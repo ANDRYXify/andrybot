@@ -183,14 +183,19 @@
     let motore = 'nativo';
     try { if (localStorage.getItem('voce_motore') === 'locale') motore = 'locale'; } catch (e) { /* ignora */ }
 
-    // Motore locale (Whisper via transformers.js): scarica il modello UNA volta
-    // (poi resta in cache nel browser), trascrive la voce sul dispositivo e
+    // Motore locale (Whisper via transformers.js v3): scarica il modello UNA
+    // volta (poi resta in cache nel browser), trascrive la voce SUL TUO PC e
     // cerca le parole chiave. Nessun servizio esterno: privacy totale.
-    const WHISPER_CDN = 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
-    const WHISPER_MODELLO = 'Xenova/whisper-tiny';   // il più leggero/veloce: scarica poco e trascrive in fretta
-    const FINESTRA_SEC = 4;           // quanti secondi di audio trascriviamo ogni giro (corta = più veloce)
-    const PASSO_MS = 2000;            // ogni quanto trascriviamo (finestre sovrapposte)
-    const MAX_TOKEN = 48;             // tetto ai token generati: per le parole chiave basta poco → molto più rapido
+    // Usa la GPU (WebGPU) se disponibile → veloce E preciso (whisper-base);
+    // altrimenti ripiega su CPU (WASM) con un modello più leggero.
+    const WHISPER_CDN = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.1';
+    const MODELLO_GPU = 'onnx-community/whisper-base';   // preciso, veloce su GPU
+    const MODELLO_CPU = 'Xenova/whisper-tiny';           // leggero, per il fallback CPU
+    const DTYPE_GPU = { encoder_model: 'fp32', decoder_model_merged: 'fp16' };
+    const FINESTRA_SEC = 5;           // secondi di audio per giro (più contesto = capisce meglio)
+    const PASSO_MS = 1800;            // ogni quanto trascriviamo (finestre sovrapposte)
+    const MAX_TOKEN = 64;             // tetto ai token generati
+    let motoreAttivo = null;          // 'GPU' | 'CPU' (per i log)
     let asr = null;                   // pipeline Whisper (caricata una volta)
     let asrInCaricamento = null;      // Promise di caricamento (evita doppi load)
     let micStream = null, audioCtx = null, procNode = null, srcNode = null;
@@ -411,22 +416,44 @@
       if (asr) return asr;
       if (asrInCaricamento) return asrInCaricamento;
       asrInCaricamento = (async () => {
-        logga('⬇️ Preparo il motore vocale locale…');
+        logga('⬇️ Preparo il motore vocale…');
         const mod = await import(WHISPER_CDN);
         const pipeline = mod.pipeline;
         try { if (mod.env) mod.env.allowLocalModels = false; } catch (e) { /* ignora */ }
-        let ultima = -1;
-        const p = await pipeline('automatic-speech-recognition', WHISPER_MODELLO, {
-          progress_callback: (info) => {
-            if (info && info.status === 'progress' && typeof info.progress === 'number') {
-              const perc = Math.floor(info.progress);
-              if (perc >= ultima + 10) { ultima = perc; logga('⬇️ Scarico il modello vocale: ' + perc + '% (solo la prima volta)'); }
-            } else if (info && info.status === 'ready') {
-              logga('✅ Modello vocale pronto.');
-            }
-          },
-        });
-        return p;
+
+        // Prima la GPU (WebGPU): veloce e precisa. Poi la CPU (WASM) come rete.
+        const haGPU = (typeof navigator !== 'undefined' && !!navigator.gpu);
+        const tentativi = [];
+        if (haGPU) tentativi.push({ device: 'webgpu', model: MODELLO_GPU, dtype: DTYPE_GPU, nome: 'GPU' });
+        tentativi.push({ device: 'wasm', model: MODELLO_CPU, dtype: 'q8', nome: 'CPU' });
+
+        let ultimoErrore = null;
+        for (const cfg of tentativi) {
+          try {
+            logga(`⚙️ Motore vocale su ${cfg.nome} (${cfg.model})…`);
+            let ultima = -1;
+            const p = await pipeline('automatic-speech-recognition', cfg.model, {
+              device: cfg.device,
+              dtype: cfg.dtype,
+              progress_callback: (info) => {
+                if (info && info.status === 'progress' && typeof info.progress === 'number') {
+                  const perc = Math.floor(info.progress);
+                  if (perc >= ultima + 15) { ultima = perc; logga('⬇️ Scarico il modello: ' + perc + '% (solo la prima volta)'); }
+                }
+              },
+            });
+            // warm-up: valida il backend con mezzo secondo di silenzio (se il
+            // device non regge, salta al successivo invece di fallire in chat)
+            await p(new Float32Array(8000), { language: 'italian', task: 'transcribe' });
+            motoreAttivo = cfg.nome;
+            logga(`✅ Motore vocale pronto (${cfg.nome}).`);
+            return p;
+          } catch (e) {
+            ultimoErrore = e;
+            logga(`↩️ ${cfg.nome} non disponibile, provo altro… (${(e && e.message ? e.message : e).toString().slice(0, 70)})`);
+          }
+        }
+        throw ultimoErrore || new Error('nessun backend vocale');
       })();
       try { asr = await asrInCaricamento; return asr; }
       finally { asrInCaricamento = null; }
