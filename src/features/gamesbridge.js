@@ -13,10 +13,13 @@ import { makeLog } from '../logger.js';
 const log = makeLog('giochi');
 
 const TIMEOUT_MS = 8_000;
-// prefissi dei comandi di gioco da inoltrare (Phase 1: comandi con '!').
-// Inoltriamo tutti i messaggi che iniziano per '!' così anche i comandi chat
-// personalizzati del sito continuano a funzionare tramite SocialBot.
-const INOLTRA = (testo) => testo.startsWith('!');
+// Inoltriamo SOLO i comandi dei giochi del sito (AGENTify): !ag e !agentify.
+// Tutto il resto della chat (comandi propri, citazioni, minigiochi, moderazione…)
+// lo gestisce SocialBot in locale, quindi non serve mandarlo al sito: meno
+// traffico e nessun rischio che un comando locale venga "rubato" dal ponte.
+// Se in futuro il sito aggiunge altri giochi da chat, basta ampliare qui.
+const PREFISSI_GIOCO = /^!(ag|agentify)\b/i;
+const INOLTRA = (testo) => PREFISSI_GIOCO.test(testo);
 
 // Inoltra il messaggio al sito e scrive le risposte. Ritorna true se il sito
 // l'ha gestito (comando di gioco/comando noto): in tal caso il bot NON elabora
