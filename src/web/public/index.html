@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AndryBot — la dashboard del tuo bot</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- notifiche a scomparsa -->
+  <div id="toast-box" aria-live="polite"></div>
+
+  <header class="testata">
+    <div class="testata-inner">
+      <div>
+        <h1>AndryBot <span class="emoji">🤖💜</span> <span class="claim">— il bot che cresce con te</span></h1>
+        <p class="sottotitolo">per la community di andryxify.it</p>
+      </div>
+      <!-- riempito da app.js quando l'utente è loggato -->
+      <div id="area-utente" class="area-utente"></div>
+    </div>
+  </header>
+
+  <main id="app" class="contenitore">
+    <div class="caricamento">Caricamento…</div>
+  </main>
+
+  <footer class="pie">
+    <p>AndryBot parla nella tua chat <strong>con il tuo account</strong> — sei sempre tu ad avere il controllo.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
