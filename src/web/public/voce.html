@@ -187,9 +187,10 @@
     // (poi resta in cache nel browser), trascrive la voce sul dispositivo e
     // cerca le parole chiave. Nessun servizio esterno: privacy totale.
     const WHISPER_CDN = 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
-    const WHISPER_MODELLO = 'Xenova/whisper-base';   // buon compromesso IT; 'whisper-tiny' = più veloce
-    const FINESTRA_SEC = 6;           // quanti secondi di audio trascriviamo ogni giro
-    const PASSO_MS = 2500;            // ogni quanto trascriviamo (finestre sovrapposte)
+    const WHISPER_MODELLO = 'Xenova/whisper-tiny';   // il più leggero/veloce: scarica poco e trascrive in fretta
+    const FINESTRA_SEC = 4;           // quanti secondi di audio trascriviamo ogni giro (corta = più veloce)
+    const PASSO_MS = 2000;            // ogni quanto trascriviamo (finestre sovrapposte)
+    const MAX_TOKEN = 48;             // tetto ai token generati: per le parole chiave basta poco → molto più rapido
     let asr = null;                   // pipeline Whisper (caricata una volta)
     let asrInCaricamento = null;      // Promise di caricamento (evita doppi load)
     let micStream = null, audioCtx = null, procNode = null, srcNode = null;
@@ -490,7 +491,12 @@
         let off = 0; for (const c of chunkAudio) { unito.set(c, off); off += c.length; }
         const a16 = resample16k(unito, audioCtx ? audioCtx.sampleRate : 16000);
         if (a16.length < 16000 * 0.6) { trascrivendo = false; return; }   // troppo poco audio
-        const out = await asr(a16, { language: 'italian', task: 'transcribe', chunk_length_s: FINESTRA_SEC });
+        // gate sul silenzio: se non stai parlando, non sprechiamo una trascrizione
+        let energia = 0;
+        for (let i = 0; i < a16.length; i++) energia += a16[i] * a16[i];
+        energia = Math.sqrt(energia / a16.length);
+        if (energia < 0.008) { trascrivendo = false; return; }
+        const out = await asr(a16, { language: 'italian', task: 'transcribe', max_new_tokens: MAX_TOKEN });
         const testo = (out && out.text ? String(out.text) : '').trim();
         if (testo) valuta(testo, true);
       } catch (e) {
