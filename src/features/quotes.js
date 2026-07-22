@@ -56,23 +56,3 @@ export function tryQuoteCommand(msg, say) {
     return true;
   } catch (e) { log.error('tryQuoteCommand:', e?.message || e); return false; }
 }
-
-// !so @nome / !shoutout @nome (solo mod/streamer)
-export async function tryShoutout(helix, msg, say) {
-  try {
-    if (!msg || msg.isSelf || !puoGestire(msg)) return false;
-    const m = /^!(?:so|shoutout|grida)\s+@?([a-z0-9_]{2,25})/i.exec(String(msg.text || '').trim());
-    if (!m) return false;
-    const target = m[1].toLowerCase();
-    const u = await helix.getUserByLogin(target).catch(() => null);
-    if (!u?.id) { say(`Non trovo @${target} su Twitch 🤔`); return true; }
-    let gioco = '';
-    try { gioco = (await helix.getChannelInfo(u.id))?.game_name || ''; } catch { /* niente */ }
-    const nome = u.display_name || target;
-    const link = `twitch.tv/${u.login || target}`;
-    say(gioco
-      ? `🎉 Shoutout a @${nome}! L'ultima volta streammava ${gioco} — andate a seguirlo su ${link} 💜`
-      : `🎉 Shoutout a @${nome}! Andate a seguirlo su ${link} 💜`);
-    return true;
-  } catch (e) { log.error('tryShoutout:', e?.message || e); return false; }
-}
