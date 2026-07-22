@@ -63,3 +63,34 @@ export async function tryGamesBridge(msg, say) {
     return false;
   }
 }
+
+// Poll degli annunci "gioco attivo": chiede al sito se c'è una riga di
+// regole/comandi da scrivere in chat. Serve per le partite create DAL SITO
+// (dove non c'è un comando in chat che inneschi la risposta): l'attivazione dei
+// controlli è automatica e le regole compaiono in chat da sole. Best-effort,
+// non lancia mai; silenzioso se non c'è nulla in coda.
+export async function pollAnnunci(login, say) {
+  try {
+    const cfg = streamers.get(login)?.settings?.giochiSito;
+    if (!cfg?.attivo || !cfg.endpoint || !cfg.secret) return;
+
+    const ac = new AbortController();
+    const to = setTimeout(() => ac.abort(), TIMEOUT_MS);
+    let dati = null;
+    try {
+      const r = await fetch(cfg.endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + cfg.secret },
+        body: JSON.stringify({ tipo: 'annunci', login }),
+        signal: ac.signal,
+      });
+      if (!r.ok) return;
+      dati = await r.json().catch(() => null);
+    } finally { clearTimeout(to); }
+
+    const annunci = Array.isArray(dati?.annunci) ? dati.annunci : [];
+    for (const t of annunci) { if (t && typeof say === 'function') say(t); }
+  } catch (e) {
+    log.debug(`annunci #${login}:`, e?.message || e);
+  }
+}
