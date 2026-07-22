@@ -257,13 +257,17 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     seedStreamer(who.login);
 
     // ponte "giochi del sito": il sito ci consegna endpoint + segreto al redeem;
-    // li memorizziamo (senza toccare l'interruttore 'attivo' scelto dallo streamer).
+    // li memorizziamo. L'interruttore 'attivo' qui è solo un master-switch del
+    // ponte (SocialBot inoltra i comandi di gioco al sito): lo teniamo ACCESO di
+    // default, così l'abilitazione vera e propria la comanda lo streamer dal
+    // toggle sul gioco (sul sito). Un eventuale OFF esplicito scelto prima dallo
+    // streamer viene comunque rispettato.
     if (who.bridge) {
       const s = streamers.get(who.login);
       const g = s?.settings?.giochiSito || {};
       streamers.setSettings(who.login, {
         ...s.settings,
-        giochiSito: { attivo: g.attivo === true, endpoint: who.bridge.endpoint, secret: who.bridge.secret },
+        giochiSito: { attivo: g.attivo !== false, endpoint: who.bridge.endpoint, secret: who.bridge.secret },
       });
     }
 
