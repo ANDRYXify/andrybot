@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-#  AndryBot — preparazione del Mac (macOS)
+#  SocialBot — preparazione del Mac (macOS)
 #
 #  Cosa fa:
 #    1. installa FileZilla (per gestire i file sul server)
