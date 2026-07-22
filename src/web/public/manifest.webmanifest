@@ -1,0 +1,16 @@
+{
+  "name": "SocialBot — dashboard",
+  "short_name": "SocialBot",
+  "description": "Gestisci il tuo bot Twitch: personalità, comandi, effetti, notifiche e molto altro.",
+  "start_url": "/sblocca",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#1a1030",
+  "theme_color": "#7c3aed",
+  "lang": "it",
+  "orientation": "any",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
