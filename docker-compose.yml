@@ -1,6 +1,7 @@
 # ============================================================
 #  AndryBot — stack di produzione
 #  - bot:   Node 22 (dashboard + chat Twitch), solo rete interna
+#  - brain: cervello Python isolato (coscienza + modello linguistico)
 #  - caddy: reverse proxy con HTTPS automatico (Let's Encrypt)
 #  Avvio:  docker compose up -d --build
 # ============================================================
@@ -16,6 +17,20 @@ services:
     expose:
       # Porta interna: la vede solo Caddy, NON è aperta su internet.
       - "8090"
+    depends_on:
+      - brain
+
+  # Il "cervello" che parla con parole sue: gira ISOLATO, così qualunque cosa
+  # faccia (pensare, caricare il modello) NON rallenta il bot → comandi sempre
+  # istantanei. Il bot lo raggiunge su http://brain:8091 (solo rete interna).
+  brain:
+    build: ./brain
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/app/data      # coscienza (memoria) + modelli, persistono qui
+    expose:
+      - "8091"
 
   caddy:
     image: caddy:2
