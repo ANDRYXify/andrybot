@@ -44,6 +44,7 @@ export class BotManager {
     this._animaTimer = null;
     this._vipTimer = null;
     this._premiTimer = null;
+    this._annunciTimer = null;       // poll degli annunci "gioco attivo" (regole in chat)
     this._stopReflection = null;
     this._capAvvisoDato = false;     // il tetto ascolti è già stato loggato una volta?
     this._liveState = new Map();     // login → bool: se lo streamer è in live adesso
@@ -83,6 +84,9 @@ export class BotManager {
     this._premiTimer = setInterval(() => this._controllaPremi(), 60 * 60_000);
     // TikTok: rilevamento live best-effort (l'affidabile è il webhook)
     this._tiktokTimer = setInterval(() => this._controllaTikTok().catch(() => {}), 3 * 60_000);
+    // Giochi del sito: poll delle regole da annunciare in chat quando parte una
+    // partita (attivazione automatica anche per le partite create dal sito).
+    this._annunciTimer = setInterval(() => this._pollAnnunciGiochi(), 15_000);
     log.info('SocialBot avviato');
   }
 
@@ -93,6 +97,7 @@ export class BotManager {
     clearInterval(this._vipTimer);
     clearInterval(this._premiTimer);
     clearInterval(this._tiktokTimer);
+    clearInterval(this._annunciTimer);
     this._stopReflection?.();
     this.watcher?.stop();
     // spegni tutti gli ascolti live (audio): non devono restare orfani
@@ -396,6 +401,19 @@ export class BotManager {
         log.info(`notifica Telegram inviata per #${login}`);
       }
     } catch (e) { log.error(`notifica Telegram #${login}:`, e?.message || e); }
+  }
+
+  // Giochi del sito: per ogni canale connesso col ponte acceso, chiede al sito
+  // se ci sono regole/comandi da scrivere in chat (partita appena creata dal
+  // sito). Se sì, le scrive con l'account dello streamer. Silenzioso se vuoto.
+  _pollAnnunciGiochi() {
+    try {
+      for (const login of this.units.keys()) {
+        const cfg = streamers.get(login)?.settings?.giochiSito;
+        if (!cfg?.attivo || !cfg.endpoint || !cfg.secret) continue;
+        gamesbridge.pollAnnunci(login, (t) => this.say(login, t)).catch(() => {});
+      }
+    } catch (e) { log.error('poll annunci giochi:', e?.message || e); }
   }
 
   // TikTok: giro di rilevamento live (best-effort) su chi ha configurato e
