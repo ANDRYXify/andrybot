@@ -38,7 +38,7 @@ function nomeMoneta(channel) {
 // Chi chatta guadagna qualche moneta (throttle 60s per persona).
 export function accredita(msg) {
   try {
-    if (!msg || msg.isSelf) return;
+    if (!msg) return;
     const u = String(msg.user || '').toLowerCase();
     if (!u || u.startsWith('[')) return;
     if (!attivi(msg.channel)) return;
@@ -93,7 +93,9 @@ const DUELLO_ESITI = [
 // Ritorna true se il messaggio era un comando/azione di gioco (gestito).
 export function tryGame(msg, say) {
   try {
-    if (!msg || msg.isSelf) return false;
+    // Niente skip su isSelf: lo streamer (che il bot impersona) può giocare/
+    // testare i minigiochi dal suo account. Nessun loop: gli echi non tornano.
+    if (!msg) return false;
     const channel = msg.channel;
     if (!attivi(channel)) return false;
     const nome = msg.display || msg.user;
