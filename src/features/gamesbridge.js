@@ -26,7 +26,11 @@ const INOLTRA = (testo) => PREFISSI_GIOCO.test(testo);
 // oltre. Non lancia mai.
 export async function tryGamesBridge(msg, say) {
   try {
-    if (!msg || msg.isSelf) return false;
+    // NB: NON saltiamo `isSelf`. Il bot parla con l'account dello streamer,
+    // quindi i messaggi dello streamer stesso risultano "isSelf": ma i comandi
+    // di gioco (!ag) che digita LUI devono funzionare (spesso è lui a testare/
+    // creare la partita). Gli echi del bot non tornano su IRC, quindi nessun loop.
+    if (!msg) return false;
     const cfg = streamers.get(msg.channel)?.settings?.giochiSito;
     if (!cfg?.attivo || !cfg.endpoint || !cfg.secret) return false;
     const testo = String(msg.text || '').trim();

@@ -234,8 +234,11 @@ export class ChatBot extends EventEmitter {
 
     // Nota: i messaggi che INVIAMO noi non tornano indietro su questa
     // connessione, quindi un PRIVMSG dal nostro stesso login è lo
-    // streamer in carne e ossa che scrive dalla sua app: lo emettiamo
-    // con isSelf=true (utile per imparare, mai per rispondergli).
+    // streamer in carne e ossa che scrive dalla sua app. Lo marchiamo
+    // isSelf=true: le funzioni "ambientali" (moderazione, chiacchiera IA
+    // proattiva, hype/amicizia) lo lasciano in pace, ma i suoi COMANDI
+    // (!ag, !vip, !cita, minigiochi, builtin) devono funzionare — è spesso
+    // lui a testare. Nessun loop: gli echi del bot non tornano mai indietro.
     const badges = tags['badges'] || '';
     const isBroadcaster = badges.includes('broadcaster/');
     this.emit('message', {
