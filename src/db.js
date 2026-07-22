@@ -432,6 +432,25 @@ export const quotes = {
   list(channel) { return db.prepare('SELECT * FROM quotes WHERE channel=? ORDER BY n').all(String(channel).toLowerCase()); },
   remove(channel, n) { db.prepare('DELETE FROM quotes WHERE channel=? AND n=?').run(String(channel).toLowerCase(), n); },
   count(channel) { return db.prepare('SELECT COUNT(*) c FROM quotes WHERE channel=?').get(String(channel).toLowerCase()).c; },
+  // import in blocco: salta i doppioni (confronto normalizzato) sia con l'esistente
+  // sia dentro il lotto. Ritorna { aggiunte, saltate }.
+  addMany(channel, testi, by = '') {
+    const ch = String(channel).toLowerCase();
+    const norm = (s) => String(s || '').toLowerCase().replace(/^[“"'«\s]+|[”"'»\s]+$/g, '').replace(/\s+/g, ' ').trim();
+    const gia = new Set(this.list(ch).map((q) => norm(q.text)));
+    const visti = new Set();
+    let aggiunte = 0, saltate = 0;
+    for (const raw of (Array.isArray(testi) ? testi : [])) {
+      const t = String(raw || '').replace(/^[“"'«\s]+|[”"'»\s]+$/g, '').trim().slice(0, 400);
+      const k = norm(t);
+      if (!k) { continue; }
+      if (gia.has(k) || visti.has(k)) { saltate++; continue; }
+      visti.add(k);
+      this.add(ch, t, by);
+      aggiunte++;
+    }
+    return { aggiunte, saltate };
+  },
 };
 
 // ---------------------------------------------------------------- moderatori (gestori delegati)
