@@ -127,3 +127,14 @@ export async function notificaLive(conf, streamer, info) {
   if (!r.ok) log.warn(`notifica live #${streamer?.login}: ${r.errore}`);
   return r;
 }
+
+// Notifica "in diretta su TikTok" nel gruppo Telegram configurato.
+export async function notificaTikTok(conf, streamer, username) {
+  if (!conf?.token || !conf?.chat_id) return { ok: false, errore: 'telegram non configurato' };
+  const u = String(username || '').replace(/^@/, '');
+  const nome = escHtml(streamer?.display || streamer?.login || u);
+  const testo = `🎵 <b>${nome}</b> è in diretta su <b>TikTok</b>!\n\n👉 https://www.tiktok.com/@${escHtml(u)}/live`;
+  const r = await inviaMessaggio(conf.token, conf.chat_id, testo, { anteprima: true });
+  if (!r.ok) log.warn(`notifica TikTok #${streamer?.login}: ${r.errore}`);
+  return r;
+}

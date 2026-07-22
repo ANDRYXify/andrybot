@@ -72,6 +72,7 @@ function impostazioni() {
     nomeMonete: (typeof s.nomeMonete === 'string' && s.nomeMonete.trim()) || 'monete',
     premioVip: (s.premioVip && typeof s.premioVip === 'object') ? s.premioVip : { attivo: false, periodo: 'settimana', quanti: 1 },
     antispam: (s.antispam && typeof s.antispam === 'object') ? s.antispam : {},
+    tiktok: (s.tiktok && typeof s.tiktok === 'object') ? s.tiktok : { username: '', attivo: false, annunciaChat: false },
     frasi: Array.isArray(s.frasi) ? s.frasi : [],
     clipAuto: s.clipAuto !== false,
     clipAutoSoglia: typeof s.clipAutoSoglia === 'number' ? s.clipAutoSoglia : 25,
@@ -670,6 +671,7 @@ function pannelloGiochi() {
 
 function pannelloNotifiche() {
   const tg = stato.telegram || { configurato: false, gruppoOk: false, attivo: false, messaggio: '', botUsername: '', gruppo: '' };
+  const tkc = impostazioni().tiktok || {};
   const msgDefault = '🔴 {nome} è in diretta!\n\n{titolo}\n🎮 {gioco}\n\n👉 {link}';
   return pannello('notifiche', `
     <div class="carta">
@@ -716,6 +718,42 @@ function pannelloNotifiche() {
         <button class="btn pericolo mini" id="btn-tg-scollega">Scollega</button>
       </p>
       ` : ''}
+    </div>
+
+    <div class="carta">
+      <h2>Notifica live TikTok 🎵</h2>
+      <p>Quando vai in diretta su <strong class="primo-piano">TikTok</strong>, avviso il gruppo Telegram
+      (e, se vuoi, la chat Twitch). Su TikTok non esiste una chat-bot come su Twitch: qui facciamo la notifica.</p>
+
+      <label class="campo" for="inp-tk-user">Il tuo username TikTok</label>
+      <div class="riga-flessibile">
+        <span class="suggerimento">@</span>
+        <input type="text" id="inp-tk-user" placeholder="tuonome" value="${esc(tkc.username || '')}">
+      </div>
+
+      <div class="riga-check spazio-sopra">
+        <input type="checkbox" id="chk-tk-attivo" ${tkc.attivo ? 'checked' : ''}>
+        <label for="chk-tk-attivo">Rileva in automatico quando vado live su TikTok</label>
+      </div>
+      <p class="suggerimento">⚠️ Il rilevamento automatico è <em>best-effort</em> (TikTok non ha un'API ufficiale):
+      può non essere sempre puntuale. Per la massima affidabilità usa il webhook qui sotto.</p>
+
+      <div class="riga-check">
+        <input type="checkbox" id="chk-tk-chat" ${tkc.annunciaChat ? 'checked' : ''}>
+        <label for="chk-tk-chat">Annuncia anche nella chat Twitch</label>
+      </div>
+
+      <p class="spazio-sopra">
+        <button class="btn" id="btn-tk-salva">Salva</button>
+        <button class="btn secondario" id="btn-tk-prova">Manda una prova</button>
+      </p>
+
+      <hr class="separatore">
+      <p class="suggerimento"><strong class="primo-piano">Via affidabile (webhook):</strong> collega una tua automazione
+      (IFTTT/Zapier/Shortcut) all'evento "vado live su TikTok" e falle chiamare in POST:</p>
+      <p><code>POST ${esc(location.origin)}/api/ext/${esc(stato.user.login)}</code></p>
+      <p class="suggerimento">con header <code>Authorization: Bearer LA-TUA-CHIAVE-API</code> e corpo
+      <code>{"azione":"tiktok-live"}</code>. La chiave API la trovi nella scheda Moduli.</p>
     </div>`);
 }
 
@@ -974,6 +1012,22 @@ function attivaPiattaforma() {
     await api('/api/streamer/telegram', { method: 'DELETE' });
     toast('Telegram scollegato.');
     stato = await api('/api/me'); render();
+  }));
+
+  // --- Notifica TikTok ---
+  document.getElementById('btn-tk-salva')?.addEventListener('click', () => conErrore(async () => {
+    await salvaImpostazioni({
+      tiktok: {
+        username: (document.getElementById('inp-tk-user').value || '').trim(),
+        attivo: document.getElementById('chk-tk-attivo').checked,
+        annunciaChat: document.getElementById('chk-tk-chat').checked,
+      },
+    }, 'TikTok salvato 🎵');
+  }));
+
+  document.getElementById('btn-tk-prova')?.addEventListener('click', () => conErrore(async () => {
+    await api('/api/streamer/tiktok/prova', { method: 'POST', body: {} });
+    toast('Prova TikTok inviata nel gruppo Telegram 🎵');
   }));
 
   // Comando rapido: inserimento variabili (senza perdere il focus) + crea al volo
