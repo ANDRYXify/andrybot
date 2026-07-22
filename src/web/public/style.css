@@ -359,9 +359,123 @@ input[type="file"]::file-selector-button:hover { background: var(--viola-scuro);
 a { color: var(--viola-chiaro); }
 code { background: var(--carta-2); border-radius: 5px; padding: .1rem .35rem; font-size: .88em; }
 
+/* ------------------------------------------------------------ moduli (automazioni) */
+
+/* bottoncini dei modelli pronti */
+.modelli-pronti { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .6rem; }
+.modello-pronto {
+  background: var(--carta-2);
+  border: 1px solid var(--bordo);
+  color: var(--testo);
+  border-radius: 999px;
+  padding: .4rem .95rem;
+  font-size: .85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+.modello-pronto:hover { border-color: var(--viola); color: var(--viola-chiaro); }
+
+/* riga di un modulo in lista */
+.lista-moduli { list-style: none; margin-top: .6rem; }
+.modulo {
+  background: var(--carta-2);
+  border: 1px solid var(--bordo);
+  border-radius: 12px;
+  padding: .7rem .9rem;
+  margin-bottom: .6rem;
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+  flex-wrap: wrap;
+}
+.modulo .testo-voce { flex: 1; min-width: 200px; }
+.modulo .nome-modulo { font-weight: 700; }
+.modulo .riassunto-lista { font-size: .85rem; color: var(--testo-2); margin-top: .1rem; }
+
+/* blocchi QUANDO / SE / ALLORA: barra-accento a sinistra + etichetta in maiuscoletto */
+.blocco-quando, .blocco-se, .blocco-allora {
+  border: 1px solid var(--bordo);
+  border-left: 3px solid var(--viola);
+  border-radius: 10px;
+  background: var(--carta-2);
+  padding: .9rem 1rem;
+  margin-top: 1rem;
+}
+.etichetta-blocco {
+  font-size: .74rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--viola-chiaro);
+  margin-bottom: .4rem;
+}
+details.blocco-se > summary {
+  list-style: none;
+  cursor: pointer;
+  margin-bottom: 0;
+}
+details.blocco-se > summary::-webkit-details-marker { display: none; }
+details.blocco-se[open] > summary { margin-bottom: .3rem; }
+
+/* riga di una singola azione */
+.azione-riga {
+  border: 1px solid var(--bordo);
+  border-radius: 10px;
+  background: var(--carta);
+  padding: .7rem .8rem;
+  margin-bottom: .6rem;
+}
+.azione-testata { display: flex; align-items: center; gap: .5rem; margin-bottom: .5rem; }
+.azione-testata select { flex: 1; }
+.azione-controlli { display: flex; gap: .25rem; flex-shrink: 0; }
+.azione-controlli .btn.mini { padding: .25rem .55rem; }
+
+/* pillole variabili cliccabili (monospace) */
+.chip-vars { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .45rem; }
+.chip-var {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .78rem;
+  background: rgba(145, 70, 255, .1);
+  border: 1px solid rgba(145, 70, 255, .35);
+  color: var(--viola-chiaro);
+  border-radius: 6px;
+  padding: .12rem .5rem;
+  cursor: pointer;
+}
+.chip-var:hover { background: rgba(145, 70, 255, .2); }
+
+/* riassunto vivo in cima all'editor */
+.riassunto-modulo {
+  background: rgba(145, 70, 255, .08);
+  border: 1px dashed rgba(145, 70, 255, .4);
+  border-radius: 10px;
+  padding: .6rem .9rem;
+  color: var(--testo);
+  font-size: .92rem;
+  margin: .3rem 0 .9rem;
+}
+
+/* blocco di codice per l'esempio curl dei connettori */
+pre.blocco-codice {
+  background: var(--fondo);
+  border: 1px solid var(--bordo);
+  border-radius: 8px;
+  padding: .7rem .8rem;
+  margin-top: .3rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .82rem;
+  color: var(--testo-2);
+  overflow-x: auto;
+  white-space: pre;
+}
+
 @media (max-width: 640px) {
   .testata h1 { font-size: 1.2rem; }
   .testata .claim { display: block; font-size: .95rem; }
   .carta { padding: 1rem; }
   .hero { padding: 1.6rem .6rem; }
+  .blocco-quando, .blocco-se, .blocco-allora { padding: .8rem .7rem; }
+  .modulo .azioni-voce { width: 100%; }
 }

@@ -1,0 +1,45 @@
+// ─────────────────────────────────────────────────────────────────────────
+//  ESEMPIO DI PLUGIN OPERATORE  —  NON viene caricato (ha estensione .js.txt)
+//
+//  Per attivarlo: copialo in `plugins/saluto.js` (estensione .js).
+//  ⚠️  ATTENZIONE: i plugin girano SUL SERVER con pieni privilegi del processo.
+//      Mettili SOLO tu (operatore andryxify): non sono per gli streamer.
+// ─────────────────────────────────────────────────────────────────────────
+
+// Un plugin esporta:
+//   • una funzione `default`, OPPURE
+//   • un oggetto con un metodo `setup`.
+// Riceve un'API stabile: { on, say, log }
+//   - on(evento, handler)  → 'message' (ogni messaggio chat) | 'event' (eventi Twitch)
+//   - say(channel, text)   → scrive in chat con l'account dello streamer
+//   - log                  → logger con .info/.warn/.error/.debug
+
+export default function setup({ on, say, log }) {
+  log.info('plugin esempio-saluto attivo');
+
+  // Esempio 1: rispondi quando qualcuno scrive "!ping" in chat.
+  on('message', (msg) => {
+    // msg = { channel, user, display, text, isMod, isBroadcaster, isSub, isSelf, tags }
+    if (msg.isSelf) return;                 // mai auto-rispondersi
+    if (String(msg.text || '').trim().toLowerCase() === '!ping') {
+      say(msg.channel, `pong @${msg.display} 🏓`);
+    }
+  });
+
+  // Esempio 2: saluta i nuovi follower.
+  on('event', (ev) => {
+    // ev = { channel, type, data }  (type es. 'channel.follow', 'channel.raid', ...)
+    if (ev.type === 'channel.follow') {
+      const nome = ev.data?.user_name || 'nuovo amico';
+      say(ev.channel, `Benvenutǝ ${nome}, grazie del follow! 💜`);
+    }
+  });
+}
+
+// In alternativa alla forma qui sopra potresti esportare:
+//
+//   export const setup = ({ on, say, log }) => { ... };
+//
+// oppure:
+//
+//   export default { setup: ({ on, say, log }) => { ... } };
