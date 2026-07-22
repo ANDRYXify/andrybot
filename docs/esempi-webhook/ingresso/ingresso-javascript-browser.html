@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <title>API in ingresso — SocialBot (dal browser)</title>
+</head>
+<body>
+  <!--
+    API IN INGRESSO — il TUO servizio comanda SocialBot, direttamente dal browser.
+
+    Con l'API in ingresso sei TU a far dire/fare cose al bot. SocialBot pubblica
+    in chat con l'account dello streamer.
+
+    Copia CHIAVE e CANALE dalla dashboard (Ascolto live / Moduli → Connettori).
+
+    ATTENZIONE alla sicurezza: la chiave qui è visibile a CHIUNQUE apra la pagina.
+    Usa questo file solo in locale / su una pagina privata (es. un tuo pannellino
+    su OBS). Per un sito pubblico, tieni la chiave sul server e fai passare da lì
+    le chiamate.
+  -->
+  <h1>Comanda SocialBot</h1>
+  <button id="btn-messaggio">Manda messaggio</button>
+  <button id="btn-clip">Crea clip</button>
+  <button id="btn-effetto">Effetto airhorn</button>
+  <button id="btn-modulo">Avvia modulo</button>
+  <pre id="log"></pre>
+
+  <script>
+    const CHIAVE = 'LA_TUA_CHIAVE';   // <-- incolla qui la tua chiave
+    const CANALE = 'tuocanale';       // <-- il tuo canale
+    const URL = `https://bot.andryxify.it/api/ext/${CANALE}`;
+
+    async function comanda(payload) {
+      const log = document.getElementById('log');
+      try {
+        const risposta = await fetch(URL, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${CHIAVE}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+        log.textContent = risposta.status + ' ' + (await risposta.text());
+      } catch (err) {
+        log.textContent = 'Errore: ' + err;
+      }
+    }
+
+    // Un'azione per ogni bottone.
+    document.getElementById('btn-messaggio').onclick = () =>
+      comanda({ azione: 'messaggio', testo: 'Ciao dal browser!' });
+    document.getElementById('btn-clip').onclick = () =>
+      comanda({ azione: 'clip', motivo: 'Momento epico!' });
+    document.getElementById('btn-effetto').onclick = () =>
+      comanda({ azione: 'effetto', comando: 'airhorn' });
+    document.getElementById('btn-modulo').onclick = () =>
+      comanda({ azione: 'modulo', modulo: 'NomeModulo' });
+  </script>
+</body>
+</html>

@@ -5,5 +5,8 @@
 data/
 node_modules/
 *.log
+# cache di Python (creata validando gli esempi in docs/esempi-webhook/)
+__pycache__/
+*.pyc
 # chiavi SSH generate dagli script
 server/pc/chiavi/
