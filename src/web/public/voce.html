@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SocialBot — Ascolto vocale</title>
+  <style>
+    /* Pagina autoconsistente: nessuna risorsa esterna, tema scuro coerente
+       con la dashboard (accento viola Twitch #9146FF). */
+    :root {
+      --viola: #9146FF;
+      --viola-chiaro: #a970ff;
+      --viola-scuro: #772ce8;
+      --fondo: #0e0e10;
+      --carta: #18181b;
+      --carta-2: #1f1f23;
+      --bordo: #2d2d35;
+      --testo: #efeff1;
+      --testo-2: #adadb8;
+      --verde: #00d68f;
+      --rosso: #f2545b;
+      --giallo: #ffd37c;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { color-scheme: dark; }
+    body {
+      background: var(--fondo);
+      color: var(--testo);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.55;
+      min-height: 100vh;
+    }
+    .wrap {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 1.6rem 1.1rem 3rem;
+    }
+
+    h1 { font-size: 1.5rem; letter-spacing: .01em; }
+    h2 { font-size: .85rem; text-transform: uppercase; letter-spacing: .06em; color: var(--testo-2); margin-bottom: .5rem; }
+    .intro { color: var(--testo-2); margin: .5rem 0 1.4rem; }
+
+    /* avviso "serve Chrome/Edge" o errori bloccanti */
+    .avviso {
+      background: rgba(242, 84, 91, .12);
+      border: 1px solid rgba(242, 84, 91, .45);
+      color: #ffd7d9;
+      border-radius: 10px;
+      padding: .9rem 1rem;
+      margin-bottom: 1.2rem;
+      font-size: .95rem;
+    }
+
+    /* bottone grande avvia/ferma */
+    .btn {
+      display: block;
+      width: 100%;
+      border: none;
+      border-radius: 14px;
+      padding: 1.1rem 1rem;
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: .01em;
+      cursor: pointer;
+      color: #fff;
+      background: linear-gradient(135deg, var(--viola) 0%, var(--viola-scuro) 100%);
+      box-shadow: 0 10px 30px rgba(145, 70, 255, .3);
+      transition: transform .08s ease, box-shadow .2s ease, background .2s ease;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
+    .btn.attivo { background: linear-gradient(135deg, #3a3a44 0%, #26262c 100%); box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+
+    /* riga di stato sotto al bottone */
+    .stato {
+      display: flex;
+      align-items: center;
+      gap: .55rem;
+      margin: 1rem 0 1.6rem;
+      font-weight: 600;
+    }
+    .pallino { width: .8rem; height: .8rem; border-radius: 50%; background: var(--testo-2); flex: 0 0 auto; }
+    .stato.on .pallino { background: var(--verde); box-shadow: 0 0 0 4px rgba(0,214,143,.18); animation: pulse 1.4s ease-in-out infinite; }
+    .stato.on { color: var(--verde); }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+
+    .sezione { margin-bottom: 1.6rem; }
+
+    /* frasi in ascolto: chip */
+    .frasi { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .frasi .vuoto { color: var(--testo-2); font-style: italic; }
+    .chip {
+      background: var(--carta-2);
+      border: 1px solid var(--bordo);
+      border-radius: 999px;
+      padding: .3rem .85rem;
+      font-size: .92rem;
+      color: var(--viola-chiaro);
+      font-weight: 600;
+    }
+
+    /* registro scorrevole */
+    .log {
+      background: var(--carta);
+      border: 1px solid var(--bordo);
+      border-radius: 10px;
+      padding: .6rem .8rem;
+      height: 220px;
+      overflow-y: auto;
+      font-size: .9rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .log .riga { padding: .18rem 0; border-bottom: 1px solid rgba(255,255,255,.04); word-break: break-word; }
+    .log .riga:last-child { border-bottom: none; }
+    .log .ora { color: var(--testo-2); margin-right: .5rem; }
+    .log .vuoto { color: var(--testo-2); font-style: italic; }
+
+    .privacy { color: var(--testo-2); font-size: .82rem; margin-top: 1.4rem; }
+    .privacy strong { color: var(--testo); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>🎙️ Ascolto vocale</h1>
+    <p class="intro">Tieni questa scheda aperta mentre streammi: quando dici una parola chiave, il bot fa quello che hai impostato nei Moduli.</p>
+
+    <div id="noApi" class="avviso" hidden>
+      Il riconoscimento vocale non è disponibile in questo browser.
+      Serve <strong>Chrome</strong> o <strong>Edge</strong> (su Mac o Windows).
+    </div>
+
+    <button id="btn" class="btn" type="button">▶ Avvia ascolto</button>
+
+    <div id="stato" class="stato"><span class="pallino"></span><span id="statoTesto">Fermo</span></div>
+
+    <div class="sezione">
+      <h2>Frasi che sta ascoltando</h2>
+      <div id="frasi" class="frasi"><span class="vuoto">Avvia l'ascolto per caricarle…</span></div>
+    </div>
+
+    <div class="sezione">
+      <h2>Registro</h2>
+      <div id="log" class="log"><div class="riga vuoto">Nessuna attività per ora.</div></div>
+    </div>
+
+    <p class="privacy"><strong>Privacy:</strong> la trascrizione la fa il browser; parte solo una piccola chiamata quando scatta una parola chiave.</p>
+  </div>
+
+  <script>
+    'use strict';
+
+    // --- riferimenti DOM -------------------------------------------------
+    const btn = document.getElementById('btn');
+    const statoBox = document.getElementById('stato');
+    const statoTesto = document.getElementById('statoTesto');
+    const frasiBox = document.getElementById('frasi');
+    const logBox = document.getElementById('log');
+    const noApi = document.getElementById('noApi');
+
+    // --- Web Speech API (Chrome/Edge). Se assente: si ferma qui. ---------
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    let rec = null;            // istanza SpeechRecognition
+    let attivo = false;        // l'utente VUOLE ascoltare (guida i riavvii)
+    let frasi = [];            // frasi da ascoltare (minuscole), dal server
+    let timerFrasi = null;     // ricarica periodica dell'elenco
+    const ultimoScatto = new Map();   // frase → epoch ms ultimo invio (cooldown 4s)
+    const COOLDOWN_MS = 4000;
+    let logVuoto = true;
+
+    // --- registro a video ------------------------------------------------
+    function logga(testo) {
+      if (logVuoto) { logBox.innerHTML = ''; logVuoto = false; }
+      const ora = new Date().toLocaleTimeString('it-IT');
+      const riga = document.createElement('div');
+      riga.className = 'riga';
+      const spanOra = document.createElement('span');
+      spanOra.className = 'ora';
+      spanOra.textContent = ora;
+      riga.appendChild(spanOra);
+      riga.appendChild(document.createTextNode(testo));   // textContent: niente HTML
+      logBox.appendChild(riga);
+      // tieni solo le ultime 200 righe
+      while (logBox.childElementCount > 200) logBox.removeChild(logBox.firstChild);
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    // --- stato a video ---------------------------------------------------
+    function aggiornaStato() {
+      if (attivo) {
+        statoBox.classList.add('on');
+        statoTesto.textContent = 'In ascolto…';
+        btn.textContent = '⏹ Ferma';
+        btn.classList.add('attivo');
+      } else {
+        statoBox.classList.remove('on');
+        statoTesto.textContent = 'Fermo';
+        btn.textContent = '▶ Avvia ascolto';
+        btn.classList.remove('attivo');
+      }
+    }
+
+    function mostraFrasi() {
+      frasiBox.innerHTML = '';
+      if (!frasi.length) {
+        const v = document.createElement('span');
+        v.className = 'vuoto';
+        v.textContent = 'Nessuna frase: crea un Modulo con innesco "voce" nella dashboard.';
+        frasiBox.appendChild(v);
+        return;
+      }
+      for (const f of frasi) {
+        const chip = document.createElement('span');
+        chip.className = 'chip';
+        chip.textContent = f;
+        frasiBox.appendChild(chip);
+      }
+    }
+
+    // --- server: elenco frasi da ascoltare -------------------------------
+    async function caricaFrasi() {
+      try {
+        const res = await fetch('/api/streamer/voce', { headers: { 'Accept': 'application/json' } });
+        if (res.status === 401 || res.status === 404) return sessioneScaduta();
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const dati = await res.json();
+        frasi = Array.isArray(dati.frasi) ? dati.frasi.map((f) => String(f).toLowerCase()).filter(Boolean) : [];
+        mostraFrasi();
+      } catch (e) {
+        logga('⚠️ non riesco a leggere le frasi: ' + (e && e.message ? e.message : e));
+      }
+    }
+
+    // --- server: ho sentito una frase ------------------------------------
+    async function inviaFrase(frase) {
+      logga('🎙️ sentito "' + frase + '" → invio…');
+      try {
+        const res = await fetch('/api/streamer/voce', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ frase }),
+        });
+        if (res.status === 401 || res.status === 404) return sessioneScaduta();
+        const dati = await res.json().catch(() => ({}));
+        if (dati && dati.eseguito) logga('✅ "' + frase + '" → modulo scattato');
+        else logga('➡️ "' + frase + '" inviato (nessun modulo ha reagito)');
+      } catch (e) {
+        logga('⚠️ invio non riuscito: ' + (e && e.message ? e.message : e));
+      }
+    }
+
+    function sessioneScaduta() {
+      logga('🔒 Sessione scaduta: rientra dalla dashboard e riapri questa pagina.');
+      ferma();
+    }
+
+    // --- confronto: la frase sentita contiene una parola chiave? ---------
+    function valuta(testo) {
+      const t = String(testo || '').toLowerCase();
+      if (!t || !frasi.length) return;
+      const ora = Date.now();
+      for (const frase of frasi) {
+        if (!frase || !t.includes(frase)) continue;
+        if (ora - (ultimoScatto.get(frase) || 0) < COOLDOWN_MS) continue;   // cooldown 4s per frase
+        ultimoScatto.set(frase, ora);
+        inviaFrase(frase);
+      }
+    }
+
+    // --- riconoscitore vocale --------------------------------------------
+    function creaRiconoscitore() {
+      const r = new SR();
+      r.lang = 'it-IT';
+      r.continuous = true;
+      r.interimResults = true;
+
+      r.onresult = (ev) => {
+        for (let i = ev.resultIndex; i < ev.results.length; i++) {
+          // valutiamo anche i risultati parziali: la reazione è più pronta
+          valuta(ev.results[i][0].transcript);
+        }
+      };
+
+      r.onerror = (ev) => {
+        const err = ev && ev.error;
+        if (err === 'not-allowed' || err === 'service-not-allowed') {
+          logga('⚠️ Permesso microfono negato. Consenti il microfono per questo sito (icona 🔒 nella barra) e riprova.');
+          ferma();
+        } else if (err === 'no-speech' || err === 'aborted') {
+          // normale: onend rilancerà il riconoscimento
+        } else {
+          logga('⚠️ Errore riconoscimento: ' + err);
+        }
+      };
+
+      // la modalità continua cade da sola ogni tanto: se siamo ancora attivi,
+      // rilanciamo il riconoscimento.
+      r.onend = () => {
+        if (!attivo) { aggiornaStato(); return; }
+        setTimeout(() => {
+          if (!attivo) return;
+          try { r.start(); } catch (e) { /* in transizione: riproverà */ }
+        }, 300);
+      };
+
+      return r;
+    }
+
+    // --- avvio / stop ----------------------------------------------------
+    function avvia() {
+      if (!SR) return;
+      attivo = true;
+      if (!rec) rec = creaRiconoscitore();
+      try { rec.start(); } catch (e) { /* già avviato */ }
+      aggiornaStato();
+      caricaFrasi();
+      if (!timerFrasi) timerFrasi = setInterval(caricaFrasi, 60000);   // ricarica ogni 60s
+      logga('🟢 Ascolto avviato.');
+    }
+
+    function ferma() {
+      const eraAttivo = attivo;
+      attivo = false;
+      if (rec) { try { rec.stop(); } catch (e) { /* già fermo */ } }
+      if (timerFrasi) { clearInterval(timerFrasi); timerFrasi = null; }
+      aggiornaStato();
+      if (eraAttivo) logga('⏹ Ascolto fermato.');
+    }
+
+    // --- collegamento UI -------------------------------------------------
+    if (!SR) {
+      noApi.hidden = false;
+      btn.disabled = true;
+      statoTesto.textContent = 'Non disponibile';
+    } else {
+      btn.addEventListener('click', () => { if (attivo) ferma(); else avvia(); });
+    }
+  </script>
+</body>
+</html>

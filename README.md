@@ -1,4 +1,4 @@
-# AndryBot 🤖💜
+# SocialBot 🤖💜
 
 Il bot Twitch della community di **[andryxify.it](https://andryxify.it)**: un bot che
 **parla nella chat dello streamer con il suo stesso account**, **impara** dalla sua
@@ -16,7 +16,7 @@ di comportamento decise dallo streamer.
 
 ## Come funziona il "cervello" (procedurale e progressivo)
 
-AndryBot non usa modelli linguistici esterni. Ragiona così, in ordine:
+SocialBot non usa modelli linguistici esterni. Ragiona così, in ordine:
 
 1. **Intenti** — riconosce a parole chiave le situazioni tipiche della chat (saluti,
    "come va", "chi sei", "che gioco è", "da quanto sei live", richieste di clip, richieste
@@ -25,7 +25,7 @@ AndryBot non usa modelli linguistici esterni. Ragiona così, in ordine:
 2. **Conoscenza** — cerca tra le cose che *sa* su quel canale (vedi sotto) e, se trova una
    corrispondenza, risponde con quella.
 3. **Apprendimento dalla chat** — quando un utente fa una domanda e poco dopo lo streamer
-   o un moderatore risponde, AndryBot **impara** quella coppia domanda→risposta.
+   o un moderatore risponde, SocialBot **impara** quella coppia domanda→risposta.
 4. **Catene di Markov** — costruisce frasi "nello stile" della chat a partire dai messaggi
    realmente scritti nel canale (dichiarandole per quello che sono: battute improvvisate).
 5. **Interventi spontanei** — ogni tanto (con una probabilità regolabile dallo streamer)
@@ -40,7 +40,7 @@ Da dove impara:
 | **Conoscenza manuale** | regole e nozioni che lo streamer aggiunge dalla dashboard |
 | **Riflessione periodica** | ogni 6 ore consolida statistiche e "lezioni" sul canale |
 
-Tutto questo resta **per singolo canale**: ogni streamer ha il suo AndryBot che cresce
+Tutto questo resta **per singolo canale**: ogni streamer ha il suo SocialBot che cresce
 con lui.
 
 ---
@@ -53,7 +53,7 @@ esplorabile**: chi ci arriva senza passare da andryxify.it vede solo un `Not Fou
 Il meccanismo (**zero segreti condivisi**):
 
 1. Lo streamer **verificato e abilitato** su andryxify.it apre le impostazioni del suo
-   account e trova la card **"🤖 Gestisci il tuo AndryBot"** (invisibile a tutti gli altri).
+   account e trova la card **"🤖 Gestisci il tuo SocialBot"** (invisibile a tutti gli altri).
 2. Al clic, il sito conia un **pass usa-e-getta** (256 bit, valido 2 minuti, una volta sola)
    e reindirizza a `bot.andryxify.it/entra?pass=…`.
 3. Il bot "brucia" il pass richiamando il sito: se il sito conferma un login abilitato,
@@ -67,7 +67,7 @@ Se il sito revoca l'abilitazione, il bot **esce dal canale da solo** (controllo 
 ## Il bot parla con l'account dello streamer
 
 Non esiste un "account bot" separato. Dentro la dashboard, lo streamer concede i permessi
-Twitch (OAuth) e da quel momento AndryBot scrive in chat **come lui**. È trasparente e
+Twitch (OAuth) e da quel momento SocialBot scrive in chat **come lui**. È trasparente e
 sotto il suo pieno controllo: si spegne con un clic e i permessi si revocano quando vuole.
 
 ---
@@ -174,6 +174,6 @@ HTTPS automatico).
 
 ## Trasparenza
 
-AndryBot scrive **con l'account dello streamer**, **solo** dopo il suo consenso esplicito
+SocialBot scrive **con l'account dello streamer**, **solo** dopo il suo consenso esplicito
 (OAuth), ed è **disattivabile in un clic**. Impara solo dalla chat pubblica del canale e dal
 profilo pubblico su andryxify.it. Nessun dato viene condiviso con terzi.

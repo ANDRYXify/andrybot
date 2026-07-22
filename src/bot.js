@@ -1,9 +1,10 @@
-// BotManager: il "direttore d'orchestra" di AndryBot.
+// BotManager: il "direttore d'orchestra" di SocialBot.
 // Per OGNI streamer approvato e acceso crea una "unità": una
 // connessione chat autenticata CON L'ACCOUNT DELLO STREAMER (il bot
 // parla come lui), un gestore messaggi e le sottoscrizioni agli
 // eventi Twitch. Tiene tutto sincronizzato con la dashboard.
 import { makeLog } from './logger.js';
+import { config } from './config.js';
 import { tokens, streamers, memory } from './db.js';
 import { ChatBot } from './twitch/chat.js';
 import { EventHub } from './twitch/events.js';
@@ -12,6 +13,7 @@ import { createMessageHandler } from './features/handler.js';
 import { ClipEngine } from './features/clips.js';
 import { scheduleReflection } from './ai/reflection.js';
 import { StreamWatcher } from './stream/watcher.js';
+import { LiveListener } from './stream/listener.js';
 
 const log = makeLog('bot');
 
@@ -24,12 +26,14 @@ export class BotManager {
     this.bus = bus || null;          // event-bus dei plugin operatore (opzionale)
     this.running = false;
     this.units = new Map();          // login → { chat }
+    this.listeners = new Map();      // login → LiveListener (ascolto live audio, opt-in)
     this.brain = null;
     this.clips = null;
     this.events = null;
     this.watcher = null;
     this._syncTimer = null;
     this._stopReflection = null;
+    this._capAvvisoDato = false;     // il tetto ascolti è già stato loggato una volta?
   }
 
   async start() {
@@ -51,7 +55,7 @@ export class BotManager {
     this.running = true;
     await this.syncChannels();
     this._syncTimer = setInterval(() => this.syncChannels().catch(() => {}), 60_000);
-    log.info('AndryBot avviato');
+    log.info('SocialBot avviato');
   }
 
   async stop() {
@@ -59,6 +63,9 @@ export class BotManager {
     clearInterval(this._syncTimer);
     this._stopReflection?.();
     this.watcher?.stop();
+    // spegni tutti gli ascolti live (audio): non devono restare orfani
+    for (const [, l] of this.listeners) { try { l.stop(); } catch { /* niente */ } }
+    this.listeners.clear();
     await this.events?.stop?.();
     for (const [, u] of this.units) u.chat.disconnect();
     this.units.clear();
@@ -117,6 +124,98 @@ export class BotManager {
       this.units.delete(login);
       log.info(`Unità spenta per #${login}`);
     }
+
+    // riconciliazione degli ascolti live (audio → clip nei momenti salienti).
+    // In try/catch a parte: l'ascolto non deve MAI compromettere il resto.
+    try { await this.reconcileListeners(); }
+    catch (e) { log.error('reconcileListeners:', e?.message || e); }
+  }
+
+  // Pool degli ascolti live lato server. Per ogni streamer attivo che ha
+  // acceso `ascoltoLive`, se è in live e siamo sotto il cap globale, avvia
+  // un LiveListener che crea clip sui picchi audio. Spegne gli ascolti non
+  // più desiderati, di chi non è più live, o quelli "morti" (offline/errore).
+  async reconcileListeners() {
+    // bot fermo: nessun ascolto deve sopravvivere
+    if (!this.running) {
+      for (const [login, l] of this.listeners) {
+        try { l.stop(); } catch { /* niente */ }
+        this.listeners.delete(login);
+      }
+      return;
+    }
+
+    const cap = config.maxListeners;
+
+    // chi vuole essere ascoltato: attivi con impostazione ascoltoLive === true
+    const vogliono = streamers.active().filter(s => s.settings?.ascoltoLive === true);
+    const voglionoSet = new Set(vogliono.map(s => s.login));
+
+    // 1) spegni gli ascolti non più desiderati o morti (offline/binario assente)
+    for (const [login, l] of this.listeners) {
+      if (!voglionoSet.has(login) || l.morto) {
+        try { l.stop(); } catch { /* niente */ }
+        this.listeners.delete(login);
+        log.info(`ascolto live spento per #${login}`);
+      }
+    }
+
+    // cap a 0 = funzione globalmente disattivata: spegni tutto e non avviare nulla
+    if (cap <= 0) {
+      for (const [login, l] of this.listeners) {
+        try { l.stop(); } catch { /* niente */ }
+        this.listeners.delete(login);
+        log.info(`ascolto live spento per #${login} (funzione disattivata)`);
+      }
+      return;
+    }
+
+    // 2) avvia gli ascolti mancanti, rispettando il CAP globale
+    for (const s of vogliono) {
+      const login = s.login;
+      if (this.listeners.has(login)) continue;
+
+      // tetto raggiunto: non avviarne altri (log una sola volta)
+      if (this.listeners.size >= cap) {
+        if (!this._capAvvisoDato) {
+          log.warn(`cap ascolti live raggiunto (${cap}): altri canali resteranno in attesa`);
+          this._capAvvisoDato = true;
+        }
+        continue;
+      }
+
+      // è davvero in live? (l'audio esiste solo mentre trasmette)
+      let live = null;
+      try { live = await this.helix.getStream(login); }
+      catch (e) { log.debug(`ascolto: getStream #${login} fallito:`, e?.message || e); continue; }
+      if (!live) continue;
+
+      const sensibilita = Number(s.settings?.ascoltoSensibilita) || 5;
+      const listener = new LiveListener({
+        login,
+        sensibilita,
+        onSpike: () => {
+          try { this.clips?.createClip(login, 'momento saliente (audio della live)'); }
+          catch (e) { log.error(`clip da ascolto #${login}:`, e?.message || e); }
+        },
+        log,
+      });
+      try {
+        listener.start();
+        this.listeners.set(login, listener);
+        log.info(`ascolto live avviato per #${login} (sensibilità ${sensibilita})`);
+      } catch (e) {
+        log.error(`avvio ascolto live #${login} fallito:`, e?.message || e);
+      }
+    }
+
+    // tornati sotto il tetto: si potrà ri-loggare il prossimo "cap raggiunto"
+    if (this.listeners.size < cap) this._capAvvisoDato = false;
+  }
+
+  // Crea una clip a comando (usata dall'API vocale / ingresso esterno).
+  async creaClip(channel, motivo) {
+    return this.clips?.createClip(channel, motivo || 'comando esterno');
   }
 
   // eventi Twitch (follow, sub, raid, live on/off, riscatti punti)
@@ -136,6 +235,7 @@ export class BotManager {
     return {
       running: this.running,
       channels: [...this.units.keys()],
+      ascoltando: [...this.listeners.keys()],   // canali sotto ascolto live (audio)
       streamers: streamers.list().length,
     };
   }

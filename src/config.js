@@ -1,4 +1,4 @@
-// Configurazione di AndryBot: legge le variabili d'ambiente (.env)
+// Configurazione di SocialBot: legge le variabili d'ambiente (.env)
 // e le espone con valori di default sensati. Il bot parte anche a
 // configurazione incompleta ("modalità setup"): la dashboard guida
 // l'amministratore a completare ciò che manca.
@@ -70,6 +70,10 @@ export const config = {
 
   // dati
   dataDir,
+
+  // ascolto live lato server: quanti canali possiamo ascoltare in AUDIO
+  // contemporaneamente (cap globale, il server è piccolo). 0 = disattivato.
+  maxListeners: Math.max(0, parseInt(env('MAX_LISTENERS', '2'), 10)),
 };
 
 // Scope OAuth richiesti.

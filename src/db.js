@@ -1,4 +1,4 @@
-// Database di AndryBot (SQLite): qui vivono token, streamer abilitati,
+// Database di SocialBot (SQLite): qui vivono token, streamer abilitati,
 // memoria del bot (messaggi, ricordi sugli utenti, lezioni imparate),
 // comandi personalizzati e registro delle clip.
 import Database from 'better-sqlite3';

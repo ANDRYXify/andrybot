@@ -11,7 +11,7 @@
 // con un semplice replace: NIENTE eval, niente template engine.
 import dns from 'node:dns/promises';
 import net from 'node:net';
-import { modules as modulesDb, counters, memory, streamers } from '../db.js';
+import { modules as modulesDb, counters, memory, streamers, clips } from '../db.js';
 import { makeLog } from '../logger.js';
 
 const log = makeLog('moduli');
@@ -134,6 +134,85 @@ export class ModulesEngine {
     const parole = testo.trim();
     const args = parole.length ? parole.split(/\s+/) : [];
     return this._ctxDaMessaggio(msg, channel, livello, args, parole);
+  }
+
+  // ============================================================ ingresso: VOCE
+
+  // I "comandi vocali" sono un tipo di innesco dei Moduli: la trascrizione la
+  // fa il BROWSER (Web Speech API, vedi voce.html) e ci manda la frase sentita.
+  // Qui NON si registra nulla: si confrontano solo le frasi-chiave configurate.
+
+  // Normalizza una frase vocale: minuscolo, via la punteggiatura/simboli, spazi
+  // compattati. Usata sia per confrontare i trigger sia per l'elenco frasiVoce.
+  _normVoce(s) {
+    return String(s || '')
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}\s]/gu, ' ')   // togli punteggiatura e simboli
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  // Esegue i moduli 'voce' ATTIVI del canale la cui frase-chiave combacia con
+  // la frase sentita dal browser. Riusa esegui(), quindi rispetta i cooldown e
+  // le altre condizioni come per ogni altro innesco. Ritorna true se almeno un
+  // modulo è davvero scattato. Non lancia mai.
+  async eseguiVoce(channel, frase, say) {
+    try {
+      const ch = norm(channel);
+      const sentita = this._normVoce(frase);
+      if (!ch || !sentita) return false;
+
+      const parole = sentita.split(' ').filter(Boolean);
+      const dire = typeof say === 'function' ? say : ((t) => this._say(ch, t));
+
+      let scattato = false;
+      for (const modulo of modulesDb.list(ch)) {
+        if (!modulo.attivo) continue;
+        const tr = modulo.trigger || {};
+        if (tr.tipo !== 'voce') continue;
+        const frasi = Array.isArray(tr.frasi) ? tr.frasi : [];
+
+        const combacia = frasi.some((f) => {
+          const chiave = this._normVoce(f);
+          if (!chiave) return false;
+          if (sentita.includes(chiave)) return true;   // la chiave è dentro la frase sentita
+          // per le chiavi di UNA sola parola accettiamo anche il contrario: il
+          // browser può mandare un frammento più corto ("clip" ⊂ "clippa").
+          if (!chiave.includes(' ') && chiave.includes(sentita)) return true;
+          return false;
+        });
+        if (!combacia) continue;
+
+        const ctx = this._ctxVoce(ch, sentita, parole);
+        if (await this.esegui(modulo, ctx, dire)) scattato = true;
+      }
+      return scattato;
+    } catch (e) {
+      log.debug('eseguiVoce:', e?.message || e);
+      return false;
+    }
+  }
+
+  // Elenco UNICO (minuscolo, normalizzato) di tutte le frasi dei moduli 'voce'
+  // attivi del canale: è ciò che il browser deve "ascoltare".
+  frasiVoce(channel) {
+    try {
+      const ch = norm(channel);
+      const set = new Set();
+      for (const modulo of modulesDb.list(ch)) {
+        if (!modulo.attivo) continue;
+        const tr = modulo.trigger || {};
+        if (tr.tipo !== 'voce') continue;
+        for (const f of (Array.isArray(tr.frasi) ? tr.frasi : [])) {
+          const chiave = this._normVoce(f);
+          if (chiave) set.add(chiave);
+        }
+      }
+      return [...set];
+    } catch (e) {
+      log.debug('frasiVoce:', e?.message || e);
+      return [];
+    }
   }
 
   // ============================================================ ingresso: EVENTI
@@ -261,14 +340,16 @@ export class ModulesEngine {
 
   // ============================================================ ESECUZIONE
 
-  // Valuta le CONDIZIONI e, se passano, esegue le AZIONI in sequenza.
+  // Valuta le CONDIZIONI e, se passano, esegue le AZIONI in sequenza. Ritorna
+  // true se le azioni sono state eseguite (utile a chi vuole sapere se il
+  // modulo è davvero scattato, es. eseguiVoce); false se saltato per condizioni.
   async esegui(modulo, ctx, say, opts = {}) {
-    if (!modulo || !Array.isArray(modulo.azioni) || !modulo.azioni.length) return;
+    if (!modulo || !Array.isArray(modulo.azioni) || !modulo.azioni.length) return false;
 
     if (!opts.saltaCondizioni) {
       let ok = false;
       try { ok = await this._condizioniOk(modulo, ctx); } catch { ok = false; }
-      if (!ok) return;
+      if (!ok) return false;
     }
 
     const dire = typeof say === 'function' ? say : ((t) => this._say(ctx.channel, t));
@@ -283,6 +364,7 @@ export class ModulesEngine {
         log.debug(`azione ${azione?.tipo} fallita:`, e?.message || e);
       }
     }
+    return true;
   }
 
   // Valuta il blocco SE. Ordine: ruolo → probabilità → live/offline → cooldown
@@ -368,6 +450,18 @@ export class ModulesEngine {
       }
       case 'timeout': {
         await this._timeout(ctx, Number(azione.secondi) || 0);
+        return;
+      }
+      case 'clip': {
+        // crea una clip vera del momento (es. comando vocale "clippa")
+        const clip = await this.helix?.createClip?.(ctx.channel).catch(() => null);
+        if (clip?.url) {
+          try { clips.log(ctx.channel, clip.id || '', clip.url, azione.motivo || 'modulo'); } catch { /* niente */ }
+          const t = azione.testo
+            ? await this.espandi(azione.testo, ctx)
+            : 'Clip salvata! ' + clip.url;
+          if (t) dire(t);
+        }
         return;
       }
       default:
@@ -517,6 +611,18 @@ export class ModulesEngine {
     };
   }
 
+  // Contesto di un innesco 'voce': l'autore è lo streamer (contesto di sistema),
+  // gli args sono le parole della frase sentita (così $arg1, $args funzionano).
+  _ctxVoce(channel, frase, parole) {
+    const nome = streamers.get(channel)?.display || channel;
+    const args = Array.isArray(parole) ? parole : String(frase || '').split(' ').filter(Boolean);
+    return {
+      channel, user: nome, userLogin: channel, display: nome,
+      args, argsRaw: String(frase || ''), evento: 'voce',
+      _livello: TIER_SCALA.mod, _vars: {},
+    };
+  }
+
   _ctxProva(channel) {
     const nome = streamers.get(channel)?.display || channel;
     return {
@@ -591,7 +697,7 @@ export class ModulesEngine {
         redirect: 'manual',     // un redirect potrebbe puntare all'interno: lo neghiamo
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'AndryBot-Webhook/1.0',
+          'User-Agent': 'SocialBot-Webhook/1.0',
           'Accept': 'application/json',
         },
         body: JSON.stringify(payload || {}),
