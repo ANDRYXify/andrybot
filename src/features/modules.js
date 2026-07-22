@@ -114,7 +114,13 @@ export class ModulesEngine {
     if (!t.startsWith('!')) return null;
     const primo = norm(t.slice(1).split(/\s+/)[0] || '');
     if (!primo) return null;
-    const comandi = [tr.comando, ...(Array.isArray(tr.alias) ? tr.alias : [])]
+    // Alias ROBUSTO: accetta sia un array (['disc','dc']) sia una stringa
+    // ("disc dc" / "disc, dc"). Prima gli alias salvati come stringa venivano
+    // ignorati del tutto → il comando ! funzionava ma gli alias no.
+    const aliasList = Array.isArray(tr.alias)
+      ? tr.alias
+      : (typeof tr.alias === 'string' ? tr.alias.split(/[\s,]+/) : []);
+    const comandi = [tr.comando, ...aliasList]
       .map((c) => norm(c).replace(/^!/, '').trim())
       .filter(Boolean);
     if (!comandi.includes(primo)) return null;
