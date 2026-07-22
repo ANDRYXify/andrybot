@@ -152,6 +152,14 @@ CREATE TABLE IF NOT EXISTS anima (         -- l'anima CONDIVISA di SocialBot (un
   data TEXT NOT NULL DEFAULT '{}',          -- JSON: nome, tratti, valori, tono, umore, energia, tormentoni
   ts INTEGER NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS points (        -- "monete" (punti fedeltà) dei minigiochi, per canale
+  channel TEXT NOT NULL,
+  user TEXT NOT NULL,
+  monete INTEGER NOT NULL DEFAULT 0,
+  ts INTEGER NOT NULL,
+  PRIMARY KEY (channel, user)
+);
 `);
 
 const now = () => Date.now();
@@ -178,6 +186,25 @@ export const friends = {
   },
   top(n = 10) { return db.prepare('SELECT * FROM friends ORDER BY affinity DESC LIMIT ?').all(n); },
   count() { return db.prepare('SELECT COUNT(*) c FROM friends').get().c; },
+};
+
+// ---------------------------------------------------------------- monete (minigiochi)
+export const points = {
+  get(channel, user) {
+    const r = db.prepare('SELECT monete FROM points WHERE channel=? AND user=?').get(channel, String(user).toLowerCase());
+    return r ? r.monete : 0;
+  },
+  // aggiunge (o toglie, con delta negativo) monete; non scende sotto 0. Ritorna il nuovo saldo.
+  add(channel, user, delta) {
+    const u = String(user).toLowerCase();
+    db.prepare(`INSERT INTO points (channel, user, monete, ts) VALUES (?,?,MAX(0,?),?)
+      ON CONFLICT(channel, user) DO UPDATE SET monete = MAX(0, points.monete + ?), ts=?`)
+      .run(channel, u, delta, now(), delta, now());
+    return this.get(channel, u);
+  },
+  top(channel, n = 5) {
+    return db.prepare("SELECT user, monete FROM points WHERE channel=? AND user NOT LIKE '[%' ORDER BY monete DESC LIMIT ?").all(channel, n);
+  },
 };
 
 // ---------------------------------------------------------------- anima (condivisa)

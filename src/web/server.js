@@ -346,6 +346,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // anima: adatta la personalità al canale (autonomo) + proattività
     if (b.adattaCanale !== undefined) out.adattaCanale = !!b.adattaCanale;
     if (b.proattivo !== undefined) out.proattivo = !!b.proattivo;
+    // giochi + promo social automatica
+    if (b.giochi !== undefined) out.giochi = !!b.giochi;
+    if (b.promoSocial !== undefined) out.promoSocial = !!b.promoSocial;
+    if (b.nomeMonete !== undefined) out.nomeMonete = String(b.nomeMonete).trim().slice(0, 20);
 
     streamers.setSettings(user.login, out);
     res.json({ ok: true });
