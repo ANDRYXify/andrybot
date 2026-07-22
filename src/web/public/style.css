@@ -1,4 +1,4 @@
-/* AndryBot — dashboard. Tema scuro elegante con accento viola Twitch.
+/* SocialBot — dashboard. Tema scuro elegante con accento viola Twitch.
    Nessuna risorsa esterna: solo font di sistema. */
 
 :root {
@@ -470,6 +470,13 @@ pre.blocco-codice {
   overflow-x: auto;
   white-space: pre;
 }
+
+/* ------------------------------------------------------------ ascolto live */
+/* passi numerati "come si usa" del companion: il reset azzera i padding,
+   qui ripristino l'indentazione perché si vedano i numeri */
+.lista-passi { margin: .4rem 0 .2rem 1.35rem; color: var(--testo-2); font-size: .9rem; }
+.lista-passi li { margin: .25rem 0; }
+.lista-passi code { color: var(--testo); }
 
 @media (max-width: 640px) {
   .testata h1 { font-size: 1.2rem; }

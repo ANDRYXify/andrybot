@@ -1,4 +1,4 @@
-# AndryBot — guida al deploy (per Andrea)
+# SocialBot — guida al deploy (per Andrea)
 
 Guida passo-passo per mettere online **bot.andryxify.it** sul server Hetzner.
 Segui i punti in ordine: la prima volta ci vogliono ~20 minuti, poi gli aggiornamenti
@@ -100,9 +100,9 @@ solo al primo accesso, se il DNS del punto 1 è a posto).
 
 ## 5. Collega il sito (andryxify.it / repo siteify)
 
-Perché la card "Gestisci il tuo AndryBot" compaia nelle impostazioni degli streamer
+Perché la card "Gestisci il tuo SocialBot" compaia nelle impostazioni degli streamer
 abilitati, il sito deve avere l'integrazione del gate (file `api/bot-gate.js` +
-`src/components/CardAndryBot.jsx` + la modifica a `SettingsPage.jsx`). Una volta in
+`src/components/CardSocialBot.jsx` + la modifica a `SettingsPage.jsx`). Una volta in
 produzione su Vercel, non serve alcuna variabile d'ambiente aggiuntiva: usa il Redis
 (Upstash) e gli stessi segreti Twitch già presenti sul sito.
 
@@ -111,7 +111,7 @@ produzione su Vercel, non serve alcuna variabile d'ambiente aggiuntiva: usa il R
 ## 6. Primo avvio e abilitazione streamer
 
 1. Apri **https://andryxify.it**, vai nelle **impostazioni del tuo account** e apri la card
-   **"🤖 Gestisci il tuo AndryBot"** → ti porta alla dashboard del bot.
+   **"🤖 Gestisci il tuo SocialBot"** → ti porta alla dashboard del bot.
 2. Nella dashboard, **concedi i permessi** (il bot leggerà e scriverà nella tua chat con il
    tuo account, creerà clip, vedrà follow/sub).
 3. Accendi il bot con l'interruttore. Fatto: entra nel tuo canale e si pre-addestra dal tuo
@@ -122,7 +122,7 @@ con la procedura del sito.
 
 > **Da condividere con gli streamer:** «Se sei uno streamer verificato e abilitato su
 > andryxify.it, vai nelle impostazioni del tuo account: trovi la card *Gestisci il tuo
-> AndryBot*. Da lì attivi e configuri il tuo bot personale.»
+> SocialBot*. Da lì attivi e configuri il tuo bot personale.»
 
 ---
 

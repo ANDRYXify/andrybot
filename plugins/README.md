@@ -1,6 +1,6 @@
 # Plugin (solo operatore) ⚠️
 
-Questa cartella è per i **plugin server-side** di AndryBot. Sono **codice JavaScript
+Questa cartella è per i **plugin server-side** di SocialBot. Sono **codice JavaScript
 vero** che gira **sul server, dentro il processo del bot, con pieni privilegi**.
 
 > **Mettili SOLO tu (operatore andryxify).** Non sono per gli streamer: chi scrive

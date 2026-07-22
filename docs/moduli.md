@@ -69,7 +69,7 @@ di comporre il messaggio (stato live in cache 30s). Sostituzione con semplice `r
   IP privati/loopback/link-local/riservati sia se scritti direttamente sia **dopo la
   risoluzione DNS** del nome (`dns.lookup`, tutti gli indirizzi). `redirect: 'manual'` (un
   redirect non può aggirare la guardia), timeout 5s (`AbortController`), User-Agent
-  `AndryBot-Webhook/1.0`, corpo JSON del contesto, lettura della risposta limitata a ~10KB,
+  `SocialBot-Webhook/1.0`, corpo JSON del contesto, lettura della risposta limitata a ~10KB,
   parsing JSON tollerante. Non punta mai verso l'interno della rete.
 - **Chiave API in ingresso** (`POST /api/ext/:login`): confronto **timing-safe**
   (`crypto.timingSafeEqual`; lunghezze diverse → 404). Chiave errata → **404** (nessun

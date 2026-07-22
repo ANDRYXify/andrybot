@@ -1,4 +1,4 @@
-// Gestore dei messaggi in chat: il cuore "reattivo" di AndryBot.
+// Gestore dei messaggi in chat: il cuore "reattivo" di SocialBot.
 // Per ogni messaggio, in ordine: memoria → moderazione → comandi (!) → IA.
 // I comandi NON passano dall'IA: risposta immediata e deterministica.
 import { makeLog } from '../logger.js';

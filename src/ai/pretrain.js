@@ -37,7 +37,7 @@ async function scaricaPagina(url, timeoutMs = 10_000) {
     const res = await fetch(url, {
       signal: controller.signal,
       redirect: 'follow',
-      headers: { 'User-Agent': 'AndryBot/1.0' },
+      headers: { 'User-Agent': 'SocialBot/1.0' },
     });
     if (!res.ok) return null;
     return await res.text();

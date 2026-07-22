@@ -36,7 +36,7 @@ function unescapeTag(v) {
 const normCh = ch => String(ch || '').toLowerCase().replace(/^#/, '').trim();
 
 export class ChatBot extends EventEmitter {
-  // login: account con cui parlare in chat (per AndryBot è lo streamer
+  // login: account con cui parlare in chat (per SocialBot è lo streamer
   // stesso); kind: tipo di token in db ('broadcaster' di default).
   constructor({ auth, login, kind = 'broadcaster' }) {
     super();

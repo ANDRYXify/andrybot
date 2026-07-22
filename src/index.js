@@ -1,4 +1,4 @@
-// AndryBot — punto di ingresso.
+// SocialBot — punto di ingresso.
 // Avvia web (dashboard su bot.andryxify.it) e, se la configurazione
 // è completa, il bot vero e proprio (chat, eventi, IA, clip).
 import { config, missingConfig } from './config.js';
