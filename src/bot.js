@@ -13,6 +13,7 @@ import * as persona from './ai/persona.js';
 import * as games from './features/games.js';
 import * as vip from './features/vip.js';
 import * as telegram from './features/telegram.js';
+import * as antispam from './features/antispam.js';
 import * as model from './ai/model.js';
 import { createMessageHandler } from './features/handler.js';
 import { ClipEngine } from './features/clips.js';
@@ -175,27 +176,11 @@ export class BotManager {
           chat, helix: this.helix, brain: this.brain, clips: this.clips, botLogin: login,
         });
         chat.on('message', msg => {
-          onMessage(msg).catch(e => log.error(`#${login} gestione messaggio:`, e?.message || e));
-          if (!msg.isSelf) this.clips.onActivity(msg.channel);   // rilevatore "hype" per le clip automatiche
-          this.brain.observe?.(msg);                             // apprendimento passivo (anche dai messaggi dello streamer)
-          // amicizia GLOBALE: chi interagisce diventa piano piano "amico" del
-          // bot (solo un'affinità, mai contenuti né in quale canale).
-          if (!msg.isSelf) { try { persona.interagisci(msg.user); } catch { /* niente */ } }
-          // minigiochi: monete passive + comandi (!dado, !slot, !trivia, ...)
-          try { games.accredita(msg); games.tryGame(msg, (t) => this.say(msg.channel, t)); }
-          catch (e) { log.error(`#${login} giochi:`, e?.message || e); }
-          // comandi VIP (mod/streamer): !vip @nome [durata], !unvip, !viplista
-          vip.tryVipCommand(this.helix, msg, (t) => this.say(msg.channel, t)).catch((e) => log.error(`#${login} vip:`, e?.message || e));
-          // effetti & suoni: un comando come !airhorn accende l'overlay OBS.
-          // Non deve MAI rompere il flusso dei messaggi, quindi try/catch.
-          try { this.effects?.tryTrigger(msg, (t) => this.say(msg.channel, t)); }
-          catch (e) { log.error(`#${login} effetti:`, e?.message || e); }
-          // moduli: automazioni dello streamer (comando/parola/primo messaggio).
-          // onMessage assorbe i propri errori, ma proteggiamo comunque il flusso.
-          try { this.modules?.onMessage(msg, (t) => this.say(msg.channel, t)); }
-          catch (e) { log.error(`#${login} moduli:`, e?.message || e); }
-          // plugin operatore (opzionali): alimentiamo l'event-bus.
-          try { this.bus?.emit('message', msg); } catch (e) { log.debug('bus message:', e?.message || e); }
+          // ANTISPAM per primo: se il messaggio è spam lo elimina (e timeout ai
+          // recidivi) e NON lo si elabora oltre — il bot non "reagisce" allo spam.
+          antispam.tryAntispam(this.helix, msg, (t) => this.say(msg.channel, t))
+            .then((agito) => { if (!agito) this._elaboraMessaggio(login, msg, onMessage); })
+            .catch((e) => { log.error(`#${login} antispam:`, e?.message || e); this._elaboraMessaggio(login, msg, onMessage); });
         });
         await chat.connect();
         chat.join(login);
@@ -219,6 +204,29 @@ export class BotManager {
     // In try/catch a parte: l'ascolto non deve MAI compromettere il resto.
     try { await this.reconcileListeners(); }
     catch (e) { log.error('reconcileListeners:', e?.message || e); }
+  }
+
+  // Elaborazione normale di un messaggio (chiamata solo se NON è spam).
+  _elaboraMessaggio(login, msg, onMessage) {
+    onMessage(msg).catch(e => log.error(`#${login} gestione messaggio:`, e?.message || e));
+    if (!msg.isSelf) this.clips.onActivity(msg.channel);   // rilevatore "hype" per le clip automatiche
+    this.brain.observe?.(msg);                             // apprendimento passivo (anche dai messaggi dello streamer)
+    // amicizia GLOBALE: chi interagisce diventa piano piano "amico" del bot
+    // (solo un'affinità, mai contenuti né in quale canale).
+    if (!msg.isSelf) { try { persona.interagisci(msg.user); } catch { /* niente */ } }
+    // minigiochi: monete passive + comandi (!dado, !slot, !trivia, ...)
+    try { games.accredita(msg); games.tryGame(msg, (t) => this.say(msg.channel, t)); }
+    catch (e) { log.error(`#${login} giochi:`, e?.message || e); }
+    // comandi VIP (mod/streamer): !vip @nome [durata], !unvip, !viplista
+    vip.tryVipCommand(this.helix, msg, (t) => this.say(msg.channel, t)).catch((e) => log.error(`#${login} vip:`, e?.message || e));
+    // effetti & suoni: un comando come !airhorn accende l'overlay OBS.
+    try { this.effects?.tryTrigger(msg, (t) => this.say(msg.channel, t)); }
+    catch (e) { log.error(`#${login} effetti:`, e?.message || e); }
+    // moduli: automazioni dello streamer (comando/parola/primo messaggio).
+    try { this.modules?.onMessage(msg, (t) => this.say(msg.channel, t)); }
+    catch (e) { log.error(`#${login} moduli:`, e?.message || e); }
+    // plugin operatore (opzionali): alimentiamo l'event-bus.
+    try { this.bus?.emit('message', msg); } catch (e) { log.debug('bus message:', e?.message || e); }
   }
 
   // Pool degli ascolti live lato server. Per ogni streamer attivo che ha
