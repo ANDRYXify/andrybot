@@ -776,6 +776,20 @@ function pannelloGiochi() {
         <input type="text" id="inp-citazione" maxlength="400" placeholder="una frase memorabile…">
         <button class="btn" id="btn-aggiungi-citazione">Aggiungi</button>
       </div>
+
+      <details class="spazio-sopra">
+        <summary style="cursor:pointer">📥 Importa citazioni (da x.la o altro)</summary>
+        <p class="suggerimento">Il modo più sicuro: copia le tue citazioni e incollale qui, <strong class="primo-piano">una
+        per riga</strong> — funziona da qualsiasi fonte (la tua pagina x.la, StreamElements, un file…). I doppioni li
+        salto da solo.</p>
+        <textarea id="txt-import-citazioni" rows="5" placeholder="una citazione per riga…"></textarea>
+        <div class="riga-flessibile">
+          <input type="text" id="inp-import-url" placeholder="…oppure incolla un link e provo a estrarle">
+          <button class="btn secondario" id="btn-estrai-citazioni">Estrai dal link</button>
+        </div>
+        <p class="spazio-sopra"><button class="btn" id="btn-importa-citazioni">Importa quelle qui sopra</button></p>
+      </details>
+
       <ul class="lista-voci" id="lista-citazioni"><li class="vuoto">Caricamento…</li></ul>
     </div>`);
 }
@@ -1122,6 +1136,30 @@ function attivaPiattaforma() {
     const r = await api('/api/streamer/citazioni', { method: 'POST', body: { testo } });
     inp.value = '';
     toast('Citazione #' + r.n + ' aggiunta 💬');
+    caricaCitazioni();
+  }));
+
+  // citazioni: estrai da un link → riempie la textarea (da curare prima di importare)
+  document.getElementById('btn-estrai-citazioni')?.addEventListener('click', (ev) => conErrore(async () => {
+    const url = (document.getElementById('inp-import-url').value || '').trim();
+    if (!url) { toast('Incolla un link.', 'errore'); return; }
+    const btn = ev.currentTarget; btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Estraggo…';
+    try {
+      const r = await api('/api/streamer/citazioni/da-url', { method: 'POST', body: { url } });
+      const ta = document.getElementById('txt-import-citazioni');
+      const esistenti = ta.value.trim();
+      ta.value = (esistenti ? esistenti + '\n' : '') + (r.citazioni || []).join('\n');
+      toast(r.citazioni?.length ? `Trovate ${r.citazioni.length} possibili citazioni — controllale e importa 👀` : 'Nessuna citazione trovata in quel link 🤔', r.citazioni?.length ? 'ok' : 'errore');
+    } finally { btn.disabled = false; btn.textContent = orig; }
+  }));
+
+  // citazioni: importa in blocco quelle nella textarea (una per riga)
+  document.getElementById('btn-importa-citazioni')?.addEventListener('click', () => conErrore(async () => {
+    const testi = righe(document.getElementById('txt-import-citazioni').value);
+    if (!testi.length) { toast('Incolla o estrai prima qualche citazione.', 'errore'); return; }
+    const r = await api('/api/streamer/citazioni/importa', { method: 'POST', body: { testi } });
+    document.getElementById('txt-import-citazioni').value = '';
+    toast(`Importate ${r.aggiunte} citazioni` + (r.saltate ? ` (${r.saltate} doppioni saltati)` : '') + ' 💬');
     caricaCitazioni();
   }));
 

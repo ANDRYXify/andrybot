@@ -21,6 +21,7 @@ import { seedStreamer } from '../features/seed.js';
 import * as vip from '../features/vip.js';
 import * as telegram from '../features/telegram.js';
 import * as tiktok from '../features/tiktok.js';
+import * as quotesImport from '../features/quotesimport.js';
 import { pretrain } from '../ai/pretrain.js';
 import * as persona from '../ai/persona.js';
 import { redeemPass } from './gate.js';
@@ -891,6 +892,21 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   app.delete('/api/streamer/citazioni/:n', requireLogin, wrap(async (req, res) => {
     quotes.remove(currentUser(req).login, parseInt(req.params.n, 10) || 0);
     res.json({ ok: true });
+  }));
+  // import in blocco (dalla textarea: una citazione per riga)
+  app.post('/api/streamer/citazioni/importa', requireLogin, wrap(async (req, res) => {
+    const testi = Array.isArray(req.body?.testi) ? req.body.testi : [];
+    if (!testi.length) return res.status(400).json({ errore: 'niente da importare' });
+    const esito = quotes.addMany(currentUser(req).login, testi.slice(0, 1000), currentUser(req).login);
+    res.json({ ok: true, ...esito });
+  }));
+  // anteprima: estrae citazioni da un link (best-effort, non salva)
+  app.post('/api/streamer/citazioni/da-url', requireLogin, wrap(async (req, res) => {
+    const url = String(req.body?.url || '').trim();
+    if (!url) return res.status(400).json({ errore: 'link mancante' });
+    const r = await quotesImport.estrai(url);
+    if (!r.ok) return res.status(400).json({ errore: r.errore });
+    res.json({ ok: true, citazioni: r.citazioni });
   }));
 
   // classifica monete + VIP attuali (per la dashboard)
