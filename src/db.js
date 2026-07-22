@@ -219,6 +219,16 @@ CREATE TABLE IF NOT EXISTS managers (     -- moderatori che possono gestire la d
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_managers_channel_login ON managers(channel, login);
 CREATE INDEX IF NOT EXISTS idx_managers_login ON managers(login);
+
+CREATE TABLE IF NOT EXISTS quotes (       -- citazioni della chat (!cita)
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  channel TEXT NOT NULL,
+  n INTEGER NOT NULL,                       -- numero progressivo per canale (stabile: !cita 12)
+  text TEXT NOT NULL,
+  added_by TEXT NOT NULL DEFAULT '',
+  ts INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_quotes_channel ON quotes(channel, n);
 `);
 
 const now = () => Date.now();
@@ -402,6 +412,26 @@ export const passkeys = {
   },
   remove(login, id) { db.prepare('DELETE FROM passkeys WHERE login=? AND id=?').run(String(login).toLowerCase(), id); },
   count(login) { return db.prepare('SELECT COUNT(*) c FROM passkeys WHERE login=?').get(String(login).toLowerCase()).c; },
+};
+
+// ---------------------------------------------------------------- citazioni (!cita)
+export const quotes = {
+  add(channel, text, by = '') {
+    const ch = String(channel).toLowerCase();
+    const n = (db.prepare('SELECT MAX(n) m FROM quotes WHERE channel=?').get(ch).m || 0) + 1;
+    db.prepare('INSERT INTO quotes (channel, n, text, added_by, ts) VALUES (?,?,?,?,?)')
+      .run(ch, n, String(text).slice(0, 400), String(by).toLowerCase(), now());
+    return n;
+  },
+  get(channel, n) {
+    return db.prepare('SELECT * FROM quotes WHERE channel=? AND n=?').get(String(channel).toLowerCase(), n) || null;
+  },
+  random(channel) {
+    return db.prepare('SELECT * FROM quotes WHERE channel=? ORDER BY RANDOM() LIMIT 1').get(String(channel).toLowerCase()) || null;
+  },
+  list(channel) { return db.prepare('SELECT * FROM quotes WHERE channel=? ORDER BY n').all(String(channel).toLowerCase()); },
+  remove(channel, n) { db.prepare('DELETE FROM quotes WHERE channel=? AND n=?').run(String(channel).toLowerCase(), n); },
+  count(channel) { return db.prepare('SELECT COUNT(*) c FROM quotes WHERE channel=?').get(String(channel).toLowerCase()).c; },
 };
 
 // ---------------------------------------------------------------- moderatori (gestori delegati)

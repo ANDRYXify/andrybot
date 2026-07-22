@@ -14,7 +14,7 @@ import { dirname, join } from 'node:path';
 import { config, SCOPES, missingConfig } from '../config.js';
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb, friends } from '../db.js';
-import { points, vips, tgConf, passkeys, managers } from '../db.js';
+import { points, vips, tgConf, passkeys, managers, quotes } from '../db.js';
 import * as webauthn from './webauthn.js';
 import { comprimi } from '../features/compress.js';
 import { seedStreamer } from '../features/seed.js';
@@ -876,6 +876,21 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     }
     const eseguito = await modules.eseguiVoce(login, frase, (t) => manager.say(login, t));
     res.json({ ok: true, eseguito });
+  }));
+
+  // citazioni (!cita) — elenco/aggiungi/rimuovi dalla dashboard
+  app.get('/api/streamer/citazioni', requireLogin, wrap(async (req, res) => {
+    res.json(quotes.list(currentUser(req).login).map((q) => ({ n: q.n, text: q.text, added_by: q.added_by, ts: q.ts })));
+  }));
+  app.post('/api/streamer/citazioni', requireLogin, wrap(async (req, res) => {
+    const testo = String(req.body?.testo || '').trim();
+    if (!testo) return res.status(400).json({ errore: 'testo mancante' });
+    const n = quotes.add(currentUser(req).login, testo, currentUser(req).login);
+    res.json({ ok: true, n });
+  }));
+  app.delete('/api/streamer/citazioni/:n', requireLogin, wrap(async (req, res) => {
+    quotes.remove(currentUser(req).login, parseInt(req.params.n, 10) || 0);
+    res.json({ ok: true });
   }));
 
   // classifica monete + VIP attuali (per la dashboard)
