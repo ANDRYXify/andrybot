@@ -13,6 +13,7 @@ import * as persona from './ai/persona.js';
 import * as games from './features/games.js';
 import * as vip from './features/vip.js';
 import * as telegram from './features/telegram.js';
+import * as model from './ai/model.js';
 import { createMessageHandler } from './features/handler.js';
 import { ClipEngine } from './features/clips.js';
 import { scheduleReflection } from './ai/reflection.js';
@@ -88,6 +89,8 @@ export class BotManager {
     for (const [, l] of this.listeners) { try { l.stop(); } catch { /* niente */ } }
     this.listeners.clear();
     await this.events?.stop?.();
+    // salva i modelli IA locali (semantica auto-addestrata) prima di chiudere
+    try { model.salvaTutto(); } catch { /* niente */ }
     for (const [, u] of this.units) u.chat.disconnect();
     this.units.clear();
   }

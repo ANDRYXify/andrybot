@@ -64,6 +64,7 @@ function impostazioni() {
     spontaneita: typeof s.spontaneita === 'number' ? s.spontaneita : 0.03,
     rispostaMenzioni: s.rispostaMenzioni !== false,
     modalita: ['sempre', 'live', 'manuale'].includes(s.modalita) ? s.modalita : 'sempre',
+    iaLocale: s.iaLocale !== false,
     proattivo: s.proattivo !== false,
     adattaCanale: s.adattaCanale !== false,
     giochi: s.giochi !== false,
@@ -331,6 +332,14 @@ function pannelloPersonalita() {
       </div>
       <p class="suggerimento">SocialBot ha un carattere suo condiviso, ma qui puoi renderlo coerente
       con il tuo canale: col tono qui sopra (a mano) e lasciandolo adattare da solo al tuo stile.</p>
+
+      <div class="riga-check spazio-sopra">
+        <input type="checkbox" id="chk-ialocale" ${s.iaLocale ? 'checked' : ''}>
+        <label for="chk-ialocale">Risposte intelligenti (IA locale auto-addestrata)</label>
+      </div>
+      <p class="suggerimento">Un piccolo modello che gira <strong class="primo-piano">sul server, senza servizi a pagamento</strong>:
+      impara dalla tua chat, capisce le domande anche se scritte in modo diverso e risponde in modo naturale —
+      così devi scrivere molte meno risposte a mano. Più la chat vive, più migliora.</p>
 
       <label class="campo" for="txt-frasi">Le tue frasi / battute (una per riga)</label>
       <textarea id="txt-frasi" placeholder="es. GG raga, si vola!&#10;chi non segue il canale paga da bere">${esc(s.frasi.join('\n'))}</textarea>
@@ -808,6 +817,7 @@ function attivaPiattaforma() {
       rispostaMenzioni: document.getElementById('chk-menzioni').checked,
       proattivo: document.getElementById('chk-proattivo').checked,
       adattaCanale: document.getElementById('chk-adatta').checked,
+      iaLocale: document.getElementById('chk-ialocale').checked,
       frasi: righe(document.getElementById('txt-frasi').value),
     }, 'Personalità salvata 🎭');
   }));
