@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-#  AndryBot — setup del server Hetzner (Ubuntu 24.04, CPX12)
+#  SocialBot — setup del server Hetzner (Ubuntu 24.04, CPX12)
 #
 #  Da eseguire come root:
 #      bash setup-hetzner.sh
@@ -68,8 +68,8 @@ ufw status
 passo "fail2ban (blocca chi prova password SSH a raffica)"
 systemctl enable --now fail2ban
 
-# ---- g. Codice di AndryBot ---------------------------------
-passo "Codice di AndryBot in ${APP_DIR}"
+# ---- g. Codice di SocialBot ---------------------------------
+passo "Codice di SocialBot in ${APP_DIR}"
 if [ -d "${APP_DIR}/.git" ]; then
   git -C "${APP_DIR}" pull
   echo "Repository già presente: aggiornato con git pull."
@@ -123,7 +123,7 @@ fi
 echo "File .env completo: procedo con l'avvio."
 
 # ---- j. Avvio con docker compose ---------------------------
-passo "Avvio di AndryBot (docker compose up -d --build)"
+passo "Avvio di SocialBot (docker compose up -d --build)"
 docker compose up -d --build
 
 # ---- k. Hardening SSH (solo se c'è già una chiave) ---------

@@ -1,5 +1,5 @@
 # ============================================================
-#  AndryBot — preparazione del PC (Windows 10/11)
+#  SocialBot — preparazione del PC (Windows 10/11)
 #
 #  Cosa fa:
 #    1. installa FileZilla (per gestire i file sul server)
