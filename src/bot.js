@@ -10,6 +10,7 @@ import { ChatBot } from './twitch/chat.js';
 import { EventHub } from './twitch/events.js';
 import { Brain } from './ai/brain.js';
 import * as persona from './ai/persona.js';
+import * as games from './features/games.js';
 import { createMessageHandler } from './features/handler.js';
 import { ClipEngine } from './features/clips.js';
 import { scheduleReflection } from './ai/reflection.js';
@@ -93,7 +94,11 @@ export class BotManager {
         if (auto <= 0) continue;                                // autonomia a zero = zitto
         if ((memory.messageRate?.(login) || 0) < 1) continue;   // chat ferma: non parlare da solo
         if (Math.random() < auto * 0.4) {
-          const t = persona.proattiva();
+          // alterna: a volte una promo social (se accesa e c'è un link imparato),
+          // a volte una battuta dell'anima — così è vario e utile, mai ripetitivo.
+          let t = null;
+          if (s.settings?.promoSocial !== false && Math.random() < 0.45) t = games.promoSociale(login);
+          if (!t) t = persona.proattiva();
           if (t) this.say(login, t);
         }
       }
@@ -125,6 +130,9 @@ export class BotManager {
           // amicizia GLOBALE: chi interagisce diventa piano piano "amico" del
           // bot (solo un'affinità, mai contenuti né in quale canale).
           if (!msg.isSelf) { try { persona.interagisci(msg.user); } catch { /* niente */ } }
+          // minigiochi: monete passive + comandi (!dado, !slot, !trivia, ...)
+          try { games.accredita(msg); games.tryGame(msg, (t) => this.say(msg.channel, t)); }
+          catch (e) { log.error(`#${login} giochi:`, e?.message || e); }
           // effetti & suoni: un comando come !airhorn accende l'overlay OBS.
           // Non deve MAI rompere il flusso dei messaggi, quindi try/catch.
           try { this.effects?.tryTrigger(msg, (t) => this.say(msg.channel, t)); }

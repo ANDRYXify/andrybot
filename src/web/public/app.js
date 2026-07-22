@@ -65,6 +65,9 @@ function impostazioni() {
     rispostaMenzioni: s.rispostaMenzioni !== false,
     proattivo: s.proattivo !== false,
     adattaCanale: s.adattaCanale !== false,
+    giochi: s.giochi !== false,
+    promoSocial: s.promoSocial !== false,
+    nomeMonete: (typeof s.nomeMonete === 'string' && s.nomeMonete.trim()) || 'monete',
     frasi: Array.isArray(s.frasi) ? s.frasi : [],
     clipAuto: s.clipAuto !== false,
     clipAutoSoglia: typeof s.clipAutoSoglia === 'number' ? s.clipAutoSoglia : 25,
@@ -199,6 +202,7 @@ function vistaPiattaforma() {
     ['clip', 'Clip'],
     ['ascolto', 'Ascolto live'],
     ['effetti', 'Effetti & Suoni'],
+    ['giochi', 'Giochi'],
     ['moduli', 'Moduli'],
     ['regole', 'Regole'],
     ['memoria', 'Memoria & Statistiche'],
@@ -214,6 +218,7 @@ function vistaPiattaforma() {
     ${pannelloClip()}
     ${pannelloAscolto()}
     ${pannelloEffetti()}
+    ${pannelloGiochi()}
     ${pannelloModuli()}
     ${pannelloRegole()}
     ${pannelloMemoria()}`;
@@ -544,6 +549,49 @@ function modelloPronto(nome) {
   }
 }
 
+// --- scheda Giochi ------------------------------------------------------
+
+function pannelloGiochi() {
+  const s = impostazioni();
+  return pannello('giochi', `
+    <div class="carta">
+      <h2>Minigiochi 🎮</h2>
+      <p>Giochi in chat per la tua community, con delle <strong class="primo-piano">monete</strong>
+      (punti fedeltà) che si guadagnano chiacchierando.</p>
+
+      <div class="riga-check">
+        <input type="checkbox" id="chk-giochi" ${s.giochi ? 'checked' : ''}>
+        <label for="chk-giochi">Attiva i minigiochi in chat</label>
+      </div>
+
+      <label class="campo" for="inp-monete">Come si chiamano le monete</label>
+      <input type="text" id="inp-monete" maxlength="20" value="${esc(s.nomeMonete)}" placeholder="es. monete, punti, gemme…">
+
+      <div class="riga-check spazio-sopra">
+        <input type="checkbox" id="chk-promo" ${s.promoSocial ? 'checked' : ''}>
+        <label for="chk-promo">Promo social automatica — ogni tanto condivide da solo i tuoi link</label>
+      </div>
+      <p class="suggerimento">Nei momenti giusti (chat viva, dopo un raid/sub) il bot ricorda i tuoi social
+      presi dal profilo andryxify.it — con calma, mai spam.</p>
+
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-giochi">Salva</button></p>
+    </div>
+    <div class="carta">
+      <h2>Comandi dei giochi</h2>
+      <ul class="lista-voci">
+        <li><div class="testo-voce"><span class="domanda">!dado</span> <span class="risposta">tira un dado (anche !dado 2d20)</span></div></li>
+        <li><div class="testo-voce"><span class="domanda">!moneta</span> <span class="risposta">testa o croce</span></div></li>
+        <li><div class="testo-voce"><span class="domanda">!8ball &lt;domanda&gt;</span> <span class="risposta">la palla magica risponde</span></div></li>
+        <li><div class="testo-voce"><span class="domanda">!slot</span> <span class="risposta">slot machine (costa qualche moneta)</span></div></li>
+        <li><div class="testo-voce"><span class="domanda">!duello @nome</span> <span class="risposta">sfida un altro utente</span></div></li>
+        <li><div class="testo-voce"><span class="domanda">!trivia</span> <span class="risposta">domanda a sorpresa, il primo che risponde vince</span></div></li>
+        <li><div class="testo-voce"><span class="domanda">!monete</span> <span class="risposta">quante monete hai</span></div></li>
+        <li><div class="testo-voce"><span class="domanda">!classifica</span> <span class="risposta">i più ricchi del canale</span></div></li>
+        <li><div class="testo-voce"><span class="domanda">!giochi</span> <span class="risposta">elenco dei giochi</span></div></li>
+      </ul>
+    </div>`);
+}
+
 // --- scheda Regole ------------------------------------------------------
 
 function pannelloRegole() {
@@ -658,6 +706,14 @@ function attivaPiattaforma() {
     await salvaImpostazioni({
       paroleVietate: righe(document.getElementById('txt-vietate').value),
     }, 'Regole salvate 🚫');
+  }));
+
+  document.getElementById('btn-salva-giochi')?.addEventListener('click', () => conErrore(async () => {
+    await salvaImpostazioni({
+      giochi: document.getElementById('chk-giochi').checked,
+      nomeMonete: document.getElementById('inp-monete').value.trim(),
+      promoSocial: document.getElementById('chk-promo').checked,
+    }, 'Giochi salvati 🎮');
   }));
 
   // slider spontaneità: percentuale in tempo reale
