@@ -12,7 +12,7 @@
 set -euo pipefail
 
 # ---- Configurazione (modifica qui se serve) ----------------
-REPO_URL="${REPO_URL:-git@github.com:andryxify/andrybot.git}"
+REPO_URL="${REPO_URL:-https://github.com/andryxify/andrybot.git}"
 APP_DIR="/opt/andrybot"
 
 passo() { echo; echo "==== $* ===="; }
