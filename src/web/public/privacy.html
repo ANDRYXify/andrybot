@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#7c3aed">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <title>SocialBot — Privacy & Sicurezza</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: radial-gradient(120% 90% at 50% 0%, #241645 0%, #1a1030 55%, #120a24 100%);
+      color: #ece8ff; line-height: 1.6; padding: 24px;
+    }
+    .wrap { max-width: 780px; margin: 0 auto; }
+    header.top { display: flex; align-items: center; gap: 14px; margin: 8px 0 22px; }
+    header.top img { width: 52px; height: 52px; border-radius: 14px; }
+    h1 { font-size: 1.7rem; margin: 0; }
+    .sub { color: #b9b2d9; font-size: .95rem; margin-top: 2px; }
+    section {
+      background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+      border-radius: 16px; padding: 20px 22px; margin: 0 0 16px;
+    }
+    h2 { font-size: 1.18rem; margin: 0 0 10px; color: #d9ccff; }
+    h3 { font-size: 1rem; margin: 16px 0 6px; color: #c4b5fd; }
+    p { color: #d6d1ee; margin: 8px 0; }
+    ul { margin: 8px 0; padding-left: 20px; }
+    li { margin: 6px 0; color: #d6d1ee; }
+    strong { color: #fff; }
+    .muted { color: #b9b2d9; font-size: .9rem; }
+    a { color: #c4b5fd; }
+    .pill { display: inline-block; background: rgba(139,92,246,.18); border: 1px solid rgba(139,92,246,.35);
+      color: #d9ccff; border-radius: 999px; padding: 2px 10px; font-size: .82rem; margin: 2px 4px 2px 0; }
+    footer { text-align: center; color: #8b83ad; font-size: .85rem; margin: 26px 0 10px; }
+    .aggiornato { color: #8b83ad; font-size: .82rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <img src="/icons/icon-192.png" alt="SocialBot">
+      <div>
+        <h1>Privacy &amp; Sicurezza</h1>
+        <div class="sub">SocialBot · bot.andryxify.it</div>
+      </div>
+    </header>
+
+    <section>
+      <p>SocialBot è il bot Twitch di <strong>ANDRYXify</strong>, riservato agli streamer verificati e abilitati.
+      Parla nella chat <strong>con l'account dello streamer stesso</strong> (nessun account-bot anonimo) e raccoglie solo
+      ciò che serve a funzionare. <strong>Nessuna IA a pagamento di terzi</strong>: il "cervello" è un modello
+      procedurale/statistico che gira interamente sul nostro server. <strong>Nessun dato venduto a terzi</strong>.</p>
+      <p class="muted">Titolare del trattamento: ANDRYXify. Per qualsiasi richiesta puoi scriverci dai
+      <a href="https://www.andryxify.it">canali ufficiali di andryxify.it</a>.</p>
+    </section>
+
+    <section>
+      <h2>🍪 Cookie</h2>
+      <p>Usiamo <strong>un solo cookie tecnico di sessione</strong> (<code>andrybot</code>), necessario per tenerti
+      connesso dopo l'accesso. È firmato, <code>httpOnly</code> e <code>SameSite=Lax</code>.</p>
+      <ul>
+        <li><strong>Nessun</strong> cookie analitico, pubblicitario o di profilazione.</li>
+        <li><strong>Nessun</strong> tracker o servizio di terze parti che imposti cookie.</li>
+      </ul>
+      <p class="muted">Essendo strettamente necessario al login, questo cookie non richiede consenso: il banner che vedi
+      è puramente informativo.</p>
+    </section>
+
+    <section>
+      <h2>📋 Quali dati trattiamo</h2>
+      <ul>
+        <li><strong>Account Twitch dello streamer</strong> (login, nome visualizzato, user id) e <strong>token di
+          autorizzazione (OAuth)</strong>: servono per agire col suo account — scrivere in chat, creare clip, gestire
+          VIP, moderare, ricevere gli eventi (follow/sub/raid). Restano sul server e <strong>non sono mai esposti al
+          browser</strong>.</li>
+        <li><strong>Messaggi della chat pubblica</strong> del canale: memorizzati per far imparare e rispondere il bot,
+          e <strong>cancellati automaticamente dopo 14 giorni</strong>. L'IA locale ne ricava solo statistiche e vettori
+          numerici, non conserva il testo oltre.</li>
+        <li><strong>Conoscenza e impostazioni</strong> inserite dallo streamer; <strong>monete e VIP</strong> (fedeltà).</li>
+        <li><strong>Affinità "amici"</strong>: un semplice punteggio globale per utente, a <strong>compartimenti
+          stagni</strong> — mai il contenuto dei messaggi né in quale canale.</li>
+        <li><strong>Integrazioni opzionali</strong> attivate dallo streamer: token del suo bot <strong>Telegram</strong>
+          + id del gruppo (forniti da lui), e <strong>username TikTok</strong> pubblico per la notifica live.</li>
+        <li><strong>Passkey</strong>: solo la <strong>chiave pubblica</strong>. Nessun dato biometrico lascia mai il tuo
+          dispositivo.</li>
+        <li><strong>Log tecnici minimi</strong> per funzionamento e sicurezza.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>⚖️ Perché li trattiamo (basi giuridiche)</h2>
+      <ul>
+        <li><strong>Esecuzione del servizio</strong> richiesto dallo streamer (le funzioni del bot che attiva lui).</li>
+        <li><strong>Interesse legittimo</strong> del canale a moderare e interagire, su messaggi <strong>già resi
+          pubblici</strong> dagli utenti nella chat Twitch.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>🔗 Con chi e dove</h2>
+      <p>Il bot opera sulla piattaforma <strong>Twitch</strong>. Le integrazioni verso <strong>Telegram</strong> e
+      <strong>TikTok</strong> avvengono solo se lo streamer le collega. I dati vivono sul <strong>server di ANDRYXify
+      (Hetzner, Germania — UE)</strong>, sotto HTTPS.</p>
+      <p class="muted">Nessuna vendita di dati, nessun tracciamento pubblicitario, nessuna IA a pagamento di terzi.</p>
+    </section>
+
+    <section>
+      <h2>⏳ Per quanto tempo</h2>
+      <ul>
+        <li>Messaggi della chat: <strong>14 giorni</strong>.</li>
+        <li>Token: finché lo streamer resta collegato (revocabili disconnettendosi).</li>
+        <li>Il resto: finché serve al servizio, o finché lo streamer non lo cancella.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>🙋 I tuoi diritti</h2>
+      <p>Puoi esercitare accesso, rettifica, cancellazione e opposizione. In pratica, dalla dashboard lo streamer può:</p>
+      <ul>
+        <li><strong>Azzerare la memoria</strong> del bot (lezioni, ricordi, conoscenza imparata dalla chat).</li>
+        <li><strong>Revocare i permessi</strong> disconnettendo l'account (i token vengono invalidati).</li>
+        <li><strong>Rimuovere le passkey</strong> e <strong>scollegare</strong> Telegram/TikTok in ogni momento.</li>
+      </ul>
+      <p class="muted">Per richieste, scrivici dai <a href="https://www.andryxify.it">canali ufficiali di andryxify.it</a>.</p>
+    </section>
+
+    <section>
+      <h2>🛡️ Sicurezza</h2>
+      <div>
+        <span class="pill">Accesso blindato</span>
+        <span class="pill">Passkey</span>
+        <span class="pill">HTTPS</span>
+        <span class="pill">Token lato server</span>
+        <span class="pill">IA locale</span>
+        <span class="pill">Server UE</span>
+      </div>
+      <ul>
+        <li><strong>Accesso "a labirinto":</strong> la dashboard non è raggiungibile da fuori. Si entra solo con un
+          <strong>pass usa-e-getta</strong> coniato dal sito (256 bit, valido 2 minuti, monouso) oppure con la tua
+          <strong>passkey</strong>. Chi non è autorizzato vede solo un "Not Found": nessuna informazione trapela.</li>
+        <li><strong>Passkey (WebAuthn):</strong> rientri con impronta, volto o PIN del dispositivo; la chiave privata
+          non lascia mai il dispositivo, noi conserviamo solo quella pubblica.</li>
+        <li><strong>Token mai nel browser:</strong> le autorizzazioni Twitch restano sul server; la sessione usa un
+          cookie firmato e <code>httpOnly</code>.</li>
+        <li><strong>Cervello in locale:</strong> nessun contenuto viene inviato a servizi di intelligenza artificiale
+          esterni o a pagamento.</li>
+        <li><strong>Moderazione:</strong> l'antispam integrato rimuove spam e link non autorizzati e mette in timeout i
+          recidivi, a tutela della chat.</li>
+        <li><strong>Tutto in UE, tutto in HTTPS</strong>, con log tecnici minimi.</li>
+      </ul>
+    </section>
+
+    <footer>
+      <p><a href="/">← Torna alla dashboard</a> · <a href="https://www.andryxify.it">andryxify.it</a></p>
+      <p class="aggiornato">SocialBot — informativa sintetica e trasparente. Ultimo aggiornamento: 2026.</p>
+    </footer>
+  </div>
+</body>
+</html>

@@ -32,7 +32,28 @@
 
   <footer class="pie">
     <p>SocialBot parla nella tua chat <strong>con il tuo account</strong> — sei sempre tu ad avere il controllo.</p>
+    <p class="pie-legale"><a href="/privacy">Privacy &amp; Sicurezza</a></p>
   </footer>
+
+  <!-- banner cookie (solo informativo: usiamo un unico cookie tecnico) -->
+  <div id="cookie-banner" class="cookie-banner" hidden>
+    <p>Usiamo solo un <strong>cookie tecnico</strong> per tenerti connesso dopo l'accesso.
+      Nessun tracciamento, nessuna pubblicità. <a href="/privacy">Dettagli</a></p>
+    <button type="button" id="cookie-ok" class="btn">Ho capito</button>
+  </div>
+  <script>
+    (function () {
+      try {
+        if (localStorage.getItem('cookie-ok') === '1') return;
+        var b = document.getElementById('cookie-banner'); if (!b) return;
+        b.hidden = false;
+        document.getElementById('cookie-ok').addEventListener('click', function () {
+          try { localStorage.setItem('cookie-ok', '1'); } catch (e) { /* niente */ }
+          b.hidden = true;
+        });
+      } catch (e) { /* niente */ }
+    })();
+  </script>
 
   <script src="app.js"></script>
 </body>
