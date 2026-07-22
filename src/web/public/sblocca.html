@@ -67,10 +67,12 @@
       return d;
     };
 
-    async function sblocca() {
+    // auto = tentativo automatico all'avvio dell'app: se serve un tap o viene
+    // annullato, resta il bottone senza mostrare errori "spaventosi".
+    async function sblocca(auto) {
       const msg = $('msg'); const btn = $('btn');
       msg.className = 'msg'; msg.textContent = '';
-      if (!window.PublicKeyCredential) { msg.className = 'msg err'; msg.textContent = 'Questo dispositivo non supporta le passkey.'; return; }
+      if (!window.PublicKeyCredential) { if (!auto) { msg.className = 'msg err'; msg.textContent = 'Questo dispositivo non supporta le passkey.'; } return; }
       btn.disabled = true;
       try {
         const opt = await post('/api/passkey/login/inizio');
@@ -91,11 +93,16 @@
         location.href = '/';
       } catch (e) {
         btn.disabled = false;
+        if (auto) return;   // avvio automatico non riuscito: si aspetta il tap, in silenzio
         msg.className = 'msg err';
         msg.textContent = (e && e.name === 'NotAllowedError') ? 'Operazione annullata.' : ('Non riuscito: ' + (e.message || e));
       }
     }
-    $('btn').addEventListener('click', sblocca);
+    $('btn').addEventListener('click', () => sblocca(false));
+
+    // App installata (standalone): apri SUBITO lo sblocco con passkey.
+    const inApp = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    if (inApp) window.addEventListener('load', () => setTimeout(() => sblocca(true), 250));
   </script>
 </body>
 </html>

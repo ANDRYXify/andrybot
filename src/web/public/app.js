@@ -93,10 +93,18 @@ async function salvaImpostazioni(parziale, msgOk = 'Impostazioni salvate 💜') 
 
 // ------------------------------------------------------------------ avvio
 
+// app installata (standalone)? Serve per lo sblocco rapido con passkey.
+function inApp() {
+  return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+}
+
 async function caricaStato() {
   try {
     stato = await api('/api/me');
   } catch (e) {
+    // Nell'app installata una sessione scaduta non deve mostrare un errore:
+    // si va allo sblocco con passkey (che, se serve, rimanda al sito).
+    if (inApp()) { location.href = '/sblocca'; return; }
     app.innerHTML = `<div class="carta"><h2>Ops!</h2><p>Impossibile contattare il server: ${esc(e.message)}</p></div>`;
     return;
   }
@@ -266,6 +274,19 @@ function pannelloStato() {
           : '<span class="badge">○ non connesso</span>'}
         ${stato.permessiOk ? '<span class="badge viola">permessi ok</span>' : '<span class="badge rosso">permessi mancanti</span>'}
       </div>
+
+      <p class="spazio-sopra"><strong class="primo-piano">Permessi:</strong>
+        ${stato.permessiOk ? '<span class="badge verde">✓ chat</span>' : '<span class="badge rosso">✗ chat</span>'}
+        ${stato.vipOk ? '<span class="badge verde">✓ VIP</span>' : '<span class="badge giallo">VIP da concedere</span>'}
+        ${stato.moderazioneOk ? '<span class="badge verde">✓ moderazione</span>' : '<span class="badge giallo">moderazione da concedere</span>'}
+        ${(!stato.permessiOk || !stato.vipOk || !stato.moderazioneOk)
+          ? '<a class="btn secondario mini" href="/auth/permessi">Concedi i permessi</a>'
+          : ''}
+      </p>
+      <p class="suggerimento">La <strong class="primo-piano">chat</strong> serve per far parlare il bot,
+      <strong class="primo-piano">VIP</strong> per assegnarli a voce/premi, <strong class="primo-piano">moderazione</strong>
+      per l'antispam. Concedendoli abiliti anche VIP e antispam in un colpo solo.</p>
+
       <p class="suggerimento spazio-sopra">Spegnerlo non cancella nulla: quando lo riaccendi riparte da dove era rimasto.</p>
 
       <label class="campo spazio-sopra" for="sel-modalita">Quando dev'essere attivo</label>
@@ -788,7 +809,9 @@ function pannelloRegole() {
 
     <div class="carta">
       <h2>Antispam automatico 🛡️</h2>
-      ${stato.moderazioneOk ? '' : `<p class="suggerimento">⚠️ Per eliminare i messaggi servono i permessi di moderazione (aggiunti dopo).
+      ${stato.moderazioneOk
+        ? '<p class="suggerimento"><span class="badge verde">✓ permessi di moderazione attivi</span></p>'
+        : `<p class="suggerimento">⚠️ Per eliminare i messaggi servono i permessi di moderazione (aggiunti dopo).
         <a class="btn secondario mini" href="/auth/permessi">Concedi i permessi</a></p>`}
       <p>Elimina da solo lo spam e, a chi insiste, dà un timeout crescente.
       <strong class="primo-piano">Mod, VIP e broadcaster sono sempre esenti.</strong></p>
