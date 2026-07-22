@@ -14,10 +14,11 @@ import { dirname, join } from 'node:path';
 import { config, SCOPES, missingConfig } from '../config.js';
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb, friends } from '../db.js';
-import { points, vips } from '../db.js';
+import { points, vips, tgConf } from '../db.js';
 import { comprimi } from '../features/compress.js';
 import { seedStreamer } from '../features/seed.js';
 import * as vip from '../features/vip.js';
+import * as telegram from '../features/telegram.js';
 import { pretrain } from '../ai/pretrain.js';
 import * as persona from '../ai/persona.js';
 import { redeemPass } from './gate.js';
@@ -121,6 +122,20 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // ha concesso il permesso VIP? (aggiunto dopo: richiede una ri-autorizzazione)
   const vipOk = (login) =>
     !!(tokens.get('broadcaster', login)?.scopes?.includes('channel:manage:vips'));
+
+  // stato Telegram per la dashboard — MAI il token (segreto): solo se è
+  // configurato, lo @username del bot, il gruppo collegato e le impostazioni.
+  const statoTelegram = (login) => {
+    const c = tgConf.get(login);
+    return {
+      configurato: !!(c && c.token),
+      botUsername: c?.bot_username || '',
+      gruppo: c?.chat_titolo || '',
+      gruppoOk: !!(c && c.chat_id),
+      attivo: !!(c && c.attivo),
+      messaggio: c?.messaggio || '',
+    };
+  };
 
   const sync = () => Promise.resolve(manager.syncChannels?.()).catch(() => {});
 
@@ -272,6 +287,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       streamer: user ? streamers.get(user.login) : null,
       permessiOk: user ? permessiOk(user.login) : false,
       vipOk: user ? vipOk(user.login) : false,
+      telegram: user ? statoTelegram(user.login) : null,
       knowledgeCount: user ? knowledge.count(user.login) : 0,
       preaddestramento: user
         ? Object.fromEntries(memory.facts(user.login)
@@ -325,6 +341,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       out.spontaneita = Math.min(0.5, Math.max(0, n));
     }
     if (b.rispostaMenzioni !== undefined) out.rispostaMenzioni = !!b.rispostaMenzioni;
+    // modalità di attivazione: 24/7, solo quando è in diretta, o manuale
+    if (b.modalita !== undefined) {
+      if (!['sempre', 'live', 'manuale'].includes(b.modalita)) return res.status(400).json({ errore: 'modalità non valida' });
+      out.modalita = b.modalita;
+    }
     if (b.frasi !== undefined) {
       if (!Array.isArray(b.frasi)) return res.status(400).json({ errore: 'frasi deve essere una lista' });
       out.frasi = b.frasi
@@ -370,6 +391,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     }
 
     streamers.setSettings(user.login, out);
+    // se è cambiata la modalità di attivazione, riconcilia subito i canali
+    if (b.modalita !== undefined) sync();
     res.json({ ok: true });
   }));
 
@@ -673,6 +696,71 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       monete: points.top(login, 10),
       vip: vips.list(login).map((v) => ({ user: v.user, display: v.display, until: v.until, motivo: v.motivo })),
     });
+  }));
+
+  // ---------------------------------------------------------- NOTIFICHE TELEGRAM
+  // Lo streamer collega il PROPRIO bot (token di @BotFather) e il PROPRIO gruppo.
+
+  // stato attuale (senza il token)
+  app.get('/api/streamer/telegram', requireLogin, wrap(async (req, res) => {
+    res.json(statoTelegram(currentUser(req).login));
+  }));
+
+  // salva il token: lo validiamo con getMe e memorizziamo lo @username del bot
+  app.post('/api/streamer/telegram/token', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const token = String(req.body?.token || '').trim();
+    if (!token || !/^\d+:[A-Za-z0-9_-]{20,}$/.test(token)) {
+      return res.status(400).json({ errore: 'token non valido (copialo esatto da @BotFather)' });
+    }
+    const v = await telegram.validaToken(token);
+    if (!v.ok) return res.status(400).json({ errore: v.errore || 'token rifiutato da Telegram' });
+    tgConf.set(login, { token, botUsername: v.username });
+    res.json({ ok: true, botUsername: v.username });
+  }));
+
+  // rileva il gruppo dagli ultimi update (il bot dev'essere già nel gruppo)
+  app.post('/api/streamer/telegram/rileva', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const c = tgConf.get(login);
+    if (!c?.token) return res.status(400).json({ errore: 'prima collega il bot con il token' });
+    const r = await telegram.rilevaGruppo(c.token);
+    if (!r.ok) return res.status(400).json({ errore: r.errore });
+    tgConf.set(login, { chatId: r.chatId, chatTitolo: r.titolo });
+    // saluto di conferma nel gruppo appena collegato (best-effort)
+    telegram.inviaMessaggio(c.token, r.chatId, '✅ Collegato! Vi avviserò qui quando parte la diretta.').catch(() => {});
+    res.json({ ok: true, gruppo: r.titolo, privato: !!r.privato });
+  }));
+
+  // salva impostazioni notifica (accesa/spenta + testo)
+  app.post('/api/streamer/telegram/impostazioni', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const c = tgConf.get(login);
+    if (!c?.token) return res.status(400).json({ errore: 'prima collega il bot con il token' });
+    const attivo = !!req.body?.attivo;
+    const messaggio = String(req.body?.messaggio ?? '').slice(0, 800);
+    if (attivo && !c.chat_id) return res.status(400).json({ errore: 'collega prima un gruppo (Rileva gruppo)' });
+    tgConf.set(login, { attivo, messaggio });
+    res.json({ ok: true });
+  }));
+
+  // manda un messaggio di prova nel gruppo, adesso
+  app.post('/api/streamer/telegram/prova', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const c = tgConf.get(login);
+    if (!c?.token || !c.chat_id) return res.status(400).json({ errore: 'configura bot e gruppo prima' });
+    const info = await helix.getStream(login).catch(() => null);
+    const s = streamers.get(login);
+    const testo = telegram.costruisciMessaggioLive({ login, display: s?.display || login }, info, c.messaggio);
+    const r = await telegram.inviaMessaggio(c.token, c.chat_id, '🧪 <i>Anteprima notifica</i>\n\n' + testo);
+    if (!r.ok) return res.status(400).json({ errore: r.errore });
+    res.json({ ok: true });
+  }));
+
+  // scollega tutto (rimuove token e gruppo)
+  app.delete('/api/streamer/telegram', requireLogin, wrap(async (req, res) => {
+    tgConf.remove(currentUser(req).login);
+    res.json({ ok: true });
   }));
 
   // ---- INGRESSO ESTERNO: un servizio dello streamer fa dire/fare cose al bot
