@@ -19,6 +19,7 @@ import { comprimi } from '../features/compress.js';
 import { seedStreamer } from '../features/seed.js';
 import * as vip from '../features/vip.js';
 import * as telegram from '../features/telegram.js';
+import * as tiktok from '../features/tiktok.js';
 import { pretrain } from '../ai/pretrain.js';
 import * as persona from '../ai/persona.js';
 import { redeemPass } from './gate.js';
@@ -382,6 +383,12 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (b.proattivo !== undefined) out.proattivo = !!b.proattivo;
     // IA locale: risposte più naturali auto-addestrate (default accesa)
     if (b.iaLocale !== undefined) out.iaLocale = !!b.iaLocale;
+    // notifica live TikTok (rilevamento best-effort + annuncio)
+    if (b.tiktok !== undefined) {
+      const tk = b.tiktok || {};
+      const username = tiktok.pulisciUsername(tk.username).slice(0, 40);
+      out.tiktok = { username, attivo: !!tk.attivo && !!username, annunciaChat: !!tk.annunciaChat };
+    }
     // giochi + promo social automatica
     if (b.giochi !== undefined) out.giochi = !!b.giochi;
     if (b.promoSocial !== undefined) out.promoSocial = !!b.promoSocial;
@@ -787,6 +794,19 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.json({ ok: true });
   }));
 
+  // prova la notifica TikTok adesso (manda il messaggio nel gruppo Telegram)
+  app.post('/api/streamer/tiktok/prova', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const s = streamers.get(login);
+    const username = s?.settings?.tiktok?.username;
+    if (!username) return res.status(400).json({ errore: 'imposta prima il tuo username TikTok' });
+    const c = tgConf.get(login);
+    if (!c?.token || !c.chat_id) return res.status(400).json({ errore: 'collega prima il bot Telegram e il gruppo' });
+    const r = await telegram.notificaTikTok(c, { login, display: s?.display || login }, username);
+    if (!r.ok) return res.status(400).json({ errore: r.errore });
+    res.json({ ok: true });
+  }));
+
   // ---- INGRESSO ESTERNO: un servizio dello streamer fa dire/fare cose al bot
   // Autenticazione con la chiave API del :login (Bearer o ?key=), confronto
   // timing-safe. Chiave errata → 404 (labirinto: nessun indizio). Solo POST.
@@ -821,6 +841,12 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (azione === 'clip') {
       await manager.creaClip(login, req.body?.motivo || 'comando vocale');
       return res.json({ ok: true });
+    }
+    // azione 'tiktok-live': via affidabile per avvisare "sono live su TikTok"
+    // (una tua automazione la chiama quando vai in diretta su TikTok)
+    if (azione === 'tiktok-live' || azione === 'tiktok') {
+      const r = await manager.notificaTikTok(login);
+      return res.json({ ok: !!r?.ok, motivo: r?.motivo });
     }
     // le altre azioni (messaggio/effetto/modulo) restano gestite dai moduli
     const ok = await modules.eseguiPerApi(login, req.body || {}, (t) => manager.say(login, t));
