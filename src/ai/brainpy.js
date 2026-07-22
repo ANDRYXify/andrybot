@@ -1,0 +1,61 @@
+// brainpy.js — ponte verso il CERVELLO in Python (container 'brain').
+//
+// Il cervello (coscienza + modello linguistico) vive in un processo separato:
+// qui lo interroghiamo via HTTP con un timeout CORTO. Se è lento, occupato o
+// spento, ritorniamo null e il bot semplicemente non chiacchiera — i COMANDI
+// non passano mai di qui, quindi restano SEMPRE istantanei. Non lancia mai.
+import { makeLog } from '../logger.js';
+
+const log = makeLog('brainpy');
+
+const BASE = process.env.BRAIN_URL || 'http://brain:8091';
+const TIMEOUT_CHAT = Number(process.env.BRAIN_TIMEOUT_MS || '9000') || 9000;
+
+// Chiede una risposta contestuale al cervello. Ritorna stringa o null.
+export async function rispondi({ canale, login, nome, testo, tono, conoscenza } = {}) {
+  if (!canale || !login || !testo) return null;
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), TIMEOUT_CHAT);
+  try {
+    const r = await fetch(BASE + '/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ canale, login, nome, testo, tono, conoscenza }),
+      signal: ac.signal,
+    });
+    if (!r.ok) return null;
+    const d = await r.json().catch(() => null);
+    return d && d.risposta ? String(d.risposta) : null;
+  } catch (e) {
+    log.debug('chat:', e?.message || e);
+    return null;
+  } finally {
+    clearTimeout(to);
+  }
+}
+
+// Nutre la coscienza con ciò che passa in chat (impara persone/fatti). Fire-and-
+// forget: non attende e non blocca nulla.
+export function osserva({ canale, login, nome, testo } = {}) {
+  if (!canale || !login) return;
+  try {
+    const ac = new AbortController();
+    const to = setTimeout(() => ac.abort(), 2500);
+    fetch(BASE + '/osserva', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ canale, login, nome, testo }),
+      signal: ac.signal,
+    }).catch(() => {}).finally(() => clearTimeout(to));
+  } catch { /* niente */ }
+}
+
+// Stato del cervello (per log/diagnostica). Ritorna un oggetto o null.
+export async function stato() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 2500);
+  try {
+    const r = await fetch(BASE + '/health', { signal: ac.signal });
+    return r.ok ? await r.json().catch(() => null) : null;
+  } catch { return null; } finally { clearTimeout(to); }
+}
