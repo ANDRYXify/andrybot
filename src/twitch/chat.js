@@ -10,7 +10,12 @@ const log = makeLog('chat');
 
 const IRC_URL = 'wss://irc-ws.chat.twitch.tv:443';
 const MSG_MAX = 450;            // limite prudente sotto i 500 byte IRC
-const RATE_MS = 1600;           // 1 messaggio ogni 1,6s (limite globale prudente)
+// Spaziatura tra messaggi. Il bot parla con l'account dello streamer (che in
+// chat è broadcaster o moderatore): Twitch concede ~100 msg/30s a broadcaster e
+// mod, cioè 1 ogni 0,3s. Teniamo 400ms come margine: risposte molto più rapide
+// senza rischiare il rate-limit globale. (Un singolo messaggio parte comunque
+// SUBITO: questa spaziatura conta solo tra un messaggio e il successivo.)
+const RATE_MS = 400;
 const BACKOFF_MIN = 1000;       // riconnessione: 1s → ... → 60s
 const BACKOFF_MAX = 60_000;
 const QUEUE_MAX = 30;           // messaggi in coda al massimo (oltre: scartiamo i più vecchi)

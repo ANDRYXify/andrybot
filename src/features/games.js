@@ -250,3 +250,44 @@ export function promoSociale(channel) {
       : `${scegli(APERTURE)} ${url}`;
   } catch { return null; }
 }
+
+// --------------------------------------------------------- comando !social
+// Elenco DETERMINISTICO e immediato di tutti i social del canale (a differenza
+// della promo proattiva che ne pesca uno solo, a caso, e a tempo). I link sono
+// quelli imparati dal profilo del sito + quelli aggiunti a mano alla conoscenza.
+const PIATTAFORME = [
+  [/youtube\.com|youtu\.be/i, 'YouTube'],
+  [/instagram\.com|instagr\.am/i, 'Instagram'],
+  [/tiktok\.com/i, 'TikTok'],
+  [/discord\.(gg|com)/i, 'Discord'],
+  [/(^|\/\/)(t\.me)|telegram\.(me|org)/i, 'Telegram'],
+  [/twitch\.tv/i, 'Twitch'],
+  [/kick\.com/i, 'Kick'],
+  [/twitter\.com|(^|\/\/)x\.com/i, 'X'],
+  [/facebook\.com|fb\.com/i, 'Facebook'],
+  [/spotify\.com/i, 'Spotify'],
+];
+function nomePiattaforma(url) {
+  for (const [re, nome] of PIATTAFORME) if (re.test(url)) return nome;
+  return null;
+}
+// Ritorna una riga "🔗 Social: YouTube <url> · TikTok <url> · …" o null se
+// non c'è nessun social conosciuto per il canale.
+export function elencoSocial(channel) {
+  try {
+    const parti = [];
+    const visti = new Set();
+    for (const k of knowledge.list(channel)) {
+      const testo = String(k?.risposta || '');
+      for (const url of testo.match(/https?:\/\/\S+/g) || []) {
+        const pulito = url.replace(/[),.;]+$/, '');            // togli punteggiatura finale
+        const nome = nomePiattaforma(pulito);
+        if (!nome || visti.has(nome)) continue;                // solo social noti, uno per piattaforma
+        visti.add(nome);
+        parti.push(`${nome}: ${pulito}`);
+      }
+    }
+    if (!parti.length) return null;
+    return '🔗 Social: ' + parti.join(' · ');
+  } catch { return null; }
+}

@@ -4,11 +4,12 @@
 import { makeLog } from '../logger.js';
 import { memory, streamers, commands } from '../db.js';
 import { checkMessage } from './moderation.js';
+import { elencoSocial } from './games.js';
 
 const log = makeLog('handler');
 
 // Comandi integrati (elencati da !comandi)
-const BUILTIN = ['comandi', 'ciao', 'uptime', 'game', 'title', 'followage', 'clip', 'so',
+const BUILTIN = ['comandi', 'ciao', 'uptime', 'game', 'title', 'followage', 'social', 'clip', 'so',
   'cita', 'ban', 'timeout', 'untimeout', 'addcmd', 'delcmd'];
 
 // "da quando segue": trasforma una data ISO in un testo umano (anni/mesi/giorni)
@@ -75,6 +76,13 @@ export function createMessageHandler({ chat, helix, brain, clips, botLogin }) {
           const g = info?.game_name || (await helix.getStream(channel).catch(() => null))?.game_name;
           chat.say(channel, g ? `Ora si gioca a: ${g} 🎮` : 'Nessun gioco impostato al momento.');
         } catch { chat.say(channel, 'Non riesco a leggere il gioco adesso.'); }
+        return;
+      }
+
+      // social del canale: elenco immediato e deterministico (no IA, no attesa)
+      case 'social': case 'socials': case 'link': case 'links': case 'lin': {
+        const elenco = elencoSocial(channel);
+        chat.say(channel, elenco || 'Non ho ancora social salvati per questo canale.');
         return;
       }
 
