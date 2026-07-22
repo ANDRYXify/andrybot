@@ -14,7 +14,8 @@ import { dirname, join } from 'node:path';
 import { config, SCOPES, missingConfig } from '../config.js';
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb, friends } from '../db.js';
-import { points, vips, tgConf } from '../db.js';
+import { points, vips, tgConf, passkeys } from '../db.js';
+import * as webauthn from './webauthn.js';
 import { comprimi } from '../features/compress.js';
 import { seedStreamer } from '../features/seed.js';
 import * as vip from '../features/vip.js';
@@ -72,10 +73,14 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // con la chiave (?key=...), perché OBS lo apre senza sessione/cookie.
   // Stessa logica per /api/ext/*: l'ingresso esterno si protegge con la chiave
   // API del canale (Authorization: Bearer ...), non con la sessione.
-  const PUBBLICI = new Set(['/health', '/entra']);
+  // Pubblici anche: i file "guscio" della PWA (manifest, service worker, icone)
+  // e il flusso di login con passkey (per rientrare senza passare dal sito).
+  // Non rivelano nulla di sensibile: la dashboard vera resta dietro la sessione.
+  const PUBBLICI = new Set(['/health', '/entra', '/sblocca', '/sblocca.html', '/manifest.webmanifest', '/sw.js']);
   app.use((req, res, next) => {
     if (currentUser(req) || PUBBLICI.has(req.path)
-        || req.path.startsWith('/overlay/') || req.path.startsWith('/api/ext/')) return next();
+        || req.path.startsWith('/overlay/') || req.path.startsWith('/api/ext/')
+        || req.path.startsWith('/icons/') || req.path.startsWith('/api/passkey/login/')) return next();
     return notFound(res);
   });
 
@@ -142,6 +147,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   };
 
   const sync = () => Promise.resolve(manager.syncChannels?.()).catch(() => {});
+
+  // Passkey (WebAuthn): l'RP ID è il dominio, l'origin è l'URL completo.
+  const RP_ID = (() => { try { return new URL(config.baseUrl).hostname; } catch { return 'localhost'; } })();
+  const ORIGIN = (() => { try { return new URL(config.baseUrl).origin; } catch { return config.baseUrl; } })();
+  const RP_NAME = 'SocialBot';
 
   // ------------------------------------------------------------ EFFETTI: cartelle e upload
   // gli effetti vivono in data/effects/<login>/, i file in arrivo in data/tmp/
@@ -227,6 +237,14 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     sync();
     res.redirect('/');
   }));
+
+  // Pagina "Sblocca con passkey": ingresso alternativo per chi ha registrato
+  // una passkey (così può rientrare, o aprire l'app installata, senza pass del
+  // sito). Se si è già loggati, si va dritti alla dashboard.
+  app.get('/sblocca', (req, res) => {
+    if (currentUser(req)) return res.redirect('/');
+    res.sendFile(join(publicDir, 'sblocca.html'));
+  });
 
   // ------------------------------------------------------------ OAuth permessi
   // (raggiungibile solo DOPO essere entrati: il cancello 404-a chi non ha sessione)
@@ -804,6 +822,73 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!c?.token || !c.chat_id) return res.status(400).json({ errore: 'collega prima il bot Telegram e il gruppo' });
     const r = await telegram.notificaTikTok(c, { login, display: s?.display || login }, username);
     if (!r.ok) return res.status(400).json({ errore: r.errore });
+    res.json({ ok: true });
+  }));
+
+  // ---------------------------------------------------------- PASSKEY (WebAuthn)
+  // Si CREA solo da loggati (già entrati col pass); permette poi di RIENTRARE
+  // senza pass. Login (inizio/fine) è pubblico: è proprio come si rientra.
+
+  app.post('/api/passkey/registra/inizio', requireLogin, wrap(async (req, res) => {
+    const user = currentUser(req);
+    const challenge = webauthn.randomChallenge();
+    req.session.pkReg = challenge;
+    res.json({
+      challenge,
+      rp: { id: RP_ID, name: RP_NAME },
+      user: { id: webauthn.bufToB64url(Buffer.from(user.login)), name: user.login, displayName: user.display || user.login },
+      pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }, { type: 'public-key', alg: -8 }],
+      authenticatorSelection: { residentKey: 'preferred', userVerification: 'preferred' },
+      excludeCredentials: passkeys.byLogin(user.login).map((p) => ({ id: p.cred_id, type: 'public-key' })),
+      timeout: 60000,
+      attestation: 'none',
+    });
+  }));
+
+  app.post('/api/passkey/registra/fine', requireLogin, wrap(async (req, res) => {
+    const user = currentUser(req);
+    const challenge = req.session.pkReg; delete req.session.pkReg;
+    if (!challenge) return res.status(400).json({ errore: 'sessione scaduta, riprova' });
+    const { attestationObject, clientDataJSON, nome } = req.body || {};
+    const v = webauthn.verifyRegistration({ attestationObject, clientDataJSON, challenge, origin: ORIGIN, rpId: RP_ID });
+    if (!v.ok) return res.status(400).json({ errore: v.errore });
+    if (passkeys.byCredId(v.credId)) return res.status(400).json({ errore: 'passkey già registrata' });
+    passkeys.add({ login: user.login, credId: v.credId, publicKey: v.jwk, alg: v.alg, signCount: v.signCount, nome: String(nome || 'Passkey').slice(0, 40) });
+    res.json({ ok: true });
+  }));
+
+  app.get('/api/passkey', requireLogin, wrap(async (req, res) => {
+    res.json(passkeys.byLogin(currentUser(req).login).map((p) => ({ id: p.id, nome: p.nome, created_at: p.created_at, last_used: p.last_used })));
+  }));
+
+  app.delete('/api/passkey/:id', requireLogin, wrap(async (req, res) => {
+    passkeys.remove(currentUser(req).login, parseInt(req.params.id, 10) || 0);
+    res.json({ ok: true });
+  }));
+
+  // --- login con passkey (PUBBLICO) ---
+  app.post('/api/passkey/login/inizio', wrap(async (req, res) => {
+    const challenge = webauthn.randomChallenge();
+    req.session.pkLogin = challenge;
+    res.json({ challenge, rpId: RP_ID, userVerification: 'preferred', timeout: 60000, allowCredentials: [] });
+  }));
+
+  app.post('/api/passkey/login/fine', wrap(async (req, res) => {
+    const challenge = req.session?.pkLogin; delete req.session.pkLogin;
+    if (!challenge) return res.status(400).json({ errore: 'sessione scaduta, riprova' });
+    const { id, authenticatorData, clientDataJSON, signature } = req.body || {};
+    const cred = id ? passkeys.byCredId(id) : null;
+    if (!cred) return res.status(400).json({ errore: 'passkey sconosciuta' });
+    const v = webauthn.verifyAuthentication({
+      authenticatorData, clientDataJSON, signature,
+      jwk: cred.publicKey, alg: cred.alg, challenge, origin: ORIGIN, rpId: RP_ID, storedSignCount: cred.sign_count,
+    });
+    if (!v.ok) return res.status(400).json({ errore: v.errore });
+    const s = streamers.get(cred.login);
+    if (!s) return res.status(403).json({ errore: 'account non più abilitato' });
+    passkeys.bumpCounter(id, v.newSignCount);
+    req.session.user = { login: cred.login, display: s.display || cred.login };
+    log.info(`login con passkey: @${cred.login}`);
     res.json({ ok: true });
   }));
 
