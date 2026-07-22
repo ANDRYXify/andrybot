@@ -144,4 +144,17 @@ export class EffectsEngine {
     log.debug(`effetto !${comando} su #${channel}`);
     return true;
   }
+
+  // Emette un effetto per comando SALTANDO tier e cooldown. Lo usano i Moduli
+  // (azione "effetto") e l'ingresso via API: la decisione di sparare l'effetto
+  // è già stata presa altrove, qui si spinge e basta. Ritorna true se l'effetto
+  // esiste ed è attivo su quel canale.
+  fire(channel, comando) {
+    const ch = norm(channel);
+    const eff = effectsDb.get(ch, comando);
+    if (!eff) return false;
+    this.emit(ch, this.payload(ch, eff));
+    log.debug(`fire effetto !${eff.comando} su #${ch}`);
+    return true;
+  }
 }

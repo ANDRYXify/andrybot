@@ -101,6 +101,24 @@ Source*: l'URL (con la sua chiave) si copia dalla sezione "Effetti & Suoni" dell
 
 ---
 
+## Moduli (automazioni componibili)
+
+Ogni streamer può creare automazioni **QUANDO → SE → ALLORA** dalla dashboard: *quando*
+succede qualcosa (un comando, una parola, un evento, un timer), *se* valgono certe condizioni
+(ruolo, cooldown, probabilità, solo in live…), *allora* il bot esegue una o più azioni
+(scrivi in chat, fai partire un effetto, contatore, chiama un webhook, mostra testo
+sull'overlay…). **Libertà totale ma sicura**: un modulo è **solo dati** (JSON), mai codice —
+sul server condiviso non gira nulla di arbitrario. L'azione **webhook** apre a logiche
+esterne (con guardia anti-SSRF) e la **chiave API in ingresso** (`/api/ext/<login>`) lascia
+che un servizio dello streamer faccia dire/fare cose al bot. Dettagli in
+[`docs/moduli.md`](docs/moduli.md).
+
+> **Plugin operatore** (`plugins/`): estensioni **server-side** in JavaScript, riservate
+> **solo all'operatore** (andryxify). A differenza dei Moduli, girano sul server con pieni
+> privilegi: non sono per gli streamer. Vedi [`plugins/README.md`](plugins/README.md).
+
+---
+
 ## Moduli
 
 | Percorso | Ruolo |
@@ -121,6 +139,8 @@ Source*: l'URL (con la sua chiave) si copia dalla sezione "Effetti & Suoni" dell
 | `src/features/clips.js` | clip manuali e automatiche nei momenti "hype" |
 | `src/features/moderation.js` | filtri e regole di comportamento |
 | `src/features/effects.js` | motore effetti/suoni + registro overlay (SSE) |
+| `src/features/modules.js` | motore "Moduli": automazioni QUANDO→SE→ALLORA (vedi `docs/moduli.md`) |
+| `src/features/plugins.js` | caricatore plugin operatore + event-bus (vedi `plugins/README.md`) |
 | `src/features/compress.js` | super-compressione dei media con ffmpeg |
 | `src/web/server.js` | dashboard, API e rotte overlay |
 | `src/web/gate.js` | il "cancello": pass monouso + revoca automatica |

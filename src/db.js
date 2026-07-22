@@ -119,6 +119,23 @@ CREATE TABLE IF NOT EXISTS effects (        -- "Effetti & Suoni": comandi chat �
 );
 -- indice UNIVOCO su (channel, comando): serve anche all'UPSERT (ON CONFLICT)
 CREATE UNIQUE INDEX IF NOT EXISTS idx_effects_channel_comando ON effects(channel, comando);
+
+CREATE TABLE IF NOT EXISTS modules (       -- "Moduli": automazioni QUANDO→SE→ALLORA per canale
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  channel TEXT NOT NULL,
+  nome TEXT NOT NULL DEFAULT '',
+  attivo INTEGER NOT NULL DEFAULT 1,
+  config TEXT NOT NULL DEFAULT '{}',        -- JSON dell'intero modulo: trigger/condizioni/azioni
+  ts INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_modules_channel ON modules(channel);
+
+CREATE TABLE IF NOT EXISTS counters (      -- contatori dei moduli (es. "morti"), per canale
+  channel TEXT NOT NULL,
+  nome TEXT NOT NULL,
+  valore INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (channel, nome)
+);
 `);
 
 const now = () => Date.now();
@@ -333,6 +350,100 @@ export const effects = {
     if (!r) return null;
     db.prepare('DELETE FROM effects WHERE channel=? AND id=?').run(channel, id);
     return r.file;
+  },
+};
+
+// ---------------------------------------------------------------- moduli (automazioni)
+
+const MAX_MODULI = 100;   // tetto di moduli per canale
+
+// Deserializza una riga della tabella modules nel modello completo del modulo.
+function rowToModule(r) {
+  if (!r) return null;
+  const cfg = safeJson(r.config);
+  return {
+    id: r.id,
+    nome: r.nome,
+    attivo: !!r.attivo,
+    trigger: cfg.trigger || {},
+    condizioni: cfg.condizioni || {},
+    azioni: Array.isArray(cfg.azioni) ? cfg.azioni : [],
+  };
+}
+
+export const modules = {
+  list(channel) {
+    return db.prepare('SELECT * FROM modules WHERE channel=? ORDER BY id').all(channel).map(rowToModule);
+  },
+  get(channel, id) {
+    return rowToModule(db.prepare('SELECT * FROM modules WHERE channel=? AND id=?').get(channel, id));
+  },
+  // Inserisce o aggiorna un modulo. Se m.id esiste (per questo canale) → UPDATE,
+  // altrimenti INSERT (rispettando il tetto MAX_MODULI). Ritorna l'id.
+  save(channel, m) {
+    const nome = String(m?.nome || '').slice(0, 80);
+    const config = JSON.stringify({
+      trigger: m?.trigger || {},
+      condizioni: m?.condizioni || {},
+      azioni: Array.isArray(m?.azioni) ? m.azioni : [],
+    });
+    const attivo = m?.attivo === false ? 0 : 1;
+    const id = Number(m?.id);
+    if (Number.isFinite(id) && id > 0 &&
+        db.prepare('SELECT 1 FROM modules WHERE channel=? AND id=?').get(channel, id)) {
+      db.prepare('UPDATE modules SET nome=?, attivo=?, config=?, ts=? WHERE channel=? AND id=?')
+        .run(nome, attivo, config, now(), channel, id);
+      return id;
+    }
+    const n = db.prepare('SELECT COUNT(*) c FROM modules WHERE channel=?').get(channel).c;
+    if (n >= MAX_MODULI) throw new Error(`hai raggiunto il massimo di ${MAX_MODULI} moduli`);
+    const info = db.prepare('INSERT INTO modules (channel, nome, attivo, config, ts) VALUES (?,?,?,?,?)')
+      .run(channel, nome, attivo, config, now());
+    return Number(info.lastInsertRowid);
+  },
+  remove(channel, id) { db.prepare('DELETE FROM modules WHERE channel=? AND id=?').run(channel, id); },
+  setAttivo(channel, id, attivo) {
+    db.prepare('UPDATE modules SET attivo=? WHERE channel=? AND id=?').run(attivo ? 1 : 0, channel, id);
+  },
+  // Tutti i moduli ATTIVI di TUTTI i canali (usato dal motore timer). Ogni voce
+  // porta con sé il proprio channel.
+  all() {
+    return db.prepare('SELECT * FROM modules WHERE attivo=1').all()
+      .map(r => ({ channel: r.channel, ...rowToModule(r) }));
+  },
+};
+
+// ---------------------------------------------------------------- contatori
+
+// Nome contatore normalizzato: minuscolo, senza spazi ai bordi, max 60 char.
+const normContatore = (s) => String(s || '').trim().toLowerCase().slice(0, 60);
+
+export const counters = {
+  get(channel, nome) {
+    const n = normContatore(nome);
+    return db.prepare('SELECT valore FROM counters WHERE channel=? AND nome=?').get(channel, n)?.valore ?? 0;
+  },
+  // Incrementa (o decrementa con delta negativo) e ritorna il nuovo valore.
+  inc(channel, nome, delta = 1) {
+    const n = normContatore(nome);
+    if (!n) return 0;
+    const d = Math.trunc(Number(delta) || 0);
+    db.prepare(`INSERT INTO counters (channel, nome, valore) VALUES (?,?,?)
+      ON CONFLICT(channel, nome) DO UPDATE SET valore = valore + excluded.valore`)
+      .run(channel, n, d);
+    return this.get(channel, n);
+  },
+  set(channel, nome, valore) {
+    const n = normContatore(nome);
+    if (!n) return 0;
+    const v = Math.trunc(Number(valore) || 0);
+    db.prepare(`INSERT INTO counters (channel, nome, valore) VALUES (?,?,?)
+      ON CONFLICT(channel, nome) DO UPDATE SET valore = excluded.valore`)
+      .run(channel, n, v);
+    return v;
+  },
+  all(channel) {
+    return db.prepare('SELECT nome, valore FROM counters WHERE channel=? ORDER BY nome').all(channel);
   },
 };
 
