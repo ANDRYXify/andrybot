@@ -63,6 +63,8 @@ function impostazioni() {
     tono: ['scherzoso', 'amichevole', 'serio'].includes(s.tono) ? s.tono : 'scherzoso',
     spontaneita: typeof s.spontaneita === 'number' ? s.spontaneita : 0.03,
     rispostaMenzioni: s.rispostaMenzioni !== false,
+    proattivo: s.proattivo !== false,
+    adattaCanale: s.adattaCanale !== false,
     frasi: Array.isArray(s.frasi) ? s.frasi : [],
     clipAuto: s.clipAuto !== false,
     clipAutoSoglia: typeof s.clipAutoSoglia === 'number' ? s.clipAutoSoglia : 25,
@@ -118,7 +120,7 @@ function render() {
   app.innerHTML = html;
 
   if (st?.status === 'approved') attivaPiattaforma();
-  if (stato.isAdmin) caricaTabellaAdmin();
+  if (stato.isAdmin) { caricaTabellaAdmin(); caricaAnima(); }
 }
 
 function renderAreaUtente() {
@@ -294,6 +296,18 @@ function pannelloPersonalita() {
         <input type="checkbox" id="chk-menzioni" ${s.rispostaMenzioni ? 'checked' : ''}>
         <label for="chk-menzioni">Rispondi quando mi nominano in chat</label>
       </div>
+
+      <div class="riga-check">
+        <input type="checkbox" id="chk-proattivo" ${s.proattivo ? 'checked' : ''}>
+        <label for="chk-proattivo">Personalità proattiva — ogni tanto si fa vivo da solo</label>
+      </div>
+
+      <div class="riga-check">
+        <input type="checkbox" id="chk-adatta" ${s.adattaCanale ? 'checked' : ''}>
+        <label for="chk-adatta">Adatta la personalità al mio canale (in automatico)</label>
+      </div>
+      <p class="suggerimento">SocialBot ha un carattere suo condiviso, ma qui puoi renderlo coerente
+      con il tuo canale: col tono qui sopra (a mano) e lasciandolo adattare da solo al tuo stile.</p>
 
       <label class="campo" for="txt-frasi">Le tue frasi / battute (una per riga)</label>
       <textarea id="txt-frasi" placeholder="es. GG raga, si vola!&#10;chi non segue il canale paga da bere">${esc(s.frasi.join('\n'))}</textarea>
@@ -627,6 +641,8 @@ function attivaPiattaforma() {
       tono: document.getElementById('sel-tono').value,
       spontaneita: Number(document.getElementById('rng-spontaneita').value) / 100,
       rispostaMenzioni: document.getElementById('chk-menzioni').checked,
+      proattivo: document.getElementById('chk-proattivo').checked,
+      adattaCanale: document.getElementById('chk-adatta').checked,
       frasi: righe(document.getElementById('txt-frasi').value),
     }, 'Personalità salvata 🎭');
   }));
@@ -1645,7 +1661,68 @@ function vistaAdmin() {
           <tbody id="tabella-streamer"><tr><td colspan="6" class="vuoto">Caricamento…</td></tr></tbody>
         </table>
       </div>
+    </div>
+    <div class="carta">
+      <h2>Anima di SocialBot 🫀</h2>
+      <p>La personalità <strong class="primo-piano">condivisa</strong>: un solo carattere, coerente su tutti
+      i canali (in chat indossa poi il nome e il tono di ognuno). Gli utenti restano a compartimenti stagni:
+      qui vedi solo <em>quanti amici</em> e i più affini, mai cosa hanno scritto o dove.</p>
+      <div id="anima-box"><p class="vuoto">Caricamento…</p></div>
     </div>`;
+}
+
+// carica e disegna il pannello Anima (solo operatore)
+async function caricaAnima() {
+  const box = document.getElementById('anima-box');
+  if (!box) return;
+  try {
+    const d = await api('/api/admin/anima');
+    const p = d.profilo || {};
+    const amici = d.amici || { totale: 0, top: [] };
+    box.innerHTML = `
+      <label class="campo" for="an-nome">Nome</label>
+      <input type="text" id="an-nome" value="${esc(p.nome || 'SocialBot')}" maxlength="40">
+
+      <label class="campo" for="an-tono">Tono di base</label>
+      <select id="an-tono">
+        <option value="scherzoso" ${p.tono === 'scherzoso' ? 'selected' : ''}>Scherzoso</option>
+        <option value="amichevole" ${p.tono === 'amichevole' ? 'selected' : ''}>Amichevole</option>
+        <option value="serio" ${p.tono === 'serio' ? 'selected' : ''}>Serio</option>
+      </select>
+
+      <label class="campo" for="an-tratti">Tratti (uno per riga)</label>
+      <textarea id="an-tratti" placeholder="curioso&#10;ironico&#10;empatico">${esc((p.tratti || []).join('\n'))}</textarea>
+
+      <label class="campo" for="an-valori">Valori / linee guida (uno per riga)</label>
+      <textarea id="an-valori" placeholder="rispetto&#10;community prima di tutto">${esc((p.valori || []).join('\n'))}</textarea>
+
+      <label class="campo" for="an-tormentoni">Tormentoni / frasi-firma (uno per riga)</label>
+      <textarea id="an-tormentoni" placeholder="si vola!&#10;GG raga">${esc((p.tormentoni || []).join('\n'))}</textarea>
+
+      <p class="spazio-sopra">Stato d'animo ora:
+        <span class="badge viola">umore ${p.umore ?? 50}/100</span>
+        <span class="badge viola">energia ${p.energia ?? 60}/100</span>
+        <span class="suggerimento">— cambia da solo con gli eventi (raid, sub…) e col tempo.</span>
+      </p>
+      <p><strong class="primo-piano">${amici.totale}</strong> persone conosciute in tutta la rete.
+        ${amici.top.length ? 'Più affini: ' + amici.top.map((f) =>
+          `<span class="badge">${esc(f.user)} · ${f.affinita}</span>`).join(' ') : ''}</p>
+
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-anima">Salva l'anima</button></p>`;
+
+    document.getElementById('btn-salva-anima')?.addEventListener('click', () => conErrore(async () => {
+      await api('/api/admin/anima', { method: 'POST', body: {
+        nome: document.getElementById('an-nome').value.trim(),
+        tono: document.getElementById('an-tono').value,
+        tratti: righe(document.getElementById('an-tratti').value),
+        valori: righe(document.getElementById('an-valori').value),
+        tormentoni: righe(document.getElementById('an-tormentoni').value),
+      } });
+      toast('Anima aggiornata 🫀');
+    }));
+  } catch (e) {
+    box.innerHTML = `<p class="vuoto">Errore: ${esc(e.message)}</p>`;
+  }
 }
 
 async function caricaTabellaAdmin() {
