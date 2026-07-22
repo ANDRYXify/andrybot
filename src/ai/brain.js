@@ -1,0 +1,612 @@
+// Il cervello di AndryBot: PROCEDURALE e PROGRESSIVO. Niente IA esterna:
+// intenti a pattern, knowledge base con scoring, catene di Markov e una
+// personalità fatta di pool di template in tre toni. Ricorda sempre:
+// il bot parla CON L'ACCOUNT DELLO STREAMER, quindi in prima persona.
+import { makeLog } from '../logger.js';
+import { db, memory, knowledge } from '../db.js';
+import { checkMessage } from '../features/moderation.js';
+import * as learn from './learn.js';
+
+const log = makeLog('brain');
+
+const COOLDOWN_RISPOSTA = 45_000;   // minimo tra due risposte del cervello per canale
+const COOLDOWN_EVENTO = 10_000;     // minimo tra due annunci dello stesso evento per canale
+const MAX_RISPOSTA = 400;           // lunghezza massima di una risposta
+
+// bot noti a cui non si risponde mai (parlano tra loro e non finisce bene)
+const BOT_NOTI = new Set(['nightbot', 'streamelements', 'moobot', 'streamlabs', 'fossabot', 'wizebot']);
+
+const TONI = ['scherzoso', 'amichevole', 'serio'];
+
+// ======================================================================
+// LA PERSONALITÀ: pool di template per tono. {user} = chi scrive,
+// {canale} = display del canale. Frasi brevi, vive, da chat Twitch.
+// ======================================================================
+
+const SALUTI = {
+  scherzoso: [
+    'Ehi {user}, benvenuto nel caos! 😜',
+    'Oh, {user}! Stavo giusto parlando bene di te. Forse. 😂',
+    '{user} in chat! Ora sì che si ragiona 😎',
+    'Ciao {user}! Trovati una sedia comoda, qui si sta bene 🪑',
+    'Eccolo, {user}! La festa può cominciare 🎉',
+    'Weilà {user}! Arrivi giusto in tempo per il bello 🍿',
+  ],
+  amichevole: [
+    'Ciao {user}, che bello vederti! 😊',
+    'Benvenuto {user}! Mettiti comodo 💜',
+    'Ehi {user}, felice di averti qui! 🙌',
+    'Ciao {user}! Com\'è andata la giornata?',
+    'Un saluto a {user}! Benvenuto in famiglia 🤗',
+  ],
+  serio: [
+    'Ciao {user}, benvenuto.',
+    'Salve {user}, buona permanenza in chat.',
+    'Benvenuto {user}, mettiti pure comodo.',
+    'Ciao {user}, grazie per essere passato.',
+  ],
+};
+
+const COME_VA = {
+  scherzoso: [
+    'Alla grande, come un lunedì senza sveglia! 😄 Tu?',
+    'Da paura! Se andasse meglio dovrebbero pagarmi... ah no, già 😅',
+    'Tutto liscio come una ranked persa al primo minuto 😂 Tu come stai?',
+    'Benissimo! Il mio umore oggi è in early access ma promette bene 😎',
+    'Non mi lamento, e quando lo faccio nessuno mi ascolta 😂 Tu?',
+  ],
+  amichevole: [
+    'Tutto bene, grazie che lo chiedi! 😊 Tu?',
+    'Alla grande! E la tua giornata com\'è andata?',
+    'Si tira avanti col sorriso 🙂 Tu tutto ok?',
+    'Bene bene! Sempre meglio quando la chat è viva 💜',
+    'Tutto a posto! Tu piuttosto, come va?',
+  ],
+  serio: [
+    'Tutto bene, grazie. Tu?',
+    'Bene, si va avanti. Tu come stai?',
+    'Non mi lamento. E tu?',
+    'Bene, grazie per averlo chiesto.',
+  ],
+};
+
+const CHI_SONO = [
+  'Sono il lato bot di {canale}: imparo dalla chat e dal sito andryxify.it, rispondo alle domande e ogni tanto clippo i momenti migliori 🎬',
+  'Il gemello digitale di {canale}! Imparo da quello che scrivete qui e da andryxify.it. Chiedimi pure, male che vada improvviso 😉',
+  'Sono {canale} in versione automatica: memoria di ferro, imparo dalla chat, faccio clip e rispondo quando mi chiamate 🤖',
+  'La parte di {canale} che non dorme mai: studio la chat e andryxify.it, e più mi scrivete più divento bravo 📚',
+];
+
+const GRAZIE = {
+  scherzoso: [
+    'Grazie a te, {user}! Ora arrossisco, e per me non è facile 😳',
+    'Lo so, sono un grande 😎 Scherzo {user}, grazie davvero!',
+    '{user} smettila che poi mi monto la testa 😂 💜',
+    'Grazie {user}! Detto da te vale doppio 😄',
+    'Continua pure, i complimenti sono il mio carburante ⛽😂 Grazie {user}!',
+  ],
+  amichevole: [
+    'Grazie {user}, sei un tesoro 💜',
+    'Troppo gentile {user}! 😊',
+    'Che carino {user}, grazie davvero 🙏',
+    'Grazie {user}, mi hai fatto sorridere!',
+    'Grazie di cuore {user}, gente come te rende tutto più bello 💜',
+  ],
+  serio: [
+    'Grazie {user}, lo apprezzo.',
+    'Molto gentile, {user}.',
+    'Grazie del supporto, {user}.',
+    'Ti ringrazio {user}, fa piacere.',
+  ],
+};
+
+// domanda diretta al bot senza risposta in memoria: onestà con stile
+const NON_LO_SO = [
+  'Questa ancora non la so! {user}, se vuoi me la puoi insegnare dalla dashboard 📚',
+  'Mi hai beccato: non lo so 😅 Ma si può rimediare dalla dashboard, {user}!',
+  'Bella domanda {user}! La risposta ancora non ce l\'ho, ma sto imparando ogni giorno 🤓',
+  'Boh! 😄 {user}, insegnamela dalla dashboard e la prossima volta rispondo al volo',
+  'Su questa passo, {user}. Ma se me la insegni dalla dashboard non me la scordo più 📚',
+  'Ancora non è nel mio libro, {user}! Si accettano lezioni dalla dashboard ✍️',
+];
+
+// quando il bot "improvvisa" con una frase generata dalla chat
+const IMPROVVISO = [
+  'Ti dico solo: {frase}',
+  'Non ho la risposta, ma la chat mi ha insegnato questa: "{frase}" 😄',
+  'Vado a intuito: {frase}',
+  'La butto lì: {frase}',
+];
+
+// menzione senza domanda né altro appiglio: il bot si fa vivo
+const ECCOMI = {
+  scherzoso: [
+    'Eccomi {user}, chi mi ha evocato? 🧞',
+    'Presente! Dimmi tutto, {user} 😄',
+    '{user} hai fatto il mio nome e sono apparso ✨',
+    'Sì {user}? Se è per soldi, non ne ho 😂',
+  ],
+  amichevole: [
+    'Eccomi {user}! Dimmi pure 😊',
+    'Ciao {user}, sono tutto orecchie 👂',
+    'Presente, {user}! Che succede?',
+    'Dimmi {user} 💜',
+  ],
+  serio: [
+    'Dimmi, {user}.',
+    'Eccomi {user}, di che si tratta?',
+    'Sì {user}, ti ascolto.',
+    'Presente. Dimmi pure, {user}.',
+  ],
+};
+
+// battute spontanee (nessuna menzione): il bot vive la chat
+const SPONTANEE = {
+  scherzoso: [
+    'Sto seguendo tutto eh, non pensate che dorma 👀',
+    'Chat, vi voglio bene ma siete dei matti 😂',
+    'Qualcuno porti i popcorn, qui si mette bene 🍿',
+    'Io c\'ero. Qualsiasi cosa succeda, ricordate: io c\'ero 😎',
+    'La chat oggi va più veloce dei miei riflessi 😅',
+    'Minuto di silenzio per tutte le run andate male 🫡',
+  ],
+  amichevole: [
+    'Che bella chat che siete oggi 💜',
+    'Mi piace l\'energia di stasera! 🙌',
+    'Grazie a chi passa anche solo per un saluto 😊',
+    'Siete i migliori, ve lo dovevo dire 💜',
+    'Questa community è casa 🏠',
+  ],
+  serio: [
+    'Bella discussione, continuate pure.',
+    'Chat attiva oggi, fa piacere.',
+    'Grazie a chi sta seguendo con attenzione.',
+    'Punto interessante quello di prima, ci penso su.',
+  ],
+};
+
+// clip riuscita / fallita ({url})
+const CLIP_OK = [
+  'Eccola, clip fatta! 🎬 {url}',
+  'Beccato il momento! 📎 {url}',
+  'Fatto! Questa la rivediamo volentieri: {url} 🎬',
+  'Clip in cassaforte 🔒 {url}',
+];
+const CLIP_NO = [
+  'Ci ho provato, ma la clip non è partita 😬 Siamo live?',
+  'Niente clip stavolta: Twitch mi ha detto picche 😅',
+  'La clip non è uscita... riproviamo tra un attimo? 🎬',
+  'Mi sa che il momento è sfuggito: clip non riuscita 😔',
+];
+
+// stato della live ({gioco}, {titolo}, {spettatori}, {ctx}, {ore}, {minuti})
+const LIVE_ORA = [
+  'In questo momento: {gioco} — "{titolo}", con {spettatori} persone collegate 🔴',
+  'Stiamo su {gioco}! Titolo di oggi: "{titolo}" ({spettatori} spettatori) 🎮',
+  'Live su {gioco} con {spettatori} persone: "{titolo}" 🔴',
+];
+const LIVE_CONTESTO = [
+  'Ti aggiorno al volo: {ctx}',
+  'In questo momento: {ctx}',
+  'Situazione attuale: {ctx}',
+];
+const OFFLINE_GIOCO = [
+  'Ora siamo offline! Ultimamente giravo su {gioco}, torna alla prossima live 💜',
+  'Adesso niente live, ma l\'ultima volta si giocava a {gioco} 🎮',
+  'Siamo offline al momento! Il gioco del periodo è {gioco}, ci vediamo in live 👋',
+];
+const OFFLINE = [
+  'Ora siamo offline, ci vediamo alla prossima live! 💜',
+  'Niente live in questo momento, ma torniamo presto 👋',
+  'Al momento siamo offline: attiva le notifiche e non ti perdi nulla 🔔',
+];
+const UPTIME_LIVE = [
+  'Siamo live da {ore}h {minuti}m e non è ancora finita 💪',
+  'Live iniziata {ore}h {minuti}m fa, e si va avanti! 🔴',
+  'Il contatore dice {ore}h {minuti}m di live. Vola il tempo qui! ⏱️',
+];
+
+// ---------------------------------------------------------------- eventi
+// (in prima persona: è lo streamer che parla)
+const EV_FOLLOW = [
+  'Grazie del follow, {nome}! 💜',
+  'Benvenuto a bordo, {nome}! Grazie del follow 🚀',
+  '{nome} è dei nostri ora! Grazie del follow 🙌',
+  'Grande {nome}, grazie del follow! Fatti sentire in chat 😄',
+];
+const EV_SUB = [
+  'Grazie della sub{tier}, {nome}! Sei un grande 💜',
+  '{nome} con la sub{tier}! Grazie di cuore 🙌',
+  'Sub{tier} di {nome}! Abbraccio virtuale in arrivo 🤗',
+  'Grande {nome}, grazie per la sub{tier}! 🎉',
+];
+const EV_RAID = [
+  'Raid di {nome} con {viewers} persone! Benvenuti tutti 🎉',
+  'Aprite le porte: arriva il raid di {nome}! Benvenuti in {viewers} 🙌',
+  '{nome} ci porta {viewers} persone! Fatevi sentire in chat, benvenuti 💜',
+  'Benvenuti raider di {nome}! Mettetevi comodi, qui si sta bene 🔥',
+];
+const EV_ONLINE = [
+  'Siamo live! Chiamate tutti, si comincia 🔴',
+  'Si parte! Benvenuti alla live di oggi 🎬',
+  'Live iniziata! Mettetevi comodi 💜',
+  'Eccoci, si va in onda! Buona live a tutti 🔴',
+];
+const EV_RISCATTO = [
+  '{nome} ha riscattato "{titolo}"! Punti ben spesi 😄',
+  'Riscatto in arrivo: "{titolo}" per {nome}! 🎁',
+  '{nome} si prende "{titolo}", grande! 👏',
+  'Un "{titolo}" per {nome}! I punti girano 💫',
+];
+
+// ======================================================================
+// utilità
+// ======================================================================
+
+const scegli = (pool) => pool[Math.floor(Math.random() * pool.length)];
+
+function compila(template, variabili) {
+  let out = String(template ?? '');
+  for (const [k, v] of Object.entries(variabili || {})) out = out.replaceAll('{' + k + '}', String(v));
+  return out;
+}
+
+// il testo menziona il canale/streamer (@nome o nome come parola) o "bot"?
+function menzionaBot(text, login) {
+  const t = String(text || '').toLowerCase();
+  if (/(^|[^a-z0-9_])bot([^a-z0-9_]|$)/.test(t)) return true;
+  const l = String(login || '').toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  if (!l) return false;
+  return new RegExp('(^|[^a-z0-9_])@?' + l + '([^a-z0-9_]|$)').test(t);
+}
+
+// parole legate a social/link, cercate sia nel messaggio sia nella knowledge
+const PAROLE_SOCIAL = ['instagram', 'youtube', 'tiktok', 'discord', 'telegram', 'twitter',
+  'spotify', 'kick', 'facebook', 'github', 'social', 'sito'];
+
+// ======================================================================
+// Brain
+// ======================================================================
+
+export class Brain {
+  constructor({ helix, actions } = {}) {
+    this.helix = helix;
+    this.actions = actions || {};
+    this._ultimaRisposta = new Map();   // canale → ts ultima risposta del cervello
+    this._ultimoEvento = new Map();     // 'canale|tipo' → ts ultimo annuncio
+  }
+
+  // apprendimento passivo: ogni messaggio passa di qui
+  observe(msg) {
+    try { learn.observe(msg); } catch (e) { log.error('observe:', e?.message || e); }
+  }
+
+  // ------------------------------------------------------------ shouldReply
+
+  shouldReply({ channel, botLogin, user, text, streamer, isSelf } = {}) {
+    try {
+      if (isSelf || !streamer || !channel || !text) return false;
+      if (BOT_NOTI.has(String(user || '').toLowerCase())) return false;
+
+      // respiro: mai due risposte del cervello troppo vicine (i comandi ! non c'entrano)
+      if (Date.now() - (this._ultimaRisposta.get(channel) || 0) < COOLDOWN_RISPOSTA) return false;
+
+      const settings = streamer.settings || {};
+      if (menzionaBot(text, botLogin || channel)) return settings.rispostaMenzioni !== false;
+
+      // risposta spontanea: probabilità configurabile, raddoppiata sulle domande
+      let p = Number.isFinite(+settings.spontaneita) ? +settings.spontaneita : 0.03;
+      p = Math.min(0.3, Math.max(0, p));
+      if (String(text).trim().endsWith('?')) p *= 2;
+      return Math.random() < p;
+    } catch (e) {
+      log.error('shouldReply:', e?.message || e);
+      return false;
+    }
+  }
+
+  // ------------------------------------------------------------ chatReply
+
+  // Pipeline procedurale: intenti → conoscenza → cortesie → onestà → spontaneità.
+  // La prima tappa che produce qualcosa vince; meglio null di una risposta scarsa.
+  async chatReply({ channel, user, display, text, streamer, botLogin } = {}) {
+    try {
+      if (!channel || !text || !streamer) return null;
+      const settings = streamer.settings || {};
+      const tono = TONI.includes(settings.tono) ? settings.tono : 'scherzoso';
+      const nome = display || user || 'tu';
+      const lower = String(text).toLowerCase();
+      const menziona = menzionaBot(text, botLogin || channel);
+      const variabili = { user: nome, canale: streamer.display || channel };
+
+      // ---- a. INTENTI --------------------------------------------------
+
+      // saluto rivolto al bot/canale
+      if (menziona && /(^|[^a-z])(ciao|ehi|hey|buongiorno|buonasera|buond[iì]|salve|weil[aà]|hola)([^a-z]|$)/.test(lower)) {
+        return this._finalizza(channel, compila(scegli(SALUTI[tono]), variabili), streamer);
+      }
+
+      // come va / come stai
+      if (/come va\b|come stai|come butta|come procede|come andiamo|tutto bene\?/.test(lower)) {
+        return this._finalizza(channel, compila(scegli(COME_VA[tono]), variabili), streamer);
+      }
+
+      // chi sei / cosa sai fare
+      if (/chi sei|cosa sei|che cosa sai fare|cosa sai fare|come funzioni|che bot sei|presentati/.test(lower)) {
+        return this._finalizza(channel, compila(scegli(CHI_SONO), variabili), streamer);
+      }
+
+      // che gioco / a cosa giochi
+      if (/che gioco|che game|a cosa (stai )?gioc|a che (gioco|game)|cosa stai giocando|che stai giocando/.test(lower)) {
+        const ctx = memory.streamContext(channel);
+        if (ctx) return this._finalizza(channel, compila(scegli(LIVE_CONTESTO), { ...variabili, ctx }), streamer);
+        try {
+          const stream = await this.helix?.getStream?.(channel);
+          if (stream) {
+            return this._finalizza(channel, compila(scegli(LIVE_ORA), {
+              ...variabili,
+              gioco: stream.game_name || 'qualcosa di bello',
+              titolo: stream.title || 'live di oggi',
+              spettatori: stream.viewer_count ?? 0,
+            }), streamer);
+          }
+        } catch { /* helix giù: si ripiega sull'offline */ }
+        const recente = memory.facts(channel).find((f) => f.key === 'gioco_recente')?.value;
+        return this._finalizza(channel,
+          recente ? compila(scegli(OFFLINE_GIOCO), { ...variabili, gioco: recente }) : scegli(OFFLINE),
+          streamer);
+      }
+
+      // da quanto siamo live / uptime
+      if (/uptime|da quanto/.test(lower)) {
+        try {
+          const stream = await this.helix?.getStream?.(channel);
+          if (stream?.started_at) {
+            const minuti = Math.max(0, Math.floor((Date.now() - new Date(stream.started_at).getTime()) / 60_000));
+            return this._finalizza(channel, compila(scegli(UPTIME_LIVE), {
+              ...variabili, ore: Math.floor(minuti / 60), minuti: minuti % 60,
+            }), streamer);
+          }
+          return this._finalizza(channel, scegli(OFFLINE), streamer);
+        } catch { return null; }
+      }
+
+      // clip su richiesta (serve la menzione: "clippalo bot!")
+      if (menziona && /\bclip/.test(lower)) {
+        let url = null;
+        try { url = await this.actions?.createClip?.(channel, 'richiesta in chat da ' + nome); }
+        catch (e) { log.error(`clip #${channel}:`, e?.message || e); }
+        return this._finalizza(channel,
+          url ? compila(scegli(CLIP_OK), { ...variabili, url }) : scegli(CLIP_NO),
+          streamer);
+      }
+
+      // social e link: prima si cerca nella knowledge, se non c'è si prosegue
+      const socialCitati = PAROLE_SOCIAL.filter((p) => lower.includes(p));
+      const chiedeLink = /dove ti trovo|dove ti seguo|(^|[^a-z])link([^a-z]|$)/.test(lower);
+      if (socialCitati.length || chiedeLink) {
+        const voci = knowledge.list(channel);
+        let voce = null;
+        if (socialCitati.length) {
+          voce = voci.find((k) => socialCitati.some((p) => k.domanda.toLowerCase().includes(p)));
+        }
+        if (!voce && chiedeLink) {
+          voce = voci.find((k) => {
+            const d = k.domanda.toLowerCase();
+            return PAROLE_SOCIAL.some((p) => d.includes(p)) || d.includes('link') || d.includes('trovo');
+          });
+        }
+        if (voce) return this._finalizza(channel, voce.risposta, streamer);
+      }
+
+      // ---- b. CONOSCENZA (scoring sulle parole normalizzate) ----------
+      const daConoscenza = this._cercaConoscenza(channel, text);
+      if (daConoscenza) {
+        const r = Math.random();
+        const prefisso = r < 0.6 ? '' : r < 0.85 ? nome + ' ' : 'Se parli di questo: ';
+        return this._finalizza(channel, prefisso + daConoscenza, streamer);
+      }
+
+      // ---- c. RINGRAZIAMENTI E COMPLIMENTI ----------------------------
+      if (/grazie|bravo|brava|bravissim|sei un grande|sei una grande|grande bot|fortissim|mitic|(^|[^a-z])top([^a-z]|$)|numero uno|il migliore|la migliore/.test(lower)) {
+        return this._finalizza(channel, compila(scegli(GRAZIE[tono]), variabili), streamer);
+      }
+
+      // ---- d. DOMANDA DIRETTA senza risposta trovata ------------------
+      if (menziona && text.includes('?')) {
+        if (Math.random() < 0.3) {
+          const frase = learn.generate(channel);
+          if (frase) return this._finalizza(channel, compila(scegli(IMPROVVISO), { ...variabili, frase }), streamer);
+        }
+        return this._finalizza(channel, compila(scegli(NON_LO_SO), variabili), streamer);
+      }
+
+      // menzione "a vuoto": a volte il bot si fa vivo, altrimenti tace
+      if (menziona) {
+        if (Math.random() < 0.5) return this._finalizza(channel, compila(scegli(ECCOMI[tono]), variabili), streamer);
+        return null;
+      }
+
+      // ---- e. SPONTANEA (nessuna menzione) ----------------------------
+      const emote = learn.emotiTop(channel, 5);
+      if (emote.length && Math.random() < 0.2) {
+        return this._finalizza(channel, scegli(emote), streamer);   // a volte basta una emote
+      }
+
+      const battuta = () => {
+        const pool = [...SPONTANEE[tono]];
+        for (const frase of (Array.isArray(settings.frasi) ? settings.frasi : [])) {
+          if (frase && typeof frase === 'string') pool.push(frase, frase);   // il doppio di probabilità
+        }
+        let testo = compila(scegli(pool), variabili);
+        if (emote.length && Math.random() < 0.35) testo += ' ' + scegli(emote);
+        return testo;
+      };
+
+      if (Math.random() < 0.5) return this._finalizza(channel, battuta(), streamer);
+      const generata = learn.generate(channel);
+      return this._finalizza(channel, generata || battuta(), streamer);
+    } catch (e) {
+      log.error(`chatReply #${channel}:`, e?.message || e);
+      return null;
+    }
+  }
+
+  // Cerca nella knowledge la voce che meglio combacia con il testo.
+  // Punteggio: parole in comune / parole della voce, con bonus per i
+  // match "pesanti" (parole lunghe, più distintive).
+  _cercaConoscenza(channel, testo) {
+    const paroleUtente = new Set(learn.normalizza(testo));
+    if (!paroleUtente.size) return null;
+
+    let migliore = null;
+    let migliorPunteggio = 0;
+    for (const voce of knowledge.list(channel)) {
+      const paroleVoce = new Set(learn.normalizza(voce.domanda));
+      if (!paroleVoce.size) continue;
+
+      let comuni = 0;
+      let bonus = 0;
+      for (const w of paroleVoce) {
+        if (!paroleUtente.has(w)) continue;
+        comuni++;
+        if (w.length >= 5) bonus += 0.05;   // le parole lunghe pesano di più
+      }
+      const minime = paroleVoce.size <= 2 ? 1 : 2;   // le voci corte si accontentano di 1 parola
+      if (comuni < minime) continue;
+
+      const punteggio = comuni / paroleVoce.size + Math.min(0.25, bonus);
+      if (punteggio > migliorPunteggio) { migliorPunteggio = punteggio; migliore = voce; }
+    }
+    return migliorPunteggio >= 0.5 ? migliore.risposta : null;
+  }
+
+  // Ultimo miglio di ogni risposta: moderazione, lunghezza, cooldown, log.
+  _finalizza(channel, risposta, streamer) {
+    if (!risposta) return null;
+    let testo = String(risposta).replace(/\s+/g, ' ').trim();
+    if (!testo) return null;
+    if (testo.length > MAX_RISPOSTA) testo = testo.slice(0, MAX_RISPOSTA - 1).trimEnd() + '…';
+
+    const esito = checkMessage(testo, streamer?.settings || {});
+    if (!esito.ok) {
+      log.warn(`#${channel} risposta bloccata dalla moderazione (${esito.reason})`);
+      return null;
+    }
+    this._ultimaRisposta.set(channel, Date.now());
+    log.info(`#${channel} → ${testo}`);
+    return testo;
+  }
+
+  // ------------------------------------------------------------ onEvent
+
+  // Eventi Twitch → annunci in chat (in prima persona: parla lo streamer).
+  onEvent(ev, say) {
+    try {
+      const { channel, type, data = {} } = ev || {};
+      if (!channel || !type || typeof say !== 'function') return;
+
+      const chiave = channel + '|' + type;
+      if (Date.now() - (this._ultimoEvento.get(chiave) || 0) < COOLDOWN_EVENTO) return;
+
+      let testo = null;
+      switch (type) {
+        case 'channel.follow': {
+          if (!data.user_name) return;
+          testo = compila(scegli(EV_FOLLOW), { nome: data.user_name });
+          break;
+        }
+        case 'channel.subscribe': {
+          const tier = data.tier === '2000' ? ' Tier 2' : data.tier === '3000' ? ' Tier 3' : '';
+          testo = compila(scegli(EV_SUB), { nome: data.user_name || 'qualcuno', tier });
+          break;
+        }
+        case 'channel.raid': {
+          testo = compila(scegli(EV_RAID), {
+            nome: data.from_broadcaster_user_name || 'un canale amico',
+            viewers: data.viewers ?? 'tante',
+          });
+          break;
+        }
+        case 'stream.online': {
+          testo = scegli(EV_ONLINE);
+          break;
+        }
+        case 'channel.channel_points_custom_reward_redemption.add': {
+          testo = compila(scegli(EV_RISCATTO), {
+            nome: data.user_name || 'qualcuno',
+            titolo: data.reward?.title || 'un premio',
+          });
+          break;
+        }
+        default:
+          return;   // evento che non commentiamo
+      }
+
+      this._ultimoEvento.set(chiave, Date.now());
+      log.info(`#${channel} evento ${type} → ${testo}`);
+      say(testo);
+    } catch (e) {
+      log.error('onEvent:', e?.message || e);
+    }
+  }
+
+  // ------------------------------------------------------------ reflect
+
+  // Consolidamento periodico, tutto procedurale: statistiche → fatti,
+  // una "lezione" quando c'è materiale fresco, pulizia dei messaggi vecchi.
+  async reflect(channel) {
+    try {
+      const adesso = Date.now();
+
+      // chi anima la chat
+      const top = learn.topChatters(channel, 7, 5);
+      if (top.length) {
+        memory.setFact(channel, 'top_chatter', top.map((t) => `${t.user} (${t.count})`).join(', '));
+        if (top[0].count > 50) {
+          memory.addUserMemory(channel, top[0].user, 'è tra i più attivi della chat ultimamente');
+        }
+      }
+
+      // le emote del momento
+      const emote = learn.emotiTop(channel, 5);
+      if (emote.length) memory.setFact(channel, 'emote_preferite', emote.join(' '));
+
+      // quanto si è mosso il canale nell'ultima settimana
+      const settimana = db.prepare('SELECT COUNT(*) c FROM messages WHERE channel=? AND from_bot=0 AND ts>=?')
+        .get(channel, adesso - 7 * 24 * 3_600_000).c;
+      memory.setFact(channel, 'attivita_settimana', `${settimana} messaggi negli ultimi 7 giorni`);
+
+      // una lezione nuova solo se c'è materiale fresco (≥50 messaggi in 6h)
+      const seiOre = db.prepare('SELECT COUNT(*) c FROM messages WHERE channel=? AND from_bot=0 AND ts>=?')
+        .get(channel, adesso - 6 * 3_600_000).c;
+      if (seiOre >= 50) {
+        // in che fascia oraria la chat è più viva (ultimi 7 giorni)
+        const fasce = { notte: 0, mattina: 0, pomeriggio: 0, sera: 0 };
+        const perOra = db.prepare(`SELECT CAST(strftime('%H', ts/1000, 'unixepoch', 'localtime') AS INTEGER) h, COUNT(*) c
+            FROM messages WHERE channel=? AND from_bot=0 AND ts>=? GROUP BY h`)
+          .all(channel, adesso - 7 * 24 * 3_600_000);
+        for (const r of perOra) {
+          if (r.h < 6) fasce.notte += r.c;
+          else if (r.h < 13) fasce.mattina += r.c;
+          else if (r.h < 19) fasce.pomeriggio += r.c;
+          else fasce.sera += r.c;
+        }
+        const fasciaViva = Object.entries(fasce).sort((a, b) => b[1] - a[1])[0][0];
+
+        const pezzi = [`La chat è più viva di ${fasciaViva}`];
+        if (emote.length) pezzi.push(`emote del momento: ${emote.slice(0, 3).join(' ')}`);
+        if (top.length) pezzi.push(`top chatter: ${top.slice(0, 3).map((t) => t.user).join(', ')}`);
+        pezzi.push(`${seiOre} messaggi nelle ultime 6 ore`);
+        memory.addLesson(channel, pezzi.join('; '));
+      }
+
+      // pulizia: i messaggi oltre i 14 giorni non servono più
+      const via = db.prepare('DELETE FROM messages WHERE channel=? AND ts<?')
+        .run(channel, adesso - 14 * 24 * 3_600_000).changes;
+      log.debug(`riflessione #${channel}: ${settimana} msg/settimana, ${via} messaggi vecchi eliminati`);
+    } catch (e) {
+      log.error(`reflect #${channel}:`, e?.message || e);
+    }
+  }
+}

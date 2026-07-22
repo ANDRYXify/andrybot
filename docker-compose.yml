@@ -1,0 +1,36 @@
+# ============================================================
+#  AndryBot — stack di produzione
+#  - bot:   Node 22 (dashboard + chat Twitch), solo rete interna
+#  - caddy: reverse proxy con HTTPS automatico (Let's Encrypt)
+#  Avvio:  docker compose up -d --build
+# ============================================================
+services:
+  bot:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      # Database e memoria del bot restano sul disco del server,
+      # quindi sopravvivono a riavvii e rebuild dell'immagine.
+      - ./data:/app/data
+    expose:
+      # Porta interna: la vede solo Caddy, NON è aperta su internet.
+      - "8090"
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"        # HTTP (redirect a HTTPS + sfida Let's Encrypt)
+      - "443:443"      # HTTPS
+      - "443:443/udp"  # HTTP/3 (QUIC)
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data       # qui Caddy conserva i certificati
+      - caddy_config:/config
+    depends_on:
+      - bot
+
+volumes:
+  caddy_data:
+  caddy_config:

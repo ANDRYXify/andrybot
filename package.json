@@ -1,0 +1,20 @@
+{
+  "name": "andrybot",
+  "version": "1.0.0",
+  "description": "AndryBot — bot Twitch procedurale e progressivo per andryxify.it",
+  "type": "module",
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.0.0",
+    "cookie-session": "^2.1.0",
+    "express": "^4.21.0",
+    "multer": "^2.2.0"
+  }
+}

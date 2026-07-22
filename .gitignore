@@ -1,0 +1,9 @@
+# segreti e dati locali: MAI su GitHub
+# data/ contiene anche gli effetti caricati (data/effects/<login>/) e i
+# file temporanei di upload (data/tmp/): roba locale, mai versionata.
+.env
+data/
+node_modules/
+*.log
+# chiavi SSH generate dagli script
+server/pc/chiavi/
