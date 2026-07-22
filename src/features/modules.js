@@ -68,11 +68,14 @@ export class ModulesEngine {
 
   // ============================================================ ingresso: CHAT
 
-  // Chiamato per ogni messaggio in chat. Non deve MAI auto-innescarsi sui
-  // messaggi del bot/streamer stesso.
+  // Chiamato per ogni messaggio in chat. NON saltiamo `isSelf`: il bot parla
+  // con l'account dello streamer, quindi i comandi/parole che scrive LUI stesso
+  // devono innescare i Moduli (spesso è lui a usarli/testarli). L'innesco "primo
+  // messaggio" non scatta comunque per lo streamer (non ha il tag first-msg), e
+  // gli echi del bot non tornano su IRC → nessun loop. Solo `from_bot` è escluso.
   async onMessage(msg, say) {
     try {
-      if (!msg || msg.isSelf || msg.from_bot) return;
+      if (!msg || msg.from_bot) return;
       const channel = norm(msg.channel);
       if (!channel) return;
       const testo = String(msg.text || '');
