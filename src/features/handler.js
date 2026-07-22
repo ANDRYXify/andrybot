@@ -8,7 +8,21 @@ import { checkMessage } from './moderation.js';
 const log = makeLog('handler');
 
 // Comandi integrati (elencati da !comandi)
-const BUILTIN = ['comandi', 'ciao', 'uptime', 'clip', 'so', 'addcmd', 'delcmd'];
+const BUILTIN = ['comandi', 'ciao', 'uptime', 'game', 'title', 'followage', 'clip', 'so',
+  'cita', 'ban', 'timeout', 'untimeout', 'addcmd', 'delcmd'];
+
+// "da quando segue": trasforma una data ISO in un testo umano (anni/mesi/giorni)
+function daQuando(iso) {
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return null;
+  const giorni = Math.max(0, Math.floor((Date.now() - t) / 86_400_000));
+  if (giorni < 1) return 'da oggi';
+  if (giorni < 31) return `da ${giorni} giorn${giorni === 1 ? 'o' : 'i'}`;
+  const mesi = Math.floor(giorni / 30);
+  if (mesi < 12) return `da ${mesi} mes${mesi === 1 ? 'e' : 'i'}`;
+  const anni = Math.floor(mesi / 12), restoMesi = mesi % 12;
+  return `da ${anni} ann${anni === 1 ? 'o' : 'i'}` + (restoMesi ? ` e ${restoMesi} mes${restoMesi === 1 ? 'e' : 'i'}` : '');
+}
 
 const COOLDOWN_MODERAZIONE = 30_000; // avviso moderazione: max uno ogni 30s per canale
 const COOLDOWN_CLIP = 60_000;        // !clip: max una ogni 60s per canale
@@ -54,6 +68,40 @@ export function createMessageHandler({ chat, helix, brain, clips, botLogin }) {
         return;
       }
 
+      // gioco/categoria corrente del canale
+      case 'game': case 'gioco': {
+        try {
+          const info = streamer.user_id ? await helix.getChannelInfo(streamer.user_id) : null;
+          const g = info?.game_name || (await helix.getStream(channel).catch(() => null))?.game_name;
+          chat.say(channel, g ? `Ora si gioca a: ${g} 🎮` : 'Nessun gioco impostato al momento.');
+        } catch { chat.say(channel, 'Non riesco a leggere il gioco adesso.'); }
+        return;
+      }
+
+      // titolo corrente del canale
+      case 'title': case 'titolo': {
+        try {
+          const info = streamer.user_id ? await helix.getChannelInfo(streamer.user_id) : null;
+          const t = info?.title || (await helix.getStream(channel).catch(() => null))?.title;
+          chat.say(channel, t ? `Titolo: ${t}` : 'Nessun titolo impostato al momento.');
+        } catch { chat.say(channel, 'Non riesco a leggere il titolo adesso.'); }
+        return;
+      }
+
+      // da quanto un utente segue il canale (default: chi scrive)
+      case 'followage': case 'follow': {
+        const targetF = (argomenti[0] || user).replace(/^@/, '').toLowerCase();
+        try {
+          const u = await helix.getUserByLogin(targetF);
+          if (!u?.id) { chat.say(channel, `Non trovo @${targetF} 🤔`); return; }
+          const iso = await helix.getFollowAge(channel, u.id);
+          if (!iso) { chat.say(channel, `@${u.display_name} non segue il canale (o non riesco a vederlo).`); return; }
+          const quanto = daQuando(iso);
+          chat.say(channel, `@${u.display_name} segue il canale ${quanto} 💜`);
+        } catch (e) { log.error(`!followage #${channel}:`, e?.message || e); }
+        return;
+      }
+
       // clip su richiesta (con cooldown per non spammare Twitch)
       case 'clip': {
         const ultimo = ultimaClipCmd.get(channel) || 0;
@@ -84,6 +132,28 @@ export function createMessageHandler({ chat, helix, brain, clips, botLogin }) {
         } catch (e) {
           log.error(`!so #${channel}:`, e?.message || e);
         }
+        return;
+      }
+
+      // moderazione manuale (solo mod/broadcaster): ban / timeout / untimeout
+      case 'ban': case 'timeout': case 'untimeout': case 'unban': {
+        if (!isMod && !isBroadcaster) return;
+        const bersaglio = (argomenti[0] || '').replace(/^@/, '').toLowerCase();
+        if (!bersaglio) { chat.say(channel, `Uso: !${nome} <utente>` + (nome === 'timeout' ? ' [secondi] [motivo]' : '')); return; }
+        try {
+          const u = await helix.getUserByLogin(bersaglio);
+          if (!u?.id) { chat.say(channel, `Non trovo @${bersaglio} 🤔`); return; }
+          if (nome === 'untimeout' || nome === 'unban') {
+            const r = await helix.unbanUser(channel, u.id);
+            chat.say(channel, r.ok ? `@${u.display_name} può tornare a scrivere ✅` : `Non riesco: ${r.motivo}`);
+            return;
+          }
+          const durata = nome === 'ban' ? 0 : (parseInt(argomenti[1], 10) || 600);   // ban=permanente, timeout=10min default
+          const motivo = argomenti.slice(nome === 'ban' ? 1 : 2).join(' ') || 'moderazione';
+          const r = await helix.timeoutUser(channel, u.id, durata, motivo);
+          if (r.ok) chat.say(channel, nome === 'ban' ? `@${u.display_name} bannato.` : `@${u.display_name} in timeout per ${durata >= 60 ? Math.round(durata / 60) + ' min' : durata + 's'}.`);
+          else chat.say(channel, `Non riesco: ${r.motivo}`);
+        } catch (e) { log.error(`!${nome} #${channel}:`, e?.message || e); }
         return;
       }
 
