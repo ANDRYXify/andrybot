@@ -18,7 +18,6 @@ import * as tiktok from './features/tiktok.js';
 import * as gamesbridge from './features/gamesbridge.js';
 import * as quotes from './features/quotes.js';
 import * as model from './ai/model.js';
-import * as llm from './ai/llm.js';
 import { createMessageHandler } from './features/handler.js';
 import { ClipEngine } from './features/clips.js';
 import { scheduleReflection } from './ai/reflection.js';
@@ -74,10 +73,10 @@ export class BotManager {
     });
     this.watcher.start();
     this._stopReflection = scheduleReflection({ brain: this.brain });
-    // IA locale (LLM che parla "con parole sue"): avvia il caricamento in
-    // BACKGROUND — la prima volta scarica il modello. Non blocca l'avvio del
-    // bot; finché non è pronto, il cervello resta sui suoi binari sicuri.
-    llm.avvia().catch(() => {});
+    // Il "cervello" che parla con parole sue vive in un PROCESSO SEPARATO
+    // (container 'brain', Python): si avvia da solo col compose. Il bot lo
+    // interroga via HTTP con timeout corto (vedi ai/brainpy.js), così i comandi
+    // restano sempre istantanei anche mentre il cervello pensa.
 
     this.running = true;
     await this.syncChannels();

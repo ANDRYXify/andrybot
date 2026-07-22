@@ -8,7 +8,7 @@ import { checkMessage } from '../features/moderation.js';
 import * as learn from './learn.js';
 import * as model from './model.js';
 import * as persona from './persona.js';
-import * as llm from './llm.js';
+import * as brainpy from './brainpy.js';
 
 const log = makeLog('brain');
 
@@ -301,6 +301,12 @@ export class Brain {
     // da sé stessa (fromBot) per evitare loop di rinforzo.
     try { model.observe(msg?.channel, msg?.text, { fromBot: !!msg?.isSelf }); }
     catch (e) { log.debug('model.observe:', e?.message || e); }
+    // Nutre la COSCIENZA in Python (impara persone/fatti dalla chat vera). Fire-
+    // and-forget: non attende, non blocca. Solo messaggi umani, non comandi.
+    if (msg && !msg.isSelf && msg.text && !String(msg.text).startsWith('!')) {
+      try { brainpy.osserva({ canale: msg.channel, login: msg.user, nome: msg.display || msg.user, testo: msg.text }); }
+      catch { /* niente */ }
+    }
   }
 
   // generazione "creativa": prima l'IA locale (n-grammi ordine 3, più naturale),
@@ -453,22 +459,18 @@ export class Brain {
         return this._finalizza(channel, prefisso + daConoscenza, streamer);
       }
 
-      // ---- c. IL MODELLO PARLA (contestuale, parole sue) --------------
-      // Cuore della conversazione: il modello locale risponde al messaggio,
-      // in prima persona, col contesto (conoscenza curata + ultimi messaggi).
-      // Vale per le menzioni ("se lo citano risponde a tema") e per le battute
-      // spontanee. Passa comunque da _finalizza (moderazione + anti-eco).
-      if (iaOn && llm.pronto()) {
+      // ---- c. IL CERVELLO PARLA (contestuale, parole sue) -------------
+      // La conversazione la genera il CERVELLO in Python (coscienza progressiva
+      // + modello linguistico), che vive in un PROCESSO SEPARATO: se è lento o
+      // spento ritorna null e il bot resta zitto. I COMANDI non passano mai di
+      // qui → restano sempre istantanei. Passa comunque da _finalizza (mod+anti-eco).
+      if (iaOn) {
         const conoscenza = knowledge.list(channel)
           .filter((k) => k.fonte !== 'chat')
           .slice(0, 6)
-          .map((k) => `${k.domanda} → ${k.risposta}`);
-        const storia = memory.recentMessages(channel, 8)
-          .filter((r) => !r.from_bot && r.text && !String(r.text).startsWith('!'))
-          .slice(-6)
-          .map((r) => `${r.user || 'utente'}: ${String(r.text).slice(0, 120)}`);
-        const risposta = await llm.rispondi({
-          canale: streamer.display || channel, tono, conoscenza, storia, testo: text,
+          .map((k) => `${k.domanda}: ${k.risposta}`);
+        const risposta = await brainpy.rispondi({
+          canale: streamer.display || channel, login: user, nome, testo: text, tono, conoscenza,
         });
         if (risposta) return this._finalizza(channel, risposta, streamer);
       }
