@@ -1,45 +1,106 @@
-# Esempi di modulo esterno (webhook)
+# Esempi per collegare SocialBot
 
-Questi sono **punti di partenza** per collegare una tua logica custom ad SocialBot, in
-**qualsiasi linguaggio** (qui Python e Node, ma vale uguale per Java, Go, PHP…): il tuo
-servizio parla solo **HTTP + JSON**.
+Raccolta di esempi **pronti** per unire una tua logica a SocialBot, in tanti linguaggi.
+Il tuo codice parla solo **HTTP + JSON**, quindi va bene qualunque linguaggio o servizio.
 
-Ci sono due versi, indipendenti:
+> **SocialBot** è il nome del prodotto. In chat il bot scrive con l'account (e il nome)
+> dello streamer: "SocialBot" si vede solo sul sito.
 
-## 1. SocialBot → il tuo codice (azione "Webhook")
+Ci sono **due versi**, indipendenti:
 
-Nel modulo, aggiungi un'azione **Chiama un webhook** con l'URL del tuo servizio e spunta
-"usa la risposta come messaggio in chat". Quando il modulo scatta, SocialBot manda una POST
-JSON al tuo URL con il contesto:
+---
+
+## Verso A — SocialBot chiama il TUO servizio (azione "Webhook")
+
+Nel modulo aggiungi un'azione **Chiama un webhook** con l'URL del tuo servizio e spunta
+"usa la risposta come messaggio in chat". Quando il modulo scatta, SocialBot manda una
+**POST** con questo corpo JSON:
 
 ```json
-{ "channel": "tuocanale", "user": "spettatore", "args": ["ciao"],
-  "argsRaw": "ciao", "evento": null }
+{
+  "channel": "canale",
+  "user": "spettatore",
+  "display": "Spettatore",
+  "args": ["ciao", "mondo"],
+  "argsRaw": "ciao mondo",
+  "evento": null,
+  "variabili": {}
+}
 ```
 
-Il tuo servizio risponde:
+Il tuo servizio risponde JSON:
 
 ```json
 { "reply": "testo da scrivere in chat" }
 ```
 
-e SocialBot lo pubblica. Esempi: [`webhook.py`](webhook.py), [`webhook.mjs`](webhook.mjs).
+Se non vuoi far dire niente, rispondi `{}` (o ometti `reply`).
 
-> Il servizio deve stare su un **URL pubblico https** (un tuo dominio/VPS/serverless).
-> Per sicurezza SocialBot **non** chiama indirizzi interni (`localhost`, IP privati).
+### 🟢 Il modo più facile: serverless (nessun server da gestire, gratis)
 
-## 2. Il tuo codice → SocialBot (chiave API in ingresso)
+| Dove | File | Note |
+|---|---|---|
+| **Google Apps Script** | [`serverless-google-apps-script.gs`](serverless-google-apps-script.gs) | Zero server, gratis. Incolla, "Distribuisci → App web", copia l'URL. |
+| **Vercel** | [`serverless-vercel.js`](serverless-vercel.js) | Metti il file in `api/` di un qualsiasi progetto Vercel (anche il tuo sito). |
+| **Cloudflare Workers** | [`serverless-cloudflare.js`](serverless-cloudflare.js) | Incolla in un Worker, pubblica. |
 
-Dalla dashboard, sezione **Moduli → Connettori**, copia la tua chiave e l'URL. Da qualunque
-servizio puoi far dire/fare cose al bot:
+### Oppure un mini-server tuo (self-hosted)
 
-```bash
-curl -X POST https://bot.andryxify.it/api/ext/tuocanale \
-  -H "Authorization: Bearer LA_TUA_CHIAVE" \
-  -H "Content-Type: application/json" \
-  -d '{"azione":"messaggio","testo":"Ciao dal mio servizio!"}'
+| Linguaggio | File | Come si avvia |
+|---|---|---|
+| Python | [`webhook-python.py`](webhook-python.py) | `python3 webhook-python.py` |
+| Node.js | [`webhook-node.mjs`](webhook-node.mjs) | `node webhook-node.mjs` |
+| PHP | [`webhook-php.php`](webhook-php.php) | `php -S 0.0.0.0:8099 webhook-php.php` |
+| Go | [`webhook-go.go`](webhook-go.go) | `go run webhook-go.go` |
+| Java | [`webhook-java.java`](webhook-java.java) | `java webhook-java.java` (JDK 11+) |
+| Ruby | [`webhook-ruby.rb`](webhook-ruby.rb) | `ruby webhook-ruby.rb` |
+| C# / .NET | [`webhook-csharp.cs`](webhook-csharp.cs) | vedi commento in cima al file |
+| Deno | [`webhook-deno.ts`](webhook-deno.ts) | `deno run --allow-net webhook-deno.ts` |
+| Bun | [`webhook-bun.ts`](webhook-bun.ts) | `bun webhook-bun.ts` |
+
+Tutti ascoltano sulla porta **8099** e vanno esposti su un **URL pubblico https**
+(un tuo dominio/VPS/serverless). Per sicurezza SocialBot **non** chiama indirizzi
+interni (`localhost`, IP privati).
+
+---
+
+## Verso B — il TUO servizio comanda SocialBot (API in ingresso)
+
+Dalla dashboard (scheda **Ascolto live** o **Moduli → Connettori**) copia la tua
+**chiave** e l'**URL**. Poi da qualsiasi servizio:
+
+```
+POST https://bot.andryxify.it/api/ext/<tuo-canale>
+Authorization: Bearer <LA_TUA_CHIAVE>
+Content-Type: application/json
 ```
 
-Azioni possibili: `{"azione":"messaggio","testo":"..."}`,
-`{"azione":"effetto","comando":"airhorn"}`,
-`{"azione":"modulo","modulo":"NomeModulo"}`.
+Corpo JSON, una tra queste azioni:
+
+| Azione | Corpo | Cosa fa |
+|---|---|---|
+| messaggio | `{"azione":"messaggio","testo":"..."}` | scrive in chat |
+| clip | `{"azione":"clip","motivo":"..."}` | crea una clip del momento |
+| effetto | `{"azione":"effetto","comando":"airhorn"}` | fa partire un effetto |
+| modulo | `{"azione":"modulo","modulo":"NomeModulo"}` | esegue un tuo modulo |
+
+Snippet pronti nella cartella [`ingresso/`](ingresso/):
+
+| Linguaggio | File |
+|---|---|
+| curl (terminale) | [`ingresso/ingresso-curl.sh`](ingresso/ingresso-curl.sh) |
+| Python | [`ingresso/ingresso-python.py`](ingresso/ingresso-python.py) |
+| Node.js | [`ingresso/ingresso-node.mjs`](ingresso/ingresso-node.mjs) |
+| PHP | [`ingresso/ingresso-php.php`](ingresso/ingresso-php.php) |
+| JavaScript (browser) | [`ingresso/ingresso-javascript-browser.html`](ingresso/ingresso-javascript-browser.html) |
+| Go | [`ingresso/ingresso-go.go`](ingresso/ingresso-go.go) |
+| Java | [`ingresso/ingresso-java.java`](ingresso/ingresso-java.java) |
+
+---
+
+## Sicurezza in due righe
+
+- Il **webhook** (verso A) deve stare su un **URL pubblico https**; SocialBot non
+  raggiunge `localhost` né IP privati (protezione anti-SSRF).
+- La **chiave** dell'API in ingresso (verso B) va tenuta **privata**: chi ce l'ha può
+  far scrivere il bot nel tuo canale. Se la perdi, rigenerala dalla dashboard.
