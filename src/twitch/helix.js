@@ -166,6 +166,33 @@ export class Helix {
     }
   }
 
+  // Da quanto un utente segue il canale → data ISO 'followed_at' o null.
+  // Richiede lo scope 'moderator:read:followers' sul token del broadcaster.
+  async getFollowAge(channelLogin, userId) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id || !userId) return null;
+    const token = await this.auth.getToken('broadcaster', channelLogin);
+    try {
+      const j = await this._request('GET', '/channels/followers', { query: { broadcaster_id: s.user_id, user_id: userId }, token });
+      return j?.data?.[0]?.followed_at || null;
+    } catch { return null; }
+  }
+
+  // Revoca un ban/timeout. Ritorna { ok } o { ok:false, motivo }.
+  async unbanUser(channelLogin, userId) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id || !userId) return { ok: false, motivo: 'dati mancanti' };
+    const token = await this.auth.getToken('broadcaster', channelLogin);
+    try {
+      await this._request('DELETE', '/moderation/bans', { query: { broadcaster_id: s.user_id, moderator_id: s.user_id, user_id: userId }, token });
+      return { ok: true };
+    } catch (e) {
+      if (e.status === 400 || e.status === 404) return { ok: true, nonEra: true };  // non era bannato: ok
+      if (e.status === 401) return { ok: false, motivo: 'permesso mancante' };
+      return { ok: false, motivo: 'errore Twitch' };
+    }
+  }
+
   // Timeout (o ban se durataSec = 0) di un utente. Ritorna { ok } o { ok:false }.
   async timeoutUser(channelLogin, userId, durataSec = 60, reason = '') {
     const s = streamers.get(channelLogin);
