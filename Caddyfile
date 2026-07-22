@@ -1,0 +1,15 @@
+# ============================================================
+#  AndryBot — configurazione Caddy
+#
+#  HTTPS AUTOMATICO: Caddy ottiene e rinnova DA SOLO il certificato
+#  Let's Encrypt per bot.andryxify.it. Basta che:
+#    1. il DNS di bot.andryxify.it punti a questo server;
+#    2. le porte 80 e 443 siano raggiungibili da internet.
+#  Nessun'altra configurazione necessaria: al primo accesso il
+#  certificato viene emesso in pochi secondi.
+# ============================================================
+bot.andryxify.it {
+	encode gzip
+	# "bot" è il nome del servizio nella rete di docker compose
+	reverse_proxy bot:8090
+}
