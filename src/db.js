@@ -203,6 +203,22 @@ CREATE TABLE IF NOT EXISTS passkeys (     -- passkey (WebAuthn) per rientrare se
   last_used INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_passkeys_login ON passkeys(login);
+
+CREATE TABLE IF NOT EXISTS managers (     -- moderatori che possono gestire la dashboard di uno streamer
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  channel TEXT NOT NULL,                   -- canale (streamer proprietario) minuscolo
+  login TEXT NOT NULL,                      -- login twitch del moderatore
+  display TEXT NOT NULL DEFAULT '',
+  role TEXT NOT NULL DEFAULT 'moderatore',  -- per ora un solo ruolo; predisposto per livelli futuri
+  status TEXT NOT NULL DEFAULT 'invitato',  -- 'invitato' (link non ancora accettato) | 'attivo'
+  invite_token TEXT NOT NULL DEFAULT '',    -- token dell'invito finché non accettato
+  invite_expires INTEGER NOT NULL DEFAULT 0,-- scadenza dell'invito (epoch ms)
+  invited_by TEXT NOT NULL DEFAULT '',
+  created_at INTEGER NOT NULL,
+  last_seen INTEGER NOT NULL DEFAULT 0
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_managers_channel_login ON managers(channel, login);
+CREATE INDEX IF NOT EXISTS idx_managers_login ON managers(login);
 `);
 
 const now = () => Date.now();
@@ -386,6 +402,56 @@ export const passkeys = {
   },
   remove(login, id) { db.prepare('DELETE FROM passkeys WHERE login=? AND id=?').run(String(login).toLowerCase(), id); },
   count(login) { return db.prepare('SELECT COUNT(*) c FROM passkeys WHERE login=?').get(String(login).toLowerCase()).c; },
+};
+
+// ---------------------------------------------------------------- moderatori (gestori delegati)
+// Un moderatore è una persona che lo streamer autorizza a gestire il suo bot
+// dalla dashboard. Si invita con un link (l'identità la conferma Twitch); ha
+// pieno accesso di gestione TRANNE le azioni da proprietario (permessi, lista
+// moderatori, disconnessione). Uno stesso moderatore può gestire più canali.
+export const managers = {
+  invita(channel, login, { display = '', invitedBy = '', token, expires, role = 'moderatore' }) {
+    const ch = String(channel).toLowerCase(), l = String(login).toLowerCase();
+    db.prepare(`INSERT INTO managers (channel, login, display, role, status, invite_token, invite_expires, invited_by, created_at)
+      VALUES (?,?,?,?,'invitato',?,?,?,?)
+      ON CONFLICT(channel, login) DO UPDATE SET
+        display=CASE WHEN excluded.display!='' THEN excluded.display ELSE managers.display END,
+        role=excluded.role, invite_token=excluded.invite_token, invite_expires=excluded.invite_expires,
+        invited_by=excluded.invited_by,
+        status=CASE WHEN managers.status='attivo' THEN 'attivo' ELSE 'invitato' END`)
+      .run(ch, l, display, role, token, expires, String(invitedBy).toLowerCase(), now());
+    return this.get(ch, l);
+  },
+  get(channel, login) {
+    return db.prepare('SELECT * FROM managers WHERE channel=? AND login=?')
+      .get(String(channel).toLowerCase(), String(login).toLowerCase()) || null;
+  },
+  byId(channel, id) {
+    return db.prepare('SELECT * FROM managers WHERE channel=? AND id=?').get(String(channel).toLowerCase(), id) || null;
+  },
+  listByChannel(channel) {
+    return db.prepare('SELECT * FROM managers WHERE channel=? ORDER BY status DESC, created_at').all(String(channel).toLowerCase());
+  },
+  // canali che questo login gestisce ATTIVAMENTE (per lo switcher / login mod)
+  attiviByLogin(login) {
+    return db.prepare("SELECT * FROM managers WHERE login=? AND status='attivo' ORDER BY last_seen DESC")
+      .all(String(login).toLowerCase());
+  },
+  byInvite(token) {
+    if (!token) return null;
+    return db.prepare('SELECT * FROM managers WHERE invite_token=?').get(String(token)) || null;
+  },
+  attiva(channel, login, display = '') {
+    db.prepare(`UPDATE managers SET status='attivo', invite_token='', invite_expires=0,
+      display=CASE WHEN ?!='' THEN ? ELSE display END, last_seen=? WHERE channel=? AND login=?`)
+      .run(display, display, now(), String(channel).toLowerCase(), String(login).toLowerCase());
+    return this.get(channel, login);
+  },
+  touch(channel, login) {
+    db.prepare('UPDATE managers SET last_seen=? WHERE channel=? AND login=?')
+      .run(now(), String(channel).toLowerCase(), String(login).toLowerCase());
+  },
+  remove(channel, id) { db.prepare('DELETE FROM managers WHERE channel=? AND id=?').run(String(channel).toLowerCase(), id); },
 };
 
 // ---------------------------------------------------------------- notifiche Telegram

@@ -142,6 +142,28 @@ function render() {
 
 function renderAreaUtente() {
   if (!stato.user) { areaUtente.innerHTML = ''; return; }
+
+  // Moderatore: mostra il suo nome + il canale che sta gestendo, con lo switcher
+  // se ne gestisce più d'uno (come il selettore canale di Nightbot).
+  if (stato.ruolo === 'moderatore') {
+    const canali = stato.mieiCanali || [];
+    const switcher = canali.length > 1
+      ? `<select class="chip-utente" id="switch-canale" title="Cambia canale gestito">
+           ${canali.map((c) => `<option value="${esc(c.canale)}" ${c.canale === stato.user.login ? 'selected' : ''}>gestisci @${esc(c.display)}</option>`).join('')}
+         </select>`
+      : `<span class="chip-utente">gestisci <strong>@${esc(stato.gestisce?.streamer || stato.user.login)}</strong></span>`;
+    areaUtente.innerHTML = `
+      <span class="chip-utente">${esc(stato.user.modDisplay || 'moderatore')} · <strong>mod</strong></span>
+      ${switcher}
+      <a class="btn secondario mini" href="/auth/logout">Esci</a>`;
+    document.getElementById('switch-canale')?.addEventListener('change', (ev) => conErrore(async () => {
+      await api('/api/mod/cambia-canale', { method: 'POST', body: { channel: ev.target.value } });
+      stato = await api('/api/me'); render();
+      toast('Ora gestisci @' + (stato.gestisce?.streamer || stato.user.login));
+    }));
+    return;
+  }
+
   areaUtente.innerHTML = `
     <span class="chip-utente">ciao, <strong>${esc(stato.user.display)}</strong></span>
     <a class="btn secondario mini" href="/auth/logout">Esci</a>`;
@@ -251,8 +273,19 @@ function pannelloStato() {
   const inChat = (stato.status?.channels || []).includes(login);
   const pre = stato.preaddestramento || {};
   const sImp = impostazioni();
+  const proprietario = stato.ruolo !== 'moderatore';
 
-  const cardPermessi = stato.permessiOk ? '' : `
+  // Banner per i moderatori: chiarisce cosa possono fare e cosa no.
+  const bannerMod = proprietario ? '' : `
+    <div class="carta evidenziata">
+      <h2>Stai gestendo il canale di @${esc(stato.gestisce?.streamer || login)} 🛠️</h2>
+      <p>Sei entrato come <strong class="primo-piano">moderatore</strong>: puoi occuparti di comandi, moduli,
+      effetti, giochi, notifiche, regole e memoria. Le cose da proprietario — permessi Twitch, elenco moderatori
+      e passkey — restano a chi possiede il canale.</p>
+    </div>`;
+
+  // La card "concedi permessi" la vede solo il proprietario (un mod non li tocca).
+  const cardPermessi = (!proprietario || stato.permessiOk) ? '' : `
     <div class="carta evidenziata">
       <h2>Attiva il bot: concedi i permessi 🔑</h2>
       <p>Per funzionare, SocialBot <strong class="primo-piano">leggerà e scriverà nella tua chat
@@ -261,7 +294,7 @@ function pannelloStato() {
     </div>`;
 
   return pannello('stato', `
-    ${cardPermessi}
+    ${bannerMod}${cardPermessi}
     <div class="carta">
       <h2>Il tuo bot</h2>
       <div class="riga-interruttore spazio-sopra">
@@ -276,6 +309,7 @@ function pannelloStato() {
         ${stato.permessiOk ? '<span class="badge viola">permessi ok</span>' : '<span class="badge rosso">permessi mancanti</span>'}
       </div>
 
+      ${proprietario ? `
       <p class="spazio-sopra"><strong class="primo-piano">Permessi:</strong>
         ${stato.permessiOk ? '<span class="badge verde">✓ chat</span>' : '<span class="badge rosso">✗ chat</span>'}
         ${stato.vipOk ? '<span class="badge verde">✓ VIP</span>' : '<span class="badge giallo">VIP da concedere</span>'}
@@ -286,7 +320,8 @@ function pannelloStato() {
       </p>
       <p class="suggerimento">La <strong class="primo-piano">chat</strong> serve per far parlare il bot,
       <strong class="primo-piano">VIP</strong> per assegnarli a voce/premi, <strong class="primo-piano">moderazione</strong>
-      per l'antispam. Concedendoli abiliti anche VIP e antispam in un colpo solo.</p>
+      per l'antispam. Concedendoli abiliti anche VIP e antispam in un colpo solo.</p>` : `
+      <p class="suggerimento spazio-sopra">Permessi del bot: ${stato.permessiOk ? '<span class="badge verde">✓ chat attiva</span>' : '<span class="badge rosso">chat non attiva</span>'} — li gestisce il proprietario del canale.</p>`}
 
       <p class="suggerimento spazio-sopra">Spegnerlo non cancella nulla: quando lo riaccendi riparte da dove era rimasto.</p>
 
@@ -316,6 +351,7 @@ function pannelloStato() {
         <span id="esito-pretrain" class="suggerimento"></span>
       </p>
     </div>
+    ${proprietario ? `
     <div class="carta">
       <h2>App installabile & Passkey 📱🔑</h2>
       <p>Installa la dashboard <strong class="primo-piano">come app</strong> sul telefono o sul PC, e crea una
@@ -329,7 +365,22 @@ function pannelloStato() {
       usa il bottone qui sopra o l’icona “installa” nella barra indirizzi.</p>
       <h3>Le tue passkey</h3>
       <ul class="lista-voci" id="lista-passkey"><li class="vuoto">Caricamento…</li></ul>
-    </div>`);
+    </div>
+    <div class="carta">
+      <h2>Moderatori 👥</h2>
+      <p>Fai aiutare qualcuno di cui ti fidi a gestire il bot. Gli mandi un <strong class="primo-piano">link
+      d'invito</strong>: accede con Twitch (così sappiamo che è davvero lui) e può occuparsi di tutto,
+      <strong class="primo-piano">tranne</strong> le cose da proprietario — permessi Twitch, questo elenco e le passkey.</p>
+      <label class="campo" for="inp-mod-login">Username Twitch del moderatore</label>
+      <div class="riga-flessibile">
+        <span class="suggerimento">@</span>
+        <input type="text" id="inp-mod-login" placeholder="nomeutente" autocomplete="off">
+        <button class="btn" id="btn-invita-mod">Crea invito</button>
+      </div>
+      <div id="invito-creato"></div>
+      <h3>I tuoi moderatori</h3>
+      <ul class="lista-voci" id="lista-moderatori"><li class="vuoto">Caricamento…</li></ul>
+    </div>` : ''}`);
 }
 
 // --- scheda Personalità -------------------------------------------------
@@ -949,6 +1000,17 @@ function attivaPiattaforma() {
     }
   });
 
+  // invito di un moderatore (crea il link da mandargli)
+  document.getElementById('btn-invita-mod')?.addEventListener('click', () => conErrore(async () => {
+    const login = (document.getElementById('inp-mod-login').value || '').trim().replace(/^@/, '');
+    if (!login) { toast('Scrivi l’username Twitch del moderatore.', 'errore'); return; }
+    const r = await api('/api/moderatori', { method: 'POST', body: { login } });
+    document.getElementById('inp-mod-login').value = '';
+    mostraInvito(r.invito);
+    toast('Invito creato: copia il link e mandaglielo 👍');
+    caricaModeratori();
+  }));
+
   // creazione di una passkey
   document.getElementById('btn-crea-passkey')?.addEventListener('click', (ev) => conErrore(async () => {
     const btn = ev.currentTarget; btn.disabled = true;
@@ -1344,7 +1406,7 @@ async function conErrore(fn) {
 
 // carica i dati "pigri" della scheda selezionata
 function caricaDatiScheda(id) {
-  if (id === 'stato') caricaPasskey();
+  if (id === 'stato') { caricaPasskey(); caricaModeratori(); }
   if (id === 'conoscenza') caricaConoscenza();
   if (id === 'clip') caricaClip();
   if (id === 'effetti') caricaEffetti();
@@ -2366,6 +2428,65 @@ async function creaPasskey() {
     clientDataJSON: bufToB64url(cred.response.clientDataJSON),
     nome,
   } });
+}
+
+// mostra il link d'invito appena creato, pronto da copiare e mandare
+function mostraInvito(invito) {
+  const box = document.getElementById('invito-creato');
+  if (!box || !invito) return;
+  box.innerHTML = `
+    <p class="suggerimento spazio-sopra">Manda questo link a <strong class="primo-piano">@${esc(invito.login)}</strong>
+      (vale fino al ${esc(dataIt(invito.scade))}); accederà con Twitch e potrà gestire il bot:</p>
+    <div class="riga-flessibile">
+      <input type="text" id="url-invito" readonly value="${esc(invito.url)}">
+      <button class="btn" id="btn-copia-invito">Copia</button>
+    </div>`;
+  document.getElementById('btn-copia-invito')?.addEventListener('click', () => copiaTesto(invito.url, 'Link d’invito copiato 📋'));
+}
+
+async function caricaModeratori() {
+  const ul = document.getElementById('lista-moderatori');
+  if (!ul) return;                       // per i moderatori la card non esiste: si salta
+  try {
+    const lista = await api('/api/moderatori');
+    if (!lista.length) { ul.innerHTML = '<li class="vuoto">Ancora nessun moderatore. Invitane uno qui sopra 👥</li>'; return; }
+    const links = {};
+    ul.innerHTML = lista.map((m) => {
+      if (m.invito) links[m.id] = m.invito.url;
+      const stato = m.status === 'attivo'
+        ? '<span class="badge verde">attivo</span>'
+        : '<span class="badge giallo">invito in attesa</span>';
+      const meta = m.status === 'attivo'
+        ? (m.last_seen ? 'ultimo accesso ' + esc(dataIt(m.last_seen)) : 'mai entrato')
+        : (m.invito ? 'invito valido fino al ' + esc(dataIt(m.invito.scade)) : 'invito scaduto');
+      const azioni = m.status === 'attivo'
+        ? `<button class="btn secondario mini" data-mod-rimuovi="${m.id}">Rimuovi</button>`
+        : `<button class="btn secondario mini" data-mod-link="${m.id}">Copia link</button>
+           <button class="btn secondario mini" data-mod-reinvita="${m.id}">Rigenera</button>
+           <button class="btn secondario mini" data-mod-rimuovi="${m.id}">Annulla</button>`;
+      return `<li>
+        <div class="testo-voce">
+          <span class="domanda">👤 ${esc(m.display || m.login)} ${stato}</span>
+          <span class="meta">@${esc(m.login)} · ${meta}</span>
+        </div>
+        <div class="azioni-voce">${azioni}</div>
+      </li>`;
+    }).join('');
+    ul.onclick = (ev) => {
+      const b = ev.target.closest('[data-mod-rimuovi],[data-mod-reinvita],[data-mod-link]');
+      if (!b) return;
+      if (b.dataset.modLink) { if (links[b.dataset.modLink]) copiaTesto(links[b.dataset.modLink], 'Link d’invito copiato 📋'); return; }
+      if (b.dataset.modReinvita) return conErrore(async () => {
+        const r = await api('/api/moderatori/' + b.dataset.modReinvita + '/reinvita', { method: 'POST', body: {} });
+        mostraInvito(r.invito); toast('Nuovo link generato.'); caricaModeratori();
+      });
+      if (b.dataset.modRimuovi) return conErrore(async () => {
+        if (!confirm('Rimuovere questo moderatore / annullare l’invito?')) return;
+        await api('/api/moderatori/' + b.dataset.modRimuovi, { method: 'DELETE' });
+        toast('Fatto.'); caricaModeratori();
+      });
+    };
+  } catch (e) { ul.innerHTML = `<li class="vuoto">Errore: ${esc(e.message)}</li>`; }
 }
 
 async function caricaPasskey() {

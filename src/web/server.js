@@ -14,7 +14,7 @@ import { dirname, join } from 'node:path';
 import { config, SCOPES, missingConfig } from '../config.js';
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb, friends } from '../db.js';
-import { points, vips, tgConf, passkeys } from '../db.js';
+import { points, vips, tgConf, passkeys, managers } from '../db.js';
 import * as webauthn from './webauthn.js';
 import { comprimi } from '../features/compress.js';
 import { seedStreamer } from '../features/seed.js';
@@ -58,7 +58,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
 
   // utente loggato in sessione (o null)
   const currentUser = (req) => req.session?.user || null;
-  const isAdmin = (user) => !!user && config.adminLogins.includes(user.login);
+  // admin = il founder che agisce come sé stesso. Un MODERATORE delegato non è
+  // mai admin, nemmeno se gestisce il canale del founder (user.login = canale).
+  const isAdmin = (user) => !!user && user.role !== 'moderatore' && config.adminLogins.includes(user.login);
 
   // risposta "il sito non esiste": nessun indizio, nessun brand, nessun corpo utile
   const notFound = (res) => res.status(404).type('text/plain').send('Not Found');
@@ -76,7 +78,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // Pubblici anche: i file "guscio" della PWA (manifest, service worker, icone)
   // e il flusso di login con passkey (per rientrare senza passare dal sito).
   // Non rivelano nulla di sensibile: la dashboard vera resta dietro la sessione.
-  const PUBBLICI = new Set(['/health', '/entra', '/sblocca', '/sblocca.html', '/privacy', '/privacy.html', '/manifest.webmanifest', '/sw.js']);
+  const PUBBLICI = new Set(['/health', '/entra', '/sblocca', '/sblocca.html', '/privacy', '/privacy.html',
+    '/mod', '/mod.html', '/auth/mod', '/auth/callback', '/manifest.webmanifest', '/sw.js']);
   app.use((req, res, next) => {
     if (currentUser(req) || PUBBLICI.has(req.path)
         || req.path.startsWith('/overlay/') || req.path.startsWith('/api/ext/')
@@ -90,6 +93,14 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
 
   function requireLogin(req, res, next) {
     if (!currentUser(req)) return res.status(401).json({ errore: 'non autenticato' });
+    next();
+  }
+  // è il PROPRIETARIO del canale (non un moderatore delegato)? Serve per le
+  // azioni riservate: permessi Twitch, lista moderatori, disconnessione.
+  const isOwner = (req) => { const u = currentUser(req); return !!u && u.role !== 'moderatore'; };
+  function requireOwner(req, res, next) {
+    if (!currentUser(req)) return res.status(401).json({ errore: 'non autenticato' });
+    if (!isOwner(req)) return res.status(403).json({ errore: 'solo il proprietario del canale può farlo' });
     next();
   }
   function requireAdmin(req, res, next) {
@@ -240,7 +251,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // andryxify.it è la fonte di verità sull'abilitazione: lo registriamo
     // localmente come approvato (rispettando un eventuale on/off preesistente).
     streamers.upsertApproved(who.login, who.display, who.userId);
-    req.session.user = { login: who.login, display: who.display };
+    req.session.user = { login: who.login, display: who.display, role: 'proprietario' };
     // kit di partenza: al primo ingresso è già tutto pronto (idempotente)
     seedStreamer(who.login);
 
@@ -272,47 +283,137 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // Informativa privacy & sicurezza (pubblica: dev'essere sempre consultabile)
   app.get('/privacy', (req, res) => res.sendFile(join(publicDir, 'privacy.html')));
 
-  // ------------------------------------------------------------ OAuth permessi
-  // (raggiungibile solo DOPO essere entrati: il cancello 404-a chi non ha sessione)
+  // ------------------------------------------------------------ MODERATORI (gestori delegati)
+  // Lo streamer invita un moderatore con un link; il moderatore accetta facendo
+  // login con Twitch (l'identità la conferma Twitch, non c'è codice da copiare).
+  const MOD_INVITE_TTL = 72 * 60 * 60 * 1000;                 // l'invito scade in 72 ore
+  const MOD_INVITE_URL = (token) => `${config.baseUrl.replace(/\/$/, '')}/mod?invito=${token}`;
 
-  // Concessione permessi: lo streamer autorizza gli scope broadcaster
-  // (chat:read/chat:edit inclusi — il bot scriverà con il SUO account).
-  app.get('/auth/permessi', requireLogin, (req, res) => {
+  // Pagina pubblica dell'invito: "accedi con Twitch per gestire il canale".
+  app.get('/mod', (req, res) => {
+    if (currentUser(req)) return res.redirect('/');
+    res.sendFile(join(publicDir, 'mod.html'));
+  });
+
+  // Avvio del login moderatore: OAuth Twitch di sola IDENTITÀ (nessuno scope).
+  app.get('/auth/mod', (req, res) => {
+    const state = crypto.randomUUID();
+    const invito = String(req.query.invito || '').trim() || null;
+    req.session.modFlow = { state, invito };
+    res.redirect(auth.authUrl([], state));
+  });
+
+  // ------------------------------------------------------------ OAuth callback
+  // Gestisce DUE flussi: (a) il proprietario che concede i permessi broadcaster,
+  // (b) il moderatore che fa login per gestire un canale. Pubblico: il cancello
+  // lo lascia passare (il moderatore non ha ancora una sessione).
+  app.get('/auth/callback', wrap(async (req, res) => {
+    if (req.query.error) return res.redirect('/?errore=' + encodeURIComponent(String(req.query.error)));
+
+    // ── (b) FLUSSO MODERATORE ──────────────────────────────────────
+    if (req.session?.modFlow) {
+      const mf = req.session.modFlow; delete req.session.modFlow;
+      if (!mf.state || req.query.state !== mf.state) return res.redirect('/mod?errore=state');
+      let v = null;
+      try { const t = await auth.exchangeCode(String(req.query.code || '')); v = await auth.validate(t.accessToken); }
+      catch { /* sotto */ }
+      if (!v?.login) return res.redirect('/mod?errore=validazione');
+      const modLogin = String(v.login).toLowerCase();
+
+      let canale = null;
+      if (mf.invito) {
+        const inv = managers.byInvite(mf.invito);
+        if (!inv) return res.redirect('/mod?errore=invito');
+        if (inv.invite_expires && Date.now() > inv.invite_expires) return res.redirect('/mod?errore=scaduto');
+        if (inv.login !== modLogin) return res.redirect('/mod?errore=account-diverso');
+        managers.attiva(inv.channel, modLogin, v.display || modLogin);
+        canale = inv.channel;
+      } else {
+        const attivi = managers.attiviByLogin(modLogin);
+        if (!attivi.length) return res.redirect('/mod?errore=nonmod');
+        canale = attivi[0].channel;                            // il più recente; poi lo switcher
+      }
+      const st = streamers.get(canale);
+      managers.touch(canale, modLogin);
+      req.session.user = { login: canale, display: st?.display || canale, role: 'moderatore', modLogin, modDisplay: v.display || modLogin };
+      log.info(`login moderatore: @${modLogin} → gestisce #${canale}`);
+      return res.redirect('/');
+    }
+
+    // ── (a) FLUSSO PROPRIETARIO (concessione permessi) ─────────────
+    const u = req.session?.user;
+    if (!u) return notFound(res);                              // nessun flusso valido
+    const state = req.session?.oauthState; delete req.session.oauthState;
+    if (!state || req.query.state !== state) return res.redirect('/?errore=state');
+    const t = await auth.exchangeCode(String(req.query.code || ''));
+    const v = await auth.validate(t.accessToken);
+    if (!v) return res.redirect('/?errore=validazione');
+    if (v.login !== u.login) return res.redirect('/?errore=account-diverso');
+    tokens.save('broadcaster', v.login, {
+      userId: v.userId, accessToken: t.accessToken, refreshToken: t.refreshToken, scopes: t.scopes, expiresAt: t.expiresAt,
+    });
+    avviaPretrain(v.login);
+    sync();
+    res.redirect('/');
+  }));
+
+  // Concessione permessi: SOLO il proprietario (un moderatore non tocca i permessi).
+  app.get('/auth/permessi', requireOwner, (req, res) => {
     const state = crypto.randomUUID();
     req.session.oauthState = state;
     res.redirect(auth.authUrl(SCOPES.broadcaster, state));
   });
 
-  app.get('/auth/callback', requireLogin, wrap(async (req, res) => {
-    // l'utente ha negato l'autorizzazione (o Twitch ha segnalato un errore)
-    if (req.query.error) {
-      return res.redirect('/?errore=' + encodeURIComponent(String(req.query.error)));
-    }
-    // anti-CSRF: lo state deve combaciare con quello messo in sessione
-    const state = req.session?.oauthState;
-    delete req.session.oauthState;
-    if (!state || req.query.state !== state) {
-      return res.redirect('/?errore=state');
-    }
+  // Elenco/invito/rimozione dei moderatori del proprio canale (solo proprietario).
+  app.get('/api/moderatori', requireOwner, wrap(async (req, res) => {
+    const ch = currentUser(req).login;
+    res.json(managers.listByChannel(ch).map((m) => ({
+      id: m.id, login: m.login, display: m.display || m.login, status: m.status,
+      last_seen: m.last_seen, created_at: m.created_at,
+      invito: m.status === 'invitato' ? { url: MOD_INVITE_URL(m.invite_token), scade: m.invite_expires } : null,
+    })));
+  }));
 
-    const t = await auth.exchangeCode(String(req.query.code || ''));
-    const v = await auth.validate(t.accessToken);
-    if (!v) return res.redirect('/?errore=validazione');
-
-    // i permessi devono arrivare dallo STESSO account entrato col pass
-    if (v.login !== req.session.user?.login) {
-      return res.redirect('/?errore=account-diverso');
+  app.post('/api/moderatori', requireOwner, wrap(async (req, res) => {
+    const ch = currentUser(req).login;
+    const login = String(req.body?.login || '').toLowerCase().trim().replace(/^@/, '');
+    if (!/^[a-z0-9_]{3,25}$/.test(login)) return res.status(400).json({ errore: 'username Twitch non valido' });
+    if (login === ch) return res.status(400).json({ errore: 'sei già il proprietario del canale' });
+    if (!managers.get(ch, login) && managers.listByChannel(ch).length >= 20) {
+      return res.status(400).json({ errore: 'hai già raggiunto il massimo di moderatori' });
     }
-    tokens.save('broadcaster', v.login, {
-      userId: v.userId,
-      accessToken: t.accessToken,
-      refreshToken: t.refreshToken,
-      scopes: t.scopes,
-      expiresAt: t.expiresAt,
-    });
-    avviaPretrain(v.login);
-    sync();
-    res.redirect('/');
+    const token = crypto.randomBytes(32).toString('base64url');
+    const scade = Date.now() + MOD_INVITE_TTL;
+    managers.invita(ch, login, { invitedBy: ch, token, expires: scade });
+    res.json({ ok: true, invito: { url: MOD_INVITE_URL(token), login, scade } });
+  }));
+
+  app.post('/api/moderatori/:id/reinvita', requireOwner, wrap(async (req, res) => {
+    const ch = currentUser(req).login;
+    const m = managers.byId(ch, parseInt(req.params.id, 10) || 0);
+    if (!m) return res.status(404).json({ errore: 'moderatore sconosciuto' });
+    const token = crypto.randomBytes(32).toString('base64url');
+    const scade = Date.now() + MOD_INVITE_TTL;
+    managers.invita(ch, m.login, { invitedBy: ch, token, expires: scade });
+    res.json({ ok: true, invito: { url: MOD_INVITE_URL(token), login: m.login, scade } });
+  }));
+
+  app.delete('/api/moderatori/:id', requireOwner, wrap(async (req, res) => {
+    managers.remove(currentUser(req).login, parseInt(req.params.id, 10) || 0);
+    res.json({ ok: true });
+  }));
+
+  // Cambio canale gestito (switcher del moderatore).
+  app.post('/api/mod/cambia-canale', requireLogin, wrap(async (req, res) => {
+    const u = currentUser(req);
+    if (u.role !== 'moderatore') return res.status(403).json({ errore: 'non applicabile' });
+    const ch = String(req.body?.channel || '').toLowerCase().trim();
+    const m = managers.get(ch, u.modLogin);
+    if (!m || m.status !== 'attivo') return res.status(403).json({ errore: 'non gestisci questo canale' });
+    const st = streamers.get(ch);
+    managers.touch(ch, u.modLogin);
+    req.session.user = { ...u, login: ch, display: st?.display || ch };
+    res.json({ ok: true });
   }));
 
   app.get('/auth/logout', (req, res) => {
@@ -327,9 +428,16 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // stato complessivo per la single-page
   app.get('/api/me', wrap(async (req, res) => {
     const user = currentUser(req);
+    const isMod = user?.role === 'moderatore';
     res.json({
       user,
       isAdmin: isAdmin(user),
+      ruolo: user?.role || null,
+      // per il moderatore: chi sta gestendo + gli altri canali che gestisce (switcher)
+      gestisce: isMod ? { canale: user.login, streamer: user.display || user.login } : null,
+      mieiCanali: isMod
+        ? managers.attiviByLogin(user.modLogin).map((m) => ({ canale: m.channel, display: streamers.get(m.channel)?.display || m.channel }))
+        : [],
       missing: missingConfig(),
       status: manager.status(),
       streamer: user ? streamerSicuro(user.login) : null,
@@ -861,7 +969,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // Si CREA solo da loggati (già entrati col pass); permette poi di RIENTRARE
   // senza pass. Login (inizio/fine) è pubblico: è proprio come si rientra.
 
-  app.post('/api/passkey/registra/inizio', requireLogin, wrap(async (req, res) => {
+  app.post('/api/passkey/registra/inizio', requireOwner, wrap(async (req, res) => {
     const user = currentUser(req);
     const challenge = webauthn.randomChallenge();
     req.session.pkReg = challenge;
@@ -877,7 +985,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     });
   }));
 
-  app.post('/api/passkey/registra/fine', requireLogin, wrap(async (req, res) => {
+  app.post('/api/passkey/registra/fine', requireOwner, wrap(async (req, res) => {
     const user = currentUser(req);
     const challenge = req.session.pkReg; delete req.session.pkReg;
     if (!challenge) return res.status(400).json({ errore: 'sessione scaduta, riprova' });
@@ -889,11 +997,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.json({ ok: true });
   }));
 
-  app.get('/api/passkey', requireLogin, wrap(async (req, res) => {
+  app.get('/api/passkey', requireOwner, wrap(async (req, res) => {
     res.json(passkeys.byLogin(currentUser(req).login).map((p) => ({ id: p.id, nome: p.nome, created_at: p.created_at, last_used: p.last_used })));
   }));
 
-  app.delete('/api/passkey/:id', requireLogin, wrap(async (req, res) => {
+  app.delete('/api/passkey/:id', requireOwner, wrap(async (req, res) => {
     passkeys.remove(currentUser(req).login, parseInt(req.params.id, 10) || 0);
     res.json({ ok: true });
   }));
@@ -919,7 +1027,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const s = streamers.get(cred.login);
     if (!s) return res.status(403).json({ errore: 'account non più abilitato' });
     passkeys.bumpCounter(id, v.newSignCount);
-    req.session.user = { login: cred.login, display: s.display || cred.login };
+    req.session.user = { login: cred.login, display: s.display || cred.login, role: 'proprietario' };
     log.info(`login con passkey: @${cred.login}`);
     res.json({ ok: true });
   }));
