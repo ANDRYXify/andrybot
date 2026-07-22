@@ -13,9 +13,10 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { config, SCOPES, missingConfig } from '../config.js';
 import { makeLog } from '../logger.js';
-import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb } from '../db.js';
+import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb, friends } from '../db.js';
 import { comprimi } from '../features/compress.js';
 import { pretrain } from '../ai/pretrain.js';
+import * as persona from '../ai/persona.js';
 import { redeemPass } from './gate.js';
 
 const log = makeLog('web');
@@ -342,6 +343,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
         .filter(Boolean)
         .slice(0, 100);
     }
+    // anima: adatta la personalità al canale (autonomo) + proattività
+    if (b.adattaCanale !== undefined) out.adattaCanale = !!b.adattaCanale;
+    if (b.proattivo !== undefined) out.proattivo = !!b.proattivo;
 
     streamers.setSettings(user.login, out);
     res.json({ ok: true });
@@ -702,6 +706,37 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     tokens.delete('broadcaster', login);
     sync();
     res.json({ ok: true });
+  }));
+
+  // ------------------------------------------------------------ Anima (operatore)
+  // La personalità CONDIVISA di SocialBot: una sola, coerente su tutti i canali.
+  // La modifica solo l'operatore (andryxify). Le persone restano a compartimenti
+  // stagni: qui si vede solo QUANTI amici e i più affini, mai cosa/dove.
+
+  app.get('/api/admin/anima', requireAdmin, wrap(async (req, res) => {
+    res.json({
+      profilo: persona.profilo(),
+      amici: { totale: friends.count(), top: friends.top(8).map((f) => ({ user: f.user, affinita: Math.round(f.affinity), interazioni: f.interactions })) },
+    });
+  }));
+
+  app.post('/api/admin/anima', requireAdmin, wrap(async (req, res) => {
+    const b = req.body || {};
+    const patch = {};
+    if (b.nome !== undefined) patch.nome = String(b.nome).trim().slice(0, 40) || 'SocialBot';
+    if (b.tono !== undefined) {
+      if (!TONI_VALIDI.includes(b.tono)) return res.status(400).json({ errore: 'tono non valido' });
+      patch.tono = b.tono;
+    }
+    if (b.umore !== undefined) patch.umore = Math.min(100, Math.max(0, Math.round(Number(b.umore)) || 0));
+    if (b.energia !== undefined) patch.energia = Math.min(100, Math.max(0, Math.round(Number(b.energia)) || 0));
+    const lista = (v, max, len) => Array.isArray(v)
+      ? v.map((x) => String(x).trim().slice(0, len)).filter(Boolean).slice(0, max) : undefined;
+    if (b.tratti !== undefined) patch.tratti = lista(b.tratti, 12, 40) || [];
+    if (b.valori !== undefined) patch.valori = lista(b.valori, 12, 60) || [];
+    if (b.tormentoni !== undefined) patch.tormentoni = lista(b.tormentoni, 20, 40) || [];
+    const profilo = persona.salvaProfilo(patch);
+    res.json({ ok: true, profilo });
   }));
 
   // ------------------------------------------------------------ avvio

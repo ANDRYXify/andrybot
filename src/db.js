@@ -136,9 +136,62 @@ CREATE TABLE IF NOT EXISTS counters (      -- contatori dei moduli (es. "morti")
   valore INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (channel, nome)
 );
+
+CREATE TABLE IF NOT EXISTS friends (       -- AMICIZIA GLOBALE con le persone.
+  -- COMPARTIMENTI STAGNI: qui NON si salva MAI cosa ha scritto un utente né
+  -- in quale canale l'abbiamo visto — solo un'affinità che cresce interagendo.
+  user TEXT PRIMARY KEY,                    -- login twitch minuscolo
+  affinity REAL NOT NULL DEFAULT 0,         -- 0..100 (quanto è "amico")
+  interactions INTEGER NOT NULL DEFAULT 0,
+  first_seen INTEGER NOT NULL,
+  last_seen INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS anima (         -- l'anima CONDIVISA di SocialBot (una riga)
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  data TEXT NOT NULL DEFAULT '{}',          -- JSON: nome, tratti, valori, tono, umore, energia, tormentoni
+  ts INTEGER NOT NULL
+);
 `);
 
 const now = () => Date.now();
+
+// ---------------------------------------------------------------- amicizia (globale)
+// L'unica cosa condivisa tra i canali sulle persone: un'affinità che cresce
+// con le interazioni. MAI contenuti, MAI in quale canale (compartimenti stagni).
+export const friends = {
+  touch(user, peso = 0.3) {
+    const u = String(user || '').toLowerCase();
+    if (!u) return;
+    const t = now();
+    db.prepare(`INSERT INTO friends (user, affinity, interactions, first_seen, last_seen)
+      VALUES (?, ?, 1, ?, ?)
+      ON CONFLICT(user) DO UPDATE SET
+        affinity = MIN(100, friends.affinity + ?),
+        interactions = friends.interactions + 1,
+        last_seen = ?`).run(u, peso, t, t, peso, t);
+  },
+  get(user) {
+    const u = String(user || '').toLowerCase();
+    const r = db.prepare('SELECT * FROM friends WHERE user=?').get(u);
+    return r || { user: u, affinity: 0, interactions: 0, first_seen: 0, last_seen: 0 };
+  },
+  top(n = 10) { return db.prepare('SELECT * FROM friends ORDER BY affinity DESC LIMIT ?').all(n); },
+  count() { return db.prepare('SELECT COUNT(*) c FROM friends').get().c; },
+};
+
+// ---------------------------------------------------------------- anima (condivisa)
+export const anima = {
+  get() {
+    const r = db.prepare('SELECT data FROM anima WHERE id=1').get();
+    return r ? safeJson(r.data) : {};
+  },
+  set(obj) {
+    db.prepare(`INSERT INTO anima (id, data, ts) VALUES (1, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET data=excluded.data, ts=excluded.ts`)
+      .run(JSON.stringify(obj || {}), now());
+  },
+};
 
 // ---------------------------------------------------------------- token
 export const tokens = {
