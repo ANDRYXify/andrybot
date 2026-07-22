@@ -1996,7 +1996,7 @@ function disegnaCampiQuando(t) {
           <input type="text" id="mod-comando" class="campo-largo" placeholder="ciao" value="${esc(t.comando || '')}">
         </div>
         <label class="campo" for="mod-alias">Alias (facoltativi, separati da spazio)</label>
-        <input type="text" id="mod-alias" placeholder="salve buongiorno" value="${esc((t.alias || []).join(' '))}">`;
+        <input type="text" id="mod-alias" placeholder="salve buongiorno" value="${esc(Array.isArray(t.alias) ? t.alias.join(' ') : (t.alias || ''))}">`;
     case 'parola':
       return `
         <label class="campo" for="mod-testo-trigger">Parola o frase</label>
