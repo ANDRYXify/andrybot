@@ -464,14 +464,9 @@ export class Brain {
         return this._finalizza(channel, prefisso + daConoscenza, streamer);
       }
 
-      // ---- b2. RISPOSTA "LIBERA" pertinente (IA locale) ---------------
-      // Il messaggio sembra qualcosa a cui reagire (domanda/intento) ma non
-      // c'è una voce di conoscenza: l'IA prova a rispondere nello stile della
-      // chat, in modo pertinente. Solo se convince davvero (soglia alta).
-      if (iaOn && (menziona || sembraRispondibile(text))) {
-        const libera = model.componiRisposta(channel, text, { minScore: menziona ? 0.55 : 0.62 });
-        if (libera) return this._finalizza(channel, libera, streamer);
-      }
+      // NB: rimosso il percorso "risposta libera" generata dall'IA. Ripescava
+      // frasi vere degli utenti / le rigenerava con gli n-grammi, e finiva per
+      // RIPETERE i messaggi delle persone: sgradevole. Meglio niente che un'eco.
 
       // ---- c. RINGRAZIAMENTI E COMPLIMENTI ----------------------------
       if (/grazie|bravo|brava|bravissim|sei un grande|sei una grande|grande bot|fortissim|mitic|(^|[^a-z])top([^a-z]|$)|numero uno|il migliore|la migliore/.test(lower)) {
@@ -479,11 +474,9 @@ export class Brain {
       }
 
       // ---- d. DOMANDA DIRETTA senza risposta trovata ------------------
+      // Onestà, non improvvisazione: niente frasi "a intuito" generate dagli
+      // n-grammi (spesso sbagliate o copiate). Se non lo so, lo dico.
       if (menziona && text.includes('?')) {
-        if (Math.random() < 0.3) {
-          const frase = this._genera(channel);
-          if (frase) return this._finalizza(channel, compila(scegli(IMPROVVISO), { ...variabili, frase }), streamer);
-        }
         return this._finalizza(channel, compila(scegli(NON_LO_SO), variabili), streamer);
       }
 
@@ -509,9 +502,8 @@ export class Brain {
         return testo;
       };
 
-      if (Math.random() < 0.5) return this._finalizza(channel, battuta(), streamer);
-      const generata = this._genera(channel);
-      return this._finalizza(channel, generata || battuta(), streamer);
+      // Solo battute da TEMPLATE (curate), mai frasi generate/copiate dalla chat.
+      return this._finalizza(channel, battuta(), streamer);
     } catch (e) {
       log.error(`chatReply #${channel}:`, e?.message || e);
       return null;
@@ -528,6 +520,9 @@ export class Brain {
     let migliore = null;
     let migliorPunteggio = 0;
     for (const voce of knowledge.list(channel)) {
+      // niente risposte "imparate dalla chat" (sono messaggi veri degli utenti:
+      // ripeterli è sgradevole). Solo conoscenza curata: profilo del sito / dashboard.
+      if (voce.fonte === 'chat') continue;
       const paroleVoce = new Set(learn.normalizza(voce.domanda));
       if (!paroleVoce.size) continue;
 
@@ -547,7 +542,29 @@ export class Brain {
     return migliorPunteggio >= 0.5 ? migliore.risposta : null;
   }
 
-  // Ultimo miglio di ogni risposta: moderazione, lunghezza, cooldown, log.
+  // Normalizza per confronti "è la stessa frase?": minuscolo, senza
+  // punteggiatura/emoji, spazi compattati.
+  _norm(s) {
+    return String(s || '').toLowerCase().replace(/[^a-zà-ÿ0-9\s]/gi, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  // Rete di sicurezza anti-eco: la risposta è (quasi) identica a un messaggio
+  // scritto da un utente di recente? Allora NON la diciamo: ripetere le frasi
+  // delle persone è sgradevole. Le frasi cortissime (saluti) non contano.
+  _eEcoDiUtente(channel, testo) {
+    try {
+      const t = this._norm(testo);
+      if (t.split(' ').filter(Boolean).length < 3) return false;
+      for (const r of memory.recentMessages(channel, 400)) {
+        if (r.from_bot) continue;
+        const rt = this._norm(r.text);
+        if (rt.length >= 8 && (rt === t || (t.length >= 12 && (rt.includes(t) || t.includes(rt))))) return true;
+      }
+      return false;
+    } catch { return false; }
+  }
+
+  // Ultimo miglio di ogni risposta: moderazione, anti-eco, lunghezza, cooldown, log.
   _finalizza(channel, risposta, streamer) {
     if (!risposta) return null;
     let testo = String(risposta).replace(/\s+/g, ' ').trim();
@@ -558,6 +575,11 @@ export class Brain {
     const esito = checkMessage(testo, streamer?.settings || {});
     if (!esito.ok) {
       log.warn(`#${channel} risposta bloccata dalla moderazione (${esito.reason})`);
+      return null;
+    }
+    // mai fare l'eco di un messaggio di un utente
+    if (this._eEcoDiUtente(channel, testo)) {
+      log.debug(`#${channel} risposta scartata: eco di un messaggio utente`);
       return null;
     }
     this._ultimaRisposta.set(channel, Date.now());

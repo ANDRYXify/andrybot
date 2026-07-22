@@ -69,30 +69,13 @@ function pareDomanda(testo) {
   return t.includes('?') || INIZIO_DOMANDA.test(t);
 }
 
-// Registra una coppia domanda→risposta come conoscenza 'chat', evitando
-// doppioni (confronto sulle parole normalizzate) e rispettando il limite orario.
-function registraCoppia(channel, domanda, risposta) {
-  const ora = Date.now();
-  const tempi = (vociChatRecenti.get(channel) || []).filter((t) => ora - t < 3_600_000);
-  vociChatRecenti.set(channel, tempi);
-  if (tempi.length >= MAX_VOCI_CHAT_ORA) return;
-
-  const nuove = new Set(normalizza(domanda));
-  if (!nuove.size) return;
-
-  // se esiste già una voce molto simile, non insistere
-  for (const k of knowledge.list(channel)) {
-    const esistenti = new Set(normalizza(k.domanda));
-    if (!esistenti.size) continue;
-    let comuni = 0;
-    for (const w of nuove) if (esistenti.has(w)) comuni++;
-    if (comuni / Math.max(nuove.size, esistenti.size) >= 0.75) return;
-  }
-
-  tempi.push(ora);
-  knowledge.add(channel, { domanda, risposta, fonte: 'chat' });
-  log.info(`#${channel} imparato dalla chat: "${String(domanda).slice(0, 60)}"`);
-}
+// DISATTIVATO. Prima imparava una coppia domanda→risposta dalla chat e la
+// salvava come conoscenza 'chat'; poi il bot RIPETEVA quelle frasi (messaggi
+// veri degli utenti) verbatim, cosa sgradevole. Ora la conoscenza del bot
+// arriva solo dal profilo del sito e da ciò che lo streamer insegna dalla
+// dashboard. Lasciato come no-op per non toccare il chiamante (observe).
+// eslint-disable-next-line no-unused-vars
+function registraCoppia(channel, domanda, risposta) { /* no-op: niente eco degli utenti */ }
 
 // Chiamata per OGNI messaggio (anche quelli dello streamer, isSelf=true).
 export function observe(msg) {

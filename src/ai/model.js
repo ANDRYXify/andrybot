@@ -292,6 +292,9 @@ export function bestKnowledge(channel, text) {
 
   let migliore = null, migliorScore = 0;
   for (const voce of voci) {
+    // niente risposte "imparate dalla chat": sono messaggi veri degli utenti e
+    // ripeterli è sgradevole. Solo conoscenza curata (profilo del sito/dashboard).
+    if (voce.fonte === 'chat') continue;
     const paroleVoce = new Set(normalizza(voce.domanda));
     if (!paroleVoce.size) continue;
     // lessicale (come prima): parole in comune / parole della voce, con bonus lunghe
