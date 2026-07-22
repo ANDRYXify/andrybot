@@ -14,8 +14,10 @@ import { dirname, join } from 'node:path';
 import { config, SCOPES, missingConfig } from '../config.js';
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb, friends } from '../db.js';
+import { points, vips } from '../db.js';
 import { comprimi } from '../features/compress.js';
 import { seedStreamer } from '../features/seed.js';
+import * as vip from '../features/vip.js';
 import { pretrain } from '../ai/pretrain.js';
 import * as persona from '../ai/persona.js';
 import { redeemPass } from './gate.js';
@@ -116,6 +118,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // lo streamer ha concesso i permessi chat? (il bot parla col suo account)
   const permessiOk = (login) =>
     !!(tokens.get('broadcaster', login)?.scopes?.includes('chat:edit'));
+  // ha concesso il permesso VIP? (aggiunto dopo: richiede una ri-autorizzazione)
+  const vipOk = (login) =>
+    !!(tokens.get('broadcaster', login)?.scopes?.includes('channel:manage:vips'));
 
   const sync = () => Promise.resolve(manager.syncChannels?.()).catch(() => {});
 
@@ -266,6 +271,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       status: manager.status(),
       streamer: user ? streamers.get(user.login) : null,
       permessiOk: user ? permessiOk(user.login) : false,
+      vipOk: user ? vipOk(user.login) : false,
       knowledgeCount: user ? knowledge.count(user.login) : 0,
       preaddestramento: user
         ? Object.fromEntries(memory.facts(user.login)
@@ -353,6 +359,15 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (b.giochi !== undefined) out.giochi = !!b.giochi;
     if (b.promoSocial !== undefined) out.promoSocial = !!b.promoSocial;
     if (b.nomeMonete !== undefined) out.nomeMonete = String(b.nomeMonete).trim().slice(0, 20);
+    // premio VIP periodico (top monete)
+    if (b.premioVip !== undefined) {
+      const p = b.premioVip || {};
+      out.premioVip = {
+        attivo: !!p.attivo,
+        periodo: ['settimana', 'mese'].includes(p.periodo) ? p.periodo : 'settimana',
+        quanti: Math.min(5, Math.max(1, Math.round(Number(p.quanti)) || 1)),
+      };
+    }
 
     streamers.setSettings(user.login, out);
     res.json({ ok: true });
@@ -639,8 +654,25 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!frase || frase.length >= 300) {
       return res.status(400).json({ errore: 'frase non valida (vuota o troppo lunga)' });
     }
+    // comando vocale VIP: "vip a chiara [per un mese]" · "togli vip a chiara"
+    const cmdVip = vip.parseComandoVip(frase);
+    if (cmdVip) {
+      const say = (t) => manager.say(login, t);
+      if (cmdVip.azione === 'remove') await vip.togliVip(helix, login, cmdVip.nome, say);
+      else await vip.assegnaVip(helix, login, { nome: cmdVip.nome, durata: cmdVip.durata, motivo: 'voce' }, say);
+      return res.json({ ok: true, eseguito: true, vip: true });
+    }
     const eseguito = await modules.eseguiVoce(login, frase, (t) => manager.say(login, t));
     res.json({ ok: true, eseguito });
+  }));
+
+  // classifica monete + VIP attuali (per la dashboard)
+  app.get('/api/streamer/classifica', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    res.json({
+      monete: points.top(login, 10),
+      vip: vips.list(login).map((v) => ({ user: v.user, display: v.display, until: v.until, motivo: v.motivo })),
+    });
   }));
 
   // ---- INGRESSO ESTERNO: un servizio dello streamer fa dire/fare cose al bot
