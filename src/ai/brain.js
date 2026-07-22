@@ -8,6 +8,7 @@ import { checkMessage } from '../features/moderation.js';
 import * as learn from './learn.js';
 import * as model from './model.js';
 import * as persona from './persona.js';
+import * as llm from './llm.js';
 
 const log = makeLog('brain');
 
@@ -371,22 +372,10 @@ export class Brain {
       const menziona = menzionaBot(text, botLogin || channel);
       const variabili = { user: nome, canale: streamer.display || channel };
 
-      // ---- a. INTENTI --------------------------------------------------
-
-      // saluto rivolto al bot/canale
-      if (menziona && /(^|[^a-z])(ciao|ehi|hey|buongiorno|buonasera|buond[iì]|salve|weil[aà]|hola)([^a-z]|$)/.test(lower)) {
-        return this._finalizza(channel, compila(scegli(SALUTI[tono]), variabili), streamer);
-      }
-
-      // come va / come stai
-      if (/come va\b|come stai|come butta|come procede|come andiamo|tutto bene\?/.test(lower)) {
-        return this._finalizza(channel, compila(scegli(COME_VA[tono]), variabili), streamer);
-      }
-
-      // chi sei / cosa sai fare
-      if (/chi sei|cosa sei|che cosa sai fare|cosa sai fare|come funzioni|che bot sei|presentati/.test(lower)) {
-        return this._finalizza(channel, compila(scegli(CHI_SONO), variabili), streamer);
-      }
+      // ---- a. INTENTI FATTUALI (dati reali) ----------------------------
+      // Questi NON passano dal modello: danno un dato preciso (gioco, uptime,
+      // link, clip) che l'IA non può inventare. Saluti/come va/chi sei/grazie
+      // NON sono più template: li gestisce il modello, con parole sue.
 
       // che gioco / a cosa giochi
       if (/che gioco|che game|a cosa (stai )?gioc|a che (gioco|game)|cosa stai giocando|che stai giocando/.test(lower)) {
@@ -464,46 +453,34 @@ export class Brain {
         return this._finalizza(channel, prefisso + daConoscenza, streamer);
       }
 
-      // NB: rimosso il percorso "risposta libera" generata dall'IA. Ripescava
-      // frasi vere degli utenti / le rigenerava con gli n-grammi, e finiva per
-      // RIPETERE i messaggi delle persone: sgradevole. Meglio niente che un'eco.
-
-      // ---- c. RINGRAZIAMENTI E COMPLIMENTI ----------------------------
-      if (/grazie|bravo|brava|bravissim|sei un grande|sei una grande|grande bot|fortissim|mitic|(^|[^a-z])top([^a-z]|$)|numero uno|il migliore|la migliore/.test(lower)) {
-        return this._finalizza(channel, compila(scegli(GRAZIE[tono]), variabili), streamer);
+      // ---- c. IL MODELLO PARLA (contestuale, parole sue) --------------
+      // Cuore della conversazione: il modello locale risponde al messaggio,
+      // in prima persona, col contesto (conoscenza curata + ultimi messaggi).
+      // Vale per le menzioni ("se lo citano risponde a tema") e per le battute
+      // spontanee. Passa comunque da _finalizza (moderazione + anti-eco).
+      if (iaOn && llm.pronto()) {
+        const conoscenza = knowledge.list(channel)
+          .filter((k) => k.fonte !== 'chat')
+          .slice(0, 6)
+          .map((k) => `${k.domanda} → ${k.risposta}`);
+        const storia = memory.recentMessages(channel, 8)
+          .filter((r) => !r.from_bot && r.text && !String(r.text).startsWith('!'))
+          .slice(-6)
+          .map((r) => `${r.user || 'utente'}: ${String(r.text).slice(0, 120)}`);
+        const risposta = await llm.rispondi({
+          canale: streamer.display || channel, tono, conoscenza, storia, testo: text,
+        });
+        if (risposta) return this._finalizza(channel, risposta, streamer);
       }
 
-      // ---- d. DOMANDA DIRETTA senza risposta trovata ------------------
-      // Onestà, non improvvisazione: niente frasi "a intuito" generate dagli
-      // n-grammi (spesso sbagliate o copiate). Se non lo so, lo dico.
+      // ---- d. FALLBACK quando il modello non è pronto ------------------
+      // (primo avvio: sta ancora scaricando/caricando il modello, oppure non è
+      // installato). Niente personalità finta: solo un'onestà se ci citano con
+      // una domanda; altrimenti silenzio. Appena il modello è pronto, parla lui.
       if (menziona && text.includes('?')) {
         return this._finalizza(channel, compila(scegli(NON_LO_SO), variabili), streamer);
       }
-
-      // menzione "a vuoto": a volte il bot si fa vivo, altrimenti tace
-      if (menziona) {
-        if (Math.random() < 0.5) return this._finalizza(channel, compila(scegli(ECCOMI[tono]), variabili), streamer);
-        return null;
-      }
-
-      // ---- e. SPONTANEA (nessuna menzione) ----------------------------
-      const emote = learn.emotiTop(channel, 5);
-      if (emote.length && Math.random() < 0.2) {
-        return this._finalizza(channel, scegli(emote), streamer);   // a volte basta una emote
-      }
-
-      const battuta = () => {
-        const pool = [...SPONTANEE[tono]];
-        for (const frase of (Array.isArray(settings.frasi) ? settings.frasi : [])) {
-          if (frase && typeof frase === 'string') pool.push(frase, frase);   // il doppio di probabilità
-        }
-        let testo = compila(scegli(pool), variabili);
-        if (emote.length && Math.random() < 0.35) testo += ' ' + scegli(emote);
-        return testo;
-      };
-
-      // Solo battute da TEMPLATE (curate), mai frasi generate/copiate dalla chat.
-      return this._finalizza(channel, battuta(), streamer);
+      return null;
     } catch (e) {
       log.error(`chatReply #${channel}:`, e?.message || e);
       return null;
