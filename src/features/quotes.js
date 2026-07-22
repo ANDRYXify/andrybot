@@ -29,7 +29,9 @@ function rimuovi(msg, n, say) {
 // !cita / !quote [N | aggiungi <testo> | rimuovi N] · alias !addquote/!delquote
 export function tryQuoteCommand(msg, say) {
   try {
-    if (!msg || msg.isSelf) return false;
+    // Niente skip su isSelf: lo streamer usa il bot col suo account e deve poter
+    // usare le citazioni (i comandi mod-only restano protetti più sotto).
+    if (!msg) return false;
     const t = String(msg.text || '').trim();
 
     let m = /^!(?:addquote|aggiungicita)\s+(.+)$/i.exec(t);

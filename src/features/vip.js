@@ -118,7 +118,9 @@ export async function assegnaVipLogin(helix, channel, login, durata, motivo = 'p
 // comandi in chat (solo mod/streamer): !vip @nome [durata] · !unvip @nome · !viplista
 export async function tryVipCommand(helix, msg, say) {
   try {
-    if (!msg || msg.isSelf) return false;
+    // Niente skip su isSelf: lo streamer (che il bot impersona) deve poter dare
+    // i comandi VIP dal suo account. È comunque riservato a mod/broadcaster.
+    if (!msg) return false;
     if (!(msg.isMod || msg.isBroadcaster)) return false;
     const t = String(msg.text || '').trim();
     if (!/^!(vip|unvip|viplista|viplist)\b/i.test(t)) return false;
