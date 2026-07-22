@@ -86,6 +86,7 @@ export class ModulesEngine {
       // Twitch marca il primo messaggio in assoluto di un utente col tag first-msg=1.
       const primoMessaggio = msg.tags && msg.tags['first-msg'] === '1';
 
+      let comandoScattato = false;
       for (const modulo of lista) {
         if (!modulo.attivo) continue;
         const tr = modulo.trigger || {};
@@ -100,7 +101,24 @@ export class ModulesEngine {
           ctx.evento = 'first';
         }
 
-        if (ctx) await this.esegui(modulo, ctx, say);
+        if (ctx) { await this.esegui(modulo, ctx, say); if (tr.tipo === 'comando') comandoScattato = true; }
+      }
+
+      // Diagnostica: se è un "!comando" e NESSUN modulo-comando ha risposto,
+      // logghiamo cosa era disponibile. Così, se un alias "non dà segni di vita",
+      // dai log del bot si vede subito se l'alias è davvero salvato nel modulo.
+      const trimmed = testo.trim();
+      if (!comandoScattato && trimmed.startsWith('!')) {
+        const cmd = norm(trimmed.slice(1).split(/\s+/)[0] || '');
+        const moduliCmd = lista.filter((m) => m.attivo && m.trigger?.tipo === 'comando');
+        if (cmd && moduliCmd.length) {
+          const disp = moduliCmd.map((m) => {
+            const a = m.trigger.alias;
+            const alist = Array.isArray(a) ? a : (typeof a === 'string' ? a.split(/[\s,]+/) : []);
+            return [m.trigger.comando, ...alist].filter(Boolean).join('/');
+          }).join(' | ');
+          log.info(`comando "${cmd}" #${channel} non ha inneschi. Moduli-comando disponibili: ${disp}`);
+        }
       }
     } catch (e) {
       log.debug('onMessage:', e?.message || e);
