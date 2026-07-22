@@ -172,6 +172,18 @@ CREATE TABLE IF NOT EXISTS vips (          -- VIP assegnati dal bot (con scadenz
   PRIMARY KEY (channel, user)
 );
 CREATE INDEX IF NOT EXISTS idx_vips_until ON vips(until);
+
+CREATE TABLE IF NOT EXISTS telegram (     -- notifiche Telegram: un bot+gruppo PROPRIO per streamer
+  channel TEXT PRIMARY KEY,                -- login twitch minuscolo
+  token TEXT NOT NULL DEFAULT '',          -- token del bot Telegram dello streamer (@BotFather)
+  chat_id TEXT NOT NULL DEFAULT '',        -- id del gruppo dove notificare
+  chat_titolo TEXT NOT NULL DEFAULT '',    -- nome del gruppo (solo per mostrarlo)
+  bot_username TEXT NOT NULL DEFAULT '',   -- @username del bot (solo per mostrarlo)
+  attivo INTEGER NOT NULL DEFAULT 0,       -- notifica "vado live" accesa?
+  messaggio TEXT NOT NULL DEFAULT '',      -- testo con segnaposto (vuoto = default)
+  ultima_live TEXT NOT NULL DEFAULT '',    -- id dell'ultima live notificata (anti-doppioni)
+  ts INTEGER NOT NULL DEFAULT 0
+);
 `);
 
 const now = () => Date.now();
@@ -320,6 +332,39 @@ export const streamers = {
     db.prepare('UPDATE streamers SET settings=? WHERE login=?').run(JSON.stringify(settings || {}), login.toLowerCase());
   },
   remove(login) { db.prepare('DELETE FROM streamers WHERE login=?').run(login.toLowerCase()); },
+};
+
+// ---------------------------------------------------------------- notifiche Telegram
+// Config per canale del bot Telegram PROPRIO dello streamer (token + gruppo).
+// Il token è un segreto: non esce MAI verso il browser (vedi /api/me).
+export const tgConf = {
+  get(channel) {
+    return db.prepare('SELECT * FROM telegram WHERE channel=?').get(String(channel).toLowerCase()) || null;
+  },
+  set(channel, campi = {}) {
+    const c = String(channel).toLowerCase();
+    const cur = this.get(c) || { token: '', chat_id: '', chat_titolo: '', bot_username: '', attivo: 0, messaggio: '', ultima_live: '' };
+    const v = {
+      token: campi.token !== undefined ? String(campi.token) : cur.token,
+      chat_id: campi.chatId !== undefined ? String(campi.chatId) : cur.chat_id,
+      chat_titolo: campi.chatTitolo !== undefined ? String(campi.chatTitolo) : cur.chat_titolo,
+      bot_username: campi.botUsername !== undefined ? String(campi.botUsername) : cur.bot_username,
+      attivo: campi.attivo !== undefined ? (campi.attivo ? 1 : 0) : cur.attivo,
+      messaggio: campi.messaggio !== undefined ? String(campi.messaggio) : cur.messaggio,
+      ultima_live: campi.ultimaLive !== undefined ? String(campi.ultimaLive) : cur.ultima_live,
+    };
+    db.prepare(`INSERT INTO telegram (channel, token, chat_id, chat_titolo, bot_username, attivo, messaggio, ultima_live, ts)
+      VALUES (@channel, @token, @chat_id, @chat_titolo, @bot_username, @attivo, @messaggio, @ultima_live, @ts)
+      ON CONFLICT(channel) DO UPDATE SET token=excluded.token, chat_id=excluded.chat_id, chat_titolo=excluded.chat_titolo,
+        bot_username=excluded.bot_username, attivo=excluded.attivo, messaggio=excluded.messaggio,
+        ultima_live=excluded.ultima_live, ts=excluded.ts`)
+      .run({ channel: c, ...v, ts: now() });
+    return this.get(c);
+  },
+  setUltimaLive(channel, streamId) {
+    db.prepare('UPDATE telegram SET ultima_live=? WHERE channel=?').run(String(streamId || ''), String(channel).toLowerCase());
+  },
+  remove(channel) { db.prepare('DELETE FROM telegram WHERE channel=?').run(String(channel).toLowerCase()); },
 };
 
 // ---------------------------------------------------------------- memoria

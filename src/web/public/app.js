@@ -63,6 +63,7 @@ function impostazioni() {
     tono: ['scherzoso', 'amichevole', 'serio'].includes(s.tono) ? s.tono : 'scherzoso',
     spontaneita: typeof s.spontaneita === 'number' ? s.spontaneita : 0.03,
     rispostaMenzioni: s.rispostaMenzioni !== false,
+    modalita: ['sempre', 'live', 'manuale'].includes(s.modalita) ? s.modalita : 'sempre',
     proattivo: s.proattivo !== false,
     adattaCanale: s.adattaCanale !== false,
     giochi: s.giochi !== false,
@@ -204,6 +205,7 @@ function vistaPiattaforma() {
     ['ascolto', 'Ascolto live'],
     ['effetti', 'Effetti & Suoni'],
     ['giochi', 'Giochi'],
+    ['notifiche', 'Notifiche'],
     ['moduli', 'Moduli'],
     ['regole', 'Regole'],
     ['memoria', 'Memoria & Statistiche'],
@@ -220,6 +222,7 @@ function vistaPiattaforma() {
     ${pannelloAscolto()}
     ${pannelloEffetti()}
     ${pannelloGiochi()}
+    ${pannelloNotifiche()}
     ${pannelloModuli()}
     ${pannelloRegole()}
     ${pannelloMemoria()}`;
@@ -235,6 +238,7 @@ function pannelloStato() {
   const login = stato.user.login;
   const inChat = (stato.status?.channels || []).includes(login);
   const pre = stato.preaddestramento || {};
+  const sImp = impostazioni();
 
   const cardPermessi = stato.permessiOk ? '' : `
     <div class="carta evidenziata">
@@ -260,6 +264,19 @@ function pannelloStato() {
         ${stato.permessiOk ? '<span class="badge viola">permessi ok</span>' : '<span class="badge rosso">permessi mancanti</span>'}
       </div>
       <p class="suggerimento spazio-sopra">Spegnerlo non cancella nulla: quando lo riaccendi riparte da dove era rimasto.</p>
+
+      <label class="campo spazio-sopra" for="sel-modalita">Quando dev'essere attivo</label>
+      <select id="sel-modalita">
+        <option value="sempre" ${sImp.modalita === 'sempre' ? 'selected' : ''}>Sempre (24/7)</option>
+        <option value="live" ${sImp.modalita === 'live' ? 'selected' : ''}>Solo quando sei in diretta</option>
+        <option value="manuale" ${sImp.modalita === 'manuale' ? 'selected' : ''}>Manuale (decidi tu con l'interruttore)</option>
+      </select>
+      <p class="suggerimento">
+        <strong class="primo-piano">24/7</strong>: sempre in chat. ·
+        <strong class="primo-piano">Quando sei live</strong>: entra da solo quando parte la diretta ed esce a fine stream. ·
+        <strong class="primo-piano">Manuale</strong>: comandi tu con l'interruttore qui sopra.
+      </p>
+      <p><button class="btn secondario" id="btn-salva-modalita">Salva modalità</button></p>
     </div>
     <div class="carta">
       <h2>Pre-addestramento 📚</h2>
@@ -639,6 +656,59 @@ function pannelloGiochi() {
     </div>`);
 }
 
+// --- scheda Notifiche (Telegram) ---------------------------------------
+
+function pannelloNotifiche() {
+  const tg = stato.telegram || { configurato: false, gruppoOk: false, attivo: false, messaggio: '', botUsername: '', gruppo: '' };
+  const msgDefault = '🔴 {nome} è in diretta!\n\n{titolo}\n🎮 {gioco}\n\n👉 {link}';
+  return pannello('notifiche', `
+    <div class="carta">
+      <h2>Avviso "sono in diretta" su Telegram 📣</h2>
+      <p>Collega il <strong class="primo-piano">tuo</strong> bot Telegram e il tuo gruppo: quando vai live,
+      il bot avvisa i tuoi follower nel gruppo. Le chiavi sono tue e restano tue.</p>
+
+      <ol class="passi">
+        <li><strong>Crea il bot</strong>: su Telegram apri <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a>,
+          scrivi <code>/newbot</code>, segui le istruzioni e copia il <em>token</em> che ti dà.</li>
+        <li><strong>Incolla il token</strong> qui sotto e premi <em>Collega</em>.</li>
+        <li><strong>Aggiungi il bot al tuo gruppo</strong>, scrivici <code>/collega</code> dentro, poi premi <em>Rileva gruppo</em>.</li>
+      </ol>
+
+      <label class="campo" for="inp-tg-token">Token del bot Telegram</label>
+      <div class="riga-flessibile">
+        <input type="text" id="inp-tg-token" placeholder="123456789:AA..." autocomplete="off"
+          value="" ${tg.configurato ? 'disabled' : ''}>
+        <button class="btn" id="btn-tg-token">${tg.configurato ? 'Collegato ✓' : 'Collega'}</button>
+      </div>
+      ${tg.configurato ? `<p class="suggerimento">Bot collegato: <strong class="primo-piano">@${esc(tg.botUsername || '?')}</strong></p>` : ''}
+
+      ${tg.configurato ? `
+      <div class="riga-flessibile spazio-sopra">
+        <button class="btn secondario" id="btn-tg-rileva">Rileva gruppo</button>
+        <span class="suggerimento">${tg.gruppoOk
+          ? `Gruppo collegato: <strong class="primo-piano">${esc(tg.gruppo || '(gruppo)')}</strong> ✓`
+          : 'Nessun gruppo ancora collegato.'}</span>
+      </div>
+
+      <label class="campo spazio-sopra" for="txt-tg-messaggio">Messaggio dell'avviso</label>
+      <textarea id="txt-tg-messaggio" rows="5" placeholder="${esc(msgDefault)}">${esc(tg.messaggio || '')}</textarea>
+      <p class="suggerimento">Segnaposto: <code>{nome}</code> <code>{titolo}</code> <code>{gioco}</code>
+        <code>{spettatori}</code> <code>{link}</code>. Lascia vuoto per usare quello standard.</p>
+
+      <div class="riga-check spazio-sopra">
+        <input type="checkbox" id="chk-tg-attivo" ${tg.attivo ? 'checked' : ''} ${tg.gruppoOk ? '' : 'disabled'}>
+        <label for="chk-tg-attivo">Avvisa il gruppo quando vado in diretta</label>
+      </div>
+
+      <p class="spazio-sopra">
+        <button class="btn" id="btn-tg-salva">Salva</button>
+        <button class="btn secondario" id="btn-tg-prova" ${tg.gruppoOk ? '' : 'disabled'}>Manda una prova</button>
+        <button class="btn pericolo mini" id="btn-tg-scollega">Scollega</button>
+      </p>
+      ` : ''}
+    </div>`);
+}
+
 // --- scheda Regole ------------------------------------------------------
 
 function pannelloRegole() {
@@ -773,6 +843,49 @@ function attivaPiattaforma() {
         quanti,
       },
     }, 'Premio VIP salvato 🏆');
+  }));
+
+  // modalità di attivazione (24/7 · quando live · manuale)
+  document.getElementById('btn-salva-modalita')?.addEventListener('click', () => conErrore(async () => {
+    await salvaImpostazioni({ modalita: document.getElementById('sel-modalita').value }, 'Modalità salvata ⏱️');
+  }));
+
+  // --- Notifiche Telegram ---
+  document.getElementById('btn-tg-token')?.addEventListener('click', () => conErrore(async () => {
+    const inp = document.getElementById('inp-tg-token');
+    if (inp?.disabled) return;   // già collegato
+    const token = (inp?.value || '').trim();
+    if (!token) { toast('Incolla il token del bot (te lo dà @BotFather).', 'errore'); return; }
+    const r = await api('/api/streamer/telegram/token', { method: 'POST', body: { token } });
+    toast('Bot collegato: @' + (r.botUsername || '?') + ' ✅');
+    stato = await api('/api/me'); render();
+  }));
+
+  document.getElementById('btn-tg-rileva')?.addEventListener('click', () => conErrore(async () => {
+    const r = await api('/api/streamer/telegram/rileva', { method: 'POST', body: {} });
+    toast(r.privato ? 'Collegata la chat privata col bot.' : 'Gruppo collegato: ' + (r.gruppo || '✓'));
+    stato = await api('/api/me'); render();
+  }));
+
+  document.getElementById('btn-tg-salva')?.addEventListener('click', () => conErrore(async () => {
+    await api('/api/streamer/telegram/impostazioni', { method: 'POST', body: {
+      attivo: document.getElementById('chk-tg-attivo').checked,
+      messaggio: document.getElementById('txt-tg-messaggio').value,
+    } });
+    toast('Notifiche Telegram salvate 📣');
+    stato = await api('/api/me');   // aggiorna lo stato senza perdere la scheda
+  }));
+
+  document.getElementById('btn-tg-prova')?.addEventListener('click', () => conErrore(async () => {
+    await api('/api/streamer/telegram/prova', { method: 'POST', body: {} });
+    toast('Messaggio di prova inviato nel gruppo 🧪');
+  }));
+
+  document.getElementById('btn-tg-scollega')?.addEventListener('click', () => conErrore(async () => {
+    if (!confirm('Scollegare il bot Telegram? Dovrai reincollare il token per riattivarlo.')) return;
+    await api('/api/streamer/telegram', { method: 'DELETE' });
+    toast('Telegram scollegato.');
+    stato = await api('/api/me'); render();
   }));
 
   // Comando rapido: inserimento variabili (senza perdere il focus) + crea al volo

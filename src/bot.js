@@ -5,13 +5,14 @@
 // eventi Twitch. Tiene tutto sincronizzato con la dashboard.
 import { makeLog } from './logger.js';
 import { config } from './config.js';
-import { tokens, streamers, memory } from './db.js';
+import { tokens, streamers, memory, tgConf } from './db.js';
 import { ChatBot } from './twitch/chat.js';
 import { EventHub } from './twitch/events.js';
 import { Brain } from './ai/brain.js';
 import * as persona from './ai/persona.js';
 import * as games from './features/games.js';
 import * as vip from './features/vip.js';
+import * as telegram from './features/telegram.js';
 import { createMessageHandler } from './features/handler.js';
 import { ClipEngine } from './features/clips.js';
 import { scheduleReflection } from './ai/reflection.js';
@@ -40,6 +41,7 @@ export class BotManager {
     this._premiTimer = null;
     this._stopReflection = null;
     this._capAvvisoDato = false;     // il tetto ascolti è già stato loggato una volta?
+    this._liveState = new Map();     // login → bool: se lo streamer è in live adesso
   }
 
   async start() {
@@ -54,7 +56,12 @@ export class BotManager {
       auth: this.auth, helix: this.helix,
       onEvent: ev => this._onTwitchEvent(ev),
     });
-    this.watcher = new StreamWatcher({ helix: this.helix, brain: this.brain });
+    // il watcher ci dice live/offline di ogni streamer: da lì partono le
+    // notifiche Telegram e la modalità "quando live".
+    this.watcher = new StreamWatcher({
+      helix: this.helix, brain: this.brain,
+      onLive: (login, isLive, data) => this._setLive(login, isLive, data),
+    });
     this.watcher.start();
     this._stopReflection = scheduleReflection({ brain: this.brain });
 
@@ -137,10 +144,25 @@ export class BotManager {
     return !!t && t.scopes.includes('chat:edit');
   }
 
+  // Modalità di attivazione scelta dallo streamer:
+  //  'sempre'  → 24/7 (sempre in chat quando è acceso)
+  //  'live'    → solo mentre è in diretta (entra/esce col live)
+  //  'manuale' → lo governa l'interruttore acceso/spento (come 'sempre' a livello di runtime)
+  _modalitaConsente(s) {
+    const m = s?.settings?.modalita || 'sempre';
+    if (m === 'live') return this._liveState.get(s.login) === true;
+    return true;
+  }
+
   // crea/distrugge le unità in base allo stato sulla dashboard
   async syncChannels() {
     if (!this.running) return;
-    const wanted = new Map(streamers.active().filter(s => this._ready(s)).map(s => [s.login, s]));
+    const wanted = new Map(
+      streamers.active()
+        .filter(s => this._ready(s))
+        .filter(s => this._modalitaConsente(s))
+        .map(s => [s.login, s])
+    );
 
     for (const [login, s] of wanted) {
       if (this.units.has(login)) continue;
@@ -286,6 +308,17 @@ export class BotManager {
   // eventi Twitch (follow, sub, raid, live on/off, riscatti punti)
   _onTwitchEvent(ev) {
     const { channel, type, data } = ev;
+    // live on/off passano dal gestore dedicato (dedup + notifiche + modalità live)
+    if (type === 'stream.online' || type === 'stream.offline') {
+      this._setLive(channel, type === 'stream.online', data);
+      return;
+    }
+    this._dispatchEvent(ev);
+  }
+
+  // Consegna un evento a cervello + moduli + plugin (parte comune).
+  _dispatchEvent(ev) {
+    const { channel, type, data } = ev;
     memory.logMessage(channel, '[evento]', '', `${type} ${JSON.stringify(data || {})}`.slice(0, 300), true);
     this.brain?.onEvent?.(ev, (text) => this.say(channel, text));
     // moduli: automazioni con trigger 'evento' (follow, sub, raid, cheer, ...)
@@ -293,6 +326,44 @@ export class BotManager {
     catch (e) { log.error(`#${channel} moduli evento:`, e?.message || e); }
     // plugin operatore (opzionali)
     try { this.bus?.emit('event', ev); } catch (e) { log.debug('bus event:', e?.message || e); }
+  }
+
+  // Fonte UNICA di verità per lo stato live/offline (arriva sia da EventSub,
+  // istantaneo, sia dal watcher, che copre anche chi non è connesso in chat —
+  // es. modalità "quando live" con bot ancora offline). Idempotente: reagisce
+  // solo ai VERI cambi di stato, così non si notifica due volte.
+  _setLive(login, isLive, data) {
+    const ch = String(login || '').toLowerCase();
+    if (!ch) return;
+    const prev = this._liveState.get(ch);
+    if (prev === isLive) return;                 // nessun cambiamento: stop
+    this._liveState.set(ch, isLive);
+    // riconcilia le unità: la modalità "quando live" entra/esce col live
+    this.syncChannels().catch(() => {});
+    // Primo rilevamento (bot appena avviato): NON è una transizione vera.
+    // Evita di annunciare "è live!" se il bot riparte a diretta già in corso.
+    if (prev === undefined) return;
+    const ev = { channel: ch, type: isLive ? 'stream.online' : 'stream.offline', data: data || {} };
+    this._dispatchEvent(ev);
+    if (isLive) this._notificaTelegram(ch);
+  }
+
+  // Manda la notifica Telegram "è live" nel gruppo dello streamer, se ha
+  // configurato e acceso le notifiche. Anti-doppioni sull'id della live.
+  async _notificaTelegram(login) {
+    try {
+      const conf = tgConf.get(login);
+      if (!conf?.attivo || !conf.token || !conf.chat_id) return;
+      const info = await this.helix.getStream(login).catch(() => null);
+      const streamId = String(info?.id || '');
+      if (streamId && streamId === conf.ultima_live) return;   // già avvisato per questa diretta
+      const s = streamers.get(login);
+      const r = await telegram.notificaLive(conf, { login, display: s?.display || login }, info);
+      if (r?.ok) {
+        if (streamId) tgConf.setUltimaLive(login, streamId);
+        log.info(`notifica Telegram inviata per #${login}`);
+      }
+    } catch (e) { log.error(`notifica Telegram #${login}:`, e?.message || e); }
   }
 
   // stato riassuntivo per la dashboard

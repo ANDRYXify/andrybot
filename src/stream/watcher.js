@@ -12,9 +12,10 @@ const INTERVALLO = 120_000; // controllo periodico: ogni 120 secondi
 const PRIMO_GIRO = 10_000;  // primo controllo poco dopo l'avvio (10s)
 
 export class StreamWatcher {
-  constructor({ helix, brain }) {
+  constructor({ helix, brain, onLive }) {
     this.helix = helix;
     this.brain = brain;      // tenuto da parte per usi futuri (es. commenti spontanei)
+    this.onLive = typeof onLive === 'function' ? onLive : null;  // (login, isLive, streamData) ad ogni giro
     this._timer = null;      // setInterval del giro periodico
     this._primoTimer = null; // setTimeout del primo giro rapido
     this._inCorso = false;   // evita giri sovrapposti se Helix è lento
@@ -45,6 +46,11 @@ export class StreamWatcher {
         const login = st.login;
         try {
           const s = await this.helix.getStream(login);
+
+          // Comunica SEMPRE lo stato live/offline al manager (che decide
+          // notifiche Telegram e modalità "quando live"). È idempotente: il
+          // manager reagisce solo ai veri cambi di stato.
+          try { this.onLive?.(login, !!s, s || null); } catch { /* niente */ }
 
           // Offline: non scriviamo nulla, il contesto scade da solo (10 min).
           // Dimentichiamo anche lo stato del giro prima: alla prossima live
