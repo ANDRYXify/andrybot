@@ -14,6 +14,7 @@ import * as games from './features/games.js';
 import * as vip from './features/vip.js';
 import * as telegram from './features/telegram.js';
 import * as antispam from './features/antispam.js';
+import * as tiktok from './features/tiktok.js';
 import * as model from './ai/model.js';
 import { createMessageHandler } from './features/handler.js';
 import { ClipEngine } from './features/clips.js';
@@ -44,6 +45,9 @@ export class BotManager {
     this._stopReflection = null;
     this._capAvvisoDato = false;     // il tetto ascolti è già stato loggato una volta?
     this._liveState = new Map();     // login → bool: se lo streamer è in live adesso
+    this._tiktokTimer = null;
+    this._tiktokLive = new Map();    // login → bool: in diretta su TikTok adesso
+    this._tiktokUltima = new Map();  // login → ts ultima notifica TikTok (anti-doppioni)
   }
 
   async start() {
@@ -75,6 +79,8 @@ export class BotManager {
     // VIP: rimozione automatica degli scaduti + premi periodici (settimanale/mensile)
     this._vipTimer = setInterval(() => vip.controllaScadenze(this.helix).catch(() => {}), 5 * 60_000);
     this._premiTimer = setInterval(() => this._controllaPremi(), 60 * 60_000);
+    // TikTok: rilevamento live best-effort (l'affidabile è il webhook)
+    this._tiktokTimer = setInterval(() => this._controllaTikTok().catch(() => {}), 3 * 60_000);
     log.info('SocialBot avviato');
   }
 
@@ -84,6 +90,7 @@ export class BotManager {
     clearInterval(this._animaTimer);
     clearInterval(this._vipTimer);
     clearInterval(this._premiTimer);
+    clearInterval(this._tiktokTimer);
     this._stopReflection?.();
     this.watcher?.stop();
     // spegni tutti gli ascolti live (audio): non devono restare orfani
@@ -375,6 +382,49 @@ export class BotManager {
         log.info(`notifica Telegram inviata per #${login}`);
       }
     } catch (e) { log.error(`notifica Telegram #${login}:`, e?.message || e); }
+  }
+
+  // TikTok: giro di rilevamento live (best-effort) su chi ha configurato e
+  // acceso il TikTok. Dedup + "primo rilevamento" silenzioso come per Twitch.
+  async _controllaTikTok() {
+    try {
+      for (const s of streamers.active()) {
+        const tk = s.settings?.tiktok;
+        if (!tk?.attivo || !tk.username) continue;
+        const r = await tiktok.isLive(tk.username);
+        if (r.sconosciuto) continue;                       // endpoint incerto: non tocchiamo lo stato
+        const prev = this._tiktokLive.get(s.login);
+        if (prev === r.live) continue;
+        this._tiktokLive.set(s.login, r.live);
+        if (prev === undefined) continue;                  // primo giro: solo seed, niente avviso
+        if (r.live) this.notificaTikTok(s.login).catch(() => {});
+      }
+    } catch (e) { log.error('controllaTikTok:', e?.message || e); }
+  }
+
+  // Notifica "in diretta su TikTok" (Telegram + eventuale annuncio in chat).
+  // Chiamata sia dal rilevamento automatico sia dal webhook /api/ext.
+  // Anti-doppioni: al massimo una notifica ogni 3 ore per canale.
+  async notificaTikTok(login) {
+    try {
+      const l = String(login || '').toLowerCase();
+      const s = streamers.get(l);
+      const tk = s?.settings?.tiktok;
+      if (!tk?.username) return { ok: false, motivo: 'TikTok non configurato' };
+      if (Date.now() - (this._tiktokUltima.get(l) || 0) < 3 * 3600_000) return { ok: false, motivo: 'gia avvisato di recente' };
+      this._tiktokUltima.set(l, Date.now());
+      // Telegram (se collegato)
+      const conf = tgConf.get(l);
+      if (conf?.attivo && conf.token && conf.chat_id) {
+        telegram.notificaTikTok(conf, { login: l, display: s?.display || l }, tk.username).catch(() => {});
+      }
+      // annuncio in chat Twitch (se acceso e il bot è connesso)
+      if (tk.annunciaChat && this.units.has(l)) {
+        this.say(l, `🎵 Sono in diretta anche su TikTok! Passate a salutare 👉 ${tiktok.urlLive(tk.username)}`);
+      }
+      log.info(`notifica TikTok inviata per #${l}`);
+      return { ok: true };
+    } catch (e) { log.error(`notificaTikTok #${login}:`, e?.message || e); return { ok: false }; }
   }
 
   // stato riassuntivo per la dashboard
