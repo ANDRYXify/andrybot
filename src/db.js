@@ -190,6 +190,19 @@ CREATE TABLE IF NOT EXISTS brain_model (  -- IA locale: modello auto-addestrato 
   data TEXT NOT NULL DEFAULT '',           -- JSON: vocabolario + vettori semantici (base64)
   ts INTEGER NOT NULL DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS passkeys (     -- passkey (WebAuthn) per rientrare senza il pass del sito
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  login TEXT NOT NULL,                     -- streamer proprietario
+  cred_id TEXT NOT NULL UNIQUE,            -- credential id (base64url)
+  public_key TEXT NOT NULL,                -- chiave pubblica in JWK (JSON)
+  alg INTEGER NOT NULL DEFAULT -7,         -- algoritmo COSE (-7 ES256, -257 RS256, -8 EdDSA)
+  sign_count INTEGER NOT NULL DEFAULT 0,   -- contatore anti-clone
+  nome TEXT NOT NULL DEFAULT '',           -- etichetta (es. "iPhone")
+  created_at INTEGER NOT NULL,
+  last_used INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_passkeys_login ON passkeys(login);
 `);
 
 const now = () => Date.now();
@@ -351,6 +364,28 @@ export const models = {
       .run(String(channel).toLowerCase(), String(data || ''), now());
   },
   remove(channel) { db.prepare('DELETE FROM brain_model WHERE channel=?').run(String(channel).toLowerCase()); },
+};
+
+// ---------------------------------------------------------------- passkey (WebAuthn)
+export const passkeys = {
+  add({ login, credId, publicKey, alg = -7, signCount = 0, nome = '' }) {
+    db.prepare(`INSERT INTO passkeys (login, cred_id, public_key, alg, sign_count, nome, created_at, last_used)
+      VALUES (?,?,?,?,?,?,?,0)`)
+      .run(String(login).toLowerCase(), credId, JSON.stringify(publicKey), alg, signCount, String(nome || '').slice(0, 40), now());
+  },
+  byLogin(login) {
+    return db.prepare('SELECT * FROM passkeys WHERE login=? ORDER BY created_at DESC').all(String(login).toLowerCase());
+  },
+  byCredId(credId) {
+    const r = db.prepare('SELECT * FROM passkeys WHERE cred_id=?').get(String(credId));
+    if (!r) return null;
+    return { ...r, publicKey: safeJson(r.public_key) };
+  },
+  bumpCounter(credId, signCount) {
+    db.prepare('UPDATE passkeys SET sign_count=?, last_used=? WHERE cred_id=?').run(signCount, now(), String(credId));
+  },
+  remove(login, id) { db.prepare('DELETE FROM passkeys WHERE login=? AND id=?').run(String(login).toLowerCase(), id); },
+  count(login) { return db.prepare('SELECT COUNT(*) c FROM passkeys WHERE login=?').get(String(login).toLowerCase()).c; },
 };
 
 // ---------------------------------------------------------------- notifiche Telegram

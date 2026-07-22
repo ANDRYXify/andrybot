@@ -293,6 +293,20 @@ function pannelloStato() {
         <button class="btn secondario" id="btn-pretrain">Ri-leggi il mio profilo andryxify.it</button>
         <span id="esito-pretrain" class="suggerimento"></span>
       </p>
+    </div>
+    <div class="carta">
+      <h2>App installabile & Passkey 📱🔑</h2>
+      <p>Installa la dashboard <strong class="primo-piano">come app</strong> sul telefono o sul PC, e crea una
+      <strong class="primo-piano">passkey</strong> (impronta, volto o PIN): così rientri al volo, in modo sicuro,
+      <strong class="primo-piano">senza ripassare ogni volta dal sito</strong>.</p>
+      <p class="spazio-sopra">
+        <button class="btn secondario" id="btn-installa">Installa l'app</button>
+        <button class="btn" id="btn-crea-passkey">Crea una passkey</button>
+      </p>
+      <p class="suggerimento">Su iPhone/iPad: apri in Safari → Condividi → “Aggiungi a Home”. Su Android/PC (Chrome):
+      usa il bottone qui sopra o l’icona “installa” nella barra indirizzi.</p>
+      <h3>Le tue passkey</h3>
+      <ul class="lista-voci" id="lista-passkey"><li class="vuoto">Caricamento…</li></ul>
     </div>`);
 }
 
@@ -882,6 +896,30 @@ function attivaPiattaforma() {
     }
   });
 
+  // installazione dell'app (PWA)
+  document.getElementById('btn-installa')?.addEventListener('click', async () => {
+    if (promptInstall) {
+      promptInstall.prompt();
+      const scelta = await promptInstall.userChoice.catch(() => null);
+      if (scelta?.outcome === 'accepted') toast('App installata! 📱');
+      promptInstall = null;
+    } else if (window.matchMedia('(display-mode: standalone)').matches) {
+      toast('L\'app è già installata 💜');
+    } else {
+      toast('Usa il menu del browser: “Installa app” / “Aggiungi a Home”.');
+    }
+  });
+
+  // creazione di una passkey
+  document.getElementById('btn-crea-passkey')?.addEventListener('click', (ev) => conErrore(async () => {
+    const btn = ev.currentTarget; btn.disabled = true;
+    try { await creaPasskey(); toast('Passkey creata! Ora puoi rientrare senza pass 🔑'); caricaPasskey(); }
+    catch (e) {
+      if (e?.name === 'NotAllowedError') toast('Operazione annullata.', 'errore');
+      else toast('Passkey non creata: ' + (e.message || e), 'errore');
+    } finally { btn.disabled = false; }
+  }));
+
   // pre-addestramento manuale con spinner e risultato
   document.getElementById('btn-pretrain')?.addEventListener('click', async (ev) => {
     const btn = ev.currentTarget;
@@ -1262,6 +1300,7 @@ async function conErrore(fn) {
 
 // carica i dati "pigri" della scheda selezionata
 function caricaDatiScheda(id) {
+  if (id === 'stato') caricaPasskey();
   if (id === 'conoscenza') caricaConoscenza();
   if (id === 'clip') caricaClip();
   if (id === 'effetti') caricaEffetti();
@@ -2237,6 +2276,71 @@ document.addEventListener('click', (ev) => {
     });
   }
 });
+
+// ------------------------------------------------------------------ PWA + Passkey
+
+// installazione: cattura l'evento del browser per poterla offrire col bottone
+let promptInstall = null;
+window.addEventListener('beforeinstallprompt', (ev) => { ev.preventDefault(); promptInstall = ev; });
+
+// service worker (rende l'app installabile + guscio base)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+}
+
+// --- helper WebAuthn lato client ---
+const b64urlToBuf = (s) => {
+  s = String(s).replace(/-/g, '+').replace(/_/g, '/');
+  const bin = atob(s + '==='.slice((s.length + 3) % 4));
+  const u = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+  return u.buffer;
+};
+const bufToB64url = (buf) => {
+  let bin = ''; const u = new Uint8Array(buf);
+  for (let i = 0; i < u.length; i++) bin += String.fromCharCode(u[i]);
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+};
+
+// registra una nuova passkey per l'utente loggato
+async function creaPasskey() {
+  if (!window.PublicKeyCredential) { toast('Questo dispositivo non supporta le passkey.', 'errore'); return; }
+  const opt = await api('/api/passkey/registra/inizio', { method: 'POST', body: {} });
+  const cred = await navigator.credentials.create({ publicKey: {
+    challenge: b64urlToBuf(opt.challenge),
+    rp: opt.rp,
+    user: { id: b64urlToBuf(opt.user.id), name: opt.user.name, displayName: opt.user.displayName },
+    pubKeyCredParams: opt.pubKeyCredParams,
+    authenticatorSelection: opt.authenticatorSelection,
+    excludeCredentials: (opt.excludeCredentials || []).map((c) => ({ id: b64urlToBuf(c.id), type: 'public-key' })),
+    timeout: opt.timeout,
+    attestation: opt.attestation,
+  } });
+  const nome = (navigator.userAgentData?.platform || navigator.platform || 'Passkey');
+  await api('/api/passkey/registra/fine', { method: 'POST', body: {
+    attestationObject: bufToB64url(cred.response.attestationObject),
+    clientDataJSON: bufToB64url(cred.response.clientDataJSON),
+    nome,
+  } });
+}
+
+async function caricaPasskey() {
+  const ul = document.getElementById('lista-passkey');
+  if (!ul) return;
+  try {
+    const lista = await api('/api/passkey');
+    ul.innerHTML = lista.length
+      ? lista.map((p) => `<li><div class="testo-voce"><span class="domanda">🔑 ${esc(p.nome || 'Passkey')}</span>
+          <span class="meta">creata ${esc(dataIt(p.created_at))}${p.last_used ? ' · usata ' + esc(dataIt(p.last_used)) : ''}</span></div>
+          <button class="btn secondario mini" data-pk="${p.id}">Rimuovi</button></li>`).join('')
+      : '<li class="vuoto">Nessuna passkey ancora. Creane una per rientrare al volo 🔑</li>';
+    ul.onclick = (ev) => {
+      const btn = ev.target.closest('[data-pk]');
+      if (!btn) return;
+      conErrore(async () => { await api('/api/passkey/' + btn.dataset.pk, { method: 'DELETE' }); toast('Passkey rimossa.'); caricaPasskey(); });
+    };
+  } catch (e) { ul.innerHTML = `<li class="vuoto">Errore: ${esc(e.message)}</li>`; }
+}
 
 // via!
 caricaStato();
