@@ -256,10 +256,18 @@
     }
 
     // --- confronto: la frase sentita contiene una parola chiave? ---------
-    function valuta(testo) {
+    function valuta(testo, finale) {
       const t = String(testo || '').toLowerCase();
-      if (!t || !frasi.length) return;
+      if (!t) return;
       const ora = Date.now();
+      // comando integrato VIP: solo su frase COMPLETA (es. "vip a chiara per un mese")
+      if (finale && /\bvip\b\s+\S/.test(t)) {
+        if (ora - (ultimoScatto.get('__vip') || 0) >= COOLDOWN_MS) {
+          ultimoScatto.set('__vip', ora);
+          inviaFrase(t);
+        }
+      }
+      // frasi configurate nei moduli
       for (const frase of frasi) {
         if (!frase || !t.includes(frase)) continue;
         if (ora - (ultimoScatto.get(frase) || 0) < COOLDOWN_MS) continue;   // cooldown 4s per frase
@@ -278,7 +286,8 @@
       r.onresult = (ev) => {
         for (let i = ev.resultIndex; i < ev.results.length; i++) {
           // valutiamo anche i risultati parziali: la reazione è più pronta
-          valuta(ev.results[i][0].transcript);
+          // (il comando VIP scatta però solo sul risultato definitivo)
+          valuta(ev.results[i][0].transcript, ev.results[i].isFinal);
         }
       };
 

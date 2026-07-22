@@ -89,6 +89,7 @@ export const SCOPES = {
     'channel:read:subscriptions', // eventi sub
     'moderator:read:followers',   // eventi follow
     'channel:read:redemptions',   // riscatti punti canale
+    'channel:manage:vips',        // assegnare/togliere i VIP (comando vocale, premi)
   ],
 };
 

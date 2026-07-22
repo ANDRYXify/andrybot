@@ -68,6 +68,7 @@ function impostazioni() {
     giochi: s.giochi !== false,
     promoSocial: s.promoSocial !== false,
     nomeMonete: (typeof s.nomeMonete === 'string' && s.nomeMonete.trim()) || 'monete',
+    premioVip: (s.premioVip && typeof s.premioVip === 'object') ? s.premioVip : { attivo: false, periodo: 'settimana', quanti: 1 },
     frasi: Array.isArray(s.frasi) ? s.frasi : [],
     clipAuto: s.clipAuto !== false,
     clipAutoSoglia: typeof s.clipAutoSoglia === 'number' ? s.clipAutoSoglia : 25,
@@ -609,6 +610,32 @@ function pannelloGiochi() {
         <li><div class="testo-voce"><span class="domanda">!classifica</span> <span class="risposta">i più ricchi del canale</span></div></li>
         <li><div class="testo-voce"><span class="domanda">!giochi</span> <span class="risposta">elenco dei giochi</span></div></li>
       </ul>
+    </div>
+    <div class="carta">
+      <h2>Classifica & VIP 🏆</h2>
+      ${stato.vipOk ? '' : `<p class="suggerimento">⚠️ Per assegnare i VIP serve un permesso in più (aggiunto dopo).
+        <a class="btn secondario mini" href="/auth/permessi">Concedi i permessi</a></p>`}
+      <div class="riga-check">
+        <input type="checkbox" id="chk-premiovip" ${s.premioVip.attivo ? 'checked' : ''}>
+        <label for="chk-premiovip">Premio VIP automatico ai più affezionati</label>
+      </div>
+      <div class="riga-flessibile">
+        <span class="suggerimento">Ogni</span>
+        <select id="sel-premio-periodo">
+          <option value="settimana" ${s.premioVip.periodo === 'settimana' ? 'selected' : ''}>settimana</option>
+          <option value="mese" ${s.premioVip.periodo === 'mese' ? 'selected' : ''}>mese</option>
+        </select>
+        <span class="suggerimento">ai primi</span>
+        <input type="number" id="num-premio-quanti" min="1" max="5" value="${Number(s.premioVip.quanti) || 1}">
+      </div>
+      <p class="suggerimento">Il bot dà il VIP (per la stessa durata) ai top ${esc(s.nomeMonete)}. Puoi anche darlo
+      <strong class="primo-piano">a voce</strong> (Ascolto vocale → "vip a nome", default 1 settimana; di' "mese" per un mese)
+      o in chat con <code>!vip @nome</code>.</p>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-premio">Salva premio</button></p>
+      <h3>Classifica ${esc(s.nomeMonete)}</h3>
+      <ul class="lista-voci" id="lista-classifica"><li class="vuoto">Caricamento…</li></ul>
+      <h3>VIP a tempo attivi</h3>
+      <ul class="lista-voci" id="lista-vip"><li class="vuoto">Caricamento…</li></ul>
     </div>`);
 }
 
@@ -734,6 +761,18 @@ function attivaPiattaforma() {
       nomeMonete: document.getElementById('inp-monete').value.trim(),
       promoSocial: document.getElementById('chk-promo').checked,
     }, 'Giochi salvati 🎮');
+  }));
+
+  // premio VIP automatico (top monete → VIP ogni settimana/mese)
+  document.getElementById('btn-salva-premio')?.addEventListener('click', () => conErrore(async () => {
+    const quanti = Math.min(5, Math.max(1, Number(document.getElementById('num-premio-quanti').value) || 1));
+    await salvaImpostazioni({
+      premioVip: {
+        attivo: document.getElementById('chk-premiovip').checked,
+        periodo: document.getElementById('sel-premio-periodo').value === 'mese' ? 'mese' : 'settimana',
+        quanti,
+      },
+    }, 'Premio VIP salvato 🏆');
   }));
 
   // Comando rapido: inserimento variabili (senza perdere il focus) + crea al volo
@@ -973,6 +1012,7 @@ function caricaDatiScheda(id) {
   if (id === 'effetti') caricaEffetti();
   if (id === 'moduli') caricaModuli();
   if (id === 'memoria') caricaStatistiche();
+  if (id === 'giochi') caricaClassifica();
 }
 
 // --- caricamenti dati ---------------------------------------------------
@@ -1025,6 +1065,49 @@ async function caricaClip() {
     ul.innerHTML = `<li class="vuoto">Errore: ${esc(e.message)}</li>`;
   }
 }
+
+// classifica monete + VIP a tempo attivi (scheda Giochi)
+async function caricaClassifica() {
+  const ulCl = document.getElementById('lista-classifica');
+  const ulVip = document.getElementById('lista-vip');
+  if (!ulCl && !ulVip) return;
+  const nome = esc(impostazioni().nomeMonete || 'monete');
+  try {
+    const d = await api('/api/streamer/classifica');
+    if (ulCl) {
+      const monete = d.monete || [];
+      ulCl.innerHTML = monete.length
+        ? monete.map((m, i) => `
+          <li>
+            <div class="testo-voce">
+              <span class="domanda">${medaglia(i)} ${esc(m.user)}</span>
+              <span class="risposta">${Number(m.monete).toLocaleString('it-IT')} ${nome}</span>
+            </div>
+          </li>`).join('')
+        : `<li class="vuoto">Ancora nessuno ha ${nome}: si guadagnano chiacchierando e giocando!</li>`;
+    }
+    if (ulVip) {
+      const vip = d.vip || [];
+      ulVip.innerHTML = vip.length
+        ? vip.map((v) => {
+            const quando = v.until ? `fino al ${dataIt(v.until)}` : 'per sempre';
+            return `
+          <li>
+            <div class="testo-voce">
+              <span class="domanda">👑 ${esc(v.display || v.user)}</span>
+              <span class="risposta">${esc(quando)}${v.motivo ? ' · ' + esc(v.motivo) : ''}</span>
+            </div>
+          </li>`;
+          }).join('')
+        : '<li class="vuoto">Nessun VIP a tempo assegnato dal bot. Dallo a voce ("vip a nome") o con !vip @nome.</li>';
+    }
+  } catch (e) {
+    if (ulCl) ulCl.innerHTML = `<li class="vuoto">Errore: ${esc(e.message)}</li>`;
+    if (ulVip) ulVip.innerHTML = '';
+  }
+}
+
+function medaglia(i) { return ['🥇', '🥈', '🥉'][i] || `${i + 1}°`; }
 
 // --- effetti & suoni ----------------------------------------------------
 
