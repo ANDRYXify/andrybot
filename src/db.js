@@ -184,6 +184,12 @@ CREATE TABLE IF NOT EXISTS telegram (     -- notifiche Telegram: un bot+gruppo P
   ultima_live TEXT NOT NULL DEFAULT '',    -- id dell'ultima live notificata (anti-doppioni)
   ts INTEGER NOT NULL DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS brain_model (  -- IA locale: modello auto-addestrato per canale
+  channel TEXT PRIMARY KEY,                -- login twitch minuscolo
+  data TEXT NOT NULL DEFAULT '',           -- JSON: vocabolario + vettori semantici (base64)
+  ts INTEGER NOT NULL DEFAULT 0
+);
 `);
 
 const now = () => Date.now();
@@ -332,6 +338,19 @@ export const streamers = {
     db.prepare('UPDATE streamers SET settings=? WHERE login=?').run(JSON.stringify(settings || {}), login.toLowerCase());
   },
   remove(login) { db.prepare('DELETE FROM streamers WHERE login=?').run(login.toLowerCase()); },
+};
+
+// ---------------------------------------------------------------- IA locale (modello)
+// Il modello auto-addestrato di ciascun canale (vocabolario + vettori semantici).
+// Solo dati derivati dalla chat: si può cancellare senza perdere nulla di vero.
+export const models = {
+  get(channel) { return db.prepare('SELECT data FROM brain_model WHERE channel=?').get(String(channel).toLowerCase())?.data || null; },
+  set(channel, data) {
+    db.prepare(`INSERT INTO brain_model (channel, data, ts) VALUES (?,?,?)
+      ON CONFLICT(channel) DO UPDATE SET data=excluded.data, ts=excluded.ts`)
+      .run(String(channel).toLowerCase(), String(data || ''), now());
+  },
+  remove(channel) { db.prepare('DELETE FROM brain_model WHERE channel=?').run(String(channel).toLowerCase()); },
 };
 
 // ---------------------------------------------------------------- notifiche Telegram

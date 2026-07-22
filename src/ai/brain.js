@@ -6,6 +6,7 @@ import { makeLog } from '../logger.js';
 import { db, memory, knowledge } from '../db.js';
 import { checkMessage } from '../features/moderation.js';
 import * as learn from './learn.js';
+import * as model from './model.js';
 import * as persona from './persona.js';
 
 const log = makeLog('brain');
@@ -295,6 +296,17 @@ export class Brain {
   // apprendimento passivo: ogni messaggio passa di qui
   observe(msg) {
     try { learn.observe(msg); } catch (e) { log.error('observe:', e?.message || e); }
+    // IA locale: si auto-addestra sul messaggio (semantica + stile). Non impara
+    // da sé stessa (fromBot) per evitare loop di rinforzo.
+    try { model.observe(msg?.channel, msg?.text, { fromBot: !!msg?.isSelf }); }
+    catch (e) { log.debug('model.observe:', e?.message || e); }
+  }
+
+  // generazione "creativa": prima l'IA locale (n-grammi ordine 3, più naturale),
+  // poi il vecchio motore a bigrammi come rete di sicurezza.
+  _genera(channel) {
+    try { return model.genera(channel) || learn.generate(channel); }
+    catch { return learn.generate(channel); }
   }
 
   // ------------------------------------------------------------ shouldReply
@@ -347,6 +359,7 @@ export class Brain {
     try {
       if (!channel || !text || !streamer) return null;
       const settings = streamer.settings || {};
+      const iaOn = settings.iaLocale !== false;   // IA locale accesa (default sì)
       const tono = TONI.includes(settings.tono) ? settings.tono : 'scherzoso';
       let nome = display || user || 'tu';
       // amici della community: ogni tanto il bot li chiama con più calore
@@ -438,12 +451,26 @@ export class Brain {
         if (voce) return this._finalizza(channel, voce.risposta, streamer);
       }
 
-      // ---- b. CONOSCENZA (scoring sulle parole normalizzate) ----------
-      const daConoscenza = this._cercaConoscenza(channel, text);
+      // ---- b. CONOSCENZA (semantica + lessicale) ----------------------
+      // Con l'IA locale il match "capisce" anche le parafrasi (es. "dove ti
+      // seguo" → la voce sui social), così servono molte meno risposte scritte
+      // a mano. Se l'IA è spenta o "fredda", si ripiega sul match lessicale.
+      let daConoscenza = null;
+      if (iaOn) { const bk = model.bestKnowledge(channel, text); if (bk) daConoscenza = bk.risposta; }
+      if (!daConoscenza) daConoscenza = this._cercaConoscenza(channel, text);
       if (daConoscenza) {
         const r = Math.random();
         const prefisso = r < 0.6 ? '' : r < 0.85 ? nome + ' ' : 'Se parli di questo: ';
         return this._finalizza(channel, prefisso + daConoscenza, streamer);
+      }
+
+      // ---- b2. RISPOSTA "LIBERA" pertinente (IA locale) ---------------
+      // Il messaggio sembra qualcosa a cui reagire (domanda/intento) ma non
+      // c'è una voce di conoscenza: l'IA prova a rispondere nello stile della
+      // chat, in modo pertinente. Solo se convince davvero (soglia alta).
+      if (iaOn && (menziona || sembraRispondibile(text))) {
+        const libera = model.componiRisposta(channel, text, { minScore: menziona ? 0.55 : 0.62 });
+        if (libera) return this._finalizza(channel, libera, streamer);
       }
 
       // ---- c. RINGRAZIAMENTI E COMPLIMENTI ----------------------------
@@ -454,7 +481,7 @@ export class Brain {
       // ---- d. DOMANDA DIRETTA senza risposta trovata ------------------
       if (menziona && text.includes('?')) {
         if (Math.random() < 0.3) {
-          const frase = learn.generate(channel);
+          const frase = this._genera(channel);
           if (frase) return this._finalizza(channel, compila(scegli(IMPROVVISO), { ...variabili, frase }), streamer);
         }
         return this._finalizza(channel, compila(scegli(NON_LO_SO), variabili), streamer);
@@ -483,7 +510,7 @@ export class Brain {
       };
 
       if (Math.random() < 0.5) return this._finalizza(channel, battuta(), streamer);
-      const generata = learn.generate(channel);
+      const generata = this._genera(channel);
       return this._finalizza(channel, generata || battuta(), streamer);
     } catch (e) {
       log.error(`chatReply #${channel}:`, e?.message || e);
@@ -641,6 +668,9 @@ export class Brain {
         pezzi.push(`${seiOre} messaggi nelle ultime 6 ore`);
         memory.addLesson(channel, pezzi.join('; '));
       }
+
+      // IA locale: ri-addestramento periodico (n-grammi + semantica + conoscenza)
+      try { model.train(channel); } catch (e) { log.error(`train #${channel}:`, e?.message || e); }
 
       // pulizia: i messaggi oltre i 14 giorni non servono più
       const via = db.prepare('DELETE FROM messages WHERE channel=? AND ts<?')
