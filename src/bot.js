@@ -16,6 +16,7 @@ import * as telegram from './features/telegram.js';
 import * as antispam from './features/antispam.js';
 import * as tiktok from './features/tiktok.js';
 import * as gamesbridge from './features/gamesbridge.js';
+import * as quotes from './features/quotes.js';
 import * as model from './ai/model.js';
 import { createMessageHandler } from './features/handler.js';
 import { ClipEngine } from './features/clips.js';
@@ -237,6 +238,9 @@ export class BotManager {
     catch (e) { log.error(`#${login} giochi:`, e?.message || e); }
     // comandi VIP (mod/streamer): !vip @nome [durata], !unvip, !viplista
     vip.tryVipCommand(this.helix, msg, (t) => this.say(msg.channel, t)).catch((e) => log.error(`#${login} vip:`, e?.message || e));
+    // citazioni (!cita) e shoutout (!so @nome)
+    try { quotes.tryQuoteCommand(msg, (t) => this.say(msg.channel, t)); } catch (e) { log.error(`#${login} citazioni:`, e?.message || e); }
+    quotes.tryShoutout(this.helix, msg, (t) => this.say(msg.channel, t)).catch((e) => log.error(`#${login} shoutout:`, e?.message || e));
     // effetti & suoni: un comando come !airhorn accende l'overlay OBS.
     try { this.effects?.tryTrigger(msg, (t) => this.say(msg.channel, t)); }
     catch (e) { log.error(`#${login} effetti:`, e?.message || e); }

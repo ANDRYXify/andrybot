@@ -766,6 +766,17 @@ function pannelloGiochi() {
         <label for="chk-giochisito">Fai giocare la chat ai giochi del sito</label>
       </div>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-giochisito" ${s.giochiSito.collegato ? '' : 'disabled'}>Salva</button></p>
+    </div>
+
+    <div class="carta">
+      <h2>Citazioni 💬</h2>
+      <p>Le frasi memorabili della chat. In chat: <code>!cita</code> (a caso), <code>!cita 12</code> (una precisa),
+      <code>!cita aggiungi &lt;testo&gt;</code> e <code>!cita rimuovi 12</code> (mod/streamer). Le gestisci anche da qui.</p>
+      <div class="riga-flessibile">
+        <input type="text" id="inp-citazione" maxlength="400" placeholder="una frase memorabile…">
+        <button class="btn" id="btn-aggiungi-citazione">Aggiungi</button>
+      </div>
+      <ul class="lista-voci" id="lista-citazioni"><li class="vuoto">Caricamento…</li></ul>
     </div>`);
 }
 
@@ -1103,6 +1114,17 @@ function attivaPiattaforma() {
     await salvaImpostazioni({ giochiSito: { attivo: document.getElementById('chk-giochisito').checked } }, 'Giochi del sito salvati 🎯');
   }));
 
+  // citazioni: aggiunta dalla dashboard
+  document.getElementById('btn-aggiungi-citazione')?.addEventListener('click', () => conErrore(async () => {
+    const inp = document.getElementById('inp-citazione');
+    const testo = (inp.value || '').trim();
+    if (!testo) { toast('Scrivi la citazione.', 'errore'); return; }
+    const r = await api('/api/streamer/citazioni', { method: 'POST', body: { testo } });
+    inp.value = '';
+    toast('Citazione #' + r.n + ' aggiunta 💬');
+    caricaCitazioni();
+  }));
+
   // premio VIP automatico (top monete → VIP ogni settimana/mese)
   document.getElementById('btn-salva-premio')?.addEventListener('click', () => conErrore(async () => {
     const quanti = Math.min(5, Math.max(1, Number(document.getElementById('num-premio-quanti').value) || 1));
@@ -1412,7 +1434,7 @@ function caricaDatiScheda(id) {
   if (id === 'effetti') caricaEffetti();
   if (id === 'moduli') caricaModuli();
   if (id === 'memoria') caricaStatistiche();
-  if (id === 'giochi') caricaClassifica();
+  if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); }
 }
 
 // --- caricamenti dati ---------------------------------------------------
@@ -1508,6 +1530,25 @@ async function caricaClassifica() {
 }
 
 function medaglia(i) { return ['🥇', '🥈', '🥉'][i] || `${i + 1}°`; }
+
+async function caricaCitazioni() {
+  const ul = document.getElementById('lista-citazioni');
+  if (!ul) return;
+  try {
+    const voci = await api('/api/streamer/citazioni');
+    ul.innerHTML = voci.length
+      ? voci.map((q) => `<li>
+          <div class="testo-voce"><span class="domanda">#${q.n}</span> <span class="risposta">${esc(q.text)}</span></div>
+          <button class="btn secondario mini" data-cita-rimuovi="${q.n}">Rimuovi</button>
+        </li>`).join('')
+      : '<li class="vuoto">Ancora nessuna citazione. Aggiungine una qui sopra o con !cita aggiungi in chat 💬</li>';
+    ul.onclick = (ev) => {
+      const b = ev.target.closest('[data-cita-rimuovi]');
+      if (!b) return;
+      conErrore(async () => { await api('/api/streamer/citazioni/' + b.dataset.citaRimuovi, { method: 'DELETE' }); toast('Citazione rimossa.'); caricaCitazioni(); });
+    };
+  } catch (e) { ul.innerHTML = `<li class="vuoto">Errore: ${esc(e.message)}</li>`; }
+}
 
 // --- effetti & suoni ----------------------------------------------------
 
