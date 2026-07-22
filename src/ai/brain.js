@@ -6,6 +6,7 @@ import { makeLog } from '../logger.js';
 import { db, memory, knowledge } from '../db.js';
 import { checkMessage } from '../features/moderation.js';
 import * as learn from './learn.js';
+import * as persona from './persona.js';
 
 const log = makeLog('brain');
 
@@ -326,6 +327,11 @@ export class Brain {
         p = Math.max(p, Math.min(0.5, spont * 3));
       }
 
+      // amici: il bot si fa vivo con loro un filo più volentieri (solo se l'autonomia è > 0)
+      if (spont > 0 && user && persona.amicizia(user).livello >= 2) {
+        p = Math.max(p, Math.min(0.5, spont * 2 + 0.05));
+      }
+
       return Math.random() < p;
     } catch (e) {
       log.error('shouldReply:', e?.message || e);
@@ -342,7 +348,12 @@ export class Brain {
       if (!channel || !text || !streamer) return null;
       const settings = streamer.settings || {};
       const tono = TONI.includes(settings.tono) ? settings.tono : 'scherzoso';
-      const nome = display || user || 'tu';
+      let nome = display || user || 'tu';
+      // amici della community: ogni tanto il bot li chiama con più calore
+      // (l'anima è condivisa; non rivela MAI dove/cosa, solo l'affinità)
+      if (user && persona.amicizia(user).livello >= 2 && Math.random() < 0.4) {
+        nome = persona.vezzeggiativo(user, nome);
+      }
       const lower = String(text).toLowerCase();
       const menziona = menzionaBot(text, botLogin || channel);
       const variabili = { user: nome, canale: streamer.display || channel };
@@ -514,6 +525,7 @@ export class Brain {
     if (!risposta) return null;
     let testo = String(risposta).replace(/\s+/g, ' ').trim();
     if (!testo) return null;
+    testo = persona.colora(testo);   // tocco leggero dell'anima (umore/energia)
     if (testo.length > MAX_RISPOSTA) testo = testo.slice(0, MAX_RISPOSTA - 1).trimEnd() + '…';
 
     const esito = checkMessage(testo, streamer?.settings || {});
@@ -533,6 +545,7 @@ export class Brain {
     try {
       const { channel, type, data = {} } = ev || {};
       if (!channel || !type || typeof say !== 'function') return;
+      persona.onEvento(ev);   // l'anima reagisce agli eventi (umore/energia)
 
       const chiave = channel + '|' + type;
       if (Date.now() - (this._ultimoEvento.get(chiave) || 0) < COOLDOWN_EVENTO) return;

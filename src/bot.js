@@ -9,6 +9,7 @@ import { tokens, streamers, memory } from './db.js';
 import { ChatBot } from './twitch/chat.js';
 import { EventHub } from './twitch/events.js';
 import { Brain } from './ai/brain.js';
+import * as persona from './ai/persona.js';
 import { createMessageHandler } from './features/handler.js';
 import { ClipEngine } from './features/clips.js';
 import { scheduleReflection } from './ai/reflection.js';
@@ -32,6 +33,7 @@ export class BotManager {
     this.events = null;
     this.watcher = null;
     this._syncTimer = null;
+    this._animaTimer = null;
     this._stopReflection = null;
     this._capAvvisoDato = false;     // il tetto ascolti è già stato loggato una volta?
   }
@@ -55,12 +57,15 @@ export class BotManager {
     this.running = true;
     await this.syncChannels();
     this._syncTimer = setInterval(() => this.syncChannels().catch(() => {}), 60_000);
+    // battito dell'anima: umore che "respira" + proattività dosata dall'autonomia
+    this._animaTimer = setInterval(() => this._battitoAnima(), 3 * 60_000);
     log.info('SocialBot avviato');
   }
 
   async stop() {
     this.running = false;
     clearInterval(this._syncTimer);
+    clearInterval(this._animaTimer);
     this._stopReflection?.();
     this.watcher?.stop();
     // spegni tutti gli ascolti live (audio): non devono restare orfani
@@ -73,6 +78,27 @@ export class BotManager {
 
   // manda un messaggio nel canale attraverso l'unità giusta
   say(channel, text) { this.units.get(channel)?.chat.say(channel, text); }
+
+  // Battito dell'anima: l'umore "respira" (torna piano alla calma) e, se lo
+  // streamer lascia la proattività accesa, ogni tanto il bot dice qualcosa di
+  // sua iniziativa — dosato dalla stessa manopola "Chat autonoma", e solo se
+  // c'è gente che parla (mai in una chat vuota).
+  _battitoAnima() {
+    try {
+      persona.respira();
+      for (const login of this.units.keys()) {
+        const s = streamers.get(login);
+        if (!s || s.settings?.proattivo === false) continue;   // proattività disattivabile
+        const auto = Math.min(0.5, Math.max(0, Number(s.settings?.spontaneita) || 0));
+        if (auto <= 0) continue;                                // autonomia a zero = zitto
+        if ((memory.messageRate?.(login) || 0) < 1) continue;   // chat ferma: non parlare da solo
+        if (Math.random() < auto * 0.4) {
+          const t = persona.proattiva();
+          if (t) this.say(login, t);
+        }
+      }
+    } catch (e) { log.error('battito anima:', e?.message || e); }
+  }
 
   // uno streamer è "pronto" se ha concesso i permessi con gli scope chat
   _ready(s) {
@@ -96,6 +122,9 @@ export class BotManager {
           onMessage(msg).catch(e => log.error(`#${login} gestione messaggio:`, e?.message || e));
           if (!msg.isSelf) this.clips.onActivity(msg.channel);   // rilevatore "hype" per le clip automatiche
           this.brain.observe?.(msg);                             // apprendimento passivo (anche dai messaggi dello streamer)
+          // amicizia GLOBALE: chi interagisce diventa piano piano "amico" del
+          // bot (solo un'affinità, mai contenuti né in quale canale).
+          if (!msg.isSelf) { try { persona.interagisci(msg.user); } catch { /* niente */ } }
           // effetti & suoni: un comando come !airhorn accende l'overlay OBS.
           // Non deve MAI rompere il flusso dei messaggi, quindi try/catch.
           try { this.effects?.tryTrigger(msg, (t) => this.say(msg.channel, t)); }
