@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { config, SCOPES, missingConfig } from '../config.js';
 import { makeLog } from '../logger.js';
-import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando } from '../db.js';
+import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb } from '../db.js';
 import { comprimi } from '../features/compress.js';
 import { pretrain } from '../ai/pretrain.js';
 import { redeemPass } from './gate.js';
@@ -26,7 +26,12 @@ const STATI_VALIDI = ['pending', 'approved', 'disabled'];
 const TIER_VALIDI = ['tutti', 'sub', 'vip', 'mod'];
 const UPLOAD_MAX = 30 * 1024 * 1024;   // 30 MB in ingresso (l'output sarà molto più piccolo)
 
-export function startWeb({ auth, helix, manager, effects }) {
+// Moduli: tipi di innesco e di azione ammessi (validazione lato API)
+const MOD_TRIGGER = ['comando', 'parola', 'evento', 'timer', 'manuale'];
+const MOD_AZIONI = ['messaggio', 'effetto', 'contatore', 'webhook', 'attendi', 'overlayTesto', 'timeout'];
+const EXT_MAX_MIN = 30;   // ingresso esterno: max richieste al minuto per login
+
+export function startWeb({ auth, helix, manager, effects, modules }) {
   const app = express();
 
   // dietro reverse proxy (nginx/caddy) serve per cookie "secure" e IP reali
@@ -59,9 +64,12 @@ export function startWeb({ auth, helix, manager, effects }) {
   // trova nulla da esplorare.
   // Eccezione per l'overlay OBS: /overlay/* è pubblico ma si protegge da solo
   // con la chiave (?key=...), perché OBS lo apre senza sessione/cookie.
+  // Stessa logica per /api/ext/*: l'ingresso esterno si protegge con la chiave
+  // API del canale (Authorization: Bearer ...), non con la sessione.
   const PUBBLICI = new Set(['/health', '/entra']);
   app.use((req, res, next) => {
-    if (currentUser(req) || PUBBLICI.has(req.path) || req.path.startsWith('/overlay/')) return next();
+    if (currentUser(req) || PUBBLICI.has(req.path)
+        || req.path.startsWith('/overlay/') || req.path.startsWith('/api/ext/')) return next();
     return notFound(res);
   });
 
@@ -500,6 +508,130 @@ export function startWeb({ auth, helix, manager, effects }) {
     const eff = comando ? effectsDb.get(login, comando) : null;
     if (!eff) return res.status(404).json({ errore: 'effetto non trovato' });
     effects.emit(login, effects.payload(login, eff));
+    res.json({ ok: true });
+  }));
+
+  // ------------------------------------------------------------ API MODULI (automazioni)
+
+  // Legge la chiave API in ingresso del canale (o null se non c'è).
+  const leggiApiKey = (login) => streamers.get(login)?.settings?.apiKey || null;
+
+  // Genera (e salva, mergiando le impostazioni) una nuova chiave API del canale.
+  const generaApiKey = (login) => {
+    const key = crypto.randomBytes(24).toString('base64url');
+    const s = streamers.get(login);
+    streamers.setSettings(login, { ...(s?.settings || {}), apiKey: key });
+    return key;
+  };
+
+  // Ritorna la chiave esistente o ne crea una se manca.
+  const apiKeyOrCrea = (login) => leggiApiKey(login) || generaApiKey(login);
+
+  // Validazione di un modulo in arrivo dalla dashboard. Ritorna un messaggio
+  // d'errore (stringa) o null se è valido.
+  function validaModulo(m) {
+    if (!m || typeof m !== 'object') return 'modulo mancante';
+    if (!String(m.nome || '').trim()) return 'il nome è obbligatorio';
+    const tipo = m.trigger?.tipo;
+    if (!MOD_TRIGGER.includes(tipo)) return 'tipo di innesco non valido';
+    if (!Array.isArray(m.azioni) || !m.azioni.length) return "serve almeno un'azione";
+    for (const a of m.azioni) {
+      if (!a || !MOD_AZIONI.includes(a.tipo)) return 'azione non valida';
+      if (a.tipo === 'webhook' && !/^https?:\/\//i.test(String(a.url || ''))) {
+        return 'il webhook accetta solo URL http/https';
+      }
+    }
+    return null;
+  }
+
+  // elenco moduli + effetti disponibili (per il menu azioni) + chiave/URL API
+  app.get('/api/streamer/moduli', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const effettiDisponibili = effectsDb.list(login).filter((e) => e.attivo).map((e) => e.comando);
+    res.json({
+      moduli: modulesDb.list(login),
+      effettiDisponibili,
+      apiKey: apiKeyOrCrea(login),
+      apiUrl: `${config.baseUrl}/api/ext/${login}`,
+    });
+  }));
+
+  // crea/aggiorna un modulo (id? nel body per la modifica)
+  app.post('/api/streamer/moduli', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const errore = validaModulo(req.body);
+    if (errore) return res.status(400).json({ errore });
+    let id;
+    try { id = modulesDb.save(login, req.body); }
+    catch (e) { return res.status(400).json({ errore: e?.message || 'salvataggio non riuscito' }); }
+    res.json({ ok: true, id });
+  }));
+
+  // elimina un modulo
+  app.delete('/api/streamer/moduli/:id', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) return res.status(400).json({ errore: 'id non valido' });
+    modulesDb.remove(login, id);
+    res.json({ ok: true });
+  }));
+
+  // "prova": esegue il modulo una volta lì per lì (contesto = streamer)
+  app.post('/api/streamer/moduli/:id/prova', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) return res.status(400).json({ errore: 'id non valido' });
+    const ok = await modules.provaModulo(login, id, (t) => manager.say(login, t));
+    if (!ok) return res.status(404).json({ errore: 'modulo non trovato' });
+    res.json({ ok: true });
+  }));
+
+  // accende/spegne un modulo
+  app.post('/api/streamer/moduli/:id/toggle', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) return res.status(400).json({ errore: 'id non valido' });
+    modulesDb.setAttivo(login, id, !!req.body?.attivo);
+    res.json({ ok: true });
+  }));
+
+  // rigenera la chiave API in ingresso del canale
+  app.post('/api/streamer/apikey', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    res.json({ apiKey: generaApiKey(login) });
+  }));
+
+  // ---- INGRESSO ESTERNO: un servizio dello streamer fa dire/fare cose al bot
+  // Autenticazione con la chiave API del :login (Bearer o ?key=), confronto
+  // timing-safe. Chiave errata → 404 (labirinto: nessun indizio). Solo POST.
+
+  const extHits = new Map();   // login → { count, reset }
+  function extRateOk(login) {
+    const ora = Date.now();
+    let r = extHits.get(login);
+    if (!r || ora > r.reset) { r = { count: 0, reset: ora + 60_000 }; extHits.set(login, r); }
+    r.count++;
+    return r.count <= EXT_MAX_MIN;
+  }
+
+  // confronto costante: lunghezze diverse → false (senza toccare timingSafeEqual)
+  function chiaveUguale(fornita, attesa) {
+    const a = Buffer.from(String(fornita || ''), 'utf8');
+    const b = Buffer.from(String(attesa || ''), 'utf8');
+    if (a.length !== b.length) return false;
+    try { return crypto.timingSafeEqual(a, b); } catch { return false; }
+  }
+
+  app.post('/api/ext/:login', wrap(async (req, res) => {
+    const login = String(req.params.login || '').toLowerCase();
+    const attesa = leggiApiKey(login);
+    const fornita = (req.get('authorization') || '').replace(/^Bearer\s+/i, '').trim()
+      || String(req.query.key || '');
+    // nessuna chiave configurata o chiave errata → 404 (nessun indizio)
+    if (!attesa || !chiaveUguale(fornita, attesa)) return notFound(res);
+    if (!extRateOk(login)) return res.status(429).json({ errore: 'troppe richieste' });
+    const ok = await modules.eseguiPerApi(login, req.body || {}, (t) => manager.say(login, t));
+    if (!ok) return res.status(400).json({ errore: 'azione non riconosciuta' });
     res.json({ ok: true });
   }));
 

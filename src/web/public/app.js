@@ -8,6 +8,12 @@
 let stato = null;          // risposta di /api/me
 let schedaAttiva = 'stato';
 
+// stato locale della scheda "Moduli"
+let datiModuli = null;        // { moduli, effettiDisponibili, apiKey, apiUrl }
+let moduloInModifica = null;  // oggetto aperto nell'editor (per conservare id/attivo)
+let campoAttivoModulo = null; // ultimo campo di testo a fuoco (per le pillole variabili)
+let apiKeyVisibile = false;   // se la chiave API è mostrata in chiaro
+
 const app = document.getElementById('app');
 const areaUtente = document.getElementById('area-utente');
 
@@ -188,6 +194,7 @@ function vistaPiattaforma() {
     ['conoscenza', 'Conoscenza'],
     ['clip', 'Clip'],
     ['effetti', 'Effetti & Suoni'],
+    ['moduli', 'Moduli'],
     ['regole', 'Regole'],
     ['memoria', 'Memoria & Statistiche'],
   ];
@@ -201,6 +208,7 @@ function vistaPiattaforma() {
     ${pannelloConoscenza()}
     ${pannelloClip()}
     ${pannelloEffetti()}
+    ${pannelloModuli()}
     ${pannelloRegole()}
     ${pannelloMemoria()}`;
 }
@@ -400,6 +408,73 @@ function pannelloEffetti() {
     </div>`);
 }
 
+// --- scheda Moduli ------------------------------------------------------
+// Automazioni componibili col modello QUANDO → SE → ALLORA.
+
+function pannelloModuli() {
+  return pannello('moduli', `
+    <div class="carta">
+      <h2>Moduli 🧩</h2>
+      <p>Crea le tue automazioni: <strong class="primo-piano">QUANDO</strong> succede qualcosa,
+      il bot fa <strong class="primo-piano">quello che vuoi tu</strong>.</p>
+      <p class="spazio-sopra"><button class="btn" data-nuovo-modulo>➕ Nuovo modulo</button></p>
+      <p class="suggerimento spazio-sopra">Non sai da dove partire? Scegli un modello pronto e modificalo:</p>
+      <div class="modelli-pronti">
+        <button class="modello-pronto" data-modello="saluto">Saluto</button>
+        <button class="modello-pronto" data-modello="timer">Timer annuncio</button>
+        <button class="modello-pronto" data-modello="social">Social</button>
+        <button class="modello-pronto" data-modello="morti">Contatore morti</button>
+        <button class="modello-pronto" data-modello="webhook">Collega il mio bot (webhook)</button>
+      </div>
+    </div>
+
+    <div class="carta">
+      <h2>I tuoi moduli 📋</h2>
+      <ul id="lista-moduli" class="lista-moduli"><li class="vuoto">Caricamento…</li></ul>
+    </div>
+
+    <div id="editor-modulo"></div>
+
+    <div class="carta">
+      <h2>Connettori avanzati 🔌</h2>
+      <p>Per far dire o fare qualcosa ad AndryBot <strong class="primo-piano">da un tuo servizio esterno</strong>
+      (il bot custom che già hai): chiama l'URL qui sotto con la tua chiave.</p>
+      <div id="connettori-moduli"><p class="vuoto">Caricamento…</p></div>
+    </div>`);
+}
+
+// modelli pronti: precompilano l'editor, l'utente poi salva
+function modelloPronto(nome) {
+  const cond = () => ({ chiPuo: 'tutti', cooldown: 0, probabilita: 100, soloLive: false, soloOffline: false });
+  switch (nome) {
+    case 'saluto':
+      return { id: null, nome: 'Saluto', attivo: true,
+        trigger: { tipo: 'comando', comando: 'ciao', alias: [] }, condizioni: cond(),
+        azioni: [{ tipo: 'messaggio', testo: 'Ciao $user! 👋' }] };
+    case 'timer':
+      return { id: null, nome: 'Timer annuncio', attivo: true,
+        trigger: { tipo: 'timer', minuti: 15, minMessaggi: 10 }, condizioni: cond(),
+        azioni: [{ tipo: 'messaggio', testo: 'Ricordati di seguire il canale! 💜' }] };
+    case 'social':
+      return { id: null, nome: 'Social', attivo: true,
+        trigger: { tipo: 'comando', comando: 'social', alias: [] }, condizioni: cond(),
+        azioni: [{ tipo: 'messaggio', testo: 'I miei social li trovi su andryxify.it/u/$canale ✨' }] };
+    case 'morti':
+      return { id: null, nome: 'Contatore morti', attivo: true,
+        trigger: { tipo: 'comando', comando: 'morte', alias: [] }, condizioni: { ...cond(), chiPuo: 'mod' },
+        azioni: [
+          { tipo: 'contatore', nome: 'morti', operazione: 'incrementa', valore: 0 },
+          { tipo: 'messaggio', testo: 'Morti oggi: $count(morti) 💀' },
+        ] };
+    case 'webhook':
+      return { id: null, nome: 'Collega il mio bot', attivo: true,
+        trigger: { tipo: 'comando', comando: 'chiedi', alias: [] }, condizioni: cond(),
+        azioni: [{ tipo: 'webhook', url: '', usaRisposta: true }] };
+    default:
+      return null;
+  }
+}
+
 // --- scheda Regole ------------------------------------------------------
 
 function pannelloRegole() {
@@ -559,8 +634,114 @@ function attivaPiattaforma() {
     document.getElementById('contenitore-memoria').innerHTML = '';
   }));
 
+  // --- scheda Moduli: intro + modelli pronti (delega sul pannello) ---
+  document.getElementById('scheda-moduli')?.addEventListener('click', (ev) => {
+    if (ev.target.closest('[data-nuovo-modulo]')) { apriEditor(null); return; }
+    const mod = ev.target.closest('[data-modello]');
+    if (mod) apriEditor(modelloPronto(mod.dataset.modello));
+  });
+
+  // --- scheda Moduli: editor (delega sul contenitore persistente) ---
+  const ed = document.getElementById('editor-modulo');
+  if (ed) {
+    // tiene il focus sul campo di testo quando si clicca una pillola
+    ed.addEventListener('mousedown', (ev) => {
+      if (ev.target.closest('[data-inserisci]')) ev.preventDefault();
+    });
+    // ricorda l'ultimo campo di testo a fuoco (per inserire le variabili)
+    ed.addEventListener('focusin', (ev) => {
+      if (ev.target.matches('[data-var-target]')) campoAttivoModulo = ev.target;
+    });
+    // digitazione → aggiorna il riassunto vivo
+    ed.addEventListener('input', aggiornaRiassunto);
+    // cambi di select (tipo trigger / tipo azione / condizioni) e checkbox
+    ed.addEventListener('change', (ev) => {
+      if (ev.target.matches('[data-trigger-tipo]')) {
+        const box = document.getElementById('campi-quando');
+        if (box) box.innerHTML = disegnaCampiQuando({ tipo: ev.target.value });
+      } else if (ev.target.matches('[data-azione-tipo]')) {
+        const riga = ev.target.closest('.azione-riga');
+        if (riga) riga.outerHTML = disegnaAzione({ tipo: ev.target.value });
+      }
+      aggiornaRiassunto();
+    });
+    // bottoni dell'editor + pillole variabili
+    ed.addEventListener('click', gestisciClicEditor);
+  }
+
   // dati della scheda visibile al primo caricamento
   caricaDatiScheda(schedaAttiva);
+}
+
+// click dentro l'editor: pillole, riordino/rimozione azioni, salva/prova/annulla
+function gestisciClicEditor(ev) {
+  const chip = ev.target.closest('[data-inserisci]');
+  if (chip) {
+    let campo = campoAttivoModulo;
+    const ed = document.getElementById('editor-modulo');
+    if (!campo || !ed?.contains(campo)) {
+      campo = chip.closest('.azione-riga')?.querySelector('[data-var-target]') || null;
+    }
+    if (campo) inserisciNelCampo(campo, chip.getAttribute('data-inserisci'));
+    aggiornaRiassunto();
+    return;
+  }
+  if (ev.target.closest('[data-aggiungi-azione]')) {
+    ev.preventDefault();
+    document.getElementById('lista-azioni')?.insertAdjacentHTML('beforeend', disegnaAzione({ tipo: 'messaggio', testo: '' }));
+    aggiornaRiassunto();
+    return;
+  }
+  const rim = ev.target.closest('[data-rimuovi-azione]');
+  if (rim) { ev.preventDefault(); rim.closest('.azione-riga')?.remove(); aggiornaRiassunto(); return; }
+  const su = ev.target.closest('[data-su]');
+  if (su) {
+    ev.preventDefault();
+    const riga = su.closest('.azione-riga');
+    const prec = riga?.previousElementSibling;
+    if (prec) riga.parentNode.insertBefore(riga, prec);
+    aggiornaRiassunto();
+    return;
+  }
+  const giu = ev.target.closest('[data-giu]');
+  if (giu) {
+    ev.preventDefault();
+    const riga = giu.closest('.azione-riga');
+    const succ = riga?.nextElementSibling;
+    if (succ) riga.parentNode.insertBefore(succ, riga);
+    aggiornaRiassunto();
+    return;
+  }
+  if (ev.target.closest('[data-annulla-editor]')) {
+    ev.preventDefault();
+    moduloInModifica = null;
+    const cont = document.getElementById('editor-modulo');
+    if (cont) cont.innerHTML = '';
+    return;
+  }
+  if (ev.target.closest('[data-salva-modulo]')) {
+    ev.preventDefault();
+    conErrore(async () => {
+      const id = await salvaModuloCorrente();
+      if (id == null) return;
+      toast('Modulo salvato 💜');
+      moduloInModifica = null;
+      const cont = document.getElementById('editor-modulo');
+      if (cont) cont.innerHTML = '';
+      caricaModuli();
+    });
+    return;
+  }
+  if (ev.target.closest('[data-prova-editor]')) {
+    ev.preventDefault();
+    conErrore(async () => {
+      const id = await salvaModuloCorrente();
+      if (id == null) return;
+      await api('/api/streamer/moduli/' + encodeURIComponent(id) + '/prova', { method: 'POST', body: {} });
+      toast('Salvato e provato: guarda chat/overlay 👀');
+      caricaModuli(); // aggiorna la lista, l'editor resta aperto per continuare a modificare
+    });
+  }
 }
 
 // textarea → array di righe pulite
@@ -578,6 +759,7 @@ function caricaDatiScheda(id) {
   if (id === 'conoscenza') caricaConoscenza();
   if (id === 'clip') caricaClip();
   if (id === 'effetti') caricaEffetti();
+  if (id === 'moduli') caricaModuli();
   if (id === 'memoria') caricaStatistiche();
 }
 
@@ -765,6 +947,559 @@ async function caricaMemoria(mostraToast = false) {
     if (mostraToast) toast('Memoria caricata 🧠');
   } catch (e) {
     box.innerHTML = `<p class="vuoto">Errore: ${esc(e.message)}</p>`;
+  }
+}
+
+// ------------------------------------------------------------------ moduli (automazioni)
+
+// mappe testo per rendere leggibili trigger, eventi e azioni
+const EVENTI = [
+  ['follow', 'Nuovo follow'],
+  ['sub', 'Sub / resub'],
+  ['raid', 'Raid'],
+  ['bits', 'Bits / cheer'],
+  ['riscatto', 'Riscatto punti canale'],
+  ['primo', 'Primo messaggio di un utente'],
+  ['live', 'Sei andato in live'],
+  ['fine', 'Fine live'],
+];
+const EVENTI_TXT = {
+  follow: 'arriva un nuovo follow', sub: 'qualcuno si abbona', raid: 'parte un raid',
+  bits: 'arrivano dei bits', riscatto: 'riscattano un premio coi punti',
+  primo: 'un utente scrive per la prima volta', live: 'vai in live', fine: 'finisce la live',
+};
+const TRIGGER = [
+  ['comando', 'Un comando in chat'],
+  ['parola', 'Una parola o frase in chat'],
+  ['evento', 'Un evento del canale'],
+  ['timer', 'A tempo (timer)'],
+  ['manuale', 'Manuale / da un mio servizio'],
+];
+const AZIONI = [
+  ['messaggio', '💬 Scrivi in chat'],
+  ['effetto', '✨ Fai partire un effetto'],
+  ['contatore', '🔢 Contatore'],
+  ['webhook', '🔗 Chiama un webhook'],
+  ['aspetta', '⏱️ Aspetta'],
+  ['overlay', '🖥️ Mostra testo sull\'overlay'],
+  ['timeout', '🚫 Timeout in chat'],
+];
+// pillole variabili cliccabili (testo inserito = etichetta)
+const VARIABILI = [
+  '$user', '$touser', '$args', '$arg1', '$canale', '$uptime',
+  '$gioco', '$titolo', '$count(nome)', '$random(1,100)', '$pick(a|b|c)',
+];
+
+// traduce un modulo in una frase italiana leggibile: "QUANDO … SE … → azioni"
+function riassuntoModulo(m) {
+  if (!m) return '';
+  const t = riassuntoQuando(m.trigger || {});
+  const c = riassuntoSe(m.condizioni || {});
+  const az = (m.azioni || []).map(riassuntoAzione).filter(Boolean);
+  const azTxt = az.length ? az.join(', ') : 'non fa ancora niente';
+  return `QUANDO ${t}${c ? ' · SE ' + c : ''} → ${azTxt}`;
+}
+function riassuntoQuando(t) {
+  switch (t.tipo) {
+    case 'comando': return t.comando ? `scrivono !${t.comando}` : 'scrivono un comando';
+    case 'parola': {
+      const modo = { contiene: 'compare', esatto: 'è esattamente', inizia: 'inizia con' }[t.modo] || 'compare';
+      return t.testo ? `in chat ${modo} "${t.testo}"` : 'compare una parola';
+    }
+    case 'evento': return EVENTI_TXT[t.evento] || 'succede un evento del canale';
+    case 'timer': {
+      let s = `ogni ${t.minuti || 0} min`;
+      if (t.minMessaggi) s += ` e almeno ${t.minMessaggi} messaggi`;
+      return s;
+    }
+    case 'manuale': return 'lo attivi tu (Prova o servizio esterno)';
+    default: return 'succede qualcosa';
+  }
+}
+function riassuntoSe(c) {
+  const parti = [];
+  const chi = { sub: 'solo i sub', vip: 'solo i VIP', mod: 'solo i mod' }[c.chiPuo];
+  if (chi) parti.push(chi);
+  if (c.cooldown > 0) parti.push(`max ogni ${c.cooldown}s`);
+  if (typeof c.probabilita === 'number' && c.probabilita >= 0 && c.probabilita < 100) parti.push(`${c.probabilita}% delle volte`);
+  if (c.soloLive) parti.push('solo in live');
+  if (c.soloOffline) parti.push('solo offline');
+  return parti.join(', ');
+}
+function riassuntoAzione(a) {
+  switch (a.tipo) {
+    case 'messaggio': return 'invia un messaggio';
+    case 'effetto': return a.comando ? `fai partire l'effetto !${a.comando}` : 'fai partire un effetto';
+    case 'contatore': {
+      const n = a.nome || 'contatore';
+      if (a.operazione === 'azzera') return `azzera "${n}"`;
+      if (a.operazione === 'imposta') return `imposta "${n}" a ${a.valore ?? 0}`;
+      return `aumenta "${n}"`;
+    }
+    case 'webhook': return 'chiama un webhook';
+    case 'aspetta': return `aspetta ${a.secondi || 0}s`;
+    case 'overlay': return 'mostra un testo sull\'overlay';
+    case 'timeout': return `timeout di ${a.secondi || 0}s`;
+    default: return '';
+  }
+}
+
+// carica dati della scheda (lazy) e disegna lista + connettori
+async function caricaModuli() {
+  const ul = document.getElementById('lista-moduli');
+  if (!ul) return;
+  try {
+    datiModuli = await api('/api/streamer/moduli');
+  } catch (e) {
+    ul.innerHTML = `<li class="vuoto">Errore: ${esc(e.message)}</li>`;
+    return;
+  }
+  disegnaListaModuli();
+  disegnaConnettori();
+}
+
+function disegnaListaModuli() {
+  const ul = document.getElementById('lista-moduli');
+  if (!ul) return;
+  const moduli = datiModuli?.moduli || [];
+  if (!moduli.length) {
+    ul.innerHTML = '<li class="vuoto">Nessun modulo ancora: parti da un modello qui sopra 👆</li>';
+    return;
+  }
+  ul.innerHTML = moduli.map((m) => `
+    <li class="modulo">
+      <label class="interruttore">
+        <input type="checkbox" data-toggle-modulo="${esc(m.id)}" ${m.attivo ? 'checked' : ''}>
+        <span class="levetta"></span>
+      </label>
+      <div class="testo-voce">
+        <div class="nome-modulo">${esc(m.nome || 'Senza nome')}</div>
+        <div class="riassunto-lista">${esc(riassuntoModulo(m))}</div>
+      </div>
+      <div class="azioni-voce">
+        <button class="btn secondario mini" data-prova-modulo="${esc(m.id)}">Prova</button>
+        <button class="btn secondario mini" data-modifica-modulo="${esc(m.id)}">Modifica</button>
+        <button class="btn pericolo mini" data-elimina-modulo="${esc(m.id)}">Elimina</button>
+      </div>
+    </li>`).join('');
+
+  // interruttore attivo/spento
+  ul.onchange = (ev) => {
+    const tog = ev.target.closest('[data-toggle-modulo]');
+    if (!tog) return;
+    const id = tog.dataset.toggleModulo;
+    const acceso = tog.checked;
+    conErrore(async () => {
+      try {
+        await api('/api/streamer/moduli/' + encodeURIComponent(id) + '/toggle', { method: 'POST', body: { attivo: acceso } });
+        const m = (datiModuli.moduli || []).find((x) => String(x.id) === String(id));
+        if (m) m.attivo = acceso;
+        toast(acceso ? 'Modulo acceso 💜' : 'Modulo spento.');
+      } catch (e) {
+        tog.checked = !acceso;
+        throw e;
+      }
+    });
+  };
+
+  // Prova / Modifica / Elimina (delega sull'elenco)
+  ul.onclick = (ev) => {
+    const prova = ev.target.closest('[data-prova-modulo]');
+    const modifica = ev.target.closest('[data-modifica-modulo]');
+    const elimina = ev.target.closest('[data-elimina-modulo]');
+    if (prova) {
+      conErrore(async () => {
+        await api('/api/streamer/moduli/' + encodeURIComponent(prova.dataset.provaModulo) + '/prova', { method: 'POST', body: {} });
+        toast('Modulo provato: guarda chat/overlay 👀');
+      });
+    } else if (modifica) {
+      const m = (datiModuli.moduli || []).find((x) => String(x.id) === String(modifica.dataset.modificaModulo));
+      if (m) apriEditor(m);
+    } else if (elimina) {
+      conErrore(async () => {
+        if (!confirm('Eliminare questo modulo? Non si torna indietro.')) return;
+        await api('/api/streamer/moduli/' + encodeURIComponent(elimina.dataset.eliminaModulo), { method: 'DELETE' });
+        toast('Modulo eliminato 🗑️');
+        caricaModuli();
+      });
+    }
+  };
+}
+
+// --- editor QUANDO / SE / ALLORA ---------------------------------------
+
+function apriEditor(modulo) {
+  const cont = document.getElementById('editor-modulo');
+  if (!cont) return;
+  // clona per non modificare la lista finché non si salva; null = nuovo
+  moduloInModifica = modulo ? JSON.parse(JSON.stringify(modulo)) : {
+    id: null, nome: '', attivo: true,
+    trigger: { tipo: 'comando', comando: '', alias: [] },
+    condizioni: { chiPuo: 'tutti', cooldown: 0, probabilita: 100, soloLive: false, soloOffline: false },
+    azioni: [{ tipo: 'messaggio', testo: '' }],
+  };
+  const m = moduloInModifica;
+  const c = m.condizioni || {};
+  const seAperto = c.chiPuo && c.chiPuo !== 'tutti' || c.cooldown > 0 ||
+    (typeof c.probabilita === 'number' && c.probabilita < 100) || c.soloLive || c.soloOffline;
+
+  cont.innerHTML = `
+    <div class="carta">
+      <h2>${m.id ? 'Modifica modulo ✏️' : 'Nuovo modulo ✨'}</h2>
+      <div class="riassunto-modulo">${esc(riassuntoModulo(m))}</div>
+
+      <label class="campo" for="mod-nome">Nome del modulo</label>
+      <input type="text" id="mod-nome" placeholder="es. Saluto di benvenuto" value="${esc(m.nome || '')}">
+
+      <div class="blocco-quando">
+        <div class="etichetta-blocco">Quando</div>
+        <label class="campo" for="mod-trigger-tipo">Cosa fa scattare il modulo</label>
+        <select id="mod-trigger-tipo" data-trigger-tipo>
+          ${TRIGGER.map(([v, t]) => `<option value="${v}" ${m.trigger?.tipo === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}
+        </select>
+        <div id="campi-quando">${disegnaCampiQuando(m.trigger || {})}</div>
+      </div>
+
+      <details class="blocco-se" ${seAperto ? 'open' : ''}>
+        <summary class="etichetta-blocco">Se (facoltativo) — aggiungi condizioni</summary>
+        <div class="griglia-campi spazio-sopra">
+          <div>
+            <label class="campo" for="mod-chipuo">Chi può attivarlo</label>
+            <select id="mod-chipuo">
+              <option value="tutti" ${c.chiPuo === 'tutti' ? 'selected' : ''}>Tutti</option>
+              <option value="sub" ${c.chiPuo === 'sub' ? 'selected' : ''}>Solo sub</option>
+              <option value="vip" ${c.chiPuo === 'vip' ? 'selected' : ''}>Solo VIP</option>
+              <option value="mod" ${c.chiPuo === 'mod' ? 'selected' : ''}>Solo mod</option>
+            </select>
+          </div>
+          <div>
+            <label class="campo" for="mod-cooldown">Cooldown (s)</label>
+            <input type="number" id="mod-cooldown" min="0" max="86400" value="${Number(c.cooldown) || 0}">
+          </div>
+          <div>
+            <label class="campo" for="mod-probabilita">Probabilità (%)</label>
+            <input type="number" id="mod-probabilita" min="0" max="100" value="${typeof c.probabilita === 'number' ? c.probabilita : 100}">
+          </div>
+        </div>
+        <div class="riga-check"><input type="checkbox" id="mod-solo-live" ${c.soloLive ? 'checked' : ''}><label for="mod-solo-live">Solo se sono in live</label></div>
+        <div class="riga-check"><input type="checkbox" id="mod-solo-offline" ${c.soloOffline ? 'checked' : ''}><label for="mod-solo-offline">Solo se sono offline</label></div>
+      </details>
+
+      <div class="blocco-allora">
+        <div class="etichetta-blocco">Allora</div>
+        <div id="lista-azioni">${(m.azioni || []).map(disegnaAzione).join('')}</div>
+        <p class="spazio-sopra"><button class="btn secondario mini" data-aggiungi-azione>+ Aggiungi azione</button></p>
+      </div>
+
+      <p class="spazio-sopra">
+        <button class="btn" data-salva-modulo>Salva</button>
+        <button class="btn secondario" data-prova-editor>Prova</button>
+        <button class="btn secondario" data-annulla-editor>Annulla</button>
+      </p>
+    </div>`;
+
+  cont.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.getElementById('mod-nome')?.focus();
+}
+
+// campi contestuali del blocco QUANDO in base al tipo di innesco
+function disegnaCampiQuando(t) {
+  switch (t.tipo) {
+    case 'comando':
+      return `
+        <label class="campo" for="mod-comando">Comando (senza !)</label>
+        <div class="riga-flessibile">
+          <span class="prefisso-cmd">!</span>
+          <input type="text" id="mod-comando" class="campo-largo" placeholder="ciao" value="${esc(t.comando || '')}">
+        </div>
+        <label class="campo" for="mod-alias">Alias (facoltativi, separati da spazio)</label>
+        <input type="text" id="mod-alias" placeholder="salve buongiorno" value="${esc((t.alias || []).join(' '))}">`;
+    case 'parola':
+      return `
+        <label class="campo" for="mod-testo-trigger">Parola o frase</label>
+        <input type="text" id="mod-testo-trigger" placeholder="es. buonanotte" value="${esc(t.testo || '')}">
+        <label class="campo" for="mod-modo">Come confrontarla</label>
+        <select id="mod-modo">
+          <option value="contiene" ${t.modo === 'contiene' ? 'selected' : ''}>La contiene</option>
+          <option value="esatto" ${t.modo === 'esatto' ? 'selected' : ''}>È esatta</option>
+          <option value="inizia" ${t.modo === 'inizia' ? 'selected' : ''}>Inizia con</option>
+        </select>`;
+    case 'evento':
+      return `
+        <label class="campo" for="mod-evento">Quale evento</label>
+        <select id="mod-evento">
+          ${EVENTI.map(([v, t2]) => `<option value="${v}" ${t.evento === v ? 'selected' : ''}>${esc(t2)}</option>`).join('')}
+        </select>`;
+    case 'timer':
+      return `
+        <div class="griglia-campi spazio-sopra">
+          <div>
+            <label class="campo" for="mod-minuti">Ogni quanti minuti</label>
+            <input type="number" id="mod-minuti" min="1" max="1440" value="${Number(t.minuti) || 15}">
+          </div>
+          <div>
+            <label class="campo" for="mod-min-messaggi">Solo se almeno N messaggi</label>
+            <input type="number" id="mod-min-messaggi" min="0" max="1000" value="${Number(t.minMessaggi) || 0}">
+          </div>
+        </div>
+        <p class="suggerimento">Metti 0 messaggi per farlo partire comunque a tempo.</p>`;
+    case 'manuale':
+      return `<p class="suggerimento spazio-sopra">Nessun campo: questo modulo si attiva dal bottone "Prova" o dai
+        Connettori avanzati (API in ingresso) qui sotto.</p>`;
+    default:
+      return '';
+  }
+}
+
+// una riga azione del blocco ALLORA
+function disegnaAzione(a) {
+  a = a || { tipo: 'messaggio' };
+  const tipo = a.tipo || 'messaggio';
+  const selTipo = `
+    <select data-azione-tipo>
+      ${AZIONI.map(([v, t]) => `<option value="${v}" ${tipo === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}
+    </select>`;
+  return `
+    <div class="azione-riga" data-tipo="${esc(tipo)}">
+      <div class="azione-testata">
+        ${selTipo}
+        <div class="azione-controlli">
+          <button class="btn secondario mini" data-su title="Sposta su">↑</button>
+          <button class="btn secondario mini" data-giu title="Sposta giù">↓</button>
+          <button class="btn pericolo mini" data-rimuovi-azione title="Rimuovi">×</button>
+        </div>
+      </div>
+      ${disegnaCampiAzione(a)}
+    </div>`;
+}
+
+// campi contestuali di un'azione
+function disegnaCampiAzione(a) {
+  const tipo = a.tipo || 'messaggio';
+  const pillole = `<div class="chip-vars">${VARIABILI.map((v) =>
+    `<button type="button" class="chip-var" data-inserisci="${esc(v)}">${esc(v)}</button>`).join('')}</div>`;
+  switch (tipo) {
+    case 'messaggio':
+      return `
+        <textarea data-campo="testo" data-var-target placeholder="es. Ciao $user! 👋">${esc(a.testo || '')}</textarea>
+        ${pillole}`;
+    case 'effetto': {
+      const eff = datiModuli?.effettiDisponibili || [];
+      if (!eff.length) {
+        return `<p class="suggerimento">Non hai ancora effetti: carica prima un effetto nella scheda "Effetti & Suoni".</p>
+          <input type="hidden" data-campo="comando" value="${esc(a.comando || '')}">`;
+      }
+      return `
+        <label class="campo">Quale effetto</label>
+        <select data-campo="comando">
+          ${eff.map((e) => {
+            const cmd = typeof e === 'string' ? e : (e.comando || '');
+            return `<option value="${esc(cmd)}" ${a.comando === cmd ? 'selected' : ''}>!${esc(cmd)}</option>`;
+          }).join('')}
+        </select>`;
+    }
+    case 'contatore':
+      return `
+        <div class="griglia-campi">
+          <div>
+            <label class="campo">Nome contatore</label>
+            <input type="text" data-campo="nome" placeholder="morti" value="${esc(a.nome || '')}">
+          </div>
+          <div>
+            <label class="campo">Operazione</label>
+            <select data-campo="operazione">
+              <option value="incrementa" ${a.operazione === 'incrementa' ? 'selected' : ''}>Incrementa (+1)</option>
+              <option value="azzera" ${a.operazione === 'azzera' ? 'selected' : ''}>Azzera</option>
+              <option value="imposta" ${a.operazione === 'imposta' ? 'selected' : ''}>Imposta a…</option>
+            </select>
+          </div>
+          <div>
+            <label class="campo">Valore (se "imposta")</label>
+            <input type="number" data-campo="valore" value="${Number(a.valore) || 0}">
+          </div>
+        </div>`;
+    case 'webhook':
+      return `
+        <label class="campo">URL del tuo servizio (https)</label>
+        <input type="text" data-campo="url" placeholder="https://" value="${esc(a.url || '')}">
+        <div class="riga-check">
+          <input type="checkbox" data-campo="usaRisposta" ${a.usaRisposta ? 'checked' : ''}>
+          <label>Usa la risposta come messaggio in chat</label>
+        </div>
+        <p class="suggerimento">L'URL è il <strong class="primo-piano">tuo</strong> servizio: la tua logica resta sul tuo
+        server e AndryBot ne pubblica la risposta.</p>`;
+    case 'aspetta':
+      return `
+        <label class="campo">Secondi da aspettare</label>
+        <input type="number" data-campo="secondi" min="0" max="60" value="${Number(a.secondi) || 2}">`;
+    case 'overlay':
+      return `
+        <textarea data-campo="testo" data-var-target placeholder="Testo da mostrare sull'overlay">${esc(a.testo || '')}</textarea>
+        ${pillole}
+        <label class="campo">Durata a schermo (ms)</label>
+        <input type="number" data-campo="durata" min="500" max="30000" value="${Number(a.durata) || 5000}">`;
+    case 'timeout':
+      return `
+        <label class="campo">Timeout (secondi)</label>
+        <input type="number" data-campo="secondi" min="1" max="1209600" value="${Number(a.secondi) || 600}">`;
+    default:
+      return '';
+  }
+}
+
+// ricostruisce l'oggetto modulo dallo stato del form
+function leggiForm() {
+  if (!document.getElementById('mod-trigger-tipo')) return null;
+  const g = (id) => document.getElementById(id);
+  const tipoT = g('mod-trigger-tipo').value;
+  const trigger = { tipo: tipoT };
+  if (tipoT === 'comando') {
+    trigger.comando = (g('mod-comando')?.value || '').trim().replace(/^!/, '');
+    trigger.alias = (g('mod-alias')?.value || '').split(/[\s,]+/).map((x) => x.trim().replace(/^!/, '')).filter(Boolean);
+  } else if (tipoT === 'parola') {
+    trigger.testo = (g('mod-testo-trigger')?.value || '').trim();
+    trigger.modo = g('mod-modo')?.value || 'contiene';
+  } else if (tipoT === 'evento') {
+    trigger.evento = g('mod-evento')?.value || 'follow';
+  } else if (tipoT === 'timer') {
+    trigger.minuti = Number(g('mod-minuti')?.value) || 0;
+    trigger.minMessaggi = Number(g('mod-min-messaggi')?.value) || 0;
+  }
+  const condizioni = {
+    chiPuo: g('mod-chipuo')?.value || 'tutti',
+    cooldown: Number(g('mod-cooldown')?.value) || 0,
+    probabilita: g('mod-probabilita') ? Number(g('mod-probabilita').value) : 100,
+    soloLive: !!g('mod-solo-live')?.checked,
+    soloOffline: !!g('mod-solo-offline')?.checked,
+  };
+  const azioni = [...document.querySelectorAll('#lista-azioni .azione-riga')].map(leggiAzioneRiga);
+  return {
+    id: moduloInModifica?.id ?? null,
+    nome: (g('mod-nome')?.value || '').trim(),
+    attivo: moduloInModifica ? moduloInModifica.attivo !== false : true,
+    trigger, condizioni, azioni,
+  };
+}
+
+function leggiAzioneRiga(riga) {
+  const tipo = riga.querySelector('[data-azione-tipo]').value;
+  const v = (campo) => riga.querySelector(`[data-campo="${campo}"]`);
+  switch (tipo) {
+    case 'messaggio': return { tipo, testo: v('testo')?.value || '' };
+    case 'effetto': return { tipo, comando: v('comando')?.value || '' };
+    case 'contatore': return {
+      tipo, nome: (v('nome')?.value || '').trim(),
+      operazione: v('operazione')?.value || 'incrementa', valore: Number(v('valore')?.value) || 0,
+    };
+    case 'webhook': return { tipo, url: (v('url')?.value || '').trim(), usaRisposta: !!v('usaRisposta')?.checked };
+    case 'aspetta': return { tipo, secondi: Number(v('secondi')?.value) || 0 };
+    case 'overlay': return { tipo, testo: v('testo')?.value || '', durata: Number(v('durata')?.value) || 5000 };
+    case 'timeout': return { tipo, secondi: Number(v('secondi')?.value) || 0 };
+    default: return { tipo };
+  }
+}
+
+// aggiorna il riassunto vivo in cima all'editor
+function aggiornaRiassunto() {
+  const el = document.querySelector('#editor-modulo .riassunto-modulo');
+  if (!el) return;
+  const m = leggiForm();
+  if (m) el.textContent = riassuntoModulo(m);
+}
+
+// inserisce una variabile nel campo di testo attivo (o in coda)
+function inserisciNelCampo(campo, testo) {
+  const s = campo.selectionStart, e = campo.selectionEnd;
+  if (typeof s === 'number' && typeof e === 'number') {
+    const val = campo.value;
+    campo.value = val.slice(0, s) + testo + val.slice(e);
+    const pos = s + testo.length;
+    campo.focus();
+    try { campo.setSelectionRange(pos, pos); } catch { /* input non selezionabile */ }
+  } else {
+    campo.value += testo;
+    campo.focus();
+  }
+}
+
+// salva il modulo corrente; ritorna l'id (nuovo o esistente) o null in caso di stop
+async function salvaModuloCorrente() {
+  const m = leggiForm();
+  if (!m) return null;
+  if (!m.nome) { toast('Dai un nome al modulo.', 'errore'); return null; }
+  if (!m.azioni.length) { toast('Aggiungi almeno un\'azione.', 'errore'); return null; }
+  const res = await api('/api/streamer/moduli', { method: 'POST', body: m });
+  const id = res?.id ?? m.id;
+  if (moduloInModifica) moduloInModifica.id = id;
+  return id;
+}
+
+// --- connettori avanzati (API in ingresso) -----------------------------
+
+function disegnaConnettori() {
+  const box = document.getElementById('connettori-moduli');
+  if (!box) return;
+  const apiKey = datiModuli?.apiKey || null;
+  const apiUrl = datiModuli?.apiUrl || '';
+  const chiaveMostrata = apiKey ? (apiKeyVisibile ? apiKey : '••••••••••••••••') : 'nessuna chiave';
+
+  const esempio = `curl -X POST ${apiUrl || 'https://bot.andryxify.it/api/ext/<login>'} \\
+  -H "Authorization: Bearer LA_TUA_CHIAVE" \\
+  -H "Content-Type: application/json" \\
+  -d '{"azione":"messaggio","testo":"Ciao dalla mia app!"}'`;
+
+  box.innerHTML = `
+    <label class="campo">Chiave API in ingresso</label>
+    <div class="riga-flessibile">
+      <input type="text" class="campo-largo" readonly value="${esc(chiaveMostrata)}">
+      ${apiKey ? `<button class="btn secondario mini" data-apikey="mostra">${apiKeyVisibile ? 'Nascondi' : 'Mostra'}</button>` : ''}
+      ${apiKey ? '<button class="btn secondario mini" data-apikey="copia">Copia</button>' : ''}
+      <button class="btn secondario mini" data-apikey="rigenera">${apiKey ? 'Rigenera' : 'Genera chiave'}</button>
+    </div>
+    <p class="suggerimento">Tienila segreta: chi ha questa chiave può far parlare o agire il tuo bot.</p>
+
+    <label class="campo">URL a cui inviare le richieste</label>
+    <div class="riga-flessibile">
+      <input type="text" class="campo-largo" readonly value="${esc(apiUrl)}" placeholder="—">
+      <button class="btn secondario mini" data-apikey="copia-url">Copia</button>
+    </div>
+
+    <label class="campo">Esempio d'uso</label>
+    <pre class="blocco-codice">${esc(esempio)}</pre>`;
+
+  box.onclick = (ev) => {
+    const btn = ev.target.closest('[data-apikey]');
+    if (!btn) return;
+    const azione = btn.dataset.apikey;
+    if (azione === 'mostra') {
+      apiKeyVisibile = !apiKeyVisibile;
+      disegnaConnettori();
+    } else if (azione === 'copia') {
+      copiaTesto(datiModuli?.apiKey || '', 'Chiave copiata 📋');
+    } else if (azione === 'copia-url') {
+      copiaTesto(datiModuli?.apiUrl || '', 'URL copiato 📋');
+    } else if (azione === 'rigenera') {
+      conErrore(async () => {
+        const nuova = !!datiModuli?.apiKey;
+        if (nuova && !confirm('Rigenerare la chiave? Quella vecchia smetterà subito di funzionare.')) return;
+        const res = await api('/api/streamer/apikey', { method: 'POST', body: {} });
+        if (datiModuli) datiModuli.apiKey = res.apiKey;
+        apiKeyVisibile = true;
+        disegnaConnettori();
+        toast(nuova ? 'Nuova chiave generata 🔑' : 'Chiave creata 🔑');
+      });
+    }
+  };
+}
+
+// copia negli appunti con fallback
+async function copiaTesto(testo, msgOk) {
+  if (!testo) { toast('Niente da copiare.', 'errore'); return; }
+  try {
+    await navigator.clipboard.writeText(testo);
+    toast(msgOk);
+  } catch {
+    toast('Copia non riuscita, fallo a mano.', 'errore');
   }
 }
 

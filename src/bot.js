@@ -16,10 +16,12 @@ import { StreamWatcher } from './stream/watcher.js';
 const log = makeLog('bot');
 
 export class BotManager {
-  constructor({ auth, helix, effects }) {
+  constructor({ auth, helix, effects, modules, bus }) {
     this.auth = auth;
     this.helix = helix;
     this.effects = effects;          // motore "Effetti & Suoni" condiviso con la dashboard
+    this.modules = modules || null;  // motore "Moduli" (automazioni QUANDO→SE→ALLORA)
+    this.bus = bus || null;          // event-bus dei plugin operatore (opzionale)
     this.running = false;
     this.units = new Map();          // login → { chat }
     this.brain = null;
@@ -91,6 +93,12 @@ export class BotManager {
           // Non deve MAI rompere il flusso dei messaggi, quindi try/catch.
           try { this.effects?.tryTrigger(msg, (t) => this.say(msg.channel, t)); }
           catch (e) { log.error(`#${login} effetti:`, e?.message || e); }
+          // moduli: automazioni dello streamer (comando/parola/primo messaggio).
+          // onMessage assorbe i propri errori, ma proteggiamo comunque il flusso.
+          try { this.modules?.onMessage(msg, (t) => this.say(msg.channel, t)); }
+          catch (e) { log.error(`#${login} moduli:`, e?.message || e); }
+          // plugin operatore (opzionali): alimentiamo l'event-bus.
+          try { this.bus?.emit('message', msg); } catch (e) { log.debug('bus message:', e?.message || e); }
         });
         await chat.connect();
         chat.join(login);
@@ -116,6 +124,11 @@ export class BotManager {
     const { channel, type, data } = ev;
     memory.logMessage(channel, '[evento]', '', `${type} ${JSON.stringify(data || {})}`.slice(0, 300), true);
     this.brain?.onEvent?.(ev, (text) => this.say(channel, text));
+    // moduli: automazioni con trigger 'evento' (follow, sub, raid, cheer, ...)
+    try { this.modules?.onEvent(ev, (t) => this.say(channel, t)); }
+    catch (e) { log.error(`#${channel} moduli evento:`, e?.message || e); }
+    // plugin operatore (opzionali)
+    try { this.bus?.emit('event', ev); } catch (e) { log.debug('bus event:', e?.message || e); }
   }
 
   // stato riassuntivo per la dashboard

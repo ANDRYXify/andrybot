@@ -58,11 +58,38 @@
       transition: opacity .25s ease, transform .25s ease;
     }
     .pillola.dentro { opacity: 1; transform: translateY(0); }
+
+    /* Testo a schermo (azione "overlayTesto" dei Moduli): centrato, con fade. */
+    #testi {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      padding: 0 6vw;
+    }
+    .testo-overlay {
+      max-width: 84vw;
+      text-align: center;
+      color: #fff;
+      font-weight: 800;
+      font-size: 3.2rem;
+      line-height: 1.15;
+      letter-spacing: .01em;
+      text-shadow: 0 3px 18px rgba(0, 0, 0, .7), 0 0 2px rgba(0, 0, 0, .9);
+      opacity: 0;
+      transform: translateY(14px) scale(.98);
+      transition: opacity .3s ease, transform .3s ease;
+      word-break: break-word;
+    }
+    .testo-overlay.dentro { opacity: 1; transform: translateY(0) scale(1); }
   </style>
 </head>
 <body>
   <div id="palco"></div>
   <div id="etichette"></div>
+  <div id="testi"></div>
 
   <script>
     'use strict';
@@ -75,6 +102,7 @@
 
     const palco = document.getElementById('palco');
     const etichette = document.getElementById('etichette');
+    const testi = document.getElementById('testi');
 
     // --- coda per gli effetti VISIVI (immagini/video): uno alla volta -----
     const codaVisiva = [];
@@ -154,6 +182,23 @@
       etichettaVolatile(ev.comando, 1600);
     }
 
+    // Mostra un testo libero al centro dello schermo per `durata` ms, con fade.
+    // Usato dall'azione "overlayTesto" dei Moduli (payload { tipo:'testo', testo, durata }).
+    function mostraTesto(ev) {
+      const t = String(ev.testo || '').slice(0, 400);
+      if (!t) return;
+      const durata = durataMs(ev, 5000);
+      const el = document.createElement('div');
+      el.className = 'testo-overlay';
+      el.textContent = t;                     // textContent: niente HTML, niente injection
+      testi.appendChild(el);
+      requestAnimationFrame(() => el.classList.add('dentro'));
+      setTimeout(() => {
+        el.classList.remove('dentro');
+        setTimeout(() => el.remove(), 320);
+      }, durata);
+    }
+
     // Mostra il nome del comando in una pillola che compare e sfuma.
     function etichettaVolatile(comando, durata) {
       if (!comando) return;
@@ -176,6 +221,7 @@
         try { dati = JSON.parse(m.data); } catch (e) { return; }
         if (!dati || !dati.tipo) return;
         if (dati.tipo === 'audio') suona(dati);
+        else if (dati.tipo === 'testo') mostraTesto(dati);
         else { codaVisiva.push(dati); mostraProssimo(); }
       };
       // in caso di errore EventSource riprova da solo: non facciamo nulla
