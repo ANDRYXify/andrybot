@@ -9,6 +9,7 @@
 //     rispondi() torna null e il cervello resta sui suoi binari sicuri.
 //   - ogni generazione ha un TIMEOUT: una risposta lenta non blocca la chat.
 import fs from 'node:fs';
+import os from 'node:os';
 import { join } from 'node:path';
 import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
@@ -25,7 +26,11 @@ const env = (k, d) => (process.env[k] ?? d);
 // LLM_MODEL_URL per salire (1B/1.5B) se hai più RAM, o LLM=0 per spegnere.
 const MODEL_URL = env('LLM_MODEL_URL',
   'https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf');
-const ABILITATO = String(env('LLM', '1')) !== '0';   // spegnibile con LLM=0
+// Modalità: 'auto' (default) accende l'LLM SOLO se il server ha abbastanza RAM
+// (sotto soglia resta spento, così non rallenta il bot su macchine piccole);
+// '1'/'on' forza l'accensione anche su server piccoli; '0'/'off' lo spegne.
+const LLM_MODE = String(env('LLM', 'auto')).toLowerCase();
+const RAM_MIN_GB = Number(env('LLM_RAM_MIN_GB', '3')) || 3;   // soglia auto
 const MAX_TOKEN = Number(env('LLM_MAX_TOKEN', '80')) || 80;
 const TIMEOUT_MS = Number(env('LLM_TIMEOUT_MS', '25000')) || 25000;
 // contesto ridotto = meno RAM per la KV-cache (importante su server piccoli).
@@ -76,7 +81,20 @@ async function scaricaSeManca(url) {
 // Avvio LAZY in background: importa node-llama-cpp (opzionale), scarica e
 // carica il modello. Non lancia mai: in caso di problema resta 'errore'.
 export async function avvia() {
-  if (!ABILITATO) { stato = 'spento'; motivo = 'disattivato (LLM=0)'; return; }
+  if (LLM_MODE === '0' || LLM_MODE === 'off' || LLM_MODE === 'false') {
+    stato = 'spento'; motivo = 'disattivato (LLM=0)'; return;
+  }
+  // Auto-protezione RAM: su server piccoli l'LLM locale, mentre genera, si
+  // mangia CPU/RAM e RALLENTA il resto del bot (i comandi si fanno attendere).
+  // Quindi in 'auto' lo accendiamo solo con RAM sufficiente. Con LLM=1 si forza.
+  const forza = LLM_MODE === '1' || LLM_MODE === 'on' || LLM_MODE === 'true' || LLM_MODE === 'force';
+  const gb = os.totalmem() / (1024 ** 3);
+  if (!forza && gb < RAM_MIN_GB) {
+    stato = 'spento';
+    motivo = `RAM totale ${gb.toFixed(1)}GB < ${RAM_MIN_GB}GB: LLM locale SPENTO per non rallentare il bot (comandi reattivi). Aumenta la RAM (4GB+) e si riaccende da solo, oppure forza con LLM=1.`;
+    log.warn('LLM: ' + motivo);
+    return;
+  }
   if (avvioPromise) return avvioPromise;
   avvioPromise = (async () => {
     stato = 'carico';
