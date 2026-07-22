@@ -15,6 +15,7 @@ import { config, SCOPES, missingConfig } from '../config.js';
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb, friends } from '../db.js';
 import { comprimi } from '../features/compress.js';
+import { seedStreamer } from '../features/seed.js';
 import { pretrain } from '../ai/pretrain.js';
 import * as persona from '../ai/persona.js';
 import { redeemPass } from './gate.js';
@@ -194,6 +195,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // localmente come approvato (rispettando un eventuale on/off preesistente).
     streamers.upsertApproved(who.login, who.display, who.userId);
     req.session.user = { login: who.login, display: who.display };
+    // kit di partenza: al primo ingresso è già tutto pronto (idempotente)
+    seedStreamer(who.login);
 
     // primo giro di pre-addestramento dal profilo del sito (max 1 a settimana)
     if (!pretrainRecente(who.login)) avviaPretrain(who.login);
@@ -698,7 +701,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       return res.status(400).json({ errore: 'login o stato non validi' });
     }
     streamers.setStatus(login, status);
-    if (status === 'approved') avviaPretrain(login);
+    if (status === 'approved') { seedStreamer(login); avviaPretrain(login); }
     sync();
     res.json({ ok: true });
   }));
