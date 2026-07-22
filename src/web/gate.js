@@ -73,6 +73,11 @@ export async function redeemPass(token) {
       login: String(dati.login).toLowerCase(),
       display: String(dati.display || dati.login),
       userId: String(dati.userId || dati.user_id || ''),
+      // ponte "giochi del sito" (endpoint + segreto), se il sito lo fornisce:
+      // così SocialBot può inoltrare i comandi di gioco senza chiavi manuali.
+      bridge: (dati.bridge && dati.bridge.endpoint && dati.bridge.secret)
+        ? { endpoint: String(dati.bridge.endpoint), secret: String(dati.bridge.secret) }
+        : null,
     };
   } catch (e) {
     log.warn('redeem: sito irraggiungibile:', e?.message || e);

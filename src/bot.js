@@ -15,6 +15,7 @@ import * as vip from './features/vip.js';
 import * as telegram from './features/telegram.js';
 import * as antispam from './features/antispam.js';
 import * as tiktok from './features/tiktok.js';
+import * as gamesbridge from './features/gamesbridge.js';
 import * as model from './ai/model.js';
 import { createMessageHandler } from './features/handler.js';
 import { ClipEngine } from './features/clips.js';
@@ -182,13 +183,7 @@ export class BotManager {
         const onMessage = createMessageHandler({
           chat, helix: this.helix, brain: this.brain, clips: this.clips, botLogin: login,
         });
-        chat.on('message', msg => {
-          // ANTISPAM per primo: se il messaggio è spam lo elimina (e timeout ai
-          // recidivi) e NON lo si elabora oltre — il bot non "reagisce" allo spam.
-          antispam.tryAntispam(this.helix, msg, (t) => this.say(msg.channel, t))
-            .then((agito) => { if (!agito) this._elaboraMessaggio(login, msg, onMessage); })
-            .catch((e) => { log.error(`#${login} antispam:`, e?.message || e); this._elaboraMessaggio(login, msg, onMessage); });
-        });
+        chat.on('message', msg => this._gestisciMessaggio(login, msg, onMessage));
         await chat.connect();
         chat.join(login);
         this.units.set(login, { chat });
@@ -213,7 +208,23 @@ export class BotManager {
     catch (e) { log.error('reconcileListeners:', e?.message || e); }
   }
 
-  // Elaborazione normale di un messaggio (chiamata solo se NON è spam).
+  // Catena di ingresso di ogni messaggio: prima i "guardiani" (antispam, poi il
+  // ponte giochi del sito); se uno dei due lo gestisce, il messaggio NON viene
+  // elaborato oltre. Altrimenti prosegue col flusso normale.
+  async _gestisciMessaggio(login, msg, onMessage) {
+    // 1) ANTISPAM: se è spam lo elimina e stop (il bot non "reagisce" allo spam)
+    try {
+      if (await antispam.tryAntispam(this.helix, msg, (t) => this.say(msg.channel, t))) return;
+    } catch (e) { log.error(`#${login} antispam:`, e?.message || e); }
+    // 2) GIOCHI DEL SITO: se è un comando gestito dal sito, risponde e stop
+    try {
+      if (await gamesbridge.tryGamesBridge(msg, (t) => this.say(msg.channel, t))) return;
+    } catch (e) { log.error(`#${login} giochi:`, e?.message || e); }
+    // 3) flusso normale
+    this._elaboraMessaggio(login, msg, onMessage);
+  }
+
+  // Elaborazione normale di un messaggio (chiamata solo se non gestito prima).
   _elaboraMessaggio(login, msg, onMessage) {
     onMessage(msg).catch(e => log.error(`#${login} gestione messaggio:`, e?.message || e));
     if (!msg.isSelf) this.clips.onActivity(msg.channel);   // rilevatore "hype" per le clip automatiche
