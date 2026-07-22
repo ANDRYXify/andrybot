@@ -122,6 +122,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // ha concesso il permesso VIP? (aggiunto dopo: richiede una ri-autorizzazione)
   const vipOk = (login) =>
     !!(tokens.get('broadcaster', login)?.scopes?.includes('channel:manage:vips'));
+  // ha concesso i permessi di moderazione? (elimina messaggi / timeout)
+  const moderazioneOk = (login) =>
+    !!(tokens.get('broadcaster', login)?.scopes?.includes('moderator:manage:chat_messages'));
 
   // stato Telegram per la dashboard — MAI il token (segreto): solo se è
   // configurato, lo @username del bot, il gruppo collegato e le impostazioni.
@@ -287,6 +290,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       streamer: user ? streamers.get(user.login) : null,
       permessiOk: user ? permessiOk(user.login) : false,
       vipOk: user ? vipOk(user.login) : false,
+      moderazioneOk: user ? moderazioneOk(user.login) : false,
       telegram: user ? statoTelegram(user.login) : null,
       knowledgeCount: user ? knowledge.count(user.login) : 0,
       preaddestramento: user
@@ -382,6 +386,24 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (b.giochi !== undefined) out.giochi = !!b.giochi;
     if (b.promoSocial !== undefined) out.promoSocial = !!b.promoSocial;
     if (b.nomeMonete !== undefined) out.nomeMonete = String(b.nomeMonete).trim().slice(0, 20);
+    // antispam: elimina spam/link e timeout ai recidivi
+    if (b.antispam !== undefined) {
+      const a = b.antispam || {};
+      out.antispam = {
+        attivo: !!a.attivo,
+        link: a.link !== false,
+        linkTier: ['tutti', 'sub', 'vip', 'mod'].includes(a.linkTier) ? a.linkTier : 'sub',
+        whitelist: Array.isArray(a.whitelist)
+          ? a.whitelist.map((d) => String(d).trim().toLowerCase().slice(0, 100)).filter(Boolean).slice(0, 30)
+          : [],
+        ripetizioni: a.ripetizioni !== false,
+        maiuscole: a.maiuscole !== false,
+        menzioni: a.menzioni !== false,
+        flood: a.flood !== false,
+        timeoutRecidivi: a.timeoutRecidivi !== false,
+        avvisa: a.avvisa !== false,
+      };
+    }
     // premio VIP periodico (top monete)
     if (b.premioVip !== undefined) {
       const p = b.premioVip || {};

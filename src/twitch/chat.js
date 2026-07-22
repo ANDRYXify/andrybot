@@ -243,9 +243,12 @@ export class ChatBot extends EventEmitter {
       user,
       display: tags['display-name'] || user,
       text,
+      id: tags['id'] || '',                                    // id del messaggio (per eliminarlo)
+      userId: tags['user-id'] || '',                           // id Twitch di chi scrive
       isMod: tags['mod'] === '1' || isBroadcaster,
       isBroadcaster,
-      isSub: tags['subscriber'] === '1',
+      isSub: tags['subscriber'] === '1' || badges.includes('subscriber/') || badges.includes('founder/'),
+      isVip: tags['vip'] === '1' || badges.includes('vip/'),
       isSelf: user === this._login,
       tags,
     });

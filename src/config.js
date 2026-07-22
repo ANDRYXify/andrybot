@@ -90,6 +90,8 @@ export const SCOPES = {
     'moderator:read:followers',   // eventi follow
     'channel:read:redemptions',   // riscatti punti canale
     'channel:manage:vips',        // assegnare/togliere i VIP (comando vocale, premi)
+    'moderator:manage:chat_messages', // eliminare messaggi (antispam)
+    'moderator:manage:banned_users',  // timeout ai recidivi (antispam)
   ],
 };
 

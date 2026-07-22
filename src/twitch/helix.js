@@ -142,4 +142,48 @@ export class Helix {
       return j?.data || [];
     } catch { return []; }
   }
+
+  // ------------------------------------------------------------- MODERAZIONE
+  // Richiedono, sul token del broadcaster, gli scope 'moderator:manage:chat_messages'
+  // (elimina) e 'moderator:manage:banned_users' (timeout). Il moderatore è il
+  // broadcaster stesso (parliamo col suo account).
+
+  // Elimina un singolo messaggio della chat. Ritorna { ok } o { ok:false, motivo }.
+  async deleteMessage(channelLogin, messageId) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id || !messageId) return { ok: false, motivo: 'dati mancanti' };
+    const token = await this.auth.getToken('broadcaster', channelLogin);
+    try {
+      await this._request('DELETE', '/moderation/chat', {
+        query: { broadcaster_id: s.user_id, moderator_id: s.user_id, message_id: messageId }, token,
+      });
+      return { ok: true };
+    } catch (e) {
+      if (e.status === 404) return { ok: true, giaVia: true };   // già sparito
+      if (e.status === 401) return { ok: false, motivo: 'permesso mancante (ri-concedi i permessi)' };
+      log.debug('deleteMessage:', e?.message || e);
+      return { ok: false, motivo: 'errore Twitch' };
+    }
+  }
+
+  // Timeout (o ban se durataSec = 0) di un utente. Ritorna { ok } o { ok:false }.
+  async timeoutUser(channelLogin, userId, durataSec = 60, reason = '') {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id || !userId) return { ok: false, motivo: 'dati mancanti' };
+    const token = await this.auth.getToken('broadcaster', channelLogin);
+    const data = { user_id: String(userId), reason: String(reason || '').slice(0, 500) };
+    if (durataSec > 0) data.duration = Math.min(1209600, Math.max(1, Math.round(durataSec))); // max 14 giorni
+    try {
+      await this._request('POST', '/moderation/bans', {
+        query: { broadcaster_id: s.user_id, moderator_id: s.user_id }, token, body: { data },
+      });
+      return { ok: true };
+    } catch (e) {
+      if (e.status === 400) return { ok: false, motivo: 'non posso (forse è mod/VIP o sei tu)' };
+      if (e.status === 401) return { ok: false, motivo: 'permesso mancante' };
+      if (e.status === 409) return { ok: true, gia: true };   // già bannato
+      log.debug('timeoutUser:', e?.message || e);
+      return { ok: false, motivo: 'errore Twitch' };
+    }
+  }
 }

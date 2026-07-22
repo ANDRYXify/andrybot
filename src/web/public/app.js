@@ -71,6 +71,7 @@ function impostazioni() {
     promoSocial: s.promoSocial !== false,
     nomeMonete: (typeof s.nomeMonete === 'string' && s.nomeMonete.trim()) || 'monete',
     premioVip: (s.premioVip && typeof s.premioVip === 'object') ? s.premioVip : { attivo: false, periodo: 'settimana', quanti: 1 },
+    antispam: (s.antispam && typeof s.antispam === 'object') ? s.antispam : {},
     frasi: Array.isArray(s.frasi) ? s.frasi : [],
     clipAuto: s.clipAuto !== false,
     clipAutoSoglia: typeof s.clipAutoSoglia === 'number' ? s.clipAutoSoglia : 25,
@@ -722,6 +723,8 @@ function pannelloNotifiche() {
 
 function pannelloRegole() {
   const s = impostazioni();
+  const a = s.antispam || {};
+  const sel = (v, def) => v === undefined ? def : v;   // default "acceso" per i booleani
   return pannello('regole', `
     <div class="carta">
       <h2>Parole vietate 🚫</h2>
@@ -729,6 +732,64 @@ function pannelloRegole() {
       <label class="campo" for="txt-vietate">Elenco parole vietate</label>
       <textarea id="txt-vietate" placeholder="una parola per riga">${esc(s.paroleVietate.join('\n'))}</textarea>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-regole">Salva</button></p>
+    </div>
+
+    <div class="carta">
+      <h2>Antispam automatico 🛡️</h2>
+      ${stato.moderazioneOk ? '' : `<p class="suggerimento">⚠️ Per eliminare i messaggi servono i permessi di moderazione (aggiunti dopo).
+        <a class="btn secondario mini" href="/auth/permessi">Concedi i permessi</a></p>`}
+      <p>Elimina da solo lo spam e, a chi insiste, dà un timeout crescente.
+      <strong class="primo-piano">Mod, VIP e broadcaster sono sempre esenti.</strong></p>
+
+      <div class="riga-check">
+        <input type="checkbox" id="chk-as-attivo" ${a.attivo ? 'checked' : ''}>
+        <label for="chk-as-attivo">Attiva l'antispam</label>
+      </div>
+
+      <div class="riga-check spazio-sopra">
+        <input type="checkbox" id="chk-as-link" ${sel(a.link, true) ? 'checked' : ''}>
+        <label for="chk-as-link">Blocca i link non autorizzati</label>
+      </div>
+      <div class="riga-flessibile">
+        <span class="suggerimento">Possono postare link:</span>
+        <select id="sel-as-linktier">
+          <option value="mod" ${a.linkTier === 'mod' ? 'selected' : ''}>solo mod</option>
+          <option value="vip" ${a.linkTier === 'vip' ? 'selected' : ''}>VIP e mod</option>
+          <option value="sub" ${(a.linkTier || 'sub') === 'sub' ? 'selected' : ''}>sub, VIP e mod</option>
+          <option value="tutti" ${a.linkTier === 'tutti' ? 'selected' : ''}>tutti (non bloccare)</option>
+        </select>
+      </div>
+      <label class="campo" for="txt-as-whitelist">Domini sempre permessi (uno per riga)</label>
+      <textarea id="txt-as-whitelist" placeholder="es. youtube.com&#10;instagram.com/tuonome">${esc((Array.isArray(a.whitelist) ? a.whitelist : []).join('\n'))}</textarea>
+      <p class="suggerimento">Il tuo canale, le clip di Twitch e andryxify.it sono già permessi.</p>
+
+      <div class="riga-check spazio-sopra">
+        <input type="checkbox" id="chk-as-ripet" ${sel(a.ripetizioni, true) ? 'checked' : ''}>
+        <label for="chk-as-ripet">Blocca copypasta / messaggi ripetuti</label>
+      </div>
+      <div class="riga-check">
+        <input type="checkbox" id="chk-as-flood" ${sel(a.flood, true) ? 'checked' : ''}>
+        <label for="chk-as-flood">Blocca il flood (troppi messaggi di fila)</label>
+      </div>
+      <div class="riga-check">
+        <input type="checkbox" id="chk-as-caps" ${sel(a.maiuscole, true) ? 'checked' : ''}>
+        <label for="chk-as-caps">Blocca i messaggi TUTTI MAIUSCOLI</label>
+      </div>
+      <div class="riga-check">
+        <input type="checkbox" id="chk-as-menz" ${sel(a.menzioni, true) ? 'checked' : ''}>
+        <label for="chk-as-menz">Blocca le valanghe di @menzioni</label>
+      </div>
+
+      <div class="riga-check spazio-sopra">
+        <input type="checkbox" id="chk-as-timeout" ${sel(a.timeoutRecidivi, true) ? 'checked' : ''}>
+        <label for="chk-as-timeout">Timeout crescente ai recidivi (1ª volta solo cancella, poi 1m, 5m, 10m)</label>
+      </div>
+      <div class="riga-check">
+        <input type="checkbox" id="chk-as-avvisa" ${sel(a.avvisa, true) ? 'checked' : ''}>
+        <label for="chk-as-avvisa">Avvisa in chat quando elimina</label>
+      </div>
+
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-antispam">Salva antispam</button></p>
     </div>`);
 }
 
@@ -833,6 +894,23 @@ function attivaPiattaforma() {
     await salvaImpostazioni({
       paroleVietate: righe(document.getElementById('txt-vietate').value),
     }, 'Regole salvate 🚫');
+  }));
+
+  document.getElementById('btn-salva-antispam')?.addEventListener('click', () => conErrore(async () => {
+    await salvaImpostazioni({
+      antispam: {
+        attivo: document.getElementById('chk-as-attivo').checked,
+        link: document.getElementById('chk-as-link').checked,
+        linkTier: document.getElementById('sel-as-linktier').value,
+        whitelist: righe(document.getElementById('txt-as-whitelist').value),
+        ripetizioni: document.getElementById('chk-as-ripet').checked,
+        flood: document.getElementById('chk-as-flood').checked,
+        maiuscole: document.getElementById('chk-as-caps').checked,
+        menzioni: document.getElementById('chk-as-menz').checked,
+        timeoutRecidivi: document.getElementById('chk-as-timeout').checked,
+        avvisa: document.getElementById('chk-as-avvisa').checked,
+      },
+    }, 'Antispam salvato 🛡️');
   }));
 
   document.getElementById('btn-salva-giochi')?.addEventListener('click', () => conErrore(async () => {
