@@ -76,7 +76,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // Pubblici anche: i file "guscio" della PWA (manifest, service worker, icone)
   // e il flusso di login con passkey (per rientrare senza passare dal sito).
   // Non rivelano nulla di sensibile: la dashboard vera resta dietro la sessione.
-  const PUBBLICI = new Set(['/health', '/entra', '/sblocca', '/sblocca.html', '/manifest.webmanifest', '/sw.js']);
+  const PUBBLICI = new Set(['/health', '/entra', '/sblocca', '/sblocca.html', '/privacy', '/privacy.html', '/manifest.webmanifest', '/sw.js']);
   app.use((req, res, next) => {
     if (currentUser(req) || PUBBLICI.has(req.path)
         || req.path.startsWith('/overlay/') || req.path.startsWith('/api/ext/')
@@ -245,6 +245,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (currentUser(req)) return res.redirect('/');
     res.sendFile(join(publicDir, 'sblocca.html'));
   });
+
+  // Informativa privacy & sicurezza (pubblica: dev'essere sempre consultabile)
+  app.get('/privacy', (req, res) => res.sendFile(join(publicDir, 'privacy.html')));
 
   // ------------------------------------------------------------ OAuth permessi
   // (raggiungibile solo DOPO essere entrati: il cancello 404-a chi non ha sessione)
