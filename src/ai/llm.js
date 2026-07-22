@@ -19,16 +19,17 @@ const log = makeLog('llm');
 
 const env = (k, d) => (process.env[k] ?? d);
 
-// Modello di default: Qwen2.5-1.5B-Instruct (multilingue, discreto in italiano
-// per la sua taglia), quantizzato Q4 per stare leggero di RAM (~1.1GB su disco,
-// ~1,5-2GB in memoria). Cambiabile via env se il tuo server è più piccolo
-// (es. un modello 0.5B) o più grande (un 3B/7B).
+// Modello di default: Qwen2.5-0.5B-Instruct (leggerissimo, adatto a server con
+// poca RAM: ~0.5GB su disco, ~0,7-0,9GB in memoria con mmap). L'italiano su un
+// modello così piccolo è essenziale ma dignitoso per la chat. Cambiabile via env:
+// LLM_MODEL_URL per salire (1B/1.5B) se hai più RAM, o LLM=0 per spegnere.
 const MODEL_URL = env('LLM_MODEL_URL',
-  'https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf');
+  'https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf');
 const ABILITATO = String(env('LLM', '1')) !== '0';   // spegnibile con LLM=0
-const MAX_TOKEN = Number(env('LLM_MAX_TOKEN', '90')) || 90;
-const TIMEOUT_MS = Number(env('LLM_TIMEOUT_MS', '20000')) || 20000;
-const CONTEXT_SIZE = 2048;
+const MAX_TOKEN = Number(env('LLM_MAX_TOKEN', '80')) || 80;
+const TIMEOUT_MS = Number(env('LLM_TIMEOUT_MS', '25000')) || 25000;
+// contesto ridotto = meno RAM per la KV-cache (importante su server piccoli).
+const CONTEXT_SIZE = Number(env('LLM_CONTEXT', '1024')) || 1024;
 
 let stato = 'spento';       // 'spento' | 'carico' | 'pronto' | 'errore'
 let motivo = null;          // messaggio d'errore/diagnostica
