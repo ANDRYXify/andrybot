@@ -1,4 +1,4 @@
-// La "riflessione" di AndryBot: ogni tanto il cervello si ferma a
+// La "riflessione" di SocialBot: ogni tanto il cervello si ferma a
 // consolidare quello che ha visto (statistiche → fatti e lezioni,
 // pulizia della memoria). Primo giro dopo 10 minuti dall'avvio, poi
 // ogni 6 ore, un canale alla volta per non stressare il DB.

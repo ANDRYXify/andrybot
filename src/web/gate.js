@@ -5,7 +5,7 @@
 // sito andryxify.it con un "pass" usa-e-getta:
 //
 //   1. Lo streamer VERIFICATO E ABILITATO, dentro le impostazioni del suo
-//      account su andryxify.it, clicca "Gestisci il mio AndryBot".
+//      account su andryxify.it, clicca "Gestisci il mio SocialBot".
 //   2. Il sito conia un pass casuale (256 bit), lo salva per 2 minuti e
 //      reindirizza il browser a  bot.andryxify.it/entra?pass=<pass>.
 //   3. Il bot "brucia" il pass chiamando il sito (redeemPass): il sito

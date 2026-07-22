@@ -1,4 +1,4 @@
-// Dashboard web di AndryBot (bot.andryxify.it).
+// Dashboard web di SocialBot (bot.andryxify.it).
 // Qui lo streamer: fa login con Twitch, chiede l'abilitazione, concede i
 // permessi (il bot parla CON IL SUO ACCOUNT), configura personalità,
 // conoscenza, clip e regole, e consulta memoria e statistiche.
@@ -27,8 +27,8 @@ const TIER_VALIDI = ['tutti', 'sub', 'vip', 'mod'];
 const UPLOAD_MAX = 30 * 1024 * 1024;   // 30 MB in ingresso (l'output sarà molto più piccolo)
 
 // Moduli: tipi di innesco e di azione ammessi (validazione lato API)
-const MOD_TRIGGER = ['comando', 'parola', 'evento', 'timer', 'manuale'];
-const MOD_AZIONI = ['messaggio', 'effetto', 'contatore', 'webhook', 'attendi', 'overlayTesto', 'timeout'];
+const MOD_TRIGGER = ['comando', 'parola', 'evento', 'timer', 'manuale', 'voce'];
+const MOD_AZIONI = ['messaggio', 'effetto', 'contatore', 'webhook', 'attendi', 'overlayTesto', 'timeout', 'clip'];
 const EXT_MAX_MIN = 30;   // ingresso esterno: max richieste al minuto per login
 
 export function startWeb({ auth, helix, manager, effects, modules }) {
@@ -271,7 +271,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     });
   }));
 
-  // richiesta di abilitazione ("porta AndryBot nel tuo canale")
+  // richiesta di abilitazione ("porta SocialBot nel tuo canale")
   app.post('/api/richiesta', requireLogin, wrap(async (req, res) => {
     const user = currentUser(req);
     streamers.request(user.login, user.display, '');
@@ -312,7 +312,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (b.spontaneita !== undefined) {
       const n = Number(b.spontaneita);
       if (!Number.isFinite(n)) return res.status(400).json({ errore: 'spontaneita non valida' });
-      out.spontaneita = Math.min(0.3, Math.max(0, n));
+      out.spontaneita = Math.min(0.5, Math.max(0, n));
     }
     if (b.rispostaMenzioni !== undefined) out.rispostaMenzioni = !!b.rispostaMenzioni;
     if (b.frasi !== undefined) {
@@ -327,6 +327,13 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       const n = Number(b.clipAutoSoglia);
       if (!Number.isFinite(n)) return res.status(400).json({ errore: 'soglia clip non valida' });
       out.clipAutoSoglia = Math.min(200, Math.max(5, Math.round(n)));
+    }
+    // ascolto live lato server (audio → clip nei momenti salienti): opt-in
+    if (b.ascoltoLive !== undefined) out.ascoltoLive = !!b.ascoltoLive;
+    if (b.ascoltoSensibilita !== undefined) {
+      const n = Number(b.ascoltoSensibilita);
+      if (!Number.isFinite(n)) return res.status(400).json({ errore: 'sensibilità ascolto non valida' });
+      out.ascoltoSensibilita = Math.min(10, Math.max(1, Math.round(n)));
     }
     if (b.paroleVietate !== undefined) {
       if (!Array.isArray(b.paroleVietate)) return res.status(400).json({ errore: 'paroleVietate deve essere una lista' });
@@ -601,6 +608,30 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.json({ apiKey: generaApiKey(login) });
   }));
 
+  // ------------------------------------------------------------ API COMANDI VOCALI
+  // I "comandi vocali" sono un innesco dei Moduli (trigger.tipo='voce'). La
+  // trascrizione la fa il BROWSER (public/voce.html, Web Speech API): il PC
+  // dello streamer tiene aperta quella scheda (loggata, col cookie di sessione),
+  // sente le parole chiave e chiama queste due rotte. Nessun audio arriva qui.
+
+  // elenco delle frasi da ascoltare (dei moduli 'voce' attivi del canale)
+  app.get('/api/streamer/voce', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const frasi = modules.frasiVoce(login);
+    res.json({ frasi, count: frasi.length });
+  }));
+
+  // il browser ha sentito una frase: eseguiamo i moduli 'voce' che combaciano
+  app.post('/api/streamer/voce', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const frase = String(req.body?.frase || '').trim();
+    if (!frase || frase.length >= 300) {
+      return res.status(400).json({ errore: 'frase non valida (vuota o troppo lunga)' });
+    }
+    const eseguito = await modules.eseguiVoce(login, frase, (t) => manager.say(login, t));
+    res.json({ ok: true, eseguito });
+  }));
+
   // ---- INGRESSO ESTERNO: un servizio dello streamer fa dire/fare cose al bot
   // Autenticazione con la chiave API del :login (Bearer o ?key=), confronto
   // timing-safe. Chiave errata → 404 (labirinto: nessun indizio). Solo POST.
@@ -630,6 +661,13 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // nessuna chiave configurata o chiave errata → 404 (nessun indizio)
     if (!attesa || !chiaveUguale(fornita, attesa)) return notFound(res);
     if (!extRateOk(login)) return res.status(429).json({ errore: 'troppe richieste' });
+    // azione 'clip': crea una clip a comando (usata dalla voce lato PC via companion)
+    const azione = String(req.body?.azione || '').toLowerCase().trim();
+    if (azione === 'clip') {
+      await manager.creaClip(login, req.body?.motivo || 'comando vocale');
+      return res.json({ ok: true });
+    }
+    // le altre azioni (messaggio/effetto/modulo) restano gestite dai moduli
     const ok = await modules.eseguiPerApi(login, req.body || {}, (t) => manager.say(login, t));
     if (!ok) return res.status(400).json({ errore: 'azione non riconosciuta' });
     res.json({ ok: true });

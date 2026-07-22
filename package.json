@@ -1,7 +1,7 @@
 {
   "name": "andrybot",
   "version": "1.0.0",
-  "description": "AndryBot — bot Twitch procedurale e progressivo per andryxify.it",
+  "description": "SocialBot — bot Twitch procedurale e progressivo per andryxify.it",
   "type": "module",
   "main": "src/index.js",
   "engines": {

@@ -35,7 +35,7 @@ ALLORA**. Ogni modulo mostra in lista un riassunto in una riga:
 5. **Prova prima di fidarti.** Ogni modulo ha "Prova": lo esegue una volta lì per lì
    (contesto = te), così vedi il risultato in chat/overlay senza aspettare un vero evento.
 6. **Libertà con reti di sicurezza.** L'azione **Webhook** apre a qualunque logica esterna
-   (il bot custom che già hai): la tua logica resta sul tuo server e AndryBot ne pubblica la
+   (il bot custom che già hai): la tua logica resta sul tuo server e SocialBot ne pubblica la
    risposta. Così "libertà totale" senza eseguire codice altrui sul server condiviso.
 
 ## 3. Architettura della scheda "Moduli"

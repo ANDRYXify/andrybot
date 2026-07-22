@@ -1,4 +1,4 @@
-// AndryBot — logica della dashboard (single-page, zero dipendenze).
+// SocialBot — logica della dashboard (single-page, zero dipendenze).
 // Stato globale caricato da GET /api/me, funzioni di render per sezione,
 // fetch con gestione errori e toast di conferma.
 
@@ -67,6 +67,8 @@ function impostazioni() {
     clipAuto: s.clipAuto !== false,
     clipAutoSoglia: typeof s.clipAutoSoglia === 'number' ? s.clipAutoSoglia : 25,
     paroleVietate: Array.isArray(s.paroleVietate) ? s.paroleVietate : [],
+    ascoltoLive: s.ascoltoLive === true,
+    ascoltoSensibilita: typeof s.ascoltoSensibilita === 'number' ? s.ascoltoSensibilita : 5,
   };
 }
 
@@ -141,7 +143,7 @@ function renderHero() {
     ${msgErrore ? `<div class="carta avviso"><p>⚠️ ${esc(msgErrore)}</p></div>` : ''}
     <div class="carta hero">
       <h2>Il bot Twitch che parla <em>con la tua voce</em></h2>
-      <p>AndryBot vive nella tua chat e scrive <strong class="primo-piano">con il tuo account</strong>:
+      <p>SocialBot vive nella tua chat e scrive <strong class="primo-piano">con il tuo account</strong>:
       niente account bot anonimi, sei sempre tu.</p>
       <ul class="lista-punti">
         <li>Impara dalla tua chat e dal tuo profilo su andryxify.it</li>
@@ -158,11 +160,11 @@ function renderHero() {
 function vistaRichiesta() {
   return `
     <div class="carta evidenziata">
-      <h2>Porta AndryBot nel tuo canale 🚀</h2>
+      <h2>Porta SocialBot nel tuo canale 🚀</h2>
       <p>Chiedi l'abilitazione: andryxify riceverà la tua richiesta e, una volta approvata,
       potrai configurare il tuo bot da qui.</p>
       <p class="spazio-sopra">
-        <button class="btn grande" id="btn-richiesta">Richiedi AndryBot</button>
+        <button class="btn grande" id="btn-richiesta">Richiedi SocialBot</button>
       </p>
     </div>`;
 }
@@ -180,7 +182,7 @@ function vistaDisabilitato() {
   return `
     <div class="carta">
       <h2>Accesso disabilitato 😴</h2>
-      <p>Il tuo accesso ad AndryBot è al momento disabilitato da andryxify.
+      <p>Il tuo accesso ad SocialBot è al momento disabilitato da andryxify.
       Se pensi sia un errore, contattalo.</p>
     </div>`;
 }
@@ -193,6 +195,7 @@ function vistaPiattaforma() {
     ['personalita', 'Personalità'],
     ['conoscenza', 'Conoscenza'],
     ['clip', 'Clip'],
+    ['ascolto', 'Ascolto live'],
     ['effetti', 'Effetti & Suoni'],
     ['moduli', 'Moduli'],
     ['regole', 'Regole'],
@@ -207,6 +210,7 @@ function vistaPiattaforma() {
     ${pannelloPersonalita()}
     ${pannelloConoscenza()}
     ${pannelloClip()}
+    ${pannelloAscolto()}
     ${pannelloEffetti()}
     ${pannelloModuli()}
     ${pannelloRegole()}
@@ -227,7 +231,7 @@ function pannelloStato() {
   const cardPermessi = stato.permessiOk ? '' : `
     <div class="carta evidenziata">
       <h2>Attiva il bot: concedi i permessi 🔑</h2>
-      <p>Per funzionare, AndryBot <strong class="primo-piano">leggerà e scriverà nella tua chat
+      <p>Per funzionare, SocialBot <strong class="primo-piano">leggerà e scriverà nella tua chat
       con il tuo account</strong>, creerà clip e vedrà follow e sub. Nient'altro.</p>
       <p class="spazio-sopra"><a class="btn grande" href="/auth/permessi">Concedi i permessi su Twitch</a></p>
     </div>`;
@@ -251,7 +255,7 @@ function pannelloStato() {
     </div>
     <div class="carta">
       <h2>Pre-addestramento 📚</h2>
-      <p>AndryBot legge il tuo profilo su andryxify.it per conoscerti prima ancora di entrare in chat.</p>
+      <p>SocialBot legge il tuo profilo su andryxify.it per conoscerti prima ancora di entrare in chat.</p>
       <p class="spazio-sopra">
         Ultima lettura: <strong class="primo-piano">${esc(dataIt(pre.preaddestramento_ts))}</strong>
         ${pre.preaddestramento_esito ? ` — <span class="badge viola">${esc(pre.preaddestramento_esito)}</span>` : ''}
@@ -281,9 +285,10 @@ function pannelloPersonalita() {
         <option value="serio" ${s.tono === 'serio' ? 'selected' : ''}>Serio — sobrio e diretto</option>
       </select>
 
-      <label class="campo" for="rng-spontaneita">Spontaneità: <span id="val-spontaneita">${perc}%</span></label>
-      <input type="range" id="rng-spontaneita" min="0" max="30" step="1" value="${perc}">
-      <p class="suggerimento">Quanto spesso interviene da solo, senza che nessuno lo chiami. 0% = solo se interpellato.</p>
+      <label class="campo" for="rng-spontaneita">Chat autonoma: <span id="val-spontaneita">${perc}%</span></label>
+      <input type="range" id="rng-spontaneita" min="0" max="50" step="1" value="${perc}">
+      <p class="suggerimento">Quanto partecipa da sola alla conversazione, come una persona.
+      0 = solo se la chiami; alto = molto chiacchierona.</p>
 
       <div class="riga-check">
         <input type="checkbox" id="chk-menzioni" ${s.rispostaMenzioni ? 'checked' : ''}>
@@ -340,6 +345,51 @@ function pannelloClip() {
     <div class="carta">
       <h2>Ultime clip</h2>
       <ul class="lista-voci" id="lista-clip"><li class="vuoto">Caricamento…</li></ul>
+    </div>`);
+}
+
+// --- scheda Ascolto live ------------------------------------------------
+// Due strade per creare clip "a voce": dal server (audio della live) e dal PC (microfono).
+
+function pannelloAscolto() {
+  const s = impostazioni();
+  let sens = Number(s.ascoltoSensibilita);
+  sens = Number.isFinite(sens) ? Math.min(10, Math.max(1, Math.round(sens))) : 5;
+  const inAscolto = (stato.status?.ascoltando || []).includes(stato.user.login);
+
+  return pannello('ascolto', `
+    <div class="carta">
+      <h2>Momenti salienti (dal server) 🎧</h2>
+      <p>Il bot ascolta l'audio della tua live e crea una clip da solo quando "esplode": urla, risate, hype.</p>
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore">
+          <input type="checkbox" id="toggle-ascolto" ${s.ascoltoLive ? 'checked' : ''}>
+          <span class="levetta"></span>
+        </label>
+        <span class="etichetta-stato" id="etichetta-ascolto">${s.ascoltoLive ? 'Ascolto acceso' : 'Ascolto spento'}</span>
+        ${inAscolto
+          ? '<span class="badge verde">● in ascolto ora</span>'
+          : '<span class="badge">○ non in ascolto</span>'}
+      </div>
+      <label class="campo" for="rng-ascolto">Sensibilità: <span id="val-ascolto">${sens}</span></label>
+      <input type="range" id="rng-ascolto" min="1" max="10" step="1" value="${sens}">
+      <p class="suggerimento">Più alto = più clip (prende anche i momenti meno intensi). Più basso = solo i picchi veri.</p>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-ascolto">Salva</button></p>
+      <p class="suggerimento spazio-sopra">Consuma risorse del server: è limitato a pochi canali live insieme.
+      C'è un piccolo ritardo (~15-30s) dovuto a Twitch, ma le clip prendono comunque il momento.</p>
+    </div>
+
+    <div class="carta">
+      <h2>Comando vocale 🎙️</h2>
+      <p>I comandi vocali funzionano <strong class="primo-piano">nel browser</strong>, senza installare niente:
+      apri la pagina di ascolto, premi Avvia, e quando dici una parola chiave il bot fa quello che hai impostato
+      nei Moduli.</p>
+      <p class="spazio-sopra">
+        <a class="btn grande" href="/voce.html" target="_blank" rel="noopener">🎙️ Apri l'ascolto vocale</a>
+      </p>
+      <p class="suggerimento spazio-sopra">Tienila aperta mentre streammi. Funziona su Chrome o Edge (Mac e Windows).</p>
+      <p class="suggerimento">I comandi vocali si creano e modificano nella scheda
+      <strong class="primo-piano">Moduli</strong> (innesco "Comando vocale").</p>
     </div>`);
 }
 
@@ -424,6 +474,7 @@ function pannelloModuli() {
         <button class="modello-pronto" data-modello="timer">Timer annuncio</button>
         <button class="modello-pronto" data-modello="social">Social</button>
         <button class="modello-pronto" data-modello="morti">Contatore morti</button>
+        <button class="modello-pronto" data-modello="voce">Comando vocale: clippa</button>
         <button class="modello-pronto" data-modello="webhook">Collega il mio bot (webhook)</button>
       </div>
     </div>
@@ -437,7 +488,7 @@ function pannelloModuli() {
 
     <div class="carta">
       <h2>Connettori avanzati 🔌</h2>
-      <p>Per far dire o fare qualcosa ad AndryBot <strong class="primo-piano">da un tuo servizio esterno</strong>
+      <p>Per far dire o fare qualcosa ad SocialBot <strong class="primo-piano">da un tuo servizio esterno</strong>
       (il bot custom che già hai): chiama l'URL qui sotto con la tua chiave.</p>
       <div id="connettori-moduli"><p class="vuoto">Caricamento…</p></div>
     </div>`);
@@ -445,7 +496,7 @@ function pannelloModuli() {
 
 // modelli pronti: precompilano l'editor, l'utente poi salva
 function modelloPronto(nome) {
-  const cond = () => ({ chiPuo: 'tutti', cooldown: 0, probabilita: 100, soloLive: false, soloOffline: false });
+  const cond = () => ({ tier: 'tutti', cooldown: 0, probabilita: 100, soloLive: false, soloOffline: false });
   switch (nome) {
     case 'saluto':
       return { id: null, nome: 'Saluto', attivo: true,
@@ -461,11 +512,15 @@ function modelloPronto(nome) {
         azioni: [{ tipo: 'messaggio', testo: 'I miei social li trovi su andryxify.it/u/$canale ✨' }] };
     case 'morti':
       return { id: null, nome: 'Contatore morti', attivo: true,
-        trigger: { tipo: 'comando', comando: 'morte', alias: [] }, condizioni: { ...cond(), chiPuo: 'mod' },
+        trigger: { tipo: 'comando', comando: 'morte', alias: [] }, condizioni: { ...cond(), tier: 'mod' },
         azioni: [
-          { tipo: 'contatore', nome: 'morti', operazione: 'incrementa', valore: 0 },
+          { tipo: 'contatore', nome: 'morti', op: 'incrementa', valore: 0 },
           { tipo: 'messaggio', testo: 'Morti oggi: $count(morti) 💀' },
         ] };
+    case 'voce':
+      return { id: null, nome: 'Comando vocale: clippa', attivo: true,
+        trigger: { tipo: 'voce', frasi: ['clippa', 'salva la clip'] }, condizioni: cond(),
+        azioni: [{ tipo: 'clip' }] };
     case 'webhook':
       return { id: null, nome: 'Collega il mio bot', attivo: true,
         trigger: { tipo: 'comando', comando: 'chiedi', alias: [] }, condizioni: cond(),
@@ -593,6 +648,37 @@ function attivaPiattaforma() {
   document.getElementById('rng-spontaneita')?.addEventListener('input', (ev) => {
     document.getElementById('val-spontaneita').textContent = ev.target.value + '%';
   });
+
+  // --- scheda Ascolto live: interruttore, slider e salvataggio ---
+  // l'interruttore salva subito (come il bot acceso/spento), aggiornando l'etichetta
+  document.getElementById('toggle-ascolto')?.addEventListener('change', (ev) => {
+    const acceso = ev.target.checked;
+    const et = document.getElementById('etichetta-ascolto');
+    conErrore(async () => {
+      try {
+        await salvaImpostazioni({ ascoltoLive: acceso }, acceso ? 'Ascolto live acceso 🎧' : 'Ascolto live spento.');
+        if (et) et.textContent = acceso ? 'Ascolto acceso' : 'Ascolto spento';
+      } catch (e) {
+        ev.target.checked = !acceso; // ripristino in caso di errore
+        throw e;
+      }
+    });
+  });
+
+  // slider sensibilità: solo valore mostrato in tempo reale (salva col bottone)
+  document.getElementById('rng-ascolto')?.addEventListener('input', (ev) => {
+    const out = document.getElementById('val-ascolto');
+    if (out) out.textContent = ev.target.value;
+  });
+
+  // Salva: interruttore + sensibilità insieme
+  document.getElementById('btn-salva-ascolto')?.addEventListener('click', () => conErrore(async () => {
+    const ascoltoLive = document.getElementById('toggle-ascolto').checked;
+    const ascoltoSensibilita = Number(document.getElementById('rng-ascolto').value) || 5;
+    await salvaImpostazioni({ ascoltoLive, ascoltoSensibilita }, 'Ascolto live salvato 🎧');
+    const et = document.getElementById('etichetta-ascolto');
+    if (et) et.textContent = ascoltoLive ? 'Ascolto acceso' : 'Ascolto spento';
+  }));
 
   // conoscenza: aggiunta manuale
   document.getElementById('btn-aggiungi-conoscenza')?.addEventListener('click', () => conErrore(async () => {
@@ -955,22 +1041,23 @@ async function caricaMemoria(mostraToast = false) {
 // mappe testo per rendere leggibili trigger, eventi e azioni
 const EVENTI = [
   ['follow', 'Nuovo follow'],
-  ['sub', 'Sub / resub'],
+  ['subscribe', 'Sub / resub'],
   ['raid', 'Raid'],
-  ['bits', 'Bits / cheer'],
-  ['riscatto', 'Riscatto punti canale'],
-  ['primo', 'Primo messaggio di un utente'],
-  ['live', 'Sei andato in live'],
-  ['fine', 'Fine live'],
+  ['cheer', 'Bits / cheer'],
+  ['redemption', 'Riscatto punti canale'],
+  ['first', 'Primo messaggio di un utente'],
+  ['online', 'Sei andato in live'],
+  ['offline', 'Fine live'],
 ];
 const EVENTI_TXT = {
-  follow: 'arriva un nuovo follow', sub: 'qualcuno si abbona', raid: 'parte un raid',
-  bits: 'arrivano dei bits', riscatto: 'riscattano un premio coi punti',
-  primo: 'un utente scrive per la prima volta', live: 'vai in live', fine: 'finisce la live',
+  follow: 'arriva un nuovo follow', subscribe: 'qualcuno si abbona', raid: 'parte un raid',
+  cheer: 'arrivano dei bits', redemption: 'riscattano un premio coi punti',
+  first: 'un utente scrive per la prima volta', online: 'vai in live', offline: 'finisce la live',
 };
 const TRIGGER = [
   ['comando', 'Un comando in chat'],
   ['parola', 'Una parola o frase in chat'],
+  ['voce', 'Comando vocale (dal tuo PC)'],
   ['evento', 'Un evento del canale'],
   ['timer', 'A tempo (timer)'],
   ['manuale', 'Manuale / da un mio servizio'],
@@ -978,10 +1065,11 @@ const TRIGGER = [
 const AZIONI = [
   ['messaggio', '💬 Scrivi in chat'],
   ['effetto', '✨ Fai partire un effetto'],
+  ['clip', '🎬 Crea una clip'],
   ['contatore', '🔢 Contatore'],
   ['webhook', '🔗 Chiama un webhook'],
-  ['aspetta', '⏱️ Aspetta'],
-  ['overlay', '🖥️ Mostra testo sull\'overlay'],
+  ['attendi', '⏱️ Aspetta'],
+  ['overlayTesto', '🖥️ Mostra testo sull\'overlay'],
   ['timeout', '🚫 Timeout in chat'],
 ];
 // pillole variabili cliccabili (testo inserito = etichetta)
@@ -1006,6 +1094,12 @@ function riassuntoQuando(t) {
       const modo = { contiene: 'compare', esatto: 'è esattamente', inizia: 'inizia con' }[t.modo] || 'compare';
       return t.testo ? `in chat ${modo} "${t.testo}"` : 'compare una parola';
     }
+    case 'voce': {
+      const f = (Array.isArray(t.frasi) ? t.frasi : []).filter(Boolean);
+      if (!f.length) return 'dici una frase al microfono';
+      const primi = f.slice(0, 2).map((x) => `"${x}"`).join(' o ');
+      return `dici ${primi}`;
+    }
     case 'evento': return EVENTI_TXT[t.evento] || 'succede un evento del canale';
     case 'timer': {
       let s = `ogni ${t.minuti || 0} min`;
@@ -1018,7 +1112,7 @@ function riassuntoQuando(t) {
 }
 function riassuntoSe(c) {
   const parti = [];
-  const chi = { sub: 'solo i sub', vip: 'solo i VIP', mod: 'solo i mod' }[c.chiPuo];
+  const chi = { sub: 'solo i sub', vip: 'solo i VIP', mod: 'solo i mod' }[c.tier];
   if (chi) parti.push(chi);
   if (c.cooldown > 0) parti.push(`max ogni ${c.cooldown}s`);
   if (typeof c.probabilita === 'number' && c.probabilita >= 0 && c.probabilita < 100) parti.push(`${c.probabilita}% delle volte`);
@@ -1037,8 +1131,9 @@ function riassuntoAzione(a) {
       return `aumenta "${n}"`;
     }
     case 'webhook': return 'chiama un webhook';
-    case 'aspetta': return `aspetta ${a.secondi || 0}s`;
-    case 'overlay': return 'mostra un testo sull\'overlay';
+    case 'clip': return 'crea una clip';
+    case 'attendi': return `aspetta ${a.secondi || 0}s`;
+    case 'overlayTesto': return 'mostra un testo sull\'overlay';
     case 'timeout': return `timeout di ${a.secondi || 0}s`;
     default: return '';
   }
@@ -1135,12 +1230,12 @@ function apriEditor(modulo) {
   moduloInModifica = modulo ? JSON.parse(JSON.stringify(modulo)) : {
     id: null, nome: '', attivo: true,
     trigger: { tipo: 'comando', comando: '', alias: [] },
-    condizioni: { chiPuo: 'tutti', cooldown: 0, probabilita: 100, soloLive: false, soloOffline: false },
+    condizioni: { tier: 'tutti', cooldown: 0, probabilita: 100, soloLive: false, soloOffline: false },
     azioni: [{ tipo: 'messaggio', testo: '' }],
   };
   const m = moduloInModifica;
   const c = m.condizioni || {};
-  const seAperto = c.chiPuo && c.chiPuo !== 'tutti' || c.cooldown > 0 ||
+  const seAperto = c.tier && c.tier !== 'tutti' || c.cooldown > 0 ||
     (typeof c.probabilita === 'number' && c.probabilita < 100) || c.soloLive || c.soloOffline;
 
   cont.innerHTML = `
@@ -1166,10 +1261,10 @@ function apriEditor(modulo) {
           <div>
             <label class="campo" for="mod-chipuo">Chi può attivarlo</label>
             <select id="mod-chipuo">
-              <option value="tutti" ${c.chiPuo === 'tutti' ? 'selected' : ''}>Tutti</option>
-              <option value="sub" ${c.chiPuo === 'sub' ? 'selected' : ''}>Solo sub</option>
-              <option value="vip" ${c.chiPuo === 'vip' ? 'selected' : ''}>Solo VIP</option>
-              <option value="mod" ${c.chiPuo === 'mod' ? 'selected' : ''}>Solo mod</option>
+              <option value="tutti" ${c.tier === 'tutti' ? 'selected' : ''}>Tutti</option>
+              <option value="sub" ${c.tier === 'sub' ? 'selected' : ''}>Solo sub</option>
+              <option value="vip" ${c.tier === 'vip' ? 'selected' : ''}>Solo VIP</option>
+              <option value="mod" ${c.tier === 'mod' ? 'selected' : ''}>Solo mod</option>
             </select>
           </div>
           <div>
@@ -1224,6 +1319,14 @@ function disegnaCampiQuando(t) {
           <option value="esatto" ${t.modo === 'esatto' ? 'selected' : ''}>È esatta</option>
           <option value="inizia" ${t.modo === 'inizia' ? 'selected' : ''}>Inizia con</option>
         </select>`;
+    case 'voce': {
+      const frasi = (Array.isArray(t.frasi) && t.frasi.length) ? t.frasi : ['clippa', 'salva la clip'];
+      return `
+        <label class="campo" for="mod-frasi-voce">Frasi da ascoltare (una per riga)</label>
+        <textarea id="mod-frasi-voce" placeholder="clippa&#10;salva la clip">${esc(frasi.join('\n'))}</textarea>
+        <p class="suggerimento">Quando al microfono dici una di queste frasi, il modulo scatta. Scrivile in minuscolo,
+        una per riga. L'ascolto si avvia dalla pagina "Apri l'ascolto vocale" nella scheda "Ascolto live".</p>`;
+    }
     case 'evento':
       return `
         <label class="campo" for="mod-evento">Quale evento</label>
@@ -1307,10 +1410,10 @@ function disegnaCampiAzione(a) {
           </div>
           <div>
             <label class="campo">Operazione</label>
-            <select data-campo="operazione">
-              <option value="incrementa" ${a.operazione === 'incrementa' ? 'selected' : ''}>Incrementa (+1)</option>
-              <option value="azzera" ${a.operazione === 'azzera' ? 'selected' : ''}>Azzera</option>
-              <option value="imposta" ${a.operazione === 'imposta' ? 'selected' : ''}>Imposta a…</option>
+            <select data-campo="op">
+              <option value="incrementa" ${a.op === 'incrementa' ? 'selected' : ''}>Incrementa (+1)</option>
+              <option value="azzera" ${a.op === 'azzera' ? 'selected' : ''}>Azzera</option>
+              <option value="imposta" ${a.op === 'imposta' ? 'selected' : ''}>Imposta a…</option>
             </select>
           </div>
           <div>
@@ -1327,12 +1430,16 @@ function disegnaCampiAzione(a) {
           <label>Usa la risposta come messaggio in chat</label>
         </div>
         <p class="suggerimento">L'URL è il <strong class="primo-piano">tuo</strong> servizio: la tua logica resta sul tuo
-        server e AndryBot ne pubblica la risposta.</p>`;
-    case 'aspetta':
+        server e SocialBot ne pubblica la risposta.</p>`;
+    case 'clip':
+      return `
+        <p class="suggerimento">Crea una clip del momento su Twitch. Utile con l'innesco vocale
+        ("clippa!") o su un evento. Nessun campo da compilare.</p>`;
+    case 'attendi':
       return `
         <label class="campo">Secondi da aspettare</label>
         <input type="number" data-campo="secondi" min="0" max="60" value="${Number(a.secondi) || 2}">`;
-    case 'overlay':
+    case 'overlayTesto':
       return `
         <textarea data-campo="testo" data-var-target placeholder="Testo da mostrare sull'overlay">${esc(a.testo || '')}</textarea>
         ${pillole}
@@ -1359,6 +1466,8 @@ function leggiForm() {
   } else if (tipoT === 'parola') {
     trigger.testo = (g('mod-testo-trigger')?.value || '').trim();
     trigger.modo = g('mod-modo')?.value || 'contiene';
+  } else if (tipoT === 'voce') {
+    trigger.frasi = righe((g('mod-frasi-voce')?.value || '').toLowerCase());
   } else if (tipoT === 'evento') {
     trigger.evento = g('mod-evento')?.value || 'follow';
   } else if (tipoT === 'timer') {
@@ -1366,7 +1475,7 @@ function leggiForm() {
     trigger.minMessaggi = Number(g('mod-min-messaggi')?.value) || 0;
   }
   const condizioni = {
-    chiPuo: g('mod-chipuo')?.value || 'tutti',
+    tier: g('mod-chipuo')?.value || 'tutti',
     cooldown: Number(g('mod-cooldown')?.value) || 0,
     probabilita: g('mod-probabilita') ? Number(g('mod-probabilita').value) : 100,
     soloLive: !!g('mod-solo-live')?.checked,
@@ -1389,11 +1498,12 @@ function leggiAzioneRiga(riga) {
     case 'effetto': return { tipo, comando: v('comando')?.value || '' };
     case 'contatore': return {
       tipo, nome: (v('nome')?.value || '').trim(),
-      operazione: v('operazione')?.value || 'incrementa', valore: Number(v('valore')?.value) || 0,
+      op: v('op')?.value || 'incrementa', valore: Number(v('valore')?.value) || 0,
     };
     case 'webhook': return { tipo, url: (v('url')?.value || '').trim(), usaRisposta: !!v('usaRisposta')?.checked };
-    case 'aspetta': return { tipo, secondi: Number(v('secondi')?.value) || 0 };
-    case 'overlay': return { tipo, testo: v('testo')?.value || '', durata: Number(v('durata')?.value) || 5000 };
+    case 'clip': return { tipo };
+    case 'attendi': return { tipo, secondi: Number(v('secondi')?.value) || 0 };
+    case 'overlayTesto': return { tipo, testo: v('testo')?.value || '', durata: Number(v('durata')?.value) || 5000 };
     case 'timeout': return { tipo, secondi: Number(v('secondi')?.value) || 0 };
     default: return { tipo };
   }
@@ -1591,7 +1701,7 @@ async function caricaTabellaAdmin() {
 
 // ------------------------------------------------------------------ listener globali
 
-// bottone "richiedi AndryBot" (vista senza richiesta) — delega sul documento
+// bottone "richiedi SocialBot" (vista senza richiesta) — delega sul documento
 document.addEventListener('click', (ev) => {
   if (ev.target.id === 'btn-richiesta') {
     conErrore(async () => {

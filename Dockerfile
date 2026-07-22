@@ -6,9 +6,12 @@ FROM node:22-bookworm-slim
 # Strumenti di compilazione: servono a better-sqlite3 SOLO se per
 # questa piattaforma manca il binario precompilato (prebuild).
 # ca-certificates serve per le chiamate HTTPS verso Twitch.
-# ffmpeg serve alla super-compressione degli effetti (audio/immagini/video).
+# ffmpeg serve alla super-compressione degli effetti (audio/immagini/video)
+# e alla misura della loudness (ebur128) per l'ascolto live.
+# streamlink tira l'audio della live da Twitch per l'ascolto lato server
+# (bookworm ha il pacchetto nativo).
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      python3 make g++ ca-certificates ffmpeg \
+      python3 make g++ ca-certificates ffmpeg streamlink \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

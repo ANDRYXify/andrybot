@@ -1,4 +1,4 @@
-// Il cervello di AndryBot: PROCEDURALE e PROGRESSIVO. Niente IA esterna:
+// Il cervello di SocialBot: PROCEDURALE e PROGRESSIVO. Niente IA esterna:
 // intenti a pattern, knowledge base con scoring, catene di Markov e una
 // personalità fatta di pool di template in tre toni. Ricorda sempre:
 // il bot parla CON L'ACCOUNT DELLO STREAMER, quindi in prima persona.
@@ -264,6 +264,21 @@ function menzionaBot(text, login) {
 const PAROLE_SOCIAL = ['instagram', 'youtube', 'tiktok', 'discord', 'telegram', 'twitter',
   'spotify', 'kick', 'facebook', 'github', 'social', 'sito'];
 
+// Intenti che il bot sa già gestire in chatReply (saluti, "come va", "chi sei",
+// gioco/uptime, ringraziamenti, link). Serve al percorso REATTIVO di shouldReply:
+// riconoscere al volo un messaggio "rispondibile" anche senza menzione.
+const INTENTI_NOTI = /come va\b|come stai|come butta|come procede|come andiamo|chi sei|cosa sei|cosa sai fare|come funzioni|che bot sei|presentati|che gioco|che game|a cosa (stai )?gioc|a che (gioco|game)|cosa stai giocando|che stai giocando|uptime|da quanto|(^|[^a-z])(ciao|ehi|hey|buongiorno|buonasera|buond[iì]|salve|weil[aà]|hola)([^a-z]|$)|grazie|bravo|brava|bravissim|(^|[^a-z])(link|sito|social)([^a-z]|$)/;
+
+// Il messaggio "sembra rispondibile"? Cioè assomiglia a qualcosa che il bot sa
+// già gestire: una domanda ('?'), un intento noto o una parola social/link.
+function sembraRispondibile(text) {
+  const t = String(text || '').toLowerCase();
+  if (!t) return false;
+  if (t.includes('?')) return true;
+  if (INTENTI_NOTI.test(t)) return true;
+  return PAROLE_SOCIAL.some((p) => t.includes(p));
+}
+
 // ======================================================================
 // Brain
 // ======================================================================
@@ -294,10 +309,23 @@ export class Brain {
       const settings = streamer.settings || {};
       if (menzionaBot(text, botLogin || channel)) return settings.rispostaMenzioni !== false;
 
-      // risposta spontanea: probabilità configurabile, raddoppiata sulle domande
+      // manopola: probabilità base "spontanea" (0 = zitto). Stesso clamp del
+      // server (0..0.5), così un valore alto = bot più "chiacchierone".
       let p = Number.isFinite(+settings.spontaneita) ? +settings.spontaneita : 0.03;
-      p = Math.min(0.3, Math.max(0, p));
+      const spont = Math.min(0.5, Math.max(0, p));
+      p = spont;
+
+      // spontanea: raddoppiata sulle domande (come da sempre)
       if (String(text).trim().endsWith('?')) p *= 2;
+
+      // percorso REATTIVO: senza menzione, ma il messaggio sembra qualcosa a cui
+      // il bot saprebbe rispondere (domanda / intento noto / conoscenza) → alza
+      // la probabilità sopra la spontanea base, restando derivata dalla manopola
+      // (a manopola 0 resta tutto spento) e sempre col cooldown già rispettato.
+      if (spont > 0 && sembraRispondibile(text)) {
+        p = Math.max(p, Math.min(0.5, spont * 3));
+      }
+
       return Math.random() < p;
     } catch (e) {
       log.error('shouldReply:', e?.message || e);
