@@ -146,6 +146,18 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     };
   };
 
+  // streamer "sicuro" per il browser: nasconde il segreto del ponte giochi
+  // (resta solo nel DB del bot). Espone se è collegato e se è acceso.
+  const streamerSicuro = (login) => {
+    const s = streamers.get(login);
+    if (!s) return null;
+    const g = s.settings?.giochiSito;
+    if (g && (g.secret || g.endpoint)) {
+      s.settings = { ...s.settings, giochiSito: { attivo: g.attivo === true, collegato: !!(g.secret && g.endpoint) } };
+    }
+    return s;
+  };
+
   const sync = () => Promise.resolve(manager.syncChannels?.()).catch(() => {});
 
   // Passkey (WebAuthn): l'RP ID è il dominio, l'origin è l'URL completo.
@@ -232,6 +244,17 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // kit di partenza: al primo ingresso è già tutto pronto (idempotente)
     seedStreamer(who.login);
 
+    // ponte "giochi del sito": il sito ci consegna endpoint + segreto al redeem;
+    // li memorizziamo (senza toccare l'interruttore 'attivo' scelto dallo streamer).
+    if (who.bridge) {
+      const s = streamers.get(who.login);
+      const g = s?.settings?.giochiSito || {};
+      streamers.setSettings(who.login, {
+        ...s.settings,
+        giochiSito: { attivo: g.attivo === true, endpoint: who.bridge.endpoint, secret: who.bridge.secret },
+      });
+    }
+
     // primo giro di pre-addestramento dal profilo del sito (max 1 a settimana)
     if (!pretrainRecente(who.login)) avviaPretrain(who.login);
     sync();
@@ -309,7 +332,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       isAdmin: isAdmin(user),
       missing: missingConfig(),
       status: manager.status(),
-      streamer: user ? streamers.get(user.login) : null,
+      streamer: user ? streamerSicuro(user.login) : null,
       permessiOk: user ? permessiOk(user.login) : false,
       vipOk: user ? vipOk(user.login) : false,
       moderazioneOk: user ? moderazioneOk(user.login) : false,
@@ -409,6 +432,12 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       const tk = b.tiktok || {};
       const username = tiktok.pulisciUsername(tk.username).slice(0, 40);
       out.tiktok = { username, attivo: !!tk.attivo && !!username, annunciaChat: !!tk.annunciaChat };
+    }
+    // ponte "giochi del sito": dalla dashboard si può SOLO accendere/spegnere;
+    // endpoint e segreto arrivano dal sito (redeem del pass), non dal client.
+    if (b.giochiSito !== undefined) {
+      const cur = s.settings?.giochiSito || {};
+      out.giochiSito = { endpoint: cur.endpoint || '', secret: cur.secret || '', attivo: !!(b.giochiSito && b.giochiSito.attivo) };
     }
     // giochi + promo social automatica
     if (b.giochi !== undefined) out.giochi = !!b.giochi;

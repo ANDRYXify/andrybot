@@ -73,6 +73,7 @@ function impostazioni() {
     premioVip: (s.premioVip && typeof s.premioVip === 'object') ? s.premioVip : { attivo: false, periodo: 'settimana', quanti: 1 },
     antispam: (s.antispam && typeof s.antispam === 'object') ? s.antispam : {},
     tiktok: (s.tiktok && typeof s.tiktok === 'object') ? s.tiktok : { username: '', attivo: false, annunciaChat: false },
+    giochiSito: (s.giochiSito && typeof s.giochiSito === 'object') ? s.giochiSito : { attivo: false, collegato: false },
     frasi: Array.isArray(s.frasi) ? s.frasi : [],
     clipAuto: s.clipAuto !== false,
     clipAutoSoglia: typeof s.clipAutoSoglia === 'number' ? s.clipAutoSoglia : 25,
@@ -699,6 +700,21 @@ function pannelloGiochi() {
       <ul class="lista-voci" id="lista-classifica"><li class="vuoto">Caricamento…</li></ul>
       <h3>VIP a tempo attivi</h3>
       <ul class="lista-voci" id="lista-vip"><li class="vuoto">Caricamento…</li></ul>
+    </div>
+
+    <div class="carta">
+      <h2>Giochi del sito andryxify.it 🎯</h2>
+      <p>I giochi di andryxify.it (come <strong class="primo-piano">AGENTify</strong>) possono girare
+      <strong class="primo-piano">direttamente dalla tua chat</strong> tramite SocialBot: i tuoi viewer scrivono i
+      comandi (es. <code>!ag …</code>) e il bot risponde. Un solo bot in chat, niente da installare.</p>
+      ${s.giochiSito.collegato
+        ? '<p class="suggerimento"><span class="badge verde">✓ collegato al sito</span></p>'
+        : '<p class="suggerimento"><span class="badge giallo">non ancora collegato</span> — entra nella dashboard passando da andryxify.it e il collegamento si attiva da solo.</p>'}
+      <div class="riga-check">
+        <input type="checkbox" id="chk-giochisito" ${s.giochiSito.attivo ? 'checked' : ''} ${s.giochiSito.collegato ? '' : 'disabled'}>
+        <label for="chk-giochisito">Fai giocare la chat ai giochi del sito</label>
+      </div>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-giochisito" ${s.giochiSito.collegato ? '' : 'disabled'}>Salva</button></p>
     </div>`);
 }
 
@@ -1018,6 +1034,11 @@ function attivaPiattaforma() {
       nomeMonete: document.getElementById('inp-monete').value.trim(),
       promoSocial: document.getElementById('chk-promo').checked,
     }, 'Giochi salvati 🎮');
+  }));
+
+  // ponte "giochi del sito": solo l'interruttore (endpoint/segreto arrivano dal sito)
+  document.getElementById('btn-salva-giochisito')?.addEventListener('click', () => conErrore(async () => {
+    await salvaImpostazioni({ giochiSito: { attivo: document.getElementById('chk-giochisito').checked } }, 'Giochi del sito salvati 🎯');
   }));
 
   // premio VIP automatico (top monete → VIP ogni settimana/mese)
