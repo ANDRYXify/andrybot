@@ -11,6 +11,7 @@ import { EventHub } from './twitch/events.js';
 import { Brain } from './ai/brain.js';
 import * as persona from './ai/persona.js';
 import * as games from './features/games.js';
+import * as vip from './features/vip.js';
 import { createMessageHandler } from './features/handler.js';
 import { ClipEngine } from './features/clips.js';
 import { scheduleReflection } from './ai/reflection.js';
@@ -35,6 +36,8 @@ export class BotManager {
     this.watcher = null;
     this._syncTimer = null;
     this._animaTimer = null;
+    this._vipTimer = null;
+    this._premiTimer = null;
     this._stopReflection = null;
     this._capAvvisoDato = false;     // il tetto ascolti è già stato loggato una volta?
   }
@@ -60,6 +63,9 @@ export class BotManager {
     this._syncTimer = setInterval(() => this.syncChannels().catch(() => {}), 60_000);
     // battito dell'anima: umore che "respira" + proattività dosata dall'autonomia
     this._animaTimer = setInterval(() => this._battitoAnima(), 3 * 60_000);
+    // VIP: rimozione automatica degli scaduti + premi periodici (settimanale/mensile)
+    this._vipTimer = setInterval(() => vip.controllaScadenze(this.helix).catch(() => {}), 5 * 60_000);
+    this._premiTimer = setInterval(() => this._controllaPremi(), 60 * 60_000);
     log.info('SocialBot avviato');
   }
 
@@ -67,6 +73,8 @@ export class BotManager {
     this.running = false;
     clearInterval(this._syncTimer);
     clearInterval(this._animaTimer);
+    clearInterval(this._vipTimer);
+    clearInterval(this._premiTimer);
     this._stopReflection?.();
     this.watcher?.stop();
     // spegni tutti gli ascolti live (audio): non devono restare orfani
@@ -105,6 +113,24 @@ export class BotManager {
     } catch (e) { log.error('battito anima:', e?.message || e); }
   }
 
+  // Premi periodici: se lo streamer li ha attivati, ogni settimana/mese dà il
+  // VIP ai più affezionati (top monete). Controllato ogni ora.
+  async _controllaPremi() {
+    try {
+      for (const login of this.units.keys()) {
+        const s = streamers.get(login);
+        const p = s?.settings?.premioVip;
+        if (!p?.attivo) continue;
+        const mese = p.periodo === 'mese';
+        const periodoMs = (mese ? 30 : 7) * 24 * 60 * 60_000;
+        if (Date.now() - (Number(s.settings.premioVipUltimo) || 0) < periodoMs) continue;
+        const durata = vip.parseDurata(mese ? 'mese' : 'settimana');
+        await vip.premiaTopMonete(this.helix, login, Math.min(5, Math.max(1, Number(p.quanti) || 1)), durata, (t) => this.say(login, t));
+        streamers.setSettings(login, { ...s.settings, premioVipUltimo: Date.now() });
+      }
+    } catch (e) { log.error('premi VIP:', e?.message || e); }
+  }
+
   // uno streamer è "pronto" se ha concesso i permessi con gli scope chat
   _ready(s) {
     const t = tokens.get('broadcaster', s.login);
@@ -133,6 +159,8 @@ export class BotManager {
           // minigiochi: monete passive + comandi (!dado, !slot, !trivia, ...)
           try { games.accredita(msg); games.tryGame(msg, (t) => this.say(msg.channel, t)); }
           catch (e) { log.error(`#${login} giochi:`, e?.message || e); }
+          // comandi VIP (mod/streamer): !vip @nome [durata], !unvip, !viplista
+          vip.tryVipCommand(this.helix, msg, (t) => this.say(msg.channel, t)).catch((e) => log.error(`#${login} vip:`, e?.message || e));
           // effetti & suoni: un comando come !airhorn accende l'overlay OBS.
           // Non deve MAI rompere il flusso dei messaggi, quindi try/catch.
           try { this.effects?.tryTrigger(msg, (t) => this.say(msg.channel, t)); }

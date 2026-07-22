@@ -94,4 +94,52 @@ export class Helix {
       throw e;
     }
   }
+
+  // ------------------------------------------------------------- VIP
+  // Richiedono lo scope 'channel:manage:vips' sul token del broadcaster.
+
+  // Assegna il VIP. Ritorna { ok, gia?, motivo? }.
+  async addVip(channelLogin, userId) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id || !userId) return { ok: false, motivo: 'dati mancanti' };
+    const token = await this.auth.getToken('broadcaster', channelLogin);
+    try {
+      await this._request('POST', '/channels/vips', { query: { broadcaster_id: s.user_id, user_id: userId }, token });
+      return { ok: true };
+    } catch (e) {
+      if (e.status === 409) return { ok: true, gia: true };                       // è già VIP
+      if (e.status === 422) return { ok: false, motivo: 'non ci sono più slot VIP liberi' };
+      if (e.status === 401) return { ok: false, motivo: 'permesso mancante (ri-concedi i permessi)' };
+      if (e.status === 400) return { ok: false, motivo: 'non posso (forse è mod o sei tu)' };
+      log.warn('addVip:', e?.message || e);
+      return { ok: false, motivo: 'errore Twitch' };
+    }
+  }
+
+  // Toglie il VIP. Ritorna { ok, motivo? }.
+  async removeVip(channelLogin, userId) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id || !userId) return { ok: false, motivo: 'dati mancanti' };
+    const token = await this.auth.getToken('broadcaster', channelLogin);
+    try {
+      await this._request('DELETE', '/channels/vips', { query: { broadcaster_id: s.user_id, user_id: userId }, token });
+      return { ok: true };
+    } catch (e) {
+      if (e.status === 404 || e.status === 422) return { ok: true, nonEra: true }; // non era VIP: ok lo stesso
+      if (e.status === 401) return { ok: false, motivo: 'permesso mancante' };
+      log.warn('removeVip:', e?.message || e);
+      return { ok: false, motivo: 'errore Twitch' };
+    }
+  }
+
+  // Elenco VIP attuali → [{ user_id, user_login, user_name }] o [].
+  async getVips(channelLogin) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return [];
+    const token = await this.auth.getToken('broadcaster', channelLogin);
+    try {
+      const j = await this._request('GET', '/channels/vips', { query: { broadcaster_id: s.user_id, first: 100 }, token });
+      return j?.data || [];
+    } catch { return []; }
+  }
 }

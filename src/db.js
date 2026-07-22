@@ -160,6 +160,18 @@ CREATE TABLE IF NOT EXISTS points (        -- "monete" (punti fedeltà) dei mini
   ts INTEGER NOT NULL,
   PRIMARY KEY (channel, user)
 );
+
+CREATE TABLE IF NOT EXISTS vips (          -- VIP assegnati dal bot (con scadenza)
+  channel TEXT NOT NULL,
+  user TEXT NOT NULL,                       -- login minuscolo
+  user_id TEXT NOT NULL DEFAULT '',
+  display TEXT NOT NULL DEFAULT '',
+  until INTEGER NOT NULL DEFAULT 0,         -- epoch ms di scadenza (0 = permanente)
+  motivo TEXT NOT NULL DEFAULT '',          -- 'comando', 'voce', 'premio'
+  ts INTEGER NOT NULL,
+  PRIMARY KEY (channel, user)
+);
+CREATE INDEX IF NOT EXISTS idx_vips_until ON vips(until);
 `);
 
 const now = () => Date.now();
@@ -205,6 +217,23 @@ export const points = {
   top(channel, n = 5) {
     return db.prepare("SELECT user, monete FROM points WHERE channel=? AND user NOT LIKE '[%' ORDER BY monete DESC LIMIT ?").all(channel, n);
   },
+};
+
+// ---------------------------------------------------------------- VIP (con scadenza)
+export const vips = {
+  set(channel, { user, userId = '', display = '', until = 0, motivo = '' }) {
+    const u = String(user).toLowerCase();
+    db.prepare(`INSERT INTO vips (channel, user, user_id, display, until, motivo, ts)
+      VALUES (?,?,?,?,?,?,?)
+      ON CONFLICT(channel, user) DO UPDATE SET user_id=excluded.user_id, display=excluded.display,
+        until=excluded.until, motivo=excluded.motivo, ts=excluded.ts`)
+      .run(channel, u, userId, display, until, motivo, now());
+  },
+  get(channel, user) { return db.prepare('SELECT * FROM vips WHERE channel=? AND user=?').get(channel, String(user).toLowerCase()) || null; },
+  remove(channel, user) { db.prepare('DELETE FROM vips WHERE channel=? AND user=?').run(channel, String(user).toLowerCase()); },
+  list(channel) { return db.prepare('SELECT * FROM vips WHERE channel=? ORDER BY ts DESC').all(channel); },
+  // VIP scaduti su TUTTI i canali (until>0 e già passato): per la rimozione automatica
+  scaduti() { return db.prepare('SELECT * FROM vips WHERE until>0 AND until<?').all(now()); },
 };
 
 // ---------------------------------------------------------------- anima (condivisa)
@@ -308,6 +337,13 @@ export const memory = {
   messageRate(channel, windowMs = 30000) {   // messaggi al minuto nell'ultima finestra (per rilevare hype)
     const n = db.prepare('SELECT COUNT(*) c FROM messages WHERE channel=? AND ts>=? AND from_bot=0').get(channel, now() - windowMs).c;
     return n * (60000 / windowMs);
+  },
+  // chatter recenti (persone che hanno scritto), più recenti prima: serve alla
+  // predizione del nick del comando vocale ("vip a chiara" → chiara_3008).
+  recentChatters(channel, sinceMs = 6 * 3600_000, limit = 400) {
+    return db.prepare(`SELECT user, MAX(display) display, MAX(ts) ts FROM messages
+      WHERE channel=? AND ts>=? AND from_bot=0 AND user NOT LIKE '[%'
+      GROUP BY user ORDER BY ts DESC LIMIT ?`).all(channel, now() - sinceMs, limit);
   },
   addUserMemory(channel, user, note) {
     db.prepare('INSERT INTO user_memories (channel, user, note, ts) VALUES (?,?,?,?)').run(channel, user.toLowerCase(), note, now());
