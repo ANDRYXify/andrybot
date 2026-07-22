@@ -481,12 +481,32 @@ function pannelloEffetti() {
 // Automazioni componibili col modello QUANDO → SE → ALLORA.
 
 function pannelloModuli() {
+  const chipsRapido = ['$user', '$touser', '$canale', '$uptime', '$gioco', '$count(morti)', '$random(1,100)']
+    .map((v) => `<button type="button" class="chip-var" data-qc="${esc(v)}">${esc(v)}</button>`).join('');
   return pannello('moduli', `
     <div class="carta">
+      <h2>Comando rapido ⚡</h2>
+      <p>Il modo più veloce: scrivi il <strong class="primo-piano">nome</strong> e <strong class="primo-piano">cosa
+      deve rispondere</strong>. Fatto — niente altro da compilare.</p>
+      <div class="riga-flessibile">
+        <span class="prefisso-cmd">!</span>
+        <input type="text" id="qc-nome" class="campo-largo" placeholder="social" maxlength="24">
+      </div>
+      <label class="campo" for="qc-risposta">Risposta</label>
+      <textarea id="qc-risposta" placeholder="es. I miei social li trovi su andryxify.it/u/$canale ✨"></textarea>
+      <div class="chip-vars" id="qc-chips">${chipsRapido}</div>
+      <p class="spazio-sopra">
+        <button class="btn" id="btn-qc">Aggiungi comando</button>
+        <span class="suggerimento">Per condizioni, eventi, timer, effetti o webhook usa <strong>Nuovo modulo</strong> qui sotto.</span>
+      </p>
+    </div>
+
+    <div class="carta">
       <h2>Moduli 🧩</h2>
-      <p>Crea le tue automazioni: <strong class="primo-piano">QUANDO</strong> succede qualcosa,
-      il bot fa <strong class="primo-piano">quello che vuoi tu</strong>.</p>
-      <p class="spazio-sopra"><button class="btn" data-nuovo-modulo>➕ Nuovo modulo</button></p>
+      <p>Automazioni avanzate: <strong class="primo-piano">QUANDO</strong> succede qualcosa,
+      <strong class="primo-piano">SE</strong> valgono certe condizioni, <strong class="primo-piano">ALLORA</strong>
+      il bot fa una o più azioni.</p>
+      <p class="spazio-sopra"><button class="btn secondario" data-nuovo-modulo>➕ Nuovo modulo (avanzato)</button></p>
       <p class="suggerimento spazio-sopra">Non sai da dove partire? Scegli un modello pronto e modificalo:</p>
       <div class="modelli-pronti">
         <button class="modello-pronto" data-modello="saluto">Saluto</button>
@@ -714,6 +734,40 @@ function attivaPiattaforma() {
       nomeMonete: document.getElementById('inp-monete').value.trim(),
       promoSocial: document.getElementById('chk-promo').checked,
     }, 'Giochi salvati 🎮');
+  }));
+
+  // Comando rapido: inserimento variabili (senza perdere il focus) + crea al volo
+  document.getElementById('qc-chips')?.addEventListener('mousedown', (ev) => {
+    const chip = ev.target.closest('[data-qc]');
+    if (!chip) return;
+    ev.preventDefault();
+    const ta = document.getElementById('qc-risposta');
+    if (!ta) return;
+    const v = chip.dataset.qc;
+    const s = ta.selectionStart ?? ta.value.length;
+    const e = ta.selectionEnd ?? ta.value.length;
+    ta.value = ta.value.slice(0, s) + v + ta.value.slice(e);
+    ta.focus();
+    const pos = s + v.length;
+    ta.setSelectionRange(pos, pos);
+  });
+
+  document.getElementById('btn-qc')?.addEventListener('click', () => conErrore(async () => {
+    const comando = (document.getElementById('qc-nome').value || '')
+      .trim().toLowerCase().replace(/^!/, '').replace(/[^a-z0-9_]/g, '');
+    const risposta = (document.getElementById('qc-risposta').value || '').trim();
+    if (!comando) { toast('Scrivi il nome del comando (senza !).', 'errore'); return; }
+    if (!risposta) { toast('Scrivi cosa deve rispondere il bot.', 'errore'); return; }
+    await api('/api/streamer/moduli', { method: 'POST', body: {
+      nome: 'Comando !' + comando, attivo: true,
+      trigger: { tipo: 'comando', comando, alias: [] },
+      condizioni: { tier: 'tutti', cooldown: 0, probabilita: 100, soloLive: false, soloOffline: false },
+      azioni: [{ tipo: 'messaggio', testo: risposta }],
+    } });
+    document.getElementById('qc-nome').value = '';
+    document.getElementById('qc-risposta').value = '';
+    toast('Comando !' + comando + ' creato ⚡');
+    caricaModuli();
   }));
 
   // slider spontaneità: percentuale in tempo reale
