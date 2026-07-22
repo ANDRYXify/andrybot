@@ -168,6 +168,12 @@
     const ultimoScatto = new Map();   // frase → epoch ms ultimo invio (cooldown 4s)
     const COOLDOWN_MS = 4000;
     let logVuoto = true;
+    // Gestione errori di rete del riconoscitore: invece di riavviare ogni 300ms
+    // (spam nel registro), aspettiamo sempre di più e dopo un po' ci fermiamo.
+    let erroriRete = 0;               // errori 'network' consecutivi
+    let backoffMs = 300;              // ritardo prima di riprovare (cresce con gli errori)
+    const BACKOFF_MAX = 15000;        // al massimo 15s tra un tentativo e l'altro
+    const MAX_ERRORI_RETE = 6;        // dopo tanti errori di rete di fila, in pausa
 
     // --- registro a video ------------------------------------------------
     function logga(testo) {
@@ -284,6 +290,8 @@
       r.interimResults = true;
 
       r.onresult = (ev) => {
+        // il riconoscimento funziona: azzera lo stato di errore di rete
+        erroriRete = 0; backoffMs = 300;
         for (let i = ev.resultIndex; i < ev.results.length; i++) {
           // valutiamo anche i risultati parziali: la reazione è più pronta
           // (il comando VIP scatta però solo sul risultato definitivo)
@@ -298,19 +306,32 @@
           ferma();
         } else if (err === 'no-speech' || err === 'aborted') {
           // normale: onend rilancerà il riconoscimento
+        } else if (err === 'network') {
+          // Il riconoscimento del browser non raggiunge il suo servizio.
+          // Non spammiamo: un solo avviso, poi backoff crescente; se insiste,
+          // ci fermiamo con un messaggio utile.
+          erroriRete++;
+          backoffMs = Math.min(backoffMs * 2, BACKOFF_MAX);
+          if (erroriRete === 1) {
+            logga('⚠️ Il riconoscimento vocale del browser non raggiunge il suo servizio (errore di rete). Riprovo, aspettando sempre di più…');
+          }
+          if (erroriRete >= MAX_ERRORI_RETE) {
+            logga('⛔ Riconoscimento vocale non disponibile (rete). Suggerimenti: usa Chrome o Edge, con connessione attiva e senza blocchi (VPN/estensioni privacy/Brave shields). Ascolto in pausa: premi Avvia per riprovare.');
+            ferma();
+          }
         } else {
           logga('⚠️ Errore riconoscimento: ' + err);
         }
       };
 
       // la modalità continua cade da sola ogni tanto: se siamo ancora attivi,
-      // rilanciamo il riconoscimento.
+      // rilanciamo il riconoscimento (con backoff se ci sono errori di rete).
       r.onend = () => {
         if (!attivo) { aggiornaStato(); return; }
         setTimeout(() => {
           if (!attivo) return;
           try { r.start(); } catch (e) { /* in transizione: riproverà */ }
-        }, 300);
+        }, backoffMs);
       };
 
       return r;
@@ -320,6 +341,7 @@
     function avvia() {
       if (!SR) return;
       attivo = true;
+      erroriRete = 0; backoffMs = 300;    // riparti pulito (l'utente ha premuto Avvia)
       if (!rec) rec = creaRiconoscitore();
       try { rec.start(); } catch (e) { /* già avviato */ }
       aggiornaStato();
