@@ -116,11 +116,18 @@ async function caricaStato() {
 
 function render() {
   renderAreaUtente();
+  const navLat = document.getElementById('nav-lat');
 
-  if (!stato.user) { renderHero(); return; }
+  if (!stato.user) {
+    document.body.classList.remove('con-nav');
+    if (navLat) navLat.innerHTML = '';
+    renderHero();
+    return;
+  }
 
   let html = '';
   const st = stato.streamer;
+  const conPiattaforma = st?.status === 'approved';
 
   if (!st) {
     html += vistaRichiesta();
@@ -135,11 +142,16 @@ function render() {
   // L'admin con un canale approvato ha l'area "Admin" tra le schede (dentro
   // vistaPiattaforma). Se è admin ma senza canale approvato, non ci sono schede:
   // in quel caso mostriamo il pannello admin da solo, come prima.
-  if (stato.isAdmin && st?.status !== 'approved') html += `<hr class="separatore">${vistaAdminContenuto()}`;
+  if (stato.isAdmin && !conPiattaforma) html += `<hr class="separatore">${vistaAdminContenuto()}`;
 
   app.innerHTML = html;
 
-  if (st?.status === 'approved') attivaPiattaforma();
+  // La sidebar (con la navigazione) c'è solo quando esiste la piattaforma a
+  // schede; negli altri stati (login, richiesta, ecc.) resta nascosta.
+  document.body.classList.toggle('con-nav', conPiattaforma);
+  if (navLat) navLat.innerHTML = conPiattaforma ? navLateraleHtml() : '';
+
+  if (conPiattaforma) attivaPiattaforma();
   if (stato.isAdmin) { caricaTabellaAdmin(); caricaAnima(); }
 }
 
@@ -269,39 +281,24 @@ function elencoGruppi() {
   return stato.isAdmin ? GRUPPI.concat([GRUPPO_ADMIN]) : GRUPPI;
 }
 
-// Trova il gruppo che contiene una certa scheda (default: il primo).
-function gruppoDiScheda(id) {
-  return elencoGruppi().find((g) => g.schede.some(([sid]) => sid === id)) || GRUPPI[0];
-}
-
-// Disegna la navigazione a due livelli: i GRUPPI in alto e, sotto, le schede
-// del gruppo attivo (la riga di sotto compare solo se il gruppo ha più schede).
-// NB: la barra dei gruppi e la sotto-barra sono in due contenitori distinti,
-// così al cambio scheda possiamo aggiornare solo le classi attive senza
-// ricostruire l'HTML — altrimenti su mobile lo scroll orizzontale tornerebbe
-// all'inizio ad ogni click (la "dock" che rimbalza).
-function gruppiHtml() {
-  const gAtt = gruppoDiScheda(schedaAttiva);
-  return elencoGruppi().map((g) =>
-    `<button class="gruppo-btn${g.id === gAtt.id ? ' attiva' : ''}" data-gruppo="${g.id}">
-       <span class="gruppo-icona">${g.icona}</span>${g.nome}</button>`).join('');
-}
-function sottoSchedeHtml() {
-  const gAtt = gruppoDiScheda(schedaAttiva);
-  if (gAtt.schede.length <= 1) return '';
-  return `<nav class="schede" id="sotto-schede">
-    ${gAtt.schede.map(([id, nome]) =>
-      `<button class="scheda-btn${id === schedaAttiva ? ' attiva' : ''}" data-scheda="${id}">${nome}</button>`).join('')}
-  </nav>`;
-}
-function navInterna() {
-  return `<nav class="gruppi" id="nav-gruppi">${gruppiHtml()}</nav>` +
-         `<div id="sotto-wrap">${sottoSchedeHtml()}</div>`;
+// Costruisce la navigazione della sidebar: le aree a scheda singola sono voci
+// dirette (icona + nome); le aree con più schede diventano una sezione con
+// etichetta e le sue voci sotto. Tutte le voci sono cliccabili (data-scheda).
+function navLateraleHtml() {
+  return elencoGruppi().map((g) => {
+    if (g.schede.length === 1) {
+      const [id] = g.schede[0];
+      return `<button class="lat-item lat-solo${id === schedaAttiva ? ' attiva' : ''}" data-scheda="${id}">
+        <span class="lat-ico">${g.icona}</span><span>${g.nome}</span></button>`;
+    }
+    const voci = g.schede.map(([id, nome]) =>
+      `<button class="lat-item${id === schedaAttiva ? ' attiva' : ''}" data-scheda="${id}"><span>${nome}</span></button>`).join('');
+    return `<div class="lat-gruppo"><div class="lat-label"><span class="lat-ico">${g.icona}</span>${g.nome}</div>${voci}</div>`;
+  }).join('');
 }
 
 function vistaPiattaforma() {
   return `
-    <div id="nav-wrap">${navInterna()}</div>
     ${pannelloStato()}
     ${pannelloPersonalita()}
     ${pannelloConoscenza()}
@@ -1047,33 +1044,8 @@ function pannelloMemoria() {
 
 // aggancia tutti i listener dopo il render della vista "approved"
 function attivaPiattaforma() {
-  // navigazione a due livelli: click su un GRUPPO (apre la sua prima scheda)
-  // oppure su una SOTTO-SCHEDA. In entrambi i casi ridisegniamo la barra e
-  // mostriamo il pannello giusto (i pannelli restano tutti nel DOM).
-  document.getElementById('nav-wrap')?.addEventListener('click', (ev) => {
-    const gBtn = ev.target.closest('[data-gruppo]');
-    const sBtn = ev.target.closest('[data-scheda]');
-    if (gBtn) {
-      const g = elencoGruppi().find((x) => x.id === gBtn.dataset.gruppo);
-      if (!g || g.id === gruppoDiScheda(schedaAttiva).id) return;  // già qui
-      schedaAttiva = g.schede[0][0];   // apri la prima scheda del gruppo
-      // aggiorna la barra gruppi SENZA ricrearla (preserva lo scroll orizz.)
-      document.querySelectorAll('#nav-gruppi .gruppo-btn').forEach((b) =>
-        b.classList.toggle('attiva', b.dataset.gruppo === g.id));
-      // ricrea SOLO la sotto-barra (è cambiato l'insieme delle schede)
-      const sw = document.getElementById('sotto-wrap');
-      if (sw) sw.innerHTML = sottoSchedeHtml();
-    } else if (sBtn) {
-      if (sBtn.dataset.scheda === schedaAttiva) return;
-      schedaAttiva = sBtn.dataset.scheda;
-      // solo scambio di classe attiva: niente ricostruzione → scroll preservato
-      document.querySelectorAll('#sotto-schede .scheda-btn').forEach((b) =>
-        b.classList.toggle('attiva', b.dataset.scheda === schedaAttiva));
-    } else return;
-    document.querySelectorAll('.pannello-scheda').forEach((p) =>
-      p.classList.toggle('visibile', p.id === 'scheda-' + schedaAttiva));
-    caricaDatiScheda(schedaAttiva);
-  });
+  // la navigazione (sidebar) è gestita da initGuscio(), una volta sola: qui
+  // agganciamo solo i controlli dei pannelli appena (ri)disegnati.
 
   // interruttore acceso/spento
   document.getElementById('toggle-bot')?.addEventListener('change', async (ev) => {
@@ -2705,5 +2677,40 @@ async function caricaPasskey() {
   } catch (e) { ul.innerHTML = `<li class="vuoto">Errore: ${esc(e.message)}</li>`; }
 }
 
+// Chiude il drawer della sidebar su mobile.
+function chiudiMenuMobile() {
+  document.body.classList.remove('menu-aperto');
+  document.getElementById('apri-menu')?.setAttribute('aria-expanded', 'false');
+}
+
+// Aggancia UNA VOLTA SOLA i comportamenti del guscio (sidebar + drawer mobile).
+// Il contenuto della sidebar viene ridisegnato ad ogni render, ma questi
+// elementi/handler restano fissi, quindi si delega sull'elemento persistente.
+function initGuscio() {
+  // navigazione: click su una voce della sidebar → apre quella scheda
+  document.getElementById('nav-lat')?.addEventListener('click', (ev) => {
+    const btn = ev.target.closest('[data-scheda]');
+    if (!btn) return;
+    const id = btn.dataset.scheda;
+    chiudiMenuMobile();                       // su mobile chiude il drawer
+    if (id === schedaAttiva) return;
+    schedaAttiva = id;
+    document.querySelectorAll('#nav-lat .lat-item').forEach((b) =>
+      b.classList.toggle('attiva', b.dataset.scheda === id));
+    document.querySelectorAll('.pannello-scheda').forEach((p) =>
+      p.classList.toggle('visibile', p.id === 'scheda-' + id));
+    caricaDatiScheda(id);
+    document.querySelector('.area-principale')?.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // hamburger (solo mobile): apre/chiude la sidebar
+  document.getElementById('apri-menu')?.addEventListener('click', () => {
+    const aperto = document.body.classList.toggle('menu-aperto');
+    document.getElementById('apri-menu').setAttribute('aria-expanded', aperto ? 'true' : 'false');
+  });
+  document.getElementById('backdrop')?.addEventListener('click', chiudiMenuMobile);
+}
+
 // via!
+initGuscio();
 caricaStato();

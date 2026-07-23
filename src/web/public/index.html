@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#7c3aed">
+  <meta name="theme-color" content="#ffffff">
   <title>SocialBot — la dashboard del tuo bot</title>
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="/manifest.webmanifest">
@@ -15,25 +15,37 @@
   <!-- notifiche a scomparsa -->
   <div id="toast-box" aria-live="polite"></div>
 
-  <header class="testata">
-    <div class="testata-inner">
-      <div>
-        <h1>SocialBot <span class="emoji">🤖💜</span> <span class="claim">— il bot che cresce con te</span></h1>
-        <p class="sottotitolo">per la community di andryxify.it</p>
-      </div>
-      <!-- riempito da app.js quando l'utente è loggato -->
-      <div id="area-utente" class="area-utente"></div>
-    </div>
+  <!-- barra superiore: visibile solo su mobile (apre la sidebar) -->
+  <header class="barra-mobile">
+    <button class="apri-menu" id="apri-menu" aria-label="Apri il menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <span class="marchio-mobile">SocialBot</span>
   </header>
 
-  <main id="app" class="contenitore">
-    <div class="caricamento">Caricamento…</div>
-  </main>
+  <div class="guscio">
+    <!-- sidebar: logo, navigazione (riempita da app.js) e utente -->
+    <aside class="barra-laterale" id="barra-laterale" aria-label="Navigazione">
+      <a class="marchio" href="/">
+        <span class="marchio-segno" aria-hidden="true">S</span>
+        <span class="marchio-testo">SocialBot<small>andryxify.it</small></span>
+      </a>
+      <nav class="nav-lat" id="nav-lat"></nav>
+      <div class="utente-lat" id="area-utente"></div>
+    </aside>
 
-  <footer class="pie">
-    <p>SocialBot parla nella tua chat <strong>con il tuo account</strong> — sei sempre tu ad avere il controllo.</p>
-    <p class="pie-legale"><a href="/privacy">Privacy &amp; Sicurezza</a></p>
-  </footer>
+    <div class="backdrop" id="backdrop"></div>
+
+    <main class="area-principale">
+      <div id="app" class="contenitore">
+        <div class="caricamento">Caricamento…</div>
+      </div>
+      <footer class="pie">
+        <p>SocialBot parla nella tua chat <strong>con il tuo account</strong> — sei sempre tu ad avere il controllo.</p>
+        <p class="pie-legale"><a href="/privacy">Privacy &amp; Sicurezza</a></p>
+      </footer>
+    </main>
+  </div>
 
   <!-- banner cookie (solo informativo: usiamo un unico cookie tecnico) -->
   <div id="cookie-banner" class="cookie-banner" hidden>
@@ -56,52 +68,5 @@
   </script>
 
   <script src="app.js"></script>
-
-  <!-- micro-interazione: una luce morbida segue il cursore sulla carta sotto il
-       puntatore. Delegato su document → funziona anche sui contenuti ridisegnati. -->
-  <script>
-    (function () {
-      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      var raf = 0, carta = null, x = 0, y = 0;
-      function applica() {
-        raf = 0;
-        if (!carta) return;
-        var r = carta.getBoundingClientRect();
-        carta.style.setProperty('--mx', (x - r.left) + 'px');
-        carta.style.setProperty('--my', (y - r.top) + 'px');
-      }
-      document.addEventListener('pointermove', function (e) {
-        var c = e.target.closest ? e.target.closest('.carta') : null;
-        if (c !== carta && carta) {           // uscito dalla carta precedente: spegni la luce
-          carta.style.setProperty('--mx', '-300px');
-          carta.style.setProperty('--my', '-300px');
-        }
-        carta = c;
-        if (!c) return;
-        x = e.clientX; y = e.clientY;
-        if (!raf) raf = requestAnimationFrame(applica);
-      }, { passive: true });
-    })();
-  </script>
-
-  <!-- micro-interazione: onda (ripple) dal punto di click sui bottoni. -->
-  <script>
-    (function () {
-      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      document.addEventListener('pointerdown', function (e) {
-        var btn = e.target.closest ? e.target.closest('.btn') : null;
-        if (!btn || btn.disabled) return;
-        var r = btn.getBoundingClientRect();
-        var size = Math.max(r.width, r.height);
-        var onda = document.createElement('span');
-        onda.className = 'onda';
-        onda.style.width = onda.style.height = size + 'px';
-        onda.style.left = (e.clientX - r.left - size / 2) + 'px';
-        onda.style.top = (e.clientY - r.top - size / 2) + 'px';
-        btn.appendChild(onda);
-        onda.addEventListener('animationend', function () { onda.remove(); });
-      }, { passive: true });
-    })();
-  </script>
 </body>
 </html>
