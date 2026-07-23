@@ -3,7 +3,7 @@
 //
 // Comandi: !dado [NdM] · !moneta · !8ball <domanda> · !slot · !duello @tizio
 //          · !trivia · !classifica · !monete · !giochi
-import { points, streamers, knowledge } from '../db.js';
+import { points, streamers, knowledge, giochi } from '../db.js';
 import { makeLog } from '../logger.js';
 
 const log = makeLog('giochi');
@@ -93,7 +93,67 @@ const BANCA_TRIVIA = [
   { q: 'Come si chiama la nostra galassia?', a: ['via lattea'] },
   { q: 'Quanti colori ha l\'arcobaleno?', a: ['7', 'sette'] },
 ];
-const triviaRound = new Map();   // channel → { answers:[], scadenza, question }
+// parole "reflex" di riserva se il canale non ha un gioco-parola personalizzato
+const BANCA_PAROLE = ['pizza', 'gg', 'hype', 'clip', 'combo', 'boss', 'jump', 'loot', 'respawn', 'buff', 'nerf', 'poggers', 'raid', 'sub', 'lag'];
+
+// ─────────────────────────────────────────────────── motore delle "manche"
+// Una manche è un ROUND a tempo: il bot lancia un gioco in chat, il primo che
+// risponde giusto vince i punti. I round sono generalizzati (trivia, parola,
+// numero) con una funzione `controlla(testo)` uniforme.
+const roundAttivo = new Map();   // channel → { tipo, controlla, premio, soluzione, scadenza, durata }
+
+function giochiCustom(channel, tipo) {
+  try { return giochi.listAttivi(channel).filter((g) => g.tipo === tipo); } catch { return []; }
+}
+
+// Costruttori di round. Ognuno ritorna un descrittore (o null se non fattibile).
+function roundTrivia(channel) {
+  const custom = giochiCustom(channel, 'trivia').flatMap((g) => Array.isArray(g.config?.domande) ? g.config.domande : []);
+  const banca = custom.length ? (Math.random() < 0.65 ? custom : BANCA_TRIVIA) : BANCA_TRIVIA;
+  const d = scegli(banca);
+  if (!d?.q || !Array.isArray(d.a) || !d.a.length) return null;
+  const ans = d.a.map(norm).filter(Boolean);
+  return { tipo: 'trivia', annuncio: `🧠 TRIVIA: ${d.q}`, controlla: (t) => ans.some((a) => t === a || t.split(' ').includes(a)), soluzione: d.a[0], durata: 45000 };
+}
+function roundParola(channel) {
+  const custom = giochiCustom(channel, 'parola').flatMap((g) => Array.isArray(g.config?.parole) ? g.config.parole : []);
+  const pool = custom.length ? custom : BANCA_PAROLE;
+  const p = String(scegli(pool) || '').trim();
+  if (!p) return null;
+  const target = norm(p);
+  return { tipo: 'parola', annuncio: `⚡ REFLEX: il primo che scrive "${p}" vince!`, controlla: (t) => t === target, soluzione: p, durata: 30000 };
+}
+function roundNumero() {
+  const max = 50;
+  const n = rnd(1, max);
+  return { tipo: 'numero', annuncio: `🔢 Ho pensato un numero da 1 a ${max}: indovinatelo!`, controlla: (t) => parseInt(t, 10) === n, soluzione: String(n), durata: 40000 };
+}
+
+function avviaRound(channel, round, say) {
+  if (!round || roundAttivo.has(channel)) return false;
+  round.premio = round.premio || cfgPunti(channel).trivia;
+  round.scadenza = Date.now() + round.durata;
+  roundAttivo.set(channel, round);
+  try { say(`${round.annuncio} — rispondete in chat! (${Math.round(round.durata / 1000)}s, +${round.premio} ${nomeMoneta(channel)})`); } catch { /* niente */ }
+  setTimeout(() => {
+    const r = roundAttivo.get(channel);
+    if (r === round) { roundAttivo.delete(channel); try { say(`⏰ Tempo scaduto! La risposta era "${round.soluzione}".`); } catch { /* niente */ } }
+  }, round.durata + 1000).unref?.();
+  return true;
+}
+
+// Lancia una manche a caso (gioco scelto a caso tra trivia/parola/numero, con i
+// giochi personalizzati mescolati). Chiamata dallo scheduler del bot.
+export function avviaManche(channel, say) {
+  if (!attivi(channel) || roundAttivo.has(channel)) return false;
+  const builders = [roundTrivia, roundParola, roundNumero];
+  // prova qualche costruttore finché uno produce un round valido
+  for (const b of builders.sort(() => Math.random() - 0.5)) {
+    const r = b(channel);
+    if (r) return avviaRound(channel, r, say);
+  }
+  return false;
+}
 
 // --------------------------------------------------------- 8ball
 const OTTO = [
@@ -122,19 +182,15 @@ export function tryGame(msg, say) {
     const nome = msg.display || msg.user;
     const moneta = () => nomeMoneta(channel);
 
-    // risposta a una trivia in corso (messaggio normale, non comando)
-    const round = triviaRound.get(channel);
+    // risposta a una manche (round) in corso: messaggio normale, non comando
+    const round = roundAttivo.get(channel);
     if (round) {
-      if (Date.now() > round.scadenza) { triviaRound.delete(channel); }
-      else if (!String(msg.text).startsWith('!')) {
-        const risposta = norm(msg.text);
-        if (round.answers.some((a) => risposta === a || risposta.split(' ').includes(a))) {
-          triviaRound.delete(channel);
-          const premio = cfgPunti(channel).trivia;
-          points.add(channel, msg.user, premio);
-          say(`🧠 Esatto ${nome}! La risposta era "${round.answers[0]}". +${premio} ${moneta()}!`);
-          return true;
-        }
+      if (Date.now() > round.scadenza) { roundAttivo.delete(channel); }
+      else if (!String(msg.text).startsWith('!') && round.controlla(norm(msg.text))) {
+        roundAttivo.delete(channel);
+        points.add(channel, msg.user, round.premio);
+        say(`🎉 Esatto ${nome}! (${round.soluzione}) +${round.premio} ${moneta()}!`);
+        return true;
       }
     }
 
@@ -224,16 +280,18 @@ export function tryGame(msg, say) {
 
       case 'trivia':
       case 'quiz': {
-        if (triviaRound.has(channel)) { say('🧠 C\'è già una domanda in corso, rispondete!'); return true; }
+        if (roundAttivo.has(channel)) { say('🧠 C\'è già una manche in corso, rispondete!'); return true; }
         if (inCooldown(channel + '|trivia', 15000)) return true;
-        const d = scegli(BANCA_TRIVIA);
-        triviaRound.set(channel, { answers: d.a.map(norm), scadenza: Date.now() + 45000, question: d.q });
-        say(`🧠 TRIVIA: ${d.q} — rispondete in chat! (45s)`);
-        // pulizia automatica se nessuno risponde
-        setTimeout(() => {
-          const r = triviaRound.get(channel);
-          if (r && r.question === d.q) { triviaRound.delete(channel); try { say(`⏰ Tempo scaduto! La risposta era "${d.a[0]}".`); } catch { /* niente */ } }
-        }, 46000).unref?.();
+        avviaRound(channel, roundTrivia(channel), say);
+        return true;
+      }
+
+      case 'manche':
+      case 'gioca': {
+        // avvia una manche a caso al volo (utile per provare / mod)
+        if (roundAttivo.has(channel)) { say('🎮 C\'è già una manche in corso!'); return true; }
+        if (inCooldown(channel + '|manche', 10000)) return true;
+        if (!avviaManche(channel, say)) say('🎮 Nessuna manche disponibile al momento.');
         return true;
       }
 
