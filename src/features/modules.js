@@ -129,9 +129,7 @@ export class ModulesEngine {
   // contesto se combacia, altrimenti null.
   _matchComando(tr, testo, msg, channel, livello) {
     const t = testo.trim();
-    if (!t.startsWith('!')) return null;
-    const primo = norm(t.slice(1).split(/\s+/)[0] || '');
-    if (!primo) return null;
+    if (!t) return null;
     // Alias ROBUSTO: accetta sia un array (['disc','dc']) sia una stringa
     // ("disc dc" / "disc, dc"). Prima gli alias salvati come stringa venivano
     // ignorati del tutto → il comando ! funzionava ma gli alias no.
@@ -141,10 +139,27 @@ export class ModulesEngine {
     const comandi = [tr.comando, ...aliasList]
       .map((c) => norm(c).replace(/^!/, '').trim())
       .filter(Boolean);
-    if (!comandi.includes(primo)) return null;
-    const dopo = t.slice(1).replace(/^\S+\s*/, '');   // testo dopo il comando
-    const args = dopo.length ? dopo.split(/\s+/) : [];
-    return this._ctxDaMessaggio(msg, channel, livello, args, dopo);
+    if (!comandi.length) return null;
+
+    if (t.startsWith('!')) {
+      // forma esplicita: !comando [argomenti]
+      const primo = norm(t.slice(1).split(/\s+/)[0] || '');
+      if (!comandi.includes(primo)) return null;
+      const dopo = t.slice(1).replace(/^\S+\s*/, '');   // testo dopo il comando
+      const args = dopo.length ? dopo.split(/\s+/) : [];
+      return this._ctxDaMessaggio(msg, channel, livello, args, dopo);
+    }
+
+    // forma SENZA "!": solo se il modulo l'ha abilitato (opt-in senzaBang) e
+    // SOLO se il messaggio è ESATTAMENTE il comando/alias (una parola sola),
+    // così non scatta a caso dentro le frasi normali della chat.
+    if (tr.senzaBang) {
+      const parole = t.split(/\s+/);
+      if (parole.length === 1 && comandi.includes(norm(parole[0]))) {
+        return this._ctxDaMessaggio(msg, channel, livello, [], '');
+      }
+    }
+    return null;
   }
 
   // Verifica il trigger 'parola' secondo il modo (contiene | esatto | inizia).
