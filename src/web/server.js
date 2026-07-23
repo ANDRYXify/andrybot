@@ -545,7 +545,12 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (b.tiktok !== undefined) {
       const tk = b.tiktok || {};
       const username = tiktok.pulisciUsername(tk.username).slice(0, 40);
-      out.tiktok = { username, attivo: !!tk.attivo && !!username, annunciaChat: !!tk.annunciaChat };
+      out.tiktok = {
+        username,
+        attivo: !!tk.attivo && !!username,
+        annunciaChat: !!tk.annunciaChat,
+        messaggio: String(tk.messaggio || '').slice(0, 800),   // testo Telegram personalizzato
+      };
     }
     // ponte "giochi del sito": dalla dashboard si può SOLO accendere/spegnere;
     // endpoint e segreto arrivano dal sito (redeem del pass), non dal client.
@@ -997,7 +1002,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!username) return res.status(400).json({ errore: 'imposta prima il tuo username TikTok' });
     const c = tgConf.get(login);
     if (!c?.token || !c.chat_id) return res.status(400).json({ errore: 'collega prima il bot Telegram e il gruppo' });
-    const r = await telegram.notificaTikTok(c, { login, display: s?.display || login }, username);
+    const r = await telegram.notificaTikTok(c, { login, display: s?.display || login }, username, s?.settings?.tiktok?.messaggio);
     if (!r.ok) return res.status(400).json({ errore: r.errore });
     res.json({ ok: true });
   }));
