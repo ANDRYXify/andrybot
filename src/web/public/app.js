@@ -1762,6 +1762,31 @@ async function caricaEffettoUpload(ev) {
   }
 }
 
+// Conteggio animato: fa "salire" i numeri delle statistiche da 0 al valore.
+// Rispetta prefers-reduced-motion e ripristina sempre il testo esatto finale.
+function animaNumeri(root) {
+  const els = (root || document).querySelectorAll('.stat .numero');
+  const fermo = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  els.forEach((el) => {
+    if (el.dataset.animato) return;
+    el.dataset.animato = '1';
+    const finale = el.textContent.trim();
+    const n = parseInt(finale.replace(/[^\d]/g, ''), 10);
+    if (fermo || !Number.isFinite(n) || n <= 0) return;   // niente da animare
+    const durata = 900;
+    const start = performance.now();
+    const passo = (ora) => {
+      const t = Math.min(1, (ora - start) / durata);
+      const eased = 1 - Math.pow(1 - t, 3);               // easeOutCubic
+      el.textContent = Math.round(n * eased).toLocaleString('it-IT');
+      if (t < 1) requestAnimationFrame(passo);
+      // fine: stessa formattazione dell'animazione (niente scatto del puntino)
+      else el.textContent = /^\d+$/.test(finale) ? n.toLocaleString('it-IT') : finale;
+    };
+    requestAnimationFrame(passo);
+  });
+}
+
 async function caricaStatistiche() {
   const griglia = document.getElementById('griglia-stat');
   const chatters = document.getElementById('lista-chatters');
@@ -1772,6 +1797,7 @@ async function caricaStatistiche() {
       <div class="stat"><div class="numero">${s.messaggi7g}</div><div class="etichetta">messaggi in chat (7g)</div></div>
       <div class="stat"><div class="numero">${s.messaggiBot7g}</div><div class="etichetta">interventi del bot (7g)</div></div>
       <div class="stat"><div class="numero">${s.clipTotali}</div><div class="etichetta">clip totali</div></div>`;
+    animaNumeri(griglia);   // conteggio animato da 0 al valore
     chatters.innerHTML = s.topChatters.length
       ? s.topChatters.map((c, i) => `
           <li><div class="testo-voce"><span class="domanda">${['🥇', '🥈', '🥉', '4°', '5°'][i] || ''} ${esc(c.user)}</span>

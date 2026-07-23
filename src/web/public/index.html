@@ -83,5 +83,25 @@
       }, { passive: true });
     })();
   </script>
+
+  <!-- micro-interazione: onda (ripple) dal punto di click sui bottoni. -->
+  <script>
+    (function () {
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      document.addEventListener('pointerdown', function (e) {
+        var btn = e.target.closest ? e.target.closest('.btn') : null;
+        if (!btn || btn.disabled) return;
+        var r = btn.getBoundingClientRect();
+        var size = Math.max(r.width, r.height);
+        var onda = document.createElement('span');
+        onda.className = 'onda';
+        onda.style.width = onda.style.height = size + 'px';
+        onda.style.left = (e.clientX - r.left - size / 2) + 'px';
+        onda.style.top = (e.clientY - r.top - size / 2) + 'px';
+        btn.appendChild(onda);
+        onda.addEventListener('animationend', function () { onda.remove(); });
+      }, { passive: true });
+    })();
+  </script>
 </body>
 </html>
