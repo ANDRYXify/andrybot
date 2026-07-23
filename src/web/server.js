@@ -107,8 +107,14 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // Non rivelano nulla di sensibile: la dashboard vera resta dietro la sessione.
   const PUBBLICI = new Set(['/health', '/entra', '/sblocca', '/sblocca.html', '/privacy', '/privacy.html',
     '/mod', '/mod.html', '/auth/mod', '/auth/callback', '/manifest.webmanifest', '/sw.js']);
+  // "Vetrina" pubblica: il guscio del sito (pagina + asset) e la demo interattiva
+  // sono visibili anche senza pass, per far conoscere il bot. NON espongono dati
+  // reali: /api/me senza sessione risponde solo "nessun utente" e tutte le API
+  // con i dati dello streamer restano chiuse dietro il pass.
+  const VETRINA = new Set(['/', '/index.html', '/app.js', '/style.css']);
   app.use((req, res, next) => {
     if (currentUser(req) || PUBBLICI.has(req.path)
+        || VETRINA.has(req.path) || req.path === '/api/me'
         || req.path.startsWith('/overlay/') || req.path.startsWith('/api/ext/')
         || req.path.startsWith('/tg/')       // webhook Telegram: si protegge col segreto nel path
         || req.path.startsWith('/icons/') || req.path.startsWith('/api/passkey/login/')) return next();
@@ -462,6 +468,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // stato complessivo per la single-page
   app.get('/api/me', wrap(async (req, res) => {
     const user = currentUser(req);
+    // Vetrina pubblica: senza sessione niente dati reali, solo "nessun utente"
+    // (la single-page mostra la vetrina/landing). Config e canali restano privati.
+    if (!user) { res.json({ user: null }); return; }
     const isMod = user?.role === 'moderatore';
     res.json({
       user,
