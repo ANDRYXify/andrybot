@@ -93,6 +93,7 @@ function impostazioni() {
     paroleVietate: Array.isArray(s.paroleVietate) ? s.paroleVietate : [],
     ascoltoLive: s.ascoltoLive === true,
     ascoltoSensibilita: typeof s.ascoltoSensibilita === 'number' ? s.ascoltoSensibilita : 5,
+    cambioCategoria: { attivo: false, trigger: 'categoria', annuncia: true, ...(s.cambioCategoria && typeof s.cambioCategoria === 'object' ? s.cambioCategoria : {}) },
   };
 }
 
@@ -160,7 +161,7 @@ function statoDemo() {
     mieiCanali: _DEMO_CANALI,
     gestisce: { canale: ctx.canale, streamer: ctx.display },
     isAdmin: false,
-    permessiOk: true, vipOk: true, moderazioneOk: true,
+    permessiOk: true, vipOk: true, moderazioneOk: true, canaleOk: true,
     knowledgeCount: 3,
     status: { channels: [ctx.canale] },   // "in chat adesso"
     preaddestramento: { preaddestramento_ts: '2026-05-01T20:00:00Z', preaddestramento_esito: 'pagina profilo letta ("Andryx — creator e streamer da Genova · Twitch, YouTube, gaming"), 5 link social; gioco recente: Fortnite; profilo Twitch letto' },
@@ -173,6 +174,7 @@ function statoDemo() {
         tono: 'scherzoso', spontaneita: 0.05, rispostaMenzioni: true, modalita: 'sempre',
         iaLocale: true, proattivo: true, adattaCanale: true, giochi: true, promoSocial: true,
         nomeMonete: 'scudi', clipAuto: true, clipAutoSoglia: 25, ascoltoLive: false, ascoltoSensibilita: 5,
+        cambioCategoria: { attivo: true, trigger: 'categoria', annuncia: true },
         premioVip: { attivo: true, periodo: 'settimana', quanti: 2 },
         manche: { attivo: true, minMin: 20, maxMin: 60, soloLive: false },
         paroleVietate: ['spoiler', 'link-truffa'],
@@ -1035,6 +1037,8 @@ function pannelloAscolto() {
   let sens = Number(s.ascoltoSensibilita);
   sens = Number.isFinite(sens) ? Math.min(10, Math.max(1, Math.round(sens))) : 5;
   const inAscolto = (stato.status?.ascoltando || []).includes(stato.user.login);
+  const cc = s.cambioCategoria || { attivo: false, trigger: 'categoria', annuncia: true };
+  const mancaPermesso = !DEMO && stato.canaleOk === false;   // serve una ri-autorizzazione
 
   return pannello('ascolto', `
     <div class="carta">
@@ -1069,6 +1073,31 @@ function pannelloAscolto() {
       <p class="suggerimento spazio-sopra">Tienila aperta mentre streammi. Funziona su Chrome o Edge (Mac e Windows).</p>
       <p class="suggerimento">I comandi vocali si creano e modificano in
       <strong class="primo-piano">Chat &amp; comandi → Comandi</strong> (innesco "Comando vocale").</p>
+    </div>
+
+    <div class="carta">
+      <h2>Cambia categoria a voce 🎮</h2>
+      <p>Dici <strong class="primo-piano">«<span id="cat-esempio">${esc(cc.trigger || 'categoria')}</span> <em>nome del gioco</em>»</strong>
+      mentre streammi e il bot cambia la categoria del canale su Twitch. Se ti sente male,
+      prova comunque a indovinare il gioco più somigliante tra le categorie di Twitch.</p>
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore">
+          <input type="checkbox" id="chk-categoria" ${cc.attivo ? 'checked' : ''}>
+          <span class="levetta"></span>
+        </label>
+        <span class="etichetta-stato" id="etichetta-categoria">${cc.attivo ? 'Attivo' : 'Spento'}</span>
+      </div>
+      <label class="campo" for="inp-cat-trigger">Parola chiave (quella che dici prima del gioco)</label>
+      <input type="text" id="inp-cat-trigger" class="campo-largo" maxlength="30" value="${esc(cc.trigger || 'categoria')}" placeholder="categoria">
+      <div class="riga-check spazio-sopra">
+        <input type="checkbox" id="chk-cat-annuncia" ${cc.annuncia !== false ? 'checked' : ''}>
+        <label for="chk-cat-annuncia">Annuncia il cambio in chat</label>
+      </div>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-categoria">Salva</button></p>
+      ${mancaPermesso ? `<p class="nota-lettura">🔒 Per cambiare categoria il bot ha bisogno del permesso <strong>Gestione canale</strong> su Twitch.
+      <a href="/auth/permessi">Concedi il permesso</a> (ti riporta qui dopo l'autorizzazione).</p>` : ''}
+      <p class="suggerimento spazio-sopra">Esempi: «categoria Fortnite», «categoria League of Legends».
+      La parola chiave è a tua scelta (es. «gioco», «passa a»). Funziona dalla stessa pagina di ascolto vocale qui sopra.</p>
     </div>`);
 }
 
@@ -2049,6 +2078,24 @@ function attivaPiattaforma() {
     await salvaImpostazioni({ ascoltoLive, ascoltoSensibilita }, 'Ascolto live salvato 🎧');
     const et = document.getElementById('etichetta-ascolto');
     if (et) et.textContent = ascoltoLive ? 'Ascolto acceso' : 'Ascolto spento';
+  }));
+
+  // --- cambio categoria a voce: label live, esempio live, salvataggio ---
+  document.getElementById('chk-categoria')?.addEventListener('change', (ev) => {
+    const et = document.getElementById('etichetta-categoria');
+    if (et) et.textContent = ev.target.checked ? 'Attivo' : 'Spento';
+  });
+  document.getElementById('inp-cat-trigger')?.addEventListener('input', (ev) => {
+    const ex = document.getElementById('cat-esempio');
+    if (ex) ex.textContent = (ev.target.value.trim() || 'categoria');
+  });
+  document.getElementById('btn-salva-categoria')?.addEventListener('click', () => conErrore(async () => {
+    const attivo = document.getElementById('chk-categoria').checked;
+    const trigger = (document.getElementById('inp-cat-trigger').value || '').trim().toLowerCase() || 'categoria';
+    const annuncia = document.getElementById('chk-cat-annuncia').checked;
+    await salvaImpostazioni({ cambioCategoria: { attivo, trigger, annuncia } }, 'Comando categoria salvato 🎮');
+    const et = document.getElementById('etichetta-categoria');
+    if (et) et.textContent = attivo ? 'Attivo' : 'Spento';
   }));
 
   // conoscenza: aggiunta manuale

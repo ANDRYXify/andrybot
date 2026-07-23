@@ -166,7 +166,9 @@
     let rec = null;            // istanza SpeechRecognition
     let attivo = false;        // l'utente VUOLE ascoltare (guida i riavvii)
     let frasi = [];            // frasi da ascoltare (minuscole), dal server
+    let catCfg = { attivo: false, trigger: 'categoria' };   // comando "cambia categoria a voce"
     let timerFrasi = null;     // ricarica periodica dell'elenco
+    const escRe = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const ultimoScatto = new Map();   // frase → epoch ms ultimo invio (cooldown 4s)
     const COOLDOWN_MS = 4000;
     let logVuoto = true;
@@ -261,6 +263,9 @@
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const dati = await res.json();
         frasi = Array.isArray(dati.frasi) ? dati.frasi.map((f) => String(f).toLowerCase()).filter(Boolean) : [];
+        if (dati.cat && typeof dati.cat === 'object') {
+          catCfg = { attivo: !!dati.cat.attivo, trigger: String(dati.cat.trigger || 'categoria').toLowerCase() };
+        }
         mostraFrasi();
       } catch (e) {
         logga('⚠️ non riesco a leggere le frasi: ' + (e && e.message ? e.message : e));
@@ -278,7 +283,13 @@
         });
         if (res.status === 401 || res.status === 404) return sessioneScaduta();
         const dati = await res.json().catch(() => ({}));
-        if (dati && dati.eseguito) logga('✅ "' + frase + '" → modulo scattato');
+        const cat = dati && dati.categoria;
+        if (cat) {
+          if (dati.eseguito && cat.nome) logga('🎮 categoria cambiata in "' + cat.nome + '"');
+          else if (cat.riautorizza) logga('🔒 manca il permesso di gestione canale: riautorizza dalla dashboard (Panoramica → permessi)');
+          else if (cat.trovato === false) logga('🤔 categoria non trovata per "' + (cat.query || '') + '"');
+          else logga('⚠️ non sono riuscito a cambiare categoria');
+        } else if (dati && dati.eseguito) logga('✅ "' + frase + '" → modulo scattato');
         else logga('➡️ "' + frase + '" inviato (nessun modulo ha reagito)');
       } catch (e) {
         logga('⚠️ invio non riuscito: ' + (e && e.message ? e.message : e));
@@ -299,6 +310,15 @@
       if (finale && /\bvip\b\s+\S/.test(t)) {
         if (ora - (ultimoScatto.get('__vip') || 0) >= COOLDOWN_MS) {
           ultimoScatto.set('__vip', ora);
+          inviaFrase(t);
+        }
+      }
+      // comando "cambia categoria": es. "categoria Fortnite" (solo frase completa).
+      // Mandiamo l'intera frase: il server estrae il gioco e imposta la categoria.
+      if (finale && catCfg.attivo && catCfg.trigger &&
+          new RegExp('(?:^|\\s)' + escRe(catCfg.trigger) + '\\s+\\S').test(t)) {
+        if (ora - (ultimoScatto.get('__cat') || 0) >= COOLDOWN_MS) {
+          ultimoScatto.set('__cat', ora);
           inviaFrase(t);
         }
       }
