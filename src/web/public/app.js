@@ -251,6 +251,8 @@ const GRUPPI = [
   { id: 'diretta', nome: 'Durante la diretta', icona: '🔴', schede: [
     ['clip', 'Clip'],
     ['ascolto', 'Ascolto vocale'],
+  ] },
+  { id: 'notifiche', nome: 'Notifiche', icona: '🔔', schede: [
     ['notifiche', 'Notifiche'],
   ] },
 ];
