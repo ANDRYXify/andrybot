@@ -234,6 +234,18 @@ CREATE TABLE IF NOT EXISTS quotes (       -- citazioni della chat (!cita)
   ts INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_quotes_channel ON quotes(channel, n);
+
+CREATE TABLE IF NOT EXISTS compleanni (   -- compleanni dei membri del gruppo Telegram
+  channel TEXT NOT NULL,                   -- login twitch (proprietario del bot Telegram)
+  tg_user_id TEXT NOT NULL,                -- id Telegram del membro (o "man_..." se aggiunto a mano)
+  nome TEXT NOT NULL DEFAULT '',
+  giorno INTEGER NOT NULL,
+  mese INTEGER NOT NULL,
+  last_auguri INTEGER NOT NULL DEFAULT 0,  -- anno dell'ultimo augurio inviato (anti-doppioni)
+  ts INTEGER NOT NULL,
+  PRIMARY KEY (channel, tg_user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_compleanni_data ON compleanni(channel, mese, giorno);
 `);
 
 // --- migrazioni leggere: aggiunge colonne nuove a DB già esistenti ------------
@@ -577,6 +589,38 @@ export const tgConf = {
     return db.prepare('SELECT * FROM telegram WHERE webhook_secret=? AND interattivo=1').get(s) || null;
   },
   remove(channel) { db.prepare('DELETE FROM telegram WHERE channel=?').run(String(channel).toLowerCase()); },
+};
+
+// ---------------------------------------------------------------- compleanni
+// Compleanni dei membri del gruppo Telegram (per gli auguri automatici).
+export const compleanni = {
+  set(channel, tgUserId, nome, giorno, mese) {
+    db.prepare(`INSERT INTO compleanni (channel, tg_user_id, nome, giorno, mese, last_auguri, ts)
+      VALUES (?,?,?,?,?,0,?)
+      ON CONFLICT(channel, tg_user_id) DO UPDATE SET nome=excluded.nome, giorno=excluded.giorno, mese=excluded.mese`)
+      .run(String(channel).toLowerCase(), String(tgUserId), String(nome || ''), giorno | 0, mese | 0, now());
+    return this.get(channel, tgUserId);
+  },
+  get(channel, tgUserId) {
+    return db.prepare('SELECT * FROM compleanni WHERE channel=? AND tg_user_id=?')
+      .get(String(channel).toLowerCase(), String(tgUserId)) || null;
+  },
+  list(channel) {
+    return db.prepare('SELECT * FROM compleanni WHERE channel=? ORDER BY mese, giorno')
+      .all(String(channel).toLowerCase());
+  },
+  oggi(channel, giorno, mese) {
+    return db.prepare('SELECT * FROM compleanni WHERE channel=? AND giorno=? AND mese=?')
+      .all(String(channel).toLowerCase(), giorno | 0, mese | 0);
+  },
+  remove(channel, tgUserId) {
+    db.prepare('DELETE FROM compleanni WHERE channel=? AND tg_user_id=?')
+      .run(String(channel).toLowerCase(), String(tgUserId));
+  },
+  markAuguri(channel, tgUserId, anno) {
+    db.prepare('UPDATE compleanni SET last_auguri=? WHERE channel=? AND tg_user_id=?')
+      .run(anno | 0, String(channel).toLowerCase(), String(tgUserId));
+  },
 };
 
 // ---------------------------------------------------------------- memoria

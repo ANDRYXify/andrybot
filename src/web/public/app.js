@@ -992,6 +992,14 @@ function pannelloNotifiche() {
         <button class="btn" id="btn-tg-mod-salva">Salva comandi</button>
       </p>
     </div>
+
+    <div class="carta">
+      <h2>Auguri di compleanno 🎂</h2>
+      <p>Il bot fa gli <strong class="primo-piano">auguri automatici</strong> nel gruppo il giorno del compleanno dei
+      membri. Loro possono registrarsi da soli scrivendo <code>/compleanno 25/12</code> nel gruppo (serve il bot
+      interattivo qui sopra), oppure li aggiungi tu qui sotto.</p>
+      <div id="box-compleanni"><p class="vuoto">Caricamento…</p></div>
+    </div>
     ` : ''}
 
     <div class="carta">
@@ -1394,6 +1402,32 @@ function attivaPiattaforma() {
     toast('Comandi Telegram salvati 🤖');
   }));
 
+  // --- Auguri di compleanno (delega sul contenitore, ricaricato via JS) ---
+  document.getElementById('box-compleanni')?.addEventListener('click', (ev) => {
+    if (ev.target.closest('#btn-compleanni-salva')) return conErrore(async () => {
+      await api('/api/streamer/telegram/compleanni', { method: 'POST', body: {
+        attivo: document.getElementById('chk-compleanni-attivo')?.checked,
+        messaggio: document.getElementById('txt-compleanni-msg')?.value || '',
+      } });
+      toast('Auguri di compleanno salvati 🎂');
+      caricaCompleanni();
+    });
+    if (ev.target.closest('#btn-comple-aggiungi')) return conErrore(async () => {
+      await api('/api/streamer/telegram/compleanni/aggiungi', { method: 'POST', body: {
+        nome: document.getElementById('inp-comple-nome')?.value || '',
+        giorno: document.getElementById('inp-comple-giorno')?.value || '',
+        mese: document.getElementById('inp-comple-mese')?.value || '',
+      } });
+      toast('Compleanno aggiunto 🎂');
+      caricaCompleanni();
+    });
+    const rim = ev.target.closest('[data-comple-rimuovi]');
+    if (rim) return conErrore(async () => {
+      await api('/api/streamer/telegram/compleanni/' + encodeURIComponent(rim.dataset.compleRimuovi), { method: 'DELETE' });
+      caricaCompleanni();
+    });
+  });
+
   // --- Notifica TikTok ---
   document.getElementById('btn-tk-salva')?.addEventListener('click', () => conErrore(async () => {
     await salvaImpostazioni({
@@ -1650,7 +1684,7 @@ function caricaDatiScheda(id) {
   if (id === 'moduli') caricaModuli();
   if (id === 'memoria') caricaStatistiche();
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); }
-  if (id === 'notifiche') caricaTgModuli();
+  if (id === 'notifiche') { caricaTgModuli(); caricaCompleanni(); }
   if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaAnima(); }
 }
 
@@ -1715,6 +1749,41 @@ function leggiTgModuliDaDOM() {
     messaggio: r.querySelector('.tgm-messaggio')?.value || '',
     attivo: !!r.querySelector('.tgm-attivo')?.checked,
   }));
+}
+
+// --- auguri di compleanno (scheda Notifiche) ----------------------------
+const fmtGiornoMese = (g, m) => String(g).padStart(2, '0') + '/' + String(m).padStart(2, '0');
+
+async function caricaCompleanni() {
+  const box = document.getElementById('box-compleanni');
+  if (!box) return;
+  let d;
+  try { d = await api('/api/streamer/telegram/compleanni'); }
+  catch { box.innerHTML = '<p class="vuoto">Impossibile caricare.</p>'; return; }
+  const lista = (d.lista || []).map((c) => `
+    <li><div class="testo-voce"><span class="domanda">🎂 ${esc(c.nome || '—')}</span>
+      <span class="meta"> — ${fmtGiornoMese(c.giorno, c.mese)}${c.manuale ? ' · aggiunto a mano' : ''}</span></div>
+      <button class="btn pericolo mini" data-comple-rimuovi="${esc(c.id)}">Rimuovi</button></li>`).join('');
+  box.innerHTML = `
+    <div class="riga-interruttore">
+      <label class="interruttore"><input type="checkbox" id="chk-compleanni-attivo" ${d.attivo ? 'checked' : ''}><span class="levetta"></span></label>
+      <span class="etichetta-stato">Auguri automatici ${d.attivo ? 'accesi' : 'spenti'}</span>
+    </div>
+    <label class="campo spazio-sopra" for="txt-compleanni-msg">Messaggio di auguri</label>
+    <textarea id="txt-compleanni-msg" rows="3" placeholder="🎂 Tanti auguri {menzione}! 🎉">${esc(d.messaggio || '')}</textarea>
+    <p class="suggerimento">Segnaposto: <code>{menzione}</code> (tag del festeggiato) <code>{nome}</code>. Vuoto = messaggio standard.</p>
+    <p><button class="btn" id="btn-compleanni-salva">Salva impostazioni</button></p>
+
+    <hr class="separatore">
+    <h3>Compleanni registrati (${(d.lista || []).length})</h3>
+    <ul class="lista-voci">${lista || '<li class="vuoto">Nessuno ancora.</li>'}</ul>
+    <label class="campo">Aggiungi un compleanno a mano</label>
+    <div class="riga-flessibile">
+      <input type="text" id="inp-comple-nome" class="campo-largo" placeholder="Nome">
+      <input type="number" id="inp-comple-giorno" min="1" max="31" placeholder="GG" style="width:80px">
+      <input type="number" id="inp-comple-mese" min="1" max="12" placeholder="MM" style="width:80px">
+      <button class="btn secondario" id="btn-comple-aggiungi">Aggiungi</button>
+    </div>`;
 }
 
 // --- caricamenti dati ---------------------------------------------------
