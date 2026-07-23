@@ -5,11 +5,12 @@ import { makeLog } from '../logger.js';
 import { memory, streamers, commands } from '../db.js';
 import { checkMessage } from './moderation.js';
 import { elencoSocial } from './games.js';
+import { risolviCategoria } from './categoria.js';
 
 const log = makeLog('handler');
 
 // Comandi integrati (elencati da !comandi)
-const BUILTIN = ['comandi', 'ciao', 'uptime', 'game', 'title', 'followage', 'social', 'clip', 'so',
+const BUILTIN = ['comandi', 'ciao', 'uptime', 'game', 'categoria', 'title', 'titolo', 'followage', 'social', 'clip', 'so',
   'cita', 'ban', 'timeout', 'untimeout', 'addcmd', 'delcmd'];
 
 // "da quando segue": trasforma una data ISO in un testo umano (anni/mesi/giorni)
@@ -69,8 +70,23 @@ export function createMessageHandler({ chat, helix, brain, clips, botLogin }) {
         return;
       }
 
-      // gioco/categoria corrente del canale
-      case 'game': case 'gioco': {
+      // gioco/categoria del canale: senza argomento LEGGE; con argomento (solo
+      // mod/streamer) IMPOSTA la categoria su Twitch (match "furbo" tra le categorie).
+      case 'game': case 'gioco': case 'categoria': {
+        const richiesta = argomenti.join(' ').trim();
+        if (richiesta) {
+          if (!(isMod || isBroadcaster)) { chat.say(channel, 'Solo i moderatori possono cambiare il gioco 😊'); return; }
+          try {
+            const cat = await risolviCategoria(helix, richiesta);
+            if (!cat) { chat.say(channel, `Non ho trovato la categoria "${richiesta}" 🤔`); return; }
+            await helix.setChannelInfo(channel, { gameId: cat.id });
+            chat.say(channel, `🎮 Categoria aggiornata: ${cat.name}`);
+          } catch (e) {
+            if (e?.status === 401 || e?.status === 403) chat.say(channel, '🔒 Mi manca il permesso per cambiare categoria: lo streamer deve riautorizzare dalla dashboard.');
+            else { log.error(`!game set #${channel}:`, e?.message || e); chat.say(channel, 'Non sono riuscito a cambiare categoria adesso.'); }
+          }
+          return;
+        }
         try {
           const info = streamer.user_id ? await helix.getChannelInfo(streamer.user_id) : null;
           const g = info?.game_name || (await helix.getStream(channel).catch(() => null))?.game_name;
@@ -86,8 +102,21 @@ export function createMessageHandler({ chat, helix, brain, clips, botLogin }) {
         return;
       }
 
-      // titolo corrente del canale
+      // titolo del canale: senza argomento LEGGE; con argomento (solo mod/streamer)
+      // IMPOSTA il titolo dello stream su Twitch.
       case 'title': case 'titolo': {
+        const nuovo = argomenti.join(' ').trim();
+        if (nuovo) {
+          if (!(isMod || isBroadcaster)) { chat.say(channel, 'Solo i moderatori possono cambiare il titolo 😊'); return; }
+          try {
+            await helix.setChannelInfo(channel, { title: nuovo.slice(0, 140) });
+            chat.say(channel, `📝 Titolo aggiornato: ${nuovo.slice(0, 140)}`);
+          } catch (e) {
+            if (e?.status === 401 || e?.status === 403) chat.say(channel, '🔒 Mi manca il permesso per cambiare titolo: lo streamer deve riautorizzare dalla dashboard.');
+            else { log.error(`!title set #${channel}:`, e?.message || e); chat.say(channel, 'Non sono riuscito a cambiare titolo adesso.'); }
+          }
+          return;
+        }
         try {
           const info = streamer.user_id ? await helix.getChannelInfo(streamer.user_id) : null;
           const t = info?.title || (await helix.getStream(channel).catch(() => null))?.title;

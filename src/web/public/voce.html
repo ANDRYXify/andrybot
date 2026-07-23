@@ -167,6 +167,7 @@
     let attivo = false;        // l'utente VUOLE ascoltare (guida i riavvii)
     let frasi = [];            // frasi da ascoltare (minuscole), dal server
     let catCfg = { attivo: false, trigger: 'categoria' };   // comando "cambia categoria a voce"
+    let titCfg = { attivo: false, trigger: 'titolo' };      // comando "cambia titolo a voce"
     let timerFrasi = null;     // ricarica periodica dell'elenco
     const escRe = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const ultimoScatto = new Map();   // frase → epoch ms ultimo invio (cooldown 4s)
@@ -266,6 +267,9 @@
         if (dati.cat && typeof dati.cat === 'object') {
           catCfg = { attivo: !!dati.cat.attivo, trigger: String(dati.cat.trigger || 'categoria').toLowerCase() };
         }
+        if (dati.tit && typeof dati.tit === 'object') {
+          titCfg = { attivo: !!dati.tit.attivo, trigger: String(dati.tit.trigger || 'titolo').toLowerCase() };
+        }
         mostraFrasi();
       } catch (e) {
         logga('⚠️ non riesco a leggere le frasi: ' + (e && e.message ? e.message : e));
@@ -284,11 +288,16 @@
         if (res.status === 401 || res.status === 404) return sessioneScaduta();
         const dati = await res.json().catch(() => ({}));
         const cat = dati && dati.categoria;
+        const tit = dati && dati.titolo;
         if (cat) {
           if (dati.eseguito && cat.nome) logga('🎮 categoria cambiata in "' + cat.nome + '"');
           else if (cat.riautorizza) logga('🔒 manca il permesso di gestione canale: riautorizza dalla dashboard (Panoramica → permessi)');
           else if (cat.trovato === false) logga('🤔 categoria non trovata per "' + (cat.query || '') + '"');
           else logga('⚠️ non sono riuscito a cambiare categoria');
+        } else if (tit) {
+          if (dati.eseguito && tit.testo) logga('📝 titolo cambiato in "' + tit.testo + '"');
+          else if (tit.riautorizza) logga('🔒 manca il permesso di gestione canale: riautorizza dalla dashboard (Panoramica → permessi)');
+          else logga('⚠️ non sono riuscito a cambiare titolo');
         } else if (dati && dati.eseguito) logga('✅ "' + frase + '" → modulo scattato');
         else logga('➡️ "' + frase + '" inviato (nessun modulo ha reagito)');
       } catch (e) {
@@ -320,6 +329,15 @@
         if (ora - (ultimoScatto.get('__cat') || 0) >= COOLDOWN_MS) {
           ultimoScatto.set('__cat', ora);
           inviaFrase(t);
+        }
+      }
+      // comando "cambia titolo": es. "titolo In diretta con la community!".
+      // Usiamo il transcript ORIGINALE (non minuscolizzato): il titolo è testo libero.
+      if (finale && titCfg.attivo && titCfg.trigger &&
+          new RegExp('(?:^|\\s)' + escRe(titCfg.trigger) + '\\s+\\S').test(t)) {
+        if (ora - (ultimoScatto.get('__tit') || 0) >= COOLDOWN_MS) {
+          ultimoScatto.set('__tit', ora);
+          inviaFrase(String(testo || '').trim());   // originale, con maiuscole/punteggiatura
         }
       }
       // frasi configurate nei moduli

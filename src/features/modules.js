@@ -631,6 +631,22 @@ export class ModulesEngine {
         }
         return;
       }
+      case 'titolo': {
+        // cambia il titolo dello stream su Twitch. Testo libero, con variabili
+        // ($args, $gioco, ...): es. "In diretta: $gioco con la community!".
+        const t = (await this.espandi(azione.testo, ctx)).trim().slice(0, 140);
+        if (!t) return;
+        try {
+          await this.helix?.setChannelInfo?.(ctx.channel, { title: t });
+          if (azione.annuncia !== false) dire(`📝 Titolo aggiornato: ${t}`);
+        } catch (e) {
+          log.debug('titolo via modulo fallita:', e?.message || e);
+          if (azione.annuncia !== false && (e?.status === 401 || e?.status === 403)) {
+            dire('🔒 Mi manca il permesso per cambiare titolo: riautorizza dalla dashboard.');
+          }
+        }
+        return;
+      }
       default:
         return;
     }
