@@ -96,6 +96,10 @@ export class BotManager {
     // un membro riceve gli auguri UNA volta l'anno, all'inizio del suo giorno).
     this._compleTimer = setInterval(() => this._controllaCompleanni().catch(() => {}), 60 * 60_000);
     setTimeout(() => this._controllaCompleanni().catch(() => {}), 30_000);
+    // Manche automatiche: il bot lancia un gioco a caso, a intervalli casuali,
+    // sui canali che l'hanno attivato (controllo ogni minuto).
+    this._mancheProx = new Map();     // login → ts della prossima manche
+    this._mancheTimer = setInterval(() => this._manche(), 60_000);
     log.info('SocialBot avviato');
   }
 
@@ -163,6 +167,32 @@ export class BotManager {
         streamers.setSettings(login, { ...s.settings, premioVipUltimo: Date.now() });
       }
     } catch (e) { log.error('premi VIP:', e?.message || e); }
+  }
+
+  // Manche automatiche: per ogni canale che le ha attivate, ogni tanto (intervallo
+  // casuale tra min e max minuti) il bot lancia un gioco a caso. Solo a chat viva
+  // (mai in una chat vuota) e, se richiesto, solo mentre è in diretta.
+  _prossimaManche(m) {
+    const min = Math.min(360, Math.max(1, Number(m.minMin) || 15));
+    const max = Math.max(min, Math.min(360, Number(m.maxMin) || 45));
+    return Date.now() + (min + Math.random() * (max - min)) * 60_000;
+  }
+  _manche() {
+    try {
+      for (const login of this.units.keys()) {
+        const s = streamers.get(login);
+        const m = s?.settings?.manche;
+        // manche spente, o giochi spenti (anche per tier) → niente e resetta
+        if (!m?.attivo || s.settings?.giochi === false) { this._mancheProx.delete(login); continue; }
+        if (m.soloLive && this._liveState.get(login) !== true) continue;   // solo live, ma non è live
+        if ((memory.messageRate?.(login) || 0) < 1) continue;              // chat ferma: non disturbare
+        const prox = this._mancheProx.get(login);
+        if (prox === undefined) { this._mancheProx.set(login, this._prossimaManche(m)); continue; }  // pianifica la prima
+        if (Date.now() < prox) continue;
+        games.avviaManche(login, (t) => this.say(login, t));
+        this._mancheProx.set(login, this._prossimaManche(m));
+      }
+    } catch (e) { log.error('manche:', e?.message || e); }
   }
 
   // uno streamer è "pronto" se ha concesso i permessi con gli scope chat

@@ -14,7 +14,7 @@ import { dirname, join } from 'node:path';
 import { config, SCOPES, missingConfig } from '../config.js';
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb, friends } from '../db.js';
-import { points, vips, tgConf, passkeys, managers, quotes, compleanni, membri, subscriptions } from '../db.js';
+import { points, vips, tgConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb } from '../db.js';
 import * as abbonamenti from '../features/abbonamenti.js';
 import * as webauthn from './webauthn.js';
 import { comprimi } from '../features/compress.js';
@@ -792,6 +792,13 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // giochi + promo social automatica
     if (b.giochi !== undefined) out.giochi = !!b.giochi;
     if (b.promoSocial !== undefined) out.promoSocial = !!b.promoSocial;
+    // manche automatiche: il bot lancia giochi a caso a intervalli casuali
+    if (b.manche !== undefined) {
+      const m = b.manche || {};
+      const cm = (v, def, lo, hi) => { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : def; };
+      const minMin = cm(m.minMin, 15, 1, 360);
+      out.manche = { attivo: !!m.attivo, minMin, maxMin: Math.max(minMin, cm(m.maxMin, 45, 1, 360)), soloLive: !!m.soloLive };
+    }
     if (b.nomeMonete !== undefined) out.nomeMonete = String(b.nomeMonete).trim().slice(0, 20);
     // personalizzazione punti/classifica: quanti punti per messaggio, premi dei
     // giochi, quanti in classifica. Valori limitati a range sensati.
@@ -841,7 +848,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // community hanno tutto attivo, quindi non vengono mai limitati).
     const tierS = tierDi(user.login) || 'free';
     const A = abbonamenti.funzioneAbilitata;
-    if (!A(tierS, 'giochi')) out.giochi = false;
+    if (!A(tierS, 'giochi')) { out.giochi = false; if (out.manche) out.manche.attivo = false; }
     if (!A(tierS, 'clipAuto')) out.clipAuto = false;
     if (!A(tierS, 'voce')) out.ascoltoLive = false;
     if (!A(tierS, 'notifiche') && out.tiktok) out.tiktok.attivo = false;
@@ -1193,6 +1200,50 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       monete: points.top(login, 10),
       vip: vips.list(login).map((v) => ({ user: v.user, display: v.display, until: v.until, motivo: v.motivo })),
     });
+  }));
+
+  // ---------------------------------------------------------- GIOCHI personalizzati
+  app.get('/api/streamer/giochi', requireLogin, wrap(async (req, res) => {
+    res.json(giochiDb.list(currentUser(req).login));
+  }));
+
+  // crea/aggiorna un gioco personalizzato (trivia = domande, parola = elenco parole)
+  app.post('/api/streamer/giochi', requireLogin, wrap(async (req, res) => {
+    if (!esigiFunzione(req, res, 'giochi', 'I giochi personalizzati')) return;
+    const login = currentUser(req).login;
+    const b = req.body || {};
+    const tipo = ['trivia', 'parola'].includes(b.tipo) ? b.tipo : null;
+    if (!tipo) return res.status(400).json({ errore: 'tipo di gioco non valido' });
+    const nome = String(b.nome || '').trim().slice(0, 60);
+    let config = {};
+    if (tipo === 'trivia') {
+      const domande = (Array.isArray(b.domande) ? b.domande : [])
+        .map((d) => ({ q: String(d?.q || '').trim().slice(0, 200), a: (Array.isArray(d?.a) ? d.a : []).map((x) => String(x).trim().slice(0, 80)).filter(Boolean).slice(0, 10) }))
+        .filter((d) => d.q && d.a.length).slice(0, 200);
+      if (!domande.length) return res.status(400).json({ errore: 'aggiungi almeno una domanda con una risposta' });
+      config = { domande };
+    } else {
+      const parole = (Array.isArray(b.parole) ? b.parole : [])
+        .map((p) => String(p).trim().slice(0, 60)).filter(Boolean).slice(0, 300);
+      if (!parole.length) return res.status(400).json({ errore: 'aggiungi almeno una parola' });
+      config = { parole };
+    }
+    if (!b.id && giochiDb.count(login) >= 50) return res.status(400).json({ errore: 'hai raggiunto il massimo di giochi' });
+    const id = giochiDb.save(login, { id: b.id ? parseInt(b.id, 10) : undefined, tipo, nome, config, attivo: b.attivo !== false });
+    res.json({ ok: true, id });
+  }));
+
+  app.post('/api/streamer/giochi/:id/toggle', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const g = giochiDb.list(login).find((x) => x.id === parseInt(req.params.id, 10));
+    if (!g) return res.status(404).json({ errore: 'gioco sconosciuto' });
+    giochiDb.save(login, { id: g.id, tipo: g.tipo, nome: g.nome, config: g.config, attivo: !!req.body?.attivo });
+    res.json({ ok: true });
+  }));
+
+  app.delete('/api/streamer/giochi/:id', requireLogin, wrap(async (req, res) => {
+    giochiDb.remove(currentUser(req).login, parseInt(req.params.id, 10) || 0);
+    res.json({ ok: true });
   }));
 
   // ---------------------------------------------------------- NOTIFICHE TELEGRAM
