@@ -14,13 +14,14 @@ import { dirname, join } from 'node:path';
 import { config, SCOPES, missingConfig } from '../config.js';
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb, friends } from '../db.js';
-import { points, vips, tgConf, passkeys, managers, quotes } from '../db.js';
+import { points, vips, tgConf, passkeys, managers, quotes, compleanni } from '../db.js';
 import * as webauthn from './webauthn.js';
 import { comprimi } from '../features/compress.js';
 import { seedStreamer } from '../features/seed.js';
 import * as vip from '../features/vip.js';
 import * as telegram from '../features/telegram.js';
 import * as telegramModuli from '../features/telegramModuli.js';
+import * as compleanniFeat from '../features/compleanni.js';
 import * as tiktok from '../features/tiktok.js';
 import * as quotesImport from '../features/quotesimport.js';
 import { pretrain } from '../ai/pretrain.js';
@@ -39,6 +40,31 @@ const UPLOAD_MAX = 30 * 1024 * 1024;   // 30 MB in ingresso (l'output sarà molt
 const MOD_TRIGGER = ['comando', 'parola', 'evento', 'timer', 'manuale', 'voce'];
 const MOD_AZIONI = ['messaggio', 'effetto', 'contatore', 'webhook', 'attendi', 'overlayTesto', 'timeout', 'clip'];
 const EXT_MAX_MIN = 30;   // ingresso esterno: max richieste al minuto per login
+
+// Comando integrato /compleanno nel gruppo Telegram. Registra/mostra/rimuove la
+// data del membro che scrive. Ritorna il testo di risposta (HTML) o null se il
+// messaggio non è un comando compleanno.
+function gestisciComandoCompleanno(login, msg, testo) {
+  const m = String(testo).trim().toLowerCase().match(/^[\/!]?compleanno(?:@\S+)?(?:\s+(.*))?$/);
+  if (!m) return null;
+  const arg = (m[1] || '').trim();
+  const from = msg.from || {};
+  const nome = from.first_name || from.username || 'amico';
+  if (!arg) {
+    const cur = compleanni.get(login, from.id);
+    return cur
+      ? `🎂 Il tuo compleanno è segnato per il <b>${compleanniFeat.fmtData(cur.giorno, cur.mese)}</b>. Per cambiarlo: <code>/compleanno GG/MM</code>.`
+      : 'Scrivi <code>/compleanno GG/MM</code> (es. <code>/compleanno 25/12</code>) e ti farò gli auguri il giorno giusto! 🎉';
+  }
+  if (/^(rimuovi|cancella|togli)$/.test(arg)) {
+    compleanni.remove(login, from.id);
+    return '👍 Ho tolto il tuo compleanno.';
+  }
+  const d = compleanniFeat.parseData(arg);
+  if (!d) return 'Non ho capito la data. Usa <code>/compleanno GG/MM</code>, es. <code>/compleanno 25/12</code>.';
+  compleanni.set(login, from.id, nome, d.giorno, d.mese);
+  return `🎂 Segnato! Ti farò gli auguri il <b>${compleanniFeat.fmtData(d.giorno, d.mese)}</b>. 🎉`;
+}
 
 export function startWeb({ auth, helix, manager, effects, modules }) {
   const app = express();
@@ -1049,6 +1075,41 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.json({ ok: true, moduli });
   }));
 
+  // ---- Auguri di compleanno: configurazione + elenco dei compleanni ----
+  app.get('/api/streamer/telegram/compleanni', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const cfg = streamers.get(login)?.settings?.telegramAuguri || {};
+    const lista = compleanni.list(login).map((c) => ({
+      id: c.tg_user_id, nome: c.nome, giorno: c.giorno, mese: c.mese,
+      manuale: String(c.tg_user_id).startsWith('man_'),
+    }));
+    res.json({ attivo: !!cfg.attivo, messaggio: cfg.messaggio || '', lista });
+  }));
+  app.post('/api/streamer/telegram/compleanni', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const s = streamers.get(login);
+    if (!s) return res.status(404).json({ errore: 'streamer sconosciuto' });
+    const attivo = !!req.body?.attivo;
+    const messaggio = String(req.body?.messaggio || '').slice(0, 600);
+    streamers.setSettings(login, { ...s.settings, telegramAuguri: { attivo, messaggio } });
+    res.json({ ok: true });
+  }));
+  // aggiunta manuale dal sito (senza id Telegram → niente tag, solo nome)
+  app.post('/api/streamer/telegram/compleanni/aggiungi', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const nome = String(req.body?.nome || '').trim().slice(0, 60);
+    const d = compleanniFeat.parseData(`${req.body?.giorno}/${req.body?.mese}`);
+    if (!nome) return res.status(400).json({ errore: 'metti un nome' });
+    if (!d) return res.status(400).json({ errore: 'data non valida (giorno/mese)' });
+    const id = 'man_' + crypto.randomBytes(6).toString('hex');
+    compleanni.set(login, id, nome, d.giorno, d.mese);
+    res.json({ ok: true });
+  }));
+  app.delete('/api/streamer/telegram/compleanni/:id', requireLogin, wrap(async (req, res) => {
+    compleanni.remove(currentUser(req).login, req.params.id);
+    res.json({ ok: true });
+  }));
+
   // ---- WEBHOOK Telegram: qui arrivano i messaggi del gruppo (pubblico) ----
   // Si protegge col segreto nel path + header di verifica di Telegram. Risponde
   // SEMPRE 200 in fretta (Telegram lo pretende): l'elaborazione è best-effort.
@@ -1066,13 +1127,19 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       const testo = msg?.text;
       if (!chat || !testo) return;
       const login = conf.channel;
+      const s = streamers.get(login);
       // auto-collega il gruppo: se non ne abbiamo ancora uno, prendi questo
       if (!conf.chat_id && (chat.type === 'group' || chat.type === 'supergroup')) {
         tgConf.set(login, { chatId: String(chat.id), chatTitolo: chat.title || '(gruppo)' });
       }
+      // comando integrato /compleanno (solo se gli auguri sono accesi)
+      if (s?.settings?.telegramAuguri?.attivo) {
+        const risp = gestisciComandoCompleanno(login, msg, testo);
+        if (risp) { telegram.inviaMessaggio(conf.token, chat.id, risp).catch(() => {}); return; }
+      }
+      // comandi personalizzati
       const mod = telegramModuli.trovaPerComando(login, testo);
       if (!mod) return;
-      const s = streamers.get(login);
       const utente = msg.from?.first_name || msg.from?.username || '';
       const risposta = telegramModuli.costruisciMessaggio(mod, { utente, streamer: s?.display || login });
       if (risposta) telegram.inviaMessaggio(conf.token, chat.id, risposta).catch(() => {});
