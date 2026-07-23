@@ -94,14 +94,19 @@ body::after {
   border-bottom: 1px solid var(--bordo);
   overflow: hidden;
 }
-.testata::before {   /* alone morbido statico dietro il logo */
+.testata::before {   /* alone morbido che respira dietro il logo */
   content: "";
   position: absolute;
   top: -60%; left: -10%;
   width: 480px; height: 320px;
-  background: radial-gradient(circle, rgba(145, 70, 255, .22), transparent 62%);
+  background: radial-gradient(circle, rgba(145, 70, 255, .26), transparent 62%);
   filter: blur(10px);
+  animation: respira 9s ease-in-out infinite;
   pointer-events: none;
+}
+@keyframes respira {
+  0%, 100% { opacity: .55; transform: translate(0, 0) scale(1); }
+  50%      { opacity: .9;  transform: translate(40px, 12px) scale(1.08); }
 }
 .testata-inner {
   position: relative;
@@ -115,7 +120,8 @@ body::after {
   flex-wrap: wrap;
 }
 .testata h1 { font-size: clamp(1.2rem, 3.5vw, 1.5rem); letter-spacing: .01em; font-weight: 800; }
-.testata .emoji { display: inline-block; }
+.testata .emoji { display: inline-block; animation: fluttua 4s ease-in-out infinite; }
+@keyframes fluttua { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-3px) rotate(-4deg); } }
 .testata .claim {
   font-weight: 600;
   font-size: 1.02rem;
@@ -274,6 +280,17 @@ body::after {
 .btn.pericolo { background: var(--rosso); }
 .btn.pericolo:hover { background: #e0434f; box-shadow: 0 6px 20px rgba(255, 91, 107, .3); }
 .btn.mini { padding: .28rem .7rem; font-size: .8rem; border-radius: 7px; }
+/* onda (ripple) al click, creata da JS: parte dal punto toccato */
+.btn .onda {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .35);
+  transform: scale(0);
+  animation: onda .55s ease-out;
+  pointer-events: none;
+  z-index: -1;
+}
+@keyframes onda { to { transform: scale(2.6); opacity: 0; } }
 
 :focus-visible { outline: 2px solid var(--viola-chiaro); outline-offset: 2px; border-radius: 4px; }
 
@@ -285,6 +302,15 @@ body::after {
   flex-wrap: wrap;
   margin-bottom: .9rem;
 }
+/* ingresso a cascata dei bottoni-area (al primo caricamento) */
+.gruppi .gruppo-btn { animation: entra-giu .4s cubic-bezier(.2, .8, .25, 1) backwards; }
+.gruppi .gruppo-btn:nth-child(1) { animation-delay: .03s; }
+.gruppi .gruppo-btn:nth-child(2) { animation-delay: .09s; }
+.gruppi .gruppo-btn:nth-child(3) { animation-delay: .15s; }
+.gruppi .gruppo-btn:nth-child(4) { animation-delay: .21s; }
+.gruppi .gruppo-btn:nth-child(5) { animation-delay: .27s; }
+.gruppi .gruppo-btn:nth-child(n+6) { animation-delay: .32s; }
+@keyframes entra-giu { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
 .gruppo-btn {
   position: relative;
   background: var(--carta);
@@ -348,6 +374,14 @@ body::after {
 .scheda-btn:hover { color: var(--testo); background: var(--carta-2); }
 .scheda-btn.attiva { color: #fff; font-weight: 700; }
 .scheda-btn.attiva::after { transform: scaleX(1); }
+/* ingresso morbido delle sotto-schede quando entri in un'area */
+.schede .scheda-btn { animation: entra-lato .32s cubic-bezier(.2, .8, .25, 1) backwards; }
+.schede .scheda-btn:nth-child(1) { animation-delay: .02s; }
+.schede .scheda-btn:nth-child(2) { animation-delay: .07s; }
+.schede .scheda-btn:nth-child(3) { animation-delay: .12s; }
+.schede .scheda-btn:nth-child(4) { animation-delay: .17s; }
+.schede .scheda-btn:nth-child(n+5) { animation-delay: .2s; }
+@keyframes entra-lato { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
 
 /* ------------------------------------------------------------ form */
 label.campo { display: block; margin: .8rem 0 .3rem; font-weight: 600; font-size: .92rem; }
@@ -427,7 +461,12 @@ input[type="checkbox"] { accent-color: var(--viola); width: 1.05rem; height: 1.0
   background: var(--carta-2);
   color: var(--testo-2);
 }
-.badge.verde  { color: var(--verde);  border-color: rgba(36, 209, 139, .4); background: rgba(36, 209, 139, .09); }
+.badge.verde  { color: var(--verde);  border-color: rgba(36, 209, 139, .4); background: rgba(36, 209, 139, .09); animation: battito-verde 2.6s ease-in-out infinite; }
+/* alone "vivo" appena percettibile sui badge verdi (connesso/attivo) */
+@keyframes battito-verde {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(36, 209, 139, 0); }
+  50%      { box-shadow: 0 0 0 4px rgba(36, 209, 139, .1); }
+}
 .badge.rosso  { color: var(--rosso);  border-color: rgba(255, 91, 107, .4); background: rgba(255, 91, 107, .09); }
 .badge.viola  { color: var(--viola-chiaro); border-color: rgba(145, 70, 255, .45); background: rgba(145, 70, 255, .12); }
 .badge.giallo { color: var(--giallo); border-color: rgba(255, 206, 106, .4); background: rgba(255, 206, 106, .09); }
