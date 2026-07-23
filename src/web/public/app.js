@@ -149,6 +149,7 @@ function statoDemo() {
       ...(mod ? { modLogin: 'andryx_demo', modDisplay: 'Andryx' } : {}) },
     ruolo: ctx.role,
     identita: 'andryx_demo', identitaDisplay: 'Andryx',
+    tier: 'community', stripeAttivo: false,
     mieiCanali: _DEMO_CANALI,
     gestisce: { canale: ctx.canale, streamer: ctx.display },
     isAdmin: false,
@@ -527,6 +528,8 @@ function renderHero() {
       </div>
     </section>
 
+    <section class="vetrina-piani" id="vetrina-piani" aria-label="Piani"></section>
+
     <section class="carta rivela vetrina-cta">
       <div>
         <h2>Fai parte di andryxify.it</h2>
@@ -536,6 +539,58 @@ function renderHero() {
     </section>`;
 
   rivelaCarte();   // scroll-reveal delle carte della vetrina
+  caricaPiani();   // riempie la sezione prezzi (tier) dal server
+  // esiti del ritorno da Stripe
+  const q = new URLSearchParams(location.search);
+  if (q.get('abbonato') === '1') toast('Abbonamento attivo, benvenuto! 🎉');
+  else if (q.get('abbonamento') === 'annullato') toast('Checkout annullato — nessun addebito.');
+}
+
+// Riempie la sezione "Piani" della vetrina con i tier dal server. Se gli
+// abbonamenti sono spenti mostra comunque i piani, con i bottoni in "arrivo".
+async function caricaPiani() {
+  const box = document.getElementById('vetrina-piani');
+  if (!box) return;
+  let dati;
+  try { dati = await api('/api/abbonamento/piani'); } catch { box.remove(); return; }
+  const tiers = dati.tier || [];
+  if (!tiers.length) { box.remove(); return; }
+  const F = [
+    ['moduli', 'Comandi & moduli'], ['giochi', 'Giochi e classifiche'], ['notifiche', 'Notifiche live'],
+    ['clipAuto', 'Clip automatiche'], ['voce', 'Comandi a voce'], ['moderatori', 'Moderatori'],
+  ];
+  const valore = (v) => v === true ? '✓' : (v === false ? '—' : (v === null ? '—' : (v > 999 ? '∞' : v)));
+  box.innerHTML = `
+    <div class="vetrina-piani-testa">
+      <h2>Piani</h2>
+      <p>${dati.attivo ? 'Scegli il piano e attiva SocialBot sul tuo canale.' : 'Gli abbonamenti stanno arrivando — intanto ecco cosa includeranno.'}</p>
+    </div>
+    <div class="piani-griglia">
+      ${tiers.map((t) => `
+        <div class="piano carta rivela${t.id === 'pro' ? ' piano-top' : ''}">
+          ${t.id === 'pro' ? '<span class="piano-badge">Consigliato</span>' : ''}
+          <h3>${esc(t.nome)}</h3>
+          <div class="piano-prezzo">${esc(t.prezzoTesto)}</div>
+          <p class="piano-somm">${esc(t.sommario)}</p>
+          <ul class="piano-funzioni">
+            ${F.map(([k, nome]) => `<li><span class="pf-val ${t.funzioni[k] === false || t.funzioni[k] === null ? 'no' : 'si'}">${valore(t.funzioni[k])}</span> ${esc(nome)}</li>`).join('')}
+          </ul>
+          ${t.id === 'free'
+            ? '<span class="piano-nota">Incluso per provare</span>'
+            : (dati.attivo
+                ? `<button class="btn grande${t.id === 'pro' ? '' : ' secondario'}" data-abbona="${t.id}">Scegli ${esc(t.nome)}</button>`
+                : `<button class="btn grande secondario" disabled>In arrivo</button>`)}
+        </div>`).join('')}
+    </div>`;
+  rivelaCarte(box);
+  box.addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-abbona]');
+    if (!b) return;
+    conErrore(async () => {
+      const r = await api('/api/abbonamento/checkout', { method: 'POST', body: { tier: b.dataset.abbona } });
+      if (r?.url) location.href = r.url; else toast('Piano non disponibile al momento.', 'errore');
+    });
+  });
 }
 
 function vistaRichiesta() {
@@ -812,6 +867,19 @@ function pannelloStato() {
       <p class="suggerimento">Su iPhone/iPad: apri in Safari → Condividi → “Aggiungi a Home”. Su Android/PC (Chrome):
       usa il bottone qui sopra o l’icona “installa” nella barra indirizzi.</p>
     </div>
+    ${proprietario ? (() => {
+      const nomi = { community: 'Community', free: 'Prova', base: 'Base', pro: 'Pro' };
+      const tier = stato.tier || 'community';
+      const pagato = tier === 'base' || tier === 'pro';
+      return `
+    <div class="carta">
+      <h2>Abbonamento 💳</h2>
+      <p>Piano attuale: <strong class="primo-piano">${esc(nomi[tier] || '—')}</strong>${tier === 'community' ? ' — accesso completo, riservato ai membri abilitati di andryxify.it.' : ''}</p>
+      ${pagato
+        ? '<p class="spazio-sopra"><button class="btn secondario" id="btn-portale-abbonamento">Gestisci abbonamento</button></p>'
+        : (tier === 'community' ? '' : '<p class="suggerimento spazio-sopra">Gli abbonamenti self-service stanno arrivando.</p>')}
+    </div>`;
+    })() : ''}
     <div class="carta">
       <h2>Passkey 🔑</h2>
       <p>Crea una <strong class="primo-piano">passkey</strong> (impronta, volto o PIN): così rientri al volo, in
@@ -1515,6 +1583,12 @@ function attivaPiattaforma() {
       toast('Usa il menu del browser: “Installa app” / “Aggiungi a Home”.');
     }
   });
+
+  // gestione abbonamento (portale clienti Stripe)
+  document.getElementById('btn-portale-abbonamento')?.addEventListener('click', () => conErrore(async () => {
+    const r = await api('/api/abbonamento/portale', { method: 'POST', body: {} });
+    if (r?.url) location.href = r.url;
+  }));
 
   // invito di un moderatore (crea il link da mandargli)
   document.getElementById('btn-invita-mod')?.addEventListener('click', () => conErrore(async () => {
