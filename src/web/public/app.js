@@ -163,6 +163,15 @@ function render() {
 // Le carte entrano morbide quando compaiono (al cambio scheda o scorrendo),
 // stile Awwwards. Un solo IntersectionObserver, riusato ad ogni render.
 const _menoMoto = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+// Esegue `fn` (che modifica il DOM) dentro una View Transition: il browser anima
+// morbidamente il passaggio — morph del corpo pagina e scorrimento della pillola
+// del menu. Dove non è supportata (o con "meno movimento") esegue e basta.
+function transizione(fn) {
+  if (_menoMoto || !document.startViewTransition) { fn(); return { finished: Promise.resolve() }; }
+  return document.startViewTransition(fn);
+}
+
 let _rivObs = null;
 function _osservatore() {
   if (!_rivObs) {
@@ -367,8 +376,11 @@ const CHEVRON = '<svg class="lat-chevron" viewBox="0 0 24 24" width="14" height=
 // scheda singola sono voci dirette; quelle con più schede diventano una SEZIONE
 // richiudibile (l'etichetta apre/chiude con animazione). Tutte cliccabili.
 function navLateraleHtml() {
-  const voce = (id, nome) =>
-    `<button class="lat-item${id === schedaAttiva ? ' attiva' : ''}" data-scheda="${id}">${ICONA[id] || ''}<span>${nome}</span></button>`;
+  const voce = (id, nome) => {
+    const att = id === schedaAttiva;
+    // la voce attiva porta la "pillola" (elemento condiviso della view transition)
+    return `<button class="lat-item${att ? ' attiva' : ''}" data-scheda="${id}">${att ? '<span class="lat-pill"></span>' : ''}${ICONA[id] || ''}<span>${nome}</span></button>`;
+  };
   return elencoGruppi().map((g) => {
     if (g.schede.length === 1) return voce(g.schede[0][0], g.nome);
     const chiuso = gruppiChiusi.has(g.id);
@@ -390,8 +402,16 @@ function aggiornaTestataPagina() {
   const desc = DESC[schedaAttiva] || '';
   el.innerHTML =
     `${area ? `<div class="pt-occhiello">${esc(area)}</div>` : ''}` +
-    `<h1>${esc(titolo)}</h1>` +
+    `<h1>${titoloParole(titolo)}</h1>` +
     `${desc ? `<p>${esc(desc)}</p>` : ''}`;
+}
+
+// Divide il titolo in parole avvolte per la rivelazione "parola per parola":
+// ognuna scivola dal basso con un ritardo progressivo (--wd).
+function titoloParole(t) {
+  return esc(t).split(/\s+/).filter(Boolean)
+    .map((w, i) => `<span class="pt-parola" style="--wd:${40 + i * 60}ms"><i>${w}</i></span>`)
+    .join(' ');
 }
 
 function vistaPiattaforma() {
@@ -3004,15 +3024,23 @@ function initGuscio() {
     chiudiMenuMobile();                       // su mobile chiude il drawer
     if (id === schedaAttiva) return;
     schedaAttiva = id;
-    document.querySelectorAll('#nav-lat .lat-item').forEach((b) =>
-      b.classList.toggle('attiva', b.dataset.scheda === id));
     const pannello = document.getElementById('scheda-' + id);
-    document.querySelectorAll('.pannello-scheda').forEach((p) =>
-      p.classList.toggle('visibile', p === pannello));
-    aggiornaTestataPagina();
+    // le mutazioni del DOM entrano nella view transition: corpo che morpha e
+    // pillola del menu che scorre sulla nuova voce (elemento condiviso "navpill").
+    transizione(() => {
+      const pill = document.querySelector('#nav-lat .lat-pill') || document.createElement('span');
+      pill.className = 'lat-pill';
+      document.querySelectorAll('#nav-lat .lat-item').forEach((b) =>
+        b.classList.toggle('attiva', b.dataset.scheda === id));
+      const nuova = document.querySelector(`#nav-lat .lat-item[data-scheda="${id}"]`);
+      if (nuova) nuova.insertBefore(pill, nuova.firstChild);
+      document.querySelectorAll('.pannello-scheda').forEach((p) =>
+        p.classList.toggle('visibile', p === pannello));
+      aggiornaTestataPagina();
+      if (pannello) rivelaCarte(pannello);   // reveal fresco delle carte della scheda
+    });
     caricaDatiScheda(id);
     window.scrollTo({ top: 0, behavior: _menoMoto ? 'auto' : 'smooth' });
-    if (pannello) rivelaCarte(pannello);   // reveal fresco delle carte della scheda
   });
 
   // hamburger (solo mobile): apre/chiude la sidebar
@@ -3021,6 +3049,24 @@ function initGuscio() {
     document.getElementById('apri-menu').setAttribute('aria-expanded', aperto ? 'true' : 'false');
   });
   document.getElementById('backdrop')?.addEventListener('click', chiudiMenuMobile);
+
+  // bottoni "magnetici": quando il cursore è sopra un .btn, il bottone si sposta
+  // di poco verso il puntatore (stile Awwwards). Su touch/meno-movimento: niente.
+  if (!_menoMoto && window.matchMedia && window.matchMedia('(hover: hover)').matches) {
+    let magBtn = null;
+    const smagnetizza = (b) => { if (b) { b.style.removeProperty('--mx'); b.style.removeProperty('--my'); } };
+    document.addEventListener('pointermove', (ev) => {
+      const b = ev.target.closest?.('.btn');
+      if (b !== magBtn) { smagnetizza(magBtn); magBtn = b; }
+      if (!b || b.disabled) return;
+      const r = b.getBoundingClientRect();
+      const dx = ev.clientX - (r.left + r.width / 2);
+      const dy = ev.clientY - (r.top + r.height / 2);
+      b.style.setProperty('--mx', (dx * 0.22).toFixed(1) + 'px');
+      b.style.setProperty('--my', (dy * 0.32).toFixed(1) + 'px');
+    }, { passive: true });
+    document.addEventListener('pointerdown', () => smagnetizza(magBtn), { passive: true });
+  }
 }
 
 // via!
