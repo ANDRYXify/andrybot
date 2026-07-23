@@ -74,7 +74,7 @@ body::before {
   pointer-events: none;
 }
 
-/* linea-firma animata in cima alla pagina */
+/* filo-firma statico in cima alla pagina (niente animazioni che distraggono) */
 body::after {
   content: "";
   position: fixed;
@@ -82,11 +82,8 @@ body::after {
   height: 2px;
   z-index: 60;
   background: var(--grad);
-  background-size: 220% 100%;
-  animation: scorri-linea 7s linear infinite;
   pointer-events: none;
 }
-@keyframes scorri-linea { to { background-position: 220% 0; } }
 
 ::selection { background: rgba(145, 70, 255, .35); color: #fff; }
 
@@ -97,19 +94,14 @@ body::after {
   border-bottom: 1px solid var(--bordo);
   overflow: hidden;
 }
-.testata::before {   /* alone morbido che respira dietro il logo */
+.testata::before {   /* alone morbido statico dietro il logo */
   content: "";
   position: absolute;
   top: -60%; left: -10%;
   width: 480px; height: 320px;
-  background: radial-gradient(circle, rgba(145, 70, 255, .28), transparent 62%);
+  background: radial-gradient(circle, rgba(145, 70, 255, .22), transparent 62%);
   filter: blur(10px);
-  animation: respira 9s ease-in-out infinite;
   pointer-events: none;
-}
-@keyframes respira {
-  0%, 100% { opacity: .55; transform: translate(0, 0) scale(1); }
-  50%      { opacity: .9;  transform: translate(40px, 12px) scale(1.08); }
 }
 .testata-inner {
   position: relative;
@@ -123,8 +115,7 @@ body::after {
   flex-wrap: wrap;
 }
 .testata h1 { font-size: clamp(1.2rem, 3.5vw, 1.5rem); letter-spacing: .01em; font-weight: 800; }
-.testata .emoji { display: inline-block; animation: fluttua 4s ease-in-out infinite; }
-@keyframes fluttua { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-3px) rotate(-4deg); } }
+.testata .emoji { display: inline-block; }
 .testata .claim {
   font-weight: 600;
   font-size: 1.02rem;
