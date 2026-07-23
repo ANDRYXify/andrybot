@@ -315,6 +315,10 @@ body.vetrina .contenuto { max-width: 1040px; }
 .pf-val.no { background: var(--surface-2); color: var(--testo-3); }
 .piano .btn { width: 100%; }
 .piano-nota { text-align: center; color: var(--testo-3); font-size: .84rem; padding: .4rem 0; }
+/* i membri abilitati della community hanno il bot gratis e completo */
+.piani-community { margin-top: 1.1rem; text-align: center; padding: .85rem 1rem; background: var(--verde-soft); border: 1px solid var(--verde-bordo); border-radius: var(--r-m); color: var(--testo-2); font-size: .92rem; line-height: 1.5; }
+.piani-community strong { color: var(--testo); }
+.piani-community a { color: var(--acc); font-weight: 600; }
 
 /* ============================================================ demo
    Barra fissa in alto + striscia di spiegazione per la dashboard in modalità demo. */
