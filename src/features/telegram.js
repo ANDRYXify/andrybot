@@ -150,12 +150,27 @@ export async function notificaLive(conf, streamer, info) {
   return r;
 }
 
-// Notifica "in diretta su TikTok" nel gruppo Telegram configurato.
-export async function notificaTikTok(conf, streamer, username) {
-  if (!conf?.token || !conf?.chat_id) return { ok: false, errore: 'telegram non configurato' };
+// Messaggio TikTok di default (modificabile dallo streamer). Segnaposto:
+// {nome} {link} {username}
+export const MESSAGGIO_TIKTOK_DEFAULT =
+  '🎵 <b>{nome}</b> è in diretta su <b>TikTok</b>!\n\n👉 {link}';
+
+export function costruisciMessaggioTikTok(streamer, username, template) {
   const u = String(username || '').replace(/^@/, '');
-  const nome = escHtml(streamer?.display || streamer?.login || u);
-  const testo = `🎵 <b>${nome}</b> è in diretta su <b>TikTok</b>!\n\n👉 https://www.tiktok.com/@${escHtml(u)}/live`;
+  const valori = {
+    nome: escHtml(streamer?.display || streamer?.login || u),
+    link: `https://www.tiktok.com/@${u}/live`,   // grezzo: lo linkifica Telegram
+    username: escHtml('@' + u),
+  };
+  const t = (template && String(template).trim()) || MESSAGGIO_TIKTOK_DEFAULT;
+  return t.replace(/\{(nome|link|username)\}/g, (_, k) => valori[k]);
+}
+
+// Notifica "in diretta su TikTok" nel gruppo Telegram configurato. `template`
+// è il testo personalizzato (vuoto = quello standard).
+export async function notificaTikTok(conf, streamer, username, template) {
+  if (!conf?.token || !conf?.chat_id) return { ok: false, errore: 'telegram non configurato' };
+  const testo = costruisciMessaggioTikTok(streamer, username, template);
   const r = await inviaMessaggio(conf.token, conf.chat_id, testo, { anteprima: true });
   if (!r.ok) log.warn(`notifica TikTok #${streamer?.login}: ${r.errore}`);
   return r;

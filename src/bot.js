@@ -464,8 +464,25 @@ export class BotManager {
         this._tiktokLive.set(s.login, r.live);
         if (prev === undefined) continue;                  // primo giro: solo seed, niente avviso
         if (r.live) this.notificaTikTok(s.login).catch(() => {});
+        else this._chiudiTelegramTikTok(s.login).catch(() => {});   // live TikTok finita: elimina l'avviso
       }
     } catch (e) { log.error('controllaTikTok:', e?.message || e); }
+  }
+
+  // Live TikTok spenta: elimina dal gruppo l'avviso (se era stato fissato/inviato),
+  // togliendo così anche il "fissato". Best-effort, message_id separato da Twitch.
+  async _chiudiTelegramTikTok(login) {
+    try {
+      const conf = tgConf.get(login);
+      if (!conf?.token || !conf.chat_id) return;
+      const msgId = conf.msg_id_tk;
+      if (!msgId) return;
+      tgConf.setMsgIdTk(login, '');   // azzera comunque: un solo tentativo
+      if (!conf.pin_live) return;     // eliminazione legata all'opzione "fissa/elimina"
+      const r = await telegram.eliminaMessaggio(conf.token, conf.chat_id, msgId);
+      if (r.ok) log.info(`avviso TikTok Telegram eliminato per #${login} (live finita)`);
+      else log.warn(`elimina TikTok Telegram #${login}: ${r.errore}`);
+    } catch (e) { log.error(`chiudi TikTok Telegram #${login}:`, e?.message || e); }
   }
 
   // Notifica "in diretta su TikTok" (Telegram + eventuale annuncio in chat).
@@ -479,10 +496,21 @@ export class BotManager {
       if (!tk?.username) return { ok: false, motivo: 'TikTok non configurato' };
       if (Date.now() - (this._tiktokUltima.get(l) || 0) < 3 * 3600_000) return { ok: false, motivo: 'gia avvisato di recente' };
       this._tiktokUltima.set(l, Date.now());
-      // Telegram (se collegato)
+      // Telegram (basta che il bot+gruppo siano collegati: indipendente dal
+      // toggle "avviso live Twitch"). Cattura il message_id per fissarlo/eliminarlo.
       const conf = tgConf.get(l);
-      if (conf?.attivo && conf.token && conf.chat_id) {
-        telegram.notificaTikTok(conf, { login: l, display: s?.display || l }, tk.username).catch(() => {});
+      if (conf?.token && conf.chat_id) {
+        try {
+          const r = await telegram.notificaTikTok(conf, { login: l, display: s?.display || l }, tk.username, tk.messaggio);
+          const msgId = r?.ok ? r.result?.message_id : null;
+          if (msgId) {
+            tgConf.setMsgIdTk(l, msgId);
+            if (conf.pin_live) {
+              const p = await telegram.fissaMessaggio(conf.token, conf.chat_id, msgId, { silenzioso: false });
+              if (!p.ok) log.warn(`pin TikTok Telegram #${l}: ${p.errore} (il bot è admin del gruppo con permesso di fissare?)`);
+            }
+          }
+        } catch (e) { log.warn(`notifica TikTok Telegram #${l}:`, e?.message || e); }
       }
       // annuncio in chat Twitch (se acceso e il bot è connesso)
       if (tk.annunciaChat && this.units.has(l)) {

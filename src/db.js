@@ -183,7 +183,8 @@ CREATE TABLE IF NOT EXISTS telegram (     -- notifiche Telegram: un bot+gruppo P
   messaggio TEXT NOT NULL DEFAULT '',      -- testo con segnaposto (vuoto = default)
   ultima_live TEXT NOT NULL DEFAULT '',    -- id dell'ultima live notificata (anti-doppioni)
   pin_live INTEGER NOT NULL DEFAULT 1,     -- fissa l'avviso a live attiva e lo elimina a live spenta?
-  msg_id TEXT NOT NULL DEFAULT '',         -- message_id dell'ultimo avviso live (per fissarlo/eliminarlo)
+  msg_id TEXT NOT NULL DEFAULT '',         -- message_id dell'ultimo avviso live TWITCH (per fissarlo/eliminarlo)
+  msg_id_tk TEXT NOT NULL DEFAULT '',      -- idem per l'avviso live TIKTOK (indipendente da Twitch)
   ts INTEGER NOT NULL DEFAULT 0
 );
 
@@ -244,6 +245,7 @@ function aggiungiColonna(tabella, colonna, definizione) {
 }
 aggiungiColonna('telegram', 'pin_live', "INTEGER NOT NULL DEFAULT 1");
 aggiungiColonna('telegram', 'msg_id', "TEXT NOT NULL DEFAULT ''");
+aggiungiColonna('telegram', 'msg_id_tk', "TEXT NOT NULL DEFAULT ''");
 
 const now = () => Date.now();
 
@@ -526,7 +528,7 @@ export const tgConf = {
   },
   set(channel, campi = {}) {
     const c = String(channel).toLowerCase();
-    const cur = this.get(c) || { token: '', chat_id: '', chat_titolo: '', bot_username: '', attivo: 0, messaggio: '', ultima_live: '', pin_live: 1, msg_id: '' };
+    const cur = this.get(c) || { token: '', chat_id: '', chat_titolo: '', bot_username: '', attivo: 0, messaggio: '', ultima_live: '', pin_live: 1, msg_id: '', msg_id_tk: '' };
     const v = {
       token: campi.token !== undefined ? String(campi.token) : cur.token,
       chat_id: campi.chatId !== undefined ? String(campi.chatId) : cur.chat_id,
@@ -537,21 +539,27 @@ export const tgConf = {
       ultima_live: campi.ultimaLive !== undefined ? String(campi.ultimaLive) : cur.ultima_live,
       pin_live: campi.pinLive !== undefined ? (campi.pinLive ? 1 : 0) : (cur.pin_live ?? 1),
       msg_id: campi.msgId !== undefined ? String(campi.msgId) : (cur.msg_id ?? ''),
+      msg_id_tk: campi.msgIdTk !== undefined ? String(campi.msgIdTk) : (cur.msg_id_tk ?? ''),
     };
-    db.prepare(`INSERT INTO telegram (channel, token, chat_id, chat_titolo, bot_username, attivo, messaggio, ultima_live, pin_live, msg_id, ts)
-      VALUES (@channel, @token, @chat_id, @chat_titolo, @bot_username, @attivo, @messaggio, @ultima_live, @pin_live, @msg_id, @ts)
+    db.prepare(`INSERT INTO telegram (channel, token, chat_id, chat_titolo, bot_username, attivo, messaggio, ultima_live, pin_live, msg_id, msg_id_tk, ts)
+      VALUES (@channel, @token, @chat_id, @chat_titolo, @bot_username, @attivo, @messaggio, @ultima_live, @pin_live, @msg_id, @msg_id_tk, @ts)
       ON CONFLICT(channel) DO UPDATE SET token=excluded.token, chat_id=excluded.chat_id, chat_titolo=excluded.chat_titolo,
         bot_username=excluded.bot_username, attivo=excluded.attivo, messaggio=excluded.messaggio,
-        ultima_live=excluded.ultima_live, pin_live=excluded.pin_live, msg_id=excluded.msg_id, ts=excluded.ts`)
+        ultima_live=excluded.ultima_live, pin_live=excluded.pin_live, msg_id=excluded.msg_id, msg_id_tk=excluded.msg_id_tk, ts=excluded.ts`)
       .run({ channel: c, ...v, ts: now() });
     return this.get(c);
   },
   setUltimaLive(channel, streamId) {
     db.prepare('UPDATE telegram SET ultima_live=? WHERE channel=?').run(String(streamId || ''), String(channel).toLowerCase());
   },
-  // salva (o azzera) il message_id dell'avviso live, per poterlo poi eliminare
+  // salva (o azzera) il message_id dell'avviso live Twitch, per poterlo eliminare
   setMsgId(channel, msgId) {
     db.prepare('UPDATE telegram SET msg_id=? WHERE channel=?').run(String(msgId || ''), String(channel).toLowerCase());
+  },
+  // idem per l'avviso live TikTok (message_id separato: Twitch e TikTok possono
+  // essere live insieme, quindi non devono sovrascriversi a vicenda)
+  setMsgIdTk(channel, msgId) {
+    db.prepare('UPDATE telegram SET msg_id_tk=? WHERE channel=?').run(String(msgId || ''), String(channel).toLowerCase());
   },
   remove(channel) { db.prepare('DELETE FROM telegram WHERE channel=?').run(String(channel).toLowerCase()); },
 };
