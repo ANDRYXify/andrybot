@@ -239,15 +239,60 @@ body.menu-aperto .apri-menu span:nth-child(3) { transform: translateY(-7px) rota
 @keyframes vt-entra { from { opacity: 0; transform: translateY(14px); } }
 ::view-transition-group(navpill) { animation-duration: .4s; animation-timing-function: var(--spring); }
 
-/* ============================================================ hero (login) */
-.hero { text-align: center; padding: clamp(1.8rem, 6vw, 3.4rem) clamp(.8rem, 4vw, 1.4rem); }
-.hero h2 { font-size: clamp(1.8rem, 5vw, 2.6rem); font-weight: 800; margin-bottom: .8rem; letter-spacing: -.035em; line-height: 1.1; }
-.hero h2 em { font-style: normal; color: var(--acc); }
-.hero p { font-size: 1.05rem; }
-.hero .lista-punti { list-style: none; max-width: 520px; margin: 1.5rem auto 1.8rem; text-align: left; color: var(--testo-2); }
-.hero .lista-punti li { padding: .45rem 0 .45rem 1.7rem; position: relative; }
-.hero .lista-punti li::before { content: ""; position: absolute; left: .15rem; top: 1rem; width: 6px; height: 6px; border-radius: 50%; background: var(--acc); }
-.hero .nota { font-size: .85rem; color: var(--testo-2); margin-top: 1rem; }
+/* ============================================================ vetrina (landing pubblica)
+   Ciò che vede chi NON è loggato: una vetrina del bot, zero dati privati, con
+   richiamo al sito principale. Riusa i token e le animazioni della dashboard. */
+body.vetrina .contenuto { max-width: 1040px; }
+
+.vetrina-hero {
+  position: relative; text-align: center;
+  padding: clamp(1.6rem, 5vw, 3.4rem) clamp(.6rem, 4vw, 1.4rem) clamp(1.8rem, 4vw, 2.6rem);
+}
+/* alone viola che "respira" dietro al titolo */
+.vetrina-hero::before {
+  content: ""; position: absolute; z-index: -1; top: 8%; left: 50%; transform: translateX(-50%);
+  width: min(560px, 82%); aspect-ratio: 1.4 / 1;
+  background: radial-gradient(closest-side, var(--acc-tint), transparent 72%);
+  filter: blur(8px); animation: respiro 7s var(--ease) infinite;
+}
+@keyframes respiro { 0%, 100% { opacity: .7; transform: translateX(-50%) scale(1); } 50% { opacity: 1; transform: translateX(-50%) scale(1.12); } }
+
+.vetrina-occhiello {
+  display: inline-block; font-size: .74rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--acc); background: var(--acc-soft); border: 1px solid var(--acc-bordo);
+  padding: .3rem .7rem; border-radius: 999px; margin-bottom: 1.1rem;
+  animation: pt-in .6s var(--rev-ease) backwards;
+}
+.vetrina-titolo { font-size: clamp(2rem, 1.2rem + 3.6vw, 3.3rem); font-weight: 800; letter-spacing: -.038em; line-height: 1.05; margin-bottom: .9rem; }
+.vetrina-titolo .acc { color: var(--acc); }
+.vetrina-sub { font-size: clamp(1rem, .95rem + .4vw, 1.18rem); color: var(--testo-2); max-width: 60ch; margin: 0 auto; }
+.vetrina-sub strong { color: var(--testo); }
+.vetrina-azioni { display: flex; flex-wrap: wrap; gap: .7rem; justify-content: center; margin: 1.6rem 0 .8rem; animation: pt-in .6s var(--rev-ease) .5s backwards; }
+.vetrina-hero .nota { font-size: .85rem; color: var(--testo-2); margin-top: .4rem; }
+
+/* griglia funzioni */
+.vetrina-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; margin-bottom: 1.1rem; }
+.vetrina-feat { margin-bottom: 0; }
+/* hover: evidenzia bordo + ombra (istantaneo, per non entrare in conflitto con
+   la transizione di scroll-reveal della carta) */
+.carta.vetrina-feat:hover { border-color: var(--acc-bordo); box-shadow: var(--om-m); }
+.vetrina-feat-ico { display: inline-flex; padding: .55rem; border-radius: var(--r-m); background: var(--acc-soft); color: var(--acc); margin-bottom: .8rem; }
+.vetrina-feat h3 { font-size: 1.05rem; font-weight: 700; letter-spacing: -.02em; margin-bottom: .35rem; }
+.vetrina-feat p { color: var(--testo-2); font-size: .92rem; line-height: 1.55; }
+
+/* passi */
+.vetrina-come h2, .vetrina-cta h2 { font-size: 1.35rem; font-weight: 800; letter-spacing: -.03em; margin-bottom: 1.1rem; }
+.vetrina-passi { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.1rem; }
+.vetrina-passo { display: flex; gap: .8rem; align-items: flex-start; }
+.vetrina-passo-n { flex-shrink: 0; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; background: var(--acc); color: #fff; font-weight: 700; font-size: .92rem; box-shadow: 0 2px 8px rgba(109, 59, 239, .28); }
+.vetrina-passo strong { display: block; margin-bottom: .15rem; }
+.vetrina-passo p { color: var(--testo-2); font-size: .9rem; line-height: 1.5; }
+
+/* banda di richiamo al sito principale */
+.vetrina-cta { display: flex; align-items: center; justify-content: space-between; gap: 1.2rem; flex-wrap: wrap; background: linear-gradient(120deg, var(--acc-soft), var(--surface)); border-color: var(--acc-bordo); }
+.vetrina-cta h2 { margin-bottom: .3rem; }
+.vetrina-cta p { color: var(--testo-2); max-width: 52ch; }
+.vetrina-cta .btn { flex-shrink: 0; }
 
 /* ============================================================ bottoni */
 .btn {

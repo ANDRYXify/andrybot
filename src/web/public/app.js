@@ -119,6 +119,9 @@ function render() {
   renderAreaUtente();
   const navLat = document.getElementById('nav-lat');
 
+  // "vetrina": la landing pubblica per chi non è loggato (nessun dato privato).
+  document.body.classList.toggle('vetrina', !stato.user);
+
   if (!stato.user) {
     document.body.classList.remove('con-nav');
     if (navLat) navLat.innerHTML = '';
@@ -241,22 +244,72 @@ function renderHero() {
     'account-diverso': 'Hai autorizzato un account diverso da quello con cui sei loggato: usa lo stesso account.',
   }[errore] || (errore ? `Errore di accesso: ${errore}` : null);
 
+  // Icone a tratto per la vetrina (coerenti con quelle della sidebar).
+  const vi = (d) => `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  const FEAT = [
+    [vi('<path d="M8 12h8"/><path d="M12 8v8"/><rect x="3" y="4" width="18" height="16" rx="3"/>'),
+      'Parla col tuo account', 'Niente bot anonimi: SocialBot scrive in chat con il tuo nome. Sei sempre tu.'],
+    [vi('<path d="M12 3c.35 3.8 1.4 4.85 5 5.2-3.6.35-4.65 1.4-5 5.2-.35-3.8-1.4-4.85-5-5.2 3.6-.35 4.65-1.4 5-5.2Z"/>'),
+      'Si addestra da solo', 'Al primo accesso impara chi sei dal tuo profilo e cresce con la tua chat.'],
+    [vi('<rect x="3" y="4" width="18" height="16" rx="2.2"/><path d="M7.5 9.5 10.5 12l-3 2.5"/><path d="M13 15h4"/>'),
+      'Comandi & moduli', 'Crea comandi, frasi e automazioni infinite — anche a partire da una frase o una domanda.'],
+    [vi('<rect x="3" y="5" width="18" height="14" rx="2.2"/><path d="M8 5v14"/><path d="M16 5v14"/>'),
+      'Clip automatiche', 'Cattura i momenti di hype senza muovere un dito.'],
+    [vi('<path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5 2 6H4c.5-1 2-2 2-6"/><path d="M10.3 20a1.9 1.9 0 0 0 3.4 0"/>'),
+      'Notifiche live', 'Avvisi automatici su Telegram e TikTok quando vai in diretta.'],
+    [vi('<rect x="9" y="3" width="6" height="10.5" rx="3"/><path d="M6 11a6 6 0 0 0 12 0"/><path d="M12 17v4"/>'),
+      'Comandi a voce', 'Piloti il bot parlando, mentre streammi, senza toccare la tastiera.'],
+  ];
+  const STEP = [
+    ['1', 'Accedi con Twitch', 'Un click, con lo stesso account con cui streammi.'],
+    ['2', 'Richiedi l’abilitazione', 'andryxify ti approva e sblocca la tua dashboard.'],
+    ['3', 'Personalizza e vai live', 'Tono, comandi, notifiche: tutto tuo, in pochi minuti.'],
+  ];
+
   app.innerHTML = `
     ${msgErrore ? `<div class="carta avviso"><p>⚠️ ${esc(msgErrore)}</p></div>` : ''}
-    <div class="carta hero">
-      <h2>Il bot Twitch che parla <em>con la tua voce</em></h2>
-      <p>SocialBot vive nella tua chat e scrive <strong class="primo-piano">con il tuo account</strong>:
-      niente account bot anonimi, sei sempre tu.</p>
-      <ul class="lista-punti">
-        <li>Impara dalla tua chat e dal tuo profilo su andryxify.it</li>
-        <li>Si pre-addestra da solo al primo accesso: conosce già te e i tuoi contenuti</li>
-        <li>Crea clip automatiche nei momenti di hype</li>
-        <li>Comandi personalizzati, battute tue, tono a tua scelta</li>
-        <li>Cresce nel tempo: più lo usi, più diventa "tuo"</li>
-      </ul>
-      <a class="btn grande" href="/auth/login">Accedi con Twitch</a>
+
+    <section class="vetrina-hero">
+      <span class="vetrina-occhiello">SocialBot · il bot di andryxify.it</span>
+      <h1 class="vetrina-titolo">${titoloParole('Il bot Twitch che parla')} <span class="acc">${titoloParole('con la tua voce', 4)}</span></h1>
+      <p class="vetrina-sub">Vive nella tua chat e scrive <strong>con il tuo account</strong> — niente bot anonimi.
+      Impara chi sei, crea comandi su misura e cresce con la tua community.</p>
+      <div class="vetrina-azioni">
+        <a class="btn grande" href="/auth/login">Accedi con Twitch</a>
+        <a class="btn grande secondario" href="https://andryxify.it">Scopri andryxify.it →</a>
+      </div>
       <p class="nota">🔒 Riservato agli streamer verificati e abilitati da andryxify.</p>
-    </div>`;
+    </section>
+
+    <section class="vetrina-features">
+      ${FEAT.map(([ic, t, d]) => `
+        <div class="carta rivela vetrina-feat">
+          <span class="vetrina-feat-ico">${ic}</span>
+          <h3>${t}</h3>
+          <p>${d}</p>
+        </div>`).join('')}
+    </section>
+
+    <section class="carta rivela vetrina-come">
+      <h2>Come si attiva</h2>
+      <div class="vetrina-passi">
+        ${STEP.map(([n, t, d]) => `
+          <div class="vetrina-passo">
+            <span class="vetrina-passo-n">${n}</span>
+            <div><strong>${t}</strong><p>${d}</p></div>
+          </div>`).join('')}
+      </div>
+    </section>
+
+    <section class="carta rivela vetrina-cta">
+      <div>
+        <h2>Fai parte di andryxify.it</h2>
+        <p>SocialBot è uno dei tasselli del mondo andryxify: profili, giochi e community in un unico posto.</p>
+      </div>
+      <a class="btn grande secondario" href="https://andryxify.it">Vai al sito principale →</a>
+    </section>`;
+
+  rivelaCarte();   // scroll-reveal delle carte della vetrina
 }
 
 function vistaRichiesta() {
@@ -410,10 +463,11 @@ function aggiornaTestataPagina() {
 }
 
 // Divide il titolo in parole avvolte per la rivelazione "parola per parola":
-// ognuna scivola dal basso con un ritardo progressivo (--wd).
-function titoloParole(t) {
+// ognuna scivola dal basso con un ritardo progressivo (--wd). `off` sfasa il
+// ritardo per continuare la cascata su più segmenti (es. titolo + accento).
+function titoloParole(t, off = 0) {
   return esc(t).split(/\s+/).filter(Boolean)
-    .map((w, i) => `<span class="pt-parola" style="--wd:${40 + i * 60}ms"><i>${w}</i></span>`)
+    .map((w, i) => `<span class="pt-parola" style="--wd:${40 + (off + i) * 60}ms"><i>${w}</i></span>`)
     .join(' ');
 }
 
