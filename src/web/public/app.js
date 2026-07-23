@@ -581,6 +581,10 @@ async function caricaPiani() {
                 ? `<button class="btn grande${t.id === 'pro' ? '' : ' secondario'}" data-abbona="${t.id}">Scegli ${esc(t.nome)}</button>`
                 : `<button class="btn grande secondario" disabled>In arrivo</button>`)}
         </div>`).join('')}
+    </div>
+    <div class="piani-community">
+      🎁 <strong>Sei già un membro abilitato della community di <a href="https://andryxify.it">andryxify.it</a>?</strong>
+      SocialBot è <strong>gratis e completo</strong> per te — non ti serve nessun piano.
     </div>`;
   rivelaCarte(box);
   box.addEventListener('click', (ev) => {
