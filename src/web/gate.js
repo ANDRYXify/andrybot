@@ -113,33 +113,60 @@ export async function fetchApproved() {
 // buttare giù i bot). Ritorna una funzione per fermare il ciclo.
 export function startApprovalSync({ manager, everyMs = 5 * 60_000 } = {}) {
   async function giro() {
-    // 1) revoca i trial "settimana gratis" scaduti (indipendente dal sito)
-    let promoCambiato = false;
-    for (const s of subscriptions.scaduti()) {
-      subscriptions.set(s.login, { tier: s.tier, status: 'canceled', periodEnd: s.current_period_end });
-      streamers.setEnabled(s.login, false);   // bot spento (non cancella nulla)
-      log.info(`Trial promo scaduto per #${s.login}: accesso revocato`);
-      promoCambiato = true;
-    }
-    if (promoCambiato) Promise.resolve(manager?.syncChannels?.()).catch(() => {});
-
-    // 2) revoca chi non è più abilitato sul sito
+    // Elenco degli abilitati dal sito (i "community": accesso pieno di diritto).
+    // null = sito muto: in tal caso NON si revoca nulla in base al sito (un
+    // disguido di rete non deve spegnere i bot). Lo prendiamo UNA volta e lo
+    // usiamo in tutti i passaggi qui sotto.
     const attivi = await fetchApproved();
-    if (!attivi) return;                      // sito muto: non revocare nulla
-    // Prudenza: una lista vuota è quasi certamente un disguido (parsing o
-    // endpoint cambiato), non "nessuno è più abilitato". In quel caso non
-    // revochiamo nulla, per non spegnere per sbaglio tutti i bot.
-    if (attivi.size === 0) return;
+    const listaSito = attivi && attivi.size > 0;   // lista utile (non muta né vuota)
     let cambiato = false;
-    for (const s of streamers.list()) {
-      // gli ABBONATI self-service (Stripe) non dipendono dal sito: non si revocano
-      if (subscriptions.attivo(s.login)) continue;
-      if (s.status === 'approved' && !attivi.has(s.login)) {
-        streamers.setStatus(s.login, 'disabled');
-        log.info(`Abilitazione revocata dal sito per #${s.login}: bot disattivato`);
-        cambiato = true;
+
+    // 0) AUTO-RIPRISTINO: un membro community non deve MAI restare col bot spento
+    //    per colpa di un trial promo scaduto. Se troviamo un community (nella
+    //    lista del sito) col bot spento e un trial ormai chiuso, lo riaccendiamo
+    //    e azzeriamo il trial (torna "community puro"). Firma sicura: l'interruttore
+    //    volontario dello streamer non lascia un abbonamento 'canceled', quindi
+    //    non riaccendiamo mai per sbaglio chi ha spento il bot di sua volontà.
+    if (listaSito) {
+      for (const s of streamers.list()) {
+        if (s.botEnabled || !attivi.has(s.login)) continue;
+        const sub = subscriptions.get(s.login);
+        if (sub && sub.status === 'canceled') {
+          streamers.setEnabled(s.login, true);
+          subscriptions.set(s.login, { tier: 'free', status: 'none', periodEnd: 0 });
+          log.info(`Ripristino: #${s.login} è community → bot riacceso (un trial scaduto non deve spegnerlo)`);
+          cambiato = true;
+        }
       }
     }
+
+    // 1) Trial "settimana gratis" scaduti: si azzera il trial (torna al piano
+    //    gratis). NON tocchiamo MAI `bot_enabled`: se la persona è comunque
+    //    abilitata dal sito (community) il bot deve restare acceso. Se l'accesso
+    //    veniva SOLO dal trial, a spegnerlo ci pensa il punto 2 in base alla lista
+    //    del sito (setStatus 'disabled'), revoca più pulita che non si scontra con
+    //    l'interruttore on/off dello streamer.
+    for (const s of subscriptions.scaduti()) {
+      subscriptions.set(s.login, { tier: 'free', status: 'canceled', periodEnd: s.current_period_end });
+      log.info(`Trial promo scaduto per #${s.login}: torna al piano gratis`);
+      cambiato = true;
+    }
+
+    // 2) revoca chi non è più abilitato sul sito. Salta se il sito è muto o la
+    //    lista è vuota (quasi certo un disguido: parsing o endpoint cambiato),
+    //    per non spegnere per sbaglio tutti i bot.
+    if (listaSito) {
+      for (const s of streamers.list()) {
+        // gli ABBONATI self-service (Stripe) non dipendono dal sito: non si revocano
+        if (subscriptions.attivo(s.login)) continue;
+        if (s.status === 'approved' && !attivi.has(s.login)) {
+          streamers.setStatus(s.login, 'disabled');
+          log.info(`Abilitazione revocata dal sito per #${s.login}: bot disattivato`);
+          cambiato = true;
+        }
+      }
+    }
+
     if (cambiato) Promise.resolve(manager?.syncChannels?.()).catch(() => {});
   }
   const timer = setInterval(() => giro().catch(() => {}), everyMs);
