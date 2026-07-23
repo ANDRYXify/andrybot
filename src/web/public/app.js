@@ -778,18 +778,24 @@ function pannelloStato() {
         <span id="esito-pretrain" class="suggerimento"></span>
       </p>
     </div>
-    ${proprietario ? `
     <div class="carta">
-      <h2>App installabile & Passkey 📱🔑</h2>
-      <p>Installa la dashboard <strong class="primo-piano">come app</strong> sul telefono o sul PC, e crea una
-      <strong class="primo-piano">passkey</strong> (impronta, volto o PIN): così rientri al volo, in modo sicuro,
-      <strong class="primo-piano">senza ripassare ogni volta dal sito</strong>.</p>
+      <h2>Installa l'app 📱</h2>
+      <p>Installa la dashboard <strong class="primo-piano">come app</strong> sul telefono o sul PC: la apri a
+      schermo intero come un'app vera, senza doverla cercare nel browser.</p>
       <p class="spazio-sopra">
         <button class="btn secondario" id="btn-installa">Installa l'app</button>
-        <button class="btn" id="btn-crea-passkey">Crea una passkey</button>
       </p>
       <p class="suggerimento">Su iPhone/iPad: apri in Safari → Condividi → “Aggiungi a Home”. Su Android/PC (Chrome):
       usa il bottone qui sopra o l’icona “installa” nella barra indirizzi.</p>
+    </div>
+    ${proprietario ? `
+    <div class="carta">
+      <h2>Passkey 🔑</h2>
+      <p>Crea una <strong class="primo-piano">passkey</strong> (impronta, volto o PIN): così rientri al volo, in
+      modo sicuro, <strong class="primo-piano">senza ripassare ogni volta dal sito</strong>.</p>
+      <p class="spazio-sopra">
+        <button class="btn" id="btn-crea-passkey">Crea una passkey</button>
+      </p>
       <h3>Le tue passkey</h3>
       <ul class="lista-voci" id="lista-passkey"><li class="vuoto">Caricamento…</li></ul>
     </div>
