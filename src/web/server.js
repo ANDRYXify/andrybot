@@ -636,9 +636,12 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
 
   // elenco tier + stato del sistema (pubblico: la vetrina mostra i prezzi)
   app.get('/api/abbonamento/piani', (req, res) => {
+    // Infinity non è serializzabile in JSON (diventa null): lo mandiamo come -1
+    // ("illimitato"), che il client interpreta come ∞.
+    const sanFunzioni = (f) => Object.fromEntries(Object.entries(f).map(([k, v]) => [k, v === Infinity ? -1 : v]));
     res.json({
       attivo: config.stripe.attivo,
-      tier: abbonamenti.TIERS.map((t) => ({ id: t.id, nome: t.nome, prezzoTesto: t.prezzoTesto, sommario: t.sommario, funzioni: t.funzioni })),
+      tier: abbonamenti.TIERS.map((t) => ({ id: t.id, nome: t.nome, prezzoTesto: t.prezzoTesto, sommario: t.sommario, funzioni: sanFunzioni(t.funzioni) })),
     });
   });
 
