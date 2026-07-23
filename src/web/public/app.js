@@ -2680,6 +2680,7 @@ const AZIONI = [
   ['messaggio', '💬 Scrivi in chat'],
   ['effetto', '✨ Fai partire un effetto'],
   ['clip', '🎬 Crea una clip'],
+  ['categoria', '🎮 Cambia categoria Twitch'],
   ['contatore', '🔢 Contatore'],
   ['webhook', '🔗 Chiama un webhook'],
   ['attendi', '⏱️ Aspetta'],
@@ -2765,6 +2766,7 @@ function riassuntoAzione(a) {
     }
     case 'webhook': return 'chiama un webhook';
     case 'clip': return 'crea una clip';
+    case 'categoria': return a.gioco ? `cambia categoria in "${a.gioco}"` : 'cambia categoria';
     case 'attendi': return `aspetta ${a.secondi || 0}s`;
     case 'overlayTesto': return 'mostra un testo sull\'overlay';
     case 'timeout': return `timeout di ${a.secondi || 0}s`;
@@ -3101,6 +3103,17 @@ function disegnaCampiAzione(a) {
       return `
         <p class="suggerimento">Crea una clip del momento su Twitch. Utile con l'innesco vocale
         ("clippa!") o su un evento. Nessun campo da compilare.</p>`;
+    case 'categoria':
+      return `
+        <label class="campo">Categoria / gioco (puoi usare le variabili, es. <code>$args</code>)</label>
+        <input type="text" data-campo="gioco" data-var-target placeholder="es. Fortnite oppure $args" value="${esc(a.gioco || '')}">
+        ${pillole}
+        <div class="riga-check spazio-sopra">
+          <input type="checkbox" data-campo="annuncia" ${a.annuncia !== false ? 'checked' : ''}>
+          <label>Annuncia il cambio in chat</label>
+        </div>
+        <p class="suggerimento">Il bot cerca la categoria su Twitch e imposta quella più somigliante a ciò che scrivi/dici.
+        Serve il permesso <strong class="primo-piano">Gestione canale</strong> (lo concedi da <strong>Durante la diretta → Ascolto vocale</strong>).</p>`;
     case 'attendi':
       return `
         <label class="campo">Secondi da aspettare</label>
@@ -3174,6 +3187,7 @@ function leggiAzioneRiga(riga) {
     };
     case 'webhook': return { tipo, url: (v('url')?.value || '').trim(), usaRisposta: !!v('usaRisposta')?.checked };
     case 'clip': return { tipo };
+    case 'categoria': return { tipo, gioco: (v('gioco')?.value || '').trim(), annuncia: !!v('annuncia')?.checked };
     case 'attendi': return { tipo, secondi: Number(v('secondi')?.value) || 0 };
     case 'overlayTesto': return { tipo, testo: v('testo')?.value || '', durata: Number(v('durata')?.value) || 5000 };
     case 'timeout': return { tipo, secondi: Number(v('secondi')?.value) || 0 };
