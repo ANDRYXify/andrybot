@@ -140,6 +140,17 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     return null;
   }
 
+  // Gating funzioni per tier (endpoint a pagamento). Ritorna true se la funzione
+  // è inclusa nel piano del canale gestito; altrimenti risponde 403 e ritorna
+  // false. I membri community hanno tutto → non vengono mai bloccati.
+  const tierReq = (req) => tierDi(currentUser(req)?.login) || 'free';
+  function esigiFunzione(req, res, chiave, etichetta) {
+    if (abbonamenti.funzioneAbilitata(tierReq(req), chiave)) return true;
+    res.status(403).json({ errore: `${etichetta} non è incluso nel tuo piano — passa a un piano superiore per sbloccarlo.`, upgrade: true });
+    return false;
+  }
+  const limiteTier = (req, chiave) => abbonamenti.limiteFunzione(tierReq(req), chiave);
+
   // risposta "il sito non esiste": nessun indizio, nessun brand, nessun corpo utile
   const notFound = (res) => res.status(404).type('text/plain').send('Not Found');
 
@@ -499,8 +510,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const login = String(req.body?.login || '').toLowerCase().trim().replace(/^@/, '');
     if (!/^[a-z0-9_]{3,25}$/.test(login)) return res.status(400).json({ errore: 'username Twitch non valido' });
     if (login === ch) return res.status(400).json({ errore: 'sei già il proprietario del canale' });
-    if (!managers.get(ch, login) && managers.listByChannel(ch).length >= 20) {
-      return res.status(400).json({ errore: 'hai già raggiunto il massimo di moderatori' });
+    const maxMod = limiteTier(req, 'moderatori');   // limite moderatori del piano
+    if (!managers.get(ch, login) && managers.listByChannel(ch).length >= maxMod) {
+      return res.status(400).json({ errore: maxMod === 0 ? 'Il tuo piano non include i moderatori.' : 'hai raggiunto il massimo di moderatori del tuo piano.' });
     }
     const token = crypto.randomBytes(32).toString('base64url');
     const scade = Date.now() + MOD_INVITE_TTL;
@@ -792,6 +804,15 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       };
     }
 
+    // gating per tier: le funzioni non incluse nel piano restano spente (i membri
+    // community hanno tutto attivo, quindi non vengono mai limitati).
+    const tierS = tierDi(user.login) || 'free';
+    const A = abbonamenti.funzioneAbilitata;
+    if (!A(tierS, 'giochi')) out.giochi = false;
+    if (!A(tierS, 'clipAuto')) out.clipAuto = false;
+    if (!A(tierS, 'voce')) out.ascoltoLive = false;
+    if (!A(tierS, 'notifiche') && out.tiktok) out.tiktok.attivo = false;
+
     streamers.setSettings(user.login, out);
     // se è cambiata la modalità di attivazione, riconcilia subito i canali
     if (b.modalita !== undefined) sync();
@@ -1019,6 +1040,13 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const login = currentUser(req).login;
     const errore = validaModulo(req.body);
     if (errore) return res.status(400).json({ errore });
+    // limite moduli del piano (solo sui NUOVI moduli; le modifiche passano sempre)
+    if (!req.body?.id) {
+      const maxMod = limiteTier(req, 'moduli');
+      if (modulesDb.list(login).length >= maxMod) {
+        return res.status(403).json({ errore: `Il tuo piano include fino a ${maxMod} comandi/moduli. Passa a un piano superiore per crearne altri.`, upgrade: true });
+      }
+    }
     let id;
     try { id = modulesDb.save(login, req.body); }
     catch (e) { return res.status(400).json({ errore: e?.message || 'salvataggio non riuscito' }); }
@@ -1074,6 +1102,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
 
   // il browser ha sentito una frase: eseguiamo i moduli 'voce' che combaciano
   app.post('/api/streamer/voce', requireLogin, wrap(async (req, res) => {
+    if (!esigiFunzione(req, res, 'voce', 'Il comando a voce')) return;
     const login = currentUser(req).login;
     const frase = String(req.body?.frase || '').trim();
     if (!frase || frase.length >= 300) {
@@ -1143,6 +1172,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
 
   // salva il token: lo validiamo con getMe e memorizziamo lo @username del bot
   app.post('/api/streamer/telegram/token', requireLogin, wrap(async (req, res) => {
+    if (!esigiFunzione(req, res, 'notifiche', 'Le notifiche live')) return;
     const login = currentUser(req).login;
     const token = String(req.body?.token || '').trim();
     if (!token || !/^\d+:[A-Za-z0-9_-]{20,}$/.test(token)) {
