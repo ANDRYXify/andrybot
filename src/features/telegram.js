@@ -100,6 +100,20 @@ export async function inviaMessaggio(token, chatId, testo, { anteprima = true } 
   });
 }
 
+// --------------------------------------------------------- webhook (interattivo)
+// Attiva il webhook: Telegram consegnerà gli update (messaggi) al nostro URL.
+// `secret` viaggia sia nel path dell'URL sia nell'header di verifica.
+export async function impostaWebhook(token, url, secret) {
+  return tgCall(token, 'setWebhook', {
+    post: true,
+    params: { url, secret_token: secret, allowed_updates: ['message'], drop_pending_updates: true },
+  });
+}
+// Spegne il webhook (torna possibile getUpdates → rilevamento gruppo classico).
+export async function rimuoviWebhook(token) {
+  return tgCall(token, 'deleteWebhook', { post: true, params: { drop_pending_updates: true } });
+}
+
 // --------------------------------------------------------- fissa / elimina
 // Fissa in cima al gruppo l'avviso della live. Richiede che il bot sia
 // AMMINISTRATORE con il permesso di fissare i messaggi: se non lo è, Telegram

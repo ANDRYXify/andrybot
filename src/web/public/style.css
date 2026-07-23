@@ -348,6 +348,10 @@ details.blocco-se[open] > summary { margin-bottom: .3rem; }
 pre.blocco-codice { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-s); padding: .75rem .8rem; margin-top: .3rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .82rem; color: var(--testo-2); overflow-x: auto; white-space: pre; }
 
 /* ============================================================ varie */
+/* editor di un comando/modulo Telegram */
+.modulo-tg { border: 1px solid var(--border); border-radius: var(--r-m); background: var(--surface-2); padding: .9rem 1rem; margin-bottom: .7rem; }
+.modulo-tg .riga-flessibile { justify-content: space-between; }
+
 .riga-flessibile { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; }
 .spazio-sopra { margin-top: 1rem; }
 .separatore { border: none; border-top: 1px solid var(--border); margin: 1.1rem 0; }

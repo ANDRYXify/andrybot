@@ -185,6 +185,8 @@ CREATE TABLE IF NOT EXISTS telegram (     -- notifiche Telegram: un bot+gruppo P
   pin_live INTEGER NOT NULL DEFAULT 1,     -- fissa l'avviso a live attiva e lo elimina a live spenta?
   msg_id TEXT NOT NULL DEFAULT '',         -- message_id dell'ultimo avviso live TWITCH (per fissarlo/eliminarlo)
   msg_id_tk TEXT NOT NULL DEFAULT '',      -- idem per l'avviso live TIKTOK (indipendente da Twitch)
+  interattivo INTEGER NOT NULL DEFAULT 0,  -- il bot legge e risponde nel gruppo (webhook attivo)?
+  webhook_secret TEXT NOT NULL DEFAULT '', -- segreto nel path del webhook (identifica il canale)
   ts INTEGER NOT NULL DEFAULT 0
 );
 
@@ -246,6 +248,8 @@ function aggiungiColonna(tabella, colonna, definizione) {
 aggiungiColonna('telegram', 'pin_live', "INTEGER NOT NULL DEFAULT 1");
 aggiungiColonna('telegram', 'msg_id', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('telegram', 'msg_id_tk', "TEXT NOT NULL DEFAULT ''");
+aggiungiColonna('telegram', 'interattivo', "INTEGER NOT NULL DEFAULT 0");
+aggiungiColonna('telegram', 'webhook_secret', "TEXT NOT NULL DEFAULT ''");
 
 const now = () => Date.now();
 
@@ -560,6 +564,17 @@ export const tgConf = {
   // essere live insieme, quindi non devono sovrascriversi a vicenda)
   setMsgIdTk(channel, msgId) {
     db.prepare('UPDATE telegram SET msg_id_tk=? WHERE channel=?').run(String(msgId || ''), String(channel).toLowerCase());
+  },
+  // modalità interattiva (webhook): accende/spegne e memorizza il segreto del path
+  setInterattivo(channel, attivo, secret) {
+    db.prepare('UPDATE telegram SET interattivo=?, webhook_secret=? WHERE channel=?')
+      .run(attivo ? 1 : 0, String(secret || ''), String(channel).toLowerCase());
+  },
+  // trova il canale dal segreto del webhook (per instradare gli update in arrivo)
+  getBySecret(secret) {
+    const s = String(secret || '');
+    if (!s) return null;
+    return db.prepare('SELECT * FROM telegram WHERE webhook_secret=? AND interattivo=1').get(s) || null;
   },
   remove(channel) { db.prepare('DELETE FROM telegram WHERE channel=?').run(String(channel).toLowerCase()); },
 };

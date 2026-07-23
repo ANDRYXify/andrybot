@@ -20,6 +20,7 @@ import { comprimi } from '../features/compress.js';
 import { seedStreamer } from '../features/seed.js';
 import * as vip from '../features/vip.js';
 import * as telegram from '../features/telegram.js';
+import * as telegramModuli from '../features/telegramModuli.js';
 import * as tiktok from '../features/tiktok.js';
 import * as quotesImport from '../features/quotesimport.js';
 import { pretrain } from '../ai/pretrain.js';
@@ -84,6 +85,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   app.use((req, res, next) => {
     if (currentUser(req) || PUBBLICI.has(req.path)
         || req.path.startsWith('/overlay/') || req.path.startsWith('/api/ext/')
+        || req.path.startsWith('/tg/')       // webhook Telegram: si protegge col segreto nel path
         || req.path.startsWith('/icons/') || req.path.startsWith('/api/passkey/login/')) return next();
     return notFound(res);
   });
@@ -156,6 +158,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       attivo: !!(c && c.attivo),
       messaggio: c?.messaggio || '',
       pinLive: c ? !!c.pin_live : true,
+      interattivo: !!(c && c.interattivo),
     };
   };
 
@@ -866,7 +869,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // elenco delle frasi da ascoltare (dei moduli 'voce' attivi del canale)
   app.get('/api/streamer/voce', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    const frasi = modules.frasiVoce(login);
+    // frasi vocali dei moduli Twitch + di quelli Telegram (lista unica)
+    const frasi = [...new Set([...modules.frasiVoce(login), ...telegramModuli.frasiVoce(login)])];
     res.json({ frasi, count: frasi.length });
   }));
 
@@ -885,7 +889,20 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       else await vip.assegnaVip(helix, login, { nome: cmdVip.nome, durata: cmdVip.durata, motivo: 'voce' }, say);
       return res.json({ ok: true, eseguito: true, vip: true });
     }
-    const eseguito = await modules.eseguiVoce(login, frase, (t) => manager.say(login, t));
+    let eseguito = await modules.eseguiVoce(login, frase, (t) => manager.say(login, t));
+    // moduli TELEGRAM con innesco vocale: inviano il messaggio nel gruppo
+    const modsTg = telegramModuli.trovaPerVoce(login, frase);
+    if (modsTg.length) {
+      const c = tgConf.get(login);
+      if (c?.token && c.chat_id) {
+        const s = streamers.get(login);
+        for (const m of modsTg) {
+          const testo = telegramModuli.costruisciMessaggio(m, { streamer: s?.display || login });
+          if (testo) telegram.inviaMessaggio(c.token, c.chat_id, testo).catch(() => {});
+        }
+        eseguito = true;
+      }
+    }
     res.json({ ok: true, eseguito });
   }));
 
@@ -988,10 +1005,78 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.json({ ok: true });
   }));
 
-  // scollega tutto (rimuove token e gruppo)
+  // scollega tutto (rimuove token e gruppo). Se il webhook era attivo, lo spegne.
   app.delete('/api/streamer/telegram', requireLogin, wrap(async (req, res) => {
-    tgConf.remove(currentUser(req).login);
+    const login = currentUser(req).login;
+    const c = tgConf.get(login);
+    if (c?.token && c.interattivo) telegram.rimuoviWebhook(c.token).catch(() => {});
+    tgConf.remove(login);
     res.json({ ok: true });
+  }));
+
+  // ---- Telegram INTERATTIVO: il bot legge e risponde nel gruppo (webhook) ----
+  // Accende/spegne. All'accensione genera un segreto e registra il webhook che
+  // punta a /tg/<segreto>. Serve un URL pubblico HTTPS (in locale non funziona).
+  app.post('/api/streamer/telegram/interattivo', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const c = tgConf.get(login);
+    if (!c?.token) return res.status(400).json({ errore: 'prima collega il bot con il token' });
+    const attivo = !!req.body?.attivo;
+    if (attivo) {
+      const secret = crypto.randomBytes(24).toString('hex');
+      const url = `${config.baseUrl.replace(/\/$/, '')}/tg/${secret}`;
+      const r = await telegram.impostaWebhook(c.token, url, secret);
+      if (!r.ok) return res.status(400).json({ errore: r.errore || 'Telegram ha rifiutato il webhook (serve un URL pubblico HTTPS)' });
+      tgConf.setInterattivo(login, true, secret);
+      return res.json({ ok: true, interattivo: true });
+    }
+    if (c.token) telegram.rimuoviWebhook(c.token).catch(() => {});
+    tgConf.setInterattivo(login, false, '');
+    res.json({ ok: true, interattivo: false });
+  }));
+
+  // Moduli Telegram (lista separata): leggi / salva l'intera lista.
+  app.get('/api/streamer/telegram/moduli', requireLogin, wrap(async (req, res) => {
+    const s = streamers.get(currentUser(req).login);
+    res.json({ moduli: Array.isArray(s?.settings?.telegramModuli) ? s.settings.telegramModuli : [] });
+  }));
+  app.post('/api/streamer/telegram/moduli', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const s = streamers.get(login);
+    if (!s) return res.status(404).json({ errore: 'streamer sconosciuto' });
+    const moduli = telegramModuli.normalizzaModuli(req.body?.moduli);
+    streamers.setSettings(login, { ...s.settings, telegramModuli: moduli });
+    res.json({ ok: true, moduli });
+  }));
+
+  // ---- WEBHOOK Telegram: qui arrivano i messaggi del gruppo (pubblico) ----
+  // Si protegge col segreto nel path + header di verifica di Telegram. Risponde
+  // SEMPRE 200 in fretta (Telegram lo pretende): l'elaborazione è best-effort.
+  app.post('/tg/:secret', wrap(async (req, res) => {
+    const conf = tgConf.getBySecret(req.params.secret);
+    if (!conf) return res.status(404).type('text/plain').send('Not Found');
+    // verifica l'header segreto (difesa in più oltre al path)
+    if (req.get('X-Telegram-Bot-Api-Secret-Token') !== conf.webhook_secret) {
+      return res.status(403).type('text/plain').send('Forbidden');
+    }
+    res.json({ ok: true });   // conferma subito a Telegram, poi elabora
+    try {
+      const msg = req.body?.message;
+      const chat = msg?.chat;
+      const testo = msg?.text;
+      if (!chat || !testo) return;
+      const login = conf.channel;
+      // auto-collega il gruppo: se non ne abbiamo ancora uno, prendi questo
+      if (!conf.chat_id && (chat.type === 'group' || chat.type === 'supergroup')) {
+        tgConf.set(login, { chatId: String(chat.id), chatTitolo: chat.title || '(gruppo)' });
+      }
+      const mod = telegramModuli.trovaPerComando(login, testo);
+      if (!mod) return;
+      const s = streamers.get(login);
+      const utente = msg.from?.first_name || msg.from?.username || '';
+      const risposta = telegramModuli.costruisciMessaggio(mod, { utente, streamer: s?.display || login });
+      if (risposta) telegram.inviaMessaggio(conf.token, chat.id, risposta).catch(() => {});
+    } catch (e) { log.warn('webhook telegram:', e?.message || e); }
   }));
 
   // prova la notifica TikTok adesso (manda il messaggio nel gruppo Telegram)
