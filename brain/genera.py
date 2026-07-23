@@ -18,9 +18,13 @@ import urllib.request
 DATA_DIR = os.environ.get("DATA_DIR", "/app/data")
 MODELS_DIR = os.path.join(DATA_DIR, "models")
 
-# Scaletta modelli per fascia di RAM (Qwen2.5 Instruct, GGUF Q4). Più RAM, più
-# grande il modello, migliore la chiacchiera. Override con LLM_MODEL_URL.
+# Scaletta modelli per fascia di RAM (Qwen2.5 Instruct, GGUF). Più RAM, più grande
+# il modello / migliore la quantizzazione → chiacchiera migliore. Override con
+# LLM_MODEL_URL (o LLM_MODEL_PATH per un file locale, es. un fine-tune tuo).
+# Nota: sui box da 8 GB (es. Hetzner CX33) il 3B gira in Q5 (qualità più alta del
+# Q4, entra comodo lasciando RAM al bot). 7B non ci sta senza rischiare l'OOM.
 _TIERS = [
+    (7.0, "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q5_k_m.gguf"),
     (6.0, "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q4_k_m.gguf"),
     (3.0, "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf"),
     (0.0, "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf"),
@@ -103,9 +107,16 @@ def avvia():
             _stato.update(stato="errore", motivo=f"llama-cpp-python assente: {e}")
             print("[genera] llama-cpp-python non installato: chiacchiera disattivata.", flush=True)
             return
-        url = _scegli_modello()
-        _stato["modello"] = url.split("/")[-1]
-        path = _scarica(url)
+        # modello locale (un tuo fine-tune in GGUF, es. dopo un LoRA) se indicato;
+        # altrimenti si scarica dalla scaletta in base alla RAM.
+        locale = os.environ.get("LLM_MODEL_PATH")
+        if locale and os.path.exists(locale):
+            path = locale
+            _stato["modello"] = os.path.basename(locale)
+        else:
+            url = _scegli_modello()
+            _stato["modello"] = url.split("/")[-1]
+            path = _scarica(url)
         cpu = os.cpu_count() or 2
         print("[genera] carico il modello in memoria…", flush=True)
         model = Llama(
