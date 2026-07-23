@@ -411,7 +411,8 @@ export class BotManager {
         if (msgId) {
           tgConf.setMsgId(login, msgId);
           if (conf.pin_live) {
-            const p = await telegram.fissaMessaggio(conf.token, conf.chat_id, msgId);
+            // silenzioso:false → il "fissato" avvisa TUTTI i membri del gruppo
+            const p = await telegram.fissaMessaggio(conf.token, conf.chat_id, msgId, { silenzioso: false });
             if (!p.ok) log.warn(`pin Telegram #${login}: ${p.errore} (il bot è admin del gruppo con permesso di fissare?)`);
           }
         }
