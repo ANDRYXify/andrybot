@@ -132,7 +132,10 @@ function render() {
     html += vistaPiattaforma();
   }
 
-  if (stato.isAdmin) html += vistaAdmin();
+  // L'admin con un canale approvato ha l'area "Admin" tra le schede (dentro
+  // vistaPiattaforma). Se è admin ma senza canale approvato, non ci sono schede:
+  // in quel caso mostriamo il pannello admin da solo, come prima.
+  if (stato.isAdmin && st?.status !== 'approved') html += `<hr class="separatore">${vistaAdminContenuto()}`;
 
   app.innerHTML = html;
 
@@ -257,9 +260,18 @@ const GRUPPI = [
   ] },
 ];
 
+// Area riservata all'operatore (andryxify): compare come scheda a sé SOLO per
+// l'admin, così il pannello "Anima" non è più sempre in fondo a ogni scheda.
+const GRUPPO_ADMIN = { id: 'admin', nome: 'Admin', icona: '👑', schede: [['admin', 'Admin']] };
+
+// L'elenco effettivo dei gruppi: aggiunge l'area Admin se sei l'operatore.
+function elencoGruppi() {
+  return stato.isAdmin ? GRUPPI.concat([GRUPPO_ADMIN]) : GRUPPI;
+}
+
 // Trova il gruppo che contiene una certa scheda (default: il primo).
 function gruppoDiScheda(id) {
-  return GRUPPI.find((g) => g.schede.some(([sid]) => sid === id)) || GRUPPI[0];
+  return elencoGruppi().find((g) => g.schede.some(([sid]) => sid === id)) || GRUPPI[0];
 }
 
 // Disegna la navigazione a due livelli: i GRUPPI in alto e, sotto, le schede
@@ -270,7 +282,7 @@ function gruppoDiScheda(id) {
 // all'inizio ad ogni click (la "dock" che rimbalza).
 function gruppiHtml() {
   const gAtt = gruppoDiScheda(schedaAttiva);
-  return GRUPPI.map((g) =>
+  return elencoGruppi().map((g) =>
     `<button class="gruppo-btn${g.id === gAtt.id ? ' attiva' : ''}" data-gruppo="${g.id}">
        <span class="gruppo-icona">${g.icona}</span>${g.nome}</button>`).join('');
 }
@@ -300,7 +312,8 @@ function vistaPiattaforma() {
     ${pannelloNotifiche()}
     ${pannelloModuli()}
     ${pannelloRegole()}
-    ${pannelloMemoria()}`;
+    ${pannelloMemoria()}
+    ${stato.isAdmin ? pannello('admin', vistaAdminContenuto()) : ''}`;
 }
 
 function pannello(id, contenuto) {
@@ -1041,7 +1054,7 @@ function attivaPiattaforma() {
     const gBtn = ev.target.closest('[data-gruppo]');
     const sBtn = ev.target.closest('[data-scheda]');
     if (gBtn) {
-      const g = GRUPPI.find((x) => x.id === gBtn.dataset.gruppo);
+      const g = elencoGruppi().find((x) => x.id === gBtn.dataset.gruppo);
       if (!g || g.id === gruppoDiScheda(schedaAttiva).id) return;  // già qui
       schedaAttiva = g.schede[0][0];   // apri la prima scheda del gruppo
       // aggiorna la barra gruppi SENZA ricrearla (preserva lo scroll orizz.)
@@ -1539,6 +1552,7 @@ function caricaDatiScheda(id) {
   if (id === 'moduli') caricaModuli();
   if (id === 'memoria') caricaStatistiche();
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); }
+  if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaAnima(); }
 }
 
 // --- caricamenti dati ---------------------------------------------------
@@ -2381,7 +2395,9 @@ async function copiaTesto(testo, msgOk) {
 
 // ------------------------------------------------------------------ pannello admin
 
-function vistaAdmin() {
+// Contenuto del pannello admin (senza wrapper): usato sia come scheda "Admin"
+// per l'operatore con canale approvato, sia da solo se non ha un canale.
+function vistaAdminContenuto() {
   const avviso = stato.missing?.length ? `
     <div class="carta avviso">
       <h2>⚠️ Configurazione incompleta</h2>
@@ -2391,7 +2407,6 @@ function vistaAdmin() {
 
   const st = stato.status || {};
   return `
-    <hr class="separatore">
     <div class="carta">
       <h2>Pannello andryxify 👑</h2>
       <p class="spazio-sopra">
