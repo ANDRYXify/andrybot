@@ -56,5 +56,32 @@
   </script>
 
   <script src="app.js"></script>
+
+  <!-- micro-interazione: una luce morbida segue il cursore sulla carta sotto il
+       puntatore. Delegato su document → funziona anche sui contenuti ridisegnati. -->
+  <script>
+    (function () {
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      var raf = 0, carta = null, x = 0, y = 0;
+      function applica() {
+        raf = 0;
+        if (!carta) return;
+        var r = carta.getBoundingClientRect();
+        carta.style.setProperty('--mx', (x - r.left) + 'px');
+        carta.style.setProperty('--my', (y - r.top) + 'px');
+      }
+      document.addEventListener('pointermove', function (e) {
+        var c = e.target.closest ? e.target.closest('.carta') : null;
+        if (c !== carta && carta) {           // uscito dalla carta precedente: spegni la luce
+          carta.style.setProperty('--mx', '-300px');
+          carta.style.setProperty('--my', '-300px');
+        }
+        carta = c;
+        if (!c) return;
+        x = e.clientX; y = e.clientY;
+        if (!raf) raf = requestAnimationFrame(applica);
+      }, { passive: true });
+    })();
+  </script>
 </body>
 </html>
