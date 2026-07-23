@@ -336,6 +336,9 @@ body.vetrina .contenuto { max-width: 1040px; }
 /* ============================================================ form */
 label.campo { display: block; margin: .85rem 0 .3rem; font-weight: 600; font-size: .88rem; }
 .suggerimento { font-size: .82rem; color: var(--testo-2); margin-top: .28rem; }
+/* notina neutra per un dettaglio discorsivo (es. esito del pre-addestramento):
+   una frase, non un'etichetta → niente pillola colorata che va a capo storta */
+.nota-lettura { margin-top: .5rem; padding: .55rem .75rem; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-s); color: var(--testo-2); font-size: .86rem; line-height: 1.5; }
 
 input[type="text"], textarea, select {
   width: 100%; background: var(--surface); border: 1px solid var(--border-2); border-radius: var(--r-s);

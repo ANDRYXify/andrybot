@@ -36,7 +36,8 @@ function esc(s) {
 }
 
 function dataIt(ts) {
-  const n = Number(ts);
+  let n = Number(ts);
+  if (!Number.isFinite(n) || n <= 0) n = Date.parse(ts);   // accetta anche date ISO
   if (!Number.isFinite(n) || n <= 0) return '—';
   return new Date(n).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' });
 }
@@ -139,7 +140,7 @@ function statoDemo() {
     permessiOk: true, vipOk: true, moderazioneOk: true,
     knowledgeCount: 3,
     status: { channels: ['andryx_demo'] },   // "in chat adesso"
-    preaddestramento: { preaddestramento_ts: '2026-05-01T20:00:00Z', preaddestramento_esito: 'profilo letto' },
+    preaddestramento: { preaddestramento_ts: '2026-05-01T20:00:00Z', preaddestramento_esito: 'pagina profilo letta ("Andryx — creator e streamer da Genova · Twitch, YouTube, gaming"), 5 link social; gioco recente: Fortnite; profilo Twitch letto' },
     telegram: { configurato: true, gruppoOk: true, attivo: true, pinLive: true,
       interattivo: true, botUsername: 'andryx_live_bot', gruppo: 'Community di Andryx', messaggio: '' },
     streamer: {
@@ -764,9 +765,9 @@ function pannelloStato() {
       <p>SocialBot legge il tuo profilo su andryxify.it per conoscerti prima ancora di entrare in chat.</p>
       <p class="spazio-sopra">
         Ultima lettura: <strong class="primo-piano">${esc(dataIt(pre.preaddestramento_ts))}</strong>
-        ${pre.preaddestramento_esito ? ` — <span class="badge viola">${esc(pre.preaddestramento_esito)}</span>` : ''}
-        — voci di conoscenza: <strong class="primo-piano">${stato.knowledgeCount}</strong>
+        · voci di conoscenza: <strong class="primo-piano">${stato.knowledgeCount}</strong>
       </p>
+      ${pre.preaddestramento_esito ? `<p class="nota-lettura">${esc(pre.preaddestramento_esito)}</p>` : ''}
       <p class="spazio-sopra">
         <button class="btn secondario" id="btn-pretrain">Ri-leggi il mio profilo andryxify.it</button>
         <span id="esito-pretrain" class="suggerimento"></span>
