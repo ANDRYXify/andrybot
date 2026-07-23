@@ -230,25 +230,55 @@ function vistaDisabilitato() {
 
 // ------------------------------------------------------------------ piattaforma streamer
 
-function vistaPiattaforma() {
-  const schede = [
+// Le schede raggruppate per area logica: invece di 11 bottoni in fila (troppo
+// dispersivi) mostriamo poche categorie chiare e, dentro ognuna, le sue schede.
+// NB: gli id delle schede restano identici a prima (li usano i pannelli).
+const GRUPPI = [
+  { id: 'panoramica', nome: 'Panoramica', icona: '🏠', schede: [
     ['stato', 'Stato'],
+  ] },
+  { id: 'personaggio', nome: 'Il personaggio', icona: '🧠', schede: [
     ['personalita', 'Personalità'],
     ['conoscenza', 'Conoscenza'],
-    ['clip', 'Clip'],
-    ['ascolto', 'Ascolto live'],
-    ['effetti', 'Effetti & Suoni'],
-    ['giochi', 'Giochi'],
-    ['notifiche', 'Notifiche'],
-    ['moduli', 'Moduli'],
+    ['memoria', 'Memoria'],
+  ] },
+  { id: 'chat', nome: 'Chat & comandi', icona: '💬', schede: [
+    ['moduli', 'Comandi'],
     ['regole', 'Regole'],
-    ['memoria', 'Memoria & Statistiche'],
-  ];
+    ['giochi', 'Giochi'],
+    ['effetti', 'Effetti & suoni'],
+  ] },
+  { id: 'diretta', nome: 'Durante la diretta', icona: '🔴', schede: [
+    ['clip', 'Clip'],
+    ['ascolto', 'Ascolto vocale'],
+    ['notifiche', 'Notifiche'],
+  ] },
+];
+
+// Trova il gruppo che contiene una certa scheda (default: il primo).
+function gruppoDiScheda(id) {
+  return GRUPPI.find((g) => g.schede.some(([sid]) => sid === id)) || GRUPPI[0];
+}
+
+// Disegna la navigazione a due livelli: i GRUPPI in alto e, sotto, le schede
+// del gruppo attivo (la riga di sotto compare solo se il gruppo ha più schede).
+function navInterna() {
+  const gAtt = gruppoDiScheda(schedaAttiva);
+  const gruppi = GRUPPI.map((g) =>
+    `<button class="gruppo-btn${g.id === gAtt.id ? ' attiva' : ''}" data-gruppo="${g.id}">
+       <span class="gruppo-icona">${g.icona}</span>${g.nome}</button>`).join('');
+  const sub = gAtt.schede.length > 1
+    ? `<nav class="schede" id="sotto-schede">
+         ${gAtt.schede.map(([id, nome]) =>
+           `<button class="scheda-btn${id === schedaAttiva ? ' attiva' : ''}" data-scheda="${id}">${nome}</button>`).join('')}
+       </nav>`
+    : '';
+  return `<nav class="gruppi" id="nav-gruppi">${gruppi}</nav>${sub}`;
+}
+
+function vistaPiattaforma() {
   return `
-    <nav class="schede" id="nav-schede">
-      ${schede.map(([id, nome]) =>
-        `<button class="scheda-btn${id === schedaAttiva ? ' attiva' : ''}" data-scheda="${id}">${nome}</button>`).join('')}
-    </nav>
+    <div id="nav-wrap">${navInterna()}</div>
     ${pannelloStato()}
     ${pannelloPersonalita()}
     ${pannelloConoscenza()}
@@ -523,8 +553,8 @@ function pannelloAscolto() {
         <a class="btn grande" href="/voce.html" target="_blank" rel="noopener">🎙️ Apri l'ascolto vocale</a>
       </p>
       <p class="suggerimento spazio-sopra">Tienila aperta mentre streammi. Funziona su Chrome o Edge (Mac e Windows).</p>
-      <p class="suggerimento">I comandi vocali si creano e modificano nella scheda
-      <strong class="primo-piano">Moduli</strong> (innesco "Comando vocale").</p>
+      <p class="suggerimento">I comandi vocali si creano e modificano in
+      <strong class="primo-piano">Chat &amp; comandi → Comandi</strong> (innesco "Comando vocale").</p>
     </div>`);
 }
 
@@ -887,7 +917,7 @@ function pannelloNotifiche() {
       (IFTTT/Zapier/Shortcut) all'evento "vado live su TikTok" e falle chiamare in POST:</p>
       <p><code>POST ${esc(location.origin)}/api/ext/${esc(stato.user.login)}</code></p>
       <p class="suggerimento">con header <code>Authorization: Bearer LA-TUA-CHIAVE-API</code> e corpo
-      <code>{"azione":"tiktok-live"}</code>. La chiave API la trovi nella scheda Moduli.</p>
+      <code>{"azione":"tiktok-live"}</code>. La chiave API la trovi in <strong>Chat &amp; comandi → Comandi</strong>.</p>
     </div>`);
 }
 
@@ -993,12 +1023,21 @@ function pannelloMemoria() {
 
 // aggancia tutti i listener dopo il render della vista "approved"
 function attivaPiattaforma() {
-  // navigazione a schede
-  document.getElementById('nav-schede')?.addEventListener('click', (ev) => {
-    const btn = ev.target.closest('[data-scheda]');
-    if (!btn) return;
-    schedaAttiva = btn.dataset.scheda;
-    document.querySelectorAll('.scheda-btn').forEach((b) => b.classList.toggle('attiva', b === btn));
+  // navigazione a due livelli: click su un GRUPPO (apre la sua prima scheda)
+  // oppure su una SOTTO-SCHEDA. In entrambi i casi ridisegniamo la barra e
+  // mostriamo il pannello giusto (i pannelli restano tutti nel DOM).
+  document.getElementById('nav-wrap')?.addEventListener('click', (ev) => {
+    const gBtn = ev.target.closest('[data-gruppo]');
+    const sBtn = ev.target.closest('[data-scheda]');
+    if (gBtn) {
+      const g = GRUPPI.find((x) => x.id === gBtn.dataset.gruppo);
+      if (!g || g.id === gruppoDiScheda(schedaAttiva).id) return;  // già qui
+      schedaAttiva = g.schede[0][0];   // apri la prima scheda del gruppo
+    } else if (sBtn) {
+      if (sBtn.dataset.scheda === schedaAttiva) return;
+      schedaAttiva = sBtn.dataset.scheda;
+    } else return;
+    document.getElementById('nav-wrap').innerHTML = navInterna();
     document.querySelectorAll('.pannello-scheda').forEach((p) =>
       p.classList.toggle('visibile', p.id === 'scheda-' + schedaAttiva));
     caricaDatiScheda(schedaAttiva);
@@ -2032,7 +2071,7 @@ function disegnaCampiQuando(t) {
         <label class="campo" for="mod-frasi-voce">Frasi da ascoltare (una per riga)</label>
         <textarea id="mod-frasi-voce" placeholder="clippa&#10;salva la clip">${esc(frasi.join('\n'))}</textarea>
         <p class="suggerimento">Quando al microfono dici una di queste frasi, il modulo scatta. Scrivile in minuscolo,
-        una per riga. L'ascolto si avvia dalla pagina "Apri l'ascolto vocale" nella scheda "Ascolto live".</p>`;
+        una per riga. L'ascolto si avvia dalla pagina "Apri l'ascolto vocale" in <strong>Durante la diretta → Ascolto vocale</strong>.</p>`;
     }
     case 'evento':
       return `
@@ -2096,7 +2135,7 @@ function disegnaCampiAzione(a) {
     case 'effetto': {
       const eff = datiModuli?.effettiDisponibili || [];
       if (!eff.length) {
-        return `<p class="suggerimento">Non hai ancora effetti: carica prima un effetto nella scheda "Effetti & Suoni".</p>
+        return `<p class="suggerimento">Non hai ancora effetti: carica prima un effetto in <strong>Chat &amp; comandi → Effetti &amp; suoni</strong>.</p>
           <input type="hidden" data-campo="comando" value="${esc(a.comando || '')}">`;
       }
       return `
