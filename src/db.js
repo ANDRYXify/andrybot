@@ -256,6 +256,16 @@ CREATE TABLE IF NOT EXISTS tg_membri (    -- roster dei membri visti scrivere ne
   PRIMARY KEY (channel, tg_user_id)
 );
 CREATE INDEX IF NOT EXISTS idx_tgmembri_ch ON tg_membri(channel, ultimo);
+CREATE TABLE IF NOT EXISTS giochi (          -- giochi personalizzati per canale (manche)
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  channel TEXT NOT NULL,
+  tipo TEXT NOT NULL,                         -- 'trivia' | 'parola'
+  nome TEXT NOT NULL DEFAULT '',
+  config TEXT NOT NULL DEFAULT '{}',          -- domande/parole + opzioni (JSON)
+  attivo INTEGER NOT NULL DEFAULT 1,
+  ts INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_giochi_ch ON giochi(channel);
 CREATE TABLE IF NOT EXISTS subscriptions (   -- abbonamenti self-service (Stripe/Link)
   login TEXT PRIMARY KEY,                     -- login twitch dello streamer abbonato
   tier TEXT NOT NULL DEFAULT 'free',          -- id del tier corrente (free|base|pro)
@@ -428,6 +438,31 @@ export const streamers = {
     db.prepare('UPDATE streamers SET settings=? WHERE login=?').run(JSON.stringify(settings || {}), login.toLowerCase());
   },
   remove(login) { db.prepare('DELETE FROM streamers WHERE login=?').run(login.toLowerCase()); },
+};
+
+// ---------------------------------------------------------------- giochi (manche)
+// Giochi personalizzati creati dallo streamer: set di trivia (domanda→risposte)
+// o di "parole veloci". Vengono pescati a caso dalle manche automatiche.
+function rowToGioco(r) { return { id: r.id, tipo: r.tipo, nome: r.nome, config: safeJson(r.config), attivo: !!r.attivo }; }
+export const giochi = {
+  list(channel) {
+    return db.prepare('SELECT * FROM giochi WHERE channel=? ORDER BY ts DESC').all(String(channel).toLowerCase()).map(rowToGioco);
+  },
+  listAttivi(channel) { return this.list(channel).filter((g) => g.attivo); },
+  save(channel, { id, tipo, nome, config, attivo = true }) {
+    const ch = String(channel).toLowerCase();
+    const cfg = JSON.stringify(config || {});
+    if (id) {
+      db.prepare('UPDATE giochi SET tipo=?, nome=?, config=?, attivo=? WHERE channel=? AND id=?')
+        .run(tipo, String(nome || '').slice(0, 60), cfg, attivo ? 1 : 0, ch, id);
+      return id;
+    }
+    const r = db.prepare('INSERT INTO giochi (channel, tipo, nome, config, attivo, ts) VALUES (?,?,?,?,?,?)')
+      .run(ch, tipo, String(nome || '').slice(0, 60), cfg, attivo ? 1 : 0, now());
+    return r.lastInsertRowid;
+  },
+  remove(channel, id) { db.prepare('DELETE FROM giochi WHERE channel=? AND id=?').run(String(channel).toLowerCase(), id); },
+  count(channel) { return db.prepare('SELECT COUNT(*) c FROM giochi WHERE channel=?').get(String(channel).toLowerCase()).c; },
 };
 
 // ---------------------------------------------------------------- abbonamenti

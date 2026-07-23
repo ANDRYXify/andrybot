@@ -82,6 +82,7 @@ function impostazioni() {
     promoSocial: s.promoSocial !== false,
     nomeMonete: (typeof s.nomeMonete === 'string' && s.nomeMonete.trim()) || 'monete',
     punti: { perMessaggio: 2, ogniSecondi: 60, trivia: 25, duello: 15, slotCosto: 10, slotVinci: 200, slotCoppia: 20, topN: 5, ...(s.punti && typeof s.punti === 'object' ? s.punti : {}) },
+    manche: { attivo: false, minMin: 15, maxMin: 45, soloLive: false, ...(s.manche && typeof s.manche === 'object' ? s.manche : {}) },
     premioVip: (s.premioVip && typeof s.premioVip === 'object') ? s.premioVip : { attivo: false, periodo: 'settimana', quanti: 1 },
     antispam: (s.antispam && typeof s.antispam === 'object') ? s.antispam : {},
     tiktok: (s.tiktok && typeof s.tiktok === 'object') ? s.tiktok : { username: '', attivo: false, annunciaChat: false, messaggio: '' },
@@ -173,6 +174,7 @@ function statoDemo() {
         iaLocale: true, proattivo: true, adattaCanale: true, giochi: true, promoSocial: true,
         nomeMonete: 'scudi', clipAuto: true, clipAutoSoglia: 25, ascoltoLive: false, ascoltoSensibilita: 5,
         premioVip: { attivo: true, periodo: 'settimana', quanti: 2 },
+        manche: { attivo: true, minMin: 20, maxMin: 60, soloLive: false },
         paroleVietate: ['spoiler', 'link-truffa'],
         frasi: ['Benvenuto nel canale! 💜', 'Ricordati di seguire per non perderti le live!'],
         tiktok: { username: 'andryxify', attivo: true, annunciaChat: true, messaggio: '' },
@@ -280,6 +282,10 @@ function _demoGet(via) {
         { id: 2, nome: 'Giada', giorno: 2, mese: 9, tg_user_id: '2' },
       ],
     },
+    '/api/streamer/giochi': [
+      { id: 1, tipo: 'trivia', nome: 'Trivia gaming', attivo: true, config: { domande: [{ q: 'In che anno è uscito il primo Minecraft?', a: ['2011'] }, { q: 'Chi è la mascotte di PlayStation?', a: ['crash', 'crash bandicoot'] }] } },
+      { id: 2, tipo: 'parola', nome: 'Reflex hype', attivo: true, config: { parole: ['pizza', 'combo perfetta', 'gg wp', 'clutch'] } },
+    ],
     '/api/moderatori': [ { login: 'lucaplays', display: 'lucaplays', stato: 'attivo' } ],
     '/api/passkey': [ { id: 'demo', nome: 'iPhone di Andryx', quando: '2026-04-10' } ],
   };
@@ -1268,6 +1274,47 @@ function pannelloGiochi() {
       <p class="spazio-sopra"><button class="btn" id="btn-salva-punti">Salva punti</button></p>
     </div>
     <div class="carta">
+      <h2>Manche automatiche 🎲</h2>
+      <p>Lascia che sia <strong class="primo-piano">il bot</strong> a lanciare i giochi: ogni tanto, a sorpresa, parte una
+      <strong class="primo-piano">manche</strong> (trivia, reflex sulla parola, indovina il numero) e il primo che risponde vince.</p>
+      <div class="riga-check">
+        <input type="checkbox" id="chk-manche" ${s.manche.attivo ? 'checked' : ''}>
+        <label for="chk-manche">Attiva le manche automatiche</label>
+      </div>
+      <div class="griglia-punti">
+        <label class="campo-num">Ogni almeno (minuti)<input type="number" id="mn-min" min="1" max="360" value="${s.manche.minMin}"></label>
+        <label class="campo-num">…al massimo (minuti)<input type="number" id="mn-max" min="1" max="360" value="${s.manche.maxMin}"></label>
+      </div>
+      <div class="riga-check spazio-sopra">
+        <input type="checkbox" id="chk-manche-live" ${s.manche.soloLive ? 'checked' : ''}>
+        <label for="chk-manche-live">Solo mentre sono in diretta</label>
+      </div>
+      <p class="suggerimento">Il bot sceglie da solo quando e quale gioco, e non disturba mai una chat vuota. In chat: <code>!manche</code> ne lancia una al volo.</p>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-manche">Salva manche</button></p>
+    </div>
+    <div class="carta">
+      <h2>I tuoi giochi 🕹️</h2>
+      <p>Crea i tuoi giochi: entrano nel giro delle manche automatiche (mescolati a quelli di default).</p>
+      <div class="riga-flessibile">
+        <select id="gioco-tipo">
+          <option value="trivia">Trivia (domande & risposte)</option>
+          <option value="parola">Parola veloce (reflex)</option>
+        </select>
+        <input type="text" id="gioco-nome" maxlength="60" placeholder="Nome del gioco (es. Trivia gaming)">
+      </div>
+      <div id="gioco-trivia" class="spazio-sopra">
+        <label class="campo">Domande — una per riga, formato <code>domanda | risposta1, risposta2</code></label>
+        <textarea id="gioco-domande" rows="5" placeholder="Chi ha vinto i mondiali 2006? | italia&#10;Come si chiama il mio gatto? | felix, felixe"></textarea>
+      </div>
+      <div id="gioco-parola" class="spazio-sopra" hidden>
+        <label class="campo">Parole — una per riga (il bot ne pesca una e il primo che la scrive vince)</label>
+        <textarea id="gioco-parole" rows="5" placeholder="pizza&#10;combo perfetta&#10;gg wp"></textarea>
+      </div>
+      <p class="spazio-sopra"><button class="btn" id="btn-crea-gioco">Crea gioco</button></p>
+      <h3>Giochi creati</h3>
+      <ul class="lista-voci" id="lista-giochi"><li class="vuoto">Caricamento…</li></ul>
+    </div>
+    <div class="carta">
       <h2>Comandi dei giochi</h2>
       <ul class="lista-voci">
         <li><div class="testo-voce"><span class="domanda">!dado</span> <span class="risposta">tira un dado (anche !dado 2d20)</span></div></li>
@@ -1728,6 +1775,44 @@ function attivaPiattaforma() {
     } }, 'Punti aggiornati 🏅');
   }));
 
+  // manche automatiche
+  document.getElementById('btn-salva-manche')?.addEventListener('click', () => conErrore(async () => {
+    await salvaImpostazioni({ manche: {
+      attivo: document.getElementById('chk-manche').checked,
+      minMin: Number(document.getElementById('mn-min').value),
+      maxMin: Number(document.getElementById('mn-max').value),
+      soloLive: document.getElementById('chk-manche-live').checked,
+    } }, 'Manche salvate 🎲');
+  }));
+
+  // creatore di giochi: mostra i campi giusti in base al tipo
+  document.getElementById('gioco-tipo')?.addEventListener('change', (ev) => {
+    const trivia = ev.target.value === 'trivia';
+    document.getElementById('gioco-trivia').hidden = !trivia;
+    document.getElementById('gioco-parola').hidden = trivia;
+  });
+  document.getElementById('btn-crea-gioco')?.addEventListener('click', () => conErrore(async () => {
+    const tipo = document.getElementById('gioco-tipo').value;
+    const nome = document.getElementById('gioco-nome').value.trim();
+    const body = { tipo, nome };
+    if (tipo === 'trivia') {
+      body.domande = document.getElementById('gioco-domande').value.split('\n').map((r) => {
+        const [q, ris] = r.split('|');
+        return { q: (q || '').trim(), a: (ris || '').split(',').map((x) => x.trim()).filter(Boolean) };
+      }).filter((d) => d.q && d.a.length);
+      if (!body.domande.length) { toast('Aggiungi almeno una domanda con risposta.', 'errore'); return; }
+    } else {
+      body.parole = document.getElementById('gioco-parole').value.split('\n').map((p) => p.trim()).filter(Boolean);
+      if (!body.parole.length) { toast('Aggiungi almeno una parola.', 'errore'); return; }
+    }
+    await api('/api/streamer/giochi', { method: 'POST', body });
+    document.getElementById('gioco-nome').value = '';
+    document.getElementById('gioco-domande').value = '';
+    document.getElementById('gioco-parole').value = '';
+    toast('Gioco creato! 🕹️');
+    caricaGiochi();
+  }));
+
   // ponte "giochi del sito": solo l'interruttore (endpoint/segreto arrivano dal sito)
   document.getElementById('btn-salva-giochisito')?.addEventListener('click', () => conErrore(async () => {
     await salvaImpostazioni({ giochiSito: { attivo: document.getElementById('chk-giochisito').checked } }, 'Giochi del sito salvati 🎯');
@@ -2146,7 +2231,7 @@ function caricaDatiScheda(id) {
   if (id === 'effetti') caricaEffetti();
   if (id === 'moduli') caricaModuli();
   if (id === 'memoria') caricaStatistiche();
-  if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); }
+  if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); }
   if (id === 'notifiche') caricaCompleanni();
   if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaAnima(); }
 }
@@ -2256,6 +2341,44 @@ async function caricaClip() {
 }
 
 // classifica monete + VIP a tempo attivi (scheda Giochi)
+// giochi personalizzati (creati dallo streamer)
+async function caricaGiochi() {
+  const ul = document.getElementById('lista-giochi');
+  if (!ul) return;
+  try {
+    const giochi = await api('/api/streamer/giochi');
+    const et = { trivia: '🧠 trivia', parola: '⚡ parola' };
+    ul.innerHTML = giochi.length
+      ? giochi.map((g) => {
+          const dett = g.tipo === 'trivia' ? `${(g.config.domande || []).length} domande` : `${(g.config.parole || []).length} parole`;
+          return `<li>
+            <div class="testo-voce">
+              <div class="domanda">${esc(g.nome || '(senza nome)')} <span class="badge viola">${et[g.tipo] || g.tipo}</span></div>
+              <div class="meta">${dett}${g.attivo ? '' : ' · <span class="badge">in pausa</span>'}</div>
+            </div>
+            <div class="azioni-voce">
+              <button class="btn secondario mini" data-gioco-toggle="${g.id}" data-attivo="${g.attivo ? 1 : 0}">${g.attivo ? 'Pausa' : 'Riattiva'}</button>
+              <button class="btn pericolo mini" data-gioco-elimina="${g.id}">Elimina</button>
+            </div>
+          </li>`;
+        }).join('')
+      : '<li class="vuoto">Nessun gioco tuo ancora: creane uno qui sopra! I giochi di default (trivia, reflex, numero) funzionano comunque.</li>';
+    ul.onclick = (ev) => {
+      const tog = ev.target.closest('[data-gioco-toggle]');
+      const del = ev.target.closest('[data-gioco-elimina]');
+      if (tog) conErrore(async () => {
+        await api('/api/streamer/giochi/' + tog.dataset.giocoToggle + '/toggle', { method: 'POST', body: { attivo: tog.dataset.attivo !== '1' } });
+        caricaGiochi();
+      });
+      else if (del) conErrore(async () => {
+        if (!confirm('Eliminare questo gioco?')) return;
+        await api('/api/streamer/giochi/' + del.dataset.giocoElimina, { method: 'DELETE' });
+        toast('Gioco eliminato.'); caricaGiochi();
+      });
+    };
+  } catch (e) { ul.innerHTML = `<li class="vuoto">Errore: ${esc(e.message)}</li>`; }
+}
+
 async function caricaClassifica() {
   const ulCl = document.getElementById('lista-classifica');
   const ulVip = document.getElementById('lista-vip');
