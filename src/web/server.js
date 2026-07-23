@@ -14,7 +14,7 @@ import { dirname, join } from 'node:path';
 import { config, SCOPES, missingConfig } from '../config.js';
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb, friends } from '../db.js';
-import { points, vips, tgConf, passkeys, managers, quotes, compleanni } from '../db.js';
+import { points, vips, tgConf, passkeys, managers, quotes, compleanni, membri } from '../db.js';
 import * as webauthn from './webauthn.js';
 import { comprimi } from '../features/compress.js';
 import { seedStreamer } from '../features/seed.js';
@@ -1079,11 +1079,27 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   app.get('/api/streamer/telegram/compleanni', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const cfg = streamers.get(login)?.settings?.telegramAuguri || {};
-    const lista = compleanni.list(login).map((c) => ({
+    const righe = compleanni.list(login);
+    const lista = righe.map((c) => ({
       id: c.tg_user_id, nome: c.nome, giorno: c.giorno, mese: c.mese,
       manuale: String(c.tg_user_id).startsWith('man_'),
     }));
-    res.json({ attivo: !!cfg.attivo, messaggio: cfg.messaggio || '', lista });
+    // roster: membri visti nel gruppo che NON hanno ancora un compleanno segnato
+    const conCompleanno = new Set(righe.map((c) => c.tg_user_id));
+    const roster = membri.list(login).filter((m) => !conCompleanno.has(m.tg_user_id))
+      .map((m) => ({ id: m.tg_user_id, nome: m.nome, username: m.username }));
+    res.json({ attivo: !!cfg.attivo, messaggio: cfg.messaggio || '', lista, membri: roster });
+  }));
+
+  // carica gli amministratori del gruppo nel roster (unica lista che l'API concede)
+  app.post('/api/streamer/telegram/membri/aggiorna', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const c = tgConf.get(login);
+    if (!c?.token || !c.chat_id) return res.status(400).json({ errore: 'collega prima il bot e il gruppo' });
+    const r = await telegram.membriAdmin(c.token, c.chat_id);
+    if (!r.ok) return res.status(400).json({ errore: r.errore });
+    for (const m of r.membri) membri.touch(login, m.id, m.nome, m.username);
+    res.json({ ok: true, aggiunti: r.membri.length });
   }));
   app.post('/api/streamer/telegram/compleanni', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
@@ -1094,14 +1110,17 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     streamers.setSettings(login, { ...s.settings, telegramAuguri: { attivo, messaggio } });
     res.json({ ok: true });
   }));
-  // aggiunta manuale dal sito (senza id Telegram → niente tag, solo nome)
+  // aggiunge/modifica un compleanno. Se arriva un `id` (membro del roster) usa
+  // quello reale → il festeggiato verrà TAGGATO; altrimenti crea un id "man_"
+  // (aggiunta a mano, solo nome, niente tag).
   app.post('/api/streamer/telegram/compleanni/aggiungi', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const nome = String(req.body?.nome || '').trim().slice(0, 60);
     const d = compleanniFeat.parseData(`${req.body?.giorno}/${req.body?.mese}`);
     if (!nome) return res.status(400).json({ errore: 'metti un nome' });
     if (!d) return res.status(400).json({ errore: 'data non valida (giorno/mese)' });
-    const id = 'man_' + crypto.randomBytes(6).toString('hex');
+    const idIn = String(req.body?.id || '').trim();
+    const id = /^\d+$/.test(idIn) ? idIn : ('man_' + crypto.randomBytes(6).toString('hex'));
     compleanni.set(login, id, nome, d.giorno, d.mese);
     res.json({ ok: true });
   }));
@@ -1131,6 +1150,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       // auto-collega il gruppo: se non ne abbiamo ancora uno, prendi questo
       if (!conf.chat_id && (chat.type === 'group' || chat.type === 'supergroup')) {
         tgConf.set(login, { chatId: String(chat.id), chatTitolo: chat.title || '(gruppo)' });
+      }
+      // roster: annota il membro che ha scritto (così poi assegni il compleanno)
+      if (msg.from && !msg.from.is_bot) {
+        membri.touch(login, msg.from.id, msg.from.first_name || msg.from.username || '', msg.from.username || '');
       }
       // comando integrato /compleanno (solo se gli auguri sono accesi)
       if (s?.settings?.telegramAuguri?.attivo) {

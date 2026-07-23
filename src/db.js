@@ -246,6 +246,16 @@ CREATE TABLE IF NOT EXISTS compleanni (   -- compleanni dei membri del gruppo Te
   PRIMARY KEY (channel, tg_user_id)
 );
 CREATE INDEX IF NOT EXISTS idx_compleanni_data ON compleanni(channel, mese, giorno);
+
+CREATE TABLE IF NOT EXISTS tg_membri (    -- roster dei membri visti scrivere nel gruppo Telegram
+  channel TEXT NOT NULL,                   -- login twitch (proprietario del bot)
+  tg_user_id TEXT NOT NULL,                -- id Telegram del membro
+  nome TEXT NOT NULL DEFAULT '',
+  username TEXT NOT NULL DEFAULT '',
+  ultimo INTEGER NOT NULL DEFAULT 0,       -- ultima volta visto (per ordinare)
+  PRIMARY KEY (channel, tg_user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_tgmembri_ch ON tg_membri(channel, ultimo);
 `);
 
 // --- migrazioni leggere: aggiunge colonne nuove a DB già esistenti ------------
@@ -620,6 +630,25 @@ export const compleanni = {
   markAuguri(channel, tgUserId, anno) {
     db.prepare('UPDATE compleanni SET last_auguri=? WHERE channel=? AND tg_user_id=?')
       .run(anno | 0, String(channel).toLowerCase(), String(tgUserId));
+  },
+};
+
+// ---------------------------------------------------------------- membri Telegram
+// Roster dei membri visti scrivere nel gruppo (Telegram non espone l'elenco
+// completo: lo costruiamo dai messaggi + dagli amministratori su richiesta).
+export const membri = {
+  touch(channel, tgUserId, nome, username) {
+    const id = String(tgUserId || '');
+    if (!id) return;
+    db.prepare(`INSERT INTO tg_membri (channel, tg_user_id, nome, username, ultimo)
+      VALUES (?,?,?,?,?)
+      ON CONFLICT(channel, tg_user_id) DO UPDATE SET
+        nome=excluded.nome, username=excluded.username, ultimo=excluded.ultimo`)
+      .run(String(channel).toLowerCase(), id, String(nome || ''), String(username || ''), now());
+  },
+  list(channel, limit = 200) {
+    return db.prepare('SELECT * FROM tg_membri WHERE channel=? ORDER BY ultimo DESC LIMIT ?')
+      .all(String(channel).toLowerCase(), limit | 0);
   },
 };
 

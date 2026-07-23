@@ -984,7 +984,10 @@ function pannelloNotifiche() {
         ${tg.interattivo ? '<span class="badge verde">attivo</span>' : ''}
       </div>
       <p class="suggerimento">Il bot dev'essere <strong>nel gruppo</strong>. Da attivo, il gruppo si collega da solo:
-      scrivi un messaggio qualsiasi nel gruppo e viene rilevato. Il tasto «Rileva gruppo» funziona solo da spento.</p>
+      scrivi un messaggio qualsiasi nel gruppo e viene rilevato. Il tasto «Rileva gruppo» funziona solo da spento.
+      Per far leggere al bot <strong>tutti</strong> i messaggi (comandi senza <code>/</code> e roster membri) disattiva la
+      <em>privacy</em> su <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a>
+      (<code>/setprivacy → Disable</code>); coi comandi <code>/comando</code> funziona comunque.</p>
 
       <div id="lista-tg-moduli" class="spazio-sopra"><p class="vuoto">Caricamento…</p></div>
       <p class="spazio-sopra">
@@ -1421,6 +1424,25 @@ function attivaPiattaforma() {
       toast('Compleanno aggiunto 🎂');
       caricaCompleanni();
     });
+    if (ev.target.closest('#btn-membri-aggiorna')) return conErrore(async () => {
+      const r = await api('/api/streamer/telegram/membri/aggiorna', { method: 'POST', body: {} });
+      toast(`Caricati ${r.aggiunti || 0} amministratori 👥`);
+      caricaCompleanni();
+    });
+    const add = ev.target.closest('[data-membro-add]');
+    if (add) {
+      const riga = add.closest('.membro-riga');
+      return conErrore(async () => {
+        await api('/api/streamer/telegram/compleanni/aggiungi', { method: 'POST', body: {
+          id: riga.dataset.membroId,
+          nome: riga.dataset.membroNome,
+          giorno: riga.querySelector('.mem-gg')?.value || '',
+          mese: riga.querySelector('.mem-mm')?.value || '',
+        } });
+        toast('Compleanno aggiunto 🎂 (verrà taggato)');
+        caricaCompleanni();
+      });
+    }
     const rim = ev.target.closest('[data-comple-rimuovi]');
     if (rim) return conErrore(async () => {
       await api('/api/streamer/telegram/compleanni/' + encodeURIComponent(rim.dataset.compleRimuovi), { method: 'DELETE' });
@@ -1764,6 +1786,13 @@ async function caricaCompleanni() {
     <li><div class="testo-voce"><span class="domanda">🎂 ${esc(c.nome || '—')}</span>
       <span class="meta"> — ${fmtGiornoMese(c.giorno, c.mese)}${c.manuale ? ' · aggiunto a mano' : ''}</span></div>
       <button class="btn pericolo mini" data-comple-rimuovi="${esc(c.id)}">Rimuovi</button></li>`).join('');
+  const roster = (d.membri || []).map((m) => `
+    <div class="riga-flessibile membro-riga" data-membro-id="${esc(m.id)}" data-membro-nome="${esc(m.nome || '')}" style="margin-bottom:.4rem">
+      <span class="campo-largo">${esc(m.nome || '—')}${m.username ? ` <span class="meta">@${esc(m.username)}</span>` : ''}</span>
+      <input type="number" class="mem-gg" min="1" max="31" placeholder="GG" style="width:72px">
+      <input type="number" class="mem-mm" min="1" max="12" placeholder="MM" style="width:72px">
+      <button class="btn secondario mini" data-membro-add>Aggiungi</button>
+    </div>`).join('');
   box.innerHTML = `
     <div class="riga-interruttore">
       <label class="interruttore"><input type="checkbox" id="chk-compleanni-attivo" ${d.attivo ? 'checked' : ''}><span class="levetta"></span></label>
@@ -1777,7 +1806,17 @@ async function caricaCompleanni() {
     <hr class="separatore">
     <h3>Compleanni registrati (${(d.lista || []).length})</h3>
     <ul class="lista-voci">${lista || '<li class="vuoto">Nessuno ancora.</li>'}</ul>
-    <label class="campo">Aggiungi un compleanno a mano</label>
+
+    <hr class="separatore">
+    <h3>Membri del gruppo (${(d.membri || []).length})</h3>
+    <p class="suggerimento">L'elenco si riempie da chi <strong>scrive</strong> nel gruppo (Telegram non lascia leggere l'intera lista).
+    <button class="btn secondario mini" id="btn-membri-aggiorna">Carica amministratori</button>
+    Per vedere tutti quelli che scrivono, disattiva la <em>privacy</em> del bot su
+    <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a> (<code>/setprivacy → Disable</code>).</p>
+    ${roster || '<p class="vuoto">Ancora nessun membro. Falli scrivere nel gruppo o carica gli amministratori.</p>'}
+
+    <hr class="separatore">
+    <label class="campo">Aggiungi un compleanno a mano (senza tag)</label>
     <div class="riga-flessibile">
       <input type="text" id="inp-comple-nome" class="campo-largo" placeholder="Nome">
       <input type="number" id="inp-comple-giorno" min="1" max="31" placeholder="GG" style="width:80px">
