@@ -2031,7 +2031,7 @@ const EVENTI_TXT = {
 };
 const TRIGGER = [
   ['comando', 'Un comando in chat'],
-  ['parola', 'Una parola o frase in chat'],
+  ['parola', 'Una parola, frase o domanda in chat'],
   ['voce', 'Comando vocale (dal tuo PC)'],
   ['evento', 'Un evento del canale'],
   ['timer', 'A tempo (timer)'],
@@ -2309,15 +2309,23 @@ function disegnaCampiQuando(t) {
         </div>`;
     case 'parola':
       return `
-        <label class="campo" for="mod-testo-trigger">Parola o frase</label>
-        <input type="text" id="mod-testo-trigger" placeholder="es. buonanotte" value="${esc(t.testo || '')}">
+        <label class="campo" for="mod-testo-trigger">Parola, frase o domanda</label>
+        <input type="text" id="mod-testo-trigger" placeholder="es. come stai? · buonanotte · a che ora inizi" value="${esc(t.testo || '')}">
         <label class="campo" for="mod-modo">Come confrontarla</label>
         <select id="mod-modo">
-          <option value="contiene" ${t.modo === 'contiene' ? 'selected' : ''}>La contiene</option>
-          <option value="esatto" ${t.modo === 'esatto' ? 'selected' : ''}>È esatta</option>
-          <option value="inizia" ${t.modo === 'inizia' ? 'selected' : ''}>Inizia con</option>
+          <option value="contiene" ${t.modo === 'contiene' ? 'selected' : ''}>Compare dentro il messaggio</option>
+          <option value="esatto" ${t.modo === 'esatto' ? 'selected' : ''}>È esattamente il messaggio</option>
+          <option value="inizia" ${t.modo === 'inizia' ? 'selected' : ''}>Il messaggio inizia così</option>
         </select>
         <div class="riga-check" style="margin-top:.5rem">
+          <input type="checkbox" id="mod-punt" ${t.ignoraPunt !== false ? 'checked' : ''}>
+          <label for="mod-punt">Ignora la <b>punteggiatura</b> (così “come stai?” combacia con “come stai”)</label>
+        </div>
+        <div class="riga-check">
+          <input type="checkbox" id="mod-case" ${t.maiuscole ? 'checked' : ''}>
+          <label for="mod-case">Rispetta <b>maiuscole/minuscole</b> (di solito conviene lasciarlo spento)</label>
+        </div>
+        <div class="riga-check">
           <input type="checkbox" id="mod-telegram" ${moduloInModifica?.telegram ? 'checked' : ''}>
           <label for="mod-telegram">Abilita anche su <b>Telegram</b> — reagisce anche nel gruppo. Attiva il <em>bot interattivo</em> in Notifiche.</label>
         </div>`;
@@ -2473,6 +2481,8 @@ function leggiForm() {
   } else if (tipoT === 'parola') {
     trigger.testo = (g('mod-testo-trigger')?.value || '').trim();
     trigger.modo = g('mod-modo')?.value || 'contiene';
+    trigger.maiuscole = !!g('mod-case')?.checked;          // rispetta maiuscole/minuscole
+    trigger.ignoraPunt = g('mod-punt') ? !!g('mod-punt').checked : true;   // ignora la punteggiatura (default sì)
   } else if (tipoT === 'voce') {
     trigger.frasi = righe((g('mod-frasi-voce')?.value || '').toLowerCase());
   } else if (tipoT === 'evento') {
