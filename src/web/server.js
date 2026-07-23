@@ -89,6 +89,43 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // mai admin, nemmeno se gestisce il canale del founder (user.login = canale).
   const isAdmin = (user) => !!user && user.role !== 'moderatore' && config.adminLogins.includes(user.login);
 
+  // ── Identità & contesti (accesso unificato) ─────────────────────────────
+  // L'identità è la PERSONA (login Twitch), fissa per la sessione; `login` è il
+  // canale che sta gestendo ORA. Una stessa persona può gestire il proprio canale
+  // (da proprietario, se streamer approvato) e i canali che modera (da mod). Il
+  // ruolo si DERIVA dai contesti, così qualunque ingresso che prova l'identità
+  // (pass, passkey, login mod) dà accesso a tutto ciò a cui si ha diritto.
+  const identitaDi = (u) => String(u?.identita || u?.modLogin || u?.login || '').toLowerCase();
+
+  function contestiPer(identita) {
+    const l = String(identita || '').toLowerCase();
+    if (!l) return [];
+    const out = [];
+    const s = streamers.get(l);
+    if (s && s.status === 'approved') out.push({ canale: l, display: s.display || l, role: 'proprietario' });
+    for (const m of managers.attiviByLogin(l)) {
+      if (m.channel === l) continue;                 // il proprio canale è già incluso sopra
+      const st = streamers.get(m.channel);
+      out.push({ canale: m.channel, display: st?.display || m.channel, role: 'moderatore' });
+    }
+    return out;
+  }
+
+  // Contesto di default: preferisce il proprio canale (proprietario), poi il primo
+  // canale moderato. `preferito` forza un canale specifico (es. quello dell'invito).
+  function contestoDefault(contesti, preferito) {
+    if (preferito) { const c = contesti.find((x) => x.canale === preferito); if (c) return c; }
+    return contesti.find((x) => x.role === 'proprietario') || contesti[0] || null;
+  }
+
+  // Costruisce l'oggetto sessione per un contesto scelto, mantenendo l'identità.
+  function sessionePer(identita, identitaDisplay, ctx) {
+    const idl = String(identita).toLowerCase();
+    const u = { login: ctx.canale, display: ctx.display, role: ctx.role, identita: idl, identitaDisplay: identitaDisplay || idl };
+    if (ctx.role === 'moderatore') { u.modLogin = idl; u.modDisplay = u.identitaDisplay; }   // retrocompat
+    return u;
+  }
+
   // risposta "il sito non esiste": nessun indizio, nessun brand, nessun corpo utile
   const notFound = (res) => res.status(404).type('text/plain').send('Not Found');
 
@@ -287,7 +324,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // andryxify.it è la fonte di verità sull'abilitazione: lo registriamo
     // localmente come approvato (rispettando un eventuale on/off preesistente).
     streamers.upsertApproved(who.login, who.display, who.userId);
-    req.session.user = { login: who.login, display: who.display, role: 'proprietario' };
+    // identità = lo streamer; contesto di default = il proprio canale (proprietario),
+    // ma potrà passare anche ai canali che modera con lo switcher.
+    const contesti = contestiPer(who.login);
+    const ctx = contestoDefault(contesti, who.login) || { canale: who.login, display: who.display, role: 'proprietario' };
+    req.session.user = sessionePer(who.login, who.display, ctx);
     // kit di partenza: al primo ingresso è già tutto pronto (idempotente)
     seedStreamer(who.login);
 
@@ -359,24 +400,25 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       catch { /* sotto */ }
       if (!v?.login) return res.redirect('/mod?errore=validazione');
       const modLogin = String(v.login).toLowerCase();
+      const disp = v.display || modLogin;
 
-      let canale = null;
+      let preferito = null;
       if (mf.invito) {
         const inv = managers.byInvite(mf.invito);
         if (!inv) return res.redirect('/mod?errore=invito');
         if (inv.invite_expires && Date.now() > inv.invite_expires) return res.redirect('/mod?errore=scaduto');
         if (inv.login !== modLogin) return res.redirect('/mod?errore=account-diverso');
-        managers.attiva(inv.channel, modLogin, v.display || modLogin);
-        canale = inv.channel;
-      } else {
-        const attivi = managers.attiviByLogin(modLogin);
-        if (!attivi.length) return res.redirect('/mod?errore=nonmod');
-        canale = attivi[0].channel;                            // il più recente; poi lo switcher
+        managers.attiva(inv.channel, modLogin, disp);
+        preferito = inv.channel;                               // atterra sul canale dell'invito
       }
-      const st = streamers.get(canale);
-      managers.touch(canale, modLogin);
-      req.session.user = { login: canale, display: st?.display || canale, role: 'moderatore', modLogin, modDisplay: v.display || modLogin };
-      log.info(`login moderatore: @${modLogin} → gestisce #${canale}`);
+      // accesso unificato: l'identità dà accesso al proprio canale (se streamer
+      // approvato) e a tutti i canali moderati; poi si cambia con lo switcher.
+      const contesti = contestiPer(modLogin);
+      if (!contesti.length) return res.redirect('/mod?errore=nonmod');
+      const ctx = contestoDefault(contesti, preferito);
+      if (ctx.role === 'moderatore') managers.touch(ctx.canale, modLogin);
+      req.session.user = sessionePer(modLogin, disp, ctx);
+      log.info(`login: @${modLogin} → gestisce #${ctx.canale} (${ctx.role})`);
       return res.redirect('/');
     }
 
@@ -443,18 +485,21 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.json({ ok: true });
   }));
 
-  // Cambio canale gestito (switcher del moderatore).
-  app.post('/api/mod/cambia-canale', requireLogin, wrap(async (req, res) => {
+  // Cambio del canale gestito (switcher). Vale per chiunque: il proprietario può
+  // passare anche ai canali che modera e viceversa. Il ruolo sul nuovo canale è
+  // determinato dai contesti dell'identità → il sito capisce da sé chi sei lì.
+  const cambiaCanale = wrap(async (req, res) => {
     const u = currentUser(req);
-    if (u.role !== 'moderatore') return res.status(403).json({ errore: 'non applicabile' });
+    const ident = identitaDi(u);
     const ch = String(req.body?.channel || '').toLowerCase().trim();
-    const m = managers.get(ch, u.modLogin);
-    if (!m || m.status !== 'attivo') return res.status(403).json({ errore: 'non gestisci questo canale' });
-    const st = streamers.get(ch);
-    managers.touch(ch, u.modLogin);
-    req.session.user = { ...u, login: ch, display: st?.display || ch };
-    res.json({ ok: true });
-  }));
+    const ctx = contestiPer(ident).find((c) => c.canale === ch);
+    if (!ctx) return res.status(403).json({ errore: 'non gestisci questo canale' });
+    if (ctx.role === 'moderatore') managers.touch(ch, ident);
+    req.session.user = sessionePer(ident, u.identitaDisplay || u.modDisplay || u.display || ident, ctx);
+    res.json({ ok: true, ruolo: ctx.role, canale: ch });
+  });
+  app.post('/api/cambia-canale', requireLogin, cambiaCanale);
+  app.post('/api/mod/cambia-canale', requireLogin, cambiaCanale);   // alias retrocompatibile
 
   app.get('/auth/logout', (req, res) => {
     req.session = null;
@@ -471,16 +516,17 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // Vetrina pubblica: senza sessione niente dati reali, solo "nessun utente"
     // (la single-page mostra la vetrina/landing). Config e canali restano privati.
     if (!user) { res.json({ user: null }); return; }
-    const isMod = user?.role === 'moderatore';
+    const ident = identitaDi(user);
     res.json({
       user,
       isAdmin: isAdmin(user),
       ruolo: user?.role || null,
-      // per il moderatore: chi sta gestendo + gli altri canali che gestisce (switcher)
-      gestisce: isMod ? { canale: user.login, streamer: user.display || user.login } : null,
-      mieiCanali: isMod
-        ? managers.attiviByLogin(user.modLogin).map((m) => ({ canale: m.channel, display: streamers.get(m.channel)?.display || m.channel }))
-        : [],
+      identita: ident,
+      identitaDisplay: user.identitaDisplay || user.modDisplay || user.display || ident,
+      // chi sta gestendo ora + TUTTI i canali gestibili dall'identità, con ruolo
+      // (proprio canale da proprietario + canali moderati) → alimenta lo switcher.
+      gestisce: { canale: user.login, streamer: user.display || user.login },
+      mieiCanali: contestiPer(ident),
       missing: missingConfig(),
       status: manager.status(),
       streamer: user ? streamerSicuro(user.login) : null,
@@ -1164,43 +1210,46 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   }));
 
   // ---------------------------------------------------------- PASSKEY (WebAuthn)
-  // Si CREA solo da loggati (già entrati col pass); permette poi di RIENTRARE
-  // senza pass. Login (inizio/fine) è pubblico: è proprio come si rientra.
+  // Si CREA da loggati (proprietario O moderatore): la passkey è della PERSONA
+  // (la sua identità Twitch), non del canale. Al login ridà accesso a tutti i
+  // contesti a cui la persona ha diritto. Login (inizio/fine) è pubblico.
 
-  app.post('/api/passkey/registra/inizio', requireOwner, wrap(async (req, res) => {
+  app.post('/api/passkey/registra/inizio', requireLogin, wrap(async (req, res) => {
     const user = currentUser(req);
+    const ident = identitaDi(user);
+    const identDisp = user.identitaDisplay || user.modDisplay || user.display || ident;
     const challenge = webauthn.randomChallenge();
     req.session.pkReg = challenge;
     res.json({
       challenge,
       rp: { id: RP_ID, name: RP_NAME },
-      user: { id: webauthn.bufToB64url(Buffer.from(user.login)), name: user.login, displayName: user.display || user.login },
+      user: { id: webauthn.bufToB64url(Buffer.from(ident)), name: ident, displayName: identDisp },
       pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }, { type: 'public-key', alg: -8 }],
       authenticatorSelection: { residentKey: 'preferred', userVerification: 'preferred' },
-      excludeCredentials: passkeys.byLogin(user.login).map((p) => ({ id: p.cred_id, type: 'public-key' })),
+      excludeCredentials: passkeys.byLogin(ident).map((p) => ({ id: p.cred_id, type: 'public-key' })),
       timeout: 60000,
       attestation: 'none',
     });
   }));
 
-  app.post('/api/passkey/registra/fine', requireOwner, wrap(async (req, res) => {
-    const user = currentUser(req);
+  app.post('/api/passkey/registra/fine', requireLogin, wrap(async (req, res) => {
+    const ident = identitaDi(currentUser(req));
     const challenge = req.session.pkReg; delete req.session.pkReg;
     if (!challenge) return res.status(400).json({ errore: 'sessione scaduta, riprova' });
     const { attestationObject, clientDataJSON, nome } = req.body || {};
     const v = webauthn.verifyRegistration({ attestationObject, clientDataJSON, challenge, origin: ORIGIN, rpId: RP_ID });
     if (!v.ok) return res.status(400).json({ errore: v.errore });
     if (passkeys.byCredId(v.credId)) return res.status(400).json({ errore: 'passkey già registrata' });
-    passkeys.add({ login: user.login, credId: v.credId, publicKey: v.jwk, alg: v.alg, signCount: v.signCount, nome: String(nome || 'Passkey').slice(0, 40) });
+    passkeys.add({ login: ident, credId: v.credId, publicKey: v.jwk, alg: v.alg, signCount: v.signCount, nome: String(nome || 'Passkey').slice(0, 40) });
     res.json({ ok: true });
   }));
 
-  app.get('/api/passkey', requireOwner, wrap(async (req, res) => {
-    res.json(passkeys.byLogin(currentUser(req).login).map((p) => ({ id: p.id, nome: p.nome, created_at: p.created_at, last_used: p.last_used })));
+  app.get('/api/passkey', requireLogin, wrap(async (req, res) => {
+    res.json(passkeys.byLogin(identitaDi(currentUser(req))).map((p) => ({ id: p.id, nome: p.nome, created_at: p.created_at, last_used: p.last_used })));
   }));
 
-  app.delete('/api/passkey/:id', requireOwner, wrap(async (req, res) => {
-    passkeys.remove(currentUser(req).login, parseInt(req.params.id, 10) || 0);
+  app.delete('/api/passkey/:id', requireLogin, wrap(async (req, res) => {
+    passkeys.remove(identitaDi(currentUser(req)), parseInt(req.params.id, 10) || 0);
     res.json({ ok: true });
   }));
 
@@ -1222,11 +1271,14 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       jwk: cred.publicKey, alg: cred.alg, challenge, origin: ORIGIN, rpId: RP_ID, storedSignCount: cred.sign_count,
     });
     if (!v.ok) return res.status(400).json({ errore: v.errore });
-    const s = streamers.get(cred.login);
-    if (!s) return res.status(403).json({ errore: 'account non più abilitato' });
+    // cred.login = identità della persona; ricostruiamo i suoi contesti attuali
+    // (proprio canale + moderati). Se non ne ha più nessuno, accesso revocato.
+    const contesti = contestiPer(cred.login);
+    if (!contesti.length) return res.status(403).json({ errore: 'account non più abilitato' });
     passkeys.bumpCounter(id, v.newSignCount);
-    req.session.user = { login: cred.login, display: s.display || cred.login, role: 'proprietario' };
-    log.info(`login con passkey: @${cred.login}`);
+    const disp = streamers.get(cred.login)?.display || managers.attiviByLogin(cred.login)[0]?.display || cred.login;
+    req.session.user = sessionePer(cred.login, disp, contestoDefault(contesti));
+    log.info(`login con passkey: @${cred.login} → #${req.session.user.login} (${req.session.user.role})`);
     res.json({ ok: true });
   }));
 

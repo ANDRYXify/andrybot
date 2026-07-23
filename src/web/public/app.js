@@ -130,16 +130,31 @@ async function caricaStato() {
 // "andryx_demo") e servono solo a far vedere com'è fatta e come funziona la
 // dashboard, con una spiegazione per ogni sezione.
 
-// Stato finto: uno streamer approvato, permessi ok, con impostazioni e Telegram
-// già configurati così ogni scheda ha qualcosa da mostrare.
+// Nella demo la persona "Andryx" gestisce il proprio canale (da proprietario) e
+// ne modera un altro: così si vede anche lo switcher e il cambio di ruolo.
+const _DEMO_CANALI = [
+  { canale: 'andryx_demo', display: 'Andryx', role: 'proprietario' },
+  { canale: 'lucaplays', display: 'lucaplays', role: 'moderatore' },
+];
+let _demoCanale = 'andryx_demo';
+
+// Stato finto: una persona con impostazioni e Telegram già configurati, così ogni
+// scheda ha qualcosa da mostrare. Riflette il canale/ruolo attualmente scelto.
 function statoDemo() {
+  const ctx = _DEMO_CANALI.find((c) => c.canale === _demoCanale) || _DEMO_CANALI[0];
+  const mod = ctx.role === 'moderatore';
   return {
-    user: { login: 'andryx_demo', display: 'Andryx', avatar: '' },
-    ruolo: 'proprietario',
+    user: { login: ctx.canale, display: ctx.display, role: ctx.role, avatar: '',
+      identita: 'andryx_demo', identitaDisplay: 'Andryx',
+      ...(mod ? { modLogin: 'andryx_demo', modDisplay: 'Andryx' } : {}) },
+    ruolo: ctx.role,
+    identita: 'andryx_demo', identitaDisplay: 'Andryx',
+    mieiCanali: _DEMO_CANALI,
+    gestisce: { canale: ctx.canale, streamer: ctx.display },
     isAdmin: false,
     permessiOk: true, vipOk: true, moderazioneOk: true,
     knowledgeCount: 3,
-    status: { channels: ['andryx_demo'] },   // "in chat adesso"
+    status: { channels: [ctx.canale] },   // "in chat adesso"
     preaddestramento: { preaddestramento_ts: '2026-05-01T20:00:00Z', preaddestramento_esito: 'pagina profilo letta ("Andryx — creator e streamer da Genova · Twitch, YouTube, gaming"), 5 link social; gioco recente: Fortnite; profilo Twitch letto' },
     telegram: { configurato: true, gruppoOk: true, attivo: true, pinLive: true,
       interattivo: true, botUsername: 'andryx_live_bot', gruppo: 'Community di Andryx', messaggio: '' },
@@ -171,6 +186,12 @@ function apiDemo(percorso, opzioni = {}) {
   if (via === '/api/me') return Promise.resolve(statoDemo());
   if (via === '/api/moderatori') return Promise.resolve({ invito: 'https://bot.andryxify.it/mod?token=demo' });
   if (via === '/api/streamer/apikey') return Promise.resolve({ apikey: 'demo_' + 'x'.repeat(24) });
+  if (via === '/api/cambia-canale' || via === '/api/mod/cambia-canale') {
+    const ch = opzioni.body?.channel;
+    if (_DEMO_CANALI.some((c) => c.canale === ch)) _demoCanale = ch;
+    const ctx = _DEMO_CANALI.find((c) => c.canale === _demoCanale);
+    return Promise.resolve({ ok: true, ruolo: ctx.role, canale: ctx.canale });
+  }
   if (via.endsWith('/prova')) { toast('In demo non invio davvero in chat 😊'); return Promise.resolve({ ok: true }); }
   return Promise.resolve({ ok: true, demo: true });
 }
@@ -404,30 +425,33 @@ function rivelaCarte(scope = document) {
 function renderAreaUtente() {
   if (!stato.user) { areaUtente.innerHTML = ''; return; }
 
-  // Moderatore: mostra il suo nome + il canale che sta gestendo, con lo switcher
-  // se ne gestisce più d'uno (come il selettore canale di Nightbot).
-  if (stato.ruolo === 'moderatore') {
-    const canali = stato.mieiCanali || [];
-    const switcher = canali.length > 1
-      ? `<select class="chip-utente" id="switch-canale" title="Cambia canale gestito">
-           ${canali.map((c) => `<option value="${esc(c.canale)}" ${c.canale === stato.user.login ? 'selected' : ''}>gestisci @${esc(c.display)}</option>`).join('')}
-         </select>`
-      : `<span class="chip-utente">gestisci <strong>@${esc(stato.gestisce?.streamer || stato.user.login)}</strong></span>`;
-    areaUtente.innerHTML = `
-      <span class="chip-utente">${esc(stato.user.modDisplay || 'moderatore')} · <strong>mod</strong></span>
-      ${switcher}
-      <a class="btn secondario mini" href="/auth/logout">Esci</a>`;
-    document.getElementById('switch-canale')?.addEventListener('change', (ev) => conErrore(async () => {
-      await api('/api/mod/cambia-canale', { method: 'POST', body: { channel: ev.target.value } });
-      stato = await api('/api/me'); render();
-      toast('Ora gestisci @' + (stato.gestisce?.streamer || stato.user.login));
-    }));
-    return;
+  // Identità della persona (fissa) + il canale che sta gestendo ora. Se può
+  // gestire più canali (il proprio + quelli che modera) mostra uno switcher che
+  // riporta il RUOLO per canale: cambiando canale il sito capisce da sé chi sei.
+  const canali = stato.mieiCanali || [];
+  const ident = esc(stato.identitaDisplay || stato.user.identitaDisplay || stato.user.modDisplay || stato.user.display || 'tu');
+  const attuale = stato.user.login;
+  const etichetta = (c) => (c.role === 'proprietario' ? 'il mio canale @' : 'moderi @') + c.display;
+
+  let centro = '';
+  if (canali.length > 1) {
+    centro = `<select class="chip-utente" id="switch-canale" title="Cambia canale">
+      ${canali.map((c) => `<option value="${esc(c.canale)}" ${c.canale === attuale ? 'selected' : ''}>${esc(etichetta(c))}</option>`).join('')}
+    </select>`;
+  } else if (stato.ruolo === 'moderatore') {
+    centro = `<span class="chip-utente">moderi <strong>@${esc(stato.user.display || attuale)}</strong></span>`;
   }
 
   areaUtente.innerHTML = `
-    <span class="chip-utente">ciao, <strong>${esc(stato.user.display)}</strong></span>
+    <span class="chip-utente">ciao, <strong>${ident}</strong></span>
+    ${centro}
     <a class="btn secondario mini" href="/auth/logout">Esci</a>`;
+
+  document.getElementById('switch-canale')?.addEventListener('change', (ev) => conErrore(async () => {
+    await api('/api/cambia-canale', { method: 'POST', body: { channel: ev.target.value } });
+    stato = await api('/api/me'); render();
+    toast('Ora gestisci @' + (stato.user.display || stato.user.login) + (stato.ruolo === 'moderatore' ? ' come moderatore' : ' come proprietario'));
+  }));
 }
 
 // ------------------------------------------------------------------ viste "semplici"
@@ -707,8 +731,8 @@ function pannelloStato() {
     <div class="carta evidenziata">
       <h2>Stai gestendo il canale di @${esc(stato.gestisce?.streamer || login)} 🛠️</h2>
       <p>Sei entrato come <strong class="primo-piano">moderatore</strong>: puoi occuparti di comandi, moduli,
-      effetti, giochi, notifiche, regole e memoria. Le cose da proprietario — permessi Twitch, elenco moderatori
-      e passkey — restano a chi possiede il canale.</p>
+      effetti, giochi, notifiche, regole e memoria. Le cose da proprietario — permessi Twitch e l'elenco dei
+      moderatori — restano a chi possiede il canale.</p>
     </div>`;
 
   // La card "concedi permessi" la vede solo il proprietario (un mod non li tocca).
@@ -788,22 +812,23 @@ function pannelloStato() {
       <p class="suggerimento">Su iPhone/iPad: apri in Safari → Condividi → “Aggiungi a Home”. Su Android/PC (Chrome):
       usa il bottone qui sopra o l’icona “installa” nella barra indirizzi.</p>
     </div>
-    ${proprietario ? `
     <div class="carta">
       <h2>Passkey 🔑</h2>
       <p>Crea una <strong class="primo-piano">passkey</strong> (impronta, volto o PIN): così rientri al volo, in
-      modo sicuro, <strong class="primo-piano">senza ripassare ogni volta dal sito</strong>.</p>
+      modo sicuro, <strong class="primo-piano">senza ripassare ogni volta dal sito</strong>.
+      ${proprietario ? '' : 'Vale per il tuo account: ti riporta ai canali che gestisci.'}</p>
       <p class="spazio-sopra">
         <button class="btn" id="btn-crea-passkey">Crea una passkey</button>
       </p>
       <h3>Le tue passkey</h3>
       <ul class="lista-voci" id="lista-passkey"><li class="vuoto">Caricamento…</li></ul>
     </div>
+    ${proprietario ? `
     <div class="carta">
       <h2>Moderatori 👥</h2>
       <p>Fai aiutare qualcuno di cui ti fidi a gestire il bot. Gli mandi un <strong class="primo-piano">link
       d'invito</strong>: accede con Twitch (così sappiamo che è davvero lui) e può occuparsi di tutto,
-      <strong class="primo-piano">tranne</strong> le cose da proprietario — permessi Twitch, questo elenco e le passkey.</p>
+      <strong class="primo-piano">tranne</strong> le cose da proprietario — permessi Twitch e questo elenco.</p>
       <label class="campo" for="inp-mod-login">Username Twitch del moderatore</label>
       <div class="riga-flessibile">
         <span class="suggerimento">@</span>
