@@ -1777,7 +1777,12 @@ function riassuntoModulo(m) {
 }
 function riassuntoQuando(t) {
   switch (t.tipo) {
-    case 'comando': return t.comando ? `scrivono !${t.comando}` : 'scrivono un comando';
+    case 'comando': {
+      if (!t.comando) return 'scrivono un comando';
+      const a = Array.isArray(t.alias) ? t.alias : (typeof t.alias === 'string' ? t.alias.split(/[\s,]+/) : []);
+      const alist = a.map((x) => String(x).trim().replace(/^!/, '')).filter(Boolean);
+      return `scrivono !${t.comando}` + (alist.length ? ` (o ${alist.map((x) => '!' + x).join(', ')})` : '');
+    }
     case 'parola': {
       const modo = { contiene: 'compare', esatto: 'è esattamente', inizia: 'inizia con' }[t.modo] || 'compare';
       return t.testo ? `in chat ${modo} "${t.testo}"` : 'compare una parola';
