@@ -162,18 +162,31 @@ export class ModulesEngine {
     return null;
   }
 
-  // Verifica il trigger 'parola' secondo il modo (contiene | esatto | inizia).
-  _matchParola(tr, testo, msg, channel, livello) {
-    const needle = norm(tr.testo).trim();
-    if (!needle) return null;
-    const hay = norm(testo);
+  // Normalizza un testo per il confronto del trigger 'parola', secondo le opzioni:
+  //  • tr.maiuscole = true  → rispetta maiuscole/minuscole (di default no)
+  //  • tr.ignoraPunt !== false → ignora la punteggiatura (di default sì)
+  _preparaConfronto(s, tr) {
+    let x = String(s || '');
+    if (!tr.maiuscole) x = x.toLowerCase();
+    if (tr.ignoraPunt !== false) x = x.replace(/[^\p{L}\p{N}\s]/gu, ' ');
+    return x.replace(/\s+/g, ' ').trim();
+  }
+
+  // Vero se `testo` combacia col trigger 'parola' (modo + opzioni case/punt).
+  _confrontaParola(tr, testo) {
+    const needle = this._preparaConfronto(tr.testo, tr);
+    if (!needle) return false;
+    const hay = this._preparaConfronto(testo, tr);
     const modo = tr.modo || 'contiene';
-    let ok;
-    if (modo === 'esatto') ok = hay.trim() === needle;
-    else if (modo === 'inizia') ok = hay.trimStart().startsWith(needle);
-    else ok = hay.includes(needle);
-    if (!ok) return null;
-    const parole = testo.trim();
+    if (modo === 'esatto') return hay === needle;
+    if (modo === 'inizia') return hay.startsWith(needle);
+    return hay.includes(needle);
+  }
+
+  // Verifica il trigger 'parola' (frase/domanda) secondo modo + opzioni.
+  _matchParola(tr, testo, msg, channel, livello) {
+    if (!this._confrontaParola(tr, testo)) return null;
+    const parole = String(testo).trim();
     const args = parole.length ? parole.split(/\s+/) : [];
     return this._ctxDaMessaggio(msg, channel, livello, args, parole);
   }
@@ -325,17 +338,10 @@ export class ModulesEngine {
     return null;
   }
 
-  // Match del trigger 'parola' su Telegram (contiene | esatto | inizia).
+  // Match del trigger 'parola' su Telegram (stessa logica di Twitch: modo +
+  // opzioni maiuscole/punteggiatura).
   _matchParolaTelegram(tr, testo, ch, utente) {
-    const needle = norm(tr.testo).trim();
-    if (!needle) return null;
-    const hay = norm(testo);
-    const modo = tr.modo || 'contiene';
-    let ok;
-    if (modo === 'esatto') ok = hay.trim() === needle;
-    else if (modo === 'inizia') ok = hay.trimStart().startsWith(needle);
-    else ok = hay.includes(needle);
-    if (!ok) return null;
+    if (!this._confrontaParola(tr, testo)) return null;
     const grezzo = String(testo).trim();
     return this._ctxTelegram(ch, utente, grezzo ? grezzo.split(/\s+/) : [], grezzo);
   }
