@@ -2305,7 +2305,7 @@ function disegnaCampiQuando(t) {
         </div>
         <div class="riga-check" style="margin-top:.4rem">
           <input type="checkbox" id="mod-telegram" ${moduloInModifica?.telegram ? 'checked' : ''}>
-          <label for="mod-telegram">Abilita anche su <b>Telegram</b> — risponde nel gruppo (lì il <code>!</code> non serve). Attiva il <em>bot interattivo</em> in Notifiche.</label>
+          <label for="mod-telegram">Abilita anche su <b>Telegram</b> — risponde nel gruppo anche se la parola è <b>dentro una frase</b> (il <code>!</code> non serve). Attiva il <em>bot interattivo</em> in Notifiche.</label>
         </div>`;
     case 'parola':
       return `
@@ -2316,7 +2316,11 @@ function disegnaCampiQuando(t) {
           <option value="contiene" ${t.modo === 'contiene' ? 'selected' : ''}>La contiene</option>
           <option value="esatto" ${t.modo === 'esatto' ? 'selected' : ''}>È esatta</option>
           <option value="inizia" ${t.modo === 'inizia' ? 'selected' : ''}>Inizia con</option>
-        </select>`;
+        </select>
+        <div class="riga-check" style="margin-top:.5rem">
+          <input type="checkbox" id="mod-telegram" ${moduloInModifica?.telegram ? 'checked' : ''}>
+          <label for="mod-telegram">Abilita anche su <b>Telegram</b> — reagisce anche nel gruppo. Attiva il <em>bot interattivo</em> in Notifiche.</label>
+        </div>`;
     case 'voce': {
       const frasi = (Array.isArray(t.frasi) && t.frasi.length) ? t.frasi : ['clippa', 'salva la clip'];
       return `

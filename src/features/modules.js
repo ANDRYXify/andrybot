@@ -262,9 +262,9 @@ export class ModulesEngine {
   }
 
   // ============================================================ ingresso: TELEGRAM
-  // Un messaggio è arrivato nel gruppo Telegram: cerca un modulo con innesco
-  // 'comando' abilitato per Telegram che combacia (SENZA bisogno del !) ed
-  // esegue solo le sue azioni "messaggio", inviandole con `invia`.
+  // Un messaggio è arrivato nel gruppo Telegram: cerca un modulo abilitato per
+  // Telegram che combacia ed esegue solo le sue azioni "messaggio". Gestisce
+  // sia gli inneschi 'comando' (anche dentro una frase) sia 'parola'.
   async eseguiTelegram(channel, testo, invia, { utente = '' } = {}) {
     try {
       const ch = norm(channel);
@@ -273,8 +273,9 @@ export class ModulesEngine {
       for (const modulo of modulesDb.list(ch)) {
         if (!modulo.attivo || !modulo.telegram) continue;
         const tr = modulo.trigger || {};
-        if (tr.tipo !== 'comando') continue;
-        const ctx = this._matchComandoTelegram(tr, t, ch, utente);
+        let ctx = null;
+        if (tr.tipo === 'comando') ctx = this._matchComandoTelegram(tr, t, ch, utente);
+        else if (tr.tipo === 'parola') ctx = this._matchParolaTelegram(tr, t, ch, utente);
         if (!ctx) continue;
         await this.esegui(modulo, ctx, invia, { soloMessaggi: true });
         return true;   // primo match: basta (niente risposte doppie)
@@ -286,31 +287,57 @@ export class ModulesEngine {
     }
   }
 
-  // Match del comando su Telegram: accetta "/cmd", "!cmd" e la parola secca
-  // "cmd" (il ! NON è richiesto). Gestisce "/cmd@nomebot" e gli argomenti.
+  // Contesto per un modulo eseguito da Telegram (nessun ruolo → tier passano).
+  _ctxTelegram(ch, utente, args, argsRaw) {
+    return {
+      channel: ch, user: utente || '', userLogin: '', display: utente || '',
+      args: args || [], argsRaw: argsRaw || '', evento: null,
+      _livello: TIER_SCALA.mod, _vars: {},
+    };
+  }
+
+  // Match del comando su Telegram. Combacia se:
+  //  • il messaggio inizia con /cmd, !cmd o "cmd ..." (con argomenti), oppure
+  //  • la parola-comando (o un alias) compare DENTRO la frase, come parola intera
+  //    (es. "mandami i social" fa scattare il comando "social").
+  // Gestisce "/cmd@nomebot".
   _matchComandoTelegram(tr, testo, ch, utente) {
     const t = String(testo).trim();
     if (!t) return null;
     const aliasList = Array.isArray(tr.alias) ? tr.alias : (typeof tr.alias === 'string' ? tr.alias.split(/[\s,]+/) : []);
     const comandi = [tr.comando, ...aliasList].map((c) => norm(c).replace(/^[/!]/, '').trim()).filter(Boolean);
     if (!comandi.length) return null;
+
+    // forma esplicita in testa: /cmd, !cmd, oppure "cmd argomenti"
     const conPrefisso = /^[/!]/.test(t);
     const corpo = conPrefisso ? t.slice(1) : t;
     const primo = norm(corpo.split(/\s+/)[0] || '').split('@')[0];
-    if (!comandi.includes(primo)) return null;
-    const resto = corpo.replace(/^\S+\s*/, '');
-    const args = resto.length ? resto.split(/\s+/) : [];
-    return {
-      channel: ch,
-      user: utente || '',
-      userLogin: '',
-      display: utente || '',
-      args,
-      argsRaw: resto,
-      evento: null,
-      _livello: TIER_SCALA.mod,   // su Telegram non ci sono ruoli → le condizioni tier passano
-      _vars: {},
-    };
+    if (comandi.includes(primo)) {
+      const resto = corpo.replace(/^\S+\s*/, '');
+      return this._ctxTelegram(ch, utente, resto.length ? resto.split(/\s+/) : [], resto);
+    }
+
+    // forma "dentro la frase": una parola-comando compare come parola intera
+    const parole = norm(t).split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+    if (comandi.some((c) => parole.includes(c))) {
+      return this._ctxTelegram(ch, utente, [], '');
+    }
+    return null;
+  }
+
+  // Match del trigger 'parola' su Telegram (contiene | esatto | inizia).
+  _matchParolaTelegram(tr, testo, ch, utente) {
+    const needle = norm(tr.testo).trim();
+    if (!needle) return null;
+    const hay = norm(testo);
+    const modo = tr.modo || 'contiene';
+    let ok;
+    if (modo === 'esatto') ok = hay.trim() === needle;
+    else if (modo === 'inizia') ok = hay.trimStart().startsWith(needle);
+    else ok = hay.includes(needle);
+    if (!ok) return null;
+    const grezzo = String(testo).trim();
+    return this._ctxTelegram(ch, utente, grezzo ? grezzo.split(/\s+/) : [], grezzo);
   }
 
   // ============================================================ ingresso: EVENTI
