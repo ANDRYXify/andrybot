@@ -1610,6 +1610,18 @@ function gestisciClicEditor(ev) {
   }
   const rim = ev.target.closest('[data-rimuovi-azione]');
   if (rim) { ev.preventDefault(); rim.closest('.azione-riga')?.remove(); aggiornaRiassunto(); return; }
+  // caselle delle frasi-trigger (trigger 'parola'): aggiungi / rimuovi
+  if (ev.target.closest('[data-aggiungi-frase]')) {
+    ev.preventDefault();
+    document.getElementById('lista-frasi-trigger')?.insertAdjacentHTML('beforeend',
+      '<div class="frase-trigger riga-flessibile" style="margin-bottom:.4rem">'
+      + '<input type="text" class="mod-testo-trigger campo-largo" placeholder="es. come stai?">'
+      + '<button type="button" class="btn pericolo mini" data-rimuovi-frase title="Rimuovi">×</button></div>');
+    aggiornaRiassunto();
+    return;
+  }
+  const rimF = ev.target.closest('[data-rimuovi-frase]');
+  if (rimF) { ev.preventDefault(); rimF.closest('.frase-trigger')?.remove(); aggiornaRiassunto(); return; }
   const su = ev.target.closest('[data-su]');
   if (su) {
     ev.preventDefault();
@@ -2082,7 +2094,11 @@ function riassuntoQuando(t) {
     }
     case 'parola': {
       const modo = { contiene: 'compare', esatto: 'è esattamente', inizia: 'inizia con' }[t.modo] || 'compare';
-      return t.testo ? `in chat ${modo} "${t.testo}"` : 'compare una parola';
+      const frasi = (Array.isArray(t.testi) && t.testi.length) ? t.testi : (t.testo ? [t.testo] : []);
+      if (!frasi.length) return 'compare una parola';
+      const primi = frasi.slice(0, 2).map((x) => `"${x}"`).join(' o ');
+      const extra = frasi.length > 2 ? ` (+${frasi.length - 2})` : '';
+      return `in chat ${modo} ${primi}${extra}`;
     }
     case 'voce': {
       const f = (Array.isArray(t.frasi) ? t.frasi : []).filter(Boolean);
@@ -2307,11 +2323,19 @@ function disegnaCampiQuando(t) {
           <input type="checkbox" id="mod-telegram" ${moduloInModifica?.telegram ? 'checked' : ''}>
           <label for="mod-telegram">Abilita anche su <b>Telegram</b> — risponde nel gruppo anche se la parola è <b>dentro una frase</b> (il <code>!</code> non serve). Attiva il <em>bot interattivo</em> in Notifiche.</label>
         </div>`;
-    case 'parola':
+    case 'parola': {
+      const frasi = (Array.isArray(t.testi) && t.testi.length) ? t.testi : (t.testo ? [t.testo] : ['']);
+      const caselle = frasi.map((f) => `
+        <div class="frase-trigger riga-flessibile" style="margin-bottom:.4rem">
+          <input type="text" class="mod-testo-trigger campo-largo" placeholder="es. come stai? · buonanotte · a che ora inizi?" value="${esc(f)}">
+          <button type="button" class="btn pericolo mini" data-rimuovi-frase title="Rimuovi">×</button>
+        </div>`).join('');
       return `
-        <label class="campo" for="mod-testo-trigger">Parola, frase o domanda</label>
-        <input type="text" id="mod-testo-trigger" placeholder="es. come stai? · buonanotte · a che ora inizi" value="${esc(t.testo || '')}">
-        <label class="campo" for="mod-modo">Come confrontarla</label>
+        <label class="campo">Parole, frasi o domande che fanno scattare il modulo</label>
+        <p class="suggerimento" style="margin-top:0">Una per casella. Possono essere frasi intere (niente più divisione a virgole). Basta che <b>una</b> combaci.</p>
+        <div id="lista-frasi-trigger">${caselle}</div>
+        <p><button type="button" class="btn secondario mini" data-aggiungi-frase>+ Aggiungi frase</button></p>
+        <label class="campo" for="mod-modo">Come confrontarle</label>` + `
         <select id="mod-modo">
           <option value="contiene" ${t.modo === 'contiene' ? 'selected' : ''}>Compare dentro il messaggio</option>
           <option value="esatto" ${t.modo === 'esatto' ? 'selected' : ''}>È esattamente il messaggio</option>
@@ -2329,6 +2353,7 @@ function disegnaCampiQuando(t) {
           <input type="checkbox" id="mod-telegram" ${moduloInModifica?.telegram ? 'checked' : ''}>
           <label for="mod-telegram">Abilita anche su <b>Telegram</b> — reagisce anche nel gruppo. Attiva il <em>bot interattivo</em> in Notifiche.</label>
         </div>`;
+    }
     case 'voce': {
       const frasi = (Array.isArray(t.frasi) && t.frasi.length) ? t.frasi : ['clippa', 'salva la clip'];
       return `
@@ -2479,7 +2504,9 @@ function leggiForm() {
     trigger.alias = (g('mod-alias')?.value || '').split(/[\s,]+/).map((x) => x.trim().replace(/^!/, '')).filter(Boolean);
     trigger.senzaBang = !!g('mod-senza-bang')?.checked;
   } else if (tipoT === 'parola') {
-    trigger.testo = (g('mod-testo-trigger')?.value || '').trim();
+    // una casella per frase: NIENTE split su virgole → le frasi restano intere
+    trigger.testi = [...document.querySelectorAll('#lista-frasi-trigger .mod-testo-trigger')]
+      .map((i) => i.value.trim()).filter(Boolean);
     trigger.modo = g('mod-modo')?.value || 'contiene';
     trigger.maiuscole = !!g('mod-case')?.checked;          // rispetta maiuscole/minuscole
     trigger.ignoraPunt = g('mod-punt') ? !!g('mod-punt').checked : true;   // ignora la punteggiatura (default sì)
