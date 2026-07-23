@@ -34,6 +34,25 @@ function nomeMoneta(channel) {
   return (n && String(n).trim()) || 'monete';
 }
 
+// Configurazione punti/classifica per canale (personalizzabile dalla dashboard).
+// Valori di default = quelli storici, così i canali esistenti non cambiano nulla.
+const PUNTI_DEFAULT = { perMessaggio: 2, ogniSecondi: 60, trivia: 25, duello: 15, slotCosto: 10, slotVinci: 200, slotCoppia: 20, topN: 5 };
+function numClamp(v, def, lo, hi) { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : def; }
+function cfgPunti(channel) {
+  const p = streamers.get(channel)?.settings?.punti || {};
+  return {
+    perMessaggio: numClamp(p.perMessaggio, PUNTI_DEFAULT.perMessaggio, 0, 1000),
+    ogniSecondi:  numClamp(p.ogniSecondi,  PUNTI_DEFAULT.ogniSecondi, 5, 3600),
+    trivia:       numClamp(p.trivia,       PUNTI_DEFAULT.trivia, 0, 100000),
+    duello:       numClamp(p.duello,       PUNTI_DEFAULT.duello, 0, 100000),
+    slotCosto:    numClamp(p.slotCosto,    PUNTI_DEFAULT.slotCosto, 0, 100000),
+    slotVinci:    numClamp(p.slotVinci,    PUNTI_DEFAULT.slotVinci, 0, 1000000),
+    slotCoppia:   numClamp(p.slotCoppia,   PUNTI_DEFAULT.slotCoppia, 0, 100000),
+    topN:         numClamp(p.topN,         PUNTI_DEFAULT.topN, 3, 10),
+  };
+}
+const medaglia = (i) => ['🥇', '🥈', '🥉'][i] || `${i + 1}°`;
+
 // --------------------------------------------------------- monete: accredito passivo
 // Chi chatta guadagna qualche moneta (throttle 60s per persona).
 export function accredita(msg) {
@@ -42,10 +61,12 @@ export function accredita(msg) {
     const u = String(msg.user || '').toLowerCase();
     if (!u || u.startsWith('[')) return;
     if (!attivi(msg.channel)) return;
+    const c = cfgPunti(msg.channel);
+    if (c.perMessaggio <= 0) return;
     const k = msg.channel + '|' + u;
-    if (Date.now() - (ultimoAccredito.get(k) || 0) < 60_000) return;
+    if (Date.now() - (ultimoAccredito.get(k) || 0) < c.ogniSecondi * 1000) return;
     ultimoAccredito.set(k, Date.now());
-    points.add(msg.channel, u, 2);
+    points.add(msg.channel, u, c.perMessaggio);
   } catch { /* niente */ }
 }
 
@@ -109,7 +130,7 @@ export function tryGame(msg, say) {
         const risposta = norm(msg.text);
         if (round.answers.some((a) => risposta === a || risposta.split(' ').includes(a))) {
           triviaRound.delete(channel);
-          const premio = 25;
+          const premio = cfgPunti(channel).trivia;
           points.add(channel, msg.user, premio);
           say(`🧠 Esatto ${nome}! La risposta era "${round.answers[0]}". +${premio} ${moneta()}!`);
           return true;
@@ -164,22 +185,24 @@ export function tryGame(msg, say) {
 
       case 'classifica':
       case 'top': {
-        const top = points.top(channel, 5);
+        const top = points.top(channel, cfgPunti(channel).topN);
         if (!top.length) { say(`Nessuno ha ancora ${moneta()}: chattate e giocate! 🎮`); return true; }
-        const riga = top.map((r, i) => `${['🥇', '🥈', '🥉', '4°', '5°'][i]} ${r.user} (${r.monete})`).join('  ');
+        const riga = top.map((r, i) => `${medaglia(i)} ${r.user} (${r.monete})`).join('  ');
         say(`🏆 Classifica ${moneta()}: ${riga}`);
         return true;
       }
 
       case 'slot': {
         if (inCooldown(channel + '|slot|' + msg.user, 5000)) return true;
-        const costo = 10;
+        const cp = cfgPunti(channel);
+        const costo = cp.slotCosto;
         if (points.get(channel, msg.user) < costo) { say(`🎰 Ti servono ${costo} ${moneta()} per giocare, ${nome}. Chatta un po' e torna!`); return true; }
         points.add(channel, msg.user, -costo);
         const r = [scegli(SLOT_SIMBOLI), scegli(SLOT_SIMBOLI), scegli(SLOT_SIMBOLI)];
         let vincita = 0, msgWin = '';
-        if (r[0] === r[1] && r[1] === r[2]) { vincita = r[0] === '💎' ? 200 : r[0] === '7️⃣' ? 150 : 80; msgWin = ' JACKPOT!! 🎉'; }
-        else if (r[0] === r[1] || r[1] === r[2] || r[0] === r[2]) { vincita = 20; msgWin = ' bella coppia!'; }
+        // tris: 💎 = vincita piena, 7️⃣ = 75%, altro = 40% (scala su slotVinci)
+        if (r[0] === r[1] && r[1] === r[2]) { vincita = r[0] === '💎' ? cp.slotVinci : r[0] === '7️⃣' ? Math.round(cp.slotVinci * 0.75) : Math.round(cp.slotVinci * 0.4); msgWin = ' JACKPOT!! 🎉'; }
+        else if (r[0] === r[1] || r[1] === r[2] || r[0] === r[2]) { vincita = cp.slotCoppia; msgWin = ' bella coppia!'; }
         if (vincita) points.add(channel, msg.user, vincita);
         say(`🎰 [ ${r.join(' | ')} ] ${vincita ? `${nome} vince ${vincita} ${moneta()}!${msgWin}` : `niente, ritenta ${nome}!`}`);
         return true;
@@ -193,7 +216,7 @@ export function tryGame(msg, say) {
         if (inCooldown(channel + '|duello', 15000)) { say('⚔️ Un duello alla volta, aspettate un attimo!'); return true; }
         const vince = Math.random() < 0.5;
         const a = vince ? nome : sfidato, b = vince ? sfidato : nome;
-        const premio = 15;
+        const premio = cfgPunti(channel).duello;
         points.add(channel, vince ? msg.user : sfidato, premio);
         say('⚔️ ' + scegli(DUELLO_ESITI).replace('{a}', a).replace('{b}', b) + ` (+${premio} ${moneta()})`);
         return true;

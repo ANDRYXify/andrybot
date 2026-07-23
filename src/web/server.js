@@ -776,6 +776,22 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (b.giochi !== undefined) out.giochi = !!b.giochi;
     if (b.promoSocial !== undefined) out.promoSocial = !!b.promoSocial;
     if (b.nomeMonete !== undefined) out.nomeMonete = String(b.nomeMonete).trim().slice(0, 20);
+    // personalizzazione punti/classifica: quanti punti per messaggio, premi dei
+    // giochi, quanti in classifica. Valori limitati a range sensati.
+    if (b.punti !== undefined) {
+      const p = b.punti || {};
+      const c = (v, def, lo, hi) => { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : def; };
+      out.punti = {
+        perMessaggio: c(p.perMessaggio, 2, 0, 1000),
+        ogniSecondi:  c(p.ogniSecondi, 60, 5, 3600),
+        trivia:       c(p.trivia, 25, 0, 100000),
+        duello:       c(p.duello, 15, 0, 100000),
+        slotCosto:    c(p.slotCosto, 10, 0, 100000),
+        slotVinci:    c(p.slotVinci, 200, 0, 1000000),
+        slotCoppia:   c(p.slotCoppia, 20, 0, 100000),
+        topN:         c(p.topN, 5, 3, 10),
+      };
+    }
     // antispam: elimina spam/link e timeout ai recidivi
     if (b.antispam !== undefined) {
       const a = b.antispam || {};

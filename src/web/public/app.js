@@ -81,6 +81,7 @@ function impostazioni() {
     giochi: s.giochi !== false,
     promoSocial: s.promoSocial !== false,
     nomeMonete: (typeof s.nomeMonete === 'string' && s.nomeMonete.trim()) || 'monete',
+    punti: { perMessaggio: 2, ogniSecondi: 60, trivia: 25, duello: 15, slotCosto: 10, slotVinci: 200, slotCoppia: 20, topN: 5, ...(s.punti && typeof s.punti === 'object' ? s.punti : {}) },
     premioVip: (s.premioVip && typeof s.premioVip === 'object') ? s.premioVip : { attivo: false, periodo: 'settimana', quanti: 1 },
     antispam: (s.antispam && typeof s.antispam === 'object') ? s.antispam : {},
     tiktok: (s.tiktok && typeof s.tiktok === 'object') ? s.tiktok : { username: '', attivo: false, annunciaChat: false, messaggio: '' },
@@ -1243,6 +1244,23 @@ function pannelloGiochi() {
       <p class="spazio-sopra"><button class="btn" id="btn-salva-giochi">Salva</button></p>
     </div>
     <div class="carta">
+      <h2>Punti & classifica 🏅</h2>
+      <p>Decidi quanti <strong class="primo-piano">${esc(s.nomeMonete)}</strong> si guadagnano e i premi dei giochi.
+      La classifica <code>!classifica</code> mostra i primi in cima.</p>
+      <div class="griglia-punti">
+        <label class="campo-num">Punti per messaggio<input type="number" id="pt-perMessaggio" min="0" max="1000" value="${s.punti.perMessaggio}"></label>
+        <label class="campo-num">…ogni quanti secondi<input type="number" id="pt-ogniSecondi" min="5" max="3600" value="${s.punti.ogniSecondi}"></label>
+        <label class="campo-num">Premio trivia<input type="number" id="pt-trivia" min="0" max="100000" value="${s.punti.trivia}"></label>
+        <label class="campo-num">Premio duello<input type="number" id="pt-duello" min="0" max="100000" value="${s.punti.duello}"></label>
+        <label class="campo-num">Slot: costo giocata<input type="number" id="pt-slotCosto" min="0" max="100000" value="${s.punti.slotCosto}"></label>
+        <label class="campo-num">Slot: vincita tris<input type="number" id="pt-slotVinci" min="0" max="1000000" value="${s.punti.slotVinci}"></label>
+        <label class="campo-num">Slot: vincita coppia<input type="number" id="pt-slotCoppia" min="0" max="100000" value="${s.punti.slotCoppia}"></label>
+        <label class="campo-num">Quanti in classifica<input type="number" id="pt-topN" min="3" max="10" value="${s.punti.topN}"></label>
+      </div>
+      <p class="suggerimento">“Punti per messaggio” a 0 = nessun guadagno passivo dal chattare. Lo slot tris scala su questo valore (💎 pieno, 7️⃣ 75%, resto 40%).</p>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-punti">Salva punti</button></p>
+    </div>
+    <div class="carta">
       <h2>Comandi dei giochi</h2>
       <ul class="lista-voci">
         <li><div class="testo-voce"><span class="domanda">!dado</span> <span class="risposta">tira un dado (anche !dado 2d20)</span></div></li>
@@ -1690,6 +1708,17 @@ function attivaPiattaforma() {
       nomeMonete: document.getElementById('inp-monete').value.trim(),
       promoSocial: document.getElementById('chk-promo').checked,
     }, 'Giochi salvati 🎮');
+  }));
+
+  // personalizzazione punti/classifica
+  document.getElementById('btn-salva-punti')?.addEventListener('click', () => conErrore(async () => {
+    const v = (id) => Number(document.getElementById(id).value);
+    await salvaImpostazioni({ punti: {
+      perMessaggio: v('pt-perMessaggio'), ogniSecondi: v('pt-ogniSecondi'),
+      trivia: v('pt-trivia'), duello: v('pt-duello'),
+      slotCosto: v('pt-slotCosto'), slotVinci: v('pt-slotVinci'),
+      slotCoppia: v('pt-slotCoppia'), topN: v('pt-topN'),
+    } }, 'Punti aggiornati 🏅');
   }));
 
   // ponte "giochi del sito": solo l'interruttore (endpoint/segreto arrivano dal sito)

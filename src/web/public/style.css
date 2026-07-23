@@ -320,6 +320,12 @@ body.vetrina .contenuto { max-width: 1040px; }
 .piani-community strong { color: var(--testo); }
 .piani-community a { color: var(--acc); font-weight: 600; }
 
+/* griglia di campi numerici (personalizzazione punti/classifica) */
+.griglia-punti { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .8rem; margin-top: .6rem; }
+.campo-num { display: flex; flex-direction: column; gap: .3rem; font-size: .84rem; font-weight: 600; color: var(--testo-2); }
+.campo-num input { font-family: inherit; font-size: .95rem; padding: .5rem .6rem; border: 1px solid var(--border-2); border-radius: var(--r-s); background: var(--surface); color: var(--testo); }
+.campo-num input:focus { outline: none; border-color: var(--acc); box-shadow: 0 0 0 3px var(--acc-tint); }
+
 /* ============================================================ demo
    Barra fissa in alto + striscia di spiegazione per la dashboard in modalità demo. */
 #demo-barra {
