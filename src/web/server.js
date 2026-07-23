@@ -14,7 +14,8 @@ import { dirname, join } from 'node:path';
 import { config, SCOPES, missingConfig } from '../config.js';
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb, friends } from '../db.js';
-import { points, vips, tgConf, passkeys, managers, quotes, compleanni, membri } from '../db.js';
+import { points, vips, tgConf, passkeys, managers, quotes, compleanni, membri, subscriptions } from '../db.js';
+import * as abbonamenti from '../features/abbonamenti.js';
 import * as webauthn from './webauthn.js';
 import { comprimi } from '../features/compress.js';
 import { seedStreamer } from '../features/seed.js';
@@ -79,7 +80,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     secure: config.baseUrl.startsWith('https'),
     httpOnly: true,
   }));
-  app.use(express.json());
+  // Cattura il corpo RAW (serve al webhook Stripe per verificare la firma).
+  app.use(express.json({ verify: (req, _res, buf) => { req.rawBody = buf; } }));
 
   // ------------------------------------------------------------ helper
 
@@ -126,6 +128,18 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     return u;
   }
 
+  // Tier d'accesso di una persona: l'abbonamento attivo (base/pro), altrimenti
+  // 'community' se abilitata dal sito (accesso pieno di diritto), altrimenti null
+  // (nessun accesso → deve abbonarsi). Con Stripe spento esistono solo community.
+  function tierDi(login) {
+    const l = String(login || '').toLowerCase();
+    if (!l) return null;
+    if (subscriptions.attivo(l)) return subscriptions.get(l).tier || 'base';
+    const s = streamers.get(l);
+    if (s && s.status === 'approved') return 'community';
+    return null;
+  }
+
   // risposta "il sito non esiste": nessun indizio, nessun brand, nessun corpo utile
   const notFound = (res) => res.status(404).type('text/plain').send('Not Found');
 
@@ -143,7 +157,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // e il flusso di login con passkey (per rientrare senza passare dal sito).
   // Non rivelano nulla di sensibile: la dashboard vera resta dietro la sessione.
   const PUBBLICI = new Set(['/health', '/entra', '/sblocca', '/sblocca.html', '/privacy', '/privacy.html',
-    '/mod', '/mod.html', '/auth/mod', '/auth/callback', '/manifest.webmanifest', '/sw.js']);
+    '/mod', '/mod.html', '/auth/mod', '/auth/callback', '/manifest.webmanifest', '/sw.js',
+    // abbonamenti self-service: login con Twitch + webhook Stripe (firma verificata)
+    '/accedi', '/stripe/webhook']);
   // "Vetrina" pubblica: il guscio del sito (pagina + asset) e la demo interattiva
   // sono visibili anche senza pass, per far conoscere il bot. NON espongono dati
   // reali: /api/me senza sessione risponde solo "nessun utente" e tutte le API
@@ -152,6 +168,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   app.use((req, res, next) => {
     if (currentUser(req) || PUBBLICI.has(req.path)
         || VETRINA.has(req.path) || req.path === '/api/me'
+        || req.path.startsWith('/api/abbonamento/')   // piani/checkout/portale: auth propria
         || req.path.startsWith('/overlay/') || req.path.startsWith('/api/ext/')
         || req.path.startsWith('/tg/')       // webhook Telegram: si protegge col segreto nel path
         || req.path.startsWith('/icons/') || req.path.startsWith('/api/passkey/login/')) return next();
@@ -385,11 +402,32 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   });
 
   // ------------------------------------------------------------ OAuth callback
-  // Gestisce DUE flussi: (a) il proprietario che concede i permessi broadcaster,
-  // (b) il moderatore che fa login per gestire un canale. Pubblico: il cancello
-  // lo lascia passare (il moderatore non ha ancora una sessione).
+  // Gestisce TRE flussi: (a) il proprietario che concede i permessi broadcaster,
+  // (b) il moderatore che fa login per gestire un canale, (c) il login
+  // self-service per abbonarsi. Pubblico: il cancello lo lascia passare.
   app.get('/auth/callback', wrap(async (req, res) => {
     if (req.query.error) return res.redirect('/?errore=' + encodeURIComponent(String(req.query.error)));
+
+    // ── (c) FLUSSO SELF-SERVICE (abbonamento) ──────────────────────
+    if (req.session?.selfFlow) {
+      const sf = req.session.selfFlow; delete req.session.selfFlow;
+      if (!sf.state || req.query.state !== sf.state) return res.redirect('/?errore=state');
+      let v = null;
+      try { const t = await auth.exchangeCode(String(req.query.code || '')); v = await auth.validate(t.accessToken); }
+      catch { /* sotto */ }
+      if (!v?.login) return res.redirect('/?errore=validazione');
+      const login = String(v.login).toLowerCase();
+      const disp = v.display || login;
+      const contesti = contestiPer(login);
+      if (contesti.length) {                                  // ha già accesso → dashboard
+        req.session.user = sessionePer(login, disp, contestoDefault(contesti));
+        return res.redirect('/');
+      }
+      // nessun accesso: identità "in attesa di abbonarsi" — NIENTE session.user,
+      // quindi niente dashboard né API dati. Vede solo i piani e può fare checkout.
+      req.session.abbonando = { login, display: disp };
+      return res.redirect('/?abbonati=1');
+    }
 
     // ── (b) FLUSSO MODERATORE ──────────────────────────────────────
     if (req.session?.modFlow) {
@@ -540,6 +578,13 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
             .filter((f) => f.key.startsWith('preaddestramento'))
             .map((f) => [f.key, f.value]))
         : {},
+      // abbonamento: tier corrente del canale gestito + stato Stripe (per la UI)
+      tier: tierDi(user.login),
+      abbonamento: (() => {
+        const s = subscriptions.get(user.login);
+        return s ? { tier: s.tier, status: s.status, fine: s.current_period_end } : null;
+      })(),
+      stripeAttivo: config.stripe.attivo,
     });
   }));
 
@@ -554,6 +599,80 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     } catch { /* pazienza: si riproverà */ }
     res.json({ ok: true });
   }));
+
+  // ------------------------------------------------------------ ABBONAMENTI
+  // Accesso self-service a SocialBot via abbonamento Stripe/Link. "Predisposto ma
+  // spento" finché non ci sono le chiavi (config.stripe.attivo): i tier si vedono,
+  // il checkout non parte. Il login self-service con Twitch (/accedi) si attiva
+  // solo con Stripe acceso, così l'ingresso extra non si apre finché il paywall
+  // non è operativo. NOTA per l'accensione: prima di andare live va aggiunto il
+  // gating a livello di API per tier (oggi i membri community hanno accesso pieno).
+
+  // elenco tier + stato del sistema (pubblico: la vetrina mostra i prezzi)
+  app.get('/api/abbonamento/piani', (req, res) => {
+    res.json({
+      attivo: config.stripe.attivo,
+      tier: abbonamenti.TIERS.map((t) => ({ id: t.id, nome: t.nome, prezzoTesto: t.prezzoTesto, sommario: t.sommario, funzioni: t.funzioni })),
+    });
+  });
+
+  // avvia il checkout per un tier. Identità: la sessione, oppure chi ha fatto il
+  // login self-service in attesa di abbonarsi (req.session.abbonando). Off → 503.
+  app.post('/api/abbonamento/checkout', wrap(async (req, res) => {
+    if (!config.stripe.attivo) return res.status(503).json({ errore: 'Gli abbonamenti non sono ancora attivi.' });
+    const login = identitaDi(currentUser(req)) || String(req.session?.abbonando?.login || '').toLowerCase();
+    if (!login) return res.status(401).json({ errore: 'non autenticato' });
+    const url = await abbonamenti.creaCheckout({ login, tierId: String(req.body?.tier || '').toLowerCase() });
+    if (!url) return res.status(400).json({ errore: 'Piano non disponibile.' });
+    res.json({ url });
+  }));
+
+  // portale clienti Stripe (gestione/disdetta). Serve un cliente Stripe esistente.
+  app.post('/api/abbonamento/portale', requireLogin, wrap(async (req, res) => {
+    const s = subscriptions.get(identitaDi(currentUser(req)));
+    const url = s?.stripe_customer ? await abbonamenti.creaPortale({ customerId: s.stripe_customer }) : null;
+    if (!url) return res.status(503).json({ errore: 'Gestione abbonamento non disponibile.' });
+    res.json({ url });
+  }));
+
+  // webhook Stripe: unica fonte di verità sullo stato dell'abbonamento.
+  app.post('/stripe/webhook', wrap(async (req, res) => {
+    const ev = abbonamenti.verificaWebhook(req.rawBody, req.headers['stripe-signature']);
+    if (!ev) return res.status(400).send('firma non valida');
+    try { await gestisciEventoStripe(ev); } catch (e) { log.warn('webhook stripe:', e?.message || e); }
+    res.json({ received: true });
+  }));
+
+  async function gestisciEventoStripe(ev) {
+    const o = ev.data?.object || {};
+    if (ev.type === 'checkout.session.completed') {
+      const login = String(o.metadata?.login || o.client_reference_id || '').toLowerCase();
+      if (!login) return;
+      const tier = o.metadata?.tier || 'base';
+      subscriptions.set(login, { tier, status: 'active', customerId: o.customer || '', subId: o.subscription || '' });
+      streamers.upsertApproved(login, streamers.get(login)?.display || login);   // abbonato → abilitato
+      seedStreamer(login);
+      sync();
+      log.info(`abbonamento attivo: @${login} (${tier})`);
+    } else if (ev.type === 'customer.subscription.updated' || ev.type === 'customer.subscription.deleted') {
+      const login = String(o.metadata?.login || '').toLowerCase();
+      if (!login) return;
+      const attivo = o.status === 'active' || o.status === 'trialing';
+      const tier = o.metadata?.tier || subscriptions.get(login)?.tier || 'base';
+      subscriptions.set(login, { tier, status: o.status || 'canceled', subId: o.id || '', periodEnd: (o.current_period_end || 0) * 1000 });
+      if (!attivo) streamers.setEnabled(login, false);   // disdetta/insoluto → bot spento (non cancella nulla)
+      sync();
+      log.info(`abbonamento @${login}: ${o.status}`);
+    }
+  }
+
+  // Login self-service con Twitch per abbonarsi. Attivo solo con Stripe acceso.
+  app.get('/accedi', (req, res) => {
+    if (!config.stripe.attivo) return res.redirect('/');   // paywall spento: niente ingresso extra
+    const state = crypto.randomUUID();
+    req.session.selfFlow = { state };
+    res.redirect(auth.authUrl([], state));
+  });
 
   // ------------------------------------------------------------ API streamer
 

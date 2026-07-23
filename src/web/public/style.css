@@ -296,6 +296,26 @@ body.vetrina .contenuto { max-width: 1040px; }
 .vetrina-cta p { color: var(--testo-2); max-width: 52ch; }
 .vetrina-cta .btn { flex-shrink: 0; }
 
+/* piani / prezzi (vetrina) */
+.vetrina-piani { margin-bottom: 1.1rem; }
+.vetrina-piani-testa { text-align: center; margin-bottom: 1.2rem; }
+.vetrina-piani-testa h2 { font-size: 1.5rem; font-weight: 800; letter-spacing: -.03em; }
+.vetrina-piani-testa p { color: var(--testo-2); margin-top: .35rem; }
+.piani-griglia { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; align-items: start; }
+.piano { margin-bottom: 0; display: flex; flex-direction: column; position: relative; }
+.piano-top { border-color: var(--acc-bordo); box-shadow: 0 10px 30px rgba(109, 59, 239, .14); }
+.piano-badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--acc); color: #fff; font-size: .7rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: .2rem .6rem; border-radius: 999px; }
+.piano h3 { font-size: 1.15rem; font-weight: 700; }
+.piano-prezzo { font-size: 1.6rem; font-weight: 800; letter-spacing: -.03em; margin: .3rem 0 .1rem; color: var(--acc); }
+.piano-somm { color: var(--testo-2); font-size: .9rem; min-height: 2.5em; }
+.piano-funzioni { list-style: none; margin: .9rem 0 1.1rem; display: flex; flex-direction: column; gap: .45rem; flex: 1; }
+.piano-funzioni li { font-size: .9rem; color: var(--testo-2); display: flex; align-items: center; gap: .5rem; }
+.pf-val { flex-shrink: 0; width: 1.4rem; height: 1.4rem; display: grid; place-items: center; border-radius: 50%; font-size: .78rem; font-weight: 700; }
+.pf-val.si { background: var(--verde-soft); color: var(--verde); }
+.pf-val.no { background: var(--surface-2); color: var(--testo-3); }
+.piano .btn { width: 100%; }
+.piano-nota { text-align: center; color: var(--testo-3); font-size: .84rem; padding: .4rem 0; }
+
 /* ============================================================ demo
    Barra fissa in alto + striscia di spiegazione per la dashboard in modalità demo. */
 #demo-barra {

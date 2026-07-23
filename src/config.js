@@ -74,6 +74,22 @@ export const config = {
   // ascolto live lato server: quanti canali possiamo ascoltare in AUDIO
   // contemporaneamente (cap globale, il server è piccolo). 0 = disattivato.
   maxListeners: Math.max(0, parseInt(env('MAX_LISTENERS', '2'), 10)),
+
+  // Abbonamenti self-service (Stripe / Link) — TUTTO OPZIONALE. Se le chiavi non
+  // ci sono, gli abbonamenti restano "spenti": la struttura (tier, DB, endpoint,
+  // UI) è pronta ma non si accettano pagamenti. Si accende mettendo le chiavi.
+  stripe: (() => {
+    const secretKey = env('STRIPE_SECRET_KEY');            // sk_test_... / sk_live_...
+    const webhookSecret = env('STRIPE_WEBHOOK_SECRET');    // whsec_...
+    return {
+      secretKey,
+      webhookSecret,
+      // price-id per tier a pagamento (dal cruscotto Stripe). Vuoto = non acquistabile.
+      prezzi: { base: env('STRIPE_PRICE_BASE'), pro: env('STRIPE_PRICE_PRO') },
+      // gli abbonamenti sono operativi solo con chiave segreta + segreto webhook
+      attivo: !!(secretKey && webhookSecret),
+    };
+  })(),
 };
 
 // Scope OAuth richiesti.
