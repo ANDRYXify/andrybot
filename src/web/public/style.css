@@ -146,21 +146,18 @@ body:not(.con-nav) .barra-mobile { display: none; }
 .lat-item:not(.attiva):hover { background: var(--surface-2); color: var(--testo); transform: translateX(3px); }
 .lat-item:hover .lat-svg { transform: scale(1.08); }
 .lat-item:not(.attiva):hover .lat-svg { color: var(--testo-2); }
-.lat-item.attiva { color: var(--acc); font-weight: 600; }
+/* voce attiva: sfondo lavanda STATICO (compare subito, sotto al testo) */
+.lat-item.attiva { background: var(--acc-soft); color: var(--acc); font-weight: 600; }
 .lat-item.attiva .lat-svg { color: var(--acc); }
-/* icona e testo devono stare SOPRA la pillola */
+/* icona e testo sempre sopra l'indicatore */
 .lat-item > .lat-svg, .lat-item > span:not(.lat-pill) { position: relative; z-index: 1; }
-/* "pillola" attiva: scorre da una voce all'altra come elemento condiviso della
-   View Transition (view-transition-name) — il browser ne morpha posizione e
-   dimensione, così invece di saltare scivola in modo fluido sulla nuova voce. */
+/* indicatore attivo: una barretta sottile sul bordo sinistro che SCORRE da una
+   voce all'altra come elemento condiviso della View Transition. Essendo stretta
+   e sul bordo non copre mai il testo della voce (a differenza di una pillola). */
 .lat-pill {
-  position: absolute; inset: 0; z-index: 0;
-  background: var(--acc-soft); border-radius: var(--r-s);
+  position: absolute; left: 0; top: 50%; transform: translateY(-50%); z-index: 2;
+  width: 3px; height: 56%; background: var(--acc); border-radius: 0 3px 3px 0;
   view-transition-name: navpill;
-}
-.lat-pill::before {
-  content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
-  width: 3px; height: 56%; background: var(--acc); border-radius: 3px;
 }
 
 /* utente in fondo */
