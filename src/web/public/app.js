@@ -565,7 +565,9 @@ async function caricaPiani() {
     ['moduli', 'Comandi & moduli'], ['giochi', 'Giochi e classifiche'], ['notifiche', 'Notifiche live'],
     ['clipAuto', 'Clip automatiche'], ['voce', 'Comandi a voce'], ['moderatori', 'Moderatori'],
   ];
-  const valore = (v) => v === true ? '✓' : (v === false ? '—' : (v === null ? '—' : (v > 999 ? '∞' : v)));
+  // -1 = illimitato (∞); true = ✓; false/null/0 = —; altrimenti il numero.
+  const valore = (v) => (v === true ? '✓' : (v === -1 || v > 999 ? '∞' : (!v ? '—' : v)));
+  const attiva = (v) => v === true || v === -1 || (typeof v === 'number' && v > 0);
   box.innerHTML = `
     <div class="vetrina-piani-testa">
       <h2>Piani</h2>
@@ -579,7 +581,7 @@ async function caricaPiani() {
           <div class="piano-prezzo">${esc(t.prezzoTesto)}</div>
           <p class="piano-somm">${esc(t.sommario)}</p>
           <ul class="piano-funzioni">
-            ${F.map(([k, nome]) => `<li><span class="pf-val ${t.funzioni[k] === false || t.funzioni[k] === null ? 'no' : 'si'}">${valore(t.funzioni[k])}</span> ${esc(nome)}</li>`).join('')}
+            ${F.map(([k, nome]) => `<li><span class="pf-val ${attiva(t.funzioni[k]) ? 'si' : 'no'}">${valore(t.funzioni[k])}</span> ${esc(nome)}</li>`).join('')}
           </ul>
           ${t.id === 'free'
             ? '<span class="piano-nota">Incluso per provare</span>'
