@@ -286,7 +286,7 @@ function montaDemo() {
     `<span class="demo-punto"></span>
      <span class="demo-testo"><strong>Demo di SocialBot</strong> — stai esplorando la dashboard con dati d'esempio. Puoi cliccare ovunque; niente viene salvato.</span>
      <span class="demo-azioni">
-       <a class="btn mini" href="/auth/login">Accedi con Twitch</a>
+       <a class="btn mini" href="https://andryxify.it">Attiva su andryxify.it</a>
        <a class="btn mini secondario" href="/">Esci dalla demo</a>
      </span>`;
   cont.insertBefore(barra, header);
@@ -471,10 +471,10 @@ function renderHero() {
       <p class="vetrina-sub">Vive nella tua chat e scrive <strong>con il tuo account</strong> — niente bot anonimi.
       Impara chi sei, crea comandi su misura e cresce con la tua community.</p>
       <div class="vetrina-azioni">
-        <a class="btn grande" href="/auth/login">Accedi con Twitch</a>
-        <a class="btn grande secondario" href="/?demo=1">▶ Prova la demo</a>
+        <a class="btn grande" href="/?demo=1">▶ Prova la demo</a>
+        <a class="btn grande secondario" href="https://andryxify.it">Attiva su andryxify.it →</a>
       </div>
-      <p class="nota">🔒 Riservato agli streamer verificati e abilitati da andryxify. La <a href="/?demo=1">demo</a> è aperta a tutti · <a href="https://andryxify.it">andryxify.it</a></p>
+      <p class="nota">🔒 Per attivare SocialBot sul tuo canale devi essere uno streamer verificato e abilitato su <a href="https://andryxify.it">andryxify.it</a>: da lì entri nella tua dashboard.</p>
     </section>
 
     <section class="vetrina-features">
