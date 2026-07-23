@@ -39,7 +39,7 @@ const UPLOAD_MAX = 30 * 1024 * 1024;   // 30 MB in ingresso (l'output sarà molt
 
 // Moduli: tipi di innesco e di azione ammessi (validazione lato API)
 const MOD_TRIGGER = ['comando', 'parola', 'evento', 'timer', 'manuale', 'voce'];
-const MOD_AZIONI = ['messaggio', 'effetto', 'contatore', 'webhook', 'attendi', 'overlayTesto', 'timeout', 'clip', 'categoria'];
+const MOD_AZIONI = ['messaggio', 'effetto', 'contatore', 'webhook', 'attendi', 'overlayTesto', 'timeout', 'clip', 'categoria', 'titolo'];
 const EXT_MAX_MIN = 30;   // ingresso esterno: max richieste al minuto per login
 
 // Comando integrato /compleanno nel gruppo Telegram. Registra/mostra/rimuove la
@@ -772,6 +772,12 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       const trig = String(cc.trigger || 'categoria').trim().toLowerCase().replace(/\s+/g, ' ').slice(0, 30) || 'categoria';
       out.cambioCategoria = { attivo: !!cc.attivo, trigger: trig, annuncia: cc.annuncia !== false };
     }
+    // cambio titolo a voce: stessa logica (parola chiave + annuncio)
+    if (b.cambioTitolo !== undefined) {
+      const ct = b.cambioTitolo || {};
+      const trig = String(ct.trigger || 'titolo').trim().toLowerCase().replace(/\s+/g, ' ').slice(0, 30) || 'titolo';
+      out.cambioTitolo = { attivo: !!ct.attivo, trigger: trig, annuncia: ct.annuncia !== false };
+    }
     if (b.paroleVietate !== undefined) {
       if (!Array.isArray(b.paroleVietate)) return res.status(400).json({ errore: 'paroleVietate deve essere una lista' });
       out.paroleVietate = b.paroleVietate
@@ -862,7 +868,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const A = abbonamenti.funzioneAbilitata;
     if (!A(tierS, 'giochi')) { out.giochi = false; if (out.manche) out.manche.attivo = false; }
     if (!A(tierS, 'clipAuto')) out.clipAuto = false;
-    if (!A(tierS, 'voce')) { out.ascoltoLive = false; if (out.cambioCategoria) out.cambioCategoria.attivo = false; }
+    if (!A(tierS, 'voce')) { out.ascoltoLive = false; if (out.cambioCategoria) out.cambioCategoria.attivo = false; if (out.cambioTitolo) out.cambioTitolo.attivo = false; }
     if (!A(tierS, 'notifiche') && out.tiktok) out.tiktok.attivo = false;
 
     streamers.setSettings(user.login, out);
@@ -1074,6 +1080,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       if (a.tipo === 'categoria' && !String(a.gioco || '').trim()) {
         return 'l\'azione "cambia categoria" ha bisogno di un gioco (o una variabile come $args)';
       }
+      if (a.tipo === 'titolo' && !String(a.testo || '').trim()) {
+        return 'l\'azione "cambia titolo" ha bisogno di un testo (anche con variabili come $args)';
+      }
     }
     return null;
   }
@@ -1152,10 +1161,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   app.get('/api/streamer/voce', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const frasi = modules.frasiVoce(login);   // include i moduli abilitati a Telegram
-    // comando "cambia categoria a voce": il browser deve conoscere la parola chiave
-    const cc = streamers.get(login)?.settings?.cambioCategoria;
-    const cat = { attivo: !!cc?.attivo, trigger: (cc?.trigger || 'categoria') };
-    res.json({ frasi, count: frasi.length, cat });
+    // comandi "cambia categoria / titolo a voce": il browser deve conoscere le parole chiave
+    const st = streamers.get(login)?.settings || {};
+    const cat = { attivo: !!st.cambioCategoria?.attivo, trigger: (st.cambioCategoria?.trigger || 'categoria') };
+    const tit = { attivo: !!st.cambioTitolo?.attivo, trigger: (st.cambioTitolo?.trigger || 'titolo') };
+    res.json({ frasi, count: frasi.length, cat, tit });
   }));
 
   // il browser ha sentito una frase: eseguiamo i moduli 'voce' che combaciano
@@ -1193,6 +1203,25 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
         } catch (e) {
           const permesso = e?.status === 401 || e?.status === 403;
           return res.json({ ok: true, eseguito: false, categoria: { errore: permesso ? 'permesso' : 'errore', riautorizza: permesso } });
+        }
+      }
+    }
+    // comando vocale TITOLO: "<parola chiave> <testo libero>" → cambia il titolo dello stream.
+    const ct = streamers.get(login)?.settings?.cambioTitolo;
+    if (ct?.attivo) {
+      const nuovo = categoria.estraiDopoTrigger(frase, ct.trigger || 'titolo');
+      if (nuovo) {
+        if (!canaleOk(login)) {
+          return res.json({ ok: true, eseguito: false, titolo: { errore: 'permesso', riautorizza: true } });
+        }
+        const testo = nuovo.slice(0, 140);
+        try {
+          await helix.setChannelInfo(login, { title: testo });
+          if (ct.annuncia !== false) manager.say(login, `📝 Titolo aggiornato: ${testo}`);
+          return res.json({ ok: true, eseguito: true, titolo: { testo } });
+        } catch (e) {
+          const permesso = e?.status === 401 || e?.status === 403;
+          return res.json({ ok: true, eseguito: false, titolo: { errore: permesso ? 'permesso' : 'errore', riautorizza: permesso } });
         }
       }
     }

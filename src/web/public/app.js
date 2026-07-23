@@ -94,6 +94,7 @@ function impostazioni() {
     ascoltoLive: s.ascoltoLive === true,
     ascoltoSensibilita: typeof s.ascoltoSensibilita === 'number' ? s.ascoltoSensibilita : 5,
     cambioCategoria: { attivo: false, trigger: 'categoria', annuncia: true, ...(s.cambioCategoria && typeof s.cambioCategoria === 'object' ? s.cambioCategoria : {}) },
+    cambioTitolo: { attivo: false, trigger: 'titolo', annuncia: true, ...(s.cambioTitolo && typeof s.cambioTitolo === 'object' ? s.cambioTitolo : {}) },
   };
 }
 
@@ -175,6 +176,7 @@ function statoDemo() {
         iaLocale: true, proattivo: true, adattaCanale: true, giochi: true, promoSocial: true,
         nomeMonete: 'scudi', clipAuto: true, clipAutoSoglia: 25, ascoltoLive: false, ascoltoSensibilita: 5,
         cambioCategoria: { attivo: true, trigger: 'categoria', annuncia: true },
+        cambioTitolo: { attivo: false, trigger: 'titolo', annuncia: true },
         premioVip: { attivo: true, periodo: 'settimana', quanti: 2 },
         manche: { attivo: true, minMin: 20, maxMin: 60, soloLive: false },
         paroleVietate: ['spoiler', 'link-truffa'],
@@ -1038,6 +1040,7 @@ function pannelloAscolto() {
   sens = Number.isFinite(sens) ? Math.min(10, Math.max(1, Math.round(sens))) : 5;
   const inAscolto = (stato.status?.ascoltando || []).includes(stato.user.login);
   const cc = s.cambioCategoria || { attivo: false, trigger: 'categoria', annuncia: true };
+  const ct = s.cambioTitolo || { attivo: false, trigger: 'titolo', annuncia: true };
   const mancaPermesso = !DEMO && stato.canaleOk === false;   // serve una ri-autorizzazione
 
   return pannello('ascolto', `
@@ -1098,6 +1101,30 @@ function pannelloAscolto() {
       <a href="/auth/permessi">Concedi il permesso</a> (ti riporta qui dopo l'autorizzazione).</p>` : ''}
       <p class="suggerimento spazio-sopra">Esempi: «categoria Fortnite», «categoria League of Legends».
       La parola chiave è a tua scelta (es. «gioco», «passa a»). Funziona dalla stessa pagina di ascolto vocale qui sopra.</p>
+    </div>
+
+    <div class="carta">
+      <h2>Cambia titolo a voce 📝</h2>
+      <p>Dici <strong class="primo-piano">«<span id="tit-esempio">${esc(ct.trigger || 'titolo')}</span> <em>il tuo titolo</em>»</strong>
+      e il bot aggiorna il titolo dello stream su Twitch (testo libero, come lo dici).</p>
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore">
+          <input type="checkbox" id="chk-titolo" ${ct.attivo ? 'checked' : ''}>
+          <span class="levetta"></span>
+        </label>
+        <span class="etichetta-stato" id="etichetta-titolo">${ct.attivo ? 'Attivo' : 'Spento'}</span>
+      </div>
+      <label class="campo" for="inp-tit-trigger">Parola chiave (quella che dici prima del titolo)</label>
+      <input type="text" id="inp-tit-trigger" class="campo-largo" maxlength="30" value="${esc(ct.trigger || 'titolo')}" placeholder="titolo">
+      <div class="riga-check spazio-sopra">
+        <input type="checkbox" id="chk-tit-annuncia" ${ct.annuncia !== false ? 'checked' : ''}>
+        <label for="chk-tit-annuncia">Annuncia il cambio in chat</label>
+      </div>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-titolo">Salva</button></p>
+      ${mancaPermesso ? `<p class="nota-lettura">🔒 Anche il titolo usa il permesso <strong>Gestione canale</strong>.
+      <a href="/auth/permessi">Concedilo qui</a> (vale per categoria e titolo).</p>` : ''}
+      <p class="suggerimento spazio-sopra">Esempio: «titolo Si torna su Elden Ring, si punta al boss!».
+      Puoi cambiare la parola chiave (es. «nuovo titolo»). Stessa pagina di ascolto vocale qui sopra.</p>
     </div>`);
 }
 
@@ -2098,6 +2125,24 @@ function attivaPiattaforma() {
     if (et) et.textContent = attivo ? 'Attivo' : 'Spento';
   }));
 
+  // --- cambio titolo a voce ---
+  document.getElementById('chk-titolo')?.addEventListener('change', (ev) => {
+    const et = document.getElementById('etichetta-titolo');
+    if (et) et.textContent = ev.target.checked ? 'Attivo' : 'Spento';
+  });
+  document.getElementById('inp-tit-trigger')?.addEventListener('input', (ev) => {
+    const ex = document.getElementById('tit-esempio');
+    if (ex) ex.textContent = (ev.target.value.trim() || 'titolo');
+  });
+  document.getElementById('btn-salva-titolo')?.addEventListener('click', () => conErrore(async () => {
+    const attivo = document.getElementById('chk-titolo').checked;
+    const trigger = (document.getElementById('inp-tit-trigger').value || '').trim().toLowerCase() || 'titolo';
+    const annuncia = document.getElementById('chk-tit-annuncia').checked;
+    await salvaImpostazioni({ cambioTitolo: { attivo, trigger, annuncia } }, 'Comando titolo salvato 📝');
+    const et = document.getElementById('etichetta-titolo');
+    if (et) et.textContent = attivo ? 'Attivo' : 'Spento';
+  }));
+
   // conoscenza: aggiunta manuale
   document.getElementById('btn-aggiungi-conoscenza')?.addEventListener('click', () => conErrore(async () => {
     const domanda = document.getElementById('inp-domanda').value.trim();
@@ -2681,6 +2726,7 @@ const AZIONI = [
   ['effetto', '✨ Fai partire un effetto'],
   ['clip', '🎬 Crea una clip'],
   ['categoria', '🎮 Cambia categoria Twitch'],
+  ['titolo', '📝 Cambia titolo stream'],
   ['contatore', '🔢 Contatore'],
   ['webhook', '🔗 Chiama un webhook'],
   ['attendi', '⏱️ Aspetta'],
@@ -2767,6 +2813,7 @@ function riassuntoAzione(a) {
     case 'webhook': return 'chiama un webhook';
     case 'clip': return 'crea una clip';
     case 'categoria': return a.gioco ? `cambia categoria in "${a.gioco}"` : 'cambia categoria';
+    case 'titolo': return a.testo ? `cambia titolo in "${a.testo}"` : 'cambia titolo';
     case 'attendi': return `aspetta ${a.secondi || 0}s`;
     case 'overlayTesto': return 'mostra un testo sull\'overlay';
     case 'timeout': return `timeout di ${a.secondi || 0}s`;
@@ -3114,6 +3161,17 @@ function disegnaCampiAzione(a) {
         </div>
         <p class="suggerimento">Il bot cerca la categoria su Twitch e imposta quella più somigliante a ciò che scrivi/dici.
         Serve il permesso <strong class="primo-piano">Gestione canale</strong> (lo concedi da <strong>Durante la diretta → Ascolto vocale</strong>).</p>`;
+    case 'titolo':
+      return `
+        <label class="campo">Nuovo titolo (puoi usare le variabili, es. <code>$gioco</code>, <code>$args</code>)</label>
+        <textarea data-campo="testo" data-var-target placeholder="es. In diretta: $gioco con la community! 🎮">${esc(a.testo || '')}</textarea>
+        ${pillole}
+        <div class="riga-check spazio-sopra">
+          <input type="checkbox" data-campo="annuncia" ${a.annuncia !== false ? 'checked' : ''}>
+          <label>Annuncia il cambio in chat</label>
+        </div>
+        <p class="suggerimento">Imposta il titolo dello stream su Twitch (max 140 caratteri).
+        Serve il permesso <strong class="primo-piano">Gestione canale</strong> (lo concedi da <strong>Durante la diretta → Ascolto vocale</strong>).</p>`;
     case 'attendi':
       return `
         <label class="campo">Secondi da aspettare</label>
@@ -3188,6 +3246,7 @@ function leggiAzioneRiga(riga) {
     case 'webhook': return { tipo, url: (v('url')?.value || '').trim(), usaRisposta: !!v('usaRisposta')?.checked };
     case 'clip': return { tipo };
     case 'categoria': return { tipo, gioco: (v('gioco')?.value || '').trim(), annuncia: !!v('annuncia')?.checked };
+    case 'titolo': return { tipo, testo: v('testo')?.value || '', annuncia: !!v('annuncia')?.checked };
     case 'attendi': return { tipo, secondi: Number(v('secondi')?.value) || 0 };
     case 'overlayTesto': return { tipo, testo: v('testo')?.value || '', durata: Number(v('durata')?.value) || 5000 };
     case 'timeout': return { tipo, secondi: Number(v('secondi')?.value) || 0 };
