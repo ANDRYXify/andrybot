@@ -155,6 +155,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       gruppoOk: !!(c && c.chat_id),
       attivo: !!(c && c.attivo),
       messaggio: c?.messaggio || '',
+      pinLive: c ? !!c.pin_live : true,
     };
   };
 
@@ -963,8 +964,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!c?.token) return res.status(400).json({ errore: 'prima collega il bot con il token' });
     const attivo = !!req.body?.attivo;
     const messaggio = String(req.body?.messaggio ?? '').slice(0, 800);
+    const pinLive = !!req.body?.pinLive;
     if (attivo && !c.chat_id) return res.status(400).json({ errore: 'collega prima un gruppo (Rileva gruppo)' });
-    tgConf.set(login, { attivo, messaggio });
+    tgConf.set(login, { attivo, messaggio, pinLive });
     res.json({ ok: true });
   }));
 

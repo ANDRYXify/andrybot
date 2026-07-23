@@ -182,6 +182,8 @@ CREATE TABLE IF NOT EXISTS telegram (     -- notifiche Telegram: un bot+gruppo P
   attivo INTEGER NOT NULL DEFAULT 0,       -- notifica "vado live" accesa?
   messaggio TEXT NOT NULL DEFAULT '',      -- testo con segnaposto (vuoto = default)
   ultima_live TEXT NOT NULL DEFAULT '',    -- id dell'ultima live notificata (anti-doppioni)
+  pin_live INTEGER NOT NULL DEFAULT 1,     -- fissa l'avviso a live attiva e lo elimina a live spenta?
+  msg_id TEXT NOT NULL DEFAULT '',         -- message_id dell'ultimo avviso live (per fissarlo/eliminarlo)
   ts INTEGER NOT NULL DEFAULT 0
 );
 
@@ -230,6 +232,18 @@ CREATE TABLE IF NOT EXISTS quotes (       -- citazioni della chat (!cita)
 );
 CREATE INDEX IF NOT EXISTS idx_quotes_channel ON quotes(channel, n);
 `);
+
+// --- migrazioni leggere: aggiunge colonne nuove a DB già esistenti ------------
+// CREATE TABLE IF NOT EXISTS non tocca le tabelle già create, quindi le colonne
+// aggiunte dopo il primo avvio vanno inserite a mano (idempotente).
+function aggiungiColonna(tabella, colonna, definizione) {
+  const cols = db.prepare(`PRAGMA table_info(${tabella})`).all();
+  if (!cols.some((c) => c.name === colonna)) {
+    db.exec(`ALTER TABLE ${tabella} ADD COLUMN ${colonna} ${definizione}`);
+  }
+}
+aggiungiColonna('telegram', 'pin_live', "INTEGER NOT NULL DEFAULT 1");
+aggiungiColonna('telegram', 'msg_id', "TEXT NOT NULL DEFAULT ''");
 
 const now = () => Date.now();
 
@@ -512,7 +526,7 @@ export const tgConf = {
   },
   set(channel, campi = {}) {
     const c = String(channel).toLowerCase();
-    const cur = this.get(c) || { token: '', chat_id: '', chat_titolo: '', bot_username: '', attivo: 0, messaggio: '', ultima_live: '' };
+    const cur = this.get(c) || { token: '', chat_id: '', chat_titolo: '', bot_username: '', attivo: 0, messaggio: '', ultima_live: '', pin_live: 1, msg_id: '' };
     const v = {
       token: campi.token !== undefined ? String(campi.token) : cur.token,
       chat_id: campi.chatId !== undefined ? String(campi.chatId) : cur.chat_id,
@@ -521,17 +535,23 @@ export const tgConf = {
       attivo: campi.attivo !== undefined ? (campi.attivo ? 1 : 0) : cur.attivo,
       messaggio: campi.messaggio !== undefined ? String(campi.messaggio) : cur.messaggio,
       ultima_live: campi.ultimaLive !== undefined ? String(campi.ultimaLive) : cur.ultima_live,
+      pin_live: campi.pinLive !== undefined ? (campi.pinLive ? 1 : 0) : (cur.pin_live ?? 1),
+      msg_id: campi.msgId !== undefined ? String(campi.msgId) : (cur.msg_id ?? ''),
     };
-    db.prepare(`INSERT INTO telegram (channel, token, chat_id, chat_titolo, bot_username, attivo, messaggio, ultima_live, ts)
-      VALUES (@channel, @token, @chat_id, @chat_titolo, @bot_username, @attivo, @messaggio, @ultima_live, @ts)
+    db.prepare(`INSERT INTO telegram (channel, token, chat_id, chat_titolo, bot_username, attivo, messaggio, ultima_live, pin_live, msg_id, ts)
+      VALUES (@channel, @token, @chat_id, @chat_titolo, @bot_username, @attivo, @messaggio, @ultima_live, @pin_live, @msg_id, @ts)
       ON CONFLICT(channel) DO UPDATE SET token=excluded.token, chat_id=excluded.chat_id, chat_titolo=excluded.chat_titolo,
         bot_username=excluded.bot_username, attivo=excluded.attivo, messaggio=excluded.messaggio,
-        ultima_live=excluded.ultima_live, ts=excluded.ts`)
+        ultima_live=excluded.ultima_live, pin_live=excluded.pin_live, msg_id=excluded.msg_id, ts=excluded.ts`)
       .run({ channel: c, ...v, ts: now() });
     return this.get(c);
   },
   setUltimaLive(channel, streamId) {
     db.prepare('UPDATE telegram SET ultima_live=? WHERE channel=?').run(String(streamId || ''), String(channel).toLowerCase());
+  },
+  // salva (o azzera) il message_id dell'avviso live, per poterlo poi eliminare
+  setMsgId(channel, msgId) {
+    db.prepare('UPDATE telegram SET msg_id=? WHERE channel=?').run(String(msgId || ''), String(channel).toLowerCase());
   },
   remove(channel) { db.prepare('DELETE FROM telegram WHERE channel=?').run(String(channel).toLowerCase()); },
 };
