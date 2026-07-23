@@ -12,6 +12,7 @@
 import dns from 'node:dns/promises';
 import net from 'node:net';
 import { modules as modulesDb, counters, memory, streamers, clips } from '../db.js';
+import { risolviCategoria } from './categoria.js';
 import { makeLog } from '../logger.js';
 
 const log = makeLog('moduli');
@@ -607,6 +608,26 @@ export class ModulesEngine {
             ? await this.espandi(azione.testo, ctx)
             : 'Clip salvata! ' + clip.url;
           if (t) dire(t);
+        }
+        return;
+      }
+      case 'categoria': {
+        // cambia la categoria/gioco del canale su Twitch. Il "gioco" può usare le
+        // variabili ($args, $arg1, ...): così "!gioco fortnite" → categoria Fortnite.
+        // Se il testo è impreciso, il bot sceglie la categoria Twitch più somigliante.
+        const q = (await this.espandi(azione.gioco, ctx)).trim();
+        if (!q) return;
+        const cat = await risolviCategoria(this.helix, q).catch(() => null);
+        if (!cat) { if (azione.annuncia !== false) dire(`🤔 Non ho trovato la categoria "${q}".`); return; }
+        try {
+          await this.helix?.setChannelInfo?.(ctx.channel, { gameId: cat.id });
+          if (azione.annuncia !== false) dire(`🎮 Categoria aggiornata: ${cat.name}`);
+        } catch (e) {
+          // scope mancante o errore Twitch: non blocca le altre azioni
+          log.debug('categoria via modulo fallita:', e?.message || e);
+          if (azione.annuncia !== false && (e?.status === 401 || e?.status === 403)) {
+            dire('🔒 Mi manca il permesso per cambiare categoria: riautorizza dalla dashboard.');
+          }
         }
         return;
       }
