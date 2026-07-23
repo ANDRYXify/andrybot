@@ -41,9 +41,12 @@
 
   --molla: .18s cubic-bezier(.2, .8, .25, 1);
   --ease: cubic-bezier(.22, .9, .3, 1);        /* fluida, decelerata */
+  --rev-ease: cubic-bezier(.16, 1, .3, 1);     /* "expo out": decelerazione elegante */
   --spring: cubic-bezier(.34, 1.35, .5, 1);    /* leggero rimbalzo */
   --sidebar: 262px;
 }
+
+html { scroll-behavior: smooth; }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { color-scheme: light; -webkit-text-size-adjust: 100%; }
@@ -137,10 +140,11 @@ body:not(.con-nav) .barra-mobile { display: none; }
   background: transparent; border: none; color: var(--testo-2);
   padding: .48rem .6rem; border-radius: var(--r-s);
   font-size: .875rem; font-weight: 500; font-family: inherit; cursor: pointer;
-  transition: background var(--molla), color var(--molla);
+  transition: background var(--molla), color var(--molla), transform var(--molla);
 }
-.lat-svg { flex-shrink: 0; color: var(--testo-3); transition: color var(--molla); }
-.lat-item:hover { background: var(--surface-2); color: var(--testo); }
+.lat-svg { flex-shrink: 0; color: var(--testo-3); transition: color var(--molla), transform var(--molla); }
+.lat-item:hover { background: var(--surface-2); color: var(--testo); transform: translateX(3px); }
+.lat-item:hover .lat-svg { transform: scale(1.08); }
 .lat-item:hover .lat-svg { color: var(--testo-2); }
 .lat-item.attiva { background: var(--acc-soft); color: var(--acc); font-weight: 600; }
 .lat-item.attiva .lat-svg { color: var(--acc); }
@@ -175,11 +179,11 @@ body.menu-aperto .apri-menu span:nth-child(3) { transform: translateY(-7px) rota
 .pagina-testata h1 { font-size: clamp(1.55rem, 1.05rem + 1.9vw, 2.05rem); font-weight: 800; letter-spacing: -.032em; line-height: 1.1; }
 .pagina-testata p { color: var(--testo-2); font-size: 1rem; margin-top: .5rem; max-width: 62ch; }
 /* l'intestazione entra a cascata ad ogni cambio sezione (innerHTML rifatto) */
-.pagina-testata > * { animation: pt-in .42s var(--ease) backwards; }
-.pagina-testata .pt-occhiello { animation-delay: .02s; }
-.pagina-testata h1 { animation-delay: .06s; }
-.pagina-testata p { animation-delay: .12s; }
-@keyframes pt-in { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+.pagina-testata > * { animation: pt-in .6s var(--rev-ease) backwards; }
+.pagina-testata .pt-occhiello { animation-delay: .03s; }
+.pagina-testata h1 { animation-delay: .09s; }
+.pagina-testata p { animation-delay: .16s; }
+@keyframes pt-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 
 /* ============================================================ carte */
 .carta { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-l); padding: clamp(1.15rem, 2.6vw, 1.6rem); margin-bottom: 1.1rem; box-shadow: var(--om-s); }
@@ -191,16 +195,19 @@ body.menu-aperto .apri-menu span:nth-child(3) { transform: translateY(-7px) rota
 .carta.avviso { border-color: var(--ambra-bordo); background: var(--ambra-soft); }
 .carta.avviso h2, .carta.avviso p { color: var(--ambra); }
 
-/* ingresso morbido a cascata */
 .pannello-scheda { display: none; }
 .pannello-scheda.visibile { display: block; }
-.pannello-scheda.visibile > .carta { animation: salgi .44s var(--ease) backwards; }
-.pannello-scheda.visibile > .carta:nth-child(1) { animation-delay: .02s; }
-.pannello-scheda.visibile > .carta:nth-child(2) { animation-delay: .08s; }
-.pannello-scheda.visibile > .carta:nth-child(3) { animation-delay: .14s; }
-.pannello-scheda.visibile > .carta:nth-child(4) { animation-delay: .2s; }
-.pannello-scheda.visibile > .carta:nth-child(n+5) { animation-delay: .24s; }
-@keyframes salgi { from { opacity: 0; transform: translateY(12px) scale(.994); } to { opacity: 1; transform: none; } }
+
+/* SCROLL-REVEAL (stile Awwwards): le carte entrano morbide quando compaiono,
+   sia al cambio scheda sia scorrendo. Lo stato lo gestisce l'IntersectionObserver
+   in app.js (classe .dentro). Easing "expo" per una decelerazione elegante. */
+.carta.rivela {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity .7s var(--ease), transform .8s var(--rev-ease);
+  transition-delay: var(--rev-delay, 0ms);
+}
+.carta.rivela.dentro { opacity: 1; transform: none; }
 @keyframes appare { from { opacity: 0; } to { opacity: 1; } }
 
 /* ============================================================ hero (login) */
@@ -221,8 +228,8 @@ body.menu-aperto .apri-menu span:nth-child(3) { transform: translateY(-7px) rota
   font-size: .9rem; font-weight: 600; font-family: inherit; cursor: pointer; text-decoration: none;
   transition: background var(--molla), transform .06s, box-shadow var(--molla);
 }
-.btn:hover { background: var(--acc-600); box-shadow: 0 4px 14px rgba(109, 59, 239, .26); text-decoration: none; }
-.btn:active { transform: translateY(1px); }
+.btn:hover { background: var(--acc-600); box-shadow: 0 8px 20px rgba(109, 59, 239, .3); text-decoration: none; transform: translateY(-1px); }
+.btn:active { transform: translateY(0) scale(.98); }
 .btn:disabled { opacity: .5; cursor: wait; box-shadow: none; }
 .btn.grande { padding: .7rem 1.5rem; min-height: 44px; font-size: .98rem; }
 .btn.secondario { background: var(--surface); border: 1px solid var(--border-2); color: var(--testo); }
@@ -407,7 +414,9 @@ pre.blocco-codice { background: var(--surface-2); border: 1px solid var(--border
 
 /* meno movimento */
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+  .carta.rivela { opacity: 1 !important; transform: none !important; }
 }
 
 /* ============================================================ banner cookie */

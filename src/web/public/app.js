@@ -155,6 +155,38 @@ function render() {
 
   if (conPiattaforma) attivaPiattaforma();
   if (stato.isAdmin) { caricaTabellaAdmin(); caricaAnima(); }
+
+  rivelaCarte();   // scroll-reveal delle carte appena disegnate
+}
+
+// ------------------------------------------------------------------ scroll-reveal
+// Le carte entrano morbide quando compaiono (al cambio scheda o scorrendo),
+// stile Awwwards. Un solo IntersectionObserver, riusato ad ogni render.
+const _menoMoto = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+let _rivObs = null;
+function _osservatore() {
+  if (!_rivObs) {
+    _rivObs = new IntersectionObserver((voci) => {
+      for (const v of voci) if (v.isIntersecting) { v.target.classList.add('dentro'); _rivObs.unobserve(v.target); }
+    }, { threshold: 0.05, rootMargin: '0px 0px -6% 0px' });
+  }
+  return _rivObs;
+}
+// Prepara (nasconde) e osserva le carte dentro `scope`. Quelle già in vista si
+// rivelano subito con una piccola cascata; le altre quando ci scorri sopra.
+function rivelaCarte(scope = document) {
+  const carte = [...scope.querySelectorAll('.carta')];
+  if (_menoMoto) { carte.forEach((c) => c.classList.add('rivela', 'dentro')); return; }
+  const obs = _osservatore();
+  let inVista = 0;
+  for (const c of carte) {
+    c.classList.remove('dentro');
+    c.classList.add('rivela');
+    const r = c.getBoundingClientRect();
+    const visibile = r.top < window.innerHeight * 0.92;   // già a schermo → cascata
+    c.style.setProperty('--rev-delay', visibile ? Math.min(inVista++, 5) * 70 + 'ms' : '0ms');
+    obs.observe(c);
+  }
 }
 
 function renderAreaUtente() {
@@ -2974,11 +3006,13 @@ function initGuscio() {
     schedaAttiva = id;
     document.querySelectorAll('#nav-lat .lat-item').forEach((b) =>
       b.classList.toggle('attiva', b.dataset.scheda === id));
+    const pannello = document.getElementById('scheda-' + id);
     document.querySelectorAll('.pannello-scheda').forEach((p) =>
-      p.classList.toggle('visibile', p.id === 'scheda-' + id));
+      p.classList.toggle('visibile', p === pannello));
     aggiornaTestataPagina();
     caricaDatiScheda(id);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: _menoMoto ? 'auto' : 'smooth' });
+    if (pannello) rivelaCarte(pannello);   // reveal fresco delle carte della scheda
   });
 
   // hamburger (solo mobile): apre/chiude la sidebar
