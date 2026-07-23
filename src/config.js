@@ -90,6 +90,15 @@ export const config = {
       attivo: !!(secretKey && webhookSecret),
     };
   })(),
+
+  // Promo "settimana gratis": al primo accesso self-service, con una certa
+  // probabilità, un account che non ha MAI avuto il bot riceve alcuni giorni di
+  // accesso Pro (un trial, non "community"). Si revoca da sé alla scadenza. È
+  // legata al login self-service, quindi di fatto parte solo con Stripe acceso.
+  promo: {
+    probabilita: Math.min(1, Math.max(0, Number(env('PROMO_PROBABILITA', '0.2')) || 0)),
+    giorni: Math.max(1, parseInt(env('PROMO_GIORNI', '7'), 10) || 7),
+  },
 };
 
 // Scope OAuth richiesti.
