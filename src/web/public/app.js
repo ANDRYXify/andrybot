@@ -166,9 +166,12 @@ const _menoMoto = !!(window.matchMedia && window.matchMedia('(prefers-reduced-mo
 
 // Esegue `fn` (che modifica il DOM) dentro una View Transition: il browser anima
 // morbidamente il passaggio — morph del corpo pagina e scorrimento della pillola
-// del menu. Dove non è supportata (o con "meno movimento") esegue e basta.
+// del menu. Niente transizione con "meno movimento", dove l'API non c'è, o in
+// modalità drawer (≤860px): lì la sidebar scorre via e l'elemento condiviso
+// "volerebbe" attraverso lo schermo → meglio un cambio netto.
 function transizione(fn) {
-  if (_menoMoto || !document.startViewTransition) { fn(); return { finished: Promise.resolve() }; }
+  const drawer = window.matchMedia && window.matchMedia('(max-width: 860px)').matches;
+  if (_menoMoto || drawer || !document.startViewTransition) { fn(); return { finished: Promise.resolve() }; }
   return document.startViewTransition(fn);
 }
 

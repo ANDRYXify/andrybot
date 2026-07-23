@@ -433,6 +433,10 @@ pre.blocco-codice { background: var(--surface-2); border: 1px solid var(--border
   @keyframes voce-in { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
   .backdrop { display: block; position: fixed; inset: 0; z-index: 50; background: rgba(15, 15, 25, .35); opacity: 0; pointer-events: none; transition: opacity .28s; }
   body.menu-aperto .backdrop { opacity: 1; pointer-events: auto; }
+  /* in modalità drawer niente elementi condivisi di view transition: la sidebar
+     scorre via e la pillola "volerebbe" attraverso lo schermo (rete di sicurezza,
+     la transizione è comunque disattivata via JS a questa larghezza) */
+  #app, .lat-pill { view-transition-name: none; }
 }
 
 @media (max-width: 640px) {
