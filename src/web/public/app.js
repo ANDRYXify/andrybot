@@ -150,6 +150,7 @@ function render() {
   // schede; negli altri stati (login, richiesta, ecc.) resta nascosta.
   document.body.classList.toggle('con-nav', conPiattaforma);
   if (navLat) navLat.innerHTML = conPiattaforma ? navLateraleHtml() : '';
+  aggiornaTestataPagina();
 
   if (conPiattaforma) attivaPiattaforma();
   if (stato.isAdmin) { caricaTabellaAdmin(); caricaAnima(); }
@@ -281,20 +282,76 @@ function elencoGruppi() {
   return stato.isAdmin ? GRUPPI.concat([GRUPPO_ADMIN]) : GRUPPI;
 }
 
-// Costruisce la navigazione della sidebar: le aree a scheda singola sono voci
-// dirette (icona + nome); le aree con più schede diventano una sezione con
-// etichetta e le sue voci sotto. Tutte le voci sono cliccabili (data-scheda).
+// Icone della navigazione: SVG a tratto (stile "line icon"), una per scheda.
+// Niente emoji: monocromatiche, ereditano il colore del testo → look pulito.
+const _ico = (d) => `<svg class="lat-svg" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const ICONA = {
+  stato:       _ico('<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9v11h14V9"/><path d="M9.5 20v-6h5v6"/>'),
+  personalita: _ico('<path d="M12 3c.35 3.8 1.4 4.85 5 5.2-3.6.35-4.65 1.4-5 5.2-.35-3.8-1.4-4.85-5-5.2 3.6-.35 4.65-1.4 5-5.2Z"/><path d="M18.5 15c.15 1.6.6 2.05 2.2 2.2-1.6.15-2.05.6-2.2 2.2-.15-1.6-.6-2.05-2.2-2.2 1.6-.15 2.05-.6 2.2-2.2Z"/>'),
+  conoscenza:  _ico('<path d="M5 4.5h11a2 2 0 0 1 2 2v13H7a2 2 0 0 1-2-2Z"/><path d="M9 4.5v15"/>'),
+  memoria:     _ico('<path d="M4 21V4"/><path d="M4 21h16"/><path d="M8.5 21v-6"/><path d="M13 21V9"/><path d="M17.5 21v-9"/>'),
+  moduli:      _ico('<rect x="3" y="4" width="18" height="16" rx="2.2"/><path d="M7.5 9.5 10.5 12l-3 2.5"/><path d="M13 15h4"/>'),
+  regole:      _ico('<path d="M12 3.2 19 6v5c0 4.8-3.4 7.8-7 8.8-3.6-1-7-4-7-8.8V6z"/>'),
+  giochi:      _ico('<rect x="2" y="7.5" width="20" height="9" rx="4.5"/><path d="M7 11v3"/><path d="M5.5 12.5h3"/><circle cx="16" cy="11.5" r=".9" fill="currentColor" stroke="none"/><circle cx="18" cy="13.5" r=".9" fill="currentColor" stroke="none"/>'),
+  effetti:     _ico('<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9.5a4 4 0 0 1 0 5"/>'),
+  clip:        _ico('<rect x="3" y="5" width="18" height="14" rx="2.2"/><path d="M8 5v14"/><path d="M16 5v14"/><path d="M3 9.5h5"/><path d="M16 9.5h5"/><path d="M3 14.5h5"/><path d="M16 14.5h5"/>'),
+  ascolto:     _ico('<rect x="9" y="3" width="6" height="10.5" rx="3"/><path d="M6 11a6 6 0 0 0 12 0"/><path d="M12 17v4"/>'),
+  notifiche:   _ico('<path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5 2 6H4c.5-1 2-2 2-6"/><path d="M10.3 20a1.9 1.9 0 0 0 3.4 0"/>'),
+  admin:       _ico('<path d="M4 8.5 7.5 16h9L20 8.5l-4.3 3L12 5 8.3 11.5z"/><path d="M7.5 19h9"/>'),
+};
+
+// Descrizioni brevi mostrate nell'intestazione di pagina di ogni sezione.
+const DESC = {
+  stato: 'Accendi il bot e controlla che sia connesso alla tua chat.',
+  personalita: 'Il tono e il carattere con cui il bot parla in chat.',
+  conoscenza: 'Cosa sa il bot su di te e sui tuoi contenuti.',
+  memoria: 'Le statistiche della chat e cosa il bot ricorda.',
+  moduli: 'Crea comandi e automazioni per la tua community.',
+  regole: 'Moderazione automatica: filtri e antispam.',
+  giochi: 'Mini-giochi, monete e classifiche per la chat.',
+  effetti: 'Suoni ed effetti da lanciare in chat o in overlay.',
+  clip: 'Clip automatiche nei momenti di hype.',
+  ascolto: 'Comanda il bot a voce mentre streammi.',
+  notifiche: 'Avvisi su Telegram e TikTok quando vai in diretta.',
+  admin: 'Gestione streamer e anima condivisa del bot.',
+};
+
+// Ritrova area + titolo di una scheda per l'intestazione di pagina. Per le aree
+// a scheda singola (Panoramica, Notifiche, Admin) il titolo è il nome dell'area
+// stessa e non mostriamo l'occhiello (combacia con la voce del menu).
+function infoScheda(id) {
+  for (const g of elencoGruppi()) {
+    const s = g.schede.find(([sid]) => sid === id);
+    if (s) return g.schede.length === 1 ? { area: '', titolo: g.nome } : { area: g.nome, titolo: s[1] };
+  }
+  return { area: '', titolo: id };
+}
+
+// Costruisce la navigazione della sidebar: ogni voce ha icona + nome. Le aree a
+// scheda singola sono voci dirette; quelle con più schede diventano una sezione
+// con etichetta e le sue voci sotto. Tutte cliccabili (data-scheda).
 function navLateraleHtml() {
+  const voce = (id, nome) =>
+    `<button class="lat-item${id === schedaAttiva ? ' attiva' : ''}" data-scheda="${id}">${ICONA[id] || ''}<span>${nome}</span></button>`;
   return elencoGruppi().map((g) => {
-    if (g.schede.length === 1) {
-      const [id] = g.schede[0];
-      return `<button class="lat-item lat-solo${id === schedaAttiva ? ' attiva' : ''}" data-scheda="${id}">
-        <span class="lat-ico">${g.icona}</span><span>${g.nome}</span></button>`;
-    }
-    const voci = g.schede.map(([id, nome]) =>
-      `<button class="lat-item${id === schedaAttiva ? ' attiva' : ''}" data-scheda="${id}"><span>${nome}</span></button>`).join('');
-    return `<div class="lat-gruppo"><div class="lat-label"><span class="lat-ico">${g.icona}</span>${g.nome}</div>${voci}</div>`;
+    if (g.schede.length === 1) return voce(g.schede[0][0], g.nome);
+    const voci = g.schede.map(([id, nome]) => voce(id, nome)).join('');
+    return `<div class="lat-gruppo"><div class="lat-label">${g.nome}</div>${voci}</div>`;
   }).join('');
+}
+
+// Aggiorna l'intestazione di pagina (occhiello area + titolo + descrizione)
+// in base alla scheda attiva. Vuota se non c'è navigazione.
+function aggiornaTestataPagina() {
+  const el = document.getElementById('pagina-testata');
+  if (!el) return;
+  if (!document.body.classList.contains('con-nav')) { el.innerHTML = ''; return; }
+  const { area, titolo } = infoScheda(schedaAttiva);
+  const desc = DESC[schedaAttiva] || '';
+  el.innerHTML =
+    `${area ? `<div class="pt-occhiello">${esc(area)}</div>` : ''}` +
+    `<h1>${esc(titolo)}</h1>` +
+    `${desc ? `<p>${esc(desc)}</p>` : ''}`;
 }
 
 function vistaPiattaforma() {
@@ -2699,8 +2756,9 @@ function initGuscio() {
       b.classList.toggle('attiva', b.dataset.scheda === id));
     document.querySelectorAll('.pannello-scheda').forEach((p) =>
       p.classList.toggle('visibile', p.id === 'scheda-' + id));
+    aggiornaTestataPagina();
     caricaDatiScheda(id);
-    document.querySelector('.area-principale')?.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
   // hamburger (solo mobile): apre/chiude la sidebar
