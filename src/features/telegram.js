@@ -114,6 +114,19 @@ export async function rimuoviWebhook(token) {
   return tgCall(token, 'deleteWebhook', { post: true, params: { drop_pending_updates: true } });
 }
 
+// --------------------------------------------------------- membri (amministratori)
+// L'API dei bot NON permette di elencare tutti i membri: gli amministratori sì.
+// Utile per "seminare" il roster (il resto si riempie da chi scrive).
+export async function membriAdmin(token, chatId) {
+  const r = await tgCall(token, 'getChatAdministrators', { post: true, params: { chat_id: chatId } });
+  if (!r.ok) return { ok: false, errore: r.errore };
+  const membri = (Array.isArray(r.result) ? r.result : [])
+    .map((a) => a.user)
+    .filter((u) => u && !u.is_bot)
+    .map((u) => ({ id: String(u.id), nome: u.first_name || u.username || '', username: u.username || '' }));
+  return { ok: true, membri };
+}
+
 // --------------------------------------------------------- fissa / elimina
 // Fissa in cima al gruppo l'avviso della live. Richiede che il bot sia
 // AMMINISTRATORE con il permesso di fissare i messaggi: se non lo è, Telegram
