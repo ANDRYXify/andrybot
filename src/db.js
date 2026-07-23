@@ -455,6 +455,12 @@ export const subscriptions = {
     const s = this.get(login);
     return !!s && (s.status === 'active' || s.status === 'trialing');
   },
+  // trial (promo) scaduti da revocare: quelli in prova con periodo finito.
+  // I paganti (active) li gestisce il webhook Stripe, non questo.
+  scaduti() {
+    return db.prepare("SELECT * FROM subscriptions WHERE status='trialing' AND current_period_end>0 AND current_period_end<?")
+      .all(now());
+  },
 };
 
 // ---------------------------------------------------------------- IA locale (modello)
