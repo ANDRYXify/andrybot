@@ -797,7 +797,7 @@ function pannelloGiochi() {
 // --- scheda Notifiche (Telegram) ---------------------------------------
 
 function pannelloNotifiche() {
-  const tg = stato.telegram || { configurato: false, gruppoOk: false, attivo: false, messaggio: '', botUsername: '', gruppo: '' };
+  const tg = stato.telegram || { configurato: false, gruppoOk: false, attivo: false, messaggio: '', botUsername: '', gruppo: '', pinLive: true };
   const tkc = impostazioni().tiktok || {};
   const msgDefault = '🔴 {nome} è in diretta!\n\n{titolo}\n🎮 {gioco}\n\n👉 {link}';
   return pannello('notifiche', `
@@ -838,6 +838,13 @@ function pannelloNotifiche() {
         <input type="checkbox" id="chk-tg-attivo" ${tg.attivo ? 'checked' : ''} ${tg.gruppoOk ? '' : 'disabled'}>
         <label for="chk-tg-attivo">Avvisa il gruppo quando vado in diretta</label>
       </div>
+
+      <div class="riga-check">
+        <input type="checkbox" id="chk-tg-pin" ${tg.pinLive ? 'checked' : ''} ${tg.gruppoOk ? '' : 'disabled'}>
+        <label for="chk-tg-pin">Fissa l'avviso in cima durante la live e rimuovilo quando stacco</label>
+      </div>
+      <p class="suggerimento">Per fissare l'avviso il bot dev'essere <strong>amministratore</strong> del gruppo
+        con il permesso di <em>fissare i messaggi</em>. L'eliminazione a fine live funziona comunque.</p>
 
       <p class="spazio-sopra">
         <button class="btn" id="btn-tg-salva">Salva</button>
@@ -1201,6 +1208,7 @@ function attivaPiattaforma() {
     await api('/api/streamer/telegram/impostazioni', { method: 'POST', body: {
       attivo: document.getElementById('chk-tg-attivo').checked,
       messaggio: document.getElementById('txt-tg-messaggio').value,
+      pinLive: document.getElementById('chk-tg-pin')?.checked ?? true,
     } });
     toast('Notifiche Telegram salvate 📣');
     stato = await api('/api/me');   // aggiorna lo stato senza perdere la scheda

@@ -387,6 +387,7 @@ export class BotManager {
     const ev = { channel: ch, type: isLive ? 'stream.online' : 'stream.offline', data: data || {} };
     this._dispatchEvent(ev);
     if (isLive) this._notificaTelegram(ch);
+    else this._chiudiTelegram(ch);
   }
 
   // Manda la notifica Telegram "è live" nel gruppo dello streamer, se ha
@@ -403,8 +404,36 @@ export class BotManager {
       if (r?.ok) {
         if (streamId) tgConf.setUltimaLive(login, streamId);
         log.info(`notifica Telegram inviata per #${login}`);
+        // Se richiesto, fissa l'avviso in cima al gruppo e ricorda il suo id
+        // così a live spenta possiamo eliminarlo. Il pin richiede che il bot
+        // sia admin: se non lo è fallisce in silenzio (l'avviso resta comunque).
+        const msgId = r.result?.message_id;
+        if (msgId) {
+          tgConf.setMsgId(login, msgId);
+          if (conf.pin_live) {
+            const p = await telegram.fissaMessaggio(conf.token, conf.chat_id, msgId);
+            if (!p.ok) log.warn(`pin Telegram #${login}: ${p.errore} (il bot è admin del gruppo con permesso di fissare?)`);
+          }
+        }
       }
     } catch (e) { log.error(`notifica Telegram #${login}:`, e?.message || e); }
+  }
+
+  // Live spenta: se l'avviso era stato fissato, lo elimina dal gruppo (togliendo
+  // così anche il "fissato"). Best-effort e idempotente: se non c'è nulla da
+  // eliminare, non fa niente. Il bot può cancellare i propri messaggi entro 48h.
+  async _chiudiTelegram(login) {
+    try {
+      const conf = tgConf.get(login);
+      if (!conf?.token || !conf.chat_id) return;
+      const msgId = conf.msg_id;
+      if (!msgId) return;
+      tgConf.setMsgId(login, '');   // azzera comunque: un solo tentativo
+      if (!conf.pin_live) return;   // eliminazione legata all'opzione "fissa/elimina"
+      const r = await telegram.eliminaMessaggio(conf.token, conf.chat_id, msgId);
+      if (r.ok) log.info(`avviso Telegram eliminato per #${login} (live finita)`);
+      else log.warn(`elimina Telegram #${login}: ${r.errore}`);
+    } catch (e) { log.error(`chiudi Telegram #${login}:`, e?.message || e); }
   }
 
   // Giochi del sito: per ogni canale connesso col ponte acceso, chiede al sito

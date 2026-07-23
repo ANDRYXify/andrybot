@@ -100,6 +100,28 @@ export async function inviaMessaggio(token, chatId, testo, { anteprima = true } 
   });
 }
 
+// --------------------------------------------------------- fissa / elimina
+// Fissa in cima al gruppo l'avviso della live. Richiede che il bot sia
+// AMMINISTRATORE con il permesso di fissare i messaggi: se non lo è, Telegram
+// rifiuta e noi ce ne accorgiamo dal .ok (il messaggio resta comunque inviato).
+export async function fissaMessaggio(token, chatId, messageId, { silenzioso = true } = {}) {
+  if (!messageId) return { ok: false, errore: 'nessun messaggio da fissare' };
+  return tgCall(token, 'pinChatMessage', {
+    post: true,
+    params: { chat_id: chatId, message_id: messageId, disable_notification: silenzioso },
+  });
+}
+
+// Elimina un messaggio (il bot può cancellare i PROPRI messaggi entro 48h,
+// anche senza essere amministratore). Toglie di fatto anche il "fissato".
+export async function eliminaMessaggio(token, chatId, messageId) {
+  if (!messageId) return { ok: false, errore: 'nessun messaggio da eliminare' };
+  return tgCall(token, 'deleteMessage', {
+    post: true,
+    params: { chat_id: chatId, message_id: messageId },
+  });
+}
+
 // --------------------------------------------------------- messaggio live
 const escHtml = (s) => String(s ?? '')
   .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
