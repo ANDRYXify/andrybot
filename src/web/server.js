@@ -20,7 +20,6 @@ import { comprimi } from '../features/compress.js';
 import { seedStreamer } from '../features/seed.js';
 import * as vip from '../features/vip.js';
 import * as telegram from '../features/telegram.js';
-import * as telegramModuli from '../features/telegramModuli.js';
 import * as compleanniFeat from '../features/compleanni.js';
 import * as tiktok from '../features/tiktok.js';
 import * as quotesImport from '../features/quotesimport.js';
@@ -895,8 +894,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // elenco delle frasi da ascoltare (dei moduli 'voce' attivi del canale)
   app.get('/api/streamer/voce', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    // frasi vocali dei moduli Twitch + di quelli Telegram (lista unica)
-    const frasi = [...new Set([...modules.frasiVoce(login), ...telegramModuli.frasiVoce(login)])];
+    const frasi = modules.frasiVoce(login);   // include i moduli abilitati a Telegram
     res.json({ frasi, count: frasi.length });
   }));
 
@@ -915,20 +913,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       else await vip.assegnaVip(helix, login, { nome: cmdVip.nome, durata: cmdVip.durata, motivo: 'voce' }, say);
       return res.json({ ok: true, eseguito: true, vip: true });
     }
-    let eseguito = await modules.eseguiVoce(login, frase, (t) => manager.say(login, t));
-    // moduli TELEGRAM con innesco vocale: inviano il messaggio nel gruppo
-    const modsTg = telegramModuli.trovaPerVoce(login, frase);
-    if (modsTg.length) {
-      const c = tgConf.get(login);
-      if (c?.token && c.chat_id) {
-        const s = streamers.get(login);
-        for (const m of modsTg) {
-          const testo = telegramModuli.costruisciMessaggio(m, { streamer: s?.display || login });
-          if (testo) telegram.inviaMessaggio(c.token, c.chat_id, testo).catch(() => {});
-        }
-        eseguito = true;
-      }
-    }
+    // la stessa risposta va anche nel gruppo Telegram se il modulo è abilitato
+    const c = tgConf.get(login);
+    const inviaTg = (t) => { if (c?.token && c.chat_id && t) telegram.inviaMessaggio(c.token, c.chat_id, t).catch(() => {}); };
+    const eseguito = await modules.eseguiVoce(login, frase, (t) => manager.say(login, t), inviaTg);
     res.json({ ok: true, eseguito });
   }));
 
@@ -1061,20 +1049,6 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.json({ ok: true, interattivo: false });
   }));
 
-  // Moduli Telegram (lista separata): leggi / salva l'intera lista.
-  app.get('/api/streamer/telegram/moduli', requireLogin, wrap(async (req, res) => {
-    const s = streamers.get(currentUser(req).login);
-    res.json({ moduli: Array.isArray(s?.settings?.telegramModuli) ? s.settings.telegramModuli : [] });
-  }));
-  app.post('/api/streamer/telegram/moduli', requireLogin, wrap(async (req, res) => {
-    const login = currentUser(req).login;
-    const s = streamers.get(login);
-    if (!s) return res.status(404).json({ errore: 'streamer sconosciuto' });
-    const moduli = telegramModuli.normalizzaModuli(req.body?.moduli);
-    streamers.setSettings(login, { ...s.settings, telegramModuli: moduli });
-    res.json({ ok: true, moduli });
-  }));
-
   // ---- Auguri di compleanno: configurazione + elenco dei compleanni ----
   app.get('/api/streamer/telegram/compleanni', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
@@ -1160,12 +1134,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
         const risp = gestisciComandoCompleanno(login, msg, testo);
         if (risp) { telegram.inviaMessaggio(conf.token, chat.id, risp).catch(() => {}); return; }
       }
-      // comandi personalizzati
-      const mod = telegramModuli.trovaPerComando(login, testo);
-      if (!mod) return;
+      // comandi: i moduli con "abilita anche su Telegram" (schermata Comandi)
       const utente = msg.from?.first_name || msg.from?.username || '';
-      const risposta = telegramModuli.costruisciMessaggio(mod, { utente, streamer: s?.display || login });
-      if (risposta) telegram.inviaMessaggio(conf.token, chat.id, risposta).catch(() => {});
+      const invia = (t) => { if (t) telegram.inviaMessaggio(conf.token, chat.id, t).catch(() => {}); };
+      modules.eseguiTelegram(login, testo, invia, { utente }).catch(() => {});
     } catch (e) { log.warn('webhook telegram:', e?.message || e); }
   }));
 
