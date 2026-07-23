@@ -14,6 +14,7 @@ let datiModuli = null;        // { moduli, effettiDisponibili, apiKey, apiUrl }
 let moduloInModifica = null;  // oggetto aperto nell'editor (per conservare id/attivo)
 let campoAttivoModulo = null; // ultimo campo di testo a fuoco (per le pillole variabili)
 let apiKeyVisibile = false;   // se la chiave API è mostrata in chiaro
+let tgModuli = [];            // moduli/comandi Telegram in modifica nella scheda Notifiche
 
 const app = document.getElementById('app');
 const areaUtente = document.getElementById('area-utente');
@@ -970,6 +971,29 @@ function pannelloNotifiche() {
       ` : ''}
     </div>
 
+    ${tg.configurato ? `
+    <div class="carta">
+      <h2>Comandi del bot su Telegram 🤖</h2>
+      <p>Con la <strong class="primo-piano">modalità interattiva</strong> il bot <strong>legge i messaggi</strong> del
+      gruppo e risponde ai comandi che crei qui sotto (come su Twitch). Ogni comando può partire anche
+      <strong>a voce</strong> dall'ascolto vocale.</p>
+
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore"><input type="checkbox" id="chk-tg-interattivo" ${tg.interattivo ? 'checked' : ''}><span class="levetta"></span></label>
+        <span class="etichetta-stato">Bot interattivo nel gruppo</span>
+        ${tg.interattivo ? '<span class="badge verde">attivo</span>' : ''}
+      </div>
+      <p class="suggerimento">Il bot dev'essere <strong>nel gruppo</strong>. Da attivo, il gruppo si collega da solo:
+      scrivi un messaggio qualsiasi nel gruppo e viene rilevato. Il tasto «Rileva gruppo» funziona solo da spento.</p>
+
+      <div id="lista-tg-moduli" class="spazio-sopra"><p class="vuoto">Caricamento…</p></div>
+      <p class="spazio-sopra">
+        <button class="btn secondario" id="btn-tg-mod-aggiungi">+ Nuovo comando</button>
+        <button class="btn" id="btn-tg-mod-salva">Salva comandi</button>
+      </p>
+    </div>
+    ` : ''}
+
     <div class="carta">
       <h2>Notifica live TikTok 🎵</h2>
       <p>Quando vai in diretta su <strong class="primo-piano">TikTok</strong>, avviso il gruppo Telegram
@@ -1339,6 +1363,37 @@ function attivaPiattaforma() {
     stato = await api('/api/me'); render();
   }));
 
+  // --- Bot interattivo su Telegram (webhook + comandi) ---
+  document.getElementById('chk-tg-interattivo')?.addEventListener('change', (ev) => {
+    const chk = ev.target;
+    conErrore(async () => {
+      await api('/api/streamer/telegram/interattivo', { method: 'POST', body: { attivo: chk.checked } });
+      toast(chk.checked ? 'Bot interattivo attivato 🤖' : 'Bot interattivo spento.');
+      stato = await api('/api/me'); render(); caricaTgModuli();
+    }).catch(() => { chk.checked = !chk.checked; });   // in caso di errore, rimetti lo switch
+  });
+
+  document.getElementById('btn-tg-mod-aggiungi')?.addEventListener('click', () => {
+    tgModuli = leggiTgModuliDaDOM();
+    tgModuli.push({ id: '', nome: '', comando: '', alias: '', senzaBang: false, frasiVoce: [], messaggio: '', attivo: true });
+    renderTgModuli();
+  });
+
+  document.getElementById('lista-tg-moduli')?.addEventListener('click', (ev) => {
+    const rim = ev.target.closest('[data-tgm-rimuovi]');
+    if (!rim) return;
+    tgModuli = leggiTgModuliDaDOM();
+    tgModuli.splice(Number(rim.dataset.tgmRimuovi), 1);
+    renderTgModuli();
+  });
+
+  document.getElementById('btn-tg-mod-salva')?.addEventListener('click', () => conErrore(async () => {
+    const r = await api('/api/streamer/telegram/moduli', { method: 'POST', body: { moduli: leggiTgModuliDaDOM() } });
+    tgModuli = Array.isArray(r.moduli) ? r.moduli : [];
+    renderTgModuli();
+    toast('Comandi Telegram salvati 🤖');
+  }));
+
   // --- Notifica TikTok ---
   document.getElementById('btn-tk-salva')?.addEventListener('click', () => conErrore(async () => {
     await salvaImpostazioni({
@@ -1595,7 +1650,71 @@ function caricaDatiScheda(id) {
   if (id === 'moduli') caricaModuli();
   if (id === 'memoria') caricaStatistiche();
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); }
+  if (id === 'notifiche') caricaTgModuli();
   if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaAnima(); }
+}
+
+// --- moduli/comandi Telegram (scheda Notifiche) -------------------------
+async function caricaTgModuli() {
+  const box = document.getElementById('lista-tg-moduli');
+  if (!box) return;   // Telegram non configurato: la card non c'è
+  try {
+    const r = await api('/api/streamer/telegram/moduli');
+    tgModuli = Array.isArray(r.moduli) ? r.moduli : [];
+  } catch { tgModuli = []; }
+  renderTgModuli();
+}
+
+function renderTgModuli() {
+  const box = document.getElementById('lista-tg-moduli');
+  if (!box) return;
+  if (!tgModuli.length) {
+    box.innerHTML = '<p class="vuoto">Nessun comando ancora. Aggiungine uno: es. comando <code>social</code> → messaggio con i tuoi link.</p>';
+    return;
+  }
+  box.innerHTML = tgModuli.map((m, i) => {
+    const alias = Array.isArray(m.alias) ? m.alias.join(' ') : (m.alias || '');
+    const voce = Array.isArray(m.frasiVoce) ? m.frasiVoce.join('\n') : (m.frasiVoce || '');
+    return `
+    <div class="modulo-tg" data-i="${i}">
+      <div class="riga-flessibile">
+        <input type="text" class="tgm-nome campo-largo" placeholder="Nome del comando" value="${esc(m.nome || '')}">
+        <label class="interruttore"><input type="checkbox" class="tgm-attivo" ${m.attivo !== false ? 'checked' : ''}><span class="levetta"></span></label>
+        <button class="btn pericolo mini" data-tgm-rimuovi="${i}">Rimuovi</button>
+      </div>
+      <label class="campo">Comando scritto nel gruppo</label>
+      <input type="text" class="tgm-comando" placeholder="social" value="${esc(m.comando || '')}">
+      <label class="campo">Alias (facoltativi, separati da spazio)</label>
+      <input type="text" class="tgm-alias" placeholder="social socials link" value="${esc(alias)}">
+      <div class="riga-check">
+        <input type="checkbox" class="tgm-senzabang" ${m.senzaBang ? 'checked' : ''}>
+        <label>Attiva anche <b>senza / o !</b> (basta la parola esatta)</label>
+      </div>
+      <label class="campo">Frasi per il comando vocale (una per riga, facoltative)</label>
+      <textarea class="tgm-voce" rows="2" placeholder="manda i social&#10;link social">${esc(voce)}</textarea>
+      <label class="campo">Messaggio da inviare nel gruppo</label>
+      <textarea class="tgm-messaggio" rows="3" placeholder="I miei social: ...">${esc(m.messaggio || '')}</textarea>
+      <p class="suggerimento">Segnaposto: <code>{utente}</code> (chi scrive) <code>{nome}</code> (tu). Puoi usare grassetto con <code>&lt;b&gt;…&lt;/b&gt;</code>.</p>
+    </div>`;
+  }).join('');
+}
+
+// legge dal DOM lo stato corrente dei moduli (prima di salvare o ridisegnare)
+function leggiTgModuliDaDOM() {
+  const box = document.getElementById('lista-tg-moduli');
+  if (!box) return tgModuli;
+  const righe = [...box.querySelectorAll('.modulo-tg')];
+  if (!righe.length) return [];
+  return righe.map((r, i) => ({
+    id: tgModuli[i]?.id || '',
+    nome: r.querySelector('.tgm-nome')?.value || '',
+    comando: r.querySelector('.tgm-comando')?.value || '',
+    alias: r.querySelector('.tgm-alias')?.value || '',
+    senzaBang: !!r.querySelector('.tgm-senzabang')?.checked,
+    frasiVoce: (r.querySelector('.tgm-voce')?.value || '').split('\n'),
+    messaggio: r.querySelector('.tgm-messaggio')?.value || '',
+    attivo: !!r.querySelector('.tgm-attivo')?.checked,
+  }));
 }
 
 // --- caricamenti dati ---------------------------------------------------
