@@ -113,6 +113,17 @@ export async function fetchApproved() {
 // buttare giù i bot). Ritorna una funzione per fermare il ciclo.
 export function startApprovalSync({ manager, everyMs = 5 * 60_000 } = {}) {
   async function giro() {
+    // 1) revoca i trial "settimana gratis" scaduti (indipendente dal sito)
+    let promoCambiato = false;
+    for (const s of subscriptions.scaduti()) {
+      subscriptions.set(s.login, { tier: s.tier, status: 'canceled', periodEnd: s.current_period_end });
+      streamers.setEnabled(s.login, false);   // bot spento (non cancella nulla)
+      log.info(`Trial promo scaduto per #${s.login}: accesso revocato`);
+      promoCambiato = true;
+    }
+    if (promoCambiato) Promise.resolve(manager?.syncChannels?.()).catch(() => {});
+
+    // 2) revoca chi non è più abilitato sul sito
     const attivi = await fetchApproved();
     if (!attivi) return;                      // sito muto: non revocare nulla
     // Prudenza: una lista vuota è quasi certamente un disguido (parsing o

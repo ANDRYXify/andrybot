@@ -123,6 +123,11 @@ async function caricaStato() {
     return;
   }
   render();
+  // promo "settimana gratis" appena assegnata
+  if (new URLSearchParams(location.search).get('promo') === '1') {
+    toast('🎁 Hai ricevuto una settimana Pro gratis — esplora tutto SocialBot!');
+    try { history.replaceState(null, '', '/'); } catch { /* niente */ }
+  }
 }
 
 // ------------------------------------------------------------------ modalità demo

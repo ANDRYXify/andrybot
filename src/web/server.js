@@ -434,6 +434,20 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
         req.session.user = sessionePer(login, disp, contestoDefault(contesti));
         return res.redirect('/');
       }
+      // PROMO "settimana gratis": chi non ha MAI avuto il bot (nessun abbonamento/
+      // trial precedente) può ricevere, a caso, alcuni giorni di Pro. È un trial
+      // temporaneo (non "community"), si revoca da sé alla scadenza.
+      const maiAvuto = !subscriptions.get(login);
+      if (maiAvuto && config.promo.probabilita > 0 && Math.random() < config.promo.probabilita) {
+        const fine = Date.now() + config.promo.giorni * 86400000;
+        subscriptions.set(login, { tier: 'pro', status: 'trialing', periodEnd: fine });
+        streamers.upsertApproved(login, disp);
+        seedStreamer(login);
+        sync();
+        req.session.user = sessionePer(login, disp, contestoDefault(contestiPer(login)));
+        log.info(`promo: settimana gratis Pro a @${login} (${config.promo.giorni}g)`);
+        return res.redirect('/?promo=1');
+      }
       // nessun accesso: identità "in attesa di abbonarsi" — NIENTE session.user,
       // quindi niente dashboard né API dati. Vede solo i piani e può fare checkout.
       req.session.abbonando = { login, display: disp };
