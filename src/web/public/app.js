@@ -7,6 +7,14 @@
 // ------------------------------------------------------------------ stato
 let stato = null;          // risposta di /api/me
 let schedaAttiva = 'stato';
+
+// Modalità DEMO: dashboard interattiva con dati d'esempio, per far vedere il bot
+// senza login. Attiva con /?demo=1 (link dalla vetrina). Nessuna API reale: le
+// chiamate sono simulate lato client (vedi apiDemo), i salvataggi non persistono.
+const DEMO = (() => {
+  try { return new URLSearchParams(location.search).get('demo') === '1' || /^\/demo\/?$/.test(location.pathname); }
+  catch { return false; }
+})();
 const gruppiChiusi = new Set();   // id delle sezioni della sidebar richiuse
 
 // stato locale della scheda "Moduli"
@@ -45,6 +53,7 @@ function toast(msg, tipo = 'ok') {
 
 // fetch verso le API: JSON in/out, errori → eccezione con messaggio leggibile
 async function api(percorso, opzioni = {}) {
+  if (DEMO) return apiDemo(percorso, opzioni);   // demo: nessuna chiamata reale
   const opts = { headers: {}, ...opzioni };
   if (opts.body !== undefined && typeof opts.body !== 'string') {
     opts.headers['Content-Type'] = 'application/json';
@@ -101,6 +110,7 @@ function inApp() {
 }
 
 async function caricaStato() {
+  if (DEMO) { stato = statoDemo(); render(); montaDemo(); return; }
   try {
     stato = await api('/api/me');
   } catch (e) {
@@ -111,6 +121,192 @@ async function caricaStato() {
     return;
   }
   render();
+}
+
+// ------------------------------------------------------------------ modalità demo
+// Tutta la logica della demo interattiva. Vive qui, isolata: se DEMO è falso
+// niente di questo viene mai eseguito. I dati sono di fantasia (streamer
+// "andryx_demo") e servono solo a far vedere com'è fatta e come funziona la
+// dashboard, con una spiegazione per ogni sezione.
+
+// Stato finto: uno streamer approvato, permessi ok, con impostazioni e Telegram
+// già configurati così ogni scheda ha qualcosa da mostrare.
+function statoDemo() {
+  return {
+    user: { login: 'andryx_demo', display: 'Andryx', avatar: '' },
+    ruolo: 'proprietario',
+    isAdmin: false,
+    permessiOk: true, vipOk: true, moderazioneOk: true,
+    knowledgeCount: 3,
+    status: { channels: ['andryx_demo'] },   // "in chat adesso"
+    preaddestramento: { preaddestramento_ts: '2026-05-01T20:00:00Z', preaddestramento_esito: 'profilo letto' },
+    telegram: { configurato: true, gruppoOk: true, attivo: true, pinLive: true,
+      interattivo: true, botUsername: 'andryx_live_bot', gruppo: 'Community di Andryx', messaggio: '' },
+    streamer: {
+      status: 'approved',
+      botEnabled: true,
+      settings: {
+        tono: 'scherzoso', spontaneita: 0.05, rispostaMenzioni: true, modalita: 'sempre',
+        iaLocale: true, proattivo: true, adattaCanale: true, giochi: true, promoSocial: true,
+        nomeMonete: 'scudi', clipAuto: true, clipAutoSoglia: 25, ascoltoLive: false, ascoltoSensibilita: 5,
+        premioVip: { attivo: true, periodo: 'settimana', quanti: 2 },
+        paroleVietate: ['spoiler', 'link-truffa'],
+        frasi: ['Benvenuto nel canale! 💜', 'Ricordati di seguire per non perderti le live!'],
+        tiktok: { username: 'andryxify', attivo: true, annunciaChat: true, messaggio: '' },
+        giochiSito: { attivo: true, collegato: true },
+        antispam: { maiuscole: true, link: true, flood: true },
+      },
+    },
+  };
+}
+
+// Risposte finte alle API. Le GET restituiscono dati d'esempio; le scritture
+// tornano un esito benevolo (la barra demo chiarisce che non si salva nulla).
+function apiDemo(percorso, opzioni = {}) {
+  const metodo = (opzioni.method || 'GET').toUpperCase();
+  const via = percorso.split('?')[0];
+  if (metodo === 'GET') return Promise.resolve(_demoGet(via));
+  // scritture: qualche endpoint restituisce dati usati a schermo → li simuliamo.
+  if (via === '/api/me') return Promise.resolve(statoDemo());
+  if (via === '/api/moderatori') return Promise.resolve({ invito: 'https://bot.andryxify.it/mod?token=demo' });
+  if (via === '/api/streamer/apikey') return Promise.resolve({ apikey: 'demo_' + 'x'.repeat(24) });
+  if (via.endsWith('/prova')) { toast('In demo non invio davvero in chat 😊'); return Promise.resolve({ ok: true }); }
+  return Promise.resolve({ ok: true, demo: true });
+}
+
+function _demoGet(via) {
+  const F = {
+    '/api/me': statoDemo(),
+    '/api/streamer/knowledge': [
+      { id: 1, domanda: 'Che PC usi?', risposta: 'Ryzen 7 + RTX 4070, trovi tutto su andryxify.it 🖥️', fonte: 'manuale', ts: '2026-05-02T18:00:00Z' },
+      { id: 2, domanda: 'Da dove streammi?', risposta: 'Da Genova, quasi ogni sera verso le 21 💜', fonte: 'auto', ts: '2026-05-01T20:00:00Z' },
+      { id: 3, domanda: 'Come ti seguo ovunque?', risposta: 'Tutti i miei link li trovi su andryxify.it/u/andryx', fonte: 'chat', ts: '2026-05-05T22:10:00Z' },
+    ],
+    '/api/streamer/citazioni': [
+      { n: 1, text: '"Oggi si vince o si impara, mai si perde." — Andryx' },
+      { n: 2, text: '"La chat è la vera protagonista." — un mod a caso' },
+      { n: 3, text: '"Un altro boss, un altro tentativo." — Andryx alle 2 di notte' },
+    ],
+    '/api/streamer/classifica': {
+      monete: [
+        { user: 'lucaplays', monete: 4820 }, { user: 'giada_ttv', monete: 3910 },
+        { user: 'marco99', monete: 2740 }, { user: 'sara_gg', monete: 1980 }, { user: 'il_nonno', monete: 1450 },
+      ],
+      vip: [
+        { user: 'lucaplays', display: 'lucaplays', until: null, motivo: 'top chatter del mese' },
+        { user: 'giada_ttv', display: 'giada_ttv', until: '2026-09-01T00:00:00Z', motivo: 'vincitrice del quiz' },
+      ],
+    },
+    '/api/streamer/effetti': {
+      overlayUrl: 'https://bot.andryxify.it/overlay/andryx_demo',
+      effetti: [
+        { id: 1, comando: 'applausi', tipo: 'audio', tier: 'tutti', cooldown: 10, volume: 80, durata: 3000 },
+        { id: 2, comando: 'tromba', tipo: 'audio', tier: 'sub', cooldown: 15, volume: 70, durata: 2000 },
+        { id: 3, comando: 'coriandoli', tipo: 'video', tier: 'vip', cooldown: 30, volume: 60, durata: 4000 },
+      ],
+    },
+    '/api/streamer/statistiche': {
+      messaggi7g: 12840, messaggiBot7g: 1620, clipTotali: 96,
+      topChatters: [
+        { user: 'lucaplays', c: 1820 }, { user: 'giada_ttv', c: 1390 }, { user: 'marco99', c: 980 },
+        { user: 'sara_gg', c: 640 }, { user: 'il_nonno', c: 410 },
+      ],
+    },
+    '/api/streamer/memoria': {
+      clip: [
+        { url: 'https://clips.twitch.tv/demo1', clip_id: 'demo1', reason: 'hype: +25 msg/min', ts: '2026-06-20T21:15:00Z' },
+        { url: 'https://clips.twitch.tv/demo2', clip_id: 'demo2', reason: 'reazione al jumpscare 😱', ts: '2026-06-18T22:40:00Z' },
+      ],
+      lezioni: [
+        { text: 'La community ama i boss-fight e le serate chiacchiera.', ts: '2026-06-10T21:00:00Z' },
+        { text: 'Meglio non fare spoiler prima delle 22.', ts: '2026-06-12T20:30:00Z' },
+      ],
+      fatti: [
+        { key: 'Gioco preferito', value: 'GDR e soulslike' },
+        { key: 'Orario tipico', value: 'quasi ogni sera verso le 21' },
+        { key: 'Città', value: 'Genova' },
+      ],
+    },
+    '/api/streamer/moduli': [
+      { id: 'social', nome: 'Social', attivo: true, tipo: 'comando',
+        trigger: { tipo: 'comando', comando: 'social' },
+        azioni: [{ tipo: 'messaggio', testo: 'I miei social: andryxify.it/u/$canale ✨' }] },
+      { id: 'pc', nome: 'Setup PC', attivo: true, tipo: 'comando',
+        trigger: { tipo: 'comando', comando: 'pc' },
+        azioni: [{ tipo: 'messaggio', testo: 'Ryzen 7 + RTX 4070. Dettagli su andryxify.it 🖥️' }] },
+      { id: 'benvenuto', nome: 'Benvenuto', attivo: true, tipo: 'evento',
+        trigger: { tipo: 'evento', evento: 'primo-messaggio' },
+        azioni: [{ tipo: 'messaggio', testo: 'Benvenuto $user! Mettiti comodo 💜' }] },
+      { id: 'dado', nome: 'Tiro di dado', attivo: false, tipo: 'comando',
+        trigger: { tipo: 'comando', comando: 'dado' },
+        azioni: [{ tipo: 'messaggio', testo: '$user tira il dado e fa... $random(1,6)! 🎲' }] },
+    ],
+    '/api/streamer/telegram/compleanni': {
+      membri: [
+        { tg_user_id: '1', nome: 'Luca', username: 'lucaplays' },
+        { tg_user_id: '2', nome: 'Giada', username: 'giada_ttv' },
+      ],
+      compleanni: [
+        { id: 1, nome: 'Luca', giorno: 14, mese: 3, tg_user_id: '1' },
+        { id: 2, nome: 'Giada', giorno: 2, mese: 9, tg_user_id: '2' },
+      ],
+    },
+    '/api/moderatori': [ { login: 'lucaplays', display: 'lucaplays', stato: 'attivo' } ],
+    '/api/passkey': [ { id: 'demo', nome: 'iPhone di Andryx', quando: '2026-04-10' } ],
+  };
+  return F[via] !== undefined ? F[via] : {};
+}
+
+// Spiegazione mostrata in cima ad ogni scheda durante la demo ("le varie sezioni,
+// spiegate"). Chiave = id scheda.
+const SPIEGA_DEMO = {
+  stato: 'Il quadro di comando: accendi/spegni il bot, controlli i permessi Twitch e vedi se è connesso alla chat. Da qui inviti anche i tuoi moderatori.',
+  personalita: 'Decidi il carattere del bot: tono (scherzoso, amichevole, serio), quanto è spontaneo, se risponde alle menzioni e quando può parlare.',
+  conoscenza: 'Insegni al bot cosa sa di te: domande e risposte pronte (PC, social, orari…) che userà quando qualcuno chiede in chat.',
+  memoria: 'Le statistiche del canale e ciò che il bot ricorda: clip salvate, note sulla community, sintesi di com\'è andata.',
+  moduli: 'Il cuore del bot: crei comandi e automazioni. Trigger da parola, frase, evento, voce o timer e azioni con variabili $ (come $user o $random).',
+  regole: 'La moderazione automatica: filtri anti-spam, parole vietate e limiti, per tenere la chat pulita senza pensarci.',
+  giochi: 'Mini-giochi, monete e classifiche per la community: qui vedi la leaderboard e gestisci le citazioni.',
+  effetti: 'Suoni ed effetti da lanciare in chat o in overlay: un comando e parte l\'applauso, la tromba o i coriandoli.',
+  clip: 'Le clip automatiche nei momenti di hype, così non perdi mai il momento migliore della live.',
+  ascolto: 'Comandi il bot a voce mentre streammi: parli e lui esegue, senza toccare la tastiera.',
+  notifiche: 'Gli avvisi quando vai in diretta: Telegram (con messaggio fissato e auguri di compleanno ai membri) e TikTok.',
+};
+
+// Monta gli elementi fissi della demo (barra in alto + striscia di spiegazione)
+// e li tiene aggiornati sulla scheda attiva.
+function montaDemo() {
+  const cont = document.querySelector('.contenuto');
+  const header = document.getElementById('pagina-testata');
+  if (!cont || document.getElementById('demo-barra')) { aggiornaSpiegazioneDemo(); return; }
+
+  const barra = document.createElement('div');
+  barra.id = 'demo-barra';
+  barra.innerHTML =
+    `<span class="demo-punto"></span>
+     <span class="demo-testo"><strong>Demo di SocialBot</strong> — stai esplorando la dashboard con dati d'esempio. Puoi cliccare ovunque; niente viene salvato.</span>
+     <span class="demo-azioni">
+       <a class="btn mini" href="/auth/login">Accedi con Twitch</a>
+       <a class="btn mini secondario" href="/">Esci dalla demo</a>
+     </span>`;
+  cont.insertBefore(barra, header);
+
+  const spiega = document.createElement('div');
+  spiega.id = 'demo-spiega';
+  spiega.className = 'carta demo-spiega';
+  cont.insertBefore(spiega, document.getElementById('app'));
+
+  aggiornaSpiegazioneDemo();
+}
+
+// Aggiorna la striscia di spiegazione in base alla scheda attiva.
+function aggiornaSpiegazioneDemo() {
+  const el = document.getElementById('demo-spiega');
+  if (!el) return;
+  const testo = SPIEGA_DEMO[schedaAttiva];
+  if (!testo) { el.style.display = 'none'; return; }
+  el.style.display = '';
+  el.innerHTML = `<span class="demo-spiega-ico" aria-hidden="true">💡</span><p><strong>Cos'è questa sezione — </strong>${esc(testo)}</p>`;
 }
 
 // ------------------------------------------------------------------ render principale
@@ -276,9 +472,9 @@ function renderHero() {
       Impara chi sei, crea comandi su misura e cresce con la tua community.</p>
       <div class="vetrina-azioni">
         <a class="btn grande" href="/auth/login">Accedi con Twitch</a>
-        <a class="btn grande secondario" href="https://andryxify.it">Scopri andryxify.it →</a>
+        <a class="btn grande secondario" href="/?demo=1">▶ Prova la demo</a>
       </div>
-      <p class="nota">🔒 Riservato agli streamer verificati e abilitati da andryxify.</p>
+      <p class="nota">🔒 Riservato agli streamer verificati e abilitati da andryxify. La <a href="/?demo=1">demo</a> è aperta a tutti · <a href="https://andryxify.it">andryxify.it</a></p>
     </section>
 
     <section class="vetrina-features">
@@ -2024,6 +2220,7 @@ async function caricaEffetti() {
 
 // invio multipart del form di caricamento effetto (non passa da api(): usa FormData)
 async function caricaEffettoUpload(ev) {
+  if (DEMO) { toast('In demo non si caricano file 😊 — accedi per farlo davvero.'); return; }
   const btn = ev.currentTarget;
   const out = document.getElementById('esito-effetto');
   const fileInput = document.getElementById('eff-file');
@@ -3097,6 +3294,7 @@ function initGuscio() {
       if (pannello) rivelaCarte(pannello);   // reveal fresco delle carte della scheda
     });
     caricaDatiScheda(id);
+    if (DEMO) aggiornaSpiegazioneDemo();   // aggiorna la spiegazione della scheda
     window.scrollTo({ top: 0, behavior: _menoMoto ? 'auto' : 'smooth' });
   });
 
