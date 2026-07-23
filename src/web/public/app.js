@@ -476,6 +476,11 @@ function renderHero() {
         <a class="btn grande secondario" href="https://andryxify.it">Attiva su andryxify.it →</a>
       </div>
       <p class="nota">🔒 Per attivare SocialBot sul tuo canale devi essere uno streamer verificato e abilitato su <a href="https://andryxify.it">andryxify.it</a>: da lì entri nella tua dashboard.</p>
+      <p class="vetrina-accessi">Hai già un accesso?
+        <a href="/sblocca">🔓 Entra con passkey</a>
+        <span aria-hidden="true">·</span>
+        <a href="/mod">🛠️ Accesso moderatore</a>
+      </p>
     </section>
 
     <section class="vetrina-features">
