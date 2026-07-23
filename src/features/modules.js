@@ -172,15 +172,27 @@ export class ModulesEngine {
     return x.replace(/\s+/g, ' ').trim();
   }
 
-  // Vero se `testo` combacia col trigger 'parola' (modo + opzioni case/punt).
+  // Le frasi/domande di un trigger 'parola': la LISTA `testi` (una per casella)
+  // oppure, per compatibilità coi moduli vecchi, il singolo `testo`.
+  _frasiTrigger(tr) {
+    if (Array.isArray(tr.testi) && tr.testi.length) return tr.testi;
+    return tr.testo ? [tr.testo] : [];
+  }
+
+  // Vero se `testo` combacia con ALMENO UNA delle frasi del trigger (modo +
+  // opzioni case/punteggiatura).
   _confrontaParola(tr, testo) {
-    const needle = this._preparaConfronto(tr.testo, tr);
-    if (!needle) return false;
     const hay = this._preparaConfronto(testo, tr);
     const modo = tr.modo || 'contiene';
-    if (modo === 'esatto') return hay === needle;
-    if (modo === 'inizia') return hay.startsWith(needle);
-    return hay.includes(needle);
+    for (const f of this._frasiTrigger(tr)) {
+      const needle = this._preparaConfronto(f, tr);
+      if (!needle) continue;
+      const ok = modo === 'esatto' ? hay === needle
+        : modo === 'inizia' ? hay.startsWith(needle)
+        : hay.includes(needle);
+      if (ok) return true;
+    }
+    return false;
   }
 
   // Verifica il trigger 'parola' (frase/domanda) secondo modo + opzioni.
