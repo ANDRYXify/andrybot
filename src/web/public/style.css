@@ -266,6 +266,11 @@ body.vetrina .contenuto { max-width: 1040px; }
 .vetrina-sub strong { color: var(--testo); }
 .vetrina-azioni { display: flex; flex-wrap: wrap; gap: .7rem; justify-content: center; margin: 1.6rem 0 .8rem; animation: pt-in .6s var(--rev-ease) .5s backwards; }
 .vetrina-hero .nota { font-size: .85rem; color: var(--testo-2); margin-top: .4rem; }
+/* scorciatoie d'accesso per chi è già dentro (passkey / moderatore) */
+.vetrina-accessi { margin-top: 1rem; font-size: .88rem; color: var(--testo-3); }
+.vetrina-accessi a { color: var(--acc); font-weight: 600; text-decoration: none; margin: 0 .15rem; white-space: nowrap; }
+.vetrina-accessi a:hover { text-decoration: underline; }
+.vetrina-accessi span { color: var(--testo-3); margin: 0 .2rem; }
 
 /* griglia funzioni */
 .vetrina-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; margin-bottom: 1.1rem; }
