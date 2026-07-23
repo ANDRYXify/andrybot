@@ -811,6 +811,7 @@ function rowToModule(r) {
     id: r.id,
     nome: r.nome,
     attivo: !!r.attivo,
+    telegram: !!cfg.telegram,          // il modulo risponde anche nel gruppo Telegram?
     trigger: cfg.trigger || {},
     condizioni: cfg.condizioni || {},
     azioni: Array.isArray(cfg.azioni) ? cfg.azioni : [],
@@ -832,6 +833,7 @@ export const modules = {
       trigger: m?.trigger || {},
       condizioni: m?.condizioni || {},
       azioni: Array.isArray(m?.azioni) ? m.azioni : [],
+      telegram: m?.telegram === true,
     });
     const attivo = m?.attivo === false ? 0 : 1;
     const id = Number(m?.id);

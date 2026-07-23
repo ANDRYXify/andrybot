@@ -14,7 +14,6 @@ let datiModuli = null;        // { moduli, effettiDisponibili, apiKey, apiUrl }
 let moduloInModifica = null;  // oggetto aperto nell'editor (per conservare id/attivo)
 let campoAttivoModulo = null; // ultimo campo di testo a fuoco (per le pillole variabili)
 let apiKeyVisibile = false;   // se la chiave API è mostrata in chiaro
-let tgModuli = [];            // moduli/comandi Telegram in modifica nella scheda Notifiche
 
 const app = document.getElementById('app');
 const areaUtente = document.getElementById('area-utente');
@@ -973,10 +972,11 @@ function pannelloNotifiche() {
 
     ${tg.configurato ? `
     <div class="carta">
-      <h2>Comandi del bot su Telegram 🤖</h2>
+      <h2>Bot interattivo su Telegram 🤖</h2>
       <p>Con la <strong class="primo-piano">modalità interattiva</strong> il bot <strong>legge i messaggi</strong> del
-      gruppo e risponde ai comandi che crei qui sotto (come su Twitch). Ogni comando può partire anche
-      <strong>a voce</strong> dall'ascolto vocale.</p>
+      gruppo e risponde ai comandi. I comandi si creano in <strong>Chat &amp; comandi → Comandi</strong>:
+      crea un modulo con innesco <em>Comando</em> e spunta <strong>«Abilita anche su Telegram»</strong>
+      (su Telegram funziona anche senza <code>!</code>). Valgono anche a voce dall'ascolto vocale.</p>
 
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore"><input type="checkbox" id="chk-tg-interattivo" ${tg.interattivo ? 'checked' : ''}><span class="levetta"></span></label>
@@ -988,12 +988,6 @@ function pannelloNotifiche() {
       Per far leggere al bot <strong>tutti</strong> i messaggi (comandi senza <code>/</code> e roster membri) disattiva la
       <em>privacy</em> su <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a>
       (<code>/setprivacy → Disable</code>); coi comandi <code>/comando</code> funziona comunque.</p>
-
-      <div id="lista-tg-moduli" class="spazio-sopra"><p class="vuoto">Caricamento…</p></div>
-      <p class="spazio-sopra">
-        <button class="btn secondario" id="btn-tg-mod-aggiungi">+ Nuovo comando</button>
-        <button class="btn" id="btn-tg-mod-salva">Salva comandi</button>
-      </p>
     </div>
 
     <div class="carta">
@@ -1380,30 +1374,9 @@ function attivaPiattaforma() {
     conErrore(async () => {
       await api('/api/streamer/telegram/interattivo', { method: 'POST', body: { attivo: chk.checked } });
       toast(chk.checked ? 'Bot interattivo attivato 🤖' : 'Bot interattivo spento.');
-      stato = await api('/api/me'); render(); caricaTgModuli();
+      stato = await api('/api/me'); render();
     }).catch(() => { chk.checked = !chk.checked; });   // in caso di errore, rimetti lo switch
   });
-
-  document.getElementById('btn-tg-mod-aggiungi')?.addEventListener('click', () => {
-    tgModuli = leggiTgModuliDaDOM();
-    tgModuli.push({ id: '', nome: '', comando: '', alias: '', senzaBang: false, frasiVoce: [], messaggio: '', attivo: true });
-    renderTgModuli();
-  });
-
-  document.getElementById('lista-tg-moduli')?.addEventListener('click', (ev) => {
-    const rim = ev.target.closest('[data-tgm-rimuovi]');
-    if (!rim) return;
-    tgModuli = leggiTgModuliDaDOM();
-    tgModuli.splice(Number(rim.dataset.tgmRimuovi), 1);
-    renderTgModuli();
-  });
-
-  document.getElementById('btn-tg-mod-salva')?.addEventListener('click', () => conErrore(async () => {
-    const r = await api('/api/streamer/telegram/moduli', { method: 'POST', body: { moduli: leggiTgModuliDaDOM() } });
-    tgModuli = Array.isArray(r.moduli) ? r.moduli : [];
-    renderTgModuli();
-    toast('Comandi Telegram salvati 🤖');
-  }));
 
   // --- Auguri di compleanno (delega sul contenitore, ricaricato via JS) ---
   document.getElementById('box-compleanni')?.addEventListener('click', (ev) => {
@@ -1706,72 +1679,10 @@ function caricaDatiScheda(id) {
   if (id === 'moduli') caricaModuli();
   if (id === 'memoria') caricaStatistiche();
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); }
-  if (id === 'notifiche') { caricaTgModuli(); caricaCompleanni(); }
+  if (id === 'notifiche') caricaCompleanni();
   if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaAnima(); }
 }
 
-// --- moduli/comandi Telegram (scheda Notifiche) -------------------------
-async function caricaTgModuli() {
-  const box = document.getElementById('lista-tg-moduli');
-  if (!box) return;   // Telegram non configurato: la card non c'è
-  try {
-    const r = await api('/api/streamer/telegram/moduli');
-    tgModuli = Array.isArray(r.moduli) ? r.moduli : [];
-  } catch { tgModuli = []; }
-  renderTgModuli();
-}
-
-function renderTgModuli() {
-  const box = document.getElementById('lista-tg-moduli');
-  if (!box) return;
-  if (!tgModuli.length) {
-    box.innerHTML = '<p class="vuoto">Nessun comando ancora. Aggiungine uno: es. comando <code>social</code> → messaggio con i tuoi link.</p>';
-    return;
-  }
-  box.innerHTML = tgModuli.map((m, i) => {
-    const alias = Array.isArray(m.alias) ? m.alias.join(' ') : (m.alias || '');
-    const voce = Array.isArray(m.frasiVoce) ? m.frasiVoce.join('\n') : (m.frasiVoce || '');
-    return `
-    <div class="modulo-tg" data-i="${i}">
-      <div class="riga-flessibile">
-        <input type="text" class="tgm-nome campo-largo" placeholder="Nome del comando" value="${esc(m.nome || '')}">
-        <label class="interruttore"><input type="checkbox" class="tgm-attivo" ${m.attivo !== false ? 'checked' : ''}><span class="levetta"></span></label>
-        <button class="btn pericolo mini" data-tgm-rimuovi="${i}">Rimuovi</button>
-      </div>
-      <label class="campo">Comando scritto nel gruppo</label>
-      <input type="text" class="tgm-comando" placeholder="social" value="${esc(m.comando || '')}">
-      <label class="campo">Alias (facoltativi, separati da spazio)</label>
-      <input type="text" class="tgm-alias" placeholder="social socials link" value="${esc(alias)}">
-      <div class="riga-check">
-        <input type="checkbox" class="tgm-senzabang" ${m.senzaBang ? 'checked' : ''}>
-        <label>Attiva anche <b>senza / o !</b> (basta la parola esatta)</label>
-      </div>
-      <label class="campo">Frasi per il comando vocale (una per riga, facoltative)</label>
-      <textarea class="tgm-voce" rows="2" placeholder="manda i social&#10;link social">${esc(voce)}</textarea>
-      <label class="campo">Messaggio da inviare nel gruppo</label>
-      <textarea class="tgm-messaggio" rows="3" placeholder="I miei social: ...">${esc(m.messaggio || '')}</textarea>
-      <p class="suggerimento">Segnaposto: <code>{utente}</code> (chi scrive) <code>{nome}</code> (tu). Puoi usare grassetto con <code>&lt;b&gt;…&lt;/b&gt;</code>.</p>
-    </div>`;
-  }).join('');
-}
-
-// legge dal DOM lo stato corrente dei moduli (prima di salvare o ridisegnare)
-function leggiTgModuliDaDOM() {
-  const box = document.getElementById('lista-tg-moduli');
-  if (!box) return tgModuli;
-  const righe = [...box.querySelectorAll('.modulo-tg')];
-  if (!righe.length) return [];
-  return righe.map((r, i) => ({
-    id: tgModuli[i]?.id || '',
-    nome: r.querySelector('.tgm-nome')?.value || '',
-    comando: r.querySelector('.tgm-comando')?.value || '',
-    alias: r.querySelector('.tgm-alias')?.value || '',
-    senzaBang: !!r.querySelector('.tgm-senzabang')?.checked,
-    frasiVoce: (r.querySelector('.tgm-voce')?.value || '').split('\n'),
-    messaggio: r.querySelector('.tgm-messaggio')?.value || '',
-    attivo: !!r.querySelector('.tgm-attivo')?.checked,
-  }));
-}
 
 // --- auguri di compleanno (scheda Notifiche) ----------------------------
 const fmtGiornoMese = (g, m) => String(g).padStart(2, '0') + '/' + String(m).padStart(2, '0');
@@ -2138,8 +2049,16 @@ const AZIONI = [
 ];
 // pillole variabili cliccabili (testo inserito = etichetta)
 const VARIABILI = [
-  '$user', '$touser', '$args', '$arg1', '$canale', '$uptime',
-  '$gioco', '$titolo', '$count(nome)', '$random(1,100)', '$pick(a|b|c)',
+  // contesto
+  '$user', '$touser', '$args', '$arg1', '$canale', '$uptime', '$gioco', '$titolo',
+  // generatori parametrici (combinazioni infinite)
+  '$random(1,100)', '$random(6)', '$decimale(1,2)', '$misura(1,50,cm)', '$pick(a|b|c)', '$count(nome)',
+  // numeri & percentuali
+  '$random', '$numero', '$percentuale', '$dado', '$moneta', '$sino', '$livello',
+  // metriche / misure a caso
+  '$altezza', '$peso', '$lunghezza', '$grandezza', '$eta', '$temperatura', '$velocita', '$distanza', '$soldi',
+  // colore / fantasia
+  '$colore', '$emoji', '$animale',
 ];
 
 // traduce un modulo in una frase italiana leggibile: "QUANDO … SE … → azioni"
@@ -2383,6 +2302,10 @@ function disegnaCampiQuando(t) {
         <div class="riga-check" style="margin-top:.5rem">
           <input type="checkbox" id="mod-senza-bang" ${t.senzaBang ? 'checked' : ''}>
           <label for="mod-senza-bang">Attiva anche <b>senza !</b> — basta scrivere la parola esatta (es. <code>disc</code>)</label>
+        </div>
+        <div class="riga-check" style="margin-top:.4rem">
+          <input type="checkbox" id="mod-telegram" ${moduloInModifica?.telegram ? 'checked' : ''}>
+          <label for="mod-telegram">Abilita anche su <b>Telegram</b> — risponde nel gruppo (lì il <code>!</code> non serve). Attiva il <em>bot interattivo</em> in Notifiche.</label>
         </div>`;
     case 'parola':
       return `
@@ -2400,7 +2323,11 @@ function disegnaCampiQuando(t) {
         <label class="campo" for="mod-frasi-voce">Frasi da ascoltare (una per riga)</label>
         <textarea id="mod-frasi-voce" placeholder="clippa&#10;salva la clip">${esc(frasi.join('\n'))}</textarea>
         <p class="suggerimento">Quando al microfono dici una di queste frasi, il modulo scatta. Scrivile in minuscolo,
-        una per riga. L'ascolto si avvia dalla pagina "Apri l'ascolto vocale" in <strong>Durante la diretta → Ascolto vocale</strong>.</p>`;
+        una per riga. L'ascolto si avvia dalla pagina "Apri l'ascolto vocale" in <strong>Durante la diretta → Ascolto vocale</strong>.</p>
+        <div class="riga-check" style="margin-top:.4rem">
+          <input type="checkbox" id="mod-telegram" ${moduloInModifica?.telegram ? 'checked' : ''}>
+          <label for="mod-telegram">Manda il messaggio anche su <b>Telegram</b> quando lo dico a voce (serve il bot interattivo).</label>
+        </div>`;
     }
     case 'evento':
       return `
@@ -2562,6 +2489,7 @@ function leggiForm() {
     id: moduloInModifica?.id ?? null,
     nome: (g('mod-nome')?.value || '').trim(),
     attivo: moduloInModifica ? moduloInModifica.attivo !== false : true,
+    telegram: !!g('mod-telegram')?.checked,   // risponde/invia anche nel gruppo Telegram
     trigger, condizioni, azioni,
   };
 }

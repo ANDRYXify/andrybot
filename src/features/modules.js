@@ -198,7 +198,7 @@ export class ModulesEngine {
   // la frase sentita dal browser. Riusa esegui(), quindi rispetta i cooldown e
   // le altre condizioni come per ogni altro innesco. Ritorna true se almeno un
   // modulo è davvero scattato. Non lancia mai.
-  async eseguiVoce(channel, frase, say) {
+  async eseguiVoce(channel, frase, say, inviaTelegram) {
     try {
       const ch = norm(channel);
       const sentita = this._normVoce(frase);
@@ -226,7 +226,11 @@ export class ModulesEngine {
         if (!combacia) continue;
 
         const ctx = this._ctxVoce(ch, sentita, parole);
-        if (await this.esegui(modulo, ctx, dire)) scattato = true;
+        // se il modulo è abilitato per Telegram, la stessa risposta va anche là
+        const dai = (modulo.telegram && typeof inviaTelegram === 'function')
+          ? (t) => { dire(t); inviaTelegram(t); }
+          : dire;
+        if (await this.esegui(modulo, ctx, dai)) scattato = true;
       }
       return scattato;
     } catch (e) {
@@ -255,6 +259,58 @@ export class ModulesEngine {
       log.debug('frasiVoce:', e?.message || e);
       return [];
     }
+  }
+
+  // ============================================================ ingresso: TELEGRAM
+  // Un messaggio è arrivato nel gruppo Telegram: cerca un modulo con innesco
+  // 'comando' abilitato per Telegram che combacia (SENZA bisogno del !) ed
+  // esegue solo le sue azioni "messaggio", inviandole con `invia`.
+  async eseguiTelegram(channel, testo, invia, { utente = '' } = {}) {
+    try {
+      const ch = norm(channel);
+      const t = String(testo || '').trim();
+      if (!ch || !t) return false;
+      for (const modulo of modulesDb.list(ch)) {
+        if (!modulo.attivo || !modulo.telegram) continue;
+        const tr = modulo.trigger || {};
+        if (tr.tipo !== 'comando') continue;
+        const ctx = this._matchComandoTelegram(tr, t, ch, utente);
+        if (!ctx) continue;
+        await this.esegui(modulo, ctx, invia, { soloMessaggi: true });
+        return true;   // primo match: basta (niente risposte doppie)
+      }
+      return false;
+    } catch (e) {
+      log.debug('eseguiTelegram:', e?.message || e);
+      return false;
+    }
+  }
+
+  // Match del comando su Telegram: accetta "/cmd", "!cmd" e la parola secca
+  // "cmd" (il ! NON è richiesto). Gestisce "/cmd@nomebot" e gli argomenti.
+  _matchComandoTelegram(tr, testo, ch, utente) {
+    const t = String(testo).trim();
+    if (!t) return null;
+    const aliasList = Array.isArray(tr.alias) ? tr.alias : (typeof tr.alias === 'string' ? tr.alias.split(/[\s,]+/) : []);
+    const comandi = [tr.comando, ...aliasList].map((c) => norm(c).replace(/^[/!]/, '').trim()).filter(Boolean);
+    if (!comandi.length) return null;
+    const conPrefisso = /^[/!]/.test(t);
+    const corpo = conPrefisso ? t.slice(1) : t;
+    const primo = norm(corpo.split(/\s+/)[0] || '').split('@')[0];
+    if (!comandi.includes(primo)) return null;
+    const resto = corpo.replace(/^\S+\s*/, '');
+    const args = resto.length ? resto.split(/\s+/) : [];
+    return {
+      channel: ch,
+      user: utente || '',
+      userLogin: '',
+      display: utente || '',
+      args,
+      argsRaw: resto,
+      evento: null,
+      _livello: TIER_SCALA.mod,   // su Telegram non ci sono ruoli → le condizioni tier passano
+      _vars: {},
+    };
   }
 
   // ============================================================ ingresso: EVENTI
@@ -398,6 +454,9 @@ export class ModulesEngine {
     let eseguite = 0;
     for (const azione of modulo.azioni) {
       if (eseguite >= MAX_AZIONI) break;
+      // su Telegram eseguiamo SOLO le azioni "messaggio" (le altre — effetti,
+      // timeout, clip — sono cose di Twitch e non hanno senso in un gruppo).
+      if (opts.soloMessaggi && azione?.tipo !== 'messaggio') continue;
       eseguite++;
       try {
         await this._eseguiAzione(azione, ctx, dire);
@@ -541,23 +600,58 @@ export class ModulesEngine {
       try { stream = await this._stream(ctx.channel); } catch { stream = null; }
     }
 
+    const ri = (lo, hi) => { lo = Math.round(lo); hi = Math.round(hi); if (lo > hi) [lo, hi] = [hi, lo]; return lo + Math.floor(Math.random() * (hi - lo + 1)); };
+    const scegli = (arr) => (arr.length ? arr[Math.floor(Math.random() * arr.length)] : '');
+
     // funzioni parametriche (prima delle variabili semplici)
     s = s.replace(/\$count\(([^)]*)\)/g, (_, nome) => String(counters.get(ctx.channel, nome)));
-    s = s.replace(/\$random\(\s*(-?\d+)\s*,\s*(-?\d+)\s*\)/g, (_, a, b) => {
-      let lo = parseInt(a, 10), hi = parseInt(b, 10);
+    // $random(a,b) intervallo · $random(n) da 1 a n · $random da solo 0-100
+    s = s.replace(/\$random\(\s*(-?\d+)\s*(?:,\s*(-?\d+)\s*)?\)/g, (_, a, b) =>
+      String(b != null ? ri(parseInt(a, 10), parseInt(b, 10)) : ri(1, parseInt(a, 10))));
+    // $decimale(a,b): numero con 2 decimali (per metriche tipo 1,73)
+    s = s.replace(/\$decimale\(\s*(-?\d+(?:[.,]\d+)?)\s*,\s*(-?\d+(?:[.,]\d+)?)\s*\)/g, (_, a, b) => {
+      let lo = parseFloat(String(a).replace(',', '.')), hi = parseFloat(String(b).replace(',', '.'));
       if (lo > hi) [lo, hi] = [hi, lo];
-      return String(lo + Math.floor(Math.random() * (hi - lo + 1)));
+      return (lo + Math.random() * (hi - lo)).toFixed(2).replace('.', ',');
     });
-    s = s.replace(/\$pick\(([^)]*)\)/g, (_, lista) => {
-      const opz = String(lista).split('|').map((x) => x.trim()).filter(Boolean);
-      return opz.length ? opz[Math.floor(Math.random() * opz.length)] : '';
-    });
+    // $misura(a,b,unità): numero casuale con un'unità a scelta → "23 cm"
+    s = s.replace(/\$misura\(\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*([^)]*)\)/g, (_, a, b, u) =>
+      `${ri(parseInt(a, 10), parseInt(b, 10))} ${String(u).trim()}`);
+    // $pick(a|b|c) / $scegli(a|b|c): scelta a caso
+    s = s.replace(/\$(?:pick|scegli)\(([^)]*)\)/g, (_, lista) =>
+      scegli(String(lista).split('|').map((x) => x.trim()).filter(Boolean)));
 
     // $arg1..$argN (prima delle variabili semplici, così non collidono con $args)
     s = s.replace(/\$arg(\d+)/g, (_, n) => {
       const i = parseInt(n, 10) - 1;
       return (ctx.args && ctx.args[i] != null) ? String(ctx.args[i]) : '';
     });
+
+    // variabili DINAMICHE (novelty): un valore fresco ad OGNI occorrenza, così
+    // due $dado nella stessa frase danno numeri diversi → combinazioni infinite.
+    const dinamiche = {
+      random: () => String(ri(0, 100)),
+      numero: () => String(ri(0, 100)),
+      percentuale: () => ri(0, 100) + '%',
+      percento: () => ri(0, 100) + '%',
+      dado: () => String(ri(1, 6)),
+      moneta: () => scegli(['testa', 'croce']),
+      sino: () => scegli(['sì', 'no']),
+      altezza: () => (1.40 + Math.random() * 0.70).toFixed(2).replace('.', ',') + ' m',
+      peso: () => ri(40, 130) + ' kg',
+      lunghezza: () => ri(1, 30) + ' cm',
+      grandezza: () => ri(1, 50) + ' cm',
+      eta: () => ri(1, 99) + ' anni',
+      temperatura: () => ri(-10, 45) + '°C',
+      velocita: () => ri(1, 320) + ' km/h',
+      distanza: () => ri(1, 1000) + ' km',
+      soldi: () => ri(0, 100000).toLocaleString('it-IT') + ' €',
+      euro: () => ri(0, 100000).toLocaleString('it-IT') + ' €',
+      livello: () => String(ri(1, 100)),
+      colore: () => scegli(['rosso', 'blu', 'verde', 'giallo', 'viola', 'arancione', 'rosa', 'nero', 'celeste', 'turchese', 'fucsia', 'oro']),
+      emoji: () => scegli(['😂', '🔥', '💀', '😎', '🤡', '👑', '💜', '🚀', '🎉', '🥶', '🤯', '😳', '🫡', '🧠', '⚡', '🍕', '🐐']),
+      animale: () => scegli(['gatto', 'cane', 'panda', 'drago', 'lama', 'bradipo', 'procione', 'capibara', 'pinguino', 'koala', 'volpe', 'riccio']),
+    };
 
     const ev = ctx._vars || {};
     const vars = {
@@ -576,10 +670,12 @@ export class ModulesEngine {
       premio: ev.premio || '',
     };
 
-    // variabili semplici $nome (sconosciute → stringa vuota). Il primo carattere
-    // deve essere una lettera: così importi tipo "$5" restano intatti.
+    // variabili semplici $nome: prima le dinamiche (valore fresco), poi quelle di
+    // contesto. Sconosciute → stringa vuota. Il primo carattere è una lettera:
+    // così importi tipo "$5" restano intatti.
     s = s.replace(/\$([a-zA-Z]\w*)/g, (m, name) => {
       const k = name.toLowerCase();
+      if (typeof dinamiche[k] === 'function') return String(dinamiche[k]());
       return Object.prototype.hasOwnProperty.call(vars, k) ? String(vars[k]) : '';
     });
 
