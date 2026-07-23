@@ -294,6 +294,26 @@ body.vetrina .contenuto { max-width: 1040px; }
 .vetrina-cta p { color: var(--testo-2); max-width: 52ch; }
 .vetrina-cta .btn { flex-shrink: 0; }
 
+/* ============================================================ demo
+   Barra fissa in alto + striscia di spiegazione per la dashboard in modalità demo. */
+#demo-barra {
+  display: flex; align-items: center; gap: .7rem; flex-wrap: wrap;
+  margin-bottom: 1.1rem; padding: .7rem .9rem;
+  background: linear-gradient(120deg, var(--acc-soft), var(--surface));
+  border: 1px solid var(--acc-bordo); border-radius: var(--r-m);
+  animation: pt-in .5s var(--rev-ease) backwards;
+}
+#demo-barra .demo-punto { flex-shrink: 0; width: 9px; height: 9px; border-radius: 50%; background: var(--acc); box-shadow: 0 0 0 0 var(--acc-tint); animation: demo-pulsa 1.8s var(--ease) infinite; }
+@keyframes demo-pulsa { 0% { box-shadow: 0 0 0 0 rgba(109,59,239,.35); } 70% { box-shadow: 0 0 0 8px rgba(109,59,239,0); } 100% { box-shadow: 0 0 0 0 rgba(109,59,239,0); } }
+#demo-barra .demo-testo { flex: 1 1 260px; font-size: .9rem; color: var(--testo-2); line-height: 1.45; }
+#demo-barra .demo-testo strong { color: var(--acc); }
+#demo-barra .demo-azioni { display: flex; gap: .5rem; flex-shrink: 0; }
+
+.demo-spiega { display: flex; gap: .7rem; align-items: flex-start; background: var(--acc-soft); border-color: var(--acc-bordo); margin-bottom: 1.1rem; }
+.demo-spiega .demo-spiega-ico { flex-shrink: 0; font-size: 1.15rem; line-height: 1.3; }
+.demo-spiega p { color: var(--testo-2); font-size: .92rem; line-height: 1.55; margin: 0; }
+.demo-spiega p strong { color: var(--testo); }
+
 /* ============================================================ bottoni */
 .btn {
   display: inline-flex; align-items: center; justify-content: center;
