@@ -5,7 +5,7 @@
 // eventi Twitch. Tiene tutto sincronizzato con la dashboard.
 import { makeLog } from './logger.js';
 import { config } from './config.js';
-import { tokens, streamers, memory, tgConf } from './db.js';
+import { tokens, streamers, memory, tgConf, compleanni } from './db.js';
 import { ChatBot } from './twitch/chat.js';
 import { EventHub } from './twitch/events.js';
 import { Brain } from './ai/brain.js';
@@ -15,6 +15,7 @@ import * as vip from './features/vip.js';
 import * as telegram from './features/telegram.js';
 import * as antispam from './features/antispam.js';
 import * as tiktok from './features/tiktok.js';
+import * as compleanniFeat from './features/compleanni.js';
 import * as gamesbridge from './features/gamesbridge.js';
 import * as quotes from './features/quotes.js';
 import * as model from './ai/model.js';
@@ -91,6 +92,10 @@ export class BotManager {
     // Giochi del sito: poll delle regole da annunciare in chat quando parte una
     // partita (attivazione automatica anche per le partite create dal sito).
     this._annunciTimer = setInterval(() => this._pollAnnunciGiochi(), 15_000);
+    // Compleanni: auguri automatici nel gruppo Telegram (controllo ogni ora;
+    // un membro riceve gli auguri UNA volta l'anno, all'inizio del suo giorno).
+    this._compleTimer = setInterval(() => this._controllaCompleanni().catch(() => {}), 60 * 60_000);
+    setTimeout(() => this._controllaCompleanni().catch(() => {}), 30_000);
     log.info('SocialBot avviato');
   }
 
@@ -483,6 +488,30 @@ export class BotManager {
       if (r.ok) log.info(`avviso TikTok Telegram eliminato per #${login} (live finita)`);
       else log.warn(`elimina TikTok Telegram #${login}: ${r.errore}`);
     } catch (e) { log.error(`chiudi TikTok Telegram #${login}:`, e?.message || e); }
+  }
+
+  // Auguri di compleanno: per ogni streamer con la funzione accesa e il gruppo
+  // collegato, manda gli auguri a chi compie gli anni oggi (fuso italiano). Un
+  // membro riceve gli auguri al massimo una volta l'anno (campo last_auguri).
+  async _controllaCompleanni() {
+    try {
+      const { giorno, mese, anno } = compleanniFeat.oggiRoma();
+      for (const s of streamers.active()) {
+        const cfg = s.settings?.telegramAuguri;
+        if (!cfg?.attivo) continue;
+        const conf = tgConf.get(s.login);
+        if (!conf?.token || !conf.chat_id) continue;
+        const oggi = compleanni.oggi(s.login, giorno, mese).filter((c) => c.last_auguri !== anno);
+        for (const c of oggi) {
+          const testo = compleanniFeat.costruisciAuguri(cfg.messaggio, { nome: c.nome, tgUserId: c.tg_user_id });
+          const r = await telegram.inviaMessaggio(conf.token, conf.chat_id, testo);
+          if (r.ok) {
+            compleanni.markAuguri(s.login, c.tg_user_id, anno);
+            log.info(`auguri di compleanno inviati per #${s.login} → ${c.nome}`);
+          }
+        }
+      }
+    } catch (e) { log.error('controllaCompleanni:', e?.message || e); }
   }
 
   // Notifica "in diretta su TikTok" (Telegram + eventuale annuncio in chat).
