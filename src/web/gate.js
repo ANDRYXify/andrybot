@@ -18,7 +18,7 @@
 // per lui.
 import { config } from '../config.js';
 import { makeLog } from '../logger.js';
-import { streamers } from '../db.js';
+import { streamers, subscriptions } from '../db.js';
 
 const log = makeLog('gate');
 
@@ -121,6 +121,8 @@ export function startApprovalSync({ manager, everyMs = 5 * 60_000 } = {}) {
     if (attivi.size === 0) return;
     let cambiato = false;
     for (const s of streamers.list()) {
+      // gli ABBONATI self-service (Stripe) non dipendono dal sito: non si revocano
+      if (subscriptions.attivo(s.login)) continue;
       if (s.status === 'approved' && !attivi.has(s.login)) {
         streamers.setStatus(s.login, 'disabled');
         log.info(`Abilitazione revocata dal sito per #${s.login}: bot disattivato`);

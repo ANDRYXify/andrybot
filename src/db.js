@@ -256,6 +256,15 @@ CREATE TABLE IF NOT EXISTS tg_membri (    -- roster dei membri visti scrivere ne
   PRIMARY KEY (channel, tg_user_id)
 );
 CREATE INDEX IF NOT EXISTS idx_tgmembri_ch ON tg_membri(channel, ultimo);
+CREATE TABLE IF NOT EXISTS subscriptions (   -- abbonamenti self-service (Stripe/Link)
+  login TEXT PRIMARY KEY,                     -- login twitch dello streamer abbonato
+  tier TEXT NOT NULL DEFAULT 'free',          -- id del tier corrente (free|base|pro)
+  status TEXT NOT NULL DEFAULT 'none',        -- none|active|trialing|past_due|canceled
+  stripe_customer TEXT NOT NULL DEFAULT '',   -- id cliente Stripe (per il portale)
+  stripe_sub TEXT NOT NULL DEFAULT '',        -- id abbonamento Stripe
+  current_period_end INTEGER NOT NULL DEFAULT 0,
+  updated_at INTEGER NOT NULL DEFAULT 0
+);
 `);
 
 // --- migrazioni leggere: aggiunge colonne nuove a DB già esistenti ------------
@@ -419,6 +428,33 @@ export const streamers = {
     db.prepare('UPDATE streamers SET settings=? WHERE login=?').run(JSON.stringify(settings || {}), login.toLowerCase());
   },
   remove(login) { db.prepare('DELETE FROM streamers WHERE login=?').run(login.toLowerCase()); },
+};
+
+// ---------------------------------------------------------------- abbonamenti
+// Stato dell'abbonamento self-service (Stripe) di uno streamer. Il tier decide
+// quali funzioni sono sbloccate; lo status se l'accesso è attivo. Aggiornato dal
+// webhook Stripe. Chi è abilitato dal sito (community) non passa di qui.
+export const subscriptions = {
+  get(login) {
+    return db.prepare('SELECT * FROM subscriptions WHERE login=?').get(String(login).toLowerCase()) || null;
+  },
+  set(login, { tier, status, customerId = '', subId = '', periodEnd = 0 } = {}) {
+    const l = String(login).toLowerCase();
+    db.prepare(`INSERT INTO subscriptions (login, tier, status, stripe_customer, stripe_sub, current_period_end, updated_at)
+      VALUES (?,?,?,?,?,?,?)
+      ON CONFLICT(login) DO UPDATE SET
+        tier=excluded.tier, status=excluded.status,
+        stripe_customer=CASE WHEN excluded.stripe_customer!='' THEN excluded.stripe_customer ELSE subscriptions.stripe_customer END,
+        stripe_sub=CASE WHEN excluded.stripe_sub!='' THEN excluded.stripe_sub ELSE subscriptions.stripe_sub END,
+        current_period_end=excluded.current_period_end, updated_at=excluded.updated_at`)
+      .run(l, tier || 'free', status || 'none', customerId, subId, periodEnd, now());
+    return this.get(l);
+  },
+  // abbonamento operativo (accesso attivo)
+  attivo(login) {
+    const s = this.get(login);
+    return !!s && (s.status === 'active' || s.status === 'trialing');
+  },
 };
 
 // ---------------------------------------------------------------- IA locale (modello)
