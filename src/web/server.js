@@ -21,6 +21,7 @@ import { comprimi } from '../features/compress.js';
 import { seedStreamer } from '../features/seed.js';
 import * as vip from '../features/vip.js';
 import * as telegram from '../features/telegram.js';
+import * as categoria from '../features/categoria.js';
 import * as compleanniFeat from '../features/compleanni.js';
 import * as tiktok from '../features/tiktok.js';
 import * as quotesImport from '../features/quotesimport.js';
@@ -241,6 +242,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // ha concesso i permessi di moderazione? (elimina messaggi / timeout)
   const moderazioneOk = (login) =>
     !!(tokens.get('broadcaster', login)?.scopes?.includes('moderator:manage:chat_messages'));
+  // ha concesso il permesso di gestione canale? (cambiare categoria/titolo a voce;
+  // aggiunto dopo → richiede una ri-autorizzazione da /auth/permessi)
+  const canaleOk = (login) =>
+    !!(tokens.get('broadcaster', login)?.scopes?.includes('channel:manage:broadcast'));
 
   // stato Telegram per la dashboard — MAI il token (segreto): solo se è
   // configurato, lo @username del bot, il gruppo collegato e le impostazioni.
@@ -597,6 +602,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       permessiOk: user ? permessiOk(user.login) : false,
       vipOk: user ? vipOk(user.login) : false,
       moderazioneOk: user ? moderazioneOk(user.login) : false,
+      canaleOk: user ? canaleOk(user.login) : false,
       telegram: user ? statoTelegram(user.login) : null,
       knowledgeCount: user ? knowledge.count(user.login) : 0,
       preaddestramento: user
@@ -760,6 +766,12 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       if (!Number.isFinite(n)) return res.status(400).json({ errore: 'sensibilità ascolto non valida' });
       out.ascoltoSensibilita = Math.min(10, Math.max(1, Math.round(n)));
     }
+    // cambio categoria a voce: parola chiave personalizzabile + annuncio in chat
+    if (b.cambioCategoria !== undefined) {
+      const cc = b.cambioCategoria || {};
+      const trig = String(cc.trigger || 'categoria').trim().toLowerCase().replace(/\s+/g, ' ').slice(0, 30) || 'categoria';
+      out.cambioCategoria = { attivo: !!cc.attivo, trigger: trig, annuncia: cc.annuncia !== false };
+    }
     if (b.paroleVietate !== undefined) {
       if (!Array.isArray(b.paroleVietate)) return res.status(400).json({ errore: 'paroleVietate deve essere una lista' });
       out.paroleVietate = b.paroleVietate
@@ -850,7 +862,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const A = abbonamenti.funzioneAbilitata;
     if (!A(tierS, 'giochi')) { out.giochi = false; if (out.manche) out.manche.attivo = false; }
     if (!A(tierS, 'clipAuto')) out.clipAuto = false;
-    if (!A(tierS, 'voce')) out.ascoltoLive = false;
+    if (!A(tierS, 'voce')) { out.ascoltoLive = false; if (out.cambioCategoria) out.cambioCategoria.attivo = false; }
     if (!A(tierS, 'notifiche') && out.tiktok) out.tiktok.attivo = false;
 
     streamers.setSettings(user.login, out);
@@ -1137,7 +1149,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   app.get('/api/streamer/voce', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const frasi = modules.frasiVoce(login);   // include i moduli abilitati a Telegram
-    res.json({ frasi, count: frasi.length });
+    // comando "cambia categoria a voce": il browser deve conoscere la parola chiave
+    const cc = streamers.get(login)?.settings?.cambioCategoria;
+    const cat = { attivo: !!cc?.attivo, trigger: (cc?.trigger || 'categoria') };
+    res.json({ frasi, count: frasi.length, cat });
   }));
 
   // il browser ha sentito una frase: eseguiamo i moduli 'voce' che combaciano
@@ -1155,6 +1170,28 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       if (cmdVip.azione === 'remove') await vip.togliVip(helix, login, cmdVip.nome, say);
       else await vip.assegnaVip(helix, login, { nome: cmdVip.nome, durata: cmdVip.durata, motivo: 'voce' }, say);
       return res.json({ ok: true, eseguito: true, vip: true });
+    }
+    // comando vocale CATEGORIA: "<parola chiave> <nome gioco>" → cambia categoria Twitch.
+    // Best-effort: se il riconoscimento è impreciso, il bot prova comunque a
+    // risalire al gioco più somigliante tra le categorie di Twitch.
+    const cc = streamers.get(login)?.settings?.cambioCategoria;
+    if (cc?.attivo) {
+      const q = categoria.parseComandoCategoria(frase, cc.trigger || 'categoria');
+      if (q) {
+        if (!canaleOk(login)) {
+          return res.json({ ok: true, eseguito: false, categoria: { errore: 'permesso', riautorizza: true } });
+        }
+        const cat = await categoria.risolviCategoria(helix, q).catch(() => null);
+        if (!cat) return res.json({ ok: true, eseguito: false, categoria: { query: q, trovato: false } });
+        try {
+          await helix.setChannelInfo(login, { gameId: cat.id });
+          if (cc.annuncia !== false) manager.say(login, `🎮 Categoria aggiornata: ${cat.name}`);
+          return res.json({ ok: true, eseguito: true, categoria: { nome: cat.name } });
+        } catch (e) {
+          const permesso = e?.status === 401 || e?.status === 403;
+          return res.json({ ok: true, eseguito: false, categoria: { errore: permesso ? 'permesso' : 'errore', riautorizza: permesso } });
+        }
+      }
     }
     // la stessa risposta va anche nel gruppo Telegram se il modulo è abilitato
     const c = tgConf.get(login);

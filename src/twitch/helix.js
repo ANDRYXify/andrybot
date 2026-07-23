@@ -63,6 +63,30 @@ export class Helix {
     return j?.data?.[0] || null;
   }
 
+  // Cerca categorie/giochi Twitch per nome (basta il token applicazione).
+  // Ritorna [{ id, name, boxArt }] (i primi risultati, per rilevanza).
+  async searchCategories(query, { first = 15 } = {}) {
+    const q = String(query || '').trim();
+    if (!q) return [];
+    const j = await this._request('GET', '/search/categories', { query: { query: q, first } });
+    return (j?.data || []).map((c) => ({ id: c.id, name: c.name, boxArt: c.box_art_url }));
+  }
+
+  // Imposta la categoria (game_id) e/o il titolo del canale. Richiede il token
+  // del broadcaster con scope channel:manage:broadcast. Ritorna true; lancia un
+  // Error con .status 401/403 se il permesso non è stato concesso.
+  async setChannelInfo(channelLogin, { gameId, title } = {}) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return false;
+    const body = {};
+    if (gameId !== undefined && gameId !== null) body.game_id = String(gameId);
+    if (title !== undefined) body.title = String(title).slice(0, 140);
+    if (!Object.keys(body).length) return false;
+    const token = await this.auth.getToken('broadcaster', channelLogin);
+    await this._request('PATCH', '/channels', { query: { broadcaster_id: s.user_id }, body, token });
+    return true;
+  }
+
   // Crea una clip sul canale indicato usando il token del broadcaster.
   // Ritorna { id, url, editUrl } oppure null se lo streamer non è live
   // (Twitch risponde 404 in quel caso) o se manca lo user_id.
