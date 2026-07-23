@@ -143,17 +143,25 @@ body:not(.con-nav) .barra-mobile { display: none; }
   transition: background var(--molla), color var(--molla), transform var(--molla);
 }
 .lat-svg { flex-shrink: 0; color: var(--testo-3); transition: color var(--molla), transform var(--molla); }
-.lat-item:hover { background: var(--surface-2); color: var(--testo); transform: translateX(3px); }
+.lat-item:not(.attiva):hover { background: var(--surface-2); color: var(--testo); transform: translateX(3px); }
 .lat-item:hover .lat-svg { transform: scale(1.08); }
-.lat-item:hover .lat-svg { color: var(--testo-2); }
-.lat-item.attiva { background: var(--acc-soft); color: var(--acc); font-weight: 600; }
+.lat-item:not(.attiva):hover .lat-svg { color: var(--testo-2); }
+.lat-item.attiva { color: var(--acc); font-weight: 600; }
 .lat-item.attiva .lat-svg { color: var(--acc); }
-.lat-item.attiva::before {
-  content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
-  width: 3px; height: 0; background: var(--acc); border-radius: 3px;
-  animation: barra .25s var(--ease) forwards;
+/* icona e testo devono stare SOPRA la pillola */
+.lat-item > .lat-svg, .lat-item > span:not(.lat-pill) { position: relative; z-index: 1; }
+/* "pillola" attiva: scorre da una voce all'altra come elemento condiviso della
+   View Transition (view-transition-name) — il browser ne morpha posizione e
+   dimensione, così invece di saltare scivola in modo fluido sulla nuova voce. */
+.lat-pill {
+  position: absolute; inset: 0; z-index: 0;
+  background: var(--acc-soft); border-radius: var(--r-s);
+  view-transition-name: navpill;
 }
-@keyframes barra { to { height: 56%; } }
+.lat-pill::before {
+  content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 56%; background: var(--acc); border-radius: 3px;
+}
 
 /* utente in fondo */
 .utente-lat { border-top: 1px solid var(--border); padding-top: .8rem; margin-top: .3rem; display: flex; flex-direction: column; gap: .5rem; }
@@ -178,12 +186,21 @@ body.menu-aperto .apri-menu span:nth-child(3) { transform: translateY(-7px) rota
 .pt-occhiello { font-size: .72rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--acc); margin-bottom: .5rem; }
 .pagina-testata h1 { font-size: clamp(1.55rem, 1.05rem + 1.9vw, 2.05rem); font-weight: 800; letter-spacing: -.032em; line-height: 1.1; }
 .pagina-testata p { color: var(--testo-2); font-size: 1rem; margin-top: .5rem; max-width: 62ch; }
-/* l'intestazione entra a cascata ad ogni cambio sezione (innerHTML rifatto) */
-.pagina-testata > * { animation: pt-in .6s var(--rev-ease) backwards; }
-.pagina-testata .pt-occhiello { animation-delay: .03s; }
-.pagina-testata h1 { animation-delay: .09s; }
-.pagina-testata p { animation-delay: .16s; }
+/* l'intestazione entra a cascata ad ogni cambio sezione (innerHTML rifatto):
+   occhiello e descrizione scivolano su, il TITOLO si rivela parola per parola. */
+.pagina-testata > .pt-occhiello, .pagina-testata > p { animation: pt-in .6s var(--rev-ease) backwards; }
+.pagina-testata .pt-occhiello { animation-delay: .02s; }
+.pagina-testata p { animation-delay: .34s; }
 @keyframes pt-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+/* rivelazione parola-per-parola del titolo: ogni parola è mascherata e scivola
+   dal basso, con un piccolo ritardo progressivo (--wd) → effetto "stampa". */
+.pt-parola { display: inline-block; overflow: hidden; vertical-align: bottom; padding-bottom: .06em; margin-bottom: -.06em; }
+.pt-parola > i {
+  display: inline-block; font-style: inherit;
+  animation: parola-su .72s var(--rev-ease) both;
+  animation-delay: var(--wd, 0ms);
+}
+@keyframes parola-su { from { transform: translateY(110%); } to { transform: translateY(0); } }
 
 /* ============================================================ carte */
 .carta { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-l); padding: clamp(1.15rem, 2.6vw, 1.6rem); margin-bottom: 1.1rem; box-shadow: var(--om-s); }
@@ -210,6 +227,18 @@ body.menu-aperto .apri-menu span:nth-child(3) { transform: translateY(-7px) rota
 .carta.rivela.dentro { opacity: 1; transform: none; }
 @keyframes appare { from { opacity: 0; } to { opacity: 1; } }
 
+/* ============================================================ view transitions
+   Al cambio sezione il corpo pagina (#app) fa un morph morbido (dissolvenza +
+   scivolamento) mentre la pillola del menu scorre sulla nuova voce. La radice
+   non si anima, così sidebar e titolo cambiano netti senza sfarfallii. */
+#app { view-transition-name: contenuto; }
+::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+::view-transition-old(contenuto) { animation: vt-esce .22s var(--ease) both; }
+::view-transition-new(contenuto) { animation: vt-entra .34s var(--rev-ease) both; }
+@keyframes vt-esce { to { opacity: 0; transform: translateY(-10px); } }
+@keyframes vt-entra { from { opacity: 0; transform: translateY(14px); } }
+::view-transition-group(navpill) { animation-duration: .4s; animation-timing-function: var(--spring); }
+
 /* ============================================================ hero (login) */
 .hero { text-align: center; padding: clamp(1.8rem, 6vw, 3.4rem) clamp(.8rem, 4vw, 1.4rem); }
 .hero h2 { font-size: clamp(1.8rem, 5vw, 2.6rem); font-weight: 800; margin-bottom: .8rem; letter-spacing: -.035em; line-height: 1.1; }
@@ -226,10 +255,12 @@ body.menu-aperto .apri-menu span:nth-child(3) { transform: translateY(-7px) rota
   background: var(--acc); color: #fff; border: none; border-radius: var(--r-s);
   padding: .55rem 1.1rem; min-height: 38px;
   font-size: .9rem; font-weight: 600; font-family: inherit; cursor: pointer; text-decoration: none;
-  transition: background var(--molla), transform .06s, box-shadow var(--molla);
+  /* --mx/--my: spostamento "magnetico" verso il cursore (impostato da app.js) */
+  transform: translate(var(--mx, 0px), var(--my, 0px));
+  transition: background var(--molla), transform .18s var(--ease), box-shadow var(--molla);
 }
-.btn:hover { background: var(--acc-600); box-shadow: 0 8px 20px rgba(109, 59, 239, .3); text-decoration: none; transform: translateY(-1px); }
-.btn:active { transform: translateY(0) scale(.98); }
+.btn:hover { background: var(--acc-600); box-shadow: 0 8px 20px rgba(109, 59, 239, .3); text-decoration: none; transform: translate(var(--mx, 0px), calc(var(--my, 0px) - 1px)); }
+.btn:active { transform: translate(var(--mx, 0px), var(--my, 0px)) scale(.97); transition-duration: .07s; }
 .btn:disabled { opacity: .5; cursor: wait; box-shadow: none; }
 .btn.grande { padding: .7rem 1.5rem; min-height: 44px; font-size: .98rem; }
 .btn.secondario { background: var(--surface); border: 1px solid var(--border-2); color: var(--testo); }
@@ -417,6 +448,8 @@ pre.blocco-codice { background: var(--surface-2); border: 1px solid var(--border
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
   .carta.rivela { opacity: 1 !important; transform: none !important; }
+  .pt-parola > i { transform: none !important; }
+  .btn { transform: none !important; }
 }
 
 /* ============================================================ banner cookie */
