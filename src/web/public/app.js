@@ -73,7 +73,7 @@ function impostazioni() {
     nomeMonete: (typeof s.nomeMonete === 'string' && s.nomeMonete.trim()) || 'monete',
     premioVip: (s.premioVip && typeof s.premioVip === 'object') ? s.premioVip : { attivo: false, periodo: 'settimana', quanti: 1 },
     antispam: (s.antispam && typeof s.antispam === 'object') ? s.antispam : {},
-    tiktok: (s.tiktok && typeof s.tiktok === 'object') ? s.tiktok : { username: '', attivo: false, annunciaChat: false },
+    tiktok: (s.tiktok && typeof s.tiktok === 'object') ? s.tiktok : { username: '', attivo: false, annunciaChat: false, messaggio: '' },
     giochiSito: (s.giochiSito && typeof s.giochiSito === 'object') ? s.giochiSito : { attivo: false, collegato: false },
     frasi: Array.isArray(s.frasi) ? s.frasi : [],
     clipAuto: s.clipAuto !== false,
@@ -981,6 +981,11 @@ function pannelloNotifiche() {
         <input type="text" id="inp-tk-user" placeholder="tuonome" value="${esc(tkc.username || '')}">
       </div>
 
+      <label class="campo spazio-sopra" for="txt-tk-messaggio">Messaggio dell'avviso TikTok</label>
+      <textarea id="txt-tk-messaggio" rows="4" placeholder="${esc('🎵 {nome} è in diretta su TikTok!\n\n👉 {link}')}">${esc(tkc.messaggio || '')}</textarea>
+      <p class="suggerimento">Segnaposto: <code>{nome}</code> <code>{link}</code> <code>{username}</code>. Lascia vuoto per usare quello standard.
+        Se hai attivato <em>«Fissa l'avviso…»</em> qui sopra, l'avviso TikTok viene fissato a live attiva ed eliminato quando stacchi.</p>
+
       <div class="riga-check spazio-sopra">
         <input type="checkbox" id="chk-tk-attivo" ${tkc.attivo ? 'checked' : ''}>
         <label for="chk-tk-attivo">Rileva in automatico quando vado live su TikTok</label>
@@ -1341,6 +1346,7 @@ function attivaPiattaforma() {
         username: (document.getElementById('inp-tk-user').value || '').trim(),
         attivo: document.getElementById('chk-tk-attivo').checked,
         annunciaChat: document.getElementById('chk-tk-chat').checked,
+        messaggio: document.getElementById('txt-tk-messaggio')?.value || '',
       },
     }, 'TikTok salvato 🎵');
   }));
