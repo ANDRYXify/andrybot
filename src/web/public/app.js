@@ -264,18 +264,27 @@ function gruppoDiScheda(id) {
 
 // Disegna la navigazione a due livelli: i GRUPPI in alto e, sotto, le schede
 // del gruppo attivo (la riga di sotto compare solo se il gruppo ha più schede).
-function navInterna() {
+// NB: la barra dei gruppi e la sotto-barra sono in due contenitori distinti,
+// così al cambio scheda possiamo aggiornare solo le classi attive senza
+// ricostruire l'HTML — altrimenti su mobile lo scroll orizzontale tornerebbe
+// all'inizio ad ogni click (la "dock" che rimbalza).
+function gruppiHtml() {
   const gAtt = gruppoDiScheda(schedaAttiva);
-  const gruppi = GRUPPI.map((g) =>
+  return GRUPPI.map((g) =>
     `<button class="gruppo-btn${g.id === gAtt.id ? ' attiva' : ''}" data-gruppo="${g.id}">
        <span class="gruppo-icona">${g.icona}</span>${g.nome}</button>`).join('');
-  const sub = gAtt.schede.length > 1
-    ? `<nav class="schede" id="sotto-schede">
-         ${gAtt.schede.map(([id, nome]) =>
-           `<button class="scheda-btn${id === schedaAttiva ? ' attiva' : ''}" data-scheda="${id}">${nome}</button>`).join('')}
-       </nav>`
-    : '';
-  return `<nav class="gruppi" id="nav-gruppi">${gruppi}</nav>${sub}`;
+}
+function sottoSchedeHtml() {
+  const gAtt = gruppoDiScheda(schedaAttiva);
+  if (gAtt.schede.length <= 1) return '';
+  return `<nav class="schede" id="sotto-schede">
+    ${gAtt.schede.map(([id, nome]) =>
+      `<button class="scheda-btn${id === schedaAttiva ? ' attiva' : ''}" data-scheda="${id}">${nome}</button>`).join('')}
+  </nav>`;
+}
+function navInterna() {
+  return `<nav class="gruppi" id="nav-gruppi">${gruppiHtml()}</nav>` +
+         `<div id="sotto-wrap">${sottoSchedeHtml()}</div>`;
 }
 
 function vistaPiattaforma() {
@@ -1035,11 +1044,19 @@ function attivaPiattaforma() {
       const g = GRUPPI.find((x) => x.id === gBtn.dataset.gruppo);
       if (!g || g.id === gruppoDiScheda(schedaAttiva).id) return;  // già qui
       schedaAttiva = g.schede[0][0];   // apri la prima scheda del gruppo
+      // aggiorna la barra gruppi SENZA ricrearla (preserva lo scroll orizz.)
+      document.querySelectorAll('#nav-gruppi .gruppo-btn').forEach((b) =>
+        b.classList.toggle('attiva', b.dataset.gruppo === g.id));
+      // ricrea SOLO la sotto-barra (è cambiato l'insieme delle schede)
+      const sw = document.getElementById('sotto-wrap');
+      if (sw) sw.innerHTML = sottoSchedeHtml();
     } else if (sBtn) {
       if (sBtn.dataset.scheda === schedaAttiva) return;
       schedaAttiva = sBtn.dataset.scheda;
+      // solo scambio di classe attiva: niente ricostruzione → scroll preservato
+      document.querySelectorAll('#sotto-schede .scheda-btn').forEach((b) =>
+        b.classList.toggle('attiva', b.dataset.scheda === schedaAttiva));
     } else return;
-    document.getElementById('nav-wrap').innerHTML = navInterna();
     document.querySelectorAll('.pannello-scheda').forEach((p) =>
       p.classList.toggle('visibile', p.id === 'scheda-' + schedaAttiva));
     caricaDatiScheda(schedaAttiva);
