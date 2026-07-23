@@ -1781,7 +1781,9 @@ function riassuntoQuando(t) {
       if (!t.comando) return 'scrivono un comando';
       const a = Array.isArray(t.alias) ? t.alias : (typeof t.alias === 'string' ? t.alias.split(/[\s,]+/) : []);
       const alist = a.map((x) => String(x).trim().replace(/^!/, '')).filter(Boolean);
-      return `scrivono !${t.comando}` + (alist.length ? ` (o ${alist.map((x) => '!' + x).join(', ')})` : '');
+      const bang = t.senzaBang ? '' : '!';
+      return `scrivono ${bang}${t.comando}` + (alist.length ? ` (o ${alist.map((x) => bang + x).join(', ')})` : '')
+        + (t.senzaBang ? ' (anche senza !)' : '');
     }
     case 'parola': {
       const modo = { contiene: 'compare', esatto: 'è esattamente', inizia: 'inizia con' }[t.modo] || 'compare';
@@ -2001,7 +2003,11 @@ function disegnaCampiQuando(t) {
           <input type="text" id="mod-comando" class="campo-largo" placeholder="ciao" value="${esc(t.comando || '')}">
         </div>
         <label class="campo" for="mod-alias">Alias (facoltativi, separati da spazio)</label>
-        <input type="text" id="mod-alias" placeholder="salve buongiorno" value="${esc(Array.isArray(t.alias) ? t.alias.join(' ') : (t.alias || ''))}">`;
+        <input type="text" id="mod-alias" placeholder="salve buongiorno" value="${esc(Array.isArray(t.alias) ? t.alias.join(' ') : (t.alias || ''))}">
+        <div class="riga-check" style="margin-top:.5rem">
+          <input type="checkbox" id="mod-senza-bang" ${t.senzaBang ? 'checked' : ''}>
+          <label for="mod-senza-bang">Attiva anche <b>senza !</b> — basta scrivere la parola esatta (es. <code>disc</code>)</label>
+        </div>`;
     case 'parola':
       return `
         <label class="campo" for="mod-testo-trigger">Parola o frase</label>
@@ -2156,6 +2162,7 @@ function leggiForm() {
   if (tipoT === 'comando') {
     trigger.comando = (g('mod-comando')?.value || '').trim().replace(/^!/, '');
     trigger.alias = (g('mod-alias')?.value || '').split(/[\s,]+/).map((x) => x.trim().replace(/^!/, '')).filter(Boolean);
+    trigger.senzaBang = !!g('mod-senza-bang')?.checked;
   } else if (tipoT === 'parola') {
     trigger.testo = (g('mod-testo-trigger')?.value || '').trim();
     trigger.modo = g('mod-modo')?.value || 'contiene';
