@@ -70,6 +70,16 @@ export function parseComandoCategoria(frase, trigger = 'categoria') {
   return q || null;
 }
 
+// Estrae il testo GREZZO dopo la parola chiave (NON normalizza: preserva
+// maiuscole e punteggiatura). Utile per il titolo, che è testo libero.
+export function estraiDopoTrigger(frase, trigger) {
+  const f = String(frase || '').trim();
+  const trig = String(trigger || '').trim();
+  if (!f || !trig) return null;
+  const m = f.match(new RegExp('(?:^|\\s)' + escRe(trig) + '\\s+(.+)$', 'i'));
+  return m ? m[1].trim() : null;
+}
+
 // Sceglie la miglior categoria Twitch per la query "sentita". Best-effort: prova
 // più ricerche (query ripulita, per parole) e sceglie il candidato più somigliante.
 // Ritorna { id, name, score } oppure null se davvero non trova nulla di sensato.
