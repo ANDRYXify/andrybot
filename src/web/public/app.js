@@ -7,6 +7,7 @@
 // ------------------------------------------------------------------ stato
 let stato = null;          // risposta di /api/me
 let schedaAttiva = 'stato';
+const gruppiChiusi = new Set();   // id delle sezioni della sidebar richiuse
 
 // stato locale della scheda "Moduli"
 let datiModuli = null;        // { moduli, effettiDisponibili, apiKey, apiUrl }
@@ -327,16 +328,23 @@ function infoScheda(id) {
   return { area: '', titolo: id };
 }
 
+// Freccetta delle sezioni richiudibili (ruota quando la sezione è chiusa).
+const CHEVRON = '<svg class="lat-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+
 // Costruisce la navigazione della sidebar: ogni voce ha icona + nome. Le aree a
-// scheda singola sono voci dirette; quelle con più schede diventano una sezione
-// con etichetta e le sue voci sotto. Tutte cliccabili (data-scheda).
+// scheda singola sono voci dirette; quelle con più schede diventano una SEZIONE
+// richiudibile (l'etichetta apre/chiude con animazione). Tutte cliccabili.
 function navLateraleHtml() {
   const voce = (id, nome) =>
     `<button class="lat-item${id === schedaAttiva ? ' attiva' : ''}" data-scheda="${id}">${ICONA[id] || ''}<span>${nome}</span></button>`;
   return elencoGruppi().map((g) => {
     if (g.schede.length === 1) return voce(g.schede[0][0], g.nome);
+    const chiuso = gruppiChiusi.has(g.id);
     const voci = g.schede.map(([id, nome]) => voce(id, nome)).join('');
-    return `<div class="lat-gruppo"><div class="lat-label">${g.nome}</div>${voci}</div>`;
+    return `<div class="lat-gruppo${chiuso ? ' chiuso' : ''}" data-gruppo="${g.id}">
+      <button class="lat-label" data-toggle="${g.id}" aria-expanded="${chiuso ? 'false' : 'true'}">${g.nome}${CHEVRON}</button>
+      <div class="lat-voci"><div>${voci}</div></div>
+    </div>`;
   }).join('');
 }
 
@@ -2746,6 +2754,16 @@ function chiudiMenuMobile() {
 function initGuscio() {
   // navigazione: click su una voce della sidebar → apre quella scheda
   document.getElementById('nav-lat')?.addEventListener('click', (ev) => {
+    // click sull'etichetta di una sezione → apre/chiude con animazione
+    const tog = ev.target.closest('[data-toggle]');
+    if (tog) {
+      const gid = tog.dataset.toggle;
+      const chiuso = gruppiChiusi.has(gid);
+      if (chiuso) gruppiChiusi.delete(gid); else gruppiChiusi.add(gid);
+      tog.closest('.lat-gruppo')?.classList.toggle('chiuso', !chiuso);
+      tog.setAttribute('aria-expanded', chiuso ? 'true' : 'false');
+      return;
+    }
     const btn = ev.target.closest('[data-scheda]');
     if (!btn) return;
     const id = btn.dataset.scheda;
