@@ -39,7 +39,7 @@ const UPLOAD_MAX = 30 * 1024 * 1024;   // 30 MB in ingresso (l'output sarà molt
 
 // Moduli: tipi di innesco e di azione ammessi (validazione lato API)
 const MOD_TRIGGER = ['comando', 'parola', 'evento', 'timer', 'manuale', 'voce'];
-const MOD_AZIONI = ['messaggio', 'effetto', 'contatore', 'webhook', 'attendi', 'overlayTesto', 'timeout', 'clip'];
+const MOD_AZIONI = ['messaggio', 'effetto', 'contatore', 'webhook', 'attendi', 'overlayTesto', 'timeout', 'clip', 'categoria'];
 const EXT_MAX_MIN = 30;   // ingresso esterno: max richieste al minuto per login
 
 // Comando integrato /compleanno nel gruppo Telegram. Registra/mostra/rimuove la
@@ -1070,6 +1070,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       if (!a || !MOD_AZIONI.includes(a.tipo)) return 'azione non valida';
       if (a.tipo === 'webhook' && !/^https?:\/\//i.test(String(a.url || ''))) {
         return 'il webhook accetta solo URL http/https';
+      }
+      if (a.tipo === 'categoria' && !String(a.gioco || '').trim()) {
+        return 'l\'azione "cambia categoria" ha bisogno di un gioco (o una variabile come $args)';
       }
     }
     return null;
