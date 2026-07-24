@@ -337,6 +337,17 @@ aggiungiColonna('linee_guida', 'dove', "TEXT NOT NULL DEFAULT 'ovunque'");     /
 aggiungiColonna('linee_guida', 'con_chi', "TEXT NOT NULL DEFAULT 'tutti'");    // tutti | solo-me | tranne-me
 // abbonamenti modulari: pacchetti add-on à la carte attivi (CSV di id)
 aggiungiColonna('subscriptions', 'pacchetti', "TEXT NOT NULL DEFAULT ''");
+// Distingue i MEMBRI COMMUNITY (verificati da andryxify.it) dagli abbonati/promo:
+// serve per bloccare la dashboard a chi non paga e non è community. Alla PRIMA
+// aggiunta della colonna, tutti gli approvati odierni sono community (Stripe non è
+// mai stato attivo in produzione, quindi non esistono ancora abbonati né promo).
+(() => {
+  const cols = db.prepare('PRAGMA table_info(streamers)').all();
+  if (!cols.some((c) => c.name === 'community')) {
+    db.exec("ALTER TABLE streamers ADD COLUMN community INTEGER NOT NULL DEFAULT 0");
+    db.exec("UPDATE streamers SET community=1 WHERE status='approved'");
+  }
+})();
 
 const now = () => Date.now();
 
@@ -448,11 +459,11 @@ export const streamers = {
   get(login) {
     const r = db.prepare('SELECT * FROM streamers WHERE login=?').get(login.toLowerCase());
     if (!r) return null;
-    return { ...r, settings: safeJson(r.settings), botEnabled: !!r.bot_enabled };
+    return { ...r, settings: safeJson(r.settings), botEnabled: !!r.bot_enabled, community: !!r.community };
   },
   list() {
     return db.prepare('SELECT * FROM streamers ORDER BY requested_at DESC').all()
-      .map(r => ({ ...r, settings: safeJson(r.settings), botEnabled: !!r.bot_enabled }));
+      .map(r => ({ ...r, settings: safeJson(r.settings), botEnabled: !!r.bot_enabled, community: !!r.community }));
   },
   // canali dove il bot deve stare adesso: approvati + accesi
   active() {
@@ -479,6 +490,12 @@ export const streamers = {
   },
   setEnabled(login, enabled) {
     db.prepare('UPDATE streamers SET bot_enabled=? WHERE login=?').run(enabled ? 1 : 0, login.toLowerCase());
+  },
+  // Marca uno streamer come MEMBRO COMMUNITY (verificato da andryxify.it): lo si
+  // chiama solo dall'ingresso col pass del sito (/entra). Gli abbonati/promo NON
+  // passano di qui, così restano distinguibili da chi ha accesso "di diritto".
+  markCommunity(login) {
+    db.prepare('UPDATE streamers SET community=1 WHERE login=?').run(login.toLowerCase());
   },
   setSettings(login, settings) {
     db.prepare('UPDATE streamers SET settings=? WHERE login=?').run(JSON.stringify(settings || {}), login.toLowerCase());

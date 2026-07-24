@@ -106,10 +106,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const l = String(identita || '').toLowerCase();
     if (!l) return [];
     const out = [];
-    const s = streamers.get(l);
-    if (s && s.status === 'approved') out.push({ canale: l, display: s.display || l, role: 'proprietario' });
+    // il proprio canale: solo se ha accesso attivo (paga o è community verificata)
+    if (haAccesso(l)) { const s = streamers.get(l); out.push({ canale: l, display: s?.display || l, role: 'proprietario' }); }
     for (const m of managers.attiviByLogin(l)) {
       if (m.channel === l) continue;                 // il proprio canale è già incluso sopra
+      if (!haAccesso(m.channel)) continue;           // il canale moderato deve avere accesso attivo
       const st = streamers.get(m.channel);
       out.push({ canale: m.channel, display: st?.display || m.channel, role: 'moderatore' });
     }
@@ -135,12 +136,24 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // altrimenti 'community' se abilitata dal sito (accesso pieno di diritto),
   // altrimenti null (nessun accesso → deve abbonarsi). Con Stripe spento
   // esistono solo community.
+  // Ha diritto d'accesso alla dashboard? Solo chi PAGA (abbonamento o trial
+  // attivo) oppure è un MEMBRO COMMUNITY verificato da andryxify.it (flag
+  // `community`, tenuto fresco dal sync col sito). Chi non è né l'uno né l'altro
+  // resta fuori: niente sessione, niente dashboard.
+  function haAccesso(login) {
+    const l = String(login || '').toLowerCase();
+    if (!l) return false;
+    if (subscriptions.attivo(l)) return true;
+    const s = streamers.get(l);
+    return !!(s && s.status === 'approved' && s.community);
+  }
+
   function tierDi(login) {
     const l = String(login || '').toLowerCase();
     if (!l) return null;
     if (subscriptions.attivo(l)) return subscriptions.get(l).tier || 'base';
     const s = streamers.get(l);
-    if (s && s.status === 'approved') return 'community';
+    if (s && s.status === 'approved' && s.community) return 'community';
     return null;
   }
 
@@ -154,7 +167,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       return abbonamenti.funzioniDi({ tier: s.tier || 'base', pacchetti: s.pacchetti });
     }
     const st = l ? streamers.get(l) : null;
-    if (st && st.status === 'approved') return abbonamenti.funzioniDi({ tier: 'community' });
+    if (st && st.status === 'approved' && st.community) return abbonamenti.funzioniDi({ tier: 'community' });
     return abbonamenti.funzioniDi({ tier: 'free' });
   }
 
@@ -197,6 +210,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // con i dati dello streamer restano chiuse dietro il pass.
   const VETRINA = new Set(['/', '/index.html', '/app.js', '/style.css']);
   app.use((req, res, next) => {
+    // Rivalida la sessione a ogni richiesta: se chi è loggato non ha più accesso
+    // al canale che gestisce (abbonamento decaduto e non è community), lo sloggiamo
+    // — così torna alla vetrina e non rientra nella dashboard. Gli admin sono esenti.
+    const sessUser = currentUser(req);
+    if (sessUser && !isAdmin(sessUser) && !haAccesso(sessUser.login)) req.session.user = null;
     if (currentUser(req) || PUBBLICI.has(req.path)
         || VETRINA.has(req.path) || req.path === '/api/me'
         || req.path.startsWith('/api/abbonamento/')   // piani/checkout/portale: auth propria
@@ -385,8 +403,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!who) return notFound(res);            // pass assente/scaduto/già usato
 
     // andryxify.it è la fonte di verità sull'abilitazione: lo registriamo
-    // localmente come approvato (rispettando un eventuale on/off preesistente).
+    // localmente come approvato (rispettando un eventuale on/off preesistente) e
+    // lo marchiamo come MEMBRO COMMUNITY (accesso pieno di diritto, non a pagamento).
     streamers.upsertApproved(who.login, who.display, who.userId);
+    streamers.markCommunity(who.login);
     // identità = lo streamer; contesto di default = il proprio canale (proprietario),
     // ma potrà passare anche ai canali che modera con lo switcher.
     const contesti = contestiPer(who.login);
