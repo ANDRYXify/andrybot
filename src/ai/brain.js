@@ -3,7 +3,8 @@
 // personalità fatta di pool di template in tre toni. Ricorda sempre:
 // il bot parla CON L'ACCOUNT DELLO STREAMER, quindi in prima persona.
 import { makeLog } from '../logger.js';
-import { db, memory, knowledge, voceStreamer, guide } from '../db.js';
+import { db, memory, knowledge, voceStreamer, guide, streamers } from '../db.js';
+import * as internet from '../features/web.js';
 import { checkMessage } from '../features/moderation.js';
 import * as learn from './learn.js';
 import * as model from './model.js';
@@ -411,12 +412,16 @@ export class Brain {
       const conoscenza = knowledge.list(channel)
         .filter((k) => k.fonte !== 'chat').slice(0, 6)
         .map((k) => `${k.domanda}: ${k.risposta}`);
+      // se è un dubbio e ha internet, cerca online e le passa il riferimento:
+      // così può rispondere DA SÉ invece di dire "non lo so".
+      const web = await this._cercaWeb(channel, testo);
       const r = await brainpy.rispondi({
         canale: channel, login: String(user || 'utente'), nome: nome || String(user || 'tu'),
         testo: String(testo).slice(0, 300), tono: t, conoscenza, stile: this._stileStreamer(channel),
         modo: 'allenamento',   // DM privato = allenamento: risposta ragionata, sfrutta il maestro esterno
         nomeBot: this._nomePersona(),   // parla come una persona (il suo nome, dall'anima)
         lineeGuida: guide.testi(channel),   // le regole che le hai dato: le rispetta sempre
+        web,                   // riferimento trovato online (se c'era)
         timeoutMs: 40000,      // aspettiamo di più: risposta più lunga (e il locale su CPU è lento)
       });
       if (!r) return null;
@@ -424,6 +429,23 @@ export class Brain {
       if (out.length > MAX_RISPOSTA) out = out.slice(0, MAX_RISPOSTA - 1).trimEnd() + '…';
       return out || null;
     } catch (e) { log.debug('rispostaDiretta:', e?.message || e); return null; }
+  }
+
+  // Può cercare su internet su questo canale? (impostazione, default sì)
+  _internetOn(channel) {
+    try { return streamers.get(channel)?.settings?.internet !== false; } catch { return true; }
+  }
+
+  // Sembra una domanda/dubbio da cercare online?
+  _sembraDomanda(t) {
+    const s = String(t || '').trim();
+    return s.length >= 8 && (/\?/.test(s) || /^(chi|cosa|che cos|come|quando|dove|perch|quanti|quanto|quale|quali|significa|cos'è|cos e)\b/i.test(s));
+  }
+
+  // Cerca online se acceso e se ha senso. Ritorna un breve riferimento o null.
+  async _cercaWeb(channel, testo) {
+    if (!this._internetOn(channel) || !this._sembraDomanda(testo)) return null;
+    try { return await internet.cerca(testo); } catch { return null; }
   }
 
   // Il nome della "persona" (dall'anima condivisa): è così che si presenta nei DM.
@@ -661,6 +683,17 @@ export class Brain {
       // installato). Niente personalità finta: solo un'onestà se ci citano con
       // una domanda; altrimenti silenzio. Appena il modello è pronto, parla lui.
       if (menziona && text.includes('?')) {
+        // prima di arrendersi: se ha internet, prova a cercare la risposta da sé
+        if (this._internetOn(channel)) {
+          const web = await this._cercaWeb(channel, text);
+          if (web) {
+            const r = await brainpy.rispondi({
+              canale: streamer.display || channel, login: user, nome, testo: text, tono, web,
+              lineeGuida: guide.testi(channel), stile: this._stileStreamer(channel), timeoutMs: 12000,
+            });
+            if (r) return this._finalizza(channel, r, streamer);
+          }
+        }
         return this._finalizza(channel, compila(scegli(NON_LO_SO), variabili), streamer);
       }
       return null;
