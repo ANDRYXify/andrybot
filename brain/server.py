@@ -114,7 +114,9 @@ class Handler(BaseHTTPRequestHandler):
         nome = str(d.get("nome") or login)
         testo = str(d.get("testo") or "").strip()
         tono = str(d.get("tono") or "scherzoso")
-        modo = "allenamento" if str(d.get("modo") or "").strip() == "allenamento" else "live"
+        modo = str(d.get("modo") or "").strip()
+        if modo not in ("allenamento", "proattivo"):
+            modo = "live"
         if not canale or not login or not testo:
             return self._json(400, {"errore": "dati mancanti"})
         try:
@@ -130,6 +132,13 @@ class Handler(BaseHTTPRequestHandler):
             sti = d.get("stile")
             if isinstance(sti, list) and sti:
                 ctx["stile"] = [str(x)[:160] for x in sti[:8] if str(x).strip()]
+            # personhood: nome della "persona" (dall'anima) e spunto per il proattivo
+            nb = str(d.get("nome_bot") or "").strip()
+            if nb:
+                ctx["nome_bot"] = nb[:40]
+            sp = str(d.get("spunto") or "").strip()
+            if sp:
+                ctx["spunto"] = sp[:200]
             # in allenamento lascio più tempo (risposta più lunga e ragionata)
             timeout_s = 38 if modo == "allenamento" else 30
             risposta = G.genera(canale, ctx, testo, timeout_s=timeout_s, modo=modo)

@@ -77,6 +77,7 @@ function impostazioni() {
     modalita: ['sempre', 'live', 'manuale'].includes(s.modalita) ? s.modalita : 'sempre',
     iaLocale: s.iaLocale !== false,
     proattivo: s.proattivo !== false,
+    proattivoTg: s.proattivoTg !== false,
     adattaCanale: s.adattaCanale !== false,
     giochi: s.giochi !== false,
     promoSocial: s.promoSocial !== false,
@@ -175,7 +176,7 @@ function statoDemo() {
       botEnabled: true,
       settings: {
         tono: 'scherzoso', spontaneita: 0.05, rispostaMenzioni: true, modalita: 'sempre',
-        iaLocale: true, proattivo: true, adattaCanale: true, giochi: true, promoSocial: true,
+        iaLocale: true, proattivo: true, proattivoTg: true, adattaCanale: true, giochi: true, promoSocial: true,
         nomeMonete: 'scudi', clipAuto: true, clipAutoSoglia: 25, ascoltoLive: false, ascoltoSensibilita: 5,
         cambioCategoria: { attivo: true, trigger: 'categoria', annuncia: true },
         cambioTitolo: { attivo: false, trigger: 'titolo', annuncia: true },
@@ -1597,6 +1598,16 @@ function pannelloNotifiche() {
           : 'Per rispondere solo a te, lega una volta il tuo Telegram: <a href="#" id="btn-tg-dm-collega">genera un codice</a> e scrivi <code>/collega CODICE</code> al bot in privato. Finché non colleghi, in privato non risponde a nessuno.'}
       </p>
       <div id="tg-dm-codice"></div>
+
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore"><input type="checkbox" id="chk-tg-proattiva" ${impostazioni().proattivoTg !== false ? 'checked' : ''}><span class="levetta"></span></label>
+        <span class="etichetta-stato">Ti scrive per prima (proattiva e curiosa)</span>
+      </div>
+      <p class="suggerimento">Ogni tanto è <strong>lei</strong> a scriverti in privato di sua iniziativa: ti fa una domanda, ti chiede una cosa
+      che ancora non sa, commenta. Come una persona — non a orari fissi, mai di notte, e senza esagerare.
+      Serve aver <strong>collegato</strong> il tuo Telegram qui sopra. Il nome con cui si presenta lo scegli in
+      <strong>Admin → Anima</strong>.</p>
+
       <p class="suggerimento">Nel <strong>gruppo</strong> invece il bot funziona per tutti (e impara dalla chat come su Twitch). Il privato resta solo tuo.</p>
     </div>
 
@@ -2059,6 +2070,10 @@ function attivaPiattaforma() {
     toast('Account Telegram scollegato.');
     stato = await api('/api/me'); render();
   }); });
+  document.getElementById('chk-tg-proattiva')?.addEventListener('change', (ev) => conErrore(async () => {
+    await salvaImpostazioni({ proattivoTg: ev.target.checked },
+      ev.target.checked ? 'Ok, ogni tanto ti scriverò io 💜' : 'Non ti scriverò più per prima.');
+  }));
 
   // --- Auguri di compleanno (delega sul contenitore, ricaricato via JS) ---
   document.getElementById('box-compleanni')?.addEventListener('click', (ev) => {

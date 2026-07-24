@@ -415,6 +415,7 @@ export class Brain {
         canale: channel, login: String(user || 'utente'), nome: nome || String(user || 'tu'),
         testo: String(testo).slice(0, 300), tono: t, conoscenza, stile: this._stileStreamer(channel),
         modo: 'allenamento',   // DM privato = allenamento: risposta ragionata, sfrutta il maestro esterno
+        nomeBot: this._nomePersona(),   // parla come una persona (il suo nome, dall'anima)
         timeoutMs: 40000,      // aspettiamo di più: risposta più lunga (e il locale su CPU è lento)
       });
       if (!r) return null;
@@ -422,6 +423,52 @@ export class Brain {
       if (out.length > MAX_RISPOSTA) out = out.slice(0, MAX_RISPOSTA - 1).trimEnd() + '…';
       return out || null;
     } catch (e) { log.debug('rispostaDiretta:', e?.message || e); return null; }
+  }
+
+  // Il nome della "persona" (dall'anima condivisa): è così che si presenta nei DM.
+  // Se è ancora il nome di default "SocialBot" ritorno '' (troppo "da bot": meglio
+  // che resti sul vago finché non le dai un nome vero in Admin → Anima).
+  _nomePersona() {
+    try { const n = String(persona.profilo()?.nome || '').trim(); return (n && n !== 'SocialBot') ? n : ''; }
+    catch { return ''; }
+  }
+
+  // MESSAGGIO PROATTIVO (Telegram, chat privata col proprietario): scrive LEI per
+  // prima, di sua iniziativa. La curiosità nasce dalle LACUNE della rete (le cose
+  // che non sa ancora): così è naturale che te le venga a chiedere — e imparando la
+  // tua risposta cresce davvero. Ritorna una stringa o null. Non lancia mai.
+  async messaggioProattivo(channel, { nome } = {}) {
+    try {
+      if (!channel) return null;
+      // spunto di curiosità: preferisci una lacuna della rete, sennò un tema generico
+      let spunto = '';
+      try {
+        const r = await brainpy.reteStato(channel);
+        const lac = Array.isArray(r?.non_so) ? r.non_so.filter(Boolean) : [];
+        if (lac.length) spunto = lac[Math.floor(Math.random() * lac.length)];
+      } catch { /* niente */ }
+      if (!spunto) {
+        const temi = [
+          'com\'è andata oggi', 'a cosa stai giocando ultimamente', 'una cosa che ti ha fatto ridere',
+          'come ti senti prima di andare live', 'un ricordo bello del tuo percorso da streamer',
+          'cosa vorresti dalla tua community', 'una cosa di te che quasi nessuno sa',
+        ];
+        spunto = temi[Math.floor(Math.random() * temi.length)];
+      }
+      const conoscenza = knowledge.list(channel).filter((k) => k.fonte !== 'chat').slice(0, 6)
+        .map((k) => `${k.domanda}: ${k.risposta}`);
+      const r = await brainpy.rispondi({
+        canale: channel, login: channel, nome: nome || 'tu',
+        testo: '(scrivigli tu per primo, di tua iniziativa)',
+        modo: 'proattivo', spunto, nomeBot: this._nomePersona(),
+        conoscenza, stile: this._stileStreamer(channel),
+        tono: 'amichevole', timeoutMs: 35000,
+      });
+      if (!r) return null;
+      let out = String(r).replace(/\s+/g, ' ').trim();
+      if (out.length > MAX_RISPOSTA) out = out.slice(0, MAX_RISPOSTA - 1).trimEnd() + '…';
+      return out || null;
+    } catch (e) { log.debug('messaggioProattivo:', e?.message || e); return null; }
   }
 
   // apprendimento passivo: ogni messaggio passa di qui
