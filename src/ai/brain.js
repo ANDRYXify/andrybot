@@ -328,25 +328,17 @@ export class Brain {
     }
   }
 
-  // Impara dalla VOCE PARLATA dello streamer (trascrizione dal suo microfono in
-  // diretta): la salva come materiale di stile e nutre la coscienza. È la sua
-  // voce vera → è il modo più forte per "sentirlo parlare e crescere".
+  // Impara dalle PAROLE VERE dello streamer — la sua voce parlata in diretta (dal
+  // microfono) o i SUOI messaggi su Telegram. È l'apprendimento "duro" (stile +
+  // coscienza), volutamente limitato a LUI SOLO: una scelta di privacy, così il
+  // bot non assorbe la roba di nessun altro (dagli altri impara solo la chat
+  // pubblica di Twitch). È il modo più forte per farlo crescere "come me".
   imparaDaVoce({ channel, testo } = {}) {
     const t = String(testo || '').trim();
     if (!channel || t.length < 8 || t.startsWith('!') || t.startsWith('/')) return;
     try { voceStreamer.add(channel, t); this._stileCache.delete(channel); } catch { /* niente */ }
     // coscienza: impara anche fatti da ciò che dice (login = canale = lo streamer)
     try { brainpy.osserva({ canale: channel, login: channel, nome: 'streamer', testo: t }); } catch { /* niente */ }
-  }
-
-  // Impara da una chat ESTERNA (es. Telegram): nutre la coscienza (persone/fatti),
-  // così il bot "impara anche da Telegram", non solo dalla chat Twitch.
-  imparaEsterno({ channel, user, nome, testo } = {}) {
-    if (!channel || !user || !testo) return;
-    const t = String(testo).trim();
-    if (!t || t.startsWith('!') || t.startsWith('/')) return;   // i comandi non si "imparano"
-    try { brainpy.osserva({ canale: channel, login: String(user), nome: nome || String(user), testo: t }); }
-    catch { /* niente */ }
   }
 
   // Risposta conversazionale "diretta" (es. chat privata Telegram: "gli parlo da
