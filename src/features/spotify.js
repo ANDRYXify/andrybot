@@ -16,14 +16,32 @@ const API = 'https://api.spotify.com/v1';
 // aggiungere alla coda + leggere la riproduzione in corso
 const SCOPES = 'user-modify-playback-state user-read-playback-state user-read-currently-playing';
 
-export function attivo() { return !!config.spotify.attivo; }
-export function collegato(login) { return !!spotifyTokens.get(login)?.refresh; }
-export function scollega(login) { spotifyTokens.remove(login); }
+// Credenziali dell'app da usare per un canale: quelle DELLO STREAMER se le ha
+// impostate, altrimenti l'app globale dell'operatore (config.spotify). Il
+// redirect è sempre lo stesso (il nostro /spotify/callback): ogni streamer lo
+// registra nella propria app Spotify.
+export function credenziali(login) {
+  const t = login ? spotifyTokens.get(login) : null;
+  if (t?.client_id && t?.client_secret) return { clientId: t.client_id, clientSecret: t.client_secret, proprio: true };
+  return { clientId: config.spotify.clientId, clientSecret: config.spotify.clientSecret, proprio: false };
+}
+export function redirectUri() { return config.spotify.redirectUri; }
+
+// C'è un'app utilizzabile per questo canale (propria o globale)?
+export function attivo(login) { const c = credenziali(login); return !!(c.clientId && c.clientSecret); }
+// Lo streamer ha impostato le PROPRIE credenziali?
+export function haConfigProprio(login) { return !!credenziali(login).proprio; }
+export function collegato(login) { const t = spotifyTokens.get(login); return !!(t?.refresh); }
+export function salvaConfig(login, clientId, clientSecret) {
+  spotifyTokens.setConfig(login, { clientId: String(clientId || '').trim(), clientSecret: String(clientSecret || '').trim() });
+}
+export function scollega(login) { spotifyTokens.scollega(login); }
 
 // URL a cui mandare il browser dello streamer per autorizzare (con `state`).
-export function urlAutorizzazione(state) {
+export function urlAutorizzazione(login, state) {
+  const c = credenziali(login);
   const p = new URLSearchParams({
-    client_id: config.spotify.clientId,
+    client_id: c.clientId,
     response_type: 'code',
     redirect_uri: config.spotify.redirectUri,
     scope: SCOPES,
@@ -32,14 +50,15 @@ export function urlAutorizzazione(state) {
   return `${ACCOUNTS}/authorize?${p.toString()}`;
 }
 
-async function tokenCall(params) {
-  if (!config.spotify.attivo) return null;
+async function tokenCall(login, params) {
+  const c = credenziali(login);
+  if (!c.clientId || !c.clientSecret) return null;
   try {
     const r = await fetch(`${ACCOUNTS}/api/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        Authorization: 'Basic ' + Buffer.from(`${config.spotify.clientId}:${config.spotify.clientSecret}`).toString('base64'),
+        Authorization: 'Basic ' + Buffer.from(`${c.clientId}:${c.clientSecret}`).toString('base64'),
       },
       body: new URLSearchParams(params),
     });
@@ -51,7 +70,7 @@ async function tokenCall(params) {
 
 // Scambia il `code` dell'OAuth e salva i token per il canale. true/false.
 export async function collega(login, code) {
-  const j = await tokenCall({ grant_type: 'authorization_code', code, redirect_uri: config.spotify.redirectUri });
+  const j = await tokenCall(login, { grant_type: 'authorization_code', code, redirect_uri: config.spotify.redirectUri });
   if (!j?.access_token) return false;
   spotifyTokens.set(login, { access: j.access_token, refresh: j.refresh_token || '', scadenza: Date.now() + (j.expires_in || 3600) * 1000 });
   return true;
@@ -62,7 +81,7 @@ async function tokenValido(login) {
   const t = spotifyTokens.get(login);
   if (!t?.refresh) return null;
   if (t.access && (t.scadenza - 30000) > Date.now()) return t.access;
-  const j = await tokenCall({ grant_type: 'refresh_token', refresh_token: t.refresh });
+  const j = await tokenCall(login, { grant_type: 'refresh_token', refresh_token: t.refresh });
   if (!j?.access_token) return null;
   spotifyTokens.set(login, { access: j.access_token, refresh: j.refresh_token || t.refresh, scadenza: Date.now() + (j.expires_in || 3600) * 1000 });
   return j.access_token;

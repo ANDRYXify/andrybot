@@ -783,19 +783,34 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   const spotifyStati = new Map();   // state → { login, ts }
   const puliziaStati = () => { const ora = Date.now(); for (const [k, v] of spotifyStati) if (ora - v.ts > 600000) spotifyStati.delete(k); };
 
-  // stato del connettore per il canale gestito (per la UI)
+  // stato del connettore per il canale gestito (per la UI). Non espone mai i segreti.
   app.get('/api/spotify/stato', requireLogin, (req, res) => {
     const login = currentUser(req).login;
-    res.json({ attivo: spotify.attivo(), collegato: spotify.collegato(login) });
+    res.json({
+      attivo: spotify.attivo(login),           // c'è un'app usabile (propria o globale)
+      proprio: spotify.haConfigProprio(login), // lo streamer ha messo le SUE credenziali
+      collegato: spotify.collegato(login),     // account Spotify collegato (OAuth fatto)
+      redirect: spotify.redirectUri(),         // da registrare nell'app Spotify dello streamer
+    });
   });
 
-  // avvia il collegamento: solo il proprietario, solo se il connettore è configurato
+  // salva le credenziali dell'app Spotify DELLO STREAMER (Client ID/Secret)
+  app.post('/api/spotify/config', requireOwner, (req, res) => {
+    const clientId = String(req.body?.clientId || '').trim();
+    const clientSecret = String(req.body?.clientSecret || '').trim();
+    if (!clientId || !clientSecret) return res.status(400).json({ errore: 'Servono Client ID e Client Secret.' });
+    spotify.salvaConfig(currentUser(req).login, clientId, clientSecret);
+    res.json({ ok: true });
+  });
+
+  // avvia il collegamento: solo il proprietario, solo se c'è un'app usabile
   app.get('/api/spotify/connect', requireOwner, (req, res) => {
-    if (!spotify.attivo()) return res.status(503).json({ errore: 'Connettore Spotify non configurato.' });
+    const login = currentUser(req).login;
+    if (!spotify.attivo(login)) return res.status(503).json({ errore: 'Imposta prima le credenziali Spotify.' });
     puliziaStati();
     const state = crypto.randomUUID();
-    spotifyStati.set(state, { login: currentUser(req).login, ts: Date.now() });
-    res.json({ url: spotify.urlAutorizzazione(state) });
+    spotifyStati.set(state, { login, ts: Date.now() });
+    res.json({ url: spotify.urlAutorizzazione(login, state) });
   });
 
   // ritorno OAuth di Spotify: scambia il code e salva i token per il canale.

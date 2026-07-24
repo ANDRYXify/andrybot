@@ -288,6 +288,8 @@ CREATE TABLE IF NOT EXISTS spotify_tokens ( -- connettore Spotify per le richies
   access TEXT NOT NULL DEFAULT '',            -- access token (breve durata)
   refresh TEXT NOT NULL DEFAULT '',           -- refresh token (lunga durata)
   scadenza INTEGER NOT NULL DEFAULT 0,        -- ms epoch di scadenza dell'access token
+  client_id TEXT NOT NULL DEFAULT '',         -- app Spotify DELLO STREAMER (Client ID)
+  client_secret TEXT NOT NULL DEFAULT '',     -- app Spotify dello streamer (Client Secret)
   updated_at INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS linee_guida (     -- regole/limiti che lo streamer dà a "lia": lei le rispetta SEMPRE
@@ -344,6 +346,9 @@ aggiungiColonna('linee_guida', 'dove', "TEXT NOT NULL DEFAULT 'ovunque'");     /
 aggiungiColonna('linee_guida', 'con_chi', "TEXT NOT NULL DEFAULT 'tutti'");    // tutti | solo-me | tranne-me
 // abbonamenti modulari: pacchetti add-on à la carte attivi (CSV di id)
 aggiungiColonna('subscriptions', 'pacchetti', "TEXT NOT NULL DEFAULT ''");
+// Spotify per-streamer: credenziali dell'app dello streamer (Client ID/Secret)
+aggiungiColonna('spotify_tokens', 'client_id', "TEXT NOT NULL DEFAULT ''");
+aggiungiColonna('spotify_tokens', 'client_secret', "TEXT NOT NULL DEFAULT ''");
 // Distingue i MEMBRI COMMUNITY (verificati da andryxify.it) dagli abbonati/promo:
 // serve per bloccare la dashboard a chi non paga e non è community. Alla PRIMA
 // aggiunta della colonna, tutti gli approvati odierni sono community (Stripe non è
@@ -610,6 +615,23 @@ export const spotifyTokens = {
         scadenza=excluded.scadenza, updated_at=excluded.updated_at`)
       .run(l, access, refresh, scadenza, now());
     return this.get(l);
+  },
+  // Salva le credenziali dell'app Spotify DELLO STREAMER (Client ID/Secret).
+  // Cambiare app invalida i token OAuth esistenti: li azzeriamo (serve ri-collegare).
+  setConfig(login, { clientId = '', clientSecret = '' } = {}) {
+    const l = String(login).toLowerCase();
+    db.prepare(`INSERT INTO spotify_tokens (login, client_id, client_secret, access, refresh, scadenza, updated_at)
+      VALUES (?,?,?,'','',0,?)
+      ON CONFLICT(login) DO UPDATE SET
+        client_id=excluded.client_id, client_secret=excluded.client_secret,
+        access='', refresh='', scadenza=0, updated_at=excluded.updated_at`)
+      .run(l, clientId, clientSecret, now());
+    return this.get(l);
+  },
+  // Scollega solo l'account (azzera i token OAuth), tenendo le credenziali dell'app.
+  scollega(login) {
+    db.prepare("UPDATE spotify_tokens SET access='', refresh='', scadenza=0, updated_at=? WHERE login=?")
+      .run(now(), String(login).toLowerCase());
   },
   remove(login) { db.prepare('DELETE FROM spotify_tokens WHERE login=?').run(String(login).toLowerCase()); },
 };
