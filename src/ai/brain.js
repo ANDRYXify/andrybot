@@ -326,6 +326,38 @@ export class Brain {
     }
   }
 
+  // Impara da una chat ESTERNA (es. Telegram): nutre la coscienza (persone/fatti),
+  // così il bot "impara anche da Telegram", non solo dalla chat Twitch.
+  imparaEsterno({ channel, user, nome, testo } = {}) {
+    if (!channel || !user || !testo) return;
+    const t = String(testo).trim();
+    if (!t || t.startsWith('!') || t.startsWith('/')) return;   // i comandi non si "imparano"
+    try { brainpy.osserva({ canale: channel, login: String(user), nome: nome || String(user), testo: t }); }
+    catch { /* niente */ }
+  }
+
+  // Risposta conversazionale "diretta" (es. chat privata Telegram: "gli parlo da
+  // qui"): il cervello (LLM + coscienza) risponde con la conoscenza curata e la
+  // VOCE dello streamer. Ritorna stringa o null (cervello spento/lento). Qui non
+  // c'è la chat Twitch, quindi niente anti-eco/cooldown: solo pulizia di lunghezza.
+  async rispostaDiretta({ channel, user, nome, testo, tono } = {}) {
+    try {
+      if (!channel || !testo) return null;
+      const t = TONI.includes(tono) ? tono : 'scherzoso';
+      const conoscenza = knowledge.list(channel)
+        .filter((k) => k.fonte !== 'chat').slice(0, 6)
+        .map((k) => `${k.domanda}: ${k.risposta}`);
+      const r = await brainpy.rispondi({
+        canale: channel, login: String(user || 'utente'), nome: nome || String(user || 'tu'),
+        testo: String(testo).slice(0, 300), tono: t, conoscenza, stile: this._stileStreamer(channel),
+      });
+      if (!r) return null;
+      let out = String(r).replace(/\s+/g, ' ').trim();
+      if (out.length > MAX_RISPOSTA) out = out.slice(0, MAX_RISPOSTA - 1).trimEnd() + '…';
+      return out || null;
+    } catch (e) { log.debug('rispostaDiretta:', e?.message || e); return null; }
+  }
+
   // apprendimento passivo: ogni messaggio passa di qui
   observe(msg) {
     try { learn.observe(msg); } catch (e) { log.error('observe:', e?.message || e); }

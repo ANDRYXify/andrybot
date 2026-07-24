@@ -608,9 +608,16 @@ async function caricaPiani() {
   box.addEventListener('click', (ev) => {
     const b = ev.target.closest('[data-abbona]');
     if (!b) return;
+    const tier = b.dataset.abbona;
     conErrore(async () => {
-      const r = await api('/api/abbonamento/checkout', { method: 'POST', body: { tier: b.dataset.abbona } });
-      if (r?.url) location.href = r.url; else toast('Piano non disponibile al momento.', 'errore');
+      try {
+        const r = await api('/api/abbonamento/checkout', { method: 'POST', body: { tier } });
+        if (r?.url) location.href = r.url; else toast('Piano non disponibile al momento.', 'errore');
+      } catch (e) {
+        // non loggato: prima l'accesso con Twitch, poi si torna dritti al checkout del piano scelto
+        if (/non autenticato/i.test(e?.message || '')) { location.href = '/accedi?tier=' + encodeURIComponent(tier); return; }
+        throw e;
+      }
     });
   });
 }
