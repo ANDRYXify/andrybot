@@ -646,6 +646,7 @@ const SVG_PIANI = {
   clip: '<path d="m12.296 3.464 3.02 3.956"/><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3z"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="m6.18 5.276 3.1 3.899"/>',
   voce: '<path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/>',
   squadra: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/>',
+  musica: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
 };
 const svgPiano = (id) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${SVG_PIANI[id] || SVG_PIANI.base}</svg>`;
 
@@ -816,6 +817,7 @@ const GRUPPI = [
   { id: 'diretta', nome: 'Durante la diretta', icona: '🔴', schede: [
     ['clip', 'Clip'],
     ['ascolto', 'Ascolto vocale'],
+    ['musica', 'Musica'],
   ] },
   { id: 'notifiche', nome: 'Notifiche', icona: '🔔', schede: [
     ['notifiche', 'Notifiche'],
@@ -845,6 +847,7 @@ const ICONA = {
   effetti:     _ico('<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9.5a4 4 0 0 1 0 5"/>'),
   clip:        _ico('<rect x="3" y="5" width="18" height="14" rx="2.2"/><path d="M8 5v14"/><path d="M16 5v14"/><path d="M3 9.5h5"/><path d="M16 9.5h5"/><path d="M3 14.5h5"/><path d="M16 14.5h5"/>'),
   ascolto:     _ico('<rect x="9" y="3" width="6" height="10.5" rx="3"/><path d="M6 11a6 6 0 0 0 12 0"/><path d="M12 17v4"/>'),
+  musica:      _ico('<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>'),
   notifiche:   _ico('<path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5 2 6H4c.5-1 2-2 2-6"/><path d="M10.3 20a1.9 1.9 0 0 0 3.4 0"/>'),
   admin:       _ico('<path d="M4 8.5 7.5 16h9L20 8.5l-4.3 3L12 5 8.3 11.5z"/><path d="M7.5 19h9"/>'),
 };
@@ -861,6 +864,7 @@ const DESC = {
   effetti: 'Suoni ed effetti da lanciare in chat o in overlay.',
   clip: 'Clip automatiche nei momenti di hype.',
   ascolto: 'Comanda il bot a voce mentre streammi.',
+  musica: 'Richieste musicali: gli spettatori mettono canzoni in coda su Spotify.',
   notifiche: 'Avvisi su Telegram e TikTok quando vai in diretta.',
   admin: 'Gestione streamer e anima condivisa del bot.',
 };
@@ -929,6 +933,7 @@ function vistaPiattaforma() {
     ${pannelloConoscenza()}
     ${pannelloClip()}
     ${pannelloAscolto()}
+    ${pannelloMusica()}
     ${pannelloEffetti()}
     ${pannelloGiochi()}
     ${pannelloNotifiche()}
@@ -1354,6 +1359,51 @@ function pannelloAscolto() {
       <p class="suggerimento spazio-sopra">🔒 L'audio <strong>non lascia il tuo PC</strong>: la trascrizione avviene nel browser,
       al bot arriva solo il testo. Funziona dalla stessa pagina di ascolto vocale qui sopra.</p>
     </div>` : ''}`);
+}
+
+// --- scheda Musica (richieste via Spotify) ------------------------------
+
+function pannelloMusica() {
+  return pannello('musica', `
+    <div class="carta">
+      <h2>Richieste musicali 🎵</h2>
+      <p>Collega il tuo Spotify: gli spettatori mettono canzoni in coda con
+      <code>!sr &lt;canzone&gt;</code> e vedono cosa suona con <code>!song</code>.
+      Serve <strong>Spotify Premium</strong> e un dispositivo attivo (l'app aperta e in riproduzione).</p>
+      <div id="spotify-box" class="spazio-sopra"><p>Carico…</p></div>
+    </div>`);
+}
+
+async function caricaSpotify() {
+  const box = document.getElementById('spotify-box');
+  if (!box) return;
+  const q = new URLSearchParams(location.search);
+  if (q.get('spotify') === 'ok') toast('Spotify collegato! 🎵');
+  else if (q.get('spotify') === 'errore') toast('Collegamento Spotify non riuscito.', 'errore');
+  let d;
+  try { d = await api('/api/spotify/stato'); } catch { box.innerHTML = '<p>Impossibile caricare lo stato.</p>'; return; }
+  if (!d.attivo) { box.innerHTML = '<p>Il connettore Spotify non è ancora configurato dall\'operatore.</p>'; return; }
+  const proprietario = stato?.ruolo !== 'moderatore';
+  if (d.collegato) {
+    box.innerHTML = `<div class="riga-interruttore">
+      <span class="badge verde">● Spotify collegato</span>
+      ${proprietario ? '<button class="btn secondario" id="spotify-scollega">Scollega</button>' : ''}
+    </div>`;
+    const b = document.getElementById('spotify-scollega');
+    if (b) b.addEventListener('click', () => conErrore(async () => {
+      await api('/api/spotify/disconnect', { method: 'POST', body: {} });
+      toast('Spotify scollegato.'); caricaSpotify();
+    }));
+  } else {
+    box.innerHTML = proprietario
+      ? '<button class="btn" id="spotify-collega">Connetti Spotify</button>'
+      : '<p>Spotify non è collegato. Solo il proprietario del canale può collegarlo.</p>';
+    const b = document.getElementById('spotify-collega');
+    if (b) b.addEventListener('click', () => conErrore(async () => {
+      const r = await api('/api/spotify/connect');
+      if (r?.url) location.href = r.url;
+    }));
+  }
 }
 
 // --- scheda Effetti & Suoni ---------------------------------------------
@@ -2879,6 +2929,7 @@ function caricaDatiScheda(id) {
   if (id === 'personalita') caricaGuide();
   if (id === 'conoscenza') caricaConoscenza();
   if (id === 'clip') caricaClip();
+  if (id === 'musica') caricaSpotify();
   if (id === 'effetti') { caricaEffetti(); caricaPremi(); }
   if (id === 'moduli') caricaModuli();
   if (id === 'memoria') caricaStatistiche();

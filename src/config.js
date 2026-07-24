@@ -96,10 +96,27 @@ export const config = {
         addon_clip: env('STRIPE_PRICE_ADDON_CLIP'),
         addon_voce: env('STRIPE_PRICE_ADDON_VOCE'),
         addon_squadra: env('STRIPE_PRICE_ADDON_SQUADRA'),
+        addon_musica: env('STRIPE_PRICE_ADDON_MUSICA'),
         pro: env('STRIPE_PRICE_PRO'),
       },
       // gli abbonamenti sono operativi solo con chiave segreta + segreto webhook
       attivo: !!(secretKey && webhookSecret),
+    };
+  })(),
+
+  // Spotify (richieste musicali) — OPZIONALE. Serve un'app su
+  // developer.spotify.com con Client ID/Secret e il redirect
+  // https://bot.andryxify.it/spotify/callback tra i "Redirect URIs". Senza
+  // credenziali il connettore resta spento (nessun bottone "Connetti Spotify").
+  spotify: (() => {
+    const clientId = env('SPOTIFY_CLIENT_ID');
+    const clientSecret = env('SPOTIFY_CLIENT_SECRET');
+    return {
+      clientId,
+      clientSecret,
+      // redirect esplicito o, se assente, dedotto dal BASE_URL
+      redirectUri: env('SPOTIFY_REDIRECT_URI') || (env('BASE_URL', 'http://localhost:8090').replace(/\/$/, '') + '/spotify/callback'),
+      attivo: !!(clientId && clientSecret),
     };
   })(),
 

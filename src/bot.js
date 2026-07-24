@@ -13,6 +13,7 @@ import * as persona from './ai/persona.js';
 import * as games from './features/games.js';
 import * as giveaway from './features/giveaway.js';
 import * as sondaggi from './features/sondaggi.js';
+import * as songrequest from './features/songrequest.js';
 import * as vip from './features/vip.js';
 import * as telegram from './features/telegram.js';
 import * as antispam from './features/antispam.js';
@@ -374,6 +375,8 @@ export class BotManager {
     vip.tryVipCommand(this.helix, msg, (t) => this.say(msg.channel, t)).catch((e) => log.error(`#${login} vip:`, e?.message || e));
     // sondaggi & predizioni Twitch (mod/streamer) — add-on Effetti & Punti canale
     sondaggi.trySondaggio(this.helix, msg, (t) => this.say(msg.channel, t)).catch((e) => log.error(`#${login} sondaggi:`, e?.message || e));
+    // richieste musicali via Spotify (!sr, !song) — add-on Richieste Musicali
+    songrequest.trySongRequest(msg, (t) => this.say(msg.channel, t)).catch((e) => log.error(`#${login} songrequest:`, e?.message || e));
     // citazioni (!cita) — lo shoutout (!so) lo gestisce già handler.js
     try { quotes.tryQuoteCommand(msg, (t) => this.say(msg.channel, t)); } catch (e) { log.error(`#${login} citazioni:`, e?.message || e); }
     // effetti & suoni: un comando come !airhorn accende l'overlay OBS.
