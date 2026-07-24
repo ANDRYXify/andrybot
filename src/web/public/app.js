@@ -3643,7 +3643,8 @@ async function aggiornaRetePanoramica(box, primo) {
     <p class="spazio-sopra"><button class="btn secondario mini" id="btn-forgia">📚 Studia ora</button>
       &nbsp;<a class="suggerimento" href="/api/streamer/corpus" download>📦 Scarica il dataset della sua mente</a></p>
     <p class="suggerimento">«Studia ora»: cerca da sé le sue lacune online, ci ragiona su e le distilla nel suo motore.
-    Il «dataset» è il materiale con cui, su una macchina capace, si potrebbe forgiare un vero modello tutto suo.</p>`;
+    Il «dataset» è la sua mente: su un Mac Apple Silicon lo trasformi in un vero modello tutto suo con
+    <code>forgia/forgia.sh</code> (vedi <code>forgia/README.md</code>), poi lo ricolleghi come "maestro".</p>`;
   document.getElementById('btn-forgia')?.addEventListener('click', () => conErrore(async () => {
     await api('/api/streamer/forgia', { method: 'POST', body: {} });
     toast('Ci sto lavorando 📚 — studio le mie lacune e distillo. Torna tra poco.');
