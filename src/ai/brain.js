@@ -547,13 +547,14 @@ export class Brain {
   // prima, di sua iniziativa. La curiosità nasce dalle LACUNE della rete (le cose
   // che non sa ancora): così è naturale che te le venga a chiedere — e imparando la
   // tua risposta cresce davvero. Ritorna una stringa o null. Non lancia mai.
-  async messaggioProattivo(channel, { nome } = {}) {
+  async messaggioProattivo(channel, { nome, spunto: spuntoForzato } = {}) {
     try {
       if (!channel) return null;
-      // spunto di curiosità: prima il suo OBIETTIVO del risveglio (il percorso),
-      // sennò una lacuna a caso, sennò un tema generico su di lui.
-      let spunto = '';
-      try { spunto = (this._obiettivo?.get(channel)) || ''; } catch { /* niente */ }
+      // spunto di curiosità: se il chiamante ne forza uno (es. "sei andato live")
+      // uso quello; sennò il suo OBIETTIVO del risveglio, sennò una lacuna, sennò
+      // un tema generico su di lui.
+      let spunto = String(spuntoForzato || '').trim();
+      if (!spunto) { try { spunto = (this._obiettivo?.get(channel)) || ''; } catch { /* niente */ } }
       if (!spunto) {
         try {
           const r = await brainpy.reteStato(channel);
