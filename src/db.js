@@ -700,10 +700,10 @@ export const tgConf = {
     db.prepare('UPDATE telegram SET interattivo=?, webhook_secret=? WHERE channel=?')
       .run(attivo ? 1 : 0, String(secret || ''), String(channel).toLowerCase());
   },
-  // chat privata: chi può farsi rispondere dal cervello — 'me' (solo il proprietario),
-  // 'tutti', 'off'. Default 'me'.
+  // chat privata: risponde SOLO al proprietario ('me') o è spenta ('off'). Mai ad
+  // altri (in privato il bot è accessibile solo da me). Default 'me'.
   setDmModo(channel, modo) {
-    const m = ['me', 'tutti', 'off'].includes(modo) ? modo : 'me';
+    const m = modo === 'off' ? 'off' : 'me';
     db.prepare('UPDATE telegram SET dm_modo=? WHERE channel=?').run(m, String(channel).toLowerCase());
   },
   // lega (o slega, con id vuoto) l'account Telegram del proprietario per il "solo me"
