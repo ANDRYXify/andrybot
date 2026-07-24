@@ -66,6 +66,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._chat()
         if self.path.startswith("/osserva"):
             return self._osserva()
+        if self.path.startswith("/distilla"):
+            return self._distilla()
         return self._json(404, {"errore": "non trovato"})
 
     def _chat(self):
@@ -96,6 +98,20 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, {"risposta": risposta})
         except Exception as e:
             return self._json(200, {"risposta": None, "errore": str(e)[:120]})
+
+    def _distilla(self):
+        # ALLENAMENTO: dai discorsi dello streamer ricava coppie domanda→risposta
+        # riutilizzabili (nel suo stile) per il motore veloce. Best-effort.
+        d = self._leggi()
+        canale = str(d.get("canale") or "").lower().strip()
+        frasi = d.get("frasi")
+        if not canale or not isinstance(frasi, list):
+            return self._json(400, {"errore": "dati mancanti"})
+        try:
+            coppie = G.distilla(canale, frasi)
+            return self._json(200, {"coppie": coppie if isinstance(coppie, list) else [], "pronto": coppie is not None})
+        except Exception as e:
+            return self._json(200, {"coppie": [], "pronto": False, "errore": str(e)[:120]})
 
     def _osserva(self):
         d = self._leggi()
