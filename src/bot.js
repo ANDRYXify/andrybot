@@ -5,7 +5,7 @@
 // eventi Twitch. Tiene tutto sincronizzato con la dashboard.
 import { makeLog } from './logger.js';
 import { config } from './config.js';
-import { tokens, streamers, memory, tgConf, compleanni } from './db.js';
+import { tokens, streamers, memory, tgConf, compleanni, pointAlerts } from './db.js';
 import { ChatBot } from './twitch/chat.js';
 import { EventHub } from './twitch/events.js';
 import { Brain } from './ai/brain.js';
@@ -473,7 +473,29 @@ export class BotManager {
       this._setLive(channel, type === 'stream.online', data);
       return;
     }
+    // riscatto di un premio a PUNTI CANALE → alert mappato (effetto + messaggio)
+    if (type === 'channel.channel_points_custom_reward_redemption.add') {
+      this._premioRiscattato(channel, data);
+    }
     this._dispatchEvent(ev);
+  }
+
+  // Uno spettatore ha riscattato un premio a punti canale: se è mappato a un
+  // alert, lo spariamo (effetto in overlay + eventuale messaggio in chat) e
+  // segniamo il riscatto come completato.
+  _premioRiscattato(channel, data) {
+    try {
+      const rewardId = data?.reward?.id;
+      if (!rewardId) return;
+      const m = pointAlerts.getByReward(channel, rewardId);
+      if (!m) return;                                   // premio non nostro / non mappato
+      const utente = data?.user_name || data?.user_login || 'qualcuno';
+      if (m.effetto) { try { this.effects?.fire?.(channel, m.effetto); } catch { /* niente */ } }
+      if (m.testo) this.say(channel, String(m.testo).replace(/\{user\}/g, utente).slice(0, 400));
+      // togli il riscatto dalla coda "in sospeso" (best-effort, solo premi nostri)
+      this.helix?.aggiornaRedemption?.(channel, rewardId, data?.id, 'FULFILLED').catch(() => {});
+      log.info(`premio punti canale «${m.titolo}» riscattato da ${utente} su #${channel}`);
+    } catch (e) { log.error('premioRiscattato:', e?.message || e); }
   }
 
   // Consegna un evento a cervello + moduli + plugin (parte comune).
