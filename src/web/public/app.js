@@ -1364,13 +1364,38 @@ function pannelloAscolto() {
 // --- scheda Musica (richieste via Spotify) ------------------------------
 
 function pannelloMusica() {
+  const m = impostazioni().musica || {};
+  const modo = ['libero', 'sub', 'monete', 'bit', 'punti'].includes(m.modo) ? m.modo : 'libero';
+  const opt = (v, t) => `<option value="${v}" ${modo === v ? 'selected' : ''}>${t}</option>`;
   return pannello('musica', `
     <div class="carta">
       <h2>Richieste musicali 🎵</h2>
-      <p>Collega il <strong>tuo</strong> Spotify: gli spettatori mettono canzoni in coda con
+      <p>Collega Spotify: gli spettatori mettono canzoni in coda con
       <code>!sr &lt;canzone&gt;</code> e vedono cosa suona con <code>!song</code>.
       Serve <strong>Spotify Premium</strong> e un dispositivo attivo (l'app aperta e in riproduzione).</p>
       <div id="spotify-box" class="spazio-sopra"><p>Carico…</p></div>
+    </div>
+    <div class="carta">
+      <h3>Come si richiede una canzone 🎚️</h3>
+      <p>Decidi tu se le richieste sono libere o "a pagamento": non devono per forza essere gratis.</p>
+      <label class="campo" for="musica-modo">Modalità</label>
+      <select id="musica-modo">
+        ${opt('libero', 'Libere — tutti, gratis')}
+        ${opt('sub', 'Solo abbonati (sub)')}
+        ${opt('monete', 'A monete del bot')}
+        ${opt('bit', 'A bit (Cheer nel messaggio)')}
+        ${opt('punti', 'A punti canale (premio)')}
+      </select>
+      <div id="musica-costo-box" class="spazio-sopra" hidden>
+        <label class="campo" for="musica-costo">Costo (<span id="musica-costo-unita">monete</span>)</label>
+        <input type="number" id="musica-costo" min="0" max="1000000" value="${Number(m.costo) || 0}">
+      </div>
+      <div id="musica-premio-box" class="spazio-sopra" hidden>
+        <label class="campo" for="musica-premio">Nome esatto del premio a punti canale</label>
+        <input type="text" id="musica-premio" placeholder="es. Richiesta musicale" value="${esc(m.premio || '')}">
+        <p class="suggerimento">Crea su Twitch un premio a punti canale con <strong>"richiedi un testo allo spettatore"</strong> attivo, poi scrivi qui il suo nome esatto: chi lo riscatta scrive la canzone e il bot la mette in coda.</p>
+      </div>
+      <button class="btn spazio-sopra" id="musica-salva">Salva</button>
     </div>`);
 }
 
@@ -1401,7 +1426,35 @@ function formCredenzialiSpotify(redirect) {
     <button class="btn spazio-sopra" id="spotify-salva-cred">Salva credenziali</button>`;
 }
 
+// Modalità richieste (!sr): mostra il campo giusto per il modo scelto e salva.
+function wiraMusicaConfig() {
+  const sel = document.getElementById('musica-modo');
+  if (!sel) return;
+  const costoBox = document.getElementById('musica-costo-box');
+  const premioBox = document.getElementById('musica-premio-box');
+  const unita = document.getElementById('musica-costo-unita');
+  const applica = () => {
+    const v = sel.value;
+    if (costoBox) costoBox.hidden = !(v === 'monete' || v === 'bit');
+    if (premioBox) premioBox.hidden = v !== 'punti';
+    if (unita) unita.textContent = v === 'bit' ? 'bit' : 'monete';
+  };
+  sel.addEventListener('change', applica);
+  applica();
+  const b = document.getElementById('musica-salva');
+  if (b) b.addEventListener('click', () => conErrore(async () => {
+    const musica = {
+      modo: sel.value,
+      costo: Number(document.getElementById('musica-costo')?.value) || 0,
+      premio: (document.getElementById('musica-premio')?.value || '').trim(),
+    };
+    await api('/api/streamer/impostazioni', { method: 'POST', body: { musica } });
+    toast('Impostazioni musica salvate 🎵');
+  }));
+}
+
 async function caricaSpotify() {
+  wiraMusicaConfig();
   const box = document.getElementById('spotify-box');
   if (!box) return;
   const q = new URLSearchParams(location.search);
@@ -1431,8 +1484,10 @@ async function caricaSpotify() {
   if (d.attivo) {
     box.innerHTML = `
       <button class="btn" id="spotify-collega">Connetti Spotify</button>
-      <p class="suggerimento spazio-sopra">${d.proprio ? 'Userai la tua app Spotify.' : 'Userai l\'app condivisa; puoi comunque impostare la tua qui sotto.'}</p>
-      <details class="spazio-sopra"><summary>Usa la mia app Spotify</summary>${formCredenzialiSpotify(d.redirect)}</details>`;
+      <p class="suggerimento spazio-sopra">${d.proprio
+        ? 'Userai la tua app Spotify.'
+        : 'Basta un clic: userai l\'app di andryxify.it. Solo se preferisci puoi usare una tua app Spotify (opzionale).'}</p>
+      ${d.proprio ? '' : '<details class="spazio-sopra"><summary>Usa una mia app Spotify (avanzato)</summary>' + formCredenzialiSpotify(d.redirect) + '</details>'}`;
     document.getElementById('spotify-collega').addEventListener('click', () => conErrore(async () => {
       const r = await api('/api/spotify/connect');
       if (r?.url) location.href = r.url;

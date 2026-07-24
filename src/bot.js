@@ -487,6 +487,9 @@ export class BotManager {
     // riscatto di un premio a PUNTI CANALE → alert mappato (effetto + messaggio)
     if (type === 'channel.channel_points_custom_reward_redemption.add') {
       this._premioRiscattato(channel, data);
+      // richiesta musicale a punti canale: se il premio è quello configurato,
+      // il testo del riscatto diventa una canzone in coda su Spotify.
+      songrequest.perRedemptionMusica(channel, data, (t) => this.say(channel, t)).catch(() => {});
     }
     this._dispatchEvent(ev);
   }

@@ -989,6 +989,16 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
         topN:         c(p.topN, 5, 3, 10),
       };
     }
+    // richieste musicali (!sr): modo di pagamento/permesso + costo + premio
+    if (b.musica !== undefined) {
+      const m = b.musica || {};
+      const modo = ['libero', 'sub', 'monete', 'bit', 'punti'].includes(m.modo) ? m.modo : 'libero';
+      out.musica = {
+        modo,
+        costo: Math.max(0, Math.min(1000000, Math.round(Number(m.costo)) || 0)),
+        premio: String(m.premio || '').trim().slice(0, 60),
+      };
+    }
     // antispam: elimina spam/link e timeout ai recidivi
     if (b.antispam !== undefined) {
       const a = b.antispam || {};
