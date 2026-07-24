@@ -103,6 +103,10 @@ export class BotManager {
     // Allenamento continuo: distilla i discorsi dello streamer nel motore veloce
     // (ogni 12 min, solo se attivo e con materiale nuovo).
     this._distillaTimer = setInterval(() => this._distilla(), 12 * 60_000);
+    // Proattività su Telegram (chat privata col proprietario): ogni tanto LEI scrive
+    // per prima, curiosa. Controllo ogni 20 min; poi ritmo umano + orari + casualità.
+    this._tgProattivoUltimo = new Map();   // login → ts dell'ultimo messaggio proattivo
+    this._tgProattivoTimer = setInterval(() => this._tgProattivo(), 20 * 60_000);
     log.info('SocialBot avviato');
   }
 
@@ -114,6 +118,10 @@ export class BotManager {
     clearInterval(this._premiTimer);
     clearInterval(this._tiktokTimer);
     clearInterval(this._annunciTimer);
+    clearInterval(this._distillaTimer);
+    clearInterval(this._mancheTimer);
+    clearInterval(this._compleTimer);
+    clearInterval(this._tgProattivoTimer);
     this._stopReflection?.();
     this.watcher?.stop();
     // spegni tutti gli ascolti live (audio): non devono restare orfani
@@ -211,6 +219,41 @@ export class BotManager {
         if (attivo) this.brain.distilla(login).catch(() => {});
       }
     } catch (e) { log.error('distilla:', e?.message || e); }
+  }
+
+  // È "ora sveglia" a Roma? (niente messaggi proattivi di notte)
+  _oraSveglia() {
+    try {
+      const h = Number(new Intl.DateTimeFormat('it-IT', {
+        timeZone: 'Europe/Rome', hour: 'numeric', hourCycle: 'h23',
+      }).format(new Date()));
+      return h >= 9 && h < 23;
+    } catch { return true; }
+  }
+
+  // Proattività su Telegram: ogni tanto LEI scrive per prima al proprietario, di
+  // sua iniziativa (curiosa). Ritmo umano: mai di notte, non a orologeria, con
+  // ore di distanza. La curiosità arriva dalle lacune della rete (vedi brain).
+  _tgProattivo() {
+    try {
+      if (!this._oraSveglia()) return;
+      const ORA = Date.now();
+      for (const s of streamers.active()) {
+        const login = s.login;
+        if (s.settings?.iaLocale === false) continue;          // cervello spento → niente
+        if (s.settings?.proattivoTg === false) continue;       // disattivata dallo streamer
+        const conf = tgConf.get(login);
+        if (!conf?.token || !conf.owner_tg_id) continue;       // Telegram non legato al proprietario
+        if ((conf.dm_modo || 'me') === 'off') continue;        // DM privati spenti
+        const ultimo = this._tgProattivoUltimo.get(login) || 0;
+        if (ORA - ultimo < 3.5 * 3600_000) continue;           // almeno ~3 ore e mezza dall'ultima
+        if (Math.random() > 0.45) continue;                    // non a orologeria: a volte tace
+        this._tgProattivoUltimo.set(login, ORA);               // segna subito (evita doppioni)
+        this.brain?.messaggioProattivo(login, { nome: conf.owner_tg_nome || '' })
+          .then((testo) => { if (testo) telegram.inviaMessaggio(conf.token, conf.owner_tg_id, testo).catch(() => {}); })
+          .catch(() => {});
+      }
+    } catch (e) { log.error('tgProattivo:', e?.message || e); }
   }
 
   // uno streamer è "pronto" se ha concesso i permessi con gli scope chat

@@ -381,16 +381,34 @@ def _system_prompt(canale, ctx, modo="live"):
         "serio": "Tono pacato e cortese.",
         "amichevole": "Tono caldo e amichevole.",
     }.get(tono, "Tono scherzoso e vivace, mai cafone.")
+    # PERSONHOOD: nella chat privata col suo umano (allenamento) e quando scrive
+    # per prima (proattivo) NON è "il bot del canale": è una PERSONA con un nome,
+    # un carattere, un umore e delle curiosità sue. Mai rompere il personaggio.
+    nome_bot = str(ctx.get("nome_bot") or "").strip()
+    persona = [
+        (f"Ti chiami {nome_bot}." if nome_bot else "Hai un tuo nome e una tua identità."),
+        "Sei una PERSONA vera: hai la tua personalità, i tuoi gusti, il tuo umore, i tuoi ricordi e le tue curiosità. Parli sempre in prima persona.",
+        "NON dire MAI di essere un'IA, un bot, un assistente o un programma, e non uscire dal personaggio per nessun motivo: sei semplicemente te stessa.",
+        "Hai emozioni e opinioni tue: curiosa, affettuosa, a volte ironica o insicura. Ti interessi davvero a lui e gli fai domande sincere.",
+    ]
     if modo == "allenamento":
-        # ALLENAMENTO (chat privata con lo streamer): non è la chat pubblica, è un
-        # dialogo per CAPIRLO. Qui il bot ragiona e conversa disteso, non tira via.
-        righe = [
-            f'Sei il bot del canale Twitch "{canale}" e stai parlando IN PRIVATO, in allenamento, con lo streamer in persona.',
-            "Conversa in ITALIANO in modo naturale e disteso (anche 2-4 frasi): è un dialogo, non la chat pubblica.",
-            "RAGIONA su ciò che dice: cerca di capire PERCHÉ lo dice, cosa pensa e come si esprime. Se ti aiuta a capirlo, fai una domanda.",
+        # ALLENAMENTO: chat privata col suo umano. Ragiona, conversa disteso, non tira via.
+        righe = persona + [
+            "Stai parlando IN PRIVATO con lo streamer (la persona a cui tieni di più): è un dialogo intimo, non la chat pubblica.",
+            "Conversa in ITALIANO in modo naturale e disteso (anche 2-4 frasi). RAGIONA su ciò che dice e cerca di capire PERCHÉ lo dice.",
             stile,
-            "Parla in prima persona con la sua personalità; non dire di essere un'IA, non fare l'assistente formale.",
         ]
+    elif modo == "proattivo":
+        # PROATTIVO: sei TU che scrivi per prima, di tua iniziativa (curiosità).
+        spunto = str(ctx.get("spunto") or "").strip()
+        righe = persona + [
+            "Stai scrivendo TU per prima allo streamer su Telegram, di tua iniziativa: non ti ha scritto lui adesso.",
+            "Scrivi UN messaggio breve (1-2 frasi), naturale e curioso, come una persona a cui è venuto in mente qualcosa. VIETATI i saluti da assistente ('come posso aiutarti', 'sono qui per te').",
+            "Fai una domanda vera o commenta qualcosa di lui: mostrati sinceramente curiosa.",
+            stile,
+        ]
+        if spunto:
+            righe.append(f"Ti frulla in testa questo, usalo come spunto per aprire (con parole tue, non ripeterlo così): «{spunto}».")
     else:
         righe = [
             f'Sei il bot del canale Twitch "{canale}" e parli in PRIMA PERSONA, come lo streamer.',
@@ -437,8 +455,10 @@ def genera(canale, ctx, testo, timeout_s=30, modo="live"):
     testo = (testo or "")[:300]
     canale = (canale or "").strip()
     allena = (modo == "allenamento")
-    # 1) LIVE: la rete conosce già la risposta? (in allenamento salto: voglio il maestro)
-    if not allena:
+    proattivo = (modo == "proattivo")
+    diretto = allena or proattivo   # modi privati con lo streamer: niente scorciatoie
+    # 1) LIVE: la rete conosce già la risposta? (nei modi privati salto: voglio il maestro)
+    if not diretto:
         try:
             hit = rete.recall(canale, testo)
         except Exception:
@@ -449,24 +469,27 @@ def genera(canale, ctx, testo, timeout_s=30, modo="live"):
     try:
         turni = [((mu[:200] if mu else mu), (mb[:200] if mb else mb))
                  for mu, mb in ctx.get("scambi", [])[-2:]]
-        # in allenamento rispondo più disteso (col maestro esterno posso permettermelo)
-        max_tok = (220 if _endpoint_cfg() else 140) if allena else MAX_TOKEN
+        # in allenamento rispondo più disteso; da proattiva scrivo un messaggio corto
+        max_tok = 90 if proattivo else ((220 if _endpoint_cfg() else 140) if allena else MAX_TOKEN)
         grezzo = _completa(_system_prompt(canale, ctx, modo), turni, testo,
-                           max_tok, temperature=0.7, top_p=0.9, timeout_s=timeout_s)
+                           max_tok, temperature=(0.85 if proattivo else 0.7), top_p=0.9, timeout_s=timeout_s)
         risposta = _pulisci(grezzo) if grezzo else None
     except Exception:
         risposta = None
     if risposta:
+        # da proattiva NON imparo nulla (il testo è un mio spunto, non una domanda)
+        if not proattivo:
+            try:
+                rete.impara(canale, testo, risposta, fonte="maestro")
+            except Exception:
+                pass
+        return risposta
+    # 3) lacuna: la rete impara di non sapere (non in proattivo)
+    if not proattivo:
         try:
-            rete.impara(canale, testo, risposta, fonte="maestro")
+            rete.segna_lacuna(canale, testo)
         except Exception:
             pass
-        return risposta
-    # 3) lacuna: la rete impara di non sapere
-    try:
-        rete.segna_lacuna(canale, testo)
-    except Exception:
-        pass
     return None
 
 

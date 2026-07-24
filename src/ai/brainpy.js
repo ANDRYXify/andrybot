@@ -17,7 +17,7 @@ const TIMEOUT_CHAT = Number(process.env.BRAIN_TIMEOUT_MS || '9000') || 9000;
 //   perché su CPU un 3B è lento e una risposta tardiva è meglio di nessuna risposta).
 // `modo` = 'live' (chat pubblica, veloce) oppure 'allenamento' (chat privata con
 //   lo streamer: risposta più lunga e ragionata, sfrutta il maestro esterno).
-export async function rispondi({ canale, login, nome, testo, tono, conoscenza, stile, timeoutMs, modo } = {}) {
+export async function rispondi({ canale, login, nome, testo, tono, conoscenza, stile, timeoutMs, modo, nomeBot, spunto } = {}) {
   if (!canale || !login || !testo) return null;
   const ac = new AbortController();
   const to = setTimeout(() => ac.abort(), timeoutMs || TIMEOUT_CHAT);
@@ -25,7 +25,7 @@ export async function rispondi({ canale, login, nome, testo, tono, conoscenza, s
     const r = await fetch(BASE + '/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ canale, login, nome, testo, tono, conoscenza, stile, modo }),
+      body: JSON.stringify({ canale, login, nome, testo, tono, conoscenza, stile, modo, nome_bot: nomeBot, spunto }),
       signal: ac.signal,
     });
     if (!r.ok) return null;
