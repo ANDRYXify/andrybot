@@ -1556,11 +1556,14 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       if (msg.from && !msg.from.is_bot) {
         membri.touch(login, msg.from.id, msg.from.first_name || msg.from.username || '', msg.from.username || '');
       }
-      // impara ANCHE da Telegram: nutre la coscienza (persone/fatti), come dalla chat Twitch
       const tgUser = msg.from?.username || (msg.from?.id ? 'tg' + msg.from.id : '');
       const utente = msg.from?.first_name || msg.from?.username || '';
-      if (tgUser && !msg.from?.is_bot) {
-        manager.brain?.imparaEsterno({ channel: login, user: tgUser, nome: utente, testo });
+      // APPRENDIMENTO "DURO" SOLO DA ME (privacy): su Telegram il bot impara SOLO
+      // dai messaggi del proprietario legato (l'account del "solo me"). Dagli altri
+      // NON assorbe nulla — al massimo risponde (se abilitato). L'apprendimento dagli
+      // altri resta limitato alla chat PUBBLICA di Twitch, come prima.
+      if (conf.owner_tg_id && String(msg.from?.id) === String(conf.owner_tg_id) && !msg.from?.is_bot) {
+        manager.brain?.imparaDaVoce({ channel: login, testo });   // le MIE parole → stile + coscienza
       }
       // comando integrato /compleanno (solo se gli auguri sono accesi)
       if (s?.settings?.telegramAuguri?.attivo) {
