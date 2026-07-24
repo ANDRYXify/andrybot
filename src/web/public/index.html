@@ -3,12 +3,116 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#ffffff">
-  <title>SocialBot — la dashboard del tuo bot</title>
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0c0c11" media="(prefers-color-scheme: dark)">
+
+  <title>SocialBot · Bot per Twitch che parla con la tua voce</title>
+  <meta name="description" content="Il bot per Twitch che scrive in chat con il TUO account: impara chi sei, crea comandi su misura, cattura clip, modera la chat e ti avvisa quando vai live. In italiano, con una demo da provare subito.">
+  <meta name="keywords" content="bot Twitch, bot per Twitch, bot Twitch italiano, bot Twitch gratis, moderazione Twitch, comandi Twitch, clip automatiche Twitch, bot chat Twitch, SocialBot, andryxify">
+  <meta name="author" content="andryxify.it">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+  <link rel="canonical" href="https://bot.andryxify.it/">
+
+  <!-- Open Graph (anteprima nelle chat e sui social) -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="SocialBot">
+  <meta property="og:locale" content="it_IT">
+  <meta property="og:url" content="https://bot.andryxify.it/">
+  <meta property="og:title" content="SocialBot · Bot per Twitch che parla con la tua voce">
+  <meta property="og:description" content="Il bot per Twitch che scrive in chat con il tuo account: impara chi sei, crea comandi su misura, cattura clip, modera e ti avvisa quando vai live.">
+  <meta property="og:image" content="https://bot.andryxify.it/icons/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="SocialBot — il bot per Twitch di andryxify.it">
+
+  <!-- Twitter/X -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SocialBot · Bot per Twitch che parla con la tua voce">
+  <meta name="twitter:description" content="Il bot per Twitch che scrive in chat con il tuo account. Comandi, clip, moderazione, notifiche live. In italiano.">
+  <meta name="twitter:image" content="https://bot.andryxify.it/icons/og.png">
+
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
   <link rel="icon" href="/icons/icon-192.png">
+
+  <!-- Dati strutturati: aiutano Google a capire cos'è SocialBot e a mostrare
+       risultati arricchiti (scheda prodotto + domande frequenti). -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://bot.andryxify.it/#website",
+        "url": "https://bot.andryxify.it/",
+        "name": "SocialBot",
+        "inLanguage": "it-IT",
+        "publisher": { "@id": "https://bot.andryxify.it/#org" }
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://bot.andryxify.it/#org",
+        "name": "andryxify.it",
+        "url": "https://andryxify.it",
+        "logo": "https://bot.andryxify.it/icons/icon-512.png"
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://bot.andryxify.it/#app",
+        "name": "SocialBot",
+        "applicationCategory": "MultimediaApplication",
+        "applicationSubCategory": "Bot per Twitch",
+        "operatingSystem": "Web",
+        "inLanguage": "it-IT",
+        "url": "https://bot.andryxify.it/",
+        "description": "Il bot per Twitch che scrive in chat con il tuo account: impara chi sei, crea comandi su misura, cattura clip, modera la chat e ti avvisa quando vai live.",
+        "featureList": [
+          "Scrive in chat con il tuo account Twitch",
+          "Comandi e automazioni su misura",
+          "Moderazione della chat",
+          "Clip automatiche dei momenti di hype",
+          "Minigiochi con monete",
+          "Notifiche live su Telegram",
+          "Avvisi dei nuovi post su TikTok, YouTube e Instagram",
+          "Comandi a voce"
+        ],
+        "publisher": { "@id": "https://bot.andryxify.it/#org" }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://bot.andryxify.it/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Con quale account scrive SocialBot nella chat di Twitch?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Con il tuo. SocialBot usa il tuo account Twitch, non un bot anonimo: in chat compare il tuo nome e sei sempre tu ad avere il controllo." }
+          },
+          {
+            "@type": "Question",
+            "name": "Che cosa sa fare SocialBot?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Crea comandi e automazioni su misura, modera la chat, cattura clip automatiche dei momenti di hype, offre minigiochi con monete, avvisa quando vai in diretta su Telegram e segnala i nuovi post su TikTok, YouTube e Instagram. Puoi anche pilotarlo a voce mentre streammi." }
+          },
+          {
+            "@type": "Question",
+            "name": "SocialBot è in italiano?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Sì: sia il bot in chat sia la dashboard sono interamente in italiano." }
+          },
+          {
+            "@type": "Question",
+            "name": "Posso provarlo senza registrarmi?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Sì, c'è una demo interattiva con dati d'esempio: la apri con un click, senza accesso." }
+          },
+          {
+            "@type": "Question",
+            "name": "Come attivo SocialBot sul mio canale?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Accedi con Twitch, richiedi l'abilitazione e personalizza la tua dashboard. Per attivarlo devi essere uno streamer abilitato su andryxify.it." }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
 
@@ -41,6 +145,32 @@
         <header class="pagina-testata" id="pagina-testata"></header>
         <div id="app">
           <div class="caricamento">Caricamento…</div>
+          <!-- Contenuto per i motori di ricerca e per chi ha JavaScript disattivato.
+               Con JS attivo, app.js disegna la vetrina interattiva al suo posto. -->
+          <noscript>
+            <section class="vetrina-hero">
+              <span class="vetrina-occhiello">SocialBot · il bot di andryxify.it</span>
+              <h1 class="vetrina-titolo">Il bot per Twitch che parla con la tua voce</h1>
+              <p class="vetrina-sub">SocialBot vive nella tua chat e scrive <strong>con il tuo account</strong> — niente
+              bot anonimi. Impara chi sei, crea comandi su misura, cattura clip, modera la chat e ti avvisa quando vai live.</p>
+              <p><a class="btn grande" href="/?demo=1">Prova la demo</a>
+                 <a class="btn grande secondario" href="https://andryxify.it">Attiva su andryxify.it</a></p>
+            </section>
+            <section class="vetrina-features">
+              <div class="carta vetrina-feat"><h2>Parla col tuo account</h2><p>SocialBot scrive in chat con il tuo nome: sei sempre tu ad avere il controllo.</p></div>
+              <div class="carta vetrina-feat"><h2>Comandi e moduli</h2><p>Comandi, frasi e automazioni infinite — anche a partire da una domanda.</p></div>
+              <div class="carta vetrina-feat"><h2>Moderazione</h2><p>Tiene pulita la chat mentre tu pensi solo a streammare.</p></div>
+              <div class="carta vetrina-feat"><h2>Clip automatiche</h2><p>Cattura i momenti di hype senza muovere un dito.</p></div>
+              <div class="carta vetrina-feat"><h2>Notifiche live</h2><p>Avvisi automatici su Telegram e dei nuovi post su TikTok, YouTube e Instagram.</p></div>
+              <div class="carta vetrina-feat"><h2>Comandi a voce</h2><p>Piloti il bot parlando, mentre streammi, senza toccare la tastiera.</p></div>
+            </section>
+            <section class="carta">
+              <h2>Domande frequenti</h2>
+              <p><strong>Con quale account scrive?</strong> Con il tuo account Twitch, non un bot anonimo.</p>
+              <p><strong>È in italiano?</strong> Sì, bot e dashboard sono in italiano.</p>
+              <p><strong>Come si attiva?</strong> Accedi con Twitch, richiedi l'abilitazione e personalizza la dashboard. Serve essere uno streamer abilitato su <a href="https://andryxify.it">andryxify.it</a>.</p>
+            </section>
+          </noscript>
         </div>
       </div>
       <footer class="pie">

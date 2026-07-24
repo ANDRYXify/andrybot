@@ -1,0 +1,21 @@
+# SocialBot — bot per Twitch · https://bot.andryxify.it
+# I motori possono indicizzare la vetrina pubblica; le aree private
+# rispondono già 404 senza accesso, ma le teniamo fuori dal crawl budget.
+User-agent: *
+Allow: /$
+Allow: /index.html
+Allow: /style.css
+Allow: /app.js
+Allow: /privacy
+Allow: /icons/
+Allow: /manifest.webmanifest
+Disallow: /api/
+Disallow: /auth/
+Disallow: /overlay/
+Disallow: /tg/
+Disallow: /entra
+Disallow: /accedi
+Disallow: /sblocca
+Disallow: /mod
+
+Sitemap: https://bot.andryxify.it/sitemap.xml

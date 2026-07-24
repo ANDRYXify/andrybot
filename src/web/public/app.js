@@ -561,6 +561,15 @@ function renderHero() {
     ['2', 'Richiedi l’abilitazione', 'andryxify ti approva e sblocca la tua dashboard.'],
     ['3', 'Personalizza e vai live', 'Tono, comandi, notifiche: tutto tuo, in pochi minuti.'],
   ];
+  // Domande frequenti: rispecchiano i dati strutturati FAQPage in index.html
+  // (Google mostra le FAQ nei risultati solo se sono anche visibili qui).
+  const FAQ = [
+    ['Con quale account scrive SocialBot in chat?', 'Con il <strong>tuo</strong>: SocialBot usa il tuo account Twitch, non un bot anonimo. In chat compare il tuo nome e sei sempre tu ad avere il controllo.'],
+    ['Che cosa sa fare?', 'Comandi e automazioni su misura, moderazione della chat, clip automatiche, minigiochi con monete, notifiche live su Telegram e avvisi dei nuovi post su TikTok, YouTube e Instagram. E lo piloti anche a voce.'],
+    ['SocialBot è in italiano?', 'Sì: sia il bot in chat sia la dashboard sono interamente in italiano.'],
+    ['Posso provarlo senza registrarmi?', 'Sì, c’è una <a href="/?demo=1">demo interattiva</a> con dati d’esempio: la apri con un click, senza accesso.'],
+    ['Come si attiva sul mio canale?', 'Accedi con Twitch, richiedi l’abilitazione e personalizza la dashboard. Per attivarlo devi essere uno streamer abilitato su <a href="https://andryxify.it">andryxify.it</a>.'],
+  ];
 
   app.innerHTML = `
     ${msgErrore ? `<div class="carta avviso"><p>⚠️ ${esc(msgErrore)}</p></div>` : ''}
@@ -603,6 +612,11 @@ function renderHero() {
     </section>
 
     <section class="vetrina-piani" id="vetrina-piani" aria-label="Piani"></section>
+
+    <section class="carta rivela vetrina-faq" aria-label="Domande frequenti">
+      <h2>Domande frequenti</h2>
+      ${FAQ.map(([q, a]) => `<details class="faq-item"><summary>${q}</summary><p>${a}</p></details>`).join('')}
+    </section>
 
     <section class="carta rivela vetrina-cta">
       <div>
