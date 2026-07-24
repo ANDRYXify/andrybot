@@ -27,6 +27,7 @@ import * as tiktok from '../features/tiktok.js';
 import * as quotesImport from '../features/quotesimport.js';
 import { pretrain } from '../ai/pretrain.js';
 import * as persona from '../ai/persona.js';
+import * as brainpy from '../ai/brainpy.js';
 import { redeemPass } from './gate.js';
 
 const log = makeLog('web');
@@ -1584,7 +1585,20 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
         const acceso = (conf.dm_modo || 'me') !== 'off';
         if (acceso && sonoIoTg) {
           const risp = await manager.brain?.rispostaDiretta({ channel: login, user: tgUser || 'utente', nome: utente, testo, tono: s?.settings?.tono });
-          if (risp) telegram.inviaMessaggio(conf.token, chat.id, risp).catch(() => {});
+          if (risp) {
+            telegram.inviaMessaggio(conf.token, chat.id, risp).catch(() => {});
+          } else {
+            // il cervello non ha prodotto nulla: invece di restare muti, spieghiamo
+            // perché (così non sembra "rotto"). L'apprendimento avviene comunque.
+            const st = await brainpy.stato().catch(() => null);
+            const sc = st?.genera?.stato;
+            const fb = sc === 'carico'
+              ? '🧠 Sto ancora caricando il cervello (al primo avvio scarica il modello, ci vuole un po\'). Intanto imparo da ciò che scrivi — riprova tra un minuto!'
+              : sc === 'pronto'
+                ? 'Mmh, stavolta non mi è venuta la risposta 😅 riprova a scrivermelo?'
+                : 'Il mio cervello (l\'IA locale) non è attivo su questo server, quindi in privato non riesco a rispondere. Però sto già imparando da ciò che scrivi. 🧠';
+            telegram.inviaMessaggio(conf.token, chat.id, fb).catch(() => {});
+          }
         }
       }
     } catch (e) { log.warn('webhook telegram:', e?.message || e); }
