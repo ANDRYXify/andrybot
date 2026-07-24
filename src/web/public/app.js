@@ -242,9 +242,9 @@ function _demoGet(via) {
     },
     '/api/streamer/guide': {
       guide: [
-        { id: 1, testo: 'Non essere mai volgare', ts: '2026-06-01T10:00:00Z' },
-        { id: 2, testo: 'Dai del tu a tutti in chat', ts: '2026-06-02T12:00:00Z' },
-        { id: 3, testo: 'Evita di essere insistente', ts: '2026-06-03T09:00:00Z' },
+        { id: 1, testo: 'Non essere mai volgare', dove: 'ovunque', con_chi: 'tutti', ts: '2026-06-01T10:00:00Z' },
+        { id: 2, testo: 'Non parlare dei miei progetti', dove: 'ovunque', con_chi: 'tranne-me', ts: '2026-06-02T12:00:00Z' },
+        { id: 3, testo: 'Dammi del tu e sii sincera', dove: 'tg-privato', con_chi: 'solo-me', ts: '2026-06-03T09:00:00Z' },
       ],
     },
     '/api/streamer/knowledge': [
@@ -1046,11 +1046,26 @@ function pannelloPersonalita() {
       <p>I <strong class="primo-piano">limiti e le regole</strong> che le dai: lei li <strong>salva</strong> e li rispetta
       <strong>sempre</strong>, in ogni chat (privata, pubblica, quando scrive per prima). Es. «non essere mai volgare»,
       «non parlare di politica», «dai del tu a tutti».</p>
-      <p class="suggerimento">Puoi dettargliele anche <strong>da Telegram in privato</strong> (solo tu): scrivile ad es.
-      «d'ora in poi non essere troppo formale», oppure <code>/regola &lt;testo&gt;</code>, <code>/regole</code>, <code>/scorda n</code>.</p>
+      <p class="suggerimento">Ogni regola può valere in un <strong>contesto</strong> preciso: con chi (tutti / solo con te / tutti tranne te)
+      e dove (ovunque / Twitch / Telegram / in privato con te). Così puoi dire «con tutti tranne me non parlare di politica»
+      oppure «solo con me, in privato su Telegram, dammi del tu».</p>
+      <p class="suggerimento">Puoi dettargliele anche <strong>da Telegram in privato</strong> (solo tu), a voce tua: scrivi ad es.
+      «d'ora in poi non essere troppo formale» o «con chi non sono io non parlare dei miei progetti» — capisce da sola il
+      contesto. Comandi: <code>/regola &lt;testo&gt;</code>, <code>/regole</code>, <code>/scorda n</code>.</p>
       <label class="campo" for="inp-guida">Nuova linea guida</label>
-      <div class="riga-flessibile">
-        <input type="text" id="inp-guida" placeholder="es. evita di essere insistente" maxlength="300">
+      <input type="text" id="inp-guida" placeholder="es. non parlare di politica" maxlength="300">
+      <div class="riga-flessibile spazio-sopra">
+        <select id="sel-guida-conchi" title="Con chi">
+          <option value="tutti">con tutti</option>
+          <option value="solo-me">solo con me</option>
+          <option value="tranne-me">con tutti tranne me</option>
+        </select>
+        <select id="sel-guida-dove" title="Dove">
+          <option value="ovunque">ovunque</option>
+          <option value="twitch">in chat Twitch</option>
+          <option value="tg">su Telegram</option>
+          <option value="tg-privato">in privato su Telegram</option>
+        </select>
         <button class="btn" id="btn-guida-add">Aggiungi</button>
       </div>
       <ul class="lista-voci" id="lista-guide"><li class="vuoto">Caricamento…</li></ul>
@@ -1064,8 +1079,11 @@ async function caricaGuide() {
   let d;
   try { d = await api('/api/streamer/guide'); } catch { box.innerHTML = '<li class="vuoto">Non disponibile ora.</li>'; return; }
   const l = d.guide || [];
+  const DOVE = { ovunque: 'ovunque', twitch: 'in chat Twitch', tg: 'su Telegram', 'tg-privato': 'in privato su Telegram' };
+  const CONCHI = { tutti: 'con tutti', 'solo-me': 'solo con te', 'tranne-me': 'con tutti tranne te' };
+  const amb = (g) => `${CONCHI[g.con_chi] || 'con tutti'}, ${DOVE[g.dove] || 'ovunque'}`;
   box.innerHTML = l.length
-    ? l.map((g) => `<li><span>${esc(g.testo)}</span> <a href="#" class="rimuovi" data-id="${g.id}" title="Rimuovi">✕</a></li>`).join('')
+    ? l.map((g) => `<li><span>${esc(g.testo)} <span class="suggerimento">— ${esc(amb(g))}</span></span> <a href="#" class="rimuovi" data-id="${g.id}" title="Rimuovi">✕</a></li>`).join('')
     : '<li class="vuoto">Nessuna regola ancora. Aggiungine una qui sopra o da Telegram.</li>';
   box.querySelectorAll('.rimuovi').forEach((a) => a.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
     await api('/api/streamer/guide/' + a.dataset.id, { method: 'DELETE' });
@@ -1914,7 +1932,9 @@ function attivaPiattaforma() {
     const inp = document.getElementById('inp-guida');
     const t = (inp?.value || '').trim();
     if (t.length < 3) return;
-    await api('/api/streamer/guide', { method: 'POST', body: { testo: t } });
+    const dove = document.getElementById('sel-guida-dove')?.value || 'ovunque';
+    const con_chi = document.getElementById('sel-guida-conchi')?.value || 'tutti';
+    await api('/api/streamer/guide', { method: 'POST', body: { testo: t, dove, con_chi } });
     if (inp) inp.value = '';
     caricaGuide();
     toast('Regola aggiunta ✍️');

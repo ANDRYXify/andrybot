@@ -420,7 +420,7 @@ export class Brain {
         testo: String(testo).slice(0, 300), tono: t, conoscenza, stile: this._stileStreamer(channel),
         modo: 'allenamento',   // DM privato = allenamento: risposta ragionata, sfrutta il maestro esterno
         nomeBot: this._nomePersona(),   // parla come una persona (il suo nome, dall'anima)
-        lineeGuida: guide.testi(channel),   // le regole che le hai dato: le rispetta sempre
+        lineeGuida: guide.applicabili(channel, { piattaforma: 'telegram', privato: true, sonoIo: true }),   // regole valide QUI (privato con te)
         web,                   // riferimento trovato online (se c'era)
         timeoutMs: 40000,      // aspettiamo di più: risposta più lunga (e il locale su CPU è lento)
       });
@@ -498,7 +498,7 @@ export class Brain {
       const r = await brainpy.rispondi({
         canale: channel, login: channel, nome: 'studio',
         testo: String(lacuna).slice(0, 200), modo: 'studio', web: snippet,
-        nomeBot: this._nomePersona(), lineeGuida: guide.testi(channel), timeoutMs: 30000,
+        nomeBot: this._nomePersona(), lineeGuida: guide.applicabili(channel, { piattaforma: 'twitch', privato: false, sonoIo: false }), timeoutMs: 30000,
       });
       if (!r) return null;
       const out = String(r).replace(/\s+/g, ' ').trim();
@@ -575,7 +575,7 @@ export class Brain {
         canale: channel, login: channel, nome: nome || 'tu',
         testo: '(scrivigli tu per primo, di tua iniziativa)',
         modo: 'proattivo', spunto, nomeBot: this._nomePersona(),
-        lineeGuida: guide.testi(channel),
+        lineeGuida: guide.applicabili(channel, { piattaforma: 'telegram', privato: true, sonoIo: true }),
         conoscenza, stile: this._stileStreamer(channel),
         tono: 'amichevole', timeoutMs: 35000,
       });
@@ -764,7 +764,7 @@ export class Brain {
         const risposta = await brainpy.rispondi({
           canale: streamer.display || channel, login: user, nome, testo: text, tono, conoscenza,
           stile: this._stileStreamer(channel),   // la voce vera dello streamer (esempi di stile)
-          lineeGuida: guide.testi(channel),       // le regole valgono anche in chat pubblica
+          lineeGuida: guide.applicabili(channel, { piattaforma: 'twitch', privato: false, sonoIo: false }),   // regole valide in chat pubblica
         });
         if (risposta) return this._finalizza(channel, risposta, streamer);
       }
@@ -780,7 +780,7 @@ export class Brain {
           if (web) {
             const r = await brainpy.rispondi({
               canale: streamer.display || channel, login: user, nome, testo: text, tono, web,
-              lineeGuida: guide.testi(channel), stile: this._stileStreamer(channel), timeoutMs: 12000,
+              lineeGuida: guide.applicabili(channel, { piattaforma: 'twitch', privato: false, sonoIo: false }), stile: this._stileStreamer(channel), timeoutMs: 12000,
             });
             if (r) return this._finalizza(channel, r, streamer);
           }
