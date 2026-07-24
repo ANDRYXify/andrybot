@@ -139,6 +139,14 @@ class Handler(BaseHTTPRequestHandler):
             sp = str(d.get("spunto") or "").strip()
             if sp:
                 ctx["spunto"] = sp[:200]
+            # LINEE GUIDA: regole che lo streamer le ha dato → le rispetta SEMPRE
+            lg = d.get("linee_guida")
+            if isinstance(lg, list) and lg:
+                ctx["linee_guida"] = [str(x)[:200] for x in lg[:12] if str(x).strip()]
+            # WEB: informazione trovata online (da trattare come NON affidabile)
+            wb = str(d.get("web") or "").strip()
+            if wb:
+                ctx["web"] = wb[:600]
             # in allenamento lascio più tempo (risposta più lunga e ragionata)
             timeout_s = 38 if modo == "allenamento" else 30
             risposta = G.genera(canale, ctx, testo, timeout_s=timeout_s, modo=modo)

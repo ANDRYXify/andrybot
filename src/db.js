@@ -282,6 +282,13 @@ CREATE TABLE IF NOT EXISTS subscriptions (   -- abbonamenti self-service (Stripe
   current_period_end INTEGER NOT NULL DEFAULT 0,
   updated_at INTEGER NOT NULL DEFAULT 0
 );
+CREATE TABLE IF NOT EXISTS linee_guida (     -- regole/limiti che lo streamer dà a "lia": lei le rispetta SEMPRE
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  channel TEXT NOT NULL,
+  testo TEXT NOT NULL,
+  ts INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_guida_ch ON linee_guida(channel, ts);
 `);
 
 // --- migrazioni leggere: aggiunge colonne nuove a DB già esistenti ------------
@@ -866,6 +873,42 @@ export const knowledge = {
   remove(channel, id) { db.prepare('DELETE FROM knowledge WHERE channel=? AND id=?').run(channel, id); },
   clearBySource(channel, fonte) { db.prepare('DELETE FROM knowledge WHERE channel=? AND fonte=?').run(channel, fonte); },
   count(channel) { return db.prepare('SELECT COUNT(*) c FROM knowledge WHERE channel=?').get(channel).c; },
+};
+
+// -------------------------------------------------- linee guida (regole di "lia")
+// I limiti/regole che lo streamer le dà (in privato o dalla dashboard): lei li
+// SALVA e li rispetta sempre. Sono del proprietario, valgono su tutti i suoi modi.
+export const guide = {
+  list(channel) {
+    return db.prepare('SELECT id, testo, ts FROM linee_guida WHERE channel=? ORDER BY ts ASC')
+      .all(String(channel).toLowerCase());
+  },
+  testi(channel, max = 12) {
+    return this.list(channel).slice(0, max).map((r) => r.testo);
+  },
+  add(channel, testo) {
+    const t = String(testo || '').replace(/\s+/g, ' ').trim().slice(0, 300);
+    if (t.length < 3) return null;
+    const c = String(channel).toLowerCase();
+    const gia = db.prepare('SELECT id FROM linee_guida WHERE channel=? AND lower(testo)=lower(?) LIMIT 1').get(c, t);
+    if (gia) return gia.id;
+    // tetto: massimo 40 regole per canale (scarta le più vecchie)
+    const info = db.prepare('INSERT INTO linee_guida(channel, testo, ts) VALUES(?,?,?)').run(c, t, now());
+    db.prepare(`DELETE FROM linee_guida WHERE channel=? AND id NOT IN (
+      SELECT id FROM linee_guida WHERE channel=? ORDER BY ts DESC LIMIT 40)`).run(c, c);
+    return info.lastInsertRowid;
+  },
+  remove(channel, id) {
+    db.prepare('DELETE FROM linee_guida WHERE channel=? AND id=?').run(String(channel).toLowerCase(), Number(id) || 0);
+  },
+  removeByIndex(channel, idx) {
+    const item = this.list(channel)[Number(idx) - 1];
+    if (item) this.remove(channel, item.id);
+    return item || null;
+  },
+  count(channel) {
+    return db.prepare('SELECT COUNT(*) c FROM linee_guida WHERE channel=?').get(String(channel).toLowerCase()).c;
+  },
 };
 
 // ---------------------------------------------------------------- effetti & suoni
