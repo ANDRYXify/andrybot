@@ -120,6 +120,19 @@ export async function reteStato(canale) {
   } catch { return null; } finally { clearTimeout(to); }
 }
 
+// Il dataset della "mente" della rete per un canale: coppie {q, a} consolidate.
+export async function reteCorpus(canale) {
+  if (!canale) return [];
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 5000);
+  try {
+    const r = await fetch(BASE + '/corpus?canale=' + encodeURIComponent(canale), { signal: ac.signal });
+    if (!r.ok) return [];
+    const d = await r.json().catch(() => null);
+    return Array.isArray(d?.coppie) ? d.coppie : [];
+  } catch { return []; } finally { clearTimeout(to); }
+}
+
 // Stato del cervello (per log/diagnostica). Ritorna un oggetto o null.
 export async function stato() {
   const ac = new AbortController();

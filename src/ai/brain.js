@@ -476,6 +476,8 @@ export class Brain {
         : `Mi sono svegliata. So rispondere a ${sa} cose (fiducia ${fid}%). Nessuna lacuna in vista: continuo ad ascoltare e a imparare.`;
       diario.add(channel, 'risveglio', testo);
       log.info(`risveglio #${channel}: ${goal ? 'obiettivo «' + goal + '»' : 'nessuna lacuna'}`);
+      // e poi si mette a studiare da sola le sue lacune (in background, se ha internet)
+      if (goal) this._autoColmaLacune(channel).catch(() => {});
       return testo;
     } catch (e) { log.debug('risveglio:', e?.message || e); return null; }
   }
@@ -483,6 +485,59 @@ export class Brain {
   // L'ultimo "pensiero" dal diario (per mostrarlo in dashboard).
   pensiero(channel) {
     try { return diario.latest(channel); } catch { return null; }
+  }
+
+  // STUDIA una lacuna RAGIONANDO su una fonte trovata online: non copia, valuta
+  // se la fonte risponde e formula una risposta breve e vera (o si astiene).
+  // Ritorna la risposta o null (se non è chiaro). Non lancia mai.
+  async _studia(channel, lacuna, snippet) {
+    try {
+      const r = await brainpy.rispondi({
+        canale: channel, login: channel, nome: 'studio',
+        testo: String(lacuna).slice(0, 200), modo: 'studio', web: snippet,
+        nomeBot: this._nomePersona(), lineeGuida: guide.testi(channel), timeoutMs: 30000,
+      });
+      if (!r) return null;
+      const out = String(r).replace(/\s+/g, ' ').trim();
+      if (!out || /^non chiaro/i.test(out)) return null;   // si è astenuta: onesta
+      return out.length > 300 ? out.slice(0, 299) + '…' : out;
+    } catch { return null; }
+  }
+
+  // Da sola, cerca online le sue LACUNE, ci ragiona su e — se arriva a una
+  // risposta chiara — se la salva come conoscenza (fonte 'web') e la annota nel
+  // diario. Prudente: max 2 lacune per giro, solo se internet è acceso. Ritorna
+  // quante ne ha colmate.
+  async _autoColmaLacune(channel) {
+    if (!this._internetOn(channel)) return 0;
+    let fatte = 0;
+    try {
+      const r = await brainpy.reteStato(channel).catch(() => null);
+      const lac = (Array.isArray(r?.non_so) ? r.non_so : []).filter(Boolean).slice(0, 2);
+      for (const lacuna of lac) {
+        const snippet = await internet.cerca(lacuna);
+        if (!snippet) continue;
+        const risp = await this._studia(channel, lacuna, snippet);
+        if (!risp) continue;
+        knowledge.add(channel, { domanda: String(lacuna).slice(0, 200), risposta: risp, fonte: 'web' });
+        diario.add(channel, 'studio', `Ho studiato da sola: «${lacuna}» → ${risp}`);
+        fatte++;
+      }
+    } catch (e) { log.debug('autoColmaLacune:', e?.message || e); }
+    return fatte;
+  }
+
+  // "FORGIA": lei lavora sulla SUA mente locale. La sua rete è il suo modello
+  // (cresce dalla sua esperienza, non è scaricato): forgiare = colmare lacune dal
+  // web + distillare altro materiale nel motore veloce. È così che "si costruisce
+  // la sua LLM locale" con l'hardware che ha. Ritorna un piccolo riepilogo.
+  async forgia(channel) {
+    try {
+      const colmate = await this._autoColmaLacune(channel);
+      this.distilla?.(channel)?.catch?.(() => {});   // distilla altro materiale nella rete
+      diario.add(channel, 'forgia', `Ho lavorato sulla mia mente: ${colmate} lacune colmate dal web, e sto distillando altro nel motore veloce.`);
+      return { colmate };
+    } catch (e) { log.debug('forgia:', e?.message || e); return { colmate: 0 }; }
   }
 
   // MESSAGGIO PROATTIVO (Telegram, chat privata col proprietario): scrive LEI per

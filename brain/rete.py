@@ -361,6 +361,22 @@ def stato(canale):
         }
 
 
+def esporta(canale, min_forza=1.0):
+    """Il DATASET della sua mente: le coppie domanda→risposta che ha imparato e
+    consolidato (nodi solidi). È il materiale con cui, su una macchina capace, si
+    potrebbe forgiare un vero modello fine-tunato tutto suo."""
+    with _lock:
+        st = _carica(canale)
+        out = []
+        for n in st["nodi"]:
+            risp = n.get("risposte") or []
+            if not risp:
+                continue
+            if n.get("usi", 0) >= 2 or n.get("forza", 0) >= min_forza:
+                out.append({"q": str(n.get("dom", ""))[:200], "a": str(risp[0])[:300]})
+        return out
+
+
 def riepilogo():
     """Sommario globale (tutti i canali visti finora) per /health."""
     with _lock:
