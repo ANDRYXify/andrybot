@@ -1496,6 +1496,38 @@ function modelloPronto(nome) {
 
 // --- scheda Giochi ------------------------------------------------------
 
+// Corpo del bookmarklet "Prendi le quote da x.la": gira NEL browser dell'utente
+// sulla pagina x.la (dove il JavaScript ha già disegnato le frasi e lui è loggato),
+// pesca le quote dal testo renderizzato e le copia nel formato «frase ⏎ autore | data».
+// Qui non viene mai eseguita: la serializziamo con toString() per creare l'href.
+function _xlaGrabFn() {
+  try {
+    var L = (document.body.innerText || '').split('\n').map(function (s) { return s.replace(/\s+/g, ' ').trim(); }).filter(Boolean);
+    var M = /^(.{1,48}?)\s*[|·•–-]\s*(\d{1,2}[.\/]\d{1,2}[.\/]\d{2,4})$/;
+    var G = /please enable javascript|enable javascript|xsolla partner network|shortcut icon/i;
+    var o = [], seen = {};
+    for (var i = 0; i < L.length; i++) {
+      if (M.test(L[i]) || G.test(L[i])) continue;
+      var q = L[i].replace(/^[“"'«\s]+|[”"'»\s]+$/g, '').trim();
+      if (q.length < 6 || q.length > 300) continue;
+      if (q.split(' ').length < 2) continue;
+      if (!/[a-zA-Zà-ÿ]/.test(q)) continue;
+      var k = q.toLowerCase();
+      if (seen[k]) continue; seen[k] = 1;
+      var mm = M.exec(L[i + 1] || '');
+      o.push('"' + q + '"' + (mm ? '\n' + L[i + 1] : ''));
+      if (mm) i++;
+    }
+    if (!o.length) { alert('Nessuna quote trovata: scorri la pagina x.la fino in fondo per caricarle tutte, poi riprova.'); return; }
+    var t = o.join('\n\n');
+    var done = function () { alert('Copiate ' + o.length + ' quote! Torna sul bot, incollale in "Importa citazioni" e premi "Riconosci e importa".'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, function () { window.prompt('Copia con Ctrl+C:', t); });
+    else window.prompt('Copia con Ctrl+C:', t);
+  } catch (e) { alert('Errore: ' + e.message); }
+}
+// href del bookmarklet: la funzione su una riga sola, pronta da trascinare nei preferiti.
+const bookmarkletXla = 'javascript:(' + _xlaGrabFn.toString().replace(/\n\s*/g, ' ') + ')()';
+
 function pannelloGiochi() {
   const s = impostazioni();
   return pannello('giochi', `
@@ -1646,10 +1678,19 @@ function pannelloGiochi() {
 
       <details class="spazio-sopra">
         <summary style="cursor:pointer">📥 Importa citazioni (da x.la)</summary>
-        <p class="suggerimento">Vai sulla tua pagina <strong class="primo-piano">x.la</strong>, seleziona le quote e
-        <strong>incollale qui sotto</strong>: riconosco da solo <strong>nome utente e data</strong> (formato
-        «<em>frase</em> ⏎ <em>autore | data</em>», come le mostra x.la). Funziona anche incollando l'HTML della pagina.
-        I doppioni li salto.</p>
+        <p class="suggerimento">x.la disegna le frasi <strong>con JavaScript</strong>: copiare la pagina "alla cieca" (o dal link)
+        spesso prende solo il guscio vuoto («<em>Please enable JavaScript</em>»). Due modi che funzionano davvero 👇</p>
+
+        <p class="suggerimento" style="margin-bottom:.35rem"><strong>1) Bottone magico</strong> (consigliato). Trascina
+        <a id="bm-xla" class="btn secondario" draggable="true" href="#" title="Trascinami nella barra dei preferiti del browser">📌 Prendi le quote da x.la</a>
+        nella <strong>barra dei preferiti</strong> del browser. Poi apri la tua pagina x.la, aspetta che le quote compaiano
+        (scorri fino in fondo) e <strong>clicca quel preferito</strong>: copia tutto da solo. Torna qui, incolla sotto e importa.
+        <button class="btn secondario" id="bm-xla-copia" type="button" style="margin-left:.35rem">copia il codice</button></p>
+
+        <p class="suggerimento" style="margin-bottom:.5rem"><strong>2) A mano.</strong> Sulla pagina x.la <em>già aperta e caricata</em>,
+        seleziona le quote col mouse e incollale qui sotto: riconosco <strong>nome utente e data</strong>
+        (formato «<em>frase</em> ⏎ <em>autore | data</em>», come le mostra x.la). I doppioni li salto.</p>
+
         <textarea id="txt-import-citazioni" rows="6" placeholder="&quot;Tu, molto molto bravo&quot;&#10;UnicornoFacinoroso | 06.09.2024&#10;&quot;io solo perchè mi andava di uscire&quot;&#10;@chiara_3008 | 06.10.2024"></textarea>
         <div class="riga-flessibile">
           <input type="text" id="inp-import-url" placeholder="…oppure incolla un link (per altre fonti)">
@@ -1659,6 +1700,7 @@ function pannelloGiochi() {
           <button class="btn" id="btn-importa-citazioni">Riconosci e importa</button>
           <span id="import-cita-esito" class="suggerimento"></span>
         </p>
+        <p id="import-cita-avviso" class="nota-lettura" hidden></p>
       </details>
 
       <ul class="lista-voci" id="lista-citazioni"><li class="vuoto">Caricamento…</li></ul>
@@ -2220,9 +2262,31 @@ function attivaPiattaforma() {
       const ta = document.getElementById('txt-import-citazioni');
       const esistenti = ta.value.trim();
       ta.value = (esistenti ? esistenti + '\n' : '') + (r.citazioni || []).join('\n');
-      toast(r.citazioni?.length ? `Trovate ${r.citazioni.length} possibili citazioni — controllale e importa 👀` : 'Nessuna citazione trovata in quel link 🤔', r.citazioni?.length ? 'ok' : 'errore');
+      if (r.avviso) mostraAvvisoCita(r.avviso); else if (r.citazioni?.length) mostraAvvisoCita('');
+      toast(r.citazioni?.length ? `Trovate ${r.citazioni.length} possibili citazioni — controllale e importa 👀`
+        : (r.avviso ? 'Quel link disegna le frasi col JavaScript — usa il bottone magico 📌' : 'Nessuna citazione trovata in quel link 🤔'),
+        r.citazioni?.length ? 'ok' : 'errore');
     } finally { btn.disabled = false; btn.textContent = orig; }
   }));
+
+  // mostra/nasconde l'avviso "hai incollato il guscio senza JS"
+  const mostraAvvisoCita = (msg) => {
+    const el = document.getElementById('import-cita-avviso');
+    if (!el) return;
+    if (msg) { el.innerHTML = '⚠️ ' + msg; el.hidden = false; } else { el.hidden = true; el.textContent = ''; }
+  };
+
+  // il bookmarklet "Prendi le quote da x.la": lo si trascina nei preferiti
+  const bmXla = document.getElementById('bm-xla');
+  if (bmXla) {
+    bmXla.href = bookmarkletXla;
+    // cliccato QUI (sul bot) non serve: va aperto su x.la. Spieghiamo invece di navigare.
+    bmXla.addEventListener('click', (e) => { e.preventDefault(); toast('Trascinami nella barra dei preferiti, poi cliccami mentre sei sulla tua pagina x.la 🙂'); });
+  }
+  document.getElementById('bm-xla-copia')?.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(bookmarkletXla); toast('Codice copiato. Crea un preferito e incollalo come indirizzo 📌'); }
+    catch { window.prompt('Copia con Ctrl+C, poi crea un preferito con questo indirizzo:', bookmarkletXla); }
+  });
 
   // citazioni: riconosce (testo/autore/data, formato x.la) e importa
   document.getElementById('btn-importa-citazioni')?.addEventListener('click', () => conErrore(async () => {
@@ -2231,7 +2295,12 @@ function attivaPiattaforma() {
     if (!testo.trim()) { toast('Incolla prima qualche citazione.', 'errore'); return; }
     const a = await api('/api/streamer/citazioni/analizza', { method: 'POST', body: { testo } });
     const citazioni = a.citazioni || [];
-    if (!citazioni.length) { toast('Non ho riconosciuto nessuna citazione 🤔', 'errore'); return; }
+    if (!citazioni.length) {
+      if (a.avviso) mostraAvvisoCita(a.avviso);
+      toast(a.avviso ? 'Hai incollato il guscio di x.la, non le frasi — leggi qui sotto 👇' : 'Non ho riconosciuto nessuna citazione 🤔', 'errore');
+      return;
+    }
+    mostraAvvisoCita('');
     const conAutore = citazioni.filter((q) => q.autore).length;
     const conData = citazioni.filter((q) => q.data).length;
     const r = await api('/api/streamer/citazioni/importa', { method: 'POST', body: { citazioni } });
