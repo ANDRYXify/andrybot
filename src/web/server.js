@@ -1015,7 +1015,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   app.post('/api/streamer/guide', requireLogin, wrap(async (req, res) => {
     const testo = String(req.body?.testo || '').trim();
     if (testo.length < 3) return res.status(400).json({ errore: 'scrivi una regola più chiara' });
-    guide.add(currentUser(req).login, testo);
+    const b = req.body || {};
+    // ambito esplicito dai menu, sennò dedotto dal testo
+    const ambito = (b.dove || b.con_chi) ? { dove: b.dove, con_chi: b.con_chi } : guide.interpreta(testo);
+    guide.add(currentUser(req).login, testo, ambito);
     res.json({ ok: true, guide: guide.list(currentUser(req).login) });
   }));
   app.delete('/api/streamer/guide/:id', requireLogin, wrap(async (req, res) => {
@@ -1636,8 +1639,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
         if (/^\/regole\b/.test(low)) {
           const l = guide.list(login);
           const out = l.length
-            ? 'Le mie linee guida:\n' + l.map((g, i) => `${i + 1}. ${g.testo}`).join('\n') + '\n\nPer toglierne una: /scorda numero'
-            : 'Non mi hai ancora dato nessuna linea guida. Scrivimi ad es. «d\'ora in poi non essere troppo formale» oppure /regola <testo>.';
+            ? 'Le mie linee guida:\n' + l.map((g, i) => `${i + 1}. ${g.testo} — ${guide.descriviAmbito(g)}`).join('\n') + '\n\nPer toglierne una: /scorda numero'
+            : 'Non mi hai ancora dato nessuna linea guida. Scrivimi ad es. «d\'ora in poi non essere troppo formale» oppure «con tutti tranne me non parlare di politica».';
           telegram.inviaMessaggio(conf.token, chat.id, out).catch(() => {});
           return;
         }
@@ -1656,9 +1659,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
           if (marker.test(low) && !low.includes('?') && !scherzo && raw.length >= 6) regola = raw;
         }
         if (regola && regola.length >= 3) {
-          guide.add(login, regola);
+          const ambito = guide.interpreta(regola);
+          guide.add(login, regola, ambito);
           telegram.inviaMessaggio(conf.token, chat.id,
-            `Ok, me lo segno come linea guida: «${regola.slice(0, 180)}» ✍️ La rispetterò sempre. (Se non intendevi questo: /scorda ${guide.count(login)})`).catch(() => {});
+            `Ok, me lo segno: «${regola.slice(0, 180)}» — vale ${guide.descriviAmbito(ambito)}. ✍️ (Se non intendevi questo: /scorda ${guide.count(login)})`).catch(() => {});
           return;
         }
       }
