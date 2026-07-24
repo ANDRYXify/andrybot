@@ -14,6 +14,7 @@ import os
 import time
 import threading
 import urllib.request
+import urllib.error
 import json
 
 import rete       # la "piccola rete" che si autoaddestra (memoria associativa)
@@ -275,29 +276,51 @@ def _scarica(url):
         return dest
     tmp = dest + ".part"
     print(f"[genera] scarico il modello (una volta): {nome}", flush=True)
-    # HF_TOKEN: alcuni modelli (es. Gemma) sono "gated" su HuggingFace e servono
-    # un token per scaricarli. Se c'è, lo passiamo; altrimenti richiesta normale.
-    req = urllib.request.Request(url)
     tok = os.environ.get("HF_TOKEN")
-    if tok and "huggingface.co" in url:
-        req.add_header("Authorization", "Bearer " + tok)
-    with urllib.request.urlopen(req, timeout=60) as r, open(tmp, "wb") as out:
-        totale = int(r.headers.get("Content-Length", 0))
-        letti, ultima = 0, -1
-        while True:
-            blocco = r.read(1024 * 512)
-            if not blocco:
-                break
-            out.write(blocco)
-            letti += len(blocco)
-            if totale:
-                perc = int(letti * 100 / totale)
-                if perc >= ultima + 10:
-                    ultima = perc
-                    print(f"[genera] download {perc}%", flush=True)
-    os.replace(tmp, dest)
-    print("[genera] modello scaricato.", flush=True)
-    return dest
+    su_hf = "huggingface.co" in url
+
+    # HF_TOKEN serve SOLO per i pochi modelli "gated". Ma se il token è
+    # sbagliato/scaduto, HuggingFace risponde 401 anche sui repo PUBBLICI (es.
+    # Gemma di bartowski). Quindi: provo col token; se dà 401/403, riprovo SENZA.
+    def _apri(con_token):
+        req = urllib.request.Request(url)
+        if con_token and tok and su_hf:
+            req.add_header("Authorization", "Bearer " + tok)
+        return urllib.request.urlopen(req, timeout=60)
+
+    try:
+        try:
+            r = _apri(con_token=True)
+        except urllib.error.HTTPError as e:
+            if e.code in (401, 403) and tok and su_hf:
+                print(f"[genera] HF ha risposto {e.code} col token: riprovo SENZA token (repo pubblico?).", flush=True)
+                r = _apri(con_token=False)
+            else:
+                raise
+        with r, open(tmp, "wb") as out:
+            totale = int(r.headers.get("Content-Length", 0))
+            letti, ultima = 0, -1
+            while True:
+                blocco = r.read(1024 * 512)
+                if not blocco:
+                    break
+                out.write(blocco)
+                letti += len(blocco)
+                if totale:
+                    perc = int(letti * 100 / totale)
+                    if perc >= ultima + 10:
+                        ultima = perc
+                        print(f"[genera] download {perc}%", flush=True)
+        os.replace(tmp, dest)
+        print("[genera] modello scaricato.", flush=True)
+        return dest
+    except Exception as e:
+        try:
+            if os.path.exists(tmp):
+                os.remove(tmp)   # via il parziale (spazio) così la dashboard vede l'errore vero
+        except Exception:
+            pass
+        raise RuntimeError(f"download fallito ({nome}): {e}") from e
 
 
 def avvia():
