@@ -1558,12 +1558,15 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       }
       const tgUser = msg.from?.username || (msg.from?.id ? 'tg' + msg.from.id : '');
       const utente = msg.from?.first_name || msg.from?.username || '';
-      // APPRENDIMENTO "DURO" SOLO DA ME (privacy): su Telegram il bot impara SOLO
-      // dai messaggi del proprietario legato (l'account del "solo me"). Dagli altri
-      // NON assorbe nulla — al massimo risponde (se abilitato). L'apprendimento dagli
-      // altri resta limitato alla chat PUBBLICA di Twitch, come prima.
-      if (conf.owner_tg_id && String(msg.from?.id) === String(conf.owner_tg_id) && !msg.from?.is_bot) {
-        manager.brain?.imparaDaVoce({ channel: login, testo });   // le MIE parole → stile + coscienza
+      const sonoIoTg = conf.owner_tg_id && String(msg.from?.id) === String(conf.owner_tg_id);
+      const inGruppo = chat.type === 'group' || chat.type === 'supergroup';
+      // APPRENDIMENTO. Dai MIEI messaggi (account legato): stile + coscienza — è
+      // l'apprendimento "duro", solo da me, ovunque su Telegram. Dagli altri: solo
+      // nei GRUPPI (spazi pubblici, come la chat Twitch) e solo la coscienza
+      // (persone/fatti), MAI lo stile. In privato, dagli altri non si impara nulla.
+      if (!msg.from?.is_bot) {
+        if (sonoIoTg) manager.brain?.imparaDaVoce({ channel: login, testo });
+        else if (inGruppo) manager.brain?.imparaComunita({ channel: login, user: tgUser, nome: utente, testo });
       }
       // comando integrato /compleanno (solo se gli auguri sono accesi)
       if (s?.settings?.telegramAuguri?.attivo) {
@@ -1573,14 +1576,13 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       // comandi: i moduli con "abilita anche su Telegram" (schermata Comandi)
       const invia = (t) => { if (t) telegram.inviaMessaggio(conf.token, chat.id, t).catch(() => {}); };
       const fattoDaModulo = await modules.eseguiTelegram(login, testo, invia, { utente }).catch(() => false);
-      // CHAT PRIVATA col bot: se nessun modulo ha reagito e non è un comando, il
-      // cervello risponde direttamente — così lo streamer "ci parla da qui". Chi
-      // riceve risposta dipende dalla modalità scelta: 'me' (solo il proprietario
-      // legato), 'tutti', 'off'. Default 'me' → nessuno tranne me.
+      // CHAT PRIVATA col bot: risponde SOLO A ME (l'account legato), mai ad altri —
+      // così non è un peso tenerlo acceso e resta privato. Si può spegnere del tutto
+      // dalla dashboard (dm_modo='off'). Gli estranei che scrivono in privato non
+      // ricevono nulla e non vengono "imparati".
       if (!fattoDaModulo && chat.type === 'private' && !/^[/!]/.test(String(testo).trim()) && !msg.from?.is_bot) {
-        const modo = conf.dm_modo || 'me';
-        const sonoIo = conf.owner_tg_id && String(msg.from?.id) === String(conf.owner_tg_id);
-        if (modo === 'tutti' || (modo === 'me' && sonoIo)) {
+        const acceso = (conf.dm_modo || 'me') !== 'off';
+        if (acceso && sonoIoTg) {
           const risp = await manager.brain?.rispostaDiretta({ channel: login, user: tgUser || 'utente', nome: utente, testo, tono: s?.settings?.tono });
           if (risp) telegram.inviaMessaggio(conf.token, chat.id, risp).catch(() => {});
         }

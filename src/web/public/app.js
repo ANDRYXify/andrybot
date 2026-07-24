@@ -1558,20 +1558,17 @@ function pannelloNotifiche() {
       <em>privacy</em> su <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a>
       (<code>/setprivacy → Disable</code>); coi comandi <code>/comando</code> funziona comunque.</p>
 
-      <div class="spazio-sopra">
-        <label class="campo" for="sel-tg-dm">In chat privata col bot risponde a</label>
-        <select id="sel-tg-dm" class="campo-largo">
-          <option value="me" ${tg.dmModo !== 'tutti' && tg.dmModo !== 'off' ? 'selected' : ''}>Solo me (consigliato)</option>
-          <option value="tutti" ${tg.dmModo === 'tutti' ? 'selected' : ''}>Chiunque mi scriva in privato</option>
-          <option value="off" ${tg.dmModo === 'off' ? 'selected' : ''}>Nessuno (chat privata spenta)</option>
-        </select>
-        <p class="suggerimento spazio-sopra" id="tg-dm-stato">
-          ${tg.dmCollegato
-            ? `🔗 «Solo me» legato all'account <strong>${esc(tg.dmNome || 'te')}</strong>. <a href="#" id="btn-tg-dm-scollega">Scollega</a>`
-            : 'Per il <strong>«solo me»</strong> lega una volta il tuo Telegram: <a href="#" id="btn-tg-dm-collega">genera un codice</a> e scrivi <code>/collega CODICE</code> al bot in privato.'}
-        </p>
-        <div id="tg-dm-codice"></div>
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore"><input type="checkbox" id="chk-tg-dm" ${tg.dmModo !== 'off' ? 'checked' : ''}><span class="levetta"></span></label>
+        <span class="etichetta-stato">Rispondimi in chat privata (solo a me)</span>
       </div>
+      <p class="suggerimento" id="tg-dm-stato">
+        ${tg.dmCollegato
+          ? `🔗 In privato risponde <strong>solo a te</strong> (account <strong>${esc(tg.dmNome || 'te')}</strong>). <a href="#" id="btn-tg-dm-scollega">Scollega</a>`
+          : 'Per rispondere solo a te, lega una volta il tuo Telegram: <a href="#" id="btn-tg-dm-collega">genera un codice</a> e scrivi <code>/collega CODICE</code> al bot in privato. Finché non colleghi, in privato non risponde a nessuno.'}
+      </p>
+      <div id="tg-dm-codice"></div>
+      <p class="suggerimento">Nel <strong>gruppo</strong> invece il bot funziona per tutti (e impara dalla chat come su Twitch). Il privato resta solo tuo.</p>
     </div>
 
     <div class="carta">
@@ -2018,9 +2015,9 @@ function attivaPiattaforma() {
   });
 
   // --- Chat privata Telegram: chi risponde + collegamento "solo me" ---
-  document.getElementById('sel-tg-dm')?.addEventListener('change', (ev) => conErrore(async () => {
-    await api('/api/streamer/telegram/dm', { method: 'POST', body: { modo: ev.target.value } });
-    toast('Preferenza salvata.');
+  document.getElementById('chk-tg-dm')?.addEventListener('change', (ev) => conErrore(async () => {
+    await api('/api/streamer/telegram/dm', { method: 'POST', body: { modo: ev.target.checked ? 'me' : 'off' } });
+    toast(ev.target.checked ? 'In privato risponderò solo a te.' : 'Chat privata spenta.');
     stato = await api('/api/me'); render();
   }));
   document.getElementById('btn-tg-dm-collega')?.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
