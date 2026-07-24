@@ -317,6 +317,7 @@ aggiungiColonna('telegram', 'webhook_secret', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('telegram', 'dm_modo', "TEXT NOT NULL DEFAULT 'me'");
 aggiungiColonna('telegram', 'owner_tg_id', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('telegram', 'owner_tg_nome', "TEXT NOT NULL DEFAULT ''");
+aggiungiColonna('telegram', 'yt_ultimo', "TEXT NOT NULL DEFAULT ''");   // id ultimo video YouTube annunciato (anti-doppioni)
 // linee guida: ambito (dove valgono + con chi) — regole contestuali di "lia"
 aggiungiColonna('linee_guida', 'dove', "TEXT NOT NULL DEFAULT 'ovunque'");     // ovunque | twitch | tg | tg-privato
 aggiungiColonna('linee_guida', 'con_chi', "TEXT NOT NULL DEFAULT 'tutti'");    // tutti | solo-me | tranne-me
@@ -703,6 +704,9 @@ export const tgConf = {
   },
   setUltimaLive(channel, streamId) {
     db.prepare('UPDATE telegram SET ultima_live=? WHERE channel=?').run(String(streamId || ''), String(channel).toLowerCase());
+  },
+  setYtUltimo(channel, videoId) {
+    db.prepare('UPDATE telegram SET yt_ultimo=? WHERE channel=?').run(String(videoId || ''), String(channel).toLowerCase());
   },
   // salva (o azzera) il message_id dell'avviso live Twitch, per poterlo eliminare
   setMsgId(channel, msgId) {

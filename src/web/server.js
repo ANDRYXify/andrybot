@@ -820,6 +820,17 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
         messaggio: String(tk.messaggio || '').slice(0, 800),   // testo Telegram personalizzato
       };
     }
+    // avviso NUOVO VIDEO su YouTube (via RSS: affidabile, nessuna chiave)
+    if (b.youtube !== undefined) {
+      const y = b.youtube || {};
+      const canale = String(y.canale || '').trim().slice(0, 120);
+      out.youtube = {
+        canale,
+        attivo: !!y.attivo && !!canale,
+        annunciaChat: !!y.annunciaChat,
+        messaggio: String(y.messaggio || '').slice(0, 800),
+      };
+    }
     // ponte "giochi del sito": dalla dashboard si può SOLO accendere/spegnere;
     // endpoint e segreto arrivano dal sito (redeem del pass), non dal client.
     if (b.giochiSito !== undefined) {
@@ -889,6 +900,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!A(tierS, 'clipAuto')) out.clipAuto = false;
     if (!A(tierS, 'voce')) { out.ascoltoLive = false; if (out.cambioCategoria) out.cambioCategoria.attivo = false; if (out.cambioTitolo) out.cambioTitolo.attivo = false; if (out.imparaVoce) out.imparaVoce.attivo = false; }
     if (!A(tierS, 'notifiche') && out.tiktok) out.tiktok.attivo = false;
+    if (!A(tierS, 'notifiche') && out.youtube) out.youtube.attivo = false;
+    // se cambi canale YouTube, riparto pulito (niente avviso del video già presente)
+    if (out.youtube && out.youtube.canale !== (s.settings?.youtube?.canale || '')) {
+      try { tgConf.setYtUltimo(user.login, ''); } catch { /* niente */ }
+    }
 
     streamers.setSettings(user.login, out);
     // se è cambiata la modalità di attivazione, riconcilia subito i canali
@@ -1835,6 +1851,21 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (azione === 'tiktok-live' || azione === 'tiktok') {
       const r = await manager.notificaTikTok(login);
       return res.json({ ok: !!r?.ok, motivo: r?.motivo });
+    }
+    // azioni per i NUOVI POST (via IFTTT/Zapier): affidabili anche per TikTok,
+    // dove il rilevamento automatico dal server non è possibile.
+    if (azione === 'youtube' || azione === 'youtube-post' || azione === 'tiktok-post') {
+      const piattaforma = azione === 'tiktok-post' ? 'tiktok' : 'youtube';
+      const s = streamers.get(login);
+      const cfg = s?.settings?.[piattaforma] || {};
+      const r = await manager.notificaPost(login, {
+        piattaforma,
+        titolo: String(req.body?.titolo || '').slice(0, 300),
+        url: String(req.body?.url || req.body?.link || '').slice(0, 400),
+        messaggio: cfg.messaggio || '',
+        annunciaChat: !!cfg.annunciaChat,
+      });
+      return res.json({ ok: !!r?.ok });
     }
     // le altre azioni (messaggio/effetto/modulo) restano gestite dai moduli
     const ok = await modules.eseguiPerApi(login, req.body || {}, (t) => manager.say(login, t));

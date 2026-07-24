@@ -88,6 +88,7 @@ function impostazioni() {
     premioVip: (s.premioVip && typeof s.premioVip === 'object') ? s.premioVip : { attivo: false, periodo: 'settimana', quanti: 1 },
     antispam: (s.antispam && typeof s.antispam === 'object') ? s.antispam : {},
     tiktok: (s.tiktok && typeof s.tiktok === 'object') ? s.tiktok : { username: '', attivo: false, annunciaChat: false, messaggio: '' },
+    youtube: (s.youtube && typeof s.youtube === 'object') ? s.youtube : { canale: '', attivo: false, annunciaChat: false, messaggio: '' },
     giochiSito: (s.giochiSito && typeof s.giochiSito === 'object') ? s.giochiSito : { attivo: false, collegato: false },
     frasi: Array.isArray(s.frasi) ? s.frasi : [],
     clipAuto: s.clipAuto !== false,
@@ -187,6 +188,7 @@ function statoDemo() {
         paroleVietate: ['spoiler', 'link-truffa'],
         frasi: ['Benvenuto nel canale! 💜', 'Ricordati di seguire per non perderti le live!'],
         tiktok: { username: 'andryxify', attivo: true, annunciaChat: true, messaggio: '' },
+        youtube: { canale: '@andryxify', attivo: true, annunciaChat: false, messaggio: '' },
         giochiSito: { attivo: true, collegato: true },
         antispam: { maiuscole: true, link: true, flood: true },
       },
@@ -1584,6 +1586,7 @@ function pannelloGiochi() {
 function pannelloNotifiche() {
   const tg = stato.telegram || { configurato: false, gruppoOk: false, attivo: false, messaggio: '', botUsername: '', gruppo: '', pinLive: true };
   const tkc = impostazioni().tiktok || {};
+  const ytc = impostazioni().youtube || {};
   const msgDefault = '🔴 {nome} è in diretta!\n\n{titolo}\n🎮 {gioco}\n\n👉 {link}';
   return pannello('notifiche', `
     <div class="carta">
@@ -1729,6 +1732,39 @@ function pannelloNotifiche() {
       <p><code>POST ${esc(location.origin)}/api/ext/${esc(stato.user.login)}</code></p>
       <p class="suggerimento">con header <code>Authorization: Bearer LA-TUA-CHIAVE-API</code> e corpo
       <code>{"azione":"tiktok-live"}</code>. La chiave API la trovi in <strong>Chat &amp; comandi → Comandi</strong>.</p>
+
+      <hr class="separatore">
+      <p class="suggerimento"><strong class="primo-piano">Nuovo post su TikTok:</strong> il rilevamento automatico dei post
+      dal server non è possibile. Usa lo stesso webhook con corpo <code>{"azione":"tiktok-post","url":"…"}</code>
+      (la tua automazione lo chiama quando pubblichi).</p>
+    </div>
+
+    <div class="carta">
+      <h2>Nuovo video su YouTube 📺</h2>
+      <p>Quando esce un <strong class="primo-piano">nuovo video</strong> sul tuo canale YouTube, avviso il gruppo Telegram
+      (e, se vuoi, la chat Twitch). Funziona con il feed pubblico di YouTube: <strong>affidabile e senza chiavi</strong>.</p>
+
+      <label class="campo" for="inp-yt-canale">Il tuo canale YouTube</label>
+      <input type="text" id="inp-yt-canale" class="campo-largo" placeholder="@iltuohandle · oppure l'URL o l'ID (UC…) del canale" value="${esc(ytc.canale || '')}">
+      <p class="suggerimento">Va bene l'<code>@handle</code>, l'URL del canale, o l'ID <code>UC…</code>. Lo risolvo io.</p>
+
+      <label class="campo spazio-sopra" for="txt-yt-messaggio">Messaggio dell'avviso</label>
+      <textarea id="txt-yt-messaggio" rows="4" placeholder="${esc('📺 {nome} ha caricato un nuovo video su YouTube!\n\n{titolo}\n👉 {link}')}">${esc(ytc.messaggio || '')}</textarea>
+      <p class="suggerimento">Segnaposto: <code>{nome}</code> <code>{titolo}</code> <code>{link}</code>. Lascia vuoto per usare quello standard.</p>
+
+      <div class="riga-check spazio-sopra">
+        <input type="checkbox" id="chk-yt-attivo" ${ytc.attivo ? 'checked' : ''}>
+        <label for="chk-yt-attivo">Avvisami quando esce un nuovo video</label>
+      </div>
+      <div class="riga-check">
+        <input type="checkbox" id="chk-yt-chat" ${ytc.annunciaChat ? 'checked' : ''}>
+        <label for="chk-yt-chat">Annuncia anche nella chat Twitch</label>
+      </div>
+
+      <p class="spazio-sopra">
+        <button class="btn" id="btn-yt-salva">Salva</button>
+      </p>
+      <p class="suggerimento">Il controllo parte ogni ~10 minuti; il primo giro serve solo a memorizzare l'ultimo video (non avvisa).</p>
     </div>`);
 }
 
@@ -2221,6 +2257,17 @@ function attivaPiattaforma() {
   document.getElementById('btn-tk-prova')?.addEventListener('click', () => conErrore(async () => {
     await api('/api/streamer/tiktok/prova', { method: 'POST', body: {} });
     toast('Prova TikTok inviata nel gruppo Telegram 🎵');
+  }));
+
+  document.getElementById('btn-yt-salva')?.addEventListener('click', () => conErrore(async () => {
+    await salvaImpostazioni({
+      youtube: {
+        canale: (document.getElementById('inp-yt-canale').value || '').trim(),
+        attivo: document.getElementById('chk-yt-attivo').checked,
+        annunciaChat: document.getElementById('chk-yt-chat').checked,
+        messaggio: document.getElementById('txt-yt-messaggio')?.value || '',
+      },
+    }, 'YouTube salvato 📺');
   }));
 
   // Comando rapido: inserimento variabili (senza perdere il focus) + crea al volo
