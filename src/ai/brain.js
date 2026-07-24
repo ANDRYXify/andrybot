@@ -449,11 +449,14 @@ export class Brain {
   }
 
   // Il nome della "persona" (dall'anima condivisa): è così che si presenta nei DM.
-  // Se è ancora il nome di default "SocialBot" ritorno '' (troppo "da bot": meglio
-  // che resti sul vago finché non le dai un nome vero in Admin → Anima).
+  // Se non le hai dato un nome (è ancora il default "SocialBot"), usa "Lia" così ha
+  // COMUNQUE un'identità stabile — senza un nome finiva per confondersi e prendere
+  // quello dell'interlocutore. Lo cambi in Admin → Anima.
   _nomePersona() {
-    try { const n = String(persona.profilo()?.nome || '').trim(); return (n && n !== 'SocialBot') ? n : ''; }
-    catch { return ''; }
+    try {
+      const n = String(persona.profilo()?.nome || '').trim();
+      return (n && n !== 'SocialBot') ? n : 'Lia';
+    } catch { return 'Lia'; }
   }
 
   // RISVEGLIO / PERCORSO DI CRESCITA. Il server è sempre acceso: a ogni avvio (e
