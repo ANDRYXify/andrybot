@@ -366,6 +366,12 @@ body.vetrina .contenuto { max-width: 1040px; }
 .piani-community strong { color: var(--testo); }
 .piani-community a { color: var(--acc); font-weight: 600; }
 
+/* Connettore Spotify (scheda Musica) */
+.spotify-guida { margin-top: .4rem; }
+.spotify-guida summary, details > summary { cursor: pointer; font-weight: 600; color: var(--acc); }
+.spotify-guida ol { margin: .7rem 0 .2rem; padding-left: 1.2rem; display: flex; flex-direction: column; gap: .45rem; color: var(--testo-2); font-size: .9rem; line-height: 1.5; }
+.spotify-redirect { display: inline-block; margin-top: .25rem; padding: .3rem .5rem; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-s); word-break: break-all; font-size: .82rem; }
+
 /* griglia di campi numerici (personalizzazione punti/classifica) */
 .griglia-punti { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .8rem; margin-top: .6rem; }
 .campo-num { display: flex; flex-direction: column; gap: .3rem; font-size: .84rem; font-weight: 600; color: var(--testo-2); }
