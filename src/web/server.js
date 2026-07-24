@@ -803,6 +803,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // anima: adatta la personalità al canale (autonomo) + proattività
     if (b.adattaCanale !== undefined) out.adattaCanale = !!b.adattaCanale;
     if (b.proattivo !== undefined) out.proattivo = !!b.proattivo;
+    // proattività su Telegram: lei ti scrive per prima in privato (curiosa)
+    if (b.proattivoTg !== undefined) out.proattivoTg = !!b.proattivoTg;
     // IA locale: risposte più naturali auto-addestrate (default accesa)
     if (b.iaLocale !== undefined) out.iaLocale = !!b.iaLocale;
     // notifica live TikTok (rilevamento best-effort + annuncio)
