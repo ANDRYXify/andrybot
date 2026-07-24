@@ -233,6 +233,10 @@ function _demoGet(via) {
         rete: { canali: 1, nodi: 128, solidi: 74, curiosita: 0.34, fiducia: 0.61 },
       },
     },
+    '/api/streamer/rete': {
+      nodi: 128, solidi: 74, curiosita: 0.34, fiducia: 0.61, lacune: 12,
+      non_so: ['come si chiama il tuo gatto?', 'quando esce il prossimo video?'],
+    },
     '/api/streamer/knowledge': [
       { id: 1, domanda: 'Che PC usi?', risposta: 'Ryzen 7 + RTX 4070, trovi tutto su andryxify.it 🖥️', fonte: 'manuale', ts: '2026-05-02T18:00:00Z' },
       { id: 2, domanda: 'Da dove streammi?', risposta: 'Da Genova, quasi ogni sera verso le 21 💜', fonte: 'auto', ts: '2026-05-01T20:00:00Z' },
@@ -906,6 +910,13 @@ function pannelloStato() {
         <button class="btn secondario" id="btn-pretrain">Ri-leggi il mio profilo andryxify.it</button>
         <span id="esito-pretrain" class="suggerimento"></span>
       </p>
+    </div>
+    <div class="carta">
+      <h2>La piccola rete che impara 🌱</h2>
+      <p>Il motore veloce del bot che <strong class="primo-piano">cresce da solo</strong>: risponde all'istante a ciò
+      che ha già imparato e, quando incontra qualcosa di nuovo, se lo segna e lo impara dal maestro.
+      Più lo alleni (anche via DM su Telegram), più sa fare da sé.</p>
+      <div id="rete-panoramica"><p class="vuoto">Caricamento…</p></div>
     </div>
     <div class="carta">
       <h2>Installa l'app 📱</h2>
@@ -2403,7 +2414,7 @@ async function conErrore(fn) {
 
 // carica i dati "pigri" della scheda selezionata
 function caricaDatiScheda(id) {
-  if (id === 'stato') { caricaPasskey(); caricaModeratori(); }
+  if (id === 'stato') { caricaPasskey(); caricaModeratori(); caricaRetePanoramica(); }
   if (id === 'conoscenza') caricaConoscenza();
   if (id === 'clip') caricaClip();
   if (id === 'effetti') caricaEffetti();
@@ -3492,6 +3503,27 @@ function vistaAdminContenuto() {
       qualche minuto; nel frattempo la chat usa il motore veloce di riserva).</p>
       <div id="llm-box"><p class="vuoto">Caricamento…</p></div>
     </div>`;
+}
+
+// cruscotto della "piccola rete" in Panoramica (per il canale corrente)
+async function caricaRetePanoramica() {
+  const box = document.getElementById('rete-panoramica');
+  if (!box) return;
+  let d;
+  try { d = await api('/api/streamer/rete'); } catch { box.innerHTML = '<p class="vuoto">Non disponibile ora.</p>'; return; }
+  const pct = (x) => Math.round((x || 0) * 100) + '%';
+  const num = 'font-size:1.7em;font-weight:700;line-height:1';
+  const nonSo = (d.non_so || []).slice(0, 4);
+  box.innerHTML = `
+    <div style="display:flex;gap:22px;flex-wrap:wrap;margin-top:2px">
+      <div><div style="${num}">${d.nodi || 0}</div><small>nodi appresi</small></div>
+      <div><div style="${num}">${d.solidi || 0}</div><small>sa rispondere</small></div>
+      <div><div style="${num}">${pct(d.fiducia)}</div><small>fiducia</small></div>
+      <div><div style="${num}">${pct(d.curiosita)}</div><small>curiosità</small></div>
+    </div>
+    ${nonSo.length
+      ? `<p class="suggerimento spazio-sopra">Ultime cose che <strong>non sapeva</strong> (le imparerà col tempo): ${nonSo.map((t) => `«${esc(t)}»`).join(' · ')}</p>`
+      : '<p class="suggerimento spazio-sopra">Nessuna lacuna recente: sta rispondendo bene. 🙂</p>'}`;
 }
 
 // carica e disegna la gestione del modello IA (solo operatore)

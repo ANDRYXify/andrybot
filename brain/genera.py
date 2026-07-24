@@ -375,19 +375,30 @@ def ricarica():
     avvia()
 
 
-def _system_prompt(canale, ctx):
+def _system_prompt(canale, ctx, modo="live"):
     tono = ctx.get("tono", "scherzoso")
     stile = {
         "serio": "Tono pacato e cortese.",
         "amichevole": "Tono caldo e amichevole.",
     }.get(tono, "Tono scherzoso e vivace, mai cafone.")
-    righe = [
-        f'Sei il bot del canale Twitch "{canale}" e parli in PRIMA PERSONA, come lo streamer.',
-        "Rispondi in ITALIANO, naturale e BREVE: 1 frase, max 2, da chat Twitch.",
-        stile,
-        "Non ripetere la domanda, non elencare, non dire di essere un'IA. Max una emoji.",
-        "Se non sai qualcosa, ammettilo con leggerezza invece di inventare.",
-    ]
+    if modo == "allenamento":
+        # ALLENAMENTO (chat privata con lo streamer): non è la chat pubblica, è un
+        # dialogo per CAPIRLO. Qui il bot ragiona e conversa disteso, non tira via.
+        righe = [
+            f'Sei il bot del canale Twitch "{canale}" e stai parlando IN PRIVATO, in allenamento, con lo streamer in persona.',
+            "Conversa in ITALIANO in modo naturale e disteso (anche 2-4 frasi): è un dialogo, non la chat pubblica.",
+            "RAGIONA su ciò che dice: cerca di capire PERCHÉ lo dice, cosa pensa e come si esprime. Se ti aiuta a capirlo, fai una domanda.",
+            stile,
+            "Parla in prima persona con la sua personalità; non dire di essere un'IA, non fare l'assistente formale.",
+        ]
+    else:
+        righe = [
+            f'Sei il bot del canale Twitch "{canale}" e parli in PRIMA PERSONA, come lo streamer.',
+            "Rispondi in ITALIANO, naturale e BREVE: 1 frase, max 2, da chat Twitch.",
+            stile,
+            "Non ripetere la domanda, non elencare, non dire di essere un'IA. Max una emoji.",
+            "Se non sai qualcosa, ammettilo con leggerezza invece di inventare.",
+        ]
     # STILE: frasi vere scritte dallo streamer. Sono l'esempio più forte per
     # suonare come lui → vanno IMITATE nel tono/modo di scrivere, mai copiate.
     stile = ctx.get("stile") or []
@@ -412,32 +423,36 @@ def _system_prompt(canale, ctx):
     return "\n".join(righe)
 
 
-def genera(canale, ctx, testo, timeout_s=30):
+def genera(canale, ctx, testo, timeout_s=30, modo="live"):
     """Genera una risposta o None. Non solleva mai.
 
-    Pipeline dell'apprendimento:
-      1) MOTORE VELOCE — la piccola rete ha già imparato questa cosa? → risposta
-         istantanea, niente LLM.
-      2) MAESTRO — altrimenti chiedo al modello (endpoint esterno se collegato,
-         sennò locale) e la rete IMPARA la risposta: la prossima volta fa da sola.
-      3) METACOGNIZIONE — se nessuno sa, la rete 'sa di non sapere': segna la
-         lacuna e la sua curiosità sale.
+    Due modalità (i due cervelli che volevi):
+      • LIVE — chat pubblica: veloce e proattivo. 1) la piccola rete sa già? →
+        risposta istantanea; 2) sennò il MAESTRO e la rete impara; 3) sennò segna
+        la lacuna ('sa di non sapere' → curiosità).
+      • ALLENAMENTO — chat privata con lo streamer: NON usa la scorciatoia della
+        rete (voglio il ragionamento del maestro), risponde disteso e ragiona
+        sul perché dico le cose. La rete impara comunque da ogni risposta.
     """
     testo = (testo or "")[:300]
     canale = (canale or "").strip()
-    # 1) la rete conosce già la risposta?
-    try:
-        hit = rete.recall(canale, testo)
-    except Exception:
-        hit = None
-    if hit and hit.get("risposta"):
-        return _pulisci(hit["risposta"])
-    # 2) chiedi al maestro
+    allena = (modo == "allenamento")
+    # 1) LIVE: la rete conosce già la risposta? (in allenamento salto: voglio il maestro)
+    if not allena:
+        try:
+            hit = rete.recall(canale, testo)
+        except Exception:
+            hit = None
+        if hit and hit.get("risposta"):
+            return _pulisci(hit["risposta"])
+    # 2) chiedi al maestro (endpoint esterno se collegato, sennò modello locale)
     try:
         turni = [((mu[:200] if mu else mu), (mb[:200] if mb else mb))
                  for mu, mb in ctx.get("scambi", [])[-2:]]
-        grezzo = _completa(_system_prompt(canale, ctx), turni, testo,
-                           MAX_TOKEN, temperature=0.7, top_p=0.9, timeout_s=timeout_s)
+        # in allenamento rispondo più disteso (col maestro esterno posso permettermelo)
+        max_tok = (220 if _endpoint_cfg() else 140) if allena else MAX_TOKEN
+        grezzo = _completa(_system_prompt(canale, ctx, modo), turni, testo,
+                           max_tok, temperature=0.7, top_p=0.9, timeout_s=timeout_s)
         risposta = _pulisci(grezzo) if grezzo else None
     except Exception:
         risposta = None

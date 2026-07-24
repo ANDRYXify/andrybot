@@ -958,6 +958,13 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.json({ messaggi7g, topChatters, messaggiBot7g, clipTotali });
   }));
 
+  // stato della "piccola rete che impara" per questo canale (cruscotto Panoramica)
+  app.get('/api/streamer/rete', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const r = await brainpy.reteStato(login).catch(() => null);
+    res.json(r || { nodi: 0, solidi: 0, curiosita: 0, fiducia: 0, lacune: 0, non_so: [] });
+  }));
+
   // ------------------------------------------------------------ API effetti & suoni
 
   // elenco effetti + URL dell'overlay OBS (con la chiave del canale)

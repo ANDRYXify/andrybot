@@ -414,7 +414,8 @@ export class Brain {
       const r = await brainpy.rispondi({
         canale: channel, login: String(user || 'utente'), nome: nome || String(user || 'tu'),
         testo: String(testo).slice(0, 300), tono: t, conoscenza, stile: this._stileStreamer(channel),
-        timeoutMs: 28000,   // in DM aspettiamo di più: su CPU il 3B è lento, meglio tardi che mai
+        modo: 'allenamento',   // DM privato = allenamento: risposta ragionata, sfrutta il maestro esterno
+        timeoutMs: 40000,      // aspettiamo di più: risposta più lunga (e il locale su CPU è lento)
       });
       if (!r) return null;
       let out = String(r).replace(/\s+/g, ' ').trim();
