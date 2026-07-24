@@ -7,7 +7,7 @@ import express from 'express';
 import cookieSession from 'cookie-session';
 import multer from 'multer';
 import crypto from 'node:crypto';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { unlink } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -1797,6 +1797,41 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (b.tormentoni !== undefined) patch.tormentoni = lista(b.tormentoni, 20, 40) || [];
     const profilo = persona.salvaProfilo(patch);
     res.json({ ok: true, profilo });
+  }));
+
+  // ---- ADMIN: gestione del MODELLO IA (globale: il cervello è condiviso) ----
+  const LLM_MODELLI = [
+    { id: 'auto', nome: 'Automatico (in base alla RAM del server)' },
+    { id: 'qwen', nome: 'Qwen 2.5 3B — equilibrato' },
+    { id: 'gemma', nome: 'Gemma 2 2B — veloce' },
+    { id: 'gemma-uncensored', nome: 'Gemma 2 2B — senza freni (abliterated)' },
+  ];
+  const llmFile = join(config.dataDir, 'llm.json');
+  const llmScelta = () => { try { return JSON.parse(readFileSync(llmFile, 'utf8')) || {}; } catch { return {}; } };
+
+  app.get('/api/admin/llm', requireAdmin, wrap(async (req, res) => {
+    const st = await brainpy.stato().catch(() => null);
+    res.json({ scelta: llmScelta(), modelli: LLM_MODELLI, stato: st?.genera || { stato: 'sconosciuto' } });
+  }));
+
+  app.post('/api/admin/llm', requireAdmin, wrap(async (req, res) => {
+    const b = req.body || {};
+    const url = String(b.url || '').trim();
+    const modello = String(b.modello || '').trim().toLowerCase();
+    let scelta = {};
+    if (url) {
+      if (!/^https:\/\/\S+\.gguf(\?\S*)?$/i.test(url)) return res.status(400).json({ errore: 'URL non valido (dev\'essere https://…gguf)' });
+      scelta = { url };
+    } else if (modello && modello !== 'auto') {
+      if (!LLM_MODELLI.some((m) => m.id === modello)) return res.status(400).json({ errore: 'modello sconosciuto' });
+      scelta = { modello };
+    } // altrimenti 'auto' → scelta vuota (torna alla scaletta automatica)
+    try {
+      if (Object.keys(scelta).length) writeFileSync(llmFile, JSON.stringify(scelta));
+      else { try { rmSync(llmFile); } catch { /* non c'era */ } }
+    } catch (e) { return res.status(500).json({ errore: 'non riesco a salvare la scelta' }); }
+    brainpy.ricarica().catch(() => {});   // il cervello cambia modello a caldo (in background)
+    res.json({ ok: true });
   }));
 
   // ------------------------------------------------------------ avvio

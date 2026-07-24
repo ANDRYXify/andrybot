@@ -395,7 +395,7 @@ function render() {
   aggiornaTestataPagina();
 
   if (conPiattaforma) attivaPiattaforma();
-  if (stato.isAdmin) { caricaTabellaAdmin(); caricaAnima(); }
+  if (stato.isAdmin) { caricaTabellaAdmin(); caricaAnima(); caricaLLM(); }
 
   rivelaCarte();   // scroll-reveal delle carte appena disegnate
 }
@@ -2393,7 +2393,7 @@ function caricaDatiScheda(id) {
   if (id === 'memoria') caricaStatistiche();
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); }
   if (id === 'notifiche') caricaCompleanni();
-  if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaAnima(); }
+  if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaAnima(); caricaLLM(); }
 }
 
 
@@ -3466,7 +3466,52 @@ function vistaAdminContenuto() {
       i canali (in chat indossa poi il nome e il tono di ognuno). Gli utenti restano a compartimenti stagni:
       qui vedi solo <em>quanti amici</em> e i più affini, mai cosa hanno scritto o dove.</p>
       <div id="anima-box"><p class="vuoto">Caricamento…</p></div>
+    </div>
+    <div class="carta">
+      <h2>Cervello — modello IA 🧠</h2>
+      <p>Il modello linguistico locale è <strong class="primo-piano">condiviso</strong> da tutti i canali.
+      Cambiandolo qui, il cervello lo sostituisce <strong>a caldo</strong> (scarica + carica: può metterci
+      qualche minuto; nel frattempo la chat usa il motore veloce di riserva).</p>
+      <div id="llm-box"><p class="vuoto">Caricamento…</p></div>
     </div>`;
+}
+
+// carica e disegna la gestione del modello IA (solo operatore)
+async function caricaLLM() {
+  const box = document.getElementById('llm-box');
+  if (!box) return;
+  let d;
+  try { d = await api('/api/admin/llm'); } catch (e) { box.innerHTML = `<p class="vuoto">Errore: ${esc(e.message)}</p>`; return; }
+  const s = d.stato || {};
+  const statoTxt = { pronto: '🟢 pronto', carico: '🟡 sto caricando…', spento: '🔴 spento', errore: '🔴 errore' }[s.stato] || ('⚪ ' + (s.stato || 'sconosciuto'));
+  const scelta = d.scelta || {};
+  const selVal = scelta.url ? 'url' : (scelta.modello || 'auto');
+  const opts = (d.modelli || []).map((m) => `<option value="${esc(m.id)}" ${selVal === m.id ? 'selected' : ''}>${esc(m.nome)}</option>`).join('');
+  box.innerHTML = `
+    <p>Stato: <strong>${statoTxt}</strong> &nbsp; In memoria: <code>${esc(s.modello || '—')}</code>${s.motivo ? ` <span class="suggerimento">(${esc(s.motivo)})</span>` : ''}</p>
+    <label class="campo" for="sel-llm">Modello</label>
+    <select id="sel-llm" class="campo-largo">
+      ${opts}
+      <option value="url" ${selVal === 'url' ? 'selected' : ''}>URL personalizzato (GGUF)…</option>
+    </select>
+    <input type="text" id="inp-llm-url" class="campo-largo spazio-sopra" placeholder="https://…gguf" value="${esc(scelta.url || '')}" ${selVal === 'url' ? '' : 'hidden'}>
+    <p class="spazio-sopra">
+      <button class="btn" id="btn-llm-applica">Applica e ricarica</button>
+      <button class="btn secondario" id="btn-llm-refresh">Aggiorna stato</button>
+    </p>
+    <p class="suggerimento">"Senza freni" = modello <em>abliterated</em> (nessun rifiuto). La moderazione del bot e le <strong>parole vietate</strong> filtrano comunque l'uscita.</p>`;
+  document.getElementById('sel-llm')?.addEventListener('change', (ev) => {
+    const u = document.getElementById('inp-llm-url');
+    if (u) u.hidden = ev.target.value !== 'url';
+  });
+  document.getElementById('btn-llm-refresh')?.addEventListener('click', () => conErrore(caricaLLM));
+  document.getElementById('btn-llm-applica')?.addEventListener('click', () => conErrore(async () => {
+    const v = document.getElementById('sel-llm').value;
+    const body = v === 'url' ? { url: (document.getElementById('inp-llm-url').value || '').trim() } : { modello: v };
+    await api('/api/admin/llm', { method: 'POST', body });
+    toast('Sto cambiando modello 🧠 — può metterci qualche minuto (scarica + carica).');
+    setTimeout(caricaLLM, 2500);
+  }));
 }
 
 // carica e disegna il pannello Anima (solo operatore)
