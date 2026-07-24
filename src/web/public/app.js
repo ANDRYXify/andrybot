@@ -568,7 +568,7 @@ function renderHero() {
     ['Che cosa sa fare?', 'Comandi e automazioni su misura, moderazione della chat, clip automatiche, minigiochi con monete, notifiche live su Telegram e avvisi dei nuovi post su TikTok, YouTube e Instagram. E lo piloti anche a voce.'],
     ['SocialBot è in italiano?', 'Sì: sia il bot in chat sia la dashboard sono interamente in italiano.'],
     ['Posso provarlo senza registrarmi?', 'Sì, c’è una <a href="/?demo=1">demo interattiva</a> con dati d’esempio: la apri con un click, senza accesso.'],
-    ['Come si attiva sul mio canale?', 'Accedi con Twitch, richiedi l’abilitazione e personalizza la dashboard. Per attivarlo devi essere uno streamer abilitato su <a href="https://andryxify.it">andryxify.it</a>.'],
+    ['Come si attiva sul mio canale?', 'In due modi. Se sei già un membro abilitato della community di <a href="https://andryxify.it">andryxify.it</a>, SocialBot è gratis e completo: accedi con Twitch e attivi la dashboard. Altrimenti scegli un piano — con l’abbonamento entri subito, direttamente da qui.'],
   ];
 
   app.innerHTML = `
