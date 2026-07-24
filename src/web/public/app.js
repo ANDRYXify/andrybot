@@ -238,6 +238,13 @@ function _demoGet(via) {
       nodi: 128, solidi: 74, curiosita: 0.34, fiducia: 0.61, lacune: 12,
       non_so: ['come si chiama il tuo gatto?', 'quando esce il prossimo video?'],
     },
+    '/api/streamer/guide': {
+      guide: [
+        { id: 1, testo: 'Non essere mai volgare', ts: '2026-06-01T10:00:00Z' },
+        { id: 2, testo: 'Dai del tu a tutti in chat', ts: '2026-06-02T12:00:00Z' },
+        { id: 3, testo: 'Evita di essere insistente', ts: '2026-06-03T09:00:00Z' },
+      ],
+    },
     '/api/streamer/knowledge': [
       { id: 1, domanda: 'Che PC usi?', risposta: 'Ryzen 7 + RTX 4070, trovi tutto su andryxify.it 🖥️', fonte: 'manuale', ts: '2026-05-02T18:00:00Z' },
       { id: 2, domanda: 'Da dove streammi?', risposta: 'Da Genova, quasi ogni sera verso le 21 💜', fonte: 'auto', ts: '2026-05-01T20:00:00Z' },
@@ -1023,7 +1030,37 @@ function pannelloPersonalita() {
       <p class="suggerimento">Il bot le userà ogni tanto per suonare davvero come te. Max 50 frasi da 200 caratteri.</p>
 
       <p class="spazio-sopra"><button class="btn" id="btn-salva-personalita">Salva</button></p>
+    </div>
+    <div class="carta">
+      <h2>Linee guida 📏</h2>
+      <p>I <strong class="primo-piano">limiti e le regole</strong> che le dai: lei li <strong>salva</strong> e li rispetta
+      <strong>sempre</strong>, in ogni chat (privata, pubblica, quando scrive per prima). Es. «non essere mai volgare»,
+      «non parlare di politica», «dai del tu a tutti».</p>
+      <p class="suggerimento">Puoi dettargliele anche <strong>da Telegram in privato</strong> (solo tu): scrivile ad es.
+      «d'ora in poi non essere troppo formale», oppure <code>/regola &lt;testo&gt;</code>, <code>/regole</code>, <code>/scorda n</code>.</p>
+      <label class="campo" for="inp-guida">Nuova linea guida</label>
+      <div class="riga-flessibile">
+        <input type="text" id="inp-guida" placeholder="es. evita di essere insistente" maxlength="300">
+        <button class="btn" id="btn-guida-add">Aggiungi</button>
+      </div>
+      <ul class="lista-voci" id="lista-guide"><li class="vuoto">Caricamento…</li></ul>
     </div>`);
+}
+
+// carica e disegna l'elenco delle linee guida (regole di "lia")
+async function caricaGuide() {
+  const box = document.getElementById('lista-guide');
+  if (!box) return;
+  let d;
+  try { d = await api('/api/streamer/guide'); } catch { box.innerHTML = '<li class="vuoto">Non disponibile ora.</li>'; return; }
+  const l = d.guide || [];
+  box.innerHTML = l.length
+    ? l.map((g) => `<li><span>${esc(g.testo)}</span> <a href="#" class="rimuovi" data-id="${g.id}" title="Rimuovi">✕</a></li>`).join('')
+    : '<li class="vuoto">Nessuna regola ancora. Aggiungine una qui sopra o da Telegram.</li>';
+  box.querySelectorAll('.rimuovi').forEach((a) => a.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
+    await api('/api/streamer/guide/' + a.dataset.id, { method: 'DELETE' });
+    caricaGuide();
+  }); }));
 }
 
 // --- scheda Conoscenza --------------------------------------------------
@@ -1861,6 +1898,19 @@ function attivaPiattaforma() {
     }, 'Personalità salvata 🎭');
   }));
 
+  // linee guida: aggiungi (l'elenco e i "✕" si gestiscono in caricaGuide)
+  const aggiungiGuida = () => conErrore(async () => {
+    const inp = document.getElementById('inp-guida');
+    const t = (inp?.value || '').trim();
+    if (t.length < 3) return;
+    await api('/api/streamer/guide', { method: 'POST', body: { testo: t } });
+    if (inp) inp.value = '';
+    caricaGuide();
+    toast('Regola aggiunta ✍️');
+  });
+  document.getElementById('btn-guida-add')?.addEventListener('click', aggiungiGuida);
+  document.getElementById('inp-guida')?.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); aggiungiGuida(); } });
+
   document.getElementById('btn-salva-clip')?.addEventListener('click', () => conErrore(async () => {
     await salvaImpostazioni({
       clipAuto: document.getElementById('chk-clip').checked,
@@ -2430,6 +2480,7 @@ async function conErrore(fn) {
 // carica i dati "pigri" della scheda selezionata
 function caricaDatiScheda(id) {
   if (id === 'stato') { caricaPasskey(); caricaModeratori(); caricaRetePanoramica(); }
+  if (id === 'personalita') caricaGuide();
   if (id === 'conoscenza') caricaConoscenza();
   if (id === 'clip') caricaClip();
   if (id === 'effetti') caricaEffetti();

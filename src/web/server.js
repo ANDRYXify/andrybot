@@ -14,7 +14,7 @@ import { dirname, join } from 'node:path';
 import { config, SCOPES, missingConfig } from '../config.js';
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb, friends } from '../db.js';
-import { points, vips, tgConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb } from '../db.js';
+import { points, vips, tgConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide } from '../db.js';
 import * as abbonamenti from '../features/abbonamenti.js';
 import * as webauthn from './webauthn.js';
 import { comprimi } from '../features/compress.js';
@@ -967,6 +967,21 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.json(r || { nodi: 0, solidi: 0, curiosita: 0, fiducia: 0, lacune: 0, non_so: [] });
   }));
 
+  // LINEE GUIDA (le regole che dai a "lia"): le rispetta sempre, in ogni modo
+  app.get('/api/streamer/guide', requireLogin, wrap(async (req, res) => {
+    res.json({ guide: guide.list(currentUser(req).login) });
+  }));
+  app.post('/api/streamer/guide', requireLogin, wrap(async (req, res) => {
+    const testo = String(req.body?.testo || '').trim();
+    if (testo.length < 3) return res.status(400).json({ errore: 'scrivi una regola più chiara' });
+    guide.add(currentUser(req).login, testo);
+    res.json({ ok: true, guide: guide.list(currentUser(req).login) });
+  }));
+  app.delete('/api/streamer/guide/:id', requireLogin, wrap(async (req, res) => {
+    guide.remove(currentUser(req).login, req.params.id);
+    res.json({ ok: true, guide: guide.list(currentUser(req).login) });
+  }));
+
   // ------------------------------------------------------------ API effetti & suoni
 
   // elenco effetti + URL dell'overlay OBS (con la chiave del canale)
@@ -1570,6 +1585,42 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       const utente = msg.from?.first_name || msg.from?.username || '';
       const sonoIoTg = conf.owner_tg_id && String(msg.from?.id) === String(conf.owner_tg_id);
       const inGruppo = chat.type === 'group' || chat.type === 'supergroup';
+
+      // LINEE GUIDA (solo io, in privato): le do e lei le SALVA e le rispetterà
+      // sempre. Le riconosce da un comando (/regola, /regole, /scorda) o dal
+      // linguaggio naturale ("d'ora in poi…", "non essere…", "evita di…").
+      if (chat.type === 'private' && sonoIoTg && !inGruppo) {
+        const raw = String(testo).trim();
+        const low = raw.toLowerCase();
+        if (/^\/regole\b/.test(low)) {
+          const l = guide.list(login);
+          const out = l.length
+            ? 'Le mie linee guida:\n' + l.map((g, i) => `${i + 1}. ${g.testo}`).join('\n') + '\n\nPer toglierne una: /scorda numero'
+            : 'Non mi hai ancora dato nessuna linea guida. Scrivimi ad es. «d\'ora in poi non essere troppo formale» oppure /regola <testo>.';
+          telegram.inviaMessaggio(conf.token, chat.id, out).catch(() => {});
+          return;
+        }
+        if (/^\/scorda\b/.test(low)) {
+          const n = parseInt(raw.split(/\s+/)[1], 10);
+          const rem = Number.isFinite(n) ? guide.removeByIndex(login, n) : null;
+          telegram.inviaMessaggio(conf.token, chat.id, rem ? `Ok, dimenticata: «${rem.testo}» 🗑️` : 'Numero non valido — vedi /regole.').catch(() => {});
+          return;
+        }
+        let regola = null;
+        if (/^\/regola\b/.test(low)) regola = raw.replace(/^\/regola\b\s*/i, '').trim();
+        else {
+          // linguaggio naturale: solo direttive chiare, mai domande o battute
+          const marker = /^\s*(d'?ora in (poi|avanti)|da ora in poi|regola\s*[:\-]|linea guida\s*[:\-]|ricord(a|ati)\s+(di|che)|non (essere|devi|fare|dire|usare|parlare|chiamarti)|mai (essere|dire|fare)|evita(re)? (di|sempre)|voglio che (tu )?(non )?(sia|faccia|ti comporti)|comportati)/i;
+          const scherzo = /\b(ahah|haha|ehe|lol|scherz)/i.test(low);
+          if (marker.test(low) && !low.includes('?') && !scherzo && raw.length >= 6) regola = raw;
+        }
+        if (regola && regola.length >= 3) {
+          guide.add(login, regola);
+          telegram.inviaMessaggio(conf.token, chat.id,
+            `Ok, me lo segno come linea guida: «${regola.slice(0, 180)}» ✍️ La rispetterò sempre. (Se non intendevi questo: /scorda ${guide.count(login)})`).catch(() => {});
+          return;
+        }
+      }
       // APPRENDIMENTO. Dai MIEI messaggi (account legato): stile + coscienza — è
       // l'apprendimento "duro", solo da me, ovunque su Telegram. Dagli altri: solo
       // nei GRUPPI (spazi pubblici, come la chat Twitch) e solo la coscienza
