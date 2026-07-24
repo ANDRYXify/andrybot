@@ -21,6 +21,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import coscienza as C
 import genera as G
+import rete as R
 
 PORT = int(os.environ.get("BRAIN_PORT", "8091"))
 CONSOLIDA_OGNI = int(os.environ.get("BRAIN_CONSOLIDA_MIN", "30")) * 60
@@ -70,7 +71,27 @@ class Handler(BaseHTTPRequestHandler):
             return self._distilla()
         if self.path.startswith("/ricarica"):
             return self._ricarica()
+        if self.path.startswith("/prova"):
+            return self._prova()
         return self._json(404, {"errore": "non trovato"})
+
+    def _prova(self):
+        # verifica dal SERVER che un endpoint esterno (LM Studio/Ollama) risponda.
+        # Se il corpo è vuoto, prova la configurazione salvata.
+        d = self._leggi()
+        cfg = None
+        url = str(d.get("url") or "").strip()
+        if url:
+            cfg = {
+                "url": url,
+                "modello": (str(d.get("modello") or "").strip() or "local-model"),
+                "chiave": str(d.get("chiave") or "").strip(),
+                "solo": bool(d.get("solo")),
+            }
+        try:
+            return self._json(200, G.prova_endpoint(cfg))
+        except Exception as e:
+            return self._json(200, {"ok": False, "motivo": str(e)[:160]})
 
     def _chat(self):
         d = self._leggi()
@@ -145,7 +166,12 @@ def _ciclo_consolida():
         try:
             for canale in mente.canali_attivi():
                 mente.consolida(canale)
-            print("[brain] coscienza consolidata.", flush=True)
+                try:
+                    R.consolida(canale)   # il 'sonno' anche della piccola rete
+                except Exception:
+                    pass
+            R.salva_tutto()
+            print("[brain] coscienza e rete consolidate.", flush=True)
         except Exception as e:
             print(f"[brain] consolida errore: {e}", flush=True)
 
