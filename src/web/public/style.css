@@ -108,9 +108,8 @@ body:not(.con-nav) .barra-mobile { display: none; }
 .marchio { display: flex; align-items: center; gap: .6rem; padding: .35rem .5rem 1rem; color: var(--testo); }
 .marchio:hover { text-decoration: none; }
 .marchio-segno {
-  width: 30px; height: 30px; flex-shrink: 0; border-radius: 8px;
-  background: var(--acc); color: #fff; font-weight: 800; font-size: .95rem;
-  display: grid; place-items: center; box-shadow: 0 2px 8px rgba(109, 59, 239, .28);
+  width: 32px; height: 32px; flex-shrink: 0; border-radius: 8px;
+  object-fit: contain; display: block;
 }
 .marchio-testo { display: flex; flex-direction: column; line-height: 1.15; font-weight: 750; font-size: 1rem; letter-spacing: -.01em; }
 .marchio-testo small { font-weight: 500; font-size: .72rem; color: var(--testo-3); letter-spacing: 0; }
