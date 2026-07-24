@@ -14,9 +14,13 @@ import os
 import time
 import threading
 import urllib.request
+import json
 
 DATA_DIR = os.environ.get("DATA_DIR", "/app/data")
 MODELS_DIR = os.path.join(DATA_DIR, "models")
+# scelta del modello fatta dalla DASHBOARD (admin): { "modello": "gemma" } o { "url": "..." }.
+# La scrive il bot Node, la legge qui. Vince su .env; vuota = automatico.
+SCELTA_FILE = os.path.join(DATA_DIR, "llm.json")
 
 # Scaletta modelli per fascia di RAM (Qwen2.5 Instruct, GGUF). Più RAM, più grande
 # il modello / migliore la quantizzazione → chiacchiera migliore. Override con
@@ -90,13 +94,31 @@ _MODELLI = {
 }
 
 
+def _scelta_dashboard():
+    try:
+        if os.path.exists(SCELTA_FILE):
+            with open(SCELTA_FILE) as f:
+                return json.load(f) or {}
+    except Exception:
+        pass
+    return {}
+
+
 def _scegli_modello():
+    # 1) scelta dalla dashboard (admin): ha la precedenza
+    s = _scelta_dashboard()
+    if s.get("url"):
+        return str(s["url"])
+    if s.get("modello") in _MODELLI:
+        return _MODELLI[s["modello"]]
+    # 2) override da .env
     url = os.environ.get("LLM_MODEL_URL")
     if url:
         return url
     nome = os.environ.get("LLM_MODELLO", "").strip().lower()
     if nome in _MODELLI:
         return _MODELLI[nome]
+    # 3) automatico in base alla RAM
     gb = _ram_gb()
     for soglia, u in _TIERS:
         if gb >= soglia:
@@ -187,6 +209,20 @@ def avvia():
     except Exception as e:
         _stato.update(stato="errore", motivo=str(e))
         print(f"[genera] modello non caricato: {e}", flush=True)
+
+
+def ricarica():
+    """Cambia modello a caldo: scarica quello vecchio dalla memoria e ricarica in
+    base alla scelta corrente (dashboard/.env/RAM). Da lanciare in un thread: mentre
+    carica lo stato è 'carico' e la chat usa il fallback. Non solleva mai."""
+    global _llm
+    import gc
+    print("[genera] ricarico il modello (scelta cambiata)…", flush=True)
+    with _lock:
+        _llm = None
+        _stato.update(stato="spento", modello=None, motivo=None)
+    gc.collect()   # libera il modello vecchio PRIMA di caricare il nuovo
+    avvia()
 
 
 def _system_prompt(canale, ctx):
