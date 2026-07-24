@@ -68,6 +68,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._osserva()
         if self.path.startswith("/distilla"):
             return self._distilla()
+        if self.path.startswith("/ricarica"):
+            return self._ricarica()
         return self._json(404, {"errore": "non trovato"})
 
     def _chat(self):
@@ -98,6 +100,11 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, {"risposta": risposta})
         except Exception as e:
             return self._json(200, {"risposta": None, "errore": str(e)[:120]})
+
+    def _ricarica(self):
+        # cambia modello a caldo (in base a data/llm.json aggiornato dalla dashboard)
+        threading.Thread(target=G.ricarica, daemon=True).start()
+        return self._json(200, {"ok": True, "genera": G.stato()})
 
     def _distilla(self):
         # ALLENAMENTO: dai discorsi dello streamer ricava coppie domanda→risposta
