@@ -1315,9 +1315,11 @@ function pannelloEffetti() {
         </div>
         <div>
           <label class="campo" for="eff-durata">Durata a schermo (ms)</label>
-          <input type="number" id="eff-durata" min="500" max="15000" value="5000">
+          <input type="number" id="eff-durata" min="500" max="30000" value="5000">
         </div>
       </div>
+      <p class="suggerimento">Fino a <strong>30 secondi</strong> (30000 ms). Per le <strong>immagini</strong> è quanto restano a schermo;
+      audio e video usano la loro durata reale (accorciati a 30s se più lunghi).</p>
       <p class="spazio-sopra">
         <button class="btn" id="btn-carica-effetto">Carica effetto</button>
         <span id="esito-effetto" class="suggerimento"></span>
