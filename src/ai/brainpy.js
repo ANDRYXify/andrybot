@@ -12,7 +12,8 @@ const BASE = process.env.BRAIN_URL || 'http://brain:8091';
 const TIMEOUT_CHAT = Number(process.env.BRAIN_TIMEOUT_MS || '9000') || 9000;
 
 // Chiede una risposta contestuale al cervello. Ritorna stringa o null.
-export async function rispondi({ canale, login, nome, testo, tono, conoscenza } = {}) {
+// `stile` = alcune frasi vere dello streamer (la sua voce), per farlo suonare come lui.
+export async function rispondi({ canale, login, nome, testo, tono, conoscenza, stile } = {}) {
   if (!canale || !login || !testo) return null;
   const ac = new AbortController();
   const to = setTimeout(() => ac.abort(), TIMEOUT_CHAT);
@@ -20,7 +21,7 @@ export async function rispondi({ canale, login, nome, testo, tono, conoscenza } 
     const r = await fetch(BASE + '/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ canale, login, nome, testo, tono, conoscenza }),
+      body: JSON.stringify({ canale, login, nome, testo, tono, conoscenza, stile }),
       signal: ac.signal,
     });
     if (!r.ok) return null;

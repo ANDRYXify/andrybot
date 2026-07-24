@@ -147,6 +147,14 @@ def _system_prompt(canale, ctx):
         "Non ripetere la domanda, non elencare, non dire di essere un'IA. Max una emoji.",
         "Se non sai qualcosa, ammettilo con leggerezza invece di inventare.",
     ]
+    # STILE: frasi vere scritte dallo streamer. Sono l'esempio più forte per
+    # suonare come lui → vanno IMITATE nel tono/modo di scrivere, mai copiate.
+    stile = ctx.get("stile") or []
+    if stile:
+        esempi = " · ".join("«" + str(s).strip() + "»" for s in stile[:6] if str(s).strip())
+        if esempi:
+            righe.append("Ecco come scrivo di solito (imìta il tono, il ritmo e le parole, "
+                         "NON copiare queste frasi né citarle): " + esempi)
     p = ctx.get("persona", {})
     if p.get("nome"):
         if p.get("nuova"):
@@ -181,7 +189,8 @@ def genera(canale, ctx, testo, timeout_s=25):
             try:
                 with _lock:
                     out = _llm.create_chat_completion(
-                        messages=messaggi, max_tokens=MAX_TOKEN, temperature=0.7, top_p=0.9,
+                        messages=messaggi, max_tokens=MAX_TOKEN,
+                        temperature=0.7, top_p=0.9, top_k=40, repeat_penalty=1.1,
                     )
                 risultato["t"] = out["choices"][0]["message"]["content"]
             except Exception as e:

@@ -292,6 +292,38 @@ export class Brain {
     this.actions = actions || {};
     this._ultimaRisposta = new Map();   // canale → ts ultima risposta del cervello
     this._ultimoEvento = new Map();     // 'canale|tipo' → ts ultimo annuncio
+    this._stileCache = new Map();       // canale → { ts, frasi } (voce dello streamer)
+  }
+
+  // Alcune frasi VERE scritte dallo streamer nel suo canale (i suoi messaggi
+  // umani, non i comandi, non le risposte del bot): sono la sua "voce". Le
+  // passiamo al cervello come esempi di stile così suona come lui. Cache 30 min.
+  _stileStreamer(channel) {
+    try {
+      const c = this._stileCache.get(channel);
+      if (c && Date.now() - c.ts < 30 * 60_000) return c.frasi;
+      const righe = db.prepare(
+        `SELECT text FROM messages
+           WHERE channel=? AND user=? AND from_bot=0
+             AND text NOT LIKE '!%' AND length(text) BETWEEN 15 AND 160
+           ORDER BY ts DESC LIMIT 80`,
+      ).all(channel, channel);
+      const frasi = [];
+      const viste = new Set();
+      for (const r of righe) {
+        const t = String(r.text || '').replace(/\s+/g, ' ').trim();
+        const k = t.toLowerCase();
+        if (t.length < 15 || viste.has(k)) continue;
+        viste.add(k);
+        frasi.push(t);
+        if (frasi.length >= 8) break;
+      }
+      this._stileCache.set(channel, { ts: Date.now(), frasi });
+      return frasi;
+    } catch (e) {
+      log.debug('stile:', e?.message || e);
+      return [];
+    }
   }
 
   // apprendimento passivo: ogni messaggio passa di qui
@@ -471,6 +503,7 @@ export class Brain {
           .map((k) => `${k.domanda}: ${k.risposta}`);
         const risposta = await brainpy.rispondi({
           canale: streamer.display || channel, login: user, nome, testo: text, tono, conoscenza,
+          stile: this._stileStreamer(channel),   // la voce vera dello streamer (esempi di stile)
         });
         if (risposta) return this._finalizza(channel, risposta, streamer);
       }

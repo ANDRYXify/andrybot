@@ -86,6 +86,10 @@ class Handler(BaseHTTPRequestHandler):
             cur = d.get("conoscenza")
             if isinstance(cur, list) and cur:
                 ctx["fatti"] = [str(x)[:200] for x in cur[:6]] + list(ctx.get("fatti", []))
+            # stile: frasi vere dello streamer (la sua voce) → esempi da imitare
+            sti = d.get("stile")
+            if isinstance(sti, list) and sti:
+                ctx["stile"] = [str(x)[:160] for x in sti[:8] if str(x).strip()]
             risposta = G.genera(canale, ctx, testo)
             if risposta:
                 mente.registra_scambio(canale, login, testo, risposta)
