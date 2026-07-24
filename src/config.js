@@ -90,6 +90,8 @@ export const config = {
       //  · pro         → LEGACY: vecchio tier "tutto incluso" (compat con abbonati storici)
       prezzi: {
         base: env('STRIPE_PRICE_BASE'),
+        addon_giochi: env('STRIPE_PRICE_ADDON_GIOCHI'),
+        addon_effetti: env('STRIPE_PRICE_ADDON_EFFETTI'),
         addon_notifiche: env('STRIPE_PRICE_ADDON_NOTIFICHE'),
         addon_clip: env('STRIPE_PRICE_ADDON_CLIP'),
         addon_voce: env('STRIPE_PRICE_ADDON_VOCE'),

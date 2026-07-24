@@ -34,15 +34,27 @@ export const FREE = {
 // `funzioni`: matrice di ciò che il piano sblocca. Numeri = limiti (Infinity =
 // illimitato), booleani = on/off. L'unione con gli add-on la calcola funzioniDi().
 export const BASE = {
-  id: 'base', nome: 'Base', prezzo: 4.99, prezzoTesto: '€4,99/mese', priceEnv: 'base', icona: '🤖',
-  sommario: 'Il bot completo per la tua community: comandi illimitati, giochi, effetti a punti canale, overlay e antispam.',
-  funzioni: { moduli: Infinity, giochi: true, notifiche: false, clipAuto: false, voce: false, moderatori: 1, effetti: true, overlay: true, telegram: false },
+  id: 'base', nome: 'Base', prezzo: 3.99, prezzoTesto: '€3,99/mese', priceEnv: 'base', icona: '🤖',
+  sommario: 'Il cuore del bot: comandi illimitati, antispam e moderazione, overlay per OBS e un moderatore.',
+  funzioni: { moduli: Infinity, giochi: false, notifiche: false, clipAuto: false, voce: false, moderatori: 1, effetti: false, overlay: true, telegram: false },
 };
 
 // ── ADD-ON à la carte: pacchetti componibili, ognuno un prezzo Stripe a sé ───
 // Ogni add-on aggiunge (unione) le sue funzioni sopra alla Base. `priceEnv` è la
 // chiave in config.stripe.prezzi; senza price-id l'add-on non è acquistabile.
 export const ADDON = [
+  {
+    id: 'giochi', nome: 'Giochi & Classifiche', prezzo: 2.99, prezzoTesto: '€2,99/mese',
+    priceEnv: 'addon_giochi', icona: '🎮',
+    sommario: 'Minigiochi in chat, monete, classifiche e premio VIP ai più attivi.',
+    funzioni: { giochi: true },
+  },
+  {
+    id: 'effetti', nome: 'Effetti & Punti canale', prezzo: 1.99, prezzoTesto: '€1,99/mese',
+    priceEnv: 'addon_effetti', icona: '✨',
+    sommario: 'Alert ed effetti in overlay, anche riscattabili con i punti canale.',
+    funzioni: { effetti: true },
+  },
   {
     id: 'notifiche', nome: 'Social & Notifiche', prezzo: 2.99, prezzoTesto: '€2,99/mese',
     priceEnv: 'addon_notifiche', icona: '📣',

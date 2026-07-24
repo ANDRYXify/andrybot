@@ -945,7 +945,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // resta spento (i membri community hanno tutto attivo, quindi mai limitati).
     const F = funzioniDi(user.login);
     const A = (k) => abbonamenti.abilitata(F, k);
-    if (!A('giochi')) { out.giochi = false; if (out.manche) out.manche.attivo = false; }
+    if (!A('giochi')) { out.giochi = false; if (out.manche) out.manche.attivo = false; if (out.premioVip) out.premioVip.attivo = false; }
     if (!A('clipAuto')) out.clipAuto = false;
     if (!A('voce')) { out.ascoltoLive = false; if (out.cambioCategoria) out.cambioCategoria.attivo = false; if (out.cambioTitolo) out.cambioTitolo.attivo = false; if (out.imparaVoce) out.imparaVoce.attivo = false; }
     if (!A('notifiche') && out.tiktok) out.tiktok.attivo = false;
@@ -1110,6 +1110,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // caricamento di un nuovo effetto (multipart): file + comando/tier/cooldown/volume/durata.
   // Il file viene super-compresso con ffmpeg prima di essere salvato.
   app.post('/api/streamer/effetti', requireLogin, (req, res) => {
+    if (!esigiFunzione(req, res, 'effetti', 'Gli effetti e i premi a punti canale')) return;
     upload.single('file')(req, res, (err) => {
       if (err) {
         const msg = err.code === 'LIMIT_FILE_SIZE' ? 'file troppo grande (max 30MB)' : 'caricamento non riuscito';
@@ -1192,6 +1193,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
 
   // "prova": manda l'effetto all'overlay come farebbe il trigger in chat
   app.post('/api/streamer/effetti/test', requireLogin, wrap(async (req, res) => {
+    if (!esigiFunzione(req, res, 'effetti', 'Gli effetti e i premi a punti canale')) return;
     const login = currentUser(req).login;
     const comando = normComando(req.body?.comando || '');
     const eff = comando ? effectsDb.get(login, comando) : null;
@@ -1211,6 +1213,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   }));
 
   app.post('/api/streamer/premi', requireLogin, wrap(async (req, res) => {
+    if (!esigiFunzione(req, res, 'effetti', 'Gli effetti e i premi a punti canale')) return;
     const login = currentUser(req).login;
     if (!redemptionsOk(login)) return res.status(403).json({ errore: 'Concedi il permesso "punti canale" da /auth/permessi', permesso: true });
     const b = req.body || {};
