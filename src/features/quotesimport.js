@@ -57,15 +57,34 @@ function pulisci(t) {
   return deent(t).replace(/\s+/g, ' ').replace(/^[“"'«\s]+|[”"'»\s]+$/g, '').trim();
 }
 
+// Frammenti tipici del "guscio" di x.la (Rainmaker/Xsolla) quando il JavaScript
+// non è ancora girato: NON sono citazioni. Se l'utente incolla la pagina prima
+// che il JS disegni le frasi (o ne copia la sorgente), vede solo questi.
+const FRASI_GUSCIO = [
+  'please enable javascript', 'enable javascript', 'xsolla partner network',
+  'shortcut icon', 'this site can', 'connection was reset', 'err_connection',
+];
+const eGuscio = (t) => { const s = String(t || '').toLowerCase(); return FRASI_GUSCIO.some((f) => s.includes(f)); };
+
 // una riga "sembra una citazione"? né troppo corta né spazzatura di navigazione
 function pareCitazione(t) {
   if (t.length < 6 || t.length > 300) return false;
   if (/^https?:\/\//i.test(t)) return false;                 // solo un link
   if (!/[a-zà-ÿ]/i.test(t)) return false;                     // niente lettere
   if (t.split(/\s+/).length < 2) return false;                // parola singola
+  if (eGuscio(t)) return false;                               // rumore del guscio senza-JS
   const simboli = (t.match(/[^\w\sà-ÿ.,!?'"()«»“”…-]/gi) || []).length;
   if (simboli > t.length * 0.25) return false;                // troppa fuffa
   return true;
+}
+
+// Il testo incollato è (in sostanza) il guscio senza-JavaScript di x.la?
+// Serve a spiegare all'utente perché non troviamo quote: ha copiato la pagina
+// prima che il JavaScript la disegnasse. Vero solo se NON ci sono quote vere.
+export function sembraGuscioJs(testo) {
+  const s = String(testo || '');
+  if (!eGuscio(s)) return false;
+  return estraiConMeta(s).length === 0;
 }
 
 // Estrae candidati citazione da un testo (HTML/JSON/plain). Pura e testabile.
@@ -156,7 +175,9 @@ export function estraiConMeta(testo) {
 export async function estrai(url) {
   try {
     const testo = await fetchSicuro(url);
-    return { ok: true, citazioni: estraiDaTesto(testo) };
+    const citazioni = estraiDaTesto(testo);
+    // pagina che disegna tutto con JavaScript (tipo x.la): il fetch vede il guscio
+    return { ok: true, citazioni, guscio: !citazioni.length && eGuscio(testo) };
   } catch (e) {
     log.debug('estrai:', e?.message || e);
     return { ok: false, errore: e?.message || 'import non riuscito' };
