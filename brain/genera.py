@@ -125,6 +125,14 @@ def avvia():
             n_threads=max(1, cpu - 1),   # lascia un core al resto del sistema
             verbose=False,
         )
+        # WARMUP: la primissima generazione è lentissima (memoria/cache fredde). Ne
+        # facciamo una minuscola ORA, così la prima risposta vera all'utente è già
+        # "calda" e non va in timeout (importante sulle CPU condivise piccole).
+        try:
+            model.create_chat_completion(messages=[{"role": "user", "content": "ciao"}], max_tokens=1)
+            print("[genera] warmup ok.", flush=True)
+        except Exception as e:
+            print(f"[genera] warmup saltato: {e}", flush=True)
         with _lock:
             _llm = model
             _stato.update(stato="pronto", motivo=None)
@@ -151,7 +159,7 @@ def _system_prompt(canale, ctx):
     # suonare come lui → vanno IMITATE nel tono/modo di scrivere, mai copiate.
     stile = ctx.get("stile") or []
     if stile:
-        esempi = " · ".join("«" + str(s).strip() + "»" for s in stile[:6] if str(s).strip())
+        esempi = " · ".join("«" + str(s).strip() + "»" for s in stile[:4] if str(s).strip())
         if esempi:
             righe.append("Ecco come scrivo di solito (imìta il tono, il ritmo e le parole, "
                          "NON copiare queste frasi né citarle): " + esempi)
@@ -171,13 +179,13 @@ def _system_prompt(canale, ctx):
     return "\n".join(righe)
 
 
-def genera(canale, ctx, testo, timeout_s=25):
+def genera(canale, ctx, testo, timeout_s=30):
     """Genera una risposta o None. Non solleva mai."""
     if _stato["stato"] != "pronto" or _llm is None:
         return None
     try:
         messaggi = [{"role": "system", "content": _system_prompt(canale, ctx)}]
-        for m_utente, m_bot in ctx.get("scambi", [])[-3:]:
+        for m_utente, m_bot in ctx.get("scambi", [])[-2:]:
             if m_utente:
                 messaggi.append({"role": "user", "content": m_utente[:200]})
             if m_bot:
