@@ -1442,7 +1442,12 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // analizza il testo incollato (formato x.la): estrae testo + autore + data
   app.post('/api/streamer/citazioni/analizza', requireLogin, wrap(async (req, res) => {
     const testo = String(req.body?.testo || '');
-    res.json({ ok: true, citazioni: quotesImport.estraiConMeta(testo) });
+    const citazioni = quotesImport.estraiConMeta(testo);
+    // se non troviamo nulla ma sembra il guscio senza-JS di x.la, spieghiamo perché
+    const avviso = (!citazioni.length && quotesImport.sembraGuscioJs(testo))
+      ? 'Questo è il guscio di x.la <em>senza JavaScript</em>: non contiene le frasi. Apri la tua pagina x.la nel browser, aspetta che le quote compaiano e usa il bottone <strong>«Prendi le quote da x.la»</strong> qui sopra (o selezionale a mano e incolla QUELLE).'
+      : '';
+    res.json({ ok: true, citazioni, avviso });
   }));
   // anteprima: estrae citazioni da un link (best-effort, non salva)
   app.post('/api/streamer/citazioni/da-url', requireLogin, wrap(async (req, res) => {
@@ -1450,7 +1455,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!url) return res.status(400).json({ errore: 'link mancante' });
     const r = await quotesImport.estrai(url);
     if (!r.ok) return res.status(400).json({ errore: r.errore });
-    res.json({ ok: true, citazioni: r.citazioni });
+    // pagine che disegnano tutto col JavaScript (tipo x.la): il fetch vede solo il guscio
+    const avviso = r.guscio
+      ? 'Quel link disegna le frasi <strong>con JavaScript</strong> (come x.la): dal server vedo solo il guscio vuoto. Usa il bottone <strong>«Prendi le quote da x.la»</strong> qui sopra.'
+      : '';
+    res.json({ ok: true, citazioni: r.citazioni, avviso });
   }));
 
   // classifica monete + VIP attuali (per la dashboard)
