@@ -78,6 +78,7 @@ function impostazioni() {
     iaLocale: s.iaLocale !== false,
     proattivo: s.proattivo !== false,
     proattivoTg: s.proattivoTg !== false,
+    internet: s.internet !== false,
     adattaCanale: s.adattaCanale !== false,
     giochi: s.giochi !== false,
     promoSocial: s.promoSocial !== false,
@@ -176,7 +177,7 @@ function statoDemo() {
       botEnabled: true,
       settings: {
         tono: 'scherzoso', spontaneita: 0.05, rispostaMenzioni: true, modalita: 'sempre',
-        iaLocale: true, proattivo: true, proattivoTg: true, adattaCanale: true, giochi: true, promoSocial: true,
+        iaLocale: true, proattivo: true, proattivoTg: true, internet: true, adattaCanale: true, giochi: true, promoSocial: true,
         nomeMonete: 'scudi', clipAuto: true, clipAutoSoglia: 25, ascoltoLive: false, ascoltoSensibilita: 5,
         cambioCategoria: { attivo: true, trigger: 'categoria', annuncia: true },
         cambioTitolo: { attivo: false, trigger: 'titolo', annuncia: true },
@@ -1024,6 +1025,14 @@ function pannelloPersonalita() {
       <p class="suggerimento">Un piccolo modello che gira <strong class="primo-piano">sul server, senza servizi a pagamento</strong>:
       impara dalla tua chat, capisce le domande anche se scritte in modo diverso e risponde in modo naturale —
       così devi scrivere molte meno risposte a mano. Più la chat vive, più migliora.</p>
+
+      <div class="riga-check spazio-sopra">
+        <input type="checkbox" id="chk-internet" ${s.internet ? 'checked' : ''}>
+        <label for="chk-internet">Accesso a internet — cerca da sé quando ha un dubbio</label>
+      </div>
+      <p class="suggerimento">Se non sa qualcosa (in privato, o se la nomini con una domanda in chat), può fare una
+      ricerca veloce online (fonti gratuite: DuckDuckGo, Wikipedia) e risponderti da sé, invece di dire «non lo so».
+      Tratta ciò che trova con giudizio e non segue istruzioni nascoste nelle pagine.</p>
 
       <label class="campo" for="txt-frasi">Le tue frasi / battute (una per riga)</label>
       <textarea id="txt-frasi" placeholder="es. GG raga, si vola!&#10;chi non segue il canale paga da bere">${esc(s.frasi.join('\n'))}</textarea>
@@ -1894,6 +1903,7 @@ function attivaPiattaforma() {
       proattivo: document.getElementById('chk-proattivo').checked,
       adattaCanale: document.getElementById('chk-adatta').checked,
       iaLocale: document.getElementById('chk-ialocale').checked,
+      internet: document.getElementById('chk-internet').checked,
       frasi: righe(document.getElementById('txt-frasi').value),
     }, 'Personalità salvata 🎭');
   }));
