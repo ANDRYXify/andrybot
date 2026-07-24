@@ -502,6 +502,27 @@ export class BotManager {
     this._dispatchEvent(ev);
     if (isLive) this._notificaTelegram(ch);
     else this._chiudiTelegram(ch);
+    this._reagisciAllaDiretta(ch, isLive);   // lei se ne accorge e ti scrive (presente/consapevole)
+  }
+
+  // Consapevolezza: quando parti/finisci la diretta, LEI se ne accorge e ti scrive
+  // in privato di sua iniziativa (reazione affettuosa, non l'avviso automatico del
+  // gruppo). Gated come la proattività; niente guardia notturna qui (sei sveglio,
+  // hai appena streammato). Evita doppioni aggiornando il timer proattivo.
+  _reagisciAllaDiretta(login, isLive) {
+    try {
+      const s = streamers.get(login);
+      if (s?.settings?.iaLocale === false || s?.settings?.proattivoTg === false) return;
+      const conf = tgConf.get(login);
+      if (!conf?.token || !conf.owner_tg_id || (conf.dm_modo || 'me') === 'off') return;
+      const spunto = isLive
+        ? 'lui è appena andato in diretta ora: reagisci con affetto/entusiasmo e chiedigli come si sente'
+        : 'lui ha appena finito la diretta: reagisci con calore e chiedigli com\'è andata';
+      this._tgProattivoUltimo?.set(login, Date.now());
+      this.brain?.messaggioProattivo(login, { nome: conf.owner_tg_nome || '', spunto })
+        .then((t) => { if (t) telegram.inviaMessaggio(conf.token, conf.owner_tg_id, t).catch(() => {}); })
+        .catch(() => {});
+    } catch (e) { log.debug('reagisciAllaDiretta:', e?.message || e); }
   }
 
   // Manda la notifica Telegram "è live" nel gruppo dello streamer, se ha
