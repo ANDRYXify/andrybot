@@ -26,16 +26,48 @@ function decodeEnt(s) {
     .replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n));
 }
 
+async function getJson(url) {
+  const t = await getText(url);
+  if (!t) return null;
+  try { return JSON.parse(t); } catch { return null; }
+}
+
 // Normalizza ciò che scrive lo streamer (id | URL | @handle) per mostrarlo.
 export function pulisciCanale(input) {
   return String(input || '').trim();
 }
 
-// Risolve l'id del canale (UC...) da id, URL o @handle. Ritorna la stringa UC... o null.
-export async function risolviCanaleId(input) {
+// ── Con la TUA chiave API (YouTube Data v3): più robusto dell'RSS ──────────────
+// Risolve l'id canale con l'API ufficiale (gestisce @handle in modo affidabile).
+async function risolviCanaleIdApi(input, apiKey) {
+  const s = pulisciCanale(input);
+  if (RE_UC.test(s)) return s;
+  const mUrl = s.match(/channel\/(UC[A-Za-z0-9_-]{22})/);
+  if (mUrl) return mUrl[1];
+  const handle = s.replace(/^https?:\/\/(www\.)?youtube\.com\//i, '').replace(/^@/, '').split(/[/?#]/)[0];
+  const j = await getJson('https://www.googleapis.com/youtube/v3/channels?part=id&forHandle=' + encodeURIComponent('@' + handle) + '&key=' + encodeURIComponent(apiKey));
+  return j?.items?.[0]?.id || null;
+}
+
+// Ultimo video via API: canale → playlist "uploads" → primo elemento.
+async function ultimoVideoApi(channelId, apiKey) {
+  const c = await getJson('https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=' + encodeURIComponent(channelId) + '&key=' + encodeURIComponent(apiKey));
+  const uploads = c?.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
+  if (!uploads) return null;
+  const p = await getJson('https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=1&playlistId=' + encodeURIComponent(uploads) + '&key=' + encodeURIComponent(apiKey));
+  const it = p?.items?.[0]?.snippet;
+  const vid = it?.resourceId?.videoId;
+  if (!vid) return null;
+  return { videoId: vid, titolo: String(it.title || ''), url: 'https://www.youtube.com/watch?v=' + vid };
+}
+
+// Risolve l'id del canale (UC...) da id, URL o @handle. Con la tua chiave API usa
+// l'API ufficiale (più affidabile), altrimenti la pagina pubblica. Ritorna UC… o null.
+export async function risolviCanaleId(input, apiKey) {
   const s = pulisciCanale(input);
   if (!s) return null;
   if (RE_UC.test(s)) return s;                                   // è già un channel id
+  if (apiKey) { const id = await risolviCanaleIdApi(s, apiKey).catch(() => null); if (id) return id; }
   const mUrl = s.match(/channel\/(UC[A-Za-z0-9_-]{22})/);        // URL .../channel/UC...
   if (mUrl) return mUrl[1];
   let url;
@@ -53,9 +85,11 @@ export async function risolviCanaleId(input) {
   return m ? m[1] : null;
 }
 
-// Ultimo video dal feed RSS del canale. Ritorna {videoId, titolo, url} o null.
-export async function ultimoVideo(channelId) {
+// Ultimo video del canale. Con la tua chiave API usa l'API ufficiale, altrimenti
+// il feed RSS pubblico. Ritorna {videoId, titolo, url} o null.
+export async function ultimoVideo(channelId, apiKey) {
   if (!channelId) return null;
+  if (apiKey) { const v = await ultimoVideoApi(channelId, apiKey).catch(() => null); if (v) return v; }
   const xml = await getText('https://www.youtube.com/feeds/videos.xml?channel_id=' + encodeURIComponent(channelId));
   if (!xml) return null;
   const entry = xml.split('<entry>')[1];   // il primo <entry> è il più recente

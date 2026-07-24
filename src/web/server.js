@@ -24,6 +24,7 @@ import * as telegram from '../features/telegram.js';
 import * as categoria from '../features/categoria.js';
 import * as compleanniFeat from '../features/compleanni.js';
 import * as tiktok from '../features/tiktok.js';
+import * as instagram from '../features/instagram.js';
 import * as quotesImport from '../features/quotesimport.js';
 import { pretrain } from '../ai/pretrain.js';
 import * as persona from '../ai/persona.js';
@@ -279,6 +280,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (g && (g.secret || g.endpoint)) {
       s.settings = { ...s.settings, giochiSito: { attivo: g.attivo === true, collegato: !!(g.secret && g.endpoint) } };
     }
+    // maschera i segreti delle API personali: mai al client, solo un flag "impostato"
+    const yt = s.settings?.youtube;
+    if (yt && yt.apiKey) s.settings = { ...s.settings, youtube: { ...yt, apiKey: '', apiKeySet: true } };
+    const ig = s.settings?.instagram;
+    if (ig && ig.token) s.settings = { ...s.settings, instagram: { ...ig, token: '', tokenSet: true } };
     return s;
   };
 
@@ -823,15 +829,31 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
         messaggio: String(tk.messaggio || '').slice(0, 800),   // testo Telegram personalizzato
       };
     }
-    // avviso NUOVO VIDEO su YouTube (via RSS: affidabile, nessuna chiave)
+    // avviso NUOVO VIDEO su YouTube (RSS gratis, oppure la TUA chiave API Data v3)
     if (b.youtube !== undefined) {
       const y = b.youtube || {};
       const canale = String(y.canale || '').trim().slice(0, 120);
+      // apiKey (facoltativa): vuoto = mantieni quella salvata; apiKeyClear = rimuovi
+      const apiKeyVecchia = s.settings?.youtube?.apiKey || '';
+      const apiKey = y.apiKeyClear ? '' : (String(y.apiKey || '').trim() || apiKeyVecchia);
       out.youtube = {
-        canale,
+        canale, apiKey,
         attivo: !!y.attivo && !!canale,
         annunciaChat: !!y.annunciaChat,
         messaggio: String(y.messaggio || '').slice(0, 800),
+      };
+    }
+    // avviso NUOVO POST su Instagram (serve la TUA API: Graph API business)
+    if (b.instagram !== undefined) {
+      const g = b.instagram || {};
+      const userId = String(g.userId || '').trim().replace(/[^0-9]/g, '').slice(0, 40);
+      const tokenVecchio = s.settings?.instagram?.token || '';
+      const token = g.tokenClear ? '' : (String(g.token || '').trim() || tokenVecchio);
+      out.instagram = {
+        userId, token,
+        attivo: !!g.attivo && !!userId && !!token,
+        annunciaChat: !!g.annunciaChat,
+        messaggio: String(g.messaggio || '').slice(0, 800),
       };
     }
     // ponte "giochi del sito": dalla dashboard si può SOLO accendere/spegnere;
@@ -904,9 +926,13 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!A(tierS, 'voce')) { out.ascoltoLive = false; if (out.cambioCategoria) out.cambioCategoria.attivo = false; if (out.cambioTitolo) out.cambioTitolo.attivo = false; if (out.imparaVoce) out.imparaVoce.attivo = false; }
     if (!A(tierS, 'notifiche') && out.tiktok) out.tiktok.attivo = false;
     if (!A(tierS, 'notifiche') && out.youtube) out.youtube.attivo = false;
-    // se cambi canale YouTube, riparto pulito (niente avviso del video già presente)
+    if (!A(tierS, 'notifiche') && out.instagram) out.instagram.attivo = false;
+    // se cambi canale/account, riparto pulito (niente avviso del contenuto già presente)
     if (out.youtube && out.youtube.canale !== (s.settings?.youtube?.canale || '')) {
       try { tgConf.setYtUltimo(user.login, ''); } catch { /* niente */ }
+    }
+    if (out.instagram && out.instagram.userId !== (s.settings?.instagram?.userId || '')) {
+      try { tgConf.setIgUltimo(user.login, ''); } catch { /* niente */ }
     }
 
     streamers.setSettings(user.login, out);
@@ -1782,6 +1808,18 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.json({ ok: true });
   }));
 
+  // prova le credenziali Instagram (ID account + token): legge l'ultimo post
+  app.post('/api/streamer/instagram/prova', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const cfg = streamers.get(login)?.settings?.instagram || {};
+    const b = req.body || {};
+    const userId = String(b.userId || cfg.userId || '').trim();
+    const token = String(b.token || '').trim() || cfg.token || '';
+    if (!userId || !token) return res.status(400).json({ errore: 'servono ID account e token' });
+    const r = await instagram.prova({ userId, token }).catch(() => null);
+    res.json(r || { ok: false, motivo: 'errore' });
+  }));
+
   // ---------------------------------------------------------- PASSKEY (WebAuthn)
   // Si CREA da loggati (proprietario O moderatore): la passkey è della PERSONA
   // (la sua identità Twitch), non del canale. Al login ridà accesso a tutti i
@@ -1898,8 +1936,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     }
     // azioni per i NUOVI POST (via IFTTT/Zapier): affidabili anche per TikTok,
     // dove il rilevamento automatico dal server non è possibile.
-    if (azione === 'youtube' || azione === 'youtube-post' || azione === 'tiktok-post') {
-      const piattaforma = azione === 'tiktok-post' ? 'tiktok' : 'youtube';
+    if (azione === 'youtube' || azione === 'youtube-post' || azione === 'tiktok-post' || azione === 'instagram-post') {
+      const piattaforma = azione === 'tiktok-post' ? 'tiktok' : azione === 'instagram-post' ? 'instagram' : 'youtube';
       const s = streamers.get(login);
       const cfg = s?.settings?.[piattaforma] || {};
       const r = await manager.notificaPost(login, {
