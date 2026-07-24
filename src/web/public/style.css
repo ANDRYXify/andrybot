@@ -561,3 +561,115 @@ pre.blocco-codice { background: var(--surface-2); border: 1px solid var(--border
 .cookie-banner p { margin: 0; flex: 1 1 260px; font-size: .9rem; line-height: 1.45; color: var(--testo-2); }
 .cookie-banner .btn { flex: 0 0 auto; }
 .cookie-banner[hidden] { display: none; }
+
+/* ============================================================================
+   CRAFT PASS — rifinitura additiva: profondità, materialità, micro-interazioni
+   e TEMA SCURO automatico. Tutto rispetta prefers-reduced-motion (blocco sopra).
+   ============================================================================ */
+:root { --sheen: rgba(255, 255, 255, .6); }
+
+/* profondità: due aloni d'accento tenui, fissi, dietro a tutto */
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -3; pointer-events: none;
+  background:
+    radial-gradient(52% 46% at 84% -8%, var(--acc-tint), transparent 60%),
+    radial-gradient(46% 46% at -8% 106%, var(--acc-tint), transparent 62%);
+  opacity: .85;
+}
+
+/* carte: hover elegante — solo bordo+ombra (niente transform: non litiga con lo
+   scroll-reveal, che usa translate) */
+.carta { transition: border-color var(--molla), box-shadow .32s var(--ease), background var(--molla); }
+.carta:hover { border-color: var(--border-2); box-shadow: var(--om-m); }
+.carta.evidenziata:hover { box-shadow: 0 0 0 1px var(--acc-tint), var(--om-l); }
+.carta.avviso:hover, .demo-spiega:hover { box-shadow: var(--om-s); }
+
+/* bottone primario: gradiente sottile per dare volume + ombra a colore */
+.btn:not(.secondario):not(.pericolo) {
+  background: linear-gradient(180deg, var(--acc), var(--acc-600));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .10), 0 8px 18px -8px rgba(109, 59, 239, .5);
+}
+.btn:not(.secondario):not(.pericolo):hover {
+  box-shadow: 0 2px 5px rgba(0, 0, 0, .12), 0 14px 30px -8px rgba(109, 59, 239, .62);
+}
+
+/* voci di lista / moduli / azioni: filo d'accento a sinistra allo hover */
+.lista-voci li, .modulo, .azione-riga { position: relative; }
+.lista-voci li::before, .modulo::before, .azione-riga::before {
+  content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px;
+  background: var(--acc); border-radius: 0 3px 3px 0;
+  transform: scaleY(0); transform-origin: 50% 50%;
+  transition: transform .28s var(--rev-ease);
+}
+.lista-voci li:hover::before, .modulo:hover::before, .azione-riga:hover::before { transform: scaleY(1); }
+
+/* input: micro-lift alla messa a fuoco */
+input[type="text"], textarea, select, input[type="number"] {
+  transition: border-color var(--molla), box-shadow var(--molla), transform var(--molla);
+}
+input[type="text"]:focus, textarea:focus, select:focus, input[type="number"]:focus { transform: translateY(-1px); }
+
+/* link discorsivi: sottolineatura che cresce da sinistra (invece dell'underline secco) */
+.carta p a:not(.btn), .suggerimento a:not(.btn), .nota-lettura a:not(.btn) {
+  text-decoration: none; padding-bottom: 1px;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1.5px; background-position: 0 100%; background-repeat: no-repeat;
+  transition: background-size .28s var(--rev-ease), color var(--molla);
+}
+.carta p a:not(.btn):hover, .suggerimento a:not(.btn):hover, .nota-lettura a:not(.btn):hover { background-size: 100% 1.5px; text-decoration: none; }
+
+/* chip-var: hover neutro rispetto al tema */
+.chip-var:hover { background: var(--acc-tint); }
+
+/* numeri "che contano su" (l'animazione la fa app.js: animaNumeri) */
+[data-conta] { font-variant-numeric: tabular-nums; }
+
+/* skeleton shimmer per gli stati di caricamento */
+.scheletro { position: relative; overflow: hidden; background: var(--surface-2); border-radius: var(--r-s); }
+.scheletro::after {
+  content: ""; position: absolute; inset: 0; transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--sheen), transparent);
+  animation: shimmer 1.5s var(--ease) infinite;
+}
+.scheletro.riga { height: .95em; margin: .5rem 0; }
+.scheletro.riga.corta { width: 62%; }
+@keyframes shimmer { to { transform: translateX(100%); } }
+
+/* ---------------------------------------------------------------- TEMA SCURO
+   Automatico in base al sistema: tutto usa i token, quindi basta ridefinirli.
+   Palette scura profonda con un filo di viola, superfici a strati, accento più
+   luminoso per il contrasto. */
+@media (prefers-color-scheme: dark) {
+  html { color-scheme: dark; }
+  :root {
+    --bg: #0c0c11;
+    --surface: #151519;
+    --surface-2: #1c1c23;
+    --surface-3: #2a2a33;
+    --border: #262630;
+    --border-2: #363642;
+
+    --testo: #f3f3f6;
+    --testo-2: #b6b6c2;
+    --testo-3: #7d7d8b;
+
+    --acc: #9a7bff;
+    --acc-600: #866bf5;
+    --acc-soft: #201a35;
+    --acc-tint: rgba(154, 123, 255, .16);
+    --acc-bordo: #3a2f5c;
+
+    --verde: #55d98a; --verde-soft: #14261c; --verde-bordo: #244b35;
+    --rosso: #f9807d; --rosso-soft: #2a1719; --rosso-bordo: #4e2a2c;
+    --ambra: #f6c24a; --ambra-soft: #2a2210; --ambra-bordo: #4a3b18;
+
+    --om-s: 0 1px 2px rgba(0, 0, 0, .5);
+    --om-m: 0 6px 20px rgba(0, 0, 0, .5);
+    --om-l: 0 22px 54px rgba(0, 0, 0, .66);
+
+    --sheen: rgba(255, 255, 255, .05);
+  }
+  body::before { opacity: 1; }
+  .btn.secondario { background: var(--surface-2); }
+  .btn.secondario:hover { background: var(--surface-3); }
+}
