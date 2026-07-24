@@ -15,7 +15,9 @@ const TIMEOUT_CHAT = Number(process.env.BRAIN_TIMEOUT_MS || '9000') || 9000;
 // `stile` = alcune frasi vere dello streamer (la sua voce), per farlo suonare come lui.
 // `timeoutMs` = quanto attendere (default 9s per la chat live; i DM possono attendere di più
 //   perché su CPU un 3B è lento e una risposta tardiva è meglio di nessuna risposta).
-export async function rispondi({ canale, login, nome, testo, tono, conoscenza, stile, timeoutMs } = {}) {
+// `modo` = 'live' (chat pubblica, veloce) oppure 'allenamento' (chat privata con
+//   lo streamer: risposta più lunga e ragionata, sfrutta il maestro esterno).
+export async function rispondi({ canale, login, nome, testo, tono, conoscenza, stile, timeoutMs, modo } = {}) {
   if (!canale || !login || !testo) return null;
   const ac = new AbortController();
   const to = setTimeout(() => ac.abort(), timeoutMs || TIMEOUT_CHAT);
@@ -23,7 +25,7 @@ export async function rispondi({ canale, login, nome, testo, tono, conoscenza, s
     const r = await fetch(BASE + '/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ canale, login, nome, testo, tono, conoscenza, stile }),
+      body: JSON.stringify({ canale, login, nome, testo, tono, conoscenza, stile, modo }),
       signal: ac.signal,
     });
     if (!r.ok) return null;
@@ -104,6 +106,18 @@ export async function provaEndpoint(cfg) {
     return r.ok ? await r.json().catch(() => null) : null;
   } catch (e) { log.debug('prova:', e?.message || e); return null; }
   finally { clearTimeout(to); }
+}
+
+// Stato della piccola rete PER CANALE (cruscotto in dashboard). Ritorna un
+// oggetto {nodi, solidi, curiosita, fiducia, lacune, non_so} o null.
+export async function reteStato(canale) {
+  if (!canale) return null;
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 3000);
+  try {
+    const r = await fetch(BASE + '/rete?canale=' + encodeURIComponent(canale), { signal: ac.signal });
+    return r.ok ? await r.json().catch(() => null) : null;
+  } catch { return null; } finally { clearTimeout(to); }
 }
 
 // Stato del cervello (per log/diagnostica). Ritorna un oggetto o null.

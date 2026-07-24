@@ -60,7 +60,21 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path.startswith("/health") or self.path.startswith("/stato"):
             return self._json(200, {"ok": True, "genera": G.stato()})
+        if self.path.startswith("/rete"):
+            return self._rete()
         return self._json(404, {"errore": "non trovato"})
+
+    def _rete(self):
+        # stato della piccola rete PER CANALE (cruscotto in dashboard)
+        from urllib.parse import urlparse, parse_qs
+        q = parse_qs(urlparse(self.path).query)
+        canale = (q.get("canale", [""])[0] or "").lower().strip()
+        if not canale:
+            return self._json(400, {"errore": "canale mancante"})
+        try:
+            return self._json(200, R.stato(canale))
+        except Exception as e:
+            return self._json(200, {"nodi": 0, "errore": str(e)[:120]})
 
     def do_POST(self):
         if self.path.startswith("/chat"):
@@ -100,6 +114,7 @@ class Handler(BaseHTTPRequestHandler):
         nome = str(d.get("nome") or login)
         testo = str(d.get("testo") or "").strip()
         tono = str(d.get("tono") or "scherzoso")
+        modo = "allenamento" if str(d.get("modo") or "").strip() == "allenamento" else "live"
         if not canale or not login or not testo:
             return self._json(400, {"errore": "dati mancanti"})
         try:
@@ -115,7 +130,9 @@ class Handler(BaseHTTPRequestHandler):
             sti = d.get("stile")
             if isinstance(sti, list) and sti:
                 ctx["stile"] = [str(x)[:160] for x in sti[:8] if str(x).strip()]
-            risposta = G.genera(canale, ctx, testo)
+            # in allenamento lascio più tempo (risposta più lunga e ragionata)
+            timeout_s = 38 if modo == "allenamento" else 30
+            risposta = G.genera(canale, ctx, testo, timeout_s=timeout_s, modo=modo)
             if risposta:
                 mente.registra_scambio(canale, login, testo, risposta)
             return self._json(200, {"risposta": risposta})
