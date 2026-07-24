@@ -293,6 +293,55 @@ export class Brain {
     this._ultimaRisposta = new Map();   // canale → ts ultima risposta del cervello
     this._ultimoEvento = new Map();     // 'canale|tipo' → ts ultimo annuncio
     this._stileCache = new Map();       // canale → { ts, frasi } (voce dello streamer)
+    this._lastDistill = new Map();      // canale → ts ultima distillazione (allenamento)
+  }
+
+  // Materiale di ALLENAMENTO: le parole vere dello streamer da cui distillare —
+  // la sua voce (mic/DM) e i suoi messaggi Twitch — più recenti dell'ultima volta.
+  _materialeAllenamento(channel, dopoTs) {
+    const frasi = []; const viste = new Set();
+    const push = (t) => {
+      const s = String(t || '').replace(/\s+/g, ' ').trim();
+      const k = s.toLowerCase();
+      if (s.length >= 15 && !viste.has(k)) { viste.add(k); frasi.push(s); }
+    };
+    try { for (const v of voceStreamer.recent(channel, 30)) push(v); } catch { /* niente */ }
+    try {
+      const righe = db.prepare(
+        `SELECT text FROM messages WHERE channel=? AND user=? AND from_bot=0
+           AND text NOT LIKE '!%' AND length(text) BETWEEN 15 AND 200 AND ts>?
+           ORDER BY ts DESC LIMIT 40`,
+      ).all(channel, channel, dopoTs || 0);
+      for (const r of righe) push(r.text);
+    } catch { /* niente */ }
+    return frasi.slice(0, 30);
+  }
+
+  // ALLENAMENTO → MOTORE VELOCE: il cervello grosso digerisce i tuoi discorsi e ne
+  // ricava conoscenza riutilizzabile (domanda→risposta nel tuo stile), salvata
+  // localmente. Da lì la usa il motore VELOCE in live, senza richiamare l'LLM.
+  // Si auto-salta se non c'è materiale nuovo; non blocca nulla.
+  async distilla(channel) {
+    try {
+      const dopo = this._lastDistill.get(channel) || 0;
+      const frasi = this._materialeAllenamento(channel, dopo);
+      if (frasi.length < 3) return 0;                       // niente di nuovo/sufficiente
+      const coppie = await brainpy.distilla(channel, frasi);
+      if (coppie === null) return 0;                        // cervello non pronto: riprova dopo (non avanza)
+      this._lastDistill.set(channel, Date.now());
+      if (!coppie.length) return 0;
+      const esistenti = new Set(knowledge.list(channel).map((k) => this._norm(k.domanda)));
+      let aggiunte = 0;
+      for (const c of coppie) {
+        const q = String(c?.q || '').trim();
+        const a = String(c?.a || '').trim();
+        if (q.length < 3 || a.length < 2 || esistenti.has(this._norm(q))) continue;
+        knowledge.add(channel, { domanda: q, risposta: a, fonte: 'distillato' });
+        esistenti.add(this._norm(q)); aggiunte++;
+      }
+      if (aggiunte) log.info(`#${channel}: allenamento → ${aggiunte} risposte distillate dai tuoi discorsi`);
+      return aggiunte;
+    } catch (e) { log.debug('distilla:', e?.message || e); return 0; }
   }
 
   // Alcune frasi VERE scritte dallo streamer nel suo canale (i suoi messaggi

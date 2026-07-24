@@ -37,6 +37,29 @@ export async function rispondi({ canale, login, nome, testo, tono, conoscenza, s
   }
 }
 
+// ALLENAMENTO: chiede al cervello GROSSO di distillare i discorsi dello streamer
+// in coppie domanda→risposta riutilizzabili. Ritorna un array (anche vuoto) se il
+// cervello ha lavorato, oppure null se non era pronto/è andato in errore (così chi
+// chiama sa se riprovare più tardi). Può metterci: timeout ampio.
+export async function distilla(canale, frasi = []) {
+  if (!canale || !Array.isArray(frasi) || !frasi.length) return null;
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 95_000);
+  try {
+    const r = await fetch(BASE + '/distilla', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ canale, frasi }), signal: ac.signal,
+    });
+    if (!r.ok) return null;
+    const d = await r.json().catch(() => null);
+    if (!d || d.pronto === false) return null;            // cervello non pronto → riprova dopo
+    return Array.isArray(d.coppie) ? d.coppie : [];
+  } catch (e) {
+    log.debug('distilla:', e?.message || e);
+    return null;
+  } finally { clearTimeout(to); }
+}
+
 // Nutre la coscienza con ciò che passa in chat (impara persone/fatti). Fire-and-
 // forget: non attende e non blocca nulla.
 export function osserva({ canale, login, nome, testo } = {}) {

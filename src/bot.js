@@ -100,6 +100,9 @@ export class BotManager {
     // sui canali che l'hanno attivato (controllo ogni minuto).
     this._mancheProx = new Map();     // login → ts della prossima manche
     this._mancheTimer = setInterval(() => this._manche(), 60_000);
+    // Allenamento continuo: distilla i discorsi dello streamer nel motore veloce
+    // (ogni 12 min, solo se attivo e con materiale nuovo).
+    this._distillaTimer = setInterval(() => this._distilla(), 12 * 60_000);
     log.info('SocialBot avviato');
   }
 
@@ -193,6 +196,21 @@ export class BotManager {
         this._mancheProx.set(login, this._prossimaManche(m));
       }
     } catch (e) { log.error('manche:', e?.message || e); }
+  }
+
+  // ALLENAMENTO CONTINUO: mentre lo streamer è attivo (in live o con chat viva), il
+  // cervello grosso distilla i suoi discorsi nel MOTORE VELOCE (conoscenza locale).
+  // Si auto-salta se non c'è materiale nuovo. Gira lento in background: non tocca la
+  // reattività dei comandi (il cervello è un processo a parte).
+  _distilla() {
+    try {
+      for (const login of this.units.keys()) {
+        const s = streamers.get(login);
+        if (s?.settings?.iaLocale === false) continue;   // IA locale spenta → niente allenamento
+        const attivo = this._liveState.get(login) === true || (memory.messageRate?.(login) || 0) >= 1;
+        if (attivo) this.brain.distilla(login).catch(() => {});
+      }
+    } catch (e) { log.error('distilla:', e?.message || e); }
   }
 
   // uno streamer è "pronto" se ha concesso i permessi con gli scope chat
