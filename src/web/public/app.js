@@ -95,6 +95,7 @@ function impostazioni() {
     ascoltoSensibilita: typeof s.ascoltoSensibilita === 'number' ? s.ascoltoSensibilita : 5,
     cambioCategoria: { attivo: false, trigger: 'categoria', annuncia: true, ...(s.cambioCategoria && typeof s.cambioCategoria === 'object' ? s.cambioCategoria : {}) },
     cambioTitolo: { attivo: false, trigger: 'titolo', annuncia: true, ...(s.cambioTitolo && typeof s.cambioTitolo === 'object' ? s.cambioTitolo : {}) },
+    imparaVoce: { attivo: false, ...(s.imparaVoce && typeof s.imparaVoce === 'object' ? s.imparaVoce : {}) },
   };
 }
 
@@ -177,6 +178,7 @@ function statoDemo() {
         nomeMonete: 'scudi', clipAuto: true, clipAutoSoglia: 25, ascoltoLive: false, ascoltoSensibilita: 5,
         cambioCategoria: { attivo: true, trigger: 'categoria', annuncia: true },
         cambioTitolo: { attivo: false, trigger: 'titolo', annuncia: true },
+        imparaVoce: { attivo: false },
         premioVip: { attivo: true, periodo: 'settimana', quanti: 2 },
         manche: { attivo: true, minMin: 20, maxMin: 60, soloLive: false },
         paroleVietate: ['spoiler', 'link-truffa'],
@@ -1048,6 +1050,8 @@ function pannelloAscolto() {
   const inAscolto = (stato.status?.ascoltando || []).includes(stato.user.login);
   const cc = s.cambioCategoria || { attivo: false, trigger: 'categoria', annuncia: true };
   const ct = s.cambioTitolo || { attivo: false, trigger: 'titolo', annuncia: true };
+  const iv = s.imparaVoce || { attivo: false };
+  const proprietario = stato?.ruolo !== 'moderatore';        // "impara mentre parlo" solo per me
   const mancaPermesso = !DEMO && stato.canaleOk === false;   // serve una ri-autorizzazione
 
   return pannello('ascolto', `
@@ -1132,7 +1136,22 @@ function pannelloAscolto() {
       <a href="/auth/permessi">Concedilo qui</a> (vale per categoria e titolo).</p>` : ''}
       <p class="suggerimento spazio-sopra">Esempio: «titolo Si torna su Elden Ring, si punta al boss!».
       Puoi cambiare la parola chiave (es. «nuovo titolo»). Stessa pagina di ascolto vocale qui sopra.</p>
-    </div>`);
+    </div>
+    ${proprietario ? `
+    <div class="carta">
+      <h2>Impara mentre parlo 🎧</h2>
+      <p>Con la pagina di ascolto aperta, il bot <strong class="primo-piano">ti sente parlare in diretta</strong> e cresce:
+      impara i tuoi modi di dire e il tuo tono, così ti somiglia sempre di più. <strong>Solo la tua voce</strong> — mai da altri account.</p>
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore">
+          <input type="checkbox" id="chk-impara" ${iv.attivo ? 'checked' : ''}>
+          <span class="levetta"></span>
+        </label>
+        <span class="etichetta-stato" id="etichetta-impara">${iv.attivo ? 'Attivo' : 'Spento'}</span>
+      </div>
+      <p class="suggerimento spazio-sopra">🔒 L'audio <strong>non lascia il tuo PC</strong>: la trascrizione avviene nel browser,
+      al bot arriva solo il testo. Funziona dalla stessa pagina di ascolto vocale qui sopra.</p>
+    </div>` : ''}`);
 }
 
 // --- scheda Effetti & Suoni ---------------------------------------------
@@ -2149,6 +2168,18 @@ function attivaPiattaforma() {
     const et = document.getElementById('etichetta-titolo');
     if (et) et.textContent = attivo ? 'Attivo' : 'Spento';
   }));
+
+  // --- "impara mentre parlo": interruttore che salva subito ---
+  document.getElementById('chk-impara')?.addEventListener('change', (ev) => {
+    const acceso = ev.target.checked;
+    const et = document.getElementById('etichetta-impara');
+    conErrore(async () => {
+      try {
+        await salvaImpostazioni({ imparaVoce: { attivo: acceso } }, acceso ? 'Ora imparo mentre parli 🎧' : 'Ascolto per imparare spento.');
+        if (et) et.textContent = acceso ? 'Attivo' : 'Spento';
+      } catch (e) { ev.target.checked = !acceso; throw e; }
+    });
+  });
 
   // conoscenza: aggiunta manuale
   document.getElementById('btn-aggiungi-conoscenza')?.addEventListener('click', () => conErrore(async () => {

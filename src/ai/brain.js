@@ -3,7 +3,7 @@
 // personalità fatta di pool di template in tre toni. Ricorda sempre:
 // il bot parla CON L'ACCOUNT DELLO STREAMER, quindi in prima persona.
 import { makeLog } from '../logger.js';
-import { db, memory, knowledge } from '../db.js';
+import { db, memory, knowledge, voceStreamer } from '../db.js';
 import { checkMessage } from '../features/moderation.js';
 import * as learn from './learn.js';
 import * as model from './model.js';
@@ -302,28 +302,41 @@ export class Brain {
     try {
       const c = this._stileCache.get(channel);
       if (c && Date.now() - c.ts < 30 * 60_000) return c.frasi;
+      const frasi = [];
+      const viste = new Set();
+      const aggiungi = (t, minLen) => {
+        const s = String(t || '').replace(/\s+/g, ' ').trim();
+        const k = s.toLowerCase();
+        if (s.length < minLen || viste.has(k) || frasi.length >= 8) return;
+        viste.add(k); frasi.push(s);
+      };
+      // 1) la VOCE PARLATA in diretta (materiale di stile migliore: è la sua voce vera)
+      try { for (const v of voceStreamer.recent(channel, 8)) aggiungi(v, 12); } catch { /* niente */ }
+      // 2) completa con i suoi messaggi SCRITTI in chat
       const righe = db.prepare(
         `SELECT text FROM messages
            WHERE channel=? AND user=? AND from_bot=0
              AND text NOT LIKE '!%' AND length(text) BETWEEN 15 AND 160
            ORDER BY ts DESC LIMIT 80`,
       ).all(channel, channel);
-      const frasi = [];
-      const viste = new Set();
-      for (const r of righe) {
-        const t = String(r.text || '').replace(/\s+/g, ' ').trim();
-        const k = t.toLowerCase();
-        if (t.length < 15 || viste.has(k)) continue;
-        viste.add(k);
-        frasi.push(t);
-        if (frasi.length >= 8) break;
-      }
+      for (const r of righe) aggiungi(r.text, 15);
       this._stileCache.set(channel, { ts: Date.now(), frasi });
       return frasi;
     } catch (e) {
       log.debug('stile:', e?.message || e);
       return [];
     }
+  }
+
+  // Impara dalla VOCE PARLATA dello streamer (trascrizione dal suo microfono in
+  // diretta): la salva come materiale di stile e nutre la coscienza. È la sua
+  // voce vera → è il modo più forte per "sentirlo parlare e crescere".
+  imparaDaVoce({ channel, testo } = {}) {
+    const t = String(testo || '').trim();
+    if (!channel || t.length < 8 || t.startsWith('!') || t.startsWith('/')) return;
+    try { voceStreamer.add(channel, t); this._stileCache.delete(channel); } catch { /* niente */ }
+    // coscienza: impara anche fatti da ciò che dice (login = canale = lo streamer)
+    try { brainpy.osserva({ canale: channel, login: channel, nome: 'streamer', testo: t }); } catch { /* niente */ }
   }
 
   // Impara da una chat ESTERNA (es. Telegram): nutre la coscienza (persone/fatti),

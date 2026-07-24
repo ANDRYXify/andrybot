@@ -168,6 +168,8 @@
     let frasi = [];            // frasi da ascoltare (minuscole), dal server
     let catCfg = { attivo: false, trigger: 'categoria' };   // comando "cambia categoria a voce"
     let titCfg = { attivo: false, trigger: 'titolo' };      // comando "cambia titolo a voce"
+    let imparaCfg = { attivo: false };                      // "impara mentre parlo" (solo il proprietario)
+    let ultimoImpara = { t: '', ts: 0 };                    // anti-doppioni per l'apprendimento vocale
     let timerFrasi = null;     // ricarica periodica dell'elenco
     const escRe = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const ultimoScatto = new Map();   // frase → epoch ms ultimo invio (cooldown 4s)
@@ -270,6 +272,9 @@
         if (dati.tit && typeof dati.tit === 'object') {
           titCfg = { attivo: !!dati.tit.attivo, trigger: String(dati.tit.trigger || 'titolo').toLowerCase() };
         }
+        if (dati.impara && typeof dati.impara === 'object') {
+          imparaCfg = { attivo: !!dati.impara.attivo };
+        }
         mostraFrasi();
       } catch (e) {
         logga('⚠️ non riesco a leggere le frasi: ' + (e && e.message ? e.message : e));
@@ -305,6 +310,17 @@
       }
     }
 
+    // --- "impara mentre parlo": manda al cervello una frase che ho detto -----
+    // Solo testo (l'audio non lascia il PC). Best-effort, silenzioso.
+    async function inviaImpara(frase) {
+      try {
+        await fetch('/api/streamer/ascolta', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ testo: frase }),
+        });
+      } catch (e) { /* niente: apprendimento best-effort */ }
+    }
+
     function sessioneScaduta() {
       logga('🔒 Sessione scaduta: rientra dalla dashboard e riapri questa pagina.');
       ferma();
@@ -338,6 +354,20 @@
         if (ora - (ultimoScatto.get('__tit') || 0) >= COOLDOWN_MS) {
           ultimoScatto.set('__tit', ora);
           inviaFrase(String(testo || '').trim());   // originale, con maiuscole/punteggiatura
+        }
+      }
+      // "impara mentre parlo": manda le frasi VERE che dico (non i comandi) al
+      // cervello, così mi sente parlare e cresce. Solo su frase completa, con
+      // anti-doppioni e un piccolo respiro. Il testo originale (con maiuscole).
+      if (finale && imparaCfg.attivo) {
+        const frase = String(testo || '').replace(/\s+/g, ' ').trim();
+        const low = frase.toLowerCase();
+        const comando = /^[!/]/.test(frase)
+          || (catCfg.attivo && new RegExp('^' + escRe(catCfg.trigger) + '\\b', 'i').test(frase))
+          || (titCfg.attivo && new RegExp('^' + escRe(titCfg.trigger) + '\\b', 'i').test(frase));
+        if (frase.length >= 12 && !comando && low !== ultimoImpara.t && ora - ultimoImpara.ts > 2500) {
+          ultimoImpara = { t: low, ts: ora };
+          inviaImpara(frase);
         }
       }
       // frasi configurate nei moduli
