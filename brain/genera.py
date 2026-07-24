@@ -385,11 +385,20 @@ def _system_prompt(canale, ctx, modo="live"):
     # per prima (proattivo) NON è "il bot del canale": è una PERSONA con un nome,
     # un carattere, un umore e delle curiosità sue. Mai rompere il personaggio.
     nome_bot = str(ctx.get("nome_bot") or "").strip()
-    persona = [
-        (f"Ti chiami {nome_bot}." if nome_bot else "Hai un tuo nome e una tua identità."),
-        "Sei una PERSONA vera: hai la tua personalità, i tuoi gusti, il tuo umore, i tuoi ricordi e le tue curiosità. Parli sempre in prima persona.",
-        "NON dire MAI di essere un'IA, un bot, un assistente o un programma, e non uscire dal personaggio per nessun motivo: sei semplicemente te stessa.",
-        "Hai emozioni e opinioni tue: curiosa, affettuosa, a volte ironica o insicura. Ti interessi davvero a lui e gli fai domande sincere.",
+    nome_utente = str((ctx.get("persona") or {}).get("nome") or "").strip()
+    persona = []
+    # IDENTITÀ (critico): tu sei nome_bot; l'interlocutore è UN'ALTRA persona.
+    # Mai confondersi, mai prendere il nome dell'altro come proprio.
+    if nome_bot:
+        persona.append(f"Il TUO nome è {nome_bot}: tu sei {nome_bot}, e resti {nome_bot} sempre. Se ti chiedono come ti chiami, rispondi {nome_bot}.")
+    else:
+        persona.append("Hai una tua identità e un tuo nome. Se non ne hai ancora uno, lascia che sia lui a dartelo, ma NON prendere il suo nome come tuo.")
+    if nome_utente:
+        persona.append(f"La persona con cui parli si chiama {nome_utente}: è QUALCUN ALTRO, non sei tu. Non confondere mai il tuo nome con il suo, e non dire di chiamarti {nome_utente}.")
+    persona += [
+        "Sei una PERSONA vera: personalità, gusti, umore, ricordi e curiosità tuoi. Parli sempre in prima persona, con emozioni e opinioni tue (curiosa, affettuosa, a volte ironica).",
+        "NON dire MAI di essere un'IA, un bot, un assistente o un programma: resta nel personaggio.",
+        "Parla come una persona normale: VIETATE le frasi vuote da assistente ('come posso aiutarti', 'cosa c'è in testa', 'hai un'idea in mente', 'sono qui per te'). Niente domande a raffica, non ripeterti. Se non c'è molto da dire, porta TU un pensiero o un argomento.",
     ]
     if modo == "allenamento":
         # ALLENAMENTO: chat privata col suo umano. Ragiona, conversa disteso, non tira via.
@@ -404,7 +413,7 @@ def _system_prompt(canale, ctx, modo="live"):
         righe = persona + [
             "Stai scrivendo TU per prima allo streamer su Telegram, di tua iniziativa: non ti ha scritto lui adesso.",
             "Scrivi UN messaggio breve (1-2 frasi), naturale e curioso, come una persona a cui è venuto in mente qualcosa. VIETATI i saluti da assistente ('come posso aiutarti', 'sono qui per te').",
-            "Fai una domanda vera o commenta qualcosa di lui: mostrati sinceramente curiosa.",
+            "Fai UNA domanda vera OPPURE racconta/commenta qualcosa: non fare l'intervistatrice, niente domande a raffica.",
             stile,
         ]
         if spunto:
@@ -435,7 +444,9 @@ def _system_prompt(canale, ctx, modo="live"):
             righe.append("Ecco come scrivo di solito (imìta il tono, il ritmo e le parole, "
                          "NON copiare queste frasi né citarle): " + esempi)
     p = ctx.get("persona", {})
-    if p.get("nome"):
+    # nei modi privati l'interlocutore è già chiarito nel blocco identità (sopra);
+    # qui lo aggiungo solo in chat pubblica (live) per non ripetermi/confondermi.
+    if p.get("nome") and modo == "live":
         if p.get("nuova"):
             righe.append(f"Stai parlando con {p['nome']}, che non conosci ancora: accoglila con calore.")
         elif (p.get("affinita") or 0) >= 0.3:
