@@ -967,7 +967,45 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const login = currentUser(req).login;
     const r = await brainpy.reteStato(login).catch(() => null) || { nodi: 0, solidi: 0, curiosita: 0, fiducia: 0, lacune: 0, non_so: [] };
     r.pensiero = manager.brain?.pensiero?.(login)?.testo || null;   // "a cosa sto pensando" (dal diario)
+    // corpus = la "mente" che si è costruita da sé (conoscenza distillata + studiata dal web)
+    r.corpus = knowledge.list(login).filter((k) => k.fonte === 'distillato' || k.fonte === 'web').length;
     res.json(r);
+  }));
+
+  // FORGIA: le dice di lavorare ORA sulla sua mente (studia le lacune dal web +
+  // distilla altro materiale nella rete). Torna subito; il lavoro va in background.
+  app.post('/api/streamer/forgia', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    manager.brain?.forgia?.(login).catch(() => {});
+    res.json({ ok: true });
+  }));
+
+  // CORPUS: scarica il DATASET della sua mente (JSONL istruzione→risposta), il
+  // materiale con cui — su una macchina capace — si potrebbe forgiare un vero
+  // modello fine-tunato tutto suo. Unisce la rete (motore veloce) e la conoscenza
+  // distillata/studiata dal web.
+  app.get('/api/streamer/corpus', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const coppie = await brainpy.reteCorpus(login).catch(() => []);
+    const daRete = coppie.map((c) => ({ q: c.q, a: c.a }));
+    const daConoscenza = knowledge.list(login)
+      .filter((k) => k.fonte === 'distillato' || k.fonte === 'web' || k.fonte === 'manuale')
+      .map((k) => ({ q: k.domanda, a: k.risposta }));
+    // dedup su domanda normalizzata
+    const visti = new Set();
+    const righe = [];
+    for (const p of [...daRete, ...daConoscenza]) {
+      const q = String(p.q || '').trim();
+      const a = String(p.a || '').trim();
+      if (q.length < 2 || a.length < 1) continue;
+      const key = q.toLowerCase();
+      if (visti.has(key)) continue;
+      visti.add(key);
+      righe.push(JSON.stringify({ instruction: q, output: a }));
+    }
+    res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="mente-${login}.jsonl"`);
+    res.send(righe.join('\n') + (righe.length ? '\n' : ''));
   }));
 
   // LINEE GUIDA (le regole che dai a "lia"): le rispetta sempre, in ogni modo

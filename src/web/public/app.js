@@ -236,7 +236,7 @@ function _demoGet(via) {
       },
     },
     '/api/streamer/rete': {
-      nodi: 128, solidi: 74, curiosita: 0.34, fiducia: 0.61, lacune: 12,
+      nodi: 128, solidi: 74, corpus: 52, curiosita: 0.34, fiducia: 0.61, lacune: 12,
       non_so: ['come si chiama il tuo gatto?', 'quando esce il prossimo video?'],
       pensiero: 'Mi sono svegliata. So rispondere a 74 cose (fiducia 61%). Oggi voglio capire meglio: «come si chiama il tuo gatto?».',
     },
@@ -3612,13 +3612,22 @@ async function aggiornaRetePanoramica(box, primo) {
     <div style="display:flex;gap:22px;flex-wrap:wrap;margin-top:2px">
       <div><div style="${num}">${d.nodi || 0}</div><small>nodi appresi</small></div>
       <div><div style="${num}">${d.solidi || 0}</div><small>sa rispondere</small></div>
+      <div><div style="${num}">${d.corpus || 0}</div><small>nella sua mente</small></div>
       <div><div style="${num}">${pct(d.fiducia)}</div><small>fiducia</small></div>
       <div><div style="${num}">${pct(d.curiosita)}</div><small>curiosità</small></div>
     </div>
     ${d.pensiero ? `<p class="spazio-sopra">💭 <em>${esc(d.pensiero)}</em></p>` : ''}
     ${nonSo.length
       ? `<p class="suggerimento spazio-sopra">Ultime cose che <strong>non sapeva</strong> (le imparerà col tempo): ${nonSo.map((t) => `«${esc(t)}»`).join(' · ')}</p>`
-      : '<p class="suggerimento spazio-sopra">Nessuna lacuna recente: sta rispondendo bene. 🙂</p>'}`;
+      : '<p class="suggerimento spazio-sopra">Nessuna lacuna recente: sta rispondendo bene. 🙂</p>'}
+    <p class="spazio-sopra"><button class="btn secondario mini" id="btn-forgia">📚 Studia ora</button>
+      &nbsp;<a class="suggerimento" href="/api/streamer/corpus" download>📦 Scarica il dataset della sua mente</a></p>
+    <p class="suggerimento">«Studia ora»: cerca da sé le sue lacune online, ci ragiona su e le distilla nel suo motore.
+    Il «dataset» è il materiale con cui, su una macchina capace, si potrebbe forgiare un vero modello tutto suo.</p>`;
+  document.getElementById('btn-forgia')?.addEventListener('click', () => conErrore(async () => {
+    await api('/api/streamer/forgia', { method: 'POST', body: {} });
+    toast('Ci sto lavorando 📚 — studio le mie lacune e distillo. Torna tra poco.');
+  }));
 }
 
 // carica e disegna la gestione del modello IA (solo operatore)
