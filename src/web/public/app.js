@@ -1367,11 +1367,38 @@ function pannelloMusica() {
   return pannello('musica', `
     <div class="carta">
       <h2>Richieste musicali 🎵</h2>
-      <p>Collega il tuo Spotify: gli spettatori mettono canzoni in coda con
+      <p>Collega il <strong>tuo</strong> Spotify: gli spettatori mettono canzoni in coda con
       <code>!sr &lt;canzone&gt;</code> e vedono cosa suona con <code>!song</code>.
       Serve <strong>Spotify Premium</strong> e un dispositivo attivo (l'app aperta e in riproduzione).</p>
       <div id="spotify-box" class="spazio-sopra"><p>Carico…</p></div>
     </div>`);
+}
+
+// Modulo "credenziali": ogni streamer crea la SUA app Spotify (gratis) e incolla
+// qui Client ID/Secret. Così ogni app serve un solo utente e resta in
+// Development mode → nessuna approvazione da chiedere a Spotify.
+function formCredenzialiSpotify(redirect) {
+  return `
+    <details class="spotify-guida">
+      <summary>Come ottenere le credenziali Spotify (2 min)</summary>
+      <ol>
+        <li>Vai su <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener">developer.spotify.com/dashboard</a> e accedi.</li>
+        <li>Clicca <strong>Create app</strong>: dai un nome qualsiasi.</li>
+        <li>In <strong>Redirect URIs</strong> incolla esattamente:<br><code class="spotify-redirect">${esc(redirect || '')}</code></li>
+        <li>Salva, poi apri le <strong>Settings</strong> dell'app: copia <strong>Client ID</strong> e <strong>Client Secret</strong> qui sotto.</li>
+      </ol>
+    </details>
+    <div class="griglia-campi spazio-sopra">
+      <div>
+        <label class="campo">Client ID</label>
+        <input type="text" id="spotify-cid" placeholder="es. 4a1b…" autocomplete="off">
+      </div>
+      <div>
+        <label class="campo">Client Secret</label>
+        <input type="password" id="spotify-csec" placeholder="incolla il secret" autocomplete="off">
+      </div>
+    </div>
+    <button class="btn spazio-sopra" id="spotify-salva-cred">Salva credenziali</button>`;
 }
 
 async function caricaSpotify() {
@@ -1380,30 +1407,56 @@ async function caricaSpotify() {
   const q = new URLSearchParams(location.search);
   if (q.get('spotify') === 'ok') toast('Spotify collegato! 🎵');
   else if (q.get('spotify') === 'errore') toast('Collegamento Spotify non riuscito.', 'errore');
+  const proprietario = stato?.ruolo !== 'moderatore';
+  if (!proprietario) { box.innerHTML = '<p>Solo il proprietario del canale può collegare Spotify.</p>'; return; }
   let d;
   try { d = await api('/api/spotify/stato'); } catch { box.innerHTML = '<p>Impossibile caricare lo stato.</p>'; return; }
-  if (!d.attivo) { box.innerHTML = '<p>Il connettore Spotify non è ancora configurato dall\'operatore.</p>'; return; }
-  const proprietario = stato?.ruolo !== 'moderatore';
+
+  // 1) già collegato → badge + scollega + possibilità di cambiare app
   if (d.collegato) {
     box.innerHTML = `<div class="riga-interruttore">
-      <span class="badge verde">● Spotify collegato</span>
-      ${proprietario ? '<button class="btn secondario" id="spotify-scollega">Scollega</button>' : ''}
-    </div>`;
-    const b = document.getElementById('spotify-scollega');
-    if (b) b.addEventListener('click', () => conErrore(async () => {
+        <span class="badge verde">● Spotify collegato</span>
+        <button class="btn secondario" id="spotify-scollega">Scollega</button>
+      </div>
+      <p class="suggerimento spazio-sopra">${d.proprio ? 'Stai usando la tua app Spotify.' : 'Stai usando l\'app condivisa dell\'operatore.'}</p>`;
+    document.getElementById('spotify-scollega').addEventListener('click', () => conErrore(async () => {
       await api('/api/spotify/disconnect', { method: 'POST', body: {} });
       toast('Spotify scollegato.'); caricaSpotify();
     }));
-  } else {
-    box.innerHTML = proprietario
-      ? '<button class="btn" id="spotify-collega">Connetti Spotify</button>'
-      : '<p>Spotify non è collegato. Solo il proprietario del canale può collegarlo.</p>';
-    const b = document.getElementById('spotify-collega');
-    if (b) b.addEventListener('click', () => conErrore(async () => {
+    return;
+  }
+
+  // 2) credenziali presenti (proprie o globali) ma non ancora collegato → Connetti
+  //    (+ possibilità di reimpostare le proprie credenziali)
+  if (d.attivo) {
+    box.innerHTML = `
+      <button class="btn" id="spotify-collega">Connetti Spotify</button>
+      <p class="suggerimento spazio-sopra">${d.proprio ? 'Userai la tua app Spotify.' : 'Userai l\'app condivisa; puoi comunque impostare la tua qui sotto.'}</p>
+      <details class="spazio-sopra"><summary>Usa la mia app Spotify</summary>${formCredenzialiSpotify(d.redirect)}</details>`;
+    document.getElementById('spotify-collega').addEventListener('click', () => conErrore(async () => {
       const r = await api('/api/spotify/connect');
       if (r?.url) location.href = r.url;
     }));
+    collegaSalvaCred();
+    return;
   }
+
+  // 3) nessuna app: mostra il form credenziali
+  box.innerHTML = formCredenzialiSpotify(d.redirect);
+  collegaSalvaCred();
+}
+
+function collegaSalvaCred() {
+  const b = document.getElementById('spotify-salva-cred');
+  if (!b) return;
+  b.addEventListener('click', () => conErrore(async () => {
+    const clientId = (document.getElementById('spotify-cid')?.value || '').trim();
+    const clientSecret = (document.getElementById('spotify-csec')?.value || '').trim();
+    if (!clientId || !clientSecret) { toast('Inserisci Client ID e Client Secret.', 'errore'); return; }
+    await api('/api/spotify/config', { method: 'POST', body: { clientId, clientSecret } });
+    toast('Credenziali salvate! Ora connetti Spotify.');
+    caricaSpotify();
+  }));
 }
 
 // --- scheda Effetti & Suoni ---------------------------------------------
