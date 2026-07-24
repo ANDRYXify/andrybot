@@ -79,6 +79,12 @@ export const ADDON = [
     sommario: 'Fino a 10 moderatori per gestire il canale in team con i tuoi mod.',
     funzioni: { moderatori: 10 },
   },
+  {
+    id: 'musica', nome: 'Richieste Musicali', prezzo: 2.99, prezzoTesto: '€2,99/mese',
+    priceEnv: 'addon_musica', icona: '🎵',
+    sommario: 'Gli spettatori mettono canzoni in coda su Spotify con !sr.',
+    funzioni: { musica: true },
+  },
 ];
 
 // Piano "di diritto" per gli streamer abilitati dal sito (accesso pieno, non a
@@ -86,7 +92,7 @@ export const ADDON = [
 export const TIER_COMMUNITY = {
   id: 'community', nome: 'Community', prezzo: 0, prezzoTesto: 'Membro community', priceEnv: null, icona: '🎁',
   sommario: 'Accesso completo riservato ai membri abilitati di andryxify.it.',
-  funzioni: { moduli: Infinity, giochi: true, notifiche: true, clipAuto: true, voce: true, moderatori: 20, effetti: true, overlay: true, telegram: true },
+  funzioni: { moduli: Infinity, giochi: true, notifiche: true, clipAuto: true, voce: true, moderatori: 20, effetti: true, overlay: true, telegram: true, musica: true },
 };
 
 // Tutti gli id di add-on esistenti (comodo per promo/trial "esperienza completa").

@@ -16,6 +16,7 @@ import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb, friends } from '../db.js';
 import { points, vips, tgConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts } from '../db.js';
 import * as abbonamenti from '../features/abbonamenti.js';
+import * as spotify from '../features/spotify.js';
 import * as webauthn from './webauthn.js';
 import { comprimi } from '../features/compress.js';
 import { seedStreamer } from '../features/seed.js';
@@ -203,7 +204,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // SEO: i motori di ricerca devono poter leggere robots e sitemap (nessun dato sensibile)
     '/robots.txt', '/sitemap.xml',
     // abbonamenti self-service: login con Twitch + webhook Stripe (firma verificata)
-    '/accedi', '/stripe/webhook']);
+    '/accedi', '/stripe/webhook',
+    // ritorno OAuth di Spotify: si protegge da sé con lo `state` monouso
+    '/spotify/callback']);
   // "Vetrina" pubblica: il guscio del sito (pagina + asset) e la demo interattiva
   // sono visibili anche senza pass, per far conoscere il bot. NON espongono dati
   // reali: /api/me senza sessione risponde solo "nessun utente" e tutte le API
@@ -771,6 +774,44 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // ricorda la scelta: dopo il login self-service si va DRITTI al checkout (Base + add-on)
     req.session.selfFlow = { state, compra: true, pacchetti };
     res.redirect(auth.authUrl([], state));
+  });
+
+  // ------------------------------------------------------------ SPOTIFY (richieste musicali)
+  // Connettore OAuth: lo streamer collega il PROPRIO account Spotify. Lo `state`
+  // monouso (login + scadenza) lega il ritorno OAuth al canale giusto, senza
+  // dipendere dal cookie di sessione (il redirect arriva da accounts.spotify.com).
+  const spotifyStati = new Map();   // state → { login, ts }
+  const puliziaStati = () => { const ora = Date.now(); for (const [k, v] of spotifyStati) if (ora - v.ts > 600000) spotifyStati.delete(k); };
+
+  // stato del connettore per il canale gestito (per la UI)
+  app.get('/api/spotify/stato', requireLogin, (req, res) => {
+    const login = currentUser(req).login;
+    res.json({ attivo: spotify.attivo(), collegato: spotify.collegato(login) });
+  });
+
+  // avvia il collegamento: solo il proprietario, solo se il connettore è configurato
+  app.get('/api/spotify/connect', requireOwner, (req, res) => {
+    if (!spotify.attivo()) return res.status(503).json({ errore: 'Connettore Spotify non configurato.' });
+    puliziaStati();
+    const state = crypto.randomUUID();
+    spotifyStati.set(state, { login: currentUser(req).login, ts: Date.now() });
+    res.json({ url: spotify.urlAutorizzazione(state) });
+  });
+
+  // ritorno OAuth di Spotify: scambia il code e salva i token per il canale.
+  app.get('/spotify/callback', wrap(async (req, res) => {
+    puliziaStati();
+    const st = spotifyStati.get(String(req.query.state || ''));
+    spotifyStati.delete(String(req.query.state || ''));
+    if (!st || !req.query.code) return res.redirect('/?spotify=errore');
+    const ok = await spotify.collega(st.login, String(req.query.code)).catch(() => false);
+    return res.redirect(ok ? '/?spotify=ok' : '/?spotify=errore');
+  }));
+
+  // scollega Spotify dal canale gestito
+  app.post('/api/spotify/disconnect', requireOwner, (req, res) => {
+    spotify.scollega(currentUser(req).login);
+    res.json({ ok: true });
   });
 
   // ------------------------------------------------------------ API streamer

@@ -283,6 +283,13 @@ CREATE TABLE IF NOT EXISTS subscriptions (   -- abbonamenti self-service (Stripe
   current_period_end INTEGER NOT NULL DEFAULT 0,
   updated_at INTEGER NOT NULL DEFAULT 0
 );
+CREATE TABLE IF NOT EXISTS spotify_tokens ( -- connettore Spotify per le richieste musicali (per canale)
+  login TEXT PRIMARY KEY,                     -- login twitch del canale
+  access TEXT NOT NULL DEFAULT '',            -- access token (breve durata)
+  refresh TEXT NOT NULL DEFAULT '',           -- refresh token (lunga durata)
+  scadenza INTEGER NOT NULL DEFAULT 0,        -- ms epoch di scadenza dell'access token
+  updated_at INTEGER NOT NULL DEFAULT 0
+);
 CREATE TABLE IF NOT EXISTS linee_guida (     -- regole/limiti che lo streamer dà a "lia": lei le rispetta SEMPRE
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   channel TEXT NOT NULL,
@@ -584,6 +591,27 @@ export const subscriptions = {
     return db.prepare("SELECT * FROM subscriptions WHERE status='trialing' AND current_period_end>0 AND current_period_end<?")
       .all(now());
   },
+};
+
+// ---------------------------------------------------------------- Spotify (richieste musicali)
+// Token OAuth di Spotify per canale (connettore "richieste musicali"). Solo per
+// aggiungere brani alla coda del broadcaster: nessun dato personale oltre ai token.
+export const spotifyTokens = {
+  get(login) {
+    return db.prepare('SELECT * FROM spotify_tokens WHERE login=?').get(String(login).toLowerCase()) || null;
+  },
+  set(login, { access = '', refresh = '', scadenza = 0 } = {}) {
+    const l = String(login).toLowerCase();
+    db.prepare(`INSERT INTO spotify_tokens (login, access, refresh, scadenza, updated_at)
+      VALUES (?,?,?,?,?)
+      ON CONFLICT(login) DO UPDATE SET
+        access=excluded.access,
+        refresh=CASE WHEN excluded.refresh!='' THEN excluded.refresh ELSE spotify_tokens.refresh END,
+        scadenza=excluded.scadenza, updated_at=excluded.updated_at`)
+      .run(l, access, refresh, scadenza, now());
+    return this.get(l);
+  },
+  remove(login) { db.prepare('DELETE FROM spotify_tokens WHERE login=?').run(String(login).toLowerCase()); },
 };
 
 // ---------------------------------------------------------------- IA locale (modello)
