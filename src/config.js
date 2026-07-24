@@ -113,7 +113,8 @@ export const SCOPES = {
     'clips:edit',                 // creare clip
     'channel:read:subscriptions', // eventi sub
     'moderator:read:followers',   // eventi follow
-    'channel:read:redemptions',   // riscatti punti canale
+    'channel:read:redemptions',   // riscatti punti canale (eventi)
+    'channel:manage:redemptions', // creare/gestire i premi a punti canale (alert)
     'channel:manage:vips',        // assegnare/togliere i VIP (comando vocale, premi)
     'channel:manage:broadcast',   // cambiare categoria/titolo del canale (comando vocale)
     'moderator:manage:chat_messages', // eliminare messaggi (antispam)

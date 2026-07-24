@@ -247,6 +247,14 @@ function _demoGet(via) {
       pensiero: 'Mi sono svegliata. So rispondere a 74 cose (fiducia 61%). Oggi voglio capire meglio: «come si chiama il tuo gatto?».',
       ragiona: { fatti: 41, dedotti: 12, contraddizioni: [] },
     },
+    '/api/streamer/premi': {
+      permessoOk: true,
+      effetti: ['airhorn', 'applausi', 'risata'],
+      premi: [
+        { reward_id: 'r1', titolo: 'Airhorn 📣', costo: 500, effetto: 'airhorn', testo: '{user} ha lanciato l\'airhorn!' },
+        { reward_id: 'r2', titolo: 'Applauso 👏', costo: 300, effetto: 'applausi', testo: '' },
+      ],
+    },
     '/api/streamer/guide': {
       guide: [
         { id: 1, testo: 'Non essere mai volgare', dove: 'ovunque', con_chi: 'tutti', ts: '2026-06-01T10:00:00Z' },
@@ -1319,7 +1327,69 @@ function pannelloEffetti() {
     <div class="carta">
       <h2>I tuoi effetti 🎛️</h2>
       <ul class="lista-voci" id="lista-effetti"><li class="vuoto">Caricamento…</li></ul>
+    </div>
+
+    <div class="carta">
+      <h2>Alert a punti canale 🎁</h2>
+      <p>Crea un <strong class="primo-piano">premio a punti canale</strong> di Twitch: quando uno spettatore lo riscatta
+      (spendendo i suoi punti), parte un <strong>effetto</strong> nell'overlay e/o un <strong>messaggio</strong> in chat.
+      Il premio compare da solo nella tua pagina Twitch.</p>
+      <div id="premi-box"><p class="vuoto">Caricamento…</p></div>
     </div>`);
+}
+
+// carica e disegna gli alert a punti canale (crea premio Twitch + mappa effetto)
+async function caricaPremi() {
+  const box = document.getElementById('premi-box');
+  if (!box) return;
+  let d;
+  try { d = await api('/api/streamer/premi'); } catch (e) { box.innerHTML = `<p class="vuoto">Errore: ${esc(e.message)}</p>`; return; }
+  if (!d.permessoOk) {
+    box.innerHTML = `<p class="vuoto">Per creare premi a punti canale serve un permesso in più.
+      <a class="btn secondario mini" href="/auth/permessi">Concedi il permesso</a></p>`;
+    return;
+  }
+  const effOpts = ['<option value="">— nessun effetto —</option>']
+    .concat((d.effetti || []).map((c) => `<option value="${esc(c)}">!${esc(c)}</option>`)).join('');
+  const premi = d.premi || [];
+  const lista = premi.length
+    ? premi.map((p) => `<li><span><strong>${esc(p.titolo)}</strong> <span class="suggerimento">${p.costo} punti${p.effetto ? ` · !${esc(p.effetto)}` : ''}${p.testo ? ' · 💬' : ''}</span></span> <a href="#" class="rimuovi-premio" data-id="${esc(p.reward_id)}" title="Elimina">✕</a></li>`).join('')
+    : '<li class="vuoto">Nessun premio ancora.</li>';
+  box.innerHTML = `
+    <label class="campo" for="premio-titolo">Nome del premio</label>
+    <input type="text" id="premio-titolo" class="campo-largo" placeholder="es. Airhorn 📣" maxlength="45">
+    <div class="griglia-campi spazio-sopra">
+      <div>
+        <label class="campo" for="premio-costo">Costo (punti canale)</label>
+        <input type="number" id="premio-costo" min="1" max="1000000" value="500">
+      </div>
+      <div>
+        <label class="campo" for="premio-effetto">Effetto da lanciare</label>
+        <select id="premio-effetto">${effOpts}</select>
+      </div>
+    </div>
+    <label class="campo spazio-sopra" for="premio-testo">Messaggio in chat <span class="suggerimento">(facoltativo, {user} = chi riscatta)</span></label>
+    <input type="text" id="premio-testo" class="campo-largo" placeholder="es. {user} ha lanciato l'airhorn! 📣" maxlength="300">
+    <p class="spazio-sopra"><button class="btn" id="btn-premio-crea">Crea il premio</button></p>
+    <h3>I tuoi premi</h3>
+    <ul class="lista-voci" id="lista-premi">${lista}</ul>`;
+  document.getElementById('btn-premio-crea')?.addEventListener('click', () => conErrore(async () => {
+    const body = {
+      titolo: (document.getElementById('premio-titolo').value || '').trim(),
+      costo: document.getElementById('premio-costo').value,
+      effetto: document.getElementById('premio-effetto').value,
+      testo: (document.getElementById('premio-testo').value || '').trim(),
+    };
+    await api('/api/streamer/premi', { method: 'POST', body });
+    toast('Premio creato 🎁 — lo trovi tra i punti canale su Twitch.');
+    caricaPremi();
+  }));
+  box.querySelectorAll('.rimuovi-premio').forEach((a) => a.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
+    if (!confirm('Eliminare questo premio da Twitch?')) return;
+    await api('/api/streamer/premi/' + encodeURIComponent(a.dataset.id), { method: 'DELETE' });
+    toast('Premio eliminato.');
+    caricaPremi();
+  }); }));
 }
 
 // --- scheda Moduli ------------------------------------------------------
@@ -2566,7 +2636,7 @@ function caricaDatiScheda(id) {
   if (id === 'personalita') caricaGuide();
   if (id === 'conoscenza') caricaConoscenza();
   if (id === 'clip') caricaClip();
-  if (id === 'effetti') caricaEffetti();
+  if (id === 'effetti') { caricaEffetti(); caricaPremi(); }
   if (id === 'moduli') caricaModuli();
   if (id === 'memoria') caricaStatistiche();
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); }
