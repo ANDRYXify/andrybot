@@ -89,6 +89,7 @@ function impostazioni() {
     antispam: (s.antispam && typeof s.antispam === 'object') ? s.antispam : {},
     tiktok: (s.tiktok && typeof s.tiktok === 'object') ? s.tiktok : { username: '', attivo: false, annunciaChat: false, messaggio: '' },
     youtube: (s.youtube && typeof s.youtube === 'object') ? s.youtube : { canale: '', attivo: false, annunciaChat: false, messaggio: '' },
+    instagram: (s.instagram && typeof s.instagram === 'object') ? s.instagram : { userId: '', attivo: false, annunciaChat: false, messaggio: '' },
     giochiSito: (s.giochiSito && typeof s.giochiSito === 'object') ? s.giochiSito : { attivo: false, collegato: false },
     frasi: Array.isArray(s.frasi) ? s.frasi : [],
     clipAuto: s.clipAuto !== false,
@@ -188,7 +189,8 @@ function statoDemo() {
         paroleVietate: ['spoiler', 'link-truffa'],
         frasi: ['Benvenuto nel canale! 💜', 'Ricordati di seguire per non perderti le live!'],
         tiktok: { username: 'andryxify', attivo: true, annunciaChat: true, messaggio: '' },
-        youtube: { canale: '@andryxify', attivo: true, annunciaChat: false, messaggio: '' },
+        youtube: { canale: '@andryxify', apiKeySet: true, attivo: true, annunciaChat: false, messaggio: '' },
+        instagram: { userId: '17841400000000000', tokenSet: true, attivo: true, annunciaChat: false, messaggio: '' },
         giochiSito: { attivo: true, collegato: true },
         antispam: { maiuscole: true, link: true, flood: true },
       },
@@ -213,6 +215,7 @@ function apiDemo(percorso, opzioni = {}) {
     return Promise.resolve({ ok: true, ruolo: ctx.role, canale: ctx.canale });
   }
   if (via === '/api/admin/llm/prova') return Promise.resolve({ ok: true, modello: 'mistral-nemo', campione: 'ok' });
+  if (via === '/api/streamer/instagram/prova') return Promise.resolve({ ok: true });
   if (via.endsWith('/prova')) { toast('In demo non invio davvero in chat 😊'); return Promise.resolve({ ok: true }); }
   return Promise.resolve({ ok: true, demo: true });
 }
@@ -1659,6 +1662,7 @@ function pannelloNotifiche() {
   const tg = stato.telegram || { configurato: false, gruppoOk: false, attivo: false, messaggio: '', botUsername: '', gruppo: '', pinLive: true };
   const tkc = impostazioni().tiktok || {};
   const ytc = impostazioni().youtube || {};
+  const igc = impostazioni().instagram || {};
   const msgDefault = '🔴 {nome} è in diretta!\n\n{titolo}\n🎮 {gioco}\n\n👉 {link}';
   return pannello('notifiche', `
     <div class="carta">
@@ -1820,6 +1824,12 @@ function pannelloNotifiche() {
       <input type="text" id="inp-yt-canale" class="campo-largo" placeholder="@iltuohandle · oppure l'URL o l'ID (UC…) del canale" value="${esc(ytc.canale || '')}">
       <p class="suggerimento">Va bene l'<code>@handle</code>, l'URL del canale, o l'ID <code>UC…</code>. Lo risolvo io.</p>
 
+      <label class="campo spazio-sopra" for="inp-yt-apikey">La tua chiave API YouTube <span class="suggerimento">(facoltativa)</span></label>
+      <input type="password" id="inp-yt-apikey" class="campo-largo" placeholder="${ytc.apiKeySet ? '•••••••• (impostata)' : 'YouTube Data API v3 — lascia vuoto per usare l\'RSS'}" autocomplete="off">
+      <p class="suggerimento">Senza chiave uso il <strong>feed RSS pubblico</strong> (va benissimo). Con la tua chiave (<em>YouTube Data API v3</em>,
+      da <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">Google Cloud</a>) la rilevazione è ancora più affidabile.
+      ${ytc.apiKeySet ? '<a href="#" id="btn-yt-apikey-rimuovi">Rimuovi la chiave</a>' : ''}</p>
+
       <label class="campo spazio-sopra" for="txt-yt-messaggio">Messaggio dell'avviso</label>
       <textarea id="txt-yt-messaggio" rows="4" placeholder="${esc('📺 {nome} ha caricato un nuovo video su YouTube!\n\n{titolo}\n👉 {link}')}">${esc(ytc.messaggio || '')}</textarea>
       <p class="suggerimento">Segnaposto: <code>{nome}</code> <code>{titolo}</code> <code>{link}</code>. Lascia vuoto per usare quello standard.</p>
@@ -1837,6 +1847,39 @@ function pannelloNotifiche() {
         <button class="btn" id="btn-yt-salva">Salva</button>
       </p>
       <p class="suggerimento">Il controllo parte ogni ~10 minuti; il primo giro serve solo a memorizzare l'ultimo video (non avvisa).</p>
+    </div>
+
+    <div class="carta">
+      <h2>Nuovo post su Instagram 📸</h2>
+      <p>Quando pubblichi su <strong class="primo-piano">Instagram</strong>, avviso il gruppo Telegram (e, se vuoi, la chat Twitch).
+      Instagram non ha un feed pubblico, quindi serve la <strong>tua API</strong>: l'<em>Instagram Graph API</em> (account Business/Creator
+      collegato a una Pagina Facebook).</p>
+
+      <label class="campo" for="inp-ig-userid">ID account Instagram</label>
+      <input type="text" id="inp-ig-userid" class="campo-largo" placeholder="es. 17841400000000000" value="${esc(igc.userId || '')}">
+      <label class="campo spazio-sopra" for="inp-ig-token">Token di accesso (Graph API)</label>
+      <input type="password" id="inp-ig-token" class="campo-largo" placeholder="${igc.tokenSet ? '•••••••• (impostato)' : 'token a lunga durata'}" autocomplete="off">
+      <p class="suggerimento">Li ottieni creando un'app su <a href="https://developers.facebook.com/" target="_blank" rel="noopener">Meta for Developers</a>
+      e collegando il tuo account IG Business. ${igc.tokenSet ? '<a href="#" id="btn-ig-token-rimuovi">Rimuovi il token</a>' : ''}</p>
+
+      <label class="campo spazio-sopra" for="txt-ig-messaggio">Messaggio dell'avviso</label>
+      <textarea id="txt-ig-messaggio" rows="4" placeholder="${esc('📸 {nome} ha un nuovo post su Instagram!\n\n{titolo}\n👉 {link}')}">${esc(igc.messaggio || '')}</textarea>
+      <p class="suggerimento">Segnaposto: <code>{nome}</code> <code>{titolo}</code> (didascalia) <code>{link}</code>.</p>
+
+      <div class="riga-check spazio-sopra">
+        <input type="checkbox" id="chk-ig-attivo" ${igc.attivo ? 'checked' : ''}>
+        <label for="chk-ig-attivo">Avvisami quando pubblico un nuovo post</label>
+      </div>
+      <div class="riga-check">
+        <input type="checkbox" id="chk-ig-chat" ${igc.annunciaChat ? 'checked' : ''}>
+        <label for="chk-ig-chat">Annuncia anche nella chat Twitch</label>
+      </div>
+
+      <p class="spazio-sopra">
+        <button class="btn" id="btn-ig-salva">Salva</button>
+        <button class="btn secondario" id="btn-ig-prova">Prova le credenziali</button>
+        <span id="ig-esito" class="suggerimento"></span>
+      </p>
     </div>`);
 }
 
@@ -2332,14 +2375,44 @@ function attivaPiattaforma() {
   }));
 
   document.getElementById('btn-yt-salva')?.addEventListener('click', () => conErrore(async () => {
-    await salvaImpostazioni({
-      youtube: {
-        canale: (document.getElementById('inp-yt-canale').value || '').trim(),
-        attivo: document.getElementById('chk-yt-attivo').checked,
-        annunciaChat: document.getElementById('chk-yt-chat').checked,
-        messaggio: document.getElementById('txt-yt-messaggio')?.value || '',
-      },
-    }, 'YouTube salvato 📺');
+    const yt = {
+      canale: (document.getElementById('inp-yt-canale').value || '').trim(),
+      attivo: document.getElementById('chk-yt-attivo').checked,
+      annunciaChat: document.getElementById('chk-yt-chat').checked,
+      messaggio: document.getElementById('txt-yt-messaggio')?.value || '',
+    };
+    const ak = (document.getElementById('inp-yt-apikey')?.value || '').trim();
+    if (ak) yt.apiKey = ak;   // vuoto = mantieni quella salvata
+    await salvaImpostazioni({ youtube: yt }, 'YouTube salvato 📺');
+  }));
+  document.getElementById('btn-yt-apikey-rimuovi')?.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
+    await salvaImpostazioni({ youtube: { canale: (document.getElementById('inp-yt-canale').value || '').trim(), apiKeyClear: true } }, 'Chiave rimossa.');
+    stato = await api('/api/me'); render();
+  }); });
+
+  document.getElementById('btn-ig-salva')?.addEventListener('click', () => conErrore(async () => {
+    const ig = {
+      userId: (document.getElementById('inp-ig-userid').value || '').trim(),
+      attivo: document.getElementById('chk-ig-attivo').checked,
+      annunciaChat: document.getElementById('chk-ig-chat').checked,
+      messaggio: document.getElementById('txt-ig-messaggio')?.value || '',
+    };
+    const tk = (document.getElementById('inp-ig-token')?.value || '').trim();
+    if (tk) ig.token = tk;
+    await salvaImpostazioni({ instagram: ig }, 'Instagram salvato 📸');
+  }));
+  document.getElementById('btn-ig-token-rimuovi')?.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
+    await salvaImpostazioni({ instagram: { userId: (document.getElementById('inp-ig-userid').value || '').trim(), tokenClear: true } }, 'Token rimosso.');
+    stato = await api('/api/me'); render();
+  }); });
+  document.getElementById('btn-ig-prova')?.addEventListener('click', () => conErrore(async () => {
+    const esito = document.getElementById('ig-esito');
+    if (esito) esito.textContent = 'Provo…';
+    const r = await api('/api/streamer/instagram/prova', { method: 'POST', body: {
+      userId: (document.getElementById('inp-ig-userid').value || '').trim(),
+      token: (document.getElementById('inp-ig-token').value || '').trim(),
+    } });
+    if (esito) esito.innerHTML = r && r.ok ? '🟢 Funziona!' : `🔴 ${esc((r && r.motivo) || 'errore')}`;
   }));
 
   // Comando rapido: inserimento variabili (senza perdere il focus) + crea al volo
