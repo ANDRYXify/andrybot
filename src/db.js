@@ -275,7 +275,8 @@ CREATE TABLE IF NOT EXISTS voce_streamer (   -- trascrizioni della voce PARLATA 
 CREATE INDEX IF NOT EXISTS idx_voce_ch ON voce_streamer(channel, ts);
 CREATE TABLE IF NOT EXISTS subscriptions (   -- abbonamenti self-service (Stripe/Link)
   login TEXT PRIMARY KEY,                     -- login twitch dello streamer abbonato
-  tier TEXT NOT NULL DEFAULT 'free',          -- id del tier corrente (free|base|pro)
+  tier TEXT NOT NULL DEFAULT 'free',          -- piano base: free|base|community (pro=legacy)
+  pacchetti TEXT NOT NULL DEFAULT '',         -- add-on à la carte attivi (CSV di id)
   status TEXT NOT NULL DEFAULT 'none',        -- none|active|trialing|past_due|canceled
   stripe_customer TEXT NOT NULL DEFAULT '',   -- id cliente Stripe (per il portale)
   stripe_sub TEXT NOT NULL DEFAULT '',        -- id abbonamento Stripe
@@ -334,6 +335,8 @@ aggiungiColonna('quotes', 'data', "TEXT NOT NULL DEFAULT ''");     // data della
 // linee guida: ambito (dove valgono + con chi) — regole contestuali di "lia"
 aggiungiColonna('linee_guida', 'dove', "TEXT NOT NULL DEFAULT 'ovunque'");     // ovunque | twitch | tg | tg-privato
 aggiungiColonna('linee_guida', 'con_chi', "TEXT NOT NULL DEFAULT 'tutti'");    // tutti | solo-me | tranne-me
+// abbonamenti modulari: pacchetti add-on à la carte attivi (CSV di id)
+aggiungiColonna('subscriptions', 'pacchetti', "TEXT NOT NULL DEFAULT ''");
 
 const now = () => Date.now();
 
@@ -536,16 +539,21 @@ export const subscriptions = {
   get(login) {
     return db.prepare('SELECT * FROM subscriptions WHERE login=?').get(String(login).toLowerCase()) || null;
   },
-  set(login, { tier, status, customerId = '', subId = '', periodEnd = 0 } = {}) {
+  set(login, { tier, pacchetti, status, customerId = '', subId = '', periodEnd = 0 } = {}) {
     const l = String(login).toLowerCase();
-    db.prepare(`INSERT INTO subscriptions (login, tier, status, stripe_customer, stripe_sub, current_period_end, updated_at)
-      VALUES (?,?,?,?,?,?,?)
+    // pacchetti: se non passato (undefined) NON lo tocchiamo; stringa/array → CSV normalizzato
+    const csv = pacchetti === undefined ? null
+      : (Array.isArray(pacchetti) ? pacchetti : String(pacchetti || '').split(','))
+          .map((s) => String(s || '').trim().toLowerCase()).filter(Boolean).join(',');
+    db.prepare(`INSERT INTO subscriptions (login, tier, pacchetti, status, stripe_customer, stripe_sub, current_period_end, updated_at)
+      VALUES (?,?,?,?,?,?,?,?)
       ON CONFLICT(login) DO UPDATE SET
         tier=excluded.tier, status=excluded.status,
+        pacchetti=CASE WHEN ? THEN excluded.pacchetti ELSE subscriptions.pacchetti END,
         stripe_customer=CASE WHEN excluded.stripe_customer!='' THEN excluded.stripe_customer ELSE subscriptions.stripe_customer END,
         stripe_sub=CASE WHEN excluded.stripe_sub!='' THEN excluded.stripe_sub ELSE subscriptions.stripe_sub END,
         current_period_end=excluded.current_period_end, updated_at=excluded.updated_at`)
-      .run(l, tier || 'free', status || 'none', customerId, subId, periodEnd, now());
+      .run(l, tier || 'free', csv || '', status || 'none', customerId, subId, periodEnd, now(), csv === null ? 0 : 1);
     return this.get(l);
   },
   // abbonamento operativo (accesso attivo)

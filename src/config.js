@@ -84,8 +84,18 @@ export const config = {
     return {
       secretKey,
       webhookSecret,
-      // price-id per tier a pagamento (dal cruscotto Stripe). Vuoto = non acquistabile.
-      prezzi: { base: env('STRIPE_PRICE_BASE'), pro: env('STRIPE_PRICE_PRO') },
+      // price-id (dal cruscotto Stripe). Vuoto = non acquistabile.
+      //  · base        → il canone del piano Base
+      //  · addon_*     → i pacchetti add-on à la carte (componibili sopra la Base)
+      //  · pro         → LEGACY: vecchio tier "tutto incluso" (compat con abbonati storici)
+      prezzi: {
+        base: env('STRIPE_PRICE_BASE'),
+        addon_notifiche: env('STRIPE_PRICE_ADDON_NOTIFICHE'),
+        addon_clip: env('STRIPE_PRICE_ADDON_CLIP'),
+        addon_voce: env('STRIPE_PRICE_ADDON_VOCE'),
+        addon_squadra: env('STRIPE_PRICE_ADDON_SQUADRA'),
+        pro: env('STRIPE_PRICE_PRO'),
+      },
       // gli abbonamenti sono operativi solo con chiave segreta + segreto webhook
       attivo: !!(secretKey && webhookSecret),
     };

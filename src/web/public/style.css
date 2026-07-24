@@ -312,20 +312,55 @@ body.vetrina .contenuto { max-width: 1040px; }
 .vetrina-piani-testa { text-align: center; margin-bottom: 1.2rem; }
 .vetrina-piani-testa h2 { font-size: 1.5rem; font-weight: 800; letter-spacing: -.03em; }
 .vetrina-piani-testa p { color: var(--testo-2); margin-top: .35rem; }
-.piani-griglia { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; align-items: start; }
-.piano { margin-bottom: 0; display: flex; flex-direction: column; position: relative; }
-.piano-top { border-color: var(--acc-bordo); box-shadow: 0 10px 30px rgba(109, 59, 239, .14); }
-.piano-badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--acc); color: #fff; font-size: .7rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: .2rem .6rem; border-radius: 999px; }
+/* ── Piani MODULARI "componi il tuo bot": Base + add-on à la carte ── */
+.piani-componi { display: flex; flex-direction: column; gap: 1.1rem; }
 .piano h3 { font-size: 1.15rem; font-weight: 700; }
-.piano-prezzo { font-size: 1.6rem; font-weight: 800; letter-spacing: -.03em; margin: .3rem 0 .1rem; color: var(--acc); }
-.piano-somm { color: var(--testo-2); font-size: .9rem; min-height: 2.5em; }
-.piano-funzioni { list-style: none; margin: .9rem 0 1.1rem; display: flex; flex-direction: column; gap: .45rem; flex: 1; }
+.piano-somm { color: var(--testo-2); font-size: .9rem; }
+.piano-funzioni { list-style: none; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: .5rem .9rem; }
 .piano-funzioni li { font-size: .9rem; color: var(--testo-2); display: flex; align-items: center; gap: .5rem; }
 .pf-val { flex-shrink: 0; width: 1.4rem; height: 1.4rem; display: grid; place-items: center; border-radius: 50%; font-size: .78rem; font-weight: 700; }
 .pf-val.si { background: var(--verde-soft); color: var(--verde); }
 .pf-val.no { background: var(--surface-2); color: var(--testo-3); }
-.piano .btn { width: 100%; }
-.piano-nota { text-align: center; color: var(--testo-3); font-size: .84rem; padding: .4rem 0; }
+
+/* Base: la carta-fondamenta */
+.piano-base { border-color: var(--acc-bordo); box-shadow: 0 10px 30px rgba(109, 59, 239, .1); }
+.piano-base-testa { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: .9rem; margin-bottom: 1rem; }
+.piano-icona { width: 3rem; height: 3rem; flex-shrink: 0; display: grid; place-items: center; border-radius: var(--r-m); background: var(--acc-soft, rgba(109, 59, 239, .12)); color: var(--acc); }
+.piano-icona svg { width: 1.7rem; height: 1.7rem; }
+.piano-base-testa .piano-somm { margin-top: .15rem; }
+.piano-prezzo { font-size: 1.7rem; font-weight: 800; letter-spacing: -.03em; color: var(--acc); white-space: nowrap; text-align: right; }
+.piano-prezzo span { font-size: .8rem; font-weight: 600; color: var(--testo-3); letter-spacing: 0; }
+
+/* Add-on: pacchetti componibili selezionabili */
+.addon-titolo { font-size: 1.05rem; font-weight: 700; margin-bottom: .7rem; }
+.addon-titolo span { color: var(--testo-3); font-weight: 500; font-size: .9rem; }
+.addon-griglia { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: .8rem; }
+.addon-carta { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: .8rem; text-align: left; width: 100%; padding: .9rem 1rem; border: 1.5px solid var(--border); border-radius: var(--r-m); background: var(--surface); color: inherit; cursor: pointer; transition: border-color .18s ease, background .18s ease, transform .18s ease, box-shadow .18s ease; }
+.addon-carta:hover { border-color: var(--acc-bordo); transform: translateY(-2px); box-shadow: 0 8px 22px rgba(109, 59, 239, .12); }
+.addon-carta:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+/* selezionato: bordi "evidenziati" di viola (anello accent), niente pallini */
+.addon-carta.on { border-color: var(--acc); background: var(--acc-soft, rgba(109, 59, 239, .08)); box-shadow: 0 0 0 1.5px var(--acc), 0 10px 24px rgba(109, 59, 239, .2); }
+.addon-icona { width: 2.5rem; height: 2.5rem; flex-shrink: 0; display: grid; place-items: center; border-radius: var(--r-s, 10px); background: var(--acc-soft, rgba(109, 59, 239, .1)); color: var(--acc); transition: background .18s ease, color .18s ease; }
+.addon-icona svg { width: 1.35rem; height: 1.35rem; }
+.addon-carta.on .addon-icona { background: var(--acc); color: #fff; }
+.addon-testo { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+.addon-nome { font-weight: 700; font-size: .95rem; }
+.addon-somm { color: var(--testo-2); font-size: .82rem; line-height: 1.35; }
+.addon-prezzo { align-self: center; font-weight: 800; color: var(--acc); white-space: nowrap; font-size: .95rem; }
+
+/* Riepilogo: totale live + CTA unica */
+.piani-riepilogo { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; padding: 1rem 1.2rem; border: 1px solid var(--acc-bordo); border-radius: var(--r-m); background: var(--acc-soft, rgba(109, 59, 239, .07)); }
+.riepilogo-conto { display: flex; flex-direction: column; gap: .1rem; }
+.riepilogo-voce { color: var(--testo-2); font-size: .85rem; font-weight: 600; }
+.riepilogo-tot { font-size: 1.9rem; font-weight: 800; letter-spacing: -.03em; color: var(--acc); }
+.riepilogo-tot span { font-size: .85rem; font-weight: 600; color: var(--testo-3); letter-spacing: 0; }
+.piani-riepilogo .btn { flex-shrink: 0; }
+@media (max-width: 560px) {
+  .piano-base-testa { grid-template-columns: auto 1fr; }
+  .piano-base-testa .piano-prezzo { grid-column: 1 / -1; text-align: left; }
+  .piani-riepilogo { justify-content: stretch; }
+  .piani-riepilogo .btn { width: 100%; }
+}
 /* i membri abilitati della community hanno il bot gratis e completo */
 .piani-community { margin-top: 1.1rem; text-align: center; padding: .85rem 1rem; background: var(--verde-soft); border: 1px solid var(--verde-bordo); border-radius: var(--r-m); color: var(--testo-2); font-size: .92rem; line-height: 1.5; }
 .piani-community strong { color: var(--testo); }

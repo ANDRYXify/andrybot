@@ -131,9 +131,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     return u;
   }
 
-  // Tier d'accesso di una persona: l'abbonamento attivo (base/pro), altrimenti
-  // 'community' se abilitata dal sito (accesso pieno di diritto), altrimenti null
-  // (nessun accesso → deve abbonarsi). Con Stripe spento esistono solo community.
+  // Piano base d'accesso di una persona: l'abbonamento attivo (base/pro),
+  // altrimenti 'community' se abilitata dal sito (accesso pieno di diritto),
+  // altrimenti null (nessun accesso → deve abbonarsi). Con Stripe spento
+  // esistono solo community.
   function tierDi(login) {
     const l = String(login || '').toLowerCase();
     if (!l) return null;
@@ -143,16 +144,30 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     return null;
   }
 
-  // Gating funzioni per tier (endpoint a pagamento). Ritorna true se la funzione
-  // è inclusa nel piano del canale gestito; altrimenti risponde 403 e ritorna
+  // Funzioni EFFETTIVE del canale di una persona: unione di piano base + add-on
+  // à la carte attivi (o accesso pieno se community). È la matrice su cui si basa
+  // tutto il gating: chi non ha un piano ricade su 'free'.
+  function funzioniDi(login) {
+    const l = String(login || '').toLowerCase();
+    if (l && subscriptions.attivo(l)) {
+      const s = subscriptions.get(l);
+      return abbonamenti.funzioniDi({ tier: s.tier || 'base', pacchetti: s.pacchetti });
+    }
+    const st = l ? streamers.get(l) : null;
+    if (st && st.status === 'approved') return abbonamenti.funzioniDi({ tier: 'community' });
+    return abbonamenti.funzioniDi({ tier: 'free' });
+  }
+
+  // Gating funzioni (endpoint a pagamento). Ritorna true se la funzione è inclusa
+  // nelle funzioni effettive del canale gestito; altrimenti risponde 403 e ritorna
   // false. I membri community hanno tutto → non vengono mai bloccati.
-  const tierReq = (req) => tierDi(currentUser(req)?.login) || 'free';
+  const funzioniReq = (req) => funzioniDi(currentUser(req)?.login);
   function esigiFunzione(req, res, chiave, etichetta) {
-    if (abbonamenti.funzioneAbilitata(tierReq(req), chiave)) return true;
-    res.status(403).json({ errore: `${etichetta} non è incluso nel tuo piano — passa a un piano superiore per sbloccarlo.`, upgrade: true });
+    if (abbonamenti.abilitata(funzioniReq(req), chiave)) return true;
+    res.status(403).json({ errore: `${etichetta} non è incluso nel tuo piano — aggiungi il pacchetto giusto per sbloccarlo.`, upgrade: true });
     return false;
   }
-  const limiteTier = (req, chiave) => abbonamenti.limiteFunzione(tierReq(req), chiave);
+  const limiteTier = (req, chiave) => abbonamenti.limite(funzioniReq(req), chiave);
 
   // risposta "il sito non esiste": nessun indizio, nessun brand, nessun corpo utile
   const notFound = (res) => res.status(404).type('text/plain').send('Not Found');
@@ -471,9 +486,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       // nessun accesso: identità "in attesa di abbonarsi" — NIENTE session.user,
       // quindi niente dashboard né API dati. Vede solo i piani e può fare checkout.
       req.session.abbonando = { login, display: disp };
-      // veniva da "compra piano X"? → dritti al checkout Stripe, niente giro in più
-      if (sf.tier && config.stripe.attivo) {
-        const url = await abbonamenti.creaCheckout({ login, tierId: String(sf.tier).toLowerCase() }).catch(() => null);
+      // veniva da "attiva il bot" (Base + add-on scelti)? → dritti al checkout Stripe
+      if (sf.compra && config.stripe.attivo) {
+        const url = await abbonamenti.creaCheckout({ login, pacchetti: sf.pacchetti || [] }).catch(() => null);
         if (url) return res.redirect(url);
       }
       return res.redirect('/?abbonati=1');
@@ -630,11 +645,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
             .filter((f) => f.key.startsWith('preaddestramento'))
             .map((f) => [f.key, f.value]))
         : {},
-      // abbonamento: tier corrente del canale gestito + stato Stripe (per la UI)
+      // abbonamento: piano base + add-on attivi del canale gestito + stato Stripe (per la UI)
       tier: tierDi(user.login),
       abbonamento: (() => {
         const s = subscriptions.get(user.login);
-        return s ? { tier: s.tier, status: s.status, fine: s.current_period_end } : null;
+        return s ? { tier: s.tier, pacchetti: abbonamenti.normalizzaPacchetti(s.pacchetti), status: s.status, fine: s.current_period_end } : null;
       })(),
       stripeAttivo: config.stripe.attivo,
     });
@@ -653,22 +668,18 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   }));
 
   // ------------------------------------------------------------ ABBONAMENTI
-  // Accesso self-service a SocialBot via abbonamento Stripe/Link. "Predisposto ma
-  // spento" finché non ci sono le chiavi (config.stripe.attivo): i tier si vedono,
-  // il checkout non parte. Il login self-service con Twitch (/accedi) si attiva
-  // solo con Stripe acceso, così l'ingresso extra non si apre finché il paywall
-  // non è operativo. NOTA per l'accensione: prima di andare live va aggiunto il
-  // gating a livello di API per tier (oggi i membri community hanno accesso pieno).
+  // Accesso self-service a SocialBot via abbonamento Stripe/Link, modello MODULARE
+  // "Base + add-on à la carte". "Predisposto ma spento" finché non ci sono le chiavi
+  // (config.stripe.attivo): i piani si vedono, il checkout non parte. Il login
+  // self-service con Twitch (/accedi) si attiva solo con Stripe acceso, così
+  // l'ingresso extra non si apre finché il paywall non è operativo. Il gating per
+  // funzioni effettive (base ∪ add-on) è già attivo — vedi funzioniDi()/esigiFunzione();
+  // i membri community restano con accesso pieno di diritto.
 
-  // elenco tier + stato del sistema (pubblico: la vetrina mostra i prezzi)
+  // piani (Base + add-on) + stato del sistema (pubblico: la vetrina mostra i prezzi).
+  // pianiPubblici() serializza Infinity come -1 ("illimitato"), che il client legge come ∞.
   app.get('/api/abbonamento/piani', (req, res) => {
-    // Infinity non è serializzabile in JSON (diventa null): lo mandiamo come -1
-    // ("illimitato"), che il client interpreta come ∞.
-    const sanFunzioni = (f) => Object.fromEntries(Object.entries(f).map(([k, v]) => [k, v === Infinity ? -1 : v]));
-    res.json({
-      attivo: config.stripe.attivo,
-      tier: abbonamenti.TIERS.map((t) => ({ id: t.id, nome: t.nome, prezzoTesto: t.prezzoTesto, sommario: t.sommario, funzioni: sanFunzioni(t.funzioni) })),
-    });
+    res.json({ attivo: config.stripe.attivo, ...abbonamenti.pianiPubblici() });
   });
 
   // avvia il checkout per un tier. Identità: la sessione, oppure chi ha fatto il
@@ -677,7 +688,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!config.stripe.attivo) return res.status(503).json({ errore: 'Gli abbonamenti non sono ancora attivi.' });
     const login = identitaDi(currentUser(req)) || String(req.session?.abbonando?.login || '').toLowerCase();
     if (!login) return res.status(401).json({ errore: 'non autenticato' });
-    const url = await abbonamenti.creaCheckout({ login, tierId: String(req.body?.tier || '').toLowerCase() });
+    // canone Base + add-on scelti (à la carte). Retrocompat: 'pro' → base + tutti gli add-on.
+    const pacchetti = String(req.body?.tier || '').toLowerCase() === 'pro'
+      ? abbonamenti.ADDON_IDS
+      : abbonamenti.normalizzaPacchetti(req.body?.pacchetti);
+    const url = await abbonamenti.creaCheckout({ login, pacchetti });
     if (!url) return res.status(400).json({ errore: 'Piano non disponibile.' });
     res.json({ url });
   }));
@@ -704,17 +719,21 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       const login = String(o.metadata?.login || o.client_reference_id || '').toLowerCase();
       if (!login) return;
       const tier = o.metadata?.tier || 'base';
-      subscriptions.set(login, { tier, status: 'active', customerId: o.customer || '', subId: o.subscription || '' });
+      const pacchetti = abbonamenti.normalizzaPacchetti(o.metadata?.pacchetti);
+      subscriptions.set(login, { tier, pacchetti, status: 'active', customerId: o.customer || '', subId: o.subscription || '' });
       streamers.upsertApproved(login, streamers.get(login)?.display || login);   // abbonato → abilitato
       seedStreamer(login);
       sync();
-      log.info(`abbonamento attivo: @${login} (${tier})`);
+      log.info(`abbonamento attivo: @${login} (${tier}${pacchetti.length ? ' +' + pacchetti.join('+') : ''})`);
     } else if (ev.type === 'customer.subscription.updated' || ev.type === 'customer.subscription.deleted') {
       const login = String(o.metadata?.login || '').toLowerCase();
       if (!login) return;
       const attivo = o.status === 'active' || o.status === 'trialing';
       const tier = o.metadata?.tier || subscriptions.get(login)?.tier || 'base';
-      subscriptions.set(login, { tier, status: o.status || 'canceled', subId: o.id || '', periodEnd: (o.current_period_end || 0) * 1000 });
+      // i pacchetti restano quelli scelti al checkout: se i metadata non li portano,
+      // non li tocchiamo (undefined = mantieni quelli già salvati).
+      const pacchetti = o.metadata?.pacchetti !== undefined ? abbonamenti.normalizzaPacchetti(o.metadata.pacchetti) : undefined;
+      subscriptions.set(login, { tier, pacchetti, status: o.status || 'canceled', subId: o.id || '', periodEnd: (o.current_period_end || 0) * 1000 });
       if (!attivo) streamers.setEnabled(login, false);   // disdetta/insoluto → bot spento (non cancella nulla)
       sync();
       log.info(`abbonamento @${login}: ${o.status}`);
@@ -725,9 +744,12 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   app.get('/accedi', (req, res) => {
     if (!config.stripe.attivo) return res.redirect('/');   // paywall spento: niente ingresso extra
     const state = crypto.randomUUID();
-    const tier = String(req.query.tier || '').toLowerCase();
-    // ricorda il piano scelto: dopo il login self-service si va DRITTI al checkout
-    req.session.selfFlow = { state, tier: ['base', 'pro'].includes(tier) ? tier : '' };
+    // add-on scelti dalla vetrina (CSV). Retrocompat: ?tier=pro → base + tutti gli add-on.
+    const pacchetti = String(req.query.tier || '').toLowerCase() === 'pro'
+      ? abbonamenti.ADDON_IDS
+      : abbonamenti.normalizzaPacchetti(req.query.pacchetti);
+    // ricorda la scelta: dopo il login self-service si va DRITTI al checkout (Base + add-on)
+    req.session.selfFlow = { state, compra: true, pacchetti };
     res.redirect(auth.authUrl([], state));
   });
 
@@ -919,16 +941,16 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       };
     }
 
-    // gating per tier: le funzioni non incluse nel piano restano spente (i membri
-    // community hanno tutto attivo, quindi non vengono mai limitati).
-    const tierS = tierDi(user.login) || 'free';
-    const A = abbonamenti.funzioneAbilitata;
-    if (!A(tierS, 'giochi')) { out.giochi = false; if (out.manche) out.manche.attivo = false; }
-    if (!A(tierS, 'clipAuto')) out.clipAuto = false;
-    if (!A(tierS, 'voce')) { out.ascoltoLive = false; if (out.cambioCategoria) out.cambioCategoria.attivo = false; if (out.cambioTitolo) out.cambioTitolo.attivo = false; if (out.imparaVoce) out.imparaVoce.attivo = false; }
-    if (!A(tierS, 'notifiche') && out.tiktok) out.tiktok.attivo = false;
-    if (!A(tierS, 'notifiche') && out.youtube) out.youtube.attivo = false;
-    if (!A(tierS, 'notifiche') && out.instagram) out.instagram.attivo = false;
+    // gating per funzioni effettive: ciò che non è incluso nel piano base + add-on
+    // resta spento (i membri community hanno tutto attivo, quindi mai limitati).
+    const F = funzioniDi(user.login);
+    const A = (k) => abbonamenti.abilitata(F, k);
+    if (!A('giochi')) { out.giochi = false; if (out.manche) out.manche.attivo = false; }
+    if (!A('clipAuto')) out.clipAuto = false;
+    if (!A('voce')) { out.ascoltoLive = false; if (out.cambioCategoria) out.cambioCategoria.attivo = false; if (out.cambioTitolo) out.cambioTitolo.attivo = false; if (out.imparaVoce) out.imparaVoce.attivo = false; }
+    if (!A('notifiche') && out.tiktok) out.tiktok.attivo = false;
+    if (!A('notifiche') && out.youtube) out.youtube.attivo = false;
+    if (!A('notifiche') && out.instagram) out.instagram.attivo = false;
     // se cambi canale/account, riparto pulito (niente avviso del contenuto già presente)
     if (out.youtube && out.youtube.canale !== (s.settings?.youtube?.canale || '')) {
       try { tgConf.setYtUltimo(user.login, ''); } catch { /* niente */ }
