@@ -107,6 +107,11 @@ export class BotManager {
     // per prima, curiosa. Controllo ogni 20 min; poi ritmo umano + orari + casualità.
     this._tgProattivoUltimo = new Map();   // login → ts dell'ultimo messaggio proattivo
     this._tgProattivoTimer = setInterval(() => this._tgProattivo(), 20 * 60_000);
+    // Percorso di crescita: a ogni AVVIO (il server è sempre acceso, ma se si
+    // riavvia lei si "risveglia") si chiede cosa le manca per capire meglio, e ogni
+    // 3 ore ci ritorna sopra. È il suo obiettivo che poi guida la curiosità.
+    this._risveglioTO = setTimeout(() => this._percorso(), 60_000);   // ~1 min dopo l'avvio
+    this._percorsoTimer = setInterval(() => this._percorso(), 3 * 60 * 60_000);
     log.info('SocialBot avviato');
   }
 
@@ -122,6 +127,8 @@ export class BotManager {
     clearInterval(this._mancheTimer);
     clearInterval(this._compleTimer);
     clearInterval(this._tgProattivoTimer);
+    clearInterval(this._percorsoTimer);
+    clearTimeout(this._risveglioTO);
     this._stopReflection?.();
     this.watcher?.stop();
     // spegni tutti gli ascolti live (audio): non devono restare orfani
@@ -219,6 +226,17 @@ export class BotManager {
         if (attivo) this.brain.distilla(login).catch(() => {});
       }
     } catch (e) { log.error('distilla:', e?.message || e); }
+  }
+
+  // Il "risveglio" / percorso: per ogni streamer con cervello, lei si chiede cosa
+  // le manca per capire meglio e si dà un obiettivo (annotato nel diario).
+  async _percorso() {
+    try {
+      for (const s of streamers.active()) {
+        if (s.settings?.iaLocale === false) continue;
+        await this.brain?.risveglio?.(s.login);
+      }
+    } catch (e) { log.error('percorso:', e?.message || e); }
   }
 
   // È "ora sveglia" a Roma? (niente messaggi proattivi di notte)

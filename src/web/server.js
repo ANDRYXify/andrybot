@@ -965,8 +965,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // stato della "piccola rete che impara" per questo canale (cruscotto Panoramica)
   app.get('/api/streamer/rete', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    const r = await brainpy.reteStato(login).catch(() => null);
-    res.json(r || { nodi: 0, solidi: 0, curiosita: 0, fiducia: 0, lacune: 0, non_so: [] });
+    const r = await brainpy.reteStato(login).catch(() => null) || { nodi: 0, solidi: 0, curiosita: 0, fiducia: 0, lacune: 0, non_so: [] };
+    r.pensiero = manager.brain?.pensiero?.(login)?.testo || null;   // "a cosa sto pensando" (dal diario)
+    res.json(r);
   }));
 
   // LINEE GUIDA (le regole che dai a "lia"): le rispetta sempre, in ogni modo

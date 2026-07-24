@@ -3,7 +3,7 @@
 // personalità fatta di pool di template in tre toni. Ricorda sempre:
 // il bot parla CON L'ACCOUNT DELLO STREAMER, quindi in prima persona.
 import { makeLog } from '../logger.js';
-import { db, memory, knowledge, voceStreamer, guide, streamers } from '../db.js';
+import { db, memory, knowledge, voceStreamer, guide, streamers, diario } from '../db.js';
 import * as internet from '../features/web.js';
 import { checkMessage } from '../features/moderation.js';
 import * as learn from './learn.js';
@@ -456,6 +456,35 @@ export class Brain {
     catch { return ''; }
   }
 
+  // RISVEGLIO / PERCORSO DI CRESCITA. Il server è sempre acceso: a ogni avvio (e
+  // ogni tanto) lei si "sveglia" e si chiede cosa le manca per capire meglio.
+  // Guarda la sua rete (a quante sa rispondere, quanta fiducia, cosa NON sa), si
+  // dà un obiettivo e se lo annota nel diario. L'obiettivo poi guida la sua
+  // curiosità: è quello che verrà a chiederti (proattiva) o cercherà di capire.
+  async risveglio(channel) {
+    try {
+      if (!channel) return null;
+      const r = await brainpy.reteStato(channel).catch(() => null);
+      const lac = Array.isArray(r?.non_so) ? r.non_so.filter(Boolean) : [];
+      const goal = lac[0] || null;
+      this._obiettivo ||= new Map();
+      this._obiettivo.set(channel, goal);
+      const sa = r?.solidi || 0;
+      const fid = Math.round((r?.fiducia || 0) * 100);
+      const testo = goal
+        ? `Mi sono svegliata. So rispondere a ${sa} cose (fiducia ${fid}%). Oggi voglio capire meglio: «${goal}».`
+        : `Mi sono svegliata. So rispondere a ${sa} cose (fiducia ${fid}%). Nessuna lacuna in vista: continuo ad ascoltare e a imparare.`;
+      diario.add(channel, 'risveglio', testo);
+      log.info(`risveglio #${channel}: ${goal ? 'obiettivo «' + goal + '»' : 'nessuna lacuna'}`);
+      return testo;
+    } catch (e) { log.debug('risveglio:', e?.message || e); return null; }
+  }
+
+  // L'ultimo "pensiero" dal diario (per mostrarlo in dashboard).
+  pensiero(channel) {
+    try { return diario.latest(channel); } catch { return null; }
+  }
+
   // MESSAGGIO PROATTIVO (Telegram, chat privata col proprietario): scrive LEI per
   // prima, di sua iniziativa. La curiosità nasce dalle LACUNE della rete (le cose
   // che non sa ancora): così è naturale che te le venga a chiedere — e imparando la
@@ -463,13 +492,17 @@ export class Brain {
   async messaggioProattivo(channel, { nome } = {}) {
     try {
       if (!channel) return null;
-      // spunto di curiosità: preferisci una lacuna della rete, sennò un tema generico
+      // spunto di curiosità: prima il suo OBIETTIVO del risveglio (il percorso),
+      // sennò una lacuna a caso, sennò un tema generico su di lui.
       let spunto = '';
-      try {
-        const r = await brainpy.reteStato(channel);
-        const lac = Array.isArray(r?.non_so) ? r.non_so.filter(Boolean) : [];
-        if (lac.length) spunto = lac[Math.floor(Math.random() * lac.length)];
-      } catch { /* niente */ }
+      try { spunto = (this._obiettivo?.get(channel)) || ''; } catch { /* niente */ }
+      if (!spunto) {
+        try {
+          const r = await brainpy.reteStato(channel);
+          const lac = Array.isArray(r?.non_so) ? r.non_so.filter(Boolean) : [];
+          if (lac.length) spunto = lac[Math.floor(Math.random() * lac.length)];
+        } catch { /* niente */ }
+      }
       if (!spunto) {
         const temi = [
           'com\'è andata oggi', 'a cosa stai giocando ultimamente', 'una cosa che ti ha fatto ridere',

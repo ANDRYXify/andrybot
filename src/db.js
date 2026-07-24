@@ -289,6 +289,14 @@ CREATE TABLE IF NOT EXISTS linee_guida (     -- regole/limiti che lo streamer d�
   ts INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_guida_ch ON linee_guida(channel, ts);
+CREATE TABLE IF NOT EXISTS diario (          -- diario di crescita di "lia": risvegli, obiettivi, cose capite
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  channel TEXT NOT NULL,
+  tipo TEXT NOT NULL DEFAULT 'nota',
+  testo TEXT NOT NULL,
+  ts INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_diario_ch ON diario(channel, ts);
 `);
 
 // --- migrazioni leggere: aggiunge colonne nuove a DB già esistenti ------------
@@ -908,6 +916,30 @@ export const guide = {
   },
   count(channel) {
     return db.prepare('SELECT COUNT(*) c FROM linee_guida WHERE channel=?').get(String(channel).toLowerCase()).c;
+  },
+};
+
+// -------------------------------------------------- diario di crescita di "lia"
+// Il suo "percorso": a ogni risveglio (avvio del server) e ogni tanto si chiede
+// cosa le manca per capire meglio, e se lo annota. È qui che tiene traccia dei
+// suoi obiettivi e di ciò che via via impara. Solo del proprietario, per canale.
+export const diario = {
+  add(channel, tipo, testo) {
+    const t = String(testo || '').replace(/\s+/g, ' ').trim().slice(0, 400);
+    if (t.length < 3) return;
+    const c = String(channel).toLowerCase();
+    db.prepare('INSERT INTO diario(channel, tipo, testo, ts) VALUES(?,?,?,?)')
+      .run(c, String(tipo || 'nota').slice(0, 20), t, now());
+    db.prepare(`DELETE FROM diario WHERE channel=? AND id NOT IN (
+      SELECT id FROM diario WHERE channel=? ORDER BY ts DESC LIMIT 100)`).run(c, c);
+  },
+  latest(channel) {
+    return db.prepare('SELECT tipo, testo, ts FROM diario WHERE channel=? ORDER BY ts DESC LIMIT 1')
+      .get(String(channel).toLowerCase()) || null;
+  },
+  list(channel, n = 20) {
+    return db.prepare('SELECT tipo, testo, ts FROM diario WHERE channel=? ORDER BY ts DESC LIMIT ?')
+      .all(String(channel).toLowerCase(), n);
   },
 };
 
