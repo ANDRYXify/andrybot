@@ -142,6 +142,87 @@ export class Helix {
     return true;
   }
 
+  // ── Sondaggi (Polls) ──────────────────────────────────────────────────────
+  // Richiedono lo scope 'channel:manage:polls' sul token del broadcaster.
+  // Crea un sondaggio; ritorna { id, titolo } o null.
+  async creaSondaggio(channelLogin, { titolo, opzioni, durata }) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return null;
+    const token = await this.auth.getToken('broadcaster', channelLogin);
+    const j = await this._request('POST', '/polls', {
+      body: {
+        broadcaster_id: s.user_id,
+        title: String(titolo || '').slice(0, 60),
+        choices: (opzioni || []).slice(0, 5).map((t) => ({ title: String(t).slice(0, 25) })),
+        duration: Math.min(1800, Math.max(15, Math.round(durata || 120))),
+      }, token,
+    });
+    const p = j?.data?.[0];
+    return p ? { id: p.id, titolo: p.title } : null;
+  }
+
+  // Sondaggio ATTIVO in corso (per chiuderlo senza conoscerne l'id) o null.
+  async sondaggioAttivo(channelLogin) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return null;
+    const token = await this.auth.getToken('broadcaster', channelLogin);
+    const j = await this._request('GET', '/polls', { query: { broadcaster_id: s.user_id, first: 1 }, token });
+    const p = j?.data?.[0];
+    return p && p.status === 'ACTIVE' ? { id: p.id, titolo: p.title } : null;
+  }
+
+  // Termina un sondaggio (TERMINATED = mostra il risultato, ARCHIVED = nascondi).
+  async chiudiSondaggio(channelLogin, pollId, { archivia = false } = {}) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id || !pollId) return false;
+    const token = await this.auth.getToken('broadcaster', channelLogin);
+    await this._request('PATCH', '/polls', { body: { broadcaster_id: s.user_id, id: pollId, status: archivia ? 'ARCHIVED' : 'TERMINATED' }, token });
+    return true;
+  }
+
+  // ── Predizioni (Predictions) ──────────────────────────────────────────────
+  // Richiedono lo scope 'channel:manage:predictions' sul token del broadcaster.
+  // Crea una predizione; ritorna { id, titolo, esiti:[{id,titolo}] } o null.
+  async creaPredizione(channelLogin, { titolo, esiti, finestra }) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return null;
+    const token = await this.auth.getToken('broadcaster', channelLogin);
+    const j = await this._request('POST', '/predictions', {
+      body: {
+        broadcaster_id: s.user_id,
+        title: String(titolo || '').slice(0, 45),
+        outcomes: (esiti || []).slice(0, 10).map((t) => ({ title: String(t).slice(0, 25) })),
+        prediction_window: Math.min(1800, Math.max(30, Math.round(finestra || 120))),
+      }, token,
+    });
+    const p = j?.data?.[0];
+    return p ? { id: p.id, titolo: p.title, esiti: (p.outcomes || []).map((o) => ({ id: o.id, titolo: o.title })) } : null;
+  }
+
+  // Predizione ATTIVA o BLOCCATA in corso (con gli esiti, per risolverla) o null.
+  async predizioneAttiva(channelLogin) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return null;
+    const token = await this.auth.getToken('broadcaster', channelLogin);
+    const j = await this._request('GET', '/predictions', { query: { broadcaster_id: s.user_id, first: 1 }, token });
+    const p = j?.data?.[0];
+    return p && (p.status === 'ACTIVE' || p.status === 'LOCKED')
+      ? { id: p.id, titolo: p.title, stato: p.status, esiti: (p.outcomes || []).map((o) => ({ id: o.id, titolo: o.title })) }
+      : null;
+  }
+
+  // Risolve una predizione su un esito vincente (esitoId). Senza esitoId → annulla.
+  async risolviPredizione(channelLogin, predId, esitoId) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id || !predId) return false;
+    const token = await this.auth.getToken('broadcaster', channelLogin);
+    const body = esitoId
+      ? { broadcaster_id: s.user_id, id: predId, status: 'RESOLVED', winning_outcome_id: esitoId }
+      : { broadcaster_id: s.user_id, id: predId, status: 'CANCELED' };
+    await this._request('PATCH', '/predictions', { body, token });
+    return true;
+  }
+
   // Crea una clip sul canale indicato usando il token del broadcaster.
   // Ritorna { id, url, editUrl } oppure null se lo streamer non è live
   // (Twitch risponde 404 in quel caso) o se manca lo user_id.
