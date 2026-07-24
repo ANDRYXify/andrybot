@@ -129,6 +129,8 @@ export const SCOPES = {
     'channel:manage:redemptions', // creare/gestire i premi a punti canale (alert)
     'channel:manage:vips',        // assegnare/togliere i VIP (comando vocale, premi)
     'channel:manage:broadcast',   // cambiare categoria/titolo del canale (comando vocale)
+    'channel:manage:polls',       // creare/chiudere sondaggi
+    'channel:manage:predictions', // creare/risolvere predizioni
     'moderator:manage:chat_messages', // eliminare messaggi (antispam)
     'moderator:manage:banned_users',  // timeout ai recidivi (antispam)
   ],
