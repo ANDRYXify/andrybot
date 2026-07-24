@@ -11,14 +11,15 @@ const log = makeLog('effects');
 
 // -------------------------------------------------- costanti di compressione
 const AUDIO_BITRATE = '64k';    // opus per gli effetti audio (mono)
-const AUDIO_MAX_S = 10;         // durata massima di un audio (secondi)
+const AUDIO_MAX_S = 30;         // durata massima di un audio (secondi)
 const IMG_MAX_LATO = 800;       // lato massimo di un'immagine (px)
 const IMG_QUALITA = 75;         // qualità webp (0..100)
 const IMG_DURATA_MS = 5000;     // quanto resta a schermo un'immagine (ms)
-const VIDEO_MAX_S = 8;          // durata massima di un video (secondi)
+const VIDEO_MAX_S = 30;         // durata massima di un video (secondi)
 const VIDEO_MAX_ALTEZZA = 720;  // altezza massima di un video (px)
 const VIDEO_CRF = 34;           // qualità VP9 (più alto = più compresso)
-const TIMEOUT_MS = 60_000;      // oltre questo tempo il processo ffmpeg viene ucciso
+const TIMEOUT_MS = 150_000;     // oltre questo tempo il processo ffmpeg viene ucciso
+                                // (video fino a 30s su CPU debole possono metterci)
 
 // Riconosce la famiglia del file dal mimetype (con qualche estensione di scorta).
 // Le GIF (spesso animate) vengono trattate come video → webm.

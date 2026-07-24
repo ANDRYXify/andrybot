@@ -36,7 +36,7 @@ const SETTE_GIORNI_MS = 7 * 24 * 60 * 60 * 1000;
 const TONI_VALIDI = ['scherzoso', 'amichevole', 'serio'];
 const STATI_VALIDI = ['pending', 'approved', 'disabled'];
 const TIER_VALIDI = ['tutti', 'sub', 'vip', 'mod'];
-const UPLOAD_MAX = 30 * 1024 * 1024;   // 30 MB in ingresso (l'output sarà molto più piccolo)
+const UPLOAD_MAX = 60 * 1024 * 1024;   // 60 MB in ingresso (per clip fino a ~30s; l'output sarà molto più piccolo)
 
 // Moduli: tipi di innesco e di azione ammessi (validazione lato API)
 const MOD_TRIGGER = ['comando', 'parola', 'evento', 'timer', 'manuale', 'voce'];
@@ -1095,7 +1095,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!TIER_VALIDI.includes(tier)) return errore('permesso (chi può usarlo) non valido');
     if (!Number.isFinite(cooldown) || cooldown < 0 || cooldown > 3600) return errore('cooldown non valido (0..3600 s)');
     if (!Number.isFinite(volume) || volume < 0 || volume > 100) return errore('volume non valido (0..100)');
-    if (!Number.isFinite(durata) || durata < 500 || durata > 15000) return errore('durata non valida (500..15000 ms)');
+    if (!Number.isFinite(durata) || durata < 500 || durata > 30000) return errore('durata non valida (500..30000 ms)');
 
     const destDir = join(effectsRoot, login);
     mkdirSync(destDir, { recursive: true });
