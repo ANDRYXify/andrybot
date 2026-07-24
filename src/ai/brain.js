@@ -328,11 +328,21 @@ export class Brain {
     }
   }
 
+  // Impara dalla COMMUNITY in uno spazio pubblico (chat di GRUPPO Telegram, come
+  // dalla chat Twitch): nutre SOLO la coscienza (persone/fatti), MAI lo stile
+  // personale. Ammesso perché i gruppi sono pubblici; in privato invece nulla.
+  imparaComunita({ channel, user, nome, testo } = {}) {
+    if (!channel || !user || !testo) return;
+    const t = String(testo).trim();
+    if (!t || t.startsWith('!') || t.startsWith('/')) return;
+    try { brainpy.osserva({ canale: channel, login: String(user), nome: nome || String(user), testo: t }); }
+    catch { /* niente */ }
+  }
+
   // Impara dalle PAROLE VERE dello streamer — la sua voce parlata in diretta (dal
-  // microfono) o i SUOI messaggi su Telegram. È l'apprendimento "duro" (stile +
-  // coscienza), volutamente limitato a LUI SOLO: una scelta di privacy, così il
-  // bot non assorbe la roba di nessun altro (dagli altri impara solo la chat
-  // pubblica di Twitch). È il modo più forte per farlo crescere "come me".
+  // microfono) o i SUOI messaggi su Telegram (ovunque). È l'apprendimento "duro"
+  // (stile + coscienza), volutamente limitato a LUI SOLO: scelta di privacy, così
+  // il bot non assorbe lo STILE di nessun altro. È il modo più forte per crescere "come me".
   imparaDaVoce({ channel, testo } = {}) {
     const t = String(testo || '').trim();
     if (!channel || t.length < 8 || t.startsWith('!') || t.startsWith('/')) return;
