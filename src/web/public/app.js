@@ -168,7 +168,8 @@ function statoDemo() {
     status: { channels: [ctx.canale] },   // "in chat adesso"
     preaddestramento: { preaddestramento_ts: '2026-05-01T20:00:00Z', preaddestramento_esito: 'pagina profilo letta ("Andryx — creator e streamer da Genova · Twitch, YouTube, gaming"), 5 link social; gioco recente: Fortnite; profilo Twitch letto' },
     telegram: { configurato: true, gruppoOk: true, attivo: true, pinLive: true,
-      interattivo: true, botUsername: 'andryx_live_bot', gruppo: 'Community di Andryx', messaggio: '' },
+      interattivo: true, botUsername: 'andryx_live_bot', gruppo: 'Community di Andryx', messaggio: '',
+      dmModo: 'me', dmCollegato: true, dmNome: 'Andryx' },
     streamer: {
       status: 'approved',
       botEnabled: true,
@@ -1556,6 +1557,21 @@ function pannelloNotifiche() {
       Per far leggere al bot <strong>tutti</strong> i messaggi (comandi senza <code>/</code> e roster membri) disattiva la
       <em>privacy</em> su <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a>
       (<code>/setprivacy → Disable</code>); coi comandi <code>/comando</code> funziona comunque.</p>
+
+      <div class="spazio-sopra">
+        <label class="campo" for="sel-tg-dm">In chat privata col bot risponde a</label>
+        <select id="sel-tg-dm" class="campo-largo">
+          <option value="me" ${tg.dmModo !== 'tutti' && tg.dmModo !== 'off' ? 'selected' : ''}>Solo me (consigliato)</option>
+          <option value="tutti" ${tg.dmModo === 'tutti' ? 'selected' : ''}>Chiunque mi scriva in privato</option>
+          <option value="off" ${tg.dmModo === 'off' ? 'selected' : ''}>Nessuno (chat privata spenta)</option>
+        </select>
+        <p class="suggerimento spazio-sopra" id="tg-dm-stato">
+          ${tg.dmCollegato
+            ? `🔗 «Solo me» legato all'account <strong>${esc(tg.dmNome || 'te')}</strong>. <a href="#" id="btn-tg-dm-scollega">Scollega</a>`
+            : 'Per il <strong>«solo me»</strong> lega una volta il tuo Telegram: <a href="#" id="btn-tg-dm-collega">genera un codice</a> e scrivi <code>/collega CODICE</code> al bot in privato.'}
+        </p>
+        <div id="tg-dm-codice"></div>
+      </div>
     </div>
 
     <div class="carta">
@@ -2000,6 +2016,23 @@ function attivaPiattaforma() {
       stato = await api('/api/me'); render();
     }).catch(() => { chk.checked = !chk.checked; });   // in caso di errore, rimetti lo switch
   });
+
+  // --- Chat privata Telegram: chi risponde + collegamento "solo me" ---
+  document.getElementById('sel-tg-dm')?.addEventListener('change', (ev) => conErrore(async () => {
+    await api('/api/streamer/telegram/dm', { method: 'POST', body: { modo: ev.target.value } });
+    toast('Preferenza salvata.');
+    stato = await api('/api/me'); render();
+  }));
+  document.getElementById('btn-tg-dm-collega')?.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
+    const r = await api('/api/streamer/telegram/collega', { method: 'POST', body: {} });
+    const box = document.getElementById('tg-dm-codice');
+    if (box) box.innerHTML = `<p class="nota-lettura">Scrivi al tuo bot${r.username ? ' <strong>@' + esc(r.username) + '</strong>' : ''} in privato:<br><code>/collega ${esc(r.code)}</code><br>Scade tra 10 minuti.</p>`;
+  }); });
+  document.getElementById('btn-tg-dm-scollega')?.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
+    await api('/api/streamer/telegram/scollega', { method: 'POST', body: {} });
+    toast('Account Telegram scollegato.');
+    stato = await api('/api/me'); render();
+  }); });
 
   // --- Auguri di compleanno (delega sul contenitore, ricaricato via JS) ---
   document.getElementById('box-compleanni')?.addEventListener('click', (ev) => {

@@ -298,6 +298,10 @@ aggiungiColonna('telegram', 'msg_id', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('telegram', 'msg_id_tk', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('telegram', 'interattivo', "INTEGER NOT NULL DEFAULT 0");
 aggiungiColonna('telegram', 'webhook_secret', "TEXT NOT NULL DEFAULT ''");
+// chat privata: modalità ('me'|'tutti'|'off') e account Telegram legato al proprietario
+aggiungiColonna('telegram', 'dm_modo', "TEXT NOT NULL DEFAULT 'me'");
+aggiungiColonna('telegram', 'owner_tg_id', "TEXT NOT NULL DEFAULT ''");
+aggiungiColonna('telegram', 'owner_tg_nome', "TEXT NOT NULL DEFAULT ''");
 
 const now = () => Date.now();
 
@@ -695,6 +699,17 @@ export const tgConf = {
   setInterattivo(channel, attivo, secret) {
     db.prepare('UPDATE telegram SET interattivo=?, webhook_secret=? WHERE channel=?')
       .run(attivo ? 1 : 0, String(secret || ''), String(channel).toLowerCase());
+  },
+  // chat privata: chi può farsi rispondere dal cervello — 'me' (solo il proprietario),
+  // 'tutti', 'off'. Default 'me'.
+  setDmModo(channel, modo) {
+    const m = ['me', 'tutti', 'off'].includes(modo) ? modo : 'me';
+    db.prepare('UPDATE telegram SET dm_modo=? WHERE channel=?').run(m, String(channel).toLowerCase());
+  },
+  // lega (o slega, con id vuoto) l'account Telegram del proprietario per il "solo me"
+  setOwnerTg(channel, tgId, nome) {
+    db.prepare('UPDATE telegram SET owner_tg_id=?, owner_tg_nome=? WHERE channel=?')
+      .run(String(tgId || ''), String(nome || '').slice(0, 60), String(channel).toLowerCase());
   },
   // trova il canale dal segreto del webhook (per instradare gli update in arrivo)
   getBySecret(secret) {
