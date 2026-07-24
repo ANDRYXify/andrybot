@@ -15,6 +15,7 @@ import * as vip from './features/vip.js';
 import * as telegram from './features/telegram.js';
 import * as antispam from './features/antispam.js';
 import * as tiktok from './features/tiktok.js';
+import * as youtube from './features/youtube.js';
 import * as compleanniFeat from './features/compleanni.js';
 import * as gamesbridge from './features/gamesbridge.js';
 import * as quotes from './features/quotes.js';
@@ -89,6 +90,9 @@ export class BotManager {
     this._premiTimer = setInterval(() => this._controllaPremi(), 60 * 60_000);
     // TikTok: rilevamento live best-effort (l'affidabile è il webhook)
     this._tiktokTimer = setInterval(() => this._controllaTikTok().catch(() => {}), 3 * 60_000);
+    // Nuovi post: avvisa quando esce un nuovo video su YouTube (via RSS, ogni 10 min).
+    this._ytId = new Map();     // login → id canale YouTube risolto (cache)
+    this._postTimer = setInterval(() => this._controllaPost().catch(() => {}), 10 * 60_000);
     // Giochi del sito: poll delle regole da annunciare in chat quando parte una
     // partita (attivazione automatica anche per le partite create dal sito).
     this._annunciTimer = setInterval(() => this._pollAnnunciGiochi(), 15_000);
@@ -122,6 +126,7 @@ export class BotManager {
     clearInterval(this._vipTimer);
     clearInterval(this._premiTimer);
     clearInterval(this._tiktokTimer);
+    clearInterval(this._postTimer);
     clearInterval(this._annunciTimer);
     clearInterval(this._distillaTimer);
     clearInterval(this._mancheTimer);
@@ -678,6 +683,48 @@ export class BotManager {
       log.info(`notifica TikTok inviata per #${l}`);
       return { ok: true };
     } catch (e) { log.error(`notificaTikTok #${login}:`, e?.message || e); return { ok: false }; }
+  }
+
+  // Controlla YouTube (RSS): se è uscito un nuovo video, avvisa. Anti-doppioni
+  // con l'id dell'ultimo video annunciato (persistente); primo giro = seed.
+  async _controllaPost() {
+    try {
+      for (const s of streamers.active()) {
+        const yt = s.settings?.youtube;
+        if (!yt?.attivo || !yt.canale) continue;
+        // cache dell'id canale keyed sull'input: se cambi canale, si ri-risolve
+        let cid = this._ytId.get(yt.canale);
+        if (cid === undefined) { cid = await youtube.risolviCanaleId(yt.canale); this._ytId.set(yt.canale, cid || null); }
+        if (!cid) continue;
+        const v = await youtube.ultimoVideo(cid);
+        if (!v?.videoId) continue;
+        const conf = tgConf.get(s.login);
+        const ultimo = conf?.yt_ultimo || '';
+        if (v.videoId === ultimo) continue;                 // niente di nuovo
+        tgConf.setYtUltimo(s.login, v.videoId);
+        if (!ultimo) continue;                              // primo giro: solo seed, niente avviso
+        await this.notificaPost(s.login, { piattaforma: 'youtube', titolo: v.titolo, url: v.url, messaggio: yt.messaggio, annunciaChat: yt.annunciaChat });
+      }
+    } catch (e) { log.error('controllaPost:', e?.message || e); }
+  }
+
+  // Manda l'avviso di un nuovo post (YouTube/TikTok): gruppo Telegram + eventuale
+  // annuncio in chat Twitch. Usata dal poller YouTube e dal webhook /api/ext.
+  async notificaPost(login, { piattaforma = 'youtube', titolo = '', url = '', messaggio = '', annunciaChat = false } = {}) {
+    try {
+      const l = String(login || '').toLowerCase();
+      const s = streamers.get(l);
+      const conf = tgConf.get(l);
+      if (conf?.token && conf.chat_id) {
+        await telegram.notificaPost(conf, { login: l, display: s?.display || l }, { piattaforma, titolo, url, messaggio }).catch(() => {});
+      }
+      if (annunciaChat && this.units.has(l) && url) {
+        const dove = piattaforma === 'tiktok' ? 'TikTok' : 'YouTube';
+        this.say(l, `${piattaforma === 'tiktok' ? '🎵' : '📺'} Nuovo contenuto su ${dove}! 👉 ${url}`);
+      }
+      log.info(`notifica post (${piattaforma}) inviata per #${l}`);
+      return { ok: true };
+    } catch (e) { log.error(`notificaPost #${login}:`, e?.message || e); return { ok: false }; }
   }
 
   // stato riassuntivo per la dashboard

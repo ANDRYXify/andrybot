@@ -202,3 +202,19 @@ export async function notificaTikTok(conf, streamer, username, template) {
   if (!r.ok) log.warn(`notifica TikTok #${streamer?.login}: ${r.errore}`);
   return r;
 }
+
+// Avviso di un NUOVO POST/VIDEO (YouTube o TikTok) nel gruppo Telegram.
+// Segnaposto nel messaggio personalizzato: {nome} {titolo} {link}
+export const MESSAGGIO_POST_YT_DEFAULT = '📺 <b>{nome}</b> ha caricato un nuovo video su <b>YouTube</b>!\n\n{titolo}\n👉 {link}';
+export const MESSAGGIO_POST_TT_DEFAULT = '🎵 <b>{nome}</b> ha un nuovo post su <b>TikTok</b>!\n\n👉 {link}';
+
+export async function notificaPost(conf, streamer, { piattaforma, titolo, url, messaggio } = {}) {
+  if (!conf?.token || !conf?.chat_id) return { ok: false, errore: 'telegram non configurato' };
+  const nome = escHtml(streamer?.display || streamer?.login || '');
+  const def = piattaforma === 'tiktok' ? MESSAGGIO_POST_TT_DEFAULT : MESSAGGIO_POST_YT_DEFAULT;
+  const t = (messaggio && String(messaggio).trim()) || def;
+  const testo = t.replace(/\{(nome|titolo|link)\}/g, (_, k) => (k === 'nome' ? nome : k === 'titolo' ? escHtml(titolo || '') : (url || '')));
+  const r = await inviaMessaggio(conf.token, conf.chat_id, testo, { anteprima: true });
+  if (!r.ok) log.warn(`notifica post #${streamer?.login}: ${r.errore}`);
+  return r;
+}
