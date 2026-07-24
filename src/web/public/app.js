@@ -3505,12 +3505,29 @@ function vistaAdminContenuto() {
     </div>`;
 }
 
-// cruscotto della "piccola rete" in Panoramica (per il canale corrente)
+// cruscotto della "piccola rete" in Panoramica (per il canale corrente).
+// Si aggiorna IN TEMPO REALE finché sei sulla scheda: così vedi i nodi salire
+// mentre alleni. Il timer si spegne da solo quando lasci la scheda.
+let _reteTimer = null;
+
 async function caricaRetePanoramica() {
   const box = document.getElementById('rete-panoramica');
   if (!box) return;
+  await aggiornaRetePanoramica(box, true);
+  if (_reteTimer) { clearInterval(_reteTimer); _reteTimer = null; }
+  if (DEMO) return;   // in demo i dati sono finti/statici: niente polling
+  _reteTimer = setInterval(() => {
+    const b = document.getElementById('rete-panoramica');
+    if (!b) { clearInterval(_reteTimer); _reteTimer = null; return; }   // ho lasciato la scheda
+    if (document.hidden) return;                                        // scheda in background: non sprecare
+    aggiornaRetePanoramica(b, false);
+  }, 5000);
+}
+
+async function aggiornaRetePanoramica(box, primo) {
   let d;
-  try { d = await api('/api/streamer/rete'); } catch { box.innerHTML = '<p class="vuoto">Non disponibile ora.</p>'; return; }
+  try { d = await api('/api/streamer/rete'); }
+  catch { if (primo) box.innerHTML = '<p class="vuoto">Non disponibile ora.</p>'; return; }
   const pct = (x) => Math.round((x || 0) * 100) + '%';
   const num = 'font-size:1.7em;font-weight:700;line-height:1';
   const nonSo = (d.non_so || []).slice(0, 4);
@@ -3546,6 +3563,7 @@ async function caricaLLM() {
   const pct = (x) => Math.round((x || 0) * 100) + '%';
   const stile = { hr: 'border:0;border-top:1px solid currentColor;opacity:.15;margin:20px 0', num: 'font-size:1.7em;font-weight:700;line-height:1' };
   box.innerHTML = `
+    <p class="suggerimento">🔒 <strong>Riservato a te</strong>: il modello del server e il maestro esterno li vedi e li cambi <strong>solo tu</strong> (andryxify). Nessun altro streamer o moderatore ha accesso a questa sezione.</p>
     <p>Stato: <strong>${statoTxt}</strong> &nbsp; In memoria: <code>${esc(s.modello || '—')}</code>${s.motivo ? ` <span class="suggerimento">(${esc(s.motivo)})</span>` : ''}</p>
     <label class="campo" for="sel-llm">Modello locale (sul server)</label>
     <select id="sel-llm" class="campo-largo">
