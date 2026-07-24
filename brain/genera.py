@@ -79,10 +79,24 @@ def _ram_gb():
     return 2.0
 
 
+# Scorciatoie comode: nel .env metti LLM_MODELLO=<nome> invece dell'URL lungo.
+# 'gemma-uncensored' = Gemma 2 2B "abliterated" (senza i rifiuti/il tono da manuale):
+# più libero per una chat Twitch. Restano comunque la moderazione del bot e le
+# "parole vietate" a filtrare l'uscita — e le regole di Twitch valgono sempre.
+_MODELLI = {
+    "qwen": "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q5_k_m.gguf",
+    "gemma": "https://huggingface.co/bartowski/gemma-2-2b-it-GGUF/resolve/main/gemma-2-2b-it-Q4_K_M.gguf",
+    "gemma-uncensored": "https://huggingface.co/bartowski/gemma-2-2b-it-abliterated-GGUF/resolve/main/gemma-2-2b-it-abliterated-Q4_K_M.gguf",
+}
+
+
 def _scegli_modello():
     url = os.environ.get("LLM_MODEL_URL")
     if url:
         return url
+    nome = os.environ.get("LLM_MODELLO", "").strip().lower()
+    if nome in _MODELLI:
+        return _MODELLI[nome]
     gb = _ram_gb()
     for soglia, u in _TIERS:
         if gb >= soglia:
