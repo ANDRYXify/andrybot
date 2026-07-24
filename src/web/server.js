@@ -785,6 +785,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       const trig = String(ct.trigger || 'titolo').trim().toLowerCase().replace(/\s+/g, ' ').slice(0, 30) || 'titolo';
       out.cambioTitolo = { attivo: !!ct.attivo, trigger: trig, annuncia: ct.annuncia !== false };
     }
+    // "impara mentre parlo": il bot cresce ascoltando la voce dello streamer in diretta
+    if (b.imparaVoce !== undefined) {
+      out.imparaVoce = { attivo: !!(b.imparaVoce || {}).attivo };
+    }
     if (b.paroleVietate !== undefined) {
       if (!Array.isArray(b.paroleVietate)) return res.status(400).json({ errore: 'paroleVietate deve essere una lista' });
       out.paroleVietate = b.paroleVietate
@@ -875,7 +879,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const A = abbonamenti.funzioneAbilitata;
     if (!A(tierS, 'giochi')) { out.giochi = false; if (out.manche) out.manche.attivo = false; }
     if (!A(tierS, 'clipAuto')) out.clipAuto = false;
-    if (!A(tierS, 'voce')) { out.ascoltoLive = false; if (out.cambioCategoria) out.cambioCategoria.attivo = false; if (out.cambioTitolo) out.cambioTitolo.attivo = false; }
+    if (!A(tierS, 'voce')) { out.ascoltoLive = false; if (out.cambioCategoria) out.cambioCategoria.attivo = false; if (out.cambioTitolo) out.cambioTitolo.attivo = false; if (out.imparaVoce) out.imparaVoce.attivo = false; }
     if (!A(tierS, 'notifiche') && out.tiktok) out.tiktok.attivo = false;
 
     streamers.setSettings(user.login, out);
@@ -1172,7 +1176,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const st = streamers.get(login)?.settings || {};
     const cat = { attivo: !!st.cambioCategoria?.attivo, trigger: (st.cambioCategoria?.trigger || 'categoria') };
     const tit = { attivo: !!st.cambioTitolo?.attivo, trigger: (st.cambioTitolo?.trigger || 'titolo') };
-    res.json({ frasi, count: frasi.length, cat, tit });
+    // "impara mentre parlo": attivo SOLO per il proprietario (mai da un mod → solo da me)
+    const impara = { attivo: !!(st.imparaVoce?.attivo && isOwner(req)) };
+    res.json({ frasi, count: frasi.length, cat, tit, impara });
   }));
 
   // il browser ha sentito una frase: eseguiamo i moduli 'voce' che combaciano
@@ -1237,6 +1243,19 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const inviaTg = (t) => { if (c?.token && c.chat_id && t) telegram.inviaMessaggio(c.token, c.chat_id, t).catch(() => {}); };
     const eseguito = await modules.eseguiVoce(login, frase, (t) => manager.say(login, t), inviaTg);
     res.json({ ok: true, eseguito });
+  }));
+
+  // "impara mentre parlo": il browser (voce.html) manda qui le frasi che lo
+  // streamer DICE in diretta, così il cervello lo sente parlare e cresce. La
+  // trascrizione avviene sul PC: qui arriva solo il testo. SOLO il proprietario
+  // (mai un mod) può alimentarla → è la voce di 'me', di nessun altro account.
+  app.post('/api/streamer/ascolta', requireLogin, wrap(async (req, res) => {
+    if (!isOwner(req)) return res.status(403).json({ errore: 'solo il proprietario del canale' });
+    const login = currentUser(req).login;
+    if (!streamers.get(login)?.settings?.imparaVoce?.attivo) return res.json({ ok: false });
+    const testo = String(req.body?.testo || '').replace(/\s+/g, ' ').trim().slice(0, 200);
+    if (testo.length >= 12) manager.brain?.imparaDaVoce({ channel: login, testo });
+    res.json({ ok: true });
   }));
 
   // citazioni (!cita) — elenco/aggiungi/rimuovi dalla dashboard

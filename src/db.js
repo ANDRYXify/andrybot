@@ -266,6 +266,13 @@ CREATE TABLE IF NOT EXISTS giochi (          -- giochi personalizzati per canale
   ts INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_giochi_ch ON giochi(channel);
+CREATE TABLE IF NOT EXISTS voce_streamer (   -- trascrizioni della voce PARLATA dello streamer (materiale di stile)
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  channel TEXT NOT NULL,
+  testo TEXT NOT NULL,
+  ts INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_voce_ch ON voce_streamer(channel, ts);
 CREATE TABLE IF NOT EXISTS subscriptions (   -- abbonamenti self-service (Stripe/Link)
   login TEXT PRIMARY KEY,                     -- login twitch dello streamer abbonato
   tier TEXT NOT NULL DEFAULT 'free',          -- id del tier corrente (free|base|pro)
@@ -463,6 +470,26 @@ export const giochi = {
   },
   remove(channel, id) { db.prepare('DELETE FROM giochi WHERE channel=? AND id=?').run(String(channel).toLowerCase(), id); },
   count(channel) { return db.prepare('SELECT COUNT(*) c FROM giochi WHERE channel=?').get(String(channel).toLowerCase()).c; },
+};
+
+// ---------------------------------------------------------------- voce parlata
+// Frasi che lo streamer DICE in diretta (trascritte dal suo microfono, nel suo
+// browser: l'audio non arriva mai qui, solo il testo). Sono la sua voce vera →
+// ottimo materiale di stile per il cervello. Teniamo solo le ultime per canale.
+export const voceStreamer = {
+  add(channel, testo) {
+    const ch = String(channel).toLowerCase();
+    const t = String(testo || '').replace(/\s+/g, ' ').trim().slice(0, 200);
+    if (t.length < 12) return;
+    db.prepare('INSERT INTO voce_streamer (channel, testo, ts) VALUES (?,?,?)').run(ch, t, now());
+    // oblio: tieni solo le ultime 60 frasi per canale
+    db.prepare(`DELETE FROM voce_streamer WHERE channel=? AND id NOT IN
+      (SELECT id FROM voce_streamer WHERE channel=? ORDER BY ts DESC LIMIT 60)`).run(ch, ch);
+  },
+  recent(channel, n = 8) {
+    return db.prepare('SELECT testo FROM voce_streamer WHERE channel=? ORDER BY ts DESC LIMIT ?')
+      .all(String(channel).toLowerCase(), n).map((r) => r.testo);
+  },
 };
 
 // ---------------------------------------------------------------- abbonamenti
