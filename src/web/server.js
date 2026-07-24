@@ -456,6 +456,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       // nessun accesso: identità "in attesa di abbonarsi" — NIENTE session.user,
       // quindi niente dashboard né API dati. Vede solo i piani e può fare checkout.
       req.session.abbonando = { login, display: disp };
+      // veniva da "compra piano X"? → dritti al checkout Stripe, niente giro in più
+      if (sf.tier && config.stripe.attivo) {
+        const url = await abbonamenti.creaCheckout({ login, tierId: String(sf.tier).toLowerCase() }).catch(() => null);
+        if (url) return res.redirect(url);
+      }
       return res.redirect('/?abbonati=1');
     }
 
@@ -705,7 +710,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   app.get('/accedi', (req, res) => {
     if (!config.stripe.attivo) return res.redirect('/');   // paywall spento: niente ingresso extra
     const state = crypto.randomUUID();
-    req.session.selfFlow = { state };
+    const tier = String(req.query.tier || '').toLowerCase();
+    // ricorda il piano scelto: dopo il login self-service si va DRITTI al checkout
+    req.session.selfFlow = { state, tier: ['base', 'pro'].includes(tier) ? tier : '' };
     res.redirect(auth.authUrl([], state));
   });
 
@@ -1486,15 +1493,26 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       if (msg.from && !msg.from.is_bot) {
         membri.touch(login, msg.from.id, msg.from.first_name || msg.from.username || '', msg.from.username || '');
       }
+      // impara ANCHE da Telegram: nutre la coscienza (persone/fatti), come dalla chat Twitch
+      const tgUser = msg.from?.username || (msg.from?.id ? 'tg' + msg.from.id : '');
+      const utente = msg.from?.first_name || msg.from?.username || '';
+      if (tgUser && !msg.from?.is_bot) {
+        manager.brain?.imparaEsterno({ channel: login, user: tgUser, nome: utente, testo });
+      }
       // comando integrato /compleanno (solo se gli auguri sono accesi)
       if (s?.settings?.telegramAuguri?.attivo) {
         const risp = gestisciComandoCompleanno(login, msg, testo);
         if (risp) { telegram.inviaMessaggio(conf.token, chat.id, risp).catch(() => {}); return; }
       }
       // comandi: i moduli con "abilita anche su Telegram" (schermata Comandi)
-      const utente = msg.from?.first_name || msg.from?.username || '';
       const invia = (t) => { if (t) telegram.inviaMessaggio(conf.token, chat.id, t).catch(() => {}); };
-      modules.eseguiTelegram(login, testo, invia, { utente }).catch(() => {});
+      const fattoDaModulo = await modules.eseguiTelegram(login, testo, invia, { utente }).catch(() => false);
+      // CHAT PRIVATA col bot: se nessun modulo ha reagito e non è un comando, il
+      // cervello risponde direttamente — così lo streamer "ci parla da qui".
+      if (!fattoDaModulo && chat.type === 'private' && !/^[/!]/.test(String(testo).trim()) && !msg.from?.is_bot) {
+        const risp = await manager.brain?.rispostaDiretta({ channel: login, user: tgUser || 'utente', nome: utente, testo, tono: s?.settings?.tono });
+        if (risp) telegram.inviaMessaggio(conf.token, chat.id, risp).catch(() => {});
+      }
     } catch (e) { log.warn('webhook telegram:', e?.message || e); }
   }));
 
