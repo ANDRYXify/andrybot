@@ -87,6 +87,61 @@ export class Helix {
     return true;
   }
 
+  // ---- Punti canale: ricompense personalizzate (Custom Rewards) ----
+  // Crea un premio a punti canale. Ritorna {id, title, cost} o lancia (es. 403
+  // se manca lo scope channel:manage:redemptions, 400 se il titolo è duplicato).
+  async creaReward(channelLogin, { titolo, costo } = {}) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return null;
+    const token = await this.auth.getToken('broadcaster', channelLogin);
+    const j = await this._request('POST', '/channel_points/custom_rewards', {
+      query: { broadcaster_id: s.user_id },
+      body: {
+        title: String(titolo || '').slice(0, 45),
+        cost: Math.max(1, Math.round(Number(costo) || 100)),
+        is_enabled: true,
+      },
+      token,
+    });
+    const r = j?.data?.[0];
+    return r ? { id: r.id, title: r.title, cost: r.cost } : null;
+  }
+
+  // Elenca i premi GESTIBILI da noi (quelli creati dal nostro client).
+  async listaRewards(channelLogin) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return [];
+    const token = await this.auth.getToken('broadcaster', channelLogin);
+    const j = await this._request('GET', '/channel_points/custom_rewards', {
+      query: { broadcaster_id: s.user_id, only_manageable_rewards: 'true' }, token,
+    });
+    return (j?.data || []).map((r) => ({ id: r.id, title: r.title, cost: r.cost, enabled: r.is_enabled }));
+  }
+
+  // Elimina un premio (solo quelli creati da noi).
+  async eliminaReward(channelLogin, rewardId) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id || !rewardId) return false;
+    const token = await this.auth.getToken('broadcaster', channelLogin);
+    await this._request('DELETE', '/channel_points/custom_rewards', {
+      query: { broadcaster_id: s.user_id, id: rewardId }, token,
+    });
+    return true;
+  }
+
+  // Segna un riscatto come completato/annullato (solo per i premi nostri): così
+  // nella coda Twitch non resta "in sospeso". Best-effort.
+  async aggiornaRedemption(channelLogin, rewardId, redemptionId, status) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id || !rewardId || !redemptionId) return false;
+    const token = await this.auth.getToken('broadcaster', channelLogin);
+    await this._request('PATCH', '/channel_points/custom_rewards/redemptions', {
+      query: { broadcaster_id: s.user_id, reward_id: rewardId, id: redemptionId },
+      body: { status: status === 'CANCELED' ? 'CANCELED' : 'FULFILLED' }, token,
+    });
+    return true;
+  }
+
   // Crea una clip sul canale indicato usando il token del broadcaster.
   // Ritorna { id, url, editUrl } oppure null se lo streamer non è live
   // (Twitch risponde 404 in quel caso) o se manca lo user_id.

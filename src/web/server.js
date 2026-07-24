@@ -14,7 +14,7 @@ import { dirname, join, basename } from 'node:path';
 import { config, SCOPES, missingConfig } from '../config.js';
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb, friends } from '../db.js';
-import { points, vips, tgConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide } from '../db.js';
+import { points, vips, tgConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts } from '../db.js';
 import * as abbonamenti from '../features/abbonamenti.js';
 import * as webauthn from './webauthn.js';
 import { comprimi } from '../features/compress.js';
@@ -247,6 +247,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // aggiunto dopo → richiede una ri-autorizzazione da /auth/permessi)
   const canaleOk = (login) =>
     !!(tokens.get('broadcaster', login)?.scopes?.includes('channel:manage:broadcast'));
+  // ha concesso il permesso per creare/gestire i premi a punti canale?
+  const redemptionsOk = (login) =>
+    !!(tokens.get('broadcaster', login)?.scopes?.includes('channel:manage:redemptions'));
 
   // stato Telegram per la dashboard — MAI il token (segreto): solo se è
   // configurato, lo @username del bot, il gruppo collegato e le impostazioni.
@@ -1145,6 +1148,47 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!eff) return res.status(404).json({ errore: 'effetto non trovato' });
     effects.emit(login, effects.payload(login, eff));
     res.json({ ok: true });
+  }));
+
+  // ---- Alert a PUNTI CANALE (Twitch Custom Rewards) ----
+  app.get('/api/streamer/premi', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    res.json({
+      premi: pointAlerts.list(login),
+      effetti: effectsDb.list(login).map((e) => e.comando),
+      permessoOk: redemptionsOk(login),
+    });
+  }));
+
+  app.post('/api/streamer/premi', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (!redemptionsOk(login)) return res.status(403).json({ errore: 'Concedi il permesso "punti canale" da /auth/permessi', permesso: true });
+    const b = req.body || {};
+    const titolo = String(b.titolo || '').trim().slice(0, 45);
+    const costo = Math.max(1, Math.round(Number(b.costo) || 100));
+    const effetto = normComando(b.effetto || '');
+    const testo = String(b.testo || '').trim().slice(0, 300);
+    if (titolo.length < 2) return res.status(400).json({ errore: 'dai un nome al premio' });
+    if (!effetto && !testo) return res.status(400).json({ errore: 'scegli un effetto o scrivi un messaggio' });
+    let reward;
+    try {
+      reward = await helix.creaReward(login, { titolo, costo });
+    } catch (e) {
+      if (e.status === 403) return res.status(403).json({ errore: 'Permesso mancante: concedi "punti canale" da /auth/permessi', permesso: true });
+      if (e.status === 400) return res.status(400).json({ errore: 'Twitch ha rifiutato il premio (nome già usato?)' });
+      return res.status(502).json({ errore: 'Twitch non ha creato il premio' });
+    }
+    if (!reward?.id) return res.status(502).json({ errore: 'Twitch non ha creato il premio' });
+    pointAlerts.add(login, { rewardId: reward.id, titolo: reward.title, costo: reward.cost, effetto, testo });
+    res.json({ ok: true, premi: pointAlerts.list(login) });
+  }));
+
+  app.delete('/api/streamer/premi/:rewardId', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const rid = String(req.params.rewardId || '');
+    try { await helix.eliminaReward(login, rid); } catch { /* forse già tolto su Twitch */ }
+    pointAlerts.remove(login, rid);
+    res.json({ ok: true, premi: pointAlerts.list(login) });
   }));
 
   // ------------------------------------------------------------ API MODULI (automazioni)

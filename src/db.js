@@ -297,6 +297,16 @@ CREATE TABLE IF NOT EXISTS diario (          -- diario di crescita di "lia": ris
   ts INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_diario_ch ON diario(channel, ts);
+CREATE TABLE IF NOT EXISTS point_alerts (    -- premi a PUNTI CANALE Twitch → alert (effetto e/o messaggio)
+  channel TEXT NOT NULL,
+  reward_id TEXT NOT NULL,
+  titolo TEXT NOT NULL DEFAULT '',
+  costo INTEGER NOT NULL DEFAULT 0,
+  effetto TEXT NOT NULL DEFAULT '',          -- comando effetto da lanciare (overlay/suono)
+  testo TEXT NOT NULL DEFAULT '',            -- messaggio in chat ({user} = chi riscatta)
+  ts INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (channel, reward_id)
+);
 `);
 
 // --- migrazioni leggere: aggiunge colonne nuove a DB già esistenti ------------
@@ -965,6 +975,32 @@ export const guide = {
     const d = { ovunque: 'ovunque', twitch: 'in chat Twitch', tg: 'su Telegram', 'tg-privato': 'in privato su Telegram' }[dove] || 'ovunque';
     const c = { tutti: 'con tutti', 'solo-me': 'solo con te', 'tranne-me': 'con tutti tranne te' }[con_chi] || 'con tutti';
     return `${c}, ${d}`;
+  },
+};
+
+// -------------------------------------------------- alert a punti canale (Twitch)
+// Mappa un premio a punti canale (reward Twitch) a un alert: un effetto/suono e/o
+// un messaggio in chat. Quando lo spettatore riscatta (spendendo i suoi punti),
+// il bot spara l'alert. Per canale.
+export const pointAlerts = {
+  list(channel) {
+    return db.prepare('SELECT reward_id, titolo, costo, effetto, testo, ts FROM point_alerts WHERE channel=? ORDER BY ts DESC')
+      .all(String(channel).toLowerCase());
+  },
+  getByReward(channel, rewardId) {
+    return db.prepare('SELECT reward_id, titolo, costo, effetto, testo FROM point_alerts WHERE channel=? AND reward_id=?')
+      .get(String(channel).toLowerCase(), String(rewardId)) || null;
+  },
+  add(channel, { rewardId, titolo, costo, effetto, testo }) {
+    db.prepare(`INSERT INTO point_alerts(channel, reward_id, titolo, costo, effetto, testo, ts)
+      VALUES(?,?,?,?,?,?,?)
+      ON CONFLICT(channel, reward_id) DO UPDATE SET titolo=excluded.titolo, costo=excluded.costo,
+        effetto=excluded.effetto, testo=excluded.testo`)
+      .run(String(channel).toLowerCase(), String(rewardId), String(titolo || '').slice(0, 60),
+           Math.max(0, Math.round(Number(costo) || 0)), String(effetto || '').slice(0, 24), String(testo || '').slice(0, 300), now());
+  },
+  remove(channel, rewardId) {
+    db.prepare('DELETE FROM point_alerts WHERE channel=? AND reward_id=?').run(String(channel).toLowerCase(), String(rewardId));
   },
 };
 
