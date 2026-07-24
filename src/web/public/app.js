@@ -215,6 +215,16 @@ function apiDemo(percorso, opzioni = {}) {
 function _demoGet(via) {
   const F = {
     '/api/me': statoDemo(),
+    '/api/admin/llm': {
+      scelta: { modello: 'gemma-uncensored' },
+      modelli: [
+        { id: 'auto', nome: 'Automatico (in base alla RAM del server)' },
+        { id: 'qwen', nome: 'Qwen 2.5 3B — equilibrato' },
+        { id: 'gemma', nome: 'Gemma 2 2B — veloce' },
+        { id: 'gemma-uncensored', nome: 'Gemma 2 2B — senza freni (abliterated)' },
+      ],
+      stato: { stato: 'pronto', modello: 'gemma-2-2b-it-abliterated-Q4_K_M.gguf' },
+    },
     '/api/streamer/knowledge': [
       { id: 1, domanda: 'Che PC usi?', risposta: 'Ryzen 7 + RTX 4070, trovi tutto su andryxify.it 🖥️', fonte: 'manuale', ts: '2026-05-02T18:00:00Z' },
       { id: 2, domanda: 'Da dove streammi?', risposta: 'Da Genova, quasi ogni sera verso le 21 💜', fonte: 'auto', ts: '2026-05-01T20:00:00Z' },
