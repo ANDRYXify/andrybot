@@ -3038,21 +3038,41 @@ async function caricaEffettoUpload(ev) {
   }
 }
 
-// Conteggio animato: fa "salire" i numeri delle statistiche da 0 al valore.
-// Rispetta prefers-reduced-motion e ripristina sempre il testo esatto finale.
+// Numeri "che contano su": animano da 0 al valore finale. Copre sia le
+// statistiche (.stat .numero, valore letto dal testo) sia i contatori del
+// cruscotto rete ([data-conta], con suffisso data-suff opzionale come "%").
+// Rispetta prefers-reduced-motion ed è idempotente.
 function animaNumeri(root) {
-  const els = (root || document).querySelectorAll('.stat .numero');
-  const fermo = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-  els.forEach((el) => {
+  const scope = root || document;
+  const ridotto = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // contatori espliciti del cruscotto rete
+  scope.querySelectorAll('[data-conta]:not([data-contato])').forEach((el) => {
+    el.dataset.contato = '1';
+    const target = parseFloat(el.dataset.conta);
+    const suff = el.dataset.suff || '';
+    if (!isFinite(target)) return;
+    if (ridotto) { el.textContent = target + suff; return; }
+    const dur = 900; const t0 = performance.now();
+    const passo = (now) => {
+      const t = Math.min(1, (now - t0) / dur);
+      const e = 1 - Math.pow(1 - t, 3);   // easeOutCubic
+      el.textContent = Math.round(target * e) + suff;
+      if (t < 1) requestAnimationFrame(passo); else el.textContent = target + suff;
+    };
+    requestAnimationFrame(passo);
+  });
+
+  // statistiche: il valore sta nel testo, formattato all'italiana
+  scope.querySelectorAll('.stat .numero').forEach((el) => {
     if (el.dataset.animato) return;
     el.dataset.animato = '1';
     const finale = el.textContent.trim();
     const n = parseInt(finale.replace(/[^\d]/g, ''), 10);
-    if (fermo || !Number.isFinite(n) || n <= 0) return;   // niente da animare
-    const durata = 900;
+    if (ridotto || !Number.isFinite(n) || n <= 0) return;   // niente da animare
     const start = performance.now();
     const passo = (ora) => {
-      const t = Math.min(1, (ora - start) / durata);
+      const t = Math.min(1, (ora - start) / 900);
       const eased = 1 - Math.pow(1 - t, 3);               // easeOutCubic
       el.textContent = Math.round(n * eased).toLocaleString('it-IT');
       if (t < 1) requestAnimationFrame(passo);
@@ -3845,13 +3865,14 @@ async function aggiornaRetePanoramica(box, primo) {
   const pct = (x) => Math.round((x || 0) * 100) + '%';
   const num = 'font-size:1.7em;font-weight:700;line-height:1';
   const nonSo = (d.non_so || []).slice(0, 4);
+  const N = (v, suff = '') => `<span data-conta="${v}"${suff ? ` data-suff="${suff}"` : ''}>${v}${suff}</span>`;
   box.innerHTML = `
     <div style="display:flex;gap:22px;flex-wrap:wrap;margin-top:2px">
-      <div><div style="${num}">${d.nodi || 0}</div><small>nodi appresi</small></div>
-      <div><div style="${num}">${d.solidi || 0}</div><small>sa rispondere</small></div>
-      <div><div style="${num}">${d.corpus || 0}</div><small>nella sua mente</small></div>
-      <div><div style="${num}">${pct(d.fiducia)}</div><small>fiducia</small></div>
-      <div><div style="${num}">${pct(d.curiosita)}</div><small>curiosità</small></div>
+      <div><div style="${num}">${N(d.nodi || 0)}</div><small>nodi appresi</small></div>
+      <div><div style="${num}">${N(d.solidi || 0)}</div><small>sa rispondere</small></div>
+      <div><div style="${num}">${N(d.corpus || 0)}</div><small>nella sua mente</small></div>
+      <div><div style="${num}">${N(Math.round((d.fiducia || 0) * 100), '%')}</div><small>fiducia</small></div>
+      <div><div style="${num}">${N(Math.round((d.curiosita || 0) * 100), '%')}</div><small>curiosità</small></div>
     </div>
     ${d.pensiero ? `<p class="spazio-sopra">💭 <em>${esc(d.pensiero)}</em></p>` : ''}
     ${d.ragiona ? `<p class="suggerimento spazio-sopra">🧩 Cervello logico (non statistico): <strong>${d.ragiona.fatti || 0}</strong> fatti,
@@ -3864,6 +3885,7 @@ async function aggiornaRetePanoramica(box, primo) {
     <p class="suggerimento">«Studia ora»: cerca da sé le sue lacune online, ci ragiona su e le distilla nel suo motore.
     Il «dataset» è la sua mente: su un Mac Apple Silicon lo trasformi in un vero modello tutto suo con
     <code>forgia/forgia.sh</code> (vedi <code>forgia/README.md</code>), poi lo ricolleghi come "maestro".</p>`;
+  if (primo) animaNumeri(box);   // conta su dallo 0 solo alla prima comparsa (non a ogni refresh)
   document.getElementById('btn-forgia')?.addEventListener('click', () => conErrore(async () => {
     await api('/api/streamer/forgia', { method: 'POST', body: {} });
     toast('Ci sto lavorando 📚 — studio le mie lacune e distillo. Torna tra poco.');
