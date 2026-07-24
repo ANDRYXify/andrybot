@@ -634,60 +634,129 @@ function renderHero() {
   else if (q.get('abbonamento') === 'annullato') toast('Checkout annullato — nessun addebito.');
 }
 
-// Riempie la sezione "Piani" della vetrina con i tier dal server. Se gli
-// abbonamenti sono spenti mostra comunque i piani, con i bottoni in "arrivo".
+// Icone dei piani: SVG in linea (stile Lucide, tratto pulito) invece delle emoji
+// — più "disegnate" e in tinta col brand. Stringhe statiche e fidate (nessun
+// input utente), quindi si iniettano come HTML senza rischi. `currentColor` così
+// ereditano il viola del contenitore.
+const SVG_PIANI = {
+  base: '<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>',
+  notifiche: '<path d="M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/><path d="M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14"/><path d="M8 6v8"/>',
+  clip: '<path d="m12.296 3.464 3.02 3.956"/><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3z"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="m6.18 5.276 3.1 3.899"/>',
+  voce: '<path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/>',
+  squadra: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/>',
+};
+const svgPiano = (id) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${SVG_PIANI[id] || SVG_PIANI.base}</svg>`;
+
+// Riempie la sezione "Piani" della vetrina col modello MODULARE "componi il tuo
+// bot": una Base + add-on à la carte selezionabili, con totale live. Se gli
+// abbonamenti sono spenti mostra comunque tutto, con la CTA "In arrivo".
 async function caricaPiani() {
   const box = document.getElementById('vetrina-piani');
   if (!box) return;
   let dati;
   try { dati = await api('/api/abbonamento/piani'); } catch { box.remove(); return; }
-  const tiers = dati.tier || [];
-  if (!tiers.length) { box.remove(); return; }
-  const F = [
-    ['moduli', 'Comandi & moduli'], ['giochi', 'Giochi e classifiche'], ['notifiche', 'Notifiche live'],
-    ['clipAuto', 'Clip automatiche'], ['voce', 'Comandi a voce'], ['moderatori', 'Moderatori'],
+  const base = dati.base;
+  const addon = dati.addon || [];
+  if (!base) { box.remove(); return; }
+
+  const prezzoIt = (n) => Number(n || 0).toFixed(2).replace('.', ',');
+  // Cosa include la Base (copy curata, non guidata dalla matrice grezza).
+  const inclusiBase = [
+    'Comandi & moduli illimitati',
+    'Giochi, monete e classifiche',
+    'Effetti & premi a punti canale',
+    'Overlay per OBS',
+    'Antispam & moderazione',
+    '1 moderatore incluso',
   ];
-  // -1 = illimitato (∞); true = ✓; false/null/0 = —; altrimenti il numero.
-  const valore = (v) => (v === true ? '✓' : (v === -1 || v > 999 ? '∞' : (!v ? '—' : v)));
-  const attiva = (v) => v === true || v === -1 || (typeof v === 'number' && v > 0);
+
   box.innerHTML = `
     <div class="vetrina-piani-testa">
-      <h2>Piani</h2>
-      <p>${dati.attivo ? 'Scegli il piano e attiva SocialBot sul tuo canale.' : 'Gli abbonamenti stanno arrivando — intanto ecco cosa includeranno.'}</p>
+      <h2>Componi il tuo bot</h2>
+      <p>${dati.attivo
+        ? 'Parti dalla Base e aggiungi solo i super-poteri che ti servono.'
+        : 'Presto potrai attivarlo — parti dalla Base e aggiungi solo i super-poteri che ti servono.'}</p>
     </div>
-    <div class="piani-griglia">
-      ${tiers.map((t) => `
-        <div class="piano carta rivela${t.id === 'pro' ? ' piano-top' : ''}">
-          ${t.id === 'pro' ? '<span class="piano-badge">Consigliato</span>' : ''}
-          <h3>${esc(t.nome)}</h3>
-          <div class="piano-prezzo">${esc(t.prezzoTesto)}</div>
-          <p class="piano-somm">${esc(t.sommario)}</p>
-          <ul class="piano-funzioni">
-            ${F.map(([k, nome]) => `<li><span class="pf-val ${attiva(t.funzioni[k]) ? 'si' : 'no'}">${valore(t.funzioni[k])}</span> ${esc(nome)}</li>`).join('')}
-          </ul>
-          ${t.id === 'free'
-            ? '<span class="piano-nota">Incluso per provare</span>'
-            : (dati.attivo
-                ? `<button class="btn grande${t.id === 'pro' ? '' : ' secondario'}" data-abbona="${t.id}">Scegli ${esc(t.nome)}</button>`
-                : `<button class="btn grande secondario" disabled>In arrivo</button>`)}
-        </div>`).join('')}
+    <div class="piani-componi">
+      <div class="piano-base carta rivela">
+        <div class="piano-base-testa">
+          <span class="piano-icona">${svgPiano('base')}</span>
+          <div>
+            <h3>${esc(base.nome)}</h3>
+            <p class="piano-somm">${esc(base.sommario)}</p>
+          </div>
+          <div class="piano-prezzo">€${prezzoIt(base.prezzo)}<span>/mese</span></div>
+        </div>
+        <ul class="piano-funzioni">
+          ${inclusiBase.map((t) => `<li><span class="pf-val si">✓</span> ${esc(t)}</li>`).join('')}
+        </ul>
+      </div>
+
+      <div class="addon-blocco">
+        <h4 class="addon-titolo">Aggiungi super-poteri <span>· à la carte</span></h4>
+        <div class="addon-griglia">
+          ${addon.map((a) => `
+            <button type="button" class="addon-carta" data-addon="${esc(a.id)}" aria-pressed="false">
+              <span class="addon-icona">${svgPiano(a.id)}</span>
+              <span class="addon-testo">
+                <span class="addon-nome">${esc(a.nome)}</span>
+                <span class="addon-somm">${esc(a.sommario)}</span>
+              </span>
+              <span class="addon-prezzo">+€${prezzoIt(a.prezzo)}</span>
+            </button>`).join('')}
+        </div>
+      </div>
+
+      <div class="piani-riepilogo">
+        <div class="riepilogo-conto">
+          <span class="riepilogo-voce" id="piani-voce">Solo Base</span>
+          <span class="riepilogo-tot" id="piani-totale">€${prezzoIt(base.prezzo)}<span>/mese</span></span>
+        </div>
+        ${dati.attivo
+          ? '<button class="btn grande" id="piani-attiva">Attiva SocialBot →</button>'
+          : '<button class="btn grande secondario" disabled>In arrivo</button>'}
+      </div>
     </div>
     <div class="piani-community">
       🎁 <strong>Sei già un membro abilitato della community di <a href="https://andryxify.it">andryxify.it</a>?</strong>
       SocialBot è <strong>gratis e completo</strong> per te — non ti serve nessun piano.
     </div>`;
   rivelaCarte(box);
-  box.addEventListener('click', (ev) => {
-    const b = ev.target.closest('[data-abbona]');
-    if (!b) return;
-    const tier = b.dataset.abbona;
+
+  // Selezione add-on + totale live.
+  const selezione = new Set();
+  const totaleEl = box.querySelector('#piani-totale');
+  const voceEl = box.querySelector('#piani-voce');
+  const aggiorna = () => {
+    let tot = Number(base.prezzo || 0);
+    selezione.forEach((id) => { const a = addon.find((x) => x.id === id); if (a) tot += Number(a.prezzo || 0); });
+    if (totaleEl) totaleEl.innerHTML = `€${prezzoIt(tot)}<span>/mese</span>`;
+    if (voceEl) voceEl.textContent = selezione.size
+      ? `Base + ${selezione.size} add-on`
+      : 'Solo Base';
+  };
+  box.querySelectorAll('[data-addon]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.addon;
+      const on = !selezione.has(id);
+      if (on) selezione.add(id); else selezione.delete(id);
+      btn.classList.toggle('on', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      aggiorna();
+    });
+  });
+
+  // CTA unica: checkout con Base + add-on scelti.
+  const attivaBtn = box.querySelector('#piani-attiva');
+  if (attivaBtn) attivaBtn.addEventListener('click', () => {
+    const pacchetti = [...selezione];
     conErrore(async () => {
       try {
-        const r = await api('/api/abbonamento/checkout', { method: 'POST', body: { tier } });
+        const r = await api('/api/abbonamento/checkout', { method: 'POST', body: { pacchetti } });
         if (r?.url) location.href = r.url; else toast('Piano non disponibile al momento.', 'errore');
       } catch (e) {
-        // non loggato: prima l'accesso con Twitch, poi si torna dritti al checkout del piano scelto
-        if (/non autenticato/i.test(e?.message || '')) { location.href = '/accedi?tier=' + encodeURIComponent(tier); return; }
+        // non loggato: prima l'accesso con Twitch, poi si torna dritti al checkout con la scelta
+        if (/non autenticato/i.test(e?.message || '')) { location.href = '/accedi?pacchetti=' + encodeURIComponent(pacchetti.join(',')); return; }
         throw e;
       }
     });
