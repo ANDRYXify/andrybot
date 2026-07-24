@@ -42,7 +42,7 @@ const UPLOAD_MAX = 60 * 1024 * 1024;   // 60 MB in ingresso (per clip fino a ~30
 
 // Moduli: tipi di innesco e di azione ammessi (validazione lato API)
 const MOD_TRIGGER = ['comando', 'parola', 'evento', 'timer', 'manuale', 'voce'];
-const MOD_AZIONI = ['messaggio', 'effetto', 'contatore', 'webhook', 'attendi', 'overlayTesto', 'timeout', 'clip', 'categoria', 'titolo'];
+const MOD_AZIONI = ['messaggio', 'effetto', 'contatore', 'webhook', 'attendi', 'overlayTesto', 'timeout', 'clip', 'categoria', 'titolo', 'musica'];
 const EXT_MAX_MIN = 30;   // ingresso esterno: max richieste al minuto per login
 
 // Comando integrato /compleanno nel gruppo Telegram. Registra/mostra/rimuove la
@@ -1354,6 +1354,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       }
       if (a.tipo === 'titolo' && !String(a.testo || '').trim()) {
         return 'l\'azione "cambia titolo" ha bisogno di un testo (anche con variabili come $args)';
+      }
+      if (a.tipo === 'musica' && !String(a.brano || '').trim()) {
+        return 'l\'azione "metti in coda" ha bisogno di un brano (o una variabile come $args)';
       }
     }
     return null;
