@@ -60,9 +60,23 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path.startswith("/health") or self.path.startswith("/stato"):
             return self._json(200, {"ok": True, "genera": G.stato()})
+        if self.path.startswith("/corpus"):
+            return self._corpus()
         if self.path.startswith("/rete"):
             return self._rete()
         return self._json(404, {"errore": "non trovato"})
+
+    def _corpus(self):
+        # il dataset della sua mente (coppie domanda→risposta consolidate)
+        from urllib.parse import urlparse, parse_qs
+        q = parse_qs(urlparse(self.path).query)
+        canale = (q.get("canale", [""])[0] or "").lower().strip()
+        if not canale:
+            return self._json(400, {"errore": "canale mancante"})
+        try:
+            return self._json(200, {"coppie": R.esporta(canale)})
+        except Exception as e:
+            return self._json(200, {"coppie": [], "errore": str(e)[:120]})
 
     def _rete(self):
         # stato della piccola rete PER CANALE (cruscotto in dashboard)
@@ -115,7 +129,7 @@ class Handler(BaseHTTPRequestHandler):
         testo = str(d.get("testo") or "").strip()
         tono = str(d.get("tono") or "scherzoso")
         modo = str(d.get("modo") or "").strip()
-        if modo not in ("allenamento", "proattivo"):
+        if modo not in ("allenamento", "proattivo", "studio"):
             modo = "live"
         if not canale or not login or not testo:
             return self._json(400, {"errore": "dati mancanti"})
