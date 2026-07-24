@@ -325,12 +325,19 @@ def avvia():
             _stato.update(stato="errore", motivo=f"llama-cpp-python assente: {e}")
             print("[genera] llama-cpp-python non installato: chiacchiera disattivata.", flush=True)
             return
-        # modello locale (un tuo fine-tune in GGUF, es. dopo un LoRA) se indicato;
-        # altrimenti si scarica dalla scaletta in base alla RAM.
+        # 0) FILE locale scelto dalla dashboard (un GGUF che hai caricato o
+        #    scaricato tu): ha la precedenza, nessun download.
+        scelta_file = str(_scelta_dashboard().get("file") or "").strip()
+        cand = os.path.join(MODELS_DIR, os.path.basename(scelta_file)) if scelta_file else ""
         locale = os.environ.get("LLM_MODEL_PATH")
-        if locale and os.path.exists(locale):
+        if cand and os.path.exists(cand) and os.path.getsize(cand) > 1024 * 1024:
+            path = cand
+            _stato["modello"] = os.path.basename(cand)
+        # 1) file locale da .env (un tuo fine-tune in GGUF, es. dopo un LoRA)
+        elif locale and os.path.exists(locale):
             path = locale
             _stato["modello"] = os.path.basename(locale)
+        # 2) altrimenti scarica dalla scaletta/URL in base alla scelta e alla RAM
         else:
             url = _scegli_modello()
             _stato["modello"] = url.split("/")[-1]

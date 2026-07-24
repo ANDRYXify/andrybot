@@ -229,6 +229,10 @@ function _demoGet(via) {
         { id: 'gemma', nome: 'Gemma 2 2B — veloce' },
         { id: 'gemma-uncensored', nome: 'Gemma 2 2B — senza freni (abliterated)' },
       ],
+      modelliLocali: [
+        { nome: 'lia-forgiata.gguf', mb: 4630 },
+        { nome: 'qwen2.5-3b-instruct-q5_k_m.gguf', mb: 2100 },
+      ],
       stato: {
         stato: 'pronto', modello: 'gemma-2-2b-it-abliterated-Q4_K_M.gguf',
         endpoint: { configurato: true, url: 'http://192.168.1.50:1234/v1', modello: 'mistral-nemo', solo: false, ok: true, motivo: null },
@@ -3673,6 +3677,11 @@ async function caricaLLM() {
   const rete = s.rete || {};
   const pct = (x) => Math.round((x || 0) * 100) + '%';
   const stile = { hr: 'border:0;border-top:1px solid currentColor;opacity:.15;margin:20px 0', num: 'font-size:1.7em;font-weight:700;line-height:1' };
+  const locali = d.modelliLocali || [];
+  const selFile = scelta.file || '';
+  const libItems = locali.length
+    ? locali.map((m) => `<li><span>${esc(m.nome)} <span class="suggerimento">${m.mb} MB</span>${selFile === m.nome ? ' <span class="badge verde">in uso</span>' : ''}</span> <span>${selFile === m.nome ? '' : `<a href="#" class="usa-modello" data-nome="${esc(m.nome)}">usa</a> · `}<a href="#" class="rimuovi-modello" data-nome="${esc(m.nome)}" title="Elimina">✕</a></span></li>`).join('')
+    : '<li class="vuoto">Nessun modello caricato a mano. Sopra usi quelli automatici; qui sotto carichi un GGUF tuo.</li>';
   box.innerHTML = `
     <p class="suggerimento">🔒 <strong>Riservato a te</strong>: il modello del server e il maestro esterno li vedi e li cambi <strong>solo tu</strong> (andryxify). Nessun altro streamer o moderatore ha accesso a questa sezione.</p>
     <p>Stato: <strong>${statoTxt}</strong> &nbsp; In memoria: <code>${esc(s.modello || '—')}</code>${s.motivo ? ` <span class="suggerimento">(${esc(s.motivo)})</span>` : ''}</p>
@@ -3687,6 +3696,17 @@ async function caricaLLM() {
       <button class="btn secondario" id="btn-llm-refresh">Aggiorna stato</button>
     </p>
     <p class="suggerimento">"Senza freni" = modello <em>abliterated</em> (nessun rifiuto). La moderazione del bot e le <strong>parole vietate</strong> filtrano comunque l'uscita.</p>
+
+    <hr style="${stile.hr}">
+    <h3>Modelli sul server 📦</h3>
+    <p class="suggerimento">Carica un <strong>GGUF</strong> dal tuo computer (es. quello forgiato sul Mac) e usalo qui. Qui vedi anche i modelli
+    scaricati automaticamente. ⚠️ Pesano vari GB: occhio allo <strong>spazio su disco</strong> del server (elimina quelli che non usi).</p>
+    <ul class="lista-voci" id="lista-modelli">${libItems}</ul>
+    <p class="spazio-sopra">
+      <input type="file" id="inp-modello-file" accept=".gguf">
+      <button class="btn secondario" id="btn-modello-upload">Carica sul server</button>
+      <span id="modello-upload-stato" class="suggerimento"></span>
+    </p>
 
     <hr style="${stile.hr}">
     <h3>Maestro esterno — LM Studio / Ollama &nbsp;<span class="suggerimento">${epBadge}</span></h3>
@@ -3750,6 +3770,48 @@ async function caricaLLM() {
       ? `🟢 Risponde! ${r.modello ? `(${esc(r.modello)}) ` : ''}<em>«${esc(r.campione || 'ok')}»</em>`
       : `🔴 Non risponde: ${esc((r && r.motivo) || 'errore')}`;
   }));
+  // libreria modelli: usa / elimina / carica
+  document.querySelectorAll('#lista-modelli .usa-modello').forEach((a) => a.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
+    await api('/api/admin/llm', { method: 'POST', body: { file: a.dataset.nome } });
+    toast('Carico il modello 🧠 — può metterci un po\'.');
+    setTimeout(caricaLLM, 2500);
+  }); }));
+  document.querySelectorAll('#lista-modelli .rimuovi-modello').forEach((a) => a.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
+    if (!confirm('Eliminare questo modello dal server?')) return;
+    await api('/api/admin/llm/files/' + encodeURIComponent(a.dataset.nome), { method: 'DELETE' });
+    toast('Modello eliminato.');
+    caricaLLM();
+  }); }));
+  document.getElementById('btn-modello-upload')?.addEventListener('click', () => caricaModelloFile());
+}
+
+// upload di un GGUF con barra di avanzamento (i file sono grandi: XHR per il progresso)
+function caricaModelloFile() {
+  const inp = document.getElementById('inp-modello-file');
+  const st = document.getElementById('modello-upload-stato');
+  const f = inp && inp.files && inp.files[0];
+  if (!f) { toast('Scegli un file .gguf', 'errore'); return; }
+  if (!/\.gguf$/i.test(f.name)) { toast('Serve un file .gguf', 'errore'); return; }
+  if (DEMO) { toast('In demo non carico davvero 😊'); return; }
+  const xhr = new XMLHttpRequest();
+  const fd = new FormData();
+  fd.append('file', f);
+  xhr.open('POST', '/api/admin/llm/upload');
+  xhr.upload.onprogress = (e) => { if (e.lengthComputable && st) st.textContent = `Carico… ${Math.round(e.loaded * 100 / e.total)}%`; };
+  xhr.onload = () => {
+    if (xhr.status >= 200 && xhr.status < 300) {
+      if (st) st.textContent = 'Caricato ✓';
+      toast('Modello caricato 📦 — ora premi «usa» per attivarlo.');
+      caricaLLM();
+    } else {
+      let m = 'errore'; try { m = JSON.parse(xhr.responseText).errore || m; } catch { /* niente */ }
+      if (st) st.textContent = 'Errore: ' + m;
+      toast('Upload fallito: ' + m, 'errore');
+    }
+  };
+  xhr.onerror = () => { if (st) st.textContent = 'Errore di rete'; toast('Upload fallito', 'errore'); };
+  if (st) st.textContent = 'Carico… 0%';
+  xhr.send(fd);
 }
 
 // carica e disegna il pannello Anima (solo operatore)
