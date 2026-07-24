@@ -16,6 +16,8 @@ import threading
 import urllib.request
 import json
 
+import rete   # la "piccola rete" che si autoaddestra (motore veloce, puro Python)
+
 DATA_DIR = os.environ.get("DATA_DIR", "/app/data")
 MODELS_DIR = os.path.join(DATA_DIR, "models")
 # scelta del modello fatta dalla DASHBOARD (admin): { "modello": "gemma" } o { "url": "..." }.
@@ -41,10 +43,26 @@ _lock = threading.Lock()
 _stato = {"stato": "spento", "modello": None, "motivo": None}
 _llm = None
 _gemma = False   # il modello caricato è della famiglia Gemma? (niente ruolo "system")
+# stato dell'endpoint esterno (LM Studio / Ollama / OpenAI-compatibile): il "maestro"
+_stato_endpoint = {"ok": None, "modello": None, "quando": 0, "motivo": None}
 
 
 def stato():
-    return dict(_stato)
+    s = dict(_stato)
+    cfg = _endpoint_cfg()
+    s["endpoint"] = {
+        "configurato": bool(cfg),
+        "url": cfg["url"] if cfg else None,
+        "modello": cfg["modello"] if cfg else None,
+        "solo": bool(cfg and cfg.get("solo")),
+        "ok": _stato_endpoint.get("ok"),
+        "motivo": _stato_endpoint.get("motivo"),
+    }
+    try:
+        s["rete"] = rete.riepilogo()
+    except Exception:
+        s["rete"] = None
+    return s
 
 
 # Costruisce la lista di messaggi per il modello. Gemma NON ha il ruolo "system":
@@ -69,6 +87,128 @@ def _prepara_messaggi(sistema, turni, utente):
             msgs.append({"role": "assistant", "content": mb})
     msgs.append({"role": "user", "content": utente})
     return msgs
+
+
+# Messaggi in formato OpenAI STANDARD (ruolo system normale): è ciò che vogliono
+# gli endpoint esterni (LM Studio, Ollama, …), che applicano loro il template del
+# modello. Il formato "gemma" serve solo al modello LOCALE.
+def _messaggi_std(sistema, turni, utente):
+    msgs = [{"role": "system", "content": sistema}]
+    for mu, mb in turni:
+        if mu:
+            msgs.append({"role": "user", "content": mu})
+        if mb:
+            msgs.append({"role": "assistant", "content": mb})
+    msgs.append({"role": "user", "content": utente})
+    return msgs
+
+
+# ─────────────────────────────────── ENDPOINT ESTERNO (il "maestro")
+# Puoi collegare un modello locale POTENTE che gira sul TUO PC (es. LM Studio o
+# Ollama, sul fisso da gaming): il cervello lo usa come MAESTRO — risponde meglio
+# e, soprattutto, la piccola rete impara da OGNI sua risposta. Deve essere
+# raggiungibile dal server (LAN, IP pubblico o tunnel tipo cloudflared/ngrok).
+def _endpoint_cfg():
+    s = _scelta_dashboard()
+    e = s.get("endpoint") if isinstance(s.get("endpoint"), dict) else {}
+    url = (e.get("url") or os.environ.get("LLM_ENDPOINT_URL") or "").strip()
+    if not url:
+        return None
+    return {
+        "url": url,
+        "modello": (e.get("modello") or os.environ.get("LLM_ENDPOINT_MODELLO") or "local-model").strip() or "local-model",
+        "chiave": (e.get("chiave") or os.environ.get("LLM_ENDPOINT_CHIAVE") or "").strip(),
+        # "solo": non caricare il modello locale (risparmia RAM: mi bastano endpoint + rete)
+        "solo": bool(e.get("solo")) or os.environ.get("LLM_ENDPOINT_SOLO", "").lower() in ("1", "true", "si", "sì"),
+    }
+
+
+def _endpoint_url(url):
+    u = (url or "").strip().rstrip("/")
+    if u.endswith("/chat/completions"):
+        return u
+    if u.endswith("/v1"):
+        return u + "/chat/completions"
+    return u + "/v1/chat/completions"
+
+
+def _chat_endpoint(cfg, messaggi, max_tokens, temperature, top_p, timeout_s):
+    corpo = json.dumps({
+        "model": cfg.get("modello") or "local-model",
+        "messages": messaggi,
+        "max_tokens": int(max_tokens),
+        "temperature": temperature,
+        "top_p": top_p,
+        "stream": False,
+    }).encode("utf-8")
+    req = urllib.request.Request(_endpoint_url(cfg["url"]), data=corpo, method="POST")
+    req.add_header("Content-Type", "application/json")
+    if cfg.get("chiave"):
+        req.add_header("Authorization", "Bearer " + cfg["chiave"])
+    try:
+        with urllib.request.urlopen(req, timeout=timeout_s) as r:
+            d = json.loads(r.read().decode("utf-8"))
+        txt = d["choices"][0]["message"]["content"]
+        _stato_endpoint.update(ok=True, modello=cfg.get("modello"), quando=int(time.time()), motivo=None)
+        return txt
+    except Exception as e:
+        _stato_endpoint.update(ok=False, quando=int(time.time()), motivo=str(e)[:160])
+        return None
+
+
+def prova_endpoint(cfg=None, timeout_s=10):
+    """Verifica dal SERVER che l'endpoint risponda davvero (mini generazione).
+    Ritorna {ok, modello, campione} oppure {ok:False, motivo}."""
+    cfg = cfg or _endpoint_cfg()
+    if not cfg:
+        return {"ok": False, "motivo": "nessun endpoint configurato"}
+    txt = _chat_endpoint(cfg, [{"role": "user", "content": "Rispondi con una sola parola: ok"}],
+                         max_tokens=8, temperature=0.0, top_p=1.0, timeout_s=timeout_s)
+    if txt and txt.strip():
+        return {"ok": True, "modello": cfg.get("modello"), "campione": (_pulisci(txt) or txt.strip())[:80]}
+    return {"ok": False, "motivo": _stato_endpoint.get("motivo") or "nessuna risposta"}
+
+
+# Genera con il MAESTRO: prima l'endpoint esterno (se c'è e risponde), altrimenti
+# il modello LOCALE. Ritorna testo grezzo o None.
+def _completa(sistema, turni, utente, max_tokens, temperature=0.7, top_p=0.9, timeout_s=30):
+    cfg = _endpoint_cfg()
+    if cfg:
+        txt = _chat_endpoint(cfg, _messaggi_std(sistema, turni, utente),
+                             max_tokens, temperature, top_p, timeout_s)
+        if txt and txt.strip():
+            return txt
+        # endpoint giù/lento → provo il modello locale come riserva (se c'è)
+    if _stato["stato"] == "pronto" and _llm is not None:
+        return _completa_locale(_prepara_messaggi(sistema, turni, utente),
+                                max_tokens, temperature, top_p, timeout_s)
+    return None
+
+
+def _completa_locale(messaggi, max_tokens, temperature, top_p, timeout_s):
+    risultato = {}
+
+    def _lavoro():
+        try:
+            with _lock:
+                out = _llm.create_chat_completion(
+                    messages=messaggi, max_tokens=int(max_tokens),
+                    temperature=temperature, top_p=top_p, top_k=40, repeat_penalty=1.1,
+                )
+            risultato["t"] = out["choices"][0]["message"]["content"]
+        except Exception as e:
+            risultato["e"] = e
+
+    th = threading.Thread(target=_lavoro, daemon=True)
+    th.start()
+    th.join(timeout_s)
+    if th.is_alive() or "e" in risultato:
+        return None
+    return risultato.get("t")
+
+
+def _puo_generare():
+    return bool(_endpoint_cfg()) or (_stato["stato"] == "pronto" and _llm is not None)
 
 
 def _ram_gb():
@@ -168,6 +308,16 @@ def avvia():
             return
         _stato["stato"] = "carico"
     try:
+        # se hai collegato un endpoint esterno in modalità "solo", NON carico il
+        # modello locale: mi bastano l'endpoint (il maestro) + la rete → RAM libera.
+        cfg = _endpoint_cfg()
+        if cfg and cfg.get("solo"):
+            with _lock:
+                _llm = None
+                _stato.update(stato="pronto", modello="endpoint:" + (cfg.get("modello") or ""),
+                              motivo="uso solo l'endpoint esterno")
+            print("[genera] modalità solo-endpoint: modello locale non caricato (RAM libera).", flush=True)
+            return
         try:
             from llama_cpp import Llama  # dipendenza OPZIONALE
         except Exception as e:
@@ -263,36 +413,46 @@ def _system_prompt(canale, ctx):
 
 
 def genera(canale, ctx, testo, timeout_s=30):
-    """Genera una risposta o None. Non solleva mai."""
-    if _stato["stato"] != "pronto" or _llm is None:
-        return None
+    """Genera una risposta o None. Non solleva mai.
+
+    Pipeline dell'apprendimento:
+      1) MOTORE VELOCE — la piccola rete ha già imparato questa cosa? → risposta
+         istantanea, niente LLM.
+      2) MAESTRO — altrimenti chiedo al modello (endpoint esterno se collegato,
+         sennò locale) e la rete IMPARA la risposta: la prossima volta fa da sola.
+      3) METACOGNIZIONE — se nessuno sa, la rete 'sa di non sapere': segna la
+         lacuna e la sua curiosità sale.
+    """
+    testo = (testo or "")[:300]
+    canale = (canale or "").strip()
+    # 1) la rete conosce già la risposta?
+    try:
+        hit = rete.recall(canale, testo)
+    except Exception:
+        hit = None
+    if hit and hit.get("risposta"):
+        return _pulisci(hit["risposta"])
+    # 2) chiedi al maestro
     try:
         turni = [((mu[:200] if mu else mu), (mb[:200] if mb else mb))
                  for mu, mb in ctx.get("scambi", [])[-2:]]
-        messaggi = _prepara_messaggi(_system_prompt(canale, ctx), turni, testo[:300])
-
-        risultato = {}
-        def _lavoro():
-            try:
-                with _lock:
-                    out = _llm.create_chat_completion(
-                        messages=messaggi, max_tokens=MAX_TOKEN,
-                        temperature=0.7, top_p=0.9, top_k=40, repeat_penalty=1.1,
-                    )
-                risultato["t"] = out["choices"][0]["message"]["content"]
-            except Exception as e:
-                risultato["e"] = e
-
-        th = threading.Thread(target=_lavoro, daemon=True)
-        th.start()
-        th.join(timeout_s)
-        if th.is_alive():
-            return None  # troppo lento: meglio niente
-        if "e" in risultato:
-            return None
-        return _pulisci(risultato.get("t"))
+        grezzo = _completa(_system_prompt(canale, ctx), turni, testo,
+                           MAX_TOKEN, temperature=0.7, top_p=0.9, timeout_s=timeout_s)
+        risposta = _pulisci(grezzo) if grezzo else None
     except Exception:
-        return None
+        risposta = None
+    if risposta:
+        try:
+            rete.impara(canale, testo, risposta, fonte="maestro")
+        except Exception:
+            pass
+        return risposta
+    # 3) lacuna: la rete impara di non sapere
+    try:
+        rete.segna_lacuna(canale, testo)
+    except Exception:
+        pass
+    return None
 
 
 # ─────────────────────────────────────────── DISTILLAZIONE (allenamento)
@@ -301,7 +461,7 @@ def genera(canale, ctx, testo, timeout_s=30):
 # Queste finiscono nel motore VELOCE (la conoscenza locale), così in live si
 # risponde bene senza richiamare l'LLM. Gira in background: può metterci.
 def distilla(canale, frasi, timeout_s=90):
-    if _stato["stato"] != "pronto" or _llm is None:
+    if not _puo_generare():
         return None
     righe = [str(f).strip() for f in (frasi or []) if str(f).strip()][:30]
     if not righe:
@@ -314,28 +474,12 @@ def distilla(canale, frasi, timeout_s=90):
         "Risposte BREVI (1 frase), in prima persona, coerenti con ciò che pensa e col suo tono. "
         "Rispondi SOLO con righe nel formato esatto:  domanda :: risposta  — massimo 6 righe, niente altro."
     )
-    messaggi = _prepara_messaggi(sistema, [], blocco)
-    risultato = {}
-
-    def _lavoro():
-        try:
-            with _lock:
-                out = _llm.create_chat_completion(
-                    messages=messaggi, max_tokens=320,
-                    temperature=0.5, top_p=0.9, repeat_penalty=1.1,
-                )
-            risultato["t"] = out["choices"][0]["message"]["content"]
-        except Exception as e:
-            risultato["e"] = e
-
-    th = threading.Thread(target=_lavoro, daemon=True)
-    th.start()
-    th.join(timeout_s)
-    if th.is_alive() or "e" in risultato:
+    # usa il MAESTRO (endpoint esterno se collegato — più intelligente — sennò locale)
+    grezzo = _completa(sistema, [], blocco, max_tokens=320, temperature=0.5, top_p=0.9, timeout_s=timeout_s)
+    if grezzo is None:
         return None
-    testo = risultato.get("t") or ""
     coppie = []
-    for riga in testo.splitlines():
+    for riga in (grezzo or "").splitlines():
         if "::" not in riga:
             continue
         q, a = riga.split("::", 1)
@@ -343,7 +487,14 @@ def distilla(canale, frasi, timeout_s=90):
         a = a.strip(" -•*").strip().strip('"\'«»').strip()
         if len(q) >= 3 and len(a) >= 2:
             coppie.append({"q": q[:200], "a": a[:300]})
-    return coppie[:6]
+    coppie = coppie[:6]
+    # la RETE impara subito le coppie distillate (fonte fidata: dai discorsi dello streamer)
+    for c in coppie:
+        try:
+            rete.impara(canale, c["q"], c["a"], fonte="distillato")
+        except Exception:
+            pass
+    return coppie
 
 
 def _pulisci(s):

@@ -88,6 +88,24 @@ export async function ricarica() {
   finally { clearTimeout(to); }
 }
 
+// Prova un endpoint esterno (LM Studio/Ollama/OpenAI-compatibile): la verifica
+// parte dal CERVELLO (server), perché è lui che dovrà raggiungerlo davvero.
+// `cfg` = {url, modello, chiave, solo} oppure null per provare quello salvato.
+export async function provaEndpoint(cfg) {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 15_000);
+  try {
+    const r = await fetch(BASE + '/prova', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cfg || {}),
+      signal: ac.signal,
+    });
+    return r.ok ? await r.json().catch(() => null) : null;
+  } catch (e) { log.debug('prova:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
 // Stato del cervello (per log/diagnostica). Ritorna un oggetto o null.
 export async function stato() {
   const ac = new AbortController();
