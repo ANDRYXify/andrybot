@@ -1,7 +1,8 @@
 // Minigiochi in chat + monete (punti fedeltà) + promo social proattiva.
 // Tutto procedurale e leggero. Disattivabile per canale (settings.giochi).
 //
-// Comandi: !dado [NdM] · !moneta · !8ball <domanda> · !slot · !duello @tizio
+// Comandi: !dado [NdM] · !moneta · !8ball <domanda> · !slot · !roulette <p> <scelta>
+//          · !pesca · !duello @tizio · !furto @tizio · !regala @tizio N
 //          · !trivia · !classifica · !monete · !giochi
 import { points, streamers, knowledge, giochi } from '../db.js';
 import { makeLog } from '../logger.js';
@@ -169,6 +170,27 @@ const DUELLO_ESITI = [
   '{a} e {b} se le danno di santa ragione… vince {a}! 🔥',
   '{a} sconfigge {b} e ruba pure la scena ✨',
 ];
+// pesca: tabella del pescato (peso = probabilità relativa, v = monete vinte)
+const PESCA = [
+  { n: 'una vecchia ciabatta 🥿', v: 0, peso: 16 },
+  { n: 'una lattina arrugginita 🥫', v: 0, peso: 12 },
+  { n: 'un pesciolino 🐟', v: 15, peso: 30 },
+  { n: 'un granchio 🦀', v: 30, peso: 18 },
+  { n: 'un polpo 🐙', v: 60, peso: 10 },
+  { n: 'un pesce spada 🗡️', v: 120, peso: 6 },
+  { n: 'uno stivale pieno di monete 👢', v: 250, peso: 4 },
+  { n: 'uno scrigno del tesoro 🧰', v: 500, peso: 2 },
+];
+// roulette europea: lo 0 è verde, gli altri numeri sono rossi o neri
+const ROULETTE_ROSSI = new Set([1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]);
+
+// pesca pesata da una tabella con campo `peso`
+function pescaPesata(tab) {
+  const tot = tab.reduce((s, x) => s + (x.peso || 0), 0);
+  let r = Math.random() * tot;
+  for (const x of tab) { if ((r -= (x.peso || 0)) < 0) return x; }
+  return tab[tab.length - 1];
+}
 
 // --------------------------------------------------------- comando principale
 // Ritorna true se il messaggio era un comando/azione di gioco (gestito).
@@ -202,7 +224,7 @@ export function tryGame(msg, say) {
 
     switch (cmd) {
       case 'giochi':
-        say('🎮 Giochi: !dado, !moneta, !8ball, !slot, !duello @nome, !trivia, !classifica, !monete');
+        say('🎮 Giochi: !dado, !moneta, !8ball, !slot, !roulette, !pesca, !duello @nome, !furto @nome, !regala @nome N, !trivia, !classifica, !monete');
         return true;
 
       case 'dado':
@@ -292,6 +314,71 @@ export function tryGame(msg, say) {
         if (roundAttivo.has(channel)) { say('🎮 C\'è già una manche in corso!'); return true; }
         if (inCooldown(channel + '|manche', 10000)) return true;
         if (!avviaManche(channel, say)) say('🎮 Nessuna manche disponibile al momento.');
+        return true;
+      }
+
+      case 'pesca':
+      case 'fish': {
+        if (inCooldown(channel + '|pesca|' + msg.user, 60000)) { say(`🎣 ${nome}, la canna è ancora in acqua… riprova tra poco.`); return true; }
+        const c = pescaPesata(PESCA);
+        if (c.v > 0) { points.add(channel, msg.user, c.v); say(`🎣 ${nome} pesca ${c.n} e guadagna ${c.v} ${moneta()}!`); }
+        else say(`🎣 ${nome} pesca ${c.n}… niente ${moneta()}, ritenta!`);
+        return true;
+      }
+
+      case 'roulette':
+      case 'rul': {
+        if (inCooldown(channel + '|roulette|' + msg.user, 5000)) return true;
+        const punta = Math.round(Number(args[0]));
+        const scelta = (args[1] || '').toLowerCase();
+        if (!Number.isFinite(punta) || punta <= 0 || !scelta) { say(`🎡 Uso: !roulette <puntata> <rosso|nero|verde|numero 0-36>`); return true; }
+        const saldo = points.get(channel, msg.user);
+        if (saldo < punta) { say(`🎡 ${nome}, non hai abbastanza ${moneta()} (${saldo}).`); return true; }
+        const numScelto = /^\d{1,2}$/.test(scelta) ? parseInt(scelta, 10) : null;
+        if (numScelto === null && !['rosso', 'nero', 'verde', 'red', 'black', 'green'].includes(scelta)) { say(`🎡 Punta su rosso, nero, verde o un numero da 0 a 36.`); return true; }
+        if (numScelto !== null && (numScelto < 0 || numScelto > 36)) { say(`🎡 Il numero va da 0 a 36, ${nome}.`); return true; }
+        points.add(channel, msg.user, -punta);
+        const uscito = rnd(0, 36);
+        const colore = uscito === 0 ? 'verde' : (ROULETTE_ROSSI.has(uscito) ? 'rosso' : 'nero');
+        let vincita = 0;
+        if (numScelto !== null) { if (numScelto === uscito) vincita = punta * 36; }         // pieno: 35x + puntata
+        else { const s = { red: 'rosso', black: 'nero', green: 'verde' }[scelta] || scelta;
+          if (s === colore) vincita = colore === 'verde' ? punta * 14 : punta * 2; }
+        const pallina = `${uscito} ${colore === 'rosso' ? '🔴' : colore === 'nero' ? '⚫' : '🟢'}`;
+        if (vincita) { points.add(channel, msg.user, vincita); say(`🎡 La pallina cade sul ${pallina} — ${nome} vince ${vincita} ${moneta()}! 🎉`); }
+        else say(`🎡 La pallina cade sul ${pallina} — niente da fare, ${nome}.`);
+        return true;
+      }
+
+      case 'furto':
+      case 'rapina': {
+        const vittima = (args[0] || '').replace(/^@/, '').toLowerCase();
+        if (!vittima) { say(`🦝 Uso: !furto @nome`); return true; }
+        if (vittima === msg.user.toLowerCase()) { say(`${nome}, non puoi derubare te stesso 😄`); return true; }
+        if (inCooldown(channel + '|furto|' + msg.user, 45000)) { say(`🦝 ${nome}, aspetta prima di tentare un altro colpo.`); return true; }
+        const gruzzolo = points.get(channel, vittima);
+        if (gruzzolo < 20) { say(`🦝 ${vittima} ha le tasche vuote, niente da rubare.`); return true; }
+        if (Math.random() < 0.45) {                                   // colpo riuscito
+          const bottino = rnd(10, Math.min(gruzzolo, 150));
+          points.add(channel, vittima, -bottino); points.add(channel, msg.user, bottino);
+          say(`🦝 Colpo riuscito! ${nome} sgraffigna ${bottino} ${moneta()} a ${vittima}! 😈`);
+        } else {                                                       // beccato: multa
+          const multa = Math.min(points.get(channel, msg.user), rnd(10, 60));
+          if (multa > 0) { points.add(channel, msg.user, -multa); points.add(channel, vittima, multa); }
+          say(`🚓 ${nome} viene beccato e paga ${multa} ${moneta()} di multa a ${vittima}! 😂`);
+        }
+        return true;
+      }
+
+      case 'regala':
+      case 'dona': {
+        const dest = (args[0] || '').replace(/^@/, '').toLowerCase();
+        const q = Math.round(Number(args[1]));
+        if (!dest || !Number.isFinite(q) || q <= 0) { say(`💝 Uso: !regala @nome quantità`); return true; }
+        if (dest === msg.user.toLowerCase()) { say(`${nome}, non puoi regalarti ${moneta()} da solo 😄`); return true; }
+        if (points.get(channel, msg.user) < q) { say(`${nome}, non hai abbastanza ${moneta()} (ne hai ${points.get(channel, msg.user)}).`); return true; }
+        points.add(channel, msg.user, -q); points.add(channel, dest, q);
+        say(`💝 ${nome} ha regalato ${q} ${moneta()} a ${dest}! Che generosità ✨`);
         return true;
       }
 
