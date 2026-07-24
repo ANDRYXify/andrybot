@@ -208,6 +208,7 @@ function apiDemo(percorso, opzioni = {}) {
     const ctx = _DEMO_CANALI.find((c) => c.canale === _demoCanale);
     return Promise.resolve({ ok: true, ruolo: ctx.role, canale: ctx.canale });
   }
+  if (via === '/api/admin/llm/prova') return Promise.resolve({ ok: true, modello: 'mistral-nemo', campione: 'ok' });
   if (via.endsWith('/prova')) { toast('In demo non invio davvero in chat 😊'); return Promise.resolve({ ok: true }); }
   return Promise.resolve({ ok: true, demo: true });
 }
@@ -216,14 +217,21 @@ function _demoGet(via) {
   const F = {
     '/api/me': statoDemo(),
     '/api/admin/llm': {
-      scelta: { modello: 'gemma-uncensored' },
+      scelta: {
+        modello: 'gemma-uncensored',
+        endpoint: { url: 'http://192.168.1.50:1234/v1', modello: 'mistral-nemo', chiave: '', solo: false },
+      },
       modelli: [
         { id: 'auto', nome: 'Automatico (in base alla RAM del server)' },
         { id: 'qwen', nome: 'Qwen 2.5 3B — equilibrato' },
         { id: 'gemma', nome: 'Gemma 2 2B — veloce' },
         { id: 'gemma-uncensored', nome: 'Gemma 2 2B — senza freni (abliterated)' },
       ],
-      stato: { stato: 'pronto', modello: 'gemma-2-2b-it-abliterated-Q4_K_M.gguf' },
+      stato: {
+        stato: 'pronto', modello: 'gemma-2-2b-it-abliterated-Q4_K_M.gguf',
+        endpoint: { configurato: true, url: 'http://192.168.1.50:1234/v1', modello: 'mistral-nemo', solo: false, ok: true, motivo: null },
+        rete: { canali: 1, nodi: 128, solidi: 74, curiosita: 0.34, fiducia: 0.61 },
+      },
     },
     '/api/streamer/knowledge': [
       { id: 1, domanda: 'Che PC usi?', risposta: 'Ryzen 7 + RTX 4070, trovi tutto su andryxify.it 🖥️', fonte: 'manuale', ts: '2026-05-02T18:00:00Z' },
@@ -3497,9 +3505,17 @@ async function caricaLLM() {
   const scelta = d.scelta || {};
   const selVal = scelta.url ? 'url' : (scelta.modello || 'auto');
   const opts = (d.modelli || []).map((m) => `<option value="${esc(m.id)}" ${selVal === m.id ? 'selected' : ''}>${esc(m.nome)}</option>`).join('');
+  const ep = scelta.endpoint || {};
+  const eps = s.endpoint || {};
+  const epBadge = eps.configurato
+    ? (eps.ok === true ? '🟢 collegato' : eps.ok === false ? '🔴 non risponde' : '🟡 da provare')
+    : '⚪ non collegato';
+  const rete = s.rete || {};
+  const pct = (x) => Math.round((x || 0) * 100) + '%';
+  const stile = { hr: 'border:0;border-top:1px solid currentColor;opacity:.15;margin:20px 0', num: 'font-size:1.7em;font-weight:700;line-height:1' };
   box.innerHTML = `
     <p>Stato: <strong>${statoTxt}</strong> &nbsp; In memoria: <code>${esc(s.modello || '—')}</code>${s.motivo ? ` <span class="suggerimento">(${esc(s.motivo)})</span>` : ''}</p>
-    <label class="campo" for="sel-llm">Modello</label>
+    <label class="campo" for="sel-llm">Modello locale (sul server)</label>
     <select id="sel-llm" class="campo-largo">
       ${opts}
       <option value="url" ${selVal === 'url' ? 'selected' : ''}>URL personalizzato (GGUF)…</option>
@@ -3509,7 +3525,39 @@ async function caricaLLM() {
       <button class="btn" id="btn-llm-applica">Applica e ricarica</button>
       <button class="btn secondario" id="btn-llm-refresh">Aggiorna stato</button>
     </p>
-    <p class="suggerimento">"Senza freni" = modello <em>abliterated</em> (nessun rifiuto). La moderazione del bot e le <strong>parole vietate</strong> filtrano comunque l'uscita.</p>`;
+    <p class="suggerimento">"Senza freni" = modello <em>abliterated</em> (nessun rifiuto). La moderazione del bot e le <strong>parole vietate</strong> filtrano comunque l'uscita.</p>
+
+    <hr style="${stile.hr}">
+    <h3>Maestro esterno — LM Studio / Ollama &nbsp;<span class="suggerimento">${epBadge}</span></h3>
+    <p class="suggerimento">Collega un modello che gira sul <strong>tuo PC</strong> (di solito più potente del server): il bot lo usa come <em>maestro</em> e la piccola rete impara da <strong>ogni</strong> sua risposta. Dev'essere raggiungibile dal server: stessa LAN, IP pubblico, o un tunnel tipo <code>cloudflared</code>/<code>ngrok</code>.</p>
+    <label class="campo" for="ep-url">Indirizzo (URL)</label>
+    <input type="text" id="ep-url" class="campo-largo" placeholder="http://IP:1234/v1" value="${esc(ep.url || '')}">
+    <label class="campo" for="ep-mod">Nome del modello <span class="suggerimento">(facoltativo)</span></label>
+    <input type="text" id="ep-mod" class="campo-largo" placeholder="quello caricato in LM Studio" value="${esc(ep.modello || '')}">
+    <label class="campo" for="ep-key">Chiave API <span class="suggerimento">(se richiesta)</span></label>
+    <input type="password" id="ep-key" class="campo-largo" placeholder="(vuoto se non serve)" value="${esc(ep.chiave || '')}">
+    <label class="spazio-sopra" style="display:flex;gap:8px;align-items:flex-start;cursor:pointer">
+      <input type="checkbox" id="ep-solo" ${ep.solo ? 'checked' : ''}>
+      <span>Usa <strong>solo</strong> l'endpoint — non caricare il modello locale (libera la RAM del server)</span>
+    </label>
+    <p class="spazio-sopra">
+      <button class="btn" id="btn-ep-salva">Collega</button>
+      <button class="btn secondario" id="btn-ep-prova">Prova connessione</button>
+      <button class="btn secondario" id="btn-ep-stacca">Scollega</button>
+    </p>
+    <p id="ep-esito" class="suggerimento"></p>
+
+    <hr style="${stile.hr}">
+    <h3>La piccola rete che impara 🌱</h3>
+    <p class="suggerimento">Il motore veloce che <strong>cresce da solo</strong>: risponde all'istante a ciò che ha già imparato e, quando incontra qualcosa di nuovo, lo chiede al maestro e se lo segna. "Curiosità" alta = sente di avere lacune; "fiducia" = quanto si fida di ciò che sa.</p>
+    <div style="display:flex;gap:22px;flex-wrap:wrap;margin-top:6px">
+      <div><div style="${stile.num}">${rete.nodi || 0}</div><small>nodi appresi</small></div>
+      <div><div style="${stile.num}">${rete.solidi || 0}</div><small>sa rispondere</small></div>
+      <div><div style="${stile.num}">${pct(rete.fiducia)}</div><small>fiducia</small></div>
+      <div><div style="${stile.num}">${pct(rete.curiosita)}</div><small>curiosità</small></div>
+    </div>`;
+  const val = (id) => (document.getElementById(id)?.value || '').trim();
+  const raccogliEp = () => ({ url: val('ep-url'), modello: val('ep-mod'), chiave: val('ep-key'), solo: !!document.getElementById('ep-solo')?.checked });
   document.getElementById('sel-llm')?.addEventListener('change', (ev) => {
     const u = document.getElementById('inp-llm-url');
     if (u) u.hidden = ev.target.value !== 'url';
@@ -3521,6 +3569,25 @@ async function caricaLLM() {
     await api('/api/admin/llm', { method: 'POST', body });
     toast('Sto cambiando modello 🧠 — può metterci qualche minuto (scarica + carica).');
     setTimeout(caricaLLM, 2500);
+  }));
+  document.getElementById('btn-ep-salva')?.addEventListener('click', () => conErrore(async () => {
+    await api('/api/admin/llm', { method: 'POST', body: { endpoint: raccogliEp() } });
+    toast('Maestro collegato 🎓 — la rete inizierà a imparare da lui.');
+    setTimeout(caricaLLM, 1500);
+  }));
+  document.getElementById('btn-ep-stacca')?.addEventListener('click', () => conErrore(async () => {
+    await api('/api/admin/llm', { method: 'POST', body: { endpoint: { url: '' } } });
+    toast('Maestro scollegato.');
+    setTimeout(caricaLLM, 800);
+  }));
+  document.getElementById('btn-ep-prova')?.addEventListener('click', () => conErrore(async () => {
+    const esito = document.getElementById('ep-esito');
+    if (esito) esito.textContent = 'Provo la connessione…';
+    const r = await api('/api/admin/llm/prova', { method: 'POST', body: { endpoint: raccogliEp() } });
+    if (!esito) return;
+    esito.innerHTML = r && r.ok
+      ? `🟢 Risponde! ${r.modello ? `(${esc(r.modello)}) ` : ''}<em>«${esc(r.campione || 'ok')}»</em>`
+      : `🔴 Non risponde: ${esc((r && r.motivo) || 'errore')}`;
   }));
 }
 

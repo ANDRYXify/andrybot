@@ -1816,22 +1816,67 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
 
   app.post('/api/admin/llm', requireAdmin, wrap(async (req, res) => {
     const b = req.body || {};
-    const url = String(b.url || '').trim();
-    const modello = String(b.modello || '').trim().toLowerCase();
-    let scelta = {};
-    if (url) {
-      if (!/^https:\/\/\S+\.gguf(\?\S*)?$/i.test(url)) return res.status(400).json({ errore: 'URL non valido (dev\'essere https://…gguf)' });
-      scelta = { url };
-    } else if (modello && modello !== 'auto') {
-      if (!LLM_MODELLI.some((m) => m.id === modello)) return res.status(400).json({ errore: 'modello sconosciuto' });
-      scelta = { modello };
-    } // altrimenti 'auto' → scelta vuota (torna alla scaletta automatica)
+    const scelta = llmScelta();                 // parto da ciò che c'è: aggiorno solo le parti indicate
+    const primaSolo = !!(scelta.endpoint && scelta.endpoint.solo);
+    let ricaricare = false;
+
+    // --- MODELLO LOCALE di base (Qwen/Gemma/URL/auto) ---
+    if ('modello' in b || 'url' in b) {
+      const url = String(b.url || '').trim();
+      const modello = String(b.modello || '').trim().toLowerCase();
+      delete scelta.url; delete scelta.modello;
+      if (url) {
+        if (!/^https:\/\/\S+\.gguf(\?\S*)?$/i.test(url)) return res.status(400).json({ errore: 'URL non valido (dev\'essere https://…gguf)' });
+        scelta.url = url;
+      } else if (modello && modello !== 'auto') {
+        if (!LLM_MODELLI.some((m) => m.id === modello)) return res.status(400).json({ errore: 'modello sconosciuto' });
+        scelta.modello = modello;
+      } // 'auto' → nessuna chiave: torna alla scaletta automatica
+      ricaricare = true;   // cambiare il modello base richiede la ricarica del cervello
+    }
+
+    // --- ENDPOINT ESTERNO (LM Studio / Ollama / OpenAI-compatibile) ---
+    if ('endpoint' in b) {
+      const e = b.endpoint || {};
+      const url = String(e.url || '').trim();
+      if (url) {
+        if (!/^https?:\/\/\S+/i.test(url)) return res.status(400).json({ errore: 'URL endpoint non valido (http(s)://host:porta)' });
+        scelta.endpoint = {
+          url,
+          modello: String(e.modello || '').trim() || 'local-model',
+          chiave: String(e.chiave || '').trim(),
+          solo: !!e.solo,
+        };
+      } else {
+        delete scelta.endpoint;   // url vuoto = scollega l'endpoint
+      }
+    }
+
+    // ricarica il cervello solo se serve: modello base cambiato, o è cambiato se
+    // caricare o no il modello locale (flag "solo" dell'endpoint).
+    const dopoSolo = !!(scelta.endpoint && scelta.endpoint.solo);
+    if (primaSolo !== dopoSolo) ricaricare = true;
+
     try {
       if (Object.keys(scelta).length) writeFileSync(llmFile, JSON.stringify(scelta));
       else { try { rmSync(llmFile); } catch { /* non c'era */ } }
     } catch (e) { return res.status(500).json({ errore: 'non riesco a salvare la scelta' }); }
-    brainpy.ricarica().catch(() => {});   // il cervello cambia modello a caldo (in background)
+    if (ricaricare) brainpy.ricarica().catch(() => {});   // cambio a caldo, in background
     res.json({ ok: true });
+  }));
+
+  // prova la raggiungibilità di un endpoint esterno (la verifica parte dal cervello)
+  app.post('/api/admin/llm/prova', requireAdmin, wrap(async (req, res) => {
+    const e = (req.body && req.body.endpoint) || req.body || {};
+    const url = String(e.url || '').trim();
+    const cfg = url ? {
+      url,
+      modello: String(e.modello || '').trim() || 'local-model',
+      chiave: String(e.chiave || '').trim(),
+      solo: !!e.solo,
+    } : null;
+    const r = await brainpy.provaEndpoint(cfg).catch(() => null);
+    res.json(r || { ok: false, motivo: 'cervello non raggiungibile' });
   }));
 
   // ------------------------------------------------------------ avvio
