@@ -317,6 +317,9 @@ aggiungiColonna('telegram', 'webhook_secret', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('telegram', 'dm_modo', "TEXT NOT NULL DEFAULT 'me'");
 aggiungiColonna('telegram', 'owner_tg_id', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('telegram', 'owner_tg_nome', "TEXT NOT NULL DEFAULT ''");
+// linee guida: ambito (dove valgono + con chi) — regole contestuali di "lia"
+aggiungiColonna('linee_guida', 'dove', "TEXT NOT NULL DEFAULT 'ovunque'");     // ovunque | twitch | tg | tg-privato
+aggiungiColonna('linee_guida', 'con_chi', "TEXT NOT NULL DEFAULT 'tutti'");    // tutti | solo-me | tranne-me
 
 const now = () => Date.now();
 
@@ -886,22 +889,43 @@ export const knowledge = {
 // -------------------------------------------------- linee guida (regole di "lia")
 // I limiti/regole che lo streamer le dà (in privato o dalla dashboard): lei li
 // SALVA e li rispetta sempre. Sono del proprietario, valgono su tutti i suoi modi.
+const GUIDA_DOVE = ['ovunque', 'twitch', 'tg', 'tg-privato'];
+const GUIDA_CONCHI = ['tutti', 'solo-me', 'tranne-me'];
+
 export const guide = {
   list(channel) {
-    return db.prepare('SELECT id, testo, ts FROM linee_guida WHERE channel=? ORDER BY ts ASC')
+    return db.prepare('SELECT id, testo, dove, con_chi, ts FROM linee_guida WHERE channel=? ORDER BY ts ASC')
       .all(String(channel).toLowerCase());
   },
   testi(channel, max = 12) {
     return this.list(channel).slice(0, max).map((r) => r.testo);
   },
-  add(channel, testo) {
+  // Solo le regole che valgono NEL CONTESTO attuale (piattaforma + con chi).
+  // contesto = { piattaforma:'twitch'|'telegram', privato:bool, sonoIo:bool }
+  applicabili(channel, contesto = {}, max = 12) {
+    const { piattaforma = 'twitch', privato = false, sonoIo = false } = contesto;
+    return this.list(channel).filter((g) => {
+      const dove = g.dove || 'ovunque';
+      let doveOk = true;
+      if (dove === 'twitch') doveOk = piattaforma === 'twitch';
+      else if (dove === 'tg') doveOk = piattaforma === 'telegram';
+      else if (dove === 'tg-privato') doveOk = piattaforma === 'telegram' && privato && sonoIo;
+      if (!doveOk) return false;
+      const con = g.con_chi || 'tutti';
+      if (con === 'solo-me') return sonoIo === true;
+      if (con === 'tranne-me') return sonoIo === false;
+      return true;
+    }).slice(0, max).map((g) => g.testo);
+  },
+  add(channel, testo, ambito = {}) {
     const t = String(testo || '').replace(/\s+/g, ' ').trim().slice(0, 300);
     if (t.length < 3) return null;
+    const dove = GUIDA_DOVE.includes(ambito.dove) ? ambito.dove : 'ovunque';
+    const con_chi = GUIDA_CONCHI.includes(ambito.con_chi) ? ambito.con_chi : 'tutti';
     const c = String(channel).toLowerCase();
     const gia = db.prepare('SELECT id FROM linee_guida WHERE channel=? AND lower(testo)=lower(?) LIMIT 1').get(c, t);
-    if (gia) return gia.id;
-    // tetto: massimo 40 regole per canale (scarta le più vecchie)
-    const info = db.prepare('INSERT INTO linee_guida(channel, testo, ts) VALUES(?,?,?)').run(c, t, now());
+    if (gia) { db.prepare('UPDATE linee_guida SET dove=?, con_chi=? WHERE id=?').run(dove, con_chi, gia.id); return gia.id; }
+    const info = db.prepare('INSERT INTO linee_guida(channel, testo, dove, con_chi, ts) VALUES(?,?,?,?,?)').run(c, t, dove, con_chi, now());
     db.prepare(`DELETE FROM linee_guida WHERE channel=? AND id NOT IN (
       SELECT id FROM linee_guida WHERE channel=? ORDER BY ts DESC LIMIT 40)`).run(c, c);
     return info.lastInsertRowid;
@@ -916,6 +940,27 @@ export const guide = {
   },
   count(channel) {
     return db.prepare('SELECT COUNT(*) c FROM linee_guida WHERE channel=?').get(String(channel).toLowerCase()).c;
+  },
+  // Deduce l'AMBITO da come è scritta la regola in linguaggio naturale.
+  interpreta(testo) {
+    const t = String(testo || '').toLowerCase();
+    let dove = 'ovunque';
+    const suTg = /\b(telegram|tg)\b/.test(t) || /\bqui\b/.test(t);
+    const privato = /\bin privato\b|\bprivato\b|\bsolo (con|a) (me|te)\b/.test(t);
+    if (/\btwitch\b|\bin diretta\b|\blive\b|\bin chat\b/.test(t)) dove = 'twitch';
+    else if (suTg && privato) dove = 'tg-privato';
+    else if (suTg) dove = 'tg';
+    let con_chi = 'tutti';
+    if (/\b(tranne|eccetto|a parte)\s+(me|te)\b|\bche non sia (io|me|te)\b|\bnon sia (io|me|te)\b|\ba nessun\w*\b|\b(gli|agli|con gli) altri\b|\bsconosciut\w*\b/.test(t)) con_chi = 'tranne-me';
+    else if (/\b(solo|soltanto)\s+(con|a|per)\s+(me|te)\b|\bsolo io\b|\bsolo tu\b/.test(t)) con_chi = 'solo-me';
+    if (con_chi === 'solo-me' && suTg && privato) dove = 'tg-privato';
+    return { dove, con_chi };
+  },
+  // Descrizione umana dell'ambito (per la dashboard e le conferme su Telegram).
+  descriviAmbito({ dove = 'ovunque', con_chi = 'tutti' } = {}) {
+    const d = { ovunque: 'ovunque', twitch: 'in chat Twitch', tg: 'su Telegram', 'tg-privato': 'in privato su Telegram' }[dove] || 'ovunque';
+    const c = { tutti: 'con tutti', 'solo-me': 'solo con te', 'tranne-me': 'con tutti tranne te' }[con_chi] || 'con tutti';
+    return `${c}, ${d}`;
   },
 };
 
