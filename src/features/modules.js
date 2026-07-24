@@ -13,6 +13,8 @@ import dns from 'node:dns/promises';
 import net from 'node:net';
 import { modules as modulesDb, counters, memory, streamers, clips } from '../db.js';
 import { risolviCategoria } from './categoria.js';
+import { canaleHa } from './accesso.js';
+import * as spotify from './spotify.js';
 import { makeLog } from '../logger.js';
 
 const log = makeLog('moduli');
@@ -628,6 +630,24 @@ export class ModulesEngine {
           if (azione.annuncia !== false && (e?.status === 401 || e?.status === 403)) {
             dire('🔒 Mi manca il permesso per cambiare categoria: riautorizza dalla dashboard.');
           }
+        }
+        return;
+      }
+      case 'musica': {
+        // mette un brano nella coda Spotify del canale. Il "brano" può usare le
+        // variabili ($args): comando fisso (es. !sigla → un brano preciso) oppure
+        // libero (es. !metti $args). Richiede l'add-on Musica e Spotify collegato.
+        if (!canaleHa(ctx.channel, 'musica')) return;
+        if (!spotify.collegato(ctx.channel)) { if (azione.annuncia !== false) dire('🎵 Spotify non è collegato: fallo dal pannello.'); return; }
+        const q = (await this.espandi(azione.brano, ctx)).trim();
+        if (!q) return;
+        const brano = await spotify.cerca(ctx.channel, q).catch(() => null);
+        if (!brano) { if (azione.annuncia !== false) dire(`🎵 Non ho trovato "${q}" su Spotify.`); return; }
+        const r = await spotify.aggiungiInCoda(ctx.channel, brano.uri).catch(() => ({ ok: false, status: 0 }));
+        if (azione.annuncia !== false) {
+          if (r.ok) dire(`🎵 In coda: ${brano.nome} — ${brano.artisti} 🎶`);
+          else if (r.status === 404) dire('🎵 Nessun dispositivo Spotify attivo.');
+          else dire('🎵 Non sono riuscito ad aggiungere il brano.');
         }
         return;
       }

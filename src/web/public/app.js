@@ -3419,6 +3419,7 @@ const AZIONI = [
   ['attendi', '⏱️ Aspetta'],
   ['overlayTesto', '🖥️ Mostra testo sull\'overlay'],
   ['timeout', '🚫 Timeout in chat'],
+  ['musica', '🎵 Metti una canzone in coda'],
 ];
 // pillole variabili cliccabili (testo inserito = etichetta)
 const VARIABILI = [
@@ -3873,6 +3874,16 @@ function disegnaCampiAzione(a) {
       return `
         <label class="campo">Timeout (secondi)</label>
         <input type="number" data-campo="secondi" min="1" max="1209600" value="${Number(a.secondi) || 600}">`;
+    case 'musica':
+      return `
+        <label class="campo">Brano da mettere in coda (nome, artista o <code>$args</code>)</label>
+        <input type="text" data-campo="brano" data-var-target placeholder="es. Blinding Lights oppure $args" value="${esc(a.brano || '')}">
+        ${pillole}
+        <div class="riga-check spazio-sopra">
+          <input type="checkbox" data-campo="annuncia" ${a.annuncia !== false ? 'checked' : ''}>
+          <label>Annuncia in chat il brano aggiunto</label>
+        </div>
+        <p class="suggerimento">Aggiunge il brano alla coda del tuo Spotify. Richiede l'add-on <strong class="primo-piano">Richieste Musicali</strong> e Spotify collegato in <strong>Durante la diretta → Musica</strong>.</p>`;
     default:
       return '';
   }
@@ -3937,6 +3948,7 @@ function leggiAzioneRiga(riga) {
     case 'attendi': return { tipo, secondi: Number(v('secondi')?.value) || 0 };
     case 'overlayTesto': return { tipo, testo: v('testo')?.value || '', durata: Number(v('durata')?.value) || 5000 };
     case 'timeout': return { tipo, secondi: Number(v('secondi')?.value) || 0 };
+    case 'musica': return { tipo, brano: (v('brano')?.value || '').trim(), annuncia: !!v('annuncia')?.checked };
     default: return { tipo };
   }
 }
