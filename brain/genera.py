@@ -216,6 +216,57 @@ def genera(canale, ctx, testo, timeout_s=30):
         return None
 
 
+# ─────────────────────────────────────────── DISTILLAZIONE (allenamento)
+# Il modello GROSSO digerisce i discorsi dello streamer e ne ricava conoscenza
+# RIUTILIZZABILE: coppie "domanda della community → risposta come la darebbe LUI".
+# Queste finiscono nel motore VELOCE (la conoscenza locale), così in live si
+# risponde bene senza richiamare l'LLM. Gira in background: può metterci.
+def distilla(canale, frasi, timeout_s=90):
+    if _stato["stato"] != "pronto" or _llm is None:
+        return None
+    righe = [str(f).strip() for f in (frasi or []) if str(f).strip()][:30]
+    if not righe:
+        return []
+    blocco = "\n".join("- " + r[:200] for r in righe)
+    sistema = (
+        "Studi uno streamer per capirlo e preparare risposte pronte nel SUO stile. "
+        "Dalle frasi che ha detto/scritto (qui sotto), ricava COPPIE "
+        "'domanda che la community potrebbe fargli in chat' -> 'risposta come la darebbe LUI'. "
+        "Risposte BREVI (1 frase), in prima persona, coerenti con ciò che pensa e col suo tono. "
+        "Rispondi SOLO con righe nel formato esatto:  domanda :: risposta  — massimo 6 righe, niente altro."
+    )
+    messaggi = [{"role": "system", "content": sistema}, {"role": "user", "content": blocco}]
+    risultato = {}
+
+    def _lavoro():
+        try:
+            with _lock:
+                out = _llm.create_chat_completion(
+                    messages=messaggi, max_tokens=320,
+                    temperature=0.5, top_p=0.9, repeat_penalty=1.1,
+                )
+            risultato["t"] = out["choices"][0]["message"]["content"]
+        except Exception as e:
+            risultato["e"] = e
+
+    th = threading.Thread(target=_lavoro, daemon=True)
+    th.start()
+    th.join(timeout_s)
+    if th.is_alive() or "e" in risultato:
+        return None
+    testo = risultato.get("t") or ""
+    coppie = []
+    for riga in testo.splitlines():
+        if "::" not in riga:
+            continue
+        q, a = riga.split("::", 1)
+        q = q.strip(" -•*").strip()
+        a = a.strip(" -•*").strip().strip('"\'«»').strip()
+        if len(q) >= 3 and len(a) >= 2:
+            coppie.append({"q": q[:200], "a": a[:300]})
+    return coppie[:6]
+
+
 def _pulisci(s):
     import re
     t = re.sub(r"\s+", " ", (s or "").strip())
