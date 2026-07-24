@@ -16,6 +16,7 @@ import * as telegram from './features/telegram.js';
 import * as antispam from './features/antispam.js';
 import * as tiktok from './features/tiktok.js';
 import * as youtube from './features/youtube.js';
+import * as instagram from './features/instagram.js';
 import * as compleanniFeat from './features/compleanni.js';
 import * as gamesbridge from './features/gamesbridge.js';
 import * as quotes from './features/quotes.js';
@@ -712,20 +713,38 @@ export class BotManager {
   async _controllaPost() {
     try {
       for (const s of streamers.active()) {
+        // --- YouTube (RSS o, se hai messo la TUA chiave, l'API ufficiale) ---
         const yt = s.settings?.youtube;
-        if (!yt?.attivo || !yt.canale) continue;
-        // cache dell'id canale keyed sull'input: se cambi canale, si ri-risolve
-        let cid = this._ytId.get(yt.canale);
-        if (cid === undefined) { cid = await youtube.risolviCanaleId(yt.canale); this._ytId.set(yt.canale, cid || null); }
-        if (!cid) continue;
-        const v = await youtube.ultimoVideo(cid);
-        if (!v?.videoId) continue;
-        const conf = tgConf.get(s.login);
-        const ultimo = conf?.yt_ultimo || '';
-        if (v.videoId === ultimo) continue;                 // niente di nuovo
-        tgConf.setYtUltimo(s.login, v.videoId);
-        if (!ultimo) continue;                              // primo giro: solo seed, niente avviso
-        await this.notificaPost(s.login, { piattaforma: 'youtube', titolo: v.titolo, url: v.url, messaggio: yt.messaggio, annunciaChat: yt.annunciaChat });
+        if (yt?.attivo && yt.canale) {
+          const apiKey = yt.apiKey || '';
+          const chiaveCache = yt.canale + '|' + (apiKey ? 'api' : 'rss');
+          let cid = this._ytId.get(chiaveCache);
+          if (cid === undefined) { cid = await youtube.risolviCanaleId(yt.canale, apiKey); this._ytId.set(chiaveCache, cid || null); }
+          if (cid) {
+            const v = await youtube.ultimoVideo(cid, apiKey);
+            if (v?.videoId) {
+              const conf = tgConf.get(s.login);
+              const ultimo = conf?.yt_ultimo || '';
+              if (v.videoId !== ultimo) {
+                tgConf.setYtUltimo(s.login, v.videoId);
+                if (ultimo) await this.notificaPost(s.login, { piattaforma: 'youtube', titolo: v.titolo, url: v.url, messaggio: yt.messaggio, annunciaChat: yt.annunciaChat });
+              }
+            }
+          }
+        }
+        // --- Instagram (solo con la TUA Graph API: ID account + token) ---
+        const ig = s.settings?.instagram;
+        if (ig?.attivo && ig.userId && ig.token) {
+          const p = await instagram.ultimoPost({ userId: ig.userId, token: ig.token });
+          if (p?.id) {
+            const conf = tgConf.get(s.login);
+            const ultimo = conf?.ig_ultimo || '';
+            if (p.id !== ultimo) {
+              tgConf.setIgUltimo(s.login, p.id);
+              if (ultimo) await this.notificaPost(s.login, { piattaforma: 'instagram', titolo: (p.caption || '').slice(0, 140), url: p.permalink, messaggio: ig.messaggio, annunciaChat: ig.annunciaChat });
+            }
+          }
+        }
       }
     } catch (e) { log.error('controllaPost:', e?.message || e); }
   }
@@ -741,8 +760,8 @@ export class BotManager {
         await telegram.notificaPost(conf, { login: l, display: s?.display || l }, { piattaforma, titolo, url, messaggio }).catch(() => {});
       }
       if (annunciaChat && this.units.has(l) && url) {
-        const dove = piattaforma === 'tiktok' ? 'TikTok' : 'YouTube';
-        this.say(l, `${piattaforma === 'tiktok' ? '🎵' : '📺'} Nuovo contenuto su ${dove}! 👉 ${url}`);
+        const info = { tiktok: ['🎵', 'TikTok'], instagram: ['📸', 'Instagram'], youtube: ['📺', 'YouTube'] }[piattaforma] || ['📺', 'YouTube'];
+        this.say(l, `${info[0]} Nuovo contenuto su ${info[1]}! 👉 ${url}`);
       }
       log.info(`notifica post (${piattaforma}) inviata per #${l}`);
       return { ok: true };
