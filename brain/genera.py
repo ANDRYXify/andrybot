@@ -16,7 +16,8 @@ import threading
 import urllib.request
 import json
 
-import rete   # la "piccola rete" che si autoaddestra (motore veloce, puro Python)
+import rete       # la "piccola rete" che si autoaddestra (memoria associativa)
+import ragiona    # il cervello SIMBOLICO (non statistico): deduce dai fatti a regole
 
 DATA_DIR = os.environ.get("DATA_DIR", "/app/data")
 MODELS_DIR = os.path.join(DATA_DIR, "models")
@@ -493,6 +494,15 @@ def genera(canale, ctx, testo, timeout_s=30, modo="live"):
     studio = (modo == "studio")        # sta studiando una lacuna su una fonte (web)
     diretto = allena or proattivo or studio   # niente scorciatoia della rete
     senza_appr = proattivo or studio   # non impara/segna lacune (spunto/fonte, non una domanda vera)
+    # 0) RAGIONAMENTO SIMBOLICO (NON statistico): se lo può DEDURRE dai fatti a
+    #    regole, risponde da sé — senza LLM. È il suo "cervello ad hoc" logico.
+    if not proattivo and not studio:
+        try:
+            ded = ragiona.deduci(canale, testo)
+        except Exception:
+            ded = None
+        if ded and ded.get("sicura") and ded.get("risposta"):
+            return _pulisci(ded["risposta"])
     # 1) LIVE: la rete conosce già la risposta? (nei modi diretti salto: voglio il ragionamento)
     if not diretto:
         try:

@@ -239,6 +239,7 @@ function _demoGet(via) {
       nodi: 128, solidi: 74, corpus: 52, curiosita: 0.34, fiducia: 0.61, lacune: 12,
       non_so: ['come si chiama il tuo gatto?', 'quando esce il prossimo video?'],
       pensiero: 'Mi sono svegliata. So rispondere a 74 cose (fiducia 61%). Oggi voglio capire meglio: «come si chiama il tuo gatto?».',
+      ragiona: { fatti: 41, dedotti: 12, contraddizioni: [] },
     },
     '/api/streamer/guide': {
       guide: [
@@ -3637,6 +3638,8 @@ async function aggiornaRetePanoramica(box, primo) {
       <div><div style="${num}">${pct(d.curiosita)}</div><small>curiosità</small></div>
     </div>
     ${d.pensiero ? `<p class="spazio-sopra">💭 <em>${esc(d.pensiero)}</em></p>` : ''}
+    ${d.ragiona ? `<p class="suggerimento spazio-sopra">🧩 Cervello logico (non statistico): <strong>${d.ragiona.fatti || 0}</strong> fatti,
+      <strong>${d.ragiona.dedotti || 0}</strong> dedotti da sé ragionando${(d.ragiona.contraddizioni || []).length ? ` · ⚠️ ${d.ragiona.contraddizioni.length} incoerenze notate` : ''}.</p>` : ''}
     ${nonSo.length
       ? `<p class="suggerimento spazio-sopra">Ultime cose che <strong>non sapeva</strong> (le imparerà col tempo): ${nonSo.map((t) => `«${esc(t)}»`).join(' · ')}</p>`
       : '<p class="suggerimento spazio-sopra">Nessuna lacuna recente: sta rispondendo bene. 🙂</p>'}

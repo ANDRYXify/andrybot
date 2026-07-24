@@ -22,6 +22,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import coscienza as C
 import genera as G
 import rete as R
+import ragiona as RAG
 
 PORT = int(os.environ.get("BRAIN_PORT", "8091"))
 CONSOLIDA_OGNI = int(os.environ.get("BRAIN_CONSOLIDA_MIN", "30")) * 60
@@ -86,7 +87,12 @@ class Handler(BaseHTTPRequestHandler):
         if not canale:
             return self._json(400, {"errore": "canale mancante"})
         try:
-            return self._json(200, R.stato(canale))
+            st = R.stato(canale)
+            try:
+                st["ragiona"] = RAG.stato(canale)   # il cervello simbolico (fatti/dedotti)
+            except Exception:
+                st["ragiona"] = None
+            return self._json(200, st)
         except Exception as e:
             return self._json(200, {"nodi": 0, "errore": str(e)[:120]})
 
@@ -201,6 +207,11 @@ class Handler(BaseHTTPRequestHandler):
                 # impara un "fatto" solo se sembra un'affermazione sostanziosa
                 if testo and not testo.startswith("!") and 20 <= len(testo) <= 200 and "?" not in testo:
                     mente.impara_fatto(canale, testo, fonte="chat")
+                    # e prova a ricavarne triple per il cervello SIMBOLICO
+                    try:
+                        RAG.impara_frase(canale, testo)
+                    except Exception:
+                        pass
             except Exception:
                 pass
         return self._json(200, {"ok": True})
@@ -218,8 +229,12 @@ def _ciclo_consolida():
                     R.consolida(canale)   # il 'sonno' anche della piccola rete
                 except Exception:
                     pass
+                try:
+                    RAG.inferisci(canale)   # ragiona sui fatti: deduce e trova incoerenze
+                except Exception:
+                    pass
             R.salva_tutto()
-            print("[brain] coscienza e rete consolidate.", flush=True)
+            print("[brain] coscienza, rete e ragionamento consolidati.", flush=True)
         except Exception as e:
             print(f"[brain] consolida errore: {e}", flush=True)
 
