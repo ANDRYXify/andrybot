@@ -11,6 +11,7 @@ import { EventHub } from './twitch/events.js';
 import { Brain } from './ai/brain.js';
 import * as persona from './ai/persona.js';
 import * as games from './features/games.js';
+import * as giveaway from './features/giveaway.js';
 import * as vip from './features/vip.js';
 import * as telegram from './features/telegram.js';
 import * as antispam from './features/antispam.js';
@@ -365,6 +366,9 @@ export class BotManager {
     // minigiochi: monete passive + comandi (!dado, !slot, !trivia, ...)
     try { games.accredita(msg); games.tryGame(msg, (t) => this.say(msg.channel, t)); }
     catch (e) { log.error(`#${login} giochi:`, e?.message || e); }
+    // giveaway / sorteggi (!giveaway, !join, !estrai) — segue l'add-on Giochi
+    try { giveaway.tryGiveaway(msg, (t) => this.say(msg.channel, t)); }
+    catch (e) { log.error(`#${login} giveaway:`, e?.message || e); }
     // comandi VIP (mod/streamer): !vip @nome [durata], !unvip, !viplista
     vip.tryVipCommand(this.helix, msg, (t) => this.say(msg.channel, t)).catch((e) => log.error(`#${login} vip:`, e?.message || e));
     // citazioni (!cita) — lo shoutout (!so) lo gestisce già handler.js
