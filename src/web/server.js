@@ -7,10 +7,10 @@ import express from 'express';
 import cookieSession from 'cookie-session';
 import multer from 'multer';
 import crypto from 'node:crypto';
-import { mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync, rmSync, existsSync, readdirSync, statSync, unlinkSync, renameSync } from 'node:fs';
 import { unlink } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { dirname, join, basename } from 'node:path';
 import { config, SCOPES, missingConfig } from '../config.js';
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb, friends } from '../db.js';
@@ -1914,9 +1914,62 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   const llmFile = join(config.dataDir, 'llm.json');
   const llmScelta = () => { try { return JSON.parse(readFileSync(llmFile, 'utf8')) || {}; } catch { return {}; } };
 
+  // --- LIBRERIA dei modelli sul server (data/models): caricati o scaricati ---
+  const modelsDir = join(config.dataDir, 'models');
+  mkdirSync(modelsDir, { recursive: true });
+  const nomeModelloSicuro = (s) => {
+    let n = basename(String(s || '')).replace(/[^a-zA-Z0-9._-]/g, '_').replace(/^[._]+/, '').slice(-120);
+    if (!/\.gguf$/i.test(n)) n += '.gguf';
+    return n || 'modello.gguf';
+  };
+  const listaModelli = () => {
+    try {
+      return readdirSync(modelsDir)
+        .filter((f) => /\.gguf$/i.test(f))
+        .map((f) => { let mb = 0; try { mb = Math.round(statSync(join(modelsDir, f)).size / (1024 * 1024)); } catch { /* niente */ } return { nome: f, mb }; })
+        .sort((a, b) => a.nome.localeCompare(b.nome));
+    } catch { return []; }
+  };
+  const uploadModello = multer({
+    storage: multer.diskStorage({
+      destination: (req, file, cb) => cb(null, modelsDir),
+      // carico con un suffisso: diventa .gguf solo a caricamento riuscito
+      filename: (req, file, cb) => cb(null, nomeModelloSicuro(file.originalname) + '.uploading'),
+    }),
+    limits: { fileSize: 20 * 1024 * 1024 * 1024, files: 1 },   // fino a 20 GB
+  });
+
   app.get('/api/admin/llm', requireAdmin, wrap(async (req, res) => {
     const st = await brainpy.stato().catch(() => null);
-    res.json({ scelta: llmScelta(), modelli: LLM_MODELLI, stato: st?.genera || { stato: 'sconosciuto' } });
+    res.json({ scelta: llmScelta(), modelli: LLM_MODELLI, modelliLocali: listaModelli(), stato: st?.genera || { stato: 'sconosciuto' } });
+  }));
+
+  // elenco dei modelli presenti sul server
+  app.get('/api/admin/llm/files', requireAdmin, wrap(async (req, res) => {
+    res.json({ files: listaModelli(), scelta: llmScelta() });
+  }));
+
+  // CARICA un GGUF dal tuo computer direttamente sul server (owner)
+  app.post('/api/admin/llm/upload', requireAdmin, uploadModello.single('file'), wrap(async (req, res) => {
+    if (!req.file) return res.status(400).json({ errore: 'nessun file' });
+    const finale = req.file.filename.replace(/\.uploading$/, '');
+    if (!/\.gguf$/i.test(finale)) { try { unlinkSync(req.file.path); } catch { /* niente */ } return res.status(400).json({ errore: 'serve un file .gguf' }); }
+    try { renameSync(req.file.path, join(modelsDir, finale)); }
+    catch (e) { return res.status(500).json({ errore: 'non riesco a salvare il file (spazio su disco?)' }); }
+    res.json({ ok: true, caricato: finale, files: listaModelli() });
+  }));
+
+  // ELIMINA un modello dal server (per liberare spazio)
+  app.delete('/api/admin/llm/files/:nome', requireAdmin, wrap(async (req, res) => {
+    const safe = nomeModelloSicuro(req.params.nome);
+    try { unlinkSync(join(modelsDir, safe)); } catch { /* già rimosso */ }
+    const s = llmScelta();
+    if (s.file === safe) {   // era quello in uso: torna all'automatico e ricarica
+      delete s.file;
+      try { if (Object.keys(s).length) writeFileSync(llmFile, JSON.stringify(s)); else rmSync(llmFile); } catch { /* niente */ }
+      brainpy.ricarica().catch(() => {});
+    }
+    res.json({ ok: true, files: listaModelli() });
   }));
 
   app.post('/api/admin/llm', requireAdmin, wrap(async (req, res) => {
@@ -1925,12 +1978,17 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const primaSolo = !!(scelta.endpoint && scelta.endpoint.solo);
     let ricaricare = false;
 
-    // --- MODELLO LOCALE di base (Qwen/Gemma/URL/auto) ---
-    if ('modello' in b || 'url' in b) {
+    // --- MODELLO LOCALE di base (file caricato/scaricato | Qwen/Gemma | URL | auto) ---
+    if ('modello' in b || 'url' in b || 'file' in b) {
+      const file = String(b.file || '').trim();
       const url = String(b.url || '').trim();
       const modello = String(b.modello || '').trim().toLowerCase();
-      delete scelta.url; delete scelta.modello;
-      if (url) {
+      delete scelta.url; delete scelta.modello; delete scelta.file;
+      if (file) {
+        const safe = nomeModelloSicuro(file);
+        if (!existsSync(join(modelsDir, safe))) return res.status(400).json({ errore: 'modello non trovato sul server' });
+        scelta.file = safe;
+      } else if (url) {
         if (!/^https:\/\/\S+\.gguf(\?\S*)?$/i.test(url)) return res.status(400).json({ errore: 'URL non valido (dev\'essere https://…gguf)' });
         scelta.url = url;
       } else if (modello && modello !== 'auto') {
