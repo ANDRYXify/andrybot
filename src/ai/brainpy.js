@@ -13,10 +13,12 @@ const TIMEOUT_CHAT = Number(process.env.BRAIN_TIMEOUT_MS || '9000') || 9000;
 
 // Chiede una risposta contestuale al cervello. Ritorna stringa o null.
 // `stile` = alcune frasi vere dello streamer (la sua voce), per farlo suonare come lui.
-export async function rispondi({ canale, login, nome, testo, tono, conoscenza, stile } = {}) {
+// `timeoutMs` = quanto attendere (default 9s per la chat live; i DM possono attendere di più
+//   perché su CPU un 3B è lento e una risposta tardiva è meglio di nessuna risposta).
+export async function rispondi({ canale, login, nome, testo, tono, conoscenza, stile, timeoutMs } = {}) {
   if (!canale || !login || !testo) return null;
   const ac = new AbortController();
-  const to = setTimeout(() => ac.abort(), TIMEOUT_CHAT);
+  const to = setTimeout(() => ac.abort(), timeoutMs || TIMEOUT_CHAT);
   try {
     const r = await fetch(BASE + '/chat', {
       method: 'POST',
