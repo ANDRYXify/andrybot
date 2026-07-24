@@ -260,6 +260,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       messaggio: c?.messaggio || '',
       pinLive: c ? !!c.pin_live : true,
       interattivo: !!(c && c.interattivo),
+      dmModo: c?.dm_modo || 'me',                 // chat privata: me | tutti | off
+      dmCollegato: !!(c && c.owner_tg_id),        // proprietario legato al suo Telegram?
+      dmNome: c?.owner_tg_nome || '',             // nome dell'account legato (solo per mostrarlo)
     };
   };
 
@@ -1432,6 +1435,34 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.json({ ok: true, interattivo: false });
   }));
 
+  // ---- Chat privata Telegram: chi può farsi rispondere + collegamento "solo me" ----
+  const pendingLinkTg = new Map();   // canale → { code, scad } codice usa-e-getta per legare il proprietario
+
+  // imposta la modalità: 'me' (solo il proprietario), 'tutti', 'off'
+  app.post('/api/streamer/telegram/dm', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    tgConf.setDmModo(login, String(req.body?.modo || 'me'));
+    res.json({ ok: true, telegram: statoTelegram(login) });
+  }));
+
+  // genera un codice usa-e-getta: il proprietario scrive "/collega CODICE" al bot in
+  // privato e lega il PROPRIO account Telegram (così il "solo me" sa chi è 'me').
+  app.post('/api/streamer/telegram/collega', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (!tgConf.get(login)?.interattivo) return res.status(400).json({ errore: 'attiva prima il bot interattivo' });
+    const code = String(crypto.randomInt(100000, 1000000));   // 6 cifre
+    pendingLinkTg.set(login, { code, scad: Date.now() + 10 * 60_000 });
+    res.json({ ok: true, code, username: tgConf.get(login)?.bot_username || '' });
+  }));
+
+  // slega l'account del proprietario
+  app.post('/api/streamer/telegram/scollega', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    tgConf.setOwnerTg(login, '', '');
+    pendingLinkTg.delete(login);
+    res.json({ ok: true, telegram: statoTelegram(login) });
+  }));
+
   // ---- Auguri di compleanno: configurazione + elenco dei compleanni ----
   app.get('/api/streamer/telegram/compleanni', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
@@ -1508,6 +1539,19 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       if (!conf.chat_id && (chat.type === 'group' || chat.type === 'supergroup')) {
         tgConf.set(login, { chatId: String(chat.id), chatTitolo: chat.title || '(gruppo)' });
       }
+      // "/collega CODICE" in privato: lega l'account del proprietario (per il "solo me")
+      if (chat.type === 'private' && /^\/collega\b/i.test(String(testo).trim())) {
+        const code = String(testo).trim().split(/\s+/)[1] || '';
+        const pend = pendingLinkTg.get(login);
+        if (pend && pend.code && code === pend.code && Date.now() < pend.scad) {
+          tgConf.setOwnerTg(login, msg.from?.id, msg.from?.first_name || msg.from?.username || '');
+          pendingLinkTg.delete(login);
+          telegram.inviaMessaggio(conf.token, chat.id, '✅ Collegato! Da ora ti risponderò qui in privato.').catch(() => {});
+        } else {
+          telegram.inviaMessaggio(conf.token, chat.id, '❌ Codice non valido o scaduto. Rigeneralo dalla dashboard (Notifiche → Telegram).').catch(() => {});
+        }
+        return;
+      }
       // roster: annota il membro che ha scritto (così poi assegni il compleanno)
       if (msg.from && !msg.from.is_bot) {
         membri.touch(login, msg.from.id, msg.from.first_name || msg.from.username || '', msg.from.username || '');
@@ -1527,10 +1571,16 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       const invia = (t) => { if (t) telegram.inviaMessaggio(conf.token, chat.id, t).catch(() => {}); };
       const fattoDaModulo = await modules.eseguiTelegram(login, testo, invia, { utente }).catch(() => false);
       // CHAT PRIVATA col bot: se nessun modulo ha reagito e non è un comando, il
-      // cervello risponde direttamente — così lo streamer "ci parla da qui".
+      // cervello risponde direttamente — così lo streamer "ci parla da qui". Chi
+      // riceve risposta dipende dalla modalità scelta: 'me' (solo il proprietario
+      // legato), 'tutti', 'off'. Default 'me' → nessuno tranne me.
       if (!fattoDaModulo && chat.type === 'private' && !/^[/!]/.test(String(testo).trim()) && !msg.from?.is_bot) {
-        const risp = await manager.brain?.rispostaDiretta({ channel: login, user: tgUser || 'utente', nome: utente, testo, tono: s?.settings?.tono });
-        if (risp) telegram.inviaMessaggio(conf.token, chat.id, risp).catch(() => {});
+        const modo = conf.dm_modo || 'me';
+        const sonoIo = conf.owner_tg_id && String(msg.from?.id) === String(conf.owner_tg_id);
+        if (modo === 'tutti' || (modo === 'me' && sonoIo)) {
+          const risp = await manager.brain?.rispostaDiretta({ channel: login, user: tgUser || 'utente', nome: utente, testo, tono: s?.settings?.tono });
+          if (risp) telegram.inviaMessaggio(conf.token, chat.id, risp).catch(() => {});
+        }
       }
     } catch (e) { log.warn('webhook telegram:', e?.message || e); }
   }));
