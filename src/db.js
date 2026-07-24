@@ -329,6 +329,8 @@ aggiungiColonna('telegram', 'owner_tg_id', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('telegram', 'owner_tg_nome', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('telegram', 'yt_ultimo', "TEXT NOT NULL DEFAULT ''");   // id ultimo video YouTube annunciato (anti-doppioni)
 aggiungiColonna('telegram', 'ig_ultimo', "TEXT NOT NULL DEFAULT ''");   // id ultimo post Instagram annunciato (anti-doppioni)
+aggiungiColonna('quotes', 'autore', "TEXT NOT NULL DEFAULT ''");   // chi ha DETTO la citazione (import x.la: nome utente)
+aggiungiColonna('quotes', 'data', "TEXT NOT NULL DEFAULT ''");     // data della citazione (ISO YYYY-MM-DD, se nota)
 // linee guida: ambito (dove valgono + con chi) — regole contestuali di "lia"
 aggiungiColonna('linee_guida', 'dove', "TEXT NOT NULL DEFAULT 'ovunque'");     // ovunque | twitch | tg | tg-privato
 aggiungiColonna('linee_guida', 'con_chi', "TEXT NOT NULL DEFAULT 'tutti'");    // tutti | solo-me | tranne-me
@@ -596,11 +598,12 @@ export const passkeys = {
 
 // ---------------------------------------------------------------- citazioni (!cita)
 export const quotes = {
-  add(channel, text, by = '') {
+  add(channel, text, by = '', meta = {}) {
     const ch = String(channel).toLowerCase();
     const n = (db.prepare('SELECT MAX(n) m FROM quotes WHERE channel=?').get(ch).m || 0) + 1;
-    db.prepare('INSERT INTO quotes (channel, n, text, added_by, ts) VALUES (?,?,?,?,?)')
-      .run(ch, n, String(text).slice(0, 400), String(by).toLowerCase(), now());
+    db.prepare('INSERT INTO quotes (channel, n, text, added_by, autore, data, ts) VALUES (?,?,?,?,?,?,?)')
+      .run(ch, n, String(text).slice(0, 400), String(by).toLowerCase(),
+           String(meta.autore || '').slice(0, 60), String(meta.data || '').slice(0, 20), now());
     return n;
   },
   get(channel, n) {
@@ -613,20 +616,22 @@ export const quotes = {
   remove(channel, n) { db.prepare('DELETE FROM quotes WHERE channel=? AND n=?').run(String(channel).toLowerCase(), n); },
   count(channel) { return db.prepare('SELECT COUNT(*) c FROM quotes WHERE channel=?').get(String(channel).toLowerCase()).c; },
   // import in blocco: salta i doppioni (confronto normalizzato) sia con l'esistente
-  // sia dentro il lotto. Ritorna { aggiunte, saltate }.
-  addMany(channel, testi, by = '') {
+  // sia dentro il lotto. Accetta stringhe OPPURE oggetti {testo, autore, data}
+  // (per l'import x.la con nome utente e data). Ritorna { aggiunte, saltate }.
+  addMany(channel, elementi, by = '') {
     const ch = String(channel).toLowerCase();
     const norm = (s) => String(s || '').toLowerCase().replace(/^[“"'«\s]+|[”"'»\s]+$/g, '').replace(/\s+/g, ' ').trim();
     const gia = new Set(this.list(ch).map((q) => norm(q.text)));
     const visti = new Set();
     let aggiunte = 0, saltate = 0;
-    for (const raw of (Array.isArray(testi) ? testi : [])) {
-      const t = String(raw || '').replace(/^[“"'«\s]+|[”"'»\s]+$/g, '').trim().slice(0, 400);
+    for (const raw of (Array.isArray(elementi) ? elementi : [])) {
+      const o = (raw && typeof raw === 'object') ? raw : { testo: raw };
+      const t = String(o.testo || o.text || '').replace(/^[“"'«\s]+|[”"'»\s]+$/g, '').trim().slice(0, 400);
       const k = norm(t);
       if (!k) { continue; }
       if (gia.has(k) || visti.has(k)) { saltate++; continue; }
       visti.add(k);
-      this.add(ch, t, by);
+      this.add(ch, t, by, { autore: o.autore, data: o.data });
       aggiunte++;
     }
     return { aggiunte, saltate };

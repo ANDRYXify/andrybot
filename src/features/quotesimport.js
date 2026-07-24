@@ -104,6 +104,54 @@ export function estraiDaTesto(testo) {
   return [...candidati].slice(0, 300);
 }
 
+// Nome utente pulito: via la @ iniziale, spazi, e i caratteri strani ai bordi.
+function pulisciAutore(s) {
+  return String(s || '').trim().replace(/^@+/, '').replace(/[^\p{L}\p{N}_.\-]/gu, '').slice(0, 60);
+}
+
+// Data x.la (MM.DD.YYYY, formato USA) → ISO YYYY-MM-DD. Se non torna, stringa vuota.
+function normalizzaData(s) {
+  const m = /^(\d{1,2})[./](\d{1,2})[./](\d{2,4})$/.exec(String(s || '').trim());
+  if (!m) return '';
+  let [, mm, dd, yy] = m;
+  mm = +mm; dd = +dd; yy = +yy;
+  if (yy < 100) yy += 2000;
+  if (mm < 1 || mm > 12 || dd < 1 || dd > 31) return '';
+  return `${yy}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
+}
+
+// Riga "autore | data" (come su x.la: `UnicornoFacinoroso | 06.09.2024`).
+const RE_META = /^\s*(.{1,48}?)\s*[|·•–-]\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})\s*$/;
+
+// Estrae citazioni CON metadati (autore + data) dal testo incollato — pensato
+// per il formato x.la: una riga con la frase, la riga dopo con "autore | data".
+// Gestisce anche l'HTML incollato. Ritorna [{ testo, autore, data }].
+export function estraiConMeta(testo) {
+  let t = String(testo || '');
+  if (/<[a-z!][\s\S]*>/i.test(t)) {
+    t = t.replace(/<(script|style)[\s\S]*?<\/\1>/gi, ' ')
+      .replace(/<\/(div|p|li|blockquote|h[1-6]|tr)>|<br\s*\/?>/gi, '\n')
+      .replace(/<[^>]+>/g, ' ');
+    t = deent(t);
+  }
+  const righe = t.split(/\r?\n/).map((r) => r.replace(/\s+/g, ' ').trim()).filter(Boolean);
+  const out = [];
+  const visti = new Set();
+  for (let i = 0; i < righe.length; i++) {
+    if (RE_META.test(righe[i])) continue;                // riga di meta orfana: la salto
+    const q = pulisci(righe[i]);
+    if (!pareCitazione(q)) continue;
+    const k = q.toLowerCase();
+    if (visti.has(k)) continue;
+    visti.add(k);
+    let autore = '', data = '';
+    const m = RE_META.exec(righe[i + 1] || '');           // la riga dopo è "autore | data"?
+    if (m) { autore = pulisciAutore(m[1]); data = normalizzaData(m[2]); i++; }
+    out.push({ testo: q.slice(0, 400), autore, data });
+  }
+  return out.slice(0, 800);
+}
+
 // Estrae candidati citazione da un URL. Ritorna { ok, citazioni } o { ok:false, errore }.
 export async function estrai(url) {
   try {

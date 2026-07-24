@@ -1432,10 +1432,17 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   }));
   // import in blocco (dalla textarea: una citazione per riga)
   app.post('/api/streamer/citazioni/importa', requireLogin, wrap(async (req, res) => {
-    const testi = Array.isArray(req.body?.testi) ? req.body.testi : [];
-    if (!testi.length) return res.status(400).json({ errore: 'niente da importare' });
-    const esito = quotes.addMany(currentUser(req).login, testi.slice(0, 1000), currentUser(req).login);
+    // accetta oggetti {testo, autore, data} (import x.la con nome+data) o stringhe
+    const elementi = Array.isArray(req.body?.citazioni) ? req.body.citazioni
+      : Array.isArray(req.body?.testi) ? req.body.testi : [];
+    if (!elementi.length) return res.status(400).json({ errore: 'niente da importare' });
+    const esito = quotes.addMany(currentUser(req).login, elementi.slice(0, 1000), currentUser(req).login);
     res.json({ ok: true, ...esito });
+  }));
+  // analizza il testo incollato (formato x.la): estrae testo + autore + data
+  app.post('/api/streamer/citazioni/analizza', requireLogin, wrap(async (req, res) => {
+    const testo = String(req.body?.testo || '');
+    res.json({ ok: true, citazioni: quotesImport.estraiConMeta(testo) });
   }));
   // anteprima: estrae citazioni da un link (best-effort, non salva)
   app.post('/api/streamer/citazioni/da-url', requireLogin, wrap(async (req, res) => {

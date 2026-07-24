@@ -8,7 +8,16 @@ import { makeLog } from '../logger.js';
 const log = makeLog('citazioni');
 
 const puoGestire = (msg) => !!(msg.isMod || msg.isBroadcaster);
-const fmt = (q) => `“${q.text}” — #${q.n}`;
+// data ISO (YYYY-MM-DD) → GG/MM/AAAA per la chat
+const fmtData = (iso) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '')); return m ? `${m[3]}/${m[2]}/${m[1]}` : ''; };
+// come le mostra x.la: “testo” — @autore · data (#n)
+const fmt = (q) => {
+  const meta = [];
+  if (q.autore) meta.push('@' + q.autore);
+  const d = fmtData(q.data);
+  if (d) meta.push(d);
+  return `“${q.text}”${meta.length ? ' — ' + meta.join(' · ') : ''} (#${q.n})`;
+};
 
 function aggiungi(msg, testo, say) {
   if (!puoGestire(msg)) { say('Solo mod e streamer possono aggiungere citazioni 🙂'); return true; }

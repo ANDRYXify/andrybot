@@ -216,6 +216,11 @@ function apiDemo(percorso, opzioni = {}) {
   }
   if (via === '/api/admin/llm/prova') return Promise.resolve({ ok: true, modello: 'mistral-nemo', campione: 'ok' });
   if (via === '/api/streamer/instagram/prova') return Promise.resolve({ ok: true });
+  if (via === '/api/streamer/citazioni/analizza') return Promise.resolve({ ok: true, citazioni: [
+    { testo: 'Tu, molto molto bravo', autore: 'UnicornoFacinoroso', data: '2024-06-09' },
+    { testo: 'ti porterò in un brodificio', autore: 'andryxify', data: '2024-06-17' },
+  ] });
+  if (via === '/api/streamer/citazioni/importa') return Promise.resolve({ ok: true, aggiunte: 2, saltate: 0 });
   if (via.endsWith('/prova')) { toast('In demo non invio davvero in chat 😊'); return Promise.resolve({ ok: true }); }
   return Promise.resolve({ ok: true, demo: true });
 }
@@ -271,9 +276,9 @@ function _demoGet(via) {
       { id: 3, domanda: 'Come ti seguo ovunque?', risposta: 'Tutti i miei link li trovi su andryxify.it/u/andryx', fonte: 'chat', ts: '2026-05-05T22:10:00Z' },
     ],
     '/api/streamer/citazioni': [
-      { n: 1, text: '"Oggi si vince o si impara, mai si perde." — Andryx' },
-      { n: 2, text: '"La chat è la vera protagonista." — un mod a caso' },
-      { n: 3, text: '"Un altro boss, un altro tentativo." — Andryx alle 2 di notte' },
+      { n: 1, text: 'Tu, molto molto bravo', autore: 'UnicornoFacinoroso', data: '2024-06-09' },
+      { n: 2, text: 'io solo perchè mi andava di uscire', autore: 'chiara_3008', data: '2024-06-10' },
+      { n: 3, text: 'ti porterò in un brodificio', autore: 'andryxify', data: '2024-06-17' },
     ],
     '/api/streamer/classifica': {
       monete: [
@@ -1640,16 +1645,20 @@ function pannelloGiochi() {
       </div>
 
       <details class="spazio-sopra">
-        <summary style="cursor:pointer">📥 Importa citazioni (da x.la o altro)</summary>
-        <p class="suggerimento">Il modo più sicuro: copia le tue citazioni e incollale qui, <strong class="primo-piano">una
-        per riga</strong> — funziona da qualsiasi fonte (la tua pagina x.la, StreamElements, un file…). I doppioni li
-        salto da solo.</p>
-        <textarea id="txt-import-citazioni" rows="5" placeholder="una citazione per riga…"></textarea>
+        <summary style="cursor:pointer">📥 Importa citazioni (da x.la)</summary>
+        <p class="suggerimento">Vai sulla tua pagina <strong class="primo-piano">x.la</strong>, seleziona le quote e
+        <strong>incollale qui sotto</strong>: riconosco da solo <strong>nome utente e data</strong> (formato
+        «<em>frase</em> ⏎ <em>autore | data</em>», come le mostra x.la). Funziona anche incollando l'HTML della pagina.
+        I doppioni li salto.</p>
+        <textarea id="txt-import-citazioni" rows="6" placeholder="&quot;Tu, molto molto bravo&quot;&#10;UnicornoFacinoroso | 06.09.2024&#10;&quot;io solo perchè mi andava di uscire&quot;&#10;@chiara_3008 | 06.10.2024"></textarea>
         <div class="riga-flessibile">
-          <input type="text" id="inp-import-url" placeholder="…oppure incolla un link e provo a estrarle">
+          <input type="text" id="inp-import-url" placeholder="…oppure incolla un link (per altre fonti)">
           <button class="btn secondario" id="btn-estrai-citazioni">Estrai dal link</button>
         </div>
-        <p class="spazio-sopra"><button class="btn" id="btn-importa-citazioni">Importa quelle qui sopra</button></p>
+        <p class="spazio-sopra">
+          <button class="btn" id="btn-importa-citazioni">Riconosci e importa</button>
+          <span id="import-cita-esito" class="suggerimento"></span>
+        </p>
       </details>
 
       <ul class="lista-voci" id="lista-citazioni"><li class="vuoto">Caricamento…</li></ul>
@@ -2215,13 +2224,20 @@ function attivaPiattaforma() {
     } finally { btn.disabled = false; btn.textContent = orig; }
   }));
 
-  // citazioni: importa in blocco quelle nella textarea (una per riga)
+  // citazioni: riconosce (testo/autore/data, formato x.la) e importa
   document.getElementById('btn-importa-citazioni')?.addEventListener('click', () => conErrore(async () => {
-    const testi = righe(document.getElementById('txt-import-citazioni').value);
-    if (!testi.length) { toast('Incolla o estrai prima qualche citazione.', 'errore'); return; }
-    const r = await api('/api/streamer/citazioni/importa', { method: 'POST', body: { testi } });
+    const testo = document.getElementById('txt-import-citazioni').value || '';
+    const esito = document.getElementById('import-cita-esito');
+    if (!testo.trim()) { toast('Incolla prima qualche citazione.', 'errore'); return; }
+    const a = await api('/api/streamer/citazioni/analizza', { method: 'POST', body: { testo } });
+    const citazioni = a.citazioni || [];
+    if (!citazioni.length) { toast('Non ho riconosciuto nessuna citazione 🤔', 'errore'); return; }
+    const conAutore = citazioni.filter((q) => q.autore).length;
+    const conData = citazioni.filter((q) => q.data).length;
+    const r = await api('/api/streamer/citazioni/importa', { method: 'POST', body: { citazioni } });
     document.getElementById('txt-import-citazioni').value = '';
-    toast(`Importate ${r.aggiunte} citazioni` + (r.saltate ? ` (${r.saltate} doppioni saltati)` : '') + ' 💬');
+    if (esito) esito.textContent = `${r.aggiunte} importate (${conAutore} con autore, ${conData} con data)` + (r.saltate ? ` · ${r.saltate} doppioni` : '');
+    toast(`Importate ${r.aggiunte} citazioni con nome e data 💬`);
     caricaCitazioni();
   }));
 
@@ -2909,11 +2925,15 @@ async function caricaCitazioni() {
   if (!ul) return;
   try {
     const voci = await api('/api/streamer/citazioni');
+    const fmtD = (iso) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '')); return m ? `${m[3]}/${m[2]}/${m[1]}` : ''; };
     ul.innerHTML = voci.length
-      ? voci.map((q) => `<li>
-          <div class="testo-voce"><span class="domanda">#${q.n}</span> <span class="risposta">${esc(q.text)}</span></div>
+      ? voci.map((q) => {
+        const meta = [q.autore ? '@' + esc(q.autore) : '', fmtD(q.data)].filter(Boolean).join(' · ');
+        return `<li>
+          <div class="testo-voce"><span class="domanda">#${q.n}</span> <span class="risposta">${esc(q.text)}</span>${meta ? ` <span class="suggerimento">— ${meta}</span>` : ''}</div>
           <button class="btn secondario mini" data-cita-rimuovi="${q.n}">Rimuovi</button>
-        </li>`).join('')
+        </li>`;
+      }).join('')
       : '<li class="vuoto">Ancora nessuna citazione. Aggiungine una qui sopra o con !cita aggiungi in chat 💬</li>';
     ul.onclick = (ev) => {
       const b = ev.target.closest('[data-cita-rimuovi]');
