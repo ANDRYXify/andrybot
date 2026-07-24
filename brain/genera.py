@@ -36,10 +36,35 @@ CONTEXT = int(os.environ.get("LLM_CONTEXT", "1024"))
 _lock = threading.Lock()
 _stato = {"stato": "spento", "modello": None, "motivo": None}
 _llm = None
+_gemma = False   # il modello caricato è della famiglia Gemma? (niente ruolo "system")
 
 
 def stato():
     return dict(_stato)
+
+
+# Costruisce la lista di messaggi per il modello. Gemma NON ha il ruolo "system":
+# fondiamo le istruzioni nel primo turno utente. Gli altri (Qwen, Llama…) usano
+# il ruolo system normale. `turni` = lista di (msg_utente, msg_bot).
+def _prepara_messaggi(sistema, turni, utente):
+    if _gemma:
+        msgs, primo = [], True
+        for mu, mb in turni:
+            if mu:
+                msgs.append({"role": "user", "content": (sistema + "\n\n" if primo else "") + mu})
+                primo = False
+            if mb:
+                msgs.append({"role": "assistant", "content": mb})
+        msgs.append({"role": "user", "content": (sistema + "\n\n" if primo else "") + utente})
+        return msgs
+    msgs = [{"role": "system", "content": sistema}]
+    for mu, mb in turni:
+        if mu:
+            msgs.append({"role": "user", "content": mu})
+        if mb:
+            msgs.append({"role": "assistant", "content": mb})
+    msgs.append({"role": "user", "content": utente})
+    return msgs
 
 
 def _ram_gb():
@@ -73,7 +98,13 @@ def _scarica(url):
         return dest
     tmp = dest + ".part"
     print(f"[genera] scarico il modello (una volta): {nome}", flush=True)
-    with urllib.request.urlopen(url, timeout=60) as r, open(tmp, "wb") as out:
+    # HF_TOKEN: alcuni modelli (es. Gemma) sono "gated" su HuggingFace e servono
+    # un token per scaricarli. Se c'è, lo passiamo; altrimenti richiesta normale.
+    req = urllib.request.Request(url)
+    tok = os.environ.get("HF_TOKEN")
+    if tok and "huggingface.co" in url:
+        req.add_header("Authorization", "Bearer " + tok)
+    with urllib.request.urlopen(req, timeout=60) as r, open(tmp, "wb") as out:
         totale = int(r.headers.get("Content-Length", 0))
         letti, ultima = 0, -1
         while True:
@@ -117,8 +148,10 @@ def avvia():
             url = _scegli_modello()
             _stato["modello"] = url.split("/")[-1]
             path = _scarica(url)
+        global _gemma
+        _gemma = "gemma" in str(_stato.get("modello") or "").lower()
         cpu = os.cpu_count() or 2
-        print("[genera] carico il modello in memoria…", flush=True)
+        print(f"[genera] carico il modello in memoria… (famiglia {'gemma' if _gemma else 'std'})", flush=True)
         model = Llama(
             model_path=path,
             n_ctx=CONTEXT,
@@ -184,13 +217,9 @@ def genera(canale, ctx, testo, timeout_s=30):
     if _stato["stato"] != "pronto" or _llm is None:
         return None
     try:
-        messaggi = [{"role": "system", "content": _system_prompt(canale, ctx)}]
-        for m_utente, m_bot in ctx.get("scambi", [])[-2:]:
-            if m_utente:
-                messaggi.append({"role": "user", "content": m_utente[:200]})
-            if m_bot:
-                messaggi.append({"role": "assistant", "content": m_bot[:200]})
-        messaggi.append({"role": "user", "content": testo[:300]})
+        turni = [((mu[:200] if mu else mu), (mb[:200] if mb else mb))
+                 for mu, mb in ctx.get("scambi", [])[-2:]]
+        messaggi = _prepara_messaggi(_system_prompt(canale, ctx), turni, testo[:300])
 
         risultato = {}
         def _lavoro():
@@ -235,7 +264,7 @@ def distilla(canale, frasi, timeout_s=90):
         "Risposte BREVI (1 frase), in prima persona, coerenti con ciò che pensa e col suo tono. "
         "Rispondi SOLO con righe nel formato esatto:  domanda :: risposta  — massimo 6 righe, niente altro."
     )
-    messaggi = [{"role": "system", "content": sistema}, {"role": "user", "content": blocco}]
+    messaggi = _prepara_messaggi(sistema, [], blocco)
     risultato = {}
 
     def _lavoro():
