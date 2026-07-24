@@ -3,7 +3,7 @@
 // personalità fatta di pool di template in tre toni. Ricorda sempre:
 // il bot parla CON L'ACCOUNT DELLO STREAMER, quindi in prima persona.
 import { makeLog } from '../logger.js';
-import { db, memory, knowledge, voceStreamer } from '../db.js';
+import { db, memory, knowledge, voceStreamer, guide } from '../db.js';
 import { checkMessage } from '../features/moderation.js';
 import * as learn from './learn.js';
 import * as model from './model.js';
@@ -416,6 +416,7 @@ export class Brain {
         testo: String(testo).slice(0, 300), tono: t, conoscenza, stile: this._stileStreamer(channel),
         modo: 'allenamento',   // DM privato = allenamento: risposta ragionata, sfrutta il maestro esterno
         nomeBot: this._nomePersona(),   // parla come una persona (il suo nome, dall'anima)
+        lineeGuida: guide.testi(channel),   // le regole che le hai dato: le rispetta sempre
         timeoutMs: 40000,      // aspettiamo di più: risposta più lunga (e il locale su CPU è lento)
       });
       if (!r) return null;
@@ -461,6 +462,7 @@ export class Brain {
         canale: channel, login: channel, nome: nome || 'tu',
         testo: '(scrivigli tu per primo, di tua iniziativa)',
         modo: 'proattivo', spunto, nomeBot: this._nomePersona(),
+        lineeGuida: guide.testi(channel),
         conoscenza, stile: this._stileStreamer(channel),
         tono: 'amichevole', timeoutMs: 35000,
       });
@@ -649,6 +651,7 @@ export class Brain {
         const risposta = await brainpy.rispondi({
           canale: streamer.display || channel, login: user, nome, testo: text, tono, conoscenza,
           stile: this._stileStreamer(channel),   // la voce vera dello streamer (esempi di stile)
+          lineeGuida: guide.testi(channel),       // le regole valgono anche in chat pubblica
         });
         if (risposta) return this._finalizza(channel, risposta, streamer);
       }
