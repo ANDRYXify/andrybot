@@ -172,6 +172,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // Non rivelano nulla di sensibile: la dashboard vera resta dietro la sessione.
   const PUBBLICI = new Set(['/health', '/entra', '/sblocca', '/sblocca.html', '/privacy', '/privacy.html',
     '/mod', '/mod.html', '/auth/mod', '/auth/callback', '/manifest.webmanifest', '/sw.js',
+    // SEO: i motori di ricerca devono poter leggere robots e sitemap (nessun dato sensibile)
+    '/robots.txt', '/sitemap.xml',
     // abbonamenti self-service: login con Twitch + webhook Stripe (firma verificata)
     '/accedi', '/stripe/webhook']);
   // "Vetrina" pubblica: il guscio del sito (pagina + asset) e la demo interattiva
