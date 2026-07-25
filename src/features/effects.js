@@ -157,4 +157,15 @@ export class EffectsEngine {
     log.debug(`fire effetto !${eff.comando} su #${ch}`);
     return true;
   }
+
+  // Spinge un SUONO PRESET (sintetizzato nell'overlay, nessun file) verso gli
+  // overlay del canale. `etichetta` è il testo mostrato nella pillola (di solito
+  // il titolo del premio a punti canale). Volume 0..100.
+  firePreset(channel, preset, etichetta = '', volume = 100) {
+    const ch = norm(channel);
+    if (!preset) return false;
+    this.emit(ch, { tipo: 'preset', preset: String(preset), comando: String(etichetta || ''), volume });
+    log.debug(`fire preset "${preset}" su #${ch}`);
+    return true;
+  }
 }

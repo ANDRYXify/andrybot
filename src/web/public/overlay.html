@@ -91,6 +91,7 @@
   <div id="etichette"></div>
   <div id="testi"></div>
 
+  <script src="/presets.js"></script>
   <script>
     'use strict';
 
@@ -182,6 +183,12 @@
       etichettaVolatile(ev.comando, 1600);
     }
 
+    // Suono PRESET sintetizzato (nessun file): usa la libreria condivisa.
+    function suonaPreset(ev) {
+      try { window.SUONI_PRESET && window.SUONI_PRESET.suona(ev.preset, ev.volume); } catch (e) { /* niente */ }
+      etichettaVolatile(ev.comando, 1600, false);   // titolo del premio, senza '!'
+    }
+
     // Mostra un testo libero al centro dello schermo per `durata` ms, con fade.
     // Usato dall'azione "overlayTesto" dei Moduli (payload { tipo:'testo', testo, durata }).
     function mostraTesto(ev) {
@@ -200,11 +207,13 @@
     }
 
     // Mostra il nome del comando in una pillola che compare e sfuma.
-    function etichettaVolatile(comando, durata) {
+    // conPrefisso=true → antepone '!' (comandi chat); false → testo così com'è
+    // (es. titolo di un premio a punti canale).
+    function etichettaVolatile(comando, durata, conPrefisso = true) {
       if (!comando) return;
       const el = document.createElement('div');
       el.className = 'pillola';
-      el.textContent = '!' + comando;
+      el.textContent = (conPrefisso ? '!' : '') + comando;
       etichette.appendChild(el);
       requestAnimationFrame(() => el.classList.add('dentro'));
       setTimeout(() => {
@@ -221,6 +230,7 @@
         try { dati = JSON.parse(m.data); } catch (e) { return; }
         if (!dati || !dati.tipo) return;
         if (dati.tipo === 'audio') suona(dati);
+        else if (dati.tipo === 'preset') suonaPreset(dati);
         else if (dati.tipo === 'testo') mostraTesto(dati);
         else { codaVisiva.push(dati); mostraProssimo(); }
       };
