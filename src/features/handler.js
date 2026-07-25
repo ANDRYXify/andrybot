@@ -4,13 +4,12 @@
 import { makeLog } from '../logger.js';
 import { memory, streamers, commands } from '../db.js';
 import { checkMessage } from './moderation.js';
-import { elencoSocial } from './games.js';
 import { risolviCategoria } from './categoria.js';
 
 const log = makeLog('handler');
 
 // Comandi integrati (elencati da !comandi)
-const BUILTIN = ['comandi', 'ciao', 'uptime', 'game', 'categoria', 'title', 'titolo', 'followage', 'social', 'clip', 'so',
+const BUILTIN = ['comandi', 'ciao', 'uptime', 'game', 'categoria', 'title', 'titolo', 'followage', 'clip', 'so',
   'cita', 'ban', 'timeout', 'untimeout', 'addcmd', 'delcmd'];
 
 // "da quando segue": trasforma una data ISO in un testo umano (anni/mesi/giorni)
@@ -95,12 +94,12 @@ export function createMessageHandler({ chat, helix, brain, clips, botLogin }) {
         return;
       }
 
-      // social del canale: elenco immediato e deterministico (no IA, no attesa)
-      case 'social': case 'socials': case 'link': case 'links': case 'lin': {
-        const elenco = elencoSocial(channel);
-        chat.say(channel, elenco || 'Non ho ancora social salvati per questo canale.');
-        return;
-      }
+      // NB: NIENTE comando !social integrato. Rispondeva pescando link dalla
+      // "conoscenza" del canale, che poteva contenere dati non impostati dallo
+      // streamer (rischio di mostrare i social sbagliati). Il !social lo fornisce
+      // il MODULO del kit di partenza ("andryxify.it/u/$canale"), sempre corretto
+      // e sotto controllo dello streamer. Regola: rispondono solo i comandi che
+      // lo streamer ha (il kit crea, lui modifica/cancella).
 
       // titolo del canale: senza argomento LEGGE; con argomento (solo mod/streamer)
       // IMPOSTA il titolo dello stream su Twitch.
