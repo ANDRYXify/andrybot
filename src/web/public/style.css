@@ -375,6 +375,20 @@ body.vetrina .contenuto { max-width: 1040px; }
 .riquadro-info .ok-riga { color: var(--verde); font-weight: 600; margin-top: .35rem; }
 .riquadro-info .warn-riga { color: var(--ambra, #b45309); font-weight: 600; margin-top: .35rem; }
 
+/* Mini-guida "Come funziona" in cima a ogni scheda: evidenzia a cosa serve e come si fa */
+.guida-scheda { margin-top: 1.1rem; max-width: 720px; background: var(--acc-soft); border: 1px solid var(--acc-bordo); border-radius: var(--r-m); padding: .7rem 1rem; }
+.guida-scheda > summary { display: flex; align-items: center; gap: .5rem; cursor: pointer; list-style: none; font-weight: 700; color: var(--acc); font-size: .95rem; }
+.guida-scheda > summary::-webkit-details-marker { display: none; }
+.guida-scheda > summary::after { content: ''; margin-left: auto; width: .5rem; height: .5rem; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); transition: transform .18s ease; opacity: .8; }
+.guida-scheda[open] > summary::after { transform: rotate(-135deg); }
+.guida-ico { display: inline-flex; }
+.guida-corpo { margin-top: .6rem; }
+.guida-serve { color: var(--testo); font-size: .92rem; line-height: 1.5; }
+.guida-serve strong { color: var(--acc); }
+.guida-titolo { margin-top: .6rem; font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--testo-3); }
+.guida-come { margin: .3rem 0 0; padding-left: 1.25rem; display: flex; flex-direction: column; gap: .3rem; color: var(--testo-2); font-size: .9rem; line-height: 1.45; }
+.guida-come li::marker { color: var(--acc); font-weight: 700; }
+
 /* griglia di campi numerici (personalizzazione punti/classifica) */
 .griglia-punti { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .8rem; margin-top: .6rem; }
 .campo-num { display: flex; flex-direction: column; gap: .3rem; font-size: .84rem; font-weight: 600; color: var(--testo-2); }
