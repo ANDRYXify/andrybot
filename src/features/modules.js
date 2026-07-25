@@ -729,6 +729,21 @@ export class ModulesEngine {
       try { stream = await this._stream(ctx.channel); } catch { stream = null; }
     }
 
+    // SHOUTOUT: l'ultimo gioco/titolo del canale dell'utente citato DOPO il
+    // comando ($touser = primo argomento). Es. "!so giorgiottv" →
+    // "$touser stava streammando $giocotarget". Serve un destinatario: senza,
+    // queste restano vuote (lo shoutout senza @nome non ha niente da dire).
+    let bersaglioInfo = null;
+    if (/\$giocotarget|\$titolotarget/.test(s) && this.helix) {
+      const chi = String((ctx.args && ctx.args[0]) || '').replace(/^@/, '').trim().toLowerCase();
+      if (chi) {
+        try {
+          const u = await this.helix.getUserByLogin?.(chi);
+          if (u?.id && this.helix.getChannelInfo) bersaglioInfo = await this.helix.getChannelInfo(u.id);
+        } catch (e) { log.debug('shoutout target:', e?.message || e); }
+      }
+    }
+
     const ri = (lo, hi) => { lo = Math.round(lo); hi = Math.round(hi); if (lo > hi) [lo, hi] = [hi, lo]; return lo + Math.floor(Math.random() * (hi - lo + 1)); };
     const scegli = (arr) => (arr.length ? arr[Math.floor(Math.random() * arr.length)] : '');
 
@@ -785,12 +800,17 @@ export class ModulesEngine {
     const ev = ctx._vars || {};
     const vars = {
       user: ctx.user || '',
-      touser: (ctx.args && ctx.args[0]) ? ctx.args[0] : (ctx.user || ''),
+      // destinatario del comando: il nome scritto dopo (@ opzionale, ripulito),
+      // altrimenti chi scrive. È il "tag streamer" a cui si legano $giocotarget/$titolotarget.
+      touser: String((ctx.args && ctx.args[0]) || ctx.user || '').replace(/^@/, ''),
       args: ctx.argsRaw || '',
       canale: ctx.channel || '',
       uptime: stream?.started_at ? this._formattaUptime(stream.started_at) : '',
       gioco: stream?.game_name || '',
       titolo: stream?.title || '',
+      // SHOUTOUT: gioco/titolo dell'ULTIMA diretta del destinatario ($touser)
+      giocotarget: bersaglioInfo?.game_name || '',
+      titolotarget: bersaglioInfo?.title || '',
       // variabili evento
       raider: ev.raider || '',
       viewers: ev.viewers != null && ev.viewers !== '' ? String(ev.viewers) : '',
