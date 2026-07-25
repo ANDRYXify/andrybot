@@ -1011,6 +1011,13 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
         .slice(0, 50);
     }
     if (b.clipAuto !== undefined) out.clipAuto = !!b.clipAuto;
+    // sensibilità del rilevatore clip (1–10): il bot si adatta al ritmo del canale
+    if (b.clipAutoSensibilita !== undefined) {
+      const n = Number(b.clipAutoSensibilita);
+      if (!Number.isFinite(n)) return res.status(400).json({ errore: 'sensibilità clip non valida' });
+      out.clipAutoSensibilita = Math.min(10, Math.max(1, Math.round(n)));
+    }
+    // legacy: vecchia soglia in messaggi/minuto (ancora accettata)
     if (b.clipAutoSoglia !== undefined) {
       const n = Number(b.clipAutoSoglia);
       if (!Number.isFinite(n)) return res.status(400).json({ errore: 'soglia clip non valida' });
