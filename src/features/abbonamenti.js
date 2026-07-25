@@ -22,6 +22,8 @@ import { makeLog } from '../logger.js';
 
 const log = makeLog('abbonamenti');
 
+const TOLLERANZA_WEBHOOK_S = 300; // 5 min: finestra anti-replay dei webhook Stripe
+
 // ── Piano di prova (gratis) ──────────────────────────────────────────────────
 // Per far provare il bot: pochi comandi, tutto il resto spento (paywall).
 export const FREE = {
@@ -239,6 +241,11 @@ export function verificaWebhook(rawBody, sigHeader) {
   }));
   const t = parti.t, v1 = parti.v1;
   if (!t || !v1) return null;
+  // Anti-REPLAY: rifiuta eventi troppo vecchi/futuri. Senza questo controllo un
+  // webhook autentico catturato (log, proxy...) potrebbe essere rigiocato per
+  // sempre. Stessa tolleranza dello SDK ufficiale Stripe: 5 minuti.
+  const ts = Number(t);
+  if (!Number.isFinite(ts) || Math.abs(Date.now() / 1000 - ts) > TOLLERANZA_WEBHOOK_S) return null;
   const atteso = crypto.createHmac('sha256', config.stripe.webhookSecret).update(`${t}.${rawBody}`).digest('hex');
   if (atteso.length !== v1.length) return null;
   try { if (!crypto.timingSafeEqual(Buffer.from(atteso), Buffer.from(v1))) return null; }
