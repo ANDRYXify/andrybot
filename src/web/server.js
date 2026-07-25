@@ -45,6 +45,9 @@ const FONT_OVL = ['sistema', 'rotondo', 'condensato', 'mono', 'serif', 'manga'];
 const clampInt = (v, lo, hi, def) => { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : def; };
 const hexOk = (v, def) => (/^#[0-9a-fA-F]{6}$/.test(String(v)) ? String(v) : def);
 const unoDi = (v, lista, def) => (lista.includes(v) ? v : def);
+// posizione libera (drag): coordinate in % del canvas, oppure null (usa l'angolo)
+const xyOk = (v) => (v && Number.isFinite(Number(v.x)) && Number.isFinite(Number(v.y)))
+  ? { x: clampInt(v.x, 0, 100, 50), y: clampInt(v.y, 0, 100, 50) } : null;
 const TONI_VALIDI = ['scherzoso', 'amichevole', 'serio'];
 const STATI_VALIDI = ['pending', 'approved', 'disabled'];
 const TIER_VALIDI = ['tutti', 'sub', 'vip', 'mod'];
@@ -1134,6 +1137,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       out.alerts = {
         attivo: !!p.attivo,
         posizione: posAlert.includes(p.posizione) ? p.posizione : 'alto-centro',
+        xy: xyOk(p.xy),
         durata: clampInt(p.durata, 2000, 20000, 6000),
         stile: {
           animazione: unoDi(st.animazione, ['slide', 'pop', 'zoom', 'fade', 'flip', 'bounce'], 'slide'),
@@ -1161,6 +1165,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       out.chatOverlay = {
         attivo: !!c.attivo,
         posizione: posChat.includes(c.posizione) ? c.posizione : 'basso-sinistra',
+        xy: xyOk(c.xy),
         max: clampInt(c.max, 1, 20, 8),
         fadeSec: clampInt(c.fadeSec, 0, 120, 0),
         stile: {
@@ -1187,6 +1192,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
         return {
           attivo: !!x.attivo,
           posizione: posW.includes(x.posizione) ? x.posizione : 'basso-destra',
+          xy: xyOk(x.xy),
           testo: String(x.testo || testoDef).slice(0, 80),
           stile: {
             dim: unoDi(st.dim, ['piccola', 'media', 'grande'], 'media'),

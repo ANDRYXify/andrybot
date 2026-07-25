@@ -369,6 +369,20 @@
     // applica un oggetto {--var: valore} come stile inline
     function applicaVars(el, vars) { for (const k in vars) { if (vars[k] != null && vars[k] !== '') el.style.setProperty(k, String(vars[k])); } }
 
+    // posiziona un contenitore: se c'è xy (posizione libera dal drag) usa left/top
+    // in %, altrimenti torna alle classi d'angolo.
+    function posizionaContenitore(el, xy, corner) {
+      if (xy && xy.x != null) {
+        el.className = '';
+        el.style.left = xy.x + '%'; el.style.top = xy.y + '%';
+        el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.width = 'auto';
+        el.style.transform = 'translate(-50%,-50%)';
+      } else {
+        el.className = corner;
+        el.style.left = el.style.top = el.style.right = el.style.bottom = el.style.width = el.style.transform = '';
+      }
+    }
+
     function alert(ev) { codaAlert.push(ev); mostraAlertProssimo(); }
 
     function mostraAlertProssimo() {
@@ -376,7 +390,7 @@
       alertOccupato = true;
       const ev = codaAlert.shift();
       const st = ev.stile || {};
-      alertBox.className = ev.posizione || 'alto-centro';
+      posizionaContenitore(alertBox, ev.xy, ev.posizione || 'alto-centro');
       const card = document.createElement('div');
       card.className = 'alert-card anim-' + (st.animazione || 'slide') + (st.glow ? ' glow' : '') + (st.icona === false ? ' senza-ico' : '');
       applicaVars(card, {
@@ -400,9 +414,9 @@
     // --- CHAT a schermo --------------------------------------------------
     function chat(ev) {
       const st = ev.stile || {};
-      chatBox.className = (ev.posizione || 'basso-sinistra');
+      posizionaContenitore(chatBox, ev.xy, ev.posizione || 'basso-sinistra');
       if (st.larghezza) chatBox.style.maxWidth = st.larghezza + 'vw';
-      const destra = /destra/.test(ev.posizione || '');
+      const destra = !ev.xy && /destra/.test(ev.posizione || '');
       const riga = document.createElement('div');
       riga.className = 'chat-riga dim-' + (st.dim || 'media') + ' anim-' + (st.animazione || 'slide') + (st.ombra !== false ? ' ombra' : '') + (st.grassettoUser !== false ? ' user-bold' : '');
       applicaVars(riga, {
@@ -452,6 +466,10 @@
         widgetEl[id] = el;
       }
       (wboxes[ang] || wboxes['basso-destra']).appendChild(el);
+      // posizione libera (drag) o angolo
+      if (cfg.xy && cfg.xy.x != null) {
+        el.style.position = 'fixed'; el.style.left = cfg.xy.x + '%'; el.style.top = cfg.xy.y + '%'; el.style.transform = 'translate(-50%,-50%)';
+      } else { el.style.position = ''; el.style.left = ''; el.style.top = ''; el.style.transform = ''; }
       const st = cfg.stile || {};
       el.className = 'ovl-widget dim-' + (st.dim || 'media');
       applicaVars(el, {
