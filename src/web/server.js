@@ -27,6 +27,7 @@ import * as categoria from '../features/categoria.js';
 import * as compleanniFeat from '../features/compleanni.js';
 import * as tiktok from '../features/tiktok.js';
 import * as instagram from '../features/instagram.js';
+import * as emotes from '../features/emotes.js';
 import * as quotesImport from '../features/quotesimport.js';
 import { pretrain } from '../ai/pretrain.js';
 import * as persona from '../ai/persona.js';
@@ -403,6 +404,20 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!chiaveOk(req)) return notFound(res);
     const login = String(req.params.login).toLowerCase();
     res.json(manager.alerts?.tema(login) || { css: '', widget: {}, stato: {} });
+  });
+
+  // Mappa emote 7TV (globali + del canale) per la "chat a schermo": l'overlay la
+  // legge al caricamento e la rinfresca ogni tanto, così le emote 7TV compaiono
+  // come immagini. Pubblica ma protetta dalla chiave; risultato cache-ato lato
+  // server (7tv.io), quindi niente carico anche con più fonti OBS aperte.
+  app.get('/overlay/:login/emotes', async (req, res) => {
+    if (!chiaveOk(req)) return notFound(res);
+    const login = String(req.params.login).toLowerCase();
+    try {
+      const mappa = await emotes.mappaCanale(helix, login);
+      res.set('Cache-Control', 'public, max-age=300');
+      res.json(mappa || {});
+    } catch { res.json({}); }
   });
 
   // flusso SSE degli effetti in tempo reale
@@ -1405,6 +1420,13 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     }
 
     streamers.setSettings(user.login, out);
+    // OVERLAY IN TEMPO REALE: se è cambiato qualcosa che l'overlay mostra
+    // (CSS, widget, chat, alert, temi, stato), spingiamo SUBITO il nuovo tema
+    // via SSE così la fonte OBS si aggiorna da sola, senza bisogno di refresh.
+    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato'].some((k) => k in out)) {
+      try { effects.emit(user.login, { tipo: 'tema', ...(manager.alerts?.tema(user.login) || {}) }); }
+      catch (e) { log.debug('push tema live:', e?.message || e); }
+    }
     // se è cambiata la modalità di attivazione, riconcilia subito i canali
     if (b.modalita !== undefined) sync();
     res.json({ ok: true });
