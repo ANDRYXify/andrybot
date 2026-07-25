@@ -818,6 +818,8 @@ const GRUPPI = [
     ['clip', 'Clip'],
     ['ascolto', 'Ascolto vocale'],
     ['musica', 'Musica'],
+    ['sondaggi', 'Sondaggi'],
+    ['giveaway', 'Giveaway'],
   ] },
   { id: 'notifiche', nome: 'Notifiche', icona: '🔔', schede: [
     ['notifiche', 'Notifiche'],
@@ -848,6 +850,8 @@ const ICONA = {
   clip:        _ico('<rect x="3" y="5" width="18" height="14" rx="2.2"/><path d="M8 5v14"/><path d="M16 5v14"/><path d="M3 9.5h5"/><path d="M16 9.5h5"/><path d="M3 14.5h5"/><path d="M16 14.5h5"/>'),
   ascolto:     _ico('<rect x="9" y="3" width="6" height="10.5" rx="3"/><path d="M6 11a6 6 0 0 0 12 0"/><path d="M12 17v4"/>'),
   musica:      _ico('<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>'),
+  sondaggi:    _ico('<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>'),
+  giveaway:    _ico('<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/>'),
   notifiche:   _ico('<path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5 2 6H4c.5-1 2-2 2-6"/><path d="M10.3 20a1.9 1.9 0 0 0 3.4 0"/>'),
   admin:       _ico('<path d="M4 8.5 7.5 16h9L20 8.5l-4.3 3L12 5 8.3 11.5z"/><path d="M7.5 19h9"/>'),
 };
@@ -865,6 +869,8 @@ const DESC = {
   clip: 'Clip automatiche nei momenti di hype.',
   ascolto: 'Comanda il bot a voce mentre streammi.',
   musica: 'Richieste musicali: gli spettatori mettono canzoni in coda su Spotify.',
+  sondaggi: 'Crea sondaggi e predizioni Twitch al volo.',
+  giveaway: 'Organizza estrazioni a premi per la community.',
   notifiche: 'Avvisi su Telegram e TikTok quando vai in diretta.',
   admin: 'Gestione streamer e anima condivisa del bot.',
 };
@@ -934,6 +940,8 @@ function vistaPiattaforma() {
     ${pannelloClip()}
     ${pannelloAscolto()}
     ${pannelloMusica()}
+    ${pannelloSondaggi()}
+    ${pannelloGiveaway()}
     ${pannelloEffetti()}
     ${pannelloGiochi()}
     ${pannelloNotifiche()}
@@ -1560,6 +1568,152 @@ function collegaSalvaCred() {
     toast('Credenziali salvate! Ora connetti Spotify.');
     caricaSpotify();
   }));
+}
+
+// --- scheda Sondaggi & Predizioni ---------------------------------------
+
+function pannelloSondaggi() {
+  const campo = (cls, ph) => `<input type="text" class="${cls}" placeholder="${ph}">`;
+  return pannello('sondaggi', `
+    <div class="carta">
+      <h2>Sondaggi 📊</h2>
+      <p>Lancia un sondaggio Twitch: gli spettatori votano dall'app, il risultato appare sul canale.</p>
+      <div id="sondaggio-attivo"></div>
+      <label class="campo">Domanda</label>
+      <input type="text" id="poll-titolo" placeholder="es. Che gioco stasera?">
+      <label class="campo spazio-sopra">Opzioni (min 2, max 5)</label>
+      <div class="griglia-campi">
+        ${campo('poll-opt', 'Opzione 1')}${campo('poll-opt', 'Opzione 2')}${campo('poll-opt', 'Opzione 3 (facolt.)')}${campo('poll-opt', 'Opzione 4 (facolt.)')}
+      </div>
+      <label class="campo spazio-sopra">Durata (secondi)</label>
+      <input type="number" id="poll-durata" min="15" max="1800" value="120">
+      <button class="btn spazio-sopra" id="poll-crea">Lancia sondaggio</button>
+    </div>
+    <div class="carta">
+      <h2>Predizioni 🔮</h2>
+      <p>Gli spettatori scommettono i punti canale sull'esito. Decidi tu chi vince a fine gioco.</p>
+      <div id="predizione-attiva"></div>
+      <label class="campo">Titolo</label>
+      <input type="text" id="pred-titolo" placeholder="es. Vinco questa partita?">
+      <label class="campo spazio-sopra">Esiti (min 2, max 10)</label>
+      <div class="griglia-campi">
+        ${campo('pred-esito', 'Esito 1 (es. Sì)')}${campo('pred-esito', 'Esito 2 (es. No)')}${campo('pred-esito', 'Esito 3 (facolt.)')}${campo('pred-esito', 'Esito 4 (facolt.)')}
+      </div>
+      <label class="campo spazio-sopra">Finestra puntate (secondi)</label>
+      <input type="number" id="pred-finestra" min="30" max="1800" value="120">
+      <button class="btn spazio-sopra" id="pred-crea">Apri predizione</button>
+    </div>`);
+}
+
+async function caricaSondaggi() {
+  // wiring dei bottoni "crea" una volta sola
+  const bp = document.getElementById('poll-crea');
+  if (bp && !bp.dataset.wired) {
+    bp.dataset.wired = '1';
+    bp.addEventListener('click', () => conErrore(async () => {
+      const titolo = (document.getElementById('poll-titolo').value || '').trim();
+      const opzioni = [...document.querySelectorAll('.poll-opt')].map((i) => i.value.trim()).filter(Boolean);
+      const durata = Number(document.getElementById('poll-durata').value) || 120;
+      if (!titolo || opzioni.length < 2) { toast('Serve una domanda e almeno 2 opzioni.', 'errore'); return; }
+      const r = await api('/api/sondaggi/crea', { method: 'POST', body: { titolo, opzioni, durata } });
+      if (r?.poll) { toast('Sondaggio lanciato 📊'); document.getElementById('poll-titolo').value = ''; document.querySelectorAll('.poll-opt').forEach((i) => (i.value = '')); caricaSondaggi(); }
+    }));
+  }
+  const br = document.getElementById('pred-crea');
+  if (br && !br.dataset.wired) {
+    br.dataset.wired = '1';
+    br.addEventListener('click', () => conErrore(async () => {
+      const titolo = (document.getElementById('pred-titolo').value || '').trim();
+      const esiti = [...document.querySelectorAll('.pred-esito')].map((i) => i.value.trim()).filter(Boolean);
+      const finestra = Number(document.getElementById('pred-finestra').value) || 120;
+      if (!titolo || esiti.length < 2) { toast('Serve un titolo e almeno 2 esiti.', 'errore'); return; }
+      const r = await api('/api/predizioni/crea', { method: 'POST', body: { titolo, esiti, finestra } });
+      if (r?.pred) { toast('Predizione aperta 🔮'); document.getElementById('pred-titolo').value = ''; document.querySelectorAll('.pred-esito').forEach((i) => (i.value = '')); caricaSondaggi(); }
+    }));
+  }
+  // stato attivo (poll + pred)
+  const wrapP = document.getElementById('sondaggio-attivo');
+  const wrapR = document.getElementById('predizione-attiva');
+  let d;
+  try { d = await api('/api/sondaggi/stato'); } catch { return; }
+  if (wrapP) {
+    if (d.poll) {
+      wrapP.innerHTML = `<div class="riquadro-info"><p>📊 Sondaggio in corso: <strong>${esc(d.poll.titolo)}</strong></p>
+        <button class="btn secondario spazio-sopra" id="poll-chiudi">Chiudi ora</button></div>`;
+      document.getElementById('poll-chiudi').addEventListener('click', () => conErrore(async () => { await api('/api/sondaggi/chiudi', { method: 'POST', body: {} }); toast('Sondaggio chiuso.'); caricaSondaggi(); }));
+    } else wrapP.innerHTML = '';
+  }
+  if (wrapR) {
+    if (d.pred) {
+      wrapR.innerHTML = `<div class="riquadro-info"><p>🔮 Predizione in corso: <strong>${esc(d.pred.titolo)}</strong></p>
+        <p class="spazio-sopra">Fai vincere:</p>
+        <div class="chip-vars">${(d.pred.esiti || []).map((o) => `<button type="button" class="btn secondario mini" data-vince="${esc(o.id)}">${esc(o.titolo)}</button>`).join('')}</div>
+        <button class="btn pericolo spazio-sopra" id="pred-annulla">Annulla e rimborsa</button></div>`;
+      wrapR.querySelectorAll('[data-vince]').forEach((b) => b.addEventListener('click', () => conErrore(async () => { await api('/api/predizioni/risolvi', { method: 'POST', body: { esitoId: b.dataset.vince } }); toast('Predizione risolta 🎉'); caricaSondaggi(); })));
+      document.getElementById('pred-annulla').addEventListener('click', () => conErrore(async () => { await api('/api/predizioni/annulla', { method: 'POST', body: {} }); toast('Predizione annullata.'); caricaSondaggi(); }));
+    } else wrapR.innerHTML = '';
+  }
+}
+
+// --- scheda Giveaway ----------------------------------------------------
+
+function pannelloGiveaway() {
+  return pannello('giveaway', `
+    <div class="carta">
+      <h2>Giveaway 🎁</h2>
+      <p>Apri un'estrazione a premi: la community entra con <code>!join</code> in chat e tu estrai il vincitore da qui.</p>
+      <div id="giveaway-stato" class="spazio-sopra"><p>Carico…</p></div>
+      <div id="giveaway-apri">
+        <label class="campo">Premio in palio</label>
+        <input type="text" id="gw-premio" placeholder="es. una gift card, un gioco Steam…">
+        <div class="riga-check spazio-sopra">
+          <input type="checkbox" id="gw-sub">
+          <label>Riservato agli abbonati (sub)</label>
+        </div>
+        <button class="btn spazio-sopra" id="gw-apri">Apri il giveaway</button>
+      </div>
+    </div>`);
+}
+
+async function caricaGiveaway() {
+  const stBox = document.getElementById('giveaway-stato');
+  const apriBox = document.getElementById('giveaway-apri');
+  if (!stBox) return;
+  const ba = document.getElementById('gw-apri');
+  if (ba && !ba.dataset.wired) {
+    ba.dataset.wired = '1';
+    ba.addEventListener('click', () => conErrore(async () => {
+      const premio = (document.getElementById('gw-premio').value || '').trim();
+      const soloSub = !!document.getElementById('gw-sub').checked;
+      const r = await api('/api/giveaway/apri', { method: 'POST', body: { premio, soloSub } });
+      if (r?.ok) { toast('Giveaway aperto! 🎁'); document.getElementById('gw-premio').value = ''; caricaGiveaway(); }
+    }));
+  }
+  let d;
+  try { d = await api('/api/giveaway/stato'); } catch { stBox.innerHTML = '<p>Impossibile leggere lo stato.</p>'; return; }
+  if (d.aperto) {
+    if (apriBox) apriBox.hidden = true;
+    stBox.innerHTML = `<div class="riquadro-info">
+      <p>🎁 Giveaway in corso: <strong>${esc(d.premio)}</strong>${d.soloSub ? ' <span class="badge">solo sub</span>' : ''}</p>
+      <p class="spazio-sopra"><strong>${d.partecipanti}</strong> ${d.partecipanti === 1 ? 'partecipante' : 'partecipanti'} — entrano con <code>!join</code></p>
+      <div class="spazio-sopra">
+        <button class="btn" id="gw-estrai">Estrai un vincitore</button>
+        <button class="btn pericolo" id="gw-annulla">Annulla</button>
+      </div>
+      <div id="gw-vincitore" class="spazio-sopra"></div>
+    </div>`;
+    document.getElementById('gw-estrai').addEventListener('click', () => conErrore(async () => {
+      const r = await api('/api/giveaway/estrai', { method: 'POST', body: {} });
+      const v = document.getElementById('gw-vincitore');
+      if (r?.vincitore) { if (v) v.innerHTML = `<p class="ok-riga">🎉 Ha vinto: <strong>${esc(r.vincitore)}</strong>!</p>`; }
+      else if (v) v.innerHTML = '<p class="warn-riga">Nessun partecipante ancora.</p>';
+      caricaGiveaway();
+    }));
+    document.getElementById('gw-annulla').addEventListener('click', () => conErrore(async () => { await api('/api/giveaway/annulla', { method: 'POST', body: {} }); toast('Giveaway annullato.'); caricaGiveaway(); }));
+  } else {
+    if (apriBox) apriBox.hidden = false;
+    stBox.innerHTML = '<p>Nessun giveaway in corso.</p>';
+  }
 }
 
 // --- scheda Effetti & Suoni ---------------------------------------------
@@ -3086,6 +3240,8 @@ function caricaDatiScheda(id) {
   if (id === 'conoscenza') caricaConoscenza();
   if (id === 'clip') caricaClip();
   if (id === 'musica') caricaSpotify();
+  if (id === 'sondaggi') caricaSondaggi();
+  if (id === 'giveaway') caricaGiveaway();
   if (id === 'effetti') { caricaEffetti(); caricaPremi(); }
   if (id === 'moduli') caricaModuli();
   if (id === 'memoria') caricaStatistiche();

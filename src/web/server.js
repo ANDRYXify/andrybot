@@ -17,6 +17,7 @@ import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, 
 import { points, vips, tgConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts } from '../db.js';
 import * as abbonamenti from '../features/abbonamenti.js';
 import * as spotify from '../features/spotify.js';
+import * as giveaway from '../features/giveaway.js';
 import * as webauthn from './webauthn.js';
 import { comprimi } from '../features/compress.js';
 import { seedStreamer } from '../features/seed.js';
@@ -858,6 +859,112 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     streamers.setSettings(login, { ...s.settings, musica });
     res.json({ ok: true, reward });
   }));
+
+  // ------------------------------------------------------------ SONDAGGI & PREDIZIONI (dal pannello)
+  // Gli stessi di !sondaggio/!predizione, ma gestiti dalla dashboard via Helix.
+  // Fanno parte dell'add-on "Effetti & Punti canale".
+  app.get('/api/sondaggi/stato', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const [poll, pred] = await Promise.all([
+      helix.sondaggioAttivo(login).catch(() => null),
+      helix.predizioneAttiva(login).catch(() => null),
+    ]);
+    res.json({ poll, pred });
+  }));
+
+  app.post('/api/sondaggi/crea', requireOwner, wrap(async (req, res) => {
+    if (!esigiFunzione(req, res, 'effetti', 'I sondaggi')) return;
+    const login = currentUser(req).login;
+    const titolo = String(req.body?.titolo || '').trim();
+    const opzioni = (Array.isArray(req.body?.opzioni) ? req.body.opzioni : []).map((x) => String(x || '').trim()).filter(Boolean);
+    if (!titolo || opzioni.length < 2) return res.status(400).json({ errore: 'Serve una domanda e almeno 2 opzioni.' });
+    let p;
+    try { p = await helix.creaSondaggio(login, { titolo, opzioni, durata: Math.max(15, Math.min(1800, Number(req.body?.durata) || 120)) }); }
+    catch (e) {
+      if (e.status === 401 || e.status === 403) return res.status(403).json({ errore: 'Concedi il permesso "sondaggi" da /auth/permessi', permesso: true });
+      if (e.status === 400) return res.status(400).json({ errore: 'Twitch ha rifiutato il sondaggio (ne hai già uno attivo?).' });
+      return res.status(502).json({ errore: 'Twitch non ha creato il sondaggio.' });
+    }
+    if (!p) return res.status(502).json({ errore: 'Sondaggio non creato (sei in diretta?).' });
+    manager.say(login, `📊 Sondaggio: "${p.titolo}" — votate su Twitch!`);
+    res.json({ ok: true, poll: p });
+  }));
+
+  app.post('/api/sondaggi/chiudi', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const att = await helix.sondaggioAttivo(login).catch(() => null);
+    if (!att) return res.status(404).json({ errore: 'Nessun sondaggio attivo.' });
+    await helix.chiudiSondaggio(login, att.id).catch(() => {});
+    res.json({ ok: true });
+  }));
+
+  app.post('/api/predizioni/crea', requireOwner, wrap(async (req, res) => {
+    if (!esigiFunzione(req, res, 'effetti', 'Le predizioni')) return;
+    const login = currentUser(req).login;
+    const titolo = String(req.body?.titolo || '').trim();
+    const esiti = (Array.isArray(req.body?.esiti) ? req.body.esiti : []).map((x) => String(x || '').trim()).filter(Boolean);
+    if (!titolo || esiti.length < 2) return res.status(400).json({ errore: 'Serve un titolo e almeno 2 esiti.' });
+    let p;
+    try { p = await helix.creaPredizione(login, { titolo, esiti, finestra: Math.max(30, Math.min(1800, Number(req.body?.finestra) || 120)) }); }
+    catch (e) {
+      if (e.status === 401 || e.status === 403) return res.status(403).json({ errore: 'Concedi il permesso "predizioni" da /auth/permessi', permesso: true });
+      if (e.status === 400) return res.status(400).json({ errore: 'Twitch ha rifiutato la predizione (ne hai già una attiva?).' });
+      return res.status(502).json({ errore: 'Twitch non ha creato la predizione.' });
+    }
+    if (!p) return res.status(502).json({ errore: 'Predizione non creata.' });
+    manager.say(login, `🔮 Predizione: "${p.titolo}" — puntate i punti canale!`);
+    res.json({ ok: true, pred: p });
+  }));
+
+  app.post('/api/predizioni/risolvi', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const att = await helix.predizioneAttiva(login).catch(() => null);
+    if (!att) return res.status(404).json({ errore: 'Nessuna predizione attiva.' });
+    const esitoId = String(req.body?.esitoId || '');
+    const vinc = att.esiti.find((o) => o.id === esitoId);
+    if (!vinc) return res.status(400).json({ errore: 'Esito non valido.' });
+    await helix.risolviPredizione(login, att.id, esitoId).catch(() => {});
+    manager.say(login, `🔮 Predizione risolta: ha vinto "${vinc.titolo}"! 🎉`);
+    res.json({ ok: true });
+  }));
+
+  app.post('/api/predizioni/annulla', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const att = await helix.predizioneAttiva(login).catch(() => null);
+    if (!att) return res.status(404).json({ errore: 'Nessuna predizione attiva.' });
+    await helix.risolviPredizione(login, att.id, null).catch(() => {});
+    res.json({ ok: true });
+  }));
+
+  // ------------------------------------------------------------ GIVEAWAY (dal pannello)
+  // Stato in memoria condiviso col bot (stesso processo). Gli spettatori entrano
+  // con !join in chat; lo streamer apre/estrae/annulla da qui. Add-on "Giochi".
+  app.get('/api/giveaway/stato', requireOwner, (req, res) => {
+    res.json(giveaway.stato(currentUser(req).login));
+  });
+
+  app.post('/api/giveaway/apri', requireOwner, (req, res) => {
+    const login = currentUser(req).login;
+    const r = giveaway.apri(login, { premio: req.body?.premio, soloSub: !!req.body?.soloSub });
+    if (!r.ok) return res.status(400).json({ errore: r.errore === 'gia-aperto' ? 'C\'è già un giveaway aperto.' : 'I giveaway non sono inclusi nel tuo piano.' });
+    manager.say(login, `🎁 GIVEAWAY APERTO: ${r.premio}! Scrivete !join per partecipare${r.soloSub ? ' (riservato ai sub)' : ''}. In bocca al lupo! 🍀`);
+    res.json({ ok: true });
+  });
+
+  app.post('/api/giveaway/estrai', requireOwner, (req, res) => {
+    const login = currentUser(req).login;
+    const r = giveaway.estraiUno(login);
+    if (!r) return res.json({ ok: true, vincitore: null });
+    manager.say(login, `🎉🎉 Il vincitore del giveaway è… ${r.vincitore}! Congratulazioni! 🏆`);
+    res.json({ ok: true, vincitore: r.vincitore });
+  });
+
+  app.post('/api/giveaway/annulla', requireOwner, (req, res) => {
+    const login = currentUser(req).login;
+    giveaway.annulla(login);
+    manager.say(login, '🎁 Giveaway annullato.');
+    res.json({ ok: true });
+  });
 
   // ------------------------------------------------------------ API streamer
 
