@@ -24,6 +24,7 @@ import * as compleanniFeat from './features/compleanni.js';
 import * as gamesbridge from './features/gamesbridge.js';
 import * as quotes from './features/quotes.js';
 import * as model from './ai/model.js';
+import * as brainpy from './ai/brainpy.js';
 import { createMessageHandler } from './features/handler.js';
 import { ClipEngine } from './features/clips.js';
 import { PenitenzeEngine } from './features/penitenze.js';
@@ -64,7 +65,21 @@ export class BotManager {
     if (this.running) return;
 
     this.clips = new ClipEngine({ helix: this.helix, say: (ch, t) => this.say(ch, t) });
-    this.penitenze = new PenitenzeEngine({ say: (ch, t) => this.say(ch, t), effects: this.effects });
+    this.penitenze = new PenitenzeEngine({
+      say: (ch, t) => this.say(ch, t),
+      effects: this.effects,
+      // penitenza scelta dall'IA: chiede al cervello una penitenza breve e
+      // giocosa. Se il cervello non è disponibile ritorna null → rete di sicurezza.
+      ia: async (ch) => {
+        const s = streamers.get(ch);
+        const r = await brainpy.rispondi({
+          canale: ch, login: ch, nome: 'sistema', modo: 'diretta', timeoutMs: 4000,
+          tono: s?.settings?.tono || 'scherzoso',
+          testo: 'Inventa UNA penitenza breve, giocosa e innocua per uno streamer che ha perso una sfida (max 8 parole). Rispondi SOLO con la penitenza, senza virgolette.',
+        }).catch(() => null);
+        return r;
+      },
+    });
     this.brain = new Brain({
       helix: this.helix,
       actions: { createClip: (channel, reason) => this.clips.createClip(channel, reason) },

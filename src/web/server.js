@@ -866,24 +866,29 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // Penitenze: elenco premi (per scegliere quello che le attiva) e creazione.
   app.get('/api/penitenze/premi', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    if (!redemptionsOk(login)) return res.json({ permessoOk: false, tutti: [], premioTesto: '', premioRandom: '' });
+    if (!redemptionsOk(login)) return res.json({ permessoOk: false, tutti: [], premioVieta: '', premioSolo: '' });
     const tutti = await helix.listaRewardsTutti(login).catch(() => []);
     const pen = streamers.get(login)?.settings?.penitenze || {};
-    // retrocompat col vecchio campo singolo `premio`+`modo`
-    const premioTesto = pen.premioTesto || (pen.modo === 'parola' ? pen.premio : '') || '';
-    const premioRandom = pen.premioRandom || (['lettera', 'casuale'].includes(pen.modo) ? pen.premio : '') || '';
-    res.json({ permessoOk: true, tutti, premioTesto, premioRandom });
+    // retrocompat: il vecchio premioTesto/premio diventa il premio "vieta"
+    const premioVieta = pen.premioVieta || pen.premioTesto || (pen.modo === 'parola' ? pen.premio : '') || '';
+    const premioSolo = pen.premioSolo || '';
+    res.json({ permessoOk: true, tutti, premioVieta, premioSolo });
   }));
 
   app.post('/api/penitenze/premio', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
     if (!redemptionsOk(login)) return res.status(403).json({ errore: 'Concedi il permesso "punti canale" da /auth/permessi', permesso: true });
-    const titolo = (String(req.body?.titolo || '').trim() || 'Vietami una parola').slice(0, 45);
+    // campo = quale dei due premi (vieta = ban, solo = inverso)
+    const campo = req.body?.campo === 'premioSolo' ? 'premioSolo' : 'premioVieta';
+    const nomeDefault = campo === 'premioSolo' ? 'Dì solo questa parola' : 'Vietami una parola';
+    const titolo = (String(req.body?.titolo || '').trim() || nomeDefault).slice(0, 45);
     const costo = Math.max(1, Math.round(Number(req.body?.costo) || 500));
-    const userInput = req.body?.userInput !== false;   // di default lo spettatore scrive la parola
+    const prompt = campo === 'premioSolo'
+      ? 'Scrivi la parola che lo streamer potrà dire (solo quella!)'
+      : 'Scrivi la parola da vietare allo streamer';
     let reward;
     try {
-      reward = await helix.creaReward(login, { titolo, costo, userInput, prompt: 'Scrivi la parola da vietare (o lascia vuoto per una a caso)' });
+      reward = await helix.creaReward(login, { titolo, costo, userInput: true, prompt });
     } catch (e) {
       if (e.status === 403) return res.status(403).json({ errore: 'Permesso mancante: concedi "punti canale" da /auth/permessi', permesso: true });
       if (e.status === 400) return res.status(400).json({ errore: 'Twitch ha rifiutato il premio: forse esiste già un premio con questo nome.' });
@@ -891,11 +896,16 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     }
     if (!reward?.id) return res.status(502).json({ errore: 'Twitch non ha creato il premio.' });
     const s = streamers.get(login);
-    // il premio con testo alimenta premioTesto, quello senza testo premioRandom
-    const campo = userInput ? 'premioTesto' : 'premioRandom';
     const penitenze = { ...(s.settings?.penitenze || {}), attivo: true, [campo]: reward.title };
     streamers.setSettings(login, { ...s.settings, penitenze });
     res.json({ ok: true, reward, campo });
+  }));
+
+  // Prova il contatore penitenze nell'overlay (start → +1 → +1 → fine).
+  app.post('/api/penitenze/prova', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    try { manager.penitenze?.prova(login); } catch { /* niente */ }
+    res.json({ ok: true });
   }));
 
   // ------------------------------------------------------------ SONDAGGI & PREDIZIONI (dal pannello)
@@ -1061,22 +1071,27 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       if (!Number.isFinite(n)) return res.status(400).json({ errore: 'soglia clip non valida' });
       out.clipAutoSoglia = Math.min(200, Math.max(5, Math.round(n)));
     }
-    // penitenze a punti canale: vieta una parola/lettera allo streamer a tempo
+    // penitenze a punti canale (a CONTATORE): due premi (vieta / usa solo), la
+    // penitenza scatta alla fine del tempo; contatore + "+1" nell'overlay.
     if (b.penitenze !== undefined) {
       const p = b.penitenze || {};
+      const ov = (p.overlay && typeof p.overlay === 'object') ? p.overlay : {};
+      const posizioni = ['alto-sinistra', 'alto-destra', 'basso-sinistra', 'basso-destra', 'alto-centro', 'basso-centro'];
+      const colore = /^#[0-9a-fA-F]{6}$/.test(String(ov.colore)) ? String(ov.colore) : '#ff2d2d';
       out.penitenze = {
         attivo: !!p.attivo,
-        // due premi-trigger: uno con richiesta di testo (lo spettatore scrive la
-        // parola) e uno "a sorpresa" (parola/lettera scelta dal bot). Coesistono.
-        premioTesto: String(p.premioTesto || '').trim().slice(0, 60),
-        premioRandom: String(p.premioRandom || '').trim().slice(0, 60),
-        modoRandom: ['parola', 'lettera', 'casuale'].includes(p.modoRandom) ? p.modoRandom : 'casuale',
+        // premio "vieta la parola" (ban) e premio "usa solo la parola" (inverso)
+        premioVieta: String(p.premioVieta || '').trim().slice(0, 60),
+        premioSolo: String(p.premioSolo || '').trim().slice(0, 60),
         durataMin: Math.max(1, Math.min(15, Math.round(Number(p.durataMin)) || 2)),
         parole: Array.isArray(p.parole) ? p.parole.map((x) => String(x).trim().toLowerCase().slice(0, 40)).filter(Boolean).slice(0, 80) : [],
-        // sorgente del forfait: la mia lista / suggerite dal bot / entrambe
-        penitenzeModo: ['lista', 'suggerite', 'entrambe'].includes(p.penitenzeModo) ? p.penitenzeModo : 'lista',
+        // penitenza: dalla mia lista o scelta dall'IA
+        penitenzeModo: ['lista', 'ia'].includes(p.penitenzeModo) ? p.penitenzeModo : 'lista',
         penitenze: Array.isArray(p.penitenze) ? p.penitenze.map((x) => String(x).trim().slice(0, 120)).filter(Boolean).slice(0, 60) : [],
         effetto: String(p.effetto || '').trim().slice(0, 40),
+        // tolleranza al riconoscimento vocale (50..100 = più severo)
+        fuzzy: Math.max(50, Math.min(100, Math.round(Number(p.fuzzy)) || 80)),
+        overlay: { posizione: posizioni.includes(ov.posizione) ? ov.posizione : 'alto-destra', colore },
       };
     }
     // ascolto live lato server (audio → clip nei momenti salienti): opt-in
