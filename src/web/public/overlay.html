@@ -411,6 +411,35 @@
       }, durata);
     }
 
+    // --- EMOTE 7TV -------------------------------------------------------
+    // Mappa nome→URL (globali 7TV + del canale), letta dal server e rinfrescata
+    // ogni tanto. Le emote compaiono come immagini dentro i messaggi di chat.
+    let EMOTE = {};
+    async function caricaEmote() {
+      try {
+        const r = await fetch('/overlay/' + encodeURIComponent(login) + '/emotes' + location.search);
+        if (r.ok) { const m = await r.json(); if (m && typeof m === 'object') EMOTE = m; }
+      } catch (e) { /* niente: la chat resta comunque testuale */ }
+    }
+    // Riempie `riga` con il testo, sostituendo le PAROLE che sono emote con
+    // <img>. Split su spazi conservando la spaziatura originale; match esatto
+    // della parola (come fanno 7TV/BTTV): "Kappa" sì, "Kappa!" no.
+    function testoConEmote(riga, testo) {
+      const pezzi = String(testo || '').split(/(\s+)/);
+      for (const p of pezzi) {
+        if (p && EMOTE[p]) {
+          const img = document.createElement('img');
+          img.className = 'emote';
+          img.src = EMOTE[p];
+          img.alt = p;
+          img.loading = 'lazy';
+          riga.appendChild(img);
+        } else if (p) {
+          riga.appendChild(document.createTextNode(p));
+        }
+      }
+    }
+
     // --- CHAT a schermo --------------------------------------------------
     function chat(ev) {
       const st = ev.stile || {};
@@ -431,7 +460,7 @@
       const cu = (st.username && st.username !== 'twitch') ? st.username : ev.colore;
       if (cu) u.style.color = cu;
       riga.appendChild(u);
-      riga.appendChild(document.createTextNode(ev.testo || ''));
+      testoConEmote(riga, ev.testo || '');
       chatBox.appendChild(riga);
       requestAnimationFrame(() => { riga.style.transform = ''; riga.classList.add('dentro'); });
       const max = Math.max(1, Number(ev.max) || 8);
@@ -535,7 +564,12 @@
       } catch (e) { /* niente */ }
     }
 
-    if (login) { connetti(); caricaTema(); }
+    if (login) {
+      connetti();
+      caricaTema();
+      caricaEmote();
+      setInterval(caricaEmote, 10 * 60 * 1000);   // le emote 7TV cambiano di rado
+    }
   </script>
 </body>
 </html>

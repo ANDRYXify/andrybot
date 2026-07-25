@@ -75,6 +75,8 @@
 .chat-riga.ombra { box-shadow: 0 4px 16px rgba(0, 0, 0, .4); }
 .chat-riga .chat-user { margin-right: .35rem; }
 .chat-riga.user-bold .chat-user { font-weight: 800; }
+/* emote 7TV: immagini in linea col testo, alte quanto ~1.5 righe */
+.chat-riga .emote { height: 1.5em; width: auto; vertical-align: middle; margin: -0.15em 0.05em 0; }
 .chat-riga { opacity: 0; }
 .chat-riga.dentro { opacity: 1; }
 .chat-riga.anim-slide { transform: translateX(-10px); transition: opacity .25s ease, transform .25s ease; }
