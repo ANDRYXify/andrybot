@@ -2188,10 +2188,12 @@ function pannelloAlert() {
         <button class="btn secondario" id="ovl-tpl-elimina">Elimina</button>
       </div>
       <div class="ovl-anteprima spazio-sopra" id="ovl-preview">
-        <div class="alert-card" id="ap-alert"><div class="alert-ico" id="ap-alert-ico"></div><div class="alert-testo" id="ap-alert-testo"></div></div>
-        <div class="ap-angolo ap-chat" id="ap-chat"></div>
-        <div class="ap-angolo" id="ap-wf"><div class="ovl-widget" id="ap-wf-el"><span class="w-ico"></span><span class="w-testo"></span></div></div>
-        <div class="ap-angolo" id="ap-ws"><div class="ovl-widget" id="ap-ws-el"><span class="w-ico"></span><span class="w-testo"></span></div></div>
+        <div class="ap-stage" id="ap-stage">
+          <div class="ap-el alert-card" id="ap-alert"><div class="alert-ico" id="ap-alert-ico"></div><div class="alert-testo" id="ap-alert-testo"></div></div>
+          <div class="ap-el ap-chat" id="ap-chat"></div>
+          <div class="ap-el" id="ap-wf"><div class="ovl-widget" id="ap-wf-el"><span class="w-ico"></span><span class="w-testo"></span></div></div>
+          <div class="ap-el" id="ap-ws"><div class="ovl-widget" id="ap-ws-el"><span class="w-ico"></span><span class="w-testo"></span></div></div>
+        </div>
       </div>
       <p class="suggerimento"><strong>Trascina</strong> gli elementi nell'anteprima per posizionarli dove vuoi (doppio clic per rimetterli nell'angolo). Usa «Prova ▶» per vederli davvero nell'overlay in OBS.</p>
     </div>
@@ -2375,7 +2377,6 @@ function _anteprimaWidget(pref, id, nome) {
   if (!attivo) { box.style.display = 'none'; return; }
   box.style.display = '';
   const w = _leggiWidget(pref).stile;
-  box.className = 'ap-angolo ap-' + (_v(`${pref}-pos`) || 'basso-destra');
   const el = _g(`ap-${pref}-el`);
   el.className = 'ovl-widget dim-' + (w.dim || 'media');
   _setVars(el, { '--bg': w.sfondo, '--op': w.opacita + '%', '--fg': w.testo, '--acc': w.accento, '--radius': w.bordoRaggio + 'px', '--font': FONT_VAR[w.font] });
@@ -2398,7 +2399,7 @@ function aggiornaAnteprima() {
   const chatPos = _v('co-pos') || 'basso-sinistra';
   const apChat = _g('ap-chat');
   if (apChat) {
-    apChat.className = 'ap-angolo ap-chat ap-' + chatPos + (/destra/.test(chatPos) ? ' destra' : '');
+    apChat.className = 'ap-el ap-chat' + (/destra/.test(chatPos) ? ' destra' : '');
     apChat.innerHTML = [['lucaplays', '#ff4d4d', 'ciao a tutti! 👋'], ['giada_ttv', '#48b0ff', 'che bella live']].map(([u, col, t]) => {
       const cu = cst.username === 'twitch' ? col : cst.username;
       return `<div class="chat-riga dim-${cst.dim}${cst.ombra ? ' ombra' : ''}${cst.grassettoUser ? ' user-bold' : ''} dentro" style="--bg:${cst.sfondo};--op:${cst.opacita}%;--fg:${cst.testo};--radius:${cst.bordoRaggio}px;--font:${FONT_VAR[cst.font]}"><span class="chat-user" style="color:${cu}">${esc(u)}</span> ${esc(t)}</div>`;
@@ -2406,22 +2407,34 @@ function aggiornaAnteprima() {
   }
   _anteprimaWidget('wf', 'ultimoFollower', 'MarioRossi');
   _anteprimaWidget('ws', 'ultimoSub', 'GiadaTTV');
-  // posizioni libere (drag): sovrascrivono gli angoli
-  _posElemento(_g('ap-alert'), posXY.alert);
-  _posElemento(_g('ap-chat'), posXY.chat);
-  _posElemento(_g('ap-wf'), posXY.wf);
-  _posElemento(_g('ap-ws'), posXY.ws);
+  // posiziona nel palco 1920x1080 (posizione libera dal drag, oppure l'angolo scelto)
+  _posElemento(_g('ap-alert'), posXY.alert || _defPos('alert'));
+  _posElemento(_g('ap-chat'), posXY.chat || _defPos('chat'));
+  _posElemento(_g('ap-wf'), posXY.wf || _defPos('wf'));
+  _posElemento(_g('ap-ws'), posXY.ws || _defPos('ws'));
 }
 
-// Posiziona un elemento dell'anteprima: libero (x/y %) o secondo le sue classi.
+// posizione di default (in %) di un elemento in base all'angolo/posizione scelta.
+function _cornerXY(c) { return ({ 'alto-sinistra': { x: 13, y: 15 }, 'alto-destra': { x: 87, y: 15 }, 'basso-sinistra': { x: 13, y: 85 }, 'basso-destra': { x: 87, y: 85 } })[c] || { x: 87, y: 85 }; }
+function _defPos(k) {
+  if (k === 'alert') return ({ 'alto-centro': { x: 50, y: 16 }, centro: { x: 50, y: 50 }, 'basso-centro': { x: 50, y: 84 } })[_v('al-pos') || 'alto-centro'] || { x: 50, y: 16 };
+  if (k === 'chat') return _cornerXY(_v('co-pos') || 'basso-sinistra');
+  return _cornerXY(_v(`${k}-pos`) || 'basso-destra');
+}
+
+// Posiziona un elemento nel palco 1920x1080 (coordinate in % → left/top, ancorato al centro).
 function _posElemento(el, xy) {
-  if (!el) return;
-  if (xy && xy.x != null) {
-    el.style.position = 'absolute'; el.style.left = xy.x + '%'; el.style.top = xy.y + '%';
-    el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.transform = 'translate(-50%,-50%)';
-  } else {
-    el.style.position = el.style.left = el.style.top = el.style.right = el.style.bottom = el.style.transform = '';
-  }
+  if (!el || !xy) return;
+  el.style.position = 'absolute'; el.style.left = xy.x + '%'; el.style.top = xy.y + '%';
+  el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.transform = 'translate(-50%,-50%)';
+}
+
+// Scala il palco 1920x1080 per riempire esattamente il riquadro 16:9 dell'anteprima.
+function scalaAnteprima() {
+  const canvas = _g('ovl-preview'), stage = _g('ap-stage');
+  if (!canvas || !stage) return;
+  const w = canvas.clientWidth;
+  if (w) stage.style.transform = 'scale(' + (w / 1920) + ')';
 }
 
 // Rende un elemento dell'anteprima trascinabile (WYSIWYG). Doppio clic = torna all'angolo.
@@ -2559,6 +2572,14 @@ function caricaAlert() {
     aggiornaAnteprima();
   });
   scheda?.addEventListener('change', () => aggiornaAnteprima());
+  // scala il palco 16:9 in modo affidabile: un ResizeObserver riscala ogni volta
+  // che il riquadro ottiene/cambia larghezza (anche quando la scheda diventa visibile).
+  const canvas = _g('ovl-preview');
+  if (canvas && !canvas._ro && typeof ResizeObserver !== 'undefined') {
+    const ro = new ResizeObserver(() => scalaAnteprima());
+    ro.observe(canvas); canvas._ro = ro;
+  }
+  scalaAnteprima();
   aggiornaAnteprima();
 
   _g('al-salva')?.addEventListener('click', () => conErrore(() => salvaAlert()));
