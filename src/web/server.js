@@ -860,6 +860,35 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.json({ ok: true, reward });
   }));
 
+  // Penitenze: elenco premi (per scegliere quello che le attiva) e creazione.
+  app.get('/api/penitenze/premi', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (!redemptionsOk(login)) return res.json({ permessoOk: false, tutti: [], premio: '' });
+    const tutti = await helix.listaRewardsTutti(login).catch(() => []);
+    res.json({ permessoOk: true, tutti, premio: streamers.get(login)?.settings?.penitenze?.premio || '' });
+  }));
+
+  app.post('/api/penitenze/premio', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (!redemptionsOk(login)) return res.status(403).json({ errore: 'Concedi il permesso "punti canale" da /auth/permessi', permesso: true });
+    const titolo = (String(req.body?.titolo || '').trim() || 'Vietami una parola').slice(0, 45);
+    const costo = Math.max(1, Math.round(Number(req.body?.costo) || 500));
+    const userInput = req.body?.userInput !== false;   // di default lo spettatore scrive la parola
+    let reward;
+    try {
+      reward = await helix.creaReward(login, { titolo, costo, userInput, prompt: 'Scrivi la parola da vietare (o lascia vuoto per una a caso)' });
+    } catch (e) {
+      if (e.status === 403) return res.status(403).json({ errore: 'Permesso mancante: concedi "punti canale" da /auth/permessi', permesso: true });
+      if (e.status === 400) return res.status(400).json({ errore: 'Twitch ha rifiutato il premio: forse esiste già un premio con questo nome.' });
+      return res.status(502).json({ errore: 'Twitch non ha creato il premio.' });
+    }
+    if (!reward?.id) return res.status(502).json({ errore: 'Twitch non ha creato il premio.' });
+    const s = streamers.get(login);
+    const penitenze = { ...(s.settings?.penitenze || {}), attivo: true, premio: reward.title };
+    streamers.setSettings(login, { ...s.settings, penitenze });
+    res.json({ ok: true, reward });
+  }));
+
   // ------------------------------------------------------------ SONDAGGI & PREDIZIONI (dal pannello)
   // Gli stessi di !sondaggio/!predizione, ma gestiti dalla dashboard via Helix.
   // Fanno parte dell'add-on "Effetti & Punti canale".
@@ -1022,6 +1051,19 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       const n = Number(b.clipAutoSoglia);
       if (!Number.isFinite(n)) return res.status(400).json({ errore: 'soglia clip non valida' });
       out.clipAutoSoglia = Math.min(200, Math.max(5, Math.round(n)));
+    }
+    // penitenze a punti canale: vieta una parola/lettera allo streamer a tempo
+    if (b.penitenze !== undefined) {
+      const p = b.penitenze || {};
+      out.penitenze = {
+        attivo: !!p.attivo,
+        premio: String(p.premio || '').trim().slice(0, 60),
+        durataMin: Math.max(1, Math.min(15, Math.round(Number(p.durataMin)) || 2)),
+        modo: ['parola', 'lettera', 'casuale'].includes(p.modo) ? p.modo : 'parola',
+        parole: Array.isArray(p.parole) ? p.parole.map((x) => String(x).trim().toLowerCase().slice(0, 40)).filter(Boolean).slice(0, 80) : [],
+        penitenze: Array.isArray(p.penitenze) ? p.penitenze.map((x) => String(x).trim().slice(0, 120)).filter(Boolean).slice(0, 60) : [],
+        effetto: String(p.effetto || '').trim().slice(0, 40),
+      };
     }
     // ascolto live lato server (audio → clip nei momenti salienti): opt-in
     if (b.ascoltoLive !== undefined) out.ascoltoLive = !!b.ascoltoLive;
@@ -1656,6 +1698,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
         }
       }
     }
+    // penitenze a punti canale: il bot "sente" se lo streamer dice una parola/
+    // lettera vietata da un riscatto e fa scattare la penitenza.
+    try { manager.penitenze?.controllaVoce(login, frase); } catch { /* niente */ }
     // la stessa risposta va anche nel gruppo Telegram se il modulo è abilitato
     const c = tgConf.get(login);
     const inviaTg = (t) => { if (c?.token && c.chat_id && t) telegram.inviaMessaggio(c.token, c.chat_id, t).catch(() => {}); };

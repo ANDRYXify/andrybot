@@ -26,6 +26,7 @@ import * as quotes from './features/quotes.js';
 import * as model from './ai/model.js';
 import { createMessageHandler } from './features/handler.js';
 import { ClipEngine } from './features/clips.js';
+import { PenitenzeEngine } from './features/penitenze.js';
 import { scheduleReflection } from './ai/reflection.js';
 import { StreamWatcher } from './stream/watcher.js';
 import { LiveListener } from './stream/listener.js';
@@ -63,6 +64,7 @@ export class BotManager {
     if (this.running) return;
 
     this.clips = new ClipEngine({ helix: this.helix, say: (ch, t) => this.say(ch, t) });
+    this.penitenze = new PenitenzeEngine({ say: (ch, t) => this.say(ch, t), effects: this.effects });
     this.brain = new Brain({
       helix: this.helix,
       actions: { createClip: (channel, reason) => this.clips.createClip(channel, reason) },
@@ -490,6 +492,8 @@ export class BotManager {
       // richiesta musicale a punti canale: se il premio è quello configurato,
       // il testo del riscatto diventa una canzone in coda su Spotify.
       songrequest.perRedemptionMusica(channel, data, (t) => this.say(channel, t)).catch(() => {});
+      // penitenza a punti canale: vieta una parola/lettera allo streamer a tempo.
+      try { this.penitenze?.daRiscatto(channel, data); } catch (e) { log.debug(`#${channel} penitenza:`, e?.message || e); }
     }
     this._dispatchEvent(ev);
   }
