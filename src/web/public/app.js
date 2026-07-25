@@ -1448,14 +1448,8 @@ function pannelloMusica() {
       </div>
       <div id="musica-premio-box" class="spazio-sopra" hidden>
         <input type="hidden" id="musica-premio" value="${esc(m.premio || '')}">
-        <p>Gli spettatori richiedono una canzone <strong>riscattando un premio a punti canale</strong>: scrivono il brano nel riscatto e il bot lo mette in coda. Crealo qui, pronto all'uso.</p>
-        <div id="musica-premi-info" class="riquadro-info spazio-sopra"><p>…</p></div>
-        <div class="griglia-campi spazio-sopra">
-          <div><label class="campo">Nome del premio</label><input type="text" id="musica-nuovo-nome" value="${esc(m.premio || 'Richiesta musicale')}"></div>
-          <div><label class="campo">Costo (punti canale)</label><input type="number" id="musica-nuovo-costo" min="1" value="500"></div>
-        </div>
-        <button class="btn spazio-sopra" id="musica-crea-premio">Crea il premio su Twitch</button>
-        <p class="suggerimento">Lo creo io con la "richiesta di testo" già attiva e lo collego alle richieste musicali.</p>
+        <p>Gli spettatori richiedono una canzone <strong>riscattando un premio a punti canale</strong> con la "richiesta di testo": scrivono il brano nel riscatto e il bot lo mette in coda.</p>
+        <div id="musica-premi-box" class="spazio-sopra"><p>Carico i tuoi premi…</p></div>
       </div>
       <button class="btn spazio-sopra" id="musica-salva">Salva</button>
     </div>`);
@@ -1506,51 +1500,74 @@ function wiraMusicaConfig() {
   sel.addEventListener('change', applica);
   applica();
   const b = document.getElementById('musica-salva');
-  if (b) b.addEventListener('click', () => conErrore(async () => {
-    const musica = {
-      modo: sel.value,
-      costo: Number(document.getElementById('musica-costo')?.value) || 0,
-      premio: (document.getElementById('musica-premio')?.value || '').trim(),
-    };
-    await api('/api/streamer/impostazioni', { method: 'POST', body: { musica } });
-    toast('Impostazioni musica salvate 🎵');
-  }));
+  if (b) b.addEventListener('click', () => conErrore(() => salvaMusica()));
+}
+
+// Salva la config musica (modo + costo + premio). `silenzioso` = niente toast.
+async function salvaMusica(silenzioso) {
+  const sel = document.getElementById('musica-modo');
+  if (!sel) return;
+  const musica = {
+    modo: sel.value,
+    costo: Number(document.getElementById('musica-costo')?.value) || 0,
+    premio: (document.getElementById('musica-premio')?.value || '').trim(),
+  };
+  await api('/api/streamer/impostazioni', { method: 'POST', body: { musica } });
+  if (!silenzioso) toast('Impostazioni musica salvate 🎵');
+}
+
+// Modalità "punti canale": lascia scegliere UN premio tra quelli con la
+// "richiesta di testo" attiva (gli altri non sono usabili → esclusi), oppure
+// crearne uno pronto all'uso. Niente più campo-nome da riempire a mano.
+async function caricaPremiMusica() {
+  const box = document.getElementById('musica-premi-box');
+  if (!box) return;
+  box.innerHTML = '<p>Carico i tuoi premi a punti canale…</p>';
+  let d;
+  try { d = await api('/api/musica/premi'); } catch { box.innerHTML = '<p>Impossibile leggere i premi.</p>'; return; }
+  if (!d.permessoOk) {
+    box.innerHTML = '<div class="riquadro-info">⚠️ Per usare i premi a punti canale serve il permesso: concedilo da <strong>Chat &amp; comandi → Effetti &amp; suoni</strong> (sezione Premi), poi torna qui.</div>';
+    return;
+  }
+  const eleggibili = (d.tutti || []).filter((r) => r.richiedeTesto);
+  const esclusi = (d.tutti || []).length - eleggibili.length;
+  const inp = document.getElementById('musica-premio');
+  const attuale = (inp?.value || d.premio || '').trim();
+
+  const formCrea = `
+    <details class="spazio-sopra"${eleggibili.length ? '' : ' open'}>
+      <summary>${eleggibili.length ? 'Oppure crea un premio pronto all\'uso' : 'Crea un premio pronto all\'uso'}</summary>
+      <div class="griglia-campi spazio-sopra">
+        <div><label class="campo">Nome</label><input type="text" id="musica-nuovo-nome" value="Richiesta musicale"></div>
+        <div><label class="campo">Costo (punti canale)</label><input type="number" id="musica-nuovo-costo" min="1" value="500"></div>
+      </div>
+      <button class="btn secondario spazio-sopra" id="musica-crea-premio">Crea il premio su Twitch</button>
+      <p class="suggerimento">Lo creo io con la "richiesta di testo" già attiva e lo seleziono qui.</p>
+    </details>`;
+
+  if (!eleggibili.length) {
+    box.innerHTML = `<div class="riquadro-info">Non hai premi a punti canale con la <strong>richiesta di testo</strong> attiva${esclusi ? ` (${esclusi} non ${esclusi === 1 ? 'adatto' : 'adatti'})` : ''}. Creane uno pronto all'uso 👇</div>${formCrea}`;
+  } else {
+    box.innerHTML = `
+      <label class="campo" for="musica-premio-sel">Premio usato per le richieste</label>
+      <select id="musica-premio-sel">
+        ${eleggibili.map((r) => `<option value="${esc(r.title)}"${r.title === attuale ? ' selected' : ''}>${esc(r.title)} — ${r.cost} punti</option>`).join('')}
+      </select>
+      ${esclusi ? `<p class="suggerimento">${esclusi} ${esclusi === 1 ? 'altro premio non ha' : 'altri premi non hanno'} la richiesta di testo, quindi ${esclusi === 1 ? 'non compare' : 'non compaiono'} qui.</p>` : ''}
+      ${formCrea}`;
+    const selp = document.getElementById('musica-premio-sel');
+    if (!eleggibili.some((r) => r.title === attuale)) selp.selectedIndex = 0;
+    if (inp) inp.value = selp.value;
+    selp.addEventListener('change', () => { if (inp) inp.value = selp.value; conErrore(async () => { await salvaMusica(true); toast('Premio impostato ✓'); }); });
+  }
+
   const bc = document.getElementById('musica-crea-premio');
   if (bc) bc.addEventListener('click', () => conErrore(async () => {
     const titolo = (document.getElementById('musica-nuovo-nome')?.value || 'Richiesta musicale').trim();
     const costo = Number(document.getElementById('musica-nuovo-costo')?.value) || 500;
     const r = await api('/api/musica/premio', { method: 'POST', body: { titolo, costo } });
-    if (r?.reward) {
-      const inp = document.getElementById('musica-premio');
-      if (inp) inp.value = r.reward.title;
-      toast('Premio creato su Twitch! 🎁');
-      caricaPremiMusica();
-    }
+    if (r?.reward) { if (inp) inp.value = r.reward.title; toast('Premio creato su Twitch! 🎁'); caricaPremiMusica(); }
   }));
-}
-
-// Mostra quanti premi a punti canale hai già e se quello scelto esiste. Aiuta a
-// capire se puoi crearne un altro e quali nomi sono occupati.
-async function caricaPremiMusica() {
-  const box = document.getElementById('musica-premi-info');
-  if (!box) return;
-  box.innerHTML = '<p>Controllo i tuoi premi a punti canale…</p>';
-  let d;
-  try { d = await api('/api/musica/premi'); } catch { box.innerHTML = '<p>Impossibile leggere i premi.</p>'; return; }
-  if (!d.permessoOk) {
-    box.innerHTML = '⚠️ Per creare o usare i premi a punti canale serve il permesso: concedilo da <strong>Chat &amp; comandi → Effetti &amp; suoni</strong> (sezione Premi), poi torna qui.';
-    return;
-  }
-  const tutti = d.tutti || [];
-  const nomi = tutti.map((r) => esc(r.title));
-  const inp = document.getElementById('musica-premio');
-  const attuale = ((inp?.value || d.premio || '').trim()).toLowerCase();
-  const trovato = tutti.find((r) => r.title.toLowerCase() === attuale);
-  box.innerHTML = `
-    <p>Hai <strong>${tutti.length}</strong> ${tutti.length === 1 ? 'premio' : 'premi'} a punti canale${tutti.length ? ': ' + nomi.join(', ') : '. Creane uno qui sotto.'}</p>
-    ${attuale ? (trovato
-      ? `<p class="ok-riga">✓ "${esc(trovato.title)}" è pronto (${trovato.cost} punti).</p>`
-      : `<p class="warn-riga">⚠️ Nessun premio si chiama "${esc(inp?.value || '')}": crealo qui sotto o correggi il nome.</p>`) : ''}`;
 }
 
 async function caricaSpotify() {
