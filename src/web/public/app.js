@@ -899,6 +899,16 @@ const GUIDE = {
 // SVG lampadina (niente emoji): icona della mini-guida.
 const _icoGuida = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1.3.5 2.6 1.5 3.5.8.8 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>';
 
+// Icona SVG "da titolo" (in tinta accento, allineata al testo): niente emoji.
+const _hIco = (d) => `<svg class="h-ico" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const ICO = {
+  musica: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+  sliders: '<line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="6" y1="14" y2="14"/><line x1="10" x2="14" y1="8" y2="8"/><line x1="18" x2="22" y1="16" y2="16"/>',
+  sondaggi: '<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
+  predizioni: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+  giveaway: '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/>',
+};
+
 // HTML della mini-guida di una scheda (vuoto se non prevista).
 function guidaSchedaHtml(id) {
   const g = GUIDE[id];
@@ -1415,14 +1425,14 @@ function pannelloMusica() {
   const opt = (v, t) => `<option value="${v}" ${modo === v ? 'selected' : ''}>${t}</option>`;
   return pannello('musica', `
     <div class="carta">
-      <h2>Richieste musicali 🎵</h2>
+      <h2>${_hIco(ICO.musica)}Richieste musicali</h2>
       <p>Collega Spotify: gli spettatori mettono canzoni in coda con
       <code>!sr &lt;canzone&gt;</code> e vedono cosa suona con <code>!song</code>.
       Serve <strong>Spotify Premium</strong> e un dispositivo attivo (l'app aperta e in riproduzione).</p>
       <div id="spotify-box" class="spazio-sopra"><p>Carico…</p></div>
     </div>
     <div class="carta">
-      <h3>Come si richiede una canzone 🎚️</h3>
+      <h3>${_hIco(ICO.sliders)}Come si richiede una canzone</h3>
       <p>Decidi tu se le richieste sono libere o "a pagamento": non devono per forza essere gratis.</p>
       <label class="campo" for="musica-modo">Modalità</label>
       <select id="musica-modo">
@@ -1614,7 +1624,7 @@ function pannelloSondaggi() {
   const campo = (cls, ph) => `<input type="text" class="${cls}" placeholder="${ph}">`;
   return pannello('sondaggi', `
     <div class="carta">
-      <h2>Sondaggi 📊</h2>
+      <h2>${_hIco(ICO.sondaggi)}Sondaggi</h2>
       <p>Lancia un sondaggio Twitch: gli spettatori votano dall'app, il risultato appare sul canale.</p>
       <div id="sondaggio-attivo"></div>
       <label class="campo">Domanda</label>
@@ -1628,7 +1638,7 @@ function pannelloSondaggi() {
       <button class="btn spazio-sopra" id="poll-crea">Lancia sondaggio</button>
     </div>
     <div class="carta">
-      <h2>Predizioni 🔮</h2>
+      <h2>${_hIco(ICO.predizioni)}Predizioni</h2>
       <p>Gli spettatori scommettono i punti canale sull'esito. Decidi tu chi vince a fine gioco.</p>
       <div id="predizione-attiva"></div>
       <label class="campo">Titolo</label>
@@ -1698,7 +1708,7 @@ async function caricaSondaggi() {
 function pannelloGiveaway() {
   return pannello('giveaway', `
     <div class="carta">
-      <h2>Giveaway 🎁</h2>
+      <h2>${_hIco(ICO.giveaway)}Giveaway</h2>
       <p>Apri un'estrazione a premi: la community entra con <code>!join</code> in chat e tu estrai il vincitore da qui.</p>
       <div id="giveaway-stato" class="spazio-sopra"><p>Carico…</p></div>
       <div id="giveaway-apri">
