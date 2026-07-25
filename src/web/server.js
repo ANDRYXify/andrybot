@@ -863,9 +863,13 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // Penitenze: elenco premi (per scegliere quello che le attiva) e creazione.
   app.get('/api/penitenze/premi', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    if (!redemptionsOk(login)) return res.json({ permessoOk: false, tutti: [], premio: '' });
+    if (!redemptionsOk(login)) return res.json({ permessoOk: false, tutti: [], premioTesto: '', premioRandom: '' });
     const tutti = await helix.listaRewardsTutti(login).catch(() => []);
-    res.json({ permessoOk: true, tutti, premio: streamers.get(login)?.settings?.penitenze?.premio || '' });
+    const pen = streamers.get(login)?.settings?.penitenze || {};
+    // retrocompat col vecchio campo singolo `premio`+`modo`
+    const premioTesto = pen.premioTesto || (pen.modo === 'parola' ? pen.premio : '') || '';
+    const premioRandom = pen.premioRandom || (['lettera', 'casuale'].includes(pen.modo) ? pen.premio : '') || '';
+    res.json({ permessoOk: true, tutti, premioTesto, premioRandom });
   }));
 
   app.post('/api/penitenze/premio', requireOwner, wrap(async (req, res) => {
@@ -884,9 +888,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     }
     if (!reward?.id) return res.status(502).json({ errore: 'Twitch non ha creato il premio.' });
     const s = streamers.get(login);
-    const penitenze = { ...(s.settings?.penitenze || {}), attivo: true, premio: reward.title };
+    // il premio con testo alimenta premioTesto, quello senza testo premioRandom
+    const campo = userInput ? 'premioTesto' : 'premioRandom';
+    const penitenze = { ...(s.settings?.penitenze || {}), attivo: true, [campo]: reward.title };
     streamers.setSettings(login, { ...s.settings, penitenze });
-    res.json({ ok: true, reward });
+    res.json({ ok: true, reward, campo });
   }));
 
   // ------------------------------------------------------------ SONDAGGI & PREDIZIONI (dal pannello)
@@ -1057,10 +1063,15 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       const p = b.penitenze || {};
       out.penitenze = {
         attivo: !!p.attivo,
-        premio: String(p.premio || '').trim().slice(0, 60),
+        // due premi-trigger: uno con richiesta di testo (lo spettatore scrive la
+        // parola) e uno "a sorpresa" (parola/lettera scelta dal bot). Coesistono.
+        premioTesto: String(p.premioTesto || '').trim().slice(0, 60),
+        premioRandom: String(p.premioRandom || '').trim().slice(0, 60),
+        modoRandom: ['parola', 'lettera', 'casuale'].includes(p.modoRandom) ? p.modoRandom : 'casuale',
         durataMin: Math.max(1, Math.min(15, Math.round(Number(p.durataMin)) || 2)),
-        modo: ['parola', 'lettera', 'casuale'].includes(p.modo) ? p.modo : 'parola',
         parole: Array.isArray(p.parole) ? p.parole.map((x) => String(x).trim().toLowerCase().slice(0, 40)).filter(Boolean).slice(0, 80) : [],
+        // sorgente del forfait: la mia lista / suggerite dal bot / entrambe
+        penitenzeModo: ['lista', 'suggerite', 'entrambe'].includes(p.penitenzeModo) ? p.penitenzeModo : 'lista',
         penitenze: Array.isArray(p.penitenze) ? p.penitenze.map((x) => String(x).trim().slice(0, 120)).filter(Boolean).slice(0, 60) : [],
         effetto: String(p.effetto || '').trim().slice(0, 40),
       };
