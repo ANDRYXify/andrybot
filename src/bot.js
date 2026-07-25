@@ -360,7 +360,7 @@ export class BotManager {
   // Elaborazione normale di un messaggio (chiamata solo se non gestito prima).
   _elaboraMessaggio(login, msg, onMessage) {
     onMessage(msg).catch(e => log.error(`#${login} gestione messaggio:`, e?.message || e));
-    if (!msg.isSelf) this.clips.onActivity(msg.channel);   // rilevatore "hype" per le clip automatiche
+    if (!msg.isSelf) this.clips.onActivity(msg);   // rilevatore "hype" per le clip automatiche (chat)
     this.brain.observe?.(msg);                             // apprendimento passivo (anche dai messaggi dello streamer)
     // amicizia GLOBALE: chi interagisce diventa piano piano "amico" del bot
     // (solo un'affinità, mai contenuti né in quale canale).
@@ -517,6 +517,8 @@ export class BotManager {
     const { channel, type, data } = ev;
     memory.logMessage(channel, '[evento]', '', `${type} ${JSON.stringify(data || {})}`.slice(0, 300), true);
     this.brain?.onEvent?.(ev, (text) => this.say(channel, text));
+    // clip automatiche: sub/bit/raid sono momenti forti (le clip li "sentono")
+    try { this.clips?.onEvent(ev); } catch (e) { log.debug(`#${channel} clip evento:`, e?.message || e); }
     // moduli: automazioni con trigger 'evento' (follow, sub, raid, cheer, ...)
     try { this.modules?.onEvent(ev, (t) => this.say(channel, t)); }
     catch (e) { log.error(`#${channel} moduli evento:`, e?.message || e); }
