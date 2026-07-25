@@ -617,7 +617,7 @@ export class ModulesEngine {
         // cambia la categoria/gioco del canale su Twitch. Il "gioco" può usare le
         // variabili ($args, $arg1, ...): così "!gioco fortnite" → categoria Fortnite.
         // Se il testo è impreciso, il bot sceglie la categoria Twitch più somigliante.
-        const q = (await this.espandi(azione.gioco, ctx)).trim();
+        const q = (await this.espandi(azione.gioco, ctx, { noAzioni: true })).trim();
         if (!q) return;
         const cat = await risolviCategoria(this.helix, q).catch(() => null);
         if (!cat) { if (azione.annuncia !== false) dire(`🤔 Non ho trovato la categoria "${q}".`); return; }
@@ -654,7 +654,7 @@ export class ModulesEngine {
       case 'titolo': {
         // cambia il titolo dello stream su Twitch. Testo libero, con variabili
         // ($args, $gioco, ...): es. "In diretta: $gioco con la community!".
-        const t = (await this.espandi(azione.testo, ctx)).trim().slice(0, 140);
+        const t = (await this.espandi(azione.testo, ctx, { noAzioni: true })).trim().slice(0, 140);
         if (!t) return;
         try {
           await this.helix?.setChannelInfo?.(ctx.channel, { title: t });
@@ -692,9 +692,34 @@ export class ModulesEngine {
   // Sostituisce le variabili nel testo. NIENTE eval: solo replace. Le variabili
   // che richiedono I/O (uptime/gioco/titolo) sono risolte con un await prima di
   // comporre il messaggio. Le sconosciute diventano stringa vuota.
-  async espandi(testo, ctx) {
+  async espandi(testo, ctx, opts = {}) {
     let s = String(testo ?? '');
     if (!s) return '';
+
+    // AZIONI inline nei comandi: $titolo(...) cambia il titolo, $categoria(...)
+    // (alias $gioco(...)) cambia la categoria/gioco su Twitch. Sono effetti
+    // collaterali: li eseguiamo qui e togliamo il token dal testo, così lo
+    // streamer scrive la sua conferma attorno (es. "!fortnite → $categoria(Fortnite) Si gioca!").
+    // opts.noAzioni evita il rientro quando espandiamo il contenuto interno.
+    if (this.helix && !opts.noAzioni) {
+      const azioni = [];
+      s = s.replace(/\$(titolo|categoria|gioco)\(([^)]*)\)/gi, (_, tipo, inner) => {
+        azioni.push({ tipo: tipo.toLowerCase() === 'titolo' ? 'titolo' : 'categoria', inner });
+        return '';
+      });
+      for (const a of azioni) {
+        const valore = (await this.espandi(a.inner, ctx, { noAzioni: true })).trim();
+        if (!valore) continue;
+        try {
+          if (a.tipo === 'titolo') {
+            await this.helix.setChannelInfo?.(ctx.channel, { title: valore.slice(0, 140) });
+          } else {
+            const cat = await risolviCategoria(this.helix, valore).catch(() => null);
+            if (cat) await this.helix.setChannelInfo?.(ctx.channel, { gameId: cat.id });
+          }
+        } catch (e) { log.debug(`azione inline ${a.tipo} fallita:`, e?.message || e); }
+      }
+    }
 
     // variabili "costose": risolvile solo se davvero citate
     let stream = null;

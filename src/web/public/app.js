@@ -2226,7 +2226,7 @@ async function caricaPremi() {
 // Automazioni componibili col modello QUANDO → SE → ALLORA.
 
 function pannelloModuli() {
-  const chipsRapido = ['$user', '$touser', '$canale', '$uptime', '$gioco', '$count(morti)', '$random(1,100)']
+  const chipsRapido = ['$user', '$touser', '$canale', '$uptime', '$gioco', '$titolo($args)', '$categoria($args)', '$count(morti)', '$random(1,100)']
     .map((v) => `<button type="button" class="chip-var" data-qc="${esc(v)}">${esc(v)}</button>`).join('');
   return pannello('moduli', `
     <div class="carta">
@@ -2240,6 +2240,9 @@ function pannelloModuli() {
       <label class="campo" for="qc-risposta">Risposta</label>
       <textarea id="qc-risposta" placeholder="es. I miei social li trovi su andryxify.it/u/$canale ✨"></textarea>
       <div class="chip-vars" id="qc-chips">${chipsRapido}</div>
+      <p class="suggerimento spazio-sopra">Puoi anche <strong>cambiare titolo e categoria</strong> dal comando:
+      <code>$categoria($args)</code> (es. <code>!gioco fortnite</code>) e <code>$titolo($args)</code>. Il token sparisce dal messaggio, scrivi tu la conferma.
+      Consiglio: metti questi comandi <strong>solo per i mod</strong>.</p>
       <p class="spazio-sopra">
         <button class="btn" id="btn-qc">Aggiungi comando</button>
         <span class="suggerimento">Per condizioni, eventi, timer, effetti o webhook usa <strong>Nuovo modulo</strong> qui sotto.</span>
@@ -4071,6 +4074,8 @@ const AZIONI = [
 const VARIABILI = [
   // contesto
   '$user', '$touser', '$args', '$arg1', '$canale', '$uptime', '$gioco', '$titolo',
+  // azioni sul canale (cambiano titolo/categoria su Twitch)
+  '$titolo($args)', '$categoria($args)',
   // generatori parametrici (combinazioni infinite)
   '$random(1,100)', '$random(6)', '$decimale(1,2)', '$misura(1,50,cm)', '$pick(a|b|c)', '$count(nome)',
   // numeri & percentuali
