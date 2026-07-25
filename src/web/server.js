@@ -226,11 +226,18 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // con i dati dello streamer restano chiuse dietro il pass.
   const VETRINA = new Set(['/', '/index.html', '/app.js', '/style.css', '/presets.js', '/overlay-skin.css']);
   app.use((req, res, next) => {
-    // Rivalida la sessione a ogni richiesta: se chi è loggato non ha più accesso
-    // al canale che gestisce (abbonamento decaduto e non è community), lo sloggiamo
-    // — così torna alla vetrina e non rientra nella dashboard. Gli admin sono esenti.
+    // Rivalida la sessione a OGNI richiesta (regola: se non paghi e non sei un
+    // membro community verificato+abilitato, NON entri). Ricava da zero i contesti
+    // validi dell'identità: canale proprio SOLO se ha accesso attivo (abbonamento
+    // o community) e canali moderati SOLO se il mod è ancora attivo e quel canale
+    // ha accesso. Se il canale gestito non è più tra questi, sloggiamo subito —
+    // così un abbonamento decaduto, una community revocata o un moderatore rimosso
+    // perdono l'accesso alla richiesta successiva (non entro il 30° giorno). Admin esenti.
     const sessUser = currentUser(req);
-    if (sessUser && !isAdmin(sessUser) && !haAccesso(sessUser.login)) req.session.user = null;
+    if (sessUser && !isAdmin(sessUser)
+        && !contestiPer(identitaDi(sessUser)).some((c) => c.canale === sessUser.login)) {
+      req.session.user = null;
+    }
     if (currentUser(req) || PUBBLICI.has(req.path)
         || VETRINA.has(req.path) || req.path === '/api/me'
         || req.path.startsWith('/api/abbonamento/')   // piani/checkout/portale: auth propria
@@ -371,7 +378,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
 
   const chiaveOk = (req) => {
     const login = String(req.params.login || '').toLowerCase();
-    return !!login && !!req.query.key && req.query.key === effects.overlayKey(login);
+    // confronto a tempo costante (come per la chiave API), niente '===' che perde
+    return !!login && !!req.query.key && chiaveUguale(String(req.query.key), effects.overlayKey(login));
   };
 
   // la pagina dell'overlay
