@@ -1391,9 +1391,19 @@ function pannelloMusica() {
         <input type="number" id="musica-costo" min="0" max="1000000" value="${Number(m.costo) || 0}">
       </div>
       <div id="musica-premio-box" class="spazio-sopra" hidden>
-        <label class="campo" for="musica-premio">Nome esatto del premio a punti canale</label>
+        <label class="campo" for="musica-premio">Premio a punti canale usato per le richieste</label>
         <input type="text" id="musica-premio" placeholder="es. Richiesta musicale" value="${esc(m.premio || '')}">
-        <p class="suggerimento">Crea su Twitch un premio a punti canale con <strong>"richiedi un testo allo spettatore"</strong> attivo, poi scrivi qui il suo nome esatto: chi lo riscatta scrive la canzone e il bot la mette in coda.</p>
+        <p class="suggerimento">Quando qualcuno riscatta questo premio (con <strong>"richiedi un testo"</strong> attivo), il bot mette in coda la canzone scritta.</p>
+        <div id="musica-premi-info" class="riquadro-info spazio-sopra"><p>…</p></div>
+        <details class="spazio-sopra">
+          <summary>Creane uno pronto all'uso ✨</summary>
+          <div class="griglia-campi spazio-sopra">
+            <div><label class="campo">Nome del premio</label><input type="text" id="musica-nuovo-nome" value="Richiesta musicale"></div>
+            <div><label class="campo">Costo (punti canale)</label><input type="number" id="musica-nuovo-costo" min="1" value="500"></div>
+          </div>
+          <button class="btn secondario spazio-sopra" id="musica-crea-premio">Crea premio su Twitch</button>
+          <p class="suggerimento">Lo creo io con la richiesta di testo già attiva e lo imposto qui sopra.</p>
+        </details>
       </div>
       <button class="btn spazio-sopra" id="musica-salva">Salva</button>
     </div>`);
@@ -1433,11 +1443,13 @@ function wiraMusicaConfig() {
   const costoBox = document.getElementById('musica-costo-box');
   const premioBox = document.getElementById('musica-premio-box');
   const unita = document.getElementById('musica-costo-unita');
+  let premiCaricati = false;
   const applica = () => {
     const v = sel.value;
     if (costoBox) costoBox.hidden = !(v === 'monete' || v === 'bit');
     if (premioBox) premioBox.hidden = v !== 'punti';
     if (unita) unita.textContent = v === 'bit' ? 'bit' : 'monete';
+    if (v === 'punti' && !premiCaricati) { premiCaricati = true; caricaPremiMusica(); }
   };
   sel.addEventListener('change', applica);
   applica();
@@ -1451,6 +1463,42 @@ function wiraMusicaConfig() {
     await api('/api/streamer/impostazioni', { method: 'POST', body: { musica } });
     toast('Impostazioni musica salvate 🎵');
   }));
+  const bc = document.getElementById('musica-crea-premio');
+  if (bc) bc.addEventListener('click', () => conErrore(async () => {
+    const titolo = (document.getElementById('musica-nuovo-nome')?.value || 'Richiesta musicale').trim();
+    const costo = Number(document.getElementById('musica-nuovo-costo')?.value) || 500;
+    const r = await api('/api/musica/premio', { method: 'POST', body: { titolo, costo } });
+    if (r?.reward) {
+      const inp = document.getElementById('musica-premio');
+      if (inp) inp.value = r.reward.title;
+      toast('Premio creato su Twitch! 🎁');
+      caricaPremiMusica();
+    }
+  }));
+}
+
+// Mostra quanti premi a punti canale hai già e se quello scelto esiste. Aiuta a
+// capire se puoi crearne un altro e quali nomi sono occupati.
+async function caricaPremiMusica() {
+  const box = document.getElementById('musica-premi-info');
+  if (!box) return;
+  box.innerHTML = '<p>Controllo i tuoi premi a punti canale…</p>';
+  let d;
+  try { d = await api('/api/musica/premi'); } catch { box.innerHTML = '<p>Impossibile leggere i premi.</p>'; return; }
+  if (!d.permessoOk) {
+    box.innerHTML = '⚠️ Per creare o usare i premi a punti canale serve il permesso: concedilo da <strong>Chat &amp; comandi → Effetti &amp; suoni</strong> (sezione Premi), poi torna qui.';
+    return;
+  }
+  const tutti = d.tutti || [];
+  const nomi = tutti.map((r) => esc(r.title));
+  const inp = document.getElementById('musica-premio');
+  const attuale = ((inp?.value || d.premio || '').trim()).toLowerCase();
+  const trovato = tutti.find((r) => r.title.toLowerCase() === attuale);
+  box.innerHTML = `
+    <p>Hai <strong>${tutti.length}</strong> ${tutti.length === 1 ? 'premio' : 'premi'} a punti canale${tutti.length ? ': ' + nomi.join(', ') : '. Creane uno qui sotto.'}</p>
+    ${attuale ? (trovato
+      ? `<p class="ok-riga">✓ "${esc(trovato.title)}" è pronto (${trovato.cost} punti).</p>`
+      : `<p class="warn-riga">⚠️ Nessun premio si chiama "${esc(inp?.value || '')}": crealo qui sotto o correggi il nome.</p>`) : ''}`;
 }
 
 async function caricaSpotify() {
