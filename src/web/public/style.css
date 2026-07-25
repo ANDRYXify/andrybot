@@ -371,6 +371,9 @@ body.vetrina .contenuto { max-width: 1040px; }
 .spotify-guida summary, details > summary { cursor: pointer; font-weight: 600; color: var(--acc); }
 .spotify-guida ol { margin: .7rem 0 .2rem; padding-left: 1.2rem; display: flex; flex-direction: column; gap: .45rem; color: var(--testo-2); font-size: .9rem; line-height: 1.5; }
 .spotify-redirect { display: inline-block; margin-top: .25rem; padding: .3rem .5rem; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-s); word-break: break-all; font-size: .82rem; }
+.riquadro-info { padding: .7rem .9rem; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-m); font-size: .9rem; color: var(--testo-2); line-height: 1.5; }
+.riquadro-info .ok-riga { color: var(--verde); font-weight: 600; margin-top: .35rem; }
+.riquadro-info .warn-riga { color: var(--ambra, #b45309); font-weight: 600; margin-top: .35rem; }
 
 /* griglia di campi numerici (personalizzazione punti/classifica) */
 .griglia-punti { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .8rem; margin-top: .6rem; }

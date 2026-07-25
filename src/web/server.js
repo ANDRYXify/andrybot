@@ -829,6 +829,36 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.json({ ok: true });
   });
 
+  // Premi a punti canale per le richieste musicali: elenco (per capire quanti ne
+  // hai già e quali nomi sono occupati) + creazione del premio dedicato.
+  app.get('/api/musica/premi', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (!redemptionsOk(login)) return res.json({ permessoOk: false, tutti: [], premio: '' });
+    const tutti = await helix.listaRewardsTutti(login).catch(() => []);
+    res.json({ permessoOk: true, tutti, premio: streamers.get(login)?.settings?.musica?.premio || '' });
+  }));
+
+  app.post('/api/musica/premio', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (!redemptionsOk(login)) return res.status(403).json({ errore: 'Concedi il permesso "punti canale" da /auth/permessi', permesso: true });
+    const titolo = (String(req.body?.titolo || '').trim() || 'Richiesta musicale').slice(0, 45);
+    const costo = Math.max(1, Math.round(Number(req.body?.costo) || 500));
+    let reward;
+    try {
+      reward = await helix.creaReward(login, { titolo, costo, userInput: true, prompt: 'Scrivi la canzone (nome e artista)' });
+    } catch (e) {
+      if (e.status === 403) return res.status(403).json({ errore: 'Permesso mancante: concedi "punti canale" da /auth/permessi', permesso: true });
+      if (e.status === 400) return res.status(400).json({ errore: 'Twitch ha rifiutato il premio: forse esiste già un premio con questo nome.' });
+      return res.status(502).json({ errore: 'Twitch non ha creato il premio.' });
+    }
+    if (!reward?.id) return res.status(502).json({ errore: 'Twitch non ha creato il premio.' });
+    // imposta subito la modalità "punti" con questo premio
+    const s = streamers.get(login);
+    const musica = { ...(s.settings?.musica || {}), modo: 'punti', premio: reward.title };
+    streamers.setSettings(login, { ...s.settings, musica });
+    res.json({ ok: true, reward });
+  }));
+
   // ------------------------------------------------------------ API streamer
 
   // acceso/spento (senza perdere l'abilitazione)
