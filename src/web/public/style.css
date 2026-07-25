@@ -389,6 +389,9 @@ body.vetrina .contenuto { max-width: 1040px; }
 .guida-come { margin: .3rem 0 0; padding-left: 1.25rem; display: flex; flex-direction: column; gap: .3rem; color: var(--testo-2); font-size: .9rem; line-height: 1.45; }
 .guida-come li::marker { color: var(--acc); font-weight: 700; }
 
+/* Icona SVG nei titoli delle sezioni (in tinta accento), al posto delle emoji */
+.h-ico { color: var(--acc); vertical-align: -.22em; margin-right: .45rem; }
+
 /* griglia di campi numerici (personalizzazione punti/classifica) */
 .griglia-punti { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .8rem; margin-top: .6rem; }
 .campo-num { display: flex; flex-direction: column; gap: .3rem; font-size: .84rem; font-weight: 600; color: var(--testo-2); }
