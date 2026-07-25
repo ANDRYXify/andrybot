@@ -88,6 +88,7 @@ export class AlertsEngine {
       volume: conf.volume != null ? Math.max(0, Math.min(100, Number(conf.volume))) : 100,
       durata: Math.max(2000, Math.min(20000, Number(a.durata) || 6000)),
       posizione: a.posizione || 'alto-centro',
+      xy: a.xy || null,
       stile: this._stileAlert(s),
     });
     log.debug(`alert ${kind} su #${channel}`);
@@ -119,6 +120,7 @@ export class AlertsEngine {
         colore: msg?.tags?.color || '',
         testo: testo.slice(0, 200),
         posizione: c.posizione || 'basso-sinistra',
+        xy: c.xy || null,
         max: Math.max(1, Math.min(20, Number(c.max) || 8)),
         fadeSec: Math.max(0, Math.min(120, Number(c.fadeSec) || 0)),
         stile: this._stileChat(s),
@@ -146,7 +148,7 @@ export class AlertsEngine {
       [{ user: 'lucaplays', colore: '#ff4d4d', testo: 'ciao a tutti! 👋' },
        { user: 'giada_ttv', colore: '#48b0ff', testo: 'che bella live oggi' },
        { user: 'marco99', colore: '#38d39f', testo: 'GG! 🔥' }].forEach((f, i) => setTimeout(() =>
-        this.effects?.emit?.(channel, { tipo: 'chat', ...f, posizione: c.posizione || 'basso-sinistra',
+        this.effects?.emit?.(channel, { tipo: 'chat', ...f, posizione: c.posizione || 'basso-sinistra', xy: c.xy || null,
           max: Math.max(1, Math.min(20, Number(c.max) || 8)), fadeSec: Math.max(0, Math.min(120, Number(c.fadeSec) || 0)), stile: st }), i * 500));
       return true;
     }
