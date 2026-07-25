@@ -1,17 +1,10 @@
-// Giveaway / sorteggi in chat. Uno per canale alla volta, tenuto IN MEMORIA:
-// è legato alla diretta e non ha senso farlo sopravvivere ai riavvii. Solo
-// mod/streamer aprono, estraggono o annullano; gli spettatori entrano con !join.
+// Giveaway / sorteggi. Uno per canale alla volta, tenuto IN MEMORIA: è legato
+// alla diretta e non ha senso farlo sopravvivere ai riavvii. Si comanda sia dalla
+// CHAT (mod/streamer: !giveaway/!estrai; spettatori: !join) sia dalla DASHBOARD
+// (le funzioni apri/stato/estraiUno/annulla, usate dagli endpoint del server, che
+// gira nello stesso processo → stessa mappa in memoria).
 //
-// Comandi:
-//   !giveaway <premio>        apre un giveaway aperto a tutti (mod)
-//   !giveaway sub <premio>    apre un giveaway riservato ai sub (mod)
-//   !join / !partecipa        entra nel giveaway in corso (spettatori)
-//   !estrai                   estrae un vincitore (mod); si può ripetere
-//   !giveaway annulla         chiude il giveaway senza estrarre (mod)
-//   !giveaway                 mostra lo stato (chiunque)
-//
-// Gating: segue l'add-on "Giochi" (settings.giochi), come i minigiochi: se il
-// piano non lo include, il server spegne settings.giochi e qui non si apre nulla.
+// Gating: segue l'add-on "Giochi" (settings.giochi), come i minigiochi.
 import { streamers } from '../db.js';
 import { makeLog } from '../logger.js';
 
@@ -22,15 +15,50 @@ const scegli = (a) => a[Math.floor(Math.random() * a.length)];
 const puoGestire = (msg) => !!(msg.isMod || msg.isBroadcaster);
 const abilitato = (channel) => streamers.get(channel)?.settings?.giochi !== false;
 
-function estrai(channel, msg, say) {
-  if (!puoGestire(msg)) return true;
+// ── API condivisa (chat + dashboard) ────────────────────────────────────────
+export function stato(channel) {
   const g = attivi.get(channel);
-  if (!g) { say('🎁 Non c\'è nessun giveaway aperto. Aprine uno con !giveaway <premio>.'); return true; }
-  if (g.partecipanti.size === 0) { say('🎁 Nessun partecipante ancora: scrivete !join per entrare!'); return true; }
+  return g ? { aperto: true, premio: g.premio, soloSub: g.soloSub, partecipanti: g.partecipanti.size } : { aperto: false };
+}
+
+// Apre un giveaway. { ok, premio, soloSub } oppure { ok:false, errore }.
+export function apri(channel, { premio, soloSub } = {}) {
+  if (!abilitato(channel)) return { ok: false, errore: 'add-on' };
+  const g = attivi.get(channel);
+  if (g && g.partecipanti.size > 0) return { ok: false, errore: 'gia-aperto' };   // uno vuoto si può rimpiazzare
+  const p = String(premio || '').trim().slice(0, 120) || 'un premio a sorpresa';
+  attivi.set(channel, { premio: p, soloSub: !!soloSub, partecipanti: new Map(), apertoDa: Date.now() });
+  return { ok: true, premio: p, soloSub: !!soloSub };
+}
+
+export function partecipa(channel, user, display) {
+  const g = attivi.get(channel);
+  if (!g) return false;
+  const u = String(user || '').toLowerCase();
+  if (u) g.partecipanti.set(u, display || u);
+  return true;
+}
+
+// Estrae un vincitore (togliendolo dal pool, così si può ri-estrarre). null se vuoto.
+export function estraiUno(channel) {
+  const g = attivi.get(channel);
+  if (!g || g.partecipanti.size === 0) return null;
   const [uWin, dWin] = scegli([...g.partecipanti.entries()]);
-  g.partecipanti.delete(uWin);   // tolto dal pool: un'eventuale ri-estrazione pesca un altro
-  const rimasti = g.partecipanti.size;
-  say(`🎉🎉 Il vincitore di "${g.premio}" è… ${dWin}! Congratulazioni! 🏆${rimasti ? ` (${rimasti} ancora in gara — !estrai per un altro)` : ''}`);
+  g.partecipanti.delete(uWin);
+  return { vincitore: dWin, rimasti: g.partecipanti.size };
+}
+
+export function annulla(channel) { return attivi.delete(channel); }
+
+// ── Ingresso CHAT ────────────────────────────────────────────────────────────
+function estraiChat(channel, msg, say) {
+  if (!puoGestire(msg)) return true;
+  const s = stato(channel);
+  if (!s.aperto) { say('🎁 Non c\'è nessun giveaway aperto. Aprine uno con !giveaway <premio>.'); return true; }
+  const r = estraiUno(channel);
+  if (!r) { say('🎁 Nessun partecipante ancora: scrivete !join per entrare!'); return true; }
+  const conPremio = s.premio && s.premio !== 'un premio a sorpresa' ? ` di "${s.premio}"` : '';
+  say(`🎉🎉 Il vincitore${conPremio} è… ${r.vincitore}! Congratulazioni! 🏆${r.rimasti ? ` (${r.rimasti} ancora in gara — !estrai per un altro)` : ''}`);
   return true;
 }
 
@@ -52,15 +80,14 @@ export function tryGiveaway(msg, say) {
       case 'entra': {
         if (!g) return false;                                  // nessun giveaway: non è roba nostra
         if (g.soloSub && !(msg.isSub || msg.isMod || msg.isBroadcaster)) return true;   // riservato ai sub
-        const u = String(msg.user || '').toLowerCase();
-        if (u) g.partecipanti.set(u, nome);                    // niente conferma singola: non floodiamo la chat
+        partecipa(channel, msg.user, nome);                    // niente conferma singola: non floodiamo
         return true;
       }
 
       case 'estrai':
       case 'draw':
       case 'vincitore':
-        return estrai(channel, msg, say);
+        return estraiChat(channel, msg, say);
 
       case 'giveaway':
       case 'sorteggio':
@@ -68,26 +95,27 @@ export function tryGiveaway(msg, say) {
         const sub0 = (parti[0] || '').toLowerCase();
         if (['annulla', 'stop', 'cancella', 'chiudi'].includes(sub0)) {
           if (!puoGestire(msg)) return true;
-          if (!g) { say('🎁 Non c\'è nessun giveaway aperto.'); return true; }
-          attivi.delete(channel); say('🎁 Giveaway annullato.'); return true;
+          if (!annulla(channel)) { say('🎁 Non c\'è nessun giveaway aperto.'); return true; }
+          say('🎁 Giveaway annullato.'); return true;
         }
-        if (['estrai', 'draw', 'vincitore'].includes(sub0)) return estrai(channel, msg, say);
-        // stato (chiunque, se c'è un giveaway o si chiede esplicitamente)
+        if (['estrai', 'draw', 'vincitore'].includes(sub0)) return estraiChat(channel, msg, say);
         if (!puoGestire(msg) || ['stato', 'info'].includes(sub0)) {
-          if (!g) { say('🎁 Nessun giveaway al momento.'); return true; }
-          say(`🎁 Giveaway "${g.premio}" in corso — ${g.partecipanti.size} partecipanti. Scrivi !join per entrare${g.soloSub ? ' (solo sub)' : ''}!`);
+          const s = stato(channel);
+          say(s.aperto
+            ? `🎁 Giveaway "${s.premio}" in corso — ${s.partecipanti} partecipanti. Scrivi !join per entrare${s.soloSub ? ' (solo sub)' : ''}!`
+            : '🎁 Nessun giveaway al momento.');
           return true;
         }
-        // aprire: solo mod/streamer, e solo se l'add-on Giochi è attivo
-        if (!abilitato(channel)) return true;
-        // blocca solo se c'è un giveaway con iscritti (uno vuoto/esaurito si può rimpiazzare)
-        if (g && g.partecipanti.size > 0) { say('🎁 C\'è già un giveaway aperto: !estrai per il vincitore o !giveaway annulla.'); return true; }
+        // aprire: solo mod/streamer (apri() controlla l'add-on e il "già aperto")
         const rest = [...parti];
         let soloSub = false;
         if ((rest[0] || '').toLowerCase() === 'sub') { soloSub = true; rest.shift(); }
-        const premio = rest.join(' ').trim().slice(0, 120) || 'un premio a sorpresa';
-        attivi.set(channel, { premio, soloSub, partecipanti: new Map(), apertoDa: Date.now() });
-        say(`🎁 GIVEAWAY APERTO: ${premio}! Scrivete !join per partecipare${soloSub ? ' (riservato ai sub)' : ''}. In bocca al lupo! 🍀`);
+        const r = apri(channel, { premio: rest.join(' '), soloSub });
+        if (!r.ok) {
+          if (r.errore === 'gia-aperto') say('🎁 C\'è già un giveaway aperto: !estrai per il vincitore o !giveaway annulla.');
+          return true;   // add-on assente → silenzio
+        }
+        say(`🎁 GIVEAWAY APERTO: ${r.premio}! Scrivete !join per partecipare${r.soloSub ? ' (riservato ai sub)' : ''}. In bocca al lupo! 🍀`);
         return true;
       }
 
