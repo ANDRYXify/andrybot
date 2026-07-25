@@ -36,6 +36,9 @@ import { redeemPass } from './gate.js';
 const log = makeLog('web');
 
 const SETTE_GIORNI_MS = 7 * 24 * 60 * 60 * 1000;
+// Id dei suoni PRESET sintetizzati (deve combaciare con public/presets.js).
+const SUONI_PRESET = new Set(['campanello', 'campana', 'acqua', 'moneta', 'tamburo',
+  'trombetta', 'errore', 'tada', 'pop', 'whoosh', 'applausi', 'laser', 'salita']);
 const TONI_VALIDI = ['scherzoso', 'amichevole', 'serio'];
 const STATI_VALIDI = ['pending', 'approved', 'disabled'];
 const TIER_VALIDI = ['tutti', 'sub', 'vip', 'mod'];
@@ -212,7 +215,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // sono visibili anche senza pass, per far conoscere il bot. NON espongono dati
   // reali: /api/me senza sessione risponde solo "nessun utente" e tutte le API
   // con i dati dello streamer restano chiuse dietro il pass.
-  const VETRINA = new Set(['/', '/index.html', '/app.js', '/style.css']);
+  const VETRINA = new Set(['/', '/index.html', '/app.js', '/style.css', '/presets.js']);
   app.use((req, res, next) => {
     // Rivalida la sessione a ogni richiesta: se chi è loggato non ha più accesso
     // al canale che gestisce (abbonamento decaduto e non è community), lo sloggiamo
@@ -1488,11 +1491,43 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // ---- Alert a PUNTI CANALE (Twitch Custom Rewards) ----
   app.get('/api/streamer/premi', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
+    const permessoOk = redemptionsOk(login);
+    // "tutti" = i premi a punti canale già esistenti su Twitch, così lo streamer
+    // può attaccare un suono a QUALSIASI riscatto, non solo a quelli creati qui.
+    const tutti = permessoOk ? await helix.listaRewardsTutti(login).catch(() => []) : [];
     res.json({
       premi: pointAlerts.list(login),
       effetti: effectsDb.list(login).map((e) => e.comando),
-      permessoOk: redemptionsOk(login),
+      tutti,
+      permessoOk,
     });
+  }));
+
+  // Attacca (o toglie) un SUONO PRESET a un premio a punti canale GIÀ ESISTENTE.
+  // Non crea nulla su Twitch: mappa e basta. Se suono e testo sono vuoti, rimuove
+  // la mappatura. L'eventuale effetto caricato già associato viene preservato.
+  app.post('/api/streamer/premi/suono', requireLogin, wrap(async (req, res) => {
+    if (!esigiFunzione(req, res, 'effetti', 'Gli effetti e i premi a punti canale')) return;
+    const login = currentUser(req).login;
+    if (!redemptionsOk(login)) return res.status(403).json({ errore: 'Concedi il permesso "punti canale" da /auth/permessi', permesso: true });
+    const b = req.body || {};
+    const rewardId = String(b.rewardId || '').trim();
+    if (!rewardId) return res.status(400).json({ errore: 'premio mancante' });
+    const suono = SUONI_PRESET.has(String(b.suono)) ? String(b.suono) : '';
+    const testo = String(b.testo || '').trim().slice(0, 300);
+    const esistente = pointAlerts.getByReward(login, rewardId) || {};
+    if (!suono && !testo && !esistente.effetto) {
+      pointAlerts.remove(login, rewardId);
+    } else {
+      pointAlerts.add(login, {
+        rewardId,
+        titolo: String(b.titolo || esistente.titolo || '').slice(0, 60),
+        costo: Number(b.costo || esistente.costo || 0),
+        effetto: esistente.effetto || '',   // preserva un eventuale effetto caricato
+        suono, testo,
+      });
+    }
+    res.json({ ok: true, premi: pointAlerts.list(login) });
   }));
 
   app.post('/api/streamer/premi', requireLogin, wrap(async (req, res) => {

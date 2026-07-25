@@ -497,6 +497,16 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .lista-voci .meta { font-size: .78rem; color: var(--testo-3); }
 .vuoto { color: var(--testo-2); font-style: italic; padding: .6rem 0; }
 
+/* suoni sui punti canale: una riga per premio (nome + suono + anteprima) */
+.lista-suoni-premi { list-style: none; margin-top: .4rem; }
+.lista-suoni-premi > li { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-m); padding: .65rem .85rem; margin-bottom: .5rem; }
+.lista-suoni-premi > li:hover { border-color: var(--border-2); }
+.riga-premio-suono { display: flex; gap: .7rem; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.riga-premio-suono .nome-premio { flex: 1; min-width: 160px; }
+.riga-premio-suono .controlli-suono { display: flex; gap: .4rem; align-items: center; }
+.riga-premio-suono .sel-suono { min-width: 150px; }
+.riga-premio-suono .prova-suono { display: inline-flex; align-items: center; justify-content: center; padding: .3rem .5rem; }
+
 /* ============================================================ statistiche */
 .griglia-stat { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .85rem; margin: .8rem 0; }
 .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-m); padding: 1.2rem 1rem; text-align: center; box-shadow: var(--om-s); transition: border-color var(--molla), transform var(--molla), box-shadow var(--molla); }
