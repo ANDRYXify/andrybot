@@ -94,6 +94,8 @@ function impostazioni() {
     frasi: Array.isArray(s.frasi) ? s.frasi : [],
     clipAuto: s.clipAuto !== false,
     clipAutoSoglia: typeof s.clipAutoSoglia === 'number' ? s.clipAutoSoglia : 25,
+    clipAutoSensibilita: typeof s.clipAutoSensibilita === 'number' ? s.clipAutoSensibilita
+      : (typeof s.clipAutoSoglia === 'number' ? Math.min(10, Math.max(1, Math.round(11 - s.clipAutoSoglia / 5))) : 5),
     paroleVietate: Array.isArray(s.paroleVietate) ? s.paroleVietate : [],
     ascoltoLive: s.ascoltoLive === true,
     ascoltoSensibilita: typeof s.ascoltoSensibilita === 'number' ? s.ascoltoSensibilita : 5,
@@ -1325,16 +1327,19 @@ function pannelloClip() {
   return pannello('clip', `
     <div class="carta">
       <h2>${_hIco(ICO.clip)}Clip automatiche</h2>
-      <div class="riga-check">
-        <input type="checkbox" id="chk-clip" ${s.clipAuto ? 'checked' : ''}>
-        <label for="chk-clip">Crea clip da solo nei momenti di hype</label>
+      <p>Il bot riconosce i <strong>momenti da clip</strong> da solo: non conta solo i messaggi,
+      ma capisce quando la chat <strong>esplode di reazioni</strong>, ride tutta insieme o arrivano
+      <strong>sub, bit o raid</strong>. E si adatta al ritmo del tuo canale (piccolo o grande).</p>
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore">
+          <input type="checkbox" id="chk-clip" ${s.clipAuto ? 'checked' : ''}>
+          <span class="levetta"></span>
+        </label>
+        <span class="etichetta-stato" id="etichetta-clip">${s.clipAuto ? 'Clip automatiche accese' : 'Clip automatiche spente'}</span>
       </div>
-      <label class="campo" for="num-soglia">Soglia di hype (messaggi al minuto)</label>
-      <div class="riga-flessibile">
-        <input type="number" id="num-soglia" min="5" max="200" value="${s.clipAutoSoglia}">
-        <span class="suggerimento">Quando la chat supera questo ritmo, il bot capisce che sta succedendo
-        qualcosa di bello e salva una clip. Più bassa = più clip.</span>
-      </div>
+      <label class="campo spazio-sopra" for="rng-clip-sens">Sensibilità: <span id="val-clip-sens">${s.clipAutoSensibilita}</span></label>
+      <input type="range" id="rng-clip-sens" min="1" max="10" value="${s.clipAutoSensibilita}">
+      <p class="suggerimento">Più alta = più clip (basta poco). Più bassa = solo i momenti davvero forti.</p>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-clip">Salva</button></p>
     </div>
     <div class="carta">
@@ -2693,10 +2698,19 @@ function attivaPiattaforma() {
   document.getElementById('btn-guida-add')?.addEventListener('click', aggiungiGuida);
   document.getElementById('inp-guida')?.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); aggiungiGuida(); } });
 
+  // clip: interruttore + slider sensibilità con anteprima dal vivo
+  document.getElementById('chk-clip')?.addEventListener('change', (ev) => {
+    const et = document.getElementById('etichetta-clip');
+    if (et) et.textContent = ev.target.checked ? 'Clip automatiche accese' : 'Clip automatiche spente';
+  });
+  document.getElementById('rng-clip-sens')?.addEventListener('input', (ev) => {
+    const v = document.getElementById('val-clip-sens');
+    if (v) v.textContent = ev.target.value;
+  });
   document.getElementById('btn-salva-clip')?.addEventListener('click', () => conErrore(async () => {
     await salvaImpostazioni({
       clipAuto: document.getElementById('chk-clip').checked,
-      clipAutoSoglia: Number(document.getElementById('num-soglia').value),
+      clipAutoSensibilita: Number(document.getElementById('rng-clip-sens').value),
     }, 'Impostazioni clip salvate 🎬');
   }));
 
