@@ -1,16 +1,14 @@
-// AlertsEngine: alert animati nell'overlay per gli EVENTI (follow, sub, cheer,
-// raid) e la CHAT a schermo. Riusa il canale SSE degli effetti (EffectsEngine.emit)
-// e i suoni PRESET (nessun file). Lo stato/config vive in streamers.settings.
-//
-// L'overlay riceve:
-//   { tipo:'alert', kind, testo, colore, suono, durata, posizione }
-//   { tipo:'chat',  user, colore, testo, badge, posizione, max, fadeSec, dim }
+// AlertsEngine: il "regista" dell'overlay in tempo reale.
+// - ALERT animati per gli eventi (follow, sub, cheer, raid) con stile completo;
+// - CHAT a schermo;
+// - WIDGET persistenti (ultimo follower, ultimo sub) aggiornati dagli eventi.
+// Riusa il canale SSE degli effetti (EffectsEngine.emit) e i suoni PRESET.
+// Tutta la configurazione (e lo stato dei widget) vive in streamers.settings.
 import { streamers } from '../db.js';
 import { makeLog } from '../logger.js';
 
 const log = makeLog('alerts');
 
-// tipo evento Twitch → categoria alert
 const MAPPA = {
   'channel.follow': 'follow',
   'channel.subscribe': 'sub',
@@ -20,7 +18,6 @@ const MAPPA = {
   'channel.raid': 'raid',
 };
 
-// testi di default per ogni tipo di alert (con segnaposto {…})
 const DEFAULT_TESTO = {
   follow: '{user} ha seguito il canale!',
   sub: '{user} si è abbonato! ({mesi} mesi)',
@@ -28,6 +25,11 @@ const DEFAULT_TESTO = {
   raid: '{user} è arrivato in raid con {viewers} spettatori!',
 };
 const DEFAULT_SUONO = { follow: 'campanello', sub: 'tada', cheer: 'moneta', raid: 'trombetta' };
+const DEFAULT_ACC = { follow: '#9146ff', sub: '#ffb020', cheer: '#38d39f', raid: '#ff4d4d' };
+
+// stile alert di default (usato se lo streamer non lo tocca)
+const STILE_ALERT = { animazione: 'slide', dimTesto: 27, sfondo: '#0f0f14', opacita: 88, testo: '#ffffff', bordoRaggio: 18, bordoSpessore: 2, glow: true, icona: true, font: 'sistema' };
+const STILE_CHAT = { dim: 'media', sfondo: '#0f0f14', opacita: 78, testo: '#f2f2f5', username: 'twitch', bordoRaggio: 10, ombra: true, font: 'sistema', larghezza: 30, animazione: 'slide', grassettoUser: true };
 
 const esc = (s) => String(s ?? '');
 function riempi(tpl, vars) {
@@ -41,8 +43,10 @@ export class AlertsEngine {
 
   cfg(channel) { return streamers.get(channel)?.settings || null; }
 
-  // Estrae le variabili dai dati dell'evento Twitch.
-  _vars(kind, d = {}) {
+  _stileAlert(s) { return { ...STILE_ALERT, ...((s?.alerts?.stile && typeof s.alerts.stile === 'object') ? s.alerts.stile : {}) }; }
+  _stileChat(s) { return { ...STILE_CHAT, ...((s?.chatOverlay?.stile && typeof s.chatOverlay.stile === 'object') ? s.chatOverlay.stile : {}) }; }
+
+  _vars(d = {}) {
     const raider = d.from_broadcaster_user_name || '';
     return {
       user: d.user_name || d.user_login || raider || 'qualcuno',
@@ -52,19 +56,22 @@ export class AlertsEngine {
     };
   }
 
-  // Evento Twitch → alert nell'overlay (se abilitato).
+  // Evento Twitch → aggiorna i widget (ultimo follower/sub) e, se abilitato, spara l'alert.
   onEvent(ev) {
     try {
       const { channel, type, data } = ev || {};
       const kind = MAPPA[type];
       if (!kind) return;
       const s = this.cfg(channel);
+      const vars = this._vars(data);
+      // widget persistenti: si aggiornano a prescindere dall'alert
+      if (kind === 'follow') this._aggiornaWidget(channel, 'ultimoFollower', vars.user);
+      if (kind === 'sub') this._aggiornaWidget(channel, 'ultimoSub', vars.user);
+      // alert
       const a = s?.alerts;
       if (!a || a.attivo === false) return;
       const conf = a[kind];
       if (!conf || conf.attivo === false) return;
-      const vars = this._vars(kind, data);
-      // soglie minime
       if (kind === 'cheer' && Number(vars.bits) < (Number(conf.minBits) || 0)) return;
       if (kind === 'raid' && Number(vars.viewers) < (Number(conf.minViewers) || 0)) return;
       this._spara(channel, a, kind, conf, vars);
@@ -72,25 +79,40 @@ export class AlertsEngine {
   }
 
   _spara(channel, a, kind, conf, vars) {
-    const testo = riempi(conf.testo || DEFAULT_TESTO[kind] || '{user}', vars);
-    const suono = conf.suono || DEFAULT_SUONO[kind] || '';
+    const s = this.cfg(channel);
     this.effects?.emit?.(channel, {
-      tipo: 'alert', kind, testo,
-      colore: conf.colore || '#9146ff',
-      suono,
+      tipo: 'alert', kind,
+      testo: riempi(conf.testo || DEFAULT_TESTO[kind] || '{user}', vars),
+      colore: conf.accento || conf.colore || DEFAULT_ACC[kind],
+      suono: conf.suono || DEFAULT_SUONO[kind] || '',
+      volume: conf.volume != null ? Math.max(0, Math.min(100, Number(conf.volume))) : 100,
       durata: Math.max(2000, Math.min(20000, Number(a.durata) || 6000)),
       posizione: a.posizione || 'alto-centro',
+      stile: this._stileAlert(s),
     });
-    log.debug(`alert ${kind} su #${channel}: ${testo}`);
+    log.debug(`alert ${kind} su #${channel}`);
   }
 
-  // Messaggio di chat → overlay "chat a schermo" (se abilitato).
+  // Registra lo stato del widget e lo spinge subito nell'overlay.
+  _aggiornaWidget(channel, id, valore) {
+    try {
+      const s = streamers.get(channel);
+      if (!s) return;
+      const stato = { ...(s.settings?.overlayStato || {}), [id]: String(valore || '').slice(0, 40) };
+      streamers.setSettings(channel, { ...s.settings, overlayStato: stato });
+      const cfg = s.settings?.overlayWidget?.[id];
+      this.effects?.emit?.(channel, { tipo: 'widget', id, cfg: cfg || {}, valore: stato[id] });
+    } catch (e) { log.debug('widget:', e?.message || e); }
+  }
+
+  // Messaggio di chat → overlay "chat a schermo".
   onChat(channel, msg) {
     try {
-      const c = this.cfg(channel)?.chatOverlay;
+      const s = this.cfg(channel);
+      const c = s?.chatOverlay;
       if (!c || !c.attivo) return;
       const testo = String(msg?.text || '').trim();
-      if (!testo || testo.startsWith('!')) return;   // niente comandi a schermo
+      if (!testo || testo.startsWith('!')) return;
       this.effects?.emit?.(channel, {
         tipo: 'chat',
         user: msg.display || msg.user || '',
@@ -99,32 +121,42 @@ export class AlertsEngine {
         posizione: c.posizione || 'basso-sinistra',
         max: Math.max(1, Math.min(20, Number(c.max) || 8)),
         fadeSec: Math.max(0, Math.min(120, Number(c.fadeSec) || 0)),
-        dim: c.dim || 'media',
+        stile: this._stileChat(s),
       });
     } catch (e) { log.debug('onChat:', e?.message || e); }
   }
 
-  // Prova dal pannello: un alert (o la chat) d'esempio nell'overlay.
+  // Il TEMA globale letto dall'overlay al caricamento: CSS avanzato, config e
+  // stato dei widget persistenti.
+  tema(channel) {
+    const s = this.cfg(channel) || {};
+    return {
+      css: String(s.overlayCss || '').slice(0, 8000),
+      widget: (s.overlayWidget && typeof s.overlayWidget === 'object') ? s.overlayWidget : {},
+      stato: (s.overlayStato && typeof s.overlayStato === 'object') ? s.overlayStato : {},
+    };
+  }
+
+  // Prova dal pannello.
   prova(channel, kind = 'follow') {
-    const s = this.cfg(channel);
+    const s = this.cfg(channel) || {};
     if (kind === 'chat') {
-      const c = s?.chatOverlay || {};
-      const finti = [
-        { user: 'lucaplays', colore: '#ff4d4d', testo: 'ciao a tutti! 👋' },
-        { user: 'giada_ttv', colore: '#48b0ff', testo: 'che bella live oggi' },
-        { user: 'marco99', colore: '#38d39f', testo: 'GG! 🔥' },
-      ];
-      finti.forEach((f, i) => setTimeout(() => this.effects?.emit?.(channel, {
-        tipo: 'chat', ...f, posizione: c.posizione || 'basso-sinistra',
-        max: Math.max(1, Math.min(20, Number(c.max) || 8)),
-        fadeSec: Math.max(0, Math.min(120, Number(c.fadeSec) || 0)), dim: c.dim || 'media',
-      }), i * 500));
+      const c = s.chatOverlay || {};
+      const st = this._stileChat(s);
+      [{ user: 'lucaplays', colore: '#ff4d4d', testo: 'ciao a tutti! 👋' },
+       { user: 'giada_ttv', colore: '#48b0ff', testo: 'che bella live oggi' },
+       { user: 'marco99', colore: '#38d39f', testo: 'GG! 🔥' }].forEach((f, i) => setTimeout(() =>
+        this.effects?.emit?.(channel, { tipo: 'chat', ...f, posizione: c.posizione || 'basso-sinistra',
+          max: Math.max(1, Math.min(20, Number(c.max) || 8)), fadeSec: Math.max(0, Math.min(120, Number(c.fadeSec) || 0)), stile: st }), i * 500));
       return true;
     }
-    const a = s?.alerts || {};
-    const conf = (a[kind]) || {};
-    const vars = { user: 'MarioRossi', mesi: 3, bits: 500, viewers: 42 };
-    this._spara(channel, a, kind, conf, vars);
+    if (kind === 'ultimoFollower' || kind === 'ultimoSub') {
+      this._aggiornaWidget(channel, kind, kind === 'ultimoSub' ? 'GiadaTTV' : 'MarioRossi');
+      return true;
+    }
+    const a = s.alerts || {};
+    const conf = a[kind] || {};
+    this._spara(channel, a, kind, conf, { user: 'MarioRossi', mesi: 3, bits: 500, viewers: 42 });
     return true;
   }
 }

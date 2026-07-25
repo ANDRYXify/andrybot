@@ -108,19 +108,38 @@ function impostazioni() {
       ...(s.penitenze && typeof s.penitenze === 'object' ? s.penitenze : {}) },
     alerts: (() => {
       const a = (s.alerts && typeof s.alerts === 'object') ? s.alerts : {};
-      const ev = (x, d) => ({ attivo: false, testo: '', suono: d.suono, colore: d.colore, minBits: 0, minViewers: 0, ...(x && typeof x === 'object' ? x : {}) });
+      const ev = (x, d) => ({ attivo: false, testo: '', suono: d.suono, accento: d.colore, volume: 100, minBits: 0, minViewers: 0, ...(x && typeof x === 'object' ? { ...x, accento: x.accento || x.colore || d.colore } : {}) });
       return {
         attivo: a.attivo !== false,
         posizione: ['alto-centro', 'centro', 'basso-centro'].includes(a.posizione) ? a.posizione : 'alto-centro',
         durata: typeof a.durata === 'number' ? a.durata : 6000,
+        stile: { animazione: 'slide', dimTesto: 27, sfondo: '#0f0f14', opacita: 88, testo: '#ffffff', bordoRaggio: 18, bordoSpessore: 2, glow: true, icona: true, font: 'sistema', ...(a.stile && typeof a.stile === 'object' ? a.stile : {}) },
         follow: ev(a.follow, { suono: 'campanello', colore: '#9146ff' }),
         sub: ev(a.sub, { suono: 'tada', colore: '#ffb020' }),
         cheer: ev(a.cheer, { suono: 'moneta', colore: '#38d39f' }),
         raid: ev(a.raid, { suono: 'trombetta', colore: '#ff4d4d' }),
       };
     })(),
-    chatOverlay: { attivo: false, posizione: 'basso-sinistra', max: 8, fadeSec: 0, dim: 'media',
-      ...(s.chatOverlay && typeof s.chatOverlay === 'object' ? s.chatOverlay : {}) },
+    chatOverlay: (() => {
+      const c = (s.chatOverlay && typeof s.chatOverlay === 'object') ? s.chatOverlay : {};
+      return {
+        attivo: !!c.attivo,
+        posizione: ['alto-sinistra', 'alto-destra', 'basso-sinistra', 'basso-destra'].includes(c.posizione) ? c.posizione : 'basso-sinistra',
+        max: typeof c.max === 'number' ? c.max : 8,
+        fadeSec: typeof c.fadeSec === 'number' ? c.fadeSec : 0,
+        stile: { dim: 'media', sfondo: '#0f0f14', opacita: 78, testo: '#f2f2f5', username: 'twitch', bordoRaggio: 10, ombra: true, font: 'sistema', larghezza: 30, animazione: 'slide', grassettoUser: true,
+          ...(c.stile && typeof c.stile === 'object' ? c.stile : (c.dim ? { dim: c.dim } : {})) },
+      };
+    })(),
+    overlayWidget: (() => {
+      const w = (s.overlayWidget && typeof s.overlayWidget === 'object') ? s.overlayWidget : {};
+      const wd = (x, testoDef) => ({ attivo: false, posizione: 'basso-destra', testo: testoDef,
+        stile: { dim: 'media', sfondo: '#0f0f14', opacita: 85, testo: '#ffffff', accento: '#9146ff', bordoRaggio: 12, font: 'sistema', ...(x?.stile && typeof x.stile === 'object' ? x.stile : {}) },
+        ...(x && typeof x === 'object' ? { attivo: !!x.attivo, posizione: x.posizione || 'basso-destra', testo: x.testo || testoDef } : {}) });
+      return { ultimoFollower: wd(w.ultimoFollower, 'Ultimo follower: {nome}'), ultimoSub: wd(w.ultimoSub, 'Ultimo sub: {nome}') };
+    })(),
+    overlayCss: typeof s.overlayCss === 'string' ? s.overlayCss : '',
+    overlayTemplates: Array.isArray(s.overlayTemplates) ? s.overlayTemplates : [],
   };
 }
 
@@ -130,7 +149,7 @@ async function salvaImpostazioni(parziale, msgOk = 'Impostazioni salvate 💜') 
   if (stato?.streamer) {
     stato.streamer.settings = { ...(stato.streamer.settings || {}), ...parziale };
   }
-  toast(msgOk);
+  if (msgOk) toast(msgOk);   // salvataggi "silenziosi" (msgOk null) non mostrano nulla
 }
 
 // ------------------------------------------------------------------ avvio
@@ -2060,69 +2079,141 @@ function opzioniSuono(sel) {
 }
 
 const ALERT_TIPI = [
-  { key: 'follow', nome: 'Nuovo follower', ph: '{user} ha seguito il canale!', vars: '{user}' },
-  { key: 'sub', nome: 'Abbonamento', ph: '{user} si è abbonato! ({mesi} mesi)', vars: '{user}, {mesi}' },
-  { key: 'cheer', nome: 'Bit (cheer)', ph: '{user} ha lanciato {bits} bit!', vars: '{user}, {bits}', soglia: { campo: 'minBits', label: 'Bit minimi' } },
-  { key: 'raid', nome: 'Raid', ph: '{user} è arrivato in raid con {viewers} spettatori!', vars: '{user}, {viewers}', soglia: { campo: 'minViewers', label: 'Spettatori minimi' } },
+  { key: 'follow', nome: 'Nuovo follower', ph: '{user} ha seguito il canale!', vars: '{user}', acc: '#9146ff' },
+  { key: 'sub', nome: 'Abbonamento', ph: '{user} si è abbonato! ({mesi} mesi)', vars: '{user}, {mesi}', acc: '#ffb020' },
+  { key: 'cheer', nome: 'Bit (cheer)', ph: '{user} ha lanciato {bits} bit!', vars: '{user}, {bits}', acc: '#38d39f', soglia: { campo: 'minBits', label: 'Bit minimi' } },
+  { key: 'raid', nome: 'Raid', ph: '{user} è arrivato in raid con {viewers} spettatori!', vars: '{user}, {viewers}', acc: '#ff4d4d', soglia: { campo: 'minViewers', label: 'Spettatori minimi' } },
+];
+
+// opzioni comuni per i controlli di stile
+const FONT_OPTS = [['sistema', 'Sistema'], ['rotondo', 'Arrotondato'], ['condensato', 'Condensato'], ['mono', 'Monospazio'], ['serif', 'Serif'], ['manga', 'Manga']];
+const ANIM_ALERT_OPTS = [['slide', 'Scivola'], ['pop', 'Pop'], ['zoom', 'Zoom'], ['fade', 'Dissolvenza'], ['flip', 'Ribalta'], ['bounce', 'Rimbalzo']];
+const ANIM_CHAT_OPTS = [['slide', 'Scivola'], ['fade', 'Dissolvenza'], ['nessuna', 'Nessuna']];
+const DIM_OPTS = [['piccola', 'Piccola'], ['media', 'Media'], ['grande', 'Grande'], ['enorme', 'Enorme']];
+const DIM3_OPTS = [['piccola', 'Piccola'], ['media', 'Media'], ['grande', 'Grande']];
+const POS4_OPTS = [['alto-sinistra', 'In alto a sx'], ['alto-destra', 'In alto a dx'], ['basso-sinistra', 'In basso a sx'], ['basso-destra', 'In basso a dx']];
+
+// mini-builder per i controlli (riducono la ripetizione)
+const _hx = (v, d) => (/^#[0-9a-fA-F]{6}$/.test(v || '') ? v : d);
+const cCol = (id, label, val) => `<div><label class="campo" for="${id}">${label}</label><input type="color" id="${id}" value="${_hx(val, '#000000')}"></div>`;
+const cRng = (id, label, min, max, val, suf = '') => `<div><label class="campo" for="${id}">${label}: <strong><span id="${id}-v">${val}</span>${suf}</strong></label><input type="range" id="${id}" min="${min}" max="${max}" value="${val}"></div>`;
+const cSel = (id, label, opts, val) => `<div><label class="campo" for="${id}">${label}</label><select id="${id}">${opts.map(([v, t]) => `<option value="${v}"${v === val ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></div>`;
+const cChk = (id, label, on) => `<label class="riga-check"><input type="checkbox" id="${id}" ${on ? 'checked' : ''}> ${label}</label>`;
+
+// template pronti (look completi da applicare con un clic)
+const TEMPLATE_BUILTIN = [
+  { nome: 'Viola classico', dati: { al: { animazione: 'slide', sfondo: '#0f0f14', opacita: 88, testo: '#ffffff', bordoRaggio: 18, bordoSpessore: 2, glow: true, font: 'sistema', dimTesto: 27 }, ch: { sfondo: '#0f0f14', opacita: 78, testo: '#f2f2f5', bordoRaggio: 10, font: 'sistema', dim: 'media' }, acc: '#9146ff' } },
+  { nome: 'Neon', dati: { al: { animazione: 'pop', sfondo: '#08010f', opacita: 72, testo: '#eafff9', bordoRaggio: 6, bordoSpessore: 3, glow: true, font: 'mono', dimTesto: 30 }, ch: { sfondo: '#08010f', opacita: 60, testo: '#c9fff2', bordoRaggio: 4, font: 'mono', dim: 'media' }, acc: '#00ffc6' } },
+  { nome: 'Minimal chiaro', dati: { al: { animazione: 'fade', sfondo: '#ffffff', opacita: 92, testo: '#111318', bordoRaggio: 14, bordoSpessore: 0, glow: false, font: 'sistema', dimTesto: 24 }, ch: { sfondo: '#ffffff', opacita: 88, testo: '#1a1c22', bordoRaggio: 8, font: 'sistema', dim: 'piccola' }, acc: '#6f47ff' } },
+  { nome: 'Retro arcade', dati: { al: { animazione: 'bounce', sfondo: '#1a1030', opacita: 95, testo: '#ffe600', bordoRaggio: 2, bordoSpessore: 4, glow: true, font: 'mono', dimTesto: 28 }, ch: { sfondo: '#1a1030', opacita: 85, testo: '#ffe600', bordoRaggio: 2, font: 'mono', dim: 'media' }, acc: '#ff2e88' } },
+  { nome: 'Manga', dati: { al: { animazione: 'zoom', sfondo: '#ffffff', opacita: 96, testo: '#111111', bordoRaggio: 20, bordoSpessore: 3, glow: false, font: 'manga', dimTesto: 30 }, ch: { sfondo: '#111111', opacita: 82, testo: '#ffffff', bordoRaggio: 16, font: 'manga', dim: 'media' }, acc: '#ff3b3b' } },
 ];
 
 function bloccoAlert(t, a) {
   const c = a[t.key] || {};
-  const sogliaHtml = t.soglia ? `
-    <div>
-      <label class="campo" for="al-${t.key}-soglia">${t.soglia.label}</label>
-      <input type="number" id="al-${t.key}-soglia" min="0" value="${Number(c[t.soglia.campo]) || 0}">
-    </div>` : '';
+  const acc = c.accento || c.colore || t.acc;
+  const vol = c.volume != null ? c.volume : 100;
+  const soglia = t.soglia ? `<div><label class="campo">${t.soglia.label}</label><input type="number" class="al-soglia" min="0" value="${Number(c[t.soglia.campo]) || 0}"></div>` : '';
   return `
     <div class="alert-blocco" data-alert="${t.key}">
       <div class="riga-interruttore">
         <label class="interruttore"><input type="checkbox" class="al-attivo" ${c.attivo ? 'checked' : ''}><span class="levetta"></span></label>
         <strong>${t.nome}</strong>
       </div>
-      <label class="campo spazio-sopra" for="al-${t.key}-testo">Testo <span class="tenue">— segnaposto: ${esc(t.vars)}</span></label>
-      <input type="text" id="al-${t.key}-testo" class="al-testo campo-largo" maxlength="200" placeholder="${esc(t.ph)}" value="${esc(c.testo || '')}">
+      <label class="campo spazio-sopra">Testo <span class="tenue">— segnaposto: ${esc(t.vars)}</span></label>
+      <input type="text" class="al-testo campo-largo" maxlength="200" placeholder="${esc(t.ph)}" value="${esc(c.testo || '')}">
       <div class="griglia-campi spazio-sopra">
-        <div>
-          <label class="campo" for="al-${t.key}-suono">Suono</label>
-          <select id="al-${t.key}-suono" class="al-suono">${opzioniSuono(c.suono || '')}</select>
-        </div>
-        <div>
-          <label class="campo" for="al-${t.key}-colore">Colore</label>
-          <input type="color" id="al-${t.key}-colore" class="al-colore" value="${/^#[0-9a-fA-F]{6}$/.test(c.colore || '') ? c.colore : '#9146ff'}">
-        </div>
-        ${sogliaHtml}
+        <div><label class="campo">Suono</label><select class="al-suono">${opzioniSuono(c.suono || '')}</select></div>
+        <div><label class="campo">Colore</label><input type="color" class="al-colore" value="${_hx(acc, t.acc)}"></div>
+        <div><label class="campo">Volume: <strong><span class="al-vol-v">${vol}</span>%</strong></label><input type="range" class="al-vol" min="0" max="100" value="${vol}"></div>
+        ${soglia}
       </div>
-      <p class="spazio-sopra"><button type="button" class="btn secondario mini al-prova" data-kind="${t.key}">Prova</button></p>
+      <p class="spazio-sopra"><button type="button" class="btn secondario mini al-prova" data-kind="${t.key}">Prova ▶</button></p>
+    </div>`;
+}
+
+function bloccoWidget(pref, w, titolo, kind) {
+  const st = w.stile || {};
+  return `
+    <div class="alert-blocco" data-w="${pref}">
+      <div class="riga-interruttore">
+        <label class="interruttore"><input type="checkbox" id="${pref}-attivo" ${w.attivo ? 'checked' : ''}><span class="levetta"></span></label>
+        <strong>${titolo}</strong>
+      </div>
+      <label class="campo spazio-sopra" for="${pref}-testo">Testo <span class="tenue">— {nome} = chi</span></label>
+      <input type="text" id="${pref}-testo" class="campo-largo" maxlength="80" value="${esc(w.testo)}">
+      <div class="griglia-campi spazio-sopra">
+        ${cSel(`${pref}-pos`, 'Posizione', POS4_OPTS, w.posizione)}
+        ${cSel(`${pref}-font`, 'Font', FONT_OPTS, st.font)}
+        ${cSel(`${pref}-dim`, 'Dimensione', DIM3_OPTS, st.dim)}
+      </div>
+      <div class="griglia-campi spazio-sopra">
+        ${cCol(`${pref}-bg`, 'Sfondo', st.sfondo)}
+        ${cRng(`${pref}-op`, 'Opacità', 0, 100, st.opacita, '%')}
+        ${cCol(`${pref}-fg`, 'Testo', st.testo)}
+        ${cCol(`${pref}-acc`, 'Nome', st.accento)}
+        ${cRng(`${pref}-radius`, 'Angoli', 0, 30, st.bordoRaggio, 'px')}
+      </div>
+      <p class="spazio-sopra"><button type="button" class="btn secondario mini w-prova" data-kind="${kind}">Prova ▶</button></p>
     </div>`;
 }
 
 function pannelloAlert() {
   const p = impostazioni();
-  const a = p.alerts || {};
-  const co = p.chatOverlay || {};
-  const posA = a.posizione || 'alto-centro';
-  const optPA = (v, t) => `<option value="${v}"${posA === v ? ' selected' : ''}>${t}</option>`;
-  const posC = co.posizione || 'basso-sinistra';
-  const optPC = (v, t) => `<option value="${v}"${posC === v ? ' selected' : ''}>${t}</option>`;
-  const optDim = (v, t) => `<option value="${v}"${(co.dim || 'media') === v ? ' selected' : ''}>${t}</option>`;
+  const a = p.alerts, st = a.stile, co = p.chatOverlay, cst = co.stile;
+  const wf = p.overlayWidget.ultimoFollower, ws = p.overlayWidget.ultimoSub;
+  const posAlertOpts = [['alto-centro', 'In alto al centro'], ['centro', 'Al centro'], ['basso-centro', 'In basso al centro']];
+  const userMode = (cst.username && cst.username !== 'twitch') ? 'fisso' : 'twitch';
+  const opzTpl = `<optgroup label="Pronti">${TEMPLATE_BUILTIN.map((t, i) => `<option value="b${i}">${esc(t.nome)}</option>`).join('')}</optgroup>`
+    + (p.overlayTemplates.length ? `<optgroup label="I miei">${p.overlayTemplates.map((t, i) => `<option value="u${i}">${esc(t.nome)}</option>`).join('')}</optgroup>` : '');
   return pannello('alert', `
     <div class="carta">
-      <h2>${_hIco(ICO.megafono)}Alert eventi</h2>
-      <p>Un <strong>cartello animato</strong> (con suono) nell'overlay quando arriva un follow, un sub, dei bit o un raid.
-      Compaiono nell'<strong>overlay per OBS</strong> (lo stesso degli effetti, scheda <em>Effetti &amp; suoni</em>).</p>
+      <h2>${_hIco(ICO.monitor)}Overlay Studio</h2>
+      <p>Personalizza <strong>tutto</strong> ciò che appare a schermo: alert, chat, widget… colori, font, forma, animazioni.
+      L'<strong>anteprima qui sotto è dal vivo</strong>; poi apri l'overlay in OBS (scheda <em>Effetti &amp; suoni</em>).</p>
+      <label class="campo" for="ovl-tpl">Template <span class="tenue">— parti da un preset o crea il tuo (salva l'intero look)</span></label>
+      <div class="riga-flessibile">
+        <select id="ovl-tpl" class="campo-largo">${opzTpl}</select>
+        <button class="btn secondario" id="ovl-tpl-applica">Applica</button>
+        <button class="btn secondario" id="ovl-tpl-salva">Salva il mio look…</button>
+        <button class="btn secondario" id="ovl-tpl-elimina">Elimina</button>
+      </div>
+      <div class="ovl-anteprima spazio-sopra" id="ovl-preview">
+        <div class="alert-card" id="ap-alert"><div class="alert-ico" id="ap-alert-ico"></div><div class="alert-testo" id="ap-alert-testo"></div></div>
+        <div class="ap-angolo ap-chat" id="ap-chat"></div>
+        <div class="ap-angolo" id="ap-wf"><div class="ovl-widget" id="ap-wf-el"><span class="w-ico"></span><span class="w-testo"></span></div></div>
+        <div class="ap-angolo" id="ap-ws"><div class="ovl-widget" id="ap-ws-el"><span class="w-ico"></span><span class="w-testo"></span></div></div>
+      </div>
+      <p class="suggerimento">L'anteprima è indicativa: usa i pulsanti «Prova ▶» per vederli davvero nell'overlay in OBS.</p>
+    </div>
+
+    <div class="carta">
+      <h3>${_hIco(ICO.megafono)}Alert eventi</h3>
+      <p>Un cartello animato con suono quando arriva un follow, un sub, dei bit o un raid.</p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore"><input type="checkbox" id="al-attivo" ${a.attivo ? 'checked' : ''}><span class="levetta"></span></label>
-        <span class="etichetta-stato">${a.attivo ? 'Alert attivi' : 'Alert spenti'}</span>
+        <span class="etichetta-stato">Alert eventi</span>
       </div>
       <div class="griglia-campi spazio-sopra">
-        <div>
-          <label class="campo" for="al-pos">Posizione</label>
-          <select id="al-pos">${optPA('alto-centro', 'In alto al centro')}${optPA('centro', 'Al centro')}${optPA('basso-centro', 'In basso al centro')}</select>
-        </div>
-        <div>
-          <label class="campo" for="al-durata">Durata (secondi)</label>
-          <input type="number" id="al-durata" min="2" max="20" value="${Math.round((Number(a.durata) || 6000) / 1000)}">
-        </div>
+        ${cSel('al-pos', 'Posizione', posAlertOpts, a.posizione)}
+        <div><label class="campo" for="al-durata">Durata (secondi)</label><input type="number" id="al-durata" min="2" max="20" value="${Math.round((Number(a.durata) || 6000) / 1000)}"></div>
+      </div>
+      <h4 class="spazio-sopra">Aspetto <span class="tenue">— vale per tutti gli alert</span></h4>
+      <div class="griglia-campi spazio-sopra">
+        ${cSel('al-st-anim', 'Animazione', ANIM_ALERT_OPTS, st.animazione)}
+        ${cSel('al-st-font', 'Font', FONT_OPTS, st.font)}
+        ${cRng('al-st-dim', 'Testo', 14, 56, st.dimTesto, 'px')}
+      </div>
+      <div class="griglia-campi spazio-sopra">
+        ${cCol('al-st-bg', 'Sfondo', st.sfondo)}
+        ${cRng('al-st-op', 'Opacità', 0, 100, st.opacita, '%')}
+        ${cCol('al-st-fg', 'Testo', st.testo)}
+        ${cRng('al-st-radius', 'Angoli', 0, 40, st.bordoRaggio, 'px')}
+        ${cRng('al-st-border', 'Bordo', 0, 10, st.bordoSpessore, 'px')}
+      </div>
+      <div class="riga-flessibile spazio-sopra">
+        ${cChk('al-st-glow', 'Bagliore', st.glow)}
+        ${cChk('al-st-icon', 'Mostra icona', st.icona)}
       </div>
       <div class="alert-griglia spazio-sopra">
         ${ALERT_TIPI.map((t) => bloccoAlert(t, a)).join('')}
@@ -2131,85 +2222,305 @@ function pannelloAlert() {
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.chat)}Chat a schermo</h2>
-      <p>Fai scorrere i messaggi della chat <strong>in sovraimpressione</strong> nell'overlay. Utile per mostrare la chat senza catturare la finestra di Twitch.</p>
+      <h3>${_hIco(ICO.chat)}Chat a schermo</h3>
+      <p>I messaggi della chat scorrono in sovraimpressione nell'overlay.</p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore"><input type="checkbox" id="co-attivo" ${co.attivo ? 'checked' : ''}><span class="levetta"></span></label>
-        <span class="etichetta-stato">${co.attivo ? 'Chat a schermo attiva' : 'Chat a schermo spenta'}</span>
+        <span class="etichetta-stato">Chat a schermo</span>
       </div>
       <div class="griglia-campi spazio-sopra">
-        <div>
-          <label class="campo" for="co-pos">Posizione</label>
-          <select id="co-pos">${optPC('alto-sinistra', 'In alto a sinistra')}${optPC('alto-destra', 'In alto a destra')}${optPC('basso-sinistra', 'In basso a sinistra')}${optPC('basso-destra', 'In basso a destra')}</select>
-        </div>
-        <div>
-          <label class="campo" for="co-dim">Dimensione</label>
-          <select id="co-dim">${optDim('piccola', 'Piccola')}${optDim('media', 'Media')}${optDim('grande', 'Grande')}</select>
-        </div>
+        ${cSel('co-pos', 'Posizione', POS4_OPTS, co.posizione)}
+        <div><label class="campo" for="co-max">Messaggi visibili</label><input type="number" id="co-max" min="1" max="20" value="${Number(co.max) || 8}"></div>
+        <div><label class="campo" for="co-fade">Spariscono dopo (s, 0=restano)</label><input type="number" id="co-fade" min="0" max="120" value="${Number(co.fadeSec) || 0}"></div>
+      </div>
+      <h4 class="spazio-sopra">Aspetto</h4>
+      <div class="griglia-campi spazio-sopra">
+        ${cSel('co-st-dim', 'Dimensione', DIM_OPTS, cst.dim)}
+        ${cSel('co-st-font', 'Font', FONT_OPTS, cst.font)}
+        ${cSel('co-st-anim', 'Animazione', ANIM_CHAT_OPTS, cst.animazione)}
+        ${cRng('co-st-larg', 'Larghezza', 18, 60, cst.larghezza, 'vw')}
       </div>
       <div class="griglia-campi spazio-sopra">
-        <div>
-          <label class="campo" for="co-max">Messaggi visibili</label>
-          <input type="number" id="co-max" min="1" max="20" value="${Number(co.max) || 8}">
-        </div>
-        <div>
-          <label class="campo" for="co-fade">Spariscono dopo (secondi, 0 = restano)</label>
-          <input type="number" id="co-fade" min="0" max="120" value="${Number(co.fadeSec) || 0}">
-        </div>
+        ${cCol('co-st-bg', 'Sfondo', cst.sfondo)}
+        ${cRng('co-st-op', 'Opacità', 0, 100, cst.opacita, '%')}
+        ${cCol('co-st-fg', 'Testo', cst.testo)}
+        ${cRng('co-st-radius', 'Angoli', 0, 30, cst.bordoRaggio, 'px')}
+      </div>
+      <div class="griglia-campi spazio-sopra">
+        ${cSel('co-st-user', 'Colore nomi', [['twitch', 'Colore di Twitch'], ['fisso', 'Colore fisso']], userMode)}
+        ${cCol('co-st-usercol', 'Colore nomi (se fisso)', userMode === 'fisso' ? cst.username : '#9146ff')}
+      </div>
+      <div class="riga-flessibile spazio-sopra">
+        ${cChk('co-st-ombra', 'Ombra', cst.ombra)}
+        ${cChk('co-st-bold', 'Nome in grassetto', cst.grassettoUser)}
       </div>
       <p class="spazio-sopra">
         <button class="btn" id="co-salva">Salva chat</button>
-        <button class="btn secondario" id="co-prova">Prova nell'overlay</button>
+        <button class="btn secondario" id="co-prova">Prova ▶</button>
       </p>
+    </div>
+
+    <div class="carta">
+      <h3>${_hIco(ICO.medaglia)}Widget: ultimo follower / ultimo sub</h3>
+      <p>Etichette <strong>sempre a schermo</strong> che si aggiornano da sole quando arriva un nuovo follower o sub.</p>
+      <div class="alert-griglia spazio-sopra">
+        ${bloccoWidget('wf', wf, 'Ultimo follower', 'ultimoFollower')}
+        ${bloccoWidget('ws', ws, 'Ultimo sub', 'ultimoSub')}
+      </div>
+      <p class="spazio-sopra"><button class="btn" id="wid-salva">Salva widget</button></p>
+    </div>
+
+    <div class="carta">
+      <h3>${_hIco(ICO.moduli)}CSS avanzato <span class="tenue">— libertà totale</span></h3>
+      <p>Per chi vuole spingersi oltre: CSS applicato al tuo overlay. Le classi principali sono
+      <code>.alert-card</code>, <code>.chat-riga</code>, <code>.ovl-widget</code>, <code>.pen-card</code>.</p>
+      <textarea id="ovl-css" spellcheck="false" placeholder=".alert-card { letter-spacing: 1px; }">${esc(p.overlayCss || '')}</textarea>
+      <p class="spazio-sopra"><button class="btn" id="css-salva">Salva CSS</button></p>
     </div>`);
 }
 
-async function salvaAlert(silenzioso) {
+// nomi-font → variabile CSS (definite in overlay-skin.css) per l'anteprima
+const FONT_VAR = { sistema: 'var(--font-sistema)', rotondo: 'var(--font-rotondo)', condensato: 'var(--font-condensato)', mono: 'var(--font-mono)', serif: 'var(--font-serif)', manga: 'var(--font-manga)' };
+const AP_ICO_ALERT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 15.09 8.26 22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+const AP_ICO_WIDGET = { ultimoFollower: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>', ultimoSub: AP_ICO_ALERT };
+const _g = (id) => document.getElementById(id);
+const _v = (id) => _g(id)?.value;
+function _setVars(el, vars) { for (const k in vars) { const x = vars[k]; if (x != null && x !== '' && String(x).indexOf('undefined') < 0 && String(x).indexOf('NaN') < 0) el.style.setProperty(k, x); } }
+
+function _leggiAlertStile() {
+  return {
+    animazione: _v('al-st-anim') || 'slide', font: _v('al-st-font') || 'sistema',
+    dimTesto: Number(_v('al-st-dim')) || 27, sfondo: _v('al-st-bg'), opacita: Number(_v('al-st-op')),
+    testo: _v('al-st-fg'), bordoRaggio: Number(_v('al-st-radius')), bordoSpessore: Number(_v('al-st-border')),
+    glow: !!_g('al-st-glow')?.checked, icona: !!_g('al-st-icon')?.checked,
+  };
+}
+function _leggiChatStile() {
+  const mode = _v('co-st-user') || 'twitch';
+  return {
+    dim: _v('co-st-dim') || 'media', font: _v('co-st-font') || 'sistema', animazione: _v('co-st-anim') || 'slide',
+    larghezza: Number(_v('co-st-larg')), sfondo: _v('co-st-bg'), opacita: Number(_v('co-st-op')), testo: _v('co-st-fg'),
+    bordoRaggio: Number(_v('co-st-radius')), username: mode === 'fisso' ? (_v('co-st-usercol') || '#9146ff') : 'twitch',
+    ombra: !!_g('co-st-ombra')?.checked, grassettoUser: !!_g('co-st-bold')?.checked,
+  };
+}
+function _leggiWidget(pref) {
+  return {
+    attivo: !!_g(`${pref}-attivo`)?.checked, posizione: _v(`${pref}-pos`) || 'basso-destra',
+    testo: (_v(`${pref}-testo`) || '').trim(),
+    stile: { dim: _v(`${pref}-dim`) || 'media', font: _v(`${pref}-font`) || 'sistema', sfondo: _v(`${pref}-bg`),
+      opacita: Number(_v(`${pref}-op`)), testo: _v(`${pref}-fg`), accento: _v(`${pref}-acc`), bordoRaggio: Number(_v(`${pref}-radius`)) },
+  };
+}
+
+function _raccogliAlerts() {
   const blocchi = {};
-  document.querySelectorAll('.alert-blocco').forEach((b) => {
+  document.querySelectorAll('.alert-blocco[data-alert]').forEach((b) => {
     const k = b.dataset.alert;
-    const soglia = b.querySelector('[id$="-soglia"]');
+    const soglia = b.querySelector('.al-soglia');
     blocchi[k] = {
       attivo: !!b.querySelector('.al-attivo')?.checked,
       testo: (b.querySelector('.al-testo')?.value || '').trim(),
       suono: b.querySelector('.al-suono')?.value || '',
-      colore: b.querySelector('.al-colore')?.value || '#9146ff',
+      accento: b.querySelector('.al-colore')?.value || '#9146ff',
+      volume: Number(b.querySelector('.al-vol')?.value) || 0,
     };
-    if (soglia) { blocchi[k][k === 'cheer' ? 'minBits' : 'minViewers'] = Number(soglia.value) || 0; }
+    if (soglia) blocchi[k][k === 'cheer' ? 'minBits' : 'minViewers'] = Number(soglia.value) || 0;
   });
-  const alerts = {
-    attivo: !!document.getElementById('al-attivo')?.checked,
-    posizione: document.getElementById('al-pos')?.value || 'alto-centro',
-    durata: (Number(document.getElementById('al-durata')?.value) || 6) * 1000,
+  return {
+    attivo: !!_g('al-attivo')?.checked,
+    posizione: _v('al-pos') || 'alto-centro',
+    durata: (Number(_v('al-durata')) || 6) * 1000,
+    stile: _leggiAlertStile(),
     ...blocchi,
   };
-  await salvaImpostazioni({ alerts }, silenzioso ? null : 'Alert salvati ✓');
+}
+function _raccogliChat() {
+  return { attivo: !!_g('co-attivo')?.checked, posizione: _v('co-pos') || 'basso-sinistra',
+    max: Number(_v('co-max')) || 8, fadeSec: Number(_v('co-fade')) || 0, stile: _leggiChatStile() };
+}
+function _raccogliWidget() { return { ultimoFollower: _leggiWidget('wf'), ultimoSub: _leggiWidget('ws') }; }
+
+async function salvaAlert(silenzioso) {
+  await salvaImpostazioni({ alerts: _raccogliAlerts() }, silenzioso ? null : 'Alert salvati ✓');
+}
+async function salvaChatOverlay(silenzioso) {
+  await salvaImpostazioni({ chatOverlay: _raccogliChat() }, silenzioso ? null : 'Chat a schermo salvata ✓');
+}
+async function salvaWidget(silenzioso) {
+  await salvaImpostazioni({ overlayWidget: _raccogliWidget() }, silenzioso ? null : 'Widget salvati ✓');
 }
 
-async function salvaChatOverlay(silenzioso) {
-  const chatOverlay = {
-    attivo: !!document.getElementById('co-attivo')?.checked,
-    posizione: document.getElementById('co-pos')?.value || 'basso-sinistra',
-    dim: document.getElementById('co-dim')?.value || 'media',
-    max: Number(document.getElementById('co-max')?.value) || 8,
-    fadeSec: Number(document.getElementById('co-fade')?.value) || 0,
-  };
-  await salvaImpostazioni({ chatOverlay }, silenzioso ? null : 'Chat a schermo salvata ✓');
+async function salvaCss(silenzioso) {
+  await salvaImpostazioni({ overlayCss: _v('ovl-css') || '' }, silenzioso ? null : 'CSS salvato ✓');
+}
+
+// --- anteprima dal vivo -------------------------------------------------
+function _anteprimaWidget(pref, id, nome) {
+  const attivo = !!_g(`${pref}-attivo`)?.checked;
+  const box = _g(`ap-${pref}`);
+  if (!box) return;
+  if (!attivo) { box.style.display = 'none'; return; }
+  box.style.display = '';
+  const w = _leggiWidget(pref).stile;
+  box.className = 'ap-angolo ap-' + (_v(`${pref}-pos`) || 'basso-destra');
+  const el = _g(`ap-${pref}-el`);
+  el.className = 'ovl-widget dim-' + (w.dim || 'media');
+  _setVars(el, { '--bg': w.sfondo, '--op': w.opacita + '%', '--fg': w.testo, '--acc': w.accento, '--radius': w.bordoRaggio + 'px', '--font': FONT_VAR[w.font] });
+  el.querySelector('.w-ico').innerHTML = AP_ICO_WIDGET[id] || '';
+  el.querySelector('.w-testo').innerHTML = esc(_v(`${pref}-testo`) || '{nome}').replace(/\{nome\}/g, '<b>' + esc(nome) + '</b>');
+}
+
+function aggiornaAnteprima() {
+  const st = _leggiAlertStile();
+  const acc = document.querySelector('.alert-blocco[data-alert="sub"] .al-colore')?.value || '#ffb020';
+  const card = _g('ap-alert');
+  if (card) {
+    card.className = 'alert-card anim-' + st.animazione + (st.glow ? ' glow' : '') + (st.icona ? '' : ' senza-ico');
+    _setVars(card, { '--acc': acc, '--bg': st.sfondo, '--op': st.opacita + '%', '--fg': st.testo, '--radius': st.bordoRaggio + 'px', '--border': st.bordoSpessore + 'px', '--size': st.dimTesto + 'px', '--font': FONT_VAR[st.font] });
+    _g('ap-alert-ico').innerHTML = AP_ICO_ALERT;
+    _g('ap-alert-testo').innerHTML = '<b>MarioRossi</b> si è abbonato! 🌟';
+    card.classList.remove('dentro'); void card.offsetWidth; requestAnimationFrame(() => card.classList.add('dentro'));
+  }
+  const cst = _leggiChatStile();
+  const chatPos = _v('co-pos') || 'basso-sinistra';
+  const apChat = _g('ap-chat');
+  if (apChat) {
+    apChat.className = 'ap-angolo ap-chat ap-' + chatPos + (/destra/.test(chatPos) ? ' destra' : '');
+    apChat.innerHTML = [['lucaplays', '#ff4d4d', 'ciao a tutti! 👋'], ['giada_ttv', '#48b0ff', 'che bella live']].map(([u, col, t]) => {
+      const cu = cst.username === 'twitch' ? col : cst.username;
+      return `<div class="chat-riga dim-${cst.dim}${cst.ombra ? ' ombra' : ''}${cst.grassettoUser ? ' user-bold' : ''} dentro" style="--bg:${cst.sfondo};--op:${cst.opacita}%;--fg:${cst.testo};--radius:${cst.bordoRaggio}px;--font:${FONT_VAR[cst.font]}"><span class="chat-user" style="color:${cu}">${esc(u)}</span> ${esc(t)}</div>`;
+    }).join('');
+  }
+  _anteprimaWidget('wf', 'ultimoFollower', 'MarioRossi');
+  _anteprimaWidget('ws', 'ultimoSub', 'GiadaTTV');
+}
+
+// --- template -----------------------------------------------------------
+const _imposta = (id, val) => { const e = _g(id); if (e && val != null) { if (e.type === 'checkbox') e.checked = !!val; else e.value = val; } };
+const _impostaEl = (e, val) => { if (e && val != null) { if (e.type === 'checkbox') e.checked = !!val; else e.value = val; } };
+
+// Applica un template. Due formati:
+//  - "seme" pronto { al, ch, acc }: cambia solo il LOOK (colori/font/forma).
+//  - snapshot COMPLETO { alerts, chatOverlay, overlayWidget, overlayCss }: ripristina tutto.
+function applicaTemplate(d) {
+  if (!d) return;
+  if (d.alerts || d.chatOverlay || d.overlayWidget || d.overlayCss != null) {
+    _riempiConfig(d);
+  } else {
+    const al = d.al || {}, ch = d.ch || {}, acc = d.acc;
+    _imposta('al-st-anim', al.animazione); _imposta('al-st-font', al.font); _imposta('al-st-dim', al.dimTesto);
+    _imposta('al-st-bg', al.sfondo); _imposta('al-st-op', al.opacita); _imposta('al-st-fg', al.testo);
+    _imposta('al-st-radius', al.bordoRaggio); _imposta('al-st-border', al.bordoSpessore);
+    _imposta('al-st-glow', al.glow); _imposta('al-st-icon', al.icona !== false);
+    _imposta('co-st-dim', ch.dim); _imposta('co-st-font', ch.font); _imposta('co-st-bg', ch.sfondo);
+    _imposta('co-st-op', ch.opacita); _imposta('co-st-fg', ch.testo); _imposta('co-st-radius', ch.bordoRaggio);
+    if (acc) document.querySelectorAll('.alert-blocco[data-alert] .al-colore').forEach((c) => { c.value = acc; });
+  }
+  document.querySelectorAll('#scheda-alert input[type="range"]').forEach((r) => { const s = _g(r.id + '-v'); if (s) s.textContent = r.value; });
+  aggiornaAnteprima();
+}
+
+// Riempie TUTTI i controlli dallo snapshot completo di un template.
+function _riempiConfig(d) {
+  const a = d.alerts || {}, ast = a.stile || {};
+  _imposta('al-attivo', a.attivo); _imposta('al-pos', a.posizione); if (a.durata) _imposta('al-durata', Math.round(a.durata / 1000));
+  _imposta('al-st-anim', ast.animazione); _imposta('al-st-font', ast.font); _imposta('al-st-dim', ast.dimTesto);
+  _imposta('al-st-bg', ast.sfondo); _imposta('al-st-op', ast.opacita); _imposta('al-st-fg', ast.testo);
+  _imposta('al-st-radius', ast.bordoRaggio); _imposta('al-st-border', ast.bordoSpessore);
+  _imposta('al-st-glow', ast.glow); _imposta('al-st-icon', ast.icona !== false);
+  document.querySelectorAll('.alert-blocco[data-alert]').forEach((b) => {
+    const c = a[b.dataset.alert] || {};
+    _impostaEl(b.querySelector('.al-attivo'), c.attivo); _impostaEl(b.querySelector('.al-testo'), c.testo);
+    _impostaEl(b.querySelector('.al-suono'), c.suono); _impostaEl(b.querySelector('.al-colore'), c.accento || c.colore);
+    _impostaEl(b.querySelector('.al-vol'), c.volume != null ? c.volume : 100);
+    const sog = b.querySelector('.al-soglia'); if (sog) _impostaEl(sog, c.minBits != null ? c.minBits : c.minViewers);
+  });
+  const ch = d.chatOverlay || {}, cst = ch.stile || {};
+  _imposta('co-attivo', ch.attivo); _imposta('co-pos', ch.posizione); _imposta('co-max', ch.max); _imposta('co-fade', ch.fadeSec);
+  _imposta('co-st-dim', cst.dim); _imposta('co-st-font', cst.font); _imposta('co-st-anim', cst.animazione); _imposta('co-st-larg', cst.larghezza);
+  _imposta('co-st-bg', cst.sfondo); _imposta('co-st-op', cst.opacita); _imposta('co-st-fg', cst.testo); _imposta('co-st-radius', cst.bordoRaggio);
+  const modo = (cst.username && cst.username !== 'twitch') ? 'fisso' : 'twitch';
+  _imposta('co-st-user', modo); if (modo === 'fisso') _imposta('co-st-usercol', cst.username);
+  _imposta('co-st-ombra', cst.ombra !== false); _imposta('co-st-bold', cst.grassettoUser !== false);
+  const w = d.overlayWidget || {};
+  [['wf', w.ultimoFollower], ['ws', w.ultimoSub]].forEach(([pref, wc]) => {
+    if (!wc) return; const ws = wc.stile || {};
+    _imposta(`${pref}-attivo`, wc.attivo); _imposta(`${pref}-pos`, wc.posizione); _imposta(`${pref}-testo`, wc.testo);
+    _imposta(`${pref}-font`, ws.font); _imposta(`${pref}-dim`, ws.dim); _imposta(`${pref}-bg`, ws.sfondo);
+    _imposta(`${pref}-op`, ws.opacita); _imposta(`${pref}-fg`, ws.testo); _imposta(`${pref}-acc`, ws.accento); _imposta(`${pref}-radius`, ws.bordoRaggio);
+  });
+  if (d.overlayCss != null) _imposta('ovl-css', d.overlayCss);
+}
+
+// Salva il look ATTUALE (completo) come template personale.
+async function salvaComeTemplate() {
+  const nome = (prompt('Nome del template:') || '').trim();
+  if (!nome) return;
+  const dati = { alerts: _raccogliAlerts(), chatOverlay: _raccogliChat(), overlayWidget: _raccogliWidget(), overlayCss: _v('ovl-css') || '' };
+  const templates = (impostazioni().overlayTemplates || []).filter((t) => t.nome !== nome).concat([{ nome, dati }]).slice(-16);
+  await salvaImpostazioni({ overlayTemplates: templates }, 'Template salvato ✓');
+  _rigeneraTemplateSelect(templates, nome);
+}
+
+async function eliminaTemplate() {
+  const v = _v('ovl-tpl') || '';
+  if (v[0] !== 'u') { toast('Puoi eliminare solo i template salvati da te.'); return; }
+  const templates = (impostazioni().overlayTemplates || []).slice();
+  const i = Number(v.slice(1));
+  if (!templates[i]) return;
+  if (!confirm(`Eliminare il template "${templates[i].nome}"?`)) return;
+  templates.splice(i, 1);
+  await salvaImpostazioni({ overlayTemplates: templates }, 'Template eliminato.');
+  _rigeneraTemplateSelect(templates);
+}
+
+// Ricostruisce le <option> del menu template (pronti + i miei).
+function _rigeneraTemplateSelect(templates, selNome) {
+  const sel = _g('ovl-tpl');
+  if (!sel) return;
+  const pronti = TEMPLATE_BUILTIN.map((t, i) => `<option value="b${i}">${esc(t.nome)}</option>`).join('');
+  const miei = templates.map((t, i) => `<option value="u${i}"${t.nome === selNome ? ' selected' : ''}>${esc(t.nome)}</option>`).join('');
+  sel.innerHTML = `<optgroup label="Pronti">${pronti}</optgroup>` + (templates.length ? `<optgroup label="I miei">${miei}</optgroup>` : '');
 }
 
 function caricaAlert() {
-  document.getElementById('al-salva')?.addEventListener('click', () => conErrore(() => salvaAlert()));
-  document.getElementById('co-salva')?.addEventListener('click', () => conErrore(() => salvaChatOverlay()));
+  const scheda = _g('scheda-alert');
+  // anteprima dal vivo: qualsiasi cambiamento aggiorna la preview + le etichette dei range
+  scheda?.addEventListener('input', (e) => {
+    const t = e.target;
+    if (t.type === 'range') {
+      const s = _g(t.id + '-v'); if (s) s.textContent = t.value;
+      if (t.classList.contains('al-vol')) { const v = t.closest('.alert-blocco')?.querySelector('.al-vol-v'); if (v) v.textContent = t.value; }
+    }
+    aggiornaAnteprima();
+  });
+  scheda?.addEventListener('change', () => aggiornaAnteprima());
+  aggiornaAnteprima();
+
+  _g('al-salva')?.addEventListener('click', () => conErrore(() => salvaAlert()));
+  _g('co-salva')?.addEventListener('click', () => conErrore(() => salvaChatOverlay()));
+  _g('wid-salva')?.addEventListener('click', () => conErrore(() => salvaWidget()));
+  _g('css-salva')?.addEventListener('click', () => conErrore(() => salvaCss()));
+
   document.querySelectorAll('.al-prova').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
-    await salvaAlert(true);
-    await api('/api/alert/prova', { method: 'POST', body: { kind: b.dataset.kind } });
-    toast('Inviato all\'overlay ▶');
+    await salvaAlert(true); await api('/api/alert/prova', { method: 'POST', body: { kind: b.dataset.kind } }); toast('Inviato all\'overlay ▶');
   })));
-  document.getElementById('co-prova')?.addEventListener('click', () => conErrore(async () => {
-    await salvaChatOverlay(true);
-    await api('/api/alert/prova', { method: 'POST', body: { kind: 'chat' } });
-    toast('Inviato all\'overlay ▶');
+  _g('co-prova')?.addEventListener('click', () => conErrore(async () => {
+    await salvaChatOverlay(true); await api('/api/alert/prova', { method: 'POST', body: { kind: 'chat' } }); toast('Inviato all\'overlay ▶');
   }));
+  document.querySelectorAll('.w-prova').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
+    await salvaWidget(true); await api('/api/alert/prova', { method: 'POST', body: { kind: b.dataset.kind } }); toast('Inviato all\'overlay ▶');
+  })));
+
+  _g('ovl-tpl-applica')?.addEventListener('click', () => {
+    const v = _v('ovl-tpl') || '';
+    const lista = v[0] === 'b' ? TEMPLATE_BUILTIN : (impostazioni().overlayTemplates || []);
+    const t = lista[Number(v.slice(1))];
+    if (t) { applicaTemplate(t.dati); toast('Template applicato — ricordati di salvare le sezioni.'); }
+  });
+  _g('ovl-tpl-salva')?.addEventListener('click', () => conErrore(() => salvaComeTemplate()));
+  _g('ovl-tpl-elimina')?.addEventListener('click', () => conErrore(() => eliminaTemplate()));
 }
 
 // --- scheda Effetti & Suoni ---------------------------------------------

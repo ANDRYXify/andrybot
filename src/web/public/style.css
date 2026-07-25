@@ -506,6 +506,13 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .alert-griglia { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: .8rem; }
 .alert-blocco { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-m); padding: .8rem .9rem; }
 .alert-blocco:hover { border-color: var(--border-2); }
+/* checkbox in riga (bagliore/icona/ombra…) */
+.riga-check { display: inline-flex; align-items: center; gap: .4rem; font-size: .9rem; margin-right: 1.2rem; cursor: pointer; }
+.riga-check input { width: 16px; height: 16px; }
+/* textarea CSS avanzato: monospazio, comoda da scrivere */
+#ovl-css { min-height: 130px; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: .85rem; white-space: pre; }
+/* input colore: un po' più grandi e cliccabili */
+input[type="color"] { width: 100%; min-height: 38px; padding: 2px; border: 1px solid var(--border); border-radius: var(--r-s); background: var(--surface); cursor: pointer; }
 
 /* suoni sui punti canale: una riga per premio (nome + suono + anteprima) */
 .lista-suoni-premi { list-style: none; margin-top: .4rem; }

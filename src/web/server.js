@@ -39,6 +39,12 @@ const SETTE_GIORNI_MS = 7 * 24 * 60 * 60 * 1000;
 // Id dei suoni PRESET sintetizzati (deve combaciare con public/presets.js).
 const SUONI_PRESET = new Set(['campanello', 'campana', 'acqua', 'moneta', 'tamburo',
   'trombetta', 'errore', 'tada', 'pop', 'whoosh', 'applausi', 'laser', 'salita']);
+// Font disponibili per l'overlay (deve combaciare con overlay-skin.css/overlay.html).
+const FONT_OVL = ['sistema', 'rotondo', 'condensato', 'mono', 'serif', 'manga'];
+// helper di validazione riusati dal "gestionale overlay"
+const clampInt = (v, lo, hi, def) => { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : def; };
+const hexOk = (v, def) => (/^#[0-9a-fA-F]{6}$/.test(String(v)) ? String(v) : def);
+const unoDi = (v, lista, def) => (lista.includes(v) ? v : def);
 const TONI_VALIDI = ['scherzoso', 'amichevole', 'serio'];
 const STATI_VALIDI = ['pending', 'approved', 'disabled'];
 const TIER_VALIDI = ['tutti', 'sub', 'vip', 'mod'];
@@ -215,7 +221,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // sono visibili anche senza pass, per far conoscere il bot. NON espongono dati
   // reali: /api/me senza sessione risponde solo "nessun utente" e tutte le API
   // con i dati dello streamer restano chiuse dietro il pass.
-  const VETRINA = new Set(['/', '/index.html', '/app.js', '/style.css', '/presets.js']);
+  const VETRINA = new Set(['/', '/index.html', '/app.js', '/style.css', '/presets.js', '/overlay-skin.css']);
   app.use((req, res, next) => {
     // Rivalida la sessione a ogni richiesta: se chi è loggato non ha più accesso
     // al canale che gestisce (abbonamento decaduto e non è community), lo sloggiamo
@@ -369,6 +375,14 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   app.get('/overlay/:login', (req, res) => {
     if (!chiaveOk(req)) return notFound(res);
     res.sendFile(overlayHtml);
+  });
+
+  // tema dell'overlay (CSS avanzato + widget persistenti + loro stato): l'overlay
+  // lo legge una volta al caricamento. Pubblico ma protetto dalla chiave.
+  app.get('/overlay/:login/tema', (req, res) => {
+    if (!chiaveOk(req)) return notFound(res);
+    const login = String(req.params.login).toLowerCase();
+    res.json(manager.alerts?.tema(login) || { css: '', widget: {}, stato: {} });
   });
 
   // flusso SSE degli effetti in tempo reale
@@ -908,10 +922,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.json({ ok: true });
   }));
 
-  // Prova un alert (o la chat) nell'overlay.
+  // Prova un alert / la chat / un widget nell'overlay.
   app.post('/api/alert/prova', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    const kind = ['follow', 'sub', 'cheer', 'raid', 'chat'].includes(req.body?.kind) ? req.body.kind : 'follow';
+    const kind = ['follow', 'sub', 'cheer', 'raid', 'chat', 'ultimoFollower', 'ultimoSub'].includes(req.body?.kind) ? req.body.kind : 'follow';
     try { manager.alerts?.prova(login, kind); } catch { /* niente */ }
     res.json({ ok: true });
   }));
@@ -1102,7 +1116,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
         overlay: { posizione: posizioni.includes(ov.posizione) ? ov.posizione : 'alto-destra', colore },
       };
     }
-    // ALERT overlay (follow/sub/cheer/raid): notifiche animate + suono
+    // ALERT overlay (follow/sub/cheer/raid): notifiche animate + suono + stile
     if (b.alerts !== undefined) {
       const p = b.alerts || {};
       const posAlert = ['alto-centro', 'centro', 'basso-centro'];
@@ -1112,30 +1126,94 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
           attivo: !!e.attivo,
           testo: String(e.testo || '').slice(0, 200),
           suono: SUONI_PRESET.has(String(e.suono)) ? String(e.suono) : '',
-          colore: /^#[0-9a-fA-F]{6}$/.test(String(e.colore)) ? String(e.colore) : '#9146ff',
+          volume: clampInt(e.volume, 0, 100, 100),
+          accento: hexOk(e.accento || e.colore, '#9146ff'),
         };
       };
+      const st = p.stile || {};
       out.alerts = {
         attivo: !!p.attivo,
         posizione: posAlert.includes(p.posizione) ? p.posizione : 'alto-centro',
-        durata: Math.max(2000, Math.min(20000, Math.round(Number(p.durata)) || 6000)),
+        durata: clampInt(p.durata, 2000, 20000, 6000),
+        stile: {
+          animazione: unoDi(st.animazione, ['slide', 'pop', 'zoom', 'fade', 'flip', 'bounce'], 'slide'),
+          dimTesto: clampInt(st.dimTesto, 14, 56, 27),
+          sfondo: hexOk(st.sfondo, '#0f0f14'),
+          opacita: clampInt(st.opacita, 0, 100, 88),
+          testo: hexOk(st.testo, '#ffffff'),
+          bordoRaggio: clampInt(st.bordoRaggio, 0, 40, 18),
+          bordoSpessore: clampInt(st.bordoSpessore, 0, 10, 2),
+          glow: st.glow !== false,
+          icona: st.icona !== false,
+          font: unoDi(st.font, FONT_OVL, 'sistema'),
+        },
         follow: evt(p.follow),
         sub: evt(p.sub),
-        cheer: { ...evt(p.cheer), minBits: Math.max(0, Math.round(Number(p.cheer?.minBits)) || 0) },
-        raid: { ...evt(p.raid), minViewers: Math.max(0, Math.round(Number(p.raid?.minViewers)) || 0) },
+        cheer: { ...evt(p.cheer), minBits: clampInt(p.cheer?.minBits, 0, 1e9, 0) },
+        raid: { ...evt(p.raid), minViewers: clampInt(p.raid?.minViewers, 0, 1e6, 0) },
       };
     }
-    // CHAT a schermo nell'overlay
+    // CHAT a schermo nell'overlay (con stile completo)
     if (b.chatOverlay !== undefined) {
       const c = b.chatOverlay || {};
       const posChat = ['alto-sinistra', 'alto-destra', 'basso-sinistra', 'basso-destra'];
+      const st = c.stile || {};
       out.chatOverlay = {
         attivo: !!c.attivo,
         posizione: posChat.includes(c.posizione) ? c.posizione : 'basso-sinistra',
-        max: Math.max(1, Math.min(20, Math.round(Number(c.max)) || 8)),
-        fadeSec: Math.max(0, Math.min(120, Math.round(Number(c.fadeSec)) || 0)),
-        dim: ['piccola', 'media', 'grande'].includes(c.dim) ? c.dim : 'media',
+        max: clampInt(c.max, 1, 20, 8),
+        fadeSec: clampInt(c.fadeSec, 0, 120, 0),
+        stile: {
+          dim: unoDi(st.dim, ['piccola', 'media', 'grande', 'enorme'], 'media'),
+          sfondo: hexOk(st.sfondo, '#0f0f14'),
+          opacita: clampInt(st.opacita, 0, 100, 78),
+          testo: hexOk(st.testo, '#f2f2f5'),
+          username: (st.username === 'twitch' || /^#[0-9a-fA-F]{6}$/.test(String(st.username))) ? st.username : 'twitch',
+          bordoRaggio: clampInt(st.bordoRaggio, 0, 30, 10),
+          ombra: st.ombra !== false,
+          font: unoDi(st.font, FONT_OVL, 'sistema'),
+          larghezza: clampInt(st.larghezza, 18, 60, 30),
+          animazione: unoDi(st.animazione, ['slide', 'fade', 'nessuna'], 'slide'),
+          grassettoUser: st.grassettoUser !== false,
+        },
       };
+    }
+    // WIDGET persistenti dell'overlay (ultimo follower / ultimo sub)
+    if (b.overlayWidget !== undefined) {
+      const w = b.overlayWidget || {};
+      const posW = ['alto-sinistra', 'alto-destra', 'basso-sinistra', 'basso-destra'];
+      const wid = (x, testoDef) => {
+        x = x || {}; const st = x.stile || {};
+        return {
+          attivo: !!x.attivo,
+          posizione: posW.includes(x.posizione) ? x.posizione : 'basso-destra',
+          testo: String(x.testo || testoDef).slice(0, 80),
+          stile: {
+            dim: unoDi(st.dim, ['piccola', 'media', 'grande'], 'media'),
+            sfondo: hexOk(st.sfondo, '#0f0f14'),
+            opacita: clampInt(st.opacita, 0, 100, 85),
+            testo: hexOk(st.testo, '#ffffff'),
+            accento: hexOk(st.accento, '#9146ff'),
+            bordoRaggio: clampInt(st.bordoRaggio, 0, 30, 12),
+            font: unoDi(st.font, FONT_OVL, 'sistema'),
+          },
+        };
+      };
+      out.overlayWidget = {
+        ultimoFollower: wid(w.ultimoFollower, 'Ultimo follower: {nome}'),
+        ultimoSub: wid(w.ultimoSub, 'Ultimo sub: {nome}'),
+      };
+    }
+    // CSS avanzato dell'overlay (libertà totale sul proprio overlay)
+    if (b.overlayCss !== undefined) out.overlayCss = String(b.overlayCss || '').slice(0, 8000);
+    // Template dell'overlay salvati dallo streamer (snapshot del proprio look).
+    // Il `dati` viene ri-applicato solo attraverso il salvataggio validato qui
+    // sopra, quindi lo conserviamo così com'è (limitato in numero e dimensione).
+    if (b.overlayTemplates !== undefined) {
+      const arr = Array.isArray(b.overlayTemplates) ? b.overlayTemplates : [];
+      out.overlayTemplates = arr.slice(0, 16)
+        .map((t) => ({ nome: String(t?.nome || 'Template').slice(0, 40), dati: (t?.dati && typeof t.dati === 'object') ? t.dati : {} }))
+        .filter((t) => JSON.stringify(t.dati).length < 8000);
     }
     // ascolto live lato server (audio → clip nei momenti salienti): opt-in
     if (b.ascoltoLive !== undefined) out.ascoltoLive = !!b.ascoltoLive;
