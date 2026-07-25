@@ -428,12 +428,12 @@ body.vetrina .contenuto { max-width: 1040px; }
   transform: translate(var(--mx, 0px), var(--my, 0px));
   transition: background var(--molla), transform .18s var(--ease), box-shadow var(--molla);
 }
-.btn:hover { background: var(--acc-600); box-shadow: 0 8px 20px rgba(109, 59, 239, .3); text-decoration: none; transform: translate(var(--mx, 0px), calc(var(--my, 0px) - 1px)); }
+.btn:hover { background: var(--acc-600); color: #fff; box-shadow: 0 8px 20px rgba(109, 59, 239, .3); text-decoration: none; transform: translate(var(--mx, 0px), calc(var(--my, 0px) - 1px)); }
 .btn:active { transform: translate(var(--mx, 0px), var(--my, 0px)) scale(.97); transition-duration: .07s; }
 .btn:disabled { opacity: .5; cursor: wait; box-shadow: none; }
 .btn.grande { padding: .7rem 1.5rem; min-height: 44px; font-size: .98rem; }
 .btn.secondario { background: var(--surface); border: 1px solid var(--border-2); color: var(--testo); }
-.btn.secondario:hover { background: var(--surface-2); border-color: var(--testo-3); box-shadow: none; }
+.btn.secondario:hover { background: var(--surface-2); color: var(--testo); border-color: var(--testo-3); box-shadow: none; }
 .btn.pericolo { background: var(--rosso); }
 .btn.pericolo:hover { background: #bb2f39; box-shadow: 0 4px 14px rgba(207, 55, 66, .22); }
 .btn.mini { padding: .3rem .7rem; min-height: 0; font-size: .8rem; border-radius: var(--r-xs); }
