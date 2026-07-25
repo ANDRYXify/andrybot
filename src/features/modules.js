@@ -9,8 +9,10 @@
 //
 // Le variabili nei testi ($user, $uptime, $count(...), ...) sono sostituite
 // con un semplice replace: NIENTE eval, niente template engine.
-import dns from 'node:dns/promises';
+import dns from 'node:dns';
 import net from 'node:net';
+import http from 'node:http';
+import https from 'node:https';
 import { modules as modulesDb, counters, memory, streamers, clips } from '../db.js';
 import { risolviCategoria } from './categoria.js';
 import { canaleHa } from './accesso.js';
@@ -937,42 +939,80 @@ export class ModulesEngine {
   // rete. Accetta solo http/https, rifiuta IP privati/loopback/link-local sia
   // se scritti direttamente sia dopo la risoluzione DNS del nome. Niente
   // redirect (eviterebbero la guardia), timeout 5s, risposta letta max ~10KB.
+  //
+  // ANTI-REBINDING: NON risolviamo il nome "prima" e poi ci colleghiamo (quella
+  // finestra permette il DNS-rebinding: pubblico al controllo, privato alla
+  // connessione). Usiamo un `lookup` personalizzato che valida e restituisce a
+  // net.connect SOLO indirizzi pubblici: l'IP validato è ESATTAMENTE quello a
+  // cui ci si lega, quindi non c'è alcuna finestra sfruttabile.
   async fetchWebhook(url, payload) {
     let u;
     try { u = new URL(String(url)); } catch { throw new Error('URL webhook non valido'); }
     if (u.protocol !== 'http:' && u.protocol !== 'https:') throw new Error('protocollo webhook non ammesso');
+    // IP-letterale: controllalo subito (nessuna risoluzione DNS in gioco).
+    if (net.isIP(u.hostname) && this._ipPrivato(u.hostname)) throw new Error('webhook verso IP privato: bloccato');
 
-    const host = u.hostname;
-    if (net.isIP(host)) {
-      if (this._ipPrivato(host)) throw new Error('webhook verso IP privato: bloccato');
-    } else {
-      let indirizzi;
-      try { indirizzi = await dns.lookup(host, { all: true }); }
-      catch { throw new Error('host webhook non risolvibile'); }
-      for (const a of indirizzi) {
-        if (this._ipPrivato(a.address)) throw new Error('host webhook risolve a IP privato: bloccato');
-      }
-    }
+    const corpo = Buffer.from(JSON.stringify(payload || {}), 'utf8');
+    const mod = u.protocol === 'https:' ? https : http;
+    const opzioni = {
+      method: 'POST',
+      hostname: u.hostname,
+      port: u.port || (u.protocol === 'https:' ? 443 : 80),
+      path: (u.pathname || '/') + (u.search || ''),
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': corpo.length,
+        'User-Agent': 'SocialBot-Webhook/1.0',
+        'Accept': 'application/json',
+      },
+      // guardia al momento della connessione: chiude la finestra di rebinding.
+      lookup: (h, o, cb) => this._lookupSicuro(h, o, cb),
+      timeout: WEBHOOK_TIMEOUT_MS,
+    };
 
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), WEBHOOK_TIMEOUT_MS);
-    try {
-      const res = await fetch(u.toString(), {
-        method: 'POST',
-        redirect: 'manual',     // un redirect potrebbe puntare all'interno: lo neghiamo
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': 'SocialBot-Webhook/1.0',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify(payload || {}),
-        signal: controller.signal,
+    return await new Promise((resolve, reject) => {
+      let fatto = false;
+      const finisci = (v) => { if (!fatto) { fatto = true; resolve(v); } };
+      const fallisci = (e) => { if (!fatto) { fatto = true; reject(e); } };
+      const req = mod.request(opzioni, (res) => {
+        // Redirect NEGATO: potrebbe puntare all'interno aggirando la guardia.
+        if (res.statusCode >= 300 && res.statusCode < 400) { res.destroy(); return fallisci(new Error('redirect webhook non consentito')); }
+        const chunks = [];
+        let size = 0;
+        res.on('data', (c) => {
+          if (size >= WEBHOOK_MAX_BYTES) return;      // già pieno: ignora il resto
+          chunks.push(c); size += c.length;
+          if (size >= WEBHOOK_MAX_BYTES) res.destroy(); // troppo grande: tronca e chiudi
+        });
+        const concludi = () => {
+          const testo = Buffer.concat(chunks).slice(0, WEBHOOK_MAX_BYTES).toString('utf8');
+          try { finisci(JSON.parse(testo)); } catch { finisci(null); }
+        };
+        res.on('end', concludi);
+        res.on('close', concludi);          // scatta anche dopo destroy() per troncatura
+        res.on('error', () => finisci(null));
       });
-      const testo = await this._leggiLimitato(res, WEBHOOK_MAX_BYTES);
-      try { return JSON.parse(testo); } catch { return null; }
-    } finally {
-      clearTimeout(timer);
-    }
+      req.on('timeout', () => req.destroy(new Error('timeout webhook')));
+      req.on('error', (e) => fallisci(e));
+      req.write(corpo);
+      req.end();
+    });
+  }
+
+  // `lookup` in stile dns.lookup usato da net.connect per il webhook: risolve il
+  // nome e SCARTA ogni indirizzo privato/loopback/riservato, passando avanti solo
+  // IP pubblici. Essendo lo stesso lookup che la connessione userà davvero, non
+  // esiste finestra di DNS-rebinding tra "controllo" e "connessione".
+  _lookupSicuro(hostname, options, callback) {
+    const cb = typeof options === 'function' ? options : callback;
+    const opts = (options && typeof options === 'object') ? options : {};
+    dns.lookup(hostname, { ...opts, all: true }, (err, indirizzi) => {
+      if (err) return cb(err);
+      const buoni = (indirizzi || []).filter((a) => a && !this._ipPrivato(a.address));
+      if (!buoni.length) return cb(new Error('host webhook risolve a IP privato: bloccato'));
+      if (opts.all) return cb(null, buoni);
+      return cb(null, buoni[0].address, buoni[0].family);
+    });
   }
 
   // true se l'IP appartiene a un range privato/loopback/link-local/riservato.
@@ -1003,27 +1043,5 @@ export class ModulesEngine {
       return false;
     }
     return true;   // non è un IP valido: per prudenza rifiuta
-  }
-
-  // Legge al massimo `max` byte dal corpo della risposta (protezione da risposte
-  // enormi), poi tronca. Tollerante: mai lanciare.
-  async _leggiLimitato(res, max) {
-    if (!res?.body || typeof res.body.getReader !== 'function') {
-      const t = await res.text().catch(() => '');
-      return t.slice(0, max);
-    }
-    const reader = res.body.getReader();
-    const chunks = [];
-    let size = 0;
-    try {
-      while (size < max) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunks.push(Buffer.from(value));
-        size += value.length;
-      }
-    } catch { /* fine o errore stream */ }
-    try { await reader.cancel(); } catch { /* ignora */ }
-    return Buffer.concat(chunks).slice(0, max).toString('utf8');
   }
 }

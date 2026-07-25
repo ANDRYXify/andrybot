@@ -89,9 +89,18 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // dietro reverse proxy (nginx/caddy) serve per cookie "secure" e IP reali
   app.set('trust proxy', 1);
 
+  // Le sessioni DEVONO essere firmate con un segreto reale. `config.sessionSecret`
+  // è sempre valorizzato (env → file persistito → effimero casuale): se per
+  // qualsiasi motivo fosse vuoto, ci fermiamo — MAI ripiegare su una chiave nota
+  // e hard-coded (permetterebbe di forgiare cookie di sessione e impersonare
+  // chiunque, admin compreso).
+  if (!config.sessionSecret || config.sessionSecret.length < 16) {
+    throw new Error('SESSION_SECRET assente o troppo debole: impossibile firmare le sessioni in sicurezza');
+  }
+
   app.use(cookieSession({
     name: 'andrybot',
-    keys: [config.sessionSecret || 'dev-solo-locale'],
+    keys: [config.sessionSecret],
     maxAge: 30 * 24 * 60 * 60 * 1000,          // 30 giorni
     sameSite: 'lax',
     secure: config.baseUrl.startsWith('https'),
