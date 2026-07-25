@@ -5,6 +5,7 @@
 //          · !pesca · !duello @tizio · !furto @tizio · !regala @tizio N
 //          · !trivia · !classifica · !monete · !giochi
 import { points, streamers, knowledge, giochi } from '../db.js';
+import { config } from '../config.js';
 import { makeLog } from '../logger.js';
 
 const log = makeLog('giochi');
@@ -392,30 +393,20 @@ export function tryGame(msg, say) {
 }
 
 // --------------------------------------------------------- promo social proattiva
-// Pesca un link social dalla conoscenza del canale (imparata dal profilo
-// andryxify.it) e lo propone con calore. Ruota per non ripetere lo stesso.
-const ultimoSocial = new Map();   // channel → domanda già usata di recente
+// Invita a seguire lo streamer rimandando alla SUA pagina hub sul sito
+// (siteUrl/u/<canale>): una destinazione sempre corretta e sotto il suo
+// controllo. NON pesca più link dalla "conoscenza" auto-appresa, che poteva
+// contenere social non impostati dallo streamer (rischio di promuovere i link
+// sbagliati). Se non c'è un sito configurato, non propone nulla.
 const APERTURE = [
-  'Se ti va, mi trovi anche qui:', 'Piccolo promemoria:', 'Passa a trovarmi anche su:',
-  'Per non perderti nulla:', 'Ci trovi anche qui:',
+  'Se ti va, mi trovi con tutti i miei social qui:', 'Piccolo promemoria — tutti i miei link:',
+  'Passa a trovarmi, trovi tutto qui:', 'Per non perderti nulla, i miei link:', 'Ci trovi qui:',
 ];
 export function promoSociale(channel) {
   try {
-    const voci = knowledge.list(channel).filter((k) =>
-      k.fonte === 'auto' && /https?:\/\//.test(k.risposta) &&
-      /(youtube|instagram|tiktok|discord|telegram|twitter|(^|[^a-z])x([^a-z]|$)|kick|facebook|spotify)/i.test(k.domanda + ' ' + k.risposta));
-    if (!voci.length) return null;
-    // evita di ripetere l'ultima usata
-    const disponibili = voci.filter((v) => v.domanda !== ultimoSocial.get(channel));
-    const v = scegli(disponibili.length ? disponibili : voci);
-    ultimoSocial.set(channel, v.domanda);
-    // la risposta della voce spesso contiene già una frase + link: la usiamo,
-    // altrimenti componiamo con un'apertura calda.
-    const url = (v.risposta.match(/https?:\/\/\S+/) || [])[0];
-    if (!url) return null;
-    return /https?:\/\//.test(v.risposta) && v.risposta.length > url.length + 3
-      ? v.risposta
-      : `${scegli(APERTURE)} ${url}`;
+    const canale = String(channel || '').toLowerCase().trim();
+    if (!canale || !config.siteUrl) return null;
+    return `${scegli(APERTURE)} ${config.siteUrl}/u/${canale} ✨`;
   } catch { return null; }
 }
 
