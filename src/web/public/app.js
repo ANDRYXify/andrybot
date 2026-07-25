@@ -102,8 +102,9 @@ function impostazioni() {
     cambioCategoria: { attivo: false, trigger: 'categoria', annuncia: true, ...(s.cambioCategoria && typeof s.cambioCategoria === 'object' ? s.cambioCategoria : {}) },
     cambioTitolo: { attivo: false, trigger: 'titolo', annuncia: true, ...(s.cambioTitolo && typeof s.cambioTitolo === 'object' ? s.cambioTitolo : {}) },
     imparaVoce: { attivo: false, ...(s.imparaVoce && typeof s.imparaVoce === 'object' ? s.imparaVoce : {}) },
-    penitenze: { attivo: false, premioTesto: '', premioRandom: '', modoRandom: 'casuale', durataMin: 2,
-      parole: [], penitenzeModo: 'lista', penitenze: [], effetto: '',
+    penitenze: { attivo: false, premioVieta: '', premioSolo: '', durataMin: 2,
+      penitenzeModo: 'lista', penitenze: [], effetto: '', fuzzy: 80,
+      overlay: { posizione: 'alto-destra', colore: '#ff2d2d' },
       ...(s.penitenze && typeof s.penitenze === 'object' ? s.penitenze : {}) },
   };
 }
@@ -198,9 +199,9 @@ function statoDemo() {
         instagram: { userId: '17841400000000000', tokenSet: true, attivo: true, annunciaChat: false, messaggio: '' },
         giochiSito: { attivo: true, collegato: true },
         antispam: { maiuscole: true, link: true, flood: true },
-        penitenze: { attivo: true, premioTesto: 'Vietami una parola', premioRandom: 'Penitenza a sorpresa',
-          modoRandom: 'casuale', durataMin: 2, parole: ['allora', 'praticamente', 'cioè'],
-          penitenzeModo: 'entrambe', penitenze: ['10 flessioni', 'canta la sigla', 'parla in inglese per 1 minuto'], effetto: 'airhorn' },
+        penitenze: { attivo: true, premioVieta: 'Vietami una parola', premioSolo: 'Dì solo questa parola',
+          durataMin: 2, penitenzeModo: 'lista', penitenze: ['10 flessioni', 'canta la sigla', 'parla in inglese per 1 minuto'],
+          effetto: 'airhorn', fuzzy: 80, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } },
       },
     },
   };
@@ -364,12 +365,11 @@ function _demoGet(via) {
       { id: 2, tipo: 'parola', nome: 'Reflex hype', attivo: true, config: { parole: ['pizza', 'combo perfetta', 'gg wp', 'clutch'] } },
     ],
     '/api/penitenze/premi': {
-      permessoOk: true, premioTesto: 'Vietami una parola', premioRandom: 'Penitenza a sorpresa',
+      permessoOk: true, premioVieta: 'Vietami una parola', premioSolo: 'Dì solo questa parola',
       tutti: [
         { id: 'p1', title: 'Vietami una parola', cost: 500, richiedeTesto: true },
-        { id: 'p2', title: 'Scegli tu la parola', cost: 800, richiedeTesto: true },
-        { id: 'p3', title: 'Penitenza a sorpresa', cost: 400, richiedeTesto: false },
-        { id: 'p4', title: 'Airhorn', cost: 200, richiedeTesto: false },
+        { id: 'p2', title: 'Dì solo questa parola', cost: 800, richiedeTesto: true },
+        { id: 'p3', title: 'Airhorn', cost: 200, richiedeTesto: false },
       ],
     },
     '/api/moderatori': [ { login: 'lucaplays', display: 'lucaplays', stato: 'attivo' } ],
@@ -919,8 +919,8 @@ const GUIDE = {
     come: ['Scrivi la domanda e le opzioni (o titolo ed esiti).', 'Lancia: gli spettatori votano/puntano dall’app.', 'Chiudi il sondaggio o scegli l’esito vincente della predizione.'] },
   giveaway: { serve: 'Organizzare estrazioni a premi per la community.',
     come: ['Apri il giveaway indicando il premio.', 'La community entra scrivendo !join in chat.', 'Estrai il vincitore dal pannello (puoi ripetere).'] },
-  penitenze: { serve: 'Trasformare un premio a punti canale in una sfida: ti vieta una parola/lettera a tempo e, se la dici, parte una penitenza.',
-    come: ['Attiva il riconoscimento vocale (scheda Ascolto vocale) e concedi i Punti canale.', 'Scegli i premi: con «richiesta di testo» lo spettatore scrive la parola, quello «a sorpresa» la sceglie il bot.', 'Decidi la penitenza: la tua lista, quelle suggerite dal bot, o entrambe.'] },
+  penitenze: { serve: 'Trasformare un premio a punti canale in una sfida a tempo: il bot conta quante volte sbagli (con «+1» a schermo) e alla fine fa partire una penitenza.',
+    come: ['Attiva il riconoscimento vocale (scheda Ascolto vocale) e concedi i Punti canale.', 'Scegli i due premi: «Vieta la parola» (non dirla) e «Usa solo la parola» (dì solo quella).', 'Decidi la penitenza (tua lista o inventata dall\'IA) e dove mostrare il contatore nell\'overlay.'] },
   notifiche: { serve: 'Avvisare i tuoi canali (Telegram, social) quando vai in diretta.',
     come: ['Collega Telegram e/o le piattaforme social.', 'Attiva gli avvisi che vuoi.', 'Personalizza i messaggi.'] },
 };
@@ -1855,14 +1855,24 @@ async function caricaGiveaway() {
 
 function pannelloPenitenze() {
   const p = impostazioni().penitenze || {};
-  const modoR = ['parola', 'lettera', 'casuale'].includes(p.modoRandom) ? p.modoRandom : 'casuale';
-  const optR = (v, t) => `<option value="${v}"${modoR === v ? ' selected' : ''}>${t}</option>`;
-  const src = ['lista', 'suggerite', 'entrambe'].includes(p.penitenzeModo) ? p.penitenzeModo : 'lista';
+  const src = ['lista', 'ia'].includes(p.penitenzeModo) ? p.penitenzeModo : 'lista';
   const optS = (v, t) => `<option value="${v}"${src === v ? ' selected' : ''}>${t}</option>`;
+  const ov = p.overlay || {};
+  const pos = ov.posizione || 'alto-destra';
+  const optP = (v, t) => `<option value="${v}"${pos === v ? ' selected' : ''}>${t}</option>`;
+  const fuzzy = Number(p.fuzzy) || 80;
   return pannello('penitenze', `
     <div class="carta">
       <h2>${_hIco(ICO.penitenza)}Penitenze a punti canale</h2>
-      <p>Uno spettatore riscatta un premio e ti <strong>vieta una parola</strong> (la scrive lui o la sceglie il bot) o una <strong>lettera</strong> per qualche minuto. Se il bot <strong>ti sente dirla</strong>, parte una penitenza! 😈</p>
+      <p>Uno spettatore riscatta un premio e sceglie una <strong>parola</strong>. Per qualche minuto il bot <strong>ti ascolta</strong>
+      e tiene un <strong>contatore</strong> (con «+1» rossi a schermo). Alla fine del tempo, se sei stato beccato, parte <strong>una penitenza</strong> 😈</p>
+      <div class="riquadro-info spazio-sopra">
+        <strong>Due modi</strong>, ognuno col suo premio a punti canale:
+        <ul class="lista-punti">
+          <li><strong>Vieta la parola</strong> — non devi dirla: ogni volta che la dici, <span class="pen-inline-num">+1</span>.</li>
+          <li><strong>Usa solo la parola</strong> — puoi dire <em>solo</em> quella: ogni frase con un'altra parola, <span class="pen-inline-num">+1</span>.</li>
+        </ul>
+      </div>
       <p class="suggerimento">Serve il <strong>riconoscimento vocale</strong> attivo (scheda <em>Ascolto vocale</em>) e il permesso <strong>Punti canale</strong>.</p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore"><input type="checkbox" id="pen-attivo" ${p.attivo ? 'checked' : ''}><span class="levetta"></span></label>
@@ -1870,61 +1880,78 @@ function pannelloPenitenze() {
       </div>
       <div class="griglia-campi spazio-sopra">
         <div>
-          <label class="campo" for="pen-durata">Durata del divieto (minuti)</label>
+          <label class="campo" for="pen-durata">Durata (minuti)</label>
           <input type="number" id="pen-durata" min="1" max="15" value="${Number(p.durataMin) || 2}">
         </div>
         <div>
-          <label class="campo" for="pen-src">La penitenza viene…</label>
+          <label class="campo" for="pen-src">La penitenza…</label>
           <select id="pen-src">
-            ${optS('lista', 'Dalla mia lista')}
-            ${optS('suggerite', 'Suggerite dal bot')}
-            ${optS('entrambe', 'Entrambe (le mie + le suggerite)')}
+            ${optS('lista', 'La scelgo dalla mia lista')}
+            ${optS('ia', 'La inventa l\'IA')}
           </select>
         </div>
       </div>
       <label class="campo spazio-sopra" for="pen-penitenze">La mia lista di penitenze (una per riga: ne parte una a caso)</label>
       <textarea id="pen-penitenze" placeholder="10 flessioni&#10;canta la sigla&#10;parla in inglese per 1 minuto">${esc((p.penitenze || []).join('\n'))}</textarea>
-      <p class="suggerimento">Con «Suggerite dal bot» non serve scrivere niente: parte una penitenza pronta all'uso.</p>
-      <label class="campo spazio-sopra" for="pen-parole">Parole da vietare a caso (una per riga)</label>
-      <textarea id="pen-parole" placeholder="allora&#10;cioè&#10;praticamente">${esc((p.parole || []).join('\n'))}</textarea>
-      <p class="suggerimento">Usate dal premio «a sorpresa» e quando lo spettatore non scrive nessuna parola.</p>
-      <label class="campo spazio-sopra" for="pen-effetto">Effetto quando ti becca (facoltativo)</label>
+      <p class="suggerimento">Con «La inventa l'IA» non serve scriverne: se il cervello non è disponibile, il bot ne pesca una pronta.</p>
+      <label class="campo spazio-sopra" for="pen-fuzzy">Tolleranza al riconoscimento vocale: <strong><span id="pen-fuzzy-val">${fuzzy}</span></strong></label>
+      <input type="range" id="pen-fuzzy" min="50" max="100" step="5" value="${fuzzy}">
+      <p class="suggerimento">Più alta = più severo (conta solo parole quasi identiche). Più bassa = perdona di più gli errori di trascrizione.</p>
+      <label class="campo spazio-sopra" for="pen-effetto">Effetto quando scatta la penitenza (facoltativo)</label>
       <input type="text" id="pen-effetto" placeholder="es. airhorn (comando di un effetto)" value="${esc(p.effetto || '')}">
       <p class="spazio-sopra"><button class="btn" id="pen-salva">Salva</button></p>
     </div>
+
     <div class="carta">
-      <h3>${_hIco(ICO.chiave)}I premi che fanno partire la penitenza</h3>
-      <p>Puoi usarne due tipi, anche insieme: uno dove <strong>lo spettatore scrive la parola</strong> e uno <strong>a sorpresa</strong> (la sceglie il bot).</p>
-      <input type="hidden" id="pen-premio-testo" value="${esc(p.premioTesto || '')}">
-      <input type="hidden" id="pen-premio-random" value="${esc(p.premioRandom || '')}">
-      <h4 class="spazio-sopra">1 · Con richiesta di testo <span class="tenue">— lo spettatore scrive la parola</span></h4>
-      <div id="pen-box-testo"><p class="suggerimento">Carico i tuoi premi…</p></div>
-      <h4 class="spazio-sopra">2 · A sorpresa <span class="tenue">— parola o lettera a caso</span></h4>
+      <h3>${_hIco(ICO.monitor)}Contatore a schermo (overlay)</h3>
+      <p>Il «+1» e il contatore compaiono nell'<strong>overlay per OBS</strong> (lo stesso degli effetti, scheda <em>Effetti &amp; suoni</em>).</p>
       <div class="griglia-campi spazio-sopra">
         <div>
-          <label class="campo" for="pen-modo-random">Cosa vieta il premio a sorpresa</label>
-          <select id="pen-modo-random">
-            ${optR('parola', 'Una parola (dalla tua lista qui sopra)')}
-            ${optR('lettera', 'Una lettera a caso')}
-            ${optR('casuale', 'A sorpresa (parola o lettera)')}
+          <label class="campo" for="pen-ov-pos">Posizione</label>
+          <select id="pen-ov-pos">
+            ${optP('alto-sinistra', 'In alto a sinistra')}
+            ${optP('alto-centro', 'In alto al centro')}
+            ${optP('alto-destra', 'In alto a destra')}
+            ${optP('basso-sinistra', 'In basso a sinistra')}
+            ${optP('basso-centro', 'In basso al centro')}
+            ${optP('basso-destra', 'In basso a destra')}
           </select>
         </div>
+        <div>
+          <label class="campo" for="pen-ov-col">Colore</label>
+          <input type="color" id="pen-ov-col" value="${/^#[0-9a-fA-F]{6}$/.test(ov.colore || '') ? ov.colore : '#ff2d2d'}">
+        </div>
       </div>
-      <div id="pen-box-random" class="spazio-sopra"><p class="suggerimento">Carico i tuoi premi…</p></div>
+      <p class="spazio-sopra"><button class="btn secondario" id="pen-ov-prova">Prova il contatore nell'overlay</button></p>
+      <p class="suggerimento">Apri l'overlay in OBS (o nel browser) e premi «Prova»: vedrai partire un +1 di esempio.</p>
+    </div>
+
+    <div class="carta">
+      <h3>${_hIco(ICO.chiave)}I premi a punti canale</h3>
+      <p>Servono premi <strong>con richiesta di testo</strong> (così lo spettatore scrive la parola). Scegline uno per modo, o creali qui.</p>
+      <input type="hidden" id="pen-premio-vieta" value="${esc(p.premioVieta || '')}">
+      <input type="hidden" id="pen-premio-solo" value="${esc(p.premioSolo || '')}">
+      <h4 class="spazio-sopra">${_hIco(ICO.divieto)}Vieta la parola <span class="tenue">— non devi dirla</span></h4>
+      <div id="pen-box-vieta"><p class="suggerimento">Carico i tuoi premi…</p></div>
+      <h4 class="spazio-sopra">${_hIco(ICO.target)}Usa solo la parola <span class="tenue">— puoi dire solo quella</span></h4>
+      <div id="pen-box-solo"><p class="suggerimento">Carico i tuoi premi…</p></div>
     </div>`);
 }
 
 async function salvaPenitenze(silenzioso) {
   const penitenze = {
     attivo: !!document.getElementById('pen-attivo')?.checked,
-    premioTesto: (document.getElementById('pen-premio-testo')?.value || '').trim(),
-    premioRandom: (document.getElementById('pen-premio-random')?.value || '').trim(),
-    modoRandom: document.getElementById('pen-modo-random')?.value || 'casuale',
+    premioVieta: (document.getElementById('pen-premio-vieta')?.value || '').trim(),
+    premioSolo: (document.getElementById('pen-premio-solo')?.value || '').trim(),
     durataMin: Number(document.getElementById('pen-durata')?.value) || 2,
-    parole: righe(document.getElementById('pen-parole')?.value || ''),
     penitenzeModo: document.getElementById('pen-src')?.value || 'lista',
     penitenze: righe(document.getElementById('pen-penitenze')?.value || ''),
     effetto: (document.getElementById('pen-effetto')?.value || '').trim(),
+    fuzzy: Number(document.getElementById('pen-fuzzy')?.value) || 80,
+    overlay: {
+      posizione: document.getElementById('pen-ov-pos')?.value || 'alto-destra',
+      colore: document.getElementById('pen-ov-col')?.value || '#ff2d2d',
+    },
   };
   await salvaImpostazioni({ penitenze }, silenzioso ? null : 'Penitenze salvate 😈');
 }
@@ -1935,29 +1962,33 @@ async function caricaPenitenze() {
     if (et) et.textContent = ev.target.checked ? 'Penitenze attive' : 'Penitenze spente';
   });
   document.getElementById('pen-salva')?.addEventListener('click', () => conErrore(() => salvaPenitenze()));
-  document.getElementById('pen-modo-random')?.addEventListener('change', () => conErrore(async () => { await salvaPenitenze(true); toast('Impostazione salvata ✓'); }));
-  const boxT = document.getElementById('pen-box-testo');
-  const boxR = document.getElementById('pen-box-random');
-  if (!boxT || !boxR) return;
+  const rng = document.getElementById('pen-fuzzy');
+  const val = document.getElementById('pen-fuzzy-val');
+  rng?.addEventListener('input', () => { if (val) val.textContent = rng.value; });
+  document.getElementById('pen-ov-pos')?.addEventListener('change', () => conErrore(async () => { await salvaPenitenze(true); toast('Overlay salvato ✓'); }));
+  document.getElementById('pen-ov-col')?.addEventListener('change', () => conErrore(() => salvaPenitenze(true)));
+  document.getElementById('pen-ov-prova')?.addEventListener('click', () => conErrore(async () => {
+    await salvaPenitenze(true);
+    await api('/api/penitenze/prova', { method: 'POST', body: {} });
+    toast('Inviato all\'overlay ▶');
+  }));
+  const boxV = document.getElementById('pen-box-vieta');
+  const boxS = document.getElementById('pen-box-solo');
+  if (!boxV || !boxS) return;
   let d;
-  try { d = await api('/api/penitenze/premi'); } catch { boxT.innerHTML = boxR.innerHTML = '<p class="suggerimento">Impossibile leggere i premi.</p>'; return; }
+  try { d = await api('/api/penitenze/premi'); } catch { boxV.innerHTML = boxS.innerHTML = '<p class="suggerimento">Impossibile leggere i premi.</p>'; return; }
   if (!d.permessoOk) {
-    const avviso = '<div class="riquadro-info">⚠️ Per i premi a punti canale serve il permesso: concedilo da <strong>Chat &amp; comandi → Effetti &amp; suoni</strong> (sezione Premi), poi torna qui.</div>';
-    boxT.innerHTML = avviso; boxR.innerHTML = '';
+    boxV.innerHTML = '<div class="riquadro-info">⚠️ Per i premi a punti canale serve il permesso: concedilo da <strong>Chat &amp; comandi → Effetti &amp; suoni</strong> (sezione Premi), poi torna qui.</div>';
+    boxS.innerHTML = '';
     return;
   }
-  const tutti = d.tutti || [];
-  // Un blocco riutilizzabile: selettore dei premi idonei + form "crea premio".
-  // richiedeTesto=true → premi dove lo spettatore scrive; false → premi "a sorpresa".
-  const montaPicker = (box, { conTesto, hiddenId, attuale, nomeDefault }) => {
-    const eleggibili = tutti.filter((r) => !!r.richiedeTesto === conTesto);
-    const esclusi = tutti.length - eleggibili.length;
+  // solo i premi CON richiesta di testo (lo spettatore scrive la parola)
+  const eleggibili = (d.tutti || []).filter((r) => r.richiedeTesto);
+  const esclusi = (d.tutti || []).length - eleggibili.length;
+  const montaPicker = (box, { campo, hiddenId, attuale, nomeDefault }) => {
     const inp = document.getElementById(hiddenId);
     const cur = (inp?.value || attuale || '').trim();
-    const selId = `${hiddenId}-sel`;
-    const creaId = `${hiddenId}-crea`;
-    const nomeId = `${hiddenId}-nome`;
-    const costoId = `${hiddenId}-costo`;
+    const selId = `${hiddenId}-sel`, creaId = `${hiddenId}-crea`, nomeId = `${hiddenId}-nome`, costoId = `${hiddenId}-costo`;
     const formCrea = `
       <details class="spazio-sopra"${eleggibili.length ? '' : ' open'}>
         <summary>${eleggibili.length ? 'Oppure crea un premio pronto all\'uso' : 'Crea un premio pronto all\'uso'}</summary>
@@ -1968,7 +1999,7 @@ async function caricaPenitenze() {
         <button class="btn secondario spazio-sopra" id="${creaId}">Crea il premio su Twitch</button>
       </details>`;
     if (!eleggibili.length) {
-      box.innerHTML = `<div class="riquadro-info">Non hai premi ${conTesto ? 'con la <strong>richiesta di testo</strong>' : '<strong>senza richiesta di testo</strong>'}${esclusi ? ` (${esclusi} non ${esclusi === 1 ? 'adatto' : 'adatti'})` : ''}. Creane uno qui.</div>${formCrea}`;
+      box.innerHTML = `<div class="riquadro-info">Non hai premi con la <strong>richiesta di testo</strong>${esclusi ? ` (${esclusi} non ${esclusi === 1 ? 'adatto' : 'adatti'})` : ''}. Creane uno qui.</div>${formCrea}`;
     } else {
       const nessuno = `<option value=""${cur ? '' : ' selected'}>— nessuno —</option>`;
       box.innerHTML = `
@@ -1984,12 +2015,12 @@ async function caricaPenitenze() {
     if (bc) bc.addEventListener('click', () => conErrore(async () => {
       const titolo = (document.getElementById(nomeId)?.value || nomeDefault).trim();
       const costo = Number(document.getElementById(costoId)?.value) || 500;
-      const r = await api('/api/penitenze/premio', { method: 'POST', body: { titolo, costo, userInput: conTesto } });
+      const r = await api('/api/penitenze/premio', { method: 'POST', body: { campo, titolo, costo } });
       if (r?.reward) { if (inp) inp.value = r.reward.title; toast('Premio creato su Twitch! 🎁'); caricaPenitenze(); }
     }));
   };
-  montaPicker(boxT, { conTesto: true, hiddenId: 'pen-premio-testo', attuale: d.premioTesto, nomeDefault: 'Vietami una parola' });
-  montaPicker(boxR, { conTesto: false, hiddenId: 'pen-premio-random', attuale: d.premioRandom, nomeDefault: 'Penitenza a sorpresa' });
+  montaPicker(boxV, { campo: 'premioVieta', hiddenId: 'pen-premio-vieta', attuale: d.premioVieta, nomeDefault: 'Vietami una parola' });
+  montaPicker(boxS, { campo: 'premioSolo', hiddenId: 'pen-premio-solo', attuale: d.premioSolo, nomeDefault: 'Dì solo questa parola' });
 }
 
 // --- scheda Effetti & Suoni ---------------------------------------------

@@ -497,6 +497,11 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .lista-voci .meta { font-size: .78rem; color: var(--testo-3); }
 .vuoto { color: var(--testo-2); font-style: italic; padding: .6rem 0; }
 
+/* penitenze: elenchino dentro il riquadro-info + pillolina "+1" */
+.riquadro-info .lista-punti { margin: .4rem 0 0; padding-left: 1.1rem; }
+.riquadro-info .lista-punti li { margin: .25rem 0; }
+.pen-inline-num { display: inline-block; background: #ff2d2d; color: #fff; font-weight: 800; font-size: .78rem; padding: .05rem .4rem; border-radius: 6px; vertical-align: baseline; }
+
 /* suoni sui punti canale: una riga per premio (nome + suono + anteprima) */
 .lista-suoni-premi { list-style: none; margin-top: .4rem; }
 .lista-suoni-premi > li { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-m); padding: .65rem .85rem; margin-bottom: .5rem; }
