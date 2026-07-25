@@ -387,24 +387,13 @@ function montaDemo() {
        <a class="btn mini secondario" href="/">Esci dalla demo</a>
      </span>`;
   cont.insertBefore(barra, header);
-
-  const spiega = document.createElement('div');
-  spiega.id = 'demo-spiega';
-  spiega.className = 'carta demo-spiega';
-  cont.insertBefore(spiega, document.getElementById('app'));
-
-  aggiornaSpiegazioneDemo();
+  // La spiegazione per-sezione ora è la mini-guida "Come funziona" (guidaSchedaHtml)
+  // in cima a ogni scheda: vale sia in demo sia nella dashboard vera, così è una
+  // sola, coerente. Niente più striscia demo separata (evita doppioni).
 }
 
-// Aggiorna la striscia di spiegazione in base alla scheda attiva.
-function aggiornaSpiegazioneDemo() {
-  const el = document.getElementById('demo-spiega');
-  if (!el) return;
-  const testo = SPIEGA_DEMO[schedaAttiva];
-  if (!testo) { el.style.display = 'none'; return; }
-  el.style.display = '';
-  el.innerHTML = `<span class="demo-spiega-ico" aria-hidden="true">💡</span><p><strong>Cos'è questa sezione — </strong>${esc(testo)}</p>`;
-}
+// Retrocompat: la spiegazione demo è confluita nella guida di scheda. No-op.
+function aggiornaSpiegazioneDemo() { /* sostituita da guidaSchedaHtml() */ }
 
 // ------------------------------------------------------------------ render principale
 
@@ -875,6 +864,54 @@ const DESC = {
   admin: 'Gestione streamer e anima condivisa del bot.',
 };
 
+// Mini-guida per scheda: "a cosa serve" + i passi di "come si fa". Mostrata in
+// cima a ogni pagina (callout richiudibile), così con tante sezioni si capisce
+// sempre cosa fare. Vale anche in demo (usa la stessa testata di pagina).
+const GUIDE = {
+  stato: { serve: 'Accendere il bot e controllare che sia connesso alla tua chat.',
+    come: ['Accendi l’interruttore del bot.', 'Controlla il badge “in chat”: verde = sei online.', 'Se manca un permesso, riautorizza con un clic.'] },
+  personalita: { serve: 'Dare al bot il tono e il carattere con cui parla in chat.',
+    come: ['Scegli tono e “spontaneità” (quanto interviene da solo).', 'Aggiungi regole che rispetterà SEMPRE.', 'Salva: il nuovo stile parte subito.'] },
+  conoscenza: { serve: 'Insegnare al bot cosa dire su di te (social, orari, PC, regole…).',
+    come: ['Aggiungi una voce: domanda → risposta.', 'In chat richiami la risposta con un !comando o una parola chiave.'] },
+  moduli: { serve: 'Creare comandi e automazioni: QUANDO succede X, SE le condizioni, ALLORA fai Y.',
+    come: ['“Nuovo comando”.', 'Scegli l’innesco: !comando, una parola, un evento o un timer.', 'Aggiungi una o più azioni (scrivi in chat, effetto, clip, musica…).', 'Premi “Prova” per vederlo in azione.'] },
+  regole: { serve: 'Moderazione automatica: filtra spam, link e flood e dà timeout ai recidivi.',
+    come: ['Attiva l’antispam.', 'Scegli cosa filtrare (link, maiuscole, ripetizioni…).', 'Salva: il bot modera da solo.'] },
+  giochi: { serve: 'Minigiochi, monete e classifiche per tenere viva la chat.',
+    come: ['Attiva i giochi.', 'Personalizza il nome della moneta e i premi.', 'Gli spettatori giocano con !slot, !roulette, !pesca, !trivia…'] },
+  effetti: { serve: 'Suoni ed effetti in overlay OBS, anche riscattabili con i punti canale.',
+    come: ['Carica un effetto (audio/immagine) e dagli un comando.', 'Aggiungi l’URL overlay in OBS come sorgente browser.', 'Se vuoi, collega un effetto a un premio a punti canale.'] },
+  clip: { serve: 'Creare clip automatiche nei momenti di “hype” della diretta.',
+    come: ['Attiva le clip automatiche.', 'Regola la sensibilità (quanto “hype” serve).'] },
+  ascolto: { serve: 'Comandare il bot con la VOCE mentre streami (l’audio resta sul tuo PC).',
+    come: ['Concedi l’accesso al microfono dal browser.', 'Di’ le frasi-chiave dei tuoi moduli vocali (es. “clippa”).'] },
+  musica: { serve: 'Richieste musicali: gli spettatori mettono canzoni in coda su Spotify.',
+    come: ['Connetti Spotify (serve Premium + app aperta).', 'Scegli come si “paga” la richiesta: libera, sub, monete, bit o punti canale.', 'Gli spettatori usano !sr <canzone>; !song mostra cosa suona.'] },
+  sondaggi: { serve: 'Lanciare sondaggi e predizioni Twitch direttamente da qui.',
+    come: ['Scrivi la domanda e le opzioni (o titolo ed esiti).', 'Lancia: gli spettatori votano/puntano dall’app.', 'Chiudi il sondaggio o scegli l’esito vincente della predizione.'] },
+  giveaway: { serve: 'Organizzare estrazioni a premi per la community.',
+    come: ['Apri il giveaway indicando il premio.', 'La community entra scrivendo !join in chat.', 'Estrai il vincitore dal pannello (puoi ripetere).'] },
+  notifiche: { serve: 'Avvisare i tuoi canali (Telegram, social) quando vai in diretta.',
+    come: ['Collega Telegram e/o le piattaforme social.', 'Attiva gli avvisi che vuoi.', 'Personalizza i messaggi.'] },
+};
+
+// SVG lampadina (niente emoji): icona della mini-guida.
+const _icoGuida = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1.3.5 2.6 1.5 3.5.8.8 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>';
+
+// HTML della mini-guida di una scheda (vuoto se non prevista).
+function guidaSchedaHtml(id) {
+  const g = GUIDE[id];
+  if (!g) return '';
+  return `<details class="guida-scheda" open>
+    <summary><span class="guida-ico">${_icoGuida}</span> Come funziona</summary>
+    <div class="guida-corpo">
+      ${g.serve ? `<p class="guida-serve"><strong>A cosa serve.</strong> ${esc(g.serve)}</p>` : ''}
+      ${Array.isArray(g.come) && g.come.length ? `<p class="guida-titolo">Come si fa</p><ol class="guida-come">${g.come.map((c) => `<li>${esc(c)}</li>`).join('')}</ol>` : ''}
+    </div>
+  </details>`;
+}
+
 // Ritrova area + titolo di una scheda per l'intestazione di pagina. Per le aree
 // a scheda singola (Panoramica, Notifiche, Admin) il titolo è il nome dell'area
 // stessa e non mostriamo l'occhiello (combacia con la voce del menu).
@@ -920,7 +957,8 @@ function aggiornaTestataPagina() {
   el.innerHTML =
     `${area ? `<div class="pt-occhiello">${esc(area)}</div>` : ''}` +
     `<h1>${titoloParole(titolo)}</h1>` +
-    `${desc ? `<p>${esc(desc)}</p>` : ''}`;
+    `${desc ? `<p>${esc(desc)}</p>` : ''}` +
+    guidaSchedaHtml(schedaAttiva);
 }
 
 // Divide il titolo in parole avvolte per la rivelazione "parola per parola":
