@@ -756,7 +756,7 @@ async function caricaPiani() {
 function vistaRichiesta() {
   return `
     <div class="carta evidenziata">
-      <h2>Porta SocialBot nel tuo canale 🚀</h2>
+      <h2>${_hIco(ICO.rocket)}Porta SocialBot nel tuo canale</h2>
       <p>Chiedi l'abilitazione: andryxify riceverà la tua richiesta e, una volta approvata,
       potrai configurare il tuo bot da qui.</p>
       <p class="spazio-sopra">
@@ -768,7 +768,7 @@ function vistaRichiesta() {
 function vistaPending() {
   return `
     <div class="carta">
-      <h2>Richiesta inviata! ⏳</h2>
+      <h2>${_hIco(ICO.attesa)}Richiesta inviata!</h2>
       <p>andryxify deve approvarti. Torna qui più tardi: quando sarai abilitato
       troverai la tua dashboard completa.</p>
     </div>`;
@@ -777,7 +777,7 @@ function vistaPending() {
 function vistaDisabilitato() {
   return `
     <div class="carta">
-      <h2>Accesso disabilitato 😴</h2>
+      <h2>${_hIco(ICO.sonno)}Accesso disabilitato</h2>
       <p>Il tuo accesso ad SocialBot è al momento disabilitato da andryxify.
       Se pensi sia un errore, contattalo.</p>
     </div>`;
@@ -907,6 +907,46 @@ const ICO = {
   sondaggi: '<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
   predizioni: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
   giveaway: '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/>',
+  rocket: '<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>',
+  attesa: '<path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>',
+  sonno: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+  chiave: '<path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"/><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/>',
+  libro: '<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/>',
+  germoglio: '<path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/>',
+  telefono: '<rect width="14" height="20" x="5" y="2" rx="2"/><path d="M12 18h.01"/>',
+  carta: '<rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>',
+  utenti: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  persona: '<path d="M12 3c.35 3.8 1.4 4.85 5 5.2-3.6.35-4.65 1.4-5 5.2-.35-3.8-1.4-4.85-5-5.2 3.6-.35 4.65-1.4 5-5.2Z"/><path d="M18.5 15c.15 1.6.6 2.05 2.2 2.2-1.6.15-2.05.6-2.2 2.2-.15-1.6-.6-2.05-2.2-2.2 1.6-.15 2.05-.6 2.2-2.2Z"/>',
+  righello: '<path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.4 2.4 0 0 1 0-3.4l2.6-2.6a2.4 2.4 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/>',
+  scrivi: '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  cervello: '<path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/>',
+  clip: '<path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3z"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3 3.9"/>',
+  cuffie: '<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5a9 9 0 0 1 18 0v5a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>',
+  voce: '<path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/>',
+  giochi: '<line x1="6" x2="10" y1="11" y2="11"/><line x1="8" x2="8" y1="9" y2="13"/><line x1="15" x2="15.01" y1="12" y2="12"/><line x1="18" x2="18.01" y1="10" y2="10"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"/>',
+  monitor: '<rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/>',
+  effetti: '<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>',
+  fulmine: '<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>',
+  moduli: '<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
+  lista: '<rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>',
+  spina: '<path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/>',
+  medaglia: '<path d="M7.21 15 2.66 7.14a2 2 0 0 1 .13-2.2L4.4 2.8A2 2 0 0 1 6 2h12a2 2 0 0 1 1.6.8l1.6 2.14a2 2 0 0 1 .14 2.2L16.79 15"/><path d="M11 12 5.12 2.2"/><path d="m13 12 5.88-9.8"/><path d="M8 7h8"/><circle cx="12" cy="17" r="5"/><path d="M12 18v-2h-.5"/>',
+  dado: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M8 8h.01"/><path d="M16 16h.01"/><path d="M12 12h.01"/><path d="M16 8h.01"/><path d="M8 16h.01"/>',
+  trofeo: '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>',
+  target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+  chat: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+  megafono: '<path d="M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/><path d="M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14"/><path d="M8 6v8"/>',
+  bot: '<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>',
+  torta: '<path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/>',
+  tv: '<rect width="20" height="15" x="2" y="7" rx="2"/><polyline points="17 2 12 7 7 2"/>',
+  fotocamera: '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
+  divieto: '<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>',
+  scudo: '<path d="M12 3.2 19 6v5c0 4.8-3.4 7.8-7 8.8-3.6-1-7-4-7-8.8V6z"/>',
+  grafico: '<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
+  corona: '<path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/>',
+  cuore: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+  pacco: '<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
+  avviso: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
 };
 
 // HTML della mini-guida di una scheda (vuoto se non prevista).
@@ -1015,7 +1055,7 @@ function pannelloStato() {
   // Banner per i moderatori: chiarisce cosa possono fare e cosa no.
   const bannerMod = proprietario ? '' : `
     <div class="carta evidenziata">
-      <h2>Stai gestendo il canale di @${esc(stato.gestisce?.streamer || login)} 🛠️</h2>
+      <h2>${_hIco(ICO.utenti)}Stai gestendo il canale di @${esc(stato.gestisce?.streamer || login)}</h2>
       <p>Sei entrato come <strong class="primo-piano">moderatore</strong>: puoi occuparti di comandi, moduli,
       effetti, giochi, notifiche, regole e memoria. Le cose da proprietario — permessi Twitch e l'elenco dei
       moderatori — restano a chi possiede il canale.</p>
@@ -1024,7 +1064,7 @@ function pannelloStato() {
   // La card "concedi permessi" la vede solo il proprietario (un mod non li tocca).
   const cardPermessi = (!proprietario || stato.permessiOk) ? '' : `
     <div class="carta evidenziata">
-      <h2>Attiva il bot: concedi i permessi 🔑</h2>
+      <h2>${_hIco(ICO.chiave)}Attiva il bot: concedi i permessi</h2>
       <p>Per funzionare, SocialBot <strong class="primo-piano">leggerà e scriverà nella tua chat
       con il tuo account</strong>, creerà clip e vedrà follow e sub. Nient'altro.</p>
       <p class="spazio-sopra"><a class="btn grande" href="/auth/permessi">Concedi i permessi su Twitch</a></p>
@@ -1076,7 +1116,7 @@ function pannelloStato() {
       <p><button class="btn secondario" id="btn-salva-modalita">Salva modalità</button></p>
     </div>
     <div class="carta">
-      <h2>Pre-addestramento 📚</h2>
+      <h2>${_hIco(ICO.libro)}Pre-addestramento</h2>
       <p>SocialBot legge il tuo profilo su andryxify.it per conoscerti prima ancora di entrare in chat.</p>
       <p class="spazio-sopra">
         Ultima lettura: <strong class="primo-piano">${esc(dataIt(pre.preaddestramento_ts))}</strong>
@@ -1089,14 +1129,14 @@ function pannelloStato() {
       </p>
     </div>
     <div class="carta">
-      <h2>La piccola rete che impara 🌱</h2>
+      <h2>${_hIco(ICO.germoglio)}La piccola rete che impara</h2>
       <p>Il motore veloce del bot che <strong class="primo-piano">cresce da solo</strong>: risponde all'istante a ciò
       che ha già imparato e, quando incontra qualcosa di nuovo, se lo segna e lo impara dal maestro.
       Più lo alleni (anche via DM su Telegram), più sa fare da sé.</p>
       <div id="rete-panoramica"><p class="vuoto">Caricamento…</p></div>
     </div>
     <div class="carta">
-      <h2>Installa l'app 📱</h2>
+      <h2>${_hIco(ICO.telefono)}Installa l'app</h2>
       <p>Installa la dashboard <strong class="primo-piano">come app</strong> sul telefono o sul PC: la apri a
       schermo intero come un'app vera, senza doverla cercare nel browser.</p>
       <p class="spazio-sopra">
@@ -1111,7 +1151,7 @@ function pannelloStato() {
       const pagato = tier === 'base' || tier === 'pro';
       return `
     <div class="carta">
-      <h2>Abbonamento 💳</h2>
+      <h2>${_hIco(ICO.carta)}Abbonamento</h2>
       <p>Piano attuale: <strong class="primo-piano">${esc(nomi[tier] || '—')}</strong>${tier === 'community' ? ' — accesso completo, riservato ai membri abilitati di andryxify.it.' : ''}</p>
       ${pagato
         ? '<p class="spazio-sopra"><button class="btn secondario" id="btn-portale-abbonamento">Gestisci abbonamento</button></p>'
@@ -1119,7 +1159,7 @@ function pannelloStato() {
     </div>`;
     })() : ''}
     <div class="carta">
-      <h2>Passkey 🔑</h2>
+      <h2>${_hIco(ICO.chiave)}Passkey</h2>
       <p>Crea una <strong class="primo-piano">passkey</strong> (impronta, volto o PIN): così rientri al volo, in
       modo sicuro, <strong class="primo-piano">senza ripassare ogni volta dal sito</strong>.
       ${proprietario ? '' : 'Vale per il tuo account: ti riporta ai canali che gestisci.'}</p>
@@ -1131,7 +1171,7 @@ function pannelloStato() {
     </div>
     ${proprietario ? `
     <div class="carta">
-      <h2>Moderatori 👥</h2>
+      <h2>${_hIco(ICO.utenti)}Moderatori</h2>
       <p>Fai aiutare qualcuno di cui ti fidi a gestire il bot. Gli mandi un <strong class="primo-piano">link
       d'invito</strong>: accede con Twitch (così sappiamo che è davvero lui) e può occuparsi di tutto,
       <strong class="primo-piano">tranne</strong> le cose da proprietario — permessi Twitch e questo elenco.</p>
@@ -1154,7 +1194,7 @@ function pannelloPersonalita() {
   const perc = Math.round(s.spontaneita * 100);
   return pannello('personalita', `
     <div class="carta">
-      <h2>Personalità 🎭</h2>
+      <h2>${_hIco(ICO.persona)}Personalità</h2>
       <p>Decidi come parla il bot: ricorda che in chat appare <strong class="primo-piano">a nome tuo</strong>.</p>
 
       <label class="campo" for="sel-tono">Tono</label>
@@ -1209,7 +1249,7 @@ function pannelloPersonalita() {
       <p class="spazio-sopra"><button class="btn" id="btn-salva-personalita">Salva</button></p>
     </div>
     <div class="carta">
-      <h2>Linee guida 📏</h2>
+      <h2>${_hIco(ICO.righello)}Linee guida</h2>
       <p>I <strong class="primo-piano">limiti e le regole</strong> che le dai: lei li <strong>salva</strong> e li rispetta
       <strong>sempre</strong>, in ogni chat (privata, pubblica, quando scrive per prima). Es. «non essere mai volgare»,
       «non parlare di politica», «dai del tu a tutti».</p>
@@ -1263,7 +1303,7 @@ async function caricaGuide() {
 function pannelloConoscenza() {
   return pannello('conoscenza', `
     <div class="carta">
-      <h2>Insegnagli qualcosa ✍️</h2>
+      <h2>${_hIco(ICO.scrivi)}Insegnagli qualcosa</h2>
       <p>Domanda (o parole chiave) e risposta: quando in chat spunta l'argomento, il bot saprà cosa dire.</p>
       <label class="campo" for="inp-domanda">Domanda / parole chiave</label>
       <input type="text" id="inp-domanda" placeholder="es. che pc usi? / setup / configurazione">
@@ -1272,7 +1312,7 @@ function pannelloConoscenza() {
       <p class="spazio-sopra"><button class="btn" id="btn-aggiungi-conoscenza">Aggiungi</button></p>
     </div>
     <div class="carta">
-      <h2>Cosa sa il bot 🧠</h2>
+      <h2>${_hIco(ICO.cervello)}Cosa sa il bot</h2>
       <p>🌐 dal sito &nbsp;·&nbsp; ✍️ tua &nbsp;·&nbsp; 💬 imparata dalla chat</p>
       <ul class="lista-voci" id="lista-conoscenza"><li class="vuoto">Caricamento…</li></ul>
     </div>`);
@@ -1284,7 +1324,7 @@ function pannelloClip() {
   const s = impostazioni();
   return pannello('clip', `
     <div class="carta">
-      <h2>Clip automatiche 🎬</h2>
+      <h2>${_hIco(ICO.clip)}Clip automatiche</h2>
       <div class="riga-check">
         <input type="checkbox" id="chk-clip" ${s.clipAuto ? 'checked' : ''}>
         <label for="chk-clip">Crea clip da solo nei momenti di hype</label>
@@ -1319,7 +1359,7 @@ function pannelloAscolto() {
 
   return pannello('ascolto', `
     <div class="carta">
-      <h2>Momenti salienti (dal server) 🎧</h2>
+      <h2>${_hIco(ICO.cuffie)}Momenti salienti (dal server)</h2>
       <p>Il bot ascolta l'audio della tua live e crea una clip da solo quando "esplode": urla, risate, hype.</p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore">
@@ -1340,7 +1380,7 @@ function pannelloAscolto() {
     </div>
 
     <div class="carta">
-      <h2>Comando vocale 🎙️</h2>
+      <h2>${_hIco(ICO.voce)}Comando vocale</h2>
       <p>I comandi vocali funzionano <strong class="primo-piano">nel browser</strong>, senza installare niente:
       apri la pagina di ascolto, premi Avvia, e quando dici una parola chiave il bot fa quello che hai impostato
       nei Moduli.</p>
@@ -1353,7 +1393,7 @@ function pannelloAscolto() {
     </div>
 
     <div class="carta">
-      <h2>Cambia categoria a voce 🎮</h2>
+      <h2>${_hIco(ICO.giochi)}Cambia categoria a voce</h2>
       <p>Dici <strong class="primo-piano">«<span id="cat-esempio">${esc(cc.trigger || 'categoria')}</span> <em>nome del gioco</em>»</strong>
       mentre streammi e il bot cambia la categoria del canale su Twitch. Se ti sente male,
       prova comunque a indovinare il gioco più somigliante tra le categorie di Twitch.</p>
@@ -1378,7 +1418,7 @@ function pannelloAscolto() {
     </div>
 
     <div class="carta">
-      <h2>Cambia titolo a voce 📝</h2>
+      <h2>${_hIco(ICO.scrivi)}Cambia titolo a voce</h2>
       <p>Dici <strong class="primo-piano">«<span id="tit-esempio">${esc(ct.trigger || 'titolo')}</span> <em>il tuo titolo</em>»</strong>
       e il bot aggiorna il titolo dello stream su Twitch (testo libero, come lo dici).</p>
       <div class="riga-interruttore spazio-sopra">
@@ -1402,7 +1442,7 @@ function pannelloAscolto() {
     </div>
     ${proprietario ? `
     <div class="carta">
-      <h2>Impara mentre parlo 🎧</h2>
+      <h2>${_hIco(ICO.cuffie)}Impara mentre parlo</h2>
       <p>Con la pagina di ascolto aperta, il bot <strong class="primo-piano">ti sente parlare in diretta</strong> e cresce:
       impara i tuoi modi di dire e il tuo tono, così ti somiglia sempre di più. <strong>Solo la tua voce</strong> — mai da altri account.</p>
       <div class="riga-interruttore spazio-sopra">
@@ -1782,7 +1822,7 @@ async function caricaGiveaway() {
 function pannelloEffetti() {
   return pannello('effetti', `
     <div class="carta">
-      <h2>Overlay per OBS 🖥️</h2>
+      <h2>${_hIco(ICO.monitor)}Overlay per OBS</h2>
       <p>Aggiungi questo indirizzo in OBS come <strong class="primo-piano">Sorgenti → Browser</strong>,
       con larghezza <strong class="primo-piano">1920</strong>, altezza <strong class="primo-piano">1080</strong> e sfondo trasparente.</p>
       <div class="riga-flessibile spazio-sopra">
@@ -1793,7 +1833,7 @@ function pannelloEffetti() {
     </div>
 
     <div class="carta">
-      <h2>Carica un effetto ✨</h2>
+      <h2>${_hIco(ICO.effetti)}Carica un effetto</h2>
       <p>Audio, immagini o brevi video. Ogni file viene <strong class="primo-piano">super-compresso</strong>
       in automatico, così l'overlay resta leggero.</p>
 
@@ -1839,12 +1879,12 @@ function pannelloEffetti() {
     </div>
 
     <div class="carta">
-      <h2>I tuoi effetti 🎛️</h2>
+      <h2>${_hIco(ICO.sliders)}I tuoi effetti</h2>
       <ul class="lista-voci" id="lista-effetti"><li class="vuoto">Caricamento…</li></ul>
     </div>
 
     <div class="carta">
-      <h2>Alert a punti canale 🎁</h2>
+      <h2>${_hIco(ICO.giveaway)}Alert a punti canale</h2>
       <p>Crea un <strong class="primo-piano">premio a punti canale</strong> di Twitch: quando uno spettatore lo riscatta
       (spendendo i suoi punti), parte un <strong>effetto</strong> nell'overlay e/o un <strong>messaggio</strong> in chat.
       Il premio compare da solo nella tua pagina Twitch.</p>
@@ -1914,7 +1954,7 @@ function pannelloModuli() {
     .map((v) => `<button type="button" class="chip-var" data-qc="${esc(v)}">${esc(v)}</button>`).join('');
   return pannello('moduli', `
     <div class="carta">
-      <h2>Comando rapido ⚡</h2>
+      <h2>${_hIco(ICO.fulmine)}Comando rapido</h2>
       <p>Il modo più veloce: scrivi il <strong class="primo-piano">nome</strong> e <strong class="primo-piano">cosa
       deve rispondere</strong>. Fatto — niente altro da compilare.</p>
       <div class="riga-flessibile">
@@ -1931,7 +1971,7 @@ function pannelloModuli() {
     </div>
 
     <div class="carta">
-      <h2>Moduli 🧩</h2>
+      <h2>${_hIco(ICO.moduli)}Moduli</h2>
       <p>Automazioni avanzate: <strong class="primo-piano">QUANDO</strong> succede qualcosa,
       <strong class="primo-piano">SE</strong> valgono certe condizioni, <strong class="primo-piano">ALLORA</strong>
       il bot fa una o più azioni.</p>
@@ -1948,14 +1988,14 @@ function pannelloModuli() {
     </div>
 
     <div class="carta">
-      <h2>I tuoi moduli 📋</h2>
+      <h2>${_hIco(ICO.lista)}I tuoi moduli</h2>
       <ul id="lista-moduli" class="lista-moduli"><li class="vuoto">Caricamento…</li></ul>
     </div>
 
     <div id="editor-modulo"></div>
 
     <div class="carta">
-      <h2>Connettori avanzati 🔌</h2>
+      <h2>${_hIco(ICO.spina)}Connettori avanzati</h2>
       <p>Per far dire o fare qualcosa ad SocialBot <strong class="primo-piano">da un tuo servizio esterno</strong>
       (il bot custom che già hai): chiama l'URL qui sotto con la tua chiave.</p>
       <div id="connettori-moduli"><p class="vuoto">Caricamento…</p></div>
@@ -2036,7 +2076,7 @@ function pannelloGiochi() {
   const s = impostazioni();
   return pannello('giochi', `
     <div class="carta">
-      <h2>Minigiochi 🎮</h2>
+      <h2>${_hIco(ICO.giochi)}Minigiochi</h2>
       <p>Giochi in chat per la tua community, con delle <strong class="primo-piano">monete</strong>
       (punti fedeltà) che si guadagnano chiacchierando.</p>
 
@@ -2058,7 +2098,7 @@ function pannelloGiochi() {
       <p class="spazio-sopra"><button class="btn" id="btn-salva-giochi">Salva</button></p>
     </div>
     <div class="carta">
-      <h2>Punti & classifica 🏅</h2>
+      <h2>${_hIco(ICO.medaglia)}Punti & classifica</h2>
       <p>Decidi quanti <strong class="primo-piano">${esc(s.nomeMonete)}</strong> si guadagnano e i premi dei giochi.
       La classifica <code>!classifica</code> mostra i primi in cima.</p>
       <div class="griglia-punti">
@@ -2075,7 +2115,7 @@ function pannelloGiochi() {
       <p class="spazio-sopra"><button class="btn" id="btn-salva-punti">Salva punti</button></p>
     </div>
     <div class="carta">
-      <h2>Manche automatiche 🎲</h2>
+      <h2>${_hIco(ICO.dado)}Manche automatiche</h2>
       <p>Lascia che sia <strong class="primo-piano">il bot</strong> a lanciare i giochi: ogni tanto, a sorpresa, parte una
       <strong class="primo-piano">manche</strong> (trivia, reflex sulla parola, indovina il numero) e il primo che risponde vince.</p>
       <div class="riga-check">
@@ -2094,7 +2134,7 @@ function pannelloGiochi() {
       <p class="spazio-sopra"><button class="btn" id="btn-salva-manche">Salva manche</button></p>
     </div>
     <div class="carta">
-      <h2>I tuoi giochi 🕹️</h2>
+      <h2>${_hIco(ICO.giochi)}I tuoi giochi</h2>
       <p>Crea i tuoi giochi: entrano nel giro delle manche automatiche (mescolati a quelli di default).</p>
       <div class="riga-flessibile">
         <select id="gioco-tipo">
@@ -2130,7 +2170,7 @@ function pannelloGiochi() {
       </ul>
     </div>
     <div class="carta">
-      <h2>Classifica & VIP 🏆</h2>
+      <h2>${_hIco(ICO.trofeo)}Classifica & VIP</h2>
       ${stato.vipOk ? '' : `<p class="suggerimento">⚠️ Per assegnare i VIP serve un permesso in più (aggiunto dopo).
         <a class="btn secondario mini" href="/auth/permessi">Concedi i permessi</a></p>`}
       <div class="riga-check">
@@ -2157,7 +2197,7 @@ function pannelloGiochi() {
     </div>
 
     <div class="carta">
-      <h2>Giochi del sito andryxify.it 🎯</h2>
+      <h2>${_hIco(ICO.target)}Giochi del sito andryxify.it</h2>
       <p>I giochi di andryxify.it (come <strong class="primo-piano">AGENTify</strong>) possono girare
       <strong class="primo-piano">direttamente dalla tua chat</strong> tramite SocialBot: i tuoi viewer scrivono i
       comandi (es. <code>!ag …</code>) e il bot risponde. Un solo bot in chat, niente da installare.</p>
@@ -2172,7 +2212,7 @@ function pannelloGiochi() {
     </div>
 
     <div class="carta">
-      <h2>Citazioni 💬</h2>
+      <h2>${_hIco(ICO.chat)}Citazioni</h2>
       <p>Le frasi memorabili della chat. In chat: <code>!cita</code> (a caso), <code>!cita 12</code> (una precisa),
       <code>!cita aggiungi &lt;testo&gt;</code> e <code>!cita rimuovi 12</code> (mod/streamer). Le gestisci anche da qui.</p>
       <div class="riga-flessibile">
@@ -2221,7 +2261,7 @@ function pannelloNotifiche() {
   const msgDefault = '🔴 {nome} è in diretta!\n\n{titolo}\n🎮 {gioco}\n\n👉 {link}';
   return pannello('notifiche', `
     <div class="carta">
-      <h2>Avviso "sono in diretta" su Telegram 📣</h2>
+      <h2>${_hIco(ICO.megafono)}Avviso "sono in diretta" su Telegram</h2>
       <p>Collega il <strong class="primo-piano">tuo</strong> bot Telegram e il tuo gruppo: quando vai live,
       il bot avvisa i tuoi follower nel gruppo. Le chiavi sono tue e restano tue.</p>
 
@@ -2275,7 +2315,7 @@ function pannelloNotifiche() {
 
     ${tg.configurato ? `
     <div class="carta">
-      <h2>Bot interattivo su Telegram 🤖</h2>
+      <h2>${_hIco(ICO.bot)}Bot interattivo su Telegram</h2>
       <p>Con la <strong class="primo-piano">modalità interattiva</strong> il bot <strong>legge i messaggi</strong> del
       gruppo e risponde ai comandi. I comandi si creano in <strong>Chat &amp; comandi → Comandi</strong>:
       crea un modulo con innesco <em>Comando</em> e spunta <strong>«Abilita anche su Telegram»</strong>
@@ -2316,7 +2356,7 @@ function pannelloNotifiche() {
     </div>
 
     <div class="carta">
-      <h2>Auguri di compleanno 🎂</h2>
+      <h2>${_hIco(ICO.torta)}Auguri di compleanno</h2>
       <p>Il bot fa gli <strong class="primo-piano">auguri automatici</strong> nel gruppo il giorno del compleanno dei
       membri. Loro possono registrarsi da soli scrivendo <code>/compleanno 25/12</code> nel gruppo (serve il bot
       interattivo qui sopra), oppure li aggiungi tu qui sotto.</p>
@@ -2325,7 +2365,7 @@ function pannelloNotifiche() {
     ` : ''}
 
     <div class="carta">
-      <h2>Notifica live TikTok 🎵</h2>
+      <h2>${_hIco(ICO.musica)}Notifica live TikTok</h2>
       <p>Quando vai in diretta su <strong class="primo-piano">TikTok</strong>, avviso il gruppo Telegram
       (e, se vuoi, la chat Twitch). Su TikTok non esiste una chat-bot come su Twitch: qui facciamo la notifica.</p>
 
@@ -2371,7 +2411,7 @@ function pannelloNotifiche() {
     </div>
 
     <div class="carta">
-      <h2>Nuovo video su YouTube 📺</h2>
+      <h2>${_hIco(ICO.tv)}Nuovo video su YouTube</h2>
       <p>Quando esce un <strong class="primo-piano">nuovo video</strong> sul tuo canale YouTube, avviso il gruppo Telegram
       (e, se vuoi, la chat Twitch). Funziona con il feed pubblico di YouTube: <strong>affidabile e senza chiavi</strong>.</p>
 
@@ -2405,7 +2445,7 @@ function pannelloNotifiche() {
     </div>
 
     <div class="carta">
-      <h2>Nuovo post su Instagram 📸</h2>
+      <h2>${_hIco(ICO.fotocamera)}Nuovo post su Instagram</h2>
       <p>Quando pubblichi su <strong class="primo-piano">Instagram</strong>, avviso il gruppo Telegram (e, se vuoi, la chat Twitch).
       Instagram non ha un feed pubblico, quindi serve la <strong>tua API</strong>: l'<em>Instagram Graph API</em> (account Business/Creator
       collegato a una Pagina Facebook).</p>
@@ -2446,7 +2486,7 @@ function pannelloRegole() {
   const sel = (v, def) => v === undefined ? def : v;   // default "acceso" per i booleani
   return pannello('regole', `
     <div class="carta">
-      <h2>Parole vietate 🚫</h2>
+      <h2>${_hIco(ICO.divieto)}Parole vietate</h2>
       <p>Una per riga. Il bot <strong class="primo-piano">non le dirà mai</strong> e richiama chi le usa in chat.</p>
       <label class="campo" for="txt-vietate">Elenco parole vietate</label>
       <textarea id="txt-vietate" placeholder="una parola per riga">${esc(s.paroleVietate.join('\n'))}</textarea>
@@ -2454,7 +2494,7 @@ function pannelloRegole() {
     </div>
 
     <div class="carta">
-      <h2>Antispam automatico 🛡️</h2>
+      <h2>${_hIco(ICO.scudo)}Antispam automatico</h2>
       ${stato.moderazioneOk
         ? '<p class="suggerimento"><span class="badge verde">✓ permessi di moderazione attivi</span></p>'
         : `<p class="suggerimento">⚠️ Per eliminare i messaggi servono i permessi di moderazione (aggiunti dopo).
@@ -2519,13 +2559,13 @@ function pannelloRegole() {
 function pannelloMemoria() {
   return pannello('memoria', `
     <div class="carta">
-      <h2>Statistiche degli ultimi 7 giorni 📊</h2>
+      <h2>${_hIco(ICO.grafico)}Statistiche degli ultimi 7 giorni</h2>
       <div class="griglia-stat" id="griglia-stat"><div class="vuoto">Caricamento…</div></div>
       <h3>Top chatters</h3>
       <ul class="lista-voci" id="lista-chatters"><li class="vuoto">Caricamento…</li></ul>
     </div>
     <div class="carta">
-      <h2>La memoria del bot 🧠</h2>
+      <h2>${_hIco(ICO.cervello)}La memoria del bot</h2>
       <p>Le "lezioni" che ha imparato osservando la tua chat e i fatti stabili che ricorda sul canale.</p>
       <p class="spazio-sopra"><button class="btn secondario" id="btn-carica-memoria">Mostra la memoria</button></p>
       <div id="contenitore-memoria"></div>
@@ -3729,17 +3769,17 @@ const TRIGGER = [
   ['manuale', 'Manuale / da un mio servizio'],
 ];
 const AZIONI = [
-  ['messaggio', '💬 Scrivi in chat'],
-  ['effetto', '✨ Fai partire un effetto'],
-  ['clip', '🎬 Crea una clip'],
-  ['categoria', '🎮 Cambia categoria Twitch'],
-  ['titolo', '📝 Cambia titolo stream'],
-  ['contatore', '🔢 Contatore'],
-  ['webhook', '🔗 Chiama un webhook'],
-  ['attendi', '⏱️ Aspetta'],
-  ['overlayTesto', '🖥️ Mostra testo sull\'overlay'],
-  ['timeout', '🚫 Timeout in chat'],
-  ['musica', '🎵 Metti una canzone in coda'],
+  ['messaggio', 'Scrivi in chat'],
+  ['effetto', 'Fai partire un effetto'],
+  ['clip', 'Crea una clip'],
+  ['categoria', 'Cambia categoria Twitch'],
+  ['titolo', 'Cambia titolo stream'],
+  ['contatore', 'Contatore'],
+  ['webhook', 'Chiama un webhook'],
+  ['attendi', 'Aspetta'],
+  ['overlayTesto', 'Mostra testo sull\'overlay'],
+  ['timeout', 'Timeout in chat'],
+  ['musica', 'Metti una canzone in coda'],
 ];
 // pillole variabili cliccabili (testo inserito = etichetta)
 const VARIABILI = [
@@ -3930,7 +3970,7 @@ function apriEditor(modulo) {
 
   cont.innerHTML = `
     <div class="carta">
-      <h2>${m.id ? 'Modifica modulo ✏️' : 'Nuovo modulo ✨'}</h2>
+      <h2>${_hIco(ICO.scrivi)}${m.id ? 'Modifica modulo' : 'Nuovo modulo'}</h2>
       <div class="riassunto-modulo">${esc(riassuntoModulo(m))}</div>
 
       <label class="campo" for="mod-nome">Nome del modulo</label>
@@ -4384,7 +4424,7 @@ async function copiaTesto(testo, msgOk) {
 function vistaAdminContenuto() {
   const avviso = stato.missing?.length ? `
     <div class="carta avviso">
-      <h2>⚠️ Configurazione incompleta</h2>
+      <h2>${_hIco(ICO.avviso)}Configurazione incompleta</h2>
       <p>Mancano nel file <code>.env</code>: ${stato.missing.map((m) => `<code>${esc(m)}</code>`).join(', ')}.
       Il bot non parte finché non le compili.</p>
     </div>` : '';
@@ -4392,7 +4432,7 @@ function vistaAdminContenuto() {
   const st = stato.status || {};
   return `
     <div class="carta">
-      <h2>Pannello andryxify 👑</h2>
+      <h2>${_hIco(ICO.corona)}Pannello andryxify</h2>
       <p class="spazio-sopra">
         Bot: ${st.running ? '<span class="badge verde">● in esecuzione</span>' : '<span class="badge rosso">○ fermo</span>'}
         &nbsp; Canali attivi: ${st.channels?.length
@@ -4412,14 +4452,14 @@ function vistaAdminContenuto() {
       </div>
     </div>
     <div class="carta">
-      <h2>Anima di SocialBot 🫀</h2>
+      <h2>${_hIco(ICO.cuore)}Anima di SocialBot</h2>
       <p>La personalità <strong class="primo-piano">condivisa</strong>: un solo carattere, coerente su tutti
       i canali (in chat indossa poi il nome e il tono di ognuno). Gli utenti restano a compartimenti stagni:
       qui vedi solo <em>quanti amici</em> e i più affini, mai cosa hanno scritto o dove.</p>
       <div id="anima-box"><p class="vuoto">Caricamento…</p></div>
     </div>
     <div class="carta">
-      <h2>Cervello — modello IA 🧠</h2>
+      <h2>${_hIco(ICO.cervello)}Cervello — modello IA</h2>
       <p>Il modello linguistico locale è <strong class="primo-piano">condiviso</strong> da tutti i canali.
       Cambiandolo qui, il cervello lo sostituisce <strong>a caldo</strong> (scarica + carica: può metterci
       qualche minuto; nel frattempo la chat usa il motore veloce di riserva).</p>
@@ -4520,7 +4560,7 @@ async function caricaLLM() {
     <p class="suggerimento">"Senza freni" = modello <em>abliterated</em> (nessun rifiuto). La moderazione del bot e le <strong>parole vietate</strong> filtrano comunque l'uscita.</p>
 
     <hr style="${stile.hr}">
-    <h3>Modelli sul server 📦</h3>
+    <h3>${_hIco(ICO.pacco)}Modelli sul server</h3>
     <p class="suggerimento">Carica un <strong>GGUF</strong> dal tuo computer (es. quello forgiato sul Mac) e usalo qui. Qui vedi anche i modelli
     scaricati automaticamente. ⚠️ Pesano vari GB: occhio allo <strong>spazio su disco</strong> del server (elimina quelli che non usi).</p>
     <ul class="lista-voci" id="lista-modelli">${libItems}</ul>
@@ -4551,7 +4591,7 @@ async function caricaLLM() {
     <p id="ep-esito" class="suggerimento"></p>
 
     <hr style="${stile.hr}">
-    <h3>La piccola rete che impara 🌱</h3>
+    <h3>${_hIco(ICO.germoglio)}La piccola rete che impara</h3>
     <p class="suggerimento">Il motore veloce che <strong>cresce da solo</strong>: risponde all'istante a ciò che ha già imparato e, quando incontra qualcosa di nuovo, lo chiede al maestro e se lo segna. "Curiosità" alta = sente di avere lacune; "fiducia" = quanto si fida di ciò che sa.</p>
     <div style="display:flex;gap:22px;flex-wrap:wrap;margin-top:6px">
       <div><div style="${stile.num}">${rete.nodi || 0}</div><small>nodi appresi</small></div>
