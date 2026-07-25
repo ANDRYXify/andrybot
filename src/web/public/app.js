@@ -106,6 +106,21 @@ function impostazioni() {
       penitenzeModo: 'lista', penitenze: [], effetto: '', fuzzy: 80,
       overlay: { posizione: 'alto-destra', colore: '#ff2d2d' },
       ...(s.penitenze && typeof s.penitenze === 'object' ? s.penitenze : {}) },
+    alerts: (() => {
+      const a = (s.alerts && typeof s.alerts === 'object') ? s.alerts : {};
+      const ev = (x, d) => ({ attivo: false, testo: '', suono: d.suono, colore: d.colore, minBits: 0, minViewers: 0, ...(x && typeof x === 'object' ? x : {}) });
+      return {
+        attivo: a.attivo !== false,
+        posizione: ['alto-centro', 'centro', 'basso-centro'].includes(a.posizione) ? a.posizione : 'alto-centro',
+        durata: typeof a.durata === 'number' ? a.durata : 6000,
+        follow: ev(a.follow, { suono: 'campanello', colore: '#9146ff' }),
+        sub: ev(a.sub, { suono: 'tada', colore: '#ffb020' }),
+        cheer: ev(a.cheer, { suono: 'moneta', colore: '#38d39f' }),
+        raid: ev(a.raid, { suono: 'trombetta', colore: '#ff4d4d' }),
+      };
+    })(),
+    chatOverlay: { attivo: false, posizione: 'basso-sinistra', max: 8, fadeSec: 0, dim: 'media',
+      ...(s.chatOverlay && typeof s.chatOverlay === 'object' ? s.chatOverlay : {}) },
   };
 }
 
@@ -202,6 +217,12 @@ function statoDemo() {
         penitenze: { attivo: true, premioVieta: 'Vietami una parola', premioSolo: 'Dì solo questa parola',
           durataMin: 2, penitenzeModo: 'lista', penitenze: ['10 flessioni', 'canta la sigla', 'parla in inglese per 1 minuto'],
           effetto: 'airhorn', fuzzy: 80, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } },
+        alerts: { attivo: true, posizione: 'alto-centro', durata: 6000,
+          follow: { attivo: true, testo: '{user} ha seguito il canale! 💜', suono: 'campanello', colore: '#9146ff' },
+          sub: { attivo: true, testo: '{user} si è abbonato! ({mesi} mesi) 🌟', suono: 'tada', colore: '#ffb020' },
+          cheer: { attivo: true, testo: '{user} ha lanciato {bits} bit! ⚡', suono: 'moneta', colore: '#38d39f', minBits: 100 },
+          raid: { attivo: true, testo: '{user} è arrivato in raid con {viewers}! 🚀', suono: 'trombetta', colore: '#ff4d4d', minViewers: 2 } },
+        chatOverlay: { attivo: false, posizione: 'basso-sinistra', max: 8, fadeSec: 0, dim: 'media' },
       },
     },
   };
@@ -834,6 +855,7 @@ const GRUPPI = [
     ['sondaggi', 'Sondaggi'],
     ['giveaway', 'Giveaway'],
     ['penitenze', 'Penitenze'],
+    ['alert', 'Alert & Chat'],
   ] },
   { id: 'notifiche', nome: 'Notifiche', icona: '🔔', schede: [
     ['notifiche', 'Notifiche'],
@@ -867,6 +889,7 @@ const ICONA = {
   sondaggi:    _ico('<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>'),
   giveaway:    _ico('<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/>'),
   penitenze:   _ico('<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>'),
+  alert:       _ico('<path d="m3 11 15-5v12l-6-2"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/><path d="M18 8a3 3 0 0 1 0 4"/>'),
   notifiche:   _ico('<path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5 2 6H4c.5-1 2-2 2-6"/><path d="M10.3 20a1.9 1.9 0 0 0 3.4 0"/>'),
   admin:       _ico('<path d="M4 8.5 7.5 16h9L20 8.5l-4.3 3L12 5 8.3 11.5z"/><path d="M7.5 19h9"/>'),
 };
@@ -887,6 +910,7 @@ const DESC = {
   sondaggi: 'Crea sondaggi e predizioni Twitch al volo.',
   giveaway: 'Organizza estrazioni a premi per la community.',
   penitenze: 'Punti canale che ti vietano una parola: se la dici, penitenza!',
+  alert: 'Alert animati per follow, sub, bit e raid, e la chat a schermo.',
   notifiche: 'Avvisi su Telegram e TikTok quando vai in diretta.',
   admin: 'Gestione streamer e anima condivisa del bot.',
 };
@@ -923,6 +947,8 @@ const GUIDE = {
     come: ['Attiva il riconoscimento vocale (scheda Ascolto vocale) e concedi i Punti canale.', 'Scegli i due premi: «Vieta la parola» (non dirla) e «Usa solo la parola» (dì solo quella).', 'Decidi la penitenza (tua lista o inventata dall\'IA) e dove mostrare il contatore nell\'overlay.'] },
   notifiche: { serve: 'Avvisare i tuoi canali (Telegram, social) quando vai in diretta.',
     come: ['Collega Telegram e/o le piattaforme social.', 'Attiva gli avvisi che vuoi.', 'Personalizza i messaggi.'] },
+  alert: { serve: 'Mostrare nell\'overlay OBS un cartello animato (con suono) per follow, sub, bit e raid, e far scorrere la chat a schermo.',
+    come: ['Aggiungi l\'URL overlay in OBS (scheda Effetti & suoni).', 'Attiva gli alert che vuoi e personalizza testo, suono e colore.', 'Premi «Prova» per vederli. Attiva la chat a schermo se la vuoi in sovraimpressione.'] },
 };
 
 // SVG lampadina (niente emoji): icona della mini-guida.
@@ -1061,6 +1087,7 @@ function vistaPiattaforma() {
     ${pannelloSondaggi()}
     ${pannelloGiveaway()}
     ${pannelloPenitenze()}
+    ${pannelloAlert()}
     ${pannelloEffetti()}
     ${pannelloGiochi()}
     ${pannelloNotifiche()}
@@ -2021,6 +2048,168 @@ async function caricaPenitenze() {
   };
   montaPicker(boxV, { campo: 'premioVieta', hiddenId: 'pen-premio-vieta', attuale: d.premioVieta, nomeDefault: 'Vietami una parola' });
   montaPicker(boxS, { campo: 'premioSolo', hiddenId: 'pen-premio-solo', attuale: d.premioSolo, nomeDefault: 'Dì solo questa parola' });
+}
+
+// --- scheda Alert & Chat ------------------------------------------------
+
+// opzioni <option> dei suoni preset (dalla libreria condivisa presets.js)
+function opzioniSuono(sel) {
+  const lista = (window.SUONI_PRESET && window.SUONI_PRESET.lista) || [];
+  return ['<option value="">— nessun suono —</option>']
+    .concat(lista.map((s) => `<option value="${esc(s.id)}"${s.id === sel ? ' selected' : ''}>${esc(s.nome)}</option>`)).join('');
+}
+
+const ALERT_TIPI = [
+  { key: 'follow', nome: 'Nuovo follower', ph: '{user} ha seguito il canale!', vars: '{user}' },
+  { key: 'sub', nome: 'Abbonamento', ph: '{user} si è abbonato! ({mesi} mesi)', vars: '{user}, {mesi}' },
+  { key: 'cheer', nome: 'Bit (cheer)', ph: '{user} ha lanciato {bits} bit!', vars: '{user}, {bits}', soglia: { campo: 'minBits', label: 'Bit minimi' } },
+  { key: 'raid', nome: 'Raid', ph: '{user} è arrivato in raid con {viewers} spettatori!', vars: '{user}, {viewers}', soglia: { campo: 'minViewers', label: 'Spettatori minimi' } },
+];
+
+function bloccoAlert(t, a) {
+  const c = a[t.key] || {};
+  const sogliaHtml = t.soglia ? `
+    <div>
+      <label class="campo" for="al-${t.key}-soglia">${t.soglia.label}</label>
+      <input type="number" id="al-${t.key}-soglia" min="0" value="${Number(c[t.soglia.campo]) || 0}">
+    </div>` : '';
+  return `
+    <div class="alert-blocco" data-alert="${t.key}">
+      <div class="riga-interruttore">
+        <label class="interruttore"><input type="checkbox" class="al-attivo" ${c.attivo ? 'checked' : ''}><span class="levetta"></span></label>
+        <strong>${t.nome}</strong>
+      </div>
+      <label class="campo spazio-sopra" for="al-${t.key}-testo">Testo <span class="tenue">— segnaposto: ${esc(t.vars)}</span></label>
+      <input type="text" id="al-${t.key}-testo" class="al-testo campo-largo" maxlength="200" placeholder="${esc(t.ph)}" value="${esc(c.testo || '')}">
+      <div class="griglia-campi spazio-sopra">
+        <div>
+          <label class="campo" for="al-${t.key}-suono">Suono</label>
+          <select id="al-${t.key}-suono" class="al-suono">${opzioniSuono(c.suono || '')}</select>
+        </div>
+        <div>
+          <label class="campo" for="al-${t.key}-colore">Colore</label>
+          <input type="color" id="al-${t.key}-colore" class="al-colore" value="${/^#[0-9a-fA-F]{6}$/.test(c.colore || '') ? c.colore : '#9146ff'}">
+        </div>
+        ${sogliaHtml}
+      </div>
+      <p class="spazio-sopra"><button type="button" class="btn secondario mini al-prova" data-kind="${t.key}">Prova</button></p>
+    </div>`;
+}
+
+function pannelloAlert() {
+  const p = impostazioni();
+  const a = p.alerts || {};
+  const co = p.chatOverlay || {};
+  const posA = a.posizione || 'alto-centro';
+  const optPA = (v, t) => `<option value="${v}"${posA === v ? ' selected' : ''}>${t}</option>`;
+  const posC = co.posizione || 'basso-sinistra';
+  const optPC = (v, t) => `<option value="${v}"${posC === v ? ' selected' : ''}>${t}</option>`;
+  const optDim = (v, t) => `<option value="${v}"${(co.dim || 'media') === v ? ' selected' : ''}>${t}</option>`;
+  return pannello('alert', `
+    <div class="carta">
+      <h2>${_hIco(ICO.megafono)}Alert eventi</h2>
+      <p>Un <strong>cartello animato</strong> (con suono) nell'overlay quando arriva un follow, un sub, dei bit o un raid.
+      Compaiono nell'<strong>overlay per OBS</strong> (lo stesso degli effetti, scheda <em>Effetti &amp; suoni</em>).</p>
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore"><input type="checkbox" id="al-attivo" ${a.attivo ? 'checked' : ''}><span class="levetta"></span></label>
+        <span class="etichetta-stato">${a.attivo ? 'Alert attivi' : 'Alert spenti'}</span>
+      </div>
+      <div class="griglia-campi spazio-sopra">
+        <div>
+          <label class="campo" for="al-pos">Posizione</label>
+          <select id="al-pos">${optPA('alto-centro', 'In alto al centro')}${optPA('centro', 'Al centro')}${optPA('basso-centro', 'In basso al centro')}</select>
+        </div>
+        <div>
+          <label class="campo" for="al-durata">Durata (secondi)</label>
+          <input type="number" id="al-durata" min="2" max="20" value="${Math.round((Number(a.durata) || 6000) / 1000)}">
+        </div>
+      </div>
+      <div class="alert-griglia spazio-sopra">
+        ${ALERT_TIPI.map((t) => bloccoAlert(t, a)).join('')}
+      </div>
+      <p class="spazio-sopra"><button class="btn" id="al-salva">Salva alert</button></p>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.chat)}Chat a schermo</h2>
+      <p>Fai scorrere i messaggi della chat <strong>in sovraimpressione</strong> nell'overlay. Utile per mostrare la chat senza catturare la finestra di Twitch.</p>
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore"><input type="checkbox" id="co-attivo" ${co.attivo ? 'checked' : ''}><span class="levetta"></span></label>
+        <span class="etichetta-stato">${co.attivo ? 'Chat a schermo attiva' : 'Chat a schermo spenta'}</span>
+      </div>
+      <div class="griglia-campi spazio-sopra">
+        <div>
+          <label class="campo" for="co-pos">Posizione</label>
+          <select id="co-pos">${optPC('alto-sinistra', 'In alto a sinistra')}${optPC('alto-destra', 'In alto a destra')}${optPC('basso-sinistra', 'In basso a sinistra')}${optPC('basso-destra', 'In basso a destra')}</select>
+        </div>
+        <div>
+          <label class="campo" for="co-dim">Dimensione</label>
+          <select id="co-dim">${optDim('piccola', 'Piccola')}${optDim('media', 'Media')}${optDim('grande', 'Grande')}</select>
+        </div>
+      </div>
+      <div class="griglia-campi spazio-sopra">
+        <div>
+          <label class="campo" for="co-max">Messaggi visibili</label>
+          <input type="number" id="co-max" min="1" max="20" value="${Number(co.max) || 8}">
+        </div>
+        <div>
+          <label class="campo" for="co-fade">Spariscono dopo (secondi, 0 = restano)</label>
+          <input type="number" id="co-fade" min="0" max="120" value="${Number(co.fadeSec) || 0}">
+        </div>
+      </div>
+      <p class="spazio-sopra">
+        <button class="btn" id="co-salva">Salva chat</button>
+        <button class="btn secondario" id="co-prova">Prova nell'overlay</button>
+      </p>
+    </div>`);
+}
+
+async function salvaAlert(silenzioso) {
+  const blocchi = {};
+  document.querySelectorAll('.alert-blocco').forEach((b) => {
+    const k = b.dataset.alert;
+    const soglia = b.querySelector('[id$="-soglia"]');
+    blocchi[k] = {
+      attivo: !!b.querySelector('.al-attivo')?.checked,
+      testo: (b.querySelector('.al-testo')?.value || '').trim(),
+      suono: b.querySelector('.al-suono')?.value || '',
+      colore: b.querySelector('.al-colore')?.value || '#9146ff',
+    };
+    if (soglia) { blocchi[k][k === 'cheer' ? 'minBits' : 'minViewers'] = Number(soglia.value) || 0; }
+  });
+  const alerts = {
+    attivo: !!document.getElementById('al-attivo')?.checked,
+    posizione: document.getElementById('al-pos')?.value || 'alto-centro',
+    durata: (Number(document.getElementById('al-durata')?.value) || 6) * 1000,
+    ...blocchi,
+  };
+  await salvaImpostazioni({ alerts }, silenzioso ? null : 'Alert salvati ✓');
+}
+
+async function salvaChatOverlay(silenzioso) {
+  const chatOverlay = {
+    attivo: !!document.getElementById('co-attivo')?.checked,
+    posizione: document.getElementById('co-pos')?.value || 'basso-sinistra',
+    dim: document.getElementById('co-dim')?.value || 'media',
+    max: Number(document.getElementById('co-max')?.value) || 8,
+    fadeSec: Number(document.getElementById('co-fade')?.value) || 0,
+  };
+  await salvaImpostazioni({ chatOverlay }, silenzioso ? null : 'Chat a schermo salvata ✓');
+}
+
+function caricaAlert() {
+  document.getElementById('al-salva')?.addEventListener('click', () => conErrore(() => salvaAlert()));
+  document.getElementById('co-salva')?.addEventListener('click', () => conErrore(() => salvaChatOverlay()));
+  document.querySelectorAll('.al-prova').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
+    await salvaAlert(true);
+    await api('/api/alert/prova', { method: 'POST', body: { kind: b.dataset.kind } });
+    toast('Inviato all\'overlay ▶');
+  })));
+  document.getElementById('co-prova')?.addEventListener('click', () => conErrore(async () => {
+    await salvaChatOverlay(true);
+    await api('/api/alert/prova', { method: 'POST', body: { kind: 'chat' } });
+    toast('Inviato all\'overlay ▶');
+  }));
 }
 
 // --- scheda Effetti & Suoni ---------------------------------------------
@@ -3632,6 +3821,7 @@ function caricaDatiScheda(id) {
   if (id === 'sondaggi') caricaSondaggi();
   if (id === 'giveaway') caricaGiveaway();
   if (id === 'penitenze') caricaPenitenze();
+  if (id === 'alert') caricaAlert();
   if (id === 'effetti') { caricaEffetti(); caricaPremi(); caricaSuoniPremi(); }
   if (id === 'moduli') caricaModuli();
   if (id === 'memoria') caricaStatistiche();

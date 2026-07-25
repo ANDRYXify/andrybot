@@ -908,6 +908,14 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.json({ ok: true });
   }));
 
+  // Prova un alert (o la chat) nell'overlay.
+  app.post('/api/alert/prova', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const kind = ['follow', 'sub', 'cheer', 'raid', 'chat'].includes(req.body?.kind) ? req.body.kind : 'follow';
+    try { manager.alerts?.prova(login, kind); } catch { /* niente */ }
+    res.json({ ok: true });
+  }));
+
   // ------------------------------------------------------------ SONDAGGI & PREDIZIONI (dal pannello)
   // Gli stessi di !sondaggio/!predizione, ma gestiti dalla dashboard via Helix.
   // Fanno parte dell'add-on "Effetti & Punti canale".
@@ -1092,6 +1100,41 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
         // tolleranza al riconoscimento vocale (50..100 = più severo)
         fuzzy: Math.max(50, Math.min(100, Math.round(Number(p.fuzzy)) || 80)),
         overlay: { posizione: posizioni.includes(ov.posizione) ? ov.posizione : 'alto-destra', colore },
+      };
+    }
+    // ALERT overlay (follow/sub/cheer/raid): notifiche animate + suono
+    if (b.alerts !== undefined) {
+      const p = b.alerts || {};
+      const posAlert = ['alto-centro', 'centro', 'basso-centro'];
+      const evt = (e) => {
+        e = e || {};
+        return {
+          attivo: !!e.attivo,
+          testo: String(e.testo || '').slice(0, 200),
+          suono: SUONI_PRESET.has(String(e.suono)) ? String(e.suono) : '',
+          colore: /^#[0-9a-fA-F]{6}$/.test(String(e.colore)) ? String(e.colore) : '#9146ff',
+        };
+      };
+      out.alerts = {
+        attivo: !!p.attivo,
+        posizione: posAlert.includes(p.posizione) ? p.posizione : 'alto-centro',
+        durata: Math.max(2000, Math.min(20000, Math.round(Number(p.durata)) || 6000)),
+        follow: evt(p.follow),
+        sub: evt(p.sub),
+        cheer: { ...evt(p.cheer), minBits: Math.max(0, Math.round(Number(p.cheer?.minBits)) || 0) },
+        raid: { ...evt(p.raid), minViewers: Math.max(0, Math.round(Number(p.raid?.minViewers)) || 0) },
+      };
+    }
+    // CHAT a schermo nell'overlay
+    if (b.chatOverlay !== undefined) {
+      const c = b.chatOverlay || {};
+      const posChat = ['alto-sinistra', 'alto-destra', 'basso-sinistra', 'basso-destra'];
+      out.chatOverlay = {
+        attivo: !!c.attivo,
+        posizione: posChat.includes(c.posizione) ? c.posizione : 'basso-sinistra',
+        max: Math.max(1, Math.min(20, Math.round(Number(c.max)) || 8)),
+        fadeSec: Math.max(0, Math.min(120, Math.round(Number(c.fadeSec)) || 0)),
+        dim: ['piccola', 'media', 'grande'].includes(c.dim) ? c.dim : 'media',
       };
     }
     // ascolto live lato server (audio → clip nei momenti salienti): opt-in
