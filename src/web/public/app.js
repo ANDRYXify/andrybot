@@ -112,6 +112,7 @@ function impostazioni() {
       return {
         attivo: a.attivo !== false,
         posizione: ['alto-centro', 'centro', 'basso-centro'].includes(a.posizione) ? a.posizione : 'alto-centro',
+        xy: (a.xy && typeof a.xy === 'object') ? a.xy : null,
         durata: typeof a.durata === 'number' ? a.durata : 6000,
         stile: { animazione: 'slide', dimTesto: 27, sfondo: '#0f0f14', opacita: 88, testo: '#ffffff', bordoRaggio: 18, bordoSpessore: 2, glow: true, icona: true, font: 'sistema', ...(a.stile && typeof a.stile === 'object' ? a.stile : {}) },
         follow: ev(a.follow, { suono: 'campanello', colore: '#9146ff' }),
@@ -125,6 +126,7 @@ function impostazioni() {
       return {
         attivo: !!c.attivo,
         posizione: ['alto-sinistra', 'alto-destra', 'basso-sinistra', 'basso-destra'].includes(c.posizione) ? c.posizione : 'basso-sinistra',
+        xy: (c.xy && typeof c.xy === 'object') ? c.xy : null,
         max: typeof c.max === 'number' ? c.max : 8,
         fadeSec: typeof c.fadeSec === 'number' ? c.fadeSec : 0,
         stile: { dim: 'media', sfondo: '#0f0f14', opacita: 78, testo: '#f2f2f5', username: 'twitch', bordoRaggio: 10, ombra: true, font: 'sistema', larghezza: 30, animazione: 'slide', grassettoUser: true,
@@ -133,7 +135,7 @@ function impostazioni() {
     })(),
     overlayWidget: (() => {
       const w = (s.overlayWidget && typeof s.overlayWidget === 'object') ? s.overlayWidget : {};
-      const wd = (x, testoDef) => ({ attivo: false, posizione: 'basso-destra', testo: testoDef,
+      const wd = (x, testoDef) => ({ attivo: false, posizione: 'basso-destra', testo: testoDef, xy: (x?.xy && typeof x.xy === 'object') ? x.xy : null,
         stile: { dim: 'media', sfondo: '#0f0f14', opacita: 85, testo: '#ffffff', accento: '#9146ff', bordoRaggio: 12, font: 'sistema', ...(x?.stile && typeof x.stile === 'object' ? x.stile : {}) },
         ...(x && typeof x === 'object' ? { attivo: !!x.attivo, posizione: x.posizione || 'basso-destra', testo: x.testo || testoDef } : {}) });
       return { ultimoFollower: wd(w.ultimoFollower, 'Ultimo follower: {nome}'), ultimoSub: wd(w.ultimoSub, 'Ultimo sub: {nome}') };
@@ -2100,13 +2102,18 @@ const cRng = (id, label, min, max, val, suf = '') => `<div><label class="campo" 
 const cSel = (id, label, opts, val) => `<div><label class="campo" for="${id}">${label}</label><select id="${id}">${opts.map(([v, t]) => `<option value="${v}"${v === val ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></div>`;
 const cChk = (id, label, on) => `<label class="riga-check"><input type="checkbox" id="${id}" ${on ? 'checked' : ''}> ${label}</label>`;
 
-// template pronti (look completi da applicare con un clic)
+// template pronti: ogni look è pensato per RISPECCHIARE il proprio nome.
 const TEMPLATE_BUILTIN = [
-  { nome: 'Viola classico', dati: { al: { animazione: 'slide', sfondo: '#0f0f14', opacita: 88, testo: '#ffffff', bordoRaggio: 18, bordoSpessore: 2, glow: true, font: 'sistema', dimTesto: 27 }, ch: { sfondo: '#0f0f14', opacita: 78, testo: '#f2f2f5', bordoRaggio: 10, font: 'sistema', dim: 'media' }, acc: '#9146ff' } },
-  { nome: 'Neon', dati: { al: { animazione: 'pop', sfondo: '#08010f', opacita: 72, testo: '#eafff9', bordoRaggio: 6, bordoSpessore: 3, glow: true, font: 'mono', dimTesto: 30 }, ch: { sfondo: '#08010f', opacita: 60, testo: '#c9fff2', bordoRaggio: 4, font: 'mono', dim: 'media' }, acc: '#00ffc6' } },
-  { nome: 'Minimal chiaro', dati: { al: { animazione: 'fade', sfondo: '#ffffff', opacita: 92, testo: '#111318', bordoRaggio: 14, bordoSpessore: 0, glow: false, font: 'sistema', dimTesto: 24 }, ch: { sfondo: '#ffffff', opacita: 88, testo: '#1a1c22', bordoRaggio: 8, font: 'sistema', dim: 'piccola' }, acc: '#6f47ff' } },
-  { nome: 'Retro arcade', dati: { al: { animazione: 'bounce', sfondo: '#1a1030', opacita: 95, testo: '#ffe600', bordoRaggio: 2, bordoSpessore: 4, glow: true, font: 'mono', dimTesto: 28 }, ch: { sfondo: '#1a1030', opacita: 85, testo: '#ffe600', bordoRaggio: 2, font: 'mono', dim: 'media' }, acc: '#ff2e88' } },
-  { nome: 'Manga', dati: { al: { animazione: 'zoom', sfondo: '#ffffff', opacita: 96, testo: '#111111', bordoRaggio: 20, bordoSpessore: 3, glow: false, font: 'manga', dimTesto: 30 }, ch: { sfondo: '#111111', opacita: 82, testo: '#ffffff', bordoRaggio: 16, font: 'manga', dim: 'media' }, acc: '#ff3b3b' } },
+  // viola Twitch, scuro e morbido, bagliore soft: il classico.
+  { nome: 'Viola classico', dati: { al: { animazione: 'slide', sfondo: '#12101c', opacita: 90, testo: '#ffffff', bordoRaggio: 18, bordoSpessore: 2, glow: true, font: 'sistema', dimTesto: 27 }, ch: { sfondo: '#12101c', opacita: 80, testo: '#efeaff', bordoRaggio: 12, font: 'sistema', dim: 'media' }, acc: '#9146ff' } },
+  // insegna al neon: nero pieno, colore elettrico saturo, bordo sottile, bagliore forte, mono.
+  { nome: 'Neon', dati: { al: { animazione: 'pop', sfondo: '#04010a', opacita: 62, testo: '#eafffb', bordoRaggio: 8, bordoSpessore: 2, glow: true, font: 'mono', dimTesto: 29 }, ch: { sfondo: '#04010a', opacita: 55, testo: '#d6fff7', bordoRaggio: 6, font: 'mono', dim: 'media' }, acc: '#00e5ff' } },
+  // pulito e chiaro: fondo bianco, niente bordo/bagliore, angoli morbidi, accento tenue.
+  { nome: 'Minimal chiaro', dati: { al: { animazione: 'fade', sfondo: '#f7f7fa', opacita: 95, testo: '#15171c', bordoRaggio: 16, bordoSpessore: 0, glow: false, font: 'sistema', dimTesto: 24 }, ch: { sfondo: '#ffffff', opacita: 90, testo: '#22242b', bordoRaggio: 12, font: 'sistema', dim: 'piccola' }, acc: '#2b2d36' } },
+  // cabinato anni '80: mono squadrato, bordo spesso, giallo su nero, rosa acceso, rimbalzo.
+  { nome: 'Retro arcade', dati: { al: { animazione: 'bounce', sfondo: '#0a0a14', opacita: 96, testo: '#ffe600', bordoRaggio: 2, bordoSpessore: 4, glow: true, font: 'mono', dimTesto: 28 }, ch: { sfondo: '#0a0a14', opacita: 90, testo: '#ffe600', bordoRaggio: 2, font: 'mono', dim: 'media' }, acc: '#ff2e88' } },
+  // fumetto giapponese: bianco/nero netto, bordo nero spesso, rosso "manga", zoom d'impatto.
+  { nome: 'Manga', dati: { al: { animazione: 'zoom', sfondo: '#ffffff', opacita: 98, testo: '#0b0b0b', bordoRaggio: 6, bordoSpessore: 4, glow: false, font: 'manga', dimTesto: 30 }, ch: { sfondo: '#0b0b0b', opacita: 88, testo: '#ffffff', bordoRaggio: 6, font: 'manga', dim: 'media' }, acc: '#e60012' } },
 ];
 
 function bloccoAlert(t, a) {
@@ -2184,7 +2191,7 @@ function pannelloAlert() {
         <div class="ap-angolo" id="ap-wf"><div class="ovl-widget" id="ap-wf-el"><span class="w-ico"></span><span class="w-testo"></span></div></div>
         <div class="ap-angolo" id="ap-ws"><div class="ovl-widget" id="ap-ws-el"><span class="w-ico"></span><span class="w-testo"></span></div></div>
       </div>
-      <p class="suggerimento">L'anteprima è indicativa: usa i pulsanti «Prova ▶» per vederli davvero nell'overlay in OBS.</p>
+      <p class="suggerimento"><strong>Trascina</strong> gli elementi nell'anteprima per posizionarli dove vuoi (doppio clic per rimetterli nell'angolo). Usa «Prova ▶» per vederli davvero nell'overlay in OBS.</p>
     </div>
 
     <div class="carta">
@@ -2281,6 +2288,8 @@ function pannelloAlert() {
 
 // nomi-font → variabile CSS (definite in overlay-skin.css) per l'anteprima
 const FONT_VAR = { sistema: 'var(--font-sistema)', rotondo: 'var(--font-rotondo)', condensato: 'var(--font-condensato)', mono: 'var(--font-mono)', serif: 'var(--font-serif)', manga: 'var(--font-manga)' };
+// posizioni LIBERE (drag) degli elementi nell'anteprima: {x,y} in % o null (angolo).
+let posXY = { alert: null, chat: null, wf: null, ws: null };
 const AP_ICO_ALERT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 15.09 8.26 22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
 const AP_ICO_WIDGET = { ultimoFollower: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>', ultimoSub: AP_ICO_ALERT };
 const _g = (id) => document.getElementById(id);
@@ -2306,7 +2315,7 @@ function _leggiChatStile() {
 }
 function _leggiWidget(pref) {
   return {
-    attivo: !!_g(`${pref}-attivo`)?.checked, posizione: _v(`${pref}-pos`) || 'basso-destra',
+    attivo: !!_g(`${pref}-attivo`)?.checked, posizione: _v(`${pref}-pos`) || 'basso-destra', xy: posXY[pref],
     testo: (_v(`${pref}-testo`) || '').trim(),
     stile: { dim: _v(`${pref}-dim`) || 'media', font: _v(`${pref}-font`) || 'sistema', sfondo: _v(`${pref}-bg`),
       opacita: Number(_v(`${pref}-op`)), testo: _v(`${pref}-fg`), accento: _v(`${pref}-acc`), bordoRaggio: Number(_v(`${pref}-radius`)) },
@@ -2330,13 +2339,14 @@ function _raccogliAlerts() {
   return {
     attivo: !!_g('al-attivo')?.checked,
     posizione: _v('al-pos') || 'alto-centro',
+    xy: posXY.alert,
     durata: (Number(_v('al-durata')) || 6) * 1000,
     stile: _leggiAlertStile(),
     ...blocchi,
   };
 }
 function _raccogliChat() {
-  return { attivo: !!_g('co-attivo')?.checked, posizione: _v('co-pos') || 'basso-sinistra',
+  return { attivo: !!_g('co-attivo')?.checked, posizione: _v('co-pos') || 'basso-sinistra', xy: posXY.chat,
     max: Number(_v('co-max')) || 8, fadeSec: Number(_v('co-fade')) || 0, stile: _leggiChatStile() };
 }
 function _raccogliWidget() { return { ultimoFollower: _leggiWidget('wf'), ultimoSub: _leggiWidget('ws') }; }
@@ -2394,6 +2404,52 @@ function aggiornaAnteprima() {
   }
   _anteprimaWidget('wf', 'ultimoFollower', 'MarioRossi');
   _anteprimaWidget('ws', 'ultimoSub', 'GiadaTTV');
+  // posizioni libere (drag): sovrascrivono gli angoli
+  _posElemento(_g('ap-alert'), posXY.alert);
+  _posElemento(_g('ap-chat'), posXY.chat);
+  _posElemento(_g('ap-wf'), posXY.wf);
+  _posElemento(_g('ap-ws'), posXY.ws);
+}
+
+// Posiziona un elemento dell'anteprima: libero (x/y %) o secondo le sue classi.
+function _posElemento(el, xy) {
+  if (!el) return;
+  if (xy && xy.x != null) {
+    el.style.position = 'absolute'; el.style.left = xy.x + '%'; el.style.top = xy.y + '%';
+    el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.transform = 'translate(-50%,-50%)';
+  } else {
+    el.style.position = el.style.left = el.style.top = el.style.right = el.style.bottom = el.style.transform = '';
+  }
+}
+
+// Rende un elemento dell'anteprima trascinabile (WYSIWYG). Doppio clic = torna all'angolo.
+function rendiTrascinabile(el, chiave) {
+  if (!el) return;
+  el.style.cursor = 'grab';
+  el.title = 'Trascina per posizionarlo · doppio clic per rimetterlo nell\'angolo';
+  el.addEventListener('pointerdown', (e) => {
+    if (e.button != null && e.button !== 0) return;
+    e.preventDefault();
+    const canvas = _g('ovl-preview').getBoundingClientRect();
+    try { el.setPointerCapture(e.pointerId); } catch (_) { /* niente */ }
+    el.style.cursor = 'grabbing';
+    const move = (ev) => {
+      const x = ((ev.clientX - canvas.left) / canvas.width) * 100;
+      const y = ((ev.clientY - canvas.top) / canvas.height) * 100;
+      posXY[chiave] = { x: Math.max(0, Math.min(100, Math.round(x))), y: Math.max(0, Math.min(100, Math.round(y))) };
+      _posElemento(el, posXY[chiave]);
+    };
+    const up = () => { el.style.cursor = 'grab'; el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); _salvaPos(chiave); };
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', up);
+  });
+  el.addEventListener('dblclick', () => { posXY[chiave] = null; aggiornaAnteprima(); _salvaPos(chiave); });
+}
+
+function _salvaPos(chiave) {
+  if (chiave === 'alert') return salvaAlert(true);
+  if (chiave === 'chat') return salvaChatOverlay(true);
+  return salvaWidget(true);   // wf / ws
 }
 
 // --- template -----------------------------------------------------------
@@ -2486,6 +2542,11 @@ function _rigeneraTemplateSelect(templates, selNome) {
 
 function caricaAlert() {
   const scheda = _g('scheda-alert');
+  // posizioni libere iniziali (dal salvataggio) + elementi trascinabili
+  const imp = impostazioni();
+  posXY = { alert: imp.alerts.xy || null, chat: imp.chatOverlay.xy || null,
+    wf: imp.overlayWidget.ultimoFollower.xy || null, ws: imp.overlayWidget.ultimoSub.xy || null };
+  ['ap-alert', 'ap-chat', 'ap-wf', 'ap-ws'].forEach((id) => rendiTrascinabile(_g(id), id.replace('ap-', '')));
   // anteprima dal vivo: qualsiasi cambiamento aggiorna la preview + le etichette dei range
   scheda?.addEventListener('input', (e) => {
     const t = e.target;
