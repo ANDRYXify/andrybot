@@ -876,7 +876,9 @@ const GRUPPI = [
     ['sondaggi', 'Sondaggi'],
     ['giveaway', 'Giveaway'],
     ['penitenze', 'Penitenze'],
-    ['alert', 'Alert & Chat'],
+  ] },
+  { id: 'overlay', nome: 'Overlay', icona: '🖥️', schede: [
+    ['alert', 'Overlay Studio'],
   ] },
   { id: 'notifiche', nome: 'Notifiche', icona: '🔔', schede: [
     ['notifiche', 'Notifiche'],
@@ -910,7 +912,7 @@ const ICONA = {
   sondaggi:    _ico('<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>'),
   giveaway:    _ico('<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/>'),
   penitenze:   _ico('<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>'),
-  alert:       _ico('<path d="m3 11 15-5v12l-6-2"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/><path d="M18 8a3 3 0 0 1 0 4"/>'),
+  alert:       _ico('<rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/><path d="M6 8h4"/><path d="M6 11h2"/>'),
   notifiche:   _ico('<path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5 2 6H4c.5-1 2-2 2-6"/><path d="M10.3 20a1.9 1.9 0 0 0 3.4 0"/>'),
   admin:       _ico('<path d="M4 8.5 7.5 16h9L20 8.5l-4.3 3L12 5 8.3 11.5z"/><path d="M7.5 19h9"/>'),
 };
@@ -931,7 +933,7 @@ const DESC = {
   sondaggi: 'Crea sondaggi e predizioni Twitch al volo.',
   giveaway: 'Organizza estrazioni a premi per la community.',
   penitenze: 'Punti canale che ti vietano una parola: se la dici, penitenza!',
-  alert: 'Alert animati per follow, sub, bit e raid, e la chat a schermo.',
+  alert: 'Il tuo overlay OBS: alert, chat a schermo, widget e temi, tutto personalizzabile.',
   notifiche: 'Avvisi su Telegram e TikTok quando vai in diretta.',
   admin: 'Gestione streamer e anima condivisa del bot.',
 };
