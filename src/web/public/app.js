@@ -2810,7 +2810,7 @@ async function caricaPremi() {
 // Automazioni componibili col modello QUANDO → SE → ALLORA.
 
 function pannelloModuli() {
-  const chipsRapido = ['$user', '$touser', '$canale', '$uptime', '$gioco', '$titolo($args)', '$categoria($args)', '$count(morti)', '$random(1,100)']
+  const chipsRapido = ['$user', '$touser', '$giocotarget', '$canale', '$uptime', '$gioco', '$titolo($args)', '$categoria($args)', '$count(morti)', '$random(1,100)']
     .map((v) => `<button type="button" class="chip-var" data-qc="${esc(v)}">${esc(v)}</button>`).join('');
   return pannello('moduli', `
     <div class="carta">
@@ -2827,6 +2827,10 @@ function pannelloModuli() {
       <p class="suggerimento spazio-sopra">Puoi anche <strong>cambiare titolo e categoria</strong> dal comando:
       <code>$categoria($args)</code> (es. <code>!gioco fortnite</code>) e <code>$titolo($args)</code>. Il token sparisce dal messaggio, scrivi tu la conferma.
       Consiglio: metti questi comandi <strong>solo per i mod</strong>.</p>
+      <p class="suggerimento">Per uno <strong>shoutout</strong>: <code>$touser</code> è il nome scritto dopo il comando e
+      <code>$giocotarget</code> è l'ultimo gioco del suo canale. Es. <code>!so giorgiottv</code> con risposta
+      <em>"Andate a seguire @$touser! Stava streammando $giocotarget"</em>. Nota: <code>$giocotarget</code> funziona
+      solo se c'è un destinatario (il nome dopo il comando).</p>
       <p class="spazio-sopra">
         <button class="btn" id="btn-qc">Aggiungi comando</button>
         <span class="suggerimento">Per condizioni, eventi, timer, effetti o webhook usa <strong>Nuovo modulo</strong> qui sotto.</span>
@@ -2842,6 +2846,7 @@ function pannelloModuli() {
       <p class="suggerimento spazio-sopra">Non sai da dove partire? Scegli un modello pronto e modificalo:</p>
       <div class="modelli-pronti">
         <button class="modello-pronto" data-modello="saluto">Saluto</button>
+        <button class="modello-pronto" data-modello="shoutout">Shoutout</button>
         <button class="modello-pronto" data-modello="timer">Timer annuncio</button>
         <button class="modello-pronto" data-modello="social">Social</button>
         <button class="modello-pronto" data-modello="morti">Contatore morti</button>
@@ -2873,6 +2878,13 @@ function modelloPronto(nome) {
       return { id: null, nome: 'Saluto', attivo: true,
         trigger: { tipo: 'comando', comando: 'ciao', alias: [] }, condizioni: cond(),
         azioni: [{ tipo: 'messaggio', testo: 'Ciao $user! 👋' }] };
+    case 'shoutout':
+      // "!so giorgiottv" → "Andate a seguire @giorgiottv! Stava streammando <gioco>…"
+      // $touser = il nome scritto dopo il comando; $giocotarget = l'ultimo gioco
+      // del SUO canale (è legato a $touser: senza destinatario resta vuoto).
+      return { id: null, nome: 'Shoutout', attivo: true,
+        trigger: { tipo: 'comando', comando: 'so', alias: ['shoutout', 'sh'] }, condizioni: { ...cond(), tier: 'mod' },
+        azioni: [{ tipo: 'messaggio', testo: 'Andate tutti a seguire @$touser! 💜 Stava streammando $giocotarget 👉 twitch.tv/$touser' }] };
     case 'timer':
       return { id: null, nome: 'Timer annuncio', attivo: true,
         trigger: { tipo: 'timer', minuti: 15, minMessaggi: 10 }, condizioni: cond(),
@@ -4659,6 +4671,8 @@ const AZIONI = [
 const VARIABILI = [
   // contesto
   '$user', '$touser', '$args', '$arg1', '$canale', '$uptime', '$gioco', '$titolo',
+  // shoutout: gioco/titolo dell'ultima diretta del destinatario ($touser)
+  '$giocotarget', '$titolotarget',
   // azioni sul canale (cambiano titolo/categoria su Twitch)
   '$titolo($args)', '$categoria($args)',
   // generatori parametrici (combinazioni infinite)
