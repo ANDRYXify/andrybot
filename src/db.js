@@ -328,6 +328,7 @@ function aggiungiColonna(tabella, colonna, definizione) {
     db.exec(`ALTER TABLE ${tabella} ADD COLUMN ${colonna} ${definizione}`);
   }
 }
+aggiungiColonna('point_alerts', 'suono', "TEXT NOT NULL DEFAULT ''");   // suono PRESET sul riscatto (id preset)
 aggiungiColonna('telegram', 'pin_live', "INTEGER NOT NULL DEFAULT 1");
 aggiungiColonna('telegram', 'msg_id', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('telegram', 'msg_id_tk', "TEXT NOT NULL DEFAULT ''");
@@ -1068,20 +1069,21 @@ export const guide = {
 // il bot spara l'alert. Per canale.
 export const pointAlerts = {
   list(channel) {
-    return db.prepare('SELECT reward_id, titolo, costo, effetto, testo, ts FROM point_alerts WHERE channel=? ORDER BY ts DESC')
+    return db.prepare('SELECT reward_id, titolo, costo, effetto, suono, testo, ts FROM point_alerts WHERE channel=? ORDER BY ts DESC')
       .all(String(channel).toLowerCase());
   },
   getByReward(channel, rewardId) {
-    return db.prepare('SELECT reward_id, titolo, costo, effetto, testo FROM point_alerts WHERE channel=? AND reward_id=?')
+    return db.prepare('SELECT reward_id, titolo, costo, effetto, suono, testo FROM point_alerts WHERE channel=? AND reward_id=?')
       .get(String(channel).toLowerCase(), String(rewardId)) || null;
   },
-  add(channel, { rewardId, titolo, costo, effetto, testo }) {
-    db.prepare(`INSERT INTO point_alerts(channel, reward_id, titolo, costo, effetto, testo, ts)
-      VALUES(?,?,?,?,?,?,?)
+  add(channel, { rewardId, titolo, costo, effetto, suono, testo }) {
+    db.prepare(`INSERT INTO point_alerts(channel, reward_id, titolo, costo, effetto, suono, testo, ts)
+      VALUES(?,?,?,?,?,?,?,?)
       ON CONFLICT(channel, reward_id) DO UPDATE SET titolo=excluded.titolo, costo=excluded.costo,
-        effetto=excluded.effetto, testo=excluded.testo`)
+        effetto=excluded.effetto, suono=excluded.suono, testo=excluded.testo`)
       .run(String(channel).toLowerCase(), String(rewardId), String(titolo || '').slice(0, 60),
-           Math.max(0, Math.round(Number(costo) || 0)), String(effetto || '').slice(0, 24), String(testo || '').slice(0, 300), now());
+           Math.max(0, Math.round(Number(costo) || 0)), String(effetto || '').slice(0, 24),
+           String(suono || '').slice(0, 24), String(testo || '').slice(0, 300), now());
   },
   remove(channel, rewardId) {
     db.prepare('DELETE FROM point_alerts WHERE channel=? AND reward_id=?').run(String(channel).toLowerCase(), String(rewardId));

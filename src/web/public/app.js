@@ -267,8 +267,15 @@ function _demoGet(via) {
       permessoOk: true,
       effetti: ['airhorn', 'applausi', 'risata'],
       premi: [
-        { reward_id: 'r1', titolo: 'Airhorn 📣', costo: 500, effetto: 'airhorn', testo: '{user} ha lanciato l\'airhorn!' },
-        { reward_id: 'r2', titolo: 'Applauso 👏', costo: 300, effetto: 'applausi', testo: '' },
+        { reward_id: 'r1', titolo: 'Airhorn 📣', costo: 500, effetto: 'airhorn', suono: '', testo: '{user} ha lanciato l\'airhorn!' },
+        { reward_id: 'r2', titolo: 'Applauso 👏', costo: 300, effetto: 'applausi', suono: '', testo: '' },
+        { reward_id: 'r3', titolo: 'Bevi l\'acqua', costo: 150, effetto: '', suono: 'acqua', testo: '{user} ti ricorda di bere! 💧' },
+      ],
+      tutti: [
+        { id: 'r1', title: 'Airhorn 📣', cost: 500, richiedeTesto: false },
+        { id: 'r2', title: 'Applauso 👏', cost: 300, richiedeTesto: false },
+        { id: 'r3', title: 'Bevi l\'acqua', cost: 150, richiedeTesto: false },
+        { id: 'r4', title: 'Cambia gioco', cost: 2000, richiedeTesto: true },
       ],
     },
     '/api/streamer/guide': {
@@ -2052,12 +2059,82 @@ function pannelloEffetti() {
     </div>
 
     <div class="carta">
+      <h2>${_hIco(ICO.cuffie)}Suoni sui tuoi punti canale</h2>
+      <p>Attacca un <strong class="primo-piano">suono</strong> a un <strong>premio a punti canale che hai già</strong>:
+      quando qualcuno lo riscatta (es. «Bevi l'acqua»), parte il suono nell'overlay — così si capisce al volo.
+      Sono <strong>suoni pronti</strong>, non serve caricare niente.</p>
+      <div id="suoni-premi-box"><p class="vuoto">Caricamento…</p></div>
+    </div>
+
+    <div class="carta">
       <h2>${_hIco(ICO.giveaway)}Alert a punti canale</h2>
       <p>Crea un <strong class="primo-piano">premio a punti canale</strong> di Twitch: quando uno spettatore lo riscatta
       (spendendo i suoi punti), parte un <strong>effetto</strong> nell'overlay e/o un <strong>messaggio</strong> in chat.
       Il premio compare da solo nella tua pagina Twitch.</p>
       <div id="premi-box"><p class="vuoto">Caricamento…</p></div>
     </div>`);
+}
+
+// Elenca i premi a punti canale ESISTENTI e permette di attaccare a ognuno un
+// suono pronto (preset) + un messaggio. Non crea premi su Twitch: mappa e basta.
+async function caricaSuoniPremi() {
+  const box = document.getElementById('suoni-premi-box');
+  if (!box) return;
+  let d;
+  try { d = await api('/api/streamer/premi'); } catch (e) { box.innerHTML = `<p class="vuoto">Errore: ${esc(e.message)}</p>`; return; }
+  if (!d.permessoOk) {
+    box.innerHTML = `<p class="vuoto">Per leggere i tuoi punti canale serve un permesso in più.
+      <a class="btn secondario mini" href="/auth/permessi">Concedi il permesso</a></p>`;
+    return;
+  }
+  const tutti = d.tutti || [];
+  if (!tutti.length) {
+    box.innerHTML = '<div class="riquadro-info">Non hai ancora premi a punti canale su Twitch. Creane uno (anche qui sotto, in «Alert a punti canale») e poi torna qui per dargli un suono.</div>';
+    return;
+  }
+  const mappa = {};
+  (d.premi || []).forEach((p) => { mappa[p.reward_id] = p; });
+  const presets = (window.SUONI_PRESET && window.SUONI_PRESET.lista) || [];
+  const opz = (sel) => ['<option value="">— nessun suono —</option>']
+    .concat(presets.map((s) => `<option value="${esc(s.id)}"${s.id === sel ? ' selected' : ''}>${esc(s.nome)}</option>`)).join('');
+  const svgPlay = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+  box.innerHTML = `<ul class="lista-suoni-premi">${tutti.map((r) => {
+    const m = mappa[r.id] || {};
+    return `<li data-reward="${esc(r.id)}" data-titolo="${esc(r.title)}" data-costo="${r.cost || 0}">
+      <div class="riga-premio-suono">
+        <span class="nome-premio"><strong>${esc(r.title)}</strong> <span class="suggerimento">${r.cost || 0} punti</span></span>
+        <span class="controlli-suono">
+          <select class="sel-suono">${opz(m.suono || '')}</select>
+          <button type="button" class="btn secondario mini prova-suono" title="Ascolta">${svgPlay}</button>
+        </span>
+      </div>
+      <input type="text" class="campo-largo msg-suono spazio-sopra" maxlength="300" placeholder="Messaggio in chat (facoltativo, {user} = chi riscatta)" value="${esc(m.testo || '')}">
+    </li>`;
+  }).join('')}</ul>`;
+
+  const salvaRiga = (li) => conErrore(async () => {
+    await api('/api/streamer/premi/suono', { method: 'POST', body: {
+      rewardId: li.dataset.reward,
+      titolo: li.dataset.titolo,
+      costo: li.dataset.costo,
+      suono: li.querySelector('.sel-suono').value,
+      testo: (li.querySelector('.msg-suono').value || '').trim(),
+    } });
+  });
+  box.querySelectorAll('.lista-suoni-premi > li').forEach((li) => {
+    const sel = li.querySelector('.sel-suono');
+    sel.addEventListener('change', () => {
+      const id = sel.value;
+      if (id && window.SUONI_PRESET) window.SUONI_PRESET.suona(id, 100);   // anteprima
+      salvaRiga(li).then(() => toast('Suono impostato ✓'));
+    });
+    li.querySelector('.prova-suono').addEventListener('click', () => {
+      const id = sel.value;
+      if (id && window.SUONI_PRESET) window.SUONI_PRESET.suona(id, 100);
+      else toast('Scegli prima un suono.');
+    });
+    li.querySelector('.msg-suono').addEventListener('change', () => salvaRiga(li).then(() => toast('Messaggio salvato ✓')));
+  });
 }
 
 // carica e disegna gli alert a punti canale (crea premio Twitch + mappa effetto)
@@ -3521,7 +3598,7 @@ function caricaDatiScheda(id) {
   if (id === 'sondaggi') caricaSondaggi();
   if (id === 'giveaway') caricaGiveaway();
   if (id === 'penitenze') caricaPenitenze();
-  if (id === 'effetti') { caricaEffetti(); caricaPremi(); }
+  if (id === 'effetti') { caricaEffetti(); caricaPremi(); caricaSuoniPremi(); }
   if (id === 'moduli') caricaModuli();
   if (id === 'memoria') caricaStatistiche();
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); }
