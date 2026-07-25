@@ -1447,19 +1447,15 @@ function pannelloMusica() {
         <input type="number" id="musica-costo" min="0" max="1000000" value="${Number(m.costo) || 0}">
       </div>
       <div id="musica-premio-box" class="spazio-sopra" hidden>
-        <label class="campo" for="musica-premio">Premio a punti canale usato per le richieste</label>
-        <input type="text" id="musica-premio" placeholder="es. Richiesta musicale" value="${esc(m.premio || '')}">
-        <p class="suggerimento">Quando qualcuno riscatta questo premio (con <strong>"richiedi un testo"</strong> attivo), il bot mette in coda la canzone scritta.</p>
+        <input type="hidden" id="musica-premio" value="${esc(m.premio || '')}">
+        <p>Gli spettatori richiedono una canzone <strong>riscattando un premio a punti canale</strong>: scrivono il brano nel riscatto e il bot lo mette in coda. Crealo qui, pronto all'uso.</p>
         <div id="musica-premi-info" class="riquadro-info spazio-sopra"><p>…</p></div>
-        <details class="spazio-sopra">
-          <summary>Creane uno pronto all'uso ✨</summary>
-          <div class="griglia-campi spazio-sopra">
-            <div><label class="campo">Nome del premio</label><input type="text" id="musica-nuovo-nome" value="Richiesta musicale"></div>
-            <div><label class="campo">Costo (punti canale)</label><input type="number" id="musica-nuovo-costo" min="1" value="500"></div>
-          </div>
-          <button class="btn secondario spazio-sopra" id="musica-crea-premio">Crea premio su Twitch</button>
-          <p class="suggerimento">Lo creo io con la richiesta di testo già attiva e lo imposto qui sopra.</p>
-        </details>
+        <div class="griglia-campi spazio-sopra">
+          <div><label class="campo">Nome del premio</label><input type="text" id="musica-nuovo-nome" value="${esc(m.premio || 'Richiesta musicale')}"></div>
+          <div><label class="campo">Costo (punti canale)</label><input type="number" id="musica-nuovo-costo" min="1" value="500"></div>
+        </div>
+        <button class="btn spazio-sopra" id="musica-crea-premio">Crea il premio su Twitch</button>
+        <p class="suggerimento">Lo creo io con la "richiesta di testo" già attiva e lo collego alle richieste musicali.</p>
       </div>
       <button class="btn spazio-sopra" id="musica-salva">Salva</button>
     </div>`);
