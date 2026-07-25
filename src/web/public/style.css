@@ -502,6 +502,11 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .riquadro-info .lista-punti li { margin: .25rem 0; }
 .pen-inline-num { display: inline-block; background: #ff2d2d; color: #fff; font-weight: 800; font-size: .78rem; padding: .05rem .4rem; border-radius: 6px; vertical-align: baseline; }
 
+/* alert eventi: una griglia di blocchi (follow/sub/cheer/raid) */
+.alert-griglia { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: .8rem; }
+.alert-blocco { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-m); padding: .8rem .9rem; }
+.alert-blocco:hover { border-color: var(--border-2); }
+
 /* suoni sui punti canale: una riga per premio (nome + suono + anteprima) */
 .lista-suoni-premi { list-style: none; margin-top: .4rem; }
 .lista-suoni-premi > li { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-m); padding: .65rem .85rem; margin-bottom: .5rem; }

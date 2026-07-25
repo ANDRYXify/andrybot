@@ -23,6 +23,7 @@ function desiredSubs(bid) {
     { type: 'stream.offline', version: '1', condition: { broadcaster_user_id: bid } },
     { type: 'channel.follow', version: '2', condition: { broadcaster_user_id: bid, moderator_user_id: bid } },
     { type: 'channel.subscribe', version: '1', condition: { broadcaster_user_id: bid } },
+    { type: 'channel.cheer', version: '1', condition: { broadcaster_user_id: bid } },
     { type: 'channel.raid', version: '1', condition: { to_broadcaster_user_id: bid } },
     { type: 'channel.channel_points_custom_reward_redemption.add', version: '1', condition: { broadcaster_user_id: bid } },
   ];

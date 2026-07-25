@@ -28,6 +28,7 @@ import * as brainpy from './ai/brainpy.js';
 import { createMessageHandler } from './features/handler.js';
 import { ClipEngine } from './features/clips.js';
 import { PenitenzeEngine } from './features/penitenze.js';
+import { AlertsEngine } from './features/alerts.js';
 import { scheduleReflection } from './ai/reflection.js';
 import { StreamWatcher } from './stream/watcher.js';
 import { LiveListener } from './stream/listener.js';
@@ -65,6 +66,7 @@ export class BotManager {
     if (this.running) return;
 
     this.clips = new ClipEngine({ helix: this.helix, say: (ch, t) => this.say(ch, t) });
+    this.alerts = new AlertsEngine({ effects: this.effects });
     this.penitenze = new PenitenzeEngine({
       say: (ch, t) => this.say(ch, t),
       effects: this.effects,
@@ -378,6 +380,7 @@ export class BotManager {
   _elaboraMessaggio(login, msg, onMessage) {
     onMessage(msg).catch(e => log.error(`#${login} gestione messaggio:`, e?.message || e));
     if (!msg.isSelf) this.clips.onActivity(msg);   // rilevatore "hype" per le clip automatiche (chat)
+    try { this.alerts?.onChat(login, msg); } catch (e) { log.debug(`#${login} chat overlay:`, e?.message || e); }
     this.brain.observe?.(msg);                             // apprendimento passivo (anche dai messaggi dello streamer)
     // amicizia GLOBALE: chi interagisce diventa piano piano "amico" del bot
     // (solo un'affinità, mai contenuti né in quale canale).
@@ -537,6 +540,8 @@ export class BotManager {
     const { channel, type, data } = ev;
     memory.logMessage(channel, '[evento]', '', `${type} ${JSON.stringify(data || {})}`.slice(0, 300), true);
     this.brain?.onEvent?.(ev, (text) => this.say(channel, text));
+    // alert overlay (follow/sub/cheer/raid): notifica animata + suono
+    try { this.alerts?.onEvent(ev); } catch (e) { log.debug(`#${channel} alert evento:`, e?.message || e); }
     // clip automatiche: sub/bit/raid sono momenti forti (le clip li "sentono")
     try { this.clips?.onEvent(ev); } catch (e) { log.debug(`#${channel} clip evento:`, e?.message || e); }
     // moduli: automazioni con trigger 'evento' (follow, sub, raid, cheer, ...)
