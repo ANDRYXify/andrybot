@@ -90,18 +90,18 @@ export class Helix {
   // ---- Punti canale: ricompense personalizzate (Custom Rewards) ----
   // Crea un premio a punti canale. Ritorna {id, title, cost} o lancia (es. 403
   // se manca lo scope channel:manage:redemptions, 400 se il titolo è duplicato).
-  async creaReward(channelLogin, { titolo, costo } = {}) {
+  async creaReward(channelLogin, { titolo, costo, prompt, userInput } = {}) {
     const s = streamers.get(channelLogin);
     if (!s?.user_id) return null;
     const token = await this.auth.getToken('broadcaster', channelLogin);
+    const body = {
+      title: String(titolo || '').slice(0, 45),
+      cost: Math.max(1, Math.round(Number(costo) || 100)),
+      is_enabled: true,
+    };
+    if (userInput) { body.is_user_input_required = true; body.prompt = String(prompt || '').slice(0, 200); }
     const j = await this._request('POST', '/channel_points/custom_rewards', {
-      query: { broadcaster_id: s.user_id },
-      body: {
-        title: String(titolo || '').slice(0, 45),
-        cost: Math.max(1, Math.round(Number(costo) || 100)),
-        is_enabled: true,
-      },
-      token,
+      query: { broadcaster_id: s.user_id }, body, token,
     });
     const r = j?.data?.[0];
     return r ? { id: r.id, title: r.title, cost: r.cost } : null;
@@ -116,6 +116,18 @@ export class Helix {
       query: { broadcaster_id: s.user_id, only_manageable_rewards: 'true' }, token,
     });
     return (j?.data || []).map((r) => ({ id: r.id, title: r.title, cost: r.cost, enabled: r.is_enabled }));
+  }
+
+  // Elenca TUTTI i premi a punti canale del canale (anche quelli non nostri): utile
+  // per far vedere allo streamer quanti ne ha già e i nomi occupati.
+  async listaRewardsTutti(channelLogin) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return [];
+    const token = await this.auth.getToken('broadcaster', channelLogin);
+    const j = await this._request('GET', '/channel_points/custom_rewards', {
+      query: { broadcaster_id: s.user_id }, token,
+    });
+    return (j?.data || []).map((r) => ({ id: r.id, title: r.title, cost: r.cost, enabled: r.is_enabled, nostro: !!r.is_user_input_required || undefined }));
   }
 
   // Elimina un premio (solo quelli creati da noi).
