@@ -2290,9 +2290,13 @@ function pannelloAlert() {
         ${cSel('al-st-font', 'Font', FONT_OPTS, st.font)}
         ${cRng('al-st-dim', 'Testo', 14, 56, st.dimTesto, 'px')}
       </div>
-      <label class="campo spazio-sopra">Font Google <span class="tenue">— cerca nell'elenco (oltre 1900 font): scrivi e scegli, l'anteprima usa quel font e vince sul menu qui sopra</span></label>
-      <input type="text" id="al-st-gfont" class="campo-largo gfont" list="lista-gfont" placeholder="— nessuno (usa il menu) —" value="${esc(st.googleFont || '')}">
-      <datalist id="lista-gfont"></datalist>
+      <label class="campo spazio-sopra">Font <span class="tenue">— scegli un font Google dall'elenco con anteprima (vince sul menu qui sopra)</span></label>
+      <div class="riga-flessibile">
+        <input type="text" id="al-st-gfont" class="campo-largo gfont" placeholder="— nessun font Google (uso il menu) —" value="${esc(st.googleFont || '')}">
+        <button type="button" class="btn secondario sfoglia-font" data-target="al-st-gfont" data-box="fb-al">📖 Sfoglia i font</button>
+        <button type="button" class="btn secondario gfont-x" data-target="al-st-gfont" title="Togli il font Google">✕</button>
+      </div>
+      <div class="font-browser" id="fb-al" hidden></div>
       <div class="griglia-campi spazio-sopra">
         ${cCol('al-st-bg', 'Sfondo', st.sfondo)}
         ${cRng('al-st-op', 'Opacità', 0, 100, st.opacita, '%')}
@@ -2329,8 +2333,13 @@ function pannelloAlert() {
         ${cSel('co-st-anim', 'Animazione', ANIM_CHAT_OPTS, cst.animazione)}
         ${cRng('co-st-larg', 'Larghezza', 18, 60, cst.larghezza, 'vw')}
       </div>
-      <label class="campo spazio-sopra">Font Google <span class="tenue">— cerca nell'elenco, opzionale, vince sul menu</span></label>
-      <input type="text" id="co-st-gfont" class="campo-largo gfont" list="lista-gfont" placeholder="— nessuno —" value="${esc(cst.googleFont || '')}">
+      <label class="campo spazio-sopra">Font <span class="tenue">— font Google dall'elenco con anteprima (opzionale, vince sul menu)</span></label>
+      <div class="riga-flessibile">
+        <input type="text" id="co-st-gfont" class="campo-largo gfont" placeholder="— nessun font Google —" value="${esc(cst.googleFont || '')}">
+        <button type="button" class="btn secondario sfoglia-font" data-target="co-st-gfont" data-box="fb-co">📖 Sfoglia i font</button>
+        <button type="button" class="btn secondario gfont-x" data-target="co-st-gfont" title="Togli il font Google">✕</button>
+      </div>
+      <div class="font-browser" id="fb-co" hidden></div>
       <div class="griglia-campi spazio-sopra">
         ${cCol('co-st-bg', 'Sfondo', cst.sfondo)}
         ${cRng('co-st-op', 'Opacità', 0, 100, cst.opacita, '%')}
@@ -2387,6 +2396,38 @@ function fontGoogleDash(nome) {
 }
 // font effettivo di uno stile: Google (se scritto) o quello del menu
 const fontStile = (st) => (st && st.googleFont ? fontGoogleDash(st.googleFont) : FONT_VAR[(st || {}).font]);
+
+// Elenco sfogliabile dei font Google CON ANTEPRIMA (ogni voce scritta nel suo
+// font). Niente ricerca obbligatoria: scorri e scegli. I font si caricano solo
+// quando la riga entra in vista (lazy), così le ~1900 voci non pesano tutte.
+let FONTS_GOOGLE = null;
+async function montaFontBrowser(box, targetId) {
+  box.innerHTML = '<input type="text" class="fb-cerca" placeholder="Filtra per nome (facoltativo)…"><div class="fb-lista"><p class="tenue">Carico i font…</p></div>';
+  if (!FONTS_GOOGLE) { try { const r = await api('/api/streamer/google-fonts'); FONTS_GOOGLE = r.fonts || []; } catch { FONTS_GOOGLE = []; } }
+  const lista = box.querySelector('.fb-lista');
+  lista.innerHTML = FONTS_GOOGLE.length
+    ? FONTS_GOOGLE.map((f) => `<button type="button" class="fb-riga" data-font="${esc(f)}">${esc(f)}</button>`).join('')
+    : '<p class="tenue">Elenco non disponibile ora: puoi scrivere il nome del font a mano.</p>';
+  if (typeof IntersectionObserver !== 'undefined') {
+    const io = new IntersectionObserver((ents) => ents.forEach((e) => {
+      if (e.isIntersecting) { e.target.style.fontFamily = fontGoogleDash(e.target.dataset.font); io.unobserve(e.target); }
+    }), { root: lista, rootMargin: '250px' });
+    lista.querySelectorAll('.fb-riga').forEach((r) => io.observe(r));
+  } else {
+    lista.querySelectorAll('.fb-riga').forEach((r) => { r.style.fontFamily = fontGoogleDash(r.dataset.font); });
+  }
+  box.querySelector('.fb-cerca').addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    lista.querySelectorAll('.fb-riga').forEach((r) => { r.hidden = !!q && !r.dataset.font.toLowerCase().includes(q); });
+  });
+  lista.addEventListener('click', (e) => {
+    const r = e.target.closest('.fb-riga'); if (!r) return;
+    const inp = _g(targetId);
+    if (inp) { inp.value = r.dataset.font; inp.dispatchEvent(new Event('input', { bubbles: true })); }
+    lista.querySelectorAll('.fb-riga.sel').forEach((x) => x.classList.remove('sel'));
+    r.classList.add('sel');
+  });
+}
 // posizioni LIBERE (drag) degli elementi nell'anteprima: {x,y} in % o null (angolo).
 // Appartengono all'OVERLAY selezionato (posXY = layout dell'overlay corrente).
 let posXY = { alert: null, chat: null, wf: null, ws: null };
@@ -2916,13 +2957,17 @@ function caricaAlert() {
     const upd = () => { el.style.fontFamily = fontGoogleDash(el.value) || ''; };
     el.addEventListener('input', upd); upd();
   });
-  // riempi l'elenco cercabile dei font Google (una volta, cache lato server)
-  const dl = _g('lista-gfont');
-  if (dl && !dl.children.length) {
-    api('/api/streamer/google-fonts').then((r) => {
-      dl.innerHTML = (r.fonts || []).map((f) => `<option value="${esc(f)}">`).join('');
-    }).catch(() => { /* niente: resta il campo libero */ });
-  }
+  // "Sfoglia i font": apre l'elenco Google con ANTEPRIMA (ogni font nel suo font)
+  document.querySelectorAll('.sfoglia-font').forEach((btn) => btn.addEventListener('click', () => {
+    const box = _g(btn.dataset.box); if (!box) return;
+    box.hidden = !box.hidden;
+    btn.textContent = box.hidden ? '📖 Sfoglia i font' : '▲ Chiudi elenco';
+    if (!box.hidden && !box._montato) { box._montato = true; montaFontBrowser(box, btn.dataset.target); }
+  }));
+  // ✕ = togli il font Google (torna al menu)
+  document.querySelectorAll('.gfont-x').forEach((btn) => btn.addEventListener('click', () => {
+    const inp = _g(btn.dataset.target); if (inp) { inp.value = ''; inp.dispatchEvent(new Event('input', { bubbles: true })); }
+  }));
   _g('css-salva')?.addEventListener('click', () => conErrore(() => salvaCss()));
 
   document.querySelectorAll('.al-prova').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
