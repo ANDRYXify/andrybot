@@ -1655,6 +1655,24 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.json({ overlays });
   }));
 
+  // Elenco COMPLETO dei font Google (per la ricerca nel menu font). Preso una
+  // volta da fonts.google.com (host fisso, niente SSRF) e cache-ato 24h.
+  let _gfontLista = null, _gfontTs = 0;
+  app.get('/api/streamer/google-fonts', requireLogin, wrap(async (req, res) => {
+    if (_gfontLista && Date.now() - _gfontTs < 86_400_000) return res.json({ fonts: _gfontLista });
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 6000);
+      const r = await fetch('https://fonts.google.com/metadata/fonts', { headers: { Accept: 'application/json', 'User-Agent': 'SocialBot/1.0' }, signal: ctrl.signal }).finally(() => clearTimeout(t));
+      const buf = Buffer.from(await r.arrayBuffer());
+      if (buf.length > 8 * 1024 * 1024) throw new Error('troppo grande');
+      const j = JSON.parse(buf.toString('utf8').replace(/^[^[{]+/, ''));   // toglie il prefisso XSSI
+      const lista = (j.familyMetadataList || []).map((f) => f.family).filter(Boolean).slice(0, 3000);
+      if (lista.length) { _gfontLista = lista; _gfontTs = Date.now(); }
+    } catch (e) { log.debug('google-fonts:', e?.message || e); }
+    res.json({ fonts: _gfontLista || [] });
+  }));
+
   // posizione/dimensione/rotazione di un effetto a schermo (dall'Overlay Studio).
   // Body: { comando, xy: {x,y,s,r} | null }. null = rimetti l'effetto al centro.
   app.post('/api/streamer/effetti/posizione', requireLogin, wrap(async (req, res) => {

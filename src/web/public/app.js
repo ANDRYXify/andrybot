@@ -2290,9 +2290,9 @@ function pannelloAlert() {
         ${cSel('al-st-font', 'Font', FONT_OPTS, st.font)}
         ${cRng('al-st-dim', 'Testo', 14, 56, st.dimTesto, 'px')}
       </div>
-      <label class="campo spazio-sopra">Font Google <span class="tenue">— scrivi un nome (es. Poppins, Bebas Neue): l'anteprima usa quel font e vince sul menu qui sopra</span></label>
-      <input type="text" id="al-st-gfont" class="campo-largo gfont" placeholder="— nessuno (usa il menu) —" value="${esc(st.googleFont || '')}">
-      <p class="tenue">Sfoglia i font su <a href="https://fonts.google.com" target="_blank" rel="noopener">fonts.google.com</a> e copia qui il nome.</p>
+      <label class="campo spazio-sopra">Font Google <span class="tenue">— cerca nell'elenco (oltre 1900 font): scrivi e scegli, l'anteprima usa quel font e vince sul menu qui sopra</span></label>
+      <input type="text" id="al-st-gfont" class="campo-largo gfont" list="lista-gfont" placeholder="— nessuno (usa il menu) —" value="${esc(st.googleFont || '')}">
+      <datalist id="lista-gfont"></datalist>
       <div class="griglia-campi spazio-sopra">
         ${cCol('al-st-bg', 'Sfondo', st.sfondo)}
         ${cRng('al-st-op', 'Opacità', 0, 100, st.opacita, '%')}
@@ -2329,8 +2329,8 @@ function pannelloAlert() {
         ${cSel('co-st-anim', 'Animazione', ANIM_CHAT_OPTS, cst.animazione)}
         ${cRng('co-st-larg', 'Larghezza', 18, 60, cst.larghezza, 'vw')}
       </div>
-      <label class="campo spazio-sopra">Font Google <span class="tenue">— opzionale, vince sul menu</span></label>
-      <input type="text" id="co-st-gfont" class="campo-largo gfont" placeholder="— nessuno —" value="${esc(cst.googleFont || '')}">
+      <label class="campo spazio-sopra">Font Google <span class="tenue">— cerca nell'elenco, opzionale, vince sul menu</span></label>
+      <input type="text" id="co-st-gfont" class="campo-largo gfont" list="lista-gfont" placeholder="— nessuno —" value="${esc(cst.googleFont || '')}">
       <div class="griglia-campi spazio-sopra">
         ${cCol('co-st-bg', 'Sfondo', cst.sfondo)}
         ${cRng('co-st-op', 'Opacità', 0, 100, cst.opacita, '%')}
@@ -2916,6 +2916,13 @@ function caricaAlert() {
     const upd = () => { el.style.fontFamily = fontGoogleDash(el.value) || ''; };
     el.addEventListener('input', upd); upd();
   });
+  // riempi l'elenco cercabile dei font Google (una volta, cache lato server)
+  const dl = _g('lista-gfont');
+  if (dl && !dl.children.length) {
+    api('/api/streamer/google-fonts').then((r) => {
+      dl.innerHTML = (r.fonts || []).map((f) => `<option value="${esc(f)}">`).join('');
+    }).catch(() => { /* niente: resta il campo libero */ });
+  }
   _g('css-salva')?.addEventListener('click', () => conErrore(() => salvaCss()));
 
   document.querySelectorAll('.al-prova').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
