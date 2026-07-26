@@ -506,6 +506,15 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .alert-griglia { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: .8rem; }
 .alert-blocco { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-m); padding: .8rem .9rem; }
 .alert-blocco:hover { border-color: var(--border-2); }
+/* Media dell'alert: due slot affiancati (Suono | Immagine-video), ognuno con
+   scelta dalla libreria + caricamento diretto. Responsive: in colonna se stretto. */
+.al-media-wrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .8rem; }
+.al-slot { background: var(--bg-2, rgba(255,255,255,.02)); border: 1px solid var(--border); border-radius: var(--r-s); padding: .6rem .65rem; }
+.al-slot > .campo { font-weight: 600; }
+.al-slot select { width: 100%; }
+.al-carica { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; margin-top: .5rem; }
+.al-carica .btn { white-space: nowrap; }
+.al-up-esito { font-size: .8rem; }
 /* checkbox in riga (bagliore/icona/ombra…) */
 .riga-check { display: inline-flex; align-items: center; gap: .4rem; font-size: .9rem; margin-right: 1.2rem; cursor: pointer; }
 .riga-check input { width: 16px; height: 16px; }
