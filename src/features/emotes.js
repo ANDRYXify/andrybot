@@ -94,3 +94,25 @@ export function invalida(login) {
   if (login) cacheCanale.delete(String(login).toLowerCase().trim());
   else { cacheCanale.clear(); cacheGlobale = null; }
 }
+
+// Emote NATIVE di Twitch presenti in UN messaggio. Twitch non le manda come
+// testo ma nel tag IRC "emotes" ("id:inizio-fine,inizio-fine/id2:…"), dove gli
+// indici puntano al testo GREZZO. Ricaviamo nome→url estraendo il nome alle
+// posizioni indicate (indici per CODE-POINT, non UTF-16, per reggere le emoji).
+// L'url è la CDN ufficiale di Twitch (static-cdn.jtv.net).
+export function twitchInMessaggio(emotesTag, testo) {
+  const out = {};
+  if (!emotesTag || !testo) return out;
+  const cp = [...String(testo)];
+  for (const parte of String(emotesTag).split('/')) {
+    const i = parte.indexOf(':');
+    if (i < 0) continue;
+    const id = parte.slice(0, i);
+    const primo = (parte.slice(i + 1).split(',')[0] || '');
+    const a = Number(primo.split('-')[0]), b = Number(primo.split('-')[1]);
+    if (!id || !Number.isFinite(a) || !Number.isFinite(b) || b < a) continue;
+    const nome = cp.slice(a, b + 1).join('');
+    if (nome) out[nome] = `https://static-cdn.jtv.net/emoticons/v2/${encodeURIComponent(id)}/default/dark/2.0`;
+  }
+  return out;
+}

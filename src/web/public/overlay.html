@@ -568,13 +568,15 @@
     // Riempie `riga` con il testo, sostituendo le PAROLE che sono emote con
     // <img>. Split su spazi conservando la spaziatura originale; match esatto
     // della parola (come fanno 7TV/BTTV): "Kappa" sì, "Kappa!" no.
-    function testoConEmote(riga, testo) {
+    function testoConEmote(riga, testo, extra) {
       const pezzi = String(testo || '').split(/(\s+)/);
       for (const p of pezzi) {
-        if (p && EMOTE[p]) {
+        // 7TV (mappa del canale) oppure emote NATIVA di Twitch (mappa del messaggio)
+        const url = p && (EMOTE[p] || (extra && extra[p]));
+        if (url) {
           const img = document.createElement('img');
           img.className = 'emote';
-          img.src = EMOTE[p];
+          img.src = url;
           img.alt = p;
           img.loading = 'lazy';
           riga.appendChild(img);
@@ -606,7 +608,7 @@
       const cu = (st.username && st.username !== 'twitch') ? st.username : ev.colore;
       if (cu) u.style.color = cu;
       riga.appendChild(u);
-      testoConEmote(riga, ev.testo || '');
+      testoConEmote(riga, ev.testo || '', ev.emotiTwitch);
       chatBox.appendChild(riga);
       requestAnimationFrame(() => { riga.style.transform = ''; riga.classList.add('dentro'); });
       const max = Math.max(1, Number(ev.max) || 8);
