@@ -1578,6 +1578,12 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.json({ effetti, overlayUrl: effects.overlayUrl(login) });
   }));
 
+  // solo il link dell'overlay per OBS (lo usa l'Overlay Studio, senza scaricare
+  // tutta la lista effetti).
+  app.get('/api/streamer/overlay-url', requireLogin, wrap(async (req, res) => {
+    res.json({ overlayUrl: effects.overlayUrl(currentUser(req).login) });
+  }));
+
   // posizione/dimensione/rotazione di un effetto a schermo (dall'Overlay Studio).
   // Body: { comando, xy: {x,y,s,r} | null }. null = rimetti l'effetto al centro.
   app.post('/api/streamer/effetti/posizione', requireLogin, wrap(async (req, res) => {
