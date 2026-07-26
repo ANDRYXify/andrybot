@@ -558,6 +558,15 @@ table.tabella { width: 100%; border-collapse: collapse; font-size: .9rem; margin
 .fb-riga { text-align: left; padding: .5rem .6rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--testo); cursor: pointer; font-size: 1.15rem; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: border-color .12s ease, background .12s ease; }
 .fb-riga:hover { border-color: var(--acc-bordo); background: var(--acc-tint); }
 .fb-riga.sel { border-color: var(--acc); box-shadow: 0 0 0 1px var(--acc); }
+
+/* Sezioni comprimibili (carta a fisarmonica): pannelli lunghi più scansionabili */
+details.carta.sez { padding-top: 0; }
+details.carta.sez > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: .45rem; padding: 1.05rem 0 .2rem; font-weight: 700; color: var(--testo); }
+details.carta.sez > summary::-webkit-details-marker { display: none; }
+details.carta.sez > summary h3 { margin: 0; font-size: .98rem; display: inline-flex; align-items: center; gap: .4rem; }
+details.carta.sez > summary::after { content: ''; margin-left: auto; flex: 0 0 auto; width: .5rem; height: .5rem; border-right: 2px solid var(--acc); border-bottom: 2px solid var(--acc); transform: rotate(45deg); transition: transform .18s ease; opacity: .85; }
+details.carta.sez[open] > summary::after { transform: rotate(-135deg); }
+details.carta.sez[open] > summary { margin-bottom: .5rem; border-bottom: 1px solid var(--border); }
 .prefisso-cmd { font-size: 1.3rem; font-weight: 800; color: var(--acc); line-height: 1; }
 .azioni-voce { display: flex; gap: .35rem; align-items: center; flex-wrap: wrap; }
 
