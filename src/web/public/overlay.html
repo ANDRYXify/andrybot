@@ -388,6 +388,22 @@
 
     // mappa nome-font → variabile CSS definita in overlay-skin.css
     const FONT = { sistema: 'var(--font-sistema)', rotondo: 'var(--font-rotondo)', condensato: 'var(--font-condensato)', mono: 'var(--font-mono)', serif: 'var(--font-serif)', manga: 'var(--font-manga)' };
+    // FONT GOOGLE: carica al volo un font dalla libreria Google e lo usa. Il nome
+    // arriva già ripulito dal server (solo lettere/numeri/spazi).
+    const _gfont = new Set();
+    function caricaFontGoogle(nome) {
+      const n = String(nome || '').trim();
+      if (!n) return null;
+      if (!_gfont.has(n.toLowerCase())) {
+        _gfont.add(n.toLowerCase());
+        const l = document.createElement('link');
+        l.rel = 'stylesheet';
+        l.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(n).replace(/%20/g, '+') + '&display=swap';
+        document.head.appendChild(l);
+      }
+      return "'" + n + "', var(--font-sistema)";
+    }
+    const fontDi = (st) => (st && st.googleFont ? caricaFontGoogle(st.googleFont) : (FONT[(st || {}).font] || null));
     // applica un oggetto {--var: valore} come stile inline
     function applicaVars(el, vars) { for (const k in vars) { if (vars[k] != null && vars[k] !== '') el.style.setProperty(k, String(vars[k])); } }
 
@@ -421,7 +437,7 @@
         '--acc': ev.colore, '--bg': st.sfondo, '--op': st.opacita != null ? st.opacita + '%' : null,
         '--fg': st.testo, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null,
         '--border': st.bordoSpessore != null ? st.bordoSpessore + 'px' : null,
-        '--size': st.dimTesto != null ? st.dimTesto + 'px' : null, '--font': FONT[st.font] || null,
+        '--size': st.dimTesto != null ? st.dimTesto + 'px' : null, '--font': fontDi(st) || null,
       });
       const testoHtml = escHtml(ev.testo || '').replace(/^(\S+)/, '<b>$1</b>');
       // MEDIA opzionale (immagine/video caricato) mostrato sopra il testo
@@ -488,7 +504,7 @@
       riga.className = 'chat-riga dim-' + (st.dim || 'media') + ' anim-' + (st.animazione || 'slide') + (st.ombra !== false ? ' ombra' : '') + (st.grassettoUser !== false ? ' user-bold' : '');
       applicaVars(riga, {
         '--bg': st.sfondo, '--op': st.opacita != null ? st.opacita + '%' : null,
-        '--fg': st.testo, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null, '--font': FONT[st.font] || null,
+        '--fg': st.testo, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null, '--font': fontDi(st) || null,
       });
       if (destra) riga.style.transform = 'translateX(10px)';
       const u = document.createElement('span');
@@ -545,7 +561,7 @@
       el.className = 'ovl-widget dim-' + (st.dim || 'media');
       applicaVars(el, {
         '--bg': st.sfondo, '--op': st.opacita != null ? st.opacita + '%' : null, '--fg': st.testo,
-        '--acc': st.accento, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null, '--font': FONT[st.font] || null,
+        '--acc': st.accento, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null, '--font': fontDi(st) || null,
       });
       el.querySelector('.w-ico').innerHTML = WIDGET_ICO[id] || '';
       const tpl = cfg.testo || '{nome}';
