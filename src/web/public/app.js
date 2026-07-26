@@ -3046,10 +3046,12 @@ function pannelloEffetti() {
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.cuffie)}Suoni sui tuoi punti canale</h2>
-      <p>Attacca un <strong class="primo-piano">suono</strong> a un <strong>premio a punti canale che hai già</strong>:
-      quando qualcuno lo riscatta (es. «Bevi l'acqua»), parte il suono nell'overlay — così si capisce al volo.
-      Sono <strong>suoni pronti</strong>, non serve caricare niente.</p>
+      <h2>${_hIco(ICO.cuffie)}Effetti sui tuoi punti canale</h2>
+      <p>Attacca un <strong class="primo-piano">effetto</strong> a un <strong>premio a punti canale che hai già</strong>:
+      quando qualcuno lo riscatta (es. «Bevi l'acqua»), nell'overlay parte quello che scegli — un <strong>suono pronto</strong>,
+      oppure un <strong>tuo suono, immagine o video</strong> caricato in «Carica un effetto» qui sopra.
+      Per immagini e video puoi decidere <strong>dove e quanto grande</strong> appaiono, e per i video attivare il
+      <strong>green screen</strong> (togliere lo sfondo di un colore).</p>
       <div id="suoni-premi-box"><p class="vuoto">Caricamento…</p></div>
     </div>
 
@@ -3082,46 +3084,125 @@ async function caricaSuoniPremi() {
   const mappa = {};
   (d.premi || []).forEach((p) => { mappa[p.reward_id] = p; });
   const presets = (window.SUONI_PRESET && window.SUONI_PRESET.lista) || [];
-  const opz = (sel) => ['<option value="">— nessun suono —</option>']
-    .concat(presets.map((s) => `<option value="${esc(s.id)}"${s.id === sel ? ' selected' : ''}>${esc(s.nome)}</option>`)).join('');
+  const effetti = d.effetti || [];
+  const audio = effetti.filter((e) => e.tipo === 'audio');
+  const visivi = effetti.filter((e) => e.tipo === 'immagine' || e.tipo === 'video');
+  const tipoDi = {}; effetti.forEach((e) => { tipoDi[e.comando] = e.tipo; });
+  // scelta: preset ("<id>") o effetto ("effetto:<comando>")
+  const opzScelta = (sel) => {
+    const p = presets.map((s) => `<option value="${esc(s.id)}"${s.id === sel ? ' selected' : ''}>${esc(s.nome)}</option>`).join('');
+    const a = audio.map((e) => `<option value="effetto:${esc(e.comando)}"${'effetto:' + e.comando === sel ? ' selected' : ''}>!${esc(e.comando)}</option>`).join('');
+    const v = visivi.map((e) => `<option value="effetto:${esc(e.comando)}"${'effetto:' + e.comando === sel ? ' selected' : ''}>!${esc(e.comando)} (${e.tipo})</option>`).join('');
+    return `<option value="">— niente —</option><optgroup label="Suoni pronti">${p}</optgroup>`
+      + (a ? `<optgroup label="I miei suoni caricati">${a}</optgroup>` : '')
+      + (v ? `<optgroup label="Immagini / Video">${v}</optgroup>` : '');
+  };
   const svgPlay = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
   box.innerHTML = `<ul class="lista-suoni-premi">${tutti.map((r) => {
     const m = mappa[r.id] || {};
+    const selVal = m.effetto ? 'effetto:' + m.effetto : (m.suono || '');
     return `<li data-reward="${esc(r.id)}" data-titolo="${esc(r.title)}" data-costo="${r.cost || 0}">
       <div class="riga-premio-suono">
         <span class="nome-premio"><strong>${esc(r.title)}</strong> <span class="suggerimento">${r.cost || 0} punti</span></span>
         <span class="controlli-suono">
-          <select class="sel-suono">${opz(m.suono || '')}</select>
-          <button type="button" class="btn secondario mini prova-suono" title="Ascolta">${svgPlay}</button>
+          <select class="sel-effetto">${opzScelta(selVal)}</select>
+          <button type="button" class="btn secondario mini prova-suono" title="Prova">${svgPlay}</button>
         </span>
       </div>
       <input type="text" class="campo-largo msg-suono spazio-sopra" maxlength="300" placeholder="Messaggio in chat (facoltativo, {user} = chi riscatta)" value="${esc(m.testo || '')}">
+      <div class="premio-posizione" hidden></div>
     </li>`;
   }).join('')}</ul>`;
 
-  const salvaRiga = (li) => conErrore(async () => {
-    await api('/api/streamer/premi/suono', { method: 'POST', body: {
-      rewardId: li.dataset.reward,
-      titolo: li.dataset.titolo,
-      costo: li.dataset.costo,
-      suono: li.querySelector('.sel-suono').value,
-      testo: (li.querySelector('.msg-suono').value || '').trim(),
-    } });
+  // stato per riga: posizione (xy) + green screen (chroma)
+  const stato = {};
+  (d.premi || []).forEach((p) => {
+    let o = {}; try { o = p.opzioni ? JSON.parse(p.opzioni) : {}; } catch { o = {}; }
+    stato[p.reward_id] = { xy: o.xy || null, chroma: o.chroma || { attivo: false, colore: '#00ff00', soglia: 140 } };
   });
+
   box.querySelectorAll('.lista-suoni-premi > li').forEach((li) => {
-    const sel = li.querySelector('.sel-suono');
+    const reward = li.dataset.reward;
+    const sel = li.querySelector('.sel-effetto');
+    const st = stato[reward] || (stato[reward] = { xy: null, chroma: { attivo: false, colore: '#00ff00', soglia: 140 } });
+    const salva = (msg) => conErrore(async () => {
+      await api('/api/streamer/premi/suono', { method: 'POST', body: {
+        rewardId: reward, titolo: li.dataset.titolo, costo: li.dataset.costo,
+        scelta: sel.value, testo: (li.querySelector('.msg-suono').value || '').trim(),
+        opzioni: { xy: st.xy, chroma: st.chroma },
+      } });
+      if (msg) toast(msg);
+    });
+    const comandoSel = () => { const m = /^effetto:(.+)$/.exec(sel.value); return m ? m[1] : ''; };
+    const aggiornaEditor = () => {
+      const c = comandoSel(); const tipo = tipoDi[c];
+      _premioEditorPos(li.querySelector('.premio-posizione'), c, tipo, st, () => salva());
+    };
     sel.addEventListener('change', () => {
-      const id = sel.value;
-      if (id && window.SUONI_PRESET) window.SUONI_PRESET.suona(id, 100);   // anteprima
-      salvaRiga(li).then(() => toast('Suono impostato ✓'));
+      const v = sel.value;
+      if (v && !v.startsWith('effetto:') && window.SUONI_PRESET) window.SUONI_PRESET.suona(v, 100);   // anteprima preset
+      aggiornaEditor();
+      salva('Effetto impostato ✓');
     });
     li.querySelector('.prova-suono').addEventListener('click', () => {
-      const id = sel.value;
-      if (id && window.SUONI_PRESET) window.SUONI_PRESET.suona(id, 100);
-      else toast('Scegli prima un suono.');
+      const v = sel.value;
+      if (v && !v.startsWith('effetto:') && window.SUONI_PRESET) window.SUONI_PRESET.suona(v, 100);
+      else if (v) api('/api/streamer/effetti/test', { method: 'POST', body: { comando: comandoSel() } }).then(() => toast('Inviato all\'overlay ▶')).catch(() => toast('Apri prima l\'overlay in OBS.'));
+      else toast('Scegli prima un effetto.');
     });
-    li.querySelector('.msg-suono').addEventListener('change', () => salvaRiga(li).then(() => toast('Messaggio salvato ✓')));
+    li.querySelector('.msg-suono').addEventListener('change', () => salva('Messaggio salvato ✓'));
+    aggiornaEditor();
   });
+}
+
+// Editor compatto (16:9) per posizione/dimensione/rotazione + green screen di un
+// effetto visivo su un premio a punti canale. Solo per immagini/video.
+function _premioEditorPos(box, comando, tipo, st, salva) {
+  if (!box) return;
+  if (!comando || (tipo !== 'immagine' && tipo !== 'video')) { box.hidden = true; box.innerHTML = ''; return; }
+  st.xy = st.xy || { x: 50, y: 50, s: 100, r: 0 };
+  box.hidden = false;
+  const isVideo = tipo === 'video';
+  box.innerHTML = `
+    <p class="suggerimento spazio-sopra"><strong>Dove appare</strong> — trascina nel riquadro, poi regola dimensione e rotazione.</p>
+    <div class="pp-stage"><div class="pp-el">🎬 !${esc(comando)}</div></div>
+    <div class="griglia-campi spazio-sopra">
+      <div><label class="campo">Dimensione: <strong class="pp-s-v">${st.xy.s || 100}</strong>%</label><input type="range" class="pp-s" min="30" max="300" value="${st.xy.s || 100}"></div>
+      <div><label class="campo">Rotazione: <strong class="pp-r-v">${st.xy.r || 0}</strong>°</label><input type="range" class="pp-r" min="-180" max="180" value="${st.xy.r || 0}"></div>
+    </div>
+    ${isVideo ? `
+    <div class="riga-check spazio-sopra"><input type="checkbox" class="pp-chroma" ${st.chroma?.attivo ? 'checked' : ''}><label>Green screen <span class="tenue">— togli lo sfondo di un colore dal video</span></label></div>
+    <div class="pp-chroma-box griglia-campi" ${st.chroma?.attivo ? '' : 'hidden'}>
+      <div><label class="campo">Colore da togliere</label><input type="color" class="pp-chroma-col" value="${esc(st.chroma?.colore || '#00ff00')}"></div>
+      <div><label class="campo">Sensibilità: <strong class="pp-chroma-s-v">${st.chroma?.soglia || 140}</strong></label><input type="range" class="pp-chroma-s" min="40" max="260" value="${st.chroma?.soglia || 140}"></div>
+    </div>` : ''}`;
+  const el = box.querySelector('.pp-el');
+  const stage = box.querySelector('.pp-stage');
+  const posEl = () => { el.style.left = st.xy.x + '%'; el.style.top = st.xy.y + '%'; el.style.transform = `translate(-50%,-50%) scale(${(st.xy.s || 100) / 100}) rotate(${st.xy.r || 0}deg)`; };
+  posEl();
+  el.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    const rect = stage.getBoundingClientRect();
+    try { el.setPointerCapture(e.pointerId); } catch (_) { /* niente */ }
+    const move = (ev) => {
+      st.xy.x = Math.round(Math.max(0, Math.min(100, ((ev.clientX - rect.left) / rect.width) * 100)));
+      st.xy.y = Math.round(Math.max(0, Math.min(100, ((ev.clientY - rect.top) / rect.height) * 100)));
+      posEl();
+    };
+    const up = () => { el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); salva(); };
+    el.addEventListener('pointermove', move); el.addEventListener('pointerup', up);
+  });
+  box.querySelector('.pp-s').addEventListener('input', (e) => { st.xy.s = Number(e.target.value); box.querySelector('.pp-s-v').textContent = st.xy.s; posEl(); });
+  box.querySelector('.pp-s').addEventListener('change', salva);
+  box.querySelector('.pp-r').addEventListener('input', (e) => { st.xy.r = Number(e.target.value); box.querySelector('.pp-r-v').textContent = st.xy.r; posEl(); });
+  box.querySelector('.pp-r').addEventListener('change', salva);
+  const chk = box.querySelector('.pp-chroma');
+  if (chk) {
+    chk.addEventListener('change', () => { st.chroma.attivo = chk.checked; box.querySelector('.pp-chroma-box').hidden = !chk.checked; salva(); });
+    box.querySelector('.pp-chroma-col').addEventListener('change', (e) => { st.chroma.colore = e.target.value; salva(); });
+    box.querySelector('.pp-chroma-s').addEventListener('input', (e) => { st.chroma.soglia = Number(e.target.value); box.querySelector('.pp-chroma-s-v').textContent = st.chroma.soglia; });
+    box.querySelector('.pp-chroma-s').addEventListener('change', salva);
+  }
 }
 
 // carica e disegna gli alert a punti canale (crea premio Twitch + mappa effetto)
