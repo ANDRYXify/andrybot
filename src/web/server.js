@@ -1789,7 +1789,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const tutti = permessoOk ? await helix.listaRewardsTutti(login).catch(() => []) : [];
     res.json({
       premi: pointAlerts.list(login),
-      effetti: effectsDb.list(login).map((e) => e.comando),
+      effetti: effectsDb.list(login).map((e) => ({ comando: e.comando, tipo: e.tipo })),
       tutti,
       permessoOk,
     });
@@ -1805,18 +1805,30 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const b = req.body || {};
     const rewardId = String(b.rewardId || '').trim();
     if (!rewardId) return res.status(400).json({ errore: 'premio mancante' });
-    const suono = SUONI_PRESET.has(String(b.suono)) ? String(b.suono) : '';
     const testo = String(b.testo || '').trim().slice(0, 300);
+    // scelta dell'effetto sul riscatto: un suono PRESET ("<id>") OPPURE un effetto
+    // caricato ("effetto:<comando>" → audio/immagine/video dalla libreria).
+    const scelta = String(b.scelta ?? b.suono ?? '');
+    let suono = '', effetto = '';
+    const mEff = /^effetto:([a-z0-9_]{1,30})$/i.exec(scelta);
+    if (mEff) effetto = mEff[1].toLowerCase();
+    else if (SUONI_PRESET.has(scelta)) suono = scelta;
+    // opzioni: posizione a schermo + green screen (chroma-key), salvate in JSON
+    const o = b.opzioni || {};
+    const xy = xyOk(o.xy);
+    const chroma = (o.chroma && o.chroma.attivo)
+      ? { attivo: true, colore: hexOk(o.chroma.colore, '#00ff00'), soglia: clampInt(o.chroma.soglia, 20, 300, 140) }
+      : null;
+    const opzioni = (xy || chroma) ? JSON.stringify({ xy: xy || null, chroma }) : '';
     const esistente = pointAlerts.getByReward(login, rewardId) || {};
-    if (!suono && !testo && !esistente.effetto) {
+    if (!suono && !effetto && !testo) {
       pointAlerts.remove(login, rewardId);
     } else {
       pointAlerts.add(login, {
         rewardId,
         titolo: String(b.titolo || esistente.titolo || '').slice(0, 60),
         costo: Number(b.costo || esistente.costo || 0),
-        effetto: esistente.effetto || '',   // preserva un eventuale effetto caricato
-        suono, testo,
+        effetto, suono, testo, opzioni,
       });
     }
     res.json({ ok: true, premi: pointAlerts.list(login) });

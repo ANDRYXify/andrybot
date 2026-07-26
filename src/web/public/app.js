@@ -3136,7 +3136,7 @@ async function caricaPremi() {
     return;
   }
   const effOpts = ['<option value="">— nessun effetto —</option>']
-    .concat((d.effetti || []).map((c) => `<option value="${esc(c)}">!${esc(c)}</option>`)).join('');
+    .concat((d.effetti || []).map((c) => `<option value="${esc(c.comando)}">!${esc(c.comando)} (${esc(c.tipo)})</option>`)).join('');
   const premi = d.premi || [];
   const lista = premi.length
     ? premi.map((p) => `<li><span><strong>${esc(p.titolo)}</strong> <span class="suggerimento">${p.costo} punti${p.effetto ? ` · !${esc(p.effetto)}` : ''}${p.testo ? ' · 💬' : ''}</span></span> <a href="#" class="rimuovi-premio" data-id="${esc(p.reward_id)}" title="Elimina">✕</a></li>`).join('')

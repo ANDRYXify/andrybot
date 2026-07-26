@@ -526,7 +526,11 @@ export class BotManager {
       const m = pointAlerts.getByReward(channel, rewardId);
       if (!m) return;                                   // premio non nostro / non mappato
       const utente = data?.user_name || data?.user_login || 'qualcuno';
-      if (m.effetto) { try { this.effects?.fire?.(channel, m.effetto); } catch { /* niente */ } }
+      if (m.effetto) {
+        let opz = {};
+        try { opz = m.opzioni ? JSON.parse(m.opzioni) : {}; } catch { opz = {}; }
+        try { this.effects?.fireConOpzioni?.(channel, m.effetto, opz); } catch { /* niente */ }
+      }
       if (m.suono) { try { this.effects?.firePreset?.(channel, m.suono, m.titolo, 100); } catch { /* niente */ } }
       if (m.testo) this.say(channel, String(m.testo).replace(/\{user\}/g, utente).slice(0, 400));
       // togli il riscatto dalla coda "in sospeso" (best-effort, solo premi nostri)
