@@ -1371,6 +1371,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
         modo,
         costo: Math.max(0, Math.min(1000000, Math.round(Number(m.costo)) || 0)),
         premio: String(m.premio || '').trim().slice(0, 60),
+        disambigua: m.disambigua !== false,
       };
     }
     // antispam: elimina spam/link e timeout ai recidivi

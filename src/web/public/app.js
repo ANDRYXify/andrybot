@@ -1575,6 +1575,10 @@ function pannelloMusica() {
         <p>Gli spettatori richiedono una canzone <strong>riscattando un premio a punti canale</strong> con la "richiesta di testo": scrivono il brano nel riscatto e il bot lo mette in coda.</p>
         <div id="musica-premi-box" class="spazio-sopra"><p>Carico i tuoi premi…</p></div>
       </div>
+      <div class="riga-check spazio-sopra">
+        <input type="checkbox" id="musica-disambigua" ${m.disambigua !== false ? 'checked' : ''}>
+        <label for="musica-disambigua">Se ci sono più canzoni con lo stesso titolo, chiedi in chat quale ("intendi 1, 2 o 3?")</label>
+      </div>
       <button class="btn spazio-sopra" id="musica-salva">Salva</button>
     </div>`);
 }
@@ -1635,6 +1639,7 @@ async function salvaMusica(silenzioso) {
     modo: sel.value,
     costo: Number(document.getElementById('musica-costo')?.value) || 0,
     premio: (document.getElementById('musica-premio')?.value || '').trim(),
+    disambigua: !!document.getElementById('musica-disambigua')?.checked,
   };
   await api('/api/streamer/impostazioni', { method: 'POST', body: { musica } });
   if (!silenzioso) toast('Impostazioni musica salvate 🎵');
