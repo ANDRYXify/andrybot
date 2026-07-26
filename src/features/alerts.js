@@ -95,14 +95,19 @@ export class AlertsEngine {
   }
 
   // Registra lo stato del widget e lo spinge subito nell'overlay.
-  _aggiornaWidget(channel, id, valore) {
+  // persisti=false → mostra il valore SENZA salvarlo: serve alla "Prova", così i
+  // nomi finti (MarioRossi/GiadaTTV) NON restano nell'overlay dal vivo.
+  _aggiornaWidget(channel, id, valore, persisti = true) {
     try {
       const s = streamers.get(channel);
       if (!s) return;
-      const stato = { ...(s.settings?.overlayStato || {}), [id]: String(valore || '').slice(0, 40) };
-      streamers.setSettings(channel, { ...s.settings, overlayStato: stato });
+      const val = String(valore || '').slice(0, 40);
+      if (persisti) {
+        const stato = { ...(s.settings?.overlayStato || {}), [id]: val };
+        streamers.setSettings(channel, { ...s.settings, overlayStato: stato });
+      }
       const cfg = s.settings?.overlayWidget?.[id];
-      this.effects?.emit?.(channel, { tipo: 'widget', id, cfg: cfg || {}, valore: stato[id] });
+      this.effects?.emit?.(channel, { tipo: 'widget', id, cfg: cfg || {}, valore: val });
     } catch (e) { log.debug('widget:', e?.message || e); }
   }
 
@@ -153,7 +158,8 @@ export class AlertsEngine {
       return true;
     }
     if (kind === 'ultimoFollower' || kind === 'ultimoSub') {
-      this._aggiornaWidget(channel, kind, kind === 'ultimoSub' ? 'GiadaTTV' : 'MarioRossi');
+      // Prova: mostra un nome finto SENZA salvarlo (niente placeholder nel live)
+      this._aggiornaWidget(channel, kind, kind === 'ultimoSub' ? 'GiadaTTV' : 'MarioRossi', false);
       return true;
     }
     const a = s.alerts || {};
