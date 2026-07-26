@@ -100,6 +100,10 @@ export class EffectsEngine {
       url: this.mediaUrl(channel, eff.file),
       volume: eff.volume,
       durata: eff.durata,
+      // posizione a schermo (dall'Overlay Studio): {x,y,s,r} o null = centrato
+      posizione: (eff.posx != null && eff.posy != null)
+        ? { x: eff.posx, y: eff.posy, s: eff.scala != null ? eff.scala : 100, r: eff.rot || 0 }
+        : null,
     };
   }
 

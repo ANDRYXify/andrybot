@@ -33,6 +33,11 @@
       border-radius: 8px;
     }
     .effetto.dentro { opacity: 1; transform: scale(1); }
+    /* effetto a POSIZIONE LIBERA (dall'Overlay Studio): ancorato via left/top %
+       e trasformato con la scala (--fx-s) e la rotazione (--fx-r) scelte. */
+    .effetto.libero { position: absolute; max-width: none; max-height: 92vh;
+      transform: translate(-50%, -50%) scale(calc(var(--fx-s, 1) * .9)) rotate(var(--fx-r, 0deg)); }
+    .effetto.libero.dentro { transform: translate(-50%, -50%) scale(var(--fx-s, 1)) rotate(var(--fx-r, 0deg)); }
 
     /* Etichetta con il nome del comando (usata soprattutto per gli audio). */
     #etichette {
@@ -229,10 +234,22 @@
       return Math.min(1, Math.max(0, v / 100));
     }
 
+    // Applica la posizione libera (x,y %) + dimensione (s %) + rotazione (r°) a
+    // un elemento-effetto, se l'Overlay Studio l'ha impostata. Altrimenti resta
+    // centrato dal #palco (comportamento classico).
+    function posizionaEffetto(el, pos) {
+      if (!pos || pos.x == null) return;
+      el.classList.add('libero');
+      el.style.left = pos.x + '%'; el.style.top = pos.y + '%';
+      el.style.setProperty('--fx-s', (Number(pos.s) || 100) / 100);
+      el.style.setProperty('--fx-r', (Number(pos.r) || 0) + 'deg');
+    }
+
     function mostraImmagine(ev) {
       const img = document.createElement('img');
       img.className = 'effetto';
       img.src = ev.url;
+      posizionaEffetto(img, ev.posizione);
       palco.appendChild(img);
       requestAnimationFrame(() => img.classList.add('dentro'));
       etichettaVolatile(ev.comando, durataMs(ev, 5000));
@@ -249,6 +266,7 @@
       v.autoplay = true;
       v.playsInline = true;
       v.volume = volume01(ev);
+      posizionaEffetto(v, ev.posizione);
       palco.appendChild(v);
       requestAnimationFrame(() => v.classList.add('dentro'));
       etichettaVolatile(ev.comando, 1800);
