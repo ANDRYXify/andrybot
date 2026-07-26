@@ -1790,6 +1790,87 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.json({ ok: true });
   }));
 
+  // ---- Media/suono CARICATI DIRETTAMENTE da un blocco alert ----
+  // Massima libertà: dallo stesso alert lo streamer carica un'immagine, un video
+  // o un suono SUO (senza passare dalla scheda Effetti) e viene assegnato subito
+  // all'evento. Riusa la pipeline effetti (compressione/limiti/storage) ma con un
+  // NOME DETERMINISTICO per (evento, slot): un nuovo caricamento SOSTITUISCE il
+  // precedente, così non restano effetti orfani a ogni cambio. Suono e media sono
+  // due slot indipendenti → possono partire INSIEME (es. GIF + suono).
+  const ALERT_KINDS = ['follow', 'sub', 'cheer', 'raid'];
+  app.post('/api/streamer/alerts/media', requireLogin, (req, res) => {
+    if (!esigiFunzione(req, res, 'effetti', 'Gli alert personalizzati')) return;
+    upload.single('file')(req, res, (err) => {
+      if (err) {
+        const msg = err.code === 'LIMIT_FILE_SIZE' ? 'file troppo grande (max 30MB)' : 'caricamento non riuscito';
+        return res.status(400).json({ errore: msg });
+      }
+      salvaAlertMedia(req, res).catch(async (e) => {
+        log.error('POST /api/streamer/alerts/media →', e?.message || e);
+        await pulisciTemp(req.file?.path);
+        if (!res.headersSent) res.status(500).json({ errore: e?.message || 'errore interno' });
+      });
+    });
+  });
+
+  async function salvaAlertMedia(req, res) {
+    const login = currentUser(req).login;
+    if (streamers.get(login)?.status !== 'approved') {
+      await pulisciTemp(req.file?.path);
+      return res.status(403).json({ errore: 'non sei ancora abilitato' });
+    }
+    if (!req.file) return res.status(400).json({ errore: 'nessun file caricato' });
+
+    const kind = String(req.body?.kind || '').toLowerCase();
+    const slot = String(req.body?.slot || '').toLowerCase();   // 'suono' | 'media'
+    const errore = async (msg) => { await pulisciTemp(req.file?.path); return res.status(400).json({ errore: msg }); };
+    if (!ALERT_KINDS.includes(kind)) return errore('evento non valido');
+    if (slot !== 'suono' && slot !== 'media') return errore('slot non valido');
+
+    const destDir = join(effectsRoot, login);
+    mkdirSync(destDir, { recursive: true });
+    const comando = `alert_${kind}_${slot}`;   // deterministico → sostituisce il precedente
+
+    let esito;
+    try {
+      esito = await comprimi(req.file.path, req.file.mimetype, destDir, `${Date.now()}_${comando}`);
+    } catch (e) {
+      return res.status(400).json({ errore: e?.message || 'compressione fallita' });
+    }
+    // coerenza slot ↔ tipo del file
+    if (slot === 'suono' && esito.tipo !== 'audio') {
+      await pulisciTemp(join(destDir, esito.file));
+      return res.status(400).json({ errore: 'per il Suono serve un file AUDIO (mp3, wav, ogg…)' });
+    }
+    if (slot === 'media' && esito.tipo !== 'immagine' && esito.tipo !== 'video') {
+      await pulisciTemp(join(destDir, esito.file));
+      return res.status(400).json({ errore: "qui serve un'IMMAGINE o un VIDEO" });
+    }
+
+    let vecchioFile;
+    try {
+      vecchioFile = effectsDb.add(login, {
+        comando, tipo: esito.tipo, file: esito.file,
+        tier: 'mod', cooldown: 0, volume: 100,
+        durata: esito.tipo === 'immagine' ? 5000 : esito.durata,
+      });
+    } catch (e) {
+      await pulisciTemp(join(destDir, esito.file));
+      return res.status(400).json({ errore: e?.message || 'salvataggio non riuscito' });
+    }
+    if (vecchioFile && vecchioFile !== esito.file) await pulisciTemp(join(destDir, vecchioFile));
+
+    // assegna al blocco alert e persisti (merge sulle impostazioni correnti)
+    const s = streamers.get(login);
+    const settings = { ...(s?.settings || {}) };
+    const alerts = { ...(settings.alerts || {}) };
+    alerts[kind] = { ...(alerts[kind] || {}), [slot === 'suono' ? 'suono' : 'media']: `effetto:${comando}` };
+    settings.alerts = alerts;
+    streamers.setSettings(login, settings);
+
+    res.json({ ok: true, ref: `effetto:${comando}`, comando, tipo: esito.tipo, url: effects.mediaUrl(login, esito.file) });
+  }
+
   // ---- Alert a PUNTI CANALE (Twitch Custom Rewards) ----
   app.get('/api/streamer/premi', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
