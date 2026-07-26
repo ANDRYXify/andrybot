@@ -344,6 +344,14 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // ha concesso il permesso per creare/gestire i premi a punti canale?
   const redemptionsOk = (login) =>
     !!(tokens.get('broadcaster', login)?.scopes?.includes('channel:manage:redemptions'));
+  // Regia: permessi per raid / pubblicità / lettura programmazione ads (aggiunti
+  // dopo → richiedono una ri-autorizzazione da /auth/permessi).
+  const raidOk = (login) =>
+    !!(tokens.get('broadcaster', login)?.scopes?.includes('channel:manage:raids'));
+  const commercialOk = (login) =>
+    !!(tokens.get('broadcaster', login)?.scopes?.includes('channel:edit:commercial'));
+  const adsOk = (login) =>
+    !!(tokens.get('broadcaster', login)?.scopes?.includes('channel:read:ads'));
 
   // stato Telegram per la dashboard — MAI il token (segreto): solo se è
   // configurato, lo @username del bot, il gruppo collegato e le impostazioni.
@@ -744,6 +752,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       vipOk: user ? vipOk(user.login) : false,
       moderazioneOk: user ? moderazioneOk(user.login) : false,
       canaleOk: user ? canaleOk(user.login) : false,
+      // Regia (Vai live): quali permessi ha concesso per gestire la diretta dal bot
+      regia: user ? { broadcast: canaleOk(user.login), raid: raidOk(user.login), commercial: commercialOk(user.login), ads: adsOk(user.login) } : null,
       telegram: user ? statoTelegram(user.login) : null,
       knowledgeCount: user ? knowledge.count(user.login) : 0,
       preaddestramento: user
@@ -1652,6 +1662,105 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // tutta la lista effetti).
   app.get('/api/streamer/overlay-url', requireLogin, wrap(async (req, res) => {
     res.json({ overlayUrl: effects.overlayUrl(currentUser(req).login) });
+  }));
+
+  // ---- REGIA: gestisci la diretta dal bot (senza aprire OBS per queste cose) ----
+  // Stato diretta (live/spettatori/uptime) + info canale (titolo/categoria/tag) +
+  // quali permessi la regia ha a disposizione + programmazione pubblicità.
+  app.get('/api/streamer/regia', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const s = streamers.get(login);
+    const permessi = { broadcast: canaleOk(login), raid: raidOk(login), commercial: commercialOk(login), ads: adsOk(login) };
+    let live = { online: false };
+    let canale = { title: '', gameId: '', gameName: '', tags: [], language: '' };
+    let ads = null;
+    try {
+      const st = await helix.getStream(login);
+      if (st) live = { online: true, title: st.title, gameName: st.game_name, viewers: st.viewer_count, startedAt: st.started_at };
+    } catch { /* offline o errore: resta online:false */ }
+    try {
+      const ci = s?.user_id ? await helix.getChannelInfo(s.user_id) : null;
+      if (ci) canale = { title: ci.title || '', gameId: ci.game_id || '', gameName: ci.game_name || '', tags: ci.tags || [], language: ci.broadcaster_language || '' };
+    } catch { /* niente */ }
+    if (permessi.ads) { try { ads = await helix.getAdSchedule(login); } catch { /* niente */ } }
+    res.json({ permessi, live, canale, ads });
+  }));
+
+  // ricerca categorie/giochi (per il selettore della regia)
+  app.get('/api/streamer/regia/giochi', requireLogin, wrap(async (req, res) => {
+    const q = String(req.query.q || '').trim();
+    if (!q) return res.json({ giochi: [] });
+    const giochi = await helix.searchCategories(q).catch(() => []);
+    res.json({ giochi });
+  }));
+
+  // aggiorna titolo / categoria / tag / lingua del canale
+  app.post('/api/streamer/regia/canale', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (!canaleOk(login)) return res.status(403).json({ errore: 'Concedi il permesso "gestione canale" da /auth/permessi', permesso: true });
+    const b = req.body || {};
+    const patch = {};
+    if (typeof b.titolo === 'string') patch.title = b.titolo;
+    if (b.giocoId) patch.gameId = String(b.giocoId);
+    else if (typeof b.giocoNome === 'string' && b.giocoNome.trim()) {
+      const r = await helix.searchCategories(b.giocoNome.trim()).catch(() => []);
+      if (r[0]) patch.gameId = r[0].id;
+    }
+    if (Array.isArray(b.tags)) patch.tags = b.tags.map((t) => String(t).trim()).filter(Boolean).slice(0, 10);
+    if (b.lingua) patch.language = String(b.lingua);
+    if (!Object.keys(patch).length) return res.status(400).json({ errore: 'niente da aggiornare' });
+    try {
+      await helix.setChannelInfo(login, patch);
+      res.json({ ok: true });
+    } catch (e) {
+      if (e.status === 401 || e.status === 403) return res.status(403).json({ errore: 'permesso mancante (ri-concedi i permessi)', permesso: true });
+      res.status(400).json({ errore: e?.message || 'aggiornamento non riuscito' });
+    }
+  }));
+
+  // crea una clip del momento (serve essere in diretta)
+  app.post('/api/streamer/regia/clip', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const clip = await helix.createClip(login);
+    if (!clip) return res.status(400).json({ errore: 'Nessuna clip: devi essere in diretta.' });
+    res.json({ ok: true, url: clip.url, editUrl: clip.editUrl });
+  }));
+
+  // marker nel VOD
+  app.post('/api/streamer/regia/marker', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (!canaleOk(login)) return res.status(403).json({ errore: 'Concedi il permesso "gestione canale" da /auth/permessi', permesso: true });
+    const r = await helix.createStreamMarker(login, String(req.body?.descrizione || ''));
+    if (!r.ok) return res.status(400).json({ errore: r.motivo || 'non riuscito' });
+    res.json({ ok: true, position: r.position });
+  }));
+
+  // pubblicità (ad-break)
+  app.post('/api/streamer/regia/pubblicita', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (!commercialOk(login)) return res.status(403).json({ errore: 'Concedi il permesso "pubblicità" da /auth/permessi', permesso: true });
+    const r = await helix.startCommercial(login, req.body?.durata);
+    if (!r.ok) return res.status(400).json({ errore: r.motivo || 'non riuscito' });
+    res.json({ ok: true, length: r.length });
+  }));
+
+  // raid verso un altro canale
+  app.post('/api/streamer/regia/raid', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (!raidOk(login)) return res.status(403).json({ errore: 'Concedi il permesso "raid" da /auth/permessi', permesso: true });
+    const target = String(req.body?.canale || '').trim().replace(/^@/, '').toLowerCase();
+    if (!target) return res.status(400).json({ errore: 'scrivi il canale da raidare' });
+    const r = await helix.startRaid(login, target);
+    if (!r.ok) return res.status(400).json({ errore: r.motivo || 'non riuscito' });
+    res.json({ ok: true, target: r.target });
+  }));
+
+  // annulla la raid in preparazione
+  app.post('/api/streamer/regia/raid/annulla', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (!raidOk(login)) return res.status(403).json({ errore: 'permesso mancante', permesso: true });
+    const r = await helix.cancelRaid(login);
+    res.json({ ok: !!r.ok });
   }));
 
   // elenco dei PIÙ OVERLAY dello streamer: per ognuno id, nome, layout e il suo

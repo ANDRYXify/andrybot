@@ -75,16 +75,104 @@ export class Helix {
   // Imposta la categoria (game_id) e/o il titolo del canale. Richiede il token
   // del broadcaster con scope channel:manage:broadcast. Ritorna true; lancia un
   // Error con .status 401/403 se il permesso non è stato concesso.
-  async setChannelInfo(channelLogin, { gameId, title } = {}) {
+  async setChannelInfo(channelLogin, { gameId, title, tags, language } = {}) {
     const s = streamers.get(channelLogin);
     if (!s?.user_id) return false;
     const body = {};
     if (gameId !== undefined && gameId !== null) body.game_id = String(gameId);
     if (title !== undefined) body.title = String(title).slice(0, 140);
+    if (Array.isArray(tags)) body.tags = tags.map((t) => String(t).slice(0, 25)).filter(Boolean).slice(0, 10);
+    if (language) body.broadcaster_language = String(language).slice(0, 8);
     if (!Object.keys(body).length) return false;
     const token = await this.auth.getToken('broadcaster', channelLogin);
     await this._request('PATCH', '/channels', { query: { broadcaster_id: s.user_id }, body, token });
     return true;
+  }
+
+  // ── Regia: comandi diretta ─────────────────────────────────────────────────
+  // Ognuno usa il token del broadcaster con lo scope indicato. Ritornano oggetti
+  // { ok, ... } con un 'motivo' leggibile in caso di errore (niente eccezioni al chiamante).
+
+  // Pubblicità (ad-break) di N secondi. Serve essere LIVE + scope 'channel:edit:commercial'.
+  async startCommercial(channelLogin, length) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return { ok: false, motivo: 'canale sconosciuto' };
+    const token = await this.auth.getToken('broadcaster', channelLogin);
+    const len = Math.max(30, Math.min(180, Math.round(Number(length) || 60)));
+    try {
+      const j = await this._request('POST', '/channels/commercial', { body: { broadcaster_id: s.user_id, length: len }, token });
+      const d = j?.data?.[0] || {};
+      return { ok: true, length: d.length || len, retry: d.retry_after || 0, messaggio: d.message || '' };
+    } catch (e) {
+      if (e.status === 400) return { ok: false, motivo: 'devi essere in diretta per lanciare una pubblicità' };
+      if (e.status === 401 || e.status === 403) return { ok: false, motivo: 'permesso mancante (ri-concedi i permessi)' };
+      if (e.status === 429) return { ok: false, motivo: 'troppo presto per un\'altra pubblicità' };
+      return { ok: false, motivo: 'errore Twitch' };
+    }
+  }
+
+  // Marker nel VOD (per ritrovare i momenti). Serve essere LIVE + scope 'channel:manage:broadcast'.
+  async createStreamMarker(channelLogin, description = '') {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return { ok: false, motivo: 'canale sconosciuto' };
+    const token = await this.auth.getToken('broadcaster', channelLogin);
+    try {
+      const j = await this._request('POST', '/streams/markers', { body: { user_id: s.user_id, description: String(description || '').slice(0, 140) }, token });
+      const d = j?.data?.[0] || {};
+      return { ok: true, id: d.id, position: d.position_seconds };
+    } catch (e) {
+      if (e.status === 404) return { ok: false, motivo: 'devi essere in diretta per mettere un marker' };
+      if (e.status === 401 || e.status === 403) return { ok: false, motivo: 'permesso mancante (ri-concedi i permessi)' };
+      return { ok: false, motivo: 'errore Twitch' };
+    }
+  }
+
+  // Avvia una RAID verso un altro canale (per login). Serve essere LIVE + scope 'channel:manage:raids'.
+  async startRaid(fromLogin, toLogin) {
+    const s = streamers.get(fromLogin);
+    if (!s?.user_id) return { ok: false, motivo: 'canale sconosciuto' };
+    const target = await this.getUserByLogin(toLogin);
+    if (!target?.id) return { ok: false, motivo: 'canale di destinazione non trovato' };
+    if (target.id === s.user_id) return { ok: false, motivo: 'non puoi raidare te stesso' };
+    const token = await this.auth.getToken('broadcaster', fromLogin);
+    try {
+      await this._request('POST', '/raids', { query: { from_broadcaster_id: s.user_id, to_broadcaster_id: target.id }, token });
+      return { ok: true, target: target.display_name || target.login };
+    } catch (e) {
+      if (e.status === 409) return { ok: false, motivo: 'c\'è già una raid in corso' };
+      if (e.status === 400) return { ok: false, motivo: 'devi essere in diretta per fare una raid' };
+      if (e.status === 401 || e.status === 403) return { ok: false, motivo: 'permesso mancante (ri-concedi i permessi)' };
+      return { ok: false, motivo: 'errore Twitch' };
+    }
+  }
+
+  // Annulla una raid in preparazione. Scope 'channel:manage:raids'.
+  async cancelRaid(fromLogin) {
+    const s = streamers.get(fromLogin);
+    if (!s?.user_id) return { ok: false, motivo: 'canale sconosciuto' };
+    const token = await this.auth.getToken('broadcaster', fromLogin);
+    try {
+      await this._request('DELETE', '/raids', { query: { broadcaster_id: s.user_id }, token });
+      return { ok: true };
+    } catch (e) {
+      if (e.status === 404) return { ok: true, nonCera: true };
+      if (e.status === 401 || e.status === 403) return { ok: false, motivo: 'permesso mancante' };
+      return { ok: false, motivo: 'errore Twitch' };
+    }
+  }
+
+  // Programmazione pubblicità (prossimo ad-break, snooze). Scope 'channel:read:ads'.
+  // Ritorna { nextAt, duration, lastAt, snoozeCount } o null (offline / niente scope).
+  async getAdSchedule(channelLogin) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return null;
+    const token = await this.auth.getToken('broadcaster', channelLogin);
+    try {
+      const j = await this._request('GET', '/channels/ads', { query: { broadcaster_id: s.user_id }, token });
+      const d = j?.data?.[0];
+      if (!d) return null;
+      return { nextAt: d.next_ad_at || 0, duration: d.duration || 0, lastAt: d.last_ad_at || 0, snoozeCount: d.snooze_count || 0 };
+    } catch { return null; }
   }
 
   // ---- Punti canale: ricompense personalizzate (Custom Rewards) ----

@@ -531,6 +531,28 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .lib-nome { font-weight: 600; font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lib-azioni { display: flex; align-items: center; gap: .4rem; margin-top: auto; }
 .lib-azioni .lib-importa { flex: 1; }
+
+/* --- Regia (Vai live) -------------------------------------------------- */
+.regia-badge { display: inline-flex; align-items: center; gap: .4rem; font-weight: 700; letter-spacing: .02em; padding: .28rem .7rem; border-radius: 999px; font-size: .95rem; }
+.regia-badge.live { color: #fff; background: #e0245e; box-shadow: 0 0 0 3px #e0245e33; animation: regiaPulse 2s infinite; }
+.regia-badge.off  { color: var(--testo-2); background: var(--surface-2); border: 1px solid var(--border); }
+@keyframes regiaPulse { 0%,100% { box-shadow: 0 0 0 3px #e0245e33; } 50% { box-shadow: 0 0 0 6px #e0245e1a; } }
+.regia-metriche { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: .7rem; }
+.regia-metrica { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-s); padding: .5rem .8rem; min-width: 100px; }
+.regia-metrica span { display: block; font-size: .74rem; color: var(--testo-2); }
+.regia-metrica strong { font-size: 1.25rem; }
+.regia-gioco-cur { font-size: .9rem; color: var(--testo-2); margin-bottom: .35rem; }
+.regia-gioco { position: relative; }
+.regia-gioco input { width: 100%; }
+.regia-gioco-lista { position: absolute; z-index: 30; left: 0; right: 0; margin-top: 4px; max-height: 280px; overflow-y: auto; background: var(--surface); border: 1px solid var(--border-2); border-radius: var(--r-s); box-shadow: 0 12px 30px #0006; }
+.rg-opt { display: flex; align-items: center; gap: .6rem; width: 100%; text-align: left; padding: .4rem .6rem; background: none; border: 0; border-bottom: 1px solid var(--border); color: inherit; cursor: pointer; font-size: .9rem; }
+.rg-opt:hover { background: var(--surface-2); }
+.rg-opt img { width: 30px; height: 40px; object-fit: cover; border-radius: 3px; flex: none; }
+.rg-vuoto { padding: .6rem; color: var(--testo-2); font-size: .85rem; }
+.regia-azioni { display: flex; flex-direction: column; gap: .7rem; }
+.regia-riga { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.regia-riga input[type="text"] { flex: 1 1 180px; min-width: 140px; }
+.regia-riga .btn { white-space: nowrap; }
 /* checkbox in riga (bagliore/icona/ombra…) */
 .riga-check { display: inline-flex; align-items: center; gap: .4rem; font-size: .9rem; margin-right: 1.2rem; cursor: pointer; }
 .riga-check input { width: 16px; height: 16px; }
