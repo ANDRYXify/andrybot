@@ -864,41 +864,41 @@ function vistaDisabilitato() {
 // dispersivi) mostriamo poche categorie chiare e, dentro ognuna, le sue schede.
 // NB: gli id delle schede restano identici a prima (li usano i pannelli).
 const GRUPPI = [
-  { id: 'panoramica', nome: 'Panoramica', icona: '', schede: [
+  { id: 'panoramica', nome: 'Panoramica', schede: [
     ['stato', 'Stato'],
   ] },
-  { id: 'personaggio', nome: 'Il personaggio', icona: '', schede: [
+  { id: 'personaggio', nome: 'Personaggio', schede: [
     ['personalita', 'Personalità'],
     ['conoscenza', 'Conoscenza'],
     ['memoria', 'Memoria'],
   ] },
-  { id: 'chat', nome: 'Chat & comandi', icona: '', schede: [
+  { id: 'chat', nome: 'Chat & comandi', schede: [
     ['moduli', 'Comandi'],
-    ['regole', 'Regole'],
-    ['giochi', 'Giochi'],
+    ['regole', 'Moderazione'],
+    ['giochi', 'Giochi & classifiche'],
     ['effetti', 'Effetti & suoni'],
   ] },
-  { id: 'diretta', nome: 'Durante la diretta', icona: '', schede: [
-    ['regia', 'Vai live'],
+  { id: 'diretta', nome: 'Diretta', schede: [
+    ['regia', 'Regia'],
     ['studio', 'Studio Web'],
     ['clip', 'Clip'],
-    ['ascolto', 'Ascolto vocale'],
+    ['ascolto', 'Comandi a voce'],
     ['musica', 'Musica'],
-    ['sondaggi', 'Sondaggi'],
+    ['sondaggi', 'Sondaggi & predizioni'],
     ['giveaway', 'Giveaway'],
     ['penitenze', 'Penitenze'],
   ] },
-  { id: 'overlay', nome: 'Overlay', icona: '', schede: [
-    ['alert', 'Overlay Studio'],
+  { id: 'overlay', nome: 'Overlay', schede: [
+    ['alert', 'Overlay'],
   ] },
-  { id: 'notifiche', nome: 'Notifiche', icona: '', schede: [
+  { id: 'notifiche', nome: 'Notifiche', schede: [
     ['notifiche', 'Notifiche'],
   ] },
 ];
 
 // Area riservata all'operatore (andryxify): compare come scheda a sé SOLO per
 // l'admin, così il pannello "Anima" non è più sempre in fondo a ogni scheda.
-const GRUPPO_ADMIN = { id: 'admin', nome: 'Admin', icona: '', schede: [['admin', 'Admin']] };
+const GRUPPO_ADMIN = { id: 'admin', nome: 'Admin', schede: [['admin', 'Admin']] };
 
 // L'elenco effettivo dei gruppi: aggiunge l'area Admin se sei l'operatore.
 function elencoGruppi() {
@@ -939,7 +939,9 @@ const DESC = {
   moduli: 'Crea comandi e automazioni per la tua community.',
   regole: 'Moderazione automatica: filtri e antispam.',
   giochi: 'Mini-giochi, monete e classifiche per la chat.',
-  effetti: 'Suoni ed effetti da lanciare in chat o in overlay.',
+  effetti: 'Effetti, suoni, GIF e video da lanciare in chat o in overlay — con libreria condivisa.',
+  regia: 'Gestisci la diretta dal bot: titolo, categoria, tag, clip, marker, pubblicità e raid.',
+  studio: 'Vai live dal browser, senza OBS: webcam, schermo, overlay e audio in un click.',
   clip: 'Clip automatiche nei momenti di hype.',
   ascolto: 'Comanda il bot a voce mentre streammi.',
   musica: 'Richieste musicali: gli spettatori mettono canzoni in coda su Spotify.',
@@ -980,7 +982,7 @@ const GUIDE = {
   giveaway: { serve: 'Organizzare estrazioni a premi per la community.',
     come: ['Apri il giveaway indicando il premio.', 'La community entra scrivendo !join in chat.', 'Estrai il vincitore dal pannello (puoi ripetere).'] },
   penitenze: { serve: 'Trasformare un premio a punti canale in una sfida a tempo: il bot conta quante volte sbagli (con «+1» a schermo) e alla fine fa partire una penitenza.',
-    come: ['Attiva il riconoscimento vocale (scheda Ascolto vocale) e concedi i Punti canale.', 'Scegli i due premi: «Vieta la parola» (non dirla) e «Usa solo la parola» (dì solo quella).', 'Decidi la penitenza (tua lista o inventata dall\'IA) e dove mostrare il contatore nell\'overlay.'] },
+    come: ['Attiva il riconoscimento vocale (scheda Comandi a voce) e concedi i Punti canale.', 'Scegli i due premi: «Vieta la parola» (non dirla) e «Usa solo la parola» (dì solo quella).', 'Decidi la penitenza (tua lista o inventata dall\'IA) e dove mostrare il contatore nell\'overlay.'] },
   notifiche: { serve: 'Avvisare i tuoi canali (Telegram, social) quando vai in diretta.',
     come: ['Collega Telegram e/o le piattaforme social.', 'Attiva gli avvisi che vuoi.', 'Personalizza i messaggi.'] },
   alert: { serve: 'Mostrare nell\'overlay OBS un cartello animato (con suono) per follow, sub, bit e raid, e far scorrere la chat a schermo.',
@@ -1960,7 +1962,7 @@ function pannelloPenitenze() {
           <li><strong>Usa solo la parola</strong> — puoi dire <em>solo</em> quella: ogni frase con un'altra parola, <span class="pen-inline-num">+1</span>.</li>
         </ul>
       </div>
-      <p class="suggerimento">Serve il <strong>riconoscimento vocale</strong> attivo (scheda <em>Ascolto vocale</em>) e il permesso <strong>Punti canale</strong>.</p>
+      <p class="suggerimento">Serve il <strong>riconoscimento vocale</strong> attivo (scheda <em>Comandi a voce</em>) e il permesso <strong>Punti canale</strong>.</p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore"><input type="checkbox" id="pen-attivo" ${p.attivo ? 'checked' : ''}><span class="levetta"></span></label>
         <span class="etichetta-stato" id="pen-etichetta">${p.attivo ? 'Penitenze attive' : 'Penitenze spente'}</span>
@@ -4057,7 +4059,7 @@ function pannelloGiochi() {
         <input type="number" id="num-premio-quanti" min="1" max="5" value="${Number(s.premioVip.quanti) || 1}">
       </div>
       <p class="suggerimento">Il bot dà il VIP (per la stessa durata) ai top ${esc(s.nomeMonete)}. Puoi anche darlo
-      <strong class="primo-piano">a voce</strong> (Ascolto vocale → "vip a nome", default 1 settimana; di' "mese" per un mese)
+      <strong class="primo-piano">a voce</strong> (Comandi a voce → "vip a nome", default 1 settimana; di' "mese" per un mese)
       o in chat con <code>!vip @nome</code>.</p>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-premio">Salva premio</button></p>
       <h3>Classifica ${esc(s.nomeMonete)}</h3>
@@ -6151,7 +6153,7 @@ function disegnaCampiQuando(t) {
         <label class="campo" for="mod-frasi-voce">Frasi da ascoltare (una per riga)</label>
         <textarea id="mod-frasi-voce" placeholder="clippa&#10;salva la clip">${esc(frasi.join('\n'))}</textarea>
         <p class="suggerimento">Quando al microfono dici una di queste frasi, il modulo scatta. Scrivile in minuscolo,
-        una per riga. L'ascolto si avvia dalla pagina "Apri l'ascolto vocale" in <strong>Durante la diretta → Ascolto vocale</strong>.</p>
+        una per riga. L'ascolto si avvia dalla pagina "Apri l'ascolto vocale" in <strong>Diretta → Comandi a voce</strong>.</p>
         <div class="riga-check" style="margin-top:.4rem">
           <input type="checkbox" id="mod-telegram" ${moduloInModifica?.telegram ? 'checked' : ''}>
           <label for="mod-telegram">Manda il messaggio anche su <b>Telegram</b> quando lo dico a voce (serve il bot interattivo).</label>
@@ -6275,7 +6277,7 @@ function disegnaCampiAzione(a) {
           <label>Annuncia il cambio in chat</label>
         </div>
         <p class="suggerimento">Il bot cerca la categoria su Twitch e imposta quella più somigliante a ciò che scrivi/dici.
-        Serve il permesso <strong class="primo-piano">Gestione canale</strong> (lo concedi da <strong>Durante la diretta → Ascolto vocale</strong>).</p>`;
+        Serve il permesso <strong class="primo-piano">Gestione canale</strong> (lo concedi da <strong>Diretta → Comandi a voce</strong>).</p>`;
     case 'titolo':
       return `
         <label class="campo">Nuovo titolo (puoi usare le variabili, es. <code>$gioco</code>, <code>$args</code>)</label>
@@ -6286,7 +6288,7 @@ function disegnaCampiAzione(a) {
           <label>Annuncia il cambio in chat</label>
         </div>
         <p class="suggerimento">Imposta il titolo dello stream su Twitch (max 140 caratteri).
-        Serve il permesso <strong class="primo-piano">Gestione canale</strong> (lo concedi da <strong>Durante la diretta → Ascolto vocale</strong>).</p>`;
+        Serve il permesso <strong class="primo-piano">Gestione canale</strong> (lo concedi da <strong>Diretta → Comandi a voce</strong>).</p>`;
     case 'attendi':
       return `
         <label class="campo">Secondi da aspettare</label>
@@ -6310,7 +6312,7 @@ function disegnaCampiAzione(a) {
           <input type="checkbox" data-campo="annuncia" ${a.annuncia !== false ? 'checked' : ''}>
           <label>Annuncia in chat il brano aggiunto</label>
         </div>
-        <p class="suggerimento">Aggiunge il brano alla coda del tuo Spotify. Richiede l'add-on <strong class="primo-piano">Richieste Musicali</strong> e Spotify collegato in <strong>Durante la diretta → Musica</strong>.</p>`;
+        <p class="suggerimento">Aggiunge il brano alla coda del tuo Spotify. Richiede l'add-on <strong class="primo-piano">Richieste Musicali</strong> e Spotify collegato in <strong>Diretta → Musica</strong>.</p>`;
     default:
       return '';
   }
