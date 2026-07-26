@@ -5517,10 +5517,9 @@ async function caricaCitazioni() {
 async function caricaEffetti() {
   const ul = document.getElementById('lista-effetti');
   if (!ul) return;
-  const inpUrl = document.getElementById('inp-overlay-url');
   try {
     const dati = await api('/api/streamer/effetti');
-    if (inpUrl) inpUrl.value = dati.overlayUrl || '';
+    // NB: il link OBS vive nella scheda Overlay (per-overlay), non qui: non tocchiamo inp-overlay-url
 
     const etTipo = { audio: _bIco(ICO.altoparlante) + 'audio', immagine: _bIco(ICO.immagine) + 'immagine', video: _bIco(ICO.video) + 'video' };
     const etTier = { tutti: 'tutti', sub: 'sub', vip: 'VIP', mod: 'mod' };

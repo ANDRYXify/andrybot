@@ -75,6 +75,12 @@ function overlayById(settings, id) {
   const lista = overlaysDi(settings);
   return lista.find((o) => String(o.id) === String(id)) || lista[0];
 }
+// nome overlay → "slug" per i link belli (/o/<nick>/<slug>): minuscolo, senza
+// accenti, solo lettere/numeri/trattini.
+function slugify(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'overlay';
+}
 const TONI_VALIDI = ['scherzoso', 'amichevole', 'serio'];
 const STATI_VALIDI = ['pending', 'approved', 'disabled'];
 const TIER_VALIDI = ['tutti', 'sub', 'vip', 'mod'];
@@ -277,7 +283,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (currentUser(req) || PUBBLICI.has(req.path)
         || VETRINA.has(req.path) || req.path === '/api/me'
         || req.path.startsWith('/api/abbonamento/')   // piani/checkout/portale: auth propria
-        || req.path.startsWith('/overlay/') || req.path.startsWith('/api/ext/')
+        || req.path.startsWith('/overlay/') || req.path.startsWith('/o/')   // overlay OBS + link "belli"
+        || req.path.startsWith('/api/ext/')
         || req.path.startsWith('/tg/')       // webhook Telegram: si protegge col segreto nel path
         || req.path.startsWith('/icons/') || req.path.startsWith('/api/passkey/login/')) return next();
     return notFound(res);
@@ -440,6 +447,22 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   app.get('/overlay/:login', (req, res) => {
     if (!chiaveOk(req)) return notFound(res);
     res.sendFile(overlayHtml);
+  });
+
+  // Link "bello" per OBS: /o/<nick>/<nome-overlay>. Reindirizza al link reale con
+  // la chiave (gestita dal server) e l'overlay giusto (?o=id). Comodo da copiare;
+  // l'overlay funziona identico. Nota: è indovinabile (nick + nome), quindi meno
+  // "segreto" del link con ?key — che resta valido come alternativa privata.
+  app.get('/o/:login/:slug', (req, res) => {
+    const login = String(req.params.login).toLowerCase();
+    const s = streamers.get(login);
+    if (!s) return notFound(res);
+    const slug = slugify(req.params.slug);
+    const lista = overlaysDi(s.settings);
+    const ov = lista.find((o) => slugify(o.nome) === slug) || (slug === 'overlay' ? lista[0] : null);
+    if (!ov) return notFound(res);
+    const key = effects.overlayKey(login);
+    res.redirect(`/overlay/${encodeURIComponent(login)}?key=${encodeURIComponent(key)}&o=${encodeURIComponent(ov.id)}`);
   });
 
   // tema dell'overlay (CSS avanzato + widget persistenti + loro stato): l'overlay
@@ -1818,9 +1841,12 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const login = currentUser(req).login;
     const base = effects.overlayUrl(login);
     const sep = base.includes('?') ? '&' : '?';
+    const root = config.baseUrl.replace(/\/$/, '');
     const overlays = overlaysDi(streamers.get(login)?.settings).map((o) => ({
       id: o.id, nome: o.nome, mostra: o.mostra || _mostraDefault(), xy: o.xy || {}, css: o.css || '',
-      url: `${base}${sep}o=${encodeURIComponent(o.id)}`,
+      // link "bello" per OBS (senza ?key) + link privato con chiave, come alternativa
+      url: `${root}/o/${encodeURIComponent(login)}/${slugify(o.nome)}`,
+      urlKey: `${base}${sep}o=${encodeURIComponent(o.id)}`,
     }));
     res.json({ overlays });
   }));
