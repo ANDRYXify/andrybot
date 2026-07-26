@@ -196,6 +196,10 @@
     const parti = location.pathname.split('/').filter(Boolean); // ['overlay', '<login>']
     const login = parti[1] || '';
     const urlStream = '/overlay/' + encodeURIComponent(login) + '/stream' + location.search;
+    // PIÙ OVERLAY: questo overlay ha un id (?o=). Dal tema riceve il suo LAYOUT:
+    // cosa mostra (mostra) e dove (xy), così ogni link OBS ha il suo aspetto.
+    const MIO = { mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true }, xy: {} };
+    const mostra = (k) => MIO.mostra[k] !== false;
 
     const palco = document.getElementById('palco');
     const etichette = document.getElementById('etichette');
@@ -403,14 +407,14 @@
       }
     }
 
-    function alert(ev) { codaAlert.push(ev); mostraAlertProssimo(); }
+    function alert(ev) { if (!mostra('alert')) return; codaAlert.push(ev); mostraAlertProssimo(); }
 
     function mostraAlertProssimo() {
       if (alertOccupato || !codaAlert.length) return;
       alertOccupato = true;
       const ev = codaAlert.shift();
       const st = ev.stile || {};
-      posizionaContenitore(alertBox, ev.xy, ev.posizione || 'alto-centro');
+      posizionaContenitore(alertBox, MIO.xy.alert || ev.xy, ev.posizione || 'alto-centro');
       const card = document.createElement('div');
       card.className = 'alert-card anim-' + (st.animazione || 'slide') + (st.glow ? ' glow' : '') + (st.icona === false ? ' senza-ico' : '');
       applicaVars(card, {
@@ -462,8 +466,9 @@
 
     // --- CHAT a schermo --------------------------------------------------
     function chat(ev) {
+      if (!mostra('chat')) return;
       const st = ev.stile || {};
-      posizionaContenitore(chatBox, ev.xy, ev.posizione || 'basso-sinistra');
+      posizionaContenitore(chatBox, MIO.xy.chat || ev.xy, ev.posizione || 'basso-sinistra');
       if (st.larghezza) chatBox.style.maxWidth = st.larghezza + 'vw';
       const destra = !ev.xy && /destra/.test(ev.posizione || '');
       const riga = document.createElement('div');
@@ -515,9 +520,13 @@
         widgetEl[id] = el;
       }
       (wboxes[ang] || wboxes['basso-destra']).appendChild(el);
-      // posizione libera (drag) o angolo
-      if (cfg.xy && cfg.xy.x != null) {
-        el.style.position = 'fixed'; el.style.left = cfg.xy.x + '%'; el.style.top = cfg.xy.y + '%'; el.style.transform = 'translate(-50%,-50%)';
+      // posizione: quella di QUESTO overlay (MIO.xy) se impostata, altrimenti
+      // quella condivisa del widget (cfg.xy), altrimenti l'angolo.
+      const xyEff = MIO.xy[id === 'ultimoSub' ? 'ws' : 'wf'] || cfg.xy;
+      if (xyEff && xyEff.x != null) {
+        const s = (Number(xyEff.s) || 100) / 100, r = Number(xyEff.r) || 0;
+        el.style.position = 'fixed'; el.style.left = xyEff.x + '%'; el.style.top = xyEff.y + '%';
+        el.style.transform = 'translate(-50%,-50%) scale(' + s + ') rotate(' + r + 'deg)';
       } else { el.style.position = ''; el.style.left = ''; el.style.top = ''; el.style.transform = ''; }
       const st = cfg.stile || {};
       el.className = 'ovl-widget dim-' + (st.dim || 'media');
@@ -553,27 +562,31 @@
         let dati;
         try { dati = JSON.parse(m.data); } catch (e) { return; }
         if (!dati || !dati.tipo) return;
-        if (dati.tipo === 'audio') suona(dati);
-        else if (dati.tipo === 'preset') suonaPreset(dati);
-        else if (dati.tipo === 'penitenza') penitenza(dati);
+        // ogni overlay mostra solo ciò che il suo layout prevede (mostra.*)
+        if (dati.tipo === 'audio') { if (mostra('effetti')) suona(dati); }
+        else if (dati.tipo === 'preset') { if (mostra('effetti')) suonaPreset(dati); }
+        else if (dati.tipo === 'penitenza') { if (mostra('effetti')) penitenza(dati); }
         else if (dati.tipo === 'alert') alert(dati);
         else if (dati.tipo === 'chat') chat(dati);
-        else if (dati.tipo === 'widget') widget(dati.id, dati.cfg, dati.valore);
-        else if (dati.tipo === 'tema') applicaTema(dati);
-        else if (dati.tipo === 'testo') mostraTesto(dati);
-        else { codaVisiva.push(dati); mostraProssimo(); }
+        else if (dati.tipo === 'widget') { if (mostra(dati.id === 'ultimoSub' ? 'ws' : 'wf')) widget(dati.id, dati.cfg, dati.valore); }
+        else if (dati.tipo === 'tema') caricaTema();   // ricarica il MIO tema (per ?o=id)
+        else if (dati.tipo === 'testo') { if (mostra('effetti')) mostraTesto(dati); }
+        else { if (mostra('effetti')) { codaVisiva.push(dati); mostraProssimo(); } }
       };
       // in caso di errore EventSource riprova da solo: non facciamo nulla
       es.onerror = () => {};
     }
 
-    // Applica il TEMA globale: CSS avanzato dell'utente + widget persistenti.
+    // Applica il TEMA di QUESTO overlay: layout (cosa mostra + dove), CSS e widget.
     function applicaTema(t) {
+      MIO.mostra = (t && t.mostra) ? t.mostra : MIO.mostra;
+      MIO.xy = (t && t.xy) ? t.xy : {};
       try { document.getElementById('css-utente').textContent = String(t.css || '').slice(0, 8000); } catch (e) { /* niente */ }
       const w = t.widget || {};
       const stato = t.stato || {};
-      widget('ultimoFollower', w.ultimoFollower, stato.ultimoFollower);
-      widget('ultimoSub', w.ultimoSub, stato.ultimoSub);
+      // widget mostrati solo se questo overlay li prevede
+      widget('ultimoFollower', mostra('wf') ? w.ultimoFollower : { attivo: false }, stato.ultimoFollower);
+      widget('ultimoSub', mostra('ws') ? w.ultimoSub : { attivo: false }, stato.ultimoSub);
     }
 
     // Al caricamento leggo il tema una volta (CSS + widget), poi mi tengo aggiornato via SSE.

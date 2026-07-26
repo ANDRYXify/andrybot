@@ -50,6 +50,30 @@ const unoDi = (v, lista, def) => (lista.includes(v) ? v : def);
 // 30–300) e rotazione (r = gradi, -180…180). null → si usa l'angolo predefinito.
 const xyOk = (v) => (v && Number.isFinite(Number(v.x)) && Number.isFinite(Number(v.y)))
   ? { x: clampInt(v.x, 0, 100, 50), y: clampInt(v.y, 0, 100, 50), s: clampInt(v.s, 30, 300, 100), r: clampInt(v.r, -180, 180, 0) } : null;
+
+// --- PIÙ OVERLAY: ogni overlay ha un suo LAYOUT (quali elementi mostra e dove)
+// e un suo CSS, con un link OBS a sé. Lo STILE/TESTO restano condivisi a livello
+// di canale (alerts/chatOverlay/overlayWidget). Retro-compatibile: se non c'è
+// una lista `overlays`, ne ricaviamo uno solo ("principale") con tutto visibile
+// e le posizioni attuali → chi ha già l'overlay lo vede identico.
+const _mostraDefault = () => ({ alert: true, chat: true, wf: true, ws: true, effetti: true });
+function overlaysDi(settings) {
+  const s = settings || {};
+  if (Array.isArray(s.overlays) && s.overlays.length) return s.overlays;
+  return [{
+    id: 'principale', nome: 'Overlay principale',
+    mostra: _mostraDefault(),
+    xy: {
+      alert: s.alerts?.xy || null, chat: s.chatOverlay?.xy || null,
+      wf: s.overlayWidget?.ultimoFollower?.xy || null, ws: s.overlayWidget?.ultimoSub?.xy || null,
+    },
+    css: s.overlayCss || '',
+  }];
+}
+function overlayById(settings, id) {
+  const lista = overlaysDi(settings);
+  return lista.find((o) => String(o.id) === String(id)) || lista[0];
+}
 const TONI_VALIDI = ['scherzoso', 'amichevole', 'serio'];
 const STATI_VALIDI = ['pending', 'approved', 'disabled'];
 const TIER_VALIDI = ['tutti', 'sub', 'vip', 'mod'];
@@ -404,7 +428,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   app.get('/overlay/:login/tema', (req, res) => {
     if (!chiaveOk(req)) return notFound(res);
     const login = String(req.params.login).toLowerCase();
-    res.json(manager.alerts?.tema(login) || { css: '', widget: {}, stato: {} });
+    const base = manager.alerts?.tema(login) || { css: '', widget: {}, stato: {} };
+    // layout dell'overlay richiesto (?o=id): cosa mostra + dove. Il CSS è quello
+    // dell'overlay (per "principale" coincide con quello di canale).
+    const ov = overlayById(streamers.get(login)?.settings, String(req.query.o || ''));
+    res.json({ ...base, css: ov.css != null ? ov.css : base.css, mostra: ov.mostra || _mostraDefault(), xy: ov.xy || {} });
   });
 
   // Mappa emote 7TV (globali + del canale) per la "chat a schermo": l'overlay la
@@ -1245,6 +1273,25 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     }
     // CSS avanzato dell'overlay (libertà totale sul proprio overlay)
     if (b.overlayCss !== undefined) out.overlayCss = String(b.overlayCss || '').slice(0, 8000);
+    // PIÙ OVERLAY: lista di layout, ognuno col suo id/nome/visibilità/posizioni/css.
+    if (b.overlays !== undefined) {
+      const arr = Array.isArray(b.overlays) ? b.overlays : [];
+      const puliti = arr.slice(0, 12).map((o, i) => {
+        const m = o?.mostra || {};
+        const xy = o?.xy || {};
+        let id = String(o?.id || `ov${i}`).replace(/[^a-z0-9_-]/gi, '').slice(0, 24) || `ov${i}`;
+        return {
+          id, nome: String(o?.nome || 'Overlay').trim().slice(0, 40) || 'Overlay',
+          mostra: { alert: m.alert !== false, chat: m.chat !== false, wf: m.wf !== false, ws: m.ws !== false, effetti: m.effetti !== false },
+          xy: { alert: xyOk(xy.alert), chat: xyOk(xy.chat), wf: xyOk(xy.wf), ws: xyOk(xy.ws) },
+          css: String(o?.css || '').slice(0, 8000),
+        };
+      });
+      // id UNICI (l'url dell'overlay li usa)
+      const visti = new Set();
+      for (const o of puliti) { while (visti.has(o.id)) o.id += '_'; visti.add(o.id); }
+      if (puliti.length) out.overlays = puliti;
+    }
     // Template dell'overlay salvati dallo streamer (snapshot del proprio look).
     // Il `dati` viene ri-applicato solo attraverso il salvataggio validato qui
     // sopra, quindi lo conserviamo così com'è (limitato in numero e dimensione).
@@ -1425,8 +1472,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // OVERLAY IN TEMPO REALE: se è cambiato qualcosa che l'overlay mostra
     // (CSS, widget, chat, alert, temi, stato), spingiamo SUBITO il nuovo tema
     // via SSE così la fonte OBS si aggiorna da sola, senza bisogno di refresh.
-    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato'].some((k) => k in out)) {
-      try { effects.emit(user.login, { tipo: 'tema', ...(manager.alerts?.tema(user.login) || {}) }); }
+    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays'].some((k) => k in out)) {
+      // segnale di RICARICA: ogni overlay ricarica il PROPRIO tema (per ?o=id),
+      // così più overlay diversi si aggiornano ciascuno col suo layout.
+      try { effects.emit(user.login, { tipo: 'tema' }); }
       catch (e) { log.debug('push tema live:', e?.message || e); }
     }
     // se è cambiata la modalità di attivazione, riconcilia subito i canali
@@ -1582,6 +1631,19 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // tutta la lista effetti).
   app.get('/api/streamer/overlay-url', requireLogin, wrap(async (req, res) => {
     res.json({ overlayUrl: effects.overlayUrl(currentUser(req).login) });
+  }));
+
+  // elenco dei PIÙ OVERLAY dello streamer: per ognuno id, nome, layout e il suo
+  // link OBS (con ?o=id). Lo usa l'Overlay Studio per gestirli.
+  app.get('/api/streamer/overlays', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const base = effects.overlayUrl(login);
+    const sep = base.includes('?') ? '&' : '?';
+    const overlays = overlaysDi(streamers.get(login)?.settings).map((o) => ({
+      id: o.id, nome: o.nome, mostra: o.mostra || _mostraDefault(), xy: o.xy || {}, css: o.css || '',
+      url: `${base}${sep}o=${encodeURIComponent(o.id)}`,
+    }));
+    res.json({ overlays });
   }));
 
   // posizione/dimensione/rotazione di un effetto a schermo (dall'Overlay Studio).
