@@ -46,9 +46,10 @@ const FONT_OVL = ['sistema', 'rotondo', 'condensato', 'mono', 'serif', 'manga'];
 const clampInt = (v, lo, hi, def) => { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : def; };
 const hexOk = (v, def) => (/^#[0-9a-fA-F]{6}$/.test(String(v)) ? String(v) : def);
 const unoDi = (v, lista, def) => (lista.includes(v) ? v : def);
-// posizione libera (drag): coordinate in % del canvas, oppure null (usa l'angolo)
+// posizione libera (drag): coordinate in % del canvas + dimensione (s = scala %,
+// 30–300) e rotazione (r = gradi, -180…180). null → si usa l'angolo predefinito.
 const xyOk = (v) => (v && Number.isFinite(Number(v.x)) && Number.isFinite(Number(v.y)))
-  ? { x: clampInt(v.x, 0, 100, 50), y: clampInt(v.y, 0, 100, 50) } : null;
+  ? { x: clampInt(v.x, 0, 100, 50), y: clampInt(v.y, 0, 100, 50), s: clampInt(v.s, 30, 300, 100), r: clampInt(v.r, -180, 180, 0) } : null;
 const TONI_VALIDI = ['scherzoso', 'amichevole', 'serio'];
 const STATI_VALIDI = ['pending', 'approved', 'disabled'];
 const TIER_VALIDI = ['tutti', 'sub', 'vip', 'mod'];

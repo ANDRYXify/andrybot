@@ -2200,7 +2200,21 @@ function pannelloAlert() {
           <div class="ap-el" id="ap-ws"><div class="ovl-widget" id="ap-ws-el"><span class="w-ico"></span><span class="w-testo"></span></div></div>
         </div>
       </div>
-      <p class="suggerimento"><strong>Trascina</strong> gli elementi nell'anteprima per posizionarli dove vuoi (doppio clic per rimetterli nell'angolo). Usa «Prova ▶» per vederli davvero nell'overlay in OBS.</p>
+      <div class="ovl-inspector" id="ovl-inspector" hidden>
+        <div class="ovl-insp-testa"><span class="ovl-insp-nome" id="insp-nome">Elemento</span>
+          <button type="button" class="ovl-insp-reset" id="insp-reset" title="Ripristina posizione, dimensione e rotazione">Ripristina</button></div>
+        <div class="ovl-insp-riga">
+          <label for="insp-size">Dimensione</label>
+          <input type="range" id="insp-size" min="30" max="300" step="1" value="100">
+          <span class="ovl-insp-val" id="insp-size-val">100%</span>
+        </div>
+        <div class="ovl-insp-riga">
+          <label for="insp-rot">Rotazione</label>
+          <input type="range" id="insp-rot" min="-180" max="180" step="1" value="0">
+          <span class="ovl-insp-val" id="insp-rot-val">0°</span>
+        </div>
+      </div>
+      <p class="suggerimento"><strong>Clicca</strong> un elemento per selezionarlo, poi <strong>trascinalo</strong> per spostarlo, usa le <strong>maniglie</strong> (⤡ dimensione · ⟳ rotazione) o i cursori qui sopra. Scorciatoie: <strong>rotellina</strong> = ridimensiona, <strong>Shift+rotellina</strong> = ruota, <strong>doppio clic</strong> = ripristina. Usa «Prova ▶» per vederli nell'overlay in OBS.</p>
     </div>
 
     <div class="carta">
@@ -2404,11 +2418,12 @@ function aggiornaAnteprima() {
   const chatPos = _v('co-pos') || 'basso-sinistra';
   const apChat = _g('ap-chat');
   if (apChat) {
-    apChat.className = 'ap-el ap-chat' + (/destra/.test(chatPos) ? ' destra' : '');
+    apChat.className = 'ap-el ap-chat' + (/destra/.test(chatPos) ? ' destra' : '') + (selezione === 'chat' ? ' sel' : '');
     apChat.innerHTML = [['lucaplays', '#ff4d4d', 'ciao a tutti! 👋'], ['giada_ttv', '#48b0ff', 'che bella live']].map(([u, col, t]) => {
       const cu = cst.username === 'twitch' ? col : cst.username;
       return `<div class="chat-riga dim-${cst.dim}${cst.ombra ? ' ombra' : ''}${cst.grassettoUser ? ' user-bold' : ''} dentro" style="--bg:${cst.sfondo};--op:${cst.opacita}%;--fg:${cst.testo};--radius:${cst.bordoRaggio}px;--font:${FONT_VAR[cst.font]}"><span class="chat-user" style="color:${cu}">${esc(u)}</span> ${esc(t)}</div>`;
     }).join('');
+    _iniettaManiglie('chat');   // l'innerHTML qui sopra le rimuove: le rimettiamo
   }
   _anteprimaWidget('wf', 'ultimoFollower', 'MarioRossi');
   _anteprimaWidget('ws', 'ultimoSub', 'GiadaTTV');
@@ -2427,11 +2442,99 @@ function _defPos(k) {
   return _cornerXY(_v(`${k}-pos`) || 'basso-destra');
 }
 
-// Posiziona un elemento nel palco 1920x1080 (coordinate in % → left/top, ancorato al centro).
+// Posiziona un elemento nel palco 1920x1080 (coordinate in % → left/top, ancorato
+// al centro) applicando anche DIMENSIONE (s = scala %) e ROTAZIONE (r = gradi).
 function _posElemento(el, xy) {
   if (!el || !xy) return;
+  const sf = (Number(xy.s) || 100) / 100, r = Number(xy.r) || 0;
   el.style.position = 'absolute'; el.style.left = xy.x + '%'; el.style.top = xy.y + '%';
-  el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.transform = 'translate(-50%,-50%)';
+  el.style.right = 'auto'; el.style.bottom = 'auto';
+  el.style.transform = `translate(-50%,-50%) scale(${sf}) rotate(${r}deg)`;
+  // le maniglie sono figlie dell'elemento: contro-scala così restano usabili
+  el.querySelectorAll('.ap-handle').forEach((h) => { h.style.transform = `scale(${1 / sf})`; });
+}
+
+// Nomi leggibili degli elementi (mostrati nell'inspector).
+const NOMI_EL = { alert: 'Alert', chat: 'Chat a schermo', wf: 'Widget: ultimo follower', ws: 'Widget: ultimo sub' };
+let selezione = null;   // elemento selezionato nell'editor ('alert'|'chat'|'wf'|'ws')
+
+// Ritorna (creandolo se serve) lo stato {x,y,s,r} di un elemento: dal drag/scala
+// o, se ancora "all'angolo", materializzato dalla posizione di default.
+function _statoXY(chiave) {
+  if (!posXY[chiave]) posXY[chiave] = { ..._defPos(chiave) };
+  const st = posXY[chiave];
+  if (st.s == null) st.s = 100;
+  if (st.r == null) st.r = 0;
+  return st;
+}
+
+// Selezione: evidenzia l'elemento e mostra l'inspector (dimensione/rotazione).
+function seleziona(chiave) {
+  selezione = chiave;
+  ['alert', 'chat', 'wf', 'ws'].forEach((k) => _g('ap-' + k)?.classList.toggle('sel', k === chiave));
+  aggiornaInspector();
+}
+function deseleziona() {
+  selezione = null;
+  ['alert', 'chat', 'wf', 'ws'].forEach((k) => _g('ap-' + k)?.classList.remove('sel'));
+  aggiornaInspector();
+}
+function aggiornaInspector() {
+  const box = _g('ovl-inspector'); if (!box) return;
+  if (!selezione) { box.hidden = true; return; }
+  box.hidden = false;
+  const st = _statoXY(selezione);
+  const nome = _g('insp-nome'); if (nome) nome.textContent = NOMI_EL[selezione] || selezione;
+  const sz = _g('insp-size'), rt = _g('insp-rot');
+  if (sz) { sz.value = st.s; _g('insp-size-val').textContent = st.s + '%'; }
+  if (rt) { rt.value = st.r; _g('insp-rot-val').textContent = st.r + '°'; }
+}
+
+// Salvataggio posizione/scala/rotazione con antirimbalzo (rotellina/cursori).
+let _timerPos = null;
+function _salvaPosDebounced(chiave) {
+  clearTimeout(_timerPos);
+  _timerPos = setTimeout(() => _salvaPos(chiave), 500);
+}
+
+// Inietta le maniglie (ridimensiona ⤡ + ruota ⟳) in un elemento e le collega.
+function _iniettaManiglie(chiave) {
+  const el = _g('ap-' + chiave);
+  if (!el || el.querySelector('.ap-handle')) return;
+  const hR = document.createElement('div');
+  hR.className = 'ap-handle ap-h-scala'; hR.title = 'Trascina per ridimensionare'; hR.textContent = '⤡';
+  const hRot = document.createElement('div');
+  hRot.className = 'ap-handle ap-h-ruota'; hRot.title = 'Trascina per ruotare'; hRot.textContent = '⟳';
+  el.appendChild(hR); el.appendChild(hRot);
+  hR.addEventListener('pointerdown', (e) => _dragManiglia(chiave, e, 'scala'));
+  hRot.addEventListener('pointerdown', (e) => _dragManiglia(chiave, e, 'ruota'));
+}
+
+// Drag di una maniglia: math in coordinate SCHERMO (robusta alla scala del palco).
+//  · scala → rapporto tra la distanza dal centro ora e all'inizio
+//  · ruota → angolo dal centro verso il puntatore (la maniglia sta in alto)
+function _dragManiglia(chiave, e, tipo) {
+  e.preventDefault(); e.stopPropagation();
+  const el = _g('ap-' + chiave);
+  const rect = el.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+  const st = _statoXY(chiave);
+  const d0 = Math.hypot(e.clientX - cx, e.clientY - cy) || 1;
+  const s0 = st.s || 100;
+  seleziona(chiave);
+  const move = (ev) => {
+    if (tipo === 'scala') {
+      const d = Math.hypot(ev.clientX - cx, ev.clientY - cy);
+      st.s = Math.max(30, Math.min(300, Math.round(s0 * d / d0)));
+    } else {
+      let deg = Math.atan2(ev.clientY - cy, ev.clientX - cx) * 180 / Math.PI + 90;
+      while (deg > 180) deg -= 360; while (deg < -180) deg += 360;
+      st.r = Math.round(deg);
+    }
+    _posElemento(el, st); aggiornaInspector();
+  };
+  const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); _salvaPos(chiave); };
+  window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
 }
 
 // Scala il palco 1920x1080 per riempire esattamente il riquadro 16:9 dell'anteprima.
@@ -2442,28 +2545,40 @@ function scalaAnteprima() {
   if (w) stage.style.transform = 'scale(' + (w / 1920) + ')';
 }
 
-// Rende un elemento dell'anteprima trascinabile (WYSIWYG). Doppio clic = torna all'angolo.
+// Rende un elemento dell'anteprima MANIPOLABILE (WYSIWYG): clic per selezionare,
+// trascina per spostare, rotellina per ridimensionare (Shift = ruota), maniglie
+// per scala/rotazione. Doppio clic = ripristina (posizione, dimensione, rotazione).
 function rendiTrascinabile(el, chiave) {
   if (!el) return;
   el.style.cursor = 'grab';
-  el.title = 'Trascina per posizionarlo · doppio clic per rimetterlo nell\'angolo';
+  el.title = 'Clic per selezionare · trascina per spostare · doppio clic per ripristinare';
+  _iniettaManiglie(chiave);
   el.addEventListener('pointerdown', (e) => {
     if (e.button != null && e.button !== 0) return;
+    if (e.target?.classList?.contains('ap-handle')) return;   // le maniglie fanno da sé
     e.preventDefault();
+    seleziona(chiave);
     const canvas = _g('ovl-preview').getBoundingClientRect();
     try { el.setPointerCapture(e.pointerId); } catch (_) { /* niente */ }
     el.style.cursor = 'grabbing';
+    const st = _statoXY(chiave);
     const move = (ev) => {
-      const x = ((ev.clientX - canvas.left) / canvas.width) * 100;
-      const y = ((ev.clientY - canvas.top) / canvas.height) * 100;
-      posXY[chiave] = { x: Math.max(0, Math.min(100, Math.round(x))), y: Math.max(0, Math.min(100, Math.round(y))) };
-      _posElemento(el, posXY[chiave]);
+      st.x = Math.max(0, Math.min(100, Math.round(((ev.clientX - canvas.left) / canvas.width) * 100)));
+      st.y = Math.max(0, Math.min(100, Math.round(((ev.clientY - canvas.top) / canvas.height) * 100)));
+      _posElemento(el, st);
     };
     const up = () => { el.style.cursor = 'grab'; el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); _salvaPos(chiave); };
     el.addEventListener('pointermove', move);
     el.addEventListener('pointerup', up);
   });
-  el.addEventListener('dblclick', () => { posXY[chiave] = null; aggiornaAnteprima(); _salvaPos(chiave); });
+  el.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const st = _statoXY(chiave);
+    if (e.shiftKey) { let r = (st.r || 0) + (e.deltaY < 0 ? 4 : -4); while (r > 180) r -= 360; while (r < -180) r += 360; st.r = r; }
+    else { st.s = Math.max(30, Math.min(300, (st.s || 100) + (e.deltaY < 0 ? 4 : -4))); }
+    seleziona(chiave); _posElemento(el, st); _salvaPosDebounced(chiave);
+  }, { passive: false });
+  el.addEventListener('dblclick', () => { posXY[chiave] = null; deseleziona(); aggiornaAnteprima(); _salvaPos(chiave); });
 }
 
 function _salvaPos(chiave) {
@@ -2567,6 +2682,25 @@ function caricaAlert() {
   posXY = { alert: imp.alerts.xy || null, chat: imp.chatOverlay.xy || null,
     wf: imp.overlayWidget.ultimoFollower.xy || null, ws: imp.overlayWidget.ultimoSub.xy || null };
   ['ap-alert', 'ap-chat', 'ap-wf', 'ap-ws'].forEach((id) => rendiTrascinabile(_g(id), id.replace('ap-', '')));
+  // inspector: cursori dimensione/rotazione dell'elemento selezionato
+  _g('insp-size')?.addEventListener('input', (e) => {
+    if (!selezione) return;
+    const st = _statoXY(selezione); st.s = Math.max(30, Math.min(300, Number(e.target.value) || 100));
+    _g('insp-size-val').textContent = st.s + '%'; _posElemento(_g('ap-' + selezione), st); _salvaPosDebounced(selezione);
+  });
+  _g('insp-rot')?.addEventListener('input', (e) => {
+    if (!selezione) return;
+    const st = _statoXY(selezione); st.r = Math.max(-180, Math.min(180, Number(e.target.value) || 0));
+    _g('insp-rot-val').textContent = st.r + '°'; _posElemento(_g('ap-' + selezione), st); _salvaPosDebounced(selezione);
+  });
+  _g('insp-reset')?.addEventListener('click', () => {
+    if (!selezione) return;
+    const k = selezione; posXY[k] = null; aggiornaAnteprima(); aggiornaInspector(); _salvaPos(k);
+  });
+  // clic sul palco "vuoto" (non su un elemento) = deseleziona
+  _g('ovl-preview')?.addEventListener('pointerdown', (e) => {
+    if (e.target?.id === 'ovl-preview' || e.target?.id === 'ap-stage') deseleziona();
+  });
   // anteprima dal vivo: qualsiasi cambiamento aggiorna la preview + le etichette dei range
   scheda?.addEventListener('input', (e) => {
     const t = e.target;
