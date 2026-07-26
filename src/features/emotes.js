@@ -112,7 +112,7 @@ export function twitchInMessaggio(emotesTag, testo) {
     const a = Number(primo.split('-')[0]), b = Number(primo.split('-')[1]);
     if (!id || !Number.isFinite(a) || !Number.isFinite(b) || b < a) continue;
     const nome = cp.slice(a, b + 1).join('');
-    if (nome) out[nome] = `https://static-cdn.jtv.net/emoticons/v2/${encodeURIComponent(id)}/default/dark/2.0`;
+    if (nome) out[nome] = `https://static-cdn.jtvnw.net/emoticons/v2/${encodeURIComponent(id)}/default/dark/2.0`;
   }
   return out;
 }
