@@ -879,6 +879,7 @@ const GRUPPI = [
     ['effetti', 'Effetti & suoni'],
   ] },
   { id: 'diretta', nome: 'Durante la diretta', icona: '🔴', schede: [
+    ['regia', 'Vai live'],
     ['clip', 'Clip'],
     ['ascolto', 'Ascolto vocale'],
     ['musica', 'Musica'],
@@ -908,6 +909,7 @@ function elencoGruppi() {
 const _ico = (d) => `<svg class="lat-svg" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const ICONA = {
   stato:       _ico('<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9v11h14V9"/><path d="M9.5 20v-6h5v6"/>'),
+  regia:       _ico('<circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.48M7.76 16.24a6 6 0 0 1 0-8.48M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/>'),
   personalita: _ico('<path d="M12 3c.35 3.8 1.4 4.85 5 5.2-3.6.35-4.65 1.4-5 5.2-.35-3.8-1.4-4.85-5-5.2 3.6-.35 4.65-1.4 5-5.2Z"/><path d="M18.5 15c.15 1.6.6 2.05 2.2 2.2-1.6.15-2.05.6-2.2 2.2-.15-1.6-.6-2.05-2.2-2.2 1.6-.15 2.05-.6 2.2-2.2Z"/>'),
   conoscenza:  _ico('<path d="M5 4.5h11a2 2 0 0 1 2 2v13H7a2 2 0 0 1-2-2Z"/><path d="M9 4.5v15"/>'),
   memoria:     _ico('<path d="M4 21V4"/><path d="M4 21h16"/><path d="M8.5 21v-6"/><path d="M13 21V9"/><path d="M17.5 21v-9"/>'),
@@ -1113,6 +1115,7 @@ function vistaPiattaforma() {
     ${pannelloStato()}
     ${pannelloPersonalita()}
     ${pannelloConoscenza()}
+    ${pannelloRegia()}
     ${pannelloClip()}
     ${pannelloAscolto()}
     ${pannelloMusica()}
@@ -3025,6 +3028,172 @@ function caricaAlert() {
   _g('ovl-tpl-elimina')?.addEventListener('click', () => conErrore(() => eliminaTemplate()));
 }
 
+// --- scheda Regia (Vai live) --------------------------------------------
+
+function pannelloRegia() {
+  return pannello('regia', `
+    <div class="carta evidenziata" id="regia-permessi-banner" hidden></div>
+
+    <div class="carta">
+      <h2>🔴 Stato diretta</h2>
+      <div id="regia-stato" class="regia-stato"><p class="vuoto">Carico…</p></div>
+      <p class="spazio-sopra"><button type="button" class="btn secondario mini" id="regia-refresh">↻ Aggiorna</button></p>
+    </div>
+
+    <div class="carta">
+      <h2>📝 Info del canale</h2>
+      <p>Imposta <strong>titolo</strong>, <strong>categoria</strong> e <strong>tag</strong> del canale — senza aprire Twitch o OBS. Vale anche da offline.</p>
+      <label class="campo" for="regia-titolo">Titolo della diretta</label>
+      <input type="text" id="regia-titolo" class="campo-largo" maxlength="140" placeholder="Es. Ranked fino al Diamante!">
+
+      <label class="campo spazio-sopra">Categoria / gioco</label>
+      <div class="regia-gioco-cur">Ora: <strong id="regia-gioco-sel">—</strong></div>
+      <div class="regia-gioco">
+        <input type="text" id="regia-gioco-cerca" placeholder="Cerca un gioco/categoria…" autocomplete="off">
+        <div id="regia-gioco-lista" class="regia-gioco-lista" hidden></div>
+      </div>
+
+      <label class="campo spazio-sopra" for="regia-tags">Tag <span class="tenue">— separati da virgola, max 10</span></label>
+      <input type="text" id="regia-tags" class="campo-largo" placeholder="italiano, chill, ranked">
+
+      <p class="spazio-sopra"><button type="button" class="btn" id="regia-salva-canale">💾 Salva info canale</button></p>
+    </div>
+
+    <div class="carta">
+      <h2>⚡ Azioni rapide</h2>
+      <div class="regia-azioni">
+        <button type="button" class="btn secondario" id="regia-clip">✂️ Crea clip</button>
+        <div class="regia-riga">
+          <input type="text" id="regia-marker-desc" placeholder="Nota del marker (facoltativa)" maxlength="140">
+          <button type="button" class="btn secondario" id="regia-marker">📍 Marker</button>
+        </div>
+        <div class="regia-riga" id="regia-ad-box">
+          <select id="regia-ad-durata">
+            <option value="30">30s</option><option value="60" selected>60s</option>
+            <option value="90">90s</option><option value="120">120s</option>
+            <option value="150">150s</option><option value="180">180s</option>
+          </select>
+          <button type="button" class="btn secondario" id="regia-ad">📺 Manda pubblicità</button>
+        </div>
+        <div class="regia-riga" id="regia-raid-box">
+          <span class="prefisso-cmd">↪</span>
+          <input type="text" id="regia-raid-canale" placeholder="canale da raidare" maxlength="30">
+          <button type="button" class="btn secondario" id="regia-raid">Avvia raid</button>
+          <button type="button" class="btn secondario mini" id="regia-raid-annulla">Annulla</button>
+        </div>
+      </div>
+      <p class="suggerimento spazio-sopra">Clip e marker (e la pubblicità/raid) funzionano solo <strong>mentre sei in diretta</strong>. Il video della live lo fa ancora OBS — qui gestisci tutto il resto.</p>
+    </div>`);
+}
+
+let _regiaGameId = '';
+let _regiaUptimeTimer = null;
+let _regiaCercaTimer = null;
+
+function _fmtUptime(startedAt) {
+  if (!startedAt) return '';
+  const ms = Date.now() - new Date(startedAt).getTime();
+  if (!(ms >= 0)) return '';
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
+  const due = (n) => (n < 10 ? '0' : '') + n;
+  return (h ? h + 'h ' : '') + (h ? due(m) : m) + 'm ' + due(ss) + 's';
+}
+
+function renderRegiaStato(live, ads) {
+  const box = document.getElementById('regia-stato');
+  if (!box) return;
+  if (!live || !live.online) {
+    box.innerHTML = '<div class="regia-badge off">● OFFLINE</div><p class="tenue spazio-sopra">Non sei in diretta adesso. Titolo, categoria e tag puoi impostarli lo stesso.</p>';
+    return;
+  }
+  let adInfo = '';
+  if (ads && ads.nextAt) {
+    const at = typeof ads.nextAt === 'number' ? ads.nextAt * 1000 : new Date(ads.nextAt).getTime();
+    const secs = Math.round((at - Date.now()) / 1000);
+    if (secs > 0) adInfo = `<div class="regia-metrica"><span>Prossima pubblicità</span><strong>${Math.floor(secs / 60)}m ${secs % 60}s</strong></div>`;
+  }
+  box.innerHTML = `
+    <div class="regia-badge live">● LIVE</div>
+    <div class="regia-metriche">
+      <div class="regia-metrica"><span>Spettatori</span><strong>${live.viewers ?? 0}</strong></div>
+      <div class="regia-metrica"><span>Da</span><strong id="regia-uptime">${esc(_fmtUptime(live.startedAt))}</strong></div>
+      ${adInfo}
+    </div>`;
+}
+
+async function caricaRegia() {
+  const box = document.getElementById('regia-stato');
+  if (!box) return;
+  if (DEMO) {
+    renderRegiaStato({ online: true, viewers: 128, startedAt: new Date(Date.now() - 5400000).toISOString() }, null);
+    const sel = document.getElementById('regia-gioco-sel'); if (sel) sel.textContent = 'Just Chatting';
+    return;
+  }
+  let d;
+  try { d = await api('/api/streamer/regia'); } catch (e) { box.innerHTML = `<p class="vuoto">Errore: ${esc(e.message)}</p>`; return; }
+
+  // banner permessi mancanti → link per ri-concederli
+  const p = d.permessi || {};
+  const mancanti = [];
+  if (!p.broadcast) mancanti.push('gestione canale (titolo/categoria/marker)');
+  if (!p.raid) mancanti.push('raid');
+  if (!p.commercial) mancanti.push('pubblicità');
+  const banner = document.getElementById('regia-permessi-banner');
+  if (banner) {
+    if (mancanti.length) {
+      banner.hidden = false;
+      banner.innerHTML = `<p>🔐 Per usare tutta la regia servono alcuni permessi non ancora concessi: <strong>${esc(mancanti.join(', '))}</strong>.</p>
+        <p class="spazio-sopra"><a class="btn" href="/auth/permessi">Concedi i permessi</a></p>`;
+    } else banner.hidden = true;
+  }
+
+  renderRegiaStato(d.live, d.ads);
+  clearInterval(_regiaUptimeTimer);
+  if (d.live && d.live.online && d.live.startedAt) {
+    _regiaUptimeTimer = setInterval(() => {
+      const u = document.getElementById('regia-uptime');
+      if (u) u.textContent = _fmtUptime(d.live.startedAt); else clearInterval(_regiaUptimeTimer);
+    }, 1000);
+  }
+
+  const t = document.getElementById('regia-titolo'); if (t) t.value = d.canale?.title || '';
+  const tags = document.getElementById('regia-tags'); if (tags) tags.value = (d.canale?.tags || []).join(', ');
+  _regiaGameId = d.canale?.gameId || '';
+  const sel = document.getElementById('regia-gioco-sel'); if (sel) sel.textContent = d.canale?.gameName || '— nessuna —';
+
+  // nascondi le azioni per cui manca il permesso
+  const adBox = document.getElementById('regia-ad-box'); if (adBox) adBox.style.display = p.commercial ? '' : 'none';
+  const raidBox = document.getElementById('regia-raid-box'); if (raidBox) raidBox.style.display = p.raid ? '' : 'none';
+}
+
+async function cercaGiochiRegia() {
+  const q = (document.getElementById('regia-gioco-cerca')?.value || '').trim();
+  const lista = document.getElementById('regia-gioco-lista');
+  if (!lista) return;
+  if (q.length < 2) { lista.hidden = true; lista.innerHTML = ''; return; }
+  try {
+    const d = await api('/api/streamer/regia/giochi?q=' + encodeURIComponent(q));
+    if (!d.giochi.length) { lista.hidden = false; lista.innerHTML = '<div class="rg-vuoto">Nessun risultato</div>'; return; }
+    lista.hidden = false;
+    lista.innerHTML = d.giochi.map((g) => {
+      const art = g.boxArt ? g.boxArt.replace('{width}', '40').replace('{height}', '53') : '';
+      return `<button type="button" class="rg-opt" data-id="${esc(g.id)}" data-nome="${esc(g.name)}">${art ? `<img src="${esc(art)}" alt="">` : ''}<span>${esc(g.name)}</span></button>`;
+    }).join('');
+  } catch (e) { lista.hidden = false; lista.innerHTML = `<div class="rg-vuoto">Errore: ${esc(e.message)}</div>`; }
+}
+
+async function salvaRegiaCanale() {
+  if (DEMO) { toast('In demo non si salva 😊 — accedi per farlo davvero.'); return; }
+  const titolo = document.getElementById('regia-titolo')?.value || '';
+  const tagsRaw = document.getElementById('regia-tags')?.value || '';
+  const tags = tagsRaw.split(',').map((x) => x.trim()).filter(Boolean).slice(0, 10);
+  const body = { titolo, tags };
+  if (_regiaGameId) body.giocoId = _regiaGameId;
+  await api('/api/streamer/regia/canale', { method: 'POST', body });
+  toast('Info canale aggiornate ✓');
+}
+
 // --- scheda Effetti & Suoni ---------------------------------------------
 
 function pannelloEffetti() {
@@ -4591,6 +4760,40 @@ function attivaPiattaforma() {
     }
   });
 
+  // --- Regia (Vai live) ---
+  document.getElementById('regia-refresh')?.addEventListener('click', () => conErrore(() => caricaRegia()));
+  document.getElementById('regia-salva-canale')?.addEventListener('click', () => conErrore(() => salvaRegiaCanale()));
+  document.getElementById('regia-clip')?.addEventListener('click', () => conErrore(async () => {
+    const r = await api('/api/streamer/regia/clip', { method: 'POST' }); toast('Clip creata! ✂️'); if (r.url) window.open(r.url, '_blank', 'noopener');
+  }));
+  document.getElementById('regia-marker')?.addEventListener('click', () => conErrore(async () => {
+    await api('/api/streamer/regia/marker', { method: 'POST', body: { descrizione: document.getElementById('regia-marker-desc')?.value || '' } });
+    toast('Marker messo nel VOD 📍');
+  }));
+  document.getElementById('regia-ad')?.addEventListener('click', () => conErrore(async () => {
+    const r = await api('/api/streamer/regia/pubblicita', { method: 'POST', body: { durata: Number(document.getElementById('regia-ad-durata')?.value) || 60 } });
+    toast(`Pubblicità di ${r.length}s avviata 📺`);
+  }));
+  document.getElementById('regia-raid')?.addEventListener('click', () => conErrore(async () => {
+    const c = document.getElementById('regia-raid-canale')?.value || '';
+    const r = await api('/api/streamer/regia/raid', { method: 'POST', body: { canale: c } });
+    toast(`Raid verso ${r.target || c} avviata ↪`);
+  }));
+  document.getElementById('regia-raid-annulla')?.addEventListener('click', () => conErrore(async () => {
+    await api('/api/streamer/regia/raid/annulla', { method: 'POST' }); toast('Raid annullata');
+  }));
+  // selettore gioco/categoria della regia
+  const gCerca = document.getElementById('regia-gioco-cerca');
+  gCerca?.addEventListener('input', () => { clearTimeout(_regiaCercaTimer); _regiaCercaTimer = setTimeout(cercaGiochiRegia, 300); });
+  const gLista = document.getElementById('regia-gioco-lista');
+  gLista?.addEventListener('click', (ev) => {
+    const opt = ev.target.closest('.rg-opt'); if (!opt) return;
+    _regiaGameId = opt.dataset.id;
+    const sel = document.getElementById('regia-gioco-sel'); if (sel) sel.textContent = opt.dataset.nome;
+    gLista.hidden = true; if (gCerca) gCerca.value = '';
+  });
+  document.addEventListener('click', (ev) => { if (gLista && !gLista.hidden && !gLista.contains(ev.target) && ev.target !== gCerca) gLista.hidden = true; });
+
   // caricamento di un effetto (multipart, con spinner)
   document.getElementById('btn-carica-effetto')?.addEventListener('click', caricaEffettoUpload);
   // "rendi pubblico": mostra il campo nome nella libreria
@@ -4771,6 +4974,7 @@ function caricaDatiScheda(id) {
   if (id === 'giveaway') caricaGiveaway();
   if (id === 'penitenze') caricaPenitenze();
   if (id === 'alert') caricaAlert();
+  if (id === 'regia') caricaRegia();
   if (id === 'effetti') { caricaEffetti(); caricaPremi(); caricaSuoniPremi(); caricaLibreria(); }
   if (id === 'moduli') caricaModuli();
   if (id === 'memoria') caricaStatistiche();
