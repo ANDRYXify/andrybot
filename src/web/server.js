@@ -29,6 +29,7 @@ import * as compleanniFeat from '../features/compleanni.js';
 import * as tiktok from '../features/tiktok.js';
 import * as instagram from '../features/instagram.js';
 import * as emotes from '../features/emotes.js';
+import * as badges from '../features/badges.js';
 import * as quotesImport from '../features/quotesimport.js';
 import { pretrain } from '../ai/pretrain.js';
 import * as persona from '../ai/persona.js';
@@ -488,6 +489,18 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     try {
       const mappa = await emotes.mappaCanale(helix, login);
       res.set('Cache-Control', 'public, max-age=300');
+      res.json(mappa || {});
+    } catch { res.json({}); }
+  });
+
+  // Stemmi (badge) Twitch del canale: "setId/version" → url immagine. L'overlay li
+  // usa per mettere gli stemmi accanto ai nick nella "chat a schermo".
+  app.get('/overlay/:login/badges', async (req, res) => {
+    if (!chiaveOk(req)) return notFound(res);
+    const login = String(req.params.login).toLowerCase();
+    try {
+      const mappa = await badges.mappaBadge(helix, login);
+      res.set('Cache-Control', 'public, max-age=600');
       res.json(mappa || {});
     } catch { res.json({}); }
   });

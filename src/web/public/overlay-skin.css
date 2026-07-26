@@ -76,6 +76,9 @@
 .chat-riga.ombra { box-shadow: 0 4px 16px rgba(0, 0, 0, .4); }
 .chat-riga .chat-user { margin-right: .35rem; }
 .chat-riga.user-bold .chat-user { font-weight: 800; }
+/* stemmi (badge) Twitch/7TV: piccoli, in linea, appena prima del nome */
+.chat-riga .chat-badge { height: 1em; width: auto; vertical-align: -0.15em; margin-right: .18rem; border-radius: 3px; }
+.chat-riga .chat-badge:last-of-type { margin-right: .35rem; }
 /* emote 7TV: immagini in linea col testo, alte quanto ~1.5 righe */
 .chat-riga .emote { height: 1.5em; width: auto; vertical-align: middle; margin: -0.15em 0.05em 0; }
 .chat-riga { opacity: 0; }

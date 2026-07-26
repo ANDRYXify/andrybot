@@ -5,6 +5,7 @@
 // Riusa il canale SSE degli effetti (EffectsEngine.emit) e i suoni PRESET.
 // Tutta la configurazione (e lo stato dei widget) vive in streamers.settings.
 import { streamers, effects as effectsDb } from '../db.js';
+import * as stemmi from './badges.js';
 import { makeLog } from '../logger.js';
 
 const log = makeLog('alerts');
@@ -151,6 +152,9 @@ export class AlertsEngine {
         user: msg.display || msg.user || '',
         colore: msg?.tags?.color || '',
         testo: testo.slice(0, 200),
+        // stemmi: Twitch (stringa "setId/version,…" risolta nell'overlay) + 7TV (url già risolto)
+        badges: msg?.tags?.badges || '',
+        badge7tv: stemmi.badge7tv(msg?.userId || msg?.tags?.['user-id']),
         posizione: c.posizione || 'basso-sinistra',
         xy: c.xy || null,
         max: Math.max(1, Math.min(20, Number(c.max) || 8)),
