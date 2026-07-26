@@ -554,6 +554,10 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .regia-riga input[type="text"] { flex: 1 1 180px; min-width: 140px; }
 .regia-riga .btn { white-space: nowrap; }
 
+/* icona in linea nei bottoni/etichette */
+.b-ico { vertical-align: -2px; margin-right: .35rem; flex: none; }
+.lib-tab .b-ico, .studio-sorgenti .btn .b-ico { margin-right: .3rem; }
+
 /* --- Studio Web ------------------------------------------------------- */
 .studio-sorgenti { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .8rem; }
 .studio-sorgenti .btn.attivo { background: var(--viola, #9146ff); color: #fff; border-color: transparent; }

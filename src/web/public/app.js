@@ -1039,7 +1039,24 @@ const ICO = {
   pacco: '<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
   avviso: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
   penitenza: '<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  // aggiunte per Regia / Studio / Libreria / Alert
+  onda: '<path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/>',
+  segnaposto: '<path d="M20 10c0 4.4-8 12-8 12s-8-7.6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+  freccia: '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+  aggiorna: '<path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/>',
+  stop: '<rect x="6" y="6" width="12" height="12" rx="2"/>',
+  piu: '<path d="M12 5v14"/><path d="M5 12h14"/>',
+  condividi: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/>',
+  lucchetto: '<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/>',
+  altoparlante: '<path d="M11 4.7 6.6 8.4H3v7.2h3.6L11 19.3z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>',
+  immagine: '<rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
+  video: '<path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/>',
+  carica: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/>',
+  globo: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18Z"/>',
 };
+
+// icona piccola in linea per i bottoni/etichette (16px, stesso stile a tratto)
+const _bIco = (d) => `<svg class="b-ico" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 
 // HTML della mini-guida di una scheda (vuoto se non prevista).
 function guidaSchedaHtml(id) {
@@ -1484,7 +1501,7 @@ function pannelloAscolto() {
       apri la pagina di ascolto, premi Avvia, e quando dici una parola chiave il bot fa quello che hai impostato
       nei Moduli.</p>
       <p class="spazio-sopra">
-        <a class="btn grande" href="/voce.html" target="_blank" rel="noopener">🎙️ Apri l'ascolto vocale</a>
+        <a class="btn grande" href="/voce.html" target="_blank" rel="noopener">${_bIco(ICO.voce)}Apri l'ascolto vocale</a>
       </p>
       <p class="suggerimento spazio-sopra">Tienila aperta mentre streammi. Funziona su Chrome o Edge (Mac e Windows).</p>
       <p class="suggerimento">I comandi vocali si creano e modificano in
@@ -2181,25 +2198,25 @@ function bloccoAlert(t, a) {
       </div>
       <div class="al-media-wrap spazio-sopra">
         <div class="al-slot">
-          <label class="campo">🔊 Suono</label>
+          <label class="campo">${_bIco(ICO.altoparlante)}Suono</label>
           <select class="al-suono">${opzioniSuono(c.suono || '')}</select>
           <div class="al-carica">
             <input type="file" class="al-up al-up-suono" accept="audio/*" data-slot="suono" hidden>
-            <button type="button" class="btn secondario mini al-btn-up" data-slot="suono">＋ Carica un suono tuo</button>
+            <button type="button" class="btn secondario mini al-btn-up" data-slot="suono">${_bIco(ICO.carica)}Carica un suono tuo</button>
             <span class="al-up-esito tenue"></span>
           </div>
         </div>
         <div class="al-slot">
-          <label class="campo">🖼️ Immagine o video</label>
+          <label class="campo">${_bIco(ICO.immagine)}Immagine o video</label>
           <select class="al-media"><option value="">— niente —</option></select>
           <div class="al-carica">
             <input type="file" class="al-up al-up-media" accept="image/*,video/*" data-slot="media" hidden>
-            <button type="button" class="btn secondario mini al-btn-up" data-slot="media">＋ Carica immagine/video tuo</button>
+            <button type="button" class="btn secondario mini al-btn-up" data-slot="media">${_bIco(ICO.carica)}Carica immagine/video tuo</button>
             <span class="al-up-esito tenue"></span>
           </div>
         </div>
       </div>
-      <p class="suggerimento">✨ <strong>Metti quello che vuoi:</strong> scegli dai tuoi effetti <em>oppure</em> carica un file al volo qui sopra. Suono e immagine/video <strong>partono insieme</strong> — così puoi avere, ad esempio, la tua GIF <em>con</em> il tuo suono.</p>
+      <p class="suggerimento"><strong>Metti quello che vuoi:</strong> scegli dai tuoi effetti <em>oppure</em> carica un file al volo qui sopra. Suono e immagine/video <strong>partono insieme</strong> — così puoi avere, ad esempio, la tua GIF <em>con</em> il tuo suono.</p>
       <p class="spazio-sopra"><button type="button" class="btn secondario mini al-prova" data-kind="${t.key}">Prova ▶</button></p>
     </div>`;
 }
@@ -2270,7 +2287,7 @@ function pannelloAlert() {
       <p>Personalizza <strong>tutto</strong> ciò che appare a schermo: alert, chat, widget… colori, font, forma, animazioni.
       Posizioni e "cosa mostra" valgono per l'<strong>overlay selezionato qui sopra</strong>; stile e testi sono condivisi.
       L'<strong>anteprima qui sotto è dal vivo</strong>.</p>
-      <p class="spazio-sopra"><button class="btn grande" id="ovl-salva-tutto">💾 Salva overlay</button>
+      <p class="spazio-sopra"><button class="btn grande" id="ovl-salva-tutto">Salva overlay</button>
         <span class="suggerimento">Salva tutto in un colpo: alert, chat, widget e il layout dell'overlay selezionato.</span></p>
       <label class="campo spazio-sopra" for="ovl-tpl">Parti da un modello pronto <span class="tenue">— «Applica» riempie i controlli con quel look; poi premi «Salva overlay»</span></label>
       <div class="riga-flessibile">
@@ -2324,7 +2341,7 @@ function pannelloAlert() {
       <label class="campo spazio-sopra">Font <span class="tenue">— scegli un font Google dall'elenco con anteprima (vince sul menu qui sopra)</span></label>
       <div class="riga-flessibile">
         <input type="text" id="al-st-gfont" class="campo-largo gfont" placeholder="— nessun font Google (uso il menu) —" value="${esc(st.googleFont || '')}">
-        <button type="button" class="btn secondario sfoglia-font" data-target="al-st-gfont" data-box="fb-al">📖 Sfoglia i font</button>
+        <button type="button" class="btn secondario sfoglia-font" data-target="al-st-gfont" data-box="fb-al">${_bIco(ICO.libro)}Sfoglia i font</button>
         <button type="button" class="btn secondario gfont-x" data-target="al-st-gfont" title="Togli il font Google">✕</button>
       </div>
       <div class="font-browser" id="fb-al" hidden></div>
@@ -2367,7 +2384,7 @@ function pannelloAlert() {
       <label class="campo spazio-sopra">Font <span class="tenue">— font Google dall'elenco con anteprima (opzionale, vince sul menu)</span></label>
       <div class="riga-flessibile">
         <input type="text" id="co-st-gfont" class="campo-largo gfont" placeholder="— nessun font Google —" value="${esc(cst.googleFont || '')}">
-        <button type="button" class="btn secondario sfoglia-font" data-target="co-st-gfont" data-box="fb-co">📖 Sfoglia i font</button>
+        <button type="button" class="btn secondario sfoglia-font" data-target="co-st-gfont" data-box="fb-co">${_bIco(ICO.libro)}Sfoglia i font</button>
         <button type="button" class="btn secondario gfont-x" data-target="co-st-gfont" title="Togli il font Google">✕</button>
       </div>
       <div class="font-browser" id="fb-co" hidden></div>
@@ -3038,13 +3055,13 @@ function pannelloRegia() {
     <div class="carta evidenziata" id="regia-permessi-banner" hidden></div>
 
     <div class="carta">
-      <h2>🔴 Stato diretta</h2>
+      <h2>${_hIco(ICO.onda)}Stato diretta</h2>
       <div id="regia-stato" class="regia-stato"><p class="vuoto">Carico…</p></div>
-      <p class="spazio-sopra"><button type="button" class="btn secondario mini" id="regia-refresh">↻ Aggiorna</button></p>
+      <p class="spazio-sopra"><button type="button" class="btn secondario mini" id="regia-refresh">${_bIco(ICO.aggiorna)}Aggiorna</button></p>
     </div>
 
     <div class="carta">
-      <h2>📝 Info del canale</h2>
+      <h2>${_hIco(ICO.scrivi)}Info del canale</h2>
       <p>Imposta <strong>titolo</strong>, <strong>categoria</strong> e <strong>tag</strong> del canale — senza aprire Twitch o OBS. Vale anche da offline.</p>
       <label class="campo" for="regia-titolo">Titolo della diretta</label>
       <input type="text" id="regia-titolo" class="campo-largo" maxlength="140" placeholder="Es. Ranked fino al Diamante!">
@@ -3059,16 +3076,16 @@ function pannelloRegia() {
       <label class="campo spazio-sopra" for="regia-tags">Tag <span class="tenue">— separati da virgola, max 10</span></label>
       <input type="text" id="regia-tags" class="campo-largo" placeholder="italiano, chill, ranked">
 
-      <p class="spazio-sopra"><button type="button" class="btn" id="regia-salva-canale">💾 Salva info canale</button></p>
+      <p class="spazio-sopra"><button type="button" class="btn" id="regia-salva-canale">Salva info canale</button></p>
     </div>
 
     <div class="carta">
-      <h2>⚡ Azioni rapide</h2>
+      <h2>${_hIco(ICO.fulmine)}Azioni rapide</h2>
       <div class="regia-azioni">
-        <button type="button" class="btn secondario" id="regia-clip">✂️ Crea clip</button>
+        <button type="button" class="btn secondario" id="regia-clip">${_bIco(ICO.clip)}Crea clip</button>
         <div class="regia-riga">
           <input type="text" id="regia-marker-desc" placeholder="Nota del marker (facoltativa)" maxlength="140">
-          <button type="button" class="btn secondario" id="regia-marker">📍 Marker</button>
+          <button type="button" class="btn secondario" id="regia-marker">${_bIco(ICO.segnaposto)}Marker</button>
         </div>
         <div class="regia-riga" id="regia-ad-box">
           <select id="regia-ad-durata">
@@ -3076,12 +3093,11 @@ function pannelloRegia() {
             <option value="90">90s</option><option value="120">120s</option>
             <option value="150">150s</option><option value="180">180s</option>
           </select>
-          <button type="button" class="btn secondario" id="regia-ad">📺 Manda pubblicità</button>
+          <button type="button" class="btn secondario" id="regia-ad">${_bIco(ICO.tv)}Manda pubblicità</button>
         </div>
         <div class="regia-riga" id="regia-raid-box">
-          <span class="prefisso-cmd">↪</span>
           <input type="text" id="regia-raid-canale" placeholder="canale da raidare" maxlength="30">
-          <button type="button" class="btn secondario" id="regia-raid">Avvia raid</button>
+          <button type="button" class="btn secondario" id="regia-raid">${_bIco(ICO.freccia)}Avvia raid</button>
           <button type="button" class="btn secondario mini" id="regia-raid-annulla">Annulla</button>
         </div>
       </div>
@@ -3146,7 +3162,7 @@ async function caricaRegia() {
   if (banner) {
     if (mancanti.length) {
       banner.hidden = false;
-      banner.innerHTML = `<p>🔐 Per usare tutta la regia servono alcuni permessi non ancora concessi: <strong>${esc(mancanti.join(', '))}</strong>.</p>
+      banner.innerHTML = `<p>${_bIco(ICO.lucchetto)}Per usare tutta la regia servono alcuni permessi non ancora concessi: <strong>${esc(mancanti.join(', '))}</strong>.</p>
         <p class="spazio-sopra"><a class="btn" href="/auth/permessi">Concedi i permessi</a></p>`;
     } else banner.hidden = true;
   }
@@ -3203,14 +3219,14 @@ function pannelloStudio() {
   return pannello('studio', `
     <div class="carta evidenziata" id="studio-permessi-banner" hidden></div>
     <div class="carta">
-      <h2>📡 Studio Web — vai live senza OBS</h2>
+      <h2>${_hIco(ICO.onda)}Studio Web — vai live senza OBS</h2>
       <p>Componi <strong>webcam + schermo/gioco + overlay</strong> qui nel browser e vai in diretta su Twitch con un click.
       Il video parte da questa scheda: <strong>tienila aperta</strong> mentre trasmetti.</p>
 
       <div class="studio-sorgenti">
-        <button type="button" class="btn secondario" id="studio-webcam">🎥 Webcam</button>
-        <button type="button" class="btn secondario" id="studio-mic">🎙️ Microfono</button>
-        <button type="button" class="btn secondario" id="studio-schermo">🖥️ Schermo / gioco</button>
+        <button type="button" class="btn secondario" id="studio-webcam">${_bIco(ICO.fotocamera)}Webcam</button>
+        <button type="button" class="btn secondario" id="studio-mic">${_bIco(ICO.voce)}Microfono</button>
+        <button type="button" class="btn secondario" id="studio-schermo">${_bIco(ICO.monitor)}Schermo / gioco</button>
       </div>
 
       <div class="studio-palco">
@@ -3236,12 +3252,12 @@ function pannelloStudio() {
       </div>
 
       <div class="studio-vai spazio-sopra">
-        <button type="button" class="btn grande" id="studio-live">🔴 VAI LIVE</button>
-        <button type="button" class="btn secondario" id="studio-ferma" hidden>⏹ Ferma diretta</button>
+        <button type="button" class="btn grande" id="studio-live">${_bIco(ICO.onda)}VAI LIVE</button>
+        <button type="button" class="btn secondario" id="studio-ferma" hidden>${_bIco(ICO.stop)}Ferma diretta</button>
         <span id="studio-stato" class="suggerimento"></span>
       </div>
 
-      <p class="suggerimento spazio-sopra">ℹ️ Perfetto per <strong>just-chatting / webcam</strong>. Per i giochi ad alta qualità/frame rate OBS resta migliore.
+      <p class="suggerimento spazio-sopra">Perfetto per <strong>just-chatting / webcam</strong>. Per i giochi ad alta qualità/frame rate OBS resta migliore.
       Alert, chat ed effetti a punti canale vengono disegnati sul palco (v1: senza le animazioni più elaborate né le emote 7TV).</p>
     </div>`);
 }
@@ -3377,7 +3393,7 @@ async function attivaMic() {
   try {
     STUDIO.mic = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     document.getElementById('studio-mic')?.classList.add('attivo');
-    toast('Microfono attivo 🎙️');
+    toast('Microfono attivo');
   } catch (e) { toast('Microfono non disponibile: ' + e.message, 'errore'); }
 }
 
@@ -3429,7 +3445,7 @@ async function avviaLive() {
   document.getElementById('studio-ferma').hidden = false;
   const badge = document.getElementById('studio-badge-live'); if (badge) badge.hidden = false;
   STUDIO.timer = setInterval(aggiornaTimerStudio, 1000);
-  studioLog('🔴 In diretta su Twitch!');
+  studioLog('In diretta su Twitch!');
 }
 
 async function drenaCodaStudio() {
@@ -3474,7 +3490,7 @@ async function caricaStudio() {
     if (banner) {
       if (!d.keyOk) {
         banner.hidden = false;
-        banner.innerHTML = '<p>🔐 Per andare live dallo Studio serve il permesso <strong>stream key</strong> (non ancora concesso).</p><p class="spazio-sopra"><a class="btn" href="/auth/permessi">Concedi i permessi</a></p>';
+        banner.innerHTML = '<p>' + _bIco(ICO.lucchetto) + 'Per andare live dallo Studio serve il permesso <strong>stream key</strong> (non ancora concesso).</p><p class="spazio-sopra"><a class="btn" href="/auth/permessi">Concedi i permessi</a></p>';
       } else banner.hidden = true;
     }
   } catch (e) { /* niente */ }
@@ -3490,16 +3506,16 @@ async function caricaStudio() {
 function pannelloEffetti() {
   return pannello('effetti', `
     <div class="carta">
-      <h2>${_hIco(ICO.effetti)}📚 Libreria condivisa</h2>
+      <h2>${_hIco(ICO.libro)}Libreria condivisa</h2>
       <p>Sfoglia <strong class="primo-piano">effetti, gif, video, foto e suoni</strong> condivisi dagli altri streamer
       e aggiungili alla tua libreria con un click. Quello che aggiungi lo ritrovi <strong>ovunque</strong>: overlay,
       alert, effetti e premi a punti canale.</p>
       <div class="lib-filtri">
         <div class="lib-tabs">
           <button type="button" class="btn secondario mini lib-tab attivo" data-tipo="">Tutti</button>
-          <button type="button" class="btn secondario mini lib-tab" data-tipo="immagine">🖼️ Immagini</button>
-          <button type="button" class="btn secondario mini lib-tab" data-tipo="video">🎬 Video</button>
-          <button type="button" class="btn secondario mini lib-tab" data-tipo="audio">🔊 Audio</button>
+          <button type="button" class="btn secondario mini lib-tab" data-tipo="immagine">${_bIco(ICO.immagine)}Immagini</button>
+          <button type="button" class="btn secondario mini lib-tab" data-tipo="video">${_bIco(ICO.video)}Video</button>
+          <button type="button" class="btn secondario mini lib-tab" data-tipo="audio">${_bIco(ICO.altoparlante)}Audio</button>
         </div>
         <input type="search" id="lib-cerca" placeholder="Cerca per nome…" maxlength="40">
       </div>
@@ -3515,7 +3531,7 @@ function pannelloEffetti() {
       <input type="file" id="eff-file" accept="audio/*,image/*,video/*">
 
       <div class="spazio-sopra">
-        <label class="campo" for="eff-suono">🔊 Suono da abbinare <span class="tenue">— opzionale, per immagini/video: crei una <strong>combo</strong> (media + suono che parte insieme)</span></label>
+        <label class="campo" for="eff-suono">${_bIco(ICO.altoparlante)}Suono da abbinare <span class="tenue">— opzionale, per immagini/video: crei una <strong>combo</strong> (media + suono che parte insieme)</span></label>
         <input type="file" id="eff-suono" accept="audio/*">
       </div>
 
@@ -3553,7 +3569,7 @@ function pannelloEffetti() {
       audio e video usano la loro durata reale (accorciati a 30s se più lunghi).</p>
 
       <div class="riga-check spazio-sopra" style="display:block">
-        <label class="riga-check"><input type="checkbox" id="eff-pubblico"> 🌍 <strong>Rendi pubblico</strong> — condividilo con gli altri streamer nella libreria</label>
+        <label class="riga-check"><input type="checkbox" id="eff-pubblico"> ${_bIco(ICO.globo)}<strong>Rendi pubblico</strong> — condividilo con gli altri streamer nella libreria</label>
       </div>
       <div id="eff-nome-box" class="spazio-sopra" hidden>
         <label class="campo" for="eff-nome">Nome nella libreria condivisa</label>
@@ -3821,7 +3837,7 @@ function pannelloModuli() {
       <p>Automazioni avanzate: <strong class="primo-piano">QUANDO</strong> succede qualcosa,
       <strong class="primo-piano">SE</strong> valgono certe condizioni, <strong class="primo-piano">ALLORA</strong>
       il bot fa una o più azioni.</p>
-      <p class="spazio-sopra"><button class="btn secondario" data-nuovo-modulo>➕ Nuovo modulo (avanzato)</button></p>
+      <p class="spazio-sopra"><button class="btn secondario" data-nuovo-modulo>${_bIco(ICO.piu)}Nuovo modulo (avanzato)</button></p>
       <p class="suggerimento spazio-sopra">Non sai da dove partire? Scegli un modello pronto e modificalo:</p>
       <div class="modelli-pronti">
         <button class="modello-pronto" data-modello="saluto">Saluto</button>
@@ -4080,7 +4096,7 @@ function pannelloGiochi() {
         spesso prende solo il guscio vuoto («<em>Please enable JavaScript</em>»). Due modi che funzionano davvero 👇</p>
 
         <p class="suggerimento" style="margin-bottom:.35rem"><strong>1) Bottone magico</strong> (consigliato). Trascina
-        <a id="bm-xla" class="btn secondario" draggable="true" href="#" title="Trascinami nella barra dei preferiti del browser">📌 Prendi le quote da x.la</a>
+        <a id="bm-xla" class="btn secondario" draggable="true" href="#" title="Trascinami nella barra dei preferiti del browser">${_bIco(ICO.segnaposto)}Prendi le quote da x.la</a>
         nella <strong>barra dei preferiti</strong> del browser. Poi apri la tua pagina x.la, aspetta che le quote compaiano
         (scorri fino in fondo) e <strong>clicca quel preferito</strong>: copia tutto da solo. Torna qui, incolla sotto e importa.
         <button class="btn secondario" id="bm-xla-copia" type="button" style="margin-left:.35rem">copia il codice</button></p>
@@ -5055,20 +5071,20 @@ function attivaPiattaforma() {
   document.getElementById('regia-refresh')?.addEventListener('click', () => conErrore(() => caricaRegia()));
   document.getElementById('regia-salva-canale')?.addEventListener('click', () => conErrore(() => salvaRegiaCanale()));
   document.getElementById('regia-clip')?.addEventListener('click', () => conErrore(async () => {
-    const r = await api('/api/streamer/regia/clip', { method: 'POST' }); toast('Clip creata! ✂️'); if (r.url) window.open(r.url, '_blank', 'noopener');
+    const r = await api('/api/streamer/regia/clip', { method: 'POST' }); toast('Clip creata!'); if (r.url) window.open(r.url, '_blank', 'noopener');
   }));
   document.getElementById('regia-marker')?.addEventListener('click', () => conErrore(async () => {
     await api('/api/streamer/regia/marker', { method: 'POST', body: { descrizione: document.getElementById('regia-marker-desc')?.value || '' } });
-    toast('Marker messo nel VOD 📍');
+    toast('Marker messo nel VOD');
   }));
   document.getElementById('regia-ad')?.addEventListener('click', () => conErrore(async () => {
     const r = await api('/api/streamer/regia/pubblicita', { method: 'POST', body: { durata: Number(document.getElementById('regia-ad-durata')?.value) || 60 } });
-    toast(`Pubblicità di ${r.length}s avviata 📺`);
+    toast(`Pubblicità di ${r.length}s avviata`);
   }));
   document.getElementById('regia-raid')?.addEventListener('click', () => conErrore(async () => {
     const c = document.getElementById('regia-raid-canale')?.value || '';
     const r = await api('/api/streamer/regia/raid', { method: 'POST', body: { canale: c } });
-    toast(`Raid verso ${r.target || c} avviata ↪`);
+    toast(`Raid verso ${r.target || c} avviata`);
   }));
   document.getElementById('regia-raid-annulla')?.addEventListener('click', () => conErrore(async () => {
     await api('/api/streamer/regia/raid/annulla', { method: 'POST' }); toast('Raid annullata');
@@ -5504,7 +5520,7 @@ async function caricaEffetti() {
     const dati = await api('/api/streamer/effetti');
     if (inpUrl) inpUrl.value = dati.overlayUrl || '';
 
-    const etTipo = { audio: '🔊 audio', immagine: '🖼️ immagine', video: '🎬 video' };
+    const etTipo = { audio: _bIco(ICO.altoparlante) + 'audio', immagine: _bIco(ICO.immagine) + 'immagine', video: _bIco(ICO.video) + 'video' };
     const etTier = { tutti: 'tutti', sub: 'sub', vip: 'VIP', mod: 'mod' };
 
     if (!dati.effetti.length) {
@@ -5514,11 +5530,11 @@ async function caricaEffetti() {
     ul.innerHTML = dati.effetti.map((e) => `
       <li>
         <div class="testo-voce">
-          <div class="domanda">!${esc(e.comando)} <span class="badge viola">${etTipo[e.tipo] || esc(e.tipo)}</span>${e.combo ? ' <span class="badge">combo 🔊</span>' : ''}${e.pubblico ? ' <span class="badge verde">🌍 pubblico</span>' : ''}</div>
+          <div class="domanda">!${esc(e.comando)} <span class="badge viola">${etTipo[e.tipo] || esc(e.tipo)}</span>${e.combo ? ' <span class="badge">combo</span>' : ''}${e.pubblico ? ' <span class="badge verde">pubblico</span>' : ''}</div>
           <div class="meta">chi: ${esc(etTier[e.tier] || e.tier)} · cooldown ${e.cooldown}s · volume ${e.volume}% · ${e.durata}ms</div>
         </div>
         <div class="azioni-voce">
-          <button class="btn secondario mini" data-pubblica="${e.id}" data-stato="${e.pubblico ? 1 : 0}" data-nome="${esc(e.nome || e.comando)}">${e.pubblico ? '🔒 Rendi privato' : '🌍 Condividi'}</button>
+          <button class="btn secondario mini" data-pubblica="${e.id}" data-stato="${e.pubblico ? 1 : 0}" data-nome="${esc(e.nome || e.comando)}">${e.pubblico ? _bIco(ICO.lucchetto) + 'Rendi privato' : _bIco(ICO.condividi) + 'Condividi'}</button>
           <button class="btn secondario mini" data-prova="${esc(e.comando)}">Prova</button>
           <button class="btn pericolo mini" data-elimina-eff="${e.id}">Elimina</button>
         </div>
@@ -5550,7 +5566,7 @@ async function caricaEffetti() {
             if (!nome) return;   // annullato
           }
           await api('/api/streamer/effetti/' + pub.dataset.pubblica + '/pubblico', { method: 'PATCH', body: { pubblico: rendiPubblico, nome } });
-          toast(rendiPubblico ? 'Condiviso nella libreria 🌍' : 'Tornato privato 🔒');
+          toast(rendiPubblico ? 'Condiviso nella libreria' : 'Tornato privato');
           caricaEffetti(); caricaLibreria();
         });
       }
@@ -5572,10 +5588,10 @@ function libItemHtml(it) {
   const audio = (it.tipo === 'audio' || it.combo)
     ? `<button type="button" class="btn secondario mini lib-play" data-audio="${esc(it.suonoUrl || it.url)}" title="Ascolta">▶</button>` : '';
   return `<div class="lib-card" data-id="${it.id}">
-    <div class="lib-media-wrap">${media}${it.combo ? '<span class="lib-combo">combo 🔊</span>' : ''}</div>
+    <div class="lib-media-wrap">${media}${it.combo ? '<span class="lib-combo">combo</span>' : ''}</div>
     <div class="lib-nome" title="${esc(it.nome)}">${esc(it.nome)}</div>
     <div class="meta">di ${esc(it.autore)}${it.usi ? ' · ' + it.usi + ' usi' : ''}</div>
-    <div class="lib-azioni">${audio}<button type="button" class="btn mini lib-importa" data-id="${it.id}">➕ Aggiungi</button></div>
+    <div class="lib-azioni">${audio}<button type="button" class="btn mini lib-importa" data-id="${it.id}">${_bIco(ICO.piu)}Aggiungi</button></div>
   </div>`;
 }
 
@@ -5586,7 +5602,7 @@ async function caricaLibreria() {
   try {
     const d = await api(`/api/streamer/libreria?tipo=${encodeURIComponent(_libTipo)}&q=${encodeURIComponent(q)}`);
     if (!d.items.length) {
-      g.innerHTML = '<p class="vuoto">Ancora niente qui. Sii il primo a condividere: carica un effetto e spunta “🌍 Rendi pubblico”!</p>';
+      g.innerHTML = '<p class="vuoto">Ancora niente qui. Sii il primo a condividere: carica un effetto e spunta “Rendi pubblico”!</p>';
       return;
     }
     g.innerHTML = d.items.map(libItemHtml).join('');
@@ -5602,7 +5618,7 @@ async function importaLibreria(id, btn) {
   btn.textContent = 'Aggiungo…';
   try {
     const r = await api('/api/streamer/libreria/importa', { method: 'POST', body: { id: Number(id) } });
-    toast(`Aggiunto come !${r.comando} alla tua libreria ✨`);
+    toast(`Aggiunto come !${r.comando} alla tua libreria`);
     caricaEffetti();
     btn.textContent = '✓ Aggiunto';
   } catch (e) {
@@ -5649,7 +5665,7 @@ async function caricaEffettoUpload(ev) {
     let dati = null;
     try { dati = await res.json(); } catch { /* risposta non JSON */ }
     if (!res.ok) throw new Error(dati?.errore || `errore ${res.status}`);
-    toast(dati?.combo ? 'Combo caricata (media + suono)! ✨' : 'Effetto caricato e compresso! ✨');
+    toast(dati?.combo ? 'Combo caricata (media + suono)!' : 'Effetto caricato e compresso!');
     fileInput.value = '';
     if (suonoInput) suonoInput.value = '';
     document.getElementById('eff-comando').value = '';
@@ -5692,7 +5708,7 @@ async function caricaMediaAlert(kind, slot, file) {
     cfg[kind] = { ...(cfg[kind] || {}), [slot === 'suono' ? 'suono' : 'media']: dati.ref };
     popolaMediaSuoniAlert(lib.effetti || [], cfg);
     if (esito) esito.textContent = '✓ ' + (slot === 'suono' ? 'suono' : (dati.tipo || 'media')) + ' caricato e assegnato';
-    toast('Caricato e assegnato all\'alert! ✨');
+    toast('Caricato e assegnato all\'alert!');
   } catch (e) {
     if (esito) esito.textContent = '❌ ' + e.message;
     toast('Caricamento fallito: ' + e.message, 'errore');
@@ -6559,8 +6575,8 @@ async function aggiornaRetePanoramica(box, primo) {
     ${nonSo.length
       ? `<p class="suggerimento spazio-sopra">Ultime cose che <strong>non sapeva</strong> (le imparerà col tempo): ${nonSo.map((t) => `«${esc(t)}»`).join(' · ')}</p>`
       : '<p class="suggerimento spazio-sopra">Nessuna lacuna recente: sta rispondendo bene. 🙂</p>'}
-    <p class="spazio-sopra"><button class="btn secondario mini" id="btn-forgia">📚 Studia ora</button>
-      &nbsp;<a class="suggerimento" href="/api/streamer/corpus" download>📦 Scarica il dataset della sua mente</a></p>
+    <p class="spazio-sopra"><button class="btn secondario mini" id="btn-forgia">${_bIco(ICO.libro)}Studia ora</button>
+      &nbsp;<a class="suggerimento" href="/api/streamer/corpus" download>${_bIco(ICO.pacco)}Scarica il dataset della sua mente</a></p>
     <p class="suggerimento">«Studia ora»: cerca da sé le sue lacune online, ci ragiona su e le distilla nel suo motore.
     Il «dataset» è la sua mente: su un Mac Apple Silicon lo trasformi in un vero modello tutto suo con
     <code>forgia/forgia.sh</code> (vedi <code>forgia/README.md</code>), poi lo ricolleghi come "maestro".</p>`;
