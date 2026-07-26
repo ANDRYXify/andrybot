@@ -846,6 +846,16 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     }
   }
 
+  // Login DIRETTO con Twitch, SENZA passkey: pensato per chi è già abilitato
+  // (community) o abbonato. Il cancello resta invariato: il callback concede la
+  // dashboard SOLO se contestiPer(login) non è vuoto (accesso attivo); altrimenti
+  // rimanda ai piani. Nessuna scorciatoia sull'accesso — solo un ingresso comodo.
+  app.get('/entra', (req, res) => {
+    const state = crypto.randomUUID();
+    req.session.selfFlow = { state };   // niente `compra`: login puro
+    res.redirect(auth.authUrl([], state));
+  });
+
   // Login self-service con Twitch per abbonarsi. Attivo solo con Stripe acceso.
   app.get('/accedi', (req, res) => {
     if (!config.stripe.attivo) return res.redirect('/');   // paywall spento: niente ingresso extra

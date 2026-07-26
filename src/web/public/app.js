@@ -610,6 +610,14 @@ function renderHero() {
       'Notifiche live', 'Avvisi automatici su Telegram e TikTok quando vai in diretta.'],
     [vi('<rect x="9" y="3" width="6" height="10.5" rx="3"/><path d="M6 11a6 6 0 0 0 12 0"/><path d="M12 17v4"/>'),
       'Comandi a voce', 'Piloti il bot parlando, mentre streammi, senza toccare la tastiera.'],
+    [vi('<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>'),
+      'Overlay Studio', 'Alert, chat e widget a schermo: colori, font (anche Google), posizione, dimensione e rotazione. Più overlay, ognuno col suo link OBS.'],
+    [vi('<path d="M12 3v18"/><path d="M4 8l8-5 8 5"/><path d="M4 16l8 5 8-5"/>'),
+      'Alert su misura', 'Follow, sub, bit e raid con immagini o video, suoni tuoi o pronti, e il green screen sui video riscattabili a punti canale.'],
+    [vi('<circle cx="12" cy="12" r="9"/><path d="M8 12h8"/><path d="M12 8v8"/>'),
+      'Emote 7TV', 'Le emote 7TV del tuo canale compaiono nella chat a schermo, come nella chat vera.'],
+    [vi('<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>'),
+      'Musica & punti canale', 'Richieste musicali su Spotify, minigiochi con monete, penitenze a tempo ed effetti su ogni riscatto.'],
   ];
   const STEP = [
     ['1', 'Accedi con Twitch', 'Un click, con lo stesso account con cui streammi.'],
@@ -635,11 +643,12 @@ function renderHero() {
       <p class="vetrina-sub">Vive nella tua chat e scrive <strong>con il tuo account</strong> — niente bot anonimi.
       Impara chi sei, crea comandi su misura e cresce con la tua community.</p>
       <div class="vetrina-azioni">
-        <a class="btn grande" href="/?demo=1">▶ Prova la demo</a>
-        <a class="btn grande secondario" href="https://andryxify.it">Attiva su andryxify.it →</a>
+        <a class="btn grande" href="/entra">Accedi con Twitch</a>
+        <a class="btn grande secondario" href="/?demo=1">▶ Prova la demo</a>
       </div>
-      <p class="nota">🔒 Per attivare SocialBot sul tuo canale devi essere uno streamer verificato e abilitato su <a href="https://andryxify.it">andryxify.it</a>: da lì entri nella tua dashboard.</p>
-      <p class="vetrina-accessi">Hai già un accesso?
+      <p class="nota">🔒 Con «Accedi con Twitch» entri <strong>subito nella dashboard</strong> se sei uno streamer <strong>abilitato</strong> su
+      <a href="https://andryxify.it">andryxify.it</a> o hai un <strong>abbonamento</strong> — <strong>senza passkey</strong>. Altrimenti da qui scegli un piano.</p>
+      <p class="vetrina-accessi">Preferisci un altro modo?
         <a href="/sblocca">🔓 Entra con passkey</a>
         <span aria-hidden="true">·</span>
         <a href="/mod">🛠️ Accesso moderatore</a>
