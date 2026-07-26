@@ -432,7 +432,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // layout dell'overlay richiesto (?o=id): cosa mostra + dove. Il CSS è quello
     // dell'overlay (per "principale" coincide con quello di canale).
     const ov = overlayById(streamers.get(login)?.settings, String(req.query.o || ''));
-    res.json({ ...base, css: ov.css != null ? ov.css : base.css, mostra: ov.mostra || _mostraDefault(), xy: ov.xy || {} });
+    // CSS avanzato condiviso (vale per tutti gli overlay); il layout è per-overlay
+    res.json({ ...base, mostra: ov.mostra || _mostraDefault(), xy: ov.xy || {} });
   });
 
   // Mappa emote 7TV (globali + del canale) per la "chat a schermo": l'overlay la
