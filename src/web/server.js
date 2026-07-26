@@ -1185,12 +1185,18 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (b.alerts !== undefined) {
       const p = b.alerts || {};
       const posAlert = ['alto-centro', 'centro', 'basso-centro'];
+      // suono: un preset OPPURE un effetto audio caricato ("effetto:<comando>").
+      // media: niente OPPURE un'immagine/video caricato ("effetto:<comando>").
+      const refEffetto = (x) => /^effetto:[a-z0-9_]{1,30}$/i.test(String(x)) ? String(x).toLowerCase() : '';
+      const suonoOk = (x) => (SUONI_PRESET.has(String(x)) ? String(x) : refEffetto(x));
       const evt = (e) => {
         e = e || {};
         return {
           attivo: !!e.attivo,
           testo: String(e.testo || '').slice(0, 200),
-          suono: SUONI_PRESET.has(String(e.suono)) ? String(e.suono) : '',
+          suono: suonoOk(e.suono),
+          media: refEffetto(e.media),
+          font: unoDi(e.font, FONT_OVL, ''),   // '' = usa il font condiviso dello stile
           volume: clampInt(e.volume, 0, 100, 100),
           accento: hexOk(e.accento || e.colore, '#9146ff'),
         };

@@ -4,7 +4,7 @@
 // - WIDGET persistenti (ultimo follower, ultimo sub) aggiornati dagli eventi.
 // Riusa il canale SSE degli effetti (EffectsEngine.emit) e i suoni PRESET.
 // Tutta la configurazione (e lo stato dei widget) vive in streamers.settings.
-import { streamers } from '../db.js';
+import { streamers, effects as effectsDb } from '../db.js';
 import { makeLog } from '../logger.js';
 
 const log = makeLog('alerts');
@@ -78,19 +78,46 @@ export class AlertsEngine {
     } catch (e) { log.debug('onEvent:', e?.message || e); }
   }
 
+  // Risolve "effetto:<comando>" in { url, tipo } usando la libreria Effetti &
+  // suoni del canale (così un alert può usare un suono/immagine/video caricati).
+  _risolviEffetto(channel, ref) {
+    const m = /^effetto:(.+)$/i.exec(String(ref || ''));
+    if (!m) return null;
+    try {
+      const eff = effectsDb.get(channel, m[1]);
+      if (!eff || !this.effects?.mediaUrl) return null;
+      return { url: this.effects.mediaUrl(channel, eff.file), tipo: eff.tipo };
+    } catch { return null; }
+  }
+
   _spara(channel, a, kind, conf, vars) {
     const s = this.cfg(channel);
-    this.effects?.emit?.(channel, {
+    // font per-alert: se impostato, sovrascrive quello condiviso dello stile
+    const stileBase = this._stileAlert(s);
+    const stile = conf.font ? { ...stileBase, font: conf.font } : stileBase;
+    const payload = {
       tipo: 'alert', kind,
       testo: riempi(conf.testo || DEFAULT_TESTO[kind] || '{user}', vars),
       colore: conf.accento || conf.colore || DEFAULT_ACC[kind],
-      suono: conf.suono || DEFAULT_SUONO[kind] || '',
       volume: conf.volume != null ? Math.max(0, Math.min(100, Number(conf.volume))) : 100,
       durata: Math.max(2000, Math.min(20000, Number(a.durata) || 6000)),
       posizione: a.posizione || 'alto-centro',
       xy: a.xy || null,
-      stile: this._stileAlert(s),
-    });
+      stile,
+    };
+    // SUONO: un effetto audio caricato (suonoUrl) oppure un preset sintetizzato.
+    if (String(conf.suono || '').toLowerCase().startsWith('effetto:')) {
+      const sfx = this._risolviEffetto(channel, conf.suono);
+      if (sfx && sfx.tipo === 'audio') payload.suonoUrl = sfx.url;    // altrimenti: niente suono
+    } else {
+      payload.suono = conf.suono || DEFAULT_SUONO[kind] || '';
+    }
+    // MEDIA: un'immagine o un video caricato, mostrato insieme all'alert.
+    const media = this._risolviEffetto(channel, conf.media);
+    if (media && (media.tipo === 'immagine' || media.tipo === 'video')) {
+      payload.mediaUrl = media.url; payload.mediaTipo = media.tipo;
+    }
+    this.effects?.emit?.(channel, payload);
     log.debug(`alert ${kind} su #${channel}`);
   }
 

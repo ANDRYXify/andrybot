@@ -424,10 +424,23 @@
         '--size': st.dimTesto != null ? st.dimTesto + 'px' : null, '--font': FONT[st.font] || null,
       });
       const testoHtml = escHtml(ev.testo || '').replace(/^(\S+)/, '<b>$1</b>');
-      card.innerHTML = '<div class="alert-ico">' + (ALERT_ICO[ev.kind] || ALERT_ICO.follow) + '</div><div class="alert-testo">' + testoHtml + '</div>';
+      // MEDIA opzionale (immagine/video caricato) mostrato sopra il testo
+      let mediaHtml = '';
+      if (ev.mediaUrl) {
+        mediaHtml = ev.mediaTipo === 'video'
+          ? '<video class="alert-media" src="' + escHtml(ev.mediaUrl) + '" autoplay playsinline></video>'
+          : '<img class="alert-media" src="' + escHtml(ev.mediaUrl) + '">';
+      }
+      card.innerHTML = mediaHtml + '<div class="alert-ico">' + (ALERT_ICO[ev.kind] || ALERT_ICO.follow) + '</div><div class="alert-testo">' + testoHtml + '</div>';
       alertBox.appendChild(card);
+      const vol01 = (ev.volume != null ? ev.volume : 100) / 100;
+      const vid = card.querySelector('video.alert-media'); if (vid) { try { vid.volume = vol01; } catch (e) { /* niente */ } }
       requestAnimationFrame(() => card.classList.add('dentro'));
-      try { if (ev.suono && window.SUONI_PRESET) window.SUONI_PRESET.suona(ev.suono, ev.volume != null ? ev.volume : 100); } catch (e) { /* niente */ }
+      // SUONO: un file audio caricato (suonoUrl) oppure un preset sintetizzato
+      try {
+        if (ev.suonoUrl) { const au = new Audio(ev.suonoUrl); au.volume = vol01; au.play().catch(() => {}); }
+        else if (ev.suono && window.SUONI_PRESET) window.SUONI_PRESET.suona(ev.suono, ev.volume != null ? ev.volume : 100);
+      } catch (e) { /* niente */ }
       const durata = Math.max(2000, Number(ev.durata) || 6000);
       setTimeout(() => {
         card.classList.remove('dentro');
