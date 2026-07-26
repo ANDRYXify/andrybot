@@ -1572,8 +1572,22 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const effetti = effectsDb.list(login).map((e) => ({
       id: e.id, comando: e.comando, tipo: e.tipo, tier: e.tier,
       cooldown: e.cooldown, volume: e.volume, durata: e.durata, attivo: !!e.attivo,
+      // posizione/dimensione/rotazione a schermo (gestita dall'Overlay Studio)
+      xy: (e.posx != null && e.posy != null) ? { x: e.posx, y: e.posy, s: e.scala != null ? e.scala : 100, r: e.rot || 0 } : null,
     }));
     res.json({ effetti, overlayUrl: effects.overlayUrl(login) });
+  }));
+
+  // posizione/dimensione/rotazione di un effetto a schermo (dall'Overlay Studio).
+  // Body: { comando, xy: {x,y,s,r} | null }. null = rimetti l'effetto al centro.
+  app.post('/api/streamer/effetti/posizione', requireLogin, wrap(async (req, res) => {
+    if (!esigiFunzione(req, res, 'effetti', 'Gli effetti')) return;
+    const login = currentUser(req).login;
+    const comando = normComando(req.body?.comando || '');
+    if (!comando) return res.status(400).json({ errore: 'comando non valido' });
+    const xy = req.body?.xy == null ? null : xyOk(req.body.xy);
+    if (!effectsDb.setPos(login, comando, xy)) return res.status(404).json({ errore: 'effetto non trovato' });
+    res.json({ ok: true });
   }));
 
   // caricamento di un nuovo effetto (multipart): file + comando/tier/cooldown/volume/durata.

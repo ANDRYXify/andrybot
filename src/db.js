@@ -114,6 +114,10 @@ CREATE TABLE IF NOT EXISTS effects (        -- "Effetti & Suoni": comandi chat â
   cooldown INTEGER NOT NULL DEFAULT 0,       -- secondi tra un uso e il successivo
   volume INTEGER NOT NULL DEFAULT 100,       -- 0..100 (per audio/video)
   durata INTEGER NOT NULL DEFAULT 5000,      -- ms: quanto resta a schermo
+  posx INTEGER,                              -- posizione a schermo in % (NULL = centrato)
+  posy INTEGER,
+  scala INTEGER NOT NULL DEFAULT 100,        -- dimensione in % (30..300)
+  rot INTEGER NOT NULL DEFAULT 0,            -- rotazione in gradi (-180..180)
   attivo INTEGER NOT NULL DEFAULT 1,
   ts INTEGER NOT NULL
 );
@@ -329,6 +333,11 @@ function aggiungiColonna(tabella, colonna, definizione) {
   }
 }
 aggiungiColonna('point_alerts', 'suono', "TEXT NOT NULL DEFAULT ''");   // suono PRESET sul riscatto (id preset)
+// Effetti a schermo: posizione/dimensione/rotazione, gestite dall'Overlay Studio.
+aggiungiColonna('effects', 'posx', 'INTEGER');                          // % orizzontale (NULL = centrato)
+aggiungiColonna('effects', 'posy', 'INTEGER');                          // % verticale
+aggiungiColonna('effects', 'scala', 'INTEGER NOT NULL DEFAULT 100');    // dimensione %
+aggiungiColonna('effects', 'rot', 'INTEGER NOT NULL DEFAULT 0');        // rotazione gradi
 aggiungiColonna('telegram', 'pin_live', "INTEGER NOT NULL DEFAULT 1");
 aggiungiColonna('telegram', 'msg_id', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('telegram', 'msg_id_tk', "TEXT NOT NULL DEFAULT ''");
@@ -1161,6 +1170,20 @@ export const effects = {
     if (!r) return null;
     db.prepare('DELETE FROM effects WHERE channel=? AND id=?').run(channel, id);
     return r.file;
+  },
+  // Posizione/dimensione/rotazione a schermo di un effetto (gestite dall'Overlay
+  // Studio). xy = { x, y, s, r } oppure null per rimetterlo al centro. Ritorna
+  // true se l'effetto esiste. I valori arrivano giÃ  validati dal chiamante.
+  setPos(channel, comando, xy) {
+    const c = normComando(comando);
+    if (!c) return false;
+    const px = xy && xy.x != null ? Math.round(xy.x) : null;
+    const py = xy && xy.y != null ? Math.round(xy.y) : null;
+    const s = xy && xy.s != null ? Math.round(xy.s) : 100;
+    const r = xy && xy.r != null ? Math.round(xy.r) : 0;
+    const info = db.prepare('UPDATE effects SET posx=?, posy=?, scala=?, rot=? WHERE channel=? AND comando=?')
+      .run(px, py, s, r, channel, c);
+    return info.changes > 0;
   },
 };
 
