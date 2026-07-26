@@ -876,20 +876,22 @@ const GRUPPI = [
     ['moduli', 'Comandi'],
     ['regole', 'Moderazione'],
     ['giochi', 'Giochi & classifiche'],
-    ['effetti', 'Effetti & suoni'],
   ] },
   { id: 'diretta', nome: 'Diretta', schede: [
     ['regia', 'Regia'],
     ['studio', 'Studio Web'],
     ['clip', 'Clip'],
     ['ascolto', 'Comandi a voce'],
+  ] },
+  { id: 'interazione', nome: 'Interazione', schede: [
     ['musica', 'Musica'],
     ['sondaggi', 'Sondaggi & predizioni'],
     ['giveaway', 'Giveaway'],
     ['penitenze', 'Penitenze'],
   ] },
   { id: 'overlay', nome: 'Overlay', schede: [
-    ['alert', 'Overlay'],
+    ['alert', 'Overlay Studio'],
+    ['effetti', 'Effetti & suoni'],
   ] },
   { id: 'notifiche', nome: 'Notifiche', schede: [
     ['notifiche', 'Notifiche'],
@@ -1132,10 +1134,16 @@ function titoloParole(t, off = 0) {
 }
 
 function vistaPiattaforma() {
+  // Ordine dei pannelli = ordine del menu (leggibilità del codice; a schermo
+  // compare comunque solo la sezione attiva).
   return `
     ${pannelloStato()}
     ${pannelloPersonalita()}
     ${pannelloConoscenza()}
+    ${pannelloMemoria()}
+    ${pannelloModuli()}
+    ${pannelloRegole()}
+    ${pannelloGiochi()}
     ${pannelloRegia()}
     ${pannelloStudio()}
     ${pannelloClip()}
@@ -1146,11 +1154,7 @@ function vistaPiattaforma() {
     ${pannelloPenitenze()}
     ${pannelloAlert()}
     ${pannelloEffetti()}
-    ${pannelloGiochi()}
     ${pannelloNotifiche()}
-    ${pannelloModuli()}
-    ${pannelloRegole()}
-    ${pannelloMemoria()}
     ${stato.isAdmin ? pannello('admin', vistaAdminContenuto()) : ''}`;
 }
 
