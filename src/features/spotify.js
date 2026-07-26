@@ -111,6 +111,20 @@ export async function cerca(login, q) {
   return t ? { uri: t.uri, nome: t.name, artisti: (t.artists || []).map((a) => a.name).join(', ') } : null;
 }
 
+// Cerca PIÙ brani → array di { uri, nome, artisti, artista1 } (max n). Serve a
+// disambiguare quando più canzoni hanno lo stesso titolo ("intendi 1, 2 o 3?").
+export async function cercaMulti(login, q, n = 5) {
+  const lim = Math.max(1, Math.min(10, Math.round(Number(n)) || 5));
+  const r = await apiCall(login, 'GET', '/search', { query: { q, type: 'track', limit: lim } });
+  const items = r.dati?.tracks?.items || [];
+  return items.map((t) => ({
+    uri: t.uri,
+    nome: t.name,
+    artisti: (t.artists || []).map((a) => a.name).join(', '),
+    artista1: t.artists?.[0]?.name || '',
+  }));
+}
+
 // Aggiunge un brano (uri) alla coda del broadcaster. { ok, status }.
 export async function aggiungiInCoda(login, uri) {
   const r = await apiCall(login, 'POST', '/me/player/queue', { query: { uri } });
