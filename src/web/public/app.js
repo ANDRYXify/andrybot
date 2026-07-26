@@ -2182,6 +2182,17 @@ function pannelloAlert() {
     + (p.overlayTemplates.length ? `<optgroup label="I miei">${p.overlayTemplates.map((t, i) => `<option value="u${i}">${esc(t.nome)}</option>`).join('')}</optgroup>` : '');
   return pannello('alert', `
     <div class="carta">
+      <h2>${_hIco(ICO.monitor)}Link overlay per OBS</h2>
+      <p>Aggiungi questo indirizzo in OBS come <strong class="primo-piano">Sorgenti → Browser</strong>,
+      larghezza <strong class="primo-piano">1920</strong>, altezza <strong class="primo-piano">1080</strong>, sfondo trasparente.</p>
+      <div class="riga-flessibile spazio-sopra">
+        <input type="text" id="inp-overlay-url" class="campo-largo" readonly value="" placeholder="caricamento…">
+        <button class="btn secondario" id="btn-copia-overlay">Copia</button>
+      </div>
+      <p class="suggerimento">Tienilo per te: chi ha questo link può far comparire cose nel tuo overlay.</p>
+    </div>
+
+    <div class="carta">
       <h2>${_hIco(ICO.monitor)}Overlay Studio</h2>
       <p>Personalizza <strong>tutto</strong> ciò che appare a schermo: alert, chat, widget… colori, font, forma, animazioni.
       L'<strong>anteprima qui sotto è dal vivo</strong>; poi apri l'overlay in OBS (scheda <em>Effetti &amp; suoni</em>).</p>
@@ -2412,7 +2423,9 @@ function aggiornaAnteprima() {
     _setVars(card, { '--acc': acc, '--bg': st.sfondo, '--op': st.opacita + '%', '--fg': st.testo, '--radius': st.bordoRaggio + 'px', '--border': st.bordoSpessore + 'px', '--size': st.dimTesto + 'px', '--font': FONT_VAR[st.font] });
     _g('ap-alert-ico').innerHTML = AP_ICO_ALERT;
     _g('ap-alert-testo').innerHTML = '<b>MarioRossi</b> si è abbonato! 🌟';
-    card.classList.remove('dentro'); void card.offsetWidth; requestAnimationFrame(() => card.classList.add('dentro'));
+    // niente re-animazione a ogni tasto: l'anteprima resta stabile (l'entrata
+    // vera si vede con «Prova ▶» o nell'overlay). Prima "sfarfallava".
+    card.classList.add('dentro');
   }
   const cst = _leggiChatStile();
   const chatPos = _v('co-pos') || 'basso-sinistra';
@@ -2563,8 +2576,16 @@ function rendiTrascinabile(el, chiave) {
     el.style.cursor = 'grabbing';
     const st = _statoXY(chiave);
     const move = (ev) => {
-      st.x = Math.max(0, Math.min(100, Math.round(((ev.clientX - canvas.left) / canvas.width) * 100)));
-      st.y = Math.max(0, Math.min(100, Math.round(((ev.clientY - canvas.top) / canvas.height) * 100)));
+      // LIMITI 16:9: l'elemento non può uscire dal riquadro. Clampa il centro
+      // tenendo conto del suo ingombro (metà larghezza/altezza in % del palco),
+      // così il bordo resta sempre dentro l'anteprima (e quindi lo schermo).
+      const er = el.getBoundingClientRect();
+      const hw = Math.min(50, (er.width / 2) / canvas.width * 100);
+      const hh = Math.min(50, (er.height / 2) / canvas.height * 100);
+      const x = ((ev.clientX - canvas.left) / canvas.width) * 100;
+      const y = ((ev.clientY - canvas.top) / canvas.height) * 100;
+      st.x = Math.round(Math.max(hw, Math.min(100 - hw, x)));
+      st.y = Math.round(Math.max(hh, Math.min(100 - hh, y)));
       _posElemento(el, st);
     };
     const up = () => { el.style.cursor = 'grab'; el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); _salvaPos(chiave); };
@@ -2682,6 +2703,8 @@ function caricaAlert() {
   posXY = { alert: imp.alerts.xy || null, chat: imp.chatOverlay.xy || null,
     wf: imp.overlayWidget.ultimoFollower.xy || null, ws: imp.overlayWidget.ultimoSub.xy || null };
   ['ap-alert', 'ap-chat', 'ap-wf', 'ap-ws'].forEach((id) => rendiTrascinabile(_g(id), id.replace('ap-', '')));
+  // link overlay per OBS (ora vive qui, sotto Overlay)
+  (async () => { try { const d = await api('/api/streamer/overlay-url'); const i = _g('inp-overlay-url'); if (i) i.value = d.overlayUrl || ''; } catch (_) { /* niente */ } })();
   // inspector: cursori dimensione/rotazione dell'elemento selezionato
   _g('insp-size')?.addEventListener('input', (e) => {
     if (!selezione) return;
@@ -2750,17 +2773,6 @@ function caricaAlert() {
 
 function pannelloEffetti() {
   return pannello('effetti', `
-    <div class="carta">
-      <h2>${_hIco(ICO.monitor)}Overlay per OBS</h2>
-      <p>Aggiungi questo indirizzo in OBS come <strong class="primo-piano">Sorgenti → Browser</strong>,
-      con larghezza <strong class="primo-piano">1920</strong>, altezza <strong class="primo-piano">1080</strong> e sfondo trasparente.</p>
-      <div class="riga-flessibile spazio-sopra">
-        <input type="text" id="inp-overlay-url" class="campo-largo" readonly value="" placeholder="caricamento…">
-        <button class="btn secondario" id="btn-copia-overlay">Copia</button>
-      </div>
-      <p class="suggerimento">Tienilo per te: chi ha questo link può far comparire effetti nel tuo overlay.</p>
-    </div>
-
     <div class="carta">
       <h2>${_hIco(ICO.effetti)}Carica un effetto</h2>
       <p>Audio, immagini o brevi video. Ogni file viene <strong class="primo-piano">super-compresso</strong>
