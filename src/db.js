@@ -318,6 +318,7 @@ CREATE TABLE IF NOT EXISTS point_alerts (    -- premi a PUNTI CANALE Twitch → 
   costo INTEGER NOT NULL DEFAULT 0,
   effetto TEXT NOT NULL DEFAULT '',          -- comando effetto da lanciare (overlay/suono)
   testo TEXT NOT NULL DEFAULT '',            -- messaggio in chat ({user} = chi riscatta)
+  opzioni TEXT NOT NULL DEFAULT '',          -- JSON: posizione a schermo + green screen dell'effetto
   ts INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (channel, reward_id)
 );
@@ -333,6 +334,7 @@ function aggiungiColonna(tabella, colonna, definizione) {
   }
 }
 aggiungiColonna('point_alerts', 'suono', "TEXT NOT NULL DEFAULT ''");   // suono PRESET sul riscatto (id preset)
+aggiungiColonna('point_alerts', 'opzioni', "TEXT NOT NULL DEFAULT ''"); // posizione + green screen dell'effetto (JSON)
 // Effetti a schermo: posizione/dimensione/rotazione, gestite dall'Overlay Studio.
 aggiungiColonna('effects', 'posx', 'INTEGER');                          // % orizzontale (NULL = centrato)
 aggiungiColonna('effects', 'posy', 'INTEGER');                          // % verticale
@@ -1078,21 +1080,22 @@ export const guide = {
 // il bot spara l'alert. Per canale.
 export const pointAlerts = {
   list(channel) {
-    return db.prepare('SELECT reward_id, titolo, costo, effetto, suono, testo, ts FROM point_alerts WHERE channel=? ORDER BY ts DESC')
+    return db.prepare('SELECT reward_id, titolo, costo, effetto, suono, testo, opzioni, ts FROM point_alerts WHERE channel=? ORDER BY ts DESC')
       .all(String(channel).toLowerCase());
   },
   getByReward(channel, rewardId) {
-    return db.prepare('SELECT reward_id, titolo, costo, effetto, suono, testo FROM point_alerts WHERE channel=? AND reward_id=?')
+    return db.prepare('SELECT reward_id, titolo, costo, effetto, suono, testo, opzioni FROM point_alerts WHERE channel=? AND reward_id=?')
       .get(String(channel).toLowerCase(), String(rewardId)) || null;
   },
-  add(channel, { rewardId, titolo, costo, effetto, suono, testo }) {
-    db.prepare(`INSERT INTO point_alerts(channel, reward_id, titolo, costo, effetto, suono, testo, ts)
-      VALUES(?,?,?,?,?,?,?,?)
+  add(channel, { rewardId, titolo, costo, effetto, suono, testo, opzioni }) {
+    db.prepare(`INSERT INTO point_alerts(channel, reward_id, titolo, costo, effetto, suono, testo, opzioni, ts)
+      VALUES(?,?,?,?,?,?,?,?,?)
       ON CONFLICT(channel, reward_id) DO UPDATE SET titolo=excluded.titolo, costo=excluded.costo,
-        effetto=excluded.effetto, suono=excluded.suono, testo=excluded.testo`)
+        effetto=excluded.effetto, suono=excluded.suono, testo=excluded.testo, opzioni=excluded.opzioni`)
       .run(String(channel).toLowerCase(), String(rewardId), String(titolo || '').slice(0, 60),
            Math.max(0, Math.round(Number(costo) || 0)), String(effetto || '').slice(0, 24),
-           String(suono || '').slice(0, 24), String(testo || '').slice(0, 300), now());
+           String(suono || '').slice(0, 24), String(testo || '').slice(0, 300),
+           String(opzioni || '').slice(0, 400), now());
   },
   remove(channel, rewardId) {
     db.prepare('DELETE FROM point_alerts WHERE channel=? AND reward_id=?').run(String(channel).toLowerCase(), String(rewardId));

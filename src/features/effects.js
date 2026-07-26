@@ -162,6 +162,22 @@ export class EffectsEngine {
     return true;
   }
 
+  // Come fire(), ma con OPZIONI per-riscatto (premio a punti canale): posizione a
+  // schermo (xy) e green screen (chroma) che sovrascrivono/aggiungono al payload.
+  fireConOpzioni(channel, comando, opzioni = {}) {
+    const ch = norm(channel);
+    const eff = effectsDb.get(ch, comando);
+    if (!eff) return false;
+    const p = this.payload(ch, eff);
+    if (opzioni.xy && opzioni.xy.x != null) p.posizione = opzioni.xy;
+    if (opzioni.chroma && opzioni.chroma.attivo) {
+      p.chroma = { colore: opzioni.chroma.colore || '#00ff00', soglia: Math.max(20, Math.min(300, Number(opzioni.chroma.soglia) || 140)) };
+    }
+    this.emit(ch, p);
+    log.debug(`fire effetto !${eff.comando} (opzioni) su #${ch}`);
+    return true;
+  }
+
   // Spinge un SUONO PRESET (sintetizzato nell'overlay, nessun file) verso gli
   // overlay del canale. `etichetta` è il testo mostrato nella pillola (di solito
   // il titolo del premio a punti canale). Volume 0..100.
