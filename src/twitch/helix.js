@@ -161,6 +161,18 @@ export class Helix {
     }
   }
 
+  // Badge (stemmi) di chat: globali e del canale. Bastano il token applicazione.
+  // Ritornano [{ set_id, versions:[{id, image_url_1x/2x/4x}] }].
+  async badgeGlobali() {
+    const j = await this._request('GET', '/chat/badges/global', {});
+    return j?.data || [];
+  }
+  async badgeCanale(broadcasterId) {
+    if (!broadcasterId) return [];
+    const j = await this._request('GET', '/chat/badges', { query: { broadcaster_id: broadcasterId } });
+    return j?.data || [];
+  }
+
   // Stream key RTMP del canale (Studio Web). Scope 'channel:read:stream_key'.
   // Segretissima: resta sul server, non va MAI al browser. Ritorna la chiave o null.
   async getStreamKey(channelLogin) {

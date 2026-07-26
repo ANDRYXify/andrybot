@@ -539,6 +539,26 @@
         if (r.ok) { const m = await r.json(); if (m && typeof m === 'object') EMOTE = m; }
       } catch (e) { /* niente: la chat resta comunque testuale */ }
     }
+
+    // --- STEMMI (badge) Twitch: mappa "setId/version" → url immagine ------
+    let BADGE = {};
+    async function caricaBadge() {
+      try {
+        const r = await fetch('/overlay/' + encodeURIComponent(login) + '/badges' + location.search);
+        if (r.ok) { const m = await r.json(); if (m && typeof m === 'object') BADGE = m; }
+      } catch (e) { /* niente: la chat resta senza stemmi */ }
+    }
+    // Aggiunge gli stemmi (Twitch dalla mappa + 7TV già risolto) prima del nome.
+    function aggiungiStemmi(riga, ev) {
+      const img = (src, alt) => {
+        if (!src) return;
+        const i = document.createElement('img');
+        i.className = 'chat-badge'; i.src = src; i.alt = alt || ''; i.loading = 'lazy';
+        riga.appendChild(i);
+      };
+      if (ev.badges) for (const b of String(ev.badges).split(',')) { const u = BADGE[b.trim()]; if (u) img(u, b); }
+      if (ev.badge7tv) img(ev.badge7tv, '7tv');
+    }
     // Riempie `riga` con il testo, sostituendo le PAROLE che sono emote con
     // <img>. Split su spazi conservando la spaziatura originale; match esatto
     // della parola (come fanno 7TV/BTTV): "Kappa" sì, "Kappa!" no.
@@ -572,6 +592,7 @@
         '--fg': st.testo, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null, '--font': fontDi(st) || null,
       });
       if (destra) riga.style.transform = 'translateX(10px)';
+      aggiungiStemmi(riga, ev);
       const u = document.createElement('span');
       u.className = 'chat-user';
       u.textContent = ev.user || '';
@@ -696,6 +717,8 @@
       caricaTema();
       caricaEmote();
       setInterval(caricaEmote, 10 * 60 * 1000);   // le emote 7TV cambiano di rado
+      caricaBadge();
+      setInterval(caricaBadge, 30 * 60 * 1000);   // gli stemmi cambiano ancora meno
     }
   </script>
 </body>
