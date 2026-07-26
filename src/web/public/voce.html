@@ -122,7 +122,7 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>🎙️ Ascolto vocale</h1>
+    <h1>Ascolto vocale</h1>
     <p class="intro">Tieni questa scheda aperta mentre streammi: quando dici una parola chiave, il bot fa quello che hai impostato nei Moduli.</p>
 
     <div id="noApi" class="avviso" hidden>
@@ -277,13 +277,13 @@
         }
         mostraFrasi();
       } catch (e) {
-        logga('⚠️ non riesco a leggere le frasi: ' + (e && e.message ? e.message : e));
+        logga('non riesco a leggere le frasi: ' + (e && e.message ? e.message : e));
       }
     }
 
     // --- server: ho sentito una frase ------------------------------------
     async function inviaFrase(frase) {
-      logga('🎙️ sentito "' + frase + '" → invio…');
+      logga('sentito "' + frase + '" → invio…');
       try {
         const res = await fetch('/api/streamer/voce', {
           method: 'POST',
@@ -295,18 +295,18 @@
         const cat = dati && dati.categoria;
         const tit = dati && dati.titolo;
         if (cat) {
-          if (dati.eseguito && cat.nome) logga('🎮 categoria cambiata in "' + cat.nome + '"');
-          else if (cat.riautorizza) logga('🔒 manca il permesso di gestione canale: riautorizza dalla dashboard (Panoramica → permessi)');
-          else if (cat.trovato === false) logga('🤔 categoria non trovata per "' + (cat.query || '') + '"');
-          else logga('⚠️ non sono riuscito a cambiare categoria');
+          if (dati.eseguito && cat.nome) logga('categoria cambiata in "' + cat.nome + '"');
+          else if (cat.riautorizza) logga('manca il permesso di gestione canale: riautorizza dalla dashboard (Panoramica → permessi)');
+          else if (cat.trovato === false) logga('categoria non trovata per "' + (cat.query || '') + '"');
+          else logga('non sono riuscito a cambiare categoria');
         } else if (tit) {
-          if (dati.eseguito && tit.testo) logga('📝 titolo cambiato in "' + tit.testo + '"');
-          else if (tit.riautorizza) logga('🔒 manca il permesso di gestione canale: riautorizza dalla dashboard (Panoramica → permessi)');
-          else logga('⚠️ non sono riuscito a cambiare titolo');
-        } else if (dati && dati.eseguito) logga('✅ "' + frase + '" → modulo scattato');
-        else logga('➡️ "' + frase + '" inviato (nessun modulo ha reagito)');
+          if (dati.eseguito && tit.testo) logga('titolo cambiato in "' + tit.testo + '"');
+          else if (tit.riautorizza) logga('manca il permesso di gestione canale: riautorizza dalla dashboard (Panoramica → permessi)');
+          else logga('non sono riuscito a cambiare titolo');
+        } else if (dati && dati.eseguito) logga('"' + frase + '" → modulo scattato');
+        else logga('"' + frase + '" inviato (nessun modulo ha reagito)');
       } catch (e) {
-        logga('⚠️ invio non riuscito: ' + (e && e.message ? e.message : e));
+        logga('invio non riuscito: ' + (e && e.message ? e.message : e));
       }
     }
 
@@ -322,7 +322,7 @@
     }
 
     function sessioneScaduta() {
-      logga('🔒 Sessione scaduta: rientra dalla dashboard e riapri questa pagina.');
+      logga('Sessione scaduta: rientra dalla dashboard e riapri questa pagina.');
       ferma();
     }
 
@@ -399,7 +399,7 @@
       r.onerror = (ev) => {
         const err = ev && ev.error;
         if (err === 'not-allowed' || err === 'service-not-allowed') {
-          logga('⚠️ Permesso microfono negato. Consenti il microfono per questo sito (icona 🔒 nella barra) e riprova.');
+          logga('Permesso microfono negato. Consenti il microfono per questo sito (icona nella barra) e riprova.');
           ferma();
         } else if (err === 'no-speech' || err === 'aborted') {
           // normale: onend rilancerà il riconoscimento
@@ -409,13 +409,13 @@
           // al motore LOCALE, che funziona ovunque.
           erroriRete++;
           if (erroriRete === 1) {
-            logga('⚠️ Il riconoscimento nativo non è disponibile in questo browser. Preparo il motore locale…');
+            logga('Il riconoscimento nativo non è disponibile in questo browser. Preparo il motore locale…');
           }
           if (erroriRete >= MAX_ERRORI_RETE) {
             passaALocale('(il nativo dà errore di rete)');
           }
         } else {
-          logga('⚠️ Errore riconoscimento: ' + err);
+          logga('Errore riconoscimento: ' + err);
         }
       };
 
@@ -458,7 +458,7 @@
       erroriRete = 0; backoffMs = 300;
       if (!rec) rec = creaRiconoscitore();
       try { rec.start(); } catch (e) { /* già avviato */ }
-      logga('🟢 Ascolto avviato (motore del browser).');
+      logga('Ascolto avviato (motore del browser).');
     }
     function fermaNativo(silenzioso) {
       if (rec) { try { rec.stop(); } catch (e) { /* già fermo */ } }
@@ -470,7 +470,7 @@
       if (motore !== 'locale') {
         motore = 'locale';
         try { localStorage.setItem('voce_motore', 'locale'); } catch (e) { /* ignora */ }
-        logga('↪️ Passo al motore LOCALE (funziona anche su Dia/Arc/Brave). ' + (motivo || ''));
+        logga('Passo al motore LOCALE (funziona anche su Dia/Arc/Brave). ' + (motivo || ''));
       }
       fermaNativo(true);
       if (attivo) avviaLocale();
@@ -484,7 +484,7 @@
       if (asr) return asr;
       if (asrInCaricamento) return asrInCaricamento;
       asrInCaricamento = (async () => {
-        logga('⬇️ Preparo il motore vocale…');
+        logga('Preparo il motore vocale…');
         const mod = await import(WHISPER_CDN);
         const pipeline = mod.pipeline;
         try { if (mod.env) mod.env.allowLocalModels = false; } catch (e) { /* ignora */ }
@@ -498,7 +498,7 @@
         let ultimoErrore = null;
         for (const cfg of tentativi) {
           try {
-            logga(`⚙️ Motore vocale su ${cfg.nome} (${cfg.model})…`);
+            logga(`Motore vocale su ${cfg.nome} (${cfg.model})…`);
             let ultima = -1;
             const p = await pipeline('automatic-speech-recognition', cfg.model, {
               device: cfg.device,
@@ -506,7 +506,7 @@
               progress_callback: (info) => {
                 if (info && info.status === 'progress' && typeof info.progress === 'number') {
                   const perc = Math.floor(info.progress);
-                  if (perc >= ultima + 15) { ultima = perc; logga('⬇️ Scarico il modello: ' + perc + '% (solo la prima volta)'); }
+                  if (perc >= ultima + 15) { ultima = perc; logga('Scarico il modello: ' + perc + '% (solo la prima volta)'); }
                 }
               },
             });
@@ -514,11 +514,11 @@
             // device non regge, salta al successivo invece di fallire in chat)
             await p(new Float32Array(8000), { language: 'italian', task: 'transcribe' });
             motoreAttivo = cfg.nome;
-            logga(`✅ Motore vocale pronto (${cfg.nome}).`);
+            logga(`Motore vocale pronto (${cfg.nome}).`);
             return p;
           } catch (e) {
             ultimoErrore = e;
-            logga(`↩️ ${cfg.nome} non disponibile, provo altro… (${(e && e.message ? e.message : e).toString().slice(0, 70)})`);
+            logga(`${cfg.nome} non disponibile, provo altro… (${(e && e.message ? e.message : e).toString().slice(0, 70)})`);
           }
         }
         throw ultimoErrore || new Error('nessun backend vocale');
@@ -529,7 +529,7 @@
 
     async function avviaLocale() {
       try {
-        logga('🟢 Ascolto avviato (motore locale, sul tuo dispositivo).');
+        logga('Ascolto avviato (motore locale, sul tuo dispositivo).');
         await ensureWhisper();
         if (!attivo) return;   // fermato durante il caricamento
         micStream = await navigator.mediaDevices.getUserMedia({
@@ -554,13 +554,13 @@
         procNode.connect(audioCtx.destination);
         if (loopTimer) clearInterval(loopTimer);
         loopTimer = setInterval(cicloTrascrizione, PASSO_MS);
-        logga('🎧 Sto ascoltando (locale). La prima trascrizione può metterci qualche secondo.');
+        logga('Sto ascoltando (locale). La prima trascrizione può metterci qualche secondo.');
       } catch (e) {
         const msg = (e && e.message) ? e.message : String(e);
         if (/Permission|NotAllowed|denied/i.test(msg)) {
-          logga('⚠️ Permesso microfono negato. Consenti il microfono per questo sito e premi Avvia.');
+          logga('Permesso microfono negato. Consenti il microfono per questo sito e premi Avvia.');
         } else {
-          logga('⚠️ Motore locale non avviato: ' + msg);
+          logga('Motore locale non avviato: ' + msg);
         }
         ferma();
       }
