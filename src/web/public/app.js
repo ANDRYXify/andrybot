@@ -2273,8 +2273,8 @@ function pannelloAlert() {
       <p class="suggerimento"><strong>Clicca</strong> un elemento per selezionarlo, poi <strong>trascinalo</strong> per spostarlo, usa le <strong>maniglie</strong> (⤡ dimensione · ⟳ rotazione) o i cursori qui sopra. Scorciatoie: <strong>rotellina</strong> = ridimensiona, <strong>Shift+rotellina</strong> = ruota, <strong>doppio clic</strong> = ripristina. Usa «Prova ▶» per vederli nell'overlay in OBS.</p>
     </div>
 
-    <div class="carta">
-      <h3>${_hIco(ICO.megafono)}Alert eventi</h3>
+    <details class="carta sez">
+      <summary><h3>${_hIco(ICO.megafono)}Alert eventi</h3></summary>
       <p>Un cartello animato con suono quando arriva un follow, un sub, dei bit o un raid.</p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore"><input type="checkbox" id="al-attivo" ${a.attivo ? 'checked' : ''}><span class="levetta"></span></label>
@@ -2312,10 +2312,10 @@ function pannelloAlert() {
         ${ALERT_TIPI.map((t) => bloccoAlert(t, a)).join('')}
       </div>
       <p class="spazio-sopra"><button class="btn" id="al-salva">Salva alert</button></p>
-    </div>
+    </details>
 
-    <div class="carta">
-      <h3>${_hIco(ICO.chat)}Chat a schermo</h3>
+    <details class="carta sez">
+      <summary><h3>${_hIco(ICO.chat)}Chat a schermo</h3></summary>
       <p>I messaggi della chat scorrono in sovraimpressione nell'overlay.</p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore"><input type="checkbox" id="co-attivo" ${co.attivo ? 'checked' : ''}><span class="levetta"></span></label>
@@ -2358,25 +2358,25 @@ function pannelloAlert() {
         <button class="btn" id="co-salva">Salva chat</button>
         <button class="btn secondario" id="co-prova">Prova ▶</button>
       </p>
-    </div>
+    </details>
 
-    <div class="carta">
-      <h3>${_hIco(ICO.medaglia)}Widget: ultimo follower / ultimo sub</h3>
+    <details class="carta sez">
+      <summary><h3>${_hIco(ICO.medaglia)}Widget: ultimo follower / ultimo sub</h3></summary>
       <p>Etichette <strong>sempre a schermo</strong> che si aggiornano da sole quando arriva un nuovo follower o sub.</p>
       <div class="alert-griglia spazio-sopra">
         ${bloccoWidget('wf', wf, 'Ultimo follower', 'ultimoFollower')}
         ${bloccoWidget('ws', ws, 'Ultimo sub', 'ultimoSub')}
       </div>
       <p class="spazio-sopra"><button class="btn" id="wid-salva">Salva widget</button></p>
-    </div>
+    </details>
 
-    <div class="carta">
-      <h3>${_hIco(ICO.moduli)}CSS avanzato <span class="tenue">— libertà totale</span></h3>
+    <details class="carta sez">
+      <summary><h3>${_hIco(ICO.moduli)}CSS avanzato <span class="tenue">— libertà totale</span></h3></summary>
       <p>Per chi vuole spingersi oltre: CSS applicato al tuo overlay. Le classi principali sono
       <code>.alert-card</code>, <code>.chat-riga</code>, <code>.ovl-widget</code>, <code>.pen-card</code>.</p>
       <textarea id="ovl-css" spellcheck="false" placeholder=".alert-card { letter-spacing: 1px; }">${esc(p.overlayCss || '')}</textarea>
       <p class="spazio-sopra"><button class="btn" id="css-salva">Salva CSS</button></p>
-    </div>`);
+    </details>`);
 }
 
 // nomi-font → variabile CSS (definite in overlay-skin.css) per l'anteprima
