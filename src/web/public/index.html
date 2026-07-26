@@ -7,8 +7,8 @@
   <meta name="theme-color" content="#0c0c11" media="(prefers-color-scheme: dark)">
 
   <title>SocialBot · Bot per Twitch che parla con la tua voce</title>
-  <meta name="description" content="Il bot per Twitch che scrive in chat con il TUO account: impara chi sei, crea comandi su misura, cattura clip, modera la chat e ti avvisa quando vai live. In italiano, con una demo da provare subito.">
-  <meta name="keywords" content="bot Twitch, bot per Twitch, bot Twitch italiano, bot Twitch gratis, bot per streaming, bot streaming Twitch, moderazione Twitch, comandi Twitch, chat bot Twitch, clip automatiche Twitch, notifiche Twitch, notifiche live Telegram, avvisi TikTok, avvisi YouTube, avvisi Instagram, bot Telegram streamer, SocialBot, andryxify">
+  <meta name="description" content="SocialBot è il bot per Twitch in italiano che scrive in chat col TUO account: comandi su misura, moderazione, clip automatiche, overlay per OBS personalizzabile (alert con immagini/video/green screen, chat a schermo, widget, emote 7TV), richieste musicali Spotify, effetti sui punti canale e notifiche live. Con demo da provare subito.">
+  <meta name="keywords" content="bot Twitch, bot per Twitch, bot Twitch italiano, bot Twitch gratis, bot per streaming, overlay Twitch OBS, alert Twitch, alert follow sub bit raid, chat a schermo, widget Twitch, emote 7TV, green screen alert, moderazione Twitch, comandi Twitch, chat bot Twitch, clip automatiche Twitch, richieste musicali Spotify, punti canale Twitch, notifiche live Telegram, avvisi TikTok YouTube Instagram, SocialBot, andryxify">
   <meta name="author" content="andryxify.it">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
   <link rel="canonical" href="https://bot.andryxify.it/">
@@ -19,7 +19,7 @@
   <meta property="og:locale" content="it_IT">
   <meta property="og:url" content="https://bot.andryxify.it/">
   <meta property="og:title" content="SocialBot · Bot per Twitch che parla con la tua voce">
-  <meta property="og:description" content="Il bot per Twitch che scrive in chat con il tuo account: impara chi sei, crea comandi su misura, cattura clip, modera e ti avvisa quando vai live.">
+  <meta property="og:description" content="Il bot per Twitch in italiano che scrive in chat col tuo account: comandi su misura, overlay per OBS (alert, chat a schermo, widget, emote 7TV, green screen), musica, clip e notifiche live.">
   <meta property="og:image" content="https://bot.andryxify.it/icons/og.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -28,7 +28,7 @@
   <!-- Twitter/X -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="SocialBot · Bot per Twitch che parla con la tua voce">
-  <meta name="twitter:description" content="Il bot per Twitch che scrive in chat con il tuo account. Comandi, clip, moderazione, notifiche live. In italiano.">
+  <meta name="twitter:description" content="Il bot per Twitch in italiano che scrive col tuo account. Overlay OBS (alert, chat, widget, 7TV, green screen), comandi, musica, clip, notifiche live.">
   <meta name="twitter:image" content="https://bot.andryxify.it/icons/og.png">
 
   <meta property="og:image:type" content="image/png">
@@ -85,15 +85,20 @@
         "operatingSystem": "Web",
         "inLanguage": "it-IT",
         "url": "https://bot.andryxify.it/",
-        "description": "Il bot per Twitch che scrive in chat con il tuo account: impara chi sei, crea comandi su misura, cattura clip, modera la chat e ti avvisa quando vai live.",
+        "description": "Il bot per Twitch in italiano che scrive in chat col tuo account: comandi su misura, moderazione, clip automatiche, overlay per OBS personalizzabile (alert con immagini/video/green screen, chat a schermo, widget, emote 7TV), richieste musicali Spotify, effetti sui punti canale e notifiche live.",
         "featureList": [
           "Scrive in chat con il tuo account Twitch",
           "Comandi e automazioni su misura",
-          "Moderazione della chat",
+          "Moderazione della chat e antispam",
           "Clip automatiche dei momenti di hype",
-          "Minigiochi con monete",
-          "Notifiche live su Telegram",
-          "Avvisi dei nuovi post su TikTok, YouTube e Instagram",
+          "Overlay per OBS personalizzabile: alert, chat a schermo, widget",
+          "Alert con immagini, video, suoni e green screen",
+          "Emote 7TV nella chat a schermo",
+          "Più overlay, ognuno con il suo link OBS",
+          "Font Google e posizione/dimensione/rotazione degli elementi",
+          "Richieste musicali su Spotify",
+          "Minigiochi con monete, penitenze ed effetti sui punti canale",
+          "Notifiche live su Telegram e avvisi dei post su TikTok, YouTube e Instagram",
           "Comandi a voce"
         ],
         "publisher": { "@id": "https://bot.andryxify.it/#org" }
@@ -110,7 +115,7 @@
           {
             "@type": "Question",
             "name": "Che cosa sa fare SocialBot?",
-            "acceptedAnswer": { "@type": "Answer", "text": "Crea comandi e automazioni su misura, modera la chat, cattura clip automatiche dei momenti di hype, offre minigiochi con monete, avvisa quando vai in diretta su Telegram e segnala i nuovi post su TikTok, YouTube e Instagram. Puoi anche pilotarlo a voce mentre streammi." }
+            "acceptedAnswer": { "@type": "Answer", "text": "Crea comandi e automazioni su misura, modera la chat, cattura clip automatiche e offre un overlay per OBS totalmente personalizzabile: alert per follow/sub/bit/raid con immagini, video, suoni e green screen, chat a schermo, widget ed emote 7TV, con più overlay dal proprio link. In più: richieste musicali su Spotify, minigiochi con monete, penitenze ed effetti sui punti canale, notifiche live su Telegram e avvisi dei nuovi post su TikTok, YouTube e Instagram. Puoi anche pilotarlo a voce mentre streammi." }
           },
           {
             "@type": "Question",
@@ -168,18 +173,37 @@
                disegna la vetrina interattiva al suo posto. -->
           <section class="vetrina-hero">
             <span class="vetrina-occhiello">SocialBot · il bot di andryxify.it</span>
-            <h1 class="vetrina-titolo">Il bot per Twitch che parla con la tua voce</h1>
-            <p class="vetrina-sub">SocialBot è il <strong>bot per Twitch</strong> che vive nella tua chat e scrive
+            <h1 class="vetrina-titolo">SocialBot: il bot per Twitch che parla con la tua voce</h1>
+            <p class="vetrina-sub">SocialBot è il <strong>bot per Twitch in italiano</strong> che vive nella tua chat e scrive
             <strong>con il tuo account</strong> — niente bot anonimi. Impara chi sei, crea comandi su misura,
-            cattura clip, modera la chat e ti avvisa quando vai live. In italiano.</p>
-            <p><a class="btn grande" href="/?demo=1">Prova la demo</a>
-               <a class="btn grande secondario" href="https://andryxify.it">Attiva su andryxify.it</a></p>
+            cattura clip, modera la chat, mette un <strong>overlay personalizzabile</strong> in OBS (alert, chat a schermo,
+            widget, emote 7TV) e ti avvisa quando vai live.</p>
+            <p><a class="btn grande" href="/entra">Accedi con Twitch</a>
+               <a class="btn grande secondario" href="/?demo=1">Prova la demo</a></p>
+          </section>
+          <section class="carta">
+            <h2>Cos'è SocialBot</h2>
+            <p>SocialBot è un <strong>bot per Twitch</strong> pensato per gli streamer italiani. A differenza dei bot classici,
+            non è un account anonimo: <strong>scrive in chat col tuo account</strong>, così in chat compare il tuo nome e mantieni
+            il pieno controllo. Si addestra da solo sul tuo profilo, capisce la tua community e cresce con te.</p>
+            <h2>Perché è il migliore</h2>
+            <ul>
+              <li><strong>Parla con la tua voce</strong>, non da un bot generico: la chat resta tua.</li>
+              <li><strong>Overlay Studio completo</strong> per OBS: alert (con immagini, video, suoni e green screen), chat a schermo,
+                  widget, emote 7TV, font Google, posizione/dimensione/rotazione e più overlay con link separati.</li>
+              <li><strong>Comandi e automazioni illimitati</strong>, richieste musicali Spotify, minigiochi, penitenze ed effetti sui punti canale.</li>
+              <li><strong>Tutto in italiano</strong>, dashboard inclusa, e lo piloti anche <strong>a voce</strong> mentre streammi.</li>
+            </ul>
           </section>
           <section class="vetrina-features">
             <div class="carta vetrina-feat"><h2>Parla col tuo account</h2><p>SocialBot scrive nella chat di Twitch con il tuo nome: sei sempre tu ad avere il controllo, nessun account-bot anonimo.</p></div>
+            <div class="carta vetrina-feat"><h2>Overlay Studio per OBS</h2><p>Alert, chat a schermo e widget totalmente personalizzabili: colori, font (anche Google), posizione, dimensione e rotazione. Più overlay, ognuno col suo link.</p></div>
+            <div class="carta vetrina-feat"><h2>Alert su misura</h2><p>Follow, sub, bit e raid con immagini o video, suoni tuoi o pronti e green screen sui video riscattabili a punti canale.</p></div>
+            <div class="carta vetrina-feat"><h2>Emote 7TV</h2><p>Le emote 7TV del tuo canale compaiono nella chat a schermo, come nella chat vera.</p></div>
             <div class="carta vetrina-feat"><h2>Comandi e moduli</h2><p>Crea comandi, frasi e automazioni infinite per la tua chat Twitch — anche a partire da una domanda.</p></div>
             <div class="carta vetrina-feat"><h2>Moderazione</h2><p>Antispam e moderazione della chat mentre tu pensi solo a streammare.</p></div>
             <div class="carta vetrina-feat"><h2>Clip automatiche</h2><p>Cattura i momenti di hype della diretta senza muovere un dito.</p></div>
+            <div class="carta vetrina-feat"><h2>Musica &amp; punti canale</h2><p>Richieste musicali su Spotify, minigiochi con monete, penitenze a tempo ed effetti su ogni riscatto.</p></div>
             <div class="carta vetrina-feat"><h2>Notifiche live</h2><p>Avvisi automatici su Telegram quando vai in diretta e dei nuovi post su TikTok, YouTube e Instagram.</p></div>
             <div class="carta vetrina-feat"><h2>Comandi a voce</h2><p>Piloti il bot parlando, mentre streammi, senza toccare la tastiera.</p></div>
           </section>
