@@ -2168,16 +2168,32 @@ function bloccoAlert(t, a) {
       <label class="campo spazio-sopra">Testo <span class="tenue">— segnaposto: ${esc(t.vars)}</span></label>
       <input type="text" class="al-testo campo-largo" maxlength="200" placeholder="${esc(t.ph)}" value="${esc(c.testo || '')}">
       <div class="griglia-campi spazio-sopra">
-        <div><label class="campo">Suono</label><select class="al-suono">${opzioniSuono(c.suono || '')}</select></div>
         <div><label class="campo">Colore</label><input type="color" class="al-colore" value="${_hx(acc, t.acc)}"></div>
         <div><label class="campo">Volume: <strong><span class="al-vol-v">${vol}</span>%</strong></label><input type="range" class="al-vol" min="0" max="100" value="${vol}"></div>
+        <div><label class="campo">Font</label><select class="al-font">${opzioniFont(c.font || '')}</select></div>
         ${soglia}
       </div>
-      <div class="griglia-campi spazio-sopra">
-        <div><label class="campo">Font</label><select class="al-font">${opzioniFont(c.font || '')}</select></div>
-        <div><label class="campo">Immagine/Video <span class="tenue">— dai tuoi effetti</span></label><select class="al-media"><option value="">— niente —</option></select></div>
+      <div class="al-media-wrap spazio-sopra">
+        <div class="al-slot">
+          <label class="campo">🔊 Suono</label>
+          <select class="al-suono">${opzioniSuono(c.suono || '')}</select>
+          <div class="al-carica">
+            <input type="file" class="al-up al-up-suono" accept="audio/*" data-slot="suono" hidden>
+            <button type="button" class="btn secondario mini al-btn-up" data-slot="suono">＋ Carica un suono tuo</button>
+            <span class="al-up-esito tenue"></span>
+          </div>
+        </div>
+        <div class="al-slot">
+          <label class="campo">🖼️ Immagine o video</label>
+          <select class="al-media"><option value="">— niente —</option></select>
+          <div class="al-carica">
+            <input type="file" class="al-up al-up-media" accept="image/*,video/*" data-slot="media" hidden>
+            <button type="button" class="btn secondario mini al-btn-up" data-slot="media">＋ Carica immagine/video tuo</button>
+            <span class="al-up-esito tenue"></span>
+          </div>
+        </div>
       </div>
-      <p class="suggerimento">Suono e Immagine/Video si scelgono dai tuoi <strong>Effetti &amp; suoni</strong>: caricali lì, poi li ritrovi qui nel menu.</p>
+      <p class="suggerimento">✨ <strong>Metti quello che vuoi:</strong> scegli dai tuoi effetti <em>oppure</em> carica un file al volo qui sopra. Suono e immagine/video <strong>partono insieme</strong> — così puoi avere, ad esempio, la tua GIF <em>con</em> il tuo suono.</p>
       <p class="spazio-sopra"><button type="button" class="btn secondario mini al-prova" data-kind="${t.key}">Prova ▶</button></p>
     </div>`;
 }
@@ -2981,6 +2997,16 @@ function caricaAlert() {
 
   document.querySelectorAll('.al-prova').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
     await salvaAlert(true); await api('/api/alert/prova', { method: 'POST', body: { kind: b.dataset.kind } }); toast('Inviato all\'overlay ▶');
+  })));
+  // upload inline di suono / immagine-video direttamente dal blocco alert
+  document.querySelectorAll('.al-btn-up').forEach((btn) => btn.addEventListener('click', () => {
+    const inp = btn.parentElement.querySelector('.al-up'); if (inp) inp.click();
+  }));
+  document.querySelectorAll('.al-up').forEach((inp) => inp.addEventListener('change', () => conErrore(async () => {
+    const blocco = inp.closest('.alert-blocco[data-alert]');
+    const file = inp.files[0];
+    if (blocco && file) await caricaMediaAlert(blocco.dataset.alert, inp.dataset.slot, file);
+    inp.value = '';
   })));
   _g('co-prova')?.addEventListener('click', () => conErrore(async () => {
     await salvaChatOverlay(true); await api('/api/alert/prova', { method: 'POST', body: { kind: 'chat' } }); toast('Inviato all\'overlay ▶');
@@ -4999,6 +5025,42 @@ async function caricaEffettoUpload(ev) {
   } finally {
     btn.disabled = false;
     btn.textContent = testoOrig;
+  }
+}
+
+// Carica un file (audio / immagine / video) SUO direttamente da un blocco alert:
+// lo invia al server (che lo comprime, salva e assegna all'evento), poi ricarica
+// la libreria e seleziona il nuovo media nel menu del blocco giusto. Così lo
+// streamer mette quello che vuole senza passare dalla scheda Effetti.
+async function caricaMediaAlert(kind, slot, file) {
+  if (DEMO) { toast('In demo non si caricano file 😊 — accedi per farlo davvero.'); return; }
+  const blocco = document.querySelector(`.alert-blocco[data-alert="${kind}"]`);
+  const btn = blocco?.querySelector(`.al-btn-up[data-slot="${slot}"]`);
+  const esito = btn?.parentElement?.querySelector('.al-up-esito');
+  const testoOrig = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Comprimo e carico… ⏳'; }
+  if (esito) esito.textContent = '';
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('kind', kind);
+    fd.append('slot', slot);
+    // niente header Content-Type: lo imposta il browser col boundary multipart
+    const res = await fetch('/api/streamer/alerts/media', { method: 'POST', body: fd });
+    let dati = null; try { dati = await res.json(); } catch { /* risposta non JSON */ }
+    if (!res.ok) throw new Error(dati?.errore || `errore ${res.status}`);
+    // ricarica la libreria e ripopola i menu, mostrando il nuovo media già selezionato
+    const lib = await api('/api/streamer/effetti').catch(() => ({ effetti: [] }));
+    const cfg = impostazioni().alerts || {};
+    cfg[kind] = { ...(cfg[kind] || {}), [slot === 'suono' ? 'suono' : 'media']: dati.ref };
+    popolaMediaSuoniAlert(lib.effetti || [], cfg);
+    if (esito) esito.textContent = '✓ ' + (slot === 'suono' ? 'suono' : (dati.tipo || 'media')) + ' caricato e assegnato';
+    toast('Caricato e assegnato all\'alert! ✨');
+  } catch (e) {
+    if (esito) esito.textContent = '❌ ' + e.message;
+    toast('Caricamento fallito: ' + e.message, 'errore');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = testoOrig; }
   }
 }
 
