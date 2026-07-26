@@ -488,13 +488,23 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
 
   // ------------------------------------------------------------ INGRESSO (pass del sito)
 
-  // Unico ingresso pubblico. Lo streamer arriva qui da andryxify.it con un
-  // pass usa-e-getta (bot.andryxify.it/entra?pass=...). Il bot lo "brucia"
-  // chiamando il sito: se il sito conferma un login abilitato, si crea la
-  // sessione. Nessun pass valido → 404, come se la pagina non esistesse.
+  // Ingresso pubblico. Due modi, stesso URL:
+  //  1) con pass usa-e-getta da andryxify.it (bot.andryxify.it/entra?pass=...):
+  //     il bot lo "brucia" chiamando il sito e crea la sessione se abilitato;
+  //  2) SENZA pass: login DIRETTO con Twitch ("Accedi con Twitch" dalla vetrina),
+  //     pensato per chi è già abilitato (community) o abbonato. Il cancello resta
+  //     invariato: il callback concede la dashboard SOLO se contestiPer(login) non
+  //     è vuoto; altrimenti si vede solo la pagina dei piani. Nessuna scorciatoia.
   app.get('/entra', wrap(async (req, res) => {
-    const who = await redeemPass(String(req.query.pass || ''));
-    if (!who) return notFound(res);            // pass assente/scaduto/già usato
+    const passRaw = String(req.query.pass || '').trim();
+    if (!passRaw) {
+      // login diretto con Twitch (nessun `compra`: ingresso puro, gate al callback)
+      const state = crypto.randomUUID();
+      req.session.selfFlow = { state };
+      return res.redirect(auth.authUrl([], state));
+    }
+    const who = await redeemPass(passRaw);
+    if (!who) return notFound(res);            // pass presente ma scaduto/già usato
 
     // andryxify.it è la fonte di verità sull'abilitazione: lo registriamo
     // localmente come approvato (rispettando un eventuale on/off preesistente) e
@@ -856,15 +866,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     }
   }
 
-  // Login DIRETTO con Twitch, SENZA passkey: pensato per chi è già abilitato
-  // (community) o abbonato. Il cancello resta invariato: il callback concede la
-  // dashboard SOLO se contestiPer(login) non è vuoto (accesso attivo); altrimenti
-  // rimanda ai piani. Nessuna scorciatoia sull'accesso — solo un ingresso comodo.
-  app.get('/entra', (req, res) => {
-    const state = crypto.randomUUID();
-    req.session.selfFlow = { state };   // niente `compra`: login puro
-    res.redirect(auth.authUrl([], state));
-  });
+  // (il login diretto con Twitch è gestito sopra da GET /entra senza ?pass)
 
   // Login self-service con Twitch per abbonarsi. Attivo solo con Stripe acceso.
   app.get('/accedi', (req, res) => {
