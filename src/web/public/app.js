@@ -2182,12 +2182,27 @@ function pannelloAlert() {
     + (p.overlayTemplates.length ? `<optgroup label="I miei">${p.overlayTemplates.map((t, i) => `<option value="u${i}">${esc(t.nome)}</option>`).join('')}</optgroup>` : '');
   return pannello('alert', `
     <div class="carta">
-      <h2>${_hIco(ICO.monitor)}Link overlay per OBS</h2>
-      <p>Aggiungi questo indirizzo in OBS come <strong class="primo-piano">Sorgenti → Browser</strong>,
-      larghezza <strong class="primo-piano">1920</strong>, altezza <strong class="primo-piano">1080</strong>, sfondo trasparente.</p>
-      <div class="riga-flessibile spazio-sopra">
+      <h2>${_hIco(ICO.monitor)}I miei overlay</h2>
+      <p>Puoi avere <strong>più overlay</strong>, ognuno col suo <strong>link OBS</strong> e il suo <strong>layout</strong>
+      (cosa mostra e dove). Es. un overlay "solo alert" in una scena e uno "solo chat" in un'altra.</p>
+      <div class="riga-flessibile">
+        <select id="ov-sel" class="campo-largo"></select>
+        <button class="btn secondario" id="ov-nuovo">＋ Nuovo</button>
+        <button class="btn secondario" id="ov-rinomina">Rinomina</button>
+        <button class="btn secondario" id="ov-elimina">Elimina</button>
+      </div>
+      <label class="campo spazio-sopra">Link OBS di questo overlay <span class="tenue">— Sorgenti → Browser, 1920×1080, sfondo trasparente</span></label>
+      <div class="riga-flessibile">
         <input type="text" id="inp-overlay-url" class="campo-largo" readonly value="" placeholder="caricamento…">
         <button class="btn secondario" id="btn-copia-overlay">Copia</button>
+      </div>
+      <label class="campo spazio-sopra">Cosa mostra questo overlay</label>
+      <div class="ovl-mostra">
+        <label class="riga-check"><input type="checkbox" id="mostra-alert" checked> Alert</label>
+        <label class="riga-check"><input type="checkbox" id="mostra-chat" checked> Chat a schermo</label>
+        <label class="riga-check"><input type="checkbox" id="mostra-wf" checked> Widget ultimo follower</label>
+        <label class="riga-check"><input type="checkbox" id="mostra-ws" checked> Widget ultimo sub</label>
+        <label class="riga-check"><input type="checkbox" id="mostra-effetti" checked> Effetti & suoni</label>
       </div>
       <p class="suggerimento">Tienilo per te: chi ha questo link può far comparire cose nel tuo overlay.</p>
     </div>
@@ -2195,7 +2210,8 @@ function pannelloAlert() {
     <div class="carta">
       <h2>${_hIco(ICO.monitor)}Overlay Studio</h2>
       <p>Personalizza <strong>tutto</strong> ciò che appare a schermo: alert, chat, widget… colori, font, forma, animazioni.
-      L'<strong>anteprima qui sotto è dal vivo</strong>; poi apri l'overlay in OBS (scheda <em>Effetti &amp; suoni</em>).</p>
+      Posizioni e "cosa mostra" valgono per l'<strong>overlay selezionato qui sopra</strong>; stile e testi sono condivisi.
+      L'<strong>anteprima qui sotto è dal vivo</strong>.</p>
       <label class="campo" for="ovl-tpl">Template <span class="tenue">— parti da un preset o crea il tuo (salva l'intero look)</span></label>
       <div class="riga-flessibile">
         <select id="ovl-tpl" class="campo-largo">${opzTpl}</select>
@@ -2323,7 +2339,11 @@ function pannelloAlert() {
 // nomi-font → variabile CSS (definite in overlay-skin.css) per l'anteprima
 const FONT_VAR = { sistema: 'var(--font-sistema)', rotondo: 'var(--font-rotondo)', condensato: 'var(--font-condensato)', mono: 'var(--font-mono)', serif: 'var(--font-serif)', manga: 'var(--font-manga)' };
 // posizioni LIBERE (drag) degli elementi nell'anteprima: {x,y} in % o null (angolo).
+// Appartengono all'OVERLAY selezionato (posXY = layout dell'overlay corrente).
 let posXY = { alert: null, chat: null, wf: null, ws: null };
+let overlays = [];      // lista degli overlay dello streamer (ognuno un link OBS)
+let overlaySel = '';    // id dell'overlay attualmente in modifica
+const mostraChk = (k) => !!_g('mostra-' + k)?.checked;
 const AP_ICO_ALERT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 15.09 8.26 22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
 const AP_ICO_WIDGET = { ultimoFollower: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>', ultimoSub: AP_ICO_ALERT };
 const _g = (id) => document.getElementById(id);
@@ -2348,8 +2368,9 @@ function _leggiChatStile() {
   };
 }
 function _leggiWidget(pref) {
+  const chXy = impostazioni().overlayWidget?.[pref === 'wf' ? 'ultimoFollower' : 'ultimoSub']?.xy || null;
   return {
-    attivo: !!_g(`${pref}-attivo`)?.checked, posizione: _v(`${pref}-pos`) || 'basso-destra', xy: posXY[pref],
+    attivo: !!_g(`${pref}-attivo`)?.checked, posizione: _v(`${pref}-pos`) || 'basso-destra', xy: chXy,
     testo: (_v(`${pref}-testo`) || '').trim(),
     stile: { dim: _v(`${pref}-dim`) || 'media', font: _v(`${pref}-font`) || 'sistema', sfondo: _v(`${pref}-bg`),
       opacita: Number(_v(`${pref}-op`)), testo: _v(`${pref}-fg`), accento: _v(`${pref}-acc`), bordoRaggio: Number(_v(`${pref}-radius`)) },
@@ -2373,14 +2394,16 @@ function _raccogliAlerts() {
   return {
     attivo: !!_g('al-attivo')?.checked,
     posizione: _v('al-pos') || 'alto-centro',
-    xy: posXY.alert,
+    // la posizione ora è per-overlay: lo stile non tocca la posizione "di default"
+    xy: (impostazioni().alerts && impostazioni().alerts.xy) || null,
     durata: (Number(_v('al-durata')) || 6) * 1000,
     stile: _leggiAlertStile(),
     ...blocchi,
   };
 }
 function _raccogliChat() {
-  return { attivo: !!_g('co-attivo')?.checked, posizione: _v('co-pos') || 'basso-sinistra', xy: posXY.chat,
+  return { attivo: !!_g('co-attivo')?.checked, posizione: _v('co-pos') || 'basso-sinistra',
+    xy: (impostazioni().chatOverlay && impostazioni().chatOverlay.xy) || null,
     max: Number(_v('co-max')) || 8, fadeSec: Number(_v('co-fade')) || 0, stile: _leggiChatStile() };
 }
 function _raccogliWidget() { return { ultimoFollower: _leggiWidget('wf'), ultimoSub: _leggiWidget('ws') }; }
@@ -2404,7 +2427,7 @@ function _anteprimaWidget(pref, id, nome) {
   const attivo = !!_g(`${pref}-attivo`)?.checked;
   const box = _g(`ap-${pref}`);
   if (!box) return;
-  if (!attivo) { box.style.display = 'none'; return; }
+  if (!attivo || !mostraChk(pref)) { box.style.display = 'none'; return; }
   box.style.display = '';
   const w = _leggiWidget(pref).stile;
   const el = _g(`ap-${pref}-el`);
@@ -2445,6 +2468,9 @@ function aggiornaAnteprima() {
   _posElemento(_g('ap-chat'), posXY.chat || _defPos('chat'));
   _posElemento(_g('ap-wf'), posXY.wf || _defPos('wf'));
   _posElemento(_g('ap-ws'), posXY.ws || _defPos('ws'));
+  // nascondi nell'anteprima ciò che QUESTO overlay non mostra
+  if (_g('ap-alert')) _g('ap-alert').style.display = mostraChk('alert') ? '' : 'none';
+  if (_g('ap-chat')) _g('ap-chat').style.display = mostraChk('chat') ? '' : 'none';
 }
 
 // posizione di default (in %) di un elemento in base all'angolo/posizione scelta.
@@ -2602,10 +2628,9 @@ function rendiTrascinabile(el, chiave) {
   el.addEventListener('dblclick', () => { posXY[chiave] = null; deseleziona(); aggiornaAnteprima(); _salvaPos(chiave); });
 }
 
-function _salvaPos(chiave) {
-  if (chiave === 'alert') return salvaAlert(true);
-  if (chiave === 'chat') return salvaChatOverlay(true);
-  return salvaWidget(true);   // wf / ws
+function _salvaPos() {
+  // le posizioni (alert/chat/wf/ws) appartengono all'OVERLAY selezionato
+  return salvaLayoutOverlay(true);
 }
 
 // --- template -----------------------------------------------------------
@@ -2696,6 +2721,70 @@ function _rigeneraTemplateSelect(templates, selNome) {
   sel.innerHTML = `<optgroup label="Pronti">${pronti}</optgroup>` + (templates.length ? `<optgroup label="I miei">${miei}</optgroup>` : '');
 }
 
+// --- gestione PIÙ OVERLAY (ognuno un link + un layout) ------------------
+async function caricaOverlays() {
+  try { const d = await api('/api/streamer/overlays'); overlays = Array.isArray(d.overlays) ? d.overlays : []; }
+  catch { overlays = []; }
+  if (!overlays.length) overlays = [{ id: 'principale', nome: 'Overlay principale', mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true }, xy: {}, url: '' }];
+  if (!overlays.find((o) => o.id === overlaySel)) overlaySel = overlays[0].id;
+  _rigeneraSelOverlay();
+  caricaOverlaySel();
+}
+function _rigeneraSelOverlay() {
+  const sel = _g('ov-sel'); if (!sel) return;
+  sel.innerHTML = overlays.map((o) => `<option value="${esc(o.id)}"${o.id === overlaySel ? ' selected' : ''}>${esc(o.nome)}</option>`).join('');
+}
+// carica nell'editor il layout dell'overlay selezionato (posizioni + cosa mostra + link)
+function caricaOverlaySel() {
+  const ov = overlays.find((o) => o.id === overlaySel) || overlays[0];
+  if (!ov) return;
+  posXY = { alert: ov.xy?.alert || null, chat: ov.xy?.chat || null, wf: ov.xy?.wf || null, ws: ov.xy?.ws || null };
+  ['alert', 'chat', 'wf', 'ws', 'effetti'].forEach((k) => { const c = _g('mostra-' + k); if (c) c.checked = ov.mostra?.[k] !== false; });
+  const i = _g('inp-overlay-url'); if (i) i.value = ov.url || '';
+  deseleziona();
+  aggiornaAnteprima();
+}
+// payload "pulito" degli overlay per il salvataggio (senza url, che è calcolato)
+function _overlaysPayload() {
+  return overlays.map((o) => ({ id: o.id, nome: o.nome, mostra: o.mostra, xy: o.xy, css: o.css || '' }));
+}
+// salva il layout (posizioni + cosa mostra) dell'overlay selezionato
+async function salvaLayoutOverlay(silenzioso) {
+  const ov = overlays.find((o) => o.id === overlaySel);
+  if (!ov) return;
+  ov.xy = { alert: posXY.alert, chat: posXY.chat, wf: posXY.wf, ws: posXY.ws };
+  ov.mostra = { alert: mostraChk('alert'), chat: mostraChk('chat'), wf: mostraChk('wf'), ws: mostraChk('ws'), effetti: mostraChk('effetti') };
+  await salvaImpostazioni({ overlays: _overlaysPayload() }, silenzioso ? null : 'Overlay salvato ✓');
+}
+async function nuovoOverlay() {
+  if (overlays.length >= 12) { toast('Massimo 12 overlay.'); return; }
+  const nome = (prompt('Nome del nuovo overlay:') || '').trim();
+  if (!nome) return;
+  const id = 'ov' + Math.random().toString(36).slice(2, 8);
+  overlays.push({ id, nome, mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true }, xy: {}, css: '' });
+  overlaySel = id;
+  await salvaImpostazioni({ overlays: _overlaysPayload() }, null);
+  await caricaOverlays();                 // ricarica per avere il link dal server
+  toast('Overlay creato ✓');
+}
+async function rinominaOverlay() {
+  const ov = overlays.find((o) => o.id === overlaySel); if (!ov) return;
+  const nome = (prompt('Nuovo nome:', ov.nome) || '').trim(); if (!nome) return;
+  ov.nome = nome;
+  await salvaImpostazioni({ overlays: _overlaysPayload() }, null);
+  _rigeneraSelOverlay(); toast('Rinominato ✓');
+}
+async function eliminaOverlay() {
+  if (overlays.length <= 1) { toast('Deve restare almeno un overlay.'); return; }
+  const ov = overlays.find((o) => o.id === overlaySel); if (!ov) return;
+  if (!confirm(`Eliminare l'overlay "${ov.nome}"? Il suo link OBS smetterà di funzionare.`)) return;
+  overlays = overlays.filter((o) => o.id !== overlaySel);
+  overlaySel = overlays[0].id;
+  await salvaImpostazioni({ overlays: _overlaysPayload() }, null);
+  await caricaOverlays();
+  toast('Overlay eliminato.');
+}
+
 function caricaAlert() {
   const scheda = _g('scheda-alert');
   // posizioni libere iniziali (dal salvataggio) + elementi trascinabili
@@ -2703,8 +2792,13 @@ function caricaAlert() {
   posXY = { alert: imp.alerts.xy || null, chat: imp.chatOverlay.xy || null,
     wf: imp.overlayWidget.ultimoFollower.xy || null, ws: imp.overlayWidget.ultimoSub.xy || null };
   ['ap-alert', 'ap-chat', 'ap-wf', 'ap-ws'].forEach((id) => rendiTrascinabile(_g(id), id.replace('ap-', '')));
-  // link overlay per OBS (ora vive qui, sotto Overlay)
-  (async () => { try { const d = await api('/api/streamer/overlay-url'); const i = _g('inp-overlay-url'); if (i) i.value = d.overlayUrl || ''; } catch (_) { /* niente */ } })();
+  // PIÙ OVERLAY: carica la lista, il selettore e il layout dell'overlay scelto
+  caricaOverlays();
+  _g('ov-sel')?.addEventListener('change', (e) => { overlaySel = e.target.value; caricaOverlaySel(); });
+  _g('ov-nuovo')?.addEventListener('click', () => conErrore(() => nuovoOverlay()));
+  _g('ov-rinomina')?.addEventListener('click', () => conErrore(() => rinominaOverlay()));
+  _g('ov-elimina')?.addEventListener('click', () => conErrore(() => eliminaOverlay()));
+  ['alert', 'chat', 'wf', 'ws', 'effetti'].forEach((k) => _g('mostra-' + k)?.addEventListener('change', () => { aggiornaAnteprima(); salvaLayoutOverlay(true); }));
   // inspector: cursori dimensione/rotazione dell'elemento selezionato
   _g('insp-size')?.addEventListener('input', (e) => {
     if (!selezione) return;
