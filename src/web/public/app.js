@@ -146,7 +146,7 @@ function impostazioni() {
 }
 
 // salva un sottoinsieme di impostazioni e aggiorna lo stato locale
-async function salvaImpostazioni(parziale, msgOk = 'Impostazioni salvate 💜') {
+async function salvaImpostazioni(parziale, msgOk = 'Impostazioni salvate') {
   await api('/api/streamer/impostazioni', { method: 'POST', body: parziale });
   if (stato?.streamer) {
     stato.streamer.settings = { ...(stato.streamer.settings || {}), ...parziale };
@@ -175,7 +175,7 @@ async function caricaStato() {
   render();
   // promo "settimana gratis" appena assegnata
   if (new URLSearchParams(location.search).get('promo') === '1') {
-    toast('🎁 Hai ricevuto una settimana Pro gratis — esplora tutto SocialBot!');
+    toast('Hai ricevuto una settimana Pro gratis — esplora tutto SocialBot!');
     try { history.replaceState(null, '', '/'); } catch { /* niente */ }
   }
 }
@@ -229,7 +229,7 @@ function statoDemo() {
         premioVip: { attivo: true, periodo: 'settimana', quanti: 2 },
         manche: { attivo: true, minMin: 20, maxMin: 60, soloLive: false },
         paroleVietate: ['spoiler', 'link-truffa'],
-        frasi: ['Benvenuto nel canale! 💜', 'Ricordati di seguire per non perderti le live!'],
+        frasi: ['Benvenuto nel canale!', 'Ricordati di seguire per non perderti le live!'],
         tiktok: { username: 'andryxify', attivo: true, annunciaChat: true, messaggio: '' },
         youtube: { canale: '@andryxify', apiKeySet: true, attivo: true, annunciaChat: false, messaggio: '' },
         instagram: { userId: '17841400000000000', tokenSet: true, attivo: true, annunciaChat: false, messaggio: '' },
@@ -239,10 +239,10 @@ function statoDemo() {
           durataMin: 2, penitenzeModo: 'lista', penitenze: ['10 flessioni', 'canta la sigla', 'parla in inglese per 1 minuto'],
           effetto: 'airhorn', fuzzy: 80, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } },
         alerts: { attivo: true, posizione: 'alto-centro', durata: 6000,
-          follow: { attivo: true, testo: '{user} ha seguito il canale! 💜', suono: 'campanello', colore: '#9146ff' },
-          sub: { attivo: true, testo: '{user} si è abbonato! ({mesi} mesi) 🌟', suono: 'tada', colore: '#ffb020' },
-          cheer: { attivo: true, testo: '{user} ha lanciato {bits} bit! ⚡', suono: 'moneta', colore: '#38d39f', minBits: 100 },
-          raid: { attivo: true, testo: '{user} è arrivato in raid con {viewers}! 🚀', suono: 'trombetta', colore: '#ff4d4d', minViewers: 2 } },
+          follow: { attivo: true, testo: '{user} ha seguito il canale!', suono: 'campanello', colore: '#9146ff' },
+          sub: { attivo: true, testo: '{user} si è abbonato! ({mesi} mesi)', suono: 'tada', colore: '#ffb020' },
+          cheer: { attivo: true, testo: '{user} ha lanciato {bits} bit!', suono: 'moneta', colore: '#38d39f', minBits: 100 },
+          raid: { attivo: true, testo: '{user} è arrivato in raid con {viewers}!', suono: 'trombetta', colore: '#ff4d4d', minViewers: 2 } },
         chatOverlay: { attivo: false, posizione: 'basso-sinistra', max: 8, fadeSec: 0, dim: 'media' },
       },
     },
@@ -272,7 +272,7 @@ function apiDemo(percorso, opzioni = {}) {
     { testo: 'ti porterò in un brodificio', autore: 'andryxify', data: '2024-06-17' },
   ] });
   if (via === '/api/streamer/citazioni/importa') return Promise.resolve({ ok: true, aggiunte: 2, saltate: 0 });
-  if (via.endsWith('/prova')) { toast('In demo non invio davvero in chat 😊'); return Promise.resolve({ ok: true }); }
+  if (via.endsWith('/prova')) { toast('In demo non invio davvero in chat'); return Promise.resolve({ ok: true }); }
   return Promise.resolve({ ok: true, demo: true });
 }
 
@@ -310,13 +310,13 @@ function _demoGet(via) {
       permessoOk: true,
       effetti: ['airhorn', 'applausi', 'risata'],
       premi: [
-        { reward_id: 'r1', titolo: 'Airhorn 📣', costo: 500, effetto: 'airhorn', suono: '', testo: '{user} ha lanciato l\'airhorn!' },
-        { reward_id: 'r2', titolo: 'Applauso 👏', costo: 300, effetto: 'applausi', suono: '', testo: '' },
-        { reward_id: 'r3', titolo: 'Bevi l\'acqua', costo: 150, effetto: '', suono: 'acqua', testo: '{user} ti ricorda di bere! 💧' },
+        { reward_id: 'r1', titolo: 'Airhorn', costo: 500, effetto: 'airhorn', suono: '', testo: '{user} ha lanciato l\'airhorn!' },
+        { reward_id: 'r2', titolo: 'Applauso', costo: 300, effetto: 'applausi', suono: '', testo: '' },
+        { reward_id: 'r3', titolo: 'Bevi l\'acqua', costo: 150, effetto: '', suono: 'acqua', testo: '{user} ti ricorda di bere!' },
       ],
       tutti: [
-        { id: 'r1', title: 'Airhorn 📣', cost: 500, richiedeTesto: false },
-        { id: 'r2', title: 'Applauso 👏', cost: 300, richiedeTesto: false },
+        { id: 'r1', title: 'Airhorn', cost: 500, richiedeTesto: false },
+        { id: 'r2', title: 'Applauso', cost: 300, richiedeTesto: false },
         { id: 'r3', title: 'Bevi l\'acqua', cost: 150, richiedeTesto: false },
         { id: 'r4', title: 'Cambia gioco', cost: 2000, richiedeTesto: true },
       ],
@@ -329,8 +329,8 @@ function _demoGet(via) {
       ],
     },
     '/api/streamer/knowledge': [
-      { id: 1, domanda: 'Che PC usi?', risposta: 'Ryzen 7 + RTX 4070, trovi tutto su andryxify.it 🖥️', fonte: 'manuale', ts: '2026-05-02T18:00:00Z' },
-      { id: 2, domanda: 'Da dove streammi?', risposta: 'Da Genova, quasi ogni sera verso le 21 💜', fonte: 'auto', ts: '2026-05-01T20:00:00Z' },
+      { id: 1, domanda: 'Che PC usi?', risposta: 'Ryzen 7 + RTX 4070, trovi tutto su andryxify.it', fonte: 'manuale', ts: '2026-05-02T18:00:00Z' },
+      { id: 2, domanda: 'Da dove streammi?', risposta: 'Da Genova, quasi ogni sera verso le 21', fonte: 'auto', ts: '2026-05-01T20:00:00Z' },
       { id: 3, domanda: 'Come ti seguo ovunque?', risposta: 'Tutti i miei link li trovi su andryxify.it/u/andryx', fonte: 'chat', ts: '2026-05-05T22:10:00Z' },
     ],
     '/api/streamer/citazioni': [
@@ -366,7 +366,7 @@ function _demoGet(via) {
     '/api/streamer/memoria': {
       clip: [
         { url: 'https://clips.twitch.tv/demo1', clip_id: 'demo1', reason: 'hype: +25 msg/min', ts: '2026-06-20T21:15:00Z' },
-        { url: 'https://clips.twitch.tv/demo2', clip_id: 'demo2', reason: 'reazione al jumpscare 😱', ts: '2026-06-18T22:40:00Z' },
+        { url: 'https://clips.twitch.tv/demo2', clip_id: 'demo2', reason: 'reazione al jumpscare', ts: '2026-06-18T22:40:00Z' },
       ],
       lezioni: [
         { text: 'La community ama i boss-fight e le serate chiacchiera.', ts: '2026-06-10T21:00:00Z' },
@@ -381,16 +381,16 @@ function _demoGet(via) {
     '/api/streamer/moduli': [
       { id: 'social', nome: 'Social', attivo: true, tipo: 'comando',
         trigger: { tipo: 'comando', comando: 'social' },
-        azioni: [{ tipo: 'messaggio', testo: 'I miei social: andryxify.it/u/$canale ✨' }] },
+        azioni: [{ tipo: 'messaggio', testo: 'I miei social: andryxify.it/u/$canale' }] },
       { id: 'pc', nome: 'Setup PC', attivo: true, tipo: 'comando',
         trigger: { tipo: 'comando', comando: 'pc' },
-        azioni: [{ tipo: 'messaggio', testo: 'Ryzen 7 + RTX 4070. Dettagli su andryxify.it 🖥️' }] },
+        azioni: [{ tipo: 'messaggio', testo: 'Ryzen 7 + RTX 4070. Dettagli su andryxify.it' }] },
       { id: 'benvenuto', nome: 'Benvenuto', attivo: true, tipo: 'evento',
         trigger: { tipo: 'evento', evento: 'primo-messaggio' },
-        azioni: [{ tipo: 'messaggio', testo: 'Benvenuto $user! Mettiti comodo 💜' }] },
+        azioni: [{ tipo: 'messaggio', testo: 'Benvenuto $user! Mettiti comodo' }] },
       { id: 'dado', nome: 'Tiro di dado', attivo: false, tipo: 'comando',
         trigger: { tipo: 'comando', comando: 'dado' },
-        azioni: [{ tipo: 'messaggio', testo: '$user tira il dado e fa... $random(1,6)! 🎲' }] },
+        azioni: [{ tipo: 'messaggio', testo: '$user tira il dado e fa... $random(1,6)!' }] },
     ],
     '/api/streamer/telegram/compleanni': {
       membri: [
@@ -635,7 +635,7 @@ function renderHero() {
   ];
 
   app.innerHTML = `
-    ${msgErrore ? `<div class="carta avviso"><p>⚠️ ${esc(msgErrore)}</p></div>` : ''}
+    ${msgErrore ? `<div class="carta avviso"><p>${esc(msgErrore)}</p></div>` : ''}
 
     <section class="vetrina-hero">
       <span class="vetrina-occhiello">SocialBot · il bot di andryxify.it</span>
@@ -646,12 +646,12 @@ function renderHero() {
         <a class="btn grande" href="/entra">Accedi con Twitch</a>
         <a class="btn grande secondario" href="/?demo=1">▶ Prova la demo</a>
       </div>
-      <p class="nota">🔒 Con «Accedi con Twitch» entri <strong>subito nella dashboard</strong> se sei uno streamer <strong>abilitato</strong> su
+      <p class="nota">Con «Accedi con Twitch» entri <strong>subito nella dashboard</strong> se sei uno streamer <strong>abilitato</strong> su
       <a href="https://andryxify.it">andryxify.it</a> o hai un <strong>abbonamento</strong> — <strong>senza passkey</strong>. Altrimenti da qui scegli un piano.</p>
       <p class="vetrina-accessi">Preferisci un altro modo?
-        <a href="/sblocca">🔓 Entra con passkey</a>
+        <a href="/sblocca">Entra con passkey</a>
         <span aria-hidden="true">·</span>
-        <a href="/mod">🛠️ Accesso moderatore</a>
+        <a href="/mod">Accesso moderatore</a>
       </p>
     </section>
 
@@ -694,7 +694,7 @@ function renderHero() {
   caricaPiani();   // riempie la sezione prezzi (tier) dal server
   // esiti del ritorno da Stripe
   const q = new URLSearchParams(location.search);
-  if (q.get('abbonato') === '1') toast('Abbonamento attivo, benvenuto! 🎉');
+  if (q.get('abbonato') === '1') toast('Abbonamento attivo, benvenuto!');
   else if (q.get('abbonamento') === 'annullato') toast('Checkout annullato — nessun addebito.');
 }
 
@@ -783,7 +783,7 @@ async function caricaPiani() {
       </div>
     </div>
     <div class="piani-community">
-      🎁 <strong>Sei già un membro abilitato della community di <a href="https://andryxify.it">andryxify.it</a>?</strong>
+      <strong>Sei già un membro abilitato della community di <a href="https://andryxify.it">andryxify.it</a>?</strong>
       SocialBot è <strong>gratis e completo</strong> per te — non ti serve nessun piano.
     </div>`;
   rivelaCarte(box);
@@ -864,21 +864,21 @@ function vistaDisabilitato() {
 // dispersivi) mostriamo poche categorie chiare e, dentro ognuna, le sue schede.
 // NB: gli id delle schede restano identici a prima (li usano i pannelli).
 const GRUPPI = [
-  { id: 'panoramica', nome: 'Panoramica', icona: '🏠', schede: [
+  { id: 'panoramica', nome: 'Panoramica', icona: '', schede: [
     ['stato', 'Stato'],
   ] },
-  { id: 'personaggio', nome: 'Il personaggio', icona: '🧠', schede: [
+  { id: 'personaggio', nome: 'Il personaggio', icona: '', schede: [
     ['personalita', 'Personalità'],
     ['conoscenza', 'Conoscenza'],
     ['memoria', 'Memoria'],
   ] },
-  { id: 'chat', nome: 'Chat & comandi', icona: '💬', schede: [
+  { id: 'chat', nome: 'Chat & comandi', icona: '', schede: [
     ['moduli', 'Comandi'],
     ['regole', 'Regole'],
     ['giochi', 'Giochi'],
     ['effetti', 'Effetti & suoni'],
   ] },
-  { id: 'diretta', nome: 'Durante la diretta', icona: '🔴', schede: [
+  { id: 'diretta', nome: 'Durante la diretta', icona: '', schede: [
     ['regia', 'Vai live'],
     ['studio', 'Studio Web'],
     ['clip', 'Clip'],
@@ -888,17 +888,17 @@ const GRUPPI = [
     ['giveaway', 'Giveaway'],
     ['penitenze', 'Penitenze'],
   ] },
-  { id: 'overlay', nome: 'Overlay', icona: '🖥️', schede: [
+  { id: 'overlay', nome: 'Overlay', icona: '', schede: [
     ['alert', 'Overlay Studio'],
   ] },
-  { id: 'notifiche', nome: 'Notifiche', icona: '🔔', schede: [
+  { id: 'notifiche', nome: 'Notifiche', icona: '', schede: [
     ['notifiche', 'Notifiche'],
   ] },
 ];
 
 // Area riservata all'operatore (andryxify): compare come scheda a sé SOLO per
 // l'admin, così il pannello "Anima" non è più sempre in fondo a ogni scheda.
-const GRUPPO_ADMIN = { id: 'admin', nome: 'Admin', icona: '👑', schede: [['admin', 'Admin']] };
+const GRUPPO_ADMIN = { id: 'admin', nome: 'Admin', icona: '', schede: [['admin', 'Admin']] };
 
 // L'elenco effettivo dei gruppi: aggiunge l'area Admin se sei l'operatore.
 function elencoGruppi() {
@@ -1426,7 +1426,7 @@ function pannelloConoscenza() {
     </div>
     <div class="carta">
       <h2>${_hIco(ICO.cervello)}Cosa sa il bot</h2>
-      <p>🌐 dal sito &nbsp;·&nbsp; ✍️ tua &nbsp;·&nbsp; 💬 imparata dalla chat</p>
+      <p>dal sito &nbsp;·&nbsp; tua &nbsp;·&nbsp; imparata dalla chat</p>
       <ul class="lista-voci" id="lista-conoscenza"><li class="vuoto">Caricamento…</li></ul>
     </div>`);
 }
@@ -1527,7 +1527,7 @@ function pannelloAscolto() {
         <label for="chk-cat-annuncia">Annuncia il cambio in chat</label>
       </div>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-categoria">Salva</button></p>
-      ${mancaPermesso ? `<p class="nota-lettura">🔒 Per cambiare categoria il bot ha bisogno del permesso <strong>Gestione canale</strong> su Twitch.
+      ${mancaPermesso ? `<p class="nota-lettura">Per cambiare categoria il bot ha bisogno del permesso <strong>Gestione canale</strong> su Twitch.
       <a href="/auth/permessi">Concedi il permesso</a> (ti riporta qui dopo l'autorizzazione).</p>` : ''}
       <p class="suggerimento spazio-sopra">Esempi: «categoria Fortnite», «categoria League of Legends».
       La parola chiave è a tua scelta (es. «gioco», «passa a»). Funziona dalla stessa pagina di ascolto vocale qui sopra.</p>
@@ -1551,7 +1551,7 @@ function pannelloAscolto() {
         <label for="chk-tit-annuncia">Annuncia il cambio in chat</label>
       </div>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-titolo">Salva</button></p>
-      ${mancaPermesso ? `<p class="nota-lettura">🔒 Anche il titolo usa il permesso <strong>Gestione canale</strong>.
+      ${mancaPermesso ? `<p class="nota-lettura">Anche il titolo usa il permesso <strong>Gestione canale</strong>.
       <a href="/auth/permessi">Concedilo qui</a> (vale per categoria e titolo).</p>` : ''}
       <p class="suggerimento spazio-sopra">Esempio: «titolo Si torna su Elden Ring, si punta al boss!».
       Puoi cambiare la parola chiave (es. «nuovo titolo»). Stessa pagina di ascolto vocale qui sopra.</p>
@@ -1568,7 +1568,7 @@ function pannelloAscolto() {
         </label>
         <span class="etichetta-stato" id="etichetta-impara">${iv.attivo ? 'Attivo' : 'Spento'}</span>
       </div>
-      <p class="suggerimento spazio-sopra">🔒 L'audio <strong>non lascia il tuo PC</strong>: la trascrizione avviene nel browser,
+      <p class="suggerimento spazio-sopra">L'audio <strong>non lascia il tuo PC</strong>: la trascrizione avviene nel browser,
       al bot arriva solo il testo. Funziona dalla stessa pagina di ascolto vocale qui sopra.</p>
     </div>` : ''}`);
 }
@@ -1674,7 +1674,7 @@ async function salvaMusica(silenzioso) {
     disambigua: !!document.getElementById('musica-disambigua')?.checked,
   };
   await api('/api/streamer/impostazioni', { method: 'POST', body: { musica } });
-  if (!silenzioso) toast('Impostazioni musica salvate 🎵');
+  if (!silenzioso) toast('Impostazioni musica salvate');
 }
 
 // Modalità "punti canale": lascia scegliere UN premio tra quelli con la
@@ -1687,7 +1687,7 @@ async function caricaPremiMusica() {
   let d;
   try { d = await api('/api/musica/premi'); } catch { box.innerHTML = '<p>Impossibile leggere i premi.</p>'; return; }
   if (!d.permessoOk) {
-    box.innerHTML = '<div class="riquadro-info">⚠️ Per usare i premi a punti canale serve il permesso: concedilo da <strong>Chat &amp; comandi → Effetti &amp; suoni</strong> (sezione Premi), poi torna qui.</div>';
+    box.innerHTML = '<div class="riquadro-info">Per usare i premi a punti canale serve il permesso: concedilo da <strong>Chat &amp; comandi → Effetti &amp; suoni</strong> (sezione Premi), poi torna qui.</div>';
     return;
   }
   const eleggibili = (d.tutti || []).filter((r) => r.richiedeTesto);
@@ -1707,7 +1707,7 @@ async function caricaPremiMusica() {
     </details>`;
 
   if (!eleggibili.length) {
-    box.innerHTML = `<div class="riquadro-info">Non hai premi a punti canale con la <strong>richiesta di testo</strong> attiva${esclusi ? ` (${esclusi} non ${esclusi === 1 ? 'adatto' : 'adatti'})` : ''}. Creane uno pronto all'uso 👇</div>${formCrea}`;
+    box.innerHTML = `<div class="riquadro-info">Non hai premi a punti canale con la <strong>richiesta di testo</strong> attiva${esclusi ? ` (${esclusi} non ${esclusi === 1 ? 'adatto' : 'adatti'})` : ''}. Creane uno pronto all'uso</div>${formCrea}`;
   } else {
     box.innerHTML = `
       <label class="campo" for="musica-premio-sel">Premio usato per le richieste</label>
@@ -1727,7 +1727,7 @@ async function caricaPremiMusica() {
     const titolo = (document.getElementById('musica-nuovo-nome')?.value || 'Richiesta musicale').trim();
     const costo = Number(document.getElementById('musica-nuovo-costo')?.value) || 500;
     const r = await api('/api/musica/premio', { method: 'POST', body: { titolo, costo } });
-    if (r?.reward) { if (inp) inp.value = r.reward.title; toast('Premio creato su Twitch! 🎁'); caricaPremiMusica(); }
+    if (r?.reward) { if (inp) inp.value = r.reward.title; toast('Premio creato su Twitch!'); caricaPremiMusica(); }
   }));
 }
 
@@ -1736,7 +1736,7 @@ async function caricaSpotify() {
   const box = document.getElementById('spotify-box');
   if (!box) return;
   const q = new URLSearchParams(location.search);
-  if (q.get('spotify') === 'ok') toast('Spotify collegato! 🎵');
+  if (q.get('spotify') === 'ok') toast('Spotify collegato!');
   else if (q.get('spotify') === 'errore') toast('Collegamento Spotify non riuscito.', 'errore');
   const proprietario = stato?.ruolo !== 'moderatore';
   if (!proprietario) { box.innerHTML = '<p>Solo il proprietario del canale può collegare Spotify.</p>'; return; }
@@ -1838,7 +1838,7 @@ async function caricaSondaggi() {
       const durata = Number(document.getElementById('poll-durata').value) || 120;
       if (!titolo || opzioni.length < 2) { toast('Serve una domanda e almeno 2 opzioni.', 'errore'); return; }
       const r = await api('/api/sondaggi/crea', { method: 'POST', body: { titolo, opzioni, durata } });
-      if (r?.poll) { toast('Sondaggio lanciato 📊'); document.getElementById('poll-titolo').value = ''; document.querySelectorAll('.poll-opt').forEach((i) => (i.value = '')); caricaSondaggi(); }
+      if (r?.poll) { toast('Sondaggio lanciato'); document.getElementById('poll-titolo').value = ''; document.querySelectorAll('.poll-opt').forEach((i) => (i.value = '')); caricaSondaggi(); }
     }));
   }
   const br = document.getElementById('pred-crea');
@@ -1850,7 +1850,7 @@ async function caricaSondaggi() {
       const finestra = Number(document.getElementById('pred-finestra').value) || 120;
       if (!titolo || esiti.length < 2) { toast('Serve un titolo e almeno 2 esiti.', 'errore'); return; }
       const r = await api('/api/predizioni/crea', { method: 'POST', body: { titolo, esiti, finestra } });
-      if (r?.pred) { toast('Predizione aperta 🔮'); document.getElementById('pred-titolo').value = ''; document.querySelectorAll('.pred-esito').forEach((i) => (i.value = '')); caricaSondaggi(); }
+      if (r?.pred) { toast('Predizione aperta'); document.getElementById('pred-titolo').value = ''; document.querySelectorAll('.pred-esito').forEach((i) => (i.value = '')); caricaSondaggi(); }
     }));
   }
   // stato attivo (poll + pred)
@@ -1860,18 +1860,18 @@ async function caricaSondaggi() {
   try { d = await api('/api/sondaggi/stato'); } catch { return; }
   if (wrapP) {
     if (d.poll) {
-      wrapP.innerHTML = `<div class="riquadro-info"><p>📊 Sondaggio in corso: <strong>${esc(d.poll.titolo)}</strong></p>
+      wrapP.innerHTML = `<div class="riquadro-info"><p>Sondaggio in corso: <strong>${esc(d.poll.titolo)}</strong></p>
         <button class="btn secondario spazio-sopra" id="poll-chiudi">Chiudi ora</button></div>`;
       document.getElementById('poll-chiudi').addEventListener('click', () => conErrore(async () => { await api('/api/sondaggi/chiudi', { method: 'POST', body: {} }); toast('Sondaggio chiuso.'); caricaSondaggi(); }));
     } else wrapP.innerHTML = '';
   }
   if (wrapR) {
     if (d.pred) {
-      wrapR.innerHTML = `<div class="riquadro-info"><p>🔮 Predizione in corso: <strong>${esc(d.pred.titolo)}</strong></p>
+      wrapR.innerHTML = `<div class="riquadro-info"><p>Predizione in corso: <strong>${esc(d.pred.titolo)}</strong></p>
         <p class="spazio-sopra">Fai vincere:</p>
         <div class="chip-vars">${(d.pred.esiti || []).map((o) => `<button type="button" class="btn secondario mini" data-vince="${esc(o.id)}">${esc(o.titolo)}</button>`).join('')}</div>
         <button class="btn pericolo spazio-sopra" id="pred-annulla">Annulla e rimborsa</button></div>`;
-      wrapR.querySelectorAll('[data-vince]').forEach((b) => b.addEventListener('click', () => conErrore(async () => { await api('/api/predizioni/risolvi', { method: 'POST', body: { esitoId: b.dataset.vince } }); toast('Predizione risolta 🎉'); caricaSondaggi(); })));
+      wrapR.querySelectorAll('[data-vince]').forEach((b) => b.addEventListener('click', () => conErrore(async () => { await api('/api/predizioni/risolvi', { method: 'POST', body: { esitoId: b.dataset.vince } }); toast('Predizione risolta'); caricaSondaggi(); })));
       document.getElementById('pred-annulla').addEventListener('click', () => conErrore(async () => { await api('/api/predizioni/annulla', { method: 'POST', body: {} }); toast('Predizione annullata.'); caricaSondaggi(); }));
     } else wrapR.innerHTML = '';
   }
@@ -1908,7 +1908,7 @@ async function caricaGiveaway() {
       const premio = (document.getElementById('gw-premio').value || '').trim();
       const soloSub = !!document.getElementById('gw-sub').checked;
       const r = await api('/api/giveaway/apri', { method: 'POST', body: { premio, soloSub } });
-      if (r?.ok) { toast('Giveaway aperto! 🎁'); document.getElementById('gw-premio').value = ''; caricaGiveaway(); }
+      if (r?.ok) { toast('Giveaway aperto!'); document.getElementById('gw-premio').value = ''; caricaGiveaway(); }
     }));
   }
   let d;
@@ -1916,7 +1916,7 @@ async function caricaGiveaway() {
   if (d.aperto) {
     if (apriBox) apriBox.hidden = true;
     stBox.innerHTML = `<div class="riquadro-info">
-      <p>🎁 Giveaway in corso: <strong>${esc(d.premio)}</strong>${d.soloSub ? ' <span class="badge">solo sub</span>' : ''}</p>
+      <p>Giveaway in corso: <strong>${esc(d.premio)}</strong>${d.soloSub ? ' <span class="badge">solo sub</span>' : ''}</p>
       <p class="spazio-sopra"><strong>${d.partecipanti}</strong> ${d.partecipanti === 1 ? 'partecipante' : 'partecipanti'} — entrano con <code>!join</code></p>
       <div class="spazio-sopra">
         <button class="btn" id="gw-estrai">Estrai un vincitore</button>
@@ -1927,7 +1927,7 @@ async function caricaGiveaway() {
     document.getElementById('gw-estrai').addEventListener('click', () => conErrore(async () => {
       const r = await api('/api/giveaway/estrai', { method: 'POST', body: {} });
       const v = document.getElementById('gw-vincitore');
-      if (r?.vincitore) { if (v) v.innerHTML = `<p class="ok-riga">🎉 Ha vinto: <strong>${esc(r.vincitore)}</strong>!</p>`; }
+      if (r?.vincitore) { if (v) v.innerHTML = `<p class="ok-riga">Ha vinto: <strong>${esc(r.vincitore)}</strong>!</p>`; }
       else if (v) v.innerHTML = '<p class="warn-riga">Nessun partecipante ancora.</p>';
       caricaGiveaway();
     }));
@@ -1952,7 +1952,7 @@ function pannelloPenitenze() {
     <div class="carta">
       <h2>${_hIco(ICO.penitenza)}Penitenze a punti canale</h2>
       <p>Uno spettatore riscatta un premio e sceglie una <strong>parola</strong>. Per qualche minuto il bot <strong>ti ascolta</strong>
-      e tiene un <strong>contatore</strong> (con «+1» rossi a schermo). Alla fine del tempo, se sei stato beccato, parte <strong>una penitenza</strong> 😈</p>
+      e tiene un <strong>contatore</strong> (con «+1» rossi a schermo). Alla fine del tempo, se sei stato beccato, parte <strong>una penitenza</strong></p>
       <div class="riquadro-info spazio-sopra">
         <strong>Due modi</strong>, ognuno col suo premio a punti canale:
         <ul class="lista-punti">
@@ -2040,7 +2040,7 @@ async function salvaPenitenze(silenzioso) {
       colore: document.getElementById('pen-ov-col')?.value || '#ff2d2d',
     },
   };
-  await salvaImpostazioni({ penitenze }, silenzioso ? null : 'Penitenze salvate 😈');
+  await salvaImpostazioni({ penitenze }, silenzioso ? null : 'Penitenze salvate');
 }
 
 async function caricaPenitenze() {
@@ -2065,7 +2065,7 @@ async function caricaPenitenze() {
   let d;
   try { d = await api('/api/penitenze/premi'); } catch { boxV.innerHTML = boxS.innerHTML = '<p class="suggerimento">Impossibile leggere i premi.</p>'; return; }
   if (!d.permessoOk) {
-    boxV.innerHTML = '<div class="riquadro-info">⚠️ Per i premi a punti canale serve il permesso: concedilo da <strong>Chat &amp; comandi → Effetti &amp; suoni</strong> (sezione Premi), poi torna qui.</div>';
+    boxV.innerHTML = '<div class="riquadro-info">Per i premi a punti canale serve il permesso: concedilo da <strong>Chat &amp; comandi → Effetti &amp; suoni</strong> (sezione Premi), poi torna qui.</div>';
     boxS.innerHTML = '';
     return;
   }
@@ -2103,7 +2103,7 @@ async function caricaPenitenze() {
       const titolo = (document.getElementById(nomeId)?.value || nomeDefault).trim();
       const costo = Number(document.getElementById(costoId)?.value) || 500;
       const r = await api('/api/penitenze/premio', { method: 'POST', body: { campo, titolo, costo } });
-      if (r?.reward) { if (inp) inp.value = r.reward.title; toast('Premio creato su Twitch! 🎁'); caricaPenitenze(); }
+      if (r?.reward) { if (inp) inp.value = r.reward.title; toast('Premio creato su Twitch!'); caricaPenitenze(); }
     }));
   };
   montaPicker(boxV, { campo: 'premioVieta', hiddenId: 'pen-premio-vieta', attuale: d.premioVieta, nomeDefault: 'Vietami una parola' });
@@ -2262,7 +2262,7 @@ function pannelloAlert() {
       (cosa mostra e dove). Es. un overlay "solo alert" in una scena e uno "solo chat" in un'altra.</p>
       <div class="riga-flessibile">
         <select id="ov-sel" class="campo-largo"></select>
-        <button class="btn secondario" id="ov-nuovo">＋ Nuovo</button>
+        <button class="btn secondario" id="ov-nuovo">Nuovo</button>
         <button class="btn secondario" id="ov-rinomina">Rinomina</button>
         <button class="btn secondario" id="ov-elimina">Elimina</button>
       </div>
@@ -2585,7 +2585,7 @@ function aggiornaAnteprima() {
     card.className = 'alert-card anim-' + st.animazione + (st.glow ? ' glow' : '') + (st.icona ? '' : ' senza-ico');
     _setVars(card, { '--acc': acc, '--bg': st.sfondo, '--op': st.opacita + '%', '--fg': st.testo, '--radius': st.bordoRaggio + 'px', '--border': st.bordoSpessore + 'px', '--size': st.dimTesto + 'px', '--font': fontStile(st) });
     _g('ap-alert-ico').innerHTML = AP_ICO_ALERT;
-    _g('ap-alert-testo').innerHTML = '<b>MarioRossi</b> si è abbonato! 🌟';
+    _g('ap-alert-testo').innerHTML = '<b>MarioRossi</b> si è abbonato!';
     // niente re-animazione a ogni tasto: l'anteprima resta stabile (l'entrata
     // vera si vede con «Prova ▶» o nell'overlay). Prima "sfarfallava".
     card.classList.add('dentro');
@@ -2595,7 +2595,7 @@ function aggiornaAnteprima() {
   const apChat = _g('ap-chat');
   if (apChat) {
     apChat.className = 'ap-el ap-chat' + (/destra/.test(chatPos) ? ' destra' : '') + (selezione === 'chat' ? ' sel' : '');
-    apChat.innerHTML = [['lucaplays', '#ff4d4d', 'ciao a tutti! 👋'], ['giada_ttv', '#48b0ff', 'che bella live']].map(([u, col, t]) => {
+    apChat.innerHTML = [['lucaplays', '#ff4d4d', 'ciao a tutti!'], ['giada_ttv', '#48b0ff', 'che bella live']].map(([u, col, t]) => {
       const cu = cst.username === 'twitch' ? col : cst.username;
       return `<div class="chat-riga dim-${cst.dim}${cst.ombra ? ' ombra' : ''}${cst.grassettoUser ? ' user-bold' : ''} dentro" style="--bg:${cst.sfondo};--op:${cst.opacita}%;--fg:${cst.testo};--radius:${cst.bordoRaggio}px;--font:${fontStile(cst)}"><span class="chat-user" style="color:${cu}">${esc(u)}</span> ${esc(t)}</div>`;
     }).join('');
@@ -3009,7 +3009,7 @@ function caricaAlert() {
   document.querySelectorAll('.sfoglia-font').forEach((btn) => btn.addEventListener('click', () => {
     const box = _g(btn.dataset.box); if (!box) return;
     box.hidden = !box.hidden;
-    btn.textContent = box.hidden ? '📖 Sfoglia i font' : '▲ Chiudi elenco';
+    btn.textContent = box.hidden ? 'Sfoglia i font' : '▲ Chiudi elenco';
     if (!box.hidden && !box._montato) { box._montato = true; montaFontBrowser(box, btn.dataset.target); }
   }));
   // ✕ = togli il font Google (torna al menu)
@@ -3203,7 +3203,7 @@ async function cercaGiochiRegia() {
 }
 
 async function salvaRegiaCanale() {
-  if (DEMO) { toast('In demo non si salva 😊 — accedi per farlo davvero.'); return; }
+  if (DEMO) { toast('In demo non si salva — accedi per farlo davvero.'); return; }
   const titolo = document.getElementById('regia-titolo')?.value || '';
   const tagsRaw = document.getElementById('regia-tags')?.value || '';
   const tags = tagsRaw.split(',').map((x) => x.trim()).filter(Boolean).slice(0, 10);
@@ -3378,7 +3378,7 @@ function studioSSE(sseUrl) {
 }
 
 async function attivaWebcam() {
-  if (DEMO) { toast('In demo la webcam non parte 😊 — accedi per farlo davvero.'); return; }
+  if (DEMO) { toast('In demo la webcam non parte — accedi per farlo davvero.'); return; }
   try {
     STUDIO.webcam = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: false });
     const v = document.createElement('video'); v.srcObject = STUDIO.webcam; v.muted = true; v.playsInline = true; await v.play().catch(() => {});
@@ -3389,7 +3389,7 @@ async function attivaWebcam() {
 }
 
 async function attivaMic() {
-  if (DEMO) { toast('In demo il microfono non parte 😊'); return; }
+  if (DEMO) { toast('In demo il microfono non parte'); return; }
   try {
     STUDIO.mic = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     document.getElementById('studio-mic')?.classList.add('attivo');
@@ -3398,7 +3398,7 @@ async function attivaMic() {
 }
 
 async function attivaSchermo() {
-  if (DEMO) { toast('In demo la condivisione non parte 😊'); return; }
+  if (DEMO) { toast('In demo la condivisione non parte'); return; }
   try {
     const s = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: true });
     STUDIO.schermo = s;
@@ -3428,7 +3428,7 @@ async function avviaLive() {
   if (!STUDIO.video.scr && !STUDIO.video.cam) { toast('Attiva prima la webcam o lo schermo.', 'errore'); return; }
   studioLog('Avvio…');
   try { await api('/api/studio/start', { method: 'POST' }); }
-  catch (e) { studioLog('❌ ' + e.message); toast('Non riuscito: ' + e.message, 'errore'); return; }
+  catch (e) { studioLog('' + e.message); toast('Non riuscito: ' + e.message, 'errore'); return; }
   avviaLoopStudio();
   const vstream = STUDIO.canvas.captureStream(30);
   const astream = studioAudioInit();
@@ -3437,7 +3437,7 @@ async function avviaLive() {
   const mime = mimeOk('video/webm;codecs=vp8,opus') ? 'video/webm;codecs=vp8,opus' : (mimeOk('video/webm') ? 'video/webm' : '');
   let rec;
   try { rec = new MediaRecorder(combined, mime ? { mimeType: mime, videoBitsPerSecond: 4500000, audioBitsPerSecond: 160000 } : undefined); }
-  catch (e) { studioLog('❌ registrazione non supportata dal browser'); toast('Il browser non supporta la registrazione video.', 'errore'); await api('/api/studio/stop', { method: 'POST' }).catch(() => {}); return; }
+  catch (e) { studioLog('registrazione non supportata dal browser'); toast('Il browser non supporta la registrazione video.', 'errore'); await api('/api/studio/stop', { method: 'POST' }).catch(() => {}); return; }
   rec.ondataavailable = (e) => { if (e.data && e.data.size) { STUDIO.coda.push(e.data); drenaCodaStudio(); } };
   rec.start(1000);
   STUDIO.rec = rec; STUDIO.live = true; STUDIO.startedAt = Date.now();
@@ -3707,7 +3707,7 @@ function _premioEditorPos(box, comando, tipo, st, salva) {
   const isVideo = tipo === 'video';
   box.innerHTML = `
     <p class="suggerimento spazio-sopra"><strong>Dove appare</strong> — trascina nel riquadro, poi regola dimensione e rotazione.</p>
-    <div class="pp-stage"><div class="pp-el">🎬 !${esc(comando)}</div></div>
+    <div class="pp-stage"><div class="pp-el">!${esc(comando)}</div></div>
     <div class="griglia-campi spazio-sopra">
       <div><label class="campo">Dimensione: <strong class="pp-s-v">${st.xy.s || 100}</strong>%</label><input type="range" class="pp-s" min="30" max="300" value="${st.xy.s || 100}"></div>
       <div><label class="campo">Rotazione: <strong class="pp-r-v">${st.xy.r || 0}</strong>°</label><input type="range" class="pp-r" min="-180" max="180" value="${st.xy.r || 0}"></div>
@@ -3762,11 +3762,11 @@ async function caricaPremi() {
     .concat((d.effetti || []).map((c) => `<option value="${esc(c.comando)}">!${esc(c.comando)} (${esc(c.tipo)})</option>`)).join('');
   const premi = d.premi || [];
   const lista = premi.length
-    ? premi.map((p) => `<li><span><strong>${esc(p.titolo)}</strong> <span class="suggerimento">${p.costo} punti${p.effetto ? ` · !${esc(p.effetto)}` : ''}${p.testo ? ' · 💬' : ''}</span></span> <a href="#" class="rimuovi-premio" data-id="${esc(p.reward_id)}" title="Elimina">✕</a></li>`).join('')
+    ? premi.map((p) => `<li><span><strong>${esc(p.titolo)}</strong> <span class="suggerimento">${p.costo} punti${p.effetto ? ` · !${esc(p.effetto)}` : ''}${p.testo ? ' ·' : ''}</span></span> <a href="#" class="rimuovi-premio" data-id="${esc(p.reward_id)}" title="Elimina">✕</a></li>`).join('')
     : '<li class="vuoto">Nessun premio ancora.</li>';
   box.innerHTML = `
     <label class="campo" for="premio-titolo">Nome del premio</label>
-    <input type="text" id="premio-titolo" class="campo-largo" placeholder="es. Airhorn 📣" maxlength="45">
+    <input type="text" id="premio-titolo" class="campo-largo" placeholder="es. Airhorn" maxlength="45">
     <div class="griglia-campi spazio-sopra">
       <div>
         <label class="campo" for="premio-costo">Costo (punti canale)</label>
@@ -3778,7 +3778,7 @@ async function caricaPremi() {
       </div>
     </div>
     <label class="campo spazio-sopra" for="premio-testo">Messaggio in chat <span class="suggerimento">(facoltativo, {user} = chi riscatta)</span></label>
-    <input type="text" id="premio-testo" class="campo-largo" placeholder="es. {user} ha lanciato l'airhorn! 📣" maxlength="300">
+    <input type="text" id="premio-testo" class="campo-largo" placeholder="es. {user} ha lanciato l'airhorn!" maxlength="300">
     <p class="spazio-sopra"><button class="btn" id="btn-premio-crea">Crea il premio</button></p>
     <h3>I tuoi premi</h3>
     <ul class="lista-voci" id="lista-premi">${lista}</ul>`;
@@ -3790,7 +3790,7 @@ async function caricaPremi() {
       testo: (document.getElementById('premio-testo').value || '').trim(),
     };
     await api('/api/streamer/premi', { method: 'POST', body });
-    toast('Premio creato 🎁 — lo trovi tra i punti canale su Twitch.');
+    toast('Premio creato — lo trovi tra i punti canale su Twitch.');
     caricaPremi();
   }));
   box.querySelectorAll('.rimuovi-premio').forEach((a) => a.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
@@ -3817,7 +3817,7 @@ function pannelloModuli() {
         <input type="text" id="qc-nome" class="campo-largo" placeholder="social" maxlength="24">
       </div>
       <label class="campo" for="qc-risposta">Risposta</label>
-      <textarea id="qc-risposta" placeholder="es. I miei social li trovi su andryxify.it/u/$canale ✨"></textarea>
+      <textarea id="qc-risposta" placeholder="es. I miei social li trovi su andryxify.it/u/$canale"></textarea>
       <div class="chip-vars" id="qc-chips">${chipsRapido}</div>
       <p class="suggerimento spazio-sopra">Puoi anche <strong>cambiare titolo e categoria</strong> dal comando:
       <code>$categoria($args)</code> (es. <code>!gioco fortnite</code>) e <code>$titolo($args)</code>. Il token sparisce dal messaggio, scrivi tu la conferma.
@@ -3872,28 +3872,28 @@ function modelloPronto(nome) {
     case 'saluto':
       return { id: null, nome: 'Saluto', attivo: true,
         trigger: { tipo: 'comando', comando: 'ciao', alias: [] }, condizioni: cond(),
-        azioni: [{ tipo: 'messaggio', testo: 'Ciao $user! 👋' }] };
+        azioni: [{ tipo: 'messaggio', testo: 'Ciao $user!' }] };
     case 'shoutout':
       // "!so giorgiottv" → "Andate a seguire @giorgiottv! Stava streammando <gioco>…"
       // $touser = il nome scritto dopo il comando; $giocotarget = l'ultimo gioco
       // del SUO canale (è legato a $touser: senza destinatario resta vuoto).
       return { id: null, nome: 'Shoutout', attivo: true,
         trigger: { tipo: 'comando', comando: 'so', alias: ['shoutout', 'sh'] }, condizioni: { ...cond(), tier: 'mod' },
-        azioni: [{ tipo: 'messaggio', testo: 'Andate tutti a seguire @$touser! 💜 Stava streammando $giocotarget 👉 twitch.tv/$touser' }] };
+        azioni: [{ tipo: 'messaggio', testo: 'Andate tutti a seguire @$touser! Stava streammando $giocotarget twitch.tv/$touser' }] };
     case 'timer':
       return { id: null, nome: 'Timer annuncio', attivo: true,
         trigger: { tipo: 'timer', minuti: 15, minMessaggi: 10 }, condizioni: cond(),
-        azioni: [{ tipo: 'messaggio', testo: 'Ricordati di seguire il canale! 💜' }] };
+        azioni: [{ tipo: 'messaggio', testo: 'Ricordati di seguire il canale!' }] };
     case 'social':
       return { id: null, nome: 'Social', attivo: true,
         trigger: { tipo: 'comando', comando: 'social', alias: [] }, condizioni: cond(),
-        azioni: [{ tipo: 'messaggio', testo: 'I miei social li trovi su andryxify.it/u/$canale ✨' }] };
+        azioni: [{ tipo: 'messaggio', testo: 'I miei social li trovi su andryxify.it/u/$canale' }] };
     case 'morti':
       return { id: null, nome: 'Contatore morti', attivo: true,
         trigger: { tipo: 'comando', comando: 'morte', alias: [] }, condizioni: { ...cond(), tier: 'mod' },
         azioni: [
           { tipo: 'contatore', nome: 'morti', op: 'incrementa', valore: 0 },
-          { tipo: 'messaggio', testo: 'Morti oggi: $count(morti) 💀' },
+          { tipo: 'messaggio', testo: 'Morti oggi: $count(morti)' },
         ] };
     case 'voce':
       return { id: null, nome: 'Comando vocale: clippa', attivo: true,
@@ -3981,7 +3981,7 @@ function pannelloGiochi() {
         <label class="campo-num">Slot: vincita coppia<input type="number" id="pt-slotCoppia" min="0" max="100000" value="${s.punti.slotCoppia}"></label>
         <label class="campo-num">Quanti in classifica<input type="number" id="pt-topN" min="3" max="10" value="${s.punti.topN}"></label>
       </div>
-      <p class="suggerimento">“Punti per messaggio” a 0 = nessun guadagno passivo dal chattare. Lo slot tris scala su questo valore (💎 pieno, 7️⃣ 75%, resto 40%).</p>
+      <p class="suggerimento">“Punti per messaggio” a 0 = nessun guadagno passivo dal chattare. Lo slot tris scala su questo valore (pieno, 7⃣ 75%, resto 40%).</p>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-punti">Salva punti</button></p>
     </div>
     <div class="carta">
@@ -4041,7 +4041,7 @@ function pannelloGiochi() {
     </div>
     <div class="carta">
       <h2>${_hIco(ICO.trofeo)}Classifica & VIP</h2>
-      ${stato.vipOk ? '' : `<p class="suggerimento">⚠️ Per assegnare i VIP serve un permesso in più (aggiunto dopo).
+      ${stato.vipOk ? '' : `<p class="suggerimento">Per assegnare i VIP serve un permesso in più (aggiunto dopo).
         <a class="btn secondario mini" href="/auth/permessi">Concedi i permessi</a></p>`}
       <div class="riga-check">
         <input type="checkbox" id="chk-premiovip" ${s.premioVip.attivo ? 'checked' : ''}>
@@ -4091,9 +4091,9 @@ function pannelloGiochi() {
       </div>
 
       <details class="spazio-sopra">
-        <summary style="cursor:pointer">📥 Importa citazioni (da x.la)</summary>
+        <summary style="cursor:pointer">Importa citazioni (da x.la)</summary>
         <p class="suggerimento">x.la disegna le frasi <strong>con JavaScript</strong>: copiare la pagina "alla cieca" (o dal link)
-        spesso prende solo il guscio vuoto («<em>Please enable JavaScript</em>»). Due modi che funzionano davvero 👇</p>
+        spesso prende solo il guscio vuoto («<em>Please enable JavaScript</em>»). Due modi che funzionano davvero</p>
 
         <p class="suggerimento" style="margin-bottom:.35rem"><strong>1) Bottone magico</strong> (consigliato). Trascina
         <a id="bm-xla" class="btn secondario" draggable="true" href="#" title="Trascinami nella barra dei preferiti del browser">${_bIco(ICO.segnaposto)}Prendi le quote da x.la</a>
@@ -4128,7 +4128,7 @@ function pannelloNotifiche() {
   const tkc = impostazioni().tiktok || {};
   const ytc = impostazioni().youtube || {};
   const igc = impostazioni().instagram || {};
-  const msgDefault = '🔴 {nome} è in diretta!\n\n{titolo}\n🎮 {gioco}\n\n👉 {link}';
+  const msgDefault = '{nome} è in diretta!\n\n{titolo}\n{gioco}\n\n{link}';
   return pannello('notifiche', `
     <div class="carta">
       <h2>${_hIco(ICO.megafono)}Avviso "sono in diretta" su Telegram</h2>
@@ -4208,7 +4208,7 @@ function pannelloNotifiche() {
       </div>
       <p class="suggerimento" id="tg-dm-stato">
         ${tg.dmCollegato
-          ? `🔗 In privato risponde <strong>solo a te</strong> (account <strong>${esc(tg.dmNome || 'te')}</strong>). <a href="#" id="btn-tg-dm-scollega">Scollega</a>`
+          ? `In privato risponde <strong>solo a te</strong> (account <strong>${esc(tg.dmNome || 'te')}</strong>). <a href="#" id="btn-tg-dm-scollega">Scollega</a>`
           : 'Per rispondere solo a te, lega una volta il tuo Telegram: <a href="#" id="btn-tg-dm-collega">genera un codice</a> e scrivi <code>/collega CODICE</code> al bot in privato. Finché non colleghi, in privato non risponde a nessuno.'}
       </p>
       <div id="tg-dm-codice"></div>
@@ -4246,7 +4246,7 @@ function pannelloNotifiche() {
       </div>
 
       <label class="campo spazio-sopra" for="txt-tk-messaggio">Messaggio dell'avviso TikTok</label>
-      <textarea id="txt-tk-messaggio" rows="4" placeholder="${esc('🎵 {nome} è in diretta su TikTok!\n\n👉 {link}')}">${esc(tkc.messaggio || '')}</textarea>
+      <textarea id="txt-tk-messaggio" rows="4" placeholder="${esc('{nome} è in diretta su TikTok!\n\n{link}')}">${esc(tkc.messaggio || '')}</textarea>
       <p class="suggerimento">Segnaposto: <code>{nome}</code> <code>{link}</code> <code>{username}</code>. Lascia vuoto per usare quello standard.
         Se hai attivato <em>«Fissa l'avviso…»</em> qui sopra, l'avviso TikTok viene fissato a live attiva ed eliminato quando stacchi.</p>
 
@@ -4254,7 +4254,7 @@ function pannelloNotifiche() {
         <input type="checkbox" id="chk-tk-attivo" ${tkc.attivo ? 'checked' : ''}>
         <label for="chk-tk-attivo">Rileva in automatico quando vado live su TikTok</label>
       </div>
-      <p class="suggerimento">⚠️ Il rilevamento automatico è <em>best-effort</em> (TikTok non ha un'API ufficiale):
+      <p class="suggerimento">Il rilevamento automatico è <em>best-effort</em> (TikTok non ha un'API ufficiale):
       può non essere sempre puntuale. Per la massima affidabilità usa il webhook qui sotto.</p>
 
       <div class="riga-check">
@@ -4296,7 +4296,7 @@ function pannelloNotifiche() {
       ${ytc.apiKeySet ? '<a href="#" id="btn-yt-apikey-rimuovi">Rimuovi la chiave</a>' : ''}</p>
 
       <label class="campo spazio-sopra" for="txt-yt-messaggio">Messaggio dell'avviso</label>
-      <textarea id="txt-yt-messaggio" rows="4" placeholder="${esc('📺 {nome} ha caricato un nuovo video su YouTube!\n\n{titolo}\n👉 {link}')}">${esc(ytc.messaggio || '')}</textarea>
+      <textarea id="txt-yt-messaggio" rows="4" placeholder="${esc('{nome} ha caricato un nuovo video su YouTube!\n\n{titolo}\n{link}')}">${esc(ytc.messaggio || '')}</textarea>
       <p class="suggerimento">Segnaposto: <code>{nome}</code> <code>{titolo}</code> <code>{link}</code>. Lascia vuoto per usare quello standard.</p>
 
       <div class="riga-check spazio-sopra">
@@ -4328,7 +4328,7 @@ function pannelloNotifiche() {
       e collegando il tuo account IG Business. ${igc.tokenSet ? '<a href="#" id="btn-ig-token-rimuovi">Rimuovi il token</a>' : ''}</p>
 
       <label class="campo spazio-sopra" for="txt-ig-messaggio">Messaggio dell'avviso</label>
-      <textarea id="txt-ig-messaggio" rows="4" placeholder="${esc('📸 {nome} ha un nuovo post su Instagram!\n\n{titolo}\n👉 {link}')}">${esc(igc.messaggio || '')}</textarea>
+      <textarea id="txt-ig-messaggio" rows="4" placeholder="${esc('{nome} ha un nuovo post su Instagram!\n\n{titolo}\n{link}')}">${esc(igc.messaggio || '')}</textarea>
       <p class="suggerimento">Segnaposto: <code>{nome}</code> <code>{titolo}</code> (didascalia) <code>{link}</code>.</p>
 
       <div class="riga-check spazio-sopra">
@@ -4367,7 +4367,7 @@ function pannelloRegole() {
       <h2>${_hIco(ICO.scudo)}Antispam automatico</h2>
       ${stato.moderazioneOk
         ? '<p class="suggerimento"><span class="badge verde">✓ permessi di moderazione attivi</span></p>'
-        : `<p class="suggerimento">⚠️ Per eliminare i messaggi servono i permessi di moderazione (aggiunti dopo).
+        : `<p class="suggerimento">Per eliminare i messaggi servono i permessi di moderazione (aggiunti dopo).
         <a class="btn secondario mini" href="/auth/permessi">Concedi i permessi</a></p>`}
       <p>Elimina da solo lo spam e, a chi insiste, dà un timeout crescente.
       <strong class="primo-piano">Mod, VIP e broadcaster sono sempre esenti.</strong></p>
@@ -4460,7 +4460,7 @@ function attivaPiattaforma() {
       await api('/api/streamer/toggle', { method: 'POST', body: { enabled: acceso } });
       stato.streamer.botEnabled = acceso;
       document.getElementById('etichetta-bot').textContent = acceso ? 'Bot acceso' : 'Bot spento';
-      toast(acceso ? 'Bot acceso! 💜' : 'Bot spento.');
+      toast(acceso ? 'Bot acceso!' : 'Bot spento.');
     } catch (e) {
       ev.target.checked = !acceso;
       toast('Errore: ' + e.message, 'errore');
@@ -4472,10 +4472,10 @@ function attivaPiattaforma() {
     if (promptInstall) {
       promptInstall.prompt();
       const scelta = await promptInstall.userChoice.catch(() => null);
-      if (scelta?.outcome === 'accepted') toast('App installata! 📱');
+      if (scelta?.outcome === 'accepted') toast('App installata!');
       promptInstall = null;
     } else if (window.matchMedia('(display-mode: standalone)').matches) {
-      toast('L\'app è già installata 💜');
+      toast('L\'app è già installata');
     } else {
       toast('Usa il menu del browser: “Installa app” / “Aggiungi a Home”.');
     }
@@ -4494,14 +4494,14 @@ function attivaPiattaforma() {
     const r = await api('/api/moderatori', { method: 'POST', body: { login } });
     document.getElementById('inp-mod-login').value = '';
     mostraInvito(r.invito);
-    toast('Invito creato: copia il link e mandaglielo 👍');
+    toast('Invito creato: copia il link e mandaglielo');
     caricaModeratori();
   }));
 
   // creazione di una passkey
   document.getElementById('btn-crea-passkey')?.addEventListener('click', (ev) => conErrore(async () => {
     const btn = ev.currentTarget; btn.disabled = true;
-    try { await creaPasskey(); toast('Passkey creata! Ora puoi rientrare senza pass 🔑'); caricaPasskey(); }
+    try { await creaPasskey(); toast('Passkey creata! Ora puoi rientrare senza pass'); caricaPasskey(); }
     catch (e) {
       if (e?.name === 'NotAllowedError') toast('Operazione annullata.', 'errore');
       else toast('Passkey non creata: ' + (e.message || e), 'errore');
@@ -4521,13 +4521,13 @@ function attivaPiattaforma() {
       const riassunto = typeof esito === 'object' && esito
         ? (esito.esito || esito.messaggio || `voci: ${esito.voci ?? esito.count ?? '?'}`)
         : String(esito);
-      out.textContent = '✅ Fatto! ' + riassunto;
-      toast('Profilo riletto, conoscenza aggiornata 💜');
+      out.textContent = 'Fatto! ' + riassunto;
+      toast('Profilo riletto, conoscenza aggiornata');
       // ricarica lo stato per aggiornare timestamp e contatore conoscenza
       stato = await api('/api/me');
       render();
     } catch (e) {
-      out.textContent = '❌ ' + e.message;
+      out.textContent = '' + e.message;
       toast('Pre-addestramento fallito: ' + e.message, 'errore');
       btn.disabled = false;
       btn.textContent = testoOrig;
@@ -4545,7 +4545,7 @@ function attivaPiattaforma() {
       iaLocale: document.getElementById('chk-ialocale').checked,
       internet: document.getElementById('chk-internet').checked,
       frasi: righe(document.getElementById('txt-frasi').value),
-    }, 'Personalità salvata 🎭');
+    }, 'Personalità salvata');
   }));
 
   // linee guida: aggiungi (l'elenco e i "✕" si gestiscono in caricaGuide)
@@ -4558,7 +4558,7 @@ function attivaPiattaforma() {
     await api('/api/streamer/guide', { method: 'POST', body: { testo: t, dove, con_chi } });
     if (inp) inp.value = '';
     caricaGuide();
-    toast('Regola aggiunta ✍️');
+    toast('Regola aggiunta');
   });
   document.getElementById('btn-guida-add')?.addEventListener('click', aggiungiGuida);
   document.getElementById('inp-guida')?.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); aggiungiGuida(); } });
@@ -4576,13 +4576,13 @@ function attivaPiattaforma() {
     await salvaImpostazioni({
       clipAuto: document.getElementById('chk-clip').checked,
       clipAutoSensibilita: Number(document.getElementById('rng-clip-sens').value),
-    }, 'Impostazioni clip salvate 🎬');
+    }, 'Impostazioni clip salvate');
   }));
 
   document.getElementById('btn-salva-regole')?.addEventListener('click', () => conErrore(async () => {
     await salvaImpostazioni({
       paroleVietate: righe(document.getElementById('txt-vietate').value),
-    }, 'Regole salvate 🚫');
+    }, 'Regole salvate');
   }));
 
   document.getElementById('btn-salva-antispam')?.addEventListener('click', () => conErrore(async () => {
@@ -4599,7 +4599,7 @@ function attivaPiattaforma() {
         timeoutRecidivi: document.getElementById('chk-as-timeout').checked,
         avvisa: document.getElementById('chk-as-avvisa').checked,
       },
-    }, 'Antispam salvato 🛡️');
+    }, 'Antispam salvato');
   }));
 
   document.getElementById('btn-salva-giochi')?.addEventListener('click', () => conErrore(async () => {
@@ -4607,7 +4607,7 @@ function attivaPiattaforma() {
       giochi: document.getElementById('chk-giochi').checked,
       nomeMonete: document.getElementById('inp-monete').value.trim(),
       promoSocial: document.getElementById('chk-promo').checked,
-    }, 'Giochi salvati 🎮');
+    }, 'Giochi salvati');
   }));
 
   // personalizzazione punti/classifica
@@ -4618,7 +4618,7 @@ function attivaPiattaforma() {
       trivia: v('pt-trivia'), duello: v('pt-duello'),
       slotCosto: v('pt-slotCosto'), slotVinci: v('pt-slotVinci'),
       slotCoppia: v('pt-slotCoppia'), topN: v('pt-topN'),
-    } }, 'Punti aggiornati 🏅');
+    } }, 'Punti aggiornati');
   }));
 
   // manche automatiche
@@ -4628,7 +4628,7 @@ function attivaPiattaforma() {
       minMin: Number(document.getElementById('mn-min').value),
       maxMin: Number(document.getElementById('mn-max').value),
       soloLive: document.getElementById('chk-manche-live').checked,
-    } }, 'Manche salvate 🎲');
+    } }, 'Manche salvate');
   }));
 
   // creatore di giochi: mostra i campi giusti in base al tipo
@@ -4655,13 +4655,13 @@ function attivaPiattaforma() {
     document.getElementById('gioco-nome').value = '';
     document.getElementById('gioco-domande').value = '';
     document.getElementById('gioco-parole').value = '';
-    toast('Gioco creato! 🕹️');
+    toast('Gioco creato!');
     caricaGiochi();
   }));
 
   // ponte "giochi del sito": solo l'interruttore (endpoint/segreto arrivano dal sito)
   document.getElementById('btn-salva-giochisito')?.addEventListener('click', () => conErrore(async () => {
-    await salvaImpostazioni({ giochiSito: { attivo: document.getElementById('chk-giochisito').checked } }, 'Giochi del sito salvati 🎯');
+    await salvaImpostazioni({ giochiSito: { attivo: document.getElementById('chk-giochisito').checked } }, 'Giochi del sito salvati');
   }));
 
   // citazioni: aggiunta dalla dashboard
@@ -4671,7 +4671,7 @@ function attivaPiattaforma() {
     if (!testo) { toast('Scrivi la citazione.', 'errore'); return; }
     const r = await api('/api/streamer/citazioni', { method: 'POST', body: { testo } });
     inp.value = '';
-    toast('Citazione #' + r.n + ' aggiunta 💬');
+    toast('Citazione #' + r.n + ' aggiunta');
     caricaCitazioni();
   }));
 
@@ -4686,8 +4686,8 @@ function attivaPiattaforma() {
       const esistenti = ta.value.trim();
       ta.value = (esistenti ? esistenti + '\n' : '') + (r.citazioni || []).join('\n');
       if (r.avviso) mostraAvvisoCita(r.avviso); else if (r.citazioni?.length) mostraAvvisoCita('');
-      toast(r.citazioni?.length ? `Trovate ${r.citazioni.length} possibili citazioni — controllale e importa 👀`
-        : (r.avviso ? 'Quel link disegna le frasi col JavaScript — usa il bottone magico 📌' : 'Nessuna citazione trovata in quel link 🤔'),
+      toast(r.citazioni?.length ? `Trovate ${r.citazioni.length} possibili citazioni — controllale e importa`
+        : (r.avviso ? 'Quel link disegna le frasi col JavaScript — usa il bottone magico' : 'Nessuna citazione trovata in quel link'),
         r.citazioni?.length ? 'ok' : 'errore');
     } finally { btn.disabled = false; btn.textContent = orig; }
   }));
@@ -4696,7 +4696,7 @@ function attivaPiattaforma() {
   const mostraAvvisoCita = (msg) => {
     const el = document.getElementById('import-cita-avviso');
     if (!el) return;
-    if (msg) { el.innerHTML = '⚠️ ' + msg; el.hidden = false; } else { el.hidden = true; el.textContent = ''; }
+    if (msg) { el.innerHTML = '' + msg; el.hidden = false; } else { el.hidden = true; el.textContent = ''; }
   };
 
   // il bookmarklet "Prendi le quote da x.la": lo si trascina nei preferiti
@@ -4704,10 +4704,10 @@ function attivaPiattaforma() {
   if (bmXla) {
     bmXla.href = bookmarkletXla;
     // cliccato QUI (sul bot) non serve: va aperto su x.la. Spieghiamo invece di navigare.
-    bmXla.addEventListener('click', (e) => { e.preventDefault(); toast('Trascinami nella barra dei preferiti, poi cliccami mentre sei sulla tua pagina x.la 🙂'); });
+    bmXla.addEventListener('click', (e) => { e.preventDefault(); toast('Trascinami nella barra dei preferiti, poi cliccami mentre sei sulla tua pagina x.la'); });
   }
   document.getElementById('bm-xla-copia')?.addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText(bookmarkletXla); toast('Codice copiato. Crea un preferito e incollalo come indirizzo 📌'); }
+    try { await navigator.clipboard.writeText(bookmarkletXla); toast('Codice copiato. Crea un preferito e incollalo come indirizzo'); }
     catch { window.prompt('Copia con Ctrl+C, poi crea un preferito con questo indirizzo:', bookmarkletXla); }
   });
 
@@ -4720,7 +4720,7 @@ function attivaPiattaforma() {
     const citazioni = a.citazioni || [];
     if (!citazioni.length) {
       if (a.avviso) mostraAvvisoCita(a.avviso);
-      toast(a.avviso ? 'Hai incollato il guscio di x.la, non le frasi — leggi qui sotto 👇' : 'Non ho riconosciuto nessuna citazione 🤔', 'errore');
+      toast(a.avviso ? 'Hai incollato il guscio di x.la, non le frasi — leggi qui sotto' : 'Non ho riconosciuto nessuna citazione', 'errore');
       return;
     }
     mostraAvvisoCita('');
@@ -4729,7 +4729,7 @@ function attivaPiattaforma() {
     const r = await api('/api/streamer/citazioni/importa', { method: 'POST', body: { citazioni } });
     document.getElementById('txt-import-citazioni').value = '';
     if (esito) esito.textContent = `${r.aggiunte} importate (${conAutore} con autore, ${conData} con data)` + (r.saltate ? ` · ${r.saltate} doppioni` : '');
-    toast(`Importate ${r.aggiunte} citazioni con nome e data 💬`);
+    toast(`Importate ${r.aggiunte} citazioni con nome e data`);
     caricaCitazioni();
   }));
 
@@ -4742,12 +4742,12 @@ function attivaPiattaforma() {
         periodo: document.getElementById('sel-premio-periodo').value === 'mese' ? 'mese' : 'settimana',
         quanti,
       },
-    }, 'Premio VIP salvato 🏆');
+    }, 'Premio VIP salvato');
   }));
 
   // modalità di attivazione (24/7 · quando live · manuale)
   document.getElementById('btn-salva-modalita')?.addEventListener('click', () => conErrore(async () => {
-    await salvaImpostazioni({ modalita: document.getElementById('sel-modalita').value }, 'Modalità salvata ⏱️');
+    await salvaImpostazioni({ modalita: document.getElementById('sel-modalita').value }, 'Modalità salvata ⏱');
   }));
 
   // --- Notifiche Telegram ---
@@ -4757,7 +4757,7 @@ function attivaPiattaforma() {
     const token = (inp?.value || '').trim();
     if (!token) { toast('Incolla il token del bot (te lo dà @BotFather).', 'errore'); return; }
     const r = await api('/api/streamer/telegram/token', { method: 'POST', body: { token } });
-    toast('Bot collegato: @' + (r.botUsername || '?') + ' ✅');
+    toast('Bot collegato: @' + (r.botUsername || '?') + '');
     stato = await api('/api/me'); render();
   }));
 
@@ -4773,13 +4773,13 @@ function attivaPiattaforma() {
       messaggio: document.getElementById('txt-tg-messaggio').value,
       pinLive: document.getElementById('chk-tg-pin')?.checked ?? true,
     } });
-    toast('Notifiche Telegram salvate 📣');
+    toast('Notifiche Telegram salvate');
     stato = await api('/api/me');   // aggiorna lo stato senza perdere la scheda
   }));
 
   document.getElementById('btn-tg-prova')?.addEventListener('click', () => conErrore(async () => {
     await api('/api/streamer/telegram/prova', { method: 'POST', body: {} });
-    toast('Messaggio di prova inviato nel gruppo 🧪');
+    toast('Messaggio di prova inviato nel gruppo');
   }));
 
   document.getElementById('btn-tg-scollega')?.addEventListener('click', () => conErrore(async () => {
@@ -4794,7 +4794,7 @@ function attivaPiattaforma() {
     const chk = ev.target;
     conErrore(async () => {
       await api('/api/streamer/telegram/interattivo', { method: 'POST', body: { attivo: chk.checked } });
-      toast(chk.checked ? 'Bot interattivo attivato 🤖' : 'Bot interattivo spento.');
+      toast(chk.checked ? 'Bot interattivo attivato' : 'Bot interattivo spento.');
       stato = await api('/api/me'); render();
     }).catch(() => { chk.checked = !chk.checked; });   // in caso di errore, rimetti lo switch
   });
@@ -4817,7 +4817,7 @@ function attivaPiattaforma() {
   }); });
   document.getElementById('chk-tg-proattiva')?.addEventListener('change', (ev) => conErrore(async () => {
     await salvaImpostazioni({ proattivoTg: ev.target.checked },
-      ev.target.checked ? 'Ok, ogni tanto ti scriverò io 💜' : 'Non ti scriverò più per prima.');
+      ev.target.checked ? 'Ok, ogni tanto ti scriverò io' : 'Non ti scriverò più per prima.');
   }));
 
   // --- Auguri di compleanno (delega sul contenitore, ricaricato via JS) ---
@@ -4827,7 +4827,7 @@ function attivaPiattaforma() {
         attivo: document.getElementById('chk-compleanni-attivo')?.checked,
         messaggio: document.getElementById('txt-compleanni-msg')?.value || '',
       } });
-      toast('Auguri di compleanno salvati 🎂');
+      toast('Auguri di compleanno salvati');
       caricaCompleanni();
     });
     if (ev.target.closest('#btn-comple-aggiungi')) return conErrore(async () => {
@@ -4836,12 +4836,12 @@ function attivaPiattaforma() {
         giorno: document.getElementById('inp-comple-giorno')?.value || '',
         mese: document.getElementById('inp-comple-mese')?.value || '',
       } });
-      toast('Compleanno aggiunto 🎂');
+      toast('Compleanno aggiunto');
       caricaCompleanni();
     });
     if (ev.target.closest('#btn-membri-aggiorna')) return conErrore(async () => {
       const r = await api('/api/streamer/telegram/membri/aggiorna', { method: 'POST', body: {} });
-      toast(`Caricati ${r.aggiunti || 0} amministratori 👥`);
+      toast(`Caricati ${r.aggiunti || 0} amministratori`);
       caricaCompleanni();
     });
     const add = ev.target.closest('[data-membro-add]');
@@ -4854,7 +4854,7 @@ function attivaPiattaforma() {
           giorno: riga.querySelector('.mem-gg')?.value || '',
           mese: riga.querySelector('.mem-mm')?.value || '',
         } });
-        toast('Compleanno aggiunto 🎂 (verrà taggato)');
+        toast('Compleanno aggiunto (verrà taggato)');
         caricaCompleanni();
       });
     }
@@ -4874,12 +4874,12 @@ function attivaPiattaforma() {
         annunciaChat: document.getElementById('chk-tk-chat').checked,
         messaggio: document.getElementById('txt-tk-messaggio')?.value || '',
       },
-    }, 'TikTok salvato 🎵');
+    }, 'TikTok salvato');
   }));
 
   document.getElementById('btn-tk-prova')?.addEventListener('click', () => conErrore(async () => {
     await api('/api/streamer/tiktok/prova', { method: 'POST', body: {} });
-    toast('Prova TikTok inviata nel gruppo Telegram 🎵');
+    toast('Prova TikTok inviata nel gruppo Telegram');
   }));
 
   document.getElementById('btn-yt-salva')?.addEventListener('click', () => conErrore(async () => {
@@ -4891,7 +4891,7 @@ function attivaPiattaforma() {
     };
     const ak = (document.getElementById('inp-yt-apikey')?.value || '').trim();
     if (ak) yt.apiKey = ak;   // vuoto = mantieni quella salvata
-    await salvaImpostazioni({ youtube: yt }, 'YouTube salvato 📺');
+    await salvaImpostazioni({ youtube: yt }, 'YouTube salvato');
   }));
   document.getElementById('btn-yt-apikey-rimuovi')?.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
     await salvaImpostazioni({ youtube: { canale: (document.getElementById('inp-yt-canale').value || '').trim(), apiKeyClear: true } }, 'Chiave rimossa.');
@@ -4907,7 +4907,7 @@ function attivaPiattaforma() {
     };
     const tk = (document.getElementById('inp-ig-token')?.value || '').trim();
     if (tk) ig.token = tk;
-    await salvaImpostazioni({ instagram: ig }, 'Instagram salvato 📸');
+    await salvaImpostazioni({ instagram: ig }, 'Instagram salvato');
   }));
   document.getElementById('btn-ig-token-rimuovi')?.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
     await salvaImpostazioni({ instagram: { userId: (document.getElementById('inp-ig-userid').value || '').trim(), tokenClear: true } }, 'Token rimosso.');
@@ -4920,7 +4920,7 @@ function attivaPiattaforma() {
       userId: (document.getElementById('inp-ig-userid').value || '').trim(),
       token: (document.getElementById('inp-ig-token').value || '').trim(),
     } });
-    if (esito) esito.innerHTML = r && r.ok ? '🟢 Funziona!' : `🔴 ${esc((r && r.motivo) || 'errore')}`;
+    if (esito) esito.innerHTML = r && r.ok ? 'Funziona!' : `${esc((r && r.motivo) || 'errore')}`;
   }));
 
   // Comando rapido: inserimento variabili (senza perdere il focus) + crea al volo
@@ -4953,7 +4953,7 @@ function attivaPiattaforma() {
     } });
     document.getElementById('qc-nome').value = '';
     document.getElementById('qc-risposta').value = '';
-    toast('Comando !' + comando + ' creato ⚡');
+    toast('Comando !' + comando + ' creato');
     caricaModuli();
   }));
 
@@ -4969,7 +4969,7 @@ function attivaPiattaforma() {
     const et = document.getElementById('etichetta-ascolto');
     conErrore(async () => {
       try {
-        await salvaImpostazioni({ ascoltoLive: acceso }, acceso ? 'Ascolto live acceso 🎧' : 'Ascolto live spento.');
+        await salvaImpostazioni({ ascoltoLive: acceso }, acceso ? 'Ascolto live acceso' : 'Ascolto live spento.');
         if (et) et.textContent = acceso ? 'Ascolto acceso' : 'Ascolto spento';
       } catch (e) {
         ev.target.checked = !acceso; // ripristino in caso di errore
@@ -4988,7 +4988,7 @@ function attivaPiattaforma() {
   document.getElementById('btn-salva-ascolto')?.addEventListener('click', () => conErrore(async () => {
     const ascoltoLive = document.getElementById('toggle-ascolto').checked;
     const ascoltoSensibilita = Number(document.getElementById('rng-ascolto').value) || 5;
-    await salvaImpostazioni({ ascoltoLive, ascoltoSensibilita }, 'Ascolto live salvato 🎧');
+    await salvaImpostazioni({ ascoltoLive, ascoltoSensibilita }, 'Ascolto live salvato');
     const et = document.getElementById('etichetta-ascolto');
     if (et) et.textContent = ascoltoLive ? 'Ascolto acceso' : 'Ascolto spento';
   }));
@@ -5006,7 +5006,7 @@ function attivaPiattaforma() {
     const attivo = document.getElementById('chk-categoria').checked;
     const trigger = (document.getElementById('inp-cat-trigger').value || '').trim().toLowerCase() || 'categoria';
     const annuncia = document.getElementById('chk-cat-annuncia').checked;
-    await salvaImpostazioni({ cambioCategoria: { attivo, trigger, annuncia } }, 'Comando categoria salvato 🎮');
+    await salvaImpostazioni({ cambioCategoria: { attivo, trigger, annuncia } }, 'Comando categoria salvato');
     const et = document.getElementById('etichetta-categoria');
     if (et) et.textContent = attivo ? 'Attivo' : 'Spento';
   }));
@@ -5024,7 +5024,7 @@ function attivaPiattaforma() {
     const attivo = document.getElementById('chk-titolo').checked;
     const trigger = (document.getElementById('inp-tit-trigger').value || '').trim().toLowerCase() || 'titolo';
     const annuncia = document.getElementById('chk-tit-annuncia').checked;
-    await salvaImpostazioni({ cambioTitolo: { attivo, trigger, annuncia } }, 'Comando titolo salvato 📝');
+    await salvaImpostazioni({ cambioTitolo: { attivo, trigger, annuncia } }, 'Comando titolo salvato');
     const et = document.getElementById('etichetta-titolo');
     if (et) et.textContent = attivo ? 'Attivo' : 'Spento';
   }));
@@ -5035,7 +5035,7 @@ function attivaPiattaforma() {
     const et = document.getElementById('etichetta-impara');
     conErrore(async () => {
       try {
-        await salvaImpostazioni({ imparaVoce: { attivo: acceso } }, acceso ? 'Ora imparo mentre parli 🎧' : 'Ascolto per imparare spento.');
+        await salvaImpostazioni({ imparaVoce: { attivo: acceso } }, acceso ? 'Ora imparo mentre parli' : 'Ascolto per imparare spento.');
         if (et) et.textContent = acceso ? 'Attivo' : 'Spento';
       } catch (e) { ev.target.checked = !acceso; throw e; }
     });
@@ -5049,7 +5049,7 @@ function attivaPiattaforma() {
     await api('/api/streamer/knowledge', { method: 'POST', body: { domanda, risposta } });
     document.getElementById('inp-domanda').value = '';
     document.getElementById('inp-risposta').value = '';
-    toast('Il bot ha imparato qualcosa di nuovo ✍️');
+    toast('Il bot ha imparato qualcosa di nuovo');
     caricaConoscenza();
   }));
 
@@ -5059,7 +5059,7 @@ function attivaPiattaforma() {
     if (!inp?.value) { toast('URL non ancora pronto, riprova tra un attimo.', 'errore'); return; }
     try {
       await navigator.clipboard.writeText(inp.value);
-      toast('URL dell\'overlay copiato 📋');
+      toast('URL dell\'overlay copiato');
     } catch {
       inp.select();
       try { document.execCommand('copy'); toast('URL selezionato: premi Ctrl+C'); }
@@ -5251,7 +5251,7 @@ function gestisciClicEditor(ev) {
     conErrore(async () => {
       const id = await salvaModuloCorrente();
       if (id == null) return;
-      toast('Modulo salvato 💜');
+      toast('Modulo salvato');
       moduloInModifica = null;
       const cont = document.getElementById('editor-modulo');
       if (cont) cont.innerHTML = '';
@@ -5265,7 +5265,7 @@ function gestisciClicEditor(ev) {
       const id = await salvaModuloCorrente();
       if (id == null) return;
       await api('/api/streamer/moduli/' + encodeURIComponent(id) + '/prova', { method: 'POST', body: {} });
-      toast('Salvato e provato: guarda chat/overlay 👀');
+      toast('Salvato e provato: guarda chat/overlay');
       caricaModuli(); // aggiorna la lista, l'editor resta aperto per continuare a modificare
     });
   }
@@ -5313,7 +5313,7 @@ async function caricaCompleanni() {
   try { d = await api('/api/streamer/telegram/compleanni'); }
   catch { box.innerHTML = '<p class="vuoto">Impossibile caricare.</p>'; return; }
   const lista = (d.lista || []).map((c) => `
-    <li><div class="testo-voce"><span class="domanda">🎂 ${esc(c.nome || '—')}</span>
+    <li><div class="testo-voce"><span class="domanda">${esc(c.nome || '—')}</span>
       <span class="meta"> — ${fmtGiornoMese(c.giorno, c.mese)}${c.manuale ? ' · aggiunto a mano' : ''}</span></div>
       <button class="btn pericolo mini" data-comple-rimuovi="${esc(c.id)}">Rimuovi</button></li>`).join('');
   const roster = (d.membri || []).map((m) => `
@@ -5329,7 +5329,7 @@ async function caricaCompleanni() {
       <span class="etichetta-stato">Auguri automatici ${d.attivo ? 'accesi' : 'spenti'}</span>
     </div>
     <label class="campo spazio-sopra" for="txt-compleanni-msg">Messaggio di auguri</label>
-    <textarea id="txt-compleanni-msg" rows="3" placeholder="🎂 Tanti auguri {menzione}! 🎉">${esc(d.messaggio || '')}</textarea>
+    <textarea id="txt-compleanni-msg" rows="3" placeholder="Tanti auguri {menzione}!">${esc(d.messaggio || '')}</textarea>
     <p class="suggerimento">Segnaposto: <code>{menzione}</code> (tag del festeggiato) <code>{nome}</code>. Vuoto = messaggio standard.</p>
     <p><button class="btn" id="btn-compleanni-salva">Salva impostazioni</button></p>
 
@@ -5363,7 +5363,7 @@ async function caricaConoscenza() {
   try {
     const voci = await api('/api/streamer/knowledge');
     if (!voci.length) { ul.innerHTML = '<li class="vuoto">Il bot non sa ancora niente: insegnagli qualcosa qui sopra!</li>'; return; }
-    const badge = { auto: '🌐 dal sito', manuale: '✍️ tua', chat: '💬 dalla chat' };
+    const badge = { auto: 'dal sito', manuale: 'tua', chat: 'dalla chat' };
     ul.innerHTML = voci.map((v) => `
       <li>
         <div class="testo-voce">
@@ -5413,7 +5413,7 @@ async function caricaGiochi() {
   if (!ul) return;
   try {
     const giochi = await api('/api/streamer/giochi');
-    const et = { trivia: '🧠 trivia', parola: '⚡ parola' };
+    const et = { trivia: 'trivia', parola: 'parola' };
     ul.innerHTML = giochi.length
       ? giochi.map((g) => {
           const dett = g.tipo === 'trivia' ? `${(g.config.domande || []).length} domande` : `${(g.config.parole || []).length} parole`;
@@ -5472,7 +5472,7 @@ async function caricaClassifica() {
             return `
           <li>
             <div class="testo-voce">
-              <span class="domanda">👑 ${esc(v.display || v.user)}</span>
+              <span class="domanda">${esc(v.display || v.user)}</span>
               <span class="risposta">${esc(quando)}${v.motivo ? ' · ' + esc(v.motivo) : ''}</span>
             </div>
           </li>`;
@@ -5485,7 +5485,7 @@ async function caricaClassifica() {
   }
 }
 
-function medaglia(i) { return ['🥇', '🥈', '🥉'][i] || `${i + 1}°`; }
+function medaglia(i) { return ['', '', ''][i] || `${i + 1}°`; }
 
 async function caricaCitazioni() {
   const ul = document.getElementById('lista-citazioni');
@@ -5501,7 +5501,7 @@ async function caricaCitazioni() {
           <button class="btn secondario mini" data-cita-rimuovi="${q.n}">Rimuovi</button>
         </li>`;
       }).join('')
-      : '<li class="vuoto">Ancora nessuna citazione. Aggiungine una qui sopra o con !cita aggiungi in chat 💬</li>';
+      : '<li class="vuoto">Ancora nessuna citazione. Aggiungine una qui sopra o con !cita aggiungi in chat</li>';
     ul.onclick = (ev) => {
       const b = ev.target.closest('[data-cita-rimuovi]');
       if (!b) return;
@@ -5548,13 +5548,13 @@ async function caricaEffetti() {
       if (prova) {
         conErrore(async () => {
           await api('/api/streamer/effetti/test', { method: 'POST', body: { comando: prova.dataset.prova } });
-          toast('Effetto inviato all\'overlay ✨ (aprilo per vederlo)');
+          toast('Effetto inviato all\'overlay (aprilo per vederlo)');
         });
       } else if (del) {
         conErrore(async () => {
           if (!confirm('Eliminare questo effetto? Il file verrà cancellato.')) return;
           await api('/api/streamer/effetti/' + del.dataset.eliminaEff, { method: 'DELETE' });
-          toast('Effetto eliminato 🗑️');
+          toast('Effetto eliminato');
           caricaEffetti();
         });
       } else if (pub) {
@@ -5584,7 +5584,7 @@ function libItemHtml(it) {
   let media;
   if (it.tipo === 'immagine') media = `<img class="lib-media" src="${esc(it.url)}" loading="lazy" alt="">`;
   else if (it.tipo === 'video') media = `<video class="lib-media" src="${esc(it.url)}" muted playsinline loop preload="metadata"></video>`;
-  else media = '<div class="lib-media lib-audio">🔊</div>';
+  else media = '<div class="lib-media lib-audio"></div>';
   const audio = (it.tipo === 'audio' || it.combo)
     ? `<button type="button" class="btn secondario mini lib-play" data-audio="${esc(it.suonoUrl || it.url)}" title="Ascolta">▶</button>` : '';
   return `<div class="lib-card" data-id="${it.id}">
@@ -5612,7 +5612,7 @@ async function caricaLibreria() {
 }
 
 async function importaLibreria(id, btn) {
-  if (DEMO) { toast('In demo non si importa 😊 — accedi per farlo davvero.'); return; }
+  if (DEMO) { toast('In demo non si importa — accedi per farlo davvero.'); return; }
   btn.disabled = true;
   const t = btn.textContent;
   btn.textContent = 'Aggiungo…';
@@ -5630,7 +5630,7 @@ async function importaLibreria(id, btn) {
 
 // invio multipart del form di caricamento effetto (non passa da api(): usa FormData)
 async function caricaEffettoUpload(ev) {
-  if (DEMO) { toast('In demo non si caricano file 😊 — accedi per farlo davvero.'); return; }
+  if (DEMO) { toast('In demo non si caricano file — accedi per farlo davvero.'); return; }
   const btn = ev.currentTarget;
   const out = document.getElementById('esito-effetto');
   const fileInput = document.getElementById('eff-file');
@@ -5673,7 +5673,7 @@ async function caricaEffettoUpload(ev) {
     caricaEffetti();
     if (pubblico) caricaLibreria();     // riflette subito la nuova condivisione
   } catch (e) {
-    if (out) out.textContent = '❌ ' + e.message;
+    if (out) out.textContent = '' + e.message;
     toast('Caricamento fallito: ' + e.message, 'errore');
   } finally {
     btn.disabled = false;
@@ -5686,7 +5686,7 @@ async function caricaEffettoUpload(ev) {
 // la libreria e seleziona il nuovo media nel menu del blocco giusto. Così lo
 // streamer mette quello che vuole senza passare dalla scheda Effetti.
 async function caricaMediaAlert(kind, slot, file) {
-  if (DEMO) { toast('In demo non si caricano file 😊 — accedi per farlo davvero.'); return; }
+  if (DEMO) { toast('In demo non si caricano file — accedi per farlo davvero.'); return; }
   const blocco = document.querySelector(`.alert-blocco[data-alert="${kind}"]`);
   const btn = blocco?.querySelector(`.al-btn-up[data-slot="${slot}"]`);
   const esito = btn?.parentElement?.querySelector('.al-up-esito');
@@ -5710,7 +5710,7 @@ async function caricaMediaAlert(kind, slot, file) {
     if (esito) esito.textContent = '✓ ' + (slot === 'suono' ? 'suono' : (dati.tipo || 'media')) + ' caricato e assegnato';
     toast('Caricato e assegnato all\'alert!');
   } catch (e) {
-    if (esito) esito.textContent = '❌ ' + e.message;
+    if (esito) esito.textContent = '' + e.message;
     toast('Caricamento fallito: ' + e.message, 'errore');
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = testoOrig; }
@@ -5775,7 +5775,7 @@ async function caricaStatistiche() {
     animaNumeri(griglia);   // conteggio animato da 0 al valore
     chatters.innerHTML = s.topChatters.length
       ? s.topChatters.map((c, i) => `
-          <li><div class="testo-voce"><span class="domanda">${['🥇', '🥈', '🥉', '4°', '5°'][i] || ''} ${esc(c.user)}</span>
+          <li><div class="testo-voce"><span class="domanda">${['', '', '', '4°', '5°'][i] || ''} ${esc(c.user)}</span>
           <span class="meta"> — ${c.c} messaggi</span></div></li>`).join('')
       : '<li class="vuoto">Ancora nessun chatter registrato.</li>';
   } catch (e) {
@@ -5799,7 +5799,7 @@ async function caricaMemoria(mostraToast = false) {
         ? m.fatti.map((f) => `<li><div class="testo-voce"><span class="domanda">${esc(f.key)}</span>
             <span class="risposta"> ${esc(String(f.value).slice(0, 200))}</span></div></li>`).join('')
         : '<li class="vuoto">Nessun fatto memorizzato.</li>'}</ul>`;
-    if (mostraToast) toast('Memoria caricata 🧠');
+    if (mostraToast) toast('Memoria caricata');
   } catch (e) {
     box.innerHTML = `<p class="vuoto">Errore: ${esc(e.message)}</p>`;
   }
@@ -5955,7 +5955,7 @@ function disegnaListaModuli() {
   if (!ul) return;
   const moduli = datiModuli?.moduli || [];
   if (!moduli.length) {
-    ul.innerHTML = '<li class="vuoto">Nessun modulo ancora: parti da un modello qui sopra 👆</li>';
+    ul.innerHTML = '<li class="vuoto">Nessun modulo ancora: parti da un modello qui sopra</li>';
     return;
   }
   ul.innerHTML = moduli.map((m) => `
@@ -5986,7 +5986,7 @@ function disegnaListaModuli() {
         await api('/api/streamer/moduli/' + encodeURIComponent(id) + '/toggle', { method: 'POST', body: { attivo: acceso } });
         const m = (datiModuli.moduli || []).find((x) => String(x.id) === String(id));
         if (m) m.attivo = acceso;
-        toast(acceso ? 'Modulo acceso 💜' : 'Modulo spento.');
+        toast(acceso ? 'Modulo acceso' : 'Modulo spento.');
       } catch (e) {
         tog.checked = !acceso;
         throw e;
@@ -6002,7 +6002,7 @@ function disegnaListaModuli() {
     if (prova) {
       conErrore(async () => {
         await api('/api/streamer/moduli/' + encodeURIComponent(prova.dataset.provaModulo) + '/prova', { method: 'POST', body: {} });
-        toast('Modulo provato: guarda chat/overlay 👀');
+        toast('Modulo provato: guarda chat/overlay');
       });
     } else if (modifica) {
       const m = (datiModuli.moduli || []).find((x) => String(x.id) === String(modifica.dataset.modificaModulo));
@@ -6011,7 +6011,7 @@ function disegnaListaModuli() {
       conErrore(async () => {
         if (!confirm('Eliminare questo modulo? Non si torna indietro.')) return;
         await api('/api/streamer/moduli/' + encodeURIComponent(elimina.dataset.eliminaModulo), { method: 'DELETE' });
-        toast('Modulo eliminato 🗑️');
+        toast('Modulo eliminato');
         caricaModuli();
       });
     }
@@ -6214,7 +6214,7 @@ function disegnaCampiAzione(a) {
   switch (tipo) {
     case 'messaggio':
       return `
-        <textarea data-campo="testo" data-var-target placeholder="es. Ciao $user! 👋">${esc(a.testo || '')}</textarea>
+        <textarea data-campo="testo" data-var-target placeholder="es. Ciao $user!">${esc(a.testo || '')}</textarea>
         ${pillole}`;
     case 'effetto': {
       const eff = datiModuli?.effettiDisponibili || [];
@@ -6279,7 +6279,7 @@ function disegnaCampiAzione(a) {
     case 'titolo':
       return `
         <label class="campo">Nuovo titolo (puoi usare le variabili, es. <code>$gioco</code>, <code>$args</code>)</label>
-        <textarea data-campo="testo" data-var-target placeholder="es. In diretta: $gioco con la community! 🎮">${esc(a.testo || '')}</textarea>
+        <textarea data-campo="testo" data-var-target placeholder="es. In diretta: $gioco con la community!">${esc(a.testo || '')}</textarea>
         ${pillole}
         <div class="riga-check spazio-sopra">
           <input type="checkbox" data-campo="annuncia" ${a.annuncia !== false ? 'checked' : ''}>
@@ -6456,9 +6456,9 @@ function disegnaConnettori() {
       apiKeyVisibile = !apiKeyVisibile;
       disegnaConnettori();
     } else if (azione === 'copia') {
-      copiaTesto(datiModuli?.apiKey || '', 'Chiave copiata 📋');
+      copiaTesto(datiModuli?.apiKey || '', 'Chiave copiata');
     } else if (azione === 'copia-url') {
-      copiaTesto(datiModuli?.apiUrl || '', 'URL copiato 📋');
+      copiaTesto(datiModuli?.apiUrl || '', 'URL copiato');
     } else if (azione === 'rigenera') {
       conErrore(async () => {
         const nuova = !!datiModuli?.apiKey;
@@ -6467,7 +6467,7 @@ function disegnaConnettori() {
         if (datiModuli) datiModuli.apiKey = res.apiKey;
         apiKeyVisibile = true;
         disegnaConnettori();
-        toast(nuova ? 'Nuova chiave generata 🔑' : 'Chiave creata 🔑');
+        toast(nuova ? 'Nuova chiave generata' : 'Chiave creata');
       });
     }
   };
@@ -6569,12 +6569,12 @@ async function aggiornaRetePanoramica(box, primo) {
       <div><div style="${num}">${N(Math.round((d.fiducia || 0) * 100), '%')}</div><small>fiducia</small></div>
       <div><div style="${num}">${N(Math.round((d.curiosita || 0) * 100), '%')}</div><small>curiosità</small></div>
     </div>
-    ${d.pensiero ? `<p class="spazio-sopra">💭 <em>${esc(d.pensiero)}</em></p>` : ''}
-    ${d.ragiona ? `<p class="suggerimento spazio-sopra">🧩 Cervello logico (non statistico): <strong>${d.ragiona.fatti || 0}</strong> fatti,
-      <strong>${d.ragiona.dedotti || 0}</strong> dedotti da sé ragionando${(d.ragiona.contraddizioni || []).length ? ` · ⚠️ ${d.ragiona.contraddizioni.length} incoerenze notate` : ''}.</p>` : ''}
+    ${d.pensiero ? `<p class="spazio-sopra"><em>${esc(d.pensiero)}</em></p>` : ''}
+    ${d.ragiona ? `<p class="suggerimento spazio-sopra">Cervello logico (non statistico): <strong>${d.ragiona.fatti || 0}</strong> fatti,
+      <strong>${d.ragiona.dedotti || 0}</strong> dedotti da sé ragionando${(d.ragiona.contraddizioni || []).length ? ` · ${d.ragiona.contraddizioni.length} incoerenze notate` : ''}.</p>` : ''}
     ${nonSo.length
       ? `<p class="suggerimento spazio-sopra">Ultime cose che <strong>non sapeva</strong> (le imparerà col tempo): ${nonSo.map((t) => `«${esc(t)}»`).join(' · ')}</p>`
-      : '<p class="suggerimento spazio-sopra">Nessuna lacuna recente: sta rispondendo bene. 🙂</p>'}
+      : '<p class="suggerimento spazio-sopra">Nessuna lacuna recente: sta rispondendo bene.</p>'}
     <p class="spazio-sopra"><button class="btn secondario mini" id="btn-forgia">${_bIco(ICO.libro)}Studia ora</button>
       &nbsp;<a class="suggerimento" href="/api/streamer/corpus" download>${_bIco(ICO.pacco)}Scarica il dataset della sua mente</a></p>
     <p class="suggerimento">«Studia ora»: cerca da sé le sue lacune online, ci ragiona su e le distilla nel suo motore.
@@ -6583,7 +6583,7 @@ async function aggiornaRetePanoramica(box, primo) {
   if (primo) animaNumeri(box);   // conta su dallo 0 solo alla prima comparsa (non a ogni refresh)
   document.getElementById('btn-forgia')?.addEventListener('click', () => conErrore(async () => {
     await api('/api/streamer/forgia', { method: 'POST', body: {} });
-    toast('Ci sto lavorando 📚 — studio le mie lacune e distillo. Torna tra poco.');
+    toast('Ci sto lavorando — studio le mie lacune e distillo. Torna tra poco.');
   }));
 }
 
@@ -6594,15 +6594,15 @@ async function caricaLLM() {
   let d;
   try { d = await api('/api/admin/llm'); } catch (e) { box.innerHTML = `<p class="vuoto">Errore: ${esc(e.message)}</p>`; return; }
   const s = d.stato || {};
-  const statoTxt = { pronto: '🟢 pronto', carico: '🟡 sto caricando…', spento: '🔴 spento', errore: '🔴 errore' }[s.stato] || ('⚪ ' + (s.stato || 'sconosciuto'));
+  const statoTxt = { pronto: 'pronto', carico: 'sto caricando…', spento: 'spento', errore: 'errore' }[s.stato] || ('' + (s.stato || 'sconosciuto'));
   const scelta = d.scelta || {};
   const selVal = scelta.url ? 'url' : (scelta.modello || 'auto');
   const opts = (d.modelli || []).map((m) => `<option value="${esc(m.id)}" ${selVal === m.id ? 'selected' : ''}>${esc(m.nome)}</option>`).join('');
   const ep = scelta.endpoint || {};
   const eps = s.endpoint || {};
   const epBadge = eps.configurato
-    ? (eps.ok === true ? '🟢 collegato' : eps.ok === false ? '🔴 non risponde' : '🟡 da provare')
-    : '⚪ non collegato';
+    ? (eps.ok === true ? 'collegato' : eps.ok === false ? 'non risponde' : 'da provare')
+    : 'non collegato';
   const rete = s.rete || {};
   const pct = (x) => Math.round((x || 0) * 100) + '%';
   const stile = { hr: 'border:0;border-top:1px solid currentColor;opacity:.15;margin:20px 0', num: 'font-size:1.7em;font-weight:700;line-height:1' };
@@ -6612,7 +6612,7 @@ async function caricaLLM() {
     ? locali.map((m) => `<li><span>${esc(m.nome)} <span class="suggerimento">${m.mb} MB</span>${selFile === m.nome ? ' <span class="badge verde">in uso</span>' : ''}</span> <span>${selFile === m.nome ? '' : `<a href="#" class="usa-modello" data-nome="${esc(m.nome)}">usa</a> · `}<a href="#" class="rimuovi-modello" data-nome="${esc(m.nome)}" title="Elimina">✕</a></span></li>`).join('')
     : '<li class="vuoto">Nessun modello caricato a mano. Sopra usi quelli automatici; qui sotto carichi un GGUF tuo.</li>';
   box.innerHTML = `
-    <p class="suggerimento">🔒 <strong>Riservato a te</strong>: il modello del server e il maestro esterno li vedi e li cambi <strong>solo tu</strong> (andryxify). Nessun altro streamer o moderatore ha accesso a questa sezione.</p>
+    <p class="suggerimento"><strong>Riservato a te</strong>: il modello del server e il maestro esterno li vedi e li cambi <strong>solo tu</strong> (andryxify). Nessun altro streamer o moderatore ha accesso a questa sezione.</p>
     <p>Stato: <strong>${statoTxt}</strong> &nbsp; In memoria: <code>${esc(s.modello || '—')}</code>${s.motivo ? ` <span class="suggerimento">(${esc(s.motivo)})</span>` : ''}</p>
     <label class="campo" for="sel-llm">Modello locale (sul server)</label>
     <select id="sel-llm" class="campo-largo">
@@ -6629,7 +6629,7 @@ async function caricaLLM() {
     <hr style="${stile.hr}">
     <h3>${_hIco(ICO.pacco)}Modelli sul server</h3>
     <p class="suggerimento">Carica un <strong>GGUF</strong> dal tuo computer (es. quello forgiato sul Mac) e usalo qui. Qui vedi anche i modelli
-    scaricati automaticamente. ⚠️ Pesano vari GB: occhio allo <strong>spazio su disco</strong> del server (elimina quelli che non usi).</p>
+    scaricati automaticamente. Pesano vari GB: occhio allo <strong>spazio su disco</strong> del server (elimina quelli che non usi).</p>
     <ul class="lista-voci" id="lista-modelli">${libItems}</ul>
     <p class="spazio-sopra">
       <input type="file" id="inp-modello-file" accept=".gguf">
@@ -6677,12 +6677,12 @@ async function caricaLLM() {
     const v = document.getElementById('sel-llm').value;
     const body = v === 'url' ? { url: (document.getElementById('inp-llm-url').value || '').trim() } : { modello: v };
     await api('/api/admin/llm', { method: 'POST', body });
-    toast('Sto cambiando modello 🧠 — può metterci qualche minuto (scarica + carica).');
+    toast('Sto cambiando modello — può metterci qualche minuto (scarica + carica).');
     setTimeout(caricaLLM, 2500);
   }));
   document.getElementById('btn-ep-salva')?.addEventListener('click', () => conErrore(async () => {
     await api('/api/admin/llm', { method: 'POST', body: { endpoint: raccogliEp() } });
-    toast('Maestro collegato 🎓 — la rete inizierà a imparare da lui.');
+    toast('Maestro collegato — la rete inizierà a imparare da lui.');
     setTimeout(caricaLLM, 1500);
   }));
   document.getElementById('btn-ep-stacca')?.addEventListener('click', () => conErrore(async () => {
@@ -6696,13 +6696,13 @@ async function caricaLLM() {
     const r = await api('/api/admin/llm/prova', { method: 'POST', body: { endpoint: raccogliEp() } });
     if (!esito) return;
     esito.innerHTML = r && r.ok
-      ? `🟢 Risponde! ${r.modello ? `(${esc(r.modello)}) ` : ''}<em>«${esc(r.campione || 'ok')}»</em>`
-      : `🔴 Non risponde: ${esc((r && r.motivo) || 'errore')}`;
+      ? `Risponde! ${r.modello ? `(${esc(r.modello)}) ` : ''}<em>«${esc(r.campione || 'ok')}»</em>`
+      : `Non risponde: ${esc((r && r.motivo) || 'errore')}`;
   }));
   // libreria modelli: usa / elimina / carica
   document.querySelectorAll('#lista-modelli .usa-modello').forEach((a) => a.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
     await api('/api/admin/llm', { method: 'POST', body: { file: a.dataset.nome } });
-    toast('Carico il modello 🧠 — può metterci un po\'.');
+    toast('Carico il modello — può metterci un po\'.');
     setTimeout(caricaLLM, 2500);
   }); }));
   document.querySelectorAll('#lista-modelli .rimuovi-modello').forEach((a) => a.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
@@ -6721,7 +6721,7 @@ function caricaModelloFile() {
   const f = inp && inp.files && inp.files[0];
   if (!f) { toast('Scegli un file .gguf', 'errore'); return; }
   if (!/\.gguf$/i.test(f.name)) { toast('Serve un file .gguf', 'errore'); return; }
-  if (DEMO) { toast('In demo non carico davvero 😊'); return; }
+  if (DEMO) { toast('In demo non carico davvero'); return; }
   const xhr = new XMLHttpRequest();
   const fd = new FormData();
   fd.append('file', f);
@@ -6730,7 +6730,7 @@ function caricaModelloFile() {
   xhr.onload = () => {
     if (xhr.status >= 200 && xhr.status < 300) {
       if (st) st.textContent = 'Caricato ✓';
-      toast('Modello caricato 📦 — ora premi «usa» per attivarlo.');
+      toast('Modello caricato — ora premi «usa» per attivarlo.');
       caricaLLM();
     } else {
       let m = 'errore'; try { m = JSON.parse(xhr.responseText).errore || m; } catch { /* niente */ }
@@ -6790,7 +6790,7 @@ async function caricaAnima() {
         valori: righe(document.getElementById('an-valori').value),
         tormentoni: righe(document.getElementById('an-tormentoni').value),
       } });
-      toast('Anima aggiornata 🫀');
+      toast('Anima aggiornata');
     }));
   } catch (e) {
     box.innerHTML = `<p class="vuoto">Errore: ${esc(e.message)}</p>`;
@@ -6855,7 +6855,7 @@ document.addEventListener('click', (ev) => {
   if (ev.target.id === 'btn-richiesta') {
     conErrore(async () => {
       await api('/api/richiesta', { method: 'POST', body: {} });
-      toast('Richiesta inviata! 🎉');
+      toast('Richiesta inviata!');
       stato = await api('/api/me');
       render();
     });
@@ -6920,7 +6920,7 @@ function mostraInvito(invito) {
       <input type="text" id="url-invito" readonly value="${esc(invito.url)}">
       <button class="btn" id="btn-copia-invito">Copia</button>
     </div>`;
-  document.getElementById('btn-copia-invito')?.addEventListener('click', () => copiaTesto(invito.url, 'Link d’invito copiato 📋'));
+  document.getElementById('btn-copia-invito')?.addEventListener('click', () => copiaTesto(invito.url, 'Link d’invito copiato'));
 }
 
 async function caricaModeratori() {
@@ -6928,7 +6928,7 @@ async function caricaModeratori() {
   if (!ul) return;                       // per i moderatori la card non esiste: si salta
   try {
     const lista = await api('/api/moderatori');
-    if (!lista.length) { ul.innerHTML = '<li class="vuoto">Ancora nessun moderatore. Invitane uno qui sopra 👥</li>'; return; }
+    if (!lista.length) { ul.innerHTML = '<li class="vuoto">Ancora nessun moderatore. Invitane uno qui sopra</li>'; return; }
     const links = {};
     ul.innerHTML = lista.map((m) => {
       if (m.invito) links[m.id] = m.invito.url;
@@ -6945,7 +6945,7 @@ async function caricaModeratori() {
            <button class="btn secondario mini" data-mod-rimuovi="${m.id}">Annulla</button>`;
       return `<li>
         <div class="testo-voce">
-          <span class="domanda">👤 ${esc(m.display || m.login)} ${stato}</span>
+          <span class="domanda">${esc(m.display || m.login)} ${stato}</span>
           <span class="meta">@${esc(m.login)} · ${meta}</span>
         </div>
         <div class="azioni-voce">${azioni}</div>
@@ -6954,7 +6954,7 @@ async function caricaModeratori() {
     ul.onclick = (ev) => {
       const b = ev.target.closest('[data-mod-rimuovi],[data-mod-reinvita],[data-mod-link]');
       if (!b) return;
-      if (b.dataset.modLink) { if (links[b.dataset.modLink]) copiaTesto(links[b.dataset.modLink], 'Link d’invito copiato 📋'); return; }
+      if (b.dataset.modLink) { if (links[b.dataset.modLink]) copiaTesto(links[b.dataset.modLink], 'Link d’invito copiato'); return; }
       if (b.dataset.modReinvita) return conErrore(async () => {
         const r = await api('/api/moderatori/' + b.dataset.modReinvita + '/reinvita', { method: 'POST', body: {} });
         mostraInvito(r.invito); toast('Nuovo link generato.'); caricaModeratori();
@@ -6974,10 +6974,10 @@ async function caricaPasskey() {
   try {
     const lista = await api('/api/passkey');
     ul.innerHTML = lista.length
-      ? lista.map((p) => `<li><div class="testo-voce"><span class="domanda">🔑 ${esc(p.nome || 'Passkey')}</span>
+      ? lista.map((p) => `<li><div class="testo-voce"><span class="domanda">${esc(p.nome || 'Passkey')}</span>
           <span class="meta">creata ${esc(dataIt(p.created_at))}${p.last_used ? ' · usata ' + esc(dataIt(p.last_used)) : ''}</span></div>
           <button class="btn secondario mini" data-pk="${p.id}">Rimuovi</button></li>`).join('')
-      : '<li class="vuoto">Nessuna passkey ancora. Creane una per rientrare al volo 🔑</li>';
+      : '<li class="vuoto">Nessuna passkey ancora. Creane una per rientrare al volo</li>';
     ul.onclick = (ev) => {
       const btn = ev.target.closest('[data-pk]');
       if (!btn) return;

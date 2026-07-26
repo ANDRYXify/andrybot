@@ -428,8 +428,8 @@
       const card = penCard[ev.id];
       if (!card) return;
       const esito = ev.count > 0
-        ? '💀 PENITENZA: ' + escHtml(String(ev.penitenza || '')) + (ev.count > 1 ? ' ×' + ev.count : '')
-        : '✅ Salvo!';
+        ? 'PENITENZA: ' + escHtml(String(ev.penitenza || '')) + (ev.count > 1 ? ' ×' + ev.count : '')
+        : 'Salvo!';
       card.innerHTML = '<span class="pen-esito">' + esito + '</span>';
       setTimeout(() => {
         card.classList.remove('dentro');
