@@ -36,8 +36,8 @@
     /* effetto a POSIZIONE LIBERA (dall'Overlay Studio): ancorato via left/top %
        e trasformato con la scala (--fx-s) e la rotazione (--fx-r) scelte. */
     .effetto.libero { position: absolute; max-width: none; max-height: 92vh;
-      transform: translate(-50%, -50%) scale(calc(var(--fx-s, 1) * .9)) rotate(var(--fx-r, 0deg)); }
-    .effetto.libero.dentro { transform: translate(-50%, -50%) scale(var(--fx-s, 1)) rotate(var(--fx-r, 0deg)); }
+      transform: translate(var(--fx-ax, -50%), var(--fx-ay, -50%)) scale(calc(var(--fx-s, 1) * .9)) rotate(var(--fx-r, 0deg)); }
+    .effetto.libero.dentro { transform: translate(var(--fx-ax, -50%), var(--fx-ay, -50%)) scale(var(--fx-s, 1)) rotate(var(--fx-r, 0deg)); }
 
     /* Etichetta con il nome del comando (usata soprattutto per gli audio). */
     #etichette {
@@ -245,6 +245,9 @@
       if (!pos || pos.x == null) return;
       el.classList.add('libero');
       el.style.left = pos.x + '%'; el.style.top = pos.y + '%';
+      // ancoraggio consapevole della posizione (resta sempre dentro al palco)
+      el.style.setProperty('--fx-ax', (-pos.x) + '%');
+      el.style.setProperty('--fx-ay', (-pos.y) + '%');
       el.style.setProperty('--fx-s', (Number(pos.s) || 100) / 100);
       el.style.setProperty('--fx-r', (Number(pos.r) || 0) + 'deg');
     }
@@ -481,7 +484,10 @@
         el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.width = 'auto';
         // DIMENSIONE (s = scala %) e ROTAZIONE (r = gradi) impostate dall'editor
         var s = (Number(xy.s) || 100) / 100, r = Number(xy.r) || 0;
-        el.style.transform = 'translate(-50%,-50%) scale(' + s + ') rotate(' + r + 'deg)';
+        // ancoraggio "consapevole della posizione": translate(-x%,-y%) tiene sempre
+        // l'elemento DENTRO al palco (a sinistra hugga il bordo sx, a destra il dx…),
+        // così in basso a sinistra non esce più sotto/a lato.
+        el.style.transform = 'translate(' + (-xy.x) + '%,' + (-xy.y) + '%) scale(' + s + ') rotate(' + r + 'deg)';
       } else {
         el.className = corner;
         el.style.left = el.style.top = el.style.right = el.style.bottom = el.style.width = el.style.transform = '';
@@ -641,7 +647,7 @@
       if (xyEff && xyEff.x != null) {
         const s = (Number(xyEff.s) || 100) / 100, r = Number(xyEff.r) || 0;
         el.style.position = 'fixed'; el.style.left = xyEff.x + '%'; el.style.top = xyEff.y + '%';
-        el.style.transform = 'translate(-50%,-50%) scale(' + s + ') rotate(' + r + 'deg)';
+        el.style.transform = 'translate(' + (-xyEff.x) + '%,' + (-xyEff.y) + '%) scale(' + s + ') rotate(' + r + 'deg)';
       } else { el.style.position = ''; el.style.left = ''; el.style.top = ''; el.style.transform = ''; }
       const st = cfg.stile || {};
       el.className = 'ovl-widget dim-' + (st.dim || 'media');

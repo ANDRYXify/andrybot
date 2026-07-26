@@ -2623,14 +2623,16 @@ function _defPos(k) {
   return _cornerXY(_v(`${k}-pos`) || 'basso-destra');
 }
 
-// Posiziona un elemento nel palco 1920x1080 (coordinate in % → left/top, ancorato
-// al centro) applicando anche DIMENSIONE (s = scala %) e ROTAZIONE (r = gradi).
+// Posiziona un elemento nel palco 1920x1080 (coordinate in % → left/top) con
+// ancoraggio CONSAPEVOLE della posizione: translate(-x%,-y%) tiene l'elemento
+// sempre dentro al palco (identico all'overlay → anteprima fedele). Applica anche
+// DIMENSIONE (s = scala %) e ROTAZIONE (r = gradi).
 function _posElemento(el, xy) {
   if (!el || !xy) return;
   const sf = (Number(xy.s) || 100) / 100, r = Number(xy.r) || 0;
   el.style.position = 'absolute'; el.style.left = xy.x + '%'; el.style.top = xy.y + '%';
   el.style.right = 'auto'; el.style.bottom = 'auto';
-  el.style.transform = `translate(-50%,-50%) scale(${sf}) rotate(${r}deg)`;
+  el.style.transform = `translate(${-xy.x}%,${-xy.y}%) scale(${sf}) rotate(${r}deg)`;
   // le maniglie sono figlie dell'elemento: contro-scala così restano usabili
   el.querySelectorAll('.ap-handle').forEach((h) => { h.style.transform = `scale(${1 / sf})`; });
 }
