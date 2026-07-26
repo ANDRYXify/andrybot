@@ -2086,6 +2086,28 @@ function opzioniSuono(sel) {
   return ['<option value="">— nessun suono —</option>']
     .concat(lista.map((s) => `<option value="${esc(s.id)}"${s.id === sel ? ' selected' : ''}>${esc(s.nome)}</option>`)).join('');
 }
+// font per-alert: '' = usa il font condiviso dello stile
+function opzioniFont(sel) {
+  const f = [['', '— come lo stile —'], ['sistema', 'Sistema'], ['rotondo', 'Rotondo'], ['condensato', 'Condensato'], ['mono', 'Mono'], ['serif', 'Serif'], ['manga', 'Manga']];
+  return f.map(([v, n]) => `<option value="${v}"${v === sel ? ' selected' : ''}>${n}</option>`).join('');
+}
+// Popola i menu Suono/Immagine-Video di ogni alert con la libreria Effetti &
+// suoni (audio nei suoni; immagini/video nei media), oltre ai preset, e ripristina
+// i valori salvati (che possono essere "effetto:<comando>").
+function popolaMediaSuoniAlert(effetti, alertsCfg) {
+  const a = alertsCfg || (impostazioni().alerts) || {};
+  const audio = (effetti || []).filter((e) => e.tipo === 'audio');
+  const visivi = (effetti || []).filter((e) => e.tipo === 'immagine' || e.tipo === 'video');
+  const gruppoAudio = audio.length ? `<optgroup label="I miei suoni caricati">${audio.map((e) => `<option value="effetto:${esc(e.comando)}">!${esc(e.comando)}</option>`).join('')}</optgroup>` : '';
+  const optMedia = '<option value="">— niente —</option>' + visivi.map((e) => `<option value="effetto:${esc(e.comando)}">!${esc(e.comando)} (${e.tipo})</option>`).join('');
+  document.querySelectorAll('.alert-blocco[data-alert]').forEach((b) => {
+    const c = a[b.dataset.alert] || {};
+    const selS = b.querySelector('.al-suono');
+    if (selS) { selS.innerHTML = opzioniSuono('') + gruppoAudio; selS.value = c.suono || ''; }
+    const selM = b.querySelector('.al-media');
+    if (selM) { selM.innerHTML = optMedia; selM.value = c.media || ''; }
+  });
+}
 
 const ALERT_TIPI = [
   { key: 'follow', nome: 'Nuovo follower', ph: '{user} ha seguito il canale!', vars: '{user}', acc: '#9146ff' },
@@ -2142,6 +2164,11 @@ function bloccoAlert(t, a) {
         <div><label class="campo">Volume: <strong><span class="al-vol-v">${vol}</span>%</strong></label><input type="range" class="al-vol" min="0" max="100" value="${vol}"></div>
         ${soglia}
       </div>
+      <div class="griglia-campi spazio-sopra">
+        <div><label class="campo">Font</label><select class="al-font">${opzioniFont(c.font || '')}</select></div>
+        <div><label class="campo">Immagine/Video <span class="tenue">— dai tuoi effetti</span></label><select class="al-media"><option value="">— niente —</option></select></div>
+      </div>
+      <p class="suggerimento">Suono e Immagine/Video si scelgono dai tuoi <strong>Effetti &amp; suoni</strong>: caricali lì, poi li ritrovi qui nel menu.</p>
       <p class="spazio-sopra"><button type="button" class="btn secondario mini al-prova" data-kind="${t.key}">Prova ▶</button></p>
     </div>`;
 }
@@ -2386,6 +2413,8 @@ function _raccogliAlerts() {
       attivo: !!b.querySelector('.al-attivo')?.checked,
       testo: (b.querySelector('.al-testo')?.value || '').trim(),
       suono: b.querySelector('.al-suono')?.value || '',
+      media: b.querySelector('.al-media')?.value || '',
+      font: b.querySelector('.al-font')?.value || '',
       accento: b.querySelector('.al-colore')?.value || '#9146ff',
       volume: Number(b.querySelector('.al-vol')?.value) || 0,
     };
@@ -2670,9 +2699,11 @@ function _riempiConfig(d) {
     const c = a[b.dataset.alert] || {};
     _impostaEl(b.querySelector('.al-attivo'), c.attivo); _impostaEl(b.querySelector('.al-testo'), c.testo);
     _impostaEl(b.querySelector('.al-suono'), c.suono); _impostaEl(b.querySelector('.al-colore'), c.accento || c.colore);
-    _impostaEl(b.querySelector('.al-vol'), c.volume != null ? c.volume : 100);
+    _impostaEl(b.querySelector('.al-font'), c.font || ''); _impostaEl(b.querySelector('.al-vol'), c.volume != null ? c.volume : 100);
     const sog = b.querySelector('.al-soglia'); if (sog) _impostaEl(sog, c.minBits != null ? c.minBits : c.minViewers);
   });
+  // popola i menu Suono/Immagine-Video con la libreria Effetti & suoni
+  api('/api/streamer/effetti').then((r) => popolaMediaSuoniAlert(r.effetti || [], a)).catch(() => { /* niente */ });
   const ch = d.chatOverlay || {}, cst = ch.stile || {};
   _imposta('co-attivo', ch.attivo); _imposta('co-pos', ch.posizione); _imposta('co-max', ch.max); _imposta('co-fade', ch.fadeSec);
   _imposta('co-st-dim', cst.dim); _imposta('co-st-font', cst.font); _imposta('co-st-anim', cst.animazione); _imposta('co-st-larg', cst.larghezza);
