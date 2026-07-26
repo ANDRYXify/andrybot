@@ -376,7 +376,9 @@
         el.className = '';
         el.style.left = xy.x + '%'; el.style.top = xy.y + '%';
         el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.width = 'auto';
-        el.style.transform = 'translate(-50%,-50%)';
+        // DIMENSIONE (s = scala %) e ROTAZIONE (r = gradi) impostate dall'editor
+        var s = (Number(xy.s) || 100) / 100, r = Number(xy.r) || 0;
+        el.style.transform = 'translate(-50%,-50%) scale(' + s + ') rotate(' + r + 'deg)';
       } else {
         el.className = corner;
         el.style.left = el.style.top = el.style.right = el.style.bottom = el.style.width = el.style.transform = '';
