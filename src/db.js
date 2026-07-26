@@ -340,6 +340,12 @@ aggiungiColonna('effects', 'posx', 'INTEGER');                          // % ori
 aggiungiColonna('effects', 'posy', 'INTEGER');                          // % verticale
 aggiungiColonna('effects', 'scala', 'INTEGER NOT NULL DEFAULT 100');    // dimensione %
 aggiungiColonna('effects', 'rot', 'INTEGER NOT NULL DEFAULT 0');        // rotazione gradi
+// Libreria condivisa: un effetto può essere reso PUBBLICO e importato dagli altri.
+aggiungiColonna('effects', 'pubblico', 'INTEGER NOT NULL DEFAULT 0');   // 1 = visibile nella libreria condivisa
+aggiungiColonna('effects', 'nome', "TEXT NOT NULL DEFAULT ''");         // titolo mostrato nella libreria
+aggiungiColonna('effects', 'autore', "TEXT NOT NULL DEFAULT ''");       // login del creatore originale (attribuzione)
+aggiungiColonna('effects', 'usi', 'INTEGER NOT NULL DEFAULT 0');        // quante volte è stato importato
+aggiungiColonna('effects', 'suono_file', "TEXT NOT NULL DEFAULT ''");   // COMBO: audio abbinato a un'immagine/video
 aggiungiColonna('telegram', 'pin_live', "INTEGER NOT NULL DEFAULT 1");
 aggiungiColonna('telegram', 'msg_id', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('telegram', 'msg_id_tk', "TEXT NOT NULL DEFAULT ''");
@@ -1167,12 +1173,13 @@ export const effects = {
       .run(channel, c, tipo, file, tier, cooldown, volume, durata, now());
     return esistente?.file || null;
   },
-  // Elimina un effetto e ritorna il nome file da cancellare dal disco (o null).
+  // Elimina un effetto e ritorna i nomi file da cancellare dal disco (media +
+  // eventuale audio abbinato della COMBO), o null se non esisteva.
   remove(channel, id) {
-    const r = db.prepare('SELECT file FROM effects WHERE channel=? AND id=?').get(channel, id);
+    const r = db.prepare('SELECT file, suono_file FROM effects WHERE channel=? AND id=?').get(channel, id);
     if (!r) return null;
     db.prepare('DELETE FROM effects WHERE channel=? AND id=?').run(channel, id);
-    return r.file;
+    return { file: r.file, suonoFile: r.suono_file || '' };
   },
   // Posizione/dimensione/rotazione a schermo di un effetto (gestite dall'Overlay
   // Studio). xy = { x, y, s, r } oppure null per rimetterlo al centro. Ritorna
@@ -1188,6 +1195,45 @@ export const effects = {
       .run(px, py, s, r, channel, c);
     return info.changes > 0;
   },
+
+  // ---- Libreria condivisa ----------------------------------------------------
+  // Rende un effetto pubblico/privato + titolo mostrato nella libreria. L'autore
+  // (creatore originale) NON viene mai sovrascritto una volta impostato. true se esiste.
+  setPubblico(channel, id, { pubblico, nome, autore } = {}) {
+    const r = db.prepare('SELECT autore FROM effects WHERE channel=? AND id=?').get(channel, id);
+    if (!r) return false;
+    const aut = (r.autore && r.autore.trim()) ? r.autore : String(autore || channel).toLowerCase();
+    db.prepare('UPDATE effects SET pubblico=?, nome=?, autore=? WHERE channel=? AND id=?')
+      .run(pubblico ? 1 : 0, String(nome || '').slice(0, 60), aut, channel, id);
+    return true;
+  },
+  // Aggancia (o toglie, con '') un audio abbinato a un'immagine/video (COMBO).
+  attachSuono(channel, id, suonoFile) {
+    const info = db.prepare('UPDATE effects SET suono_file=? WHERE channel=? AND id=?')
+      .run(String(suonoFile || ''), channel, id);
+    return info.changes > 0;
+  },
+  // Effetto per id in un canale (per pubblicare/combinare/eliminare da UI).
+  byId(channel, id) {
+    return db.prepare('SELECT * FROM effects WHERE channel=? AND id=?').get(channel, id) || null;
+  },
+  // Effetto PUBBLICO per id, di qualsiasi canale: per import e anteprima sicura.
+  pubblicoById(id) {
+    return db.prepare('SELECT * FROM effects WHERE id=? AND pubblico=1 AND attivo=1').get(id) || null;
+  },
+  // Elenco della LIBRERIA CONDIVISA: effetti pubblici, filtrabili per tipo/testo,
+  // opzionalmente escludendo un canale (di norma il proprio). Prima i più usati.
+  sharedList({ tipo, q, escludi, limit = 120 } = {}) {
+    let sql = 'SELECT * FROM effects WHERE pubblico=1 AND attivo=1';
+    const args = [];
+    if (tipo && ['audio', 'immagine', 'video'].includes(tipo)) { sql += ' AND tipo=?'; args.push(tipo); }
+    if (escludi) { sql += ' AND channel<>?'; args.push(String(escludi).toLowerCase()); }
+    if (q && String(q).trim()) { sql += ' AND (comando LIKE ? OR nome LIKE ?)'; const p = '%' + String(q).trim() + '%'; args.push(p, p); }
+    sql += ' ORDER BY usi DESC, ts DESC LIMIT ?';
+    args.push(Math.max(1, Math.min(300, Math.round(limit) || 120)));
+    return db.prepare(sql).all(...args);
+  },
+  incUsi(id) { db.prepare('UPDATE effects SET usi=usi+1 WHERE id=?').run(id); },
 };
 
 // ---------------------------------------------------------------- moduli (automazioni)

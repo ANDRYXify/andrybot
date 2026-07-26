@@ -3030,12 +3030,34 @@ function caricaAlert() {
 function pannelloEffetti() {
   return pannello('effetti', `
     <div class="carta">
+      <h2>${_hIco(ICO.effetti)}📚 Libreria condivisa</h2>
+      <p>Sfoglia <strong class="primo-piano">effetti, gif, video, foto e suoni</strong> condivisi dagli altri streamer
+      e aggiungili alla tua libreria con un click. Quello che aggiungi lo ritrovi <strong>ovunque</strong>: overlay,
+      alert, effetti e premi a punti canale.</p>
+      <div class="lib-filtri">
+        <div class="lib-tabs">
+          <button type="button" class="btn secondario mini lib-tab attivo" data-tipo="">Tutti</button>
+          <button type="button" class="btn secondario mini lib-tab" data-tipo="immagine">🖼️ Immagini</button>
+          <button type="button" class="btn secondario mini lib-tab" data-tipo="video">🎬 Video</button>
+          <button type="button" class="btn secondario mini lib-tab" data-tipo="audio">🔊 Audio</button>
+        </div>
+        <input type="search" id="lib-cerca" placeholder="Cerca per nome…" maxlength="40">
+      </div>
+      <div id="lib-griglia" class="lib-griglia"><p class="vuoto">Carico la libreria…</p></div>
+    </div>
+
+    <div class="carta">
       <h2>${_hIco(ICO.effetti)}Carica un effetto</h2>
       <p>Audio, immagini o brevi video. Ogni file viene <strong class="primo-piano">super-compresso</strong>
       in automatico, così l'overlay resta leggero.</p>
 
       <label class="campo" for="eff-file">File (audio / immagine / video)</label>
       <input type="file" id="eff-file" accept="audio/*,image/*,video/*">
+
+      <div class="spazio-sopra">
+        <label class="campo" for="eff-suono">🔊 Suono da abbinare <span class="tenue">— opzionale, per immagini/video: crei una <strong>combo</strong> (media + suono che parte insieme)</span></label>
+        <input type="file" id="eff-suono" accept="audio/*">
+      </div>
 
       <label class="campo" for="eff-comando">Comando in chat</label>
       <div class="riga-flessibile">
@@ -3069,6 +3091,15 @@ function pannelloEffetti() {
       </div>
       <p class="suggerimento">Fino a <strong>30 secondi</strong> (30000 ms). Per le <strong>immagini</strong> è quanto restano a schermo;
       audio e video usano la loro durata reale (accorciati a 30s se più lunghi).</p>
+
+      <div class="riga-check spazio-sopra" style="display:block">
+        <label class="riga-check"><input type="checkbox" id="eff-pubblico"> 🌍 <strong>Rendi pubblico</strong> — condividilo con gli altri streamer nella libreria</label>
+      </div>
+      <div id="eff-nome-box" class="spazio-sopra" hidden>
+        <label class="campo" for="eff-nome">Nome nella libreria condivisa</label>
+        <input type="text" id="eff-nome" class="campo-largo" maxlength="60" placeholder="Es. Airhorn epico">
+      </div>
+
       <p class="spazio-sopra">
         <button class="btn" id="btn-carica-effetto">Carica effetto</button>
         <span id="esito-effetto" class="suggerimento"></span>
@@ -4562,6 +4593,29 @@ function attivaPiattaforma() {
 
   // caricamento di un effetto (multipart, con spinner)
   document.getElementById('btn-carica-effetto')?.addEventListener('click', caricaEffettoUpload);
+  // "rendi pubblico": mostra il campo nome nella libreria
+  document.getElementById('eff-pubblico')?.addEventListener('change', (e) => {
+    const box = document.getElementById('eff-nome-box'); if (box) box.hidden = !e.target.checked;
+  });
+  // libreria condivisa: filtri per tipo, ricerca, import, anteprima audio/video
+  document.querySelectorAll('.lib-tab').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('.lib-tab').forEach((x) => x.classList.remove('attivo'));
+    b.classList.add('attivo'); _libTipo = b.dataset.tipo || ''; caricaLibreria();
+  }));
+  document.getElementById('lib-cerca')?.addEventListener('input', () => {
+    clearTimeout(_libCercaTimer); _libCercaTimer = setTimeout(caricaLibreria, 300);
+  });
+  const grigliaLib = document.getElementById('lib-griglia');
+  if (grigliaLib) {
+    grigliaLib.addEventListener('click', (ev) => {
+      const imp = ev.target.closest('.lib-importa');
+      const play = ev.target.closest('.lib-play');
+      if (imp) conErrore(() => importaLibreria(imp.dataset.id, imp));
+      else if (play) { try { const a = new Audio(play.dataset.audio); a.play().catch(() => {}); } catch (e) { /* niente */ } }
+    });
+    grigliaLib.addEventListener('mouseover', (ev) => { const v = ev.target.closest('video.lib-media'); if (v) v.play().catch(() => {}); });
+    grigliaLib.addEventListener('mouseout', (ev) => { const v = ev.target.closest('video.lib-media'); if (v) { try { v.pause(); v.currentTime = 0; } catch (e) { /* niente */ } } });
+  }
 
   // memoria on-demand
   document.getElementById('btn-carica-memoria')?.addEventListener('click', () => caricaMemoria(true));
@@ -4717,7 +4771,7 @@ function caricaDatiScheda(id) {
   if (id === 'giveaway') caricaGiveaway();
   if (id === 'penitenze') caricaPenitenze();
   if (id === 'alert') caricaAlert();
-  if (id === 'effetti') { caricaEffetti(); caricaPremi(); caricaSuoniPremi(); }
+  if (id === 'effetti') { caricaEffetti(); caricaPremi(); caricaSuoniPremi(); caricaLibreria(); }
   if (id === 'moduli') caricaModuli();
   if (id === 'memoria') caricaStatistiche();
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); }
@@ -4953,19 +5007,21 @@ async function caricaEffetti() {
     ul.innerHTML = dati.effetti.map((e) => `
       <li>
         <div class="testo-voce">
-          <div class="domanda">!${esc(e.comando)} <span class="badge viola">${etTipo[e.tipo] || esc(e.tipo)}</span></div>
+          <div class="domanda">!${esc(e.comando)} <span class="badge viola">${etTipo[e.tipo] || esc(e.tipo)}</span>${e.combo ? ' <span class="badge">combo 🔊</span>' : ''}${e.pubblico ? ' <span class="badge verde">🌍 pubblico</span>' : ''}</div>
           <div class="meta">chi: ${esc(etTier[e.tier] || e.tier)} · cooldown ${e.cooldown}s · volume ${e.volume}% · ${e.durata}ms</div>
         </div>
         <div class="azioni-voce">
+          <button class="btn secondario mini" data-pubblica="${e.id}" data-stato="${e.pubblico ? 1 : 0}" data-nome="${esc(e.nome || e.comando)}">${e.pubblico ? '🔒 Rendi privato' : '🌍 Condividi'}</button>
           <button class="btn secondario mini" data-prova="${esc(e.comando)}">Prova</button>
           <button class="btn pericolo mini" data-elimina-eff="${e.id}">Elimina</button>
         </div>
       </li>`).join('');
 
-    // Prova / Elimina (delega sull'elenco)
+    // Prova / Elimina / Condividi (delega sull'elenco)
     ul.onclick = (ev) => {
       const prova = ev.target.closest('[data-prova]');
       const del = ev.target.closest('[data-elimina-eff]');
+      const pub = ev.target.closest('[data-pubblica]');
       if (prova) {
         conErrore(async () => {
           await api('/api/streamer/effetti/test', { method: 'POST', body: { comando: prova.dataset.prova } });
@@ -4978,10 +5034,74 @@ async function caricaEffetti() {
           toast('Effetto eliminato 🗑️');
           caricaEffetti();
         });
+      } else if (pub) {
+        conErrore(async () => {
+          const rendiPubblico = pub.dataset.stato !== '1';
+          let nome = pub.dataset.nome || '';
+          if (rendiPubblico) {
+            nome = (prompt('Con che nome vuoi condividerlo nella libreria?', nome) || '').trim();
+            if (!nome) return;   // annullato
+          }
+          await api('/api/streamer/effetti/' + pub.dataset.pubblica + '/pubblico', { method: 'PATCH', body: { pubblico: rendiPubblico, nome } });
+          toast(rendiPubblico ? 'Condiviso nella libreria 🌍' : 'Tornato privato 🔒');
+          caricaEffetti(); caricaLibreria();
+        });
       }
     };
   } catch (e) {
     ul.innerHTML = `<li class="vuoto">Errore: ${esc(e.message)}</li>`;
+  }
+}
+
+// --- Libreria condivisa -------------------------------------------------
+let _libTipo = '';
+let _libCercaTimer = null;
+
+function libItemHtml(it) {
+  let media;
+  if (it.tipo === 'immagine') media = `<img class="lib-media" src="${esc(it.url)}" loading="lazy" alt="">`;
+  else if (it.tipo === 'video') media = `<video class="lib-media" src="${esc(it.url)}" muted playsinline loop preload="metadata"></video>`;
+  else media = '<div class="lib-media lib-audio">🔊</div>';
+  const audio = (it.tipo === 'audio' || it.combo)
+    ? `<button type="button" class="btn secondario mini lib-play" data-audio="${esc(it.suonoUrl || it.url)}" title="Ascolta">▶</button>` : '';
+  return `<div class="lib-card" data-id="${it.id}">
+    <div class="lib-media-wrap">${media}${it.combo ? '<span class="lib-combo">combo 🔊</span>' : ''}</div>
+    <div class="lib-nome" title="${esc(it.nome)}">${esc(it.nome)}</div>
+    <div class="meta">di ${esc(it.autore)}${it.usi ? ' · ' + it.usi + ' usi' : ''}</div>
+    <div class="lib-azioni">${audio}<button type="button" class="btn mini lib-importa" data-id="${it.id}">➕ Aggiungi</button></div>
+  </div>`;
+}
+
+async function caricaLibreria() {
+  const g = document.getElementById('lib-griglia');
+  if (!g) return;
+  const q = (document.getElementById('lib-cerca')?.value || '').trim();
+  try {
+    const d = await api(`/api/streamer/libreria?tipo=${encodeURIComponent(_libTipo)}&q=${encodeURIComponent(q)}`);
+    if (!d.items.length) {
+      g.innerHTML = '<p class="vuoto">Ancora niente qui. Sii il primo a condividere: carica un effetto e spunta “🌍 Rendi pubblico”!</p>';
+      return;
+    }
+    g.innerHTML = d.items.map(libItemHtml).join('');
+  } catch (e) {
+    g.innerHTML = `<p class="vuoto">Errore: ${esc(e.message)}</p>`;
+  }
+}
+
+async function importaLibreria(id, btn) {
+  if (DEMO) { toast('In demo non si importa 😊 — accedi per farlo davvero.'); return; }
+  btn.disabled = true;
+  const t = btn.textContent;
+  btn.textContent = 'Aggiungo…';
+  try {
+    const r = await api('/api/streamer/libreria/importa', { method: 'POST', body: { id: Number(id) } });
+    toast(`Aggiunto come !${r.comando} alla tua libreria ✨`);
+    caricaEffetti();
+    btn.textContent = '✓ Aggiunto';
+  } catch (e) {
+    toast('Non riuscito: ' + e.message, 'errore');
+    btn.disabled = false;
+    btn.textContent = t;
   }
 }
 
@@ -4998,13 +5118,20 @@ async function caricaEffettoUpload(ev) {
   if (!file) { toast('Scegli un file da caricare.', 'errore'); return; }
   if (!comando) { toast('Scrivi il comando (senza !).', 'errore'); return; }
 
+  const suonoInput = document.getElementById('eff-suono');
+  const suonoFile = suonoInput?.files[0];
+  const pubblico = !!document.getElementById('eff-pubblico')?.checked;
+
   const fd = new FormData();
   fd.append('file', file);
+  if (suonoFile) fd.append('suono', suonoFile);       // COMBO: suono abbinato
   fd.append('comando', comando);
   fd.append('tier', document.getElementById('eff-tier').value);
   fd.append('cooldown', document.getElementById('eff-cooldown').value);
   fd.append('volume', document.getElementById('eff-volume').value);
   fd.append('durata', document.getElementById('eff-durata').value);
+  fd.append('pubblico', pubblico ? '1' : '0');
+  fd.append('nome', document.getElementById('eff-nome')?.value?.trim() || '');
 
   btn.disabled = true;
   const testoOrig = btn.textContent;
@@ -5015,10 +5142,13 @@ async function caricaEffettoUpload(ev) {
     let dati = null;
     try { dati = await res.json(); } catch { /* risposta non JSON */ }
     if (!res.ok) throw new Error(dati?.errore || `errore ${res.status}`);
-    toast('Effetto caricato e compresso! ✨');
+    toast(dati?.combo ? 'Combo caricata (media + suono)! ✨' : 'Effetto caricato e compresso! ✨');
     fileInput.value = '';
+    if (suonoInput) suonoInput.value = '';
     document.getElementById('eff-comando').value = '';
+    const nomeBox = document.getElementById('eff-nome'); if (nomeBox) nomeBox.value = '';
     caricaEffetti();
+    if (pubblico) caricaLibreria();     // riflette subito la nuova condivisione
   } catch (e) {
     if (out) out.textContent = '❌ ' + e.message;
     toast('Caricamento fallito: ' + e.message, 'errore');

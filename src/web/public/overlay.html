@@ -249,12 +249,19 @@
       el.style.setProperty('--fx-r', (Number(pos.r) || 0) + 'deg');
     }
 
+    // COMBO: un effetto visivo può avere un suono abbinato → parte insieme al media.
+    function suonaAbbinato(ev) {
+      if (!ev || !ev.suonoUrl) return;
+      try { const a = new Audio(ev.suonoUrl); a.volume = volume01(ev); a.play().catch(() => {}); } catch (e) { /* niente */ }
+    }
+
     function mostraImmagine(ev) {
       const img = document.createElement('img');
       img.className = 'effetto';
       img.src = ev.url;
       posizionaEffetto(img, ev.posizione);
       palco.appendChild(img);
+      suonaAbbinato(ev);
       requestAnimationFrame(() => img.classList.add('dentro'));
       etichettaVolatile(ev.comando, durataMs(ev, 5000));
       setTimeout(() => {
@@ -275,6 +282,7 @@
       v.volume = volume01(ev);
       posizionaEffetto(v, ev.posizione);
       palco.appendChild(v);
+      suonaAbbinato(ev);
       requestAnimationFrame(() => v.classList.add('dentro'));
       etichettaVolatile(ev.comando, 1800);
 
@@ -307,6 +315,7 @@
       canvas.className = 'effetto';
       posizionaEffetto(canvas, ev.posizione);
       palco.appendChild(canvas);
+      suonaAbbinato(ev);
       requestAnimationFrame(() => canvas.classList.add('dentro'));
       etichettaVolatile(ev.comando, 1800);
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
