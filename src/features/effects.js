@@ -94,7 +94,7 @@ export class EffectsEngine {
 
   // Costruisce il payload standard di un effetto (riusato da trigger e "prova").
   payload(channel, eff) {
-    return {
+    const p = {
       comando: eff.comando,
       tipo: eff.tipo,
       url: this.mediaUrl(channel, eff.file),
@@ -105,6 +105,11 @@ export class EffectsEngine {
         ? { x: eff.posx, y: eff.posy, s: eff.scala != null ? eff.scala : 100, r: eff.rot || 0 }
         : null,
     };
+    // COMBO: immagine/video con un suono abbinato → parte insieme al media.
+    if (eff.suono_file && (eff.tipo === 'immagine' || eff.tipo === 'video')) {
+      p.suonoUrl = this.mediaUrl(channel, eff.suono_file);
+    }
+    return p;
   }
 
   // ------------------------------------------------------ trigger dalla chat

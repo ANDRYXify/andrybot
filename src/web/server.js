@@ -7,7 +7,7 @@ import express from 'express';
 import cookieSession from 'cookie-session';
 import multer from 'multer';
 import crypto from 'node:crypto';
-import { mkdirSync, readFileSync, writeFileSync, rmSync, existsSync, readdirSync, statSync, unlinkSync, renameSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync, rmSync, existsSync, readdirSync, statSync, unlinkSync, renameSync, copyFileSync } from 'node:fs';
 import { unlink } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, basename } from 'node:path';
@@ -394,14 +394,14 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   const tmpDir = join(config.dataDir, 'tmp');
   mkdirSync(tmpDir, { recursive: true });
 
-  const upload = multer({
-    storage: multer.diskStorage({
-      destination: (req, file, cb) => cb(null, tmpDir),
-      // nome temporaneo neutro (l'estensione vera non serve: usiamo il mimetype)
-      filename: (req, file, cb) => cb(null, `up_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`),
-    }),
-    limits: { fileSize: UPLOAD_MAX, files: 1 },
+  const uploadStorage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, tmpDir),
+    // nome temporaneo neutro (l'estensione vera non serve: usiamo il mimetype)
+    filename: (req, file, cb) => cb(null, `up_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`),
   });
+  const upload = multer({ storage: uploadStorage, limits: { fileSize: UPLOAD_MAX, files: 1 } });
+  // per gli effetti: fino a 2 file (media + eventuale suono abbinato = COMBO)
+  const uploadEff = multer({ storage: uploadStorage, limits: { fileSize: UPLOAD_MAX, files: 2 } });
 
   // rimuove un file temporaneo (best-effort, non lancia mai)
   const pulisciTemp = async (p) => { if (p) { try { await unlink(p); } catch { /* già rimosso */ } } };
@@ -1642,6 +1642,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       cooldown: e.cooldown, volume: e.volume, durata: e.durata, attivo: !!e.attivo,
       // posizione/dimensione/rotazione a schermo (gestita dall'Overlay Studio)
       xy: (e.posx != null && e.posy != null) ? { x: e.posx, y: e.posy, s: e.scala != null ? e.scala : 100, r: e.rot || 0 } : null,
+      // libreria condivisa
+      pubblico: !!e.pubblico, nome: e.nome || '', combo: !!e.suono_file,
     }));
     res.json({ effetti, overlayUrl: effects.overlayUrl(login) });
   }));
@@ -1699,37 +1701,47 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // Il file viene super-compresso con ffmpeg prima di essere salvato.
   app.post('/api/streamer/effetti', requireLogin, (req, res) => {
     if (!esigiFunzione(req, res, 'effetti', 'Gli effetti e i premi a punti canale')) return;
-    upload.single('file')(req, res, (err) => {
+    // fino a 2 file: il media principale + un eventuale suono abbinato (COMBO).
+    uploadEff.fields([{ name: 'file', maxCount: 1 }, { name: 'suono', maxCount: 1 }])(req, res, (err) => {
+      const puliziaTutto = async () => { for (const f of _fileList(req)) await pulisciTemp(f.path); };
       if (err) {
         const msg = err.code === 'LIMIT_FILE_SIZE' ? 'file troppo grande (max 30MB)' : 'caricamento non riuscito';
-        return res.status(400).json({ errore: msg });
+        return puliziaTutto().then(() => res.status(400).json({ errore: msg }));
       }
       salvaEffetto(req, res).catch(async (e) => {
         log.error('POST /api/streamer/effetti →', e?.message || e);
-        await pulisciTemp(req.file?.path);
+        await puliziaTutto();
         if (!res.headersSent) res.status(500).json({ errore: e?.message || 'errore interno' });
       });
     });
   });
 
+  // tutti i file temporanei di una richiesta multipart (single o fields)
+  const _fileList = (req) => (req.file ? [req.file] : []).concat(Object.values(req.files || {}).flat());
+
   // logica di salvataggio (separata perché parte dopo il parsing multipart di multer)
   async function salvaEffetto(req, res) {
     const login = currentUser(req).login;
+    const fileMedia = req.files?.file?.[0];
+    const fileSuono = req.files?.suono?.[0];
+    const puliziaTutto = async () => { for (const f of _fileList(req)) await pulisciTemp(f.path); };
 
     if (streamers.get(login)?.status !== 'approved') {
-      await pulisciTemp(req.file?.path);
+      await puliziaTutto();
       return res.status(403).json({ errore: 'non sei ancora abilitato' });
     }
-    if (!req.file) return res.status(400).json({ errore: 'nessun file caricato' });
+    if (!fileMedia) { await puliziaTutto(); return res.status(400).json({ errore: 'nessun file caricato' }); }
 
     const comando = normComando(req.body?.comando || '');
     const tier = String(req.body?.tier || 'tutti');
     const cooldown = Math.round(Number(req.body?.cooldown));
     const volume = Math.round(Number(req.body?.volume));
     const durata = Math.round(Number(req.body?.durata));
+    const pubblico = /^(1|true|on|si|sì)$/i.test(String(req.body?.pubblico || ''));
+    const nomePubblico = String(req.body?.nome || '').slice(0, 60).trim();
 
-    // validazione: se qualcosa non va, si pulisce il temp e si risponde 400
-    const errore = async (msg) => { await pulisciTemp(req.file?.path); return res.status(400).json({ errore: msg }); };
+    // validazione: se qualcosa non va, si puliscono i temp e si risponde 400
+    const errore = async (msg) => { await puliziaTutto(); return res.status(400).json({ errore: msg }); };
     if (!comando) return errore('comando non valido: usa lettere, numeri o "_"');
     if (!TIER_VALIDI.includes(tier)) return errore('permesso (chi può usarlo) non valido');
     if (!Number.isFinite(cooldown) || cooldown < 0 || cooldown > 3600) return errore('cooldown non valido (0..3600 s)');
@@ -1739,34 +1751,62 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const destDir = join(effectsRoot, login);
     mkdirSync(destDir, { recursive: true });
 
-    // compressione: comprimi() cancella comunque il file temporaneo
+    // effetto precedente con lo stesso comando (per pulire i vecchi file su sostituzione)
+    const esistente = effectsDb.get(login, comando);
+
+    // compressione del media principale: comprimi() cancella comunque il temp
     let esito;
     try {
-      esito = await comprimi(req.file.path, req.file.mimetype, destDir, `${Date.now()}_${comando}`);
+      esito = await comprimi(fileMedia.path, fileMedia.mimetype, destDir, `${Date.now()}_${comando}`);
     } catch (e) {
+      await pulisciTemp(fileSuono?.path);
       return res.status(400).json({ errore: e?.message || 'compressione fallita' });
+    }
+
+    // COMBO: suono abbinato — solo se il media è immagine/video e il file è audio.
+    let esitoSuono = null;
+    if (fileSuono) {
+      if (esito.tipo !== 'immagine' && esito.tipo !== 'video') {
+        await pulisciTemp(join(destDir, esito.file)); await pulisciTemp(fileSuono.path);
+        return res.status(400).json({ errore: 'il suono abbinato si può mettere solo su immagini o video' });
+      }
+      try {
+        esitoSuono = await comprimi(fileSuono.path, fileSuono.mimetype, destDir, `${Date.now()}_${comando}_snd`);
+      } catch (e) {
+        await pulisciTemp(join(destDir, esito.file));
+        return res.status(400).json({ errore: e?.message || 'compressione suono fallita' });
+      }
+      if (esitoSuono.tipo !== 'audio') {
+        await pulisciTemp(join(destDir, esito.file)); await pulisciTemp(join(destDir, esitoSuono.file));
+        return res.status(400).json({ errore: 'il file da abbinare deve essere un AUDIO' });
+      }
     }
 
     // durata a schermo: per le immagini vale la scelta dello streamer,
     // per audio/video usiamo la durata reale del media (già limitata).
     const durataFinale = esito.tipo === 'immagine' ? durata : esito.durata;
 
-    let vecchioFile;
     try {
-      vecchioFile = effectsDb.add(login, {
-        comando, tipo: esito.tipo, file: esito.file, tier, cooldown, volume, durata: durataFinale,
-      });
+      effectsDb.add(login, { comando, tipo: esito.tipo, file: esito.file, tier, cooldown, volume, durata: durataFinale });
     } catch (e) {
-      // salvataggio nel DB fallito (es. tetto effetti): niente orfani sul disco
       await pulisciTemp(join(destDir, esito.file));
+      if (esitoSuono) await pulisciTemp(join(destDir, esitoSuono.file));
       return res.status(400).json({ errore: e?.message || 'salvataggio non riuscito' });
     }
 
-    // se stavamo sostituendo un effetto, cancelliamo il vecchio media
-    if (vecchioFile && vecchioFile !== esito.file) {
-      await pulisciTemp(join(destDir, vecchioFile));
+    const eff = effectsDb.get(login, comando);   // riprende la riga (con id) appena salvata
+    // COMBO: aggancia il nuovo suono (o lascia il precedente se non ne è arrivato uno nuovo)
+    if (esitoSuono && eff) {
+      effectsDb.attachSuono(login, eff.id, esitoSuono.file);
+      if (esistente?.suono_file && esistente.suono_file !== esitoSuono.file) await pulisciTemp(join(destDir, esistente.suono_file));
     }
-    res.json({ ok: true });
+    // pubblicazione nella libreria condivisa (attribuzione: chi carica)
+    if (eff) effectsDb.setPubblico(login, eff.id, { pubblico, nome: nomePubblico || comando, autore: login });
+
+    // pulizia dei vecchi file su sostituzione
+    if (esistente?.file && esistente.file !== esito.file) await pulisciTemp(join(destDir, esistente.file));
+
+    res.json({ ok: true, pubblico, combo: !!esitoSuono });
   }
 
   // eliminazione di un effetto (+ del suo file dal disco)
@@ -1774,9 +1814,101 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const login = currentUser(req).login;
     const id = parseInt(req.params.id, 10);
     if (!Number.isFinite(id)) return res.status(400).json({ errore: 'id non valido' });
-    const file = effectsDb.remove(login, id);
-    if (file) await pulisciTemp(join(effectsRoot, login, file));
+    const rimosso = effectsDb.remove(login, id);
+    if (rimosso?.file) await pulisciTemp(join(effectsRoot, login, rimosso.file));
+    if (rimosso?.suonoFile) await pulisciTemp(join(effectsRoot, login, rimosso.suonoFile));   // audio della combo
     res.json({ ok: true });
+  }));
+
+  // ---- Libreria CONDIVISA di effetti (gif/video/foto/audio + combo) ----
+  // Ogni effetto può essere reso pubblico e importato dagli altri streamer.
+  // Rende pubblico/privato un MIO effetto (+ titolo mostrato nella libreria).
+  app.patch('/api/streamer/effetti/:id/pubblico', requireLogin, wrap(async (req, res) => {
+    if (!esigiFunzione(req, res, 'effetti', 'La libreria condivisa')) return;
+    const login = currentUser(req).login;
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) return res.status(400).json({ errore: 'id non valido' });
+    const eff = effectsDb.byId(login, id);
+    if (!eff) return res.status(404).json({ errore: 'effetto non trovato' });
+    const pubblico = req.body?.pubblico === true || /^(1|true|on)$/i.test(String(req.body?.pubblico ?? ''));
+    const nome = String(req.body?.nome || eff.nome || eff.comando).slice(0, 60);
+    effectsDb.setPubblico(login, id, { pubblico, nome, autore: login });
+    res.json({ ok: true, pubblico });
+  }));
+
+  // Elenca la libreria condivisa (pubblici, di default esclusi i miei). Filtri:
+  // tipo (audio|immagine|video), q (ricerca), miei=1 per includere anche i miei.
+  app.get('/api/streamer/libreria', requireLogin, wrap(async (req, res) => {
+    if (!esigiFunzione(req, res, 'effetti', 'La libreria condivisa')) return;
+    const login = currentUser(req).login;
+    const tipo = String(req.query.tipo || '');
+    const q = String(req.query.q || '');
+    const includiMiei = /^(1|true)$/i.test(String(req.query.miei || ''));
+    const items = effectsDb.sharedList({ tipo, q, escludi: includiMiei ? null : login }).map((e) => ({
+      id: e.id, nome: e.nome || e.comando, tipo: e.tipo,
+      autore: e.autore || e.channel, combo: !!e.suono_file, usi: e.usi || 0,
+      mio: e.channel === login,
+      url: `/api/streamer/libreria/media/${e.id}`,
+      suonoUrl: e.suono_file ? `/api/streamer/libreria/media/${e.id}/audio` : null,
+    }));
+    res.json({ items });
+  }));
+
+  // Serve il media di un effetto PUBBLICO (anteprima nella libreria). Sicuro:
+  // solo se pubblico, e usa il nome file salvato nel DB (niente path dall'utente).
+  const serviLibreria = (colonna) => (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const eff = Number.isFinite(id) ? effectsDb.pubblicoById(id) : null;
+    const file = eff ? eff[colonna] : '';
+    if (!eff || !file || !/^[A-Za-z0-9._-]+$/.test(file)) return notFound(res);
+    res.sendFile(join(effectsRoot, eff.channel, file), { maxAge: '300s' }, (err) => { if (err && !res.headersSent) notFound(res); });
+  };
+  app.get('/api/streamer/libreria/media/:id', requireLogin, serviLibreria('file'));
+  app.get('/api/streamer/libreria/media/:id/audio', requireLogin, serviLibreria('suono_file'));
+
+  // Importa un effetto pubblico nella PROPRIA libreria (copia i file). Resta
+  // privato di default; l'attribuzione all'autore originale viene conservata.
+  app.post('/api/streamer/libreria/importa', requireLogin, wrap(async (req, res) => {
+    if (!esigiFunzione(req, res, 'effetti', 'La libreria condivisa')) return;
+    const login = currentUser(req).login;
+    if (streamers.get(login)?.status !== 'approved') return res.status(403).json({ errore: 'non sei ancora abilitato' });
+    const id = parseInt(req.body?.id, 10);
+    const src = Number.isFinite(id) ? effectsDb.pubblicoById(id) : null;
+    if (!src) return res.status(404).json({ errore: 'effetto non trovato o non più pubblico' });
+    if (src.channel === login) return res.status(400).json({ errore: 'questo effetto è già tuo' });
+
+    const srcDir = join(effectsRoot, src.channel);
+    const destDir = join(effectsRoot, login);
+    mkdirSync(destDir, { recursive: true });
+    if (!existsSync(join(srcDir, src.file))) return res.status(404).json({ errore: 'file di origine non trovato' });
+
+    // comando univoco nel MIO canale, derivato dal nome/comando di origine
+    const base = normComando(src.nome || src.comando) || 'effetto';
+    let comando = base, n = 2;
+    while (effectsDb.get(login, comando)) { comando = normComando(base + '_' + n) || (base + n); n++; if (n > 99) break; }
+
+    const estens = (f) => { const i = String(f).lastIndexOf('.'); return i >= 0 ? String(f).slice(i) : ''; };
+    const nuovoFile = `${Date.now()}_${comando}${estens(src.file)}`;
+    copyFileSync(join(srcDir, src.file), join(destDir, nuovoFile));
+    let nuovoSuono = '';
+    if (src.suono_file && existsSync(join(srcDir, src.suono_file))) {
+      nuovoSuono = `${Date.now()}_${comando}_snd${estens(src.suono_file)}`;
+      copyFileSync(join(srcDir, src.suono_file), join(destDir, nuovoSuono));
+    }
+
+    try {
+      effectsDb.add(login, { comando, tipo: src.tipo, file: nuovoFile, tier: 'tutti', cooldown: 0, volume: src.volume, durata: src.durata });
+    } catch (e) {
+      await pulisciTemp(join(destDir, nuovoFile));
+      if (nuovoSuono) await pulisciTemp(join(destDir, nuovoSuono));
+      return res.status(400).json({ errore: e?.message || 'importazione non riuscita' });
+    }
+    const eff = effectsDb.get(login, comando);
+    if (eff && nuovoSuono) effectsDb.attachSuono(login, eff.id, nuovoSuono);
+    // resta PRIVATO; conserva l'autore originale per l'attribuzione
+    if (eff) effectsDb.setPubblico(login, eff.id, { pubblico: false, nome: src.nome || comando, autore: src.autore || src.channel });
+    effectsDb.incUsi(src.id);
+    res.json({ ok: true, comando });
   }));
 
   // "prova": manda l'effetto all'overlay come farebbe il trigger in chat

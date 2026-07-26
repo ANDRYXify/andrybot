@@ -515,6 +515,22 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .al-carica { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; margin-top: .5rem; }
 .al-carica .btn { white-space: nowrap; }
 .al-up-esito { font-size: .8rem; }
+
+/* --- Libreria condivisa ------------------------------------------------ */
+.lib-filtri { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin: .4rem 0 .8rem; }
+.lib-tabs { display: flex; flex-wrap: wrap; gap: .4rem; }
+.lib-tab.attivo { background: var(--viola, #9146ff); color: #fff; border-color: transparent; }
+#lib-cerca { flex: 1 1 180px; min-width: 140px; }
+.lib-griglia { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .8rem; }
+.lib-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-m); padding: .55rem; display: flex; flex-direction: column; gap: .35rem; }
+.lib-card:hover { border-color: var(--border-2); }
+.lib-media-wrap { position: relative; aspect-ratio: 16/9; border-radius: var(--r-s); overflow: hidden; background: #0000002e; display: flex; align-items: center; justify-content: center; }
+.lib-media { width: 100%; height: 100%; object-fit: contain; display: block; }
+.lib-media.lib-audio { font-size: 2.2rem; }
+.lib-combo { position: absolute; left: 4px; bottom: 4px; font-size: .68rem; background: #000000a6; color: #fff; padding: 1px 6px; border-radius: 999px; }
+.lib-nome { font-weight: 600; font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lib-azioni { display: flex; align-items: center; gap: .4rem; margin-top: auto; }
+.lib-azioni .lib-importa { flex: 1; }
 /* checkbox in riga (bagliore/icona/ombra…) */
 .riga-check { display: inline-flex; align-items: center; gap: .4rem; font-size: .9rem; margin-right: 1.2rem; cursor: pointer; }
 .riga-check input { width: 16px; height: 16px; }
