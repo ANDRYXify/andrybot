@@ -61,6 +61,8 @@ export const config = {
   // twitch
   twitchClientId: env('TWITCH_CLIENT_ID'),
   twitchClientSecret: env('TWITCH_CLIENT_SECRET'),
+  // Studio Web: server di ingest RTMP di Twitch (senza la stream key finale).
+  twitchRtmp: env('TWITCH_RTMP', 'rtmp://live.twitch.tv/app').replace(/\/$/, ''),
   adminLogins: env('ADMIN_LOGINS', 'andryxify')
     .toLowerCase().split(',').map(s => s.trim()).filter(Boolean),
 
@@ -153,6 +155,7 @@ export const SCOPES = {
     'channel:manage:raids',       // Regia: avviare/annullare una raid
     'channel:edit:commercial',    // Regia: lanciare una pubblicità (ad-break)
     'channel:read:ads',           // Regia: leggere la programmazione delle pubblicità
+    'channel:read:stream_key',    // Studio Web: leggere la stream key (per andare live dal browser)
   ],
 };
 

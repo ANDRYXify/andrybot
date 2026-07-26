@@ -880,6 +880,7 @@ const GRUPPI = [
   ] },
   { id: 'diretta', nome: 'Durante la diretta', icona: '🔴', schede: [
     ['regia', 'Vai live'],
+    ['studio', 'Studio Web'],
     ['clip', 'Clip'],
     ['ascolto', 'Ascolto vocale'],
     ['musica', 'Musica'],
@@ -910,6 +911,7 @@ const _ico = (d) => `<svg class="lat-svg" viewBox="0 0 24 24" width="17" height=
 const ICONA = {
   stato:       _ico('<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9v11h14V9"/><path d="M9.5 20v-6h5v6"/>'),
   regia:       _ico('<circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.48M7.76 16.24a6 6 0 0 1 0-8.48M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/>'),
+  studio:      _ico('<path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/>'),
   personalita: _ico('<path d="M12 3c.35 3.8 1.4 4.85 5 5.2-3.6.35-4.65 1.4-5 5.2-.35-3.8-1.4-4.85-5-5.2 3.6-.35 4.65-1.4 5-5.2Z"/><path d="M18.5 15c.15 1.6.6 2.05 2.2 2.2-1.6.15-2.05.6-2.2 2.2-.15-1.6-.6-2.05-2.2-2.2 1.6-.15 2.05-.6 2.2-2.2Z"/>'),
   conoscenza:  _ico('<path d="M5 4.5h11a2 2 0 0 1 2 2v13H7a2 2 0 0 1-2-2Z"/><path d="M9 4.5v15"/>'),
   memoria:     _ico('<path d="M4 21V4"/><path d="M4 21h16"/><path d="M8.5 21v-6"/><path d="M13 21V9"/><path d="M17.5 21v-9"/>'),
@@ -1116,6 +1118,7 @@ function vistaPiattaforma() {
     ${pannelloPersonalita()}
     ${pannelloConoscenza()}
     ${pannelloRegia()}
+    ${pannelloStudio()}
     ${pannelloClip()}
     ${pannelloAscolto()}
     ${pannelloMusica()}
@@ -3194,6 +3197,294 @@ async function salvaRegiaCanale() {
   toast('Info canale aggiornate ✓');
 }
 
+// --- scheda Studio Web (vai live dal browser, senza OBS) ----------------
+
+function pannelloStudio() {
+  return pannello('studio', `
+    <div class="carta evidenziata" id="studio-permessi-banner" hidden></div>
+    <div class="carta">
+      <h2>📡 Studio Web — vai live senza OBS</h2>
+      <p>Componi <strong>webcam + schermo/gioco + overlay</strong> qui nel browser e vai in diretta su Twitch con un click.
+      Il video parte da questa scheda: <strong>tienila aperta</strong> mentre trasmetti.</p>
+
+      <div class="studio-sorgenti">
+        <button type="button" class="btn secondario" id="studio-webcam">🎥 Webcam</button>
+        <button type="button" class="btn secondario" id="studio-mic">🎙️ Microfono</button>
+        <button type="button" class="btn secondario" id="studio-schermo">🖥️ Schermo / gioco</button>
+      </div>
+
+      <div class="studio-palco">
+        <canvas id="studio-canvas" width="1280" height="720"></canvas>
+        <div id="studio-badge-live" class="studio-badge-live" hidden>● LIVE <span id="studio-timer">00:00</span></div>
+      </div>
+
+      <div class="griglia-campi spazio-sopra">
+        <div>
+          <label class="campo" for="studio-pip-corner">Webcam — posizione</label>
+          <select id="studio-pip-corner">
+            <option value="br">In basso a destra</option>
+            <option value="bl">In basso a sinistra</option>
+            <option value="tr">In alto a destra</option>
+            <option value="tl">In alto a sinistra</option>
+            <option value="full">A tutto schermo</option>
+          </select>
+        </div>
+        <div>
+          <label class="campo" for="studio-pip-size">Webcam — dimensione: <strong><span id="studio-pip-size-v">26</span>%</strong></label>
+          <input type="range" id="studio-pip-size" min="12" max="50" value="26">
+        </div>
+      </div>
+
+      <div class="studio-vai spazio-sopra">
+        <button type="button" class="btn grande" id="studio-live">🔴 VAI LIVE</button>
+        <button type="button" class="btn secondario" id="studio-ferma" hidden>⏹ Ferma diretta</button>
+        <span id="studio-stato" class="suggerimento"></span>
+      </div>
+
+      <p class="suggerimento spazio-sopra">ℹ️ Perfetto per <strong>just-chatting / webcam</strong>. Per i giochi ad alta qualità/frame rate OBS resta migliore.
+      Alert, chat ed effetti a punti canale vengono disegnati sul palco (v1: senza le animazioni più elaborate né le emote 7TV).</p>
+    </div>`);
+}
+
+// stato del motore studio (lato browser)
+const STUDIO = {
+  webcam: null, mic: null, schermo: null,
+  video: { cam: null, scr: null },
+  canvas: null, ctx: null, raf: 0,
+  audio: null, rec: null, live: false, startedAt: 0, timer: 0,
+  coda: [], inviando: false,
+  overlay: { alert: null, chat: [], fx: [] },
+  sse: null, pip: { corner: 'br', size: 26 },
+};
+
+function studioLog(m) { const el = document.getElementById('studio-stato'); if (el) el.textContent = m; }
+
+function avviaLoopStudio() {
+  if (!STUDIO.canvas) { STUDIO.canvas = document.getElementById('studio-canvas'); STUDIO.ctx = STUDIO.canvas ? STUDIO.canvas.getContext('2d') : null; }
+  if (STUDIO.ctx && !STUDIO.raf) studioDisegna();
+}
+
+function studioDisegna() {
+  const c = STUDIO.ctx; if (!c) { STUDIO.raf = 0; return; }
+  const W = STUDIO.canvas.width, H = STUDIO.canvas.height;
+  c.fillStyle = '#0b0b0f'; c.fillRect(0, 0, W, H);
+  const scr = STUDIO.video.scr, cam = STUDIO.video.cam;
+  const cover = (v) => { if (!v || !v.videoWidth) return; const r = Math.max(W / v.videoWidth, H / v.videoHeight); const w = v.videoWidth * r, h = v.videoHeight * r; try { c.drawImage(v, (W - w) / 2, (H - h) / 2, w, h); } catch (e) { /* frame non pronto */ } };
+  if (scr && scr.videoWidth) cover(scr);
+  else if (cam && cam.videoWidth) cover(cam);
+  // webcam in PiP quando c'è lo schermo (e non è "a tutto schermo")
+  if (cam && cam.videoWidth && scr && scr.videoWidth && STUDIO.pip.corner !== 'full') {
+    const pw = W * STUDIO.pip.size / 100, ph = pw * (cam.videoHeight / cam.videoWidth || 0.5625), m = 20;
+    let x = W - pw - m, y = H - ph - m;
+    if (STUDIO.pip.corner === 'bl') x = m;
+    else if (STUDIO.pip.corner === 'tr') y = m;
+    else if (STUDIO.pip.corner === 'tl') { x = m; y = m; }
+    try { c.drawImage(cam, x, y, pw, ph); c.strokeStyle = '#000a'; c.lineWidth = 4; c.strokeRect(x, y, pw, ph); } catch (e) { /* niente */ }
+  }
+  disegnaOverlayStudio(c, W, H);
+  STUDIO.raf = requestAnimationFrame(studioDisegna);
+}
+
+function disegnaOverlayStudio(c, W, H) {
+  const now = Date.now(), ov = STUDIO.overlay;
+  ov.fx = ov.fx.filter((f) => f.until > now);
+  for (const f of ov.fx) {
+    const el = f.el; const vw = el && (el.videoWidth || el.naturalWidth), vh = el && (el.videoHeight || el.naturalHeight);
+    if (!vw) continue;
+    const scale = (W * 0.35) / vw, w = vw * scale, h = vh * scale;
+    const x = (f.x != null ? f.x / 100 * W : W / 2) - w / 2;
+    const y = (f.y != null ? f.y / 100 * H : H / 2) - h / 2;
+    try { c.drawImage(el, x, y, w, h); } catch (e) { /* niente */ }
+  }
+  ov.chat = ov.chat.filter((m) => m.until > now);
+  const chat = ov.chat.slice(-6);
+  c.textAlign = 'left'; c.textBaseline = 'bottom'; c.font = '600 22px system-ui, sans-serif';
+  chat.forEach((m, i) => {
+    const y = H - 28 - (chat.length - 1 - i) * 30, t = (m.user ? m.user + ': ' : '') + m.testo;
+    c.lineWidth = 4; c.strokeStyle = '#000a'; c.strokeText(t, 24, y);
+    c.fillStyle = '#fff'; c.fillText(t, 24, y);
+  });
+  if (ov.alert && ov.alert.until > now) {
+    const a = ov.alert;
+    c.textAlign = 'center'; c.textBaseline = 'top'; c.font = '800 40px system-ui, sans-serif';
+    c.lineWidth = 6; c.strokeStyle = '#000b'; c.strokeText(a.testo, W / 2, 40, W * 0.9);
+    c.fillStyle = a.colore || '#fff'; c.fillText(a.testo, W / 2, 40, W * 0.9);
+    if (a.el && (a.el.naturalWidth || a.el.videoWidth)) {
+      const vw = a.el.videoWidth || a.el.naturalWidth, vh = a.el.videoHeight || a.el.naturalHeight;
+      const scale = (W * 0.26) / vw, w = vw * scale, h = vh * scale;
+      try { c.drawImage(a.el, (W - w) / 2, 96, w, h); } catch (e) { /* niente */ }
+    }
+    c.textAlign = 'left';
+  } else if (ov.alert) ov.alert = null;
+}
+
+// instrada un audio (effetto/alert) nel mix in diretta (così lo sentono anche gli
+// spettatori) e lo fa sentire allo streamer. Fuori diretta: play locale semplice.
+function suonaStudioSfx(url, volume) {
+  try {
+    const el = new Audio(url); el.crossOrigin = 'anonymous';
+    if (volume != null) el.volume = Math.max(0, Math.min(1, Number(volume) / 100));
+    const A = STUDIO.audio;
+    if (A) { try { const s = A.ac.createMediaElementSource(el); s.connect(A.sfx); s.connect(A.ac.destination); } catch (e) { /* niente */ } }
+    el.play().catch(() => {});
+  } catch (e) { /* niente */ }
+}
+
+function studioSSE(sseUrl) {
+  if (STUDIO.sse) { try { STUDIO.sse.close(); } catch (e) { /* niente */ } }
+  let es; try { es = new EventSource(sseUrl); } catch (e) { return; }
+  STUDIO.sse = es;
+  es.onmessage = (ev) => {
+    let d; try { d = JSON.parse(ev.data); } catch { return; }
+    const now = Date.now();
+    if (d.tipo === 'immagine' || d.tipo === 'video') {
+      const el = document.createElement(d.tipo === 'video' ? 'video' : 'img');
+      el.crossOrigin = 'anonymous'; el.src = d.url;
+      if (d.tipo === 'video') { el.muted = true; el.autoplay = true; el.playsInline = true; el.play().catch(() => {}); }
+      const pos = d.posizione || {};
+      STUDIO.overlay.fx.push({ el, until: now + (Number(d.durata) || 5000), x: pos.x, y: pos.y });
+      if (d.suonoUrl) suonaStudioSfx(d.suonoUrl, d.volume);
+    } else if (d.tipo === 'audio') {
+      if (d.url) suonaStudioSfx(d.url, d.volume);
+    } else if (d.tipo === 'alert') {
+      const a = { testo: String(d.testo || ''), colore: d.colore, until: now + (Number(d.durata) || 6000) };
+      if (d.mediaUrl) {
+        const el = document.createElement(d.mediaTipo === 'video' ? 'video' : 'img'); el.crossOrigin = 'anonymous'; el.src = d.mediaUrl;
+        if (d.mediaTipo === 'video') { el.muted = true; el.autoplay = true; el.playsInline = true; el.play().catch(() => {}); }
+        a.el = el;
+      }
+      STUDIO.overlay.alert = a;
+      if (d.suonoUrl) suonaStudioSfx(d.suonoUrl, d.volume);
+    } else if (d.tipo === 'chat') {
+      STUDIO.overlay.chat.push({ user: d.user || '', testo: String(d.testo || ''), until: now + 12000 });
+    }
+  };
+}
+
+async function attivaWebcam() {
+  if (DEMO) { toast('In demo la webcam non parte 😊 — accedi per farlo davvero.'); return; }
+  try {
+    STUDIO.webcam = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: false });
+    const v = document.createElement('video'); v.srcObject = STUDIO.webcam; v.muted = true; v.playsInline = true; await v.play().catch(() => {});
+    STUDIO.video.cam = v;
+    document.getElementById('studio-webcam')?.classList.add('attivo');
+    avviaLoopStudio();
+  } catch (e) { toast('Webcam non disponibile: ' + e.message, 'errore'); }
+}
+
+async function attivaMic() {
+  if (DEMO) { toast('In demo il microfono non parte 😊'); return; }
+  try {
+    STUDIO.mic = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    document.getElementById('studio-mic')?.classList.add('attivo');
+    toast('Microfono attivo 🎙️');
+  } catch (e) { toast('Microfono non disponibile: ' + e.message, 'errore'); }
+}
+
+async function attivaSchermo() {
+  if (DEMO) { toast('In demo la condivisione non parte 😊'); return; }
+  try {
+    const s = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: true });
+    STUDIO.schermo = s;
+    const v = document.createElement('video'); v.srcObject = new MediaStream(s.getVideoTracks()); v.muted = true; v.playsInline = true; await v.play().catch(() => {});
+    STUDIO.video.scr = v;
+    s.getVideoTracks()[0].addEventListener('ended', () => {
+      STUDIO.video.scr = null; STUDIO.schermo = null; document.getElementById('studio-schermo')?.classList.remove('attivo');
+    });
+    document.getElementById('studio-schermo')?.classList.add('attivo');
+    avviaLoopStudio();
+  } catch (e) { if (e.name !== 'NotAllowedError') toast('Condivisione non riuscita: ' + e.message, 'errore'); }
+}
+
+function studioAudioInit() {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const ac = new AC();
+  const dest = ac.createMediaStreamDestination();
+  const sfx = ac.createGain(); sfx.gain.value = 1; sfx.connect(dest);
+  if (STUDIO.mic && STUDIO.mic.getAudioTracks().length) { try { ac.createMediaStreamSource(STUDIO.mic).connect(dest); } catch (e) { /* niente */ } }
+  if (STUDIO.schermo && STUDIO.schermo.getAudioTracks().length) { try { ac.createMediaStreamSource(new MediaStream(STUDIO.schermo.getAudioTracks())).connect(dest); } catch (e) { /* niente */ } }
+  STUDIO.audio = { ac, dest, sfx };
+  return dest.stream;
+}
+
+async function avviaLive() {
+  if (STUDIO.live) return;
+  if (!STUDIO.video.scr && !STUDIO.video.cam) { toast('Attiva prima la webcam o lo schermo.', 'errore'); return; }
+  studioLog('Avvio…');
+  try { await api('/api/studio/start', { method: 'POST' }); }
+  catch (e) { studioLog('❌ ' + e.message); toast('Non riuscito: ' + e.message, 'errore'); return; }
+  avviaLoopStudio();
+  const vstream = STUDIO.canvas.captureStream(30);
+  const astream = studioAudioInit();
+  const combined = new MediaStream([...vstream.getVideoTracks(), ...astream.getAudioTracks()]);
+  const mimeOk = (t) => { try { return MediaRecorder.isTypeSupported(t); } catch (e) { return false; } };
+  const mime = mimeOk('video/webm;codecs=vp8,opus') ? 'video/webm;codecs=vp8,opus' : (mimeOk('video/webm') ? 'video/webm' : '');
+  let rec;
+  try { rec = new MediaRecorder(combined, mime ? { mimeType: mime, videoBitsPerSecond: 4500000, audioBitsPerSecond: 160000 } : undefined); }
+  catch (e) { studioLog('❌ registrazione non supportata dal browser'); toast('Il browser non supporta la registrazione video.', 'errore'); await api('/api/studio/stop', { method: 'POST' }).catch(() => {}); return; }
+  rec.ondataavailable = (e) => { if (e.data && e.data.size) { STUDIO.coda.push(e.data); drenaCodaStudio(); } };
+  rec.start(1000);
+  STUDIO.rec = rec; STUDIO.live = true; STUDIO.startedAt = Date.now();
+  document.getElementById('studio-live').hidden = true;
+  document.getElementById('studio-ferma').hidden = false;
+  const badge = document.getElementById('studio-badge-live'); if (badge) badge.hidden = false;
+  STUDIO.timer = setInterval(aggiornaTimerStudio, 1000);
+  studioLog('🔴 In diretta su Twitch!');
+}
+
+async function drenaCodaStudio() {
+  if (STUDIO.inviando) return;
+  STUDIO.inviando = true;
+  while (STUDIO.coda.length && STUDIO.live) {
+    const blob = STUDIO.coda.shift();
+    try {
+      const buf = await blob.arrayBuffer();
+      await fetch('/api/studio/chunk', { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: buf });
+    } catch (e) { /* pezzo perso: si continua */ }
+  }
+  STUDIO.inviando = false;
+}
+
+async function fermaLive() {
+  if (!STUDIO.live) return;
+  STUDIO.live = false;
+  try { STUDIO.rec && STUDIO.rec.stop(); } catch (e) { /* niente */ }
+  clearInterval(STUDIO.timer);
+  try { await api('/api/studio/stop', { method: 'POST' }); } catch (e) { /* niente */ }
+  try { STUDIO.audio && STUDIO.audio.ac.close(); } catch (e) { /* niente */ }
+  STUDIO.audio = null; STUDIO.coda = [];
+  document.getElementById('studio-live').hidden = false;
+  document.getElementById('studio-ferma').hidden = true;
+  const badge = document.getElementById('studio-badge-live'); if (badge) badge.hidden = true;
+  studioLog('Diretta terminata.');
+}
+
+function aggiornaTimerStudio() {
+  const el = document.getElementById('studio-timer'); if (!el) return;
+  const s = Math.max(0, Math.floor((Date.now() - STUDIO.startedAt) / 1000));
+  el.textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+}
+
+async function caricaStudio() {
+  avviaLoopStudio();   // mostra il palco (nero) + overlay in anteprima
+  if (DEMO) { studioLog('Anteprima demo: qui vai in diretta senza OBS.'); return; }
+  try {
+    const d = await api('/api/studio');
+    const banner = document.getElementById('studio-permessi-banner');
+    if (banner) {
+      if (!d.keyOk) {
+        banner.hidden = false;
+        banner.innerHTML = '<p>🔐 Per andare live dallo Studio serve il permesso <strong>stream key</strong> (non ancora concesso).</p><p class="spazio-sopra"><a class="btn" href="/auth/permessi">Concedi i permessi</a></p>';
+      } else banner.hidden = true;
+    }
+  } catch (e) { /* niente */ }
+  // anteprima overlay via SSE (stessa sorgente dell'overlay OBS)
+  try {
+    const ov = await api('/api/streamer/overlay-url');
+    if (ov.overlayUrl) studioSSE(ov.overlayUrl.replace('?key=', '/stream?key='));
+  } catch (e) { /* niente */ }
+}
+
 // --- scheda Effetti & Suoni ---------------------------------------------
 
 function pannelloEffetti() {
@@ -4794,6 +5085,17 @@ function attivaPiattaforma() {
   });
   document.addEventListener('click', (ev) => { if (gLista && !gLista.hidden && !gLista.contains(ev.target) && ev.target !== gCerca) gLista.hidden = true; });
 
+  // --- Studio Web ---
+  document.getElementById('studio-webcam')?.addEventListener('click', () => conErrore(() => attivaWebcam()));
+  document.getElementById('studio-mic')?.addEventListener('click', () => conErrore(() => attivaMic()));
+  document.getElementById('studio-schermo')?.addEventListener('click', () => conErrore(() => attivaSchermo()));
+  document.getElementById('studio-live')?.addEventListener('click', () => conErrore(() => avviaLive()));
+  document.getElementById('studio-ferma')?.addEventListener('click', () => conErrore(() => fermaLive()));
+  document.getElementById('studio-pip-corner')?.addEventListener('change', (e) => { STUDIO.pip.corner = e.target.value; });
+  document.getElementById('studio-pip-size')?.addEventListener('input', (e) => {
+    STUDIO.pip.size = Number(e.target.value); const v = document.getElementById('studio-pip-size-v'); if (v) v.textContent = e.target.value;
+  });
+
   // caricamento di un effetto (multipart, con spinner)
   document.getElementById('btn-carica-effetto')?.addEventListener('click', caricaEffettoUpload);
   // "rendi pubblico": mostra il campo nome nella libreria
@@ -4975,6 +5277,7 @@ function caricaDatiScheda(id) {
   if (id === 'penitenze') caricaPenitenze();
   if (id === 'alert') caricaAlert();
   if (id === 'regia') caricaRegia();
+  if (id === 'studio') caricaStudio();
   if (id === 'effetti') { caricaEffetti(); caricaPremi(); caricaSuoniPremi(); caricaLibreria(); }
   if (id === 'moduli') caricaModuli();
   if (id === 'memoria') caricaStatistiche();

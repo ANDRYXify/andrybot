@@ -161,6 +161,18 @@ export class Helix {
     }
   }
 
+  // Stream key RTMP del canale (Studio Web). Scope 'channel:read:stream_key'.
+  // Segretissima: resta sul server, non va MAI al browser. Ritorna la chiave o null.
+  async getStreamKey(channelLogin) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return null;
+    const token = await this.auth.getToken('broadcaster', channelLogin);
+    try {
+      const j = await this._request('GET', '/streams/key', { query: { broadcaster_id: s.user_id }, token });
+      return j?.data?.[0]?.stream_key || null;
+    } catch { return null; }
+  }
+
   // Programmazione pubblicità (prossimo ad-break, snooze). Scope 'channel:read:ads'.
   // Ritorna { nextAt, duration, lastAt, snoozeCount } o null (offline / niente scope).
   async getAdSchedule(channelLogin) {

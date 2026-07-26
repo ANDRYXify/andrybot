@@ -20,6 +20,7 @@ import * as spotify from '../features/spotify.js';
 import * as giveaway from '../features/giveaway.js';
 import * as webauthn from './webauthn.js';
 import { comprimi } from '../features/compress.js';
+import { StudioEngine } from '../features/studio.js';
 import { seedStreamer } from '../features/seed.js';
 import * as vip from '../features/vip.js';
 import * as telegram from '../features/telegram.js';
@@ -352,6 +353,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     !!(tokens.get('broadcaster', login)?.scopes?.includes('channel:edit:commercial'));
   const adsOk = (login) =>
     !!(tokens.get('broadcaster', login)?.scopes?.includes('channel:read:ads'));
+  // Studio Web: ha concesso la lettura della stream key? (per andare live dal browser)
+  const studioKeyOk = (login) =>
+    !!(tokens.get('broadcaster', login)?.scopes?.includes('channel:read:stream_key'));
 
   // stato Telegram per la dashboard — MAI il token (segreto): solo se è
   // configurato, lo @username del bot, il gruppo collegato e le impostazioni.
@@ -401,6 +405,13 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   const effectsRoot = join(config.dataDir, 'effects');
   const tmpDir = join(config.dataDir, 'tmp');
   mkdirSync(tmpDir, { recursive: true });
+
+  // Studio Web: motore delle dirette dal browser (ffmpeg → RTMP Twitch).
+  const studio = new StudioEngine();
+  const chiudiStudio = () => { try { studio.stopAll(); } catch { /* niente */ } };
+  process.once('SIGINT', chiudiStudio);
+  process.once('SIGTERM', chiudiStudio);
+  process.once('exit', chiudiStudio);
 
   const uploadStorage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, tmpDir),
@@ -764,6 +775,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       canaleOk: user ? canaleOk(user.login) : false,
       // Regia (Vai live): quali permessi ha concesso per gestire la diretta dal bot
       regia: user ? { broadcast: canaleOk(user.login), raid: raidOk(user.login), commercial: commercialOk(user.login), ads: adsOk(user.login) } : null,
+      // Studio Web: permesso stream key concesso? live in corso dallo studio?
+      studio: user ? { keyOk: studioKeyOk(user.login), live: studio.attiva(user.login) } : null,
       telegram: user ? statoTelegram(user.login) : null,
       knowledgeCount: user ? knowledge.count(user.login) : 0,
       preaddestramento: user
@@ -1763,6 +1776,40 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!raidOk(login)) return res.status(403).json({ errore: 'permesso mancante', permesso: true });
     const r = await helix.cancelRaid(login);
     res.json({ ok: !!r.ok });
+  }));
+
+  // ---- STUDIO WEB: vai live dal browser, senza OBS (canvas → ffmpeg → RTMP) ----
+  app.get('/api/studio', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    res.json({ keyOk: studioKeyOk(login), ...studio.stato(login) });
+  }));
+
+  // avvia la diretta: prende la stream key (che resta sul server) e apre ffmpeg
+  app.post('/api/studio/start', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (streamers.get(login)?.status !== 'approved') return res.status(403).json({ errore: 'non sei ancora abilitato' });
+    if (!studioKeyOk(login)) return res.status(403).json({ errore: 'Concedi il permesso "stream key" da /auth/permessi', permesso: true });
+    if (studio.attiva(login)) return res.status(409).json({ errore: 'sei già in diretta dallo studio' });
+    const key = await helix.getStreamKey(login).catch(() => null);
+    if (!key) return res.status(400).json({ errore: 'stream key non disponibile (ri-concedi i permessi)', permesso: true });
+    const r = studio.start(login, key);
+    if (!r.ok) return res.status(400).json({ errore: r.motivo || 'avvio non riuscito' });
+    res.json({ ok: true });
+  }));
+
+  // riceve i pezzi di media (Buffer) dal browser: raw body, un ffmpeg per streamer.
+  // express.raw con type:()=>true → qualsiasi content-type finisce in req.body come Buffer.
+  app.post('/api/studio/chunk', requireLogin, express.raw({ type: () => true, limit: '30mb' }), (req, res) => {
+    const login = currentUser(req).login;
+    if (!studio.attiva(login)) return res.status(409).json({ errore: 'nessuna diretta in corso' });
+    if (Buffer.isBuffer(req.body)) studio.write(login, req.body);
+    res.json({ ok: true });
+  });
+
+  // ferma la diretta dallo studio
+  app.post('/api/studio/stop', requireLogin, wrap(async (req, res) => {
+    studio.stop(currentUser(req).login);
+    res.json({ ok: true });
   }));
 
   // elenco dei PIÙ OVERLAY dello streamer: per ognuno id, nome, layout e il suo
