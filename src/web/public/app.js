@@ -2239,11 +2239,13 @@ function pannelloAlert() {
       <p>Personalizza <strong>tutto</strong> ciò che appare a schermo: alert, chat, widget… colori, font, forma, animazioni.
       Posizioni e "cosa mostra" valgono per l'<strong>overlay selezionato qui sopra</strong>; stile e testi sono condivisi.
       L'<strong>anteprima qui sotto è dal vivo</strong>.</p>
-      <label class="campo" for="ovl-tpl">Template <span class="tenue">— parti da un preset o crea il tuo (salva l'intero look)</span></label>
+      <p class="spazio-sopra"><button class="btn grande" id="ovl-salva-tutto">💾 Salva overlay</button>
+        <span class="suggerimento">Salva tutto in un colpo: alert, chat, widget e il layout dell'overlay selezionato.</span></p>
+      <label class="campo spazio-sopra" for="ovl-tpl">Parti da un modello pronto <span class="tenue">— «Applica» riempie i controlli con quel look; poi premi «Salva overlay»</span></label>
       <div class="riga-flessibile">
         <select id="ovl-tpl" class="campo-largo">${opzTpl}</select>
-        <button class="btn secondario" id="ovl-tpl-applica">Applica</button>
-        <button class="btn secondario" id="ovl-tpl-salva">Salva il mio look…</button>
+        <button class="btn secondario" id="ovl-tpl-applica">Applica al momento</button>
+        <button class="btn secondario" id="ovl-tpl-salva">Salva come mio modello…</button>
         <button class="btn secondario" id="ovl-tpl-elimina">Elimina</button>
       </div>
       <div class="ovl-anteprima spazio-sopra" id="ovl-preview">
@@ -2288,6 +2290,9 @@ function pannelloAlert() {
         ${cSel('al-st-font', 'Font', FONT_OPTS, st.font)}
         ${cRng('al-st-dim', 'Testo', 14, 56, st.dimTesto, 'px')}
       </div>
+      <label class="campo spazio-sopra">Font Google <span class="tenue">— scrivi un nome (es. Poppins, Bebas Neue): l'anteprima usa quel font e vince sul menu qui sopra</span></label>
+      <input type="text" id="al-st-gfont" class="campo-largo gfont" placeholder="— nessuno (usa il menu) —" value="${esc(st.googleFont || '')}">
+      <p class="tenue">Sfoglia i font su <a href="https://fonts.google.com" target="_blank" rel="noopener">fonts.google.com</a> e copia qui il nome.</p>
       <div class="griglia-campi spazio-sopra">
         ${cCol('al-st-bg', 'Sfondo', st.sfondo)}
         ${cRng('al-st-op', 'Opacità', 0, 100, st.opacita, '%')}
@@ -2324,6 +2329,8 @@ function pannelloAlert() {
         ${cSel('co-st-anim', 'Animazione', ANIM_CHAT_OPTS, cst.animazione)}
         ${cRng('co-st-larg', 'Larghezza', 18, 60, cst.larghezza, 'vw')}
       </div>
+      <label class="campo spazio-sopra">Font Google <span class="tenue">— opzionale, vince sul menu</span></label>
+      <input type="text" id="co-st-gfont" class="campo-largo gfont" placeholder="— nessuno —" value="${esc(cst.googleFont || '')}">
       <div class="griglia-campi spazio-sopra">
         ${cCol('co-st-bg', 'Sfondo', cst.sfondo)}
         ${cRng('co-st-op', 'Opacità', 0, 100, cst.opacita, '%')}
@@ -2365,6 +2372,21 @@ function pannelloAlert() {
 
 // nomi-font → variabile CSS (definite in overlay-skin.css) per l'anteprima
 const FONT_VAR = { sistema: 'var(--font-sistema)', rotondo: 'var(--font-rotondo)', condensato: 'var(--font-condensato)', mono: 'var(--font-mono)', serif: 'var(--font-serif)', manga: 'var(--font-manga)' };
+// FONT GOOGLE nell'anteprima: carica al volo il font dalla libreria Google.
+const _gfontDash = new Set();
+function fontGoogleDash(nome) {
+  const n = String(nome || '').replace(/[^a-zA-Z0-9 ]/g, '').trim();
+  if (!n) return null;
+  if (!_gfontDash.has(n.toLowerCase())) {
+    _gfontDash.add(n.toLowerCase());
+    const l = document.createElement('link'); l.rel = 'stylesheet';
+    l.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(n).replace(/%20/g, '+') + '&display=swap';
+    document.head.appendChild(l);
+  }
+  return "'" + n + "', var(--font-sistema)";
+}
+// font effettivo di uno stile: Google (se scritto) o quello del menu
+const fontStile = (st) => (st && st.googleFont ? fontGoogleDash(st.googleFont) : FONT_VAR[(st || {}).font]);
 // posizioni LIBERE (drag) degli elementi nell'anteprima: {x,y} in % o null (angolo).
 // Appartengono all'OVERLAY selezionato (posXY = layout dell'overlay corrente).
 let posXY = { alert: null, chat: null, wf: null, ws: null };
@@ -2379,7 +2401,7 @@ function _setVars(el, vars) { for (const k in vars) { const x = vars[k]; if (x !
 
 function _leggiAlertStile() {
   return {
-    animazione: _v('al-st-anim') || 'slide', font: _v('al-st-font') || 'sistema',
+    animazione: _v('al-st-anim') || 'slide', font: _v('al-st-font') || 'sistema', googleFont: (_v('al-st-gfont') || '').trim(),
     dimTesto: Number(_v('al-st-dim')) || 27, sfondo: _v('al-st-bg'), opacita: Number(_v('al-st-op')),
     testo: _v('al-st-fg'), bordoRaggio: Number(_v('al-st-radius')), bordoSpessore: Number(_v('al-st-border')),
     glow: !!_g('al-st-glow')?.checked, icona: !!_g('al-st-icon')?.checked,
@@ -2388,7 +2410,7 @@ function _leggiAlertStile() {
 function _leggiChatStile() {
   const mode = _v('co-st-user') || 'twitch';
   return {
-    dim: _v('co-st-dim') || 'media', font: _v('co-st-font') || 'sistema', animazione: _v('co-st-anim') || 'slide',
+    dim: _v('co-st-dim') || 'media', font: _v('co-st-font') || 'sistema', googleFont: (_v('co-st-gfont') || '').trim(), animazione: _v('co-st-anim') || 'slide',
     larghezza: Number(_v('co-st-larg')), sfondo: _v('co-st-bg'), opacita: Number(_v('co-st-op')), testo: _v('co-st-fg'),
     bordoRaggio: Number(_v('co-st-radius')), username: mode === 'fisso' ? (_v('co-st-usercol') || '#9146ff') : 'twitch',
     ombra: !!_g('co-st-ombra')?.checked, grassettoUser: !!_g('co-st-bold')?.checked,
@@ -2472,7 +2494,7 @@ function aggiornaAnteprima() {
   const card = _g('ap-alert');
   if (card) {
     card.className = 'alert-card anim-' + st.animazione + (st.glow ? ' glow' : '') + (st.icona ? '' : ' senza-ico');
-    _setVars(card, { '--acc': acc, '--bg': st.sfondo, '--op': st.opacita + '%', '--fg': st.testo, '--radius': st.bordoRaggio + 'px', '--border': st.bordoSpessore + 'px', '--size': st.dimTesto + 'px', '--font': FONT_VAR[st.font] });
+    _setVars(card, { '--acc': acc, '--bg': st.sfondo, '--op': st.opacita + '%', '--fg': st.testo, '--radius': st.bordoRaggio + 'px', '--border': st.bordoSpessore + 'px', '--size': st.dimTesto + 'px', '--font': fontStile(st) });
     _g('ap-alert-ico').innerHTML = AP_ICO_ALERT;
     _g('ap-alert-testo').innerHTML = '<b>MarioRossi</b> si è abbonato! 🌟';
     // niente re-animazione a ogni tasto: l'anteprima resta stabile (l'entrata
@@ -2486,7 +2508,7 @@ function aggiornaAnteprima() {
     apChat.className = 'ap-el ap-chat' + (/destra/.test(chatPos) ? ' destra' : '') + (selezione === 'chat' ? ' sel' : '');
     apChat.innerHTML = [['lucaplays', '#ff4d4d', 'ciao a tutti! 👋'], ['giada_ttv', '#48b0ff', 'che bella live']].map(([u, col, t]) => {
       const cu = cst.username === 'twitch' ? col : cst.username;
-      return `<div class="chat-riga dim-${cst.dim}${cst.ombra ? ' ombra' : ''}${cst.grassettoUser ? ' user-bold' : ''} dentro" style="--bg:${cst.sfondo};--op:${cst.opacita}%;--fg:${cst.testo};--radius:${cst.bordoRaggio}px;--font:${FONT_VAR[cst.font]}"><span class="chat-user" style="color:${cu}">${esc(u)}</span> ${esc(t)}</div>`;
+      return `<div class="chat-riga dim-${cst.dim}${cst.ombra ? ' ombra' : ''}${cst.grassettoUser ? ' user-bold' : ''} dentro" style="--bg:${cst.sfondo};--op:${cst.opacita}%;--fg:${cst.testo};--radius:${cst.bordoRaggio}px;--font:${fontStile(cst)}"><span class="chat-user" style="color:${cu}">${esc(u)}</span> ${esc(t)}</div>`;
     }).join('');
     _iniettaManiglie('chat');   // l'innerHTML qui sopra le rimuove: le rimettiamo
   }
@@ -2675,11 +2697,11 @@ function applicaTemplate(d) {
     _riempiConfig(d);
   } else {
     const al = d.al || {}, ch = d.ch || {}, acc = d.acc;
-    _imposta('al-st-anim', al.animazione); _imposta('al-st-font', al.font); _imposta('al-st-dim', al.dimTesto);
+    _imposta('al-st-anim', al.animazione); _imposta('al-st-font', al.font); _imposta('al-st-gfont', al.googleFont); _imposta('al-st-dim', al.dimTesto);
     _imposta('al-st-bg', al.sfondo); _imposta('al-st-op', al.opacita); _imposta('al-st-fg', al.testo);
     _imposta('al-st-radius', al.bordoRaggio); _imposta('al-st-border', al.bordoSpessore);
     _imposta('al-st-glow', al.glow); _imposta('al-st-icon', al.icona !== false);
-    _imposta('co-st-dim', ch.dim); _imposta('co-st-font', ch.font); _imposta('co-st-bg', ch.sfondo);
+    _imposta('co-st-dim', ch.dim); _imposta('co-st-font', ch.font); _imposta('co-st-gfont', ch.googleFont); _imposta('co-st-bg', ch.sfondo);
     _imposta('co-st-op', ch.opacita); _imposta('co-st-fg', ch.testo); _imposta('co-st-radius', ch.bordoRaggio);
     if (acc) document.querySelectorAll('.alert-blocco[data-alert] .al-colore').forEach((c) => { c.value = acc; });
   }
@@ -2691,7 +2713,7 @@ function applicaTemplate(d) {
 function _riempiConfig(d) {
   const a = d.alerts || {}, ast = a.stile || {};
   _imposta('al-attivo', a.attivo); _imposta('al-pos', a.posizione); if (a.durata) _imposta('al-durata', Math.round(a.durata / 1000));
-  _imposta('al-st-anim', ast.animazione); _imposta('al-st-font', ast.font); _imposta('al-st-dim', ast.dimTesto);
+  _imposta('al-st-anim', ast.animazione); _imposta('al-st-font', ast.font); _imposta('al-st-gfont', ast.googleFont); _imposta('al-st-dim', ast.dimTesto);
   _imposta('al-st-bg', ast.sfondo); _imposta('al-st-op', ast.opacita); _imposta('al-st-fg', ast.testo);
   _imposta('al-st-radius', ast.bordoRaggio); _imposta('al-st-border', ast.bordoSpessore);
   _imposta('al-st-glow', ast.glow); _imposta('al-st-icon', ast.icona !== false);
@@ -2706,7 +2728,7 @@ function _riempiConfig(d) {
   api('/api/streamer/effetti').then((r) => popolaMediaSuoniAlert(r.effetti || [], a)).catch(() => { /* niente */ });
   const ch = d.chatOverlay || {}, cst = ch.stile || {};
   _imposta('co-attivo', ch.attivo); _imposta('co-pos', ch.posizione); _imposta('co-max', ch.max); _imposta('co-fade', ch.fadeSec);
-  _imposta('co-st-dim', cst.dim); _imposta('co-st-font', cst.font); _imposta('co-st-anim', cst.animazione); _imposta('co-st-larg', cst.larghezza);
+  _imposta('co-st-dim', cst.dim); _imposta('co-st-font', cst.font); _imposta('co-st-gfont', cst.googleFont); _imposta('co-st-anim', cst.animazione); _imposta('co-st-larg', cst.larghezza);
   _imposta('co-st-bg', cst.sfondo); _imposta('co-st-op', cst.opacita); _imposta('co-st-fg', cst.testo); _imposta('co-st-radius', cst.bordoRaggio);
   const modo = (cst.username && cst.username !== 'twitch') ? 'fisso' : 'twitch';
   _imposta('co-st-user', modo); if (modo === 'fisso') _imposta('co-st-usercol', cst.username);
@@ -2816,6 +2838,21 @@ async function eliminaOverlay() {
   toast('Overlay eliminato.');
 }
 
+// Salva TUTTO l'overlay in un colpo: stile/testi (alert, chat, widget) + il
+// layout (posizioni e "cosa mostra") dell'overlay selezionato.
+async function salvaTuttoOverlay() {
+  const ov = overlays.find((o) => o.id === overlaySel);
+  if (ov) {
+    ov.xy = { alert: posXY.alert, chat: posXY.chat, wf: posXY.wf, ws: posXY.ws };
+    ov.mostra = { alert: mostraChk('alert'), chat: mostraChk('chat'), wf: mostraChk('wf'), ws: mostraChk('ws'), effetti: mostraChk('effetti') };
+  }
+  await salvaImpostazioni({
+    alerts: _raccogliAlerts(), chatOverlay: _raccogliChat(), overlayWidget: _raccogliWidget(),
+    overlays: _overlaysPayload(),
+  }, null);
+  toast('Overlay salvato ✓');
+}
+
 function caricaAlert() {
   const scheda = _g('scheda-alert');
   // posizioni libere iniziali (dal salvataggio) + elementi trascinabili
@@ -2872,6 +2909,13 @@ function caricaAlert() {
   _g('al-salva')?.addEventListener('click', () => conErrore(() => salvaAlert()));
   _g('co-salva')?.addEventListener('click', () => conErrore(() => salvaChatOverlay()));
   _g('wid-salva')?.addEventListener('click', () => conErrore(() => salvaWidget()));
+  _g('ovl-salva-tutto')?.addEventListener('click', () => conErrore(() => salvaTuttoOverlay()));
+  // font Google: anteprima del nome scritto nel font stesso (più intuitivo)
+  ['al-st-gfont', 'co-st-gfont'].forEach((id) => {
+    const el = _g(id); if (!el) return;
+    const upd = () => { el.style.fontFamily = fontGoogleDash(el.value) || ''; };
+    el.addEventListener('input', upd); upd();
+  });
   _g('css-salva')?.addEventListener('click', () => conErrore(() => salvaCss()));
 
   document.querySelectorAll('.al-prova').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
