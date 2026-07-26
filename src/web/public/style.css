@@ -567,6 +567,13 @@ details.carta.sez > summary h3 { margin: 0; font-size: .98rem; display: inline-f
 details.carta.sez > summary::after { content: ''; margin-left: auto; flex: 0 0 auto; width: .5rem; height: .5rem; border-right: 2px solid var(--acc); border-bottom: 2px solid var(--acc); transform: rotate(45deg); transition: transform .18s ease; opacity: .85; }
 details.carta.sez[open] > summary::after { transform: rotate(-135deg); }
 details.carta.sez[open] > summary { margin-bottom: .5rem; border-bottom: 1px solid var(--border); }
+
+/* Mini editor 16:9 di posizione per un effetto sul premio a punti canale */
+.premio-posizione { margin-top: .5rem; }
+.pp-stage { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: var(--r-m); overflow: hidden; border: 1px solid var(--border); margin-top: .4rem; background-color: #14171f; background-image: linear-gradient(#ffffff12 1px, transparent 1px), linear-gradient(90deg, #ffffff12 1px, transparent 1px); background-size: 8.33% 8.33%; }
+.pp-el { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: .4rem .7rem; border-radius: 8px; background: rgba(72, 176, 255, .92); color: #fff; font-weight: 700; white-space: nowrap; cursor: grab; user-select: none; box-shadow: 0 4px 14px rgba(0, 0, 0, .45); touch-action: none; }
+.pp-el:active { cursor: grabbing; }
+.pp-chroma-box { margin-top: .5rem; }
 .prefisso-cmd { font-size: 1.3rem; font-weight: 800; color: var(--acc); line-height: 1; }
 .azioni-voce { display: flex; gap: .35rem; align-items: center; flex-wrap: wrap; }
 
