@@ -15,7 +15,6 @@ const DEMO = (() => {
   try { return new URLSearchParams(location.search).get('demo') === '1' || /^\/demo\/?$/.test(location.pathname); }
   catch { return false; }
 })();
-const gruppiChiusi = new Set();   // id delle sezioni della sidebar richiuse
 
 // stato locale della scheda "Moduli"
 let datiModuli = null;        // { moduli, effettiDisponibili, apiKey, apiUrl }
@@ -465,14 +464,16 @@ function aggiornaSpiegazioneDemo() { /* sostituita da guidaSchedaHtml() */ }
 
 function render() {
   renderAreaUtente();
-  const navLat = document.getElementById('nav-lat');
+  const navTop = document.getElementById('nav-top');
+  const navDrawer = document.getElementById('nav-drawer');
+  const svuotaNav = () => { if (navTop) navTop.innerHTML = ''; if (navDrawer) navDrawer.innerHTML = ''; };
 
   // "vetrina": la landing pubblica per chi non è loggato (nessun dato privato).
   document.body.classList.toggle('vetrina', !stato.user);
 
   if (!stato.user) {
     document.body.classList.remove('con-nav');
-    if (navLat) navLat.innerHTML = '';
+    svuotaNav();
     renderHero();
     return;
   }
@@ -501,7 +502,8 @@ function render() {
   // La sidebar (con la navigazione) c'è solo quando esiste la piattaforma a
   // schede; negli altri stati (login, richiesta, ecc.) resta nascosta.
   document.body.classList.toggle('con-nav', conPiattaforma);
-  if (navLat) navLat.innerHTML = conPiattaforma ? navLateraleHtml() : '';
+  if (navTop) navTop.innerHTML = conPiattaforma ? navTopHtml() : '';
+  if (navDrawer) navDrawer.innerHTML = conPiattaforma ? navDrawerHtml() : '';
   aggiornaTestataPagina();
 
   if (conPiattaforma) attivaPiattaforma();
@@ -518,10 +520,9 @@ const _menoMoto = !!(window.matchMedia && window.matchMedia('(prefers-reduced-mo
 // Esegue `fn` (che modifica il DOM) dentro una View Transition: il browser anima
 // morbidamente il passaggio — morph del corpo pagina e scorrimento della pillola
 // del menu. Niente transizione con "meno movimento", dove l'API non c'è, o in
-// modalità drawer (≤860px): lì la sidebar scorre via e l'elemento condiviso
-// "volerebbe" attraverso lo schermo → meglio un cambio netto.
+// modalità cassetto (≤1200px): lì la nav non è a schermo → meglio un cambio netto.
 function transizione(fn) {
-  const drawer = window.matchMedia && window.matchMedia('(max-width: 860px)').matches;
+  const drawer = window.matchMedia && window.matchMedia('(max-width: 1200px)').matches;
   if (_menoMoto || drawer || !document.startViewTransition) { fn(); return { finished: Promise.resolve() }; }
   return document.startViewTransition(fn);
 }
@@ -553,7 +554,8 @@ function rivelaCarte(scope = document) {
 }
 
 function renderAreaUtente() {
-  if (!stato.user) { areaUtente.innerHTML = ''; return; }
+  const areaMob = document.getElementById('area-utente-mob');
+  if (!stato.user) { if (areaUtente) areaUtente.innerHTML = ''; if (areaMob) areaMob.innerHTML = ''; return; }
 
   // Identità della persona (fissa) + il canale che sta gestendo ora. Se può
   // gestire più canali (il proprio + quelli che modera) mostra uno switcher che
@@ -563,25 +565,28 @@ function renderAreaUtente() {
   const attuale = stato.user.login;
   const etichetta = (c) => (c.role === 'proprietario' ? 'il mio canale @' : 'moderi @') + c.display;
 
+  // Selettore del canale (o chip "moderi @…"): condiviso tra barra e cassetto.
   let centro = '';
   if (canali.length > 1) {
-    centro = `<select class="chip-utente" id="switch-canale" title="Cambia canale">
+    centro = `<select class="chip-utente switch-canale" title="Cambia canale">
       ${canali.map((c) => `<option value="${esc(c.canale)}" ${c.canale === attuale ? 'selected' : ''}>${esc(etichetta(c))}</option>`).join('')}
     </select>`;
   } else if (stato.ruolo === 'moderatore') {
     centro = `<span class="chip-utente">moderi <strong>@${esc(stato.user.display || attuale)}</strong></span>`;
   }
+  const esci = `<a class="btn secondario mini" href="/auth/logout">Esci</a>`;
 
-  areaUtente.innerHTML = `
-    <span class="chip-utente">ciao, <strong>${ident}</strong></span>
-    ${centro}
-    <a class="btn secondario mini" href="/auth/logout">Esci</a>`;
+  // Barra in alto (desktop): versione compatta — canale + esci, senza saluto.
+  if (areaUtente) areaUtente.innerHTML = `${centro}${esci}`;
+  // Cassetto (mobile): versione completa — saluto + canale + esci.
+  if (areaMob) areaMob.innerHTML = `<span class="chip-utente">ciao, <strong>${ident}</strong></span>${centro}${esci}`;
 
-  document.getElementById('switch-canale')?.addEventListener('change', (ev) => conErrore(async () => {
-    await api('/api/cambia-canale', { method: 'POST', body: { channel: ev.target.value } });
-    stato = await api('/api/me'); render();
-    toast('Ora gestisci @' + (stato.user.display || stato.user.login) + (stato.ruolo === 'moderatore' ? ' come moderatore' : ' come proprietario'));
-  }));
+  document.querySelectorAll('.switch-canale').forEach((sel) =>
+    sel.addEventListener('change', (ev) => conErrore(async () => {
+      await api('/api/cambia-canale', { method: 'POST', body: { channel: ev.target.value } });
+      stato = await api('/api/me'); render();
+      toast('Ora gestisci @' + (stato.user.display || stato.user.login) + (stato.ruolo === 'moderatore' ? ' come moderatore' : ' come proprietario'));
+    })));
 }
 
 // ------------------------------------------------------------------ viste "semplici"
@@ -1092,20 +1097,39 @@ const CHEVRON = '<svg class="lat-chevron" viewBox="0 0 24 24" width="14" height=
 // Costruisce la navigazione della sidebar: ogni voce ha icona + nome. Le aree a
 // scheda singola sono voci dirette; quelle con più schede diventano una SEZIONE
 // richiudibile (l'etichetta apre/chiude con animazione). Tutte cliccabili.
-function navLateraleHtml() {
-  const voce = (id, nome) => {
-    const att = id === schedaAttiva;
-    // la voce attiva porta la "pillola" (elemento condiviso della view transition)
-    return `<button class="lat-item${att ? ' attiva' : ''}" data-scheda="${id}">${att ? '<span class="lat-pill"></span>' : ''}${ICONA[id] || ''}<span>${nome}</span></button>`;
-  };
+// Id del gruppo che contiene una scheda (per evidenziare il gruppo attivo).
+function gruppoDiScheda(id) {
+  const g = elencoGruppi().find((x) => x.schede.some(([sid]) => sid === id));
+  return g ? g.id : '';
+}
+
+// Navigazione in ALTO: ogni gruppo è un pulsante col suo colore-firma. I gruppi
+// con più schede aprono un menu a tendina; quelli con una scheda sola vanno
+// dritti alla sezione. Il colore del gruppo passa via --gc (variabile CSS).
+function navTopHtml() {
   return elencoGruppi().map((g) => {
-    if (g.schede.length === 1) return voce(g.schede[0][0], g.nome);
-    const chiuso = gruppiChiusi.has(g.id);
-    const voci = g.schede.map(([id, nome]) => voce(id, nome)).join('');
-    return `<div class="lat-gruppo${chiuso ? ' chiuso' : ''}" data-gruppo="${g.id}">
-      <button class="lat-label" data-toggle="${g.id}" aria-expanded="${chiuso ? 'false' : 'true'}">${g.nome}${CHEVRON}</button>
-      <div class="lat-voci"><div>${voci}</div></div>
-    </div>`;
+    const attivo = g.schede.some(([id]) => id === schedaAttiva) ? ' attivo' : '';
+    const col = `--gc:var(--g-${g.id})`;
+    if (g.schede.length === 1) {
+      const [id] = g.schede[0];
+      return `<div class="grp${attivo}" data-grp="${g.id}" style="${col}">
+        <button class="grp-btn" data-scheda="${id}"><span class="grp-dot"></span>${esc(g.nome)}</button></div>`;
+    }
+    const voci = g.schede.map(([id, nome]) =>
+      `<button class="menu-voce${id === schedaAttiva ? ' on' : ''}" data-scheda="${id}">${ICONA[id] || ''}<span>${esc(nome)}</span></button>`).join('');
+    return `<div class="grp${attivo}" data-grp="${g.id}" style="${col}">
+      <button class="grp-btn" data-menu="${g.id}" aria-expanded="false"><span class="grp-dot"></span>${esc(g.nome)}${CHEVRON}</button>
+      <div class="grp-menu">${voci}</div></div>`;
+  }).join('');
+}
+
+// Cassetto laterale (schermi stretti): gli stessi gruppi, impilati, con titolo
+// colorato per gruppo e le schede come voci cliccabili.
+function navDrawerHtml() {
+  return elencoGruppi().map((g) => {
+    const voci = g.schede.map(([id, nome]) =>
+      `<button class="drawer-voce${id === schedaAttiva ? ' on' : ''}" data-scheda="${id}">${ICONA[id] || ''}<span>${esc(nome)}</span></button>`).join('');
+    return `<div class="drawer-grp" style="--gc:var(--g-${g.id})"><div class="drawer-grp-tit">${esc(g.nome)}</div>${voci}</div>`;
   }).join('');
 }
 
@@ -1117,6 +1141,9 @@ function aggiornaTestataPagina() {
   if (!document.body.classList.contains('con-nav')) { el.innerHTML = ''; return; }
   const { area, titolo } = infoScheda(schedaAttiva);
   const desc = DESC[schedaAttiva] || '';
+  // l'occhiello prende il colore-firma del gruppo attivo (coerenza con la nav)
+  const gid = gruppoDiScheda(schedaAttiva);
+  if (gid) el.style.setProperty('--gc', `var(--g-${gid})`); else el.style.removeProperty('--gc');
   el.innerHTML =
     `${area ? `<div class="pt-occhiello">${esc(area)}</div>` : ''}` +
     `<h1>${titoloParole(titolo)}</h1>` +
@@ -6999,54 +7026,87 @@ function chiudiMenuMobile() {
   document.getElementById('apri-menu')?.setAttribute('aria-expanded', 'false');
 }
 
-// Aggancia UNA VOLTA SOLA i comportamenti del guscio (sidebar + drawer mobile).
-// Il contenuto della sidebar viene ridisegnato ad ogni render, ma questi
-// elementi/handler restano fissi, quindi si delega sull'elemento persistente.
+// Chiude i menu a tendina aperti nella barra in alto.
+function chiudiMenuTop() {
+  document.querySelectorAll('#nav-top .grp.aperto').forEach((g) => {
+    g.classList.remove('aperto');
+    g.querySelector('[data-menu]')?.setAttribute('aria-expanded', 'false');
+  });
+}
+
+// Evidenzia nella navigazione (barra + cassetto) il gruppo e la scheda attivi.
+function aggiornaStatoNav(id) {
+  const gid = gruppoDiScheda(id);
+  document.querySelectorAll('#nav-top .grp').forEach((el) =>
+    el.classList.toggle('attivo', el.dataset.grp === gid));
+  document.querySelectorAll('#nav-top .menu-voce, #nav-drawer .drawer-voce').forEach((b) =>
+    b.classList.toggle('on', b.dataset.scheda === id));
+}
+
+// Apre una scheda: aggiorna lo stato della nav, il corpo pagina (dentro una view
+// transition), la testata e i dati. Condivisa da barra in alto e cassetto.
+function vaiAScheda(id) {
+  chiudiMenuTop();
+  chiudiMenuMobile();                       // su mobile chiude il cassetto
+  if (id === schedaAttiva) return;
+  schedaAttiva = id;
+  const pannello = document.getElementById('scheda-' + id);
+  transizione(() => {
+    aggiornaStatoNav(id);
+    document.querySelectorAll('.pannello-scheda').forEach((p) =>
+      p.classList.toggle('visibile', p === pannello));
+    aggiornaTestataPagina();
+    if (pannello) rivelaCarte(pannello);   // reveal fresco delle carte della scheda
+  });
+  caricaDatiScheda(id);
+  if (DEMO) aggiornaSpiegazioneDemo();     // aggiorna la spiegazione della scheda
+  window.scrollTo({ top: 0, behavior: _menoMoto ? 'auto' : 'smooth' });
+}
+
+// Aggancia UNA VOLTA SOLA i comportamenti del guscio (barra in alto + cassetto).
+// Il contenuto della nav si ridisegna ad ogni render, ma questi handler restano
+// fissi: quindi si delega sugli elementi persistenti.
 function initGuscio() {
-  // navigazione: click su una voce della sidebar → apre quella scheda
-  document.getElementById('nav-lat')?.addEventListener('click', (ev) => {
-    // click sull'etichetta di una sezione → apre/chiude con animazione
-    const tog = ev.target.closest('[data-toggle]');
-    if (tog) {
-      const gid = tog.dataset.toggle;
-      const chiuso = gruppiChiusi.has(gid);
-      if (chiuso) gruppiChiusi.delete(gid); else gruppiChiusi.add(gid);
-      tog.closest('.lat-gruppo')?.classList.toggle('chiuso', !chiuso);
-      tog.setAttribute('aria-expanded', chiuso ? 'true' : 'false');
+  // barra in alto: click su un gruppo (apre il menu a tendina) o su una scheda
+  document.getElementById('nav-top')?.addEventListener('click', (ev) => {
+    const men = ev.target.closest('[data-menu]');
+    if (men) {
+      const grp = men.parentElement;
+      const era = grp.classList.contains('aperto');
+      chiudiMenuTop();
+      if (!era) {
+        grp.classList.add('aperto');
+        men.setAttribute('aria-expanded', 'true');
+        // se il menu sborda a destra dello schermo, allinealo al bordo destro
+        const menu = grp.querySelector('.grp-menu');
+        if (menu) {
+          menu.classList.remove('a-destra');
+          if (menu.getBoundingClientRect().right > window.innerWidth - 8) menu.classList.add('a-destra');
+        }
+      }
       return;
     }
-    const btn = ev.target.closest('[data-scheda]');
-    if (!btn) return;
-    const id = btn.dataset.scheda;
-    chiudiMenuMobile();                       // su mobile chiude il drawer
-    if (id === schedaAttiva) return;
-    schedaAttiva = id;
-    const pannello = document.getElementById('scheda-' + id);
-    // le mutazioni del DOM entrano nella view transition: corpo che morpha e
-    // pillola del menu che scorre sulla nuova voce (elemento condiviso "navpill").
-    transizione(() => {
-      const pill = document.querySelector('#nav-lat .lat-pill') || document.createElement('span');
-      pill.className = 'lat-pill';
-      document.querySelectorAll('#nav-lat .lat-item').forEach((b) =>
-        b.classList.toggle('attiva', b.dataset.scheda === id));
-      const nuova = document.querySelector(`#nav-lat .lat-item[data-scheda="${id}"]`);
-      if (nuova) nuova.insertBefore(pill, nuova.firstChild);
-      document.querySelectorAll('.pannello-scheda').forEach((p) =>
-        p.classList.toggle('visibile', p === pannello));
-      aggiornaTestataPagina();
-      if (pannello) rivelaCarte(pannello);   // reveal fresco delle carte della scheda
-    });
-    caricaDatiScheda(id);
-    if (DEMO) aggiornaSpiegazioneDemo();   // aggiorna la spiegazione della scheda
-    window.scrollTo({ top: 0, behavior: _menoMoto ? 'auto' : 'smooth' });
+    const b = ev.target.closest('[data-scheda]');
+    if (b) vaiAScheda(b.dataset.scheda);
   });
 
-  // hamburger (solo mobile): apre/chiude la sidebar
+  // cassetto: click su una scheda
+  document.getElementById('nav-drawer')?.addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-scheda]');
+    if (b) vaiAScheda(b.dataset.scheda);
+  });
+
+  // click fuori da un gruppo → chiude i menu a tendina; Esc → chiude tutto
+  document.addEventListener('click', (ev) => { if (!ev.target.closest('.grp')) chiudiMenuTop(); });
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { chiudiMenuTop(); chiudiMenuMobile(); } });
+
+  // hamburger: apre/chiude il cassetto (schermi stretti)
   document.getElementById('apri-menu')?.addEventListener('click', () => {
     const aperto = document.body.classList.toggle('menu-aperto');
     document.getElementById('apri-menu').setAttribute('aria-expanded', aperto ? 'true' : 'false');
   });
   document.getElementById('backdrop')?.addEventListener('click', chiudiMenuMobile);
+  document.getElementById('chiudi-menu')?.addEventListener('click', chiudiMenuMobile);
 
   // bottoni "magnetici": quando il cursore è sopra un .btn, il bottone si sposta
   // di poco verso il puntatore (stile Awwwards). Su touch/meno-movimento: niente.
