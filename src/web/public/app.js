@@ -4508,59 +4508,56 @@ function pannelloModuli() {
     .map((v) => `<button type="button" class="chip-var" data-qc="${esc(v)}">${esc(v)}</button>`).join('');
   return pannello('moduli', `
     <div class="carta">
-      <h2>${_hIco(ICO.fulmine)}Comando rapido</h2>
-      <p>Il modo più veloce: scrivi il <strong class="primo-piano">nome</strong> e <strong class="primo-piano">cosa
-      deve rispondere</strong>. Fatto — niente altro da compilare.</p>
+      <h2>${_hIco(ICO.fulmine)}${L('Comando rapido', 'Quick command', 'Comando rápido')}</h2>
+      <p>${L('Il modo più veloce: scrivi il', 'The fastest way: type the', 'La forma más rápida: escribe el')} <strong class="primo-piano">${L('nome', 'name', 'nombre')}</strong> ${L('e', 'and', 'y')} <strong class="primo-piano">${L('cosa deve rispondere', 'what it should reply', 'qué debe responder')}</strong>. ${L('Fatto — niente altro da compilare.', 'Done — nothing else to fill in.', 'Listo — nada más que rellenar.')}</p>
       <div class="riga-flessibile">
         <span class="prefisso-cmd">!</span>
         <input type="text" id="qc-nome" class="campo-largo" placeholder="social" maxlength="24">
       </div>
-      <label class="campo" for="qc-risposta">Risposta</label>
-      <textarea id="qc-risposta" placeholder="es. I miei social li trovi su andryxify.it/u/$canale"></textarea>
+      <label class="campo" for="qc-risposta">${L('Risposta', 'Reply', 'Respuesta')}</label>
+      <textarea id="qc-risposta" placeholder="${L('es. I miei social li trovi su andryxify.it/u/$canale', 'e.g. Find my socials at andryxify.it/u/$canale', 'p. ej. Mis redes están en andryxify.it/u/$canale')}"></textarea>
       <div class="chip-vars" id="qc-chips">${chipsRapido}</div>
-      <p class="suggerimento spazio-sopra">Puoi anche <strong>cambiare titolo e categoria</strong> dal comando:
-      <code>$categoria($args)</code> (es. <code>!gioco fortnite</code>) e <code>$titolo($args)</code>. Il token sparisce dal messaggio, scrivi tu la conferma.
-      Consiglio: metti questi comandi <strong>solo per i mod</strong>.</p>
-      <p class="suggerimento">Per uno <strong>shoutout</strong>: <code>$touser</code> è il nome scritto dopo il comando e
-      <code>$giocotarget</code> è l'ultimo gioco del suo canale. Es. <code>!so giorgiottv</code> con risposta
-      <em>"Andate a seguire @$touser! Stava streammando $giocotarget"</em>. Nota: <code>$giocotarget</code> funziona
-      solo se c'è un destinatario (il nome dopo il comando).</p>
+      <p class="suggerimento spazio-sopra">${L('Puoi anche', 'You can also', 'También puedes')} <strong>${L('cambiare titolo e categoria', 'change title and category', 'cambiar título y categoría')}</strong> ${L('dal comando:', 'from the command:', 'desde el comando:')}
+      <code>$categoria($args)</code> (${L('es.', 'e.g.', 'p. ej.')} <code>!gioco fortnite</code>) ${L('e', 'and', 'y')} <code>$titolo($args)</code>. ${L('Il token sparisce dal messaggio, scrivi tu la conferma. Consiglio: metti questi comandi', 'The token disappears from the message; you write the confirmation. Tip: make these commands', 'El token desaparece del mensaje; escribe tú la confirmación. Consejo: pon estos comandos')} <strong>${L('solo per i mod', 'mods only', 'solo para mods')}</strong>.</p>
+      <p class="suggerimento">${L('Per uno', 'For a', 'Para un')} <strong>shoutout</strong>: <code>$touser</code> ${L('è il nome scritto dopo il comando e', 'is the name typed after the command and', 'es el nombre escrito tras el comando y')}
+      <code>$giocotarget</code> ${L('è l\'ultimo gioco del suo canale. Es.', 'is the last game on their channel. E.g.', 'es el último juego de su canal. P. ej.')} <code>!so giorgiottv</code> ${L('con risposta', 'with reply', 'con respuesta')}
+      <em>${L('"Andate a seguire @$touser! Stava streammando $giocotarget"', '"Go follow @$touser! They were streaming $giocotarget"', '"¡Id a seguir a @$touser! Estaba jugando a $giocotarget"')}</em>. ${L('Nota:', 'Note:', 'Nota:')} <code>$giocotarget</code> ${L('funziona solo se c\'è un destinatario (il nome dopo il comando).', 'works only if there’s a target (the name after the command).', 'funciona solo si hay un destinatario (el nombre tras el comando).')}</p>
       <p class="spazio-sopra">
-        <button class="btn" id="btn-qc">Aggiungi comando</button>
-        <span class="suggerimento">Per condizioni, eventi, timer, effetti o webhook usa <strong>Nuovo modulo</strong> qui sotto.</span>
+        <button class="btn" id="btn-qc">${L('Aggiungi comando', 'Add command', 'Añadir comando')}</button>
+        <span class="suggerimento">${L('Per condizioni, eventi, timer, effetti o webhook usa', 'For conditions, events, timers, effects or webhooks use', 'Para condiciones, eventos, temporizadores, efectos o webhooks usa')} <strong>${L('Nuovo modulo', 'New module', 'Nuevo módulo')}</strong> ${L('qui sotto.', 'below.', 'abajo.')}</span>
       </p>
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.moduli)}Moduli</h2>
-      <p>Automazioni avanzate: <strong class="primo-piano">QUANDO</strong> succede qualcosa,
-      <strong class="primo-piano">SE</strong> valgono certe condizioni, <strong class="primo-piano">ALLORA</strong>
-      il bot fa una o più azioni.</p>
-      <p class="spazio-sopra"><button class="btn secondario" data-nuovo-modulo>${_bIco(ICO.piu)}Nuovo modulo (avanzato)</button></p>
-      <p class="suggerimento spazio-sopra">Non sai da dove partire? Scegli un modello pronto e modificalo:</p>
+      <h2>${_hIco(ICO.moduli)}${L('Moduli', 'Modules', 'Módulos')}</h2>
+      <p>${L('Automazioni avanzate:', 'Advanced automations:', 'Automatizaciones avanzadas:')} <strong class="primo-piano">${L('QUANDO', 'WHEN', 'CUANDO')}</strong> ${L('succede qualcosa,', 'something happens,', 'pasa algo,')}
+      <strong class="primo-piano">${L('SE', 'IF', 'SI')}</strong> ${L('valgono certe condizioni,', 'certain conditions hold,', 'se cumplen ciertas condiciones,')} <strong class="primo-piano">${L('ALLORA', 'THEN', 'ENTONCES')}</strong>
+      ${L('il bot fa una o più azioni.', 'the bot does one or more actions.', 'el bot hace una o más acciones.')}</p>
+      <p class="spazio-sopra"><button class="btn secondario" data-nuovo-modulo>${_bIco(ICO.piu)}${L('Nuovo modulo (avanzato)', 'New module (advanced)', 'Nuevo módulo (avanzado)')}</button></p>
+      <p class="suggerimento spazio-sopra">${L('Non sai da dove partire? Scegli un modello pronto e modificalo:', 'Not sure where to start? Pick a ready-made template and tweak it:', '¿No sabes por dónde empezar? Elige una plantilla lista y modifícala:')}</p>
       <div class="modelli-pronti">
-        <button class="modello-pronto" data-modello="saluto">Saluto</button>
+        <button class="modello-pronto" data-modello="saluto">${L('Saluto', 'Greeting', 'Saludo')}</button>
         <button class="modello-pronto" data-modello="shoutout">Shoutout</button>
-        <button class="modello-pronto" data-modello="timer">Timer annuncio</button>
+        <button class="modello-pronto" data-modello="timer">${L('Timer annuncio', 'Announcement timer', 'Temporizador de aviso')}</button>
         <button class="modello-pronto" data-modello="social">Social</button>
-        <button class="modello-pronto" data-modello="morti">Contatore morti</button>
-        <button class="modello-pronto" data-modello="voce">Comando vocale: clippa</button>
-        <button class="modello-pronto" data-modello="webhook">Collega il mio bot (webhook)</button>
+        <button class="modello-pronto" data-modello="morti">${L('Contatore morti', 'Death counter', 'Contador de muertes')}</button>
+        <button class="modello-pronto" data-modello="voce">${L('Comando vocale: clippa', 'Voice command: clip', 'Comando por voz: clipea')}</button>
+        <button class="modello-pronto" data-modello="webhook">${L('Collega il mio bot (webhook)', 'Connect my bot (webhook)', 'Conecta mi bot (webhook)')}</button>
       </div>
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.lista)}I tuoi moduli</h2>
-      <ul id="lista-moduli" class="lista-moduli"><li class="vuoto">Caricamento…</li></ul>
+      <h2>${_hIco(ICO.lista)}${L('I tuoi moduli', 'Your modules', 'Tus módulos')}</h2>
+      <ul id="lista-moduli" class="lista-moduli"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
     </div>
 
     <div id="editor-modulo"></div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.spina)}Connettori avanzati</h2>
-      <p>Per far dire o fare qualcosa ad SocialBot <strong class="primo-piano">da un tuo servizio esterno</strong>
-      (il bot custom che già hai): chiama l'URL qui sotto con la tua chiave.</p>
-      <div id="connettori-moduli"><p class="vuoto">Caricamento…</p></div>
+      <h2>${_hIco(ICO.spina)}${L('Connettori avanzati', 'Advanced connectors', 'Conectores avanzados')}</h2>
+      <p>${L('Per far dire o fare qualcosa ad SocialBot', 'To make SocialBot say or do something', 'Para que SocialBot diga o haga algo')} <strong class="primo-piano">${L('da un tuo servizio esterno', 'from an external service of yours', 'desde un servicio externo tuyo')}</strong>
+      ${L('(il bot custom che già hai): chiama l\'URL qui sotto con la tua chiave.', '(the custom bot you already have): call the URL below with your key.', '(el bot personalizado que ya tienes): llama a la URL de abajo con tu clave.')}</p>
+      <div id="connettori-moduli"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
     </div>`);
 }
 
