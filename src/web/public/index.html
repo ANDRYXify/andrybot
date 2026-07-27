@@ -143,26 +143,33 @@
   <!-- notifiche a scomparsa -->
   <div id="toast-box" aria-live="polite"></div>
 
-  <!-- barra superiore: visibile solo su mobile (apre la sidebar) -->
-  <header class="barra-mobile">
-    <button class="apri-menu" id="apri-menu" aria-label="Apri il menu" aria-expanded="false">
-      <span></span><span></span><span></span>
-    </button>
-    <span class="marchio-mobile">SocialBot</span>
-  </header>
-
   <div class="guscio">
-    <!-- sidebar: logo, navigazione (riempita da app.js) e utente -->
-    <aside class="barra-laterale" id="barra-laterale" aria-label="Navigazione">
+    <!-- barra in alto: marchio, navigazione a gruppi (menu a tendina) e strumenti.
+         Sostituisce la vecchia colonna a sinistra: riempita da app.js. -->
+    <header class="barra-top" id="barra-top">
       <a class="marchio" href="/">
         <img class="marchio-segno" src="/icons/icon-192.png" alt="SocialBot" width="30" height="30">
         <span class="marchio-testo">SocialBot<small>andryxify.it</small></span>
       </a>
-      <nav class="nav-lat" id="nav-lat"></nav>
-      <div class="utente-lat" id="area-utente"></div>
-    </aside>
+      <nav class="nav-top" id="nav-top" aria-label="Navigazione"></nav>
+      <div class="top-strumenti" id="area-utente"></div>
+      <button class="apri-menu" id="apri-menu" aria-label="Apri il menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </header>
 
+    <!-- cassetto laterale: appare su schermi stretti al posto della barra -->
     <div class="backdrop" id="backdrop"></div>
+    <aside class="drawer" id="drawer" aria-label="Menu">
+      <div class="drawer-testa">
+        <span>Menu</span>
+        <button class="chiudi-drawer" id="chiudi-menu" aria-label="Chiudi il menu">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <nav class="nav-drawer" id="nav-drawer" aria-label="Navigazione"></nav>
+      <div class="drawer-utente" id="area-utente-mob"></div>
+    </aside>
 
     <main class="area-principale">
       <div class="contenuto">
