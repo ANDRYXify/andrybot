@@ -602,6 +602,8 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .studio-scena:hover { color: var(--testo); border-color: var(--testo-3); }
 .studio-scena.attiva { background: var(--acc); color: #fff; border-color: transparent; }
 .studio-scena-nuova, .studio-scena-rinomina, .studio-scena-elimina { padding: .4rem .55rem; color: var(--testo-3); }
+.studio-preset { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-bottom: .9rem; }
+.studio-preset select { max-width: 200px; }
 
 /* impaginazione: palco a sinistra, colonna strumenti a destra */
 .studio-griglia { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 1.1rem; align-items: start; }
