@@ -281,6 +281,18 @@ function _demoGet(via) {
   const F = {
     '/api/me': statoDemo(),
     '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://socialbot.live/tiktok/callback' },
+    '/api/seventv/stato': { collegato: true, username: 'andryxify', setId: 'demo7tvset' },
+    '/api/seventv/emotes': { id: 'demo7tvset', nome: 'andryxify · emotes', capienza: 1000, usate: 4, emotes: [
+      { id: '60aeab8df6a2c3b332d92b73', nome: 'peepoHappy', url: 'https://cdn.7tv.app/emote/60aeab8df6a2c3b332d92b73/2x.webp', animato: false },
+      { id: '603cb219c20d020014423c34', nome: 'catJAM', url: 'https://cdn.7tv.app/emote/603cb219c20d020014423c34/2x.webp', animato: true },
+      { id: '60ae958e229664e8667aea38', nome: 'Clap', url: 'https://cdn.7tv.app/emote/60ae958e229664e8667aea38/2x.webp', animato: true },
+      { id: '60aea79b229664e8667a9c99', nome: 'Sadge', url: 'https://cdn.7tv.app/emote/60aea79b229664e8667a9c99/2x.webp', animato: false },
+    ] },
+    '/api/seventv/cerca': { items: [
+      { id: '60aeec1b259ac5a73e56a426', nome: 'EZ', url: 'https://cdn.7tv.app/emote/60aeec1b259ac5a73e56a426/2x.webp', animato: false, autore: '7TV' },
+      { id: '60ae65b29627b8f6c5e2dd93', nome: 'PogU', url: 'https://cdn.7tv.app/emote/60ae65b29627b8f6c5e2dd93/2x.webp', animato: false, autore: '7TV' },
+      { id: '60b00d1f0d3a78a196f803e3', nome: 'AlienPls', url: 'https://cdn.7tv.app/emote/60b00d1f0d3a78a196f803e3/2x.webp', animato: true, autore: '7TV' },
+    ], totale: 3 },
     '/api/admin/llm': {
       scelta: {
         modello: 'gemma-uncensored',
@@ -1051,6 +1063,7 @@ const GRUPPI = [
   { id: 'overlay', nome: 'Overlay', schede: [
     ['alert', 'Overlay Studio'],
     ['effetti', 'Effetti & suoni'],
+    ['emote', '7TV · Emote'],
   ] },
   { id: 'notifiche', nome: 'Notifiche', schede: [
     ['notifiche', 'Notifiche'],
@@ -1091,6 +1104,7 @@ const T_SCHEDA = {
   giveaway: ['Giveaway', 'Giveaway', 'Sorteo'],
   penitenze: ['Penitenze', 'Forfeits', 'Penitencias'],
   alert: ['Overlay Studio', 'Overlay Studio', 'Overlay Studio'],
+  emote: ['7TV · Emote', '7TV · Emotes', '7TV · Emotes'],
   notifiche: ['Notifiche', 'Notifications', 'Notificaciones'],
   admin: ['Admin', 'Admin', 'Admin'],
 };
@@ -1123,6 +1137,7 @@ const ICONA = {
   giveaway:    _ico('<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/>'),
   penitenze:   _ico('<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>'),
   alert:       _ico('<rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/><path d="M6 8h4"/><path d="M6 11h2"/>'),
+  emote:       _ico('<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><line x1="9" x2="9.01" y1="9.5" y2="9.5"/><line x1="15" x2="15.01" y1="9.5" y2="9.5"/>'),
   notifiche:   _ico('<path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5 2 6H4c.5-1 2-2 2-6"/><path d="M10.3 20a1.9 1.9 0 0 0 3.4 0"/>'),
   admin:       _ico('<path d="M4 8.5 7.5 16h9L20 8.5l-4.3 3L12 5 8.3 11.5z"/><path d="M7.5 19h9"/>'),
 };
@@ -1147,6 +1162,7 @@ const DESC = {
   giveaway: ['Organizza estrazioni a premi per la community.', 'Run prize giveaways for your community.', 'Organiza sorteos de premios para tu comunidad.'],
   penitenze: ['Punti canale che ti vietano una parola: se la dici, penitenza!', 'Channel points that ban a word for you: say it and you owe a forfeit!', '¡Puntos de canal que te prohíben una palabra: si la dices, penitencia!'],
   alert: ['Il tuo overlay OBS: alert, chat a schermo, widget e temi, tutto personalizzabile.', 'Your OBS overlay: alerts, on-screen chat, widgets and themes, all customizable.', 'Tu overlay para OBS: alertas, chat en pantalla, widgets y temas, todo personalizable.'],
+  emote: ['Gestisci le emote 7TV del tuo canale: aggiungi, togli e rinomina, senza uscire dal bot.', 'Manage your channel’s 7TV emotes: add, remove and rename, without leaving the bot.', 'Gestiona las emotes 7TV de tu canal: añade, quita y renombra, sin salir del bot.'],
   notifiche: ['Avvisi su Telegram e TikTok quando vai in diretta.', 'Alerts on Telegram and TikTok when you go live.', 'Avisos en Telegram y TikTok cuando estás en directo.'],
   admin: ['Gestione streamer e anima condivisa del bot.', 'Streamer management and the bot’s shared soul.', 'Gestión de streamers y el alma compartida del bot.'],
 };
@@ -1187,6 +1203,8 @@ const GUIDE = {
     come: [['Collega Telegram e/o le piattaforme social.', 'Connect Telegram and/or the social platforms.', 'Conecta Telegram y/o las plataformas sociales.'], ['Attiva gli avvisi che vuoi.', 'Turn on the alerts you want.', 'Activa los avisos que quieras.'], ['Personalizza i messaggi.', 'Customize the messages.', 'Personaliza los mensajes.']] },
   alert: { serve: ['Mostrare nell\'overlay OBS un cartello animato (con suono) per follow, sub, bit e raid, e far scorrere la chat a schermo.', 'Show an animated card (with sound) in the OBS overlay for follows, subs, bits and raids, and scroll the chat on screen.', 'Mostrar en el overlay de OBS un cartel animado (con sonido) para follows, subs, bits y raids, y desplazar el chat en pantalla.'],
     come: [['Aggiungi l\'URL overlay in OBS (scheda Effetti & suoni).', 'Add the overlay URL in OBS (Effects & sounds tab).', 'Añade la URL del overlay en OBS (pestaña Efectos y sonidos).'], ['Attiva gli alert che vuoi e personalizza testo, suono e colore.', 'Enable the alerts you want and customize text, sound and color.', 'Activa las alertas que quieras y personaliza texto, sonido y color.'], ['Premi «Prova» per vederli. Attiva la chat a schermo se la vuoi in sovraimpressione.', 'Hit «Test» to preview them. Enable on-screen chat if you want it as an overlay.', 'Pulsa «Probar» para verlas. Activa el chat en pantalla si lo quieres superpuesto.']] },
+  emote: { serve: ['Gestire a 360° le emote 7TV del tuo canale — aggiungerle, toglierle e rinominarle — direttamente dal bot. Le emote 7TV compaiono anche nella chat a schermo dell\'overlay.', 'Fully manage your channel’s 7TV emotes — add, remove and rename them — right from the bot. 7TV emotes also show up in the overlay’s on-screen chat.', 'Gestiona al 100% las emotes 7TV de tu canal — añadirlas, quitarlas y renombrarlas — directamente desde el bot. Las emotes 7TV también aparecen en el chat en pantalla del overlay.'],
+    come: [['Collega il tuo account 7TV incollando il token (c\'è la guida qui sotto).', 'Connect your 7TV account by pasting the token (there’s a guide below).', 'Conecta tu cuenta 7TV pegando el token (hay una guía abajo).'], ['Cerca un\'emote nella directory 7TV e premi «Aggiungi» (puoi dargli un alias).', 'Search an emote in the 7TV directory and hit «Add» (you can give it an alias).', 'Busca una emote en el directorio 7TV y pulsa «Añadir» (puedes ponerle un alias).'], ['Nel tuo set puoi rinominare o togliere le emote con un clic.', 'In your set you can rename or remove emotes with one click.', 'En tu set puedes renombrar o quitar emotes con un clic.']] },
 };
 
 // SVG lampadina (niente emoji): icona della mini-guida.
@@ -1383,6 +1401,7 @@ function vistaPiattaforma() {
     ${pannelloPenitenze()}
     ${pannelloAlert()}
     ${pannelloEffetti()}
+    ${pannello7TV()}
     ${pannelloNotifiche()}
     ${stato.isAdmin ? pannello('admin', vistaAdminContenuto()) : ''}`;
 }
@@ -4488,6 +4507,179 @@ async function caricaPremi() {
   }); }));
 }
 
+// --- scheda 7TV · Emote -------------------------------------------------
+// Gestione COMPLETA delle emote 7TV del canale: collega l'account 7TV (token),
+// vedi il set attivo, cerca nella directory e aggiungi/togli/rinomina. Le emote
+// 7TV compaiono anche nella chat a schermo dell'overlay (features/emotes.js).
+function pannello7TV() {
+  return pannello('emote', `
+    <div class="carta">
+      <h2>${_hIco(ICO.faccina || ICO.chat)}${L('Il tuo account 7TV', 'Your 7TV account', 'Tu cuenta 7TV')}</h2>
+      <p>${L('Collega il tuo account', 'Connect your', 'Conecta tu cuenta')} <strong class="primo-piano">7TV</strong> ${L('per gestire le emote del canale — aggiungerle, toglierle e rinominarle — senza uscire dal bot. Le emote 7TV compaiono anche nella chat a schermo del tuo overlay.', 'account to manage your channel emotes — add, remove and rename them — without leaving the bot. 7TV emotes also appear in your overlay’s on-screen chat.', 'para gestionar las emotes del canal — añadirlas, quitarlas y renombrarlas — sin salir del bot. Las emotes 7TV también aparecen en el chat en pantalla de tu overlay.')}</p>
+      <div id="svtv-conn"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.sliders)}${L('Le tue emote', 'Your emotes', 'Tus emotes')}</h2>
+      <div id="svtv-set"><p class="vuoto">${L('Collega 7TV per vedere le tue emote.', 'Connect 7TV to see your emotes.', 'Conecta 7TV para ver tus emotes.')}</p></div>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.piu)}${L('Aggiungi emote', 'Add emotes', 'Añadir emotes')}</h2>
+      <p>${L('Cerca nella directory pubblica 7TV e aggiungi con un clic. Oppure incolla il link (o l\'ID) di un\'emote 7TV.', 'Search the public 7TV directory and add with one click. Or paste the link (or ID) of a 7TV emote.', 'Busca en el directorio público de 7TV y añade con un clic. O pega el enlace (o el ID) de una emote 7TV.')}</p>
+      <div class="riga-flessibile">
+        <input type="search" id="svtv-cerca" class="campo-largo" placeholder="${L('Cerca un\'emote…', 'Search an emote…', 'Busca una emote…')}" maxlength="60">
+        <button class="btn secondario" id="svtv-cerca-btn">${L('Cerca', 'Search', 'Buscar')}</button>
+      </div>
+      <div id="svtv-risultati" class="svtv-griglia spazio-sopra"></div>
+      <label class="campo spazio-sopra" for="svtv-link">${L('…oppure aggiungi da link / ID', '…or add by link / ID', '…o añade por enlace / ID')}</label>
+      <div class="riga-flessibile">
+        <input type="text" id="svtv-link" class="campo-largo" placeholder="https://7tv.app/emotes/…" maxlength="200">
+        <input type="text" id="svtv-alias" placeholder="${L('alias (facoltativo)', 'alias (optional)', 'alias (opcional)')}" maxlength="40" style="max-width:180px">
+        <button class="btn secondario" id="svtv-link-btn">${L('Aggiungi', 'Add', 'Añadir')}</button>
+      </div>
+    </div>`);
+}
+
+// Card di una singola emote (immagine + nome + azioni). `azioni` è HTML già pronto.
+function _svtvEmoteCard(e, azioni) {
+  return `<div class="svtv-card" data-id="${esc(e.id)}" data-nome="${esc(e.nome)}">
+    <div class="svtv-img-wrap"><img class="svtv-img" src="${esc(e.url)}" alt="${esc(e.nome)}" loading="lazy">${e.animato ? '<span class="svtv-anim" title="animata">GIF</span>' : ''}</div>
+    <div class="svtv-nome" title="${esc(e.nome)}">${esc(e.nome)}</div>
+    ${e.autore ? `<div class="meta">${L('di', 'by', 'de')} ${esc(e.autore)}</div>` : ''}
+    <div class="svtv-azioni">${azioni}</div>
+  </div>`;
+}
+
+let _svtvCollegato = false;
+
+async function caricaEmote7TV() {
+  const conn = document.getElementById('svtv-conn');
+  if (!conn) return;
+  const proprietario = stato?.ruolo !== 'moderatore';
+  let d;
+  try { d = await api('/api/seventv/stato'); }
+  catch { conn.innerHTML = `<p class="suggerimento">${L('Impossibile caricare lo stato di 7TV.', 'Could not load 7TV status.', 'No se pudo cargar el estado de 7TV.')}</p>`; return; }
+  _svtvCollegato = !!d.collegato;
+
+  if (d.collegato) {
+    conn.innerHTML = `<div class="riga-interruttore">
+        <span class="badge verde">● ${L('7TV collegato', '7TV connected', '7TV conectado')}${d.username ? ' (@' + esc(d.username) + ')' : ''}</span>
+        ${proprietario ? `<button class="btn secondario mini" id="svtv-scollega">${L('Scollega', 'Disconnect', 'Desconectar')}</button>` : ''}
+      </div>
+      ${proprietario ? '' : `<p class="suggerimento spazio-sopra">${L('Solo il proprietario del canale può collegare o scollegare 7TV.', 'Only the channel owner can connect or disconnect 7TV.', 'Solo el propietario del canal puede conectar o desconectar 7TV.')}</p>`}`;
+    document.getElementById('svtv-scollega')?.addEventListener('click', () => conErrore(async () => {
+      if (!confirm(L('Scollegare 7TV? Il token verrà rimosso dal server.', 'Disconnect 7TV? The token will be removed from the server.', '¿Desconectar 7TV? El token se eliminará del servidor.'))) return;
+      await api('/api/seventv/disconnect', { method: 'POST', body: {} });
+      toast(L('7TV scollegato.', '7TV disconnected.', '7TV desconectado.')); caricaEmote7TV();
+    }));
+    _svtvCaricaSet();
+  } else if (!proprietario) {
+    conn.innerHTML = `<p class="suggerimento">${L('7TV non è ancora collegato. Solo il proprietario del canale può collegarlo.', '7TV is not connected yet. Only the channel owner can connect it.', '7TV aún no está conectado. Solo el propietario del canal puede conectarlo.')}</p>`;
+  } else {
+    conn.innerHTML = `
+      <label class="campo" for="svtv-token">${L('Token del tuo account 7TV', 'Your 7TV account token', 'Token de tu cuenta 7TV')}</label>
+      <div class="riga-flessibile">
+        <input type="password" id="svtv-token" class="campo-largo" placeholder="${L('incolla qui il token…', 'paste the token here…', 'pega aquí el token…')}" autocomplete="off">
+        <button class="btn" id="svtv-collega">${L('Collega 7TV', 'Connect 7TV', 'Conectar 7TV')}</button>
+      </div>
+      <p class="suggerimento spazio-sopra">${L('Il token resta sul server e non è mai esposto al browser. Serve perché sei tu il proprietario delle tue emote 7TV.', 'The token stays on the server and is never exposed to the browser. It’s needed because you own your 7TV emotes.', 'El token se queda en el servidor y nunca se expone al navegador. Hace falta porque tú eres el dueño de tus emotes 7TV.')}</p>
+      <details class="spazio-sopra">
+        <summary>${L('Come trovo il mio token 7TV?', 'How do I find my 7TV token?', '¿Cómo encuentro mi token de 7TV?')}</summary>
+        <ol class="suggerimento">
+          <li>${L('Vai su', 'Go to', 'Ve a')} <a href="https://7tv.app" target="_blank" rel="noopener">7tv.app</a> ${L('e accedi con Twitch.', 'and log in with Twitch.', 'e inicia sesión con Twitch.')}</li>
+          <li>${L('Apri gli strumenti sviluppatore del browser (tasto F12) e vai alla scheda «Rete» (Network).', 'Open the browser developer tools (F12 key) and go to the «Network» tab.', 'Abre las herramientas de desarrollo del navegador (tecla F12) y ve a la pestaña «Red» (Network).')}</li>
+          <li>${L('Ricarica la pagina, clicca una richiesta verso 7tv.io e, tra gli header della richiesta, copia il valore dopo «authorization: Bearer ».', 'Reload the page, click a request to 7tv.io and, among the request headers, copy the value after «authorization: Bearer ».', 'Recarga la página, haz clic en una petición a 7tv.io y, entre los encabezados de la petición, copia el valor después de «authorization: Bearer ».')}</li>
+          <li>${L('Incollalo qui sopra e premi «Collega 7TV».', 'Paste it above and press «Connect 7TV».', 'Pégalo arriba y pulsa «Conectar 7TV».')}</li>
+        </ol>
+      </details>`;
+    document.getElementById('svtv-collega')?.addEventListener('click', () => conErrore(async () => {
+      const token = (document.getElementById('svtv-token')?.value || '').trim();
+      if (!token) { toast(L('Incolla il token del tuo account 7TV.', 'Paste your 7TV account token.', 'Pega el token de tu cuenta 7TV.'), 'errore'); return; }
+      const r = await api('/api/seventv/connect', { method: 'POST', body: { token } });
+      toast(L('7TV collegato!', '7TV connected!', '¡7TV conectado!') + (r?.username ? ' (@' + r.username + ')' : ''));
+      caricaEmote7TV();
+    }));
+  }
+
+  // ricerca + aggiunta da link (attive solo da collegati; il server comunque protegge)
+  const cercaBtn = document.getElementById('svtv-cerca-btn');
+  const cercaInp = document.getElementById('svtv-cerca');
+  const faiCerca = () => conErrore(async () => {
+    const q = (cercaInp?.value || '').trim();
+    const box = document.getElementById('svtv-risultati');
+    if (!q) { if (box) box.innerHTML = ''; return; }
+    if (box) box.innerHTML = `<p class="vuoto">${L('Cerco…', 'Searching…', 'Buscando…')}</p>`;
+    let r;
+    try { r = await api('/api/seventv/cerca?q=' + encodeURIComponent(q)); }
+    catch { if (box) box.innerHTML = `<p class="vuoto">${L('Ricerca non disponibile ora.', 'Search not available now.', 'Búsqueda no disponible ahora.')}</p>`; return; }
+    const items = r.items || [];
+    if (!items.length) { if (box) box.innerHTML = `<p class="vuoto">${L('Nessuna emote trovata.', 'No emotes found.', 'No se han encontrado emotes.')}</p>`; return; }
+    box.innerHTML = items.map((e) => _svtvEmoteCard(e,
+      `<button type="button" class="btn mini svtv-add" data-id="${esc(e.id)}">${_bIco(ICO.piu)}${L('Aggiungi', 'Add', 'Añadir')}</button>`)).join('');
+  });
+  cercaBtn?.addEventListener('click', faiCerca);
+  cercaInp?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); faiCerca(); } });
+
+  // delega sui risultati: «Aggiungi»
+  document.getElementById('svtv-risultati')?.addEventListener('click', (ev) => {
+    const b = ev.target.closest('.svtv-add'); if (!b) return;
+    _svtvAggiungi(b.dataset.id, '', b);
+  });
+
+  // aggiungi da link / ID
+  document.getElementById('svtv-link-btn')?.addEventListener('click', () => {
+    const v = (document.getElementById('svtv-link')?.value || '').trim();
+    const alias = (document.getElementById('svtv-alias')?.value || '').trim();
+    if (!v) { toast(L('Incolla il link o l\'ID di un\'emote 7TV.', 'Paste the link or ID of a 7TV emote.', 'Pega el enlace o el ID de una emote 7TV.'), 'errore'); return; }
+    _svtvAggiungi(v, alias, document.getElementById('svtv-link-btn'));
+  });
+}
+
+async function _svtvAggiungi(emoteId, alias, btn) {
+  if (!_svtvCollegato) { toast(L('Collega prima il tuo account 7TV.', 'Connect your 7TV account first.', 'Conecta antes tu cuenta 7TV.'), 'errore'); return; }
+  if (btn) btn.disabled = true;
+  try {
+    await api('/api/seventv/aggiungi', { method: 'POST', body: { emoteId, alias } });
+    toast(L('Emote aggiunta ✓', 'Emote added ✓', 'Emote añadida ✓'));
+    const l = document.getElementById('svtv-link'); if (l) l.value = '';
+    const a = document.getElementById('svtv-alias'); if (a) a.value = '';
+    _svtvCaricaSet();
+  } catch (e) {
+    toast((e?.message || L('Aggiunta non riuscita.', 'Add failed.', 'No se pudo añadir.')), 'errore');
+  } finally { if (btn) btn.disabled = false; }
+}
+
+async function _svtvCaricaSet() {
+  const box = document.getElementById('svtv-set');
+  if (!box) return;
+  box.innerHTML = `<p class="vuoto">${L('Carico le emote…', 'Loading emotes…', 'Cargando emotes…')}</p>`;
+  let set;
+  try { set = await api('/api/seventv/emotes'); }
+  catch { box.innerHTML = `<p class="vuoto">${L('Non riesco a leggere il tuo emote-set.', 'Can’t read your emote set.', 'No puedo leer tu emote-set.')}</p>`; return; }
+  const emotes = set.emotes || [];
+  const cap = set.capienza ? ` <span class="suggerimento">${set.usate}/${set.capienza}</span>` : ` <span class="suggerimento">${emotes.length}</span>`;
+  const testa = `<p><strong>${esc(set.nome || L('Set attivo', 'Active set', 'Set activo'))}</strong>${cap}</p>`;
+  if (!emotes.length) { box.innerHTML = testa + `<p class="vuoto">${L('Nessuna emote nel set. Aggiungine qui sotto!', 'No emotes in the set. Add some below!', '¡No hay emotes en el set. Añade algunas abajo!')}</p>`; return; }
+  const proprietario = stato?.ruolo !== 'moderatore';
+  box.innerHTML = testa + `<div class="svtv-griglia">` + emotes.map((e) => _svtvEmoteCard(e, proprietario
+    ? `<button type="button" class="btn secondario mini svtv-rinomina" data-id="${esc(e.id)}" data-nome="${esc(e.nome)}" title="${L('Rinomina', 'Rename', 'Renombrar')}">${_bIco(ICO.scrivi || ICO.moduli)}</button>
+       <button type="button" class="btn pericolo mini svtv-rimuovi" data-id="${esc(e.id)}" data-nome="${esc(e.nome)}" title="${L('Togli', 'Remove', 'Quitar')}">✕</button>`
+    : '')).join('') + `</div>`;
+
+  box.querySelectorAll('.svtv-rimuovi').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
+    if (!confirm(L('Togliere «', 'Remove «', 'Quitar «') + b.dataset.nome + L('» dal tuo canale?', '» from your channel?', '» de tu canal?'))) return;
+    await api('/api/seventv/rimuovi', { method: 'POST', body: { emoteId: b.dataset.id } });
+    toast(L('Emote rimossa.', 'Emote removed.', 'Emote quitada.')); _svtvCaricaSet();
+  })));
+  box.querySelectorAll('.svtv-rinomina').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
+    const nome = (prompt(L('Nuovo nome per l\'emote:', 'New name for the emote:', 'Nuevo nombre para la emote:'), b.dataset.nome) || '').trim();
+    if (!nome || nome === b.dataset.nome) return;
+    await api('/api/seventv/rinomina', { method: 'POST', body: { emoteId: b.dataset.id, nome } });
+    toast(L('Emote rinominata ✓', 'Emote renamed ✓', 'Emote renombrada ✓')); _svtvCaricaSet();
+  })));
+}
+
 // --- scheda Moduli ------------------------------------------------------
 // Automazioni componibili col modello QUANDO → SE → ALLORA.
 
@@ -5972,6 +6164,7 @@ function caricaDatiScheda(id) {
   if (id === 'regia') caricaRegia();
   if (id === 'studio') caricaStudio();
   if (id === 'effetti') { caricaEffetti(); caricaPremi(); caricaSuoniPremi(); caricaLibreria(); }
+  if (id === 'emote') caricaEmote7TV();
   if (id === 'moduli') caricaModuli();
   if (id === 'memoria') caricaStatistiche();
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); }

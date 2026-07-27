@@ -29,6 +29,7 @@ import * as compleanniFeat from '../features/compleanni.js';
 import * as tiktok from '../features/tiktok.js';
 import * as instagram from '../features/instagram.js';
 import * as emotes from '../features/emotes.js';
+import * as seventv from '../features/seventv.js';
 import * as badges from '../features/badges.js';
 import * as quotesImport from '../features/quotesimport.js';
 import { pretrain } from '../ai/pretrain.js';
@@ -1054,6 +1055,71 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!tiktok.collegato(login)) return res.status(400).json({ errore: 'Collega prima il tuo account TikTok.' });
     const r = await tiktok.provaApi(login);
     res.json(r);
+  }));
+
+  // ─────────────────────────────────────────────────────── 7TV: gestione emote
+  // Collega l'account 7TV dello streamer (token) e gestisci le emote del canale:
+  // il token è il PROPRIETARIO del set, quindi può modificarlo. Sotto l'overlay
+  // (funzione base): estende le emote 7TV già mostrate nella chat a schermo.
+  const g7tv = gateFeature('overlay', "L'overlay");
+
+  app.get('/api/seventv/stato', requireLogin, (req, res) => {
+    const login = currentUser(req).login;
+    const d = seventv.datiCollegamento(login);
+    res.json({ collegato: seventv.collegato(login), username: d?.username || '', setId: d?.setId || '' });
+  });
+
+  // collega: lo streamer incolla il token del suo account 7TV
+  app.post('/api/seventv/connect', requireOwner, g7tv, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const token = String(req.body?.token || '').trim();
+    if (!token) return res.status(400).json({ errore: 'Incolla il token del tuo account 7TV.' });
+    const r = await seventv.collega(helix, login, token);
+    if (!r.ok) return res.status(400).json({ errore: r.motivo || 'Collegamento non riuscito.' });
+    res.json({ ok: true, username: r.username });
+  }));
+
+  app.post('/api/seventv/disconnect', requireOwner, g7tv, (req, res) => {
+    seventv.scollega(currentUser(req).login);
+    res.json({ ok: true });
+  });
+
+  // emote del set attivo del canale (lettura pubblica lato 7TV)
+  app.get('/api/seventv/emotes', requireLogin, g7tv, wrap(async (req, res) => {
+    const set = await seventv.setAttivo(helix, currentUser(req).login);
+    if (!set) return res.status(404).json({ errore: 'Nessun emote-set trovato per il canale.' });
+    res.json(set);
+  }));
+
+  // ricerca nella directory pubblica 7TV
+  app.get('/api/seventv/cerca', requireLogin, g7tv, wrap(async (req, res) => {
+    const r = await seventv.cerca(String(req.query.q || ''), Number(req.query.page) || 1);
+    if (r.errore) return res.status(502).json({ errore: 'Ricerca 7TV non disponibile ora.' });
+    res.json(r);
+  }));
+
+  app.post('/api/seventv/aggiungi', requireOwner, g7tv, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (!seventv.collegato(login)) return res.status(400).json({ errore: 'Collega prima il tuo account 7TV.' });
+    const r = await seventv.aggiungi(helix, login, String(req.body?.emoteId || ''), String(req.body?.alias || ''));
+    if (!r.ok) return res.status(r.scaduto ? 401 : 400).json({ errore: r.motivo || 'Non aggiunta.', scaduto: !!r.scaduto });
+    res.json({ ok: true });
+  }));
+
+  app.post('/api/seventv/rimuovi', requireOwner, g7tv, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (!seventv.collegato(login)) return res.status(400).json({ errore: 'Collega prima il tuo account 7TV.' });
+    const r = await seventv.rimuovi(helix, login, String(req.body?.emoteId || ''));
+    if (!r.ok) return res.status(r.scaduto ? 401 : 400).json({ errore: r.motivo || 'Non rimossa.', scaduto: !!r.scaduto });
+    res.json({ ok: true });
+  }));
+
+  app.post('/api/seventv/rinomina', requireOwner, g7tv, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (!seventv.collegato(login)) return res.status(400).json({ errore: 'Collega prima il tuo account 7TV.' });
+    const r = await seventv.rinomina(helix, login, String(req.body?.emoteId || ''), String(req.body?.nome || ''));
+    if (!r.ok) return res.status(r.scaduto ? 401 : 400).json({ errore: r.motivo || 'Non rinominata.', scaduto: !!r.scaduto });
+    res.json({ ok: true });
   }));
 
   // Premi a punti canale per le richieste musicali: elenco (per capire quanti ne
