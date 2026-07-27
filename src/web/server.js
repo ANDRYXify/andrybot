@@ -1,4 +1,4 @@
-// Dashboard web di SocialBot (bot.andryxify.it).
+// Dashboard web di SocialBot (socialbot.live).
 // Qui lo streamer: fa login con Twitch, chiede l'abilitazione, concede i
 // permessi (il bot parla CON IL SUO ACCOUNT), configura personalità,
 // conoscenza, clip e regole, e consulta memoria e statistiche.
@@ -246,7 +246,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // risposta "il sito non esiste": nessun indizio, nessun brand, nessun corpo utile
   const notFound = (res) => res.status(404).type('text/plain').send('Not Found');
 
-  // ---- CANCELLO: senza sessione valida, bot.andryxify.it non esiste ----
+  // ---- CANCELLO: senza sessione valida, socialbot.live non esiste ----
   // Passano soltanto /health (per Caddy/Docker) e /entra (l'ingresso con il
   // pass monouso del sito). Tutto il resto — dashboard, file statici, API,
   // perfino le rotte OAuth — resta invisibile (404) finché non si è entrati
@@ -541,7 +541,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // ------------------------------------------------------------ INGRESSO (pass del sito)
 
   // Ingresso pubblico. Due modi, stesso URL:
-  //  1) con pass usa-e-getta da andryxify.it (bot.andryxify.it/entra?pass=...):
+  //  1) con pass usa-e-getta da andryxify.it (socialbot.live/entra?pass=...):
   //     il bot lo "brucia" chiamando il sito e crea la sessione se abilitato;
   //  2) SENZA pass: login DIRETTO con Twitch ("Accedi con Twitch" dalla vetrina),
   //     pensato per chi è già abilitato (community) o abbonato. Il cancello resta

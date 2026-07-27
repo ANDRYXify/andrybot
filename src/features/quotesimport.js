@@ -9,7 +9,7 @@ const log = makeLog('import');
 
 const TIMEOUT_MS = 10_000;
 const MAX_BYTES = 2 * 1024 * 1024;   // non scarichiamo pagine enormi
-const UA = 'Mozilla/5.0 (compatible; SocialBot/1.0; +https://bot.andryxify.it)';
+const UA = 'Mozilla/5.0 (compatible; SocialBot/1.0; +https://socialbot.live)';
 
 // true se l'IP è privato/loopback/link-local/riservato → da bloccare
 function ipPrivato(ip) {

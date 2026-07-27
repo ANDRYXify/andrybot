@@ -256,7 +256,7 @@ function apiDemo(percorso, opzioni = {}) {
   if (metodo === 'GET') return Promise.resolve(_demoGet(via));
   // scritture: qualche endpoint restituisce dati usati a schermo → li simuliamo.
   if (via === '/api/me') return Promise.resolve(statoDemo());
-  if (via === '/api/moderatori') return Promise.resolve({ invito: 'https://bot.andryxify.it/mod?token=demo' });
+  if (via === '/api/moderatori') return Promise.resolve({ invito: 'https://socialbot.live/mod?token=demo' });
   if (via === '/api/streamer/apikey') return Promise.resolve({ apikey: 'demo_' + 'x'.repeat(24) });
   if (via === '/api/cambia-canale' || via === '/api/mod/cambia-canale') {
     const ch = opzioni.body?.channel;
@@ -280,7 +280,7 @@ function apiDemo(percorso, opzioni = {}) {
 function _demoGet(via) {
   const F = {
     '/api/me': statoDemo(),
-    '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://bot.andryxify.it/tiktok/callback' },
+    '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://socialbot.live/tiktok/callback' },
     '/api/admin/llm': {
       scelta: {
         modello: 'gemma-uncensored',
@@ -351,7 +351,7 @@ function _demoGet(via) {
       ],
     },
     '/api/streamer/effetti': {
-      overlayUrl: 'https://bot.andryxify.it/overlay/andryx_demo',
+      overlayUrl: 'https://socialbot.live/overlay/andryx_demo',
       effetti: [
         { id: 1, comando: 'applausi', tipo: 'audio', tier: 'tutti', cooldown: 10, volume: 80, durata: 3000 },
         { id: 2, comando: 'tromba', tipo: 'audio', tier: 'sub', cooldown: 15, volume: 70, durata: 2000 },
@@ -7112,7 +7112,7 @@ function disegnaConnettori() {
   const apiUrl = datiModuli?.apiUrl || '';
   const chiaveMostrata = apiKey ? (apiKeyVisibile ? apiKey : '••••••••••••••••') : 'nessuna chiave';
 
-  const esempio = `curl -X POST ${apiUrl || 'https://bot.andryxify.it/api/ext/<login>'} \\
+  const esempio = `curl -X POST ${apiUrl || 'https://socialbot.live/api/ext/<login>'} \\
   -H "Authorization: Bearer LA_TUA_CHIAVE" \\
   -H "Content-Type: application/json" \\
   -d '{"azione":"messaggio","testo":"Ciao dalla mia app!"}'`;
