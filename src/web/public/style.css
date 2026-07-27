@@ -402,6 +402,7 @@ body.vetrina .contenuto { max-width: 1040px; }
 .bundle-prezzo s { color: var(--testo-3); font-weight: 600; margin-right: .15rem; }
 .bundle-prezzo strong { font-weight: 800; }
 .bundle-prezzo small { color: var(--testo-3); font-weight: 600; font-size: .78rem; }
+.bundle-sconto { display: inline-block; background: var(--verde, #16794b); color: #fff; font-weight: 800; font-size: .72rem; padding: .06rem .4rem; border-radius: 999px; vertical-align: 1px; }
 
 /* Riepilogo: totale live + CTA unica */
 .piani-riepilogo { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; padding: 1rem 1.2rem; border: 1px solid var(--acc-bordo); border-radius: var(--r-m); background: var(--acc-soft, rgba(109, 59, 239, .07)); }
