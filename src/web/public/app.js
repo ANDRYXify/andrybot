@@ -1785,25 +1785,25 @@ function pannelloMusica() {
   const opt = (v, t) => `<option value="${v}" ${modo === v ? 'selected' : ''}>${t}</option>`;
   return pannello('musica', `
     <div class="carta">
-      <h2>${_hIco(ICO.musica)}Richieste musicali</h2>
-      <p>Collega Spotify: gli spettatori mettono canzoni in coda con
-      <code>!sr &lt;canzone&gt;</code> e vedono cosa suona con <code>!song</code>.
-      Serve <strong>Spotify Premium</strong> e un dispositivo attivo (l'app aperta e in riproduzione).</p>
-      <div id="spotify-box" class="spazio-sopra"><p>Carico…</p></div>
+      <h2>${_hIco(ICO.musica)}${L('Richieste musicali', 'Music requests', 'Peticiones musicales')}</h2>
+      <p>${L('Collega Spotify: gli spettatori mettono canzoni in coda con', 'Connect Spotify: viewers queue songs with', 'Conecta Spotify: los espectadores ponen canciones en cola con')}
+      <code>!sr &lt;${L('canzone', 'song', 'canción')}&gt;</code> ${L('e vedono cosa suona con', 'and see what’s playing with', 'y ven qué suena con')} <code>!song</code>.
+      ${L('Serve <strong>Spotify Premium</strong> e un dispositivo attivo (l\'app aperta e in riproduzione).', 'Requires <strong>Spotify Premium</strong> and an active device (the app open and playing).', 'Necesita <strong>Spotify Premium</strong> y un dispositivo activo (la app abierta y reproduciendo).')}</p>
+      <div id="spotify-box" class="spazio-sopra"><p>${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
     </div>
     <div class="carta">
-      <h3>${_hIco(ICO.sliders)}Come si richiede una canzone</h3>
-      <p>Decidi tu se le richieste sono libere o "a pagamento": non devono per forza essere gratis.</p>
-      <label class="campo" for="musica-modo">Modalità</label>
+      <h3>${_hIco(ICO.sliders)}${L('Come si richiede una canzone', 'How to request a song', 'Cómo se pide una canción')}</h3>
+      <p>${L('Decidi tu se le richieste sono libere o "a pagamento": non devono per forza essere gratis.', 'You decide whether requests are free or "paid": they don’t have to be free.', 'Tú decides si las peticiones son libres o "de pago": no tienen por qué ser gratis.')}</p>
+      <label class="campo" for="musica-modo">${L('Modalità', 'Mode', 'Modo')}</label>
       <select id="musica-modo">
-        ${opt('libero', 'Libere — tutti, gratis')}
-        ${opt('sub', 'Solo abbonati (sub)')}
-        ${opt('monete', 'A monete del bot')}
-        ${opt('bit', 'A bit (Cheer nel messaggio)')}
-        ${opt('punti', 'A punti canale (premio)')}
+        ${opt('libero', L('Libere — tutti, gratis', 'Free — everyone, free', 'Libres — todos, gratis'))}
+        ${opt('sub', L('Solo abbonati (sub)', 'Subscribers only (subs)', 'Solo suscriptores (subs)'))}
+        ${opt('monete', L('A monete del bot', 'With bot coins', 'Con monedas del bot'))}
+        ${opt('bit', L('A bit (Cheer nel messaggio)', 'With bits (Cheer in the message)', 'Con bits (Cheer en el mensaje)'))}
+        ${opt('punti', L('A punti canale (premio)', 'With channel points (reward)', 'Con puntos de canal (recompensa)'))}
       </select>
       <div id="musica-costo-box" class="spazio-sopra" hidden>
-        <label class="campo" for="musica-costo">Costo (<span id="musica-costo-unita">monete</span>)</label>
+        <label class="campo" for="musica-costo">${L('Costo', 'Cost', 'Coste')} (<span id="musica-costo-unita">${L('monete', 'coins', 'monedas')}</span>)</label>
         <input type="number" id="musica-costo" min="0" max="1000000" value="${Number(m.costo) || 0}">
       </div>
       <div id="musica-premio-box" class="spazio-sopra" hidden>
@@ -1813,9 +1813,9 @@ function pannelloMusica() {
       </div>
       <div class="riga-check spazio-sopra">
         <input type="checkbox" id="musica-disambigua" ${m.disambigua !== false ? 'checked' : ''}>
-        <label for="musica-disambigua">Se ci sono più canzoni con lo stesso titolo, chiedi in chat quale ("intendi 1, 2 o 3?")</label>
+        <label for="musica-disambigua">${L('Se ci sono più canzoni con lo stesso titolo, chiedi in chat quale ("intendi 1, 2 o 3?")', 'If several songs share the same title, ask in chat which one ("do you mean 1, 2 or 3?")', 'Si hay varias canciones con el mismo título, pregunta en el chat cuál ("¿te refieres a 1, 2 o 3?")')}</label>
       </div>
-      <button class="btn spazio-sopra" id="musica-salva">Salva</button>
+      <button class="btn spazio-sopra" id="musica-salva">${L('Salva', 'Save', 'Guardar')}</button>
     </div>`);
 }
 
@@ -1825,25 +1825,25 @@ function pannelloMusica() {
 function formCredenzialiSpotify(redirect) {
   return `
     <details class="spotify-guida">
-      <summary>Come ottenere le credenziali Spotify (2 min)</summary>
+      <summary>${L('Come ottenere le credenziali Spotify (2 min)', 'How to get Spotify credentials (2 min)', 'Cómo obtener las credenciales de Spotify (2 min)')}</summary>
       <ol>
-        <li>Vai su <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener">developer.spotify.com/dashboard</a> e accedi.</li>
-        <li>Clicca <strong>Create app</strong>: dai un nome qualsiasi.</li>
-        <li>In <strong>Redirect URIs</strong> incolla esattamente:<br><code class="spotify-redirect">${esc(redirect || '')}</code></li>
-        <li>Salva, poi apri le <strong>Settings</strong> dell'app: copia <strong>Client ID</strong> e <strong>Client Secret</strong> qui sotto.</li>
+        <li>${L('Vai su', 'Go to', 'Ve a')} <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener">developer.spotify.com/dashboard</a> ${L('e accedi.', 'and log in.', 'e inicia sesión.')}</li>
+        <li>${L('Clicca', 'Click', 'Haz clic en')} <strong>Create app</strong>: ${L('dai un nome qualsiasi.', 'give it any name.', 'ponle cualquier nombre.')}</li>
+        <li>${L('In <strong>Redirect URIs</strong> incolla esattamente:', 'In <strong>Redirect URIs</strong> paste exactly:', 'En <strong>Redirect URIs</strong> pega exactamente:')}<br><code class="spotify-redirect">${esc(redirect || '')}</code></li>
+        <li>${L('Salva, poi apri le <strong>Settings</strong> dell\'app: copia <strong>Client ID</strong> e <strong>Client Secret</strong> qui sotto.', 'Save, then open the app <strong>Settings</strong>: copy <strong>Client ID</strong> and <strong>Client Secret</strong> below.', 'Guarda, luego abre los <strong>Settings</strong> de la app: copia <strong>Client ID</strong> y <strong>Client Secret</strong> abajo.')}</li>
       </ol>
     </details>
     <div class="griglia-campi spazio-sopra">
       <div>
         <label class="campo">Client ID</label>
-        <input type="text" id="spotify-cid" placeholder="es. 4a1b…" autocomplete="off">
+        <input type="text" id="spotify-cid" placeholder="${L('es. 4a1b…', 'e.g. 4a1b…', 'p. ej. 4a1b…')}" autocomplete="off">
       </div>
       <div>
         <label class="campo">Client Secret</label>
-        <input type="password" id="spotify-csec" placeholder="incolla il secret" autocomplete="off">
+        <input type="password" id="spotify-csec" placeholder="${L('incolla il secret', 'paste the secret', 'pega el secret')}" autocomplete="off">
       </div>
     </div>
-    <button class="btn spazio-sopra" id="spotify-salva-cred">Salva credenziali</button>`;
+    <button class="btn spazio-sopra" id="spotify-salva-cred">${L('Salva credenziali', 'Save credentials', 'Guardar credenciales')}</button>`;
 }
 
 // Modalità richieste (!sr): mostra il campo giusto per il modo scelto e salva.
@@ -1878,7 +1878,7 @@ async function salvaMusica(silenzioso) {
     disambigua: !!document.getElementById('musica-disambigua')?.checked,
   };
   await api('/api/streamer/impostazioni', { method: 'POST', body: { musica } });
-  if (!silenzioso) toast('Impostazioni musica salvate');
+  if (!silenzioso) toast(L('Impostazioni musica salvate', 'Music settings saved', 'Ajustes de música guardados'));
 }
 
 // Modalità "punti canale": lascia scegliere UN premio tra quelli con la
@@ -1887,11 +1887,11 @@ async function salvaMusica(silenzioso) {
 async function caricaPremiMusica() {
   const box = document.getElementById('musica-premi-box');
   if (!box) return;
-  box.innerHTML = '<p>Carico i tuoi premi a punti canale…</p>';
+  box.innerHTML = `<p>${L('Carico i tuoi premi a punti canale…', 'Loading your channel-point rewards…', 'Cargando tus recompensas de puntos de canal…')}</p>`;
   let d;
-  try { d = await api('/api/musica/premi'); } catch { box.innerHTML = '<p>Impossibile leggere i premi.</p>'; return; }
+  try { d = await api('/api/musica/premi'); } catch { box.innerHTML = `<p>${L('Impossibile leggere i premi.', 'Couldn’t read the rewards.', 'No se pueden leer las recompensas.')}</p>`; return; }
   if (!d.permessoOk) {
-    box.innerHTML = '<div class="riquadro-info">Per usare i premi a punti canale serve il permesso: concedilo da <strong>Chat &amp; comandi → Effetti &amp; suoni</strong> (sezione Premi), poi torna qui.</div>';
+    box.innerHTML = `<div class="riquadro-info">${L('Per usare i premi a punti canale serve il permesso: concedilo da <strong>Chat &amp; comandi → Effetti &amp; suoni</strong> (sezione Premi), poi torna qui.', 'To use channel-point rewards you need the permission: grant it from <strong>Chat &amp; commands → Effects &amp; sounds</strong> (Rewards section), then come back here.', 'Para usar las recompensas de puntos de canal necesitas el permiso: concédelo desde <strong>Chat y comandos → Efectos y sonidos</strong> (sección Recompensas), luego vuelve aquí.')}</div>`;
     return;
   }
   const eleggibili = (d.tutti || []).filter((r) => r.richiedeTesto);
@@ -1901,37 +1901,37 @@ async function caricaPremiMusica() {
 
   const formCrea = `
     <details class="spazio-sopra"${eleggibili.length ? '' : ' open'}>
-      <summary>${eleggibili.length ? 'Oppure crea un premio pronto all\'uso' : 'Crea un premio pronto all\'uso'}</summary>
+      <summary>${eleggibili.length ? L('Oppure crea un premio pronto all\'uso', 'Or create a ready-to-use reward', 'O crea una recompensa lista para usar') : L('Crea un premio pronto all\'uso', 'Create a ready-to-use reward', 'Crea una recompensa lista para usar')}</summary>
       <div class="griglia-campi spazio-sopra">
-        <div><label class="campo">Nome</label><input type="text" id="musica-nuovo-nome" value="Richiesta musicale"></div>
-        <div><label class="campo">Costo (punti canale)</label><input type="number" id="musica-nuovo-costo" min="1" value="500"></div>
+        <div><label class="campo">${L('Nome', 'Name', 'Nombre')}</label><input type="text" id="musica-nuovo-nome" value="${L('Richiesta musicale', 'Music request', 'Petición musical')}"></div>
+        <div><label class="campo">${L('Costo (punti canale)', 'Cost (channel points)', 'Coste (puntos de canal)')}</label><input type="number" id="musica-nuovo-costo" min="1" value="500"></div>
       </div>
-      <button class="btn secondario spazio-sopra" id="musica-crea-premio">Crea il premio su Twitch</button>
-      <p class="suggerimento">Lo creo io con la "richiesta di testo" già attiva e lo seleziono qui.</p>
+      <button class="btn secondario spazio-sopra" id="musica-crea-premio">${L('Crea il premio su Twitch', 'Create the reward on Twitch', 'Crea la recompensa en Twitch')}</button>
+      <p class="suggerimento">${L('Lo creo io con la "richiesta di testo" già attiva e lo seleziono qui.', 'I create it with "require text" already on and select it here.', 'La creo con "requerir texto" ya activado y la selecciono aquí.')}</p>
     </details>`;
 
   if (!eleggibili.length) {
-    box.innerHTML = `<div class="riquadro-info">Non hai premi a punti canale con la <strong>richiesta di testo</strong> attiva${esclusi ? ` (${esclusi} non ${esclusi === 1 ? 'adatto' : 'adatti'})` : ''}. Creane uno pronto all'uso</div>${formCrea}`;
+    box.innerHTML = `<div class="riquadro-info">${L('Non hai premi a punti canale con la <strong>richiesta di testo</strong> attiva', 'You have no channel-point rewards with <strong>require text</strong> enabled', 'No tienes recompensas de puntos de canal con <strong>requerir texto</strong> activado')}${esclusi ? ` (${esclusi} ${L('non ', 'not ', 'no ')}${esclusi === 1 ? L('adatto', 'suitable', 'apta') : L('adatti', 'suitable', 'aptas')})` : ''}. ${L('Creane uno pronto all\'uso', 'Create a ready-to-use one', 'Crea una lista para usar')}</div>${formCrea}`;
   } else {
     box.innerHTML = `
-      <label class="campo" for="musica-premio-sel">Premio usato per le richieste</label>
+      <label class="campo" for="musica-premio-sel">${L('Premio usato per le richieste', 'Reward used for requests', 'Recompensa usada para las peticiones')}</label>
       <select id="musica-premio-sel">
-        ${eleggibili.map((r) => `<option value="${esc(r.title)}"${r.title === attuale ? ' selected' : ''}>${esc(r.title)} — ${r.cost} punti</option>`).join('')}
+        ${eleggibili.map((r) => `<option value="${esc(r.title)}"${r.title === attuale ? ' selected' : ''}>${esc(r.title)} — ${r.cost} ${L('punti', 'points', 'puntos')}</option>`).join('')}
       </select>
-      ${esclusi ? `<p class="suggerimento">${esclusi} ${esclusi === 1 ? 'altro premio non ha' : 'altri premi non hanno'} la richiesta di testo, quindi ${esclusi === 1 ? 'non compare' : 'non compaiono'} qui.</p>` : ''}
+      ${esclusi ? `<p class="suggerimento">${esclusi} ${esclusi === 1 ? L('altro premio non ha', 'other reward doesn’t have', 'otra recompensa no tiene') : L('altri premi non hanno', 'other rewards don’t have', 'otras recompensas no tienen')} ${L('la richiesta di testo, quindi', 'require text, so', 'requerir texto, así que')} ${esclusi === 1 ? L('non compare', 'it doesn’t appear', 'no aparece') : L('non compaiono', 'they don’t appear', 'no aparecen')} ${L('qui.', 'here.', 'aquí.')}</p>` : ''}
       ${formCrea}`;
     const selp = document.getElementById('musica-premio-sel');
     if (!eleggibili.some((r) => r.title === attuale)) selp.selectedIndex = 0;
     if (inp) inp.value = selp.value;
-    selp.addEventListener('change', () => { if (inp) inp.value = selp.value; conErrore(async () => { await salvaMusica(true); toast('Premio impostato ✓'); }); });
+    selp.addEventListener('change', () => { if (inp) inp.value = selp.value; conErrore(async () => { await salvaMusica(true); toast(L('Premio impostato ✓', 'Reward set ✓', 'Recompensa fijada ✓')); }); });
   }
 
   const bc = document.getElementById('musica-crea-premio');
   if (bc) bc.addEventListener('click', () => conErrore(async () => {
-    const titolo = (document.getElementById('musica-nuovo-nome')?.value || 'Richiesta musicale').trim();
+    const titolo = (document.getElementById('musica-nuovo-nome')?.value || L('Richiesta musicale', 'Music request', 'Petición musical')).trim();
     const costo = Number(document.getElementById('musica-nuovo-costo')?.value) || 500;
     const r = await api('/api/musica/premio', { method: 'POST', body: { titolo, costo } });
-    if (r?.reward) { if (inp) inp.value = r.reward.title; toast('Premio creato su Twitch!'); caricaPremiMusica(); }
+    if (r?.reward) { if (inp) inp.value = r.reward.title; toast(L('Premio creato su Twitch!', 'Reward created on Twitch!', '¡Recompensa creada en Twitch!')); caricaPremiMusica(); }
   }));
 }
 
@@ -1940,23 +1940,23 @@ async function caricaSpotify() {
   const box = document.getElementById('spotify-box');
   if (!box) return;
   const q = new URLSearchParams(location.search);
-  if (q.get('spotify') === 'ok') toast('Spotify collegato!');
-  else if (q.get('spotify') === 'errore') toast('Collegamento Spotify non riuscito.', 'errore');
+  if (q.get('spotify') === 'ok') toast(L('Spotify collegato!', 'Spotify connected!', '¡Spotify conectado!'));
+  else if (q.get('spotify') === 'errore') toast(L('Collegamento Spotify non riuscito.', 'Spotify connection failed.', 'Conexión con Spotify fallida.'), 'errore');
   const proprietario = stato?.ruolo !== 'moderatore';
-  if (!proprietario) { box.innerHTML = '<p>Solo il proprietario del canale può collegare Spotify.</p>'; return; }
+  if (!proprietario) { box.innerHTML = `<p>${L('Solo il proprietario del canale può collegare Spotify.', 'Only the channel owner can connect Spotify.', 'Solo el dueño del canal puede conectar Spotify.')}</p>`; return; }
   let d;
-  try { d = await api('/api/spotify/stato'); } catch { box.innerHTML = '<p>Impossibile caricare lo stato.</p>'; return; }
+  try { d = await api('/api/spotify/stato'); } catch { box.innerHTML = `<p>${L('Impossibile caricare lo stato.', 'Couldn’t load the status.', 'No se pudo cargar el estado.')}</p>`; return; }
 
   // 1) già collegato → badge + scollega + possibilità di cambiare app
   if (d.collegato) {
     box.innerHTML = `<div class="riga-interruttore">
-        <span class="badge verde">● Spotify collegato</span>
-        <button class="btn secondario" id="spotify-scollega">Scollega</button>
+        <span class="badge verde">● ${L('Spotify collegato', 'Spotify connected', 'Spotify conectado')}</span>
+        <button class="btn secondario" id="spotify-scollega">${L('Scollega', 'Disconnect', 'Desconectar')}</button>
       </div>
-      <p class="suggerimento spazio-sopra">${d.proprio ? 'Stai usando la tua app Spotify.' : 'Stai usando l\'app condivisa dell\'operatore.'}</p>`;
+      <p class="suggerimento spazio-sopra">${d.proprio ? L('Stai usando la tua app Spotify.', 'You’re using your own Spotify app.', 'Estás usando tu app de Spotify.') : L('Stai usando l\'app condivisa dell\'operatore.', 'You’re using the operator’s shared app.', 'Estás usando la app compartida del operador.')}</p>`;
     document.getElementById('spotify-scollega').addEventListener('click', () => conErrore(async () => {
       await api('/api/spotify/disconnect', { method: 'POST', body: {} });
-      toast('Spotify scollegato.'); caricaSpotify();
+      toast(L('Spotify scollegato.', 'Spotify disconnected.', 'Spotify desconectado.')); caricaSpotify();
     }));
     return;
   }
@@ -1965,11 +1965,11 @@ async function caricaSpotify() {
   //    (+ possibilità di reimpostare le proprie credenziali)
   if (d.attivo) {
     box.innerHTML = `
-      <button class="btn" id="spotify-collega">Connetti Spotify</button>
+      <button class="btn" id="spotify-collega">${L('Connetti Spotify', 'Connect Spotify', 'Conectar Spotify')}</button>
       <p class="suggerimento spazio-sopra">${d.proprio
-        ? 'Userai la tua app Spotify.'
-        : 'Basta un clic: userai l\'app di andryxify.it. Solo se preferisci puoi usare una tua app Spotify (opzionale).'}</p>
-      ${d.proprio ? '' : '<details class="spazio-sopra"><summary>Usa una mia app Spotify (avanzato)</summary>' + formCredenzialiSpotify(d.redirect) + '</details>'}`;
+        ? L('Userai la tua app Spotify.', 'You’ll use your own Spotify app.', 'Usarás tu app de Spotify.')
+        : L('Basta un clic: userai l\'app di andryxify.it. Solo se preferisci puoi usare una tua app Spotify (opzionale).', 'One click: you’ll use andryxify.it’s app. Only if you prefer, you can use your own Spotify app (optional).', 'Un clic: usarás la app de andryxify.it. Solo si lo prefieres puedes usar tu propia app de Spotify (opcional).')}</p>
+      ${d.proprio ? '' : `<details class="spazio-sopra"><summary>${L('Usa una mia app Spotify (avanzato)', 'Use my own Spotify app (advanced)', 'Usar mi propia app de Spotify (avanzado)')}</summary>` + formCredenzialiSpotify(d.redirect) + '</details>'}`;
     document.getElementById('spotify-collega').addEventListener('click', () => conErrore(async () => {
       const r = await api('/api/spotify/connect');
       if (r?.url) location.href = r.url;
