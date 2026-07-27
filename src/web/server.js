@@ -14,7 +14,7 @@ import { dirname, join, basename } from 'node:path';
 import { config, SCOPES, missingConfig } from '../config.js';
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb, friends } from '../db.js';
-import { points, vips, tgConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts } from '../db.js';
+import { points, vips, tgConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin } from '../db.js';
 import * as abbonamenti from '../features/abbonamenti.js';
 import * as spotify from '../features/spotify.js';
 import * as giveaway from '../features/giveaway.js';
@@ -30,6 +30,7 @@ import * as tiktok from '../features/tiktok.js';
 import * as instagram from '../features/instagram.js';
 import * as emotes from '../features/emotes.js';
 import * as seventv from '../features/seventv.js';
+import * as tgapp from '../features/tgapp.js';
 import * as badges from '../features/badges.js';
 import * as quotesImport from '../features/quotesimport.js';
 import { pretrain } from '../ai/pretrain.js';
@@ -268,7 +269,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // abbonamenti self-service: login con Twitch + webhook Stripe (firma verificata)
     '/accedi', '/stripe/webhook',
     // ritorno OAuth di Spotify e TikTok: si proteggono da sé con lo `state` monouso
-    '/spotify/callback', '/tiktok/callback']);
+    '/spotify/callback', '/tiktok/callback',
+    // Telegram Mini App: la pagina e l'auth via initData (firmato dal bot token)
+    // + il ritorno OIDC di "Accedi con Telegram" (si protegge con lo `state`).
+    '/tgapp', '/tgapp.html', '/api/tgapp/auth', '/api/tgapp/oidc/start', '/telegram/oidc/callback']);
   // "Vetrina" pubblica: il guscio del sito (pagina + asset) e la demo interattiva
   // sono visibili anche senza pass, per far conoscere il bot. NON espongono dati
   // reali: /api/me senza sessione risponde solo "nessun utente" e tutte le API
@@ -1120,6 +1124,125 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const r = await seventv.rinomina(helix, login, String(req.body?.emoteId || ''), String(req.body?.nome || ''));
     if (!r.ok) return res.status(r.scaduto ? 401 : 400).json({ errore: r.motivo || 'Non rinominata.', scaduto: !!r.scaduto });
     res.json({ ok: true });
+  }));
+
+  // ──────────────────────────────────── Telegram Mini App + "Accedi con Telegram"
+  // La Mini App (dentro Telegram) autentica con initData firmato dal bot; "Accedi
+  // con Telegram" (browser) usa OIDC. In entrambi i casi otteniamo l'id utente
+  // Telegram e, se è collegato a un canale ABILITATO, apriamo la sessione. Il
+  // collegamento id↔canale si crea da loggati con un codice usa-e-getta mostrato
+  // dalla Mini App: così un login Telegram non può MAI dare accesso a un canale
+  // che non hai già rivendicato dall'ingresso normale.
+  const tgLinkCodes = new Map();   // codice → { tgId, username, nome, ts }
+  const tgOidcStati = new Map();   // state → { verifier, ts, linkLogin }
+  const puliziaTg = () => {
+    const ora = Date.now();
+    for (const [k, v] of tgLinkCodes) if (ora - v.ts > 600000) tgLinkCodes.delete(k);
+    for (const [k, v] of tgOidcStati) if (ora - v.ts > 600000) tgOidcStati.delete(k);
+  };
+  const codiceLink = () => { let c = ''; const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; const r = crypto.randomBytes(6); for (let i = 0; i < 6; i++) c += A[r[i] % A.length]; return c; };
+
+  // Apre la sessione per un'identità Telegram collegata a un canale abilitato.
+  function apriSessionePerLogin(req, login) {
+    const contesti = contestiPer(login);
+    if (!contesti.length) return false;
+    const disp = streamers.get(login)?.display || login;
+    req.session.user = sessionePer(login, disp, contestoDefault(contesti));
+    return true;
+  }
+
+  // pagina della Mini App (aperta dentro Telegram)
+  app.get('/tgapp', (req, res) => res.sendFile(join(publicDir, 'tgapp.html')));
+
+  // auth della Mini App: valida initData; se l'utente è collegato apre la sessione,
+  // altrimenti conia un codice da inserire nella dashboard per collegarsi.
+  app.post('/api/tgapp/auth', wrap(async (req, res) => {
+    if (!tgapp.attiva()) return res.status(503).json({ errore: 'Mini App non configurata.' });
+    const v = tgapp.validaInitData(String(req.body?.initData || ''));
+    if (!v.ok) return res.status(401).json({ errore: v.motivo || 'initData non valido' });
+    const map = tgLogin.getByTg(v.user.id);
+    if (map && apriSessionePerLogin(req, map.login)) {
+      return res.json({ collegato: true, login: req.session.user.login, display: req.session.user.display });
+    }
+    puliziaTg();
+    const codice = codiceLink();
+    tgLinkCodes.set(codice, { tgId: v.user.id, username: v.user.username, nome: [v.user.first_name, v.user.last_name].filter(Boolean).join(' '), ts: Date.now() });
+    res.json({ collegato: false, codice, nome: v.user.first_name || v.user.username || '' });
+  }));
+
+  // stato compatto per la Mini App (dopo l'auth c'è la sessione)
+  app.get('/api/tgapp/stato', requireLogin, (req, res) => {
+    const u = currentUser(req);
+    const s = streamers.get(u.login);
+    const st = manager.status();
+    res.json({
+      login: u.login, display: u.display || u.login, ruolo: u.role,
+      abilitato: s?.status === 'approved',
+      botOn: !!s?.botEnabled,
+      inChat: Array.isArray(st?.channels) && st.channels.includes(u.login),
+    });
+  });
+
+  // dalla Mini App: accendi/spegni il bot al volo (solo il proprietario)
+  app.post('/api/tgapp/toggle', requireOwner, wrap(async (req, res) => {
+    const u = currentUser(req);
+    if (streamers.get(u.login)?.status !== 'approved') return res.status(403).json({ errore: 'non abilitato' });
+    streamers.setEnabled(u.login, !!req.body?.enabled);
+    sync();
+    res.json({ ok: true });
+  }));
+
+  // dalla DASHBOARD (loggato): collega Telegram inserendo il codice della Mini App
+  app.post('/api/tgapp/collega', requireOwner, wrap(async (req, res) => {
+    puliziaTg();
+    const codice = String(req.body?.codice || '').trim().toUpperCase();
+    const dati = tgLinkCodes.get(codice);
+    if (!dati) return res.status(400).json({ errore: 'Codice non valido o scaduto.' });
+    tgLinkCodes.delete(codice);
+    tgLogin.link(dati.tgId, currentUser(req).login, { username: dati.username, nome: dati.nome });
+    res.json({ ok: true, username: dati.username || '' });
+  }));
+
+  app.post('/api/tgapp/scollega', requireOwner, (req, res) => {
+    tgLogin.unlinkByLogin(currentUser(req).login);
+    res.json({ ok: true });
+  });
+
+  // stato del collegamento Telegram per la card in dashboard
+  app.get('/api/tgapp/login-stato', requireLogin, (req, res) => {
+    const m = tgLogin.getByLogin(currentUser(req).login);
+    res.json({
+      attiva: tgapp.attiva(), oidc: tgapp.oidcAttiva(), bot: tgapp.botUsername(),
+      collegato: !!m, username: m?.username || '', nome: m?.nome || '',
+    });
+  });
+
+  // ── OIDC "Accedi con Telegram" ──
+  // start: se sei GIÀ loggato lo useremo per COLLEGARE; se no, per ACCEDERE.
+  app.get('/api/tgapp/oidc/start', wrap(async (req, res) => {
+    if (!tgapp.oidcAttiva()) return res.status(503).json({ errore: 'Accesso Telegram non configurato.' });
+    puliziaTg();
+    const { verifier, challenge } = tgapp.pkce();
+    const state = crypto.randomUUID();
+    tgOidcStati.set(state, { verifier, ts: Date.now(), linkLogin: currentUser(req)?.login || null });
+    res.json({ url: tgapp.urlAutorizzazione(state, challenge) });
+  }));
+
+  app.get('/telegram/oidc/callback', wrap(async (req, res) => {
+    puliziaTg();
+    const state = String(req.query.state || '');
+    const st = tgOidcStati.get(state);
+    tgOidcStati.delete(state);
+    if (!st || !req.query.code) return res.redirect('/?tgapp=errore');
+    const r = await tgapp.scambiaCode(String(req.query.code), st.verifier).catch(() => ({ errore: 'ko' }));
+    if (r?.errore || !r?.sub) return res.redirect('/?tgapp=errore');
+    if (st.linkLogin) {                                   // ero loggato → COLLEGO
+      tgLogin.link(r.sub, st.linkLogin, { username: r.username, nome: r.nome });
+      return res.redirect('/?tgapp=collegato#notifiche');
+    }
+    const map = tgLogin.getByTg(r.sub);                   // non loggato → ACCEDO se collegato
+    if (map && apriSessionePerLogin(req, map.login)) return res.redirect('/');
+    return res.redirect('/?tgapp=noncollegato');
   }));
 
   // Premi a punti canale per le richieste musicali: elenco (per capire quanti ne
