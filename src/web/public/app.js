@@ -2200,78 +2200,78 @@ function pannelloPenitenze() {
   const fuzzy = Number(p.fuzzy) || 80;
   return pannello('penitenze', `
     <div class="carta">
-      <h2>${_hIco(ICO.penitenza)}Penitenze a punti canale</h2>
-      <p>Uno spettatore riscatta un premio e sceglie una <strong>parola</strong>. Per qualche minuto il bot <strong>ti ascolta</strong>
-      e tiene un <strong>contatore</strong> (con «+1» rossi a schermo). Alla fine del tempo, se sei stato beccato, parte <strong>una penitenza</strong></p>
+      <h2>${_hIco(ICO.penitenza)}${L('Penitenze a punti canale', 'Channel-point forfeits', 'Penitencias con puntos de canal')}</h2>
+      <p>${L('Uno spettatore riscatta un premio e sceglie una', 'A viewer redeems a reward and picks a', 'Un espectador canjea una recompensa y elige una')} <strong>${L('parola', 'word', 'palabra')}</strong>. ${L('Per qualche minuto il bot', 'For a few minutes the bot', 'Durante unos minutos el bot')} <strong>${L('ti ascolta', 'listens to you', 'te escucha')}</strong>
+      ${L('e tiene un', 'and keeps a', 'y lleva un')} <strong>${L('contatore', 'counter', 'contador')}</strong> ${L('(con «+1» rossi a schermo). Alla fine del tempo, se sei stato beccato, parte <strong>una penitenza</strong>', '(with red «+1»s on screen). When the time is up, if you slipped up, <strong>a forfeit</strong> starts', '(con «+1» rojos en pantalla). Al acabar el tiempo, si te pillaron, empieza <strong>una penitencia</strong>')}</p>
       <div class="riquadro-info spazio-sopra">
-        <strong>Due modi</strong>, ognuno col suo premio a punti canale:
+        <strong>${L('Due modi', 'Two modes', 'Dos modos')}</strong>, ${L('ognuno col suo premio a punti canale:', 'each with its own channel-point reward:', 'cada uno con su recompensa de puntos de canal:')}
         <ul class="lista-punti">
-          <li><strong>Vieta la parola</strong> — non devi dirla: ogni volta che la dici, <span class="pen-inline-num">+1</span>.</li>
-          <li><strong>Usa solo la parola</strong> — puoi dire <em>solo</em> quella: ogni frase con un'altra parola, <span class="pen-inline-num">+1</span>.</li>
+          <li><strong>${L('Vieta la parola', 'Ban the word', 'Prohíbe la palabra')}</strong> — ${L('non devi dirla: ogni volta che la dici,', 'you must not say it: every time you do,', 'no debes decirla: cada vez que la dices,')} <span class="pen-inline-num">+1</span>.</li>
+          <li><strong>${L('Usa solo la parola', 'Use only the word', 'Usa solo la palabra')}</strong> — ${L('puoi dire', 'you can say', 'puedes decir')} <em>${L('solo', 'only', 'solo')}</em> ${L('quella: ogni frase con un\'altra parola,', 'that: every sentence with another word,', 'esa: cada frase con otra palabra,')} <span class="pen-inline-num">+1</span>.</li>
         </ul>
       </div>
-      <p class="suggerimento">Serve il <strong>riconoscimento vocale</strong> attivo (scheda <em>Comandi a voce</em>) e il permesso <strong>Punti canale</strong>.</p>
+      <p class="suggerimento">${L('Serve il <strong>riconoscimento vocale</strong> attivo (scheda <em>Comandi a voce</em>) e il permesso <strong>Punti canale</strong>.', 'Requires <strong>voice recognition</strong> active (<em>Voice commands</em> tab) and the <strong>Channel Points</strong> permission.', 'Necesita el <strong>reconocimiento de voz</strong> activo (pestaña <em>Comandos por voz</em>) y el permiso <strong>Puntos de canal</strong>.')}</p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore"><input type="checkbox" id="pen-attivo" ${p.attivo ? 'checked' : ''}><span class="levetta"></span></label>
-        <span class="etichetta-stato" id="pen-etichetta">${p.attivo ? 'Penitenze attive' : 'Penitenze spente'}</span>
+        <span class="etichetta-stato" id="pen-etichetta">${p.attivo ? L('Penitenze attive', 'Forfeits on', 'Penitencias activas') : L('Penitenze spente', 'Forfeits off', 'Penitencias apagadas')}</span>
       </div>
       <div class="griglia-campi spazio-sopra">
         <div>
-          <label class="campo" for="pen-durata">Durata (minuti)</label>
+          <label class="campo" for="pen-durata">${L('Durata (minuti)', 'Duration (minutes)', 'Duración (minutos)')}</label>
           <input type="number" id="pen-durata" min="1" max="15" value="${Number(p.durataMin) || 2}">
         </div>
         <div>
-          <label class="campo" for="pen-src">La penitenza…</label>
+          <label class="campo" for="pen-src">${L('La penitenza…', 'The forfeit…', 'La penitencia…')}</label>
           <select id="pen-src">
-            ${optS('lista', 'La scelgo dalla mia lista')}
-            ${optS('ia', 'La inventa l\'IA')}
+            ${optS('lista', L('La scelgo dalla mia lista', 'I pick it from my list', 'La elijo de mi lista'))}
+            ${optS('ia', L('La inventa l\'IA', 'The AI makes it up', 'La inventa la IA'))}
           </select>
         </div>
       </div>
-      <label class="campo spazio-sopra" for="pen-penitenze">La mia lista di penitenze (una per riga: ne parte una a caso)</label>
-      <textarea id="pen-penitenze" placeholder="10 flessioni&#10;canta la sigla&#10;parla in inglese per 1 minuto">${esc((p.penitenze || []).join('\n'))}</textarea>
-      <p class="suggerimento">Con «La inventa l'IA» non serve scriverne: se il cervello non è disponibile, il bot ne pesca una pronta.</p>
-      <label class="campo spazio-sopra" for="pen-fuzzy">Tolleranza al riconoscimento vocale: <strong><span id="pen-fuzzy-val">${fuzzy}</span></strong></label>
+      <label class="campo spazio-sopra" for="pen-penitenze">${L('La mia lista di penitenze (una per riga: ne parte una a caso)', 'My list of forfeits (one per line: a random one starts)', 'Mi lista de penitencias (una por línea: empieza una al azar)')}</label>
+      <textarea id="pen-penitenze" placeholder="${L('10 flessioni&#10;canta la sigla&#10;parla in inglese per 1 minuto', '10 push-ups&#10;sing the theme song&#10;speak English for 1 minute', '10 flexiones&#10;canta la sintonía&#10;habla en inglés 1 minuto')}">${esc((p.penitenze || []).join('\n'))}</textarea>
+      <p class="suggerimento">${L('Con «La inventa l\'IA» non serve scriverne: se il cervello non è disponibile, il bot ne pesca una pronta.', 'With «The AI makes it up» you don’t need to write any: if the brain isn’t available, the bot picks a ready-made one.', 'Con «La inventa la IA» no hace falta escribir ninguna: si el cerebro no está disponible, el bot elige una ya hecha.')}</p>
+      <label class="campo spazio-sopra" for="pen-fuzzy">${L('Tolleranza al riconoscimento vocale:', 'Voice-recognition tolerance:', 'Tolerancia del reconocimiento de voz:')} <strong><span id="pen-fuzzy-val">${fuzzy}</span></strong></label>
       <input type="range" id="pen-fuzzy" min="50" max="100" step="5" value="${fuzzy}">
-      <p class="suggerimento">Più alta = più severo (conta solo parole quasi identiche). Più bassa = perdona di più gli errori di trascrizione.</p>
-      <label class="campo spazio-sopra" for="pen-effetto">Effetto quando scatta la penitenza (facoltativo)</label>
-      <input type="text" id="pen-effetto" placeholder="es. airhorn (comando di un effetto)" value="${esc(p.effetto || '')}">
-      <p class="spazio-sopra"><button class="btn" id="pen-salva">Salva</button></p>
+      <p class="suggerimento">${L('Più alta = più severo (conta solo parole quasi identiche). Più bassa = perdona di più gli errori di trascrizione.', 'Higher = stricter (counts only near-identical words). Lower = forgives transcription errors more.', 'Más alta = más estricto (cuenta solo palabras casi idénticas). Más baja = perdona más los errores de transcripción.')}</p>
+      <label class="campo spazio-sopra" for="pen-effetto">${L('Effetto quando scatta la penitenza (facoltativo)', 'Effect when the forfeit triggers (optional)', 'Efecto cuando salta la penitencia (opcional)')}</label>
+      <input type="text" id="pen-effetto" placeholder="${L('es. airhorn (comando di un effetto)', 'e.g. airhorn (an effect command)', 'p. ej. airhorn (comando de un efecto)')}" value="${esc(p.effetto || '')}">
+      <p class="spazio-sopra"><button class="btn" id="pen-salva">${L('Salva', 'Save', 'Guardar')}</button></p>
     </div>
 
     <div class="carta">
-      <h3>${_hIco(ICO.monitor)}Contatore a schermo (overlay)</h3>
-      <p>Il «+1» e il contatore compaiono nell'<strong>overlay per OBS</strong> (lo stesso degli effetti, scheda <em>Effetti &amp; suoni</em>).</p>
+      <h3>${_hIco(ICO.monitor)}${L('Contatore a schermo (overlay)', 'On-screen counter (overlay)', 'Contador en pantalla (overlay)')}</h3>
+      <p>${L('Il «+1» e il contatore compaiono nell\'<strong>overlay per OBS</strong> (lo stesso degli effetti, scheda <em>Effetti &amp; suoni</em>).', 'The «+1» and the counter appear in the <strong>OBS overlay</strong> (the same as effects, <em>Effects &amp; sounds</em> tab).', 'El «+1» y el contador aparecen en el <strong>overlay para OBS</strong> (el mismo de los efectos, pestaña <em>Efectos y sonidos</em>).')}</p>
       <div class="griglia-campi spazio-sopra">
         <div>
-          <label class="campo" for="pen-ov-pos">Posizione</label>
+          <label class="campo" for="pen-ov-pos">${L('Posizione', 'Position', 'Posición')}</label>
           <select id="pen-ov-pos">
-            ${optP('alto-sinistra', 'In alto a sinistra')}
-            ${optP('alto-centro', 'In alto al centro')}
-            ${optP('alto-destra', 'In alto a destra')}
-            ${optP('basso-sinistra', 'In basso a sinistra')}
-            ${optP('basso-centro', 'In basso al centro')}
-            ${optP('basso-destra', 'In basso a destra')}
+            ${optP('alto-sinistra', L('In alto a sinistra', 'Top left', 'Arriba a la izquierda'))}
+            ${optP('alto-centro', L('In alto al centro', 'Top center', 'Arriba al centro'))}
+            ${optP('alto-destra', L('In alto a destra', 'Top right', 'Arriba a la derecha'))}
+            ${optP('basso-sinistra', L('In basso a sinistra', 'Bottom left', 'Abajo a la izquierda'))}
+            ${optP('basso-centro', L('In basso al centro', 'Bottom center', 'Abajo al centro'))}
+            ${optP('basso-destra', L('In basso a destra', 'Bottom right', 'Abajo a la derecha'))}
           </select>
         </div>
         <div>
-          <label class="campo" for="pen-ov-col">Colore</label>
+          <label class="campo" for="pen-ov-col">${L('Colore', 'Color', 'Color')}</label>
           <input type="color" id="pen-ov-col" value="${/^#[0-9a-fA-F]{6}$/.test(ov.colore || '') ? ov.colore : '#ff2d2d'}">
         </div>
       </div>
-      <p class="spazio-sopra"><button class="btn secondario" id="pen-ov-prova">Prova il contatore nell'overlay</button></p>
-      <p class="suggerimento">Apri l'overlay in OBS (o nel browser) e premi «Prova»: vedrai partire un +1 di esempio.</p>
+      <p class="spazio-sopra"><button class="btn secondario" id="pen-ov-prova">${L('Prova il contatore nell\'overlay', 'Test the counter in the overlay', 'Prueba el contador en el overlay')}</button></p>
+      <p class="suggerimento">${L('Apri l\'overlay in OBS (o nel browser) e premi «Prova»: vedrai partire un +1 di esempio.', 'Open the overlay in OBS (or the browser) and press «Test»: you’ll see a sample +1 fire.', 'Abre el overlay en OBS (o en el navegador) y pulsa «Probar»: verás saltar un +1 de ejemplo.')}</p>
     </div>
 
     <div class="carta">
-      <h3>${_hIco(ICO.chiave)}I premi a punti canale</h3>
-      <p>Servono premi <strong>con richiesta di testo</strong> (così lo spettatore scrive la parola). Scegline uno per modo, o creali qui.</p>
+      <h3>${_hIco(ICO.chiave)}${L('I premi a punti canale', 'The channel-point rewards', 'Las recompensas de puntos de canal')}</h3>
+      <p>${L('Servono premi <strong>con richiesta di testo</strong> (così lo spettatore scrive la parola). Scegline uno per modo, o creali qui.', 'You need rewards <strong>that require text</strong> (so the viewer types the word). Pick one per mode, or create them here.', 'Hacen falta recompensas <strong>que requieran texto</strong> (así el espectador escribe la palabra). Elige una por modo, o créalas aquí.')}</p>
       <input type="hidden" id="pen-premio-vieta" value="${esc(p.premioVieta || '')}">
       <input type="hidden" id="pen-premio-solo" value="${esc(p.premioSolo || '')}">
-      <h4 class="spazio-sopra">${_hIco(ICO.divieto)}Vieta la parola <span class="tenue">— non devi dirla</span></h4>
-      <div id="pen-box-vieta"><p class="suggerimento">Carico i tuoi premi…</p></div>
-      <h4 class="spazio-sopra">${_hIco(ICO.target)}Usa solo la parola <span class="tenue">— puoi dire solo quella</span></h4>
-      <div id="pen-box-solo"><p class="suggerimento">Carico i tuoi premi…</p></div>
+      <h4 class="spazio-sopra">${_hIco(ICO.divieto)}${L('Vieta la parola', 'Ban the word', 'Prohíbe la palabra')} <span class="tenue">— ${L('non devi dirla', 'you must not say it', 'no debes decirla')}</span></h4>
+      <div id="pen-box-vieta"><p class="suggerimento">${L('Carico i tuoi premi…', 'Loading your rewards…', 'Cargando tus recompensas…')}</p></div>
+      <h4 class="spazio-sopra">${_hIco(ICO.target)}${L('Usa solo la parola', 'Use only the word', 'Usa solo la palabra')} <span class="tenue">— ${L('puoi dire solo quella', 'you can only say that', 'solo puedes decir esa')}</span></h4>
+      <div id="pen-box-solo"><p class="suggerimento">${L('Carico i tuoi premi…', 'Loading your rewards…', 'Cargando tus recompensas…')}</p></div>
     </div>`);
 }
 
@@ -2290,32 +2290,32 @@ async function salvaPenitenze(silenzioso) {
       colore: document.getElementById('pen-ov-col')?.value || '#ff2d2d',
     },
   };
-  await salvaImpostazioni({ penitenze }, silenzioso ? null : 'Penitenze salvate');
+  await salvaImpostazioni({ penitenze }, silenzioso ? null : L('Penitenze salvate', 'Forfeits saved', 'Penitencias guardadas'));
 }
 
 async function caricaPenitenze() {
   document.getElementById('pen-attivo')?.addEventListener('change', (ev) => {
     const et = document.getElementById('pen-etichetta');
-    if (et) et.textContent = ev.target.checked ? 'Penitenze attive' : 'Penitenze spente';
+    if (et) et.textContent = ev.target.checked ? L('Penitenze attive', 'Forfeits on', 'Penitencias activas') : L('Penitenze spente', 'Forfeits off', 'Penitencias apagadas');
   });
   document.getElementById('pen-salva')?.addEventListener('click', () => conErrore(() => salvaPenitenze()));
   const rng = document.getElementById('pen-fuzzy');
   const val = document.getElementById('pen-fuzzy-val');
   rng?.addEventListener('input', () => { if (val) val.textContent = rng.value; });
-  document.getElementById('pen-ov-pos')?.addEventListener('change', () => conErrore(async () => { await salvaPenitenze(true); toast('Overlay salvato ✓'); }));
+  document.getElementById('pen-ov-pos')?.addEventListener('change', () => conErrore(async () => { await salvaPenitenze(true); toast(L('Overlay salvato ✓', 'Overlay saved ✓', 'Overlay guardado ✓')); }));
   document.getElementById('pen-ov-col')?.addEventListener('change', () => conErrore(() => salvaPenitenze(true)));
   document.getElementById('pen-ov-prova')?.addEventListener('click', () => conErrore(async () => {
     await salvaPenitenze(true);
     await api('/api/penitenze/prova', { method: 'POST', body: {} });
-    toast('Inviato all\'overlay ▶');
+    toast(L('Inviato all\'overlay ▶', 'Sent to the overlay ▶', 'Enviado al overlay ▶'));
   }));
   const boxV = document.getElementById('pen-box-vieta');
   const boxS = document.getElementById('pen-box-solo');
   if (!boxV || !boxS) return;
   let d;
-  try { d = await api('/api/penitenze/premi'); } catch { boxV.innerHTML = boxS.innerHTML = '<p class="suggerimento">Impossibile leggere i premi.</p>'; return; }
+  try { d = await api('/api/penitenze/premi'); } catch { boxV.innerHTML = boxS.innerHTML = `<p class="suggerimento">${L('Impossibile leggere i premi.', 'Couldn’t read the rewards.', 'No se pueden leer las recompensas.')}</p>`; return; }
   if (!d.permessoOk) {
-    boxV.innerHTML = '<div class="riquadro-info">Per i premi a punti canale serve il permesso: concedilo da <strong>Chat &amp; comandi → Effetti &amp; suoni</strong> (sezione Premi), poi torna qui.</div>';
+    boxV.innerHTML = `<div class="riquadro-info">${L('Per i premi a punti canale serve il permesso: concedilo da <strong>Chat &amp; comandi → Effetti &amp; suoni</strong> (sezione Premi), poi torna qui.', 'Channel-point rewards need the permission: grant it from <strong>Chat &amp; commands → Effects &amp; sounds</strong> (Rewards section), then come back here.', 'Las recompensas de puntos de canal necesitan el permiso: concédelo desde <strong>Chat y comandos → Efectos y sonidos</strong> (sección Recompensas), luego vuelve aquí.')}</div>`;
     boxS.innerHTML = '';
     return;
   }
@@ -2328,36 +2328,36 @@ async function caricaPenitenze() {
     const selId = `${hiddenId}-sel`, creaId = `${hiddenId}-crea`, nomeId = `${hiddenId}-nome`, costoId = `${hiddenId}-costo`;
     const formCrea = `
       <details class="spazio-sopra"${eleggibili.length ? '' : ' open'}>
-        <summary>${eleggibili.length ? 'Oppure crea un premio pronto all\'uso' : 'Crea un premio pronto all\'uso'}</summary>
+        <summary>${eleggibili.length ? L('Oppure crea un premio pronto all\'uso', 'Or create a ready-to-use reward', 'O crea una recompensa lista para usar') : L('Crea un premio pronto all\'uso', 'Create a ready-to-use reward', 'Crea una recompensa lista para usar')}</summary>
         <div class="griglia-campi spazio-sopra">
-          <div><label class="campo">Nome</label><input type="text" id="${nomeId}" value="${esc(nomeDefault)}"></div>
-          <div><label class="campo">Costo (punti canale)</label><input type="number" id="${costoId}" min="1" value="500"></div>
+          <div><label class="campo">${L('Nome', 'Name', 'Nombre')}</label><input type="text" id="${nomeId}" value="${esc(nomeDefault)}"></div>
+          <div><label class="campo">${L('Costo (punti canale)', 'Cost (channel points)', 'Coste (puntos de canal)')}</label><input type="number" id="${costoId}" min="1" value="500"></div>
         </div>
-        <button class="btn secondario spazio-sopra" id="${creaId}">Crea il premio su Twitch</button>
+        <button class="btn secondario spazio-sopra" id="${creaId}">${L('Crea il premio su Twitch', 'Create the reward on Twitch', 'Crea la recompensa en Twitch')}</button>
       </details>`;
     if (!eleggibili.length) {
-      box.innerHTML = `<div class="riquadro-info">Non hai premi con la <strong>richiesta di testo</strong>${esclusi ? ` (${esclusi} non ${esclusi === 1 ? 'adatto' : 'adatti'})` : ''}. Creane uno qui.</div>${formCrea}`;
+      box.innerHTML = `<div class="riquadro-info">${L('Non hai premi con la <strong>richiesta di testo</strong>', 'You have no rewards <strong>that require text</strong>', 'No tienes recompensas <strong>que requieran texto</strong>')}${esclusi ? ` (${esclusi} ${L('non ', 'not ', 'no ')}${esclusi === 1 ? L('adatto', 'suitable', 'apta') : L('adatti', 'suitable', 'aptas')})` : ''}. ${L('Creane uno qui.', 'Create one here.', 'Crea una aquí.')}</div>${formCrea}`;
     } else {
-      const nessuno = `<option value=""${cur ? '' : ' selected'}>— nessuno —</option>`;
+      const nessuno = `<option value=""${cur ? '' : ' selected'}>${L('— nessuno —', '— none —', '— ninguno —')}</option>`;
       box.innerHTML = `
         <select id="${selId}">
-          ${nessuno}${eleggibili.map((r) => `<option value="${esc(r.title)}"${r.title === cur ? ' selected' : ''}>${esc(r.title)} — ${r.cost} punti</option>`).join('')}
+          ${nessuno}${eleggibili.map((r) => `<option value="${esc(r.title)}"${r.title === cur ? ' selected' : ''}>${esc(r.title)} — ${r.cost} ${L('punti', 'points', 'puntos')}</option>`).join('')}
         </select>${formCrea}`;
       const sel = document.getElementById(selId);
       if (cur && !eleggibili.some((r) => r.title === cur)) sel.value = '';
       if (inp) inp.value = sel.value;
-      sel.addEventListener('change', () => { if (inp) inp.value = sel.value; conErrore(async () => { await salvaPenitenze(true); toast('Premio impostato ✓'); }); });
+      sel.addEventListener('change', () => { if (inp) inp.value = sel.value; conErrore(async () => { await salvaPenitenze(true); toast(L('Premio impostato ✓', 'Reward set ✓', 'Recompensa fijada ✓')); }); });
     }
     const bc = document.getElementById(creaId);
     if (bc) bc.addEventListener('click', () => conErrore(async () => {
       const titolo = (document.getElementById(nomeId)?.value || nomeDefault).trim();
       const costo = Number(document.getElementById(costoId)?.value) || 500;
       const r = await api('/api/penitenze/premio', { method: 'POST', body: { campo, titolo, costo } });
-      if (r?.reward) { if (inp) inp.value = r.reward.title; toast('Premio creato su Twitch!'); caricaPenitenze(); }
+      if (r?.reward) { if (inp) inp.value = r.reward.title; toast(L('Premio creato su Twitch!', 'Reward created on Twitch!', '¡Recompensa creada en Twitch!')); caricaPenitenze(); }
     }));
   };
-  montaPicker(boxV, { campo: 'premioVieta', hiddenId: 'pen-premio-vieta', attuale: d.premioVieta, nomeDefault: 'Vietami una parola' });
-  montaPicker(boxS, { campo: 'premioSolo', hiddenId: 'pen-premio-solo', attuale: d.premioSolo, nomeDefault: 'Dì solo questa parola' });
+  montaPicker(boxV, { campo: 'premioVieta', hiddenId: 'pen-premio-vieta', attuale: d.premioVieta, nomeDefault: L('Vietami una parola', 'Ban me a word', 'Prohíbeme una palabra') });
+  montaPicker(boxS, { campo: 'premioSolo', hiddenId: 'pen-premio-solo', attuale: d.premioSolo, nomeDefault: L('Dì solo questa parola', 'Say only this word', 'Di solo esta palabra') });
 }
 
 // --- scheda Alert & Chat ------------------------------------------------
