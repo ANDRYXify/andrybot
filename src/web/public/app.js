@@ -591,6 +591,28 @@ function renderAreaUtente() {
 
 // ------------------------------------------------------------------ viste "semplici"
 
+// Anteprima "overlay in azione" nell'hero: un fotogramma di diretta stilizzato
+// (alert + chat a schermo + webcam) — puro CSS, comunica il prodotto a colpo
+// d'occhio. Decorativo (aria-hidden), nessun dato reale.
+function heroAnteprima() {
+  const star = '<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true"><path d="M12 2 15.09 8.26 22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>';
+  const msg = (col, nome, testo, emote) => `<div class="vp-msg"><b style="color:${col}">${nome}</b> ${testo}${emote ? ' <span class="vp-emote"></span>' : ''}</div>`;
+  return `<div class="vetrina-preview" aria-hidden="true">
+    <div class="vp-frame">
+      <span class="vp-scene">SCHERMO / GIOCO</span>
+      <span class="vp-live">● LIVE</span>
+      <div class="vp-alert"><span class="vp-alert-ic">${star}</span><span class="vp-alert-tx"><b>Nuovo follower!</b> MarioRossi</span></div>
+      <div class="vp-cam">webcam</div>
+      <div class="vp-chat">
+        ${msg('#ff5c8a', 'lucaplays', 'ciao a tutti!')}
+        ${msg('#5b8def', 'giada_ttv', 'che bella live', true)}
+        ${msg('#2fb98a', 'marco99', 'GG!')}
+      </div>
+    </div>
+    <p class="vp-cap">L'overlay in azione: alert, chat a schermo e widget — tutto personalizzabile.</p>
+  </div>`;
+}
+
 function renderHero() {
   const errore = new URLSearchParams(location.search).get('errore');
   const msgErrore = {
@@ -644,13 +666,18 @@ function renderHero() {
 
     <section class="vetrina-hero">
       <span class="vetrina-occhiello">SocialBot · il bot di andryxify.it</span>
-      <h1 class="vetrina-titolo">${titoloParole('Il bot Twitch che parla')} <span class="acc">${titoloParole('con la tua voce', 4)}</span></h1>
-      <p class="vetrina-sub">Vive nella tua chat e scrive <strong>con il tuo account</strong> — niente bot anonimi.
-      Impara chi sei, crea comandi su misura e cresce con la tua community.</p>
+      <h1 class="vetrina-titolo">${titoloParole('Il bot per Twitch che parla')} <span class="acc">${titoloParole('con la tua voce', 5)}</span></h1>
+      <p class="vetrina-sub"><strong>Bot per Twitch in italiano</strong> che vive nella tua chat e scrive <strong>con il tuo account</strong> — niente bot anonimi.
+      Comandi su misura, moderazione, <strong>overlay per OBS</strong>, clip, musica e persino <strong>dirette dal browser senza OBS</strong>.</p>
       <div class="vetrina-azioni">
         <a class="btn grande" href="/entra">Accedi con Twitch</a>
         <a class="btn grande secondario" href="/?demo=1">▶ Prova la demo</a>
       </div>
+      <ul class="vetrina-chip" aria-label="In breve">
+        ${['In italiano', 'Scrive col tuo account', 'Anche senza OBS', 'Gratis per la community'].map((t) =>
+          `<li>${_bIco('<path d="M20 6 9 17l-5-5"/>')}${t}</li>`).join('')}
+      </ul>
+      ${heroAnteprima()}
       <p class="nota">Con «Accedi con Twitch» entri <strong>subito nella dashboard</strong> se sei uno streamer <strong>abilitato</strong> su
       <a href="https://andryxify.it">andryxify.it</a> o hai un <strong>abbonamento</strong> — <strong>senza passkey</strong>. Altrimenti da qui scegli un piano.</p>
       <p class="vetrina-accessi">Preferisci un altro modo?
