@@ -36,7 +36,7 @@ export const FREE = {
 // `funzioni`: matrice di ciò che il piano sblocca. Numeri = limiti (Infinity =
 // illimitato), booleani = on/off. L'unione con gli add-on la calcola funzioniDi().
 export const BASE = {
-  id: 'base', nome: 'Base', prezzo: 3.99, prezzoTesto: '€3,99/mese', priceEnv: 'base', icona: '🤖',
+  id: 'base', nome: 'Base', prezzo: 3.49, prezzoTesto: '€3,49/mese', priceEnv: 'base', icona: '🤖',
   sommario: 'Il cuore del bot: comandi illimitati, antispam e moderazione, overlay per OBS e un moderatore.',
   funzioni: { moduli: Infinity, giochi: false, notifiche: false, clipAuto: false, voce: false, moderatori: 1, effetti: false, overlay: true, telegram: false },
 };
@@ -46,43 +46,43 @@ export const BASE = {
 // chiave in config.stripe.prezzi; senza price-id l'add-on non è acquistabile.
 export const ADDON = [
   {
-    id: 'giochi', nome: 'Giochi & Classifiche', prezzo: 2.99, prezzoTesto: '€2,99/mese',
+    id: 'giochi', nome: 'Giochi & Classifiche', prezzo: 2.79, prezzoTesto: '€2,79/mese',
     priceEnv: 'addon_giochi', icona: '🎮',
     sommario: 'Minigiochi in chat, monete, classifiche e premio VIP ai più attivi.',
     funzioni: { giochi: true },
   },
   {
-    id: 'effetti', nome: 'Effetti & Punti canale', prezzo: 1.99, prezzoTesto: '€1,99/mese',
+    id: 'effetti', nome: 'Effetti & Punti canale', prezzo: 1.79, prezzoTesto: '€1,79/mese',
     priceEnv: 'addon_effetti', icona: '✨',
     sommario: 'Alert ed effetti in overlay, anche riscattabili con i punti canale.',
     funzioni: { effetti: true },
   },
   {
-    id: 'notifiche', nome: 'Social & Notifiche', prezzo: 2.99, prezzoTesto: '€2,99/mese',
+    id: 'notifiche', nome: 'Social & Notifiche', prezzo: 2.79, prezzoTesto: '€2,79/mese',
     priceEnv: 'addon_notifiche', icona: '📣',
     sommario: 'Annuncia le tue live su TikTok, YouTube e Instagram e collega Telegram.',
     funzioni: { notifiche: true, telegram: true },
   },
   {
-    id: 'clip', nome: 'Clip Automatiche', prezzo: 2.99, prezzoTesto: '€2,99/mese',
+    id: 'clip', nome: 'Clip Automatiche', prezzo: 2.79, prezzoTesto: '€2,79/mese',
     priceEnv: 'addon_clip', icona: '🎬',
     sommario: 'I momenti migliori clippati e salvati in automatico durante la diretta.',
     funzioni: { clipAuto: true },
   },
   {
-    id: 'voce', nome: 'Comandi Vocali', prezzo: 2.99, prezzoTesto: '€2,99/mese',
+    id: 'voce', nome: 'Comandi Vocali', prezzo: 2.79, prezzoTesto: '€2,79/mese',
     priceEnv: 'addon_voce', icona: '🎙️',
     sommario: 'Guida il bot con la voce: cambia titolo, categoria e assegna VIP mentre streami.',
     funzioni: { voce: true },
   },
   {
-    id: 'squadra', nome: 'Squadra', prezzo: 1.99, prezzoTesto: '€1,99/mese',
+    id: 'squadra', nome: 'Squadra', prezzo: 1.79, prezzoTesto: '€1,79/mese',
     priceEnv: 'addon_squadra', icona: '👥',
     sommario: 'Fino a 10 moderatori per gestire il canale in team con i tuoi mod.',
     funzioni: { moderatori: 10 },
   },
   {
-    id: 'musica', nome: 'Richieste Musicali', prezzo: 2.99, prezzoTesto: '€2,99/mese',
+    id: 'musica', nome: 'Richieste Musicali', prezzo: 2.79, prezzoTesto: '€2,79/mese',
     priceEnv: 'addon_musica', icona: '🎵',
     sommario: 'Gli spettatori mettono canzoni in coda su Spotify con !sr.',
     funzioni: { musica: true },
@@ -109,6 +109,27 @@ export function normalizzaPacchetti(x) {
   const chiesti = new Set(grezzi.map((r) => String(r || '').trim().toLowerCase()).filter(Boolean));
   return ADDON_IDS.filter((id) => chiesti.has(id));
 }
+
+// ── BUNDLE curati: set di add-on a prezzo scontato ──────────────────────────
+// Non sono un piano a sé: sono una SCORCIATOIA che seleziona più add-on insieme
+// applicando uno sconto (coupon Stripe). L'utente resta abbonato Base + quegli
+// add-on, quindi può comunque aggiungerne/toglierne (modularità intatta).
+export const SCONTO_BUNDLE = 0.15;
+const _sommaAddon = (ids) => ids.reduce((t, id) => t + (addonById(id)?.prezzo || 0), 0);
+export const BUNDLE = [
+  { id: 'creator', nome: 'Creator', icona: '🎨', addon: ['effetti', 'notifiche', 'clip'],
+    sommario: 'Presenza e visibilità: overlay ed effetti, avvisi live sui social, clip automatiche.' },
+  { id: 'interazione', nome: 'Interazione', icona: '🎉', addon: ['musica', 'giochi', 'voce'],
+    sommario: 'Community attiva: richieste musicali, minigiochi e monete, comandi a voce.' },
+  { id: 'tutto', nome: 'Tutto', icona: '🚀', addon: [...ADDON_IDS],
+    sommario: 'Ogni super-potere sbloccato: tutti gli add-on in un colpo solo.' },
+].map((b) => {
+  const pieno = Math.round(_sommaAddon(b.addon) * 100) / 100;
+  const prezzo = Math.round(pieno * (1 - SCONTO_BUNDLE) * 100) / 100;
+  const t = (n) => '€' + n.toFixed(2).replace('.', ',');
+  return { ...b, sconto: SCONTO_BUNDLE, prezzoPieno: pieno, prezzo, prezzoTesto: t(prezzo) + '/mese', prezzoPienoTesto: t(pieno) };
+});
+export function bundleById(id) { return BUNDLE.find((b) => b.id === String(id || '').toLowerCase()) || null; }
 
 // ── Composizione delle funzioni effettive ────────────────────────────────────
 // Fonde più matrici di funzioni: per i numeri prende il MASSIMO (Infinity vince),
@@ -158,6 +179,8 @@ export function pianiPubblici() {
     free: esponi(FREE),
     base: esponi(BASE),
     addon: ADDON.map(esponi),
+    bundle: BUNDLE.map((b) => ({ id: b.id, nome: b.nome, icona: b.icona, sommario: b.sommario,
+      addon: b.addon, prezzo: b.prezzo, prezzoTesto: b.prezzoTesto, prezzoPieno: b.prezzoPieno, prezzoPienoTesto: b.prezzoPienoTesto, sconto: b.sconto })),
     community: esponi(TIER_COMMUNITY),
   };
 }
@@ -191,7 +214,7 @@ async function stripeCall(path, params) {
 // come line-item multipli di UNA sola sottoscrizione. Ritorna l'URL a cui mandare
 // il browser, oppure null se Stripe è spento / manca il price della Base. Link è
 // già attivo di default nel Checkout di Stripe.
-export async function creaCheckout({ login, pacchetti = [] }) {
+export async function creaCheckout({ login, pacchetti = [], coupon = false }) {
   const basePrice = config.stripe.prezzi.base;
   if (!config.stripe.attivo || !basePrice) return null;
   const ids = normalizzaPacchetti(pacchetti);
@@ -215,8 +238,12 @@ export async function creaCheckout({ login, pacchetti = [] }) {
     'subscription_data[metadata][login]': login,
     'subscription_data[metadata][tier]': 'base',
     'subscription_data[metadata][pacchetti]': csv,
-    allow_promotion_codes: 'true',
   };
+  // BUNDLE: applica il coupon sconto (se configurato). Stripe non permette coupon
+  // e codici promo insieme, quindi si sceglie: coupon per i bundle, altrimenti
+  // lasciamo aperti i codici promozionali.
+  if (coupon && config.stripe.couponBundle) params['discounts[0][coupon]'] = config.stripe.couponBundle;
+  else params.allow_promotion_codes = 'true';
   prezzi.forEach((price, i) => {
     params[`line_items[${i}][price]`] = price;
     params[`line_items[${i}][quantity]`] = '1';

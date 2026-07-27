@@ -384,6 +384,25 @@ body.vetrina .contenuto { max-width: 1040px; }
 .addon-somm { color: var(--testo-2); font-size: .82rem; line-height: 1.35; }
 .addon-prezzo { align-self: center; font-weight: 800; color: var(--acc); white-space: nowrap; font-size: .95rem; }
 
+/* Bundle: set curati scontati (griglia come gli add-on, look "in evidenza") */
+.bundle-blocco { margin-bottom: 1.2rem; }
+.bundle-griglia { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: .8rem; }
+/* card verticale: icona + prezzo in alto, testo (nome + sommario) sotto a tutta
+   larghezza → i nomi non si spezzano nelle colonne strette */
+.bundle-carta { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: .55rem .7rem; text-align: left; width: 100%; padding: .9rem 1rem; border: 1.5px solid var(--acc-bordo); border-radius: var(--r-m); background: linear-gradient(180deg, var(--acc-soft, rgba(109, 59, 239, .08)), var(--surface)); color: inherit; cursor: pointer; transition: border-color .18s ease, transform .18s ease, box-shadow .18s ease; }
+.bundle-carta:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(109, 59, 239, .14); }
+.bundle-carta:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.bundle-carta.on { border-color: var(--acc); box-shadow: 0 0 0 1.5px var(--acc), 0 10px 24px rgba(109, 59, 239, .2); }
+.bundle-icona { grid-row: 1; grid-column: 1; width: 2.5rem; height: 2.5rem; flex-shrink: 0; display: grid; place-items: center; border-radius: var(--r-s, 10px); background: var(--acc); color: #fff; }
+.bundle-icona svg { width: 1.35rem; height: 1.35rem; }
+.bundle-prezzo { grid-row: 1; grid-column: 2; justify-self: end; text-align: right; white-space: nowrap; color: var(--acc); font-size: .95rem; }
+.bundle-testo { grid-row: 2; grid-column: 1 / -1; display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+.bundle-nome { font-weight: 800; font-size: 1rem; }
+.bundle-somm { color: var(--testo-2); font-size: .82rem; line-height: 1.35; }
+.bundle-prezzo s { color: var(--testo-3); font-weight: 600; margin-right: .15rem; }
+.bundle-prezzo strong { font-weight: 800; }
+.bundle-prezzo small { color: var(--testo-3); font-weight: 600; font-size: .78rem; }
+
 /* Riepilogo: totale live + CTA unica */
 .piani-riepilogo { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; padding: 1rem 1.2rem; border: 1px solid var(--acc-bordo); border-radius: var(--r-m); background: var(--acc-soft, rgba(109, 59, 239, .07)); }
 .riepilogo-conto { display: flex; flex-direction: column; gap: .1rem; }
