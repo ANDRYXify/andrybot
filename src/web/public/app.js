@@ -3287,6 +3287,8 @@ function pannelloStudio() {
 
       <!-- scene: come le "scene" di OBS, si cambia al volo -->
       <div class="studio-scene" id="studio-scene"></div>
+      <!-- preset: salva/richiama un intero set di scene con un nome -->
+      <div class="studio-preset" id="studio-preset"></div>
 
       <div class="studio-griglia">
         <!-- palco: canvas pulito + livello UI (selezione/trascinamento) sopra -->
@@ -3731,7 +3733,51 @@ async function caricaStudio() {
 
 // ---- disegno dell'interfaccia dello Studio (scene, fonti, proprietà, mixer) --
 function renderStudioTutto() {
-  renderStudioScene(); renderStudioFonti(); renderStudioUI(); renderStudioProp(); renderStudioMixer();
+  renderStudioScene(); renderStudioPreset(); renderStudioFonti(); renderStudioUI(); renderStudioProp(); renderStudioMixer();
+}
+
+// Preset di layout: salva/richiama un intero set di scene con un nome. Restano
+// nel browser (localStorage) per canale. Webcam/schermo/testo/overlay si
+// ripristinano sempre; immagini/video solo se ancora caricati in questa sessione.
+function studioPresetKey() { try { return 'andrybot-studio-preset:' + (stato?.user?.login || 'anon'); } catch (e) { return 'andrybot-studio-preset:anon'; } }
+function studioLeggiPreset() { try { return JSON.parse(localStorage.getItem(studioPresetKey())) || []; } catch (e) { return []; } }
+function studioScriviPreset(arr) { try { localStorage.setItem(studioPresetKey(), JSON.stringify(arr)); } catch (e) { /* quota/off */ } }
+function studioSerializzaScene() {
+  return STUDIO.scene.map((s) => ({ nome: s.nome, fonti: s.fonti.map((f) => {
+    const o = { tipo: f.tipo, nome: f.nome, x: f.x, y: f.y, w: f.w, h: f.h, visibile: f.visibile };
+    if (f.dataId) o.dataId = f.dataId;
+    if (f.tipo === 'testo') { o.testo = f.testo; o.colore = f.colore; o.dim = f.dim; o.grassetto = f.grassetto; o.sfondo = f.sfondo; }
+    return o;
+  }) }));
+}
+
+function renderStudioPreset() {
+  const el = document.getElementById('studio-preset'); if (!el) return;
+  const list = studioLeggiPreset(), vuoto = !list.length;
+  el.innerHTML = `<span class="studio-mini-tit">Preset di layout</span>
+    <select class="chip-utente" id="studio-preset-sel"${vuoto ? ' disabled' : ''}>${vuoto ? '<option>— nessuno salvato —</option>' : list.map((p, i) => `<option value="${i}">${esc(p.nome)}</option>`).join('')}</select>
+    <button type="button" class="btn secondario mini" data-preset="applica"${vuoto ? ' disabled' : ''}>Applica</button>
+    <button type="button" class="btn secondario mini" data-preset="salva">Salva com'è…</button>
+    <button type="button" class="btn secondario mini" data-preset="elimina"${vuoto ? ' disabled' : ''}>Elimina</button>`;
+}
+
+function studioSalvaPreset() {
+  const nome = prompt('Nome del preset di layout:', 'Il mio layout'); if (!nome) return;
+  const arr = studioLeggiPreset();
+  arr.push({ nome: nome.slice(0, 40), scene: studioSerializzaScene() });
+  studioScriviPreset(arr); renderStudioPreset(); toast('Preset salvato ✓');
+}
+function studioApplicaPreset(idx) {
+  const arr = studioLeggiPreset(), p = arr[idx]; if (!p) return;
+  STUDIO.scene = (p.scene || []).map((s) => ({ id: 's' + (STUDIO._n++), nome: s.nome || 'Scena',
+    fonti: (s.fonti || []).filter((f) => !(f.dataId && !STUDIO.media[f.dataId])).map((f) => ({ ...f, id: 'f' + (STUDIO._n++), visibile: f.visibile !== false })) }));
+  if (!STUDIO.scene.length) studioNuovaScena('Scena 1');
+  STUDIO.attiva = 0; STUDIO.sel = null; renderStudioTutto(); toast('Preset applicato ✓');
+}
+function studioEliminaPreset(idx) {
+  const arr = studioLeggiPreset(); if (!arr[idx]) return;
+  if (!confirm('Eliminare il preset «' + arr[idx].nome + '»?')) return;
+  arr.splice(idx, 1); studioScriviPreset(arr); renderStudioPreset(); toast('Preset eliminato');
 }
 
 function renderStudioScene() {
@@ -3842,6 +3888,15 @@ function onStudioClick(ev) {
       if (!confirm('Eliminare la scena «' + s.nome + '»?')) return;
       STUDIO.scene.splice(STUDIO.attiva, 1); STUDIO.attiva = Math.max(0, STUDIO.attiva - 1); STUDIO.sel = null; renderStudioTutto();
     }
+    return;
+  }
+  const preset = t.closest('[data-preset]');
+  if (preset) {
+    const act = preset.dataset.preset;
+    if (act === 'salva') return studioSalvaPreset();
+    const sel = document.getElementById('studio-preset-sel'), i = sel ? Number(sel.value) : -1;
+    if (act === 'applica') return studioApplicaPreset(i);
+    if (act === 'elimina') return studioEliminaPreset(i);
     return;
   }
   const scena = t.closest('[data-scena]'); if (scena) { STUDIO.attiva = Number(scena.dataset.scena); STUDIO.sel = null; renderStudioTutto(); return; }
