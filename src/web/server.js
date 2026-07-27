@@ -237,6 +237,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.status(403).json({ errore: `${etichetta} non è incluso nel tuo piano — aggiungi il pacchetto giusto per sbloccarlo.`, upgrade: true });
     return false;
   }
+  // Stesso controllo di esigiFunzione, ma come MIDDLEWARE da mettere nella catena
+  // della route (es. app.post(p, requireOwner, gateFeature('musica','La musica'), h)):
+  // così il gating per-pacchetto è uniforme e non si dimentica su un endpoint.
+  const gateFeature = (chiave, etichetta) => (req, res, next) => { if (esigiFunzione(req, res, chiave, etichetta)) next(); };
   const limiteTier = (req, chiave) => abbonamenti.limite(funzioniReq(req), chiave);
 
   // risposta "il sito non esiste": nessun indizio, nessun brand, nessun corpo utile
@@ -822,6 +826,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
         : {},
       // abbonamento: piano base + add-on attivi del canale gestito + stato Stripe (per la UI)
       tier: tierDi(user.login),
+      // matrice funzioni EFFETTIVE del canale: la UI la usa per mostrare "bloccate"
+      // le sezioni non incluse nel piano (stesso identico calcolo del gating server).
+      funzioni: funzioniDi(user.login),
       abbonamento: (() => {
         const s = subscriptions.get(user.login);
         return s ? { tier: s.tier, pacchetti: abbonamenti.normalizzaPacchetti(s.pacchetti), status: s.status, fine: s.current_period_end } : null;
@@ -949,7 +956,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   });
 
   // salva le credenziali dell'app Spotify DELLO STREAMER (Client ID/Secret)
-  app.post('/api/spotify/config', requireOwner, (req, res) => {
+  app.post('/api/spotify/config', requireOwner, gateFeature('musica', 'La musica'), (req, res) => {
     const clientId = String(req.body?.clientId || '').trim();
     const clientSecret = String(req.body?.clientSecret || '').trim();
     if (!clientId || !clientSecret) return res.status(400).json({ errore: 'Servono Client ID e Client Secret.' });
@@ -958,7 +965,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   });
 
   // avvia il collegamento: solo il proprietario, solo se c'è un'app usabile
-  app.get('/api/spotify/connect', requireOwner, (req, res) => {
+  app.get('/api/spotify/connect', requireOwner, gateFeature('musica', 'La musica'), (req, res) => {
     const login = currentUser(req).login;
     if (!spotify.attivo(login)) return res.status(503).json({ errore: 'Imposta prima le credenziali Spotify.' });
     puliziaStati();
@@ -978,7 +985,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   }));
 
   // scollega Spotify dal canale gestito
-  app.post('/api/spotify/disconnect', requireOwner, (req, res) => {
+  app.post('/api/spotify/disconnect', requireOwner, gateFeature('musica', 'La musica'), (req, res) => {
     spotify.scollega(currentUser(req).login);
     res.json({ ok: true });
   });
@@ -992,7 +999,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.json({ permessoOk: true, tutti, premio: streamers.get(login)?.settings?.musica?.premio || '' });
   }));
 
-  app.post('/api/musica/premio', requireOwner, wrap(async (req, res) => {
+  app.post('/api/musica/premio', requireOwner, gateFeature('musica', 'La musica'), wrap(async (req, res) => {
     const login = currentUser(req).login;
     if (!redemptionsOk(login)) return res.status(403).json({ errore: 'Concedi il permesso "punti canale" da /auth/permessi', permesso: true });
     const titolo = (String(req.body?.titolo || '').trim() || 'Richiesta musicale').slice(0, 45);
@@ -2482,7 +2489,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // streamer DICE in diretta, così il cervello lo sente parlare e cresce. La
   // trascrizione avviene sul PC: qui arriva solo il testo. SOLO il proprietario
   // (mai un mod) può alimentarla → è la voce di 'me', di nessun altro account.
-  app.post('/api/streamer/ascolta', requireLogin, wrap(async (req, res) => {
+  app.post('/api/streamer/ascolta', requireLogin, gateFeature('voce', 'I comandi a voce'), wrap(async (req, res) => {
     if (!isOwner(req)) return res.status(403).json({ errore: 'solo il proprietario del canale' });
     const login = currentUser(req).login;
     if (!streamers.get(login)?.settings?.imparaVoce?.attivo) return res.json({ ok: false });
@@ -2593,14 +2600,18 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // ---------------------------------------------------------- NOTIFICHE TELEGRAM
   // Lo streamer collega il PROPRIO bot (token di @BotFather) e il PROPRIO gruppo.
 
-  // stato attuale (senza il token)
+  // stato attuale (senza il token) — leggibile anche senza il pacchetto, così la
+  // sezione può mostrarsi "bloccata" con l'invito a sbloccare.
   app.get('/api/streamer/telegram', requireLogin, wrap(async (req, res) => {
     res.json(statoTelegram(currentUser(req).login));
   }));
 
+  // Da qui in poi TUTTE le rotte Telegram (scrittura) richiedono il pacchetto
+  // "notifiche": un solo guard invece di ripeterlo su ogni endpoint.
+  app.use('/api/streamer/telegram', requireLogin, gateFeature('notifiche', 'Le notifiche live'));
+
   // salva il token: lo validiamo con getMe e memorizziamo lo @username del bot
   app.post('/api/streamer/telegram/token', requireLogin, wrap(async (req, res) => {
-    if (!esigiFunzione(req, res, 'notifiche', 'Le notifiche live')) return;
     const login = currentUser(req).login;
     const token = String(req.body?.token || '').trim();
     if (!token || !/^\d+:[A-Za-z0-9_-]{20,}$/.test(token)) {
@@ -2887,7 +2898,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   }));
 
   // prova la notifica TikTok adesso (manda il messaggio nel gruppo Telegram)
-  app.post('/api/streamer/tiktok/prova', requireLogin, wrap(async (req, res) => {
+  app.post('/api/streamer/tiktok/prova', requireLogin, gateFeature('notifiche', 'Le notifiche live'), wrap(async (req, res) => {
     const login = currentUser(req).login;
     const s = streamers.get(login);
     const username = s?.settings?.tiktok?.username;
@@ -2900,7 +2911,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   }));
 
   // prova le credenziali Instagram (ID account + token): legge l'ultimo post
-  app.post('/api/streamer/instagram/prova', requireLogin, wrap(async (req, res) => {
+  app.post('/api/streamer/instagram/prova', requireLogin, gateFeature('notifiche', 'Le notifiche live'), wrap(async (req, res) => {
     const login = currentUser(req).login;
     const cfg = streamers.get(login)?.settings?.instagram || {};
     const b = req.body || {};
