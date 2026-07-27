@@ -3491,10 +3491,8 @@ function pannelloStudio() {
   return pannello('studio', `
     <div class="carta evidenziata" id="studio-permessi-banner" hidden></div>
     <div class="carta studio-carta">
-      <h2>${_hIco(ICO.onda)}Studio Web — vai live senza OBS</h2>
-      <p>Un vero studio nel browser: crea <strong>scene</strong>, aggiungi <strong>fonti</strong> (webcam, schermo, immagini,
-      video, testo, overlay), spostale e ridimensionale sul palco, regola l'<strong>audio</strong> e vai in diretta su Twitch.
-      Il video parte da qui: <strong>tieni aperta questa scheda</strong> mentre trasmetti.</p>
+      <h2>${_hIco(ICO.onda)}${L('Studio Web — vai live senza OBS', 'Web Studio — go live without OBS', 'Estudio Web — emite sin OBS')}</h2>
+      <p>${L('Un vero studio nel browser: crea', 'A real studio in the browser: create', 'Un estudio de verdad en el navegador: crea')} <strong>${L('scene', 'scenes', 'escenas')}</strong>, ${L('aggiungi', 'add', 'añade')} <strong>${L('fonti', 'sources', 'fuentes')}</strong> (${L('webcam, schermo, immagini, video, testo, overlay), spostale e ridimensionale sul palco, regola l\'<strong>audio</strong> e vai in diretta su Twitch. Il video parte da qui: <strong>tieni aperta questa scheda</strong> mentre trasmetti.', 'webcam, screen, images, video, text, overlay), move and resize them on the stage, tune the <strong>audio</strong> and go live on Twitch. The video comes from here: <strong>keep this tab open</strong> while you broadcast.', 'webcam, pantalla, imágenes, vídeo, texto, overlay), muévelas y rediméntalas en el escenario, ajusta el <strong>audio</strong> y emite en Twitch. El vídeo sale de aquí: <strong>mantén esta pestaña abierta</strong> mientras transmites.')}</p>
 
       <!-- scene: come le "scene" di OBS, si cambia al volo -->
       <div class="studio-scene" id="studio-scene"></div>
@@ -3510,53 +3508,52 @@ function pannelloStudio() {
             <div id="studio-badge-live" class="studio-badge-live" hidden>● LIVE <span id="studio-timer">00:00</span></div>
           </div>
           <div class="studio-layouts" id="studio-layouts">
-            <span class="studio-mini-tit">Layout rapidi</span>
-            <button type="button" class="btn secondario mini" data-layout="cam">Solo webcam</button>
-            <button type="button" class="btn secondario mini" data-layout="schermo">Solo schermo</button>
-            <button type="button" class="btn secondario mini" data-layout="pip">Schermo + webcam</button>
-            <button type="button" class="btn secondario mini" data-layout="affianco">Affiancati</button>
+            <span class="studio-mini-tit">${L('Layout rapidi', 'Quick layouts', 'Diseños rápidos')}</span>
+            <button type="button" class="btn secondario mini" data-layout="cam">${L('Solo webcam', 'Webcam only', 'Solo webcam')}</button>
+            <button type="button" class="btn secondario mini" data-layout="schermo">${L('Solo schermo', 'Screen only', 'Solo pantalla')}</button>
+            <button type="button" class="btn secondario mini" data-layout="pip">${L('Schermo + webcam', 'Screen + webcam', 'Pantalla + webcam')}</button>
+            <button type="button" class="btn secondario mini" data-layout="affianco">${L('Affiancati', 'Side by side', 'Lado a lado')}</button>
           </div>
         </div>
 
         <!-- colonna di destra: aggiungi fonti, elenco fonti, proprietà, mixer -->
         <aside class="studio-side">
           <div class="studio-box">
-            <div class="studio-box-tit">${_bIco(ICO.piu)}Aggiungi una fonte</div>
+            <div class="studio-box-tit">${_bIco(ICO.piu)}${L('Aggiungi una fonte', 'Add a source', 'Añade una fuente')}</div>
             <div class="studio-add">
               <button type="button" class="btn secondario mini" data-add="webcam">${_bIco(ICO.fotocamera)}Webcam</button>
-              <button type="button" class="btn secondario mini" data-add="schermo">${_bIco(ICO.monitor)}Schermo</button>
-              <button type="button" class="btn secondario mini" data-add="immagine">${_bIco(ICO.immagine)}Immagine</button>
+              <button type="button" class="btn secondario mini" data-add="schermo">${_bIco(ICO.monitor)}${L('Schermo', 'Screen', 'Pantalla')}</button>
+              <button type="button" class="btn secondario mini" data-add="immagine">${_bIco(ICO.immagine)}${L('Immagine', 'Image', 'Imagen')}</button>
               <button type="button" class="btn secondario mini" data-add="video">${_bIco(ICO.video)}Video</button>
-              <button type="button" class="btn secondario mini" data-add="testo">${_bIco(ICO.testo)}Testo</button>
+              <button type="button" class="btn secondario mini" data-add="testo">${_bIco(ICO.testo)}${L('Testo', 'Text', 'Texto')}</button>
               <button type="button" class="btn secondario mini" data-add="overlay">${_bIco(ICO.effetti)}Overlay</button>
             </div>
           </div>
 
           <div class="studio-box">
-            <div class="studio-box-tit">${_bIco(ICO.lista)}Fonti della scena <span class="tenue">(la prima è dietro)</span></div>
+            <div class="studio-box-tit">${_bIco(ICO.lista)}${L('Fonti della scena', 'Scene sources', 'Fuentes de la escena')} <span class="tenue">(${L('la prima è dietro', 'the first is at the back', 'la primera está detrás')})</span></div>
             <ul class="studio-fonti" id="studio-fonti"></ul>
           </div>
 
           <div class="studio-box" id="studio-prop-box" hidden>
-            <div class="studio-box-tit">${_bIco(ICO.righello)}Proprietà</div>
+            <div class="studio-box-tit">${_bIco(ICO.righello)}${L('Proprietà', 'Properties', 'Propiedades')}</div>
             <div id="studio-prop"></div>
           </div>
 
           <div class="studio-box">
-            <div class="studio-box-tit">${_bIco(ICO.sliders)}Mixer audio</div>
+            <div class="studio-box-tit">${_bIco(ICO.sliders)}${L('Mixer audio', 'Audio mixer', 'Mezclador de audio')}</div>
             <div id="studio-mixer"></div>
           </div>
         </aside>
       </div>
 
       <div class="studio-vai spazio-sopra">
-        <button type="button" class="btn grande" id="studio-live">${_bIco(ICO.onda)}VAI LIVE</button>
-        <button type="button" class="btn secondario" id="studio-ferma" hidden>${_bIco(ICO.stop)}Ferma diretta</button>
+        <button type="button" class="btn grande" id="studio-live">${_bIco(ICO.onda)}${L('VAI LIVE', 'GO LIVE', 'EMITIR')}</button>
+        <button type="button" class="btn secondario" id="studio-ferma" hidden>${_bIco(ICO.stop)}${L('Ferma diretta', 'Stop stream', 'Detener directo')}</button>
         <span id="studio-stato" class="suggerimento"></span>
       </div>
 
-      <p class="suggerimento spazio-sopra">Perfetto per <strong>just-chatting / webcam</strong>. Per i giochi ad alta qualità/frame rate OBS resta migliore.
-      Alert, chat ed effetti a punti canale compaiono nella fonte <strong>Overlay</strong>.</p>
+      <p class="suggerimento spazio-sopra">${L('Perfetto per <strong>just-chatting / webcam</strong>. Per i giochi ad alta qualità/frame rate OBS resta migliore. Alert, chat ed effetti a punti canale compaiono nella fonte <strong>Overlay</strong>.', 'Perfect for <strong>just-chatting / webcam</strong>. For high-quality/high-frame-rate gaming OBS is still better. Alerts, chat and channel-point effects appear in the <strong>Overlay</strong> source.', 'Perfecto para <strong>just-chatting / webcam</strong>. Para juegos de alta calidad/frame rate OBS sigue siendo mejor. Las alertas, el chat y los efectos de puntos de canal aparecen en la fuente <strong>Overlay</strong>.')}</p>
     </div>
     <input type="file" id="studio-file" accept="image/*,video/*" hidden>`);
 }
@@ -3583,7 +3580,8 @@ const STUDIO = {
   drag: null, addTipo: null, _wired: false,
 };
 
-const STUDIO_ETICHETTA = { webcam: 'Webcam', schermo: 'Schermo', immagine: 'Immagine', video: 'Video', testo: 'Testo', overlay: 'Overlay' };
+// Etichetta del tipo di fonte, risolta al momento della creazione (non a load).
+const studioEtichetta = (tipo) => ({ webcam: 'Webcam', schermo: L('Schermo', 'Screen', 'Pantalla'), immagine: L('Immagine', 'Image', 'Imagen'), video: 'Video', testo: L('Testo', 'Text', 'Texto'), overlay: 'Overlay' }[tipo] || tipo);
 const studioClamp = (v, a, b) => Math.max(a, Math.min(b, v));
 function studioSceneAttiva() { return STUDIO.scene[STUDIO.attiva] || null; }
 function studioTrovaFonte(id) { const s = studioSceneAttiva(); return s ? s.fonti.find((f) => f.id === id) : null; }
@@ -3721,17 +3719,17 @@ function studioSSE(sseUrl) {
 
 // --- catture globali (condivise tra le scene) --------------------------------
 async function studioCapWebcam() {
-  if (DEMO) { toast('In demo la webcam non parte — accedi per farlo davvero.'); return false; }
+  if (DEMO) { toast(L('In demo la webcam non parte — accedi per farlo davvero.', 'In demo the webcam won’t start — log in to do it for real.', 'En demo la webcam no arranca — inicia sesión para hacerlo de verdad.')); return false; }
   if (STUDIO.cap.camEl) return true;
   try {
     STUDIO.cap.camStream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: false });
     const v = document.createElement('video'); v.srcObject = STUDIO.cap.camStream; v.muted = true; v.playsInline = true; await v.play().catch(() => {});
     STUDIO.cap.camEl = v; avviaLoopStudio(); return true;
-  } catch (e) { toast('Webcam non disponibile: ' + e.message, 'errore'); return false; }
+  } catch (e) { toast(L('Webcam non disponibile: ', 'Webcam not available: ', 'Webcam no disponible: ') + e.message, 'errore'); return false; }
 }
 
 async function studioCapSchermo() {
-  if (DEMO) { toast('In demo la condivisione non parte'); return false; }
+  if (DEMO) { toast(L('In demo la condivisione non parte', 'In demo sharing won’t start', 'En demo la compartición no arranca')); return false; }
   try {
     const s = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: true });
     STUDIO.cap.scrStream = s;
@@ -3744,17 +3742,17 @@ async function studioCapSchermo() {
     });
     if (STUDIO.live) collegaAudioCatture();
     avviaLoopStudio(); return true;
-  } catch (e) { if (e.name !== 'NotAllowedError') toast('Condivisione non riuscita: ' + e.message, 'errore'); return false; }
+  } catch (e) { if (e.name !== 'NotAllowedError') toast(L('Condivisione non riuscita: ', 'Sharing failed: ', 'Compartición fallida: ') + e.message, 'errore'); return false; }
 }
 
 async function studioCapMic() {
-  if (DEMO) { toast('In demo il microfono non parte'); return false; }
+  if (DEMO) { toast(L('In demo il microfono non parte', 'In demo the microphone won’t start', 'En demo el micrófono no arranca')); return false; }
   if (STUDIO.cap.micStream) return true;
   try {
     STUDIO.cap.micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     if (STUDIO.live) collegaAudioCatture();
-    renderStudioMixer(); toast('Microfono attivo'); return true;
-  } catch (e) { toast('Microfono non disponibile: ' + e.message, 'errore'); return false; }
+    renderStudioMixer(); toast(L('Microfono attivo', 'Microphone active', 'Micrófono activo')); return true;
+  } catch (e) { toast(L('Microfono non disponibile: ', 'Microphone not available: ', 'Micrófono no disponible: ') + e.message, 'errore'); return false; }
 }
 
 // --- aggiunta e gestione delle fonti -----------------------------------------
@@ -3768,8 +3766,8 @@ function studioDefaultTrasf(tipo) {
 
 function studioAddFonte(tipo, extra) {
   const s = studioSceneAttiva(); if (!s) return null;
-  if (tipo === 'overlay' && s.fonti.some((f) => f.tipo === 'overlay')) { toast('L\'overlay è già nella scena.'); return null; }
-  const f = { id: 'f' + (STUDIO._n++), tipo, nome: STUDIO_ETICHETTA[tipo] || tipo, visibile: true, ...studioDefaultTrasf(tipo), ...(extra || {}) };
+  if (tipo === 'overlay' && s.fonti.some((f) => f.tipo === 'overlay')) { toast(L('L\'overlay è già nella scena.', 'The overlay is already in the scene.', 'El overlay ya está en la escena.')); return null; }
+  const f = { id: 'f' + (STUDIO._n++), tipo, nome: studioEtichetta(tipo), visibile: true, ...studioDefaultTrasf(tipo), ...(extra || {}) };
   if (tipo === 'testo') { f.testo = f.testo || 'Testo'; f.colore = '#ffffff'; f.dim = 56; f.grassetto = true; f.sfondo = ''; }
   s.fonti.push(f); STUDIO.sel = f.id; renderStudioTutto();
   return f;
@@ -3864,10 +3862,10 @@ function applicaMix() {
 async function avviaLive() {
   if (STUDIO.live) return;
   const s = studioSceneAttiva();
-  if (!s || !s.fonti.some((f) => f.visibile)) { toast('Aggiungi almeno una fonte visibile alla scena.', 'errore'); return; }
-  studioLog('Avvio…');
+  if (!s || !s.fonti.some((f) => f.visibile)) { toast(L('Aggiungi almeno una fonte visibile alla scena.', 'Add at least one visible source to the scene.', 'Añade al menos una fuente visible a la escena.'), 'errore'); return; }
+  studioLog(L('Avvio…', 'Starting…', 'Iniciando…'));
   try { await api('/api/studio/start', { method: 'POST' }); }
-  catch (e) { studioLog('' + e.message); toast('Non riuscito: ' + e.message, 'errore'); return; }
+  catch (e) { studioLog('' + e.message); toast(L('Non riuscito: ', 'Failed: ', 'No se pudo: ') + e.message, 'errore'); return; }
   avviaLoopStudio();
   const vstream = STUDIO.canvas.captureStream(30);
   const astream = studioAudioInit();
@@ -3876,7 +3874,7 @@ async function avviaLive() {
   const mime = mimeOk('video/webm;codecs=vp8,opus') ? 'video/webm;codecs=vp8,opus' : (mimeOk('video/webm') ? 'video/webm' : '');
   let rec;
   try { rec = new MediaRecorder(combined, mime ? { mimeType: mime, videoBitsPerSecond: 4500000, audioBitsPerSecond: 160000 } : undefined); }
-  catch (e) { studioLog('registrazione non supportata dal browser'); toast('Il browser non supporta la registrazione video.', 'errore'); await api('/api/studio/stop', { method: 'POST' }).catch(() => {}); return; }
+  catch (e) { studioLog(L('registrazione non supportata dal browser', 'recording not supported by the browser', 'grabación no soportada por el navegador')); toast(L('Il browser non supporta la registrazione video.', 'The browser doesn’t support video recording.', 'El navegador no soporta la grabación de vídeo.'), 'errore'); await api('/api/studio/stop', { method: 'POST' }).catch(() => {}); return; }
   rec.ondataavailable = (e) => { if (e.data && e.data.size) { STUDIO.coda.push(e.data); drenaCodaStudio(); } };
   rec.start(1000);
   STUDIO.rec = rec; STUDIO.live = true; STUDIO.startedAt = Date.now();
@@ -3884,7 +3882,7 @@ async function avviaLive() {
   document.getElementById('studio-ferma').hidden = false;
   const badge = document.getElementById('studio-badge-live'); if (badge) badge.hidden = false;
   STUDIO.timer = setInterval(aggiornaTimerStudio, 1000);
-  studioLog('In diretta su Twitch!');
+  studioLog(L('In diretta su Twitch!', 'Live on Twitch!', '¡En directo en Twitch!'));
 }
 
 async function drenaCodaStudio() {
@@ -3911,7 +3909,7 @@ async function fermaLive() {
   document.getElementById('studio-live').hidden = false;
   document.getElementById('studio-ferma').hidden = true;
   const badge = document.getElementById('studio-badge-live'); if (badge) badge.hidden = true;
-  studioLog('Diretta terminata.');
+  studioLog(L('Diretta terminata.', 'Stream ended.', 'Directo finalizado.'));
 }
 
 function aggiornaTimerStudio() {
@@ -3924,7 +3922,7 @@ async function caricaStudio() {
   if (!STUDIO.scene.length) studioNuovaScena('Scena 1');
   avviaLoopStudio();      // mostra il palco + le fonti in anteprima
   renderStudioTutto();
-  if (DEMO) { studioLog('Anteprima demo: qui crei scene, aggiungi fonti e vai in diretta senza OBS.'); return; }
+  if (DEMO) { studioLog(L('Anteprima demo: qui crei scene, aggiungi fonti e vai in diretta senza OBS.', 'Demo preview: here you create scenes, add sources and go live without OBS.', 'Vista previa demo: aquí creas escenas, añades fuentes y emites sin OBS.')); return; }
   try {
     const d = await api('/api/studio');
     const banner = document.getElementById('studio-permessi-banner');
@@ -3965,44 +3963,44 @@ function studioSerializzaScene() {
 function renderStudioPreset() {
   const el = document.getElementById('studio-preset'); if (!el) return;
   const list = studioLeggiPreset(), vuoto = !list.length;
-  el.innerHTML = `<span class="studio-mini-tit">Preset di layout</span>
-    <select class="chip-utente" id="studio-preset-sel"${vuoto ? ' disabled' : ''}>${vuoto ? '<option>— nessuno salvato —</option>' : list.map((p, i) => `<option value="${i}">${esc(p.nome)}</option>`).join('')}</select>
-    <button type="button" class="btn secondario mini" data-preset="applica"${vuoto ? ' disabled' : ''}>Applica</button>
-    <button type="button" class="btn secondario mini" data-preset="salva">Salva com'è…</button>
-    <button type="button" class="btn secondario mini" data-preset="elimina"${vuoto ? ' disabled' : ''}>Elimina</button>`;
+  el.innerHTML = `<span class="studio-mini-tit">${L('Preset di layout', 'Layout presets', 'Presets de diseño')}</span>
+    <select class="chip-utente" id="studio-preset-sel"${vuoto ? ' disabled' : ''}>${vuoto ? `<option>${L('— nessuno salvato —', '— none saved —', '— ninguno guardado —')}</option>` : list.map((p, i) => `<option value="${i}">${esc(p.nome)}</option>`).join('')}</select>
+    <button type="button" class="btn secondario mini" data-preset="applica"${vuoto ? ' disabled' : ''}>${L('Applica', 'Apply', 'Aplicar')}</button>
+    <button type="button" class="btn secondario mini" data-preset="salva">${L('Salva com\'è…', 'Save as is…', 'Guardar tal cual…')}</button>
+    <button type="button" class="btn secondario mini" data-preset="elimina"${vuoto ? ' disabled' : ''}>${L('Elimina', 'Delete', 'Eliminar')}</button>`;
 }
 
 function studioSalvaPreset() {
-  const nome = prompt('Nome del preset di layout:', 'Il mio layout'); if (!nome) return;
+  const nome = prompt(L('Nome del preset di layout:', 'Layout preset name:', 'Nombre del preset de diseño:'), L('Il mio layout', 'My layout', 'Mi diseño')); if (!nome) return;
   const arr = studioLeggiPreset();
   arr.push({ nome: nome.slice(0, 40), scene: studioSerializzaScene() });
-  studioScriviPreset(arr); renderStudioPreset(); toast('Preset salvato ✓');
+  studioScriviPreset(arr); renderStudioPreset(); toast(L('Preset salvato ✓', 'Preset saved ✓', 'Preset guardado ✓'));
 }
 function studioApplicaPreset(idx) {
   const arr = studioLeggiPreset(), p = arr[idx]; if (!p) return;
-  STUDIO.scene = (p.scene || []).map((s) => ({ id: 's' + (STUDIO._n++), nome: s.nome || 'Scena',
+  STUDIO.scene = (p.scene || []).map((s) => ({ id: 's' + (STUDIO._n++), nome: s.nome || L('Scena', 'Scene', 'Escena'),
     fonti: (s.fonti || []).filter((f) => !(f.dataId && !STUDIO.media[f.dataId])).map((f) => ({ ...f, id: 'f' + (STUDIO._n++), visibile: f.visibile !== false })) }));
-  if (!STUDIO.scene.length) studioNuovaScena('Scena 1');
-  STUDIO.attiva = 0; STUDIO.sel = null; renderStudioTutto(); toast('Preset applicato ✓');
+  if (!STUDIO.scene.length) studioNuovaScena(L('Scena 1', 'Scene 1', 'Escena 1'));
+  STUDIO.attiva = 0; STUDIO.sel = null; renderStudioTutto(); toast(L('Preset applicato ✓', 'Preset applied ✓', 'Preset aplicado ✓'));
 }
 function studioEliminaPreset(idx) {
   const arr = studioLeggiPreset(); if (!arr[idx]) return;
-  if (!confirm('Eliminare il preset «' + arr[idx].nome + '»?')) return;
-  arr.splice(idx, 1); studioScriviPreset(arr); renderStudioPreset(); toast('Preset eliminato');
+  if (!confirm(L('Eliminare il preset «', 'Delete the preset “', 'Eliminar el preset «') + arr[idx].nome + L('»?', '”?', '»?'))) return;
+  arr.splice(idx, 1); studioScriviPreset(arr); renderStudioPreset(); toast(L('Preset eliminato', 'Preset deleted', 'Preset eliminado'));
 }
 
 function renderStudioScene() {
   const el = document.getElementById('studio-scene'); if (!el) return;
   el.innerHTML = STUDIO.scene.map((s, i) =>
     `<button type="button" class="studio-scena${i === STUDIO.attiva ? ' attiva' : ''}" data-scena="${i}">${_bIco(ICO.scene)}<span>${esc(s.nome)}</span></button>`).join('')
-    + `<button type="button" class="studio-scena studio-scena-nuova" data-scena-nuova="1" title="Nuova scena">${_bIco(ICO.piu)}</button>`
-    + (STUDIO.scene.length > 1 ? `<button type="button" class="studio-scena studio-scena-rinomina" data-scena-azione="rinomina" title="Rinomina scena">${_bIco(ICO.scrivi)}</button><button type="button" class="studio-scena studio-scena-elimina" data-scena-azione="elimina" title="Elimina scena">${_bIco(ICO.cestino)}</button>` : '');
+    + `<button type="button" class="studio-scena studio-scena-nuova" data-scena-nuova="1" title="${L('Nuova scena', 'New scene', 'Nueva escena')}">${_bIco(ICO.piu)}</button>`
+    + (STUDIO.scene.length > 1 ? `<button type="button" class="studio-scena studio-scena-rinomina" data-scena-azione="rinomina" title="${L('Rinomina scena', 'Rename scene', 'Renombrar escena')}">${_bIco(ICO.scrivi)}</button><button type="button" class="studio-scena studio-scena-elimina" data-scena-azione="elimina" title="${L('Elimina scena', 'Delete scene', 'Eliminar escena')}">${_bIco(ICO.cestino)}</button>` : '');
 }
 
 function renderStudioFonti() {
   const ul = document.getElementById('studio-fonti'); if (!ul) return;
   const s = studioSceneAttiva();
-  if (!s || !s.fonti.length) { ul.innerHTML = '<li class="vuoto">Nessuna fonte. Aggiungine una qui sopra.</li>'; return; }
+  if (!s || !s.fonti.length) { ul.innerHTML = `<li class="vuoto">${L('Nessuna fonte. Aggiungine una qui sopra.', 'No sources. Add one above.', 'Sin fuentes. Añade una arriba.')}</li>`; return; }
   // mostra dalla più avanti (in cima all'elenco) alla più dietro
   ul.innerHTML = s.fonti.slice().reverse().map((f) => {
     const i = s.fonti.indexOf(f);
@@ -4010,10 +4008,10 @@ function renderStudioFonti() {
       <span class="sf-ico">${_bIco(ICO[studioIcoFonte(f.tipo)])}</span>
       <span class="sf-nome">${esc(f.nome)}</span>
       <span class="sf-azioni">
-        <button type="button" class="sf-btn" data-vis="${f.id}" title="${f.visibile ? 'Nascondi' : 'Mostra'}">${_bIco(f.visibile ? ICO.occhio : ICO.occhioNo)}</button>
-        <button type="button" class="sf-btn" data-su="${f.id}" title="Porta avanti"${i === s.fonti.length - 1 ? ' disabled' : ''}>${_bIco(ICO.freccia)}</button>
-        <button type="button" class="sf-btn sf-giu" data-giu="${f.id}" title="Porta dietro"${i === 0 ? ' disabled' : ''}>${_bIco(ICO.freccia)}</button>
-        <button type="button" class="sf-btn sf-rim" data-rim="${f.id}" title="Rimuovi">${_bIco(ICO.cestino)}</button>
+        <button type="button" class="sf-btn" data-vis="${f.id}" title="${f.visibile ? L('Nascondi', 'Hide', 'Ocultar') : L('Mostra', 'Show', 'Mostrar')}">${_bIco(f.visibile ? ICO.occhio : ICO.occhioNo)}</button>
+        <button type="button" class="sf-btn" data-su="${f.id}" title="${L('Porta avanti', 'Bring forward', 'Traer al frente')}"${i === s.fonti.length - 1 ? ' disabled' : ''}>${_bIco(ICO.freccia)}</button>
+        <button type="button" class="sf-btn sf-giu" data-giu="${f.id}" title="${L('Porta dietro', 'Send back', 'Enviar atrás')}"${i === 0 ? ' disabled' : ''}>${_bIco(ICO.freccia)}</button>
+        <button type="button" class="sf-btn sf-rim" data-rim="${f.id}" title="${L('Rimuovi', 'Remove', 'Quitar')}">${_bIco(ICO.cestino)}</button>
       </span>
     </li>`;
   }).join('');
@@ -4039,23 +4037,23 @@ function renderStudioProp() {
   let extra = '';
   if (f.tipo === 'testo') {
     extra = `
-      <label class="campo" for="sp-testo">Testo</label>
+      <label class="campo" for="sp-testo">${L('Testo', 'Text', 'Texto')}</label>
       <input id="sp-testo" type="text" maxlength="120" value="${esc(f.testo || '')}">
       <div class="griglia-campi spazio-sopra">
-        <div><label class="campo" for="sp-colore">Colore</label><input id="sp-colore" type="color" value="${esc(f.colore || '#ffffff')}"></div>
-        <div><label class="campo" for="sp-dim">Dimensione: <strong><span id="sp-dim-v">${f.dim}</span></strong></label><input id="sp-dim" type="range" min="18" max="150" value="${f.dim}"></div>
+        <div><label class="campo" for="sp-colore">${L('Colore', 'Color', 'Color')}</label><input id="sp-colore" type="color" value="${esc(f.colore || '#ffffff')}"></div>
+        <div><label class="campo" for="sp-dim">${L('Dimensione:', 'Size:', 'Tamaño:')} <strong><span id="sp-dim-v">${f.dim}</span></strong></label><input id="sp-dim" type="range" min="18" max="150" value="${f.dim}"></div>
       </div>
-      <label class="riga-check spazio-sopra"><input id="sp-grass" type="checkbox"${f.grassetto ? ' checked' : ''}> Grassetto</label>`;
+      <label class="riga-check spazio-sopra"><input id="sp-grass" type="checkbox"${f.grassetto ? ' checked' : ''}> ${L('Grassetto', 'Bold', 'Negrita')}</label>`;
   } else if (f.tipo === 'overlay') {
-    extra = `<p class="suggerimento">L'overlay riempie tutto il palco (alert, chat ed effetti alle loro posizioni). Non si sposta né si ridimensiona.</p>`;
+    extra = `<p class="suggerimento">${L('L\'overlay riempie tutto il palco (alert, chat ed effetti alle loro posizioni). Non si sposta né si ridimensiona.', 'The overlay fills the whole stage (alerts, chat and effects at their positions). It doesn’t move or resize.', 'El overlay llena todo el escenario (alertas, chat y efectos en sus posiciones). No se mueve ni se redimensiona.')}</p>`;
   }
   el.innerHTML = `
-    <label class="campo" for="sp-nome">Nome</label>
+    <label class="campo" for="sp-nome">${L('Nome', 'Name', 'Nombre')}</label>
     <input id="sp-nome" type="text" maxlength="24" value="${esc(f.nome)}">
     ${extra}
     ${f.tipo !== 'overlay' ? `<div class="studio-prop-pos spazio-sopra">
-      <button type="button" class="btn secondario mini" data-fit="riempi">Riempi il palco</button>
-      <button type="button" class="btn secondario mini" data-fit="centra">Centra</button>
+      <button type="button" class="btn secondario mini" data-fit="riempi">${L('Riempi il palco', 'Fill the stage', 'Llenar el escenario')}</button>
+      <button type="button" class="btn secondario mini" data-fit="centra">${L('Centra', 'Center', 'Centrar')}</button>
     </div>` : ''}`;
 }
 
@@ -4068,15 +4066,15 @@ function renderStudioMixer() {
     <div class="mix-canale${on ? '' : ' off'}">
       <div class="mix-testa"><span>${nome}</span>${extra || ''}</div>
       <div class="mix-riga">
-        <button type="button" class="mix-mute${cfg.mute ? ' on' : ''}" data-mute="${id}"${on ? '' : ' disabled'} title="${cfg.mute ? 'Riattiva' : 'Muto'}">${_bIco(cfg.mute ? ICO.muto : ICO.altoparlante)}</button>
+        <button type="button" class="mix-mute${cfg.mute ? ' on' : ''}" data-mute="${id}"${on ? '' : ' disabled'} title="${cfg.mute ? L('Riattiva', 'Unmute', 'Reactivar') : L('Muto', 'Mute', 'Silenciar')}">${_bIco(cfg.mute ? ICO.muto : ICO.altoparlante)}</button>
         <input type="range" min="0" max="100" value="${cfg.vol}" data-vol="${id}"${on ? '' : ' disabled'}>
         <span class="mix-val">${cfg.vol}</span>
       </div>
     </div>`;
   el.innerHTML =
-    canale('mic', 'Microfono', micOn, m.mic, micOn ? '' : `<button type="button" class="btn secondario mini" data-cap="mic">Attiva</button>`)
-    + canale('desk', 'Audio dello schermo', deskOn, m.desk, deskOn ? '' : '<span class="tenue">condividi lo schermo con audio</span>')
-    + canale('sfx', 'Effetti & alert', true, m.sfx, '');
+    canale('mic', L('Microfono', 'Microphone', 'Micrófono'), micOn, m.mic, micOn ? '' : `<button type="button" class="btn secondario mini" data-cap="mic">${L('Attiva', 'Enable', 'Activar')}</button>`)
+    + canale('desk', L('Audio dello schermo', 'Screen audio', 'Audio de la pantalla'), deskOn, m.desk, deskOn ? '' : `<span class="tenue">${L('condividi lo schermo con audio', 'share the screen with audio', 'comparte la pantalla con audio')}</span>`)
+    + canale('sfx', L('Effetti & alert', 'Effects & alerts', 'Efectos y alertas'), true, m.sfx, '');
 }
 
 function posizionaBoxStudio(f) {
@@ -4093,10 +4091,10 @@ function onStudioClick(ev) {
   const azione = t.closest('[data-scena-azione]');
   if (azione) {
     const s = studioSceneAttiva(); if (!s) return;
-    if (azione.dataset.scenaAzione === 'rinomina') { const n = prompt('Nome della scena:', s.nome); if (n) { s.nome = n.slice(0, 24); renderStudioScene(); } }
+    if (azione.dataset.scenaAzione === 'rinomina') { const n = prompt(L('Nome della scena:', 'Scene name:', 'Nombre de la escena:'), s.nome); if (n) { s.nome = n.slice(0, 24); renderStudioScene(); } }
     else if (azione.dataset.scenaAzione === 'elimina') {
-      if (STUDIO.scene.length <= 1) { toast('Serve almeno una scena.'); return; }
-      if (!confirm('Eliminare la scena «' + s.nome + '»?')) return;
+      if (STUDIO.scene.length <= 1) { toast(L('Serve almeno una scena.', 'You need at least one scene.', 'Hace falta al menos una escena.')); return; }
+      if (!confirm(L('Eliminare la scena «', 'Delete the scene “', 'Eliminar la escena «') + s.nome + L('»?', '”?', '»?'))) return;
       STUDIO.scene.splice(STUDIO.attiva, 1); STUDIO.attiva = Math.max(0, STUDIO.attiva - 1); STUDIO.sel = null; renderStudioTutto();
     }
     return;
