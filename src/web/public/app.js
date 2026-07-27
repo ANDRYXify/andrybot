@@ -763,20 +763,25 @@ async function caricaPiani() {
         </ul>
       </div>
 
-      ${bundle.length ? `<div class="bundle-blocco">
-        <h4 class="addon-titolo">Bundle pronti <span>· fino al –${Math.round(Math.max(...bundle.map((b) => b.sconto || 0)) * 100)}% sugli add-on</span></h4>
+      ${bundle.length ? (() => {
+        const maxSc = Math.round(Math.max(0, ...bundle.map((b) => b.sconto || 0)) * 100);
+        return `<div class="bundle-blocco">
+        <h4 class="addon-titolo">Bundle pronti${maxSc > 0 ? ` <span>· fino al –${maxSc}% sugli add-on</span>` : ''}</h4>
         <div class="bundle-griglia">
-          ${bundle.map((b) => `
-            <button type="button" class="bundle-carta" data-bundle="${esc(b.id)}" aria-pressed="false">
+          ${bundle.map((b) => {
+            const risp = b.prezzoPieno > b.prezzo;
+            return `<button type="button" class="bundle-carta" data-bundle="${esc(b.id)}" aria-pressed="false">
               <span class="bundle-icona">${svgPiano(b.addon[0] || 'base')}</span>
-              <span class="bundle-prezzo">${b.sconto ? `<span class="bundle-sconto">–${Math.round(b.sconto * 100)}%</span> ` : ''}<s>+€${prezzoIt(b.prezzoPieno)}</s> <strong>+€${prezzoIt(b.prezzo)}</strong><small>/mese</small></span>
+              <span class="bundle-prezzo">${risp ? `<span class="bundle-sconto">–${Math.round(b.sconto * 100)}%</span> <s>+€${prezzoIt(b.prezzoPieno)}</s> ` : ''}<strong>+€${prezzoIt(b.prezzo)}</strong><small>/mese</small></span>
               <span class="bundle-testo">
                 <span class="bundle-nome">${esc(b.nome)}</span>
                 <span class="bundle-somm">${esc(b.sommario)}</span>
               </span>
-            </button>`).join('')}
+            </button>`;
+          }).join('')}
         </div>
-      </div>` : ''}
+      </div>`;
+      })() : ''}
 
       <div class="addon-blocco">
         <h4 class="addon-titolo">Aggiungi super-poteri <span>· à la carte</span></h4>
