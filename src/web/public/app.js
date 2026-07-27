@@ -575,13 +575,13 @@ function renderAreaUtente() {
   } else if (stato.ruolo === 'moderatore') {
     centro = `<span class="chip-utente">moderi <strong>@${esc(stato.user.display || attuale)}</strong></span>`;
   }
-  const esci = `<a class="btn secondario mini" href="/auth/logout">Esci</a>`;
+  const esci = `<a class="btn secondario mini" href="/auth/logout">${L('Esci', 'Log out', 'Salir')}</a>`;
   const tema = toggleTemaHtml();
 
-  // Barra in alto (desktop): versione compatta — tema + canale + esci, senza saluto.
-  if (areaUtente) areaUtente.innerHTML = `${tema}${centro}${esci}`;
-  // Cassetto (mobile): versione completa — saluto + canale + tema + esci.
-  if (areaMob) areaMob.innerHTML = `<span class="chip-utente">ciao, <strong>${ident}</strong></span>${centro}${tema}${esci}`;
+  // Barra in alto (desktop): versione compatta — lingua + tema + canale + esci, senza saluto.
+  if (areaUtente) areaUtente.innerHTML = `${selettoreLingua('mini')}${tema}${centro}${esci}`;
+  // Cassetto (mobile): versione completa — saluto + canale + lingua + tema + esci.
+  if (areaMob) areaMob.innerHTML = `<span class="chip-utente">${L('ciao', 'hi', 'hola')}, <strong>${ident}</strong></span>${centro}<div class="drawer-controlli">${selettoreLingua()}${tema}</div>${esci}`;
   applicaTema();
 
   document.querySelectorAll('.switch-canale').forEach((sel) =>
@@ -617,8 +617,8 @@ function cambiaLingua(l) {
   render();
 }
 // Selettore lingua IT/EN/ES (usato nella vetrina).
-function selettoreLingua() {
-  return `<div class="lingua-sel" role="group" aria-label="${L('Lingua', 'Language', 'Idioma')}">${LINGUE.map((l) =>
+function selettoreLingua(cls) {
+  return `<div class="lingua-sel${cls ? ' ' + cls : ''}" role="group" aria-label="${L('Lingua', 'Language', 'Idioma')}">${LINGUE.map((l) =>
     `<button type="button" class="lingua-btn${l === LINGUA ? ' on' : ''}" data-lingua="${l}" aria-pressed="${l === LINGUA}">${l.toUpperCase()}</button>`).join('')}</div>`;
 }
 
@@ -656,6 +656,11 @@ try {
 document.addEventListener('click', (e) => {
   const t = e.target.closest && e.target.closest('[data-tema-toggle]');
   if (t) { e.preventDefault(); cambiaTema(); }
+});
+// Stesso schema per la lingua: un solo handler delegato copre vetrina, barra e cassetto.
+document.addEventListener('click', (e) => {
+  const b = e.target.closest && e.target.closest('[data-lingua]');
+  if (b) { e.preventDefault(); cambiaLingua(b.dataset.lingua); }
 });
 // Interruttore sole/luna. Icone a tratto (niente emoji); la CSS mostra il sole
 // in tema scuro (per tornare al chiaro) e la luna in tema chiaro.
@@ -795,8 +800,7 @@ function renderHero() {
       <a class="btn grande secondario" href="https://andryxify.it">${L('Vai al sito principale', 'Go to the main site', 'Ir al sitio principal')} →</a>
     </section>`;
 
-  // selettore lingua: cambia lingua e ridisegna
-  app.querySelectorAll('[data-lingua]').forEach((b) => b.addEventListener('click', () => cambiaLingua(b.dataset.lingua)));
+  // il selettore lingua è gestito da un handler delegato a livello di documento
   rivelaCarte();   // scroll-reveal delle carte della vetrina
   caricaPiani();   // riempie la sezione prezzi (tier) dal server
   // esiti del ritorno da Stripe
