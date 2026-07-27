@@ -1,15 +1,49 @@
 # ============================================================
-#  AndryBot — configurazione Caddy
+#  SocialBot — configurazione Caddy
 #
-#  HTTPS AUTOMATICO: Caddy ottiene e rinnova DA SOLO il certificato
-#  Let's Encrypt per bot.andryxify.it. Basta che:
-#    1. il DNS di bot.andryxify.it punti a questo server;
-#    2. le porte 80 e 443 siano raggiungibili da internet.
-#  Nessun'altra configurazione necessaria: al primo accesso il
-#  certificato viene emesso in pochi secondi.
+#  HTTPS AUTOMATICO: Caddy ottiene e rinnova DA SOLO i certificati
+#  Let's Encrypt per OGNI dominio elencato qui. Requisiti per ciascuno:
+#    1. il DNS del dominio deve puntare a questo server (record A/AAAA);
+#    2. le porte 80 e 443 devono essere raggiungibili da internet.
+#  Se un dominio non è ancora puntato, Caddy riprova in background per
+#  QUEL dominio soltanto: gli altri continuano a funzionare.
+#
+#  MIGRAZIONE a socialbot.live (dominio ufficiale):
+#   - FASE A (questa): socialbot.live serve l'app; socialbot.it → .live;
+#     bot.andryxify.it CONTINUA a servire l'app (nessuna interruzione).
+#     Passi: 1) punta i DNS di socialbot.live/.it a questo server;
+#            2) metti BASE_URL=https://socialbot.live nel .env;
+#            3) aggiungi i redirect URI socialbot.live nelle app
+#               Twitch/Spotify/TikTok (accanto a quelli vecchi);
+#            4) git pull && docker compose up -d --build.
+#   - FASE B (quando socialbot.live è verificato): trasforma il blocco
+#     bot.andryxify.it in un redirect 301 (vedi in fondo) e fai il
+#     "Change of address" in Google Search Console.
 # ============================================================
+
+# --- Dominio UFFICIALE: serve l'app -------------------------
+socialbot.live {
+	encode gzip
+	reverse_proxy bot:8090
+}
+
+# www → dominio nudo (canonico)
+www.socialbot.live {
+	redir https://socialbot.live{uri} permanent
+}
+
+# --- .it → .live (301 permanente, buono per la SEO) ---------
+socialbot.it, www.socialbot.it {
+	redir https://socialbot.live{uri} permanent
+}
+
+# --- Vecchio dominio: durante la transizione CONTINUA a servire ---
+# Quando socialbot.live è confermato funzionante, sostituisci il blocco
+# qui sotto con:
+#   bot.andryxify.it {
+#       redir https://socialbot.live{uri} permanent
+#   }
 bot.andryxify.it {
 	encode gzip
-	# "bot" è il nome del servizio nella rete di docker compose
 	reverse_proxy bot:8090
 }
