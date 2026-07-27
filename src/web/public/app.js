@@ -86,7 +86,7 @@ function impostazioni() {
     manche: { attivo: false, minMin: 15, maxMin: 45, soloLive: false, ...(s.manche && typeof s.manche === 'object' ? s.manche : {}) },
     premioVip: (s.premioVip && typeof s.premioVip === 'object') ? s.premioVip : { attivo: false, periodo: 'settimana', quanti: 1 },
     antispam: (s.antispam && typeof s.antispam === 'object') ? s.antispam : {},
-    tiktok: (s.tiktok && typeof s.tiktok === 'object') ? s.tiktok : { username: '', attivo: false, annunciaChat: false, messaggio: '' },
+    tiktok: (s.tiktok && typeof s.tiktok === 'object') ? s.tiktok : { username: '', attivo: false, annunciaChat: false, messaggio: '', postAttivo: false, postAnnunciaChat: false, postMessaggio: '' },
     youtube: (s.youtube && typeof s.youtube === 'object') ? s.youtube : { canale: '', attivo: false, annunciaChat: false, messaggio: '' },
     instagram: (s.instagram && typeof s.instagram === 'object') ? s.instagram : { userId: '', attivo: false, annunciaChat: false, messaggio: '' },
     giochiSito: (s.giochiSito && typeof s.giochiSito === 'object') ? s.giochiSito : { attivo: false, collegato: false },
@@ -229,7 +229,7 @@ function statoDemo() {
         manche: { attivo: true, minMin: 20, maxMin: 60, soloLive: false },
         paroleVietate: ['spoiler', 'link-truffa'],
         frasi: ['Benvenuto nel canale!', 'Ricordati di seguire per non perderti le live!'],
-        tiktok: { username: 'andryxify', attivo: true, annunciaChat: true, messaggio: '' },
+        tiktok: { username: 'andryxify', attivo: true, annunciaChat: true, messaggio: '', postAttivo: true, postAnnunciaChat: false, postMessaggio: '' },
         youtube: { canale: '@andryxify', apiKeySet: true, attivo: true, annunciaChat: false, messaggio: '' },
         instagram: { userId: '17841400000000000', tokenSet: true, attivo: true, annunciaChat: false, messaggio: '' },
         giochiSito: { attivo: true, collegato: true },
@@ -266,6 +266,8 @@ function apiDemo(percorso, opzioni = {}) {
   }
   if (via === '/api/admin/llm/prova') return Promise.resolve({ ok: true, modello: 'mistral-nemo', campione: 'ok' });
   if (via === '/api/streamer/instagram/prova') return Promise.resolve({ ok: true });
+  if (via === '/api/tiktok/prova') return Promise.resolve({ ok: true });
+  if (via === '/api/tiktok/disconnect') return Promise.resolve({ ok: true });
   if (via === '/api/streamer/citazioni/analizza') return Promise.resolve({ ok: true, citazioni: [
     { testo: 'Tu, molto molto bravo', autore: 'UnicornoFacinoroso', data: '2024-06-09' },
     { testo: 'ti porterò in un brodificio', autore: 'andryxify', data: '2024-06-17' },
@@ -278,6 +280,7 @@ function apiDemo(percorso, opzioni = {}) {
 function _demoGet(via) {
   const F = {
     '/api/me': statoDemo(),
+    '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://bot.andryxify.it/tiktok/callback' },
     '/api/admin/llm': {
       scelta: {
         modello: 'gemma-uncensored',
@@ -1967,6 +1970,52 @@ async function caricaSpotify() {
   // 3) nessuna app: mostra il form credenziali
   box.innerHTML = formCredenzialiSpotify(d.redirect);
   collegaSalvaCred();
+}
+
+// Connettore TikTok (Display API) per l'avviso "nuovo post". Riempie #tiktok-post-box
+// con lo stato del collegamento OAuth: identico schema del box Spotify.
+async function caricaTikTok() {
+  const box = document.getElementById('tiktok-post-box');
+  if (!box) return;
+  const q = new URLSearchParams(location.search);
+  if (q.get('tiktok') === 'ok') toast('Account TikTok collegato.');
+  else if (q.get('tiktok') === 'errore') toast('Collegamento TikTok non riuscito.', 'errore');
+  if (q.get('tiktok')) { try { history.replaceState(null, '', location.pathname + '#notifiche'); } catch { /* niente */ } }
+  const proprietario = stato?.ruolo !== 'moderatore';
+  if (!proprietario) { box.innerHTML = '<p class="suggerimento">Solo il proprietario del canale può collegare TikTok.</p>'; return; }
+  let d;
+  try { d = await api('/api/tiktok/stato'); } catch { box.innerHTML = '<p class="suggerimento">Impossibile caricare lo stato del connettore TikTok.</p>'; return; }
+
+  // 1) app non configurata dall'operatore (manca Client Key/Secret nel server)
+  if (!d.appAttiva) {
+    box.innerHTML = '<p class="suggerimento">Il connettore TikTok non è ancora attivo: serve configurare l\'app TikTok (Client Key/Secret) lato server.</p>';
+    return;
+  }
+  // 2) app pronta ma account non collegato → bottone Collega
+  if (!d.collegato) {
+    box.innerHTML = `<button class="btn" id="tiktok-collega">Collega TikTok</button>
+      <p class="suggerimento spazio-sopra">Ti mando su TikTok per autorizzare la lettura dei tuoi video. Nient'altro.</p>`;
+    document.getElementById('tiktok-collega').addEventListener('click', () => conErrore(async () => {
+      const r = await api('/api/tiktok/connect');
+      if (r?.url) location.href = r.url;
+    }));
+    return;
+  }
+  // 3) collegato → badge + scollega + prova
+  box.innerHTML = `<div class="riga-interruttore">
+      <span class="badge verde">● TikTok collegato${d.username ? ' (@' + esc(d.username) + ')' : ''}</span>
+      <button class="btn secondario mini" id="tiktok-prova">Prova</button>
+      <button class="btn secondario mini" id="tiktok-scollega">Scollega</button>
+    </div>`;
+  document.getElementById('tiktok-scollega').addEventListener('click', () => conErrore(async () => {
+    await api('/api/tiktok/disconnect', { method: 'POST', body: {} });
+    toast('TikTok scollegato.'); caricaTikTok();
+  }));
+  document.getElementById('tiktok-prova').addEventListener('click', () => conErrore(async () => {
+    const r = await api('/api/tiktok/prova', { method: 'POST', body: {} });
+    if (r?.vuoto) toast('Collegato, ma non trovo ancora video sul tuo profilo.');
+    else toast('Funziona: leggo il tuo ultimo video.');
+  }));
 }
 
 function collegaSalvaCred() {
@@ -4904,9 +4953,30 @@ function pannelloNotifiche() {
       <code>{"azione":"tiktok-live"}</code>. La chiave API la trovi in <strong>Chat &amp; comandi → Comandi</strong>.</p>
 
       <hr class="separatore">
-      <p class="suggerimento"><strong class="primo-piano">Nuovo post su TikTok:</strong> il rilevamento automatico dei post
-      dal server non è possibile. Usa lo stesso webhook con corpo <code>{"azione":"tiktok-post","url":"…"}</code>
-      (la tua automazione lo chiama quando pubblichi).</p>
+      <p class="suggerimento"><strong class="primo-piano">Nuovo post su TikTok:</strong> ora è automatico via API ufficiale —
+      vedi la card qui sotto. In alternativa resta il webhook con corpo <code>{"azione":"tiktok-post","url":"…"}</code>.</p>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.fotocamera)}Nuovo post su TikTok</h2>
+      <p>Quando pubblichi un <strong class="primo-piano">nuovo video</strong> su TikTok, avviso il gruppo Telegram
+      (e, se vuoi, la chat Twitch). Uso l'<strong>API ufficiale di TikTok</strong>: colleghi il tuo account una volta e ci penso io.</p>
+      <div id="tiktok-post-box" class="spazio-sopra"><p class="suggerimento">Carico…</p></div>
+
+      <label class="campo spazio-sopra" for="txt-tk-post-msg">Messaggio dell'avviso</label>
+      <textarea id="txt-tk-post-msg" rows="4" placeholder="${esc('{nome} ha pubblicato un nuovo video su TikTok!\n\n{titolo}\n{link}')}">${esc(tkc.postMessaggio || '')}</textarea>
+      <p class="suggerimento">Segnaposto: <code>{nome}</code> <code>{titolo}</code> <code>{link}</code>. Lascia vuoto per usare quello standard.</p>
+
+      <div class="riga-check spazio-sopra">
+        <input type="checkbox" id="chk-tk-post-attivo" ${tkc.postAttivo ? 'checked' : ''}>
+        <label for="chk-tk-post-attivo">Avvisami quando pubblico un nuovo video</label>
+      </div>
+      <div class="riga-check">
+        <input type="checkbox" id="chk-tk-post-chat" ${tkc.postAnnunciaChat ? 'checked' : ''}>
+        <label for="chk-tk-post-chat">Annuncia anche nella chat Twitch</label>
+      </div>
+      <p class="spazio-sopra"><button class="btn" id="btn-tk-post-salva">Salva</button></p>
+      <p class="suggerimento">Il controllo parte ogni ~10 minuti; il primo giro dopo il collegamento memorizza solo l'ultimo video (non avvisa).</p>
     </div>
 
     <div class="carta">
@@ -5511,6 +5581,17 @@ function attivaPiattaforma() {
     toast('Prova TikTok inviata nel gruppo Telegram');
   }));
 
+  // --- Nuovo post su TikTok (API ufficiale) ---
+  document.getElementById('btn-tk-post-salva')?.addEventListener('click', () => conErrore(async () => {
+    await salvaImpostazioni({
+      tiktok: {
+        postAttivo: document.getElementById('chk-tk-post-attivo').checked,
+        postAnnunciaChat: document.getElementById('chk-tk-post-chat').checked,
+        postMessaggio: document.getElementById('txt-tk-post-msg')?.value || '',
+      },
+    }, 'TikTok salvato');
+  }));
+
   document.getElementById('btn-yt-salva')?.addEventListener('click', () => conErrore(async () => {
     const yt = {
       canale: (document.getElementById('inp-yt-canale').value || '').trim(),
@@ -5919,7 +6000,7 @@ function caricaDatiScheda(id) {
   if (id === 'moduli') caricaModuli();
   if (id === 'memoria') caricaStatistiche();
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); }
-  if (id === 'notifiche') caricaCompleanni();
+  if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); }
   if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaAnima(); caricaLLM(); }
 }
 
