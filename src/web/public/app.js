@@ -3327,36 +3327,36 @@ function pannelloRegia() {
     <div class="carta evidenziata" id="regia-permessi-banner" hidden></div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.onda)}Stato diretta</h2>
-      <div id="regia-stato" class="regia-stato"><p class="vuoto">Carico…</p></div>
-      <p class="spazio-sopra"><button type="button" class="btn secondario mini" id="regia-refresh">${_bIco(ICO.aggiorna)}Aggiorna</button></p>
+      <h2>${_hIco(ICO.onda)}${L('Stato diretta', 'Stream status', 'Estado del directo')}</h2>
+      <div id="regia-stato" class="regia-stato"><p class="vuoto">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+      <p class="spazio-sopra"><button type="button" class="btn secondario mini" id="regia-refresh">${_bIco(ICO.aggiorna)}${L('Aggiorna', 'Refresh', 'Actualizar')}</button></p>
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.scrivi)}Info del canale</h2>
-      <p>Imposta <strong>titolo</strong>, <strong>categoria</strong> e <strong>tag</strong> del canale — senza aprire Twitch o OBS. Vale anche da offline.</p>
-      <label class="campo" for="regia-titolo">Titolo della diretta</label>
-      <input type="text" id="regia-titolo" class="campo-largo" maxlength="140" placeholder="Es. Ranked fino al Diamante!">
+      <h2>${_hIco(ICO.scrivi)}${L('Info del canale', 'Channel info', 'Info del canal')}</h2>
+      <p>${L('Imposta', 'Set the', 'Configura')} <strong>${L('titolo', 'title', 'título')}</strong>, <strong>${L('categoria', 'category', 'categoría')}</strong> ${L('e', 'and', 'y')} <strong>${L('tag', 'tags', 'etiquetas')}</strong> ${L('del canale — senza aprire Twitch o OBS. Vale anche da offline.', 'of the channel — without opening Twitch or OBS. Works offline too.', 'del canal — sin abrir Twitch ni OBS. Vale también sin estar en directo.')}</p>
+      <label class="campo" for="regia-titolo">${L('Titolo della diretta', 'Stream title', 'Título del directo')}</label>
+      <input type="text" id="regia-titolo" class="campo-largo" maxlength="140" placeholder="${L('Es. Ranked fino al Diamante!', 'e.g. Ranked to Diamond!', '¡Ej. Ranked hasta Diamante!')}">
 
-      <label class="campo spazio-sopra">Categoria / gioco</label>
-      <div class="regia-gioco-cur">Ora: <strong id="regia-gioco-sel">—</strong></div>
+      <label class="campo spazio-sopra">${L('Categoria / gioco', 'Category / game', 'Categoría / juego')}</label>
+      <div class="regia-gioco-cur">${L('Ora:', 'Now:', 'Ahora:')} <strong id="regia-gioco-sel">—</strong></div>
       <div class="regia-gioco">
-        <input type="text" id="regia-gioco-cerca" placeholder="Cerca un gioco/categoria…" autocomplete="off">
+        <input type="text" id="regia-gioco-cerca" placeholder="${L('Cerca un gioco/categoria…', 'Search a game/category…', 'Busca un juego/categoría…')}" autocomplete="off">
         <div id="regia-gioco-lista" class="regia-gioco-lista" hidden></div>
       </div>
 
-      <label class="campo spazio-sopra" for="regia-tags">Tag <span class="tenue">— separati da virgola, max 10</span></label>
-      <input type="text" id="regia-tags" class="campo-largo" placeholder="italiano, chill, ranked">
+      <label class="campo spazio-sopra" for="regia-tags">${L('Tag', 'Tags', 'Etiquetas')} <span class="tenue">— ${L('separati da virgola, max 10', 'comma-separated, max 10', 'separadas por comas, máx. 10')}</span></label>
+      <input type="text" id="regia-tags" class="campo-largo" placeholder="${L('italiano, chill, ranked', 'english, chill, ranked', 'español, chill, ranked')}">
 
-      <p class="spazio-sopra"><button type="button" class="btn" id="regia-salva-canale">Salva info canale</button></p>
+      <p class="spazio-sopra"><button type="button" class="btn" id="regia-salva-canale">${L('Salva info canale', 'Save channel info', 'Guardar info del canal')}</button></p>
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.fulmine)}Azioni rapide</h2>
+      <h2>${_hIco(ICO.fulmine)}${L('Azioni rapide', 'Quick actions', 'Acciones rápidas')}</h2>
       <div class="regia-azioni">
-        <button type="button" class="btn secondario" id="regia-clip">${_bIco(ICO.clip)}Crea clip</button>
+        <button type="button" class="btn secondario" id="regia-clip">${_bIco(ICO.clip)}${L('Crea clip', 'Create clip', 'Crear clip')}</button>
         <div class="regia-riga">
-          <input type="text" id="regia-marker-desc" placeholder="Nota del marker (facoltativa)" maxlength="140">
+          <input type="text" id="regia-marker-desc" placeholder="${L('Nota del marker (facoltativa)', 'Marker note (optional)', 'Nota del marcador (opcional)')}" maxlength="140">
           <button type="button" class="btn secondario" id="regia-marker">${_bIco(ICO.segnaposto)}Marker</button>
         </div>
         <div class="regia-riga" id="regia-ad-box">
@@ -3365,15 +3365,15 @@ function pannelloRegia() {
             <option value="90">90s</option><option value="120">120s</option>
             <option value="150">150s</option><option value="180">180s</option>
           </select>
-          <button type="button" class="btn secondario" id="regia-ad">${_bIco(ICO.tv)}Manda pubblicità</button>
+          <button type="button" class="btn secondario" id="regia-ad">${_bIco(ICO.tv)}${L('Manda pubblicità', 'Run an ad', 'Lanzar anuncio')}</button>
         </div>
         <div class="regia-riga" id="regia-raid-box">
-          <input type="text" id="regia-raid-canale" placeholder="canale da raidare" maxlength="30">
-          <button type="button" class="btn secondario" id="regia-raid">${_bIco(ICO.freccia)}Avvia raid</button>
-          <button type="button" class="btn secondario mini" id="regia-raid-annulla">Annulla</button>
+          <input type="text" id="regia-raid-canale" placeholder="${L('canale da raidare', 'channel to raid', 'canal a raidear')}" maxlength="30">
+          <button type="button" class="btn secondario" id="regia-raid">${_bIco(ICO.freccia)}${L('Avvia raid', 'Start raid', 'Iniciar raid')}</button>
+          <button type="button" class="btn secondario mini" id="regia-raid-annulla">${L('Annulla', 'Cancel', 'Cancelar')}</button>
         </div>
       </div>
-      <p class="suggerimento spazio-sopra">Clip e marker (e la pubblicità/raid) funzionano solo <strong>mentre sei in diretta</strong>. Il video della live lo fa ancora OBS — qui gestisci tutto il resto.</p>
+      <p class="suggerimento spazio-sopra">${L('Clip e marker (e la pubblicità/raid) funzionano solo <strong>mentre sei in diretta</strong>. Il video della live lo fa ancora OBS — qui gestisci tutto il resto.', 'Clips and markers (and ads/raids) only work <strong>while you’re live</strong>. OBS still does the video — here you manage everything else.', 'Los clips y marcadores (y los anuncios/raids) solo funcionan <strong>mientras estás en directo</strong>. El vídeo sigue haciéndolo OBS — aquí gestionas todo lo demás.')}</p>
     </div>`);
 }
 
@@ -3395,20 +3395,20 @@ function renderRegiaStato(live, ads) {
   const box = document.getElementById('regia-stato');
   if (!box) return;
   if (!live || !live.online) {
-    box.innerHTML = '<div class="regia-badge off">● OFFLINE</div><p class="tenue spazio-sopra">Non sei in diretta adesso. Titolo, categoria e tag puoi impostarli lo stesso.</p>';
+    box.innerHTML = `<div class="regia-badge off">● OFFLINE</div><p class="tenue spazio-sopra">${L('Non sei in diretta adesso. Titolo, categoria e tag puoi impostarli lo stesso.', 'You’re not live right now. You can still set the title, category and tags.', 'No estás en directo ahora. Igualmente puedes fijar título, categoría y etiquetas.')}</p>`;
     return;
   }
   let adInfo = '';
   if (ads && ads.nextAt) {
     const at = typeof ads.nextAt === 'number' ? ads.nextAt * 1000 : new Date(ads.nextAt).getTime();
     const secs = Math.round((at - Date.now()) / 1000);
-    if (secs > 0) adInfo = `<div class="regia-metrica"><span>Prossima pubblicità</span><strong>${Math.floor(secs / 60)}m ${secs % 60}s</strong></div>`;
+    if (secs > 0) adInfo = `<div class="regia-metrica"><span>${L('Prossima pubblicità', 'Next ad', 'Próximo anuncio')}</span><strong>${Math.floor(secs / 60)}m ${secs % 60}s</strong></div>`;
   }
   box.innerHTML = `
     <div class="regia-badge live">● LIVE</div>
     <div class="regia-metriche">
-      <div class="regia-metrica"><span>Spettatori</span><strong>${live.viewers ?? 0}</strong></div>
-      <div class="regia-metrica"><span>Da</span><strong id="regia-uptime">${esc(_fmtUptime(live.startedAt))}</strong></div>
+      <div class="regia-metrica"><span>${L('Spettatori', 'Viewers', 'Espectadores')}</span><strong>${live.viewers ?? 0}</strong></div>
+      <div class="regia-metrica"><span>${L('Da', 'For', 'Desde')}</span><strong id="regia-uptime">${esc(_fmtUptime(live.startedAt))}</strong></div>
       ${adInfo}
     </div>`;
 }
@@ -3422,20 +3422,20 @@ async function caricaRegia() {
     return;
   }
   let d;
-  try { d = await api('/api/streamer/regia'); } catch (e) { box.innerHTML = `<p class="vuoto">Errore: ${esc(e.message)}</p>`; return; }
+  try { d = await api('/api/streamer/regia'); } catch (e) { box.innerHTML = `<p class="vuoto">${L('Errore:', 'Error:', 'Error:')} ${esc(e.message)}</p>`; return; }
 
   // banner permessi mancanti → link per ri-concederli
   const p = d.permessi || {};
   const mancanti = [];
-  if (!p.broadcast) mancanti.push('gestione canale (titolo/categoria/marker)');
+  if (!p.broadcast) mancanti.push(L('gestione canale (titolo/categoria/marker)', 'manage channel (title/category/marker)', 'gestión del canal (título/categoría/marcador)'));
   if (!p.raid) mancanti.push('raid');
-  if (!p.commercial) mancanti.push('pubblicità');
+  if (!p.commercial) mancanti.push(L('pubblicità', 'ads', 'anuncios'));
   const banner = document.getElementById('regia-permessi-banner');
   if (banner) {
     if (mancanti.length) {
       banner.hidden = false;
-      banner.innerHTML = `<p>${_bIco(ICO.lucchetto)}Per usare tutta la regia servono alcuni permessi non ancora concessi: <strong>${esc(mancanti.join(', '))}</strong>.</p>
-        <p class="spazio-sopra"><a class="btn" href="/auth/permessi">Concedi i permessi</a></p>`;
+      banner.innerHTML = `<p>${_bIco(ICO.lucchetto)}${L('Per usare tutta la regia servono alcuni permessi non ancora concessi:', 'To use the full control room you need some permissions not yet granted:', 'Para usar toda la realización faltan algunos permisos:')} <strong>${esc(mancanti.join(', '))}</strong>.</p>
+        <p class="spazio-sopra"><a class="btn" href="/auth/permessi">${L('Concedi i permessi', 'Grant permissions', 'Concede los permisos')}</a></p>`;
     } else banner.hidden = true;
   }
 
@@ -3451,7 +3451,7 @@ async function caricaRegia() {
   const t = document.getElementById('regia-titolo'); if (t) t.value = d.canale?.title || '';
   const tags = document.getElementById('regia-tags'); if (tags) tags.value = (d.canale?.tags || []).join(', ');
   _regiaGameId = d.canale?.gameId || '';
-  const sel = document.getElementById('regia-gioco-sel'); if (sel) sel.textContent = d.canale?.gameName || '— nessuna —';
+  const sel = document.getElementById('regia-gioco-sel'); if (sel) sel.textContent = d.canale?.gameName || L('— nessuna —', '— none —', '— ninguna —');
 
   // nascondi le azioni per cui manca il permesso
   const adBox = document.getElementById('regia-ad-box'); if (adBox) adBox.style.display = p.commercial ? '' : 'none';
@@ -3465,24 +3465,24 @@ async function cercaGiochiRegia() {
   if (q.length < 2) { lista.hidden = true; lista.innerHTML = ''; return; }
   try {
     const d = await api('/api/streamer/regia/giochi?q=' + encodeURIComponent(q));
-    if (!d.giochi.length) { lista.hidden = false; lista.innerHTML = '<div class="rg-vuoto">Nessun risultato</div>'; return; }
+    if (!d.giochi.length) { lista.hidden = false; lista.innerHTML = `<div class="rg-vuoto">${L('Nessun risultato', 'No results', 'Sin resultados')}</div>`; return; }
     lista.hidden = false;
     lista.innerHTML = d.giochi.map((g) => {
       const art = g.boxArt ? g.boxArt.replace('{width}', '40').replace('{height}', '53') : '';
       return `<button type="button" class="rg-opt" data-id="${esc(g.id)}" data-nome="${esc(g.name)}">${art ? `<img src="${esc(art)}" alt="">` : ''}<span>${esc(g.name)}</span></button>`;
     }).join('');
-  } catch (e) { lista.hidden = false; lista.innerHTML = `<div class="rg-vuoto">Errore: ${esc(e.message)}</div>`; }
+  } catch (e) { lista.hidden = false; lista.innerHTML = `<div class="rg-vuoto">${L('Errore:', 'Error:', 'Error:')} ${esc(e.message)}</div>`; }
 }
 
 async function salvaRegiaCanale() {
-  if (DEMO) { toast('In demo non si salva — accedi per farlo davvero.'); return; }
+  if (DEMO) { toast(L('In demo non si salva — accedi per farlo davvero.', 'In demo nothing is saved — log in to do it for real.', 'En demo no se guarda — inicia sesión para hacerlo de verdad.')); return; }
   const titolo = document.getElementById('regia-titolo')?.value || '';
   const tagsRaw = document.getElementById('regia-tags')?.value || '';
   const tags = tagsRaw.split(',').map((x) => x.trim()).filter(Boolean).slice(0, 10);
   const body = { titolo, tags };
   if (_regiaGameId) body.giocoId = _regiaGameId;
   await api('/api/streamer/regia/canale', { method: 'POST', body });
-  toast('Info canale aggiornate ✓');
+  toast(L('Info canale aggiornate ✓', 'Channel info updated ✓', 'Info del canal actualizada ✓'));
 }
 
 // --- scheda Studio Web (vai live dal browser, senza OBS) ----------------
