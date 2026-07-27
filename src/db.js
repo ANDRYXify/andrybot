@@ -306,6 +306,14 @@ CREATE TABLE IF NOT EXISTS tiktok_tokens ( -- connettore TikTok (Display API) pe
   username TEXT NOT NULL DEFAULT '',          -- @username TikTok (solo per mostrarlo nella UI)
   updated_at INTEGER NOT NULL DEFAULT 0
 );
+CREATE TABLE IF NOT EXISTS seventv_tokens ( -- connettore 7TV: gestione emote del canale (per canale)
+  login TEXT PRIMARY KEY,                     -- login twitch del canale
+  token TEXT NOT NULL DEFAULT '',            -- JWT dell'account 7TV dello streamer (proprietario del set)
+  user_id TEXT NOT NULL DEFAULT '',          -- id utente 7TV
+  username TEXT NOT NULL DEFAULT '',          -- @username 7TV (solo per la UI)
+  set_id TEXT NOT NULL DEFAULT '',           -- id dell'emote-set attivo del canale
+  updated_at INTEGER NOT NULL DEFAULT 0
+);
 CREATE TABLE IF NOT EXISTS linee_guida (     -- regole/limiti che lo streamer dà a "lia": lei le rispetta SEMPRE
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   channel TEXT NOT NULL,
@@ -691,6 +699,35 @@ export const tiktokTokens = {
     return this.get(l);
   },
   scollega(login) { db.prepare('DELETE FROM tiktok_tokens WHERE login=?').run(String(login).toLowerCase()); },
+};
+
+// ---------------------------------------------------------------- 7TV (emote)
+// Token dell'account 7TV dello streamer per gestire (aggiungere/togliere/rinominare)
+// le emote del suo set attivo. Ogni campo passato con '' non tocca quello salvato,
+// così possiamo aggiornare solo il set_id senza reincollare il token.
+export const seventvTokens = {
+  get(login) {
+    return db.prepare('SELECT * FROM seventv_tokens WHERE login=?').get(String(login).toLowerCase()) || null;
+  },
+  set(login, { token, userId, username, setId } = {}) {
+    const l = String(login).toLowerCase();
+    const cur = this.get(l) || {};
+    db.prepare(`INSERT INTO seventv_tokens (login, token, user_id, username, set_id, updated_at)
+      VALUES (?,?,?,?,?,?)
+      ON CONFLICT(login) DO UPDATE SET
+        token=CASE WHEN excluded.token!='' THEN excluded.token ELSE seventv_tokens.token END,
+        user_id=CASE WHEN excluded.user_id!='' THEN excluded.user_id ELSE seventv_tokens.user_id END,
+        username=CASE WHEN excluded.username!='' THEN excluded.username ELSE seventv_tokens.username END,
+        set_id=CASE WHEN excluded.set_id!='' THEN excluded.set_id ELSE seventv_tokens.set_id END,
+        updated_at=excluded.updated_at`)
+      .run(l,
+        token !== undefined ? String(token || '') : (cur.token || ''),
+        userId !== undefined ? String(userId || '') : (cur.user_id || ''),
+        username !== undefined ? String(username || '') : (cur.username || ''),
+        setId !== undefined ? String(setId || '') : (cur.set_id || ''), now());
+    return this.get(l);
+  },
+  scollega(login) { db.prepare('DELETE FROM seventv_tokens WHERE login=?').run(String(login).toLowerCase()); },
 };
 
 // ---------------------------------------------------------------- IA locale (modello)
