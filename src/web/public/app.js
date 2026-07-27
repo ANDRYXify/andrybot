@@ -4642,178 +4642,171 @@ function pannelloGiochi() {
   const s = impostazioni();
   return pannello('giochi', `
     <div class="carta">
-      <h2>${_hIco(ICO.giochi)}Minigiochi</h2>
-      <p>Giochi in chat per la tua community, con delle <strong class="primo-piano">monete</strong>
-      (punti fedeltà) che si guadagnano chiacchierando.</p>
+      <h2>${_hIco(ICO.giochi)}${L('Minigiochi', 'Minigames', 'Minijuegos')}</h2>
+      <p>${L('Giochi in chat per la tua community, con delle', 'Chat games for your community, with', 'Juegos en el chat para tu comunidad, con')} <strong class="primo-piano">${L('monete', 'coins', 'monedas')}</strong>
+      ${L('(punti fedeltà) che si guadagnano chiacchierando.', '(loyalty points) earned by chatting.', '(puntos de fidelidad) que se ganan charlando.')}</p>
 
       <div class="riga-check">
         <input type="checkbox" id="chk-giochi" ${s.giochi ? 'checked' : ''}>
-        <label for="chk-giochi">Attiva i minigiochi in chat</label>
+        <label for="chk-giochi">${L('Attiva i minigiochi in chat', 'Enable chat minigames', 'Activa los minijuegos en el chat')}</label>
       </div>
 
-      <label class="campo" for="inp-monete">Come si chiamano le monete</label>
-      <input type="text" id="inp-monete" maxlength="20" value="${esc(s.nomeMonete)}" placeholder="es. monete, punti, gemme…">
+      <label class="campo" for="inp-monete">${L('Come si chiamano le monete', 'What the coins are called', 'Cómo se llaman las monedas')}</label>
+      <input type="text" id="inp-monete" maxlength="20" value="${esc(s.nomeMonete)}" placeholder="${L('es. monete, punti, gemme…', 'e.g. coins, points, gems…', 'p. ej. monedas, puntos, gemas…')}">
 
       <div class="riga-check spazio-sopra">
         <input type="checkbox" id="chk-promo" ${s.promoSocial ? 'checked' : ''}>
-        <label for="chk-promo">Promo social automatica — ogni tanto condivide da solo i tuoi link</label>
+        <label for="chk-promo">${L('Promo social automatica — ogni tanto condivide da solo i tuoi link', 'Automatic social promo — now and then it shares your links on its own', 'Promo social automática — de vez en cuando comparte solo tus enlaces')}</label>
       </div>
-      <p class="suggerimento">Nei momenti giusti (chat viva, dopo un raid/sub) il bot ricorda i tuoi social
-      presi dal profilo andryxify.it — con calma, mai spam.</p>
+      <p class="suggerimento">${L('Nei momenti giusti (chat viva, dopo un raid/sub) il bot ricorda i tuoi social presi dal profilo andryxify.it — con calma, mai spam.', 'At the right moments (lively chat, after a raid/sub) the bot reminds people of your socials taken from your andryxify.it profile — gently, never spam.', 'En los momentos oportunos (chat animado, tras un raid/sub) el bot recuerda tus redes tomadas de tu perfil andryxify.it — con calma, nunca spam.')}</p>
 
-      <p class="spazio-sopra"><button class="btn" id="btn-salva-giochi">Salva</button></p>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-giochi">${L('Salva', 'Save', 'Guardar')}</button></p>
     </div>
     <div class="carta">
-      <h2>${_hIco(ICO.medaglia)}Punti & classifica</h2>
-      <p>Decidi quanti <strong class="primo-piano">${esc(s.nomeMonete)}</strong> si guadagnano e i premi dei giochi.
-      La classifica <code>!classifica</code> mostra i primi in cima.</p>
+      <h2>${_hIco(ICO.medaglia)}${L('Punti & classifica', 'Points & leaderboard', 'Puntos y clasificación')}</h2>
+      <p>${L('Decidi quanti', 'Decide how many', 'Decide cuántas')} <strong class="primo-piano">${esc(s.nomeMonete)}</strong> ${L('si guadagnano e i premi dei giochi. La classifica', 'are earned and the game prizes. The leaderboard', 'se ganan y los premios de los juegos. La clasificación')} <code>!classifica</code> ${L('mostra i primi in cima.', 'shows the top players.', 'muestra a los primeros.')}</p>
       <div class="griglia-punti">
-        <label class="campo-num">Punti per messaggio<input type="number" id="pt-perMessaggio" min="0" max="1000" value="${s.punti.perMessaggio}"></label>
-        <label class="campo-num">…ogni quanti secondi<input type="number" id="pt-ogniSecondi" min="5" max="3600" value="${s.punti.ogniSecondi}"></label>
-        <label class="campo-num">Premio trivia<input type="number" id="pt-trivia" min="0" max="100000" value="${s.punti.trivia}"></label>
-        <label class="campo-num">Premio duello<input type="number" id="pt-duello" min="0" max="100000" value="${s.punti.duello}"></label>
-        <label class="campo-num">Slot: costo giocata<input type="number" id="pt-slotCosto" min="0" max="100000" value="${s.punti.slotCosto}"></label>
-        <label class="campo-num">Slot: vincita tris<input type="number" id="pt-slotVinci" min="0" max="1000000" value="${s.punti.slotVinci}"></label>
-        <label class="campo-num">Slot: vincita coppia<input type="number" id="pt-slotCoppia" min="0" max="100000" value="${s.punti.slotCoppia}"></label>
-        <label class="campo-num">Quanti in classifica<input type="number" id="pt-topN" min="3" max="10" value="${s.punti.topN}"></label>
+        <label class="campo-num">${L('Punti per messaggio', 'Points per message', 'Puntos por mensaje')}<input type="number" id="pt-perMessaggio" min="0" max="1000" value="${s.punti.perMessaggio}"></label>
+        <label class="campo-num">${L('…ogni quanti secondi', '…every how many seconds', '…cada cuántos segundos')}<input type="number" id="pt-ogniSecondi" min="5" max="3600" value="${s.punti.ogniSecondi}"></label>
+        <label class="campo-num">${L('Premio trivia', 'Trivia prize', 'Premio trivia')}<input type="number" id="pt-trivia" min="0" max="100000" value="${s.punti.trivia}"></label>
+        <label class="campo-num">${L('Premio duello', 'Duel prize', 'Premio duelo')}<input type="number" id="pt-duello" min="0" max="100000" value="${s.punti.duello}"></label>
+        <label class="campo-num">${L('Slot: costo giocata', 'Slot: play cost', 'Slot: coste por tirada')}<input type="number" id="pt-slotCosto" min="0" max="100000" value="${s.punti.slotCosto}"></label>
+        <label class="campo-num">${L('Slot: vincita tris', 'Slot: three-of-a-kind win', 'Slot: premio trío')}<input type="number" id="pt-slotVinci" min="0" max="1000000" value="${s.punti.slotVinci}"></label>
+        <label class="campo-num">${L('Slot: vincita coppia', 'Slot: pair win', 'Slot: premio pareja')}<input type="number" id="pt-slotCoppia" min="0" max="100000" value="${s.punti.slotCoppia}"></label>
+        <label class="campo-num">${L('Quanti in classifica', 'How many on the board', 'Cuántos en la clasificación')}<input type="number" id="pt-topN" min="3" max="10" value="${s.punti.topN}"></label>
       </div>
-      <p class="suggerimento">“Punti per messaggio” a 0 = nessun guadagno passivo dal chattare. Lo slot tris scala su questo valore (pieno, 7⃣ 75%, resto 40%).</p>
-      <p class="spazio-sopra"><button class="btn" id="btn-salva-punti">Salva punti</button></p>
+      <p class="suggerimento">${L('“Punti per messaggio” a 0 = nessun guadagno passivo dal chattare. Lo slot tris scala su questo valore (pieno, 7⃣ 75%, resto 40%).', '“Points per message” at 0 = no passive earning from chatting. The slot three-of-a-kind scales on this value (full, 7⃣ 75%, rest 40%).', '“Puntos por mensaje” a 0 = sin ganancia pasiva por charlar. El trío de la slot escala sobre este valor (completo, 7⃣ 75%, resto 40%).')}</p>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-punti">${L('Salva punti', 'Save points', 'Guardar puntos')}</button></p>
     </div>
     <div class="carta">
-      <h2>${_hIco(ICO.dado)}Manche automatiche</h2>
-      <p>Lascia che sia <strong class="primo-piano">il bot</strong> a lanciare i giochi: ogni tanto, a sorpresa, parte una
-      <strong class="primo-piano">manche</strong> (trivia, reflex sulla parola, indovina il numero) e il primo che risponde vince.</p>
+      <h2>${_hIco(ICO.dado)}${L('Manche automatiche', 'Automatic rounds', 'Rondas automáticas')}</h2>
+      <p>${L('Lascia che sia', 'Let', 'Deja que sea')} <strong class="primo-piano">${L('il bot', 'the bot', 'el bot')}</strong> ${L('a lanciare i giochi: ogni tanto, a sorpresa, parte una', 'launch the games: now and then, by surprise, a', 'quien lance los juegos: de vez en cuando, por sorpresa, empieza una')}
+      <strong class="primo-piano">${L('manche', 'round', 'ronda')}</strong> ${L('(trivia, reflex sulla parola, indovina il numero) e il primo che risponde vince.', '(trivia, word reflex, guess the number) starts and the first to answer wins.', '(trivia, reflejo con la palabra, adivina el número) y el primero que responde gana.')}</p>
       <div class="riga-check">
         <input type="checkbox" id="chk-manche" ${s.manche.attivo ? 'checked' : ''}>
-        <label for="chk-manche">Attiva le manche automatiche</label>
+        <label for="chk-manche">${L('Attiva le manche automatiche', 'Enable automatic rounds', 'Activa las rondas automáticas')}</label>
       </div>
       <div class="griglia-punti">
-        <label class="campo-num">Ogni almeno (minuti)<input type="number" id="mn-min" min="1" max="360" value="${s.manche.minMin}"></label>
-        <label class="campo-num">…al massimo (minuti)<input type="number" id="mn-max" min="1" max="360" value="${s.manche.maxMin}"></label>
+        <label class="campo-num">${L('Ogni almeno (minuti)', 'At least every (minutes)', 'Cada al menos (minutos)')}<input type="number" id="mn-min" min="1" max="360" value="${s.manche.minMin}"></label>
+        <label class="campo-num">${L('…al massimo (minuti)', '…at most (minutes)', '…como máximo (minutos)')}<input type="number" id="mn-max" min="1" max="360" value="${s.manche.maxMin}"></label>
       </div>
       <div class="riga-check spazio-sopra">
         <input type="checkbox" id="chk-manche-live" ${s.manche.soloLive ? 'checked' : ''}>
-        <label for="chk-manche-live">Solo mentre sono in diretta</label>
+        <label for="chk-manche-live">${L('Solo mentre sono in diretta', 'Only while I’m live', 'Solo mientras estoy en directo')}</label>
       </div>
-      <p class="suggerimento">Il bot sceglie da solo quando e quale gioco, e non disturba mai una chat vuota. In chat: <code>!manche</code> ne lancia una al volo.</p>
-      <p class="spazio-sopra"><button class="btn" id="btn-salva-manche">Salva manche</button></p>
+      <p class="suggerimento">${L('Il bot sceglie da solo quando e quale gioco, e non disturba mai una chat vuota. In chat:', 'The bot picks when and which game on its own, and never bothers an empty chat. In chat:', 'El bot elige solo cuándo y qué juego, y nunca molesta en un chat vacío. En el chat:')} <code>!manche</code> ${L('ne lancia una al volo.', 'starts one on the fly.', 'lanza una al vuelo.')}</p>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-manche">${L('Salva manche', 'Save rounds', 'Guardar rondas')}</button></p>
     </div>
     <div class="carta">
-      <h2>${_hIco(ICO.giochi)}I tuoi giochi</h2>
-      <p>Crea i tuoi giochi: entrano nel giro delle manche automatiche (mescolati a quelli di default).</p>
+      <h2>${_hIco(ICO.giochi)}${L('I tuoi giochi', 'Your games', 'Tus juegos')}</h2>
+      <p>${L('Crea i tuoi giochi: entrano nel giro delle manche automatiche (mescolati a quelli di default).', 'Create your own games: they join the automatic rounds rotation (mixed with the default ones).', 'Crea tus propios juegos: entran en la rotación de rondas automáticas (mezclados con los de serie).')}</p>
       <div class="riga-flessibile">
         <select id="gioco-tipo">
-          <option value="trivia">Trivia (domande & risposte)</option>
-          <option value="parola">Parola veloce (reflex)</option>
+          <option value="trivia">${L('Trivia (domande & risposte)', 'Trivia (questions & answers)', 'Trivia (preguntas y respuestas)')}</option>
+          <option value="parola">${L('Parola veloce (reflex)', 'Fast word (reflex)', 'Palabra rápida (reflejo)')}</option>
         </select>
-        <input type="text" id="gioco-nome" maxlength="60" placeholder="Nome del gioco (es. Trivia gaming)">
+        <input type="text" id="gioco-nome" maxlength="60" placeholder="${L('Nome del gioco (es. Trivia gaming)', 'Game name (e.g. Gaming trivia)', 'Nombre del juego (p. ej. Trivia gaming)')}">
       </div>
       <div id="gioco-trivia" class="spazio-sopra">
-        <label class="campo">Domande — una per riga, formato <code>domanda | risposta1, risposta2</code></label>
-        <textarea id="gioco-domande" rows="5" placeholder="Chi ha vinto i mondiali 2006? | italia&#10;Come si chiama il mio gatto? | felix, felixe"></textarea>
+        <label class="campo">${L('Domande — una per riga, formato', 'Questions — one per line, format', 'Preguntas — una por línea, formato')} <code>${L('domanda | risposta1, risposta2', 'question | answer1, answer2', 'pregunta | respuesta1, respuesta2')}</code></label>
+        <textarea id="gioco-domande" rows="5" placeholder="${L('Chi ha vinto i mondiali 2006? | italia&#10;Come si chiama il mio gatto? | felix, felixe', 'Who won the 2006 World Cup? | italy&#10;What’s my cat’s name? | felix, felixe', '¿Quién ganó el Mundial 2006? | italia&#10;¿Cómo se llama mi gato? | felix, felixe')}"></textarea>
       </div>
       <div id="gioco-parola" class="spazio-sopra" hidden>
-        <label class="campo">Parole — una per riga (il bot ne pesca una e il primo che la scrive vince)</label>
+        <label class="campo">${L('Parole — una per riga (il bot ne pesca una e il primo che la scrive vince)', 'Words — one per line (the bot picks one and the first to type it wins)', 'Palabras — una por línea (el bot elige una y el primero que la escribe gana)')}</label>
         <textarea id="gioco-parole" rows="5" placeholder="pizza&#10;combo perfetta&#10;gg wp"></textarea>
       </div>
-      <p class="spazio-sopra"><button class="btn" id="btn-crea-gioco">Crea gioco</button></p>
-      <h3>Giochi creati</h3>
-      <ul class="lista-voci" id="lista-giochi"><li class="vuoto">Caricamento…</li></ul>
+      <p class="spazio-sopra"><button class="btn" id="btn-crea-gioco">${L('Crea gioco', 'Create game', 'Crear juego')}</button></p>
+      <h3>${L('Giochi creati', 'Created games', 'Juegos creados')}</h3>
+      <ul class="lista-voci" id="lista-giochi"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
     </div>
     <div class="carta">
-      <h2>Comandi dei giochi</h2>
+      <h2>${L('Comandi dei giochi', 'Game commands', 'Comandos de los juegos')}</h2>
       <ul class="lista-voci">
-        <li><div class="testo-voce"><span class="domanda">!dado</span> <span class="risposta">tira un dado (anche !dado 2d20)</span></div></li>
-        <li><div class="testo-voce"><span class="domanda">!moneta</span> <span class="risposta">testa o croce</span></div></li>
-        <li><div class="testo-voce"><span class="domanda">!8ball &lt;domanda&gt;</span> <span class="risposta">la palla magica risponde</span></div></li>
-        <li><div class="testo-voce"><span class="domanda">!slot</span> <span class="risposta">slot machine (costa qualche moneta)</span></div></li>
-        <li><div class="testo-voce"><span class="domanda">!duello @nome</span> <span class="risposta">sfida un altro utente</span></div></li>
-        <li><div class="testo-voce"><span class="domanda">!trivia</span> <span class="risposta">domanda a sorpresa, il primo che risponde vince</span></div></li>
-        <li><div class="testo-voce"><span class="domanda">!monete</span> <span class="risposta">quante monete hai</span></div></li>
-        <li><div class="testo-voce"><span class="domanda">!classifica</span> <span class="risposta">i più ricchi del canale</span></div></li>
-        <li><div class="testo-voce"><span class="domanda">!giochi</span> <span class="risposta">elenco dei giochi</span></div></li>
+        <li><div class="testo-voce"><span class="domanda">!dado</span> <span class="risposta">${L('tira un dado (anche !dado 2d20)', 'roll a die (also !dado 2d20)', 'tira un dado (también !dado 2d20)')}</span></div></li>
+        <li><div class="testo-voce"><span class="domanda">!moneta</span> <span class="risposta">${L('testa o croce', 'heads or tails', 'cara o cruz')}</span></div></li>
+        <li><div class="testo-voce"><span class="domanda">!8ball &lt;${L('domanda', 'question', 'pregunta')}&gt;</span> <span class="risposta">${L('la palla magica risponde', 'the magic ball answers', 'la bola mágica responde')}</span></div></li>
+        <li><div class="testo-voce"><span class="domanda">!slot</span> <span class="risposta">${L('slot machine (costa qualche moneta)', 'slot machine (costs a few coins)', 'tragamonedas (cuesta unas monedas)')}</span></div></li>
+        <li><div class="testo-voce"><span class="domanda">!duello @${L('nome', 'name', 'nombre')}</span> <span class="risposta">${L('sfida un altro utente', 'challenge another user', 'reta a otro usuario')}</span></div></li>
+        <li><div class="testo-voce"><span class="domanda">!trivia</span> <span class="risposta">${L('domanda a sorpresa, il primo che risponde vince', 'surprise question, first to answer wins', 'pregunta sorpresa, el primero que responde gana')}</span></div></li>
+        <li><div class="testo-voce"><span class="domanda">!monete</span> <span class="risposta">${L('quante monete hai', 'how many coins you have', 'cuántas monedas tienes')}</span></div></li>
+        <li><div class="testo-voce"><span class="domanda">!classifica</span> <span class="risposta">${L('i più ricchi del canale', 'the richest in the channel', 'los más ricos del canal')}</span></div></li>
+        <li><div class="testo-voce"><span class="domanda">!giochi</span> <span class="risposta">${L('elenco dei giochi', 'list of games', 'lista de juegos')}</span></div></li>
       </ul>
     </div>
     <div class="carta">
-      <h2>${_hIco(ICO.trofeo)}Classifica & VIP</h2>
-      ${stato.vipOk ? '' : `<p class="suggerimento">Per assegnare i VIP serve un permesso in più (aggiunto dopo).
-        <a class="btn secondario mini" href="/auth/permessi">Concedi i permessi</a></p>`}
+      <h2>${_hIco(ICO.trofeo)}${L('Classifica & VIP', 'Leaderboard & VIP', 'Clasificación y VIP')}</h2>
+      ${stato.vipOk ? '' : `<p class="suggerimento">${L('Per assegnare i VIP serve un permesso in più (aggiunto dopo).', 'Assigning VIPs needs one more permission (added later).', 'Asignar VIP necesita un permiso más (añadido después).')}
+        <a class="btn secondario mini" href="/auth/permessi">${L('Concedi i permessi', 'Grant permissions', 'Concede los permisos')}</a></p>`}
       <div class="riga-check">
         <input type="checkbox" id="chk-premiovip" ${s.premioVip.attivo ? 'checked' : ''}>
-        <label for="chk-premiovip">Premio VIP automatico ai più affezionati</label>
+        <label for="chk-premiovip">${L('Premio VIP automatico ai più affezionati', 'Automatic VIP reward for your most loyal', 'Premio VIP automático a los más fieles')}</label>
       </div>
       <div class="riga-flessibile">
-        <span class="suggerimento">Ogni</span>
+        <span class="suggerimento">${L('Ogni', 'Every', 'Cada')}</span>
         <select id="sel-premio-periodo">
-          <option value="settimana" ${s.premioVip.periodo === 'settimana' ? 'selected' : ''}>settimana</option>
-          <option value="mese" ${s.premioVip.periodo === 'mese' ? 'selected' : ''}>mese</option>
+          <option value="settimana" ${s.premioVip.periodo === 'settimana' ? 'selected' : ''}>${L('settimana', 'week', 'semana')}</option>
+          <option value="mese" ${s.premioVip.periodo === 'mese' ? 'selected' : ''}>${L('mese', 'month', 'mes')}</option>
         </select>
-        <span class="suggerimento">ai primi</span>
+        <span class="suggerimento">${L('ai primi', 'to the top', 'a los primeros')}</span>
         <input type="number" id="num-premio-quanti" min="1" max="5" value="${Number(s.premioVip.quanti) || 1}">
       </div>
-      <p class="suggerimento">Il bot dà il VIP (per la stessa durata) ai top ${esc(s.nomeMonete)}. Puoi anche darlo
-      <strong class="primo-piano">a voce</strong> (Comandi a voce → "vip a nome", default 1 settimana; di' "mese" per un mese)
-      o in chat con <code>!vip @nome</code>.</p>
-      <p class="spazio-sopra"><button class="btn" id="btn-salva-premio">Salva premio</button></p>
-      <h3>Classifica ${esc(s.nomeMonete)}</h3>
-      <ul class="lista-voci" id="lista-classifica"><li class="vuoto">Caricamento…</li></ul>
-      <h3>VIP a tempo attivi</h3>
-      <ul class="lista-voci" id="lista-vip"><li class="vuoto">Caricamento…</li></ul>
+      <p class="suggerimento">${L('Il bot dà il VIP (per la stessa durata) ai top', 'The bot gives VIP (for the same duration) to the top', 'El bot da el VIP (por la misma duración) a los mejores')} ${esc(s.nomeMonete)}. ${L('Puoi anche darlo', 'You can also give it', 'También puedes darlo')}
+      <strong class="primo-piano">${L('a voce', 'by voice', 'por voz')}</strong> ${L('(Comandi a voce → "vip a nome", default 1 settimana; di\' "mese" per un mese)', '(Voice commands → "vip to name", default 1 week; say "month" for a month)', '(Comandos por voz → "vip a nombre", por defecto 1 semana; di "mes" para un mes)')}
+      ${L('o in chat con', 'or in chat with', 'o en el chat con')} <code>!vip @${L('nome', 'name', 'nombre')}</code>.</p>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-premio">${L('Salva premio', 'Save reward', 'Guardar premio')}</button></p>
+      <h3>${L('Classifica', 'Leaderboard', 'Clasificación')} ${esc(s.nomeMonete)}</h3>
+      <ul class="lista-voci" id="lista-classifica"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+      <h3>${L('VIP a tempo attivi', 'Active timed VIPs', 'VIP temporales activos')}</h3>
+      <ul class="lista-voci" id="lista-vip"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.target)}Giochi del sito andryxify.it</h2>
-      <p>I giochi di andryxify.it (come <strong class="primo-piano">AGENTify</strong>) possono girare
-      <strong class="primo-piano">direttamente dalla tua chat</strong> tramite SocialBot: i tuoi viewer scrivono i
-      comandi (es. <code>!ag …</code>) e il bot risponde. Un solo bot in chat, niente da installare.</p>
+      <h2>${_hIco(ICO.target)}${L('Giochi del sito andryxify.it', 'andryxify.it site games', 'Juegos del sitio andryxify.it')}</h2>
+      <p>${L('I giochi di andryxify.it (come', 'The andryxify.it games (like', 'Los juegos de andryxify.it (como')} <strong class="primo-piano">AGENTify</strong>) ${L('possono girare', 'can run', 'pueden funcionar')}
+      <strong class="primo-piano">${L('direttamente dalla tua chat', 'straight from your chat', 'directamente desde tu chat')}</strong> ${L('tramite SocialBot: i tuoi viewer scrivono i comandi (es.', 'through SocialBot: your viewers type the commands (e.g.', 'con SocialBot: tus espectadores escriben los comandos (p. ej.')} <code>!ag …</code>) ${L('e il bot risponde. Un solo bot in chat, niente da installare.', 'and the bot replies. One bot in chat, nothing to install.', 'y el bot responde. Un solo bot en el chat, nada que instalar.')}</p>
       ${s.giochiSito.collegato
-        ? '<p class="suggerimento"><span class="badge verde">✓ collegato al sito</span></p>'
-        : '<p class="suggerimento"><span class="badge giallo">non ancora collegato</span> — entra nella dashboard passando da andryxify.it e il collegamento si attiva da solo.</p>'}
+        ? `<p class="suggerimento"><span class="badge verde">✓ ${L('collegato al sito', 'connected to the site', 'conectado al sitio')}</span></p>`
+        : `<p class="suggerimento"><span class="badge giallo">${L('non ancora collegato', 'not connected yet', 'aún no conectado')}</span> — ${L('entra nella dashboard passando da andryxify.it e il collegamento si attiva da solo.', 'enter the dashboard via andryxify.it and the link activates on its own.', 'entra al panel pasando por andryxify.it y el enlace se activa solo.')}</p>`}
       <div class="riga-check">
         <input type="checkbox" id="chk-giochisito" ${s.giochiSito.attivo ? 'checked' : ''} ${s.giochiSito.collegato ? '' : 'disabled'}>
-        <label for="chk-giochisito">Fai giocare la chat ai giochi del sito</label>
+        <label for="chk-giochisito">${L('Fai giocare la chat ai giochi del sito', 'Let chat play the site games', 'Deja que el chat juegue a los juegos del sitio')}</label>
       </div>
-      <p class="spazio-sopra"><button class="btn" id="btn-salva-giochisito" ${s.giochiSito.collegato ? '' : 'disabled'}>Salva</button></p>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-giochisito" ${s.giochiSito.collegato ? '' : 'disabled'}>${L('Salva', 'Save', 'Guardar')}</button></p>
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.chat)}Citazioni</h2>
-      <p>Le frasi memorabili della chat. In chat: <code>!cita</code> (a caso), <code>!cita 12</code> (una precisa),
-      <code>!cita aggiungi &lt;testo&gt;</code> e <code>!cita rimuovi 12</code> (mod/streamer). Le gestisci anche da qui.</p>
+      <h2>${_hIco(ICO.chat)}${L('Citazioni', 'Quotes', 'Citas')}</h2>
+      <p>${L('Le frasi memorabili della chat. In chat:', 'The chat’s memorable lines. In chat:', 'Las frases memorables del chat. En el chat:')} <code>!cita</code> (${L('a caso', 'random', 'al azar')}), <code>!cita 12</code> (${L('una precisa', 'a specific one', 'una concreta')}),
+      <code>!cita ${L('aggiungi', 'add', 'añadir')} &lt;${L('testo', 'text', 'texto')}&gt;</code> ${L('e', 'and', 'y')} <code>!cita ${L('rimuovi', 'remove', 'quitar')} 12</code> (mod/streamer). ${L('Le gestisci anche da qui.', 'You can also manage them here.', 'También las gestionas desde aquí.')}</p>
       <div class="riga-flessibile">
-        <input type="text" id="inp-citazione" maxlength="400" placeholder="una frase memorabile…">
-        <button class="btn" id="btn-aggiungi-citazione">Aggiungi</button>
+        <input type="text" id="inp-citazione" maxlength="400" placeholder="${L('una frase memorabile…', 'a memorable line…', 'una frase memorable…')}">
+        <button class="btn" id="btn-aggiungi-citazione">${L('Aggiungi', 'Add', 'Añadir')}</button>
       </div>
 
       <details class="spazio-sopra">
-        <summary style="cursor:pointer">Importa citazioni (da x.la)</summary>
-        <p class="suggerimento">x.la disegna le frasi <strong>con JavaScript</strong>: copiare la pagina "alla cieca" (o dal link)
-        spesso prende solo il guscio vuoto («<em>Please enable JavaScript</em>»). Due modi che funzionano davvero</p>
+        <summary style="cursor:pointer">${L('Importa citazioni (da x.la)', 'Import quotes (from x.la)', 'Importar citas (desde x.la)')}</summary>
+        <p class="suggerimento">${L('x.la disegna le frasi <strong>con JavaScript</strong>: copiare la pagina "alla cieca" (o dal link) spesso prende solo il guscio vuoto («<em>Please enable JavaScript</em>»). Due modi che funzionano davvero', 'x.la renders the lines <strong>with JavaScript</strong>: copying the page “blindly” (or from the link) often grabs only the empty shell (“<em>Please enable JavaScript</em>”). Two ways that really work', 'x.la dibuja las frases <strong>con JavaScript</strong>: copiar la página “a ciegas” (o desde el enlace) a menudo coge solo el cascarón vacío («<em>Please enable JavaScript</em>»). Dos formas que funcionan de verdad')}</p>
 
-        <p class="suggerimento" style="margin-bottom:.35rem"><strong>1) Bottone magico</strong> (consigliato). Trascina
-        <a id="bm-xla" class="btn secondario" draggable="true" href="#" title="Trascinami nella barra dei preferiti del browser">${_bIco(ICO.segnaposto)}Prendi le quote da x.la</a>
-        nella <strong>barra dei preferiti</strong> del browser. Poi apri la tua pagina x.la, aspetta che le quote compaiano
-        (scorri fino in fondo) e <strong>clicca quel preferito</strong>: copia tutto da solo. Torna qui, incolla sotto e importa.
-        <button class="btn secondario" id="bm-xla-copia" type="button" style="margin-left:.35rem">copia il codice</button></p>
+        <p class="suggerimento" style="margin-bottom:.35rem"><strong>${L('1) Bottone magico', '1) Magic button', '1) Botón mágico')}</strong> (${L('consigliato', 'recommended', 'recomendado')}). ${L('Trascina', 'Drag', 'Arrastra')}
+        <a id="bm-xla" class="btn secondario" draggable="true" href="#" title="${L('Trascinami nella barra dei preferiti del browser', 'Drag me to your browser’s bookmarks bar', 'Arrástrame a la barra de favoritos del navegador')}">${_bIco(ICO.segnaposto)}${L('Prendi le quote da x.la', 'Grab quotes from x.la', 'Coge las citas de x.la')}</a>
+        ${L('nella <strong>barra dei preferiti</strong> del browser. Poi apri la tua pagina x.la, aspetta che le quote compaiano (scorri fino in fondo) e <strong>clicca quel preferito</strong>: copia tutto da solo. Torna qui, incolla sotto e importa.', 'to your browser’s <strong>bookmarks bar</strong>. Then open your x.la page, wait for the quotes to appear (scroll to the bottom) and <strong>click that bookmark</strong>: it copies everything itself. Come back here, paste below and import.', 'a la <strong>barra de favoritos</strong> del navegador. Luego abre tu página x.la, espera a que aparezcan las citas (baja hasta el final) y <strong>haz clic en ese favorito</strong>: lo copia todo solo. Vuelve aquí, pega abajo e importa.')}
+        <button class="btn secondario" id="bm-xla-copia" type="button" style="margin-left:.35rem">${L('copia il codice', 'copy the code', 'copia el código')}</button></p>
 
-        <p class="suggerimento" style="margin-bottom:.5rem"><strong>2) A mano.</strong> Sulla pagina x.la <em>già aperta e caricata</em>,
-        seleziona le quote col mouse e incollale qui sotto: riconosco <strong>nome utente e data</strong>
-        (formato «<em>frase</em> ⏎ <em>autore | data</em>», come le mostra x.la). I doppioni li salto.</p>
+        <p class="suggerimento" style="margin-bottom:.5rem"><strong>${L('2) A mano.', '2) By hand.', '2) A mano.')}</strong> ${L('Sulla pagina x.la <em>già aperta e caricata</em>, seleziona le quote col mouse e incollale qui sotto: riconosco <strong>nome utente e data</strong> (formato «<em>frase</em> ⏎ <em>autore | data</em>», come le mostra x.la). I doppioni li salto.', 'On the x.la page <em>already open and loaded</em>, select the quotes with the mouse and paste them below: I recognize <strong>username and date</strong> (format “<em>line</em> ⏎ <em>author | date</em>”, as x.la shows them). I skip duplicates.', 'En la página x.la <em>ya abierta y cargada</em>, selecciona las citas con el ratón y pégalas abajo: reconozco <strong>usuario y fecha</strong> (formato «<em>frase</em> ⏎ <em>autor | fecha</em>», como las muestra x.la). Los duplicados los salto.')}</p>
 
         <textarea id="txt-import-citazioni" rows="6" placeholder="&quot;Tu, molto molto bravo&quot;&#10;UnicornoFacinoroso | 06.09.2024&#10;&quot;io solo perchè mi andava di uscire&quot;&#10;@chiara_3008 | 06.10.2024"></textarea>
         <div class="riga-flessibile">
-          <input type="text" id="inp-import-url" placeholder="…oppure incolla un link (per altre fonti)">
-          <button class="btn secondario" id="btn-estrai-citazioni">Estrai dal link</button>
+          <input type="text" id="inp-import-url" placeholder="${L('…oppure incolla un link (per altre fonti)', '…or paste a link (for other sources)', '…o pega un enlace (para otras fuentes)')}">
+          <button class="btn secondario" id="btn-estrai-citazioni">${L('Estrai dal link', 'Extract from link', 'Extraer del enlace')}</button>
         </div>
         <p class="spazio-sopra">
-          <button class="btn" id="btn-importa-citazioni">Riconosci e importa</button>
+          <button class="btn" id="btn-importa-citazioni">${L('Riconosci e importa', 'Recognize and import', 'Reconocer e importar')}</button>
           <span id="import-cita-esito" class="suggerimento"></span>
         </p>
         <p id="import-cita-avviso" class="nota-lettura" hidden></p>
       </details>
 
-      <ul class="lista-voci" id="lista-citazioni"><li class="vuoto">Caricamento…</li></ul>
+      <ul class="lista-voci" id="lista-citazioni"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
     </div>`);
 }
 
@@ -5073,71 +5066,71 @@ function pannelloRegole() {
   const sel = (v, def) => v === undefined ? def : v;   // default "acceso" per i booleani
   return pannello('regole', `
     <div class="carta">
-      <h2>${_hIco(ICO.divieto)}Parole vietate</h2>
-      <p>Una per riga. Il bot <strong class="primo-piano">non le dirà mai</strong> e richiama chi le usa in chat.</p>
-      <label class="campo" for="txt-vietate">Elenco parole vietate</label>
-      <textarea id="txt-vietate" placeholder="una parola per riga">${esc(s.paroleVietate.join('\n'))}</textarea>
-      <p class="spazio-sopra"><button class="btn" id="btn-salva-regole">Salva</button></p>
+      <h2>${_hIco(ICO.divieto)}${L('Parole vietate', 'Banned words', 'Palabras prohibidas')}</h2>
+      <p>${L('Una per riga. Il bot', 'One per line. The bot', 'Una por línea. El bot')} <strong class="primo-piano">${L('non le dirà mai', 'will never say them', 'nunca las dirá')}</strong> ${L('e richiama chi le usa in chat.', 'and calls out anyone using them in chat.', 'y llama la atención a quien las usa en el chat.')}</p>
+      <label class="campo" for="txt-vietate">${L('Elenco parole vietate', 'Banned words list', 'Lista de palabras prohibidas')}</label>
+      <textarea id="txt-vietate" placeholder="${L('una parola per riga', 'one word per line', 'una palabra por línea')}">${esc(s.paroleVietate.join('\n'))}</textarea>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-regole">${L('Salva', 'Save', 'Guardar')}</button></p>
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.scudo)}Antispam automatico</h2>
+      <h2>${_hIco(ICO.scudo)}${L('Antispam automatico', 'Automatic anti-spam', 'Antispam automático')}</h2>
       ${stato.moderazioneOk
-        ? '<p class="suggerimento"><span class="badge verde">✓ permessi di moderazione attivi</span></p>'
-        : `<p class="suggerimento">Per eliminare i messaggi servono i permessi di moderazione (aggiunti dopo).
-        <a class="btn secondario mini" href="/auth/permessi">Concedi i permessi</a></p>`}
-      <p>Elimina da solo lo spam e, a chi insiste, dà un timeout crescente.
-      <strong class="primo-piano">Mod, VIP e broadcaster sono sempre esenti.</strong></p>
+        ? `<p class="suggerimento"><span class="badge verde">✓ ${L('permessi di moderazione attivi', 'moderation permissions active', 'permisos de moderación activos')}</span></p>`
+        : `<p class="suggerimento">${L('Per eliminare i messaggi servono i permessi di moderazione (aggiunti dopo).', 'Deleting messages needs moderation permissions (added later).', 'Para borrar mensajes hacen falta los permisos de moderación (añadidos después).')}
+        <a class="btn secondario mini" href="/auth/permessi">${L('Concedi i permessi', 'Grant permissions', 'Concede los permisos')}</a></p>`}
+      <p>${L('Elimina da solo lo spam e, a chi insiste, dà un timeout crescente.', 'Deletes spam on its own and gives escalating timeouts to repeat offenders.', 'Borra el spam solo y da timeouts crecientes a los reincidentes.')}
+      <strong class="primo-piano">${L('Mod, VIP e broadcaster sono sempre esenti.', 'Mods, VIPs and the broadcaster are always exempt.', 'Mods, VIP y el broadcaster están siempre exentos.')}</strong></p>
 
       <div class="riga-check">
         <input type="checkbox" id="chk-as-attivo" ${a.attivo ? 'checked' : ''}>
-        <label for="chk-as-attivo">Attiva l'antispam</label>
+        <label for="chk-as-attivo">${L('Attiva l\'antispam', 'Enable anti-spam', 'Activa el antispam')}</label>
       </div>
 
       <div class="riga-check spazio-sopra">
         <input type="checkbox" id="chk-as-link" ${sel(a.link, true) ? 'checked' : ''}>
-        <label for="chk-as-link">Blocca i link non autorizzati</label>
+        <label for="chk-as-link">${L('Blocca i link non autorizzati', 'Block unauthorized links', 'Bloquea los enlaces no autorizados')}</label>
       </div>
       <div class="riga-flessibile">
-        <span class="suggerimento">Possono postare link:</span>
+        <span class="suggerimento">${L('Possono postare link:', 'Can post links:', 'Pueden publicar enlaces:')}</span>
         <select id="sel-as-linktier">
-          <option value="mod" ${a.linkTier === 'mod' ? 'selected' : ''}>solo mod</option>
-          <option value="vip" ${a.linkTier === 'vip' ? 'selected' : ''}>VIP e mod</option>
-          <option value="sub" ${(a.linkTier || 'sub') === 'sub' ? 'selected' : ''}>sub, VIP e mod</option>
-          <option value="tutti" ${a.linkTier === 'tutti' ? 'selected' : ''}>tutti (non bloccare)</option>
+          <option value="mod" ${a.linkTier === 'mod' ? 'selected' : ''}>${L('solo mod', 'mods only', 'solo mods')}</option>
+          <option value="vip" ${a.linkTier === 'vip' ? 'selected' : ''}>${L('VIP e mod', 'VIPs and mods', 'VIP y mods')}</option>
+          <option value="sub" ${(a.linkTier || 'sub') === 'sub' ? 'selected' : ''}>${L('sub, VIP e mod', 'subs, VIPs and mods', 'subs, VIP y mods')}</option>
+          <option value="tutti" ${a.linkTier === 'tutti' ? 'selected' : ''}>${L('tutti (non bloccare)', 'everyone (don’t block)', 'todos (no bloquear)')}</option>
         </select>
       </div>
-      <label class="campo" for="txt-as-whitelist">Domini sempre permessi (uno per riga)</label>
-      <textarea id="txt-as-whitelist" placeholder="es. youtube.com&#10;instagram.com/tuonome">${esc((Array.isArray(a.whitelist) ? a.whitelist : []).join('\n'))}</textarea>
-      <p class="suggerimento">Il tuo canale, le clip di Twitch e andryxify.it sono già permessi.</p>
+      <label class="campo" for="txt-as-whitelist">${L('Domini sempre permessi (uno per riga)', 'Always-allowed domains (one per line)', 'Dominios siempre permitidos (uno por línea)')}</label>
+      <textarea id="txt-as-whitelist" placeholder="${L('es. youtube.com&#10;instagram.com/tuonome', 'e.g. youtube.com&#10;instagram.com/yourname', 'p. ej. youtube.com&#10;instagram.com/tunombre')}">${esc((Array.isArray(a.whitelist) ? a.whitelist : []).join('\n'))}</textarea>
+      <p class="suggerimento">${L('Il tuo canale, le clip di Twitch e andryxify.it sono già permessi.', 'Your channel, Twitch clips and andryxify.it are already allowed.', 'Tu canal, los clips de Twitch y andryxify.it ya están permitidos.')}</p>
 
       <div class="riga-check spazio-sopra">
         <input type="checkbox" id="chk-as-ripet" ${sel(a.ripetizioni, true) ? 'checked' : ''}>
-        <label for="chk-as-ripet">Blocca copypasta / messaggi ripetuti</label>
+        <label for="chk-as-ripet">${L('Blocca copypasta / messaggi ripetuti', 'Block copypasta / repeated messages', 'Bloquea copypasta / mensajes repetidos')}</label>
       </div>
       <div class="riga-check">
         <input type="checkbox" id="chk-as-flood" ${sel(a.flood, true) ? 'checked' : ''}>
-        <label for="chk-as-flood">Blocca il flood (troppi messaggi di fila)</label>
+        <label for="chk-as-flood">${L('Blocca il flood (troppi messaggi di fila)', 'Block flooding (too many messages in a row)', 'Bloquea el flood (demasiados mensajes seguidos)')}</label>
       </div>
       <div class="riga-check">
         <input type="checkbox" id="chk-as-caps" ${sel(a.maiuscole, true) ? 'checked' : ''}>
-        <label for="chk-as-caps">Blocca i messaggi TUTTI MAIUSCOLI</label>
+        <label for="chk-as-caps">${L('Blocca i messaggi TUTTI MAIUSCOLI', 'Block ALL-CAPS messages', 'Bloquea los mensajes EN MAYÚSCULAS')}</label>
       </div>
       <div class="riga-check">
         <input type="checkbox" id="chk-as-menz" ${sel(a.menzioni, true) ? 'checked' : ''}>
-        <label for="chk-as-menz">Blocca le valanghe di @menzioni</label>
+        <label for="chk-as-menz">${L('Blocca le valanghe di @menzioni', 'Block @mention floods', 'Bloquea las avalanchas de @menciones')}</label>
       </div>
 
       <div class="riga-check spazio-sopra">
         <input type="checkbox" id="chk-as-timeout" ${sel(a.timeoutRecidivi, true) ? 'checked' : ''}>
-        <label for="chk-as-timeout">Timeout crescente ai recidivi (1ª volta solo cancella, poi 1m, 5m, 10m)</label>
+        <label for="chk-as-timeout">${L('Timeout crescente ai recidivi (1ª volta solo cancella, poi 1m, 5m, 10m)', 'Escalating timeout for repeat offenders (1st time delete only, then 1m, 5m, 10m)', 'Timeout creciente a los reincidentes (1.ª vez solo borra, luego 1m, 5m, 10m)')}</label>
       </div>
       <div class="riga-check">
         <input type="checkbox" id="chk-as-avvisa" ${sel(a.avvisa, true) ? 'checked' : ''}>
-        <label for="chk-as-avvisa">Avvisa in chat quando elimina</label>
+        <label for="chk-as-avvisa">${L('Avvisa in chat quando elimina', 'Warn in chat when it deletes', 'Avisa en el chat cuando borra')}</label>
       </div>
 
-      <p class="spazio-sopra"><button class="btn" id="btn-salva-antispam">Salva antispam</button></p>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-antispam">${L('Salva antispam', 'Save anti-spam', 'Guardar antispam')}</button></p>
     </div>`);
 }
 
