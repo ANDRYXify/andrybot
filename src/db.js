@@ -296,6 +296,16 @@ CREATE TABLE IF NOT EXISTS spotify_tokens ( -- connettore Spotify per le richies
   client_secret TEXT NOT NULL DEFAULT '',     -- app Spotify dello streamer (Client Secret)
   updated_at INTEGER NOT NULL DEFAULT 0
 );
+CREATE TABLE IF NOT EXISTS tiktok_tokens ( -- connettore TikTok (Display API) per l'avviso "nuovo post", per canale
+  login TEXT PRIMARY KEY,                     -- login twitch del canale
+  access TEXT NOT NULL DEFAULT '',            -- access token (breve durata)
+  refresh TEXT NOT NULL DEFAULT '',           -- refresh token (lunga durata, ~365g)
+  scadenza INTEGER NOT NULL DEFAULT 0,        -- ms epoch di scadenza dell'access token
+  refresh_scadenza INTEGER NOT NULL DEFAULT 0,-- ms epoch di scadenza del refresh token
+  open_id TEXT NOT NULL DEFAULT '',           -- id opaco dell'account TikTok collegato
+  username TEXT NOT NULL DEFAULT '',          -- @username TikTok (solo per mostrarlo nella UI)
+  updated_at INTEGER NOT NULL DEFAULT 0
+);
 CREATE TABLE IF NOT EXISTS linee_guida (     -- regole/limiti che lo streamer dà a "lia": lei le rispetta SEMPRE
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   channel TEXT NOT NULL,
@@ -357,6 +367,7 @@ aggiungiColonna('telegram', 'owner_tg_id', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('telegram', 'owner_tg_nome', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('telegram', 'yt_ultimo', "TEXT NOT NULL DEFAULT ''");   // id ultimo video YouTube annunciato (anti-doppioni)
 aggiungiColonna('telegram', 'ig_ultimo', "TEXT NOT NULL DEFAULT ''");   // id ultimo post Instagram annunciato (anti-doppioni)
+aggiungiColonna('telegram', 'tk_ultimo', "TEXT NOT NULL DEFAULT ''");   // id ultimo post TikTok annunciato (anti-doppioni)
 aggiungiColonna('quotes', 'autore', "TEXT NOT NULL DEFAULT ''");   // chi ha DETTO la citazione (import x.la: nome utente)
 aggiungiColonna('quotes', 'data', "TEXT NOT NULL DEFAULT ''");     // data della citazione (ISO YYYY-MM-DD, se nota)
 // linee guida: ambito (dove valgono + con chi) — regole contestuali di "lia"
@@ -654,6 +665,34 @@ export const spotifyTokens = {
   remove(login) { db.prepare('DELETE FROM spotify_tokens WHERE login=?').run(String(login).toLowerCase()); },
 };
 
+// ---------------------------------------------------------------- TikTok (Display API)
+// Token OAuth per l'avviso "nuovo post su TikTok". L'app TikTok è UNICA (globale,
+// dell'operatore): qui salviamo solo i token del singolo canale collegato.
+export const tiktokTokens = {
+  get(login) {
+    return db.prepare('SELECT * FROM tiktok_tokens WHERE login=?').get(String(login).toLowerCase()) || null;
+  },
+  set(login, { access = '', refresh = '', scadenza = 0, refreshScadenza = 0, openId, username } = {}) {
+    const l = String(login).toLowerCase();
+    const cur = this.get(l) || {};
+    db.prepare(`INSERT INTO tiktok_tokens (login, access, refresh, scadenza, refresh_scadenza, open_id, username, updated_at)
+      VALUES (?,?,?,?,?,?,?,?)
+      ON CONFLICT(login) DO UPDATE SET
+        access=excluded.access,
+        refresh=CASE WHEN excluded.refresh!='' THEN excluded.refresh ELSE tiktok_tokens.refresh END,
+        scadenza=excluded.scadenza,
+        refresh_scadenza=CASE WHEN excluded.refresh_scadenza>0 THEN excluded.refresh_scadenza ELSE tiktok_tokens.refresh_scadenza END,
+        open_id=CASE WHEN excluded.open_id!='' THEN excluded.open_id ELSE tiktok_tokens.open_id END,
+        username=CASE WHEN excluded.username!='' THEN excluded.username ELSE tiktok_tokens.username END,
+        updated_at=excluded.updated_at`)
+      .run(l, access, refresh, scadenza, refreshScadenza,
+        openId !== undefined ? String(openId || '') : (cur.open_id || ''),
+        username !== undefined ? String(username || '') : (cur.username || ''), now());
+    return this.get(l);
+  },
+  scollega(login) { db.prepare('DELETE FROM tiktok_tokens WHERE login=?').run(String(login).toLowerCase()); },
+};
+
 // ---------------------------------------------------------------- IA locale (modello)
 // Il modello auto-addestrato di ciascun canale (vocabolario + vettori semantici).
 // Solo dati derivati dalla chat: si può cancellare senza perdere nulla di vero.
@@ -819,6 +858,9 @@ export const tgConf = {
   },
   setIgUltimo(channel, postId) {
     db.prepare('UPDATE telegram SET ig_ultimo=? WHERE channel=?').run(String(postId || ''), String(channel).toLowerCase());
+  },
+  setTkUltimo(channel, postId) {
+    db.prepare('UPDATE telegram SET tk_ultimo=? WHERE channel=?').run(String(postId || ''), String(channel).toLowerCase());
   },
   // salva (o azzera) il message_id dell'avviso live Twitch, per poterlo eliminare
   setMsgId(channel, msgId) {
