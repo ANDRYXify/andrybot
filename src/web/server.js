@@ -663,7 +663,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       req.session.abbonando = { login, display: disp };
       // veniva da "attiva il bot" (Base + add-on scelti)? → dritti al checkout Stripe
       if (sf.compra && config.stripe.attivo) {
-        const url = await abbonamenti.creaCheckout({ login, pacchetti: sf.pacchetti || [], coupon: !!sf.coupon }).catch(() => null);
+        const url = await abbonamenti.creaCheckout({ login, pacchetti: sf.pacchetti || [], bundle: sf.bundle || null }).catch(() => null);
         if (url) return res.redirect(url);
       }
       return res.redirect('/?abbonati=1');
@@ -870,14 +870,18 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!config.stripe.attivo) return res.status(503).json({ errore: 'Gli abbonamenti non sono ancora attivi.' });
     const login = identitaDi(currentUser(req)) || String(req.session?.abbonando?.login || '').toLowerCase();
     if (!login) return res.status(401).json({ errore: 'non autenticato' });
-    // BUNDLE curato → i suoi add-on + coupon sconto. Altrimenti à la carte
-    // (retrocompat: 'pro' → base + tutti gli add-on).
+    // BUNDLE curato → prezzo unico scontato (i suoi add-on li sblocca il gating).
+    // Altrimenti à la carte (retrocompat: 'pro' → base + tutti gli add-on).
     const bundle = abbonamenti.bundleById(req.body?.bundle);
-    let pacchetti, coupon = false;
-    if (bundle) { pacchetti = bundle.addon; coupon = true; }
-    else if (String(req.body?.tier || '').toLowerCase() === 'pro') pacchetti = abbonamenti.ADDON_IDS;
-    else pacchetti = abbonamenti.normalizzaPacchetti(req.body?.pacchetti);
-    const url = await abbonamenti.creaCheckout({ login, pacchetti, coupon });
+    if (bundle) {
+      const url = await abbonamenti.creaCheckout({ login, bundle: bundle.id });
+      if (!url) return res.status(400).json({ errore: 'Bundle non disponibile.' });
+      return res.json({ url });
+    }
+    const pacchetti = String(req.body?.tier || '').toLowerCase() === 'pro'
+      ? abbonamenti.ADDON_IDS
+      : abbonamenti.normalizzaPacchetti(req.body?.pacchetti);
+    const url = await abbonamenti.creaCheckout({ login, pacchetti });
     if (!url) return res.status(400).json({ errore: 'Piano non disponibile.' });
     res.json({ url });
   }));
@@ -931,13 +935,13 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   app.get('/accedi', (req, res) => {
     if (!config.stripe.attivo) return res.redirect('/');   // paywall spento: niente ingresso extra
     const state = crypto.randomUUID();
-    // BUNDLE curato (?bundle=creator|interazione|tutto) → i suoi add-on + coupon.
+    // BUNDLE curato (?bundle=creator|interazione|tutto) → prezzo unico scontato.
     // Altrimenti add-on à la carte (CSV). Retrocompat: ?tier=pro → tutti gli add-on.
     const bundle = abbonamenti.bundleById(req.query.bundle);
-    const pacchetti = bundle ? bundle.addon
-      : (String(req.query.tier || '').toLowerCase() === 'pro' ? abbonamenti.ADDON_IDS : abbonamenti.normalizzaPacchetti(req.query.pacchetti));
-    // ricorda la scelta: dopo il login self-service si va DRITTI al checkout (Base + add-on)
-    req.session.selfFlow = { state, compra: true, pacchetti, coupon: !!bundle };
+    const pacchetti = String(req.query.tier || '').toLowerCase() === 'pro'
+      ? abbonamenti.ADDON_IDS : abbonamenti.normalizzaPacchetti(req.query.pacchetti);
+    // ricorda la scelta: dopo il login self-service si va DRITTI al checkout
+    req.session.selfFlow = { state, compra: true, pacchetti, bundle: bundle?.id || null };
     res.redirect(auth.authUrl([], state));
   });
 
