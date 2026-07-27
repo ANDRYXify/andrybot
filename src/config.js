@@ -114,7 +114,7 @@ export const config = {
 
   // Spotify (richieste musicali) — OPZIONALE. Serve un'app su
   // developer.spotify.com con Client ID/Secret e il redirect
-  // https://bot.andryxify.it/spotify/callback tra i "Redirect URIs". Senza
+  // https://socialbot.live/spotify/callback tra i "Redirect URIs". Senza
   // credenziali il connettore resta spento (nessun bottone "Connetti Spotify").
   spotify: (() => {
     const clientId = env('SPOTIFY_CLIENT_ID');
@@ -131,7 +131,7 @@ export const config = {
   // TikTok (avviso "nuovo post") — OPZIONALE, via API ufficiale Display API.
   // Serve UN'app su developers.tiktok.com (una sola, dell'operatore) con Client
   // Key/Secret, gli scope user.info.basic + video.list e il redirect
-  // https://bot.andryxify.it/tiktok/callback tra i "Redirect URI". Ogni streamer
+  // https://socialbot.live/tiktok/callback tra i "Redirect URI". Ogni streamer
   // collega poi il PROPRIO account TikTok (OAuth). Senza credenziali il connettore
   // resta spento (nessun bottone "Collega TikTok").
   tiktok: (() => {

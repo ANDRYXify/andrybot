@@ -1,4 +1,4 @@
-# SocialBot — bot per Twitch · https://bot.andryxify.it
+# SocialBot — bot per Twitch · https://socialbot.live
 # La vetrina pubblica è indicizzabile; le aree private rispondono già 404 senza
 # accesso e le teniamo fuori dal crawl budget. Gli asset restano crawlabili così
 # Google può renderizzare la pagina (SPA).
@@ -13,4 +13,4 @@ Disallow: /sblocca
 Disallow: /mod
 Allow: /
 
-Sitemap: https://bot.andryxify.it/sitemap.xml
+Sitemap: https://socialbot.live/sitemap.xml
