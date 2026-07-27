@@ -64,19 +64,19 @@ export const ADDON = [
     funzioni: { notifiche: true, telegram: true },
   },
   {
-    id: 'clip', nome: 'Clip Automatiche', prezzo: 2.79, prezzoTesto: '€2,79/mese',
+    id: 'clip', nome: 'Clip Automatiche', prezzo: 0.99, prezzoTesto: '€0,99/mese',
     priceEnv: 'addon_clip', icona: '🎬',
     sommario: 'I momenti migliori clippati e salvati in automatico durante la diretta.',
     funzioni: { clipAuto: true },
   },
   {
-    id: 'voce', nome: 'Comandi Vocali', prezzo: 2.79, prezzoTesto: '€2,79/mese',
+    id: 'voce', nome: 'Comandi Vocali', prezzo: 0.99, prezzoTesto: '€0,99/mese',
     priceEnv: 'addon_voce', icona: '🎙️',
     sommario: 'Guida il bot con la voce: cambia titolo, categoria e assegna VIP mentre streami.',
     funzioni: { voce: true },
   },
   {
-    id: 'squadra', nome: 'Squadra', prezzo: 1.79, prezzoTesto: '€1,79/mese',
+    id: 'squadra', nome: 'Squadra', prezzo: 2.99, prezzoTesto: '€2,99/mese',
     priceEnv: 'addon_squadra', icona: '👥',
     sommario: 'Fino a 10 moderatori per gestire il canale in team con i tuoi mod.',
     funzioni: { moderatori: 10 },
@@ -117,11 +117,11 @@ export function normalizzaPacchetti(x) {
 // intatta (il gating li conosce uno per uno).
 const _sommaAddon = (ids) => ids.reduce((t, id) => t + (addonById(id)?.prezzo || 0), 0);
 export const BUNDLE = [
-  { id: 'creator', nome: 'Creator', icona: '🎨', priceEnv: 'bundle_creator', prezzo: 5.99, addon: ['effetti', 'notifiche', 'clip'],
+  { id: 'creator', nome: 'Creator', icona: '🎨', priceEnv: 'bundle_creator', prezzo: 4.49, addon: ['effetti', 'notifiche', 'clip'],
     sommario: 'Presenza e visibilità: overlay ed effetti, avvisi live sui social, clip automatiche.' },
-  { id: 'interazione', nome: 'Interazione', icona: '🎉', priceEnv: 'bundle_interazione', prezzo: 6.99, addon: ['musica', 'giochi', 'voce'],
+  { id: 'interazione', nome: 'Interazione', icona: '🎉', priceEnv: 'bundle_interazione', prezzo: 5.49, addon: ['musica', 'giochi', 'voce'],
     sommario: 'Community attiva: richieste musicali, minigiochi e monete, comandi a voce.' },
-  { id: 'tutto', nome: 'Tutto', icona: '🚀', priceEnv: 'bundle_tutto', prezzo: 13.99, addon: [...ADDON_IDS],
+  { id: 'tutto', nome: 'Tutto', icona: '🚀', priceEnv: 'bundle_tutto', prezzo: 12.49, addon: [...ADDON_IDS],
     sommario: 'Ogni super-potere sbloccato: tutti gli add-on in un colpo solo.' },
 ].map((b) => {
   const pieno = Math.round(_sommaAddon(b.addon) * 100) / 100;
