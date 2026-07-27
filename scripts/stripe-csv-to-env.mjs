@@ -14,13 +14,15 @@ import { BASE, ADDON, BUNDLE } from '../src/features/abbonamenti.js';
 const file = process.argv[2];
 if (!file) { console.error('Uso: node scripts/stripe-csv-to-env.mjs <prezzi.csv>'); process.exit(1); }
 
-// nome prodotto (minuscolo) → { env, prezzo } dal catalogo
+// nome prodotto (minuscolo) → { env, prezzo } dal catalogo. Per i bundle accetto
+// sia "Creator" sia "Bundle Creator" (dipende da come li hai chiamati su Stripe).
 const catalogo = [
-  { nome: BASE.nome, env: 'STRIPE_PRICE_' + BASE.priceEnv.toUpperCase(), prezzo: BASE.prezzo },
-  ...ADDON.map((a) => ({ nome: a.nome, env: 'STRIPE_PRICE_' + a.priceEnv.toUpperCase(), prezzo: a.prezzo })),
-  ...BUNDLE.map((b) => ({ nome: b.nome, env: 'STRIPE_PRICE_' + b.priceEnv.toUpperCase(), prezzo: b.prezzo })),
+  { nome: BASE.nome, nomi: [BASE.nome], env: 'STRIPE_PRICE_' + BASE.priceEnv.toUpperCase(), prezzo: BASE.prezzo },
+  ...ADDON.map((a) => ({ nome: a.nome, nomi: [a.nome], env: 'STRIPE_PRICE_' + a.priceEnv.toUpperCase(), prezzo: a.prezzo })),
+  ...BUNDLE.map((b) => ({ nome: b.nome, nomi: [b.nome, 'Bundle ' + b.nome], env: 'STRIPE_PRICE_' + b.priceEnv.toUpperCase(), prezzo: b.prezzo })),
 ];
-const perNome = new Map(catalogo.map((c) => [c.nome.trim().toLowerCase(), c]));
+const perNome = new Map();
+for (const c of catalogo) for (const n of c.nomi) perNome.set(n.trim().toLowerCase(), c);
 
 // Parser CSV minimale (gestisce virgolette e virgole dentro i campi, es. "2,99").
 function parseCsv(testo) {
