@@ -1651,25 +1651,23 @@ function pannelloClip() {
   const s = impostazioni();
   return pannello('clip', `
     <div class="carta">
-      <h2>${_hIco(ICO.clip)}Clip automatiche</h2>
-      <p>Il bot riconosce i <strong>momenti da clip</strong> da solo: non conta solo i messaggi,
-      ma capisce quando la chat <strong>esplode di reazioni</strong>, ride tutta insieme o arrivano
-      <strong>sub, bit o raid</strong>. E si adatta al ritmo del tuo canale (piccolo o grande).</p>
+      <h2>${_hIco(ICO.clip)}${L('Clip automatiche', 'Automatic clips', 'Clips automáticos')}</h2>
+      <p>${L('Il bot riconosce i', 'The bot spots', 'El bot reconoce los')} <strong>${L('momenti da clip', 'clip-worthy moments', 'momentos para clip')}</strong> ${L('da solo: non conta solo i messaggi, ma capisce quando la chat', 'on its own: it doesn’t just count messages, it senses when chat', 'solo: no cuenta solo los mensajes, sino que capta cuándo el chat')} <strong>${L('esplode di reazioni', 'explodes with reactions', 'explota de reacciones')}</strong>${L(', ride tutta insieme o arrivano', ', laughs all together, or', ', se ríe a la vez o llegan')} <strong>${L('sub, bit o raid', 'subs, bits or raids', 'subs, bits o raids')}</strong> ${L('arrivano. E si adatta al ritmo del tuo canale (piccolo o grande).', 'come in. And it adapts to your channel’s pace (small or big).', 'And it adapts to your channel’s pace (small or big).')}</p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore">
           <input type="checkbox" id="chk-clip" ${s.clipAuto ? 'checked' : ''}>
           <span class="levetta"></span>
         </label>
-        <span class="etichetta-stato" id="etichetta-clip">${s.clipAuto ? 'Clip automatiche accese' : 'Clip automatiche spente'}</span>
+        <span class="etichetta-stato" id="etichetta-clip">${s.clipAuto ? L('Clip automatiche accese', 'Automatic clips on', 'Clips automáticos activados') : L('Clip automatiche spente', 'Automatic clips off', 'Clips automáticos desactivados')}</span>
       </div>
-      <label class="campo spazio-sopra" for="rng-clip-sens">Sensibilità: <span id="val-clip-sens">${s.clipAutoSensibilita}</span></label>
+      <label class="campo spazio-sopra" for="rng-clip-sens">${L('Sensibilità:', 'Sensitivity:', 'Sensibilidad:')} <span id="val-clip-sens">${s.clipAutoSensibilita}</span></label>
       <input type="range" id="rng-clip-sens" min="1" max="10" value="${s.clipAutoSensibilita}">
-      <p class="suggerimento">Più alta = più clip (basta poco). Più bassa = solo i momenti davvero forti.</p>
-      <p class="spazio-sopra"><button class="btn" id="btn-salva-clip">Salva</button></p>
+      <p class="suggerimento">${L('Più alta = più clip (basta poco). Più bassa = solo i momenti davvero forti.', 'Higher = more clips (little is enough). Lower = only the really strong moments.', 'Más alta = más clips (basta poco). Más baja = solo los momentos realmente fuertes.')}</p>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-clip">${L('Salva', 'Save', 'Guardar')}</button></p>
     </div>
     <div class="carta">
-      <h2>Ultime clip</h2>
-      <ul class="lista-voci" id="lista-clip"><li class="vuoto">Caricamento…</li></ul>
+      <h2>${L('Ultime clip', 'Latest clips', 'Últimos clips')}</h2>
+      <ul class="lista-voci" id="lista-clip"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
     </div>`);
 }
 
@@ -1689,101 +1687,93 @@ function pannelloAscolto() {
 
   return pannello('ascolto', `
     <div class="carta">
-      <h2>${_hIco(ICO.cuffie)}Momenti salienti (dal server)</h2>
-      <p>Il bot ascolta l'audio della tua live e crea una clip da solo quando "esplode": urla, risate, hype.</p>
+      <h2>${_hIco(ICO.cuffie)}${L('Momenti salienti (dal server)', 'Highlights (from the server)', 'Momentos destacados (desde el servidor)')}</h2>
+      <p>${L('Il bot ascolta l\'audio della tua live e crea una clip da solo quando "esplode": urla, risate, hype.', 'The bot listens to your live audio and clips on its own when it "explodes": shouts, laughter, hype.', 'El bot escucha el audio de tu directo y crea un clip solo cuando "explota": gritos, risas, hype.')}</p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore">
           <input type="checkbox" id="toggle-ascolto" ${s.ascoltoLive ? 'checked' : ''}>
           <span class="levetta"></span>
         </label>
-        <span class="etichetta-stato" id="etichetta-ascolto">${s.ascoltoLive ? 'Ascolto acceso' : 'Ascolto spento'}</span>
+        <span class="etichetta-stato" id="etichetta-ascolto">${s.ascoltoLive ? L('Ascolto acceso', 'Listening on', 'Escucha activada') : L('Ascolto spento', 'Listening off', 'Escucha desactivada')}</span>
         ${inAscolto
-          ? '<span class="badge verde">● in ascolto ora</span>'
-          : '<span class="badge">○ non in ascolto</span>'}
+          ? `<span class="badge verde">● ${L('in ascolto ora', 'listening now', 'escuchando ahora')}</span>`
+          : `<span class="badge">○ ${L('non in ascolto', 'not listening', 'sin escuchar')}</span>`}
       </div>
-      <label class="campo" for="rng-ascolto">Sensibilità: <span id="val-ascolto">${sens}</span></label>
+      <label class="campo" for="rng-ascolto">${L('Sensibilità:', 'Sensitivity:', 'Sensibilidad:')} <span id="val-ascolto">${sens}</span></label>
       <input type="range" id="rng-ascolto" min="1" max="10" step="1" value="${sens}">
-      <p class="suggerimento">Più alto = più clip (prende anche i momenti meno intensi). Più basso = solo i picchi veri.</p>
-      <p class="spazio-sopra"><button class="btn" id="btn-salva-ascolto">Salva</button></p>
-      <p class="suggerimento spazio-sopra">Consuma risorse del server: è limitato a pochi canali live insieme.
-      C'è un piccolo ritardo (~15-30s) dovuto a Twitch, ma le clip prendono comunque il momento.</p>
+      <p class="suggerimento">${L('Più alto = più clip (prende anche i momenti meno intensi). Più basso = solo i picchi veri.', 'Higher = more clips (catches milder moments too). Lower = only the real peaks.', 'Más alto = más clips (coge también los momentos menos intensos). Más bajo = solo los picos reales.')}</p>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-ascolto">${L('Salva', 'Save', 'Guardar')}</button></p>
+      <p class="suggerimento spazio-sopra">${L('Consuma risorse del server: è limitato a pochi canali live insieme. C\'è un piccolo ritardo (~15-30s) dovuto a Twitch, ma le clip prendono comunque il momento.', 'It uses server resources: limited to a few live channels at once. There’s a small delay (~15-30s) due to Twitch, but the clips still catch the moment.', 'Consume recursos del servidor: está limitado a pocos canales en directo a la vez. Hay un pequeño retardo (~15-30s) por Twitch, pero los clips igualmente pillan el momento.')}</p>
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.voce)}Comando vocale</h2>
-      <p>I comandi vocali funzionano <strong class="primo-piano">nel browser</strong>, senza installare niente:
-      apri la pagina di ascolto, premi Avvia, e quando dici una parola chiave il bot fa quello che hai impostato
-      nei Moduli.</p>
+      <h2>${_hIco(ICO.voce)}${L('Comando vocale', 'Voice command', 'Comando por voz')}</h2>
+      <p>${L('I comandi vocali funzionano', 'Voice commands work', 'Los comandos por voz funcionan')} <strong class="primo-piano">${L('nel browser', 'in the browser', 'en el navegador')}</strong>, ${L('senza installare niente: apri la pagina di ascolto, premi Avvia, e quando dici una parola chiave il bot fa quello che hai impostato nei Moduli.', 'with nothing to install: open the listening page, press Start, and when you say a keyword the bot does what you set in Modules.', 'sin instalar nada: abre la página de escucha, pulsa Iniciar, y cuando dices una palabra clave el bot hace lo que configuraste en los Módulos.')}</p>
       <p class="spazio-sopra">
-        <a class="btn grande" href="/voce.html" target="_blank" rel="noopener">${_bIco(ICO.voce)}Apri l'ascolto vocale</a>
+        <a class="btn grande" href="/voce.html" target="_blank" rel="noopener">${_bIco(ICO.voce)}${L('Apri l\'ascolto vocale', 'Open voice listening', 'Abre la escucha por voz')}</a>
       </p>
-      <p class="suggerimento spazio-sopra">Tienila aperta mentre streammi. Funziona su Chrome o Edge (Mac e Windows).</p>
-      <p class="suggerimento">I comandi vocali si creano e modificano in
-      <strong class="primo-piano">Chat &amp; comandi → Comandi</strong> (innesco "Comando vocale").</p>
+      <p class="suggerimento spazio-sopra">${L('Tienila aperta mentre streammi. Funziona su Chrome o Edge (Mac e Windows).', 'Keep it open while you stream. Works on Chrome or Edge (Mac and Windows).', 'Mantenla abierta mientras haces directo. Funciona en Chrome o Edge (Mac y Windows).')}</p>
+      <p class="suggerimento">${L('I comandi vocali si creano e modificano in', 'Voice commands are created and edited in', 'Los comandos por voz se crean y editan en')}
+      <strong class="primo-piano">${L('Chat & comandi → Comandi', 'Chat & commands → Commands', 'Chat y comandos → Comandos')}</strong> (${L('innesco "Comando vocale"', '"Voice command" trigger', 'disparador "Comando por voz"')}).</p>
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.giochi)}Cambia categoria a voce</h2>
-      <p>Dici <strong class="primo-piano">«<span id="cat-esempio">${esc(cc.trigger || 'categoria')}</span> <em>nome del gioco</em>»</strong>
-      mentre streammi e il bot cambia la categoria del canale su Twitch. Se ti sente male,
-      prova comunque a indovinare il gioco più somigliante tra le categorie di Twitch.</p>
+      <h2>${_hIco(ICO.giochi)}${L('Cambia categoria a voce', 'Change category by voice', 'Cambia categoría por voz')}</h2>
+      <p>${L('Dici', 'Say', 'Di')} <strong class="primo-piano">«<span id="cat-esempio">${esc(cc.trigger || 'categoria')}</span> <em>${L('nome del gioco', 'game name', 'nombre del juego')}</em>»</strong>
+      ${L('mentre streammi e il bot cambia la categoria del canale su Twitch. Se ti sente male, prova comunque a indovinare il gioco più somigliante tra le categorie di Twitch.', 'while you stream and the bot changes the channel category on Twitch. If it mishears you, it still tries to guess the closest game among Twitch categories.', 'mientras haces directo y el bot cambia la categoría del canal en Twitch. Si te oye mal, intenta igualmente adivinar el juego más parecido entre las categorías de Twitch.')}</p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore">
           <input type="checkbox" id="chk-categoria" ${cc.attivo ? 'checked' : ''}>
           <span class="levetta"></span>
         </label>
-        <span class="etichetta-stato" id="etichetta-categoria">${cc.attivo ? 'Attivo' : 'Spento'}</span>
+        <span class="etichetta-stato" id="etichetta-categoria">${cc.attivo ? L('Attivo', 'On', 'Activo') : L('Spento', 'Off', 'Apagado')}</span>
       </div>
-      <label class="campo" for="inp-cat-trigger">Parola chiave (quella che dici prima del gioco)</label>
-      <input type="text" id="inp-cat-trigger" class="campo-largo" maxlength="30" value="${esc(cc.trigger || 'categoria')}" placeholder="categoria">
+      <label class="campo" for="inp-cat-trigger">${L('Parola chiave (quella che dici prima del gioco)', 'Keyword (the one you say before the game)', 'Palabra clave (la que dices antes del juego)')}</label>
+      <input type="text" id="inp-cat-trigger" class="campo-largo" maxlength="30" value="${esc(cc.trigger || 'categoria')}" placeholder="${L('categoria', 'category', 'categoría')}">
       <div class="riga-check spazio-sopra">
         <input type="checkbox" id="chk-cat-annuncia" ${cc.annuncia !== false ? 'checked' : ''}>
-        <label for="chk-cat-annuncia">Annuncia il cambio in chat</label>
+        <label for="chk-cat-annuncia">${L('Annuncia il cambio in chat', 'Announce the change in chat', 'Anuncia el cambio en el chat')}</label>
       </div>
-      <p class="spazio-sopra"><button class="btn" id="btn-salva-categoria">Salva</button></p>
-      ${mancaPermesso ? `<p class="nota-lettura">Per cambiare categoria il bot ha bisogno del permesso <strong>Gestione canale</strong> su Twitch.
-      <a href="/auth/permessi">Concedi il permesso</a> (ti riporta qui dopo l'autorizzazione).</p>` : ''}
-      <p class="suggerimento spazio-sopra">Esempi: «categoria Fortnite», «categoria League of Legends».
-      La parola chiave è a tua scelta (es. «gioco», «passa a»). Funziona dalla stessa pagina di ascolto vocale qui sopra.</p>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-categoria">${L('Salva', 'Save', 'Guardar')}</button></p>
+      ${mancaPermesso ? `<p class="nota-lettura">${L('Per cambiare categoria il bot ha bisogno del permesso', 'To change the category the bot needs the', 'Para cambiar la categoría el bot necesita el permiso')} <strong>${L('Gestione canale', 'Manage Channel', 'Gestión del canal')}</strong> ${L('su Twitch.', 'permission on Twitch.', 'en Twitch.')}
+      <a href="/auth/permessi">${L('Concedi il permesso', 'Grant the permission', 'Concede el permiso')}</a> ${L('(ti riporta qui dopo l\'autorizzazione).', '(it brings you back here after authorizing).', '(te devuelve aquí tras autorizar).')}</p>` : ''}
+      <p class="suggerimento spazio-sopra">${L('Esempi: «categoria Fortnite», «categoria League of Legends». La parola chiave è a tua scelta (es. «gioco», «passa a»). Funziona dalla stessa pagina di ascolto vocale qui sopra.', 'Examples: “category Fortnite”, “category League of Legends”. The keyword is your choice (e.g. “game”, “switch to”). It works from the same voice-listening page above.', 'Ejemplos: «categoría Fortnite», «categoría League of Legends». La palabra clave la eliges tú (p. ej. «juego», «cambia a»). Funciona desde la misma página de escucha por voz de arriba.')}</p>
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.scrivi)}Cambia titolo a voce</h2>
-      <p>Dici <strong class="primo-piano">«<span id="tit-esempio">${esc(ct.trigger || 'titolo')}</span> <em>il tuo titolo</em>»</strong>
-      e il bot aggiorna il titolo dello stream su Twitch (testo libero, come lo dici).</p>
+      <h2>${_hIco(ICO.scrivi)}${L('Cambia titolo a voce', 'Change title by voice', 'Cambia el título por voz')}</h2>
+      <p>${L('Dici', 'Say', 'Di')} <strong class="primo-piano">«<span id="tit-esempio">${esc(ct.trigger || 'titolo')}</span> <em>${L('il tuo titolo', 'your title', 'tu título')}</em>»</strong>
+      ${L('e il bot aggiorna il titolo dello stream su Twitch (testo libero, come lo dici).', 'and the bot updates the stream title on Twitch (free text, as you say it).', 'y el bot actualiza el título del directo en Twitch (texto libre, como lo dices).')}</p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore">
           <input type="checkbox" id="chk-titolo" ${ct.attivo ? 'checked' : ''}>
           <span class="levetta"></span>
         </label>
-        <span class="etichetta-stato" id="etichetta-titolo">${ct.attivo ? 'Attivo' : 'Spento'}</span>
+        <span class="etichetta-stato" id="etichetta-titolo">${ct.attivo ? L('Attivo', 'On', 'Activo') : L('Spento', 'Off', 'Apagado')}</span>
       </div>
-      <label class="campo" for="inp-tit-trigger">Parola chiave (quella che dici prima del titolo)</label>
-      <input type="text" id="inp-tit-trigger" class="campo-largo" maxlength="30" value="${esc(ct.trigger || 'titolo')}" placeholder="titolo">
+      <label class="campo" for="inp-tit-trigger">${L('Parola chiave (quella che dici prima del titolo)', 'Keyword (the one you say before the title)', 'Palabra clave (la que dices antes del título)')}</label>
+      <input type="text" id="inp-tit-trigger" class="campo-largo" maxlength="30" value="${esc(ct.trigger || 'titolo')}" placeholder="${L('titolo', 'title', 'título')}">
       <div class="riga-check spazio-sopra">
         <input type="checkbox" id="chk-tit-annuncia" ${ct.annuncia !== false ? 'checked' : ''}>
-        <label for="chk-tit-annuncia">Annuncia il cambio in chat</label>
+        <label for="chk-tit-annuncia">${L('Annuncia il cambio in chat', 'Announce the change in chat', 'Anuncia el cambio en el chat')}</label>
       </div>
-      <p class="spazio-sopra"><button class="btn" id="btn-salva-titolo">Salva</button></p>
-      ${mancaPermesso ? `<p class="nota-lettura">Anche il titolo usa il permesso <strong>Gestione canale</strong>.
-      <a href="/auth/permessi">Concedilo qui</a> (vale per categoria e titolo).</p>` : ''}
-      <p class="suggerimento spazio-sopra">Esempio: «titolo Si torna su Elden Ring, si punta al boss!».
-      Puoi cambiare la parola chiave (es. «nuovo titolo»). Stessa pagina di ascolto vocale qui sopra.</p>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-titolo">${L('Salva', 'Save', 'Guardar')}</button></p>
+      ${mancaPermesso ? `<p class="nota-lettura">${L('Anche il titolo usa il permesso', 'The title also uses the', 'El título también usa el permiso')} <strong>${L('Gestione canale', 'Manage Channel', 'Gestión del canal')}</strong> ${L('.', ' permission.', '.')}
+      <a href="/auth/permessi">${L('Concedilo qui', 'Grant it here', 'Concédelo aquí')}</a> ${L('(vale per categoria e titolo).', '(applies to category and title).', '(vale para categoría y título).')}</p>` : ''}
+      <p class="suggerimento spazio-sopra">${L('Esempio: «titolo Si torna su Elden Ring, si punta al boss!». Puoi cambiare la parola chiave (es. «nuovo titolo»). Stessa pagina di ascolto vocale qui sopra.', 'Example: “title Back on Elden Ring, going for the boss!”. You can change the keyword (e.g. “new title”). Same voice-listening page above.', 'Ejemplo: «título ¡Volvemos a Elden Ring, a por el jefe!». Puedes cambiar la palabra clave (p. ej. «nuevo título»). Misma página de escucha por voz de arriba.')}</p>
     </div>
     ${proprietario ? `
     <div class="carta">
-      <h2>${_hIco(ICO.cuffie)}Impara mentre parlo</h2>
-      <p>Con la pagina di ascolto aperta, il bot <strong class="primo-piano">ti sente parlare in diretta</strong> e cresce:
-      impara i tuoi modi di dire e il tuo tono, così ti somiglia sempre di più. <strong>Solo la tua voce</strong> — mai da altri account.</p>
+      <h2>${_hIco(ICO.cuffie)}${L('Impara mentre parlo', 'Learns while I talk', 'Aprende mientras hablo')}</h2>
+      <p>${L('Con la pagina di ascolto aperta, il bot', 'With the listening page open, the bot', 'Con la página de escucha abierta, el bot')} <strong class="primo-piano">${L('ti sente parlare in diretta', 'hears you speak live', 'te oye hablar en directo')}</strong> ${L('e cresce: impara i tuoi modi di dire e il tuo tono, così ti somiglia sempre di più.', 'and grows: it learns your sayings and your tone, so it sounds more and more like you.', 'y crece: aprende tus expresiones y tu tono, así se te parece cada vez más.')} <strong>${L('Solo la tua voce', 'Only your voice', 'Solo tu voz')}</strong> — ${L('mai da altri account.', 'never from other accounts.', 'nunca de otras cuentas.')}</p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore">
           <input type="checkbox" id="chk-impara" ${iv.attivo ? 'checked' : ''}>
           <span class="levetta"></span>
         </label>
-        <span class="etichetta-stato" id="etichetta-impara">${iv.attivo ? 'Attivo' : 'Spento'}</span>
+        <span class="etichetta-stato" id="etichetta-impara">${iv.attivo ? L('Attivo', 'On', 'Activo') : L('Spento', 'Off', 'Apagado')}</span>
       </div>
-      <p class="suggerimento spazio-sopra">L'audio <strong>non lascia il tuo PC</strong>: la trascrizione avviene nel browser,
-      al bot arriva solo il testo. Funziona dalla stessa pagina di ascolto vocale qui sopra.</p>
+      <p class="suggerimento spazio-sopra">${L('L\'audio <strong>non lascia il tuo PC</strong>: la trascrizione avviene nel browser, al bot arriva solo il testo. Funziona dalla stessa pagina di ascolto vocale qui sopra.', 'The audio <strong>never leaves your PC</strong>: transcription happens in the browser, only the text reaches the bot. It works from the same voice-listening page above.', 'El audio <strong>no sale de tu PC</strong>: la transcripción ocurre en el navegador, al bot solo le llega el texto. Funciona desde la misma página de escucha por voz de arriba.')}</p>
     </div>` : ''}`);
 }
 
