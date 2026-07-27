@@ -1532,88 +1532,77 @@ function pannelloPersonalita() {
   const perc = Math.round(s.spontaneita * 100);
   return pannello('personalita', `
     <div class="carta">
-      <h2>${_hIco(ICO.persona)}Personalità</h2>
-      <p>Decidi come parla il bot: ricorda che in chat appare <strong class="primo-piano">a nome tuo</strong>.</p>
+      <h2>${_hIco(ICO.persona)}${L('Personalità', 'Personality', 'Personalidad')}</h2>
+      <p>${L('Decidi come parla il bot: ricorda che in chat appare', 'Decide how the bot talks: remember it appears in chat', 'Decide cómo habla el bot: recuerda que en el chat aparece')} <strong class="primo-piano">${L('a nome tuo', 'under your name', 'con tu nombre')}</strong>.</p>
 
-      <label class="campo" for="sel-tono">Tono</label>
+      <label class="campo" for="sel-tono">${L('Tono', 'Tone', 'Tono')}</label>
       <select id="sel-tono">
-        <option value="scherzoso" ${s.tono === 'scherzoso' ? 'selected' : ''}>Scherzoso — battute e ironia</option>
-        <option value="amichevole" ${s.tono === 'amichevole' ? 'selected' : ''}>Amichevole — caloroso e tranquillo</option>
-        <option value="serio" ${s.tono === 'serio' ? 'selected' : ''}>Serio — sobrio e diretto</option>
+        <option value="scherzoso" ${s.tono === 'scherzoso' ? 'selected' : ''}>${L('Scherzoso — battute e ironia', 'Playful — jokes and irony', 'Bromista — chistes e ironía')}</option>
+        <option value="amichevole" ${s.tono === 'amichevole' ? 'selected' : ''}>${L('Amichevole — caloroso e tranquillo', 'Friendly — warm and calm', 'Amistoso — cálido y tranquilo')}</option>
+        <option value="serio" ${s.tono === 'serio' ? 'selected' : ''}>${L('Serio — sobrio e diretto', 'Serious — plain and direct', 'Serio — sobrio y directo')}</option>
       </select>
 
-      <label class="campo" for="rng-spontaneita">Chat autonoma: <span id="val-spontaneita">${perc}%</span></label>
+      <label class="campo" for="rng-spontaneita">${L('Chat autonoma:', 'Autonomous chatting:', 'Chat autónomo:')} <span id="val-spontaneita">${perc}%</span></label>
       <input type="range" id="rng-spontaneita" min="0" max="50" step="1" value="${perc}">
-      <p class="suggerimento">Quanto partecipa da sola alla conversazione, come una persona.
-      0 = solo se la chiami; alto = molto chiacchierona.</p>
+      <p class="suggerimento">${L('Quanto partecipa da sola alla conversazione, come una persona. 0 = solo se la chiami; alto = molto chiacchierona.', 'How much it joins the conversation on its own, like a person. 0 = only when called; high = very chatty.', 'Cuánto participa por sí solo en la conversación, como una persona. 0 = solo si lo llamas; alto = muy hablador.')}</p>
 
       <div class="riga-check">
         <input type="checkbox" id="chk-menzioni" ${s.rispostaMenzioni ? 'checked' : ''}>
-        <label for="chk-menzioni">Rispondi quando mi nominano in chat</label>
+        <label for="chk-menzioni">${L('Rispondi quando mi nominano in chat', 'Reply when I’m mentioned in chat', 'Responde cuando me nombran en el chat')}</label>
       </div>
 
       <div class="riga-check">
         <input type="checkbox" id="chk-proattivo" ${s.proattivo ? 'checked' : ''}>
-        <label for="chk-proattivo">Personalità proattiva — ogni tanto si fa vivo da solo</label>
+        <label for="chk-proattivo">${L('Personalità proattiva — ogni tanto si fa vivo da solo', 'Proactive personality — chimes in on its own now and then', 'Personalidad proactiva — de vez en cuando interviene solo')}</label>
       </div>
 
       <div class="riga-check">
         <input type="checkbox" id="chk-adatta" ${s.adattaCanale ? 'checked' : ''}>
-        <label for="chk-adatta">Adatta la personalità al mio canale (in automatico)</label>
+        <label for="chk-adatta">${L('Adatta la personalità al mio canale (in automatico)', 'Adapt the personality to my channel (automatically)', 'Adapta la personalidad a mi canal (automáticamente)')}</label>
       </div>
-      <p class="suggerimento">SocialBot ha un carattere suo condiviso, ma qui puoi renderlo coerente
-      con il tuo canale: col tono qui sopra (a mano) e lasciandolo adattare da solo al tuo stile.</p>
+      <p class="suggerimento">${L('SocialBot ha un carattere suo condiviso, ma qui puoi renderlo coerente con il tuo canale: col tono qui sopra (a mano) e lasciandolo adattare da solo al tuo stile.', 'SocialBot has its own shared character, but here you can make it fit your channel: with the tone above (manually) and by letting it adapt to your style on its own.', 'SocialBot tiene un carácter propio compartido, pero aquí puedes hacer que encaje con tu canal: con el tono de arriba (a mano) y dejando que se adapte solo a tu estilo.')}</p>
 
       <div class="riga-check spazio-sopra">
         <input type="checkbox" id="chk-ialocale" ${s.iaLocale ? 'checked' : ''}>
-        <label for="chk-ialocale">Risposte intelligenti (IA locale auto-addestrata)</label>
+        <label for="chk-ialocale">${L('Risposte intelligenti (IA locale auto-addestrata)', 'Smart replies (self-trained local AI)', 'Respuestas inteligentes (IA local autoentrenada)')}</label>
       </div>
-      <p class="suggerimento">Un piccolo modello che gira <strong class="primo-piano">sul server, senza servizi a pagamento</strong>:
-      impara dalla tua chat, capisce le domande anche se scritte in modo diverso e risponde in modo naturale —
-      così devi scrivere molte meno risposte a mano. Più la chat vive, più migliora.</p>
+      <p class="suggerimento">${L('Un piccolo modello che gira', 'A small model running', 'Un modelo pequeño que corre')} <strong class="primo-piano">${L('sul server, senza servizi a pagamento', 'on the server, no paid services', 'en el servidor, sin servicios de pago')}</strong>: ${L('impara dalla tua chat, capisce le domande anche se scritte in modo diverso e risponde in modo naturale — così devi scrivere molte meno risposte a mano. Più la chat vive, più migliora.', 'it learns from your chat, understands questions even when worded differently and replies naturally — so you write far fewer answers by hand. The more the chat lives, the better it gets.', 'aprende de tu chat, entiende las preguntas aunque estén escritas distinto y responde de forma natural — así escribes muchas menos respuestas a mano. Cuanto más vive el chat, mejor se vuelve.')}</p>
 
       <div class="riga-check spazio-sopra">
         <input type="checkbox" id="chk-internet" ${s.internet ? 'checked' : ''}>
-        <label for="chk-internet">Accesso a internet — cerca da sé quando ha un dubbio</label>
+        <label for="chk-internet">${L('Accesso a internet — cerca da sé quando ha un dubbio', 'Internet access — searches on its own when unsure', 'Acceso a internet — busca solo cuando tiene dudas')}</label>
       </div>
-      <p class="suggerimento">Se non sa qualcosa (in privato, o se la nomini con una domanda in chat), può fare una
-      ricerca veloce online (fonti gratuite: DuckDuckGo, Wikipedia) e risponderti da sé, invece di dire «non lo so».
-      Tratta ciò che trova con giudizio e non segue istruzioni nascoste nelle pagine.</p>
+      <p class="suggerimento">${L('Se non sa qualcosa (in privato, o se la nomini con una domanda in chat), può fare una ricerca veloce online (fonti gratuite: DuckDuckGo, Wikipedia) e risponderti da sé, invece di dire «non lo so». Tratta ciò che trova con giudizio e non segue istruzioni nascoste nelle pagine.', 'If it doesn’t know something (in private, or if you mention it with a question in chat), it can do a quick online search (free sources: DuckDuckGo, Wikipedia) and answer you itself, instead of saying “I don’t know”. It treats what it finds with judgement and never follows hidden instructions in the pages.', 'Si no sabe algo (en privado, o si lo nombras con una pregunta en el chat), puede hacer una búsqueda rápida en internet (fuentes gratuitas: DuckDuckGo, Wikipedia) y responderte solo, en vez de decir «no lo sé». Trata lo que encuentra con criterio y no sigue instrucciones ocultas en las páginas.')}</p>
 
-      <label class="campo" for="txt-frasi">Le tue frasi / battute (una per riga)</label>
-      <textarea id="txt-frasi" placeholder="es. GG raga, si vola!&#10;chi non segue il canale paga da bere">${esc(s.frasi.join('\n'))}</textarea>
-      <p class="suggerimento">Il bot le userà ogni tanto per suonare davvero come te. Max 50 frasi da 200 caratteri.</p>
+      <label class="campo" for="txt-frasi">${L('Le tue frasi / battute (una per riga)', 'Your phrases / one-liners (one per line)', 'Tus frases / ocurrencias (una por línea)')}</label>
+      <textarea id="txt-frasi" placeholder="${L('es. GG raga, si vola!&#10;chi non segue il canale paga da bere', 'e.g. GG all, let’s go!&#10;whoever doesn’t follow buys the round', 'p. ej. ¡GG chicos, a volar!&#10;quien no siga el canal paga la ronda')}">${esc(s.frasi.join('\n'))}</textarea>
+      <p class="suggerimento">${L('Il bot le userà ogni tanto per suonare davvero come te. Max 50 frasi da 200 caratteri.', 'The bot will use them now and then to really sound like you. Up to 50 phrases of 200 characters.', 'El bot las usará de vez en cuando para sonar de verdad como tú. Máx. 50 frases de 200 caracteres.')}</p>
 
-      <p class="spazio-sopra"><button class="btn" id="btn-salva-personalita">Salva</button></p>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-personalita">${L('Salva', 'Save', 'Guardar')}</button></p>
     </div>
     <div class="carta">
-      <h2>${_hIco(ICO.righello)}Linee guida</h2>
-      <p>I <strong class="primo-piano">limiti e le regole</strong> che le dai: lei li <strong>salva</strong> e li rispetta
-      <strong>sempre</strong>, in ogni chat (privata, pubblica, quando scrive per prima). Es. «non essere mai volgare»,
-      «non parlare di politica», «dai del tu a tutti».</p>
-      <p class="suggerimento">Ogni regola può valere in un <strong>contesto</strong> preciso: con chi (tutti / solo con te / tutti tranne te)
-      e dove (ovunque / Twitch / Telegram / in privato con te). Così puoi dire «con tutti tranne me non parlare di politica»
-      oppure «solo con me, in privato su Telegram, dammi del tu».</p>
-      <p class="suggerimento">Puoi dettargliele anche <strong>da Telegram in privato</strong> (solo tu), a voce tua: scrivi ad es.
-      «d'ora in poi non essere troppo formale» o «con chi non sono io non parlare dei miei progetti» — capisce da sola il
-      contesto. Comandi: <code>/regola &lt;testo&gt;</code>, <code>/regole</code>, <code>/scorda n</code>.</p>
-      <label class="campo" for="inp-guida">Nuova linea guida</label>
-      <input type="text" id="inp-guida" placeholder="es. non parlare di politica" maxlength="300">
+      <h2>${_hIco(ICO.righello)}${L('Linee guida', 'Guidelines', 'Directrices')}</h2>
+      <p>${L('I', 'The', 'Los')} <strong class="primo-piano">${L('limiti e le regole', 'limits and rules', 'límites y las reglas')}</strong> ${L('che le dai: lei li', 'you give it: it', 'que le das: las')} <strong>${L('salva', 'saves', 'guarda')}</strong> ${L('e li rispetta', 'and follows them', 'y las respeta')}
+      <strong>${L('sempre', 'always', 'siempre')}</strong>, ${L('in ogni chat (privata, pubblica, quando scrive per prima). Es. «non essere mai volgare», «non parlare di politica», «dai del tu a tutti».', 'in every chat (private, public, when it writes first). E.g. “never be rude”, “don’t talk politics”, “keep it informal with everyone”.', 'en cada chat (privado, público, cuando escribe primero). P. ej. «no seas nunca grosero», «no hables de política», «tutea a todos».')}</p>
+      <p class="suggerimento">${L('Ogni regola può valere in un', 'Each rule can apply in a specific', 'Cada regla puede valer en un')} <strong>${L('contesto', 'context', 'contexto')}</strong> ${L('preciso: con chi (tutti / solo con te / tutti tranne te) e dove (ovunque / Twitch / Telegram / in privato con te). Così puoi dire «con tutti tranne me non parlare di politica» oppure «solo con me, in privato su Telegram, dammi del tu».', 'precise: with whom (everyone / only you / everyone but you) and where (anywhere / Twitch / Telegram / privately with you). So you can say “with everyone but me don’t talk politics” or “only with me, privately on Telegram, be informal”.', 'preciso: con quién (todos / solo contigo / todos menos tú) y dónde (en cualquier sitio / Twitch / Telegram / en privado contigo). Así puedes decir «con todos menos yo no hables de política» o «solo conmigo, en privado en Telegram, tutéame».')}</p>
+      <p class="suggerimento">${L('Puoi dettargliele anche', 'You can also dictate them', 'También puedes dictárselas')} <strong>${L('da Telegram in privato', 'from Telegram in private', 'desde Telegram en privado')}</strong> ${L('(solo tu), a voce tua: scrivi ad es. «d\'ora in poi non essere troppo formale» o «con chi non sono io non parlare dei miei progetti» — capisce da sola il contesto. Comandi:', '(only you), in your own words: type e.g. “from now on don’t be too formal” or “with people who aren’t me don’t talk about my projects” — it figures out the context itself. Commands:', '(solo tú), a tu manera: escribe p. ej. «a partir de ahora no seas demasiado formal» o «con quien no sea yo no hables de mis proyectos» — entiende el contexto solo. Comandos:')} <code>/regola &lt;${L('testo', 'text', 'texto')}&gt;</code>, <code>/regole</code>, <code>/scorda n</code>.</p>
+      <label class="campo" for="inp-guida">${L('Nuova linea guida', 'New guideline', 'Nueva directriz')}</label>
+      <input type="text" id="inp-guida" placeholder="${L('es. non parlare di politica', 'e.g. don’t talk politics', 'p. ej. no hables de política')}" maxlength="300">
       <div class="riga-flessibile spazio-sopra">
-        <select id="sel-guida-conchi" title="Con chi">
-          <option value="tutti">con tutti</option>
-          <option value="solo-me">solo con me</option>
-          <option value="tranne-me">con tutti tranne me</option>
+        <select id="sel-guida-conchi" title="${L('Con chi', 'With whom', 'Con quién')}">
+          <option value="tutti">${L('con tutti', 'with everyone', 'con todos')}</option>
+          <option value="solo-me">${L('solo con me', 'only with me', 'solo conmigo')}</option>
+          <option value="tranne-me">${L('con tutti tranne me', 'with everyone but me', 'con todos menos yo')}</option>
         </select>
-        <select id="sel-guida-dove" title="Dove">
-          <option value="ovunque">ovunque</option>
-          <option value="twitch">in chat Twitch</option>
-          <option value="tg">su Telegram</option>
-          <option value="tg-privato">in privato su Telegram</option>
+        <select id="sel-guida-dove" title="${L('Dove', 'Where', 'Dónde')}">
+          <option value="ovunque">${L('ovunque', 'anywhere', 'en cualquier sitio')}</option>
+          <option value="twitch">${L('in chat Twitch', 'in Twitch chat', 'en el chat de Twitch')}</option>
+          <option value="tg">${L('su Telegram', 'on Telegram', 'en Telegram')}</option>
+          <option value="tg-privato">${L('in privato su Telegram', 'privately on Telegram', 'en privado en Telegram')}</option>
         </select>
-        <button class="btn" id="btn-guida-add">Aggiungi</button>
+        <button class="btn" id="btn-guida-add">${L('Aggiungi', 'Add', 'Añadir')}</button>
       </div>
-      <ul class="lista-voci" id="lista-guide"><li class="vuoto">Caricamento…</li></ul>
+      <ul class="lista-voci" id="lista-guide"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
     </div>`);
 }
 
@@ -1622,14 +1611,14 @@ async function caricaGuide() {
   const box = document.getElementById('lista-guide');
   if (!box) return;
   let d;
-  try { d = await api('/api/streamer/guide'); } catch { box.innerHTML = '<li class="vuoto">Non disponibile ora.</li>'; return; }
+  try { d = await api('/api/streamer/guide'); } catch { box.innerHTML = `<li class="vuoto">${L('Non disponibile ora.', 'Not available right now.', 'No disponible ahora.')}</li>`; return; }
   const l = d.guide || [];
-  const DOVE = { ovunque: 'ovunque', twitch: 'in chat Twitch', tg: 'su Telegram', 'tg-privato': 'in privato su Telegram' };
-  const CONCHI = { tutti: 'con tutti', 'solo-me': 'solo con te', 'tranne-me': 'con tutti tranne te' };
-  const amb = (g) => `${CONCHI[g.con_chi] || 'con tutti'}, ${DOVE[g.dove] || 'ovunque'}`;
+  const DOVE = { ovunque: L('ovunque', 'anywhere', 'en cualquier sitio'), twitch: L('in chat Twitch', 'in Twitch chat', 'en el chat de Twitch'), tg: L('su Telegram', 'on Telegram', 'en Telegram'), 'tg-privato': L('in privato su Telegram', 'privately on Telegram', 'en privado en Telegram') };
+  const CONCHI = { tutti: L('con tutti', 'with everyone', 'con todos'), 'solo-me': L('solo con te', 'only with you', 'solo contigo'), 'tranne-me': L('con tutti tranne te', 'with everyone but you', 'con todos menos tú') };
+  const amb = (g) => `${CONCHI[g.con_chi] || CONCHI.tutti}, ${DOVE[g.dove] || DOVE.ovunque}`;
   box.innerHTML = l.length
-    ? l.map((g) => `<li><span>${esc(g.testo)} <span class="suggerimento">— ${esc(amb(g))}</span></span> <a href="#" class="rimuovi" data-id="${g.id}" title="Rimuovi">✕</a></li>`).join('')
-    : '<li class="vuoto">Nessuna regola ancora. Aggiungine una qui sopra o da Telegram.</li>';
+    ? l.map((g) => `<li><span>${esc(g.testo)} <span class="suggerimento">— ${esc(amb(g))}</span></span> <a href="#" class="rimuovi" data-id="${g.id}" title="${L('Rimuovi', 'Remove', 'Quitar')}">✕</a></li>`).join('')
+    : `<li class="vuoto">${L('Nessuna regola ancora. Aggiungine una qui sopra o da Telegram.', 'No rules yet. Add one above or from Telegram.', 'Aún no hay reglas. Añade una arriba o desde Telegram.')}</li>`;
   box.querySelectorAll('.rimuovi').forEach((a) => a.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
     await api('/api/streamer/guide/' + a.dataset.id, { method: 'DELETE' });
     caricaGuide();
@@ -1641,18 +1630,18 @@ async function caricaGuide() {
 function pannelloConoscenza() {
   return pannello('conoscenza', `
     <div class="carta">
-      <h2>${_hIco(ICO.scrivi)}Insegnagli qualcosa</h2>
-      <p>Domanda (o parole chiave) e risposta: quando in chat spunta l'argomento, il bot saprà cosa dire.</p>
-      <label class="campo" for="inp-domanda">Domanda / parole chiave</label>
-      <input type="text" id="inp-domanda" placeholder="es. che pc usi? / setup / configurazione">
-      <label class="campo" for="inp-risposta">Risposta</label>
-      <input type="text" id="inp-risposta" placeholder="es. Gioco su un Ryzen 7 con una 4070, trovi tutto su andryxify.it!">
-      <p class="spazio-sopra"><button class="btn" id="btn-aggiungi-conoscenza">Aggiungi</button></p>
+      <h2>${_hIco(ICO.scrivi)}${L('Insegnagli qualcosa', 'Teach it something', 'Enséñale algo')}</h2>
+      <p>${L('Domanda (o parole chiave) e risposta: quando in chat spunta l\'argomento, il bot saprà cosa dire.', 'Question (or keywords) and answer: when the topic comes up in chat, the bot knows what to say.', 'Pregunta (o palabras clave) y respuesta: cuando el tema aparece en el chat, el bot sabrá qué decir.')}</p>
+      <label class="campo" for="inp-domanda">${L('Domanda / parole chiave', 'Question / keywords', 'Pregunta / palabras clave')}</label>
+      <input type="text" id="inp-domanda" placeholder="${L('es. che pc usi? / setup / configurazione', 'e.g. what PC do you use? / setup / config', 'p. ej. ¿qué PC usas? / setup / configuración')}">
+      <label class="campo" for="inp-risposta">${L('Risposta', 'Answer', 'Respuesta')}</label>
+      <input type="text" id="inp-risposta" placeholder="${L('es. Gioco su un Ryzen 7 con una 4070, trovi tutto su andryxify.it!', 'e.g. I play on a Ryzen 7 with a 4070, find it all on andryxify.it!', 'p. ej. ¡Juego con un Ryzen 7 y una 4070, lo tienes todo en andryxify.it!')}">
+      <p class="spazio-sopra"><button class="btn" id="btn-aggiungi-conoscenza">${L('Aggiungi', 'Add', 'Añadir')}</button></p>
     </div>
     <div class="carta">
-      <h2>${_hIco(ICO.cervello)}Cosa sa il bot</h2>
-      <p>dal sito &nbsp;·&nbsp; tua &nbsp;·&nbsp; imparata dalla chat</p>
-      <ul class="lista-voci" id="lista-conoscenza"><li class="vuoto">Caricamento…</li></ul>
+      <h2>${_hIco(ICO.cervello)}${L('Cosa sa il bot', 'What the bot knows', 'Lo que sabe el bot')}</h2>
+      <p>${L('dal sito', 'from the site', 'de la web')} &nbsp;·&nbsp; ${L('tua', 'yours', 'tuya')} &nbsp;·&nbsp; ${L('imparata dalla chat', 'learned from chat', 'aprendida del chat')}</p>
+      <ul class="lista-voci" id="lista-conoscenza"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
     </div>`);
 }
 
@@ -5160,20 +5149,19 @@ function pannelloRegole() {
 function pannelloMemoria() {
   return pannello('memoria', `
     <div class="carta">
-      <h2>${_hIco(ICO.grafico)}Statistiche degli ultimi 7 giorni</h2>
-      <div class="griglia-stat" id="griglia-stat"><div class="vuoto">Caricamento…</div></div>
-      <h3>Top chatters</h3>
-      <ul class="lista-voci" id="lista-chatters"><li class="vuoto">Caricamento…</li></ul>
+      <h2>${_hIco(ICO.grafico)}${L('Statistiche degli ultimi 7 giorni', 'Last 7 days stats', 'Estadísticas de los últimos 7 días')}</h2>
+      <div class="griglia-stat" id="griglia-stat"><div class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</div></div>
+      <h3>${L('Top chatters', 'Top chatters', 'Top chatters')}</h3>
+      <ul class="lista-voci" id="lista-chatters"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
     </div>
     <div class="carta">
-      <h2>${_hIco(ICO.cervello)}La memoria del bot</h2>
-      <p>Le "lezioni" che ha imparato osservando la tua chat e i fatti stabili che ricorda sul canale.</p>
-      <p class="spazio-sopra"><button class="btn secondario" id="btn-carica-memoria">Mostra la memoria</button></p>
+      <h2>${_hIco(ICO.cervello)}${L('La memoria del bot', 'The bot’s memory', 'La memoria del bot')}</h2>
+      <p>${L('Le "lezioni" che ha imparato osservando la tua chat e i fatti stabili che ricorda sul canale.', 'The “lessons” it learned watching your chat and the stable facts it remembers about the channel.', 'Las «lecciones» que aprendió observando tu chat y los datos estables que recuerda sobre el canal.')}</p>
+      <p class="spazio-sopra"><button class="btn secondario" id="btn-carica-memoria">${L('Mostra la memoria', 'Show the memory', 'Mostrar la memoria')}</button></p>
       <div id="contenitore-memoria"></div>
       <hr class="separatore">
-      <p><strong class="primo-piano">Zona pericolosa.</strong> Azzera lezioni, ricordi sugli utenti, fatti
-      e conoscenza imparata dalla chat. La conoscenza dal sito e quella scritta da te restano.</p>
-      <p class="spazio-sopra"><button class="btn pericolo" id="btn-reset">Azzera ciò che ha imparato</button></p>
+      <p><strong class="primo-piano">${L('Zona pericolosa.', 'Danger zone.', 'Zona peligrosa.')}</strong> ${L('Azzera lezioni, ricordi sugli utenti, fatti e conoscenza imparata dalla chat. La conoscenza dal sito e quella scritta da te restano.', 'Wipes lessons, user memories, facts and knowledge learned from chat. Knowledge from the site and what you wrote stays.', 'Borra lecciones, recuerdos de usuarios, datos y conocimiento aprendido del chat. El conocimiento de la web y el escrito por ti se mantiene.')}</p>
+      <p class="spazio-sopra"><button class="btn pericolo" id="btn-reset">${L('Azzera ciò che ha imparato', 'Wipe what it learned', 'Borra lo que ha aprendido')}</button></p>
     </div>`);
 }
 
@@ -5190,8 +5178,8 @@ function attivaPiattaforma() {
     try {
       await api('/api/streamer/toggle', { method: 'POST', body: { enabled: acceso } });
       stato.streamer.botEnabled = acceso;
-      document.getElementById('etichetta-bot').textContent = acceso ? 'Bot acceso' : 'Bot spento';
-      toast(acceso ? 'Bot acceso!' : 'Bot spento.');
+      document.getElementById('etichetta-bot').textContent = acceso ? L('Bot acceso', 'Bot on', 'Bot encendido') : L('Bot spento', 'Bot off', 'Bot apagado');
+      toast(acceso ? L('Bot acceso!', 'Bot on!', '¡Bot encendido!') : L('Bot spento.', 'Bot off.', 'Bot apagado.'));
     } catch (e) {
       ev.target.checked = !acceso;
       toast('Errore: ' + e.message, 'errore');
