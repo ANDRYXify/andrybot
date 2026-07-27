@@ -313,6 +313,11 @@ body.vetrina .contenuto { max-width: 1040px; }
 
 /* selettore lingua (IT/EN/ES) in cima alla vetrina */
 .lingua-sel { display: inline-flex; gap: 2px; margin-bottom: 1.1rem; background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; padding: 3px; }
+/* variante compatta per la barra in alto */
+.lingua-sel.mini { margin-bottom: 0; padding: 2px; }
+.lingua-sel.mini .lingua-btn { font-size: .72rem; padding: .2rem .44rem; }
+/* riga controlli (lingua + tema) nel cassetto mobile */
+.drawer-controlli { display: inline-flex; align-items: center; gap: .5rem; }
 .lingua-btn { border: 0; background: none; color: var(--testo-3); font: inherit; font-size: .78rem; font-weight: 700; letter-spacing: .02em; padding: .26rem .6rem; border-radius: 999px; cursor: pointer; transition: color var(--molla), background var(--molla); }
 .lingua-btn:hover { color: var(--testo); }
 .lingua-btn.on { background: var(--surface); color: var(--acc); box-shadow: var(--om-s); }
@@ -873,7 +878,7 @@ pre.blocco-codice { background: var(--surface-2); border: 1px solid var(--border
 /* ============================================================ responsive */
 /* la barra a gruppi resta finché ci stanno tutti i 7 gruppi; sotto quella
    soglia collassa nell'hamburger + cassetto laterale. */
-@media (max-width: 1200px) {
+@media (max-width: 1280px) {
   .nav-top { display: none; }
   .top-strumenti { display: none; }
   .apri-menu { display: inline-flex; }
