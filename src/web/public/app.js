@@ -2048,32 +2048,32 @@ function pannelloSondaggi() {
   const campo = (cls, ph) => `<input type="text" class="${cls}" placeholder="${ph}">`;
   return pannello('sondaggi', `
     <div class="carta">
-      <h2>${_hIco(ICO.sondaggi)}Sondaggi</h2>
-      <p>Lancia un sondaggio Twitch: gli spettatori votano dall'app, il risultato appare sul canale.</p>
+      <h2>${_hIco(ICO.sondaggi)}${L('Sondaggi', 'Polls', 'Encuestas')}</h2>
+      <p>${L('Lancia un sondaggio Twitch: gli spettatori votano dall\'app, il risultato appare sul canale.', 'Launch a Twitch poll: viewers vote from the app, the result shows on the channel.', 'Lanza una encuesta de Twitch: los espectadores votan desde la app, el resultado aparece en el canal.')}</p>
       <div id="sondaggio-attivo"></div>
-      <label class="campo">Domanda</label>
-      <input type="text" id="poll-titolo" placeholder="es. Che gioco stasera?">
-      <label class="campo spazio-sopra">Opzioni (min 2, max 5)</label>
+      <label class="campo">${L('Domanda', 'Question', 'Pregunta')}</label>
+      <input type="text" id="poll-titolo" placeholder="${L('es. Che gioco stasera?', 'e.g. Which game tonight?', 'p. ej. ¿Qué juego esta noche?')}">
+      <label class="campo spazio-sopra">${L('Opzioni (min 2, max 5)', 'Options (min 2, max 5)', 'Opciones (mín. 2, máx. 5)')}</label>
       <div class="griglia-campi">
-        ${campo('poll-opt', 'Opzione 1')}${campo('poll-opt', 'Opzione 2')}${campo('poll-opt', 'Opzione 3 (facolt.)')}${campo('poll-opt', 'Opzione 4 (facolt.)')}
+        ${campo('poll-opt', L('Opzione 1', 'Option 1', 'Opción 1'))}${campo('poll-opt', L('Opzione 2', 'Option 2', 'Opción 2'))}${campo('poll-opt', L('Opzione 3 (facolt.)', 'Option 3 (opt.)', 'Opción 3 (opc.)'))}${campo('poll-opt', L('Opzione 4 (facolt.)', 'Option 4 (opt.)', 'Opción 4 (opc.)'))}
       </div>
-      <label class="campo spazio-sopra">Durata (secondi)</label>
+      <label class="campo spazio-sopra">${L('Durata (secondi)', 'Duration (seconds)', 'Duración (segundos)')}</label>
       <input type="number" id="poll-durata" min="15" max="1800" value="120">
-      <button class="btn spazio-sopra" id="poll-crea">Lancia sondaggio</button>
+      <button class="btn spazio-sopra" id="poll-crea">${L('Lancia sondaggio', 'Launch poll', 'Lanzar encuesta')}</button>
     </div>
     <div class="carta">
-      <h2>${_hIco(ICO.predizioni)}Predizioni</h2>
-      <p>Gli spettatori scommettono i punti canale sull'esito. Decidi tu chi vince a fine gioco.</p>
+      <h2>${_hIco(ICO.predizioni)}${L('Predizioni', 'Predictions', 'Predicciones')}</h2>
+      <p>${L('Gli spettatori scommettono i punti canale sull\'esito. Decidi tu chi vince a fine gioco.', 'Viewers bet channel points on the outcome. You decide who wins at the end.', 'Los espectadores apuestan puntos de canal al resultado. Tú decides quién gana al final.')}</p>
       <div id="predizione-attiva"></div>
-      <label class="campo">Titolo</label>
-      <input type="text" id="pred-titolo" placeholder="es. Vinco questa partita?">
-      <label class="campo spazio-sopra">Esiti (min 2, max 10)</label>
+      <label class="campo">${L('Titolo', 'Title', 'Título')}</label>
+      <input type="text" id="pred-titolo" placeholder="${L('es. Vinco questa partita?', 'e.g. Will I win this match?', 'p. ej. ¿Gano esta partida?')}">
+      <label class="campo spazio-sopra">${L('Esiti (min 2, max 10)', 'Outcomes (min 2, max 10)', 'Resultados (mín. 2, máx. 10)')}</label>
       <div class="griglia-campi">
-        ${campo('pred-esito', 'Esito 1 (es. Sì)')}${campo('pred-esito', 'Esito 2 (es. No)')}${campo('pred-esito', 'Esito 3 (facolt.)')}${campo('pred-esito', 'Esito 4 (facolt.)')}
+        ${campo('pred-esito', L('Esito 1 (es. Sì)', 'Outcome 1 (e.g. Yes)', 'Resultado 1 (p. ej. Sí)'))}${campo('pred-esito', L('Esito 2 (es. No)', 'Outcome 2 (e.g. No)', 'Resultado 2 (p. ej. No)'))}${campo('pred-esito', L('Esito 3 (facolt.)', 'Outcome 3 (opt.)', 'Resultado 3 (opc.)'))}${campo('pred-esito', L('Esito 4 (facolt.)', 'Outcome 4 (opt.)', 'Resultado 4 (opc.)'))}
       </div>
-      <label class="campo spazio-sopra">Finestra puntate (secondi)</label>
+      <label class="campo spazio-sopra">${L('Finestra puntate (secondi)', 'Betting window (seconds)', 'Ventana de apuestas (segundos)')}</label>
       <input type="number" id="pred-finestra" min="30" max="1800" value="120">
-      <button class="btn spazio-sopra" id="pred-crea">Apri predizione</button>
+      <button class="btn spazio-sopra" id="pred-crea">${L('Apri predizione', 'Open prediction', 'Abrir predicción')}</button>
     </div>`);
 }
 
@@ -2086,9 +2086,9 @@ async function caricaSondaggi() {
       const titolo = (document.getElementById('poll-titolo').value || '').trim();
       const opzioni = [...document.querySelectorAll('.poll-opt')].map((i) => i.value.trim()).filter(Boolean);
       const durata = Number(document.getElementById('poll-durata').value) || 120;
-      if (!titolo || opzioni.length < 2) { toast('Serve una domanda e almeno 2 opzioni.', 'errore'); return; }
+      if (!titolo || opzioni.length < 2) { toast(L('Serve una domanda e almeno 2 opzioni.', 'You need a question and at least 2 options.', 'Hace falta una pregunta y al menos 2 opciones.'), 'errore'); return; }
       const r = await api('/api/sondaggi/crea', { method: 'POST', body: { titolo, opzioni, durata } });
-      if (r?.poll) { toast('Sondaggio lanciato'); document.getElementById('poll-titolo').value = ''; document.querySelectorAll('.poll-opt').forEach((i) => (i.value = '')); caricaSondaggi(); }
+      if (r?.poll) { toast(L('Sondaggio lanciato', 'Poll launched', 'Encuesta lanzada')); document.getElementById('poll-titolo').value = ''; document.querySelectorAll('.poll-opt').forEach((i) => (i.value = '')); caricaSondaggi(); }
     }));
   }
   const br = document.getElementById('pred-crea');
@@ -2098,9 +2098,9 @@ async function caricaSondaggi() {
       const titolo = (document.getElementById('pred-titolo').value || '').trim();
       const esiti = [...document.querySelectorAll('.pred-esito')].map((i) => i.value.trim()).filter(Boolean);
       const finestra = Number(document.getElementById('pred-finestra').value) || 120;
-      if (!titolo || esiti.length < 2) { toast('Serve un titolo e almeno 2 esiti.', 'errore'); return; }
+      if (!titolo || esiti.length < 2) { toast(L('Serve un titolo e almeno 2 esiti.', 'You need a title and at least 2 outcomes.', 'Hace falta un título y al menos 2 resultados.'), 'errore'); return; }
       const r = await api('/api/predizioni/crea', { method: 'POST', body: { titolo, esiti, finestra } });
-      if (r?.pred) { toast('Predizione aperta'); document.getElementById('pred-titolo').value = ''; document.querySelectorAll('.pred-esito').forEach((i) => (i.value = '')); caricaSondaggi(); }
+      if (r?.pred) { toast(L('Predizione aperta', 'Prediction opened', 'Predicción abierta')); document.getElementById('pred-titolo').value = ''; document.querySelectorAll('.pred-esito').forEach((i) => (i.value = '')); caricaSondaggi(); }
     }));
   }
   // stato attivo (poll + pred)
@@ -2110,19 +2110,19 @@ async function caricaSondaggi() {
   try { d = await api('/api/sondaggi/stato'); } catch { return; }
   if (wrapP) {
     if (d.poll) {
-      wrapP.innerHTML = `<div class="riquadro-info"><p>Sondaggio in corso: <strong>${esc(d.poll.titolo)}</strong></p>
-        <button class="btn secondario spazio-sopra" id="poll-chiudi">Chiudi ora</button></div>`;
-      document.getElementById('poll-chiudi').addEventListener('click', () => conErrore(async () => { await api('/api/sondaggi/chiudi', { method: 'POST', body: {} }); toast('Sondaggio chiuso.'); caricaSondaggi(); }));
+      wrapP.innerHTML = `<div class="riquadro-info"><p>${L('Sondaggio in corso:', 'Poll in progress:', 'Encuesta en curso:')} <strong>${esc(d.poll.titolo)}</strong></p>
+        <button class="btn secondario spazio-sopra" id="poll-chiudi">${L('Chiudi ora', 'Close now', 'Cerrar ahora')}</button></div>`;
+      document.getElementById('poll-chiudi').addEventListener('click', () => conErrore(async () => { await api('/api/sondaggi/chiudi', { method: 'POST', body: {} }); toast(L('Sondaggio chiuso.', 'Poll closed.', 'Encuesta cerrada.')); caricaSondaggi(); }));
     } else wrapP.innerHTML = '';
   }
   if (wrapR) {
     if (d.pred) {
-      wrapR.innerHTML = `<div class="riquadro-info"><p>Predizione in corso: <strong>${esc(d.pred.titolo)}</strong></p>
-        <p class="spazio-sopra">Fai vincere:</p>
+      wrapR.innerHTML = `<div class="riquadro-info"><p>${L('Predizione in corso:', 'Prediction in progress:', 'Predicción en curso:')} <strong>${esc(d.pred.titolo)}</strong></p>
+        <p class="spazio-sopra">${L('Fai vincere:', 'Make it win:', 'Haz ganar a:')}</p>
         <div class="chip-vars">${(d.pred.esiti || []).map((o) => `<button type="button" class="btn secondario mini" data-vince="${esc(o.id)}">${esc(o.titolo)}</button>`).join('')}</div>
-        <button class="btn pericolo spazio-sopra" id="pred-annulla">Annulla e rimborsa</button></div>`;
-      wrapR.querySelectorAll('[data-vince]').forEach((b) => b.addEventListener('click', () => conErrore(async () => { await api('/api/predizioni/risolvi', { method: 'POST', body: { esitoId: b.dataset.vince } }); toast('Predizione risolta'); caricaSondaggi(); })));
-      document.getElementById('pred-annulla').addEventListener('click', () => conErrore(async () => { await api('/api/predizioni/annulla', { method: 'POST', body: {} }); toast('Predizione annullata.'); caricaSondaggi(); }));
+        <button class="btn pericolo spazio-sopra" id="pred-annulla">${L('Annulla e rimborsa', 'Cancel and refund', 'Cancelar y reembolsar')}</button></div>`;
+      wrapR.querySelectorAll('[data-vince]').forEach((b) => b.addEventListener('click', () => conErrore(async () => { await api('/api/predizioni/risolvi', { method: 'POST', body: { esitoId: b.dataset.vince } }); toast(L('Predizione risolta', 'Prediction resolved', 'Predicción resuelta')); caricaSondaggi(); })));
+      document.getElementById('pred-annulla').addEventListener('click', () => conErrore(async () => { await api('/api/predizioni/annulla', { method: 'POST', body: {} }); toast(L('Predizione annullata.', 'Prediction cancelled.', 'Predicción cancelada.')); caricaSondaggi(); }));
     } else wrapR.innerHTML = '';
   }
 }
@@ -2133,16 +2133,16 @@ function pannelloGiveaway() {
   return pannello('giveaway', `
     <div class="carta">
       <h2>${_hIco(ICO.giveaway)}Giveaway</h2>
-      <p>Apri un'estrazione a premi: la community entra con <code>!join</code> in chat e tu estrai il vincitore da qui.</p>
-      <div id="giveaway-stato" class="spazio-sopra"><p>Carico…</p></div>
+      <p>${L('Apri un\'estrazione a premi: la community entra con <code>!join</code> in chat e tu estrai il vincitore da qui.', 'Open a prize giveaway: the community joins with <code>!join</code> in chat and you draw the winner from here.', 'Abre un sorteo de premios: la comunidad entra con <code>!join</code> en el chat y tú sacas al ganador desde aquí.')}</p>
+      <div id="giveaway-stato" class="spazio-sopra"><p>${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
       <div id="giveaway-apri">
-        <label class="campo">Premio in palio</label>
-        <input type="text" id="gw-premio" placeholder="es. una gift card, un gioco Steam…">
+        <label class="campo">${L('Premio in palio', 'Prize', 'Premio en juego')}</label>
+        <input type="text" id="gw-premio" placeholder="${L('es. una gift card, un gioco Steam…', 'e.g. a gift card, a Steam game…', 'p. ej. una gift card, un juego de Steam…')}">
         <div class="riga-check spazio-sopra">
           <input type="checkbox" id="gw-sub">
-          <label>Riservato agli abbonati (sub)</label>
+          <label>${L('Riservato agli abbonati (sub)', 'Subscribers only (subs)', 'Solo para suscriptores (subs)')}</label>
         </div>
-        <button class="btn spazio-sopra" id="gw-apri">Apri il giveaway</button>
+        <button class="btn spazio-sopra" id="gw-apri">${L('Apri il giveaway', 'Open the giveaway', 'Abrir el sorteo')}</button>
       </div>
     </div>`);
 }
@@ -2158,33 +2158,33 @@ async function caricaGiveaway() {
       const premio = (document.getElementById('gw-premio').value || '').trim();
       const soloSub = !!document.getElementById('gw-sub').checked;
       const r = await api('/api/giveaway/apri', { method: 'POST', body: { premio, soloSub } });
-      if (r?.ok) { toast('Giveaway aperto!'); document.getElementById('gw-premio').value = ''; caricaGiveaway(); }
+      if (r?.ok) { toast(L('Giveaway aperto!', 'Giveaway opened!', '¡Sorteo abierto!')); document.getElementById('gw-premio').value = ''; caricaGiveaway(); }
     }));
   }
   let d;
-  try { d = await api('/api/giveaway/stato'); } catch { stBox.innerHTML = '<p>Impossibile leggere lo stato.</p>'; return; }
+  try { d = await api('/api/giveaway/stato'); } catch { stBox.innerHTML = `<p>${L('Impossibile leggere lo stato.', 'Couldn’t read the status.', 'No se pudo leer el estado.')}</p>`; return; }
   if (d.aperto) {
     if (apriBox) apriBox.hidden = true;
     stBox.innerHTML = `<div class="riquadro-info">
-      <p>Giveaway in corso: <strong>${esc(d.premio)}</strong>${d.soloSub ? ' <span class="badge">solo sub</span>' : ''}</p>
-      <p class="spazio-sopra"><strong>${d.partecipanti}</strong> ${d.partecipanti === 1 ? 'partecipante' : 'partecipanti'} — entrano con <code>!join</code></p>
+      <p>${L('Giveaway in corso:', 'Giveaway in progress:', 'Sorteo en curso:')} <strong>${esc(d.premio)}</strong>${d.soloSub ? ` <span class="badge">${L('solo sub', 'subs only', 'solo subs')}</span>` : ''}</p>
+      <p class="spazio-sopra"><strong>${d.partecipanti}</strong> ${d.partecipanti === 1 ? L('partecipante', 'participant', 'participante') : L('partecipanti', 'participants', 'participantes')} — ${L('entrano con', 'they join with', 'entran con')} <code>!join</code></p>
       <div class="spazio-sopra">
-        <button class="btn" id="gw-estrai">Estrai un vincitore</button>
-        <button class="btn pericolo" id="gw-annulla">Annulla</button>
+        <button class="btn" id="gw-estrai">${L('Estrai un vincitore', 'Draw a winner', 'Sacar un ganador')}</button>
+        <button class="btn pericolo" id="gw-annulla">${L('Annulla', 'Cancel', 'Cancelar')}</button>
       </div>
       <div id="gw-vincitore" class="spazio-sopra"></div>
     </div>`;
     document.getElementById('gw-estrai').addEventListener('click', () => conErrore(async () => {
       const r = await api('/api/giveaway/estrai', { method: 'POST', body: {} });
       const v = document.getElementById('gw-vincitore');
-      if (r?.vincitore) { if (v) v.innerHTML = `<p class="ok-riga">Ha vinto: <strong>${esc(r.vincitore)}</strong>!</p>`; }
-      else if (v) v.innerHTML = '<p class="warn-riga">Nessun partecipante ancora.</p>';
+      if (r?.vincitore) { if (v) v.innerHTML = `<p class="ok-riga">${L('Ha vinto:', 'Winner:', 'Ganó:')} <strong>${esc(r.vincitore)}</strong>!</p>`; }
+      else if (v) v.innerHTML = `<p class="warn-riga">${L('Nessun partecipante ancora.', 'No participants yet.', 'Aún no hay participantes.')}</p>`;
       caricaGiveaway();
     }));
-    document.getElementById('gw-annulla').addEventListener('click', () => conErrore(async () => { await api('/api/giveaway/annulla', { method: 'POST', body: {} }); toast('Giveaway annullato.'); caricaGiveaway(); }));
+    document.getElementById('gw-annulla').addEventListener('click', () => conErrore(async () => { await api('/api/giveaway/annulla', { method: 'POST', body: {} }); toast(L('Giveaway annullato.', 'Giveaway cancelled.', 'Sorteo cancelado.')); caricaGiveaway(); }));
   } else {
     if (apriBox) apriBox.hidden = false;
-    stBox.innerHTML = '<p>Nessun giveaway in corso.</p>';
+    stBox.innerHTML = `<p>${L('Nessun giveaway in corso.', 'No giveaway in progress.', 'No hay ningún sorteo en curso.')}</p>`;
   }
 }
 
