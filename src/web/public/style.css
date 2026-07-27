@@ -55,7 +55,7 @@
 html { scroll-behavior: smooth; }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html { color-scheme: light; -webkit-text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; }
 
 body {
   background: var(--bg);
@@ -307,11 +307,32 @@ body.vetrina .contenuto { max-width: 1040px; }
 .vetrina-accessi a:hover { text-decoration: underline; }
 .vetrina-accessi span { color: var(--testo-3); margin: 0 .2rem; }
 
+/* riga controlli (lingua + tema) in cima alla vetrina */
+.vetrina-controlli { display: inline-flex; align-items: center; gap: .5rem; margin-bottom: 1.1rem; }
+.vetrina-controlli .lingua-sel { margin-bottom: 0; }
+
 /* selettore lingua (IT/EN/ES) in cima alla vetrina */
 .lingua-sel { display: inline-flex; gap: 2px; margin-bottom: 1.1rem; background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; padding: 3px; }
 .lingua-btn { border: 0; background: none; color: var(--testo-3); font: inherit; font-size: .78rem; font-weight: 700; letter-spacing: .02em; padding: .26rem .6rem; border-radius: 999px; cursor: pointer; transition: color var(--molla), background var(--molla); }
 .lingua-btn:hover { color: var(--testo); }
 .lingua-btn.on { background: var(--surface); color: var(--acc); box-shadow: var(--om-s); }
+
+/* interruttore tema chiaro/scuro (sole/luna). Icona a tratto, niente emoji. */
+.tema-toggle {
+  display: inline-grid; place-items: center;
+  width: 34px; height: 34px; flex: none;
+  border: 1px solid var(--border); border-radius: 999px;
+  background: var(--surface-2); color: var(--testo-2);
+  cursor: pointer; padding: 0;
+  transition: color var(--molla), background var(--molla), border-color var(--molla);
+}
+.tema-toggle:hover { color: var(--testo); border-color: var(--border-2); }
+.tema-toggle svg { width: 17px; height: 17px; display: block; }
+/* mostra sole in scuro (per tornare al chiaro), luna in chiaro */
+.tema-toggle .ico-sole { display: none; }
+.tema-toggle .ico-luna { display: block; }
+:root[data-theme="dark"] .tema-toggle .ico-sole { display: block; }
+:root[data-theme="dark"] .tema-toggle .ico-luna { display: none; }
 
 /* chip di beneficio sotto la CTA */
 .vetrina-chip { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem 1.1rem; margin: .2rem 0 0; padding: 0; }
@@ -967,40 +988,77 @@ input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focu
 @keyframes shimmer { to { transform: translateX(100%); } }
 
 /* ---------------------------------------------------------------- TEMA SCURO
-   Automatico in base al sistema: tutto usa i token, quindi basta ridefinirli.
+   Automatico E scegliibile a mano. Tutto usa i token, quindi basta ridefinirli.
    Palette scura profonda con un filo di viola, superfici a strati, accento più
-   luminoso per il contrasto. */
+   luminoso per il contrasto; i colori-firma dei gruppi diventano più brillanti.
+
+   Meccanica (come per la lingua): uno script inline in <head> mette
+   data-theme="dark|light" su <html> in base alla scelta salvata ("auto" segue
+   il sistema). Quindi comanda l'attributo. La media query resta come rete di
+   sicurezza SENZA JS: si applica solo quando l'attributo non c'è. Se l'utente
+   sceglie "chiaro" mentre il sistema è scuro, data-theme="light" e la media
+   query non tocca nulla (niente attributo = niente match). */
 @media (prefers-color-scheme: dark) {
-  html { color-scheme: dark; }
-  :root {
+  :root:not([data-theme]) {
+    color-scheme: dark;
     --bg: #0c0c11;
     --surface: #151519;
     --surface-2: #1c1c23;
     --surface-3: #2a2a33;
     --border: #262630;
     --border-2: #363642;
-
     --testo: #f3f3f6;
     --testo-2: #b6b6c2;
     --testo-3: #7d7d8b;
-
     --acc: #9a7bff;
     --acc-600: #866bf5;
     --acc-soft: #201a35;
     --acc-tint: rgba(154, 123, 255, .16);
     --acc-bordo: #3a2f5c;
-
     --verde: #55d98a; --verde-soft: #14261c; --verde-bordo: #244b35;
     --rosso: #f9807d; --rosso-soft: #2a1719; --rosso-bordo: #4e2a2c;
     --ambra: #f6c24a; --ambra-soft: #2a2210; --ambra-bordo: #4a3b18;
-
     --om-s: 0 1px 2px rgba(0, 0, 0, .5);
     --om-m: 0 6px 20px rgba(0, 0, 0, .5);
     --om-l: 0 22px 54px rgba(0, 0, 0, .66);
-
     --sheen: rgba(255, 255, 255, .05);
+    --g-panoramica: #b48bff; --g-personaggio: #78a9ff; --g-chat: #4fd8ab;
+    --g-diretta: #ff8078; --g-interazione: #f4b062; --g-overlay: #ec8bd6;
+    --g-notifiche: #57c6e6; --g-admin: var(--acc);
   }
-  body::before { opacity: 1; }
-  .btn.secondario { background: var(--surface-2); }
-  .btn.secondario:hover { background: var(--surface-3); }
+  :root:not([data-theme]) body::before { opacity: 1; }
+  :root:not([data-theme]) .btn.secondario { background: var(--surface-2); }
+  :root:not([data-theme]) .btn.secondario:hover { background: var(--surface-3); }
 }
+
+/* scelta esplicita "scuro" (vince sempre, anche se il sistema è chiaro) */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0c0c11;
+  --surface: #151519;
+  --surface-2: #1c1c23;
+  --surface-3: #2a2a33;
+  --border: #262630;
+  --border-2: #363642;
+  --testo: #f3f3f6;
+  --testo-2: #b6b6c2;
+  --testo-3: #7d7d8b;
+  --acc: #9a7bff;
+  --acc-600: #866bf5;
+  --acc-soft: #201a35;
+  --acc-tint: rgba(154, 123, 255, .16);
+  --acc-bordo: #3a2f5c;
+  --verde: #55d98a; --verde-soft: #14261c; --verde-bordo: #244b35;
+  --rosso: #f9807d; --rosso-soft: #2a1719; --rosso-bordo: #4e2a2c;
+  --ambra: #f6c24a; --ambra-soft: #2a2210; --ambra-bordo: #4a3b18;
+  --om-s: 0 1px 2px rgba(0, 0, 0, .5);
+  --om-m: 0 6px 20px rgba(0, 0, 0, .5);
+  --om-l: 0 22px 54px rgba(0, 0, 0, .66);
+  --sheen: rgba(255, 255, 255, .05);
+  --g-panoramica: #b48bff; --g-personaggio: #78a9ff; --g-chat: #4fd8ab;
+  --g-diretta: #ff8078; --g-interazione: #f4b062; --g-overlay: #ec8bd6;
+  --g-notifiche: #57c6e6; --g-admin: var(--acc);
+}
+:root[data-theme="dark"] body::before { opacity: 1; }
+:root[data-theme="dark"] .btn.secondario { background: var(--surface-2); }
+:root[data-theme="dark"] .btn.secondario:hover { background: var(--surface-3); }

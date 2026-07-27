@@ -475,6 +475,7 @@ function render() {
     document.body.classList.remove('con-nav');
     svuotaNav();
     renderHero();
+    applicaTema();   // allinea l'etichetta dell'interruttore tema nella vetrina
     return;
   }
 
@@ -575,11 +576,13 @@ function renderAreaUtente() {
     centro = `<span class="chip-utente">moderi <strong>@${esc(stato.user.display || attuale)}</strong></span>`;
   }
   const esci = `<a class="btn secondario mini" href="/auth/logout">Esci</a>`;
+  const tema = toggleTemaHtml();
 
-  // Barra in alto (desktop): versione compatta — canale + esci, senza saluto.
-  if (areaUtente) areaUtente.innerHTML = `${centro}${esci}`;
-  // Cassetto (mobile): versione completa — saluto + canale + esci.
-  if (areaMob) areaMob.innerHTML = `<span class="chip-utente">ciao, <strong>${ident}</strong></span>${centro}${esci}`;
+  // Barra in alto (desktop): versione compatta — tema + canale + esci, senza saluto.
+  if (areaUtente) areaUtente.innerHTML = `${tema}${centro}${esci}`;
+  // Cassetto (mobile): versione completa — saluto + canale + tema + esci.
+  if (areaMob) areaMob.innerHTML = `<span class="chip-utente">ciao, <strong>${ident}</strong></span>${centro}${tema}${esci}`;
+  applicaTema();
 
   document.querySelectorAll('.switch-canale').forEach((sel) =>
     sel.addEventListener('change', (ev) => conErrore(async () => {
@@ -617,6 +620,49 @@ function cambiaLingua(l) {
 function selettoreLingua() {
   return `<div class="lingua-sel" role="group" aria-label="${L('Lingua', 'Language', 'Idioma')}">${LINGUE.map((l) =>
     `<button type="button" class="lingua-btn${l === LINGUA ? ' on' : ''}" data-lingua="${l}" aria-pressed="${l === LINGUA}">${l.toUpperCase()}</button>`).join('')}</div>`;
+}
+
+// ====================================================================== tema
+// Chiaro/scuro. "auto" segue il sistema (prefers-color-scheme); appena l'utente
+// tocca l'interruttore la scelta diventa esplicita e viene salvata — esattamente
+// come la lingua. Lo script inline in <head> imposta già data-theme prima del
+// primo disegno (niente lampo): qui gestiamo il cambio a runtime.
+let TEMA = (() => { try { return localStorage.getItem('tema') || 'auto'; } catch (e) { return 'auto'; } })();
+function _sistemaScuro() {
+  try { return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches); } catch (e) { return false; }
+}
+function temaScuroAttivo() { return TEMA === 'dark' || (TEMA === 'auto' && _sistemaScuro()); }
+function applicaTema() {
+  const scuro = temaScuroAttivo();
+  try { document.documentElement.setAttribute('data-theme', scuro ? 'dark' : 'light'); } catch (e) { /* niente */ }
+  const et = scuro
+    ? L('Passa al tema chiaro', 'Switch to light theme', 'Cambiar a tema claro')
+    : L('Passa al tema scuro', 'Switch to dark theme', 'Cambiar a tema oscuro');
+  document.querySelectorAll('[data-tema-toggle]').forEach((b) => { b.setAttribute('aria-label', et); b.title = et; });
+}
+function cambiaTema() {
+  TEMA = temaScuroAttivo() ? 'light' : 'dark';
+  try { localStorage.setItem('tema', TEMA); } catch (e) { /* niente */ }
+  applicaTema();
+}
+// Se l'utente non ha scelto (resta "auto"), segui i cambi di sistema in tempo reale.
+try {
+  const _mq = window.matchMedia('(prefers-color-scheme: dark)');
+  const _onSys = () => { if (TEMA === 'auto') applicaTema(); };
+  if (_mq.addEventListener) _mq.addEventListener('change', _onSys);
+  else if (_mq.addListener) _mq.addListener(_onSys);
+} catch (e) { /* niente */ }
+// Delego il click una sola volta: funziona per ogni interruttore, anche ricreato.
+document.addEventListener('click', (e) => {
+  const t = e.target.closest && e.target.closest('[data-tema-toggle]');
+  if (t) { e.preventDefault(); cambiaTema(); }
+});
+// Interruttore sole/luna. Icone a tratto (niente emoji); la CSS mostra il sole
+// in tema scuro (per tornare al chiaro) e la luna in tema chiaro.
+function toggleTemaHtml(extra) {
+  const sole = '<svg class="ico-sole" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+  const luna = '<svg class="ico-luna" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.6 6.6 0 0 0 9.8 9.8Z"/></svg>';
+  return `<button type="button" class="tema-toggle${extra ? ' ' + extra : ''}" data-tema-toggle>${sole}${luna}</button>`;
 }
 
 // Anteprima "overlay in azione" nell'hero: un fotogramma di diretta stilizzato
@@ -693,7 +739,7 @@ function renderHero() {
     ${msgErrore ? `<div class="carta avviso"><p>${esc(msgErrore)}</p></div>` : ''}
 
     <section class="vetrina-hero">
-      ${selettoreLingua()}
+      <div class="vetrina-controlli">${selettoreLingua()}${toggleTemaHtml()}</div>
       <span class="vetrina-occhiello">${L('SocialBot · il bot di andryxify.it', 'SocialBot · the bot by andryxify.it', 'SocialBot · el bot de andryxify.it')}</span>
       <h1 class="vetrina-titolo">${titoloParole(L('Il bot per Twitch che parla', 'The Twitch bot that speaks', 'El bot de Twitch que habla'))} <span class="acc">${titoloParole(L('con la tua voce', 'with your own voice', 'con tu propia voz'), 5)}</span></h1>
       <p class="vetrina-sub">${L('<strong>Bot per Twitch in italiano</strong> che vive nella tua chat e scrive <strong>con il tuo account</strong> — niente bot anonimi. Comandi su misura, moderazione, <strong>overlay per OBS</strong>, clip, musica e persino <strong>dirette dal browser senza OBS</strong>.', '<strong>Twitch bot</strong> that lives in your chat and writes <strong>with your own account</strong> — no anonymous bots. Custom commands, moderation, <strong>OBS overlay</strong>, clips, music and even <strong>going live from the browser without OBS</strong>.', '<strong>Bot para Twitch</strong> que vive en tu chat y escribe <strong>con tu cuenta</strong> — nada de bots anónimos. Comandos a medida, moderación, <strong>overlay para OBS</strong>, clips, música e incluso <strong>directos desde el navegador sin OBS</strong>.')}</p>
