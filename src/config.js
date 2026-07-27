@@ -128,6 +128,23 @@ export const config = {
     };
   })(),
 
+  // TikTok (avviso "nuovo post") — OPZIONALE, via API ufficiale Display API.
+  // Serve UN'app su developers.tiktok.com (una sola, dell'operatore) con Client
+  // Key/Secret, gli scope user.info.basic + video.list e il redirect
+  // https://bot.andryxify.it/tiktok/callback tra i "Redirect URI". Ogni streamer
+  // collega poi il PROPRIO account TikTok (OAuth). Senza credenziali il connettore
+  // resta spento (nessun bottone "Collega TikTok").
+  tiktok: (() => {
+    const clientKey = env('TIKTOK_CLIENT_KEY');
+    const clientSecret = env('TIKTOK_CLIENT_SECRET');
+    return {
+      clientKey,
+      clientSecret,
+      redirectUri: env('TIKTOK_REDIRECT_URI') || (env('BASE_URL', 'http://localhost:8090').replace(/\/$/, '') + '/tiktok/callback'),
+      attivo: !!(clientKey && clientSecret),
+    };
+  })(),
+
   // Promo "settimana gratis": al primo accesso self-service, con una certa
   // probabilità, un account che non ha MAI avuto il bot riceve alcuni giorni di
   // accesso Pro (un trial, non "community"). Si revoca da sé alla scadenza. È

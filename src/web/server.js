@@ -265,8 +265,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     '/robots.txt', '/sitemap.xml',
     // abbonamenti self-service: login con Twitch + webhook Stripe (firma verificata)
     '/accedi', '/stripe/webhook',
-    // ritorno OAuth di Spotify: si protegge da sé con lo `state` monouso
-    '/spotify/callback']);
+    // ritorno OAuth di Spotify e TikTok: si proteggono da sé con lo `state` monouso
+    '/spotify/callback', '/tiktok/callback']);
   // "Vetrina" pubblica: il guscio del sito (pagina + asset) e la demo interattiva
   // sono visibili anche senza pass, per far conoscere il bot. NON espongono dati
   // reali: /api/me senza sessione risponde solo "nessun utente" e tutte le API
@@ -998,6 +998,61 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.json({ ok: true });
   });
 
+  // ── TikTok (Display API): collega l'account per l'avviso "nuovo post" ──────────
+  // Stesso schema di Spotify: `state` monouso (login + scadenza) lega il ritorno
+  // OAuth al canale giusto. L'app TikTok è unica (globale, config.tiktok).
+  const tiktokStati = new Map();   // state → { login, ts }
+  const puliziaStatiTk = () => { const ora = Date.now(); for (const [k, v] of tiktokStati) if (ora - v.ts > 600000) tiktokStati.delete(k); };
+
+  // stato del connettore per il canale gestito (per la UI). Non espone segreti.
+  app.get('/api/tiktok/stato', requireLogin, (req, res) => {
+    const login = currentUser(req).login;
+    const d = tiktok.datiCollegamento(login);
+    res.json({
+      appAttiva: tiktok.appAttiva(),        // c'è un'app TikTok configurata dall'operatore
+      collegato: tiktok.collegato(login),   // account TikTok collegato (OAuth fatto)
+      username: d?.username || '',           // @username collegato (se disponibile)
+      redirect: tiktok.redirectUri(),        // da registrare nell'app TikTok (Redirect URI)
+    });
+  });
+
+  // avvia il collegamento: solo il proprietario, solo se c'è l'app configurata
+  app.get('/api/tiktok/connect', requireOwner, gateFeature('notifiche', 'Le notifiche'), (req, res) => {
+    const login = currentUser(req).login;
+    if (!tiktok.appAttiva()) return res.status(503).json({ errore: 'Connettore TikTok non configurato.' });
+    puliziaStatiTk();
+    const state = crypto.randomUUID();
+    tiktokStati.set(state, { login, ts: Date.now() });
+    res.json({ url: tiktok.urlAutorizzazione(state) });
+  });
+
+  // ritorno OAuth di TikTok: scambia il code e salva i token per il canale.
+  app.get('/tiktok/callback', wrap(async (req, res) => {
+    puliziaStatiTk();
+    const st = tiktokStati.get(String(req.query.state || ''));
+    tiktokStati.delete(String(req.query.state || ''));
+    if (!st || !req.query.code) return res.redirect('/?tiktok=errore#notifiche');
+    const ok = await tiktok.collega(st.login, String(req.query.code)).catch(() => false);
+    // primo collegamento: azzera l'ancora anti-doppioni così il PRIMO nuovo post
+    // (non quello già presente adesso) farà scattare l'avviso.
+    if (ok) { try { tgConf.setTkUltimo(st.login, ''); } catch { /* niente */ } }
+    return res.redirect(ok ? '/?tiktok=ok#notifiche' : '/?tiktok=errore#notifiche');
+  }));
+
+  // scollega TikTok dal canale gestito
+  app.post('/api/tiktok/disconnect', requireOwner, gateFeature('notifiche', 'Le notifiche'), (req, res) => {
+    tiktok.scollega(currentUser(req).login);
+    res.json({ ok: true });
+  });
+
+  // "Prova": verifica che il collegamento legga davvero l'ultimo video
+  app.post('/api/tiktok/prova', requireOwner, gateFeature('notifiche', 'Le notifiche'), wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (!tiktok.collegato(login)) return res.status(400).json({ errore: 'Collega prima il tuo account TikTok.' });
+    const r = await tiktok.provaApi(login);
+    res.json(r);
+  }));
+
   // Premi a punti canale per le richieste musicali: elenco (per capire quanti ne
   // hai già e quali nomi sono occupati) + creazione del premio dedicato.
   app.get('/api/musica/premi', requireOwner, wrap(async (req, res) => {
@@ -1438,12 +1493,19 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // notifica live TikTok (rilevamento best-effort + annuncio)
     if (b.tiktok !== undefined) {
       const tk = b.tiktok || {};
-      const username = tiktok.pulisciUsername(tk.username).slice(0, 40);
+      const cur = s.settings?.tiktok || {};
+      // Due form separati (live + nuovo post) salvano lo STESSO blocco: ogni campo
+      // non inviato mantiene il valore corrente, così un salvataggio non azzera l'altro.
+      const username = tk.username !== undefined ? tiktok.pulisciUsername(tk.username).slice(0, 40) : (cur.username || '');
       out.tiktok = {
         username,
-        attivo: !!tk.attivo && !!username,
-        annunciaChat: !!tk.annunciaChat,
-        messaggio: String(tk.messaggio || '').slice(0, 800),   // testo Telegram personalizzato
+        attivo: tk.attivo !== undefined ? (!!tk.attivo && !!username) : (!!cur.attivo && !!username),   // rilevamento LIVE (best-effort)
+        annunciaChat: tk.annunciaChat !== undefined ? !!tk.annunciaChat : !!cur.annunciaChat,
+        messaggio: tk.messaggio !== undefined ? String(tk.messaggio || '').slice(0, 800) : String(cur.messaggio || ''),  // testo live
+        // avviso NUOVO POST (via API ufficiale: richiede l'account TikTok collegato in OAuth)
+        postAttivo: tk.postAttivo !== undefined ? !!tk.postAttivo : !!cur.postAttivo,
+        postAnnunciaChat: tk.postAnnunciaChat !== undefined ? !!tk.postAnnunciaChat : !!cur.postAnnunciaChat,
+        postMessaggio: tk.postMessaggio !== undefined ? String(tk.postMessaggio || '').slice(0, 800) : String(cur.postMessaggio || ''),
       };
     }
     // avviso NUOVO VIDEO su YouTube (RSS gratis, oppure la TUA chiave API Data v3)
@@ -1552,7 +1614,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!A('giochi')) { out.giochi = false; if (out.manche) out.manche.attivo = false; if (out.premioVip) out.premioVip.attivo = false; }
     if (!A('clipAuto')) out.clipAuto = false;
     if (!A('voce')) { out.ascoltoLive = false; if (out.cambioCategoria) out.cambioCategoria.attivo = false; if (out.cambioTitolo) out.cambioTitolo.attivo = false; if (out.imparaVoce) out.imparaVoce.attivo = false; }
-    if (!A('notifiche') && out.tiktok) out.tiktok.attivo = false;
+    if (!A('notifiche') && out.tiktok) { out.tiktok.attivo = false; out.tiktok.postAttivo = false; }
     if (!A('notifiche') && out.youtube) out.youtube.attivo = false;
     if (!A('notifiche') && out.instagram) out.instagram.attivo = false;
     // se cambi canale/account, riparto pulito (niente avviso del contenuto già presente)

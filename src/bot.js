@@ -789,6 +789,19 @@ export class BotManager {
             }
           }
         }
+        // --- TikTok (API ufficiale: account collegato in OAuth, scope video.list) ---
+        const tk = s.settings?.tiktok;
+        if (tk?.postAttivo && tiktok.collegato(s.login)) {
+          const p = await tiktok.ultimoPostApi(s.login);
+          if (p?.id) {
+            const conf = tgConf.get(s.login);
+            const ultimo = conf?.tk_ultimo || '';
+            if (p.id !== ultimo) {
+              tgConf.setTkUltimo(s.login, p.id);
+              if (ultimo) await this.notificaPost(s.login, { piattaforma: 'tiktok', titolo: p.titolo, url: p.url, messaggio: tk.postMessaggio, annunciaChat: tk.postAnnunciaChat });
+            }
+          }
+        }
       }
     } catch (e) { log.error('controllaPost:', e?.message || e); }
   }
