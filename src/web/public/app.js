@@ -591,6 +591,34 @@ function renderAreaUtente() {
 
 // ------------------------------------------------------------------ viste "semplici"
 
+// ====================================================================== i18n
+// Tre lingue come andryxify.it: italiano, inglese, spagnolo. Fase 1 = landing
+// pubblica; la dashboard verrà tradotta in seguito, in fasi. La scelta è
+// ricordata in localStorage; L(it, en, es) restituisce la stringa della lingua
+// attiva (fallback: italiano).
+const LINGUE = ['it', 'en', 'es'];
+let LINGUA = (() => {
+  try { const s = localStorage.getItem('lingua'); if (LINGUE.includes(s)) return s; } catch (e) { /* niente */ }
+  const q = new URLSearchParams(location.search).get('lang');
+  if (LINGUE.includes(q)) return q;
+  const n = (navigator.language || 'it').slice(0, 2).toLowerCase();
+  return LINGUE.includes(n) ? n : 'it';
+})();
+try { document.documentElement.lang = LINGUA; } catch (e) { /* niente */ }
+const L = (it, en, es) => (LINGUA === 'en' ? en : LINGUA === 'es' ? es : it);
+function cambiaLingua(l) {
+  if (!LINGUE.includes(l) || l === LINGUA) return;
+  LINGUA = l;
+  try { localStorage.setItem('lingua', l); } catch (e) { /* niente */ }
+  try { document.documentElement.lang = l; } catch (e) { /* niente */ }
+  render();
+}
+// Selettore lingua IT/EN/ES (usato nella vetrina).
+function selettoreLingua() {
+  return `<div class="lingua-sel" role="group" aria-label="${L('Lingua', 'Language', 'Idioma')}">${LINGUE.map((l) =>
+    `<button type="button" class="lingua-btn${l === LINGUA ? ' on' : ''}" data-lingua="${l}" aria-pressed="${l === LINGUA}">${l.toUpperCase()}</button>`).join('')}</div>`;
+}
+
 // Anteprima "overlay in azione" nell'hero: un fotogramma di diretta stilizzato
 // (alert + chat a schermo + webcam) — puro CSS, comunica il prodotto a colpo
 // d'occhio. Decorativo (aria-hidden), nessun dato reale.
@@ -599,91 +627,90 @@ function heroAnteprima() {
   const msg = (col, nome, testo, emote) => `<div class="vp-msg"><b style="color:${col}">${nome}</b> ${testo}${emote ? ' <span class="vp-emote"></span>' : ''}</div>`;
   return `<div class="vetrina-preview" aria-hidden="true">
     <div class="vp-frame">
-      <span class="vp-scene">SCHERMO / GIOCO</span>
+      <span class="vp-scene">${L('SCHERMO / GIOCO', 'SCREEN / GAME', 'PANTALLA / JUEGO')}</span>
       <span class="vp-live">● LIVE</span>
-      <div class="vp-alert"><span class="vp-alert-ic">${star}</span><span class="vp-alert-tx"><b>Nuovo follower!</b> MarioRossi</span></div>
+      <div class="vp-alert"><span class="vp-alert-ic">${star}</span><span class="vp-alert-tx"><b>${L('Nuovo follower!', 'New follower!', '¡Nuevo follower!')}</b> MarioRossi</span></div>
       <div class="vp-cam">webcam</div>
       <div class="vp-chat">
-        ${msg('#ff5c8a', 'lucaplays', 'ciao a tutti!')}
-        ${msg('#5b8def', 'giada_ttv', 'che bella live', true)}
+        ${msg('#ff5c8a', 'lucaplays', L('ciao a tutti!', 'hi everyone!', '¡hola a todos!'))}
+        ${msg('#5b8def', 'giada_ttv', L('che bella live', 'great stream', 'qué buen directo'), true)}
         ${msg('#2fb98a', 'marco99', 'GG!')}
       </div>
     </div>
-    <p class="vp-cap">L'overlay in azione: alert, chat a schermo e widget — tutto personalizzabile.</p>
+    <p class="vp-cap">${L("L'overlay in azione: alert, chat a schermo e widget — tutto personalizzabile.", 'The overlay in action: alerts, on-screen chat and widgets — fully customizable.', 'El overlay en acción: alertas, chat en pantalla y widgets — todo personalizable.')}</p>
   </div>`;
 }
 
 function renderHero() {
   const errore = new URLSearchParams(location.search).get('errore');
   const msgErrore = {
-    'access_denied': 'Hai annullato l’accesso su Twitch.',
-    'state': 'Sessione di accesso scaduta, riprova.',
-    'validazione': 'Twitch non ha confermato il tuo accesso, riprova.',
-    'account-diverso': 'Hai autorizzato un account diverso da quello con cui sei loggato: usa lo stesso account.',
-  }[errore] || (errore ? `Errore di accesso: ${errore}` : null);
+    'access_denied': L('Hai annullato l’accesso su Twitch.', 'You cancelled the Twitch login.', 'Has cancelado el acceso con Twitch.'),
+    'state': L('Sessione di accesso scaduta, riprova.', 'Login session expired, please try again.', 'Sesión de acceso caducada, inténtalo de nuevo.'),
+    'validazione': L('Twitch non ha confermato il tuo accesso, riprova.', 'Twitch didn’t confirm your login, please try again.', 'Twitch no confirmó tu acceso, inténtalo de nuevo.'),
+    'account-diverso': L('Hai autorizzato un account diverso da quello con cui sei loggato: usa lo stesso account.', 'You authorised a different account than the one you’re logged in with: use the same account.', 'Has autorizado una cuenta distinta a la de tu sesión: usa la misma cuenta.'),
+  }[errore] || (errore ? L('Errore di accesso: ', 'Login error: ', 'Error de acceso: ') + errore : null);
 
   // Icone a tratto per la vetrina (coerenti con quelle della sidebar).
   const vi = (d) => `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
   const FEAT = [
     [vi('<path d="M8 12h8"/><path d="M12 8v8"/><rect x="3" y="4" width="18" height="16" rx="3"/>'),
-      'Parla col tuo account', 'Niente bot anonimi: SocialBot scrive in chat con il tuo nome. Sei sempre tu.'],
+      L('Parla col tuo account', 'Speaks with your account', 'Habla con tu cuenta'), L('Niente bot anonimi: SocialBot scrive in chat con il tuo nome. Sei sempre tu.', 'No anonymous bots: SocialBot writes in chat under your name. It’s always you.', 'Nada de bots anónimos: SocialBot escribe en el chat con tu nombre. Siempre eres tú.')],
     [vi('<path d="M12 3c.35 3.8 1.4 4.85 5 5.2-3.6.35-4.65 1.4-5 5.2-.35-3.8-1.4-4.85-5-5.2 3.6-.35 4.65-1.4 5-5.2Z"/>'),
-      'Si addestra da solo', 'Al primo accesso impara chi sei dal tuo profilo e cresce con la tua chat.'],
+      L('Si addestra da solo', 'Trains itself', 'Se entrena solo'), L('Al primo accesso impara chi sei dal tuo profilo e cresce con la tua chat.', 'On first login it learns who you are from your profile and grows with your chat.', 'En el primer acceso aprende quién eres desde tu perfil y crece con tu chat.')],
     [vi('<rect x="3" y="4" width="18" height="16" rx="2.2"/><path d="M7.5 9.5 10.5 12l-3 2.5"/><path d="M13 15h4"/>'),
-      'Comandi & moduli', 'Crea comandi, frasi e automazioni infinite — anche a partire da una frase o una domanda.'],
+      L('Comandi & moduli', 'Commands & modules', 'Comandos y módulos'), L('Crea comandi, frasi e automazioni infinite — anche a partire da una frase o una domanda.', 'Create unlimited commands, phrases and automations — even from a single sentence or question.', 'Crea comandos, frases y automatizaciones infinitas — incluso a partir de una frase o una pregunta.')],
     [vi('<rect x="3" y="5" width="18" height="14" rx="2.2"/><path d="M8 5v14"/><path d="M16 5v14"/>'),
-      'Clip automatiche', 'Cattura i momenti di hype senza muovere un dito.'],
+      L('Clip automatiche', 'Automatic clips', 'Clips automáticos'), L('Cattura i momenti di hype senza muovere un dito.', 'Capture the hype moments without lifting a finger.', 'Captura los momentos de hype sin mover un dedo.')],
     [vi('<path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5 2 6H4c.5-1 2-2 2-6"/><path d="M10.3 20a1.9 1.9 0 0 0 3.4 0"/>'),
-      'Notifiche live', 'Avvisi automatici su Telegram e TikTok quando vai in diretta.'],
+      L('Notifiche live', 'Live notifications', 'Notificaciones en directo'), L('Avvisi automatici su Telegram e TikTok quando vai in diretta.', 'Automatic alerts on Telegram and TikTok when you go live.', 'Avisos automáticos en Telegram y TikTok cuando estás en directo.')],
     [vi('<rect x="9" y="3" width="6" height="10.5" rx="3"/><path d="M6 11a6 6 0 0 0 12 0"/><path d="M12 17v4"/>'),
-      'Comandi a voce', 'Piloti il bot parlando, mentre streammi, senza toccare la tastiera.'],
+      L('Comandi a voce', 'Voice commands', 'Comandos por voz'), L('Piloti il bot parlando, mentre streammi, senza toccare la tastiera.', 'Drive the bot by speaking, while you stream, without touching the keyboard.', 'Controla el bot hablando, mientras haces directo, sin tocar el teclado.')],
     [vi('<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>'),
-      'Overlay Studio', 'Alert, chat e widget a schermo: colori, font (anche Google), posizione, dimensione e rotazione. Più overlay, ognuno col suo link OBS.'],
+      L('Overlay Studio', 'Overlay Studio', 'Overlay Studio'), L('Alert, chat e widget a schermo: colori, font (anche Google), posizione, dimensione e rotazione. Più overlay, ognuno col suo link OBS.', 'On-screen alerts, chat and widgets: colours, fonts (Google too), position, size and rotation. Multiple overlays, each with its own OBS link.', 'Alertas, chat y widgets en pantalla: colores, fuentes (también de Google), posición, tamaño y rotación. Varios overlays, cada uno con su enlace OBS.')],
     [vi('<path d="M12 3v18"/><path d="M4 8l8-5 8 5"/><path d="M4 16l8 5 8-5"/>'),
-      'Alert su misura', 'Follow, sub, bit e raid con immagini o video, suoni tuoi o pronti, e il green screen sui video riscattabili a punti canale.'],
+      L('Alert su misura', 'Custom alerts', 'Alertas a medida'), L('Follow, sub, bit e raid con immagini o video, suoni tuoi o pronti, e il green screen sui video riscattabili a punti canale.', 'Follows, subs, bits and raids with images or video, your own or ready-made sounds, and green screen on videos redeemable with channel points.', 'Follows, subs, bits y raids con imágenes o vídeo, sonidos tuyos o listos, y croma en los vídeos canjeables con puntos de canal.')],
     [vi('<circle cx="12" cy="12" r="9"/><path d="M8 12h8"/><path d="M12 8v8"/>'),
-      'Emote 7TV', 'Le emote 7TV del tuo canale compaiono nella chat a schermo, come nella chat vera.'],
+      L('Emote 7TV', '7TV emotes', 'Emotes 7TV'), L('Le emote 7TV del tuo canale compaiono nella chat a schermo, come nella chat vera.', 'Your channel’s 7TV emotes show up in the on-screen chat, just like in the real chat.', 'Los emotes 7TV de tu canal aparecen en el chat en pantalla, como en el chat real.')],
     [vi('<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>'),
-      'Musica & punti canale', 'Richieste musicali su Spotify, minigiochi con monete, penitenze a tempo ed effetti su ogni riscatto.'],
+      L('Musica & punti canale', 'Music & channel points', 'Música y puntos de canal'), L('Richieste musicali su Spotify, minigiochi con monete, penitenze a tempo ed effetti su ogni riscatto.', 'Music requests on Spotify, coin minigames, timed forfeits and effects on every redemption.', 'Peticiones de música en Spotify, minijuegos con monedas, penitencias a tiempo y efectos en cada canje.')],
   ];
   const STEP = [
-    ['1', 'Accedi con Twitch', 'Un click, con lo stesso account con cui streammi.'],
-    ['2', 'Richiedi l’abilitazione', 'andryxify ti approva e sblocca la tua dashboard.'],
-    ['3', 'Personalizza e vai live', 'Tono, comandi, notifiche: tutto tuo, in pochi minuti.'],
+    ['1', L('Accedi con Twitch', 'Log in with Twitch', 'Entra con Twitch'), L('Un click, con lo stesso account con cui streammi.', 'One click, with the same account you stream with.', 'Un clic, con la misma cuenta con la que haces directo.')],
+    ['2', L('Richiedi l’abilitazione', 'Request activation', 'Solicita la activación'), L('andryxify ti approva e sblocca la tua dashboard.', 'andryxify approves you and unlocks your dashboard.', 'andryxify te aprueba y desbloquea tu panel.')],
+    ['3', L('Personalizza e vai live', 'Customise and go live', 'Personaliza y ve en directo'), L('Tono, comandi, notifiche: tutto tuo, in pochi minuti.', 'Tone, commands, notifications: all yours, in minutes.', 'Tono, comandos, notificaciones: todo tuyo, en minutos.')],
   ];
   // Domande frequenti: rispecchiano i dati strutturati FAQPage in index.html
   // (Google mostra le FAQ nei risultati solo se sono anche visibili qui).
   const FAQ = [
-    ['Con quale account scrive SocialBot in chat?', 'Con il <strong>tuo</strong>: SocialBot usa il tuo account Twitch, non un bot anonimo. In chat compare il tuo nome e sei sempre tu ad avere il controllo.'],
-    ['Che cosa sa fare?', 'Comandi e automazioni su misura, moderazione della chat, clip automatiche, minigiochi con monete, notifiche live su Telegram e avvisi dei nuovi post su TikTok, YouTube e Instagram. E lo piloti anche a voce.'],
-    ['SocialBot è in italiano?', 'Sì: sia il bot in chat sia la dashboard sono interamente in italiano.'],
-    ['Posso provarlo senza registrarmi?', 'Sì, c’è una <a href="/?demo=1">demo interattiva</a> con dati d’esempio: la apri con un click, senza accesso.'],
-    ['Come si attiva sul mio canale?', 'In due modi. Se sei già un membro abilitato della community di <a href="https://andryxify.it">andryxify.it</a>, SocialBot è gratis e completo: accedi con Twitch e attivi la dashboard. Altrimenti scegli un piano — con l’abbonamento entri subito, direttamente da qui.'],
+    [L('Con quale account scrive SocialBot in chat?', 'Which account does SocialBot write with in chat?', '¿Con qué cuenta escribe SocialBot en el chat?'), L('Con il <strong>tuo</strong>: SocialBot usa il tuo account Twitch, non un bot anonimo. In chat compare il tuo nome e sei sempre tu ad avere il controllo.', 'With <strong>yours</strong>: SocialBot uses your Twitch account, not an anonymous bot. Your name shows in chat and you’re always in control.', 'Con la <strong>tuya</strong>: SocialBot usa tu cuenta de Twitch, no un bot anónimo. En el chat aparece tu nombre y siempre tienes el control.')],
+    [L('Che cosa sa fare?', 'What can it do?', '¿Qué sabe hacer?'), L('Comandi e automazioni su misura, moderazione della chat, clip automatiche, minigiochi con monete, notifiche live su Telegram e avvisi dei nuovi post su TikTok, YouTube e Instagram. E lo piloti anche a voce.', 'Custom commands and automations, chat moderation, automatic clips, coin minigames, live Telegram notifications and alerts for new posts on TikTok, YouTube and Instagram. And you can drive it by voice too.', 'Comandos y automatizaciones a medida, moderación del chat, clips automáticos, minijuegos con monedas, notificaciones en directo por Telegram y avisos de nuevas publicaciones en TikTok, YouTube e Instagram. Y también lo controlas por voz.')],
+    [L('SocialBot è in italiano?', 'Is SocialBot multilingual?', '¿SocialBot está en varios idiomas?'), L('Sì, ed è disponibile in italiano, inglese e spagnolo.', 'Yes: it’s available in Italian, English and Spanish.', 'Sí: está disponible en italiano, inglés y español.')],
+    [L('Posso provarlo senza registrarmi?', 'Can I try it without signing up?', '¿Puedo probarlo sin registrarme?'), L('Sì, c’è una <a href="/?demo=1">demo interattiva</a> con dati d’esempio: la apri con un click, senza accesso.', 'Yes, there’s an <a href="/?demo=1">interactive demo</a> with sample data: open it with one click, no login.', 'Sí, hay una <a href="/?demo=1">demo interactiva</a> con datos de ejemplo: la abres con un clic, sin acceso.')],
+    [L('Come si attiva sul mio canale?', 'How do I activate it on my channel?', '¿Cómo lo activo en mi canal?'), L('In due modi. Se sei già un membro abilitato della community di <a href="https://andryxify.it">andryxify.it</a>, SocialBot è gratis e completo: accedi con Twitch e attivi la dashboard. Altrimenti scegli un piano — con l’abbonamento entri subito, direttamente da qui.', 'Two ways. If you’re already an enabled member of the <a href="https://andryxify.it">andryxify.it</a> community, SocialBot is free and complete: log in with Twitch and activate the dashboard. Otherwise pick a plan — with a subscription you’re in right away, from here.', 'De dos formas. Si ya eres miembro habilitado de la comunidad de <a href="https://andryxify.it">andryxify.it</a>, SocialBot es gratis y completo: entra con Twitch y activas el panel. Si no, elige un plan — con la suscripción entras al instante, desde aquí.')],
   ];
 
   app.innerHTML = `
     ${msgErrore ? `<div class="carta avviso"><p>${esc(msgErrore)}</p></div>` : ''}
 
     <section class="vetrina-hero">
-      <span class="vetrina-occhiello">SocialBot · il bot di andryxify.it</span>
-      <h1 class="vetrina-titolo">${titoloParole('Il bot per Twitch che parla')} <span class="acc">${titoloParole('con la tua voce', 5)}</span></h1>
-      <p class="vetrina-sub"><strong>Bot per Twitch in italiano</strong> che vive nella tua chat e scrive <strong>con il tuo account</strong> — niente bot anonimi.
-      Comandi su misura, moderazione, <strong>overlay per OBS</strong>, clip, musica e persino <strong>dirette dal browser senza OBS</strong>.</p>
+      ${selettoreLingua()}
+      <span class="vetrina-occhiello">${L('SocialBot · il bot di andryxify.it', 'SocialBot · the bot by andryxify.it', 'SocialBot · el bot de andryxify.it')}</span>
+      <h1 class="vetrina-titolo">${titoloParole(L('Il bot per Twitch che parla', 'The Twitch bot that speaks', 'El bot de Twitch que habla'))} <span class="acc">${titoloParole(L('con la tua voce', 'with your own voice', 'con tu propia voz'), 5)}</span></h1>
+      <p class="vetrina-sub">${L('<strong>Bot per Twitch in italiano</strong> che vive nella tua chat e scrive <strong>con il tuo account</strong> — niente bot anonimi. Comandi su misura, moderazione, <strong>overlay per OBS</strong>, clip, musica e persino <strong>dirette dal browser senza OBS</strong>.', '<strong>Twitch bot</strong> that lives in your chat and writes <strong>with your own account</strong> — no anonymous bots. Custom commands, moderation, <strong>OBS overlay</strong>, clips, music and even <strong>going live from the browser without OBS</strong>.', '<strong>Bot para Twitch</strong> que vive en tu chat y escribe <strong>con tu cuenta</strong> — nada de bots anónimos. Comandos a medida, moderación, <strong>overlay para OBS</strong>, clips, música e incluso <strong>directos desde el navegador sin OBS</strong>.')}</p>
       <div class="vetrina-azioni">
-        <a class="btn grande" href="/entra">Accedi con Twitch</a>
-        <a class="btn grande secondario" href="/?demo=1">▶ Prova la demo</a>
+        <a class="btn grande" href="/entra">${L('Accedi con Twitch', 'Log in with Twitch', 'Entra con Twitch')}</a>
+        <a class="btn grande secondario" href="/?demo=1">▶ ${L('Prova la demo', 'Try the demo', 'Prueba la demo')}</a>
       </div>
-      <ul class="vetrina-chip" aria-label="In breve">
-        ${['In italiano', 'Scrive col tuo account', 'Anche senza OBS', 'Gratis per la community'].map((t) =>
+      <ul class="vetrina-chip" aria-label="${L('In breve', 'At a glance', 'En breve')}">
+        ${[L('In italiano', 'Multilingual', 'Multilingüe'), L('Scrive col tuo account', 'Uses your account', 'Con tu cuenta'), L('Anche senza OBS', 'Even without OBS', 'Incluso sin OBS'), L('Gratis per la community', 'Free for the community', 'Gratis para la comunidad')].map((t) =>
           `<li>${_bIco('<path d="M20 6 9 17l-5-5"/>')}${t}</li>`).join('')}
       </ul>
       ${heroAnteprima()}
-      <p class="nota">Con «Accedi con Twitch» entri <strong>subito nella dashboard</strong> se sei uno streamer <strong>abilitato</strong> su
-      <a href="https://andryxify.it">andryxify.it</a> o hai un <strong>abbonamento</strong> — <strong>senza passkey</strong>. Altrimenti da qui scegli un piano.</p>
-      <p class="vetrina-accessi">Preferisci un altro modo?
-        <a href="/sblocca">Entra con passkey</a>
+      <p class="nota">${L('Con «Accedi con Twitch» entri <strong>subito nella dashboard</strong> se sei uno streamer <strong>abilitato</strong> su <a href="https://andryxify.it">andryxify.it</a> o hai un <strong>abbonamento</strong> — <strong>senza passkey</strong>. Altrimenti da qui scegli un piano.', 'With «Log in with Twitch» you go <strong>straight to the dashboard</strong> if you’re an <strong>enabled</strong> streamer on <a href="https://andryxify.it">andryxify.it</a> or you have a <strong>subscription</strong> — <strong>no passkey</strong>. Otherwise pick a plan from here.', 'Con «Entra con Twitch» accedes <strong>directo al panel</strong> si eres un streamer <strong>habilitado</strong> en <a href="https://andryxify.it">andryxify.it</a> o tienes una <strong>suscripción</strong> — <strong>sin passkey</strong>. Si no, elige un plan desde aquí.')}</p>
+      <p class="vetrina-accessi">${L('Preferisci un altro modo?', 'Prefer another way?', '¿Prefieres otra forma?')}
+        <a href="/sblocca">${L('Entra con passkey', 'Log in with a passkey', 'Entra con passkey')}</a>
         <span aria-hidden="true">·</span>
-        <a href="/mod">Accesso moderatore</a>
+        <a href="/mod">${L('Accesso moderatore', 'Moderator access', 'Acceso moderador')}</a>
       </p>
     </section>
 
@@ -697,7 +724,7 @@ function renderHero() {
     </section>
 
     <section class="carta rivela vetrina-come">
-      <h2>Come si attiva</h2>
+      <h2>${L('Come si attiva', 'How to get started', 'Cómo se activa')}</h2>
       <div class="vetrina-passi">
         ${STEP.map(([n, t, d]) => `
           <div class="vetrina-passo">
@@ -707,21 +734,23 @@ function renderHero() {
       </div>
     </section>
 
-    <section class="vetrina-piani" id="vetrina-piani" aria-label="Piani"></section>
+    <section class="vetrina-piani" id="vetrina-piani" aria-label="${L('Piani', 'Plans', 'Planes')}"></section>
 
-    <section class="carta rivela vetrina-faq" aria-label="Domande frequenti">
-      <h2>Domande frequenti</h2>
+    <section class="carta rivela vetrina-faq" aria-label="${L('Domande frequenti', 'FAQ', 'Preguntas frecuentes')}">
+      <h2>${L('Domande frequenti', 'Frequently asked questions', 'Preguntas frecuentes')}</h2>
       ${FAQ.map(([q, a]) => `<details class="faq-item"><summary>${q}</summary><p>${a}</p></details>`).join('')}
     </section>
 
     <section class="carta rivela vetrina-cta">
       <div>
-        <h2>Fai parte di andryxify.it</h2>
-        <p>SocialBot è uno dei tasselli del mondo andryxify: profili, giochi e community in un unico posto.</p>
+        <h2>${L('Fai parte di andryxify.it', 'Part of andryxify.it', 'Parte de andryxify.it')}</h2>
+        <p>${L('SocialBot è uno dei tasselli del mondo andryxify: profili, giochi e community in un unico posto.', 'SocialBot is one piece of the andryxify world: profiles, games and community in one place.', 'SocialBot es una pieza del mundo andryxify: perfiles, juegos y comunidad en un solo lugar.')}</p>
       </div>
-      <a class="btn grande secondario" href="https://andryxify.it">Vai al sito principale →</a>
+      <a class="btn grande secondario" href="https://andryxify.it">${L('Vai al sito principale', 'Go to the main site', 'Ir al sitio principal')} →</a>
     </section>`;
 
+  // selettore lingua: cambia lingua e ridisegna
+  app.querySelectorAll('[data-lingua]').forEach((b) => b.addEventListener('click', () => cambiaLingua(b.dataset.lingua)));
   rivelaCarte();   // scroll-reveal delle carte della vetrina
   caricaPiani();   // riempie la sezione prezzi (tier) dal server
   // esiti del ritorno da Stripe
@@ -760,20 +789,21 @@ async function caricaPiani() {
   if (!base) { box.remove(); return; }
 
   const prezzoIt = (n) => Number(n || 0).toFixed(2).replace('.', ',');
+  const perMese = L('/mese', '/month', '/mes');
   // Cosa include la Base (copy curata, non guidata dalla matrice grezza).
   const inclusiBase = [
-    'Comandi & moduli illimitati',
-    'Antispam & moderazione',
-    'Overlay per OBS',
-    '1 moderatore incluso',
+    L('Comandi & moduli illimitati', 'Unlimited commands & modules', 'Comandos y módulos ilimitados'),
+    L('Antispam & moderazione', 'Anti-spam & moderation', 'Antispam y moderación'),
+    L('Overlay per OBS', 'OBS overlay', 'Overlay para OBS'),
+    L('1 moderatore incluso', '1 moderator included', '1 moderador incluido'),
   ];
 
   box.innerHTML = `
     <div class="vetrina-piani-testa">
-      <h2>Componi il tuo bot</h2>
+      <h2>${L('Componi il tuo bot', 'Build your bot', 'Compón tu bot')}</h2>
       <p>${dati.attivo
-        ? 'Parti dalla Base e aggiungi solo i super-poteri che ti servono.'
-        : 'Presto potrai attivarlo — parti dalla Base e aggiungi solo i super-poteri che ti servono.'}</p>
+        ? L('Parti dalla Base e aggiungi solo i super-poteri che ti servono.', 'Start from Base and add only the super-powers you need.', 'Empieza por la Base y añade solo los súper-poderes que necesitas.')
+        : L('Presto potrai attivarlo — parti dalla Base e aggiungi solo i super-poteri che ti servono.', 'Coming soon — start from Base and add only the super-powers you need.', 'Muy pronto — empieza por la Base y añade solo los súper-poderes que necesitas.')}</p>
     </div>
     <div class="piani-componi">
       <div class="piano-base carta rivela">
@@ -783,7 +813,7 @@ async function caricaPiani() {
             <h3>${esc(base.nome)}</h3>
             <p class="piano-somm">${esc(base.sommario)}</p>
           </div>
-          <div class="piano-prezzo">€${prezzoIt(base.prezzo)}<span>/mese</span></div>
+          <div class="piano-prezzo">€${prezzoIt(base.prezzo)}<span>${perMese}</span></div>
         </div>
         <ul class="piano-funzioni">
           ${inclusiBase.map((t) => `<li><span class="pf-val si">✓</span> ${esc(t)}</li>`).join('')}
@@ -793,13 +823,13 @@ async function caricaPiani() {
       ${bundle.length ? (() => {
         const maxSc = Math.round(Math.max(0, ...bundle.map((b) => b.sconto || 0)) * 100);
         return `<div class="bundle-blocco">
-        <h4 class="addon-titolo">Bundle pronti${maxSc > 0 ? ` <span>· fino al –${maxSc}% sugli add-on</span>` : ''}</h4>
+        <h4 class="addon-titolo">${L('Bundle pronti', 'Ready-made bundles', 'Packs listos')}${maxSc > 0 ? ` <span>· ${L('fino al', 'up to', 'hasta')} –${maxSc}% ${L('sugli add-on', 'on add-ons', 'en los add-on')}</span>` : ''}</h4>
         <div class="bundle-griglia">
           ${bundle.map((b) => {
             const risp = b.prezzoPieno > b.prezzo;
             return `<button type="button" class="bundle-carta" data-bundle="${esc(b.id)}" aria-pressed="false">
               <span class="bundle-icona">${svgPiano(b.addon[0] || 'base')}</span>
-              <span class="bundle-prezzo">${risp ? `<span class="bundle-sconto">–${Math.round(b.sconto * 100)}%</span> <s>+€${prezzoIt(b.prezzoPieno)}</s> ` : ''}<strong>+€${prezzoIt(b.prezzo)}</strong><small>/mese</small></span>
+              <span class="bundle-prezzo">${risp ? `<span class="bundle-sconto">–${Math.round(b.sconto * 100)}%</span> <s>+€${prezzoIt(b.prezzoPieno)}</s> ` : ''}<strong>+€${prezzoIt(b.prezzo)}</strong><small>${perMese}</small></span>
               <span class="bundle-testo">
                 <span class="bundle-nome">${esc(b.nome)}</span>
                 <span class="bundle-somm">${esc(b.sommario)}</span>
@@ -811,7 +841,7 @@ async function caricaPiani() {
       })() : ''}
 
       <div class="addon-blocco">
-        <h4 class="addon-titolo">Aggiungi super-poteri <span>· à la carte</span></h4>
+        <h4 class="addon-titolo">${L('Aggiungi super-poteri', 'Add super-powers', 'Añade súper-poderes')} <span>· à la carte</span></h4>
         <div class="addon-griglia">
           ${addon.map((a) => `
             <button type="button" class="addon-carta" data-addon="${esc(a.id)}" aria-pressed="false">
@@ -827,17 +857,16 @@ async function caricaPiani() {
 
       <div class="piani-riepilogo">
         <div class="riepilogo-conto">
-          <span class="riepilogo-voce" id="piani-voce">Solo Base</span>
-          <span class="riepilogo-tot" id="piani-totale">€${prezzoIt(base.prezzo)}<span>/mese</span></span>
+          <span class="riepilogo-voce" id="piani-voce">${L('Solo Base', 'Base only', 'Solo Base')}</span>
+          <span class="riepilogo-tot" id="piani-totale">€${prezzoIt(base.prezzo)}<span>${perMese}</span></span>
         </div>
         ${dati.attivo
-          ? '<button class="btn grande" id="piani-attiva">Attiva SocialBot →</button>'
-          : '<button class="btn grande secondario" disabled>In arrivo</button>'}
+          ? `<button class="btn grande" id="piani-attiva">${L('Attiva SocialBot', 'Activate SocialBot', 'Activa SocialBot')} →</button>`
+          : `<button class="btn grande secondario" disabled>${L('In arrivo', 'Coming soon', 'Muy pronto')}</button>`}
       </div>
     </div>
     <div class="piani-community">
-      <strong>Sei già un membro abilitato della community di <a href="https://andryxify.it">andryxify.it</a>?</strong>
-      SocialBot è <strong>gratis e completo</strong> per te — non ti serve nessun piano.
+      ${L('<strong>Sei già un membro abilitato della community di <a href="https://andryxify.it">andryxify.it</a>?</strong> SocialBot è <strong>gratis e completo</strong> per te — non ti serve nessun piano.', '<strong>Already an enabled member of the <a href="https://andryxify.it">andryxify.it</a> community?</strong> SocialBot is <strong>free and complete</strong> for you — no plan needed.', '<strong>¿Ya eres miembro habilitado de la comunidad de <a href="https://andryxify.it">andryxify.it</a>?</strong> SocialBot es <strong>gratis y completo</strong> para ti — no necesitas ningún plan.')}
     </div>`;
   rivelaCarte(box);
 
@@ -851,9 +880,9 @@ async function caricaPiani() {
     const b = bundleAttivo();
     let tot = Number(base.prezzo || 0) + (b ? Number(b.prezzo || 0)
       : [...selezione].reduce((t, id) => t + Number(addon.find((x) => x.id === id)?.prezzo || 0), 0));
-    if (totaleEl) totaleEl.innerHTML = `€${prezzoIt(tot)}<span>/mese</span>`;
-    if (voceEl) voceEl.textContent = b ? `Base + bundle ${b.nome} (–${Math.round(b.sconto * 100)}%)`
-      : (selezione.size ? `Base + ${selezione.size} add-on` : 'Solo Base');
+    if (totaleEl) totaleEl.innerHTML = `€${prezzoIt(tot)}<span>${perMese}</span>`;
+    if (voceEl) voceEl.textContent = b ? `${L('Base + bundle', 'Base + bundle', 'Base + pack')} ${b.nome} (–${Math.round(b.sconto * 100)}%)`
+      : (selezione.size ? `Base + ${selezione.size} ${L('add-on', selezione.size === 1 ? 'add-on' : 'add-ons', 'add-on')}` : L('Solo Base', 'Base only', 'Solo Base'));
     // evidenzia la carta bundle corrispondente (o nessuna)
     box.querySelectorAll('[data-bundle]').forEach((el) => {
       const on = !!b && el.dataset.bundle === b.id;
