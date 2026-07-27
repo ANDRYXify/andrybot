@@ -174,7 +174,7 @@ async function caricaStato() {
   render();
   // promo "settimana gratis" appena assegnata
   if (new URLSearchParams(location.search).get('promo') === '1') {
-    toast('Hai ricevuto una settimana Pro gratis — esplora tutto SocialBot!');
+    toast(L('Hai ricevuto una settimana Pro gratis — esplora tutto SocialBot!', 'You got a free Pro week — explore all of SocialBot!', 'Tienes una semana Pro gratis — explora todo SocialBot!'));
     try { history.replaceState(null, '', '/'); } catch { /* niente */ }
   }
 }
@@ -273,7 +273,7 @@ function apiDemo(percorso, opzioni = {}) {
     { testo: 'ti porterò in un brodificio', autore: 'andryxify', data: '2024-06-17' },
   ] });
   if (via === '/api/streamer/citazioni/importa') return Promise.resolve({ ok: true, aggiunte: 2, saltate: 0 });
-  if (via.endsWith('/prova')) { toast('In demo non invio davvero in chat'); return Promise.resolve({ ok: true }); }
+  if (via.endsWith('/prova')) { toast(L('In demo non invio davvero in chat', 'In demo mode I don\'t really send to chat', 'En demo no envío de verdad al chat')); return Promise.resolve({ ok: true }); }
   return Promise.resolve({ ok: true, demo: true });
 }
 
@@ -591,7 +591,7 @@ function renderAreaUtente() {
     sel.addEventListener('change', (ev) => conErrore(async () => {
       await api('/api/cambia-canale', { method: 'POST', body: { channel: ev.target.value } });
       stato = await api('/api/me'); render();
-      toast('Ora gestisci @' + (stato.user.display || stato.user.login) + (stato.ruolo === 'moderatore' ? ' come moderatore' : ' come proprietario'));
+      toast(L('Ora gestisci @', 'Now managing @', 'Ahora gestionas @') + (stato.user.display || stato.user.login) + (stato.ruolo === 'moderatore' ? L(' come moderatore', ' as moderator', ' como moderador') : L(' come proprietario', ' as owner', ' como propietario')));
     })));
 }
 
@@ -808,8 +808,8 @@ function renderHero() {
   caricaPiani();   // riempie la sezione prezzi (tier) dal server
   // esiti del ritorno da Stripe
   const q = new URLSearchParams(location.search);
-  if (q.get('abbonato') === '1') toast('Abbonamento attivo, benvenuto!');
-  else if (q.get('abbonamento') === 'annullato') toast('Checkout annullato — nessun addebito.');
+  if (q.get('abbonato') === '1') toast(L('Abbonamento attivo, benvenuto!', 'Subscription active, welcome!', 'Suscripción activa, ¡bienvenido!'));
+  else if (q.get('abbonamento') === 'annullato') toast(L('Checkout annullato — nessun addebito.', 'Checkout canceled — no charge.', 'Pago cancelado — sin cargo.'));
 }
 
 // Icone dei piani: SVG in linea (stile Lucide, tratto pulito) invece delle emoji
@@ -973,7 +973,7 @@ async function caricaPiani() {
       try {
         const body = b ? { bundle: b.id } : { pacchetti };
         const r = await api('/api/abbonamento/checkout', { method: 'POST', body });
-        if (r?.url) location.href = r.url; else toast('Piano non disponibile al momento.', 'errore');
+        if (r?.url) location.href = r.url; else toast(L('Piano non disponibile al momento.', 'Plan not available right now.', 'Plan no disponible por el momento.'), 'errore');
       } catch (e) {
         // non loggato: prima l'accesso con Twitch, poi si torna dritti al checkout con la scelta
         if (/non autenticato/i.test(e?.message || '')) {
@@ -1989,8 +1989,8 @@ async function caricaTikTok() {
   const box = document.getElementById('tiktok-post-box');
   if (!box) return;
   const q = new URLSearchParams(location.search);
-  if (q.get('tiktok') === 'ok') toast('Account TikTok collegato.');
-  else if (q.get('tiktok') === 'errore') toast('Collegamento TikTok non riuscito.', 'errore');
+  if (q.get('tiktok') === 'ok') toast(L('Account TikTok collegato.', 'TikTok account connected.', 'Cuenta de TikTok conectada.'));
+  else if (q.get('tiktok') === 'errore') toast(L('Collegamento TikTok non riuscito.', 'TikTok connection failed.', 'Conexión con TikTok fallida.'), 'errore');
   if (q.get('tiktok')) { try { history.replaceState(null, '', location.pathname + '#notifiche'); } catch { /* niente */ } }
   const proprietario = stato?.ruolo !== 'moderatore';
   if (!proprietario) { box.innerHTML = '<p class="suggerimento">Solo il proprietario del canale può collegare TikTok.</p>'; return; }
@@ -2020,12 +2020,12 @@ async function caricaTikTok() {
     </div>`;
   document.getElementById('tiktok-scollega').addEventListener('click', () => conErrore(async () => {
     await api('/api/tiktok/disconnect', { method: 'POST', body: {} });
-    toast('TikTok scollegato.'); caricaTikTok();
+    toast(L('TikTok scollegato.', 'TikTok disconnected.', 'TikTok desconectado.')); caricaTikTok();
   }));
   document.getElementById('tiktok-prova').addEventListener('click', () => conErrore(async () => {
     const r = await api('/api/tiktok/prova', { method: 'POST', body: {} });
-    if (r?.vuoto) toast('Collegato, ma non trovo ancora video sul tuo profilo.');
-    else toast('Funziona: leggo il tuo ultimo video.');
+    if (r?.vuoto) toast(L('Collegato, ma non trovo ancora video sul tuo profilo.', 'Connected, but I can\'t find any videos on your profile yet.', 'Conectado, pero aún no encuentro vídeos en tu perfil.'));
+    else toast(L('Funziona: leggo il tuo ultimo video.', 'It works: I can read your latest video.', 'Funciona: leo tu último vídeo.'));
   }));
 }
 
@@ -2035,9 +2035,9 @@ function collegaSalvaCred() {
   b.addEventListener('click', () => conErrore(async () => {
     const clientId = (document.getElementById('spotify-cid')?.value || '').trim();
     const clientSecret = (document.getElementById('spotify-csec')?.value || '').trim();
-    if (!clientId || !clientSecret) { toast('Inserisci Client ID e Client Secret.', 'errore'); return; }
+    if (!clientId || !clientSecret) { toast(L('Inserisci Client ID e Client Secret.', 'Enter Client ID and Client Secret.', 'Introduce Client ID y Client Secret.'), 'errore'); return; }
     await api('/api/spotify/config', { method: 'POST', body: { clientId, clientSecret } });
-    toast('Credenziali salvate! Ora connetti Spotify.');
+    toast(L('Credenziali salvate! Ora connetti Spotify.', 'Credentials saved! Now connect Spotify.', '¡Credenciales guardadas! Ahora conecta Spotify.'));
     caricaSpotify();
   }));
 }
@@ -4619,8 +4619,8 @@ function _xlaGrabFn() {
     if (!o.length) { alert('Nessuna quote trovata: scorri la pagina x.la fino in fondo per caricarle tutte, poi riprova.'); return; }
     var t = o.join('\n\n');
     var done = function () { alert('Copiate ' + o.length + ' quote! Torna sul bot, incollale in "Importa citazioni" e premi "Riconosci e importa".'); };
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, function () { window.prompt('Copia con Ctrl+C:', t); });
-    else window.prompt('Copia con Ctrl+C:', t);
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, function () { window.prompt(L('Copia con Ctrl+C:', 'Copy with Ctrl+C:', 'Copia con Ctrl+C:'), t); });
+    else window.prompt(L('Copia con Ctrl+C:', 'Copy with Ctrl+C:', 'Copia con Ctrl+C:'), t);
   } catch (e) { alert('Errore: ' + e.message); }
 }
 // href del bookmarklet: la funzione su una riga sola, pronta da trascinare nei preferiti.
@@ -5137,7 +5137,7 @@ function attivaPiattaforma() {
       toast(acceso ? L('Bot acceso!', 'Bot on!', '¡Bot encendido!') : L('Bot spento.', 'Bot off.', 'Bot apagado.'));
     } catch (e) {
       ev.target.checked = !acceso;
-      toast('Errore: ' + e.message, 'errore');
+      toast(L('Errore: ', 'Error: ', 'Error: ') + e.message, 'errore');
     }
   });
 
@@ -5146,12 +5146,12 @@ function attivaPiattaforma() {
     if (promptInstall) {
       promptInstall.prompt();
       const scelta = await promptInstall.userChoice.catch(() => null);
-      if (scelta?.outcome === 'accepted') toast('App installata!');
+      if (scelta?.outcome === 'accepted') toast(L('App installata!', 'App installed!', '¡App instalada!'));
       promptInstall = null;
     } else if (window.matchMedia('(display-mode: standalone)').matches) {
-      toast('L\'app è già installata');
+      toast(L('L\'app è già installata', 'The app is already installed', 'La app ya está instalada'));
     } else {
-      toast('Usa il menu del browser: “Installa app” / “Aggiungi a Home”.');
+      toast(L('Usa il menu del browser: “Installa app” / “Aggiungi a Home”.', 'Use the browser menu: “Install app” / “Add to Home”.', 'Usa el menú del navegador: “Instalar app” / “Añadir a inicio”.'));
     }
   });
 
@@ -5164,21 +5164,21 @@ function attivaPiattaforma() {
   // invito di un moderatore (crea il link da mandargli)
   document.getElementById('btn-invita-mod')?.addEventListener('click', () => conErrore(async () => {
     const login = (document.getElementById('inp-mod-login').value || '').trim().replace(/^@/, '');
-    if (!login) { toast('Scrivi l’username Twitch del moderatore.', 'errore'); return; }
+    if (!login) { toast(L('Scrivi l’username Twitch del moderatore.', 'Type the moderator\'s Twitch username.', 'Escribe el nombre de usuario de Twitch del moderador.'), 'errore'); return; }
     const r = await api('/api/moderatori', { method: 'POST', body: { login } });
     document.getElementById('inp-mod-login').value = '';
     mostraInvito(r.invito);
-    toast('Invito creato: copia il link e mandaglielo');
+    toast(L('Invito creato: copia il link e mandaglielo', 'Invite created: copy the link and send it to them', 'Invitación creada: copia el enlace y envíaselo'));
     caricaModeratori();
   }));
 
   // creazione di una passkey
   document.getElementById('btn-crea-passkey')?.addEventListener('click', (ev) => conErrore(async () => {
     const btn = ev.currentTarget; btn.disabled = true;
-    try { await creaPasskey(); toast('Passkey creata! Ora puoi rientrare senza pass'); caricaPasskey(); }
+    try { await creaPasskey(); toast(L('Passkey creata! Ora puoi rientrare senza pass', 'Passkey created! Now you can log back in without a password', '¡Passkey creada! Ahora puedes volver a entrar sin contraseña')); caricaPasskey(); }
     catch (e) {
-      if (e?.name === 'NotAllowedError') toast('Operazione annullata.', 'errore');
-      else toast('Passkey non creata: ' + (e.message || e), 'errore');
+      if (e?.name === 'NotAllowedError') toast(L('Operazione annullata.', 'Operation canceled.', 'Operación cancelada.'), 'errore');
+      else toast(L('Passkey non creata: ', 'Passkey not created: ', 'Passkey no creada: ') + (e.message || e), 'errore');
     } finally { btn.disabled = false; }
   }));
 
@@ -5196,13 +5196,13 @@ function attivaPiattaforma() {
         ? (esito.esito || esito.messaggio || `voci: ${esito.voci ?? esito.count ?? '?'}`)
         : String(esito);
       out.textContent = 'Fatto! ' + riassunto;
-      toast('Profilo riletto, conoscenza aggiornata');
+      toast(L('Profilo riletto, conoscenza aggiornata', 'Profile re-read, knowledge updated', 'Perfil releído, conocimiento actualizado'));
       // ricarica lo stato per aggiornare timestamp e contatore conoscenza
       stato = await api('/api/me');
       render();
     } catch (e) {
       out.textContent = '' + e.message;
-      toast('Pre-addestramento fallito: ' + e.message, 'errore');
+      toast(L('Pre-addestramento fallito: ', 'Pre-training failed: ', 'Pre-entrenamiento fallido: ') + e.message, 'errore');
       btn.disabled = false;
       btn.textContent = testoOrig;
     }
@@ -5232,7 +5232,7 @@ function attivaPiattaforma() {
     await api('/api/streamer/guide', { method: 'POST', body: { testo: t, dove, con_chi } });
     if (inp) inp.value = '';
     caricaGuide();
-    toast('Regola aggiunta');
+    toast(L('Regola aggiunta', 'Rule added', 'Regla añadida'));
   });
   document.getElementById('btn-guida-add')?.addEventListener('click', aggiungiGuida);
   document.getElementById('inp-guida')?.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); aggiungiGuida(); } });
@@ -5320,16 +5320,16 @@ function attivaPiattaforma() {
         const [q, ris] = r.split('|');
         return { q: (q || '').trim(), a: (ris || '').split(',').map((x) => x.trim()).filter(Boolean) };
       }).filter((d) => d.q && d.a.length);
-      if (!body.domande.length) { toast('Aggiungi almeno una domanda con risposta.', 'errore'); return; }
+      if (!body.domande.length) { toast(L('Aggiungi almeno una domanda con risposta.', 'Add at least one question with an answer.', 'Añade al menos una pregunta con respuesta.'), 'errore'); return; }
     } else {
       body.parole = document.getElementById('gioco-parole').value.split('\n').map((p) => p.trim()).filter(Boolean);
-      if (!body.parole.length) { toast('Aggiungi almeno una parola.', 'errore'); return; }
+      if (!body.parole.length) { toast(L('Aggiungi almeno una parola.', 'Add at least one word.', 'Añade al menos una palabra.'), 'errore'); return; }
     }
     await api('/api/streamer/giochi', { method: 'POST', body });
     document.getElementById('gioco-nome').value = '';
     document.getElementById('gioco-domande').value = '';
     document.getElementById('gioco-parole').value = '';
-    toast('Gioco creato!');
+    toast(L('Gioco creato!', 'Game created!', '¡Juego creado!'));
     caricaGiochi();
   }));
 
@@ -5342,17 +5342,17 @@ function attivaPiattaforma() {
   document.getElementById('btn-aggiungi-citazione')?.addEventListener('click', () => conErrore(async () => {
     const inp = document.getElementById('inp-citazione');
     const testo = (inp.value || '').trim();
-    if (!testo) { toast('Scrivi la citazione.', 'errore'); return; }
+    if (!testo) { toast(L('Scrivi la citazione.', 'Type the quote.', 'Escribe la cita.'), 'errore'); return; }
     const r = await api('/api/streamer/citazioni', { method: 'POST', body: { testo } });
     inp.value = '';
-    toast('Citazione #' + r.n + ' aggiunta');
+    toast(L('Citazione #', 'Quote #', 'Cita #') + r.n + L(' aggiunta', ' added', ' añadida'));
     caricaCitazioni();
   }));
 
   // citazioni: estrai da un link → riempie la textarea (da curare prima di importare)
   document.getElementById('btn-estrai-citazioni')?.addEventListener('click', (ev) => conErrore(async () => {
     const url = (document.getElementById('inp-import-url').value || '').trim();
-    if (!url) { toast('Incolla un link.', 'errore'); return; }
+    if (!url) { toast(L('Incolla un link.', 'Paste a link.', 'Pega un enlace.'), 'errore'); return; }
     const btn = ev.currentTarget; btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Estraggo…';
     try {
       const r = await api('/api/streamer/citazioni/da-url', { method: 'POST', body: { url } });
@@ -5378,23 +5378,23 @@ function attivaPiattaforma() {
   if (bmXla) {
     bmXla.href = bookmarkletXla;
     // cliccato QUI (sul bot) non serve: va aperto su x.la. Spieghiamo invece di navigare.
-    bmXla.addEventListener('click', (e) => { e.preventDefault(); toast('Trascinami nella barra dei preferiti, poi cliccami mentre sei sulla tua pagina x.la'); });
+    bmXla.addEventListener('click', (e) => { e.preventDefault(); toast(L('Trascinami nella barra dei preferiti, poi cliccami mentre sei sulla tua pagina x.la', 'Drag me to your bookmarks bar, then click me while you\'re on your x.la page', 'Arrástrame a la barra de favoritos, luego haz clic en mí mientras estás en tu página x.la')); });
   }
   document.getElementById('bm-xla-copia')?.addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText(bookmarkletXla); toast('Codice copiato. Crea un preferito e incollalo come indirizzo'); }
-    catch { window.prompt('Copia con Ctrl+C, poi crea un preferito con questo indirizzo:', bookmarkletXla); }
+    try { await navigator.clipboard.writeText(bookmarkletXla); toast(L('Codice copiato. Crea un preferito e incollalo come indirizzo', 'Code copied. Create a bookmark and paste it as the address', 'Código copiado. Crea un favorito y pégalo como dirección')); }
+    catch { window.prompt(L('Copia con Ctrl+C, poi crea un preferito con questo indirizzo:', 'Copy with Ctrl+C, then create a bookmark with this address:', 'Copia con Ctrl+C, luego crea un favorito con esta dirección:'), bookmarkletXla); }
   });
 
   // citazioni: riconosce (testo/autore/data, formato x.la) e importa
   document.getElementById('btn-importa-citazioni')?.addEventListener('click', () => conErrore(async () => {
     const testo = document.getElementById('txt-import-citazioni').value || '';
     const esito = document.getElementById('import-cita-esito');
-    if (!testo.trim()) { toast('Incolla prima qualche citazione.', 'errore'); return; }
+    if (!testo.trim()) { toast(L('Incolla prima qualche citazione.', 'Paste some quotes first.', 'Pega primero algunas citas.'), 'errore'); return; }
     const a = await api('/api/streamer/citazioni/analizza', { method: 'POST', body: { testo } });
     const citazioni = a.citazioni || [];
     if (!citazioni.length) {
       if (a.avviso) mostraAvvisoCita(a.avviso);
-      toast(a.avviso ? 'Hai incollato il guscio di x.la, non le frasi — leggi qui sotto' : 'Non ho riconosciuto nessuna citazione', 'errore');
+      toast(a.avviso ? L('Hai incollato il guscio di x.la, non le frasi — leggi qui sotto', "You pasted the x.la shell, not the quotes — read below", 'Has pegado el armazón de x.la, no las frases — lee abajo') : L('Non ho riconosciuto nessuna citazione', "I didn't recognize any quotes", 'No he reconocido ninguna cita'), 'errore');
       return;
     }
     mostraAvvisoCita('');
@@ -5403,7 +5403,7 @@ function attivaPiattaforma() {
     const r = await api('/api/streamer/citazioni/importa', { method: 'POST', body: { citazioni } });
     document.getElementById('txt-import-citazioni').value = '';
     if (esito) esito.textContent = `${r.aggiunte} importate (${conAutore} con autore, ${conData} con data)` + (r.saltate ? ` · ${r.saltate} doppioni` : '');
-    toast(`Importate ${r.aggiunte} citazioni con nome e data`);
+    toast(L(`Importate ${r.aggiunte} citazioni con nome e data`, `Imported ${r.aggiunte} quotes with name and date`, `Importadas ${r.aggiunte} citas con nombre y fecha`));
     caricaCitazioni();
   }));
 
@@ -5429,15 +5429,15 @@ function attivaPiattaforma() {
     const inp = document.getElementById('inp-tg-token');
     if (inp?.disabled) return;   // già collegato
     const token = (inp?.value || '').trim();
-    if (!token) { toast('Incolla il token del bot (te lo dà @BotFather).', 'errore'); return; }
+    if (!token) { toast(L('Incolla il token del bot (te lo dà @BotFather).', 'Paste the bot token (@BotFather gives it to you).', 'Pega el token del bot (te lo da @BotFather).'), 'errore'); return; }
     const r = await api('/api/streamer/telegram/token', { method: 'POST', body: { token } });
-    toast('Bot collegato: @' + (r.botUsername || '?') + '');
+    toast(L('Bot collegato: @', 'Bot connected: @', 'Bot conectado: @') + (r.botUsername || '?') + '');
     stato = await api('/api/me'); render();
   }));
 
   document.getElementById('btn-tg-rileva')?.addEventListener('click', () => conErrore(async () => {
     const r = await api('/api/streamer/telegram/rileva', { method: 'POST', body: {} });
-    toast(r.privato ? 'Collegata la chat privata col bot.' : 'Gruppo collegato: ' + (r.gruppo || '✓'));
+    toast(r.privato ? L('Collegata la chat privata col bot.', 'Private chat with the bot connected.', 'Chat privado con el bot conectado.') : L('Gruppo collegato: ', 'Group connected: ', 'Grupo conectado: ') + (r.gruppo || '✓'));
     stato = await api('/api/me'); render();
   }));
 
@@ -5447,19 +5447,19 @@ function attivaPiattaforma() {
       messaggio: document.getElementById('txt-tg-messaggio').value,
       pinLive: document.getElementById('chk-tg-pin')?.checked ?? true,
     } });
-    toast('Notifiche Telegram salvate');
+    toast(L('Notifiche Telegram salvate', 'Telegram notifications saved', 'Notificaciones de Telegram guardadas'));
     stato = await api('/api/me');   // aggiorna lo stato senza perdere la scheda
   }));
 
   document.getElementById('btn-tg-prova')?.addEventListener('click', () => conErrore(async () => {
     await api('/api/streamer/telegram/prova', { method: 'POST', body: {} });
-    toast('Messaggio di prova inviato nel gruppo');
+    toast(L('Messaggio di prova inviato nel gruppo', 'Test message sent to the group', 'Mensaje de prueba enviado al grupo'));
   }));
 
   document.getElementById('btn-tg-scollega')?.addEventListener('click', () => conErrore(async () => {
-    if (!confirm('Scollegare il bot Telegram? Dovrai reincollare il token per riattivarlo.')) return;
+    if (!confirm(L('Scollegare il bot Telegram? Dovrai reincollare il token per riattivarlo.', 'Disconnect the Telegram bot? You\'ll have to paste the token again to reactivate it.', '¿Desconectar el bot de Telegram? Tendrás que volver a pegar el token para reactivarlo.'))) return;
     await api('/api/streamer/telegram', { method: 'DELETE' });
-    toast('Telegram scollegato.');
+    toast(L('Telegram scollegato.', 'Telegram disconnected.', 'Telegram desconectado.'));
     stato = await api('/api/me'); render();
   }));
 
@@ -5486,7 +5486,7 @@ function attivaPiattaforma() {
   }); });
   document.getElementById('btn-tg-dm-scollega')?.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
     await api('/api/streamer/telegram/scollega', { method: 'POST', body: {} });
-    toast('Account Telegram scollegato.');
+    toast(L('Account Telegram scollegato.', 'Telegram account disconnected.', 'Cuenta de Telegram desconectada.'));
     stato = await api('/api/me'); render();
   }); });
   document.getElementById('chk-tg-proattiva')?.addEventListener('change', (ev) => conErrore(async () => {
@@ -5501,7 +5501,7 @@ function attivaPiattaforma() {
         attivo: document.getElementById('chk-compleanni-attivo')?.checked,
         messaggio: document.getElementById('txt-compleanni-msg')?.value || '',
       } });
-      toast('Auguri di compleanno salvati');
+      toast(L('Auguri di compleanno salvati', 'Birthday wishes saved', 'Felicitaciones de cumpleaños guardadas'));
       caricaCompleanni();
     });
     if (ev.target.closest('#btn-comple-aggiungi')) return conErrore(async () => {
@@ -5510,12 +5510,12 @@ function attivaPiattaforma() {
         giorno: document.getElementById('inp-comple-giorno')?.value || '',
         mese: document.getElementById('inp-comple-mese')?.value || '',
       } });
-      toast('Compleanno aggiunto');
+      toast(L('Compleanno aggiunto', 'Birthday added', 'Cumpleaños añadido'));
       caricaCompleanni();
     });
     if (ev.target.closest('#btn-membri-aggiorna')) return conErrore(async () => {
       const r = await api('/api/streamer/telegram/membri/aggiorna', { method: 'POST', body: {} });
-      toast(`Caricati ${r.aggiunti || 0} amministratori`);
+      toast(L(`Caricati ${r.aggiunti || 0} amministratori`, `Loaded ${r.aggiunti || 0} admins`, `Cargados ${r.aggiunti || 0} administradores`));
       caricaCompleanni();
     });
     const add = ev.target.closest('[data-membro-add]');
@@ -5528,7 +5528,7 @@ function attivaPiattaforma() {
           giorno: riga.querySelector('.mem-gg')?.value || '',
           mese: riga.querySelector('.mem-mm')?.value || '',
         } });
-        toast('Compleanno aggiunto (verrà taggato)');
+        toast(L('Compleanno aggiunto (verrà taggato)', 'Birthday added (they\'ll be tagged)', 'Cumpleaños añadido (se le etiquetará)'));
         caricaCompleanni();
       });
     }
@@ -5553,7 +5553,7 @@ function attivaPiattaforma() {
 
   document.getElementById('btn-tk-prova')?.addEventListener('click', () => conErrore(async () => {
     await api('/api/streamer/tiktok/prova', { method: 'POST', body: {} });
-    toast('Prova TikTok inviata nel gruppo Telegram');
+    toast(L('Prova TikTok inviata nel gruppo Telegram', 'TikTok test sent to the Telegram group', 'Prueba de TikTok enviada al grupo de Telegram'));
   }));
 
   // --- Nuovo post su TikTok (API ufficiale) ---
@@ -5628,8 +5628,8 @@ function attivaPiattaforma() {
     const comando = (document.getElementById('qc-nome').value || '')
       .trim().toLowerCase().replace(/^!/, '').replace(/[^a-z0-9_]/g, '');
     const risposta = (document.getElementById('qc-risposta').value || '').trim();
-    if (!comando) { toast('Scrivi il nome del comando (senza !).', 'errore'); return; }
-    if (!risposta) { toast('Scrivi cosa deve rispondere il bot.', 'errore'); return; }
+    if (!comando) { toast(L('Scrivi il nome del comando (senza !).', 'Type the command name (without !).', 'Escribe el nombre del comando (sin !).'), 'errore'); return; }
+    if (!risposta) { toast(L('Scrivi cosa deve rispondere il bot.', 'Type what the bot should reply.', 'Escribe qué debe responder el bot.'), 'errore'); return; }
     await api('/api/streamer/moduli', { method: 'POST', body: {
       nome: 'Comando !' + comando, attivo: true,
       trigger: { tipo: 'comando', comando, alias: [] },
@@ -5638,7 +5638,7 @@ function attivaPiattaforma() {
     } });
     document.getElementById('qc-nome').value = '';
     document.getElementById('qc-risposta').value = '';
-    toast('Comando !' + comando + ' creato');
+    toast(L('Comando !', 'Command !', 'Comando !') + comando + L(' creato', ' created', ' creado'));
     caricaModuli();
   }));
 
@@ -5730,25 +5730,25 @@ function attivaPiattaforma() {
   document.getElementById('btn-aggiungi-conoscenza')?.addEventListener('click', () => conErrore(async () => {
     const domanda = document.getElementById('inp-domanda').value.trim();
     const risposta = document.getElementById('inp-risposta').value.trim();
-    if (!domanda || !risposta) { toast('Compila domanda e risposta.', 'errore'); return; }
+    if (!domanda || !risposta) { toast(L('Compila domanda e risposta.', 'Fill in question and answer.', 'Completa pregunta y respuesta.'), 'errore'); return; }
     await api('/api/streamer/knowledge', { method: 'POST', body: { domanda, risposta } });
     document.getElementById('inp-domanda').value = '';
     document.getElementById('inp-risposta').value = '';
-    toast('Il bot ha imparato qualcosa di nuovo');
+    toast(L('Il bot ha imparato qualcosa di nuovo', 'The bot learned something new', 'El bot ha aprendido algo nuevo'));
     caricaConoscenza();
   }));
 
   // copia URL overlay OBS
   document.getElementById('btn-copia-overlay')?.addEventListener('click', async () => {
     const inp = document.getElementById('inp-overlay-url');
-    if (!inp?.value) { toast('URL non ancora pronto, riprova tra un attimo.', 'errore'); return; }
+    if (!inp?.value) { toast(L('URL non ancora pronto, riprova tra un attimo.', 'URL not ready yet, try again in a moment.', 'URL aún no lista, inténtalo de nuevo en un momento.'), 'errore'); return; }
     try {
       await navigator.clipboard.writeText(inp.value);
-      toast('URL dell\'overlay copiato');
+      toast(L('URL dell\'overlay copiato', 'Overlay URL copied', 'URL del overlay copiada'));
     } catch {
       inp.select();
-      try { document.execCommand('copy'); toast('URL selezionato: premi Ctrl+C'); }
-      catch { toast('Copia manualmente l\'URL selezionato.', 'errore'); }
+      try { document.execCommand('copy'); toast(L('URL selezionato: premi Ctrl+C', 'URL selected: press Ctrl+C', 'URL seleccionada: pulsa Ctrl+C')); }
+      catch { toast(L('Copia manualmente l\'URL selezionato.', 'Copy the selected URL manually.', 'Copia manualmente la URL seleccionada.'), 'errore'); }
     }
   });
 
@@ -5756,23 +5756,23 @@ function attivaPiattaforma() {
   document.getElementById('regia-refresh')?.addEventListener('click', () => conErrore(() => caricaRegia()));
   document.getElementById('regia-salva-canale')?.addEventListener('click', () => conErrore(() => salvaRegiaCanale()));
   document.getElementById('regia-clip')?.addEventListener('click', () => conErrore(async () => {
-    const r = await api('/api/streamer/regia/clip', { method: 'POST' }); toast('Clip creata!'); if (r.url) window.open(r.url, '_blank', 'noopener');
+    const r = await api('/api/streamer/regia/clip', { method: 'POST' }); toast(L('Clip creata!', 'Clip created!', '¡Clip creada!')); if (r.url) window.open(r.url, '_blank', 'noopener');
   }));
   document.getElementById('regia-marker')?.addEventListener('click', () => conErrore(async () => {
     await api('/api/streamer/regia/marker', { method: 'POST', body: { descrizione: document.getElementById('regia-marker-desc')?.value || '' } });
-    toast('Marker messo nel VOD');
+    toast(L('Marker messo nel VOD', 'Marker added to the VOD', 'Marcador puesto en el VOD'));
   }));
   document.getElementById('regia-ad')?.addEventListener('click', () => conErrore(async () => {
     const r = await api('/api/streamer/regia/pubblicita', { method: 'POST', body: { durata: Number(document.getElementById('regia-ad-durata')?.value) || 60 } });
-    toast(`Pubblicità di ${r.length}s avviata`);
+    toast(L(`Pubblicità di ${r.length}s avviata`, `${r.length}s ad started`, `Anuncio de ${r.length}s iniciado`));
   }));
   document.getElementById('regia-raid')?.addEventListener('click', () => conErrore(async () => {
     const c = document.getElementById('regia-raid-canale')?.value || '';
     const r = await api('/api/streamer/regia/raid', { method: 'POST', body: { canale: c } });
-    toast(`Raid verso ${r.target || c} avviata`);
+    toast(L(`Raid verso ${r.target || c} avviata`, `Raid to ${r.target || c} started`, `Raid hacia ${r.target || c} iniciada`));
   }));
   document.getElementById('regia-raid-annulla')?.addEventListener('click', () => conErrore(async () => {
-    await api('/api/streamer/regia/raid/annulla', { method: 'POST' }); toast('Raid annullata');
+    await api('/api/streamer/regia/raid/annulla', { method: 'POST' }); toast(L('Raid annullata', 'Raid canceled', 'Raid cancelada'));
   }));
   // selettore gioco/categoria della regia
   const gCerca = document.getElementById('regia-gioco-cerca');
@@ -5820,9 +5820,9 @@ function attivaPiattaforma() {
 
   // reset con conferma
   document.getElementById('btn-reset')?.addEventListener('click', () => conErrore(async () => {
-    if (!confirm('Sicuro? Il bot dimenticherà lezioni, ricordi sugli utenti e conoscenza imparata dalla chat. Non si torna indietro.')) return;
+    if (!confirm(L('Sicuro? Il bot dimenticherà lezioni, ricordi sugli utenti e conoscenza imparata dalla chat. Non si torna indietro.', 'Are you sure? The bot will forget lessons, memories about users and knowledge learned from chat. There\'s no going back.', '¿Seguro? El bot olvidará lecciones, recuerdos sobre los usuarios y conocimiento aprendido del chat. No hay vuelta atrás.'))) return;
     await api('/api/streamer/memoria/reset', { method: 'POST', body: {} });
-    toast('Memoria azzerata. Il bot riparte da zero (ma la tua conoscenza resta).');
+    toast(L('Memoria azzerata. Il bot riparte da zero (ma la tua conoscenza resta).', 'Memory wiped. The bot starts from scratch (but your knowledge stays).', 'Memoria borrada. El bot empieza de cero (pero tu conocimiento se queda).'));
     document.getElementById('contenitore-memoria').innerHTML = '';
   }));
 
@@ -5928,7 +5928,7 @@ function gestisciClicEditor(ev) {
     conErrore(async () => {
       const id = await salvaModuloCorrente();
       if (id == null) return;
-      toast('Modulo salvato');
+      toast(L('Modulo salvato', 'Module saved', 'Módulo guardado'));
       moduloInModifica = null;
       const cont = document.getElementById('editor-modulo');
       if (cont) cont.innerHTML = '';
@@ -5942,7 +5942,7 @@ function gestisciClicEditor(ev) {
       const id = await salvaModuloCorrente();
       if (id == null) return;
       await api('/api/streamer/moduli/' + encodeURIComponent(id) + '/prova', { method: 'POST', body: {} });
-      toast('Salvato e provato: guarda chat/overlay');
+      toast(L('Salvato e provato: guarda chat/overlay', 'Saved and tested: check chat/overlay', 'Guardado y probado: mira chat/overlay'));
       caricaModuli(); // aggiorna la lista, l'editor resta aperto per continuare a modificare
     });
   }
@@ -5955,7 +5955,7 @@ function righe(testo) {
 
 // esegue un'azione async mostrando eventuali errori come toast
 async function conErrore(fn) {
-  try { await fn(); } catch (e) { toast('Errore: ' + e.message, 'errore'); }
+  try { await fn(); } catch (e) { toast(L('Errore: ', 'Error: ', 'Error: ') + e.message, 'errore'); }
 }
 
 // carica i dati "pigri" della scheda selezionata
@@ -6056,7 +6056,7 @@ async function caricaConoscenza() {
       if (!btn) return;
       conErrore(async () => {
         await api('/api/streamer/knowledge/' + btn.dataset.elimina, { method: 'DELETE' });
-        toast('Voce dimenticata.');
+        toast(L('Voce dimenticata.', 'Entry forgotten.', 'Entrada olvidada.'));
         caricaConoscenza();
       });
     };
@@ -6114,9 +6114,9 @@ async function caricaGiochi() {
         caricaGiochi();
       });
       else if (del) conErrore(async () => {
-        if (!confirm('Eliminare questo gioco?')) return;
+        if (!confirm(L('Eliminare questo gioco?', 'Delete this game?', '¿Eliminar este juego?'))) return;
         await api('/api/streamer/giochi/' + del.dataset.giocoElimina, { method: 'DELETE' });
-        toast('Gioco eliminato.'); caricaGiochi();
+        toast(L('Gioco eliminato.', 'Game deleted.', 'Juego eliminado.')); caricaGiochi();
       });
     };
   } catch (e) { ul.innerHTML = `<li class="vuoto">Errore: ${esc(e.message)}</li>`; }
@@ -6182,7 +6182,7 @@ async function caricaCitazioni() {
     ul.onclick = (ev) => {
       const b = ev.target.closest('[data-cita-rimuovi]');
       if (!b) return;
-      conErrore(async () => { await api('/api/streamer/citazioni/' + b.dataset.citaRimuovi, { method: 'DELETE' }); toast('Citazione rimossa.'); caricaCitazioni(); });
+      conErrore(async () => { await api('/api/streamer/citazioni/' + b.dataset.citaRimuovi, { method: 'DELETE' }); toast(L('Citazione rimossa.', 'Quote removed.', 'Cita eliminada.')); caricaCitazioni(); });
     };
   } catch (e) { ul.innerHTML = `<li class="vuoto">Errore: ${esc(e.message)}</li>`; }
 }
@@ -6475,7 +6475,7 @@ async function caricaMemoria(mostraToast = false) {
         ? m.fatti.map((f) => `<li><div class="testo-voce"><span class="domanda">${esc(f.key)}</span>
             <span class="risposta"> ${esc(String(f.value).slice(0, 200))}</span></div></li>`).join('')
         : '<li class="vuoto">Nessun fatto memorizzato.</li>'}</ul>`;
-    if (mostraToast) toast('Memoria caricata');
+    if (mostraToast) toast(L('Memoria caricata', 'Memory loaded', 'Memoria cargada'));
   } catch (e) {
     box.innerHTML = `<p class="vuoto">Errore: ${esc(e.message)}</p>`;
   }
@@ -6678,16 +6678,16 @@ function disegnaListaModuli() {
     if (prova) {
       conErrore(async () => {
         await api('/api/streamer/moduli/' + encodeURIComponent(prova.dataset.provaModulo) + '/prova', { method: 'POST', body: {} });
-        toast('Modulo provato: guarda chat/overlay');
+        toast(L('Modulo provato: guarda chat/overlay', 'Module tested: check chat/overlay', 'Módulo probado: mira chat/overlay'));
       });
     } else if (modifica) {
       const m = (datiModuli.moduli || []).find((x) => String(x.id) === String(modifica.dataset.modificaModulo));
       if (m) apriEditor(m);
     } else if (elimina) {
       conErrore(async () => {
-        if (!confirm('Eliminare questo modulo? Non si torna indietro.')) return;
+        if (!confirm(L('Eliminare questo modulo? Non si torna indietro.', 'Delete this module? There\'s no going back.', '¿Eliminar este módulo? No hay vuelta atrás.'))) return;
         await api('/api/streamer/moduli/' + encodeURIComponent(elimina.dataset.eliminaModulo), { method: 'DELETE' });
-        toast('Modulo eliminato');
+        toast(L('Modulo eliminato', 'Module deleted', 'Módulo eliminado'));
         caricaModuli();
       });
     }
@@ -7083,8 +7083,8 @@ function inserisciNelCampo(campo, testo) {
 async function salvaModuloCorrente() {
   const m = leggiForm();
   if (!m) return null;
-  if (!m.nome) { toast('Dai un nome al modulo.', 'errore'); return null; }
-  if (!m.azioni.length) { toast('Aggiungi almeno un\'azione.', 'errore'); return null; }
+  if (!m.nome) { toast(L('Dai un nome al modulo.', 'Give the module a name.', 'Dale un nombre al módulo.'), 'errore'); return null; }
+  if (!m.azioni.length) { toast(L('Aggiungi almeno un\'azione.', 'Add at least one action.', 'Añade al menos una acción.'), 'errore'); return null; }
   const res = await api('/api/streamer/moduli', { method: 'POST', body: m });
   const id = res?.id ?? m.id;
   if (moduloInModifica) moduloInModifica.id = id;
@@ -7138,7 +7138,7 @@ function disegnaConnettori() {
     } else if (azione === 'rigenera') {
       conErrore(async () => {
         const nuova = !!datiModuli?.apiKey;
-        if (nuova && !confirm('Rigenerare la chiave? Quella vecchia smetterà subito di funzionare.')) return;
+        if (nuova && !confirm(L('Rigenerare la chiave? Quella vecchia smetterà subito di funzionare.', 'Regenerate the key? The old one will stop working immediately.', '¿Regenerar la clave? La antigua dejará de funcionar de inmediato.'))) return;
         const res = await api('/api/streamer/apikey', { method: 'POST', body: {} });
         if (datiModuli) datiModuli.apiKey = res.apiKey;
         apiKeyVisibile = true;
@@ -7151,12 +7151,12 @@ function disegnaConnettori() {
 
 // copia negli appunti con fallback
 async function copiaTesto(testo, msgOk) {
-  if (!testo) { toast('Niente da copiare.', 'errore'); return; }
+  if (!testo) { toast(L('Niente da copiare.', 'Nothing to copy.', 'Nada que copiar.'), 'errore'); return; }
   try {
     await navigator.clipboard.writeText(testo);
     toast(msgOk);
   } catch {
-    toast('Copia non riuscita, fallo a mano.', 'errore');
+    toast(L('Copia non riuscita, fallo a mano.', 'Copy failed, do it by hand.', 'Copia fallida, hazlo a mano.'), 'errore');
   }
 }
 
