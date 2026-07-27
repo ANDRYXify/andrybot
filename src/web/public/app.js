@@ -449,10 +449,10 @@ function montaDemo() {
   barra.id = 'demo-barra';
   barra.innerHTML =
     `<span class="demo-punto"></span>
-     <span class="demo-testo"><strong>Demo di SocialBot</strong> — stai esplorando la dashboard con dati d'esempio. Puoi cliccare ovunque; niente viene salvato.</span>
+     <span class="demo-testo"><strong>${L('Demo di SocialBot', 'SocialBot demo', 'Demo de SocialBot')}</strong> — ${L('stai esplorando la dashboard con dati d\'esempio. Puoi cliccare ovunque; niente viene salvato.', 'you’re exploring the dashboard with sample data. Click anywhere; nothing is saved.', 'estás explorando el panel con datos de ejemplo. Puedes hacer clic en cualquier sitio; no se guarda nada.')}</span>
      <span class="demo-azioni">
-       <a class="btn mini" href="https://andryxify.it">Attiva su andryxify.it</a>
-       <a class="btn mini secondario" href="/">Esci dalla demo</a>
+       <a class="btn mini" href="https://andryxify.it">${L('Attiva su andryxify.it', 'Activate on andryxify.it', 'Actívalo en andryxify.it')}</a>
+       <a class="btn mini secondario" href="/">${L('Esci dalla demo', 'Exit demo', 'Salir de la demo')}</a>
      </span>`;
   cont.insertBefore(barra, header);
   // La spiegazione per-sezione ora è la mini-guida "Come funziona" (guidaSchedaHtml)
@@ -1403,135 +1403,125 @@ function pannelloStato() {
   // Banner per i moderatori: chiarisce cosa possono fare e cosa no.
   const bannerMod = proprietario ? '' : `
     <div class="carta evidenziata">
-      <h2>${_hIco(ICO.utenti)}Stai gestendo il canale di @${esc(stato.gestisce?.streamer || login)}</h2>
-      <p>Sei entrato come <strong class="primo-piano">moderatore</strong>: puoi occuparti di comandi, moduli,
-      effetti, giochi, notifiche, regole e memoria. Le cose da proprietario — permessi Twitch e l'elenco dei
-      moderatori — restano a chi possiede il canale.</p>
+      <h2>${_hIco(ICO.utenti)}${L('Stai gestendo il canale di', 'You’re managing the channel of', 'Estás gestionando el canal de')} @${esc(stato.gestisce?.streamer || login)}</h2>
+      <p>${L('Sei entrato come', 'You’re signed in as a', 'Has entrado como')} <strong class="primo-piano">${L('moderatore', 'moderator', 'moderador')}</strong>: ${L('puoi occuparti di comandi, moduli, effetti, giochi, notifiche, regole e memoria. Le cose da proprietario — permessi Twitch e l\'elenco dei moderatori — restano a chi possiede il canale.', 'you can handle commands, modules, effects, games, notifications, rules and memory. Owner-only things — Twitch permissions and the moderator list — stay with the channel owner.', 'puedes ocuparte de comandos, módulos, efectos, juegos, notificaciones, reglas y memoria. Lo de propietario — permisos de Twitch y la lista de moderadores — es del dueño del canal.')}</p>
     </div>`;
 
   // La card "concedi permessi" la vede solo il proprietario (un mod non li tocca).
   const cardPermessi = (!proprietario || stato.permessiOk) ? '' : `
     <div class="carta evidenziata">
-      <h2>${_hIco(ICO.chiave)}Attiva il bot: concedi i permessi</h2>
-      <p>Per funzionare, SocialBot <strong class="primo-piano">leggerà e scriverà nella tua chat
-      con il tuo account</strong>, creerà clip e vedrà follow e sub. Nient'altro.</p>
-      <p class="spazio-sopra"><a class="btn grande" href="/auth/permessi">Concedi i permessi su Twitch</a></p>
+      <h2>${_hIco(ICO.chiave)}${L('Attiva il bot: concedi i permessi', 'Activate the bot: grant permissions', 'Activa el bot: concede los permisos')}</h2>
+      <p>${L('Per funzionare, SocialBot', 'To work, SocialBot', 'Para funcionar, SocialBot')} <strong class="primo-piano">${L('leggerà e scriverà nella tua chat con il tuo account', 'will read and write in your chat with your account', 'leerá y escribirá en tu chat con tu cuenta')}</strong>, ${L('creerà clip e vedrà follow e sub. Nient\'altro.', 'will create clips and see follows and subs. Nothing else.', 'creará clips y verá follows y subs. Nada más.')}</p>
+      <p class="spazio-sopra"><a class="btn grande" href="/auth/permessi">${L('Concedi i permessi su Twitch', 'Grant permissions on Twitch', 'Concede los permisos en Twitch')}</a></p>
     </div>`;
 
   return pannello('stato', `
     ${bannerMod}${cardPermessi}
     <div class="carta">
-      <h2>Il tuo bot</h2>
+      <h2>${L('Il tuo bot', 'Your bot', 'Tu bot')}</h2>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore">
           <input type="checkbox" id="toggle-bot" ${stato.streamer.botEnabled ? 'checked' : ''}>
           <span class="levetta"></span>
         </label>
-        <span class="etichetta-stato" id="etichetta-bot">${stato.streamer.botEnabled ? 'Bot acceso' : 'Bot spento'}</span>
+        <span class="etichetta-stato" id="etichetta-bot">${stato.streamer.botEnabled ? L('Bot acceso', 'Bot on', 'Bot encendido') : L('Bot spento', 'Bot off', 'Bot apagado')}</span>
         ${inChat
-          ? '<span class="badge verde">● in chat adesso</span>'
-          : '<span class="badge">○ non connesso</span>'}
-        ${stato.permessiOk ? '<span class="badge viola">permessi ok</span>' : '<span class="badge rosso">permessi mancanti</span>'}
+          ? `<span class="badge verde">● ${L('in chat adesso', 'in chat now', 'en el chat ahora')}</span>`
+          : `<span class="badge">○ ${L('non connesso', 'not connected', 'no conectado')}</span>`}
+        ${stato.permessiOk ? `<span class="badge viola">${L('permessi ok', 'permissions ok', 'permisos ok')}</span>` : `<span class="badge rosso">${L('permessi mancanti', 'missing permissions', 'faltan permisos')}</span>`}
       </div>
 
       ${proprietario ? `
-      <p class="spazio-sopra"><strong class="primo-piano">Permessi:</strong>
-        ${stato.permessiOk ? '<span class="badge verde">✓ chat</span>' : '<span class="badge rosso">✗ chat</span>'}
-        ${stato.vipOk ? '<span class="badge verde">✓ VIP</span>' : '<span class="badge giallo">VIP da concedere</span>'}
-        ${stato.moderazioneOk ? '<span class="badge verde">✓ moderazione</span>' : '<span class="badge giallo">moderazione da concedere</span>'}
+      <p class="spazio-sopra"><strong class="primo-piano">${L('Permessi:', 'Permissions:', 'Permisos:')}</strong>
+        ${stato.permessiOk ? `<span class="badge verde">✓ ${L('chat', 'chat', 'chat')}</span>` : `<span class="badge rosso">✗ ${L('chat', 'chat', 'chat')}</span>`}
+        ${stato.vipOk ? '<span class="badge verde">✓ VIP</span>' : `<span class="badge giallo">${L('VIP da concedere', 'VIP to grant', 'VIP por conceder')}</span>`}
+        ${stato.moderazioneOk ? `<span class="badge verde">✓ ${L('moderazione', 'moderation', 'moderación')}</span>` : `<span class="badge giallo">${L('moderazione da concedere', 'moderation to grant', 'moderación por conceder')}</span>`}
         ${(!stato.permessiOk || !stato.vipOk || !stato.moderazioneOk)
-          ? '<a class="btn secondario mini" href="/auth/permessi">Concedi i permessi</a>'
+          ? `<a class="btn secondario mini" href="/auth/permessi">${L('Concedi i permessi', 'Grant permissions', 'Concede los permisos')}</a>`
           : ''}
       </p>
-      <p class="suggerimento">La <strong class="primo-piano">chat</strong> serve per far parlare il bot,
-      <strong class="primo-piano">VIP</strong> per assegnarli a voce/premi, <strong class="primo-piano">moderazione</strong>
-      per l'antispam. Concedendoli abiliti anche VIP e antispam in un colpo solo.</p>` : `
-      <p class="suggerimento spazio-sopra">Permessi del bot: ${stato.permessiOk ? '<span class="badge verde">✓ chat attiva</span>' : '<span class="badge rosso">chat non attiva</span>'} — li gestisce il proprietario del canale.</p>`}
+      <p class="suggerimento">${L('La', 'The', 'El')} <strong class="primo-piano">${L('chat', 'chat', 'chat')}</strong> ${L('serve per far parlare il bot,', 'lets the bot speak,', 'sirve para que el bot hable,')}
+      <strong class="primo-piano">VIP</strong> ${L('per assegnarli a voce/premi,', 'to assign them via voice/rewards,', 'para asignarlos por voz/recompensas,')} <strong class="primo-piano">${L('moderazione', 'moderation', 'moderación')}</strong>
+      ${L('per l\'antispam. Concedendoli abiliti anche VIP e antispam in un colpo solo.', 'for anti-spam. Granting them enables VIP and anti-spam in one go.', 'para el antispam. Al concederlos activas también VIP y antispam de una vez.')}</p>` : `
+      <p class="suggerimento spazio-sopra">${L('Permessi del bot:', 'Bot permissions:', 'Permisos del bot:')} ${stato.permessiOk ? `<span class="badge verde">✓ ${L('chat attiva', 'chat active', 'chat activo')}</span>` : `<span class="badge rosso">${L('chat non attiva', 'chat not active', 'chat no activo')}</span>`} — ${L('li gestisce il proprietario del canale.', 'the channel owner manages them.', 'los gestiona el dueño del canal.')}</p>`}
 
-      <p class="suggerimento spazio-sopra">Spegnerlo non cancella nulla: quando lo riaccendi riparte da dove era rimasto.</p>
+      <p class="suggerimento spazio-sopra">${L('Spegnerlo non cancella nulla: quando lo riaccendi riparte da dove era rimasto.', 'Turning it off deletes nothing: when you turn it back on it resumes where it left off.', 'Apagarlo no borra nada: cuando lo vuelves a encender retoma donde estaba.')}</p>
 
-      <label class="campo spazio-sopra" for="sel-modalita">Quando dev'essere attivo</label>
+      <label class="campo spazio-sopra" for="sel-modalita">${L('Quando dev\'essere attivo', 'When it should be active', 'Cuándo debe estar activo')}</label>
       <select id="sel-modalita">
-        <option value="sempre" ${sImp.modalita === 'sempre' ? 'selected' : ''}>Sempre (24/7)</option>
-        <option value="live" ${sImp.modalita === 'live' ? 'selected' : ''}>Solo quando sei in diretta</option>
-        <option value="manuale" ${sImp.modalita === 'manuale' ? 'selected' : ''}>Manuale (decidi tu con l'interruttore)</option>
+        <option value="sempre" ${sImp.modalita === 'sempre' ? 'selected' : ''}>${L('Sempre (24/7)', 'Always (24/7)', 'Siempre (24/7)')}</option>
+        <option value="live" ${sImp.modalita === 'live' ? 'selected' : ''}>${L('Solo quando sei in diretta', 'Only when you’re live', 'Solo cuando estás en directo')}</option>
+        <option value="manuale" ${sImp.modalita === 'manuale' ? 'selected' : ''}>${L('Manuale (decidi tu con l\'interruttore)', 'Manual (you decide with the switch)', 'Manual (decides tú con el interruptor)')}</option>
       </select>
       <p class="suggerimento">
-        <strong class="primo-piano">24/7</strong>: sempre in chat. ·
-        <strong class="primo-piano">Quando sei live</strong>: entra da solo quando parte la diretta ed esce a fine stream. ·
-        <strong class="primo-piano">Manuale</strong>: comandi tu con l'interruttore qui sopra.
+        <strong class="primo-piano">24/7</strong>: ${L('sempre in chat.', 'always in chat.', 'siempre en el chat.')} ·
+        <strong class="primo-piano">${L('Quando sei live', 'When you’re live', 'Cuando estás en directo')}</strong>: ${L('entra da solo quando parte la diretta ed esce a fine stream.', 'joins by itself when the stream starts and leaves at the end.', 'entra solo cuando empieza el directo y sale al final.')} ·
+        <strong class="primo-piano">${L('Manuale', 'Manual', 'Manual')}</strong>: ${L('comandi tu con l\'interruttore qui sopra.', 'you control it with the switch above.', 'lo controlas tú con el interruptor de arriba.')}
       </p>
-      <p><button class="btn secondario" id="btn-salva-modalita">Salva modalità</button></p>
+      <p><button class="btn secondario" id="btn-salva-modalita">${L('Salva modalità', 'Save mode', 'Guardar modo')}</button></p>
     </div>
     <div class="carta">
-      <h2>${_hIco(ICO.libro)}Pre-addestramento</h2>
-      <p>SocialBot legge il tuo profilo su andryxify.it per conoscerti prima ancora di entrare in chat.</p>
+      <h2>${_hIco(ICO.libro)}${L('Pre-addestramento', 'Pre-training', 'Preentrenamiento')}</h2>
+      <p>${L('SocialBot legge il tuo profilo su andryxify.it per conoscerti prima ancora di entrare in chat.', 'SocialBot reads your andryxify.it profile to get to know you before it even joins chat.', 'SocialBot lee tu perfil en andryxify.it para conocerte antes de entrar al chat.')}</p>
       <p class="spazio-sopra">
-        Ultima lettura: <strong class="primo-piano">${esc(dataIt(pre.preaddestramento_ts))}</strong>
-        · voci di conoscenza: <strong class="primo-piano">${stato.knowledgeCount}</strong>
+        ${L('Ultima lettura:', 'Last read:', 'Última lectura:')} <strong class="primo-piano">${esc(dataIt(pre.preaddestramento_ts))}</strong>
+        · ${L('voci di conoscenza:', 'knowledge entries:', 'entradas de conocimiento:')} <strong class="primo-piano">${stato.knowledgeCount}</strong>
       </p>
       ${pre.preaddestramento_esito ? `<p class="nota-lettura">${esc(pre.preaddestramento_esito)}</p>` : ''}
       <p class="spazio-sopra">
-        <button class="btn secondario" id="btn-pretrain">Ri-leggi il mio profilo andryxify.it</button>
+        <button class="btn secondario" id="btn-pretrain">${L('Ri-leggi il mio profilo andryxify.it', 'Re-read my andryxify.it profile', 'Volver a leer mi perfil de andryxify.it')}</button>
         <span id="esito-pretrain" class="suggerimento"></span>
       </p>
     </div>
     <div class="carta">
-      <h2>${_hIco(ICO.germoglio)}La piccola rete che impara</h2>
-      <p>Il motore veloce del bot che <strong class="primo-piano">cresce da solo</strong>: risponde all'istante a ciò
-      che ha già imparato e, quando incontra qualcosa di nuovo, se lo segna e lo impara dal maestro.
-      Più lo alleni (anche via DM su Telegram), più sa fare da sé.</p>
-      <div id="rete-panoramica"><p class="vuoto">Caricamento…</p></div>
+      <h2>${_hIco(ICO.germoglio)}${L('La piccola rete che impara', 'The little network that learns', 'La pequeña red que aprende')}</h2>
+      <p>${L('Il motore veloce del bot che', 'The bot’s fast engine that', 'El motor rápido del bot que')} <strong class="primo-piano">${L('cresce da solo', 'grows on its own', 'crece solo')}</strong>: ${L('risponde all\'istante a ciò che ha già imparato e, quando incontra qualcosa di nuovo, se lo segna e lo impara dal maestro. Più lo alleni (anche via DM su Telegram), più sa fare da sé.', 'answers instantly to what it already learned and, when it meets something new, notes it and learns it from the teacher. The more you train it (also via Telegram DM), the more it can do on its own.', 'responde al instante a lo que ya aprendió y, cuando encuentra algo nuevo, lo anota y lo aprende del maestro. Cuanto más lo entrenas (también por DM en Telegram), más sabe hacer solo.')}</p>
+      <div id="rete-panoramica"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
     </div>
     <div class="carta">
-      <h2>${_hIco(ICO.telefono)}Installa l'app</h2>
-      <p>Installa la dashboard <strong class="primo-piano">come app</strong> sul telefono o sul PC: la apri a
-      schermo intero come un'app vera, senza doverla cercare nel browser.</p>
+      <h2>${_hIco(ICO.telefono)}${L('Installa l\'app', 'Install the app', 'Instala la app')}</h2>
+      <p>${L('Installa la dashboard', 'Install the dashboard', 'Instala el panel')} <strong class="primo-piano">${L('come app', 'as an app', 'como app')}</strong> ${L('sul telefono o sul PC: la apri a schermo intero come un\'app vera, senza doverla cercare nel browser.', 'on your phone or PC: open it full-screen like a real app, no need to look for it in the browser.', 'en el móvil o el PC: la abres a pantalla completa como una app de verdad, sin buscarla en el navegador.')}</p>
       <p class="spazio-sopra">
-        <button class="btn secondario" id="btn-installa">Installa l'app</button>
+        <button class="btn secondario" id="btn-installa">${L('Installa l\'app', 'Install the app', 'Instala la app')}</button>
       </p>
-      <p class="suggerimento">Su iPhone/iPad: apri in Safari → Condividi → “Aggiungi a Home”. Su Android/PC (Chrome):
-      usa il bottone qui sopra o l’icona “installa” nella barra indirizzi.</p>
+      <p class="suggerimento">${L('Su iPhone/iPad: apri in Safari → Condividi → “Aggiungi a Home”. Su Android/PC (Chrome): usa il bottone qui sopra o l’icona “installa” nella barra indirizzi.', 'On iPhone/iPad: open in Safari → Share → “Add to Home Screen”. On Android/PC (Chrome): use the button above or the “install” icon in the address bar.', 'En iPhone/iPad: abre en Safari → Compartir → “Añadir a inicio”. En Android/PC (Chrome): usa el botón de arriba o el icono “instalar” en la barra de direcciones.')}</p>
     </div>
     ${proprietario ? (() => {
-      const nomi = { community: 'Community', free: 'Prova', base: 'Base', pro: 'Pro' };
+      const nomi = { community: L('Community', 'Community', 'Comunidad'), free: L('Prova', 'Trial', 'Prueba'), base: 'Base', pro: 'Pro' };
       const tier = stato.tier || 'community';
       const pagato = tier === 'base' || tier === 'pro';
       return `
     <div class="carta">
-      <h2>${_hIco(ICO.carta)}Abbonamento</h2>
-      <p>Piano attuale: <strong class="primo-piano">${esc(nomi[tier] || '—')}</strong>${tier === 'community' ? ' — accesso completo, riservato ai membri abilitati di andryxify.it.' : ''}</p>
+      <h2>${_hIco(ICO.carta)}${L('Abbonamento', 'Subscription', 'Suscripción')}</h2>
+      <p>${L('Piano attuale:', 'Current plan:', 'Plan actual:')} <strong class="primo-piano">${esc(nomi[tier] || '—')}</strong>${tier === 'community' ? L(' — accesso completo, riservato ai membri abilitati di andryxify.it.', ' — full access, reserved for enabled andryxify.it members.', ' — acceso completo, reservado a los miembros habilitados de andryxify.it.') : ''}</p>
       ${pagato
-        ? '<p class="spazio-sopra"><button class="btn secondario" id="btn-portale-abbonamento">Gestisci abbonamento</button></p>'
-        : (tier === 'community' ? '' : '<p class="suggerimento spazio-sopra">Gli abbonamenti self-service stanno arrivando.</p>')}
+        ? `<p class="spazio-sopra"><button class="btn secondario" id="btn-portale-abbonamento">${L('Gestisci abbonamento', 'Manage subscription', 'Gestionar suscripción')}</button></p>`
+        : (tier === 'community' ? '' : `<p class="suggerimento spazio-sopra">${L('Gli abbonamenti self-service stanno arrivando.', 'Self-service subscriptions are coming soon.', 'Las suscripciones self-service están al llegar.')}</p>`)}
     </div>`;
     })() : ''}
     <div class="carta">
       <h2>${_hIco(ICO.chiave)}Passkey</h2>
-      <p>Crea una <strong class="primo-piano">passkey</strong> (impronta, volto o PIN): così rientri al volo, in
-      modo sicuro, <strong class="primo-piano">senza ripassare ogni volta dal sito</strong>.
-      ${proprietario ? '' : 'Vale per il tuo account: ti riporta ai canali che gestisci.'}</p>
+      <p>${L('Crea una', 'Create a', 'Crea una')} <strong class="primo-piano">passkey</strong> ${L('(impronta, volto o PIN): così rientri al volo, in modo sicuro,', '(fingerprint, face or PIN): so you get back in fast and securely,', '(huella, rostro o PIN): así vuelves a entrar al vuelo y de forma segura,')} <strong class="primo-piano">${L('senza ripassare ogni volta dal sito', 'without going through the site every time', 'sin pasar cada vez por la web')}</strong>.
+      ${proprietario ? '' : L('Vale per il tuo account: ti riporta ai canali che gestisci.', 'It’s tied to your account: it brings you back to the channels you manage.', 'Vale para tu cuenta: te lleva a los canales que gestionas.')}</p>
       <p class="spazio-sopra">
-        <button class="btn" id="btn-crea-passkey">Crea una passkey</button>
+        <button class="btn" id="btn-crea-passkey">${L('Crea una passkey', 'Create a passkey', 'Crea una passkey')}</button>
       </p>
-      <h3>Le tue passkey</h3>
-      <ul class="lista-voci" id="lista-passkey"><li class="vuoto">Caricamento…</li></ul>
+      <h3>${L('Le tue passkey', 'Your passkeys', 'Tus passkeys')}</h3>
+      <ul class="lista-voci" id="lista-passkey"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
     </div>
     ${proprietario ? `
     <div class="carta">
-      <h2>${_hIco(ICO.utenti)}Moderatori</h2>
-      <p>Fai aiutare qualcuno di cui ti fidi a gestire il bot. Gli mandi un <strong class="primo-piano">link
-      d'invito</strong>: accede con Twitch (così sappiamo che è davvero lui) e può occuparsi di tutto,
-      <strong class="primo-piano">tranne</strong> le cose da proprietario — permessi Twitch e questo elenco.</p>
-      <label class="campo" for="inp-mod-login">Username Twitch del moderatore</label>
+      <h2>${_hIco(ICO.utenti)}${L('Moderatori', 'Moderators', 'Moderadores')}</h2>
+      <p>${L('Fai aiutare qualcuno di cui ti fidi a gestire il bot. Gli mandi un', 'Let someone you trust help run the bot. You send them an', 'Deja que alguien de confianza te ayude con el bot. Le mandas un')} <strong class="primo-piano">${L('link d\'invito', 'invite link', 'enlace de invitación')}</strong>: ${L('accede con Twitch (così sappiamo che è davvero lui) e può occuparsi di tutto,', 'they sign in with Twitch (so we know it’s really them) and can handle everything,', 'entra con Twitch (así sabemos que es él de verdad) y puede ocuparse de todo,')} <strong class="primo-piano">${L('tranne', 'except', 'excepto')}</strong> ${L('le cose da proprietario — permessi Twitch e questo elenco.', 'owner-only things — Twitch permissions and this list.', 'lo de propietario — permisos de Twitch y esta lista.')}</p>
+      <label class="campo" for="inp-mod-login">${L('Username Twitch del moderatore', 'Moderator’s Twitch username', 'Usuario de Twitch del moderador')}</label>
       <div class="riga-flessibile">
         <span class="suggerimento">@</span>
-        <input type="text" id="inp-mod-login" placeholder="nomeutente" autocomplete="off">
-        <button class="btn" id="btn-invita-mod">Crea invito</button>
+        <input type="text" id="inp-mod-login" placeholder="${L('nomeutente', 'username', 'usuario')}" autocomplete="off">
+        <button class="btn" id="btn-invita-mod">${L('Crea invito', 'Create invite', 'Crear invitación')}</button>
       </div>
       <div id="invito-creato"></div>
-      <h3>I tuoi moderatori</h3>
-      <ul class="lista-voci" id="lista-moderatori"><li class="vuoto">Caricamento…</li></ul>
+      <h3>${L('I tuoi moderatori', 'Your moderators', 'Tus moderadores')}</h3>
+      <ul class="lista-voci" id="lista-moderatori"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
     </div>` : ''}`);
 }
 
