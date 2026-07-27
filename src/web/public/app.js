@@ -2391,20 +2391,20 @@ function popolaMediaSuoniAlert(effetti, alertsCfg) {
   });
 }
 
-const ALERT_TIPI = [
-  { key: 'follow', nome: 'Nuovo follower', ph: '{user} ha seguito il canale!', vars: '{user}', acc: '#9146ff' },
-  { key: 'sub', nome: 'Abbonamento', ph: '{user} si è abbonato! ({mesi} mesi)', vars: '{user}, {mesi}', acc: '#ffb020' },
-  { key: 'cheer', nome: 'Bit (cheer)', ph: '{user} ha lanciato {bits} bit!', vars: '{user}, {bits}', acc: '#38d39f', soglia: { campo: 'minBits', label: 'Bit minimi' } },
-  { key: 'raid', nome: 'Raid', ph: '{user} è arrivato in raid con {viewers} spettatori!', vars: '{user}, {viewers}', acc: '#ff4d4d', soglia: { campo: 'minViewers', label: 'Spettatori minimi' } },
+const ALERT_TIPI = () => [
+  { key: 'follow', nome: L('Nuovo follower', 'New follower', 'Nuevo seguidor'), ph: L('{user} ha seguito il canale!', '{user} followed the channel!', '¡{user} ha seguido el canal!'), vars: '{user}', acc: '#9146ff' },
+  { key: 'sub', nome: L('Abbonamento', 'Subscription', 'Suscripción'), ph: L('{user} si è abbonato! ({mesi} mesi)', '{user} subscribed! ({mesi} months)', '¡{user} se ha suscrito! ({mesi} meses)'), vars: '{user}, {mesi}', acc: '#ffb020' },
+  { key: 'cheer', nome: L('Bit (cheer)', 'Bits (cheer)', 'Bits (cheer)'), ph: L('{user} ha lanciato {bits} bit!', '{user} sent {bits} bits!', '¡{user} ha enviado {bits} bits!'), vars: '{user}, {bits}', acc: '#38d39f', soglia: { campo: 'minBits', label: L('Bit minimi', 'Minimum bits', 'Bits mínimos') } },
+  { key: 'raid', nome: L('Raid', 'Raid', 'Raid'), ph: L('{user} è arrivato in raid con {viewers} spettatori!', '{user} raided with {viewers} viewers!', '¡{user} ha llegado en raid con {viewers} espectadores!'), vars: '{user}, {viewers}', acc: '#ff4d4d', soglia: { campo: 'minViewers', label: L('Spettatori minimi', 'Minimum viewers', 'Espectadores mínimos') } },
 ];
 
-// opzioni comuni per i controlli di stile
-const FONT_OPTS = [['sistema', 'Sistema'], ['rotondo', 'Arrotondato'], ['condensato', 'Condensato'], ['mono', 'Monospazio'], ['serif', 'Serif'], ['manga', 'Manga']];
-const ANIM_ALERT_OPTS = [['slide', 'Scivola'], ['pop', 'Pop'], ['zoom', 'Zoom'], ['fade', 'Dissolvenza'], ['flip', 'Ribalta'], ['bounce', 'Rimbalzo']];
-const ANIM_CHAT_OPTS = [['slide', 'Scivola'], ['fade', 'Dissolvenza'], ['nessuna', 'Nessuna']];
-const DIM_OPTS = [['piccola', 'Piccola'], ['media', 'Media'], ['grande', 'Grande'], ['enorme', 'Enorme']];
-const DIM3_OPTS = [['piccola', 'Piccola'], ['media', 'Media'], ['grande', 'Grande']];
-const POS4_OPTS = [['alto-sinistra', 'In alto a sx'], ['alto-destra', 'In alto a dx'], ['basso-sinistra', 'In basso a sx'], ['basso-destra', 'In basso a dx']];
+// opzioni comuni per i controlli di stile (funzioni: risolvono la lingua al render)
+const FONT_OPTS = () => [['sistema', L('Sistema', 'System', 'Sistema')], ['rotondo', L('Arrotondato', 'Rounded', 'Redondeado')], ['condensato', L('Condensato', 'Condensed', 'Condensada')], ['mono', L('Monospazio', 'Monospace', 'Monoespaciada')], ['serif', L('Serif', 'Serif', 'Serif')], ['manga', L('Manga', 'Manga', 'Manga')]];
+const ANIM_ALERT_OPTS = () => [['slide', L('Scivola', 'Slide', 'Deslizar')], ['pop', L('Pop', 'Pop', 'Pop')], ['zoom', L('Zoom', 'Zoom', 'Zoom')], ['fade', L('Dissolvenza', 'Fade', 'Fundido')], ['flip', L('Ribalta', 'Flip', 'Voltear')], ['bounce', L('Rimbalzo', 'Bounce', 'Rebote')]];
+const ANIM_CHAT_OPTS = () => [['slide', L('Scivola', 'Slide', 'Deslizar')], ['fade', L('Dissolvenza', 'Fade', 'Fundido')], ['nessuna', L('Nessuna', 'None', 'Ninguna')]];
+const DIM_OPTS = () => [['piccola', L('Piccola', 'Small', 'Pequeña')], ['media', L('Media', 'Medium', 'Mediana')], ['grande', L('Grande', 'Large', 'Grande')], ['enorme', L('Enorme', 'Huge', 'Enorme')]];
+const DIM3_OPTS = () => [['piccola', L('Piccola', 'Small', 'Pequeña')], ['media', L('Media', 'Medium', 'Mediana')], ['grande', L('Grande', 'Large', 'Grande')]];
+const POS4_OPTS = () => [['alto-sinistra', L('In alto a sx', 'Top left', 'Arriba izq.')], ['alto-destra', L('In alto a dx', 'Top right', 'Arriba der.')], ['basso-sinistra', L('In basso a sx', 'Bottom left', 'Abajo izq.')], ['basso-destra', L('In basso a dx', 'Bottom right', 'Abajo der.')]];
 
 // mini-builder per i controlli (riducono la ripetizione)
 const _hx = (v, d) => (/^#[0-9a-fA-F]{6}$/.test(v || '') ? v : d);
@@ -2438,36 +2438,36 @@ function bloccoAlert(t, a) {
         <label class="interruttore"><input type="checkbox" class="al-attivo" ${c.attivo ? 'checked' : ''}><span class="levetta"></span></label>
         <strong>${t.nome}</strong>
       </div>
-      <label class="campo spazio-sopra">Testo <span class="tenue">— segnaposto: ${esc(t.vars)}</span></label>
+      <label class="campo spazio-sopra">${L('Testo', 'Text', 'Texto')} <span class="tenue">— ${L('segnaposto', 'placeholders', 'marcadores')}: ${esc(t.vars)}</span></label>
       <input type="text" class="al-testo campo-largo" maxlength="200" placeholder="${esc(t.ph)}" value="${esc(c.testo || '')}">
       <div class="griglia-campi spazio-sopra">
-        <div><label class="campo">Colore</label><input type="color" class="al-colore" value="${_hx(acc, t.acc)}"></div>
-        <div><label class="campo">Volume: <strong><span class="al-vol-v">${vol}</span>%</strong></label><input type="range" class="al-vol" min="0" max="100" value="${vol}"></div>
+        <div><label class="campo">${L('Colore', 'Color', 'Color')}</label><input type="color" class="al-colore" value="${_hx(acc, t.acc)}"></div>
+        <div><label class="campo">${L('Volume', 'Volume', 'Volumen')}: <strong><span class="al-vol-v">${vol}</span>%</strong></label><input type="range" class="al-vol" min="0" max="100" value="${vol}"></div>
         <div><label class="campo">Font</label><select class="al-font">${opzioniFont(c.font || '')}</select></div>
         ${soglia}
       </div>
       <div class="al-media-wrap spazio-sopra">
         <div class="al-slot">
-          <label class="campo">${_bIco(ICO.altoparlante)}Suono</label>
+          <label class="campo">${_bIco(ICO.altoparlante)}${L('Suono', 'Sound', 'Sonido')}</label>
           <select class="al-suono">${opzioniSuono(c.suono || '')}</select>
           <div class="al-carica">
             <input type="file" class="al-up al-up-suono" accept="audio/*" data-slot="suono" hidden>
-            <button type="button" class="btn secondario mini al-btn-up" data-slot="suono">${_bIco(ICO.carica)}Carica un suono tuo</button>
+            <button type="button" class="btn secondario mini al-btn-up" data-slot="suono">${_bIco(ICO.carica)}${L('Carica un suono tuo', 'Upload your own sound', 'Sube un sonido tuyo')}</button>
             <span class="al-up-esito tenue"></span>
           </div>
         </div>
         <div class="al-slot">
-          <label class="campo">${_bIco(ICO.immagine)}Immagine o video</label>
-          <select class="al-media"><option value="">— niente —</option></select>
+          <label class="campo">${_bIco(ICO.immagine)}${L('Immagine o video', 'Image or video', 'Imagen o vídeo')}</label>
+          <select class="al-media"><option value="">${L('— niente —', '— none —', '— nada —')}</option></select>
           <div class="al-carica">
             <input type="file" class="al-up al-up-media" accept="image/*,video/*" data-slot="media" hidden>
-            <button type="button" class="btn secondario mini al-btn-up" data-slot="media">${_bIco(ICO.carica)}Carica immagine/video tuo</button>
+            <button type="button" class="btn secondario mini al-btn-up" data-slot="media">${_bIco(ICO.carica)}${L('Carica immagine/video tuo', 'Upload your own image/video', 'Sube tu imagen/vídeo')}</button>
             <span class="al-up-esito tenue"></span>
           </div>
         </div>
       </div>
-      <p class="suggerimento"><strong>Metti quello che vuoi:</strong> scegli dai tuoi effetti <em>oppure</em> carica un file al volo qui sopra. Suono e immagine/video <strong>partono insieme</strong> — così puoi avere, ad esempio, la tua GIF <em>con</em> il tuo suono.</p>
-      <p class="spazio-sopra"><button type="button" class="btn secondario mini al-prova" data-kind="${t.key}">Prova ▶</button></p>
+      <p class="suggerimento"><strong>${L('Metti quello che vuoi:', 'Put whatever you want:', 'Pon lo que quieras:')}</strong> ${L('scegli dai tuoi effetti', 'choose from your effects', 'elige entre tus efectos')} <em>${L('oppure', 'or', 'o')}</em> ${L('carica un file al volo qui sopra. Suono e immagine/video', 'upload a file on the fly above. Sound and image/video', 'sube un archivo al vuelo arriba. Sonido e imagen/vídeo')} <strong>${L('partono insieme', 'play together', 'se reproducen juntos')}</strong> — ${L('così puoi avere, ad esempio, la tua GIF', 'so you can have, for example, your GIF', 'así puedes tener, por ejemplo, tu GIF')} <em>${L('con', 'with', 'con')}</em> ${L('il tuo suono.', 'your sound.', 'tu sonido.')}</p>
+      <p class="spazio-sopra"><button type="button" class="btn secondario mini al-prova" data-kind="${t.key}">${L('Prova', 'Test', 'Probar')} ▶</button></p>
     </div>`;
 }
 
@@ -2479,21 +2479,21 @@ function bloccoWidget(pref, w, titolo, kind) {
         <label class="interruttore"><input type="checkbox" id="${pref}-attivo" ${w.attivo ? 'checked' : ''}><span class="levetta"></span></label>
         <strong>${titolo}</strong>
       </div>
-      <label class="campo spazio-sopra" for="${pref}-testo">Testo <span class="tenue">— {nome} = chi</span></label>
+      <label class="campo spazio-sopra" for="${pref}-testo">${L('Testo', 'Text', 'Texto')} <span class="tenue">— {nome} = ${L('chi', 'who', 'quién')}</span></label>
       <input type="text" id="${pref}-testo" class="campo-largo" maxlength="80" value="${esc(w.testo)}">
       <div class="griglia-campi spazio-sopra">
-        ${cSel(`${pref}-pos`, 'Posizione', POS4_OPTS, w.posizione)}
-        ${cSel(`${pref}-font`, 'Font', FONT_OPTS, st.font)}
-        ${cSel(`${pref}-dim`, 'Dimensione', DIM3_OPTS, st.dim)}
+        ${cSel(`${pref}-pos`, L('Posizione', 'Position', 'Posición'), POS4_OPTS(), w.posizione)}
+        ${cSel(`${pref}-font`, 'Font', FONT_OPTS(), st.font)}
+        ${cSel(`${pref}-dim`, L('Dimensione', 'Size', 'Tamaño'), DIM3_OPTS(), st.dim)}
       </div>
       <div class="griglia-campi spazio-sopra">
-        ${cCol(`${pref}-bg`, 'Sfondo', st.sfondo)}
-        ${cRng(`${pref}-op`, 'Opacità', 0, 100, st.opacita, '%')}
-        ${cCol(`${pref}-fg`, 'Testo', st.testo)}
-        ${cCol(`${pref}-acc`, 'Nome', st.accento)}
-        ${cRng(`${pref}-radius`, 'Angoli', 0, 30, st.bordoRaggio, 'px')}
+        ${cCol(`${pref}-bg`, L('Sfondo', 'Background', 'Fondo'), st.sfondo)}
+        ${cRng(`${pref}-op`, L('Opacità', 'Opacity', 'Opacidad'), 0, 100, st.opacita, '%')}
+        ${cCol(`${pref}-fg`, L('Testo', 'Text', 'Texto'), st.testo)}
+        ${cCol(`${pref}-acc`, L('Nome', 'Name', 'Nombre'), st.accento)}
+        ${cRng(`${pref}-radius`, L('Angoli', 'Corners', 'Esquinas'), 0, 30, st.bordoRaggio, 'px')}
       </div>
-      <p class="spazio-sopra"><button type="button" class="btn secondario mini w-prova" data-kind="${kind}">Prova ▶</button></p>
+      <p class="spazio-sopra"><button type="button" class="btn secondario mini w-prova" data-kind="${kind}">${L('Prova', 'Test', 'Probar')} ▶</button></p>
     </div>`;
 }
 
@@ -2504,8 +2504,8 @@ function ovlElemento(k, ico, nome, sez) {
   return `<div class="ovl-elem">
     <span class="oe-ico">${_bIco(ico)}</span>
     <span class="oe-nome">${esc(nome)}</span>
-    <button type="button" class="oe-mod" data-apri-sez="${sez}">Modifica</button>
-    <label class="interruttore oe-sw" title="Mostra «${esc(nome)}» in questo overlay"><input type="checkbox" id="mostra-${k}" checked><span class="levetta"></span></label>
+    <button type="button" class="oe-mod" data-apri-sez="${sez}">${L('Modifica', 'Edit', 'Editar')}</button>
+    <label class="interruttore oe-sw" title="${L('Mostra', 'Show', 'Mostrar')} «${esc(nome)}» ${L('in questo overlay', 'in this overlay', 'en este overlay')}"><input type="checkbox" id="mostra-${k}" checked><span class="levetta"></span></label>
   </div>`;
 }
 
@@ -2513,50 +2513,51 @@ function pannelloAlert() {
   const p = impostazioni();
   const a = p.alerts, st = a.stile, co = p.chatOverlay, cst = co.stile;
   const wf = p.overlayWidget.ultimoFollower, ws = p.overlayWidget.ultimoSub;
-  const posAlertOpts = [['alto-centro', 'In alto al centro'], ['centro', 'Al centro'], ['basso-centro', 'In basso al centro']];
+  const posAlertOpts = [['alto-centro', L('In alto al centro', 'Top center', 'Arriba centro')], ['centro', L('Al centro', 'Center', 'Al centro')], ['basso-centro', L('In basso al centro', 'Bottom center', 'Abajo centro')]];
   const userMode = (cst.username && cst.username !== 'twitch') ? 'fisso' : 'twitch';
-  const opzTpl = `<optgroup label="Pronti">${TEMPLATE_BUILTIN.map((t, i) => `<option value="b${i}">${esc(t.nome)}</option>`).join('')}</optgroup>`
-    + (p.overlayTemplates.length ? `<optgroup label="I miei">${p.overlayTemplates.map((t, i) => `<option value="u${i}">${esc(t.nome)}</option>`).join('')}</optgroup>` : '');
+  const lblPronti = L('Pronti', 'Ready-made', 'Listos'), lblMiei = L('I miei', 'Mine', 'Los míos');
+  const opzTpl = `<optgroup label="${lblPronti}">${TEMPLATE_BUILTIN.map((t, i) => `<option value="b${i}">${esc(t.nome)}</option>`).join('')}</optgroup>`
+    + (p.overlayTemplates.length ? `<optgroup label="${lblMiei}">${p.overlayTemplates.map((t, i) => `<option value="u${i}">${esc(t.nome)}</option>`).join('')}</optgroup>` : '');
   return pannello('alert', `
     <div class="carta">
-      <h2>${_hIco(ICO.monitor)}I miei overlay</h2>
-      <p>Puoi avere <strong>più overlay</strong>, ognuno col suo <strong>link OBS</strong> e il suo <strong>layout</strong>
-      (cosa mostra e dove). Es. un overlay "solo alert" in una scena e uno "solo chat" in un'altra.</p>
+      <h2>${_hIco(ICO.monitor)}${L('I miei overlay', 'My overlays', 'Mis overlays')}</h2>
+      <p>${L('Puoi avere', 'You can have', 'Puedes tener')} <strong>${L('più overlay', 'multiple overlays', 'varios overlays')}</strong>, ${L('ognuno col suo', 'each with its own', 'cada uno con su')} <strong>${L('link OBS', 'OBS link', 'enlace OBS')}</strong> ${L('e il suo', 'and its own', 'y su propio')} <strong>${L('layout', 'layout', 'diseño')}</strong>
+      (${L('cosa mostra e dove', 'what it shows and where', 'qué muestra y dónde')}). ${L('Es. un overlay "solo alert" in una scena e uno "solo chat" in un\'altra.', 'E.g. an "alerts only" overlay in one scene and a "chat only" one in another.', 'Ej. un overlay "solo alertas" en una escena y otro "solo chat" en otra.')}</p>
       <div class="riga-flessibile">
         <select id="ov-sel" class="campo-largo"></select>
-        <button class="btn secondario" id="ov-nuovo">Nuovo</button>
-        <button class="btn secondario" id="ov-rinomina">Rinomina</button>
-        <button class="btn secondario" id="ov-elimina">Elimina</button>
+        <button class="btn secondario" id="ov-nuovo">${L('Nuovo', 'New', 'Nuevo')}</button>
+        <button class="btn secondario" id="ov-rinomina">${L('Rinomina', 'Rename', 'Renombrar')}</button>
+        <button class="btn secondario" id="ov-elimina">${L('Elimina', 'Delete', 'Eliminar')}</button>
       </div>
-      <label class="campo spazio-sopra">Link OBS di questo overlay <span class="tenue">— Sorgenti → Browser, 1920×1080, sfondo trasparente</span></label>
+      <label class="campo spazio-sopra">${L('Link OBS di questo overlay', 'OBS link for this overlay', 'Enlace OBS de este overlay')} <span class="tenue">— ${L('Sorgenti → Browser, 1920×1080, sfondo trasparente', 'Sources → Browser, 1920×1080, transparent background', 'Fuentes → Navegador, 1920×1080, fondo transparente')}</span></label>
       <div class="riga-flessibile">
-        <input type="text" id="inp-overlay-url" class="campo-largo" readonly value="" placeholder="caricamento…">
-        <button class="btn secondario" id="btn-copia-overlay">Copia</button>
+        <input type="text" id="inp-overlay-url" class="campo-largo" readonly value="" placeholder="${L('caricamento…', 'loading…', 'cargando…')}">
+        <button class="btn secondario" id="btn-copia-overlay">${L('Copia', 'Copy', 'Copiar')}</button>
       </div>
-      <label class="campo spazio-sopra">Elementi (fonti) di questo overlay <span class="tenue">— accendi/spegni cosa compare, poi personalizzali con «Modifica»</span></label>
+      <label class="campo spazio-sopra">${L('Elementi (fonti) di questo overlay', 'Elements (sources) of this overlay', 'Elementos (fuentes) de este overlay')} <span class="tenue">— ${L('accendi/spegni cosa compare, poi personalizzali con «Modifica»', 'turn on/off what appears, then customize them with «Edit»', 'activa/desactiva qué aparece, luego personalízalos con «Editar»')}</span></label>
       <div class="ovl-elementi">
-        ${ovlElemento('alert', ICO.megafono, 'Alert eventi', 'sez-alert')}
-        ${ovlElemento('chat', ICO.chat, 'Chat a schermo', 'sez-chat')}
-        ${ovlElemento('wf', ICO.cuore, 'Ultimo follower', 'sez-widget')}
-        ${ovlElemento('ws', ICO.medaglia, 'Ultimo sub', 'sez-widget')}
-        ${ovlElemento('effetti', ICO.effetti, 'Effetti & suoni', 'effetti')}
+        ${ovlElemento('alert', ICO.megafono, L('Alert eventi', 'Event alerts', 'Alertas de eventos'), 'sez-alert')}
+        ${ovlElemento('chat', ICO.chat, L('Chat a schermo', 'On-screen chat', 'Chat en pantalla'), 'sez-chat')}
+        ${ovlElemento('wf', ICO.cuore, L('Ultimo follower', 'Latest follower', 'Último seguidor'), 'sez-widget')}
+        ${ovlElemento('ws', ICO.medaglia, L('Ultimo sub', 'Latest sub', 'Último sub'), 'sez-widget')}
+        ${ovlElemento('effetti', ICO.effetti, L('Effetti & suoni', 'Effects & sounds', 'Efectos y sonidos'), 'effetti')}
       </div>
-      <p class="suggerimento">Tienilo per te: chi ha questo link può far comparire cose nel tuo overlay.</p>
+      <p class="suggerimento">${L('Tienilo per te: chi ha questo link può far comparire cose nel tuo overlay.', 'Keep it to yourself: anyone with this link can make things appear in your overlay.', 'Guárdalo para ti: quien tenga este enlace puede hacer aparecer cosas en tu overlay.')}</p>
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.righello)}Anteprima e layout</h2>
-      <p>Personalizza <strong>tutto</strong> ciò che appare a schermo: alert, chat, widget… colori, font, forma, animazioni.
-      Posizioni e "cosa mostra" valgono per l'<strong>overlay selezionato qui sopra</strong>; stile e testi sono condivisi.
-      L'<strong>anteprima qui sotto è dal vivo</strong>.</p>
-      <p class="spazio-sopra"><button class="btn grande" id="ovl-salva-tutto">Salva overlay</button>
-        <span class="suggerimento">Salva tutto in un colpo: alert, chat, widget e il layout dell'overlay selezionato.</span></p>
-      <label class="campo spazio-sopra" for="ovl-tpl">Parti da un modello pronto <span class="tenue">— «Applica» riempie i controlli con quel look; poi premi «Salva overlay»</span></label>
+      <h2>${_hIco(ICO.righello)}${L('Anteprima e layout', 'Preview and layout', 'Vista previa y diseño')}</h2>
+      <p>${L('Personalizza', 'Customize', 'Personaliza')} <strong>${L('tutto', 'everything', 'todo')}</strong> ${L('ciò che appare a schermo: alert, chat, widget… colori, font, forma, animazioni.', 'that appears on screen: alerts, chat, widgets… colors, fonts, shape, animations.', 'lo que aparece en pantalla: alertas, chat, widgets… colores, fuentes, forma, animaciones.')}
+      ${L('Posizioni e "cosa mostra" valgono per l\'', 'Positions and "what to show" apply to the', 'Las posiciones y "qué mostrar" valen para el')}<strong>${L('overlay selezionato qui sopra', 'overlay selected above', 'overlay seleccionado arriba')}</strong>; ${L('stile e testi sono condivisi.', 'style and texts are shared.', 'el estilo y los textos son compartidos.')}
+      ${L('L\'', 'The ', 'La ')}<strong>${L('anteprima qui sotto è dal vivo', 'preview below is live', 'vista previa de abajo es en vivo')}</strong>.</p>
+      <p class="spazio-sopra"><button class="btn grande" id="ovl-salva-tutto">${L('Salva overlay', 'Save overlay', 'Guardar overlay')}</button>
+        <span class="suggerimento">${L('Salva tutto in un colpo: alert, chat, widget e il layout dell\'overlay selezionato.', 'Save everything at once: alerts, chat, widgets and the selected overlay\'s layout.', 'Guarda todo de una vez: alertas, chat, widgets y el diseño del overlay seleccionado.')}</span></p>
+      <label class="campo spazio-sopra" for="ovl-tpl">${L('Parti da un modello pronto', 'Start from a ready-made template', 'Empieza con una plantilla lista')} <span class="tenue">— ${L('«Applica» riempie i controlli con quel look; poi premi «Salva overlay»', '«Apply» fills the controls with that look; then press «Save overlay»', '«Aplicar» rellena los controles con ese aspecto; luego pulsa «Guardar overlay»')}</span></label>
       <div class="riga-flessibile">
         <select id="ovl-tpl" class="campo-largo">${opzTpl}</select>
-        <button class="btn secondario" id="ovl-tpl-applica">Applica al momento</button>
-        <button class="btn secondario" id="ovl-tpl-salva">Salva come mio modello…</button>
-        <button class="btn secondario" id="ovl-tpl-elimina">Elimina</button>
+        <button class="btn secondario" id="ovl-tpl-applica">${L('Applica al momento', 'Apply now', 'Aplicar ahora')}</button>
+        <button class="btn secondario" id="ovl-tpl-salva">${L('Salva come mio modello…', 'Save as my template…', 'Guardar como mi plantilla…')}</button>
+        <button class="btn secondario" id="ovl-tpl-elimina">${L('Elimina', 'Delete', 'Eliminar')}</button>
       </div>
       <div class="ovl-anteprima spazio-sopra" id="ovl-preview">
         <div class="ap-stage" id="ap-stage">
@@ -2567,125 +2568,125 @@ function pannelloAlert() {
         </div>
       </div>
       <div class="ovl-inspector" id="ovl-inspector" hidden>
-        <div class="ovl-insp-testa"><span class="ovl-insp-nome" id="insp-nome">Elemento</span>
-          <button type="button" class="ovl-insp-reset" id="insp-reset" title="Ripristina posizione, dimensione e rotazione">Ripristina</button></div>
+        <div class="ovl-insp-testa"><span class="ovl-insp-nome" id="insp-nome">${L('Elemento', 'Element', 'Elemento')}</span>
+          <button type="button" class="ovl-insp-reset" id="insp-reset" title="${L('Ripristina posizione, dimensione e rotazione', 'Reset position, size and rotation', 'Restablecer posición, tamaño y rotación')}">${L('Ripristina', 'Reset', 'Restablecer')}</button></div>
         <div class="ovl-insp-riga">
-          <label for="insp-size">Dimensione</label>
+          <label for="insp-size">${L('Dimensione', 'Size', 'Tamaño')}</label>
           <input type="range" id="insp-size" min="30" max="300" step="1" value="100">
           <span class="ovl-insp-val" id="insp-size-val">100%</span>
         </div>
         <div class="ovl-insp-riga">
-          <label for="insp-rot">Rotazione</label>
+          <label for="insp-rot">${L('Rotazione', 'Rotation', 'Rotación')}</label>
           <input type="range" id="insp-rot" min="-180" max="180" step="1" value="0">
           <span class="ovl-insp-val" id="insp-rot-val">0°</span>
         </div>
       </div>
-      <p class="suggerimento"><strong>Clicca</strong> un elemento per selezionarlo, poi <strong>trascinalo</strong> per spostarlo, usa le <strong>maniglie</strong> (⤡ dimensione · ⟳ rotazione) o i cursori qui sopra. Scorciatoie: <strong>rotellina</strong> = ridimensiona, <strong>Shift+rotellina</strong> = ruota, <strong>doppio clic</strong> = ripristina. Usa «Prova ▶» per vederli nell'overlay in OBS.</p>
+      <p class="suggerimento"><strong>${L('Clicca', 'Click', 'Haz clic en')}</strong> ${L('un elemento per selezionarlo, poi', 'an element to select it, then', 'un elemento para seleccionarlo, luego')} <strong>${L('trascinalo', 'drag it', 'arrástralo')}</strong> ${L('per spostarlo, usa le', 'to move it, use the', 'para moverlo, usa los')} <strong>${L('maniglie', 'handles', 'tiradores')}</strong> (⤡ ${L('dimensione', 'size', 'tamaño')} · ⟳ ${L('rotazione', 'rotation', 'rotación')}) ${L('o i cursori qui sopra.', 'or the sliders above.', 'o los deslizadores de arriba.')} ${L('Scorciatoie:', 'Shortcuts:', 'Atajos:')} <strong>${L('rotellina', 'wheel', 'rueda')}</strong> = ${L('ridimensiona', 'resize', 'redimensionar')}, <strong>Shift+${L('rotellina', 'wheel', 'rueda')}</strong> = ${L('ruota', 'rotate', 'rotar')}, <strong>${L('doppio clic', 'double click', 'doble clic')}</strong> = ${L('ripristina', 'reset', 'restablecer')}. ${L('Usa «Prova ▶» per vederli nell\'overlay in OBS.', 'Use «Test ▶» to see them in the overlay in OBS.', 'Usa «Probar ▶» para verlos en el overlay en OBS.')}</p>
     </div>
 
     <details class="carta sez" id="sez-alert">
-      <summary><h3>${_hIco(ICO.megafono)}Alert eventi</h3></summary>
-      <p>Un cartello animato con suono quando arriva un follow, un sub, dei bit o un raid.</p>
+      <summary><h3>${_hIco(ICO.megafono)}${L('Alert eventi', 'Event alerts', 'Alertas de eventos')}</h3></summary>
+      <p>${L('Un cartello animato con suono quando arriva un follow, un sub, dei bit o un raid.', 'An animated banner with sound when a follow, sub, bits or a raid comes in.', 'Un cartel animado con sonido cuando llega un follow, un sub, bits o un raid.')}</p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore"><input type="checkbox" id="al-attivo" ${a.attivo ? 'checked' : ''}><span class="levetta"></span></label>
-        <span class="etichetta-stato">Alert eventi</span>
+        <span class="etichetta-stato">${L('Alert eventi', 'Event alerts', 'Alertas de eventos')}</span>
       </div>
       <div class="griglia-campi spazio-sopra">
-        ${cSel('al-pos', 'Posizione', posAlertOpts, a.posizione)}
-        <div><label class="campo" for="al-durata">Durata (secondi)</label><input type="number" id="al-durata" min="2" max="20" value="${Math.round((Number(a.durata) || 6000) / 1000)}"></div>
+        ${cSel('al-pos', L('Posizione', 'Position', 'Posición'), posAlertOpts, a.posizione)}
+        <div><label class="campo" for="al-durata">${L('Durata (secondi)', 'Duration (seconds)', 'Duración (segundos)')}</label><input type="number" id="al-durata" min="2" max="20" value="${Math.round((Number(a.durata) || 6000) / 1000)}"></div>
       </div>
-      <h4 class="spazio-sopra">Aspetto <span class="tenue">— vale per tutti gli alert</span></h4>
+      <h4 class="spazio-sopra">${L('Aspetto', 'Appearance', 'Aspecto')} <span class="tenue">— ${L('vale per tutti gli alert', 'applies to all alerts', 'vale para todas las alertas')}</span></h4>
       <div class="griglia-campi spazio-sopra">
-        ${cSel('al-st-anim', 'Animazione', ANIM_ALERT_OPTS, st.animazione)}
-        ${cSel('al-st-font', 'Font', FONT_OPTS, st.font)}
-        ${cRng('al-st-dim', 'Testo', 14, 56, st.dimTesto, 'px')}
+        ${cSel('al-st-anim', L('Animazione', 'Animation', 'Animación'), ANIM_ALERT_OPTS(), st.animazione)}
+        ${cSel('al-st-font', 'Font', FONT_OPTS(), st.font)}
+        ${cRng('al-st-dim', L('Testo', 'Text', 'Texto'), 14, 56, st.dimTesto, 'px')}
       </div>
-      <label class="campo spazio-sopra">Font <span class="tenue">— scegli un font Google dall'elenco con anteprima (vince sul menu qui sopra)</span></label>
+      <label class="campo spazio-sopra">Font <span class="tenue">— ${L('scegli un font Google dall\'elenco con anteprima (vince sul menu qui sopra)', 'pick a Google font from the list with preview (overrides the menu above)', 'elige una fuente Google de la lista con vista previa (gana sobre el menú de arriba)')}</span></label>
       <div class="riga-flessibile">
-        <input type="text" id="al-st-gfont" class="campo-largo gfont" placeholder="— nessun font Google (uso il menu) —" value="${esc(st.googleFont || '')}">
-        <button type="button" class="btn secondario sfoglia-font" data-target="al-st-gfont" data-box="fb-al">${_bIco(ICO.libro)}Sfoglia i font</button>
-        <button type="button" class="btn secondario gfont-x" data-target="al-st-gfont" title="Togli il font Google">✕</button>
+        <input type="text" id="al-st-gfont" class="campo-largo gfont" placeholder="${L('— nessun font Google (uso il menu) —', '— no Google font (using the menu) —', '— sin fuente Google (uso el menú) —')}" value="${esc(st.googleFont || '')}">
+        <button type="button" class="btn secondario sfoglia-font" data-target="al-st-gfont" data-box="fb-al">${_bIco(ICO.libro)}${L('Sfoglia i font', 'Browse fonts', 'Explorar fuentes')}</button>
+        <button type="button" class="btn secondario gfont-x" data-target="al-st-gfont" title="${L('Togli il font Google', 'Remove the Google font', 'Quitar la fuente Google')}">✕</button>
       </div>
       <div class="font-browser" id="fb-al" hidden></div>
       <div class="griglia-campi spazio-sopra">
-        ${cCol('al-st-bg', 'Sfondo', st.sfondo)}
-        ${cRng('al-st-op', 'Opacità', 0, 100, st.opacita, '%')}
-        ${cCol('al-st-fg', 'Testo', st.testo)}
-        ${cRng('al-st-radius', 'Angoli', 0, 40, st.bordoRaggio, 'px')}
-        ${cRng('al-st-border', 'Bordo', 0, 10, st.bordoSpessore, 'px')}
+        ${cCol('al-st-bg', L('Sfondo', 'Background', 'Fondo'), st.sfondo)}
+        ${cRng('al-st-op', L('Opacità', 'Opacity', 'Opacidad'), 0, 100, st.opacita, '%')}
+        ${cCol('al-st-fg', L('Testo', 'Text', 'Texto'), st.testo)}
+        ${cRng('al-st-radius', L('Angoli', 'Corners', 'Esquinas'), 0, 40, st.bordoRaggio, 'px')}
+        ${cRng('al-st-border', L('Bordo', 'Border', 'Borde'), 0, 10, st.bordoSpessore, 'px')}
       </div>
       <div class="riga-flessibile spazio-sopra">
-        ${cChk('al-st-glow', 'Bagliore', st.glow)}
-        ${cChk('al-st-icon', 'Mostra icona', st.icona)}
+        ${cChk('al-st-glow', L('Bagliore', 'Glow', 'Resplandor'), st.glow)}
+        ${cChk('al-st-icon', L('Mostra icona', 'Show icon', 'Mostrar icono'), st.icona)}
       </div>
       <div class="alert-griglia spazio-sopra">
-        ${ALERT_TIPI.map((t) => bloccoAlert(t, a)).join('')}
+        ${ALERT_TIPI().map((t) => bloccoAlert(t, a)).join('')}
       </div>
-      <p class="spazio-sopra"><button class="btn" id="al-salva">Salva alert</button></p>
+      <p class="spazio-sopra"><button class="btn" id="al-salva">${L('Salva alert', 'Save alerts', 'Guardar alertas')}</button></p>
     </details>
 
     <details class="carta sez" id="sez-chat">
-      <summary><h3>${_hIco(ICO.chat)}Chat a schermo</h3></summary>
-      <p>I messaggi della chat scorrono in sovraimpressione nell'overlay.</p>
+      <summary><h3>${_hIco(ICO.chat)}${L('Chat a schermo', 'On-screen chat', 'Chat en pantalla')}</h3></summary>
+      <p>${L('I messaggi della chat scorrono in sovraimpressione nell\'overlay.', 'Chat messages scroll as an overlay on screen.', 'Los mensajes del chat se muestran superpuestos en el overlay.')}</p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore"><input type="checkbox" id="co-attivo" ${co.attivo ? 'checked' : ''}><span class="levetta"></span></label>
-        <span class="etichetta-stato">Chat a schermo</span>
+        <span class="etichetta-stato">${L('Chat a schermo', 'On-screen chat', 'Chat en pantalla')}</span>
       </div>
       <div class="griglia-campi spazio-sopra">
-        ${cSel('co-pos', 'Posizione', POS4_OPTS, co.posizione)}
-        <div><label class="campo" for="co-max">Messaggi visibili</label><input type="number" id="co-max" min="1" max="20" value="${Number(co.max) || 8}"></div>
-        <div><label class="campo" for="co-fade">Spariscono dopo (s, 0=restano)</label><input type="number" id="co-fade" min="0" max="120" value="${Number(co.fadeSec) || 0}"></div>
+        ${cSel('co-pos', L('Posizione', 'Position', 'Posición'), POS4_OPTS(), co.posizione)}
+        <div><label class="campo" for="co-max">${L('Messaggi visibili', 'Visible messages', 'Mensajes visibles')}</label><input type="number" id="co-max" min="1" max="20" value="${Number(co.max) || 8}"></div>
+        <div><label class="campo" for="co-fade">${L('Spariscono dopo (s, 0=restano)', 'Disappear after (s, 0=stay)', 'Desaparecen tras (s, 0=quedan)')}</label><input type="number" id="co-fade" min="0" max="120" value="${Number(co.fadeSec) || 0}"></div>
       </div>
-      <h4 class="spazio-sopra">Aspetto</h4>
+      <h4 class="spazio-sopra">${L('Aspetto', 'Appearance', 'Aspecto')}</h4>
       <div class="griglia-campi spazio-sopra">
-        ${cSel('co-st-dim', 'Dimensione', DIM_OPTS, cst.dim)}
-        ${cSel('co-st-font', 'Font', FONT_OPTS, cst.font)}
-        ${cSel('co-st-anim', 'Animazione', ANIM_CHAT_OPTS, cst.animazione)}
-        ${cRng('co-st-larg', 'Larghezza', 18, 60, cst.larghezza, 'vw')}
+        ${cSel('co-st-dim', L('Dimensione', 'Size', 'Tamaño'), DIM_OPTS(), cst.dim)}
+        ${cSel('co-st-font', 'Font', FONT_OPTS(), cst.font)}
+        ${cSel('co-st-anim', L('Animazione', 'Animation', 'Animación'), ANIM_CHAT_OPTS(), cst.animazione)}
+        ${cRng('co-st-larg', L('Larghezza', 'Width', 'Ancho'), 18, 60, cst.larghezza, 'vw')}
       </div>
-      <label class="campo spazio-sopra">Font <span class="tenue">— font Google dall'elenco con anteprima (opzionale, vince sul menu)</span></label>
+      <label class="campo spazio-sopra">Font <span class="tenue">— ${L('font Google dall\'elenco con anteprima (opzionale, vince sul menu)', 'Google font from the list with preview (optional, overrides the menu)', 'fuente Google de la lista con vista previa (opcional, gana sobre el menú)')}</span></label>
       <div class="riga-flessibile">
-        <input type="text" id="co-st-gfont" class="campo-largo gfont" placeholder="— nessun font Google —" value="${esc(cst.googleFont || '')}">
-        <button type="button" class="btn secondario sfoglia-font" data-target="co-st-gfont" data-box="fb-co">${_bIco(ICO.libro)}Sfoglia i font</button>
-        <button type="button" class="btn secondario gfont-x" data-target="co-st-gfont" title="Togli il font Google">✕</button>
+        <input type="text" id="co-st-gfont" class="campo-largo gfont" placeholder="${L('— nessun font Google —', '— no Google font —', '— sin fuente Google —')}" value="${esc(cst.googleFont || '')}">
+        <button type="button" class="btn secondario sfoglia-font" data-target="co-st-gfont" data-box="fb-co">${_bIco(ICO.libro)}${L('Sfoglia i font', 'Browse fonts', 'Explorar fuentes')}</button>
+        <button type="button" class="btn secondario gfont-x" data-target="co-st-gfont" title="${L('Togli il font Google', 'Remove the Google font', 'Quitar la fuente Google')}">✕</button>
       </div>
       <div class="font-browser" id="fb-co" hidden></div>
       <div class="griglia-campi spazio-sopra">
-        ${cCol('co-st-bg', 'Sfondo', cst.sfondo)}
-        ${cRng('co-st-op', 'Opacità', 0, 100, cst.opacita, '%')}
-        ${cCol('co-st-fg', 'Testo', cst.testo)}
-        ${cRng('co-st-radius', 'Angoli', 0, 30, cst.bordoRaggio, 'px')}
+        ${cCol('co-st-bg', L('Sfondo', 'Background', 'Fondo'), cst.sfondo)}
+        ${cRng('co-st-op', L('Opacità', 'Opacity', 'Opacidad'), 0, 100, cst.opacita, '%')}
+        ${cCol('co-st-fg', L('Testo', 'Text', 'Texto'), cst.testo)}
+        ${cRng('co-st-radius', L('Angoli', 'Corners', 'Esquinas'), 0, 30, cst.bordoRaggio, 'px')}
       </div>
       <div class="griglia-campi spazio-sopra">
-        ${cSel('co-st-user', 'Colore nomi', [['twitch', 'Colore di Twitch'], ['fisso', 'Colore fisso']], userMode)}
-        ${cCol('co-st-usercol', 'Colore nomi (se fisso)', userMode === 'fisso' ? cst.username : '#9146ff')}
+        ${cSel('co-st-user', L('Colore nomi', 'Name color', 'Color de nombres'), [['twitch', L('Colore di Twitch', 'Twitch color', 'Color de Twitch')], ['fisso', L('Colore fisso', 'Fixed color', 'Color fijo')]], userMode)}
+        ${cCol('co-st-usercol', L('Colore nomi (se fisso)', 'Name color (if fixed)', 'Color de nombres (si fijo)'), userMode === 'fisso' ? cst.username : '#9146ff')}
       </div>
       <div class="riga-flessibile spazio-sopra">
-        ${cChk('co-st-ombra', 'Ombra', cst.ombra)}
-        ${cChk('co-st-bold', 'Nome in grassetto', cst.grassettoUser)}
+        ${cChk('co-st-ombra', L('Ombra', 'Shadow', 'Sombra'), cst.ombra)}
+        ${cChk('co-st-bold', L('Nome in grassetto', 'Bold name', 'Nombre en negrita'), cst.grassettoUser)}
       </div>
       <p class="spazio-sopra">
-        <button class="btn" id="co-salva">Salva chat</button>
-        <button class="btn secondario" id="co-prova">Prova ▶</button>
+        <button class="btn" id="co-salva">${L('Salva chat', 'Save chat', 'Guardar chat')}</button>
+        <button class="btn secondario" id="co-prova">${L('Prova', 'Test', 'Probar')} ▶</button>
       </p>
     </details>
 
     <details class="carta sez" id="sez-widget">
-      <summary><h3>${_hIco(ICO.medaglia)}Widget: ultimo follower / ultimo sub</h3></summary>
-      <p>Etichette <strong>sempre a schermo</strong> che si aggiornano da sole quando arriva un nuovo follower o sub.</p>
+      <summary><h3>${_hIco(ICO.medaglia)}${L('Widget: ultimo follower / ultimo sub', 'Widgets: latest follower / latest sub', 'Widgets: último seguidor / último sub')}</h3></summary>
+      <p>${L('Etichette', 'Labels', 'Etiquetas')} <strong>${L('sempre a schermo', 'always on screen', 'siempre en pantalla')}</strong> ${L('che si aggiornano da sole quando arriva un nuovo follower o sub.', 'that update themselves when a new follower or sub arrives.', 'que se actualizan solas cuando llega un nuevo seguidor o sub.')}</p>
       <div class="alert-griglia spazio-sopra">
-        ${bloccoWidget('wf', wf, 'Ultimo follower', 'ultimoFollower')}
-        ${bloccoWidget('ws', ws, 'Ultimo sub', 'ultimoSub')}
+        ${bloccoWidget('wf', wf, L('Ultimo follower', 'Latest follower', 'Último seguidor'), 'ultimoFollower')}
+        ${bloccoWidget('ws', ws, L('Ultimo sub', 'Latest sub', 'Último sub'), 'ultimoSub')}
       </div>
-      <p class="spazio-sopra"><button class="btn" id="wid-salva">Salva widget</button></p>
+      <p class="spazio-sopra"><button class="btn" id="wid-salva">${L('Salva widget', 'Save widgets', 'Guardar widgets')}</button></p>
     </details>
 
     <details class="carta sez">
-      <summary><h3>${_hIco(ICO.moduli)}CSS avanzato <span class="tenue">— libertà totale</span></h3></summary>
-      <p>Per chi vuole spingersi oltre: CSS applicato al tuo overlay. Le classi principali sono
+      <summary><h3>${_hIco(ICO.moduli)}${L('CSS avanzato', 'Advanced CSS', 'CSS avanzado')} <span class="tenue">— ${L('libertà totale', 'total freedom', 'libertad total')}</span></h3></summary>
+      <p>${L('Per chi vuole spingersi oltre: CSS applicato al tuo overlay. Le classi principali sono', 'For those who want to go further: CSS applied to your overlay. The main classes are', 'Para quien quiere ir más allá: CSS aplicado a tu overlay. Las clases principales son')}
       <code>.alert-card</code>, <code>.chat-riga</code>, <code>.ovl-widget</code>, <code>.pen-card</code>.</p>
       <textarea id="ovl-css" spellcheck="false" placeholder=".alert-card { letter-spacing: 1px; }">${esc(p.overlayCss || '')}</textarea>
-      <p class="spazio-sopra"><button class="btn" id="css-salva">Salva CSS</button></p>
+      <p class="spazio-sopra"><button class="btn" id="css-salva">${L('Salva CSS', 'Save CSS', 'Guardar CSS')}</button></p>
     </details>`);
 }
 
@@ -2811,17 +2812,17 @@ function _raccogliChat() {
 function _raccogliWidget() { return { ultimoFollower: _leggiWidget('wf'), ultimoSub: _leggiWidget('ws') }; }
 
 async function salvaAlert(silenzioso) {
-  await salvaImpostazioni({ alerts: _raccogliAlerts() }, silenzioso ? null : 'Alert salvati ✓');
+  await salvaImpostazioni({ alerts: _raccogliAlerts() }, silenzioso ? null : L('Alert salvati ✓', 'Alerts saved ✓', 'Alertas guardadas ✓'));
 }
 async function salvaChatOverlay(silenzioso) {
-  await salvaImpostazioni({ chatOverlay: _raccogliChat() }, silenzioso ? null : 'Chat a schermo salvata ✓');
+  await salvaImpostazioni({ chatOverlay: _raccogliChat() }, silenzioso ? null : L('Chat a schermo salvata ✓', 'On-screen chat saved ✓', 'Chat en pantalla guardado ✓'));
 }
 async function salvaWidget(silenzioso) {
-  await salvaImpostazioni({ overlayWidget: _raccogliWidget() }, silenzioso ? null : 'Widget salvati ✓');
+  await salvaImpostazioni({ overlayWidget: _raccogliWidget() }, silenzioso ? null : L('Widget salvati ✓', 'Widgets saved ✓', 'Widgets guardados ✓'));
 }
 
 async function salvaCss(silenzioso) {
-  await salvaImpostazioni({ overlayCss: _v('ovl-css') || '' }, silenzioso ? null : 'CSS salvato ✓');
+  await salvaImpostazioni({ overlayCss: _v('ovl-css') || '' }, silenzioso ? null : L('CSS salvato ✓', 'CSS saved ✓', 'CSS guardado ✓'));
 }
 
 // --- anteprima dal vivo -------------------------------------------------
@@ -2847,7 +2848,7 @@ function aggiornaAnteprima() {
     card.className = 'alert-card anim-' + st.animazione + (st.glow ? ' glow' : '') + (st.icona ? '' : ' senza-ico');
     _setVars(card, { '--acc': acc, '--bg': st.sfondo, '--op': st.opacita + '%', '--fg': st.testo, '--radius': st.bordoRaggio + 'px', '--border': st.bordoSpessore + 'px', '--size': st.dimTesto + 'px', '--font': fontStile(st) });
     _g('ap-alert-ico').innerHTML = AP_ICO_ALERT;
-    _g('ap-alert-testo').innerHTML = '<b>MarioRossi</b> si è abbonato!';
+    _g('ap-alert-testo').innerHTML = L('<b>MarioRossi</b> si è abbonato!', '<b>MarioRossi</b> subscribed!', '¡<b>MarioRossi</b> se ha suscrito!');
     // niente re-animazione a ogni tasto: l'anteprima resta stabile (l'entrata
     // vera si vede con «Prova ▶» o nell'overlay). Prima "sfarfallava".
     card.classList.add('dentro');
@@ -2857,7 +2858,7 @@ function aggiornaAnteprima() {
   const apChat = _g('ap-chat');
   if (apChat) {
     apChat.className = 'ap-el ap-chat' + (/destra/.test(chatPos) ? ' destra' : '') + (selezione === 'chat' ? ' sel' : '');
-    apChat.innerHTML = [['lucaplays', '#ff4d4d', 'ciao a tutti!'], ['giada_ttv', '#48b0ff', 'che bella live']].map(([u, col, t]) => {
+    apChat.innerHTML = [['lucaplays', '#ff4d4d', L('ciao a tutti!', 'hi everyone!', '¡hola a todos!')], ['giada_ttv', '#48b0ff', L('che bella live', 'great stream', 'qué buen directo')]].map(([u, col, t]) => {
       const cu = cst.username === 'twitch' ? col : cst.username;
       return `<div class="chat-riga dim-${cst.dim}${cst.ombra ? ' ombra' : ''}${cst.grassettoUser ? ' user-bold' : ''} dentro" style="--bg:${cst.sfondo};--op:${cst.opacita}%;--fg:${cst.testo};--radius:${cst.bordoRaggio}px;--font:${fontStile(cst)}"><span class="chat-user" style="color:${cu}">${esc(u)}</span> ${esc(t)}</div>`;
     }).join('');
@@ -2898,7 +2899,7 @@ function _posElemento(el, xy) {
 }
 
 // Nomi leggibili degli elementi (mostrati nell'inspector).
-const NOMI_EL = { alert: 'Alert', chat: 'Chat a schermo', wf: 'Widget: ultimo follower', ws: 'Widget: ultimo sub' };
+const NOMI_EL = () => ({ alert: L('Alert', 'Alert', 'Alerta'), chat: L('Chat a schermo', 'On-screen chat', 'Chat en pantalla'), wf: L('Widget: ultimo follower', 'Widget: latest follower', 'Widget: último seguidor'), ws: L('Widget: ultimo sub', 'Widget: latest sub', 'Widget: último sub') });
 let selezione = null;   // elemento selezionato nell'editor ('alert'|'chat'|'wf'|'ws')
 
 // Ritorna (creandolo se serve) lo stato {x,y,s,r} di un elemento: dal drag/scala
@@ -2927,7 +2928,7 @@ function aggiornaInspector() {
   if (!selezione) { box.hidden = true; return; }
   box.hidden = false;
   const st = _statoXY(selezione);
-  const nome = _g('insp-nome'); if (nome) nome.textContent = NOMI_EL[selezione] || selezione;
+  const nome = _g('insp-nome'); if (nome) nome.textContent = NOMI_EL()[selezione] || selezione;
   const sz = _g('insp-size'), rt = _g('insp-rot');
   if (sz) { sz.value = st.s; _g('insp-size-val').textContent = st.s + '%'; }
   if (rt) { rt.value = st.r; _g('insp-rot-val').textContent = st.r + '°'; }
@@ -2945,9 +2946,9 @@ function _iniettaManiglie(chiave) {
   const el = _g('ap-' + chiave);
   if (!el || el.querySelector('.ap-handle')) return;
   const hR = document.createElement('div');
-  hR.className = 'ap-handle ap-h-scala'; hR.title = 'Trascina per ridimensionare'; hR.textContent = '⤡';
+  hR.className = 'ap-handle ap-h-scala'; hR.title = L('Trascina per ridimensionare', 'Drag to resize', 'Arrastra para redimensionar'); hR.textContent = '⤡';
   const hRot = document.createElement('div');
-  hRot.className = 'ap-handle ap-h-ruota'; hRot.title = 'Trascina per ruotare'; hRot.textContent = '⟳';
+  hRot.className = 'ap-handle ap-h-ruota'; hRot.title = L('Trascina per ruotare', 'Drag to rotate', 'Arrastra para rotar'); hRot.textContent = '⟳';
   el.appendChild(hR); el.appendChild(hRot);
   hR.addEventListener('pointerdown', (e) => _dragManiglia(chiave, e, 'scala'));
   hRot.addEventListener('pointerdown', (e) => _dragManiglia(chiave, e, 'ruota'));
@@ -3098,23 +3099,23 @@ function _riempiConfig(d) {
 
 // Salva il look ATTUALE (completo) come template personale.
 async function salvaComeTemplate() {
-  const nome = (prompt('Nome del template:') || '').trim();
+  const nome = (prompt(L('Nome del template:', 'Template name:', 'Nombre de la plantilla:')) || '').trim();
   if (!nome) return;
   const dati = { alerts: _raccogliAlerts(), chatOverlay: _raccogliChat(), overlayWidget: _raccogliWidget(), overlayCss: _v('ovl-css') || '' };
   const templates = (impostazioni().overlayTemplates || []).filter((t) => t.nome !== nome).concat([{ nome, dati }]).slice(-16);
-  await salvaImpostazioni({ overlayTemplates: templates }, 'Template salvato ✓');
+  await salvaImpostazioni({ overlayTemplates: templates }, L('Template salvato ✓', 'Template saved ✓', 'Plantilla guardada ✓'));
   _rigeneraTemplateSelect(templates, nome);
 }
 
 async function eliminaTemplate() {
   const v = _v('ovl-tpl') || '';
-  if (v[0] !== 'u') { toast('Puoi eliminare solo i template salvati da te.'); return; }
+  if (v[0] !== 'u') { toast(L('Puoi eliminare solo i template salvati da te.', 'You can only delete templates you saved.', 'Solo puedes eliminar plantillas que hayas guardado.')); return; }
   const templates = (impostazioni().overlayTemplates || []).slice();
   const i = Number(v.slice(1));
   if (!templates[i]) return;
-  if (!confirm(`Eliminare il template "${templates[i].nome}"?`)) return;
+  if (!confirm(L(`Eliminare il template "${templates[i].nome}"?`, `Delete the template "${templates[i].nome}"?`, `¿Eliminar la plantilla "${templates[i].nome}"?`))) return;
   templates.splice(i, 1);
-  await salvaImpostazioni({ overlayTemplates: templates }, 'Template eliminato.');
+  await salvaImpostazioni({ overlayTemplates: templates }, L('Template eliminato.', 'Template deleted.', 'Plantilla eliminada.'));
   _rigeneraTemplateSelect(templates);
 }
 
@@ -3124,14 +3125,14 @@ function _rigeneraTemplateSelect(templates, selNome) {
   if (!sel) return;
   const pronti = TEMPLATE_BUILTIN.map((t, i) => `<option value="b${i}">${esc(t.nome)}</option>`).join('');
   const miei = templates.map((t, i) => `<option value="u${i}"${t.nome === selNome ? ' selected' : ''}>${esc(t.nome)}</option>`).join('');
-  sel.innerHTML = `<optgroup label="Pronti">${pronti}</optgroup>` + (templates.length ? `<optgroup label="I miei">${miei}</optgroup>` : '');
+  sel.innerHTML = `<optgroup label="${L('Pronti', 'Ready-made', 'Listos')}">${pronti}</optgroup>` + (templates.length ? `<optgroup label="${L('I miei', 'Mine', 'Los míos')}">${miei}</optgroup>` : '');
 }
 
 // --- gestione PIÙ OVERLAY (ognuno un link + un layout) ------------------
 async function caricaOverlays() {
   try { const d = await api('/api/streamer/overlays'); overlays = Array.isArray(d.overlays) ? d.overlays : []; }
   catch { overlays = []; }
-  if (!overlays.length) overlays = [{ id: 'principale', nome: 'Overlay principale', mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true }, xy: {}, url: '' }];
+  if (!overlays.length) overlays = [{ id: 'principale', nome: L('Overlay principale', 'Main overlay', 'Overlay principal'), mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true }, xy: {}, url: '' }];
   if (!overlays.find((o) => o.id === overlaySel)) overlaySel = overlays[0].id;
   _rigeneraSelOverlay();
   caricaOverlaySel();
@@ -3160,35 +3161,35 @@ async function salvaLayoutOverlay(silenzioso) {
   if (!ov) return;
   ov.xy = { alert: posXY.alert, chat: posXY.chat, wf: posXY.wf, ws: posXY.ws };
   ov.mostra = { alert: mostraChk('alert'), chat: mostraChk('chat'), wf: mostraChk('wf'), ws: mostraChk('ws'), effetti: mostraChk('effetti') };
-  await salvaImpostazioni({ overlays: _overlaysPayload() }, silenzioso ? null : 'Overlay salvato ✓');
+  await salvaImpostazioni({ overlays: _overlaysPayload() }, silenzioso ? null : L('Overlay salvato ✓', 'Overlay saved ✓', 'Overlay guardado ✓'));
 }
 async function nuovoOverlay() {
-  if (overlays.length >= 12) { toast('Massimo 12 overlay.'); return; }
-  const nome = (prompt('Nome del nuovo overlay:') || '').trim();
+  if (overlays.length >= 12) { toast(L('Massimo 12 overlay.', 'Maximum 12 overlays.', 'Máximo 12 overlays.')); return; }
+  const nome = (prompt(L('Nome del nuovo overlay:', 'New overlay name:', 'Nombre del nuevo overlay:')) || '').trim();
   if (!nome) return;
   const id = 'ov' + Math.random().toString(36).slice(2, 8);
   overlays.push({ id, nome, mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true }, xy: {}, css: '' });
   overlaySel = id;
   await salvaImpostazioni({ overlays: _overlaysPayload() }, null);
   await caricaOverlays();                 // ricarica per avere il link dal server
-  toast('Overlay creato ✓');
+  toast(L('Overlay creato ✓', 'Overlay created ✓', 'Overlay creado ✓'));
 }
 async function rinominaOverlay() {
   const ov = overlays.find((o) => o.id === overlaySel); if (!ov) return;
-  const nome = (prompt('Nuovo nome:', ov.nome) || '').trim(); if (!nome) return;
+  const nome = (prompt(L('Nuovo nome:', 'New name:', 'Nuevo nombre:'), ov.nome) || '').trim(); if (!nome) return;
   ov.nome = nome;
   await salvaImpostazioni({ overlays: _overlaysPayload() }, null);
-  _rigeneraSelOverlay(); toast('Rinominato ✓');
+  _rigeneraSelOverlay(); toast(L('Rinominato ✓', 'Renamed ✓', 'Renombrado ✓'));
 }
 async function eliminaOverlay() {
-  if (overlays.length <= 1) { toast('Deve restare almeno un overlay.'); return; }
+  if (overlays.length <= 1) { toast(L('Deve restare almeno un overlay.', 'At least one overlay must remain.', 'Debe quedar al menos un overlay.')); return; }
   const ov = overlays.find((o) => o.id === overlaySel); if (!ov) return;
-  if (!confirm(`Eliminare l'overlay "${ov.nome}"? Il suo link OBS smetterà di funzionare.`)) return;
+  if (!confirm(L(`Eliminare l'overlay "${ov.nome}"? Il suo link OBS smetterà di funzionare.`, `Delete the overlay "${ov.nome}"? Its OBS link will stop working.`, `¿Eliminar el overlay "${ov.nome}"? Su enlace OBS dejará de funcionar.`))) return;
   overlays = overlays.filter((o) => o.id !== overlaySel);
   overlaySel = overlays[0].id;
   await salvaImpostazioni({ overlays: _overlaysPayload() }, null);
   await caricaOverlays();
-  toast('Overlay eliminato.');
+  toast(L('Overlay eliminato.', 'Overlay deleted.', 'Overlay eliminado.'));
 }
 
 // Salva TUTTO l'overlay in un colpo: stile/testi (alert, chat, widget) + il
@@ -3203,7 +3204,7 @@ async function salvaTuttoOverlay() {
     alerts: _raccogliAlerts(), chatOverlay: _raccogliChat(), overlayWidget: _raccogliWidget(),
     overlays: _overlaysPayload(),
   }, null);
-  toast('Overlay salvato ✓');
+  toast(L('Overlay salvato ✓', 'Overlay saved ✓', 'Overlay guardado ✓'));
 }
 
 function caricaAlert() {
@@ -3291,7 +3292,7 @@ function caricaAlert() {
   _g('css-salva')?.addEventListener('click', () => conErrore(() => salvaCss()));
 
   document.querySelectorAll('.al-prova').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
-    await salvaAlert(true); await api('/api/alert/prova', { method: 'POST', body: { kind: b.dataset.kind } }); toast('Inviato all\'overlay ▶');
+    await salvaAlert(true); await api('/api/alert/prova', { method: 'POST', body: { kind: b.dataset.kind } }); toast(L('Inviato all\'overlay ▶', 'Sent to the overlay ▶', 'Enviado al overlay ▶'));
   })));
   // upload inline di suono / immagine-video direttamente dal blocco alert
   document.querySelectorAll('.al-btn-up').forEach((btn) => btn.addEventListener('click', () => {
@@ -3304,17 +3305,17 @@ function caricaAlert() {
     inp.value = '';
   })));
   _g('co-prova')?.addEventListener('click', () => conErrore(async () => {
-    await salvaChatOverlay(true); await api('/api/alert/prova', { method: 'POST', body: { kind: 'chat' } }); toast('Inviato all\'overlay ▶');
+    await salvaChatOverlay(true); await api('/api/alert/prova', { method: 'POST', body: { kind: 'chat' } }); toast(L('Inviato all\'overlay ▶', 'Sent to the overlay ▶', 'Enviado al overlay ▶'));
   }));
   document.querySelectorAll('.w-prova').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
-    await salvaWidget(true); await api('/api/alert/prova', { method: 'POST', body: { kind: b.dataset.kind } }); toast('Inviato all\'overlay ▶');
+    await salvaWidget(true); await api('/api/alert/prova', { method: 'POST', body: { kind: b.dataset.kind } }); toast(L('Inviato all\'overlay ▶', 'Sent to the overlay ▶', 'Enviado al overlay ▶'));
   })));
 
   _g('ovl-tpl-applica')?.addEventListener('click', () => {
     const v = _v('ovl-tpl') || '';
     const lista = v[0] === 'b' ? TEMPLATE_BUILTIN : (impostazioni().overlayTemplates || []);
     const t = lista[Number(v.slice(1))];
-    if (t) { applicaTemplate(t.dati); toast('Template applicato — ricordati di salvare le sezioni.'); }
+    if (t) { applicaTemplate(t.dati); toast(L('Template applicato — ricordati di salvare le sezioni.', 'Template applied — remember to save the sections.', 'Plantilla aplicada — recuerda guardar las secciones.')); }
   });
   _g('ovl-tpl-salva')?.addEventListener('click', () => conErrore(() => salvaComeTemplate()));
   _g('ovl-tpl-elimina')?.addEventListener('click', () => conErrore(() => eliminaTemplate()));
@@ -4193,103 +4194,102 @@ function initStudio() {
 function pannelloEffetti() {
   return pannello('effetti', `
     <div class="carta">
-      <h2>${_hIco(ICO.libro)}Libreria condivisa</h2>
-      <p>Sfoglia <strong class="primo-piano">effetti, gif, video, foto e suoni</strong> condivisi dagli altri streamer
-      e aggiungili alla tua libreria con un click. Quello che aggiungi lo ritrovi <strong>ovunque</strong>: overlay,
-      alert, effetti e premi a punti canale.</p>
+      <h2>${_hIco(ICO.libro)}${L('Libreria condivisa', 'Shared library', 'Biblioteca compartida')}</h2>
+      <p>${L('Sfoglia', 'Browse', 'Explora')} <strong class="primo-piano">${L('effetti, gif, video, foto e suoni', 'effects, gifs, videos, photos and sounds', 'efectos, gifs, vídeos, fotos y sonidos')}</strong> ${L('condivisi dagli altri streamer', 'shared by other streamers', 'compartidos por otros streamers')}
+      ${L('e aggiungili alla tua libreria con un click. Quello che aggiungi lo ritrovi', 'and add them to your library with one click. What you add you find', 'y añádelos a tu biblioteca con un clic. Lo que añades lo encuentras')} <strong>${L('ovunque', 'everywhere', 'en todas partes')}</strong>: ${L('overlay, alert, effetti e premi a punti canale.', 'overlay, alerts, effects and channel-point rewards.', 'overlay, alertas, efectos y recompensas de puntos de canal.')}</p>
       <div class="lib-filtri">
         <div class="lib-tabs">
-          <button type="button" class="btn secondario mini lib-tab attivo" data-tipo="">Tutti</button>
-          <button type="button" class="btn secondario mini lib-tab" data-tipo="immagine">${_bIco(ICO.immagine)}Immagini</button>
-          <button type="button" class="btn secondario mini lib-tab" data-tipo="video">${_bIco(ICO.video)}Video</button>
-          <button type="button" class="btn secondario mini lib-tab" data-tipo="audio">${_bIco(ICO.altoparlante)}Audio</button>
+          <button type="button" class="btn secondario mini lib-tab attivo" data-tipo="">${L('Tutti', 'All', 'Todos')}</button>
+          <button type="button" class="btn secondario mini lib-tab" data-tipo="immagine">${_bIco(ICO.immagine)}${L('Immagini', 'Images', 'Imágenes')}</button>
+          <button type="button" class="btn secondario mini lib-tab" data-tipo="video">${_bIco(ICO.video)}${L('Video', 'Videos', 'Vídeos')}</button>
+          <button type="button" class="btn secondario mini lib-tab" data-tipo="audio">${_bIco(ICO.altoparlante)}${L('Audio', 'Audio', 'Audio')}</button>
         </div>
-        <input type="search" id="lib-cerca" placeholder="Cerca per nome…" maxlength="40">
+        <input type="search" id="lib-cerca" placeholder="${L('Cerca per nome…', 'Search by name…', 'Buscar por nombre…')}" maxlength="40">
       </div>
-      <div id="lib-griglia" class="lib-griglia"><p class="vuoto">Carico la libreria…</p></div>
+      <div id="lib-griglia" class="lib-griglia"><p class="vuoto">${L('Carico la libreria…', 'Loading the library…', 'Cargando la biblioteca…')}</p></div>
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.effetti)}Carica un effetto</h2>
-      <p>Audio, immagini o brevi video. Ogni file viene <strong class="primo-piano">super-compresso</strong>
-      in automatico, così l'overlay resta leggero.</p>
+      <h2>${_hIco(ICO.effetti)}${L('Carica un effetto', 'Upload an effect', 'Sube un efecto')}</h2>
+      <p>${L('Audio, immagini o brevi video. Ogni file viene', 'Audio, images or short videos. Each file is', 'Audio, imágenes o vídeos cortos. Cada archivo se')} <strong class="primo-piano">${L('super-compresso', 'super-compressed', 'súper-comprimido')}</strong>
+      ${L('in automatico, così l\'overlay resta leggero.', 'automatically, so the overlay stays lightweight.', 'automáticamente, así el overlay se mantiene ligero.')}</p>
 
-      <label class="campo" for="eff-file">File (audio / immagine / video)</label>
+      <label class="campo" for="eff-file">${L('File (audio / immagine / video)', 'File (audio / image / video)', 'Archivo (audio / imagen / vídeo)')}</label>
       <input type="file" id="eff-file" accept="audio/*,image/*,video/*">
 
       <div class="spazio-sopra">
-        <label class="campo" for="eff-suono">${_bIco(ICO.altoparlante)}Suono da abbinare <span class="tenue">— opzionale, per immagini/video: crei una <strong>combo</strong> (media + suono che parte insieme)</span></label>
+        <label class="campo" for="eff-suono">${_bIco(ICO.altoparlante)}${L('Suono da abbinare', 'Sound to pair', 'Sonido a combinar')} <span class="tenue">— ${L('opzionale, per immagini/video: crei una', 'optional, for images/videos: you create a', 'opcional, para imágenes/vídeos: creas una')} <strong>combo</strong> (${L('media + suono che parte insieme', 'media + sound that plays together', 'media + sonido que se reproduce junto')})</span></label>
         <input type="file" id="eff-suono" accept="audio/*">
       </div>
 
-      <label class="campo" for="eff-comando">Comando in chat</label>
+      <label class="campo" for="eff-comando">${L('Comando in chat', 'Chat command', 'Comando en el chat')}</label>
       <div class="riga-flessibile">
         <span class="prefisso-cmd">!</span>
         <input type="text" id="eff-comando" class="campo-largo" placeholder="airhorn" maxlength="24">
       </div>
-      <p class="suggerimento">Solo lettere minuscole, numeri e "_". Chi lo scrive in chat fa partire l'effetto.</p>
+      <p class="suggerimento">${L('Solo lettere minuscole, numeri e "_". Chi lo scrive in chat fa partire l\'effetto.', 'Only lowercase letters, numbers and "_". Whoever types it in chat triggers the effect.', 'Solo letras minúsculas, números y "_". Quien lo escribe en el chat activa el efecto.')}</p>
 
       <div class="griglia-campi spazio-sopra">
         <div>
-          <label class="campo" for="eff-tier">Chi può usarlo</label>
+          <label class="campo" for="eff-tier">${L('Chi può usarlo', 'Who can use it', 'Quién puede usarlo')}</label>
           <select id="eff-tier">
-            <option value="tutti">Tutti</option>
-            <option value="sub">Solo sub</option>
-            <option value="vip">Solo VIP</option>
-            <option value="mod">Solo mod</option>
+            <option value="tutti">${L('Tutti', 'Everyone', 'Todos')}</option>
+            <option value="sub">${L('Solo sub', 'Subs only', 'Solo subs')}</option>
+            <option value="vip">${L('Solo VIP', 'VIPs only', 'Solo VIP')}</option>
+            <option value="mod">${L('Solo mod', 'Mods only', 'Solo mods')}</option>
           </select>
         </div>
         <div>
-          <label class="campo" for="eff-cooldown">Cooldown (s)</label>
+          <label class="campo" for="eff-cooldown">${L('Cooldown (s)', 'Cooldown (s)', 'Enfriamiento (s)')}</label>
           <input type="number" id="eff-cooldown" min="0" max="3600" value="10">
         </div>
         <div>
-          <label class="campo" for="eff-volume">Volume (%)</label>
+          <label class="campo" for="eff-volume">${L('Volume (%)', 'Volume (%)', 'Volumen (%)')}</label>
           <input type="number" id="eff-volume" min="0" max="100" value="80">
         </div>
         <div>
-          <label class="campo" for="eff-durata">Durata a schermo (ms)</label>
+          <label class="campo" for="eff-durata">${L('Durata a schermo (ms)', 'On-screen duration (ms)', 'Duración en pantalla (ms)')}</label>
           <input type="number" id="eff-durata" min="500" max="30000" value="5000">
         </div>
       </div>
-      <p class="suggerimento">Fino a <strong>30 secondi</strong> (30000 ms). Per le <strong>immagini</strong> è quanto restano a schermo;
-      audio e video usano la loro durata reale (accorciati a 30s se più lunghi).</p>
+      <p class="suggerimento">${L('Fino a', 'Up to', 'Hasta')} <strong>${L('30 secondi', '30 seconds', '30 segundos')}</strong> (30000 ms). ${L('Per le', 'For', 'Para las')} <strong>${L('immagini', 'images', 'imágenes')}</strong> ${L('è quanto restano a schermo;', 'it\'s how long they stay on screen;', 'es cuánto permanecen en pantalla;')}
+      ${L('audio e video usano la loro durata reale (accorciati a 30s se più lunghi).', 'audio and video use their real duration (shortened to 30s if longer).', 'audio y vídeo usan su duración real (acortados a 30s si son más largos).')}</p>
 
       <div class="riga-check spazio-sopra" style="display:block">
-        <label class="riga-check"><input type="checkbox" id="eff-pubblico"> ${_bIco(ICO.globo)}<strong>Rendi pubblico</strong> — condividilo con gli altri streamer nella libreria</label>
+        <label class="riga-check"><input type="checkbox" id="eff-pubblico"> ${_bIco(ICO.globo)}<strong>${L('Rendi pubblico', 'Make it public', 'Hazlo público')}</strong> — ${L('condividilo con gli altri streamer nella libreria', 'share it with other streamers in the library', 'compártelo con otros streamers en la biblioteca')}</label>
       </div>
       <div id="eff-nome-box" class="spazio-sopra" hidden>
-        <label class="campo" for="eff-nome">Nome nella libreria condivisa</label>
-        <input type="text" id="eff-nome" class="campo-largo" maxlength="60" placeholder="Es. Airhorn epico">
+        <label class="campo" for="eff-nome">${L('Nome nella libreria condivisa', 'Name in the shared library', 'Nombre en la biblioteca compartida')}</label>
+        <input type="text" id="eff-nome" class="campo-largo" maxlength="60" placeholder="${L('Es. Airhorn epico', 'E.g. Epic airhorn', 'Ej. Airhorn épico')}">
       </div>
 
       <p class="spazio-sopra">
-        <button class="btn" id="btn-carica-effetto">Carica effetto</button>
+        <button class="btn" id="btn-carica-effetto">${L('Carica effetto', 'Upload effect', 'Subir efecto')}</button>
         <span id="esito-effetto" class="suggerimento"></span>
       </p>
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.sliders)}I tuoi effetti</h2>
-      <ul class="lista-voci" id="lista-effetti"><li class="vuoto">Caricamento…</li></ul>
+      <h2>${_hIco(ICO.sliders)}${L('I tuoi effetti', 'Your effects', 'Tus efectos')}</h2>
+      <ul class="lista-voci" id="lista-effetti"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.cuffie)}Effetti sui tuoi punti canale</h2>
-      <p>Attacca un <strong class="primo-piano">effetto</strong> a un <strong>premio a punti canale che hai già</strong>:
-      quando qualcuno lo riscatta (es. «Bevi l'acqua»), nell'overlay parte quello che scegli — un <strong>suono pronto</strong>,
-      oppure un <strong>tuo suono, immagine o video</strong> caricato in «Carica un effetto» qui sopra.
-      Per immagini e video puoi decidere <strong>dove e quanto grande</strong> appaiono, e per i video attivare il
-      <strong>green screen</strong> (togliere lo sfondo di un colore).</p>
-      <div id="suoni-premi-box"><p class="vuoto">Caricamento…</p></div>
+      <h2>${_hIco(ICO.cuffie)}${L('Effetti sui tuoi punti canale', 'Effects on your channel points', 'Efectos en tus puntos de canal')}</h2>
+      <p>${L('Attacca un', 'Attach an', 'Añade un')} <strong class="primo-piano">${L('effetto', 'effect', 'efecto')}</strong> ${L('a un', 'to a', 'a una')} <strong>${L('premio a punti canale che hai già', 'channel-point reward you already have', 'recompensa de puntos de canal que ya tienes')}</strong>:
+      ${L('quando qualcuno lo riscatta (es. «Bevi l\'acqua»), nell\'overlay parte quello che scegli — un', 'when someone redeems it (e.g. «Drink water»), the overlay plays what you choose — a', 'cuando alguien la canjea (ej. «Bebe agua»), en el overlay se reproduce lo que elijas — un')} <strong>${L('suono pronto', 'ready-made sound', 'sonido listo')}</strong>,
+      ${L('oppure un', 'or one of your', 'o un')} <strong>${L('tuo suono, immagine o video', 'own sound, image or video', 'sonido, imagen o vídeo tuyo')}</strong> ${L('caricato in «Carica un effetto» qui sopra.', 'uploaded in «Upload an effect» above.', 'subido en «Sube un efecto» arriba.')}
+      ${L('Per immagini e video puoi decidere', 'For images and videos you can decide', 'Para imágenes y vídeos puedes decidir')} <strong>${L('dove e quanto grande', 'where and how big', 'dónde y de qué tamaño')}</strong> ${L('appaiono, e per i video attivare il', 'they appear, and for videos enable the', 'aparecen, y para los vídeos activar el')}
+      <strong>green screen</strong> (${L('togliere lo sfondo di un colore', 'remove a color background', 'quitar el fondo de un color')}).</p>
+      <div id="suoni-premi-box"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.giveaway)}Alert a punti canale</h2>
-      <p>Crea un <strong class="primo-piano">premio a punti canale</strong> di Twitch: quando uno spettatore lo riscatta
-      (spendendo i suoi punti), parte un <strong>effetto</strong> nell'overlay e/o un <strong>messaggio</strong> in chat.
-      Il premio compare da solo nella tua pagina Twitch.</p>
-      <div id="premi-box"><p class="vuoto">Caricamento…</p></div>
+      <h2>${_hIco(ICO.giveaway)}${L('Alert a punti canale', 'Channel-point alerts', 'Alertas de puntos de canal')}</h2>
+      <p>${L('Crea un', 'Create a', 'Crea una')} <strong class="primo-piano">${L('premio a punti canale', 'channel-point reward', 'recompensa de puntos de canal')}</strong> ${L('di Twitch: quando uno spettatore lo riscatta', 'on Twitch: when a viewer redeems it', 'de Twitch: cuando un espectador la canjea')}
+      (${L('spendendo i suoi punti', 'spending their points', 'gastando sus puntos')}), ${L('parte un', 'an', 'se lanza un')} <strong>${L('effetto', 'effect', 'efecto')}</strong> ${L('nell\'overlay e/o un', 'plays in the overlay and/or a', 'en el overlay y/o un')} <strong>${L('messaggio', 'message', 'mensaje')}</strong> ${L('in chat.', 'in chat.', 'en el chat.')}
+      ${L('Il premio compare da solo nella tua pagina Twitch.', 'The reward appears automatically on your Twitch page.', 'La recompensa aparece sola en tu página de Twitch.')}</p>
+      <div id="premi-box"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
     </div>`);
 }
 
@@ -4299,15 +4299,15 @@ async function caricaSuoniPremi() {
   const box = document.getElementById('suoni-premi-box');
   if (!box) return;
   let d;
-  try { d = await api('/api/streamer/premi'); } catch (e) { box.innerHTML = `<p class="vuoto">Errore: ${esc(e.message)}</p>`; return; }
+  try { d = await api('/api/streamer/premi'); } catch (e) { box.innerHTML = `<p class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</p>`; return; }
   if (!d.permessoOk) {
-    box.innerHTML = `<p class="vuoto">Per leggere i tuoi punti canale serve un permesso in più.
-      <a class="btn secondario mini" href="/auth/permessi">Concedi il permesso</a></p>`;
+    box.innerHTML = `<p class="vuoto">${L('Per leggere i tuoi punti canale serve un permesso in più.', 'Reading your channel points requires an extra permission.', 'Para leer tus puntos de canal se necesita un permiso adicional.')}
+      <a class="btn secondario mini" href="/auth/permessi">${L('Concedi il permesso', 'Grant the permission', 'Concede el permiso')}</a></p>`;
     return;
   }
   const tutti = d.tutti || [];
   if (!tutti.length) {
-    box.innerHTML = '<div class="riquadro-info">Non hai ancora premi a punti canale su Twitch. Creane uno (anche qui sotto, in «Alert a punti canale») e poi torna qui per dargli un suono.</div>';
+    box.innerHTML = `<div class="riquadro-info">${L('Non hai ancora premi a punti canale su Twitch. Creane uno (anche qui sotto, in «Alert a punti canale») e poi torna qui per dargli un suono.', 'You don\'t have any channel-point rewards on Twitch yet. Create one (also below, in «Channel-point alerts») and then come back here to give it a sound.', 'Aún no tienes recompensas de puntos de canal en Twitch. Crea una (también abajo, en «Alertas de puntos de canal») y luego vuelve aquí para darle un sonido.')}</div>`;
     return;
   }
   const mappa = {};
@@ -4322,9 +4322,9 @@ async function caricaSuoniPremi() {
     const p = presets.map((s) => `<option value="${esc(s.id)}"${s.id === sel ? ' selected' : ''}>${esc(s.nome)}</option>`).join('');
     const a = audio.map((e) => `<option value="effetto:${esc(e.comando)}"${'effetto:' + e.comando === sel ? ' selected' : ''}>!${esc(e.comando)}</option>`).join('');
     const v = visivi.map((e) => `<option value="effetto:${esc(e.comando)}"${'effetto:' + e.comando === sel ? ' selected' : ''}>!${esc(e.comando)} (${e.tipo})</option>`).join('');
-    return `<option value="">— niente —</option><optgroup label="Suoni pronti">${p}</optgroup>`
-      + (a ? `<optgroup label="I miei suoni caricati">${a}</optgroup>` : '')
-      + (v ? `<optgroup label="Immagini / Video">${v}</optgroup>` : '');
+    return `<option value="">${L('— niente —', '— none —', '— nada —')}</option><optgroup label="${L('Suoni pronti', 'Ready-made sounds', 'Sonidos listos')}">${p}</optgroup>`
+      + (a ? `<optgroup label="${L('I miei suoni caricati', 'My uploaded sounds', 'Mis sonidos subidos')}">${a}</optgroup>` : '')
+      + (v ? `<optgroup label="${L('Immagini / Video', 'Images / Videos', 'Imágenes / Vídeos')}">${v}</optgroup>` : '');
   };
   const svgPlay = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
   box.innerHTML = `<ul class="lista-suoni-premi">${tutti.map((r) => {
@@ -4332,13 +4332,13 @@ async function caricaSuoniPremi() {
     const selVal = m.effetto ? 'effetto:' + m.effetto : (m.suono || '');
     return `<li data-reward="${esc(r.id)}" data-titolo="${esc(r.title)}" data-costo="${r.cost || 0}">
       <div class="riga-premio-suono">
-        <span class="nome-premio"><strong>${esc(r.title)}</strong> <span class="suggerimento">${r.cost || 0} punti</span></span>
+        <span class="nome-premio"><strong>${esc(r.title)}</strong> <span class="suggerimento">${r.cost || 0} ${L('punti', 'points', 'puntos')}</span></span>
         <span class="controlli-suono">
           <select class="sel-effetto">${opzScelta(selVal)}</select>
-          <button type="button" class="btn secondario mini prova-suono" title="Prova">${svgPlay}</button>
+          <button type="button" class="btn secondario mini prova-suono" title="${L('Prova', 'Test', 'Probar')}">${svgPlay}</button>
         </span>
       </div>
-      <input type="text" class="campo-largo msg-suono spazio-sopra" maxlength="300" placeholder="Messaggio in chat (facoltativo, {user} = chi riscatta)" value="${esc(m.testo || '')}">
+      <input type="text" class="campo-largo msg-suono spazio-sopra" maxlength="300" placeholder="${L('Messaggio in chat (facoltativo, {user} = chi riscatta)', 'Chat message (optional, {user} = who redeems)', 'Mensaje en el chat (opcional, {user} = quien canjea)')}" value="${esc(m.testo || '')}">
       <div class="premio-posizione" hidden></div>
     </li>`;
   }).join('')}</ul>`;
@@ -4371,15 +4371,15 @@ async function caricaSuoniPremi() {
       const v = sel.value;
       if (v && !v.startsWith('effetto:') && window.SUONI_PRESET) window.SUONI_PRESET.suona(v, 100);   // anteprima preset
       aggiornaEditor();
-      salva('Effetto impostato ✓');
+      salva(L('Effetto impostato ✓', 'Effect set ✓', 'Efecto configurado ✓'));
     });
     li.querySelector('.prova-suono').addEventListener('click', () => {
       const v = sel.value;
       if (v && !v.startsWith('effetto:') && window.SUONI_PRESET) window.SUONI_PRESET.suona(v, 100);
-      else if (v) api('/api/streamer/effetti/test', { method: 'POST', body: { comando: comandoSel() } }).then(() => toast('Inviato all\'overlay ▶')).catch(() => toast('Apri prima l\'overlay in OBS.'));
-      else toast('Scegli prima un effetto.');
+      else if (v) api('/api/streamer/effetti/test', { method: 'POST', body: { comando: comandoSel() } }).then(() => toast(L('Inviato all\'overlay ▶', 'Sent to the overlay ▶', 'Enviado al overlay ▶'))).catch(() => toast(L('Apri prima l\'overlay in OBS.', 'Open the overlay in OBS first.', 'Abre antes el overlay en OBS.')));
+      else toast(L('Scegli prima un effetto.', 'Choose an effect first.', 'Elige antes un efecto.'));
     });
-    li.querySelector('.msg-suono').addEventListener('change', () => salva('Messaggio salvato ✓'));
+    li.querySelector('.msg-suono').addEventListener('change', () => salva(L('Messaggio salvato ✓', 'Message saved ✓', 'Mensaje guardado ✓')));
     aggiornaEditor();
   });
 }
@@ -4393,17 +4393,17 @@ function _premioEditorPos(box, comando, tipo, st, salva) {
   box.hidden = false;
   const isVideo = tipo === 'video';
   box.innerHTML = `
-    <p class="suggerimento spazio-sopra"><strong>Dove appare</strong> — trascina nel riquadro, poi regola dimensione e rotazione.</p>
+    <p class="suggerimento spazio-sopra"><strong>${L('Dove appare', 'Where it appears', 'Dónde aparece')}</strong> — ${L('trascina nel riquadro, poi regola dimensione e rotazione.', 'drag in the box, then adjust size and rotation.', 'arrastra en el recuadro, luego ajusta tamaño y rotación.')}</p>
     <div class="pp-stage"><div class="pp-el">!${esc(comando)}</div></div>
     <div class="griglia-campi spazio-sopra">
-      <div><label class="campo">Dimensione: <strong class="pp-s-v">${st.xy.s || 100}</strong>%</label><input type="range" class="pp-s" min="30" max="300" value="${st.xy.s || 100}"></div>
-      <div><label class="campo">Rotazione: <strong class="pp-r-v">${st.xy.r || 0}</strong>°</label><input type="range" class="pp-r" min="-180" max="180" value="${st.xy.r || 0}"></div>
+      <div><label class="campo">${L('Dimensione', 'Size', 'Tamaño')}: <strong class="pp-s-v">${st.xy.s || 100}</strong>%</label><input type="range" class="pp-s" min="30" max="300" value="${st.xy.s || 100}"></div>
+      <div><label class="campo">${L('Rotazione', 'Rotation', 'Rotación')}: <strong class="pp-r-v">${st.xy.r || 0}</strong>°</label><input type="range" class="pp-r" min="-180" max="180" value="${st.xy.r || 0}"></div>
     </div>
     ${isVideo ? `
-    <div class="riga-check spazio-sopra"><input type="checkbox" class="pp-chroma" ${st.chroma?.attivo ? 'checked' : ''}><label>Green screen <span class="tenue">— togli lo sfondo di un colore dal video</span></label></div>
+    <div class="riga-check spazio-sopra"><input type="checkbox" class="pp-chroma" ${st.chroma?.attivo ? 'checked' : ''}><label>Green screen <span class="tenue">— ${L('togli lo sfondo di un colore dal video', 'remove a color background from the video', 'quita el fondo de un color del vídeo')}</span></label></div>
     <div class="pp-chroma-box griglia-campi" ${st.chroma?.attivo ? '' : 'hidden'}>
-      <div><label class="campo">Colore da togliere</label><input type="color" class="pp-chroma-col" value="${esc(st.chroma?.colore || '#00ff00')}"></div>
-      <div><label class="campo">Sensibilità: <strong class="pp-chroma-s-v">${st.chroma?.soglia || 140}</strong></label><input type="range" class="pp-chroma-s" min="40" max="260" value="${st.chroma?.soglia || 140}"></div>
+      <div><label class="campo">${L('Colore da togliere', 'Color to remove', 'Color a quitar')}</label><input type="color" class="pp-chroma-col" value="${esc(st.chroma?.colore || '#00ff00')}"></div>
+      <div><label class="campo">${L('Sensibilità', 'Sensitivity', 'Sensibilidad')}: <strong class="pp-chroma-s-v">${st.chroma?.soglia || 140}</strong></label><input type="range" class="pp-chroma-s" min="40" max="260" value="${st.chroma?.soglia || 140}"></div>
     </div>` : ''}`;
   const el = box.querySelector('.pp-el');
   const stage = box.querySelector('.pp-stage');
@@ -4439,35 +4439,35 @@ async function caricaPremi() {
   const box = document.getElementById('premi-box');
   if (!box) return;
   let d;
-  try { d = await api('/api/streamer/premi'); } catch (e) { box.innerHTML = `<p class="vuoto">Errore: ${esc(e.message)}</p>`; return; }
+  try { d = await api('/api/streamer/premi'); } catch (e) { box.innerHTML = `<p class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</p>`; return; }
   if (!d.permessoOk) {
-    box.innerHTML = `<p class="vuoto">Per creare premi a punti canale serve un permesso in più.
-      <a class="btn secondario mini" href="/auth/permessi">Concedi il permesso</a></p>`;
+    box.innerHTML = `<p class="vuoto">${L('Per creare premi a punti canale serve un permesso in più.', 'Creating channel-point rewards requires an extra permission.', 'Para crear recompensas de puntos de canal se necesita un permiso adicional.')}
+      <a class="btn secondario mini" href="/auth/permessi">${L('Concedi il permesso', 'Grant the permission', 'Concede el permiso')}</a></p>`;
     return;
   }
-  const effOpts = ['<option value="">— nessun effetto —</option>']
+  const effOpts = [`<option value="">${L('— nessun effetto —', '— no effect —', '— sin efecto —')}</option>`]
     .concat((d.effetti || []).map((c) => `<option value="${esc(c.comando)}">!${esc(c.comando)} (${esc(c.tipo)})</option>`)).join('');
   const premi = d.premi || [];
   const lista = premi.length
-    ? premi.map((p) => `<li><span><strong>${esc(p.titolo)}</strong> <span class="suggerimento">${p.costo} punti${p.effetto ? ` · !${esc(p.effetto)}` : ''}${p.testo ? ' ·' : ''}</span></span> <a href="#" class="rimuovi-premio" data-id="${esc(p.reward_id)}" title="Elimina">✕</a></li>`).join('')
-    : '<li class="vuoto">Nessun premio ancora.</li>';
+    ? premi.map((p) => `<li><span><strong>${esc(p.titolo)}</strong> <span class="suggerimento">${p.costo} ${L('punti', 'points', 'puntos')}${p.effetto ? ` · !${esc(p.effetto)}` : ''}${p.testo ? ' ·' : ''}</span></span> <a href="#" class="rimuovi-premio" data-id="${esc(p.reward_id)}" title="${L('Elimina', 'Delete', 'Eliminar')}">✕</a></li>`).join('')
+    : `<li class="vuoto">${L('Nessun premio ancora.', 'No rewards yet.', 'Aún no hay recompensas.')}</li>`;
   box.innerHTML = `
-    <label class="campo" for="premio-titolo">Nome del premio</label>
-    <input type="text" id="premio-titolo" class="campo-largo" placeholder="es. Airhorn" maxlength="45">
+    <label class="campo" for="premio-titolo">${L('Nome del premio', 'Reward name', 'Nombre de la recompensa')}</label>
+    <input type="text" id="premio-titolo" class="campo-largo" placeholder="${L('es. Airhorn', 'e.g. Airhorn', 'ej. Airhorn')}" maxlength="45">
     <div class="griglia-campi spazio-sopra">
       <div>
-        <label class="campo" for="premio-costo">Costo (punti canale)</label>
+        <label class="campo" for="premio-costo">${L('Costo (punti canale)', 'Cost (channel points)', 'Coste (puntos de canal)')}</label>
         <input type="number" id="premio-costo" min="1" max="1000000" value="500">
       </div>
       <div>
-        <label class="campo" for="premio-effetto">Effetto da lanciare</label>
+        <label class="campo" for="premio-effetto">${L('Effetto da lanciare', 'Effect to trigger', 'Efecto a lanzar')}</label>
         <select id="premio-effetto">${effOpts}</select>
       </div>
     </div>
-    <label class="campo spazio-sopra" for="premio-testo">Messaggio in chat <span class="suggerimento">(facoltativo, {user} = chi riscatta)</span></label>
-    <input type="text" id="premio-testo" class="campo-largo" placeholder="es. {user} ha lanciato l'airhorn!" maxlength="300">
-    <p class="spazio-sopra"><button class="btn" id="btn-premio-crea">Crea il premio</button></p>
-    <h3>I tuoi premi</h3>
+    <label class="campo spazio-sopra" for="premio-testo">${L('Messaggio in chat', 'Chat message', 'Mensaje en el chat')} <span class="suggerimento">(${L('facoltativo, {user} = chi riscatta', 'optional, {user} = who redeems', 'opcional, {user} = quien canjea')})</span></label>
+    <input type="text" id="premio-testo" class="campo-largo" placeholder="${L('es. {user} ha lanciato l\'airhorn!', 'e.g. {user} triggered the airhorn!', 'ej. ¡{user} ha lanzado el airhorn!')}" maxlength="300">
+    <p class="spazio-sopra"><button class="btn" id="btn-premio-crea">${L('Crea il premio', 'Create the reward', 'Crear la recompensa')}</button></p>
+    <h3>${L('I tuoi premi', 'Your rewards', 'Tus recompensas')}</h3>
     <ul class="lista-voci" id="lista-premi">${lista}</ul>`;
   document.getElementById('btn-premio-crea')?.addEventListener('click', () => conErrore(async () => {
     const body = {
@@ -4477,13 +4477,13 @@ async function caricaPremi() {
       testo: (document.getElementById('premio-testo').value || '').trim(),
     };
     await api('/api/streamer/premi', { method: 'POST', body });
-    toast('Premio creato — lo trovi tra i punti canale su Twitch.');
+    toast(L('Premio creato — lo trovi tra i punti canale su Twitch.', 'Reward created — you\'ll find it in your Twitch channel points.', 'Recompensa creada — la encontrarás en tus puntos de canal de Twitch.'));
     caricaPremi();
   }));
   box.querySelectorAll('.rimuovi-premio').forEach((a) => a.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
-    if (!confirm('Eliminare questo premio da Twitch?')) return;
+    if (!confirm(L('Eliminare questo premio da Twitch?', 'Delete this reward from Twitch?', '¿Eliminar esta recompensa de Twitch?'))) return;
     await api('/api/streamer/premi/' + encodeURIComponent(a.dataset.id), { method: 'DELETE' });
-    toast('Premio eliminato.');
+    toast(L('Premio eliminato.', 'Reward deleted.', 'Recompensa eliminada.'));
     caricaPremi();
   }); }));
 }
@@ -6196,23 +6196,23 @@ async function caricaEffetti() {
     const dati = await api('/api/streamer/effetti');
     // NB: il link OBS vive nella scheda Overlay (per-overlay), non qui: non tocchiamo inp-overlay-url
 
-    const etTipo = { audio: _bIco(ICO.altoparlante) + 'audio', immagine: _bIco(ICO.immagine) + 'immagine', video: _bIco(ICO.video) + 'video' };
-    const etTier = { tutti: 'tutti', sub: 'sub', vip: 'VIP', mod: 'mod' };
+    const etTipo = { audio: _bIco(ICO.altoparlante) + L('audio', 'audio', 'audio'), immagine: _bIco(ICO.immagine) + L('immagine', 'image', 'imagen'), video: _bIco(ICO.video) + L('video', 'video', 'vídeo') };
+    const etTier = { tutti: L('tutti', 'everyone', 'todos'), sub: 'sub', vip: 'VIP', mod: 'mod' };
 
     if (!dati.effetti.length) {
-      ul.innerHTML = '<li class="vuoto">Nessun effetto ancora: caricane uno qui sopra e provalo!</li>';
+      ul.innerHTML = `<li class="vuoto">${L('Nessun effetto ancora: caricane uno qui sopra e provalo!', 'No effects yet: upload one above and try it!', 'Aún no hay efectos: sube uno arriba y ¡pruébalo!')}</li>`;
       return;
     }
     ul.innerHTML = dati.effetti.map((e) => `
       <li>
         <div class="testo-voce">
-          <div class="domanda">!${esc(e.comando)} <span class="badge viola">${etTipo[e.tipo] || esc(e.tipo)}</span>${e.combo ? ' <span class="badge">combo</span>' : ''}${e.pubblico ? ' <span class="badge verde">pubblico</span>' : ''}</div>
-          <div class="meta">chi: ${esc(etTier[e.tier] || e.tier)} · cooldown ${e.cooldown}s · volume ${e.volume}% · ${e.durata}ms</div>
+          <div class="domanda">!${esc(e.comando)} <span class="badge viola">${etTipo[e.tipo] || esc(e.tipo)}</span>${e.combo ? ' <span class="badge">combo</span>' : ''}${e.pubblico ? ` <span class="badge verde">${L('pubblico', 'public', 'público')}</span>` : ''}</div>
+          <div class="meta">${L('chi', 'who', 'quién')}: ${esc(etTier[e.tier] || e.tier)} · cooldown ${e.cooldown}s · ${L('volume', 'volume', 'volumen')} ${e.volume}% · ${e.durata}ms</div>
         </div>
         <div class="azioni-voce">
-          <button class="btn secondario mini" data-pubblica="${e.id}" data-stato="${e.pubblico ? 1 : 0}" data-nome="${esc(e.nome || e.comando)}">${e.pubblico ? _bIco(ICO.lucchetto) + 'Rendi privato' : _bIco(ICO.condividi) + 'Condividi'}</button>
-          <button class="btn secondario mini" data-prova="${esc(e.comando)}">Prova</button>
-          <button class="btn pericolo mini" data-elimina-eff="${e.id}">Elimina</button>
+          <button class="btn secondario mini" data-pubblica="${e.id}" data-stato="${e.pubblico ? 1 : 0}" data-nome="${esc(e.nome || e.comando)}">${e.pubblico ? _bIco(ICO.lucchetto) + L('Rendi privato', 'Make private', 'Hacer privado') : _bIco(ICO.condividi) + L('Condividi', 'Share', 'Compartir')}</button>
+          <button class="btn secondario mini" data-prova="${esc(e.comando)}">${L('Prova', 'Test', 'Probar')}</button>
+          <button class="btn pericolo mini" data-elimina-eff="${e.id}">${L('Elimina', 'Delete', 'Eliminar')}</button>
         </div>
       </li>`).join('');
 
@@ -6224,13 +6224,13 @@ async function caricaEffetti() {
       if (prova) {
         conErrore(async () => {
           await api('/api/streamer/effetti/test', { method: 'POST', body: { comando: prova.dataset.prova } });
-          toast('Effetto inviato all\'overlay (aprilo per vederlo)');
+          toast(L('Effetto inviato all\'overlay (aprilo per vederlo)', 'Effect sent to the overlay (open it to see it)', 'Efecto enviado al overlay (ábrelo para verlo)'));
         });
       } else if (del) {
         conErrore(async () => {
-          if (!confirm('Eliminare questo effetto? Il file verrà cancellato.')) return;
+          if (!confirm(L('Eliminare questo effetto? Il file verrà cancellato.', 'Delete this effect? The file will be deleted.', '¿Eliminar este efecto? El archivo se borrará.'))) return;
           await api('/api/streamer/effetti/' + del.dataset.eliminaEff, { method: 'DELETE' });
-          toast('Effetto eliminato');
+          toast(L('Effetto eliminato', 'Effect deleted', 'Efecto eliminado'));
           caricaEffetti();
         });
       } else if (pub) {
@@ -6238,17 +6238,17 @@ async function caricaEffetti() {
           const rendiPubblico = pub.dataset.stato !== '1';
           let nome = pub.dataset.nome || '';
           if (rendiPubblico) {
-            nome = (prompt('Con che nome vuoi condividerlo nella libreria?', nome) || '').trim();
+            nome = (prompt(L('Con che nome vuoi condividerlo nella libreria?', 'What name do you want to share it with in the library?', '¿Con qué nombre quieres compartirlo en la biblioteca?'), nome) || '').trim();
             if (!nome) return;   // annullato
           }
           await api('/api/streamer/effetti/' + pub.dataset.pubblica + '/pubblico', { method: 'PATCH', body: { pubblico: rendiPubblico, nome } });
-          toast(rendiPubblico ? 'Condiviso nella libreria' : 'Tornato privato');
+          toast(rendiPubblico ? L('Condiviso nella libreria', 'Shared in the library', 'Compartido en la biblioteca') : L('Tornato privato', 'Made private again', 'Vuelto a privado'));
           caricaEffetti(); caricaLibreria();
         });
       }
     };
   } catch (e) {
-    ul.innerHTML = `<li class="vuoto">Errore: ${esc(e.message)}</li>`;
+    ul.innerHTML = `<li class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</li>`;
   }
 }
 
@@ -6262,12 +6262,12 @@ function libItemHtml(it) {
   else if (it.tipo === 'video') media = `<video class="lib-media" src="${esc(it.url)}" muted playsinline loop preload="metadata"></video>`;
   else media = '<div class="lib-media lib-audio"></div>';
   const audio = (it.tipo === 'audio' || it.combo)
-    ? `<button type="button" class="btn secondario mini lib-play" data-audio="${esc(it.suonoUrl || it.url)}" title="Ascolta">▶</button>` : '';
+    ? `<button type="button" class="btn secondario mini lib-play" data-audio="${esc(it.suonoUrl || it.url)}" title="${L('Ascolta', 'Listen', 'Escuchar')}">▶</button>` : '';
   return `<div class="lib-card" data-id="${it.id}">
     <div class="lib-media-wrap">${media}${it.combo ? '<span class="lib-combo">combo</span>' : ''}</div>
     <div class="lib-nome" title="${esc(it.nome)}">${esc(it.nome)}</div>
-    <div class="meta">di ${esc(it.autore)}${it.usi ? ' · ' + it.usi + ' usi' : ''}</div>
-    <div class="lib-azioni">${audio}<button type="button" class="btn mini lib-importa" data-id="${it.id}">${_bIco(ICO.piu)}Aggiungi</button></div>
+    <div class="meta">${L('di', 'by', 'de')} ${esc(it.autore)}${it.usi ? ' · ' + it.usi + ' ' + L('usi', 'uses', 'usos') : ''}</div>
+    <div class="lib-azioni">${audio}<button type="button" class="btn mini lib-importa" data-id="${it.id}">${_bIco(ICO.piu)}${L('Aggiungi', 'Add', 'Añadir')}</button></div>
   </div>`;
 }
 
@@ -6278,27 +6278,27 @@ async function caricaLibreria() {
   try {
     const d = await api(`/api/streamer/libreria?tipo=${encodeURIComponent(_libTipo)}&q=${encodeURIComponent(q)}`);
     if (!d.items.length) {
-      g.innerHTML = '<p class="vuoto">Ancora niente qui. Sii il primo a condividere: carica un effetto e spunta “Rendi pubblico”!</p>';
+      g.innerHTML = `<p class="vuoto">${L('Ancora niente qui. Sii il primo a condividere: carica un effetto e spunta “Rendi pubblico”!', 'Nothing here yet. Be the first to share: upload an effect and tick “Make it public”!', 'Aún no hay nada aquí. Sé el primero en compartir: sube un efecto y marca “Hazlo público”.')}</p>`;
       return;
     }
     g.innerHTML = d.items.map(libItemHtml).join('');
   } catch (e) {
-    g.innerHTML = `<p class="vuoto">Errore: ${esc(e.message)}</p>`;
+    g.innerHTML = `<p class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</p>`;
   }
 }
 
 async function importaLibreria(id, btn) {
-  if (DEMO) { toast('In demo non si importa — accedi per farlo davvero.'); return; }
+  if (DEMO) { toast(L('In demo non si importa — accedi per farlo davvero.', "In demo you can't import — log in to do it for real.", 'En la demo no se importa — inicia sesión para hacerlo de verdad.')); return; }
   btn.disabled = true;
   const t = btn.textContent;
-  btn.textContent = 'Aggiungo…';
+  btn.textContent = L('Aggiungo…', 'Adding…', 'Añadiendo…');
   try {
     const r = await api('/api/streamer/libreria/importa', { method: 'POST', body: { id: Number(id) } });
-    toast(`Aggiunto come !${r.comando} alla tua libreria`);
+    toast(L(`Aggiunto come !${r.comando} alla tua libreria`, `Added as !${r.comando} to your library`, `Añadido como !${r.comando} a tu biblioteca`));
     caricaEffetti();
-    btn.textContent = '✓ Aggiunto';
+    btn.textContent = L('✓ Aggiunto', '✓ Added', '✓ Añadido');
   } catch (e) {
-    toast('Non riuscito: ' + e.message, 'errore');
+    toast(L('Non riuscito: ', 'Failed: ', 'No se pudo: ') + e.message, 'errore');
     btn.disabled = false;
     btn.textContent = t;
   }
@@ -6306,7 +6306,7 @@ async function importaLibreria(id, btn) {
 
 // invio multipart del form di caricamento effetto (non passa da api(): usa FormData)
 async function caricaEffettoUpload(ev) {
-  if (DEMO) { toast('In demo non si caricano file — accedi per farlo davvero.'); return; }
+  if (DEMO) { toast(L('In demo non si caricano file — accedi per farlo davvero.', "In demo you can't upload files — log in to do it for real.", 'En la demo no se suben archivos — inicia sesión para hacerlo de verdad.')); return; }
   const btn = ev.currentTarget;
   const out = document.getElementById('esito-effetto');
   const fileInput = document.getElementById('eff-file');
@@ -6314,8 +6314,8 @@ async function caricaEffettoUpload(ev) {
   const file = fileInput.files[0];
   if (out) out.textContent = '';
 
-  if (!file) { toast('Scegli un file da caricare.', 'errore'); return; }
-  if (!comando) { toast('Scrivi il comando (senza !).', 'errore'); return; }
+  if (!file) { toast(L('Scegli un file da caricare.', 'Choose a file to upload.', 'Elige un archivo para subir.'), 'errore'); return; }
+  if (!comando) { toast(L('Scrivi il comando (senza !).', 'Type the command (without !).', 'Escribe el comando (sin !).'), 'errore'); return; }
 
   const suonoInput = document.getElementById('eff-suono');
   const suonoFile = suonoInput?.files[0];
@@ -6334,14 +6334,14 @@ async function caricaEffettoUpload(ev) {
 
   btn.disabled = true;
   const testoOrig = btn.textContent;
-  btn.textContent = 'Comprimo e carico… ⏳';
+  btn.textContent = L('Comprimo e carico… ⏳', 'Compressing and uploading… ⏳', 'Comprimiendo y subiendo… ⏳');
   try {
     // niente header Content-Type: lo imposta il browser col boundary multipart
     const res = await fetch('/api/streamer/effetti', { method: 'POST', body: fd });
     let dati = null;
     try { dati = await res.json(); } catch { /* risposta non JSON */ }
     if (!res.ok) throw new Error(dati?.errore || `errore ${res.status}`);
-    toast(dati?.combo ? 'Combo caricata (media + suono)!' : 'Effetto caricato e compresso!');
+    toast(dati?.combo ? L('Combo caricata (media + suono)!', 'Combo uploaded (media + sound)!', '¡Combo subida (media + sonido)!') : L('Effetto caricato e compresso!', 'Effect uploaded and compressed!', '¡Efecto subido y comprimido!'));
     fileInput.value = '';
     if (suonoInput) suonoInput.value = '';
     document.getElementById('eff-comando').value = '';
@@ -6350,7 +6350,7 @@ async function caricaEffettoUpload(ev) {
     if (pubblico) caricaLibreria();     // riflette subito la nuova condivisione
   } catch (e) {
     if (out) out.textContent = '' + e.message;
-    toast('Caricamento fallito: ' + e.message, 'errore');
+    toast(L('Caricamento fallito: ', 'Upload failed: ', 'Subida fallida: ') + e.message, 'errore');
   } finally {
     btn.disabled = false;
     btn.textContent = testoOrig;
@@ -6362,12 +6362,12 @@ async function caricaEffettoUpload(ev) {
 // la libreria e seleziona il nuovo media nel menu del blocco giusto. Così lo
 // streamer mette quello che vuole senza passare dalla scheda Effetti.
 async function caricaMediaAlert(kind, slot, file) {
-  if (DEMO) { toast('In demo non si caricano file — accedi per farlo davvero.'); return; }
+  if (DEMO) { toast(L('In demo non si caricano file — accedi per farlo davvero.', "In demo you can't upload files — log in to do it for real.", 'En la demo no se suben archivos — inicia sesión para hacerlo de verdad.')); return; }
   const blocco = document.querySelector(`.alert-blocco[data-alert="${kind}"]`);
   const btn = blocco?.querySelector(`.al-btn-up[data-slot="${slot}"]`);
   const esito = btn?.parentElement?.querySelector('.al-up-esito');
   const testoOrig = btn ? btn.textContent : '';
-  if (btn) { btn.disabled = true; btn.textContent = 'Comprimo e carico… ⏳'; }
+  if (btn) { btn.disabled = true; btn.textContent = L('Comprimo e carico… ⏳', 'Compressing and uploading… ⏳', 'Comprimiendo y subiendo… ⏳'); }
   if (esito) esito.textContent = '';
   try {
     const fd = new FormData();
@@ -6383,11 +6383,11 @@ async function caricaMediaAlert(kind, slot, file) {
     const cfg = impostazioni().alerts || {};
     cfg[kind] = { ...(cfg[kind] || {}), [slot === 'suono' ? 'suono' : 'media']: dati.ref };
     popolaMediaSuoniAlert(lib.effetti || [], cfg);
-    if (esito) esito.textContent = '✓ ' + (slot === 'suono' ? 'suono' : (dati.tipo || 'media')) + ' caricato e assegnato';
-    toast('Caricato e assegnato all\'alert!');
+    if (esito) esito.textContent = '✓ ' + (slot === 'suono' ? L('suono', 'sound', 'sonido') : (dati.tipo || 'media')) + ' ' + L('caricato e assegnato', 'uploaded and assigned', 'subido y asignado');
+    toast(L('Caricato e assegnato all\'alert!', 'Uploaded and assigned to the alert!', '¡Subido y asignado a la alerta!'));
   } catch (e) {
     if (esito) esito.textContent = '' + e.message;
-    toast('Caricamento fallito: ' + e.message, 'errore');
+    toast(L('Caricamento fallito: ', 'Upload failed: ', 'Subida fallida: ') + e.message, 'errore');
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = testoOrig; }
   }
@@ -7167,21 +7167,21 @@ async function copiaTesto(testo, msgOk) {
 function vistaAdminContenuto() {
   const avviso = stato.missing?.length ? `
     <div class="carta avviso">
-      <h2>${_hIco(ICO.avviso)}Configurazione incompleta</h2>
-      <p>Mancano nel file <code>.env</code>: ${stato.missing.map((m) => `<code>${esc(m)}</code>`).join(', ')}.
-      Il bot non parte finché non le compili.</p>
+      <h2>${_hIco(ICO.avviso)}${L('Configurazione incompleta', 'Incomplete configuration', 'Configuración incompleta')}</h2>
+      <p>${L('Mancano nel file', 'Missing in the file', 'Faltan en el archivo')} <code>.env</code>: ${stato.missing.map((m) => `<code>${esc(m)}</code>`).join(', ')}.
+      ${L('Il bot non parte finché non le compili.', "The bot won't start until you fill them in.", 'El bot no arranca hasta que las completes.')}</p>
     </div>` : '';
 
   const st = stato.status || {};
   return `
     <div class="carta">
-      <h2>${_hIco(ICO.corona)}Pannello andryxify</h2>
+      <h2>${_hIco(ICO.corona)}${L('Pannello andryxify', 'andryxify panel', 'Panel de andryxify')}</h2>
       <p class="spazio-sopra">
-        Bot: ${st.running ? '<span class="badge verde">● in esecuzione</span>' : '<span class="badge rosso">○ fermo</span>'}
-        &nbsp; Canali attivi: ${st.channels?.length
+        Bot: ${st.running ? `<span class="badge verde">● ${L('in esecuzione', 'running', 'en ejecución')}</span>` : `<span class="badge rosso">○ ${L('fermo', 'stopped', 'detenido')}</span>`}
+        &nbsp; ${L('Canali attivi', 'Active channels', 'Canales activos')}: ${st.channels?.length
           ? st.channels.map((c) => `<span class="badge viola">#${esc(c)}</span>`).join(' ')
-          : '<span class="badge">nessuno</span>'}
-        &nbsp; Streamer registrati: <strong class="primo-piano">${st.streamers ?? 0}</strong>
+          : `<span class="badge">${L('nessuno', 'none', 'ninguno')}</span>`}
+        &nbsp; ${L('Streamer registrati', 'Registered streamers', 'Streamers registrados')}: <strong class="primo-piano">${st.streamers ?? 0}</strong>
       </p>
     </div>
     ${avviso}
@@ -7189,24 +7189,20 @@ function vistaAdminContenuto() {
       <h2>Streamer</h2>
       <div class="scorrevole">
         <table class="tabella">
-          <thead><tr><th>Streamer</th><th>Login</th><th>Stato</th><th>Permessi</th><th>Conoscenza</th><th>Azioni</th></tr></thead>
-          <tbody id="tabella-streamer"><tr><td colspan="6" class="vuoto">Caricamento…</td></tr></tbody>
+          <thead><tr><th>Streamer</th><th>Login</th><th>${L('Stato', 'Status', 'Estado')}</th><th>${L('Permessi', 'Permissions', 'Permisos')}</th><th>${L('Conoscenza', 'Knowledge', 'Conocimiento')}</th><th>${L('Azioni', 'Actions', 'Acciones')}</th></tr></thead>
+          <tbody id="tabella-streamer"><tr><td colspan="6" class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</td></tr></tbody>
         </table>
       </div>
     </div>
     <div class="carta">
-      <h2>${_hIco(ICO.cuore)}Anima di SocialBot</h2>
-      <p>La personalità <strong class="primo-piano">condivisa</strong>: un solo carattere, coerente su tutti
-      i canali (in chat indossa poi il nome e il tono di ognuno). Gli utenti restano a compartimenti stagni:
-      qui vedi solo <em>quanti amici</em> e i più affini, mai cosa hanno scritto o dove.</p>
-      <div id="anima-box"><p class="vuoto">Caricamento…</p></div>
+      <h2>${_hIco(ICO.cuore)}${L('Anima di SocialBot', "SocialBot's soul", 'El alma de SocialBot')}</h2>
+      <p>${L('La personalità', 'The', 'La personalidad')} <strong class="primo-piano">${L('condivisa', 'shared', 'compartida')}</strong> ${L('personalità: un solo carattere, coerente su tutti i canali (in chat indossa poi il nome e il tono di ognuno). Gli utenti restano a compartimenti stagni: qui vedi solo', 'personality: a single character, consistent across all channels (in chat it then wears each one\'s name and tone). Users stay in watertight compartments: here you only see', 'personalidad: un solo carácter, coherente en todos los canales (en el chat lleva luego el nombre y el tono de cada uno). Los usuarios quedan en compartimentos estancos: aquí solo ves')} <em>${L('quanti amici', 'how many friends', 'cuántos amigos')}</em> ${L('e i più affini, mai cosa hanno scritto o dove.', 'and the most compatible, never what they wrote or where.', 'y los más afines, nunca qué escribieron o dónde.')}</p>
+      <div id="anima-box"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
     </div>
     <div class="carta">
-      <h2>${_hIco(ICO.cervello)}Cervello — modello IA</h2>
-      <p>Il modello linguistico locale è <strong class="primo-piano">condiviso</strong> da tutti i canali.
-      Cambiandolo qui, il cervello lo sostituisce <strong>a caldo</strong> (scarica + carica: può metterci
-      qualche minuto; nel frattempo la chat usa il motore veloce di riserva).</p>
-      <div id="llm-box"><p class="vuoto">Caricamento…</p></div>
+      <h2>${_hIco(ICO.cervello)}${L('Cervello — modello IA', 'Brain — AI model', 'Cerebro — modelo IA')}</h2>
+      <p>${L('Il modello linguistico locale è', 'The local language model is', 'El modelo de lenguaje local es')} <strong class="primo-piano">${L('condiviso', 'shared', 'compartido')}</strong> ${L('da tutti i canali. Cambiandolo qui, il cervello lo sostituisce', 'by all channels. Changing it here, the brain swaps it', 'por todos los canales. Al cambiarlo aquí, el cerebro lo sustituye')} <strong>${L('a caldo', 'on the fly', 'en caliente')}</strong> (${L('scarica + carica: può metterci qualche minuto; nel frattempo la chat usa il motore veloce di riserva', 'download + load: it may take a few minutes; meanwhile chat uses the fast backup engine', 'descarga + carga: puede tardar unos minutos; mientras tanto el chat usa el motor rápido de reserva')}).</p>
+      <div id="llm-box"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
     </div>`;
 }
 
@@ -7232,34 +7228,34 @@ async function caricaRetePanoramica() {
 async function aggiornaRetePanoramica(box, primo) {
   let d;
   try { d = await api('/api/streamer/rete'); }
-  catch { if (primo) box.innerHTML = '<p class="vuoto">Non disponibile ora.</p>'; return; }
+  catch { if (primo) box.innerHTML = `<p class="vuoto">${L('Non disponibile ora.', 'Not available now.', 'No disponible ahora.')}</p>`; return; }
   const pct = (x) => Math.round((x || 0) * 100) + '%';
   const num = 'font-size:1.7em;font-weight:700;line-height:1';
   const nonSo = (d.non_so || []).slice(0, 4);
   const N = (v, suff = '') => `<span data-conta="${v}"${suff ? ` data-suff="${suff}"` : ''}>${v}${suff}</span>`;
   box.innerHTML = `
     <div style="display:flex;gap:22px;flex-wrap:wrap;margin-top:2px">
-      <div><div style="${num}">${N(d.nodi || 0)}</div><small>nodi appresi</small></div>
-      <div><div style="${num}">${N(d.solidi || 0)}</div><small>sa rispondere</small></div>
-      <div><div style="${num}">${N(d.corpus || 0)}</div><small>nella sua mente</small></div>
-      <div><div style="${num}">${N(Math.round((d.fiducia || 0) * 100), '%')}</div><small>fiducia</small></div>
-      <div><div style="${num}">${N(Math.round((d.curiosita || 0) * 100), '%')}</div><small>curiosità</small></div>
+      <div><div style="${num}">${N(d.nodi || 0)}</div><small>${L('nodi appresi', 'nodes learned', 'nodos aprendidos')}</small></div>
+      <div><div style="${num}">${N(d.solidi || 0)}</div><small>${L('sa rispondere', 'can answer', 'sabe responder')}</small></div>
+      <div><div style="${num}">${N(d.corpus || 0)}</div><small>${L('nella sua mente', 'in its mind', 'en su mente')}</small></div>
+      <div><div style="${num}">${N(Math.round((d.fiducia || 0) * 100), '%')}</div><small>${L('fiducia', 'confidence', 'confianza')}</small></div>
+      <div><div style="${num}">${N(Math.round((d.curiosita || 0) * 100), '%')}</div><small>${L('curiosità', 'curiosity', 'curiosidad')}</small></div>
     </div>
     ${d.pensiero ? `<p class="spazio-sopra"><em>${esc(d.pensiero)}</em></p>` : ''}
-    ${d.ragiona ? `<p class="suggerimento spazio-sopra">Cervello logico (non statistico): <strong>${d.ragiona.fatti || 0}</strong> fatti,
-      <strong>${d.ragiona.dedotti || 0}</strong> dedotti da sé ragionando${(d.ragiona.contraddizioni || []).length ? ` · ${d.ragiona.contraddizioni.length} incoerenze notate` : ''}.</p>` : ''}
+    ${d.ragiona ? `<p class="suggerimento spazio-sopra">${L('Cervello logico (non statistico):', 'Logical brain (not statistical):', 'Cerebro lógico (no estadístico):')} <strong>${d.ragiona.fatti || 0}</strong> ${L('fatti', 'facts', 'hechos')},
+      <strong>${d.ragiona.dedotti || 0}</strong> ${L('dedotti da sé ragionando', 'deduced by reasoning on its own', 'deducidos por sí mismo razonando')}${(d.ragiona.contraddizioni || []).length ? ` · ${d.ragiona.contraddizioni.length} ${L('incoerenze notate', 'inconsistencies noted', 'incoherencias notadas')}` : ''}.</p>` : ''}
     ${nonSo.length
-      ? `<p class="suggerimento spazio-sopra">Ultime cose che <strong>non sapeva</strong> (le imparerà col tempo): ${nonSo.map((t) => `«${esc(t)}»`).join(' · ')}</p>`
-      : '<p class="suggerimento spazio-sopra">Nessuna lacuna recente: sta rispondendo bene.</p>'}
-    <p class="spazio-sopra"><button class="btn secondario mini" id="btn-forgia">${_bIco(ICO.libro)}Studia ora</button>
-      &nbsp;<a class="suggerimento" href="/api/streamer/corpus" download>${_bIco(ICO.pacco)}Scarica il dataset della sua mente</a></p>
-    <p class="suggerimento">«Studia ora»: cerca da sé le sue lacune online, ci ragiona su e le distilla nel suo motore.
-    Il «dataset» è la sua mente: su un Mac Apple Silicon lo trasformi in un vero modello tutto suo con
-    <code>forgia/forgia.sh</code> (vedi <code>forgia/README.md</code>), poi lo ricolleghi come "maestro".</p>`;
+      ? `<p class="suggerimento spazio-sopra">${L('Ultime cose che', 'Latest things it', 'Últimas cosas que')} <strong>${L('non sapeva', "didn't know", 'no sabía')}</strong> (${L('le imparerà col tempo', 'it will learn them over time', 'las aprenderá con el tiempo')}): ${nonSo.map((t) => `«${esc(t)}»`).join(' · ')}</p>`
+      : `<p class="suggerimento spazio-sopra">${L('Nessuna lacuna recente: sta rispondendo bene.', 'No recent gaps: it\'s answering well.', 'Sin lagunas recientes: está respondiendo bien.')}</p>`}
+    <p class="spazio-sopra"><button class="btn secondario mini" id="btn-forgia">${_bIco(ICO.libro)}${L('Studia ora', 'Study now', 'Estudiar ahora')}</button>
+      &nbsp;<a class="suggerimento" href="/api/streamer/corpus" download>${_bIco(ICO.pacco)}${L('Scarica il dataset della sua mente', 'Download its mind\'s dataset', 'Descarga el dataset de su mente')}</a></p>
+    <p class="suggerimento">${L('«Studia ora»: cerca da sé le sue lacune online, ci ragiona su e le distilla nel suo motore.', '«Study now»: it looks up its own gaps online, reasons over them and distills them into its engine.', '«Estudiar ahora»: busca por sí mismo sus lagunas en línea, razona sobre ellas y las destila en su motor.')}
+    ${L('Il «dataset» è la sua mente: su un Mac Apple Silicon lo trasformi in un vero modello tutto suo con', 'The «dataset» is its mind: on an Apple Silicon Mac you turn it into a real model of its own with', 'El «dataset» es su mente: en un Mac Apple Silicon lo conviertes en un modelo propio de verdad con')}
+    <code>forgia/forgia.sh</code> (${L('vedi', 'see', 'ver')} <code>forgia/README.md</code>), ${L('poi lo ricolleghi come "maestro".', 'then reconnect it as a "teacher".', 'luego lo reconectas como "maestro".')}</p>`;
   if (primo) animaNumeri(box);   // conta su dallo 0 solo alla prima comparsa (non a ogni refresh)
   document.getElementById('btn-forgia')?.addEventListener('click', () => conErrore(async () => {
     await api('/api/streamer/forgia', { method: 'POST', body: {} });
-    toast('Ci sto lavorando — studio le mie lacune e distillo. Torna tra poco.');
+    toast(L('Ci sto lavorando — studio le mie lacune e distillo. Torna tra poco.', "I'm on it — studying my gaps and distilling. Check back soon.", 'Estoy en ello — estudio mis lagunas y destilo. Vuelve pronto.'));
   }));
 }
 
@@ -7268,79 +7264,78 @@ async function caricaLLM() {
   const box = document.getElementById('llm-box');
   if (!box) return;
   let d;
-  try { d = await api('/api/admin/llm'); } catch (e) { box.innerHTML = `<p class="vuoto">Errore: ${esc(e.message)}</p>`; return; }
+  try { d = await api('/api/admin/llm'); } catch (e) { box.innerHTML = `<p class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</p>`; return; }
   const s = d.stato || {};
-  const statoTxt = { pronto: 'pronto', carico: 'sto caricando…', spento: 'spento', errore: 'errore' }[s.stato] || ('' + (s.stato || 'sconosciuto'));
+  const statoTxt = { pronto: L('pronto', 'ready', 'listo'), carico: L('sto caricando…', 'loading…', 'cargando…'), spento: L('spento', 'off', 'apagado'), errore: L('errore', 'error', 'error') }[s.stato] || ('' + (s.stato || L('sconosciuto', 'unknown', 'desconocido')));
   const scelta = d.scelta || {};
   const selVal = scelta.url ? 'url' : (scelta.modello || 'auto');
   const opts = (d.modelli || []).map((m) => `<option value="${esc(m.id)}" ${selVal === m.id ? 'selected' : ''}>${esc(m.nome)}</option>`).join('');
   const ep = scelta.endpoint || {};
   const eps = s.endpoint || {};
   const epBadge = eps.configurato
-    ? (eps.ok === true ? 'collegato' : eps.ok === false ? 'non risponde' : 'da provare')
-    : 'non collegato';
+    ? (eps.ok === true ? L('collegato', 'connected', 'conectado') : eps.ok === false ? L('non risponde', 'not responding', 'no responde') : L('da provare', 'to test', 'por probar'))
+    : L('non collegato', 'not connected', 'no conectado');
   const rete = s.rete || {};
   const pct = (x) => Math.round((x || 0) * 100) + '%';
   const stile = { hr: 'border:0;border-top:1px solid currentColor;opacity:.15;margin:20px 0', num: 'font-size:1.7em;font-weight:700;line-height:1' };
   const locali = d.modelliLocali || [];
   const selFile = scelta.file || '';
   const libItems = locali.length
-    ? locali.map((m) => `<li><span>${esc(m.nome)} <span class="suggerimento">${m.mb} MB</span>${selFile === m.nome ? ' <span class="badge verde">in uso</span>' : ''}</span> <span>${selFile === m.nome ? '' : `<a href="#" class="usa-modello" data-nome="${esc(m.nome)}">usa</a> · `}<a href="#" class="rimuovi-modello" data-nome="${esc(m.nome)}" title="Elimina">✕</a></span></li>`).join('')
-    : '<li class="vuoto">Nessun modello caricato a mano. Sopra usi quelli automatici; qui sotto carichi un GGUF tuo.</li>';
+    ? locali.map((m) => `<li><span>${esc(m.nome)} <span class="suggerimento">${m.mb} MB</span>${selFile === m.nome ? ` <span class="badge verde">${L('in uso', 'in use', 'en uso')}</span>` : ''}</span> <span>${selFile === m.nome ? '' : `<a href="#" class="usa-modello" data-nome="${esc(m.nome)}">${L('usa', 'use', 'usar')}</a> · `}<a href="#" class="rimuovi-modello" data-nome="${esc(m.nome)}" title="${L('Elimina', 'Delete', 'Eliminar')}">✕</a></span></li>`).join('')
+    : `<li class="vuoto">${L('Nessun modello caricato a mano. Sopra usi quelli automatici; qui sotto carichi un GGUF tuo.', 'No manually uploaded models. Above you use the automatic ones; below you upload your own GGUF.', 'Ningún modelo subido a mano. Arriba usas los automáticos; abajo subes tu propio GGUF.')}</li>`;
   box.innerHTML = `
-    <p class="suggerimento"><strong>Riservato a te</strong>: il modello del server e il maestro esterno li vedi e li cambi <strong>solo tu</strong> (andryxify). Nessun altro streamer o moderatore ha accesso a questa sezione.</p>
-    <p>Stato: <strong>${statoTxt}</strong> &nbsp; In memoria: <code>${esc(s.modello || '—')}</code>${s.motivo ? ` <span class="suggerimento">(${esc(s.motivo)})</span>` : ''}</p>
-    <label class="campo" for="sel-llm">Modello locale (sul server)</label>
+    <p class="suggerimento"><strong>${L('Riservato a te', 'For you only', 'Reservado a ti')}</strong>: ${L('il modello del server e il maestro esterno li vedi e li cambi', 'you see and change the server model and the external teacher', 'el modelo del servidor y el maestro externo los ves y los cambias')} <strong>${L('solo tu', 'only you', 'solo tú')}</strong> (andryxify). ${L('Nessun altro streamer o moderatore ha accesso a questa sezione.', 'No other streamer or moderator has access to this section.', 'Ningún otro streamer o moderador tiene acceso a esta sección.')}</p>
+    <p>${L('Stato', 'Status', 'Estado')}: <strong>${statoTxt}</strong> &nbsp; ${L('In memoria', 'In memory', 'En memoria')}: <code>${esc(s.modello || '—')}</code>${s.motivo ? ` <span class="suggerimento">(${esc(s.motivo)})</span>` : ''}</p>
+    <label class="campo" for="sel-llm">${L('Modello locale (sul server)', 'Local model (on the server)', 'Modelo local (en el servidor)')}</label>
     <select id="sel-llm" class="campo-largo">
       ${opts}
-      <option value="url" ${selVal === 'url' ? 'selected' : ''}>URL personalizzato (GGUF)…</option>
+      <option value="url" ${selVal === 'url' ? 'selected' : ''}>${L('URL personalizzato (GGUF)…', 'Custom URL (GGUF)…', 'URL personalizada (GGUF)…')}</option>
     </select>
     <input type="text" id="inp-llm-url" class="campo-largo spazio-sopra" placeholder="https://…gguf" value="${esc(scelta.url || '')}" ${selVal === 'url' ? '' : 'hidden'}>
     <p class="spazio-sopra">
-      <button class="btn" id="btn-llm-applica">Applica e ricarica</button>
-      <button class="btn secondario" id="btn-llm-refresh">Aggiorna stato</button>
+      <button class="btn" id="btn-llm-applica">${L('Applica e ricarica', 'Apply and reload', 'Aplicar y recargar')}</button>
+      <button class="btn secondario" id="btn-llm-refresh">${L('Aggiorna stato', 'Refresh status', 'Actualizar estado')}</button>
     </p>
-    <p class="suggerimento">"Senza freni" = modello <em>abliterated</em> (nessun rifiuto). La moderazione del bot e le <strong>parole vietate</strong> filtrano comunque l'uscita.</p>
+    <p class="suggerimento">${L('"Senza freni" = modello', '"No brakes" = model', '"Sin frenos" = modelo')} <em>abliterated</em> (${L('nessun rifiuto', 'no refusals', 'sin rechazos')}). ${L('La moderazione del bot e le', "The bot's moderation and the", 'La moderación del bot y las')} <strong>${L('parole vietate', 'banned words', 'palabras prohibidas')}</strong> ${L('filtrano comunque l\'uscita.', 'still filter the output.', 'filtran igualmente la salida.')}</p>
 
     <hr style="${stile.hr}">
-    <h3>${_hIco(ICO.pacco)}Modelli sul server</h3>
-    <p class="suggerimento">Carica un <strong>GGUF</strong> dal tuo computer (es. quello forgiato sul Mac) e usalo qui. Qui vedi anche i modelli
-    scaricati automaticamente. Pesano vari GB: occhio allo <strong>spazio su disco</strong> del server (elimina quelli che non usi).</p>
+    <h3>${_hIco(ICO.pacco)}${L('Modelli sul server', 'Models on the server', 'Modelos en el servidor')}</h3>
+    <p class="suggerimento">${L('Carica un', 'Upload a', 'Sube un')} <strong>GGUF</strong> ${L('dal tuo computer (es. quello forgiato sul Mac) e usalo qui. Qui vedi anche i modelli scaricati automaticamente. Pesano vari GB: occhio allo', 'from your computer (e.g. the one forged on the Mac) and use it here. Here you also see the automatically downloaded models. They weigh several GB: watch the', 'desde tu ordenador (ej. el forjado en el Mac) y úsalo aquí. Aquí ves también los modelos descargados automáticamente. Pesan varios GB: cuidado con el')} <strong>${L('spazio su disco', 'disk space', 'espacio en disco')}</strong> ${L('del server (elimina quelli che non usi).', "of the server (delete the ones you don't use).", 'del servidor (elimina los que no uses).')}</p>
     <ul class="lista-voci" id="lista-modelli">${libItems}</ul>
     <p class="spazio-sopra">
       <input type="file" id="inp-modello-file" accept=".gguf">
-      <button class="btn secondario" id="btn-modello-upload">Carica sul server</button>
+      <button class="btn secondario" id="btn-modello-upload">${L('Carica sul server', 'Upload to server', 'Subir al servidor')}</button>
       <span id="modello-upload-stato" class="suggerimento"></span>
     </p>
 
     <hr style="${stile.hr}">
-    <h3>Maestro esterno — LM Studio / Ollama &nbsp;<span class="suggerimento">${epBadge}</span></h3>
-    <p class="suggerimento">Collega un modello che gira sul <strong>tuo PC</strong> (di solito più potente del server): il bot lo usa come <em>maestro</em> e la piccola rete impara da <strong>ogni</strong> sua risposta. Dev'essere raggiungibile dal server: stessa LAN, IP pubblico, o un tunnel tipo <code>cloudflared</code>/<code>ngrok</code>.</p>
-    <label class="campo" for="ep-url">Indirizzo (URL)</label>
+    <h3>${L('Maestro esterno — LM Studio / Ollama', 'External teacher — LM Studio / Ollama', 'Maestro externo — LM Studio / Ollama')} &nbsp;<span class="suggerimento">${epBadge}</span></h3>
+    <p class="suggerimento">${L('Collega un modello che gira sul', 'Connect a model running on', 'Conecta un modelo que corra en')} <strong>${L('tuo PC', 'your PC', 'tu PC')}</strong> (${L('di solito più potente del server', 'usually more powerful than the server', 'normalmente más potente que el servidor')}): ${L('il bot lo usa come', 'the bot uses it as a', 'el bot lo usa como')} <em>${L('maestro', 'teacher', 'maestro')}</em> ${L('e la piccola rete impara da', 'and the small network learns from', 'y la pequeña red aprende de')} <strong>${L('ogni', 'every', 'cada')}</strong> ${L('sua risposta. Dev\'essere raggiungibile dal server: stessa LAN, IP pubblico, o un tunnel tipo', 'answer of it. It must be reachable from the server: same LAN, public IP, or a tunnel like', 'respuesta suya. Debe ser alcanzable desde el servidor: misma LAN, IP pública, o un túnel tipo')} <code>cloudflared</code>/<code>ngrok</code>.</p>
+    <label class="campo" for="ep-url">${L('Indirizzo (URL)', 'Address (URL)', 'Dirección (URL)')}</label>
     <input type="text" id="ep-url" class="campo-largo" placeholder="http://IP:1234/v1" value="${esc(ep.url || '')}">
-    <label class="campo" for="ep-mod">Nome del modello <span class="suggerimento">(facoltativo)</span></label>
-    <input type="text" id="ep-mod" class="campo-largo" placeholder="quello caricato in LM Studio" value="${esc(ep.modello || '')}">
-    <label class="campo" for="ep-key">Chiave API <span class="suggerimento">(se richiesta)</span></label>
-    <input type="password" id="ep-key" class="campo-largo" placeholder="(vuoto se non serve)" value="${esc(ep.chiave || '')}">
+    <label class="campo" for="ep-mod">${L('Nome del modello', 'Model name', 'Nombre del modelo')} <span class="suggerimento">(${L('facoltativo', 'optional', 'opcional')})</span></label>
+    <input type="text" id="ep-mod" class="campo-largo" placeholder="${L('quello caricato in LM Studio', 'the one loaded in LM Studio', 'el cargado en LM Studio')}" value="${esc(ep.modello || '')}">
+    <label class="campo" for="ep-key">${L('Chiave API', 'API key', 'Clave API')} <span class="suggerimento">(${L('se richiesta', 'if required', 'si se requiere')})</span></label>
+    <input type="password" id="ep-key" class="campo-largo" placeholder="${L('(vuoto se non serve)', '(empty if not needed)', '(vacío si no hace falta)')}" value="${esc(ep.chiave || '')}">
     <label class="spazio-sopra" style="display:flex;gap:8px;align-items:flex-start;cursor:pointer">
       <input type="checkbox" id="ep-solo" ${ep.solo ? 'checked' : ''}>
-      <span>Usa <strong>solo</strong> l'endpoint — non caricare il modello locale (libera la RAM del server)</span>
+      <span>${L('Usa', 'Use', 'Usa')} <strong>${L('solo', 'only', 'solo')}</strong> ${L('l\'endpoint — non caricare il modello locale (libera la RAM del server)', 'the endpoint — don\'t load the local model (frees the server RAM)', 'el endpoint — no cargar el modelo local (libera la RAM del servidor)')}</span>
     </label>
     <p class="spazio-sopra">
-      <button class="btn" id="btn-ep-salva">Collega</button>
-      <button class="btn secondario" id="btn-ep-prova">Prova connessione</button>
-      <button class="btn secondario" id="btn-ep-stacca">Scollega</button>
+      <button class="btn" id="btn-ep-salva">${L('Collega', 'Connect', 'Conectar')}</button>
+      <button class="btn secondario" id="btn-ep-prova">${L('Prova connessione', 'Test connection', 'Probar conexión')}</button>
+      <button class="btn secondario" id="btn-ep-stacca">${L('Scollega', 'Disconnect', 'Desconectar')}</button>
     </p>
     <p id="ep-esito" class="suggerimento"></p>
 
     <hr style="${stile.hr}">
-    <h3>${_hIco(ICO.germoglio)}La piccola rete che impara</h3>
-    <p class="suggerimento">Il motore veloce che <strong>cresce da solo</strong>: risponde all'istante a ciò che ha già imparato e, quando incontra qualcosa di nuovo, lo chiede al maestro e se lo segna. "Curiosità" alta = sente di avere lacune; "fiducia" = quanto si fida di ciò che sa.</p>
+    <h3>${_hIco(ICO.germoglio)}${L('La piccola rete che impara', 'The small network that learns', 'La pequeña red que aprende')}</h3>
+    <p class="suggerimento">${L('Il motore veloce che', 'The fast engine that', 'El motor rápido que')} <strong>${L('cresce da solo', 'grows on its own', 'crece solo')}</strong>: ${L('risponde all\'istante a ciò che ha già imparato e, quando incontra qualcosa di nuovo, lo chiede al maestro e se lo segna. "Curiosità" alta = sente di avere lacune; "fiducia" = quanto si fida di ciò che sa.', "answers instantly to what it has already learned and, when it meets something new, asks the teacher and notes it down. High \"curiosity\" = it feels it has gaps; \"confidence\" = how much it trusts what it knows.", 'responde al instante a lo que ya ha aprendido y, cuando encuentra algo nuevo, se lo pregunta al maestro y lo apunta. "Curiosidad" alta = siente que tiene lagunas; "confianza" = cuánto se fía de lo que sabe.')}</p>
     <div style="display:flex;gap:22px;flex-wrap:wrap;margin-top:6px">
-      <div><div style="${stile.num}">${rete.nodi || 0}</div><small>nodi appresi</small></div>
-      <div><div style="${stile.num}">${rete.solidi || 0}</div><small>sa rispondere</small></div>
-      <div><div style="${stile.num}">${pct(rete.fiducia)}</div><small>fiducia</small></div>
-      <div><div style="${stile.num}">${pct(rete.curiosita)}</div><small>curiosità</small></div>
+      <div><div style="${stile.num}">${rete.nodi || 0}</div><small>${L('nodi appresi', 'nodes learned', 'nodos aprendidos')}</small></div>
+      <div><div style="${stile.num}">${rete.solidi || 0}</div><small>${L('sa rispondere', 'can answer', 'sabe responder')}</small></div>
+      <div><div style="${stile.num}">${pct(rete.fiducia)}</div><small>${L('fiducia', 'confidence', 'confianza')}</small></div>
+      <div><div style="${stile.num}">${pct(rete.curiosita)}</div><small>${L('curiosità', 'curiosity', 'curiosidad')}</small></div>
     </div>`;
   const val = (id) => (document.getElementById(id)?.value || '').trim();
   const raccogliEp = () => ({ url: val('ep-url'), modello: val('ep-mod'), chiave: val('ep-key'), solo: !!document.getElementById('ep-solo')?.checked });
@@ -7353,38 +7348,38 @@ async function caricaLLM() {
     const v = document.getElementById('sel-llm').value;
     const body = v === 'url' ? { url: (document.getElementById('inp-llm-url').value || '').trim() } : { modello: v };
     await api('/api/admin/llm', { method: 'POST', body });
-    toast('Sto cambiando modello — può metterci qualche minuto (scarica + carica).');
+    toast(L('Sto cambiando modello — può metterci qualche minuto (scarica + carica).', 'Changing the model — it may take a few minutes (download + load).', 'Cambiando el modelo — puede tardar unos minutos (descarga + carga).'));
     setTimeout(caricaLLM, 2500);
   }));
   document.getElementById('btn-ep-salva')?.addEventListener('click', () => conErrore(async () => {
     await api('/api/admin/llm', { method: 'POST', body: { endpoint: raccogliEp() } });
-    toast('Maestro collegato — la rete inizierà a imparare da lui.');
+    toast(L('Maestro collegato — la rete inizierà a imparare da lui.', 'Teacher connected — the network will start learning from it.', 'Maestro conectado — la red empezará a aprender de él.'));
     setTimeout(caricaLLM, 1500);
   }));
   document.getElementById('btn-ep-stacca')?.addEventListener('click', () => conErrore(async () => {
     await api('/api/admin/llm', { method: 'POST', body: { endpoint: { url: '' } } });
-    toast('Maestro scollegato.');
+    toast(L('Maestro scollegato.', 'Teacher disconnected.', 'Maestro desconectado.'));
     setTimeout(caricaLLM, 800);
   }));
   document.getElementById('btn-ep-prova')?.addEventListener('click', () => conErrore(async () => {
     const esito = document.getElementById('ep-esito');
-    if (esito) esito.textContent = 'Provo la connessione…';
+    if (esito) esito.textContent = L('Provo la connessione…', 'Testing the connection…', 'Probando la conexión…');
     const r = await api('/api/admin/llm/prova', { method: 'POST', body: { endpoint: raccogliEp() } });
     if (!esito) return;
     esito.innerHTML = r && r.ok
-      ? `Risponde! ${r.modello ? `(${esc(r.modello)}) ` : ''}<em>«${esc(r.campione || 'ok')}»</em>`
-      : `Non risponde: ${esc((r && r.motivo) || 'errore')}`;
+      ? `${L('Risponde!', 'It responds!', '¡Responde!')} ${r.modello ? `(${esc(r.modello)}) ` : ''}<em>«${esc(r.campione || 'ok')}»</em>`
+      : `${L('Non risponde', 'Not responding', 'No responde')}: ${esc((r && r.motivo) || L('errore', 'error', 'error'))}`;
   }));
   // libreria modelli: usa / elimina / carica
   document.querySelectorAll('#lista-modelli .usa-modello').forEach((a) => a.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
     await api('/api/admin/llm', { method: 'POST', body: { file: a.dataset.nome } });
-    toast('Carico il modello — può metterci un po\'.');
+    toast(L('Carico il modello — può metterci un po\'.', 'Loading the model — it may take a while.', 'Cargando el modelo — puede tardar un poco.'));
     setTimeout(caricaLLM, 2500);
   }); }));
   document.querySelectorAll('#lista-modelli .rimuovi-modello').forEach((a) => a.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
-    if (!confirm('Eliminare questo modello dal server?')) return;
+    if (!confirm(L('Eliminare questo modello dal server?', 'Delete this model from the server?', '¿Eliminar este modelo del servidor?'))) return;
     await api('/api/admin/llm/files/' + encodeURIComponent(a.dataset.nome), { method: 'DELETE' });
-    toast('Modello eliminato.');
+    toast(L('Modello eliminato.', 'Model deleted.', 'Modelo eliminado.'));
     caricaLLM();
   }); }));
   document.getElementById('btn-modello-upload')?.addEventListener('click', () => caricaModelloFile());
@@ -7395,27 +7390,27 @@ function caricaModelloFile() {
   const inp = document.getElementById('inp-modello-file');
   const st = document.getElementById('modello-upload-stato');
   const f = inp && inp.files && inp.files[0];
-  if (!f) { toast('Scegli un file .gguf', 'errore'); return; }
-  if (!/\.gguf$/i.test(f.name)) { toast('Serve un file .gguf', 'errore'); return; }
-  if (DEMO) { toast('In demo non carico davvero'); return; }
+  if (!f) { toast(L('Scegli un file .gguf', 'Choose a .gguf file', 'Elige un archivo .gguf'), 'errore'); return; }
+  if (!/\.gguf$/i.test(f.name)) { toast(L('Serve un file .gguf', 'A .gguf file is required', 'Se necesita un archivo .gguf'), 'errore'); return; }
+  if (DEMO) { toast(L('In demo non carico davvero', "In demo it doesn't really upload", 'En la demo no se sube de verdad')); return; }
   const xhr = new XMLHttpRequest();
   const fd = new FormData();
   fd.append('file', f);
   xhr.open('POST', '/api/admin/llm/upload');
-  xhr.upload.onprogress = (e) => { if (e.lengthComputable && st) st.textContent = `Carico… ${Math.round(e.loaded * 100 / e.total)}%`; };
+  xhr.upload.onprogress = (e) => { if (e.lengthComputable && st) st.textContent = `${L('Carico…', 'Uploading…', 'Subiendo…')} ${Math.round(e.loaded * 100 / e.total)}%`; };
   xhr.onload = () => {
     if (xhr.status >= 200 && xhr.status < 300) {
-      if (st) st.textContent = 'Caricato ✓';
-      toast('Modello caricato — ora premi «usa» per attivarlo.');
+      if (st) st.textContent = L('Caricato ✓', 'Uploaded ✓', 'Subido ✓');
+      toast(L('Modello caricato — ora premi «usa» per attivarlo.', 'Model uploaded — now press «use» to activate it.', 'Modelo subido — ahora pulsa «usar» para activarlo.'));
       caricaLLM();
     } else {
       let m = 'errore'; try { m = JSON.parse(xhr.responseText).errore || m; } catch { /* niente */ }
-      if (st) st.textContent = 'Errore: ' + m;
-      toast('Upload fallito: ' + m, 'errore');
+      if (st) st.textContent = L('Errore: ', 'Error: ', 'Error: ') + m;
+      toast(L('Upload fallito: ', 'Upload failed: ', 'Subida fallida: ') + m, 'errore');
     }
   };
-  xhr.onerror = () => { if (st) st.textContent = 'Errore di rete'; toast('Upload fallito', 'errore'); };
-  if (st) st.textContent = 'Carico… 0%';
+  xhr.onerror = () => { if (st) st.textContent = L('Errore di rete', 'Network error', 'Error de red'); toast(L('Upload fallito', 'Upload failed', 'Subida fallida'), 'errore'); };
+  if (st) st.textContent = L('Carico… 0%', 'Uploading… 0%', 'Subiendo… 0%');
   xhr.send(fd);
 }
 
@@ -7428,35 +7423,35 @@ async function caricaAnima() {
     const p = d.profilo || {};
     const amici = d.amici || { totale: 0, top: [] };
     box.innerHTML = `
-      <label class="campo" for="an-nome">Nome</label>
+      <label class="campo" for="an-nome">${L('Nome', 'Name', 'Nombre')}</label>
       <input type="text" id="an-nome" value="${esc(p.nome || 'SocialBot')}" maxlength="40">
 
-      <label class="campo" for="an-tono">Tono di base</label>
+      <label class="campo" for="an-tono">${L('Tono di base', 'Base tone', 'Tono base')}</label>
       <select id="an-tono">
-        <option value="scherzoso" ${p.tono === 'scherzoso' ? 'selected' : ''}>Scherzoso</option>
-        <option value="amichevole" ${p.tono === 'amichevole' ? 'selected' : ''}>Amichevole</option>
-        <option value="serio" ${p.tono === 'serio' ? 'selected' : ''}>Serio</option>
+        <option value="scherzoso" ${p.tono === 'scherzoso' ? 'selected' : ''}>${L('Scherzoso', 'Playful', 'Bromista')}</option>
+        <option value="amichevole" ${p.tono === 'amichevole' ? 'selected' : ''}>${L('Amichevole', 'Friendly', 'Amistoso')}</option>
+        <option value="serio" ${p.tono === 'serio' ? 'selected' : ''}>${L('Serio', 'Serious', 'Serio')}</option>
       </select>
 
-      <label class="campo" for="an-tratti">Tratti (uno per riga)</label>
-      <textarea id="an-tratti" placeholder="curioso&#10;ironico&#10;empatico">${esc((p.tratti || []).join('\n'))}</textarea>
+      <label class="campo" for="an-tratti">${L('Tratti (uno per riga)', 'Traits (one per line)', 'Rasgos (uno por línea)')}</label>
+      <textarea id="an-tratti" placeholder="${L('curioso&#10;ironico&#10;empatico', 'curious&#10;ironic&#10;empathetic', 'curioso&#10;irónico&#10;empático')}">${esc((p.tratti || []).join('\n'))}</textarea>
 
-      <label class="campo" for="an-valori">Valori / linee guida (uno per riga)</label>
-      <textarea id="an-valori" placeholder="rispetto&#10;community prima di tutto">${esc((p.valori || []).join('\n'))}</textarea>
+      <label class="campo" for="an-valori">${L('Valori / linee guida (uno per riga)', 'Values / guidelines (one per line)', 'Valores / directrices (uno por línea)')}</label>
+      <textarea id="an-valori" placeholder="${L('rispetto&#10;community prima di tutto', 'respect&#10;community first', 'respeto&#10;la comunidad primero')}">${esc((p.valori || []).join('\n'))}</textarea>
 
-      <label class="campo" for="an-tormentoni">Tormentoni / frasi-firma (uno per riga)</label>
-      <textarea id="an-tormentoni" placeholder="si vola!&#10;GG raga">${esc((p.tormentoni || []).join('\n'))}</textarea>
+      <label class="campo" for="an-tormentoni">${L('Tormentoni / frasi-firma (uno per riga)', 'Catchphrases / signature lines (one per line)', 'Muletillas / frases-firma (una por línea)')}</label>
+      <textarea id="an-tormentoni" placeholder="${L('si vola!&#10;GG raga', 'let\'s go!&#10;GG folks', '¡vamos!&#10;GG chicos')}">${esc((p.tormentoni || []).join('\n'))}</textarea>
 
-      <p class="spazio-sopra">Stato d'animo ora:
-        <span class="badge viola">umore ${p.umore ?? 50}/100</span>
-        <span class="badge viola">energia ${p.energia ?? 60}/100</span>
-        <span class="suggerimento">— cambia da solo con gli eventi (raid, sub…) e col tempo.</span>
+      <p class="spazio-sopra">${L('Stato d\'animo ora', 'Mood now', 'Estado de ánimo ahora')}:
+        <span class="badge viola">${L('umore', 'mood', 'humor')} ${p.umore ?? 50}/100</span>
+        <span class="badge viola">${L('energia', 'energy', 'energía')} ${p.energia ?? 60}/100</span>
+        <span class="suggerimento">— ${L('cambia da solo con gli eventi (raid, sub…) e col tempo.', 'changes on its own with events (raid, sub…) and over time.', 'cambia solo con los eventos (raid, sub…) y con el tiempo.')}</span>
       </p>
-      <p><strong class="primo-piano">${amici.totale}</strong> persone conosciute in tutta la rete.
-        ${amici.top.length ? 'Più affini: ' + amici.top.map((f) =>
+      <p><strong class="primo-piano">${amici.totale}</strong> ${L('persone conosciute in tutta la rete.', 'people known across the whole network.', 'personas conocidas en toda la red.')}
+        ${amici.top.length ? L('Più affini: ', 'Most compatible: ', 'Más afines: ') + amici.top.map((f) =>
           `<span class="badge">${esc(f.user)} · ${f.affinita}</span>`).join(' ') : ''}</p>
 
-      <p class="spazio-sopra"><button class="btn" id="btn-salva-anima">Salva l'anima</button></p>`;
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-anima">${L('Salva l\'anima', 'Save the soul', 'Guardar el alma')}</button></p>`;
 
     document.getElementById('btn-salva-anima')?.addEventListener('click', () => conErrore(async () => {
       await api('/api/admin/anima', { method: 'POST', body: {
@@ -7466,10 +7461,10 @@ async function caricaAnima() {
         valori: righe(document.getElementById('an-valori').value),
         tormentoni: righe(document.getElementById('an-tormentoni').value),
       } });
-      toast('Anima aggiornata');
+      toast(L('Anima aggiornata', 'Soul updated', 'Alma actualizada'));
     }));
   } catch (e) {
-    box.innerHTML = `<p class="vuoto">Errore: ${esc(e.message)}</p>`;
+    box.innerHTML = `<p class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</p>`;
   }
 }
 
@@ -7478,12 +7473,12 @@ async function caricaTabellaAdmin() {
   if (!tbody) return;
   try {
     const lista = await api('/api/admin/streamers');
-    if (!lista.length) { tbody.innerHTML = '<tr><td colspan="6" class="vuoto">Nessuno streamer ancora.</td></tr>'; return; }
+    if (!lista.length) { tbody.innerHTML = `<tr><td colspan="6" class="vuoto">${L('Nessuno streamer ancora.', 'No streamers yet.', 'Aún no hay streamers.')}</td></tr>`; return; }
 
     const badgeStato = {
-      pending: '<span class="badge giallo">in attesa</span>',
-      approved: '<span class="badge verde">approvato</span>',
-      disabled: '<span class="badge rosso">disabilitato</span>',
+      pending: `<span class="badge giallo">${L('in attesa', 'pending', 'en espera')}</span>`,
+      approved: `<span class="badge verde">${L('approvato', 'approved', 'aprobado')}</span>`,
+      disabled: `<span class="badge rosso">${L('disabilitato', 'disabled', 'deshabilitado')}</span>`,
     };
     tbody.innerHTML = lista.map((s) => `
       <tr>
@@ -7493,9 +7488,9 @@ async function caricaTabellaAdmin() {
         <td>${s.permessiOk ? '✔' : '✘'}</td>
         <td>${s.knowledgeCount}</td>
         <td>
-          ${s.status !== 'approved' ? `<button class="btn mini" data-azione="approved" data-login="${esc(s.login)}">Approva</button>` : ''}
-          ${s.status === 'approved' ? `<button class="btn secondario mini" data-azione="disabled" data-login="${esc(s.login)}">Disabilita</button>` : ''}
-          <button class="btn pericolo mini" data-azione="rimuovi" data-login="${esc(s.login)}">Rimuovi</button>
+          ${s.status !== 'approved' ? `<button class="btn mini" data-azione="approved" data-login="${esc(s.login)}">${L('Approva', 'Approve', 'Aprobar')}</button>` : ''}
+          ${s.status === 'approved' ? `<button class="btn secondario mini" data-azione="disabled" data-login="${esc(s.login)}">${L('Disabilita', 'Disable', 'Deshabilitar')}</button>` : ''}
+          <button class="btn pericolo mini" data-azione="rimuovi" data-login="${esc(s.login)}">${L('Rimuovi', 'Remove', 'Quitar')}</button>
         </td>
       </tr>`).join('');
 
@@ -7506,13 +7501,13 @@ async function caricaTabellaAdmin() {
       const { azione, login } = btn.dataset;
       conErrore(async () => {
         if (azione === 'rimuovi') {
-          if (!confirm(`Rimuovere del tutto ${login}? Verranno eliminati anche i suoi permessi.`)) return;
+          if (!confirm(L(`Rimuovere del tutto ${login}? Verranno eliminati anche i suoi permessi.`, `Completely remove ${login}? Their permissions will be deleted too.`, `¿Eliminar por completo a ${login}? También se borrarán sus permisos.`))) return;
           await api('/api/admin/rimuovi', { method: 'POST', body: { login } });
-          toast(`${login} rimosso.`);
+          toast(L(`${login} rimosso.`, `${login} removed.`, `${login} eliminado.`));
         } else {
-          if (azione === 'disabled' && !confirm(`Disabilitare ${login}? Il bot uscirà dal suo canale.`)) return;
+          if (azione === 'disabled' && !confirm(L(`Disabilitare ${login}? Il bot uscirà dal suo canale.`, `Disable ${login}? The bot will leave their channel.`, `¿Deshabilitar a ${login}? El bot saldrá de su canal.`))) return;
           await api('/api/admin/stato', { method: 'POST', body: { login, status: azione } });
-          toast(azione === 'approved' ? `${login} approvato! Il bot si sta pre-addestrando.` : `${login} disabilitato.`);
+          toast(azione === 'approved' ? L(`${login} approvato! Il bot si sta pre-addestrando.`, `${login} approved! The bot is pre-training.`, `¡${login} aprobado! El bot se está pre-entrenando.`) : L(`${login} disabilitato.`, `${login} disabled.`, `${login} deshabilitado.`));
         }
         // ricarica stato globale (canali attivi) e tabella
         stato = await api('/api/me');
@@ -7520,7 +7515,7 @@ async function caricaTabellaAdmin() {
       });
     };
   } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="6" class="vuoto">Errore: ${esc(e.message)}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</td></tr>`;
   }
 }
 
@@ -7531,7 +7526,7 @@ document.addEventListener('click', (ev) => {
   if (ev.target.id === 'btn-richiesta') {
     conErrore(async () => {
       await api('/api/richiesta', { method: 'POST', body: {} });
-      toast('Richiesta inviata!');
+      toast(L('Richiesta inviata!', 'Request sent!', '¡Solicitud enviada!'));
       stato = await api('/api/me');
       render();
     });
@@ -7565,7 +7560,7 @@ const bufToB64url = (buf) => {
 
 // registra una nuova passkey per l'utente loggato
 async function creaPasskey() {
-  if (!window.PublicKeyCredential) { toast('Questo dispositivo non supporta le passkey.', 'errore'); return; }
+  if (!window.PublicKeyCredential) { toast(L('Questo dispositivo non supporta le passkey.', "This device doesn't support passkeys.", 'Este dispositivo no admite passkeys.'), 'errore'); return; }
   const opt = await api('/api/passkey/registra/inizio', { method: 'POST', body: {} });
   const cred = await navigator.credentials.create({ publicKey: {
     challenge: b64urlToBuf(opt.challenge),
@@ -7590,13 +7585,13 @@ function mostraInvito(invito) {
   const box = document.getElementById('invito-creato');
   if (!box || !invito) return;
   box.innerHTML = `
-    <p class="suggerimento spazio-sopra">Manda questo link a <strong class="primo-piano">@${esc(invito.login)}</strong>
-      (vale fino al ${esc(dataIt(invito.scade))}); accederà con Twitch e potrà gestire il bot:</p>
+    <p class="suggerimento spazio-sopra">${L('Manda questo link a', 'Send this link to', 'Envía este enlace a')} <strong class="primo-piano">@${esc(invito.login)}</strong>
+      (${L('vale fino al', 'valid until', 'válido hasta el')} ${esc(dataIt(invito.scade))}); ${L('accederà con Twitch e potrà gestire il bot:', 'they\'ll log in with Twitch and be able to manage the bot:', 'accederá con Twitch y podrá gestionar el bot:')}</p>
     <div class="riga-flessibile">
       <input type="text" id="url-invito" readonly value="${esc(invito.url)}">
-      <button class="btn" id="btn-copia-invito">Copia</button>
+      <button class="btn" id="btn-copia-invito">${L('Copia', 'Copy', 'Copiar')}</button>
     </div>`;
-  document.getElementById('btn-copia-invito')?.addEventListener('click', () => copiaTesto(invito.url, 'Link d’invito copiato'));
+  document.getElementById('btn-copia-invito')?.addEventListener('click', () => copiaTesto(invito.url, L('Link d’invito copiato', 'Invite link copied', 'Enlace de invitación copiado')));
 }
 
 async function caricaModeratori() {
@@ -7604,21 +7599,21 @@ async function caricaModeratori() {
   if (!ul) return;                       // per i moderatori la card non esiste: si salta
   try {
     const lista = await api('/api/moderatori');
-    if (!lista.length) { ul.innerHTML = '<li class="vuoto">Ancora nessun moderatore. Invitane uno qui sopra</li>'; return; }
+    if (!lista.length) { ul.innerHTML = `<li class="vuoto">${L('Ancora nessun moderatore. Invitane uno qui sopra', 'No moderators yet. Invite one above', 'Aún no hay moderadores. Invita a uno arriba')}</li>`; return; }
     const links = {};
     ul.innerHTML = lista.map((m) => {
       if (m.invito) links[m.id] = m.invito.url;
       const stato = m.status === 'attivo'
-        ? '<span class="badge verde">attivo</span>'
-        : '<span class="badge giallo">invito in attesa</span>';
+        ? `<span class="badge verde">${L('attivo', 'active', 'activo')}</span>`
+        : `<span class="badge giallo">${L('invito in attesa', 'invite pending', 'invitación en espera')}</span>`;
       const meta = m.status === 'attivo'
-        ? (m.last_seen ? 'ultimo accesso ' + esc(dataIt(m.last_seen)) : 'mai entrato')
-        : (m.invito ? 'invito valido fino al ' + esc(dataIt(m.invito.scade)) : 'invito scaduto');
+        ? (m.last_seen ? L('ultimo accesso ', 'last access ', 'último acceso ') + esc(dataIt(m.last_seen)) : L('mai entrato', 'never entered', 'nunca ha entrado'))
+        : (m.invito ? L('invito valido fino al ', 'invite valid until ', 'invitación válida hasta el ') + esc(dataIt(m.invito.scade)) : L('invito scaduto', 'invite expired', 'invitación caducada'));
       const azioni = m.status === 'attivo'
-        ? `<button class="btn secondario mini" data-mod-rimuovi="${m.id}">Rimuovi</button>`
-        : `<button class="btn secondario mini" data-mod-link="${m.id}">Copia link</button>
-           <button class="btn secondario mini" data-mod-reinvita="${m.id}">Rigenera</button>
-           <button class="btn secondario mini" data-mod-rimuovi="${m.id}">Annulla</button>`;
+        ? `<button class="btn secondario mini" data-mod-rimuovi="${m.id}">${L('Rimuovi', 'Remove', 'Quitar')}</button>`
+        : `<button class="btn secondario mini" data-mod-link="${m.id}">${L('Copia link', 'Copy link', 'Copiar enlace')}</button>
+           <button class="btn secondario mini" data-mod-reinvita="${m.id}">${L('Rigenera', 'Regenerate', 'Regenerar')}</button>
+           <button class="btn secondario mini" data-mod-rimuovi="${m.id}">${L('Annulla', 'Cancel', 'Cancelar')}</button>`;
       return `<li>
         <div class="testo-voce">
           <span class="domanda">${esc(m.display || m.login)} ${stato}</span>
@@ -7630,18 +7625,18 @@ async function caricaModeratori() {
     ul.onclick = (ev) => {
       const b = ev.target.closest('[data-mod-rimuovi],[data-mod-reinvita],[data-mod-link]');
       if (!b) return;
-      if (b.dataset.modLink) { if (links[b.dataset.modLink]) copiaTesto(links[b.dataset.modLink], 'Link d’invito copiato'); return; }
+      if (b.dataset.modLink) { if (links[b.dataset.modLink]) copiaTesto(links[b.dataset.modLink], L('Link d’invito copiato', 'Invite link copied', 'Enlace de invitación copiado')); return; }
       if (b.dataset.modReinvita) return conErrore(async () => {
         const r = await api('/api/moderatori/' + b.dataset.modReinvita + '/reinvita', { method: 'POST', body: {} });
-        mostraInvito(r.invito); toast('Nuovo link generato.'); caricaModeratori();
+        mostraInvito(r.invito); toast(L('Nuovo link generato.', 'New link generated.', 'Nuevo enlace generado.')); caricaModeratori();
       });
       if (b.dataset.modRimuovi) return conErrore(async () => {
-        if (!confirm('Rimuovere questo moderatore / annullare l’invito?')) return;
+        if (!confirm(L('Rimuovere questo moderatore / annullare l’invito?', 'Remove this moderator / cancel the invite?', '¿Quitar este moderador / cancelar la invitación?'))) return;
         await api('/api/moderatori/' + b.dataset.modRimuovi, { method: 'DELETE' });
-        toast('Fatto.'); caricaModeratori();
+        toast(L('Fatto.', 'Done.', 'Hecho.')); caricaModeratori();
       });
     };
-  } catch (e) { ul.innerHTML = `<li class="vuoto">Errore: ${esc(e.message)}</li>`; }
+  } catch (e) { ul.innerHTML = `<li class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</li>`; }
 }
 
 async function caricaPasskey() {
@@ -7651,15 +7646,15 @@ async function caricaPasskey() {
     const lista = await api('/api/passkey');
     ul.innerHTML = lista.length
       ? lista.map((p) => `<li><div class="testo-voce"><span class="domanda">${esc(p.nome || 'Passkey')}</span>
-          <span class="meta">creata ${esc(dataIt(p.created_at))}${p.last_used ? ' · usata ' + esc(dataIt(p.last_used)) : ''}</span></div>
-          <button class="btn secondario mini" data-pk="${p.id}">Rimuovi</button></li>`).join('')
-      : '<li class="vuoto">Nessuna passkey ancora. Creane una per rientrare al volo</li>';
+          <span class="meta">${L('creata', 'created', 'creada')} ${esc(dataIt(p.created_at))}${p.last_used ? ' · ' + L('usata', 'used', 'usada') + ' ' + esc(dataIt(p.last_used)) : ''}</span></div>
+          <button class="btn secondario mini" data-pk="${p.id}">${L('Rimuovi', 'Remove', 'Quitar')}</button></li>`).join('')
+      : `<li class="vuoto">${L('Nessuna passkey ancora. Creane una per rientrare al volo', 'No passkeys yet. Create one to get back in quickly', 'Aún no hay passkeys. Crea una para volver a entrar al instante')}</li>`;
     ul.onclick = (ev) => {
       const btn = ev.target.closest('[data-pk]');
       if (!btn) return;
-      conErrore(async () => { await api('/api/passkey/' + btn.dataset.pk, { method: 'DELETE' }); toast('Passkey rimossa.'); caricaPasskey(); });
+      conErrore(async () => { await api('/api/passkey/' + btn.dataset.pk, { method: 'DELETE' }); toast(L('Passkey rimossa.', 'Passkey removed.', 'Passkey eliminada.')); caricaPasskey(); });
     };
-  } catch (e) { ul.innerHTML = `<li class="vuoto">Errore: ${esc(e.message)}</li>`; }
+  } catch (e) { ul.innerHTML = `<li class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</li>`; }
 }
 
 // Chiude il drawer della sidebar su mobile.
