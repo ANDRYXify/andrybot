@@ -4820,239 +4820,216 @@ function pannelloNotifiche() {
   const msgDefault = '{nome} è in diretta!\n\n{titolo}\n{gioco}\n\n{link}';
   return pannello('notifiche', `
     <div class="carta">
-      <h2>${_hIco(ICO.megafono)}Avviso "sono in diretta" su Telegram</h2>
-      <p>Collega il <strong class="primo-piano">tuo</strong> bot Telegram e il tuo gruppo: quando vai live,
-      il bot avvisa i tuoi follower nel gruppo. Le chiavi sono tue e restano tue.</p>
+      <h2>${_hIco(ICO.megafono)}${L('Avviso "sono in diretta" su Telegram', '"I’m live" alert on Telegram', 'Aviso "estoy en directo" en Telegram')}</h2>
+      <p>${L('Collega il', 'Connect', 'Conecta')} <strong class="primo-piano">${L('tuo', 'your own', 'tu')}</strong> ${L('bot Telegram e il tuo gruppo: quando vai live, il bot avvisa i tuoi follower nel gruppo. Le chiavi sono tue e restano tue.', 'Telegram bot and your group: when you go live, the bot alerts your followers in the group. The keys are yours and stay yours.', 'bot de Telegram y tu grupo: cuando estás en directo, el bot avisa a tus seguidores en el grupo. Las claves son tuyas y siguen siéndolo.')}</p>
 
       <ol class="passi">
-        <li><strong>Crea il bot</strong>: su Telegram apri <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a>,
-          scrivi <code>/newbot</code>, segui le istruzioni e copia il <em>token</em> che ti dà.</li>
-        <li><strong>Incolla il token</strong> qui sotto e premi <em>Collega</em>.</li>
-        <li><strong>Aggiungi il bot al tuo gruppo</strong>, scrivici <code>/collega</code> dentro, poi premi <em>Rileva gruppo</em>.</li>
+        <li><strong>${L('Crea il bot', 'Create the bot', 'Crea el bot')}</strong>: ${L('su Telegram apri', 'on Telegram open', 'en Telegram abre')} <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a>,
+          ${L('scrivi', 'type', 'escribe')} <code>/newbot</code>, ${L('segui le istruzioni e copia il', 'follow the steps and copy the', 'sigue los pasos y copia el')} <em>token</em> ${L('che ti dà.', 'it gives you.', 'que te da.')}</li>
+        <li><strong>${L('Incolla il token', 'Paste the token', 'Pega el token')}</strong> ${L('qui sotto e premi', 'below and press', 'aquí abajo y pulsa')} <em>${L('Collega', 'Connect', 'Conectar')}</em>.</li>
+        <li><strong>${L('Aggiungi il bot al tuo gruppo', 'Add the bot to your group', 'Añade el bot a tu grupo')}</strong>, ${L('scrivici', 'type', 'escribe')} <code>/collega</code> ${L('dentro, poi premi', 'inside, then press', 'dentro, luego pulsa')} <em>${L('Rileva gruppo', 'Detect group', 'Detectar grupo')}</em>.</li>
       </ol>
 
-      <label class="campo" for="inp-tg-token">Token del bot Telegram</label>
+      <label class="campo" for="inp-tg-token">${L('Token del bot Telegram', 'Telegram bot token', 'Token del bot de Telegram')}</label>
       <div class="riga-flessibile">
         <input type="text" id="inp-tg-token" placeholder="123456789:AA..." autocomplete="off"
           value="" ${tg.configurato ? 'disabled' : ''}>
-        <button class="btn" id="btn-tg-token">${tg.configurato ? 'Collegato ✓' : 'Collega'}</button>
+        <button class="btn" id="btn-tg-token">${tg.configurato ? L('Collegato ✓', 'Connected ✓', 'Conectado ✓') : L('Collega', 'Connect', 'Conectar')}</button>
       </div>
-      ${tg.configurato ? `<p class="suggerimento">Bot collegato: <strong class="primo-piano">@${esc(tg.botUsername || '?')}</strong></p>` : ''}
+      ${tg.configurato ? `<p class="suggerimento">${L('Bot collegato:', 'Bot connected:', 'Bot conectado:')} <strong class="primo-piano">@${esc(tg.botUsername || '?')}</strong></p>` : ''}
 
       ${tg.configurato ? `
       <div class="riga-flessibile spazio-sopra">
-        <button class="btn secondario" id="btn-tg-rileva">Rileva gruppo</button>
+        <button class="btn secondario" id="btn-tg-rileva">${L('Rileva gruppo', 'Detect group', 'Detectar grupo')}</button>
         <span class="suggerimento">${tg.gruppoOk
-          ? `Gruppo collegato: <strong class="primo-piano">${esc(tg.gruppo || '(gruppo)')}</strong> ✓`
-          : 'Nessun gruppo ancora collegato.'}</span>
+          ? `${L('Gruppo collegato:', 'Group connected:', 'Grupo conectado:')} <strong class="primo-piano">${esc(tg.gruppo || '(gruppo)')}</strong> ✓`
+          : L('Nessun gruppo ancora collegato.', 'No group connected yet.', 'Aún no hay grupo conectado.')}</span>
       </div>
 
-      <label class="campo spazio-sopra" for="txt-tg-messaggio">Messaggio dell'avviso</label>
+      <label class="campo spazio-sopra" for="txt-tg-messaggio">${L('Messaggio dell\'avviso', 'Alert message', 'Mensaje del aviso')}</label>
       <textarea id="txt-tg-messaggio" rows="5" placeholder="${esc(msgDefault)}">${esc(tg.messaggio || '')}</textarea>
-      <p class="suggerimento">Segnaposto: <code>{nome}</code> <code>{titolo}</code> <code>{gioco}</code>
-        <code>{spettatori}</code> <code>{link}</code>. Lascia vuoto per usare quello standard.</p>
+      <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code> <code>{titolo}</code> <code>{gioco}</code>
+        <code>{spettatori}</code> <code>{link}</code>. ${L('Lascia vuoto per usare quello standard.', 'Leave empty to use the default.', 'Déjalo vacío para usar el estándar.')}</p>
 
       <div class="riga-check spazio-sopra">
         <input type="checkbox" id="chk-tg-attivo" ${tg.attivo ? 'checked' : ''} ${tg.gruppoOk ? '' : 'disabled'}>
-        <label for="chk-tg-attivo">Avvisa il gruppo quando vado in diretta</label>
+        <label for="chk-tg-attivo">${L('Avvisa il gruppo quando vado in diretta', 'Alert the group when I go live', 'Avisa al grupo cuando voy en directo')}</label>
       </div>
 
       <div class="riga-check">
         <input type="checkbox" id="chk-tg-pin" ${tg.pinLive ? 'checked' : ''} ${tg.gruppoOk ? '' : 'disabled'}>
-        <label for="chk-tg-pin">Fissa l'avviso in cima durante la live e rimuovilo quando stacco</label>
+        <label for="chk-tg-pin">${L('Fissa l\'avviso in cima durante la live e rimuovilo quando stacco', 'Pin the alert at the top during the live and remove it when I go offline', 'Fija el aviso arriba durante el directo y quítalo cuando termino')}</label>
       </div>
-      <p class="suggerimento">Per fissare l'avviso il bot dev'essere <strong>amministratore</strong> del gruppo
-        con il permesso di <em>fissare i messaggi</em>. L'eliminazione a fine live funziona comunque.</p>
+      <p class="suggerimento">${L('Per fissare l\'avviso il bot dev\'essere', 'To pin the alert the bot must be', 'Para fijar el aviso el bot debe ser')} <strong>${L('amministratore', 'an administrator', 'administrador')}</strong> ${L('del gruppo con il permesso di', 'of the group with permission to', 'del grupo con permiso para')} <em>${L('fissare i messaggi', 'pin messages', 'fijar mensajes')}</em>. ${L('L\'eliminazione a fine live funziona comunque.', 'Deletion at the end of the live works anyway.', 'El borrado al final del directo funciona igualmente.')}</p>
 
       <p class="spazio-sopra">
-        <button class="btn" id="btn-tg-salva">Salva</button>
-        <button class="btn secondario" id="btn-tg-prova" ${tg.gruppoOk ? '' : 'disabled'}>Manda una prova</button>
-        <button class="btn pericolo mini" id="btn-tg-scollega">Scollega</button>
+        <button class="btn" id="btn-tg-salva">${L('Salva', 'Save', 'Guardar')}</button>
+        <button class="btn secondario" id="btn-tg-prova" ${tg.gruppoOk ? '' : 'disabled'}>${L('Manda una prova', 'Send a test', 'Envía una prueba')}</button>
+        <button class="btn pericolo mini" id="btn-tg-scollega">${L('Scollega', 'Disconnect', 'Desconectar')}</button>
       </p>
       ` : ''}
     </div>
 
     ${tg.configurato ? `
     <div class="carta">
-      <h2>${_hIco(ICO.bot)}Bot interattivo su Telegram</h2>
-      <p>Con la <strong class="primo-piano">modalità interattiva</strong> il bot <strong>legge i messaggi</strong> del
-      gruppo e risponde ai comandi. I comandi si creano in <strong>Chat &amp; comandi → Comandi</strong>:
-      crea un modulo con innesco <em>Comando</em> e spunta <strong>«Abilita anche su Telegram»</strong>
-      (su Telegram funziona anche senza <code>!</code>). Valgono anche a voce dall'ascolto vocale.</p>
+      <h2>${_hIco(ICO.bot)}${L('Bot interattivo su Telegram', 'Interactive bot on Telegram', 'Bot interactivo en Telegram')}</h2>
+      <p>${L('Con la', 'With', 'Con el')} <strong class="primo-piano">${L('modalità interattiva', 'interactive mode', 'modo interactivo')}</strong> ${L('il bot <strong>legge i messaggi</strong> del gruppo e risponde ai comandi. I comandi si creano in <strong>Chat &amp; comandi → Comandi</strong>: crea un modulo con innesco <em>Comando</em> e spunta <strong>«Abilita anche su Telegram»</strong> (su Telegram funziona anche senza <code>!</code>). Valgono anche a voce dall\'ascolto vocale.', 'the bot <strong>reads the group’s messages</strong> and replies to commands. Commands are created in <strong>Chat &amp; commands → Commands</strong>: create a module with a <em>Command</em> trigger and check <strong>“Enable on Telegram too”</strong> (on Telegram it works even without <code>!</code>). They also work by voice from voice listening.', 'el bot <strong>lee los mensajes</strong> del grupo y responde a los comandos. Los comandos se crean en <strong>Chat y comandos → Comandos</strong>: crea un módulo con disparador <em>Comando</em> y marca <strong>«Habilitar también en Telegram»</strong> (en Telegram funciona incluso sin <code>!</code>). También valen por voz desde la escucha por voz.')}</p>
 
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore"><input type="checkbox" id="chk-tg-interattivo" ${tg.interattivo ? 'checked' : ''}><span class="levetta"></span></label>
-        <span class="etichetta-stato">Bot interattivo nel gruppo</span>
-        ${tg.interattivo ? '<span class="badge verde">attivo</span>' : ''}
+        <span class="etichetta-stato">${L('Bot interattivo nel gruppo', 'Interactive bot in the group', 'Bot interactivo en el grupo')}</span>
+        ${tg.interattivo ? `<span class="badge verde">${L('attivo', 'active', 'activo')}</span>` : ''}
       </div>
-      <p class="suggerimento">Il bot dev'essere <strong>nel gruppo</strong>. Da attivo, il gruppo si collega da solo:
-      scrivi un messaggio qualsiasi nel gruppo e viene rilevato. Il tasto «Rileva gruppo» funziona solo da spento.
-      Per far leggere al bot <strong>tutti</strong> i messaggi (comandi senza <code>/</code> e roster membri) disattiva la
-      <em>privacy</em> su <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a>
-      (<code>/setprivacy → Disable</code>); coi comandi <code>/comando</code> funziona comunque.</p>
+      <p class="suggerimento">${L('Il bot dev\'essere', 'The bot must be', 'El bot debe estar')} <strong>${L('nel gruppo', 'in the group', 'en el grupo')}</strong>. ${L('Da attivo, il gruppo si collega da solo: scrivi un messaggio qualsiasi nel gruppo e viene rilevato. Il tasto «Rileva gruppo» funziona solo da spento. Per far leggere al bot <strong>tutti</strong> i messaggi (comandi senza <code>/</code> e roster membri) disattiva la <em>privacy</em> su', 'When active, the group connects itself: send any message in the group and it’s detected. The “Detect group” button only works when off. To let the bot read <strong>all</strong> messages (commands without <code>/</code> and the member roster) disable <em>privacy</em> on', 'Cuando está activo, el grupo se conecta solo: escribe cualquier mensaje en el grupo y se detecta. El botón «Detectar grupo» solo funciona apagado. Para que el bot lea <strong>todos</strong> los mensajes (comandos sin <code>/</code> y la lista de miembros) desactiva la <em>privacidad</em> en')} <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a>
+      (<code>/setprivacy → Disable</code>); ${L('coi comandi <code>/comando</code> funziona comunque.', 'with <code>/command</code> commands it works anyway.', 'con los comandos <code>/comando</code> funciona igualmente.')}</p>
 
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore"><input type="checkbox" id="chk-tg-dm" ${tg.dmModo !== 'off' ? 'checked' : ''}><span class="levetta"></span></label>
-        <span class="etichetta-stato">Rispondimi in chat privata (solo a me)</span>
+        <span class="etichetta-stato">${L('Rispondimi in chat privata (solo a me)', 'Reply to me in private chat (only me)', 'Respóndeme en el chat privado (solo a mí)')}</span>
       </div>
       <p class="suggerimento" id="tg-dm-stato">
         ${tg.dmCollegato
-          ? `In privato risponde <strong>solo a te</strong> (account <strong>${esc(tg.dmNome || 'te')}</strong>). <a href="#" id="btn-tg-dm-scollega">Scollega</a>`
-          : 'Per rispondere solo a te, lega una volta il tuo Telegram: <a href="#" id="btn-tg-dm-collega">genera un codice</a> e scrivi <code>/collega CODICE</code> al bot in privato. Finché non colleghi, in privato non risponde a nessuno.'}
+          ? `${L('In privato risponde <strong>solo a te</strong> (account', 'In private it replies <strong>only to you</strong> (account', 'En privado responde <strong>solo a ti</strong> (cuenta')} <strong>${esc(tg.dmNome || 'te')}</strong>). <a href="#" id="btn-tg-dm-scollega">${L('Scollega', 'Disconnect', 'Desconectar')}</a>`
+          : `${L('Per rispondere solo a te, lega una volta il tuo Telegram:', 'To reply only to you, link your Telegram once:', 'Para responder solo a ti, vincula tu Telegram una vez:')} <a href="#" id="btn-tg-dm-collega">${L('genera un codice', 'generate a code', 'genera un código')}</a> ${L('e scrivi', 'and type', 'y escribe')} <code>/collega CODICE</code> ${L('al bot in privato. Finché non colleghi, in privato non risponde a nessuno.', 'to the bot in private. Until you link it, it replies to no one in private.', 'al bot en privado. Hasta que lo vincules, en privado no responde a nadie.')}`}
       </p>
       <div id="tg-dm-codice"></div>
 
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore"><input type="checkbox" id="chk-tg-proattiva" ${impostazioni().proattivoTg !== false ? 'checked' : ''}><span class="levetta"></span></label>
-        <span class="etichetta-stato">Ti scrive per prima (proattiva e curiosa)</span>
+        <span class="etichetta-stato">${L('Ti scrive per prima (proattiva e curiosa)', 'It writes to you first (proactive and curious)', 'Te escribe primero (proactiva y curiosa)')}</span>
       </div>
-      <p class="suggerimento">Ogni tanto è <strong>lei</strong> a scriverti in privato di sua iniziativa: ti fa una domanda, ti chiede una cosa
-      che ancora non sa, commenta. Come una persona — non a orari fissi, mai di notte, e senza esagerare.
-      Serve aver <strong>collegato</strong> il tuo Telegram qui sopra. Il nome con cui si presenta lo scegli in
-      <strong>Admin → Anima</strong>.</p>
+      <p class="suggerimento">${L('Ogni tanto è <strong>lei</strong> a scriverti in privato di sua iniziativa: ti fa una domanda, ti chiede una cosa che ancora non sa, commenta. Come una persona — non a orari fissi, mai di notte, e senza esagerare. Serve aver <strong>collegato</strong> il tuo Telegram qui sopra. Il nome con cui si presenta lo scegli in', 'Now and then <strong>it</strong> writes to you in private on its own: asks you a question, asks something it doesn’t know yet, comments. Like a person — not on a fixed schedule, never at night, and without overdoing it. You need to have <strong>linked</strong> your Telegram above. You choose the name it introduces itself with in', 'De vez en cuando <strong>ella</strong> te escribe en privado por iniciativa propia: te hace una pregunta, te pide algo que aún no sabe, comenta. Como una persona — sin horarios fijos, nunca de noche y sin pasarse. Hace falta haber <strong>vinculado</strong> tu Telegram arriba. El nombre con el que se presenta lo eliges en')} <strong>${L('Admin → Anima', 'Admin → Soul', 'Admin → Alma')}</strong>.</p>
 
-      <p class="suggerimento">Nel <strong>gruppo</strong> invece il bot funziona per tutti (e impara dalla chat come su Twitch). Il privato resta solo tuo.</p>
+      <p class="suggerimento">${L('Nel <strong>gruppo</strong> invece il bot funziona per tutti (e impara dalla chat come su Twitch). Il privato resta solo tuo.', 'In the <strong>group</strong>, instead, the bot works for everyone (and learns from chat like on Twitch). Private stays yours only.', 'En el <strong>grupo</strong>, en cambio, el bot funciona para todos (y aprende del chat como en Twitch). El privado sigue siendo solo tuyo.')}</p>
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.torta)}Auguri di compleanno</h2>
-      <p>Il bot fa gli <strong class="primo-piano">auguri automatici</strong> nel gruppo il giorno del compleanno dei
-      membri. Loro possono registrarsi da soli scrivendo <code>/compleanno 25/12</code> nel gruppo (serve il bot
-      interattivo qui sopra), oppure li aggiungi tu qui sotto.</p>
-      <div id="box-compleanni"><p class="vuoto">Caricamento…</p></div>
+      <h2>${_hIco(ICO.torta)}${L('Auguri di compleanno', 'Birthday wishes', 'Felicitaciones de cumpleaños')}</h2>
+      <p>${L('Il bot fa gli', 'The bot sends', 'El bot da las')} <strong class="primo-piano">${L('auguri automatici', 'automatic wishes', 'felicitaciones automáticas')}</strong> ${L('nel gruppo il giorno del compleanno dei membri. Loro possono registrarsi da soli scrivendo', 'in the group on members’ birthdays. They can register themselves by typing', 'en el grupo el día del cumpleaños de los miembros. Ellos pueden registrarse solos escribiendo')} <code>/compleanno 25/12</code> ${L('nel gruppo (serve il bot interattivo qui sopra), oppure li aggiungi tu qui sotto.', 'in the group (needs the interactive bot above), or you add them below.', 'en el grupo (necesita el bot interactivo de arriba), o los añades tú abajo.')}</p>
+      <div id="box-compleanni"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
     </div>
     ` : ''}
 
     <div class="carta">
-      <h2>${_hIco(ICO.musica)}Notifica live TikTok</h2>
-      <p>Quando vai in diretta su <strong class="primo-piano">TikTok</strong>, avviso il gruppo Telegram
-      (e, se vuoi, la chat Twitch). Su TikTok non esiste una chat-bot come su Twitch: qui facciamo la notifica.</p>
+      <h2>${_hIco(ICO.musica)}${L('Notifica live TikTok', 'TikTok live alert', 'Aviso de directo en TikTok')}</h2>
+      <p>${L('Quando vai in diretta su', 'When you go live on', 'Cuando estás en directo en')} <strong class="primo-piano">TikTok</strong>, ${L('avviso il gruppo Telegram (e, se vuoi, la chat Twitch). Su TikTok non esiste una chat-bot come su Twitch: qui facciamo la notifica.', 'I alert the Telegram group (and, if you want, the Twitch chat). On TikTok there’s no chat-bot like on Twitch: here we do the notification.', 'aviso al grupo de Telegram (y, si quieres, al chat de Twitch). En TikTok no existe un chat-bot como en Twitch: aquí hacemos la notificación.')}</p>
 
-      <label class="campo" for="inp-tk-user">Il tuo username TikTok</label>
+      <label class="campo" for="inp-tk-user">${L('Il tuo username TikTok', 'Your TikTok username', 'Tu usuario de TikTok')}</label>
       <div class="riga-flessibile">
         <span class="suggerimento">@</span>
-        <input type="text" id="inp-tk-user" placeholder="tuonome" value="${esc(tkc.username || '')}">
+        <input type="text" id="inp-tk-user" placeholder="${L('tuonome', 'yourname', 'tunombre')}" value="${esc(tkc.username || '')}">
       </div>
 
-      <label class="campo spazio-sopra" for="txt-tk-messaggio">Messaggio dell'avviso TikTok</label>
-      <textarea id="txt-tk-messaggio" rows="4" placeholder="${esc('{nome} è in diretta su TikTok!\n\n{link}')}">${esc(tkc.messaggio || '')}</textarea>
-      <p class="suggerimento">Segnaposto: <code>{nome}</code> <code>{link}</code> <code>{username}</code>. Lascia vuoto per usare quello standard.
-        Se hai attivato <em>«Fissa l'avviso…»</em> qui sopra, l'avviso TikTok viene fissato a live attiva ed eliminato quando stacchi.</p>
+      <label class="campo spazio-sopra" for="txt-tk-messaggio">${L('Messaggio dell\'avviso TikTok', 'TikTok alert message', 'Mensaje del aviso de TikTok')}</label>
+      <textarea id="txt-tk-messaggio" rows="4" placeholder="${esc(L('{nome} è in diretta su TikTok!\n\n{link}', '{nome} is live on TikTok!\n\n{link}', '¡{nome} está en directo en TikTok!\n\n{link}'))}">${esc(tkc.messaggio || '')}</textarea>
+      <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code> <code>{link}</code> <code>{username}</code>. ${L('Lascia vuoto per usare quello standard. Se hai attivato', 'Leave empty to use the default. If you enabled', 'Déjalo vacío para usar el estándar. Si activaste')} <em>${L('«Fissa l\'avviso…»', '“Pin the alert…”', '«Fija el aviso…»')}</em> ${L('qui sopra, l\'avviso TikTok viene fissato a live attiva ed eliminato quando stacchi.', 'above, the TikTok alert is pinned while live and removed when you go offline.', 'arriba, el aviso de TikTok se fija durante el directo y se elimina cuando terminas.')}</p>
 
       <div class="riga-check spazio-sopra">
         <input type="checkbox" id="chk-tk-attivo" ${tkc.attivo ? 'checked' : ''}>
-        <label for="chk-tk-attivo">Rileva in automatico quando vado live su TikTok</label>
+        <label for="chk-tk-attivo">${L('Rileva in automatico quando vado live su TikTok', 'Auto-detect when I go live on TikTok', 'Detecta automáticamente cuando voy en directo en TikTok')}</label>
       </div>
-      <p class="suggerimento">Il rilevamento automatico è <em>best-effort</em> (TikTok non ha un'API ufficiale):
-      può non essere sempre puntuale. Per la massima affidabilità usa il webhook qui sotto.</p>
+      <p class="suggerimento">${L('Il rilevamento automatico è <em>best-effort</em> (TikTok non ha un\'API ufficiale): può non essere sempre puntuale. Per la massima affidabilità usa il webhook qui sotto.', 'Auto-detection is <em>best-effort</em> (TikTok has no official API): it may not always be on time. For maximum reliability use the webhook below.', 'La detección automática es <em>best-effort</em> (TikTok no tiene API oficial): puede no ser siempre puntual. Para máxima fiabilidad usa el webhook de abajo.')}</p>
 
       <div class="riga-check">
         <input type="checkbox" id="chk-tk-chat" ${tkc.annunciaChat ? 'checked' : ''}>
-        <label for="chk-tk-chat">Annuncia anche nella chat Twitch</label>
+        <label for="chk-tk-chat">${L('Annuncia anche nella chat Twitch', 'Announce in Twitch chat too', 'Anuncia también en el chat de Twitch')}</label>
       </div>
 
       <p class="spazio-sopra">
-        <button class="btn" id="btn-tk-salva">Salva</button>
-        <button class="btn secondario" id="btn-tk-prova">Manda una prova</button>
+        <button class="btn" id="btn-tk-salva">${L('Salva', 'Save', 'Guardar')}</button>
+        <button class="btn secondario" id="btn-tk-prova">${L('Manda una prova', 'Send a test', 'Envía una prueba')}</button>
       </p>
 
       <hr class="separatore">
-      <p class="suggerimento"><strong class="primo-piano">Via affidabile (webhook):</strong> collega una tua automazione
-      (IFTTT/Zapier/Shortcut) all'evento "vado live su TikTok" e falle chiamare in POST:</p>
+      <p class="suggerimento"><strong class="primo-piano">${L('Via affidabile (webhook):', 'Reliable way (webhook):', 'Vía fiable (webhook):')}</strong> ${L('collega una tua automazione (IFTTT/Zapier/Shortcut) all\'evento "vado live su TikTok" e falle chiamare in POST:', 'connect an automation of yours (IFTTT/Zapier/Shortcut) to the "I go live on TikTok" event and have it POST:', 'conecta una automatización tuya (IFTTT/Zapier/Shortcut) al evento "voy en directo en TikTok" y haz que llame en POST:')}</p>
       <p><code>POST ${esc(location.origin)}/api/ext/${esc(stato.user.login)}</code></p>
-      <p class="suggerimento">con header <code>Authorization: Bearer LA-TUA-CHIAVE-API</code> e corpo
-      <code>{"azione":"tiktok-live"}</code>. La chiave API la trovi in <strong>Chat &amp; comandi → Comandi</strong>.</p>
+      <p class="suggerimento">${L('con header', 'with header', 'con cabecera')} <code>Authorization: Bearer ${L('LA-TUA-CHIAVE-API', 'YOUR-API-KEY', 'TU-CLAVE-API')}</code> ${L('e corpo', 'and body', 'y cuerpo')}
+      <code>{"azione":"tiktok-live"}</code>. ${L('La chiave API la trovi in', 'Find the API key in', 'La clave API está en')} <strong>${L('Chat & comandi → Comandi', 'Chat & commands → Commands', 'Chat y comandos → Comandos')}</strong>.</p>
 
       <hr class="separatore">
-      <p class="suggerimento"><strong class="primo-piano">Nuovo post su TikTok:</strong> ora è automatico via API ufficiale —
-      vedi la card qui sotto. In alternativa resta il webhook con corpo <code>{"azione":"tiktok-post","url":"…"}</code>.</p>
+      <p class="suggerimento"><strong class="primo-piano">${L('Nuovo post su TikTok:', 'New TikTok post:', 'Nuevo post en TikTok:')}</strong> ${L('ora è automatico via API ufficiale — vedi la card qui sotto. In alternativa resta il webhook con corpo', 'it’s now automatic via the official API — see the card below. Alternatively the webhook remains, with body', 'ahora es automático vía API oficial — mira la tarjeta de abajo. Como alternativa queda el webhook con cuerpo')} <code>{"azione":"tiktok-post","url":"…"}</code>.</p>
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.fotocamera)}Nuovo post su TikTok</h2>
-      <p>Quando pubblichi un <strong class="primo-piano">nuovo video</strong> su TikTok, avviso il gruppo Telegram
-      (e, se vuoi, la chat Twitch). Uso l'<strong>API ufficiale di TikTok</strong>: colleghi il tuo account una volta e ci penso io.</p>
-      <div id="tiktok-post-box" class="spazio-sopra"><p class="suggerimento">Carico…</p></div>
+      <h2>${_hIco(ICO.fotocamera)}${L('Nuovo post su TikTok', 'New TikTok post', 'Nuevo post en TikTok')}</h2>
+      <p>${L('Quando pubblichi un', 'When you publish a', 'Cuando publicas un')} <strong class="primo-piano">${L('nuovo video', 'new video', 'nuevo vídeo')}</strong> ${L('su TikTok, avviso il gruppo Telegram (e, se vuoi, la chat Twitch). Uso l\'<strong>API ufficiale di TikTok</strong>: colleghi il tuo account una volta e ci penso io.', 'on TikTok, I alert the Telegram group (and, if you want, the Twitch chat). I use the <strong>official TikTok API</strong>: connect your account once and I take care of it.', 'en TikTok, aviso al grupo de Telegram (y, si quieres, al chat de Twitch). Uso la <strong>API oficial de TikTok</strong>: conectas tu cuenta una vez y yo me encargo.')}</p>
+      <div id="tiktok-post-box" class="spazio-sopra"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
 
-      <label class="campo spazio-sopra" for="txt-tk-post-msg">Messaggio dell'avviso</label>
-      <textarea id="txt-tk-post-msg" rows="4" placeholder="${esc('{nome} ha pubblicato un nuovo video su TikTok!\n\n{titolo}\n{link}')}">${esc(tkc.postMessaggio || '')}</textarea>
-      <p class="suggerimento">Segnaposto: <code>{nome}</code> <code>{titolo}</code> <code>{link}</code>. Lascia vuoto per usare quello standard.</p>
+      <label class="campo spazio-sopra" for="txt-tk-post-msg">${L('Messaggio dell\'avviso', 'Alert message', 'Mensaje del aviso')}</label>
+      <textarea id="txt-tk-post-msg" rows="4" placeholder="${esc(L('{nome} ha pubblicato un nuovo video su TikTok!\n\n{titolo}\n{link}', '{nome} posted a new video on TikTok!\n\n{titolo}\n{link}', '¡{nome} ha publicado un nuevo vídeo en TikTok!\n\n{titolo}\n{link}'))}">${esc(tkc.postMessaggio || '')}</textarea>
+      <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code> <code>{titolo}</code> <code>{link}</code>. ${L('Lascia vuoto per usare quello standard.', 'Leave empty to use the default.', 'Déjalo vacío para usar el estándar.')}</p>
 
       <div class="riga-check spazio-sopra">
         <input type="checkbox" id="chk-tk-post-attivo" ${tkc.postAttivo ? 'checked' : ''}>
-        <label for="chk-tk-post-attivo">Avvisami quando pubblico un nuovo video</label>
+        <label for="chk-tk-post-attivo">${L('Avvisami quando pubblico un nuovo video', 'Alert me when I post a new video', 'Avísame cuando publico un nuevo vídeo')}</label>
       </div>
       <div class="riga-check">
         <input type="checkbox" id="chk-tk-post-chat" ${tkc.postAnnunciaChat ? 'checked' : ''}>
-        <label for="chk-tk-post-chat">Annuncia anche nella chat Twitch</label>
+        <label for="chk-tk-post-chat">${L('Annuncia anche nella chat Twitch', 'Announce in Twitch chat too', 'Anuncia también en el chat de Twitch')}</label>
       </div>
-      <p class="spazio-sopra"><button class="btn" id="btn-tk-post-salva">Salva</button></p>
-      <p class="suggerimento">Il controllo parte ogni ~10 minuti; il primo giro dopo il collegamento memorizza solo l'ultimo video (non avvisa).</p>
+      <p class="spazio-sopra"><button class="btn" id="btn-tk-post-salva">${L('Salva', 'Save', 'Guardar')}</button></p>
+      <p class="suggerimento">${L('Il controllo parte ogni ~10 minuti; il primo giro dopo il collegamento memorizza solo l\'ultimo video (non avvisa).', 'The check runs every ~10 minutes; the first pass after connecting only stores the latest video (no alert).', 'La comprobación se hace cada ~10 minutos; la primera vuelta tras conectar solo memoriza el último vídeo (no avisa).')}</p>
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.tv)}Nuovo video su YouTube</h2>
-      <p>Quando esce un <strong class="primo-piano">nuovo video</strong> sul tuo canale YouTube, avviso il gruppo Telegram
-      (e, se vuoi, la chat Twitch). Funziona con il feed pubblico di YouTube: <strong>affidabile e senza chiavi</strong>.</p>
+      <h2>${_hIco(ICO.tv)}${L('Nuovo video su YouTube', 'New YouTube video', 'Nuevo vídeo en YouTube')}</h2>
+      <p>${L('Quando esce un', 'When a', 'Cuando sale un')} <strong class="primo-piano">${L('nuovo video', 'new video', 'nuevo vídeo')}</strong> ${L('sul tuo canale YouTube, avviso il gruppo Telegram (e, se vuoi, la chat Twitch). Funziona con il feed pubblico di YouTube:', 'comes out on your YouTube channel, I alert the Telegram group (and, if you want, the Twitch chat). It works with YouTube’s public feed:', 'sale en tu canal de YouTube, aviso al grupo de Telegram (y, si quieres, al chat de Twitch). Funciona con el feed público de YouTube:')} <strong>${L('affidabile e senza chiavi', 'reliable and key-free', 'fiable y sin claves')}</strong>.</p>
 
-      <label class="campo" for="inp-yt-canale">Il tuo canale YouTube</label>
-      <input type="text" id="inp-yt-canale" class="campo-largo" placeholder="@iltuohandle · oppure l'URL o l'ID (UC…) del canale" value="${esc(ytc.canale || '')}">
-      <p class="suggerimento">Va bene l'<code>@handle</code>, l'URL del canale, o l'ID <code>UC…</code>. Lo risolvo io.</p>
+      <label class="campo" for="inp-yt-canale">${L('Il tuo canale YouTube', 'Your YouTube channel', 'Tu canal de YouTube')}</label>
+      <input type="text" id="inp-yt-canale" class="campo-largo" placeholder="${L('@iltuohandle · oppure l\'URL o l\'ID (UC…) del canale', '@yourhandle · or the channel URL or ID (UC…)', '@tuhandle · o la URL o el ID (UC…) del canal')}" value="${esc(ytc.canale || '')}">
+      <p class="suggerimento">${L('Va bene l\'<code>@handle</code>, l\'URL del canale, o l\'ID <code>UC…</code>. Lo risolvo io.', 'The <code>@handle</code>, the channel URL, or the <code>UC…</code> ID all work. I resolve it.', 'Vale el <code>@handle</code>, la URL del canal o el ID <code>UC…</code>. Yo lo resuelvo.')}</p>
 
-      <label class="campo spazio-sopra" for="inp-yt-apikey">La tua chiave API YouTube <span class="suggerimento">(facoltativa)</span></label>
-      <input type="password" id="inp-yt-apikey" class="campo-largo" placeholder="${ytc.apiKeySet ? '•••••••• (impostata)' : 'YouTube Data API v3 — lascia vuoto per usare l\'RSS'}" autocomplete="off">
-      <p class="suggerimento">Senza chiave uso il <strong>feed RSS pubblico</strong> (va benissimo). Con la tua chiave (<em>YouTube Data API v3</em>,
-      da <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">Google Cloud</a>) la rilevazione è ancora più affidabile.
-      ${ytc.apiKeySet ? '<a href="#" id="btn-yt-apikey-rimuovi">Rimuovi la chiave</a>' : ''}</p>
+      <label class="campo spazio-sopra" for="inp-yt-apikey">${L('La tua chiave API YouTube', 'Your YouTube API key', 'Tu clave API de YouTube')} <span class="suggerimento">(${L('facoltativa', 'optional', 'opcional')})</span></label>
+      <input type="password" id="inp-yt-apikey" class="campo-largo" placeholder="${ytc.apiKeySet ? L('•••••••• (impostata)', '•••••••• (set)', '•••••••• (configurada)') : L('YouTube Data API v3 — lascia vuoto per usare l\'RSS', 'YouTube Data API v3 — leave empty to use RSS', 'YouTube Data API v3 — déjalo vacío para usar el RSS')}" autocomplete="off">
+      <p class="suggerimento">${L('Senza chiave uso il <strong>feed RSS pubblico</strong> (va benissimo). Con la tua chiave (<em>YouTube Data API v3</em>, da', 'Without a key I use the <strong>public RSS feed</strong> (works great). With your key (<em>YouTube Data API v3</em>, from', 'Sin clave uso el <strong>feed RSS público</strong> (va perfecto). Con tu clave (<em>YouTube Data API v3</em>, de')} <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">Google Cloud</a>) ${L('la rilevazione è ancora più affidabile.', 'detection is even more reliable.', 'la detección es aún más fiable.')}
+      ${ytc.apiKeySet ? `<a href="#" id="btn-yt-apikey-rimuovi">${L('Rimuovi la chiave', 'Remove the key', 'Quitar la clave')}</a>` : ''}</p>
 
-      <label class="campo spazio-sopra" for="txt-yt-messaggio">Messaggio dell'avviso</label>
-      <textarea id="txt-yt-messaggio" rows="4" placeholder="${esc('{nome} ha caricato un nuovo video su YouTube!\n\n{titolo}\n{link}')}">${esc(ytc.messaggio || '')}</textarea>
-      <p class="suggerimento">Segnaposto: <code>{nome}</code> <code>{titolo}</code> <code>{link}</code>. Lascia vuoto per usare quello standard.</p>
+      <label class="campo spazio-sopra" for="txt-yt-messaggio">${L('Messaggio dell\'avviso', 'Alert message', 'Mensaje del aviso')}</label>
+      <textarea id="txt-yt-messaggio" rows="4" placeholder="${esc(L('{nome} ha caricato un nuovo video su YouTube!\n\n{titolo}\n{link}', '{nome} uploaded a new video on YouTube!\n\n{titolo}\n{link}', '¡{nome} ha subido un nuevo vídeo a YouTube!\n\n{titolo}\n{link}'))}">${esc(ytc.messaggio || '')}</textarea>
+      <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code> <code>{titolo}</code> <code>{link}</code>. ${L('Lascia vuoto per usare quello standard.', 'Leave empty to use the default.', 'Déjalo vacío para usar el estándar.')}</p>
 
       <div class="riga-check spazio-sopra">
         <input type="checkbox" id="chk-yt-attivo" ${ytc.attivo ? 'checked' : ''}>
-        <label for="chk-yt-attivo">Avvisami quando esce un nuovo video</label>
+        <label for="chk-yt-attivo">${L('Avvisami quando esce un nuovo video', 'Alert me when a new video comes out', 'Avísame cuando sale un nuevo vídeo')}</label>
       </div>
       <div class="riga-check">
         <input type="checkbox" id="chk-yt-chat" ${ytc.annunciaChat ? 'checked' : ''}>
-        <label for="chk-yt-chat">Annuncia anche nella chat Twitch</label>
+        <label for="chk-yt-chat">${L('Annuncia anche nella chat Twitch', 'Announce in Twitch chat too', 'Anuncia también en el chat de Twitch')}</label>
       </div>
 
       <p class="spazio-sopra">
-        <button class="btn" id="btn-yt-salva">Salva</button>
+        <button class="btn" id="btn-yt-salva">${L('Salva', 'Save', 'Guardar')}</button>
       </p>
-      <p class="suggerimento">Il controllo parte ogni ~10 minuti; il primo giro serve solo a memorizzare l'ultimo video (non avvisa).</p>
+      <p class="suggerimento">${L('Il controllo parte ogni ~10 minuti; il primo giro serve solo a memorizzare l\'ultimo video (non avvisa).', 'The check runs every ~10 minutes; the first pass only stores the latest video (no alert).', 'La comprobación se hace cada ~10 minutos; la primera vuelta solo memoriza el último vídeo (no avisa).')}</p>
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.fotocamera)}Nuovo post su Instagram</h2>
-      <p>Quando pubblichi su <strong class="primo-piano">Instagram</strong>, avviso il gruppo Telegram (e, se vuoi, la chat Twitch).
-      Instagram non ha un feed pubblico, quindi serve la <strong>tua API</strong>: l'<em>Instagram Graph API</em> (account Business/Creator
-      collegato a una Pagina Facebook).</p>
+      <h2>${_hIco(ICO.fotocamera)}${L('Nuovo post su Instagram', 'New Instagram post', 'Nuevo post en Instagram')}</h2>
+      <p>${L('Quando pubblichi su', 'When you post on', 'Cuando publicas en')} <strong class="primo-piano">Instagram</strong>, ${L('avviso il gruppo Telegram (e, se vuoi, la chat Twitch). Instagram non ha un feed pubblico, quindi serve la <strong>tua API</strong>: l\'<em>Instagram Graph API</em> (account Business/Creator collegato a una Pagina Facebook).', 'I alert the Telegram group (and, if you want, the Twitch chat). Instagram has no public feed, so you need <strong>your own API</strong>: the <em>Instagram Graph API</em> (Business/Creator account linked to a Facebook Page).', 'aviso al grupo de Telegram (y, si quieres, al chat de Twitch). Instagram no tiene feed público, así que hace falta <strong>tu API</strong>: la <em>Instagram Graph API</em> (cuenta Business/Creator vinculada a una Página de Facebook).')}</p>
 
-      <label class="campo" for="inp-ig-userid">ID account Instagram</label>
-      <input type="text" id="inp-ig-userid" class="campo-largo" placeholder="es. 17841400000000000" value="${esc(igc.userId || '')}">
-      <label class="campo spazio-sopra" for="inp-ig-token">Token di accesso (Graph API)</label>
-      <input type="password" id="inp-ig-token" class="campo-largo" placeholder="${igc.tokenSet ? '•••••••• (impostato)' : 'token a lunga durata'}" autocomplete="off">
-      <p class="suggerimento">Li ottieni creando un'app su <a href="https://developers.facebook.com/" target="_blank" rel="noopener">Meta for Developers</a>
-      e collegando il tuo account IG Business. ${igc.tokenSet ? '<a href="#" id="btn-ig-token-rimuovi">Rimuovi il token</a>' : ''}</p>
+      <label class="campo" for="inp-ig-userid">${L('ID account Instagram', 'Instagram account ID', 'ID de la cuenta de Instagram')}</label>
+      <input type="text" id="inp-ig-userid" class="campo-largo" placeholder="${L('es. 17841400000000000', 'e.g. 17841400000000000', 'p. ej. 17841400000000000')}" value="${esc(igc.userId || '')}">
+      <label class="campo spazio-sopra" for="inp-ig-token">${L('Token di accesso (Graph API)', 'Access token (Graph API)', 'Token de acceso (Graph API)')}</label>
+      <input type="password" id="inp-ig-token" class="campo-largo" placeholder="${igc.tokenSet ? L('•••••••• (impostato)', '•••••••• (set)', '•••••••• (configurado)') : L('token a lunga durata', 'long-lived token', 'token de larga duración')}" autocomplete="off">
+      <p class="suggerimento">${L('Li ottieni creando un\'app su', 'You get them by creating an app on', 'Los obtienes creando una app en')} <a href="https://developers.facebook.com/" target="_blank" rel="noopener">Meta for Developers</a>
+      ${L('e collegando il tuo account IG Business.', 'and linking your IG Business account.', 'y vinculando tu cuenta de IG Business.')} ${igc.tokenSet ? `<a href="#" id="btn-ig-token-rimuovi">${L('Rimuovi il token', 'Remove the token', 'Quitar el token')}</a>` : ''}</p>
 
-      <label class="campo spazio-sopra" for="txt-ig-messaggio">Messaggio dell'avviso</label>
-      <textarea id="txt-ig-messaggio" rows="4" placeholder="${esc('{nome} ha un nuovo post su Instagram!\n\n{titolo}\n{link}')}">${esc(igc.messaggio || '')}</textarea>
-      <p class="suggerimento">Segnaposto: <code>{nome}</code> <code>{titolo}</code> (didascalia) <code>{link}</code>.</p>
+      <label class="campo spazio-sopra" for="txt-ig-messaggio">${L('Messaggio dell\'avviso', 'Alert message', 'Mensaje del aviso')}</label>
+      <textarea id="txt-ig-messaggio" rows="4" placeholder="${esc(L('{nome} ha un nuovo post su Instagram!\n\n{titolo}\n{link}', '{nome} has a new Instagram post!\n\n{titolo}\n{link}', '¡{nome} tiene un nuevo post en Instagram!\n\n{titolo}\n{link}'))}">${esc(igc.messaggio || '')}</textarea>
+      <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code> <code>{titolo}</code> (${L('didascalia', 'caption', 'pie de foto')}) <code>{link}</code>.</p>
 
       <div class="riga-check spazio-sopra">
         <input type="checkbox" id="chk-ig-attivo" ${igc.attivo ? 'checked' : ''}>
-        <label for="chk-ig-attivo">Avvisami quando pubblico un nuovo post</label>
+        <label for="chk-ig-attivo">${L('Avvisami quando pubblico un nuovo post', 'Alert me when I post a new one', 'Avísame cuando publico un nuevo post')}</label>
       </div>
       <div class="riga-check">
         <input type="checkbox" id="chk-ig-chat" ${igc.annunciaChat ? 'checked' : ''}>
-        <label for="chk-ig-chat">Annuncia anche nella chat Twitch</label>
+        <label for="chk-ig-chat">${L('Annuncia anche nella chat Twitch', 'Announce in Twitch chat too', 'Anuncia también en el chat de Twitch')}</label>
       </div>
 
       <p class="spazio-sopra">
-        <button class="btn" id="btn-ig-salva">Salva</button>
-        <button class="btn secondario" id="btn-ig-prova">Prova le credenziali</button>
+        <button class="btn" id="btn-ig-salva">${L('Salva', 'Save', 'Guardar')}</button>
+        <button class="btn secondario" id="btn-ig-prova">${L('Prova le credenziali', 'Test the credentials', 'Prueba las credenciales')}</button>
         <span id="ig-esito" class="suggerimento"></span>
       </p>
     </div>`);
