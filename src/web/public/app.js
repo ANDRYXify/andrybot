@@ -2286,6 +2286,18 @@ function bloccoWidget(pref, w, titolo, kind) {
     </div>`;
 }
 
+// Una riga della lista "Elementi (fonti) dell'overlay": icona, nome, «Modifica»
+// (apre la sezione che lo personalizza) e l'interruttore mostra/nascondi.
+// L'id dell'interruttore resta `mostra-<k>` così la logica di layout non cambia.
+function ovlElemento(k, ico, nome, sez) {
+  return `<div class="ovl-elem">
+    <span class="oe-ico">${_bIco(ico)}</span>
+    <span class="oe-nome">${esc(nome)}</span>
+    <button type="button" class="oe-mod" data-apri-sez="${sez}">Modifica</button>
+    <label class="interruttore oe-sw" title="Mostra «${esc(nome)}» in questo overlay"><input type="checkbox" id="mostra-${k}" checked><span class="levetta"></span></label>
+  </div>`;
+}
+
 function pannelloAlert() {
   const p = impostazioni();
   const a = p.alerts, st = a.stile, co = p.chatOverlay, cst = co.stile;
@@ -2310,19 +2322,19 @@ function pannelloAlert() {
         <input type="text" id="inp-overlay-url" class="campo-largo" readonly value="" placeholder="caricamento…">
         <button class="btn secondario" id="btn-copia-overlay">Copia</button>
       </div>
-      <label class="campo spazio-sopra">Cosa mostra questo overlay</label>
-      <div class="ovl-mostra">
-        <label class="riga-check"><input type="checkbox" id="mostra-alert" checked> Alert</label>
-        <label class="riga-check"><input type="checkbox" id="mostra-chat" checked> Chat a schermo</label>
-        <label class="riga-check"><input type="checkbox" id="mostra-wf" checked> Widget ultimo follower</label>
-        <label class="riga-check"><input type="checkbox" id="mostra-ws" checked> Widget ultimo sub</label>
-        <label class="riga-check"><input type="checkbox" id="mostra-effetti" checked> Effetti & suoni</label>
+      <label class="campo spazio-sopra">Elementi (fonti) di questo overlay <span class="tenue">— accendi/spegni cosa compare, poi personalizzali con «Modifica»</span></label>
+      <div class="ovl-elementi">
+        ${ovlElemento('alert', ICO.megafono, 'Alert eventi', 'sez-alert')}
+        ${ovlElemento('chat', ICO.chat, 'Chat a schermo', 'sez-chat')}
+        ${ovlElemento('wf', ICO.cuore, 'Ultimo follower', 'sez-widget')}
+        ${ovlElemento('ws', ICO.medaglia, 'Ultimo sub', 'sez-widget')}
+        ${ovlElemento('effetti', ICO.effetti, 'Effetti & suoni', 'effetti')}
       </div>
       <p class="suggerimento">Tienilo per te: chi ha questo link può far comparire cose nel tuo overlay.</p>
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.monitor)}Overlay Studio</h2>
+      <h2>${_hIco(ICO.righello)}Anteprima e layout</h2>
       <p>Personalizza <strong>tutto</strong> ciò che appare a schermo: alert, chat, widget… colori, font, forma, animazioni.
       Posizioni e "cosa mostra" valgono per l'<strong>overlay selezionato qui sopra</strong>; stile e testi sono condivisi.
       L'<strong>anteprima qui sotto è dal vivo</strong>.</p>
@@ -2360,7 +2372,7 @@ function pannelloAlert() {
       <p class="suggerimento"><strong>Clicca</strong> un elemento per selezionarlo, poi <strong>trascinalo</strong> per spostarlo, usa le <strong>maniglie</strong> (⤡ dimensione · ⟳ rotazione) o i cursori qui sopra. Scorciatoie: <strong>rotellina</strong> = ridimensiona, <strong>Shift+rotellina</strong> = ruota, <strong>doppio clic</strong> = ripristina. Usa «Prova ▶» per vederli nell'overlay in OBS.</p>
     </div>
 
-    <details class="carta sez">
+    <details class="carta sez" id="sez-alert">
       <summary><h3>${_hIco(ICO.megafono)}Alert eventi</h3></summary>
       <p>Un cartello animato con suono quando arriva un follow, un sub, dei bit o un raid.</p>
       <div class="riga-interruttore spazio-sopra">
@@ -2401,7 +2413,7 @@ function pannelloAlert() {
       <p class="spazio-sopra"><button class="btn" id="al-salva">Salva alert</button></p>
     </details>
 
-    <details class="carta sez">
+    <details class="carta sez" id="sez-chat">
       <summary><h3>${_hIco(ICO.chat)}Chat a schermo</h3></summary>
       <p>I messaggi della chat scorrono in sovraimpressione nell'overlay.</p>
       <div class="riga-interruttore spazio-sopra">
@@ -2447,7 +2459,7 @@ function pannelloAlert() {
       </p>
     </details>
 
-    <details class="carta sez">
+    <details class="carta sez" id="sez-widget">
       <summary><h3>${_hIco(ICO.medaglia)}Widget: ultimo follower / ultimo sub</h3></summary>
       <p>Etichette <strong>sempre a schermo</strong> che si aggiornano da sole quando arriva un nuovo follower o sub.</p>
       <div class="alert-griglia spazio-sopra">
@@ -2997,6 +3009,14 @@ function caricaAlert() {
   _g('ov-rinomina')?.addEventListener('click', () => conErrore(() => rinominaOverlay()));
   _g('ov-elimina')?.addEventListener('click', () => conErrore(() => eliminaOverlay()));
   ['alert', 'chat', 'wf', 'ws', 'effetti'].forEach((k) => _g('mostra-' + k)?.addEventListener('change', () => { aggiornaAnteprima(); salvaLayoutOverlay(true); }));
+  // «Modifica» su un elemento: apre la sua sezione (o va alla scheda Effetti)
+  scheda?.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-apri-sez]'); if (!b) return;
+    const s = b.dataset.apriSez;
+    if (s === 'effetti') { vaiAScheda('effetti'); return; }
+    const det = _g(s);
+    if (det) { det.open = true; det.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'start' }); }
+  });
   // inspector: cursori dimensione/rotazione dell'elemento selezionato
   _g('insp-size')?.addEventListener('input', (e) => {
     if (!selezione) return;
