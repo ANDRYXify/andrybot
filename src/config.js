@@ -101,6 +101,10 @@ export const config = {
         addon_musica: env('STRIPE_PRICE_ADDON_MUSICA'),
         pro: env('STRIPE_PRICE_PRO'),
       },
+      // coupon Stripe (percentuale) applicato quando si acquista un BUNDLE curato.
+      // Crealo nel cruscotto Stripe (es. 15% "forever") e — se vuoi che sconti solo
+      // gli add-on e non la Base — limitalo ai prodotti add-on (applies_to.products).
+      couponBundle: env('STRIPE_COUPON_BUNDLE'),
       // gli abbonamenti sono operativi solo con chiave segreta + segreto webhook
       attivo: !!(secretKey && webhookSecret),
     };

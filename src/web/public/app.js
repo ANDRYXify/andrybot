@@ -729,6 +729,7 @@ async function caricaPiani() {
   try { dati = await api('/api/abbonamento/piani'); } catch { box.remove(); return; }
   const base = dati.base;
   const addon = dati.addon || [];
+  const bundle = dati.bundle || [];
   if (!base) { box.remove(); return; }
 
   const prezzoIt = (n) => Number(n || 0).toFixed(2).replace('.', ',');
@@ -762,6 +763,21 @@ async function caricaPiani() {
         </ul>
       </div>
 
+      ${bundle.length ? `<div class="bundle-blocco">
+        <h4 class="addon-titolo">Bundle pronti <span>· –${Math.round((bundle[0].sconto || 0.15) * 100)}% sugli add-on</span></h4>
+        <div class="bundle-griglia">
+          ${bundle.map((b) => `
+            <button type="button" class="bundle-carta" data-bundle="${esc(b.id)}" aria-pressed="false">
+              <span class="bundle-icona">${svgPiano(b.addon[0] || 'base')}</span>
+              <span class="bundle-testo">
+                <span class="bundle-nome">${esc(b.nome)}</span>
+                <span class="bundle-somm">${esc(b.sommario)}</span>
+              </span>
+              <span class="bundle-prezzo"><s>+€${prezzoIt(b.prezzoPieno)}</s> <strong>+€${prezzoIt(b.prezzo)}</strong><small>/mese</small></span>
+            </button>`).join('')}
+        </div>
+      </div>` : ''}
+
       <div class="addon-blocco">
         <h4 class="addon-titolo">Aggiungi super-poteri <span>· à la carte</span></h4>
         <div class="addon-griglia">
@@ -793,40 +809,64 @@ async function caricaPiani() {
     </div>`;
   rivelaCarte(box);
 
-  // Selezione add-on + totale live.
+  // Selezione add-on + totale live. Un bundle è attivo quando la selezione
+  // coincide ESATTAMENTE con i suoi add-on: allora si applica lo sconto.
   const selezione = new Set();
   const totaleEl = box.querySelector('#piani-totale');
   const voceEl = box.querySelector('#piani-voce');
+  const bundleAttivo = () => bundle.find((b) => b.addon.length === selezione.size && b.addon.every((id) => selezione.has(id))) || null;
   const aggiorna = () => {
-    let tot = Number(base.prezzo || 0);
-    selezione.forEach((id) => { const a = addon.find((x) => x.id === id); if (a) tot += Number(a.prezzo || 0); });
+    const b = bundleAttivo();
+    let tot = Number(base.prezzo || 0) + (b ? Number(b.prezzo || 0)
+      : [...selezione].reduce((t, id) => t + Number(addon.find((x) => x.id === id)?.prezzo || 0), 0));
     if (totaleEl) totaleEl.innerHTML = `€${prezzoIt(tot)}<span>/mese</span>`;
-    if (voceEl) voceEl.textContent = selezione.size
-      ? `Base + ${selezione.size} add-on`
-      : 'Solo Base';
+    if (voceEl) voceEl.textContent = b ? `Base + bundle ${b.nome} (–${Math.round(b.sconto * 100)}%)`
+      : (selezione.size ? `Base + ${selezione.size} add-on` : 'Solo Base');
+    // evidenzia la carta bundle corrispondente (o nessuna)
+    box.querySelectorAll('[data-bundle]').forEach((el) => {
+      const on = !!b && el.dataset.bundle === b.id;
+      el.classList.toggle('on', on); el.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
   };
+  const segnaAddon = () => box.querySelectorAll('[data-addon]').forEach((el) => {
+    const on = selezione.has(el.dataset.addon);
+    el.classList.toggle('on', on); el.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
   box.querySelectorAll('[data-addon]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const id = btn.dataset.addon;
-      const on = !selezione.has(id);
-      if (on) selezione.add(id); else selezione.delete(id);
-      btn.classList.toggle('on', on);
-      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-      aggiorna();
+      if (selezione.has(id)) selezione.delete(id); else selezione.add(id);
+      segnaAddon(); aggiorna();
+    });
+  });
+  // click su un bundle: seleziona ESATTAMENTE i suoi add-on (toggle se già attivo)
+  box.querySelectorAll('[data-bundle]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const b = bundle.find((x) => x.id === btn.dataset.bundle); if (!b) return;
+      const giaAttivo = bundleAttivo()?.id === b.id;
+      selezione.clear();
+      if (!giaAttivo) b.addon.forEach((id) => selezione.add(id));
+      segnaAddon(); aggiorna();
     });
   });
 
-  // CTA unica: checkout con Base + add-on scelti.
+  // CTA unica: checkout con il bundle (sconto) se attivo, altrimenti Base + add-on.
   const attivaBtn = box.querySelector('#piani-attiva');
   if (attivaBtn) attivaBtn.addEventListener('click', () => {
+    const b = bundleAttivo();
     const pacchetti = [...selezione];
     conErrore(async () => {
       try {
-        const r = await api('/api/abbonamento/checkout', { method: 'POST', body: { pacchetti } });
+        const body = b ? { bundle: b.id } : { pacchetti };
+        const r = await api('/api/abbonamento/checkout', { method: 'POST', body });
         if (r?.url) location.href = r.url; else toast('Piano non disponibile al momento.', 'errore');
       } catch (e) {
         // non loggato: prima l'accesso con Twitch, poi si torna dritti al checkout con la scelta
-        if (/non autenticato/i.test(e?.message || '')) { location.href = '/accedi?pacchetti=' + encodeURIComponent(pacchetti.join(',')); return; }
+        if (/non autenticato/i.test(e?.message || '')) {
+          location.href = b ? '/accedi?bundle=' + encodeURIComponent(b.id)
+            : '/accedi?pacchetti=' + encodeURIComponent(pacchetti.join(','));
+          return;
+        }
         throw e;
       }
     });
