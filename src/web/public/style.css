@@ -307,6 +307,26 @@ body.vetrina .contenuto { max-width: 1040px; }
 .vetrina-accessi a:hover { text-decoration: underline; }
 .vetrina-accessi span { color: var(--testo-3); margin: 0 .2rem; }
 
+/* chip di beneficio sotto la CTA */
+.vetrina-chip { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem 1.1rem; margin: .2rem 0 0; padding: 0; }
+.vetrina-chip li { display: inline-flex; align-items: center; gap: .35rem; font-size: .86rem; font-weight: 600; color: var(--testo-2); }
+.vetrina-chip .b-ico { margin: 0; color: var(--verde); }
+
+/* anteprima "overlay in azione" (fotogramma di diretta stilizzato) */
+.vetrina-preview { max-width: 560px; margin: 1.9rem auto 0; animation: pt-in .7s var(--rev-ease) .6s backwards; }
+.vp-frame { position: relative; aspect-ratio: 16 / 9; border-radius: var(--r-l); overflow: hidden; border: 1px solid var(--border-2); box-shadow: var(--om-l); background: linear-gradient(150deg, #2a2350, #14121f 72%); color: #fff; }
+.vp-scene { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 800; letter-spacing: .06em; font-size: 1.3rem; color: #ffffff26; }
+.vp-live { position: absolute; top: 12px; left: 12px; font-size: .68rem; font-weight: 800; color: #fff; background: #e0245e; padding: .16rem .5rem; border-radius: 999px; letter-spacing: .03em; }
+.vp-cam { position: absolute; right: 12px; bottom: 12px; width: 28%; aspect-ratio: 16 / 9; border-radius: 8px; background: #0d0b16; border: 1px solid #ffffff22; display: grid; place-items: center; font-size: .7rem; color: #ffffff66; }
+.vp-alert { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: .5rem; background: rgba(20, 16, 34, .92); border: 1px solid #ffffff26; border-radius: 12px; padding: .48rem .8rem; white-space: nowrap; box-shadow: 0 8px 24px #0007; }
+.vp-alert-ic { color: #ffb020; display: inline-flex; }
+.vp-alert-tx { font-size: .8rem; } .vp-alert-tx b { color: #ffce5a; }
+.vp-chat { position: absolute; left: 12px; bottom: 12px; display: flex; flex-direction: column; gap: .28rem; max-width: 62%; align-items: flex-start; }
+.vp-msg { font-size: .78rem; background: rgba(12, 12, 18, .58); border-radius: 8px; padding: .16rem .5rem; }
+.vp-msg b { font-weight: 700; }
+.vp-emote { display: inline-block; width: 1.05em; height: 1.05em; vertical-align: -.2em; border-radius: 4px; background: linear-gradient(135deg, #7a34e6, #38d39f); }
+.vp-cap { text-align: center; font-size: .82rem; color: var(--testo-3); margin-top: .7rem; }
+
 /* griglia funzioni */
 .vetrina-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; margin-bottom: 1.1rem; }
 .vetrina-feat { margin-bottom: 0; }
