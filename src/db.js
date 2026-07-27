@@ -314,6 +314,14 @@ CREATE TABLE IF NOT EXISTS seventv_tokens ( -- connettore 7TV: gestione emote de
   set_id TEXT NOT NULL DEFAULT '',           -- id dell'emote-set attivo del canale
   updated_at INTEGER NOT NULL DEFAULT 0
 );
+CREATE TABLE IF NOT EXISTS telegram_login ( -- "Accedi con Telegram" / Mini App: id utente TG → canale twitch
+  tg_id TEXT PRIMARY KEY,                     -- id numerico dell'utente Telegram
+  login TEXT NOT NULL,                        -- login twitch (identità) collegato
+  username TEXT NOT NULL DEFAULT '',          -- @username Telegram (per la UI)
+  nome TEXT NOT NULL DEFAULT '',              -- nome mostrato Telegram (per la UI)
+  created_at INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_tglogin_login ON telegram_login(login);
 CREATE TABLE IF NOT EXISTS linee_guida (     -- regole/limiti che lo streamer dà a "lia": lei le rispetta SEMPRE
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   channel TEXT NOT NULL,
@@ -728,6 +736,29 @@ export const seventvTokens = {
     return this.get(l);
   },
   scollega(login) { db.prepare('DELETE FROM seventv_tokens WHERE login=?').run(String(login).toLowerCase()); },
+};
+
+// ---------------------------------------------------------------- Login Telegram
+// Mappa id-utente-Telegram → canale twitch, per "Accedi con Telegram" e la Mini
+// App. Il collegamento si crea una volta sola da loggati (con un codice usa-e-getta).
+export const tgLogin = {
+  getByTg(tgId) {
+    return db.prepare('SELECT * FROM telegram_login WHERE tg_id=?').get(String(tgId)) || null;
+  },
+  getByLogin(login) {
+    return db.prepare('SELECT * FROM telegram_login WHERE login=? ORDER BY created_at DESC').get(String(login).toLowerCase()) || null;
+  },
+  // Collega tg_id ↔ login. Un tg_id → un solo canale (PK), un canale può avere
+  // più tg_id (es. più dispositivi): sostituiamo l'eventuale tg_id già presente.
+  link(tgId, login, { username = '', nome = '' } = {}) {
+    db.prepare(`INSERT INTO telegram_login (tg_id, login, username, nome, created_at)
+      VALUES (?,?,?,?,?)
+      ON CONFLICT(tg_id) DO UPDATE SET login=excluded.login, username=excluded.username, nome=excluded.nome`)
+      .run(String(tgId), String(login).toLowerCase(), String(username || ''), String(nome || ''), now());
+    return this.getByTg(tgId);
+  },
+  unlinkByLogin(login) { db.prepare('DELETE FROM telegram_login WHERE login=?').run(String(login).toLowerCase()); },
+  unlinkByTg(tgId) { db.prepare('DELETE FROM telegram_login WHERE tg_id=?').run(String(tgId)); },
 };
 
 // ---------------------------------------------------------------- IA locale (modello)

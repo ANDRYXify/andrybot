@@ -145,6 +145,30 @@ export const config = {
     };
   })(),
 
+  // Telegram Mini App + "Accedi con Telegram" (OIDC) — OPZIONALE. Un UNICO bot
+  // operatore (creato con @BotFather) ospita la Mini App e fa da provider di
+  // login. L'initData della Mini App si valida con il BOT TOKEN; l'accesso OIDC
+  // dal browser usa Client ID (= id numerico del bot) e Client Secret (da
+  // @BotFather → Bot Settings → Web Login → OpenID Connect), con Redirect URI
+  // https://socialbot.live/telegram/oidc/callback tra quelli consentiti. Senza
+  // il bot token la Mini App resta spenta; senza Client ID/Secret resta spento
+  // solo l'accesso OIDC (la Mini App con initData funziona comunque).
+  telegramApp: (() => {
+    const botToken = env('TG_APP_BOT_TOKEN');
+    const clientId = env('TG_CLIENT_ID');
+    const clientSecret = env('TG_CLIENT_SECRET');
+    const base = env('BASE_URL', 'http://localhost:8090').replace(/\/$/, '');
+    return {
+      botToken,
+      botUsername: env('TG_APP_BOT_USERNAME').replace(/^@/, ''),   // solo per il link t.me/<bot>
+      clientId,
+      clientSecret,
+      redirectUri: env('TG_REDIRECT_URI') || (base + '/telegram/oidc/callback'),
+      attivo: !!botToken,
+      oidcAttivo: !!(clientId && clientSecret),
+    };
+  })(),
+
   // Promo "settimana gratis": al primo accesso self-service, con una certa
   // probabilità, un account che non ha MAI avuto il bot riceve alcuni giorni di
   // accesso Pro (un trial, non "community"). Si revoca da sé alla scadenza. È

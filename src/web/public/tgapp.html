@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SocialBot</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg: var(--tg-theme-bg-color, #17141f);
+      --fg: var(--tg-theme-text-color, #ece8ff);
+      --hint: var(--tg-theme-hint-color, #9a93b8);
+      --card: var(--tg-theme-secondary-bg-color, #221c33);
+      --btn: var(--tg-theme-button-color, #7c3aed);
+      --btn-fg: var(--tg-theme-button-text-color, #ffffff);
+      --accent: #a78bfa;
+      --link: var(--tg-theme-link-color, #a78bfa);
+      --ok: #34d399; --warn: #fbbf24;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg); color: var(--fg); line-height: 1.5;
+      padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
+      max-width: 560px; margin-inline: auto;
+    }
+    header { display: flex; align-items: center; gap: 12px; margin: 4px 0 18px; }
+    header img { width: 42px; height: 42px; border-radius: 11px; }
+    header h1 { font-size: 1.15rem; margin: 0; letter-spacing: -.01em; }
+    header .sub { color: var(--hint); font-size: .82rem; }
+    .card {
+      background: var(--card); border-radius: var(--radius); padding: 16px 16px; margin-bottom: 14px;
+    }
+    .card h2 { font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--hint); margin: 0 0 10px; font-weight: 700; }
+    .riga { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; }
+    .riga + .riga { border-top: 1px solid color-mix(in srgb, var(--fg) 8%, transparent); }
+    .riga .lab { font-weight: 600; }
+    .riga .val { color: var(--hint); font-size: .92rem; }
+    .badge { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: .82rem; padding: 3px 10px; border-radius: 999px; }
+    .badge.on { background: color-mix(in srgb, var(--ok) 22%, transparent); color: var(--ok); }
+    .badge.off { background: color-mix(in srgb, var(--warn) 20%, transparent); color: var(--warn); }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    button.big {
+      display: block; width: 100%; border: 0; border-radius: var(--radius); cursor: pointer;
+      background: var(--btn); color: var(--btn-fg); font-size: 1rem; font-weight: 700;
+      padding: 14px; margin-top: 6px; transition: opacity .15s;
+    }
+    button.big:active { opacity: .8; }
+    button.ghost { background: color-mix(in srgb, var(--fg) 8%, transparent); color: var(--fg); }
+    /* switch */
+    .sw { position: relative; width: 50px; height: 30px; flex: none; }
+    .sw input { opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+    .sw .track { position: absolute; inset: 0; border-radius: 999px; background: color-mix(in srgb, var(--fg) 18%, transparent); transition: background .2s; pointer-events: none; }
+    .sw .knob { position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: transform .2s; pointer-events: none; }
+    .sw input:checked ~ .track { background: var(--ok); }
+    .sw input:checked ~ .knob { transform: translateX(20px); }
+    .codice { font-size: 2rem; font-weight: 800; letter-spacing: .35em; text-align: center; padding: 14px; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); border-radius: var(--radius); margin: 10px 0; }
+    ol { margin: 8px 0 0; padding-left: 20px; color: var(--hint); font-size: .92rem; }
+    ol li { margin: 6px 0; }
+    .muted { color: var(--hint); font-size: .9rem; }
+    .center { text-align: center; }
+    .spin { width: 30px; height: 30px; border: 3px solid color-mix(in srgb, var(--fg) 15%, transparent); border-top-color: var(--accent); border-radius: 50%; animation: r 0.8s linear infinite; margin: 30px auto; }
+    @keyframes r { to { transform: rotate(360deg); } }
+    a { color: var(--link); }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="/icons/icon-192.png" alt="">
+    <div>
+      <h1>SocialBot</h1>
+      <div class="sub" id="sub"></div>
+    </div>
+  </header>
+  <main id="app"><div class="spin"></div></main>
+
+  <script>
+    const TG = window.Telegram && window.Telegram.WebApp;
+    // lingua da Telegram (it/en/es), default it
+    const lc = (TG?.initDataUnsafe?.user?.language_code || navigator.language || 'it').slice(0, 2);
+    const LANG = ['it', 'en', 'es'].includes(lc) ? lc : (lc === 'es' ? 'es' : lc.startsWith('en') ? 'en' : 'it');
+    const L = (it, en, es) => (LANG === 'en' ? en : LANG === 'es' ? es : it);
+
+    const app = document.getElementById('app');
+    document.getElementById('sub').textContent = L('Il tuo bot, dentro Telegram', 'Your bot, inside Telegram', 'Tu bot, dentro de Telegram');
+
+    async function api(path, opts) {
+      const r = await fetch(path, {
+        method: opts?.method || 'GET',
+        headers: opts?.body ? { 'Content-Type': 'application/json' } : {},
+        body: opts?.body ? JSON.stringify(opts.body) : undefined,
+        credentials: 'same-origin',
+      });
+      let j = null; try { j = await r.json(); } catch {}
+      if (!r.ok) throw new Error(j?.errore || ('HTTP ' + r.status));
+      return j;
+    }
+
+    function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+    // ── stato: NON in Telegram ──
+    function vistaFuoriTelegram() {
+      app.innerHTML = `<div class="card center">
+        <p>${L('Apri questa pagina dal bot <b>SocialBot</b> su Telegram.', 'Open this page from the <b>SocialBot</b> bot on Telegram.', 'Abre esta página desde el bot <b>SocialBot</b> en Telegram.')}</p>
+        <p class="muted">${L('Oppure gestisci tutto dal browser su', 'Or manage everything from your browser at', 'O gestiona todo desde el navegador en')} <a href="/">socialbot.live</a>.</p>
+      </div>`;
+    }
+
+    // ── stato: da collegare (mostra il codice) ──
+    function vistaCollega(codice, nome) {
+      app.innerHTML = `
+        <div class="card">
+          <h2>${L('Collega il tuo canale', 'Link your channel', 'Vincula tu canal')}</h2>
+          <p>${L('Ciao', 'Hi', 'Hola')} <b>${esc(nome || '')}</b>! ${L('Per gestire il tuo bot da qui, collega una volta sola il tuo Telegram al tuo canale.', 'To manage your bot from here, link your Telegram to your channel once.', 'Para gestionar tu bot desde aquí, vincula una vez tu Telegram a tu canal.')}</p>
+          <div class="codice">${esc(codice)}</div>
+          <ol>
+            <li>${L('Apri la dashboard su', 'Open the dashboard at', 'Abre el panel en')} <b>socialbot.live</b> ${L('(dalla mail/notifica di andryxify).', '(from your andryxify email/notification).', '(desde tu correo/notificación de andryxify).')}</li>
+            <li>${L('Vai su <b>Notifiche → Accedi da Telegram</b> e inserisci il codice qui sopra.', 'Go to <b>Notifications → Telegram login</b> and enter the code above.', 'Ve a <b>Notificaciones → Acceso con Telegram</b> e introduce el código de arriba.')}</li>
+            <li>${L('Torna qui e riapri la Mini App: sarai dentro!', 'Come back here and reopen the Mini App: you’re in!', 'Vuelve aquí y reabre la Mini App: ¡ya estás dentro!')}</li>
+          </ol>
+        </div>
+        <button class="big ghost" id="ricontrolla">${L('Ho collegato — ricontrolla', 'I linked it — check again', 'Ya lo vinculé — comprobar')}</button>`;
+      document.getElementById('ricontrolla').onclick = avvia;
+    }
+
+    // ── stato: collegato (dashboard compatta) ──
+    async function vistaDashboard(sess) {
+      app.innerHTML = `<div class="spin"></div>`;
+      let st;
+      try { st = await api('/api/tgapp/stato'); }
+      catch { app.innerHTML = `<div class="card center"><p>${L('Non riesco a leggere lo stato.', 'Can’t read the status.', 'No puedo leer el estado.')}</p></div>`; return; }
+      const puoToggle = st.ruolo !== 'moderatore' && st.abilitato;
+      app.innerHTML = `
+        <div class="card">
+          <h2>${L('Il tuo canale', 'Your channel', 'Tu canal')}</h2>
+          <div class="riga"><span class="lab">${esc(st.display || st.login)}</span>
+            <span class="badge ${st.inChat ? 'on' : 'off'}"><span class="dot"></span>${st.inChat ? L('in chat', 'in chat', 'en el chat') : L('offline', 'offline', 'desconectado')}</span></div>
+          <div class="riga"><span class="lab">${L('Bot acceso', 'Bot on', 'Bot activo')}</span>
+            <label class="sw"><input type="checkbox" id="botsw" ${st.botOn ? 'checked' : ''} ${puoToggle ? '' : 'disabled'}><span class="track"></span><span class="knob"></span></label></div>
+          ${st.abilitato ? '' : `<p class="muted">${L('Il tuo canale non è ancora abilitato.', 'Your channel isn’t enabled yet.', 'Tu canal aún no está habilitado.')}</p>`}
+        </div>
+        <button class="big" id="apri">${L('Apri la dashboard completa', 'Open the full dashboard', 'Abre el panel completo')}</button>
+        <p class="center muted" style="margin-top:14px">${L('Accesso come', 'Signed in as', 'Sesión como')} @${esc(sess.login)}</p>`;
+      const sw = document.getElementById('botsw');
+      if (sw && puoToggle) sw.onchange = async () => {
+        sw.disabled = true;
+        try { await api('/api/tgapp/toggle', { method: 'POST', body: { enabled: sw.checked } }); TG?.HapticFeedback?.notificationOccurred?.('success'); }
+        catch { sw.checked = !sw.checked; TG?.showAlert?.(L('Operazione non riuscita.', 'Action failed.', 'La acción falló.')); }
+        finally { sw.disabled = false; }
+      };
+      // la Mini App è già su socialbot.live: la sessione (cookie) vale anche per «/»
+      document.getElementById('apri').onclick = () => { location.href = '/'; };
+    }
+
+    async function avvia() {
+      app.innerHTML = `<div class="spin"></div>`;
+      const initData = TG?.initData || '';
+      if (!initData) { vistaFuoriTelegram(); return; }
+      try {
+        const r = await api('/api/tgapp/auth', { method: 'POST', body: { initData } });
+        if (r.collegato) return vistaDashboard(r);
+        return vistaCollega(r.codice, r.nome);
+      } catch (e) {
+        app.innerHTML = `<div class="card center"><p>${L('Accesso non riuscito.', 'Sign-in failed.', 'Acceso fallido.')}</p><p class="muted">${esc(e.message || '')}</p></div>`;
+      }
+    }
+
+    if (TG) { try { TG.ready(); TG.expand(); } catch {} }
+    avvia();
+  </script>
+</body>
+</html>
