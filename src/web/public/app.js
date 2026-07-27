@@ -1062,6 +1062,12 @@ const ICO = {
   video: '<path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/>',
   carica: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/>',
   globo: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18Z"/>',
+  // aggiunte per lo Studio (scene, fonti, mixer)
+  occhio: '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+  occhioNo: '<path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c7 0 10 8 10 8a13.2 13.2 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.5 13.5 0 0 0 2 12s3 8 10 8a9.7 9.7 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/>',
+  cestino: '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  scene: '<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.9a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m6.08 9.5-3.49 1.58a1 1 0 0 0 0 1.81l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9a1 1 0 0 0 0-1.83l-3.49-1.59"/><path d="m6.08 14.5-3.49 1.58a1 1 0 0 0 0 1.81l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9a1 1 0 0 0 0-1.83l-3.49-1.59"/>',
+  testo: '<path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2"/><path d="M9 20h6"/><path d="M12 4v16"/>',
 };
 
 // icona piccola in linea per i bottoni/etichette (16px, stesso stile a tratto)
@@ -3253,37 +3259,61 @@ async function salvaRegiaCanale() {
 function pannelloStudio() {
   return pannello('studio', `
     <div class="carta evidenziata" id="studio-permessi-banner" hidden></div>
-    <div class="carta">
+    <div class="carta studio-carta">
       <h2>${_hIco(ICO.onda)}Studio Web — vai live senza OBS</h2>
-      <p>Componi <strong>webcam + schermo/gioco + overlay</strong> qui nel browser e vai in diretta su Twitch con un click.
-      Il video parte da questa scheda: <strong>tienila aperta</strong> mentre trasmetti.</p>
+      <p>Un vero studio nel browser: crea <strong>scene</strong>, aggiungi <strong>fonti</strong> (webcam, schermo, immagini,
+      video, testo, overlay), spostale e ridimensionale sul palco, regola l'<strong>audio</strong> e vai in diretta su Twitch.
+      Il video parte da qui: <strong>tieni aperta questa scheda</strong> mentre trasmetti.</p>
 
-      <div class="studio-sorgenti">
-        <button type="button" class="btn secondario" id="studio-webcam">${_bIco(ICO.fotocamera)}Webcam</button>
-        <button type="button" class="btn secondario" id="studio-mic">${_bIco(ICO.voce)}Microfono</button>
-        <button type="button" class="btn secondario" id="studio-schermo">${_bIco(ICO.monitor)}Schermo / gioco</button>
-      </div>
+      <!-- scene: come le "scene" di OBS, si cambia al volo -->
+      <div class="studio-scene" id="studio-scene"></div>
 
-      <div class="studio-palco">
-        <canvas id="studio-canvas" width="1280" height="720"></canvas>
-        <div id="studio-badge-live" class="studio-badge-live" hidden>● LIVE <span id="studio-timer">00:00</span></div>
-      </div>
-
-      <div class="griglia-campi spazio-sopra">
-        <div>
-          <label class="campo" for="studio-pip-corner">Webcam — posizione</label>
-          <select id="studio-pip-corner">
-            <option value="br">In basso a destra</option>
-            <option value="bl">In basso a sinistra</option>
-            <option value="tr">In alto a destra</option>
-            <option value="tl">In alto a sinistra</option>
-            <option value="full">A tutto schermo</option>
-          </select>
+      <div class="studio-griglia">
+        <!-- palco: canvas pulito + livello UI (selezione/trascinamento) sopra -->
+        <div class="studio-palco-wrap">
+          <div class="studio-palco" id="studio-palco">
+            <canvas id="studio-canvas" width="1280" height="720"></canvas>
+            <div class="studio-ui" id="studio-ui"></div>
+            <div id="studio-badge-live" class="studio-badge-live" hidden>● LIVE <span id="studio-timer">00:00</span></div>
+          </div>
+          <div class="studio-layouts" id="studio-layouts">
+            <span class="studio-mini-tit">Layout rapidi</span>
+            <button type="button" class="btn secondario mini" data-layout="cam">Solo webcam</button>
+            <button type="button" class="btn secondario mini" data-layout="schermo">Solo schermo</button>
+            <button type="button" class="btn secondario mini" data-layout="pip">Schermo + webcam</button>
+            <button type="button" class="btn secondario mini" data-layout="affianco">Affiancati</button>
+          </div>
         </div>
-        <div>
-          <label class="campo" for="studio-pip-size">Webcam — dimensione: <strong><span id="studio-pip-size-v">26</span>%</strong></label>
-          <input type="range" id="studio-pip-size" min="12" max="50" value="26">
-        </div>
+
+        <!-- colonna di destra: aggiungi fonti, elenco fonti, proprietà, mixer -->
+        <aside class="studio-side">
+          <div class="studio-box">
+            <div class="studio-box-tit">${_bIco(ICO.piu)}Aggiungi una fonte</div>
+            <div class="studio-add">
+              <button type="button" class="btn secondario mini" data-add="webcam">${_bIco(ICO.fotocamera)}Webcam</button>
+              <button type="button" class="btn secondario mini" data-add="schermo">${_bIco(ICO.monitor)}Schermo</button>
+              <button type="button" class="btn secondario mini" data-add="immagine">${_bIco(ICO.immagine)}Immagine</button>
+              <button type="button" class="btn secondario mini" data-add="video">${_bIco(ICO.video)}Video</button>
+              <button type="button" class="btn secondario mini" data-add="testo">${_bIco(ICO.testo)}Testo</button>
+              <button type="button" class="btn secondario mini" data-add="overlay">${_bIco(ICO.effetti)}Overlay</button>
+            </div>
+          </div>
+
+          <div class="studio-box">
+            <div class="studio-box-tit">${_bIco(ICO.lista)}Fonti della scena <span class="tenue">(la prima è dietro)</span></div>
+            <ul class="studio-fonti" id="studio-fonti"></ul>
+          </div>
+
+          <div class="studio-box" id="studio-prop-box" hidden>
+            <div class="studio-box-tit">${_bIco(ICO.righello)}Proprietà</div>
+            <div id="studio-prop"></div>
+          </div>
+
+          <div class="studio-box">
+            <div class="studio-box-tit">${_bIco(ICO.sliders)}Mixer audio</div>
+            <div id="studio-mixer"></div>
+          </div>
+        </aside>
       </div>
 
       <div class="studio-vai spazio-sopra">
@@ -3293,20 +3323,39 @@ function pannelloStudio() {
       </div>
 
       <p class="suggerimento spazio-sopra">Perfetto per <strong>just-chatting / webcam</strong>. Per i giochi ad alta qualità/frame rate OBS resta migliore.
-      Alert, chat ed effetti a punti canale vengono disegnati sul palco (v1: senza le animazioni più elaborate né le emote 7TV).</p>
-    </div>`);
+      Alert, chat ed effetti a punti canale compaiono nella fonte <strong>Overlay</strong>.</p>
+    </div>
+    <input type="file" id="studio-file" accept="image/*,video/*" hidden>`);
 }
 
 // stato del motore studio (lato browser)
+// Motore Studio: modello "vero studio" simile a OBS —
+//   Scene → Fonti (webcam, schermo, immagine, video, testo, overlay).
+// Ogni fonte ha una trasformazione (x,y,w,h in coordinate del palco 1280×720),
+// visibilità e ordine (l'ordine nell'array = z-order: la prima è dietro).
+// Le catture (webcam/schermo/mic) sono GLOBALI e condivise tra le scene.
 const STUDIO = {
-  webcam: null, mic: null, schermo: null,
-  video: { cam: null, scr: null },
+  cap: { camStream: null, camEl: null, scrStream: null, scrEl: null, micStream: null },
+  media: {},               // dataId → { el, tipo, url } per immagini/video caricati
+  scene: [],               // [{ id, nome, fonti: [fonte…] }]
+  attiva: 0,               // indice della scena attiva
+  sel: null,               // id della fonte selezionata sul palco
+  _n: 1,                   // contatore per id univoci
   canvas: null, ctx: null, raf: 0,
   audio: null, rec: null, live: false, startedAt: 0, timer: 0,
   coda: [], inviando: false,
   overlay: { alert: null, chat: [], fx: [] },
-  sse: null, pip: { corner: 'br', size: 26 },
+  sse: null,
+  mix: { mic: { vol: 100, mute: false }, desk: { vol: 100, mute: false }, sfx: { vol: 100, mute: false } },
+  drag: null, addTipo: null, _wired: false,
 };
+
+const STUDIO_ETICHETTA = { webcam: 'Webcam', schermo: 'Schermo', immagine: 'Immagine', video: 'Video', testo: 'Testo', overlay: 'Overlay' };
+const studioClamp = (v, a, b) => Math.max(a, Math.min(b, v));
+function studioSceneAttiva() { return STUDIO.scene[STUDIO.attiva] || null; }
+function studioTrovaFonte(id) { const s = studioSceneAttiva(); return s ? s.fonti.find((f) => f.id === id) : null; }
+function studioIcoFonte(tipo) { return { webcam: 'fotocamera', schermo: 'monitor', immagine: 'immagine', video: 'video', testo: 'testo', overlay: 'effetti' }[tipo] || 'moduli'; }
+function studioNuovaScena(nome) { const s = { id: 's' + (STUDIO._n++), nome: nome || ('Scena ' + (STUDIO.scene.length + 1)), fonti: [] }; STUDIO.scene.push(s); return s; }
 
 function studioLog(m) { const el = document.getElementById('studio-stato'); if (el) el.textContent = m; }
 
@@ -3315,25 +3364,50 @@ function avviaLoopStudio() {
   if (STUDIO.ctx && !STUDIO.raf) studioDisegna();
 }
 
+// Disegna la scena attiva: ogni fonte visibile, dalla più dietro alla più avanti.
 function studioDisegna() {
   const c = STUDIO.ctx; if (!c) { STUDIO.raf = 0; return; }
   const W = STUDIO.canvas.width, H = STUDIO.canvas.height;
   c.fillStyle = '#0b0b0f'; c.fillRect(0, 0, W, H);
-  const scr = STUDIO.video.scr, cam = STUDIO.video.cam;
-  const cover = (v) => { if (!v || !v.videoWidth) return; const r = Math.max(W / v.videoWidth, H / v.videoHeight); const w = v.videoWidth * r, h = v.videoHeight * r; try { c.drawImage(v, (W - w) / 2, (H - h) / 2, w, h); } catch (e) { /* frame non pronto */ } };
-  if (scr && scr.videoWidth) cover(scr);
-  else if (cam && cam.videoWidth) cover(cam);
-  // webcam in PiP quando c'è lo schermo (e non è "a tutto schermo")
-  if (cam && cam.videoWidth && scr && scr.videoWidth && STUDIO.pip.corner !== 'full') {
-    const pw = W * STUDIO.pip.size / 100, ph = pw * (cam.videoHeight / cam.videoWidth || 0.5625), m = 20;
-    let x = W - pw - m, y = H - ph - m;
-    if (STUDIO.pip.corner === 'bl') x = m;
-    else if (STUDIO.pip.corner === 'tr') y = m;
-    else if (STUDIO.pip.corner === 'tl') { x = m; y = m; }
-    try { c.drawImage(cam, x, y, pw, ph); c.strokeStyle = '#000a'; c.lineWidth = 4; c.strokeRect(x, y, pw, ph); } catch (e) { /* niente */ }
-  }
-  disegnaOverlayStudio(c, W, H);
+  const s = studioSceneAttiva();
+  if (s) for (const f of s.fonti) { if (f.visibile) disegnaFonte(c, f, W, H); }
   STUDIO.raf = requestAnimationFrame(studioDisegna);
+}
+
+// "cover": riempie il riquadro ritagliando l'eccesso (webcam/schermo/video).
+function studioCover(c, el, x, y, w, h) {
+  const vw = el.videoWidth || el.naturalWidth, vh = el.videoHeight || el.naturalHeight; if (!vw) return;
+  const r = Math.max(w / vw, h / vh), dw = vw * r, dh = vh * r;
+  c.save(); c.beginPath(); c.rect(x, y, w, h); c.clip();
+  try { c.drawImage(el, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh); } catch (e) { /* frame non pronto */ }
+  c.restore();
+}
+// "contain": mostra tutta l'immagine dentro il riquadro (loghi/immagini).
+function studioContain(c, el, x, y, w, h) {
+  const vw = el.videoWidth || el.naturalWidth, vh = el.videoHeight || el.naturalHeight; if (!vw) return;
+  const r = Math.min(w / vw, h / vh), dw = vw * r, dh = vh * r;
+  try { c.drawImage(el, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh); } catch (e) { /* niente */ }
+}
+
+function disegnaFonte(c, f, W, H) {
+  if (f.tipo === 'webcam') { if (STUDIO.cap.camEl) studioCover(c, STUDIO.cap.camEl, f.x, f.y, f.w, f.h); return; }
+  if (f.tipo === 'schermo') { if (STUDIO.cap.scrEl) studioCover(c, STUDIO.cap.scrEl, f.x, f.y, f.w, f.h); return; }
+  if (f.tipo === 'immagine') { const m = STUDIO.media[f.dataId]; if (m) studioContain(c, m.el, f.x, f.y, f.w, f.h); return; }
+  if (f.tipo === 'video') { const m = STUDIO.media[f.dataId]; if (m) studioCover(c, m.el, f.x, f.y, f.w, f.h); return; }
+  if (f.tipo === 'testo') { disegnaTestoFonte(c, f); return; }
+  if (f.tipo === 'overlay') { disegnaOverlayStudio(c, W, H); return; }
+}
+
+function disegnaTestoFonte(c, f) {
+  if (f.sfondo) { c.fillStyle = f.sfondo; c.fillRect(f.x, f.y, f.w, f.h); }
+  const dim = Number(f.dim) || 48;
+  c.font = (f.grassetto ? '800 ' : '600 ') + dim + 'px system-ui, sans-serif';
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.lineWidth = Math.max(3, dim / 10); c.strokeStyle = '#000a';
+  const cx = f.x + f.w / 2, cy = f.y + f.h / 2, mw = f.w * 0.96;
+  c.strokeText(f.testo || '', cx, cy, mw);
+  c.fillStyle = f.colore || '#fff'; c.fillText(f.testo || '', cx, cy, mw);
+  c.textAlign = 'left'; c.textBaseline = 'alphabetic';
 }
 
 function disegnaOverlayStudio(c, W, H) {
@@ -3376,7 +3450,7 @@ function suonaStudioSfx(url, volume) {
     const el = new Audio(url); el.crossOrigin = 'anonymous';
     if (volume != null) el.volume = Math.max(0, Math.min(1, Number(volume) / 100));
     const A = STUDIO.audio;
-    if (A) { try { const s = A.ac.createMediaElementSource(el); s.connect(A.sfx); s.connect(A.ac.destination); } catch (e) { /* niente */ } }
+    if (A) { try { const s = A.ac.createMediaElementSource(el); s.connect(A.gSfx); s.connect(A.ac.destination); } catch (e) { /* niente */ } }
     el.play().catch(() => {});
   } catch (e) { /* niente */ }
 }
@@ -3412,55 +3486,152 @@ function studioSSE(sseUrl) {
   };
 }
 
-async function attivaWebcam() {
-  if (DEMO) { toast('In demo la webcam non parte — accedi per farlo davvero.'); return; }
+// --- catture globali (condivise tra le scene) --------------------------------
+async function studioCapWebcam() {
+  if (DEMO) { toast('In demo la webcam non parte — accedi per farlo davvero.'); return false; }
+  if (STUDIO.cap.camEl) return true;
   try {
-    STUDIO.webcam = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: false });
-    const v = document.createElement('video'); v.srcObject = STUDIO.webcam; v.muted = true; v.playsInline = true; await v.play().catch(() => {});
-    STUDIO.video.cam = v;
-    document.getElementById('studio-webcam')?.classList.add('attivo');
-    avviaLoopStudio();
-  } catch (e) { toast('Webcam non disponibile: ' + e.message, 'errore'); }
+    STUDIO.cap.camStream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: false });
+    const v = document.createElement('video'); v.srcObject = STUDIO.cap.camStream; v.muted = true; v.playsInline = true; await v.play().catch(() => {});
+    STUDIO.cap.camEl = v; avviaLoopStudio(); return true;
+  } catch (e) { toast('Webcam non disponibile: ' + e.message, 'errore'); return false; }
 }
 
-async function attivaMic() {
-  if (DEMO) { toast('In demo il microfono non parte'); return; }
-  try {
-    STUDIO.mic = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    document.getElementById('studio-mic')?.classList.add('attivo');
-    toast('Microfono attivo');
-  } catch (e) { toast('Microfono non disponibile: ' + e.message, 'errore'); }
-}
-
-async function attivaSchermo() {
-  if (DEMO) { toast('In demo la condivisione non parte'); return; }
+async function studioCapSchermo() {
+  if (DEMO) { toast('In demo la condivisione non parte'); return false; }
   try {
     const s = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: true });
-    STUDIO.schermo = s;
+    STUDIO.cap.scrStream = s;
     const v = document.createElement('video'); v.srcObject = new MediaStream(s.getVideoTracks()); v.muted = true; v.playsInline = true; await v.play().catch(() => {});
-    STUDIO.video.scr = v;
+    STUDIO.cap.scrEl = v;
     s.getVideoTracks()[0].addEventListener('ended', () => {
-      STUDIO.video.scr = null; STUDIO.schermo = null; document.getElementById('studio-schermo')?.classList.remove('attivo');
+      STUDIO.cap.scrEl = null; STUDIO.cap.scrStream = null;
+      STUDIO.scene.forEach((sc) => { sc.fonti = sc.fonti.filter((f) => f.tipo !== 'schermo'); });
+      renderStudioTutto();
     });
-    document.getElementById('studio-schermo')?.classList.add('attivo');
-    avviaLoopStudio();
-  } catch (e) { if (e.name !== 'NotAllowedError') toast('Condivisione non riuscita: ' + e.message, 'errore'); }
+    if (STUDIO.live) collegaAudioCatture();
+    avviaLoopStudio(); return true;
+  } catch (e) { if (e.name !== 'NotAllowedError') toast('Condivisione non riuscita: ' + e.message, 'errore'); return false; }
 }
 
+async function studioCapMic() {
+  if (DEMO) { toast('In demo il microfono non parte'); return false; }
+  if (STUDIO.cap.micStream) return true;
+  try {
+    STUDIO.cap.micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    if (STUDIO.live) collegaAudioCatture();
+    renderStudioMixer(); toast('Microfono attivo'); return true;
+  } catch (e) { toast('Microfono non disponibile: ' + e.message, 'errore'); return false; }
+}
+
+// --- aggiunta e gestione delle fonti -----------------------------------------
+function studioDefaultTrasf(tipo) {
+  const W = 1280, H = 720;
+  if (tipo === 'schermo' || tipo === 'overlay') return { x: 0, y: 0, w: W, h: H };
+  if (tipo === 'webcam') { const w = 384, h = 216; return { x: W - w - 28, y: H - h - 28, w, h }; }
+  if (tipo === 'testo') return { x: 140, y: 560, w: 1000, h: 110 };
+  return { x: (W - 640) / 2, y: (H - 360) / 2, w: 640, h: 360 };
+}
+
+function studioAddFonte(tipo, extra) {
+  const s = studioSceneAttiva(); if (!s) return null;
+  if (tipo === 'overlay' && s.fonti.some((f) => f.tipo === 'overlay')) { toast('L\'overlay è già nella scena.'); return null; }
+  const f = { id: 'f' + (STUDIO._n++), tipo, nome: STUDIO_ETICHETTA[tipo] || tipo, visibile: true, ...studioDefaultTrasf(tipo), ...(extra || {}) };
+  if (tipo === 'testo') { f.testo = f.testo || 'Testo'; f.colore = '#ffffff'; f.dim = 56; f.grassetto = true; f.sfondo = ''; }
+  s.fonti.push(f); STUDIO.sel = f.id; renderStudioTutto();
+  return f;
+}
+
+async function studioAggiungi(tipo) {
+  if (tipo === 'webcam') { if (await studioCapWebcam()) studioAddFonte('webcam'); return; }
+  if (tipo === 'schermo') { if (await studioCapSchermo()) studioAddFonte('schermo'); return; }
+  if (tipo === 'immagine' || tipo === 'video') { studioScegliFile(tipo); return; }
+  studioAddFonte(tipo);   // testo, overlay
+}
+
+function studioScegliFile(tipo) {
+  const inp = document.getElementById('studio-file'); if (!inp) return;
+  inp.accept = tipo === 'video' ? 'video/*' : 'image/*';
+  STUDIO.addTipo = tipo; inp.value = ''; inp.click();
+}
+
+function studioFileScelto(file) {
+  const tipo = STUDIO.addTipo; if (!file || !tipo) return;
+  const url = URL.createObjectURL(file), dataId = 'm' + (STUDIO._n++);
+  const el = document.createElement(tipo === 'video' ? 'video' : 'img');
+  if (tipo === 'video') { el.muted = true; el.loop = true; el.playsInline = true; el.autoplay = true; el.src = url; el.play().catch(() => {}); }
+  else el.src = url;
+  STUDIO.media[dataId] = { el, tipo, url };
+  studioAddFonte(tipo, { dataId, nome: (file.name || tipo).slice(0, 22) });
+}
+
+function studioSpostaFonte(id, dir) {
+  const s = studioSceneAttiva(); if (!s) return;
+  const i = s.fonti.findIndex((f) => f.id === id); if (i < 0) return;
+  const j = i + dir; if (j < 0 || j >= s.fonti.length) return;
+  const t = s.fonti[i]; s.fonti[i] = s.fonti[j]; s.fonti[j] = t; renderStudioTutto();
+}
+
+function studioRimuoviFonte(id) {
+  const s = studioSceneAttiva(); if (!s) return;
+  s.fonti = s.fonti.filter((f) => f.id !== id);
+  if (STUDIO.sel === id) STUDIO.sel = null;
+  renderStudioTutto();
+}
+
+function studioFit(mode) {
+  const f = studioTrovaFonte(STUDIO.sel); if (!f) return;
+  if (mode === 'riempi') { f.x = 0; f.y = 0; f.w = 1280; f.h = 720; }
+  else if (mode === 'centra') { f.x = (1280 - f.w) / 2; f.y = (720 - f.h) / 2; }
+  renderStudioTutto();
+}
+
+// Layout rapidi: dispone (e mostra/nasconde) le fonti webcam/schermo già presenti.
+function studioLayout(preset) {
+  const s = studioSceneAttiva(); if (!s) return;
+  const cam = s.fonti.find((f) => f.tipo === 'webcam'), scr = s.fonti.find((f) => f.tipo === 'schermo');
+  const pieno = (f) => { f.x = 0; f.y = 0; f.w = 1280; f.h = 720; f.visibile = true; };
+  if (preset === 'cam') { if (cam) pieno(cam); if (scr) scr.visibile = false; }
+  else if (preset === 'schermo') { if (scr) pieno(scr); if (cam) cam.visibile = false; }
+  else if (preset === 'pip') {
+    if (scr) pieno(scr);
+    if (cam) { cam.visibile = true; cam.w = 384; cam.h = 216; cam.x = 1280 - 384 - 28; cam.y = 720 - 216 - 28; const i = s.fonti.indexOf(cam); if (i >= 0) { s.fonti.splice(i, 1); s.fonti.push(cam); } }
+  } else if (preset === 'affianco') {
+    if (scr) { scr.visibile = true; scr.x = 20; scr.y = 150; scr.w = 760; scr.h = 428; }
+    if (cam) { cam.visibile = true; cam.x = 800; cam.y = 150; cam.w = 460; cam.h = 428; }
+  }
+  renderStudioTutto();
+}
+
+// --- audio: mixer con guadagni per canale ------------------------------------
 function studioAudioInit() {
   const AC = window.AudioContext || window.webkitAudioContext;
   const ac = new AC();
   const dest = ac.createMediaStreamDestination();
-  const sfx = ac.createGain(); sfx.gain.value = 1; sfx.connect(dest);
-  if (STUDIO.mic && STUDIO.mic.getAudioTracks().length) { try { ac.createMediaStreamSource(STUDIO.mic).connect(dest); } catch (e) { /* niente */ } }
-  if (STUDIO.schermo && STUDIO.schermo.getAudioTracks().length) { try { ac.createMediaStreamSource(new MediaStream(STUDIO.schermo.getAudioTracks())).connect(dest); } catch (e) { /* niente */ } }
-  STUDIO.audio = { ac, dest, sfx };
+  const gMic = ac.createGain(), gDesk = ac.createGain(), gSfx = ac.createGain();
+  gMic.connect(dest); gDesk.connect(dest); gSfx.connect(dest);
+  STUDIO.audio = { ac, dest, gMic, gDesk, gSfx, micNode: null, deskNode: null };
+  collegaAudioCatture(); applicaMix();
   return dest.stream;
+}
+
+function collegaAudioCatture() {
+  const A = STUDIO.audio; if (!A) return;
+  try { if (!A.micNode && STUDIO.cap.micStream && STUDIO.cap.micStream.getAudioTracks().length) { A.micNode = A.ac.createMediaStreamSource(STUDIO.cap.micStream); A.micNode.connect(A.gMic); } } catch (e) { /* niente */ }
+  try { if (!A.deskNode && STUDIO.cap.scrStream && STUDIO.cap.scrStream.getAudioTracks().length) { A.deskNode = A.ac.createMediaStreamSource(new MediaStream(STUDIO.cap.scrStream.getAudioTracks())); A.deskNode.connect(A.gDesk); } } catch (e) { /* niente */ }
+}
+
+function applicaMix() {
+  const A = STUDIO.audio, m = STUDIO.mix; if (!A) return;
+  A.gMic.gain.value = m.mic.mute ? 0 : m.mic.vol / 100;
+  A.gDesk.gain.value = m.desk.mute ? 0 : m.desk.vol / 100;
+  A.gSfx.gain.value = m.sfx.mute ? 0 : m.sfx.vol / 100;
 }
 
 async function avviaLive() {
   if (STUDIO.live) return;
-  if (!STUDIO.video.scr && !STUDIO.video.cam) { toast('Attiva prima la webcam o lo schermo.', 'errore'); return; }
+  const s = studioSceneAttiva();
+  if (!s || !s.fonti.some((f) => f.visibile)) { toast('Aggiungi almeno una fonte visibile alla scena.', 'errore'); return; }
   studioLog('Avvio…');
   try { await api('/api/studio/start', { method: 'POST' }); }
   catch (e) { studioLog('' + e.message); toast('Non riuscito: ' + e.message, 'errore'); return; }
@@ -3503,7 +3674,7 @@ async function fermaLive() {
   clearInterval(STUDIO.timer);
   try { await api('/api/studio/stop', { method: 'POST' }); } catch (e) { /* niente */ }
   try { STUDIO.audio && STUDIO.audio.ac.close(); } catch (e) { /* niente */ }
-  STUDIO.audio = null; STUDIO.coda = [];
+  STUDIO.audio = null; STUDIO.coda = []; STUDIO.inviando = false;
   document.getElementById('studio-live').hidden = false;
   document.getElementById('studio-ferma').hidden = true;
   const badge = document.getElementById('studio-badge-live'); if (badge) badge.hidden = true;
@@ -3517,8 +3688,10 @@ function aggiornaTimerStudio() {
 }
 
 async function caricaStudio() {
-  avviaLoopStudio();   // mostra il palco (nero) + overlay in anteprima
-  if (DEMO) { studioLog('Anteprima demo: qui vai in diretta senza OBS.'); return; }
+  if (!STUDIO.scene.length) studioNuovaScena('Scena 1');
+  avviaLoopStudio();      // mostra il palco + le fonti in anteprima
+  renderStudioTutto();
+  if (DEMO) { studioLog('Anteprima demo: qui crei scene, aggiungi fonti e vai in diretta senza OBS.'); return; }
   try {
     const d = await api('/api/studio');
     const banner = document.getElementById('studio-permessi-banner');
@@ -3534,6 +3707,201 @@ async function caricaStudio() {
     const ov = await api('/api/streamer/overlay-url');
     if (ov.overlayUrl) studioSSE(ov.overlayUrl.replace('?key=', '/stream?key='));
   } catch (e) { /* niente */ }
+}
+
+// ---- disegno dell'interfaccia dello Studio (scene, fonti, proprietà, mixer) --
+function renderStudioTutto() {
+  renderStudioScene(); renderStudioFonti(); renderStudioUI(); renderStudioProp(); renderStudioMixer();
+}
+
+function renderStudioScene() {
+  const el = document.getElementById('studio-scene'); if (!el) return;
+  el.innerHTML = STUDIO.scene.map((s, i) =>
+    `<button type="button" class="studio-scena${i === STUDIO.attiva ? ' attiva' : ''}" data-scena="${i}">${_bIco(ICO.scene)}<span>${esc(s.nome)}</span></button>`).join('')
+    + `<button type="button" class="studio-scena studio-scena-nuova" data-scena-nuova="1" title="Nuova scena">${_bIco(ICO.piu)}</button>`
+    + (STUDIO.scene.length > 1 ? `<button type="button" class="studio-scena studio-scena-rinomina" data-scena-azione="rinomina" title="Rinomina scena">${_bIco(ICO.scrivi)}</button><button type="button" class="studio-scena studio-scena-elimina" data-scena-azione="elimina" title="Elimina scena">${_bIco(ICO.cestino)}</button>` : '');
+}
+
+function renderStudioFonti() {
+  const ul = document.getElementById('studio-fonti'); if (!ul) return;
+  const s = studioSceneAttiva();
+  if (!s || !s.fonti.length) { ul.innerHTML = '<li class="vuoto">Nessuna fonte. Aggiungine una qui sopra.</li>'; return; }
+  // mostra dalla più avanti (in cima all'elenco) alla più dietro
+  ul.innerHTML = s.fonti.slice().reverse().map((f) => {
+    const i = s.fonti.indexOf(f);
+    return `<li class="studio-fonte${f.id === STUDIO.sel ? ' sel' : ''}${f.visibile ? '' : ' nascosta'}" data-fonte="${f.id}">
+      <span class="sf-ico">${_bIco(ICO[studioIcoFonte(f.tipo)])}</span>
+      <span class="sf-nome">${esc(f.nome)}</span>
+      <span class="sf-azioni">
+        <button type="button" class="sf-btn" data-vis="${f.id}" title="${f.visibile ? 'Nascondi' : 'Mostra'}">${_bIco(f.visibile ? ICO.occhio : ICO.occhioNo)}</button>
+        <button type="button" class="sf-btn" data-su="${f.id}" title="Porta avanti"${i === s.fonti.length - 1 ? ' disabled' : ''}>${_bIco(ICO.freccia)}</button>
+        <button type="button" class="sf-btn sf-giu" data-giu="${f.id}" title="Porta dietro"${i === 0 ? ' disabled' : ''}>${_bIco(ICO.freccia)}</button>
+        <button type="button" class="sf-btn sf-rim" data-rim="${f.id}" title="Rimuovi">${_bIco(ICO.cestino)}</button>
+      </span>
+    </li>`;
+  }).join('');
+}
+
+function renderStudioUI() {
+  const ui = document.getElementById('studio-ui'); if (!ui) return;
+  const s = studioSceneAttiva(), W = 1280, H = 720;
+  ui.innerHTML = (s ? s.fonti : []).filter((f) => f.visibile).map((f) => {
+    const sel = f.id === STUDIO.sel && f.tipo !== 'overlay';
+    const st = `left:${f.x / W * 100}%;top:${f.y / H * 100}%;width:${f.w / W * 100}%;height:${f.h / H * 100}%`;
+    const handles = sel ? ['nw', 'ne', 'sw', 'se'].map((h) => `<span class="studio-h studio-h-${h}" data-h="${h}"></span>`).join('') : '';
+    return `<div class="studio-fonte-box${sel ? ' sel' : ''}${f.tipo === 'overlay' ? ' overlay' : ''}" data-box="${f.id}" style="${st}"><span class="sfb-nome">${esc(f.nome)}</span>${handles}</div>`;
+  }).join('');
+}
+
+function renderStudioProp() {
+  const box = document.getElementById('studio-prop-box'), el = document.getElementById('studio-prop');
+  if (!box || !el) return;
+  const f = studioTrovaFonte(STUDIO.sel);
+  if (!f) { box.hidden = true; el.innerHTML = ''; return; }
+  box.hidden = false;
+  let extra = '';
+  if (f.tipo === 'testo') {
+    extra = `
+      <label class="campo" for="sp-testo">Testo</label>
+      <input id="sp-testo" type="text" maxlength="120" value="${esc(f.testo || '')}">
+      <div class="griglia-campi spazio-sopra">
+        <div><label class="campo" for="sp-colore">Colore</label><input id="sp-colore" type="color" value="${esc(f.colore || '#ffffff')}"></div>
+        <div><label class="campo" for="sp-dim">Dimensione: <strong><span id="sp-dim-v">${f.dim}</span></strong></label><input id="sp-dim" type="range" min="18" max="150" value="${f.dim}"></div>
+      </div>
+      <label class="riga-check spazio-sopra"><input id="sp-grass" type="checkbox"${f.grassetto ? ' checked' : ''}> Grassetto</label>`;
+  } else if (f.tipo === 'overlay') {
+    extra = `<p class="suggerimento">L'overlay riempie tutto il palco (alert, chat ed effetti alle loro posizioni). Non si sposta né si ridimensiona.</p>`;
+  }
+  el.innerHTML = `
+    <label class="campo" for="sp-nome">Nome</label>
+    <input id="sp-nome" type="text" maxlength="24" value="${esc(f.nome)}">
+    ${extra}
+    ${f.tipo !== 'overlay' ? `<div class="studio-prop-pos spazio-sopra">
+      <button type="button" class="btn secondario mini" data-fit="riempi">Riempi il palco</button>
+      <button type="button" class="btn secondario mini" data-fit="centra">Centra</button>
+    </div>` : ''}`;
+}
+
+function renderStudioMixer() {
+  const el = document.getElementById('studio-mixer'); if (!el) return;
+  const m = STUDIO.mix;
+  const micOn = !!STUDIO.cap.micStream;
+  const deskOn = !!(STUDIO.cap.scrStream && STUDIO.cap.scrStream.getAudioTracks().length);
+  const canale = (id, nome, on, cfg, extra) => `
+    <div class="mix-canale${on ? '' : ' off'}">
+      <div class="mix-testa"><span>${nome}</span>${extra || ''}</div>
+      <div class="mix-riga">
+        <button type="button" class="mix-mute${cfg.mute ? ' on' : ''}" data-mute="${id}"${on ? '' : ' disabled'} title="${cfg.mute ? 'Riattiva' : 'Muto'}">${_bIco(cfg.mute ? ICO.muto : ICO.altoparlante)}</button>
+        <input type="range" min="0" max="100" value="${cfg.vol}" data-vol="${id}"${on ? '' : ' disabled'}>
+        <span class="mix-val">${cfg.vol}</span>
+      </div>
+    </div>`;
+  el.innerHTML =
+    canale('mic', 'Microfono', micOn, m.mic, micOn ? '' : `<button type="button" class="btn secondario mini" data-cap="mic">Attiva</button>`)
+    + canale('desk', 'Audio dello schermo', deskOn, m.desk, deskOn ? '' : '<span class="tenue">condividi lo schermo con audio</span>')
+    + canale('sfx', 'Effetti & alert', true, m.sfx, '');
+}
+
+function posizionaBoxStudio(f) {
+  const box = document.querySelector(`#studio-ui [data-box="${f.id}"]`); if (!box) return;
+  box.style.left = f.x / 1280 * 100 + '%'; box.style.top = f.y / 720 * 100 + '%';
+  box.style.width = f.w / 1280 * 100 + '%'; box.style.height = f.h / 720 * 100 + '%';
+}
+
+// ---- interazione (click, input, trascinamento/ridimensionamento) ------------
+function onStudioClick(ev) {
+  const t = ev.target;
+  const add = t.closest('[data-add]'); if (add) return conErrore(() => studioAggiungi(add.dataset.add));
+  if (t.closest('[data-scena-nuova]')) { studioNuovaScena(); STUDIO.attiva = STUDIO.scene.length - 1; STUDIO.sel = null; renderStudioTutto(); return; }
+  const azione = t.closest('[data-scena-azione]');
+  if (azione) {
+    const s = studioSceneAttiva(); if (!s) return;
+    if (azione.dataset.scenaAzione === 'rinomina') { const n = prompt('Nome della scena:', s.nome); if (n) { s.nome = n.slice(0, 24); renderStudioScene(); } }
+    else if (azione.dataset.scenaAzione === 'elimina') {
+      if (STUDIO.scene.length <= 1) { toast('Serve almeno una scena.'); return; }
+      if (!confirm('Eliminare la scena «' + s.nome + '»?')) return;
+      STUDIO.scene.splice(STUDIO.attiva, 1); STUDIO.attiva = Math.max(0, STUDIO.attiva - 1); STUDIO.sel = null; renderStudioTutto();
+    }
+    return;
+  }
+  const scena = t.closest('[data-scena]'); if (scena) { STUDIO.attiva = Number(scena.dataset.scena); STUDIO.sel = null; renderStudioTutto(); return; }
+  const vis = t.closest('[data-vis]'); if (vis) { const f = studioTrovaFonte(vis.dataset.vis); if (f) { f.visibile = !f.visibile; renderStudioTutto(); } return; }
+  const su = t.closest('[data-su]'); if (su) return studioSpostaFonte(su.dataset.su, 1);
+  const giu = t.closest('[data-giu]'); if (giu) return studioSpostaFonte(giu.dataset.giu, -1);
+  const rim = t.closest('[data-rim]'); if (rim) return studioRimuoviFonte(rim.dataset.rim);
+  const voce = t.closest('#studio-fonti [data-fonte]'); if (voce) { STUDIO.sel = voce.dataset.fonte; renderStudioTutto(); return; }
+  const layout = t.closest('[data-layout]'); if (layout) return studioLayout(layout.dataset.layout);
+  const fit = t.closest('[data-fit]'); if (fit) return studioFit(fit.dataset.fit);
+  const cap = t.closest('[data-cap]'); if (cap && cap.dataset.cap === 'mic') return conErrore(() => studioCapMic());
+  const mute = t.closest('[data-mute]'); if (mute) { const k = mute.dataset.mute; if (STUDIO.mix[k]) { STUDIO.mix[k].mute = !STUDIO.mix[k].mute; applicaMix(); renderStudioMixer(); } return; }
+  if (t.closest('#studio-live')) return conErrore(() => avviaLive());
+  if (t.closest('#studio-ferma')) return conErrore(() => fermaLive());
+}
+
+function onStudioInput(ev) {
+  const t = ev.target;
+  const vol = t.closest('[data-vol]'); if (vol) { const k = vol.dataset.vol; if (STUDIO.mix[k]) { STUDIO.mix[k].vol = Number(vol.value); applicaMix(); const v = vol.parentElement.querySelector('.mix-val'); if (v) v.textContent = vol.value; } return; }
+  const f = studioTrovaFonte(STUDIO.sel); if (!f) return;
+  if (t.id === 'sp-nome') { f.nome = t.value; const n = document.querySelector(`#studio-fonti [data-fonte="${f.id}"] .sf-nome`); if (n) n.textContent = t.value; const bn = document.querySelector(`#studio-ui [data-box="${f.id}"] .sfb-nome`); if (bn) bn.textContent = t.value; return; }
+  if (t.id === 'sp-testo') { f.testo = t.value; return; }
+  if (t.id === 'sp-colore') { f.colore = t.value; return; }
+  if (t.id === 'sp-dim') { f.dim = Number(t.value); const v = document.getElementById('sp-dim-v'); if (v) v.textContent = t.value; return; }
+}
+
+function onStudioChange(ev) {
+  if (ev.target.id === 'sp-grass') { const f = studioTrovaFonte(STUDIO.sel); if (f) f.grassetto = ev.target.checked; return; }
+  if (ev.target.id === 'studio-file') { const file = ev.target.files && ev.target.files[0]; if (file) studioFileScelto(file); }
+}
+
+function onStudioPointerDown(ev) {
+  const box = ev.target.closest('.studio-fonte-box'); if (!box) return;
+  const id = box.dataset.box, f = studioTrovaFonte(id); if (!f) return;
+  STUDIO.sel = id; renderStudioTutto();
+  if (f.tipo === 'overlay') return;   // l'overlay non si sposta
+  const handle = ev.target.closest('.studio-h');
+  const palco = document.getElementById('studio-palco'); const r = palco.getBoundingClientRect();
+  STUDIO.drag = { id, mode: handle ? 'resize' : 'move', h: handle ? handle.dataset.h : null,
+    sx: ev.clientX, sy: ev.clientY, ox: f.x, oy: f.y, ow: f.w, oh: f.h, rw: r.width, rh: r.height };
+  ev.preventDefault();
+  try { palco.setPointerCapture(ev.pointerId); } catch (e) { /* niente */ }
+}
+
+function onStudioPointerMove(ev) {
+  const d = STUDIO.drag; if (!d) return;
+  const f = studioTrovaFonte(d.id); if (!f) return;
+  const dx = (ev.clientX - d.sx) / d.rw * 1280, dy = (ev.clientY - d.sy) / d.rh * 720;
+  if (d.mode === 'move') {
+    f.x = studioClamp(d.ox + dx, -f.w + 60, 1280 - 60);
+    f.y = studioClamp(d.oy + dy, -f.h + 60, 720 - 60);
+  } else {
+    let x = d.ox, y = d.oy, w = d.ow, h = d.oh;
+    if (d.h.indexOf('e') >= 0) w = d.ow + dx;
+    if (d.h.indexOf('s') >= 0) h = d.oh + dy;
+    if (d.h.indexOf('w') >= 0) { w = d.ow - dx; x = d.ox + dx; }
+    if (d.h.indexOf('n') >= 0) { h = d.oh - dy; y = d.oy + dy; }
+    if (w < 60) { if (d.h.indexOf('w') >= 0) x = d.ox + d.ow - 60; w = 60; }
+    if (h < 60) { if (d.h.indexOf('n') >= 0) y = d.oy + d.oh - 60; h = 60; }
+    f.x = x; f.y = y; f.w = w; f.h = h;
+  }
+  posizionaBoxStudio(f);
+}
+
+function onStudioPointerUp() { if (STUDIO.drag) STUDIO.drag = null; }
+
+// Aggancia gli handler dello Studio (chiamata a ogni render: il pannello viene
+// ridisegnato, quindi si riattacca al nuovo nodo; i listener globali del
+// trascinamento si agganciano UNA volta sola).
+function initStudio() {
+  const panel = document.getElementById('scheda-studio'); if (!panel) return;
+  panel.addEventListener('click', onStudioClick);
+  panel.addEventListener('input', onStudioInput);
+  panel.addEventListener('change', onStudioChange);
+  document.getElementById('studio-palco')?.addEventListener('pointerdown', onStudioPointerDown);
+  if (!STUDIO._wired) {
+    document.addEventListener('pointermove', onStudioPointerMove);
+    document.addEventListener('pointerup', onStudioPointerUp);
+    STUDIO._wired = true;
+  }
 }
 
 // --- scheda Effetti & Suoni ---------------------------------------------
@@ -5136,16 +5504,8 @@ function attivaPiattaforma() {
   });
   document.addEventListener('click', (ev) => { if (gLista && !gLista.hidden && !gLista.contains(ev.target) && ev.target !== gCerca) gLista.hidden = true; });
 
-  // --- Studio Web ---
-  document.getElementById('studio-webcam')?.addEventListener('click', () => conErrore(() => attivaWebcam()));
-  document.getElementById('studio-mic')?.addEventListener('click', () => conErrore(() => attivaMic()));
-  document.getElementById('studio-schermo')?.addEventListener('click', () => conErrore(() => attivaSchermo()));
-  document.getElementById('studio-live')?.addEventListener('click', () => conErrore(() => avviaLive()));
-  document.getElementById('studio-ferma')?.addEventListener('click', () => conErrore(() => fermaLive()));
-  document.getElementById('studio-pip-corner')?.addEventListener('change', (e) => { STUDIO.pip.corner = e.target.value; });
-  document.getElementById('studio-pip-size')?.addEventListener('input', (e) => {
-    STUDIO.pip.size = Number(e.target.value); const v = document.getElementById('studio-pip-size-v'); if (v) v.textContent = e.target.value;
-  });
+  // --- Studio Web (scene, fonti, mixer: tutto via delegazione) ---
+  initStudio();
 
   // caricamento di un effetto (multipart, con spinner)
   document.getElementById('btn-carica-effetto')?.addEventListener('click', caricaEffettoUpload);
