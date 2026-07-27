@@ -23,6 +23,8 @@ RUN npm install --omit=dev
 
 # Poi il codice del bot
 COPY src ./src
+# Script di utilità (es. stripe-fetch-prices.mjs), eseguibili dentro il container
+COPY scripts ./scripts
 
 ENV NODE_ENV=production
 CMD ["node", "src/index.js"]
