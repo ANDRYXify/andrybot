@@ -36,7 +36,7 @@ export const FREE = {
 // `funzioni`: matrice di ciò che il piano sblocca. Numeri = limiti (Infinity =
 // illimitato), booleani = on/off. L'unione con gli add-on la calcola funzioniDi().
 export const BASE = {
-  id: 'base', nome: 'Base', prezzo: 3.99, prezzoTesto: '€3,99/mese', priceEnv: 'base', icona: '🤖',
+  id: 'base', nome: 'Base', prezzo: 2.99, prezzoTesto: '€2,99/mese', priceEnv: 'base', icona: '🤖',
   sommario: 'Il cuore del bot: comandi illimitati, antispam e moderazione, overlay per OBS e un moderatore.',
   funzioni: { moduli: Infinity, giochi: false, notifiche: false, clipAuto: false, voce: false, moderatori: 1, effetti: false, overlay: true, telegram: false },
 };
