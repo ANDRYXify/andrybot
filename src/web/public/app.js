@@ -282,6 +282,7 @@ function _demoGet(via) {
     '/api/me': statoDemo(),
     '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://socialbot.live/tiktok/callback' },
     '/api/seventv/stato': { collegato: true, username: 'andryxify', setId: 'demo7tvset' },
+    '/api/tgapp/login-stato': { attiva: true, oidc: true, bot: 'socialbot', collegato: true, username: 'andryxify', nome: 'Andry' },
     '/api/seventv/emotes': { id: 'demo7tvset', nome: 'andryxify · emotes', capienza: 1000, usate: 4, emotes: [
       { id: '60aeab8df6a2c3b332d92b73', nome: 'peepoHappy', url: 'https://cdn.7tv.app/emote/60aeab8df6a2c3b332d92b73/2x.webp', animato: false },
       { id: '603cb219c20d020014423c34', nome: 'catJAM', url: 'https://cdn.7tv.app/emote/603cb219c20d020014423c34/2x.webp', animato: true },
@@ -2046,6 +2047,68 @@ async function caricaTikTok() {
     if (r?.vuoto) toast(L('Collegato, ma non trovo ancora video sul tuo profilo.', 'Connected, but I can\'t find any videos on your profile yet.', 'Conectado, pero aún no encuentro vídeos en tu perfil.'));
     else toast(L('Funziona: leggo il tuo ultimo video.', 'It works: I can read your latest video.', 'Funciona: leo tu último vídeo.'));
   }));
+}
+
+// "Accedi da Telegram" (Mini App + OIDC): collega il tuo Telegram al canale così
+// puoi rientrare e gestire il bot dalla Mini App dentro Telegram.
+async function caricaTgLogin() {
+  const box = document.getElementById('box-tglogin');
+  if (!box) return;
+  // messaggi di ritorno dell'OIDC (?tgapp=...)
+  const q = new URLSearchParams(location.search);
+  if (q.get('tgapp') === 'collegato') toast(L('Telegram collegato!', 'Telegram linked!', '¡Telegram vinculado!'));
+  else if (q.get('tgapp') === 'errore') toast(L('Collegamento Telegram non riuscito.', 'Telegram linking failed.', 'La vinculación de Telegram falló.'), 'errore');
+  else if (q.get('tgapp') === 'noncollegato') toast(L('Questo Telegram non è collegato a nessun canale.', 'This Telegram isn’t linked to any channel.', 'Este Telegram no está vinculado a ningún canal.'), 'errore');
+  if (q.get('tgapp')) { try { history.replaceState(null, '', location.pathname + '#notifiche'); } catch { /* niente */ } }
+
+  let d;
+  try { d = await api('/api/tgapp/login-stato'); } catch { box.hidden = true; return; }
+  if (!d.attiva) { box.hidden = true; return; }   // Mini App non configurata dall'operatore
+  box.hidden = false;
+  const proprietario = stato?.ruolo !== 'moderatore';
+  const linkBot = d.bot ? `https://t.me/${esc(d.bot)}` : '';
+
+  const testa = `<h2>${_hIco(ICO.chat)}${L('Accedi e gestisci da Telegram', 'Log in & manage from Telegram', 'Accede y gestiona desde Telegram')}</h2>
+    <p>${L('Collega il tuo Telegram al canale: potrai rientrare con un tocco e gestire il bot dalla', 'Link your Telegram to your channel: you’ll get back in with one tap and manage the bot from the', 'Vincula tu Telegram al canal: podrás volver a entrar con un toque y gestionar el bot desde la')} <strong class="primo-piano">Mini App</strong> ${L('dentro Telegram.', 'inside Telegram.', 'dentro de Telegram.')}</p>`;
+
+  if (d.collegato) {
+    box.innerHTML = testa + `<div class="riga-interruttore">
+        <span class="badge verde">● ${L('Telegram collegato', 'Telegram linked', 'Telegram vinculado')}${d.username ? ' (@' + esc(d.username) + ')' : ''}</span>
+        ${proprietario ? `<button class="btn secondario mini" id="tgl-scollega">${L('Scollega', 'Unlink', 'Desvincular')}</button>` : ''}
+      </div>
+      ${linkBot ? `<p class="suggerimento spazio-sopra">${L('Apri la Mini App:', 'Open the Mini App:', 'Abre la Mini App:')} <a href="${linkBot}" target="_blank" rel="noopener">@${esc(d.bot)}</a></p>` : ''}`;
+    document.getElementById('tgl-scollega')?.addEventListener('click', () => conErrore(async () => {
+      if (!confirm(L('Scollegare Telegram da questo canale?', 'Unlink Telegram from this channel?', '¿Desvincular Telegram de este canal?'))) return;
+      await api('/api/tgapp/scollega', { method: 'POST', body: {} });
+      toast(L('Telegram scollegato.', 'Telegram unlinked.', 'Telegram desvinculado.')); caricaTgLogin();
+    }));
+    return;
+  }
+
+  if (!proprietario) { box.innerHTML = testa + `<p class="suggerimento">${L('Solo il proprietario del canale può collegare Telegram.', 'Only the channel owner can link Telegram.', 'Solo el propietario del canal puede vincular Telegram.')}</p>`; return; }
+
+  box.innerHTML = testa + `
+    <ol class="passi">
+      <li>${L('Apri la Mini App su Telegram', 'Open the Mini App on Telegram', 'Abre la Mini App en Telegram')}${linkBot ? ` (<a href="${linkBot}" target="_blank" rel="noopener">@${esc(d.bot)}</a>)` : ''} ${L('e copia il codice che ti mostra.', 'and copy the code it shows you.', 'y copia el código que te muestra.')}</li>
+      <li>${L('Incolla qui il codice e premi «Collega».', 'Paste the code here and press «Link».', 'Pega aquí el código y pulsa «Vincular».')}</li>
+    </ol>
+    <div class="riga-flessibile">
+      <input type="text" id="tgl-codice" class="campo-largo" placeholder="${L('codice (6 caratteri)', 'code (6 characters)', 'código (6 caracteres)')}" maxlength="6" autocomplete="off" style="text-transform:uppercase">
+      <button class="btn" id="tgl-collega">${L('Collega', 'Link', 'Vincular')}</button>
+    </div>
+    ${d.oidc ? `<p class="suggerimento spazio-sopra">${L('In alternativa,', 'Alternatively,', 'Como alternativa,')} <a href="#" id="tgl-oidc">${L('collega con «Accedi con Telegram»', 'link with «Log in with Telegram»', 'vincula con «Acceder con Telegram»')}</a> ${L('dal browser.', 'from your browser.', 'desde el navegador.')}</p>` : ''}`;
+
+  document.getElementById('tgl-collega')?.addEventListener('click', () => conErrore(async () => {
+    const codice = (document.getElementById('tgl-codice')?.value || '').trim().toUpperCase();
+    if (!codice) { toast(L('Inserisci il codice della Mini App.', 'Enter the Mini App code.', 'Introduce el código de la Mini App.'), 'errore'); return; }
+    const r = await api('/api/tgapp/collega', { method: 'POST', body: { codice } });
+    toast(L('Telegram collegato!', 'Telegram linked!', '¡Telegram vinculado!') + (r?.username ? ' (@' + r.username + ')' : ''));
+    caricaTgLogin();
+  }));
+  document.getElementById('tgl-oidc')?.addEventListener('click', (e) => { e.preventDefault(); conErrore(async () => {
+    const r = await api('/api/tgapp/oidc/start');
+    if (r?.url) location.href = r.url;
+  }); });
 }
 
 function collegaSalvaCred() {
@@ -4999,6 +5062,7 @@ function pannelloNotifiche() {
   const igc = impostazioni().instagram || {};
   const msgDefault = '{nome} è in diretta!\n\n{titolo}\n{gioco}\n\n{link}';
   return pannello('notifiche', `
+    <div class="carta" id="box-tglogin" hidden></div>
     <div class="carta">
       <h2>${_hIco(ICO.megafono)}${L('Avviso "sono in diretta" su Telegram', '"I’m live" alert on Telegram', 'Aviso "estoy en directo" en Telegram')}</h2>
       <p>${L('Collega il', 'Connect', 'Conecta')} <strong class="primo-piano">${L('tuo', 'your own', 'tu')}</strong> ${L('bot Telegram e il tuo gruppo: quando vai live, il bot avvisa i tuoi follower nel gruppo. Le chiavi sono tue e restano tue.', 'Telegram bot and your group: when you go live, the bot alerts your followers in the group. The keys are yours and stay yours.', 'bot de Telegram y tu grupo: cuando estás en directo, el bot avisa a tus seguidores en el grupo. Las claves son tuyas y siguen siéndolo.')}</p>
@@ -6168,7 +6232,7 @@ function caricaDatiScheda(id) {
   if (id === 'moduli') caricaModuli();
   if (id === 'memoria') caricaStatistiche();
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); }
-  if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); }
+  if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaTgLogin(); }
   if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaAnima(); caricaLLM(); }
 }
 
