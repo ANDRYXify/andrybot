@@ -1061,6 +1061,42 @@ const GRUPPI = [
 // l'admin, così il pannello "Anima" non è più sempre in fondo a ogni scheda.
 const GRUPPO_ADMIN = { id: 'admin', nome: 'Admin', schede: [['admin', 'Admin']] };
 
+// Etichette TRADOTTE della navigazione (id → [it, en, es]). Gli id restano
+// stabili; il testo mostrato si risolve a runtime con L(), così cambia con la
+// lingua (i nomi in GRUPPI restano come fallback italiano).
+const T_GRUPPO = {
+  panoramica: ['Panoramica', 'Overview', 'Resumen'],
+  personaggio: ['Personaggio', 'Character', 'Personaje'],
+  chat: ['Chat & comandi', 'Chat & commands', 'Chat y comandos'],
+  diretta: ['Diretta', 'Live', 'Directo'],
+  interazione: ['Interazione', 'Interaction', 'Interacción'],
+  overlay: ['Overlay', 'Overlay', 'Overlay'],
+  notifiche: ['Notifiche', 'Notifications', 'Notificaciones'],
+  admin: ['Admin', 'Admin', 'Admin'],
+};
+const T_SCHEDA = {
+  stato: ['Stato', 'Status', 'Estado'],
+  personalita: ['Personalità', 'Personality', 'Personalidad'],
+  conoscenza: ['Conoscenza', 'Knowledge', 'Conocimiento'],
+  memoria: ['Memoria', 'Memory', 'Memoria'],
+  moduli: ['Comandi', 'Commands', 'Comandos'],
+  regole: ['Moderazione', 'Moderation', 'Moderación'],
+  giochi: ['Giochi & classifiche', 'Games & leaderboards', 'Juegos y clasificaciones'],
+  regia: ['Regia', 'Control room', 'Realización'],
+  studio: ['Studio Web', 'Web Studio', 'Estudio Web'],
+  clip: ['Clip', 'Clips', 'Clips'],
+  ascolto: ['Comandi a voce', 'Voice commands', 'Comandos por voz'],
+  musica: ['Musica', 'Music', 'Música'],
+  sondaggi: ['Sondaggi & predizioni', 'Polls & predictions', 'Encuestas y predicciones'],
+  giveaway: ['Giveaway', 'Giveaway', 'Sorteo'],
+  penitenze: ['Penitenze', 'Forfeits', 'Penitencias'],
+  alert: ['Overlay Studio', 'Overlay Studio', 'Overlay Studio'],
+  notifiche: ['Notifiche', 'Notifications', 'Notificaciones'],
+  admin: ['Admin', 'Admin', 'Admin'],
+};
+const tGruppo = (id, fb) => { const t = T_GRUPPO[id]; return t ? L(t[0], t[1], t[2]) : (fb || id); };
+const tScheda = (id, fb) => { const t = T_SCHEDA[id]; return t ? L(t[0], t[1], t[2]) : (fb || id); };
+
 // L'elenco effettivo dei gruppi: aggiunge l'area Admin se sei l'operatore.
 function elencoGruppi() {
   return stato.isAdmin ? GRUPPI.concat([GRUPPO_ADMIN]) : GRUPPI;
@@ -1092,62 +1128,65 @@ const ICONA = {
 };
 
 // Descrizioni brevi mostrate nell'intestazione di pagina di ogni sezione.
+// [it, en, es] risolte a runtime con L() (vedi descScheda).
 const DESC = {
-  stato: 'Accendi il bot e controlla che sia connesso alla tua chat.',
-  personalita: 'Il tono e il carattere con cui il bot parla in chat.',
-  conoscenza: 'Cosa sa il bot su di te e sui tuoi contenuti.',
-  memoria: 'Le statistiche della chat e cosa il bot ricorda.',
-  moduli: 'Crea comandi e automazioni per la tua community.',
-  regole: 'Moderazione automatica: filtri e antispam.',
-  giochi: 'Mini-giochi, monete e classifiche per la chat.',
-  effetti: 'Effetti, suoni, GIF e video da lanciare in chat o in overlay — con libreria condivisa.',
-  regia: 'Gestisci la diretta dal bot: titolo, categoria, tag, clip, marker, pubblicità e raid.',
-  studio: 'Vai live dal browser, senza OBS: webcam, schermo, overlay e audio in un click.',
-  clip: 'Clip automatiche nei momenti di hype.',
-  ascolto: 'Comanda il bot a voce mentre streammi.',
-  musica: 'Richieste musicali: gli spettatori mettono canzoni in coda su Spotify.',
-  sondaggi: 'Crea sondaggi e predizioni Twitch al volo.',
-  giveaway: 'Organizza estrazioni a premi per la community.',
-  penitenze: 'Punti canale che ti vietano una parola: se la dici, penitenza!',
-  alert: 'Il tuo overlay OBS: alert, chat a schermo, widget e temi, tutto personalizzabile.',
-  notifiche: 'Avvisi su Telegram e TikTok quando vai in diretta.',
-  admin: 'Gestione streamer e anima condivisa del bot.',
+  stato: ['Accendi il bot e controlla che sia connesso alla tua chat.', 'Turn the bot on and check it’s connected to your chat.', 'Enciende el bot y comprueba que esté conectado a tu chat.'],
+  personalita: ['Il tono e il carattere con cui il bot parla in chat.', 'The tone and character the bot uses in chat.', 'El tono y el carácter con que el bot habla en el chat.'],
+  conoscenza: ['Cosa sa il bot su di te e sui tuoi contenuti.', 'What the bot knows about you and your content.', 'Lo que el bot sabe sobre ti y tu contenido.'],
+  memoria: ['Le statistiche della chat e cosa il bot ricorda.', 'Chat stats and what the bot remembers.', 'Las estadísticas del chat y lo que el bot recuerda.'],
+  moduli: ['Crea comandi e automazioni per la tua community.', 'Create commands and automations for your community.', 'Crea comandos y automatizaciones para tu comunidad.'],
+  regole: ['Moderazione automatica: filtri e antispam.', 'Automatic moderation: filters and anti-spam.', 'Moderación automática: filtros y antispam.'],
+  giochi: ['Mini-giochi, monete e classifiche per la chat.', 'Minigames, coins and leaderboards for chat.', 'Minijuegos, monedas y clasificaciones para el chat.'],
+  effetti: ['Effetti, suoni, GIF e video da lanciare in chat o in overlay — con libreria condivisa.', 'Effects, sounds, GIFs and videos to trigger in chat or overlay — with a shared library.', 'Efectos, sonidos, GIF y vídeos para lanzar en el chat o en el overlay — con biblioteca compartida.'],
+  regia: ['Gestisci la diretta dal bot: titolo, categoria, tag, clip, marker, pubblicità e raid.', 'Run your stream from the bot: title, category, tags, clips, markers, ads and raids.', 'Gestiona el directo desde el bot: título, categoría, etiquetas, clips, marcadores, anuncios y raids.'],
+  studio: ['Vai live dal browser, senza OBS: webcam, schermo, overlay e audio in un click.', 'Go live from the browser, no OBS: webcam, screen, overlay and audio in one click.', 'Emite desde el navegador, sin OBS: webcam, pantalla, overlay y audio con un clic.'],
+  clip: ['Clip automatiche nei momenti di hype.', 'Automatic clips in the hype moments.', 'Clips automáticos en los momentos de hype.'],
+  ascolto: ['Comanda il bot a voce mentre streammi.', 'Control the bot by voice while you stream.', 'Controla el bot por voz mientras haces directo.'],
+  musica: ['Richieste musicali: gli spettatori mettono canzoni in coda su Spotify.', 'Music requests: viewers queue songs on Spotify.', 'Peticiones musicales: los espectadores ponen canciones en cola en Spotify.'],
+  sondaggi: ['Crea sondaggi e predizioni Twitch al volo.', 'Create Twitch polls and predictions on the fly.', 'Crea encuestas y predicciones de Twitch al vuelo.'],
+  giveaway: ['Organizza estrazioni a premi per la community.', 'Run prize giveaways for your community.', 'Organiza sorteos de premios para tu comunidad.'],
+  penitenze: ['Punti canale che ti vietano una parola: se la dici, penitenza!', 'Channel points that ban a word for you: say it and you owe a forfeit!', '¡Puntos de canal que te prohíben una palabra: si la dices, penitencia!'],
+  alert: ['Il tuo overlay OBS: alert, chat a schermo, widget e temi, tutto personalizzabile.', 'Your OBS overlay: alerts, on-screen chat, widgets and themes, all customizable.', 'Tu overlay para OBS: alertas, chat en pantalla, widgets y temas, todo personalizable.'],
+  notifiche: ['Avvisi su Telegram e TikTok quando vai in diretta.', 'Alerts on Telegram and TikTok when you go live.', 'Avisos en Telegram y TikTok cuando estás en directo.'],
+  admin: ['Gestione streamer e anima condivisa del bot.', 'Streamer management and the bot’s shared soul.', 'Gestión de streamers y el alma compartida del bot.'],
 };
+const descScheda = (id) => { const d = DESC[id]; return d ? L(d[0], d[1], d[2]) : ''; };
 
 // Mini-guida per scheda: "a cosa serve" + i passi di "come si fa". Mostrata in
 // cima a ogni pagina (callout richiudibile), così con tante sezioni si capisce
 // sempre cosa fare. Vale anche in demo (usa la stessa testata di pagina).
+// serve/come sono tuple [it, en, es] risolte a runtime (vedi guidaSchedaHtml).
 const GUIDE = {
-  stato: { serve: 'Accendere il bot e controllare che sia connesso alla tua chat.',
-    come: ['Accendi l’interruttore del bot.', 'Controlla il badge “in chat”: verde = sei online.', 'Se manca un permesso, riautorizza con un clic.'] },
-  personalita: { serve: 'Dare al bot il tono e il carattere con cui parla in chat.',
-    come: ['Scegli tono e “spontaneità” (quanto interviene da solo).', 'Aggiungi regole che rispetterà SEMPRE.', 'Salva: il nuovo stile parte subito.'] },
-  conoscenza: { serve: 'Insegnare al bot cosa dire su di te (social, orari, PC, regole…).',
-    come: ['Aggiungi una voce: domanda → risposta.', 'In chat richiami la risposta con un !comando o una parola chiave.'] },
-  moduli: { serve: 'Creare comandi e automazioni: QUANDO succede X, SE le condizioni, ALLORA fai Y.',
-    come: ['“Nuovo comando”.', 'Scegli l’innesco: !comando, una parola, un evento o un timer.', 'Aggiungi una o più azioni (scrivi in chat, effetto, clip, musica…).', 'Premi “Prova” per vederlo in azione.'] },
-  regole: { serve: 'Moderazione automatica: filtra spam, link e flood e dà timeout ai recidivi.',
-    come: ['Attiva l’antispam.', 'Scegli cosa filtrare (link, maiuscole, ripetizioni…).', 'Salva: il bot modera da solo.'] },
-  giochi: { serve: 'Minigiochi, monete e classifiche per tenere viva la chat.',
-    come: ['Attiva i giochi.', 'Personalizza il nome della moneta e i premi.', 'Gli spettatori giocano con !slot, !roulette, !pesca, !trivia…'] },
-  effetti: { serve: 'Suoni ed effetti in overlay OBS, anche riscattabili con i punti canale.',
-    come: ['Carica un effetto (audio/immagine) e dagli un comando.', 'Aggiungi l’URL overlay in OBS come sorgente browser.', 'Se vuoi, collega un effetto a un premio a punti canale.'] },
-  clip: { serve: 'Creare clip automatiche nei momenti di “hype” della diretta.',
-    come: ['Attiva le clip automatiche.', 'Regola la sensibilità (quanto “hype” serve).'] },
-  ascolto: { serve: 'Comandare il bot con la VOCE mentre streami (l’audio resta sul tuo PC).',
-    come: ['Concedi l’accesso al microfono dal browser.', 'Di’ le frasi-chiave dei tuoi moduli vocali (es. “clippa”).'] },
-  musica: { serve: 'Richieste musicali: gli spettatori mettono canzoni in coda su Spotify.',
-    come: ['Connetti Spotify (serve Premium + app aperta).', 'Scegli come si “paga” la richiesta: libera, sub, monete, bit o punti canale.', 'Gli spettatori usano !sr <canzone>; !song mostra cosa suona.'] },
-  sondaggi: { serve: 'Lanciare sondaggi e predizioni Twitch direttamente da qui.',
-    come: ['Scrivi la domanda e le opzioni (o titolo ed esiti).', 'Lancia: gli spettatori votano/puntano dall’app.', 'Chiudi il sondaggio o scegli l’esito vincente della predizione.'] },
-  giveaway: { serve: 'Organizzare estrazioni a premi per la community.',
-    come: ['Apri il giveaway indicando il premio.', 'La community entra scrivendo !join in chat.', 'Estrai il vincitore dal pannello (puoi ripetere).'] },
-  penitenze: { serve: 'Trasformare un premio a punti canale in una sfida a tempo: il bot conta quante volte sbagli (con «+1» a schermo) e alla fine fa partire una penitenza.',
-    come: ['Attiva il riconoscimento vocale (scheda Comandi a voce) e concedi i Punti canale.', 'Scegli i due premi: «Vieta la parola» (non dirla) e «Usa solo la parola» (dì solo quella).', 'Decidi la penitenza (tua lista o inventata dall\'IA) e dove mostrare il contatore nell\'overlay.'] },
-  notifiche: { serve: 'Avvisare i tuoi canali (Telegram, social) quando vai in diretta.',
-    come: ['Collega Telegram e/o le piattaforme social.', 'Attiva gli avvisi che vuoi.', 'Personalizza i messaggi.'] },
-  alert: { serve: 'Mostrare nell\'overlay OBS un cartello animato (con suono) per follow, sub, bit e raid, e far scorrere la chat a schermo.',
-    come: ['Aggiungi l\'URL overlay in OBS (scheda Effetti & suoni).', 'Attiva gli alert che vuoi e personalizza testo, suono e colore.', 'Premi «Prova» per vederli. Attiva la chat a schermo se la vuoi in sovraimpressione.'] },
+  stato: { serve: ['Accendere il bot e controllare che sia connesso alla tua chat.', 'Turn the bot on and check it’s connected to your chat.', 'Encender el bot y comprobar que esté conectado a tu chat.'],
+    come: [['Accendi l’interruttore del bot.', 'Flip the bot’s switch.', 'Activa el interruptor del bot.'], ['Controlla il badge “in chat”: verde = sei online.', 'Check the “in chat” badge: green = you’re online.', 'Mira la insignia “en el chat”: verde = estás en línea.'], ['Se manca un permesso, riautorizza con un clic.', 'If a permission is missing, re-authorize with one click.', 'Si falta un permiso, reautoriza con un clic.']] },
+  personalita: { serve: ['Dare al bot il tono e il carattere con cui parla in chat.', 'Give the bot the tone and character it speaks with in chat.', 'Darle al bot el tono y el carácter con que habla en el chat.'],
+    come: [['Scegli tono e “spontaneità” (quanto interviene da solo).', 'Pick tone and “spontaneity” (how often it chimes in).', 'Elige el tono y la “espontaneidad” (cuánto interviene solo).'], ['Aggiungi regole che rispetterà SEMPRE.', 'Add rules it will ALWAYS follow.', 'Añade reglas que respetará SIEMPRE.'], ['Salva: il nuovo stile parte subito.', 'Save: the new style takes effect right away.', 'Guarda: el nuevo estilo se aplica al instante.']] },
+  conoscenza: { serve: ['Insegnare al bot cosa dire su di te (social, orari, PC, regole…).', 'Teach the bot what to say about you (socials, schedule, PC, rules…).', 'Enseñarle al bot qué decir sobre ti (redes, horarios, PC, reglas…).'],
+    come: [['Aggiungi una voce: domanda → risposta.', 'Add an entry: question → answer.', 'Añade una entrada: pregunta → respuesta.'], ['In chat richiami la risposta con un !comando o una parola chiave.', 'In chat you trigger the answer with a !command or a keyword.', 'En el chat activas la respuesta con un !comando o una palabra clave.']] },
+  moduli: { serve: ['Creare comandi e automazioni: QUANDO succede X, SE le condizioni, ALLORA fai Y.', 'Create commands and automations: WHEN X happens, IF conditions, THEN do Y.', 'Crear comandos y automatizaciones: CUANDO pasa X, SI se cumplen condiciones, ENTONCES haz Y.'],
+    come: [['“Nuovo comando”.', '“New command”.', '“Nuevo comando”.'], ['Scegli l’innesco: !comando, una parola, un evento o un timer.', 'Choose the trigger: !command, a word, an event or a timer.', 'Elige el disparador: !comando, una palabra, un evento o un temporizador.'], ['Aggiungi una o più azioni (scrivi in chat, effetto, clip, musica…).', 'Add one or more actions (write in chat, effect, clip, music…).', 'Añade una o varias acciones (escribir en el chat, efecto, clip, música…).'], ['Premi “Prova” per vederlo in azione.', 'Hit “Test” to see it in action.', 'Pulsa “Probar” para verlo en acción.']] },
+  regole: { serve: ['Moderazione automatica: filtra spam, link e flood e dà timeout ai recidivi.', 'Automatic moderation: filters spam, links and flood, and times out repeat offenders.', 'Moderación automática: filtra spam, enlaces y flood, y da timeout a los reincidentes.'],
+    come: [['Attiva l’antispam.', 'Enable anti-spam.', 'Activa el antispam.'], ['Scegli cosa filtrare (link, maiuscole, ripetizioni…).', 'Choose what to filter (links, caps, repetitions…).', 'Elige qué filtrar (enlaces, mayúsculas, repeticiones…).'], ['Salva: il bot modera da solo.', 'Save: the bot moderates on its own.', 'Guarda: el bot modera solo.']] },
+  giochi: { serve: ['Minigiochi, monete e classifiche per tenere viva la chat.', 'Minigames, coins and leaderboards to keep chat alive.', 'Minijuegos, monedas y clasificaciones para animar el chat.'],
+    come: [['Attiva i giochi.', 'Turn on games.', 'Activa los juegos.'], ['Personalizza il nome della moneta e i premi.', 'Customize the coin name and the prizes.', 'Personaliza el nombre de la moneda y los premios.'], ['Gli spettatori giocano con !slot, !roulette, !pesca, !trivia…', 'Viewers play with !slot, !roulette, !fish, !trivia…', 'Los espectadores juegan con !slot, !roulette, !pesca, !trivia…']] },
+  effetti: { serve: ['Suoni ed effetti in overlay OBS, anche riscattabili con i punti canale.', 'Sounds and effects in the OBS overlay, redeemable with channel points too.', 'Sonidos y efectos en el overlay de OBS, también canjeables con puntos de canal.'],
+    come: [['Carica un effetto (audio/immagine) e dagli un comando.', 'Upload an effect (audio/image) and give it a command.', 'Sube un efecto (audio/imagen) y asígnale un comando.'], ['Aggiungi l’URL overlay in OBS come sorgente browser.', 'Add the overlay URL in OBS as a browser source.', 'Añade la URL del overlay en OBS como fuente de navegador.'], ['Se vuoi, collega un effetto a un premio a punti canale.', 'If you like, link an effect to a channel-point reward.', 'Si quieres, vincula un efecto a una recompensa de puntos de canal.']] },
+  clip: { serve: ['Creare clip automatiche nei momenti di “hype” della diretta.', 'Create automatic clips in the stream’s “hype” moments.', 'Crear clips automáticos en los momentos de “hype” del directo.'],
+    come: [['Attiva le clip automatiche.', 'Enable automatic clips.', 'Activa los clips automáticos.'], ['Regola la sensibilità (quanto “hype” serve).', 'Adjust the sensitivity (how much “hype” it takes).', 'Ajusta la sensibilidad (cuánto “hype” hace falta).']] },
+  ascolto: { serve: ['Comandare il bot con la VOCE mentre streami (l’audio resta sul tuo PC).', 'Control the bot by VOICE while you stream (audio stays on your PC).', 'Controlar el bot por VOZ mientras haces directo (el audio se queda en tu PC).'],
+    come: [['Concedi l’accesso al microfono dal browser.', 'Grant microphone access from the browser.', 'Concede el acceso al micrófono desde el navegador.'], ['Di’ le frasi-chiave dei tuoi moduli vocali (es. “clippa”).', 'Say the key phrases of your voice modules (e.g. “clip it”).', 'Di las frases clave de tus módulos de voz (p. ej. “clipea”).']] },
+  musica: { serve: ['Richieste musicali: gli spettatori mettono canzoni in coda su Spotify.', 'Music requests: viewers queue songs on Spotify.', 'Peticiones musicales: los espectadores ponen canciones en cola en Spotify.'],
+    come: [['Connetti Spotify (serve Premium + app aperta).', 'Connect Spotify (needs Premium + the app open).', 'Conecta Spotify (necesitas Premium + la app abierta).'], ['Scegli come si “paga” la richiesta: libera, sub, monete, bit o punti canale.', 'Choose how a request is “paid”: free, subs, coins, bits or channel points.', 'Elige cómo se “paga” la petición: libre, subs, monedas, bits o puntos de canal.'], ['Gli spettatori usano !sr <canzone>; !song mostra cosa suona.', 'Viewers use !sr <song>; !song shows what’s playing.', 'Los espectadores usan !sr <canción>; !song muestra qué suena.']] },
+  sondaggi: { serve: ['Lanciare sondaggi e predizioni Twitch direttamente da qui.', 'Launch Twitch polls and predictions right from here.', 'Lanzar encuestas y predicciones de Twitch directamente desde aquí.'],
+    come: [['Scrivi la domanda e le opzioni (o titolo ed esiti).', 'Write the question and options (or title and outcomes).', 'Escribe la pregunta y las opciones (o título y resultados).'], ['Lancia: gli spettatori votano/puntano dall’app.', 'Launch: viewers vote/bet from the app.', 'Lanza: los espectadores votan/apuestan desde la app.'], ['Chiudi il sondaggio o scegli l’esito vincente della predizione.', 'Close the poll or pick the winning prediction outcome.', 'Cierra la encuesta o elige el resultado ganador de la predicción.']] },
+  giveaway: { serve: ['Organizzare estrazioni a premi per la community.', 'Run prize giveaways for your community.', 'Organizar sorteos de premios para tu comunidad.'],
+    come: [['Apri il giveaway indicando il premio.', 'Open the giveaway and set the prize.', 'Abre el sorteo indicando el premio.'], ['La community entra scrivendo !join in chat.', 'The community joins by typing !join in chat.', 'La comunidad entra escribiendo !join en el chat.'], ['Estrai il vincitore dal pannello (puoi ripetere).', 'Draw the winner from the panel (you can redo it).', 'Saca al ganador desde el panel (puedes repetir).']] },
+  penitenze: { serve: ['Trasformare un premio a punti canale in una sfida a tempo: il bot conta quante volte sbagli (con «+1» a schermo) e alla fine fa partire una penitenza.', 'Turn a channel-point reward into a timed challenge: the bot counts your slip-ups (with an on-screen «+1») and triggers a forfeit at the end.', 'Convertir una recompensa de puntos de canal en un reto cronometrado: el bot cuenta cuántas veces fallas (con un «+1» en pantalla) y al final lanza una penitencia.'],
+    come: [['Attiva il riconoscimento vocale (scheda Comandi a voce) e concedi i Punti canale.', 'Enable voice recognition (Voice commands tab) and grant Channel Points.', 'Activa el reconocimiento de voz (pestaña Comandos por voz) y concede los Puntos de canal.'], ['Scegli i due premi: «Vieta la parola» (non dirla) e «Usa solo la parola» (dì solo quella).', 'Choose the two rewards: «Ban the word» (don’t say it) and «Use only the word» (say only that).', 'Elige las dos recompensas: «Prohíbe la palabra» (no la digas) y «Usa solo la palabra» (di solo esa).'], ['Decidi la penitenza (tua lista o inventata dall\'IA) e dove mostrare il contatore nell\'overlay.', 'Decide the forfeit (your list or AI-generated) and where to show the counter in the overlay.', 'Decide la penitencia (tu lista o inventada por la IA) y dónde mostrar el contador en el overlay.']] },
+  notifiche: { serve: ['Avvisare i tuoi canali (Telegram, social) quando vai in diretta.', 'Alert your channels (Telegram, socials) when you go live.', 'Avisar a tus canales (Telegram, redes) cuando estás en directo.'],
+    come: [['Collega Telegram e/o le piattaforme social.', 'Connect Telegram and/or the social platforms.', 'Conecta Telegram y/o las plataformas sociales.'], ['Attiva gli avvisi che vuoi.', 'Turn on the alerts you want.', 'Activa los avisos que quieras.'], ['Personalizza i messaggi.', 'Customize the messages.', 'Personaliza los mensajes.']] },
+  alert: { serve: ['Mostrare nell\'overlay OBS un cartello animato (con suono) per follow, sub, bit e raid, e far scorrere la chat a schermo.', 'Show an animated card (with sound) in the OBS overlay for follows, subs, bits and raids, and scroll the chat on screen.', 'Mostrar en el overlay de OBS un cartel animado (con sonido) para follows, subs, bits y raids, y desplazar el chat en pantalla.'],
+    come: [['Aggiungi l\'URL overlay in OBS (scheda Effetti & suoni).', 'Add the overlay URL in OBS (Effects & sounds tab).', 'Añade la URL del overlay en OBS (pestaña Efectos y sonidos).'], ['Attiva gli alert che vuoi e personalizza testo, suono e colore.', 'Enable the alerts you want and customize text, sound and color.', 'Activa las alertas que quieras y personaliza texto, sonido y color.'], ['Premi «Prova» per vederli. Attiva la chat a schermo se la vuoi in sovraimpressione.', 'Hit «Test» to preview them. Enable on-screen chat if you want it as an overlay.', 'Pulsa «Probar» para verlas. Activa el chat en pantalla si lo quieres superpuesto.']] },
 };
 
 // SVG lampadina (niente emoji): icona della mini-guida.
@@ -1228,14 +1267,17 @@ const ICO = {
 const _bIco = (d) => `<svg class="b-ico" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 
 // HTML della mini-guida di una scheda (vuoto se non prevista).
+// serve/come sono tuple [it,en,es]: si risolvono qui con L().
 function guidaSchedaHtml(id) {
   const g = GUIDE[id];
   if (!g) return '';
+  const serve = Array.isArray(g.serve) ? L(g.serve[0], g.serve[1], g.serve[2]) : g.serve;
+  const come = Array.isArray(g.come) ? g.come.map((c) => (Array.isArray(c) ? L(c[0], c[1], c[2]) : c)) : [];
   return `<details class="guida-scheda" open>
-    <summary><span class="guida-ico">${_icoGuida}</span> Come funziona</summary>
+    <summary><span class="guida-ico">${_icoGuida}</span> ${L('Come funziona', 'How it works', 'Cómo funciona')}</summary>
     <div class="guida-corpo">
-      ${g.serve ? `<p class="guida-serve"><strong>A cosa serve.</strong> ${esc(g.serve)}</p>` : ''}
-      ${Array.isArray(g.come) && g.come.length ? `<p class="guida-titolo">Come si fa</p><ol class="guida-come">${g.come.map((c) => `<li>${esc(c)}</li>`).join('')}</ol>` : ''}
+      ${serve ? `<p class="guida-serve"><strong>${L('A cosa serve.', 'What it’s for.', 'Para qué sirve.')}</strong> ${esc(serve)}</p>` : ''}
+      ${come.length ? `<p class="guida-titolo">${L('Come si fa', 'How to do it', 'Cómo se hace')}</p><ol class="guida-come">${come.map((c) => `<li>${esc(c)}</li>`).join('')}</ol>` : ''}
     </div>
   </details>`;
 }
@@ -1246,7 +1288,7 @@ function guidaSchedaHtml(id) {
 function infoScheda(id) {
   for (const g of elencoGruppi()) {
     const s = g.schede.find(([sid]) => sid === id);
-    if (s) return g.schede.length === 1 ? { area: '', titolo: g.nome } : { area: g.nome, titolo: s[1] };
+    if (s) return g.schede.length === 1 ? { area: '', titolo: tGruppo(g.id, g.nome) } : { area: tGruppo(g.id, g.nome), titolo: tScheda(s[0], s[1]) };
   }
   return { area: '', titolo: id };
 }
@@ -1273,12 +1315,12 @@ function navTopHtml() {
     if (g.schede.length === 1) {
       const [id] = g.schede[0];
       return `<div class="grp${attivo}" data-grp="${g.id}" style="${col}">
-        <button class="grp-btn" data-scheda="${id}"><span class="grp-dot"></span>${esc(g.nome)}</button></div>`;
+        <button class="grp-btn" data-scheda="${id}"><span class="grp-dot"></span>${esc(tGruppo(g.id, g.nome))}</button></div>`;
     }
     const voci = g.schede.map(([id, nome]) =>
-      `<button class="menu-voce${id === schedaAttiva ? ' on' : ''}" data-scheda="${id}">${ICONA[id] || ''}<span>${esc(nome)}</span></button>`).join('');
+      `<button class="menu-voce${id === schedaAttiva ? ' on' : ''}" data-scheda="${id}">${ICONA[id] || ''}<span>${esc(tScheda(id, nome))}</span></button>`).join('');
     return `<div class="grp${attivo}" data-grp="${g.id}" style="${col}">
-      <button class="grp-btn" data-menu="${g.id}" aria-expanded="false"><span class="grp-dot"></span>${esc(g.nome)}${CHEVRON}</button>
+      <button class="grp-btn" data-menu="${g.id}" aria-expanded="false"><span class="grp-dot"></span>${esc(tGruppo(g.id, g.nome))}${CHEVRON}</button>
       <div class="grp-menu">${voci}</div></div>`;
   }).join('');
 }
@@ -1288,8 +1330,8 @@ function navTopHtml() {
 function navDrawerHtml() {
   return elencoGruppi().map((g) => {
     const voci = g.schede.map(([id, nome]) =>
-      `<button class="drawer-voce${id === schedaAttiva ? ' on' : ''}" data-scheda="${id}">${ICONA[id] || ''}<span>${esc(nome)}</span></button>`).join('');
-    return `<div class="drawer-grp" style="--gc:var(--g-${g.id})"><div class="drawer-grp-tit">${esc(g.nome)}</div>${voci}</div>`;
+      `<button class="drawer-voce${id === schedaAttiva ? ' on' : ''}" data-scheda="${id}">${ICONA[id] || ''}<span>${esc(tScheda(id, nome))}</span></button>`).join('');
+    return `<div class="drawer-grp" style="--gc:var(--g-${g.id})"><div class="drawer-grp-tit">${esc(tGruppo(g.id, g.nome))}</div>${voci}</div>`;
   }).join('');
 }
 
@@ -1300,7 +1342,7 @@ function aggiornaTestataPagina() {
   if (!el) return;
   if (!document.body.classList.contains('con-nav')) { el.innerHTML = ''; return; }
   const { area, titolo } = infoScheda(schedaAttiva);
-  const desc = DESC[schedaAttiva] || '';
+  const desc = descScheda(schedaAttiva);
   // l'occhiello prende il colore-firma del gruppo attivo (coerenza con la nav)
   const gid = gruppoDiScheda(schedaAttiva);
   if (gid) el.style.setProperty('--gc', `var(--g-${gid})`); else el.style.removeProperty('--gc');
