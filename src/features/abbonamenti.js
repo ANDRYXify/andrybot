@@ -110,24 +110,24 @@ export function normalizzaPacchetti(x) {
   return ADDON_IDS.filter((id) => chiesti.has(id));
 }
 
-// ── BUNDLE curati: set di add-on a prezzo scontato ──────────────────────────
-// Non sono un piano a sé: sono una SCORCIATOIA che seleziona più add-on insieme
-// applicando uno sconto (coupon Stripe). L'utente resta abbonato Base + quegli
-// add-on, quindi può comunque aggiungerne/toglierne (modularità intatta).
-export const SCONTO_BUNDLE = 0.15;
+// ── BUNDLE curati: set di add-on a PREZZO FISSO scontato ────────────────────
+// Non sono un piano a sé: sono una SCORCIATOIA che, con un prezzo unico più
+// conveniente, sblocca un gruppo di add-on. In Stripe ognuno ha il suo price-id
+// dedicato (`priceEnv`). Restano add-on "posseduti", quindi la modularità è
+// intatta (il gating li conosce uno per uno).
 const _sommaAddon = (ids) => ids.reduce((t, id) => t + (addonById(id)?.prezzo || 0), 0);
 export const BUNDLE = [
-  { id: 'creator', nome: 'Creator', icona: '🎨', addon: ['effetti', 'notifiche', 'clip'],
+  { id: 'creator', nome: 'Creator', icona: '🎨', priceEnv: 'bundle_creator', prezzo: 5.99, addon: ['effetti', 'notifiche', 'clip'],
     sommario: 'Presenza e visibilità: overlay ed effetti, avvisi live sui social, clip automatiche.' },
-  { id: 'interazione', nome: 'Interazione', icona: '🎉', addon: ['musica', 'giochi', 'voce'],
+  { id: 'interazione', nome: 'Interazione', icona: '🎉', priceEnv: 'bundle_interazione', prezzo: 6.99, addon: ['musica', 'giochi', 'voce'],
     sommario: 'Community attiva: richieste musicali, minigiochi e monete, comandi a voce.' },
-  { id: 'tutto', nome: 'Tutto', icona: '🚀', addon: [...ADDON_IDS],
+  { id: 'tutto', nome: 'Tutto', icona: '🚀', priceEnv: 'bundle_tutto', prezzo: 13.99, addon: [...ADDON_IDS],
     sommario: 'Ogni super-potere sbloccato: tutti gli add-on in un colpo solo.' },
 ].map((b) => {
   const pieno = Math.round(_sommaAddon(b.addon) * 100) / 100;
-  const prezzo = Math.round(pieno * (1 - SCONTO_BUNDLE) * 100) / 100;
+  const sconto = pieno > 0 ? Math.round((1 - b.prezzo / pieno) * 100) / 100 : 0;
   const t = (n) => '€' + n.toFixed(2).replace('.', ',');
-  return { ...b, sconto: SCONTO_BUNDLE, prezzoPieno: pieno, prezzo, prezzoTesto: t(prezzo) + '/mese', prezzoPienoTesto: t(pieno) };
+  return { ...b, prezzoPieno: pieno, sconto, prezzoTesto: t(b.prezzo) + '/mese', prezzoPienoTesto: t(pieno) };
 });
 export function bundleById(id) { return BUNDLE.find((b) => b.id === String(id || '').toLowerCase()) || null; }
 
@@ -214,16 +214,27 @@ async function stripeCall(path, params) {
 // come line-item multipli di UNA sola sottoscrizione. Ritorna l'URL a cui mandare
 // il browser, oppure null se Stripe è spento / manca il price della Base. Link è
 // già attivo di default nel Checkout di Stripe.
-export async function creaCheckout({ login, pacchetti = [], coupon = false }) {
+export async function creaCheckout({ login, pacchetti = [], bundle = null }) {
   const basePrice = config.stripe.prezzi.base;
   if (!config.stripe.attivo || !basePrice) return null;
-  const ids = normalizzaPacchetti(pacchetti);
-  // line-item: prima la Base, poi ogni add-on con un price-id configurato.
-  const prezzi = [basePrice];
-  for (const id of ids) {
-    const a = addonById(id);
-    const p = a?.priceEnv ? config.stripe.prezzi[a.priceEnv] : '';
-    if (p) prezzi.push(p);
+  const b = bundle ? bundleById(bundle) : null;
+  let ids, prezzi;
+  if (b) {
+    // BUNDLE: line-item = Base + il prezzo UNICO del bundle. Nei metadata salvo
+    // comunque i suoi add-on, così il gating li sblocca uno per uno.
+    const bp = b.priceEnv ? config.stripe.prezzi[b.priceEnv] : '';
+    if (!bp) return null;              // bundle non ancora configurato in Stripe
+    ids = normalizzaPacchetti(b.addon);
+    prezzi = [basePrice, bp];
+  } else {
+    // à la carte: Base + ogni add-on scelto con un price-id configurato.
+    ids = normalizzaPacchetti(pacchetti);
+    prezzi = [basePrice];
+    for (const id of ids) {
+      const a = addonById(id);
+      const p = a?.priceEnv ? config.stripe.prezzi[a.priceEnv] : '';
+      if (p) prezzi.push(p);
+    }
   }
   const csv = ids.join(',');
   const base = config.baseUrl;
@@ -238,12 +249,8 @@ export async function creaCheckout({ login, pacchetti = [], coupon = false }) {
     'subscription_data[metadata][login]': login,
     'subscription_data[metadata][tier]': 'base',
     'subscription_data[metadata][pacchetti]': csv,
+    allow_promotion_codes: 'true',
   };
-  // BUNDLE: applica il coupon sconto (se configurato). Stripe non permette coupon
-  // e codici promo insieme, quindi si sceglie: coupon per i bundle, altrimenti
-  // lasciamo aperti i codici promozionali.
-  if (coupon && config.stripe.couponBundle) params['discounts[0][coupon]'] = config.stripe.couponBundle;
-  else params.allow_promotion_codes = 'true';
   prezzi.forEach((price, i) => {
     params[`line_items[${i}][price]`] = price;
     params[`line_items[${i}][quantity]`] = '1';

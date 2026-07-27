@@ -100,11 +100,13 @@ export const config = {
         addon_squadra: env('STRIPE_PRICE_ADDON_SQUADRA'),
         addon_musica: env('STRIPE_PRICE_ADDON_MUSICA'),
         pro: env('STRIPE_PRICE_PRO'),
+        // BUNDLE curati: un price-id Stripe DEDICATO per bundle (prezzo fisso
+        //  scontato). Crea in Stripe un prezzo ricorrente per ciascuno:
+        //  Creator €5,99 · Interazione €6,99 · Tutto €13,99 (esclusa la Base).
+        bundle_creator: env('STRIPE_PRICE_BUNDLE_CREATOR'),
+        bundle_interazione: env('STRIPE_PRICE_BUNDLE_INTERAZIONE'),
+        bundle_tutto: env('STRIPE_PRICE_BUNDLE_TUTTO'),
       },
-      // coupon Stripe (percentuale) applicato quando si acquista un BUNDLE curato.
-      // Crealo nel cruscotto Stripe (es. 15% "forever") e — se vuoi che sconti solo
-      // gli add-on e non la Base — limitalo ai prodotti add-on (applies_to.products).
-      couponBundle: env('STRIPE_COUPON_BUNDLE'),
       // gli abbonamenti sono operativi solo con chiave segreta + segreto webhook
       attivo: !!(secretKey && webhookSecret),
     };
