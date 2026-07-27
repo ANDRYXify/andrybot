@@ -1,4 +1,4 @@
-// Il "cancello" di bot.andryxify.it.
+// Il "cancello" di socialbot.live.
 //
 // Filosofia: ZERO segreti condivisi. La dashboard non ha un login proprio
 // e non è raggiungibile da fuori. L'unico modo per entrare è arrivare dal
@@ -7,13 +7,13 @@
 //   1. Lo streamer VERIFICATO E ABILITATO, dentro le impostazioni del suo
 //      account su andryxify.it, clicca "Gestisci il mio SocialBot".
 //   2. Il sito conia un pass casuale (256 bit), lo salva per 2 minuti e
-//      reindirizza il browser a  bot.andryxify.it/entra?pass=<pass>.
+//      reindirizza il browser a  socialbot.live/entra?pass=<pass>.
 //   3. Il bot "brucia" il pass chiamando il sito (redeemPass): il sito
 //      risponde con il login dello streamer e lo cancella (usa una volta
 //      sola). L'ancora di fiducia è l'HTTPS di andryxify.it — nessuna
 //      chiave da incollare in un .env o in una variabile d'ambiente.
 //
-// Chi arriva su bot.andryxify.it senza un pass valido non vede NIENTE:
+// Chi arriva su socialbot.live senza un pass valido non vede NIENTE:
 // solo un "Not Found". La dashboard, i file statici e le API non esistono
 // per lui.
 import { config } from '../config.js';
@@ -24,7 +24,7 @@ const log = makeLog('gate');
 
 // User-Agent neutro: lo scudo anti-scanner del sito penalizza gli UA di
 // automazione headless, quindi ci presentiamo come il servizio che siamo.
-const UA = 'bot.andryxify.it/1.0 (+https://bot.andryxify.it)';
+const UA = 'socialbot.live/1.0 (+https://socialbot.live)';
 
 // fetch con timeout (niente dipendenze: AbortController nativo)
 async function fetchJson(url, opts = {}, timeoutMs = 10_000) {
