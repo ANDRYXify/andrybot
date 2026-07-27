@@ -260,6 +260,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // e il flusso di login con passkey (per rientrare senza passare dal sito).
   // Non rivelano nulla di sensibile: la dashboard vera resta dietro la sessione.
   const PUBBLICI = new Set(['/health', '/entra', '/sblocca', '/sblocca.html', '/privacy', '/privacy.html',
+    '/termini', '/termini.html', '/terms',
     '/mod', '/mod.html', '/auth/mod', '/auth/callback', '/manifest.webmanifest', '/sw.js',
     // SEO: i motori di ricerca devono poter leggere robots e sitemap (nessun dato sensibile)
     '/robots.txt', '/sitemap.xml',
@@ -601,6 +602,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
 
   // Informativa privacy & sicurezza (pubblica: dev'essere sempre consultabile)
   app.get('/privacy', (req, res) => res.sendFile(join(publicDir, 'privacy.html')));
+  // Termini di servizio (pubblici: richiesti anche dalle app di terzi, es. TikTok)
+  app.get(['/termini', '/terms'], (req, res) => res.sendFile(join(publicDir, 'termini.html')));
 
   // ------------------------------------------------------------ MODERATORI (gestori delegati)
   // Lo streamer invita un moderatore con un link; il moderatore accetta facendo
