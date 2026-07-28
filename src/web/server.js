@@ -1557,7 +1557,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
         // penitenza: dalla mia lista o scelta dall'IA
         penitenzeModo: ['lista', 'ia'].includes(p.penitenzeModo) ? p.penitenzeModo : 'lista',
         penitenze: Array.isArray(p.penitenze) ? p.penitenze.map((x) => String(x).trim().slice(0, 120)).filter(Boolean).slice(0, 60) : [],
-        effetto: String(p.effetto || '').trim().slice(0, 40),
+        effetto: String(p.effetto || '').trim().slice(0, 60),   // "preset:<id>" | "effetto:<comando>" | ""
         // tolleranza al riconoscimento vocale (50..100 = più severo)
         fuzzy: Math.max(50, Math.min(100, Math.round(Number(p.fuzzy)) || 80)),
         overlay: { posizione: posizioni.includes(ov.posizione) ? ov.posizione : 'alto-destra', colore },
