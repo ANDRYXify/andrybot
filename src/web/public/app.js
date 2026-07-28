@@ -2383,8 +2383,12 @@ function pannelloPenitenze() {
       <label class="campo spazio-sopra" for="pen-fuzzy">${L('Tolleranza al riconoscimento vocale:', 'Voice-recognition tolerance:', 'Tolerancia del reconocimiento de voz:')} <strong><span id="pen-fuzzy-val">${fuzzy}</span></strong></label>
       <input type="range" id="pen-fuzzy" min="50" max="100" step="5" value="${fuzzy}">
       <p class="suggerimento">${L('Più alta = più severo (conta solo parole quasi identiche). Più bassa = perdona di più gli errori di trascrizione.', 'Higher = stricter (counts only near-identical words). Lower = forgives transcription errors more.', 'Más alta = más estricto (cuenta solo palabras casi idénticas). Más baja = perdona más los errores de transcripción.')}</p>
-      <label class="campo spazio-sopra" for="pen-effetto">${L('Effetto quando scatta la penitenza (facoltativo)', 'Effect when the forfeit triggers (optional)', 'Efecto cuando salta la penitencia (opcional)')}</label>
-      <input type="text" id="pen-effetto" placeholder="${L('es. airhorn (comando di un effetto)', 'e.g. airhorn (an effect command)', 'p. ej. airhorn (comando de un efecto)')}" value="${esc(p.effetto || '')}">
+      <label class="campo spazio-sopra" for="pen-effetto">${L('Suono/effetto quando scatta la penitenza (facoltativo)', 'Sound/effect when the forfeit triggers (optional)', 'Sonido/efecto cuando salta la penitencia (opcional)')}</label>
+      <div class="riga-flessibile">
+        <select id="pen-effetto" class="campo-largo"><option value="">${L('— niente —', '— none —', '— nada —')}</option></select>
+        <button type="button" class="btn secondario mini" id="pen-effetto-prova" title="${L('Prova', 'Test', 'Probar')}">▶</button>
+      </div>
+      <p class="suggerimento">${L('Scegli un suono pronto o un tuo effetto (audio/immagine/video). Ne carichi altri dalla scheda «Effetti & suoni».', 'Pick a ready-made sound or one of your effects (audio/image/video). Upload more from the «Effects & sounds» tab.', 'Elige un sonido listo o uno de tus efectos (audio/imagen/vídeo). Sube más desde la pestaña «Efectos y sonidos».')}</p>
       <p class="spazio-sopra"><button class="btn" id="pen-salva">${L('Salva', 'Save', 'Guardar')}</button></p>
     </div>
 
@@ -2442,6 +2446,39 @@ async function salvaPenitenze(silenzioso) {
   await salvaImpostazioni({ penitenze }, silenzioso ? null : L('Penitenze salvate', 'Forfeits saved', 'Penitencias guardadas'));
 }
 
+// Popola il menu «suono/effetto» della penitenza: suoni pronti (preset) + effetti
+// caricati dallo streamer. Valore salvato: "preset:<id>" o "effetto:<comando>".
+// Retrocompatibile col vecchio formato (comando "nudo" → trattato come effetto).
+async function _penMontaEffetto() {
+  const sel = document.getElementById('pen-effetto');
+  if (!sel) return;
+  let eff = {};
+  try { eff = (await api('/api/streamer/effetti')) || {}; } catch { eff = {}; }
+  const presets = (window.SUONI_PRESET && window.SUONI_PRESET.lista) || [];
+  const audio = (eff.effetti || []).filter((e) => e.tipo === 'audio');
+  const visivi = (eff.effetti || []).filter((e) => e.tipo === 'immagine' || e.tipo === 'video');
+  let cur = String((impostazioni().penitenze || {}).effetto || '');
+  if (cur && !/^(effetto|preset):/.test(cur)) cur = 'effetto:' + cur;   // retrocompat comando nudo
+  const opt = (v, t) => `<option value="${esc(v)}"${v === cur ? ' selected' : ''}>${esc(t)}</option>`;
+  sel.innerHTML = opt('', L('— niente —', '— none —', '— nada —'))
+    + `<optgroup label="${L('Suoni pronti', 'Ready-made sounds', 'Sonidos listos')}">${presets.map((s) => opt('preset:' + s.id, s.nome)).join('')}</optgroup>`
+    + (audio.length ? `<optgroup label="${L('I miei suoni caricati', 'My uploaded sounds', 'Mis sonidos subidos')}">${audio.map((e) => opt('effetto:' + e.comando, '!' + e.comando)).join('')}</optgroup>` : '')
+    + (visivi.length ? `<optgroup label="${L('Immagini / Video', 'Images / Videos', 'Imágenes / Vídeos')}">${visivi.map((e) => opt('effetto:' + e.comando, '!' + e.comando + ' (' + e.tipo + ')')).join('')}</optgroup>` : '');
+  // valore salvato ma non più tra le opzioni (es. effetto cancellato): lo tengo visibile
+  if (cur && sel.value !== cur) sel.insertAdjacentHTML('beforeend', `<option value="${esc(cur)}" selected>${esc(cur.replace(/^effetto:/, '!').replace(/^preset:/, ''))}</option>`);
+  // Prova: preset → suona lato client; effetto → invia all'overlay in OBS
+  const btn = document.getElementById('pen-effetto-prova');
+  if (btn) btn.onclick = () => {
+    const v = sel.value;
+    if (!v) { toast(L('Scegli prima un suono/effetto.', 'Choose a sound/effect first.', 'Elige antes un sonido/efecto.')); return; }
+    if (v.startsWith('preset:') && window.SUONI_PRESET) window.SUONI_PRESET.suona(v.slice(7), 100);
+    else conErrore(async () => {
+      await api('/api/streamer/effetti/test', { method: 'POST', body: { comando: v.startsWith('effetto:') ? v.slice(8) : v } });
+      toast(L('Inviato all\'overlay ▶', 'Sent to the overlay ▶', 'Enviado al overlay ▶'));
+    });
+  };
+}
+
 async function caricaPenitenze() {
   document.getElementById('pen-attivo')?.addEventListener('change', (ev) => {
     const et = document.getElementById('pen-etichetta');
@@ -2458,6 +2495,7 @@ async function caricaPenitenze() {
     await api('/api/penitenze/prova', { method: 'POST', body: {} });
     toast(L('Inviato all\'overlay ▶', 'Sent to the overlay ▶', 'Enviado al overlay ▶'));
   }));
+  await _penMontaEffetto();   // menu «suono/effetto» (preset + effetti caricati)
   const boxV = document.getElementById('pen-box-vieta');
   const boxS = document.getElementById('pen-box-solo');
   if (!boxV || !boxS) return;

@@ -192,7 +192,16 @@ export class PenitenzeEngine {
       const volte = p.count === 1 ? '1 volta' : `${p.count} volte`;
       this.say(channel, `⏱️ Tempo scaduto! ${cosa}: beccato ${volte} → PENITENZA: ${pen}${p.count > 1 ? ` ×${p.count}` : ''} 😈`);
       this._overlay(channel, { azione: 'end', id: p.id, count: p.count, penitenza: pen });
-      if (c?.effetto && this.effects?.fire) { try { this.effects.fire(channel, c.effetto); } catch { /* niente */ } }
+      // effetto/suono di fine penitenza. Formato: "preset:<id>" (suono pronto),
+      // "effetto:<comando>" (effetto caricato) o, per retrocompatibilità, il
+      // vecchio comando "nudo" (trattato come effetto caricato).
+      if (c?.effetto && this.effects) {
+        const e = String(c.effetto);
+        try {
+          if (e.startsWith('preset:')) this.effects.firePreset?.(channel, e.slice(7));
+          else this.effects.fire?.(channel, e.startsWith('effetto:') ? e.slice(8) : e);
+        } catch { /* niente */ }
+      }
     } else {
       this.say(channel, `✅ Tempo scaduto! ${cosa}: 0 penitenze — salvo! 🎉`);
       this._overlay(channel, { azione: 'end', id: p.id, count: 0, penitenza: '' });
