@@ -4601,6 +4601,19 @@ function pannello7TV() {
         <input type="text" id="svtv-alias" placeholder="${L('alias (facoltativo)', 'alias (optional)', 'alias (opcional)')}" maxlength="40" style="max-width:180px">
         <button class="btn secondario" id="svtv-link-btn">${L('Aggiungi', 'Add', 'Añadir')}</button>
       </div>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.effetti)}${L('Carica una tua emote', 'Upload your own emote', 'Sube tu propia emote')}</h2>
+      <p>${L('Immagine, GIF (anche', 'Image, GIF (even', 'Imagen, GIF (incluso')} <strong class="primo-piano">${L('trasparente', 'transparent', 'transparente')}</strong>) ${L('o', 'or', 'o')} <strong class="primo-piano">${L('video', 'video', 'vídeo')}</strong>: ${L('la convertiamo noi nel formato giusto per 7TV (WebP animato con trasparenza) e la aggiungiamo subito al tuo canale.', 'we convert it into the right 7TV format (animated WebP with transparency) and add it to your channel right away.', 'la convertimos al formato correcto para 7TV (WebP animado con transparencia) y la añadimos enseguida a tu canal.')}</p>
+      <label class="campo" for="svtv-file">${L('File (immagine / GIF / video)', 'File (image / GIF / video)', 'Archivo (imagen / GIF / vídeo)')}</label>
+      <input type="file" id="svtv-file" accept="image/*,video/*">
+      <div class="riga-flessibile spazio-sopra">
+        <span class="prefisso-cmd">:</span>
+        <input type="text" id="svtv-nome" class="campo-largo" placeholder="${L('nome dell\'emote (senza spazi)', 'emote name (no spaces)', 'nombre de la emote (sin espacios)')}" maxlength="60">
+        <button class="btn" id="svtv-carica-btn">${L('Carica su 7TV', 'Upload to 7TV', 'Subir a 7TV')}</button>
+      </div>
+      <p class="suggerimento" id="svtv-carica-esito">${L('I video diventano emote animate; le GIF trasparenti restano trasparenti. Durata max ~6s, ridimensionata in automatico.', 'Videos become animated emotes; transparent GIFs stay transparent. Max ~6s, auto-resized.', 'Los vídeos se vuelven emotes animadas; los GIF transparentes siguen siendo transparentes. Máx. ~6s, con redimensionado automático.')}</p>
     </div>`);
 }
 
@@ -4697,6 +4710,41 @@ async function caricaEmote7TV() {
     if (!v) { toast(L('Incolla il link o l\'ID di un\'emote 7TV.', 'Paste the link or ID of a 7TV emote.', 'Pega el enlace o el ID de una emote 7TV.'), 'errore'); return; }
     _svtvAggiungi(v, alias, document.getElementById('svtv-link-btn'));
   });
+
+  // carica una TUA emote (immagine/gif/video → 7TV)
+  document.getElementById('svtv-carica-btn')?.addEventListener('click', () => _svtvCarica());
+}
+
+// Upload multipart di un file → il server lo converte in webp e lo carica su 7TV.
+async function _svtvCarica() {
+  if (!_svtvCollegato) { toast(L('Collega prima il tuo account 7TV.', 'Connect your 7TV account first.', 'Conecta antes tu cuenta 7TV.'), 'errore'); return; }
+  if (DEMO) { toast(L('In demo non si caricano file — accedi per farlo davvero.', "In demo you can't upload files — log in to do it for real.", 'En la demo no se suben archivos — inicia sesión para hacerlo de verdad.')); return; }
+  const fileInp = document.getElementById('svtv-file');
+  const nomeInp = document.getElementById('svtv-nome');
+  const file = fileInp?.files?.[0];
+  const nome = (nomeInp?.value || '').trim();
+  if (!file) { toast(L('Scegli un file da caricare.', 'Choose a file to upload.', 'Elige un archivo para subir.'), 'errore'); return; }
+  if (nome.replace(/\s+/g, '').length < 2) { toast(L('Dai un nome all\'emote (min 2 caratteri, niente spazi).', 'Give the emote a name (min 2 characters, no spaces).', 'Ponle un nombre a la emote (mín. 2 caracteres, sin espacios).'), 'errore'); return; }
+  const btn = document.getElementById('svtv-carica-btn');
+  const orig = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = L('Converto e carico… ⏳', 'Converting & uploading… ⏳', 'Convirtiendo y subiendo… ⏳'); }
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('nome', nome);
+    const res = await fetch('/api/seventv/carica', { method: 'POST', body: fd });
+    let d = null; try { d = await res.json(); } catch { /* non JSON */ }
+    if (!res.ok) throw new Error(d?.errore || ('errore ' + res.status));
+    toast(d.aggiunta
+      ? L('Emote caricata e aggiunta al canale ✓', 'Emote uploaded and added to your channel ✓', 'Emote subida y añadida a tu canal ✓')
+      : L('Emote caricata su 7TV ✓', 'Emote uploaded to 7TV ✓', 'Emote subida a 7TV ✓'));
+    if (d.avviso) toast(L('Nota: ', 'Note: ', 'Nota: ') + d.avviso);
+    if (fileInp) fileInp.value = '';
+    if (nomeInp) nomeInp.value = '';
+    _svtvCaricaSet();
+  } catch (e) {
+    toast((e?.message || L('Caricamento non riuscito.', 'Upload failed.', 'Subida fallida.')), 'errore');
+  } finally { if (btn) { btn.disabled = false; btn.textContent = orig; } }
 }
 
 async function _svtvAggiungi(emoteId, alias, btn) {
