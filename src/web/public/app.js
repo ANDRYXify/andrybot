@@ -1169,6 +1169,72 @@ const DESC = {
 };
 const descScheda = (id) => { const d = DESC[id]; return d ? L(d[0], d[1], d[2]) : ''; };
 
+// --- Sezioni bloccate (upsell) -----------------------------------------
+// Alcune schede sono incluse solo in certi pacchetti. Se la funzione non è nel
+// piano dello streamer, invece del pannello mostriamo una "pagina bloccata" con
+// una demo e il pulsante per aggiungere il pacchetto giusto. La mappa scheda→
+// funzione rispecchia ESATTAMENTE il gating del server (esigiFunzione/gateFeature),
+// così non blocchiamo mai una scheda che invece funzionerebbe.
+const SCHEDA_FUNZ = { giochi: 'giochi', musica: 'musica', ascolto: 'voce', notifiche: 'notifiche', effetti: 'effetti', sondaggi: 'effetti' };
+const FUNZ_ADDON = { giochi: 'giochi', musica: 'musica', voce: 'voce', notifiche: 'notifiche', effetti: 'effetti', clipAuto: 'clip' };
+const NOME_ADDON = {
+  giochi: ['Giochi & Classifiche', 'Games & Leaderboards', 'Juegos y Clasificaciones'],
+  musica: ['Richieste Musicali', 'Music Requests', 'Peticiones Musicales'],
+  voce: ['Comandi Vocali', 'Voice Commands', 'Comandos por Voz'],
+  notifiche: ['Social & Notifiche', 'Social & Notifications', 'Social y Notificaciones'],
+  effetti: ['Effetti & Punti canale', 'Effects & Channel Points', 'Efectos y Puntos de canal'],
+  clip: ['Clip Automatiche', 'Automatic Clips', 'Clips Automáticos'],
+};
+
+// La scheda `id` è bloccata per il piano attuale? Mai in demo o per l'operatore.
+function schedaBloccata(id) {
+  if (DEMO || stato?.isAdmin || !stato?.funzioni) return false;   // fail-open: nel dubbio non blocco
+  const funz = SCHEDA_FUNZ[id];
+  if (!funz) return false;
+  return !stato.funzioni[funz];
+}
+const addonPerScheda = (id) => FUNZ_ADDON[SCHEDA_FUNZ[id]] || null;
+
+// Contenuto della "pagina bloccata": cosa fa (riuso GUIDE/DESC già tradotti),
+// una demo su QUESTA stessa scheda e il pulsante per aggiungere il pacchetto.
+function paginaBloccata(id) {
+  const addon = addonPerScheda(id);
+  const nomeScheda = tScheda(id, id);
+  const g = GUIDE[id];
+  const cosa = g?.serve ? L(g.serve[0], g.serve[1], g.serve[2]) : descScheda(id);
+  const passi = (g?.come || []).map((c) => `<li>${L(c[0], c[1], c[2])}</li>`).join('');
+  const na = NOME_ADDON[addon] || ['', '', ''];
+  const nomePacchetto = L(na[0], na[1], na[2]);
+  const puoComprare = !!stato?.stripeAttivo && !!addon;
+  return `<div class="carta blocco-carta">
+    <div class="blocco-testa">${_bIco(ICO.lucchetto)}<h2>${esc(nomeScheda)}</h2>
+      <span class="badge giallo">${L('Non nel tuo piano', 'Not in your plan', 'No en tu plan')}</span></div>
+    <p class="blocco-cosa">${cosa}</p>
+    ${passi ? `<ul class="blocco-passi">${passi}</ul>` : ''}
+    <div class="blocco-azioni">
+      <a class="btn secondario" href="/?demo=1#${esc(id)}" target="_blank" rel="noopener">${_bIco(ICO.occhio)}${L('Guarda la demo', 'See the demo', 'Ver la demo')}</a>
+      ${puoComprare
+        ? `<button class="btn grande" data-sblocca="${esc(addon)}">${_bIco(ICO.effetti)}${L('Sblocca con', 'Unlock with', 'Desbloquea con')} «${esc(nomePacchetto)}»</button>`
+        : `<span class="suggerimento">${L('Questa funzione fa parte del pacchetto', 'This feature is part of the package', 'Esta función forma parte del paquete')} <strong>${esc(nomePacchetto)}</strong>. ${L('Chiedi ad andryxify di abilitarla.', 'Ask andryxify to enable it.', 'Pide a andryxify que la habilite.')}</span>`}
+    </div>
+    ${puoComprare ? `<p class="suggerimento spazio-sopra"><a href="#stato" data-scheda="stato">${L('Vedi tutti i piani e i pacchetti →', 'See all plans and packages →', 'Ver todos los planes y paquetes →')}</a></p>` : ''}
+  </div>`;
+}
+
+// Avvia il checkout Stripe per un add-on (dalla pagina bloccata).
+function sbloccaAddon(addon) {
+  conErrore(async () => {
+    try {
+      const r = await api('/api/abbonamento/checkout', { method: 'POST', body: { pacchetti: [addon] } });
+      if (r?.url) location.href = r.url;
+      else toast(L('Checkout non disponibile al momento.', 'Checkout not available right now.', 'Pago no disponible por el momento.'), 'errore');
+    } catch (e) {
+      if (/non autenticato/i.test(e?.message || '')) { location.href = '/accedi?pacchetti=' + encodeURIComponent(addon); return; }
+      throw e;
+    }
+  });
+}
+
 // Mini-guida per scheda: "a cosa serve" + i passi di "come si fa". Mostrata in
 // cima a ogni pagina (callout richiudibile), così con tante sezioni si capisce
 // sempre cosa fare. Vale anche in demo (usa la stessa testata di pagina).
@@ -1337,7 +1403,7 @@ function navTopHtml() {
         <button class="grp-btn" data-scheda="${id}"><span class="grp-dot"></span>${esc(tGruppo(g.id, g.nome))}</button></div>`;
     }
     const voci = g.schede.map(([id, nome]) =>
-      `<button class="menu-voce${id === schedaAttiva ? ' on' : ''}" data-scheda="${id}">${ICONA[id] || ''}<span>${esc(tScheda(id, nome))}</span></button>`).join('');
+      `<button class="menu-voce${id === schedaAttiva ? ' on' : ''}${schedaBloccata(id) ? ' bloccata' : ''}" data-scheda="${id}">${ICONA[id] || ''}<span>${esc(tScheda(id, nome))}</span>${schedaBloccata(id) ? '<span class="voce-lock" aria-hidden="true">🔒</span>' : ''}</button>`).join('');
     return `<div class="grp${attivo}" data-grp="${g.id}" style="${col}">
       <button class="grp-btn" data-menu="${g.id}" aria-expanded="false"><span class="grp-dot"></span>${esc(tGruppo(g.id, g.nome))}${CHEVRON}</button>
       <div class="grp-menu">${voci}</div></div>`;
@@ -1349,7 +1415,7 @@ function navTopHtml() {
 function navDrawerHtml() {
   return elencoGruppi().map((g) => {
     const voci = g.schede.map(([id, nome]) =>
-      `<button class="drawer-voce${id === schedaAttiva ? ' on' : ''}" data-scheda="${id}">${ICONA[id] || ''}<span>${esc(tScheda(id, nome))}</span></button>`).join('');
+      `<button class="drawer-voce${id === schedaAttiva ? ' on' : ''}${schedaBloccata(id) ? ' bloccata' : ''}" data-scheda="${id}">${ICONA[id] || ''}<span>${esc(tScheda(id, nome))}</span>${schedaBloccata(id) ? '<span class="voce-lock" aria-hidden="true">🔒</span>' : ''}</button>`).join('');
     return `<div class="drawer-grp" style="--gc:var(--g-${g.id})"><div class="drawer-grp-tit">${esc(tGruppo(g.id, g.nome))}</div>${voci}</div>`;
   }).join('');
 }
@@ -1408,7 +1474,8 @@ function vistaPiattaforma() {
 }
 
 function pannello(id, contenuto) {
-  return `<section class="pannello-scheda${id === schedaAttiva ? ' visibile' : ''}" id="scheda-${id}">${contenuto}</section>`;
+  const dentro = schedaBloccata(id) ? paginaBloccata(id) : contenuto;
+  return `<section class="pannello-scheda${id === schedaAttiva ? ' visibile' : ''}" id="scheda-${id}">${dentro}</section>`;
 }
 
 // --- scheda Stato -------------------------------------------------------
@@ -6269,6 +6336,7 @@ async function conErrore(fn) {
 
 // carica i dati "pigri" della scheda selezionata
 function caricaDatiScheda(id) {
+  if (schedaBloccata(id)) return;   // pagina bloccata: nessuna API (darebbe 403)
   if (id === 'stato') { caricaPasskey(); caricaModeratori(); caricaRetePanoramica(); }
   if (id === 'personalita') caricaGuide();
   if (id === 'conoscenza') caricaConoscenza();
@@ -8035,6 +8103,14 @@ function initGuscio() {
     }
     const b = ev.target.closest('[data-scheda]');
     if (b) vaiAScheda(b.dataset.scheda);
+  });
+
+  // pagina bloccata (upsell): «Sblocca» → checkout; «vedi piani» → scheda Stato.
+  document.addEventListener('click', (ev) => {
+    const sb = ev.target.closest('[data-sblocca]');
+    if (sb) { ev.preventDefault(); sbloccaAddon(sb.dataset.sblocca); return; }
+    const vp = ev.target.closest('.blocco-carta [data-scheda]');
+    if (vp) { ev.preventDefault(); vaiAScheda(vp.dataset.scheda); }
   });
 
   // cassetto: click su una scheda
