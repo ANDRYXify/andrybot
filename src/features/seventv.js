@@ -224,3 +224,33 @@ export function rinomina(helix, login, emoteId, nome) {
   if (!n) return Promise.resolve({ ok: false, motivo: 'scrivi il nuovo nome' });
   return cambia(helix, login, 'UPDATE', emoteId, n);
 }
+
+// ───────────────────────────────────────────────── carica una NUOVA emote su 7TV
+// I byte (già convertiti in WebP dal server) vanno nel BODY grezzo; i metadati
+// (nome, tag, flag) nell'header X-Emote-Data. 7TV la processa e restituisce l'id.
+// Ritorna { ok, id, nome } | { ok:false, motivo, scaduto }.
+export async function caricaEmote(login, bytes, nome, tags = []) {
+  const t = seventvTokens.get(login);
+  if (!t?.token) return { ok: false, motivo: 'collega prima il tuo account 7TV' };
+  const n = String(nome || '').trim().replace(/\s+/g, '');
+  if (n.length < 2) return { ok: false, motivo: 'nome troppo corto (min 2 caratteri)' };
+  const meta = JSON.stringify({ name: n.slice(0, 100), tags: (tags || []).slice(0, 6), flags: 0 });
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 20000);
+  try {
+    const r = await fetch(`${REST}/emotes`, {
+      method: 'POST',
+      signal: ac.signal,
+      headers: { Authorization: 'Bearer ' + t.token, 'X-Emote-Data': meta, 'Content-Type': 'image/webp', 'User-Agent': 'SocialBot/1.0' },
+      body: bytes,
+    });
+    const j = await r.json().catch(() => null);
+    if (!r.ok) {
+      const scaduto = r.status === 401 || r.status === 403;
+      return { ok: false, motivo: j?.error?.message || j?.error || ('HTTP ' + r.status), scaduto };
+    }
+    const id = j?.id || j?.emote?.id || (r.headers.get('location') || '').split('/').pop() || '';
+    return { ok: true, id: ID_RE.test(String(id)) ? String(id) : '', nome: n };
+  } catch (e) { log.warn('caricaEmote:', e?.message || e); return { ok: false, motivo: 'irraggiungibile' }; }
+  finally { clearTimeout(to); }
+}

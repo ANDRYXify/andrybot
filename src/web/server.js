@@ -8,7 +8,7 @@ import cookieSession from 'cookie-session';
 import multer from 'multer';
 import crypto from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync, rmSync, existsSync, readdirSync, statSync, unlinkSync, renameSync, copyFileSync } from 'node:fs';
-import { unlink } from 'node:fs/promises';
+import { unlink, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, basename } from 'node:path';
 import { config, SCOPES, missingConfig } from '../config.js';
@@ -19,7 +19,7 @@ import * as abbonamenti from '../features/abbonamenti.js';
 import * as spotify from '../features/spotify.js';
 import * as giveaway from '../features/giveaway.js';
 import * as webauthn from './webauthn.js';
-import { comprimi } from '../features/compress.js';
+import { comprimi, convertiPerEmote } from '../features/compress.js';
 import { StudioEngine } from '../features/studio.js';
 import { seedStreamer } from '../features/seed.js';
 import * as vip from '../features/vip.js';
@@ -1125,6 +1125,53 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!r.ok) return res.status(r.scaduto ? 401 : 400).json({ errore: r.motivo || 'Non rinominata.', scaduto: !!r.scaduto });
     res.json({ ok: true });
   }));
+
+  // Carica una TUA emote su 7TV: qualsiasi file (immagine, GIF trasparente, video)
+  // viene auto-convertito in WebP (statico o animato con alpha) e caricato su 7TV,
+  // poi aggiunto al set attivo del canale. Multer scrive un temp; convertiPerEmote
+  // lo cancella; il WebP prodotto viene letto e rimosso dopo l'upload.
+  app.post('/api/seventv/carica', requireOwner, g7tv, (req, res) => {
+    upload.single('file')(req, res, (err) => {
+      const pulisci = async () => { if (req.file) await pulisciTemp(req.file.path); };
+      if (err) {
+        const msg = err.code === 'LIMIT_FILE_SIZE' ? 'file troppo grande (max 30MB)' : 'caricamento non riuscito';
+        return pulisci().then(() => res.status(400).json({ errore: msg }));
+      }
+      caricaEmote7TV(req, res).catch(async (e) => {
+        log.error('POST /api/seventv/carica →', e?.message || e);
+        await pulisci();
+        if (!res.headersSent) res.status(500).json({ errore: e?.message || 'errore interno' });
+      });
+    });
+  });
+
+  async function caricaEmote7TV(req, res) {
+    const login = currentUser(req).login;
+    const f = req.file;
+    if (!seventv.collegato(login)) { if (f) await pulisciTemp(f.path); return res.status(400).json({ errore: 'Collega prima il tuo account 7TV.' }); }
+    if (!f) return res.status(400).json({ errore: 'Nessun file caricato.' });
+    const nome = String(req.body?.nome || '').trim();
+    if (nome.replace(/\s+/g, '').length < 2) { await pulisciTemp(f.path); return res.status(400).json({ errore: 'Dai un nome all\'emote (min 2 caratteri, niente spazi).' }); }
+
+    // converte in webp (convertiPerEmote cancella SEMPRE il file temporaneo di multer)
+    const destDir = join(tmpDir, 'emote');
+    mkdirSync(destDir, { recursive: true });
+    const id = `e_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
+    let conv;
+    try { conv = await convertiPerEmote(f.path, f.mimetype || f.originalname, destDir, id); }
+    catch (e) { return res.status(400).json({ errore: e?.message || 'Conversione non riuscita.' }); }
+
+    const outPath = join(destDir, conv.file);
+    try {
+      const bytes = await readFile(outPath);
+      const up = await seventv.caricaEmote(login, bytes, nome);
+      if (!up.ok) return res.status(up.scaduto ? 401 : 400).json({ errore: up.motivo || 'Caricamento su 7TV non riuscito.', scaduto: !!up.scaduto });
+      // aggiunge subito l'emote al set attivo del canale (best-effort)
+      let aggiunta = false, avviso = '';
+      if (up.id) { const add = await seventv.aggiungi(helix, login, up.id, up.nome); aggiunta = add.ok; if (!add.ok) avviso = add.motivo || ''; }
+      res.json({ ok: true, id: up.id, animato: conv.animato, aggiunta, avviso });
+    } finally { try { await unlink(outPath); } catch { /* già rimosso */ } }
+  }
 
   // ──────────────────────────────────── Telegram Mini App + "Accedi con Telegram"
   // La Mini App (dentro Telegram) autentica con initData firmato dal bot; "Accedi
