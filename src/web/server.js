@@ -1166,9 +1166,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       const bytes = await readFile(outPath);
       const up = await seventv.caricaEmote(login, bytes, nome);
       if (!up.ok) return res.status(up.scaduto ? 401 : 400).json({ errore: up.motivo || 'Caricamento su 7TV non riuscito.', scaduto: !!up.scaduto });
-      // aggiunge subito l'emote al set attivo del canale (best-effort)
+      // aggiunge subito l'emote al set attivo del canale (best-effort), con l'alias
+      // scelto dallo streamer (se vuoto, usa il nome dell'emote).
+      const alias = String(req.body?.alias || '').trim() || up.nome;
       let aggiunta = false, avviso = '';
-      if (up.id) { const add = await seventv.aggiungi(helix, login, up.id, up.nome); aggiunta = add.ok; if (!add.ok) avviso = add.motivo || ''; }
+      if (up.id) { const add = await seventv.aggiungi(helix, login, up.id, alias); aggiunta = add.ok; if (!add.ok) avviso = add.motivo || ''; }
       res.json({ ok: true, id: up.id, animato: conv.animato, aggiunta, avviso });
     } finally { try { await unlink(outPath); } catch { /* già rimosso */ } }
   }
