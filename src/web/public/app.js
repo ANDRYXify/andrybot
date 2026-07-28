@@ -4611,9 +4611,10 @@ function pannello7TV() {
       <div class="riga-flessibile spazio-sopra">
         <span class="prefisso-cmd">:</span>
         <input type="text" id="svtv-nome" class="campo-largo" placeholder="${L('nome dell\'emote (senza spazi)', 'emote name (no spaces)', 'nombre de la emote (sin espacios)')}" maxlength="60">
+        <input type="text" id="svtv-alias-up" placeholder="${L('alias nel canale (facoltativo)', 'alias in your channel (optional)', 'alias en tu canal (opcional)')}" maxlength="60" style="max-width:210px">
         <button class="btn" id="svtv-carica-btn">${L('Carica su 7TV', 'Upload to 7TV', 'Subir a 7TV')}</button>
       </div>
-      <p class="suggerimento" id="svtv-carica-esito">${L('I video diventano emote animate; le GIF trasparenti restano trasparenti. Durata max ~6s, ridimensionata in automatico.', 'Videos become animated emotes; transparent GIFs stay transparent. Max ~6s, auto-resized.', 'Los vídeos se vuelven emotes animadas; los GIF transparentes siguen siendo transparentes. Máx. ~6s, con redimensionado automático.')}</p>
+      <p class="suggerimento" id="svtv-carica-esito">${L('I video diventano emote animate; le GIF trasparenti restano trasparenti. Durata max ~6s, ridimensionata in automatico. L\'alias è il nome con cui appare nel tuo canale (se vuoto, usa il nome dell\'emote).', 'Videos become animated emotes; transparent GIFs stay transparent. Max ~6s, auto-resized. The alias is the name it shows under in your channel (if empty, it uses the emote name).', 'Los vídeos se vuelven emotes animadas; los GIF transparentes siguen transparentes. Máx. ~6s, con redimensionado automático. El alias es el nombre con el que aparece en tu canal (si está vacío, usa el nombre de la emote).')}</p>
     </div>`);
 }
 
@@ -4721,8 +4722,10 @@ async function _svtvCarica() {
   if (DEMO) { toast(L('In demo non si caricano file — accedi per farlo davvero.', "In demo you can't upload files — log in to do it for real.", 'En la demo no se suben archivos — inicia sesión para hacerlo de verdad.')); return; }
   const fileInp = document.getElementById('svtv-file');
   const nomeInp = document.getElementById('svtv-nome');
+  const aliasInp = document.getElementById('svtv-alias-up');
   const file = fileInp?.files?.[0];
   const nome = (nomeInp?.value || '').trim();
+  const alias = (aliasInp?.value || '').trim();
   if (!file) { toast(L('Scegli un file da caricare.', 'Choose a file to upload.', 'Elige un archivo para subir.'), 'errore'); return; }
   if (nome.replace(/\s+/g, '').length < 2) { toast(L('Dai un nome all\'emote (min 2 caratteri, niente spazi).', 'Give the emote a name (min 2 characters, no spaces).', 'Ponle un nombre a la emote (mín. 2 caracteres, sin espacios).'), 'errore'); return; }
   const btn = document.getElementById('svtv-carica-btn');
@@ -4732,6 +4735,7 @@ async function _svtvCarica() {
     const fd = new FormData();
     fd.append('file', file);
     fd.append('nome', nome);
+    if (alias) fd.append('alias', alias);
     const res = await fetch('/api/seventv/carica', { method: 'POST', body: fd });
     let d = null; try { d = await res.json(); } catch { /* non JSON */ }
     if (!res.ok) throw new Error(d?.errore || ('errore ' + res.status));
@@ -4741,6 +4745,7 @@ async function _svtvCarica() {
     if (d.avviso) toast(L('Nota: ', 'Note: ', 'Nota: ') + d.avviso);
     if (fileInp) fileInp.value = '';
     if (nomeInp) nomeInp.value = '';
+    if (aliasInp) aliasInp.value = '';
     _svtvCaricaSet();
   } catch (e) {
     toast((e?.message || L('Caricamento non riuscito.', 'Upload failed.', 'Subida fallida.')), 'errore');
