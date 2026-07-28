@@ -20,6 +20,15 @@ const VIDEO_MAX_ALTEZZA = 720;  // altezza massima di un video (px)
 const VIDEO_CRF = 34;           // qualità VP9 (più alto = più compresso)
 const TIMEOUT_MS = 150_000;     // oltre questo tempo il processo ffmpeg viene ucciso
                                 // (video fino a 30s su CPU debole possono metterci)
+// Emote 7TV: convertiamo QUALSIASI file (immagine, GIF trasparente, video) in un
+// WebP adatto a 7TV (alpha preservata, piccolo). 7TV accetta immagini/GIF/WebP ma
+// NON i video: per questo li trasformiamo noi in WebP animato. Tetti prudenti così
+// il file resta ben sotto il limite di 7TV (~7MB) e l'emote si vede bene anche piccola.
+const EMOTE_LATO = 384;         // lato massimo dell'emote (px)
+const EMOTE_Q = 72;             // qualità webp (0..100)
+const EMOTE_FPS = 20;           // fps massimo per le emote animate
+const EMOTE_MAX_S = 6;          // durata massima di un'emote animata (secondi)
+const EMOTE_MAX_BYTES = 7 * 1024 * 1024;   // limite lato 7TV
 
 // Riconosce la famiglia del file dal mimetype (con qualche estensione di scorta).
 // Le GIF (spesso animate) vengono trattate come video → webm.
@@ -161,6 +170,48 @@ export async function comprimi(tempPath, tipoDichiarato, destDir, id) {
     return { tipo, file, durata };
   } finally {
     // il file temporaneo caricato non serve più, in ogni caso
+    try { await unlink(tempPath); } catch { /* già rimosso */ }
+  }
+}
+
+// Converte un file caricato in un WebP pronto per 7TV (immagine → WebP statico;
+// GIF/video → WebP ANIMATO con alpha preservata). Ritorna { file, animato, byte }
+// oppure lancia. Cancella SEMPRE il tempPath.
+export async function convertiPerEmote(tempPath, tipoDichiarato, destDir, id) {
+  try {
+    const tipo = rilevaTipo(tipoDichiarato);   // 'immagine' | 'video' | 'audio' (gif → video)
+    if (tipo === 'audio') throw new Error('un\'emote non può essere un audio');
+    const file = `${id}.webp`;
+    const out = join(destDir, file);
+
+    if (tipo === 'immagine') {
+      await eseguiFfmpeg([
+        '-y', '-i', tempPath,
+        '-vf', `scale='min(${EMOTE_LATO},iw)':-2:flags=lanczos`,
+        '-frames:v', '1',
+        '-c:v', 'libwebp', '-lossless', '0', '-q:v', String(EMOTE_Q),
+        out,
+      ]);
+      await verificaOutput(out);
+      const { size } = await stat(out);
+      if (size > EMOTE_MAX_BYTES) throw new Error('immagine troppo pesante anche dopo la conversione');
+      return { file, animato: false, byte: size };
+    }
+
+    // GIF (anche trasparenti) e video → WebP ANIMATO (loop, alpha preservata)
+    await eseguiFfmpeg([
+      '-y', '-i', tempPath,
+      '-t', String(EMOTE_MAX_S),
+      '-an',
+      '-vf', `fps=${EMOTE_FPS},scale='min(${EMOTE_LATO},iw)':'min(${EMOTE_LATO},ih)':force_original_aspect_ratio=decrease:flags=lanczos`,
+      '-c:v', 'libwebp', '-lossless', '0', '-q:v', String(EMOTE_Q), '-compression_level', '5', '-loop', '0',
+      out,
+    ]);
+    await verificaOutput(out);
+    const { size } = await stat(out);
+    if (size > EMOTE_MAX_BYTES) throw new Error('animazione troppo pesante: prova un video più corto o più piccolo');
+    return { file, animato: true, byte: size };
+  } finally {
     try { await unlink(tempPath); } catch { /* già rimosso */ }
   }
 }
