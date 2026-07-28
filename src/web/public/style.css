@@ -650,6 +650,17 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .svtv-nome { font-weight: 600; font-size: .82rem; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .svtv-azioni { display: flex; gap: .3rem; flex-wrap: wrap; justify-content: center; margin-top: auto; }
 
+/* --- Sezione bloccata (upsell del piano) ------------------------------- */
+.blocco-carta { }
+.blocco-testa { display: flex; align-items: center; gap: .55rem; flex-wrap: wrap; }
+.blocco-testa h2 { margin: 0; }
+.blocco-cosa { font-size: 1.05rem; margin-top: .5rem; }
+.blocco-passi { margin: .7rem 0 0; padding-left: 1.25rem; color: var(--txt-2, inherit); }
+.blocco-passi li { margin: .3rem 0; }
+.blocco-azioni { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin-top: 1.1rem; }
+.voce-lock { margin-left: 6px; font-size: .82em; opacity: .7; }
+.menu-voce.bloccata, .drawer-voce.bloccata { opacity: .82; }
+
 /* --- Regia (Vai live) -------------------------------------------------- */
 .regia-badge { display: inline-flex; align-items: center; gap: .4rem; font-weight: 700; letter-spacing: .02em; padding: .28rem .7rem; border-radius: 999px; font-size: .95rem; }
 .regia-badge.live { color: #fff; background: #e0245e; box-shadow: 0 0 0 3px #e0245e33; animation: regiaPulse 2s infinite; }
