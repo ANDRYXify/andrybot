@@ -8,17 +8,18 @@
 #  Se un dominio non è ancora puntato, Caddy riprova in background per
 #  QUEL dominio soltanto: gli altri continuano a funzionare.
 #
-#  MIGRAZIONE a socialbot.live (dominio ufficiale):
-#   - FASE A (questa): socialbot.live serve l'app; socialbot.it → .live;
-#     bot.andryxify.it CONTINUA a servire l'app (nessuna interruzione).
-#     Passi: 1) punta i DNS di socialbot.live/.it a questo server;
-#            2) metti BASE_URL=https://socialbot.live nel .env;
-#            3) aggiungi i redirect URI socialbot.live nelle app
-#               Twitch/Spotify/TikTok (accanto a quelli vecchi);
-#            4) git pull && docker compose up -d --build.
-#   - FASE B (quando socialbot.live è verificato): trasforma il blocco
-#     bot.andryxify.it in un redirect 301 (vedi in fondo) e fai il
-#     "Change of address" in Google Search Console.
+#  MIGRAZIONE a socialbot.live (dominio ufficiale) — COMPLETATA:
+#   - socialbot.live serve l'app; www → nudo; socialbot.it/www → .live (301).
+#   - bot.andryxify.it NON è più su questo server: il suo DNS è stato
+#     spostato su Squarespace, che già reindirizza a socialbot.live. Per
+#     questo qui NON c'è più un suo blocco (Caddy tenterebbe invano di
+#     ottenere un certificato per un dominio che non controlliamo più).
+#
+#   NOTA SEO (da sistemare su Squarespace/IONOS, non qui): oggi
+#   bot.andryxify.it fa un 302 verso http://socialbot.live SENZA path.
+#   Meglio un 301 verso https://socialbot.live che preservi il path, così
+#   i vecchi link/overlay non si rompono e la SEO si consolida. Poi, se
+#   serve, "Change of address" in Google Search Console.
 # ============================================================
 
 # --- Dominio UFFICIALE: serve l'app -------------------------
@@ -37,13 +38,10 @@ socialbot.it, www.socialbot.it {
 	redir https://socialbot.live{uri} permanent
 }
 
-# --- Vecchio dominio: durante la transizione CONTINUA a servire ---
-# Quando socialbot.live è confermato funzionante, sostituisci il blocco
-# qui sotto con:
+# --- Vecchio dominio bot.andryxify.it: NON più qui ----------
+# Il suo DNS è stato spostato su Squarespace, che già reindirizza a
+# socialbot.live. Niente blocco Caddy: se un domani il DNS tornasse a
+# puntare a questo server, ripristina:
 #   bot.andryxify.it {
 #       redir https://socialbot.live{uri} permanent
 #   }
-bot.andryxify.it {
-	encode gzip
-	reverse_proxy bot:8090
-}
