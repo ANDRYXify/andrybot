@@ -60,7 +60,7 @@ export const ADDON = [
   {
     id: 'notifiche', nome: 'Social & Notifiche', prezzo: 2.99, prezzoTesto: '€2,99/mese',
     priceEnv: 'addon_notifiche', icona: '📣',
-    sommario: 'Annuncia le tue live su Discord, TikTok, YouTube e Instagram e collega Telegram.',
+    sommario: 'Avvisa quando vai in diretta su Telegram e Discord; avvisa i nuovi post/video su TikTok, YouTube e Instagram.',
     funzioni: { notifiche: true, telegram: true },
   },
   {
