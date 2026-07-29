@@ -13,9 +13,23 @@ function escapeRe(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); 
 
 const puoGestire = (msg) => !!(msg.isMod || msg.isBroadcaster);
 
+// emette l'aggiornamento del contatore sull'overlay OBS (stesso feed SSE di
+// alert/effetti/chat). Best-effort.
+function verso(emit, canale, comando) {
+  try { if (typeof emit !== 'function') return; const c = store.get(canale, comando); if (c) emit(store.payloadOverlay(c)); }
+  catch { /* niente */ }
+}
+// come verso(), ma solo se il widget è impostato "mostra" (per auto-parola/riscatto)
+function versoSeMostra(emit, riga) {
+  try { if (typeof emit !== 'function' || !riga) return; const o = store.overlayDi(riga); if (o.mostra) emit(store.payloadOverlay(riga)); }
+  catch { /* niente */ }
+}
+
 // Comando chat "!<comando> [op] [arg]". Ritorna true se il messaggio era un
-// comando di un contatore (così il chiamante può fermarsi).
-export function tryComando(msg, say) {
+// comando di un contatore (così il chiamante può fermarsi). `emit` (opzionale)
+// aggiorna l'overlay OBS. Op: (nulla)=leggi · + - reset set N · on/off (mostra il
+// widget da 0 / lo nasconde).
+export function tryComando(msg, say, emit) {
   try {
     const testo = String(msg?.text || '').trim();
     if (!testo.startsWith('!')) return false;
@@ -39,6 +53,8 @@ export function tryComando(msg, say) {
       if (p1 === '+' || p1 === 'su' || p1 === 'add' || p1 === 'more') op = '+';
       else if (p1 === '-' || p1 === 'giu' || p1 === 'giù' || p1 === 'meno') op = '-';
       else if (p1 === 'reset' || p1 === 'azzera' || p1 === 'zero') op = 'reset';
+      else if (p1 === 'on' || p1 === 'start' || p1 === 'avvia' || p1 === 'via' || p1 === 'mostra') op = 'on';
+      else if (p1 === 'off' || p1 === 'stop' || p1 === 'ferma' || p1 === 'nascondi') op = 'off';
       else if (p1 === 'set' || p1 === '=') { op = 'set'; arg = parti[2]; }
       else if (/^[+-]\d+$/.test(p1)) { op = p1[0]; arg = p1.slice(1); }
       else if (/^\d+$/.test(p1)) { op = 'set'; arg = p1; }
@@ -53,14 +69,17 @@ export function tryComando(msg, say) {
     else if (op === '-') nuovo = store.incrementa(canale, primo, -passo);
     else if (op === 'reset') nuovo = store.setValore(canale, primo, 0);
     else if (op === 'set') nuovo = store.setValore(canale, primo, arg ? (parseInt(arg, 10) || 0) : 0);
-    if (nuovo) annuncia(nuovo.valore);
+    else if (op === 'on') { store.setValore(canale, primo, 0); nuovo = store.patchOverlay(canale, primo, { mostra: true }); }   // avvia da 0 e mostra a schermo
+    else if (op === 'off') { nuovo = store.patchOverlay(canale, primo, { mostra: false }); }
+    if (nuovo) { annuncia(nuovo.valore); verso(emit, canale, primo); }   // aggiorna sempre l'overlay (mostra/valore)
     return true;
   } catch (e) { log.debug('tryComando:', e?.message || e); return false; }
 }
 
 // Auto-contatore parole: per ogni contatore con `auto_parola`, conta le occorrenze
-// della parola nel messaggio e le somma. Silenzioso (nessun annuncio, niente spam).
-export function perParola(msg) {
+// della parola nel messaggio e le somma. Silenzioso in chat; aggiorna il widget
+// overlay solo se è impostato "mostra".
+export function perParola(msg, emit) {
   try {
     if (msg?.isSelf) return;   // non contare i messaggi del bot/streamer (evita loop)
     const canale = String(msg.channel || '').toLowerCase();
@@ -71,20 +90,20 @@ export function perParola(msg) {
     for (const c of lista) {
       const re = new RegExp('(?:^|[^\\p{L}\\p{N}_])' + escapeRe(c.auto_parola) + '(?![\\p{L}\\p{N}_])', 'gu');
       const n = (testo.match(re) || []).length;
-      if (n > 0) store.incrementa(canale, c.comando, n);
+      if (n > 0) versoSeMostra(emit, store.incrementa(canale, c.comando, n));
     }
   } catch (e) { log.debug('perParola:', e?.message || e); }
 }
 
-// Riscatto punti canale collegato a un contatore → +step, con annuncio.
-export function perRiscatto(channel, data, say) {
+// Riscatto punti canale collegato a un contatore → +step, con annuncio + overlay.
+export function perRiscatto(channel, data, say, emit) {
   try {
     const rewardId = data?.reward?.id; if (!rewardId) return false;
     const c = store.getByReward(channel, rewardId); if (!c) return false;
     const nuovo = store.incrementa(channel, c.comando, c.step || 1);
-    if (nuovo && typeof say === 'function') {
-      const emoji = c.emoji ? c.emoji + ' ' : '';
-      say(`${emoji}${c.etichetta || c.comando}: ${nuovo.valore}`);
+    if (nuovo) {
+      if (typeof say === 'function') { const emoji = c.emoji ? c.emoji + ' ' : ''; say(`${emoji}${c.etichetta || c.comando}: ${nuovo.valore}`); }
+      versoSeMostra(emit, nuovo);
     }
     return true;
   } catch (e) { log.debug('perRiscatto:', e?.message || e); return false; }

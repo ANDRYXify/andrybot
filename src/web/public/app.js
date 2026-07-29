@@ -282,7 +282,7 @@ function _demoGet(via) {
     '/api/me': statoDemo(),
     '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://socialbot.live/tiktok/callback' },
     '/api/discord/stato': { configurato: false, attivo: false, messaggio: '', nomeBot: '', avatar: '', anteprima: '' },
-    '/api/contatori': { contatori: [{ comando: 'morti', etichetta: 'Morti', emoji: '💀', valore: 3, step: 1, auto_parola: '', reward_id: '' }, { comando: 'lol', etichetta: 'Risate', emoji: '😂', valore: 12, step: 1, auto_parola: 'lol', reward_id: '' }] },
+    '/api/contatori': { contatori: [{ comando: 'morti', etichetta: 'Morti', emoji: '💀', valore: 3, step: 1, auto_parola: '', reward_id: '', overlayCfg: { mostra: true, x: 6, y: 84, colore: '#ffffff', sfondo: 'transparent', dim: 40, grassetto: true, font: 'system', formato: '{emoji} {etichetta}: {valore}' } }, { comando: 'lol', etichetta: 'Risate', emoji: '😂', valore: 12, step: 1, auto_parola: 'lol', reward_id: '', overlayCfg: { mostra: false, x: 6, y: 84, colore: '#ffffff', sfondo: 'transparent', dim: 40, grassetto: true, font: 'system', formato: '{emoji} {etichetta}: {valore}' } }] },
     '/api/seventv/stato': { collegato: true, username: 'andryxify', setId: 'demo7tvset' },
     '/api/tgapp/login-stato': { attiva: true, oidc: true, bot: 'socialbot', collegato: true, username: 'andryxify', nome: 'Andry' },
     '/api/seventv/emotes': { id: 'demo7tvset', nome: 'andryxify · emotes', capienza: 1000, usate: 4, emotes: [
@@ -5647,9 +5647,15 @@ async function caricaContatori() {
   let d; try { d = await api('/api/contatori'); }
   catch { box.innerHTML = `<p class="suggerimento">${L('Impossibile caricare i contatori.', 'Couldn\'t load counters.', 'No se pudieron cargar los contadores.')}</p>`; return; }
   const list = d.contatori || [];
-  box.innerHTML = list.length ? list.map((c) => `
+  const FONTS = [['system', 'Sistema'], ['inter', 'Inter'], ['spaceGrotesk', 'Space Grotesk'], ['jetBrainsMono', 'JetBrains Mono'], ['fraunces', 'Fraunces'], ['bricolage', 'Bricolage']];
+  const fontOpts = (sel) => FONTS.map(([k, n]) => `<option value="${k}"${k === sel ? ' selected' : ''}>${n}</option>`).join('');
+  box.innerHTML = list.length ? list.map((c) => {
+    const o = c.overlayCfg || {};
+    const hexBg = /^#/.test(o.sfondo || '') ? o.sfondo : '#000000';
+    const trasp = !o.sfondo || o.sfondo === 'transparent';
+    return `
     <div class="cont-riga">
-      <span class="cont-info">${c.emoji ? esc(c.emoji) + ' ' : ''}<strong>${esc(c.etichetta || c.comando)}</strong> <code>!${esc(c.comando)}</code>${c.auto_parola ? ` <span class="tenue">· ${L('auto', 'auto', 'auto')}: «${esc(c.auto_parola)}»</span>` : ''}${c.reward_id ? ` <span class="tenue">· 🏆 ${L('premio', 'reward', 'premio')}</span>` : ''}</span>
+      <span class="cont-info">${c.emoji ? esc(c.emoji) + ' ' : ''}<strong>${esc(c.etichetta || c.comando)}</strong> <code>!${esc(c.comando)}</code>${o.mostra ? ` <span class="tenue">· 📺 ${L('a schermo', 'on screen', 'en pantalla')}</span>` : ''}${c.auto_parola ? ` <span class="tenue">· ${L('auto', 'auto', 'auto')}: «${esc(c.auto_parola)}»</span>` : ''}${c.reward_id ? ` <span class="tenue">· 🏆 ${L('premio', 'reward', 'premio')}</span>` : ''}</span>
       <span class="cont-val" data-cv="${esc(c.comando)}">${c.valore}</span>
       <span class="cont-azioni">
         <button type="button" class="btn secondario mini" data-ca="piu" data-cmd="${esc(c.comando)}" data-val="${c.valore}" data-step="${c.step}">+${c.step}</button>
@@ -5658,7 +5664,31 @@ async function caricaContatori() {
         <button type="button" class="btn secondario mini" data-ca="reward" data-cmd="${esc(c.comando)}">${c.reward_id ? L('Scollega premio', 'Unlink reward', 'Desvincular premio') : L('Crea premio', 'Create reward', 'Crear premio')}</button>
         <button type="button" class="btn secondario mini" data-ca="del" data-cmd="${esc(c.comando)}" title="${L('Elimina', 'Delete', 'Eliminar')}">🗑</button>
       </span>
-    </div>`).join('')
+      <details class="cont-ov">
+        <summary>${L('Personalizza a schermo (overlay OBS)', 'Customize on screen (OBS overlay)', 'Personalizar en pantalla (overlay OBS)')}</summary>
+        <div class="cont-ov-form" data-ovform="${esc(c.comando)}">
+          <label class="riga-check"><input type="checkbox" data-ovk="mostra"${o.mostra ? ' checked' : ''}> ${L('Mostra sull\'overlay OBS', 'Show on the OBS overlay', 'Mostrar en el overlay de OBS')}</label>
+          <div class="griglia-campi spazio-sopra">
+            <div><label class="campo">${L('Posizione X %', 'Position X %', 'Posición X %')}</label><input type="number" data-ovk="x" min="0" max="100" value="${Number(o.x) || 0}"></div>
+            <div><label class="campo">${L('Posizione Y %', 'Position Y %', 'Posición Y %')}</label><input type="number" data-ovk="y" min="0" max="100" value="${Number(o.y) || 0}"></div>
+          </div>
+          <div class="griglia-campi spazio-sopra">
+            <div><label class="campo">${L('Colore testo', 'Text color', 'Color texto')}</label><input type="color" data-ovk="colore" value="${esc(o.colore || '#ffffff')}"></div>
+            <div><label class="campo">${L('Dimensione (px)', 'Size (px)', 'Tamaño (px)')}</label><input type="number" data-ovk="dim" min="10" max="200" value="${Number(o.dim) || 40}"></div>
+          </div>
+          <div class="griglia-campi spazio-sopra">
+            <div><label class="campo">${L('Colore sfondo', 'Background color', 'Color de fondo')}</label><input type="color" data-ovk="sfondo" value="${esc(hexBg)}"></div>
+            <div><label class="campo">Font</label><select data-ovk="font">${fontOpts(o.font || 'system')}</select></div>
+          </div>
+          <label class="riga-check spazio-sopra"><input type="checkbox" data-ovk="trasp"${trasp ? ' checked' : ''}> ${L('Sfondo trasparente', 'Transparent background', 'Fondo transparente')}</label>
+          <label class="riga-check"><input type="checkbox" data-ovk="grassetto"${o.grassetto ? ' checked' : ''}> ${L('Grassetto', 'Bold', 'Negrita')}</label>
+          <label class="campo spazio-sopra">${L('Formato del testo', 'Text format', 'Formato del texto')}</label>
+          <input type="text" data-ovk="formato" maxlength="80" value="${esc(o.formato || '{emoji} {etichetta}: {valore}')}" placeholder="{emoji} {etichetta}: {valore}">
+          <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{emoji}</code> <code>{etichetta}</code> <code>{valore}</code></p>
+          <p><button type="button" class="btn secondario mini" data-ca="salva-ov" data-cmd="${esc(c.comando)}">${L('Salva aspetto', 'Save look', 'Guardar aspecto')}</button></p>
+        </div>
+      </details>
+    </div>`; }).join('')
     : `<p class="suggerimento">${L('Nessun contatore ancora. Creane uno qui sotto.', 'No counters yet. Create one below.', 'Aún no hay contadores. Crea uno abajo.')}</p>`;
 
   const salvaVal = (comando, valore) => api('/api/contatori', { method: 'POST', body: { comando, valore } });
@@ -5666,6 +5696,20 @@ async function caricaContatori() {
     const b = ev.target.closest('[data-ca]'); if (!b) return;
     const cmd = b.dataset.cmd, az = b.dataset.ca;
     conErrore(async () => {
+      if (az === 'salva-ov') {
+        const form = box.querySelector(`[data-ovform="${cmd}"]`); if (!form) return;
+        const g = (k) => form.querySelector(`[data-ovk="${k}"]`);
+        const overlay = {
+          mostra: g('mostra').checked,
+          x: Number(g('x').value) || 0, y: Number(g('y').value) || 0,
+          colore: g('colore').value, sfondo: g('trasp').checked ? 'transparent' : g('sfondo').value,
+          dim: Number(g('dim').value) || 40, grassetto: g('grassetto').checked,
+          font: g('font').value, formato: g('formato').value,
+        };
+        await api('/api/contatori', { method: 'POST', body: { comando: cmd, overlay } });
+        toast(L('Aspetto salvato ✓ (aggiornato nell\'overlay)', 'Look saved ✓ (updated in overlay)', 'Aspecto guardado ✓ (actualizado en el overlay)'));
+        return;   // non ricarico: tengo aperto l'editor
+      }
       if (az === 'piu') await salvaVal(cmd, (Number(b.dataset.val) || 0) + (Number(b.dataset.step) || 1));
       else if (az === 'meno') await salvaVal(cmd, (Number(b.dataset.val) || 0) - (Number(b.dataset.step) || 1));
       else if (az === 'reset') await salvaVal(cmd, 0);
