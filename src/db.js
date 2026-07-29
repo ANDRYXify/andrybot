@@ -1208,7 +1208,9 @@ export const contatori = {
       auto_parola: autoParola !== undefined ? String(autoParola).toLowerCase().slice(0, 40) : (cur?.auto_parola || ''),
       reward_id: rewardId !== undefined ? String(rewardId) : (cur?.reward_id || ''),
       valore: valore !== undefined ? (parseInt(valore, 10) || 0) : (cur?.valore ?? 0),
-      overlay: overlay !== undefined ? JSON.stringify(overlay && typeof overlay === 'object' ? overlay : {}) : (cur?.overlay || ''),
+      // merge sulla config attuale (con default): così un overlay PARZIALE
+      // (es. {mostra:true} da un pulsante) non azzera posizione/colori salvati.
+      overlay: overlay !== undefined ? JSON.stringify({ ...this.overlayDi(cur), ...(overlay && typeof overlay === 'object' ? overlay : {}) }) : (cur?.overlay || ''),
     };
     db.prepare(`INSERT INTO contatori (channel, comando, etichetta, emoji, valore, step, auto_parola, reward_id, overlay, ts)
       VALUES (@channel,@comando,@etichetta,@emoji,@valore,@step,@auto_parola,@reward_id,@overlay,@ts)
