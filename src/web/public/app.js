@@ -1248,8 +1248,8 @@ const GUIDE = {
     come: [['Scegli tono e “spontaneità” (quanto interviene da solo).', 'Pick tone and “spontaneity” (how often it chimes in).', 'Elige el tono y la “espontaneidad” (cuánto interviene solo).'], ['Aggiungi regole che rispetterà SEMPRE.', 'Add rules it will ALWAYS follow.', 'Añade reglas que respetará SIEMPRE.'], ['Salva: il nuovo stile parte subito.', 'Save: the new style takes effect right away.', 'Guarda: el nuevo estilo se aplica al instante.']] },
   conoscenza: { serve: ['Insegnare al bot cosa dire su di te (social, orari, PC, regole…).', 'Teach the bot what to say about you (socials, schedule, PC, rules…).', 'Enseñarle al bot qué decir sobre ti (redes, horarios, PC, reglas…).'],
     come: [['Aggiungi una voce: domanda → risposta.', 'Add an entry: question → answer.', 'Añade una entrada: pregunta → respuesta.'], ['In chat richiami la risposta con un !comando o una parola chiave.', 'In chat you trigger the answer with a !command or a keyword.', 'En el chat activas la respuesta con un !comando o una palabra clave.']] },
-  moduli: { serve: ['Creare comandi e automazioni: QUANDO succede X, SE le condizioni, ALLORA fai Y.', 'Create commands and automations: WHEN X happens, IF conditions, THEN do Y.', 'Crear comandos y automatizaciones: CUANDO pasa X, SI se cumplen condiciones, ENTONCES haz Y.'],
-    come: [['“Nuovo comando”.', '“New command”.', '“Nuevo comando”.'], ['Scegli l’innesco: !comando, una parola, un evento o un timer.', 'Choose the trigger: !command, a word, an event or a timer.', 'Elige el disparador: !comando, una palabra, un evento o un temporizador.'], ['Aggiungi una o più azioni (scrivi in chat, effetto, clip, musica…).', 'Add one or more actions (write in chat, effect, clip, music…).', 'Añade una o varias acciones (escribir en el chat, efecto, clip, música…).'], ['Premi “Prova” per vederlo in azione.', 'Hit “Test” to see it in action.', 'Pulsa “Probar” para verlo en acción.']] },
+  moduli: { serve: ['Creare i comandi di chat: comandi/automazioni (QUANDO succede X, ALLORA fai Y) e i contatori (morti, tentativi, parole…) che tu e i mod gestite in chat.', 'Create your chat commands: commands/automations (WHEN X happens, THEN do Y) and counters (deaths, attempts, words…) that you and your mods manage in chat.', 'Crea tus comandos de chat: comandos/automatizaciones (CUANDO pasa X, ENTONCES haz Y) y los contadores (muertes, intentos, palabras…) que tú y los mods gestionáis en el chat.'],
+    come: [['“Nuovo comando”: scegli l’innesco (!comando, una parola, un evento o un timer).', '“New command”: choose the trigger (!command, a word, an event or a timer).', '“Nuevo comando”: elige el disparador (!comando, una palabra, un evento o un temporizador).'], ['Aggiungi una o più azioni (scrivi in chat, effetto, clip, musica…) e premi “Prova”.', 'Add one or more actions (write in chat, effect, clip, music…) and hit “Test”.', 'Añade una o varias acciones (escribir en el chat, efecto, clip, música…) y pulsa “Probar”.'], ['Più in basso, in “Contatori”, crei numeri come !morti da mostrare anche in overlay.', 'Further down, in “Counters”, you create numbers like !deaths that can also show in the overlay.', 'Más abajo, en “Contadores”, creas números como !muertes que también puedes mostrar en el overlay.']] },
   regole: { serve: ['Moderazione automatica: filtra spam, link e flood e dà timeout ai recidivi.', 'Automatic moderation: filters spam, links and flood, and times out repeat offenders.', 'Moderación automática: filtra spam, enlaces y flood, y da timeout a los reincidentes.'],
     come: [['Attiva l’antispam.', 'Enable anti-spam.', 'Activa el antispam.'], ['Scegli cosa filtrare (link, maiuscole, ripetizioni…).', 'Choose what to filter (links, caps, repetitions…).', 'Elige qué filtrar (enlaces, mayúsculas, repeticiones…).'], ['Salva: il bot modera da solo.', 'Save: the bot moderates on its own.', 'Guarda: el bot modera solo.']] },
   giochi: { serve: ['Minigiochi, monete e classifiche per tenere viva la chat.', 'Minigames, coins and leaderboards to keep chat alive.', 'Minijuegos, monedas y clasificaciones para animar el chat.'],
@@ -1478,9 +1478,9 @@ function vistaPiattaforma() {
     ${pannelloConoscenza()}
     ${pannelloMemoria()}
     ${pannelloModuli()}
+    ${pannelloContatori()}
     ${pannelloRegole()}
     ${pannelloGiochi()}
-    ${pannelloContatori()}
     ${pannelloRegia()}
     ${pannelloStudio()}
     ${pannelloClip()}
@@ -1498,7 +1498,7 @@ function vistaPiattaforma() {
 
 function pannello(id, contenuto) {
   const dentro = schedaBloccata(id) ? paginaBloccata(id) : contenuto;
-  return `<section class="pannello-scheda${id === schedaAttiva ? ' visibile' : ''}" id="scheda-${id}">${dentro}</section>`;
+  return `<section class="pannello-scheda${id === schedaAttiva ? ' visibile' : ''}" id="scheda-${id}" data-scheda="${id}">${dentro}</section>`;
 }
 
 // --- scheda Stato -------------------------------------------------------
@@ -5650,10 +5650,11 @@ function _xlaGrabFn() {
 const bookmarkletXla = 'javascript:(' + _xlaGrabFn.toString().replace(/\n\s*/g, ' ') + ')()';
 
 // --- Contatori (morti, tentativi, parole…) --------------------------------
+// Sta nella sezione COMANDI (moduli): sono comandi di chat, non minigiochi.
 function pannelloContatori() {
-  return pannello('giochi', `
+  return pannello('moduli', `
     <div class="carta">
-      <h2>${_hIco(ICO.moduli)}${L('Contatori', 'Counters', 'Contadores')}</h2>
+      <h2>${_hIco(ICO.moduli)}${L('Contatori', 'Counters', 'Contadores')} <span class="tenue">(!morti, !tentativi…)</span></h2>
       <p>${L('Crea contatori (morti, tentativi, parole…). Tu e i moderatori li gestite in chat:', 'Create counters (deaths, attempts, words…). You and your mods manage them in chat:', 'Crea contadores (muertes, intentos, palabras…). Tú y tus moderadores los gestionáis en el chat:')}
       <code>!morti</code> ${L('mostra il valore;', 'shows the value;', 'muestra el valor;')} <code>!morti+</code> · <code>!morti +3</code> · <code>!morti-</code> · <code>!morti reset</code> · <code>!morti set 10</code> ${L('(solo mod/streamer).', '(mods/streamer only).', '(solo mods/streamer).')}
       ${L('Un contatore può salire anche <strong>da solo</strong> a ogni <em>parola</em> in chat, o con un <strong>premio a punti canale</strong>.', 'A counter can also go up <strong>on its own</strong> on each chat <em>word</em>, or with a <strong>channel-point reward</strong>.', 'Un contador también puede subir <strong>solo</strong> con cada <em>palabra</em> en el chat, o con un <strong>premio de puntos de canal</strong>.')}</p>
@@ -5667,7 +5668,7 @@ function pannelloContatori() {
           L('<strong>Accendilo a schermo</strong> scrivendo in chat <code>!morti on</code> (parte da 0 e appare nell’overlay). Lo spegni con <code>!morti off</code>.', '<strong>Turn it on screen</strong> by typing <code>!deaths on</code> in chat (starts from 0 and appears in the overlay). Turn it off with <code>!deaths off</code>.', '<strong>Enciéndelo en pantalla</strong> escribiendo <code>!muertes on</code> en el chat (empieza en 0 y aparece en el overlay). Lo apagas con <code>!muertes off</code>.'),
           L('<strong>Fallo salire</strong> (solo tu e i mod): <code>!morti+</code>, <code>!morti +3</code>, <code>!morti-</code>, <code>!morti reset</code>, <code>!morti set 10</code>. Chiunque può leggerlo con <code>!morti</code>.', '<strong>Make it go up</strong> (you and mods only): <code>!deaths+</code>, <code>!deaths +3</code>, <code>!deaths-</code>, <code>!deaths reset</code>, <code>!deaths set 10</code>. Anyone can read it with <code>!deaths</code>.', '<strong>Súbelo</strong> (solo tú y los mods): <code>!muertes+</code>, <code>!muertes +3</code>, <code>!muertes-</code>, <code>!muertes reset</code>, <code>!muertes set 10</code>. Cualquiera lo lee con <code>!muertes</code>.'),
           L('<strong>In automatico</strong>: metti una «parola automatica» (es. «lol») e il contatore sale da solo ogni volta che appare in chat; oppure premi «Crea premio» per collegarlo a un <strong>punto canale</strong>.', '<strong>Automatically</strong>: set an “auto word” (e.g. “lol”) and the counter rises on its own whenever it shows up in chat; or hit “Create reward” to link it to a <strong>channel point</strong>.', '<strong>En automático</strong>: pon una «palabra automática» (ej. «lol») y el contador sube solo cada vez que aparece en el chat; o pulsa «Crear premio» para vincularlo a un <strong>punto de canal</strong>.'),
-          L('<strong>Personalizza a schermo</strong> aprendo «Personalizza a schermo (overlay OBS)» su ogni contatore: posizione, colori, dimensione, font, formato del testo e persino le <strong>parole per accendere/spegnere</strong> (oltre a on/off).', '<strong>Customize on screen</strong> by opening “Customize on screen (OBS overlay)” on each counter: position, colors, size, font, text format and even the <strong>words to turn on/off</strong> (besides on/off).', '<strong>Personaliza en pantalla</strong> abriendo «Personalizar en pantalla (overlay OBS)» en cada contador: posición, colores, tamaño, fuente, formato del texto e incluso las <strong>palabras para encender/apagar</strong> (además de on/off).'),
+          L('<strong>Scegli dove appare</strong>: attiva «Mostra in overlay» e usa il menu <strong>Posizione a schermo</strong> (in alto a destra, in basso al centro…). Sotto puoi personalizzare colori, dimensione, font, formato del testo e le <strong>parole per accendere/spegnere</strong>.', '<strong>Choose where it shows</strong>: turn on “Show in overlay” and use the <strong>On-screen position</strong> menu (top right, bottom center…). Below you can customize colors, size, font, text format and the <strong>words to turn on/off</strong>.', '<strong>Elige dónde aparece</strong>: activa «Mostrar en overlay» y usa el menú <strong>Posición en pantalla</strong> (arriba a la derecha, abajo en el centro…). Debajo puedes personalizar colores, tamaño, fuente, formato del texto y las <strong>palabras para encender/apagar</strong>.'),
         ],
         note: [
           L('Il contatore usa lo <strong>stesso overlay OBS</strong> di alert ed effetti: se ce l’hai già in OBS, non devi aggiungere nulla.', 'The counter uses the <strong>same OBS overlay</strong> as alerts and effects: if it’s already in OBS, you don’t need to add anything.', 'El contador usa el <strong>mismo overlay de OBS</strong> que las alertas y los efectos: si ya lo tienes en OBS, no hace falta añadir nada.'),
@@ -5699,6 +5700,24 @@ async function caricaContatori() {
   const list = d.contatori || [];
   const FONTS = [['system', 'Sistema'], ['inter', 'Inter'], ['spaceGrotesk', 'Space Grotesk'], ['jetBrainsMono', 'JetBrains Mono'], ['fraunces', 'Fraunces'], ['bricolage', 'Bricolage']];
   const fontOpts = (sel) => FONTS.map(([k, n]) => `<option value="${k}"${k === sel ? ' selected' : ''}>${n}</option>`).join('');
+  // Preset di posizione [chiave, X%, Y%, etichetta]: riempiono i campi X/Y (che
+  // restano per la regolazione fine). L'overlay ancora il widget all'angolo giusto.
+  const POSZ = [
+    ['alto-sx', 4, 6, L('In alto a sinistra', 'Top left', 'Arriba a la izquierda')],
+    ['alto-c', 50, 6, L('In alto al centro', 'Top center', 'Arriba en el centro')],
+    ['alto-dx', 96, 6, L('In alto a destra', 'Top right', 'Arriba a la derecha')],
+    ['centro-sx', 4, 50, L('Al centro a sinistra', 'Middle left', 'En el centro a la izquierda')],
+    ['centro', 50, 50, L('Al centro', 'Center', 'En el centro')],
+    ['centro-dx', 96, 50, L('Al centro a destra', 'Middle right', 'En el centro a la derecha')],
+    ['basso-sx', 4, 94, L('In basso a sinistra', 'Bottom left', 'Abajo a la izquierda')],
+    ['basso-c', 50, 94, L('In basso al centro', 'Bottom center', 'Abajo en el centro')],
+    ['basso-dx', 96, 94, L('In basso a destra', 'Bottom right', 'Abajo a la derecha')],
+  ];
+  const posOpts = (x, y) => {
+    const cur = (POSZ.find(([, px, py]) => px === Number(x) && py === Number(y)) || [''])[0];
+    return POSZ.map(([k, , , lab]) => `<option value="${k}"${k === cur ? ' selected' : ''}>${lab}</option>`).join('')
+      + `<option value=""${cur === '' ? ' selected' : ''}>${L('Personalizzata (X/Y sotto)', 'Custom (X/Y below)', 'Personalizada (X/Y abajo)')}</option>`;
+  };
   box.innerHTML = list.length ? list.map((c) => {
     const o = c.overlayCfg || {};
     const hexBg = /^#/.test(o.sfondo || '') ? o.sfondo : '#000000';
@@ -5724,13 +5743,18 @@ async function caricaContatori() {
         · <code>!${esc(c.comando)}+</code> <code>!${esc(c.comando)} +3</code> <code>!${esc(c.comando)}-</code> <code>!${esc(c.comando)} reset</code> <code>!${esc(c.comando)} set 10</code> <span class="tenue">(${L('solo mod/streamer', 'mods/streamer only', 'solo mods/streamer')})</span>
       </div>
       <details class="cont-ov">
-        <summary>${L('Personalizza a schermo (overlay OBS)', 'Customize on screen (OBS overlay)', 'Personalizar en pantalla (overlay OBS)')}</summary>
+        <summary>${L('Personalizza l\'aspetto a schermo (overlay)', 'Customize the on-screen look (overlay)', 'Personaliza el aspecto en pantalla (overlay)')}</summary>
         <div class="cont-ov-form" data-ovform="${esc(c.comando)}">
-          <label class="riga-check"><input type="checkbox" data-ovk="mostra"${o.mostra ? ' checked' : ''}> ${L('Mostra sull\'overlay OBS', 'Show on the OBS overlay', 'Mostrar en el overlay de OBS')}</label>
-          <div class="griglia-campi spazio-sopra">
-            <div><label class="campo">${L('Posizione X %', 'Position X %', 'Posición X %')}</label><input type="number" data-ovk="x" min="0" max="100" value="${Number(o.x) || 0}"></div>
-            <div><label class="campo">${L('Posizione Y %', 'Position Y %', 'Posición Y %')}</label><input type="number" data-ovk="y" min="0" max="100" value="${Number(o.y) || 0}"></div>
-          </div>
+          <label class="riga-check riga-mostra"><input type="checkbox" data-ovk="mostra"${o.mostra ? ' checked' : ''}> <strong>${L('Mostra in overlay', 'Show in overlay', 'Mostrar en overlay')}</strong> <span class="suggerimento">${L('(lo stesso overlay di OBS/Studio)', '(the same overlay as OBS/Studio)', '(el mismo overlay de OBS/Studio)')}</span></label>
+          <label class="campo spazio-sopra">${L('Posizione a schermo', 'On-screen position', 'Posición en pantalla')}</label>
+          <select data-ovk="posizione" class="campo-largo">${posOpts(o.x, o.y)}</select>
+          <details class="cont-fine">
+            <summary>${L('Regolazione fine (X/Y manuali)', 'Fine tuning (manual X/Y)', 'Ajuste fino (X/Y manual)')}</summary>
+            <div class="griglia-campi spazio-sopra">
+              <div><label class="campo">${L('Posizione X %', 'Position X %', 'Posición X %')}</label><input type="number" data-ovk="x" min="0" max="100" value="${Number(o.x) || 0}"></div>
+              <div><label class="campo">${L('Posizione Y %', 'Position Y %', 'Posición Y %')}</label><input type="number" data-ovk="y" min="0" max="100" value="${Number(o.y) || 0}"></div>
+            </div>
+          </details>
           <div class="griglia-campi spazio-sopra">
             <div><label class="campo">${L('Colore testo', 'Text color', 'Color texto')}</label><input type="color" data-ovk="colore" value="${esc(o.colore || '#ffffff')}"></div>
             <div><label class="campo">${L('Dimensione (px)', 'Size (px)', 'Tamaño (px)')}</label><input type="number" data-ovk="dim" min="10" max="200" value="${Number(o.dim) || 40}"></div>
@@ -5756,6 +5780,14 @@ async function caricaContatori() {
     : `<p class="suggerimento">${L('Nessun contatore ancora. Creane uno qui sotto.', 'No counters yet. Create one below.', 'Aún no hay contadores. Crea uno abajo.')}</p>`;
 
   const salvaVal = (comando, valore) => api('/api/contatori', { method: 'POST', body: { comando, valore } });
+  // Tendina posizione → riempie i campi X/Y (poi si salva con "Salva aspetto").
+  box.onchange = (ev) => {
+    const sel = ev.target.closest('[data-ovk="posizione"]'); if (!sel) return;
+    const form = ev.target.closest('[data-ovform]'); if (!form || !sel.value) return;
+    const p = POSZ.find(([k]) => k === sel.value); if (!p) return;
+    const xi = form.querySelector('[data-ovk="x"]'), yi = form.querySelector('[data-ovk="y"]');
+    if (xi) xi.value = p[1]; if (yi) yi.value = p[2];
+  };
   box.onclick = (ev) => {
     const b = ev.target.closest('[data-ca]'); if (!b) return;
     const cmd = b.dataset.cmd, az = b.dataset.ca;
@@ -7181,9 +7213,9 @@ function caricaDatiScheda(id) {
   if (id === 'studio') caricaStudio();
   if (id === 'effetti') { caricaEffetti(); caricaPremi(); caricaSuoniPremi(); caricaLibreria(); }
   if (id === 'emote') caricaEmote7TV();
-  if (id === 'moduli') caricaModuli();
+  if (id === 'moduli') { caricaModuli(); caricaContatori(); }
   if (id === 'memoria') caricaStatistiche();
-  if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); caricaContatori(); }
+  if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); }
   if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaDiscord(); caricaTgLogin(); }
   if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaAnima(); caricaLLM(); }
 }
@@ -8896,13 +8928,15 @@ function vaiAScheda(id) {
   chiudiMenuMobile();                       // su mobile chiude il cassetto
   if (id === schedaAttiva) return;
   schedaAttiva = id;
-  const pannello = document.getElementById('scheda-' + id);
+  // Una scheda logica può avere PIÙ <section> (es. Comandi = moduli + contatori):
+  // le gestiamo tutte, non solo la prima che troverebbe getElementById.
+  const sezioni = [...document.querySelectorAll('.pannello-scheda')].filter((p) => p.dataset.scheda === id);
   transizione(() => {
     aggiornaStatoNav(id);
     document.querySelectorAll('.pannello-scheda').forEach((p) =>
-      p.classList.toggle('visibile', p === pannello));
+      p.classList.toggle('visibile', p.dataset.scheda === id));
     aggiornaTestataPagina();
-    if (pannello) rivelaCarte(pannello);   // reveal fresco delle carte della scheda
+    sezioni.forEach((p) => rivelaCarte(p));   // reveal fresco delle carte della scheda
   });
   caricaDatiScheda(id);
   if (DEMO) aggiornaSpiegazioneDemo();     // aggiorna la spiegazione della scheda
