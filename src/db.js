@@ -88,6 +88,7 @@ CREATE TABLE IF NOT EXISTS contatori (         -- contatori a comando (morti, te
   step INTEGER NOT NULL DEFAULT 1,               -- di quanto sale con +
   auto_parola TEXT NOT NULL DEFAULT '',          -- se valorizzata: +1 quando appare in chat
   reward_id TEXT NOT NULL DEFAULT '',            -- premio punti canale collegato (riscatto → +step)
+  overlay TEXT NOT NULL DEFAULT '',              -- JSON: aspetto/posizione del widget a schermo
   ts INTEGER NOT NULL,
   PRIMARY KEY (channel, comando)
 );
@@ -457,6 +458,14 @@ aggiungiColonna('spotify_tokens', 'client_secret', "TEXT NOT NULL DEFAULT ''");
       console.log(`[db] conoscenza 'auto' inquinata rimossa: ${r.changes} voci (verranno riseminate corrette per-streamer)`);
     }
   } catch { /* best-effort: non blocca l'avvio */ }
+})();
+
+// Contatori: colonna `overlay` (JSON aspetto/posizione del widget) sui DB esistenti.
+(() => {
+  try {
+    const cols = db.prepare('PRAGMA table_info(contatori)').all();
+    if (!cols.some((c) => c.name === 'overlay')) db.exec("ALTER TABLE contatori ADD COLUMN overlay TEXT NOT NULL DEFAULT ''");
+  } catch { /* best-effort */ }
 })();
 
 const now = () => Date.now();
@@ -1165,7 +1174,29 @@ export const contatori = {
     return db.prepare('SELECT * FROM contatori WHERE channel=? AND reward_id=?').get(String(channel).toLowerCase(), r) || null;
   },
   autoParola(channel) { return this.list(channel).filter((c) => c.auto_parola); },
-  upsert(channel, { comando, etichetta, emoji, step, autoParola, rewardId, valore } = {}) {
+  // config del widget a schermo, con default sensati
+  overlayDi(row) {
+    const def = { mostra: false, x: 6, y: 84, colore: '#ffffff', sfondo: 'rgba(0,0,0,0.55)', dim: 40, grassetto: true, font: 'system', formato: '{emoji} {etichetta}: {valore}' };
+    let o = {}; try { o = row && row.overlay ? JSON.parse(row.overlay) : {}; } catch { o = {}; }
+    return { ...def, ...(o && typeof o === 'object' ? o : {}) };
+  },
+  // payload SSE per l'overlay (testo formattato + stile)
+  payloadOverlay(row) {
+    const o = this.overlayDi(row);
+    const testo = String(o.formato || '{emoji} {etichetta}: {valore}')
+      .replace(/\{emoji\}/g, row.emoji || '').replace(/\{etichetta\}/g, row.etichetta || row.comando).replace(/\{valore\}/g, String(row.valore ?? 0))
+      .replace(/\s+/g, ' ').trim();
+    return { tipo: 'contatore', comando: row.comando, mostra: !!o.mostra, testo, x: o.x, y: o.y, colore: o.colore, sfondo: o.sfondo, dim: o.dim, grassetto: !!o.grassetto, font: o.font };
+  },
+  // aggiorna SOLO la config overlay (merge), es. mostra on/off da chat
+  patchOverlay(channel, comando, patch) {
+    const c = String(channel).toLowerCase(), cmd = String(comando).toLowerCase();
+    const cur = this.get(c, cmd); if (!cur) return null;
+    const o = { ...this.overlayDi(cur), ...(patch || {}) };
+    db.prepare('UPDATE contatori SET overlay=?, ts=? WHERE channel=? AND comando=?').run(JSON.stringify(o), now(), c, cmd);
+    return this.get(c, cmd);
+  },
+  upsert(channel, { comando, etichetta, emoji, step, autoParola, rewardId, valore, overlay } = {}) {
     const c = String(channel).toLowerCase();
     const cmd = String(comando || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 30);
     if (!cmd) return null;
@@ -1177,11 +1208,12 @@ export const contatori = {
       auto_parola: autoParola !== undefined ? String(autoParola).toLowerCase().slice(0, 40) : (cur?.auto_parola || ''),
       reward_id: rewardId !== undefined ? String(rewardId) : (cur?.reward_id || ''),
       valore: valore !== undefined ? (parseInt(valore, 10) || 0) : (cur?.valore ?? 0),
+      overlay: overlay !== undefined ? JSON.stringify(overlay && typeof overlay === 'object' ? overlay : {}) : (cur?.overlay || ''),
     };
-    db.prepare(`INSERT INTO contatori (channel, comando, etichetta, emoji, valore, step, auto_parola, reward_id, ts)
-      VALUES (@channel,@comando,@etichetta,@emoji,@valore,@step,@auto_parola,@reward_id,@ts)
+    db.prepare(`INSERT INTO contatori (channel, comando, etichetta, emoji, valore, step, auto_parola, reward_id, overlay, ts)
+      VALUES (@channel,@comando,@etichetta,@emoji,@valore,@step,@auto_parola,@reward_id,@overlay,@ts)
       ON CONFLICT(channel,comando) DO UPDATE SET etichetta=excluded.etichetta, emoji=excluded.emoji, valore=excluded.valore,
-        step=excluded.step, auto_parola=excluded.auto_parola, reward_id=excluded.reward_id, ts=excluded.ts`)
+        step=excluded.step, auto_parola=excluded.auto_parola, reward_id=excluded.reward_id, overlay=excluded.overlay, ts=excluded.ts`)
       .run({ channel: c, comando: cmd, ...v, ts: now() });
     return this.get(c, cmd);
   },

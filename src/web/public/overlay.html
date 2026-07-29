@@ -172,6 +172,8 @@
     .wbox.alto-destra    { top: 3vh; right: 2vw; align-items: flex-end; }
     .wbox.basso-sinistra { bottom: 3vh; left: 2vw; }
     .wbox.basso-destra   { bottom: 3vh; right: 2vw; align-items: flex-end; }
+    /* widget contatore persistente (morti/parole…): posizionato a x/y % */
+    .contatore-widget { position: absolute; transform: translateY(-50%); padding: .12em .5em; border-radius: .3em; line-height: 1.15; white-space: nowrap; z-index: 8; pointer-events: none; text-shadow: 0 2px 8px rgba(0,0,0,.65), 0 0 2px rgba(0,0,0,.5); }
   </style>
 </head>
 <body>
@@ -694,10 +696,33 @@
         else if (dati.tipo === 'widget') { if (mostra(dati.id === 'ultimoSub' ? 'ws' : 'wf')) widget(dati.id, dati.cfg, dati.valore); }
         else if (dati.tipo === 'tema') caricaTema();   // ricarica il MIO tema (per ?o=id)
         else if (dati.tipo === 'testo') { if (mostra('effetti')) mostraTesto(dati); }
+        else if (dati.tipo === 'contatore') contatore(dati);   // widget contatore persistente (morti/parole…)
         else { if (mostra('effetti')) { codaVisiva.push(dati); mostraProssimo(); } }
       };
       // in caso di errore EventSource riprova da solo: non facciamo nulla
       es.onerror = () => {};
+    }
+
+    // Widget CONTATORE persistente (morti/tentativi/parole…): un elemento per
+    // comando, posizionato e stilizzato dalla config; `mostra:false` lo rimuove.
+    function fontStackCont(f) {
+      const m = { system: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif', inter: 'Inter, system-ui, sans-serif', spaceGrotesk: '"Space Grotesk", Inter, sans-serif', jetBrainsMono: '"JetBrains Mono", ui-monospace, monospace', fraunces: 'Fraunces, Georgia, serif', bricolage: '"Bricolage Grotesque", Inter, sans-serif' };
+      return m[f] || m.system;
+    }
+    function contatore(d) {
+      const id = 'cont-' + String(d.comando || '').replace(/[^a-z0-9_]/gi, '').slice(0, 30);
+      let el = document.getElementById(id);
+      if (!d.mostra) { if (el) el.remove(); return; }
+      if (!el) { el = document.createElement('div'); el.id = id; el.className = 'contatore-widget'; document.body.appendChild(el); }
+      el.textContent = String(d.testo || '');
+      const x = Number(d.x), y = Number(d.y);
+      el.style.left = (isFinite(x) ? x : 6) + '%';
+      el.style.top = (isFinite(y) ? y : 84) + '%';
+      el.style.color = d.colore || '#ffffff';
+      el.style.background = d.sfondo || 'transparent';
+      el.style.fontSize = (Math.max(8, Math.min(200, Number(d.dim) || 40))) + 'px';
+      el.style.fontWeight = d.grassetto ? '800' : '500';
+      el.style.fontFamily = fontStackCont(d.font);
     }
 
     // Applica il TEMA di QUESTO overlay: layout (cosa mostra + dove), CSS e widget.
