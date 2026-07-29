@@ -4047,10 +4047,15 @@ function studioSSE(sseUrl) {
 // --- catture globali (condivise tra le scene) --------------------------------
 
 // Vincoli video: risoluzione/fps dalla qualità scelta + dispositivo selezionato
-// (deviceId) o, su mobile, fotocamera anteriore/posteriore (facingMode).
+// (deviceId) o, su mobile, fotocamera anteriore/posteriore (facingMode). Le
+// webcam raramente superano il 1080p: chiediamo al MASSIMO 1080p come "ideale"
+// — con un deviceId `exact`, un ideale troppo alto (es. 2K) su certe fotocamere
+// restituisce un frame nero. Sono comunque valori "ideal", quindi la cam sceglie
+// il modo migliore che riesce a fare.
 function studioVincoliVideo() {
   const q = STUDIO_QUAL[STUDIO.qual] || STUDIO_QUAL['720p30'];
-  const v = { width: { ideal: q.w }, height: { ideal: q.h }, frameRate: { ideal: q.fps } };
+  const hh = Math.min(q.h, 1080), ww = Math.round(hh * 16 / 9);
+  const v = { width: { ideal: ww }, height: { ideal: hh }, frameRate: { ideal: Math.min(q.fps, 60) } };
   if (STUDIO.dev.camId) v.deviceId = { exact: STUDIO.dev.camId };
   else if (STUDIO.dev.facing) v.facingMode = STUDIO.dev.facing;
   return v;
@@ -4066,16 +4071,29 @@ async function studioCapWebcam() {
   } catch (e) { toast(L('Webcam non disponibile: ', 'Webcam not available: ', 'Webcam no disponible: ') + e.message, 'errore'); return false; }
 }
 
-// Cambia la fotocamera in uso (dropdown "Ingressi"): rilascia lo stream vecchio
-// e ne apre uno nuovo con il deviceId scelto, aggiornando l'elemento <video>.
+// Cambia la fotocamera in uso (dropdown "Ingressi"). ACQUISISCE PRIMA il nuovo
+// stream, POI ferma il vecchio: così se il nuovo fallisce (cam occupata, non
+// disponibile, permesso negato) NON restiamo con uno stream morto → niente
+// schermo nero. In caso di errore ripristina la fotocamera precedente.
 async function studioCambiaCamera(camId) {
+  const precedente = STUDIO.dev.camId;
   STUDIO.dev.camId = camId || '';
-  if (!STUDIO.cap.camEl) return;   // nessuna webcam attiva: il valore verrà usato all'attivazione
+  if (!STUDIO.cap.camEl) { studioPopolaDispositivi(); return; }   // webcam non ancora attiva: il valore si userà all'attivazione
+  const vecchioStream = STUDIO.cap.camStream;
   try {
-    try { STUDIO.cap.camStream && STUDIO.cap.camStream.getTracks().forEach((t) => t.stop()); } catch (e) { /* niente */ }
-    STUDIO.cap.camStream = await navigator.mediaDevices.getUserMedia({ video: studioVincoliVideo(), audio: false });
-    STUDIO.cap.camEl.srcObject = STUDIO.cap.camStream; await STUDIO.cap.camEl.play().catch(() => {});
-  } catch (e) { toast(L('Cambio fotocamera non riuscito: ', 'Camera switch failed: ', 'Cambio de cámara fallido: ') + e.message, 'errore'); }
+    const nuovo = await navigator.mediaDevices.getUserMedia({ video: studioVincoliVideo(), audio: false });
+    STUDIO.cap.camStream = nuovo;
+    STUDIO.cap.camEl.srcObject = nuovo;
+    await STUDIO.cap.camEl.play().catch(() => {});
+    try { vecchioStream && vecchioStream.getTracks().forEach((t) => t.stop()); } catch (e) { /* niente */ }
+    studioPopolaDispositivi();
+  } catch (e) {
+    // ripristina la fotocamera precedente: niente schermo nero
+    STUDIO.dev.camId = precedente || '';
+    try { if (vecchioStream) { STUDIO.cap.camStream = vecchioStream; STUDIO.cap.camEl.srcObject = vecchioStream; STUDIO.cap.camEl.play().catch(() => {}); } } catch (e2) { /* niente */ }
+    const cs = document.getElementById('studio-cam-sel'); if (cs) cs.value = STUDIO.dev.camId;
+    toast(L('Questa fotocamera non è disponibile o è già in uso da un\'altra app.', 'This camera is unavailable or already in use by another app.', 'Esta cámara no está disponible o ya está en uso por otra app.'), 'errore');
+  }
 }
 
 async function studioCapSchermo() {
@@ -4106,18 +4124,27 @@ async function studioCapMic() {
   } catch (e) { toast(L('Microfono non disponibile: ', 'Microphone not available: ', 'Micrófono no disponible: ') + e.message, 'errore'); return false; }
 }
 
-// Cambia il microfono in uso: rilascia lo stream vecchio, ne apre uno nuovo con
-// il deviceId scelto e ricollega il nodo audio al mixer se siamo in diretta.
+// Cambia il microfono in uso: ACQUISISCE PRIMA il nuovo stream, poi rilascia il
+// vecchio e ricollega il nodo audio al mixer se siamo in diretta. In caso di
+// errore ripristina il microfono precedente (niente audio muto imprevisto).
 async function studioCambiaMic(micId) {
+  const precedente = STUDIO.dev.micId;
   STUDIO.dev.micId = micId || '';
-  if (!STUDIO.cap.micStream) return;
+  if (!STUDIO.cap.micStream) { studioPopolaDispositivi(); return; }
+  const vecchio = STUDIO.cap.micStream;
   try {
+    const nuovo = await navigator.mediaDevices.getUserMedia({ audio: STUDIO.dev.micId ? { deviceId: { exact: STUDIO.dev.micId } } : true, video: false });
     const A = STUDIO.audio;
     try { A && A.micNode && A.micNode.disconnect(); } catch (e) { /* niente */ }
-    try { STUDIO.cap.micStream.getTracks().forEach((t) => t.stop()); } catch (e) { /* niente */ }
-    STUDIO.cap.micStream = await navigator.mediaDevices.getUserMedia({ audio: STUDIO.dev.micId ? { deviceId: { exact: STUDIO.dev.micId } } : true, video: false });
+    STUDIO.cap.micStream = nuovo;
+    try { vecchio.getTracks().forEach((t) => t.stop()); } catch (e) { /* niente */ }
     if (A) { A.micNode = null; collegaAudioCatture(); applicaMix(); }
-  } catch (e) { toast(L('Cambio microfono non riuscito: ', 'Mic switch failed: ', 'Cambio de micrófono fallido: ') + e.message, 'errore'); }
+    studioPopolaDispositivi();
+  } catch (e) {
+    STUDIO.dev.micId = precedente || '';
+    const ms = document.getElementById('studio-mic-sel'); if (ms) ms.value = STUDIO.dev.micId;
+    toast(L('Questo microfono non è disponibile o è già in uso.', 'This microphone is unavailable or already in use.', 'Este micrófono no está disponible o ya está en uso.'), 'errore');
+  }
 }
 
 // --- ingressi (dispositivi), qualità, overlay, emote -------------------------
@@ -4303,6 +4330,7 @@ function applicaMix() {
 
 async function avviaLive() {
   if (STUDIO.live) return;
+  if (stato?.ruolo === 'moderatore') { toast(L('Solo il proprietario del canale può andare in diretta.', 'Only the channel owner can go live.', 'Solo el propietario del canal puede emitir.'), 'errore'); return; }
   const s = studioSceneAttiva();
   if (!s || !s.fonti.some((f) => f.visibile)) { toast(L('Aggiungi almeno una fonte visibile alla scena.', 'Add at least one visible source to the scene.', 'Añade al menos una fuente visible a la escena.'), 'errore'); return; }
   studioLog(L('Avvio…', 'Starting…', 'Iniciando…'));
@@ -4372,7 +4400,13 @@ async function caricaStudio() {
   avviaLoopStudio();      // mostra il palco + le fonti in anteprima
   renderStudioTutto();
   studioRenderIO();       // selettori ingressi/qualità/overlay + pannello chat
-  if (DEMO) { studioLog(L('Anteprima demo: qui crei scene, aggiungi fonti e vai in diretta senza OBS.', 'Demo preview: here you create scenes, add sources and go live without OBS.', 'Vista previa demo: aquí creas escenas, añades fuentes y emites sin OBS.')); return; }
+  // blindatura: i moderatori NON avviano la diretta (userebbero la stream key
+  // del proprietario). Il blocco vero è lato server; qui lo rendiamo evidente.
+  const modStudio = stato?.ruolo === 'moderatore';
+  const btnLive = document.getElementById('studio-live');
+  if (btnLive) { btnLive.disabled = modStudio; if (modStudio) btnLive.title = L('Solo il proprietario del canale può andare in diretta.', 'Only the channel owner can go live.', 'Solo el propietario del canal puede emitir.'); }
+  if (modStudio) studioLog(L('Come moderatore puoi preparare scene, fonti e overlay, ma la diretta la avvia solo il proprietario del canale.', 'As a moderator you can set up scenes, sources and overlays, but only the channel owner can start the stream.', 'Como moderador puedes preparar escenas, fuentes y overlays, pero solo el propietario del canal puede iniciar el directo.'));
+  if (DEMO) { if (!modStudio) studioLog(L('Anteprima demo: qui crei scene, aggiungi fonti e vai in diretta senza OBS.', 'Demo preview: here you create scenes, add sources and go live without OBS.', 'Vista previa demo: aquí creas escenas, añades fuentes y emites sin OBS.')); return; }
   try {
     const d = await api('/api/studio');
     const banner = document.getElementById('studio-permessi-banner');
