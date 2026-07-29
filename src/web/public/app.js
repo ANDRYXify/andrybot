@@ -5708,12 +5708,21 @@ async function caricaContatori() {
       <span class="cont-info">${c.emoji ? esc(c.emoji) + ' ' : ''}<strong>${esc(c.etichetta || c.comando)}</strong> <code>!${esc(c.comando)}</code>${o.mostra ? ` <span class="tenue">· 📺 ${L('a schermo', 'on screen', 'en pantalla')}</span>` : ''}${c.auto_parola ? ` <span class="tenue">· ${L('auto', 'auto', 'auto')}: «${esc(c.auto_parola)}»</span>` : ''}${c.reward_id ? ` <span class="tenue">· 🏆 ${L('premio', 'reward', 'premio')}</span>` : ''}</span>
       <span class="cont-val" data-cv="${esc(c.comando)}">${c.valore}</span>
       <span class="cont-azioni">
+        ${o.mostra
+          ? `<button type="button" class="btn secondario mini" data-ca="off" data-cmd="${esc(c.comando)}" title="${L('Toglilo dallo schermo (come !' + esc(c.comando) + ' off)', 'Hide it from screen (like !' + esc(c.comando) + ' off)', 'Quítalo de la pantalla (como !' + esc(c.comando) + ' off)')}">${L('Spegni a schermo', 'Hide on screen', 'Apagar en pantalla')}</button>`
+          : `<button type="button" class="btn secondario mini acceso" data-ca="on" data-cmd="${esc(c.comando)}" title="${L('Mostralo a schermo da 0 (come !' + esc(c.comando) + ' on)', 'Show it on screen from 0 (like !' + esc(c.comando) + ' on)', 'Muéstralo en pantalla desde 0 (como !' + esc(c.comando) + ' on)')}">📺 ${L('Accendi a schermo', 'Show on screen', 'Encender en pantalla')}</button>`}
         <button type="button" class="btn secondario mini" data-ca="piu" data-cmd="${esc(c.comando)}" data-val="${c.valore}" data-step="${c.step}">+${c.step}</button>
         <button type="button" class="btn secondario mini" data-ca="meno" data-cmd="${esc(c.comando)}" data-val="${c.valore}" data-step="${c.step}">−${c.step}</button>
         <button type="button" class="btn secondario mini" data-ca="reset" data-cmd="${esc(c.comando)}">${L('Reset', 'Reset', 'Reset')}</button>
         <button type="button" class="btn secondario mini" data-ca="reward" data-cmd="${esc(c.comando)}">${c.reward_id ? L('Scollega premio', 'Unlink reward', 'Desvincular premio') : L('Crea premio', 'Create reward', 'Crear premio')}</button>
         <button type="button" class="btn secondario mini" data-ca="del" data-cmd="${esc(c.comando)}" title="${L('Elimina', 'Delete', 'Eliminar')}">🗑</button>
       </span>
+      <div class="cont-comandi">
+        <span class="cont-comandi-tit">${L('Comandi in chat', 'Chat commands', 'Comandos en el chat')}</span>
+        <code>!${esc(c.comando)}</code> <span class="tenue">${L('leggi', 'read', 'leer')}</span>
+        · <code>!${esc(c.comando)} on</code> / <code>!${esc(c.comando)} off</code> <span class="tenue">${L('accendi/spegni a schermo (parte da 0)', 'show/hide on screen (starts from 0)', 'encender/apagar en pantalla (empieza en 0)')}</span>
+        · <code>!${esc(c.comando)}+</code> <code>!${esc(c.comando)} +3</code> <code>!${esc(c.comando)}-</code> <code>!${esc(c.comando)} reset</code> <code>!${esc(c.comando)} set 10</code> <span class="tenue">(${L('solo mod/streamer', 'mods/streamer only', 'solo mods/streamer')})</span>
+      </div>
       <details class="cont-ov">
         <summary>${L('Personalizza a schermo (overlay OBS)', 'Customize on screen (OBS overlay)', 'Personalizar en pantalla (overlay OBS)')}</summary>
         <div class="cont-ov-form" data-ovform="${esc(c.comando)}">
@@ -5766,7 +5775,9 @@ async function caricaContatori() {
         toast(L('Aspetto salvato ✓ (aggiornato nell\'overlay)', 'Look saved ✓ (updated in overlay)', 'Aspecto guardado ✓ (actualizado en el overlay)'));
         return;   // non ricarico: tengo aperto l'editor
       }
-      if (az === 'piu') await salvaVal(cmd, (Number(b.dataset.val) || 0) + (Number(b.dataset.step) || 1));
+      if (az === 'on') { await api('/api/contatori', { method: 'POST', body: { comando: cmd, valore: 0, overlay: { mostra: true } } }); toast(L('Contatore acceso a schermo ✓ (da 0)', 'Counter shown on screen ✓ (from 0)', 'Contador encendido en pantalla ✓ (desde 0)')); }
+      else if (az === 'off') { await api('/api/contatori', { method: 'POST', body: { comando: cmd, overlay: { mostra: false } } }); toast(L('Contatore tolto dallo schermo.', 'Counter hidden from screen.', 'Contador quitado de la pantalla.')); }
+      else if (az === 'piu') await salvaVal(cmd, (Number(b.dataset.val) || 0) + (Number(b.dataset.step) || 1));
       else if (az === 'meno') await salvaVal(cmd, (Number(b.dataset.val) || 0) - (Number(b.dataset.step) || 1));
       else if (az === 'reset') await salvaVal(cmd, 0);
       else if (az === 'del') { if (!confirm(L('Eliminare il contatore «', 'Delete counter «', 'Eliminar el contador «') + cmd + '»?')) return; await api('/api/contatori/' + encodeURIComponent(cmd), { method: 'DELETE' }); }
