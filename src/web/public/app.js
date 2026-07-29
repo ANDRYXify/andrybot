@@ -3850,7 +3850,7 @@ const STUDIO = {
   coda: [], inviando: false,
   overlay: { alert: null, chat: [], fx: [] },
   sse: null,
-  mix: { master: { vol: 100, mute: false }, mic: { vol: 100, mute: false }, desk: { vol: 100, mute: false }, sfx: { vol: 100, mute: false } },
+  mix: { master: { vol: 100, mute: false }, mic: { vol: 100, mute: false }, desk: { vol: 100, mute: false }, media: { vol: 100, mute: false }, sfx: { vol: 100, mute: false } },
   vuRaf: 0, libero: false,
   drag: null, addTipo: null, _wired: false,
   // NEW: ingressi selezionabili, qualità, overlay scelto, chat+emote
@@ -4319,6 +4319,7 @@ function studioFileScelto(file) {
   else el.src = url;
   STUDIO.media[dataId] = { el, tipo, url };
   studioAddFonte(tipo, { dataId, nome: (file.name || tipo).slice(0, 22) });
+  if (tipo === 'video' && STUDIO.live) { collegaAudioMedia(); renderStudioMixer(); }   // in diretta: instrada subito l'audio del nuovo video
 }
 
 function studioSpostaFonte(id, dir) {
@@ -4368,14 +4369,14 @@ function studioAudioInit() {
   const ac = new AC();
   const dest = ac.createMediaStreamDestination();
   const gMaster = ac.createGain();
-  const gMic = ac.createGain(), gDesk = ac.createGain(), gSfx = ac.createGain();
-  gMic.connect(gMaster); gDesk.connect(gMaster); gSfx.connect(gMaster);
+  const gMic = ac.createGain(), gDesk = ac.createGain(), gSfx = ac.createGain(), gMedia = ac.createGain();
+  gMic.connect(gMaster); gDesk.connect(gMaster); gSfx.connect(gMaster); gMedia.connect(gMaster);
   gMaster.connect(dest);
   const mkAn = () => { const a = ac.createAnalyser(); a.fftSize = 256; a.smoothingTimeConstant = 0.6; return a; };
-  const an = { mic: mkAn(), desk: mkAn(), sfx: mkAn(), master: mkAn() };
-  gMic.connect(an.mic); gDesk.connect(an.desk); gSfx.connect(an.sfx); gMaster.connect(an.master);
-  STUDIO.audio = { ac, dest, gMaster, gMic, gDesk, gSfx, micNode: null, deskNode: null, an };
-  collegaAudioCatture(); applicaMix(); avviaVU();
+  const an = { mic: mkAn(), desk: mkAn(), sfx: mkAn(), media: mkAn(), master: mkAn() };
+  gMic.connect(an.mic); gDesk.connect(an.desk); gSfx.connect(an.sfx); gMedia.connect(an.media); gMaster.connect(an.master);
+  STUDIO.audio = { ac, dest, gMaster, gMic, gDesk, gSfx, gMedia, micNode: null, deskNode: null, mediaConnessi: new Set(), an };
+  collegaAudioCatture(); collegaAudioMedia(); applicaMix(); avviaVU();
   return dest.stream;
 }
 
@@ -4385,11 +4386,31 @@ function collegaAudioCatture() {
   try { if (!A.deskNode && STUDIO.cap.scrStream && STUDIO.cap.scrStream.getAudioTracks().length) { A.deskNode = A.ac.createMediaStreamSource(new MediaStream(STUDIO.cap.scrStream.getAudioTracks())); A.deskNode.connect(A.gDesk); } } catch (e) { /* niente */ }
 }
 
+// Instrada l'audio dei VIDEO aggiunti come fonte nel canale "Media" del mix, così
+// lo sentono anche gli spettatori. Usa captureStream (ricreabile a ogni diretta,
+// senza il limite "una volta sola" di createMediaElementSource). Il video suona
+// anche in locale (elemento non mutato); il fader Media regola solo la diretta.
+function collegaAudioMedia() {
+  const A = STUDIO.audio; if (!A || !A.gMedia || !A.mediaConnessi) return;
+  for (const id of Object.keys(STUDIO.media)) {
+    const m = STUDIO.media[id];
+    if (!m || m.tipo !== 'video' || !m.el || A.mediaConnessi.has(id)) continue;
+    try {
+      const cap = m.el.captureStream ? m.el.captureStream() : (m.el.mozCaptureStream ? m.el.mozCaptureStream() : null);
+      if (!cap || !cap.getAudioTracks().length) { A.mediaConnessi.add(id); continue; }   // video senza audio
+      m.el.muted = false; m.el.volume = 1;   // suona in locale e viene catturato per lo stream
+      A.ac.createMediaStreamSource(cap).connect(A.gMedia);
+      A.mediaConnessi.add(id);
+    } catch (e) { /* niente */ }
+  }
+}
+
 function applicaMix() {
   const A = STUDIO.audio, m = STUDIO.mix; if (!A) return;
   A.gMic.gain.value = m.mic.mute ? 0 : m.mic.vol / 100;
   A.gDesk.gain.value = m.desk.mute ? 0 : m.desk.vol / 100;
   A.gSfx.gain.value = m.sfx.mute ? 0 : m.sfx.vol / 100;
+  if (A.gMedia) A.gMedia.gain.value = m.media.mute ? 0 : m.media.vol / 100;
   if (A.gMaster) A.gMaster.gain.value = m.master.mute ? 0 : m.master.vol / 100;
 }
 
@@ -4403,7 +4424,7 @@ function avviaVU() {
   const tick = () => {
     if (!STUDIO.audio || !STUDIO.live) { STUDIO.vuRaf = 0; return; }
     const an = STUDIO.audio.an;
-    for (const k of ['mic', 'desk', 'sfx', 'master']) {
+    for (const k of ['mic', 'desk', 'media', 'sfx', 'master']) {
       const bar = document.querySelector(`.mix-vu-barra[data-vu="${k}"]`);
       if (bar && an[k]) bar.style.width = Math.round(livello(an[k]) * 100) + '%';
     }
@@ -4463,6 +4484,8 @@ async function fermaLive() {
   try { await api('/api/studio/stop', { method: 'POST' }); } catch (e) { /* niente */ }
   try { STUDIO.audio && STUDIO.audio.ac.close(); } catch (e) { /* niente */ }
   STUDIO.audio = null; STUDIO.coda = []; STUDIO.inviando = false;
+  // ri-muta i video sorgente (anteprima silenziosa fuori diretta)
+  for (const id in STUDIO.media) { const mm = STUDIO.media[id]; if (mm && mm.tipo === 'video' && mm.el) { try { mm.el.muted = true; } catch (e) { /* niente */ } } }
   document.getElementById('studio-live').hidden = false;
   document.getElementById('studio-ferma').hidden = true;
   const badge = document.getElementById('studio-badge-live'); if (badge) badge.hidden = true;
@@ -4790,6 +4813,7 @@ function renderStudioMixer() {
   const m = STUDIO.mix;
   const micOn = !!STUDIO.cap.micStream;
   const deskOn = !!(STUDIO.cap.scrStream && STUDIO.cap.scrStream.getAudioTracks().length);
+  const mediaOn = Object.values(STUDIO.media || {}).some((x) => x && x.tipo === 'video');
   const canale = (id, nome, on, cfg, extra, forte) => `
     <div class="mix-canale${on ? '' : ' off'}${forte ? ' mix-master' : ''}">
       <div class="mix-testa"><span>${nome}</span>${extra || ''}</div>
@@ -4804,6 +4828,7 @@ function renderStudioMixer() {
     canale('master', L('Master (uscita)', 'Master (output)', 'Master (salida)'), true, m.master, '', true)
     + canale('mic', L('Microfono', 'Microphone', 'Micrófono'), micOn, m.mic, micOn ? '' : `<button type="button" class="btn secondario mini" data-cap="mic">${L('Attiva', 'Enable', 'Activar')}</button>`)
     + canale('desk', L('Audio dello schermo', 'Screen audio', 'Audio de la pantalla'), deskOn, m.desk, deskOn ? '' : `<span class="tenue">${L('condividi lo schermo con audio', 'share the screen with audio', 'comparte la pantalla con audio')}</span>`)
+    + canale('media', L('Audio dei video', 'Video audio', 'Audio de los vídeos'), mediaOn, m.media, mediaOn ? '' : `<span class="tenue">${L('aggiungi un video con audio', 'add a video with sound', 'añade un vídeo con audio')}</span>`)
     + canale('sfx', L('Effetti & alert', 'Effects & alerts', 'Efectos y alertas'), true, m.sfx, '');
 }
 
