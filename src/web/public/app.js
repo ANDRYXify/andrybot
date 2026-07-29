@@ -3678,7 +3678,7 @@ async function salvaRegiaCanale() {
 function pannelloStudio() {
   return pannello('studio', `
     <div class="carta evidenziata" id="studio-permessi-banner" hidden></div>
-    <div class="carta studio-carta">
+    <div class="carta studio-carta studio-largo">
       <h2>${_hIco(ICO.onda)}${L('Studio Web — vai live senza OBS', 'Web Studio — go live without OBS', 'Estudio Web — emite sin OBS')}</h2>
       <p>${L('Un vero studio nel browser: crea', 'A real studio in the browser: create', 'Un estudio de verdad en el navegador: crea')} <strong>${L('scene', 'scenes', 'escenas')}</strong>, ${L('aggiungi', 'add', 'añade')} <strong>${L('fonti', 'sources', 'fuentes')}</strong> (${L('webcam, schermo, immagini, video, testo, overlay), spostale e ridimensionale sul palco, regola l\'<strong>audio</strong> e vai in diretta su Twitch. Il video parte da qui: <strong>tieni aperta questa scheda</strong> mentre trasmetti.', 'webcam, screen, images, video, text, overlay), move and resize them on the stage, tune the <strong>audio</strong> and go live on Twitch. The video comes from here: <strong>keep this tab open</strong> while you broadcast.', 'webcam, pantalla, imágenes, vídeo, texto, overlay), muévelas y rediméntalas en el escenario, ajusta el <strong>audio</strong> y emite en Twitch. El vídeo sale de aquí: <strong>mantén esta pestaña abierta</strong> mientras transmites.')}</p>
 
@@ -3686,10 +3686,16 @@ function pannelloStudio() {
       <div class="studio-scene" id="studio-scene"></div>
       <!-- preset: salva/richiama un intero set di scene con un nome -->
       <div class="studio-preset" id="studio-preset"></div>
+      <!-- controlli layout (contenitore separato: renderStudioPreset sovrascrive #studio-preset) -->
+      <div class="studio-layout-ctrl">
+        <button type="button" class="btn secondario mini" id="studio-libero-btn" data-libero="toggle" title="${L('Sposta liberamente i pannelli (e il palco) dove vuoi', 'Freely move the panels (and the stage) wherever you want', 'Mueve libremente los paneles (y el escenario) donde quieras')}">${_bIco(ICO.sposta || ICO.righello || ICO.piu)}${L('Layout libero', 'Free layout', 'Diseño libre')}</button>
+        <button type="button" class="btn secondario mini" data-libero="reset" title="${L('Rimetti i pannelli in ordine', 'Reset panels to the default order', 'Restablecer paneles')}">${L('Reimposta layout', 'Reset layout', 'Restablecer diseño')}</button>
+      </div>
 
-      <div class="studio-griglia">
+      <div class="studio-griglia" id="studio-griglia">
         <!-- palco: canvas pulito + livello UI (selezione/trascinamento) sopra -->
         <div class="studio-palco-wrap">
+          <span class="studio-palco-drag" title="${L('Trascina il palco', 'Drag the stage', 'Arrastra el escenario')}">⠿ ${L('palco', 'stage', 'escenario')}</span>
           <div class="studio-palco" id="studio-palco">
             <canvas id="studio-canvas" width="1280" height="720"></canvas>
             <div class="studio-ui" id="studio-ui"></div>
@@ -3796,7 +3802,7 @@ const STUDIO = {
   overlay: { alert: null, chat: [], fx: [] },
   sse: null,
   mix: { master: { vol: 100, mute: false }, mic: { vol: 100, mute: false }, desk: { vol: 100, mute: false }, sfx: { vol: 100, mute: false } },
-  vuRaf: 0,
+  vuRaf: 0, libero: false,
   drag: null, addTipo: null, _wired: false,
   // NEW: ingressi selezionabili, qualità, overlay scelto, chat+emote
   qual: '720p30',
@@ -4500,40 +4506,117 @@ function studioApplicaOrdinePannelli() {
   if (!Array.isArray(ord) || !ord.length) return;
   for (const key of ord) { const b = side.querySelector(`:scope > .studio-box[data-box-ord="${key}"]`); if (b) side.appendChild(b); }
 }
-// Prepara maniglie + drag di riordino (una sola volta: i box sono statici).
-let _studioRiord = null;
+// --- layout libero: palco e pannelli flottanti trascinabili ovunque ----------
+function studioLiberoKey() { try { return 'andrybot-studio-poslib:' + (stato?.user?.login || 'anon'); } catch (e) { return 'andrybot-studio-poslib:anon'; } }
+function studioLiberoModeKey() { try { return 'andrybot-studio-libero:' + (stato?.user?.login || 'anon'); } catch (e) { return 'andrybot-studio-libero:anon'; } }
+function studioElemKey(el) { return el.classList.contains('studio-palco-wrap') ? 'palco' : (el.dataset.boxOrd || studioBoxKey(el)); }
+function studioElementiLibero() {
+  const g = document.getElementById('studio-griglia'); if (!g) return [];
+  return [g.querySelector('.studio-palco-wrap'), ...g.querySelectorAll('.studio-side > .studio-box')].filter(Boolean);
+}
+function studioLeggiPosLibero() { try { return JSON.parse(localStorage.getItem(studioLiberoKey())); } catch (e) { return null; } }
+function studioSalvaPosLibero() {
+  const g = document.getElementById('studio-griglia'); if (!g) return;
+  const gr = g.getBoundingClientRect(); const pos = {};
+  for (const el of studioElementiLibero()) { const r = el.getBoundingClientRect(); pos[studioElemKey(el)] = { x: Math.round(r.left - gr.left), y: Math.round(r.top - gr.top) }; }
+  try { localStorage.setItem(studioLiberoKey(), JSON.stringify(pos)); } catch (e) { /* niente */ }
+}
+function studioAggiornaAltezzaLibero() {
+  const g = document.getElementById('studio-griglia'); if (!g || !g.classList.contains('libero')) return;
+  const gr = g.getBoundingClientRect(); let maxB = 0;
+  for (const el of studioElementiLibero()) { const r = el.getBoundingClientRect(); maxB = Math.max(maxB, r.bottom - gr.top); }
+  g.style.minHeight = (maxB + 24) + 'px';
+}
+function studioApplicaLibero() {
+  const g = document.getElementById('studio-griglia'); if (!g) return;
+  // "congela" le posizioni attuali (layout a colonna) prima di passare a flottante
+  const gr = g.getBoundingClientRect(); const correnti = new Map();
+  for (const el of studioElementiLibero()) { const r = el.getBoundingClientRect(); correnti.set(el, { x: r.left - gr.left, y: r.top - gr.top }); }
+  g.classList.add('libero');
+  const salvate = studioLeggiPosLibero();
+  for (const el of studioElementiLibero()) {
+    const p = (salvate && salvate[studioElemKey(el)]) || correnti.get(el) || { x: 0, y: 0 };
+    el.style.left = Math.max(0, p.x) + 'px'; el.style.top = Math.max(0, p.y) + 'px';
+  }
+  studioAggiornaAltezzaLibero();
+}
+function studioTogliLibero() {
+  const g = document.getElementById('studio-griglia'); if (!g) return;
+  g.classList.remove('libero'); g.style.minHeight = '';
+  for (const el of studioElementiLibero()) { el.style.left = ''; el.style.top = ''; }
+}
+function studioToggleLibero() {
+  STUDIO.libero = !STUDIO.libero;
+  try { localStorage.setItem(studioLiberoModeKey(), STUDIO.libero ? '1' : '0'); } catch (e) { /* niente */ }
+  if (STUDIO.libero) studioApplicaLibero(); else studioTogliLibero();
+  const btn = document.getElementById('studio-libero-btn'); if (btn) btn.classList.toggle('attivo', STUDIO.libero);
+}
+function studioResetLibero() {
+  try { localStorage.removeItem(studioLiberoKey()); localStorage.removeItem(studioLiberoModeKey()); localStorage.removeItem(studioOrdineKey()); } catch (e) { /* niente */ }
+  STUDIO.libero = false; studioTogliLibero();
+  const side = document.querySelector('.studio-side');
+  if (side) for (const key of ['io', 'add', 'fonti', 'prop', 'mixer', 'chat']) { const b = side.querySelector(`:scope > .studio-box[data-box-ord="${key}"]`); if (b) side.appendChild(b); }
+  const btn = document.getElementById('studio-libero-btn'); if (btn) btn.classList.remove('attivo');
+  toast(L('Layout ripristinato', 'Layout reset', 'Diseño restablecido'));
+}
+
+// Prepara maniglie + drag (riordino in colonna OPPURE spostamento libero) una
+// sola volta: palco e box sono statici nel DOM.
+let _studioDrag = null;
 function studioInitRiordino() {
-  const side = document.querySelector('.studio-side'); if (!side) return;
-  for (const b of side.querySelectorAll(':scope > .studio-box')) {
+  const griglia = document.getElementById('studio-griglia'); if (!griglia) return;
+  const side = griglia.querySelector('.studio-side');
+  if (side) for (const b of side.querySelectorAll(':scope > .studio-box')) {
     const key = studioBoxKey(b); if (key) b.dataset.boxOrd = key;
     const tit = b.querySelector('.studio-box-tit');
     if (tit && !tit.querySelector('.studio-box-drag')) {
       const h = document.createElement('span');
       h.className = 'studio-box-drag'; h.textContent = '⠿';
-      h.title = L('Trascina per riordinare i pannelli', 'Drag to reorder panels', 'Arrastra para reordenar los paneles');
+      h.title = L('Trascina per riordinare / spostare', 'Drag to reorder / move', 'Arrastra para reordenar / mover');
       tit.insertBefore(h, tit.firstChild);
     }
   }
-  studioApplicaOrdinePannelli();
+  // ripristina modalità (libero vs colonna) e ordine/posizioni salvati
+  try { STUDIO.libero = localStorage.getItem(studioLiberoModeKey()) === '1'; } catch (e) { /* niente */ }
+  if (STUDIO.libero) studioApplicaLibero(); else studioApplicaOrdinePannelli();
+  const btn0 = document.getElementById('studio-libero-btn'); if (btn0) btn0.classList.toggle('attivo', STUDIO.libero);
+
   if (STUDIO._riordWired) return;
   STUDIO._riordWired = true;
-  side.addEventListener('pointerdown', (e) => {
-    const h = e.target.closest('.studio-box-drag'); if (!h) return;
-    const box = h.closest('.studio-box'); if (!box) return;
-    _studioRiord = box; box.classList.add('studio-box-dragging');
+  griglia.addEventListener('pointerdown', (e) => {
+    const h = e.target.closest('.studio-box-drag, .studio-palco-drag'); if (!h) return;
+    const el = h.closest('.studio-box, .studio-palco-wrap'); if (!el) return;
+    if (STUDIO.libero) {
+      const r = el.getBoundingClientRect(), gr = griglia.getBoundingClientRect();
+      _studioDrag = { el, mode: 'free', px: e.clientX, py: e.clientY, startL: r.left - gr.left, startT: r.top - gr.top };
+    } else {
+      if (!el.classList.contains('studio-box')) return;   // in colonna solo i box si riordinano
+      _studioDrag = { el, mode: 'reorder' };
+    }
+    el.classList.add('studio-box-dragging');
     try { h.setPointerCapture(e.pointerId); } catch (er) { /* niente */ }
     e.preventDefault();
   });
-  side.addEventListener('pointermove', (e) => {
-    if (!_studioRiord) return;
-    const fratelli = [...side.querySelectorAll(':scope > .studio-box')].filter((b) => b !== _studioRiord);
-    let messo = false;
-    for (const f of fratelli) { const r = f.getBoundingClientRect(); if (e.clientY < r.top + r.height / 2) { side.insertBefore(_studioRiord, f); messo = true; break; } }
-    if (!messo) side.appendChild(_studioRiord);
+  griglia.addEventListener('pointermove', (e) => {
+    if (!_studioDrag) return;
+    if (_studioDrag.mode === 'free') {
+      const gr = griglia.getBoundingClientRect();
+      let nx = _studioDrag.startL + (e.clientX - _studioDrag.px);
+      let ny = _studioDrag.startT + (e.clientY - _studioDrag.py);
+      nx = Math.max(0, Math.min(nx, gr.width - 60)); ny = Math.max(0, ny);
+      _studioDrag.el.style.left = nx + 'px'; _studioDrag.el.style.top = ny + 'px';
+      studioAggiornaAltezzaLibero();
+    } else {
+      const s = griglia.querySelector('.studio-side'); if (!s) return;
+      const fratelli = [...s.querySelectorAll(':scope > .studio-box')].filter((b) => b !== _studioDrag.el);
+      let messo = false;
+      for (const f of fratelli) { const r = f.getBoundingClientRect(); if (e.clientY < r.top + r.height / 2) { s.insertBefore(_studioDrag.el, f); messo = true; break; } }
+      if (!messo) s.appendChild(_studioDrag.el);
+    }
   });
-  const fine = () => { if (!_studioRiord) return; _studioRiord.classList.remove('studio-box-dragging'); _studioRiord = null; studioSalvaOrdinePannelli(); };
-  side.addEventListener('pointerup', fine);
-  side.addEventListener('pointercancel', fine);
+  const fine = () => { if (!_studioDrag) return; const m = _studioDrag.mode; _studioDrag.el.classList.remove('studio-box-dragging'); _studioDrag = null; if (m === 'free') studioSalvaPosLibero(); else studioSalvaOrdinePannelli(); };
+  griglia.addEventListener('pointerup', fine);
+  griglia.addEventListener('pointercancel', fine);
 }
 
 // ---- disegno dell'interfaccia dello Studio (scene, fonti, proprietà, mixer) --
@@ -4717,6 +4800,7 @@ function onStudioClick(ev) {
   const cap = t.closest('[data-cap]'); if (cap && cap.dataset.cap === 'mic') return conErrore(() => studioCapMic());
   const mute = t.closest('[data-mute]'); if (mute) { const k = mute.dataset.mute; if (STUDIO.mix[k]) { STUDIO.mix[k].mute = !STUDIO.mix[k].mute; applicaMix(); renderStudioMixer(); } return; }
   const io = t.closest('[data-io]'); if (io) { if (io.dataset.io === 'aggiorna') return conErrore(() => studioPopolaDispositivi()); return; }
+  const lib = t.closest('[data-libero]'); if (lib) { if (lib.dataset.libero === 'toggle') return studioToggleLibero(); if (lib.dataset.libero === 'reset') return studioResetLibero(); return; }
   if (t.closest('#studio-live')) return conErrore(() => avviaLive());
   if (t.closest('#studio-ferma')) return conErrore(() => fermaLive());
 }
