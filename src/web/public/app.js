@@ -3795,7 +3795,8 @@ const STUDIO = {
   coda: [], inviando: false,
   overlay: { alert: null, chat: [], fx: [] },
   sse: null,
-  mix: { mic: { vol: 100, mute: false }, desk: { vol: 100, mute: false }, sfx: { vol: 100, mute: false } },
+  mix: { master: { vol: 100, mute: false }, mic: { vol: 100, mute: false }, desk: { vol: 100, mute: false }, sfx: { vol: 100, mute: false } },
+  vuRaf: 0,
   drag: null, addTipo: null, _wired: false,
   // NEW: ingressi selezionabili, qualità, overlay scelto, chat+emote
   qual: '720p30',
@@ -4303,15 +4304,23 @@ function studioLayout(preset) {
   renderStudioTutto();
 }
 
-// --- audio: mixer con guadagni per canale ------------------------------------
+// --- audio: mixer con guadagni per canale + master + VU-meter ----------------
+// Grafo: mic/schermo/effetti → gMaster → dest (traccia audio della diretta).
+// Un AnalyserNode per canale (post-fader) alimenta i VU-meter. I suoni SFX/preset
+// hanno anche un monitor locale diretto (in suonaStudioSfx/studioSuonaPreset).
 function studioAudioInit() {
   const AC = window.AudioContext || window.webkitAudioContext;
   const ac = new AC();
   const dest = ac.createMediaStreamDestination();
+  const gMaster = ac.createGain();
   const gMic = ac.createGain(), gDesk = ac.createGain(), gSfx = ac.createGain();
-  gMic.connect(dest); gDesk.connect(dest); gSfx.connect(dest);
-  STUDIO.audio = { ac, dest, gMic, gDesk, gSfx, micNode: null, deskNode: null };
-  collegaAudioCatture(); applicaMix();
+  gMic.connect(gMaster); gDesk.connect(gMaster); gSfx.connect(gMaster);
+  gMaster.connect(dest);
+  const mkAn = () => { const a = ac.createAnalyser(); a.fftSize = 256; a.smoothingTimeConstant = 0.6; return a; };
+  const an = { mic: mkAn(), desk: mkAn(), sfx: mkAn(), master: mkAn() };
+  gMic.connect(an.mic); gDesk.connect(an.desk); gSfx.connect(an.sfx); gMaster.connect(an.master);
+  STUDIO.audio = { ac, dest, gMaster, gMic, gDesk, gSfx, micNode: null, deskNode: null, an };
+  collegaAudioCatture(); applicaMix(); avviaVU();
   return dest.stream;
 }
 
@@ -4326,6 +4335,26 @@ function applicaMix() {
   A.gMic.gain.value = m.mic.mute ? 0 : m.mic.vol / 100;
   A.gDesk.gain.value = m.desk.mute ? 0 : m.desk.vol / 100;
   A.gSfx.gain.value = m.sfx.mute ? 0 : m.sfx.vol / 100;
+  if (A.gMaster) A.gMaster.gain.value = m.master.mute ? 0 : m.master.vol / 100;
+}
+
+// VU-meter: legge il livello (picco) di ogni canale dall'analyser e aggiorna le
+// barre. Gira solo in diretta (grafo audio presente); si ferma da solo allo stop.
+function avviaVU() {
+  const A = STUDIO.audio; if (!A || !A.an) return;
+  cancelAnimationFrame(STUDIO.vuRaf || 0);
+  const buf = new Uint8Array(A.an.master.fftSize);
+  const livello = (an) => { an.getByteTimeDomainData(buf); let picco = 0; for (let i = 0; i < buf.length; i++) { const v = Math.abs(buf[i] - 128) / 128; if (v > picco) picco = v; } return Math.min(1, picco * 1.4); };
+  const tick = () => {
+    if (!STUDIO.audio || !STUDIO.live) { STUDIO.vuRaf = 0; return; }
+    const an = STUDIO.audio.an;
+    for (const k of ['mic', 'desk', 'sfx', 'master']) {
+      const bar = document.querySelector(`.mix-vu-barra[data-vu="${k}"]`);
+      if (bar && an[k]) bar.style.width = Math.round(livello(an[k]) * 100) + '%';
+    }
+    STUDIO.vuRaf = requestAnimationFrame(tick);
+  };
+  STUDIO.vuRaf = requestAnimationFrame(tick);
 }
 
 async function avviaLive() {
@@ -4400,6 +4429,7 @@ async function caricaStudio() {
   avviaLoopStudio();      // mostra il palco + le fonti in anteprima
   renderStudioTutto();
   studioRenderIO();       // selettori ingressi/qualità/overlay + pannello chat
+  studioInitRiordino();   // pannelli laterali trascinabili (ordine salvato)
   // blindatura: i moderatori NON avviano la diretta (userebbero la stream key
   // del proprietario). Il blocco vero è lato server; qui lo rendiamo evidente.
   const modStudio = stato?.ruolo === 'moderatore';
@@ -4443,6 +4473,67 @@ function studioRenderIO() {
   const cs = document.getElementById('studio-cam-sel'); if (cs && STUDIO.dev.camId) cs.value = STUDIO.dev.camId;
   const ms = document.getElementById('studio-mic-sel'); if (ms && STUDIO.dev.micId) ms.value = STUDIO.dev.micId;
   const os = document.getElementById('studio-ov-sel'); if (os && STUDIO.ov.sel) os.value = STUDIO.ov.sel;
+}
+
+// --- pannelli riarrangiabili (trascina per riordinare la colonna strumenti) --
+// Chiave stabile di ogni box (in base a un elemento interno riconoscibile), così
+// possiamo salvarne/ripristinarne l'ordine anche se l'HTML non ha id sui box.
+function studioBoxKey(box) {
+  if (!box) return '';
+  if (box.id === 'studio-prop-box') return 'prop';
+  if (box.classList.contains('studio-io')) return 'io';
+  if (box.querySelector('#studio-fonti')) return 'fonti';
+  if (box.querySelector('#studio-mixer')) return 'mixer';
+  if (box.querySelector('#studio-chat')) return 'chat';
+  if (box.querySelector('[data-add]')) return 'add';
+  return '';
+}
+function studioOrdineKey() { try { return 'andrybot-studio-ord:' + (stato?.user?.login || 'anon'); } catch (e) { return 'andrybot-studio-ord:anon'; } }
+function studioSalvaOrdinePannelli() {
+  const side = document.querySelector('.studio-side'); if (!side) return;
+  const ord = [...side.querySelectorAll(':scope > .studio-box')].map((b) => b.dataset.boxOrd).filter(Boolean);
+  try { localStorage.setItem(studioOrdineKey(), JSON.stringify(ord)); } catch (e) { /* niente */ }
+}
+function studioApplicaOrdinePannelli() {
+  const side = document.querySelector('.studio-side'); if (!side) return;
+  let ord; try { ord = JSON.parse(localStorage.getItem(studioOrdineKey())); } catch (e) { ord = null; }
+  if (!Array.isArray(ord) || !ord.length) return;
+  for (const key of ord) { const b = side.querySelector(`:scope > .studio-box[data-box-ord="${key}"]`); if (b) side.appendChild(b); }
+}
+// Prepara maniglie + drag di riordino (una sola volta: i box sono statici).
+let _studioRiord = null;
+function studioInitRiordino() {
+  const side = document.querySelector('.studio-side'); if (!side) return;
+  for (const b of side.querySelectorAll(':scope > .studio-box')) {
+    const key = studioBoxKey(b); if (key) b.dataset.boxOrd = key;
+    const tit = b.querySelector('.studio-box-tit');
+    if (tit && !tit.querySelector('.studio-box-drag')) {
+      const h = document.createElement('span');
+      h.className = 'studio-box-drag'; h.textContent = '⠿';
+      h.title = L('Trascina per riordinare i pannelli', 'Drag to reorder panels', 'Arrastra para reordenar los paneles');
+      tit.insertBefore(h, tit.firstChild);
+    }
+  }
+  studioApplicaOrdinePannelli();
+  if (STUDIO._riordWired) return;
+  STUDIO._riordWired = true;
+  side.addEventListener('pointerdown', (e) => {
+    const h = e.target.closest('.studio-box-drag'); if (!h) return;
+    const box = h.closest('.studio-box'); if (!box) return;
+    _studioRiord = box; box.classList.add('studio-box-dragging');
+    try { h.setPointerCapture(e.pointerId); } catch (er) { /* niente */ }
+    e.preventDefault();
+  });
+  side.addEventListener('pointermove', (e) => {
+    if (!_studioRiord) return;
+    const fratelli = [...side.querySelectorAll(':scope > .studio-box')].filter((b) => b !== _studioRiord);
+    let messo = false;
+    for (const f of fratelli) { const r = f.getBoundingClientRect(); if (e.clientY < r.top + r.height / 2) { side.insertBefore(_studioRiord, f); messo = true; break; } }
+    if (!messo) side.appendChild(_studioRiord);
+  });
+  const fine = () => { if (!_studioRiord) return; _studioRiord.classList.remove('studio-box-dragging'); _studioRiord = null; studioSalvaOrdinePannelli(); };
+  side.addEventListener('pointerup', fine);
+  side.addEventListener('pointercancel', fine);
 }
 
 // ---- disegno dell'interfaccia dello Studio (scene, fonti, proprietà, mixer) --
@@ -4567,17 +4658,19 @@ function renderStudioMixer() {
   const m = STUDIO.mix;
   const micOn = !!STUDIO.cap.micStream;
   const deskOn = !!(STUDIO.cap.scrStream && STUDIO.cap.scrStream.getAudioTracks().length);
-  const canale = (id, nome, on, cfg, extra) => `
-    <div class="mix-canale${on ? '' : ' off'}">
+  const canale = (id, nome, on, cfg, extra, forte) => `
+    <div class="mix-canale${on ? '' : ' off'}${forte ? ' mix-master' : ''}">
       <div class="mix-testa"><span>${nome}</span>${extra || ''}</div>
       <div class="mix-riga">
         <button type="button" class="mix-mute${cfg.mute ? ' on' : ''}" data-mute="${id}"${on ? '' : ' disabled'} title="${cfg.mute ? L('Riattiva', 'Unmute', 'Reactivar') : L('Muto', 'Mute', 'Silenciar')}">${_bIco(cfg.mute ? ICO.muto : ICO.altoparlante)}</button>
         <input type="range" min="0" max="100" value="${cfg.vol}" data-vol="${id}"${on ? '' : ' disabled'}>
         <span class="mix-val">${cfg.vol}</span>
       </div>
+      <div class="mix-vu"><span class="mix-vu-barra" data-vu="${id}"></span></div>
     </div>`;
   el.innerHTML =
-    canale('mic', L('Microfono', 'Microphone', 'Micrófono'), micOn, m.mic, micOn ? '' : `<button type="button" class="btn secondario mini" data-cap="mic">${L('Attiva', 'Enable', 'Activar')}</button>`)
+    canale('master', L('Master (uscita)', 'Master (output)', 'Master (salida)'), true, m.master, '', true)
+    + canale('mic', L('Microfono', 'Microphone', 'Micrófono'), micOn, m.mic, micOn ? '' : `<button type="button" class="btn secondario mini" data-cap="mic">${L('Attiva', 'Enable', 'Activar')}</button>`)
     + canale('desk', L('Audio dello schermo', 'Screen audio', 'Audio de la pantalla'), deskOn, m.desk, deskOn ? '' : `<span class="tenue">${L('condividi lo schermo con audio', 'share the screen with audio', 'comparte la pantalla con audio')}</span>`)
     + canale('sfx', L('Effetti & alert', 'Effects & alerts', 'Efectos y alertas'), true, m.sfx, '');
 }
