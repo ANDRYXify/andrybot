@@ -1176,7 +1176,7 @@ export const contatori = {
   autoParola(channel) { return this.list(channel).filter((c) => c.auto_parola); },
   // config del widget a schermo, con default sensati
   overlayDi(row) {
-    const def = { mostra: false, x: 6, y: 84, colore: '#ffffff', sfondo: 'rgba(0,0,0,0.55)', dim: 40, grassetto: true, font: 'system', formato: '{emoji} {etichetta}: {valore}', parolaOn: '', parolaOff: '' };
+    const def = { mostra: false, x: 4, y: 94, colore: '#ffffff', sfondo: 'rgba(0,0,0,0.55)', dim: 40, grassetto: true, font: 'system', formato: '{emoji} {etichetta}: {valore}', parolaOn: '', parolaOff: '' };
     let o = {}; try { o = row && row.overlay ? JSON.parse(row.overlay) : {}; } catch { o = {}; }
     return { ...def, ...(o && typeof o === 'object' ? o : {}) };
   },
