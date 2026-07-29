@@ -25,7 +25,28 @@
 # --- Dominio UFFICIALE: serve l'app -------------------------
 socialbot.live {
 	encode gzip
-	reverse_proxy bot:8090
+
+	# Link-page pubblica degli streamer (/u/<login>). Il contenuto è la SPA del
+	# sito madre (su Vercel), ma DEVE stare sotto il dominio ufficiale
+	# socialbot.live (non più andryxify.it). Facciamo da reverse-proxy verso
+	# Vercel SOLO per i path che servono alla link-page standalone:
+	#   · /u/*                    → la pagina (index.html della SPA)
+	#   · /assets/*               → bundle JS/CSS della SPA (Express non li usa:
+	#                               la dashboard serve app.js/style.css dalla root)
+	#   · /api/streamer-verify*   → l'API JSON che alimenta la link-page
+	# Tutto il resto continua ad andare all'app (bot:8090). NB: il redirect
+	# inverso (andryxify.it/u/* → socialbot.live/u/*) è client-side nel sito,
+	# basato sull'hostname, quindi questo proxy NON crea loop.
+	@linkpage path /u/* /assets/* /api/streamer-verify /api/streamer-verify/*
+	handle @linkpage {
+		reverse_proxy https://andryxify.it {
+			header_up Host andryxify.it
+		}
+	}
+
+	handle {
+		reverse_proxy bot:8090
+	}
 }
 
 # www → dominio nudo (canonico)
