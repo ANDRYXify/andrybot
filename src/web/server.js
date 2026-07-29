@@ -1192,9 +1192,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
 
   // ── Contatori (morti/tentativi/parole…) — sotto l'add-on Giochi & Classifiche ──
   const gCont = gateFeature('giochi', 'I contatori');
-  // elenco (leggibile anche dai moderatori)
+  // elenco (leggibile anche dai moderatori); include la config overlay già parsata
   app.get('/api/contatori', requireLogin, (req, res) => {
-    res.json({ contatori: contatori.list(currentUser(req).login) });
+    const list = contatori.list(currentUser(req).login).map((c) => ({ ...c, overlayCfg: contatori.overlayDi(c) }));
+    res.json({ contatori: list });
   });
   // crea/aggiorna un contatore (comando, etichetta, emoji, step, parola auto, valore)
   app.post('/api/contatori', requireLogin, gCont, wrap(async (req, res) => {
@@ -1207,13 +1208,18 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       etichetta: b.etichetta, emoji: b.emoji, step: b.step,
       autoParola: b.autoParola,
       valore: b.valore,   // consente di correggere il valore a mano
+      overlay: b.overlay, // aspetto/posizione del widget a schermo (config completa)
     });
+    // aggiorna dal vivo il widget sull'overlay OBS (posizione/colore/valore/mostra)
+    try { if (c) effects.emit(login, contatori.payloadOverlay(c)); } catch (e) { /* niente */ }
     res.json({ ok: true, contatore: c });
   }));
   // elimina un contatore (il premio punti canale eventualmente collegato resta su
   // Twitch: lo streamer può toglierlo a mano — non lo cancelliamo d'ufficio)
   app.delete('/api/contatori/:comando', requireLogin, gCont, (req, res) => {
-    contatori.remove(currentUser(req).login, String(req.params.comando));
+    const login = currentUser(req).login, cmd = String(req.params.comando);
+    contatori.remove(login, cmd);
+    try { effects.emit(login, { tipo: 'contatore', comando: cmd.toLowerCase(), mostra: false }); } catch (e) { /* niente */ }   // toglilo dall'overlay
     res.json({ ok: true });
   });
   // crea (o scollega) il premio a PUNTI CANALE collegato: riscattarlo fa +step.

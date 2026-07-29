@@ -404,9 +404,13 @@ export class BotManager {
     songrequest.trySongRequest(msg, (t) => this.say(msg.channel, t)).catch((e) => log.error(`#${login} songrequest:`, e?.message || e));
     // citazioni (!cita) — lo shoutout (!so) lo gestisce già handler.js
     try { quotes.tryQuoteCommand(msg, (t) => this.say(msg.channel, t)); } catch (e) { log.error(`#${login} citazioni:`, e?.message || e); }
-    // contatori (!morti, !tentativi, !parole…): comando chat + auto-conteggio parole
-    try { contatori.tryComando(msg, (t) => this.say(msg.channel, t)); contatori.perParola(msg); }
-    catch (e) { log.debug(`#${login} contatori:`, e?.message || e); }
+    // contatori (!morti, !tentativi, !parole…): comando chat + auto-conteggio parole.
+    // L'emit aggiorna il widget sullo STESSO overlay OBS (feed SSE di alert/effetti).
+    try {
+      const emitCont = (p) => this.effects?.emit?.(login, p);
+      contatori.tryComando(msg, (t) => this.say(msg.channel, t), emitCont);
+      contatori.perParola(msg, emitCont);
+    } catch (e) { log.debug(`#${login} contatori:`, e?.message || e); }
     // effetti & suoni: un comando come !airhorn accende l'overlay OBS.
     try { this.effects?.tryTrigger(msg, (t) => this.say(msg.channel, t)); }
     catch (e) { log.error(`#${login} effetti:`, e?.message || e); }
@@ -520,8 +524,8 @@ export class BotManager {
       songrequest.perRedemptionMusica(channel, data, (t) => this.say(channel, t)).catch(() => {});
       // penitenza a punti canale: vieta una parola/lettera allo streamer a tempo.
       try { this.penitenze?.daRiscatto(channel, data); } catch (e) { log.debug(`#${channel} penitenza:`, e?.message || e); }
-      // contatore a punti canale: riscatto → +step (con annuncio).
-      try { contatori.perRiscatto(channel, data, (t) => this.say(channel, t)); } catch (e) { log.debug(`#${channel} contatore riscatto:`, e?.message || e); }
+      // contatore a punti canale: riscatto → +step (annuncio + overlay OBS).
+      try { contatori.perRiscatto(channel, data, (t) => this.say(channel, t), (p) => this.effects?.emit?.(channel, p)); } catch (e) { log.debug(`#${channel} contatore riscatto:`, e?.message || e); }
     }
     this._dispatchEvent(ev);
   }
