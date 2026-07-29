@@ -381,6 +381,9 @@ export class BotManager {
     onMessage(msg).catch(e => log.error(`#${login} gestione messaggio:`, e?.message || e));
     if (!msg.isSelf) this.clips.onActivity(msg);   // rilevatore "hype" per le clip automatiche (chat)
     try { this.alerts?.onChat(login, msg); } catch (e) { log.debug(`#${login} chat overlay:`, e?.message || e); }
+    // pannello chat dello Studio Web (feed 'chat_raw' ungated): solo se qualcuno
+    // è collegato via SSE, così non pesa quando lo Studio è chiuso.
+    try { this.alerts?.onChatRaw?.(login, msg); } catch (e) { log.debug(`#${login} chat studio:`, e?.message || e); }
     this.brain.observe?.(msg);                             // apprendimento passivo (anche dai messaggi dello streamer)
     // amicizia GLOBALE: chi interagisce diventa piano piano "amico" del bot
     // (solo un'affinità, mai contenuti né in quale canale).
