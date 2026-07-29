@@ -46,15 +46,22 @@ export function tryComando(msg, say, emit) {
     const nome = c.etichetta || c.comando;
     const annuncia = (v) => { try { say(`${emoji}${nome}: ${v}`); } catch { /* niente */ } };
 
+    // parole per ACCENDERE/SPEGNERE il widget: un set di default ampio + quelle
+    // personalizzate dallo streamer per QUESTO contatore (campo parolaOn/parolaOff).
+    const cfg = store.overlayDi(c);
+    const extra = (s) => String(s || '').toLowerCase().split(/[\s,]+/).filter(Boolean);
+    const onWords = new Set(['on', 'acceso', 'accendi', 'accendilo', 'ok', 'okay', 'vai', 'via', 'start', 'avvia', 'parti', 'go', 'mostra', 'attiva', ...extra(cfg.parolaOn)]);
+    const offWords = new Set(['off', 'spento', 'spegni', 'spegnilo', 'stop', 'ferma', 'basta', 'nascondi', 'disattiva', 'down', ...extra(cfg.parolaOff)]);
+
     // interpreta operatore e argomento
     let op = opInline, arg = null;
     if (!op && parti[1]) {
       const p1 = parti[1].toLowerCase();
-      if (p1 === '+' || p1 === 'su' || p1 === 'add' || p1 === 'more') op = '+';
-      else if (p1 === '-' || p1 === 'giu' || p1 === 'giù' || p1 === 'meno') op = '-';
+      if (p1 === '+' || p1 === 'add' || p1 === 'more') op = '+';
+      else if (p1 === '-' || p1 === 'meno') op = '-';
       else if (p1 === 'reset' || p1 === 'azzera' || p1 === 'zero') op = 'reset';
-      else if (p1 === 'on' || p1 === 'start' || p1 === 'avvia' || p1 === 'via' || p1 === 'mostra') op = 'on';
-      else if (p1 === 'off' || p1 === 'stop' || p1 === 'ferma' || p1 === 'nascondi') op = 'off';
+      else if (onWords.has(p1)) op = 'on';
+      else if (offWords.has(p1)) op = 'off';
       else if (p1 === 'set' || p1 === '=') { op = 'set'; arg = parti[2]; }
       else if (/^[+-]\d+$/.test(p1)) { op = p1[0]; arg = p1.slice(1); }
       else if (/^\d+$/.test(p1)) { op = 'set'; arg = p1; }

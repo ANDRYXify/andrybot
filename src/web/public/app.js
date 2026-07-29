@@ -5685,6 +5685,11 @@ async function caricaContatori() {
           <label class="campo spazio-sopra">${L('Formato del testo', 'Text format', 'Formato del texto')}</label>
           <input type="text" data-ovk="formato" maxlength="80" value="${esc(o.formato || '{emoji} {etichetta}: {valore}')}" placeholder="{emoji} {etichetta}: {valore}">
           <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{emoji}</code> <code>{etichetta}</code> <code>{valore}</code></p>
+          <div class="griglia-campi spazio-sopra">
+            <div><label class="campo">${L('Parola per ACCENDERE', 'Word to TURN ON', 'Palabra para ENCENDER')}</label><input type="text" data-ovk="parolaOn" maxlength="60" value="${esc(o.parolaOn || '')}" placeholder="es. acceso, ok, vai"></div>
+            <div><label class="campo">${L('Parola per SPEGNERE', 'Word to TURN OFF', 'Palabra para APAGAR')}</label><input type="text" data-ovk="parolaOff" maxlength="60" value="${esc(o.parolaOff || '')}" placeholder="es. spento, stop"></div>
+          </div>
+          <p class="suggerimento">${L('Parole extra per <code>!' + esc(c.comando) + ' &lt;parola&gt;</code> (oltre alle standard on/acceso/ok/vai · off/spento/stop). Separale con virgole.', 'Extra words for <code>!' + esc(c.comando) + ' &lt;word&gt;</code> (besides the defaults on/ok/go · off/stop). Comma-separated.', 'Palabras extra para <code>!' + esc(c.comando) + ' &lt;palabra&gt;</code> (además de las estándar on/ok/vai · off/stop). Sepáralas con comas.')}</p>
           <p><button type="button" class="btn secondario mini" data-ca="salva-ov" data-cmd="${esc(c.comando)}">${L('Salva aspetto', 'Save look', 'Guardar aspecto')}</button></p>
         </div>
       </details>
@@ -5705,6 +5710,7 @@ async function caricaContatori() {
           colore: g('colore').value, sfondo: g('trasp').checked ? 'transparent' : g('sfondo').value,
           dim: Number(g('dim').value) || 40, grassetto: g('grassetto').checked,
           font: g('font').value, formato: g('formato').value,
+          parolaOn: g('parolaOn').value, parolaOff: g('parolaOff').value,
         };
         await api('/api/contatori', { method: 'POST', body: { comando: cmd, overlay } });
         toast(L('Aspetto salvato ✓ (aggiornato nell\'overlay)', 'Look saved ✓ (updated in overlay)', 'Aspecto guardado ✓ (actualizado en el overlay)'));
