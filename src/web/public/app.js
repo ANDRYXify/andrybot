@@ -4916,7 +4916,7 @@ function pannelloModuli() {
         <input type="text" id="qc-nome" class="campo-largo" placeholder="social" maxlength="24">
       </div>
       <label class="campo" for="qc-risposta">${L('Risposta', 'Reply', 'Respuesta')}</label>
-      <textarea id="qc-risposta" placeholder="${L('es. I miei social li trovi su andryxify.it/u/$canale', 'e.g. Find my socials at andryxify.it/u/$canale', 'p. ej. Mis redes están en andryxify.it/u/$canale')}"></textarea>
+      <textarea id="qc-risposta" placeholder="${L('es. I miei social li trovi su socialbot.live/u/$canale', 'e.g. Find my socials at socialbot.live/u/$canale', 'p. ej. Mis redes están en socialbot.live/u/$canale')}"></textarea>
       <div class="chip-vars" id="qc-chips">${chipsRapido}</div>
       <p class="suggerimento spazio-sopra">${L('Puoi anche', 'You can also', 'También puedes')} <strong>${L('cambiare titolo e categoria', 'change title and category', 'cambiar título y categoría')}</strong> ${L('dal comando:', 'from the command:', 'desde el comando:')}
       <code>$categoria($args)</code> (${L('es.', 'e.g.', 'p. ej.')} <code>!gioco fortnite</code>) ${L('e', 'and', 'y')} <code>$titolo($args)</code>. ${L('Il token sparisce dal messaggio, scrivi tu la conferma. Consiglio: metti questi comandi', 'The token disappears from the message; you write the confirmation. Tip: make these commands', 'El token desaparece del mensaje; escribe tú la confirmación. Consejo: pon estos comandos')} <strong>${L('solo per i mod', 'mods only', 'solo para mods')}</strong>.</p>
@@ -4984,7 +4984,7 @@ function modelloPronto(nome) {
     case 'social':
       return { id: null, nome: 'Social', attivo: true,
         trigger: { tipo: 'comando', comando: 'social', alias: [] }, condizioni: cond(),
-        azioni: [{ tipo: 'messaggio', testo: 'I miei social li trovi su andryxify.it/u/$canale' }] };
+        azioni: [{ tipo: 'messaggio', testo: 'I miei social li trovi su socialbot.live/u/$canale' }] };
     case 'morti':
       return { id: null, nome: 'Contatore morti', attivo: true,
         trigger: { tipo: 'comando', comando: 'morte', alias: [] }, condizioni: { ...cond(), tier: 'mod' },

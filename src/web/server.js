@@ -295,6 +295,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
         || VETRINA.has(req.path) || req.path === '/api/me'
         || req.path.startsWith('/api/abbonamento/')   // piani/checkout/portale: auth propria
         || req.path.startsWith('/overlay/') || req.path.startsWith('/o/')   // overlay OBS + link "belli"
+        || req.path.startsWith('/u/')        // link-page pubblica: redirect al sito madre
         || req.path.startsWith('/api/ext/')
         || req.path.startsWith('/tg/')       // webhook Telegram: si protegge col segreto nel path
         || req.path.startsWith('/icons/') || req.path.startsWith('/api/passkey/login/')) return next();
@@ -603,6 +604,17 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   app.get('/sblocca', (req, res) => {
     if (currentUser(req)) return res.redirect('/');
     res.sendFile(join(publicDir, 'sblocca.html'));
+  });
+
+  // Link-page pubblica dello streamer: socialbot.live/u/<login> è il link
+  // "ufficiale" mostrato in chat/promo; la pagina vera vive sul sito madre, quindi
+  // qui reindirizziamo. Validiamo il login (solo caratteri Twitch) per evitare
+  // open-redirect. 302 (transitorio): se un domani la link-page si sposta qui,
+  // basta cambiare questa riga.
+  app.get('/u/:user', (req, res) => {
+    const user = String(req.params.user || '').toLowerCase();
+    if (!/^[a-z0-9_]{1,30}$/.test(user)) return notFound(res);
+    res.redirect(302, `${config.siteUrl}/u/${user}${req.originalUrl.includes('?') ? req.originalUrl.slice(req.originalUrl.indexOf('?')) : ''}`);
   });
 
   // Informativa privacy & sicurezza (pubblica: dev'essere sempre consultabile)
