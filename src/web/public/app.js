@@ -3704,8 +3704,21 @@ function pannelloStudio() {
           </div>
         </div>
 
-        <!-- colonna di destra: aggiungi fonti, elenco fonti, proprietà, mixer -->
+        <!-- colonna di destra: ingressi/qualità/overlay, aggiungi fonti, elenco, proprietà, mixer, chat -->
         <aside class="studio-side">
+          <div class="studio-box studio-io">
+            <div class="studio-box-tit">${_bIco(ICO.sliders)}${L('Ingressi & qualità', 'Inputs & quality', 'Entradas y calidad')}</div>
+            <label class="campo" for="studio-cam-sel">${L('Fotocamera', 'Camera', 'Cámara')}</label>
+            <select id="studio-cam-sel" class="campo-largo"></select>
+            <label class="campo spazio-sopra" for="studio-mic-sel">${L('Microfono', 'Microphone', 'Micrófono')}</label>
+            <select id="studio-mic-sel" class="campo-largo"></select>
+            <label class="campo spazio-sopra" for="studio-qual-sel">${L('Qualità della diretta', 'Stream quality', 'Calidad del directo')}</label>
+            <select id="studio-qual-sel" class="campo-largo"></select>
+            <label class="campo spazio-sopra" for="studio-ov-sel">${L('Overlay da mostrare', 'Overlay to show', 'Overlay a mostrar')}</label>
+            <select id="studio-ov-sel" class="campo-largo"></select>
+            <button type="button" class="btn secondario mini spazio-sopra" data-io="aggiorna">${_bIco(ICO.ricarica || ICO.aggiorna || ICO.piu)}${L('Aggiorna dispositivi', 'Refresh devices', 'Actualizar dispositivos')}</button>
+          </div>
+
           <div class="studio-box">
             <div class="studio-box-tit">${_bIco(ICO.piu)}${L('Aggiungi una fonte', 'Add a source', 'Añade una fuente')}</div>
             <div class="studio-add">
@@ -3732,6 +3745,11 @@ function pannelloStudio() {
             <div class="studio-box-tit">${_bIco(ICO.sliders)}${L('Mixer audio', 'Audio mixer', 'Mezclador de audio')}</div>
             <div id="studio-mixer"></div>
           </div>
+
+          <div class="studio-box">
+            <div class="studio-box-tit">${_bIco(ICO.moduli)}${L('Chat live', 'Live chat', 'Chat en directo')} <span class="tenue">(${L('con emote', 'with emotes', 'con emotes')})</span></div>
+            <div id="studio-chat" class="studio-chat"></div>
+          </div>
         </aside>
       </div>
 
@@ -3752,6 +3770,19 @@ function pannelloStudio() {
 // Ogni fonte ha una trasformazione (x,y,w,h in coordinate del palco 1280×720),
 // visibilità e ordine (l'ordine nell'array = z-order: la prima è dietro).
 // Le catture (webcam/schermo/mic) sono GLOBALI e condivise tra le scene.
+// Preset di qualità: la RISOLUZIONE è la dimensione del canvas (ffmpeg fa
+// passthrough lato server); più risoluzione/fps ⇒ più bitrate. Le chiavi devono
+// combaciare con QUALITA in src/features/studio.js. "2K" = 1440p. Il sistema di
+// coordinate del palco resta SEMPRE logico 1280×720 (le fonti non cambiano):
+// il canvas viene solo scalato al output scelto in studioDisegna.
+const STUDIO_QUAL = {
+  '720p30':  { w: 1280, h: 720,  fps: 30, vbps: 4500000 },
+  '1080p30': { w: 1920, h: 1080, fps: 30, vbps: 6000000 },
+  '1080p60': { w: 1920, h: 1080, fps: 60, vbps: 8000000 },
+  '1440p30': { w: 2560, h: 1440, fps: 30, vbps: 9000000 },
+  '1440p60': { w: 2560, h: 1440, fps: 60, vbps: 12000000 },
+};
+
 const STUDIO = {
   cap: { camStream: null, camEl: null, scrStream: null, scrEl: null, micStream: null },
   media: {},               // dataId → { el, tipo, url } per immagini/video caricati
@@ -3766,6 +3797,13 @@ const STUDIO = {
   sse: null,
   mix: { mic: { vol: 100, mute: false }, desk: { vol: 100, mute: false }, sfx: { vol: 100, mute: false } },
   drag: null, addTipo: null, _wired: false,
+  // NEW: ingressi selezionabili, qualità, overlay scelto, chat+emote
+  qual: '720p30',
+  dev: { cams: [], mics: [], camId: '', micId: '', facing: '' },   // dispositivi audio/video
+  ov: { list: [], sel: '', mostra: null, xy: null, key: '' },       // overlay dell'Overlay Studio
+  emote: {},               // codice → url (7TV globali+canale), da /overlay/<login>/emotes
+  emoteImg: {},            // url → HTMLImageElement precaricata (per il canvas)
+  chatFeed: [],            // pannello chat live (DOM): [{user,colore,tokens}]
 };
 
 // Etichetta del tipo di fonte, risolta al momento della creazione (non a load).
@@ -3784,12 +3822,16 @@ function avviaLoopStudio() {
 }
 
 // Disegna la scena attiva: ogni fonte visibile, dalla più dietro alla più avanti.
+// Il palco è SEMPRE in coordinate logiche 1280×720; il canvas può però avere una
+// risoluzione di output più alta (1080p/2K): scaliamo il contesto una volta per
+// frame così tutto il resto del codice continua a ragionare in 1280×720.
 function studioDisegna() {
   const c = STUDIO.ctx; if (!c) { STUDIO.raf = 0; return; }
-  const W = STUDIO.canvas.width, H = STUDIO.canvas.height;
-  c.fillStyle = '#0b0b0f'; c.fillRect(0, 0, W, H);
+  const cw = STUDIO.canvas.width, ch = STUDIO.canvas.height;
+  c.setTransform(cw / 1280, 0, 0, ch / 720, 0, 0);   // reset+scala (niente accumulo)
+  c.fillStyle = '#0b0b0f'; c.fillRect(0, 0, 1280, 720);
   const s = studioSceneAttiva();
-  if (s) for (const f of s.fonti) { if (f.visibile) disegnaFonte(c, f, W, H); }
+  if (s) for (const f of s.fonti) { if (f.visibile) disegnaFonte(c, f, 1280, 720); }
   STUDIO.raf = requestAnimationFrame(studioDisegna);
 }
 
@@ -3830,9 +3872,13 @@ function disegnaTestoFonte(c, f) {
 }
 
 function disegnaOverlayStudio(c, W, H) {
-  const now = Date.now(), ov = STUDIO.overlay;
+  const now = Date.now(), ov = STUDIO.overlay, mostra = STUDIO.ov.mostra;
+  // se ho letto il "tema" dell'overlay scelto, rispetto cosa mostrare; altrimenti tutto
+  const puoi = (k) => !mostra || mostra[k] !== false;
+
+  // effetti (immagini/video a schermo)
   ov.fx = ov.fx.filter((f) => f.until > now);
-  for (const f of ov.fx) {
+  if (puoi('effetti')) for (const f of ov.fx) {
     const el = f.el; const vw = el && (el.videoWidth || el.naturalWidth), vh = el && (el.videoHeight || el.naturalHeight);
     if (!vw) continue;
     const scale = (W * 0.35) / vw, w = vw * scale, h = vh * scale;
@@ -3840,15 +3886,23 @@ function disegnaOverlayStudio(c, W, H) {
     const y = (f.y != null ? f.y / 100 * H : H / 2) - h / 2;
     try { c.drawImage(el, x, y, w, h); } catch (e) { /* niente */ }
   }
+
+  // chat a schermo CON EMOTE (posizione dal tema dell'overlay, se presente)
   ov.chat = ov.chat.filter((m) => m.until > now);
-  const chat = ov.chat.slice(-6);
-  c.textAlign = 'left'; c.textBaseline = 'bottom'; c.font = '600 22px system-ui, sans-serif';
-  chat.forEach((m, i) => {
-    const y = H - 28 - (chat.length - 1 - i) * 30, t = (m.user ? m.user + ': ' : '') + m.testo;
-    c.lineWidth = 4; c.strokeStyle = '#000a'; c.strokeText(t, 24, y);
-    c.fillStyle = '#fff'; c.fillText(t, 24, y);
-  });
-  if (ov.alert && ov.alert.until > now) {
+  if (puoi('chat')) {
+    const chat = ov.chat.slice(-6);
+    const cxy = STUDIO.ov.xy && STUDIO.ov.xy.chat;
+    const baseX = (cxy && cxy.x != null) ? cxy.x / 100 * W : 24;
+    const baseY = (cxy && cxy.y != null) ? cxy.y / 100 * H : H - 28;
+    chat.forEach((m, i) => {
+      const y = baseY - (chat.length - 1 - i) * 32;
+      studioDisegnaRigaChat(c, baseX, y, m, W - baseX - 24);
+    });
+  }
+
+  // alert
+  if (ov.alert && ov.alert.until <= now) ov.alert = null;
+  else if (ov.alert && puoi('alert')) {
     const a = ov.alert;
     c.textAlign = 'center'; c.textBaseline = 'top'; c.font = '800 40px system-ui, sans-serif';
     c.lineWidth = 6; c.strokeStyle = '#000b'; c.strokeText(a.testo, W / 2, 40, W * 0.9);
@@ -3859,7 +3913,56 @@ function disegnaOverlayStudio(c, W, H) {
       try { c.drawImage(a.el, (W - w) / 2, 96, w, h); } catch (e) { /* niente */ }
     }
     c.textAlign = 'left';
-  } else if (ov.alert) ov.alert = null;
+  }
+}
+
+// Disegna UNA riga di chat sul canvas: "utente: " + testo con EMOTE inline
+// (immagini 7TV/Twitch precaricate). Le emote non pronte ricadono sul testo.
+function studioDisegnaRigaChat(c, x, y, m, maxW) {
+  const eh = 26;
+  c.textAlign = 'left'; c.textBaseline = 'bottom';
+  let cx = x;
+  const txt = (s, colore, peso) => {
+    c.font = (peso || '600') + ' 22px system-ui, sans-serif';
+    c.lineWidth = 4; c.strokeStyle = '#000a'; c.strokeText(s, cx, y);
+    c.fillStyle = colore; c.fillText(s, cx, y);
+    cx += c.measureText(s).width;
+  };
+  if (m.user) txt(m.user + ': ', m.colore || '#c9a6ff', '700');
+  const toks = (m.tokens && m.tokens.length) ? m.tokens : [{ t: 'txt', v: m.testo || '' }];
+  for (const tok of toks) {
+    if (cx - x > maxW) break;
+    if (tok.t === 'emote') {
+      const img = STUDIO.emoteImg[tok.v];
+      if (img && img.complete && (img.naturalWidth || img.width)) {
+        const w = eh * ((img.naturalWidth || img.width) / (img.naturalHeight || img.height || 1));
+        try { c.drawImage(img, cx, y - eh, w, eh); } catch (e) { /* niente */ }
+        cx += w + 4;
+      } else txt((tok.raw || '') + ' ', '#fff');
+    } else txt(tok.v, '#fff');
+  }
+}
+
+// Spezza il testo in token testo/emote usando le emote 7TV del canale (STUDIO.emote)
+// e quelle NATIVE Twitch del messaggio (emotiTwitch). Precarica le immagini emote.
+function studioTokenizza(testo, emotiTwitch) {
+  const pezzi = String(testo || '').split(/(\s+)/);
+  const tokens = []; let buf = '';
+  const flush = () => { if (buf) { tokens.push({ t: 'txt', v: buf }); buf = ''; } };
+  for (const p of pezzi) {
+    if (!p) continue;
+    const url = (!/\s/.test(p)) && ((emotiTwitch && emotiTwitch[p]) || STUDIO.emote[p]);
+    if (url) { flush(); tokens.push({ t: 'emote', v: url, raw: p }); studioPrecaricaEmote(url); }
+    else buf += p;
+  }
+  flush();
+  return tokens;
+}
+
+function studioPrecaricaEmote(url) {
+  if (!url || STUDIO.emoteImg[url]) return;
+  const img = new Image(); img.crossOrigin = 'anonymous'; img.src = url;
+  STUDIO.emoteImg[url] = img;
 }
 
 // instrada un audio (effetto/alert) nel mix in diretta (così lo sentono anche gli
@@ -3872,6 +3975,35 @@ function suonaStudioSfx(url, volume) {
     if (A) { try { const s = A.ac.createMediaElementSource(el); s.connect(A.gSfx); s.connect(A.ac.destination); } catch (e) { /* niente */ } }
     el.play().catch(() => {});
   } catch (e) { /* niente */ }
+}
+
+// suono PRESET sintetizzato (presets.js): in diretta lo instradiamo nel mixer
+// (gSfx → stream) e nel monitor locale; fuori diretta suona sugli altoparlanti.
+function studioSuonaPreset(nome, volume) {
+  try {
+    const P = window.SUONI_PRESET; if (!P || !nome) return;
+    const A = STUDIO.audio;
+    const destino = A ? { ac: A.ac, nodi: [A.gSfx, A.ac.destination] } : null;
+    P.suona(nome, volume != null ? volume : 100, destino);
+  } catch (e) { /* niente */ }
+}
+
+// aggiunge una riga al PANNELLO chat dello Studio (DOM, con emote come <img>)
+function studioChatPanelPush(d) {
+  const box = document.getElementById('studio-chat'); if (!box) return;
+  const attaccato = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
+  const riga = document.createElement('div'); riga.className = 'studio-chat-riga';
+  if (d.badge7tv) { const b = document.createElement('img'); b.className = 'studio-chat-badge'; b.src = d.badge7tv; b.alt = ''; riga.appendChild(b); }
+  const u = document.createElement('span'); u.className = 'studio-chat-user';
+  u.textContent = (d.user || '') + ': '; if (d.colore) u.style.color = d.colore;
+  riga.appendChild(u);
+  for (const tok of studioTokenizza(d.testo, d.emotiTwitch)) {
+    if (tok.t === 'emote') { const img = document.createElement('img'); img.className = 'studio-chat-emote'; img.src = tok.v; img.alt = tok.raw || ''; img.loading = 'lazy'; riga.appendChild(img); }
+    else riga.appendChild(document.createTextNode(tok.v));
+  }
+  box.appendChild(riga);
+  while (box.childNodes.length > 80) box.removeChild(box.firstChild);
+  if (attaccato) box.scrollTop = box.scrollHeight;   // auto-scroll solo se già in fondo
 }
 
 function studioSSE(sseUrl) {
@@ -3890,6 +4022,8 @@ function studioSSE(sseUrl) {
       if (d.suonoUrl) suonaStudioSfx(d.suonoUrl, d.volume);
     } else if (d.tipo === 'audio') {
       if (d.url) suonaStudioSfx(d.url, d.volume);
+    } else if (d.tipo === 'preset') {
+      studioSuonaPreset(d.suono || d.preset, d.volume);
     } else if (d.tipo === 'alert') {
       const a = { testo: String(d.testo || ''), colore: d.colore, until: now + (Number(d.durata) || 6000) };
       if (d.mediaUrl) {
@@ -3899,21 +4033,49 @@ function studioSSE(sseUrl) {
       }
       STUDIO.overlay.alert = a;
       if (d.suonoUrl) suonaStudioSfx(d.suonoUrl, d.volume);
+      else if (d.suono) studioSuonaPreset(d.suono, d.volume);   // alert con suono PRESET
     } else if (d.tipo === 'chat') {
-      STUDIO.overlay.chat.push({ user: d.user || '', testo: String(d.testo || ''), until: now + 12000 });
+      // chat "a schermo" dell'overlay: la disegniamo sul canvas con le emote
+      STUDIO.overlay.chat.push({ user: d.user || '', colore: d.colore, testo: String(d.testo || ''), tokens: studioTokenizza(d.testo, d.emotiTwitch), until: now + 12000 });
+    } else if (d.tipo === 'chat_raw') {
+      // feed ungated: alimenta SOLO il pannello chat dello Studio
+      studioChatPanelPush(d);
     }
   };
 }
 
 // --- catture globali (condivise tra le scene) --------------------------------
+
+// Vincoli video: risoluzione/fps dalla qualità scelta + dispositivo selezionato
+// (deviceId) o, su mobile, fotocamera anteriore/posteriore (facingMode).
+function studioVincoliVideo() {
+  const q = STUDIO_QUAL[STUDIO.qual] || STUDIO_QUAL['720p30'];
+  const v = { width: { ideal: q.w }, height: { ideal: q.h }, frameRate: { ideal: q.fps } };
+  if (STUDIO.dev.camId) v.deviceId = { exact: STUDIO.dev.camId };
+  else if (STUDIO.dev.facing) v.facingMode = STUDIO.dev.facing;
+  return v;
+}
+
 async function studioCapWebcam() {
   if (DEMO) { toast(L('In demo la webcam non parte — accedi per farlo davvero.', 'In demo the webcam won’t start — log in to do it for real.', 'En demo la webcam no arranca — inicia sesión para hacerlo de verdad.')); return false; }
   if (STUDIO.cap.camEl) return true;
   try {
-    STUDIO.cap.camStream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: false });
+    STUDIO.cap.camStream = await navigator.mediaDevices.getUserMedia({ video: studioVincoliVideo(), audio: false });
     const v = document.createElement('video'); v.srcObject = STUDIO.cap.camStream; v.muted = true; v.playsInline = true; await v.play().catch(() => {});
-    STUDIO.cap.camEl = v; avviaLoopStudio(); return true;
+    STUDIO.cap.camEl = v; avviaLoopStudio(); studioPopolaDispositivi(); return true;
   } catch (e) { toast(L('Webcam non disponibile: ', 'Webcam not available: ', 'Webcam no disponible: ') + e.message, 'errore'); return false; }
+}
+
+// Cambia la fotocamera in uso (dropdown "Ingressi"): rilascia lo stream vecchio
+// e ne apre uno nuovo con il deviceId scelto, aggiornando l'elemento <video>.
+async function studioCambiaCamera(camId) {
+  STUDIO.dev.camId = camId || '';
+  if (!STUDIO.cap.camEl) return;   // nessuna webcam attiva: il valore verrà usato all'attivazione
+  try {
+    try { STUDIO.cap.camStream && STUDIO.cap.camStream.getTracks().forEach((t) => t.stop()); } catch (e) { /* niente */ }
+    STUDIO.cap.camStream = await navigator.mediaDevices.getUserMedia({ video: studioVincoliVideo(), audio: false });
+    STUDIO.cap.camEl.srcObject = STUDIO.cap.camStream; await STUDIO.cap.camEl.play().catch(() => {});
+  } catch (e) { toast(L('Cambio fotocamera non riuscito: ', 'Camera switch failed: ', 'Cambio de cámara fallido: ') + e.message, 'errore'); }
 }
 
 async function studioCapSchermo() {
@@ -3937,10 +4099,102 @@ async function studioCapMic() {
   if (DEMO) { toast(L('In demo il microfono non parte', 'In demo the microphone won’t start', 'En demo el micrófono no arranca')); return false; }
   if (STUDIO.cap.micStream) return true;
   try {
-    STUDIO.cap.micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    const a = STUDIO.dev.micId ? { deviceId: { exact: STUDIO.dev.micId } } : true;
+    STUDIO.cap.micStream = await navigator.mediaDevices.getUserMedia({ audio: a, video: false });
     if (STUDIO.live) collegaAudioCatture();
-    renderStudioMixer(); toast(L('Microfono attivo', 'Microphone active', 'Micrófono activo')); return true;
+    renderStudioMixer(); studioPopolaDispositivi(); toast(L('Microfono attivo', 'Microphone active', 'Micrófono activo')); return true;
   } catch (e) { toast(L('Microfono non disponibile: ', 'Microphone not available: ', 'Micrófono no disponible: ') + e.message, 'errore'); return false; }
+}
+
+// Cambia il microfono in uso: rilascia lo stream vecchio, ne apre uno nuovo con
+// il deviceId scelto e ricollega il nodo audio al mixer se siamo in diretta.
+async function studioCambiaMic(micId) {
+  STUDIO.dev.micId = micId || '';
+  if (!STUDIO.cap.micStream) return;
+  try {
+    const A = STUDIO.audio;
+    try { A && A.micNode && A.micNode.disconnect(); } catch (e) { /* niente */ }
+    try { STUDIO.cap.micStream.getTracks().forEach((t) => t.stop()); } catch (e) { /* niente */ }
+    STUDIO.cap.micStream = await navigator.mediaDevices.getUserMedia({ audio: STUDIO.dev.micId ? { deviceId: { exact: STUDIO.dev.micId } } : true, video: false });
+    if (A) { A.micNode = null; collegaAudioCatture(); applicaMix(); }
+  } catch (e) { toast(L('Cambio microfono non riuscito: ', 'Mic switch failed: ', 'Cambio de micrófono fallido: ') + e.message, 'errore'); }
+}
+
+// --- ingressi (dispositivi), qualità, overlay, emote -------------------------
+
+// Enumera fotocamere e microfoni e popola i due <select> "Ingressi". Le
+// etichette diventano leggibili solo DOPO un primo getUserMedia concesso: per
+// questo lo richiamiamo dopo aver attivato webcam/mic.
+async function studioPopolaDispositivi() {
+  try {
+    if (!navigator.mediaDevices?.enumerateDevices) return;
+    const dev = await navigator.mediaDevices.enumerateDevices();
+    STUDIO.dev.cams = dev.filter((d) => d.kind === 'videoinput');
+    STUDIO.dev.mics = dev.filter((d) => d.kind === 'audioinput');
+    const riempi = (sel, lista, valore, etichettaDefault) => {
+      if (!sel) return;
+      sel.innerHTML = `<option value="">${etichettaDefault}</option>` +
+        lista.map((d, i) => `<option value="${esc(d.deviceId)}"${d.deviceId === valore ? ' selected' : ''}>${esc(d.label || (etichettaDefault + ' ' + (i + 1)))}</option>`).join('');
+    };
+    riempi(document.getElementById('studio-cam-sel'), STUDIO.dev.cams, STUDIO.dev.camId, L('Fotocamera predefinita', 'Default camera', 'Cámara predeterminada'));
+    riempi(document.getElementById('studio-mic-sel'), STUDIO.dev.mics, STUDIO.dev.micId, L('Microfono predefinito', 'Default microphone', 'Micrófono predeterminado'));
+  } catch (e) { /* niente */ }
+}
+
+// Applica un preset di qualità: cambia la risoluzione del CANVAS (l'output della
+// diretta). Non si può cambiare mentre si è in diretta (romperebbe la traccia).
+function studioApplicaQualita(key) {
+  if (STUDIO.live) return;
+  STUDIO.qual = STUDIO_QUAL[key] ? key : '720p30';
+  const q = STUDIO_QUAL[STUDIO.qual];
+  if (!STUDIO.canvas) { STUDIO.canvas = document.getElementById('studio-canvas'); STUDIO.ctx = STUDIO.canvas ? STUDIO.canvas.getContext('2d') : null; }
+  if (STUDIO.canvas) { STUDIO.canvas.width = q.w; STUDIO.canvas.height = q.h; }
+  try { localStorage.setItem('andrybot-studio-qual:' + (stato?.user?.login || 'anon'), STUDIO.qual); } catch (e) { /* niente */ }
+}
+
+// Carica la mappa emote del canale (7TV globali+canale) per la chat.
+async function studioCaricaEmote() {
+  if (DEMO) return;
+  const login = stato?.user?.login; if (!login) return;
+  try {
+    const r = await fetch(`/overlay/${encodeURIComponent(login)}/emotes`, { credentials: 'same-origin' });
+    if (r.ok) { const m = await r.json(); if (m && typeof m === 'object') STUDIO.emote = m; }
+  } catch (e) { /* niente */ }
+}
+
+// Carica l'elenco degli overlay dello streamer (Overlay Studio) e popola il
+// <select> di scelta. Il primo diventa quello attivo di default.
+async function studioCaricaOverlays() {
+  if (DEMO) return;
+  try {
+    const d = await api('/api/streamer/overlays');
+    STUDIO.ov.list = Array.isArray(d.overlays) ? d.overlays : [];
+    const sel = document.getElementById('studio-ov-sel');
+    if (sel) {
+      sel.innerHTML = STUDIO.ov.list.map((o) => `<option value="${esc(o.id)}">${esc(o.nome || 'Overlay')}</option>`).join('')
+        || `<option value="">${L('— nessun overlay —', '— no overlay —', '— sin overlay —')}</option>`;
+      if (STUDIO.ov.list.length) { if (!STUDIO.ov.sel || !STUDIO.ov.list.some((o) => o.id === STUDIO.ov.sel)) STUDIO.ov.sel = STUDIO.ov.list[0].id; sel.value = STUDIO.ov.sel; }
+    }
+    await studioConnettiOverlay();
+  } catch (e) { /* niente */ }
+}
+
+// (Ri)connette il feed SSE all'overlay selezionato e ne legge il "tema"
+// (cosa mostrare / posizioni) così il canvas rispetta quell'overlay.
+async function studioConnettiOverlay() {
+  if (DEMO) return;
+  try {
+    const ov = await api('/api/streamer/overlay-url');
+    if (!ov.overlayUrl) return;
+    // overlayUrl = .../overlay/<login>?key=K → SSE = .../overlay/<login>/stream?key=K[&o=id]
+    let sseUrl = ov.overlayUrl.replace('?key=', '/stream?key=');
+    const id = STUDIO.ov.sel;
+    if (id) sseUrl += (sseUrl.includes('?') ? '&' : '?') + 'o=' + encodeURIComponent(id);
+    studioSSE(sseUrl);
+    // tema dell'overlay scelto: mostra/xy (quali widget e dove)
+    const meta = STUDIO.ov.list.find((o) => o.id === id);
+    if (meta) { STUDIO.ov.mostra = meta.mostra || null; STUDIO.ov.xy = meta.xy || null; }
+  } catch (e) { /* niente */ }
 }
 
 // --- aggiunta e gestione delle fonti -----------------------------------------
@@ -4052,20 +4306,23 @@ async function avviaLive() {
   const s = studioSceneAttiva();
   if (!s || !s.fonti.some((f) => f.visibile)) { toast(L('Aggiungi almeno una fonte visibile alla scena.', 'Add at least one visible source to the scene.', 'Añade al menos una fuente visible a la escena.'), 'errore'); return; }
   studioLog(L('Avvio…', 'Starting…', 'Iniciando…'));
-  try { await api('/api/studio/start', { method: 'POST' }); }
+  const q = STUDIO_QUAL[STUDIO.qual] || STUDIO_QUAL['720p30'];
+  studioApplicaQualita(STUDIO.qual);   // assicura che il canvas sia alla risoluzione scelta
+  try { await api('/api/studio/start', { method: 'POST', body: { quality: STUDIO.qual } }); }
   catch (e) { studioLog('' + e.message); toast(L('Non riuscito: ', 'Failed: ', 'No se pudo: ') + e.message, 'errore'); return; }
   avviaLoopStudio();
-  const vstream = STUDIO.canvas.captureStream(30);
+  const vstream = STUDIO.canvas.captureStream(q.fps);
   const astream = studioAudioInit();
   const combined = new MediaStream([...vstream.getVideoTracks(), ...astream.getAudioTracks()]);
   const mimeOk = (t) => { try { return MediaRecorder.isTypeSupported(t); } catch (e) { return false; } };
   const mime = mimeOk('video/webm;codecs=vp8,opus') ? 'video/webm;codecs=vp8,opus' : (mimeOk('video/webm') ? 'video/webm' : '');
   let rec;
-  try { rec = new MediaRecorder(combined, mime ? { mimeType: mime, videoBitsPerSecond: 4500000, audioBitsPerSecond: 160000 } : undefined); }
+  try { rec = new MediaRecorder(combined, mime ? { mimeType: mime, videoBitsPerSecond: q.vbps, audioBitsPerSecond: 160000 } : undefined); }
   catch (e) { studioLog(L('registrazione non supportata dal browser', 'recording not supported by the browser', 'grabación no soportada por el navegador')); toast(L('Il browser non supporta la registrazione video.', 'The browser doesn’t support video recording.', 'El navegador no soporta la grabación de vídeo.'), 'errore'); await api('/api/studio/stop', { method: 'POST' }).catch(() => {}); return; }
   rec.ondataavailable = (e) => { if (e.data && e.data.size) { STUDIO.coda.push(e.data); drenaCodaStudio(); } };
   rec.start(1000);
   STUDIO.rec = rec; STUDIO.live = true; STUDIO.startedAt = Date.now();
+  studioRenderIO();   // blocca il cambio qualità durante la diretta
   document.getElementById('studio-live').hidden = true;
   document.getElementById('studio-ferma').hidden = false;
   const badge = document.getElementById('studio-badge-live'); if (badge) badge.hidden = false;
@@ -4097,6 +4354,7 @@ async function fermaLive() {
   document.getElementById('studio-live').hidden = false;
   document.getElementById('studio-ferma').hidden = true;
   const badge = document.getElementById('studio-badge-live'); if (badge) badge.hidden = true;
+  studioRenderIO();   // riabilita il cambio qualità
   studioLog(L('Diretta terminata.', 'Stream ended.', 'Directo finalizado.'));
 }
 
@@ -4108,8 +4366,12 @@ function aggiornaTimerStudio() {
 
 async function caricaStudio() {
   if (!STUDIO.scene.length) studioNuovaScena('Scena 1');
+  // qualità salvata (per canale) → dimensiona subito il canvas
+  try { const q = localStorage.getItem('andrybot-studio-qual:' + (stato?.user?.login || 'anon')); if (q && STUDIO_QUAL[q]) STUDIO.qual = q; } catch (e) { /* niente */ }
+  studioApplicaQualita(STUDIO.qual);
   avviaLoopStudio();      // mostra il palco + le fonti in anteprima
   renderStudioTutto();
+  studioRenderIO();       // selettori ingressi/qualità/overlay + pannello chat
   if (DEMO) { studioLog(L('Anteprima demo: qui crei scene, aggiungi fonti e vai in diretta senza OBS.', 'Demo preview: here you create scenes, add sources and go live without OBS.', 'Vista previa demo: aquí creas escenas, añades fuentes y emites sin OBS.')); return; }
   try {
     const d = await api('/api/studio');
@@ -4120,12 +4382,33 @@ async function caricaStudio() {
         banner.innerHTML = '<p>' + _bIco(ICO.lucchetto) + 'Per andare live dallo Studio serve il permesso <strong>stream key</strong> (non ancora concesso).</p><p class="spazio-sopra"><a class="btn" href="/auth/permessi">Concedi i permessi</a></p>';
       } else banner.hidden = true;
     }
+    // selettore qualità popolato dalle qualità note al server
+    if (Array.isArray(d.qualita) && d.qualita.length) {
+      const qs = document.getElementById('studio-qual-sel');
+      if (qs) { qs.innerHTML = d.qualita.map((q) => `<option value="${esc(q.id)}"${q.id === STUDIO.qual ? ' selected' : ''}>${esc(q.etichetta)}</option>`).join(''); }
+    }
   } catch (e) { /* niente */ }
-  // anteprima overlay via SSE (stessa sorgente dell'overlay OBS)
-  try {
-    const ov = await api('/api/streamer/overlay-url');
-    if (ov.overlayUrl) studioSSE(ov.overlayUrl.replace('?key=', '/stream?key='));
-  } catch (e) { /* niente */ }
+  // ingressi (dispositivi), overlay (SSE + tema), mappa emote per la chat
+  try { await studioPopolaDispositivi(); } catch (e) { /* niente */ }
+  try { await studioCaricaEmote(); } catch (e) { /* niente */ }
+  try { await studioCaricaOverlays(); } catch (e) { /* niente */ }
+  studioRenderIO();
+}
+
+// Sincronizza i selettori "Ingressi & qualità" con lo stato (valori correnti +
+// blocca il cambio qualità mentre si è in diretta, che romperebbe la traccia).
+function studioRenderIO() {
+  const qs = document.getElementById('studio-qual-sel');
+  if (qs) {
+    if (!qs.options.length) {   // fallback client (demo/offline) finché non arriva la lista dal server
+      const et = { '720p30': '720p 30fps', '1080p30': '1080p 30fps', '1080p60': '1080p 60fps', '1440p30': '2K (1440p) 30fps', '1440p60': '2K (1440p) 60fps' };
+      qs.innerHTML = Object.keys(STUDIO_QUAL).map((k) => `<option value="${k}">${et[k] || k}</option>`).join('');
+    }
+    qs.disabled = STUDIO.live; if (STUDIO.qual) qs.value = STUDIO.qual;
+  }
+  const cs = document.getElementById('studio-cam-sel'); if (cs && STUDIO.dev.camId) cs.value = STUDIO.dev.camId;
+  const ms = document.getElementById('studio-mic-sel'); if (ms && STUDIO.dev.micId) ms.value = STUDIO.dev.micId;
+  const os = document.getElementById('studio-ov-sel'); if (os && STUDIO.ov.sel) os.value = STUDIO.ov.sel;
 }
 
 // ---- disegno dell'interfaccia dello Studio (scene, fonti, proprietà, mixer) --
@@ -4306,6 +4589,7 @@ function onStudioClick(ev) {
   const fit = t.closest('[data-fit]'); if (fit) return studioFit(fit.dataset.fit);
   const cap = t.closest('[data-cap]'); if (cap && cap.dataset.cap === 'mic') return conErrore(() => studioCapMic());
   const mute = t.closest('[data-mute]'); if (mute) { const k = mute.dataset.mute; if (STUDIO.mix[k]) { STUDIO.mix[k].mute = !STUDIO.mix[k].mute; applicaMix(); renderStudioMixer(); } return; }
+  const io = t.closest('[data-io]'); if (io) { if (io.dataset.io === 'aggiorna') return conErrore(() => studioPopolaDispositivi()); return; }
   if (t.closest('#studio-live')) return conErrore(() => avviaLive());
   if (t.closest('#studio-ferma')) return conErrore(() => fermaLive());
 }
@@ -4313,6 +4597,11 @@ function onStudioClick(ev) {
 function onStudioInput(ev) {
   const t = ev.target;
   const vol = t.closest('[data-vol]'); if (vol) { const k = vol.dataset.vol; if (STUDIO.mix[k]) { STUDIO.mix[k].vol = Number(vol.value); applicaMix(); const v = vol.parentElement.querySelector('.mix-val'); if (v) v.textContent = vol.value; } return; }
+  // selettori "Ingressi & qualità" (non legati a una fonte)
+  if (t.id === 'studio-cam-sel') return conErrore(() => studioCambiaCamera(t.value));
+  if (t.id === 'studio-mic-sel') return conErrore(() => studioCambiaMic(t.value));
+  if (t.id === 'studio-ov-sel') { STUDIO.ov.sel = t.value; return conErrore(() => studioConnettiOverlay()); }
+  if (t.id === 'studio-qual-sel') { studioApplicaQualita(t.value); return; }
   const f = studioTrovaFonte(STUDIO.sel); if (!f) return;
   if (t.id === 'sp-nome') { f.nome = t.value; const n = document.querySelector(`#studio-fonti [data-fonte="${f.id}"] .sf-nome`); if (n) n.textContent = t.value; const bn = document.querySelector(`#studio-ui [data-box="${f.id}"] .sfb-nome`); if (bn) bn.textContent = t.value; return; }
   if (t.id === 'sp-testo') { f.testo = t.value; return; }

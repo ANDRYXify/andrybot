@@ -167,6 +167,29 @@ export class AlertsEngine {
     } catch (e) { log.debug('onChat:', e?.message || e); }
   }
 
+  // Come onChat, ma SENZA il gate "chat overlay attiva" e senza scartare i
+  // comandi: serve al PANNELLO CHAT dello Studio Web, che vuole vedere TUTTA la
+  // chat in tempo reale (con emote e badge) a prescindere dall'overlay a
+  // schermo. L'overlay OBS ignora gli eventi 'chat_raw'. Emette solo se c'è
+  // qualcuno collegato via SSE (Studio/overlay aperto), così non risolviamo
+  // emote a ogni messaggio quando nessuno ascolta.
+  onChatRaw(channel, msg) {
+    try {
+      if (!this.effects?.hasClients?.(channel)) return;
+      const testo = String(msg?.text || '').trim();
+      if (!testo) return;
+      this.effects.emit(channel, {
+        tipo: 'chat_raw',
+        user: msg.display || msg.user || '',
+        colore: msg?.tags?.color || '',
+        testo: testo.slice(0, 300),
+        badges: msg?.tags?.badges || '',
+        badge7tv: stemmi.badge7tv(msg?.userId || msg?.tags?.['user-id']),
+        emotiTwitch: emote.twitchInMessaggio(msg?.tags?.emotes, msg?.text),
+      });
+    } catch (e) { log.debug('onChatRaw:', e?.message || e); }
+  }
+
   // Il TEMA globale letto dall'overlay al caricamento: CSS avanzato, config e
   // stato dei widget persistenti.
   tema(channel) {
