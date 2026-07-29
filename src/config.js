@@ -70,6 +70,13 @@ export const config = {
   // conferma delle chiavi d'accesso monouso
   siteUrl: env('SITE_URL', 'https://andryxify.it').replace(/\/$/, ''),
 
+  // Dominio PUBBLICO dei link profilo/hub mostrati agli utenti (in chat, promo,
+  // moduli). È SEPARATO da siteUrl (che serve a LEGGERE i dati del profilo per il
+  // pre-addestramento): così i link che vedono gli spettatori usano il dominio
+  // ufficiale (socialbot.live) e non il vecchio brand. socialbot.live/u/<login>
+  // reindirizza alla link-page reale sul sito madre.
+  hubUrl: env('HUB_URL', 'https://socialbot.live').replace(/\/$/, ''),
+
   // dati
   dataDir,
 
