@@ -39,10 +39,27 @@
   --om-m: 0 4px 14px rgba(24, 24, 27, .07);
   --om-l: 0 16px 44px rgba(24, 24, 27, .13);
 
+  /* ── MOTION SYSTEM ────────────────────────────────────────────────────────
+     Curve prese da riferimenti consolidati, non inventate:
+      · easeOutExpo  cubic-bezier(.16, 1, .3, 1)     — easings.net (eq. di R. Penner, 2001)
+      · easeOutQuint cubic-bezier(.22, 1, .36, 1)    — easings.net
+      · easeOutQuart cubic-bezier(.25, 1, .5, 1)     — easings.net
+      · "emphasized decelerate" cubic-bezier(.05, .7, .1, 1) — Material Design 3
+      · easeOutBack  cubic-bezier(.34, 1.56, .64, 1) — easings.net (sovraelongazione)
+     Regole di durata (Material 3 + Apple HIG): micro-interazioni 150-200ms,
+     transizioni di elemento 250-400ms, ingressi di pagina 400-600ms. Sotto i
+     100ms non si percepisce, sopra i 600ms sembra lento.
+     ────────────────────────────────────────────────────────────────────────── */
   --molla: .18s cubic-bezier(.2, .8, .25, 1);
-  --ease: cubic-bezier(.22, .9, .3, 1);        /* fluida, decelerata */
-  --rev-ease: cubic-bezier(.16, 1, .3, 1);     /* "expo out": decelerazione elegante */
-  --spring: cubic-bezier(.34, 1.35, .5, 1);    /* leggero rimbalzo */
+  --ease: cubic-bezier(.22, .9, .3, 1);            /* fluida, decelerata */
+  --rev-ease: cubic-bezier(.16, 1, .3, 1);         /* easeOutExpo */
+  --spring: cubic-bezier(.34, 1.35, .5, 1);        /* leggero rimbalzo */
+  --ease-quint: cubic-bezier(.22, 1, .36, 1);      /* easeOutQuint: apri/chiudi */
+  --ease-m3: cubic-bezier(.05, .7, .1, 1);         /* Material 3 emphasized decelerate */
+  --ease-back: cubic-bezier(.34, 1.56, .64, 1);    /* easeOutBack: chevron, badge */
+  --dur-micro: .16s;                               /* hover, focus, chevron */
+  --dur-elem: .34s;                                /* apertura/chiusura carte */
+  --dur-pagina: .5s;                               /* ingresso di scheda */
 
   /* barra in alto */
   --top-h: 60px;
@@ -53,6 +70,10 @@
 }
 
 html { scroll-behavior: smooth; }
+/* le ancore non finiscono sotto la barra fissa in alto (pratica standard) */
+:target, [id] { scroll-margin-top: calc(var(--top-h) + 1rem); }
+/* niente "rubber banding" orizzontale: lo scorrimento resta verticale e pulito */
+body { overscroll-behavior-y: none; }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { -webkit-text-size-adjust: 100%; }
@@ -245,19 +266,64 @@ body.menu-aperto .drawer { transform: none; }
 .carta.avviso { border-color: var(--ambra-bordo); background: var(--ambra-soft); }
 .carta.avviso h2, .carta.avviso p { color: var(--ambra); }
 
+/* ── CARTE RICHIUDIBILI ──────────────────────────────────────────────────────
+   L'intestazione (h2) diventa un pulsante che apre/chiude il corpo della carta.
+   Per animare da/verso "altezza automatica" usiamo la tecnica grid 0fr→1fr
+   (Kevin Powell / CSS-Tricks): il wrapper è una griglia a una riga la cui
+   frazione passa da 0 a 1. Funziona su tutti i browser moderni senza JS di
+   misurazione, a differenza di max-height con valori "a occhio".
+   ────────────────────────────────────────────────────────────────────────── */
+.carta.pieghevole > h2 {
+  display: flex; align-items: center; gap: .5rem;
+  cursor: pointer; user-select: none; margin-bottom: 0;
+  padding-right: .25rem;
+}
+.carta.pieghevole > h2:hover .carta-chevron { color: var(--acc); border-color: var(--acc-bordo); background: var(--acc-soft); }
+.carta.pieghevole > h2:focus-visible { outline: 2px solid var(--acc); outline-offset: 4px; border-radius: var(--r-s); }
+/* chevron: cerchietto discreto a fine riga, ruota di 180° all'apertura */
+.carta-chevron {
+  margin-left: auto; flex: 0 0 auto;
+  width: 1.6rem; height: 1.6rem; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border-2); color: var(--testo-3);
+  transition: transform var(--dur-micro) var(--ease-back), color var(--dur-micro) var(--ease),
+              background var(--dur-micro) var(--ease), border-color var(--dur-micro) var(--ease);
+}
+.carta-chevron svg { display: block; }
+.carta.pieghevole.chiusa .carta-chevron { transform: rotate(-90deg); }
+/* wrapper animato: 1fr = aperto, 0fr = chiuso */
+.carta-corpo {
+  display: grid; grid-template-rows: 1fr;
+  transition: grid-template-rows var(--dur-elem) var(--ease-quint),
+              opacity var(--dur-elem) var(--ease), margin-top var(--dur-elem) var(--ease-quint);
+  margin-top: .45rem; opacity: 1;
+}
+.carta-corpo > .carta-corpo-in { min-height: 0; overflow: hidden; }
+.carta.pieghevole.chiusa > .carta-corpo { grid-template-rows: 0fr; opacity: 0; margin-top: 0; }
+/* riepilogo quando è chiusa: una riga che dice cosa c'è dentro */
+.carta-riassunto { display: none; font-size: .84rem; color: var(--testo-3); margin-top: .3rem; }
+.carta.pieghevole.chiusa .carta-riassunto { display: block; animation: carta-riass-in var(--dur-elem) var(--ease) both; }
+@keyframes carta-riass-in { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+/* barra "apri/chiudi tutto" in cima alla scheda */
+.carte-ctrl { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin: 1.1rem 0 1.2rem; }
+.carte-ctrl .suggerimento { margin: 0 .1rem 0 auto; }
+
 .pannello-scheda { display: none; }
 .pannello-scheda.visibile { display: block; }
 
-/* SCROLL-REVEAL (stile Awwwards): le carte entrano morbide quando compaiono,
-   sia al cambio scheda sia scorrendo. Lo stato lo gestisce l'IntersectionObserver
-   in app.js (classe .dentro). Easing "expo" per una decelerazione elegante. */
+/* SCROLL-REVEAL: le carte entrano morbide quando compaiono, sia al cambio scheda
+   sia scorrendo. Lo stato lo gestisce l'IntersectionObserver in app.js (.dentro).
+   Valori tarati sulle raccomandazioni Material 3 / Apple HIG: spostamento breve
+   (14px, non 26) e durate nella fascia 260-380ms. Prima era troppo lungo e "molle":
+   su una pagina con molte carte l'attesa si sommava e sembrava tutto in ritardo. */
 .carta.rivela {
   opacity: 0;
-  transform: translateY(26px);
-  transition: opacity .7s var(--ease), transform .8s var(--rev-ease);
+  transform: translateY(14px);
+  transition: opacity .26s var(--ease), transform .38s var(--rev-ease);
   transition-delay: var(--rev-delay, 0ms);
+  will-change: opacity, transform;
 }
-.carta.rivela.dentro { opacity: 1; transform: none; }
+.carta.rivela.dentro { opacity: 1; transform: none; will-change: auto; }
 @keyframes appare { from { opacity: 0; } to { opacity: 1; } }
 
 /* ============================================================ view transitions

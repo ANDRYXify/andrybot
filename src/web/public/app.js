@@ -528,6 +528,8 @@ function render() {
   if (conPiattaforma) attivaPiattaforma();
   if (stato.isAdmin) { caricaTabellaAdmin(); caricaAnima(); caricaLLM(); }
 
+  // prima le rendo richiudibili (cambia il DOM), poi le rivelo
+  if (conPiattaforma) document.querySelectorAll('.pannello-scheda').forEach((p) => rendiCartePieghevoli(p, p.dataset.scheda));
   rivelaCarte();   // scroll-reveal delle carte appena disegnate
 }
 
@@ -567,9 +569,97 @@ function rivelaCarte(scope = document) {
     c.classList.add('rivela');
     const r = c.getBoundingClientRect();
     const visibile = r.top < window.innerHeight * 0.92;   // già a schermo → cascata
-    c.style.setProperty('--rev-delay', visibile ? Math.min(inVista++, 5) * 70 + 'ms' : '0ms');
+    // cascata corta: 4 elementi × 45ms = 180ms al massimo. Con ritardi più lunghi
+    // l'ultima carta arrivava mezzo secondo dopo la prima e sembrava un blocco.
+    c.style.setProperty('--rev-delay', visibile ? Math.min(inVista++, 4) * 45 + 'ms' : '0ms');
     obs.observe(c);
   }
+}
+
+// ------------------------------------------------------- carte richiudibili
+// Ogni carta con un <h2> diventa apribile/richiudibile cliccando il titolo. Lo
+// facciamo per "arricchimento progressivo" DOPO il render: così non serve
+// toccare le decine di template delle carte, e una carta nuova lo eredita
+// gratis. Il corpo va in un wrapper a griglia (0fr↔1fr) che si anima senza
+// misurare altezze a mano (vedi .carta-corpo nel CSS).
+// Lo stato aperto/chiuso si ricorda per scheda+titolo in localStorage.
+const _icoChevron = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+
+// chiave stabile per ricordare lo stato: scheda + titolo normalizzato
+function _chiaveCarta(scheda, titolo) {
+  return 'carta:' + scheda + ':' + String(titolo || '').toLowerCase().replace(/\s+/g, ' ').trim().slice(0, 50);
+}
+function _cartaChiusa(k) { try { return localStorage.getItem(k) === '0'; } catch { return false; } }
+function _ricordaCarta(k, aperta) { try { localStorage.setItem(k, aperta ? '1' : '0'); } catch { /* niente */ } }
+
+// Riassunto mostrato quando la carta è chiusa: la prima frase del primo <p>.
+function _riassuntoCarta(corpo) {
+  const p = corpo.querySelector('p');
+  const t = (p?.textContent || '').replace(/\s+/g, ' ').trim();
+  if (!t) return '';
+  const primaFrase = t.split(/(?<=[.!?])\s/)[0] || t;
+  return primaFrase.length > 120 ? primaFrase.slice(0, 117).trimEnd() + '…' : primaFrase;
+}
+
+// Trasforma le carte di `scope` in carte richiudibili (idempotente).
+function rendiCartePieghevoli(scope, scheda) {
+  for (const carta of scope.querySelectorAll('.carta')) {
+    if (carta.classList.contains('pieghevole')) continue;          // già fatta
+    if (carta.tagName === 'DETAILS') continue;                     // già un <details>
+    const h2 = carta.querySelector(':scope > h2');
+    if (!h2) continue;                                             // senza titolo non si piega
+    // tutto ciò che segue l'h2 diventa il "corpo" della carta
+    const resto = [];
+    for (let n = h2.nextSibling; n; n = n.nextSibling) resto.push(n);
+    if (!resto.length) continue;                                   // carta di sola intestazione
+
+    const corpo = document.createElement('div');
+    corpo.className = 'carta-corpo';
+    const dentro = document.createElement('div');
+    dentro.className = 'carta-corpo-in';
+    resto.forEach((n) => dentro.appendChild(n));
+    corpo.appendChild(dentro);
+    carta.appendChild(corpo);
+
+    // titolo = pulsante accessibile (tastiera + screen reader)
+    const chev = document.createElement('span');
+    chev.className = 'carta-chevron';
+    chev.innerHTML = _icoChevron;
+    h2.appendChild(chev);
+    h2.setAttribute('role', 'button');
+    h2.setAttribute('tabindex', '0');
+
+    // riassunto sotto il titolo quando è chiusa
+    const testo = _riassuntoCarta(dentro);
+    if (testo) {
+      const r = document.createElement('p');
+      r.className = 'carta-riassunto';
+      r.textContent = testo;
+      h2.insertAdjacentElement('afterend', r);
+    }
+
+    carta.classList.add('pieghevole');
+    const k = _chiaveCarta(scheda || schedaAttiva, h2.textContent);
+    carta.dataset.ck = k;
+    if (_cartaChiusa(k)) carta.classList.add('chiusa');
+    h2.setAttribute('aria-expanded', carta.classList.contains('chiusa') ? 'false' : 'true');
+  }
+}
+
+// Apre/chiude una carta (e ricorda la scelta).
+function _piegaCarta(carta, aperta) {
+  carta.classList.toggle('chiusa', !aperta);
+  carta.querySelector(':scope > h2')?.setAttribute('aria-expanded', aperta ? 'true' : 'false');
+  if (carta.dataset.ck) _ricordaCarta(carta.dataset.ck, aperta);
+}
+
+// Barra "Apri tutto / Riduci tutto" in cima alla scheda attiva.
+function barraCarteHtml() {
+  return `<div class="carte-ctrl">
+    <button type="button" class="btn secondario mini" data-carte="apri">${L('Apri tutto', 'Expand all', 'Abrir todo')}</button>
+    <button type="button" class="btn secondario mini" data-carte="chiudi">${L('Riduci tutto', 'Collapse all', 'Reducir todo')}</button>
+    <span class="suggerimento">${L('Clicca il titolo di una scheda per aprirla o ridurla.', 'Click a card’s title to expand or collapse it.', 'Haz clic en el título de una tarjeta para abrirla o reducirla.')}</span>
+  </div>`;
 }
 
 function renderAreaUtente() {
@@ -1250,6 +1340,10 @@ const GUIDE = {
     come: [['Aggiungi una voce: domanda → risposta.', 'Add an entry: question → answer.', 'Añade una entrada: pregunta → respuesta.'], ['In chat richiami la risposta con un !comando o una parola chiave.', 'In chat you trigger the answer with a !command or a keyword.', 'En el chat activas la respuesta con un !comando o una palabra clave.']] },
   moduli: { serve: ['Creare i comandi di chat: comandi/automazioni (QUANDO succede X, ALLORA fai Y) e i contatori (morti, tentativi, parole…) che tu e i mod gestite in chat.', 'Create your chat commands: commands/automations (WHEN X happens, THEN do Y) and counters (deaths, attempts, words…) that you and your mods manage in chat.', 'Crea tus comandos de chat: comandos/automatizaciones (CUANDO pasa X, ENTONCES haz Y) y los contadores (muertes, intentos, palabras…) que tú y los mods gestionáis en el chat.'],
     come: [['“Nuovo comando”: scegli l’innesco (!comando, una parola, un evento o un timer).', '“New command”: choose the trigger (!command, a word, an event or a timer).', '“Nuevo comando”: elige el disparador (!comando, una palabra, un evento o un temporizador).'], ['Aggiungi una o più azioni (scrivi in chat, effetto, clip, musica…) e premi “Prova”.', 'Add one or more actions (write in chat, effect, clip, music…) and hit “Test”.', 'Añade una o varias acciones (escribir en el chat, efecto, clip, música…) y pulsa “Probar”.'], ['Più in basso, in “Contatori”, crei numeri come !morti da mostrare anche in overlay.', 'Further down, in “Counters”, you create numbers like !deaths that can also show in the overlay.', 'Más abajo, en “Contadores”, creas números como !muertes que también puedes mostrar en el overlay.']] },
+  memoria: { serve: ['Vedere cosa si ricorda il bot e come sta andando il canale: statistiche, utenti più attivi e cose imparate.', 'See what the bot remembers and how the channel is doing: stats, most active viewers and things it learned.', 'Ver qué recuerda el bot y cómo va el canal: estadísticas, usuarios más activos y cosas aprendidas.'],
+    come: [['Scorri le statistiche per capire quando la chat è più viva.', 'Scroll the stats to see when chat is most alive.', 'Repasa las estadísticas para ver cuándo el chat está más vivo.'], ['Controlla i ricordi: puoi cancellare quelli sbagliati.', 'Check the memories: you can delete the wrong ones.', 'Revisa los recuerdos: puedes borrar los equivocados.'], ['Se qualcosa non ti piace, correggilo dalla scheda Conoscenza.', 'If something’s off, fix it from the Knowledge tab.', 'Si algo no te gusta, corrígelo desde la pestaña Conocimiento.']] },
+  regia: { serve: ['Gestire la diretta dal pannello: titolo, categoria, marker e le azioni rapide, senza aprire Twitch.', 'Run your stream from the panel: title, category, markers and quick actions, without opening Twitch.', 'Gestionar el directo desde el panel: título, categoría, marcadores y acciones rápidas, sin abrir Twitch.'],
+    come: [['Cambia titolo e categoria e salva: si aggiornano su Twitch subito.', 'Change title and category and save: they update on Twitch right away.', 'Cambia título y categoría y guarda: se actualizan en Twitch al instante.'], ['Usa le azioni rapide durante la live (marker, clip, annunci).', 'Use the quick actions during the stream (marker, clip, announcements).', 'Usa las acciones rápidas durante el directo (marcador, clip, anuncios).'], ['Tieni il pannello aperto su un secondo schermo mentre streami.', 'Keep the panel open on a second screen while you stream.', 'Ten el panel abierto en una segunda pantalla mientras emites.']] },
   regole: { serve: ['Moderazione automatica: filtra spam, link e flood e dà timeout ai recidivi.', 'Automatic moderation: filters spam, links and flood, and times out repeat offenders.', 'Moderación automática: filtra spam, enlaces y flood, y da timeout a los reincidentes.'],
     come: [['Attiva l’antispam.', 'Enable anti-spam.', 'Activa el antispam.'], ['Scegli cosa filtrare (link, maiuscole, ripetizioni…).', 'Choose what to filter (links, caps, repetitions…).', 'Elige qué filtrar (enlaces, mayúsculas, repeticiones…).'], ['Salva: il bot modera da solo.', 'Save: the bot moderates on its own.', 'Guarda: el bot modera solo.']] },
   giochi: { serve: ['Minigiochi, monete e classifiche per tenere viva la chat.', 'Minigames, coins and leaderboards to keep chat alive.', 'Minijuegos, monedas y clasificaciones para animar el chat.'],
@@ -1362,7 +1456,10 @@ function guidaSchedaHtml(id) {
   if (!g) return '';
   const serve = Array.isArray(g.serve) ? L(g.serve[0], g.serve[1], g.serve[2]) : g.serve;
   const come = Array.isArray(g.come) ? g.come.map((c) => (Array.isArray(c) ? L(c[0], c[1], c[2]) : c)) : [];
-  return `<details class="guida-scheda" open>
+  // aperta per default, ma se l'hai chiusa resta chiusa (anche cambiando scheda)
+  let aperta = true;
+  try { aperta = localStorage.getItem('guida:' + id) !== '0'; } catch { /* niente */ }
+  return `<details class="guida-scheda"${aperta ? ' open' : ''} data-guida="${id}">
     <summary><span class="guida-ico">${_icoGuida}</span> ${L('Come funziona', 'How it works', 'Cómo funciona')}</summary>
     <div class="guida-corpo">
       ${serve ? `<p class="guida-serve"><strong>${L('A cosa serve.', 'What it’s for.', 'Para qué sirve.')}</strong> ${esc(serve)}</p>` : ''}
@@ -1457,7 +1554,8 @@ function aggiornaTestataPagina() {
     `${area ? `<div class="pt-occhiello">${esc(area)}</div>` : ''}` +
     `<h1>${titoloParole(titolo)}</h1>` +
     `${desc ? `<p>${esc(desc)}</p>` : ''}` +
-    guidaSchedaHtml(schedaAttiva);
+    guidaSchedaHtml(schedaAttiva) +
+    barraCarteHtml();
 }
 
 // Divide il titolo in parole avvolte per la rivelazione "parola per parola":
@@ -8936,7 +9034,7 @@ function vaiAScheda(id) {
     document.querySelectorAll('.pannello-scheda').forEach((p) =>
       p.classList.toggle('visibile', p.dataset.scheda === id));
     aggiornaTestataPagina();
-    sezioni.forEach((p) => rivelaCarte(p));   // reveal fresco delle carte della scheda
+    sezioni.forEach((p) => { rendiCartePieghevoli(p, id); rivelaCarte(p); });
   });
   caricaDatiScheda(id);
   if (DEMO) aggiornaSpiegazioneDemo();     // aggiorna la spiegazione della scheda
@@ -8947,6 +9045,40 @@ function vaiAScheda(id) {
 // Il contenuto della nav si ridisegna ad ogni render, ma questi handler restano
 // fissi: quindi si delega sugli elementi persistenti.
 function initGuscio() {
+  // ── carte richiudibili: click sul titolo (o Invio/Spazio) apre e chiude ──
+  // Delegato su document: vale per ogni carta, presente e futura.
+  document.addEventListener('click', (ev) => {
+    // "Apri tutto / Riduci tutto" della scheda attiva
+    const tutte = ev.target.closest('[data-carte]');
+    if (tutte) {
+      const apri = tutte.dataset.carte === 'apri';
+      document.querySelectorAll('.pannello-scheda.visibile .carta.pieghevole')
+        .forEach((c) => _piegaCarta(c, apri));
+      return;
+    }
+    const h2 = ev.target.closest('.carta.pieghevole > h2');
+    if (!h2) return;
+    // se ho cliccato un link/pulsante/campo dentro il titolo, lascio fare a lui
+    if (ev.target.closest('a, button, input, select, textarea, label')) return;
+    const carta = h2.parentElement;
+    _piegaCarta(carta, carta.classList.contains('chiusa'));
+  });
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Enter' && ev.key !== ' ') return;
+    const h2 = ev.target.closest?.('.carta.pieghevole > h2');
+    if (!h2 || h2 !== document.activeElement) return;
+    ev.preventDefault();
+    const carta = h2.parentElement;
+    _piegaCarta(carta, carta.classList.contains('chiusa'));
+  });
+  // ricorda se hai chiuso la guida "Come funziona" di una scheda
+  // ('toggle' non fa bubbling: si cattura in fase di capture)
+  document.addEventListener('toggle', (ev) => {
+    const d = ev.target;
+    if (!d?.dataset?.guida) return;
+    try { localStorage.setItem('guida:' + d.dataset.guida, d.open ? '1' : '0'); } catch { /* niente */ }
+  }, true);
+
   // barra in alto: click su un gruppo (apre il menu a tendina) o su una scheda
   document.getElementById('nav-top')?.addEventListener('click', (ev) => {
     const men = ev.target.closest('[data-menu]');
