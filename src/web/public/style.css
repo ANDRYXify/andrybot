@@ -496,6 +496,18 @@ body.vetrina .contenuto { max-width: 1040px; }
 .guida-titolo { margin-top: .6rem; font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--testo-3); }
 .guida-come { margin: .3rem 0 0; padding-left: 1.25rem; display: flex; flex-direction: column; gap: .3rem; color: var(--testo-2); font-size: .9rem; line-height: 1.45; }
 .guida-come li::marker { color: var(--acc); font-weight: 700; }
+.guida-come code, .mini-guida code { background: var(--acc-soft); border: 1px solid var(--acc-bordo); border-radius: 6px; padding: .04em .34em; font-size: .86em; }
+
+/* Mini-tutorial richiudibile DENTRO una scheda (accanto a una funzione specifica) */
+.mini-guida { margin: .2rem 0 1rem; background: var(--sfondo-2, rgba(127,127,127,.06)); border: 1px solid var(--bordo); border-radius: var(--r-m); padding: .55rem .85rem; }
+.mini-guida > summary { display: flex; align-items: center; gap: .45rem; cursor: pointer; list-style: none; font-weight: 700; color: var(--acc); font-size: .9rem; }
+.mini-guida > summary::-webkit-details-marker { display: none; }
+.mini-guida > summary::after { content: ''; margin-left: auto; width: .45rem; height: .45rem; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); transition: transform .18s ease; opacity: .75; }
+.mini-guida[open] > summary::after { transform: rotate(-135deg); }
+.mini-guida-corpo { margin-top: .55rem; }
+.mini-guida-corpo .guida-serve { color: var(--testo); font-size: .9rem; line-height: 1.5; }
+.mini-guida-corpo .guida-come { margin-top: .45rem; }
+.mini-guida-corpo .suggerimento { margin-top: .45rem; }
 
 /* Icona SVG nei titoli delle sezioni (in tinta accento), al posto delle emoji */
 .h-ico { color: var(--acc); vertical-align: -.22em; margin-right: .45rem; }
