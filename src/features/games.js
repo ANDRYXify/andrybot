@@ -405,7 +405,8 @@ const APERTURE = [
 export function promoSociale(channel) {
   try {
     const canale = String(channel || '').toLowerCase().trim();
-    if (!canale || !config.siteUrl) return null;
-    return `${scegli(APERTURE)} ${config.siteUrl}/u/${canale} ✨`;
+    const base = config.hubUrl || config.siteUrl;   // dominio PUBBLICO (socialbot.live)
+    if (!canale || !base) return null;
+    return `${scegli(APERTURE)} ${base}/u/${canale} ✨`;
   } catch { return null; }
 }

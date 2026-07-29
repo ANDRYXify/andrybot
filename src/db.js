@@ -406,6 +406,21 @@ aggiungiColonna('spotify_tokens', 'client_secret', "TEXT NOT NULL DEFAULT ''");
   }
 })();
 
+// Migrazione dominio dei LINK PROFILO: chi ha dati vecchi (moduli/conoscenza)
+// aveva "andryxify.it/u/<canale>" scritto nei testi; lo portiamo al dominio
+// ufficiale "socialbot.live/u/<canale>". Idempotente (il WHERE non matcha più
+// dopo la prima volta), così sistema anche chi non ha mai toccato i dati iniziali.
+(() => {
+  try {
+    const a = db.prepare("UPDATE modules SET config = REPLACE(config, 'andryxify.it/u/', 'socialbot.live/u/') WHERE config LIKE '%andryxify.it/u/%'").run();
+    const b = db.prepare("UPDATE knowledge SET risposta = REPLACE(risposta, 'andryxify.it/u/', 'socialbot.live/u/') WHERE risposta LIKE '%andryxify.it/u/%'").run();
+    if ((a.changes || 0) + (b.changes || 0) > 0) {
+      // eslint-disable-next-line no-console
+      console.log(`[db] link profilo migrati: ${a.changes} moduli, ${b.changes} risposte → socialbot.live/u/`);
+    }
+  } catch { /* best-effort: non blocca l'avvio */ }
+})();
+
 const now = () => Date.now();
 
 // ---------------------------------------------------------------- amicizia (globale)
