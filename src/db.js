@@ -421,6 +421,31 @@ aggiungiColonna('spotify_tokens', 'client_secret', "TEXT NOT NULL DEFAULT ''");
   } catch { /* best-effort: non blocca l'avvio */ }
 })();
 
+// Pulizia UNA-TANTUM della conoscenza 'auto' inquinata. Il vecchio
+// pre-addestramento scaricava l'HTML della SPA (SITE_URL/u/<login>), che per
+// qualsiasi login restituisce lo stesso guscio dell'app coi meta/social
+// GENERICI del sito (di fatto del proprietario). Risultato: in OGNI canale
+// erano finite come 'auto' la descrizione e i social dell'owner ("per il bot
+// erano tutti andryxify"). Qui cancelliamo TUTTE le voci 'auto' una sola
+// volta: il nuovo pre-addestramento (che legge l'API JSON per-streamer) le
+// riseminerà corrette. Guardato da un flag persistente così gira una volta
+// sola e non ricancella i dati appena riseminati ad ogni riavvio.
+(() => {
+  try {
+    const FLAG = 'purge_auto_owner_v1';
+    const gia = db.prepare("SELECT 1 FROM facts WHERE channel='__migrazioni__' AND key=?").get(FLAG);
+    if (gia) return;
+    const r = db.prepare("DELETE FROM knowledge WHERE fonte='auto'").run();
+    db.prepare(`INSERT INTO facts (channel, key, value, ts) VALUES ('__migrazioni__', ?, ?, ?)
+      ON CONFLICT(channel, key) DO UPDATE SET value=excluded.value, ts=excluded.ts`)
+      .run(FLAG, String(r.changes || 0), Date.now());
+    if ((r.changes || 0) > 0) {
+      // eslint-disable-next-line no-console
+      console.log(`[db] conoscenza 'auto' inquinata rimossa: ${r.changes} voci (verranno riseminate corrette per-streamer)`);
+    }
+  } catch { /* best-effort: non blocca l'avvio */ }
+})();
+
 const now = () => Date.now();
 
 // ---------------------------------------------------------------- amicizia (globale)

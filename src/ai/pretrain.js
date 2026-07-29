@@ -1,113 +1,69 @@
-// Pre-addestramento automatico: quando uno streamer viene abilitato (o
-// su richiesta dalla dashboard), il bot "studia" la sua pagina profilo
-// sul sito madre (SITE_URL/u/<login>) e il suo profilo Twitch, e riempie
-// la knowledge base con voci di fonte 'auto'. Niente librerie: fetch
-// globale e parsing HTML con regex prudenti. Non lancia MAI.
+// Pre-addestramento automatico: quando uno streamer viene abilitato (o su
+// richiesta dalla dashboard), il bot "studia" il PROPRIO profilo pubblico
+// dello streamer e il suo profilo Twitch, e riempie la knowledge base con
+// voci di fonte 'auto'. Niente librerie: solo fetch globale. Non lancia MAI.
+//
+// IMPORTANTE — perché NON scarichiamo più l'HTML della pagina profilo.
+// Il sito madre è una single-page app: chiedendo SITE_URL/u/<login> il
+// server risponde SEMPRE con lo stesso guscio HTML dell'app, con <title>,
+// meta description e link generici del sito (di fatto quelli del
+// PROPRIETARIO). Estraendo descrizione/social da lì, il bot finiva per
+// assegnare a OGNI streamer la descrizione e i social dell'owner — "per il
+// bot erano tutti andryxify". Adesso leggiamo i dati SOLO dall'API JSON
+// per-streamer (SITE_URL/api/streamer-verify?action=link_page&login=<login>),
+// che ritorna i dati REALI di quello streamer oppure 404 se non ha una
+// pagina pubblica: in quel caso non seminiamo NULLA dal sito.
 import { config } from '../config.js';
 import { makeLog } from '../logger.js';
 import { knowledge, memory } from '../db.js';
 
 const log = makeLog('pretrain');
 
-// Piattaforme riconosciute nei link della pagina profilo.
-const PIATTAFORME = [
-  { nome: 'youtube',   etichetta: 'YouTube',   host: ['youtube.com', 'youtu.be'] },
-  { nome: 'instagram', etichetta: 'Instagram', host: ['instagram.com'] },
-  { nome: 'tiktok',    etichetta: 'TikTok',    host: ['tiktok.com'] },
-  { nome: 'twitter',   etichetta: 'Twitter/X', host: ['twitter.com', 'x.com'] },
-  { nome: 'discord',   etichetta: 'Discord',   host: ['discord.gg', 'discord.com'] },
-  { nome: 'telegram',  etichetta: 'Telegram',  host: ['t.me', 'telegram.me'] },
-  { nome: 'kick',      etichetta: 'Kick',      host: ['kick.com'] },
-  { nome: 'facebook',  etichetta: 'Facebook',  host: ['facebook.com', 'fb.com'] },
-  { nome: 'twitch',    etichetta: 'Twitch',    host: ['twitch.tv'] },
-  { nome: 'spotify',   etichetta: 'Spotify',   host: ['spotify.com'] },
-  { nome: 'github',    etichetta: 'GitHub',    host: ['github.com'] },
-];
-
-// host da ignorare quando cerchiamo il "sito personale" generico
-const HOST_TECNICI = ['cdn', 'fonts.', 'gstatic', 'googleapis', 'cloudflare', 'jsdelivr', 'unpkg'];
+// nome piattaforma → etichetta leggibile. Le chiavi combaciano con i social
+// della vetrina restituiti dall'API (youtube/instagram/tiktok/discord/spotify);
+// le altre restano per robustezza se l'API un giorno ne aggiungesse.
+const ETICHETTE = {
+  youtube:   'YouTube',
+  instagram: 'Instagram',
+  tiktok:    'TikTok',
+  discord:   'Discord',
+  spotify:   'Spotify',
+  twitter:   'Twitter/X',
+  telegram:  'Telegram',
+  kick:      'Kick',
+  facebook:  'Facebook',
+  twitch:    'Twitch',
+};
 
 // --------------------------------------------------------------- utilità
 
-// fetch con timeout e User-Agent dedicato; null se non ok o errore
-async function scaricaPagina(url, timeoutMs = 10_000) {
+// GET JSON con timeout e User-Agent dedicato. Ritorna:
+//   { stato: 200, dati }  se ok
+//   { stato: 404 }        se la pagina non esiste (profilo senza vetrina)
+//   { stato: 0 }          se rete/timeout/altro (trattato come "non disponibile")
+async function scaricaJson(url, timeoutMs = 10_000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetch(url, {
       signal: controller.signal,
       redirect: 'follow',
-      headers: { 'User-Agent': 'SocialBot/1.0' },
+      headers: { 'User-Agent': 'SocialBot/1.0', Accept: 'application/json' },
     });
-    if (!res.ok) return null;
-    return await res.text();
+    if (res.status === 404) return { stato: 404 };
+    if (!res.ok) return { stato: 0 };
+    const dati = await res.json().catch(() => null);
+    return dati ? { stato: 200, dati } : { stato: 0 };
   } catch {
-    return null;
+    return { stato: 0 };
   } finally {
     clearTimeout(timer);
   }
 }
 
-// decodifica le entità HTML più comuni (incluse quelle numeriche)
-function decodificaEntita(s) {
-  return String(s || '')
-    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Math.min(0x10ffff, +n)))
-    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(Math.min(0x10ffff, parseInt(n, 16))))
-    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&nbsp;/g, ' ');
-}
-
-// contenuto del <title>, o ''
-function estraiTitolo(html) {
-  const m = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(html);
-  return m ? decodificaEntita(m[1]).replace(/\s+/g, ' ').trim() : '';
-}
-
-// meta description oppure og:description, o ''
-function estraiDescrizione(html) {
-  let normale = '';
-  let og = '';
-  for (const tag of html.match(/<meta\b[^>]*>/gi) || []) {
-    const attr = {};
-    for (const m of tag.matchAll(/([\w:-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g)) {
-      attr[m[1].toLowerCase()] = m[2] ?? m[3] ?? '';
-    }
-    const chiave = attr.name || attr.property || '';
-    if (chiave === 'description' && attr.content) normale = attr.content;
-    if (chiave === 'og:description' && attr.content) og = attr.content;
-  }
-  return decodificaEntita(normale || og).replace(/\s+/g, ' ').trim();
-}
-
-// tutti gli href assoluti (http/https) trovati nei tag <a>
-function estraiLink(html) {
-  const link = [];
-  for (const m of html.matchAll(/<a\b[^>]*\bhref\s*=\s*(?:"([^"]*)"|'([^']*)')/gi)) {
-    const url = decodificaEntita(m[1] ?? m[2] ?? '').trim();
-    if (/^https?:\/\//i.test(url)) link.push(url);
-  }
-  return link;
-}
-
-// testo "visibile" della pagina: via script/style/tag, spazi compressi
-function estraiTesto(html) {
-  return decodificaEntita(
-    html
-      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-      .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
-      .replace(/<[^>]+>/g, ' '),
-  ).replace(/\s+/g, ' ').trim();
-}
-
-// true se hostname appartiene a uno dei domini indicati (o a un sottodominio)
-function stessoDominio(hostname, dominio) {
-  return hostname === dominio || hostname.endsWith('.' + dominio);
-}
-
 // taglia un testo a ~max caratteri senza spezzare le parole
 function accorcia(testo, max = 400) {
-  const t = String(testo || '').trim();
+  const t = String(testo || '').replace(/\s+/g, ' ').trim();
   if (t.length <= max) return t;
   const taglio = t.lastIndexOf(' ', max);
   return t.slice(0, taglio > max * 0.6 ? taglio : max).trim() + '…';
@@ -136,58 +92,63 @@ export async function pretrain(login, helix) {
       voci++;
     };
 
-    // ---- (a) pagina profilo sul sito madre -------------------------------
-    const html = await scaricaPagina(`${config.siteUrl}/u/${canale}`);
-    if (!html) {
-      dettagli.push('pagina profilo non trovata');
+    // ---- (a) profilo pubblico dello streamer sul sito madre --------------
+    // SOLO via API JSON per-streamer: dati REALI di QUESTO streamer, o 404.
+    const url = `${config.siteUrl}/api/streamer-verify?action=link_page&login=${encodeURIComponent(canale)}`;
+    const risp = await scaricaJson(url);
+    if (risp.stato === 404) {
+      dettagli.push('nessuna pagina profilo pubblica (niente da imparare dal sito)');
+    } else if (risp.stato !== 200 || !risp.dati || String(risp.dati.login || '').toLowerCase() !== canale) {
+      // difesa extra: se per qualunque motivo il login non combacia, NON usiamo i dati
+      dettagli.push('pagina profilo non disponibile');
     } else {
-      const titolo = estraiTitolo(html);
-      const descrizione = estraiDescrizione(html);
+      const p = risp.dati;
+      const lp = p.linkPage || {};
+
+      // descrizione / bio: la bio della vetrina, oppure headline+tagline della link-page
+      const descrizione = String(p.bio || '').trim()
+        || [lp.headline, lp.tagline].map((x) => String(x || '').trim()).filter(Boolean).join(' — ');
       if (descrizione) {
         aggiungi(
-          `descrizione di ${canale} / di cosa parla il canale / che contenuti fai`,
-          accorcia(descrizione),
+          `descrizione di ${canale} / chi è ${canale} / di cosa parla il canale / che contenuti fai / parlami di te / bio`,
+          accorcia(descrizione, 400),
         );
       }
 
-      // link alle piattaforme social
-      let hostSito = '';
-      try { hostSito = new URL(config.siteUrl).hostname; } catch { /* pazienza */ }
-      const trovate = new Map();   // nome piattaforma → url (il primo trovato vince)
-      let sitoPersonale = '';
-      for (const url of estraiLink(html)) {
-        let hostname = '';
-        try { hostname = new URL(url).hostname.toLowerCase().replace(/^www\./, ''); } catch { continue; }
-        if (!hostname || (hostSito && stessoDominio(hostname, hostSito.replace(/^www\./, '')))) continue;
-
-        const piattaforma = PIATTAFORME.find((p) => p.host.some((h) => stessoDominio(hostname, h)));
-        if (piattaforma) {
-          if (!trovate.has(piattaforma.nome)) trovate.set(piattaforma.nome, url);
-        } else if (!sitoPersonale && !HOST_TECNICI.some((t) => hostname.includes(t))) {
-          sitoPersonale = url;   // primo link esterno non riconosciuto = sito personale
-        }
+      // programmazione / orari
+      if (String(p.programmazione || '').trim()) {
+        aggiungi(
+          `quando è live ${canale} / orari / che giorni streamma / programmazione`,
+          accorcia(p.programmazione, 300),
+        );
       }
-      for (const [nome, url] of trovate) {
-        const p = PIATTAFORME.find((x) => x.nome === nome);
+
+      // social della vetrina — per-streamer, MAI del sito
+      const socials = p.socials && typeof p.socials === 'object' ? p.socials : {};
+      let nSocial = 0;
+      for (const [nome, urlSocial] of Object.entries(socials)) {
+        const u = String(urlSocial || '').trim();
+        if (!/^https?:\/\//i.test(u)) continue;
+        const etichetta = ETICHETTE[nome] || (nome.charAt(0).toUpperCase() + nome.slice(1));
         aggiungi(
           `dove trovo ${canale} su ${nome} / link ${nome} / canale ${nome}`,
-          `Mi trovi su ${p.etichetta} qui: ${url}`,
+          `Mi trovi su ${etichetta} qui: ${u}`,
         );
-      }
-      if (sitoPersonale) {
-        aggiungi(
-          `sito di ${canale} / sito ufficiale / dove trovo ${canale} sul web`,
-          `Il mio sito: ${sitoPersonale}`,
-        );
+        nSocial++;
       }
 
-      // bio dal testo visibile della pagina
-      const testo = estraiTesto(html);
-      if (testo.length > 80) {
-        aggiungi(`chi è ${canale} / parlami di te / bio`, accorcia(testo, 400));
+      // link personalizzati della link-page (bottoni custom dello streamer)
+      const links = Array.isArray(lp.links) ? lp.links : [];
+      let nLink = 0;
+      for (const l of links) {
+        const u = String(l?.url || '').trim();
+        const label = String(l?.label || '').trim();
+        if (!label || !/^https?:\/\//i.test(u)) continue;
+        aggiungi(`link ${label} di ${canale} / ${label}`, `${label}: ${u}`);
+        if (++nLink >= 12) break;   // niente muri di link
       }
 
-      dettagli.push(`pagina profilo letta${titolo ? ` ("${accorcia(titolo, 60)}")` : ''}, ${trovate.size + (sitoPersonale ? 1 : 0)} link social`);
+      dettagli.push(`pagina profilo letta (${nSocial} social, ${nLink} link)`);
     }
 
     // ---- (b) profilo Twitch ---------------------------------------------
