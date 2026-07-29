@@ -14,7 +14,7 @@ import { dirname, join, basename } from 'node:path';
 import { config, SCOPES, missingConfig } from '../config.js';
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb, friends } from '../db.js';
-import { points, vips, tgConf, dcConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin } from '../db.js';
+import { points, vips, tgConf, dcConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
 import * as abbonamenti from '../features/abbonamenti.js';
 import * as spotify from '../features/spotify.js';
 import * as giveaway from '../features/giveaway.js';
@@ -1188,6 +1188,49 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const r = await discord.prova(conf, { login, display: s?.display || login });
     if (!r.ok) return res.status(400).json({ errore: r.errore || 'invio non riuscito' });
     res.json({ ok: true });
+  }));
+
+  // ── Contatori (morti/tentativi/parole…) — sotto l'add-on Giochi & Classifiche ──
+  const gCont = gateFeature('giochi', 'I contatori');
+  // elenco (leggibile anche dai moderatori)
+  app.get('/api/contatori', requireLogin, (req, res) => {
+    res.json({ contatori: contatori.list(currentUser(req).login) });
+  });
+  // crea/aggiorna un contatore (comando, etichetta, emoji, step, parola auto, valore)
+  app.post('/api/contatori', requireLogin, gCont, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const b = req.body || {};
+    const comando = String(b.comando || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 30);
+    if (!comando) return res.status(400).json({ errore: 'Comando non valido: usa lettere/numeri (es. "morti").' });
+    const c = contatori.upsert(login, {
+      comando,
+      etichetta: b.etichetta, emoji: b.emoji, step: b.step,
+      autoParola: b.autoParola,
+      valore: b.valore,   // consente di correggere il valore a mano
+    });
+    res.json({ ok: true, contatore: c });
+  }));
+  // elimina un contatore (il premio punti canale eventualmente collegato resta su
+  // Twitch: lo streamer può toglierlo a mano — non lo cancelliamo d'ufficio)
+  app.delete('/api/contatori/:comando', requireLogin, gCont, (req, res) => {
+    contatori.remove(currentUser(req).login, String(req.params.comando));
+    res.json({ ok: true });
+  });
+  // crea (o scollega) il premio a PUNTI CANALE collegato: riscattarlo fa +step.
+  app.post('/api/contatori/:comando/reward', requireOwner, gCont, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const cmd = String(req.params.comando).toLowerCase();
+    const c = contatori.get(login, cmd);
+    if (!c) return res.status(404).json({ errore: 'contatore sconosciuto' });
+    if (req.body?.scollega) { contatori.upsert(login, { comando: cmd, rewardId: '' }); return res.json({ ok: true, collegato: false }); }
+    const costo = Math.max(1, Math.min(1000000, parseInt(req.body?.costo, 10) || 100));
+    const titolo = String(req.body?.titolo || c.etichetta || cmd).slice(0, 45);
+    let reward;
+    try { reward = await helix.creaReward(login, { titolo, costo }); }
+    catch (e) { return res.status(400).json({ errore: 'Creazione premio non riuscita (hai concesso i permessi punti canale?).' }); }
+    if (!reward?.id) return res.status(400).json({ errore: 'Creazione premio non riuscita.' });
+    contatori.upsert(login, { comando: cmd, rewardId: reward.id });
+    res.json({ ok: true, collegato: true, titolo });
   }));
 
   // ─────────────────────────────────────────────────────── 7TV: gestione emote

@@ -79,6 +79,19 @@ CREATE TABLE IF NOT EXISTS commands (           -- comandi personalizzati (!nome
   PRIMARY KEY (channel, name)
 );
 
+CREATE TABLE IF NOT EXISTS contatori (         -- contatori a comando (morti, tentativi, parole…)
+  channel TEXT NOT NULL,
+  comando TEXT NOT NULL,                         -- trigger in chat (senza '!'): es. "morti"
+  etichetta TEXT NOT NULL DEFAULT '',            -- nome mostrato: es. "Morti"
+  emoji TEXT NOT NULL DEFAULT '',                -- emoji facoltativa nell'annuncio
+  valore INTEGER NOT NULL DEFAULT 0,
+  step INTEGER NOT NULL DEFAULT 1,               -- di quanto sale con +
+  auto_parola TEXT NOT NULL DEFAULT '',          -- se valorizzata: +1 quando appare in chat
+  reward_id TEXT NOT NULL DEFAULT '',            -- premio punti canale collegato (riscatto → +step)
+  ts INTEGER NOT NULL,
+  PRIMARY KEY (channel, comando)
+);
+
 CREATE TABLE IF NOT EXISTS clips (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   channel TEXT NOT NULL,
@@ -1137,6 +1150,52 @@ export const memory = {
     const r = db.prepare('SELECT description, ts FROM stream_context WHERE channel=?').get(channel);
     if (!r || now() - r.ts > maxAgeMs) return null;
     return r.description;
+  },
+};
+
+// ---------------------------------------------------------------- contatori a comando
+// Contatori configurabili (morti, tentativi, parole…): valore incrementabile da
+// comando chat (mod/streamer), da parola automatica in chat, o da riscatto punti.
+// NB: distinto dai `counters` di sotto (store low-level usato dalle azioni dei moduli).
+export const contatori = {
+  list(channel) { return db.prepare('SELECT * FROM contatori WHERE channel=? ORDER BY comando').all(String(channel).toLowerCase()); },
+  get(channel, comando) { return db.prepare('SELECT * FROM contatori WHERE channel=? AND comando=?').get(String(channel).toLowerCase(), String(comando).toLowerCase()) || null; },
+  getByReward(channel, rewardId) {
+    const r = String(rewardId || ''); if (!r) return null;
+    return db.prepare('SELECT * FROM contatori WHERE channel=? AND reward_id=?').get(String(channel).toLowerCase(), r) || null;
+  },
+  autoParola(channel) { return this.list(channel).filter((c) => c.auto_parola); },
+  upsert(channel, { comando, etichetta, emoji, step, autoParola, rewardId, valore } = {}) {
+    const c = String(channel).toLowerCase();
+    const cmd = String(comando || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 30);
+    if (!cmd) return null;
+    const cur = this.get(c, cmd);
+    const v = {
+      etichetta: etichetta !== undefined ? String(etichetta).slice(0, 40) : (cur?.etichetta || cmd),
+      emoji: emoji !== undefined ? String(emoji).slice(0, 8) : (cur?.emoji || ''),
+      step: step !== undefined ? Math.max(1, Math.min(1000, parseInt(step, 10) || 1)) : (cur?.step ?? 1),
+      auto_parola: autoParola !== undefined ? String(autoParola).toLowerCase().slice(0, 40) : (cur?.auto_parola || ''),
+      reward_id: rewardId !== undefined ? String(rewardId) : (cur?.reward_id || ''),
+      valore: valore !== undefined ? (parseInt(valore, 10) || 0) : (cur?.valore ?? 0),
+    };
+    db.prepare(`INSERT INTO contatori (channel, comando, etichetta, emoji, valore, step, auto_parola, reward_id, ts)
+      VALUES (@channel,@comando,@etichetta,@emoji,@valore,@step,@auto_parola,@reward_id,@ts)
+      ON CONFLICT(channel,comando) DO UPDATE SET etichetta=excluded.etichetta, emoji=excluded.emoji, valore=excluded.valore,
+        step=excluded.step, auto_parola=excluded.auto_parola, reward_id=excluded.reward_id, ts=excluded.ts`)
+      .run({ channel: c, comando: cmd, ...v, ts: now() });
+    return this.get(c, cmd);
+  },
+  remove(channel, comando) { db.prepare('DELETE FROM contatori WHERE channel=? AND comando=?').run(String(channel).toLowerCase(), String(comando).toLowerCase()); },
+  incrementa(channel, comando, delta) {
+    const c = String(channel).toLowerCase(), cmd = String(comando).toLowerCase();
+    db.prepare('UPDATE contatori SET valore = MAX(-1000000000, MIN(1000000000, valore + ?)), ts=? WHERE channel=? AND comando=?')
+      .run(parseInt(delta, 10) || 0, now(), c, cmd);
+    return this.get(c, cmd);
+  },
+  setValore(channel, comando, valore) {
+    const c = String(channel).toLowerCase(), cmd = String(comando).toLowerCase();
+    db.prepare('UPDATE contatori SET valore=?, ts=? WHERE channel=? AND comando=?').run(parseInt(valore, 10) || 0, now(), c, cmd);
+    return this.get(c, cmd);
   },
 };
 
