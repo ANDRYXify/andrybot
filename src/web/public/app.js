@@ -282,6 +282,7 @@ function _demoGet(via) {
     '/api/me': statoDemo(),
     '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://socialbot.live/tiktok/callback' },
     '/api/discord/stato': { configurato: false, attivo: false, messaggio: '', nomeBot: '', avatar: '', anteprima: '' },
+    '/api/contatori': { contatori: [{ comando: 'morti', etichetta: 'Morti', emoji: '💀', valore: 3, step: 1, auto_parola: '', reward_id: '' }, { comando: 'lol', etichetta: 'Risate', emoji: '😂', valore: 12, step: 1, auto_parola: 'lol', reward_id: '' }] },
     '/api/seventv/stato': { collegato: true, username: 'andryxify', setId: 'demo7tvset' },
     '/api/tgapp/login-stato': { attiva: true, oidc: true, bot: 'socialbot', collegato: true, username: 'andryxify', nome: 'Andry' },
     '/api/seventv/emotes': { id: 'demo7tvset', nome: 'andryxify · emotes', capienza: 1000, usate: 4, emotes: [
@@ -1459,6 +1460,7 @@ function vistaPiattaforma() {
     ${pannelloModuli()}
     ${pannelloRegole()}
     ${pannelloGiochi()}
+    ${pannelloContatori()}
     ${pannelloRegia()}
     ${pannelloStudio()}
     ${pannelloClip()}
@@ -5613,6 +5615,92 @@ function _xlaGrabFn() {
 // href del bookmarklet: la funzione su una riga sola, pronta da trascinare nei preferiti.
 const bookmarkletXla = 'javascript:(' + _xlaGrabFn.toString().replace(/\n\s*/g, ' ') + ')()';
 
+// --- Contatori (morti, tentativi, parole…) --------------------------------
+function pannelloContatori() {
+  return pannello('giochi', `
+    <div class="carta">
+      <h2>${_hIco(ICO.moduli)}${L('Contatori', 'Counters', 'Contadores')}</h2>
+      <p>${L('Crea contatori (morti, tentativi, parole…). Tu e i moderatori li gestite in chat:', 'Create counters (deaths, attempts, words…). You and your mods manage them in chat:', 'Crea contadores (muertes, intentos, palabras…). Tú y tus moderadores los gestionáis en el chat:')}
+      <code>!morti</code> ${L('mostra il valore;', 'shows the value;', 'muestra el valor;')} <code>!morti+</code> · <code>!morti +3</code> · <code>!morti-</code> · <code>!morti reset</code> · <code>!morti set 10</code> ${L('(solo mod/streamer).', '(mods/streamer only).', '(solo mods/streamer).')}
+      ${L('Un contatore può salire anche <strong>da solo</strong> a ogni <em>parola</em> in chat, o con un <strong>premio a punti canale</strong>.', 'A counter can also go up <strong>on its own</strong> on each chat <em>word</em>, or with a <strong>channel-point reward</strong>.', 'Un contador también puede subir <strong>solo</strong> con cada <em>palabra</em> en el chat, o con un <strong>premio de puntos de canal</strong>.')}</p>
+
+      <div id="contatori-box" class="spazio-sopra"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+
+      <hr class="separatore">
+      <h3>${L('Nuovo contatore', 'New counter', 'Nuevo contador')}</h3>
+      <div class="griglia-campi">
+        <div><label class="campo" for="cont-comando">${L('Comando (senza !)', 'Command (no !)', 'Comando (sin !)')}</label><input type="text" id="cont-comando" maxlength="30" placeholder="morti"></div>
+        <div><label class="campo" for="cont-etichetta">${L('Etichetta', 'Label', 'Etiqueta')}</label><input type="text" id="cont-etichetta" maxlength="40" placeholder="Morti"></div>
+      </div>
+      <div class="griglia-campi spazio-sopra">
+        <div><label class="campo" for="cont-emoji">${L('Emoji', 'Emoji', 'Emoji')} <span class="suggerimento">(${L('facolt.', 'optional', 'opcional')})</span></label><input type="text" id="cont-emoji" maxlength="4" placeholder="💀"></div>
+        <div><label class="campo" for="cont-step">${L('Passo (+)', 'Step (+)', 'Paso (+)')}</label><input type="number" id="cont-step" min="1" max="1000" value="1"></div>
+      </div>
+      <label class="campo spazio-sopra" for="cont-parola">${L('Parola automatica', 'Auto word', 'Palabra automática')} <span class="suggerimento">(${L('facolt.', 'optional', 'opcional')})</span></label>
+      <input type="text" id="cont-parola" maxlength="40" placeholder="${esc(L('es. «lol» → +1 ogni volta che appare in chat', 'e.g. «lol» → +1 each time it appears in chat', 'ej. «lol» → +1 cada vez que aparece en el chat'))}">
+      <p class="spazio-sopra"><button class="btn" id="cont-crea">${L('Crea contatore', 'Create counter', 'Crear contador')}</button></p>
+    </div>`);
+}
+
+async function caricaContatori() {
+  const box = document.getElementById('contatori-box'); if (!box) return;
+  let d; try { d = await api('/api/contatori'); }
+  catch { box.innerHTML = `<p class="suggerimento">${L('Impossibile caricare i contatori.', 'Couldn\'t load counters.', 'No se pudieron cargar los contadores.')}</p>`; return; }
+  const list = d.contatori || [];
+  box.innerHTML = list.length ? list.map((c) => `
+    <div class="cont-riga">
+      <span class="cont-info">${c.emoji ? esc(c.emoji) + ' ' : ''}<strong>${esc(c.etichetta || c.comando)}</strong> <code>!${esc(c.comando)}</code>${c.auto_parola ? ` <span class="tenue">· ${L('auto', 'auto', 'auto')}: «${esc(c.auto_parola)}»</span>` : ''}${c.reward_id ? ` <span class="tenue">· 🏆 ${L('premio', 'reward', 'premio')}</span>` : ''}</span>
+      <span class="cont-val" data-cv="${esc(c.comando)}">${c.valore}</span>
+      <span class="cont-azioni">
+        <button type="button" class="btn secondario mini" data-ca="piu" data-cmd="${esc(c.comando)}" data-val="${c.valore}" data-step="${c.step}">+${c.step}</button>
+        <button type="button" class="btn secondario mini" data-ca="meno" data-cmd="${esc(c.comando)}" data-val="${c.valore}" data-step="${c.step}">−${c.step}</button>
+        <button type="button" class="btn secondario mini" data-ca="reset" data-cmd="${esc(c.comando)}">${L('Reset', 'Reset', 'Reset')}</button>
+        <button type="button" class="btn secondario mini" data-ca="reward" data-cmd="${esc(c.comando)}">${c.reward_id ? L('Scollega premio', 'Unlink reward', 'Desvincular premio') : L('Crea premio', 'Create reward', 'Crear premio')}</button>
+        <button type="button" class="btn secondario mini" data-ca="del" data-cmd="${esc(c.comando)}" title="${L('Elimina', 'Delete', 'Eliminar')}">🗑</button>
+      </span>
+    </div>`).join('')
+    : `<p class="suggerimento">${L('Nessun contatore ancora. Creane uno qui sotto.', 'No counters yet. Create one below.', 'Aún no hay contadores. Crea uno abajo.')}</p>`;
+
+  const salvaVal = (comando, valore) => api('/api/contatori', { method: 'POST', body: { comando, valore } });
+  box.onclick = (ev) => {
+    const b = ev.target.closest('[data-ca]'); if (!b) return;
+    const cmd = b.dataset.cmd, az = b.dataset.ca;
+    conErrore(async () => {
+      if (az === 'piu') await salvaVal(cmd, (Number(b.dataset.val) || 0) + (Number(b.dataset.step) || 1));
+      else if (az === 'meno') await salvaVal(cmd, (Number(b.dataset.val) || 0) - (Number(b.dataset.step) || 1));
+      else if (az === 'reset') await salvaVal(cmd, 0);
+      else if (az === 'del') { if (!confirm(L('Eliminare il contatore «', 'Delete counter «', 'Eliminar el contador «') + cmd + '»?')) return; await api('/api/contatori/' + encodeURIComponent(cmd), { method: 'DELETE' }); }
+      else if (az === 'reward') {
+        if (b.textContent.includes('Scollega') || b.textContent.includes('Unlink') || b.textContent.includes('Desvincular')) {
+          await api('/api/contatori/' + encodeURIComponent(cmd) + '/reward', { method: 'POST', body: { scollega: true } });
+          toast(L('Premio scollegato.', 'Reward unlinked.', 'Premio desvinculado.'));
+        } else {
+          const costo = prompt(L('Costo in punti canale del premio (riscattarlo fa +passo):', 'Channel-point cost of the reward (redeeming it does +step):', 'Coste en puntos de canal del premio (canjearlo hace +paso):'), '100');
+          if (costo === null) return;
+          await api('/api/contatori/' + encodeURIComponent(cmd) + '/reward', { method: 'POST', body: { costo: parseInt(costo, 10) || 100 } });
+          toast(L('Premio a punti canale creato ✓', 'Channel-point reward created ✓', 'Premio de puntos de canal creado ✓'));
+        }
+      }
+      caricaContatori();
+    });
+  };
+  const crea = document.getElementById('cont-crea');
+  if (crea) crea.onclick = () => conErrore(async () => {
+    const comando = (document.getElementById('cont-comando').value || '').trim();
+    if (!comando) { toast(L('Scrivi un comando (es. morti).', 'Enter a command (e.g. deaths).', 'Escribe un comando (ej. muertes).'), 'errore'); return; }
+    await api('/api/contatori', { method: 'POST', body: {
+      comando,
+      etichetta: document.getElementById('cont-etichetta').value,
+      emoji: document.getElementById('cont-emoji').value,
+      step: document.getElementById('cont-step').value,
+      autoParola: document.getElementById('cont-parola').value,
+    } });
+    document.getElementById('cont-comando').value = ''; document.getElementById('cont-etichetta').value = '';
+    document.getElementById('cont-emoji').value = ''; document.getElementById('cont-parola').value = '';
+    toast(L('Contatore creato ✓', 'Counter created ✓', 'Contador creado ✓')); caricaContatori();
+  });
+}
+
 function pannelloGiochi() {
   const s = impostazioni();
   return pannello('giochi', `
@@ -6970,7 +7058,7 @@ function caricaDatiScheda(id) {
   if (id === 'emote') caricaEmote7TV();
   if (id === 'moduli') caricaModuli();
   if (id === 'memoria') caricaStatistiche();
-  if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); }
+  if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); caricaContatori(); }
   if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaDiscord(); caricaTgLogin(); }
   if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaAnima(); caricaLLM(); }
 }
