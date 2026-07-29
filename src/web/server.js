@@ -20,7 +20,7 @@ import * as spotify from '../features/spotify.js';
 import * as giveaway from '../features/giveaway.js';
 import * as webauthn from './webauthn.js';
 import { comprimi, convertiPerEmote } from '../features/compress.js';
-import { StudioEngine } from '../features/studio.js';
+import { StudioEngine, QUALITA as STUDIO_QUALITA } from '../features/studio.js';
 import { seedStreamer } from '../features/seed.js';
 import * as vip from '../features/vip.js';
 import * as telegram from '../features/telegram.js';
@@ -2174,7 +2174,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // ---- STUDIO WEB: vai live dal browser, senza OBS (canvas → ffmpeg → RTMP) ----
   app.get('/api/studio', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    res.json({ keyOk: studioKeyOk(login), ...studio.stato(login) });
+    // elenco qualità disponibili (chiave + etichetta) per il selettore del client
+    const qualita = Object.entries(STUDIO_QUALITA).map(([id, q]) => ({ id, etichetta: q.etichetta }));
+    res.json({ keyOk: studioKeyOk(login), qualita, ...studio.stato(login) });
   }));
 
   // avvia la diretta: prende la stream key (che resta sul server) e apre ffmpeg
@@ -2185,7 +2187,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (studio.attiva(login)) return res.status(409).json({ errore: 'sei già in diretta dallo studio' });
     const key = await helix.getStreamKey(login).catch(() => null);
     if (!key) return res.status(400).json({ errore: 'stream key non disponibile (ri-concedi i permessi)', permesso: true });
-    const r = studio.start(login, key);
+    const r = studio.start(login, key, String(req.body?.quality || ''));
     if (!r.ok) return res.status(400).json({ errore: r.motivo || 'avvio non riuscito' });
     res.json({ ok: true });
   }));

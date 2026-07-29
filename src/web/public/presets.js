@@ -77,15 +77,22 @@
 
   const lista = Object.keys(RICETTE).map((id) => ({ id, nome: NOMI[id] || id }));
 
-  function suona(id, volume) {
+  // suona(id, volume[, destino]).
+  //  · destino (opzionale) = { ac, nodi:[AudioNode,…] }: se presente, sintetizza
+  //    DENTRO quel contesto e collega l'uscita a quei nodi (es. il mixer dello
+  //    Studio Web → i suoni preset finiscono anche nella diretta e nel monitor
+  //    locale). Senza destino: nuovo contesto → altoparlanti (come prima).
+  function suona(id, volume, destino) {
     const ricetta = RICETTE[id];
     if (!ricetta) return false;
-    const c = ctx();
+    const c = (destino && destino.ac) ? destino.ac : ctx();
     if (!c) return false;
     const master = c.createGain();
     const v = Math.min(1, Math.max(0, (Number(volume) || 100) / 100));
     master.gain.value = v;
-    master.connect(c.destination);
+    const nodi = (destino && Array.isArray(destino.nodi) && destino.nodi.length) ? destino.nodi : [c.destination];
+    for (const n of nodi) { try { master.connect(n); } catch (e) { /* niente */ } }
+    try { if (c.state === 'suspended') c.resume(); } catch (e) { /* niente */ }
     try { ricetta(c, master, c.currentTime + 0.01); } catch (e) { return false; }
     return true;
   }

@@ -9,16 +9,32 @@ import { makeLog } from '../logger.js';
 
 const log = makeLog('studio');
 
+// Preset di qualità dello streaming. La RISOLUZIONE la decide il canvas del
+// browser (ffmpeg fa passthrough, nessun -s): qui scegliamo bitrate video e
+// frame-rate coerenti. "2K" = 1440p. Le chiavi devono combaciare con quelle del
+// client (app.js, STUDIO_QUAL). Nota: oltre il 1080p Twitch accetta l'ingest ma
+// applica il transcoding/limiti in base al livello dell'account dello streamer.
+export const QUALITA = {
+  '720p30':  { vBitrate: 4500, fps: 30, etichetta: '720p 30fps' },
+  '1080p30': { vBitrate: 6000, fps: 30, etichetta: '1080p 30fps' },
+  '1080p60': { vBitrate: 8000, fps: 60, etichetta: '1080p 60fps' },
+  '1440p30': { vBitrate: 9000, fps: 30, etichetta: '2K (1440p) 30fps' },
+  '1440p60': { vBitrate: 12000, fps: 60, etichetta: '2K (1440p) 60fps' },
+};
+const QUALITA_DEFAULT = '720p30';
+
 // argomenti ffmpeg: legge il webm/mp4 dallo stdin, esce in FLV h264/aac su RTMP.
-function argomenti(rtmpUrl) {
+function argomenti(rtmpUrl, q) {
+  const vb = q.vBitrate, fps = q.fps;
   return [
     '-hide_banner', '-loglevel', 'error',
     '-fflags', '+genpts',
     '-i', 'pipe:0',
     // video → H.264 (compatibile Twitch), basso ritardo
     '-c:v', 'libx264', '-preset', 'veryfast', '-tune', 'zerolatency',
-    '-b:v', '4500k', '-maxrate', '4500k', '-bufsize', '9000k',
-    '-pix_fmt', 'yuv420p', '-g', '60', '-r', '30',
+    '-b:v', `${vb}k`, '-maxrate', `${vb}k`, '-bufsize', `${vb * 2}k`,
+    // keyframe ogni 2s (requisito Twitch) → g = 2 × fps
+    '-pix_fmt', 'yuv420p', '-g', String(fps * 2), '-r', String(fps),
     // audio → AAC
     '-c:a', 'aac', '-b:a', '160k', '-ar', '44100',
     '-f', 'flv', rtmpUrl,
@@ -34,25 +50,28 @@ export class StudioEngine {
 
   stato(login) {
     const s = this.sessioni.get(String(login).toLowerCase());
-    return s ? { live: true, startedAt: s.startedAt, bytes: s.bytes } : { live: false };
+    return s ? { live: true, startedAt: s.startedAt, bytes: s.bytes, qualita: s.qualita } : { live: false };
   }
 
-  // Avvia la diretta: apre ffmpeg verso rtmp://…/app/<streamKey>. Ritorna
-  // { ok } oppure { ok:false, motivo }. Non lancia mai.
-  start(login, streamKey) {
+  // Avvia la diretta: apre ffmpeg verso rtmp://…/app/<streamKey>. `qualita` è una
+  // chiave di QUALITA (default 720p30 se assente/ignota). Ritorna { ok } oppure
+  // { ok:false, motivo }. Non lancia mai.
+  start(login, streamKey, qualita) {
     const ch = String(login).toLowerCase();
     if (this.sessioni.has(ch)) return { ok: false, motivo: 'sei già in diretta dallo studio' };
     if (!streamKey) return { ok: false, motivo: 'stream key non disponibile (ri-concedi i permessi)' };
 
+    const chiave = QUALITA[qualita] ? qualita : QUALITA_DEFAULT;
+    const q = QUALITA[chiave];
     const rtmpUrl = `${config.twitchRtmp}/${streamKey}`;
     let ff;
     try {
-      ff = spawn('ffmpeg', argomenti(rtmpUrl), { stdio: ['pipe', 'ignore', 'pipe'] });
+      ff = spawn('ffmpeg', argomenti(rtmpUrl, q), { stdio: ['pipe', 'ignore', 'pipe'] });
     } catch {
       return { ok: false, motivo: 'streaming non disponibile su questo server (manca ffmpeg)' };
     }
 
-    const sess = { ff, startedAt: Date.now(), bytes: 0 };
+    const sess = { ff, startedAt: Date.now(), bytes: 0, qualita: chiave };
     this.sessioni.set(ch, sess);
 
     let errBuf = '';
@@ -64,7 +83,7 @@ export class StudioEngine {
       if (code && code !== 255) log.warn(`ffmpeg #${ch} uscito (code ${code}): ${errBuf.trim().slice(-300)}`);
       this._chiudi(ch);
     });
-    log.info(`studio LIVE #${ch}`);
+    log.info(`studio LIVE #${ch} (${q.etichetta})`);
     return { ok: true };
   }
 

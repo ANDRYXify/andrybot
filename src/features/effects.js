@@ -55,6 +55,13 @@ export class EffectsEngine {
     }
   }
 
+  // True se c'è almeno un client SSE (overlay OBS o Studio Web) collegato a
+  // questo canale. Serve a evitare lavoro inutile quando nessuno ascolta.
+  hasClients(channel) {
+    const set = this._clients.get(norm(channel));
+    return !!(set && set.size);
+  }
+
   // Keepalive: un commento SSE che non fa nulla, serve solo a tenere viva la
   // connessione dietro reverse proxy (Caddy). server.js lo chiama ogni ~15s.
   ping() {
