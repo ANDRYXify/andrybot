@@ -797,6 +797,10 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .cont-ov > summary { cursor: pointer; font-size: .82rem; color: var(--testo-3); user-select: none; }
 .cont-ov > summary:hover { color: var(--testo); }
 .cont-ov-form { padding: .6rem .2rem .2rem; }
+.cont-ov-form .riga-mostra { padding: .4rem .55rem; border: 1px solid var(--acc-bordo); border-radius: var(--r-s); background: var(--acc-soft); }
+.cont-fine { margin-top: .55rem; }
+.cont-fine > summary { cursor: pointer; font-size: .8rem; color: var(--testo-3); user-select: none; }
+.cont-fine > summary:hover { color: var(--testo); }
 
 .studio-vai { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem; }
 @media (max-width: 820px) { .studio-griglia { grid-template-columns: 1fr; } }

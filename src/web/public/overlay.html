@@ -715,9 +715,14 @@
       if (!d.mostra) { if (el) el.remove(); return; }
       if (!el) { el = document.createElement('div'); el.id = id; el.className = 'contatore-widget'; document.body.appendChild(el); }
       el.textContent = String(d.testo || '');
-      const x = Number(d.x), y = Number(d.y);
-      el.style.left = (isFinite(x) ? x : 6) + '%';
-      el.style.top = (isFinite(y) ? y : 84) + '%';
+      const x = isFinite(Number(d.x)) ? Number(d.x) : 6, y = isFinite(Number(d.y)) ? Number(d.y) : 84;
+      el.style.left = x + '%';
+      el.style.top = y + '%';
+      // ancora il widget all'angolo giusto: a sinistra parte dal bordo, a destra
+      // termina al bordo, al centro è centrato (così i preset toccano gli angoli).
+      const tx = x <= 33 ? '0' : (x >= 67 ? '-100%' : '-50%');
+      const ty = y <= 33 ? '0' : (y >= 67 ? '-100%' : '-50%');
+      el.style.transform = 'translate(' + tx + ',' + ty + ')';
       el.style.color = d.colore || '#ffffff';
       el.style.background = d.sfondo || 'transparent';
       el.style.fontSize = (Math.max(8, Math.min(200, Number(d.dim) || 40))) + 'px';
