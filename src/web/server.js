@@ -145,6 +145,33 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // Cattura il corpo RAW (serve al webhook Stripe per verificare la firma).
   app.use(express.json({ verify: (req, _res, buf) => { req.rawBody = buf; } }));
 
+  // Ripristino UNA-TANTUM del pre-addestramento. Il vecchio pretrain scaricava
+  // l'HTML della SPA e aveva seminato in TUTTI i canali la descrizione/social
+  // generici del sito (di fatto quelli del proprietario). La migrazione DB ha
+  // già cancellato quelle voci 'auto'; qui ri-seminiamo i dati CORRETTI
+  // per-streamer leggendoli dall'API JSON, così ogni canale riottiene le
+  // proprie info senza dover premere "rileggi profilo" a mano. Gira una sola
+  // volta (flag persistente), in background e a bassa frequenza per non
+  // martellare l'API del sito.
+  (() => {
+    try {
+      const FLAG = 'repretrain_auto_v1';
+      const gia = memory.facts('__migrazioni__').some((f) => f.key === FLAG);
+      if (gia) return;
+      memory.setFact('__migrazioni__', FLAG, String(Date.now()));
+      const attivi = streamers.active();
+      if (!attivi.length) return;
+      log.info(`re-preaddestramento una-tantum di ${attivi.length} canali (dati corretti per-streamer)…`);
+      (async () => {
+        for (const s of attivi) {
+          try { await pretrain(s.login, helix); } catch { /* best-effort */ }
+          await new Promise((r) => setTimeout(r, 1500));   // gentile con l'API del sito
+        }
+        log.info('re-preaddestramento una-tantum completato');
+      })();
+    } catch { /* non blocca l'avvio */ }
+  })();
+
   // ------------------------------------------------------------ helper
 
   // utente loggato in sessione (o null)
