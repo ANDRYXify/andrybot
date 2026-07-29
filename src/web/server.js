@@ -14,7 +14,7 @@ import { dirname, join, basename } from 'node:path';
 import { config, SCOPES, missingConfig } from '../config.js';
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb, friends } from '../db.js';
-import { points, vips, tgConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin } from '../db.js';
+import { points, vips, tgConf, dcConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin } from '../db.js';
 import * as abbonamenti from '../features/abbonamenti.js';
 import * as spotify from '../features/spotify.js';
 import * as giveaway from '../features/giveaway.js';
@@ -27,6 +27,7 @@ import * as telegram from '../features/telegram.js';
 import * as categoria from '../features/categoria.js';
 import * as compleanniFeat from '../features/compleanni.js';
 import * as tiktok from '../features/tiktok.js';
+import * as discord from '../features/discord.js';
 import * as instagram from '../features/instagram.js';
 import * as emotes from '../features/emotes.js';
 import * as seventv from '../features/seventv.js';
@@ -1130,6 +1131,63 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!tiktok.collegato(login)) return res.status(400).json({ errore: 'Collega prima il tuo account TikTok.' });
     const r = await tiktok.provaApi(login);
     res.json(r);
+  }));
+
+  // ── Discord: avviso "è live" via WEBHOOK del canale del server dello streamer ──
+  // Nessun bot da creare, nessun token: lo streamer incolla il webhook (Impostazioni
+  // canale → Integrazioni → Webhook). Sotto l'add-on Notifiche.
+  // stato per la UI: NON rimanda mai il webhook completo (contiene il token).
+  app.get('/api/discord/stato', requireLogin, (req, res) => {
+    const conf = dcConf.get(currentUser(req).login) || {};
+    const wh = String(conf.webhook || '');
+    res.json({
+      configurato: !!wh,
+      attivo: !!conf.attivo,
+      messaggio: conf.messaggio || '',
+      nomeBot: conf.nome_bot || '',
+      avatar: conf.avatar || '',
+      // solo un'anteprima mascherata del webhook (mai il token)
+      anteprima: wh ? wh.replace(/\/webhooks\/(\d+)\/.*/, '/webhooks/$1/••••••') : '',
+    });
+  });
+
+  // salva/aggiorna la config Discord. Se arriva un webhook, lo VERIFICA prima.
+  app.post('/api/discord', requireOwner, gateFeature('notifiche', 'Le notifiche'), wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const b = req.body || {};
+    const campi = {};
+    if (b.webhook !== undefined) {
+      const wh = String(b.webhook || '').trim();
+      if (wh) {
+        if (!discord.webhookValido(wh)) return res.status(400).json({ errore: 'URL non valido: incolla il webhook COMPLETO del canale Discord.' });
+        const v = await discord.verifica(wh);
+        if (!v.ok) return res.status(400).json({ errore: v.errore || 'webhook non verificabile' });
+      }
+      campi.webhook = wh;
+    }
+    if (b.messaggio !== undefined) campi.messaggio = String(b.messaggio).slice(0, 500);
+    if (b.nomeBot !== undefined) campi.nomeBot = String(b.nomeBot).slice(0, 80);
+    if (b.avatar !== undefined) campi.avatar = String(b.avatar).slice(0, 500);
+    if (b.attivo !== undefined) campi.attivo = !!b.attivo;
+    const conf = dcConf.set(login, campi);
+    res.json({ ok: true, configurato: !!conf.webhook, attivo: !!conf.attivo });
+  }));
+
+  // scollega Discord (svuota il webhook e spegne)
+  app.post('/api/discord/disconnect', requireOwner, gateFeature('notifiche', 'Le notifiche'), (req, res) => {
+    dcConf.set(currentUser(req).login, { webhook: '', attivo: false });
+    res.json({ ok: true });
+  });
+
+  // messaggio di prova nel canale Discord
+  app.post('/api/discord/prova', requireOwner, gateFeature('notifiche', 'Le notifiche'), wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const conf = dcConf.get(login);
+    if (!conf?.webhook) return res.status(400).json({ errore: 'Configura prima il webhook Discord.' });
+    const s = streamers.get(login);
+    const r = await discord.prova(conf, { login, display: s?.display || login });
+    if (!r.ok) return res.status(400).json({ errore: r.errore || 'invio non riuscito' });
+    res.json({ ok: true });
   }));
 
   // ─────────────────────────────────────────────────────── 7TV: gestione emote

@@ -5,7 +5,7 @@
 // eventi Twitch. Tiene tutto sincronizzato con la dashboard.
 import { makeLog } from './logger.js';
 import { config } from './config.js';
-import { tokens, streamers, memory, tgConf, compleanni, pointAlerts } from './db.js';
+import { tokens, streamers, memory, tgConf, dcConf, compleanni, pointAlerts } from './db.js';
 import { ChatBot } from './twitch/chat.js';
 import { EventHub } from './twitch/events.js';
 import { Brain } from './ai/brain.js';
@@ -16,6 +16,7 @@ import * as sondaggi from './features/sondaggi.js';
 import * as songrequest from './features/songrequest.js';
 import * as vip from './features/vip.js';
 import * as telegram from './features/telegram.js';
+import * as discord from './features/discord.js';
 import * as antispam from './features/antispam.js';
 import * as tiktok from './features/tiktok.js';
 import * as youtube from './features/youtube.js';
@@ -575,7 +576,7 @@ export class BotManager {
     if (prev === undefined) return;
     const ev = { channel: ch, type: isLive ? 'stream.online' : 'stream.offline', data: data || {} };
     this._dispatchEvent(ev);
-    if (isLive) this._notificaTelegram(ch);
+    if (isLive) { this._notificaTelegram(ch); this._notificaDiscord(ch); }
     else this._chiudiTelegram(ch);
     this._reagisciAllaDiretta(ch, isLive);   // lei se ne accorge e ti scrive (presente/consapevole)
   }
@@ -628,6 +629,21 @@ export class BotManager {
         }
       }
     } catch (e) { log.error(`notifica Telegram #${login}:`, e?.message || e); }
+  }
+
+  // Manda la notifica Discord "è live" nel canale dello streamer (via webhook),
+  // se ha configurato e acceso le notifiche. Anti-doppioni sull'id della live.
+  async _notificaDiscord(login) {
+    try {
+      const conf = dcConf.get(login);
+      if (!conf?.attivo || !conf.webhook) return;
+      const info = await this.helix.getStream(login).catch(() => null);
+      const streamId = String(info?.id || '');
+      if (streamId && streamId === conf.ultima_live) return;   // già avvisato per questa diretta
+      const s = streamers.get(login);
+      const r = await discord.notificaLive(conf, { login, display: s?.display || login }, info);
+      if (r?.ok) { if (streamId) dcConf.setUltimaLive(login, streamId); log.info(`notifica Discord inviata per #${login}`); }
+    } catch (e) { log.error(`notifica Discord #${login}:`, e?.message || e); }
   }
 
   // Live spenta: se l'avviso era stato fissato, lo elimina dal gruppo (togliendo

@@ -931,6 +931,33 @@ export const managers = {
 // ---------------------------------------------------------------- notifiche Telegram
 // Config per canale del bot Telegram PROPRIO dello streamer (token + gruppo).
 // Il token è un segreto: non esce MAI verso il browser (vedi /api/me).
+// Config notifiche Discord (webhook) per canale. Vive dentro streamers.settings
+// (chiave `discord`), così non serve una tabella dedicata. Campi:
+//   { webhook, messaggio, nome_bot, avatar, attivo, ultima_live }
+export const dcConf = {
+  get(channel) {
+    const s = streamers.get(channel);
+    return (s && s.settings && s.settings.discord) ? s.settings.discord : null;
+  },
+  set(channel, campi = {}) {
+    const c = String(channel).toLowerCase();
+    const s = streamers.get(c);
+    const cur = (s && s.settings && s.settings.discord) || { webhook: '', messaggio: '', nome_bot: '', avatar: '', attivo: 0, ultima_live: '' };
+    const v = {
+      webhook: campi.webhook !== undefined ? String(campi.webhook) : cur.webhook,
+      messaggio: campi.messaggio !== undefined ? String(campi.messaggio) : cur.messaggio,
+      nome_bot: campi.nomeBot !== undefined ? String(campi.nomeBot) : cur.nome_bot,
+      avatar: campi.avatar !== undefined ? String(campi.avatar) : cur.avatar,
+      attivo: campi.attivo !== undefined ? (campi.attivo ? 1 : 0) : cur.attivo,
+      ultima_live: campi.ultimaLive !== undefined ? String(campi.ultimaLive) : (cur.ultima_live || ''),
+    };
+    const settings = (s && s.settings) || {};
+    streamers.setSettings(c, { ...settings, discord: v });
+    return v;
+  },
+  setUltimaLive(channel, streamId) { this.set(channel, { ultimaLive: String(streamId || '') }); },
+};
+
 export const tgConf = {
   get(channel) {
     return db.prepare('SELECT * FROM telegram WHERE channel=?').get(String(channel).toLowerCase()) || null;

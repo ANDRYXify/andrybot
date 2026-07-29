@@ -281,6 +281,7 @@ function _demoGet(via) {
   const F = {
     '/api/me': statoDemo(),
     '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://socialbot.live/tiktok/callback' },
+    '/api/discord/stato': { configurato: false, attivo: false, messaggio: '', nomeBot: '', avatar: '', anteprima: '' },
     '/api/seventv/stato': { collegato: true, username: 'andryxify', setId: 'demo7tvset' },
     '/api/tgapp/login-stato': { attiva: true, oidc: true, bot: 'socialbot', collegato: true, username: 'andryxify', nome: 'Andry' },
     '/api/seventv/emotes': { id: 'demo7tvset', nome: 'andryxify · emotes', capienza: 1000, usate: 4, emotes: [
@@ -2114,6 +2115,54 @@ async function caricaTikTok() {
     if (r?.vuoto) toast(L('Collegato, ma non trovo ancora video sul tuo profilo.', 'Connected, but I can\'t find any videos on your profile yet.', 'Conectado, pero aún no encuentro vídeos en tu perfil.'));
     else toast(L('Funziona: leggo il tuo ultimo video.', 'It works: I can read your latest video.', 'Funciona: leo tu último vídeo.'));
   }));
+}
+
+// Notifiche Discord (webhook): avviso "sei in diretta" nel canale del server Discord.
+async function caricaDiscord() {
+  const box = document.getElementById('discord-box'); if (!box) return;
+  let d; try { d = await api('/api/discord/stato'); }
+  catch { box.innerHTML = `<p class="suggerimento">${L('Impossibile caricare lo stato Discord.', 'Couldn\'t load Discord status.', 'No se pudo cargar el estado de Discord.')}</p>`; return; }
+  const wh = !!d.configurato;
+  box.innerHTML = `
+    <label class="campo" for="inp-dc-webhook">${L('Webhook del canale Discord', 'Discord channel webhook', 'Webhook del canal de Discord')}</label>
+    <input type="password" id="inp-dc-webhook" class="campo-largo" placeholder="${wh ? esc(d.anteprima) : 'https://discord.com/api/webhooks/…'}" autocomplete="off">
+    <p class="suggerimento">${L('In Discord: <strong>Impostazioni canale → Integrazioni → Webhook → Nuovo webhook → Copia URL</strong>, poi incollalo qui. Per aggiornare messaggio/opzioni lascia questo campo vuoto.', 'In Discord: <strong>Channel settings → Integrations → Webhooks → New webhook → Copy URL</strong>, then paste it here. To update the message/options just leave this field empty.', 'En Discord: <strong>Ajustes del canal → Integraciones → Webhooks → Nuevo webhook → Copiar URL</strong>, y pégalo aquí. Para actualizar mensaje/opciones deja este campo vacío.')}</p>
+
+    <label class="campo spazio-sopra" for="txt-dc-msg">${L('Messaggio dell\'avviso', 'Alert message', 'Mensaje del aviso')}</label>
+    <textarea id="txt-dc-msg" rows="3" placeholder="${esc('🔴 {nome} è in diretta ora! 👉 {link}')}">${esc(d.messaggio || '')}</textarea>
+    <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code> <code>{titolo}</code> <code>{gioco}</code> <code>{spettatori}</code> <code>{link}</code>. ${L('Per taggare tutti scrivi <code>@everyone</code> nel messaggio.', 'To ping everyone, write <code>@everyone</code> in the message.', 'Para avisar a todos escribe <code>@everyone</code> en el mensaje.')}</p>
+
+    <div class="griglia-campi spazio-sopra">
+      <div><label class="campo" for="inp-dc-nome">${L('Nome del bot', 'Bot name', 'Nombre del bot')} <span class="suggerimento">(${L('facolt.', 'optional', 'opcional')})</span></label>
+        <input type="text" id="inp-dc-nome" class="campo-largo" value="${esc(d.nomeBot || '')}" placeholder="SocialBot"></div>
+      <div><label class="campo" for="inp-dc-avatar">${L('Avatar (URL)', 'Avatar (URL)', 'Avatar (URL)')} <span class="suggerimento">(${L('facolt.', 'optional', 'opcional')})</span></label>
+        <input type="text" id="inp-dc-avatar" class="campo-largo" value="${esc(d.avatar || '')}" placeholder="https://…/logo.png"></div>
+    </div>
+
+    <div class="riga-check spazio-sopra">
+      <input type="checkbox" id="chk-dc-attivo" ${d.attivo ? 'checked' : ''}>
+      <label for="chk-dc-attivo">${L('Avvisami quando vado in diretta', 'Alert me when I go live', 'Avísame cuando voy en directo')}</label>
+    </div>
+    <p class="spazio-sopra">
+      <button class="btn" id="btn-dc-salva">${L('Salva', 'Save', 'Guardar')}</button>
+      ${wh ? ` <button class="btn secondario mini" id="btn-dc-prova">${L('Prova', 'Test', 'Probar')}</button> <button class="btn secondario mini" id="btn-dc-scollega">${L('Scollega', 'Disconnect', 'Desconectar')}</button>` : ''}
+    </p>`;
+  document.getElementById('btn-dc-salva').addEventListener('click', () => conErrore(async () => {
+    const webhook = document.getElementById('inp-dc-webhook').value.trim();
+    const body = {
+      messaggio: document.getElementById('txt-dc-msg').value,
+      nomeBot: document.getElementById('inp-dc-nome').value,
+      avatar: document.getElementById('inp-dc-avatar').value,
+      attivo: document.getElementById('chk-dc-attivo').checked,
+    };
+    if (webhook) body.webhook = webhook;   // invia il webhook solo se ne è stato messo uno nuovo
+    await api('/api/discord', { method: 'POST', body });
+    toast(L('Discord salvato ✓', 'Discord saved ✓', 'Discord guardado ✓')); caricaDiscord();
+  }));
+  const bp = document.getElementById('btn-dc-prova');
+  if (bp) bp.addEventListener('click', () => conErrore(async () => { await api('/api/discord/prova', { method: 'POST', body: {} }); toast(L('Messaggio di prova inviato ✓', 'Test message sent ✓', 'Mensaje de prueba enviado ✓')); }));
+  const bs = document.getElementById('btn-dc-scollega');
+  if (bs) bs.addEventListener('click', () => conErrore(async () => { await api('/api/discord/disconnect', { method: 'POST', body: {} }); toast(L('Discord scollegato.', 'Discord disconnected.', 'Discord desconectado.')); caricaDiscord(); }));
 }
 
 // "Accedi da Telegram" (Mini App + OIDC): collega il tuo Telegram al canale così
@@ -5874,6 +5923,12 @@ function pannelloNotifiche() {
     </div>
 
     <div class="carta">
+      <h2>${_hIco(ICO.moduli)}${L('Discord — avviso "sei in diretta"', 'Discord — "you\'re live" alert', 'Discord — aviso "estás en directo"')}</h2>
+      <p>${L('Quando vai in diretta, posto un avviso nel canale del tuo server Discord (embed con titolo, gioco, spettatori e miniatura). <strong>Nessun bot da creare, nessun token</strong>: incolli solo il <strong>webhook</strong> del canale.', 'When you go live, I post an alert in your Discord server channel (embed with title, game, viewers and thumbnail). <strong>No bot to create, no token</strong>: you just paste the channel <strong>webhook</strong>.', 'Cuando vas en directo, publico un aviso en el canal de tu servidor de Discord (embed con título, juego, espectadores y miniatura). <strong>Ningún bot que crear, ningún token</strong>: solo pegas el <strong>webhook</strong> del canal.')}</p>
+      <div id="discord-box" class="spazio-sopra"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+    </div>
+
+    <div class="carta">
       <h2>${_hIco(ICO.tv)}${L('Nuovo video su YouTube', 'New YouTube video', 'Nuevo vídeo en YouTube')}</h2>
       <p>${L('Quando esce un', 'When a', 'Cuando sale un')} <strong class="primo-piano">${L('nuovo video', 'new video', 'nuevo vídeo')}</strong> ${L('sul tuo canale YouTube, avviso il gruppo Telegram (e, se vuoi, la chat Twitch). Funziona con il feed pubblico di YouTube:', 'comes out on your YouTube channel, I alert the Telegram group (and, if you want, the Twitch chat). It works with YouTube’s public feed:', 'sale en tu canal de YouTube, aviso al grupo de Telegram (y, si quieres, al chat de Twitch). Funciona con el feed público de YouTube:')} <strong>${L('affidabile e senza chiavi', 'reliable and key-free', 'fiable y sin claves')}</strong>.</p>
 
@@ -6891,7 +6946,7 @@ function caricaDatiScheda(id) {
   if (id === 'moduli') caricaModuli();
   if (id === 'memoria') caricaStatistiche();
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); }
-  if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaTgLogin(); }
+  if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaDiscord(); caricaTgLogin(); }
   if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaAnima(); caricaLLM(); }
 }
 
