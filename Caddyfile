@@ -37,10 +37,13 @@ socialbot.live {
 	# Tutto il resto continua ad andare all'app (bot:8090). NB: il redirect
 	# inverso (andryxify.it/u/* → socialbot.live/u/*) è client-side nel sito,
 	# basato sull'hostname, quindi questo proxy NON crea loop.
+	# NB: puntiamo a www.andryxify.it (non andryxify.it): il dominio nudo su
+	# Vercel fa 307 → www, che spezzerebbe il proxy. Con www e header Host www
+	# Vercel serve la pagina direttamente (200), sotto il brand socialbot.live.
 	@linkpage path /u/* /assets/* /api/streamer-verify /api/streamer-verify/*
 	handle @linkpage {
-		reverse_proxy https://andryxify.it {
-			header_up Host andryxify.it
+		reverse_proxy https://www.andryxify.it {
+			header_up Host www.andryxify.it
 		}
 	}
 
