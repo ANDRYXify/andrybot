@@ -230,6 +230,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   function haAccesso(login) {
     const l = String(login || '').toLowerCase();
     if (!l) return false;
+    if (config.adminLogins.includes(l)) return true;   // il founder/admin ha SEMPRE accesso (mai chiuso fuori)
     if (subscriptions.attivo(l)) return true;
     const s = streamers.get(l);
     return !!(s && s.status === 'approved' && s.community);
@@ -719,6 +720,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       if (!v?.login) return res.redirect('/?errore=validazione');
       const login = String(v.login).toLowerCase();
       const disp = v.display || login;
+      // il founder/admin: assicura il record (approved+community) così non resta
+      // mai chiuso fuori e la dashboard ha tutto pronto anche dopo un reset.
+      if (config.adminLogins.includes(login)) {
+        try { streamers.upsertApproved(login, disp); streamers.markCommunity(login); seedStreamer(login); } catch (e) { log.warn('seed admin login:', e?.message || e); }
+      }
       const contesti = contestiPer(login);
       if (contesti.length) {                                  // ha già accesso → dashboard
         req.session.user = sessionePer(login, disp, contestoDefault(contesti));
