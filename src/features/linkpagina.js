@@ -650,6 +650,10 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   .fila{display:grid;grid-template-columns:repeat(12,1fr);gap:.6rem;width:100%;margin-top:1rem;align-items:start}
   .cel{min-width:0;display:flex;flex-direction:column}
   .cel > *{margin-top:0}
+  /* Nella stessa riga i titoli si tengono in pari: uno lungo va a capo e uno
+     corto no, e senza questo il contenuto sotto partiva a due altezze diverse
+     (era il caso di tre video affiancati con i titoli di lunghezza diversa). */
+  .fila .tit{min-height:2.4em;display:flex;align-items:flex-end}
   .bl{width:100%;min-width:0}
   .bl > *{margin-top:0}
   /* Sul telefono dodici colonne non hanno senso: si passa a due. Le cose grandi
@@ -747,15 +751,15 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
      profilo TikTok dentro una colonna da 15rem diventa un francobollo con le
      barre di scorrimento — che è esattamente com'era. */
   ${disp === 'rivista' ? `
+  /* "Rivista" = pagina LARGA con i titoli sottolineati. Niente colonne
+     automatiche: prima .lista era essa stessa una griglia a 2-3 colonne e
+     litigava con le larghezze scelte blocco per blocco — un blocco "un terzo"
+     finiva dentro una colonna che era già un terzo, quindi diventava un nono.
+     Adesso il comando di larghezza è l'UNICO che decide chi sta accanto a chi:
+     quello che scegli è quello che vedi. */
   .telo{max-width:min(66rem,100%)}
-  @media (min-width:760px){
-    .lista{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem;align-items:start}
-    .lista > .tit,.lista > .sep,.lista > .par,.lista > .eroe,.lista > .spazio,.lista > .socrow,
-    .lista > .griglia,.lista > .segna,.lista > .emb,.lista > .img,.lista > .marq{grid-column:1/-1}
-    .tit{margin-top:2rem;padding-bottom:.5rem;border-bottom:1px solid ${c.bordo}}
-    .griglia{grid-template-columns:repeat(auto-fill,minmax(11rem,1fr))}
-  }
-  @media (min-width:1100px){.lista{grid-template-columns:repeat(3,minmax(0,1fr))}}` : ''}
+  .tit{margin-top:2rem;padding-bottom:.5rem;border-bottom:1px solid ${c.bordo}}
+  .griglia{grid-template-columns:repeat(auto-fill,minmax(11rem,1fr))}` : ''}
   ${disp === 'sezioni' ? `
   .telo{max-width:min(54rem,100%)}
   .lista{gap:2.4rem;margin-top:3rem}
