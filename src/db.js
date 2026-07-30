@@ -1218,7 +1218,15 @@ export const FONT_LINKPAGE = ['system', 'inter', 'mono', 'serif', 'condensato', 
 export const ICONE_LINKPAGE = ['link', 'twitch', 'youtube', 'instagram', 'tiktok', 'discord', 'spotify',
   'x', 'telegram', 'kick', 'github', 'reddit', 'threads', 'facebook', 'whatsapp', 'twitter',
   'cuore', 'stella', 'regalo', 'carrello', 'calendario', 'mail', 'musica', 'video', 'scarica', 'gioco', 'caffe', 'soldi'];
-export const TIPI_BLOCCO = ['link', 'titolo', 'testo', 'badge', 'separatore', 'spazio', 'social', 'embed', 'immagine'];
+export const TIPI_BLOCCO = ['link', 'titolo', 'testo', 'badge', 'separatore', 'spazio', 'social', 'embed', 'immagine', 'diretta'];
+// Come si incorpora un contenuto: 'auto' lo decide il provider (un brano Spotify
+// è basso, uno short è verticale, un video è 16:9), gli altri li forza chi
+// costruisce la pagina.
+export const FORMATI_EMBED = ['auto', 'video', 'quadrato', 'verticale', 'alto', 'compatto'];
+// Blocco "diretta": il player del canale sempre presente. Così non serve
+// accendere e spegnere un "sono live": quando la diretta parte si vede, quando
+// è finita il player mostra da sé che il canale è offline.
+export const PIATTAFORME_DIRETTA = ['twitch', 'kick', 'youtube'];
 export const LIMITI_LINKPAGE = {
   headline: 80, tagline: 200, label: 60, sotto: 90, url: 500,
   blocchi: 40, social: 12, testo: 500, titolo: 60,
@@ -1352,7 +1360,17 @@ export const linkPage = {
         });
         out.push({ tipo, voci });
       } else if (tipo === 'embed') {
-        out.push({ tipo, url: urlOk(b.url) });
+        out.push({ tipo, url: urlOk(b.url), formato: scelta(b.formato, FORMATI_EMBED, 'auto'),
+          titolo: str(b.titolo, L.label) });
+      } else if (tipo === 'diretta') {
+        // il nome del canale, non un indirizzo: il player lo costruiamo noi.
+        // Vuoto = il canale di chi possiede la pagina.
+        const canale = String(b.canale || '').trim().replace(/^.*\//, '').slice(0, 60);
+        out.push({ tipo,
+          piattaforma: scelta(b.piattaforma, PIATTAFORME_DIRETTA, 'twitch'),
+          canale: /^[\w.-]{0,60}$/.test(canale) ? canale : '',
+          chat: b.chat === true, autoplay: b.autoplay === true, muto: b.muto !== false,
+          titolo: str(b.titolo, L.label) });
       } else if (tipo === 'immagine') {
         out.push({ tipo, url: urlOk(b.url), alt: str(b.alt, 140) });
       }
