@@ -913,6 +913,16 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .prova-banner h2 { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
 .prova-banner .badge { background: var(--acc-soft); color: var(--acc); border: 1px solid var(--acc-bordo); font-size: .74rem; font-weight: 700; padding: .16rem .5rem; border-radius: 999px; }
 
+/* griglia per scegliere l'icona VEDENDOLA (invece di un menu coi nomi) */
+.lp-icone { display: flex; flex-wrap: wrap; gap: .25rem; margin-top: .3rem; }
+.lp-ipick { width: 2rem; height: 2rem; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border); border-radius: 8px; background: var(--surface); cursor: pointer;
+  color: var(--testo-2); transition: transform .14s var(--ease-back), border-color .14s ease; }
+.lp-ipick:hover { transform: translateY(-1px); border-color: var(--acc-bordo); }
+.lp-ipick.sel { border-color: var(--acc); background: var(--acc-soft); box-shadow: 0 0 0 1px var(--acc); }
+.lp-icone.piccole .lp-ipick { width: 1.65rem; height: 1.65rem; }
+.lp-prev { max-width: 100%; max-height: 8rem; border-radius: var(--r-s); border: 1px solid var(--border); display: block; margin-bottom: .4rem; }
+
 /* Editor della pagina link: comandi a sinistra, anteprima dal vivo a destra */
 .lp-editor { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; gap: 1.1rem; align-items: start; }
 .lp-comandi { min-width: 0; display: flex; flex-direction: column; gap: .6rem; }

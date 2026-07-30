@@ -55,7 +55,11 @@ function toast(msg, tipo = 'ok') {
 async function api(percorso, opzioni = {}) {
   if (DEMO) return apiDemo(percorso, opzioni);   // demo: nessuna chiamata reale
   const opts = { headers: {}, ...opzioni };
-  if (opts.body !== undefined && typeof opts.body !== 'string') {
+  // FormData va lasciato passare INTATTO: il browser deve mettere da sé il
+  // Content-Type col boundary. Stringificarlo mandava al server la stringa
+  // "[object FormData]" e l'upload non arrivava mai.
+  const multipart = typeof FormData !== 'undefined' && opts.body instanceof FormData;
+  if (opts.body !== undefined && typeof opts.body !== 'string' && !multipart) {
     opts.headers['Content-Type'] = 'application/json';
     opts.body = JSON.stringify(opts.body);
   }
@@ -5973,40 +5977,49 @@ async function caricaSottoscrizione() {
   });
 }
 
-// Icone della pagina link: le STESSE del renderer (src/features/linkpagina.js),
-// SVG a tratto. Niente emoji: cambiano forma su ogni sistema, non si colorano e
-// su una pagina che deve sembrare tua sono un difetto, non una scorciatoia.
-const LP_ICO = {
-  link: '<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.8 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.8-1.7"/>',
-  twitch: '<path d="M4 3h16v11l-4 4h-3l-3 3H8v-3H4z"/><path d="M11 8v4"/><path d="M15 8v4"/>',
-  youtube: '<rect x="2" y="5" width="20" height="14" rx="4"/><path d="M10 9.5l5 2.5-5 2.5z"/>',
-  instagram: '<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17" cy="7" r="1" fill="currentColor" stroke="none"/>',
-  tiktok: '<path d="M14 4v9a4 4 0 1 1-4-4"/><path d="M14 4a5 5 0 0 0 5 5"/>',
-  discord: '<path d="M8 5.5C6 6 4.5 7 4 8.5 2.8 12 3 16 4.5 18c1 1 2.5 1.5 3.5 1L9 17"/><path d="M16 5.5c2 .5 3.5 1.5 4 3 1.2 3.5 1 7.5-.5 9.5-1 1-2.5 1.5-3.5 1L15 17"/><circle cx="9.5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="14.5" cy="12" r="1.2" fill="currentColor" stroke="none"/>',
-  spotify: '<circle cx="12" cy="12" r="9"/><path d="M7.5 9.5c3-1 6.5-.6 9 1"/><path d="M8 13c2.5-.8 5.3-.5 7.4.9"/><path d="M8.5 16c2-.6 4.2-.4 5.9.7"/>',
-  x: '<path d="M4 4l16 16"/><path d="M20 4L4 20"/>',
-  twitter: '<path d="M22 5.9c-.7.3-1.5.6-2.3.7A4 4 0 0 0 12 9.5v1A11 11 0 0 1 3 5s-4 9 5 13a11 11 0 0 1-6 1.5c9 5 20 0 20-11.5 0-.3 0-.6-.1-.8A7.7 7.7 0 0 0 22 5.9z"/>',
-  telegram: '<path d="M21 4L3 11l5 2 2 6 3-4 5 4z"/><path d="M8 13l10-6"/>',
-  kick: '<path d="M4 4h4v5h2V6h2V4h6v6h-2v4h2v6h-6v-2h-2v-3H8v5H4z"/>',
-  github: '<path d="M9 19c-4 1.5-4-2.5-6-3m12 5v-3.9a3.4 3.4 0 0 0-1-2.6c3-.3 5-1.6 5-6a4.7 4.7 0 0 0-1.3-3.3 3.5 3.5 0 0 0-.1-3.4S16.5.9 14 2.7a10 10 0 0 0-5 0C6.5.9 5.4 1.8 5.4 1.8a3.5 3.5 0 0 0-.1 3.4A4.7 4.7 0 0 0 4 8.5c0 4.4 2 5.7 5 6a3.4 3.4 0 0 0-1 2.6V21"/>',
-  reddit: '<circle cx="12" cy="13" r="7"/><circle cx="18.5" cy="6.5" r="2"/><path d="M12 6l1-3 4 1.5"/><circle cx="9.5" cy="12.5" r="1" fill="currentColor" stroke="none"/><circle cx="14.5" cy="12.5" r="1" fill="currentColor" stroke="none"/><path d="M9.5 16a4 4 0 0 0 5 0"/>',
-  threads: '<path d="M16 8.5c-1-1.5-2.4-2-4-2-3.5 0-5.5 2.5-5.5 5.5S8.5 17.5 12 17.5c2.6 0 4.3-1.4 4.3-3.2 0-1.6-1.3-2.6-3.3-2.6-1.5 0-2.5.7-2.5 1.7"/><circle cx="12" cy="12" r="9.5"/>',
-  facebook: '<path d="M14 8h3V4.5h-3a4 4 0 0 0-4 4V11H7.5v3.5H10V21h3.5v-6.5H16l.5-3.5H13.5V9a1 1 0 0 1 .5-1z"/>',
-  whatsapp: '<path d="M21 12a9 9 0 0 1-13.3 7.9L3 21l1.2-4.5A9 9 0 1 1 21 12z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5.6 0 1-.4 1-1l-1.3-.8-1 .8a5 5 0 0 1-2-2l.8-1L11 9.5c-.6 0-1 .4-2 0z"/>',
-  cuore: '<path d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5C2 10.8 3.5 12.5 5 14l7 7z"/>',
-  stella: '<path d="M12 3l2.9 6 6.6.9-4.8 4.6 1.2 6.5-5.9-3.2-5.9 3.2 1.2-6.5L2.5 9.9 9.1 9z"/>',
-  regalo: '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/>',
-  carrello: '<circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11L21 7H6"/>',
-  calendario: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/>',
-  mail: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
-  musica: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
-  video: '<rect x="2" y="6" width="14" height="12" rx="2"/><path d="m22 8-6 4 6 4V8Z"/>',
-  scarica: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 11 5 5 5-5"/><path d="M12 4v12"/>',
-  gioco: '<line x1="6" x2="10" y1="11" y2="11"/><line x1="8" x2="8" y1="9" y2="13"/><circle cx="16" cy="11.5" r="1" fill="currentColor" stroke="none"/><circle cx="18" cy="13.5" r="1" fill="currentColor" stroke="none"/><rect x="2" y="7" width="20" height="10" rx="5"/>',
-  caffe: '<path d="M17 8h1a3 3 0 0 1 0 6h-1"/><path d="M3 8h14v6a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5z"/><path d="M3 21h14"/>',
-  soldi: '<circle cx="12" cy="12" r="9"/><path d="M12 7v10"/><path d="M15 9.5c0-1.2-1.3-2-3-2s-3 .8-3 2 1.3 1.8 3 2.2 3 1 3 2.3-1.3 2-3 2-3-.8-3-2"/>',
+// Icone della pagina link: le STESSE del renderer (src/features/linkpagina.js).
+// ── Icone: sagome PIENE, non contorni ──────────────────────────────────────
+// Prima erano tracciati sottili a 1.8px: a 20 pixel diventavano scarabocchi
+// illeggibili. Le sagome piene si riconoscono a colpo d'occhio, e ogni brand
+// porta il SUO colore (Twitch viola, YouTube rosso…): è quello che rende
+// un'icona riconoscibile, più della precisione del disegno.
+// `c` = colore del brand ('' = usa il colore del tema).
+const MARCHI = {
+  link:       { c: '', d: 'M9.5 13.5a4.5 4.5 0 0 0 6.4.4l2.7-2.7a4.5 4.5 0 0 0-6.4-6.4l-1.5 1.5 1.5 1.5 1.5-1.5a2.3 2.3 0 0 1 3.3 3.3l-2.7 2.7a2.3 2.3 0 0 1-3.3 0zM14.5 10.5a4.5 4.5 0 0 0-6.4-.4l-2.7 2.7a4.5 4.5 0 0 0 6.4 6.4l1.5-1.5-1.5-1.5-1.5 1.5a2.3 2.3 0 0 1-3.3-3.3l2.7-2.7a2.3 2.3 0 0 1 3.3 0z' },
+  twitch:     { c: '#9146FF', d: 'M11.6 4.7h1.7v5.2h-1.7zm4.7 0H18v5.2h-1.7zM6 0 1.7 4.3v15.4h5.2V24l4.3-4.3h3.4L22.3 12V0zm14.6 11.1-3.5 3.5h-3.4l-3 3v-3H6.9V1.7h13.7z' },
+  youtube:    { c: '#FF0000', d: 'M21.6 7.2a2.8 2.8 0 0 0-2-2C17.9 4.8 12 4.8 12 4.8s-5.9 0-7.6.4a2.8 2.8 0 0 0-2 2A29 29 0 0 0 2 12a29 29 0 0 0 .4 4.8 2.8 2.8 0 0 0 2 2c1.7.4 7.6.4 7.6.4s5.9 0 7.6-.4a2.8 2.8 0 0 0 2-2A29 29 0 0 0 22 12a29 29 0 0 0-.4-4.8M9.8 15.4V8.6l5.9 3.4z' },
+  instagram:  { c: '#E4405F', d: 'M12 2.2c3.2 0 3.6 0 4.9.1 1.2 0 1.8.3 2.2.4.6.2 1 .5 1.4 1 .5.4.8.8 1 1.4.1.4.4 1 .4 2.2.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c0 1.2-.3 1.8-.4 2.2-.2.6-.5 1-1 1.4-.4.5-.8.8-1.4 1-.4.1-1 .4-2.2.4-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2 0-1.8-.3-2.2-.4-.6-.2-1-.5-1.4-1-.5-.4-.8-.8-1-1.4-.1-.4-.4-1-.4-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.9c0-1.2.3-1.8.4-2.2.2-.6.5-1 1-1.4.4-.5.8-.8 1.4-1 .4-.1 1-.4 2.2-.4C8.4 2.2 8.8 2.2 12 2.2m0 6.6a3.2 3.2 0 1 0 0 6.4 3.2 3.2 0 0 0 0-6.4m0-1.8a5 5 0 1 1 0 10 5 5 0 0 1 0-10m6.4-.2a1.2 1.2 0 1 1-2.4 0 1.2 1.2 0 0 1 2.4 0' },
+  tiktok:     { c: '#FF0050', d: 'M16.6 5.8a5 5 0 0 0 3.4 1.4V10a8 8 0 0 1-3.8-1v6.1a6 6 0 1 1-6-6h.8v3a3 3 0 1 0 2.1 2.9V.9h3a5 5 0 0 0 .5 2.1 5 5 0 0 0 0 2.8' },
+  discord:    { c: '#5865F2', d: 'M19.5 5A16 16 0 0 0 15.6 3.8l-.3.6a12 12 0 0 0-6.6 0l-.3-.6A16 16 0 0 0 4.5 5C2 8.7 1.3 12.3 1.6 15.9a16 16 0 0 0 4.9 2.5l.6-1a10 10 0 0 1-1.6-.8l.4-.3a11 11 0 0 0 9.4 0l.4.3a10 10 0 0 1-1.6.8l.6 1a16 16 0 0 0 4.9-2.5c.4-4.2-.6-7.8-2.1-10.9M8.6 13.7c-.9 0-1.7-.9-1.7-1.9s.7-1.9 1.7-1.9 1.7.9 1.7 1.9-.7 1.9-1.7 1.9m6.8 0c-.9 0-1.7-.9-1.7-1.9s.7-1.9 1.7-1.9 1.7.9 1.7 1.9-.7 1.9-1.7 1.9' },
+  spotify:    { c: '#1DB954', d: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20m4.6 14.4a.8.8 0 0 1-1.1.3c-3-1.8-6.8-2.2-11.2-1.2a.8.8 0 0 1-.3-1.5c4.8-1.1 9-.6 12.3 1.4a.8.8 0 0 1 .3 1m1.2-2.7a1 1 0 0 1-1.3.3c-3.4-2.1-8.6-2.7-12.6-1.5a1 1 0 1 1-.5-1.8c4.6-1.4 10.3-.7 14.2 1.7a1 1 0 0 1 .2 1.3m.1-2.8C14 8.6 7.5 8.4 3.9 9.5a1.2 1.2 0 1 1-.7-2.3C7.4 6 14.5 6.2 18.7 8.7a1.2 1.2 0 0 1-1.2 2.1' },
+  x:          { c: '', d: 'M18.9 2h3.3l-7.2 8.3L23.3 22h-6.8l-5.3-7-6.1 7H1.8l7.6-8.7L1.3 2h6.9l5 6.6zm-1.2 18h1.8L6.4 3.9H4.4z' },
+  twitter:    { c: '#1DA1F2', d: 'M22 5.9a8 8 0 0 1-2.4.6 4 4 0 0 0 1.8-2.2 8 8 0 0 1-2.5 1A4 4 0 0 0 12 8.6a11 11 0 0 1-8-4 4 4 0 0 0 1.2 5.3 4 4 0 0 1-1.8-.5 4 4 0 0 0 3.2 3.9 4 4 0 0 1-1.8.1 4 4 0 0 0 3.7 2.8A8 8 0 0 1 2 17.9a11 11 0 0 0 17-9.5A8 8 0 0 0 22 5.9' },
+  telegram:   { c: '#26A5E4', d: 'M22.1 3.2 2.3 10.9c-1 .4-1 1.4-.2 1.7l4.8 1.5 1.9 5.8c.2.6.4.8 1 .8.4 0 .6-.2.9-.4l2.4-2.3 4.9 3.6c.9.5 1.5.2 1.7-.8l3.1-14.7c.3-1.2-.4-1.8-1.7-1.3M9.4 14.3l9-5.7-8.2 7.4z' },
+  kick:       { c: '#53FC18', d: 'M3 3h5.4v5.4h2.7V5.7h2.7V3h5.4v5.4h-2.7v2.7h-2.7v1.8h2.7v2.7h2.7V21h-5.4v-2.7h-2.7v-2.7H8.4V21H3z' },
+  github:     { c: '', d: 'M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1-.7 0-.7 0-.7 1.2.1 1.9 1.2 1.9 1.2 1 1.8 2.8 1.3 3.5 1a2.6 2.6 0 0 1 .7-1.6c-2.7-.3-5.5-1.3-5.5-6 0-1.2.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11 11 0 0 1 6 0C17.1 4.8 18.1 5 18.1 5c.7 1.7.3 3 .1 3.2a4.5 4.5 0 0 1 1.2 3.1c0 4.7-2.8 5.7-5.5 6 .4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3' },
+  reddit:     { c: '#FF4500', d: 'M22 12a2.2 2.2 0 0 0-3.7-1.5 10.8 10.8 0 0 0-5.8-1.8l1.1-3.7 3.2.7a1.6 1.6 0 1 0 .2-1.5l-4-.9-1.5 5.4a10.8 10.8 0 0 0-5.7 1.8A2.2 2.2 0 1 0 3 14.3a4 4 0 0 0 0 .6c0 3.2 3.9 5.8 8.7 5.8s8.7-2.6 8.7-5.8a4 4 0 0 0 0-.6A2.2 2.2 0 0 0 22 12M8.5 14a1.4 1.4 0 1 1 1.4-1.4A1.4 1.4 0 0 1 8.5 14m6.6 3.6a5.9 5.9 0 0 1-3.4.9 5.9 5.9 0 0 1-3.4-.9.6.6 0 0 1 .8-.8 4.8 4.8 0 0 0 2.6.6 4.8 4.8 0 0 0 2.6-.6.6.6 0 0 1 .8.8m-.2-3.6a1.4 1.4 0 1 1 1.4-1.4 1.4 1.4 0 0 1-1.4 1.4' },
+  threads:    { c: '', d: 'M17.1 11.1a6.5 6.5 0 0 0-.3-.1c-.3-2.6-1.7-4-4.1-4a4.2 4.2 0 0 0-3.7 1.8l1.5 1a2.6 2.6 0 0 1 2.2-1c1.3 0 2.2.5 2.5 2a11 11 0 0 0-2.4-.1c-2.4.1-4 1.5-3.8 3.5.1 1 .6 1.8 1.5 2.4a4.6 4.6 0 0 0 2.6.6c1.4-.1 2.4-.7 3.1-1.7a5 5 0 0 0 .8-2.3c.9.5 1.5 1.3 1.7 2.2.3 1.6-.5 3.6-2.1 4.7-1.4 1-3.2 1.4-5.5 1.4-2.5 0-4.4-.8-5.6-2.4C4.1 17.7 3.5 15.4 3.5 12s.6-5.7 1.9-7.3C6.6 3.1 8.5 2.3 11 2.3c2.6 0 4.5.8 5.8 2.4a8 8 0 0 1 1.4 3l1.8-.5a10 10 0 0 0-1.8-3.7C16.5 1.4 14.1.4 11 .4h-.1C7.9.4 5.6 1.4 4 3.4 2.5 5.2 1.7 7.9 1.7 12s.8 6.8 2.3 8.6c1.6 2 3.9 3 7.1 3h.1c2.8 0 4.9-.8 6.6-2.1 2.2-1.7 3-4.5 2.6-6.6-.4-1.8-1.4-3.1-3.3-3.8m-3.5 4.7c-1.1.1-2.2-.4-2.3-1.4-.1-.8.5-1.6 2.3-1.7h.6c.7 0 1.3.1 1.9.2-.2 2.4-1.4 2.8-2.5 2.9' },
+  facebook:   { c: '#1877F2', d: 'M24 12a12 12 0 1 0-13.9 11.9v-8.4H7.1V12h3V9.4c0-3 1.8-4.6 4.5-4.6a18 18 0 0 1 2.7.2v3h-1.5c-1.5 0-1.9.9-1.9 1.8V12h3.3l-.5 3.5h-2.8v8.4A12 12 0 0 0 24 12' },
+  whatsapp:   { c: '#25D366', d: 'M17.5 14.4c-.3-.2-1.9-.9-2.2-1s-.5-.2-.7.1l-1 1.2c-.2.2-.4.3-.7.1a9 9 0 0 1-2.6-1.6 10 10 0 0 1-1.8-2.2c-.2-.3 0-.5.1-.6l.7-.8c.2-.2.1-.4 0-.6l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4a3.5 3.5 0 0 0-1.1 2.6 6 6 0 0 0 1.3 3.3 13 13 0 0 0 5.4 4.7c2.6 1 3.1.8 3.7.7a3.2 3.2 0 0 0 2.1-1.5c.3-.6.3-1.1.2-1.2s-.2-.2-.3-.2M12 22a10 10 0 0 1-5.1-1.4L2 22l1.5-4.6A10 10 0 1 1 12 22m0-22a12 12 0 0 0-10.3 18L0 24l6.3-1.6A12 12 0 1 0 12 0' },
+  cuore:      { c: '#e0245e', d: 'M12 21.6 10.5 20C5.2 15.2 2 12.3 2 8.6A5.4 5.4 0 0 1 7.4 3.2c1.7 0 3.3.8 4.6 2.2A6 6 0 0 1 16.6 3.2 5.4 5.4 0 0 1 22 8.6c0 3.7-3.2 6.6-8.5 11.4z' },
+  stella:     { c: '#f5b301', d: 'M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5-5.9-3.2-5.9 3.2 1.2-6.5L2.5 9.4l6.6-.9z' },
+  regalo:     { c: '', d: 'M20 7h-2.2a3 3 0 0 0-.4-3.6A3 3 0 0 0 12 4.4 3 3 0 0 0 6.6 3.4 3 3 0 0 0 6.2 7H4a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h1v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8h1a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1m-6.6-2.4a1.2 1.2 0 1 1 1.7 1.7 5 5 0 0 1-1.9.7 5 5 0 0 1 .2-2.4m-5.5 0a1.2 1.2 0 0 1 1.7 0 5 5 0 0 1 .8 2.4 5 5 0 0 1-2.5-.7 1.2 1.2 0 0 1 0-1.7M11 20H7v-8h4zm6 0h-4v-8h4z' },
+  carrello:   { c: '', d: 'M7 18a2 2 0 1 0 0 4 2 2 0 0 0 0-4m10 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4M7.2 14.8h11.3a1 1 0 0 0 1-.8l2-8A1 1 0 0 0 20.5 5H6.2L5.6 2.8A1 1 0 0 0 4.6 2H2v2h1.8l2.9 11.2A1 1 0 0 0 7.2 16h11.3v-1.2z' },
+  calendario: { c: '', d: 'M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2m0 16H5V10h14zm0-12H5V6h14z' },
+  mail:       { c: '', d: 'M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2m0 4.2-8 5-8-5V6l8 5 8-5z' },
+  musica:     { c: '', d: 'M21 3 9 5.2v10.3a4 4 0 1 0 2 3.5V7l8-1.5v7.2a4 4 0 1 0 2 3.5z' },
+  video:      { c: '', d: 'M17 10.5V7a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h13a1 1 0 0 0 1-1v-3.5l5 4v-11z' },
+  scarica:    { c: '', d: 'M12 16 6 10h4V3h4v7h4zm-8 2h16v3H4z' },
+  gioco:      { c: '', d: 'M17.5 7h-11A4.5 4.5 0 0 0 2 11.5 4.5 4.5 0 0 0 6.5 16h11a4.5 4.5 0 0 0 0-9M9 12.5H7.5V14h-2v-1.5H4v-2h1.5V9h2v1.5H9zm5.8 2a1.2 1.2 0 1 1 1.2-1.2 1.2 1.2 0 0 1-1.2 1.2m2.4-3a1.2 1.2 0 1 1 1.2-1.2 1.2 1.2 0 0 1-1.2 1.2' },
+  caffe:      { c: '#FF5E5B', d: 'M18 8h-1V5a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v9a6 6 0 0 0 6 6h3a6 6 0 0 0 5.9-5H18a5 5 0 0 0 0-10m0 8h-1.1a8 8 0 0 0 .1-1v-5h1a3 3 0 0 1 0 6M2 21h14v2H2z' },
+  soldi:      { c: '#1d9e5e', d: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20m1 15.9V19h-2v-1.1c-1.9-.3-3.2-1.4-3.3-3h2c.1.9 1 1.5 2.3 1.5s2.1-.5 2.1-1.3c0-.7-.5-1.1-2.2-1.5-2.4-.5-3.9-1.3-3.9-3.1 0-1.5 1.2-2.6 3-2.9V6.5h2v1.1c1.8.3 3 1.4 3.1 2.9h-2c-.1-.8-.8-1.4-2-1.4s-2 .5-2 1.2c0 .7.6 1 2.3 1.4 2.4.5 3.8 1.3 3.8 3.2 0 1.6-1.2 2.7-3.2 3z' },
 };
-const lpIco = (n, dim = 18) => `<svg viewBox="0 0 24 24" width="${dim}" height="${dim}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${LP_ICO[n] || LP_ICO.link}</svg>`;
+const _mIco = (n, dim = 20) => {
+  const m = MARCHI[n] || MARCHI.link;
+  return `<svg viewBox="0 0 24 24" width="${dim}" height="${dim}" fill="currentColor" aria-hidden="true"${m.c ? ` style="color:${m.c}"` : ''}><path d="${m.d}"/></svg>`;
+};
+
+const lpIco = (n, dim = 20) => _mIco(n, dim);
 
 // Riconosce la piattaforma dall'indirizzo: l'icona giusta arriva da sé.
 const LP_HOST = [[/twitch\.tv$/, 'twitch'], [/youtube\.com$|youtu\.be$/, 'youtube'], [/instagram\.com$/, 'instagram'],
@@ -6105,7 +6118,10 @@ async function caricaPaginaLink() {
             <option value="url"${LP.testa.avatar && LP.testa.avatar !== 'no' ? ' selected' : ''}>${L('Un\'immagine mia (indirizzo)', 'My own image (address)', 'Una imagen mía (dirección)')}</option>
             <option value="no"${LP.testa.avatar === 'no' ? ' selected' : ''}>${L('Nessuna', 'None', 'Ninguna')}</option>
           </select>
-          <input type="url" id="lp-avatar-url" data-lpt="avatarUrl" class="spazio-sopra" maxlength="${d.limiti.url}" value="${esc(LP.testa.avatar && LP.testa.avatar !== 'no' ? LP.testa.avatar : '')}" placeholder="https://…" ${LP.testa.avatar && LP.testa.avatar !== 'no' ? '' : 'hidden'}>
+          <div id="lp-avatar-box" ${LP.testa.avatar && LP.testa.avatar !== 'no' ? '' : 'hidden'}>
+            <p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpup="avatar">${_bIco(ICO.carica)}${L('Carica una foto', 'Upload a photo', 'Subir una foto')}</button></p>
+            <input type="url" id="lp-avatar-url" data-lpt="avatarUrl" class="spazio-sopra" maxlength="${d.limiti.url}" value="${esc(LP.testa.avatar && LP.testa.avatar !== 'no' ? LP.testa.avatar : '')}" placeholder="${esc(L('…oppure incolla un indirizzo', '…or paste an address', '…o pega una dirección'))}">
+          </div>
         </details>
 
         <details class="carta sez" open>
@@ -6122,7 +6138,7 @@ async function caricaPaginaLink() {
           </div>
         </details>
 
-        <details class="carta sez">
+        <details class="carta sez" open>
           <summary><h3>${L('Aspetto', 'Look', 'Aspecto')}</h3></summary>
           <label class="campo" for="lp-stile">${L('Stile di partenza', 'Starting style', 'Estilo de partida')}</label>
           <select id="lp-stile" data-lpt="template">${opts(d.templates || [], LP.testa.template, NOMI_STILE)}</select>
@@ -6237,9 +6253,9 @@ async function caricaPaginaLink() {
     } else if (tt === 'headline' || tt === 'tagline' || tt === 'template') {
       LP.testa[tt] = t.value;
     } else if (tt === 'avatarModo') {
-      const inp = box.querySelector('#lp-avatar-url');
-      if (t.value === 'url') { inp.hidden = false; LP.testa.avatar = inp.value || ''; }
-      else { inp.hidden = true; LP.testa.avatar = t.value === 'no' ? 'no' : ''; }
+      const cassetto = box.querySelector('#lp-avatar-box'); const inp = box.querySelector('#lp-avatar-url');
+      if (t.value === 'url') { cassetto.hidden = false; LP.testa.avatar = inp.value || ''; }
+      else { cassetto.hidden = true; LP.testa.avatar = t.value === 'no' ? 'no' : ''; }
     } else if (tt === 'avatarUrl') {
       LP.testa.avatar = t.value;
     } else if (t.dataset.lpb !== undefined) {
@@ -6263,6 +6279,34 @@ async function caricaPaginaLink() {
     LP.blocchi.push(nuovo);
     lpRenderBlocchi(); lpAnteprima();
   };
+
+  // Caricamento immagini: un vero selettore di file. Chiedere un "indirizzo"
+  // a chi ha la foto nel telefono non e una richiesta sensata.
+  box.addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-lpup]'); if (!b) return;
+    const dove = b.dataset.lpup;
+    const f = document.createElement('input');
+    f.type = 'file'; f.accept = 'image/png,image/jpeg,image/webp,image/gif';
+    f.onchange = () => conErrore(async () => {
+      const file = f.files?.[0]; if (!file) return;
+      const fd = new FormData(); fd.append('file', file);
+      b.disabled = true;
+      try {
+        const r = await api('/api/linkpage/immagine', { method: 'POST', body: fd });
+        if (!r?.url) throw new Error(L('Caricamento non riuscito.', 'Upload failed.', 'Subida fallida.'));
+        if (dove === 'avatar') {
+          LP.testa.avatar = r.url;
+          const inp = document.getElementById('lp-avatar-url'); if (inp) inp.value = r.url;
+        } else {
+          const i = Number(dove); if (LP.blocchi[i]) LP.blocchi[i].url = r.url;
+          lpRenderBlocchi();
+        }
+        toast(L('Immagine caricata ✓', 'Image uploaded ✓', 'Imagen subida ✓'));
+        lpAnteprima();
+      } finally { b.disabled = false; }
+    });
+    f.click();
+  });
 
   document.getElementById('lp-salva').onclick = () => conErrore(async () => {
     const r = await api('/api/linkpage', { method: 'POST', body: {
@@ -6323,7 +6367,10 @@ function lpRenderBlocchi() {
     titolo: L('Titolo di sezione', 'Section heading', 'Título de sección'), testo: L('Testo', 'Text', 'Texto'),
     immagine: L('Immagine', 'Image', 'Imagen'), embed: L('Video / musica', 'Video / music', 'Vídeo / música'),
     separatore: L('Riga divisoria', 'Divider', 'Separador') };
-  const opzIcone = (sel) => (d.icone || []).map((k) => `<option value="${esc(k)}"${k === sel ? ' selected' : ''}>${esc(k)}</option>`).join('');
+  // Griglia di icone: si scelgono VEDENDOLE. Un menu a tendina coi nomi
+  // ("caffe", "soldi") non dice nulla di come verranno.
+  const grigliaIcone = (i, sel) => `<div class="lp-icone">` + (d.icone || []).map((k) =>
+    `<button type="button" class="lp-ipick${k === sel ? ' sel' : ''}" data-lpico="${esc(k)}" data-lpb="${i}" title="${esc(k)}">${lpIco(k, 17)}</button>`).join('') + `</div>`;
 
   cont.innerHTML = LP.blocchi.map((b, i) => {
     let campi = '';
@@ -6335,17 +6382,17 @@ function lpRenderBlocchi() {
         </div>
         <input type="url" class="spazio-sopra" data-lpb="${i}" data-lpf="url" maxlength="${d.limiti.url}" value="${esc(b.url || '')}" placeholder="https://twitch.tv/iltuonome">
         <input type="text" class="spazio-sopra" data-lpb="${i}" data-lpf="sotto" maxlength="${d.limiti.sotto}" value="${esc(b.sotto || '')}" placeholder="${esc(L('Riga sotto (facoltativa)', 'Sub-line (optional)', 'Línea inferior (opcional)'))}">
-        <div class="griglia-campi spazio-sopra">
-          <div><label class="campo">${L('Icona', 'Icon', 'Icono')}</label><select data-lpb="${i}" data-lpf="icona">${opzIcone(b.icona)}</select></div>
-          <div><label class="riga-check" style="margin-top:1.5rem"><input type="checkbox" data-lpb="${i}" data-lpf="evidenzia"${b.evidenzia ? ' checked' : ''}> ${L('In evidenza', 'Highlighted', 'Destacado')}</label></div>
-        </div>`;
+        <label class="campo spazio-sopra">${L('Icona', 'Icon', 'Icono')}</label>
+        ${grigliaIcone(i, b.icona)}
+        <label class="riga-check spazio-sopra"><input type="checkbox" data-lpb="${i}" data-lpf="evidenzia"${b.evidenzia ? ' checked' : ''}> ${L('In evidenza (bottone pieno, colore principale)', 'Highlighted (filled button, accent colour)', 'Destacado (botón relleno, color principal)')}</label>`;
     } else if (b.tipo === 'social') {
       campi = (b.voci || []).map((v, j) => `
         <div class="lp-riga2 spazio-sopra">
           <span class="lp-bico">${lpIco(v.icona)}</span>
-          <input type="url" data-lpb="${i}" data-lpv="${j}" data-lpf="voceUrl" maxlength="${d.limiti.url}" value="${esc(v.url || '')}" placeholder="https://instagram.com/…">
+          <input type="url" data-lpb="${i}" data-lpv="${j}" data-lpf="voceUrl" maxlength="${d.limiti.url}" value="${esc(v.url || '')}" placeholder="instagram.com/tuonome">
           <button type="button" class="btn secondario mini" data-lpsoc="via" data-lpb="${i}" data-lpv="${j}" title="${L('Togli', 'Remove', 'Quitar')}">${_lpVia}</button>
-        </div>`).join('')
+        </div>
+        <div class="lp-icone piccole">${(d.icone || []).map((k) => `<button type="button" class="lp-ipick${k === v.icona ? ' sel' : ''}" data-lpico="${esc(k)}" data-lpb="${i}" data-lpv="${j}" title="${esc(k)}">${lpIco(k, 15)}</button>`).join('')}</div>`).join('')
         + `<p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpsoc="piu" data-lpb="${i}">${_bIco(ICO.piu)}${L('Aggiungi social', 'Add social', 'Añadir red')}</button></p>
            <p class="suggerimento">${L('Icone piccole in fila. L\'icona la riconosco dall\'indirizzo.', 'Small icons in a row. I detect the icon from the address.', 'Iconos pequeños en fila. El icono lo reconozco por la dirección.')}</p>`;
     } else if (b.tipo === 'titolo' || b.tipo === 'testo') {
@@ -6354,7 +6401,9 @@ function lpRenderBlocchi() {
         ? `<textarea data-lpb="${i}" data-lpf="testo" rows="3" maxlength="${max}" placeholder="${esc(L('Scrivi qui', 'Write here', 'Escribe aquí'))}">${esc(b.testo || '')}</textarea>`
         : `<input type="text" data-lpb="${i}" data-lpf="testo" maxlength="${max}" value="${esc(b.testo || '')}" placeholder="${esc(L('es. I MIEI SOCIAL', 'e.g. MY SOCIALS', 'p. ej. MIS REDES'))}">`;
     } else if (b.tipo === 'immagine') {
-      campi = `<input type="url" data-lpb="${i}" data-lpf="url" maxlength="${d.limiti.url}" value="${esc(b.url || '')}" placeholder="https://…/foto.jpg">
+      campi = `${b.url ? `<img class="lp-prev" src="${esc(b.url)}" alt="">` : ''}
+        <p><button type="button" class="btn secondario mini" data-lpup="${i}">${_bIco(ICO.carica)}${L('Carica un\'immagine', 'Upload an image', 'Subir una imagen')}</button></p>
+        <input type="url" class="spazio-sopra" data-lpb="${i}" data-lpf="url" maxlength="${d.limiti.url}" value="${esc(b.url || '')}" placeholder="${esc(L('…oppure incolla un indirizzo', '…or paste an address', '…o pega una dirección'))}">
         <input type="text" class="spazio-sopra" data-lpb="${i}" data-lpf="alt" maxlength="140" value="${esc(b.alt || '')}" placeholder="${esc(L('Descrizione per chi non vede l\'immagine', 'Description for people who can’t see it', 'Descripción para quien no la ve'))}">`;
     } else if (b.tipo === 'embed') {
       campi = `<input type="url" data-lpb="${i}" data-lpf="url" maxlength="${d.limiti.url}" value="${esc(b.url || '')}" placeholder="https://youtube.com/watch?v=…">
@@ -6384,6 +6433,13 @@ function lpRenderBlocchi() {
       else if (op.dataset.lpop === 'dup' && LP.blocchi.length < (LP.d?.limiti?.blocchi || 40)) LP.blocchi.splice(i + 1, 0, JSON.parse(JSON.stringify(LP.blocchi[i])));
       else if (op.dataset.lpop === 'su' && i > 0) LP.blocchi.splice(i - 1, 0, LP.blocchi.splice(i, 1)[0]);
       else if (op.dataset.lpop === 'giu' && i < LP.blocchi.length - 1) LP.blocchi.splice(i + 1, 0, LP.blocchi.splice(i, 1)[0]);
+      lpRenderBlocchi(); lpAnteprima(); return;
+    }
+    const ip = ev.target.closest('[data-lpico]');
+    if (ip) {
+      const i = Number(ip.dataset.lpb); const b = LP.blocchi[i]; if (!b) return;
+      if (ip.dataset.lpv !== undefined) { const j = Number(ip.dataset.lpv); if (b.voci?.[j]) b.voci[j].icona = ip.dataset.lpico; }
+      else { b.icona = ip.dataset.lpico; b._icoManuale = true; }   // scelta a mano: non la sovrascrivo dall'url
       lpRenderBlocchi(); lpAnteprima(); return;
     }
     const so = ev.target.closest('[data-lpsoc]');

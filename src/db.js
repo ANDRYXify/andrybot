@@ -1206,7 +1206,7 @@ export const FONT_LINKPAGE = ['system', 'inter', 'mono', 'serif', 'condensato', 
 export const ICONE_LINKPAGE = ['link', 'twitch', 'youtube', 'instagram', 'tiktok', 'discord', 'spotify',
   'x', 'telegram', 'kick', 'github', 'reddit', 'threads', 'facebook', 'whatsapp', 'twitter',
   'cuore', 'stella', 'regalo', 'carrello', 'calendario', 'mail', 'musica', 'video', 'scarica', 'gioco', 'caffe', 'soldi'];
-export const TIPI_BLOCCO = ['link', 'titolo', 'testo', 'separatore', 'social', 'embed', 'immagine'];
+export const TIPI_BLOCCO = ['link', 'titolo', 'testo', 'badge', 'separatore', 'spazio', 'social', 'embed', 'immagine'];
 export const LIMITI_LINKPAGE = {
   headline: 80, tagline: 200, label: 60, sotto: 90, url: 500,
   blocchi: 40, social: 12, testo: 500, titolo: 60,
@@ -1284,7 +1284,16 @@ export const linkPage = {
     const L = LIMITI_LINKPAGE;
     const hex = (v) => (/^#[0-9a-f]{3,8}$/i.test(String(v || '')) ? String(v) : '');
     const str = (v, max) => String(v ?? '').trim().slice(0, max);
-    const urlOk = (v) => { const u = String(v || '').trim(); return (/^https?:\/\/[^\s]+\.[^\s]/i.test(u) && u.length <= L.url) ? u : ''; };
+    // Se manca lo schema lo mettiamo noi: chi incolla "twitch.tv/tizio" intende
+    // un indirizzo, non un errore. Scartare la riga era il modo piu rapido di
+    // fargli perdere il lavoro.
+    const urlOk = (v) => {
+      let u = String(v || '').trim();
+      if (!u) return '';
+      if (!/^https?:\/\//i.test(u)) u = 'https://' + u.replace(/^\/+/, '');
+      if (u.length > L.url || !/^https?:\/\/[^\s]+\.[^\s]/i.test(u)) return '';
+      return u;
+    };
     const scelta = (v, ammessi, def) => (ammessi.includes(v) ? v : def);
     const num = (v, min, max, def) => { const n = Number(v); return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.round(n))) : def; };
 
@@ -1304,36 +1313,36 @@ export const linkPage = {
       allinea: scelta(t.allinea, ['centro', 'sinistra'], 'centro'),
     };
 
-    const visti = new Set();
+    // I blocchi si CONSERVANO cosi come sono, anche se incompleti: quello che hai
+    // scritto non si perde MAI salvando. E il renderer della pagina pubblica che
+    // salta i blocchi non pubblicabili (vedi features/linkpagina.js), e l'editor
+    // che te li segnala come "da completare".
     const blocchi = (Array.isArray(d.blocchi) ? d.blocchi : []).reduce((out, b) => {
       if (out.length >= L.blocchi || !b || typeof b !== 'object') return out;
       const tipo = scelta(b.tipo, TIPI_BLOCCO, null);
       if (!tipo) return out;
       if (tipo === 'link') {
-        const url = urlOk(b.url); const label = str(b.label, L.label);
-        if (!url || !label || visti.has(url)) return out;       // niente doppioni
-        visti.add(url);
-        out.push({ tipo, url, label, sotto: str(b.sotto, L.sotto),
-          icona: scelta(b.icona, ICONE_LINKPAGE, null) || iconaDaUrl(url),
-          evidenzia: b.evidenzia === true });
+        const u = urlOk(b.url);
+        out.push({ tipo, url: u, label: str(b.label, L.label), sotto: str(b.sotto, L.sotto),
+          icona: scelta(b.icona, ICONE_LINKPAGE, null) || iconaDaUrl(u), evidenzia: b.evidenzia === true });
       } else if (tipo === 'titolo') {
-        const testo = str(b.testo, L.titolo); if (testo) out.push({ tipo, testo });
+        out.push({ tipo, testo: str(b.testo, L.titolo) });
       } else if (tipo === 'testo') {
-        const testo = str(b.testo, L.testo); if (testo) out.push({ tipo, testo });
-      } else if (tipo === 'separatore') {
+        out.push({ tipo, testo: str(b.testo, L.testo) });
+      } else if (tipo === 'badge') {
+        out.push({ tipo, testo: str(b.testo, L.label) });
+      } else if (tipo === 'separatore' || tipo === 'spazio') {
         out.push({ tipo });
       } else if (tipo === 'social') {
-        const voci = (Array.isArray(b.voci) ? b.voci : []).reduce((v, s) => {
-          if (v.length >= L.social) return v;
-          const url = urlOk(s?.url); if (!url) return v;
-          v.push({ url, icona: scelta(s?.icona, ICONE_LINKPAGE, null) || iconaDaUrl(url) });
-          return v;
-        }, []);
-        if (voci.length) out.push({ tipo, voci });
+        const voci = (Array.isArray(b.voci) ? b.voci : []).slice(0, L.social).map((sv) => {
+          const u = urlOk(sv?.url);
+          return { url: u, icona: scelta(sv?.icona, ICONE_LINKPAGE, null) || iconaDaUrl(u) };
+        });
+        out.push({ tipo, voci });
       } else if (tipo === 'embed') {
-        const url = urlOk(b.url); if (url) out.push({ tipo, url });
+        out.push({ tipo, url: urlOk(b.url) });
       } else if (tipo === 'immagine') {
-        const url = urlOk(b.url); if (url) out.push({ tipo, url, alt: str(b.alt, 140) });
+        out.push({ tipo, url: urlOk(b.url), alt: str(b.alt, 140) });
       }
       return out;
     }, []);
