@@ -15,23 +15,55 @@
 // linea, nessun font remoto, nessuno script. Tutto il testo passa da esc().
 
 // ── preset: il punto di partenza, poi il tema dell'utente sovrascrive ──
+// Tavolozze. Due criteri, che prima non erano rispettati:
+// 1. i due colori dello sfondo devono essere DAVVERO diversi, altrimenti il
+//    gradiente non si vede e la pagina sembra una tinta piatta slavata;
+// 2. il testo tenue deve restare LEGGIBILE (grigio con dentro un po' del colore
+//    di sfondo, non un grigio lavato che sparisce).
 const PRESET = {
-  minimal:  { bg: '#fafafa', bg2: '#f0f0f3', testo: '#18181b', tenue: '#55555f', card: '#ffffff', bordo: '#e7e7ea', acc: '#6d3bef' },
-  neon:     { bg: '#07060d', bg2: '#140b26', testo: '#f4f2ff', tenue: '#a79fc4', card: 'rgba(255,255,255,.05)', bordo: 'rgba(165,104,255,.35)', acc: '#a568ff' },
-  retro:    { bg: '#f5e9d0', bg2: '#e8d3ad', testo: '#2b2118', tenue: '#6b5943', card: '#fffaf0', bordo: '#d8c3a0', acc: '#c2551f' },
-  sunset:   { bg: '#1b0f2b', bg2: '#4a1d3d', testo: '#fff4ed', tenue: '#d7b3c8', card: 'rgba(255,255,255,.07)', bordo: 'rgba(255,180,140,.3)', acc: '#ff8a5b' },
-  glass:    { bg: '#0e1626', bg2: '#16304d', testo: '#eef4ff', tenue: '#a8bcd8', card: 'rgba(255,255,255,.08)', bordo: 'rgba(255,255,255,.16)', acc: '#5bc8ff' },
-  brutal:   { bg: '#f4f4f0', bg2: '#e6e6e0', testo: '#0a0a0a', tenue: '#4a4a4a', card: '#ffffff', bordo: '#0a0a0a', acc: '#ff4d2d' },
-  pastello: { bg: '#fdf2f8', bg2: '#eef2ff', testo: '#3f3f52', tenue: '#7a7a92', card: '#ffffff', bordo: '#eaddf0', acc: '#c86bb0' },
+  minimal:  { bg: '#ffffff', bg2: '#eceef3', testo: '#0d0d12', tenue: '#4a4a58', card: '#ffffff', bordo: '#dcdce4', acc: '#5b2ee5' },
+  neon:     { bg: '#05040a', bg2: '#1b0b3d', testo: '#f6f3ff', tenue: '#a99ed0', card: 'rgba(255,255,255,.07)', bordo: 'rgba(170,110,255,.42)', acc: '#b072ff' },
+  retro:    { bg: '#f7ecd6', bg2: '#dcbd8e', testo: '#241a12', tenue: '#63503b', card: '#fffbf3', bordo: '#cbb08a', acc: '#c2451a' },
+  sunset:   { bg: '#160b24', bg2: '#5f1f45', testo: '#fff3ec', tenue: '#dcb0c4', card: 'rgba(255,255,255,.09)', bordo: 'rgba(255,170,130,.38)', acc: '#ff7a45' },
+  glass:    { bg: '#080f1c', bg2: '#173a63', testo: '#f0f6ff', tenue: '#a6bdda', card: 'rgba(255,255,255,.10)', bordo: 'rgba(255,255,255,.22)', acc: '#3fc0ff' },
+  brutal:   { bg: '#f5f5ef', bg2: '#e2e2d8', testo: '#000000', tenue: '#3d3d3d', card: '#ffffff', bordo: '#000000', acc: '#ff3b16' },
+  pastello: { bg: '#fff7fb', bg2: '#e6eaff', testo: '#2f2b3d', tenue: '#6a647f', card: '#ffffff', bordo: '#e6d7ea', acc: '#b4489a' },
 };
 
+// Due caratteri, non uno. È l'accoppiata titolo/testo a far sembrare una pagina
+// DISEGNATA invece che scritta: un carattere solo su tutto, alla stessa misura,
+// è il motivo per cui una pagina "non spicca". Nessun font da scaricare — solo
+// quelli già installati — quindi la pagina resta immediata.
+// d = titoli, t = testo corrente.
 const PILE = {
-  system: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-  inter: 'Inter, -apple-system, "Segoe UI", Roboto, sans-serif',
-  mono: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-  serif: 'Georgia, "Times New Roman", Times, serif',
-  condensato: '"Arial Narrow", "Helvetica Neue Condensed", Impact, sans-serif',
-  tondo: 'Verdana, "Trebuchet MS", "Segoe UI", sans-serif',
+  system: {
+    d: 'system-ui, -apple-system, "SF Pro Display", "Segoe UI Variable Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    t: 'system-ui, -apple-system, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+  inter: {
+    d: 'Inter, "Inter Tight", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+    t: 'Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+  },
+  // titoli larghi e squadrati, testo monospaziato: da terminale, ma leggibile
+  mono: {
+    d: 'ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace',
+    t: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+  },
+  // il classico editoriale: titoli con le grazie, testo senza. Sono due voci
+  // diverse, e si sente.
+  serif: {
+    d: '"Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif',
+    t: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+  // titoli stretti e alti (da manifesto), testo normale
+  condensato: {
+    d: '"Oswald", "Haettenschweiler", "Arial Narrow Bold", "Arial Narrow", "Helvetica Neue Condensed", Impact, sans-serif',
+    t: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+  tondo: {
+    d: '"SF Pro Rounded", ui-rounded, "Varela Round", "Trebuchet MS", "Segoe UI", system-ui, sans-serif',
+    t: '"SF Pro Rounded", ui-rounded, "Trebuchet MS", "Segoe UI", system-ui, sans-serif',
+  },
 };
 
 // ── Icone: sagome PIENE, non contorni ──────────────────────────────────────
@@ -560,7 +592,8 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
 <link rel="icon" href="/icons/icon-192.png">
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  :root{--testo:${c.testo};--tenue:${c.tenue};--acc:${c.acc};--r:${raggio}px;--w:${larghezza}rem}
+  :root{--testo:${c.testo};--tenue:${c.tenue};--acc:${c.acc};--r:${raggio}px;--w:${larghezza}rem;
+    --fd:${font.d};--ft:${font.t}}
   html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;overflow-x:hidden}
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
   ::selection{background:var(--acc);color:#fff}
@@ -570,7 +603,7 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   ::-webkit-scrollbar-thumb{background:${c.acc}88;border-radius:9px}
   ::-webkit-scrollbar-track{background:transparent}
   :focus-visible{outline:2px solid var(--acc);outline-offset:3px;border-radius:6px}
-  body{min-height:100dvh;${sfondo};color:var(--testo);font-family:${font};
+  body{min-height:100dvh;${sfondo};color:var(--testo);font-family:var(--ft);
     display:flex;flex-direction:column;align-items:center;
     /* env(safe-area-inset-*): sui telefoni con la tacca e la barra in fondo il
        contenuto non finisce più sotto di esse */
@@ -592,8 +625,14 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   /* sulla FOTO il trucco del bordo sfumato non si può usare (l'immagine ci sta
      sopra): lì l'anello lo fa un'ombra piena */
   img.avatar{background-image:none;border:0;box-shadow:0 0 0 2px ${c.acc},0 6px 22px -8px ${c.acc}80}
-  h1{font-size:clamp(1.35rem,5vw,1.75rem);font-weight:700;letter-spacing:-.02em;margin-top:.9rem;text-wrap:balance}
-  .tag{color:var(--tenue);font-size:.95rem;max-width:26rem;margin-top:.15rem;text-wrap:pretty}
+  /* SCALA TIPOGRAFICA. Prima era tutto vicino: il titolo appena più grande del
+     sottotitolo, il sottotitolo appena più grande delle etichette. Quando ogni
+     cosa pesa uguale, non spicca niente. Qui il salto fra un livello e l'altro
+     è netto, e i titoli usano il carattere da titolo, non quello del testo. */
+  h1,.tit,.eroe-t,.num-n,.marq-in span,.conto-n{font-family:var(--fd)}
+  h1{font-size:clamp(2rem,9vw,3.1rem);font-weight:800;letter-spacing:-.04em;line-height:1;
+    margin-top:1rem;text-wrap:balance}
+  .tag{color:var(--tenue);font-size:1.02rem;line-height:1.45;max-width:30rem;margin-top:.5rem;text-wrap:pretty}
   .lista{width:100%;display:flex;flex-direction:column;gap:.6rem;margin-top:1.5rem;text-align:left}
   .voce{display:flex;align-items:center;gap:.75rem;padding:.9rem 1.05rem;border-radius:var(--r);
     ${stileBtn};${ombra};color:var(--testo);text-decoration:none;font-weight:600;font-size:1rem;
@@ -614,13 +653,22 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   .ico{flex:0 0 auto;display:inline-flex;color:var(--acc)}
   .ico svg{color:var(--bc,currentColor)}
   .tx{flex:1;min-width:0;display:flex;flex-direction:column}
-  .et{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .so{font-size:.8rem;font-weight:400;color:var(--tenue);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .et{font-size:1.02rem;font-weight:650;letter-spacing:-.011em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .so{font-size:.82rem;font-weight:450;color:var(--tenue);margin-top:.1rem;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .fre{flex:0 0 auto;color:var(--acc);font-size:1.3rem;line-height:1;transition:transform .18s ease}
   .voce:hover .fre{transform:translateX(3px)}
-  .tit{width:100%;font-size:.78rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
-    color:var(--tenue);margin-top:1.4rem;text-align:${aSinistra ? 'left' : 'center'}}
-  .par{width:100%;font-size:.92rem;color:var(--tenue);margin-top:.7rem;text-wrap:pretty}
+  /* l'etichetta di sezione: piccola, spaziata, con una lineetta del colore
+     principale davanti — si legge come "qui comincia un'altra cosa" */
+  .tit{width:100%;font-size:.74rem;font-weight:700;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--tenue);margin-top:1.8rem;text-align:${aSinistra ? 'left' : 'center'}}
+  /* in linea, NON flex: dentro il titolo le parole sono già degli span (servono
+     per farle entrare una alla volta) e in un contenitore flex diventerebbero
+     caselle attaccate, senza più gli spazi fra una parola e l'altra */
+  .tit::before{content:'';display:inline-block;vertical-align:middle;width:1.6em;height:.14em;
+    min-height:2px;background:var(--acc);margin-right:.55em;border-radius:2px}
+  .par{width:100%;font-size:.97rem;line-height:1.65;color:var(--tenue);margin-top:.8rem;text-wrap:pretty;
+    max-width:34rem}
   .sep{width:100%;border:0;border-top:1px solid ${c.bordo};margin:1.1rem 0 .3rem}
   .socrow{width:100%;display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem;justify-content:${aSinistra ? 'flex-start' : 'center'}}
   .soc{width:2.7rem;height:2.7rem;border-radius:${raggio >= 900 ? '50%' : 'calc(var(--r) * .8)'};
