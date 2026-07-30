@@ -162,7 +162,9 @@ function embedSrc(u, dom = ['socialbot.live']) {
       const i = String(seg[0] || '').startsWith('intl-') ? 1 : 0;
       const tipo = seg[i], id = seg[i + 1];
       if (!['track', 'album', 'playlist', 'artist', 'episode', 'show'].includes(tipo) || !id) return null;
-      return { src: `https://open.spotify.com/embed/${tipo}/${pezzo(id)}`, formato: tipo === 'track' || tipo === 'episode' ? 'compatto' : 'alto' };
+      // solo il brano sta nella barra bassa: un episodio di podcast ha la
+      // copertina grande e a 152px veniva tagliato a metà
+      return { src: `https://open.spotify.com/embed/${tipo}/${pezzo(id)}`, formato: tipo === 'track' ? 'compatto' : 'alto' };
     }
 
     // Twitch: diretta di un canale, VOD, clip
@@ -290,6 +292,12 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   const dom = domini(baseUrl);          // parent= dei player Twitch/Kick
   const scuro = eScuro(c.bg);           // decide il tema della chat incorporata
   const disp = ['colonna', 'rivista', 'sezioni'].includes(t.disposizione) ? t.disposizione : 'colonna';
+  const mov = ['nessuno', 'dolce', 'cinema'].includes(t.movimento) ? t.movimento : 'dolce';
+  // Titoli "parola per parola": ogni parola è un pezzo a sé, così può entrare
+  // con un attimo di ritardo sulla precedente. Si fa qui, a mano, perché farlo
+  // in pagina vorrebbe dire JavaScript su una pagina che deve aprirsi subito.
+  const parole = (s) => String(s || '').split(/\s+/).filter(Boolean)
+    .map((w, i) => `<span class="pa" style="--i:${Math.min(i, 20)}">${esc(w)}</span>`).join(' ');
 
   // sfondo secondo il tipo scelto
   let sfondo = `background:${c.bg}`;
@@ -322,7 +330,7 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
 
   // ── contenuti: i blocchi in ordine ──
   let n = 0;
-  const corpo = (pagina.blocchi || []).map((b) => {
+  const pezzi = (pagina.blocchi || []).map((b) => {
     const ritardo = `style="--d:${Math.min(n++, 12) * 45}ms"`;
     if (b.tipo === 'link') {
       const href = urlSicuro(b.url);
@@ -341,7 +349,7 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
         <span class="fre" aria-hidden="true">›</span>
       </a>`;
     }
-    if (b.tipo === 'titolo') return b.testo ? `<h2 class="tit" ${ritardo}>${esc(b.testo)}</h2>` : (anteprima ? `<h2 class="tit bozza" ${ritardo}>titolo vuoto — da completare</h2>` : '');
+    if (b.tipo === 'titolo') return b.testo ? `<h2 class="tit" ${ritardo}>${parole(b.testo)}</h2>` : (anteprima ? `<h2 class="tit bozza" ${ritardo}>titolo vuoto — da completare</h2>` : '');
     if (b.tipo === 'testo') return b.testo ? `<p class="par" ${ritardo}>${esc(b.testo)}</p>` : (anteprima ? `<p class="par bozza" ${ritardo}>testo vuoto — da completare</p>` : '');
     if (b.tipo === 'separatore') return `<hr class="sep" ${ritardo}>`;
     if (b.tipo === 'spazio') return `<div class="spazio" ${ritardo}></div>`;
@@ -378,13 +386,20 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
       const img = urlSicuro(b.img);
       const cta = urlSicuro(b.url);
       if (!b.titolo && !img) return anteprima ? `<div class="segna" ${ritardo}>copertina: metti un titolo o un'immagine</div>` : '';
-      return `<section class="eroe a-${esc(b.altezza || 'media')}${img ? ' con-img' : ''}" ${img ? `style="--sf:url('${esc(img)}');--d:${Math.min(n, 12) * 45}ms"` : ritardo}>
+      return `<section class="eroe a-${esc(b.altezza || 'media')}${img ? ' con-img' : ''}${b.fissa ? ' fissa' : ''}" ${img ? `style="--sf:url('${esc(img)}');--d:${Math.min(n, 12) * 45}ms"` : ritardo}>
         <div class="eroe-in">
-          ${b.titolo ? `<h2 class="eroe-t">${esc(b.titolo)}</h2>` : ''}
+          ${b.titolo ? `<h2 class="eroe-t">${parole(b.titolo)}</h2>` : ''}
           ${b.sotto ? `<p class="eroe-s">${esc(b.sotto)}</p>` : ''}
           ${cta && b.etichetta ? `<a class="eroe-b" href="${esc(cta)}" target="_blank" rel="noopener nofollow">${esc(b.etichetta)}</a>` : ''}
         </div>
       </section>`;
+    }
+    if (b.tipo === 'scritta') {
+      if (!b.testo) return anteprima ? `<div class="segna" ${ritardo}>scritta che scorre: manca il testo</div>` : '';
+      const sp = { lenta: 34, media: 22, veloce: 13 }[b.velocita] || 22;
+      // quattro copie e uno spostamento del 50%: il giro si chiude senza salti
+      const uno = `<span>${esc(b.testo)}</span>`;
+      return `<div class="marq" ${ritardo} style="--sp:${sp}s"><div class="marq-in">${uno.repeat(4)}</div></div>`;
     }
     if (b.tipo === 'griglia') {
       const tessere = (b.voci || []).map((v) => {
@@ -410,7 +425,15 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
         ${chat ? `<div class="emb f-chat" ${ritardo}><iframe src="${esc(chat)}" ${IFRAME} title="chat della diretta"></iframe></div>` : ''}`;
     }
     return '';
-  }).filter(Boolean).join('\n');
+  });
+  // Se una copertina è "fissa", tutto quello che viene dopo diventa un foglio a
+  // sé (.dopo) che le scorre sopra. Il taglio si fa PRIMA di scartare i pezzi
+  // vuoti, altrimenti gli indici non corrispondono più ai blocchi.
+  const iFissa = (pagina.blocchi || []).findIndex((b) => b?.tipo === 'eroe' && b.fissa);
+  const corpo = iFissa >= 0
+    ? pezzi.slice(0, iFissa + 1).filter(Boolean).join('\n')
+      + `\n<div class="dopo">${pezzi.slice(iFissa + 1).filter(Boolean).join('\n')}</div>`
+    : pezzi.filter(Boolean).join('\n');
 
   // "Nessuna" vuol dire NESSUNA: prima cadeva sull'iniziale del nome, cioè
   // esattamente il cerchio con la lettera che si voleva togliere.
@@ -490,14 +513,37 @@ ${imgAvatar ? `<meta property="og:image" content="${esc(imgAvatar)}">` : ''}
   .eroe{position:relative;width:100%;margin-top:1rem;border-radius:var(--r);overflow:hidden;
     display:grid;place-items:${aSinistra ? 'center start' : 'center'};padding:clamp(1.4rem,5vw,2.6rem);
     min-height:16rem;border:1px solid ${c.bordo};background-color:${c.card};
-    background-image:var(--sf,none),linear-gradient(135deg,${c.acc}33,${c.bg2});
-    background-size:cover;background-position:center}
+    background-image:linear-gradient(135deg,${c.acc}33,${c.bg2})}
+  /* la foto sta in uno strato suo: così può muoversi in parallasse senza
+     trascinarsi dietro il testo */
+  .eroe.con-img::before{content:'';position:absolute;inset:-10% 0;z-index:0;
+    background-image:var(--sf);background-size:cover;background-position:center}
   .eroe.a-bassa{min-height:10rem}
   .eroe.a-piena{min-height:min(76vh,34rem)}
+  /* copertina FISSA: resta ferma e il resto della pagina le scorre sopra, come
+     un foglio che si alza. Perché funzioni il resto dev'essere un foglio VERO,
+     con lo sfondo della pagina: sennò si vedrebbe la copertina attraverso i
+     buchi fra un blocco e l'altro. Di qui il contenitore .dopo. */
+  .eroe.fissa{position:sticky;top:0;z-index:0;margin-top:0;border-radius:0;border-left:0;border-right:0}
+  .dopo{width:100%;display:flex;flex-direction:column;gap:.6rem;position:relative;z-index:1;
+    ${sfondo};padding:1.4rem clamp(.8rem,3vw,1.4rem) 1.5rem;margin-top:1.5rem;
+    border-radius:1.6rem 1.6rem 0 0;box-shadow:0 -20px 45px rgba(0,0,0,.28)}
   /* velo scuro solo se c'è una foto: serve a leggere il testo sopra l'immagine */
-  .eroe.con-img::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,${c.bg}dd,${c.bg}55 55%,transparent)}
-  .eroe-in{position:relative;z-index:1;display:flex;flex-direction:column;gap:.45rem;max-width:34rem;
+  .eroe.con-img::after{content:'';position:absolute;inset:0;z-index:1;background:linear-gradient(to top,${c.bg}dd,${c.bg}55 55%,transparent)}
+  .eroe-in{position:relative;z-index:2;display:flex;flex-direction:column;gap:.45rem;max-width:34rem;
     align-items:${aSinistra ? 'flex-start' : 'center'}}
+  .pa{display:inline-block}
+  /* scritta che scorre in continuo: un blocco di carattere, non un bottone */
+  .marq{width:100%;margin-top:1.2rem;overflow:hidden;
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
+    mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+  /* niente gap ma padding: così metà contenitore è esattamente due copie e il
+     giro si chiude senza scatti */
+  .marq-in{display:flex;width:max-content;animation:marq var(--sp,22s) linear infinite}
+  .marq-in span{white-space:nowrap;padding-right:2.5rem;font-size:clamp(1.7rem,7vw,3.6rem);font-weight:800;
+    letter-spacing:-.03em;line-height:1.1;color:var(--acc)}
+  @keyframes marq{to{transform:translateX(-50%)}}
+  .marq:hover .marq-in{animation-play-state:paused}
   .eroe-t{font-size:clamp(1.6rem,6vw,2.6rem);font-weight:800;letter-spacing:-.03em;line-height:1.05;text-wrap:balance}
   .eroe-s{color:var(--tenue);font-size:1rem;text-wrap:pretty}
   .eroe-b{margin-top:.6rem;padding:.7rem 1.3rem;border-radius:var(--r);background:var(--acc);color:#fff;
@@ -523,31 +569,58 @@ ${imgAvatar ? `<meta property="og:image" content="${esc(imgAvatar)}">` : ''}
   .piede{margin-top:2.2rem;font-size:.78rem;color:var(--tenue)}
   .piede a{color:var(--tenue)}
   /* ── disposizione: come stanno insieme i contenuti ─────────────────────── */
+  /* Regola valida ovunque: i MEDIA non si stringono mai. Un player Twitch o un
+     profilo TikTok dentro una colonna da 15rem diventa un francobollo con le
+     barre di scorrimento — che è esattamente com'era. */
   ${disp === 'rivista' ? `
-  .telo{max-width:min(64rem,100%)}
-  @media (min-width:720px){
-    .lista{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:.8rem;align-items:start}
+  .telo{max-width:min(66rem,100%)}
+  @media (min-width:760px){
+    .lista{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem;align-items:start}
     .lista > .tit,.lista > .sep,.lista > .par,.lista > .eroe,.lista > .spazio,.lista > .socrow,
-    .lista > .griglia,.lista > .segna,.lista > .emb.f-pagina,.lista > .emb.f-chat{grid-column:1/-1}
-  }` : ''}
+    .lista > .griglia,.lista > .segna,.lista > .emb,.lista > .img,.lista > .marq{grid-column:1/-1}
+    .tit{margin-top:2rem;padding-bottom:.5rem;border-bottom:1px solid ${c.bordo}}
+    .griglia{grid-template-columns:repeat(auto-fill,minmax(11rem,1fr))}
+  }
+  @media (min-width:1100px){.lista{grid-template-columns:repeat(3,minmax(0,1fr))}}` : ''}
   ${disp === 'sezioni' ? `
-  .telo{max-width:min(52rem,100%)}
-  .lista{gap:1.5rem;margin-top:2.2rem}
-  .tit{font-size:clamp(1.3rem,4.5vw,2rem);text-transform:none;letter-spacing:-.025em;color:var(--testo);margin-top:2.4rem}
-  .par{font-size:1.05rem;margin-top:.9rem}
-  .voce{padding:1.15rem 1.25rem;font-size:1.05rem}
-  .griglia{grid-template-columns:repeat(auto-fill,minmax(11rem,1fr));gap:.9rem}` : ''}
+  .telo{max-width:min(54rem,100%)}
+  .lista{gap:2.4rem;margin-top:3rem}
+  .tit{font-size:clamp(1.8rem,6vw,3.2rem);text-transform:none;letter-spacing:-.035em;color:var(--testo);
+    font-weight:800;line-height:1.05;margin-top:3.5rem;text-wrap:balance}
+  .par{font-size:clamp(1.05rem,2.4vw,1.25rem);margin-top:1.2rem;max-width:36rem;line-height:1.6}
+  .voce{padding:1.35rem 1.5rem;font-size:1.1rem}
+  .et{font-size:1.1rem}
+  .griglia{grid-template-columns:repeat(auto-fill,minmax(12rem,1fr));gap:1rem}
+  .eroe{margin-top:2rem}
+  .sep{margin:2.5rem 0 .5rem}
+  h1{font-size:clamp(2rem,8vw,3.4rem)}` : ''}
 
-  /* Comparsa: in pagina i contenuti entrano MENTRE SCORRI (animation-timeline,
-     nessun JavaScript). Dove il browser non la conosce resta la comparsa a
-     cascata di prima. In anteprima niente animazioni: rifarle a ogni tasto
-     premuto faceva sembrare l'editor rotto. */
-  ${anim && !anteprima ? `${anim}
-  .voce,.tit,.par,.sep,.socrow,.img,.emb,.eroe,.griglia{animation:ent .5s cubic-bezier(.16,1,.3,1) both;animation-delay:var(--d,0ms)}
+  /* ── movimento ───────────────────────────────────────────────────────────
+     I contenuti entrano MENTRE SCORRI, con animation-timeline: nessun
+     JavaScript, nessuna libreria. Dove il browser non la conosce resta la
+     comparsa a cascata di prima (che parte al caricamento).
+     In anteprima la comparsa a tempo è spenta — rifarla a ogni tasto premuto
+     faceva sembrare l'editor rotto — ma quella allo scorrimento resta, così
+     l'effetto si vede davvero mentre scorri l'anteprima. */
+  ${mov !== 'nessuno' && anim ? `${anim}
+  ${anteprima ? '' : `.voce,.tit,.par,.sep,.socrow,.img,.emb,.eroe,.griglia,.marq{animation:ent .5s cubic-bezier(.16,1,.3,1) both;animation-delay:var(--d,0ms)}`}
   @supports (animation-timeline:view()){@media (prefers-reduced-motion:no-preference){
-    .voce,.tit,.par,.img,.emb,.eroe,.griglia,.socrow{animation-delay:0ms;animation-duration:.6s;
-      animation-timeline:view();animation-range:entry 0% cover 22%}
+    .voce,.tit,.par,.img,.emb,.eroe,.griglia,.socrow,.marq{animation:ent .6s cubic-bezier(.16,1,.3,1) both;
+      animation-delay:0ms;animation-timeline:view();animation-range:entry 0% cover 22%}
   }}` : ''}
+  ${mov === 'cinema' ? `
+  @keyframes par{from{transform:translateY(-7%)}to{transform:translateY(7%)}}
+  @keyframes zoomin{from{transform:scale(1.14)}to{transform:scale(1)}}
+  @keyframes suPa{from{opacity:0;transform:translateY(.7em) rotate(1.2deg)}to{opacity:1;transform:none}}
+  /* le parole entrano una dopo l'altra, non tutte insieme */
+  .eroe-t .pa,.tit .pa{animation:suPa .6s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(var(--i) * 55ms)}
+  @supports (animation-timeline:view()){@media (prefers-reduced-motion:no-preference){
+    .eroe.con-img::before{animation:par linear both;animation-timeline:view();animation-range:cover 0% cover 100%}
+    .tessera img,.img{animation:zoomin linear both;animation-timeline:view();animation-range:entry 0% cover 40%}
+    .eroe-t .pa,.tit .pa{animation:suPa .6s cubic-bezier(.16,1,.3,1) both;animation-delay:0ms;
+      animation-timeline:view();animation-range:entry calc(0% + var(--i) * 2.5%) entry calc(60% + var(--i) * 2.5%)}
+  }}
+  .tit{overflow:hidden}` : ''}
   @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
 </style>
 </head>
