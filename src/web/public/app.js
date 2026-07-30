@@ -6016,7 +6016,7 @@ const MARCHI = {
 };
 const _mIco = (n, dim = 20) => {
   const m = MARCHI[n] || MARCHI.link;
-  return `<svg viewBox="0 0 24 24" width="${dim}" height="${dim}" fill="currentColor" aria-hidden="true"${m.c ? ` style="color:${m.c}"` : ''}><path d="${m.d}"/></svg>`;
+  return `<svg viewBox="0 0 24 24" width="${dim}" height="${dim}" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" aria-hidden="true"${m.c ? ` style="--bc:${m.c}"` : ''}><path d="${m.d}"/></svg>`;
 };
 
 const lpIco = (n, dim = 20) => _mIco(n, dim);
