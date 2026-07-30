@@ -6293,6 +6293,9 @@ async function caricaPaginaLink(ridisegna = false) {
             <option value="maglia">${L('Griglia', 'Grid', 'Rejilla')}</option>
             <option value="grana">${L('Grana', 'Grain', 'Grano')}</option>
             <option value="bolle">${L('Bolle di colore', 'Colour bubbles', 'Burbujas de color')}</option>
+            <option value="stelle">${L('Stelle (si muovono piano)', 'Stars (drifting)', 'Estrellas (a la deriva)')}</option>
+            <option value="onde">${L('Onde (respirano in fondo)', 'Waves (breathing at the bottom)', 'Olas (respiran abajo)')}</option>
+            <option value="griglia">${L('Griglia in prospettiva (anni ’80)', 'Perspective grid (80s)', 'Rejilla en perspectiva (años 80)')}</option>
           </select>
 
           <div class="griglia-campi spazio-sopra">
