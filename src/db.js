@@ -1371,7 +1371,7 @@ export const linkPage = {
     const tema = {
       sfondoTipo: scelta(t.sfondoTipo, ['tinta', 'gradiente', 'immagine'], 'tinta'),
       bg: hex(t.bg), bg2: hex(t.bg2), angolo: num(t.angolo, 0, 360, 160), sfondoUrl: urlOk(t.sfondoUrl),
-      effetto: scelta(t.effetto, ['nessuno', 'aurora', 'maglia', 'grana', 'bolle'], 'nessuno'),
+      effetto: scelta(t.effetto, ['nessuno', 'aurora', 'maglia', 'grana', 'bolle', 'stelle', 'onde', 'griglia'], 'nessuno'),
       testo: hex(t.testo), accent: hex(t.accent), card: hex(t.card), bordo: hex(t.bordo),
       font: scelta(t.font, FONT_LINKPAGE, 'system'),
       raggio: num(t.raggio, 0, 999, 14),
