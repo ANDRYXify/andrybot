@@ -6140,7 +6140,7 @@ async function caricaPaginaLink() {
             <button type="button" class="btn secondario mini" data-lpadd="titolo">${L('Titolo di sezione', 'Section heading', 'Título de sección')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="testo">${L('Testo', 'Text', 'Texto')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="immagine">${L('Immagine', 'Image', 'Imagen')}</button>
-            <button type="button" class="btn secondario mini" data-lpadd="embed">${L('Video / musica', 'Video / music', 'Vídeo / música')}</button>
+            <button type="button" class="btn secondario mini" data-lpadd="embed">${L('Video, musica o pagina', 'Video, music or page', 'Vídeo, música o página')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="diretta">${L('La mia diretta', 'My live stream', 'Mi directo')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="separatore">${L('Riga divisoria', 'Divider', 'Separador')}</button>
           </div>
@@ -6380,7 +6380,7 @@ function lpRenderBlocchi() {
   const d = LP.d || {};
   const NOMI = { link: L('Link', 'Link', 'Enlace'), social: L('Riga di social', 'Social row', 'Fila de redes'),
     titolo: L('Titolo di sezione', 'Section heading', 'Título de sección'), testo: L('Testo', 'Text', 'Texto'),
-    immagine: L('Immagine', 'Image', 'Imagen'), embed: L('Video / musica', 'Video / music', 'Vídeo / música'),
+    immagine: L('Immagine', 'Image', 'Imagen'), embed: L('Video, musica o pagina', 'Video, music or page', 'Vídeo, música o página'),
     diretta: L('La mia diretta', 'My live stream', 'Mi directo'),
     separatore: L('Riga divisoria', 'Divider', 'Separador') };
   // Griglia di icone: si scelgono VEDENDOLE. Un menu a tendina coi nomi
@@ -6426,12 +6426,14 @@ function lpRenderBlocchi() {
         video: L('Video 16:9', 'Video 16:9', 'Vídeo 16:9'), quadrato: L('Quadrato', 'Square', 'Cuadrado'),
         verticale: L('Verticale (short, TikTok)', 'Vertical (shorts, TikTok)', 'Vertical (shorts, TikTok)'),
         alto: L('Alto (album, playlist)', 'Tall (album, playlist)', 'Alto (álbum, lista)'),
-        compatto: L('Barra bassa (un brano)', 'Slim bar (single track)', 'Barra baja (una canción)') };
+        compatto: L('Barra bassa (un brano)', 'Slim bar (single track)', 'Barra baja (una canción)'),
+        pagina: L('Vetrina alta (profilo, pagina)', 'Tall showcase (profile, page)', 'Escaparate alto (perfil, página)') };
       campi = `<input type="text" data-lpb="${i}" data-lpf="titolo" maxlength="${d.limiti.label}" value="${esc(b.titolo || '')}" placeholder="${esc(L('Titolo sopra (facoltativo)', 'Heading above (optional)', 'Título arriba (opcional)'))}">
         <input type="url" class="spazio-sopra" data-lpb="${i}" data-lpf="url" maxlength="${d.limiti.url}" value="${esc(b.url || '')}" placeholder="https://youtube.com/watch?v=…">
         <label class="campo spazio-sopra">${L('Come si vede', 'How it looks', 'Cómo se ve')}</label>
         <select data-lpb="${i}" data-lpf="formato">${Object.keys(FORM).map((k) => `<option value="${k}"${(b.formato || 'auto') === k ? ' selected' : ''}>${esc(FORM[k])}</option>`).join('')}</select>
-        <p class="suggerimento">${L('Incolla l\'indirizzo normale, al resto ci penso io. Riconosco YouTube (video, short, playlist), Spotify (brano, album, playlist, podcast), Twitch (diretta, VOD, clip), TikTok, Kick, SoundCloud, Apple Music, Deezer e Vimeo.', 'Paste the normal address, I handle the rest. I recognise YouTube (video, shorts, playlist), Spotify (track, album, playlist, podcast), Twitch (stream, VOD, clip), TikTok, Kick, SoundCloud, Apple Music, Deezer and Vimeo.', 'Pega la dirección normal, del resto me encargo yo. Reconozco YouTube (vídeo, shorts, lista), Spotify (canción, álbum, lista, podcast), Twitch (directo, VOD, clip), TikTok, Kick, SoundCloud, Apple Music, Deezer y Vimeo.')}</p>`;
+        <p class="suggerimento">${L('Incolla l\'indirizzo normale, al resto ci penso io. Va bene sia un singolo contenuto sia una PAGINA intera: canale YouTube, profilo TikTok, pagina Facebook, artista Spotify, profilo SoundCloud, canale Twitch o Kick. Oppure un video, uno short, un post o un reel di Instagram, un brano, un album, una playlist, un podcast, una clip. Riconosco anche Apple Music, Deezer e Vimeo.', 'Paste the normal address, I handle the rest. A single item or a whole PAGE both work: YouTube channel, TikTok profile, Facebook page, Spotify artist, SoundCloud profile, Twitch or Kick channel. Or a video, a short, an Instagram post or reel, a track, an album, a playlist, a podcast, a clip. I also recognise Apple Music, Deezer and Vimeo.', 'Pega la dirección normal, del resto me encargo yo. Vale tanto un contenido suelto como una PÁGINA entera: canal de YouTube, perfil de TikTok, página de Facebook, artista de Spotify, perfil de SoundCloud, canal de Twitch o Kick. O un vídeo, un short, una publicación o un reel de Instagram, una canción, un álbum, una lista, un podcast, un clip. También reconozco Apple Music, Deezer y Vimeo.')}</p>
+        <p class="suggerimento">${L('Due limiti che non dipendono da noi: il profilo Instagram e la timeline di X non si possono incorporare (le due piattaforme non lo permettono). Di Instagram puoi mettere un post o un reel.', 'Two limits that are not ours: Instagram profiles and X timelines cannot be embedded (those platforms don\'t allow it). From Instagram you can embed a post or a reel.', 'Dos límites que no dependen de nosotros: el perfil de Instagram y la línea de X no se pueden incorporar (esas plataformas no lo permiten). De Instagram puedes poner una publicación o un reel.')}</p>`;
     } else if (b.tipo === 'diretta') {
       const PIA = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube' };
       const mio = (d.url || '').split('/u/')[1] || '';
