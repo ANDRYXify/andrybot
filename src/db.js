@@ -1237,7 +1237,11 @@ export const TIPI_BLOCCO = ['link', 'titolo', 'testo', 'badge', 'separatore', 's
 export const MOVIMENTI = ['nessuno', 'dolce', 'cinema'];
 // Ogni blocco può occupare tutta la riga o dividerla: è così che si mettono le
 // cose UNA ACCANTO ALL'ALTRA invece che una sotto l'altra.
-export const LARGHEZZE_BLOCCO = ['piena', 'meta', 'terzo'];
+// Sono FRAZIONI ESATTE di una riga a 12 colonne: un terzo occupa un terzo e
+// basta, e se accanto non c'è nient'altro lo spazio resta libero. (Prima
+// crescevano per riempire la riga, quindi "un terzo" diventava metà o due terzi
+// a seconda di quanti erano: imprevedibile.)
+export const LARGHEZZE_BLOCCO = ['piena', 'treQuarti', 'dueTerzi', 'meta', 'terzo', 'quarto'];
 // ...e può entrare a modo suo, invece di seguire l'animazione della pagina.
 export const ENTRATE_BLOCCO = ['auto', 'nessuna', 'sfuma', 'sali', 'scala', 'sinistra', 'destra', 'ruota'];
 // Come sono disposti i contenuti. "colonna" è la classica lista di bottoni;

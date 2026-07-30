@@ -486,14 +486,29 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   // L'involucro .bl serve quando il blocco ha una larghezza sua o un'entrata
   // sua: senza, il pezzo resta esattamente com'era (niente involucri inutili).
   const involucro = (html, b, i) => {
-    const larg = b?.larghezza && b.larghezza !== 'piena' ? ' w-' + esc(b.larghezza) : '';
     const ent = b?.entrata && b.entrata !== 'auto' ? ' e-' + esc(b.entrata) : '';
-    if (!larg && !ent) return html;
-    return `<div class="bl${larg}${ent}" style="--d:${Math.min(i, 12) * 45}ms">${html}</div>`;
+    if (!ent) return html;
+    return `<div class="bl${ent}" style="--d:${Math.min(i, 12) * 45}ms">${html}</div>`;
   };
+  // Quante colonne su dodici prende ogni larghezza. Dodici perché si divide per
+  // 2, 3, 4 e 6: tutte le frazioni che uno si aspetta cadono esatte.
+  const COLONNE = { piena: 12, treQuarti: 9, dueTerzi: 8, meta: 6, terzo: 4, quarto: 3 };
+  // Le righe le compone il SERVER, non il "vai a capo quando non ci stai" del
+  // browser: sappiamo già quanto è largo ogni blocco, quindi possiamo dire con
+  // certezza quali stanno insieme e quanto spazio avanza. E se la pagina è
+  // centrata, una riga incompleta la centriamo davvero invece di lasciarla
+  // schiacciata a sinistra.
   const inFile = (da, a) => {
-    const fuori = []; let fila = [];
-    const chiudi = () => { if (fila.length) { fuori.push(`<div class="fila">${fila.join('\n')}</div>`); fila = []; } };
+    const fuori = [];
+    let riga = [], usate = 0;
+    const chiudi = () => {
+      if (!riga.length) return;
+      const avanzo = 12 - usate;
+      const scarto = aSinistra ? 0 : Math.floor(avanzo / 2);
+      fuori.push(`<div class="fila">${riga.map((r, k) =>
+        `<div class="cel s-${r.col}" style="grid-column:${k === 0 ? 1 + scarto : 'auto'}/span ${r.col}">${r.html}</div>`).join('\n')}</div>`);
+      riga = []; usate = 0;
+    };
     for (let i = da; i < a; i++) {
       if (!pezzi[i]) continue;
       const b = pagina.blocchi[i] || {};
@@ -502,8 +517,10 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
       // l'editor sa quale comando aprire. display:contents = l'involucro non
       // esiste per l'impaginazione, quindi non sposta niente di un pixel.
       const seg = anteprima ? `<div class="sel-b" data-b="${i}" style="display:contents">${html}</div>` : html;
-      if (b.larghezza === 'meta' || b.larghezza === 'terzo') fila.push(seg);
-      else { chiudi(); fuori.push(seg); }
+      const col = COLONNE[b.larghezza] || 12;
+      if (col >= 12) { chiudi(); fuori.push(seg); continue; }
+      if (usate + col > 12) chiudi();      // non ci sta: si va a capo QUI, non a caso
+      riga.push({ html: seg, col }); usate += col;
     }
     chiudi();
     return fuori.join('\n');
@@ -627,13 +644,21 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   .emb.f-medio{aspect-ratio:auto;height:232px}      /* un episodio, un podcast */
   .emb.f-alto{aspect-ratio:auto;height:380px}       /* album, playlist */
   .emb.f-pagina{aspect-ratio:auto;height:26rem}     /* profili e pagine: una vetrina, non un video */
-  /* i blocchi affiancati: metà riga o un terzo */
-  .fila{display:flex;flex-wrap:wrap;gap:.6rem;width:100%;align-items:stretch}
+  /* Blocchi affiancati su una riga da DODICI colonne. Ogni blocco prende
+     esattamente le colonne della sua frazione: un terzo resta un terzo anche se
+     è da solo, e le colonne che avanzano restano libere. */
+  .fila{display:grid;grid-template-columns:repeat(12,1fr);gap:.6rem;width:100%;margin-top:1rem;align-items:start}
+  .cel{min-width:0;display:flex;flex-direction:column}
+  .cel > *{margin-top:0}
   .bl{width:100%;min-width:0}
   .bl > *{margin-top:0}
-  .fila > .bl.w-meta{flex:1 1 calc(50% - .3rem);min-width:11rem}
-  .fila > .bl.w-terzo{flex:1 1 calc(33.333% - .4rem);min-width:9rem}
-  .fila{margin-top:1rem}
+  /* Sul telefono dodici colonne non hanno senso: si passa a due. Le cose grandi
+     prendono la riga intera, i terzi e i quarti stanno in due per riga. */
+  @media (max-width:640px){
+    .fila{grid-template-columns:repeat(2,1fr)}
+    .cel{grid-column:auto/span 2!important}
+    .cel.s-3,.cel.s-4{grid-column:auto/span 1!important}
+  }
   .emb.f-chat{aspect-ratio:auto;height:26rem;margin-top:.5rem}
   /* ── copertina: l'apertura della pagina, non un bottone ── */
   .eroe{position:relative;width:100%;margin-top:1rem;border-radius:var(--r);overflow:hidden;
