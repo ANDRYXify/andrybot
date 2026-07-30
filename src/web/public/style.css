@@ -266,6 +266,40 @@ body.menu-aperto .drawer { transform: none; }
 .carta.avviso { border-color: var(--ambra-bordo); background: var(--ambra-soft); }
 .carta.avviso h2, .carta.avviso p { color: var(--ambra); }
 
+/* ── "Cosa può fare SocialBot": elenco completo con il pacchetto di ogni voce ─
+   Una carta <details> che contiene a sua volta un <details> per area, così si
+   scorre l'indice delle aree e si apre solo quella che interessa. */
+.cap-scheda { max-width: 860px; margin-inline: auto; }
+.cap-scheda > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.cap-scheda > summary::-webkit-details-marker { display: none; }
+.cap-scheda > summary h2 { margin: 0; }
+.cap-scheda > summary::after { content: ''; margin-left: auto; width: .55rem; height: .55rem; border-right: 2px solid var(--acc); border-bottom: 2px solid var(--acc); transform: rotate(45deg); transition: transform var(--dur-micro) var(--ease-back); }
+.cap-scheda[open] > summary::after { transform: rotate(-135deg); }
+.cap-sommario { font-size: .84rem; color: var(--testo-3); font-variant-numeric: tabular-nums; }
+.cap-corpo { margin-top: .9rem; }
+.cap-intro { font-size: .92rem; line-height: 1.55; margin-bottom: .9rem; }
+
+.cap-area { border-top: 1px solid var(--border); }
+.cap-area > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: .5rem; padding: .75rem 0; font-weight: 700; font-size: .95rem; color: var(--testo); }
+.cap-area > summary::-webkit-details-marker { display: none; }
+.cap-area > summary::after { content: ''; margin-left: auto; width: .45rem; height: .45rem; border-right: 2px solid var(--acc); border-bottom: 2px solid var(--acc); transform: rotate(45deg); transition: transform var(--dur-micro) var(--ease-back); }
+.cap-area[open] > summary::after { transform: rotate(-135deg); }
+.cap-quante { font-size: .72rem; font-weight: 700; color: var(--testo-3); background: var(--surface-2); border-radius: 999px; padding: .1rem .45rem; font-variant-numeric: tabular-nums; }
+
+.cap-elenco { list-style: none; margin: 0 0 .8rem; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
+.cap-voce { display: flex; align-items: flex-start; gap: .8rem; padding: .6rem .7rem; border: 1px solid var(--border); border-radius: var(--r-m); background: var(--surface-2); }
+.cap-testo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .12rem; }
+.cap-testo strong { font-size: .92rem; font-weight: 650; }
+.cap-testo span { font-size: .85rem; color: var(--testo-2); line-height: 1.45; }
+/* etichetta del pacchetto: verde = gratis, viola = a pagamento */
+.cap-pacc { flex: 0 0 auto; align-self: center; font-size: .72rem; font-weight: 700; padding: .22rem .55rem; border-radius: 999px; white-space: nowrap; }
+.cap-pacc.gratis { color: var(--verde); background: var(--verde-soft); border: 1px solid var(--verde-bordo); }
+.cap-pacc.base, .cap-pacc.addon { color: var(--acc); background: var(--acc-soft); border: 1px solid var(--acc-bordo); }
+@media (max-width: 560px) {
+  .cap-voce { flex-direction: column; gap: .4rem; }
+  .cap-pacc { align-self: flex-start; }
+}
+
 /* ── CARTE RICHIUDIBILI ──────────────────────────────────────────────────────
    L'intestazione (h2) diventa un pulsante che apre/chiude il corpo della carta.
    Per animare da/verso "altezza automatica" usiamo la tecnica grid 0fr→1fr

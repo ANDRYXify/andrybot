@@ -24,21 +24,24 @@ const log = makeLog('abbonamenti');
 
 const TOLLERANZA_WEBHOOK_S = 300; // 5 min: finestra anti-replay dei webhook Stripe
 
-// ── Piano di prova (gratis) ──────────────────────────────────────────────────
-// Per far provare il bot: pochi comandi, tutto il resto spento (paywall).
+// ── ESSENZIALE: il pacchetto GRATUITO ────────────────────────────────────────
+// Non è una demo: basta registrarsi e il bot funziona davvero nella tua chat —
+// comandi e automazioni illimitati, moderazione e antispam, overlay per OBS e
+// contatori a schermo. Si paga solo per ciò che sta oltre (Studio Web,
+// moderatori, add-on). L'id resta 'free' per compatibilità con i dati salvati.
 export const FREE = {
-  id: 'free', nome: 'Prova', prezzo: 0, prezzoTesto: 'Gratis', priceEnv: null, icona: '🎈',
-  sommario: 'Per iniziare e vedere com’è fatto il bot.',
-  funzioni: { moduli: 3, giochi: false, notifiche: false, clipAuto: false, voce: false, moderatori: 0, effetti: false, overlay: true, telegram: false },
+  id: 'free', nome: 'Essenziale', prezzo: 0, prezzoTesto: 'Gratis', priceEnv: null, icona: '🎈',
+  sommario: 'Gratis, basta registrarsi: comandi illimitati, moderazione, overlay per OBS e contatori a schermo.',
+  funzioni: { moduli: Infinity, giochi: false, notifiche: false, clipAuto: false, voce: false, moderatori: 0, effetti: false, overlay: true, telegram: false, studio: false },
 };
 
-// ── BASE: il canone che dà il bot completo per la community ──────────────────
+// ── BASE: il passo sopra l'Essenziale ────────────────────────────────────────
 // `funzioni`: matrice di ciò che il piano sblocca. Numeri = limiti (Infinity =
 // illimitato), booleani = on/off. L'unione con gli add-on la calcola funzioniDi().
 export const BASE = {
   id: 'base', nome: 'Base', prezzo: 2.99, prezzoTesto: '€2,99/mese', priceEnv: 'base', icona: '🤖',
-  sommario: 'Il cuore del bot: comandi illimitati, antispam e moderazione, overlay per OBS e un moderatore.',
-  funzioni: { moduli: Infinity, giochi: false, notifiche: false, clipAuto: false, voce: false, moderatori: 1, effetti: false, overlay: true, telegram: false },
+  sommario: 'Tutto l’Essenziale più lo Studio Web (vai live senza OBS) e un moderatore che ti aiuta.',
+  funzioni: { moduli: Infinity, giochi: false, notifiche: false, clipAuto: false, voce: false, moderatori: 1, effetti: false, overlay: true, telegram: false, studio: true },
 };
 
 // ── ADD-ON à la carte: pacchetti componibili, ognuno un prezzo Stripe a sé ───
@@ -94,7 +97,7 @@ export const ADDON = [
 export const TIER_COMMUNITY = {
   id: 'community', nome: 'Community', prezzo: 0, prezzoTesto: 'Membro community', priceEnv: null, icona: '🎁',
   sommario: 'Accesso completo riservato ai membri abilitati di andryxify.it.',
-  funzioni: { moduli: Infinity, giochi: true, notifiche: true, clipAuto: true, voce: true, moderatori: 20, effetti: true, overlay: true, telegram: true, musica: true },
+  funzioni: { moduli: Infinity, giochi: true, notifiche: true, clipAuto: true, voce: true, moderatori: 20, effetti: true, overlay: true, telegram: true, musica: true, studio: true },
 };
 
 // Tutti gli id di add-on esistenti (comodo per promo/trial "esperienza completa").
