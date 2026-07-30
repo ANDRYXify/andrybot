@@ -942,7 +942,8 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .lp-bazioni { margin-left: auto; display: inline-flex; gap: .25rem; }
 .lp-riga2 { display: flex; align-items: center; gap: .45rem; }
 .lp-riga2 input { flex: 1; min-width: 0; }
-.lp-bico { flex: 0 0 auto; width: 2rem; height: 2rem; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; background: var(--acc-soft); color: var(--acc); border: 1px solid var(--acc-bordo); }
+.lp-bico svg, .lp-ipick svg { color: var(--bc, currentColor); }
+.lp-bico { flex: 0 0 auto; width: 2rem; height: 2rem; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; background: var(--surface-2); color: var(--acc); border: 1px solid var(--border); }
 .lp-aggiungi { display: flex; flex-wrap: wrap; gap: .35rem; }
 
 /* stato della pagina link: online oppure non ancora pubblicata */

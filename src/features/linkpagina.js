@@ -70,9 +70,13 @@ const MARCHI = {
   caffe:      { c: '#FF5E5B', d: 'M18 8h-1V5a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v9a6 6 0 0 0 6 6h3a6 6 0 0 0 5.9-5H18a5 5 0 0 0 0-10m0 8h-1.1a8 8 0 0 0 .1-1v-5h1a3 3 0 0 1 0 6M2 21h14v2H2z' },
   soldi:      { c: '#1d9e5e', d: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20m1 15.9V19h-2v-1.1c-1.9-.3-3.2-1.4-3.3-3h2c.1.9 1 1.5 2.3 1.5s2.1-.5 2.1-1.3c0-.7-.5-1.1-2.2-1.5-2.4-.5-3.9-1.3-3.9-3.1 0-1.5 1.2-2.6 3-2.9V6.5h2v1.1c1.8.3 3 1.4 3.1 2.9h-2c-.1-.8-.8-1.4-2-1.4s-2 .5-2 1.2c0 .7.6 1 2.3 1.4 2.4.5 3.8 1.3 3.8 3.2 0 1.6-1.2 2.7-3.2 3z' },
 };
+// Il colore del brand viaggia in una VARIABILE CSS (--bc), non in un
+// style="color:..." inline: uno stile inline vince su qualsiasi regola, e su un
+// bottone "in evidenza" (sfondo = colore principale) l'icona restava viola su
+// viola, cioe invisibile. Con la variabile il CSS puo dire "qui bianca".
 const _mIco = (n, dim = 20) => {
   const m = MARCHI[n] || MARCHI.link;
-  return `<svg viewBox="0 0 24 24" width="${dim}" height="${dim}" fill="currentColor" aria-hidden="true"${m.c ? ` style="color:${m.c}"` : ''}><path d="${m.d}"/></svg>`;
+  return `<svg viewBox="0 0 24 24" width="${dim}" height="${dim}" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" aria-hidden="true"${m.c ? ` style="--bc:${m.c}"` : ''}><path d="${m.d}"/></svg>`;
 };
 
 function esc(s) {
@@ -168,7 +172,7 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
       return `<a class="voce${b.evidenzia ? ' spicca' : ''}" ${ritardo} href="${esc(href)}" target="_blank" rel="noopener nofollow">
         <span class="ico">${_mIco(b.icona)}</span>
         <span class="tx"><span class="et">${esc(b.label)}</span>${b.sotto ? `<span class="so">${esc(b.sotto)}</span>` : ''}</span>
-        <span class="fre" aria-hidden="true">'›'</span>
+        <span class="fre" aria-hidden="true">›</span>
       </a>`;
     }
     if (b.tipo === 'titolo') return b.testo ? `<h2 class="tit" ${ritardo}>${esc(b.testo)}</h2>` : (anteprima ? `<h2 class="tit bozza" ${ritardo}>titolo vuoto — da completare</h2>` : '');
@@ -242,8 +246,9 @@ ${imgAvatar ? `<meta property="og:image" content="${esc(imgAvatar)}">` : ''}
   .voce:hover,.voce:focus-visible{transform:translateY(-2px);border-color:var(--acc);filter:brightness(1.04)}
   .voce:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
   .voce.spicca{background:var(--acc);border-color:var(--acc);color:#fff}
-  .voce.spicca .ico,.voce.spicca .fre,.voce.spicca .so{color:#fff;opacity:.92}
+  .voce.spicca .ico,.voce.spicca .ico svg,.voce.spicca .fre,.voce.spicca .so{color:#fff!important;opacity:.95}
   .ico{flex:0 0 auto;display:inline-flex;color:var(--acc)}
+  .ico svg{color:var(--bc,currentColor)}
   .tx{flex:1;min-width:0;display:flex;flex-direction:column}
   .et{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .so{font-size:.8rem;font-weight:400;color:var(--tenue);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -257,6 +262,7 @@ ${imgAvatar ? `<meta property="og:image" content="${esc(imgAvatar)}">` : ''}
   .soc{width:2.7rem;height:2.7rem;border-radius:${raggio >= 900 ? '50%' : 'calc(var(--r) * .8)'};
     display:inline-flex;align-items:center;justify-content:center;${stileBtn};color:var(--acc);
     transition:transform .18s cubic-bezier(.34,1.56,.64,1),border-color .18s ease}
+  .soc svg{color:var(--bc,currentColor)}
   .soc:hover{transform:translateY(-2px);border-color:var(--acc)}
   .img{width:100%;border-radius:var(--r);margin-top:1rem;display:block;height:auto}
   .emb{width:100%;margin-top:1rem;border-radius:var(--r);overflow:hidden;border:1px solid ${c.bordo};aspect-ratio:16/9}
