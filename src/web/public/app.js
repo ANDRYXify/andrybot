@@ -6722,6 +6722,32 @@ function lpRenderBlocchi() {
   };
 }
 
+// L'anteprima non è solo da guardare: clicchi un pezzo della pagina e ti porta
+// ai suoi comandi, evidenziandoli. L'iframe è srcdoc, quindi ha la nostra
+// stessa origine e possiamo ascoltarci dentro senza scambi di messaggi.
+function lpAnteprimaCliccabile(f) {
+  let doc;
+  try { doc = f.contentDocument; } catch { return; }
+  if (!doc) return;
+  doc.addEventListener('click', (ev) => {
+    const w = ev.target.closest?.('[data-b]'); if (!w) return;
+    ev.preventDefault();   // niente link aperti: qui si sta modificando
+    ev.stopPropagation();
+    const bl = document.querySelector(`#lp-blocchi .lp-blocco[data-i="${w.dataset.b}"]`);
+    if (!bl) return;
+    bl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    document.querySelectorAll('.lp-blocco.acceso').forEach((e) => e.classList.remove('acceso'));
+    bl.classList.add('acceso');
+    bl.querySelector('input,textarea,select')?.focus({ preventScroll: true });
+  }, true);
+  // e viceversa: il pezzo sotto il mouse si segna, così sai cosa stai per aprire
+  doc.addEventListener('mouseover', (ev) => {
+    const w = ev.target.closest?.('[data-b]');
+    doc.querySelectorAll('.sel-b.tocca').forEach((e) => e.classList.remove('tocca'));
+    if (w) w.classList.add('tocca');
+  });
+}
+
 // Nella vista "schermo" l'anteprima è un browser largo 1280 rimpicciolito: la
 // scala dipende da quanto spazio c'è, quindi si ricalcola anche al ridimensiona.
 function lpScala() {
@@ -6753,6 +6779,7 @@ function lpAnteprima() {
       try { y = f.contentWindow?.scrollY || 0; } catch { /* altra origine: pazienza */ }
       f.addEventListener('load', () => {
         try { if (y) f.contentWindow.scrollTo(0, y); } catch { /* idem */ }
+        lpAnteprimaCliccabile(f);
       }, { once: true });
       f.srcdoc = r.html;
     } catch { /* l'anteprima non è essenziale: se salta, si salva comunque */ }
