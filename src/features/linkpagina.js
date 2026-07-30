@@ -314,6 +314,23 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
     maglia: `body::before{content:'';position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(${c.bordo} 1px,transparent 1px),linear-gradient(90deg,${c.bordo} 1px,transparent 1px);background-size:44px 44px;opacity:.35;mask-image:radial-gradient(ellipse 70% 60% at 50% 30%,#000 30%,transparent 100%)}`,
     grana: `body::before{content:'';position:fixed;inset:0;pointer-events:none;opacity:.05;background-image:repeating-conic-gradient(${c.testo} 0% 0.0001%,transparent 0% 0.0002%);background-size:3px 3px}`,
     bolle: `body::before{content:'';position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle 180px at 15% 20%,${c.acc}2e,transparent 60%),radial-gradient(circle 220px at 85% 70%,${c.acc}24,transparent 60%),radial-gradient(circle 140px at 60% 15%,${c.acc}1f,transparent 60%)}`,
+    // Un cielo di puntini che respira: tre strati di stelle di grandezza diversa
+    // che si spostano piano. Sta tutto in due gradienti ripetuti, nessuna immagine.
+    stelle: `body::before{content:'';position:fixed;inset:-10%;pointer-events:none;opacity:.55;
+      background-image:radial-gradient(1.5px 1.5px at 20% 30%,${c.testo},transparent),radial-gradient(1px 1px at 70% 60%,${c.testo},transparent),radial-gradient(2px 2px at 45% 80%,${c.acc},transparent),radial-gradient(1px 1px at 85% 15%,${c.testo},transparent);
+      background-size:180px 180px,120px 120px,260px 260px,90px 90px;
+      animation:cielo 90s linear infinite}
+      @keyframes cielo{to{background-position:180px 180px,-120px 120px,260px -260px,-90px 90px}}`,
+    // Onde lente sul fondo: due ellissi sfocate che salgono e scendono.
+    onde: `body::before{content:'';position:fixed;left:-20%;right:-20%;bottom:-30%;height:80%;pointer-events:none;
+      background:radial-gradient(ellipse 60% 50% at 30% 100%,${c.acc}33,transparent 70%),radial-gradient(ellipse 55% 45% at 75% 100%,${c.acc}22,transparent 70%);
+      filter:blur(30px);animation:onda 14s ease-in-out infinite alternate}
+      @keyframes onda{to{transform:translateY(-8%) scaleX(1.1)}}`,
+    // Griglia in prospettiva, tipo videogioco anni ottanta.
+    griglia: `body::before{content:'';position:fixed;left:-50%;right:-50%;bottom:0;height:55%;pointer-events:none;opacity:.5;
+      background-image:linear-gradient(${c.acc}66 1px,transparent 1px),linear-gradient(90deg,${c.acc}66 1px,transparent 1px);
+      background-size:60px 60px;transform:perspective(320px) rotateX(62deg);transform-origin:bottom;
+      mask-image:linear-gradient(to top,#000,transparent 75%)}`,
   };
   const effetto = EFFETTI[t.effetto] || '';
 
@@ -324,7 +341,12 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
     vetro: `background:${c.card};border:1px solid ${c.bordo};backdrop-filter:blur(12px)`,
   };
   const stileBtn = STILI[t.stileBtn] || STILI.pieno;
-  const ombra = t.ombra !== false ? 'box-shadow:0 2px 10px rgba(0,0,0,.10)' : '';
+  // Ombra a DUE strati: una stretta che stacca il bordo dal fondo e una larga e
+  // morbida che dà la distanza. È la differenza fra "un riquadro con l'ombra" e
+  // una cosa che sembra appoggiata sopra la pagina.
+  const ombra = t.ombra !== false
+    ? 'box-shadow:0 1px 2px rgba(0,0,0,.10),0 8px 24px -8px rgba(0,0,0,.22)'
+    : '';
   const ANIM = {
     fade: '@keyframes ent{from{opacity:0}to{opacity:1}}',
     rise: '@keyframes ent{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}',
@@ -522,25 +544,55 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   :root{--testo:${c.testo};--tenue:${c.tenue};--acc:${c.acc};--r:${raggio}px;--w:${larghezza}rem}
-  html{-webkit-text-size-adjust:100%}
+  html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;overflow-x:hidden}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  ::selection{background:var(--acc);color:#fff}
+  /* la barra di scorrimento intonata al tema, non quella grigia di sistema */
+  *{scrollbar-width:thin;scrollbar-color:${c.acc}88 transparent}
+  ::-webkit-scrollbar{width:9px;height:9px}
+  ::-webkit-scrollbar-thumb{background:${c.acc}88;border-radius:9px}
+  ::-webkit-scrollbar-track{background:transparent}
+  :focus-visible{outline:2px solid var(--acc);outline-offset:3px;border-radius:6px}
   body{min-height:100dvh;${sfondo};color:var(--testo);font-family:${font};
     display:flex;flex-direction:column;align-items:center;
-    padding:clamp(1.5rem,6vw,3rem) 1.25rem 2.5rem;line-height:1.5;-webkit-font-smoothing:antialiased}
+    /* env(safe-area-inset-*): sui telefoni con la tacca e la barra in fondo il
+       contenuto non finisce più sotto di esse */
+    padding:calc(clamp(1.5rem,6vw,3rem) + env(safe-area-inset-top)) calc(1.25rem + env(safe-area-inset-right))
+            calc(2.5rem + env(safe-area-inset-bottom)) calc(1.25rem + env(safe-area-inset-left));
+    line-height:1.5;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
   ${effetto}
   .telo{position:relative;z-index:1;width:100%;max-width:var(--w);display:flex;flex-direction:column;
     align-items:${aSinistra ? 'flex-start' : 'center'};text-align:${aSinistra ? 'left' : 'center'};gap:.3rem}
+  /* la foto profilo con un anello sfumato che gira piano: due righe di CSS che
+     fanno la differenza fra "un'immagine tonda" e un profilo curato */
   .avatar{width:5.5rem;height:5.5rem;border-radius:${t.avatarForma === 'quadrato' ? 'calc(var(--r) * .9)' : '50%'};
-    object-fit:cover;border:2px solid ${c.bordo};display:grid;place-items:center;
-    font-size:2.2rem;font-weight:700;color:var(--acc);background:${c.card}}
+    object-fit:cover;display:grid;place-items:center;position:relative;
+    font-size:2.2rem;font-weight:700;color:var(--acc);background:${c.card};
+    border:2px solid transparent;
+    background-image:linear-gradient(${c.card},${c.card}),conic-gradient(from 0deg,${c.acc},${c.bordo},${c.acc});
+    background-origin:border-box;background-clip:padding-box,border-box;
+    box-shadow:0 6px 22px -8px ${c.acc}80}
+  /* sulla FOTO il trucco del bordo sfumato non si può usare (l'immagine ci sta
+     sopra): lì l'anello lo fa un'ombra piena */
+  img.avatar{background-image:none;border:0;box-shadow:0 0 0 2px ${c.acc},0 6px 22px -8px ${c.acc}80}
   h1{font-size:clamp(1.35rem,5vw,1.75rem);font-weight:700;letter-spacing:-.02em;margin-top:.9rem;text-wrap:balance}
   .tag{color:var(--tenue);font-size:.95rem;max-width:26rem;margin-top:.15rem;text-wrap:pretty}
   .lista{width:100%;display:flex;flex-direction:column;gap:.6rem;margin-top:1.5rem;text-align:left}
   .voce{display:flex;align-items:center;gap:.75rem;padding:.9rem 1.05rem;border-radius:var(--r);
     ${stileBtn};${ombra};color:var(--testo);text-decoration:none;font-weight:600;font-size:1rem;
     transition:transform .18s cubic-bezier(.34,1.56,.64,1),border-color .18s ease,filter .18s ease}
-  .voce:hover,.voce:focus-visible{transform:translateY(-2px);border-color:var(--acc);filter:brightness(1.04)}
+  .voce:hover,.voce:focus-visible{transform:translateY(-2px);border-color:var(--acc);filter:brightness(1.04);
+    box-shadow:0 1px 2px rgba(0,0,0,.10),0 14px 30px -12px ${c.acc}66}
+  .voce:active{transform:translateY(0) scale(.994)}
   .voce:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
-  .voce.spicca{background:var(--acc);border-color:var(--acc);color:#fff}
+  .voce.spicca{background:var(--acc);border-color:var(--acc);color:#fff;position:relative;overflow:hidden}
+  /* una luce che passa sopra il bottone principale: si nota appena, ed è
+     esattamente il motivo per cui l'occhio ci finisce sopra */
+  .voce.spicca::after{content:'';position:absolute;top:0;bottom:0;width:45%;left:-60%;
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.28),transparent);
+    transform:skewX(-18deg);pointer-events:none}
+  @media (prefers-reduced-motion:no-preference){.voce.spicca::after{animation:luce 4.5s ease-in-out 1.2s infinite}}
+  @keyframes luce{0%{left:-60%}35%,100%{left:130%}}
   .voce.spicca .ico,.voce.spicca .ico svg,.voce.spicca .fre,.voce.spicca .so{color:#fff!important;opacity:.95}
   .ico{flex:0 0 auto;display:inline-flex;color:var(--acc)}
   .ico svg{color:var(--bc,currentColor)}
@@ -558,7 +610,11 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
     display:inline-flex;align-items:center;justify-content:center;${stileBtn};color:var(--acc);
     transition:transform .18s cubic-bezier(.34,1.56,.64,1),border-color .18s ease}
   .soc svg{color:var(--bc,currentColor)}
-  .soc:hover{transform:translateY(-2px);border-color:var(--acc)}
+  .soc:hover{transform:translateY(-3px) scale(1.06);border-color:var(--acc);box-shadow:0 10px 20px -10px ${c.acc}99}
+  .soc:active{transform:translateY(0) scale(.96)}
+  .tessera img{transition:transform .4s cubic-bezier(.22,.9,.3,1)}
+  a.tessera:hover img{transform:scale(1.06)}
+  a.tessera:active{transform:translateY(-1px) scale(.99)}
   .img{width:100%;border-radius:var(--r);margin-top:1rem;display:block;height:auto}
   .emb{width:100%;margin-top:1rem;border-radius:${raggioEmb}px;overflow:hidden;border:1px solid ${c.bordo};aspect-ratio:16/9}
   .emb iframe{width:100%;height:100%;border:0;display:block}
