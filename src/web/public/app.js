@@ -10120,10 +10120,12 @@ function initGuscio() {
   document.addEventListener('click', (ev) => {
     const sb = ev.target.closest('[data-sblocca]');
     if (sb) { ev.preventDefault(); sbloccaAddon(sb.dataset.sblocca); return; }
-    // Qualsiasi link "vai a quella scheda" dentro i pannelli. Prima valeva solo
-    // dentro .blocco-carta: altrove (per esempio "Scegli i pacchetti" nella
-    // Sottoscrizione) il click non faceva assolutamente niente.
-    const vp = ev.target.closest('[data-scheda]');
+    // Link e bottoni "vai a quella scheda" dentro i pannelli (per esempio
+    // "Scegli i pacchetti" nella Sottoscrizione, che non faceva niente).
+    // SOLO <a> e <button>: il pannello stesso è una <section data-scheda="...">,
+    // quindi cercare un antenato qualsiasi significava intercettare OGNI click
+    // dentro la scheda e annullarlo — caselle e cursori compresi.
+    const vp = ev.target.closest('a[data-scheda],button[data-scheda]');
     if (vp && !vp.closest('#nav-drawer')) { ev.preventDefault(); vaiAScheda(vp.dataset.scheda); }
   });
 
