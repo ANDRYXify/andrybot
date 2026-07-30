@@ -289,6 +289,7 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   const descr = pagina.tagline || `Tutti i link di ${display || login}`;
   const dom = domini(baseUrl);          // parent= dei player Twitch/Kick
   const scuro = eScuro(c.bg);           // decide il tema della chat incorporata
+  const disp = ['colonna', 'rivista', 'sezioni'].includes(t.disposizione) ? t.disposizione : 'colonna';
 
   // sfondo secondo il tipo scelto
   let sfondo = `background:${c.bg}`;
@@ -372,6 +373,32 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
       return `${b.titolo ? `<h2 class="tit" ${ritardo}>${esc(b.titolo)}</h2>` : ''}
         <div class="emb f-${esc(forma)}" ${ritardo}><iframe src="${esc(e.src)}" ${IFRAME}
         title="${esc(b.titolo || 'contenuto incorporato')}"></iframe></div>`;
+    }
+    if (b.tipo === 'eroe') {
+      const img = urlSicuro(b.img);
+      const cta = urlSicuro(b.url);
+      if (!b.titolo && !img) return anteprima ? `<div class="segna" ${ritardo}>copertina: metti un titolo o un'immagine</div>` : '';
+      return `<section class="eroe a-${esc(b.altezza || 'media')}${img ? ' con-img' : ''}" ${img ? `style="--sf:url('${esc(img)}');--d:${Math.min(n, 12) * 45}ms"` : ritardo}>
+        <div class="eroe-in">
+          ${b.titolo ? `<h2 class="eroe-t">${esc(b.titolo)}</h2>` : ''}
+          ${b.sotto ? `<p class="eroe-s">${esc(b.sotto)}</p>` : ''}
+          ${cta && b.etichetta ? `<a class="eroe-b" href="${esc(cta)}" target="_blank" rel="noopener nofollow">${esc(b.etichetta)}</a>` : ''}
+        </div>
+      </section>`;
+    }
+    if (b.tipo === 'griglia') {
+      const tessere = (b.voci || []).map((v) => {
+        const img = urlSicuro(v.img);
+        if (!img && !v.titolo) return '';
+        const href = urlSicuro(v.url);
+        const dentro = `${img ? `<img src="${esc(img)}" alt="${esc(v.titolo || '')}" loading="lazy">` : ''}
+          ${v.titolo || v.testo ? `<span class="tess-tx">${v.titolo ? `<span class="tess-t">${esc(v.titolo)}</span>` : ''}${v.testo ? `<span class="tess-s">${esc(v.testo)}</span>` : ''}</span>` : ''}`;
+        return href
+          ? `<a class="tessera" href="${esc(href)}" target="_blank" rel="noopener nofollow">${dentro}</a>`
+          : `<div class="tessera">${dentro}</div>`;
+      }).filter(Boolean).join('');
+      if (!tessere) return anteprima ? `<div class="segna" ${ritardo}>griglia: aggiungi almeno una tessera</div>` : '';
+      return `<div class="griglia" ${ritardo}>${tessere}</div>`;
     }
     if (b.tipo === 'diretta') {
       const dv = direttaSrc(b, dom, login);
@@ -459,6 +486,33 @@ ${imgAvatar ? `<meta property="og:image" content="${esc(imgAvatar)}">` : ''}
   .emb.f-alto{aspect-ratio:auto;height:380px}
   .emb.f-pagina{aspect-ratio:auto;height:34rem}   /* profili e pagine: una vetrina, non un video */
   .emb.f-chat{aspect-ratio:auto;height:26rem;margin-top:.5rem}
+  /* ── copertina: l'apertura della pagina, non un bottone ── */
+  .eroe{position:relative;width:100%;margin-top:1rem;border-radius:var(--r);overflow:hidden;
+    display:grid;place-items:${aSinistra ? 'center start' : 'center'};padding:clamp(1.4rem,5vw,2.6rem);
+    min-height:16rem;border:1px solid ${c.bordo};background-color:${c.card};
+    background-image:var(--sf,none),linear-gradient(135deg,${c.acc}33,${c.bg2});
+    background-size:cover;background-position:center}
+  .eroe.a-bassa{min-height:10rem}
+  .eroe.a-piena{min-height:min(76vh,34rem)}
+  /* velo scuro solo se c'è una foto: serve a leggere il testo sopra l'immagine */
+  .eroe.con-img::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,${c.bg}dd,${c.bg}55 55%,transparent)}
+  .eroe-in{position:relative;z-index:1;display:flex;flex-direction:column;gap:.45rem;max-width:34rem;
+    align-items:${aSinistra ? 'flex-start' : 'center'}}
+  .eroe-t{font-size:clamp(1.6rem,6vw,2.6rem);font-weight:800;letter-spacing:-.03em;line-height:1.05;text-wrap:balance}
+  .eroe-s{color:var(--tenue);font-size:1rem;text-wrap:pretty}
+  .eroe-b{margin-top:.6rem;padding:.7rem 1.3rem;border-radius:var(--r);background:var(--acc);color:#fff;
+    text-decoration:none;font-weight:700;transition:transform .18s cubic-bezier(.34,1.56,.64,1)}
+  .eroe-b:hover{transform:translateY(-2px)}
+  /* ── griglia di tessere: contenuti da guardare, non righe da leggere ── */
+  .griglia{width:100%;margin-top:1rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(8.5rem,1fr));gap:.6rem}
+  .tessera{display:flex;flex-direction:column;border-radius:var(--r);overflow:hidden;${stileBtn};${ombra};
+    color:var(--testo);text-decoration:none;
+    transition:transform .18s cubic-bezier(.34,1.56,.64,1),border-color .18s ease}
+  a.tessera:hover{transform:translateY(-3px);border-color:var(--acc)}
+  .tessera img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block}
+  .tess-tx{display:flex;flex-direction:column;gap:.1rem;padding:.6rem .7rem;text-align:left}
+  .tess-t{font-weight:700;font-size:.9rem;line-height:1.2}
+  .tess-s{font-size:.78rem;color:var(--tenue)}
   .spazio{width:100%;height:1.6rem}
   .badge2{align-self:${aSinistra ? 'flex-start' : 'center'};margin-top:1rem;padding:.3rem .8rem;border-radius:999px;
     background:var(--acc);color:#fff;font-size:.8rem;font-weight:700;letter-spacing:.02em}
@@ -468,7 +522,32 @@ ${imgAvatar ? `<meta property="og:image" content="${esc(imgAvatar)}">` : ''}
   .vuoto{margin-top:1.5rem;color:var(--tenue);font-size:.95rem}
   .piede{margin-top:2.2rem;font-size:.78rem;color:var(--tenue)}
   .piede a{color:var(--tenue)}
-  ${anim ? `${anim}\n  .voce,.tit,.par,.sep,.socrow,.img,.emb{animation:ent .5s cubic-bezier(.16,1,.3,1) both;animation-delay:var(--d,0ms)}` : ''}
+  /* ── disposizione: come stanno insieme i contenuti ─────────────────────── */
+  ${disp === 'rivista' ? `
+  .telo{max-width:min(64rem,100%)}
+  @media (min-width:720px){
+    .lista{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:.8rem;align-items:start}
+    .lista > .tit,.lista > .sep,.lista > .par,.lista > .eroe,.lista > .spazio,.lista > .socrow,
+    .lista > .griglia,.lista > .segna,.lista > .emb.f-pagina,.lista > .emb.f-chat{grid-column:1/-1}
+  }` : ''}
+  ${disp === 'sezioni' ? `
+  .telo{max-width:min(52rem,100%)}
+  .lista{gap:1.5rem;margin-top:2.2rem}
+  .tit{font-size:clamp(1.3rem,4.5vw,2rem);text-transform:none;letter-spacing:-.025em;color:var(--testo);margin-top:2.4rem}
+  .par{font-size:1.05rem;margin-top:.9rem}
+  .voce{padding:1.15rem 1.25rem;font-size:1.05rem}
+  .griglia{grid-template-columns:repeat(auto-fill,minmax(11rem,1fr));gap:.9rem}` : ''}
+
+  /* Comparsa: in pagina i contenuti entrano MENTRE SCORRI (animation-timeline,
+     nessun JavaScript). Dove il browser non la conosce resta la comparsa a
+     cascata di prima. In anteprima niente animazioni: rifarle a ogni tasto
+     premuto faceva sembrare l'editor rotto. */
+  ${anim && !anteprima ? `${anim}
+  .voce,.tit,.par,.sep,.socrow,.img,.emb,.eroe,.griglia{animation:ent .5s cubic-bezier(.16,1,.3,1) both;animation-delay:var(--d,0ms)}
+  @supports (animation-timeline:view()){@media (prefers-reduced-motion:no-preference){
+    .voce,.tit,.par,.img,.emb,.eroe,.griglia,.socrow{animation-delay:0ms;animation-duration:.6s;
+      animation-timeline:view();animation-range:entry 0% cover 22%}
+  }}` : ''}
   @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
 </style>
 </head>
