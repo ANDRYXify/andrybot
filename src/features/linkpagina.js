@@ -456,8 +456,12 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
       if (!pezzi[i]) continue;
       const b = pagina.blocchi[i] || {};
       const html = involucro(pezzi[i], b, i);
-      if (b.larghezza === 'meta' || b.larghezza === 'terzo') fila.push(html);
-      else { chiudi(); fuori.push(html); }
+      // In anteprima ogni pezzo si porta dietro il suo numero, così cliccandolo
+      // l'editor sa quale comando aprire. display:contents = l'involucro non
+      // esiste per l'impaginazione, quindi non sposta niente di un pixel.
+      const seg = anteprima ? `<div class="sel-b" data-b="${i}" style="display:contents">${html}</div>` : html;
+      if (b.larghezza === 'meta' || b.larghezza === 'terzo') fila.push(seg);
+      else { chiudi(); fuori.push(seg); }
     }
     chiudi();
     return fuori.join('\n');
@@ -677,6 +681,10 @@ ${imgAvatar ? `<meta property="og:image" content="${esc(imgAvatar)}">` : ''}
   }}
   .tit{overflow:hidden}` : ''}
   @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+  ${anteprima ? `
+  /* solo in anteprima: si vede che ogni pezzo si può cliccare per aprirne i comandi */
+  .sel-b:hover > *{outline:2px dashed var(--acc);outline-offset:4px;cursor:pointer}
+  .sel-b.tocca > *{outline:2px solid var(--acc);outline-offset:4px}` : ''}
 </style>
 </head>
 <body>
