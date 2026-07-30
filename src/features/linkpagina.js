@@ -239,6 +239,11 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   };
   const font = PILE[t.font] || PILE.system;
   const raggio = Number.isFinite(Number(t.raggio)) ? Number(t.raggio) : 14;
+  // L'arrotondamento scelto NON vale per i riquadri incorporati: quel valore
+  // arriva fino alla forma a pillola, e un video 16:9 con gli angoli mangiati
+  // diventa una compressa. Qui il raggio si ferma a 16px (e se hai scelto
+  // spigoli vivi restano vivi).
+  const raggioEmb = Math.min(Math.max(raggio, 0), 16);
   const larghezza = Number(t.larghezza) || 30;
   const aSinistra = t.allinea === 'sinistra';
   const titolo = pagina.headline || display || login;
@@ -401,7 +406,7 @@ ${imgAvatar ? `<meta property="og:image" content="${esc(imgAvatar)}">` : ''}
   .soc svg{color:var(--bc,currentColor)}
   .soc:hover{transform:translateY(-2px);border-color:var(--acc)}
   .img{width:100%;border-radius:var(--r);margin-top:1rem;display:block;height:auto}
-  .emb{width:100%;margin-top:1rem;border-radius:var(--r);overflow:hidden;border:1px solid ${c.bordo};aspect-ratio:16/9}
+  .emb{width:100%;margin-top:1rem;border-radius:${raggioEmb}px;overflow:hidden;border:1px solid ${c.bordo};aspect-ratio:16/9}
   .emb iframe{width:100%;height:100%;border:0;display:block}
   /* proporzioni per tipo di contenuto: un brano non è un video, e uno short
      nemmeno. Con un 16/9 forzato restava mezzo riquadro vuoto. */

@@ -6199,7 +6199,7 @@ async function caricaPaginaLink() {
           </select>
           <label class="campo spazio-sopra">${L('Angoli dei bottoni', 'Button corners', 'Esquinas de los botones')} <span class="tenue" id="lp-rag-v">${Number(LP.tema.raggio) ?? 14}px</span></label>
           <input type="range" data-lpk="raggio" min="0" max="999" value="${Number(LP.tema.raggio) ?? 14}">
-          <p class="suggerimento">${L('0 = spigoli vivi · 999 = pillola', '0 = sharp corners · 999 = pill', '0 = esquinas rectas · 999 = píldora')}</p>
+          <p class="suggerimento">${L('0 = spigoli vivi · 999 = pillola. Non vale per video e musica: lì un arrotondamento esagerato mangerebbe l\'immagine.', '0 = sharp corners · 999 = pill. Not applied to video and music: there an extreme radius would eat the picture.', '0 = esquinas rectas · 999 = píldora. No se aplica a vídeo y música: ahí un redondeo extremo se comería la imagen.')}</p>
 
           <label class="campo spazio-sopra">${L('Larghezza della colonna', 'Column width', 'Ancho de la columna')} <span class="tenue" id="lp-lar-v">${Number(LP.tema.larghezza) || 30}rem</span></label>
           <input type="range" data-lpk="larghezza" min="20" max="46" value="${Number(LP.tema.larghezza) || 30}">
