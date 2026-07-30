@@ -1218,7 +1218,11 @@ export const FONT_LINKPAGE = ['system', 'inter', 'mono', 'serif', 'condensato', 
 export const ICONE_LINKPAGE = ['link', 'twitch', 'youtube', 'instagram', 'tiktok', 'discord', 'spotify',
   'x', 'telegram', 'kick', 'github', 'reddit', 'threads', 'facebook', 'whatsapp', 'twitter',
   'cuore', 'stella', 'regalo', 'carrello', 'calendario', 'mail', 'musica', 'video', 'scarica', 'gioco', 'caffe', 'soldi'];
-export const TIPI_BLOCCO = ['link', 'titolo', 'testo', 'badge', 'separatore', 'spazio', 'social', 'embed', 'immagine', 'diretta'];
+export const TIPI_BLOCCO = ['link', 'titolo', 'testo', 'badge', 'separatore', 'spazio', 'social', 'embed', 'immagine', 'diretta', 'eroe', 'griglia'];
+// Come sono disposti i contenuti. "colonna" è la classica lista di bottoni;
+// "rivista" li affianca in una griglia su schermo largo; "sezioni" li distanzia
+// e li ingrandisce, per una pagina che si SCORRE invece di leggersi in un colpo.
+export const DISPOSIZIONI = ['colonna', 'rivista', 'sezioni'];
 // Come si incorpora un contenuto: 'auto' lo decide il provider (un brano Spotify
 // è basso, uno short è verticale, un video è 16:9), gli altri li forza chi
 // costruisce la pagina.
@@ -1331,6 +1335,7 @@ export const linkPage = {
       avatarForma: scelta(t.avatarForma, ['cerchio', 'quadrato', 'nessuno'], 'cerchio'),
       larghezza: num(t.larghezza, 20, 46, 30),
       allinea: scelta(t.allinea, ['centro', 'sinistra'], 'centro'),
+      disposizione: scelta(t.disposizione, DISPOSIZIONI, 'colonna'),
     };
 
     // I blocchi si CONSERVANO cosi come sono, anche se incompleti: quello che hai
@@ -1377,6 +1382,16 @@ export const linkPage = {
           titolo: str(b.titolo, L.label) });
       } else if (tipo === 'immagine') {
         out.push({ tipo, url: urlOk(b.url), alt: str(b.alt, 140) });
+      } else if (tipo === 'eroe') {
+        // copertina: l'apertura della pagina, con immagine di sfondo e un invito
+        out.push({ tipo, titolo: str(b.titolo, L.headline), sotto: str(b.sotto, L.tagline),
+          img: urlOk(b.img), url: urlOk(b.url), etichetta: str(b.etichetta, L.label),
+          altezza: scelta(b.altezza, ['media', 'piena', 'bassa'], 'media') });
+      } else if (tipo === 'griglia') {
+        const voci = (Array.isArray(b.voci) ? b.voci : []).slice(0, 12).map((v) => ({
+          img: urlOk(v?.img), titolo: str(v?.titolo, L.label), testo: str(v?.testo, L.sotto), url: urlOk(v?.url),
+        }));
+        out.push({ tipo, voci });
       }
       return out;
     }, []);
