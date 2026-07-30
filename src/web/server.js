@@ -678,6 +678,30 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // Prima era un reverse-proxy verso andryxify.it: significava dipendere da un
   // altro servizio per una pagina nostra, e per modificarla servivano un token
   // Twitch a ogni salvataggio e l'abilitazione "approved" sul sito.
+  // FOTO PROFILO DI TWITCH. Twitch la espone come profile_image_url, ma non la
+  // salvavamo da nessuna parte: la pagina /u mostrava l'iniziale del nome perché
+  // il campo avatar era sempre vuoto. Ora la chiediamo a Helix la prima volta che
+  // serve e la teniamo nel DB. Il tentativo verso Twitch è a colpo singolo ogni
+  // 10 minuti per canale: se l'API è giù o il canale non esiste non si martella
+  // Helix a ogni visita della pagina (che è pubblica, quindi anche dai bot).
+  const avatarUltimoTentativo = new Map();   // login → ts
+  async function avatarDi(login, { aggiorna = false } = {}) {
+    const l = String(login || '').toLowerCase();
+    const s = streamers.get(l);
+    if (!s) return '';                        // è una cache dello streamer, non lo crea
+    if (s.avatar && !aggiorna) return s.avatar;
+    const ultimo = avatarUltimoTentativo.get(l) || 0;
+    if (!aggiorna && Date.now() - ultimo < 600000) return s.avatar || '';
+    avatarUltimoTentativo.set(l, Date.now());
+    try {
+      const u = await helix?.getUserByLogin?.(l);
+      const url = u?.profile_image_url || '';
+      if (url && url !== s.avatar) streamers.setAvatar(l, url);
+      if (url) return url;
+    } catch (e) { log.warn('foto profilo twitch:', e?.message || e); }
+    return s.avatar || '';
+  }
+
   // immagini della pagina link: pubbliche come la pagina che le mostra
   app.get('/u/:user/img/:file', (req, res) => {
     const login = String(req.params.user || '').toLowerCase();
@@ -695,7 +719,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const html = renderLinkPage(p, {
       login,
       display: s?.display || login,
-      avatar: s?.avatar || '',
+      avatar: await avatarDi(login),
       baseUrl: config.baseUrl,
     });
     res.set('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
@@ -723,7 +747,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       icone: ICONE_LINKPAGE,
       tipi: TIPI_BLOCCO,
       limiti: LIMITI_LINKPAGE,
-      avatarTwitch: s?.avatar || '',
+      avatarTwitch: await avatarDi(login),
       // per chi parte da zero: un primo blocco già pronto sul suo canale
       suggeriti: linkPage.esiste(login) ? [] : [
         { tipo: 'link', icona: 'twitch', label: 'Twitch', url: `https://twitch.tv/${login}`, sotto: '', evidenzia: true },
@@ -802,7 +826,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       avatar: b.avatar, tema: b.tema, blocchi: b.blocchi,
     });
     const html = renderLinkPage(finta, {
-      login, display: s?.display || login, avatar: s?.avatar || '', baseUrl: config.baseUrl,
+      login, display: s?.display || login, avatar: await avatarDi(login), baseUrl: config.baseUrl,
       anteprima: true,   // mostra anche i blocchi ancora da completare
     });
     res.json({ html });
@@ -961,6 +985,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         try { streamers.upsertApproved(login, disp); seedStreamer(login); sync(); }
         catch (e) { log.warn('primo accesso, seed streamer:', e?.message || e); }
       }
+      // foto profilo: la aggiorno a ogni accesso (su Twitch l'indirizzo cambia
+      // quando la persona cambia foto). Non blocca il login: se Twitch non
+      // risponde si riprova alla prossima visita della pagina /u.
+      avatarDi(login, { aggiorna: true }).catch(() => {});
       const contesti = contestiPer(login);
       if (contesti.length) req.session.user = sessionePer(login, disp, contestoDefault(contesti));
       // veniva da "attiva il bot" (Base + add-on scelti)? → dritti al checkout
@@ -1002,6 +1030,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       const ctx = contestoDefault(contesti, preferito);
       if (ctx.role === 'moderatore') managers.touch(ctx.canale, modLogin);
       req.session.user = sessionePer(modLogin, disp, ctx);
+      avatarDi(modLogin, { aggiorna: true }).catch(() => {});   // foto profilo sempre fresca
       log.info(`login: @${modLogin} → gestisce #${ctx.canale} (${ctx.role})`);
       return res.redirect('/');
     }
@@ -1151,6 +1180,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     try {
       const u = await helix.getUserByLogin(user.login);
       if (u?.id) streamers.request(user.login, u.display_name || user.display, u.id);
+      if (u?.profile_image_url) streamers.setAvatar(user.login, u.profile_image_url);
     } catch { /* pazienza: si riproverà */ }
     res.json({ ok: true });
   }));
