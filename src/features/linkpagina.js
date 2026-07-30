@@ -162,9 +162,13 @@ function embedSrc(u, dom = ['socialbot.live']) {
       const i = String(seg[0] || '').startsWith('intl-') ? 1 : 0;
       const tipo = seg[i], id = seg[i + 1];
       if (!['track', 'album', 'playlist', 'artist', 'episode', 'show'].includes(tipo) || !id) return null;
-      // solo il brano sta nella barra bassa: un episodio di podcast ha la
-      // copertina grande e a 152px veniva tagliato a metà
-      return { src: `https://open.spotify.com/embed/${tipo}/${pezzo(id)}`, formato: tipo === 'track' ? 'compatto' : 'alto' };
+      // Le altezze sono quelle che Spotify stesso consiglia: 152 per il brano,
+      // 232 per un episodio o un podcast, 380 per album e playlist. Sbagliarle
+      // non taglia solo il contenuto: e l'altezza a decidere QUALE impaginazione
+      // usa Spotify, quindi con 380 su un episodio esce la scheda grande e sotto
+      // avanza il vuoto.
+      const f = tipo === 'track' ? 'compatto' : (tipo === 'episode' || tipo === 'show' ? 'medio' : 'alto');
+      return { src: `https://open.spotify.com/embed/${tipo}/${pezzo(id)}`, formato: f };
     }
 
     // Twitch: diretta di un canale, VOD, clip
@@ -378,15 +382,19 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
         return `<div class="segna" ${ritardo}>${esc(motivo)}</div>`;
       }
       const forma = b.formato && b.formato !== 'auto' ? b.formato : e.formato;
+      // altezza scelta a mano: vince su tutto, comprese le proporzioni
+      const alt = Number(b.altezza) > 0
+        ? `style="height:${Math.min(1200, Math.round(b.altezza))}px;aspect-ratio:auto;--d:${Math.min(n - 1, 12) * 45}ms"`
+        : ritardo;
       return `${b.titolo ? `<h2 class="tit" ${ritardo}>${esc(b.titolo)}</h2>` : ''}
-        <div class="emb f-${esc(forma)}" ${ritardo}><iframe src="${esc(e.src)}" ${IFRAME}
+        <div class="emb f-${esc(forma)}" ${alt}><iframe src="${esc(e.src)}" ${IFRAME}
         title="${esc(b.titolo || 'contenuto incorporato')}"></iframe></div>`;
     }
     if (b.tipo === 'eroe') {
       const img = urlSicuro(b.img);
       const cta = urlSicuro(b.url);
       if (!b.titolo && !img) return anteprima ? `<div class="segna" ${ritardo}>copertina: metti un titolo o un'immagine</div>` : '';
-      return `<section class="eroe a-${esc(b.altezza || 'media')}${img ? ' con-img' : ''}${b.fissa ? ' fissa' : ''}" ${img ? `style="--sf:url('${esc(img)}');--d:${Math.min(n, 12) * 45}ms"` : ritardo}>
+      return `<section class="eroe a-${esc(b.altezza || 'media')}${img ? ' con-img' : ''}${b.fissa ? ' fissa' : ''}" ${img ? `style="--sf:url('${esc(img)}');--d:${Math.min(n - 1, 12) * 45}ms"` : ritardo}>
         <div class="eroe-in">
           ${b.titolo ? `<h2 class="eroe-t">${parole(b.titolo)}</h2>` : ''}
           ${b.sotto ? `<p class="eroe-s">${esc(b.sotto)}</p>` : ''}
@@ -505,9 +513,10 @@ ${imgAvatar ? `<meta property="og:image" content="${esc(imgAvatar)}">` : ''}
   .emb.f-video{aspect-ratio:16/9}
   .emb.f-quadrato{aspect-ratio:1/1}
   .emb.f-verticale{aspect-ratio:9/16;max-width:22rem;align-self:center}
-  .emb.f-compatto{aspect-ratio:auto;height:152px}
-  .emb.f-alto{aspect-ratio:auto;height:380px}
-  .emb.f-pagina{aspect-ratio:auto;height:34rem}   /* profili e pagine: una vetrina, non un video */
+  .emb.f-compatto{aspect-ratio:auto;height:152px}   /* un brano */
+  .emb.f-medio{aspect-ratio:auto;height:232px}      /* un episodio, un podcast */
+  .emb.f-alto{aspect-ratio:auto;height:380px}       /* album, playlist */
+  .emb.f-pagina{aspect-ratio:auto;height:30rem}     /* profili e pagine: una vetrina, non un video */
   .emb.f-chat{aspect-ratio:auto;height:26rem;margin-top:.5rem}
   /* ── copertina: l'apertura della pagina, non un bottone ── */
   .eroe{position:relative;width:100%;margin-top:1rem;border-radius:var(--r);overflow:hidden;
