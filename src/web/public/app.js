@@ -6118,6 +6118,12 @@ async function caricaPaginaLink() {
             <option value="url"${LP.testa.avatar && LP.testa.avatar !== 'no' ? ' selected' : ''}>${L('Un\'immagine mia (indirizzo)', 'My own image (address)', 'Una imagen mía (dirección)')}</option>
             <option value="no"${LP.testa.avatar === 'no' ? ' selected' : ''}>${L('Nessuna', 'None', 'Ninguna')}</option>
           </select>
+          <div id="lp-avatar-tw" class="lp-avatar-tw" ${LP.testa.avatar ? 'hidden' : ''}>
+            ${d.avatarTwitch
+              ? `<img src="${esc(d.avatarTwitch)}" alt="" width="44" height="44" loading="lazy">
+                 <span class="suggerimento">${L('Questa è la tua foto di Twitch: la prendiamo da soli e si aggiorna quando la cambi là.', 'This is your Twitch picture: we fetch it for you and it updates when you change it there.', 'Esta es tu foto de Twitch: la traemos nosotros y se actualiza cuando la cambias allí.')}</span>`
+              : `<span class="suggerimento">${L('Non riusciamo a leggere la tua foto da Twitch in questo momento: riproviamo da soli, oppure scegli “Un\'immagine mia”.', 'We can\'t read your Twitch picture right now: we\'ll retry by ourselves, or pick “My own image”.', 'Ahora no podemos leer tu foto de Twitch: lo reintentamos solos, o elige “Una imagen mía”.')}</span>`}
+          </div>
           <div id="lp-avatar-box" ${LP.testa.avatar && LP.testa.avatar !== 'no' ? '' : 'hidden'}>
             <p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpup="avatar">${_bIco(ICO.carica)}${L('Carica una foto', 'Upload a photo', 'Subir una foto')}</button></p>
             <input type="url" id="lp-avatar-url" data-lpt="avatarUrl" class="spazio-sopra" maxlength="${d.limiti.url}" value="${esc(LP.testa.avatar && LP.testa.avatar !== 'no' ? LP.testa.avatar : '')}" placeholder="${esc(L('…oppure incolla un indirizzo', '…or paste an address', '…o pega una dirección'))}">
@@ -6254,8 +6260,10 @@ async function caricaPaginaLink() {
       LP.testa[tt] = t.value;
     } else if (tt === 'avatarModo') {
       const cassetto = box.querySelector('#lp-avatar-box'); const inp = box.querySelector('#lp-avatar-url');
+      const tw = box.querySelector('#lp-avatar-tw');
       if (t.value === 'url') { cassetto.hidden = false; LP.testa.avatar = inp.value || ''; }
       else { cassetto.hidden = true; LP.testa.avatar = t.value === 'no' ? 'no' : ''; }
+      if (tw) tw.hidden = t.value !== '';        // l'anteprima della foto Twitch serve solo in quel modo
     } else if (tt === 'avatarUrl') {
       LP.testa.avatar = t.value;
     } else if (t.dataset.lpb !== undefined) {
