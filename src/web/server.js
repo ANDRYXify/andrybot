@@ -678,6 +678,14 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // Prima era un reverse-proxy verso andryxify.it: significava dipendere da un
   // altro servizio per una pagina nostra, e per modificarla servivano un token
   // Twitch a ogni salvataggio e l'abilitazione "approved" sul sito.
+  // immagini della pagina link: pubbliche come la pagina che le mostra
+  app.get('/u/:user/img/:file', (req, res) => {
+    const login = String(req.params.user || '').toLowerCase();
+    const file = String(req.params.file || '');
+    if (!/^[a-z0-9_]{1,30}$/.test(login) || !/^lp_[a-z0-9_]+\.(png|jpg|webp|gif)$/i.test(file)) return notFound(res);
+    res.sendFile(join(effectsRoot, login, file), { maxAge: '7d' }, (err) => { if (err) notFound(res); });
+  });
+
   app.get('/u/:user', wrap(async (req, res) => {
     const login = String(req.params.user || '').toLowerCase();
     if (!/^[a-z0-9_]{1,30}$/.test(login)) return notFound(res);
@@ -758,6 +766,29 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     });
   }));
 
+  // Carica un'immagine per la pagina link (profilo o blocco immagine). Riusa la
+  // cartella degli effetti, che e gia per-streamer. Serve perche chiedere un
+  // "indirizzo dell'immagine" a chi ha la foto sul telefono non e una richiesta
+  // sensata: la foto si carica.
+  app.post('/api/linkpage/immagine', requireOwner, upload.single('file'), wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (!req.file) return res.status(400).json({ errore: 'Nessun file.' });
+    const mime = String(req.file.mimetype || '');
+    const est = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' }[mime];
+    if (!est) { await pulisciTemp(req.file.path); return res.status(400).json({ errore: 'Serve un\'immagine (PNG, JPG, WEBP o GIF).' }); }
+    const nome = `lp_${Date.now()}_${crypto.randomBytes(4).toString('hex')}.${est}`;
+    const dir = join(effectsRoot, login);
+    try {
+      mkdirSync(dir, { recursive: true });
+      renameSync(req.file.path, join(dir, nome));
+    } catch (e) {
+      await pulisciTemp(req.file.path);
+      log.warn('linkpage immagine:', e?.message || e);
+      return res.status(500).json({ errore: 'Salvataggio dell\'immagine non riuscito.' });
+    }
+    res.json({ ok: true, url: `${config.baseUrl}/u/${login}/img/${nome}` });
+  }));
+
   // Anteprima: rende l'HTML VERO della pagina senza salvarla, così quello che
   // l'editor mostra è esattamente quello che verrà pubblicato (nessuna finta
   // anteprima che poi non combacia). Non tocca il DB.
@@ -772,6 +803,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     });
     const html = renderLinkPage(finta, {
       login, display: s?.display || login, avatar: s?.avatar || '', baseUrl: config.baseUrl,
+      anteprima: true,   // mostra anche i blocchi ancora da completare
     });
     res.json({ html });
   }));
