@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS streamers (
   status TEXT NOT NULL DEFAULT 'pending',  -- pending | approved | disabled
   bot_enabled INTEGER NOT NULL DEFAULT 1,  -- lo streamer può spegnere il bot senza perdere l'abilitazione
   settings TEXT NOT NULL DEFAULT '{}',     -- JSON: personalità, soglie clip, ecc.
+  avatar TEXT NOT NULL DEFAULT '',         -- foto profilo Twitch, la riempie il server da sé
   requested_at INTEGER NOT NULL,
   approved_at INTEGER
 );
@@ -423,6 +424,10 @@ aggiungiColonna('subscriptions', 'pacchetti', "TEXT NOT NULL DEFAULT ''");
 // Spotify per-streamer: credenziali dell'app dello streamer (Client ID/Secret)
 aggiungiColonna('spotify_tokens', 'client_id', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('spotify_tokens', 'client_secret', "TEXT NOT NULL DEFAULT ''");
+// FOTO PROFILO di Twitch. La pagina /u/<canale> mostrava l'iniziale del nome
+// perché la foto non era salvata da nessuna parte: nessuno la scriveva. Ora c'è
+// la colonna e la riempie il server (al login e alla prima visita della pagina).
+aggiungiColonna('streamers', 'avatar', "TEXT NOT NULL DEFAULT ''");
 // Distingue i MEMBRI COMMUNITY (verificati da andryxify.it) dagli abbonati/promo:
 // serve per bloccare la dashboard a chi non paga e non è community. Alla PRIMA
 // aggiunta della colonna, tutti gli approvati odierni sono community (Stripe non è
@@ -645,6 +650,13 @@ export const streamers = {
   },
   setSettings(login, settings) {
     db.prepare('UPDATE streamers SET settings=? WHERE login=?').run(JSON.stringify(settings || {}), login.toLowerCase());
+  },
+  // Foto profilo di Twitch (profile_image_url). Accetta solo https e solo se il
+  // record esiste già: è una cache, non un motivo per creare uno streamer.
+  setAvatar(login, url) {
+    const u = String(url || '').trim();
+    if (u && !/^https:\/\/[^\s]+$/i.test(u)) return;
+    db.prepare('UPDATE streamers SET avatar=? WHERE login=?').run(u.slice(0, 500), login.toLowerCase());
   },
   remove(login) { db.prepare('DELETE FROM streamers WHERE login=?').run(login.toLowerCase()); },
 };

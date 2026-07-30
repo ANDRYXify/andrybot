@@ -204,7 +204,9 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
     return '';
   }).filter(Boolean).join('\n');
 
-  const mostraAvatar = t.avatarForma !== 'nessuno';
+  // "Nessuna" vuol dire NESSUNA: prima cadeva sull'iniziale del nome, cioè
+  // esattamente il cerchio con la lettera che si voleva togliere.
+  const mostraAvatar = t.avatarForma !== 'nessuno' && pagina.avatar !== 'no';
   const imgAvatar = pagina.avatar === 'no' ? '' : (urlSicuro(pagina.avatar) || avatar || '');
 
   return `<!DOCTYPE html>
