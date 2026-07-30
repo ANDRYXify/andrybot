@@ -6698,9 +6698,10 @@ function lpRenderBlocchi() {
       <div class="lp-bpiede">
         <label>${L('Largo', 'Width', 'Ancho')}
           <select data-lpb="${i}" data-lpf="larghezza">
-            <option value="piena"${(b.larghezza || 'piena') === 'piena' ? ' selected' : ''}>${L('tutta la riga', 'full row', 'toda la fila')}</option>
-            <option value="meta"${b.larghezza === 'meta' ? ' selected' : ''}>${L('metà', 'half', 'mitad')}</option>
-            <option value="terzo"${b.larghezza === 'terzo' ? ' selected' : ''}>${L('un terzo', 'a third', 'un tercio')}</option>
+            ${[['piena', L('tutta la riga', 'full row', 'toda la fila')], ['treQuarti', L('tre quarti', 'three quarters', 'tres cuartos')],
+    ['dueTerzi', L('due terzi', 'two thirds', 'dos tercios')], ['meta', L('metà', 'half', 'mitad')],
+    ['terzo', L('un terzo', 'a third', 'un tercio')], ['quarto', L('un quarto', 'a quarter', 'un cuarto')]]
+    .map(([k, n]) => `<option value="${k}"${(b.larghezza || 'piena') === k ? ' selected' : ''}>${esc(n)}</option>`).join('')}
           </select></label>
         <label>${L('Entra', 'Enters', 'Entra')}
           <select data-lpb="${i}" data-lpf="entrata">
