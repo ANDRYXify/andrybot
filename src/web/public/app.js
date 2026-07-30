@@ -6627,8 +6627,9 @@ function lpRenderBlocchi() {
     } else {
       campi = `<p class="suggerimento">${L('Una linea che separa le sezioni.', 'A line that separates sections.', 'Una línea que separa las secciones.')}</p>`;
     }
-    return `<div class="lp-blocco">
-      <div class="lp-btesta">
+    return `<div class="lp-blocco" data-i="${i}">
+      <div class="lp-btesta" draggable="true" title="${esc(L('Trascina per spostarlo', 'Drag to move it', 'Arrastra para moverlo'))}">
+        <span class="lp-presa" aria-hidden="true"></span>
         <strong>${esc(NOMI[b.tipo] || b.tipo)}</strong>
         <span class="lp-bazioni">
           <button type="button" class="btn secondario mini" data-lpb="${i}" data-lpop="su" title="${L('Su', 'Up', 'Subir')}">${_lpSu}</button>
@@ -6656,6 +6657,40 @@ function lpRenderBlocchi() {
       </div>
     </div>`;
   }).join('') || `<p class="suggerimento">${L('Nessun contenuto: aggiungi il primo pezzo qui sotto.', 'No content yet: add the first piece below.', 'Sin contenido: añade la primera pieza abajo.')}</p>`;
+
+  // Riordino TRASCINANDO. Le frecce restano (da tastiera e da telefono sono
+  // più affidabili), ma spostare un blocco prendendolo per la sua barra è il
+  // modo in cui la gente si aspetta di riordinare delle cose.
+  let preso = -1;
+  cont.ondragstart = (ev) => {
+    const t = ev.target.closest('.lp-btesta'); if (!t) return;
+    preso = Number(t.closest('.lp-blocco').dataset.i);
+    ev.dataTransfer.effectAllowed = 'move';
+    ev.dataTransfer.setData('text/plain', String(preso));   // Firefox non parte senza
+    t.closest('.lp-blocco').classList.add('preso');
+  };
+  cont.ondragover = (ev) => {
+    if (preso < 0) return;
+    ev.preventDefault();
+    const su = ev.target.closest('.lp-blocco');
+    cont.querySelectorAll('.lp-blocco.sopra').forEach((e) => e.classList.remove('sopra'));
+    if (su && Number(su.dataset.i) !== preso) su.classList.add('sopra');
+  };
+  cont.ondrop = (ev) => {
+    if (preso < 0) return;
+    ev.preventDefault();
+    const su = ev.target.closest('.lp-blocco');
+    const a = su ? Number(su.dataset.i) : LP.blocchi.length - 1;
+    if (a !== preso && LP.blocchi[preso]) {
+      LP.blocchi.splice(a, 0, LP.blocchi.splice(preso, 1)[0]);
+      lpRenderBlocchi(); lpAnteprima();
+    }
+    preso = -1;
+  };
+  cont.ondragend = () => {
+    preso = -1;
+    cont.querySelectorAll('.preso,.sopra').forEach((e) => e.classList.remove('preso', 'sopra'));
+  };
 
   cont.onclick = (ev) => {
     const op = ev.target.closest('[data-lpop]');
