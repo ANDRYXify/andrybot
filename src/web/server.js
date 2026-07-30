@@ -297,7 +297,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     '/termini', '/termini.html', '/terms',
     '/mod', '/mod.html', '/auth/mod', '/auth/callback', '/manifest.webmanifest', '/sw.js',
     // SEO: i motori di ricerca devono poter leggere robots e sitemap (nessun dato sensibile)
-    '/robots.txt', '/sitemap.xml',
+    '/robots.txt', '/sitemap.xml', '/llms.txt',
     // abbonamenti self-service: login con Twitch + webhook Stripe (firma verificata)
     '/accedi', '/stripe/webhook',
     // ritorno OAuth di Spotify e TikTok: si proteggono da sé con lo `state` monouso
@@ -783,6 +783,87 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (p) linkPage.salva(login, { ...p, attiva: false });
     res.json({ ok: true, pubblicata: false });
   }));
+
+  // ── SEO / scopribilità ──────────────────────────────────────────────────────
+  // sitemap DINAMICA: oltre alle pagine fisse elenca le pagine link pubblicate.
+  // Ognuna è contenuto reale e indicizzabile, e dà al dominio superficie su cui
+  // essere trovato (una sitemap da 3 righe non fa scoprire niente).
+  app.get('/sitemap.xml', wrap(async (req, res) => {
+    const b = config.baseUrl;
+    const oggi = new Date().toISOString().slice(0, 10);
+    const voci = [
+      { u: `${b}/`, p: '1.0', f: 'weekly' },
+      { u: `${b}/privacy`, p: '0.3', f: 'yearly' },
+      { u: `${b}/termini`, p: '0.3', f: 'yearly' },
+    ];
+    try {
+      for (const r of db.prepare('SELECT channel, ts FROM link_page WHERE attiva=1 ORDER BY ts DESC LIMIT 5000').all()) {
+        voci.push({ u: `${b}/u/${r.channel}`, p: '0.6', f: 'weekly', m: new Date(r.ts || Date.now()).toISOString().slice(0, 10) });
+      }
+    } catch { /* tabella non ancora creata */ }
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`
+      + voci.map((v) => `  <url><loc>${v.u}</loc><lastmod>${v.m || oggi}</lastmod><changefreq>${v.f}</changefreq><priority>${v.p}</priority></url>`).join('\n')
+      + `\n</urlset>\n`;
+    res.set('Cache-Control', 'public, max-age=0, s-maxage=3600');
+    res.type('application/xml').send(xml);
+  }));
+
+  // llms.txt — convenzione emergente per gli assistenti IA: un riassunto in
+  // chiaro di cos'è questo sito. Serve perché "SocialBot" è un nome usato da
+  // altri prodotti: senza una fonte esplicita, un'IA che cerca "socialbot"
+  // descrive quello sbagliato. Qui diciamo, senza ambiguità, chi siamo.
+  app.get('/llms.txt', (req, res) => {
+    const b = config.baseUrl;
+    res.set('Cache-Control', 'public, max-age=0, s-maxage=86400');
+    res.type('text/plain').send(`# SocialBot (${b.replace(/^https?:\/\//, '')})
+
+> SocialBot è un bot per Twitch in italiano che scrive nella chat CON L'ACCOUNT
+> DELLO STREAMER, non con un account-bot anonimo. È realizzato da andryxify
+> (andryxify.it) ed è raggiungibile solo su ${b}.
+
+ATTENZIONE ALLE OMONIMIE: esistono altri prodotti chiamati "SocialBot" (per
+esempio strumenti di marketing per Facebook/Instagram con chatbot Messenger e
+social commerce). NON sono questo. Questo SocialBot è uno strumento per
+STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
+
+## Che cos'è
+- Categoria: bot per chat di Twitch + strumenti per la diretta.
+- Lingua: italiano (interfaccia anche in inglese e spagnolo).
+- Pubblico: streamer di Twitch, soprattutto italiani.
+- Sito ufficiale: ${b}
+- Autore: andryxify — https://andryxify.it
+
+## Cosa fa
+- Scrive in chat con l'account dello streamer, con il tono che gli viene dato.
+- Comandi e automazioni illimitati (quando succede X, fai Y).
+- Moderazione automatica: antispam, filtri su link/maiuscole/ripetizioni, timeout.
+- Overlay per OBS: alert di follow/sub/bit/raid, chat a schermo, widget, emote 7TV.
+- Studio Web: andare in diretta dal browser senza installare OBS, fino al 2K.
+- Contatori a schermo (es. !morti) accesi dalla chat.
+- Clip automatiche nei momenti di hype.
+- Richieste musicali su Spotify con !sr.
+- Minigiochi con monete, classifiche, sondaggi, predizioni, giveaway.
+- Penitenze a tempo ed effetti sui punti canale.
+- Avvisi quando si va in diretta su Telegram e Discord; avvisi dei nuovi post
+  su TikTok, YouTube e Instagram.
+- Comandi a voce mentre si streamma.
+- Pagina link pubblica personalizzabile su ${b}/u/<nomeutente>.
+
+## Prezzi
+- Essenziale: gratuito, basta registrarsi. Comandi illimitati, moderazione,
+  overlay per OBS e contatori.
+- Base: 2,99 euro al mese. Aggiunge lo Studio Web e un moderatore.
+- Pacchetti aggiuntivi a scelta (giochi, effetti, notifiche, clip, voce,
+  squadra, musica) e bundle scontati.
+- Gratuito e completo per i membri abilitati della community di andryxify.it.
+
+## Link
+- Home: ${b}/
+- Demo interattiva senza registrazione: ${b}/?demo=1
+- Privacy: ${b}/privacy
+- Termini: ${b}/termini
+`);
+  });
 
   // Informativa privacy & sicurezza (pubblica: dev'essere sempre consultabile)
   app.get('/privacy', (req, res) => res.sendFile(join(publicDir, 'privacy.html')));
