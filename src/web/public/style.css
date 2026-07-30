@@ -893,6 +893,54 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .cont-info code { font-size: .82em; }
 .cont-val { font-variant-numeric: tabular-nums; font-weight: 800; font-size: 1.1rem; color: var(--acc); min-width: 2.4em; text-align: right; }
 .cont-azioni { display: inline-flex; flex-wrap: wrap; gap: .3rem; }
+/* Sottoscrizione: cosa hai acceso, i pacchetti, la disdetta */
+.sott-testa h3 { margin: 0 0 .35rem; font-size: 1rem; display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.sott-elenco { list-style: none; margin: .5rem 0 .6rem; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .3rem .9rem; }
+.sott-voce { display: flex; align-items: center; gap: .5rem; font-size: .9rem; }
+.sott-voce.off { color: var(--testo-3); }
+.sott-segno { flex: 0 0 auto; width: 1.15rem; height: 1.15rem; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: .72rem; font-weight: 800; }
+.sott-voce.on .sott-segno { background: var(--verde-soft); color: var(--verde); border: 1px solid var(--verde-bordo); }
+.sott-voce.off .sott-segno { background: var(--surface-2); color: var(--testo-3); border: 1px solid var(--border); }
+.sott-pacchetti { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .55rem; }
+.sott-pacc { display: flex; flex-direction: column; gap: .12rem; padding: .65rem .75rem; border: 1px solid var(--border); border-radius: var(--r-m); background: var(--surface-2); }
+.sott-pacc.mio { border-color: var(--verde-bordo); background: var(--verde-soft); }
+.sott-pacc-prezzo { font-size: .82rem; font-weight: 700; color: var(--acc); font-variant-numeric: tabular-nums; }
+.sott-pacc.mio .sott-pacc-prezzo { color: var(--verde); }
+.sott-pacc-som { font-size: .82rem; color: var(--testo-2); line-height: 1.4; }
+.sott-pacc .badge { align-self: flex-start; margin-top: .2rem; }
+
+/* banner della prova gratuita: dichiarata, con scadenza, mai una sorpresa */
+.prova-banner h2 { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.prova-banner .badge { background: var(--acc-soft); color: var(--acc); border: 1px solid var(--acc-bordo); font-size: .74rem; font-weight: 700; padding: .16rem .5rem; border-radius: 999px; }
+
+/* Editor della pagina link: comandi a sinistra, anteprima dal vivo a destra */
+.lp-editor { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; gap: 1.1rem; align-items: start; }
+.lp-comandi { min-width: 0; display: flex; flex-direction: column; gap: .6rem; }
+.lp-anteprima { position: sticky; top: calc(var(--top-h) + 1rem); }
+.lp-ant-tit { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--testo-3); margin-bottom: .45rem; }
+.lp-telefono { border: 8px solid var(--surface-3); border-radius: 26px; overflow: hidden; background: #000; box-shadow: var(--om-m); }
+.lp-telefono iframe { display: block; width: 100%; height: 30rem; border: 0; background: #000; }
+@media (max-width: 1100px) {
+  .lp-editor { grid-template-columns: 1fr; }
+  .lp-anteprima { position: static; }
+  .lp-telefono iframe { height: 26rem; }
+}
+/* un blocco di contenuto */
+.lp-blocco { border: 1px solid var(--border); border-radius: var(--r-m); background: var(--surface-2); padding: .7rem .8rem; margin-bottom: .5rem; }
+.lp-btesta { display: flex; align-items: center; gap: .5rem; margin-bottom: .5rem; }
+.lp-btesta strong { font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; color: var(--testo-3); }
+.lp-bazioni { margin-left: auto; display: inline-flex; gap: .25rem; }
+.lp-riga2 { display: flex; align-items: center; gap: .45rem; }
+.lp-riga2 input { flex: 1; min-width: 0; }
+.lp-bico { flex: 0 0 auto; width: 2rem; height: 2rem; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; background: var(--acc-soft); color: var(--acc); border: 1px solid var(--acc-bordo); }
+.lp-aggiungi { display: flex; flex-wrap: wrap; gap: .35rem; }
+
+/* stato della pagina link: online oppure non ancora pubblicata */
+.lp-stato { display: flex; align-items: center; gap: .45rem; font-size: .9rem; padding: .55rem .75rem; border-radius: var(--r-m); }
+.lp-stato.on { color: var(--verde); background: var(--verde-soft); border: 1px solid var(--verde-bordo); }
+.lp-stato.off { color: var(--ambra); background: var(--ambra-soft); border: 1px solid var(--ambra-bordo); }
+.lp-stato a { color: inherit; }
+
 /* righe della pagina link: emoji + etichetta + indirizzo + azioni */
 .lp-riga { display: grid; grid-template-columns: 3.4rem minmax(7rem, 1fr) minmax(9rem, 2fr) auto; gap: .4rem; align-items: center; margin-bottom: .45rem; }
 .lp-riga .lp-icon { text-align: center; }
