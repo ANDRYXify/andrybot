@@ -134,13 +134,24 @@ function embedSrc(u, dom = ['socialbot.live']) {
     const h = url.hostname.toLowerCase().replace(/^www\./, '');
     const seg = url.pathname.split('/').filter(Boolean);
 
-    // YouTube: video, short, diretta, playlist
+    // YouTube: video, short, diretta, playlist, CANALE INTERO
     if (/(^|\.)youtube(-nocookie)?\.com$/.test(h)) {
       const lista = url.searchParams.get('list');
       const v = url.searchParams.get('v')
         || (['shorts', 'live', 'embed', 'v'].includes(seg[0]) ? seg[1] : '');
       if (v) return { src: `https://www.youtube-nocookie.com/embed/${pezzo(v)}${lista ? `?list=${pezzo(lista)}` : ''}`, formato: seg[0] === 'shorts' ? 'verticale' : 'video' };
       if (lista) return { src: `https://www.youtube-nocookie.com/embed/videoseries?list=${pezzo(lista)}`, formato: 'video' };
+      // Il canale non ha un embed suo, ma la playlist dei CARICAMENTI sì: ha lo
+      // stesso id del canale con UC→UU. Risultato: un player con tutti i video
+      // del canale, l'ultimo per primo.
+      if (seg[0] === 'channel' && /^UC[\w-]{6,}$/.test(seg[1] || '')) {
+        return { src: `https://www.youtube-nocookie.com/embed/videoseries?list=UU${pezzo(seg[1].slice(2))}`, formato: 'video' };
+      }
+      if (String(seg[0] || '').startsWith('@') || ['c', 'user'].includes(seg[0])) {
+        // Qui ci si arriva solo se il server non è riuscito a ricavare l'id del
+        // canale (nome sbagliato, o YouTube che non risponde).
+        return { motivo: 'canale YouTube non trovato: controlla il nome, oppure incolla l\'indirizzo che contiene /channel/UC…' };
+      }
       return null;
     }
     if (h === 'youtu.be' && seg[0]) return { src: `https://www.youtube-nocookie.com/embed/${pezzo(seg[0])}`, formato: 'video' };
@@ -166,16 +177,44 @@ function embedSrc(u, dom = ['socialbot.live']) {
     // Kick
     if (/(^|\.)kick\.com$/.test(h) && seg[0]) return { src: `https://player.kick.com/${pezzo(seg[0])}?autoplay=false`, formato: 'video' };
 
-    // TikTok (il video singolo, non il profilo)
+    // TikTok: il singolo video, oppure il PROFILO intero (griglia degli ultimi
+    // video, che TikTok chiama "creator embed")
     if (/(^|\.)tiktok\.com$/.test(h)) {
       const i = seg.indexOf('video');
-      const id = i >= 0 ? seg[i + 1] : (seg[0] === 'embed' ? seg[seg.length - 1] : '');
-      return /^\d{5,}$/.test(String(id)) ? { src: `https://www.tiktok.com/embed/v2/${pezzo(id)}`, formato: 'verticale' } : null;
+      const id = i >= 0 ? seg[i + 1] : (seg[0] === 'embed' && /^\d+$/.test(seg[seg.length - 1] || '') ? seg[seg.length - 1] : '');
+      if (/^\d{5,}$/.test(String(id))) return { src: `https://www.tiktok.com/embed/v2/${pezzo(id)}`, formato: 'verticale' };
+      const utente = (seg.find((s) => s.startsWith('@')) || '').slice(1);
+      if (/^[\w.-]{1,30}$/.test(utente)) return { src: `https://www.tiktok.com/embed/@${pezzo(utente)}`, formato: 'pagina' };
+      return null;
     }
 
-    // SoundCloud (brano o playlist: il widget accetta l'indirizzo normale)
+    // Instagram: post, reel e video. Il PROFILO non si può incorporare: è
+    // Instagram che non lo permette, non una mancanza nostra. Meglio dirlo che
+    // mostrare un riquadro bianco.
+    if (/(^|\.)instagram\.com$/.test(h)) {
+      if (['p', 'reel', 'reels', 'tv'].includes(seg[0]) && seg[1]) {
+        const tipo = seg[0] === 'reels' ? 'reel' : seg[0];
+        return { src: `https://www.instagram.com/${tipo}/${pezzo(seg[1])}/embed`, formato: 'alto' };
+      }
+      return { motivo: 'Instagram non permette di incorporare un profilo: incolla un post o un reel' };
+    }
+
+    // Facebook: la pagina intera, col plugin ufficiale
+    if (/(^|\.)facebook\.com$/.test(h) && seg.length && seg[0] !== 'plugins') {
+      const pagina = `https://www.facebook.com/${seg.map(pezzo).join('/')}`;
+      return { src: `https://www.facebook.com/plugins/page.php?href=${pezzo(pagina)}&tabs=timeline&small_header=true&adapt_container_width=true&hide_cover=false&show_facepile=true`, formato: 'pagina' };
+    }
+
+    // X/Twitter: la timeline richiede il loro script, non un iframe
+    if (/(^|\.)(x|twitter)\.com$/.test(h)) {
+      return { motivo: 'X non permette di incorporare un profilo senza i suoi script: meglio un link' };
+    }
+
+    // SoundCloud: brano, playlist o profilo (il widget accetta l'indirizzo
+    // normale; un profilo o un set hanno bisogno di più spazio di un brano)
     if (/(^|\.)soundcloud\.com$/.test(h) && seg.length) {
-      return { src: `https://w.soundcloud.com/player/?url=${pezzo(`https://soundcloud.com/${seg.map(pezzo).join('/')}`)}&visual=false&hide_related=true`, formato: 'compatto' };
+      const grande = seg.length === 1 || seg.includes('sets');
+      return { src: `https://w.soundcloud.com/player/?url=${pezzo(`https://soundcloud.com/${seg.map(pezzo).join('/')}`)}&visual=false&hide_related=true`, formato: grande ? 'alto' : 'compatto' };
     }
 
     // Apple Music (della query tengo solo l'id del brano: il resto non serve e
@@ -320,11 +359,14 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
       return `<img class="img" ${ritardo} src="${esc(src)}" alt="${esc(b.alt || '')}" loading="lazy">`;
     }
     if (b.tipo === 'embed') {
-      const e = embedSrc(b.url, dom);
-      if (!e) {
-        return anteprima
-          ? `<div class="segna" ${ritardo}>${b.url ? 'indirizzo non riconosciuto: YouTube, Spotify, Twitch, TikTok, Kick, SoundCloud, Apple Music, Deezer o Vimeo' : 'video o musica da incollare'}</div>`
-          : '';
+      // "risolto" è l'indirizzo che il server ha ricavato al salvataggio (oggi
+      // solo i canali YouTube): se c'è vale quello, altrimenti quello scritto.
+      const e = embedSrc(b.risolto || b.url, dom);
+      if (!e || !e.src) {
+        if (!anteprima) return '';
+        const motivo = e?.motivo
+          || (b.url ? 'indirizzo non riconosciuto: YouTube, Spotify, Twitch, TikTok, Instagram, Facebook, Kick, SoundCloud, Apple Music, Deezer o Vimeo' : 'video, musica o pagina da incollare');
+        return `<div class="segna" ${ritardo}>${esc(motivo)}</div>`;
       }
       const forma = b.formato && b.formato !== 'auto' ? b.formato : e.formato;
       return `${b.titolo ? `<h2 class="tit" ${ritardo}>${esc(b.titolo)}</h2>` : ''}
@@ -415,6 +457,7 @@ ${imgAvatar ? `<meta property="og:image" content="${esc(imgAvatar)}">` : ''}
   .emb.f-verticale{aspect-ratio:9/16;max-width:22rem;align-self:center}
   .emb.f-compatto{aspect-ratio:auto;height:152px}
   .emb.f-alto{aspect-ratio:auto;height:380px}
+  .emb.f-pagina{aspect-ratio:auto;height:34rem}   /* profili e pagine: una vetrina, non un video */
   .emb.f-chat{aspect-ratio:auto;height:26rem;margin-top:.5rem}
   .spazio{width:100%;height:1.6rem}
   .badge2{align-self:${aSinistra ? 'flex-start' : 'center'};margin-top:1rem;padding:.3rem .8rem;border-radius:999px;

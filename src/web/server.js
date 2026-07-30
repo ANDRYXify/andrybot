@@ -17,6 +17,7 @@ import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, 
 import { points, vips, tgConf, dcConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
 import { linkPage, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO } from '../db.js';
 import { renderLinkPage } from '../features/linkpagina.js';
+import { risolviCanaleId } from '../features/youtube.js';
 import * as abbonamenti from '../features/abbonamenti.js';
 import * as spotify from '../features/spotify.js';
 import * as giveaway from '../features/giveaway.js';
@@ -702,6 +703,36 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     return s.avatar || '';
   }
 
+  // CANALI YOUTUBE nella pagina link. YouTube non sa incorporare "il canale":
+  // sa incorporare la playlist dei suoi caricamenti, che ha lo stesso id del
+  // canale con UC→UU. Ma nessuno conosce il proprio id UC…: tutti incollano
+  // youtube.com/@nome. Quindi lo risolviamo NOI quando si salva (una volta, poi
+  // in cache) e nel blocco resta l'indirizzo con l'id dentro: la pagina
+  // pubblica non fa nessuna chiamata di rete per mostrarlo.
+  const ytRisolti = new Map();      // @nome → UC… (o null se non trovato)
+  async function risolviCanaliYoutube(blocchi, login) {
+    if (!Array.isArray(blocchi)) return blocchi;
+    for (const b of blocchi) {
+      if (!b || b.tipo !== 'embed' || !b.url) continue;
+      let seg = [];
+      try {
+        const u = new URL(b.url);
+        if (!/(^|\.)youtube\.com$/.test(u.hostname.toLowerCase().replace(/^www\./, ''))) continue;
+        seg = u.pathname.split('/').filter(Boolean);
+      } catch { continue; }
+      const chiave = seg[0] || '';
+      if (!(chiave.startsWith('@') || ['c', 'user'].includes(chiave))) { b.risolto = ''; continue; }
+      const k = seg.join('/');
+      if (!ytRisolti.has(k)) {
+        const apiKey = streamers.get(login)?.settings?.youtube?.apiKey || '';
+        ytRisolti.set(k, await risolviCanaleId(b.url, apiKey).catch(() => null));
+      }
+      const id = ytRisolti.get(k);
+      b.risolto = id ? `https://www.youtube.com/channel/${id}` : '';
+    }
+    return blocchi;
+  }
+
   // immagini della pagina link: pubbliche come la pagina che le mostra
   app.get('/u/:user/img/:file', (req, res) => {
     const login = String(req.params.user || '').toLowerCase();
@@ -774,7 +805,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // annunciare un successo pieno che non c'è stato.
     const p = linkPage.salva(login, {
       headline: b.headline, tagline: b.tagline, template: b.template,
-      avatar: b.avatar, tema: b.tema, blocchi: b.blocchi,
+      avatar: b.avatar, tema: b.tema,
+      blocchi: await risolviCanaliYoutube(b.blocchi, login),
       attiva: b.attiva !== false,
     });
     res.json({
@@ -823,7 +855,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // passo dalla stessa sanificazione del salvataggio, senza scrivere
     const finta = linkPage.pulisci({
       headline: b.headline, tagline: b.tagline, template: b.template,
-      avatar: b.avatar, tema: b.tema, blocchi: b.blocchi,
+      avatar: b.avatar, tema: b.tema,
+      blocchi: await risolviCanaliYoutube(b.blocchi, login),
     });
     const html = renderLinkPage(finta, {
       login, display: s?.display || login, avatar: await avatarDi(login), baseUrl: config.baseUrl,

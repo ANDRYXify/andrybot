@@ -1222,7 +1222,7 @@ export const TIPI_BLOCCO = ['link', 'titolo', 'testo', 'badge', 'separatore', 's
 // Come si incorpora un contenuto: 'auto' lo decide il provider (un brano Spotify
 // è basso, uno short è verticale, un video è 16:9), gli altri li forza chi
 // costruisce la pagina.
-export const FORMATI_EMBED = ['auto', 'video', 'quadrato', 'verticale', 'alto', 'compatto'];
+export const FORMATI_EMBED = ['auto', 'video', 'quadrato', 'verticale', 'alto', 'compatto', 'pagina'];
 // Blocco "diretta": il player del canale sempre presente. Così non serve
 // accendere e spegnere un "sono live": quando la diretta parte si vede, quando
 // è finita il player mostra da sé che il canale è offline.
@@ -1360,8 +1360,12 @@ export const linkPage = {
         });
         out.push({ tipo, voci });
       } else if (tipo === 'embed') {
-        out.push({ tipo, url: urlOk(b.url), formato: scelta(b.formato, FORMATI_EMBED, 'auto'),
-          titolo: str(b.titolo, L.label) });
+        // "risolto": l'indirizzo che il server ha ricavato da quello scritto a
+        // mano (oggi serve per i canali YouTube: nessuno conosce il proprio id
+        // UC…, tutti incollano youtube.com/@nome). Lo scrive il server al
+        // salvataggio, così la pagina pubblica non deve risolvere niente.
+        out.push({ tipo, url: urlOk(b.url), risolto: urlOk(b.risolto),
+          formato: scelta(b.formato, FORMATI_EMBED, 'auto'), titolo: str(b.titolo, L.label) });
       } else if (tipo === 'diretta') {
         // il nome del canale, non un indirizzo: il player lo costruiamo noi.
         // Vuoto = il canale di chi possiede la pagina.
