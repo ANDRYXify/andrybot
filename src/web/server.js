@@ -679,6 +679,114 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   app.get('/assets/*', proxyLinkPage);
   app.get('/api/streamer-verify', proxyLinkPage);
 
+  // ── PAGINA LINK (/u/<login>): crearla e modificarla da qui ──────────────────
+  // I DATI restano su andryxify.it: è l'unica fonte di verità, così la pagina non
+  // si sdoppia tra due editor che scrivono in posti diversi. Noi facciamo da
+  // tramite: il sito autentica con `Authorization: Bearer <token Twitch>` e il
+  // token dello streamer ce l'abbiamo già in DB (auth.getToken lo rinnova da sé).
+  //
+  // SICUREZZA: il token NON arriva mai al browser — la chiamata la fa il server.
+  // Solo il proprietario del canale può toccare la propria pagina pubblica
+  // (requireOwner): è la sua identità, non una impostazione del canale.
+  const LINKPAGE_TEMPLATES = ['minimal', 'neon', 'retro', 'sunset', 'glass'];
+  const LINKPAGE_LIMITI = { headline: 80, tagline: 160, label: 40, icona: 24, link: 12 };
+
+  async function chiamaSitoLinkPage(login, corpo) {
+    const token = await auth.getToken('broadcaster', login);
+    const r = await fetch(LINKPAGE_ORIGIN + '/api/streamer-verify', {
+      method: corpo ? 'POST' : 'GET',
+      headers: {
+        Authorization: 'Bearer ' + token,
+        ...(corpo ? { 'Content-Type': 'application/json' } : {}),
+      },
+      ...(corpo ? { body: JSON.stringify(corpo) } : {}),
+    });
+    let dati = null;
+    try { dati = await r.json(); } catch { /* risposta non JSON */ }
+    return { stato: r.status, dati };
+  }
+
+  app.get('/api/linkpage', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    try {
+      // col Bearer il sito salta la cache CDN e ci dà lo stato fresco
+      const token = await auth.getToken('broadcaster', login);
+      const r = await fetch(`${LINKPAGE_ORIGIN}/api/streamer-verify?action=link_page&login=${encodeURIComponent(login)}`,
+        { headers: { Authorization: 'Bearer ' + token } });
+      const d = r.ok ? await r.json().catch(() => null) : null;
+      const lp = d?.linkPage || d || {};
+      // ATTENZIONE — pagina in "modalità blocchi" (schema 2): il renderer del sito
+      // mostra i BLOCCHI, non i campi semplici. Se lo streamer ha costruito la
+      // pagina con l'editor avanzato e poi salva da qui, i campi verrebbero
+      // scritti ma la pagina pubblica NON cambierebbe: un salvataggio muto, il
+      // peggior tipo di bug. Lo segnaliamo al client, che avvisa invece di far
+      // finta di niente (e noi non tocchiamo mai i blocchi: nessuna perdita).
+      const aBlocchi = String(lp.schema || '') === '2' && Array.isArray(lp.blocchi) && lp.blocchi.length > 0;
+      res.json({
+        esiste: r.status !== 404,
+        url: `${config.baseUrl}/u/${login}`,
+        templates: LINKPAGE_TEMPLATES,
+        limiti: LINKPAGE_LIMITI,
+        aBlocchi,
+        urlEditorAvanzato: `${LINKPAGE_ORIGIN}/impostazioni`,
+        pagina: {
+          template: LINKPAGE_TEMPLATES.includes(lp.template) ? lp.template : 'minimal',
+          accent: lp.accent || '', bg: lp.bg || '',
+          headline: lp.headline || '', tagline: lp.tagline || '',
+          links: Array.isArray(lp.links) ? lp.links.slice(0, LINKPAGE_LIMITI.link) : [],
+          aggiornata: lp.updatedAt || null,
+        },
+      });
+    } catch (e) {
+      // token mancante = non ha (ancora) concesso i permessi Twitch
+      if (/Token broadcaster mancante/i.test(e?.message || '')) {
+        return res.status(409).json({ errore: 'Concedi prima i permessi Twitch dalla scheda Stato.' });
+      }
+      log.warn('linkpage lettura:', e?.message || e);
+      res.status(502).json({ errore: 'Pagina link non raggiungibile, riprova.' });
+    }
+  }));
+
+  app.post('/api/linkpage', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const b = req.body || {};
+    // ripulisco qui quel che posso (il sito ri-sanifica comunque: è lui l'autorità)
+    const links = (Array.isArray(b.links) ? b.links : []).slice(0, LINKPAGE_LIMITI.link)
+      .map((l) => ({
+        label: String(l?.label || '').slice(0, LINKPAGE_LIMITI.label),
+        url: String(l?.url || '').slice(0, 600),
+        icon: String(l?.icon || '').slice(0, LINKPAGE_LIMITI.icona),
+      }))
+      .filter((l) => l.label && /^https?:\/\//i.test(l.url));
+    const corpo = {
+      action: 'update_linkpage',
+      template: LINKPAGE_TEMPLATES.includes(b.template) ? b.template : 'minimal',
+      accent: /^#[0-9a-f]{3,8}$/i.test(b.accent || '') ? b.accent : '',
+      bg: /^#[0-9a-f]{3,8}$/i.test(b.bg || '') ? b.bg : '',
+      headline: String(b.headline || '').slice(0, LINKPAGE_LIMITI.headline),
+      tagline: String(b.tagline || '').slice(0, LINKPAGE_LIMITI.tagline),
+      links,
+    };
+    try {
+      const { stato, dati } = await chiamaSitoLinkPage(login, corpo);
+      if (stato === 200) return res.json({ ok: true, url: `${config.baseUrl}/u/${login}`, salvati: links.length });
+      // messaggi utili invece del codice grezzo del sito
+      if (stato === 403 && dati?.code === 'not_approved') {
+        return res.status(403).json({ errore: 'La pagina link è riservata agli streamer abilitati su andryxify.it. Chiedi ad andryxify di abilitarti.' });
+      }
+      if (stato === 401) return res.status(409).json({ errore: 'I permessi Twitch sono scaduti: riautorizza dalla scheda Stato.' });
+      if (stato === 413) return res.status(413).json({ errore: dati?.error || 'La pagina è troppo grande: togli qualche link.' });
+      log.warn('linkpage salvataggio: HTTP', stato, dati?.error || '');
+      res.status(502).json({ errore: dati?.error || 'Salvataggio non riuscito, riprova.' });
+    } catch (e) {
+      if (/Token broadcaster mancante/i.test(e?.message || '')) {
+        return res.status(409).json({ errore: 'Concedi prima i permessi Twitch dalla scheda Stato.' });
+      }
+      log.warn('linkpage salvataggio:', e?.message || e);
+      res.status(502).json({ errore: 'Pagina link non raggiungibile, riprova.' });
+    }
+  }));
+
   // Informativa privacy & sicurezza (pubblica: dev'essere sempre consultabile)
   app.get('/privacy', (req, res) => res.sendFile(join(publicDir, 'privacy.html')));
   // Termini di servizio (pubblici: richiesti anche dalle app di terzi, es. TikTok)
