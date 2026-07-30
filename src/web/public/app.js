@@ -6212,6 +6212,7 @@ async function caricaPaginaLink(ridisegna = false) {
             <button type="button" class="btn secondario mini" data-lpadd="diretta">${L('La mia diretta', 'My live stream', 'Mi directo')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="eroe">${L('Copertina', 'Cover', 'Portada')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="griglia">${L('Griglia di tessere', 'Card grid', 'Rejilla de fichas')}</button>
+            <button type="button" class="btn secondario mini" data-lpadd="scritta">${L('Scritta che scorre', 'Scrolling text', 'Texto que se desplaza')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="separatore">${L('Riga divisoria', 'Divider', 'Separador')}</button>
           </div>
         </details>
@@ -6228,7 +6229,15 @@ async function caricaPaginaLink(ridisegna = false) {
             <option value="rivista">${L('Rivista — affiancati, come una griglia', 'Magazine — side by side, like a grid', 'Revista — en paralelo, como una rejilla')}</option>
             <option value="sezioni">${L('Sezioni — pagina lunga da scorrere', 'Sections — a long page to scroll', 'Secciones — página larga para desplazar')}</option>
           </select>
-          <p class="suggerimento">${L('“Sezioni” dà respiro e titoli grandi: i contenuti si scoprono scorrendo, come su un sito vero.', '“Sections” gives room and big headings: content is discovered by scrolling, like on a real site.', '“Secciones” da aire y títulos grandes: el contenido se descubre desplazando, como en un sitio de verdad.')}</p>
+          <p class="suggerimento">${L('“Sezioni” dà respiro e titoli grandi: i contenuti si scoprono scorrendo, come su un sito vero. “Rivista” affianca i link su due o tre colonne; video, musica e pagine restano larghi perché stretti diventano illeggibili.', '“Sections” gives room and big headings: content is discovered by scrolling, like on a real site. “Magazine” puts links on two or three columns; video, music and pages stay wide because they become unreadable when squeezed.', '“Secciones” da aire y títulos grandes: el contenido se descubre desplazando. “Revista” pone los enlaces en dos o tres columnas; vídeo, música y páginas siguen anchos porque estrechos se vuelven ilegibles.')}</p>
+
+          <label class="campo spazio-sopra" for="lp-mov">${L('Movimento', 'Motion', 'Movimiento')}</label>
+          <select id="lp-mov" data-lpk="movimento">
+            <option value="nessuno">${L('Fermo — nessuna animazione', 'Still — no animation', 'Quieto — sin animación')}</option>
+            <option value="dolce">${L('Dolce — i contenuti compaiono mentre scorri', 'Gentle — content appears as you scroll', 'Suave — el contenido aparece al desplazar')}</option>
+            <option value="cinema">${L('Cinema — parallasse, titoli parola per parola, immagini che si avvicinano', 'Cinematic — parallax, word-by-word titles, images pulling in', 'Cine — paralaje, títulos palabra por palabra, imágenes que se acercan')}</option>
+          </select>
+          <p class="suggerimento">${L('Tutto in CSS, nessuno script: la pagina resta leggera. Chi ha attivato “riduci animazioni” nel sistema non ne vede nessuna.', 'All CSS, no scripts: the page stays light. Anyone with “reduce motion” on sees none of it.', 'Todo en CSS, sin scripts: la página sigue ligera. Quien tiene “reducir movimiento” no ve ninguna.')}</p>
 
           <label class="campo spazio-sopra" for="lp-stile">${L('Stile di partenza', 'Starting style', 'Estilo de partida')}</label>
           <select id="lp-stile" data-lpt="template">${opts(d.templates || [], LP.testa.template, NOMI_STILE)}</select>
@@ -6309,8 +6318,13 @@ async function caricaPaginaLink(ridisegna = false) {
       </div>
 
       <div class="lp-anteprima">
-        <div class="lp-ant-tit">${L('Anteprima dal vivo', 'Live preview', 'Vista previa en directo')}</div>
-        <div class="lp-telefono"><iframe id="lp-iframe" title="anteprima"></iframe></div>
+        <div class="lp-ant-tit">${L('Anteprima dal vivo', 'Live preview', 'Vista previa en directo')}
+          <span class="lp-vista">
+            <button type="button" class="lp-vista-b sel" data-lpvista="telefono">${L('Telefono', 'Phone', 'Móvil')}</button>
+            <button type="button" class="lp-vista-b" data-lpvista="schermo">${L('Schermo', 'Desktop', 'Pantalla')}</button>
+          </span>
+        </div>
+        <div class="lp-telefono" id="lp-cornice"><iframe id="lp-iframe" title="anteprima"></iframe></div>
         <div class="lp-azioni">
           <button class="btn" id="lp-salva">${L('Salva e pubblica', 'Save and publish', 'Guardar y publicar')}</button>
           <a class="btn secondario" id="lp-apri" href="${esc(d.url || '#')}" target="_blank" rel="noopener">${_bIco(ICO.occhio)}${L('Apri', 'Open', 'Abrir')}</a>
@@ -6321,7 +6335,7 @@ async function caricaPaginaLink(ridisegna = false) {
     </div>`;
 
   // valori dei select del tema (non si possono impostare da HTML statico)
-  for (const k of ['sfondoTipo', 'effetto', 'stileBtn', 'allinea', 'avatarForma', 'anim', 'font', 'disposizione']) {
+  for (const k of ['sfondoTipo', 'effetto', 'stileBtn', 'allinea', 'avatarForma', 'anim', 'font', 'disposizione', 'movimento']) {
     const el = box.querySelector(`[data-lpk="${k}"]`);
     if (el && LP.tema[k] !== undefined) el.value = LP.tema[k];
   }
@@ -6369,13 +6383,24 @@ async function caricaPaginaLink(ridisegna = false) {
       immagine: { tipo: 'immagine', url: '', alt: '' },
       embed: { tipo: 'embed', url: '', formato: 'auto', titolo: '' },
       diretta: { tipo: 'diretta', piattaforma: 'twitch', canale: '', chat: false, autoplay: false, muto: true, titolo: '' },
-      eroe: { tipo: 'eroe', titolo: '', sotto: '', img: '', url: '', etichetta: '', altezza: 'media' },
+      eroe: { tipo: 'eroe', titolo: '', sotto: '', img: '', url: '', etichetta: '', altezza: 'media', fissa: false },
+      scritta: { tipo: 'scritta', testo: '', velocita: 'media' },
       griglia: { tipo: 'griglia', voci: [{ img: '', titolo: '', testo: '', url: '' }, { img: '', titolo: '', testo: '', url: '' }] },
       separatore: { tipo: 'separatore' } }[tipo];
     if (!nuovo) return;
     LP.blocchi.push(nuovo);
     lpRenderBlocchi(); lpAnteprima();
   };
+
+  // Anteprima in verticale (telefono) o in orizzontale (schermo): la pagina la
+  // guardano da entrambi, e certe disposizioni si vedono solo da largo.
+  box.addEventListener('click', (ev) => {
+    const v = ev.target.closest('[data-lpvista]'); if (!v) return;
+    const cornice = box.querySelector('#lp-cornice'); if (!cornice) return;
+    cornice.classList.toggle('schermo', v.dataset.lpvista === 'schermo');
+    box.querySelectorAll('.lp-vista-b').forEach((b) => b.classList.toggle('sel', b === v));
+    lpScala();
+  });
 
   // Temi pronti: applicano TUTTO in un colpo, poi si ridisegna l'editor perché
   // cambiano una dozzina di comandi insieme.
@@ -6490,6 +6515,7 @@ function lpRenderBlocchi() {
     immagine: L('Immagine', 'Image', 'Imagen'), embed: L('Video, musica o pagina', 'Video, music or page', 'Vídeo, música o página'),
     diretta: L('La mia diretta', 'My live stream', 'Mi directo'),
     eroe: L('Copertina', 'Cover', 'Portada'), griglia: L('Griglia di tessere', 'Card grid', 'Rejilla de fichas'),
+    scritta: L('Scritta che scorre', 'Scrolling text', 'Texto que se desplaza'),
     separatore: L('Riga divisoria', 'Divider', 'Separador') };
   // Griglia di icone: si scelgono VEDENDOLE. Un menu a tendina coi nomi
   // ("caffe", "soldi") non dice nulla di come verranno.
@@ -6553,7 +6579,14 @@ function lpRenderBlocchi() {
         <select data-lpb="${i}" data-lpf="altezza">${Object.keys(ALT).map((k) => `<option value="${k}"${(b.altezza || 'media') === k ? ' selected' : ''}>${esc(ALT[k])}</option>`).join('')}</select>
         <input type="text" class="spazio-sopra" data-lpb="${i}" data-lpf="etichetta" maxlength="${d.limiti.label}" value="${esc(b.etichetta || '')}" placeholder="${esc(L('Testo del bottone (facoltativo)', 'Button text (optional)', 'Texto del botón (opcional)'))}">
         <input type="url" class="spazio-sopra" data-lpb="${i}" data-lpf="url" maxlength="${d.limiti.url}" value="${esc(b.url || '')}" placeholder="${esc(L('Dove porta il bottone', 'Where the button goes', 'Adónde lleva el botón'))}">
+        <label class="riga-check spazio-sopra"><input type="checkbox" data-lpb="${i}" data-lpf="fissa"${b.fissa ? ' checked' : ''}> ${L('Resta ferma: il resto della pagina le scorre sopra', 'Keep it pinned: the rest of the page scrolls over it', 'Que se quede fija: el resto de la página se desplaza encima')}</label>
         <p class="suggerimento">${L('È l\'apertura della pagina: una foto grande, il tuo nome e un invito. Da sola cambia faccia a tutto.', 'It\'s the page opener: a big photo, your name and an invitation. On its own it changes the whole feel.', 'Es la apertura de la página: una foto grande, tu nombre y una invitación. Ella sola le cambia la cara a todo.')}</p>`;
+    } else if (b.tipo === 'scritta') {
+      const VEL = { lenta: L('Lenta', 'Slow', 'Lenta'), media: L('Media', 'Medium', 'Media'), veloce: L('Veloce', 'Fast', 'Rápida') };
+      campi = `<input type="text" data-lpb="${i}" data-lpf="testo" maxlength="${d.limiti.titolo}" value="${esc(b.testo || '')}" placeholder="${esc(L('es. OGNI SERA DALLE 21 ·', 'e.g. EVERY NIGHT FROM 9PM ·', 'p. ej. CADA NOCHE DESDE LAS 21 ·'))}">
+        <label class="campo spazio-sopra">${L('Velocità', 'Speed', 'Velocidad')}</label>
+        <select data-lpb="${i}" data-lpf="velocita">${Object.keys(VEL).map((k) => `<option value="${k}"${(b.velocita || 'media') === k ? ' selected' : ''}>${esc(VEL[k])}</option>`).join('')}</select>
+        <p class="suggerimento">${L('Una riga di testo grande che scorre in continuo, come sui siti fatti bene. Chiudi con un simbolo (·, —, ★) così il giro non si vede.', 'A big line of text scrolling forever, like on well-made sites. End it with a symbol (·, —, ★) so the loop doesn\'t show.', 'Una línea de texto grande que se desplaza sin fin, como en los sitios bien hechos. Termínala con un símbolo (·, —, ★) para que no se note el bucle.')}</p>`;
     } else if (b.tipo === 'griglia') {
       campi = (b.voci || []).map((v, j) => `
         <div class="lp-tessera-ed">
@@ -6625,6 +6658,16 @@ function lpRenderBlocchi() {
     }
   };
 }
+
+// Nella vista "schermo" l'anteprima è un browser largo 1280 rimpicciolito: la
+// scala dipende da quanto spazio c'è, quindi si ricalcola anche al ridimensiona.
+function lpScala() {
+  const c = document.getElementById('lp-cornice');
+  if (!c || !c.classList.contains('schermo')) return;
+  const largo = c.clientWidth || c.getBoundingClientRect().width;
+  if (largo > 0) c.style.setProperty('--z', String(Math.max(0.12, largo / 1280)));
+}
+window.addEventListener('resize', lpScala);
 
 // Anteprima: chiediamo al SERVER l'HTML vero della pagina, così quello che vedi
 // è esattamente quello che verrà pubblicato (nessuna finta anteprima che poi
@@ -10014,8 +10057,11 @@ function initGuscio() {
   document.addEventListener('click', (ev) => {
     const sb = ev.target.closest('[data-sblocca]');
     if (sb) { ev.preventDefault(); sbloccaAddon(sb.dataset.sblocca); return; }
-    const vp = ev.target.closest('.blocco-carta [data-scheda]');
-    if (vp) { ev.preventDefault(); vaiAScheda(vp.dataset.scheda); }
+    // Qualsiasi link "vai a quella scheda" dentro i pannelli. Prima valeva solo
+    // dentro .blocco-carta: altrove (per esempio "Scegli i pacchetti" nella
+    // Sottoscrizione) il click non faceva assolutamente niente.
+    const vp = ev.target.closest('[data-scheda]');
+    if (vp && !vp.closest('#nav-drawer')) { ev.preventDefault(); vaiAScheda(vp.dataset.scheda); }
   });
 
   // cassetto: click su una scheda
