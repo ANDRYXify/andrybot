@@ -6497,7 +6497,12 @@ function lpLeggiBlocco(t) {
     return;
   }
   if (t.type === 'checkbox') b[campo] = t.checked;
+  else if (t.type === 'range') b[campo] = Number(t.value);
   else b[campo] = t.value;
+  if (campo === 'altezza' && t.type === 'range') {
+    const et = document.querySelector(`[data-lpalt-v="${i}"]`);
+    if (et) et.textContent = Number(t.value) > 0 ? t.value + 'px' : L('automatica', 'automatic', 'automática');
+  }
   // l'icona segue l'indirizzo, a meno che non sia stata scelta a mano
   if (campo === 'url' && b.tipo === 'link' && !b._icoManuale) b.icona = lpIconaDaUrl(t.value);
   if (campo === 'icona') b._icoManuale = true;
@@ -6560,12 +6565,17 @@ function lpRenderBlocchi() {
         video: L('Video 16:9', 'Video 16:9', 'Vídeo 16:9'), quadrato: L('Quadrato', 'Square', 'Cuadrado'),
         verticale: L('Verticale (short, TikTok)', 'Vertical (shorts, TikTok)', 'Vertical (shorts, TikTok)'),
         alto: L('Alto (album, playlist)', 'Tall (album, playlist)', 'Alto (álbum, lista)'),
+        medio: L('Medio (episodio, podcast)', 'Medium (episode, podcast)', 'Medio (episodio, podcast)'),
         compatto: L('Barra bassa (un brano)', 'Slim bar (single track)', 'Barra baja (una canción)'),
         pagina: L('Vetrina alta (profilo, pagina)', 'Tall showcase (profile, page)', 'Escaparate alto (perfil, página)') };
       campi = `<input type="text" data-lpb="${i}" data-lpf="titolo" maxlength="${d.limiti.label}" value="${esc(b.titolo || '')}" placeholder="${esc(L('Titolo sopra (facoltativo)', 'Heading above (optional)', 'Título arriba (opcional)'))}">
         <input type="url" class="spazio-sopra" data-lpb="${i}" data-lpf="url" maxlength="${d.limiti.url}" value="${esc(b.url || '')}" placeholder="https://youtube.com/watch?v=…">
         <label class="campo spazio-sopra">${L('Come si vede', 'How it looks', 'Cómo se ve')}</label>
         <select data-lpb="${i}" data-lpf="formato">${Object.keys(FORM).map((k) => `<option value="${k}"${(b.formato || 'auto') === k ? ' selected' : ''}>${esc(FORM[k])}</option>`).join('')}</select>
+        <label class="campo spazio-sopra">${L('Altezza del riquadro', 'Box height', 'Altura del recuadro')}
+          <span class="tenue" data-lpalt-v="${i}">${Number(b.altezza) > 0 ? Number(b.altezza) + 'px' : L('automatica', 'automatic', 'automática')}</span></label>
+        <input type="range" data-lpb="${i}" data-lpf="altezza" min="0" max="900" step="10" value="${Number(b.altezza) || 0}">
+        <p class="suggerimento">${L('A zero decide il sito. Le piattaforme non ci dicono quanto è alto il loro contenuto — è un pezzo di un altro sito, non lo possiamo misurare — quindi se sotto ti avanza spazio vuoto, o il contenuto è tagliato, aggiustalo qui a occhio guardando l\'anteprima.', 'At zero the site decides. Platforms don\'t tell us how tall their content is — it\'s a piece of another site, we can\'t measure it — so if you see empty space below, or the content is cut, set it here by eye while watching the preview.', 'En cero decide el sitio. Las plataformas no nos dicen la altura de su contenido — es un trozo de otro sitio, no podemos medirlo — así que si te sobra espacio abajo, o el contenido queda cortado, ajústalo aquí a ojo mirando la vista previa.')}</p>
         <p class="suggerimento">${L('Incolla l\'indirizzo normale, al resto ci penso io. Va bene sia un singolo contenuto sia una PAGINA intera: canale YouTube, profilo TikTok, pagina Facebook, artista Spotify, profilo SoundCloud, canale Twitch o Kick. Oppure un video, uno short, un post o un reel di Instagram, un brano, un album, una playlist, un podcast, una clip. Riconosco anche Apple Music, Deezer e Vimeo.', 'Paste the normal address, I handle the rest. A single item or a whole PAGE both work: YouTube channel, TikTok profile, Facebook page, Spotify artist, SoundCloud profile, Twitch or Kick channel. Or a video, a short, an Instagram post or reel, a track, an album, a playlist, a podcast, a clip. I also recognise Apple Music, Deezer and Vimeo.', 'Pega la dirección normal, del resto me encargo yo. Vale tanto un contenido suelto como una PÁGINA entera: canal de YouTube, perfil de TikTok, página de Facebook, artista de Spotify, perfil de SoundCloud, canal de Twitch o Kick. O un vídeo, un short, una publicación o un reel de Instagram, una canción, un álbum, una lista, un podcast, un clip. También reconozco Apple Music, Deezer y Vimeo.')}</p>
         <p class="suggerimento">${L('Due limiti che non dipendono da noi: il profilo Instagram e la timeline di X non si possono incorporare (le due piattaforme non lo permettono). Di Instagram puoi mettere un post o un reel.', 'Two limits that are not ours: Instagram profiles and X timelines cannot be embedded (those platforms don\'t allow it). From Instagram you can embed a post or a reel.', 'Dos límites que no dependen de nosotros: el perfil de Instagram y la línea de X no se pueden incorporar (esas plataformas no lo permiten). De Instagram puedes poner una publicación o un reel.')}</p>`;
     } else if (b.tipo === 'eroe') {

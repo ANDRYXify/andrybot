@@ -1231,7 +1231,7 @@ export const DISPOSIZIONI = ['colonna', 'rivista', 'sezioni'];
 // Come si incorpora un contenuto: 'auto' lo decide il provider (un brano Spotify
 // è basso, uno short è verticale, un video è 16:9), gli altri li forza chi
 // costruisce la pagina.
-export const FORMATI_EMBED = ['auto', 'video', 'quadrato', 'verticale', 'alto', 'compatto', 'pagina'];
+export const FORMATI_EMBED = ['auto', 'video', 'quadrato', 'verticale', 'alto', 'medio', 'compatto', 'pagina'];
 // Blocco "diretta": il player del canale sempre presente. Così non serve
 // accendere e spegnere un "sono live": quando la diretta parte si vede, quando
 // è finita il player mostra da sé che il canale è offline.
@@ -1375,8 +1375,13 @@ export const linkPage = {
         // mano (oggi serve per i canali YouTube: nessuno conosce il proprio id
         // UC…, tutti incollano youtube.com/@nome). Lo scrive il server al
         // salvataggio, così la pagina pubblica non deve risolvere niente.
+        // altezza: 0 = quella di partenza del formato. Le piattaforme non ci
+        // dicono quanto e alto il loro contenuto (sono riquadri di un altro
+        // sito, non li possiamo misurare), quindi la decide chi fa la pagina:
+        // e l'unico modo per non lasciare mai spazio vuoto sotto.
         out.push({ tipo, url: urlOk(b.url), risolto: urlOk(b.risolto),
-          formato: scelta(b.formato, FORMATI_EMBED, 'auto'), titolo: str(b.titolo, L.label) });
+          formato: scelta(b.formato, FORMATI_EMBED, 'auto'), altezza: num(b.altezza, 0, 1200, 0),
+          titolo: str(b.titolo, L.label) });
       } else if (tipo === 'diretta') {
         // il nome del canale, non un indirizzo: il player lo costruiamo noi.
         // Vuoto = il canale di chi possiede la pagina.
