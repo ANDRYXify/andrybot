@@ -14,3 +14,6 @@ Disallow: /mod
 Allow: /
 
 Sitemap: https://socialbot.live/sitemap.xml
+
+# Riassunto in chiaro per gli assistenti IA (convenzione llms.txt)
+# https://socialbot.live/llms.txt
