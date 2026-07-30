@@ -893,6 +893,16 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .cont-info code { font-size: .82em; }
 .cont-val { font-variant-numeric: tabular-nums; font-weight: 800; font-size: 1.1rem; color: var(--acc); min-width: 2.4em; text-align: right; }
 .cont-azioni { display: inline-flex; flex-wrap: wrap; gap: .3rem; }
+/* righe della pagina link: emoji + etichetta + indirizzo + azioni */
+.lp-riga { display: grid; grid-template-columns: 3.4rem minmax(7rem, 1fr) minmax(9rem, 2fr) auto; gap: .4rem; align-items: center; margin-bottom: .45rem; }
+.lp-riga .lp-icon { text-align: center; }
+.lp-azioni { display: inline-flex; gap: .25rem; }
+@media (max-width: 700px) {
+  .lp-riga { grid-template-columns: 3.4rem 1fr; grid-template-areas: 'ico label' 'url url' 'az az'; }
+  .lp-riga .lp-icon { grid-area: ico; } .lp-riga .lp-label { grid-area: label; }
+  .lp-riga .lp-url { grid-area: url; } .lp-azioni { grid-area: az; justify-content: flex-end; }
+}
+
 .cont-comandi { flex-basis: 100%; margin-top: .1rem; font-size: .82rem; color: var(--testo-2); line-height: 1.7; }
 .cont-comandi-tit { font-weight: 700; color: var(--testo-3); text-transform: uppercase; letter-spacing: .05em; font-size: .68rem; margin-right: .35rem; }
 .cont-comandi code { background: var(--acc-soft); border: 1px solid var(--acc-bordo); border-radius: 6px; padding: .04em .34em; font-size: .92em; color: var(--acc); }

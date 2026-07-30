@@ -282,6 +282,11 @@ function _demoGet(via) {
     '/api/me': statoDemo(),
     '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://socialbot.live/tiktok/callback' },
     '/api/discord/stato': { configurato: false, attivo: false, messaggio: '', nomeBot: '', avatar: '', anteprima: '' },
+    '/api/linkpage': { esiste: true, url: 'https://socialbot.live/u/andryxify', aBlocchi: false, urlEditorAvanzato: 'https://www.andryxify.it/impostazioni', templates: ['minimal','neon','retro','sunset','glass'],
+      limiti: { headline: 80, tagline: 160, label: 40, icona: 24, link: 12 },
+      pagina: { template: 'neon', accent: '#6d3bef', bg: '#0b0813', headline: 'Andry · streamer',
+        tagline: 'Ogni sera su Twitch, di solito a fare danni',
+        links: [ { icon: '🎮', label: 'Twitch', url: 'https://twitch.tv/andryxify' }, { icon: '📸', label: 'Instagram', url: 'https://instagram.com/andryxify' }, { icon: '💬', label: 'Discord', url: 'https://discord.gg/andryxify' } ], aggiornata: null } },
     '/api/contatori': { contatori: [{ comando: 'morti', etichetta: 'Morti', emoji: '💀', valore: 3, step: 1, auto_parola: '', reward_id: '', overlayCfg: { mostra: true, x: 6, y: 84, colore: '#ffffff', sfondo: 'transparent', dim: 40, grassetto: true, font: 'system', formato: '{emoji} {etichetta}: {valore}' } }, { comando: 'lol', etichetta: 'Risate', emoji: '😂', valore: 12, step: 1, auto_parola: 'lol', reward_id: '', overlayCfg: { mostra: false, x: 6, y: 84, colore: '#ffffff', sfondo: 'transparent', dim: 40, grassetto: true, font: 'system', formato: '{emoji} {etichetta}: {valore}' } }] },
     '/api/seventv/stato': { collegato: true, username: 'andryxify', setId: 'demo7tvset' },
     '/api/tgapp/login-stato': { attiva: true, oidc: true, bot: 'socialbot', collegato: true, username: 'andryxify', nome: 'Andry' },
@@ -1129,6 +1134,7 @@ const GRUPPI = [
   ] },
   { id: 'notifiche', nome: 'Notifiche', schede: [
     ['notifiche', 'Notifiche'],
+    ['pagina', 'Pagina link'],
   ] },
 ];
 
@@ -1147,6 +1153,7 @@ const T_GRUPPO = {
   interazione: ['Interazione', 'Interaction', 'Interacción'],
   overlay: ['Overlay', 'Overlay', 'Overlay'],
   notifiche: ['Notifiche', 'Notifications', 'Notificaciones'],
+  pagina: ['Pagina link', 'Link page', 'Página de enlaces'],
   admin: ['Admin', 'Admin', 'Admin'],
 };
 const T_SCHEDA = {
@@ -1201,6 +1208,7 @@ const ICONA = {
   alert:       _ico('<rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/><path d="M6 8h4"/><path d="M6 11h2"/>'),
   emote:       _ico('<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><line x1="9" x2="9.01" y1="9.5" y2="9.5"/><line x1="15" x2="15.01" y1="9.5" y2="9.5"/>'),
   notifiche:   _ico('<path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5 2 6H4c.5-1 2-2 2-6"/><path d="M10.3 20a1.9 1.9 0 0 0 3.4 0"/>'),
+  pagina:      _ico('<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.8 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.8-1.7"/>'),
   admin:       _ico('<path d="M4 8.5 7.5 16h9L20 8.5l-4.3 3L12 5 8.3 11.5z"/><path d="M7.5 19h9"/>'),
 };
 
@@ -1226,6 +1234,7 @@ const DESC = {
   alert: ['Il tuo overlay OBS: alert, chat a schermo, widget e temi, tutto personalizzabile.', 'Your OBS overlay: alerts, on-screen chat, widgets and themes, all customizable.', 'Tu overlay para OBS: alertas, chat en pantalla, widgets y temas, todo personalizable.'],
   emote: ['Gestisci le emote 7TV del tuo canale: aggiungi, togli e rinomina, senza uscire dal bot.', 'Manage your channel’s 7TV emotes: add, remove and rename, without leaving the bot.', 'Gestiona las emotes 7TV de tu canal: añade, quita y renombra, sin salir del bot.'],
   notifiche: ['Avvisi su Telegram e Discord quando vai in diretta, e dei nuovi post su TikTok, YouTube e Instagram.', 'Alerts on Telegram and Discord when you go live, and for new posts on TikTok, YouTube and Instagram.', 'Avisos en Telegram y Discord cuando estás en directo, y de los nuevos posts en TikTok, YouTube e Instagram.'],
+  pagina: ['La tua pagina pubblica con tutti i link, su socialbot.live/u/iltuonome.', 'Your public page with all your links, at socialbot.live/u/yourname.', 'Tu página pública con todos tus enlaces, en socialbot.live/u/tunombre.'],
   admin: ['Gestione streamer e anima condivisa del bot.', 'Streamer management and the bot’s shared soul.', 'Gestión de streamers y el alma compartida del bot.'],
 };
 const descScheda = (id) => { const d = DESC[id]; return d ? L(d[0], d[1], d[2]) : ''; };
@@ -1320,6 +1329,8 @@ const GUIDE = {
     come: [['Scorri le statistiche per capire quando la chat è più viva.', 'Scroll the stats to see when chat is most alive.', 'Repasa las estadísticas para ver cuándo el chat está más vivo.'], ['Controlla i ricordi: puoi cancellare quelli sbagliati.', 'Check the memories: you can delete the wrong ones.', 'Revisa los recuerdos: puedes borrar los equivocados.'], ['Se qualcosa non ti piace, correggilo dalla scheda Conoscenza.', 'If something’s off, fix it from the Knowledge tab.', 'Si algo no te gusta, corrígelo desde la pestaña Conocimiento.']] },
   regia: { serve: ['Gestire la diretta dal pannello: titolo, categoria, marker e le azioni rapide, senza aprire Twitch.', 'Run your stream from the panel: title, category, markers and quick actions, without opening Twitch.', 'Gestionar el directo desde el panel: título, categoría, marcadores y acciones rápidas, sin abrir Twitch.'],
     come: [['Cambia titolo e categoria e salva: si aggiornano su Twitch subito.', 'Change title and category and save: they update on Twitch right away.', 'Cambia título y categoría y guarda: se actualizan en Twitch al instante.'], ['Usa le azioni rapide durante la live (marker, clip, annunci).', 'Use the quick actions during the stream (marker, clip, announcements).', 'Usa las acciones rápidas durante el directo (marcador, clip, anuncios).'], ['Tieni il pannello aperto su un secondo schermo mentre streami.', 'Keep the panel open on a second screen while you stream.', 'Ten el panel abierto en una segunda pantalla mientras emites.']] },
+  pagina: { serve: ['Avere una pagina pubblica con tutti i tuoi link (Twitch, social, Discord, donazioni) da mettere nella bio di Instagram o TikTok.', 'Have a public page with all your links (Twitch, socials, Discord, donations) to put in your Instagram or TikTok bio.', 'Tener una página pública con todos tus enlaces (Twitch, redes, Discord, donaciones) para poner en la bio de Instagram o TikTok.'],
+    come: [['Scrivi titolo e sottotitolo: è quello che si legge in cima.', 'Write a headline and tagline: that’s what people read at the top.', 'Escribe título y subtítulo: es lo que se lee arriba.'], ['Aggiungi i link con etichetta e indirizzo (l’emoji è facoltativa).', 'Add your links with a label and address (the emoji is optional).', 'Añade los enlaces con etiqueta y dirección (el emoji es opcional).'], ['Scegli stile e colori, salva e apri l’anteprima.', 'Pick style and colours, save and open the preview.', 'Elige estilo y colores, guarda y abre la vista previa.']] },
   regole: { serve: ['Moderazione automatica: filtra spam, link e flood e dà timeout ai recidivi.', 'Automatic moderation: filters spam, links and flood, and times out repeat offenders.', 'Moderación automática: filtra spam, enlaces y flood, y da timeout a los reincidentes.'],
     come: [['Attiva l’antispam.', 'Enable anti-spam.', 'Activa el antispam.'], ['Scegli cosa filtrare (link, maiuscole, ripetizioni…).', 'Choose what to filter (links, caps, repetitions…).', 'Elige qué filtrar (enlaces, mayúsculas, repeticiones…).'], ['Salva: il bot modera da solo.', 'Save: the bot moderates on its own.', 'Guarda: el bot modera solo.']] },
   giochi: { serve: ['Minigiochi, monete e classifiche per tenere viva la chat.', 'Minigames, coins and leaderboards to keep chat alive.', 'Minijuegos, monedas y clasificaciones para animar el chat.'],
@@ -1650,6 +1661,7 @@ function vistaPiattaforma() {
     ${pannelloEffetti()}
     ${pannello7TV()}
     ${pannelloNotifiche()}
+    ${pannelloPaginaLink()}
     ${stato.isAdmin ? pannello('admin', vistaAdminContenuto()) : ''}`;
 }
 
@@ -5807,6 +5819,156 @@ function _xlaGrabFn() {
 // href del bookmarklet: la funzione su una riga sola, pronta da trascinare nei preferiti.
 const bookmarkletXla = 'javascript:(' + _xlaGrabFn.toString().replace(/\n\s*/g, ' ') + ')()';
 
+// --- Pagina link pubblica (/u/<login>) ------------------------------------
+// La pagina vive su andryxify.it (unica fonte di verità): noi la leggiamo e la
+// salviamo passando dal nostro server, che si autentica col token Twitch dello
+// streamer. Qui c'è la "modalità rapida": titolo, sottotitolo, stile, colori e
+// i link. Per i layout a blocchi resta l'editor completo sul sito.
+function pannelloPaginaLink() {
+  return pannello('pagina', `
+    <div class="carta">
+      <h2>${_hIco(ICO.condividi)}${L('La tua pagina link', 'Your link page', 'Tu página de enlaces')}</h2>
+      <p>${L('Una pagina pubblica con tutti i tuoi link — Twitch, social, Discord, donazioni — da mettere nella bio di Instagram o TikTok. Vive su', 'A public page with all your links — Twitch, socials, Discord, donations — to put in your Instagram or TikTok bio. It lives at', 'Una página pública con todos tus enlaces — Twitch, redes, Discord, donaciones — para poner en la bio de Instagram o TikTok. Vive en')}
+      <strong id="lp-url-testo">socialbot.live/u/…</strong></p>
+
+      ${miniGuida({
+    titolo: L('Tutorial: crea la tua pagina in 3 mosse', 'Tutorial: build your page in 3 steps', 'Tutorial: crea tu página en 3 pasos'),
+    aperta: true,
+    passi: [
+      L('Scrivi <strong>titolo</strong> e <strong>sottotitolo</strong>: è quello che si legge in cima (es. il tuo nome e cosa fai).', 'Write a <strong>headline</strong> and <strong>tagline</strong>: that’s what people read at the top (e.g. your name and what you do).', 'Escribe <strong>título</strong> y <strong>subtítulo</strong>: es lo que se lee arriba (p. ej. tu nombre y qué haces).'),
+      L('Aggiungi i <strong>link</strong> con «Aggiungi link»: un’etichetta (es. «Twitch»), l’indirizzo e, se vuoi, un’emoji.', 'Add your <strong>links</strong> with “Add link”: a label (e.g. “Twitch”), the address and, if you like, an emoji.', 'Añade los <strong>enlaces</strong> con «Añadir enlace»: una etiqueta (p. ej. «Twitch»), la dirección y, si quieres, un emoji.'),
+      L('Scegli lo <strong>stile</strong> e i colori, salva, e apri l’anteprima per vedere il risultato.', 'Pick a <strong>style</strong> and the colours, save, and open the preview to see the result.', 'Elige el <strong>estilo</strong> y los colores, guarda, y abre la vista previa para ver el resultado.'),
+    ],
+    note: [
+      L('Il link è sempre lo stesso: se cambi i contenuti, chi ce l’ha già vede subito la versione nuova.', 'The link never changes: if you edit the contents, anyone who already has it sees the new version right away.', 'El enlace es siempre el mismo: si cambias el contenido, quien ya lo tiene ve la versión nueva al instante.'),
+    ],
+  })}
+
+      <div id="lp-box"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+    </div>`);
+}
+
+async function caricaPaginaLink() {
+  const box = document.getElementById('lp-box'); if (!box) return;
+  let d;
+  try { d = await api('/api/linkpage'); }
+  catch (e) {
+    box.innerHTML = `<p class="suggerimento">${esc(e?.message || L('Impossibile caricare la pagina link.', 'Couldn\'t load the link page.', 'No se pudo cargar la página de enlaces.'))}</p>`;
+    return;
+  }
+  const p = d.pagina || {};
+  const lim = d.limiti || { headline: 80, tagline: 160, label: 40, icona: 24, link: 12 };
+  const urlEl = document.getElementById('lp-url-testo');
+  if (urlEl && d.url) urlEl.textContent = d.url.replace(/^https?:\/\//, '');
+
+  // Se la pagina e stata costruita con l'editor a BLOCCHI del sito, il renderer
+  // mostra quelli: salvare i campi semplici da qui non cambierebbe nulla a
+  // schermo. Meglio dirlo che lasciar credere di aver salvato.
+  if (d.aBlocchi) {
+    box.innerHTML = `
+      <div class="carta avviso spazio-sopra">
+        <h3>${L('Questa pagina usa l\'editor avanzato', 'This page uses the advanced editor', 'Esta página usa el editor avanzado')}</h3>
+        <p>${L('L\'hai costruita a <strong>blocchi</strong> su andryxify.it. La pagina pubblica mostra quei blocchi, quindi modificare i campi semplici da qui <strong>non cambierebbe nulla a schermo</strong>. Per non farti perdere il lavoro, da qui non tocchiamo niente.', 'You built it with <strong>blocks</strong> on andryxify.it. The public page shows those blocks, so editing the simple fields here <strong>wouldn\'t change anything on screen</strong>. So as not to lose your work, we don\'t touch anything from here.', 'La construiste con <strong>bloques</strong> en andryxify.it. La página pública muestra esos bloques, así que editar los campos simples aquí <strong>no cambiaría nada en pantalla</strong>. Para no perder tu trabajo, desde aquí no tocamos nada.')}</p>
+        <p class="spazio-sopra">
+          <a class="btn" href="${esc(d.urlEditorAvanzato || '#')}" target="_blank" rel="noopener">${L('Modifica sul sito', 'Edit on the site', 'Editar en el sitio')}</a>
+          <a class="btn secondario" href="${esc(d.url || '#')}" target="_blank" rel="noopener">${_bIco(ICO.occhio)}${L('Apri la pagina', 'Open the page', 'Abrir la página')}</a>
+        </p>
+      </div>`;
+    const u = document.getElementById('lp-url-testo');
+    if (u && d.url) u.textContent = d.url.replace(/^https?:\/\//, '');
+    return;
+  }
+
+  const NOMI_STILE = { minimal: 'Minimal', neon: 'Neon', retro: 'Retro', sunset: 'Sunset', glass: 'Glass' };
+  const stileOpts = (d.templates || []).map((t) =>
+    `<option value="${esc(t)}"${t === p.template ? ' selected' : ''}>${esc(NOMI_STILE[t] || t)}</option>`).join('');
+
+  box.innerHTML = `
+    <div class="griglia-campi">
+      <div><label class="campo" for="lp-headline">${L('Titolo', 'Headline', 'Título')}</label>
+        <input type="text" id="lp-headline" maxlength="${lim.headline}" value="${esc(p.headline || '')}" placeholder="${esc(L('es. Andry · streamer', 'e.g. Andry · streamer', 'p. ej. Andry · streamer'))}"></div>
+      <div><label class="campo" for="lp-stile">${L('Stile', 'Style', 'Estilo')}</label>
+        <select id="lp-stile">${stileOpts}</select></div>
+    </div>
+    <label class="campo spazio-sopra" for="lp-tagline">${L('Sottotitolo', 'Tagline', 'Subtítulo')}</label>
+    <input type="text" id="lp-tagline" maxlength="${lim.tagline}" value="${esc(p.tagline || '')}" placeholder="${esc(L('es. Ogni sera su Twitch', 'e.g. Every night on Twitch', 'p. ej. Cada noche en Twitch'))}">
+    <div class="griglia-campi spazio-sopra">
+      <div><label class="campo" for="lp-accent">${L('Colore principale', 'Accent colour', 'Color principal')}</label>
+        <input type="color" id="lp-accent" value="${esc(/^#/.test(p.accent || '') ? p.accent : '#6d3bef')}"></div>
+      <div><label class="campo" for="lp-bg">${L('Colore di sfondo', 'Background colour', 'Color de fondo')}</label>
+        <input type="color" id="lp-bg" value="${esc(/^#/.test(p.bg || '') ? p.bg : '#0b0813')}"></div>
+    </div>
+
+    <h3 class="spazio-sopra">${L('I tuoi link', 'Your links', 'Tus enlaces')} <span class="tenue">(${L('massimo', 'up to', 'máximo')} ${lim.link})</span></h3>
+    <div id="lp-links"></div>
+    <p class="spazio-sopra">
+      <button type="button" class="btn secondario" id="lp-aggiungi">${_bIco(ICO.piu)}${L('Aggiungi link', 'Add link', 'Añadir enlace')}</button>
+    </p>
+    <p class="spazio-sopra">
+      <button class="btn grande" id="lp-salva">${L('Salva la pagina', 'Save the page', 'Guardar la página')}</button>
+      <a class="btn secondario" id="lp-apri" href="${esc(d.url || '#')}" target="_blank" rel="noopener">${_bIco(ICO.occhio)}${L('Apri anteprima', 'Open preview', 'Abrir vista previa')}</a>
+      <span id="lp-esito" class="suggerimento"></span>
+    </p>`;
+
+  // ── righe dei link (aggiungi / togli / riordina) ──
+  const cont = document.getElementById('lp-links');
+  const rigaLink = (l = {}) => {
+    const r = document.createElement('div');
+    r.className = 'lp-riga';
+    r.innerHTML = `
+      <input type="text" class="lp-icon" maxlength="${lim.icona}" value="${esc(l.icon || '')}" placeholder="🎮" title="${L('Emoji (facoltativa)', 'Emoji (optional)', 'Emoji (opcional)')}">
+      <input type="text" class="lp-label" maxlength="${lim.label}" value="${esc(l.label || '')}" placeholder="${esc(L('Etichetta (es. Twitch)', 'Label (e.g. Twitch)', 'Etiqueta (p. ej. Twitch)'))}">
+      <input type="url" class="lp-url" value="${esc(l.url || '')}" placeholder="https://twitch.tv/iltuonome">
+      <span class="lp-azioni">
+        <button type="button" class="btn secondario mini" data-lp="su" title="${L('Sposta su', 'Move up', 'Subir')}">↑</button>
+        <button type="button" class="btn secondario mini" data-lp="giu" title="${L('Sposta giù', 'Move down', 'Bajar')}">↓</button>
+        <button type="button" class="btn secondario mini" data-lp="via" title="${L('Togli', 'Remove', 'Quitar')}">🗑</button>
+      </span>`;
+    return r;
+  };
+  (p.links || []).forEach((l) => cont.appendChild(rigaLink(l)));
+  // pagina mai creata: parto con una riga già impostata su Twitch, così si capisce
+  if (!(p.links || []).length) cont.appendChild(rigaLink({ label: 'Twitch', url: 'https://twitch.tv/' + (stato.user?.login || ''), icon: '🎮' }));
+
+  document.getElementById('lp-aggiungi').onclick = () => {
+    if (cont.children.length >= lim.link) { toast(L('Hai raggiunto il massimo di link.', 'You’ve reached the link limit.', 'Has alcanzado el máximo de enlaces.'), 'errore'); return; }
+    cont.appendChild(rigaLink());
+  };
+  cont.onclick = (ev) => {
+    const b = ev.target.closest('[data-lp]'); if (!b) return;
+    const r = b.closest('.lp-riga');
+    if (b.dataset.lp === 'via') r.remove();
+    else if (b.dataset.lp === 'su' && r.previousElementSibling) r.parentNode.insertBefore(r, r.previousElementSibling);
+    else if (b.dataset.lp === 'giu' && r.nextElementSibling) r.parentNode.insertBefore(r.nextElementSibling, r);
+  };
+
+  document.getElementById('lp-salva').onclick = () => conErrore(async () => {
+    const righe = [...cont.querySelectorAll('.lp-riga')];
+    const links = righe.map((r) => ({
+      icon: r.querySelector('.lp-icon').value.trim(),
+      label: r.querySelector('.lp-label').value.trim(),
+      url: r.querySelector('.lp-url').value.trim(),
+    })).filter((l) => l.label && l.url);
+    const scartati = righe.length - links.length;
+    const r = await api('/api/linkpage', { method: 'POST', body: {
+      headline: document.getElementById('lp-headline').value,
+      tagline: document.getElementById('lp-tagline').value,
+      template: document.getElementById('lp-stile').value,
+      accent: document.getElementById('lp-accent').value,
+      bg: document.getElementById('lp-bg').value,
+      links,
+    } });
+    // dico SEMPRE quante righe sono state scartate: è la causa tipica del
+    // "ho salvato ma non è come lo volevo"
+    const esito = document.getElementById('lp-esito');
+    if (esito) esito.textContent = scartati > 0
+      ? L(`Salvata ✓ — ${scartati} riga/e senza etichetta o indirizzo non salvate.`, `Saved ✓ — ${scartati} row(s) missing a label or address weren’t saved.`, `Guardada ✓ — ${scartati} fila(s) sin etiqueta o dirección no se guardaron.`)
+      : L('Salvata ✓ è già online.', 'Saved ✓ it’s already live.', 'Guardada ✓ ya está online.');
+    toast(L('Pagina link salvata ✓', 'Link page saved ✓', 'Página de enlaces guardada ✓'));
+    if (r?.url) { const a = document.getElementById('lp-apri'); if (a) a.href = r.url; }
+  });
+}
+
 // --- Contatori (morti, tentativi, parole…) --------------------------------
 // Sta nella sezione COMANDI (moduli): sono comandi di chat, non minigiochi.
 function pannelloContatori() {
@@ -7375,6 +7537,7 @@ function caricaDatiScheda(id) {
   if (id === 'memoria') caricaStatistiche();
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); }
   if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaDiscord(); caricaTgLogin(); }
+  if (id === 'pagina') caricaPaginaLink();
   if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaAnima(); caricaLLM(); }
 }
 
