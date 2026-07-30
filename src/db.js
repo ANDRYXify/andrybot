@@ -94,6 +94,17 @@ CREATE TABLE IF NOT EXISTS contatori (         -- contatori a comando (morti, te
   PRIMARY KEY (channel, comando)
 );
 
+-- Visite alla pagina pubblica, contate per giorno. Nessun indirizzo IP, nessun
+-- cookie, niente su chi c'era: solo QUANTE volte è stata aperta. È il dato che
+-- serve davvero ("la mia pagina la guarda qualcuno?") ed è anche l'unico che si
+-- può raccogliere senza chiedere il consenso a nessuno.
+CREATE TABLE IF NOT EXISTS link_page_visite (
+  channel TEXT NOT NULL,
+  giorno TEXT NOT NULL,                      -- AAAA-MM-GG
+  viste INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (channel, giorno)
+);
+
 CREATE TABLE IF NOT EXISTS link_page (       -- la pagina pubblica /u/<login>
   channel TEXT PRIMARY KEY,
   headline TEXT NOT NULL DEFAULT '',           -- titolo in cima
@@ -1218,7 +1229,7 @@ export const FONT_LINKPAGE = ['system', 'inter', 'mono', 'serif', 'condensato', 
 export const ICONE_LINKPAGE = ['link', 'twitch', 'youtube', 'instagram', 'tiktok', 'discord', 'spotify',
   'x', 'telegram', 'kick', 'github', 'reddit', 'threads', 'facebook', 'whatsapp', 'twitter',
   'cuore', 'stella', 'regalo', 'carrello', 'calendario', 'mail', 'musica', 'video', 'scarica', 'gioco', 'caffe', 'soldi'];
-export const TIPI_BLOCCO = ['link', 'titolo', 'testo', 'badge', 'separatore', 'spazio', 'social', 'embed', 'immagine', 'diretta', 'eroe', 'griglia', 'scritta'];
+export const TIPI_BLOCCO = ['link', 'titolo', 'testo', 'badge', 'separatore', 'spazio', 'social', 'embed', 'immagine', 'diretta', 'eroe', 'griglia', 'scritta', 'numeri', 'faq', 'conto'];
 // Quanto si MUOVE la pagina mentre la si scorre. "dolce" = i contenuti
 // compaiono entrando. "cinema" = in più: la foto della copertina va in
 // parallasse, i titoli si rivelano parola per parola, le immagini si
@@ -1281,6 +1292,31 @@ const TEMA_DEF = {
   avatarForma: 'cerchio',    // cerchio | quadrato | nessuno
   larghezza: 30,             // rem: quanto è larga la colonna
   allinea: 'centro',         // centro | sinistra
+};
+
+// Visite della pagina link: si contano e si riassumono, nient'altro.
+export const visitePagina = {
+  conta(channel) {
+    const g = new Date().toISOString().slice(0, 10);
+    db.prepare(`INSERT INTO link_page_visite (channel, giorno, viste) VALUES (?, ?, 1)
+      ON CONFLICT(channel, giorno) DO UPDATE SET viste = viste + 1`).run(String(channel).toLowerCase(), g);
+  },
+  riassunto(channel) {
+    const c = String(channel).toLowerCase();
+    const giorno = (n) => new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
+    const somma = (da) => db.prepare('SELECT COALESCE(SUM(viste),0) v FROM link_page_visite WHERE channel=? AND giorno>=?').get(c, da).v;
+    return {
+      oggi: somma(giorno(0)),
+      settimana: somma(giorno(6)),
+      mese: somma(giorno(29)),
+      totale: db.prepare('SELECT COALESCE(SUM(viste),0) v FROM link_page_visite WHERE channel=?').get(c).v,
+      // gli ultimi 14 giorni in ordine, per disegnare la strisciolina
+      giorni: Array.from({ length: 14 }, (_, i) => {
+        const g = giorno(13 - i);
+        return { giorno: g, viste: db.prepare('SELECT COALESCE(viste,0) v FROM link_page_visite WHERE channel=? AND giorno=?').get(c, g)?.v || 0 };
+      }),
+    };
+  },
 };
 
 export const linkPage = {
@@ -1406,6 +1442,21 @@ export const linkPage = {
           altezza: scelta(b.altezza, ['media', 'piena', 'bassa'], 'media'), fissa: b.fissa === true });
       } else if (tipo === 'scritta') {
         out.push({ tipo, testo: str(b.testo, L.titolo), velocita: scelta(b.velocita, ['lenta', 'media', 'veloce'], 'media') });
+      } else if (tipo === 'numeri') {
+        const voci = (Array.isArray(b.voci) ? b.voci : []).slice(0, 6)
+          .map((v) => ({ n: str(v?.n, 16), etichetta: str(v?.etichetta, 40) }));
+        out.push({ tipo, voci });
+      } else if (tipo === 'faq') {
+        const voci = (Array.isArray(b.voci) ? b.voci : []).slice(0, 12)
+          .map((v) => ({ d: str(v?.d, L.titolo), r: str(v?.r, L.testo) }));
+        out.push({ tipo, voci });
+      } else if (tipo === 'conto') {
+        // quando: data e ora ISO senza fuso (2026-08-12T21:00). Il fuso lo mette
+        // il browser di chi guarda, che è l'unico che sappia il suo.
+        const q = String(b.quando || '').trim();
+        out.push({ tipo, titolo: str(b.titolo, L.label),
+          quando: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(q) ? q : '',
+          finito: str(b.finito, L.label) });
       } else if (tipo === 'griglia') {
         const voci = (Array.isArray(b.voci) ? b.voci : []).slice(0, 12).map((v) => ({
           img: urlOk(v?.img), titolo: str(v?.titolo, L.label), testo: str(v?.testo, L.sotto), url: urlOk(v?.url),

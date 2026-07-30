@@ -402,6 +402,26 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
         </div>
       </section>`;
     }
+    if (b.tipo === 'numeri') {
+      const voci = (b.voci || []).filter((v) => v.n || v.etichetta);
+      if (!voci.length) return anteprima ? `<div class="segna" ${ritardo}>numeri: aggiungi almeno una voce</div>` : '';
+      return `<div class="numeri" ${ritardo}>${voci.map((v) => `<div class="num">
+        <span class="num-n">${esc(v.n)}</span><span class="num-e">${esc(v.etichetta)}</span></div>`).join('')}</div>`;
+    }
+    if (b.tipo === 'faq') {
+      const voci = (b.voci || []).filter((v) => v.d);
+      if (!voci.length) return anteprima ? `<div class="segna" ${ritardo}>domande: scrivine almeno una</div>` : '';
+      // <details>: si aprono e si chiudono da sole, senza una riga di script
+      return `<div class="faq" ${ritardo}>${voci.map((v) => `<details class="faq-v">
+        <summary>${esc(v.d)}</summary><p>${esc(v.r)}</p></details>`).join('')}</div>`;
+    }
+    if (b.tipo === 'conto') {
+      if (!b.quando) return anteprima ? `<div class="segna" ${ritardo}>conto alla rovescia: manca la data</div>` : '';
+      return `<div class="conto" ${ritardo} data-quando="${esc(b.quando)}" data-finito="${esc(b.finito || '')}">
+        ${b.titolo ? `<span class="conto-t">${esc(b.titolo)}</span>` : ''}
+        <span class="conto-n"><time datetime="${esc(b.quando)}">${esc(b.quando.replace('T', ' · '))}</time></span>
+      </div>`;
+    }
     if (b.tipo === 'scritta') {
       if (!b.testo) return anteprima ? `<div class="segna" ${ritardo}>scritta che scorre: manca il testo</div>` : '';
       const sp = { lenta: 34, media: 22, veloce: 13 }[b.velocita] || 22;
@@ -489,8 +509,15 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
 <meta property="og:title" content="${esc(titolo)}">
 <meta property="og:description" content="${esc(descr).slice(0, 200)}">
 <meta property="og:url" content="${esc(baseUrl)}/u/${esc(login)}">
-${imgAvatar ? `<meta property="og:image" content="${esc(imgAvatar)}">` : ''}
-<meta name="twitter:card" content="summary">
+${/* per l'anteprima nelle chat vale molto di più la copertina della foto profilo:
+     è larga, si vede, e fa sembrare il link una pagina vera invece di un avatar */
+  ''}${(() => {
+    const cop = (pagina.blocchi || []).find((b) => b?.tipo === 'eroe' && b.img);
+    const og = urlSicuro(cop?.img) || imgAvatar;
+    return og ? `<meta property="og:image" content="${esc(og)}">
+<meta name="twitter:image" content="${esc(og)}">` : '';
+  })()}
+<meta name="twitter:card" content="${(pagina.blocchi || []).some((b) => b?.tipo === 'eroe' && b.img) ? 'summary_large_image' : 'summary'}">
 <link rel="icon" href="/icons/icon-192.png">
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -602,6 +629,29 @@ ${imgAvatar ? `<meta property="og:image" content="${esc(imgAvatar)}">` : ''}
   .tess-tx{display:flex;flex-direction:column;gap:.1rem;padding:.6rem .7rem;text-align:left}
   .tess-t{font-weight:700;font-size:.9rem;line-height:1.2}
   .tess-s{font-size:.78rem;color:var(--tenue)}
+  /* numeri in fila: follower, anni di dirette, ore in diretta… */
+  .numeri{width:100%;margin-top:1.2rem;display:flex;flex-wrap:wrap;gap:.6rem;
+    justify-content:${aSinistra ? 'flex-start' : 'center'}}
+  .num{flex:1 1 7rem;min-width:6rem;padding:.9rem .6rem;border-radius:var(--r);${stileBtn};text-align:center;
+    display:flex;flex-direction:column;gap:.15rem}
+  .num-n{font-size:clamp(1.4rem,5vw,2.1rem);font-weight:800;letter-spacing:-.03em;color:var(--acc);line-height:1}
+  .num-e{font-size:.76rem;color:var(--tenue);text-transform:uppercase;letter-spacing:.06em}
+  /* domande frequenti: si aprono da sole, nessuno script */
+  .faq{width:100%;margin-top:1rem;display:flex;flex-direction:column;gap:.45rem}
+  .faq-v{border-radius:var(--r);${stileBtn};overflow:hidden}
+  .faq-v summary{cursor:pointer;padding:.85rem 1rem;font-weight:600;list-style:none;display:flex;align-items:center;gap:.5rem}
+  .faq-v summary::-webkit-details-marker{display:none}
+  .faq-v summary::after{content:'';margin-left:auto;width:.5rem;height:.5rem;flex:0 0 auto;
+    border-right:2px solid var(--acc);border-bottom:2px solid var(--acc);transform:rotate(45deg);
+    transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
+  .faq-v[open] summary::after{transform:rotate(-135deg)}
+  .faq-v p{padding:0 1rem .9rem;color:var(--tenue);font-size:.92rem;text-wrap:pretty}
+  /* conto alla rovescia */
+  .conto{width:100%;margin-top:1.2rem;padding:1.1rem 1rem;border-radius:var(--r);${stileBtn};text-align:center;
+    display:flex;flex-direction:column;gap:.3rem}
+  .conto-t{font-size:.76rem;text-transform:uppercase;letter-spacing:.08em;color:var(--tenue)}
+  .conto-n{font-size:clamp(1.3rem,5vw,2rem);font-weight:800;letter-spacing:-.02em;color:var(--acc);
+    font-variant-numeric:tabular-nums}
   .spazio{width:100%;height:1.6rem}
   .badge2{align-self:${aSinistra ? 'flex-start' : 'center'};margin-top:1rem;padding:.3rem .8rem;border-radius:999px;
     background:var(--acc);color:#fff;font-size:.8rem;font-weight:700;letter-spacing:.02em}
@@ -697,8 +747,29 @@ ${imgAvatar ? `<meta property="og:image" content="${esc(imgAvatar)}">` : ''}
     ${corpo ? `<nav class="lista">${corpo}</nav>` : `<p class="vuoto">Questa pagina non ha ancora contenuti.</p>`}
     <p class="piede">Pagina creata con <a href="${esc(baseUrl)}/" target="_blank" rel="noopener">SocialBot</a></p>
   </main>
+${corpo.includes('class="conto"') ? `<script>
+/* Conto alla rovescia. La data e scritta senza fuso orario di proposito: il
+   fuso lo mette il browser di chi guarda, che e l'unico a sapere il suo. */
+(function () {
+  var c = document.querySelectorAll('.conto');
+  function pezzo(n, s) { return n + s; }
+  function giro() {
+    for (var i = 0; i < c.length; i++) {
+      var t = new Date(c[i].getAttribute('data-quando')).getTime();
+      var n = c[i].querySelector('.conto-n');
+      if (!t || !n) continue;
+      var d = t - Date.now();
+      if (d <= 0) { n.textContent = c[i].getAttribute('data-finito') || 'ora!'; continue; }
+      var s = Math.floor(d / 1000), g = Math.floor(s / 86400), o = Math.floor(s % 86400 / 3600),
+          m = Math.floor(s % 3600 / 60), q = s % 60;
+      n.textContent = (g ? pezzo(g, 'g ') : '') + pezzo(o, 'h ') + pezzo(m, 'm ') + pezzo(q, 's');
+    }
+  }
+  giro(); setInterval(giro, 1000);
+})();
+</script>` : ''}
 ${corpo.includes('<iframe') ? `<script>
-/* L'UNICO script della pagina, ed e qui per un motivo solo: TikTok e Instagram
+/* L'altro script: TikTok e Instagram
    dicono da soli quanto sono alti, con un messaggio al genitore. Senza, il
    riquadro resta dell'altezza che abbiamo indovinato noi e sotto avanza il
    vuoto. Chi non lo manda (Spotify, Twitch) resta com'e: per quelli c'e il

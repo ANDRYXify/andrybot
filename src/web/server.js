@@ -15,7 +15,7 @@ import { config, SCOPES, missingConfig } from '../config.js';
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb, friends } from '../db.js';
 import { points, vips, tgConf, dcConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
-import { linkPage, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO } from '../db.js';
+import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO } from '../db.js';
 import { renderLinkPage } from '../features/linkpagina.js';
 import { risolviCanaleId } from '../features/youtube.js';
 import * as abbonamenti from '../features/abbonamenti.js';
@@ -753,6 +753,14 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       avatar: await avatarDi(login),
       baseUrl: config.baseUrl,
     });
+    // Una visita in più. Contiamo SOLO quante volte la pagina è stata aperta:
+    // niente indirizzi IP, niente cookie, niente su chi c'era. I robot li
+    // saltiamo, sennò il numero racconta i crawler invece delle persone.
+    try {
+      if (!/bot|crawl|spider|slurp|facebookexternalhit|preview|monitor|curl|wget|headless/i.test(String(req.get('user-agent') || ''))) {
+        visitePagina.conta(login);
+      }
+    } catch (e) { log.warn('visite pagina link:', e?.message || e); }
     res.set('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
     res.type('html').send(html);
   }));
@@ -779,6 +787,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       tipi: TIPI_BLOCCO,
       limiti: LIMITI_LINKPAGE,
       avatarTwitch: await avatarDi(login),
+      visite: visitePagina.riassunto(login),
       // per chi parte da zero: un primo blocco già pronto sul suo canale
       suggeriti: linkPage.esiste(login) ? [] : [
         { tipo: 'link', icona: 'twitch', label: 'Twitch', url: `https://twitch.tv/${login}`, sotto: '', evidenzia: true },

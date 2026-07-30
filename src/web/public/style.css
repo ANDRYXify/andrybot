@@ -985,6 +985,14 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .lp-tema-sw span:first-child { width: 72%; }
 .lp-tema-sw span:last-child { width: 48%; }
 .lp-tema-n { font-size: .72rem; color: var(--testo-2); line-height: 1.15; }
+/* quante volte hanno aperto la pagina, con la strisciolina degli ultimi 14 giorni */
+.lp-visite { display: flex; align-items: center; gap: .8rem; padding: .6rem .8rem; border: 1px solid var(--border);
+  border-radius: var(--r-m); background: var(--surface-2); }
+.lp-visite-n { font-size: .84rem; line-height: 1.35; }
+.lp-visite-n b { font-size: 1.15rem; color: var(--acc); }
+.lp-visite-n .suggerimento { display: block; margin: 0; font-size: .72rem; }
+.lp-barre { margin-left: auto; display: flex; align-items: flex-end; gap: 2px; height: 2.2rem; }
+.lp-barra { width: 5px; height: max(2px, var(--h)); background: var(--acc); border-radius: 2px; opacity: .75; }
 /* piede di ogni blocco: quanto è largo e come entra — valgono per tutti */
 .lp-bpiede { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .6rem; padding-top: .5rem; border-top: 1px dashed var(--border); }
 .lp-bpiede label { display: inline-flex; align-items: center; gap: .3rem; font-size: .74rem; color: var(--testo-3); }
