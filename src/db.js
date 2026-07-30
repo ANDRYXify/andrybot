@@ -1224,6 +1224,11 @@ export const TIPI_BLOCCO = ['link', 'titolo', 'testo', 'badge', 'separatore', 's
 // parallasse, i titoli si rivelano parola per parola, le immagini si
 // riavvicinano. Tutto in CSS (animation-timeline), zero JavaScript.
 export const MOVIMENTI = ['nessuno', 'dolce', 'cinema'];
+// Ogni blocco può occupare tutta la riga o dividerla: è così che si mettono le
+// cose UNA ACCANTO ALL'ALTRA invece che una sotto l'altra.
+export const LARGHEZZE_BLOCCO = ['piena', 'meta', 'terzo'];
+// ...e può entrare a modo suo, invece di seguire l'animazione della pagina.
+export const ENTRATE_BLOCCO = ['auto', 'nessuna', 'sfuma', 'sali', 'scala', 'sinistra', 'destra', 'ruota'];
 // Come sono disposti i contenuti. "colonna" è la classica lista di bottoni;
 // "rivista" li affianca in una griglia su schermo largo; "sezioni" li distanzia
 // e li ingrandisce, per una pagina che si SCORRE invece di leggersi in un colpo.
@@ -1352,6 +1357,7 @@ export const linkPage = {
       if (out.length >= L.blocchi || !b || typeof b !== 'object') return out;
       const tipo = scelta(b.tipo, TIPI_BLOCCO, null);
       if (!tipo) return out;
+      const quanti = out.length;
       if (tipo === 'link') {
         const u = urlOk(b.url);
         out.push({ tipo, url: u, label: str(b.label, L.label), sotto: str(b.sotto, L.sotto),
@@ -1405,6 +1411,12 @@ export const linkPage = {
           img: urlOk(v?.img), titolo: str(v?.titolo, L.label), testo: str(v?.testo, L.sotto), url: urlOk(v?.url),
         }));
         out.push({ tipo, voci });
+      }
+      // valgono per QUALSIASI blocco: quanto è largo e come entra
+      if (out.length > quanti) {
+        const ul = out[out.length - 1];
+        ul.larghezza = scelta(b.larghezza, LARGHEZZE_BLOCCO, 'piena');
+        ul.entrata = scelta(b.entrata, ENTRATE_BLOCCO, 'auto');
       }
       return out;
     }, []);

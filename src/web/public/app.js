@@ -6397,9 +6397,11 @@ async function caricaPaginaLink(ridisegna = false) {
   box.addEventListener('click', (ev) => {
     const v = ev.target.closest('[data-lpvista]'); if (!v) return;
     const cornice = box.querySelector('#lp-cornice'); if (!cornice) return;
-    cornice.classList.toggle('schermo', v.dataset.lpvista === 'schermo');
+    const orizz = v.dataset.lpvista === 'schermo';
+    cornice.classList.toggle('schermo', orizz);
+    box.querySelector('.lp-editor')?.classList.toggle('orizz', orizz);   // più spazio all'anteprima
     box.querySelectorAll('.lp-vista-b').forEach((b) => b.classList.toggle('sel', b === v));
-    lpScala();
+    requestAnimationFrame(lpScala);   // la scala si misura dopo il cambio di colonne
   });
 
   // Temi pronti: applicano TUTTO in un colpo, poi si ridisegna l'editor perché
@@ -6636,6 +6638,22 @@ function lpRenderBlocchi() {
         </span>
       </div>
       ${campi}
+      <div class="lp-bpiede">
+        <label>${L('Largo', 'Width', 'Ancho')}
+          <select data-lpb="${i}" data-lpf="larghezza">
+            <option value="piena"${(b.larghezza || 'piena') === 'piena' ? ' selected' : ''}>${L('tutta la riga', 'full row', 'toda la fila')}</option>
+            <option value="meta"${b.larghezza === 'meta' ? ' selected' : ''}>${L('metà', 'half', 'mitad')}</option>
+            <option value="terzo"${b.larghezza === 'terzo' ? ' selected' : ''}>${L('un terzo', 'a third', 'un tercio')}</option>
+          </select></label>
+        <label>${L('Entra', 'Enters', 'Entra')}
+          <select data-lpb="${i}" data-lpf="entrata">
+            ${[['auto', L('come la pagina', 'like the page', 'como la página')], ['nessuna', L('ferma', 'still', 'quieta')],
+    ['sfuma', L('sfumando', 'fading', 'fundido')], ['sali', L('dal basso', 'from below', 'desde abajo')],
+    ['scala', L('ingrandendosi', 'scaling up', 'agrandándose')], ['sinistra', L('da sinistra', 'from the left', 'desde la izquierda')],
+    ['destra', L('da destra', 'from the right', 'desde la derecha')], ['ruota', L('ruotando', 'rotating', 'girando')]]
+    .map(([k, n]) => `<option value="${k}"${(b.entrata || 'auto') === k ? ' selected' : ''}>${esc(n)}</option>`).join('')}
+          </select></label>
+      </div>
     </div>`;
   }).join('') || `<p class="suggerimento">${L('Nessun contenuto: aggiungi il primo pezzo qui sotto.', 'No content yet: add the first piece below.', 'Sin contenido: añade la primera pieza abajo.')}</p>`;
 

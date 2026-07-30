@@ -384,7 +384,7 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
       const forma = b.formato && b.formato !== 'auto' ? b.formato : e.formato;
       // altezza scelta a mano: vince su tutto, comprese le proporzioni
       const alt = Number(b.altezza) > 0
-        ? `style="height:${Math.min(1200, Math.round(b.altezza))}px;aspect-ratio:auto;--d:${Math.min(n - 1, 12) * 45}ms"`
+        ? `data-fisso="1" style="height:${Math.min(1200, Math.round(b.altezza))}px;aspect-ratio:auto;--d:${Math.min(n - 1, 12) * 45}ms"`
         : ritardo;
       return `${b.titolo ? `<h2 class="tit" ${ritardo}>${esc(b.titolo)}</h2>` : ''}
         <div class="emb f-${esc(forma)}" ${alt}><iframe src="${esc(e.src)}" ${IFRAME}
@@ -438,10 +438,33 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   // sé (.dopo) che le scorre sopra. Il taglio si fa PRIMA di scartare i pezzi
   // vuoti, altrimenti gli indici non corrispondono più ai blocchi.
   const iFissa = (pagina.blocchi || []).findIndex((b) => b?.tipo === 'eroe' && b.fissa);
+  // I blocchi larghi "metà" o "un terzo" vanno in fila fra loro: è così che si
+  // affiancano le cose invece di impilarle. Si uniscono quelli CONSECUTIVI,
+  // che è quello che uno si aspetta guardando l'elenco dei contenuti.
+  // L'involucro .bl serve quando il blocco ha una larghezza sua o un'entrata
+  // sua: senza, il pezzo resta esattamente com'era (niente involucri inutili).
+  const involucro = (html, b, i) => {
+    const larg = b?.larghezza && b.larghezza !== 'piena' ? ' w-' + esc(b.larghezza) : '';
+    const ent = b?.entrata && b.entrata !== 'auto' ? ' e-' + esc(b.entrata) : '';
+    if (!larg && !ent) return html;
+    return `<div class="bl${larg}${ent}" style="--d:${Math.min(i, 12) * 45}ms">${html}</div>`;
+  };
+  const inFile = (da, a) => {
+    const fuori = []; let fila = [];
+    const chiudi = () => { if (fila.length) { fuori.push(`<div class="fila">${fila.join('\n')}</div>`); fila = []; } };
+    for (let i = da; i < a; i++) {
+      if (!pezzi[i]) continue;
+      const b = pagina.blocchi[i] || {};
+      const html = involucro(pezzi[i], b, i);
+      if (b.larghezza === 'meta' || b.larghezza === 'terzo') fila.push(html);
+      else { chiudi(); fuori.push(html); }
+    }
+    chiudi();
+    return fuori.join('\n');
+  };
   const corpo = iFissa >= 0
-    ? pezzi.slice(0, iFissa + 1).filter(Boolean).join('\n')
-      + `\n<div class="dopo">${pezzi.slice(iFissa + 1).filter(Boolean).join('\n')}</div>`
-    : pezzi.filter(Boolean).join('\n');
+    ? inFile(0, iFissa + 1) + `\n<div class="dopo">${inFile(iFissa + 1, pezzi.length)}</div>`
+    : inFile(0, pezzi.length);
 
   // "Nessuna" vuol dire NESSUNA: prima cadeva sull'iniziale del nome, cioè
   // esattamente il cerchio con la lettera che si voleva togliere.
@@ -516,7 +539,14 @@ ${imgAvatar ? `<meta property="og:image" content="${esc(imgAvatar)}">` : ''}
   .emb.f-compatto{aspect-ratio:auto;height:152px}   /* un brano */
   .emb.f-medio{aspect-ratio:auto;height:232px}      /* un episodio, un podcast */
   .emb.f-alto{aspect-ratio:auto;height:380px}       /* album, playlist */
-  .emb.f-pagina{aspect-ratio:auto;height:30rem}     /* profili e pagine: una vetrina, non un video */
+  .emb.f-pagina{aspect-ratio:auto;height:26rem}     /* profili e pagine: una vetrina, non un video */
+  /* i blocchi affiancati: metà riga o un terzo */
+  .fila{display:flex;flex-wrap:wrap;gap:.6rem;width:100%;align-items:stretch}
+  .bl{width:100%;min-width:0}
+  .bl > *{margin-top:0}
+  .fila > .bl.w-meta{flex:1 1 calc(50% - .3rem);min-width:11rem}
+  .fila > .bl.w-terzo{flex:1 1 calc(33.333% - .4rem);min-width:9rem}
+  .fila{margin-top:1rem}
   .emb.f-chat{aspect-ratio:auto;height:26rem;margin-top:.5rem}
   /* ── copertina: l'apertura della pagina, non un bottone ── */
   .eroe{position:relative;width:100%;margin-top:1rem;border-radius:var(--r);overflow:hidden;
@@ -617,6 +647,22 @@ ${imgAvatar ? `<meta property="og:image" content="${esc(imgAvatar)}">` : ''}
     .voce,.tit,.par,.img,.emb,.eroe,.griglia,.socrow,.marq{animation:ent .6s cubic-bezier(.16,1,.3,1) both;
       animation-delay:0ms;animation-timeline:view();animation-range:entry 0% cover 22%}
   }}` : ''}
+  /* Entrata scelta blocco per blocco: vince su quella della pagina. Anima
+     l'involucro, e il pezzo dentro sta fermo (sennò si animerebbero in due). */
+  @keyframes e-sfuma{from{opacity:0}to{opacity:1}}
+  @keyframes e-sali{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
+  @keyframes e-scala{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:none}}
+  @keyframes e-sinistra{from{opacity:0;transform:translateX(-40px)}to{opacity:1;transform:none}}
+  @keyframes e-destra{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
+  @keyframes e-ruota{from{opacity:0;transform:rotate(-4deg) scale(.94)}to{opacity:1;transform:none}}
+  .bl[class*="e-"] > *{animation:none!important}
+  .bl.e-nessuna,.bl.e-nessuna > *{animation:none!important}
+  ${['sfuma', 'sali', 'scala', 'sinistra', 'destra', 'ruota'].map((k) =>
+    `.bl.e-${k}{animation:e-${k} .6s cubic-bezier(.16,1,.3,1) both;animation-delay:var(--d,0ms)}`).join('\n  ')}
+  @supports (animation-timeline:view()){@media (prefers-reduced-motion:no-preference){
+    ${['sfuma', 'sali', 'scala', 'sinistra', 'destra', 'ruota'].map((k) =>
+    `.bl.e-${k}{animation-delay:0ms;animation-timeline:view();animation-range:entry 0% cover 25%}`).join('\n    ')}
+  }}
   ${mov === 'cinema' ? `
   @keyframes par{from{transform:translateY(-7%)}to{transform:translateY(7%)}}
   @keyframes zoomin{from{transform:scale(1.14)}to{transform:scale(1)}}
@@ -643,6 +689,28 @@ ${imgAvatar ? `<meta property="og:image" content="${esc(imgAvatar)}">` : ''}
     ${corpo ? `<nav class="lista">${corpo}</nav>` : `<p class="vuoto">Questa pagina non ha ancora contenuti.</p>`}
     <p class="piede">Pagina creata con <a href="${esc(baseUrl)}/" target="_blank" rel="noopener">SocialBot</a></p>
   </main>
+${corpo.includes('<iframe') ? `<script>
+/* L'UNICO script della pagina, ed e qui per un motivo solo: TikTok e Instagram
+   dicono da soli quanto sono alti, con un messaggio al genitore. Senza, il
+   riquadro resta dell'altezza che abbiamo indovinato noi e sotto avanza il
+   vuoto. Chi non lo manda (Spotify, Twitch) resta com'e: per quelli c'e il
+   cursore dell'altezza. Nessuna libreria, nessuna richiesta, 15 righe. */
+addEventListener('message', function (e) {
+  if (['https://www.tiktok.com', 'https://www.instagram.com'].indexOf(e.origin) < 0) return;
+  var d = e.data;
+  if (typeof d === 'string') { try { d = JSON.parse(d); } catch (x) { return; } }
+  if (!d || typeof d !== 'object') return;
+  var h = parseInt(d.height || (d.details && d.details.height) || 0, 10);
+  if (!(h > 120 && h < 2000)) return;
+  var f = document.querySelectorAll('.emb iframe');
+  for (var i = 0; i < f.length; i++) {
+    var box = f[i].parentNode;
+    if (f[i].contentWindow === e.source && !box.getAttribute('data-fisso')) {
+      box.style.height = h + 'px'; box.style.aspectRatio = 'auto';
+    }
+  }
+});
+</script>` : ''}
 </body>
 </html>`;
 }
