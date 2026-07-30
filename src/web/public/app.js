@@ -809,43 +809,6 @@ function renderHero() {
     'account-diverso': L('Hai autorizzato un account diverso da quello con cui sei loggato: usa lo stesso account.', 'You authorised a different account than the one you’re logged in with: use the same account.', 'Has autorizado una cuenta distinta a la de tu sesión: usa la misma cuenta.'),
   }[errore] || (errore ? L('Errore di accesso: ', 'Login error: ', 'Error de acceso: ') + errore : null);
 
-  // Icone a tratto per la vetrina (coerenti con quelle della sidebar).
-  const vi = (d) => `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
-  // Ogni voce dice UNA cosa e dice il VERO (allineate a src/features/* e al
-  // catalogo in features/abbonamenti.js). Se una funzione cambia, si aggiorna qui
-  // e nella copia statica in index.html (che serve alla SEO).
-  const FEAT = [
-    [vi('<path d="M8 12h8"/><path d="M12 8v8"/><rect x="3" y="4" width="18" height="16" rx="3"/>'),
-      L('Parla col tuo account', 'Speaks with your account', 'Habla con tu cuenta'), L('Niente bot anonimi: SocialBot scrive in chat col tuo nome, e col tono che gli dai tu.', 'No anonymous bots: SocialBot writes in chat under your name, in the tone you give it.', 'Nada de bots anónimos: SocialBot escribe en el chat con tu nombre y con el tono que tú le das.')],
-    [vi('<rect x="3" y="4" width="18" height="16" rx="2.2"/><path d="M7.5 9.5 10.5 12l-3 2.5"/><path d="M13 15h4"/>'),
-      L('Comandi & automazioni', 'Commands & automations', 'Comandos y automatizaciones'), L('Comandi illimitati: quando succede una cosa, il bot ne fa un’altra. Anche partendo da una semplice frase.', 'Unlimited commands: when something happens, the bot does something else. Even starting from a single sentence.', 'Comandos ilimitados: cuando pasa algo, el bot hace otra cosa. Incluso partiendo de una simple frase.')],
-    [vi('<rect x="2" y="6" width="14" height="12" rx="2"/><path d="m22 8-6 4 6 4V8Z"/>'),
-      L('Studio Web: live senza OBS', 'Web Studio: live without OBS', 'Estudio Web: directo sin OBS'), L('Vai in diretta dal browser: scene, webcam, schermo, mixer audio e qualità fino al 2K. Niente da installare.', 'Go live from the browser: scenes, webcam, screen, audio mixer and quality up to 2K. Nothing to install.', 'Emite desde el navegador: escenas, webcam, pantalla, mezclador de audio y calidad hasta 2K. Nada que instalar.')],
-    [vi('<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>'),
-      L('Overlay Studio per OBS', 'Overlay Studio for OBS', 'Overlay Studio para OBS'), L('Alert, chat e widget a schermo: colori, font (anche Google), posizione, dimensione e rotazione. Più overlay, ognuno col suo link.', 'On-screen alerts, chat and widgets: colours, fonts (Google too), position, size and rotation. Multiple overlays, each with its own link.', 'Alertas, chat y widgets en pantalla: colores, fuentes (también de Google), posición, tamaño y rotación. Varios overlays, cada uno con su enlace.')],
-    [vi('<path d="M12 3v18"/><path d="M4 8l8-5 8 5"/><path d="M4 16l8 5 8-5"/>'),
-      L('Alert su misura', 'Custom alerts', 'Alertas a medida'), L('Follow, sub, bit e raid con immagini o video, suoni tuoi o pronti, e il green screen sui video.', 'Follows, subs, bits and raids with images or video, your own or ready-made sounds, and green screen on videos.', 'Follows, subs, bits y raids con imágenes o vídeo, sonidos tuyos o listos, y croma en los vídeos.')],
-    [vi('<path d="M12 3.2 19 6v5c0 4.8-3.4 7.8-7 8.8-3.6-1-7-4-7-8.8V6z"/><path d="m9 12 2 2 4-4"/>'),
-      L('Moderazione automatica', 'Automatic moderation', 'Moderación automática'), L('Antispam, filtri su link, maiuscole e ripetizioni, e timeout a chi insiste. La chat si tiene in ordine da sola.', 'Anti-spam, filters on links, caps and repetition, and timeouts for those who insist. Chat keeps itself tidy.', 'Antispam, filtros de enlaces, mayúsculas y repeticiones, y timeout a quien insiste. El chat se mantiene en orden solo.')],
-    [vi('<rect x="3" y="5" width="18" height="14" rx="2.2"/><path d="M8 5v14"/><path d="M16 5v14"/>'),
-      L('Clip automatiche', 'Automatic clips', 'Clips automáticos'), L('Quando la chat si accende, il bot clippa da solo: i momenti migliori restano salvati.', 'When chat lights up, the bot clips on its own: the best moments stay saved.', 'Cuando el chat se enciende, el bot clipea solo: los mejores momentos quedan guardados.')],
-    [vi('<path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5 2 6H4c.5-1 2-2 2-6"/><path d="M10.3 20a1.9 1.9 0 0 0 3.4 0"/>'),
-      L('Avvisi live e nuovi post', 'Live and new-post alerts', 'Avisos de directo y nuevos posts'), L('Quando vai in diretta avvisa il tuo gruppo Telegram e il tuo server Discord. E segnala i nuovi post su TikTok, YouTube e Instagram.', 'When you go live it alerts your Telegram group and your Discord server. And it flags new posts on TikTok, YouTube and Instagram.', 'Cuando vas en directo avisa a tu grupo de Telegram y a tu servidor de Discord. Y señala los nuevos posts en TikTok, YouTube e Instagram.')],
-    [vi('<path d="M4 20h16"/><path d="M7 20V9"/><path d="M12 20V4"/><path d="M17 20v-7"/>'),
-      L('Contatori a schermo', 'On-screen counters', 'Contadores en pantalla'), L('Contatori come !morti o !tentativi: li accendi dalla chat e il numero compare a schermo nell’overlay.', 'Counters like !deaths or !attempts: you turn them on from chat and the number appears on screen in the overlay.', 'Contadores como !muertes o !intentos: los enciendes desde el chat y el número aparece en pantalla en el overlay.')],
-    [vi('<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>'),
-      L('Richieste musicali', 'Music requests', 'Peticiones musicales'), L('Gli spettatori mettono canzoni in coda su Spotify con !sr. Decidi tu se è libero o si paga con bit, monete o punti canale.', 'Viewers queue songs on Spotify with !sr. You decide whether it’s free or paid with bits, coins or channel points.', 'Los espectadores ponen canciones en cola en Spotify con !sr. Tú decides si es libre o se paga con bits, monedas o puntos de canal.')],
-    [vi('<line x1="6" x2="10" y1="11" y2="11"/><line x1="8" x2="8" y1="9" y2="13"/><line x1="15" x2="15.01" y1="12" y2="12"/><line x1="18" x2="18.01" y1="10" y2="10"/><path d="M17.3 5H6.7a4 4 0 0 0-4 3.6C2.6 9.4 2 14.5 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.4-1.4a2 2 0 0 1 1.4-.6h4.4a2 2 0 0 1 1.4.6L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.5-.6-6.6-.7-7.3A4 4 0 0 0 17.3 5z"/>'),
-      L('Giochi, sondaggi & giveaway', 'Games, polls & giveaways', 'Juegos, encuestas y sorteos'), L('Minigiochi in chat con monete, classifiche e VIP automatico ai più attivi. Più sondaggi, predizioni ed estrazioni a premi.', 'Chat minigames with coins, leaderboards and automatic VIP for the most active. Plus polls, predictions and prize draws.', 'Minijuegos en el chat con monedas, clasificaciones y VIP automático a los más activos. Más encuestas, predicciones y sorteos.')],
-    [vi('<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>'),
-      L('Punti canale & penitenze', 'Channel points & forfeits', 'Puntos de canal y penitencias'), L('Ogni riscatto può far partire un suono, un video o una penitenza a tempo, col contatore degli errori a schermo.', 'Every redemption can trigger a sound, a video or a timed forfeit, with the slip-up counter on screen.', 'Cada canje puede lanzar un sonido, un vídeo o una penitencia cronometrada, con el contador de fallos en pantalla.')],
-    [vi('<circle cx="12" cy="12" r="9"/><path d="M8 12h8"/><path d="M12 8v8"/>'),
-      L('Emote 7TV', '7TV emotes', 'Emotes 7TV'), L('Aggiungi, rinomina e togli le emote 7TV del canale direttamente dal bot. E compaiono anche nella chat a schermo.', 'Add, rename and remove your channel’s 7TV emotes right from the bot. They also show up in the on-screen chat.', 'Añade, renombra y quita las emotes 7TV del canal directamente desde el bot. Y aparecen también en el chat en pantalla.')],
-    [vi('<rect x="9" y="3" width="6" height="10.5" rx="3"/><path d="M6 11a6 6 0 0 0 12 0"/><path d="M12 17v4"/>'),
-      L('Comandi a voce', 'Voice commands', 'Comandos por voz'), L('Cambia titolo e categoria, fai una clip o dai il VIP parlando, mentre streami: l’audio non lascia il tuo PC.', 'Change title and category, make a clip or grant VIP by speaking, while you stream: the audio never leaves your PC.', 'Cambia título y categoría, haz un clip o da el VIP hablando, mientras emites: el audio no sale de tu PC.')],
-    [vi('<path d="M12 3c.35 3.8 1.4 4.85 5 5.2-3.6.35-4.65 1.4-5 5.2-.35-3.8-1.4-4.85-5-5.2 3.6-.35 4.65-1.4 5-5.2Z"/>'),
-      L('Impara e cresce con te', 'Learns and grows with you', 'Aprende y crece contigo'), L('Gli insegni cosa dire su di te — social, orari, PC, regole — e col tempo si ricorda della tua chat.', 'You teach it what to say about you — socials, schedule, PC, rules — and over time it remembers your chat.', 'Le enseñas qué decir sobre ti — redes, horarios, PC, reglas — y con el tiempo recuerda tu chat.')],
-  ];
   const STEP = [
     ['1', L('Accedi con Twitch', 'Log in with Twitch', 'Entra con Twitch'), L('Un click, con lo stesso account con cui streammi.', 'One click, with the same account you stream with.', 'Un clic, con la misma cuenta con la que haces directo.')],
     ['2', L('Parti con l’Essenziale', 'Start with Essenziale', 'Empieza con Essenziale'), L('Gratis e senza carta: comandi illimitati, moderazione, overlay e contatori sono già tuoi.', 'Free, no card needed: unlimited commands, moderation, overlay and counters are already yours.', 'Gratis y sin tarjeta: comandos ilimitados, moderación, overlay y contadores ya son tuyos.')],
@@ -884,15 +847,6 @@ function renderHero() {
         <span aria-hidden="true">·</span>
         <a href="/mod">${L('Accesso moderatore', 'Moderator access', 'Acceso moderador')}</a>
       </p>
-    </section>
-
-    <section class="vetrina-features">
-      ${FEAT.map(([ic, t, d]) => `
-        <div class="carta rivela vetrina-feat">
-          <span class="vetrina-feat-ico">${ic}</span>
-          <h3>${t}</h3>
-          <p>${d}</p>
-        </div>`).join('')}
     </section>
 
     ${capacitaHtml()}
@@ -1404,7 +1358,7 @@ const GUIDE = {
 // Titoli e descrizioni sono tuple [it, en, es]; i NOMI DEI PACCHETTI restano in
 // italiano in tutte le lingue (vedi NOME_ADDON).
 const CAPACITA = [
-  { area: ['Chat e comandi', 'Chat and commands', 'Chat y comandos'], voci: [
+  { ico: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>', area: ['Chat e comandi', 'Chat and commands', 'Chat y comandos'], voci: [
     { pacc: 'free', t: ['Scrive col tuo account', 'Writes with your account', 'Escribe con tu cuenta'], d: ['In chat compare il tuo nome, non un bot anonimo.', 'Your name appears in chat, not an anonymous bot.', 'En el chat aparece tu nombre, no un bot anónimo.'] },
     { pacc: 'free', t: ['Comandi e automazioni illimitati', 'Unlimited commands and automations', 'Comandos y automatizaciones ilimitados'], d: ['Quando succede X, il bot fa Y. Nessun limite di numero.', 'When X happens, the bot does Y. No limit on how many.', 'Cuando pasa X, el bot hace Y. Sin límite de cantidad.'] },
     { pacc: 'free', t: ['Moderazione e antispam', 'Moderation and anti-spam', 'Moderación y antispam'], d: ['Filtra link, maiuscole e ripetizioni, e dà timeout a chi insiste.', 'Filters links, caps and repetition, and times out those who insist.', 'Filtra enlaces, mayúsculas y repeticiones, y da timeout a quien insiste.'] },
@@ -1413,27 +1367,27 @@ const CAPACITA = [
     { pacc: 'free', t: ['Cosa dire su di te', 'What to say about you', 'Qué decir sobre ti'], d: ['Social, orari, PC, regole: gli insegni le risposte una volta.', 'Socials, schedule, PC, rules: you teach it the answers once.', 'Redes, horarios, PC, reglas: le enseñas las respuestas una vez.'] },
     { pacc: 'squadra', t: ['Fino a 10 moderatori', 'Up to 10 moderators', 'Hasta 10 moderadores'], d: ['I tuoi mod entrano nella dashboard e gestiscono il canale con te.', 'Your mods get into the dashboard and manage the channel with you.', 'Tus mods entran en el panel y gestionan el canal contigo.'] },
   ] },
-  { area: ['Overlay per OBS', 'OBS overlay', 'Overlay para OBS'], voci: [
+  { ico: '<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>', area: ['Overlay per OBS', 'OBS overlay', 'Overlay para OBS'], voci: [
     { pacc: 'free', t: ['Overlay Studio', 'Overlay Studio', 'Overlay Studio'], d: ['Chat a schermo, widget e temi: colori, font, posizione e dimensione. Più overlay, ognuno col suo link.', 'On-screen chat, widgets and themes: colours, fonts, position and size. Multiple overlays, each with its own link.', 'Chat en pantalla, widgets y temas: colores, fuentes, posición y tamaño. Varios overlays, cada uno con su enlace.'] },
     { pacc: 'free', t: ['Emote 7TV', '7TV emotes', 'Emotes 7TV'], d: ['Aggiungi, rinomina e togli le emote del canale dal bot.', 'Add, rename and remove your channel’s emotes from the bot.', 'Añade, renombra y quita las emotes del canal desde el bot.'] },
     { pacc: 'effetti', t: ['Alert follow, sub, bit e raid', 'Follow, sub, bit and raid alerts', 'Alertas de follow, sub, bits y raid'], d: ['Con immagini o video, suoni tuoi o pronti, e il green screen.', 'With images or video, your own or ready-made sounds, and green screen.', 'Con imágenes o vídeo, sonidos tuyos o listos, y croma.'] },
     { pacc: 'effetti', t: ['Effetti sui punti canale', 'Channel-point effects', 'Efectos con puntos de canal'], d: ['Ogni riscatto può lanciare un suono, una GIF o un video a schermo.', 'Every redemption can trigger a sound, a GIF or a video on screen.', 'Cada canje puede lanzar un sonido, un GIF o un vídeo en pantalla.'] },
     { pacc: 'effetti', t: ['Penitenze a tempo', 'Timed forfeits', 'Penitencias cronometradas'], d: ['La chat ti vieta una parola — o ti obbliga a dire solo quella. Se sbagli, penitenza.', 'Chat bans a word for you — or forces you to say only that one. Slip up and you owe a forfeit.', 'El chat te prohíbe una palabra — o te obliga a decir solo esa. Si fallas, penitencia.'] },
   ] },
-  { area: ['La tua diretta', 'Your stream', 'Tu directo'], voci: [
+  { ico: '<rect x="2" y="6" width="14" height="12" rx="2"/><path d="m22 8-6 4 6 4V8Z"/>', area: ['La tua diretta', 'Your stream', 'Tu directo'], voci: [
     { pacc: 'free', t: ['Regia della diretta', 'Stream control room', 'Realización del directo'], d: ['Titolo, categoria, tag, marker, pubblicità e raid dal pannello.', 'Title, category, tags, markers, ads and raids from the panel.', 'Título, categoría, etiquetas, marcadores, anuncios y raids desde el panel.'] },
     { pacc: 'base', t: ['Studio Web: live senza OBS', 'Web Studio: live without OBS', 'Estudio Web: directo sin OBS'], d: ['Vai in diretta dal browser: scene, webcam, schermo, mixer audio, fino al 2K.', 'Go live from the browser: scenes, webcam, screen, audio mixer, up to 2K.', 'Emite desde el navegador: escenas, webcam, pantalla, mezclador de audio, hasta 2K.'] },
     { pacc: 'clip', t: ['Clip automatiche', 'Automatic clips', 'Clips automáticos'], d: ['Quando la chat si accende il bot clippa da solo.', 'When chat lights up the bot clips on its own.', 'Cuando el chat se enciende el bot clipea solo.'] },
     { pacc: 'voce', t: ['Comandi a voce', 'Voice commands', 'Comandos por voz'], d: ['Cambi titolo, fai una clip o dai il VIP parlando. L’audio non lascia il tuo PC.', 'Change the title, make a clip or grant VIP by speaking. The audio never leaves your PC.', 'Cambias el título, haces un clip o das el VIP hablando. El audio no sale de tu PC.'] },
   ] },
-  { area: ['Far divertire la chat', 'Entertaining your chat', 'Divertir al chat'], voci: [
+  { ico: '<line x1="6" x2="10" y1="11" y2="11"/><line x1="8" x2="8" y1="9" y2="13"/><line x1="15" x2="15.01" y1="12" y2="12"/><line x1="18" x2="18.01" y1="10" y2="10"/><path d="M17.3 5H6.7a4 4 0 0 0-4 3.6C2.6 9.4 2 14.5 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.4-1.4a2 2 0 0 1 1.4-.6h4.4a2 2 0 0 1 1.4.6L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.5-.6-6.6-.7-7.3A4 4 0 0 0 17.3 5z"/>', area: ['Far divertire la chat', 'Entertaining your chat', 'Divertir al chat'], voci: [
     { pacc: 'giochi', t: ['Minigiochi e monete', 'Minigames and coins', 'Minijuegos y monedas'], d: ['Slot, roulette, pesca, trivia: gli spettatori giocano con la moneta del canale.', 'Slots, roulette, fishing, trivia: viewers play with your channel coin.', 'Tragaperras, ruleta, pesca, trivia: los espectadores juegan con la moneda del canal.'] },
     { pacc: 'giochi', t: ['Classifiche e VIP automatico', 'Leaderboards and automatic VIP', 'Clasificaciones y VIP automático'], d: ['Chi partecipa più di tutti sale in classifica e prende il VIP.', 'Whoever takes part the most climbs the leaderboard and gets VIP.', 'Quien más participa sube en la clasificación y recibe el VIP.'] },
     { pacc: 'effetti', t: ['Sondaggi e predizioni', 'Polls and predictions', 'Encuestas y predicciones'], d: ['Lanci sondaggi e predizioni Twitch dal pannello, senza aprire Twitch.', 'Launch Twitch polls and predictions from the panel, without opening Twitch.', 'Lanzas encuestas y predicciones de Twitch desde el panel, sin abrir Twitch.'] },
     { pacc: 'free', t: ['Giveaway', 'Giveaways', 'Sorteos'], d: ['Estrazioni a premi: la community entra con !join e tu estrai.', 'Prize draws: the community joins with !join and you draw.', 'Sorteos: la comunidad entra con !join y tú sorteas.'] },
     { pacc: 'musica', t: ['Richieste musicali', 'Music requests', 'Peticiones musicales'], d: ['Canzoni in coda su Spotify con !sr: libero o a bit, monete o punti canale.', 'Songs queued on Spotify with !sr: free or via bits, coins or channel points.', 'Canciones en cola en Spotify con !sr: libre o con bits, monedas o puntos de canal.'] },
   ] },
-  { area: ['Farti trovare', 'Getting you found', 'Que te encuentren'], voci: [
+  { ico: '<path d="M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/><path d="M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14"/>', area: ['Farti trovare', 'Getting you found', 'Que te encuentren'], voci: [
     { pacc: 'notifiche', t: ['Avviso quando vai in diretta', 'Alert when you go live', 'Aviso cuando estás en directo'], d: ['Avvisa il tuo gruppo Telegram e il tuo server Discord.', 'Alerts your Telegram group and your Discord server.', 'Avisa a tu grupo de Telegram y a tu servidor de Discord.'] },
     { pacc: 'notifiche', t: ['Avviso dei nuovi post', 'New-post alerts', 'Aviso de nuevos posts'], d: ['Quando pubblichi su TikTok, YouTube o Instagram lo dice alla community.', 'When you post on TikTok, YouTube or Instagram it tells your community.', 'Cuando publicas en TikTok, YouTube o Instagram se lo dice a tu comunidad.'] },
     { pacc: 'notifiche', t: ['Bot su Telegram', 'Telegram bot', 'Bot en Telegram'], d: ['Gestisci il bot dal telefono e fai gli auguri di compleanno al gruppo.', 'Manage the bot from your phone and send birthday wishes to the group.', 'Gestiona el bot desde el móvil y felicita los cumpleaños al grupo.'] },
@@ -1459,8 +1413,9 @@ function capacitaHtml() {
         <span class="cap-pacc ${e.cls}">${esc(e.testo)}</span>
       </li>`;
     }).join('');
+    const ico = g.ico ? `<span class="cap-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${g.ico}</svg></span>` : '';
     return `<details class="cap-area"${i === 0 ? ' open' : ''}>
-      <summary>${esc(L(g.area[0], g.area[1], g.area[2]))} <span class="cap-quante">${g.voci.length}</span></summary>
+      <summary>${ico}${esc(L(g.area[0], g.area[1], g.area[2]))} <span class="cap-quante">${g.voci.length}</span></summary>
       <ul class="cap-elenco">${righe}</ul>
     </details>`;
   }).join('');
