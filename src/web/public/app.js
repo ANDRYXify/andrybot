@@ -6057,56 +6057,124 @@ function pannelloPaginaLink() {
   return pannello('pagina', `
     <div class="carta">
       <h2>${_hIco(ICO.condividi)}${L('La tua pagina link', 'Your link page', 'Tu página de enlaces')}</h2>
-      <p>${L('Una pagina pubblica con tutti i tuoi link, da mettere nella bio di Instagram o TikTok. Il suo indirizzo è', 'A public page with all your links, to put in your Instagram or TikTok bio. Its address is', 'Una página pública con todos tus enlaces, para poner en la bio de Instagram o TikTok. Su dirección es')}
-      <strong id="lp-url-testo">socialbot.live/u/…</strong></p>
+      <div id="lp-box"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+    </div>`);
+}
 
+// La presentazione e il tutorial stanno DENTRO la colonna dei comandi, non
+// sopra l'editor: sennò spingono il banco di lavoro sotto lo schermo e
+// l'anteprima torna a essere una cosa da rincorrere scorrendo.
+function lpIntroHtml(d) {
+  return `<p class="suggerimento">${L('Una pagina pubblica con tutti i tuoi link, da mettere nella bio di Instagram o TikTok. Il suo indirizzo è', 'A public page with all your links, to put in your Instagram or TikTok bio. Its address is', 'Una página pública con todos tus enlaces, para poner en la bio de Instagram o TikTok. Su dirección es')}
+      <strong>${esc((d.url || '').replace(/^https?:\/\//, '') || 'socialbot.live/u/…')}</strong></p>
       ${miniGuida({
     titolo: L('Tutorial: come si costruisce', 'Tutorial: how to build it', 'Tutorial: cómo se construye'),
     aperta: true,
     passi: [
-      L('In <strong>Contenuti</strong> aggiungi i pezzi che vuoi: link, titoli di sezione, testi, una riga di social, immagini o un video. Li riordini con le frecce.', 'In <strong>Content</strong> add the pieces you want: links, section headings, text, a row of socials, images or a video. Reorder them with the arrows.', 'En <strong>Contenido</strong> añade las piezas que quieras: enlaces, títulos de sección, textos, una fila de redes, imágenes o un vídeo. Los reordenas con las flechas.'),
-      L('In <strong>Aspetto</strong> scegli uno stile di partenza e poi cambia tutto: colori, sfondo, font, forma dei bottoni, animazione.', 'In <strong>Look</strong> pick a starting style and then change everything: colours, background, font, button shape, animation.', 'En <strong>Aspecto</strong> eliges un estilo de partida y luego cambias todo: colores, fondo, fuente, forma de los botones, animación.'),
+      L('In <strong>Contenuti</strong> aggiungi i pezzi che vuoi: una <strong>copertina</strong> con foto grande, link, titoli, testi, una riga di social, una <strong>griglia di tessere</strong>, video, musica, pagine intere o la tua <strong>diretta</strong>. Li riordini con le frecce.', 'In <strong>Content</strong> add the pieces you want: a <strong>cover</strong> with a big photo, links, headings, text, a row of socials, a <strong>card grid</strong>, video, music, whole pages or your <strong>live stream</strong>. Reorder them with the arrows.', 'En <strong>Contenido</strong> añade las piezas que quieras: una <strong>portada</strong> con foto grande, enlaces, títulos, textos, una fila de redes, una <strong>rejilla de fichas</strong>, vídeo, música, páginas enteras o tu <strong>directo</strong>. Los reordenas con las flechas.'),
+      L('In <strong>Aspetto</strong> parti da un <strong>tema pronto</strong> (cambia tutto in un colpo) e poi sistema quello che vuoi: colori, sfondo, carattere, forma dei bottoni, animazione e disposizione.', 'In <strong>Look</strong> start from a <strong>ready-made theme</strong> (it changes everything at once) and then tweak what you like: colours, background, font, button shape, animation and layout.', 'En <strong>Aspecto</strong> parte de un <strong>tema listo</strong> (cambia todo de una vez) y luego ajusta lo que quieras: colores, fondo, tipografía, forma de los botones, animación y disposición.'),
       L('L’<strong>anteprima</strong> a lato si aggiorna mentre modifichi. Quando ti piace, premi <strong>Salva e pubblica</strong>.', 'The <strong>preview</strong> on the side updates as you edit. When you like it, hit <strong>Save and publish</strong>.', 'La <strong>vista previa</strong> al lado se actualiza mientras editas. Cuando te guste, pulsa <strong>Guardar y publicar</strong>.'),
     ],
     note: [L('L’indirizzo non cambia mai: chi ce l’ha già vede sempre la versione aggiornata.', 'The address never changes: anyone who already has it always sees the latest version.', 'La dirección no cambia nunca: quien ya la tiene ve siempre la versión actualizada.')],
-  })}
-
-      <div id="lp-box"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
-    </div>`);
+  })}`;
 }
 
 // stato dell'editor in memoria: blocchi + tema, con l'anteprima che li rilegge
 const LP = { d: null, blocchi: [], tema: {}, testa: {} };
 
-async function caricaPaginaLink() {
-  const box = document.getElementById('lp-box'); if (!box) return;
-  let d;
-  try { d = await api('/api/linkpage'); }
-  catch (e) {
-    box.innerHTML = `<p class="suggerimento">${esc(e?.message || L('Impossibile caricare la pagina link.', 'Couldn\'t load the link page.', 'No se pudo cargar la página de enlaces.'))}</p>`;
-    return;
-  }
-  LP.d = d;
-  const p = d.pagina || {};
-  LP.tema = { ...(p.tema || {}) };
-  LP.blocchi = (p.blocchi || []).length ? p.blocchi.map((b) => ({ ...b })) : (d.suggeriti || []).map((b) => ({ ...b }));
-  LP.testa = { headline: p.headline || '', tagline: p.tagline || '', template: p.template || 'minimal', avatar: p.avatar || '' };
+// ── Temi pronti ─────────────────────────────────────────────────────────────
+// Non solo i colori: sfondo, effetto, carattere, forma dei bottoni, animazione
+// e DISPOSIZIONE. Si scelgono vedendoli e poi si cambia quello che non piace:
+// sono un punto di partenza, non una gabbia. I campi colore lasciati vuoti
+// prendono la tinta dello stile di base, così i temi restano corti e leggibili.
+const _tema = (o) => ({ sfondoTipo: 'tinta', bg: '', bg2: '', angolo: 160, sfondoUrl: '', effetto: 'nessuno',
+  testo: '', accent: '', card: '', bordo: '', font: 'system', raggio: 14, stileBtn: 'pieno', ombra: true,
+  anim: 'rise', avatarForma: 'cerchio', larghezza: 30, allinea: 'centro', disposizione: 'colonna', ...o });
+const TEMI_PRONTI = [
+  { id: 'neon', nome: 'Notte al neon', base: 'neon',
+    tema: _tema({ sfondoTipo: 'gradiente', angolo: 165, effetto: 'aurora', stileBtn: 'vetro', raggio: 18 }) },
+  { id: 'carta', nome: 'Carta e inchiostro', base: 'minimal',
+    tema: _tema({ font: 'serif', raggio: 2, stileBtn: 'contorno', ombra: false, anim: 'fade', allinea: 'sinistra' }) },
+  { id: 'wabi', nome: 'Wabi-sabi', base: 'retro',
+    tema: _tema({ bg: '#f2ece2', bg2: '#e3d7c6', testo: '#3b2a1d', accent: '#c2551f', card: '#fffaf3', bordo: '#ddcdb6',
+      font: 'serif', raggio: 3, effetto: 'grana', ombra: false, disposizione: 'sezioni', allinea: 'sinistra' }) },
+  { id: 'rivista', nome: 'Rivista', base: 'minimal',
+    tema: _tema({ font: 'condensato', raggio: 4, larghezza: 44, allinea: 'sinistra', disposizione: 'rivista' }) },
+  { id: 'tramonto', nome: 'Tramonto', base: 'sunset',
+    tema: _tema({ sfondoTipo: 'gradiente', angolo: 200, raggio: 22, font: 'tondo' }) },
+  { id: 'vetro', nome: 'Vetro', base: 'glass',
+    tema: _tema({ sfondoTipo: 'gradiente', effetto: 'maglia', stileBtn: 'vetro', raggio: 20 }) },
+  { id: 'brutale', nome: 'Brutalista', base: 'brutal',
+    tema: _tema({ raggio: 0, stileBtn: 'contorno', ombra: false, anim: 'pop', allinea: 'sinistra' }) },
+  { id: 'confetto', nome: 'Confetto', base: 'pastello',
+    tema: _tema({ raggio: 999, font: 'tondo', effetto: 'bolle' }) },
+  { id: 'bosco', nome: 'Bosco', base: 'minimal',
+    tema: _tema({ sfondoTipo: 'gradiente', bg: '#0d1a12', bg2: '#12301f', testo: '#e8f5ec', accent: '#7bd88f',
+      card: 'rgba(255,255,255,.06)', bordo: 'rgba(123,216,143,.28)', effetto: 'aurora', raggio: 14 }) },
+  { id: 'shock', nome: 'Rosa shocking', base: 'minimal',
+    tema: _tema({ sfondoTipo: 'gradiente', bg: '#ffffff', bg2: '#ffe6f0', angolo: 200, testo: '#170410',
+      accent: '#ed1566', font: 'condensato', raggio: 8, larghezza: 42, disposizione: 'rivista' }) },
+  { id: 'mezzanotte', nome: 'Mezzanotte', base: 'glass',
+    tema: _tema({ sfondoTipo: 'gradiente', bg: '#060b18', bg2: '#0e1e42', accent: '#5b8cff', effetto: 'maglia', raggio: 12 }) },
+  { id: 'arcade', nome: 'Arcade', base: 'brutal',
+    tema: _tema({ bg: '#08090a', bg2: '#101314', testo: '#e6ffe9', accent: '#53fc18', card: 'rgba(83,252,24,.07)',
+      bordo: '#53fc18', font: 'mono', raggio: 0, ombra: false, effetto: 'grana', anim: 'pop' }) },
+];
+// Colori di partenza dei 7 stili base: servono per disegnare la miniatura del
+// tema quando il tema stesso non li sovrascrive.
+const _BASI = {
+  minimal: { bg: '#fafafa', bg2: '#f0f0f3', acc: '#6d3bef' }, neon: { bg: '#07060d', bg2: '#140b26', acc: '#a568ff' },
+  retro: { bg: '#f5e9d0', bg2: '#e8d3ad', acc: '#c2551f' }, sunset: { bg: '#1b0f2b', bg2: '#4a1d3d', acc: '#ff8a5b' },
+  glass: { bg: '#0e1626', bg2: '#16304d', acc: '#5bc8ff' }, brutal: { bg: '#f4f4f0', bg2: '#e6e6e0', acc: '#ff4d2d' },
+  pastello: { bg: '#fdf2f8', bg2: '#eef2ff', acc: '#c86bb0' },
+};
+function temiProntiHtml(sel) {
+  return `<div class="lp-temi">` + TEMI_PRONTI.map((t) => {
+    const b = _BASI[t.base] || _BASI.minimal;
+    const bg = t.tema.bg || b.bg, bg2 = t.tema.bg2 || b.bg2, acc = t.tema.accent || b.acc;
+    const sfondo = t.tema.sfondoTipo === 'gradiente' ? `linear-gradient(${t.tema.angolo}deg,${bg},${bg2})` : bg;
+    return `<button type="button" class="lp-tema${t.id === sel ? ' sel' : ''}" data-lptema="${esc(t.id)}" title="${esc(t.nome)}">
+      <span class="lp-tema-sw" style="background:${esc(sfondo)};border-radius:${Math.min(t.tema.raggio, 14)}px">
+        <span style="background:${esc(acc)};border-radius:${Math.min(t.tema.raggio, 9)}px"></span>
+        <span style="background:${esc(t.tema.card || 'rgba(128,128,128,.35)')};border-radius:${Math.min(t.tema.raggio, 9)}px"></span>
+      </span>
+      <span class="lp-tema-n">${esc(t.nome)}</span>
+    </button>`;
+  }).join('') + `</div>`;
+}
 
-  const urlEl = document.getElementById('lp-url-testo');
-  if (urlEl && d.url) urlEl.textContent = d.url.replace(/^https?:\/\//, '');
+// ridisegna=true ridisegna l'editor con lo stato che c'è già in memoria, senza
+// richiedere niente al server: serve dopo aver applicato un tema pronto, che
+// cambia una dozzina di comandi in un colpo solo.
+async function caricaPaginaLink(ridisegna = false) {
+  const box = document.getElementById('lp-box'); if (!box) return;
+  if (!ridisegna || !LP.d) {
+    let dati;
+    try { dati = await api('/api/linkpage'); }
+    catch (e) {
+      box.innerHTML = `<p class="suggerimento">${esc(e?.message || L('Impossibile caricare la pagina link.', 'Couldn\'t load the link page.', 'No se pudo cargar la página de enlaces.'))}</p>`;
+      return;
+    }
+    LP.d = dati;
+    const pag = dati.pagina || {};
+    LP.tema = { ...(pag.tema || {}) };
+    LP.blocchi = (pag.blocchi || []).length ? pag.blocchi.map((b) => ({ ...b })) : (dati.suggeriti || []).map((b) => ({ ...b }));
+    LP.testa = { headline: pag.headline || '', tagline: pag.tagline || '', template: pag.template || 'minimal', avatar: pag.avatar || '' };
+  }
+  const d = LP.d;
 
   const NOMI_STILE = { minimal: 'Minimal', neon: 'Neon', retro: 'Retro', sunset: 'Sunset', glass: 'Glass', brutal: 'Brutal', pastello: 'Pastello' };
   const NOMI_FONT = { system: L('Sistema', 'System', 'Sistema'), inter: 'Inter', mono: L('Monospaziato', 'Monospaced', 'Monoespaciado'), serif: L('Con grazie', 'Serif', 'Con serifa'), condensato: L('Condensato', 'Condensed', 'Condensada'), tondo: L('Tondo', 'Rounded', 'Redonda') };
   const opts = (lista, sel, nomi) => lista.map((k) => `<option value="${esc(k)}"${k === sel ? ' selected' : ''}>${esc((nomi && nomi[k]) || k)}</option>`).join('');
 
   box.innerHTML = `
-    ${d.pubblicata
+    <div class="lp-editor">
+      <div class="lp-comandi">
+        ${d.pubblicata
       ? `<p class="lp-stato on">${_bIco(ICO.globo)}${L('Online:', 'Live:', 'Online:')}
           <a href="${esc(d.url)}" target="_blank" rel="noopener"><strong>${esc((d.url || '').replace(/^https?:\/\//, ''))}</strong></a></p>`
       : `<p class="lp-stato off">${_bIco(ICO.avviso)}${L('Non ancora pubblicata: compila e salva.', 'Not published yet: fill it in and save.', 'Aún no publicada: rellénala y guarda.')}</p>`}
-
-    <div class="lp-editor spazio-sopra">
-      <div class="lp-comandi">
+        ${lpIntroHtml(d)}
         <details class="carta sez" open>
           <summary><h3>${L('Intestazione', 'Header', 'Encabezado')}</h3></summary>
           <label class="campo" for="lp-headline">${L('Titolo', 'Headline', 'Título')}</label>
@@ -6142,13 +6210,27 @@ async function caricaPaginaLink() {
             <button type="button" class="btn secondario mini" data-lpadd="immagine">${L('Immagine', 'Image', 'Imagen')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="embed">${L('Video, musica o pagina', 'Video, music or page', 'Vídeo, música o página')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="diretta">${L('La mia diretta', 'My live stream', 'Mi directo')}</button>
+            <button type="button" class="btn secondario mini" data-lpadd="eroe">${L('Copertina', 'Cover', 'Portada')}</button>
+            <button type="button" class="btn secondario mini" data-lpadd="griglia">${L('Griglia di tessere', 'Card grid', 'Rejilla de fichas')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="separatore">${L('Riga divisoria', 'Divider', 'Separador')}</button>
           </div>
         </details>
 
         <details class="carta sez" open>
           <summary><h3>${L('Aspetto', 'Look', 'Aspecto')}</h3></summary>
-          <label class="campo" for="lp-stile">${L('Stile di partenza', 'Starting style', 'Estilo de partida')}</label>
+          <label class="campo">${L('Temi pronti', 'Ready-made themes', 'Temas listos')}</label>
+          ${temiProntiHtml(LP.tema._pronto)}
+          <p class="suggerimento">${L('Un colpo solo: colori, sfondo, carattere, forma dei bottoni, animazione e disposizione. Poi cambi quello che vuoi qui sotto.', 'One click: colours, background, font, button shape, animation and layout. Then change whatever you like below.', 'De una vez: colores, fondo, tipografía, forma de los botones, animación y disposición. Luego cambias lo que quieras abajo.')}</p>
+
+          <label class="campo spazio-sopra" for="lp-disp">${L('Come sono disposti i contenuti', 'How content is laid out', 'Cómo se disponen los contenidos')}</label>
+          <select id="lp-disp" data-lpk="disposizione">
+            <option value="colonna">${L('Colonna — la classica lista', 'Column — the classic list', 'Columna — la lista clásica')}</option>
+            <option value="rivista">${L('Rivista — affiancati, come una griglia', 'Magazine — side by side, like a grid', 'Revista — en paralelo, como una rejilla')}</option>
+            <option value="sezioni">${L('Sezioni — pagina lunga da scorrere', 'Sections — a long page to scroll', 'Secciones — página larga para desplazar')}</option>
+          </select>
+          <p class="suggerimento">${L('“Sezioni” dà respiro e titoli grandi: i contenuti si scoprono scorrendo, come su un sito vero.', '“Sections” gives room and big headings: content is discovered by scrolling, like on a real site.', '“Secciones” da aire y títulos grandes: el contenido se descubre desplazando, como en un sitio de verdad.')}</p>
+
+          <label class="campo spazio-sopra" for="lp-stile">${L('Stile di partenza', 'Starting style', 'Estilo de partida')}</label>
           <select id="lp-stile" data-lpt="template">${opts(d.templates || [], LP.testa.template, NOMI_STILE)}</select>
           <p class="suggerimento">${L('Dà i colori di base. Qui sotto puoi cambiare tutto.', 'It sets the base colours. Below you can change everything.', 'Da los colores base. Abajo puedes cambiarlo todo.')}</p>
 
@@ -6229,18 +6311,17 @@ async function caricaPaginaLink() {
       <div class="lp-anteprima">
         <div class="lp-ant-tit">${L('Anteprima dal vivo', 'Live preview', 'Vista previa en directo')}</div>
         <div class="lp-telefono"><iframe id="lp-iframe" title="anteprima"></iframe></div>
+        <div class="lp-azioni">
+          <button class="btn" id="lp-salva">${L('Salva e pubblica', 'Save and publish', 'Guardar y publicar')}</button>
+          <a class="btn secondario" id="lp-apri" href="${esc(d.url || '#')}" target="_blank" rel="noopener">${_bIco(ICO.occhio)}${L('Apri', 'Open', 'Abrir')}</a>
+          ${d.pubblicata ? `<button type="button" class="btn secondario" id="lp-spegni">${L('Togli dal web', 'Take offline', 'Quitar de la web')}</button>` : ''}
+          <span id="lp-esito" class="suggerimento"></span>
+        </div>
       </div>
-    </div>
-
-    <p class="spazio-sopra">
-      <button class="btn grande" id="lp-salva">${L('Salva e pubblica', 'Save and publish', 'Guardar y publicar')}</button>
-      <a class="btn secondario" id="lp-apri" href="${esc(d.url || '#')}" target="_blank" rel="noopener">${_bIco(ICO.occhio)}${L('Apri la pagina', 'Open the page', 'Abrir la página')}</a>
-      ${d.pubblicata ? `<button type="button" class="btn secondario" id="lp-spegni">${L('Togli dal web', 'Take offline', 'Quitar de la web')}</button>` : ''}
-      <span id="lp-esito" class="suggerimento"></span>
-    </p>`;
+    </div>`;
 
   // valori dei select del tema (non si possono impostare da HTML statico)
-  for (const k of ['sfondoTipo', 'effetto', 'stileBtn', 'allinea', 'avatarForma', 'anim', 'font']) {
+  for (const k of ['sfondoTipo', 'effetto', 'stileBtn', 'allinea', 'avatarForma', 'anim', 'font', 'disposizione']) {
     const el = box.querySelector(`[data-lpk="${k}"]`);
     if (el && LP.tema[k] !== undefined) el.value = LP.tema[k];
   }
@@ -6258,6 +6339,8 @@ async function caricaPaginaLink() {
       if (k === 'raggio') box.querySelector('#lp-rag-v').textContent = t.value + 'px';
       if (k === 'larghezza') box.querySelector('#lp-lar-v').textContent = t.value + 'rem';
       if (k === 'sfondoTipo') lpMostraCampiSfondo();
+      // toccato a mano: non è più "quel tema pronto", è roba tua
+      if (LP.tema._pronto) { delete LP.tema._pronto; box.querySelector('.lp-tema.sel')?.classList.remove('sel'); }
     } else if (tt === 'headline' || tt === 'tagline' || tt === 'template') {
       LP.testa[tt] = t.value;
     } else if (tt === 'avatarModo') {
@@ -6286,11 +6369,23 @@ async function caricaPaginaLink() {
       immagine: { tipo: 'immagine', url: '', alt: '' },
       embed: { tipo: 'embed', url: '', formato: 'auto', titolo: '' },
       diretta: { tipo: 'diretta', piattaforma: 'twitch', canale: '', chat: false, autoplay: false, muto: true, titolo: '' },
+      eroe: { tipo: 'eroe', titolo: '', sotto: '', img: '', url: '', etichetta: '', altezza: 'media' },
+      griglia: { tipo: 'griglia', voci: [{ img: '', titolo: '', testo: '', url: '' }, { img: '', titolo: '', testo: '', url: '' }] },
       separatore: { tipo: 'separatore' } }[tipo];
     if (!nuovo) return;
     LP.blocchi.push(nuovo);
     lpRenderBlocchi(); lpAnteprima();
   };
+
+  // Temi pronti: applicano TUTTO in un colpo, poi si ridisegna l'editor perché
+  // cambiano una dozzina di comandi insieme.
+  box.addEventListener('click', (ev) => {
+    const t = ev.target.closest('[data-lptema]'); if (!t) return;
+    const tema = TEMI_PRONTI.find((x) => x.id === t.dataset.lptema); if (!tema) return;
+    LP.testa.template = tema.base;
+    LP.tema = { ...tema.tema, _pronto: tema.id };
+    caricaPaginaLink(true).then(lpAnteprima);
+  });
 
   // Caricamento immagini: un vero selettore di file. Chiedere un "indirizzo"
   // a chi ha la foto nel telefono non e una richiesta sensata.
@@ -6306,11 +6401,19 @@ async function caricaPaginaLink() {
       try {
         const r = await api('/api/linkpage/immagine', { method: 'POST', body: fd });
         if (!r?.url) throw new Error(L('Caricamento non riuscito.', 'Upload failed.', 'Subida fallida.'));
+        // dove: "avatar" | "<i>" (immagine del blocco) | "<i>.img" (sfondo della
+        // copertina) | "<i>.<j>" (immagine della tessera j della griglia)
         if (dove === 'avatar') {
           LP.testa.avatar = r.url;
           const inp = document.getElementById('lp-avatar-url'); if (inp) inp.value = r.url;
         } else {
-          const i = Number(dove); if (LP.blocchi[i]) LP.blocchi[i].url = r.url;
+          const [pi, pj] = String(dove).split('.');
+          const bl = LP.blocchi[Number(pi)];
+          if (bl) {
+            if (pj === undefined) bl.url = r.url;
+            else if (pj === 'img') bl.img = r.url;
+            else if (bl.voci?.[Number(pj)]) bl.voci[Number(pj)].img = r.url;
+          }
           lpRenderBlocchi();
         }
         toast(L('Immagine caricata ✓', 'Image uploaded ✓', 'Imagen subida ✓'));
@@ -6358,10 +6461,14 @@ function lpMostraCampiSfondo() {
 function lpLeggiBlocco(t) {
   const i = Number(t.dataset.lpb); const b = LP.blocchi[i]; if (!b) return;
   const campo = t.dataset.lpf;
-  if (campo === 'voceUrl' || campo === 'voceIcona') {
-    const j = Number(t.dataset.lpv); if (!b.voci?.[j]) return;
-    if (campo === 'voceUrl') { b.voci[j].url = t.value; b.voci[j].icona = lpIconaDaUrl(t.value); }
-    else b.voci[j].icona = t.value;
+  // campi delle voci interne (riga di social, tessere della griglia):
+  // "voceUrl", "voceTitolo", "voceTesto", "voceImg", "voceLink", "voceIcona"
+  if (campo && campo.startsWith('voce')) {
+    const j = Number(t.dataset.lpv); const v = b.voci?.[j]; if (!v) return;
+    const sotto = campo.slice(4).toLowerCase();
+    if (sotto === 'url') { v.url = t.value; v.icona = lpIconaDaUrl(t.value); }   // social: l'icona segue l'indirizzo
+    else if (sotto === 'link') v.url = t.value;                                  // tessera: nessuna icona da indovinare
+    else v[sotto] = t.value;
     return;
   }
   if (t.type === 'checkbox') b[campo] = t.checked;
@@ -6382,6 +6489,7 @@ function lpRenderBlocchi() {
     titolo: L('Titolo di sezione', 'Section heading', 'Título de sección'), testo: L('Testo', 'Text', 'Texto'),
     immagine: L('Immagine', 'Image', 'Imagen'), embed: L('Video, musica o pagina', 'Video, music or page', 'Vídeo, música o página'),
     diretta: L('La mia diretta', 'My live stream', 'Mi directo'),
+    eroe: L('Copertina', 'Cover', 'Portada'), griglia: L('Griglia di tessere', 'Card grid', 'Rejilla de fichas'),
     separatore: L('Riga divisoria', 'Divider', 'Separador') };
   // Griglia di icone: si scelgono VEDENDOLE. Un menu a tendina coi nomi
   // ("caffe", "soldi") non dice nulla di come verranno.
@@ -6434,6 +6542,32 @@ function lpRenderBlocchi() {
         <select data-lpb="${i}" data-lpf="formato">${Object.keys(FORM).map((k) => `<option value="${k}"${(b.formato || 'auto') === k ? ' selected' : ''}>${esc(FORM[k])}</option>`).join('')}</select>
         <p class="suggerimento">${L('Incolla l\'indirizzo normale, al resto ci penso io. Va bene sia un singolo contenuto sia una PAGINA intera: canale YouTube, profilo TikTok, pagina Facebook, artista Spotify, profilo SoundCloud, canale Twitch o Kick. Oppure un video, uno short, un post o un reel di Instagram, un brano, un album, una playlist, un podcast, una clip. Riconosco anche Apple Music, Deezer e Vimeo.', 'Paste the normal address, I handle the rest. A single item or a whole PAGE both work: YouTube channel, TikTok profile, Facebook page, Spotify artist, SoundCloud profile, Twitch or Kick channel. Or a video, a short, an Instagram post or reel, a track, an album, a playlist, a podcast, a clip. I also recognise Apple Music, Deezer and Vimeo.', 'Pega la dirección normal, del resto me encargo yo. Vale tanto un contenido suelto como una PÁGINA entera: canal de YouTube, perfil de TikTok, página de Facebook, artista de Spotify, perfil de SoundCloud, canal de Twitch o Kick. O un vídeo, un short, una publicación o un reel de Instagram, una canción, un álbum, una lista, un podcast, un clip. También reconozco Apple Music, Deezer y Vimeo.')}</p>
         <p class="suggerimento">${L('Due limiti che non dipendono da noi: il profilo Instagram e la timeline di X non si possono incorporare (le due piattaforme non lo permettono). Di Instagram puoi mettere un post o un reel.', 'Two limits that are not ours: Instagram profiles and X timelines cannot be embedded (those platforms don\'t allow it). From Instagram you can embed a post or a reel.', 'Dos límites que no dependen de nosotros: el perfil de Instagram y la línea de X no se pueden incorporar (esas plataformas no lo permiten). De Instagram puedes poner una publicación o un reel.')}</p>`;
+    } else if (b.tipo === 'eroe') {
+      const ALT = { bassa: L('Bassa', 'Short', 'Baja'), media: L('Media', 'Medium', 'Media'), piena: L('Quasi a tutto schermo', 'Almost full screen', 'Casi a pantalla completa') };
+      campi = `${b.img ? `<img class="lp-prev" src="${esc(b.img)}" alt="">` : ''}
+        <input type="text" data-lpb="${i}" data-lpf="titolo" maxlength="${d.limiti.headline}" value="${esc(b.titolo || '')}" placeholder="${esc(L('Titolo grande', 'Big title', 'Título grande'))}">
+        <input type="text" class="spazio-sopra" data-lpb="${i}" data-lpf="sotto" maxlength="${d.limiti.tagline}" value="${esc(b.sotto || '')}" placeholder="${esc(L('Sottotitolo', 'Subtitle', 'Subtítulo'))}">
+        <p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpup="${i}.img">${_bIco(ICO.carica)}${L('Immagine di sfondo', 'Background image', 'Imagen de fondo')}</button></p>
+        <input type="url" class="spazio-sopra" data-lpb="${i}" data-lpf="img" maxlength="${d.limiti.url}" value="${esc(b.img || '')}" placeholder="${esc(L('…oppure incolla un indirizzo', '…or paste an address', '…o pega una dirección'))}">
+        <label class="campo spazio-sopra">${L('Altezza', 'Height', 'Altura')}</label>
+        <select data-lpb="${i}" data-lpf="altezza">${Object.keys(ALT).map((k) => `<option value="${k}"${(b.altezza || 'media') === k ? ' selected' : ''}>${esc(ALT[k])}</option>`).join('')}</select>
+        <input type="text" class="spazio-sopra" data-lpb="${i}" data-lpf="etichetta" maxlength="${d.limiti.label}" value="${esc(b.etichetta || '')}" placeholder="${esc(L('Testo del bottone (facoltativo)', 'Button text (optional)', 'Texto del botón (opcional)'))}">
+        <input type="url" class="spazio-sopra" data-lpb="${i}" data-lpf="url" maxlength="${d.limiti.url}" value="${esc(b.url || '')}" placeholder="${esc(L('Dove porta il bottone', 'Where the button goes', 'Adónde lleva el botón'))}">
+        <p class="suggerimento">${L('È l\'apertura della pagina: una foto grande, il tuo nome e un invito. Da sola cambia faccia a tutto.', 'It\'s the page opener: a big photo, your name and an invitation. On its own it changes the whole feel.', 'Es la apertura de la página: una foto grande, tu nombre y una invitación. Ella sola le cambia la cara a todo.')}</p>`;
+    } else if (b.tipo === 'griglia') {
+      campi = (b.voci || []).map((v, j) => `
+        <div class="lp-tessera-ed">
+          ${v.img ? `<img class="lp-prev" src="${esc(v.img)}" alt="">` : ''}
+          <div class="lp-riga2">
+            <input type="text" data-lpb="${i}" data-lpv="${j}" data-lpf="voceTitolo" maxlength="${d.limiti.label}" value="${esc(v.titolo || '')}" placeholder="${esc(L('Titolo della tessera', 'Card title', 'Título de la ficha'))}">
+            <button type="button" class="btn secondario mini" data-lpsoc="via" data-lpb="${i}" data-lpv="${j}" title="${L('Togli', 'Remove', 'Quitar')}">${_lpVia}</button>
+          </div>
+          <input type="text" class="spazio-sopra" data-lpb="${i}" data-lpv="${j}" data-lpf="voceTesto" maxlength="${d.limiti.sotto}" value="${esc(v.testo || '')}" placeholder="${esc(L('Riga sotto (facoltativa)', 'Sub-line (optional)', 'Línea inferior (opcional)'))}">
+          <input type="url" class="spazio-sopra" data-lpb="${i}" data-lpv="${j}" data-lpf="voceLink" maxlength="${d.limiti.url}" value="${esc(v.url || '')}" placeholder="${esc(L('Dove porta (facoltativo)', 'Where it goes (optional)', 'Adónde lleva (opcional)'))}">
+          <p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpup="${i}.${j}">${_bIco(ICO.carica)}${L('Immagine', 'Image', 'Imagen')}</button></p>
+        </div>`).join('')
+        + `<p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpsoc="piu" data-lpb="${i}">${_bIco(ICO.piu)}${L('Aggiungi tessera', 'Add card', 'Añadir ficha')}</button></p>
+           <p class="suggerimento">${L('Tessere con immagine affiancate: le tue clip, i tuoi video, i tuoi progetti. Contenuti da guardare, non righe da leggere.', 'Cards with images side by side: your clips, videos, projects. Things to look at, not lines to read.', 'Fichas con imagen en paralelo: tus clips, vídeos, proyectos. Cosas para mirar, no líneas para leer.')}</p>`;
     } else if (b.tipo === 'diretta') {
       const PIA = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube' };
       const mio = (d.url || '').split('/u/')[1] || '';
@@ -6482,7 +6616,10 @@ function lpRenderBlocchi() {
     const so = ev.target.closest('[data-lpsoc]');
     if (so) {
       const i = Number(so.dataset.lpb); const b = LP.blocchi[i]; if (!b) return;
-      if (so.dataset.lpsoc === 'piu') { b.voci = b.voci || []; if (b.voci.length < 12) b.voci.push({ icona: 'link', url: '' }); }
+      if (so.dataset.lpsoc === 'piu') {
+        b.voci = b.voci || [];
+        if (b.voci.length < 12) b.voci.push(b.tipo === 'griglia' ? { img: '', titolo: '', testo: '', url: '' } : { icona: 'link', url: '' });
+      }
       else b.voci.splice(Number(so.dataset.lpv), 1);
       lpRenderBlocchi(); lpAnteprima();
     }
@@ -6502,7 +6639,16 @@ function lpAnteprima() {
         headline: LP.testa.headline, tagline: LP.testa.tagline, template: LP.testa.template,
         avatar: LP.testa.avatar, tema: LP.tema, blocchi: LP.blocchi,
       } });
-      if (r?.html) f.srcdoc = r.html;
+      if (!r?.html) return;
+      // Ricaricare l'anteprima riportava sempre in cima: se stavi sistemando
+      // l'ultimo blocco dovevi riscorrere ogni volta. Qui la posizione si
+      // conserva da una versione all'altra.
+      let y = 0;
+      try { y = f.contentWindow?.scrollY || 0; } catch { /* altra origine: pazienza */ }
+      f.addEventListener('load', () => {
+        try { if (y) f.contentWindow.scrollTo(0, y); } catch { /* idem */ }
+      }, { once: true });
+      f.srcdoc = r.html;
     } catch { /* l'anteprima non è essenziale: se salta, si salva comunque */ }
   }, 260);
 }
