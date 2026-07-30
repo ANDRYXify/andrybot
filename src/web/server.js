@@ -223,26 +223,27 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // altrimenti 'community' se abilitata dal sito (accesso pieno di diritto),
   // altrimenti null (nessun accesso → deve abbonarsi). Con Stripe spento
   // esistono solo community.
-  // Ha diritto d'accesso alla dashboard? Solo chi PAGA (abbonamento o trial
-  // attivo) oppure è un MEMBRO COMMUNITY verificato da andryxify.it (flag
-  // `community`, tenuto fresco dal sync col sito). Chi non è né l'uno né l'altro
-  // resta fuori: niente sessione, niente dashboard.
+  // Ha diritto d'accesso alla dashboard? SÌ, se ha fatto login con Twitch:
+  // esiste il pacchetto ESSENZIALE, gratuito, che basta registrarsi per avere.
+  // Ciò che cambia tra le persone non è l'accesso ma il TIER (vedi tierDi) e
+  // quindi QUALI funzioni sono sbloccate: il gratuito ha comandi illimitati,
+  // moderazione, overlay e contatori, e non ha Studio Web, moderatori e add-on.
+  // NB: la vera porta d'ingresso resta il "cancello" più sotto — senza un pass
+  // da andryxify.it il sito risponde 404 — quindi questo non apre socialbot.live
+  // a chiunque passi di lì.
   function haAccesso(login) {
-    const l = String(login || '').toLowerCase();
-    if (!l) return false;
-    if (config.adminLogins.includes(l)) return true;   // il founder/admin ha SEMPRE accesso (mai chiuso fuori)
-    if (subscriptions.attivo(l)) return true;
-    const s = streamers.get(l);
-    return !!(s && s.status === 'approved' && s.community);
+    return !!String(login || '').toLowerCase();
   }
 
+  // Piano di una persona: abbonamento attivo → il suo tier; membro community
+  // verificato → 'community' (tutto); altrimenti 'free' = ESSENZIALE gratuito.
   function tierDi(login) {
     const l = String(login || '').toLowerCase();
     if (!l) return null;
     if (subscriptions.attivo(l)) return subscriptions.get(l).tier || 'base';
     const s = streamers.get(l);
     if (s && s.status === 'approved' && s.community) return 'community';
-    return null;
+    return 'free';
   }
 
   // Funzioni EFFETTIVE del canale di una persona: unione di piano base + add-on
@@ -725,33 +726,31 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       if (config.adminLogins.includes(login)) {
         try { streamers.upsertApproved(login, disp); streamers.markCommunity(login); seedStreamer(login); } catch (e) { log.warn('seed admin login:', e?.message || e); }
       }
+      // PRIMO ACCESSO: creo il record dello streamer così il bot può entrare nella
+      // sua chat col pacchetto ESSENZIALE (gratuito). Prima però tento la PROMO
+      // "settimana gratis": a chi non ha MAI avuto il bot capita, a caso, qualche
+      // giorno di Pro. È un trial temporaneo (non "community"): scade da sé.
+      let promoVinta = false;
+      if (!streamers.get(login)) {
+        if (!subscriptions.get(login) && config.promo.probabilita > 0 && Math.random() < config.promo.probabilita) {
+          subscriptions.set(login, { tier: 'pro', status: 'trialing', periodEnd: Date.now() + config.promo.giorni * 86400000 });
+          promoVinta = true;
+          log.info(`promo: settimana gratis Pro a @${login} (${config.promo.giorni}g)`);
+        }
+        try { streamers.upsertApproved(login, disp); seedStreamer(login); sync(); }
+        catch (e) { log.warn('primo accesso, seed streamer:', e?.message || e); }
+      }
       const contesti = contestiPer(login);
-      if (contesti.length) {                                  // ha già accesso → dashboard
-        req.session.user = sessionePer(login, disp, contestoDefault(contesti));
-        return res.redirect('/');
-      }
-      // PROMO "settimana gratis": chi non ha MAI avuto il bot (nessun abbonamento/
-      // trial precedente) può ricevere, a caso, alcuni giorni di Pro. È un trial
-      // temporaneo (non "community"), si revoca da sé alla scadenza.
-      const maiAvuto = !subscriptions.get(login);
-      if (maiAvuto && config.promo.probabilita > 0 && Math.random() < config.promo.probabilita) {
-        const fine = Date.now() + config.promo.giorni * 86400000;
-        subscriptions.set(login, { tier: 'pro', status: 'trialing', periodEnd: fine });
-        streamers.upsertApproved(login, disp);
-        seedStreamer(login);
-        sync();
-        req.session.user = sessionePer(login, disp, contestoDefault(contestiPer(login)));
-        log.info(`promo: settimana gratis Pro a @${login} (${config.promo.giorni}g)`);
-        return res.redirect('/?promo=1');
-      }
-      // nessun accesso: identità "in attesa di abbonarsi" — NIENTE session.user,
-      // quindi niente dashboard né API dati. Vede solo i piani e può fare checkout.
-      req.session.abbonando = { login, display: disp };
-      // veniva da "attiva il bot" (Base + add-on scelti)? → dritti al checkout Stripe
+      if (contesti.length) req.session.user = sessionePer(login, disp, contestoDefault(contesti));
+      // veniva da "attiva il bot" (Base + add-on scelti)? → dritti al checkout
+      // Stripe. La sessione c'è già, quindi al rientro è dentro.
       if (sf.compra && config.stripe.attivo) {
         const url = await abbonamenti.creaCheckout({ login, pacchetti: sf.pacchetti || [], bundle: sf.bundle || null }).catch(() => null);
-        if (url) return res.redirect(url);
+        if (url) { if (!req.session.user) req.session.abbonando = { login, display: disp }; return res.redirect(url); }
       }
+      if (req.session.user) return res.redirect(promoVinta ? '/?promo=1' : '/');
+      // caso limite (nessun contesto): vede solo i piani e può fare checkout
+      req.session.abbonando = { login, display: disp };
       return res.redirect('/?abbonati=1');
     }
 
@@ -1197,7 +1196,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   }));
 
   // ── Contatori (morti/tentativi/parole…) — sotto l'add-on Giochi & Classifiche ──
-  const gCont = gateFeature('giochi', 'I contatori');
+  // I contatori stanno nell'ESSENZIALE (gratuito): sono comandi di chat, non un
+  // minigioco. Nessun gate di funzione, basta essere loggati.
+  const gCont = (req, res, next) => next();
   // elenco (leggibile anche dai moderatori); include la config overlay già parsata
   app.get('/api/contatori', requireLogin, (req, res) => {
     const list = contatori.list(currentUser(req).login).map((c) => ({ ...c, overlayCfg: contatori.overlayDi(c) }));
@@ -2317,7 +2318,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   }));
 
   // ---- STUDIO WEB: vai live dal browser, senza OBS (canvas → ffmpeg → RTMP) ----
-  app.get('/api/studio', requireLogin, wrap(async (req, res) => {
+  // Sta nel pacchetto Base (l'Essenziale gratuito non lo comprende): trasmettere
+  // consuma CPU e banda del server, quindi non può stare nel gratuito.
+  const gStudio = gateFeature('studio', 'Lo Studio Web');
+  app.get('/api/studio', requireLogin, gStudio, wrap(async (req, res) => {
     const login = currentUser(req).login;
     // elenco qualità disponibili (chiave + etichetta) per il selettore del client
     const qualita = Object.entries(STUDIO_QUALITA).map(([id, q]) => ({ id, etichetta: q.etichetta }));
@@ -2327,7 +2331,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // avvia la diretta: prende la stream key (che resta sul server) e apre ffmpeg.
   // SOLO il proprietario del canale: un moderatore delegato NON può andare live
   // (avvierebbe la diretta con la stream key dello streamer — troppo rischioso).
-  app.post('/api/studio/start', requireOwner, wrap(async (req, res) => {
+  app.post('/api/studio/start', requireOwner, gStudio, wrap(async (req, res) => {
     const login = currentUser(req).login;
     if (streamers.get(login)?.status !== 'approved') return res.status(403).json({ errore: 'non sei ancora abilitato' });
     if (!studioKeyOk(login)) return res.status(403).json({ errore: 'Concedi il permesso "stream key" da /auth/permessi', permesso: true });
@@ -2341,7 +2345,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
 
   // riceve i pezzi di media (Buffer) dal browser: raw body, un ffmpeg per streamer.
   // express.raw con type:()=>true → qualsiasi content-type finisce in req.body come Buffer.
-  app.post('/api/studio/chunk', requireOwner, express.raw({ type: () => true, limit: '30mb' }), (req, res) => {
+  app.post('/api/studio/chunk', requireOwner, gStudio, express.raw({ type: () => true, limit: '30mb' }), (req, res) => {
     const login = currentUser(req).login;
     if (!studio.attiva(login)) return res.status(409).json({ errore: 'nessuna diretta in corso' });
     if (Buffer.isBuffer(req.body)) studio.write(login, req.body);
@@ -2349,7 +2353,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   });
 
   // ferma la diretta dallo studio (solo il proprietario, come lo start)
-  app.post('/api/studio/stop', requireOwner, wrap(async (req, res) => {
+  app.post('/api/studio/stop', requireOwner, gStudio, wrap(async (req, res) => {
     studio.stop(currentUser(req).login);
     res.json({ ok: true });
   }));

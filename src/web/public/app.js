@@ -848,8 +848,8 @@ function renderHero() {
   ];
   const STEP = [
     ['1', L('Accedi con Twitch', 'Log in with Twitch', 'Entra con Twitch'), L('Un click, con lo stesso account con cui streammi.', 'One click, with the same account you stream with.', 'Un clic, con la misma cuenta con la que haces directo.')],
-    ['2', L('Richiedi l’abilitazione', 'Request activation', 'Solicita la activación'), L('andryxify ti approva e sblocca la tua dashboard.', 'andryxify approves you and unlocks your dashboard.', 'andryxify te aprueba y desbloquea tu panel.')],
-    ['3', L('Personalizza e vai live', 'Customise and go live', 'Personaliza y ve en directo'), L('Tono, comandi, notifiche: tutto tuo, in pochi minuti.', 'Tone, commands, notifications: all yours, in minutes.', 'Tono, comandos, notificaciones: todo tuyo, en minutos.')],
+    ['2', L('Parti con l’Essenziale', 'Start with Essenziale', 'Empieza con Essenziale'), L('Gratis e senza carta: comandi illimitati, moderazione, overlay e contatori sono già tuoi.', 'Free, no card needed: unlimited commands, moderation, overlay and counters are already yours.', 'Gratis y sin tarjeta: comandos ilimitados, moderación, overlay y contadores ya son tuyos.')],
+    ['3', L('Aggiungi solo ciò che vuoi', 'Add only what you want', 'Añade solo lo que quieras'), L('Se ti serve di più, scegli i pacchetti uno per uno. Niente di tutto-o-nulla.', 'If you need more, pick packages one by one. No all-or-nothing.', 'Si necesitas más, eliges los paquetes uno a uno. Nada de todo o nada.')],
   ];
   // Domande frequenti: rispecchiano i dati strutturati FAQPage in index.html
   // (Google mostra le FAQ nei risultati solo se sono anche visibili qui).
@@ -894,6 +894,8 @@ function renderHero() {
           <p>${d}</p>
         </div>`).join('')}
     </section>
+
+    ${capacitaHtml()}
 
     <section class="carta rivela vetrina-come">
       <h2>${L('Come si attiva', 'How to get started', 'Cómo se activa')}</h2>
@@ -1280,15 +1282,22 @@ const descScheda = (id) => { const d = DESC[id]; return d ? L(d[0], d[1], d[2]) 
 // una demo e il pulsante per aggiungere il pacchetto giusto. La mappa scheda→
 // funzione rispecchia ESATTAMENTE il gating del server (esigiFunzione/gateFeature),
 // così non blocchiamo mai una scheda che invece funzionerebbe.
-const SCHEDA_FUNZ = { giochi: 'giochi', musica: 'musica', ascolto: 'voce', notifiche: 'notifiche', effetti: 'effetti', sondaggi: 'effetti' };
-const FUNZ_ADDON = { giochi: 'giochi', musica: 'musica', voce: 'voce', notifiche: 'notifiche', effetti: 'effetti', clipAuto: 'clip' };
+// `studio` sta nel pacchetto Base, non in un add-on: FUNZ_ADDON lo manda su
+// 'base' così la pagina bloccata dice il nome giusto, e il checkout (che include
+// SEMPRE la Base) parte comunque corretto anche se 'base' non è un id di add-on.
+const SCHEDA_FUNZ = { giochi: 'giochi', musica: 'musica', ascolto: 'voce', notifiche: 'notifiche', effetti: 'effetti', sondaggi: 'effetti', studio: 'studio' };
+const FUNZ_ADDON = { giochi: 'giochi', musica: 'musica', voce: 'voce', notifiche: 'notifiche', effetti: 'effetti', clipAuto: 'clip', studio: 'base' };
+// I nomi dei pacchetti restano in ITALIANO in tutte le lingue: sono nomi propri
+// del prodotto, come "Spotify Premium". Tradurli confonderebbe chi cerca aiuto.
 const NOME_ADDON = {
-  giochi: ['Giochi & Classifiche', 'Games & Leaderboards', 'Juegos y Clasificaciones'],
-  musica: ['Richieste Musicali', 'Music Requests', 'Peticiones Musicales'],
-  voce: ['Comandi Vocali', 'Voice Commands', 'Comandos por Voz'],
-  notifiche: ['Social & Notifiche', 'Social & Notifications', 'Social y Notificaciones'],
-  effetti: ['Effetti & Punti canale', 'Effects & Channel Points', 'Efectos y Puntos de canal'],
-  clip: ['Clip Automatiche', 'Automatic Clips', 'Clips Automáticos'],
+  base: ['Base', 'Base', 'Base'],
+  giochi: ['Giochi & Classifiche', 'Giochi & Classifiche', 'Giochi & Classifiche'],
+  musica: ['Richieste Musicali', 'Richieste Musicali', 'Richieste Musicali'],
+  voce: ['Comandi Vocali', 'Comandi Vocali', 'Comandi Vocali'],
+  notifiche: ['Social & Notifiche', 'Social & Notifiche', 'Social & Notifiche'],
+  effetti: ['Effetti & Punti canale', 'Effetti & Punti canale', 'Effetti & Punti canale'],
+  clip: ['Clip Automatiche', 'Clip Automatiche', 'Clip Automatiche'],
+  squadra: ['Squadra', 'Squadra', 'Squadra'],
 };
 
 // La scheda `id` è bloccata per il piano attuale? Mai in demo o per l'operatore.
@@ -1384,6 +1393,88 @@ const GUIDE = {
   emote: { serve: ['Gestire a 360° le emote 7TV del tuo canale — aggiungerle, toglierle e rinominarle — direttamente dal bot. Le emote 7TV compaiono anche nella chat a schermo dell\'overlay.', 'Fully manage your channel’s 7TV emotes — add, remove and rename them — right from the bot. 7TV emotes also show up in the overlay’s on-screen chat.', 'Gestiona al 100% las emotes 7TV de tu canal — añadirlas, quitarlas y renombrarlas — directamente desde el bot. Las emotes 7TV también aparecen en el chat en pantalla del overlay.'],
     come: [['Collega il tuo account 7TV incollando il token (c\'è la guida qui sotto).', 'Connect your 7TV account by pasting the token (there’s a guide below).', 'Conecta tu cuenta 7TV pegando el token (hay una guía abajo).'], ['Cerca un\'emote nella directory 7TV e premi «Aggiungi» (puoi dargli un alias).', 'Search an emote in the 7TV directory and hit «Add» (you can give it an alias).', 'Busca una emote en el directorio 7TV y pulsa «Añadir» (puedes ponerle un alias).'], ['Nel tuo set puoi rinominare o togliere le emote con un clic.', 'In your set you can rename or remove emotes with one click.', 'En tu set puedes renombrar o quitar emotes con un clic.']] },
 };
+
+// ─────────────────────────── "Cosa può fare SocialBot" ───────────────────────
+// Catalogo COMPLETO di ciò che il bot sa fare, raggruppato per area, con il
+// pacchetto in cui ogni voce è compresa. È la fonte unica per la sezione
+// espandibile in vetrina: se una funzione cambia pacchetto, si tocca solo qui.
+//   pacc: 'free' = Essenziale (gratuito) · 'base' = Base · gli altri sono id di
+//   add-on (giochi, effetti, notifiche, clip, voce, squadra, musica) e devono
+//   combaciare con features/abbonamenti.js.
+// Titoli e descrizioni sono tuple [it, en, es]; i NOMI DEI PACCHETTI restano in
+// italiano in tutte le lingue (vedi NOME_ADDON).
+const CAPACITA = [
+  { area: ['Chat e comandi', 'Chat and commands', 'Chat y comandos'], voci: [
+    { pacc: 'free', t: ['Scrive col tuo account', 'Writes with your account', 'Escribe con tu cuenta'], d: ['In chat compare il tuo nome, non un bot anonimo.', 'Your name appears in chat, not an anonymous bot.', 'En el chat aparece tu nombre, no un bot anónimo.'] },
+    { pacc: 'free', t: ['Comandi e automazioni illimitati', 'Unlimited commands and automations', 'Comandos y automatizaciones ilimitados'], d: ['Quando succede X, il bot fa Y. Nessun limite di numero.', 'When X happens, the bot does Y. No limit on how many.', 'Cuando pasa X, el bot hace Y. Sin límite de cantidad.'] },
+    { pacc: 'free', t: ['Moderazione e antispam', 'Moderation and anti-spam', 'Moderación y antispam'], d: ['Filtra link, maiuscole e ripetizioni, e dà timeout a chi insiste.', 'Filters links, caps and repetition, and times out those who insist.', 'Filtra enlaces, mayúsculas y repeticiones, y da timeout a quien insiste.'] },
+    { pacc: 'free', t: ['Contatori a schermo', 'On-screen counters', 'Contadores en pantalla'], d: ['Tipo !morti: li accendi dalla chat e il numero appare nell’overlay.', 'Like !deaths: turn them on from chat and the number shows in the overlay.', 'Tipo !muertes: los enciendes desde el chat y el número aparece en el overlay.'] },
+    { pacc: 'free', t: ['Personalità e tono', 'Personality and tone', 'Personalidad y tono'], d: ['Decidi come parla e quanto interviene da solo in chat.', 'You decide how it speaks and how often it chimes in.', 'Decides cómo habla y cuánto interviene solo en el chat.'] },
+    { pacc: 'free', t: ['Cosa dire su di te', 'What to say about you', 'Qué decir sobre ti'], d: ['Social, orari, PC, regole: gli insegni le risposte una volta.', 'Socials, schedule, PC, rules: you teach it the answers once.', 'Redes, horarios, PC, reglas: le enseñas las respuestas una vez.'] },
+    { pacc: 'squadra', t: ['Fino a 10 moderatori', 'Up to 10 moderators', 'Hasta 10 moderadores'], d: ['I tuoi mod entrano nella dashboard e gestiscono il canale con te.', 'Your mods get into the dashboard and manage the channel with you.', 'Tus mods entran en el panel y gestionan el canal contigo.'] },
+  ] },
+  { area: ['Overlay per OBS', 'OBS overlay', 'Overlay para OBS'], voci: [
+    { pacc: 'free', t: ['Overlay Studio', 'Overlay Studio', 'Overlay Studio'], d: ['Chat a schermo, widget e temi: colori, font, posizione e dimensione. Più overlay, ognuno col suo link.', 'On-screen chat, widgets and themes: colours, fonts, position and size. Multiple overlays, each with its own link.', 'Chat en pantalla, widgets y temas: colores, fuentes, posición y tamaño. Varios overlays, cada uno con su enlace.'] },
+    { pacc: 'free', t: ['Emote 7TV', '7TV emotes', 'Emotes 7TV'], d: ['Aggiungi, rinomina e togli le emote del canale dal bot.', 'Add, rename and remove your channel’s emotes from the bot.', 'Añade, renombra y quita las emotes del canal desde el bot.'] },
+    { pacc: 'effetti', t: ['Alert follow, sub, bit e raid', 'Follow, sub, bit and raid alerts', 'Alertas de follow, sub, bits y raid'], d: ['Con immagini o video, suoni tuoi o pronti, e il green screen.', 'With images or video, your own or ready-made sounds, and green screen.', 'Con imágenes o vídeo, sonidos tuyos o listos, y croma.'] },
+    { pacc: 'effetti', t: ['Effetti sui punti canale', 'Channel-point effects', 'Efectos con puntos de canal'], d: ['Ogni riscatto può lanciare un suono, una GIF o un video a schermo.', 'Every redemption can trigger a sound, a GIF or a video on screen.', 'Cada canje puede lanzar un sonido, un GIF o un vídeo en pantalla.'] },
+    { pacc: 'effetti', t: ['Penitenze a tempo', 'Timed forfeits', 'Penitencias cronometradas'], d: ['La chat ti vieta una parola — o ti obbliga a dire solo quella. Se sbagli, penitenza.', 'Chat bans a word for you — or forces you to say only that one. Slip up and you owe a forfeit.', 'El chat te prohíbe una palabra — o te obliga a decir solo esa. Si fallas, penitencia.'] },
+  ] },
+  { area: ['La tua diretta', 'Your stream', 'Tu directo'], voci: [
+    { pacc: 'free', t: ['Regia della diretta', 'Stream control room', 'Realización del directo'], d: ['Titolo, categoria, tag, marker, pubblicità e raid dal pannello.', 'Title, category, tags, markers, ads and raids from the panel.', 'Título, categoría, etiquetas, marcadores, anuncios y raids desde el panel.'] },
+    { pacc: 'base', t: ['Studio Web: live senza OBS', 'Web Studio: live without OBS', 'Estudio Web: directo sin OBS'], d: ['Vai in diretta dal browser: scene, webcam, schermo, mixer audio, fino al 2K.', 'Go live from the browser: scenes, webcam, screen, audio mixer, up to 2K.', 'Emite desde el navegador: escenas, webcam, pantalla, mezclador de audio, hasta 2K.'] },
+    { pacc: 'clip', t: ['Clip automatiche', 'Automatic clips', 'Clips automáticos'], d: ['Quando la chat si accende il bot clippa da solo.', 'When chat lights up the bot clips on its own.', 'Cuando el chat se enciende el bot clipea solo.'] },
+    { pacc: 'voce', t: ['Comandi a voce', 'Voice commands', 'Comandos por voz'], d: ['Cambi titolo, fai una clip o dai il VIP parlando. L’audio non lascia il tuo PC.', 'Change the title, make a clip or grant VIP by speaking. The audio never leaves your PC.', 'Cambias el título, haces un clip o das el VIP hablando. El audio no sale de tu PC.'] },
+  ] },
+  { area: ['Far divertire la chat', 'Entertaining your chat', 'Divertir al chat'], voci: [
+    { pacc: 'giochi', t: ['Minigiochi e monete', 'Minigames and coins', 'Minijuegos y monedas'], d: ['Slot, roulette, pesca, trivia: gli spettatori giocano con la moneta del canale.', 'Slots, roulette, fishing, trivia: viewers play with your channel coin.', 'Tragaperras, ruleta, pesca, trivia: los espectadores juegan con la moneda del canal.'] },
+    { pacc: 'giochi', t: ['Classifiche e VIP automatico', 'Leaderboards and automatic VIP', 'Clasificaciones y VIP automático'], d: ['Chi partecipa più di tutti sale in classifica e prende il VIP.', 'Whoever takes part the most climbs the leaderboard and gets VIP.', 'Quien más participa sube en la clasificación y recibe el VIP.'] },
+    { pacc: 'effetti', t: ['Sondaggi e predizioni', 'Polls and predictions', 'Encuestas y predicciones'], d: ['Lanci sondaggi e predizioni Twitch dal pannello, senza aprire Twitch.', 'Launch Twitch polls and predictions from the panel, without opening Twitch.', 'Lanzas encuestas y predicciones de Twitch desde el panel, sin abrir Twitch.'] },
+    { pacc: 'free', t: ['Giveaway', 'Giveaways', 'Sorteos'], d: ['Estrazioni a premi: la community entra con !join e tu estrai.', 'Prize draws: the community joins with !join and you draw.', 'Sorteos: la comunidad entra con !join y tú sorteas.'] },
+    { pacc: 'musica', t: ['Richieste musicali', 'Music requests', 'Peticiones musicales'], d: ['Canzoni in coda su Spotify con !sr: libero o a bit, monete o punti canale.', 'Songs queued on Spotify with !sr: free or via bits, coins or channel points.', 'Canciones en cola en Spotify con !sr: libre o con bits, monedas o puntos de canal.'] },
+  ] },
+  { area: ['Farti trovare', 'Getting you found', 'Que te encuentren'], voci: [
+    { pacc: 'notifiche', t: ['Avviso quando vai in diretta', 'Alert when you go live', 'Aviso cuando estás en directo'], d: ['Avvisa il tuo gruppo Telegram e il tuo server Discord.', 'Alerts your Telegram group and your Discord server.', 'Avisa a tu grupo de Telegram y a tu servidor de Discord.'] },
+    { pacc: 'notifiche', t: ['Avviso dei nuovi post', 'New-post alerts', 'Aviso de nuevos posts'], d: ['Quando pubblichi su TikTok, YouTube o Instagram lo dice alla community.', 'When you post on TikTok, YouTube or Instagram it tells your community.', 'Cuando publicas en TikTok, YouTube o Instagram se lo dice a tu comunidad.'] },
+    { pacc: 'notifiche', t: ['Bot su Telegram', 'Telegram bot', 'Bot en Telegram'], d: ['Gestisci il bot dal telefono e fai gli auguri di compleanno al gruppo.', 'Manage the bot from your phone and send birthday wishes to the group.', 'Gestiona el bot desde el móvil y felicita los cumpleaños al grupo.'] },
+    { pacc: 'free', t: ['La tua pagina link', 'Your link page', 'Tu página de enlaces'], d: ['Una pagina con tutti i tuoi social su socialbot.live/u/iltuonome.', 'A page with all your socials at socialbot.live/u/yourname.', 'Una página con todas tus redes en socialbot.live/u/tunombre.'] },
+  ] },
+];
+
+// HTML della sezione espandibile "Cosa può fare SocialBot" (vetrina).
+// Aperta di default la prima area, il resto richiuso: si scorre l'elenco delle
+// aree e si apre solo quella che interessa.
+function capacitaHtml() {
+  const etichetta = (pacc) => {
+    if (pacc === 'free') return { testo: L('Essenziale · gratis', 'Essenziale · free', 'Essenziale · gratis'), cls: 'gratis' };
+    const na = NOME_ADDON[pacc];
+    return { testo: na ? na[0] : pacc, cls: pacc === 'base' ? 'base' : 'addon' };
+  };
+  const aree = CAPACITA.map((g, i) => {
+    const righe = g.voci.map((v) => {
+      const e = etichetta(v.pacc);
+      return `<li class="cap-voce">
+        <div class="cap-testo"><strong>${esc(L(v.t[0], v.t[1], v.t[2]))}</strong>
+          <span>${esc(L(v.d[0], v.d[1], v.d[2]))}</span></div>
+        <span class="cap-pacc ${e.cls}">${esc(e.testo)}</span>
+      </li>`;
+    }).join('');
+    return `<details class="cap-area"${i === 0 ? ' open' : ''}>
+      <summary>${esc(L(g.area[0], g.area[1], g.area[2]))} <span class="cap-quante">${g.voci.length}</span></summary>
+      <ul class="cap-elenco">${righe}</ul>
+    </details>`;
+  }).join('');
+  const nFree = CAPACITA.reduce((n, g) => n + g.voci.filter((v) => v.pacc === 'free').length, 0);
+  const nTot = CAPACITA.reduce((n, g) => n + g.voci.length, 0);
+  return `<details class="carta rivela cap-scheda">
+    <summary><h2>${L('Cosa può fare SocialBot', 'What SocialBot can do', 'Qué puede hacer SocialBot')}</h2>
+      <span class="cap-sommario">${nTot} ${L('funzioni · di cui', 'features · of which', 'funciones · de las cuales')} ${nFree} ${L('gratis', 'free', 'gratis')}</span></summary>
+    <div class="cap-corpo">
+      <p class="cap-intro">${L('Tutto quello che il bot sa fare, e in quale pacchetto è compreso. Con l’<strong>Essenziale</strong> — gratis, basta registrarsi — il bot funziona già nella tua chat.', 'Everything the bot can do, and which package includes it. With <strong>Essenziale</strong> — free, you just register — the bot already works in your chat.', 'Todo lo que el bot sabe hacer, y en qué paquete está incluido. Con <strong>Essenziale</strong> — gratis, solo registrarse — el bot ya funciona en tu chat.')}</p>
+      ${aree}
+    </div>
+  </details>`;
+}
 
 // SVG lampadina (niente emoji): icona della mini-guida.
 const _icoGuida = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1.3.5 2.6 1.5 3.5.8.8 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>';
@@ -1708,7 +1799,8 @@ function pannelloStato() {
       <p class="suggerimento">${L('Su iPhone/iPad: apri in Safari → Condividi → “Aggiungi a Home”. Su Android/PC (Chrome): usa il bottone qui sopra o l’icona “installa” nella barra indirizzi.', 'On iPhone/iPad: open in Safari → Share → “Add to Home Screen”. On Android/PC (Chrome): use the button above or the “install” icon in the address bar.', 'En iPhone/iPad: abre en Safari → Compartir → “Añadir a inicio”. En Android/PC (Chrome): usa el botón de arriba o el icono “instalar” en la barra de direcciones.')}</p>
     </div>
     ${proprietario ? (() => {
-      const nomi = { community: L('Community', 'Community', 'Comunidad'), free: L('Prova', 'Trial', 'Prueba'), base: 'Base', pro: 'Pro' };
+      // nomi dei pacchetti: sempre in italiano, sono nomi propri del prodotto
+      const nomi = { community: 'Community', free: 'Essenziale', base: 'Base', pro: 'Pro' };
       const tier = stato.tier || 'community';
       const pagato = tier === 'base' || tier === 'pro';
       return `
