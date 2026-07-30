@@ -6064,6 +6064,24 @@ function pannelloPaginaLink() {
 // La presentazione e il tutorial stanno DENTRO la colonna dei comandi, non
 // sopra l'editor: sennò spingono il banco di lavoro sotto lo schermo e
 // l'anteprima torna a essere una cosa da rincorrere scorrendo.
+// Quante volte la pagina è stata aperta. Solo il numero: nessun indirizzo IP,
+// nessun cookie, niente su chi c'era. È il dato che serve davvero ("la mia
+// pagina la guarda qualcuno?") ed è l'unico che si può raccogliere senza
+// chiedere il consenso a nessuno.
+function lpVisiteHtml(v) {
+  if (!v) return '';
+  const max = Math.max(1, ...(v.giorni || []).map((g) => g.viste));
+  const barre = (v.giorni || []).map((g) =>
+    `<span class="lp-barra" style="--h:${Math.round((g.viste / max) * 100)}%" title="${esc(g.giorno)}: ${g.viste}"></span>`).join('');
+  return `<div class="lp-visite">
+    <div class="lp-visite-n">
+      <b>${v.settimana}</b> ${L('aperture questa settimana', 'opens this week', 'aperturas esta semana')}
+      <span class="suggerimento">${L('oggi', 'today', 'hoy')} ${v.oggi} · ${L('mese', 'month', 'mes')} ${v.mese} · ${L('sempre', 'all time', 'siempre')} ${v.totale}</span>
+    </div>
+    <div class="lp-barre" aria-hidden="true">${barre}</div>
+  </div>`;
+}
+
 function lpIntroHtml(d) {
   return `<p class="suggerimento">${L('Una pagina pubblica con tutti i tuoi link, da mettere nella bio di Instagram o TikTok. Il suo indirizzo è', 'A public page with all your links, to put in your Instagram or TikTok bio. Its address is', 'Una página pública con todos tus enlaces, para poner en la bio de Instagram o TikTok. Su dirección es')}
       <strong>${esc((d.url || '').replace(/^https?:\/\//, '') || 'socialbot.live/u/…')}</strong></p>
@@ -6174,6 +6192,7 @@ async function caricaPaginaLink(ridisegna = false) {
       ? `<p class="lp-stato on">${_bIco(ICO.globo)}${L('Online:', 'Live:', 'Online:')}
           <a href="${esc(d.url)}" target="_blank" rel="noopener"><strong>${esc((d.url || '').replace(/^https?:\/\//, ''))}</strong></a></p>`
       : `<p class="lp-stato off">${_bIco(ICO.avviso)}${L('Non ancora pubblicata: compila e salva.', 'Not published yet: fill it in and save.', 'Aún no publicada: rellénala y guarda.')}</p>`}
+        ${lpVisiteHtml(d.visite)}
         ${lpIntroHtml(d)}
         <details class="carta sez" open>
           <summary><h3>${L('Intestazione', 'Header', 'Encabezado')}</h3></summary>
@@ -6213,6 +6232,9 @@ async function caricaPaginaLink(ridisegna = false) {
             <button type="button" class="btn secondario mini" data-lpadd="eroe">${L('Copertina', 'Cover', 'Portada')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="griglia">${L('Griglia di tessere', 'Card grid', 'Rejilla de fichas')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="scritta">${L('Scritta che scorre', 'Scrolling text', 'Texto que se desplaza')}</button>
+            <button type="button" class="btn secondario mini" data-lpadd="numeri">${L('Numeri', 'Numbers', 'Números')}</button>
+            <button type="button" class="btn secondario mini" data-lpadd="faq">${L('Domande frequenti', 'FAQ', 'Preguntas frecuentes')}</button>
+            <button type="button" class="btn secondario mini" data-lpadd="conto">${L('Conto alla rovescia', 'Countdown', 'Cuenta atrás')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="separatore">${L('Riga divisoria', 'Divider', 'Separador')}</button>
           </div>
         </details>
@@ -6385,6 +6407,9 @@ async function caricaPaginaLink(ridisegna = false) {
       diretta: { tipo: 'diretta', piattaforma: 'twitch', canale: '', chat: false, autoplay: false, muto: true, titolo: '' },
       eroe: { tipo: 'eroe', titolo: '', sotto: '', img: '', url: '', etichetta: '', altezza: 'media', fissa: false },
       scritta: { tipo: 'scritta', testo: '', velocita: 'media' },
+      numeri: { tipo: 'numeri', voci: [{ n: '', etichetta: '' }, { n: '', etichetta: '' }, { n: '', etichetta: '' }] },
+      faq: { tipo: 'faq', voci: [{ d: '', r: '' }] },
+      conto: { tipo: 'conto', titolo: '', quando: '', finito: '' },
       griglia: { tipo: 'griglia', voci: [{ img: '', titolo: '', testo: '', url: '' }, { img: '', titolo: '', testo: '', url: '' }] },
       separatore: { tipo: 'separatore' } }[tipo];
     if (!nuovo) return;
@@ -6523,6 +6548,8 @@ function lpRenderBlocchi() {
     diretta: L('La mia diretta', 'My live stream', 'Mi directo'),
     eroe: L('Copertina', 'Cover', 'Portada'), griglia: L('Griglia di tessere', 'Card grid', 'Rejilla de fichas'),
     scritta: L('Scritta che scorre', 'Scrolling text', 'Texto que se desplaza'),
+    numeri: L('Numeri', 'Numbers', 'Números'), faq: L('Domande frequenti', 'FAQ', 'Preguntas frecuentes'),
+    conto: L('Conto alla rovescia', 'Countdown', 'Cuenta atrás'),
     separatore: L('Riga divisoria', 'Divider', 'Separador') };
   // Griglia di icone: si scelgono VEDENDOLE. Un menu a tendina coi nomi
   // ("caffe", "soldi") non dice nulla di come verranno.
@@ -6593,6 +6620,32 @@ function lpRenderBlocchi() {
         <input type="url" class="spazio-sopra" data-lpb="${i}" data-lpf="url" maxlength="${d.limiti.url}" value="${esc(b.url || '')}" placeholder="${esc(L('Dove porta il bottone', 'Where the button goes', 'Adónde lleva el botón'))}">
         <label class="riga-check spazio-sopra"><input type="checkbox" data-lpb="${i}" data-lpf="fissa"${b.fissa ? ' checked' : ''}> ${L('Resta ferma: il resto della pagina le scorre sopra', 'Keep it pinned: the rest of the page scrolls over it', 'Que se quede fija: el resto de la página se desplaza encima')}</label>
         <p class="suggerimento">${L('È l\'apertura della pagina: una foto grande, il tuo nome e un invito. Da sola cambia faccia a tutto.', 'It\'s the page opener: a big photo, your name and an invitation. On its own it changes the whole feel.', 'Es la apertura de la página: una foto grande, tu nombre y una invitación. Ella sola le cambia la cara a todo.')}</p>`;
+    } else if (b.tipo === 'numeri') {
+      campi = (b.voci || []).map((v, j) => `
+        <div class="lp-riga2 spazio-sopra">
+          <input type="text" data-lpb="${i}" data-lpv="${j}" data-lpf="voceN" maxlength="16" value="${esc(v.n || '')}" placeholder="${esc(L('es. 12mila', 'e.g. 12k', 'p. ej. 12mil'))}">
+          <input type="text" data-lpb="${i}" data-lpv="${j}" data-lpf="voceEtichetta" maxlength="40" value="${esc(v.etichetta || '')}" placeholder="${esc(L('es. follower', 'e.g. followers', 'p. ej. seguidores'))}">
+          <button type="button" class="btn secondario mini" data-lpsoc="via" data-lpb="${i}" data-lpv="${j}" title="${L('Togli', 'Remove', 'Quitar')}">${_lpVia}</button>
+        </div>`).join('')
+        + `<p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpsoc="piu" data-lpb="${i}">${_bIco(ICO.piu)}${L('Aggiungi numero', 'Add number', 'Añadir número')}</button></p>
+           <p class="suggerimento">${L('Follower, anni di dirette, ore in diretta, paesi visitati: tre numeri grossi dicono chi sei più di un paragrafo.', 'Followers, years streaming, hours live, countries visited: three big numbers say who you are better than a paragraph.', 'Seguidores, años en directo, horas emitidas, países visitados: tres números grandes dicen quién eres mejor que un párrafo.')}</p>`;
+    } else if (b.tipo === 'faq') {
+      campi = (b.voci || []).map((v, j) => `
+        <div class="lp-tessera-ed">
+          <div class="lp-riga2">
+            <input type="text" data-lpb="${i}" data-lpv="${j}" data-lpf="voceD" maxlength="${d.limiti.titolo}" value="${esc(v.d || '')}" placeholder="${esc(L('La domanda', 'The question', 'La pregunta'))}">
+            <button type="button" class="btn secondario mini" data-lpsoc="via" data-lpb="${i}" data-lpv="${j}" title="${L('Togli', 'Remove', 'Quitar')}">${_lpVia}</button>
+          </div>
+          <textarea class="spazio-sopra" data-lpb="${i}" data-lpv="${j}" data-lpf="voceR" rows="2" maxlength="${d.limiti.testo}" placeholder="${esc(L('La risposta', 'The answer', 'La respuesta'))}">${esc(v.r || '')}</textarea>
+        </div>`).join('')
+        + `<p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpsoc="piu" data-lpb="${i}">${_bIco(ICO.piu)}${L('Aggiungi domanda', 'Add question', 'Añadir pregunta')}</button></p>
+           <p class="suggerimento">${L('Si aprono e si chiudono da sole, senza una riga di script. “Che PC usi?”, “Quando streammi?”, “Posso usare le tue clip?”', 'They open and close on their own, without a line of script. “What PC do you use?”, “When do you stream?”, “Can I use your clips?”', 'Se abren y cierran solas, sin una línea de script. “¿Qué PC usas?”, “¿Cuándo transmites?”, “¿Puedo usar tus clips?”')}</p>`;
+    } else if (b.tipo === 'conto') {
+      campi = `<input type="text" data-lpb="${i}" data-lpf="titolo" maxlength="${d.limiti.label}" value="${esc(b.titolo || '')}" placeholder="${esc(L('es. Prossima diretta fra', 'e.g. Next stream in', 'p. ej. Próximo directo en'))}">
+        <label class="campo spazio-sopra">${L('Quando', 'When', 'Cuándo')}</label>
+        <input type="datetime-local" data-lpb="${i}" data-lpf="quando" value="${esc(b.quando || '')}">
+        <input type="text" class="spazio-sopra" data-lpb="${i}" data-lpf="finito" maxlength="${d.limiti.label}" value="${esc(b.finito || '')}" placeholder="${esc(L('Cosa scrivere quando è ora (es. SONO LIVE!)', 'What to show when the time comes (e.g. I\'M LIVE!)', 'Qué poner cuando llega la hora (p. ej. ¡ESTOY EN DIRECTO!)'))}">
+        <p class="suggerimento">${L('Scala di secondo in secondo. L\'ora la scrivi nel TUO fuso: chi guarda la vede nel suo, ci pensa il suo telefono.', 'It ticks down every second. You write the time in YOUR timezone: whoever looks sees it in theirs, their phone handles it.', 'Baja segundo a segundo. La hora la escribes en TU huso: quien la mira la ve en el suyo, se encarga su móvil.')}</p>`;
     } else if (b.tipo === 'scritta') {
       const VEL = { lenta: L('Lenta', 'Slow', 'Lenta'), media: L('Media', 'Medium', 'Media'), veloce: L('Veloce', 'Fast', 'Rápida') };
       campi = `<input type="text" data-lpb="${i}" data-lpf="testo" maxlength="${d.limiti.titolo}" value="${esc(b.testo || '')}" placeholder="${esc(L('es. OGNI SERA DALLE 21 ·', 'e.g. EVERY NIGHT FROM 9PM ·', 'p. ej. CADA NOCHE DESDE LAS 21 ·'))}">
@@ -6714,7 +6767,9 @@ function lpRenderBlocchi() {
       const i = Number(so.dataset.lpb); const b = LP.blocchi[i]; if (!b) return;
       if (so.dataset.lpsoc === 'piu') {
         b.voci = b.voci || [];
-        if (b.voci.length < 12) b.voci.push(b.tipo === 'griglia' ? { img: '', titolo: '', testo: '', url: '' } : { icona: 'link', url: '' });
+        const vuota = { griglia: { img: '', titolo: '', testo: '', url: '' }, numeri: { n: '', etichetta: '' },
+          faq: { d: '', r: '' } }[b.tipo] || { icona: 'link', url: '' };
+        if (b.voci.length < 12) b.voci.push({ ...vuota });
       }
       else b.voci.splice(Number(so.dataset.lpv), 1);
       lpRenderBlocchi(); lpAnteprima();
