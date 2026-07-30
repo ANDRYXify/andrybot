@@ -93,6 +93,21 @@ CREATE TABLE IF NOT EXISTS contatori (         -- contatori a comando (morti, te
   PRIMARY KEY (channel, comando)
 );
 
+CREATE TABLE IF NOT EXISTS link_page (       -- la pagina pubblica /u/<login>
+  channel TEXT PRIMARY KEY,
+  headline TEXT NOT NULL DEFAULT '',           -- titolo in cima
+  tagline TEXT NOT NULL DEFAULT '',            -- sottotitolo
+  template TEXT NOT NULL DEFAULT 'minimal',    -- preset di partenza
+  accent TEXT NOT NULL DEFAULT '',             -- (storico) colore principale
+  bg TEXT NOT NULL DEFAULT '',                 -- (storico) colore di sfondo
+  links TEXT NOT NULL DEFAULT '',              -- (storico) JSON: [{icona,label,url}]
+  avatar TEXT NOT NULL DEFAULT '',             -- '' = quello di Twitch · 'no' = nessuno · URL
+  tema TEXT NOT NULL DEFAULT '',               -- JSON: colori, sfondo, font, forme, animazioni
+  blocchi TEXT NOT NULL DEFAULT '',            -- JSON: contenuti in ordine (link, titoli, testi, social, embed…)
+  attiva INTEGER NOT NULL DEFAULT 1,           -- 0 = pagina spenta (404)
+  ts INTEGER NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS clips (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   channel TEXT NOT NULL,
@@ -465,6 +480,18 @@ aggiungiColonna('spotify_tokens', 'client_secret', "TEXT NOT NULL DEFAULT ''");
   try {
     const cols = db.prepare('PRAGMA table_info(contatori)').all();
     if (!cols.some((c) => c.name === 'overlay')) db.exec("ALTER TABLE contatori ADD COLUMN overlay TEXT NOT NULL DEFAULT ''");
+  } catch { /* best-effort */ }
+})();
+
+// Pagina link: colonne del customizer completo sui DB che hanno già la tabella.
+(() => {
+  try {
+    const cols = db.prepare('PRAGMA table_info(link_page)').all();
+    if (cols.length) {
+      for (const c of ['avatar', 'tema', 'blocchi']) {
+        if (!cols.some((x) => x.name === c)) db.exec(`ALTER TABLE link_page ADD COLUMN ${c} TEXT NOT NULL DEFAULT ''`);
+      }
+    }
   } catch { /* best-effort */ }
 })();
 
@@ -1165,6 +1192,190 @@ export const memory = {
 // ---------------------------------------------------------------- contatori a comando
 // Contatori configurabili (morti, tentativi, parole…): valore incrementabile da
 // comando chat (mod/streamer), da parola automatica in chat, o da riscatto punti.
+// ── Pagina link pubblica /u/<login> ─────────────────────────────────────────
+// Vive QUI, non su andryxify.it: la pagina è di SocialBot, quindi i dati stanno
+// nel nostro DB e la serviamo noi. Prima erano sul sito e servivano un token
+// Twitch a ogni salvataggio, l'abilitazione "approved" e uno schema doppio
+// v1/v2 — tre modi diversi di non funzionare per chi voleva solo dei link.
+//
+// Il contenuto è una lista di BLOCCHI in ordine (non solo link), e l'aspetto è
+// un TEMA con colori, sfondo, font e forme: così lo streamer può costruire la
+// pagina come la immagina invece di riempire cinque campi fissi.
+export const TEMPLATE_LINKPAGE = ['minimal', 'neon', 'retro', 'sunset', 'glass', 'brutal', 'pastello'];
+export const FONT_LINKPAGE = ['system', 'inter', 'mono', 'serif', 'condensato', 'tondo'];
+export const ICONE_LINKPAGE = ['link', 'twitch', 'youtube', 'instagram', 'tiktok', 'discord', 'spotify',
+  'x', 'telegram', 'kick', 'github', 'reddit', 'threads', 'facebook', 'whatsapp', 'twitter',
+  'cuore', 'stella', 'regalo', 'carrello', 'calendario', 'mail', 'musica', 'video', 'scarica', 'gioco', 'caffe', 'soldi'];
+export const TIPI_BLOCCO = ['link', 'titolo', 'testo', 'separatore', 'social', 'embed', 'immagine'];
+export const LIMITI_LINKPAGE = {
+  headline: 80, tagline: 200, label: 60, sotto: 90, url: 500,
+  blocchi: 40, social: 12, testo: 500, titolo: 60,
+};
+
+// Riconosce la piattaforma dall'indirizzo: così l'icona giusta arriva da sé e
+// nessuno deve scegliere un'emoji.
+const DA_HOST = [
+  [/(^|\.)twitch\.tv$/, 'twitch'], [/(^|\.)youtube\.com$|(^|\.)youtu\.be$/, 'youtube'],
+  [/(^|\.)instagram\.com$/, 'instagram'], [/(^|\.)tiktok\.com$/, 'tiktok'],
+  [/(^|\.)discord\.(gg|com)$/, 'discord'], [/(^|\.)spotify\.com$/, 'spotify'],
+  [/(^|\.)(x\.com|twitter\.com)$/, 'x'], [/(^|\.)t\.me$|(^|\.)telegram\.(me|org)$/, 'telegram'],
+  [/(^|\.)kick\.com$/, 'kick'], [/(^|\.)github\.com$/, 'github'],
+  [/(^|\.)reddit\.com$/, 'reddit'], [/(^|\.)threads\.(net|com)$/, 'threads'],
+  [/(^|\.)facebook\.com$/, 'facebook'], [/(^|\.)wa\.me$|(^|\.)whatsapp\.com$/, 'whatsapp'],
+  [/(^|\.)(paypal\.(me|com)|streamlabs\.com|streamelements\.com)$/, 'soldi'],
+  [/(^|\.)(ko-fi\.com|buymeacoffee\.com|patreon\.com)$/, 'caffe'],
+  [/(^|\.)(amazon\.[a-z.]+|amzn\.to|etsy\.com|shopify\.com)$/, 'carrello'],
+  [/(^|\.)steam(community|powered)\.com$/, 'gioco'],
+];
+export function iconaDaUrl(u) {
+  try { const h = new URL(String(u)).hostname.toLowerCase().replace(/^www\./, '');
+    for (const [re, ico] of DA_HOST) if (re.test(h)) return ico;
+  } catch { /* url non valido */ }
+  return 'link';
+}
+
+const TEMA_DEF = {
+  sfondoTipo: 'tinta',       // tinta | gradiente | immagine
+  bg: '', bg2: '', angolo: 160, sfondoUrl: '',
+  effetto: 'nessuno',        // nessuno | aurora | maglia | grana | bolle
+  testo: '', accent: '', card: '', bordo: '',
+  font: 'system',
+  raggio: 14,                // spigoli (0) → pillola (999)
+  stileBtn: 'pieno',         // pieno | contorno | vetro
+  ombra: true,
+  anim: 'rise',              // nessuna | fade | rise | pop
+  avatarForma: 'cerchio',    // cerchio | quadrato | nessuno
+  larghezza: 30,             // rem: quanto è larga la colonna
+  allinea: 'centro',         // centro | sinistra
+};
+
+export const linkPage = {
+  _riga(r) {
+    const leggi = (s, def) => { try { const p = JSON.parse(s || 'null'); return p && typeof p === 'object' ? p : def; } catch { return def; } };
+    const tema = { ...TEMA_DEF, ...leggi(r.tema, {}) };
+    let blocchi = leggi(r.blocchi, null);
+    if (!Array.isArray(blocchi)) {
+      // pagina salvata prima dei blocchi: i vecchi `links` diventano blocchi link
+      let vecchi = []; try { const p = JSON.parse(r.links || '[]'); if (Array.isArray(p)) vecchi = p; } catch { vecchi = []; }
+      blocchi = vecchi.map((l) => ({ tipo: 'link', icona: l.icona || iconaDaUrl(l.url), label: l.label || '', url: l.url || '', sotto: '', evidenzia: false }));
+      if (!tema.accent && r.accent) tema.accent = r.accent;
+      if (!tema.bg && r.bg) tema.bg = r.bg;
+    }
+    return { ...r, tema, blocchi, attiva: r.attiva !== 0 };
+  },
+  get(channel) {
+    const r = db.prepare('SELECT * FROM link_page WHERE channel=?').get(String(channel).toLowerCase());
+    return r ? this._riga(r) : null;
+  },
+  conDefault(channel, display) {
+    const r = this.get(channel);
+    if (r) return r;
+    return { channel: String(channel).toLowerCase(), headline: display || channel, tagline: '',
+      template: 'minimal', avatar: '', tema: { ...TEMA_DEF }, blocchi: [], attiva: true, ts: 0, vuota: true };
+  },
+  esiste(channel) { return !!this.get(channel); },
+
+  // Ripulisce e salva. È l'UNICO punto in cui si decide cosa è valido: se un
+  // contenuto non passa da qui non finisce sulla pagina, e il chiamante può
+  // dire quanti pezzi ha scartato invece di annunciare un successo che non c'è.
+  // Sanifica SENZA scrivere: la usa l'anteprima, così vede esattamente ciò che
+  // verrebbe salvato. salva() la richiama, quindi c'è una sola regola.
+  pulisci(d = {}) {
+    const L = LIMITI_LINKPAGE;
+    const hex = (v) => (/^#[0-9a-f]{3,8}$/i.test(String(v || '')) ? String(v) : '');
+    const str = (v, max) => String(v ?? '').trim().slice(0, max);
+    const urlOk = (v) => { const u = String(v || '').trim(); return (/^https?:\/\/[^\s]+\.[^\s]/i.test(u) && u.length <= L.url) ? u : ''; };
+    const scelta = (v, ammessi, def) => (ammessi.includes(v) ? v : def);
+    const num = (v, min, max, def) => { const n = Number(v); return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.round(n))) : def; };
+
+    const t = d.tema && typeof d.tema === 'object' ? d.tema : {};
+    const tema = {
+      sfondoTipo: scelta(t.sfondoTipo, ['tinta', 'gradiente', 'immagine'], 'tinta'),
+      bg: hex(t.bg), bg2: hex(t.bg2), angolo: num(t.angolo, 0, 360, 160), sfondoUrl: urlOk(t.sfondoUrl),
+      effetto: scelta(t.effetto, ['nessuno', 'aurora', 'maglia', 'grana', 'bolle'], 'nessuno'),
+      testo: hex(t.testo), accent: hex(t.accent), card: hex(t.card), bordo: hex(t.bordo),
+      font: scelta(t.font, FONT_LINKPAGE, 'system'),
+      raggio: num(t.raggio, 0, 999, 14),
+      stileBtn: scelta(t.stileBtn, ['pieno', 'contorno', 'vetro'], 'pieno'),
+      ombra: t.ombra !== false,
+      anim: scelta(t.anim, ['nessuna', 'fade', 'rise', 'pop'], 'rise'),
+      avatarForma: scelta(t.avatarForma, ['cerchio', 'quadrato', 'nessuno'], 'cerchio'),
+      larghezza: num(t.larghezza, 20, 46, 30),
+      allinea: scelta(t.allinea, ['centro', 'sinistra'], 'centro'),
+    };
+
+    const visti = new Set();
+    const blocchi = (Array.isArray(d.blocchi) ? d.blocchi : []).reduce((out, b) => {
+      if (out.length >= L.blocchi || !b || typeof b !== 'object') return out;
+      const tipo = scelta(b.tipo, TIPI_BLOCCO, null);
+      if (!tipo) return out;
+      if (tipo === 'link') {
+        const url = urlOk(b.url); const label = str(b.label, L.label);
+        if (!url || !label || visti.has(url)) return out;       // niente doppioni
+        visti.add(url);
+        out.push({ tipo, url, label, sotto: str(b.sotto, L.sotto),
+          icona: scelta(b.icona, ICONE_LINKPAGE, null) || iconaDaUrl(url),
+          evidenzia: b.evidenzia === true });
+      } else if (tipo === 'titolo') {
+        const testo = str(b.testo, L.titolo); if (testo) out.push({ tipo, testo });
+      } else if (tipo === 'testo') {
+        const testo = str(b.testo, L.testo); if (testo) out.push({ tipo, testo });
+      } else if (tipo === 'separatore') {
+        out.push({ tipo });
+      } else if (tipo === 'social') {
+        const voci = (Array.isArray(b.voci) ? b.voci : []).reduce((v, s) => {
+          if (v.length >= L.social) return v;
+          const url = urlOk(s?.url); if (!url) return v;
+          v.push({ url, icona: scelta(s?.icona, ICONE_LINKPAGE, null) || iconaDaUrl(url) });
+          return v;
+        }, []);
+        if (voci.length) out.push({ tipo, voci });
+      } else if (tipo === 'embed') {
+        const url = urlOk(b.url); if (url) out.push({ tipo, url });
+      } else if (tipo === 'immagine') {
+        const url = urlOk(b.url); if (url) out.push({ tipo, url, alt: str(b.alt, 140) });
+      }
+      return out;
+    }, []);
+
+    const av = String(d.avatar || '').trim();
+    return {
+      headline: str(d.headline, L.headline),
+      tagline: str(d.tagline, L.tagline),
+      template: scelta(d.template, TEMPLATE_LINKPAGE, 'minimal'),
+      avatar: av === 'no' ? 'no' : (urlOk(av) || ''),
+      tema, blocchi,
+      attiva: d.attiva !== false,
+    };
+  },
+
+  salva(channel, d = {}) {
+    const c = String(channel).toLowerCase();
+    const p = this.pulisci(d);
+    const v = {
+      channel: c,
+      headline: p.headline,
+      tagline: p.tagline,
+      template: p.template,
+      accent: p.tema.accent, bg: p.tema.bg,        // copia per compatibilità
+      links: '',                                   // sostituito dai blocchi
+      avatar: p.avatar,
+      tema: JSON.stringify(p.tema),
+      blocchi: JSON.stringify(p.blocchi),
+      attiva: p.attiva === false ? 0 : 1,
+      ts: now(),
+    };
+    db.prepare(`INSERT INTO link_page (channel, headline, tagline, template, accent, bg, links, avatar, tema, blocchi, attiva, ts)
+      VALUES (@channel,@headline,@tagline,@template,@accent,@bg,@links,@avatar,@tema,@blocchi,@attiva,@ts)
+      ON CONFLICT(channel) DO UPDATE SET headline=excluded.headline, tagline=excluded.tagline,
+        template=excluded.template, accent=excluded.accent, bg=excluded.bg, links=excluded.links,
+        avatar=excluded.avatar, tema=excluded.tema, blocchi=excluded.blocchi,
+        attiva=excluded.attiva, ts=excluded.ts`).run(v);
+    return this.get(c);
+  },
+  rimuovi(channel) { db.prepare('DELETE FROM link_page WHERE channel=?').run(String(channel).toLowerCase()); },
+};
+
 // NB: distinto dai `counters` di sotto (store low-level usato dalle azioni dei moduli).
 export const contatori = {
   list(channel) { return db.prepare('SELECT * FROM contatori WHERE channel=? ORDER BY comando').all(String(channel).toLowerCase()); },

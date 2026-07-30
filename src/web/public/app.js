@@ -174,7 +174,9 @@ async function caricaStato() {
   render();
   // promo "settimana gratis" appena assegnata
   if (new URLSearchParams(location.search).get('promo') === '1') {
-    toast(L('Hai ricevuto una settimana Pro gratis — esplora tutto SocialBot!', 'You got a free Pro week — explore all of SocialBot!', 'Tienes una semana Pro gratis — explora todo SocialBot!'));
+    // il dettaglio (cosa, fino a quando, cosa accade dopo) sta nel banner
+    // persistente in cima alla scheda Stato: qui solo il richiamo.
+    toast(L('Hai vinto una prova gratuita — i dettagli sono qui sopra.', 'You won a free trial — the details are right above.', 'Has ganado una prueba gratuita — los detalles están arriba.'));
     try { history.replaceState(null, '', '/'); } catch { /* niente */ }
   }
 }
@@ -282,52 +284,35 @@ function _demoGet(via) {
     '/api/me': statoDemo(),
     '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://socialbot.live/tiktok/callback' },
     '/api/discord/stato': { configurato: false, attivo: false, messaggio: '', nomeBot: '', avatar: '', anteprima: '' },
-    '/api/linkpage': { esiste: true, url: 'https://socialbot.live/u/andryxify', aBlocchi: false, urlEditorAvanzato: 'https://www.andryxify.it/impostazioni', templates: ['minimal','neon','retro','sunset','glass'],
-      limiti: { headline: 80, tagline: 160, label: 40, icona: 24, link: 12 },
-      pagina: { template: 'neon', accent: '#6d3bef', bg: '#0b0813', headline: 'Andry · streamer',
-        tagline: 'Ogni sera su Twitch, di solito a fare danni',
-        links: [ { icon: '🎮', label: 'Twitch', url: 'https://twitch.tv/andryxify' }, { icon: '📸', label: 'Instagram', url: 'https://instagram.com/andryxify' }, { icon: '💬', label: 'Discord', url: 'https://discord.gg/andryxify' } ], aggiornata: null } },
-    '/api/contatori': { contatori: [{ comando: 'morti', etichetta: 'Morti', emoji: '💀', valore: 3, step: 1, auto_parola: '', reward_id: '', overlayCfg: { mostra: true, x: 6, y: 84, colore: '#ffffff', sfondo: 'transparent', dim: 40, grassetto: true, font: 'system', formato: '{emoji} {etichetta}: {valore}' } }, { comando: 'lol', etichetta: 'Risate', emoji: '😂', valore: 12, step: 1, auto_parola: 'lol', reward_id: '', overlayCfg: { mostra: false, x: 6, y: 84, colore: '#ffffff', sfondo: 'transparent', dim: 40, grassetto: true, font: 'system', formato: '{emoji} {etichetta}: {valore}' } }] },
-    '/api/seventv/stato': { collegato: true, username: 'andryxify', setId: 'demo7tvset' },
-    '/api/tgapp/login-stato': { attiva: true, oidc: true, bot: 'socialbot', collegato: true, username: 'andryxify', nome: 'Andry' },
-    '/api/seventv/emotes': { id: 'demo7tvset', nome: 'andryxify · emotes', capienza: 1000, usate: 4, emotes: [
-      { id: '60aeab8df6a2c3b332d92b73', nome: 'peepoHappy', url: 'https://cdn.7tv.app/emote/60aeab8df6a2c3b332d92b73/2x.webp', animato: false },
-      { id: '603cb219c20d020014423c34', nome: 'catJAM', url: 'https://cdn.7tv.app/emote/603cb219c20d020014423c34/2x.webp', animato: true },
-      { id: '60ae958e229664e8667aea38', nome: 'Clap', url: 'https://cdn.7tv.app/emote/60ae958e229664e8667aea38/2x.webp', animato: true },
-      { id: '60aea79b229664e8667a9c99', nome: 'Sadge', url: 'https://cdn.7tv.app/emote/60aea79b229664e8667a9c99/2x.webp', animato: false },
-    ] },
-    '/api/seventv/cerca': { items: [
-      { id: '60aeec1b259ac5a73e56a426', nome: 'EZ', url: 'https://cdn.7tv.app/emote/60aeec1b259ac5a73e56a426/2x.webp', animato: false, autore: '7TV' },
-      { id: '60ae65b29627b8f6c5e2dd93', nome: 'PogU', url: 'https://cdn.7tv.app/emote/60ae65b29627b8f6c5e2dd93/2x.webp', animato: false, autore: '7TV' },
-      { id: '60b00d1f0d3a78a196f803e3', nome: 'AlienPls', url: 'https://cdn.7tv.app/emote/60b00d1f0d3a78a196f803e3/2x.webp', animato: true, autore: '7TV' },
-    ], totale: 3 },
-    '/api/admin/llm': {
-      scelta: {
-        modello: 'gemma-uncensored',
-        endpoint: { url: 'http://192.168.1.50:1234/v1', modello: 'mistral-nemo', chiave: '', solo: false },
-      },
-      modelli: [
-        { id: 'auto', nome: 'Automatico (in base alla RAM del server)' },
-        { id: 'qwen', nome: 'Qwen 2.5 3B — equilibrato' },
-        { id: 'gemma', nome: 'Gemma 2 2B — veloce' },
-        { id: 'gemma-uncensored', nome: 'Gemma 2 2B — senza freni (abliterated)' },
-      ],
-      modelliLocali: [
-        { nome: 'lia-forgiata.gguf', mb: 4630 },
-        { nome: 'qwen2.5-3b-instruct-q5_k_m.gguf', mb: 2100 },
-      ],
-      stato: {
-        stato: 'pronto', modello: 'gemma-2-2b-it-abliterated-Q4_K_M.gguf',
-        endpoint: { configurato: true, url: 'http://192.168.1.50:1234/v1', modello: 'mistral-nemo', solo: false, ok: true, motivo: null },
-        rete: { canali: 1, nodi: 128, solidi: 74, curiosita: 0.34, fiducia: 0.61 },
-      },
-    },
-    '/api/streamer/rete': {
-      nodi: 128, solidi: 74, corpus: 52, curiosita: 0.34, fiducia: 0.61, lacune: 12,
-      non_so: ['come si chiama il tuo gatto?', 'quando esce il prossimo video?'],
-      pensiero: 'Mi sono svegliata. So rispondere a 74 cose (fiducia 61%). Oggi voglio capire meglio: «come si chiama il tuo gatto?».',
-      ragiona: { fatti: 41, dedotti: 12, contraddizioni: [] },
-    },
+    '/api/abbonamento/piani': { attivo: false,
+      free: { id: 'free', nome: 'Essenziale', prezzoTesto: 'Gratis', sommario: 'Gratis, basta registrarsi.' },
+      base: { id: 'base', nome: 'Base', prezzoTesto: '\u20ac2,99/mese', sommario: 'Studio Web e un moderatore.' },
+      addon: [
+        { id: 'giochi', nome: 'Giochi & Classifiche', prezzoTesto: '\u20ac2,79/mese', sommario: 'Minigiochi, monete, classifiche e VIP.' },
+        { id: 'effetti', nome: 'Effetti & Punti canale', prezzoTesto: '\u20ac1,79/mese', sommario: 'Alert ed effetti riscattabili a punti canale.' },
+        { id: 'notifiche', nome: 'Social & Notifiche', prezzoTesto: '\u20ac2,99/mese', sommario: 'Avvisi live su Telegram e Discord.' },
+        { id: 'clip', nome: 'Clip Automatiche', prezzoTesto: '\u20ac0,99/mese', sommario: 'I momenti migliori clippati da soli.' },
+        { id: 'voce', nome: 'Comandi Vocali', prezzoTesto: '\u20ac0,99/mese', sommario: 'Guida il bot parlando.' },
+        { id: 'squadra', nome: 'Squadra', prezzoTesto: '\u20ac2,99/mese', sommario: 'Fino a 10 moderatori.' },
+        { id: 'musica', nome: 'Richieste Musicali', prezzoTesto: '\u20ac2,79/mese', sommario: 'Canzoni in coda su Spotify con !sr.' },
+      ], bundle: [] },
+    '/api/linkpage': { url: 'https://socialbot.live/u/andryxify', pubblicata: true,
+      templates: ['minimal','neon','retro','sunset','glass','brutal','pastello'],
+      fonts: ['system','inter','mono','serif','condensato','tondo'],
+      icone: ['link','twitch','youtube','instagram','tiktok','discord','spotify','x','telegram','kick','github','cuore','stella','regalo','carrello','calendario','mail','musica','video','scarica','gioco','caffe','soldi'],
+      tipi: ['link','titolo','testo','separatore','social','embed','immagine'],
+      limiti: { headline: 80, tagline: 200, label: 60, sotto: 90, url: 500, blocchi: 40, social: 12, testo: 500, titolo: 60 },
+      avatarTwitch: '', suggeriti: [],
+      pagina: { template: 'neon', avatar: '', attiva: true, aggiornata: null,
+        headline: 'Andry \u00b7 streamer', tagline: 'Ogni sera su Twitch, di solito a fare danni',
+        tema: { sfondoTipo: 'gradiente', bg: '#07060d', bg2: '#1a0f33', angolo: 165, sfondoUrl: '', effetto: 'aurora',
+          testo: '', accent: '', card: '', bordo: '', font: 'system', raggio: 14, stileBtn: 'pieno',
+          ombra: true, anim: 'rise', avatarForma: 'cerchio', larghezza: 30, allinea: 'centro' },
+        blocchi: [ { tipo: 'link', icona: 'twitch', label: 'Twitch', url: 'https://twitch.tv/andryxify', sotto: 'Ogni sera dalle 21', evidenzia: true },
+          { tipo: 'titolo', testo: 'I MIEI SOCIAL' },
+          { tipo: 'social', voci: [ { icona: 'instagram', url: 'https://instagram.com/andryxify' }, { icona: 'tiktok', url: 'https://tiktok.com/@andryxify' }, { icona: 'discord', url: 'https://discord.gg/andryxify' } ] },
+          { tipo: 'separatore' },
+          { tipo: 'link', icona: 'caffe', label: 'Offrimi un caff\u00e8', url: 'https://ko-fi.com/andryxify', sotto: '', evidenzia: false } ] } },
     '/api/streamer/premi': {
       permessoOk: true,
       effetti: ['airhorn', 'applausi', 'risata'],
@@ -1104,6 +1089,7 @@ function vistaDisabilitato() {
 const GRUPPI = [
   { id: 'panoramica', nome: 'Panoramica', schede: [
     ['stato', 'Stato'],
+    ['sottoscrizione', 'Sottoscrizione'],
   ] },
   { id: 'personaggio', nome: 'Personaggio', schede: [
     ['personalita', 'Personalità'],
@@ -1153,7 +1139,6 @@ const T_GRUPPO = {
   interazione: ['Interazione', 'Interaction', 'Interacción'],
   overlay: ['Overlay', 'Overlay', 'Overlay'],
   notifiche: ['Notifiche', 'Notifications', 'Notificaciones'],
-  pagina: ['Pagina link', 'Link page', 'Página de enlaces'],
   admin: ['Admin', 'Admin', 'Admin'],
 };
 const T_SCHEDA = {
@@ -1175,6 +1160,9 @@ const T_SCHEDA = {
   alert: ['Overlay Studio', 'Overlay Studio', 'Overlay Studio'],
   emote: ['7TV · Emote', '7TV · Emotes', '7TV · Emotes'],
   notifiche: ['Notifiche', 'Notifications', 'Notificaciones'],
+  sottoscrizione: ['Sottoscrizione', 'Subscription', 'Suscripción'],
+  pagina: ['Pagina link', 'Link page', 'Página de enlaces'],
+  effetti: ['Effetti & suoni', 'Effects & sounds', 'Efectos y sonidos'],
   admin: ['Admin', 'Admin', 'Admin'],
 };
 const tGruppo = (id, fb) => { const t = T_GRUPPO[id]; return t ? L(t[0], t[1], t[2]) : (fb || id); };
@@ -1208,6 +1196,7 @@ const ICONA = {
   alert:       _ico('<rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/><path d="M6 8h4"/><path d="M6 11h2"/>'),
   emote:       _ico('<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><line x1="9" x2="9.01" y1="9.5" y2="9.5"/><line x1="15" x2="15.01" y1="9.5" y2="9.5"/>'),
   notifiche:   _ico('<path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5 2 6H4c.5-1 2-2 2-6"/><path d="M10.3 20a1.9 1.9 0 0 0 3.4 0"/>'),
+  sottoscrizione: _ico('<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 14.5h4"/>'),
   pagina:      _ico('<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.8 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.8-1.7"/>'),
   admin:       _ico('<path d="M4 8.5 7.5 16h9L20 8.5l-4.3 3L12 5 8.3 11.5z"/><path d="M7.5 19h9"/>'),
 };
@@ -1234,6 +1223,7 @@ const DESC = {
   alert: ['Il tuo overlay OBS: alert, chat a schermo, widget e temi, tutto personalizzabile.', 'Your OBS overlay: alerts, on-screen chat, widgets and themes, all customizable.', 'Tu overlay para OBS: alertas, chat en pantalla, widgets y temas, todo personalizable.'],
   emote: ['Gestisci le emote 7TV del tuo canale: aggiungi, togli e rinomina, senza uscire dal bot.', 'Manage your channel’s 7TV emotes: add, remove and rename, without leaving the bot.', 'Gestiona las emotes 7TV de tu canal: añade, quita y renombra, sin salir del bot.'],
   notifiche: ['Avvisi su Telegram e Discord quando vai in diretta, e dei nuovi post su TikTok, YouTube e Instagram.', 'Alerts on Telegram and Discord when you go live, and for new posts on TikTok, YouTube and Instagram.', 'Avisos en Telegram y Discord cuando estás en directo, y de los nuevos posts en TikTok, YouTube e Instagram.'],
+  sottoscrizione: ['Cosa hai attivo, cosa comprende e come annullare.', 'What you have active, what it includes and how to cancel.', 'Qué tienes activo, qué incluye y cómo cancelar.'],
   pagina: ['La tua pagina pubblica con tutti i link, su socialbot.live/u/iltuonome.', 'Your public page with all your links, at socialbot.live/u/yourname.', 'Tu página pública con todos tus enlaces, en socialbot.live/u/tunombre.'],
   admin: ['Gestione streamer e anima condivisa del bot.', 'Streamer management and the bot’s shared soul.', 'Gestión de streamers y el alma compartida del bot.'],
 };
@@ -1329,6 +1319,8 @@ const GUIDE = {
     come: [['Scorri le statistiche per capire quando la chat è più viva.', 'Scroll the stats to see when chat is most alive.', 'Repasa las estadísticas para ver cuándo el chat está más vivo.'], ['Controlla i ricordi: puoi cancellare quelli sbagliati.', 'Check the memories: you can delete the wrong ones.', 'Revisa los recuerdos: puedes borrar los equivocados.'], ['Se qualcosa non ti piace, correggilo dalla scheda Conoscenza.', 'If something’s off, fix it from the Knowledge tab.', 'Si algo no te gusta, corrígelo desde la pestaña Conocimiento.']] },
   regia: { serve: ['Gestire la diretta dal pannello: titolo, categoria, marker e le azioni rapide, senza aprire Twitch.', 'Run your stream from the panel: title, category, markers and quick actions, without opening Twitch.', 'Gestionar el directo desde el panel: título, categoría, marcadores y acciones rápidas, sin abrir Twitch.'],
     come: [['Cambia titolo e categoria e salva: si aggiornano su Twitch subito.', 'Change title and category and save: they update on Twitch right away.', 'Cambia título y categoría y guarda: se actualizan en Twitch al instante.'], ['Usa le azioni rapide durante la live (marker, clip, annunci).', 'Use the quick actions during the stream (marker, clip, announcements).', 'Usa las acciones rápidas durante el directo (marcador, clip, anuncios).'], ['Tieni il pannello aperto su un secondo schermo mentre streami.', 'Keep the panel open on a second screen while you stream.', 'Ten el panel abierto en una segunda pantalla mientras emites.']] },
+  sottoscrizione: { serve: ['Vedere cosa hai attivo, cosa comprende, quanto paghi e come cambiarlo o annullarlo.', 'See what you have active, what it includes, what you pay and how to change or cancel it.', 'Ver qué tienes activo, qué incluye, cuánto pagas y cómo cambiarlo o cancelarlo.'],
+    come: [['In cima leggi il piano attuale e, se è una prova, fino a quando dura.', 'At the top you read your current plan and, if it’s a trial, how long it lasts.', 'Arriba lees tu plan actual y, si es una prueba, hasta cuándo dura.'], ['Sotto vedi quali funzioni sono accese e quali no, senza gerghi.', 'Below you see which features are on and which aren’t, no jargon.', 'Debajo ves qué funciones están activas y cuáles no, sin jerga.'], ['Da «Gestisci» apri il portale dei pagamenti: fatture, carta e disdetta.', 'From “Manage” you open the payment portal: invoices, card and cancellation.', 'Desde «Gestionar» abres el portal de pagos: facturas, tarjeta y cancelación.']] },
   pagina: { serve: ['Avere una pagina pubblica con tutti i tuoi link (Twitch, social, Discord, donazioni) da mettere nella bio di Instagram o TikTok.', 'Have a public page with all your links (Twitch, socials, Discord, donations) to put in your Instagram or TikTok bio.', 'Tener una página pública con todos tus enlaces (Twitch, redes, Discord, donaciones) para poner en la bio de Instagram o TikTok.'],
     come: [['Scrivi titolo e sottotitolo: è quello che si legge in cima.', 'Write a headline and tagline: that’s what people read at the top.', 'Escribe título y subtítulo: es lo que se lee arriba.'], ['Aggiungi i link con etichetta e indirizzo (l’emoji è facoltativa).', 'Add your links with a label and address (the emoji is optional).', 'Añade los enlaces con etiqueta y dirección (el emoji es opcional).'], ['Scegli stile e colori, salva e apri l’anteprima.', 'Pick style and colours, save and open the preview.', 'Elige estilo y colores, guarda y abre la vista previa.']] },
   regole: { serve: ['Moderazione automatica: filtra spam, link e flood e dà timeout ai recidivi.', 'Automatic moderation: filters spam, links and flood, and times out repeat offenders.', 'Moderación automática: filtra spam, enlaces y flood, y da timeout a los reincidentes.'],
@@ -1637,11 +1629,49 @@ function titoloParole(t, off = 0) {
     .join(' ');
 }
 
+
+// ─────────────────────────── prova gratuita in corso ─────────────────────────
+// La promo "settimana gratis" (config.promo) regala qualche giorno di Pro a un
+// nuovo iscritto. Se resta INVISIBILE, la persona si ritrova per caso in Pro e
+// poi viene declassata senza capire perche: la dichiariamo sempre, ovunque.
+function provaInCorso() {
+  const a = stato?.abbonamento;
+  if (!a || a.status !== 'trialing') return null;
+  const fine = Number(a.fine) || 0;
+  const giorni = fine ? Math.max(0, Math.ceil((fine - Date.now()) / 86400000)) : null;
+  const tutto = (a.pacchetti || []).length >= 7;   // Base + tutti i pacchetti
+  return { tier: a.tier || 'base', tutto, fine, giorni };
+}
+
+// Banner persistente (non un toast che svanisce): finche la prova e attiva si
+// vede in cima alla dashboard, con la scadenza e cosa accadra dopo.
+function bannerProvaHtml() {
+  const p = provaInCorso();
+  if (!p) return '';
+  // "Pro" non esiste piu nel catalogo: una prova completa si chiama con quello
+  // che da davvero (Base + tutti i pacchetti), non con un nome che non si puo
+  // nemmeno rinnovare. 'Pro' resta solo per gli abbonati storici.
+  const nome = p.tier === 'pro' ? 'Pro'
+    : (p.tutto ? L('tutto', 'everything', 'todo') : 'Base');
+  const quando = p.giorni === null ? ''
+    : (p.giorni === 0 ? L('scade oggi', 'ends today', 'termina hoy')
+      : p.giorni === 1 ? L('scade domani', 'ends tomorrow', 'termina mañana')
+        : L(`ancora ${p.giorni} giorni`, `${p.giorni} days left`, `quedan ${p.giorni} días`));
+  return `<div class="carta evidenziata prova-banner">
+    <h2>${_hIco(ICO.pacco)}${L('Stai provando', 'You’re trying', 'Estás probando')} ${esc(nome)} ${L('gratis', 'for free', 'gratis')}${quando ? ` <span class="badge">${esc(quando)}</span>` : ''}</h2>
+    <p>${L('Ti è stata assegnata una <strong>prova gratuita</strong> al primo accesso: per qualche giorno hai tutte le funzioni sbloccate, senza aver pagato nulla e senza carta.', 'You were given a <strong>free trial</strong> on your first login: for a few days every feature is unlocked, without paying anything and with no card.', 'Se te ha asignado una <strong>prueba gratuita</strong> en tu primer acceso: durante unos días tienes todas las funciones desbloqueadas, sin pagar nada y sin tarjeta.')}
+    ${p.fine ? `<br>${L('Finisce il', 'It ends on', 'Termina el')} <strong class="primo-piano">${esc(dataIt(p.fine))}</strong>.` : ''}</p>
+    <p class="suggerimento spazio-sopra">${L('Quando finisce <strong>non perdi nulla di quello che hai configurato</strong>: torni al pacchetto <strong>Essenziale</strong> (gratuito) e le funzioni in più si limitano a spegnersi. Puoi riaccenderle quando vuoi scegliendo un pacchetto.', 'When it ends <strong>you lose nothing you configured</strong>: you go back to the <strong>Essenziale</strong> package (free) and the extra features simply switch off. You can turn them back on any time by picking a package.', 'Cuando termina <strong>no pierdes nada de lo que has configurado</strong>: vuelves al paquete <strong>Essenziale</strong> (gratuito) y las funciones extra simplemente se apagan. Puedes reactivarlas cuando quieras eligiendo un paquete.')}</p>
+    <p class="spazio-sopra"><a class="btn secondario" href="#stato" data-scheda="stato">${L('Vedi i pacchetti', 'See the packages', 'Ver los paquetes')}</a></p>
+  </div>`;
+}
+
 function vistaPiattaforma() {
   // Ordine dei pannelli = ordine del menu (leggibilità del codice; a schermo
   // compare comunque solo la sezione attiva).
   return `
     ${pannelloStato()}
+    ${pannelloSottoscrizione()}
     ${pannelloPersonalita()}
     ${pannelloConoscenza()}
     ${pannelloMemoria()}
@@ -1695,7 +1725,7 @@ function pannelloStato() {
     </div>`;
 
   return pannello('stato', `
-    ${bannerMod}${cardPermessi}
+    ${bannerProvaHtml()}${bannerMod}${cardPermessi}
     <div class="carta">
       <h2>${L('Il tuo bot', 'Your bot', 'Tu bot')}</h2>
       <div class="riga-interruttore spazio-sopra">
@@ -1767,13 +1797,20 @@ function pannelloStato() {
     </div>
     ${proprietario ? (() => {
       // nomi dei pacchetti: sempre in italiano, sono nomi propri del prodotto
-      const nomi = { community: 'Community', free: 'Essenziale', base: 'Base', pro: 'Pro' };
+      // 'Pro' non e piu acquistabile: resta solo per gli abbonati storici
+  const nomi = { community: 'Community', free: 'Essenziale', base: 'Base', pro: 'Pro (storico)' };
       const tier = stato.tier || 'community';
       const pagato = tier === 'base' || tier === 'pro';
       return `
     <div class="carta">
       <h2>${_hIco(ICO.carta)}${L('Abbonamento', 'Subscription', 'Suscripción')}</h2>
-      <p>${L('Piano attuale:', 'Current plan:', 'Plan actual:')} <strong class="primo-piano">${esc(nomi[tier] || '—')}</strong>${tier === 'community' ? L(' — accesso completo, riservato ai membri abilitati di andryxify.it.', ' — full access, reserved for enabled andryxify.it members.', ' — acceso completo, reservado a los miembros habilitados de andryxify.it.') : ''}</p>
+      <p>${L('Piano attuale:', 'Current plan:', 'Plan actual:')} <strong class="primo-piano">${esc(nomi[tier] || '—')}</strong>${(() => {
+        const p = provaInCorso();
+        if (p) return ` <span class="badge giallo">${L('prova gratuita', 'free trial', 'prueba gratuita')}</span>` + (p.fine ? ` — ${L('fino al', 'until', 'hasta el')} <strong class="primo-piano">${esc(dataIt(p.fine))}</strong>, ${L('poi torni all\'Essenziale (gratuito).', 'then you go back to Essenziale (free).', 'luego vuelves a Essenziale (gratuito).')}` : '');
+        if (tier === 'community') return L(' — accesso completo, riservato ai membri abilitati di andryxify.it.', ' — full access, reserved for enabled andryxify.it members.', ' — acceso completo, reservado a los miembros habilitados de andryxify.it.');
+        if (tier === 'free') return L(' — gratuito: comandi illimitati, moderazione, overlay e contatori. Nessuna scadenza.', ' — free: unlimited commands, moderation, overlay and counters. No expiry.', ' — gratuito: comandos ilimitados, moderación, overlay y contadores. Sin caducidad.');
+        return '';
+      })()}</p>
       ${pagato
         ? `<p class="spazio-sopra"><button class="btn secondario" id="btn-portale-abbonamento">${L('Gestisci abbonamento', 'Manage subscription', 'Gestionar suscripción')}</button></p>`
         : (tier === 'community' ? '' : `<p class="suggerimento spazio-sopra">${L('Gli abbonamenti self-service stanno arrivando.', 'Self-service subscriptions are coming soon.', 'Las suscripciones self-service están al llegar.')}</p>`)}
@@ -5819,34 +5856,213 @@ function _xlaGrabFn() {
 // href del bookmarklet: la funzione su una riga sola, pronta da trascinare nei preferiti.
 const bookmarkletXla = 'javascript:(' + _xlaGrabFn.toString().replace(/\n\s*/g, ' ') + ')()';
 
+// --- Sottoscrizione: il tuo piano, cosa comprende, come si annulla ---------
+// Pagina unica e onesta per TUTTI i casi: gratuito (Essenziale), abbonato
+// (Base + pacchetti), prova gratuita in corso, membro community. Nessun
+// "piano attuale: —" e nessuna sorpresa: si vede sempre cosa hai, fino a
+// quando, quanto paghi e cosa accade se annulli.
+function pannelloSottoscrizione() {
+  return pannello('sottoscrizione', `
+    <div class="carta">
+      <h2>${_hIco(ICO.carta)}${L('La tua sottoscrizione', 'Your subscription', 'Tu suscripción')}</h2>
+      <p>${L('Qui vedi cosa hai attivo, cosa comprende e come cambiarlo o annullarlo. Nessun vincolo: si disdice quando vuoi.', 'Here you see what you have, what it includes and how to change or cancel it. No lock-in: cancel whenever you want.', 'Aquí ves qué tienes activo, qué incluye y cómo cambiarlo o cancelarlo. Sin compromiso: se cancela cuando quieras.')}</p>
+      <div id="sott-box" class="spazio-sopra"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+    </div>`);
+}
+
+async function caricaSottoscrizione() {
+  const box = document.getElementById('sott-box'); if (!box) return;
+  let piani = null;
+  try { piani = await api('/api/abbonamento/piani'); } catch { /* si mostra comunque il piano */ }
+
+  const tier = stato.tier || 'free';
+  const prova = provaInCorso();
+  const ab = stato.abbonamento || null;
+  const mieiPacchetti = new Set(ab?.pacchetti || []);
+  const nomi = { community: 'Community', free: 'Essenziale', base: 'Base', pro: 'Pro (storico)' };
+  const f = stato.funzioni || {};
+
+  // ── 1) intestazione: cosa hai, adesso, in una riga ──
+  let riga, tono;
+  if (tier === 'community') {
+    tono = 'verde';
+    riga = L('Sei un <strong>membro abilitato</strong> della community di andryxify.it: hai tutto, gratis, senza scadenza. Non c\'è niente da gestire né da pagare.',
+      'You’re an <strong>enabled member</strong> of the andryxify.it community: you have everything, free, with no expiry. There’s nothing to manage or pay.',
+      'Eres un <strong>miembro habilitado</strong> de la comunidad de andryxify.it: tienes todo, gratis, sin caducidad. No hay nada que gestionar ni pagar.');
+  } else if (prova) {
+    tono = 'giallo';
+    riga = L(`Stai usando una <strong>prova gratuita</strong> ${prova.tutto ? 'completa (Base + tutti i pacchetti)' : 'di ' + (nomi[prova.tier] || prova.tier)}${prova.fine ? `, fino al <strong>${esc(dataIt(prova.fine))}</strong>` : ''}. Non hai pagato nulla e non c'è nessuna carta collegata: alla scadenza torni all'<strong>Essenziale</strong> e non ti viene addebitato niente.`,
+      `You’re on a <strong>free trial</strong> ${prova.tutto ? 'of everything (Base + all packages)' : 'of ' + (nomi[prova.tier] || prova.tier)}${prova.fine ? `, until <strong>${esc(dataIt(prova.fine))}</strong>` : ''}. You paid nothing and no card is attached: when it ends you go back to <strong>Essenziale</strong> and nothing is charged.`,
+      `Estás con una <strong>prueba gratuita</strong> ${prova.tutto ? 'completa (Base + todos los paquetes)' : 'de ' + (nomi[prova.tier] || prova.tier)}${prova.fine ? `, hasta el <strong>${esc(dataIt(prova.fine))}</strong>` : ''}. No has pagado nada y no hay tarjeta: al terminar vuelves a <strong>Essenziale</strong> y no se te cobra nada.`);
+  } else if (tier === 'base' || tier === 'pro') {
+    tono = 'verde';
+    riga = L(`Hai il pacchetto <strong>${nomi[tier]}</strong> attivo${ab?.fine ? `, rinnovo il <strong>${esc(dataIt(ab.fine))}</strong>` : ''}.`,
+      `You have the <strong>${nomi[tier]}</strong> package active${ab?.fine ? `, renewing on <strong>${esc(dataIt(ab.fine))}</strong>` : ''}.`,
+      `Tienes el paquete <strong>${nomi[tier]}</strong> activo${ab?.fine ? `, renovación el <strong>${esc(dataIt(ab.fine))}</strong>` : ''}.`);
+  } else {
+    tono = '';
+    riga = L('Sei sull\'<strong>Essenziale</strong>: gratuito, senza scadenza e senza carta. Comandi e automazioni illimitati, moderazione, overlay per OBS e contatori a schermo sono già tuoi.',
+      'You’re on <strong>Essenziale</strong>: free, no expiry, no card. Unlimited commands and automations, moderation, OBS overlay and on-screen counters are already yours.',
+      'Estás en <strong>Essenziale</strong>: gratuito, sin caducidad y sin tarjeta. Comandos y automatizaciones ilimitados, moderación, overlay para OBS y contadores en pantalla ya son tuyos.');
+  }
+
+  // ── 2) cosa è acceso e cosa no, senza gerghi ──
+  const VOCI = [
+    ['moduli', L('Comandi e automazioni', 'Commands and automations', 'Comandos y automatizaciones')],
+    ['overlay', L('Overlay per OBS', 'OBS overlay', 'Overlay para OBS')],
+    ['studio', L('Studio Web (live senza OBS)', 'Web Studio (live without OBS)', 'Estudio Web (directo sin OBS)')],
+    ['effetti', L('Effetti e punti canale', 'Effects and channel points', 'Efectos y puntos de canal')],
+    ['giochi', L('Giochi e classifiche', 'Games and leaderboards', 'Juegos y clasificaciones')],
+    ['musica', L('Richieste musicali', 'Music requests', 'Peticiones musicales')],
+    ['clipAuto', L('Clip automatiche', 'Automatic clips', 'Clips automáticos')],
+    ['voce', L('Comandi a voce', 'Voice commands', 'Comandos por voz')],
+    ['notifiche', L('Avvisi live e nuovi post', 'Live and new-post alerts', 'Avisos de directo y nuevos posts')],
+  ];
+  const acceso = (k) => { const v = f[k]; return v === true || v === -1 || v === Infinity || (typeof v === 'number' && v > 0); };
+  const elenco = VOCI.map(([k, et]) => `<li class="sott-voce ${acceso(k) ? 'on' : 'off'}">
+      <span class="sott-segno">${acceso(k) ? '✓' : '·'}</span>${esc(et)}</li>`).join('');
+  const nMod = f.moderatori === -1 ? '∞' : (f.moderatori || 0);
+
+  // ── 3) pacchetti aggiuntivi: quelli che hai e quelli che potresti aggiungere ──
+  const addon = piani?.addon || [];
+  const tuoi = addon.filter((a) => mieiPacchetti.has(a.id));
+  const altri = addon.filter((a) => !mieiPacchetti.has(a.id) && !acceso(a.id));
+  const cardAddon = (a, mio) => `<div class="sott-pacc${mio ? ' mio' : ''}">
+      <strong>${esc(a.nome)}</strong>
+      <span class="sott-pacc-prezzo">${esc(a.prezzoTesto || '')}</span>
+      <span class="sott-pacc-som">${esc(a.sommario || '')}</span>
+      ${mio ? `<span class="badge verde">${L('attivo', 'active', 'activo')}</span>` : ''}
+    </div>`;
+
+  // ── 4) gestione: il portale Stripe fa pagamenti, fatture e disdetta ──
+  const haCliente = !!(tier === 'base' || tier === 'pro') && !prova;
+  const gestione = tier === 'community'
+    ? `<p class="suggerimento">${L('Niente da gestire: il tuo accesso arriva dalla community, non da un pagamento.', 'Nothing to manage: your access comes from the community, not from a payment.', 'Nada que gestionar: tu acceso viene de la comunidad, no de un pago.')}</p>`
+    : haCliente
+      ? `<p><button class="btn" id="sott-portale">${_bIco(ICO.carta)}${L('Gestisci, cambia carta o annulla', 'Manage, change card or cancel', 'Gestionar, cambiar tarjeta o cancelar')}</button></p>
+         <p class="suggerimento">${L('Si apre il portale sicuro dei pagamenti: lì trovi le <strong>fatture</strong>, puoi cambiare la <strong>carta</strong> e <strong>annullare</strong>. Se annulli resti attivo fino alla fine del periodo già pagato, poi torni all\'<strong>Essenziale</strong>: <strong>niente di quello che hai configurato viene cancellato</strong>, le funzioni in più si limitano a spegnersi.', 'The secure payment portal opens: there you find your <strong>invoices</strong>, you can change the <strong>card</strong> and <strong>cancel</strong>. If you cancel you stay active until the end of the period you already paid for, then you go back to <strong>Essenziale</strong>: <strong>nothing you configured is deleted</strong>, the extra features simply switch off.', 'Se abre el portal seguro de pagos: allí están tus <strong>facturas</strong>, puedes cambiar la <strong>tarjeta</strong> y <strong>cancelar</strong>. Si cancelas sigues activo hasta el final del periodo ya pagado, luego vuelves a <strong>Essenziale</strong>: <strong>nada de lo que has configurado se borra</strong>, las funciones extra simplemente se apagan.')}</p>`
+      : `<p class="suggerimento">${prova
+        ? L('Non c\'è nulla da annullare: la prova è gratuita e scade da sé, senza addebiti.', 'There’s nothing to cancel: the trial is free and expires on its own, with no charges.', 'No hay nada que cancelar: la prueba es gratuita y caduca sola, sin cargos.')
+        : L('Non hai pagamenti attivi, quindi non c\'è nulla da annullare.', 'You have no active payments, so there’s nothing to cancel.', 'No tienes pagos activos, así que no hay nada que cancelar.')}</p>`;
+
+  box.innerHTML = `
+    <div class="carta ${tono === 'verde' ? '' : tono === 'giallo' ? 'avviso' : 'evidenziata'} sott-testa">
+      <h3>${L('Piano attuale', 'Current plan', 'Plan actual')}: ${esc(nomi[tier] || tier)}${prova ? ` <span class="badge giallo">${L('prova gratuita', 'free trial', 'prueba gratuita')}</span>` : ''}</h3>
+      <p>${riga}</p>
+    </div>
+
+    <h3 class="spazio-sopra">${L('Cosa hai acceso', 'What you have on', 'Qué tienes activo')}</h3>
+    <ul class="sott-elenco">${elenco}</ul>
+    <p class="suggerimento">${L('Moderatori che puoi invitare:', 'Moderators you can invite:', 'Moderadores que puedes invitar:')} <strong class="primo-piano">${nMod}</strong></p>
+
+    ${tuoi.length ? `<h3 class="spazio-sopra">${L('I tuoi pacchetti', 'Your packages', 'Tus paquetes')}</h3>
+      <div class="sott-pacchetti">${tuoi.map((a) => cardAddon(a, true)).join('')}</div>` : ''}
+
+    ${altri.length && tier !== 'community' ? `<h3 class="spazio-sopra">${L('Puoi aggiungere', 'You can add', 'Puedes añadir')}</h3>
+      <div class="sott-pacchetti">${altri.map((a) => cardAddon(a, false)).join('')}</div>
+      <p class="spazio-sopra"><a class="btn secondario" href="#stato" data-scheda="stato">${L('Scegli i pacchetti', 'Pick packages', 'Elige los paquetes')} →</a></p>` : ''}
+
+    <h3 class="spazio-sopra">${L('Gestione e disdetta', 'Management and cancellation', 'Gestión y cancelación')}</h3>
+    ${gestione}`;
+
+  const bp = document.getElementById('sott-portale');
+  if (bp) bp.onclick = () => conErrore(async () => {
+    const r = await api('/api/abbonamento/portale', { method: 'POST', body: {} });
+    if (r?.url) location.href = r.url;
+    else toast(L('Portale non disponibile: scrivi ad andryxify e lo sistemiamo.', 'Portal not available: message andryxify and we’ll sort it out.', 'Portal no disponible: escribe a andryxify y lo arreglamos.'), 'errore');
+  });
+}
+
+// Icone della pagina link: le STESSE del renderer (src/features/linkpagina.js),
+// SVG a tratto. Niente emoji: cambiano forma su ogni sistema, non si colorano e
+// su una pagina che deve sembrare tua sono un difetto, non una scorciatoia.
+const LP_ICO = {
+  link: '<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.8 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.8-1.7"/>',
+  twitch: '<path d="M4 3h16v11l-4 4h-3l-3 3H8v-3H4z"/><path d="M11 8v4"/><path d="M15 8v4"/>',
+  youtube: '<rect x="2" y="5" width="20" height="14" rx="4"/><path d="M10 9.5l5 2.5-5 2.5z"/>',
+  instagram: '<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17" cy="7" r="1" fill="currentColor" stroke="none"/>',
+  tiktok: '<path d="M14 4v9a4 4 0 1 1-4-4"/><path d="M14 4a5 5 0 0 0 5 5"/>',
+  discord: '<path d="M8 5.5C6 6 4.5 7 4 8.5 2.8 12 3 16 4.5 18c1 1 2.5 1.5 3.5 1L9 17"/><path d="M16 5.5c2 .5 3.5 1.5 4 3 1.2 3.5 1 7.5-.5 9.5-1 1-2.5 1.5-3.5 1L15 17"/><circle cx="9.5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="14.5" cy="12" r="1.2" fill="currentColor" stroke="none"/>',
+  spotify: '<circle cx="12" cy="12" r="9"/><path d="M7.5 9.5c3-1 6.5-.6 9 1"/><path d="M8 13c2.5-.8 5.3-.5 7.4.9"/><path d="M8.5 16c2-.6 4.2-.4 5.9.7"/>',
+  x: '<path d="M4 4l16 16"/><path d="M20 4L4 20"/>',
+  twitter: '<path d="M22 5.9c-.7.3-1.5.6-2.3.7A4 4 0 0 0 12 9.5v1A11 11 0 0 1 3 5s-4 9 5 13a11 11 0 0 1-6 1.5c9 5 20 0 20-11.5 0-.3 0-.6-.1-.8A7.7 7.7 0 0 0 22 5.9z"/>',
+  telegram: '<path d="M21 4L3 11l5 2 2 6 3-4 5 4z"/><path d="M8 13l10-6"/>',
+  kick: '<path d="M4 4h4v5h2V6h2V4h6v6h-2v4h2v6h-6v-2h-2v-3H8v5H4z"/>',
+  github: '<path d="M9 19c-4 1.5-4-2.5-6-3m12 5v-3.9a3.4 3.4 0 0 0-1-2.6c3-.3 5-1.6 5-6a4.7 4.7 0 0 0-1.3-3.3 3.5 3.5 0 0 0-.1-3.4S16.5.9 14 2.7a10 10 0 0 0-5 0C6.5.9 5.4 1.8 5.4 1.8a3.5 3.5 0 0 0-.1 3.4A4.7 4.7 0 0 0 4 8.5c0 4.4 2 5.7 5 6a3.4 3.4 0 0 0-1 2.6V21"/>',
+  reddit: '<circle cx="12" cy="13" r="7"/><circle cx="18.5" cy="6.5" r="2"/><path d="M12 6l1-3 4 1.5"/><circle cx="9.5" cy="12.5" r="1" fill="currentColor" stroke="none"/><circle cx="14.5" cy="12.5" r="1" fill="currentColor" stroke="none"/><path d="M9.5 16a4 4 0 0 0 5 0"/>',
+  threads: '<path d="M16 8.5c-1-1.5-2.4-2-4-2-3.5 0-5.5 2.5-5.5 5.5S8.5 17.5 12 17.5c2.6 0 4.3-1.4 4.3-3.2 0-1.6-1.3-2.6-3.3-2.6-1.5 0-2.5.7-2.5 1.7"/><circle cx="12" cy="12" r="9.5"/>',
+  facebook: '<path d="M14 8h3V4.5h-3a4 4 0 0 0-4 4V11H7.5v3.5H10V21h3.5v-6.5H16l.5-3.5H13.5V9a1 1 0 0 1 .5-1z"/>',
+  whatsapp: '<path d="M21 12a9 9 0 0 1-13.3 7.9L3 21l1.2-4.5A9 9 0 1 1 21 12z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5.6 0 1-.4 1-1l-1.3-.8-1 .8a5 5 0 0 1-2-2l.8-1L11 9.5c-.6 0-1 .4-2 0z"/>',
+  cuore: '<path d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5C2 10.8 3.5 12.5 5 14l7 7z"/>',
+  stella: '<path d="M12 3l2.9 6 6.6.9-4.8 4.6 1.2 6.5-5.9-3.2-5.9 3.2 1.2-6.5L2.5 9.9 9.1 9z"/>',
+  regalo: '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/>',
+  carrello: '<circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11L21 7H6"/>',
+  calendario: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/>',
+  mail: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+  musica: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+  video: '<rect x="2" y="6" width="14" height="12" rx="2"/><path d="m22 8-6 4 6 4V8Z"/>',
+  scarica: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 11 5 5 5-5"/><path d="M12 4v12"/>',
+  gioco: '<line x1="6" x2="10" y1="11" y2="11"/><line x1="8" x2="8" y1="9" y2="13"/><circle cx="16" cy="11.5" r="1" fill="currentColor" stroke="none"/><circle cx="18" cy="13.5" r="1" fill="currentColor" stroke="none"/><rect x="2" y="7" width="20" height="10" rx="5"/>',
+  caffe: '<path d="M17 8h1a3 3 0 0 1 0 6h-1"/><path d="M3 8h14v6a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5z"/><path d="M3 21h14"/>',
+  soldi: '<circle cx="12" cy="12" r="9"/><path d="M12 7v10"/><path d="M15 9.5c0-1.2-1.3-2-3-2s-3 .8-3 2 1.3 1.8 3 2.2 3 1 3 2.3-1.3 2-3 2-3-.8-3-2"/>',
+};
+const lpIco = (n, dim = 18) => `<svg viewBox="0 0 24 24" width="${dim}" height="${dim}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${LP_ICO[n] || LP_ICO.link}</svg>`;
+
+// Riconosce la piattaforma dall'indirizzo: l'icona giusta arriva da sé.
+const LP_HOST = [[/twitch\.tv$/, 'twitch'], [/youtube\.com$|youtu\.be$/, 'youtube'], [/instagram\.com$/, 'instagram'],
+  [/tiktok\.com$/, 'tiktok'], [/discord\.(gg|com)$/, 'discord'], [/spotify\.com$/, 'spotify'],
+  [/x\.com$|twitter\.com$/, 'x'], [/t\.me$|telegram\.(me|org)$/, 'telegram'], [/kick\.com$/, 'kick'],
+  [/github\.com$/, 'github'], [/reddit\.com$/, 'reddit'], [/threads\.(net|com)$/, 'threads'],
+  [/facebook\.com$/, 'facebook'], [/wa\.me$|whatsapp\.com$/, 'whatsapp'],
+  [/paypal\.(me|com)$|streamlabs\.com$|streamelements\.com$/, 'soldi'],
+  [/ko-fi\.com$|buymeacoffee\.com$|patreon\.com$/, 'caffe'],
+  [/amazon\.|amzn\.to$|etsy\.com$/, 'carrello'], [/steam(community|powered)\.com$/, 'gioco']];
+function lpIconaDaUrl(u) {
+  try { const h = new URL(u).hostname.toLowerCase().replace(/^www\./, '');
+    for (const [re, i] of LP_HOST) if (re.test(h)) return i;
+  } catch { /* url non valido */ }
+  return 'link';
+}
+
+// Azioni sui blocchi: SVG, non emoji (coerenti col resto della dashboard).
+const _lpSu  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>';
+const _lpGiu = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+const _lpDup = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>';
+const _lpVia = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+
 // --- Pagina link pubblica (/u/<login>) ------------------------------------
-// La pagina vive su andryxify.it (unica fonte di verità): noi la leggiamo e la
-// salviamo passando dal nostro server, che si autentica col token Twitch dello
-// streamer. Qui c'è la "modalità rapida": titolo, sottotitolo, stile, colori e
-// i link. Per i layout a blocchi resta l'editor completo sul sito.
+// La pagina è NOSTRA: i dati stanno nel DB di SocialBot (tabella link_page) e
+// l'HTML lo genera src/features/linkpagina.js. Prima veniva da andryxify.it, il
+// che voleva dire dipendere da un altro servizio, passare un token Twitch a ogni
+// salvataggio ed essere "abilitati" là per modificare una pagina di qui.
+//
+// L'editor è a BLOCCHI (link, titoli, testi, righe di social, immagini, embed)
+// più un tema completo: colori, sfondo, font, forme, animazioni. Con l'anteprima
+// dal vivo accanto, così si vede cosa si sta facendo mentre si fa.
 function pannelloPaginaLink() {
   return pannello('pagina', `
     <div class="carta">
       <h2>${_hIco(ICO.condividi)}${L('La tua pagina link', 'Your link page', 'Tu página de enlaces')}</h2>
-      <p>${L('Una pagina pubblica con tutti i tuoi link — Twitch, social, Discord, donazioni — da mettere nella bio di Instagram o TikTok. Vive su', 'A public page with all your links — Twitch, socials, Discord, donations — to put in your Instagram or TikTok bio. It lives at', 'Una página pública con todos tus enlaces — Twitch, redes, Discord, donaciones — para poner en la bio de Instagram o TikTok. Vive en')}
+      <p>${L('Una pagina pubblica con tutti i tuoi link, da mettere nella bio di Instagram o TikTok. Il suo indirizzo è', 'A public page with all your links, to put in your Instagram or TikTok bio. Its address is', 'Una página pública con todos tus enlaces, para poner en la bio de Instagram o TikTok. Su dirección es')}
       <strong id="lp-url-testo">socialbot.live/u/…</strong></p>
 
       ${miniGuida({
-    titolo: L('Tutorial: crea la tua pagina in 3 mosse', 'Tutorial: build your page in 3 steps', 'Tutorial: crea tu página en 3 pasos'),
+    titolo: L('Tutorial: come si costruisce', 'Tutorial: how to build it', 'Tutorial: cómo se construye'),
     aperta: true,
     passi: [
-      L('Scrivi <strong>titolo</strong> e <strong>sottotitolo</strong>: è quello che si legge in cima (es. il tuo nome e cosa fai).', 'Write a <strong>headline</strong> and <strong>tagline</strong>: that’s what people read at the top (e.g. your name and what you do).', 'Escribe <strong>título</strong> y <strong>subtítulo</strong>: es lo que se lee arriba (p. ej. tu nombre y qué haces).'),
-      L('Aggiungi i <strong>link</strong> con «Aggiungi link»: un’etichetta (es. «Twitch»), l’indirizzo e, se vuoi, un’emoji.', 'Add your <strong>links</strong> with “Add link”: a label (e.g. “Twitch”), the address and, if you like, an emoji.', 'Añade los <strong>enlaces</strong> con «Añadir enlace»: una etiqueta (p. ej. «Twitch»), la dirección y, si quieres, un emoji.'),
-      L('Scegli lo <strong>stile</strong> e i colori, salva, e apri l’anteprima per vedere il risultato.', 'Pick a <strong>style</strong> and the colours, save, and open the preview to see the result.', 'Elige el <strong>estilo</strong> y los colores, guarda, y abre la vista previa para ver el resultado.'),
+      L('In <strong>Contenuti</strong> aggiungi i pezzi che vuoi: link, titoli di sezione, testi, una riga di social, immagini o un video. Li riordini con le frecce.', 'In <strong>Content</strong> add the pieces you want: links, section headings, text, a row of socials, images or a video. Reorder them with the arrows.', 'En <strong>Contenido</strong> añade las piezas que quieras: enlaces, títulos de sección, textos, una fila de redes, imágenes o un vídeo. Los reordenas con las flechas.'),
+      L('In <strong>Aspetto</strong> scegli uno stile di partenza e poi cambia tutto: colori, sfondo, font, forma dei bottoni, animazione.', 'In <strong>Look</strong> pick a starting style and then change everything: colours, background, font, button shape, animation.', 'En <strong>Aspecto</strong> eliges un estilo de partida y luego cambias todo: colores, fondo, fuente, forma de los botones, animación.'),
+      L('L’<strong>anteprima</strong> a lato si aggiorna mentre modifichi. Quando ti piace, premi <strong>Salva e pubblica</strong>.', 'The <strong>preview</strong> on the side updates as you edit. When you like it, hit <strong>Save and publish</strong>.', 'La <strong>vista previa</strong> al lado se actualiza mientras editas. Cuando te guste, pulsa <strong>Guardar y publicar</strong>.'),
     ],
-    note: [
-      L('Il link è sempre lo stesso: se cambi i contenuti, chi ce l’ha già vede subito la versione nuova.', 'The link never changes: if you edit the contents, anyone who already has it sees the new version right away.', 'El enlace es siempre el mismo: si cambias el contenido, quien ya lo tiene ve la versión nueva al instante.'),
-    ],
+    note: [L('L’indirizzo non cambia mai: chi ce l’ha già vede sempre la versione aggiornata.', 'The address never changes: anyone who already has it always sees the latest version.', 'La dirección no cambia nunca: quien ya la tiene ve siempre la versión actualizada.')],
   })}
 
       <div id="lp-box"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
     </div>`);
 }
+
+// stato dell'editor in memoria: blocchi + tema, con l'anteprima che li rilegge
+const LP = { d: null, blocchi: [], tema: {}, testa: {} };
 
 async function caricaPaginaLink() {
   const box = document.getElementById('lp-box'); if (!box) return;
@@ -5856,117 +6072,346 @@ async function caricaPaginaLink() {
     box.innerHTML = `<p class="suggerimento">${esc(e?.message || L('Impossibile caricare la pagina link.', 'Couldn\'t load the link page.', 'No se pudo cargar la página de enlaces.'))}</p>`;
     return;
   }
+  LP.d = d;
   const p = d.pagina || {};
-  const lim = d.limiti || { headline: 80, tagline: 160, label: 40, icona: 24, link: 12 };
+  LP.tema = { ...(p.tema || {}) };
+  LP.blocchi = (p.blocchi || []).length ? p.blocchi.map((b) => ({ ...b })) : (d.suggeriti || []).map((b) => ({ ...b }));
+  LP.testa = { headline: p.headline || '', tagline: p.tagline || '', template: p.template || 'minimal', avatar: p.avatar || '' };
+
   const urlEl = document.getElementById('lp-url-testo');
   if (urlEl && d.url) urlEl.textContent = d.url.replace(/^https?:\/\//, '');
 
-  // Se la pagina e stata costruita con l'editor a BLOCCHI del sito, il renderer
-  // mostra quelli: salvare i campi semplici da qui non cambierebbe nulla a
-  // schermo. Meglio dirlo che lasciar credere di aver salvato.
-  if (d.aBlocchi) {
-    box.innerHTML = `
-      <div class="carta avviso spazio-sopra">
-        <h3>${L('Questa pagina usa l\'editor avanzato', 'This page uses the advanced editor', 'Esta página usa el editor avanzado')}</h3>
-        <p>${L('L\'hai costruita a <strong>blocchi</strong> su andryxify.it. La pagina pubblica mostra quei blocchi, quindi modificare i campi semplici da qui <strong>non cambierebbe nulla a schermo</strong>. Per non farti perdere il lavoro, da qui non tocchiamo niente.', 'You built it with <strong>blocks</strong> on andryxify.it. The public page shows those blocks, so editing the simple fields here <strong>wouldn\'t change anything on screen</strong>. So as not to lose your work, we don\'t touch anything from here.', 'La construiste con <strong>bloques</strong> en andryxify.it. La página pública muestra esos bloques, así que editar los campos simples aquí <strong>no cambiaría nada en pantalla</strong>. Para no perder tu trabajo, desde aquí no tocamos nada.')}</p>
-        <p class="spazio-sopra">
-          <a class="btn" href="${esc(d.urlEditorAvanzato || '#')}" target="_blank" rel="noopener">${L('Modifica sul sito', 'Edit on the site', 'Editar en el sitio')}</a>
-          <a class="btn secondario" href="${esc(d.url || '#')}" target="_blank" rel="noopener">${_bIco(ICO.occhio)}${L('Apri la pagina', 'Open the page', 'Abrir la página')}</a>
-        </p>
-      </div>`;
-    const u = document.getElementById('lp-url-testo');
-    if (u && d.url) u.textContent = d.url.replace(/^https?:\/\//, '');
-    return;
-  }
-
-  const NOMI_STILE = { minimal: 'Minimal', neon: 'Neon', retro: 'Retro', sunset: 'Sunset', glass: 'Glass' };
-  const stileOpts = (d.templates || []).map((t) =>
-    `<option value="${esc(t)}"${t === p.template ? ' selected' : ''}>${esc(NOMI_STILE[t] || t)}</option>`).join('');
+  const NOMI_STILE = { minimal: 'Minimal', neon: 'Neon', retro: 'Retro', sunset: 'Sunset', glass: 'Glass', brutal: 'Brutal', pastello: 'Pastello' };
+  const NOMI_FONT = { system: L('Sistema', 'System', 'Sistema'), inter: 'Inter', mono: L('Monospaziato', 'Monospaced', 'Monoespaciado'), serif: L('Con grazie', 'Serif', 'Con serifa'), condensato: L('Condensato', 'Condensed', 'Condensada'), tondo: L('Tondo', 'Rounded', 'Redonda') };
+  const opts = (lista, sel, nomi) => lista.map((k) => `<option value="${esc(k)}"${k === sel ? ' selected' : ''}>${esc((nomi && nomi[k]) || k)}</option>`).join('');
 
   box.innerHTML = `
-    <div class="griglia-campi">
-      <div><label class="campo" for="lp-headline">${L('Titolo', 'Headline', 'Título')}</label>
-        <input type="text" id="lp-headline" maxlength="${lim.headline}" value="${esc(p.headline || '')}" placeholder="${esc(L('es. Andry · streamer', 'e.g. Andry · streamer', 'p. ej. Andry · streamer'))}"></div>
-      <div><label class="campo" for="lp-stile">${L('Stile', 'Style', 'Estilo')}</label>
-        <select id="lp-stile">${stileOpts}</select></div>
-    </div>
-    <label class="campo spazio-sopra" for="lp-tagline">${L('Sottotitolo', 'Tagline', 'Subtítulo')}</label>
-    <input type="text" id="lp-tagline" maxlength="${lim.tagline}" value="${esc(p.tagline || '')}" placeholder="${esc(L('es. Ogni sera su Twitch', 'e.g. Every night on Twitch', 'p. ej. Cada noche en Twitch'))}">
-    <div class="griglia-campi spazio-sopra">
-      <div><label class="campo" for="lp-accent">${L('Colore principale', 'Accent colour', 'Color principal')}</label>
-        <input type="color" id="lp-accent" value="${esc(/^#/.test(p.accent || '') ? p.accent : '#6d3bef')}"></div>
-      <div><label class="campo" for="lp-bg">${L('Colore di sfondo', 'Background colour', 'Color de fondo')}</label>
-        <input type="color" id="lp-bg" value="${esc(/^#/.test(p.bg || '') ? p.bg : '#0b0813')}"></div>
+    ${d.pubblicata
+      ? `<p class="lp-stato on">${_bIco(ICO.globo)}${L('Online:', 'Live:', 'Online:')}
+          <a href="${esc(d.url)}" target="_blank" rel="noopener"><strong>${esc((d.url || '').replace(/^https?:\/\//, ''))}</strong></a></p>`
+      : `<p class="lp-stato off">${_bIco(ICO.avviso)}${L('Non ancora pubblicata: compila e salva.', 'Not published yet: fill it in and save.', 'Aún no publicada: rellénala y guarda.')}</p>`}
+
+    <div class="lp-editor spazio-sopra">
+      <div class="lp-comandi">
+        <details class="carta sez" open>
+          <summary><h3>${L('Intestazione', 'Header', 'Encabezado')}</h3></summary>
+          <label class="campo" for="lp-headline">${L('Titolo', 'Headline', 'Título')}</label>
+          <input type="text" id="lp-headline" data-lpt="headline" maxlength="${d.limiti.headline}" value="${esc(LP.testa.headline)}" placeholder="${esc(L('es. Andry · streamer', 'e.g. Andry · streamer', 'p. ej. Andry · streamer'))}">
+          <label class="campo spazio-sopra" for="lp-tagline">${L('Sottotitolo', 'Tagline', 'Subtítulo')}</label>
+          <input type="text" id="lp-tagline" data-lpt="tagline" maxlength="${d.limiti.tagline}" value="${esc(LP.testa.tagline)}" placeholder="${esc(L('es. Ogni sera su Twitch', 'e.g. Every night on Twitch', 'p. ej. Cada noche en Twitch'))}">
+          <label class="campo spazio-sopra" for="lp-avatar">${L('Immagine del profilo', 'Profile picture', 'Imagen de perfil')}</label>
+          <select id="lp-avatar" data-lpt="avatarModo">
+            <option value=""${!LP.testa.avatar ? ' selected' : ''}>${L('Quella di Twitch', 'Your Twitch one', 'La de Twitch')}</option>
+            <option value="url"${LP.testa.avatar && LP.testa.avatar !== 'no' ? ' selected' : ''}>${L('Un\'immagine mia (indirizzo)', 'My own image (address)', 'Una imagen mía (dirección)')}</option>
+            <option value="no"${LP.testa.avatar === 'no' ? ' selected' : ''}>${L('Nessuna', 'None', 'Ninguna')}</option>
+          </select>
+          <input type="url" id="lp-avatar-url" data-lpt="avatarUrl" class="spazio-sopra" maxlength="${d.limiti.url}" value="${esc(LP.testa.avatar && LP.testa.avatar !== 'no' ? LP.testa.avatar : '')}" placeholder="https://…" ${LP.testa.avatar && LP.testa.avatar !== 'no' ? '' : 'hidden'}>
+        </details>
+
+        <details class="carta sez" open>
+          <summary><h3>${L('Contenuti', 'Content', 'Contenido')}</h3></summary>
+          <div id="lp-blocchi"></div>
+          <div class="lp-aggiungi spazio-sopra">
+            <button type="button" class="btn secondario mini" data-lpadd="link">${_bIco(ICO.piu)}${L('Link', 'Link', 'Enlace')}</button>
+            <button type="button" class="btn secondario mini" data-lpadd="social">${L('Riga di social', 'Social row', 'Fila de redes')}</button>
+            <button type="button" class="btn secondario mini" data-lpadd="titolo">${L('Titolo di sezione', 'Section heading', 'Título de sección')}</button>
+            <button type="button" class="btn secondario mini" data-lpadd="testo">${L('Testo', 'Text', 'Texto')}</button>
+            <button type="button" class="btn secondario mini" data-lpadd="immagine">${L('Immagine', 'Image', 'Imagen')}</button>
+            <button type="button" class="btn secondario mini" data-lpadd="embed">${L('Video / musica', 'Video / music', 'Vídeo / música')}</button>
+            <button type="button" class="btn secondario mini" data-lpadd="separatore">${L('Riga divisoria', 'Divider', 'Separador')}</button>
+          </div>
+        </details>
+
+        <details class="carta sez">
+          <summary><h3>${L('Aspetto', 'Look', 'Aspecto')}</h3></summary>
+          <label class="campo" for="lp-stile">${L('Stile di partenza', 'Starting style', 'Estilo de partida')}</label>
+          <select id="lp-stile" data-lpt="template">${opts(d.templates || [], LP.testa.template, NOMI_STILE)}</select>
+          <p class="suggerimento">${L('Dà i colori di base. Qui sotto puoi cambiare tutto.', 'It sets the base colours. Below you can change everything.', 'Da los colores base. Abajo puedes cambiarlo todo.')}</p>
+
+          <label class="campo spazio-sopra" for="lp-font">${L('Carattere', 'Font', 'Tipografía')}</label>
+          <select id="lp-font" data-lpk="font">${opts(d.fonts || [], LP.tema.font, NOMI_FONT)}</select>
+
+          <label class="campo spazio-sopra" for="lp-sfondoTipo">${L('Sfondo', 'Background', 'Fondo')}</label>
+          <select id="lp-sfondoTipo" data-lpk="sfondoTipo">
+            <option value="tinta">${L('Tinta unita', 'Solid colour', 'Color plano')}</option>
+            <option value="gradiente">${L('Sfumatura fra due colori', 'Gradient between two colours', 'Degradado entre dos colores')}</option>
+            <option value="immagine">${L('Immagine', 'Image', 'Imagen')}</option>
+          </select>
+          <div class="griglia-campi spazio-sopra">
+            <div><label class="campo">${L('Colore sfondo', 'Background colour', 'Color de fondo')}</label><input type="color" data-lpk="bg" value="${esc(LP.tema.bg || '#0b0813')}"></div>
+            <div id="lp-bg2-box"><label class="campo">${L('Secondo colore', 'Second colour', 'Segundo color')}</label><input type="color" data-lpk="bg2" value="${esc(LP.tema.bg2 || '#241046')}"></div>
+          </div>
+          <div id="lp-grad-box">
+            <label class="campo spazio-sopra">${L('Direzione della sfumatura', 'Gradient direction', 'Dirección del degradado')} <span class="tenue" id="lp-ang-v">${Number(LP.tema.angolo) || 160}°</span></label>
+            <input type="range" data-lpk="angolo" min="0" max="360" value="${Number(LP.tema.angolo) || 160}">
+          </div>
+          <div id="lp-sfimg-box">
+            <label class="campo spazio-sopra">${L('Indirizzo dell\'immagine di sfondo', 'Background image address', 'Dirección de la imagen de fondo')}</label>
+            <input type="url" data-lpk="sfondoUrl" maxlength="${d.limiti.url}" value="${esc(LP.tema.sfondoUrl || '')}" placeholder="https://…">
+          </div>
+          <label class="campo spazio-sopra" for="lp-effetto">${L('Effetto sopra lo sfondo', 'Effect over the background', 'Efecto sobre el fondo')}</label>
+          <select id="lp-effetto" data-lpk="effetto">
+            <option value="nessuno">${L('Nessuno', 'None', 'Ninguno')}</option>
+            <option value="aurora">${L('Aurora (aloni sfocati)', 'Aurora (blurred glow)', 'Aurora (halos difusos)')}</option>
+            <option value="maglia">${L('Griglia', 'Grid', 'Rejilla')}</option>
+            <option value="grana">${L('Grana', 'Grain', 'Grano')}</option>
+            <option value="bolle">${L('Bolle di colore', 'Colour bubbles', 'Burbujas de color')}</option>
+          </select>
+
+          <div class="griglia-campi spazio-sopra">
+            <div><label class="campo">${L('Colore testo', 'Text colour', 'Color del texto')}</label><input type="color" data-lpk="testo" value="${esc(LP.tema.testo || '#f4f2ff')}"></div>
+            <div><label class="campo">${L('Colore evidenza', 'Accent colour', 'Color de acento')}</label><input type="color" data-lpk="accent" value="${esc(LP.tema.accent || '#a568ff')}"></div>
+          </div>
+          <div class="griglia-campi spazio-sopra">
+            <div><label class="campo">${L('Colore bottoni', 'Button colour', 'Color de botones')}</label><input type="color" data-lpk="card" value="${esc(LP.tema.card || '#141220')}"></div>
+            <div><label class="campo">${L('Colore bordi', 'Border colour', 'Color de bordes')}</label><input type="color" data-lpk="bordo" value="${esc(LP.tema.bordo || '#2c2440')}"></div>
+          </div>
+
+          <label class="campo spazio-sopra" for="lp-stileBtn">${L('Stile dei bottoni', 'Button style', 'Estilo de los botones')}</label>
+          <select id="lp-stileBtn" data-lpk="stileBtn">
+            <option value="pieno">${L('Pieni', 'Filled', 'Rellenos')}</option>
+            <option value="contorno">${L('Solo contorno', 'Outline only', 'Solo contorno')}</option>
+            <option value="vetro">${L('Vetro (sfocato)', 'Glass (blurred)', 'Cristal (difuso)')}</option>
+          </select>
+          <label class="campo spazio-sopra">${L('Angoli dei bottoni', 'Button corners', 'Esquinas de los botones')} <span class="tenue" id="lp-rag-v">${Number(LP.tema.raggio) ?? 14}px</span></label>
+          <input type="range" data-lpk="raggio" min="0" max="999" value="${Number(LP.tema.raggio) ?? 14}">
+          <p class="suggerimento">${L('0 = spigoli vivi · 999 = pillola', '0 = sharp corners · 999 = pill', '0 = esquinas rectas · 999 = píldora')}</p>
+
+          <label class="campo spazio-sopra">${L('Larghezza della colonna', 'Column width', 'Ancho de la columna')} <span class="tenue" id="lp-lar-v">${Number(LP.tema.larghezza) || 30}rem</span></label>
+          <input type="range" data-lpk="larghezza" min="20" max="46" value="${Number(LP.tema.larghezza) || 30}">
+
+          <label class="campo spazio-sopra" for="lp-allinea">${L('Allineamento', 'Alignment', 'Alineación')}</label>
+          <select id="lp-allinea" data-lpk="allinea">
+            <option value="centro">${L('Al centro', 'Centred', 'Centrado')}</option>
+            <option value="sinistra">${L('A sinistra', 'Left', 'A la izquierda')}</option>
+          </select>
+          <label class="campo spazio-sopra" for="lp-avatarForma">${L('Forma dell\'immagine profilo', 'Profile picture shape', 'Forma de la imagen de perfil')}</label>
+          <select id="lp-avatarForma" data-lpk="avatarForma">
+            <option value="cerchio">${L('Cerchio', 'Circle', 'Círculo')}</option>
+            <option value="quadrato">${L('Quadrato stondato', 'Rounded square', 'Cuadrado redondeado')}</option>
+            <option value="nessuno">${L('Non mostrarla', 'Don’t show it', 'No mostrarla')}</option>
+          </select>
+          <label class="campo spazio-sopra" for="lp-anim">${L('Animazione d\'ingresso', 'Entrance animation', 'Animación de entrada')}</label>
+          <select id="lp-anim" data-lpk="anim">
+            <option value="nessuna">${L('Nessuna', 'None', 'Ninguna')}</option>
+            <option value="fade">${L('Dissolvenza', 'Fade', 'Fundido')}</option>
+            <option value="rise">${L('Dal basso', 'From below', 'Desde abajo')}</option>
+            <option value="pop">${L('Pop', 'Pop', 'Pop')}</option>
+          </select>
+          <label class="riga-check spazio-sopra"><input type="checkbox" data-lpk="ombra"${LP.tema.ombra !== false ? ' checked' : ''}> ${L('Ombra sotto i bottoni', 'Shadow under the buttons', 'Sombra bajo los botones')}</label>
+        </details>
+      </div>
+
+      <div class="lp-anteprima">
+        <div class="lp-ant-tit">${L('Anteprima dal vivo', 'Live preview', 'Vista previa en directo')}</div>
+        <div class="lp-telefono"><iframe id="lp-iframe" title="anteprima"></iframe></div>
+      </div>
     </div>
 
-    <h3 class="spazio-sopra">${L('I tuoi link', 'Your links', 'Tus enlaces')} <span class="tenue">(${L('massimo', 'up to', 'máximo')} ${lim.link})</span></h3>
-    <div id="lp-links"></div>
     <p class="spazio-sopra">
-      <button type="button" class="btn secondario" id="lp-aggiungi">${_bIco(ICO.piu)}${L('Aggiungi link', 'Add link', 'Añadir enlace')}</button>
-    </p>
-    <p class="spazio-sopra">
-      <button class="btn grande" id="lp-salva">${L('Salva la pagina', 'Save the page', 'Guardar la página')}</button>
-      <a class="btn secondario" id="lp-apri" href="${esc(d.url || '#')}" target="_blank" rel="noopener">${_bIco(ICO.occhio)}${L('Apri anteprima', 'Open preview', 'Abrir vista previa')}</a>
+      <button class="btn grande" id="lp-salva">${L('Salva e pubblica', 'Save and publish', 'Guardar y publicar')}</button>
+      <a class="btn secondario" id="lp-apri" href="${esc(d.url || '#')}" target="_blank" rel="noopener">${_bIco(ICO.occhio)}${L('Apri la pagina', 'Open the page', 'Abrir la página')}</a>
+      ${d.pubblicata ? `<button type="button" class="btn secondario" id="lp-spegni">${L('Togli dal web', 'Take offline', 'Quitar de la web')}</button>` : ''}
       <span id="lp-esito" class="suggerimento"></span>
     </p>`;
 
-  // ── righe dei link (aggiungi / togli / riordina) ──
-  const cont = document.getElementById('lp-links');
-  const rigaLink = (l = {}) => {
-    const r = document.createElement('div');
-    r.className = 'lp-riga';
-    r.innerHTML = `
-      <input type="text" class="lp-icon" maxlength="${lim.icona}" value="${esc(l.icon || '')}" placeholder="🎮" title="${L('Emoji (facoltativa)', 'Emoji (optional)', 'Emoji (opcional)')}">
-      <input type="text" class="lp-label" maxlength="${lim.label}" value="${esc(l.label || '')}" placeholder="${esc(L('Etichetta (es. Twitch)', 'Label (e.g. Twitch)', 'Etiqueta (p. ej. Twitch)'))}">
-      <input type="url" class="lp-url" value="${esc(l.url || '')}" placeholder="https://twitch.tv/iltuonome">
-      <span class="lp-azioni">
-        <button type="button" class="btn secondario mini" data-lp="su" title="${L('Sposta su', 'Move up', 'Subir')}">↑</button>
-        <button type="button" class="btn secondario mini" data-lp="giu" title="${L('Sposta giù', 'Move down', 'Bajar')}">↓</button>
-        <button type="button" class="btn secondario mini" data-lp="via" title="${L('Togli', 'Remove', 'Quitar')}">🗑</button>
-      </span>`;
-    return r;
-  };
-  (p.links || []).forEach((l) => cont.appendChild(rigaLink(l)));
-  // pagina mai creata: parto con una riga già impostata su Twitch, così si capisce
-  if (!(p.links || []).length) cont.appendChild(rigaLink({ label: 'Twitch', url: 'https://twitch.tv/' + (stato.user?.login || ''), icon: '🎮' }));
+  // valori dei select del tema (non si possono impostare da HTML statico)
+  for (const k of ['sfondoTipo', 'effetto', 'stileBtn', 'allinea', 'avatarForma', 'anim', 'font']) {
+    const el = box.querySelector(`[data-lpk="${k}"]`);
+    if (el && LP.tema[k] !== undefined) el.value = LP.tema[k];
+  }
+  lpMostraCampiSfondo();
+  lpRenderBlocchi();
+  lpAnteprima();
 
-  document.getElementById('lp-aggiungi').onclick = () => {
-    if (cont.children.length >= lim.link) { toast(L('Hai raggiunto il massimo di link.', 'You’ve reached the link limit.', 'Has alcanzado el máximo de enlaces.'), 'errore'); return; }
-    cont.appendChild(rigaLink());
+  // ── modifiche: aggiornano lo stato e ridisegnano l'anteprima ──
+  box.oninput = (ev) => {
+    const t = ev.target;
+    const k = t.dataset.lpk, tt = t.dataset.lpt;
+    if (k) {
+      LP.tema[k] = t.type === 'checkbox' ? t.checked : (t.type === 'range' ? Number(t.value) : t.value);
+      if (k === 'angolo') box.querySelector('#lp-ang-v').textContent = t.value + '°';
+      if (k === 'raggio') box.querySelector('#lp-rag-v').textContent = t.value + 'px';
+      if (k === 'larghezza') box.querySelector('#lp-lar-v').textContent = t.value + 'rem';
+      if (k === 'sfondoTipo') lpMostraCampiSfondo();
+    } else if (tt === 'headline' || tt === 'tagline' || tt === 'template') {
+      LP.testa[tt] = t.value;
+    } else if (tt === 'avatarModo') {
+      const inp = box.querySelector('#lp-avatar-url');
+      if (t.value === 'url') { inp.hidden = false; LP.testa.avatar = inp.value || ''; }
+      else { inp.hidden = true; LP.testa.avatar = t.value === 'no' ? 'no' : ''; }
+    } else if (tt === 'avatarUrl') {
+      LP.testa.avatar = t.value;
+    } else if (t.dataset.lpb !== undefined) {
+      lpLeggiBlocco(t);
+    } else return;
+    lpAnteprima();
   };
-  cont.onclick = (ev) => {
-    const b = ev.target.closest('[data-lp]'); if (!b) return;
-    const r = b.closest('.lp-riga');
-    if (b.dataset.lp === 'via') r.remove();
-    else if (b.dataset.lp === 'su' && r.previousElementSibling) r.parentNode.insertBefore(r, r.previousElementSibling);
-    else if (b.dataset.lp === 'giu' && r.nextElementSibling) r.parentNode.insertBefore(r.nextElementSibling, r);
+  box.onchange = box.oninput;
+
+  // ── aggiungi un blocco ──
+  box.querySelector('.lp-aggiungi').onclick = (ev) => {
+    const b = ev.target.closest('[data-lpadd]'); if (!b) return;
+    if (LP.blocchi.length >= d.limiti.blocchi) { toast(L('Hai raggiunto il massimo di blocchi.', 'You’ve reached the block limit.', 'Has alcanzado el máximo de bloques.'), 'errore'); return; }
+    const tipo = b.dataset.lpadd;
+    const nuovo = { link: { tipo: 'link', icona: 'link', label: '', url: '', sotto: '', evidenzia: false },
+      social: { tipo: 'social', voci: [{ icona: 'link', url: '' }] },
+      titolo: { tipo: 'titolo', testo: '' }, testo: { tipo: 'testo', testo: '' },
+      immagine: { tipo: 'immagine', url: '', alt: '' }, embed: { tipo: 'embed', url: '' },
+      separatore: { tipo: 'separatore' } }[tipo];
+    if (!nuovo) return;
+    LP.blocchi.push(nuovo);
+    lpRenderBlocchi(); lpAnteprima();
   };
 
   document.getElementById('lp-salva').onclick = () => conErrore(async () => {
-    const righe = [...cont.querySelectorAll('.lp-riga')];
-    const links = righe.map((r) => ({
-      icon: r.querySelector('.lp-icon').value.trim(),
-      label: r.querySelector('.lp-label').value.trim(),
-      url: r.querySelector('.lp-url').value.trim(),
-    })).filter((l) => l.label && l.url);
-    const scartati = righe.length - links.length;
     const r = await api('/api/linkpage', { method: 'POST', body: {
-      headline: document.getElementById('lp-headline').value,
-      tagline: document.getElementById('lp-tagline').value,
-      template: document.getElementById('lp-stile').value,
-      accent: document.getElementById('lp-accent').value,
-      bg: document.getElementById('lp-bg').value,
-      links,
+      headline: LP.testa.headline, tagline: LP.testa.tagline, template: LP.testa.template,
+      avatar: LP.testa.avatar, tema: LP.tema, blocchi: LP.blocchi, attiva: true,
     } });
-    // dico SEMPRE quante righe sono state scartate: è la causa tipica del
-    // "ho salvato ma non è come lo volevo"
+    const scartati = Math.max(0, (r?.inviati || 0) - (r?.salvati || 0));
     const esito = document.getElementById('lp-esito');
     if (esito) esito.textContent = scartati > 0
-      ? L(`Salvata ✓ — ${scartati} riga/e senza etichetta o indirizzo non salvate.`, `Saved ✓ — ${scartati} row(s) missing a label or address weren’t saved.`, `Guardada ✓ — ${scartati} fila(s) sin etiqueta o dirección no se guardaron.`)
-      : L('Salvata ✓ è già online.', 'Saved ✓ it’s already live.', 'Guardada ✓ ya está online.');
-    toast(L('Pagina link salvata ✓', 'Link page saved ✓', 'Página de enlaces guardada ✓'));
-    if (r?.url) { const a = document.getElementById('lp-apri'); if (a) a.href = r.url; }
+      ? L(`Pubblicata ✓ — ${scartati} blocco/hi non salvati: manca un'etichetta o un indirizzo valido (https://…).`,
+        `Published ✓ — ${scartati} block(s) not saved: a label or a valid address (https://…) is missing.`,
+        `Publicada ✓ — ${scartati} bloque(s) no guardados: falta una etiqueta o una dirección válida (https://…).`)
+      : L('Pubblicata ✓ è già online.', 'Published ✓ it’s already live.', 'Publicada ✓ ya está online.');
+    toast(L('Pagina pubblicata ✓', 'Page published ✓', 'Página publicada ✓'));
+    caricaPaginaLink();
   });
+
+  const spegni = document.getElementById('lp-spegni');
+  if (spegni) spegni.onclick = () => conErrore(async () => {
+    if (!confirm(L('Togliere la pagina dal web? I contenuti restano salvati.', 'Take the page offline? The contents stay saved.', '¿Quitar la página de la web? El contenido queda guardado.'))) return;
+    await api('/api/linkpage', { method: 'DELETE' });
+    toast(L('Pagina tolta dal web.', 'Page taken offline.', 'Página quitada de la web.'));
+    caricaPaginaLink();
+  });
+}
+
+// mostra solo i campi che servono al tipo di sfondo scelto
+function lpMostraCampiSfondo() {
+  const t = LP.tema.sfondoTipo || 'tinta';
+  const g = document.getElementById('lp-grad-box'), b2 = document.getElementById('lp-bg2-box'), im = document.getElementById('lp-sfimg-box');
+  if (g) g.hidden = t !== 'gradiente';
+  if (b2) b2.hidden = t !== 'gradiente';
+  if (im) im.hidden = t !== 'immagine';
+}
+
+// legge un campo di un blocco e lo riporta nello stato
+function lpLeggiBlocco(t) {
+  const i = Number(t.dataset.lpb); const b = LP.blocchi[i]; if (!b) return;
+  const campo = t.dataset.lpf;
+  if (campo === 'voceUrl' || campo === 'voceIcona') {
+    const j = Number(t.dataset.lpv); if (!b.voci?.[j]) return;
+    if (campo === 'voceUrl') { b.voci[j].url = t.value; b.voci[j].icona = lpIconaDaUrl(t.value); }
+    else b.voci[j].icona = t.value;
+    return;
+  }
+  if (t.type === 'checkbox') b[campo] = t.checked;
+  else b[campo] = t.value;
+  // l'icona segue l'indirizzo, a meno che non sia stata scelta a mano
+  if (campo === 'url' && b.tipo === 'link' && !b._icoManuale) b.icona = lpIconaDaUrl(t.value);
+  if (campo === 'icona') b._icoManuale = true;
+}
+
+// disegna la lista dei blocchi (ognuno coi suoi campi + su/giù/duplica/togli)
+function lpRenderBlocchi() {
+  const cont = document.getElementById('lp-blocchi'); if (!cont) return;
+  const d = LP.d || {};
+  const NOMI = { link: L('Link', 'Link', 'Enlace'), social: L('Riga di social', 'Social row', 'Fila de redes'),
+    titolo: L('Titolo di sezione', 'Section heading', 'Título de sección'), testo: L('Testo', 'Text', 'Texto'),
+    immagine: L('Immagine', 'Image', 'Imagen'), embed: L('Video / musica', 'Video / music', 'Vídeo / música'),
+    separatore: L('Riga divisoria', 'Divider', 'Separador') };
+  const opzIcone = (sel) => (d.icone || []).map((k) => `<option value="${esc(k)}"${k === sel ? ' selected' : ''}>${esc(k)}</option>`).join('');
+
+  cont.innerHTML = LP.blocchi.map((b, i) => {
+    let campi = '';
+    if (b.tipo === 'link') {
+      campi = `
+        <div class="lp-riga2">
+          <span class="lp-bico">${lpIco(b.icona)}</span>
+          <input type="text" data-lpb="${i}" data-lpf="label" maxlength="${d.limiti.label}" value="${esc(b.label || '')}" placeholder="${esc(L('Etichetta (es. Twitch)', 'Label (e.g. Twitch)', 'Etiqueta (p. ej. Twitch)'))}">
+        </div>
+        <input type="url" class="spazio-sopra" data-lpb="${i}" data-lpf="url" maxlength="${d.limiti.url}" value="${esc(b.url || '')}" placeholder="https://twitch.tv/iltuonome">
+        <input type="text" class="spazio-sopra" data-lpb="${i}" data-lpf="sotto" maxlength="${d.limiti.sotto}" value="${esc(b.sotto || '')}" placeholder="${esc(L('Riga sotto (facoltativa)', 'Sub-line (optional)', 'Línea inferior (opcional)'))}">
+        <div class="griglia-campi spazio-sopra">
+          <div><label class="campo">${L('Icona', 'Icon', 'Icono')}</label><select data-lpb="${i}" data-lpf="icona">${opzIcone(b.icona)}</select></div>
+          <div><label class="riga-check" style="margin-top:1.5rem"><input type="checkbox" data-lpb="${i}" data-lpf="evidenzia"${b.evidenzia ? ' checked' : ''}> ${L('In evidenza', 'Highlighted', 'Destacado')}</label></div>
+        </div>`;
+    } else if (b.tipo === 'social') {
+      campi = (b.voci || []).map((v, j) => `
+        <div class="lp-riga2 spazio-sopra">
+          <span class="lp-bico">${lpIco(v.icona)}</span>
+          <input type="url" data-lpb="${i}" data-lpv="${j}" data-lpf="voceUrl" maxlength="${d.limiti.url}" value="${esc(v.url || '')}" placeholder="https://instagram.com/…">
+          <button type="button" class="btn secondario mini" data-lpsoc="via" data-lpb="${i}" data-lpv="${j}" title="${L('Togli', 'Remove', 'Quitar')}">${_lpVia}</button>
+        </div>`).join('')
+        + `<p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpsoc="piu" data-lpb="${i}">${_bIco(ICO.piu)}${L('Aggiungi social', 'Add social', 'Añadir red')}</button></p>
+           <p class="suggerimento">${L('Icone piccole in fila. L\'icona la riconosco dall\'indirizzo.', 'Small icons in a row. I detect the icon from the address.', 'Iconos pequeños en fila. El icono lo reconozco por la dirección.')}</p>`;
+    } else if (b.tipo === 'titolo' || b.tipo === 'testo') {
+      const max = b.tipo === 'titolo' ? d.limiti.titolo : d.limiti.testo;
+      campi = b.tipo === 'testo'
+        ? `<textarea data-lpb="${i}" data-lpf="testo" rows="3" maxlength="${max}" placeholder="${esc(L('Scrivi qui', 'Write here', 'Escribe aquí'))}">${esc(b.testo || '')}</textarea>`
+        : `<input type="text" data-lpb="${i}" data-lpf="testo" maxlength="${max}" value="${esc(b.testo || '')}" placeholder="${esc(L('es. I MIEI SOCIAL', 'e.g. MY SOCIALS', 'p. ej. MIS REDES'))}">`;
+    } else if (b.tipo === 'immagine') {
+      campi = `<input type="url" data-lpb="${i}" data-lpf="url" maxlength="${d.limiti.url}" value="${esc(b.url || '')}" placeholder="https://…/foto.jpg">
+        <input type="text" class="spazio-sopra" data-lpb="${i}" data-lpf="alt" maxlength="140" value="${esc(b.alt || '')}" placeholder="${esc(L('Descrizione per chi non vede l\'immagine', 'Description for people who can’t see it', 'Descripción para quien no la ve'))}">`;
+    } else if (b.tipo === 'embed') {
+      campi = `<input type="url" data-lpb="${i}" data-lpf="url" maxlength="${d.limiti.url}" value="${esc(b.url || '')}" placeholder="https://youtube.com/watch?v=…">
+        <p class="suggerimento">${L('Funziona con YouTube, Spotify e Twitch: incolla l\'indirizzo normale.', 'Works with YouTube, Spotify and Twitch: paste the normal address.', 'Funciona con YouTube, Spotify y Twitch: pega la dirección normal.')}</p>`;
+    } else {
+      campi = `<p class="suggerimento">${L('Una linea che separa le sezioni.', 'A line that separates sections.', 'Una línea que separa las secciones.')}</p>`;
+    }
+    return `<div class="lp-blocco">
+      <div class="lp-btesta">
+        <strong>${esc(NOMI[b.tipo] || b.tipo)}</strong>
+        <span class="lp-bazioni">
+          <button type="button" class="btn secondario mini" data-lpb="${i}" data-lpop="su" title="${L('Su', 'Up', 'Subir')}">${_lpSu}</button>
+          <button type="button" class="btn secondario mini" data-lpb="${i}" data-lpop="giu" title="${L('Giù', 'Down', 'Bajar')}">${_lpGiu}</button>
+          <button type="button" class="btn secondario mini" data-lpb="${i}" data-lpop="dup" title="${L('Duplica', 'Duplicate', 'Duplicar')}">${_lpDup}</button>
+          <button type="button" class="btn secondario mini" data-lpb="${i}" data-lpop="via" title="${L('Togli', 'Remove', 'Quitar')}">${_lpVia}</button>
+        </span>
+      </div>
+      ${campi}
+    </div>`;
+  }).join('') || `<p class="suggerimento">${L('Nessun contenuto: aggiungi il primo pezzo qui sotto.', 'No content yet: add the first piece below.', 'Sin contenido: añade la primera pieza abajo.')}</p>`;
+
+  cont.onclick = (ev) => {
+    const op = ev.target.closest('[data-lpop]');
+    if (op) {
+      const i = Number(op.dataset.lpb);
+      if (op.dataset.lpop === 'via') LP.blocchi.splice(i, 1);
+      else if (op.dataset.lpop === 'dup' && LP.blocchi.length < (LP.d?.limiti?.blocchi || 40)) LP.blocchi.splice(i + 1, 0, JSON.parse(JSON.stringify(LP.blocchi[i])));
+      else if (op.dataset.lpop === 'su' && i > 0) LP.blocchi.splice(i - 1, 0, LP.blocchi.splice(i, 1)[0]);
+      else if (op.dataset.lpop === 'giu' && i < LP.blocchi.length - 1) LP.blocchi.splice(i + 1, 0, LP.blocchi.splice(i, 1)[0]);
+      lpRenderBlocchi(); lpAnteprima(); return;
+    }
+    const so = ev.target.closest('[data-lpsoc]');
+    if (so) {
+      const i = Number(so.dataset.lpb); const b = LP.blocchi[i]; if (!b) return;
+      if (so.dataset.lpsoc === 'piu') { b.voci = b.voci || []; if (b.voci.length < 12) b.voci.push({ icona: 'link', url: '' }); }
+      else b.voci.splice(Number(so.dataset.lpv), 1);
+      lpRenderBlocchi(); lpAnteprima();
+    }
+  };
+}
+
+// Anteprima: chiediamo al SERVER l'HTML vero della pagina, così quello che vedi
+// è esattamente quello che verrà pubblicato (nessuna finta anteprima che poi
+// non combacia). Antirimbalzo, per non chiamare a ogni tasto premuto.
+let _lpTimer = null;
+function lpAnteprima() {
+  clearTimeout(_lpTimer);
+  _lpTimer = setTimeout(async () => {
+    const f = document.getElementById('lp-iframe'); if (!f) return;
+    try {
+      const r = await api('/api/linkpage/anteprima', { method: 'POST', body: {
+        headline: LP.testa.headline, tagline: LP.testa.tagline, template: LP.testa.template,
+        avatar: LP.testa.avatar, tema: LP.tema, blocchi: LP.blocchi,
+      } });
+      if (r?.html) f.srcdoc = r.html;
+    } catch { /* l'anteprima non è essenziale: se salta, si salva comunque */ }
+  }, 260);
 }
 
 // --- Contatori (morti, tentativi, parole…) --------------------------------
@@ -7538,6 +7983,7 @@ function caricaDatiScheda(id) {
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); }
   if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaDiscord(); caricaTgLogin(); }
   if (id === 'pagina') caricaPaginaLink();
+  if (id === 'sottoscrizione') caricaSottoscrizione();
   if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaAnima(); caricaLLM(); }
 }
 

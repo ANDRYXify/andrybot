@@ -176,12 +176,18 @@ export const config = {
     };
   })(),
 
-  // Promo "settimana gratis": al primo accesso self-service, con una certa
-  // probabilità, un account che non ha MAI avuto il bot riceve alcuni giorni di
-  // accesso Pro (un trial, non "community"). Si revoca da sé alla scadenza. È
-  // legata al login self-service, quindi di fatto parte solo con Stripe acceso.
+  // Promo "settimana gratis": al primo accesso, con una certa probabilità, un
+  // account che non ha MAI avuto il bot riceve alcuni giorni di accesso Pro (un
+  // trial, non "community"). Si revoca da sé alla scadenza.
+  //
+  // SPENTA per default (0). Aveva senso quando chi si registrava NON aveva
+  // accesso: era un'esca per far provare il bot. Ora esiste il pacchetto
+  // ESSENZIALE gratuito, quindi un nuovo iscritto ha già un bot che funziona;
+  // regalargli il Pro significherebbe fargli provare tutto per poi TOGLIERGLIELO
+  // dopo una settimana — un declassamento che si nota, oltre al costo di server.
+  // Accendila solo come leva di marketing consapevole: PROMO_PROBABILITA=0.2.
   promo: {
-    probabilita: Math.min(1, Math.max(0, Number(env('PROMO_PROBABILITA', '0.2')) || 0)),
+    probabilita: Math.min(1, Math.max(0, Number(env('PROMO_PROBABILITA', '0')) || 0)),
     giorni: Math.max(1, parseInt(env('PROMO_GIORNI', '7'), 10) || 7),
   },
 };

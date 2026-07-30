@@ -15,6 +15,8 @@ import { config, SCOPES, missingConfig } from '../config.js';
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb, friends } from '../db.js';
 import { points, vips, tgConf, dcConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
+import { linkPage, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO } from '../db.js';
+import { renderLinkPage } from '../features/linkpagina.js';
 import * as abbonamenti from '../features/abbonamenti.js';
 import * as spotify from '../features/spotify.js';
 import * as giveaway from '../features/giveaway.js';
@@ -325,7 +327,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
         || VETRINA.has(req.path) || req.path === '/api/me'
         || req.path.startsWith('/api/abbonamento/')   // piani/checkout/portale: auth propria
         || req.path.startsWith('/overlay/') || req.path.startsWith('/o/')   // overlay OBS + link "belli"
-        || req.path.startsWith('/u/')        // link-page pubblica (servita in proxy dal sito madre)
+        || req.path.startsWith('/u/')        // link-page pubblica: la serviamo noi dal DB
         || req.path.startsWith('/assets/')   // bundle JS/CSS della link-page (proxy verso Vercel)
         || req.path === '/api/streamer-verify'   // API JSON della link-page (proxy verso Vercel)
         || req.path.startsWith('/api/ext/')
@@ -671,120 +673,115 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       res.status(502).type('text/plain').send('Link page temporaneamente non raggiungibile.');
     }
   }
-  app.get('/u/:user', (req, res) => {
-    if (!/^[a-z0-9_]{1,30}$/.test(String(req.params.user || '').toLowerCase())) return notFound(res);
-    return proxyLinkPage(req, res);
-  });
-  // bundle JS/CSS della SPA e API JSON della link-page: proxy verso il sito madre
-  app.get('/assets/*', proxyLinkPage);
+  // ── /u/<login>: la pagina la serviamo NOI ───────────────────────────────────
+  // I dati stanno nel nostro DB (tabella link_page) e l'HTML lo generiamo qui.
+  // Prima era un reverse-proxy verso andryxify.it: significava dipendere da un
+  // altro servizio per una pagina nostra, e per modificarla servivano un token
+  // Twitch a ogni salvataggio e l'abilitazione "approved" sul sito.
+  app.get('/u/:user', wrap(async (req, res) => {
+    const login = String(req.params.user || '').toLowerCase();
+    if (!/^[a-z0-9_]{1,30}$/.test(login)) return notFound(res);
+    const p = linkPage.get(login);
+    if (!p || !p.attiva) return notFound(res);        // mai creata, o spenta dallo streamer
+    const s = streamers.get(login);
+    const html = renderLinkPage(p, {
+      login,
+      display: s?.display || login,
+      avatar: s?.avatar || '',
+      baseUrl: config.baseUrl,
+    });
+    res.set('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
+    res.type('html').send(html);
+  }));
+  // Il vecchio proxy resta solo per l'API del sito che il pre-addestramento
+  // consulta (bio/social della vetrina): non serve più per /u.
   app.get('/api/streamer-verify', proxyLinkPage);
 
-  // ── PAGINA LINK (/u/<login>): crearla e modificarla da qui ──────────────────
-  // I DATI restano su andryxify.it: è l'unica fonte di verità, così la pagina non
-  // si sdoppia tra due editor che scrivono in posti diversi. Noi facciamo da
-  // tramite: il sito autentica con `Authorization: Bearer <token Twitch>` e il
-  // token dello streamer ce l'abbiamo già in DB (auth.getToken lo rinnova da sé).
-  //
-  // SICUREZZA: il token NON arriva mai al browser — la chiamata la fa il server.
-  // Solo il proprietario del canale può toccare la propria pagina pubblica
-  // (requireOwner): è la sua identità, non una impostazione del canale.
-  const LINKPAGE_TEMPLATES = ['minimal', 'neon', 'retro', 'sunset', 'glass'];
-  const LINKPAGE_LIMITI = { headline: 80, tagline: 160, label: 40, icona: 24, link: 12 };
-
-  async function chiamaSitoLinkPage(login, corpo) {
-    const token = await auth.getToken('broadcaster', login);
-    const r = await fetch(LINKPAGE_ORIGIN + '/api/streamer-verify', {
-      method: corpo ? 'POST' : 'GET',
-      headers: {
-        Authorization: 'Bearer ' + token,
-        ...(corpo ? { 'Content-Type': 'application/json' } : {}),
-      },
-      ...(corpo ? { body: JSON.stringify(corpo) } : {}),
-    });
-    let dati = null;
-    try { dati = await r.json(); } catch { /* risposta non JSON */ }
-    return { stato: r.status, dati };
-  }
-
+  // ── API della pagina link: leggono e scrivono il NOSTRO DB ──────────────────
+  // Niente token Twitch, niente chiamate a servizi esterni, nessun vincolo di
+  // "abilitazione" altrove: la pagina è di SocialBot e la gestisce SocialBot.
+  // Funziona per tutti i piani, Essenziale gratuito compreso.
+  // requireOwner: la pagina pubblica è l'identità dello streamer, non
+  // un'impostazione del canale, quindi i moderatori non la toccano.
   app.get('/api/linkpage', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    try {
-      // col Bearer il sito salta la cache CDN e ci dà lo stato fresco
-      const token = await auth.getToken('broadcaster', login);
-      const r = await fetch(`${LINKPAGE_ORIGIN}/api/streamer-verify?action=link_page&login=${encodeURIComponent(login)}`,
-        { headers: { Authorization: 'Bearer ' + token } });
-      const d = r.ok ? await r.json().catch(() => null) : null;
-      const lp = d?.linkPage || d || {};
-      // ATTENZIONE — pagina in "modalità blocchi" (schema 2): il renderer del sito
-      // mostra i BLOCCHI, non i campi semplici. Se lo streamer ha costruito la
-      // pagina con l'editor avanzato e poi salva da qui, i campi verrebbero
-      // scritti ma la pagina pubblica NON cambierebbe: un salvataggio muto, il
-      // peggior tipo di bug. Lo segnaliamo al client, che avvisa invece di far
-      // finta di niente (e noi non tocchiamo mai i blocchi: nessuna perdita).
-      const aBlocchi = String(lp.schema || '') === '2' && Array.isArray(lp.blocchi) && lp.blocchi.length > 0;
-      res.json({
-        esiste: r.status !== 404,
-        url: `${config.baseUrl}/u/${login}`,
-        templates: LINKPAGE_TEMPLATES,
-        limiti: LINKPAGE_LIMITI,
-        aBlocchi,
-        urlEditorAvanzato: `${LINKPAGE_ORIGIN}/impostazioni`,
-        pagina: {
-          template: LINKPAGE_TEMPLATES.includes(lp.template) ? lp.template : 'minimal',
-          accent: lp.accent || '', bg: lp.bg || '',
-          headline: lp.headline || '', tagline: lp.tagline || '',
-          links: Array.isArray(lp.links) ? lp.links.slice(0, LINKPAGE_LIMITI.link) : [],
-          aggiornata: lp.updatedAt || null,
-        },
-      });
-    } catch (e) {
-      // token mancante = non ha (ancora) concesso i permessi Twitch
-      if (/Token broadcaster mancante/i.test(e?.message || '')) {
-        return res.status(409).json({ errore: 'Concedi prima i permessi Twitch dalla scheda Stato.' });
-      }
-      log.warn('linkpage lettura:', e?.message || e);
-      res.status(502).json({ errore: 'Pagina link non raggiungibile, riprova.' });
-    }
+    const s = streamers.get(login);
+    const p = linkPage.conDefault(login, s?.display || login);
+    res.json({
+      url: `${config.baseUrl}/u/${login}`,
+      pubblicata: linkPage.esiste(login) && p.attiva,
+      templates: TEMPLATE_LINKPAGE,
+      fonts: FONT_LINKPAGE,
+      icone: ICONE_LINKPAGE,
+      tipi: TIPI_BLOCCO,
+      limiti: LIMITI_LINKPAGE,
+      avatarTwitch: s?.avatar || '',
+      // per chi parte da zero: un primo blocco già pronto sul suo canale
+      suggeriti: linkPage.esiste(login) ? [] : [
+        { tipo: 'link', icona: 'twitch', label: 'Twitch', url: `https://twitch.tv/${login}`, sotto: '', evidenzia: true },
+      ],
+      pagina: {
+        headline: p.headline || '', tagline: p.tagline || '',
+        template: p.template || 'minimal',
+        avatar: p.avatar || '',
+        tema: p.tema,
+        blocchi: p.blocchi || [],
+        attiva: p.attiva !== false,
+        aggiornata: p.ts || null,
+      },
+    });
   }));
 
   app.post('/api/linkpage', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const b = req.body || {};
-    // ripulisco qui quel che posso (il sito ri-sanifica comunque: è lui l'autorità)
-    const links = (Array.isArray(b.links) ? b.links : []).slice(0, LINKPAGE_LIMITI.link)
-      .map((l) => ({
-        label: String(l?.label || '').slice(0, LINKPAGE_LIMITI.label),
-        url: String(l?.url || '').slice(0, 600),
-        icon: String(l?.icon || '').slice(0, LINKPAGE_LIMITI.icona),
-      }))
-      .filter((l) => l.label && /^https?:\/\//i.test(l.url));
-    const corpo = {
-      action: 'update_linkpage',
-      template: LINKPAGE_TEMPLATES.includes(b.template) ? b.template : 'minimal',
-      accent: /^#[0-9a-f]{3,8}$/i.test(b.accent || '') ? b.accent : '',
-      bg: /^#[0-9a-f]{3,8}$/i.test(b.bg || '') ? b.bg : '',
-      headline: String(b.headline || '').slice(0, LINKPAGE_LIMITI.headline),
-      tagline: String(b.tagline || '').slice(0, LINKPAGE_LIMITI.tagline),
-      links,
-    };
-    try {
-      const { stato, dati } = await chiamaSitoLinkPage(login, corpo);
-      if (stato === 200) return res.json({ ok: true, url: `${config.baseUrl}/u/${login}`, salvati: links.length });
-      // messaggi utili invece del codice grezzo del sito
-      if (stato === 403 && dati?.code === 'not_approved') {
-        return res.status(403).json({ errore: 'La pagina link è riservata agli streamer abilitati su andryxify.it. Chiedi ad andryxify di abilitarti.' });
-      }
-      if (stato === 401) return res.status(409).json({ errore: 'I permessi Twitch sono scaduti: riautorizza dalla scheda Stato.' });
-      if (stato === 413) return res.status(413).json({ errore: dati?.error || 'La pagina è troppo grande: togli qualche link.' });
-      log.warn('linkpage salvataggio: HTTP', stato, dati?.error || '');
-      res.status(502).json({ errore: dati?.error || 'Salvataggio non riuscito, riprova.' });
-    } catch (e) {
-      if (/Token broadcaster mancante/i.test(e?.message || '')) {
-        return res.status(409).json({ errore: 'Concedi prima i permessi Twitch dalla scheda Stato.' });
-      }
-      log.warn('linkpage salvataggio:', e?.message || e);
-      res.status(502).json({ errore: 'Pagina link non raggiungibile, riprova.' });
-    }
+    const inviati = Array.isArray(b.blocchi) ? b.blocchi.length : 0;
+    // La sanificazione sta TUTTA nello store (db.js): scarta doppioni, indirizzi
+    // non validi e testi troppo lunghi. Rispondiamo con ciò che è stato salvato
+    // DAVVERO, così il client può dire quanti pezzi ha scartato invece di
+    // annunciare un successo pieno che non c'è stato.
+    const p = linkPage.salva(login, {
+      headline: b.headline, tagline: b.tagline, template: b.template,
+      avatar: b.avatar, tema: b.tema, blocchi: b.blocchi,
+      attiva: b.attiva !== false,
+    });
+    res.json({
+      ok: true,
+      url: `${config.baseUrl}/u/${login}`,
+      pubblicata: !!p?.attiva,
+      salvati: p?.blocchi?.length || 0,
+      inviati,
+      pagina: {
+        headline: p.headline, tagline: p.tagline, template: p.template,
+        avatar: p.avatar, tema: p.tema, blocchi: p.blocchi, attiva: p.attiva, aggiornata: p.ts,
+      },
+    });
+  }));
+
+  // Anteprima: rende l'HTML VERO della pagina senza salvarla, così quello che
+  // l'editor mostra è esattamente quello che verrà pubblicato (nessuna finta
+  // anteprima che poi non combacia). Non tocca il DB.
+  app.post('/api/linkpage/anteprima', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const s = streamers.get(login);
+    const b = req.body || {};
+    // passo dalla stessa sanificazione del salvataggio, senza scrivere
+    const finta = linkPage.pulisci({
+      headline: b.headline, tagline: b.tagline, template: b.template,
+      avatar: b.avatar, tema: b.tema, blocchi: b.blocchi,
+    });
+    const html = renderLinkPage(finta, {
+      login, display: s?.display || login, avatar: s?.avatar || '', baseUrl: config.baseUrl,
+    });
+    res.json({ html });
+  }));
+
+  // Spegne la pagina (torna 404) senza cancellare i contenuti: si riaccende.
+  app.delete('/api/linkpage', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const p = linkPage.get(login);
+    if (p) linkPage.salva(login, { ...p, attiva: false });
+    res.json({ ok: true, pubblicata: false });
   }));
 
   // Informativa privacy & sicurezza (pubblica: dev'essere sempre consultabile)
@@ -841,9 +838,12 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       let promoVinta = false;
       if (!streamers.get(login)) {
         if (!subscriptions.get(login) && config.promo.probabilita > 0 && Math.random() < config.promo.probabilita) {
-          subscriptions.set(login, { tier: 'pro', status: 'trialing', periodEnd: Date.now() + config.promo.giorni * 86400000 });
+          // Base + TUTTI i pacchetti: e l'equivalente odierno del vecchio "Pro",
+          // che non esiste piu nel catalogo. Regalare un tier fuori catalogo
+          // mostrava alla persona un piano che non avrebbe potuto rinnovare.
+          subscriptions.set(login, { tier: 'base', pacchetti: abbonamenti.ADDON_IDS, status: 'trialing', periodEnd: Date.now() + config.promo.giorni * 86400000 });
           promoVinta = true;
-          log.info(`promo: settimana gratis Pro a @${login} (${config.promo.giorni}g)`);
+          log.info(`promo: prova gratuita completa a @${login} (${config.promo.giorni}g)`);
         }
         try { streamers.upsertApproved(login, disp); seedStreamer(login); sync(); }
         catch (e) { log.warn('primo accesso, seed streamer:', e?.message || e); }
