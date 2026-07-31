@@ -18,6 +18,11 @@ export const ANTISPAM_DEFAULT = {
   maiuscole: true,        // messaggi TUTTI MAIUSCOLI
   menzioni: true,         // troppe @menzioni in un colpo
   flood: true,            // troppi messaggi in pochi secondi
+  simboli: false,         // ASCII-art, "zalgo" e muri di simboli/caratteri strani
+  lungo: false,           // messaggi troppo lunghi (muri di testo)
+  lungoMax: 350,          // oltre quanti caratteri scatta "troppo lungo"
+  emoji: false,           // raffiche di emoji
+  emojiMax: 8,            // quante emoji al massimo in un messaggio
   timeoutRecidivi: true,  // timeout crescente a chi insiste
   avvisa: true,           // avvisa in chat quando elimina
 };
@@ -57,6 +62,23 @@ function troppeMaiuscole(testo) {
 
 function troppeMenzioni(testo) {
   return (testo.match(/@[a-z0-9_]{2,}/gi) || []).length >= 4;
+}
+
+// ASCII-art, "zalgo" (testo pieno di segni combinanti), muri di caratteri o
+// messaggi fatti quasi solo di simboli. Le frasi corte sono lasciate stare.
+function troppiSimboli(testo) {
+  const t = String(testo || '');
+  if (t.length < 8) return false;
+  const combinanti = (t.match(/\p{M}/gu) || []).length;
+  if (combinanti >= 8) return true;                              // zalgo
+  if (t.split(/\s+/).some((w) => w.length >= 40)) return true;   // muro di caratteri / link offuscato
+  const strani = (t.match(/[^\p{L}\p{N}\s.,!?'"()@#%$€:;/_\-]/gu) || []).length;
+  return strani >= 6 && strani / t.length >= 0.5;
+}
+
+// quante emoji vere ci sono (per la raffica di emoji)
+function contaEmoji(testo) {
+  return (String(testo || '').match(/\p{Extended_Pictographic}/gu) || []).length;
 }
 
 // -------------------------------------------------------- stato volatile
@@ -120,6 +142,12 @@ export function valuta(msg, cfg) {
   if (cfg.maiuscole && troppeMaiuscole(testo)) return { motivo: 'troppe maiuscole' };
   // valanga di menzioni
   if (cfg.menzioni && troppeMenzioni(testo)) return { motivo: 'troppe menzioni' };
+  // ASCII-art / zalgo / muri di simboli
+  if (cfg.simboli && troppiSimboli(testo)) return { motivo: 'troppi simboli / caratteri strani' };
+  // muro di testo troppo lungo
+  if (cfg.lungo && testo.length > (Number(cfg.lungoMax) || 350)) return { motivo: 'messaggio troppo lungo' };
+  // raffica di emoji
+  if (cfg.emoji && contaEmoji(testo) > (Number(cfg.emojiMax) || 8)) return { motivo: 'troppe emoji' };
 
   return null;
 }
