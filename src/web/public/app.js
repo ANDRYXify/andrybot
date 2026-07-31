@@ -6263,6 +6263,27 @@ const TEMI_PRONTI = [
   { id: 'arcade', nome: 'Arcade', base: 'brutal',
     tema: _tema({ bg: '#08090a', bg2: '#101314', testo: '#e6ffe9', accent: '#53fc18', card: 'rgba(83,252,24,.07)',
       bordo: '#53fc18', font: 'mono', raggio: 0, ombra: false, effetto: 'grana', anim: 'pop' }) },
+  // — nuovi temi con animazioni "vere" —
+  { id: 'synth', nome: 'Synthwave', base: 'neon',
+    tema: _tema({ sfondoTipo: 'gradiente', bg: '#1a0730', bg2: '#3d0d4e', angolo: 200, testo: '#ffe7fb', accent: '#ff4fd8',
+      card: 'rgba(255,255,255,.06)', bordo: 'rgba(255,79,216,.4)', font: 'condensato', raggio: 6, effetto: 'synthwave', movimento: 'crawl', stileBtn: 'vetro' }) },
+  { id: 'cyber', nome: 'Cyberpunk', base: 'glass',
+    tema: _tema({ sfondoTipo: 'gradiente', bg: '#05070d', bg2: '#0a1a2b', angolo: 160, testo: '#d7fbff', accent: '#00e5ff',
+      card: 'rgba(0,229,255,.06)', bordo: 'rgba(0,229,255,.34)', font: 'mono', raggio: 2, effetto: 'scanline', movimento: 'cinema' }) },
+  { id: 'matrix', nome: 'Matrix', base: 'brutal',
+    tema: _tema({ bg: '#020604', bg2: '#04120a', testo: '#c8ffd4', accent: '#22ff88', card: 'rgba(34,255,136,.06)',
+      bordo: 'rgba(34,255,136,.35)', font: 'mono', raggio: 0, ombra: false, effetto: 'matrix' }) },
+  { id: 'galassia', nome: 'Galassia', base: 'neon',
+    tema: _tema({ sfondoTipo: 'gradiente', bg: '#050418', bg2: '#160a3a', angolo: 165, testo: '#eef0ff', accent: '#8b7bff',
+      card: 'rgba(255,255,255,.06)', bordo: 'rgba(139,123,255,.34)', effetto: 'nebulosa', movimento: 'crawl', raggio: 16, stileBtn: 'vetro' }) },
+  { id: 'oro', nome: 'Oro', base: 'minimal',
+    tema: _tema({ sfondoTipo: 'gradiente', bg: '#0a0a0a', bg2: '#1c1608', angolo: 150, testo: '#f8f1dc', accent: '#e8c463',
+      card: 'rgba(232,196,99,.07)', bordo: 'rgba(212,175,55,.42)', font: 'serif', raggio: 4, effetto: 'raggi', stileBtn: 'contorno' }) },
+  { id: 'oceano', nome: 'Oceano', base: 'glass',
+    tema: _tema({ sfondoTipo: 'gradiente', bg: '#04121f', bg2: '#06304f', angolo: 180, testo: '#e6f6ff', accent: '#3bb0e6',
+      card: 'rgba(255,255,255,.07)', bordo: 'rgba(70,180,230,.32)', effetto: 'onde', raggio: 18, font: 'tondo' }) },
+  { id: 'scintille', nome: 'Scintille', base: 'sunset',
+    tema: _tema({ sfondoTipo: 'gradiente', bg: '#140b24', bg2: '#3a1533', angolo: 200, effetto: 'particelle', movimento: 'cinema', raggio: 20, font: 'tondo' }) },
 ];
 // Colori di partenza dei 7 stili base: servono per disegnare la miniatura del
 // tema quando il tema stesso non li sovrascrive.
@@ -6271,6 +6292,10 @@ const _BASI = {
   retro: { bg: '#f5e9d0', bg2: '#e8d3ad', acc: '#c2551f' }, sunset: { bg: '#1b0f2b', bg2: '#4a1d3d', acc: '#ff8a5b' },
   glass: { bg: '#0e1626', bg2: '#16304d', acc: '#5bc8ff' }, brutal: { bg: '#f4f4f0', bg2: '#e6e6e0', acc: '#ff4d2d' },
   pastello: { bg: '#fdf2f8', bg2: '#eef2ff', acc: '#c86bb0' },
+  cyber: { bg: '#05070d', bg2: '#0a1a2b', acc: '#00e5ff' }, vapor: { bg: '#1a0b2e', bg2: '#3a1a6b', acc: '#ff71ce' },
+  oro: { bg: '#0a0a0a', bg2: '#1c1608', acc: '#e8c463' }, oceano: { bg: '#04121f', bg2: '#06304f', acc: '#3bb0e6' },
+  foresta: { bg: '#08130d', bg2: '#102a1b', acc: '#6ad48b' }, ghiaccio: { bg: '#eef4fb', bg2: '#d6e6f5', acc: '#2a8fd8' },
+  lava: { bg: '#100604', bg2: '#3a1005', acc: '#ff5a2c' }, bubblegum: { bg: '#fff0f6', bg2: '#ffe0ef', acc: '#ff3d8b' },
 };
 function temiProntiHtml(sel) {
   return `<div class="lp-temi">` + TEMI_PRONTI.map((t) => {
@@ -6307,7 +6332,8 @@ async function caricaPaginaLink(ridisegna = false) {
   }
   const d = LP.d;
 
-  const NOMI_STILE = { minimal: 'Minimal', neon: 'Neon', retro: 'Retro', sunset: 'Sunset', glass: 'Glass', brutal: 'Brutal', pastello: 'Pastello' };
+  const NOMI_STILE = { minimal: 'Minimal', neon: 'Neon', retro: 'Retro', sunset: 'Sunset', glass: 'Glass', brutal: 'Brutal', pastello: 'Pastello',
+    cyber: 'Cyberpunk', vapor: 'Vaporwave', oro: L('Oro', 'Gold', 'Oro'), oceano: L('Oceano', 'Ocean', 'Océano'), foresta: L('Foresta', 'Forest', 'Bosque'), ghiaccio: L('Ghiaccio', 'Ice', 'Hielo'), lava: 'Lava', bubblegum: 'Bubblegum' };
   const NOMI_FONT = { system: L('Sistema', 'System', 'Sistema'), inter: 'Inter', mono: L('Monospaziato', 'Monospaced', 'Monoespaciado'), serif: L('Con grazie', 'Serif', 'Con serifa'), condensato: L('Condensato', 'Condensed', 'Condensada'), tondo: L('Tondo', 'Rounded', 'Redonda') };
   const opts = (lista, sel, nomi) => lista.map((k) => `<option value="${esc(k)}"${k === sel ? ' selected' : ''}>${esc((nomi && nomi[k]) || k)}</option>`).join('');
 
@@ -6384,6 +6410,7 @@ async function caricaPaginaLink(ridisegna = false) {
             <option value="nessuno">${L('Fermo — nessuna animazione', 'Still — no animation', 'Quieto — sin animación')}</option>
             <option value="dolce">${L('Dolce — i contenuti compaiono mentre scorri', 'Gentle — content appears as you scroll', 'Suave — el contenido aparece al desplazar')}</option>
             <option value="cinema">${L('Cinema — parallasse, titoli parola per parola, immagini che si avvicinano', 'Cinematic — parallax, word-by-word titles, images pulling in', 'Cine — paralaje, títulos palabra por palabra, imágenes que se acercan')}</option>
+            <option value="crawl">${L('Star Wars — l’intestazione arriva in prospettiva (poi i contenuti scorrono)', 'Star Wars — the header flies in with perspective (then content scrolls in)', 'Star Wars — el encabezado llega en perspectiva (luego el contenido aparece)')}</option>
           </select>
           <p class="suggerimento">${L('Tutto in CSS, nessuno script: la pagina resta leggera. Chi ha attivato “riduci animazioni” nel sistema non ne vede nessuna.', 'All CSS, no scripts: the page stays light. Anyone with “reduce motion” on sees none of it.', 'Todo en CSS, sin scripts: la página sigue ligera. Quien tiene “reducir movimiento” no ve ninguna.')}</p>
 
@@ -6422,6 +6449,13 @@ async function caricaPaginaLink(ridisegna = false) {
             <option value="stelle">${L('Stelle (si muovono piano)', 'Stars (drifting)', 'Estrellas (a la deriva)')}</option>
             <option value="onde">${L('Onde (respirano in fondo)', 'Waves (breathing at the bottom)', 'Olas (respiran abajo)')}</option>
             <option value="griglia">${L('Griglia in prospettiva (anni ’80)', 'Perspective grid (80s)', 'Rejilla en perspectiva (años 80)')}</option>
+            <option value="synthwave">${L('Synthwave (sole + griglia che scorre)', 'Synthwave (sun + flowing grid)', 'Synthwave (sol + rejilla en movimiento)')}</option>
+            <option value="neonpulse">${L('Neon che pulsa', 'Pulsing neon', 'Neón que late')}</option>
+            <option value="particelle">${L('Particelle che salgono', 'Rising particles', 'Partículas que suben')}</option>
+            <option value="matrix">${L('Pioggia digitale (Matrix)', 'Digital rain (Matrix)', 'Lluvia digital (Matrix)')}</option>
+            <option value="nebulosa">${L('Nebulosa (aloni che si muovono)', 'Nebula (drifting glow)', 'Nebulosa (halos en movimiento)')}</option>
+            <option value="scanline">${L('Scanline (vecchio schermo TV)', 'Scanlines (old CRT screen)', 'Scanlines (pantalla CRT antigua)')}</option>
+            <option value="raggi">${L('Raggi di luce che ruotano', 'Rotating light rays', 'Rayos de luz giratorios')}</option>
           </select>
 
           <div class="griglia-campi spazio-sopra">

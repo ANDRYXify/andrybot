@@ -1261,7 +1261,8 @@ export const memory = {
 // Il contenuto è una lista di BLOCCHI in ordine (non solo link), e l'aspetto è
 // un TEMA con colori, sfondo, font e forme: così lo streamer può costruire la
 // pagina come la immagina invece di riempire cinque campi fissi.
-export const TEMPLATE_LINKPAGE = ['minimal', 'neon', 'retro', 'sunset', 'glass', 'brutal', 'pastello'];
+export const TEMPLATE_LINKPAGE = ['minimal', 'neon', 'retro', 'sunset', 'glass', 'brutal', 'pastello',
+  'cyber', 'vapor', 'oro', 'oceano', 'foresta', 'ghiaccio', 'lava', 'bubblegum'];
 export const FONT_LINKPAGE = ['system', 'inter', 'mono', 'serif', 'condensato', 'tondo'];
 export const ICONE_LINKPAGE = ['link', 'twitch', 'youtube', 'instagram', 'tiktok', 'discord', 'spotify',
   'x', 'telegram', 'kick', 'github', 'reddit', 'threads', 'facebook', 'whatsapp', 'twitter',
@@ -1271,7 +1272,7 @@ export const TIPI_BLOCCO = ['link', 'titolo', 'testo', 'badge', 'separatore', 's
 // compaiono entrando. "cinema" = in più: la foto della copertina va in
 // parallasse, i titoli si rivelano parola per parola, le immagini si
 // riavvicinano. Tutto in CSS (animation-timeline), zero JavaScript.
-export const MOVIMENTI = ['nessuno', 'dolce', 'cinema'];
+export const MOVIMENTI = ['nessuno', 'dolce', 'cinema', 'crawl'];
 // Ogni blocco può occupare tutta la riga o dividerla: è così che si mettono le
 // cose UNA ACCANTO ALL'ALTRA invece che una sotto l'altra.
 // Sono FRAZIONI ESATTE di una riga a 12 colonne: un terzo occupa un terzo e
@@ -1417,7 +1418,8 @@ export const linkPage = {
     const tema = {
       sfondoTipo: scelta(t.sfondoTipo, ['tinta', 'gradiente', 'immagine'], 'tinta'),
       bg: hex(t.bg), bg2: hex(t.bg2), angolo: num(t.angolo, 0, 360, 160), sfondoUrl: urlOk(t.sfondoUrl),
-      effetto: scelta(t.effetto, ['nessuno', 'aurora', 'maglia', 'grana', 'bolle', 'stelle', 'onde', 'griglia'], 'nessuno'),
+      effetto: scelta(t.effetto, ['nessuno', 'aurora', 'maglia', 'grana', 'bolle', 'stelle', 'onde', 'griglia',
+        'synthwave', 'neonpulse', 'particelle', 'matrix', 'nebulosa', 'scanline', 'raggi'], 'nessuno'),
       testo: hex(t.testo), accent: hex(t.accent), card: hex(t.card), bordo: hex(t.bordo),
       font: scelta(t.font, FONT_LINKPAGE, 'system'),
       raggio: num(t.raggio, 0, 999, 14),
