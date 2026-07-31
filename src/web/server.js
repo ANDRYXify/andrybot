@@ -16,7 +16,7 @@ import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb, friends } from '../db.js';
 import { points, vips, tgConf, dcConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO } from '../db.js';
-import { renderLinkPage } from '../features/linkpagina.js';
+import { renderLinkPage, renderInformativa } from '../features/linkpagina.js';
 import { risolviCanaleId } from '../features/youtube.js';
 import * as abbonamenti from '../features/abbonamenti.js';
 import * as spotify from '../features/spotify.js';
@@ -740,6 +740,22 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!/^[a-z0-9_]{1,30}$/.test(login) || !/^lp_[a-z0-9_]+\.(png|jpg|webp|gif)$/i.test(file)) return notFound(res);
     res.sendFile(join(effectsRoot, login, file), { maxAge: '7d' }, (err) => { if (err) notFound(res); });
   });
+
+  // Informativa privacy della pagina pubblica. Va messa sempre, anche senza
+  // cookie: il banner serve solo per i cookie non essenziali, ma dire chi tratta
+  // i dati e quali è un obbligo che dai cookie non dipende.
+  app.get('/u/:user/privacy', wrap(async (req, res) => {
+    const login = String(req.params.user || '').toLowerCase();
+    if (!/^[a-z0-9_]{1,30}$/.test(login)) return notFound(res);
+    const p = linkPage.get(login);
+    if (!p || !p.attiva) return notFound(res);
+    const s = streamers.get(login);
+    res.set('Cache-Control', 'public, max-age=0, s-maxage=300');
+    res.type('html').send(renderInformativa({
+      login, display: s?.display || login, baseUrl: config.baseUrl, pagina: p,
+      contatto: config.contattoPrivacy || '',
+    }));
+  }));
 
   app.get('/u/:user', wrap(async (req, res) => {
     const login = String(req.params.user || '').toLowerCase();
