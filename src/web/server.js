@@ -218,13 +218,19 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // canale moderato. `preferito` forza un canale specifico (es. quello dell'invito).
   function contestoDefault(contesti, preferito) {
     if (preferito) { const c = contesti.find((x) => x.canale === preferito); if (c) return c; }
-    // Preferisci il PROPRIO canale solo se è davvero configurato (il bot lo conosce
-    // come streamer). Un moderatore "puro" — login col proprio account, ma senza un
-    // canale suo impostato — NON deve atterrare sul proprio canale vuoto: lo mandiamo
-    // dritto al primo canale che modera, così non si "perde" sul proprio profilo.
     const proprio = contesti.find((x) => x.role === 'proprietario');
-    if (proprio && streamers.get(proprio.canale)) return proprio;
-    return contesti.find((x) => x.role === 'moderatore') || proprio || contesti[0] || null;
+    const moderato = contesti.find((x) => x.role === 'moderatore');
+    // Preferisci il PROPRIO canale solo se la persona è uno streamer "vero": paga
+    // (abbonamento), è membro community, o è admin. Il record streamer viene creato
+    // d'ufficio al primo login (pacchetto gratuito), quindi la sua sola esistenza non
+    // basta: un moderatore che entra col suo account NON deve atterrare sul proprio
+    // canale vuoto, ma sul canale che modera.
+    if (proprio) {
+      const l = proprio.canale;
+      const streamerVero = !!(subscriptions.get(l) || streamers.get(l)?.community || config.adminLogins.includes(l));
+      if (streamerVero || !moderato) return proprio;
+    }
+    return moderato || proprio || contesti[0] || null;
   }
 
   // Costruisce l'oggetto sessione per un contesto scelto, mantenendo l'identità.
@@ -1056,6 +1062,13 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       if (!v?.login) return res.redirect('/?errore=validazione');
       const login = String(v.login).toLowerCase();
       const disp = v.display || login;
+      // ABBINA gli inviti a moderatore ancora pendenti per questo login: chi è
+      // stato invitato a moderare non deve per forza usare il link — basta il
+      // login con Twitch. Così un moderatore non resta chiuso fuori dal canale.
+      for (const inv of managers.pendentiByLogin(login)) {
+        try { managers.attiva(inv.channel, login, disp); log.info(`invito moderatore abbinato al login: @${login} → #${inv.channel}`); }
+        catch (e) { log.debug('auto-abbina invito:', e?.message || e); }
+      }
       // il founder/admin: assicura il record (approved+community) così non resta
       // mai chiuso fuori e la dashboard ha tutto pronto anche dopo un reset.
       if (config.adminLogins.includes(login)) {
@@ -1115,6 +1128,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         if (inv.login !== modLogin) return res.redirect('/mod?errore=account-diverso');
         managers.attiva(inv.channel, modLogin, disp);
         preferito = inv.channel;                               // atterra sul canale dell'invito
+      }
+      // anche senza link: abbina eventuali inviti pendenti a questo login.
+      for (const inv of managers.pendentiByLogin(modLogin)) {
+        try { managers.attiva(inv.channel, modLogin, disp); if (!preferito) preferito = inv.channel; }
+        catch (e) { log.debug('auto-abbina invito (mod):', e?.message || e); }
       }
       // accesso unificato: l'identità dà accesso al proprio canale (se streamer
       // approvato) e a tutti i canali moderati; poi si cambia con lo switcher.

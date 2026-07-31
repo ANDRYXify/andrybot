@@ -1020,6 +1020,13 @@ export const managers = {
     return db.prepare("SELECT * FROM managers WHERE login=? AND status='attivo' ORDER BY last_seen DESC")
       .all(String(login).toLowerCase());
   },
+  // Inviti a moderatore ANCORA PENDENTI (non accettati) e non scaduti per un
+  // login: servono per abbinare un moderatore appena fa login con Twitch, anche
+  // senza usare il link d'invito.
+  pendentiByLogin(login) {
+    return db.prepare("SELECT * FROM managers WHERE login=? AND status='invitato' AND (invite_expires=0 OR invite_expires>?)")
+      .all(String(login).toLowerCase(), now());
+  },
   byInvite(token) {
     if (!token) return null;
     return db.prepare('SELECT * FROM managers WHERE invite_token=?').get(String(token)) || null;
