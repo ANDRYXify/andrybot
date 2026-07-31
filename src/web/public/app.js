@@ -1345,7 +1345,7 @@ const GUIDE = {
   sondaggi: { serve: ['Lanciare sondaggi e predizioni Twitch direttamente da qui.', 'Launch Twitch polls and predictions right from here.', 'Lanzar encuestas y predicciones de Twitch directamente desde aquí.'],
     come: [['Scrivi la domanda e le opzioni (o titolo ed esiti).', 'Write the question and options (or title and outcomes).', 'Escribe la pregunta y las opciones (o título y resultados).'], ['Lancia: gli spettatori votano/puntano dall’app.', 'Launch: viewers vote/bet from the app.', 'Lanza: los espectadores votan/apuestan desde la app.'], ['Chiudi il sondaggio o scegli l’esito vincente della predizione.', 'Close the poll or pick the winning prediction outcome.', 'Cierra la encuesta o elige el resultado ganador de la predicción.']] },
   giveaway: { serve: ['Organizzare estrazioni a premi per la community.', 'Run prize giveaways for your community.', 'Organizar sorteos de premios para tu comunidad.'],
-    come: [['Apri il giveaway indicando il premio.', 'Open the giveaway and set the prize.', 'Abre el sorteo indicando el premio.'], ['La community entra scrivendo !join in chat.', 'The community joins by typing !join in chat.', 'La comunidad entra escribiendo !join en el chat.'], ['Estrai il vincitore dal pannello (puoi ripetere).', 'Draw the winner from the panel (you can redo it).', 'Saca al ganador desde el panel (puedes repetir).']] },
+    come: [['Apri il giveaway indicando il premio; puoi dare più possibilità a sub e VIP e scegliere la parola d\'ingresso.', 'Open the giveaway and set the prize; you can give subs and VIPs better odds and pick the join keyword.', 'Abre el sorteo indicando el premio; puedes dar más posibilidades a subs y VIPs y elegir la palabra de entrada.'], ['La community entra scrivendo !join (o la tua parola) in chat. Con !biglietti @nome regali chance extra.', 'The community joins by typing !join (or your keyword) in chat. With !biglietti @name you grant extra chances.', 'La comunidad entra escribiendo !join (o tu palabra) en el chat. Con !biglietti @nombre das chances extra.'], ['Estrai uno o più vincitori dal pannello o con !estrai N (puoi ripetere).', 'Draw one or more winners from the panel or with !estrai N (you can repeat).', 'Saca uno o varios ganadores desde el panel o con !estrai N (puedes repetir).']] },
   penitenze: { serve: ['Trasformare un premio a punti canale in una sfida a tempo: il bot conta quante volte sbagli (con «+1» a schermo) e alla fine fa partire una penitenza.', 'Turn a channel-point reward into a timed challenge: the bot counts your slip-ups (with an on-screen «+1») and triggers a forfeit at the end.', 'Convertir una recompensa de puntos de canal en un reto cronometrado: el bot cuenta cuántas veces fallas (con un «+1» en pantalla) y al final lanza una penitencia.'],
     come: [['Attiva il riconoscimento vocale (scheda Comandi a voce) e concedi i Punti canale.', 'Enable voice recognition (Voice commands tab) and grant Channel Points.', 'Activa el reconocimiento de voz (pestaña Comandos por voz) y concede los Puntos de canal.'], ['Scegli i due premi: «Vieta la parola» (non dirla) e «Usa solo la parola» (dì solo quella).', 'Choose the two rewards: «Ban the word» (don’t say it) and «Use only the word» (say only that).', 'Elige las dos recompensas: «Prohíbe la palabra» (no la digas) y «Usa solo la palabra» (di solo esa).'], ['Decidi la penitenza (tua lista o inventata dall\'IA) e dove mostrare il contatore nell\'overlay.', 'Decide the forfeit (your list or AI-generated) and where to show the counter in the overlay.', 'Decide la penitencia (tu lista o inventada por la IA) y dónde mostrar el contador en el overlay.']] },
   notifiche: { serve: ['Avvisare le tue community su Telegram e Discord quando vai in diretta, e segnalare i nuovi post/video su TikTok, YouTube e Instagram.', 'Alert your Telegram and Discord communities when you go live, and flag new posts/videos on TikTok, YouTube and Instagram.', 'Avisar a tus comunidades de Telegram y Discord cuando estás en directo, y señalar los nuevos posts/vídeos en TikTok, YouTube e Instagram.'],
@@ -1395,7 +1395,7 @@ const CAPACITA = [
     { pacc: 'giochi', t: ['Minigiochi e monete', 'Minigames and coins', 'Minijuegos y monedas'], d: ['Slot, roulette, pesca, trivia: gli spettatori giocano con la moneta del canale.', 'Slots, roulette, fishing, trivia: viewers play with your channel coin.', 'Tragaperras, ruleta, pesca, trivia: los espectadores juegan con la moneda del canal.'] },
     { pacc: 'giochi', t: ['Classifiche e VIP automatico', 'Leaderboards and automatic VIP', 'Clasificaciones y VIP automático'], d: ['Chi partecipa più di tutti sale in classifica e prende il VIP.', 'Whoever takes part the most climbs the leaderboard and gets VIP.', 'Quien más participa sube en la clasificación y recibe el VIP.'] },
     { pacc: 'effetti', t: ['Sondaggi e predizioni', 'Polls and predictions', 'Encuestas y predicciones'], d: ['Lanci sondaggi e predizioni Twitch dal pannello, senza aprire Twitch.', 'Launch Twitch polls and predictions from the panel, without opening Twitch.', 'Lanzas encuestas y predicciones de Twitch desde el panel, sin abrir Twitch.'] },
-    { pacc: 'free', t: ['Giveaway', 'Giveaways', 'Sorteos'], d: ['Estrazioni a premi: la community entra con !join e tu estrai.', 'Prize draws: the community joins with !join and you draw.', 'Sorteos: la comunidad entra con !join y tú sorteas.'] },
+    { pacc: 'free', t: ['Giveaway', 'Giveaways', 'Sorteos'], d: ['Estrazioni a premi: entrano con !join, con probabilità regolabili (più chance a sub/VIP), biglietti bonus e più vincitori in un colpo.', 'Prize draws: they join with !join, with adjustable odds (better chances for subs/VIPs), bonus tickets and multiple winners at once.', 'Sorteos: entran con !join, con probabilidades ajustables (más chances para subs/VIPs), boletos extra y varios ganadores a la vez.'] },
     { pacc: 'musica', t: ['Richieste musicali', 'Music requests', 'Peticiones musicales'], d: ['Canzoni in coda su Spotify con !sr: libero o a bit, monete o punti canale.', 'Songs queued on Spotify with !sr: free or via bits, coins or channel points.', 'Canciones en cola en Spotify con !sr: libre o con bits, monedas o puntos de canal.'] },
   ] },
   { ico: '<path d="M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/><path d="M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14"/>', area: ['Farti trovare', 'Getting you found', 'Que te encuentren'], voci: [
@@ -2568,11 +2568,28 @@ function pannelloGiveaway() {
   return pannello('giveaway', `
     <div class="carta">
       <h2>${_hIco(ICO.giveaway)}Giveaway</h2>
-      <p>${L('Apri un\'estrazione a premi: la community entra con <code>!join</code> in chat e tu estrai il vincitore da qui.', 'Open a prize giveaway: the community joins with <code>!join</code> in chat and you draw the winner from here.', 'Abre un sorteo de premios: la comunidad entra con <code>!join</code> en el chat y tú sacas al ganador desde aquí.')}</p>
+      <p>${L('Apri un\'estrazione a premi: la community entra con <code>!join</code> in chat e tu estrai il vincitore da qui. Puoi dare <strong>più possibilità</strong> a sub e VIP e regalare biglietti extra con <code>!biglietti @nome</code>.', 'Open a prize giveaway: the community joins with <code>!join</code> in chat and you draw the winner from here. You can give <strong>better odds</strong> to subs and VIPs and grant extra tickets with <code>!biglietti @name</code>.', 'Abre un sorteo de premios: la comunidad entra con <code>!join</code> en el chat y tú sacas al ganador desde aquí. Puedes dar <strong>más posibilidades</strong> a subs y VIPs y regalar boletos extra con <code>!biglietti @nombre</code>.')}</p>
       <div id="giveaway-stato" class="spazio-sopra"><p>${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
       <div id="giveaway-apri">
         <label class="campo">${L('Premio in palio', 'Prize', 'Premio en juego')}</label>
         <input type="text" id="gw-premio" placeholder="${L('es. una gift card, un gioco Steam…', 'e.g. a gift card, a Steam game…', 'p. ej. una gift card, un juego de Steam…')}">
+        <div class="griglia-campi spazio-sopra">
+          <div>
+            <label class="campo" for="gw-keyword">${L('Parola per entrare', 'Join keyword', 'Palabra para entrar')}</label>
+            <div class="riga-flessibile"><span class="prefisso-cmd">!</span><input type="text" id="gw-keyword" class="campo-largo" value="join" maxlength="20" placeholder="join"></div>
+          </div>
+          <div>
+            <label class="campo" for="gw-vincitori">${L('Vincitori (predefinito)', 'Winners (default)', 'Ganadores (por defecto)')}</label>
+            <input type="number" id="gw-vincitori" min="1" max="50" value="1">
+          </div>
+        </div>
+        <label class="campo spazio-sopra">${L('Probabilità (biglietti a testa)', 'Odds (tickets each)', 'Probabilidad (boletos por persona)')}</label>
+        <div class="griglia-campi">
+          <div><label class="campo" for="gw-molt-sub">${L('Sub', 'Subs', 'Subs')}</label><input type="number" id="gw-molt-sub" min="1" max="20" value="2"></div>
+          <div><label class="campo" for="gw-molt-vip">VIP</label><input type="number" id="gw-molt-vip" min="1" max="20" value="2"></div>
+          <div><label class="campo" for="gw-molt-mod">Mod</label><input type="number" id="gw-molt-mod" min="1" max="20" value="1"></div>
+        </div>
+        <p class="suggerimento">${L('«2» = doppie possibilità di vincere. «1» = come tutti. Nessuno è mai sicuro di vincere: l\'estrazione è casuale ma pesata.', '«2» = double chance to win. «1» = same as everyone. No one is ever guaranteed to win: the draw is random but weighted.', '«2» = doble posibilidad de ganar. «1» = como todos. Nadie tiene la victoria asegurada: el sorteo es aleatorio pero ponderado.')}</p>
         <div class="riga-check spazio-sopra">
           <input type="checkbox" id="gw-sub">
           <label>${L('Riservato agli abbonati (sub)', 'Subscribers only (subs)', 'Solo para suscriptores (subs)')}</label>
@@ -2592,7 +2609,11 @@ async function caricaGiveaway() {
     ba.addEventListener('click', () => conErrore(async () => {
       const premio = (document.getElementById('gw-premio').value || '').trim();
       const soloSub = !!document.getElementById('gw-sub').checked;
-      const r = await api('/api/giveaway/apri', { method: 'POST', body: { premio, soloSub } });
+      const keyword = (document.getElementById('gw-keyword').value || 'join').trim();
+      const moltSub = parseInt(document.getElementById('gw-molt-sub').value, 10) || 1;
+      const moltVip = parseInt(document.getElementById('gw-molt-vip').value, 10) || 1;
+      const moltMod = parseInt(document.getElementById('gw-molt-mod').value, 10) || 1;
+      const r = await api('/api/giveaway/apri', { method: 'POST', body: { premio, soloSub, keyword, moltSub, moltVip, moltMod } });
       if (r?.ok) { toast(L('Giveaway aperto!', 'Giveaway opened!', '¡Sorteo abierto!')); document.getElementById('gw-premio').value = ''; caricaGiveaway(); }
     }));
   }
@@ -2600,19 +2621,30 @@ async function caricaGiveaway() {
   try { d = await api('/api/giveaway/stato'); } catch { stBox.innerHTML = `<p>${L('Impossibile leggere lo stato.', 'Couldn’t read the status.', 'No se pudo leer el estado.')}</p>`; return; }
   if (d.aperto) {
     if (apriBox) apriBox.hidden = true;
+    const molt = d.molt || {};
+    const chipsMolt = [];
+    if (molt.sub > 1) chipsMolt.push(`sub ×${molt.sub}`);
+    if (molt.vip > 1) chipsMolt.push(`vip ×${molt.vip}`);
+    if (molt.mod > 1) chipsMolt.push(`mod ×${molt.mod}`);
+    const rigaMolt = chipsMolt.length ? `<p class="suggerimento">🎫 ${L('Probabilità:', 'Odds:', 'Probabilidad:')} ${esc(chipsMolt.join(' · '))} — ${d.biglietti} ${L('biglietti totali', 'total tickets', 'boletos totales')}</p>` : `<p class="suggerimento">🎫 ${d.biglietti} ${L('biglietti totali', 'total tickets', 'boletos totales')}</p>`;
     stBox.innerHTML = `<div class="riquadro-info">
       <p>${L('Giveaway in corso:', 'Giveaway in progress:', 'Sorteo en curso:')} <strong>${esc(d.premio)}</strong>${d.soloSub ? ` <span class="badge">${L('solo sub', 'subs only', 'solo subs')}</span>` : ''}</p>
-      <p class="spazio-sopra"><strong>${d.partecipanti}</strong> ${d.partecipanti === 1 ? L('partecipante', 'participant', 'participante') : L('partecipanti', 'participants', 'participantes')} — ${L('entrano con', 'they join with', 'entran con')} <code>!join</code></p>
-      <div class="spazio-sopra">
-        <button class="btn" id="gw-estrai">${L('Estrai un vincitore', 'Draw a winner', 'Sacar un ganador')}</button>
+      <p class="spazio-sopra"><strong>${d.partecipanti}</strong> ${d.partecipanti === 1 ? L('partecipante', 'participant', 'participante') : L('partecipanti', 'participants', 'participantes')} — ${L('entrano con', 'they join with', 'entran con')} <code>!${esc(d.keyword || 'join')}</code></p>
+      ${rigaMolt}
+      <div class="riga-flessibile spazio-sopra">
+        <label class="campo-piccola" for="gw-quanti">${L('Quanti', 'How many', 'Cuántos')}</label>
+        <input type="number" id="gw-quanti" min="1" max="50" value="1" style="max-width:5rem">
+        <button class="btn" id="gw-estrai">${L('Estrai', 'Draw', 'Sacar')}</button>
         <button class="btn pericolo" id="gw-annulla">${L('Annulla', 'Cancel', 'Cancelar')}</button>
       </div>
       <div id="gw-vincitore" class="spazio-sopra"></div>
     </div>`;
     document.getElementById('gw-estrai').addEventListener('click', () => conErrore(async () => {
-      const r = await api('/api/giveaway/estrai', { method: 'POST', body: {} });
+      const quanti = parseInt(document.getElementById('gw-quanti').value, 10) || 1;
+      const r = await api('/api/giveaway/estrai', { method: 'POST', body: { quanti } });
       const v = document.getElementById('gw-vincitore');
-      if (r?.vincitore) { if (v) v.innerHTML = `<p class="ok-riga">${L('Ha vinto:', 'Winner:', 'Ganó:')} <strong>${esc(r.vincitore)}</strong>!</p>`; }
+      const vinc = (r && r.vincitori && r.vincitori.length) ? r.vincitori : (r?.vincitore ? [r.vincitore] : []);
+      if (vinc.length) { if (v) v.innerHTML = `<p class="ok-riga">${vinc.length === 1 ? L('Ha vinto:', 'Winner:', 'Ganó:') : L('Hanno vinto:', 'Winners:', 'Ganaron:')} <strong>${esc(vinc.join(', '))}</strong>!</p>`; }
       else if (v) v.innerHTML = `<p class="warn-riga">${L('Nessun partecipante ancora.', 'No participants yet.', 'Aún no hay participantes.')}</p>`;
       caricaGiveaway();
     }));
@@ -5730,8 +5762,8 @@ async function _svtvCaricaSet() {
 // Automazioni componibili col modello QUANDO → SE → ALLORA.
 
 function pannelloModuli() {
-  const chipsRapido = ['$user', '$touser', '$giocotarget', '$canale', '$uptime', '$gioco', '$titolo($args)', '$categoria($args)', '$count(morti)', '$random(1,100)']
-    .map((v) => `<button type="button" class="chip-var" data-qc="${esc(v)}">${esc(v)}</button>`).join('');
+  const chipsRapido = ['$user', '$touser', '$canale', '$uptime', '$gioco', '$spettatori', '$followage', '$chattercaso', '$ora', '$giocotarget', '$titolo($args)', '$categoria($args)', '$count(morti)', '$random(1,100)']
+    .map((v) => `<button type="button" class="chip-var" data-qc="${esc(v)}" title="${esc(tooltipVar(v))}">${esc(v)}</button>`).join('');
   return pannello('moduli', `
     <div class="carta">
       <h2>${_hIco(ICO.fulmine)}${L('Comando rapido', 'Quick command', 'Comando rápido')}</h2>
@@ -5743,11 +5775,17 @@ function pannelloModuli() {
       <label class="campo" for="qc-risposta">${L('Risposta', 'Reply', 'Respuesta')}</label>
       <textarea id="qc-risposta" placeholder="${L('es. I miei social li trovi su socialbot.live/u/$canale', 'e.g. Find my socials at socialbot.live/u/$canale', 'p. ej. Mis redes están en socialbot.live/u/$canale')}"></textarea>
       <div class="chip-vars" id="qc-chips">${chipsRapido}</div>
+      ${legendaVariabiliHtml()}
       <p class="suggerimento spazio-sopra">${L('Puoi anche', 'You can also', 'También puedes')} <strong>${L('cambiare titolo e categoria', 'change title and category', 'cambiar título y categoría')}</strong> ${L('dal comando:', 'from the command:', 'desde el comando:')}
       <code>$categoria($args)</code> (${L('es.', 'e.g.', 'p. ej.')} <code>!gioco fortnite</code>) ${L('e', 'and', 'y')} <code>$titolo($args)</code>. ${L('Il token sparisce dal messaggio, scrivi tu la conferma. Consiglio: metti questi comandi', 'The token disappears from the message; you write the confirmation. Tip: make these commands', 'El token desaparece del mensaje; escribe tú la confirmación. Consejo: pon estos comandos')} <strong>${L('solo per i mod', 'mods only', 'solo para mods')}</strong>.</p>
       <p class="suggerimento">${L('Per uno', 'For a', 'Para un')} <strong>shoutout</strong>: <code>$touser</code> ${L('è il nome scritto dopo il comando e', 'is the name typed after the command and', 'es el nombre escrito tras el comando y')}
       <code>$giocotarget</code> ${L('è l\'ultimo gioco del suo canale. Es.', 'is the last game on their channel. E.g.', 'es el último juego de su canal. P. ej.')} <code>!so giorgiottv</code> ${L('con risposta', 'with reply', 'con respuesta')}
       <em>${L('"Andate a seguire @$touser! Stava streammando $giocotarget"', '"Go follow @$touser! They were streaming $giocotarget"', '"¡Id a seguir a @$touser! Estaba jugando a $giocotarget"')}</em>. ${L('Nota:', 'Note:', 'Nota:')} <code>$giocotarget</code> ${L('funziona solo se c\'è un destinatario (il nome dopo il comando).', 'works only if there’s a target (the name after the command).', 'funciona solo si hay un destinatario (el nombre tras el comando).')}</p>
+      <p class="suggerimento">${L('Altre variabili utili:', 'More handy variables:', 'Más variables útiles:')}
+      <code>$followage</code> (${L('da quanto ti segue chi scrive, o', 'how long the writer has followed, or', 'cuánto lleva siguiéndote quien escribe, o')} <code>!followage @nome</code>),
+      <code>$spettatori</code> (${L('quanti stanno guardando ora', 'how many are watching now', 'cuántos están viendo ahora')}),
+      <code>$chattercaso</code> (${L('un utente a caso tra chi ha scritto — perfetto per i giochi, es.', 'a random recent chatter — great for games, e.g.', 'un usuario al azar entre quienes han escrito — ideal para juegos, p. ej.')} <em>!abbraccia $chattercaso</em>),
+      <code>$data</code> · <code>$ora</code> · <code>$giorno</code>. ${L('Nota:', 'Note:', 'Nota:')} <code>$followage</code> ${L('richiede il permesso "lettura follower" (dalla dashboard).', 'needs the "read followers" permission (from the dashboard).', 'necesita el permiso de "lectura de seguidores" (desde el panel).')}</p>
       <p class="spazio-sopra">
         <button class="btn" id="btn-qc">${L('Aggiungi comando', 'Add command', 'Añadir comando')}</button>
         <span class="suggerimento">${L('Per condizioni, eventi, timer, effetti o webhook usa', 'For conditions, events, timers, effects or webhooks use', 'Para condiciones, eventos, temporizadores, efectos o webhooks usa')} <strong>${L('Nuovo modulo', 'New module', 'Nuevo módulo')}</strong> ${L('qui sotto.', 'below.', 'abajo.')}</span>
@@ -9133,7 +9171,9 @@ const AZIONI = [
 // pillole variabili cliccabili (testo inserito = etichetta)
 const VARIABILI = [
   // contesto
-  '$user', '$touser', '$args', '$arg1', '$canale', '$uptime', '$gioco', '$titolo',
+  '$user', '$touser', '$target', '$args', '$arg1', '$canale', '$uptime', '$gioco', '$titolo', '$spettatori',
+  // da quanto segue · un utente a caso tra chi ha scritto · data/ora
+  '$followage', '$chattercaso', '$data', '$ora', '$giorno',
   // shoutout: gioco/titolo dell'ultima diretta del destinatario ($touser)
   '$giocotarget', '$titolotarget',
   // azioni sul canale (cambiano titolo/categoria su Twitch)
@@ -9147,6 +9187,78 @@ const VARIABILI = [
   // colore / fantasia
   '$colore', '$emoji', '$animale',
 ];
+
+// LEGENDA delle variabili: cosa significa ogni $. Raggruppata per tema; ogni voce
+// è [token, IT, EN, ES]. Serve sia il prontuario nel pannello sia il tooltip title
+// sulle pillole (così passando sopra una pillola si legge cosa fa).
+const LEGENDA_VAR = [
+  ['gruppo', 'Chi scrive e cosa dice', 'Who writes and what they say', 'Quién escribe y qué dice'],
+  ['$user', 'Chi ha scritto (il suo nome)', 'Who wrote (their name)', 'Quién escribió (su nombre)'],
+  ['$touser', 'Il nome scritto dopo il comando (o chi scrive, se manca)', 'The name typed after the command (or the writer, if none)', 'El nombre escrito tras el comando (o quien escribe, si falta)'],
+  ['$target', 'Come $touser (nome scritto dopo il comando)', 'Same as $touser (name after the command)', 'Igual que $touser (nombre tras el comando)'],
+  ['$args', 'Tutto ciò che è scritto dopo il comando', 'Everything typed after the command', 'Todo lo escrito tras el comando'],
+  ['$arg1', 'La 1ª parola dopo il comando ($arg2, $arg3…)', 'The 1st word after the command ($arg2, $arg3…)', 'La 1ª palabra tras el comando ($arg2, $arg3…)'],
+  ['$canale', 'Il nome del tuo canale', 'Your channel name', 'El nombre de tu canal'],
+
+  ['gruppo', 'La tua diretta adesso', 'Your stream right now', 'Tu directo ahora'],
+  ['$uptime', 'Da quanto sei in diretta (vuoto se offline)', 'How long you’ve been live (empty if offline)', 'Cuánto llevas en directo (vacío si offline)'],
+  ['$gioco', 'La categoria/gioco attuale', 'Current category/game', 'La categoría/juego actual'],
+  ['$titolo', 'Il titolo attuale della diretta', 'Current stream title', 'El título actual del directo'],
+  ['$spettatori', 'Quanti stanno guardando ora', 'How many are watching now', 'Cuántos están viendo ahora'],
+
+  ['gruppo', 'Le persone', 'People', 'Las personas'],
+  ['$followage', 'Da quanto ti segue chi scrive (o !followage @nome)', 'How long the writer has followed (or !followage @name)', 'Cuánto lleva siguiéndote quien escribe (o !followage @nombre)'],
+  ['$chattercaso', 'Un utente a caso tra chi ha scritto di recente', 'A random recent chatter', 'Un usuario al azar entre quienes escribieron'],
+
+  ['gruppo', 'Shoutout (con un @nome dopo il comando)', 'Shoutout (with an @name after the command)', 'Shoutout (con un @nombre tras el comando)'],
+  ['$giocotarget', 'L’ultimo gioco del canale del destinatario', 'The target channel’s last game', 'El último juego del canal del destinatario'],
+  ['$titolotarget', 'L’ultimo titolo del canale del destinatario', 'The target channel’s last title', 'El último título del canal del destinatario'],
+
+  ['gruppo', 'Data e ora', 'Date and time', 'Fecha y hora'],
+  ['$data', 'La data di oggi', 'Today’s date', 'La fecha de hoy'],
+  ['$ora', 'L’ora attuale', 'Current time', 'La hora actual'],
+  ['$giorno', 'Il giorno della settimana', 'Day of the week', 'El día de la semana'],
+
+  ['gruppo', 'Cambiare titolo/categoria dal comando', 'Change title/category from the command', 'Cambiar título/categoría desde el comando'],
+  ['$titolo(...)', 'Cambia il titolo della diretta (es. $titolo($args))', 'Change the stream title (e.g. $titolo($args))', 'Cambia el título del directo (p. ej. $titolo($args))'],
+  ['$categoria(...)', 'Cambia la categoria/gioco (es. $categoria($args))', 'Change the category/game (e.g. $categoria($args))', 'Cambia la categoría/juego (p. ej. $categoria($args))'],
+
+  ['gruppo', 'Caso, numeri e contatori', 'Chance, numbers and counters', 'Azar, números y contadores'],
+  ['$random(1,100)', 'Un numero a caso tra due (anche $random(6))', 'A random number between two (also $random(6))', 'Un número al azar entre dos (también $random(6))'],
+  ['$count(nome)', 'Il valore di un contatore (es. $count(morti))', 'A counter’s value (e.g. $count(morti))', 'El valor de un contador (p. ej. $count(morti))'],
+  ['$pick(a|b|c)', 'Sceglie a caso una tra le opzioni', 'Picks one option at random', 'Elige al azar una de las opciones'],
+  ['$dado', '1–6 · $moneta testa/croce · $sino sì/no', '1–6 · $moneta heads/tails · $sino yes/no', '1–6 · $moneta cara/cruz · $sino sí/no'],
+  ['…', 'e tante altre "a caso": $percentuale, $altezza, $emoji, $animale…', 'and many more "random" ones: $percentuale, $altezza, $emoji, $animale…', 'y muchas más "al azar": $percentuale, $altezza, $emoji, $animale…'],
+];
+
+// dizionario token→descrizione (lingua attuale) per i tooltip delle pillole
+function _descrizioniVar() {
+  const d = {};
+  for (const [tok, it, en, es] of LEGENDA_VAR) { if (tok !== 'gruppo') d[tok] = L(it, en, es); }
+  return d;
+}
+
+// descrizione (tooltip) per una pillola, gestendo le forme parametriche:
+// $titolo($args) → $titolo(...) ; $count(morti) → $count(nome).
+function tooltipVar(v, d = _descrizioniVar()) {
+  if (d[v]) return d[v];
+  const conPuntini = String(v).replace(/\([^)]*\)/, '(...)');
+  if (d[conPuntini]) return d[conPuntini];
+  const nome = String(v).replace(/\(.*$/, '');
+  const chiave = Object.keys(d).find((k) => k.replace(/\(.*$/, '') === nome);
+  return chiave ? d[chiave] : '';
+}
+
+// blocco legenda richiudibile: "Cosa significano i $ (legenda)"
+function legendaVariabiliHtml() {
+  const righe = LEGENDA_VAR.map(([tok, it, en, es]) => tok === 'gruppo'
+    ? `<p class="legenda-gruppo">${esc(L(it, en, es))}</p>`
+    : `<div class="legenda-riga"><code>${esc(tok)}</code><span>${esc(L(it, en, es))}</span></div>`).join('');
+  return `<details class="legenda-var spazio-sopra">
+    <summary>${L('Cosa significano i $ (legenda)', 'What the $ mean (legend)', 'Qué significan los $ (leyenda)')}</summary>
+    <div class="legenda-corpo">${righe}</div>
+  </details>`;
+}
 
 // traduce un modulo in una frase italiana leggibile: "QUANDO … SE … → azioni"
 function riassuntoModulo(m) {
@@ -9495,8 +9607,9 @@ function disegnaAzione(a) {
 // campi contestuali di un'azione
 function disegnaCampiAzione(a) {
   const tipo = a.tipo || 'messaggio';
+  const _dv = _descrizioniVar();
   const pillole = `<div class="chip-vars">${VARIABILI.map((v) =>
-    `<button type="button" class="chip-var" data-inserisci="${esc(v)}">${esc(v)}</button>`).join('')}</div>`;
+    `<button type="button" class="chip-var" data-inserisci="${esc(v)}" title="${esc(tooltipVar(v, _dv))}">${esc(v)}</button>`).join('')}</div>${legendaVariabiliHtml()}`;
   switch (tipo) {
     case 'messaggio':
       return `
