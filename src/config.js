@@ -55,6 +55,13 @@ function sessionSecret() {
 export const config = {
   // web
   port: parseInt(env('PORT', '8090'), 10),
+  // Quanti proxy fidati stanno DAVANTI all'app, per leggere l'IP vero del
+  // visitatore. Oggi ce n'è uno solo: Caddy. Se metti un altro strato davanti
+  // (una protezione DDoS europea che fa da proxy, tipo Gcore) diventano due:
+  // alza questo numero, sennò l'IP che conta per l'argine anti-flood diventa
+  // quello del proxy e un attaccante potrebbe fingersi un altro. Le protezioni
+  // solo-di-rete (OVH VAC, Hetzner) sono trasparenti e NON contano: resta 1.
+  proxyFidati: Math.max(0, parseInt(env('TRUST_PROXY', '1'), 10) || 1),
   baseUrl: env('BASE_URL', 'http://localhost:8090').replace(/\/$/, ''),
   sessionSecret: sessionSecret(),
 
