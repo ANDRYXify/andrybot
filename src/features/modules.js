@@ -725,9 +725,52 @@ export class ModulesEngine {
 
     // variabili "costose": risolvile solo se davvero citate
     let stream = null;
-    if (/\$uptime|\$gioco|\$titolo/.test(s)) {
+    if (/\$uptime|\$gioco|\$titolo|\$spettatori/.test(s)) {
       try { stream = await this._stream(ctx.channel); } catch { stream = null; }
     }
+
+    // FOLLOWAGE: da quanto un utente segue il canale. Senza destinatario ($touser)
+    // vale per chi scrive; con "!followage @tizio" vale per il destinatario. Serve
+    // lo scope moderator:read:followers sul token del broadcaster: se manca, resta
+    // vuota (niente errori in chat).
+    let followText = '';
+    if (/\$followage/.test(s) && this.helix?.getFollowAge) {
+      const chi = String((ctx.args && ctx.args[0]) || '').replace(/^@/, '').trim().toLowerCase();
+      try {
+        let uid = '';
+        if (chi) {
+          const u = await this.helix.getUserByLogin?.(chi);
+          uid = u?.id || '';
+        } else {
+          uid = ctx.userId || '';
+        }
+        if (uid) {
+          const iso = await this.helix.getFollowAge(ctx.channel, uid);
+          if (iso) followText = this._formattaDurata(iso);
+        }
+      } catch (e) { log.debug('followage:', e?.message || e); }
+    }
+
+    // CHATTER A CASO: un nome pescato tra chi ha scritto di recente (per i giochi:
+    // "!abbraccia $chattercaso"). Esclude gli echi del bot e, se possibile, chi
+    // ha lanciato il comando (così non pesca se stesso). Tutto dalla memoria locale.
+    let chatterCaso = '';
+    if (/\$chattercaso|\$randomchatter/.test(s)) {
+      try {
+        const recenti = memory.recent(ctx.channel, 80) || [];
+        const io = norm(ctx.display || ctx.user);
+        let nomi = [...new Set(recenti.filter((m) => !m.from_bot && m.display).map((m) => m.display))];
+        const altri = nomi.filter((n) => norm(n) !== io);
+        const pool = altri.length ? altri : nomi;   // se c'è solo l'autore, ripiega su di lui
+        if (pool.length) chatterCaso = pool[Math.floor(Math.random() * pool.length)];
+      } catch (e) { log.debug('chattercaso:', e?.message || e); }
+    }
+
+    // data/ora locali (runtime del server): utili per comandi tipo "!ora" o "!oggi".
+    const adesso = new Date();
+    const dataOggi = adesso.toLocaleDateString('it-IT');
+    const oraOra = adesso.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+    const giornoOggi = adesso.toLocaleDateString('it-IT', { weekday: 'long' });
 
     // SHOUTOUT: l'ultimo gioco/titolo del canale dell'utente citato DOPO il
     // comando ($touser = primo argomento). Es. "!so giorgiottv" →
@@ -803,11 +846,24 @@ export class ModulesEngine {
       // destinatario del comando: il nome scritto dopo (@ opzionale, ripulito),
       // altrimenti chi scrive. È il "tag streamer" a cui si legano $giocotarget/$titolotarget.
       touser: String((ctx.args && ctx.args[0]) || ctx.user || '').replace(/^@/, ''),
+      // $target = alias di $touser (chi arriva da altri bot lo conosce così)
+      target: String((ctx.args && ctx.args[0]) || ctx.user || '').replace(/^@/, ''),
       args: ctx.argsRaw || '',
       canale: ctx.channel || '',
       uptime: stream?.started_at ? this._formattaUptime(stream.started_at) : '',
       gioco: stream?.game_name || '',
       titolo: stream?.title || '',
+      // spettatori collegati adesso (vuoto se offline)
+      spettatori: stream?.viewer_count != null ? String(stream.viewer_count) : '',
+      // da quanto segue l'utente (o il destinatario) — vuoto se non segue / manca lo scope
+      followage: followText,
+      // un utente a caso tra chi ha scritto di recente (per i giochi)
+      chattercaso: chatterCaso,
+      randomchatter: chatterCaso,
+      // data/ora locali
+      data: dataOggi,
+      ora: oraOra,
+      giorno: giornoOggi,
       // SHOUTOUT: gioco/titolo dell'ULTIMA diretta del destinatario ($touser)
       giocotarget: bersaglioInfo?.game_name || '',
       titolotarget: bersaglioInfo?.title || '',
@@ -839,6 +895,28 @@ export class ModulesEngine {
     return h > 0 ? `${h}h ${min % 60}m` : `${min}m`;
   }
 
+  // Durata "umana" da una data ISO a ORA (per $followage): "2 anni e 3 mesi",
+  // "5 mesi", "12 giorni", "3 ore". Approssimazione mesi=30gg/anno=365gg: per un
+  // "da quanto mi segui" in chat va più che bene.
+  _formattaDurata(fromISO) {
+    const start = new Date(fromISO).getTime();
+    if (!Number.isFinite(start)) return '';
+    const sec = Math.max(0, Math.floor((Date.now() - start) / 1000));
+    const giorniTot = Math.floor(sec / 86400);
+    const anni = Math.floor(giorniTot / 365);
+    const mesi = Math.floor((giorniTot % 365) / 30);
+    const giorni = giorniTot % 30;
+    const plur = (n, uno, tanti) => `${n} ${n === 1 ? uno : tanti}`;
+    const parti = [];
+    if (anni) parti.push(plur(anni, 'anno', 'anni'));
+    if (mesi) parti.push(plur(mesi, 'mese', 'mesi'));
+    if (giorni && !anni) parti.push(plur(giorni, 'giorno', 'giorni'));
+    if (parti.length) return parti.join(' e ');
+    const ore = Math.floor(sec / 3600);
+    if (ore > 0) return plur(ore, 'ora', 'ore');
+    return 'meno di un\'ora';
+  }
+
   // ============================================================ CONTESTI
 
   _ctxDaMessaggio(msg, channel, livello, args, argsRaw) {
@@ -847,6 +925,7 @@ export class ModulesEngine {
       channel,
       user: nome,                   // nome visualizzato (per $user/$touser)
       userLogin: msg.user || '',    // login (per moderazione/timeout)
+      userId: msg.userId || (msg.tags && msg.tags['user-id']) || '', // id numerico (per $followage)
       display: nome,
       args,
       argsRaw,

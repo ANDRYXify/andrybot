@@ -1992,18 +1992,31 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
   app.post('/api/giveaway/apri', requireOwner, (req, res) => {
     const login = currentUser(req).login;
-    const r = giveaway.apri(login, { premio: req.body?.premio, soloSub: !!req.body?.soloSub });
+    const b = req.body || {};
+    const r = giveaway.apri(login, {
+      premio: b.premio, soloSub: !!b.soloSub, keyword: b.keyword,
+      moltSub: b.moltSub, moltVip: b.moltVip, moltMod: b.moltMod,
+    });
     if (!r.ok) return res.status(400).json({ errore: r.errore === 'gia-aperto' ? 'C\'è già un giveaway aperto.' : 'I giveaway non sono inclusi nel tuo piano.' });
-    manager.say(login, `🎁 GIVEAWAY APERTO: ${r.premio}! Scrivete !join per partecipare${r.soloSub ? ' (riservato ai sub)' : ''}. In bocca al lupo! 🍀`);
+    const m = [];
+    if (r.molt.sub > 1) m.push(`sub ×${r.molt.sub}`);
+    if (r.molt.vip > 1) m.push(`vip ×${r.molt.vip}`);
+    if (r.molt.mod > 1) m.push(`mod ×${r.molt.mod}`);
+    const extra = m.length ? ` 🎫 ${m.join(' · ')} (più possibilità!)` : '';
+    manager.say(login, `🎁 GIVEAWAY APERTO: ${r.premio}! Scrivete !${r.keyword} per partecipare${r.soloSub ? ' (riservato ai sub)' : ''}.${extra} In bocca al lupo! 🍀`);
     res.json({ ok: true });
   });
 
   app.post('/api/giveaway/estrai', requireOwner, (req, res) => {
     const login = currentUser(req).login;
-    const r = giveaway.estraiUno(login);
-    if (!r) return res.json({ ok: true, vincitore: null });
-    manager.say(login, `🎉🎉 Il vincitore del giveaway è… ${r.vincitore}! Congratulazioni! 🏆`);
-    res.json({ ok: true, vincitore: r.vincitore });
+    const quanti = Math.max(1, Math.min(50, parseInt(req.body?.quanti, 10) || 1));
+    const r = giveaway.estrai(login, quanti);
+    if (!r.vincitori.length) return res.json({ ok: true, vincitori: [], vincitore: null });
+    const testo = r.vincitori.length === 1
+      ? `🎉🎉 Il vincitore del giveaway è… ${r.vincitori[0]}! Congratulazioni! 🏆`
+      : `🎉🎉 I vincitori del giveaway sono… ${r.vincitori.join(', ')}! Congratulazioni! 🏆`;
+    manager.say(login, testo);
+    res.json({ ok: true, vincitori: r.vincitori, vincitore: r.vincitori[0] });
   });
 
   app.post('/api/giveaway/annulla', requireOwner, (req, res) => {
