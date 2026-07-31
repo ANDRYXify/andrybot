@@ -1243,6 +1243,11 @@ export const MOVIMENTI = ['nessuno', 'dolce', 'cinema'];
 // a seconda di quanti erano: imprevedibile.)
 export const LARGHEZZE_BLOCCO = ['piena', 'treQuarti', 'dueTerzi', 'meta', 'terzo', 'quarto'];
 // ...e può entrare a modo suo, invece di seguire l'animazione della pagina.
+// Allineamento di una SEZIONE. Una sezione è un gruppo di blocchi consecutivi:
+// si chiude con una riga divisoria, oppure quando cambia il tipo di contenuto o
+// l'allineamento. Non aggiunge spazio — è solo il modo di dire "questi vanno
+// insieme, e vanno messi così".
+export const ALLINEAMENTI_BLOCCO = ['auto', 'sinistra', 'centro', 'destra'];
 export const ENTRATE_BLOCCO = ['auto', 'nessuna', 'sfuma', 'sali', 'scala', 'sinistra', 'destra', 'ruota'];
 // Come sono disposti i contenuti. "colonna" è la classica lista di bottoni;
 // "rivista" li affianca in una griglia su schermo largo; "sezioni" li distanzia
@@ -1484,6 +1489,7 @@ export const linkPage = {
         const ul = out[out.length - 1];
         ul.larghezza = scelta(b.larghezza, LARGHEZZE_BLOCCO, 'piena');
         ul.entrata = scelta(b.entrata, ENTRATE_BLOCCO, 'auto');
+        ul.allinea = scelta(b.allinea, ALLINEAMENTI_BLOCCO, 'auto');
       }
       return out;
     }, []);

@@ -568,29 +568,47 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   // schiacciata a sinistra.
   const inFile = (da, a) => {
     const fuori = [];
-    let riga = [], usate = 0;
-    const chiudi = () => {
+    let riga = [], usate = 0;      // la riga in costruzione (dodici colonne)
+    let sez = [], sezAll = 'auto', sezTipo = null;   // la sezione in costruzione
+    // L'allineamento della sezione decide anche DOVE finiscono le colonne che
+    // avanzano in una riga incompleta: a sinistra, in mezzo o a destra.
+    const scartoDi = (avanzo) => (sezAll === 'destra' ? avanzo
+      : sezAll === 'sinistra' ? 0
+        : sezAll === 'centro' ? Math.floor(avanzo / 2)
+          : (aSinistra ? 0 : Math.floor(avanzo / 2)));   // 'auto' = come la pagina
+    const chiudiRiga = () => {
       if (!riga.length) return;
-      const avanzo = 12 - usate;
-      const scarto = aSinistra ? 0 : Math.floor(avanzo / 2);
-      fuori.push(`<div class="fila">${riga.map((r, k) =>
+      const scarto = scartoDi(12 - usate);
+      sez.push(`<div class="fila">${riga.map((r, k) =>
         `<div class="cel s-${r.col}" style="grid-column:${k === 0 ? 1 + scarto : 'auto'}/span ${r.col}">${r.html}</div>`).join('\n')}</div>`);
       riga = []; usate = 0;
+    };
+    const chiudiSez = () => {
+      chiudiRiga();
+      if (!sez.length) return;
+      fuori.push(`<section class="sez a-${esc(sezAll)}">${sez.join('\n')}</section>`);
+      sez = []; sezTipo = null;
     };
     for (let i = da; i < a; i++) {
       if (!pezzi[i]) continue;
       const b = pagina.blocchi[i] || {};
+      const all = b.allinea && b.allinea !== 'auto' ? b.allinea : 'auto';
+      // Una sezione finisce quando c'è una riga divisoria, quando cambia il
+      // tipo di contenuto o quando cambia l'allineamento. Non cambia le
+      // distanze: cambia solo chi sta insieme a chi.
+      if (b.tipo === 'separatore' || (sezTipo !== null && (b.tipo !== sezTipo || all !== sezAll))) chiudiSez();
+      if (sezTipo === null) { sezAll = all; sezTipo = b.tipo; }
       const html = involucro(pezzi[i], b, i);
       // In anteprima ogni pezzo si porta dietro il suo numero, così cliccandolo
       // l'editor sa quale comando aprire. display:contents = l'involucro non
       // esiste per l'impaginazione, quindi non sposta niente di un pixel.
       const seg = anteprima ? `<div class="sel-b" data-b="${i}" style="display:contents">${html}</div>` : html;
       const col = COLONNE[b.larghezza] || 12;
-      if (col >= 12) { chiudi(); fuori.push(seg); continue; }
-      if (usate + col > 12) chiudi();      // non ci sta: si va a capo QUI, non a caso
+      if (col >= 12) { chiudiRiga(); sez.push(seg); continue; }
+      if (usate + col > 12) chiudiRiga();      // non ci sta: si va a capo QUI, non a caso
       riga.push({ html: seg, col }); usate += col;
     }
-    chiudi();
+    chiudiSez();
     return fuori.join('\n');
   };
   const corpo = iFissa >= 0
@@ -759,6 +777,19 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
      esattamente le colonne della sua frazione: un terzo resta un terzo anche se
      è da solo, e le colonne che avanzano restano libere. */
   .fila{display:grid;grid-template-columns:repeat(12,1fr);gap:.6rem;width:100%;margin-top:1rem;align-items:start}
+  /* Una SEZIONE: un gruppo di blocchi che stanno insieme e si allineano
+     insieme. Non aggiunge spazio fra i contenuti — quello lo fa la riga
+     divisoria — cambia solo da che parte stanno. */
+  .sez{width:100%;display:flex;flex-direction:column;gap:.6rem}
+  .sez.a-sinistra{align-items:flex-start;text-align:left}
+  .sez.a-centro{align-items:center;text-align:center}
+  .sez.a-destra{align-items:flex-end;text-align:right}
+  .sez.a-sinistra .socrow,.sez.a-sinistra .numeri{justify-content:flex-start}
+  .sez.a-centro .socrow,.sez.a-centro .numeri{justify-content:center}
+  .sez.a-destra .socrow,.sez.a-destra .numeri{justify-content:flex-end}
+  .sez.a-centro .tit,.sez.a-centro .par,.sez.a-centro .eroe-in{align-items:center;text-align:center}
+  .sez.a-destra .tit,.sez.a-destra .par,.sez.a-destra .eroe-in{align-items:flex-end;text-align:right}
+  .sez.a-sinistra .tit,.sez.a-sinistra .par,.sez.a-sinistra .eroe-in{align-items:flex-start;text-align:left}
   .cel{min-width:0;display:flex;flex-direction:column}
   .cel > *{margin-top:0}
   /* Nella stessa riga i titoli si tengono in pari: uno lungo va a capo e uno
