@@ -18,6 +18,7 @@ import { points, vips, tgConf, dcConf, passkeys, managers, quotes, compleanni, m
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO } from '../db.js';
 import { renderLinkPage, renderInformativa } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
+import { statoListaBot } from '../features/antibot.js';
 import { risolviCanaleId } from '../features/youtube.js';
 import * as abbonamenti from '../features/abbonamenti.js';
 import * as spotify from '../features/spotify.js';
@@ -1258,6 +1259,13 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     });
   }));
 
+  // Anti-bot: stato della lista di bot noti aggiornata da sola (per rassicurare
+  // lo streamer che è viva e piena). Non rivela nomi, solo il conteggio.
+  app.get('/api/antibot/lista', requireLogin, (req, res) => {
+    const s = statoListaBot();
+    res.json({ conteggio: s.conteggio, aggiornata: s.aggiornata });
+  });
+
   // richiesta di abilitazione ("porta SocialBot nel tuo canale")
   app.post('/api/richiesta', requireLogin, wrap(async (req, res) => {
     const user = currentUser(req);
@@ -2373,6 +2381,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         rafficaChiudiChat: a.rafficaChiudiChat !== false,
         rafficaBanna: !!a.rafficaBanna,
         nomiBot: a.nomiBot !== false,
+        listaAuto: a.listaAuto !== false,
         azione: ['ban', 'timeout', 'segnala'].includes(a.azione) ? a.azione : 'ban',
         timeoutSec: Math.min(1209600, Math.max(60, Math.round(Number(a.timeoutSec)) || 1209600)),
         esenti: puliciNomi(a.esenti),

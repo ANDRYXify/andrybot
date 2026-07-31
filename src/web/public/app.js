@@ -7506,6 +7506,22 @@ function pannelloNotifiche() {
 
 // --- scheda Regole ------------------------------------------------------
 
+// Mostra quanti bot noti ci sono nella lista aggiornata da sola (rassicura che
+// è viva e piena, senza rivelare nomi).
+async function caricaStatoListaBot() {
+  const el = document.getElementById('lp-ab-lista'); if (!el) return;
+  try {
+    const r = await api('/api/antibot/lista');
+    const n = Number(r?.conteggio || 0);
+    if (!n) { el.textContent = L('Lista in aggiornamento…', 'List updating…', 'Lista actualizándose…'); return; }
+    const quando = r.aggiornata ? new Date(r.aggiornata).toLocaleDateString() : '';
+    el.innerHTML = L(
+      `Lista aggiornata: <strong>${n.toLocaleString('it')}</strong> bot noti${quando ? ` · ${quando}` : ''}. Si aggiorna da sola ogni 12 ore.`,
+      `List up to date: <strong>${n.toLocaleString('en')}</strong> known bots${quando ? ` · ${quando}` : ''}. It refreshes itself every 12 hours.`,
+      `Lista al día: <strong>${n.toLocaleString('es')}</strong> bots conocidos${quando ? ` · ${quando}` : ''}. Se actualiza sola cada 12 horas.`);
+  } catch { el.textContent = ''; }
+}
+
 function pannelloRegole() {
   const s = impostazioni();
   const a = s.antispam || {};
@@ -7614,6 +7630,11 @@ function pannelloRegole() {
         <input type="checkbox" id="chk-ab-nomi" ${sel(ab.nomiBot, true) ? 'checked' : ''}>
         <label for="chk-ab-nomi">${L('Ferma gli account con nomi da follow-bot noti', 'Stop accounts with known follow-bot names', 'Frena las cuentas con nombres de follow-bot conocidos')}</label>
       </div>
+      <div class="riga-check">
+        <input type="checkbox" id="chk-ab-listaauto" ${sel(ab.listaAuto, true) ? 'checked' : ''}>
+        <label for="chk-ab-listaauto">${L('Usa la lista di bot noti che si aggiorna da sola', 'Use the self-updating known-bot list', 'Usa la lista de bots conocidos que se actualiza sola')}</label>
+      </div>
+      <p class="suggerimento" id="lp-ab-lista">${L('Controllo la lista…', 'Checking the list…', 'Comprobando la lista…')}</p>
       <div class="riga-flessibile">
         <span class="suggerimento">${L('Cosa fare:', 'What to do:', 'Qué hacer:')}</span>
         <select id="sel-ab-azione">
@@ -7845,6 +7866,7 @@ function attivaPiattaforma() {
         rafficaChiudiChat: document.getElementById('chk-ab-chiudi').checked,
         rafficaBanna: document.getElementById('chk-ab-rafbanna').checked,
         nomiBot: document.getElementById('chk-ab-nomi').checked,
+        listaAuto: document.getElementById('chk-ab-listaauto').checked,
         azione: document.getElementById('sel-ab-azione').value,
         controllaAccount: document.getElementById('chk-ab-account').checked,
         chatNuovi: document.getElementById('chk-ab-chatnuovi').checked,
@@ -8560,6 +8582,7 @@ function caricaDatiScheda(id) {
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); }
   if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaDiscord(); caricaTgLogin(); }
   if (id === 'pagina') caricaPaginaLink();
+  if (id === 'regole') caricaStatoListaBot();
   if (id === 'sottoscrizione') caricaSottoscrizione();
   if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaAnima(); caricaLLM(); }
 }
