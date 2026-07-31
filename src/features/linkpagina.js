@@ -924,7 +924,8 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
     <h1>${esc(titolo)}</h1>
     ${pagina.tagline ? `<p class="tag">${esc(pagina.tagline)}</p>` : ''}
     ${corpo ? `<nav class="lista">${corpo}</nav>` : `<p class="vuoto">Questa pagina non ha ancora contenuti.</p>`}
-    <p class="piede">Pagina creata con <a href="${esc(baseUrl)}/" target="_blank" rel="noopener">SocialBot</a></p>
+    <p class="piede">Pagina creata con <a href="${esc(baseUrl)}/" target="_blank" rel="noopener">SocialBot</a>
+      · <a href="/u/${esc(login)}/privacy">Privacy</a></p>
   </main>
 ${corpo.includes('class="conto"') ? `<script>
 /* Conto alla rovescia. La data e scritta senza fuso orario di proposito: il
@@ -988,6 +989,79 @@ addEventListener('message', function (e) {
   }
 });
 </script>` : ''}
+</body>
+</html>`;
+}
+
+// ── Informativa privacy della pagina pubblica ───────────────────────────────
+// Va messa SEMPRE, anche quando non ci sono cookie: il banner serve solo se si
+// usano cookie non essenziali, ma dire chi tratta i dati, quali e perché è un
+// obbligo che non dipende dai cookie. Sta su una pagina sua, con lo stesso tema
+// della pagina link, così non sembra un pezzo di un altro sito.
+export function renderInformativa({ login, display, baseUrl, pagina, contatto }) {
+  const t = { ...(pagina?.tema || {}) };
+  const c = { ...(PRESET[pagina?.template] || PRESET.minimal) };
+  for (const k of ['bg', 'bg2', 'testo', 'tenue', 'card', 'bordo']) if (t[k]) c[k] = t[k];
+  if (t.accent) c.acc = t.accent;
+  const font = PILE[t.font] || PILE.system;
+  const chiede = t.consenso !== 'sempre';
+  const nome = display || login;
+  const p = (s) => `<p>${s}</p>`;
+  return `<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy · ${esc(nome)}</title>
+<meta name="robots" content="noindex, follow">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{--acc:${c.acc};--fd:${font.d};--ft:${font.t}}
+  body{min-height:100dvh;background:${c.bg};color:${c.testo};font-family:var(--ft);line-height:1.65;
+    padding:clamp(1.5rem,6vw,3.5rem) 1.25rem 3rem;-webkit-font-smoothing:antialiased}
+  main{max-width:40rem;margin:0 auto}
+  h1{font-family:var(--fd);font-size:clamp(1.7rem,6vw,2.4rem);font-weight:800;letter-spacing:-.03em;line-height:1.05}
+  h2{font-family:var(--fd);font-size:1.1rem;margin-top:2rem;letter-spacing:-.01em}
+  p{margin-top:.7rem;color:${c.tenue}}
+  p strong,li strong{color:${c.testo}}
+  ul{margin:.6rem 0 0 1.1rem;color:${c.tenue}}
+  li{margin-top:.35rem}
+  a{color:var(--acc)}
+  .torna{display:inline-block;margin-top:2.5rem;padding:.7rem 1.2rem;border-radius:12px;
+    background:var(--acc);color:#fff;text-decoration:none;font-weight:700}
+  .data{margin-top:2.5rem;font-size:.8rem;opacity:.7}
+</style>
+</head>
+<body>
+  <main>
+    <h1>Privacy di questa pagina</h1>
+    ${p(`Questa è la pagina pubblica di <strong>${esc(nome)}</strong>, ospitata da SocialBot. Qui c'è scritto, in italiano e senza giri di parole, cosa succede ai dati quando la apri.`)}
+
+    <h2>Cookie: non ce ne sono</h2>
+    ${p('Questa pagina <strong>non usa cookie</strong> e non salva niente sul tuo dispositivo. Non c\'è nessun banner da accettare perché non c\'è niente da accettare.')}
+
+    <h2>Cosa contiamo</h2>
+    ${p('Ogni volta che la pagina viene aperta aumentiamo di uno un contatore <strong>giornaliero</strong>, così chi l\'ha creata sa se qualcuno la guarda. È tutto qui.')}
+    <ul>
+      <li><strong>Non</strong> salviamo il tuo indirizzo IP.</li>
+      <li><strong>Non</strong> sappiamo chi sei, da dove arrivi o che dispositivo usi.</li>
+      <li><strong>Non</strong> possiamo collegare due visite alla stessa persona.</li>
+      <li>Non c'è nessuno strumento di analisi o pubblicità di terzi.</li>
+    </ul>
+    ${p('Il numero è aggregato: non è un dato personale e non permette di risalire a nessuno.')}
+
+    <h2>Contenuti di altri siti</h2>
+    ${chiede
+      ? p('Se in questa pagina ci sono video, musica o riquadri di YouTube, Spotify, Twitch, TikTok, Instagram o Facebook, <strong>non vengono caricati da soli</strong>: al loro posto trovi un cartello con un bottone. Finché non lo premi tu, verso quei siti non parte nessuna richiesta e quindi nessun cookie loro. Se lo premi, da quel momento vale la privacy di quel sito, non la nostra.')
+      : p('In questa pagina ci possono essere video, musica o riquadri di YouTube, Spotify, Twitch, TikTok, Instagram o Facebook. Sono pezzi dei <strong>loro</strong> siti: quando li carichi, quei siti possono usare cookie propri e ricevere il tuo indirizzo IP. Vale la loro informativa, non la nostra.')}
+
+    <h2>Chi decide, e a chi scrivere</h2>
+    ${p(`I contenuti di questa pagina li sceglie <strong>${esc(nome)}</strong>. SocialBot la ospita e la mostra per suo conto.`)}
+    ${p(`Per chiedere di vedere, correggere o cancellare qualcosa${contatto ? `, scrivi a <a href="mailto:${esc(contatto)}">${esc(contatto)}</a>` : ', usa i contatti che trovi sulla pagina'}. La pagina si può togliere dal web in qualsiasi momento, e con lei il contatore.`)}
+
+    <a class="torna" href="/u/${esc(login)}">← Torna alla pagina</a>
+    <p class="data">SocialBot · ${esc(baseUrl || '')}</p>
+  </main>
 </body>
 </html>`;
 }
