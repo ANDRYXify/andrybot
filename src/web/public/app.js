@@ -6338,6 +6338,13 @@ async function caricaPaginaLink(ridisegna = false) {
             <option value="rise">${L('Dal basso', 'From below', 'Desde abajo')}</option>
             <option value="pop">${L('Pop', 'Pop', 'Pop')}</option>
           </select>
+          <label class="campo spazio-sopra" for="lp-consenso">${L('Video, musica e pagine di altri siti', 'Video, music and pages from other sites', 'Vídeo, música y páginas de otros sitios')}</label>
+          <select id="lp-consenso" data-lpk="consenso">
+            <option value="chiedi">${L('Caricali solo se il visitatore lo chiede (consigliato)', 'Load them only if the visitor asks (recommended)', 'Cárgalos solo si el visitante lo pide (recomendado)')}</option>
+            <option value="sempre">${L('Caricali subito', 'Load them right away', 'Cárgalos enseguida')}</option>
+          </select>
+          <p class="suggerimento">${L('La tua pagina non usa cookie. Ma un video di YouTube o un player di Spotify sono pezzi del <strong>loro</strong> sito, e quelli i cookie li mettono appena vengono caricati. Con “solo se lo chiede” al loro posto compare un cartello con un bottone: finché nessuno lo preme non parte niente verso di loro, e così <strong>non ti serve nessun banner dei cookie</strong>. Un banner che chiede il permesso dopo aver già caricato tutto non serve a niente.', 'Your page uses no cookies. But a YouTube video or a Spotify player are pieces of <strong>their</strong> site, and those set cookies as soon as they load. With “only if asked” a card with a button appears instead: until someone presses it nothing goes out to them, so <strong>you need no cookie banner at all</strong>. A banner that asks permission after already loading everything is worth nothing.', 'Tu página no usa cookies. Pero un vídeo de YouTube o un reproductor de Spotify son trozos de <strong>su</strong> sitio, y esos ponen cookies en cuanto se cargan. Con “solo si lo pide” aparece en su lugar una tarjeta con un botón: hasta que alguien lo pulse no sale nada hacia ellos, así que <strong>no necesitas ningún banner de cookies</strong>.')}</p>
+
           <label class="campo spazio-sopra" for="lp-ombra">${L('Ombra dei bottoni', 'Button shadow', 'Sombra de los botones')}</label>
           <select id="lp-ombra" data-lpk="ombraTipo">
             <option value="nessuna">${L('Nessuna', 'None', 'Ninguna')}</option>
@@ -6369,7 +6376,7 @@ async function caricaPaginaLink(ridisegna = false) {
     </div>`;
 
   // valori dei select del tema (non si possono impostare da HTML statico)
-  for (const k of ['sfondoTipo', 'effetto', 'stileBtn', 'allinea', 'avatarForma', 'anim', 'font', 'disposizione', 'movimento', 'ombraTipo']) {
+  for (const k of ['sfondoTipo', 'effetto', 'stileBtn', 'allinea', 'avatarForma', 'anim', 'font', 'disposizione', 'movimento', 'ombraTipo', 'consenso']) {
     const el = box.querySelector(`[data-lpk="${k}"]`);
     if (el && LP.tema[k] !== undefined) el.value = LP.tema[k];
   }
