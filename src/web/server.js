@@ -17,6 +17,7 @@ import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, 
 import { points, vips, tgConf, dcConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO } from '../db.js';
 import { renderLinkPage, renderInformativa } from '../features/linkpagina.js';
+import { montaEsche, riepilogoEsche } from './esche.js';
 import { risolviCanaleId } from '../features/youtube.js';
 import * as abbonamenti from '../features/abbonamenti.js';
 import * as spotify from '../features/spotify.js';
@@ -148,6 +149,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   }));
   // Cattura il corpo RAW (serve al webhook Stripe per verificare la firma).
   app.use(express.json({ verify: (req, _res, buf) => { req.rawBody = buf; } }));
+
+  // ESCHE: subito dopo il parser del corpo (serve per riconoscere il canarino)
+  // e prima di ogni altra regola. Chi bussa a porte che qui non esistono trova
+  // melassa e uno stivale, non un errore secco che gli dice "prova la prossima".
+  montaEsche(app);
 
   // Ripristino UNA-TANTUM del pre-addestramento. Il vecchio pretrain scaricava
   // l'HTML della SPA e aveva seminato in TUTTI i canali la descrizione/social
