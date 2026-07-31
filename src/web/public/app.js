@@ -9186,6 +9186,8 @@ const AZIONI = [
   ['overlayTesto', 'Mostra testo sull\'overlay'],
   ['timeout', 'Timeout in chat'],
   ['musica', 'Metti una canzone in coda'],
+  ['annuncia', 'Annuncio in chat (/announce)'],
+  ['shoutout', 'Shoutout (banner)'],
 ];
 // pillole variabili cliccabili (testo inserito = etichetta)
 const VARIABILI = [
@@ -9350,6 +9352,9 @@ function riassuntoAzione(a) {
     case 'attendi': return `aspetta ${a.secondi || 0}s`;
     case 'overlayTesto': return 'mostra un testo sull\'overlay';
     case 'timeout': return `timeout di ${a.secondi || 0}s`;
+    case 'musica': return a.brano ? `metti in coda "${a.brano}"` : 'metti una canzone in coda';
+    case 'annuncia': return 'fai un annuncio in chat';
+    case 'shoutout': return a.canale ? `shoutout a @${a.canale}` : 'shoutout (al nome dopo il comando o a chi ti raida)';
     default: return '';
   }
 }
@@ -9730,6 +9735,24 @@ function disegnaCampiAzione(a) {
           <label>Annuncia in chat il brano aggiunto</label>
         </div>
         <p class="suggerimento">Aggiunge il brano alla coda del tuo Spotify. Richiede l'add-on <strong class="primo-piano">Richieste Musicali</strong> e Spotify collegato in <strong>Diretta → Musica</strong>.</p>`;
+    case 'annuncia':
+      return `
+        <textarea data-campo="testo" data-var-target placeholder="es. Benvenuti nella live! Oggi si gioca a $gioco">${esc(a.testo || '')}</textarea>
+        ${pillole}
+        <label class="campo">Colore dell'annuncio</label>
+        <select data-campo="colore">
+          ${[['primary', 'Predefinito (viola)'], ['blue', 'Blu'], ['green', 'Verde'], ['orange', 'Arancione'], ['purple', 'Viola']]
+            .map(([v, t]) => `<option value="${v}" ${(a.colore || 'primary') === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}
+        </select>
+        <p class="suggerimento">L'annuncio ufficiale di Twitch (messaggio evidenziato). Serve il permesso <strong class="primo-piano">annunci</strong>: se manca, riautorizza dalla dashboard.</p>`;
+    case 'shoutout':
+      return `
+        <label class="campo">Canale a cui fare shoutout (vuoto = il nome dopo il comando o chi ti raida)</label>
+        <input type="text" data-campo="canale" placeholder="es. giorgiottv oppure lascia vuoto per $touser" value="${esc(a.canale || '')}">
+        <label class="campo spazio-sopra">Messaggio extra in chat (facoltativo)</label>
+        <textarea data-campo="testo" data-var-target placeholder="es. Andate a seguire @$touser! Stava streammando $giocotarget">${esc(a.testo || '')}</textarea>
+        ${pillole}
+        <p class="suggerimento">Lo shoutout ufficiale di Twitch (il banner). Serve essere in diretta e il permesso <strong class="primo-piano">shoutout</strong>. Per l'auto-shoutout ai raid: crea un modulo con innesco <strong>Evento → raid</strong> e questa azione lasciando vuoto il canale.</p>`;
     default:
       return '';
   }
@@ -9795,6 +9818,8 @@ function leggiAzioneRiga(riga) {
     case 'overlayTesto': return { tipo, testo: v('testo')?.value || '', durata: Number(v('durata')?.value) || 5000 };
     case 'timeout': return { tipo, secondi: Number(v('secondi')?.value) || 0 };
     case 'musica': return { tipo, brano: (v('brano')?.value || '').trim(), annuncia: !!v('annuncia')?.checked };
+    case 'annuncia': return { tipo, testo: v('testo')?.value || '', colore: v('colore')?.value || 'primary' };
+    case 'shoutout': return { tipo, canale: (v('canale')?.value || '').trim(), testo: v('testo')?.value || '' };
     default: return { tipo };
   }
 }

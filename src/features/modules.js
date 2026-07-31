@@ -669,6 +669,29 @@ export class ModulesEngine {
         }
         return;
       }
+      case 'annuncia': {
+        // annuncio evidenziato in chat (/announce), con colore opzionale.
+        const t = (await this.espandi(azione.testo, ctx)).trim();
+        if (!t) return;
+        const r = await this.helix?.announce?.(ctx.channel, t, azione.colore || 'primary');
+        if (r && !r.ok && (r.motivo || '').includes('permesso') && azione.annuncia !== false) {
+          dire('🔒 Mi manca il permesso per gli annunci: riautorizza dalla dashboard.');
+        }
+        return;
+      }
+      case 'shoutout': {
+        // shoutout ufficiale (banner). Destinatario: il login fisso in azione.canale,
+        // altrimenti il nome dopo il comando ($touser), altrimenti chi ha raidato.
+        let chi = String(azione.canale || '').replace(/^@/, '').trim().toLowerCase();
+        if (!chi) chi = String((ctx.args && ctx.args[0]) || ctx._vars?.raiderLogin || ctx._vars?.raider || '').replace(/^@/, '').trim().toLowerCase();
+        if (!chi) return;
+        const r = await this.helix?.shoutout?.(ctx.channel, chi);
+        if (r?.ok && azione.testo) { const t = await this.espandi(azione.testo, ctx); if (t) dire(t); }
+        else if (r && !r.ok && (r.motivo || '').includes('permesso') && azione.annuncia !== false) {
+          dire('🔒 Mi manca il permesso per lo shoutout: riautorizza dalla dashboard.');
+        }
+        return;
+      }
       default:
         return;
     }
@@ -961,6 +984,7 @@ export class ModulesEngine {
       _livello: TIER_SCALA.mod,     // contesto di sistema: le condizioni di ruolo passano
       _vars: {
         raider,
+        raiderLogin: norm(d.from_broadcaster_user_login || ''),
         viewers: d.viewers,
         mesi: d.cumulative_months ?? d.duration_months,
         bits: d.bits,

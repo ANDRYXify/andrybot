@@ -229,6 +229,9 @@ export const SCOPES = {
     'channel:manage:predictions', // creare/risolvere predizioni
     'moderator:manage:chat_messages', // eliminare messaggi (antispam)
     'moderator:manage:banned_users',  // timeout ai recidivi (antispam)
+    'moderator:manage:announcements', // annunci in chat (/announce) dai Moduli
+    'moderator:manage:shoutouts',     // shoutout ufficiale (/shoutout) dai Moduli
+    'moderator:read:chatters',        // chi è in chat (ore guardate / fedeltà)
     'channel:manage:raids',       // Regia: avviare/annullare una raid
     'channel:edit:commercial',    // Regia: lanciare una pubblicità (ad-break)
     'channel:read:ads',           // Regia: leggere la programmazione delle pubblicità
