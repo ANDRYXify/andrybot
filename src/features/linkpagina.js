@@ -345,7 +345,13 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   const disp = ['colonna', 'rivista', 'sezioni'].includes(t.disposizione) ? t.disposizione : 'colonna';
   const mov = ['nessuno', 'dolce', 'cinema'].includes(t.movimento) ? t.movimento : 'dolce';
   // in anteprima si caricano sempre: sennò l'editor mostrerebbe solo cartelli
-  const chiedi = t.consenso === 'chiedi' && !anteprima;
+  // Consenso ai contenuti di ALTRI siti (YouTube, Spotify, Twitch…). La legge
+  // europea chiede il permesso PRIMA che partano, non dopo. Quindi in pagina non
+  // si caricano mai da soli: o li carica il visitatore uno a uno ("chiedi"), o
+  // lo fa in un colpo dal banner, e la sua scelta resta memorizzata — un click
+  // una volta sola, non un cartello da sbloccare a ogni video.
+  const chiedi = !anteprima;
+  const banner = t.consenso !== 'chiedi';
   // Titoli "parola per parola": ogni parola è un pezzo a sé, così può entrare
   // con un attimo di ritardo sulla precedente. Si fa qui, a mano, perché farlo
   // in pagina vorrebbe dire JavaScript su una pagina che deve aprirsi subito.
@@ -729,6 +735,17 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
     color:#fff;font:inherit;font-weight:700;font-size:.9rem;cursor:pointer;
     transition:transform .18s cubic-bezier(.34,1.56,.64,1)}
   .chiedi-b:hover{transform:translateY(-2px)}
+  /* la fascia del consenso: una volta sola, poi la scelta resta memorizzata */
+  .fascia{position:fixed;left:0;right:0;bottom:0;z-index:50;padding:.9rem 1rem calc(.9rem + env(safe-area-inset-bottom));
+    background:${c.card};border-top:1px solid ${c.bordo};backdrop-filter:blur(14px);
+    box-shadow:0 -12px 30px -12px rgba(0,0,0,.4)}
+  .fascia p{max-width:44rem;margin:0 auto;font-size:.84rem;line-height:1.5;color:var(--tenue);text-align:left}
+  .fascia b{color:var(--testo)}
+  .fascia-b{max-width:44rem;margin:.6rem auto 0;display:flex;flex-wrap:wrap;align-items:center;gap:.5rem}
+  .fascia-b button{padding:.55rem 1rem;border:0;border-radius:var(--r);background:var(--acc);color:#fff;
+    font:inherit;font-weight:700;font-size:.85rem;cursor:pointer}
+  .fascia-b button.due{background:transparent;color:var(--testo);border:1px solid ${c.bordo}}
+  .fascia-b a{margin-left:auto;font-size:.8rem;color:var(--tenue)}
   /* proporzioni per tipo di contenuto: un brano non è un video, e uno short
      nemmeno. Con un 16/9 forzato restava mezzo riquadro vuoto. */
   .emb.f-video{aspect-ratio:16/9}
@@ -927,6 +944,16 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
     <p class="piede">Pagina creata con <a href="${esc(baseUrl)}/" target="_blank" rel="noopener">SocialBot</a>
       · <a href="/u/${esc(login)}/privacy">Privacy</a></p>
   </main>
+${banner && corpo.includes('chiedi-b') ? `
+  <aside class="fascia" id="fascia" hidden>
+    <p><b>Video e musica di altri siti.</b> Questa pagina non usa cookie, ma i riquadri di YouTube, Spotify,
+      Twitch e simili sono pezzi dei loro siti e possono usarne di propri. Li carichiamo solo se dici di sì.</p>
+    <div class="fascia-b">
+      <button type="button" id="fascia-si">Va bene, carica tutto</button>
+      <button type="button" id="fascia-no" class="due">Solo l'essenziale</button>
+      <a href="/u/${esc(login)}/privacy">Dettagli</a>
+    </div>
+  </aside>` : ''}
 ${corpo.includes('class="conto"') ? `<script>
 /* Conto alla rovescia. La data e scritta senza fuso orario di proposito: il
    fuso lo mette il browser di chi guarda, che e l'unico a sapere il suo. */
@@ -966,6 +993,19 @@ addEventListener('click', function (e) {
   var box = b.closest('.chiedi');
   box.parentNode.replaceChild(f, box);
 });
+(function () {
+  var f = document.getElementById('fascia');
+  if (!f) return;                                   /* modalita "chiedi": nessun banner */
+  var mem = null;
+  try { mem = localStorage.getItem('sb-consenso'); } catch (e) { /* niente memoria */ }
+  function tutti() { var b = document.querySelectorAll('.chiedi-b'); for (var i = 0; i < b.length; i++) b[i].click(); }
+  function ricorda(v) { try { localStorage.setItem('sb-consenso', v); } catch (e) { /* pazienza */ } }
+  if (mem === 'si') { tutti(); return; }             /* gia detto di si: si carica e basta */
+  if (mem === 'no') return;                          /* gia detto di no: restano i cartelli */
+  f.hidden = false;
+  document.getElementById('fascia-si').onclick = function () { ricorda('si'); f.hidden = true; tutti(); };
+  document.getElementById('fascia-no').onclick = function () { ricorda('no'); f.hidden = true; };
+})();
 </script>` : ''}
 ${corpo.includes('<iframe') || corpo.includes('chiedi-b') ? `<script>
 /* L'altro script: TikTok e Instagram
