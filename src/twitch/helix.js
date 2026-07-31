@@ -497,4 +497,24 @@ export class Helix {
       return { ok: false, motivo: 'errore Twitch' };
     }
   }
+
+  // Chat ai soli follower (o la riapre): la "serranda" durante un attacco
+  // follow-bot. minMinuti = da quanto devono seguire (0 = anche appena seguiti).
+  // Richiede lo scope moderator:manage:chat_settings. Ritorna { ok }.
+  async chatSoloFollower(channelLogin, attivo, minMinuti = 0) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return { ok: false, motivo: 'dati mancanti' };
+    try {
+      const token = await this.auth.getToken('broadcaster', channelLogin);
+      await this._request('PATCH', '/chat/settings', {
+        query: { broadcaster_id: s.user_id, moderator_id: s.user_id }, token,
+        body: { follower_mode: !!attivo, follower_mode_duration: Math.max(0, Math.round(minMinuti)) },
+      });
+      return { ok: true };
+    } catch (e) {
+      if (e.status === 401 || e.status === 403) return { ok: false, motivo: 'permesso mancante' };
+      log.debug('chatSoloFollower:', e?.message || e);
+      return { ok: false, motivo: 'errore Twitch' };
+    }
+  }
 }
