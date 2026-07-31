@@ -62,6 +62,13 @@ export const config = {
   // quello del proxy e un attaccante potrebbe fingersi un altro. Le protezioni
   // solo-di-rete (OVH VAC, Hetzner) sono trasparenti e NON contano: resta 1.
   proxyFidati: Math.max(0, parseInt(env('TRUST_PROXY', '1'), 10) || 1),
+  // Chiave del NOSTRO edge. Se la imposti, l'app (l'"origine") serve SOLO le
+  // richieste che passano dal nostro bordo, che aggiunge questa chiave in un
+  // header. Chi colpisce l'IP del server saltando il bordo non ottiene niente:
+  // l'indirizzo vero dell'origine smette di essere un bersaglio. Vuota = spento
+  // (il caso normale). Quando l'accendi, DEVE averla anche il proxy davanti
+  // (nel Caddyfile è già passata da {env.EDGE_KEY}).
+  edgeKey: env('EDGE_KEY', '').trim(),
   baseUrl: env('BASE_URL', 'http://localhost:8090').replace(/\/$/, ''),
   sessionSecret: sessionSecret(),
 
