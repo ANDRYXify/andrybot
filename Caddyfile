@@ -66,7 +66,13 @@ socialbot.live {
 	}
 
 	handle {
-		reverse_proxy bot:8090
+		reverse_proxy bot:8090 {
+			# Chiave del nostro edge: se EDGE_KEY è impostata nell'ambiente, il bot
+			# serve SOLO le richieste che la portano (vedi "blinda l'origine" nel
+			# codice). Se è vuota, questo header è vuoto e non cambia nulla. NB: va
+			# SOLO al bot, mai al proxy verso Vercel qui sopra.
+			header_up X-Edge-Key {env.EDGE_KEY}
+		}
 	}
 }
 

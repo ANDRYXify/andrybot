@@ -1,0 +1,30 @@
+# Edge di SocialBot — da mettere su QUALUNQUE server, ovunque.
+# Uso:  cp .env.example .env  →  compila .env  →  docker compose up -d
+services:
+  edge:
+    image: caddy:2
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - edge_data:/data       # qui l'edge conserva i suoi certificati
+      - edge_config:/config
+    security_opt:
+      - no-new-privileges:true
+    ulimits:
+      nofile:
+        soft: 131072
+        hard: 131072
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+volumes:
+  edge_data:
+  edge_config:

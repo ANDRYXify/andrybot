@@ -81,6 +81,9 @@ services:
   caddy:
     <<: *comune
     image: caddy:2
+    # Serve solo per leggere EDGE_KEY (la chiave del nostro edge) e passarla al
+    # bot col Caddyfile. Se non usi l'edge, resta vuota e non fa niente.
+    env_file: .env
     ports:
       - "80:80"        # HTTP (redirect a HTTPS + sfida Let's Encrypt)
       - "443:443"      # HTTPS

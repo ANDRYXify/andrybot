@@ -287,6 +287,28 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // risposta "il sito non esiste": nessun indizio, nessun brand, nessun corpo utile
   const notFound = (res) => res.status(404).type('text/plain').send('Not Found');
 
+  // ── BLINDA L'ORIGINE ────────────────────────────────────────────────────────
+  // Se c'è un NOSTRO edge davanti (su questo o su un altro server, ovunque nel
+  // mondo) che aggiunge la chiave in un header, qui pretendiamo quella chiave:
+  // chi colpisce l'IP del server SALTANDO il bordo non ottiene niente. Così
+  // l'indirizzo vero dell'origine smette di essere un bersaglio.
+  // Spento se EDGE_KEY è vuoto (il caso normale). Esente /health (il controllo
+  // di salute di Docker chiama in locale, senza passare dal bordo) e le sfide
+  // Let's Encrypt. Confronto a tempo costante: non si perde da un carattere.
+  if (config.edgeKey) {
+    const atteso = Buffer.from(config.edgeKey);
+    const chiaveEdgeOk = (req) => {
+      const b = Buffer.from(req.get('X-Edge-Key') || '');
+      return b.length === atteso.length && crypto.timingSafeEqual(b, atteso);
+    };
+    app.use((req, res, next) => {
+      if (req.path === '/health' || req.path.startsWith('/.well-known/')) return next();
+      if (chiaveEdgeOk(req)) return next();
+      return notFound(res);         // silenzio: chi salta il bordo non capisce nemmeno cosa c'è
+    });
+    log.info('origine blindata: si serve solo il traffico che passa dal nostro edge');
+  }
+
   // ---- CANCELLO: senza sessione valida, socialbot.live non esiste ----
   // Passano soltanto /health (per Caddy/Docker) e /entra (l'ingresso con il
   // pass monouso del sito). Tutto il resto — dashboard, file statici, API,
