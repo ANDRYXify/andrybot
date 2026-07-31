@@ -1,74 +1,133 @@
-// ── Esche, melassa e canarini ────────────────────────────────────────────────
+// ── Esche, melassa, canarini e argine ai flood ──────────────────────────────
 //
-// Difesa del NOSTRO servizio, e solo difesa: qui non si attacca nessuno, non si
-// risponde con niente di dannoso, non si prova a identificare chi c'è dietro.
-// Si fa una cosa sola: far perdere tempo a chi cerca porte che qui non esistono,
-// e accorgersene subito.
+// Difesa del NOSTRO servizio, e SOLO difesa. Qui:
+//   • non si attacca nessuno,
+//   • non si rimanda traffico indietro a chi ci colpisce,
+//   • non si prova a capire chi c'è dietro.
+// Un "contrattacco" (reverse-DDoS) sarebbe inutile e dannoso: un DDoS arriva da
+// indirizzi falsificati e da computer altrui infettati, quindi rispedire
+// traffico indietro colpisce vittime innocenti e raddoppia la banda in uscita
+// DAL nostro server, peggiorando proprio il disservizio che si vuole evitare.
+// La strategia giusta è l'opposto: rendere ogni richiesta ostile la più
+// ECONOMICA possibile da buttare via, così un flood rimbalza per niente.
 //
-// COME FUNZIONA, in tre pezzi.
+// QUATTRO PEZZI.
 //
-// 1. LE ESCHE. Un elenco di indirizzi che una persona vera non digiterà mai e
-//    che nessun collegamento sulla pagina porta: /wp-login.php, /.env,
-//    /phpmyadmin, /.git/config… Sono i primi che prova qualunque scanner
-//    automatico. Chi li chiede non si è perso: sta bussando a tutte le porte.
-//    Non stanno nel robots.txt di proposito: un motore di ricerca non deve
-//    finirci dentro.
+// 1. LE ESCHE. Un elenco lungo di indirizzi che una persona vera non digiterà
+//    mai e che nessun collegamento porta: /wp-login.php, /.env, /phpmyadmin,
+//    /.git/config, /.aws/credentials, pannelli, webshell, backup… Sono i primi
+//    che prova qualunque scanner. Chi li chiede non si è perso.
 //
 // 2. LA MELASSA. All'esca non si risponde "non esiste": si risponde LENTAMENTE
-//    (e ogni tentativo successivo più lentamente del precedente) e con una
-//    pagina che sembra vera — una finta schermata di accesso WordPress, un
-//    finto file di configurazione. Uno scanner automatico lavora a migliaia di
-//    bersagli l'ora: un sito che risponde in otto secondi e gli dà risultati
-//    inutili è il modo più economico per farsi cancellare dalla sua lista. È lo
-//    stivale al posto del pesce.
+//    e con una pagina che sembra vera. Uno scanner lavora a migliaia di
+//    bersagli l'ora: un sito che ci mette secondi e gli dà risultati inutili è
+//    il modo più economico per farsi cancellare dalla sua lista. È lo stivale
+//    al posto del pesce.
 //
-// 3. I CANARINI. Nel finto file di configurazione ci sono credenziali finte,
-//    con dentro una parola d'ordine che nel nostro codice non esiste da nessuna
-//    altra parte. Se un giorno arriva una richiesta che contiene quella parola,
-//    vuol dire che qualcuno ha letto l'esca e la sta provando: lo scriviamo nel
-//    registro col massimo rilievo. È un allarme che non può suonare per sbaglio.
+// 3. I CANARINI. Nelle finte credenziali c'è una stringa che nel nostro codice
+//    non esiste da nessun'altra parte. Se torna indietro in una richiesta,
+//    qualcuno ha letto l'esca e la sta provando: allarme nel registro.
 //
-// Cosa NON fa, di proposito: non blocca in eterno (le liste nere permanenti
-// colpiscono gli indirizzi condivisi e gli innocenti che ci finiscono dietro),
-// non salva nulla su disco, non tiene traccia delle persone. Solo un contatore
-// in memoria che si svuota da solo.
+// 4. L'ARGINE. La melassa da sola, sotto un flood, sarebbe un autogol: tenere
+//    migliaia di connessioni aperte consuma le NOSTRE risorse. Quindi:
+//      • gli utenti veri hanno la precedenza. Quando il sito è sotto carico
+//        vero, le esche NON vengono più trattenute: si risponde loro al volo,
+//        così le risorse restano a chi usa davvero il bot;
+//      • c'è un tetto alle connessioni tenute in melassa insieme: oltre quello,
+//        stessa cosa, risposta immediata;
+//      • un indirizzo che martella le esche viene messo in castigo per qualche
+//        minuto: da lì in poi riceve un rifiuto secco e a costo quasi zero (è
+//        il "blocco" del flood, fatto in modo che non costi niente a noi).
+//    Il castigo è breve e in memoria: le liste nere eterne colpiscono gli
+//    indirizzi condivisi e chi ci finisce dietro senza colpa.
+//
+// Niente di tutto questo tocca il traffico legittimo, e niente viene scritto su
+// disco: solo contatori in memoria, con un tetto e una potatura automatica.
 
 import { makeLog } from '../logger.js';
 
 const log = makeLog('esche');
 
-// Il canarino: una stringa che esiste SOLO dentro le finte credenziali. Se
-// torna indietro in una richiesta, qualcuno ha abboccato.
+// Il canarino: esiste SOLO dentro le finte credenziali. Se torna, hanno abboccato.
 const CANARINO = 'sb_ck_9f2ad41c7e0b4d16';
 
-// Indirizzi che qui non esistono e che nessun collegamento porta: chi li chiede
-// sta provando le porte a caso. Elenco tenuto corto e ovvio di proposito — sono
-// i bersagli veri degli scanner, non un catalogo per fare scena.
-const ESCHE = [
-  '/wp-login.php', '/wp-admin', '/wp-admin/', '/wordpress', '/wp-content', '/xmlrpc.php',
-  '/.env', '/.env.local', '/.env.production', '/config.json', '/configuration.php',
-  '/.git/config', '/.git/HEAD', '/.svn/entries', '/.DS_Store',
-  '/phpmyadmin', '/pma', '/myadmin', '/adminer.php', '/dbadmin',
-  '/admin.php', '/administrator', '/admin/login', '/cpanel', '/webmail',
-  '/.aws/credentials', '/.ssh/id_rsa', '/id_rsa', '/backup.zip', '/backup.sql', '/dump.sql',
-  '/actuator/env', '/actuator/health', '/solr/admin/info/system',
-  '/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php',
-  '/cgi-bin/luci', '/shell', '/telescope/requests', '/server-status',
-  '/api/v1/keys', '/api/keys', '/api/admin', '/api/token', '/api/secrets',
-];
+// Indirizzi-esca. Lista lunga di proposito: sono i bersagli veri degli scanner.
+const ESCHE = new Set([
+  // WordPress
+  '/wp-login.php', '/wp-admin', '/wp-admin/', '/wordpress', '/wp', '/wp-content', '/xmlrpc.php',
+  '/wp-config.php', '/wp-config.php.bak', '/wp-config.php.old', '/wp-config.php.save', '/wp-config.php~',
+  '/wp-content/debug.log', '/wp-json/wp/v2/users', '/wlwmanifest.xml', '/wp-includes/',
+  '/wp-content/uploads/', '/wp-content/plugins/', '/wp-content/themes/',
+  // file di ambiente e configurazione
+  '/.env', '/.env.local', '/.env.production', '/.env.dev', '/.env.bak', '/.env.save', '/.env.old',
+  '/config.json', '/config.php', '/configuration.php', '/config/database.yml', '/config.yml',
+  '/application.properties', '/appsettings.json', '/web.config', '/.htaccess', '/.htpasswd',
+  '/settings.py', '/local.settings.json', '/parameters.yml', '/secrets.json', '/credentials.json',
+  // controllo versione
+  '/.git/config', '/.git/HEAD', '/.git/logs/HEAD', '/.git/index', '/.gitignore',
+  '/.svn/entries', '/.svn/wc.db', '/.hg/store', '/.bzr/', '/.DS_Store', '/CVS/Root',
+  // credenziali cloud e chiavi
+  '/.aws/credentials', '/.aws/config', '/.ssh/id_rsa', '/.ssh/authorized_keys', '/id_rsa', '/id_dsa',
+  '/.docker/config.json', '/.kube/config', '/.npmrc', '/.pypirc', '/.netrc',
+  // pannelli di amministrazione e DB
+  '/phpmyadmin', '/phpMyAdmin', '/pma', '/myadmin', '/mysql', '/sqladmin', '/pgadmin', '/dbadmin',
+  '/adminer.php', '/adminer', '/admin.php', '/administrator', '/admin/login', '/admin/', '/admin',
+  '/cpanel', '/webmail', '/plesk', '/whm', '/manager/html', '/host-manager/html',
+  '/jenkins', '/jenkins/login', '/grafana/login', '/kibana', '/_cat/indices',
+  // webshell e caricamenti
+  '/shell', '/shell.php', '/cmd.php', '/c99.php', '/r57.php', '/alfa.php', '/wso.php',
+  '/up.php', '/upload.php', '/uploads.php', '/file.php', '/eval.php', '/gel4y.php',
+  // spie di PHP
+  '/info.php', '/phpinfo.php', '/php.php', '/test.php', '/i.php', '/pi.php', '/1.php',
+  // backup
+  '/backup.zip', '/backup.tar.gz', '/backup.sql', '/backup.sql.gz', '/dump.sql', '/db.sql',
+  '/database.sql', '/www.zip', '/site.zip', '/web.zip', '/public_html.zip', '/htdocs.zip',
+  // framework e strumenti
+  '/actuator/env', '/actuator/health', '/actuator/heapdump', '/actuator/gateway/routes',
+  '/solr/admin/info/system', '/struts2-showcase/', '/_ignition/execute-solution',
+  '/telescope/requests', '/_profiler/phpinfo', '/server-status', '/server-info', '/.well-known/traffic-advice',
+  '/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php', '/vendor/composer/installed.json',
+  // apparati di rete e vpn (bersagli classici delle botnet)
+  '/boaform/admin/formLogin', '/HNAP1', '/setup.cgi', '/cgi-bin/luci', '/cgi-bin/', '/goform/set_LimitClient_cfg',
+  '/remote/login', '/remote/fgt_lang', '/+CSCOE+/logon.html', '/dana-na/auth/url_default/welcome.cgi',
+  '/owa/auth/logon.aspx', '/autodiscover/autodiscover.xml', '/ecp/Current/exporttool/',
+  // api "a naso"
+  '/api/v1/keys', '/api/keys', '/api/admin', '/api/token', '/api/tokens', '/api/secrets',
+  '/api/config', '/api/.env', '/api/swagger.json', '/api/v2/keys', '/actuator', '/debug/pprof/',
+]);
 // Anche per prefisso: /wp-content/plugins/qualcosa, /.git/refs/…
-const PREFISSI = ['/wp-', '/.git/', '/.svn/', '/.aws/', '/.ssh/', '/phpmyadmin/', '/vendor/', '/cgi-bin/'];
+const PREFISSI = ['/wp-', '/wordpress/', '/.git/', '/.svn/', '/.hg/', '/.aws/', '/.ssh/', '/.docker/',
+  '/.kube/', '/phpmyadmin/', '/phpmyadmin', '/vendor/', '/cgi-bin/', '/actuator/', '/administrator/',
+  '/wp-content/', '/wp-includes/', '/wp-admin/', '/goform/', '/boaform/', '/solr/'];
 
 const eEsca = (percorso) => {
   const p = percorso.toLowerCase();
-  return ESCHE.includes(p) || PREFISSI.some((x) => p.startsWith(x));
+  return ESCHE.has(p) || PREFISSI.some((x) => p.startsWith(x));
 };
 
-// Contatore in memoria: indirizzo → { n, ultimo }. Si pota da solo, e ha un
-// tetto: un flusso di indirizzi diversi non deve poter far crescere la memoria.
-const visti = new Map();
-const TETTO = 5000;
+// ── Stato in memoria ─────────────────────────────────────────────────────────
+const visti = new Map();          // ip → { n, ultimo, castigo }
+const TETTO = 20000;
 const ORE = 3600000;
+
+// Quante connessioni sono tenute in melassa ADESSO. Oltre il tetto non si
+// trattiene più: si risponde al volo, così un flood non esaurisce le nostre
+// connessioni (sarebbe un autogol).
+let inMelassa = 0;
+const MAX_MELASSA = 80;
+
+// Carico VERO: quante richieste legittime sono passate di recente. Decade da
+// solo ogni secondo. Se è alto, gli utenti veri hanno la precedenza e le esche
+// non vengono trattenute — le risorse restano a chi usa il bot.
+let caricoVero = 0;
+const CARICO_ALTO = 150;
+const decadi = setInterval(() => { caricoVero = Math.floor(caricoVero * 0.5); }, 1000);
+if (decadi.unref) decadi.unref();
+
+// Un indirizzo che supera questa soglia di tentativi va in castigo: da lì in
+// poi rifiuto secco a costo quasi zero, per qualche minuto.
+const SOGLIA_CASTIGO = 12;
+const CASTIGO = 8 * 60000;
 
 function chi(req) {
   const avanti = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
@@ -77,27 +136,23 @@ function chi(req) {
 
 function segna(ip) {
   const ora = Date.now();
-  const v = visti.get(ip) || { n: 0, ultimo: ora };
+  const v = visti.get(ip) || { n: 0, ultimo: ora, castigo: 0 };
   if (ora - v.ultimo > 6 * ORE) v.n = 0;      // ha smesso da un pezzo: si riparte
   v.n += 1; v.ultimo = ora;
+  if (v.n >= SOGLIA_CASTIGO && !v.castigo) { v.castigo = ora + CASTIGO; log.warn(`castigo: ${ip} messo in castigo dopo ${v.n} tentativi sulle esche`); }
   visti.set(ip, v);
   if (visti.size > TETTO) {
-    // pota i più vecchi: la memoria non cresce all'infinito
     const ordinati = [...visti.entries()].sort((a, b) => a[1].ultimo - b[1].ultimo);
-    for (let i = 0; i < ordinati.length - TETTO + 500; i++) visti.delete(ordinati[i][0]);
+    for (let i = 0; i < ordinati.length - TETTO + 2000; i++) visti.delete(ordinati[i][0]);
   }
-  return v.n;
+  return v;
 }
+const inCastigo = (v) => v.castigo && Date.now() < v.castigo;
 
 const attesa = (ms) => new Promise((r) => setTimeout(r, ms));
-
-// Quanto si fa aspettare: cresce col numero di tentativi, ma si ferma a 8
-// secondi. Più a lungo non serve — occupa una connessione nostra per niente.
 const melassa = (n) => Math.min(8000, 900 + n * 700);
 
-// ── Le finte risposte ───────────────────────────────────────────────────────
-// Devono sembrare vere abbastanza da far continuare lo scanner (e quindi
-// perdere altro tempo), e non contenere NIENTE di vero.
+// ── Finte risposte: sembrano vere, non contengono NIENTE di vero ─────────────
 const FINTO_ENV = `APP_ENV=production
 APP_DEBUG=false
 APP_KEY=base64:${CANARINO}==
@@ -124,38 +179,54 @@ const FINTO_WP = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 
 function finta(percorso) {
   const p = percorso.toLowerCase();
-  // l'ordine conta: "/.git/config" contiene sia ".git" sia "config"
   if (p.includes('.git')) return { tipo: 'text/plain', corpo: '[core]\n\trepositoryformatversion = 0\n\tbare = false\n[remote "origin"]\n\turl = git@github.com:app/app.git\n' };
-  if (p.includes('.env') || p.includes('config')) return { tipo: 'text/plain', corpo: FINTO_ENV };
+  if (p.includes('.env') || p.includes('config') || p.includes('.properties') || p.includes('credentials')) return { tipo: 'text/plain', corpo: FINTO_ENV };
   if (p.includes('wp-') || p.includes('wordpress')) return { tipo: 'text/html', corpo: FINTO_WP };
-  if (p.startsWith('/api/')) return { tipo: 'application/json', corpo: JSON.stringify({ ok: false, error: 'invalid_token', hint: 'use X-Api-Key' }) };
+  if (p.startsWith('/api/') || p.endsWith('.json')) return { tipo: 'application/json', corpo: JSON.stringify({ ok: false, error: 'invalid_token', hint: 'use X-Api-Key' }) };
   return { tipo: 'text/html', corpo: '<!DOCTYPE html><title>401 Unauthorized</title><h1>401 Unauthorized</h1>' };
 }
 
-// ── Il pezzo che si monta ───────────────────────────────────────────────────
-// Va montato PRIMA di tutto il resto, così le esche vengono prima di ogni altra
-// regola, ma dopo il parser del corpo (serve per il canarino).
+// Rifiuto secco, a costo quasi zero: è quello che riceve chi è in castigo o chi
+// arriva mentre il sito è sotto carico. Nessuna attesa, nessuna connessione
+// tenuta aperta: un flood che finisce qui non ci costa niente.
+function secco(res) {
+  res.set('Connection', 'close');
+  res.status(429).type('text/plain').send('Too Many Requests');
+}
+
 export function montaEsche(app) {
   app.use(async (req, res, next) => {
-    // 1. il canarino: qualcuno sta usando le credenziali finte?
+    // 1. il canarino, sempre e per primo
     try {
       const dove = JSON.stringify(req.body || {}).slice(0, 4000) + req.url.slice(0, 1000)
         + String(req.headers.authorization || '').slice(0, 300);
       if (dove.includes(CANARINO)) {
         log.error(`CANARINO: qualcuno sta usando le credenziali finte delle esche — ${chi(req)} su ${req.method} ${req.path}`);
-        const n = segna(chi(req)) + 5;      // chi arriva fin qui non è passato di lì per caso
-        await attesa(melassa(n));
-        return res.status(401).type('application/json').send('{"ok":false,"error":"invalid_token"}');
+        const v = segna(chi(req)); v.castigo = Date.now() + CASTIGO;
+        return secco(res);
       }
-    } catch { /* corpo illeggibile: pazienza, si tira dritto */ }
+    } catch { /* corpo illeggibile: si tira dritto */ }
 
-    if (!eEsca(req.path)) return next();
+    // 2. non è un'esca: è traffico normale. Conta come carico vero e passa.
+    if (!eEsca(req.path)) { if (caricoVero < 100000) caricoVero++; return next(); }
 
-    // 2. è un'esca: si segna, si aspetta, si risponde con lo stivale
+    // 3. è un'esca.
     const ip = chi(req);
-    const n = segna(ip);
-    if (n === 1 || n % 25 === 0) log.warn(`esca: ${ip} ha provato ${req.method} ${req.path} (tentativo n. ${n})`);
-    await attesa(melassa(n));
+    const v = segna(ip);
+
+    // già in castigo, o sotto carico vero, o troppe connessioni già in melassa:
+    // rifiuto secco e via. Gli utenti veri vengono prima della beffa.
+    if (inCastigo(v) || caricoVero >= CARICO_ALTO || inMelassa >= MAX_MELASSA) {
+      if (v.n === 1 || v.n % 50 === 0) log.warn(`esca (rifiuto secco): ${ip} → ${req.method} ${req.path} (n. ${v.n}${inCastigo(v) ? ', in castigo' : caricoVero >= CARICO_ALTO ? ', sito occupato' : ', troppa melassa'})`);
+      return secco(res);
+    }
+
+    // c'è margine: lo si tiene nella melassa e gli si serve lo stivale
+    if (v.n === 1 || v.n % 25 === 0) log.warn(`esca: ${ip} → ${req.method} ${req.path} (tentativo n. ${v.n})`);
+    inMelassa++;
+    try { await attesa(melassa(v.n)); }
+    finally { inMelassa--; }
+    if (res.writableEnded) return;               // connessione già chiusa dal client
     const f = finta(req.path);
     res.set('X-Robots-Tag', 'noindex, nofollow');
     res.status(200).type(f.tipo).send(f.corpo);
@@ -165,7 +236,10 @@ export function montaEsche(app) {
 // Per la scheda admin: quanti stanno bussando, senza dire chi.
 export function riepilogoEsche() {
   const ora = Date.now();
-  let attivi = 0, tentativi = 0;
-  for (const v of visti.values()) { if (ora - v.ultimo < 6 * ORE) { attivi++; tentativi += v.n; } }
-  return { indirizziAttivi: attivi, tentativi, inMemoria: visti.size };
+  let attivi = 0, tentativi = 0, castigati = 0;
+  for (const v of visti.values()) {
+    if (ora - v.ultimo < 6 * ORE) { attivi++; tentativi += v.n; }
+    if (v.castigo && ora < v.castigo) castigati++;
+  }
+  return { indirizziAttivi: attivi, tentativi, castigati, inMelassaOra: inMelassa, caricoVero, inMemoria: visti.size };
 }
