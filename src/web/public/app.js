@@ -6732,6 +6732,12 @@ function lpRenderBlocchi() {
     ['terzo', L('un terzo', 'a third', 'un tercio')], ['quarto', L('un quarto', 'a quarter', 'un cuarto')]]
     .map(([k, n]) => `<option value="${k}"${(b.larghezza || 'piena') === k ? ' selected' : ''}>${esc(n)}</option>`).join('')}
           </select></label>
+        <label>${L('Allinea', 'Align', 'Alinea')}
+          <select data-lpb="${i}" data-lpf="allinea">
+            ${[['auto', L('come la pagina', 'like the page', 'como la página')], ['sinistra', L('a sinistra', 'left', 'a la izquierda')],
+    ['centro', L('al centro', 'centre', 'al centro')], ['destra', L('a destra', 'right', 'a la derecha')]]
+    .map(([k, n]) => `<option value="${k}"${(b.allinea || 'auto') === k ? ' selected' : ''}>${esc(n)}</option>`).join('')}
+          </select></label>
         <label>${L('Entra', 'Enters', 'Entra')}
           <select data-lpb="${i}" data-lpf="entrata">
             ${[['auto', L('come la pagina', 'like the page', 'como la página')], ['nessuna', L('ferma', 'still', 'quieta')],
