@@ -6346,6 +6346,11 @@ async function caricaPaginaLink(ridisegna = false) {
       : `<p class="lp-stato off">${_bIco(ICO.avviso)}${L('Non ancora pubblicata: compila e salva.', 'Not published yet: fill it in and save.', 'Aún no publicada: rellénala y guarda.')}</p>`}
         ${lpVisiteHtml(d.visite)}
         ${lpIntroHtml(d)}
+        <div class="lp-tabs" role="tablist">
+          <button type="button" class="lp-tab sel" data-lptab="contenuti">${L('Contenuti', 'Content', 'Contenido')}</button>
+          <button type="button" class="lp-tab" data-lptab="aspetto">${L('Aspetto', 'Look', 'Aspecto')}</button>
+        </div>
+        <div class="lp-pane" data-pane="contenuti">
         <details class="carta sez" open>
           <summary><h3>${L('Intestazione', 'Header', 'Encabezado')}</h3></summary>
           <label class="campo" for="lp-headline">${L('Titolo', 'Headline', 'Título')}</label>
@@ -6390,7 +6395,9 @@ async function caricaPaginaLink(ridisegna = false) {
             <button type="button" class="btn secondario mini" data-lpadd="separatore">${L('Riga divisoria', 'Divider', 'Separador')}</button>
           </div>
         </details>
+        </div>
 
+        <div class="lp-pane" data-pane="aspetto" hidden>
         <details class="carta sez" open>
           <summary><h3>${L('Aspetto', 'Look', 'Aspecto')}</h3></summary>
           <label class="campo">${L('Temi pronti', 'Ready-made themes', 'Temas listos')}</label>
@@ -6516,6 +6523,7 @@ async function caricaPaginaLink(ridisegna = false) {
             <input type="color" data-lpk="ombraColore" value="${esc(LP.tema.ombraColore || '#000000')}">
           </div>
         </details>
+        </div>
       </div>
 
       <div class="lp-anteprima">
@@ -6607,6 +6615,15 @@ async function caricaPaginaLink(ridisegna = false) {
     box.querySelector('.lp-editor')?.classList.toggle('orizz', orizz);   // più spazio all'anteprima
     box.querySelectorAll('.lp-vista-b').forEach((b) => b.classList.toggle('sel', b === v));
     requestAnimationFrame(lpScala);   // la scala si misura dopo il cambio di colonne
+  });
+
+  // Schede del banco: "Contenuti" e "Aspetto" sono due blocchi separati; qui si
+  // passa dall'uno all'altro (l'anteprima a lato resta sempre visibile).
+  box.addEventListener('click', (ev) => {
+    const t = ev.target.closest('[data-lptab]'); if (!t) return;
+    const quale = t.dataset.lptab;
+    box.querySelectorAll('.lp-tab').forEach((b) => b.classList.toggle('sel', b === t));
+    box.querySelectorAll('.lp-pane').forEach((p) => { p.hidden = p.dataset.pane !== quale; });
   });
 
   // Temi pronti: applicano TUTTO in un colpo, poi si ridisegna l'editor perché
