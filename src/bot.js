@@ -31,7 +31,7 @@ import { createMessageHandler } from './features/handler.js';
 import { ClipEngine } from './features/clips.js';
 import { PenitenzeEngine } from './features/penitenze.js';
 import { AlertsEngine } from './features/alerts.js';
-import { AntiBot } from './features/antibot.js';
+import { AntiBot, caricaListaBotDaDisco, aggiornaListaBot } from './features/antibot.js';
 import { scheduleReflection } from './ai/reflection.js';
 import { StreamWatcher } from './stream/watcher.js';
 import { LiveListener } from './stream/listener.js';
@@ -121,6 +121,12 @@ export class BotManager {
     // VIP: rimozione automatica degli scaduti + premi periodici (settimanale/mensile)
     this._vipTimer = setInterval(() => vip.controllaScadenze(this.helix).catch(() => {}), 5 * 60_000);
     this._premiTimer = setInterval(() => this._controllaPremi(), 60 * 60_000);
+    // Anti-bot: lista di bot noti aggiornata da sola. Si riprende la copia su
+    // disco subito (istantaneo), poi si scarica la fresca dopo 30s (per non
+    // rallentare l'avvio) e la si rinfresca ogni 12 ore.
+    caricaListaBotDaDisco().catch(() => {});
+    setTimeout(() => aggiornaListaBot().catch(() => {}), 30_000);
+    this._listaBotTimer = setInterval(() => aggiornaListaBot().catch(() => {}), 12 * 60 * 60_000);
     // TikTok: rilevamento live best-effort (l'affidabile è il webhook)
     this._tiktokTimer = setInterval(() => this._controllaTikTok().catch(() => {}), 3 * 60_000);
     // Nuovi post: avvisa quando esce un nuovo video su YouTube (via RSS, ogni 10 min).
@@ -158,6 +164,7 @@ export class BotManager {
     clearInterval(this._animaTimer);
     clearInterval(this._vipTimer);
     clearInterval(this._premiTimer);
+    clearInterval(this._listaBotTimer);
     clearInterval(this._tiktokTimer);
     clearInterval(this._postTimer);
     clearInterval(this._annunciTimer);
