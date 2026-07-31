@@ -1385,11 +1385,12 @@ export const linkPage = {
       // bottoni delle pagine link (Linktree la chiama hard shadow).
       ombraTipo: scelta(t.ombraTipo, ['nessuna', 'morbida', 'dura'], t.ombra === false ? 'nessuna' : 'morbida'),
       ombraColore: hex(t.ombraColore),
-      // La pagina NOSTRA non usa cookie. Ma un video di YouTube o un player di
-      // Spotify sono pezzi del LORO sito, e quelli i cookie li mettono appena
-      // vengono caricati. "chiedi" = si carica solo se il visitatore lo chiede,
-      // e allora il banner non serve perché senza il suo click non parte niente.
-      consenso: scelta(t.consenso, ['chiedi', 'sempre'], 'chiedi'),
+      // Come si caricano i contenuti di altri siti. Di norma SUBITO: doverli
+      // sbloccare uno a uno rende la pagina noiosa da sfogliare, ed è l'opposto
+      // di quello che deve fare una pagina che sta in una bio. Chi preferisce
+      // che partano solo su richiesta mette "chiedi"; l'informativa cambia da
+      // sé e racconta quello che succede davvero nei due casi.
+      consenso: scelta(t.consenso, ['chiedi', 'sempre'], 'sempre'),
       anim: scelta(t.anim, ['nessuna', 'fade', 'rise', 'pop'], 'rise'),
       avatarForma: scelta(t.avatarForma, ['cerchio', 'quadrato', 'nessuno'], 'cerchio'),
       larghezza: num(t.larghezza, 20, 46, 30),
