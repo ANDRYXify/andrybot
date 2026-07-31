@@ -128,7 +128,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   const app = express();
 
   // dietro reverse proxy (nginx/caddy) serve per cookie "secure" e IP reali
-  app.set('trust proxy', 1);
+  app.set('trust proxy', config.proxyFidati);   // Caddy = 1; con un edge DDoS L7 davanti, 2
 
   // Le sessioni DEVONO essere firmate con un segreto reale. `config.sessionSecret`
   // è sempre valorizzato (env → file persistito → effimero casuale): se per
