@@ -345,6 +345,23 @@ if(rm){frame();return;}
 var last=0;function loop(t){if(t-last>55){frame();last=t;}requestAnimationFrame(loop);}requestAnimationFrame(loop);
 })();`;
 
+// Reveal allo scroll: rete di sicurezza SOLO dove animation-timeline non è
+// supportata. Mette la classe .sr sull'<html> PRIMA del disegno (niente lampo),
+// mette in pausa le entrate e le fa partire quando il pezzo entra nello schermo.
+// Se manca il supporto, il JS è spento o qualcosa va storto → tutto resta
+// visibile (rete di sicurezza a 5s + catch). Rispetta "riduci animazioni".
+const SCRIPT_SCROLLREVEAL = `(function(){try{
+if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+if(!('IntersectionObserver' in window))return;
+if(window.CSS&&CSS.supports&&CSS.supports('animation-timeline','view()'))return;
+document.documentElement.className+=' sr';
+var SEL='.lista .voce,.lista .tit,.lista .par,.lista .sep,.lista .socrow,.lista .img,.lista .emb,.lista .eroe,.lista .griglia,.lista .marq,.lista .bl';
+function tutti(){try{document.querySelectorAll(SEL).forEach(function(el){el.classList.add('vis');});}catch(e){}}
+function avvia(){try{var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('vis');io.unobserve(e.target);}});},{rootMargin:'0px 0px -6% 0px'});document.querySelectorAll(SEL).forEach(function(el){io.observe(el);});}catch(e){tutti();}}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',avvia);else avvia();
+setTimeout(tutti,5000);
+}catch(e){try{document.documentElement.classList.remove('sr');}catch(_){}}})();`;
+
 export function renderLinkPage(pagina, { login, display, avatar, baseUrl, anteprima } = {}) {
   const pre = PRESET[pagina.template] || PRESET.minimal;
   const t = pagina.tema || {};
@@ -1040,11 +1057,20 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   .telo>h1{animation:crawlIn 1.4s cubic-bezier(.16,1,.3,1) .12s both;transform-origin:center bottom}
   .telo>.tag{animation:crawlIn 1.5s cubic-bezier(.16,1,.3,1) .24s both;transform-origin:center bottom}` : ''}
   @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
+  ${!anteprima && mov !== 'nessuno' ? `
+  /* Rete di sicurezza per lo scroll sui browser che NON conoscono
+     animation-timeline (Safari/mobile datati): un pizzico di JS (classe .sr,
+     vedi lo script) mette in pausa l'animazione d'ingresso e la fa PARTIRE solo
+     quando il pezzo entra nello schermo → l'effetto "compare mentre scorri" si
+     vede anche lì. Senza JS, o sui browser moderni, non cambia niente. */
+  html.sr :is(.voce,.tit,.par,.sep,.socrow,.img,.emb,.eroe,.griglia,.marq,.bl){animation-play-state:paused}
+  html.sr :is(.voce,.tit,.par,.sep,.socrow,.img,.emb,.eroe,.griglia,.marq,.bl).vis{animation-play-state:running}` : ''}
   ${anteprima ? `
   /* solo in anteprima: si vede che ogni pezzo si può cliccare per aprirne i comandi */
   .sel-b:hover > *{outline:2px dashed var(--acc);outline-offset:4px;cursor:pointer}
   .sel-b.tocca > *{outline:2px solid var(--acc);outline-offset:4px}` : ''}
 </style>
+${!anteprima && mov !== 'nessuno' ? `<script>${SCRIPT_SCROLLREVEAL}</script>` : ''}
 </head>
 <body>
   ${fxCanvas}
