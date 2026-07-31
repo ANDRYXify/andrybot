@@ -22,6 +22,24 @@
 #   serve, "Change of address" in Google Search Console.
 # ============================================================
 
+# --- Opzioni globali: robustezza sotto carico ----------------
+# Solo cose SICURE che non toccano gli upload né gli overlay in tempo reale:
+#  · read_header 10s → il classico "slowloris" manda gli header a goccia per
+#    tenere aperte migliaia di connessioni e affogare il server. Un client vero
+#    li manda in millisecondi: chi ci mette più di 10 secondi viene chiuso. NON
+#    tocca il corpo (gli upload di video restano liberi) né le risposte lunghe
+#    (overlay, chat: quelle restano aperte quanto serve).
+#  · max_header_size 32KB → header giganti (un altro modo di sprecarci memoria)
+#    vengono rifiutati subito.
+{
+	servers {
+		timeouts {
+			read_header 10s
+		}
+		max_header_size 32KB
+	}
+}
+
 # --- Dominio UFFICIALE: serve l'app -------------------------
 socialbot.live {
 	encode gzip
