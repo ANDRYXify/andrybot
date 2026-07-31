@@ -44,33 +44,19 @@
 socialbot.live {
 	encode gzip
 
-	# Link-page pubblica degli streamer (/u/<login>). Il contenuto è la SPA del
-	# sito madre (su Vercel), ma DEVE stare sotto il dominio ufficiale
-	# socialbot.live (non più andryxify.it). Facciamo da reverse-proxy verso
-	# Vercel SOLO per i path che servono alla link-page standalone:
-	#   · /u/*                    → la pagina (index.html della SPA)
-	#   · /assets/*               → bundle JS/CSS della SPA (Express non li usa:
-	#                               la dashboard serve app.js/style.css dalla root)
-	#   · /api/streamer-verify*   → l'API JSON che alimenta la link-page
-	# Tutto il resto continua ad andare all'app (bot:8090). NB: il redirect
-	# inverso (andryxify.it/u/* → socialbot.live/u/*) è client-side nel sito,
-	# basato sull'hostname, quindi questo proxy NON crea loop.
-	# NB: puntiamo a www.andryxify.it (non andryxify.it): il dominio nudo su
-	# Vercel fa 307 → www, che spezzerebbe il proxy. Con www e header Host www
-	# Vercel serve la pagina direttamente (200), sotto il brand socialbot.live.
-	@linkpage path /u/* /assets/* /api/streamer-verify /api/streamer-verify/*
-	handle @linkpage {
-		reverse_proxy https://www.andryxify.it {
-			header_up Host www.andryxify.it
-		}
-	}
-
+	# Link-page pubblica degli streamer (/u/<login>): ADESSO LA SERVE IL BOT,
+	# generata dal NOSTRO database (renderLinkPage in features/linkpagina.js).
+	# Prima veniva reverse-proxata alla vecchia SPA su Vercel (www.andryxify.it):
+	# era quella la "pagina vecchia" che compariva nonostante le modifiche fatte
+	# qui. Tolto il proxy, /u/* (e tutto il resto) va all'app: si vede la pagina
+	# nuova, personalizzabile e autosufficiente. Non serve più proxare /assets/*
+	# né /api/streamer-verify: la pagina nuova è HTML+CSS+JS inline, senza bundle
+	# esterni. (Il bot ha comunque un fallback per /api/streamer-verify.)
 	handle {
 		reverse_proxy bot:8090 {
 			# Chiave del nostro edge: se EDGE_KEY è impostata nell'ambiente, il bot
 			# serve SOLO le richieste che la portano (vedi "blinda l'origine" nel
-			# codice). Se è vuota, questo header è vuoto e non cambia nulla. NB: va
-			# SOLO al bot, mai al proxy verso Vercel qui sopra.
+			# codice). Se è vuota, questo header è vuoto e non cambia nulla.
 			header_up X-Edge-Key {env.EDGE_KEY}
 		}
 	}
