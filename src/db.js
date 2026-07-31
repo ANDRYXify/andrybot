@@ -1381,6 +1381,10 @@ export const linkPage = {
       raggio: num(t.raggio, 0, 999, 14),
       stileBtn: scelta(t.stileBtn, ['pieno', 'contorno', 'vetro'], 'pieno'),
       ombra: t.ombra !== false,
+      // "dura" = l'ombra piena e spostata, senza sfocatura: è la firma dei
+      // bottoni delle pagine link (Linktree la chiama hard shadow).
+      ombraTipo: scelta(t.ombraTipo, ['nessuna', 'morbida', 'dura'], t.ombra === false ? 'nessuna' : 'morbida'),
+      ombraColore: hex(t.ombraColore),
       anim: scelta(t.anim, ['nessuna', 'fade', 'rise', 'pop'], 'rise'),
       avatarForma: scelta(t.avatarForma, ['cerchio', 'quadrato', 'nessuno'], 'cerchio'),
       larghezza: num(t.larghezza, 20, 46, 30),
@@ -1401,7 +1405,9 @@ export const linkPage = {
       if (tipo === 'link') {
         const u = urlOk(b.url);
         out.push({ tipo, url: u, label: str(b.label, L.label), sotto: str(b.sotto, L.sotto),
-          icona: scelta(b.icona, ICONE_LINKPAGE, null) || iconaDaUrl(u), evidenzia: b.evidenzia === true });
+          icona: scelta(b.icona, ICONE_LINKPAGE, null) || iconaDaUrl(u), evidenzia: b.evidenzia === true,
+          // miniatura al posto dell'icona, e colori solo per QUESTO bottone
+          img: urlOk(b.img), colore: hex(b.colore), coloreTesto: hex(b.coloreTesto) });
       } else if (tipo === 'titolo') {
         out.push({ tipo, testo: str(b.testo, L.titolo) });
       } else if (tipo === 'testo') {
