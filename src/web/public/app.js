@@ -90,6 +90,7 @@ function impostazioni() {
     manche: { attivo: false, minMin: 15, maxMin: 45, soloLive: false, ...(s.manche && typeof s.manche === 'object' ? s.manche : {}) },
     premioVip: (s.premioVip && typeof s.premioVip === 'object') ? s.premioVip : { attivo: false, periodo: 'settimana', quanti: 1 },
     antispam: (s.antispam && typeof s.antispam === 'object') ? s.antispam : {},
+    antibot: (s.antibot && typeof s.antibot === 'object') ? s.antibot : {},
     tiktok: (s.tiktok && typeof s.tiktok === 'object') ? s.tiktok : { username: '', attivo: false, annunciaChat: false, messaggio: '', postAttivo: false, postAnnunciaChat: false, postMessaggio: '' },
     youtube: (s.youtube && typeof s.youtube === 'object') ? s.youtube : { canale: '', attivo: false, annunciaChat: false, messaggio: '' },
     instagram: (s.instagram && typeof s.instagram === 'object') ? s.instagram : { userId: '', attivo: false, annunciaChat: false, messaggio: '' },
@@ -1329,7 +1330,7 @@ const GUIDE = {
   pagina: { serve: ['Avere una pagina pubblica con tutti i tuoi link (Twitch, social, Discord, donazioni) da mettere nella bio di Instagram o TikTok.', 'Have a public page with all your links (Twitch, socials, Discord, donations) to put in your Instagram or TikTok bio.', 'Tener una página pública con todos tus enlaces (Twitch, redes, Discord, donaciones) para poner en la bio de Instagram o TikTok.'],
     come: [['Scrivi titolo e sottotitolo: è quello che si legge in cima. La foto la prendo dal tuo profilo Twitch.', 'Write a headline and tagline: that’s what people read at the top. I take the picture from your Twitch profile.', 'Escribe título y subtítulo: es lo que se lee arriba. La foto la tomo de tu perfil de Twitch.'], ['Aggiungi i link con etichetta e indirizzo: l’icona giusta la riconosco dall’indirizzo.', 'Add your links with a label and address: I recognise the right icon from the address.', 'Añade los enlaces con etiqueta y dirección: el icono correcto lo reconozco por la dirección.'], ['Metti anche video e musica (YouTube, Spotify, TikTok…) e il blocco “La mia diretta”: il player resta lì e dice da sé se sei online.', 'Add video and music too (YouTube, Spotify, TikTok…) and the “My live stream” block: the player stays there and says by itself whether you are online.', 'Pon también vídeo y música (YouTube, Spotify, TikTok…) y el bloque “Mi directo”: el reproductor se queda ahí y dice él mismo si estás online.'], ['Scegli stile e colori, salva e apri l’anteprima.', 'Pick style and colours, save and open the preview.', 'Elige estilo y colores, guarda y abre la vista previa.']] },
   regole: { serve: ['Moderazione automatica: filtra spam, link e flood e dà timeout ai recidivi.', 'Automatic moderation: filters spam, links and flood, and times out repeat offenders.', 'Moderación automática: filtra spam, enlaces y flood, y da timeout a los reincidentes.'],
-    come: [['Attiva l’antispam.', 'Enable anti-spam.', 'Activa el antispam.'], ['Scegli cosa filtrare (link, maiuscole, ripetizioni…).', 'Choose what to filter (links, caps, repetitions…).', 'Elige qué filtrar (enlaces, mayúsculas, repeticiones…).'], ['Salva: il bot modera da solo.', 'Save: the bot moderates on its own.', 'Guarda: el bot modera solo.']] },
+    come: [['Attiva l’antispam.', 'Enable anti-spam.', 'Activa el antispam.'], ['Scegli cosa filtrare (link, maiuscole, ripetizioni…).', 'Choose what to filter (links, caps, repetitions…).', 'Elige qué filtrar (enlaces, mayúsculas, repeticiones…).'], ['Attiva l’anti-bot per follow-bot e hate-raid: rileva le ondate di follow, ferma gli account con nomi da bot e trattiene i messaggi degli account appena creati.', 'Turn on anti-bot for follow-bots and hate-raids: detect follow waves, stop bot-named accounts and hold messages from brand-new accounts.', 'Activa el anti-bot para follow-bots y hate-raids: detecta oleadas de follows, frena las cuentas con nombre de bot y retén los mensajes de cuentas recién creadas.'], ['Salva: il bot modera da solo.', 'Save: the bot moderates on its own.', 'Guarda: el bot modera solo.']] },
   giochi: { serve: ['Minigiochi, monete e classifiche per tenere viva la chat.', 'Minigames, coins and leaderboards to keep chat alive.', 'Minijuegos, monedas y clasificaciones para animar el chat.'],
     come: [['Attiva i giochi.', 'Turn on games.', 'Activa los juegos.'], ['Personalizza il nome della moneta e i premi.', 'Customize the coin name and the prizes.', 'Personaliza el nombre de la moneda y los premios.'], ['Gli spettatori giocano con !slot, !roulette, !pesca, !trivia…', 'Viewers play with !slot, !roulette, !fish, !trivia…', 'Los espectadores juegan con !slot, !roulette, !pesca, !trivia…']] },
   effetti: { serve: ['Suoni ed effetti in overlay OBS, anche riscattabili con i punti canale.', 'Sounds and effects in the OBS overlay, redeemable with channel points too.', 'Sonidos y efectos en el overlay de OBS, también canjeables con puntos de canal.'],
@@ -7508,6 +7509,7 @@ function pannelloNotifiche() {
 function pannelloRegole() {
   const s = impostazioni();
   const a = s.antispam || {};
+  const ab = s.antibot || {};
   const sel = (v, def) => v === undefined ? def : v;   // default "acceso" per i booleani
   return pannello('regole', `
     <div class="carta">
@@ -7576,6 +7578,83 @@ function pannelloRegole() {
       </div>
 
       <p class="spazio-sopra"><button class="btn" id="btn-salva-antispam">${L('Salva antispam', 'Save anti-spam', 'Guardar antispam')}</button></p>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.scudo)}${L('Anti-bot: follow-bot e hate-raid', 'Anti-bot: follow-bots & hate-raids', 'Anti-bot: follow-bots y hate-raids')}</h2>
+      <p>${L('Protezione dagli attacchi di bot: le ondate di finti follower e gli account-bot che spammano in chat. Sullo stile di Sery_Bot.', 'Protection from bot attacks: waves of fake followers and bot accounts spamming chat. Sery_Bot style.', 'Protección de ataques de bots: oleadas de seguidores falsos y cuentas-bot que spamean el chat. Al estilo de Sery_Bot.')}
+      <strong class="primo-piano">${L('In dubbio avvisa, non caccia i fan veri.', 'When unsure it warns, it doesn’t kick real fans.', 'En duda avisa, no echa a los fans de verdad.')}</strong></p>
+
+      <div class="riga-check">
+        <input type="checkbox" id="chk-ab-attivo" ${ab.attivo ? 'checked' : ''}>
+        <label for="chk-ab-attivo">${L('Attiva la protezione anti-bot', 'Enable anti-bot protection', 'Activa la protección anti-bot')}</label>
+      </div>
+
+      <div class="riga-check spazio-sopra">
+        <input type="checkbox" id="chk-ab-raffica" ${sel(ab.raffica, true) ? 'checked' : ''}>
+        <label for="chk-ab-raffica">${L('Rileva le ondate di follow (attacco follow-bot)', 'Detect follow waves (follow-bot attack)', 'Detecta oleadas de follows (ataque follow-bot)')}</label>
+      </div>
+      <div class="riga-flessibile">
+        <span class="suggerimento">${L('Allarme oltre', 'Alert above', 'Alarma por encima de')}</span>
+        <input type="number" id="inp-ab-quanti" min="3" max="100" value="${Number(ab.rafficaQuanti) || 10}" style="width:5rem">
+        <span class="suggerimento">${L('follow in', 'follows in', 'follows en')}</span>
+        <input type="number" id="inp-ab-secondi" min="5" max="300" value="${Number(ab.rafficaSecondi) || 30}" style="width:5rem">
+        <span class="suggerimento">${L('secondi', 'seconds', 'segundos')}</span>
+      </div>
+      <div class="riga-check">
+        <input type="checkbox" id="chk-ab-chiudi" ${sel(ab.rafficaChiudiChat, true) ? 'checked' : ''}>
+        <label for="chk-ab-chiudi">${L('Durante un\'ondata, chat ai soli follower', 'During a wave, followers-only chat', 'Durante una oleada, chat solo para seguidores')}</label>
+      </div>
+      <div class="riga-check">
+        <input type="checkbox" id="chk-ab-rafbanna" ${ab.rafficaBanna ? 'checked' : ''}>
+        <label for="chk-ab-rafbanna">${L('Durante un\'ondata, banna anche i follow sospetti (aggressivo)', 'During a wave, also ban suspicious follows (aggressive)', 'Durante una oleada, banea también los follows sospechosos (agresivo)')}</label>
+      </div>
+
+      <div class="riga-check spazio-sopra">
+        <input type="checkbox" id="chk-ab-nomi" ${sel(ab.nomiBot, true) ? 'checked' : ''}>
+        <label for="chk-ab-nomi">${L('Ferma gli account con nomi da follow-bot noti', 'Stop accounts with known follow-bot names', 'Frena las cuentas con nombres de follow-bot conocidos')}</label>
+      </div>
+      <div class="riga-flessibile">
+        <span class="suggerimento">${L('Cosa fare:', 'What to do:', 'Qué hacer:')}</span>
+        <select id="sel-ab-azione">
+          <option value="ban" ${(ab.azione || 'ban') === 'ban' ? 'selected' : ''}>${L('bannare', 'ban', 'banear')}</option>
+          <option value="timeout" ${ab.azione === 'timeout' ? 'selected' : ''}>${L('timeout 14 giorni', '14-day timeout', 'timeout 14 días')}</option>
+          <option value="segnala" ${ab.azione === 'segnala' ? 'selected' : ''}>${L('solo segnalare', 'just report', 'solo avisar')}</option>
+        </select>
+      </div>
+
+      <div class="riga-check spazio-sopra">
+        <input type="checkbox" id="chk-ab-account" ${ab.controllaAccount ? 'checked' : ''}>
+        <label for="chk-ab-account">${L('Controlla ogni nuovo follower (account appena creato, senza foto, bio vuota)', 'Check every new follower (brand-new account, no picture, empty bio)', 'Revisa cada nuevo seguidor (cuenta recién creada, sin foto, bio vacía)')}</label>
+      </div>
+      <p class="suggerimento">${L('Più accurato, ma fa una richiesta a Twitch per ogni follow.', 'More accurate, but makes one Twitch request per follow.', 'Más preciso, pero hace una petición a Twitch por cada follow.')}</p>
+
+      <div class="riga-check spazio-sopra">
+        <input type="checkbox" id="chk-ab-chatnuovi" ${ab.chatNuovi ? 'checked' : ''}>
+        <label for="chk-ab-chatnuovi">${L('Trattieni i messaggi degli account appena creati', 'Hold messages from brand-new accounts', 'Retén los mensajes de las cuentas recién creadas')}</label>
+      </div>
+      <div class="riga-flessibile">
+        <span class="suggerimento">${L('Account più giovane di', 'Account younger than', 'Cuenta con menos de')}</span>
+        <input type="number" id="inp-ab-chatore" min="1" max="720" value="${Number(ab.chatMinOre) || 24}" style="width:5rem">
+        <span class="suggerimento">${L('ore →', 'hours →', 'horas →')}</span>
+        <select id="sel-ab-chatazione">
+          <option value="elimina" ${(ab.chatNuoviAzione || 'elimina') === 'elimina' ? 'selected' : ''}>${L('trattieni il messaggio', 'hold the message', 'retén el mensaje')}</option>
+          <option value="segnala" ${ab.chatNuoviAzione === 'segnala' ? 'selected' : ''}>${L('lascialo, avvisa i mod', 'leave it, warn mods', 'déjalo, avisa a los mods')}</option>
+        </select>
+      </div>
+      <p class="suggerimento">${L('La modalità “Restricted” di Twitch (messaggi visibili solo ai mod) non si può attivare da un bot: questo è l’equivalente automatico più vicino. Follower, sub, VIP e mod non vengono mai toccati.', 'Twitch’s “Restricted” mode (messages visible only to mods) can’t be set by a bot: this is the closest automatic equivalent. Followers, subs, VIPs and mods are never touched.', 'El modo “Restricted” de Twitch (mensajes visibles solo para los mods) no lo puede activar un bot: esto es el equivalente automático más cercano. Seguidores, subs, VIP y mods nunca se tocan.')}</p>
+
+      <label class="campo spazio-sopra" for="txt-ab-esenti">${L('Nomi da non toccare MAI (uno per riga)', 'Names to NEVER touch (one per line)', 'Nombres que NUNCA tocar (uno por línea)')}</label>
+      <textarea id="txt-ab-esenti" placeholder="${L('un amico con un nome buffo…', 'a friend with a funny name…', 'un amigo con un nombre gracioso…')}">${esc((Array.isArray(ab.esenti) ? ab.esenti : []).join('\n'))}</textarea>
+      <label class="campo spazio-sopra" for="txt-ab-extra">${L('Bot da fermare in più (nomi esatti, uno per riga)', 'Extra bots to stop (exact names, one per line)', 'Bots extra a frenar (nombres exactos, uno por línea)')}</label>
+      <textarea id="txt-ab-extra" placeholder="${L('un bot che hai visto tu…', 'a bot you spotted…', 'un bot que viste tú…')}">${esc((Array.isArray(ab.extra) ? ab.extra : []).join('\n'))}</textarea>
+
+      <div class="riga-check spazio-sopra">
+        <input type="checkbox" id="chk-ab-avvisa" ${sel(ab.avvisa, true) ? 'checked' : ''}>
+        <label for="chk-ab-avvisa">${L('Avvisa in chat quando interviene', 'Warn in chat when it acts', 'Avisa en el chat cuando actúa')}</label>
+      </div>
+
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-antibot">${L('Salva anti-bot', 'Save anti-bot', 'Guardar anti-bot')}</button></p>
     </div>`);
 }
 
@@ -7754,6 +7833,28 @@ function attivaPiattaforma() {
         avvisa: document.getElementById('chk-as-avvisa').checked,
       },
     }, 'Antispam salvato');
+  }));
+
+  document.getElementById('btn-salva-antibot')?.addEventListener('click', () => conErrore(async () => {
+    await salvaImpostazioni({
+      antibot: {
+        attivo: document.getElementById('chk-ab-attivo').checked,
+        raffica: document.getElementById('chk-ab-raffica').checked,
+        rafficaQuanti: Number(document.getElementById('inp-ab-quanti').value),
+        rafficaSecondi: Number(document.getElementById('inp-ab-secondi').value),
+        rafficaChiudiChat: document.getElementById('chk-ab-chiudi').checked,
+        rafficaBanna: document.getElementById('chk-ab-rafbanna').checked,
+        nomiBot: document.getElementById('chk-ab-nomi').checked,
+        azione: document.getElementById('sel-ab-azione').value,
+        controllaAccount: document.getElementById('chk-ab-account').checked,
+        chatNuovi: document.getElementById('chk-ab-chatnuovi').checked,
+        chatMinOre: Number(document.getElementById('inp-ab-chatore').value),
+        chatNuoviAzione: document.getElementById('sel-ab-chatazione').value,
+        esenti: righe(document.getElementById('txt-ab-esenti').value),
+        extra: righe(document.getElementById('txt-ab-extra').value),
+        avvisa: document.getElementById('chk-ab-avvisa').checked,
+      },
+    }, 'Anti-bot salvato');
   }));
 
   document.getElementById('btn-salva-giochi')?.addEventListener('click', () => conErrore(async () => {
