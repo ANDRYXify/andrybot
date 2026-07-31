@@ -31,6 +31,7 @@ import { createMessageHandler } from './features/handler.js';
 import { ClipEngine } from './features/clips.js';
 import { PenitenzeEngine } from './features/penitenze.js';
 import { AlertsEngine } from './features/alerts.js';
+import { AntiBot } from './features/antibot.js';
 import { scheduleReflection } from './ai/reflection.js';
 import { StreamWatcher } from './stream/watcher.js';
 import { LiveListener } from './stream/listener.js';
@@ -69,6 +70,13 @@ export class BotManager {
 
     this.clips = new ClipEngine({ helix: this.helix, say: (ch, t) => this.say(ch, t) });
     this.alerts = new AlertsEngine({ effects: this.effects });
+    // Anti-bot (stile Sery_Bot): raffiche di follow, nomi da bot, hate-raid.
+    this.antibot = new AntiBot({
+      helix: this.helix,
+      say: (ch, t) => this.say(ch, t),
+      chatSettings: (ch, o) => this.helix.chatSoloFollower(ch, !!o.followersOnly, 0),
+      alert: (ch, a) => { try { this.alerts?.manuale?.(ch, a); } catch { /* facolt. */ } },
+    });
     this.penitenze = new PenitenzeEngine({
       say: (ch, t) => this.say(ch, t),
       effects: this.effects,
@@ -366,6 +374,11 @@ export class BotManager {
   // ponte giochi del sito); se uno dei due lo gestisce, il messaggio NON viene
   // elaborato oltre. Altrimenti prosegue col flusso normale.
   async _gestisciMessaggio(login, msg, onMessage) {
+    // 0) ANTI-BOT: un nome da follow-bot noto che scrive in chat (hate-raid) si
+    // ferma subito, prima di ogni altra cosa.
+    try {
+      if (await this.antibot?.controllaChat(msg)) return;
+    } catch (e) { log.error(`#${login} anti-bot chat:`, e?.message || e); }
     // 1) ANTISPAM: se è spam lo elimina e stop (il bot non "reagisce" allo spam)
     try {
       if (await antispam.tryAntispam(this.helix, msg, (t) => this.say(msg.channel, t))) return;
@@ -562,6 +575,11 @@ export class BotManager {
     try { this.alerts?.onEvent(ev); } catch (e) { log.debug(`#${channel} alert evento:`, e?.message || e); }
     // clip automatiche: sub/bit/raid sono momenti forti (le clip li "sentono")
     try { this.clips?.onEvent(ev); } catch (e) { log.debug(`#${channel} clip evento:`, e?.message || e); }
+    // anti-bot: follow-bot (raffiche + nomi noti) e hate-raid
+    try {
+      if (type === 'channel.follow') this.antibot?.onFollow(ev);
+      else if (type === 'channel.raid') this.antibot?.onRaid(ev);
+    } catch (e) { log.error(`#${channel} anti-bot evento:`, e?.message || e); }
     // moduli: automazioni con trigger 'evento' (follow, sub, raid, cheer, ...)
     try { this.modules?.onEvent(ev, (t) => this.say(channel, t)); }
     catch (e) { log.error(`#${channel} moduli evento:`, e?.message || e); }

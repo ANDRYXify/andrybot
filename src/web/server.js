@@ -2360,6 +2360,32 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         avvisa: a.avvisa !== false,
       };
     }
+    // anti-bot: protezione da follow-bot e hate-raid (stile Sery_Bot)
+    if (b.antibot !== undefined) {
+      const a = b.antibot || {};
+      const puliciNomi = (v) => (Array.isArray(v) ? v : String(v || '').split(/[\s,]+/))
+        .map((x) => String(x).toLowerCase().replace(/^@/, '').trim()).filter((x) => /^[a-z0-9_]{2,30}$/.test(x)).slice(0, 200);
+      out.antibot = {
+        attivo: !!a.attivo,
+        raffica: a.raffica !== false,
+        rafficaQuanti: Math.min(100, Math.max(3, Math.round(Number(a.rafficaQuanti)) || 10)),
+        rafficaSecondi: Math.min(300, Math.max(5, Math.round(Number(a.rafficaSecondi)) || 30)),
+        rafficaChiudiChat: a.rafficaChiudiChat !== false,
+        rafficaBanna: !!a.rafficaBanna,
+        nomiBot: a.nomiBot !== false,
+        azione: ['ban', 'timeout', 'segnala'].includes(a.azione) ? a.azione : 'ban',
+        timeoutSec: Math.min(1209600, Math.max(60, Math.round(Number(a.timeoutSec)) || 1209600)),
+        esenti: puliciNomi(a.esenti),
+        extra: puliciNomi(a.extra),
+        controllaAccount: !!a.controllaAccount,
+        soglia: Math.min(100, Math.max(30, Math.round(Number(a.soglia)) || 70)),
+        etaMinGiorni: Math.min(90, Math.max(0, Math.round(Number(a.etaMinGiorni)) || 3)),
+        chatNuovi: !!a.chatNuovi,
+        chatMinOre: Math.min(720, Math.max(1, Math.round(Number(a.chatMinOre)) || 24)),
+        chatNuoviAzione: ['elimina', 'segnala'].includes(a.chatNuoviAzione) ? a.chatNuoviAzione : 'elimina',
+        avvisa: a.avvisa !== false,
+      };
+    }
     // premio VIP periodico (top monete)
     if (b.premioVip !== undefined) {
       const p = b.premioVip || {};
