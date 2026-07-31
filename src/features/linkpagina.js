@@ -135,6 +135,21 @@ const eScuro = (v) => {
 // Attributi comuni degli iframe incorporati. allow=: senza "autoplay" e
 // "encrypted-media" i player di Spotify e Twitch non partono nemmeno quando
 // glielo chiedi tu.
+// Il riquadro di un altro sito: o lo si carica subito, o si aspetta che il
+// visitatore lo chieda. Nel secondo caso al posto suo c'è un cartello che dice
+// DI CHI è il contenuto: così non serve nessun banner dei cookie, perché finché
+// non clicca non parte niente di terzi.
+function riquadro({ src, titolo, extra = '', chiedi }) {
+  if (!chiedi) return `<iframe src="${esc(src)}" ${IFRAME} title="${esc(titolo)}"${extra}></iframe>`;
+  let chi = '';
+  try { chi = new URL(src).hostname.replace(/^www\.|^player\.|^open\.|^embed\.|^widget\.|^w\./, '').replace(/\.com$|\.tv$|\.it$/, ''); } catch { /* niente */ }
+  return `<div class="chiedi">
+    <p class="chiedi-t">${esc(titolo)}</p>
+    <p class="chiedi-p">Il contenuto è di <b>${esc(chi || 'un altro sito')}</b>: caricandolo, quel sito può usare cookie.</p>
+    <button type="button" class="chiedi-b" data-src="${esc(src)}" data-t="${esc(titolo)}">Carica il contenuto</button>
+  </div>`;
+}
+
 const IFRAME = `loading="lazy" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"
       allow="autoplay; fullscreen; encrypted-media; picture-in-picture; clipboard-write"
       sandbox="allow-scripts allow-same-origin allow-presentation allow-popups allow-popups-to-escape-sandbox allow-forms"`;
@@ -329,6 +344,8 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   const scuro = eScuro(c.bg);           // decide il tema della chat incorporata
   const disp = ['colonna', 'rivista', 'sezioni'].includes(t.disposizione) ? t.disposizione : 'colonna';
   const mov = ['nessuno', 'dolce', 'cinema'].includes(t.movimento) ? t.movimento : 'dolce';
+  // in anteprima si caricano sempre: sennò l'editor mostrerebbe solo cartelli
+  const chiedi = t.consenso !== 'sempre' && !anteprima;
   // Titoli "parola per parola": ogni parola è un pezzo a sé, così può entrare
   // con un attimo di ritardo sulla precedente. Si fa qui, a mano, perché farlo
   // in pagina vorrebbe dire JavaScript su una pagina che deve aprirsi subito.
@@ -456,8 +473,7 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
         ? `data-fisso="1" style="height:${Math.min(1200, Math.round(b.altezza))}px;aspect-ratio:auto;--d:${Math.min(n - 1, 12) * 45}ms"`
         : ritardo;
       return `${b.titolo ? `<h2 class="tit" ${ritardo}>${esc(b.titolo)}</h2>` : ''}
-        <div class="emb f-${esc(forma)}" ${alt}><iframe src="${esc(e.src)}" ${IFRAME}
-        title="${esc(b.titolo || 'contenuto incorporato')}"></iframe></div>`;
+        <div class="emb f-${esc(forma)}" ${alt}>${riquadro({ src: e.src, titolo: b.titolo || 'contenuto incorporato', chiedi })}</div>`;
     }
     if (b.tipo === 'eroe') {
       const img = urlSicuro(b.img);
@@ -517,9 +533,8 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
       if (!dv) return anteprima ? `<div class="segna" ${ritardo}>diretta: manca il nome del canale</div>` : '';
       const chat = dv.chat ? dv.chat + (scuro ? '&darkpopout' : '') : '';
       return `${b.titolo ? `<h2 class="tit" ${ritardo}>${esc(b.titolo)}</h2>` : ''}
-        <div class="emb f-video" ${ritardo}><iframe src="${esc(dv.src)}" ${IFRAME}
-        title="${esc(b.titolo || 'diretta')}"></iframe></div>
-        ${chat ? `<div class="emb f-chat" ${ritardo}><iframe src="${esc(chat)}" ${IFRAME} title="chat della diretta"></iframe></div>` : ''}`;
+        <div class="emb f-video" ${ritardo}>${riquadro({ src: dv.src, titolo: b.titolo || 'diretta', chiedi })}</div>
+        ${chat ? `<div class="emb f-chat" ${ritardo}>${riquadro({ src: chat, titolo: 'chat della diretta', chiedi })}</div>` : ''}`;
     }
     return '';
   });
@@ -705,6 +720,15 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   .img{width:100%;border-radius:var(--r);margin-top:1rem;display:block;height:auto}
   .emb{width:100%;margin-top:1rem;border-radius:${raggioEmb}px;overflow:hidden;border:1px solid ${c.bordo};aspect-ratio:16/9}
   .emb iframe{width:100%;height:100%;border:0;display:block}
+  /* il cartello al posto del contenuto di terzi, finché non lo si chiede */
+  .chiedi{width:100%;height:100%;min-height:9rem;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:.45rem;padding:1.2rem;text-align:center;background:${c.card}}
+  .chiedi-t{font-family:var(--fd);font-weight:700;font-size:1.05rem}
+  .chiedi-p{font-size:.82rem;color:var(--tenue);max-width:24rem;line-height:1.5}
+  .chiedi-b{margin-top:.25rem;padding:.6rem 1.1rem;border:0;border-radius:var(--r);background:var(--acc);
+    color:#fff;font:inherit;font-weight:700;font-size:.9rem;cursor:pointer;
+    transition:transform .18s cubic-bezier(.34,1.56,.64,1)}
+  .chiedi-b:hover{transform:translateY(-2px)}
   /* proporzioni per tipo di contenuto: un brano non è un video, e uno short
      nemmeno. Con un 16/9 forzato restava mezzo riquadro vuoto. */
   .emb.f-video{aspect-ratio:16/9}
@@ -923,7 +947,26 @@ ${corpo.includes('class="conto"') ? `<script>
   giro(); setInterval(giro, 1000);
 })();
 </script>` : ''}
-${corpo.includes('<iframe') ? `<script>
+${corpo.includes('chiedi-b') ? `<script>
+/* Carica il contenuto di un altro sito SOLO quando il visitatore lo chiede.
+   Finché non clicca, di quel sito non parte una richiesta: nessun cookie, e
+   quindi nessun banner da mostrare. È la strada onesta — il banner che chiede
+   il consenso DOPO aver già caricato tutto non serve a niente. */
+addEventListener('click', function (e) {
+  var b = e.target.closest ? e.target.closest('.chiedi-b') : null;
+  if (!b) return;
+  var f = document.createElement('iframe');
+  f.src = b.getAttribute('data-src');
+  f.title = b.getAttribute('data-t') || '';
+  f.loading = 'lazy'; f.allowFullscreen = true;
+  f.referrerPolicy = 'strict-origin-when-cross-origin';
+  f.setAttribute('allow', 'autoplay; fullscreen; encrypted-media; picture-in-picture; clipboard-write');
+  f.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation allow-popups allow-popups-to-escape-sandbox allow-forms');
+  var box = b.closest('.chiedi');
+  box.parentNode.replaceChild(f, box);
+});
+</script>` : ''}
+${corpo.includes('<iframe') || corpo.includes('chiedi-b') ? `<script>
 /* L'altro script: TikTok e Instagram
    dicono da soli quanto sono alti, con un messaggio al genitore. Senza, il
    riquadro resta dell'altezza che abbiamo indovinato noi e sotto avanza il
