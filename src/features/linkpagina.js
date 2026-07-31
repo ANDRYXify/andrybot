@@ -328,6 +328,23 @@ function direttaSrc(b, dom, login) {
   };
 }
 
+// Renderer "Matrix" (pioggia digitale): glifi che cadono in colonne, nel colore
+// d'accento del tema. Trail che sfuma (destination-out, così lo sfondo del tema
+// resta visibile). Cap a ~18fps e devicePixelRatio max 2 per non pesare; se è
+// attivo "riduci animazioni" disegna un fotogramma fermo e si ferma.
+const SCRIPT_MATRIX = `(function(){
+var cv=document.querySelector('.lp-fx-canvas');if(!cv||!cv.getContext)return;
+var ctx=cv.getContext('2d'),rm=matchMedia('(prefers-reduced-motion:reduce)').matches;
+var acc=(getComputedStyle(document.documentElement).getPropertyValue('--acc')||'#22ff88').trim();
+var G='\\u30A2\\u30A4\\u30A6\\u30A8\\u30AA\\u30AB\\u30AD\\u30AF\\u30B1\\u30B3\\u30B5\\u30B7\\u30B9\\u30BB\\u30BD\\u30BF\\u30C1\\u30C4\\u30C6\\u30C8\\u30CA\\u30CB\\u30CC\\u30CD\\u30CE0123456789\\u30CF\\u30D2\\u30DB\\u30DE\\u30DF';
+var fs=16,dpr=Math.min(2,window.devicePixelRatio||1),W,H,cols,ys;
+function size(){W=cv.clientWidth;H=cv.clientHeight;cv.width=W*dpr;cv.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.font=fs+'px ui-monospace,monospace';cols=Math.ceil(W/fs);ys=[];for(var i=0;i<cols;i++)ys[i]=Math.random()*-H;}
+size();addEventListener('resize',size,{passive:true});
+function frame(){ctx.globalCompositeOperation='destination-out';ctx.fillStyle='rgba(0,0,0,.14)';ctx.fillRect(0,0,W,H);ctx.globalCompositeOperation='source-over';ctx.fillStyle=acc;for(var i=0;i<cols;i++){var ch=G[Math.floor(Math.random()*G.length)],y=ys[i];ctx.fillText(ch,i*fs,y);if(y>H&&Math.random()>.975)ys[i]=Math.random()*-40;else ys[i]=y+fs;}}
+if(rm){frame();return;}
+var last=0;function loop(t){if(t-last>55){frame();last=t;}requestAnimationFrame(loop);}requestAnimationFrame(loop);
+})();`;
+
 export function renderLinkPage(pagina, { login, display, avatar, baseUrl, anteprima } = {}) {
   const pre = PRESET[pagina.template] || PRESET.minimal;
   const t = pagina.tema || {};
@@ -351,6 +368,10 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   const descr = pagina.tagline || `Tutti i link di ${display || login}`;
   const dom = domini(baseUrl);          // parent= dei player Twitch/Kick
   const scuro = eScuro(c.bg);           // decide il tema della chat incorporata
+  // Colore del testo SOPRA l'accento (bottoni "in evidenza", copertina, badge…):
+  // bianco se l'accento è scuro, quasi-nero se l'accento è chiaro. Senza questo,
+  // un accento chiaro (oro, giallo) con testo bianco fisso era illeggibile.
+  const suAcc = eScuro(c.acc) ? '#ffffff' : '#0d0d12';
   const disp = ['colonna', 'rivista', 'sezioni'].includes(t.disposizione) ? t.disposizione : 'colonna';
   const mov = ['nessuno', 'dolce', 'cinema', 'crawl'].includes(t.movimento) ? t.movimento : 'dolce';
   // in anteprima si caricano sempre: sennò l'editor mostrerebbe solo cartelli
@@ -414,13 +435,10 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
       background-size:220px 320px,180px 280px,260px 360px,200px 300px,150px 240px;
       animation:salep 18s linear infinite}
       @keyframes salep{to{background-position:0 -320px,0 -280px,0 -360px,0 -300px,0 -240px}}`,
-    // Pioggia digitale: colonne con una scia luminosa che cade (tipo "matrix").
-    matrix: `body::before{content:'';position:fixed;inset:0;pointer-events:none;opacity:.35;
-      background:repeating-linear-gradient(90deg,transparent 0 20px,${c.acc}22 20px 21px)}
-      body::after{content:'';position:fixed;inset:-60% 0 0;pointer-events:none;opacity:.8;
-      background:linear-gradient(180deg,transparent,${c.acc}00 42%,${c.acc} 50%,${c.acc}00 58%,transparent);
-      background-size:21px 460px;animation:mrain 2.6s linear infinite}
-      @keyframes mrain{to{transform:translateY(60%)}}`,
+    // Pioggia digitale "Matrix": glifi che cadono, disegnati su un canvas (vedi
+    // lo script più in basso). Qui c'è solo il posizionamento del canvas dietro
+    // ai contenuti; senza JavaScript resta lo sfondo pulito.
+    matrix: `.lp-fx-canvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:-1;display:block}`,
     // Nebulosa: aloni di colore che si spostano e ruotano lentamente.
     nebulosa: `body::before{content:'';position:fixed;inset:-30%;pointer-events:none;filter:blur(60px);opacity:.7;
       background:radial-gradient(ellipse 40% 30% at 25% 30%,${c.acc}55,transparent 70%),radial-gradient(ellipse 35% 28% at 75% 62%,${c.bg2},transparent 70%),radial-gradient(ellipse 30% 25% at 55% 20%,${c.acc}33,transparent 70%);
@@ -437,6 +455,11 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
       @keyframes raggiro{to{rotate:360deg}}`,
   };
   const effetto = EFFETTI[t.effetto] || '';
+  // Effetti che hanno bisogno di un canvas (glifi, particelle "vere"): markup +
+  // script autosufficienti, iniettati solo se scelti. Rispettano "riduci
+  // animazioni" (disegnano un fotogramma fermo e si spengono).
+  const fxCanvas = t.effetto === 'matrix' ? '<canvas class="lp-fx-canvas" aria-hidden="true"></canvas>' : '';
+  const fxScript = t.effetto === 'matrix' ? `<script>${SCRIPT_MATRIX}</script>` : '';
 
   // stile dei bottoni
   const STILI = {
@@ -695,11 +718,11 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
 <link rel="icon" href="/icons/icon-192.png">
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  :root{--testo:${c.testo};--tenue:${c.tenue};--acc:${c.acc};--r:${raggio}px;--w:${larghezza}rem;
+  :root{--testo:${c.testo};--tenue:${c.tenue};--acc:${c.acc};--suacc:${suAcc};--r:${raggio}px;--w:${larghezza}rem;
     --fd:${font.d};--ft:${font.t}}
   html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;overflow-x:hidden}
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-  ::selection{background:var(--acc);color:#fff}
+  ::selection{background:var(--acc);color:var(--suacc)}
   /* la barra di scorrimento intonata al tema, non quella grigia di sistema */
   *{scrollbar-width:thin;scrollbar-color:${c.acc}88 transparent}
   ::-webkit-scrollbar{width:9px;height:9px}
@@ -751,7 +774,8 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   .voce.con-mini{padding:.5rem .9rem .5rem .5rem}
   .mini{width:2.9rem;height:2.9rem;flex:0 0 auto;object-fit:cover;
     border-radius:calc(var(--r) * .6);background:${c.bg2}}
-  .voce.spicca{background:var(--acc);border-color:var(--acc);color:#fff;position:relative;overflow:hidden}
+  .voce.spicca{background:var(--acc);border-color:var(--acc);color:var(--suacc);position:relative;overflow:hidden}
+  .voce.spicca svg{fill:var(--suacc)}
   /* una luce che passa sopra il bottone principale: si nota appena, ed è
      esattamente il motivo per cui l'occhio ci finisce sopra */
   .voce.spicca::after{content:'';position:absolute;top:0;bottom:0;width:45%;left:-60%;
@@ -809,7 +833,7 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   .fascia p{max-width:44rem;margin:0 auto;font-size:.84rem;line-height:1.5;color:var(--tenue);text-align:left}
   .fascia b{color:var(--testo)}
   .fascia-b{max-width:44rem;margin:.6rem auto 0;display:flex;flex-wrap:wrap;align-items:center;gap:.5rem}
-  .fascia-b button{padding:.55rem 1rem;border:0;border-radius:var(--r);background:var(--acc);color:#fff;
+  .fascia-b button{padding:.55rem 1rem;border:0;border-radius:var(--r);background:var(--acc);color:var(--suacc);
     font:inherit;font-weight:700;font-size:.85rem;cursor:pointer}
   .fascia-b button.due{background:transparent;color:var(--testo);border:1px solid ${c.bordo}}
   .fascia-b a{margin-left:auto;font-size:.8rem;color:var(--tenue)}
@@ -892,7 +916,7 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   .marq:hover .marq-in{animation-play-state:paused}
   .eroe-t{font-size:clamp(1.6rem,6vw,2.6rem);font-weight:800;letter-spacing:-.03em;line-height:1.05;text-wrap:balance}
   .eroe-s{color:var(--tenue);font-size:1rem;text-wrap:pretty}
-  .eroe-b{margin-top:.6rem;padding:.7rem 1.3rem;border-radius:var(--r);background:var(--acc);color:#fff;
+  .eroe-b{margin-top:.6rem;padding:.7rem 1.3rem;border-radius:var(--r);background:var(--acc);color:var(--suacc);
     text-decoration:none;font-weight:700;transition:transform .18s cubic-bezier(.34,1.56,.64,1)}
   .eroe-b:hover{transform:translateY(-2px)}
   /* ── griglia di tessere: contenuti da guardare, non righe da leggere ── */
@@ -930,7 +954,7 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
     font-variant-numeric:tabular-nums}
   .spazio{width:100%;height:1.6rem}
   .badge2{align-self:${aSinistra ? 'flex-start' : 'center'};margin-top:1rem;padding:.3rem .8rem;border-radius:999px;
-    background:var(--acc);color:#fff;font-size:.8rem;font-weight:700;letter-spacing:.02em}
+    background:var(--acc);color:var(--suacc);font-size:.8rem;font-weight:700;letter-spacing:.02em}
   .bozza{opacity:.5;border-style:dashed!important;cursor:default}
   .segna{width:100%;margin-top:1rem;padding:1.4rem;border-radius:var(--r);border:1px dashed var(--tenue);
     color:var(--tenue);font-size:.85rem;text-align:center;opacity:.7}
@@ -1023,6 +1047,7 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
 </style>
 </head>
 <body>
+  ${fxCanvas}
   <main class="telo">
     ${mostraAvatar ? (imgAvatar
       ? `<img class="avatar" src="${esc(imgAvatar)}" alt="" width="88" height="88" loading="eager">`
@@ -1118,6 +1143,7 @@ addEventListener('message', function (e) {
   }
 });
 </script>` : ''}
+${fxScript}
 </body>
 </html>`;
 }
