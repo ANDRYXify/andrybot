@@ -28,6 +28,15 @@ const PRESET = {
   glass:    { bg: '#080f1c', bg2: '#173a63', testo: '#f0f6ff', tenue: '#a6bdda', card: 'rgba(255,255,255,.10)', bordo: 'rgba(255,255,255,.22)', acc: '#3fc0ff' },
   brutal:   { bg: '#f5f5ef', bg2: '#e2e2d8', testo: '#000000', tenue: '#3d3d3d', card: '#ffffff', bordo: '#000000', acc: '#ff3b16' },
   pastello: { bg: '#fff7fb', bg2: '#e6eaff', testo: '#2f2b3d', tenue: '#6a647f', card: '#ffffff', bordo: '#e6d7ea', acc: '#b4489a' },
+  // — nuove palette —
+  cyber:    { bg: '#05070d', bg2: '#0a1a2b', testo: '#d7fbff', tenue: '#6f93a8', card: 'rgba(0,229,255,.06)', bordo: 'rgba(0,229,255,.34)', acc: '#00e5ff' },
+  vapor:    { bg: '#1a0b2e', bg2: '#3a1a6b', testo: '#ffe8fb', tenue: '#c9a0dc', card: 'rgba(255,255,255,.08)', bordo: 'rgba(255,113,206,.42)', acc: '#ff71ce' },
+  oro:      { bg: '#0a0a0a', bg2: '#1c1608', testo: '#f8f1dc', tenue: '#b8a878', card: 'rgba(232,196,99,.07)', bordo: 'rgba(212,175,55,.42)', acc: '#e8c463' },
+  oceano:   { bg: '#04121f', bg2: '#06304f', testo: '#e6f6ff', tenue: '#8fb8cf', card: 'rgba(255,255,255,.07)', bordo: 'rgba(70,180,230,.32)', acc: '#3bb0e6' },
+  foresta:  { bg: '#08130d', bg2: '#102a1b', testo: '#e8f5ec', tenue: '#93b7a1', card: 'rgba(255,255,255,.06)', bordo: 'rgba(120,210,140,.30)', acc: '#6ad48b' },
+  ghiaccio: { bg: '#eef4fb', bg2: '#d6e6f5', testo: '#10222f', tenue: '#4a6274', card: '#ffffff', bordo: '#c2d6e8', acc: '#2a8fd8' },
+  lava:     { bg: '#100604', bg2: '#3a1005', testo: '#ffe9df', tenue: '#c99a8a', card: 'rgba(255,110,60,.08)', bordo: 'rgba(255,110,60,.36)', acc: '#ff5a2c' },
+  bubblegum:{ bg: '#fff0f6', bg2: '#ffe0ef', testo: '#3d0b28', tenue: '#8a5a72', card: '#ffffff', bordo: '#ffc2dd', acc: '#ff3d8b' },
 };
 
 // Due caratteri, non uno. È l'accoppiata titolo/testo a far sembrare una pagina
@@ -343,7 +352,7 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   const dom = domini(baseUrl);          // parent= dei player Twitch/Kick
   const scuro = eScuro(c.bg);           // decide il tema della chat incorporata
   const disp = ['colonna', 'rivista', 'sezioni'].includes(t.disposizione) ? t.disposizione : 'colonna';
-  const mov = ['nessuno', 'dolce', 'cinema'].includes(t.movimento) ? t.movimento : 'dolce';
+  const mov = ['nessuno', 'dolce', 'cinema', 'crawl'].includes(t.movimento) ? t.movimento : 'dolce';
   // in anteprima si caricano sempre: sennò l'editor mostrerebbe solo cartelli
   // Consenso ai contenuti di ALTRI siti (YouTube, Spotify, Twitch…). La legge
   // europea chiede il permesso PRIMA che partano, non dopo. Quindi in pagina non
@@ -386,6 +395,46 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
       background-image:linear-gradient(${c.acc}66 1px,transparent 1px),linear-gradient(90deg,${c.acc}66 1px,transparent 1px);
       background-size:60px 60px;transform:perspective(320px) rotateX(62deg);transform-origin:bottom;
       mask-image:linear-gradient(to top,#000,transparent 75%)}`,
+    // Synthwave: sole all'orizzonte + griglia che scorre verso di te (anni '80 vivo).
+    synthwave: `body::before{content:'';position:fixed;left:50%;bottom:34%;width:min(64vw,440px);aspect-ratio:1;translate:-50% 0;pointer-events:none;border-radius:50%;
+      background:radial-gradient(circle at 50% 42%,${c.acc},${c.acc}00 68%);opacity:.6;filter:blur(1px)}
+      body::after{content:'';position:fixed;left:-50%;right:-50%;bottom:0;height:46%;pointer-events:none;opacity:.55;
+      background-image:linear-gradient(${c.acc}77 2px,transparent 2px),linear-gradient(90deg,${c.acc}55 2px,transparent 2px);
+      background-size:64px 64px;transform:perspective(300px) rotateX(64deg);transform-origin:bottom;
+      mask-image:linear-gradient(to top,#000,transparent 80%);animation:swgrid 5s linear infinite}
+      @keyframes swgrid{to{background-position:0 64px,0 0}}`,
+    // Bagliore al neon che pulsa dietro ai contenuti.
+    neonpulse: `body::before{content:'';position:fixed;inset:-20%;pointer-events:none;
+      background:radial-gradient(ellipse 45% 40% at 50% 32%,${c.acc}55,transparent 70%);filter:blur(50px);
+      animation:npulse 5s ease-in-out infinite alternate}
+      @keyframes npulse{from{opacity:.3;transform:scale(.9)}to{opacity:.8;transform:scale(1.12)}}`,
+    // Particelle che salgono piano, come scintille.
+    particelle: `body::before{content:'';position:fixed;inset:0;pointer-events:none;opacity:.6;
+      background-image:radial-gradient(2px 2px at 20% 80%,${c.acc},transparent),radial-gradient(2px 2px at 70% 90%,${c.testo},transparent),radial-gradient(1.5px 1.5px at 40% 85%,${c.acc},transparent),radial-gradient(2px 2px at 88% 75%,${c.testo},transparent),radial-gradient(1.5px 1.5px at 12% 60%,${c.acc},transparent);
+      background-size:220px 320px,180px 280px,260px 360px,200px 300px,150px 240px;
+      animation:salep 18s linear infinite}
+      @keyframes salep{to{background-position:0 -320px,0 -280px,0 -360px,0 -300px,0 -240px}}`,
+    // Pioggia digitale: colonne con una scia luminosa che cade (tipo "matrix").
+    matrix: `body::before{content:'';position:fixed;inset:0;pointer-events:none;opacity:.35;
+      background:repeating-linear-gradient(90deg,transparent 0 20px,${c.acc}22 20px 21px)}
+      body::after{content:'';position:fixed;inset:-60% 0 0;pointer-events:none;opacity:.8;
+      background:linear-gradient(180deg,transparent,${c.acc}00 42%,${c.acc} 50%,${c.acc}00 58%,transparent);
+      background-size:21px 460px;animation:mrain 2.6s linear infinite}
+      @keyframes mrain{to{transform:translateY(60%)}}`,
+    // Nebulosa: aloni di colore che si spostano e ruotano lentamente.
+    nebulosa: `body::before{content:'';position:fixed;inset:-30%;pointer-events:none;filter:blur(60px);opacity:.7;
+      background:radial-gradient(ellipse 40% 30% at 25% 30%,${c.acc}55,transparent 70%),radial-gradient(ellipse 35% 28% at 75% 62%,${c.bg2},transparent 70%),radial-gradient(ellipse 30% 25% at 55% 20%,${c.acc}33,transparent 70%);
+      animation:nebula 20s ease-in-out infinite alternate}
+      @keyframes nebula{to{transform:translate(4%,-3%) rotate(9deg) scale(1.18)}}`,
+    // Scanline da vecchio tubo catodico: righe sottili che scorrono.
+    scanline: `body::before{content:'';position:fixed;inset:0;pointer-events:none;opacity:.16;
+      background:repeating-linear-gradient(${c.testo} 0 1px,transparent 1px 3px);animation:scan 9s linear infinite}
+      @keyframes scan{to{background-position:0 300px}}`,
+    // Raggi di luce che ruotano dall'alto.
+    raggi: `body::before{content:'';position:fixed;left:50%;top:-40%;width:160vmax;height:160vmax;translate:-50% 0;transform-origin:50% 25%;pointer-events:none;opacity:.22;
+      background:repeating-conic-gradient(from 0deg at 50% 25%,${c.acc}00 0deg,${c.acc}44 6deg,${c.acc}00 12deg);
+      animation:raggiro 44s linear infinite;mask-image:radial-gradient(circle at 50% 25%,#000,transparent 70%)}
+      @keyframes raggiro{to{rotate:360deg}}`,
   };
   const effetto = EFFETTI[t.effetto] || '';
 
@@ -957,7 +1006,16 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
       animation-timeline:view();animation-range:entry calc(0% + var(--i) * 2.5%) entry calc(60% + var(--i) * 2.5%)}
   }}
   .tit{overflow:hidden}` : ''}
-  @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+  ${mov === 'crawl' ? `
+  /* Intro "alla Star Wars": l'intestazione arriva dal fondo in prospettiva e si
+     assesta dritta e leggibile (transform finale = identità). Una volta sola al
+     caricamento, così resta usabile su desktop e mobile. */
+  @keyframes crawlIn{from{opacity:0;transform:perspective(420px) rotateX(52deg) translateY(70px) scale(.72)}
+    60%{opacity:1}to{opacity:1;transform:perspective(420px) rotateX(0) translateY(0) scale(1)}}
+  .telo>.avatar{animation:crawlIn 1.3s cubic-bezier(.16,1,.3,1) both;transform-origin:center bottom}
+  .telo>h1{animation:crawlIn 1.4s cubic-bezier(.16,1,.3,1) .12s both;transform-origin:center bottom}
+  .telo>.tag{animation:crawlIn 1.5s cubic-bezier(.16,1,.3,1) .24s both;transform-origin:center bottom}` : ''}
+  @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
   ${anteprima ? `
   /* solo in anteprima: si vede che ogni pezzo si può cliccare per aprirne i comandi */
   .sel-b:hover > *{outline:2px dashed var(--acc);outline-offset:4px;cursor:pointer}
