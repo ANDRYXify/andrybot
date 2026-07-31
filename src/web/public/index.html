@@ -22,8 +22,8 @@
   </script>
 
   <title>SocialBot — bot per Twitch in italiano | socialbot.live</title>
-  <meta name="description" content="SocialBot (socialbot.live, di andryxify) è il bot per Twitch in italiano che scrive in chat col TUO account: comandi su misura, moderazione, clip automatiche, overlay per OBS personalizzabile (alert con immagini/video/green screen, chat a schermo, widget, emote 7TV), richieste musicali Spotify, effetti sui punti canale e notifiche live. Con demo da provare subito.">
-  <meta name="keywords" content="bot Twitch, bot per Twitch, bot Twitch italiano, bot Twitch gratis, bot per streaming, overlay Twitch OBS, alert Twitch, alert follow sub bit raid, chat a schermo, widget Twitch, emote 7TV, green screen alert, moderazione Twitch, comandi Twitch, chat bot Twitch, clip automatiche Twitch, richieste musicali Spotify, punti canale Twitch, notifiche live Telegram, avvisi TikTok YouTube Instagram, SocialBot, andryxify">
+  <meta name="description" content="SocialBot (socialbot.live, di andryxify) è il bot per Twitch in italiano che scrive in chat col TUO account: comandi su misura, moderazione e scudo anti-bot (ferma follow-bot e hate-raid, mette in attesa gli account appena creati), clip automatiche, overlay per OBS personalizzabile (alert con immagini/video/green screen, chat a schermo, widget, emote 7TV), richieste musicali Spotify, effetti sui punti canale e notifiche live. Con demo da provare subito.">
+  <meta name="keywords" content="bot Twitch, bot per Twitch, bot Twitch italiano, bot Twitch gratis, bot per streaming, overlay Twitch OBS, alert Twitch, alert follow sub bit raid, chat a schermo, widget Twitch, emote 7TV, green screen alert, moderazione Twitch, anti-bot Twitch, protezione anti-bot, blocca follow bot, hate raid protezione, anti raid Twitch, account nuovi chat solo mod, comandi Twitch, chat bot Twitch, clip automatiche Twitch, richieste musicali Spotify, punti canale Twitch, notifiche live Telegram, avvisi TikTok YouTube Instagram, SocialBot, andryxify">
   <meta name="author" content="andryxify.it">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
   <link rel="canonical" href="https://socialbot.live/">
@@ -111,6 +111,9 @@
           "Scrive in chat con il tuo account Twitch",
           "Comandi e automazioni su misura",
           "Moderazione della chat e antispam",
+          "Scudo anti-bot: ferma le raffiche di follow-bot e le hate-raid",
+          "Riconosce i bot noti da una lista che si aggiorna da sola",
+          "Account appena creati messi in attesa in chat: li vedono solo mod e streamer",
           "Clip automatiche dei momenti di hype",
           "Overlay per OBS personalizzabile: alert, chat a schermo, widget",
           "Alert con immagini, video, suoni e green screen",
@@ -134,7 +137,7 @@
             "availability": "https://schema.org/InStock",
             "url": "https://socialbot.live/",
             "name": "Essenziale",
-            "description": "Gratuito: basta registrarsi. Comandi e automazioni illimitati, moderazione e antispam, overlay per OBS e contatori a schermo."
+            "description": "Gratuito: basta registrarsi. Comandi e automazioni illimitati, moderazione e antispam, scudo anti-bot e anti-raid, overlay per OBS e contatori a schermo."
           },
           {
             "@type": "Offer",
@@ -160,7 +163,7 @@
           {
             "@type": "Question",
             "name": "Che cosa sa fare SocialBot?",
-            "acceptedAnswer": { "@type": "Answer", "text": "Crea comandi e automazioni su misura, modera la chat, cattura clip automatiche e offre un overlay per OBS totalmente personalizzabile: alert per follow/sub/bit/raid con immagini, video, suoni e green screen, chat a schermo, widget ed emote 7TV, con più overlay dal proprio link. In più: richieste musicali su Spotify, minigiochi con monete, penitenze ed effetti sui punti canale, notifiche live su Telegram e avvisi dei nuovi post su TikTok, YouTube e Instagram. Puoi anche pilotarlo a voce mentre streammi." }
+            "acceptedAnswer": { "@type": "Answer", "text": "Crea comandi e automazioni su misura, modera la chat e la protegge con uno scudo anti-bot (ferma le raffiche di follow-bot e le hate-raid, riconosce i bot noti da una lista che si aggiorna da sola e mette in attesa i commenti degli account appena creati). Cattura clip automatiche e offre un overlay per OBS totalmente personalizzabile: alert per follow/sub/bit/raid con immagini, video, suoni e green screen, chat a schermo, widget ed emote 7TV, con più overlay dal proprio link. In più: richieste musicali su Spotify, minigiochi con monete, penitenze ed effetti sui punti canale, notifiche live su Telegram e avvisi dei nuovi post su TikTok, YouTube e Instagram. Puoi anche pilotarlo a voce mentre streammi." }
           },
           {
             "@type": "Question",
@@ -256,6 +259,7 @@
               <li><strong>Overlay Studio per OBS</strong> Alert, chat a schermo e widget totalmente personalizzabili: colori, font (anche Google), posizione, dimensione e rotazione. Più overlay, ognuno col suo link.</li>
               <li><strong>Alert su misura</strong> Follow, sub, bit e raid con immagini o video, suoni tuoi o pronti e green screen sui video.</li>
               <li><strong>Moderazione automatica</strong> Antispam, filtri su link, maiuscole e ripetizioni, e timeout a chi insiste. La chat si tiene in ordine da sola.</li>
+              <li><strong>Scudo anti-bot e anti-raid</strong> Ferma le raffiche di follow-bot, riconosce i bot noti da una lista che si aggiorna da sola e para le hate-raid. I commenti degli account appena creati restano in attesa: li vedete solo tu e i mod, finché non è tutto in chiaro.</li>
               <li><strong>Clip automatiche</strong> Quando la chat si accende, il bot clippa da solo: i momenti migliori della diretta restano salvati.</li>
               <li><strong>Avvisi live e nuovi post</strong> Quando vai in diretta avvisa il tuo gruppo Telegram e il tuo server Discord. E segnala i nuovi post su TikTok, YouTube e Instagram.</li>
               <li><strong>Contatori a schermo</strong> Contatori come !morti o !tentativi: li accendi dalla chat e il numero compare a schermo nell'overlay.</li>
@@ -271,7 +275,7 @@
             <p><strong>Con quale account scrive SocialBot?</strong> Con il tuo account Twitch, non un bot anonimo: in chat compare il tuo nome.</p>
             <p><strong>SocialBot è in italiano?</strong> Sì, il bot in chat e la dashboard sono interamente in italiano.</p>
             <p><strong>Posso provarlo?</strong> Sì, c'è una <a href="/?demo=1">demo interattiva</a> con dati d'esempio, senza registrazione.</p>
-            <p><strong>Quanto costa?</strong> C'è un pacchetto gratuito, <strong>Essenziale</strong>: basta registrarsi e hai comandi illimitati, moderazione, overlay per OBS e contatori. Sopra ci sono la Base (€2,99/mese, aggiunge lo Studio Web e un moderatore) e i pacchetti a scelta. Se sei un membro abilitato della community di <a href="https://andryxify.it">andryxify.it</a> hai tutto gratis.</p>
+            <p><strong>Quanto costa?</strong> C'è un pacchetto gratuito, <strong>Essenziale</strong>: basta registrarsi e hai comandi illimitati, moderazione con scudo anti-bot e anti-raid, overlay per OBS e contatori. Sopra ci sono la Base (€2,99/mese, aggiunge lo Studio Web e un moderatore) e i pacchetti a scelta. Se sei un membro abilitato della community di <a href="https://andryxify.it">andryxify.it</a> hai tutto gratis.</p>
           </section>
         </div>
       </div>
