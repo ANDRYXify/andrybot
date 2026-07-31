@@ -23,8 +23,11 @@
 // toccati, e in dubbio si AVVISA invece di bannare. Un falso positivo qui
 // significa cacciare un fan vero: costa più dell'attacco.
 
+import { readFile, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { makeLog } from '../logger.js';
 import { streamers } from '../db.js';
+import { config } from '../config.js';
 
 const log = makeLog('antibot');
 
@@ -42,6 +45,7 @@ export const ANTIBOT_DEFAULT = {
   timeoutSec: 1209600,         // se azione=timeout: 14 giorni
   esenti: [],                  // nomi che NON vanno mai toccati (oltre ai bot buoni)
   extra: [],                   // nomi/pattern-bot in più, aggiunti dallo streamer
+  listaAuto: true,             // usa la lista di bot noti aggiornata da sola
   // 3. account sospetto (costa una chiamata a Twitch per follow)
   controllaAccount: false,
   soglia: 70,                  // punteggio 0-100 oltre il quale si agisce
@@ -78,6 +82,55 @@ const PATTERN_BOT = [
 
 const norm = (s) => String(s || '').toLowerCase().trim();
 
+// ── Lista di bot noti, aggiornata da sola ────────────────────────────────────
+// La lista scritta a mano invecchia: i follow-bot cambiano di continuo. Qui la
+// teniamo aggiornata da una fonte pubblica (la stessa che usano gli strumenti
+// seri di anti-bot su Twitch), con una copia su disco così regge anche se la
+// fonte è momentaneamente giù, e con l'elenco dei bot BUONI che vince sempre.
+let listaEsterna = new Set();
+let listaInfo = { conteggio: 0, aggiornata: 0 };
+const FONTE = config.listaBotUrl || 'https://api.twitchinsights.net/v1/bots/all';
+const FILE = () => join(config.dataDir, 'lista-bot.json');
+const MAX = 300000;                                    // tetto: non ci mangiamo la RAM
+
+export const statoListaBot = () => ({ ...listaInfo, fonte: FONTE });
+
+export async function caricaListaBotDaDisco() {
+  try {
+    const j = JSON.parse(await readFile(FILE(), 'utf8'));
+    if (Array.isArray(j.nomi)) {
+      listaEsterna = new Set(j.nomi.filter((n) => !BUONI.has(n)));
+      listaInfo = { conteggio: listaEsterna.size, aggiornata: j.ts || 0 };
+      log.info(`lista bot: ${listaEsterna.size} nomi ripresi dal disco`);
+    }
+  } catch { /* prima volta: nessuna copia ancora */ }
+}
+
+export async function aggiornaListaBot() {
+  try {
+    const ac = new AbortController();
+    const to = setTimeout(() => ac.abort(), 20000);
+    const r = await fetch(FONTE, { signal: ac.signal, headers: { 'User-Agent': 'SocialBot anti-bot' } }).finally(() => clearTimeout(to));
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    const arr = Array.isArray(j.bots) ? j.bots : (Array.isArray(j) ? j : []);
+    const nuovi = new Set();
+    for (const b of arr) {
+      const n = norm(Array.isArray(b) ? b[0] : b);
+      if (n && /^[a-z0-9_]{2,30}$/.test(n) && !BUONI.has(n)) { nuovi.add(n); if (nuovi.size >= MAX) break; }
+    }
+    if (nuovi.size < 100) throw new Error('lista sospettosamente corta, ignorata');
+    listaEsterna = nuovi;
+    listaInfo = { conteggio: nuovi.size, aggiornata: Date.now() };
+    await writeFile(FILE(), JSON.stringify({ ts: listaInfo.aggiornata, nomi: [...nuovi] })).catch(() => {});
+    log.info(`lista bot aggiornata: ${nuovi.size} nomi noti`);
+    return nuovi.size;
+  } catch (e) {
+    log.warn('lista bot non aggiornata (tengo l\'ultima buona):', e?.message || e);
+    return 0;
+  }
+}
+
 // Un nome è da follow-bot? (esclusi i bot buoni e gli esentati dello streamer)
 export function nomeBot(login, cfg = {}) {
   const l = norm(login);
@@ -87,6 +140,7 @@ export function nomeBot(login, cfg = {}) {
   if (esenti.includes(l)) return false;
   const extra = (cfg.extra || []).map(norm).filter(Boolean);
   if (extra.includes(l)) return true;                 // esatto, aggiunto dallo streamer
+  if (cfg.listaAuto !== false && listaEsterna.has(l)) return true;   // lista aggiornata
   return PATTERN_BOT.some((re) => re.test(l));
 }
 

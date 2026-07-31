@@ -93,6 +93,9 @@ export const config = {
 
   // dati
   dataDir,
+  // Fonte della lista di bot noti (anti-bot), aggiornata da sola. Se un domani
+  // la fonte cambia indirizzo, si sposta da qui senza toccare il codice.
+  listaBotUrl: env('LISTA_BOT_URL', 'https://api.twitchinsights.net/v1/bots/all'),
 
   // ascolto live lato server: quanti canali possiamo ascoltare in AUDIO
   // contemporaneamente (cap globale, il server è piccolo). 0 = disattivato.
