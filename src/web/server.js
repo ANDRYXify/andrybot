@@ -218,7 +218,13 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // canale moderato. `preferito` forza un canale specifico (es. quello dell'invito).
   function contestoDefault(contesti, preferito) {
     if (preferito) { const c = contesti.find((x) => x.canale === preferito); if (c) return c; }
-    return contesti.find((x) => x.role === 'proprietario') || contesti[0] || null;
+    // Preferisci il PROPRIO canale solo se è davvero configurato (il bot lo conosce
+    // come streamer). Un moderatore "puro" — login col proprio account, ma senza un
+    // canale suo impostato — NON deve atterrare sul proprio canale vuoto: lo mandiamo
+    // dritto al primo canale che modera, così non si "perde" sul proprio profilo.
+    const proprio = contesti.find((x) => x.role === 'proprietario');
+    if (proprio && streamers.get(proprio.canale)) return proprio;
+    return contesti.find((x) => x.role === 'moderatore') || proprio || contesti[0] || null;
   }
 
   // Costruisce l'oggetto sessione per un contesto scelto, mantenendo l'identità.
