@@ -2413,6 +2413,14 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         avvisa: a.avvisa !== false,
       };
     }
+    // ore guardate (watchtime): sempre attive salvo che lo streamer le spenga
+    if (b.watchtime !== undefined) {
+      out.watchtime = { attivo: (b.watchtime || {}).attivo !== false };
+    }
+    // gestione comandi dalla chat (!comando aggiungi/…): OPT-IN, default spenta
+    if (b.comandiChat !== undefined) {
+      out.comandiChat = { attivo: !!((b.comandiChat || {}).attivo) };
+    }
     // premio VIP periodico (top monete)
     if (b.premioVip !== undefined) {
       const p = b.premioVip || {};

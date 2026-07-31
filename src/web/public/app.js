@@ -91,6 +91,8 @@ function impostazioni() {
     premioVip: (s.premioVip && typeof s.premioVip === 'object') ? s.premioVip : { attivo: false, periodo: 'settimana', quanti: 1 },
     antispam: (s.antispam && typeof s.antispam === 'object') ? s.antispam : {},
     antibot: (s.antibot && typeof s.antibot === 'object') ? s.antibot : {},
+    comandiChat: (s.comandiChat && typeof s.comandiChat === 'object') ? s.comandiChat : { attivo: false },
+    watchtime: (s.watchtime && typeof s.watchtime === 'object') ? s.watchtime : { attivo: true },
     tiktok: (s.tiktok && typeof s.tiktok === 'object') ? s.tiktok : { username: '', attivo: false, annunciaChat: false, messaggio: '', postAttivo: false, postAnnunciaChat: false, postMessaggio: '' },
     youtube: (s.youtube && typeof s.youtube === 'object') ? s.youtube : { canale: '', attivo: false, annunciaChat: false, messaggio: '' },
     instagram: (s.instagram && typeof s.instagram === 'object') ? s.instagram : { userId: '', attivo: false, annunciaChat: false, messaggio: '' },
@@ -5762,6 +5764,9 @@ async function _svtvCaricaSet() {
 // Automazioni componibili col modello QUANDO → SE → ALLORA.
 
 function pannelloModuli() {
+  const imp = impostazioni();
+  const cch = imp.comandiChat || {};
+  const wt = imp.watchtime || {};
   const chipsRapido = ['$user', '$touser', '$canale', '$uptime', '$gioco', '$spettatori', '$followage', '$chattercaso', '$ora', '$giocotarget', '$titolo($args)', '$categoria($args)', '$count(morti)', '$random(1,100)']
     .map((v) => `<button type="button" class="chip-var" data-qc="${esc(v)}" title="${esc(tooltipVar(v))}">${esc(v)}</button>`).join('');
   return pannello('moduli', `
@@ -5790,6 +5795,20 @@ function pannelloModuli() {
         <button class="btn" id="btn-qc">${L('Aggiungi comando', 'Add command', 'Añadir comando')}</button>
         <span class="suggerimento">${L('Per condizioni, eventi, timer, effetti o webhook usa', 'For conditions, events, timers, effects or webhooks use', 'Para condiciones, eventos, temporizadores, efectos o webhooks usa')} <strong>${L('Nuovo modulo', 'New module', 'Nuevo módulo')}</strong> ${L('qui sotto.', 'below.', 'abajo.')}</span>
       </p>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.fulmine)}${L('Comodità in chat', 'Chat conveniences', 'Comodidades en el chat')}</h2>
+      <div class="riga-check">
+        <input type="checkbox" id="chk-comandi-chat" ${cch.attivo ? 'checked' : ''}>
+        <label for="chk-comandi-chat">${L('Gestisci i comandi dalla chat (per i mod):', 'Manage commands from chat (for mods):', 'Gestiona los comandos desde el chat (para mods):')} <code>!comando aggiungi !nome &lt;risposta&gt;</code>, <code>!comando elimina !nome</code>, <code>!comando lista</code> ${L('(anche', '(also', '(también')} <code>!addcom</code>/<code>!delcom</code>)</label>
+      </div>
+      <p class="suggerimento">${L('Spenta di default: SocialBot non impone comandi propri. Accendendola, i mod possono creare comandi semplici (testo con <code>{user}</code>) senza aprire la dashboard. Per variabili, effetti e condizioni resta l\'editor Moduli.', 'Off by default: SocialBot imposes no built-in commands. When on, mods can create simple commands (text with <code>{user}</code>) without opening the dashboard. For variables, effects and conditions use the Modules editor.', 'Apagada por defecto: SocialBot no impone comandos propios. Al activarla, los mods pueden crear comandos simples (texto con <code>{user}</code>) sin abrir el panel. Para variables, efectos y condiciones usa el editor de Módulos.')}</p>
+      <div class="riga-check spazio-sopra">
+        <input type="checkbox" id="chk-watchtime" ${wt.attivo !== false ? 'checked' : ''}>
+        <label for="chk-watchtime">${L('Conta le ore guardate in chat (comandi', 'Count watched hours in chat (commands', 'Cuenta las horas vistas en el chat (comandos')} <code>!ore</code>, <code>!classificaore</code>)</label>
+      </div>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-comodita">${L('Salva', 'Save', 'Guardar')}</button></p>
     </div>
 
     <div class="carta">
@@ -8302,6 +8321,14 @@ function attivaPiattaforma() {
     document.getElementById('qc-risposta').value = '';
     toast(L('Comando !', 'Command !', 'Comando !') + comando + L(' creato', ' created', ' creado'));
     caricaModuli();
+  }));
+
+  // comodità in chat: gestione comandi dalla chat + ore guardate
+  document.getElementById('btn-salva-comodita')?.addEventListener('click', () => conErrore(async () => {
+    await salvaImpostazioni({
+      comandiChat: { attivo: document.getElementById('chk-comandi-chat').checked },
+      watchtime: { attivo: document.getElementById('chk-watchtime').checked },
+    }, L('Salvato', 'Saved', 'Guardado'));
   }));
 
   // slider spontaneità: percentuale in tempo reale
