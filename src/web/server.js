@@ -3877,6 +3877,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
   // ------------------------------------------------------------ API admin
 
+  // Esche: quanti stanno bussando a porte inesistenti, senza dire chi.
+  app.get('/api/admin/esche', requireAdmin, (req, res) => res.json(riepilogoEsche()));
+
   app.get('/api/admin/streamers', requireAdmin, wrap(async (req, res) => {
     res.json(streamers.list().map((s) => ({
       ...s,
