@@ -946,6 +946,13 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
    dentro un'area alta quanto lo schermo: l'anteprima non si muove mai. */
 .lp-editor { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; gap: 1.1rem; align-items: start; }
 .lp-comandi { min-width: 0; display: flex; flex-direction: column; gap: .6rem; }
+/* Schede del banco: "Contenuti" e "Aspetto" come due blocchi distinti. */
+.lp-tabs { display: inline-flex; gap: .3rem; padding: .3rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-2); align-self: flex-start; }
+.lp-tab { border: 0; background: transparent; color: var(--testo-3); font: inherit; font-weight: 700; font-size: .88rem; padding: .45rem 1.1rem; border-radius: 999px; cursor: pointer; transition: background var(--molla, .18s), color var(--molla, .18s); }
+.lp-tab:hover { color: var(--testo); }
+.lp-tab.sel { background: var(--acc); color: #fff; }
+.lp-pane { display: flex; flex-direction: column; gap: .6rem; }
+.lp-pane[hidden] { display: none; }
 /* l'anteprima galleggia su un fondo suo, come su un tavolo da lavoro */
 .lp-anteprima { display: flex; flex-direction: column; min-height: 0; align-items: stretch;
   background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-m); padding: .8rem; }
