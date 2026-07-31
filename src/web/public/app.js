@@ -1371,7 +1371,7 @@ const CAPACITA = [
   { ico: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>', area: ['Chat e comandi', 'Chat and commands', 'Chat y comandos'], voci: [
     { pacc: 'free', t: ['Scrive col tuo account', 'Writes with your account', 'Escribe con tu cuenta'], d: ['In chat compare il tuo nome, non un bot anonimo.', 'Your name appears in chat, not an anonymous bot.', 'En el chat aparece tu nombre, no un bot anónimo.'] },
     { pacc: 'free', t: ['Comandi e automazioni illimitati', 'Unlimited commands and automations', 'Comandos y automatizaciones ilimitados'], d: ['Quando succede X, il bot fa Y. Nessun limite di numero.', 'When X happens, the bot does Y. No limit on how many.', 'Cuando pasa X, el bot hace Y. Sin límite de cantidad.'] },
-    { pacc: 'free', t: ['Moderazione e antispam', 'Moderation and anti-spam', 'Moderación y antispam'], d: ['Filtra link, maiuscole e ripetizioni, e dà timeout a chi insiste.', 'Filters links, caps and repetition, and times out those who insist.', 'Filtra enlaces, mayúsculas y repeticiones, y da timeout a quien insiste.'] },
+    { pacc: 'free', t: ['Moderazione e antispam', 'Moderation and anti-spam', 'Moderación y antispam'], d: ['Filtra link, maiuscole, ripetizioni, menzioni, ASCII-art/zalgo, muri di testo ed emoji a raffica, e dà timeout a chi insiste.', 'Filters links, caps, repetition, mentions, ASCII art/zalgo, text walls and emoji floods, and times out those who insist.', 'Filtra enlaces, mayúsculas, repeticiones, menciones, ASCII-art/zalgo, muros de texto y ráfagas de emojis, y da timeout a quien insiste.'] },
     { pacc: 'free', t: ['Scudo anti-bot e anti-raid', 'Anti-bot & anti-raid shield', 'Escudo anti-bot y anti-raid'], d: ['Ferma le raffiche di follow-bot, riconosce i bot noti (lista aggiornata da sola) e trattiene i messaggi degli account appena creati per mod e streamer.', 'Stops follow-bot waves, recognises known bots (self-updating list) and holds brand-new accounts’ messages for mods and streamer.', 'Frena las oleadas de follow-bots, reconoce los bots conocidos (lista que se actualiza sola) y retiene los mensajes de cuentas recién creadas para mods y streamer.'] },
     { pacc: 'free', t: ['Contatori a schermo', 'On-screen counters', 'Contadores en pantalla'], d: ['Tipo !morti: li accendi dalla chat e il numero appare nell’overlay.', 'Like !deaths: turn them on from chat and the number shows in the overlay.', 'Tipo !muertes: los enciendes desde el chat y el número aparece en el overlay.'] },
     { pacc: 'free', t: ['Personalità e tono', 'Personality and tone', 'Personalidad y tono'], d: ['Decidi come parla e quanto interviene da solo in chat.', 'You decide how it speaks and how often it chimes in.', 'Decides cómo habla y cuánto interviene solo en el chat.'] },
@@ -7623,6 +7623,20 @@ function pannelloRegole() {
         <input type="checkbox" id="chk-as-menz" ${sel(a.menzioni, true) ? 'checked' : ''}>
         <label for="chk-as-menz">${L('Blocca le valanghe di @menzioni', 'Block @mention floods', 'Bloquea las avalanchas de @menciones')}</label>
       </div>
+      <div class="riga-check">
+        <input type="checkbox" id="chk-as-simboli" ${sel(a.simboli, false) ? 'checked' : ''}>
+        <label for="chk-as-simboli">${L('Blocca ASCII-art, «zalgo» e muri di simboli', 'Block ASCII art, «zalgo» and symbol walls', 'Bloquea ASCII-art, «zalgo» y muros de símbolos')}</label>
+      </div>
+      <div class="riga-check">
+        <input type="checkbox" id="chk-as-lungo" ${sel(a.lungo, false) ? 'checked' : ''}>
+        <label for="chk-as-lungo">${L('Blocca i messaggi troppo lunghi, oltre', 'Block messages longer than', 'Bloquea los mensajes más largos de')}
+          <input type="number" id="num-as-lungomax" min="50" max="500" value="${esc(String(a.lungoMax || 350))}" style="max-width:5rem"> ${L('caratteri', 'characters', 'caracteres')}</label>
+      </div>
+      <div class="riga-check">
+        <input type="checkbox" id="chk-as-emoji" ${sel(a.emoji, false) ? 'checked' : ''}>
+        <label for="chk-as-emoji">${L('Blocca le raffiche di emoji, oltre', 'Block emoji floods, over', 'Bloquea las ráfagas de emojis, más de')}
+          <input type="number" id="num-as-emojimax" min="1" max="50" value="${esc(String(a.emojiMax || 8))}" style="max-width:4rem"> ${L('per messaggio', 'per message', 'por mensaje')}</label>
+      </div>
 
       <div class="riga-check spazio-sopra">
         <input type="checkbox" id="chk-as-timeout" ${sel(a.timeoutRecidivi, true) ? 'checked' : ''}>
@@ -7890,6 +7904,11 @@ function attivaPiattaforma() {
         flood: document.getElementById('chk-as-flood').checked,
         maiuscole: document.getElementById('chk-as-caps').checked,
         menzioni: document.getElementById('chk-as-menz').checked,
+        simboli: document.getElementById('chk-as-simboli').checked,
+        lungo: document.getElementById('chk-as-lungo').checked,
+        lungoMax: parseInt(document.getElementById('num-as-lungomax').value, 10) || 350,
+        emoji: document.getElementById('chk-as-emoji').checked,
+        emojiMax: parseInt(document.getElementById('num-as-emojimax').value, 10) || 8,
         timeoutRecidivi: document.getElementById('chk-as-timeout').checked,
         avvisa: document.getElementById('chk-as-avvisa').checked,
       },

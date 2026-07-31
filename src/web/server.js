@@ -2377,6 +2377,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         maiuscole: a.maiuscole !== false,
         menzioni: a.menzioni !== false,
         flood: a.flood !== false,
+        simboli: !!a.simboli,
+        lungo: !!a.lungo,
+        lungoMax: Math.min(500, Math.max(50, Math.round(Number(a.lungoMax)) || 350)),
+        emoji: !!a.emoji,
+        emojiMax: Math.min(50, Math.max(1, Math.round(Number(a.emojiMax)) || 8)),
         timeoutRecidivi: a.timeoutRecidivi !== false,
         avvisa: a.avvisa !== false,
       };
