@@ -5821,6 +5821,8 @@ function pannelloModuli() {
       <div class="modelli-pronti">
         <button class="modello-pronto" data-modello="saluto">${L('Saluto', 'Greeting', 'Saludo')}</button>
         <button class="modello-pronto" data-modello="shoutout">Shoutout</button>
+        <button class="modello-pronto" data-modello="raidso">${L('Auto-shoutout ai raid', 'Auto-shoutout on raids', 'Auto-shoutout en raids')}</button>
+        <button class="modello-pronto" data-modello="annuncio">${L('Annuncio', 'Announcement', 'Anuncio')}</button>
         <button class="modello-pronto" data-modello="timer">${L('Timer annuncio', 'Announcement timer', 'Temporizador de aviso')}</button>
         <button class="modello-pronto" data-modello="social">Social</button>
         <button class="modello-pronto" data-modello="morti">${L('Contatore morti', 'Death counter', 'Contador de muertes')}</button>
@@ -5853,12 +5855,25 @@ function modelloPronto(nome) {
         trigger: { tipo: 'comando', comando: 'ciao', alias: [] }, condizioni: cond(),
         azioni: [{ tipo: 'messaggio', testo: 'Ciao $user!' }] };
     case 'shoutout':
-      // "!so giorgiottv" → "Andate a seguire @giorgiottv! Stava streammando <gioco>…"
-      // $touser = il nome scritto dopo il comando; $giocotarget = l'ultimo gioco
-      // del SUO canale (è legato a $touser: senza destinatario resta vuoto).
+      // "!so giorgiottv" → shoutout UFFICIALE (il banner) + un messaggio in chat.
+      // Azione nativa "shoutout": canale vuoto = usa il nome dopo il comando ($touser).
       return { id: null, nome: 'Shoutout', attivo: true,
         trigger: { tipo: 'comando', comando: 'so', alias: ['shoutout', 'sh'] }, condizioni: { ...cond(), tier: 'mod' },
-        azioni: [{ tipo: 'messaggio', testo: 'Andate tutti a seguire @$touser! Stava streammando $giocotarget twitch.tv/$touser' }] };
+        azioni: [
+          { tipo: 'shoutout', canale: '', testo: 'Andate tutti a seguire @$touser! Stava streammando $giocotarget twitch.tv/$touser' },
+        ] };
+    case 'raidso':
+      // Auto-shoutout: QUANDO qualcuno ti RAIDA → shoutout ufficiale al suo canale.
+      return { id: null, nome: 'Auto-shoutout ai raid', attivo: true,
+        trigger: { tipo: 'evento', evento: 'raid' }, condizioni: cond(),
+        azioni: [
+          { tipo: 'shoutout', canale: '', testo: 'Grazie del raid @$raider! 💜 Andate a seguirl*: twitch.tv/$raider' },
+        ] };
+    case 'annuncio':
+      // "!annuncio <testo>" (mod) → annuncio ufficiale evidenziato in chat.
+      return { id: null, nome: 'Annuncio', attivo: true,
+        trigger: { tipo: 'comando', comando: 'annuncio', alias: ['ann'] }, condizioni: { ...cond(), tier: 'mod' },
+        azioni: [{ tipo: 'annuncia', testo: '$args', colore: 'primary' }] };
     case 'timer':
       return { id: null, nome: 'Timer annuncio', attivo: true,
         trigger: { tipo: 'timer', minuti: 15, minMessaggi: 10 }, condizioni: cond(),
