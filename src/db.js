@@ -206,6 +206,15 @@ CREATE TABLE IF NOT EXISTS points (        -- "monete" (punti fedeltà) dei mini
   PRIMARY KEY (channel, user)
 );
 
+CREATE TABLE IF NOT EXISTS watchtime (     -- ore guardate (secondi in chat mentre è live), per canale
+  channel TEXT NOT NULL,
+  user TEXT NOT NULL,                        -- login minuscolo
+  display TEXT NOT NULL DEFAULT '',
+  seconds INTEGER NOT NULL DEFAULT 0,
+  ts INTEGER NOT NULL,
+  PRIMARY KEY (channel, user)
+);
+
 CREATE TABLE IF NOT EXISTS vips (          -- VIP assegnati dal bot (con scadenza)
   channel TEXT NOT NULL,
   user TEXT NOT NULL,                       -- login minuscolo
@@ -553,6 +562,34 @@ export const points = {
   },
   top(channel, n = 5) {
     return db.prepare("SELECT user, monete FROM points WHERE channel=? AND user NOT LIKE '[%' ORDER BY monete DESC LIMIT ?").all(channel, n);
+  },
+};
+
+// ---------------------------------------------------------------- ore guardate (watchtime)
+export const watchtime = {
+  get(channel, user) {
+    const r = db.prepare('SELECT seconds FROM watchtime WHERE channel=? AND user=?').get(channel, String(user).toLowerCase());
+    return r ? r.seconds : 0;
+  },
+  // aggiunge secondi (per un utente), aggiornando il nome mostrato se fornito.
+  add(channel, user, deltaSec, display = '') {
+    const u = String(user).toLowerCase();
+    const d = String(display || '');
+    db.prepare(`INSERT INTO watchtime (channel, user, display, seconds, ts) VALUES (?,?,?,MAX(0,?),?)
+      ON CONFLICT(channel, user) DO UPDATE SET
+        seconds = MAX(0, watchtime.seconds + ?),
+        display = CASE WHEN ?<>'' THEN ? ELSE watchtime.display END,
+        ts=?`)
+      .run(channel, u, d, deltaSec, now(), deltaSec, d, d, now());
+    return this.get(channel, u);
+  },
+  // accredita gli stessi secondi a una lista di utenti (una transazione).
+  addMany(channel, users, deltaSec) {
+    const tx = db.transaction((lista) => { for (const u of lista) this.add(channel, u, deltaSec); });
+    tx(users || []);
+  },
+  top(channel, n = 5) {
+    return db.prepare("SELECT user, display, seconds FROM watchtime WHERE channel=? AND user NOT LIKE '[%' ORDER BY seconds DESC LIMIT ?").all(channel, n);
   },
 };
 

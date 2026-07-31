@@ -12,6 +12,7 @@ import { Brain } from './ai/brain.js';
 import * as persona from './ai/persona.js';
 import * as games from './features/games.js';
 import * as giveaway from './features/giveaway.js';
+import * as watchtime from './features/watchtime.js';
 import * as sondaggi from './features/sondaggi.js';
 import * as songrequest from './features/songrequest.js';
 import * as vip from './features/vip.js';
@@ -127,6 +128,11 @@ export class BotManager {
     caricaListaBotDaDisco().catch(() => {});
     setTimeout(() => aggiornaListaBot().catch(() => {}), 30_000);
     this._listaBotTimer = setInterval(() => aggiornaListaBot().catch(() => {}), 12 * 60 * 60_000);
+    // Ore guardate: ogni 5 minuti, per ogni canale LIVE, accredito il tempo a chi
+    // è in chat (lista chatters di Twitch → anche i lurker). 300s a tick = 1:1 col
+    // tempo reale. Se manca lo scope moderator:read:chatters, getChatters dà [] e
+    // semplicemente non si conteggia nulla.
+    this._watchtimeTimer = setInterval(() => this._tickWatchtime().catch(() => {}), 5 * 60_000);
     // TikTok: rilevamento live best-effort (l'affidabile è il webhook)
     this._tiktokTimer = setInterval(() => this._controllaTikTok().catch(() => {}), 3 * 60_000);
     // Nuovi post: avvisa quando esce un nuovo video su YouTube (via RSS, ogni 10 min).
@@ -165,6 +171,7 @@ export class BotManager {
     clearInterval(this._vipTimer);
     clearInterval(this._premiTimer);
     clearInterval(this._listaBotTimer);
+    clearInterval(this._watchtimeTimer);
     clearInterval(this._tiktokTimer);
     clearInterval(this._postTimer);
     clearInterval(this._annunciTimer);
@@ -230,6 +237,21 @@ export class BotManager {
         streamers.setSettings(login, { ...s.settings, premioVipUltimo: Date.now() });
       }
     } catch (e) { log.error('premi VIP:', e?.message || e); }
+  }
+
+  // Ore guardate: per ogni canale connesso e LIVE, accredita 5 minuti a chi è in
+  // chat (lista chatters di Twitch). Un canale offline non conta. Best-effort:
+  // ogni canale in try/catch, così uno che fallisce non blocca gli altri.
+  async _tickWatchtime() {
+    const passoSec = 300;
+    for (const login of this.units.keys()) {
+      try {
+        const stream = await this.helix.getStream(login);
+        if (!stream) continue;
+        const chatters = await this.helix.getChatters(login);
+        if (chatters.length) watchtime.accredita(login, chatters, passoSec);
+      } catch (e) { log.debug(`#${login} ore:`, e?.message || e); }
+    }
   }
 
   // Manche automatiche: per ogni canale che le ha attivate, ogni tanto (intervallo
@@ -416,6 +438,9 @@ export class BotManager {
     // giveaway / sorteggi (!giveaway, !join, !estrai) — segue l'add-on Giochi
     try { giveaway.tryGiveaway(msg, (t) => this.say(msg.channel, t)); }
     catch (e) { log.error(`#${login} giveaway:`, e?.message || e); }
+    // ore guardate / fedeltà (!ore, !classificaore)
+    try { watchtime.tryComando(msg, (t) => this.say(msg.channel, t)); }
+    catch (e) { log.error(`#${login} ore:`, e?.message || e); }
     // comandi VIP (mod/streamer): !vip @nome [durata], !unvip, !viplista
     vip.tryVipCommand(this.helix, msg, (t) => this.say(msg.channel, t)).catch((e) => log.error(`#${login} vip:`, e?.message || e));
     // sondaggi & predizioni Twitch (mod/streamer) — add-on Effetti & Punti canale
