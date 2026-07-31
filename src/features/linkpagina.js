@@ -345,7 +345,7 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   const disp = ['colonna', 'rivista', 'sezioni'].includes(t.disposizione) ? t.disposizione : 'colonna';
   const mov = ['nessuno', 'dolce', 'cinema'].includes(t.movimento) ? t.movimento : 'dolce';
   // in anteprima si caricano sempre: sennò l'editor mostrerebbe solo cartelli
-  const chiedi = t.consenso !== 'sempre' && !anteprima;
+  const chiedi = t.consenso === 'chiedi' && !anteprima;
   // Titoli "parola per parola": ogni parola è un pezzo a sé, così può entrare
   // con un attimo di ritardo sulla precedente. Si fa qui, a mano, perché farlo
   // in pagina vorrebbe dire JavaScript su una pagina che deve aprirsi subito.
@@ -1004,7 +1004,7 @@ export function renderInformativa({ login, display, baseUrl, pagina, contatto })
   for (const k of ['bg', 'bg2', 'testo', 'tenue', 'card', 'bordo']) if (t[k]) c[k] = t[k];
   if (t.accent) c.acc = t.accent;
   const font = PILE[t.font] || PILE.system;
-  const chiede = t.consenso !== 'sempre';
+  const chiede = t.consenso === 'chiedi';
   const nome = display || login;
   const p = (s) => `<p>${s}</p>`;
   return `<!DOCTYPE html>
