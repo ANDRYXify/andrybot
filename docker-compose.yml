@@ -4,11 +4,32 @@
 #  - brain: cervello Python isolato (coscienza + modello linguistico)
 #  - caddy: reverse proxy con HTTPS automatico (Let's Encrypt)
 #  Avvio:  docker compose up -d --build
+#
+#  Robustezza sotto carico (aggiunta): ogni servizio ha i log a rotazione
+#  (un flood non riempie il disco), un tetto ai processi (niente fork-bomb),
+#  più descrittori di file aperti (regge molte connessioni insieme) e nessuna
+#  scalata di privilegi. Il bot ha anche un controllo di salute: se smette di
+#  rispondere Docker lo segna. Le difese al volo dei flood applicativi stanno
+#  nel codice (src/web/esche.js) e in Caddy.
 # ============================================================
+
+# Impostazioni comuni: log a rotazione + nessuna scalata di privilegi. Un flood
+# genera montagne di righe di log: senza rotazione riempirebbero il disco e
+# sarebbe QUELLO a mettere giù il server, non l'attacco.
+x-comune: &comune
+  restart: unless-stopped
+  security_opt:
+    - no-new-privileges:true
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "5"
+
 services:
   bot:
+    <<: *comune
     build: .
-    restart: unless-stopped
     env_file: .env
     volumes:
       # Database e memoria del bot restano sul disco del server,
@@ -17,6 +38,22 @@ services:
     expose:
       # Porta interna: la vede solo Caddy, NON è aperta su internet.
       - "8090"
+    # Tetto ai processi (niente fork-bomb) e più file aperti insieme: così regge
+    # molte connessioni contemporanee — comprese quelle tenute apposta lente
+    # alle esche — senza restare a corto di descrittori.
+    pids_limit: 1024
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    # Se il bot smette di rispondere, Docker lo segna "unhealthy". start_period
+    # generoso: al primo avvio non deve essere dichiarato malato mentre parte.
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:8090/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
     depends_on:
       - brain
 
@@ -24,17 +61,26 @@ services:
   # faccia (pensare, caricare il modello) NON rallenta il bot → comandi sempre
   # istantanei. Il bot lo raggiunge su http://brain:8091 (solo rete interna).
   brain:
+    <<: *comune
     build: ./brain
-    restart: unless-stopped
     env_file: .env
     volumes:
       - ./data:/app/data      # coscienza (memoria) + modelli, persistono qui
     expose:
       - "8091"
+    # Il modello linguistico può aprire diversi file: alziamo anche qui il tetto.
+    # NIENTE mem_limit sul brain: la memoria di un LLM è imprevedibile e un tetto
+    # troppo basso lo farebbe uccidere a metà di un pensiero. Se vuoi un limite,
+    # misura prima quanto consuma (docker stats) e lascia margine abbondante.
+    pids_limit: 512
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
 
   caddy:
+    <<: *comune
     image: caddy:2
-    restart: unless-stopped
     ports:
       - "80:80"        # HTTP (redirect a HTTPS + sfida Let's Encrypt)
       - "443:443"      # HTTPS
@@ -43,6 +89,12 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data       # qui Caddy conserva i certificati
       - caddy_config:/config
+    # Caddy è la porta d'ingresso: regge l'urto di TUTTE le connessioni da
+    # internet, quindi gli serve il tetto più alto di file aperti.
+    ulimits:
+      nofile:
+        soft: 131072
+        hard: 131072
     depends_on:
       - bot
 
