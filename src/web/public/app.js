@@ -4884,18 +4884,69 @@ function studioAggiornaAltezzaLibero() {
   for (const el of studioElementiLibero()) { const r = el.getBoundingClientRect(); maxB = Math.max(maxB, r.bottom - gr.top); }
   g.style.minHeight = (maxB + 24) + 'px';
 }
+// Disposizione PULITA di default in modalità libera: palco in alto a sinistra,
+// i pannelli impilati in una colonna alla sua destra (o sotto, se lo spazio è
+// stretto). Misura l'altezza reale di ogni box, così non si sovrappongono mai.
+function studioTileLibero(g, els, largh) {
+  const gap = 16, palcoW = 640;
+  const colX = (palcoW + gap + 300 <= largh) ? palcoW + gap : 0;   // c'è spazio a destra?
+  const palco = els.find((e) => e.classList.contains('studio-palco-wrap'));
+  if (palco) { palco.style.left = '0px'; palco.style.top = '0px'; }
+  let y = colX ? 0 : 380;   // sotto al palco (~360px + margine) se in colonna unica
+  for (const el of els) {
+    if (el.classList.contains('studio-palco-wrap')) continue;
+    el.style.left = colX + 'px';
+    el.style.top = y + 'px';
+    const h = el.getBoundingClientRect().height || 160;
+    y += h + gap;
+  }
+}
+
 function studioApplicaLibero() {
   const g = document.getElementById('studio-griglia'); if (!g) return;
-  // "congela" le posizioni attuali (layout a colonna) prima di passare a flottante
-  const gr = g.getBoundingClientRect(); const correnti = new Map();
-  for (const el of studioElementiLibero()) { const r = el.getBoundingClientRect(); correnti.set(el, { x: r.left - gr.left, y: r.top - gr.top }); }
   g.classList.add('libero');
+  const els = studioElementiLibero();
+  const gr = g.getBoundingClientRect();
+  const largh = Math.max(360, gr.width || 1000);
   const salvate = studioLeggiPosLibero();
-  for (const el of studioElementiLibero()) {
-    const p = (salvate && salvate[studioElemKey(el)]) || correnti.get(el) || { x: 0, y: 0 };
-    el.style.left = Math.max(0, p.x) + 'px'; el.style.top = Math.max(0, p.y) + 'px';
+
+  // Le posizioni salvate valgono solo se SENSATE: dentro i limiti orizzontali e
+  // non negative. Basta un box fuori posto (schermo diverso, stato rovinato) e
+  // rifacciamo tutto pulito: così lo Studio non "sembra rotto" mai.
+  let ok = salvate && typeof salvate === 'object';
+  if (ok) {
+    for (const el of els) {
+      const p = salvate[studioElemKey(el)];
+      if (!p || !Number.isFinite(p.x) || !Number.isFinite(p.y) || p.x < 0 || p.y < 0 || p.x > largh - 60) { ok = false; break; }
+    }
+  }
+
+  if (ok) {
+    for (const el of els) {
+      const p = salvate[studioElemKey(el)];
+      el.style.left = Math.max(0, Math.min(p.x, largh - 80)) + 'px';
+      el.style.top = Math.max(0, p.y) + 'px';
+    }
+    // se le posizioni salvate finiscono per accavallare i pannelli, ri-dispone pulito
+    if (studioSovrapposti(els)) studioTileLibero(g, els, largh);
+  } else {
+    studioTileLibero(g, els, largh);
   }
   studioAggiornaAltezzaLibero();
+}
+
+// Vero se due elementi del layout libero si sovrappongono in modo significativo.
+function studioSovrapposti(els) {
+  const r = els.map((e) => e.getBoundingClientRect());
+  for (let i = 0; i < r.length; i++) {
+    for (let j = i + 1; j < r.length; j++) {
+      const a = r[i], b = r[j];
+      const ox = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+      const oy = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+      if (ox > 40 && oy > 40) return true;
+    }
+  }
+  return false;
 }
 function studioTogliLibero() {
   const g = document.getElementById('studio-griglia'); if (!g) return;
