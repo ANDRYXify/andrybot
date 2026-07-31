@@ -376,9 +376,15 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   // Ombra a DUE strati: una stretta che stacca il bordo dal fondo e una larga e
   // morbida che dà la distanza. È la differenza fra "un riquadro con l'ombra" e
   // una cosa che sembra appoggiata sopra la pagina.
-  const ombra = t.ombra !== false
-    ? 'box-shadow:0 1px 2px rgba(0,0,0,.10),0 8px 24px -8px rgba(0,0,0,.22)'
-    : '';
+  const colOmbra = t.ombraColore || c.bordo;
+  const tipoOmbra = ['nessuna', 'morbida', 'dura'].includes(t.ombraTipo)
+    ? t.ombraTipo : (t.ombra === false ? 'nessuna' : 'morbida');
+  const ombra = {
+    nessuna: '',
+    morbida: 'box-shadow:0 1px 2px rgba(0,0,0,.10),0 8px 24px -8px rgba(0,0,0,.22)',
+    // niente sfocatura: un blocco di colore spostato, che si vede e basta
+    dura: `box-shadow:4px 4px 0 0 ${colOmbra}`,
+  }[tipoOmbra];
   const ANIM = {
     fade: '@keyframes ent{from{opacity:0}to{opacity:1}}',
     rise: '@keyframes ent{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}',
@@ -401,8 +407,17 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
           <span class="tx"><span class="et">${esc(b.label || 'Link senza etichetta')}</span>
           <span class="so">${esc(!b.label ? 'manca l\'etichetta' : 'manca l\'indirizzo')} — da completare</span></span></div>`;
       }
-      return `<a class="voce${b.evidenzia ? ' spicca' : ''}" ${ritardo} href="${esc(href)}" target="_blank" rel="noopener nofollow">
-        <span class="ico">${_mIco(b.icona)}</span>
+      // Colori solo per QUESTO bottone. Vanno in due variabili, non in uno stile
+      // sul colore diretto: così le regole di hover e "in evidenza" continuano a
+      // funzionare invece di essere schiacciate da uno stile in linea.
+      const mini = urlSicuro(b.img);
+      const suo = [b.colore ? `--bcol:${b.colore}` : '', b.coloreTesto ? `--btxt:${b.coloreTesto}` : '']
+        .filter(Boolean).join(';');
+      return `<a class="voce${b.evidenzia ? ' spicca' : ''}${b.colore ? ' suo' : ''}${mini ? ' con-mini' : ''}"
+        style="--d:${Math.min(n - 1, 12) * 45}ms${suo ? ';' + suo : ''}" href="${esc(href)}" target="_blank" rel="noopener nofollow">
+        ${mini
+    ? `<img class="mini" src="${esc(mini)}" alt="" width="44" height="44" loading="lazy">`
+    : `<span class="ico">${_mIco(b.icona)}</span>`}
         <span class="tx"><span class="et">${esc(b.label)}</span>${b.sotto ? `<span class="so">${esc(b.sotto)}</span>` : ''}</span>
         <span class="fre" aria-hidden="true">›</span>
       </a>`;
@@ -641,6 +656,13 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
     box-shadow:0 1px 2px rgba(0,0,0,.10),0 14px 30px -12px ${c.acc}66}
   .voce:active{transform:translateY(0) scale(.994)}
   .voce:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
+  /* colori del singolo bottone: vincono su quelli del tema, ma solo su di lui */
+  .voce.suo{background:var(--bcol);border-color:var(--bcol);color:var(--btxt,#fff)}
+  .voce.suo .so,.voce.suo .fre,.voce.suo .ico,.voce.suo .ico svg{color:var(--btxt,#fff)!important;opacity:.92}
+  /* miniatura al posto dell'icona: si incastra nell'angolo del bottone */
+  .voce.con-mini{padding:.5rem .9rem .5rem .5rem}
+  .mini{width:2.9rem;height:2.9rem;flex:0 0 auto;object-fit:cover;
+    border-radius:calc(var(--r) * .6);background:${c.bg2}}
   .voce.spicca{background:var(--acc);border-color:var(--acc);color:#fff;position:relative;overflow:hidden}
   /* una luce che passa sopra il bottone principale: si nota appena, ed è
      esattamente il motivo per cui l'occhio ci finisce sopra */

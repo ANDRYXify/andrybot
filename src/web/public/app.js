@@ -6338,7 +6338,16 @@ async function caricaPaginaLink(ridisegna = false) {
             <option value="rise">${L('Dal basso', 'From below', 'Desde abajo')}</option>
             <option value="pop">${L('Pop', 'Pop', 'Pop')}</option>
           </select>
-          <label class="riga-check spazio-sopra"><input type="checkbox" data-lpk="ombra"${LP.tema.ombra !== false ? ' checked' : ''}> ${L('Ombra sotto i bottoni', 'Shadow under the buttons', 'Sombra bajo los botones')}</label>
+          <label class="campo spazio-sopra" for="lp-ombra">${L('Ombra dei bottoni', 'Button shadow', 'Sombra de los botones')}</label>
+          <select id="lp-ombra" data-lpk="ombraTipo">
+            <option value="nessuna">${L('Nessuna', 'None', 'Ninguna')}</option>
+            <option value="morbida">${L('Morbida (sfumata sotto)', 'Soft (blurred underneath)', 'Suave (difusa debajo)')}</option>
+            <option value="dura">${L('Dura (blocco di colore spostato)', 'Hard (solid offset block)', 'Dura (bloque de color desplazado)')}</option>
+          </select>
+          <div id="lp-ombra-col" ${(LP.tema.ombraTipo || 'morbida') === 'dura' ? '' : 'hidden'}>
+            <label class="campo spazio-sopra">${L('Colore dell\'ombra dura', 'Hard shadow colour', 'Color de la sombra dura')}</label>
+            <input type="color" data-lpk="ombraColore" value="${esc(LP.tema.ombraColore || '#000000')}">
+          </div>
         </details>
       </div>
 
@@ -6360,7 +6369,7 @@ async function caricaPaginaLink(ridisegna = false) {
     </div>`;
 
   // valori dei select del tema (non si possono impostare da HTML statico)
-  for (const k of ['sfondoTipo', 'effetto', 'stileBtn', 'allinea', 'avatarForma', 'anim', 'font', 'disposizione', 'movimento']) {
+  for (const k of ['sfondoTipo', 'effetto', 'stileBtn', 'allinea', 'avatarForma', 'anim', 'font', 'disposizione', 'movimento', 'ombraTipo']) {
     const el = box.querySelector(`[data-lpk="${k}"]`);
     if (el && LP.tema[k] !== undefined) el.value = LP.tema[k];
   }
@@ -6378,6 +6387,7 @@ async function caricaPaginaLink(ridisegna = false) {
       if (k === 'raggio') box.querySelector('#lp-rag-v').textContent = t.value + 'px';
       if (k === 'larghezza') box.querySelector('#lp-lar-v').textContent = t.value + 'rem';
       if (k === 'sfondoTipo') lpMostraCampiSfondo();
+      if (k === 'ombraTipo') { const cc = box.querySelector('#lp-ombra-col'); if (cc) cc.hidden = t.value !== 'dura'; }
       // toccato a mano: non è più "quel tema pronto", è roba tua
       if (LP.tema._pronto) { delete LP.tema._pronto; box.querySelector('.lp-tema.sel')?.classList.remove('sel'); }
     } else if (tt === 'headline' || tt === 'tagline' || tt === 'template') {
@@ -6569,8 +6579,20 @@ function lpRenderBlocchi() {
         </div>
         <input type="url" class="spazio-sopra" data-lpb="${i}" data-lpf="url" maxlength="${d.limiti.url}" value="${esc(b.url || '')}" placeholder="https://twitch.tv/iltuonome">
         <input type="text" class="spazio-sopra" data-lpb="${i}" data-lpf="sotto" maxlength="${d.limiti.sotto}" value="${esc(b.sotto || '')}" placeholder="${esc(L('Riga sotto (facoltativa)', 'Sub-line (optional)', 'Línea inferior (opcional)'))}">
-        <label class="campo spazio-sopra">${L('Icona', 'Icon', 'Icono')}</label>
-        ${grigliaIcone(i, b.icona)}
+        <label class="campo spazio-sopra">${L('Miniatura o icona', 'Thumbnail or icon', 'Miniatura o icono')}</label>
+        <p>${b.img ? `<img class="lp-prev mini" src="${esc(b.img)}" alt="">` : ''}
+          <button type="button" class="btn secondario mini" data-lpup="${i}.img">${_bIco(ICO.carica)}${L('Carica una miniatura', 'Upload a thumbnail', 'Sube una miniatura')}</button>
+          ${b.img ? `<button type="button" class="btn secondario mini" data-lpvia-img="${i}">${L('Togli', 'Remove', 'Quitar')}</button>` : ''}</p>
+        <p class="suggerimento">${L('Se metti una miniatura prende il posto dell\'icona: una faccia o una copertina si nota molto più di un simbolo.', 'A thumbnail replaces the icon: a face or a cover gets noticed far more than a symbol.', 'Una miniatura sustituye al icono: una cara o una portada se nota mucho más que un símbolo.')}</p>
+        ${b.img ? '' : grigliaIcone(i, b.icona)}
+        <div class="griglia-campi spazio-sopra">
+          <div><label class="campo">${L('Colore del bottone', 'Button colour', 'Color del botón')}</label>
+            <input type="color" data-lpb="${i}" data-lpf="colore" value="${esc(b.colore || '#6d3bef')}"></div>
+          <div><label class="campo">${L('Colore del testo', 'Text colour', 'Color del texto')}</label>
+            <input type="color" data-lpb="${i}" data-lpf="coloreTesto" value="${esc(b.coloreTesto || '#ffffff')}"></div>
+        </div>
+        <p class="suggerimento">${L('Valgono solo per questo bottone. Per rimetterlo come il tema, svuota il colore qui sotto.', 'They apply to this button only. To put it back like the theme, clear the colour below.', 'Solo valen para este botón. Para dejarlo como el tema, vacía el color abajo.')}
+          ${b.colore ? `<button type="button" class="btn secondario mini" data-lpvia-col="${i}">${L('Rimetti come il tema', 'Back to theme', 'Como el tema')}</button>` : ''}</p>
         <label class="riga-check spazio-sopra"><input type="checkbox" data-lpb="${i}" data-lpf="evidenzia"${b.evidenzia ? ' checked' : ''}> ${L('In evidenza (bottone pieno, colore principale)', 'Highlighted (filled button, accent colour)', 'Destacado (botón relleno, color principal)')}</label>`;
     } else if (b.tipo === 'social') {
       campi = (b.voci || []).map((v, j) => `
@@ -6764,6 +6786,16 @@ function lpRenderBlocchi() {
       const i = Number(ip.dataset.lpb); const b = LP.blocchi[i]; if (!b) return;
       if (ip.dataset.lpv !== undefined) { const j = Number(ip.dataset.lpv); if (b.voci?.[j]) b.voci[j].icona = ip.dataset.lpico; }
       else { b.icona = ip.dataset.lpico; b._icoManuale = true; }   // scelta a mano: non la sovrascrivo dall'url
+      lpRenderBlocchi(); lpAnteprima(); return;
+    }
+    // togliere la miniatura o i colori di un bottone: senza un modo per tornare
+    // indietro, "prova e vedi" diventa "prova e resta così"
+    const vi = ev.target.closest('[data-lpvia-img],[data-lpvia-col]');
+    if (vi) {
+      const i = Number(vi.dataset.lpviaImg ?? vi.dataset.lpviaCol);
+      const b = LP.blocchi[i]; if (!b) return;
+      if (vi.dataset.lpviaImg !== undefined) b.img = '';
+      else { b.colore = ''; b.coloreTesto = ''; }
       lpRenderBlocchi(); lpAnteprima(); return;
     }
     const so = ev.target.closest('[data-lpsoc]');
