@@ -13,6 +13,7 @@ import * as persona from './ai/persona.js';
 import * as games from './features/games.js';
 import * as giveaway from './features/giveaway.js';
 import * as watchtime from './features/watchtime.js';
+import * as comandichat from './features/comandichat.js';
 import * as sondaggi from './features/sondaggi.js';
 import * as songrequest from './features/songrequest.js';
 import * as vip from './features/vip.js';
@@ -441,6 +442,9 @@ export class BotManager {
     // ore guardate / fedeltà (!ore, !classificaore)
     try { watchtime.tryComando(msg, (t) => this.say(msg.channel, t)); }
     catch (e) { log.error(`#${login} ore:`, e?.message || e); }
+    // gestione comandi dalla chat (!comando aggiungi/…): opt-in, solo se accesa
+    try { comandichat.tryComando(msg, (t) => this.say(msg.channel, t)); }
+    catch (e) { log.error(`#${login} comandi-chat:`, e?.message || e); }
     // comandi VIP (mod/streamer): !vip @nome [durata], !unvip, !viplista
     vip.tryVipCommand(this.helix, msg, (t) => this.say(msg.channel, t)).catch((e) => log.error(`#${login} vip:`, e?.message || e));
     // sondaggi & predizioni Twitch (mod/streamer) — add-on Effetti & Punti canale
