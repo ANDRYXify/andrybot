@@ -1,0 +1,47 @@
+# ============================================================
+#  SocialBot — EDGE (bordo)
+#
+#  Questo è il NOSTRO edge: un server di frontiera che sta DAVANTI all'origine.
+#  Girà su qualunque macchina, ovunque nel mondo (una vicino al tuo pubblico =
+#  pagina più veloce per loro). È tutto tuo: solo la tua configurazione e la tua
+#  chiave, niente terzi.
+#
+#  COSA FA:
+#   · il DNS del dominio pubblico punta QUI, non all'origine → l'IP vero del
+#     server resta nascosto e non è più un bersaglio diretto;
+#   · fa da reverse-proxy all'origine, aggiungendo la chiave EDGE_KEY: l'origine
+#     serve solo il traffico che passa da qui (vedi "blinda l'origine" nel bot);
+#   · termina HTTPS (certificato Let's Encrypt suo), regge slowloris e header
+#     giganti come il Caddy principale;
+#   · sull'origine ricordati TRUST_PROXY=2 (ora i proxy davanti sono due:
+#     questo edge + il Caddy dell'origine).
+#
+#  COSA NON FA, ed è onesto dirlo: NON assorbe un DDoS volumetrico grosso più di
+#  quanta banda ha questo server. Per QUELLO serve la rete anti-DDoS di un
+#  provider (OVH/Hetzner) SOTTO questo edge. Più edge in più regioni = più
+#  banda totale e più vicinanza, ma non è magia.
+#
+#  Le variabili stanno nel file .env qui accanto (vedi .env.example).
+# ============================================================
+{
+	servers {
+		timeouts {
+			read_header 10s
+		}
+		max_header_size 32KB
+	}
+}
+
+{$EDGE_DOMAIN} {
+	encode zstd gzip
+
+	reverse_proxy {$ORIGIN} {
+		# la chiave che sblocca l'origine (deve essere la stessa del bot)
+		header_up X-Edge-Key {env.EDGE_KEY}
+		# l'origine si raggiunge a un nome NON pubblico, su HTTPS
+		header_up Host {$ORIGIN_HOST}
+		transport http {
+			tls
+		}
+	}
+}
