@@ -161,6 +161,71 @@ export class Helix {
     }
   }
 
+  // Annuncio in chat (/announce): messaggio evidenziato, con colore opzionale.
+  // Scope 'moderator:manage:announcements'. color ∈ blue|green|orange|purple|primary.
+  async announce(channelLogin, message, color = 'primary') {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return { ok: false, motivo: 'canale sconosciuto' };
+    const msg = String(message || '').slice(0, 500).trim();
+    if (!msg) return { ok: false, motivo: 'messaggio vuoto' };
+    const col = ['blue', 'green', 'orange', 'purple', 'primary'].includes(color) ? color : 'primary';
+    const token = await this.auth.getToken('broadcaster', channelLogin);
+    try {
+      await this._request('POST', '/chat/announcements', {
+        query: { broadcaster_id: s.user_id, moderator_id: s.user_id },
+        body: { message: msg, color: col }, token,
+      });
+      return { ok: true };
+    } catch (e) {
+      if (e.status === 401 || e.status === 403) return { ok: false, motivo: 'permesso mancante (ri-concedi i permessi)' };
+      return { ok: false, motivo: 'errore Twitch' };
+    }
+  }
+
+  // Shoutout ufficiale (/shoutout): il banner che rimanda a un altro canale.
+  // Scope 'moderator:manage:shoutouts'. Serve essere LIVE; Twitch limita la frequenza.
+  async shoutout(fromLogin, toLogin) {
+    const s = streamers.get(fromLogin);
+    if (!s?.user_id) return { ok: false, motivo: 'canale sconosciuto' };
+    const target = await this.getUserByLogin(toLogin);
+    if (!target?.id) return { ok: false, motivo: 'canale non trovato' };
+    if (target.id === s.user_id) return { ok: false, motivo: 'non puoi fare shoutout a te stesso' };
+    const token = await this.auth.getToken('broadcaster', fromLogin);
+    try {
+      await this._request('POST', '/chat/shoutouts', {
+        query: { from_broadcaster_id: s.user_id, to_broadcaster_id: target.id, moderator_id: s.user_id }, token,
+      });
+      return { ok: true, target: target.display_name || target.login };
+    } catch (e) {
+      if (e.status === 429) return { ok: false, motivo: 'shoutout troppo ravvicinati (aspetta un po\')' };
+      if (e.status === 400) return { ok: false, motivo: 'devi essere in diretta per lo shoutout' };
+      if (e.status === 401 || e.status === 403) return { ok: false, motivo: 'permesso mancante (ri-concedi i permessi)' };
+      return { ok: false, motivo: 'errore Twitch' };
+    }
+  }
+
+  // Chi è in chat adesso (login). Scope 'moderator:read:chatters'. Pagina fino a
+  // 1000 alla volta; per canali normali basta la prima pagina. Ritorna [] se manca
+  // lo scope o il canale è offline (Twitch dà comunque i presenti, ma noi contiamo
+  // le ore solo in live). Non lancia mai.
+  async getChatters(channelLogin, { max = 1000 } = {}) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return [];
+    try {
+      const token = await this.auth.getToken('broadcaster', channelLogin);
+      const out = [];
+      let cursor = '';
+      do {
+        const query = { broadcaster_id: s.user_id, moderator_id: s.user_id, first: 1000 };
+        if (cursor) query.after = cursor;
+        const j = await this._request('GET', '/chat/chatters', { query, token });
+        for (const c of (j?.data || [])) if (c?.user_login) out.push(c.user_login.toLowerCase());
+        cursor = j?.pagination?.cursor || '';
+      } while (cursor && out.length < max);
+      return out;
+    } catch { return []; }
+  }
+
   // Badge (stemmi) di chat: globali e del canale. Bastano il token applicazione.
   // Ritornano [{ set_id, versions:[{id, image_url_1x/2x/4x}] }].
   async badgeGlobali() {
