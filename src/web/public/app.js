@@ -9191,8 +9191,8 @@ const AZIONI = [
 const VARIABILI = [
   // contesto
   '$user', '$touser', '$target', '$args', '$arg1', '$canale', '$uptime', '$gioco', '$titolo', '$spettatori',
-  // da quanto segue · un utente a caso tra chi ha scritto · data/ora
-  '$followage', '$chattercaso', '$data', '$ora', '$giorno',
+  // da quanto segue · un utente a caso tra chi ha scritto · citazione a caso · data/ora
+  '$followage', '$chattercaso', '$cita', '$data', '$ora', '$giorno',
   // shoutout: gioco/titolo dell'ultima diretta del destinatario ($touser)
   '$giocotarget', '$titolotarget',
   // azioni sul canale (cambiano titolo/categoria su Twitch)
@@ -9228,6 +9228,7 @@ const LEGENDA_VAR = [
   ['gruppo', 'Le persone', 'People', 'Las personas'],
   ['$followage', 'Da quanto ti segue chi scrive (o !followage @nome)', 'How long the writer has followed (or !followage @name)', 'Cuánto lleva siguiéndote quien escribe (o !followage @nombre)'],
   ['$chattercaso', 'Un utente a caso tra chi ha scritto di recente', 'A random recent chatter', 'Un usuario al azar entre quienes escribieron'],
+  ['$cita', 'Una citazione a caso tra quelle salvate con !cita', 'A random saved quote (from !cita)', 'Una cita al azar de las guardadas con !cita'],
 
   ['gruppo', 'Shoutout (con un @nome dopo il comando)', 'Shoutout (with an @name after the command)', 'Shoutout (con un @nombre tras el comando)'],
   ['$giocotarget', 'L’ultimo gioco del canale del destinatario', 'The target channel’s last game', 'El último juego del canal del destinatario'],

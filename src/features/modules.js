@@ -13,7 +13,7 @@ import dns from 'node:dns';
 import net from 'node:net';
 import http from 'node:http';
 import https from 'node:https';
-import { modules as modulesDb, counters, memory, streamers, clips } from '../db.js';
+import { modules as modulesDb, counters, memory, streamers, clips, quotes } from '../db.js';
 import { risolviCategoria } from './categoria.js';
 import { canaleHa } from './accesso.js';
 import * as spotify from './spotify.js';
@@ -766,6 +766,15 @@ export class ModulesEngine {
       } catch (e) { log.debug('chattercaso:', e?.message || e); }
     }
 
+    // CITAZIONE a caso tra quelle salvate (per comandi tipo "!saggezza" → $cita).
+    let citazione = '';
+    if (/\$cita/.test(s)) {
+      try {
+        const q = quotes.random(ctx.channel);
+        if (q && q.text) citazione = `“${q.text}”${q.autore ? ' — @' + q.autore : ''}`;
+      } catch (e) { log.debug('cita:', e?.message || e); }
+    }
+
     // data/ora locali (runtime del server): utili per comandi tipo "!ora" o "!oggi".
     const adesso = new Date();
     const dataOggi = adesso.toLocaleDateString('it-IT');
@@ -860,6 +869,8 @@ export class ModulesEngine {
       // un utente a caso tra chi ha scritto di recente (per i giochi)
       chattercaso: chatterCaso,
       randomchatter: chatterCaso,
+      // una citazione a caso tra quelle salvate (!cita)
+      cita: citazione,
       // data/ora locali
       data: dataOggi,
       ora: oraOra,
