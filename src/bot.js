@@ -49,7 +49,8 @@ export class BotManager {
     this.modules = modules || null;  // motore "Moduli" (automazioni QUANDO→SE→ALLORA)
     this.bus = bus || null;          // event-bus dei plugin operatore (opzionale)
     this.running = false;
-    this.units = new Map();          // login → { chat }
+    this.units = new Map();          // login → { chat, connesso }
+    this._chatKO = new Map();        // login → { da, avvisato } — chat non autenticata (token da rifare)
     this.listeners = new Map();      // login → LiveListener (ascolto live audio, opt-in)
     this.brain = null;
     this.clips = null;
@@ -349,6 +350,29 @@ export class BotManager {
     } catch (e) { log.error('tgProattivo:', e?.message || e); }
   }
 
+  // La chat non riesce ad autenticarsi: il token è scaduto/revocato e NON si
+  // ripara da solo (il backoff continuerebbe a fallire all'infinito). Segniamo il
+  // canale come KO (lo vede la dashboard) e avvisiamo il proprietario su Telegram,
+  // una sola volta ogni 6 ore per non tempestarlo.
+  _chatAuthKO(login) {
+    try {
+      const u = this.units.get(login); if (u) u.connesso = false;
+      const ORA = Date.now();
+      const gia = this._chatKO.get(login);
+      const rec = { da: gia?.da || ORA, avvisato: gia?.avvisato || 0 };
+      if (ORA - rec.avvisato >= 6 * 3600_000) {
+        rec.avvisato = ORA;
+        const conf = tgConf.get(login);
+        if (conf?.token && conf.owner_tg_id && (conf.dm_modo || 'me') !== 'off') {
+          const testo = '⚠️ Il bot non riesce a collegarsi alla tua chat: il permesso Twitch è scaduto o è stato revocato. '
+            + 'Entra nella dashboard e premi «Concedi i permessi» per rimetterlo in funzione.';
+          telegram.inviaMessaggio(conf.token, conf.owner_tg_id, testo).catch(() => {});
+        }
+      }
+      this._chatKO.set(login, rec);
+    } catch (e) { log.debug('chatAuthKO:', e?.message || e); }
+  }
+
   // uno streamer è "pronto" se ha concesso i permessi con gli scope chat
   _ready(s) {
     const t = tokens.get('broadcaster', s.login);
@@ -383,9 +407,17 @@ export class BotManager {
           chat, helix: this.helix, brain: this.brain, clips: this.clips, botLogin: login,
         });
         chat.on('message', msg => this._gestisciMessaggio(login, msg, onMessage));
+        // Salute della connessione: 'connesso' azzera l'allarme, 'auth-fallita' (token
+        // non valido: NON si ripara da solo) avvisa il proprietario e lo segna KO.
+        chat.on('connesso', () => {
+          const u = this.units.get(login); if (u) u.connesso = true;
+          if (this._chatKO.delete(login)) log.info(`@${login}: chat riconnessa, allarme rientrato`);
+        });
+        chat.on('disconnesso', () => { const u = this.units.get(login); if (u) u.connesso = false; });
+        chat.on('auth-fallita', () => this._chatAuthKO(login));
         await chat.connect();
         chat.join(login);
-        this.units.set(login, { chat });
+        this.units.set(login, { chat, connesso: true });
         this.events.watch(s).catch?.(() => {});
         log.info(`Unità attiva per #${login} (parla come @${login})`);
       } catch (e) {
@@ -398,6 +430,7 @@ export class BotManager {
       u.chat.disconnect();
       this.events.unwatch(login);
       this.units.delete(login);
+      this._chatKO.delete(login);      // spenta di proposito: nessun allarme da mostrare
       log.info(`Unità spenta per #${login}`);
     }
 
@@ -920,6 +953,8 @@ export class BotManager {
     return {
       running: this.running,
       channels: [...this.units.keys()],
+      connessi: [...this.units].filter(([, u]) => u.connesso).map(([l]) => l),
+      chatKO: [...this._chatKO.keys()],         // canali con token da ricollegare
       ascoltando: [...this.listeners.keys()],   // canali sotto ascolto live (audio)
       streamers: streamers.list().length,
     };

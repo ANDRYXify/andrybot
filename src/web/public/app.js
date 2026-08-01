@@ -1714,7 +1714,10 @@ function pannello(id, contenuto) {
 
 function pannelloStato() {
   const login = stato.user.login;
-  const inChat = (stato.status?.channels || []).includes(login);
+  // "in chat adesso" = davvero connesso (non solo unità esistente): usa connessi[]
+  // se il server lo espone, altrimenti ripiega su channels[] (es. demo).
+  const connessi = stato.status?.connessi || stato.status?.channels || [];
+  const inChat = connessi.includes(login);
   const pre = stato.preaddestramento || {};
   const sImp = impostazioni();
   const proprietario = stato.ruolo !== 'moderatore';
@@ -1734,8 +1737,18 @@ function pannelloStato() {
       <p class="spazio-sopra"><a class="btn grande" href="/auth/permessi">${L('Concedi i permessi su Twitch', 'Grant permissions on Twitch', 'Concede los permisos en Twitch')}</a></p>
     </div>`;
 
+  // Allarme: il bot HA i permessi ma la chat non si autentica più (token scaduto/
+  // revocato). Non si ripara da solo: va ricollegato. Lo vede solo il proprietario.
+  const chatKO = proprietario && (stato.status?.chatKO || []).includes(login);
+  const cardChatKO = !chatKO ? '' : `
+    <div class="carta evidenziata avviso-rosso">
+      <h2>${_hIco(ICO.avviso || ICO.chiave)}${L('Il bot è scollegato dalla chat', 'The bot is disconnected from chat', 'El bot está desconectado del chat')}</h2>
+      <p>${L('Il permesso Twitch è', 'The Twitch permission is', 'El permiso de Twitch está')} <strong class="primo-piano">${L('scaduto o è stato revocato', 'expired or was revoked', 'caducado o fue revocado')}</strong>: ${L('il bot continua a riprovare ma non riuscirà a entrare in chat finché non lo riccolleghi. Bastano pochi secondi.', "the bot keeps retrying but won't be able to join chat until you reconnect it. It takes a few seconds.", 'el bot sigue reintentando pero no podrá entrar al chat hasta que lo reconectes. Tarda unos segundos.')}</p>
+      <p class="spazio-sopra"><a class="btn grande" href="/auth/permessi">${L('Ricollega i permessi', 'Reconnect permissions', 'Reconecta los permisos')}</a></p>
+    </div>`;
+
   return pannello('stato', `
-    ${bannerProvaHtml()}${bannerMod}${cardPermessi}
+    ${bannerProvaHtml()}${bannerMod}${cardChatKO}${cardPermessi}
     <div class="carta">
       <h2>${L('Il tuo bot', 'Your bot', 'Tu bot')}</h2>
       <div class="riga-interruttore spazio-sopra">
