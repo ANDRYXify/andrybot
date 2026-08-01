@@ -19,6 +19,7 @@ import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPA
 import { renderLinkPage, renderInformativa } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
 import { statoListaBot } from '../features/antibot.js';
+import { statoBackup, backupOra } from '../backup.js';
 import { risolviCanaleId } from '../features/youtube.js';
 import * as abbonamenti from '../features/abbonamenti.js';
 import * as spotify from '../features/spotify.js';
@@ -3989,6 +3990,18 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
   // Esche: quanti stanno bussando a porte inesistenti, senza dire chi.
   app.get('/api/admin/esche', requireAdmin, (req, res) => res.json(riepilogoEsche()));
+
+  // Backup del database: solo lo STATO (quante copie, quando l'ultima). Nessun
+  // percorso completo, nessun download: le copie contengono dati sensibili e si
+  // recuperano dal server, non dal web. (blindato)
+  app.get('/api/admin/backup', requireAdmin, (req, res) => res.json(statoBackup()));
+
+  // Backup a richiesta (admin): utile per verificare al volo che funzioni o per
+  // farne uno prima di un intervento. Restituisce l'esito + lo stato aggiornato.
+  app.post('/api/admin/backup', requireAdmin, wrap(async (req, res) => {
+    const r = await backupOra();
+    res.json({ ...r, file: undefined, stato: statoBackup() });
+  }));
 
   app.get('/api/admin/streamers', requireAdmin, wrap(async (req, res) => {
     res.json(streamers.list().map((s) => ({

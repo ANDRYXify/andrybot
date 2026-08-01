@@ -37,6 +37,7 @@ import { AntiBot, caricaListaBotDaDisco, aggiornaListaBot } from './features/ant
 import { scheduleReflection } from './ai/reflection.js';
 import { StreamWatcher } from './stream/watcher.js';
 import { LiveListener } from './stream/listener.js';
+import { avviaBackupAuto, stopBackupAuto } from './backup.js';
 
 const log = makeLog('bot');
 
@@ -134,6 +135,11 @@ export class BotManager {
     // tempo reale. Se manca lo scope moderator:read:chatters, getChatters dà [] e
     // semplicemente non si conteggia nulla.
     this._watchtimeTimer = setInterval(() => this._tickWatchtime().catch(() => {}), 5 * 60_000);
+    // Backup automatico del database: tutto (comandi, temi, monete, moderatori,
+    // pagine link, token) vive in un solo SQLite. Copie coerenti e periodiche in
+    // dataDir/backup, non scaricabili dal web. Uno ~90s dopo l'avvio, poi a
+    // intervalli (default 8h). Si spegne con stopBackupAuto() nello stop().
+    avviaBackupAuto();
     // TikTok: rilevamento live best-effort (l'affidabile è il webhook)
     this._tiktokTimer = setInterval(() => this._controllaTikTok().catch(() => {}), 3 * 60_000);
     // Nuovi post: avvisa quando esce un nuovo video su YouTube (via RSS, ogni 10 min).
@@ -173,6 +179,7 @@ export class BotManager {
     clearInterval(this._premiTimer);
     clearInterval(this._listaBotTimer);
     clearInterval(this._watchtimeTimer);
+    stopBackupAuto();
     clearInterval(this._tiktokTimer);
     clearInterval(this._postTimer);
     clearInterval(this._annunciTimer);

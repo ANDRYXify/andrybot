@@ -524,7 +524,7 @@ function render() {
   aggiornaTestataPagina();
 
   if (conPiattaforma) attivaPiattaforma();
-  if (stato.isAdmin) { caricaTabellaAdmin(); caricaAnima(); caricaLLM(); }
+  if (stato.isAdmin) { caricaTabellaAdmin(); caricaBackup(); caricaAnima(); caricaLLM(); }
 
   // prima le rendo richiudibili (cambia il DOM), poi le rivelo
   if (conPiattaforma) document.querySelectorAll('.pannello-scheda').forEach((p) => rendiCartePieghevoli(p, p.dataset.scheda));
@@ -8787,7 +8787,7 @@ function caricaDatiScheda(id) {
   if (id === 'pagina') caricaPaginaLink();
   if (id === 'regole') caricaStatoListaBot();
   if (id === 'sottoscrizione') caricaSottoscrizione();
-  if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaAnima(); caricaLLM(); }
+  if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaBackup(); caricaAnima(); caricaLLM(); }
 }
 
 
@@ -10098,6 +10098,11 @@ function vistaAdminContenuto() {
     </div>
     ${avviso}
     <div class="carta">
+      <h2>${_hIco(ICO.scudo)}${L('Backup del database', 'Database backup', 'Copia de seguridad de la base de datos')}</h2>
+      <p>${L('Tutto (comandi, temi, monete, moderatori, pagine link) vive in un solo file. Il bot ne tiene copie', 'Everything (commands, themes, coins, moderators, link pages) lives in a single file. The bot keeps', 'Todo (comandos, temas, monedas, moderadores, páginas de enlaces) vive en un solo archivo. El bot guarda')} <strong class="primo-piano">${L('automatiche e sicure', 'automatic, safe copies', 'copias automáticas y seguras')}</strong> ${L('sul server. Non sono scaricabili dal web (contengono dati sensibili): si recuperano dal server.', 'on the server. They are not downloadable from the web (they hold sensitive data): recover them from the server.', 'en el servidor. No se pueden descargar desde la web (contienen datos sensibles): se recuperan desde el servidor.')}</p>
+      <div id="backup-box"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
+    </div>
+    <div class="carta">
       <h2>Streamer</h2>
       <div class="scorrevole">
         <table class="tabella">
@@ -10324,6 +10329,36 @@ function caricaModelloFile() {
   xhr.onerror = () => { if (st) st.textContent = L('Errore di rete', 'Network error', 'Error de red'); toast(L('Upload fallito', 'Upload failed', 'Subida fallida'), 'errore'); };
   if (st) st.textContent = L('Carico… 0%', 'Uploading… 0%', 'Subiendo… 0%');
   xhr.send(fd);
+}
+
+// carica e disegna lo stato del backup (solo operatore). Nessun percorso, nessun
+// download: solo "quante copie, quando l'ultima" + un pulsante per farne uno ora.
+async function caricaBackup() {
+  const box = document.getElementById('backup-box');
+  if (!box) return;
+  let d;
+  try { d = await api('/api/admin/backup'); }
+  catch (e) { box.innerHTML = `<p class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</p>`; return; }
+  const quando = d.ultimo ? new Date(d.ultimo).toLocaleString() : '—';
+  const mb = d.bytes ? (d.bytes / 1048576).toFixed(1) + ' MB' : '—';
+  box.innerHTML = `
+    <p>
+      ${d.attivo
+        ? `<span class="badge verde">● ${L('attivo', 'active', 'activo')}</span>`
+        : `<span class="badge rosso">○ ${L('disattivato', 'off', 'desactivado')}</span>`}
+      &nbsp; <span class="badge viola">${d.conteggio} ${L('copie', 'copies', 'copias')}</span>
+      &nbsp; <span class="badge">${L('ultima', 'last', 'última')}: ${esc(quando)}</span>
+      &nbsp; <span class="badge">${mb}</span>
+    </p>
+    <p class="suggerimento">${L('Ogni', 'Every', 'Cada')} <strong>${d.ogniOre}h</strong> · ${L('conservo le ultime', 'I keep the last', 'conservo las últimas')} <strong>${d.tieni}</strong> ${L('copie (le più vecchie si cancellano da sole).', 'copies (older ones auto-delete).', 'copias (las más antiguas se borran solas).')}</p>
+    <p class="spazio-sopra"><button class="btn secondario mini" id="btn-backup-ora">${_bIco(ICO.scudo)}${L('Fai un backup ora', 'Back up now', 'Hacer copia ahora')}</button></p>`;
+  document.getElementById('btn-backup-ora')?.addEventListener('click', (ev) => conErrore(async () => {
+    const b = ev.currentTarget; b.disabled = true;
+    const r = await api('/api/admin/backup', { method: 'POST', body: {} });
+    if (r.ok) toast(L('Backup eseguito ✓', 'Backup done ✓', 'Copia realizada ✓'));
+    else toast((L('Backup fallito: ', 'Backup failed: ', 'Copia fallida: ')) + (r.errore || ''), 'errore');
+    caricaBackup();
+  }));
 }
 
 // carica e disegna il pannello Anima (solo operatore)
