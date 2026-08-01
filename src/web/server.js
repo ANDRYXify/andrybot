@@ -1234,7 +1234,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
   // ------------------------------------------------------------ API base
 
-  app.get('/health', (req, res) => res.json({ ok: true }));
+  // Pubblico, per i monitor di uptime esterni: solo ok + da quanti secondi è su.
+  // Niente dati sensibili (nomi canali, conteggi): resta blindato.
+  app.get('/health', (req, res) => res.json({ ok: true, uptime: Math.floor(process.uptime()) }));
 
   // stato complessivo per la single-page
   app.get('/api/me', wrap(async (req, res) => {
@@ -4002,6 +4004,29 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const r = await backupOra();
     res.json({ ...r, file: undefined, stato: statoBackup() });
   }));
+
+  // Salute del sistema (admin): un colpo d'occhio per capire subito se qualcosa
+  // non va — riavvii (uptime basso = crash loop), canali scollegati, disco che
+  // cresce, backup vecchio. Solo numeri, nessun dato sensibile.
+  app.get('/api/admin/salute', requireAdmin, (req, res) => {
+    const st = manager.status();
+    let dbBytes = 0;
+    try { dbBytes = statSync(join(config.dataDir, 'andrybot.db')).size; } catch { /* niente */ }
+    const mem = process.memoryUsage();
+    res.json({
+      uptime: Math.floor(process.uptime()),
+      running: !!st.running,
+      canali: st.channels?.length || 0,
+      connessi: (st.connessi || []).length,
+      chatKO: st.chatKO || [],
+      ascoltando: (st.ascoltando || []).length,
+      streamers: st.streamers || 0,
+      dbBytes,
+      rss: mem.rss,
+      node: process.version,
+      backup: statoBackup(),
+    });
+  });
 
   app.get('/api/admin/streamers', requireAdmin, wrap(async (req, res) => {
     res.json(streamers.list().map((s) => ({
