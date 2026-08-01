@@ -524,7 +524,7 @@ function render() {
   aggiornaTestataPagina();
 
   if (conPiattaforma) attivaPiattaforma();
-  if (stato.isAdmin) { caricaTabellaAdmin(); caricaBackup(); caricaAnima(); caricaLLM(); }
+  if (stato.isAdmin) { caricaTabellaAdmin(); caricaSalute(); caricaBackup(); caricaAnima(); caricaLLM(); }
 
   // prima le rendo richiudibili (cambia il DOM), poi le rivelo
   if (conPiattaforma) document.querySelectorAll('.pannello-scheda').forEach((p) => rendiCartePieghevoli(p, p.dataset.scheda));
@@ -8800,7 +8800,7 @@ function caricaDatiScheda(id) {
   if (id === 'pagina') caricaPaginaLink();
   if (id === 'regole') caricaStatoListaBot();
   if (id === 'sottoscrizione') caricaSottoscrizione();
-  if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaBackup(); caricaAnima(); caricaLLM(); }
+  if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaSalute(); caricaBackup(); caricaAnima(); caricaLLM(); }
 }
 
 
@@ -10111,6 +10111,11 @@ function vistaAdminContenuto() {
     </div>
     ${avviso}
     <div class="carta">
+      <h2>${_hIco(ICO.grafico)}${L('Stato del sistema', 'System status', 'Estado del sistema')}</h2>
+      <p class="suggerimento">${L('Un colpo d\'occhio sulla salute del servizio. Uptime basso all\'improvviso = si è riavviato; canali «scollegati» = token da ricollegare.', 'A glance at the service health. A sudden low uptime = it restarted; «disconnected» channels = tokens to reconnect.', 'Un vistazo a la salud del servicio. Un uptime bajo de repente = se reinició; canales «desconectados» = tokens por reconectar.')}</p>
+      <div id="salute-box"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
+    </div>
+    <div class="carta">
       <h2>${_hIco(ICO.scudo)}${L('Backup del database', 'Database backup', 'Copia de seguridad de la base de datos')}</h2>
       <p>${L('Tutto (comandi, temi, monete, moderatori, pagine link) vive in un solo file. Il bot ne tiene copie', 'Everything (commands, themes, coins, moderators, link pages) lives in a single file. The bot keeps', 'Todo (comandos, temas, monedas, moderadores, páginas de enlaces) vive en un solo archivo. El bot guarda')} <strong class="primo-piano">${L('automatiche e sicure', 'automatic, safe copies', 'copias automáticas y seguras')}</strong> ${L('sul server. Non sono scaricabili dal web (contengono dati sensibili): si recuperano dal server.', 'on the server. They are not downloadable from the web (they hold sensitive data): recover them from the server.', 'en el servidor. No se pueden descargar desde la web (contienen datos sensibles): se recuperan desde el servidor.')}</p>
       <div id="backup-box"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
@@ -10342,6 +10347,48 @@ function caricaModelloFile() {
   xhr.onerror = () => { if (st) st.textContent = L('Errore di rete', 'Network error', 'Error de red'); toast(L('Upload fallito', 'Upload failed', 'Subida fallida'), 'errore'); };
   if (st) st.textContent = L('Carico… 0%', 'Uploading… 0%', 'Subiendo… 0%');
   xhr.send(fd);
+}
+
+// durata in forma leggibile: 2g 3h, 5h 12m, 40m, 25s
+function _durata(sec) {
+  sec = Math.max(0, Math.floor(sec || 0));
+  const g = Math.floor(sec / 86400), h = Math.floor((sec % 86400) / 3600);
+  const m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  if (g) return `${g}g ${h}h`;
+  if (h) return `${h}h ${m}m`;
+  if (m) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
+// carica e disegna lo stato di salute del sistema (solo operatore). Read-only,
+// nessun polling: si aggiorna aprendo la scheda o col pulsante (attento ai limiti).
+async function caricaSalute() {
+  const box = document.getElementById('salute-box');
+  if (!box) return;
+  let d;
+  try { d = await api('/api/admin/salute'); }
+  catch (e) { box.innerHTML = `<p class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</p>`; return; }
+  const mb = (n) => (n / 1048576).toFixed(0) + ' MB';
+  const ko = (d.chatKO || []).length;
+  box.innerHTML = `
+    <p>
+      ${d.running ? `<span class="badge verde">● ${L('in esecuzione', 'running', 'en ejecución')}</span>` : `<span class="badge rosso">○ ${L('fermo', 'stopped', 'detenido')}</span>`}
+      &nbsp; <span class="badge">${L('acceso da', 'up for', 'activo desde hace')} ${_durata(d.uptime)}</span>
+      &nbsp; <span class="badge viola">${d.streamers} ${L('streamer', 'streamers', 'streamers')}</span>
+    </p>
+    <p class="spazio-sopra">
+      <span class="badge verde">${d.connessi}/${d.canali} ${L('in chat', 'in chat', 'en chat')}</span>
+      ${ko ? `&nbsp; <span class="badge rosso">${ko} ${L('scollegati (token)', 'disconnected (token)', 'desconectados (token)')}: ${(d.chatKO || []).map((c) => '#' + esc(c)).join(', ')}</span>` : ''}
+      ${d.ascoltando ? `&nbsp; <span class="badge">${d.ascoltando} ${L('in ascolto live', 'live listening', 'escuchando en directo')}</span>` : ''}
+    </p>
+    <p class="suggerimento spazio-sopra">
+      ${L('Database', 'Database', 'Base de datos')}: <strong>${mb(d.dbBytes)}</strong> &nbsp;·&nbsp;
+      ${L('Memoria', 'Memory', 'Memoria')}: <strong>${mb(d.rss)}</strong> &nbsp;·&nbsp;
+      Node <strong>${esc(d.node || '')}</strong> &nbsp;·&nbsp;
+      ${L('Backup', 'Backup', 'Copia')}: <strong>${d.backup?.conteggio || 0}</strong> ${L('copie', 'copies', 'copias')}
+    </p>
+    <p class="spazio-sopra"><button class="btn secondario mini" id="btn-salute-agg">${_bIco(ICO.grafico)}${L('Aggiorna', 'Refresh', 'Actualizar')}</button></p>`;
+  document.getElementById('btn-salute-agg')?.addEventListener('click', () => caricaSalute());
 }
 
 // carica e disegna lo stato del backup (solo operatore). Nessun percorso, nessun
