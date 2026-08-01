@@ -130,6 +130,7 @@ export class ChatBot extends EventEmitter {
         for (const c of this._channels) ws.send('JOIN #' + c);
         this._backoff = BACKOFF_MIN;
         log.info(`Connesso a IRC come @${this._login}` + (this._channels.size ? ` (${this._channels.size} canali)` : ''));
+        this.emit('connesso');
         if (!settled) { settled = true; resolve(); }
       });
 
@@ -154,6 +155,7 @@ export class ChatBot extends EventEmitter {
     if (this._ws !== ws) return;        // chiusura di una connessione vecchia: ignora
     this._ws = null;
     if (this._closing) return;
+    this.emit('disconnesso');           // caduta non voluta: il backoff sotto riprova
     const delay = this._backoff;
     this._backoff = Math.min(this._backoff * 2, BACKOFF_MAX);
     log.warn(`IRC disconnesso, riprovo tra ${Math.round(delay / 1000)}s`);
@@ -217,6 +219,7 @@ export class ChatBot extends EventEmitter {
         // login fallito → messaggio chiaro nei log (il token va rifatto)
         if (params.includes('Login authentication failed') || params.includes('Improperly formatted auth')) {
           log.error(`Autenticazione IRC FALLITA per @${this._login}: token non valido. Lo streamer deve ricollegare i permessi dalla dashboard.`);
+          this.emit('auth-fallita');    // il bot avvisa il proprietario: va ricollegato
         } else {
           log.debug('NOTICE:', params);
         }

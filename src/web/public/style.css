@@ -265,6 +265,8 @@ body.menu-aperto .drawer { transform: none; }
 .carta.evidenziata { border-color: var(--acc-bordo); box-shadow: 0 0 0 1px var(--acc-tint), var(--om-m); }
 .carta.avviso { border-color: var(--ambra-bordo); background: var(--ambra-soft); }
 .carta.avviso h2, .carta.avviso p { color: var(--ambra); }
+.carta.avviso-rosso { border-color: var(--rosso-bordo); background: var(--rosso-soft); }
+.carta.avviso-rosso h2 { color: var(--rosso); }
 
 /* ── "Cosa può fare SocialBot": elenco completo con il pacchetto di ogni voce ─
    Una carta <details> che contiene a sua volta un <details> per area, così si
