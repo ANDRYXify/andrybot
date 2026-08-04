@@ -1673,7 +1673,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json(r);
   }));
 
-  app.post('/api/seventv/aggiungi', requireOwner, g7tv, wrap(async (req, res) => {
+  // Gestione emote (aggiungi/rimuovi/rinomina/carica): la può fare anche un
+  // MODERATORE del canale — agisce sull'account 7TV del canale (stessa API,
+  // stesso token). Il collegamento/scollegamento dell'account resta al proprietario.
+  app.post('/api/seventv/aggiungi', requireLogin, g7tv, wrap(async (req, res) => {
     const login = currentUser(req).login;
     if (!seventv.collegato(login)) return res.status(400).json({ errore: 'Collega prima il tuo account 7TV.' });
     const r = await seventv.aggiungi(helix, login, String(req.body?.emoteId || ''), String(req.body?.alias || ''));
@@ -1681,7 +1684,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json({ ok: true });
   }));
 
-  app.post('/api/seventv/rimuovi', requireOwner, g7tv, wrap(async (req, res) => {
+  app.post('/api/seventv/rimuovi', requireLogin, g7tv, wrap(async (req, res) => {
     const login = currentUser(req).login;
     if (!seventv.collegato(login)) return res.status(400).json({ errore: 'Collega prima il tuo account 7TV.' });
     const r = await seventv.rimuovi(helix, login, String(req.body?.emoteId || ''));
@@ -1689,7 +1692,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json({ ok: true });
   }));
 
-  app.post('/api/seventv/rinomina', requireOwner, g7tv, wrap(async (req, res) => {
+  app.post('/api/seventv/rinomina', requireLogin, g7tv, wrap(async (req, res) => {
     const login = currentUser(req).login;
     if (!seventv.collegato(login)) return res.status(400).json({ errore: 'Collega prima il tuo account 7TV.' });
     const r = await seventv.rinomina(helix, login, String(req.body?.emoteId || ''), String(req.body?.nome || ''));
@@ -1701,7 +1704,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // viene auto-convertito in WebP (statico o animato con alpha) e caricato su 7TV,
   // poi aggiunto al set attivo del canale. Multer scrive un temp; convertiPerEmote
   // lo cancella; il WebP prodotto viene letto e rimosso dopo l'upload.
-  app.post('/api/seventv/carica', requireOwner, g7tv, (req, res) => {
+  app.post('/api/seventv/carica', requireLogin, g7tv, (req, res) => {
     upload.single('file')(req, res, (err) => {
       const pulisci = async () => { if (req.file) await pulisciTemp(req.file.path); };
       if (err) {
