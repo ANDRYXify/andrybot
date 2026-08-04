@@ -226,30 +226,44 @@ export function rinomina(helix, login, emoteId, nome) {
 }
 
 // ───────────────────────────────────────────────── carica una NUOVA emote su 7TV
-// I byte (già convertiti in WebP dal server) vanno nel BODY grezzo; i metadati
-// (nome, tag, flag) nell'header X-Emote-Data. 7TV la processa e restituisce l'id.
+// L'upload v3 è una GraphQL multipart-request (spec graphql-multipart-request):
+// la mutation createEmote(file: Upload!, data: EmoteInput!) con il file come
+// variabile. Il vecchio POST grezzo a /v3/emotes con header X-Emote-Data era la
+// via v2 deprecata: 7TV accettava la richiesta ma l'immagine restava VUOTA. I
+// metadati {name,tags,flags} sono identici, cambia solo il trasporto.
 // Ritorna { ok, id, nome } | { ok:false, motivo, scaduto }.
 export async function caricaEmote(login, bytes, nome, tags = []) {
   const t = seventvTokens.get(login);
   if (!t?.token) return { ok: false, motivo: 'collega prima il tuo account 7TV' };
   const n = String(nome || '').trim().replace(/\s+/g, '');
   if (n.length < 2) return { ok: false, motivo: 'nome troppo corto (min 2 caratteri)' };
-  const meta = JSON.stringify({ name: n.slice(0, 100), tags: (tags || []).slice(0, 6), flags: 0 });
+  const data = { name: n.slice(0, 100), tags: (tags || []).slice(0, 6), flags: 0 };
+  const query = 'mutation CreateEmote($file: Upload!, $data: EmoteInput!) { createEmote(file: $file, data: $data) { id } }';
+  const fd = new FormData();
+  fd.append('operations', JSON.stringify({ query, variables: { file: null, data } }));
+  fd.append('map', JSON.stringify({ 0: ['variables.file'] }));
+  fd.append('0', new Blob([bytes], { type: 'image/webp' }), `${n}.webp`);
   const ac = new AbortController();
   const to = setTimeout(() => ac.abort(), 20000);
   try {
-    const r = await fetch(`${REST}/emotes`, {
+    // NIENTE Content-Type manuale: lo imposta FormData col boundary multipart.
+    const r = await fetch(GQL, {
       method: 'POST',
       signal: ac.signal,
-      headers: { Authorization: 'Bearer ' + t.token, 'X-Emote-Data': meta, 'Content-Type': 'image/webp', 'User-Agent': 'SocialBot/1.0' },
-      body: bytes,
+      headers: { Authorization: 'Bearer ' + t.token, 'User-Agent': 'SocialBot/1.0' },
+      body: fd,
     });
     const j = await r.json().catch(() => null);
+    if (j?.errors?.length) {
+      const m = j.errors[0]?.message || 'errore 7TV';
+      const scaduto = r.status === 401 || r.status === 403 || /auth|token|unauthor|forbidden|login/i.test(m);
+      return { ok: false, motivo: m, scaduto };
+    }
     if (!r.ok) {
       const scaduto = r.status === 401 || r.status === 403;
       return { ok: false, motivo: j?.error?.message || j?.error || ('HTTP ' + r.status), scaduto };
     }
-    const id = j?.id || j?.emote?.id || (r.headers.get('location') || '').split('/').pop() || '';
+    const id = j?.data?.createEmote?.id || '';
     return { ok: true, id: ID_RE.test(String(id)) ? String(id) : '', nome: n };
   } catch (e) { log.warn('caricaEmote:', e?.message || e); return { ok: false, motivo: 'irraggiungibile' }; }
   finally { clearTimeout(to); }
