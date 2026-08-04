@@ -453,6 +453,17 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   const studioKeyOk = (login) =>
     !!(tokens.get('broadcaster', login)?.scopes?.includes('channel:read:stream_key'));
 
+  // Scope che MANCANO nel token già salvato rispetto a quelli che l'app usa oggi
+  // (fonte unica: SCOPES.broadcaster). Se ne mancano, lo streamer si è collegato
+  // PRIMA che venissero aggiunti: va ri-autorizzato, altrimenti le funzioni nuove
+  // (shoutout, annunci, ore guardate…) falliscono in silenzio. Ritorna [] se non
+  // ha ancora un token (farà comunque la concessione completa dal pulsante).
+  const scopeMancanti = (login) => {
+    const t = tokens.get('broadcaster', login);
+    if (!t?.scopes?.length) return [];
+    return SCOPES.broadcaster.filter((s) => !t.scopes.includes(s));
+  };
+
   // stato Telegram per la dashboard — MAI il token (segreto): solo se è
   // configurato, lo @username del bot, il gruppo collegato e le impostazioni.
   const statoTelegram = (login) => {
@@ -1259,6 +1270,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       status: manager.status(),
       streamer: user ? streamerSicuro(user.login) : null,
       permessiOk: user ? permessiOk(user.login) : false,
+      // scope aggiunti dopo che lo streamer si era collegato: se non vuoti, la
+      // dashboard mostra un invito a ri-autorizzare (niente errori silenziosi).
+      scopeMancanti: user ? scopeMancanti(user.login) : [],
       vipOk: user ? vipOk(user.login) : false,
       moderazioneOk: user ? moderazioneOk(user.login) : false,
       canaleOk: user ? canaleOk(user.login) : false,
