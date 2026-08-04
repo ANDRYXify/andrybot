@@ -104,10 +104,39 @@ async function apiCall(login, method, path, { query, body } = {}) {
   } catch (e) { log.warn('api: irraggiungibile', e?.message || e); return { ok: false, status: 0 }; }
 }
 
-// Cerca un brano → { uri, nome, artisti } o null.
+// normalizza per confrontare titolo/artista con la richiesta (via parentesi e
+// punteggiatura): "Flowers (Demo)" ~ "flowers".
+function normM(s) {
+  return String(s || '').toLowerCase()
+    .replace(/\(.*?\)|\[.*?\]/g, ' ')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+}
+
+// Sceglie il brano che l'utente INTENDEVA davvero tra i risultati Spotify: non
+// sempre è il primo (spesso escono karaoke/cover/tributi con lo stesso titolo).
+// Punteggio: titolo citato nella richiesta > artista citato > popolarità.
+function scegliMigliore(items, q) {
+  if (!Array.isArray(items) || !items.length) return null;
+  const nq = normM(q);
+  let best = items[0], bestScore = -Infinity;
+  for (const t of items) {
+    const nome = normM(t.name);
+    const artisti = (t.artists || []).map((a) => normM(a.name));
+    let score = Number(t.popularity) || 0;                       // 0..100
+    if (nome && nq.includes(nome)) score += 250;                 // il titolo compare nella richiesta
+    if (artisti.some((a) => a && nq.includes(a))) score += 150;  // anche l'artista citato
+    if (/karaoke|tribute|cover|made famous|originally performed/i.test(t.name)) score -= 300;
+    if (score > bestScore) { bestScore = score; best = t; }
+  }
+  return best;
+}
+
+// Cerca un brano → { uri, nome, artisti } o null. market=from_token: solo brani
+// riproducibili nel paese dello streamer e con ranking sensato (senza, Spotify
+// restituisce spesso risultati strani/non riproducibili → "canzone sbagliata").
 export async function cerca(login, q) {
-  const r = await apiCall(login, 'GET', '/search', { query: { q, type: 'track', limit: 1 } });
-  const t = r.dati?.tracks?.items?.[0];
+  const r = await apiCall(login, 'GET', '/search', { query: { q, type: 'track', limit: 6, market: 'from_token' } });
+  const t = scegliMigliore(r.dati?.tracks?.items || [], q);
   return t ? { uri: t.uri, nome: t.name, artisti: (t.artists || []).map((a) => a.name).join(', ') } : null;
 }
 
@@ -115,7 +144,7 @@ export async function cerca(login, q) {
 // disambiguare quando più canzoni hanno lo stesso titolo ("intendi 1, 2 o 3?").
 export async function cercaMulti(login, q, n = 5) {
   const lim = Math.max(1, Math.min(10, Math.round(Number(n)) || 5));
-  const r = await apiCall(login, 'GET', '/search', { query: { q, type: 'track', limit: lim } });
+  const r = await apiCall(login, 'GET', '/search', { query: { q, type: 'track', limit: lim, market: 'from_token' } });
   const items = r.dati?.tracks?.items || [];
   return items.map((t) => ({
     uri: t.uri,
