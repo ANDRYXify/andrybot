@@ -13,6 +13,7 @@ import * as persona from './ai/persona.js';
 import * as games from './features/games.js';
 import * as giveaway from './features/giveaway.js';
 import * as watchtime from './features/watchtime.js';
+import * as comandibase from './features/comandibase.js';
 import * as comandichat from './features/comandichat.js';
 import * as sondaggi from './features/sondaggi.js';
 import * as songrequest from './features/songrequest.js';
@@ -482,6 +483,10 @@ export class BotManager {
     // ore guardate / fedeltà (!ore, !classificaore)
     try { watchtime.tryComando(msg, (t) => this.say(msg.channel, t)); }
     catch (e) { log.error(`#${login} ore:`, e?.message || e); }
+    // comandi base pronti (!so/!shoutout, !followage, !uptime): opt-out e mai
+    // sopra ai comandi/Moduli creati dallo streamer (quelli vincono).
+    comandibase.tryComando(this.helix, msg, (t) => this.say(msg.channel, t))
+      .catch((e) => log.error(`#${login} comandi base:`, e?.message || e));
     // gestione comandi dalla chat (!comando aggiungi/…): opt-in, solo se accesa
     try { comandichat.tryComando(msg, (t) => this.say(msg.channel, t)); }
     catch (e) { log.error(`#${login} comandi-chat:`, e?.message || e); }
@@ -491,7 +496,7 @@ export class BotManager {
     sondaggi.trySondaggio(this.helix, msg, (t) => this.say(msg.channel, t)).catch((e) => log.error(`#${login} sondaggi:`, e?.message || e));
     // richieste musicali via Spotify (!sr, !song) — add-on Richieste Musicali
     songrequest.trySongRequest(msg, (t) => this.say(msg.channel, t)).catch((e) => log.error(`#${login} songrequest:`, e?.message || e));
-    // citazioni (!cita) — lo shoutout (!so) lo gestisce già handler.js
+    // citazioni (!cita) — lo shoutout (!so) lo gestisce comandibase qui sopra
     try { quotes.tryQuoteCommand(msg, (t) => this.say(msg.channel, t)); } catch (e) { log.error(`#${login} citazioni:`, e?.message || e); }
     // contatori (!morti, !tentativi, !parole…): comando chat + auto-conteggio parole.
     // L'emit aggiorna il widget sullo STESSO overlay OBS (feed SSE di alert/effetti).

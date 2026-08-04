@@ -13,7 +13,7 @@ import dns from 'node:dns';
 import net from 'node:net';
 import http from 'node:http';
 import https from 'node:https';
-import { modules as modulesDb, counters, memory, streamers, clips, quotes } from '../db.js';
+import { modules as modulesDb, counters, memory, streamers, clips, quotes, watchtime } from '../db.js';
 import { risolviCategoria } from './categoria.js';
 import { canaleHa } from './accesso.js';
 import * as spotify from './spotify.js';
@@ -774,6 +774,19 @@ export class ModulesEngine {
       } catch (e) { log.debug('followage:', e?.message || e); }
     }
 
+    // ORE GUARDATE: quanto tempo l'utente (o il destinatario "!ore @tizio") ha
+    // passato in live sul canale. Dallo store locale watchtime (nessun I/O Twitch).
+    // Si accumula col tick ore-guardate: serve lo scope moderator:read:chatters,
+    // altrimenti resta a 0 e la variabile è vuota (niente errori in chat).
+    let oreText = '';
+    if (/\$ore\b|\$oreguardate|\$watchtime|\$tempoguardato/.test(s)) {
+      try {
+        const chi = String((ctx.args && ctx.args[0]) || ctx.userLogin || ctx.user || '').replace(/^@/, '').trim();
+        const sec = chi ? watchtime.get(ctx.channel, chi) : 0;
+        if (sec > 0) oreText = this._formattaOre(sec);
+      } catch (e) { log.debug('ore:', e?.message || e); }
+    }
+
     // CHATTER A CASO: un nome pescato tra chi ha scritto di recente (per i giochi:
     // "!abbraccia $chattercaso"). Esclude gli echi del bot e, se possibile, chi
     // ha lanciato il comando (così non pesca se stesso). Tutto dalla memoria locale.
@@ -889,6 +902,11 @@ export class ModulesEngine {
       spettatori: stream?.viewer_count != null ? String(stream.viewer_count) : '',
       // da quanto segue l'utente (o il destinatario) — vuoto se non segue / manca lo scope
       followage: followText,
+      // ore guardate dell'utente (o del destinatario) — vuoto se 0 / manca lo scope
+      ore: oreText,
+      oreguardate: oreText,
+      watchtime: oreText,
+      tempoguardato: oreText,
       // un utente a caso tra chi ha scritto di recente (per i giochi)
       chattercaso: chatterCaso,
       randomchatter: chatterCaso,
@@ -919,6 +937,13 @@ export class ModulesEngine {
     });
 
     return s.slice(0, MAX_TESTO);
+  }
+
+  // Ore guardate in forma leggibile: "3h 20m" oppure "45m".
+  _formattaOre(sec) {
+    const min = Math.max(0, Math.floor((Number(sec) || 0) / 60));
+    const h = Math.floor(min / 60);
+    return h > 0 ? `${h}h ${min % 60}m` : `${min}m`;
   }
 
   _formattaUptime(startedAt) {
