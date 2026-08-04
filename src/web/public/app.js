@@ -93,6 +93,7 @@ function impostazioni() {
     antibot: (s.antibot && typeof s.antibot === 'object') ? s.antibot : {},
     comandiChat: (s.comandiChat && typeof s.comandiChat === 'object') ? s.comandiChat : { attivo: false },
     watchtime: (s.watchtime && typeof s.watchtime === 'object') ? s.watchtime : { attivo: true },
+    comandiBase: (s.comandiBase && typeof s.comandiBase === 'object') ? s.comandiBase : { attivo: true },
     tiktok: (s.tiktok && typeof s.tiktok === 'object') ? s.tiktok : { username: '', attivo: false, annunciaChat: false, messaggio: '', postAttivo: false, postAnnunciaChat: false, postMessaggio: '' },
     youtube: (s.youtube && typeof s.youtube === 'object') ? s.youtube : { canale: '', attivo: false, annunciaChat: false, messaggio: '' },
     instagram: (s.instagram && typeof s.instagram === 'object') ? s.instagram : { userId: '', attivo: false, annunciaChat: false, messaggio: '' },
@@ -5863,7 +5864,7 @@ function pannelloModuli() {
   const imp = impostazioni();
   const cch = imp.comandiChat || {};
   const wt = imp.watchtime || {};
-  const chipsRapido = ['$user', '$touser', '$canale', '$uptime', '$gioco', '$spettatori', '$followage', '$chattercaso', '$ora', '$giocotarget', '$titolo($args)', '$categoria($args)', '$count(morti)', '$random(1,100)']
+  const chipsRapido = ['$user', '$touser', '$canale', '$uptime', '$gioco', '$spettatori', '$followage', '$ore', '$chattercaso', '$ora', '$giocotarget', '$titolo($args)', '$categoria($args)', '$count(morti)', '$random(1,100)']
     .map((v) => `<button type="button" class="chip-var" data-qc="${esc(v)}" title="${esc(tooltipVar(v))}">${esc(v)}</button>`).join('');
   return pannello('moduli', `
     <div class="carta">
@@ -5903,6 +5904,10 @@ function pannelloModuli() {
       <div class="riga-check spazio-sopra">
         <input type="checkbox" id="chk-watchtime" ${wt.attivo !== false ? 'checked' : ''}>
         <label for="chk-watchtime">${L('Conta le ore guardate in chat (comandi', 'Count watched hours in chat (commands', 'Cuenta las horas vistas en el chat (comandos')} <code>!ore</code>, <code>!classificaore</code>)</label>
+      </div>
+      <div class="riga-check spazio-sopra">
+        <input type="checkbox" id="chk-comandi-base" ${(imp.comandiBase?.attivo !== false) ? 'checked' : ''}>
+        <label for="chk-comandi-base">${L('Comandi base pronti:', 'Ready-made base commands:', 'Comandos base listos:')} <code>!so</code>/<code>!shoutout</code>, <code>!followage</code>, <code>!uptime</code> ${L('(non sostituiscono mai i tuoi comandi con lo stesso nome; lo shoutout è per mod/streamer e serve essere in diretta)', "(never replace your own commands with the same name; shoutout is for mods/streamer and needs you to be live)", '(nunca sustituyen tus comandos con el mismo nombre; el shoutout es para mods/streamer y requiere estar en directo)')}</label>
       </div>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-comodita">${L('Salva', 'Save', 'Guardar')}</button></p>
     </div>
@@ -8490,6 +8495,7 @@ function attivaPiattaforma() {
     await salvaImpostazioni({
       comandiChat: { attivo: document.getElementById('chk-comandi-chat').checked },
       watchtime: { attivo: document.getElementById('chk-watchtime').checked },
+      comandiBase: { attivo: document.getElementById('chk-comandi-base').checked },
     }, L('Salvato', 'Saved', 'Guardado'));
   }));
 
@@ -9418,6 +9424,7 @@ const LEGENDA_VAR = [
 
   ['gruppo', 'Le persone', 'People', 'Las personas'],
   ['$followage', 'Da quanto ti segue chi scrive (o !followage @nome)', 'How long the writer has followed (or !followage @name)', 'Cuánto lleva siguiéndote quien escribe (o !followage @nombre)'],
+  ['$ore', 'Ore guardate da chi scrive (o !ore @nome) — serve il conteggio ore acceso', 'Watch time of the writer (or !ore @name) — needs watch-time on', 'Horas vistas de quien escribe (o !ore @nombre) — necesita el conteo activado'],
   ['$chattercaso', 'Un utente a caso tra chi ha scritto di recente', 'A random recent chatter', 'Un usuario al azar entre quienes escribieron'],
   ['$cita', 'Una citazione a caso tra quelle salvate con !cita', 'A random saved quote (from !cita)', 'Una cita al azar de las guardadas con !cita'],
 
