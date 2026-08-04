@@ -1747,8 +1747,40 @@ function pannelloStato() {
       <p class="spazio-sopra"><a class="btn grande" href="/auth/permessi">${L('Ricollega i permessi', 'Reconnect permissions', 'Reconecta los permisos')}</a></p>
     </div>`;
 
+  // Nuovi permessi: HA i permessi base ma al token salvato mancano scope aggiunti
+  // in seguito (shoutout, annunci, ore guardate…). Vanno riconcessi, altrimenti
+  // quelle funzioni falliscono in silenzio. Prompt esplicito, mai errore muto.
+  const SCOPE_ETICHETTE = {
+    'moderator:manage:shoutouts': L('shoutout ufficiali', 'official shoutouts', 'shoutouts oficiales'),
+    'moderator:manage:announcements': L('annunci in chat', 'chat announcements', 'anuncios en el chat'),
+    'moderator:read:chatters': L('ore guardate e fedeltà', 'watch time and loyalty', 'horas vistas y fidelidad'),
+    'channel:manage:vips': L('gestione VIP', 'VIP management', 'gestión de VIP'),
+    'channel:manage:broadcast': L('cambio categoria/titolo', 'category/title change', 'cambio de categoría/título'),
+    'channel:manage:polls': L('sondaggi', 'polls', 'encuestas'),
+    'channel:manage:predictions': L('predizioni', 'predictions', 'predicciones'),
+    'moderator:manage:chat_messages': L('moderazione messaggi', 'message moderation', 'moderación de mensajes'),
+    'moderator:manage:banned_users': L('timeout antispam', 'anti-spam timeouts', 'timeouts antispam'),
+    'channel:manage:redemptions': L('premi a punti canale', 'channel-point rewards', 'recompensas de puntos'),
+    'channel:read:redemptions': L('riscatti punti', 'point redemptions', 'canjes de puntos'),
+    'channel:manage:raids': L('raid', 'raids', 'raids'),
+    'channel:edit:commercial': L('pubblicità', 'ads', 'publicidad'),
+    'channel:read:ads': L('programmazione pubblicità', 'ad schedule', 'programación de anuncios'),
+    'channel:read:stream_key': L('Studio Web (stream key)', 'Web Studio (stream key)', 'Estudio Web (stream key)'),
+    'clips:edit': L('creazione clip', 'clip creation', 'creación de clips'),
+    'channel:read:subscriptions': L('eventi sub', 'sub events', 'eventos de sub'),
+    'moderator:read:followers': L('eventi follow', 'follow events', 'eventos de follow'),
+  };
+  const scManc = (proprietario && stato.permessiOk) ? (stato.scopeMancanti || []) : [];
+  const etichetteScope = scManc.map((s) => SCOPE_ETICHETTE[s]).filter(Boolean);
+  const cardScope = !scManc.length ? '' : `
+    <div class="carta avviso">
+      <h2>${_hIco(ICO.chiave)}${L('Nuovi permessi da concedere', 'New permissions to grant', 'Nuevos permisos por conceder')}</h2>
+      <p>${L('Alcune funzioni sono state aggiunte dopo che avevi collegato il canale: servono nuovi permessi Twitch e finché non li concedi restano spente', 'Some features were added after you connected your channel: they need new Twitch permissions and stay off until you grant them', 'Algunas funciones se añadieron después de conectar tu canal: necesitan nuevos permisos de Twitch y quedan apagadas hasta que los concedas')}${etichetteScope.length ? ` (${etichetteScope.slice(0, 8).join(', ')}${etichetteScope.length > 8 ? '…' : ''})` : ''}.</p>
+      <p class="spazio-sopra"><a class="btn grande" href="/auth/permessi">${L('Aggiorna i permessi', 'Update permissions', 'Actualizar permisos')}</a> <span class="suggerimento">${L('bastano 10 secondi', 'takes 10 seconds', 'tarda 10 segundos')}</span></p>
+    </div>`;
+
   return pannello('stato', `
-    ${bannerProvaHtml()}${bannerMod}${cardChatKO}${cardPermessi}
+    ${bannerProvaHtml()}${bannerMod}${cardChatKO}${cardPermessi}${cardScope}
     <div class="carta">
       <h2>${L('Il tuo bot', 'Your bot', 'Tu bot')}</h2>
       <div class="riga-interruttore spazio-sopra">
