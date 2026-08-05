@@ -1878,8 +1878,10 @@ function pannelloGrafiche() {
 
           <p class="spazio-sopra">
             <button class="btn" id="gr-scarica">${_bIco(ICO.scarica || ICO.pacco)}${L('Scarica PNG', 'Download PNG', 'Descargar PNG')}</button>
+            <button class="btn secondario" id="gr-scarica-video">${_bIco(ICO.video)}${L('Scarica video', 'Download video', 'Descargar vídeo')}</button>
             <button class="btn secondario" id="gr-salva">${L('Salva impostazioni', 'Save settings', 'Guardar ajustes')}</button>
           </p>
+          <p class="suggerimento">${L('Il video (WebM, 5s) ha senso con i temi animati ✨. Il PNG va bene per tutto.', 'The video (WebM, 5s) makes sense with animated themes ✨. The PNG works for everything.', 'El vídeo (WebM, 5s) tiene sentido con los temas animados ✨. El PNG sirve para todo.')}</p>
         </div>
 
         <div class="gr-anteprima">
@@ -2214,6 +2216,35 @@ function initGrafiche() {
   document.getElementById('gr-salva')?.addEventListener('click', () => conErrore(async () => {
     await salvaImpostazioni({ grafiche: c }, L('Grafica salvata ✓', 'Graphic saved ✓', 'Gráfica guardada ✓'));
   }));
+
+  // export VIDEO (WebM) — registra il canvas per 5s (utile coi temi animati)
+  document.getElementById('gr-scarica-video')?.addEventListener('click', (ev) => {
+    const btn = ev.currentTarget;
+    if (typeof MediaRecorder === 'undefined' || !canvas.captureStream) {
+      toast(L('Il tuo browser non supporta l\'export video.', "Your browser doesn't support video export.", 'Tu navegador no soporta la exportación de vídeo.'), 'errore'); return;
+    }
+    if (!grafRAF) frame();   // assicura il movimento durante la registrazione
+    let mime = 'video/webm;codecs=vp9';
+    if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm;codecs=vp8';
+    if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm';
+    let rec;
+    try { rec = new MediaRecorder(canvas.captureStream(30), { mimeType: mime, videoBitsPerSecond: 8_000_000 }); }
+    catch { toast(L('Registrazione non disponibile.', 'Recording unavailable.', 'Grabación no disponible.'), 'errore'); return; }
+    const chunks = [], testo = btn.textContent;
+    rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+    rec.onstop = () => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob(chunks, { type: 'video/webm' }));
+      a.download = `socialbot-${c.tipo}-${(stato?.user?.login || 'canale')}.webm`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 6000);
+      btn.disabled = false; btn.textContent = testo;
+      if (!grafAnimato(c) && grafRAF) { cancelAnimationFrame(grafRAF); grafRAF = null; grafDisegna(canvas, c, 0); }
+    };
+    btn.disabled = true; btn.textContent = L('Registro… 5s', 'Recording… 5s', 'Grabando… 5s');
+    rec.start();
+    setTimeout(() => { try { rec.stop(); } catch { /* già fermo */ } }, 5000);
+  });
 
   ridisegna();
 }
