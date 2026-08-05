@@ -1463,6 +1463,7 @@ input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focu
 .gr-lib-el { padding: 0; border: 1px solid var(--bordo); border-radius: 8px; overflow: hidden; cursor: pointer; background: none; aspect-ratio: 1; }
 .gr-lib-el img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .gr-lib-el:hover { border-color: var(--acc-bordo); }
+.gr-logo-prev { width: 34px; height: 34px; border-radius: 8px; object-fit: cover; vertical-align: middle; border: 1px solid var(--bordo); }
 .gr-tema { padding: .35rem .7rem; border: 1px solid var(--bordo); border-radius: 999px; background: transparent; color: var(--testo-2); font-size: .86rem; cursor: pointer; }
 .gr-tema.on { border-color: var(--acc-bordo); background: var(--acc-tint); color: var(--testo); font-weight: 600; }
 .gr-giorni { display: flex; flex-direction: column; gap: 6px; }
