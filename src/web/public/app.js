@@ -1989,6 +1989,13 @@ function initGrafiche() {
 
 // --- scheda Stato -------------------------------------------------------
 
+// badge di un permesso: verde ✓ se concesso, giallo "da concedere" se manca.
+function badgePermesso(ok, nome) {
+  return ok
+    ? `<span class="badge verde">✓ ${nome}</span>`
+    : `<span class="badge giallo">${nome} ${L('da concedere', 'to grant', 'por conceder')}</span>`;
+}
+
 function pannelloStato() {
   const login = stato.user.login;
   // "in chat adesso" = davvero connesso (non solo unità esistente): usa connessi[]
@@ -2074,16 +2081,18 @@ function pannelloStato() {
 
       ${proprietario ? `
       <p class="spazio-sopra"><strong class="primo-piano">${L('Permessi:', 'Permissions:', 'Permisos:')}</strong>
-        ${stato.permessiOk ? `<span class="badge verde">✓ ${L('chat', 'chat', 'chat')}</span>` : `<span class="badge rosso">✗ ${L('chat', 'chat', 'chat')}</span>`}
-        ${stato.vipOk ? '<span class="badge verde">✓ VIP</span>' : `<span class="badge giallo">${L('VIP da concedere', 'VIP to grant', 'VIP por conceder')}</span>`}
-        ${stato.moderazioneOk ? `<span class="badge verde">✓ ${L('moderazione', 'moderation', 'moderación')}</span>` : `<span class="badge giallo">${L('moderazione da concedere', 'moderation to grant', 'moderación por conceder')}</span>`}
-        ${(!stato.permessiOk || !stato.vipOk || !stato.moderazioneOk)
-          ? `<a class="btn secondario mini" href="/auth/permessi">${L('Concedi i permessi', 'Grant permissions', 'Concede los permisos')}</a>`
-          : ''}
+        ${badgePermesso(stato.permessiOk, L('chat', 'chat', 'chat'))}
+        ${badgePermesso(stato.vipOk, 'VIP')}
+        ${badgePermesso(stato.moderazioneOk, L('moderazione', 'moderation', 'moderación'))}
+        ${badgePermesso(!scManc.includes('moderator:manage:shoutouts'), 'shoutout')}
+        ${badgePermesso(!scManc.includes('moderator:manage:announcements'), L('annunci', 'announcements', 'anuncios'))}
+        ${badgePermesso(!scManc.includes('moderator:read:chatters'), L('ore guardate', 'watch time', 'horas vistas'))}
       </p>
-      <p class="suggerimento">${L('La', 'The', 'El')} <strong class="primo-piano">${L('chat', 'chat', 'chat')}</strong> ${L('serve per far parlare il bot,', 'lets the bot speak,', 'sirve para que el bot hable,')}
-      <strong class="primo-piano">VIP</strong> ${L('per assegnarli a voce/premi,', 'to assign them via voice/rewards,', 'para asignarlos por voz/recompensas,')} <strong class="primo-piano">${L('moderazione', 'moderation', 'moderación')}</strong>
-      ${L('per l\'antispam. Concedendoli abiliti anche VIP e antispam in un colpo solo.', 'for anti-spam. Granting them enables VIP and anti-spam in one go.', 'para el antispam. Al concederlos activas también VIP y antispam de una vez.')}</p>` : `
+      <p class="spazio-sopra"><a class="btn secondario mini" href="/auth/permessi">${_bIco(ICO.chiave)}${L('Aggiorna / ri-concedi i permessi', 'Update / re-grant permissions', 'Actualizar / reconceder permisos')}</a>
+        <span class="suggerimento">— ${L('apre la schermata di Twitch: conferma per aggiornare TUTTI i permessi (anche i nuovi). Le voci in giallo qui sopra sono da concedere.', 'opens the Twitch screen: confirm to update ALL permissions (new ones too). The yellow items above still need granting.', 'abre la pantalla de Twitch: confirma para actualizar TODOS los permisos (también los nuevos). Los ítems en amarillo aún faltan.')}</span></p>
+      <p class="suggerimento">${L('La', 'The', 'El')} <strong class="primo-piano">${L('chat', 'chat', 'chat')}</strong> ${L('fa parlare il bot,', 'lets the bot speak,', 'hace hablar al bot,')}
+      <strong class="primo-piano">shoutout</strong>/<strong class="primo-piano">${L('annunci', 'announcements', 'anuncios')}</strong> ${L('per i comandi ufficiali,', 'for the official commands,', 'para los comandos oficiales,')}
+      <strong class="primo-piano">${L('ore guardate', 'watch time', 'horas vistas')}</strong> ${L('per', 'for', 'para')} <code>!ore</code>. ${L('Se qualcosa non funziona, premi «Aggiorna i permessi».', 'If something doesn\'t work, press «Update permissions».', 'Si algo no funciona, pulsa «Actualizar permisos».')}</p>` : `
       <p class="suggerimento spazio-sopra">${L('Permessi del bot:', 'Bot permissions:', 'Permisos del bot:')} ${stato.permessiOk ? `<span class="badge verde">✓ ${L('chat attiva', 'chat active', 'chat activo')}</span>` : `<span class="badge rosso">${L('chat non attiva', 'chat not active', 'chat no activo')}</span>`} — ${L('li gestisce il proprietario del canale.', 'the channel owner manages them.', 'los gestiona el dueño del canal.')}</p>`}
 
       <p class="suggerimento spazio-sopra">${L('Spegnerlo non cancella nulla: quando lo riaccendi riparte da dove era rimasto.', 'Turning it off deletes nothing: when you turn it back on it resumes where it left off.', 'Apagarlo no borra nada: cuando lo vuelves a encender retoma donde estaba.')}</p>
