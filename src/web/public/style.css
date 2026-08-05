@@ -1458,7 +1458,7 @@ input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focu
 .gr-controlli { flex: 1 1 320px; min-width: 280px; }
 .gr-anteprima { flex: 1 1 300px; min-width: 260px; position: sticky; top: 16px; }
 #gr-canvas { width: 100%; height: auto; max-width: 420px; border-radius: 14px; box-shadow: var(--om-m); display: block; margin: 0 auto; background: #111; }
-.gr-temi { display: flex; flex-wrap: wrap; gap: 6px; }
+.gr-temi, .gr-sfondo-scelte { display: flex; flex-wrap: wrap; gap: 6px; }
 .gr-tema { padding: .35rem .7rem; border: 1px solid var(--bordo); border-radius: 999px; background: transparent; color: var(--testo-2); font-size: .86rem; cursor: pointer; }
 .gr-tema.on { border-color: var(--acc-bordo); background: var(--acc-tint); color: var(--testo); font-weight: 600; }
 .gr-giorni { display: flex; flex-direction: column; gap: 6px; }

@@ -1733,6 +1733,16 @@ const GR_TEMI = {
   minimal:  { nome: 'Minimal',  bg: ['#111113', '#111113'], testo: '#ffffff', tenue: '#a8a8b3', acc: '#ffffff', riga: 'rgba(255,255,255,.10)' },
 };
 const GR_TEMA_IDS = Object.keys(GR_TEMI);
+// immagine di sfondo in cache per il canvas (data URL → <img> precaricata)
+const grafImg = { el: null, pronto: false, src: '' };
+function grafCaricaImg(src, poi) {
+  if (!src) { grafImg.el = null; grafImg.pronto = false; grafImg.src = ''; poi && poi(); return; }
+  if (grafImg.src === src && grafImg.pronto) { poi && poi(); return; }
+  const im = new Image();
+  im.onload = () => { grafImg.el = im; grafImg.pronto = true; grafImg.src = src; poi && poi(); };
+  im.onerror = () => { grafImg.el = null; grafImg.pronto = false; poi && poi(); };
+  im.src = src;
+}
 
 function grafDefault() {
   const canale = stato?.user?.login || 'iltuocanale';
@@ -1740,6 +1750,7 @@ function grafDefault() {
     tipo: 'programmazione', tema: 'notte', accento: '',
     titolo: '', handle: '@' + canale, logo: '🎮',
     gioco: '', sottotitolo: '',
+    sfondo: 'tema', sfondoColore: '', sfondoImg: '',
     giorni: GR_GIORNI.map((g) => ({ g, ora: '21:00', att: '', off: false })),
   };
 }
@@ -1776,6 +1787,22 @@ function pannelloGrafiche() {
         <div class="gr-controlli">
           <label class="campo">${L('Tema', 'Theme', 'Tema')}</label>
           <div class="gr-temi">${temaChips}</div>
+
+          <label class="campo spazio-sopra">${L('Sfondo', 'Background', 'Fondo')}</label>
+          <div class="gr-sfondo-scelte">
+            <button type="button" class="gr-tema${c.sfondo === 'tema' ? ' on' : ''}" data-gr-sfondo="tema">${L('Dal tema', 'From theme', 'Del tema')}</button>
+            <button type="button" class="gr-tema${c.sfondo === 'tinta' ? ' on' : ''}" data-gr-sfondo="tinta">${L('Tinta unita', 'Solid colour', 'Color sólido')}</button>
+            <button type="button" class="gr-tema${c.sfondo === 'immagine' ? ' on' : ''}" data-gr-sfondo="immagine">${L('Immagine', 'Image', 'Imagen')}</button>
+          </div>
+          <div class="riga-flessibile spazio-sopra gr-sfondo-tinta" ${c.sfondo === 'tinta' ? '' : 'hidden'}>
+            <label class="campo" for="gr-sfondo-colore" style="margin:0 8px 0 0">${L('Colore', 'Colour', 'Color')}</label>
+            <input type="color" id="gr-sfondo-colore" value="${esc(c.sfondoColore || '#141225')}">
+          </div>
+          <div class="gr-sfondo-img spazio-sopra" ${c.sfondo === 'immagine' ? '' : 'hidden'}>
+            <input type="file" id="gr-sfondo-file" accept="image/*">
+            <p class="suggerimento">${L('L\'immagine viene ridimensionata e resta nel tuo canale. Consiglio: usa una foto poco contrastata così il testo resta leggibile.', 'The image is resized and stays in your channel. Tip: use a low-contrast photo so the text stays readable.', 'La imagen se redimensiona y queda en tu canal. Consejo: usa una foto poco contrastada para que el texto se lea bien.')}
+              ${c.sfondoImg ? `· <a href="#" id="gr-sfondo-togli">${L('togli immagine', 'remove image', 'quitar imagen')}</a>` : ''}</p>
+          </div>
 
           <div class="riga-flessibile spazio-sopra">
             <div style="flex:1">
@@ -1852,10 +1879,23 @@ function grafDisegna(canvas, c) {
   canvas.width = W; canvas.height = H;
   const S = 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
 
-  // sfondo: gradiente diagonale + alone d'accento
-  const g = ctx.createLinearGradient(0, 0, W, H);
-  g.addColorStop(0, tema.bg[0]); g.addColorStop(1, tema.bg[1]);
-  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  // sfondo: immagine (cover) · tinta unita · gradiente del tema. Poi, per tinta
+  // e immagine, un velo scuro leggero perché il testo resti leggibile.
+  if (c.sfondo === 'immagine' && grafImg.el && grafImg.pronto) {
+    const iw = grafImg.el.naturalWidth || 1, ih = grafImg.el.naturalHeight || 1;
+    const s = Math.max(W / iw, H / ih);           // cover
+    const dw = iw * s, dh = ih * s;
+    ctx.drawImage(grafImg.el, (W - dw) / 2, (H - dh) / 2, dw, dh);
+    ctx.fillStyle = 'rgba(8,6,18,.42)'; ctx.fillRect(0, 0, W, H);
+  } else if (c.sfondo === 'tinta') {
+    ctx.fillStyle = /^#[0-9a-fA-F]{6}$/.test(c.sfondoColore || '') ? c.sfondoColore : '#141225';
+    ctx.fillRect(0, 0, W, H);
+  } else {
+    const g = ctx.createLinearGradient(0, 0, W, H);
+    g.addColorStop(0, tema.bg[0]); g.addColorStop(1, tema.bg[1]);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  }
+  // alone d'accento (sempre, dà profondità)
   const alone = ctx.createRadialGradient(W * 0.85, H * 0.1, 40, W * 0.85, H * 0.1, W * 0.8);
   alone.addColorStop(0, acc + '44'); alone.addColorStop(1, acc + '00');
   ctx.fillStyle = alone; ctx.fillRect(0, 0, W, H);
@@ -1962,6 +2002,39 @@ function initGrafiche() {
   const bind = (id, k) => document.getElementById(id)?.addEventListener('input', (e) => { c[k] = e.target.value; ridisegna(); });
   bind('gr-titolo', 'titolo'); bind('gr-handle', 'handle'); bind('gr-logo', 'logo');
   bind('gr-accento', 'accento'); bind('gr-gioco', 'gioco'); bind('gr-sottotitolo', 'sottotitolo');
+
+  // ── sfondo: dal tema / tinta unita / immagine caricata
+  if (c.sfondo === 'immagine' && c.sfondoImg) grafCaricaImg(c.sfondoImg, ridisegna);
+  const mostraSfondo = () => {
+    document.querySelector('.gr-sfondo-tinta')?.toggleAttribute('hidden', c.sfondo !== 'tinta');
+    document.querySelector('.gr-sfondo-img')?.toggleAttribute('hidden', c.sfondo !== 'immagine');
+  };
+  document.querySelectorAll('[data-gr-sfondo]').forEach((b) => b.addEventListener('click', () => {
+    c.sfondo = b.dataset.grSfondo;
+    document.querySelectorAll('[data-gr-sfondo]').forEach((x) => x.classList.toggle('on', x === b));
+    mostraSfondo();
+    if (c.sfondo === 'immagine' && c.sfondoImg) grafCaricaImg(c.sfondoImg, ridisegna); else ridisegna();
+  }));
+  document.getElementById('gr-sfondo-colore')?.addEventListener('input', (e) => { c.sfondoColore = e.target.value; ridisegna(); });
+  document.getElementById('gr-sfondo-file')?.addEventListener('change', (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    const im = new Image();
+    im.onload = () => {
+      // ridimensiona a max 1280px lato lungo → JPEG q0.82 (leggero, si salva nelle impostazioni)
+      const max = 1280, s = Math.min(1, max / Math.max(im.naturalWidth, im.naturalHeight));
+      const cv = document.createElement('canvas');
+      cv.width = Math.round(im.naturalWidth * s); cv.height = Math.round(im.naturalHeight * s);
+      cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
+      c.sfondoImg = cv.toDataURL('image/jpeg', 0.82);
+      grafCaricaImg(c.sfondoImg, ridisegna);
+    };
+    im.onerror = () => toast(L('Immagine non valida', 'Invalid image', 'Imagen no válida'), 'errore');
+    im.src = URL.createObjectURL(f);
+  });
+  document.getElementById('gr-sfondo-togli')?.addEventListener('click', (e) => {
+    e.preventDefault(); c.sfondoImg = ''; grafCaricaImg('', ridisegna);
+  });
 
   document.querySelectorAll('.gr-riga-giorno').forEach((row) => {
     const i = Number(row.dataset.grI);
