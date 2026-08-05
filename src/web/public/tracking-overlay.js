@@ -30,7 +30,10 @@
   // leggeri in OBS.
   const human = new HumanClass({
     backend: 'webgl',
-    modelBasePath: 'https://cdn.jsdelivr.net/npm/@vladmandic/human-models@3/models/',
+    // Modelli dal repo UFFICIALE di Human (set completo, incl. handlandmark-full):
+    // il vecchio path su jsdelivr (@vladmandic/human-models@3) dava 403, i modelli
+    // non si caricavano e warmup crashava con "reading 'inputs'".
+    modelBasePath: 'https://vladmandic.github.io/human-models/models/',
     cacheModels: true,
     filter: { enabled: false },
     face: {
@@ -288,7 +291,9 @@
     try {
       setStato('carico i modelli…');
       await human.load();
-      await human.warmup();
+      // warmup è solo un pre-riscaldamento: se inciampa, la prima detect scalda da
+      // sé — non deve impedire l'avvio.
+      try { await human.warmup(); } catch (e) { /* pazienza: scalda alla prima detect */ }
       setStato('chiedo la webcam…');
       if (!await avviaWebcam()) return;   // errore già mostrato, con la soluzione
       setStato('attivo');
