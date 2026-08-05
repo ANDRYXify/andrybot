@@ -447,6 +447,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
         || VETRINA.has(req.path) || req.path === '/api/me'
         || req.path.startsWith('/api/abbonamento/')   // piani/checkout/portale: auth propria
         || req.path.startsWith('/overlay/') || req.path.startsWith('/o/')   // overlay OBS + link "belli"
+        || req.path.startsWith('/tracking/')       // overlay TRACKING in OBS (pagina + stream): protetto dalla chiave
+        || req.path.startsWith('/api/tracking/')   // gesti/say dell'overlay tracking (chiave overlay; /url resta requireLogin)
         || req.path.startsWith('/u/')        // link-page pubblica: la serviamo noi dal DB
         || req.path.startsWith('/assets/')   // bundle JS/CSS della link-page (proxy verso Vercel)
         || req.path === '/api/streamer-verify'   // API JSON della link-page (proxy verso Vercel)
