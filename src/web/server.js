@@ -2534,12 +2534,20 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       const giorni = Array.isArray(gr.giorni) ? gr.giorni.slice(0, 7).map((x) => ({
         ora: str(x?.ora, 5), att: str(x?.att, 40), off: !!x?.off,
       })) : [];
+      // sfondo: 'tema' (gradiente del tema) | 'tinta' (colore pieno) | 'immagine'
+      // (data URL caricata, già ridimensionata dal client; cap per non gonfiare
+      // le impostazioni). Le immagini restano nel canale; la condivisione
+      // pubblica passa dalla libreria effetti.
+      const sfImg = String(gr.sfondoImg || '');
       out.grafiche = {
         tipo: ['programmazione', 'live'].includes(gr.tipo) ? gr.tipo : 'programmazione',
         tema: str(gr.tema, 20),
         accento: /^#[0-9a-fA-F]{6}$/.test(String(gr.accento || '')) ? String(gr.accento) : '',
         titolo: str(gr.titolo, 40), handle: str(gr.handle, 40), logo: str(gr.logo, 8),
         gioco: str(gr.gioco, 40), sottotitolo: str(gr.sottotitolo, 60),
+        sfondo: ['tema', 'tinta', 'immagine'].includes(gr.sfondo) ? gr.sfondo : 'tema',
+        sfondoColore: /^#[0-9a-fA-F]{6}$/.test(String(gr.sfondoColore || '')) ? String(gr.sfondoColore) : '',
+        sfondoImg: /^data:image\/(png|jpeg|webp);base64,/.test(sfImg) && sfImg.length <= 700000 ? sfImg : '',
         giorni,
       };
     }
