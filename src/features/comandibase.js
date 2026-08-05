@@ -52,13 +52,24 @@ const nomeOk = (s) => /^[a-z0-9_]{2,25}$/.test(s);
 // Ritorna true se il messaggio era un comando base (gestito), false altrimenti.
 export async function tryComando(helix, msg, say) {
   try {
-    if (!msg || msg.isSelf || !helix) return false;
+    if (!msg || msg.isSelf) return false;
     const testo = String(msg.text || '').trim();
     if (!testo.startsWith('!')) return false;
     const ch = msg.channel;
-    if (!attivo(ch)) return false;
     const parti = testo.slice(1).split(/\s+/);
     const cmd = (parti.shift() || '').toLowerCase();
+
+    // TRASPARENZA IA (Reg. UE 2024/1689 "AI Act", art. 50): chiunque interagisce
+    // deve poter sapere che sta parlando con un sistema automatico/IA. Questa
+    // dichiarazione è SEMPRE disponibile (non dipende dall'opt-out dei comandi
+    // base); se lo streamer ha definito un suo !bot, vince il suo.
+    if (cmd === 'bot' || cmd === 'ia' || cmd === 'ai' || cmd === 'socialbot') {
+      if (personalizzato(ch, cmd)) return false;
+      say(`🤖 Sono un assistente automatico: alcune risposte in chat sono generate da un'intelligenza artificiale (SocialBot). Gestito da @${ch} · socialbot.live`);
+      return true;
+    }
+
+    if (!attivo(ch) || !helix) return false;
 
     // ---- SHOUTOUT ufficiale: !so / !shoutout <canale> (solo mod/broadcaster) ----
     if (cmd === 'so' || cmd === 'shoutout') {
