@@ -132,7 +132,41 @@
     };
   }
 
-  const GIOCHI = { mima: giocoMima, reaction: giocoReaction, nonridere: giocoNonRidere };
+  // Battaglia con la CHAT: gli spettatori scrivono !sfida <gesto>, tu devi rifarlo
+  // in 5s. Riesci → punto tuo; scade → punto alla chat. Primo a 5 vince.
+  function giocoBattaglia() {
+    let puntiTu = 0, puntiChat = 0, sfida = null, colpito = 0;
+    const coda = [], META = 5;
+    return {
+      nome: 'Battaglia',
+      sfida(c) {
+        const g = GESTI.some((x) => x.id === c.gesto) ? c.gesto : '';
+        if (g && coda.length < 12) coda.push({ gesto: g, user: String(c.user || 'chat').slice(0, 20) });
+      },
+      tick({ g, dt, ctx, W, H }) {
+        if (!sfida && coda.length) { sfida = { ...coda.shift(), tScad: nowMs() + 5000 }; colpito = 0; }
+        if (sfida) {
+          if (g === sfida.gesto) { colpito += dt; if (colpito >= 280) { puntiTu++; try { T.annuncia && T.annuncia('💪 Battuto @' + sfida.user + '! Tu ' + puntiTu + ' – Chat ' + puntiChat); } catch { /* niente */ } sfida = null; } }
+          else colpito = 0;
+          if (sfida && sfida.tScad - nowMs() <= 0) { puntiChat++; try { T.annuncia && T.annuncia('😈 @' + sfida.user + ' ti frega! Tu ' + puntiTu + ' – Chat ' + puntiChat); } catch { /* niente */ } sfida = null; }
+        }
+        testo(ctx, '⚔️ TU ' + puntiTu + '  –  ' + puntiChat + ' CHAT', W / 2, H * 0.14, Math.round(H * 0.06), '#fff');
+        if (sfida) {
+          const b = byId(sfida.gesto);
+          testo(ctx, '@' + sfida.user + ' ti sfida:', W / 2, H * 0.34, Math.round(H * 0.048), '#c4b5fd');
+          testo(ctx, b.emoji, W / 2, H * 0.53, Math.round(H * 0.22), '#fff');
+          anello(ctx, W / 2, H * 0.53, Math.round(H * 0.17), Math.max(0, (sfida.tScad - nowMs()) / 5000), '#22d3ee');
+          if (colpito > 0) anello(ctx, W / 2, H * 0.53, Math.round(H * 0.13), colpito / 280, '#34d399');
+        } else {
+          testo(ctx, 'La chat ti sfida — scrivete:', W / 2, H * 0.44, Math.round(H * 0.046), '#c4b5fd');
+          testo(ctx, '!sfida ✌️ 👍 ✋ ☝️ ✊', W / 2, H * 0.56, Math.round(H * 0.06), '#e5e7eb');
+        }
+        if (puntiTu >= META || puntiChat >= META) vaiFine(puntiTu >= META ? 'HAI VINTO! 💪' : 'VINCE LA CHAT 😈', puntiTu + '–' + puntiChat, '');
+      },
+    };
+  }
+
+  const GIOCHI = { mima: giocoMima, reaction: giocoReaction, nonridere: giocoNonRidere, battaglia: giocoBattaglia };
   function avviaGioco(id) {
     const f = GIOCHI[id]; if (!f) return;
     G = f(); modo = 'gioca';

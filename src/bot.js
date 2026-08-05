@@ -14,6 +14,7 @@ import * as games from './features/games.js';
 import * as giveaway from './features/giveaway.js';
 import * as watchtime from './features/watchtime.js';
 import * as comandibase from './features/comandibase.js';
+import * as trackinggiochi from './features/trackinggiochi.js';
 import * as comandichat from './features/comandichat.js';
 import * as sondaggi from './features/sondaggi.js';
 import * as songrequest from './features/songrequest.js';
@@ -487,6 +488,10 @@ export class BotManager {
     // sopra ai comandi/Moduli creati dallo streamer (quelli vincono).
     comandibase.tryComando(this.helix, msg, (t) => this.say(msg.channel, t))
       .catch((e) => log.error(`#${login} comandi base:`, e?.message || e));
+    // minigiochi webcam (!mima/!nonridere/!reaction/!battaglia, !sfida): avviano
+    // i giochi nell'overlay tracking. Deterministico; solo se il tracking è acceso.
+    try { trackinggiochi.tryComando(this.effects, msg, (t) => this.say(msg.channel, t)); }
+    catch (e) { log.error(`#${login} giochi tracking:`, e?.message || e); }
     // gestione comandi dalla chat (!comando aggiungi/…): opt-in, solo se accesa
     try { comandichat.tryComando(msg, (t) => this.say(msg.channel, t)); }
     catch (e) { log.error(`#${login} comandi-chat:`, e?.message || e); }

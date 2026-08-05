@@ -774,6 +774,18 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     req.on('close', () => effects.removeClient(login, res));
   });
 
+  // flusso SSE del TRACKING: canale a parte per i comandi dei minigiochi (avvio da
+  // chat, sfide della chat). Lo apre l'overlay tracking; protetto dalla chiave.
+  app.get('/tracking/:login/stream', (req, res) => {
+    if (!chiaveOk(req)) return notFound(res);
+    const login = String(req.params.login).toLowerCase();
+    res.set({ 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache, no-transform', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
+    res.flushHeaders?.();
+    res.write(': connesso\n\n');
+    effects.addTrkClient(login, res);
+    req.on('close', () => effects.removeTrkClient(login, res));
+  });
+
   // i file media di un effetto (serviti dal disco)
   app.get('/overlay/:login/media/:file', (req, res) => {
     if (!chiaveOk(req)) return notFound(res);
