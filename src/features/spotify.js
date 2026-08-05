@@ -131,11 +131,11 @@ function scegliMigliore(items, q) {
   return best;
 }
 
-// Cerca un brano → { uri, nome, artisti } o null. market=from_token: solo brani
-// riproducibili nel paese dello streamer e con ranking sensato (senza, Spotify
-// restituisce spesso risultati strani/non riproducibili → "canzone sbagliata").
+// Cerca un brano → { uri, nome, artisti } o null. NB: niente market=from_token —
+// Spotify l'ha DEPRECATO e ora la ricerca risponde 400 (Invalid market), quindi
+// non trovava PIÙ nulla. La scelta del brano giusto la fa già scegliMigliore().
 export async function cerca(login, q) {
-  const r = await apiCall(login, 'GET', '/search', { query: { q, type: 'track', limit: 6, market: 'from_token' } });
+  const r = await apiCall(login, 'GET', '/search', { query: { q, type: 'track', limit: 6 } });
   const t = scegliMigliore(r.dati?.tracks?.items || [], q);
   return t ? { uri: t.uri, nome: t.name, artisti: (t.artists || []).map((a) => a.name).join(', ') } : null;
 }
@@ -144,7 +144,7 @@ export async function cerca(login, q) {
 // disambiguare quando più canzoni hanno lo stesso titolo ("intendi 1, 2 o 3?").
 export async function cercaMulti(login, q, n = 5) {
   const lim = Math.max(1, Math.min(10, Math.round(Number(n)) || 5));
-  const r = await apiCall(login, 'GET', '/search', { query: { q, type: 'track', limit: lim, market: 'from_token' } });
+  const r = await apiCall(login, 'GET', '/search', { query: { q, type: 'track', limit: lim } });
   const items = r.dati?.tracks?.items || [];
   return items.map((t) => ({
     uri: t.uri,

@@ -620,7 +620,7 @@ export class BotManager {
       this._premioRiscattato(channel, data);
       // richiesta musicale a punti canale: se il premio è quello configurato,
       // il testo del riscatto diventa una canzone in coda su Spotify.
-      songrequest.perRedemptionMusica(channel, data, (t) => this.say(channel, t)).catch(() => {});
+      songrequest.perRedemptionMusica(this.helix, channel, data, (t) => this.say(channel, t)).catch(() => {});
       // penitenza a punti canale: vieta una parola/lettera allo streamer a tempo.
       try { this.penitenze?.daRiscatto(channel, data); } catch (e) { log.debug(`#${channel} penitenza:`, e?.message || e); }
       // contatore a punti canale: riscatto → +step (annuncio + overlay OBS).

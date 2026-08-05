@@ -185,7 +185,7 @@ export async function trySongRequest(msg, say) {
 // canale è in modo "punti" e il premio riscattato ha il nome configurato, il
 // testo del riscatto (user_input) è la canzone → la mettiamo in coda.
 // Ritorna true se ha gestito il riscatto (per non doppiarlo con altri alert).
-export async function perRedemptionMusica(channel, data, say) {
+export async function perRedemptionMusica(helix, channel, data, say) {
   try {
     const cfg = configMusica(channel);
     if (cfg.modo !== 'punti' || !cfg.premio) return false;
@@ -193,10 +193,25 @@ export async function perRedemptionMusica(channel, data, say) {
     const titolo = String(data?.reward?.title || '').trim().toLowerCase();
     if (titolo !== cfg.premio.toLowerCase()) return false;
     const chi = data?.user_name || data?.user_login || 'qualcuno';
+    const rewardId = data?.reward?.id, redId = data?.id;
+    // FULFILLED (consegnato) se il brano entra in coda, CANCELED (=rimborsa i
+    // punti) se non lo troviamo o fallisce. Funziona per i premi gestibili
+    // dall'app; con un premio creato a mano da Twitch, Twitch non lo consente e
+    // il rimborso non avviene (in quel caso non promettiamo un rimborso).
+    const segna = async (stato) => {
+      if (!helix?.aggiornaRedemption || !rewardId || !redId) return false;
+      try { return await helix.aggiornaRedemption(channel, rewardId, redId, stato); }
+      catch { return false; }
+    };
     const q = taglia(data?.user_input);
-    if (!q) { say(`🎵 ${chi}, scrivi il nome della canzone nel riscatto la prossima volta!`); return true; }
+    if (!q) {
+      const rimb = await segna('CANCELED');
+      say(`🎵 ${chi}, scrivi il nome della canzone nel riscatto!${rimb ? ' Punti rimborsati.' : ''}`);
+      return true;
+    }
     const esito = await accoda(channel, q, `🎵 ${chi} ha messo in coda: `);
-    say(esito.msg);
+    if (esito.ok) { await segna('FULFILLED'); say(esito.msg); }
+    else { const rimb = await segna('CANCELED'); say(esito.msg + (rimb ? ' Punti rimborsati.' : '')); }
     return true;
   } catch (e) {
     log.error('perRedemptionMusica:', e?.message || e);
