@@ -1773,6 +1773,30 @@ function grafDefault() {
     giorni: GR_GIORNI.map((g) => ({ g, ora: '21:00', att: '', off: false })),
   };
 }
+// Comprime un'immagine in un data URL JPEG che sta SOTTO al limite del server
+// (il canale accetta sfondi fino a 700KB: puntiamo più in basso così non viene
+// mai scartato in silenzio). Prima abbassa la qualità, poi rimpicciolisce.
+function grafDataUrlSotto(im, capBytes, maxLato) {
+  let lato = maxLato;
+  for (let giro = 0; giro < 6; giro++) {
+    const s = Math.min(1, lato / Math.max(im.naturalWidth, im.naturalHeight));
+    const cv = document.createElement('canvas');
+    cv.width = Math.max(1, Math.round(im.naturalWidth * s));
+    cv.height = Math.max(1, Math.round(im.naturalHeight * s));
+    cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
+    for (const q of [0.82, 0.72, 0.62, 0.52]) {
+      const url = cv.toDataURL('image/jpeg', q);
+      if (url.length <= capBytes) return url;
+    }
+    lato = Math.round(lato * 0.8);   // ancora troppo pesante: riduci e riprova
+  }
+  const cv = document.createElement('canvas');
+  const s = Math.min(1, 640 / Math.max(im.naturalWidth, im.naturalHeight));
+  cv.width = Math.max(1, Math.round(im.naturalWidth * s)); cv.height = Math.max(1, Math.round(im.naturalHeight * s));
+  cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
+  return cv.toDataURL('image/jpeg', 0.5);
+}
+
 function grafConfig() {
   const s = impostazioni().grafiche;
   const d = grafDefault();
@@ -2170,12 +2194,9 @@ function initGrafiche() {
     if (!f) return;
     const im = new Image();
     im.onload = () => {
-      // ridimensiona a max 1280px lato lungo → JPEG q0.82 (leggero, si salva nelle impostazioni)
-      const max = 1280, s = Math.min(1, max / Math.max(im.naturalWidth, im.naturalHeight));
-      const cv = document.createElement('canvas');
-      cv.width = Math.round(im.naturalWidth * s); cv.height = Math.round(im.naturalHeight * s);
-      cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
-      c.sfondoImg = cv.toDataURL('image/jpeg', 0.82);
+      // max 1280px lato lungo, e SEMPRE sotto ~680KB (sotto il cap del server),
+      // così il salvataggio non viene rifiutato né lo sfondo scartato in silenzio.
+      c.sfondoImg = grafDataUrlSotto(im, 680000, 1280);
       grafCaricaImg(c.sfondoImg, ridisegna);
     };
     im.onerror = () => toast(L('Immagine non valida', 'Invalid image', 'Imagen no válida'), 'errore');
