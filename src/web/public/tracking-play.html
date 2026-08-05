@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>SocialBot · Overlay giochi</title>
+  <style>
+    /* Trasparente: in OBS si mette SOPRA la tua facecam nativa. Nessuna webcam qui:
+       i gesti/espressioni arrivano dal "rilevatore" via il canale tracking. */
+    html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+    #fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    #stato {
+      position: absolute; left: 12px; bottom: 12px; z-index: 3;
+      font: 600 14px/1.35 system-ui, sans-serif; color: #fff; opacity: .85;
+      background: rgba(0,0,0,.55); padding: 7px 11px; border-radius: 10px; max-width: 680px;
+    }
+    body.pronto #stato { display: none; }
+  </style>
+</head>
+<body>
+  <canvas id="fx"></canvas>
+  <div id="stato">SocialBot giochi · in attesa del rilevatore…</div>
+  <!-- SB_TRACKING va definito PRIMA di tracking-games.js: quindi il motore lo
+       carichiamo dinamicamente in fondo, dopo aver creato il ponte. -->
+  <script>
+    (() => {
+      'use strict';
+      const params = new URLSearchParams(location.search);
+      const login = decodeURIComponent((location.pathname.split('/').filter(Boolean).pop() || '')).toLowerCase();
+      const key = params.get('key') || '';
+      const fx = document.getElementById('fx');
+      const ctx = fx.getContext('2d');
+      const statoEl = document.getElementById('stato');
+      const setStato = (t) => { if (statoEl) statoEl.textContent = 'SocialBot giochi · ' + t; };
+
+      let gameFn = null, cmdFn = null;
+      let lastGesto = '', lastEmo = '';
+
+      // annuncio in chat (punteggi/esiti) via il bot: solo testo, ripulito lato server.
+      const ultimoSay = { t: 0 };
+      async function annuncia(testo) {
+        if (!key || !testo) return;
+        const now = performance.now();
+        if (now - ultimoSay.t < 3000) return;
+        ultimoSay.t = now;
+        try {
+          await fetch(`/api/tracking/${encodeURIComponent(login)}/say?key=${encodeURIComponent(key)}`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ testo: String(testo).slice(0, 200) }), keepalive: true,
+          });
+        } catch { /* rete: pazienza */ }
+      }
+
+      // Ponte per tracking-games.js: qui i "gesti/volti" arrivano dallo stato SSE.
+      window.SB_TRACKING = {
+        registraMinigioco(fn) { gameFn = typeof fn === 'function' ? fn : null; },
+        fermaMinigioco() { gameFn = null; },
+        onComando(fn) { cmdFn = typeof fn === 'function' ? fn : null; },
+        _comando(c) { if (cmdFn) { try { cmdFn(c); } catch { /* niente */ } } },
+        annuncia,
+        rilevaGesto(h) { return (h && h.g) || ''; },
+        emozione(f) { return (f && f.emo) || ''; },
+      };
+
+      // Canale di ritorno: stato del rilevatore (gesto/emozione) + comandi (chat).
+      function connetti() {
+        if (!key) { setStato('chiave mancante nel link'); return; }
+        try {
+          const es = new EventSource(`/tracking/${encodeURIComponent(login)}/stream?key=${encodeURIComponent(key)}`);
+          es.onopen = () => setStato('collegato — pronto');
+          es.onmessage = (m) => {
+            let d; try { d = JSON.parse(m.data); } catch { return; }
+            if (!d) return;
+            if (d.azione === 'stato') { lastGesto = d.gesto || ''; lastEmo = d.emozione || ''; document.body.classList.add('pronto'); }
+            else if (cmdFn) { try { cmdFn(d); } catch { /* niente */ } }
+          };
+          es.onerror = () => { /* riprova da solo */ };
+        } catch { setStato('impossibile collegarsi'); }
+      }
+
+      function ridimensiona() { fx.width = window.innerWidth || 1280; fx.height = window.innerHeight || 720; }
+      window.addEventListener('resize', ridimensiona);
+      ridimensiona();
+
+      function loop() {
+        const W = fx.width, H = fx.height;
+        ctx.clearRect(0, 0, W, H);
+        if (gameFn) { try { gameFn({ hands: lastGesto ? [{ g: lastGesto }] : [], faces: lastEmo ? [{ emo: lastEmo }] : [], ctx, W, H }); } catch { /* niente */ } }
+        requestAnimationFrame(loop);
+      }
+
+      // Carica il motore giochi DOPO aver definito SB_TRACKING, poi avvia.
+      const s = document.createElement('script');
+      s.src = '/tracking-games.js';
+      s.onload = () => { connetti(); loop(); };
+      s.onerror = () => setStato('motore giochi non caricato');
+      document.head.appendChild(s);
+    })();
+  </script>
+</body>
+</html>

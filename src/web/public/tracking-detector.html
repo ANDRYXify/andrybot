@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>SocialBot · Rilevatore webcam</title>
+  <style>
+    /* Questa pagina va aperta in CHROME (non in OBS): usa la tua webcam per leggere
+       gesti ed espressioni e li manda all'overlay giochi in OBS. Tienila aperta
+       (può stare in secondo piano). La tua facecam in OBS resta quella nativa. */
+    html, body { margin: 0; height: 100%; background: #0b0b12; overflow: hidden; }
+    #wrap { position: fixed; inset: 0; }
+    #cam, #fx { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    #fx { pointer-events: none; }
+    #barra {
+      position: absolute; left: 0; right: 0; top: 0; z-index: 4;
+      font: 700 14px/1.4 system-ui, sans-serif; color: #fff;
+      background: linear-gradient(180deg, rgba(0,0,0,.75), rgba(0,0,0,0)); padding: 10px 14px 22px;
+    }
+    #barra b { color: #c4b5fd; }
+    #stato {
+      position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 3; max-width: 720px;
+      font: 600 15px/1.35 system-ui, sans-serif; color: #fff; opacity: .95;
+      background: rgba(0,0,0,.62); padding: 8px 12px; border-radius: 10px;
+      white-space: normal; word-break: break-word;
+    }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <video id="cam" autoplay muted playsinline></video>
+    <canvas id="fx"></canvas>
+    <div id="barra">🎥 <b>Rilevatore SocialBot</b> — tieni aperta questa scheda in Chrome. Legge gesti/espressioni e li manda all'overlay giochi in OBS. La tua facecam in OBS resta la tua (nativa).</div>
+    <div id="stato">SocialBot tracking · avvio…</div>
+  </div>
+  <!-- modalità RILEVATORE: manda lo stato all'overlay giochi (niente giochi locali) -->
+  <script>window.SB_INVIA_STATO = true;</script>
+  <script src="https://cdn.jsdelivr.net/npm/@vladmandic/human@3/dist/human.js"></script>
+  <script src="/tracking-overlay.js"></script>
+</body>
+</html>

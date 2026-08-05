@@ -6041,13 +6041,27 @@ function pannelloEffetti() {
         <input type="checkbox" id="trk-attivo" ${trk.attivo !== false ? 'checked' : ''}>
         <label for="trk-attivo">${L('Attiva il tracking webcam', 'Enable webcam tracking', 'Activa el tracking de webcam')}</label>
       </div>
-      <label class="campo spazio-sopra">${L('Link per OBS (Origine browser)', 'OBS link (Browser Source)', 'Enlace para OBS (Fuente de navegador)')}</label>
+      <h4 class="spazio-sopra">${L('Setup consigliato — facecam nativa, niente ritardo', 'Recommended setup — native facecam, no delay', 'Setup recomendado — facecam nativa, sin retardo')}</h4>
+      <p class="suggerimento">${L('La tua webcam resta la sorgente NATIVA in OBS (qualità e latenza intatte). Servono due link:', 'Your webcam stays the NATIVE source in OBS (quality and latency intact). Two links needed:', 'Tu webcam sigue siendo la fuente NATIVA en OBS (calidad y latencia intactas). Hacen falta dos enlaces:')}</p>
+      <label class="campo spazio-sopra">${L('1) Rilevatore — apri in Chrome e tieni la scheda aperta (legge i gesti dalla webcam)', '1) Detector — open in Chrome and keep the tab open (reads gestures from the webcam)', '1) Detector — ábrelo en Chrome y deja la pestaña abierta (lee los gestos de la webcam)')}</label>
       <div class="riga-flessibile">
-        <input type="text" id="trk-url" class="campo-largo" readonly value="${L('caricamento…', 'loading…', 'cargando…')}">
-        <button class="btn secondario" id="trk-copia">${_bIco(ICO.pacco)}${L('Copia', 'Copy', 'Copiar')}</button>
+        <input type="text" id="trk-url-detect" class="campo-largo" readonly value="${L('caricamento…', 'loading…', 'cargando…')}">
+        <button class="btn secondario" data-trk-copy="trk-url-detect">${_bIco(ICO.pacco)}${L('Copia', 'Copy', 'Copiar')}</button>
       </div>
-      <p class="suggerimento">${L('In OBS aggiungi una', 'In OBS add a', 'En OBS añade una')} <strong>${L('Origine browser', 'Browser Source', 'Fuente de navegador')}</strong> ${L('con questo link e la stessa larghezza/altezza della tua webcam (es. 1280×720). Alla prima apertura consenti l\'accesso alla webcam.', 'with this link and the same width/height as your webcam (e.g. 1280×720). On first open, allow webcam access.', 'con este enlace y el mismo ancho/alto que tu webcam (p. ej. 1280×720). En la primera apertura permite el acceso a la webcam.')}</p>
-      <p class="avviso-rosso">${L('Importante:', 'Important:', 'Importante:')} ${L('questo overlay', 'this overlay', 'este overlay')} <strong>${L('È GIÀ la tua webcam', 'IS your webcam', 'YA es tu webcam')}</strong> (${L('la mostra con gli effetti sopra', 'it shows it with effects on top', 'la muestra con los efectos encima')}). ${L('NON aggiungere anche una sorgente «Dispositivo di acquisizione video» con la stessa webcam: si occuperebbero a vicenda.', 'Do NOT also add a «Video Capture Device» source with the same webcam: they would block each other.', 'NO añadas también una fuente «Dispositivo de captura de vídeo» con la misma webcam: se bloquearían entre sí.')} ${L('La fonte browser di OBS spesso NEGA la fotocamera (concederla in un altro browser non serve). Se resta nera/bloccata: apri questo link in Chrome a tutto schermo e portalo in OBS con «Cattura finestra» — è la strada che funziona sempre. In alternativa, su OBS 30.1+: Proprietà della fonte → «Autorizzazioni pagina» → consenti la fotocamera.', 'OBS\'s browser source often DENIES the camera (granting it in another browser doesn\'t help). If it stays black/stuck: open this link in Chrome full-screen and bring it into OBS with «Window Capture» — that always works. Alternatively, on OBS 30.1+: source Properties → «Page permissions» → allow the camera.', 'La fuente de navegador de OBS a menudo DENIEGA la cámara (permitirla en otro navegador no sirve). Si queda en negro/bloqueada: abre este enlace en Chrome a pantalla completa y llévalo a OBS con «Captura de ventana» — así funciona siempre. Alternativa, en OBS 30.1+: Propiedades de la fuente → «Permisos de página» → permite la cámara.')}</p>
+      <label class="campo spazio-sopra">${L('2) Overlay giochi — in OBS come Origine browser TRASPARENTE, sopra la tua webcam', '2) Games overlay — in OBS as a TRANSPARENT Browser Source, on top of your webcam', '2) Overlay de juegos — en OBS como Fuente de navegador TRANSPARENTE, encima de tu webcam')}</label>
+      <div class="riga-flessibile">
+        <input type="text" id="trk-url-play" class="campo-largo" readonly value="${L('caricamento…', 'loading…', 'cargando…')}">
+        <button class="btn secondario" data-trk-copy="trk-url-play">${_bIco(ICO.pacco)}${L('Copia', 'Copy', 'Copiar')}</button>
+      </div>
+      <p class="suggerimento">${L('Il rilevatore (Chrome) NON serve mostrarlo: può stare in secondo piano. L\'overlay giochi in OBS non usa la webcam, quindi niente conflitti e niente ritardo. I gesti/giochi compaiono sopra la tua facecam.', 'The detector (Chrome) doesn\'t need to be shown: it can stay in the background. The OBS games overlay doesn\'t use the webcam, so no conflicts and no delay. Gestures/games appear over your facecam.', 'El detector (Chrome) no hace falta mostrarlo: puede estar en segundo plano. El overlay de juegos en OBS no usa la webcam, así que sin conflictos ni retardo. Los gestos/juegos aparecen sobre tu facecam.')}</p>
+      <details class="spazio-sopra">
+        <summary>${L('Modo tutto-in-uno (solo se la tua OBS dà la webcam alla fonte browser)', 'All-in-one mode (only if your OBS gives the camera to the browser source)', 'Modo todo-en-uno (solo si tu OBS da la cámara a la fuente de navegador)')}</summary>
+        <div class="riga-flessibile spazio-sopra">
+          <input type="text" id="trk-url" class="campo-largo" readonly value="${L('caricamento…', 'loading…', 'cargando…')}">
+          <button class="btn secondario" id="trk-copia">${_bIco(ICO.pacco)}${L('Copia', 'Copy', 'Copiar')}</button>
+        </div>
+        <p class="suggerimento">${L('Un solo link che mostra webcam + effetti. Funziona solo se la fonte browser di OBS può accedere alla fotocamera (spesso la NEGA). Se resta nera, usa il setup consigliato qui sopra.', 'A single link showing webcam + effects. Works only if the OBS browser source can access the camera (it often DENIES it). If it stays black, use the recommended setup above.', 'Un solo enlace que muestra webcam + efectos. Funciona solo si la fuente de navegador de OBS puede acceder a la cámara (a menudo la DENIEGA). Si queda en negro, usa el setup recomendado de arriba.')}</p>
+      </details>
       <label class="campo spazio-sopra">${L('Webcam da usare', 'Webcam to use', 'Webcam a usar')} <span class="tenue">— ${L('scegli quale, se ne hai più d\'una', 'pick which one if you have several', 'elige cuál, si tienes varias')}</span></label>
       <div class="riga-flessibile">
         <select id="trk-cam" class="campo-largo"><option value="">${L('Webcam predefinita del sistema', 'System default webcam', 'Webcam predeterminada del sistema')}</option></select>
@@ -9789,8 +9803,19 @@ async function caricaCitazioni() {
 async function caricaTracking() {
   const urlEl = document.getElementById('trk-url');
   if (!urlEl) return;
-  try { const d = await api('/api/tracking/url'); urlEl.value = d?.url || ''; }
-  catch { urlEl.value = ''; }
+  try {
+    const d = await api('/api/tracking/url');
+    const base = d?.url || '';
+    const sep = base.includes('?') ? '&' : '?';
+    urlEl.value = base;
+    const dEl = document.getElementById('trk-url-detect'); if (dEl) dEl.value = base ? base + sep + 'vista=detect' : '';
+    const pEl = document.getElementById('trk-url-play'); if (pEl) pEl.value = base ? base + sep + 'vista=play' : '';
+  } catch { urlEl.value = ''; }
+  // copia per i pulsanti "Copia" generici (data-trk-copy=<id campo>)
+  document.querySelectorAll('[data-trk-copy]').forEach((b) => { b.onclick = () => {
+    const v = document.getElementById(b.dataset.trkCopy)?.value || '';
+    if (v && navigator.clipboard) navigator.clipboard.writeText(v).then(() => toast(L('Link copiato ✓', 'Link copied ✓', 'Enlace copiado ✓'))).catch(() => {});
+  }; });
   // datalist effetti (autocompletamento, best-effort): riusa la lista dei Moduli
   try {
     const list = document.getElementById('trk-eff-list');
