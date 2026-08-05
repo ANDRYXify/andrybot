@@ -6048,6 +6048,12 @@ function pannelloEffetti() {
       </div>
       <p class="suggerimento">${L('In OBS aggiungi una', 'In OBS add a', 'En OBS añade una')} <strong>${L('Origine browser', 'Browser Source', 'Fuente de navegador')}</strong> ${L('con questo link e la stessa larghezza/altezza della tua webcam (es. 1280×720). Alla prima apertura consenti l\'accesso alla webcam.', 'with this link and the same width/height as your webcam (e.g. 1280×720). On first open, allow webcam access.', 'con este enlace y el mismo ancho/alto que tu webcam (p. ej. 1280×720). En la primera apertura permite el acceso a la webcam.')}</p>
       <p class="avviso-rosso">${L('Importante:', 'Important:', 'Importante:')} ${L('questo overlay', 'this overlay', 'este overlay')} <strong>${L('È GIÀ la tua webcam', 'IS your webcam', 'YA es tu webcam')}</strong> (${L('la mostra con gli effetti sopra', 'it shows it with effects on top', 'la muestra con los efectos encima')}). ${L('NON aggiungere anche una sorgente «Dispositivo di acquisizione video» con la stessa webcam: si occuperebbero a vicenda e resterebbe nera. Se la fonte resta nera, apri il link una volta anche nel browser e concedi la fotocamera.', 'Do NOT also add a «Video Capture Device» source with the same webcam: they would block each other and it would stay black. If the source stays black, open the link once in your browser too and allow the camera.', 'NO añadas también una fuente «Dispositivo de captura de vídeo» con la misma webcam: se bloquearían entre sí y quedaría en negro. Si la fuente queda en negro, abre el enlace una vez en el navegador y permite la cámara.')}</p>
+      <label class="campo spazio-sopra">${L('Webcam da usare', 'Webcam to use', 'Webcam a usar')} <span class="tenue">— ${L('scegli quale, se ne hai più d\'una', 'pick which one if you have several', 'elige cuál, si tienes varias')}</span></label>
+      <div class="riga-flessibile">
+        <select id="trk-cam" class="campo-largo"><option value="">${L('Webcam predefinita del sistema', 'System default webcam', 'Webcam predeterminada del sistema')}</option></select>
+        <button type="button" class="btn secondario" id="trk-cam-rileva">${L('Rileva webcam', 'Detect webcams', 'Detectar webcams')}</button>
+      </div>
+      <p class="suggerimento">${L('Premi «Rileva webcam» e consenti la fotocamera per vedere i nomi, scegli la tua e premi «Salva mappatura». Il nome vale anche nell\'overlay in OBS.', 'Press «Detect webcams» and allow the camera to see the names, pick yours and press «Save mapping». The name works in the OBS overlay too.', 'Pulsa «Detectar webcams» y permite la cámara para ver los nombres, elige la tuya y pulsa «Guardar mapeo». El nombre vale también en el overlay de OBS.')}</p>
       <label class="campo spazio-sopra">${L('Gesto/espressione → effetto', 'Gesture/expression → effect', 'Gesto/expresión → efecto')}</label>
       <datalist id="trk-eff-list"></datalist>
       <div class="trk-mappa">${righeTrk}</div>
@@ -9805,7 +9811,31 @@ async function caricaTracking() {
     });
     const attivo = !!document.getElementById('trk-attivo')?.checked;
     const giochi = !!document.getElementById('trk-giochi')?.checked;
-    await salvaImpostazioni({ tracking: { attivo, giochi, mappa } }, L('Mappatura salvata ✓', 'Mapping saved ✓', 'Mapeo guardado ✓'));
+    const camera = document.getElementById('trk-cam')?.value || '';
+    await salvaImpostazioni({ tracking: { attivo, giochi, camera, mappa } }, L('Mappatura salvata ✓', 'Mapping saved ✓', 'Mapeo guardado ✓'));
+  });
+
+  // Scelta webcam: mostra quella salvata; «Rileva» chiede il permesso ed elenca
+  // le fotocamere per NOME (etichetta), che vale identica anche in OBS.
+  const selCam = document.getElementById('trk-cam');
+  const camSalvata = impostazioni().tracking?.camera || '';
+  if (selCam && camSalvata && ![...selCam.options].some((o) => o.value === camSalvata)) {
+    const o = document.createElement('option'); o.value = camSalvata; o.textContent = camSalvata + ' (salvata)'; selCam.appendChild(o);
+  }
+  if (selCam && camSalvata) selCam.value = camSalvata;
+  const btnRileva = document.getElementById('trk-cam-rileva');
+  if (btnRileva) btnRileva.onclick = () => conErrore(async () => {
+    if (!navigator.mediaDevices?.getUserMedia) { toast(L('Webcam non disponibile qui.', 'Webcam not available here.', 'Webcam no disponible aquí.')); return; }
+    let stream;
+    try { stream = await navigator.mediaDevices.getUserMedia({ video: true }); }
+    catch { toast(L('Consenti la fotocamera per elencare le webcam.', 'Allow the camera to list the webcams.', 'Permite la cámara para listar las webcams.'), 'errore'); return; }
+    const cams = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'videoinput');
+    stream.getTracks().forEach((t) => t.stop());   // era solo per ottenere i nomi
+    const prima = selCam.value;
+    selCam.innerHTML = `<option value="">${L('Webcam predefinita del sistema', 'System default webcam', 'Webcam predeterminada del sistema')}</option>`
+      + cams.map((c, i) => `<option value="${esc(c.label || String(i))}">${esc(c.label || (L('Webcam', 'Webcam', 'Webcam') + ' ' + (i + 1)))}</option>`).join('');
+    if (prima && [...selCam.options].some((o) => o.value === prima)) selCam.value = prima;
+    toast(L('Webcam rilevate: scegli la tua e premi «Salva mappatura».', 'Webcams detected: pick yours and press «Save mapping».', 'Webcams detectadas: elige la tuya y pulsa «Guardar mapeo».'));
   });
 }
 
