@@ -917,13 +917,15 @@ async function caricaPiani() {
 
   const prezzoIt = (n) => Number(n || 0).toFixed(2).replace('.', ',');
   const perMese = L('/mese', '/month', '/mes');
-  // Cosa include la Base (copy curata, non guidata dalla matrice grezza).
+  // Cosa include la Base. In cima i vantaggi che AGGIUNGE all'Essenziale (così la
+  // card non sembra ripetere solo il gratis); poi ciò che eredita dall'Essenziale.
   const inclusiBase = [
-    L('Comandi & moduli illimitati', 'Unlimited commands & modules', 'Comandos y módulos ilimitados'),
-    L('Antispam & moderazione', 'Anti-spam & moderation', 'Antispam y moderación'),
-    L('Scudo anti-bot e anti-raid', 'Anti-bot & anti-raid shield', 'Escudo anti-bot y anti-raid'),
-    L('Overlay per OBS', 'OBS overlay', 'Overlay para OBS'),
-    L('1 moderatore incluso', '1 moderator included', '1 moderador incluido'),
+    { t: L('Social & Notifiche: avvisi live su Telegram/Discord + nuovi post', 'Social & Notifications: live alerts on Telegram/Discord + new posts', 'Social y Notificaciones: avisos live en Telegram/Discord + nuevos posts'), base: true },
+    { t: L('Studio Web: vai live senza OBS', 'Web Studio: go live without OBS', 'Estudio Web: sal en directo sin OBS'), base: true },
+    { t: L('1 moderatore incluso', '1 moderator included', '1 moderador incluido'), base: true },
+    { t: L('Comandi & moduli illimitati', 'Unlimited commands & modules', 'Comandos y módulos ilimitados') },
+    { t: L('Antispam, moderazione & scudo anti-bot/anti-raid', 'Anti-spam, moderation & anti-bot/anti-raid shield', 'Antispam, moderación y escudo anti-bot/anti-raid') },
+    { t: L('Overlay per OBS', 'OBS overlay', 'Overlay para OBS') },
   ];
 
   box.innerHTML = `
@@ -944,7 +946,7 @@ async function caricaPiani() {
           <div class="piano-prezzo">€${prezzoIt(base.prezzo)}<span>${perMese}</span></div>
         </div>
         <ul class="piano-funzioni">
-          ${inclusiBase.map((t) => `<li><span class="pf-val si">✓</span> ${esc(t)}</li>`).join('')}
+          ${inclusiBase.map((x) => `<li${x.base ? ' class="pf-base"' : ''}><span class="pf-val si">✓</span> ${esc(x.t)}${x.base ? ` <span class="pf-tag">${L('nel Base', 'in Base', 'en Base')}</span>` : ''}</li>`).join('')}
         </ul>
       </div>
 
