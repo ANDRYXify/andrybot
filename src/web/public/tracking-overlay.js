@@ -245,8 +245,20 @@
     requestAnimationFrame(loop);
   }
 
+  // canale di ritorno: comandi dei minigiochi (avvio da chat, sfide) via SSE. La
+  // riconnessione è automatica di EventSource. Gli eventi vanno al gioco registrato.
+  function connettiComandi() {
+    if (!key) return;
+    try {
+      const es = new EventSource(`/tracking/${encodeURIComponent(login)}/stream?key=${encodeURIComponent(key)}`);
+      es.onmessage = (m) => { let d; try { d = JSON.parse(m.data); } catch { return; } if (d) window.SB_TRACKING._comando(d); };
+      es.onerror = () => { /* riprova da solo */ };
+    } catch { /* niente */ }
+  }
+
   async function avvia() {
     if (!key) { setStato('chiave overlay mancante nel link'); return; }
+    connettiComandi();
     try {
       setStato('carico i modelli…');
       await human.load();
