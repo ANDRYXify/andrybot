@@ -145,6 +145,7 @@
   }
 
   // riconosce i gesti "utili" dalla stringa di Human → nome stabile per il bot
+  // (resta come RIPIEGO: la stringa di Human cambia tra versioni ed è inaffidabile)
   function nomeGesto(str) {
     const s = String(str || '').toLowerCase();
     if (s.includes('victory')) return 'victory';
@@ -152,6 +153,29 @@
     if (s.includes('open palm') || s === 'open') return 'openpalm';
     if (s.includes('point') || s.includes('index')) return 'point';
     if (s.includes('fist')) return 'fist';
+    return '';
+  }
+
+  // ── riconoscimento gesti dai LANDMARK (21 keypoint della mano). È il metodo
+  // PRINCIPALE: deterministico e indipendente dalle stringhe di Human. Un dito è
+  // "esteso" se la sua punta è più lontana dal polso della sua nocca centrale (pip).
+  const _xy = (p) => [(p && (p[0] ?? p.x)) || 0, (p && (p[1] ?? p.y)) || 0];
+  const _dist = (a, b) => { const A = _xy(a), B = _xy(b); return Math.hypot(A[0] - B[0], A[1] - B[1]); };
+  function rilevaGesto(h) {
+    const k = h.keypoints || h.landmarks;
+    if (!Array.isArray(k) || k.length < 21) return '';
+    const w = k[0];
+    const esteso = (tip, pip) => _dist(w, k[tip]) > _dist(w, k[pip]) * 1.12;
+    const idx = esteso(8, 6), mid = esteso(12, 10), ring = esteso(16, 14), pinky = esteso(20, 18);
+    const manoSize = _dist(w, k[9]) || 1;
+    // pollice esteso: punta lontana dalla nocca dell'indice e oltre la sua base
+    const thumb = _dist(k[4], k[5]) > manoSize * 0.6 && _dist(w, k[4]) > _dist(w, k[2]) * 1.02;
+    const nEst = (idx ? 1 : 0) + (mid ? 1 : 0) + (ring ? 1 : 0) + (pinky ? 1 : 0);
+    if (nEst >= 4) return 'openpalm';
+    if (idx && mid && !ring && !pinky) return 'victory';
+    if (idx && !mid && !ring && !pinky) return 'point';
+    if (thumb && nEst === 0) return 'thumbup';
+    if (nEst === 0 && !thumb) return 'fist';
     return '';
   }
 
@@ -176,11 +200,14 @@
       }
       disegnaParticelle();
 
-      // (3)(4) gesti delle mani → notifyBot
+      // (3)(4) gesti delle mani → notifyBot. Prima dai landmark (affidabile),
+      // poi come ripiego dalle stringhe di Human.
+      const gestiVisti = new Set();
+      for (const h of hands) { const nome = rilevaGesto(h); if (nome) { gestiVisti.add(nome); notifyBot(nome); } }
       for (const g of gestures) {
         if (!('hand' in g)) continue;
         const nome = nomeGesto(g.gesture);
-        if (nome) notifyBot(nome);
+        if (nome && !gestiVisti.has(nome)) notifyBot(nome);
       }
       // (2) espressione dominante del volto → notifyBot
       const emo = emozioneDominante(faces[0]);
