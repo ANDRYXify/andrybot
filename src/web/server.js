@@ -549,6 +549,42 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.sendFile(overlayHtml);
   });
 
+  // ── OVERLAY TRACKING (webcam + libreria Human): filtri/effetti da gesti delle
+  // mani ed espressioni del volto. Gira CLIENT-SIDE in OBS (la webcam vive nel
+  // Browser Source, il server NON la vede mai). Stessa chiave overlay del canale.
+  const trackingHtml = join(publicDir, 'tracking-overlay.html');
+  app.get('/tracking/:login', (req, res) => {
+    if (!chiaveOk(req)) return notFound(res);
+    res.sendFile(trackingHtml);
+  });
+
+  // L'overlay POSTa qui i gesti/espressioni rilevati (mai immagini né video): il
+  // server fa scattare l'effetto mappato in overlay e/o l'evento 'gesto' per i
+  // Moduli. Autenticato con la chiave overlay; anti-spam per canale+gesto.
+  const _gestoUltimo = new Map();   // "login|gesto" → ts (cooldown lato server)
+  app.post('/api/tracking/:login/gesture', (req, res) => {
+    if (!chiaveOk(req)) return res.status(403).json({ errore: 'chiave non valida' });
+    const login = String(req.params.login).toLowerCase();
+    const pulisci = (v) => String(v || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 24);
+    const gesto = pulisci(req.body?.gesto);
+    const emozione = pulisci(req.body?.emozione);
+    if (!gesto && !emozione) return res.status(400).json({ errore: 'gesto mancante' });
+    const chiave = login + '|' + (gesto || emozione);
+    const ora = Date.now();
+    if (ora - (_gestoUltimo.get(chiave) || 0) < 2500) return res.json({ ok: true, ignorato: true });
+    _gestoUltimo.set(chiave, ora);
+    // mappa gesto→effetto scelta dallo streamer (settings.tracking.mappa)
+    try {
+      const map = streamers.get(login)?.settings?.tracking?.mappa || {};
+      const eff = map[gesto] || map[emozione] || '';
+      if (eff) effects.fire(login, eff);
+    } catch { /* niente */ }
+    // evento per i Moduli (QUANDO gesto=X → ALLORA …) + event-bus operatore
+    try { modules.onEvent({ type: 'tracking.gesture', channel: login, data: { gesto, emozione } }, (t) => manager.say(login, t)); } catch { /* niente */ }
+    try { manager.bus?.emit?.('event', { type: 'tracking.gesture', channel: login, data: { gesto, emozione } }); } catch { /* niente */ }
+    res.json({ ok: true });
+  });
+
   // Link "bello" per OBS: /o/<nick>/<nome-overlay>. Reindirizza al link reale con
   // la chiave (gestita dal server) e l'overlay giusto (?o=id). Comodo da copiare;
   // l'overlay funziona identico. Nota: è indovinabile (nick + nome), quindi meno
@@ -2468,6 +2504,19 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     // comandi base pronti (!so/!followage/!uptime): OPT-OUT, default accesi
     if (b.comandiBase !== undefined) {
       out.comandiBase = { attivo: (b.comandiBase || {}).attivo !== false };
+    }
+    // Tracking webcam (P6): mappa gesto/espressione → effetto in overlay.
+    if (b.tracking !== undefined) {
+      const t = b.tracking || {};
+      const mappa = {};
+      if (t.mappa && typeof t.mappa === 'object') {
+        for (const [k, v] of Object.entries(t.mappa).slice(0, 24)) {
+          const gk = String(k).toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 24);
+          const ev = String(v || '').slice(0, 80);
+          if (gk && ev) mappa[gk] = ev;
+        }
+      }
+      out.tracking = { attivo: t.attivo !== false, mappa };
     }
     // Grafiche social (P5): config dello studio grafico. Solo dati testuali/di
     // stile, tutto limitato in lunghezza (rese SOLO lato client su canvas).
