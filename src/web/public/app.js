@@ -5610,8 +5610,40 @@ function initStudio() {
 
 // --- scheda Effetti & Suoni ---------------------------------------------
 
+const TRK_GESTI = [
+  ['victory', '✌️ Vittoria'], ['thumbup', '👍 Pollice su'], ['openpalm', '✋ Mano aperta'],
+  ['point', '☝️ Indice'], ['fist', '✊ Pugno'],
+  ['happy', '😀 Felice'], ['sad', '😢 Triste'], ['angry', '😠 Arrabbiato'], ['surprise', '😮 Sorpreso'],
+];
 function pannelloEffetti() {
+  const trk = impostazioni().tracking || {};
+  const mappa = (trk.mappa && typeof trk.mappa === 'object') ? trk.mappa : {};
+  const righeTrk = TRK_GESTI.map(([g, et]) => `
+    <div class="trk-riga">
+      <span class="trk-et">${et}</span>
+      <input type="text" class="trk-eff" list="trk-eff-list" data-g="${g}" maxlength="40" placeholder="${L('comando effetto (es. airhorn)', 'effect command (e.g. airhorn)', 'comando de efecto (p. ej. airhorn)')}" value="${esc(mappa[g] || '')}">
+    </div>`).join('');
   return pannello('effetti', `
+    <div class="carta">
+      <h2>${_hIco(ICO.effetti)}${L('Effetti dai gesti (webcam)', 'Effects from gestures (webcam)', 'Efectos por gestos (webcam)')}</h2>
+      <p>${L('Un overlay per OBS che', 'An OBS overlay that', 'Un overlay para OBS que')} <strong class="primo-piano">${L('legge i gesti delle mani e le espressioni del volto', 'reads hand gestures and face expressions', 'lee los gestos de las manos y las expresiones de la cara')}</strong> ${L('dalla webcam e fa partire effetti a schermo. Gira tutto nel Browser Source: la webcam', 'from the webcam and fires on-screen effects. It all runs in the Browser Source: the webcam', 'de la webcam y lanza efectos en pantalla. Todo corre en el Browser Source: la webcam')} <strong>${L('non esce mai dal tuo PC', 'never leaves your PC', 'nunca sale de tu PC')}</strong> — ${L('al bot arriva solo il nome del gesto.', 'the bot only receives the gesture name.', 'al bot solo llega el nombre del gesto.')}</p>
+      <div class="riga-check">
+        <input type="checkbox" id="trk-attivo" ${trk.attivo !== false ? 'checked' : ''}>
+        <label for="trk-attivo">${L('Attiva il tracking webcam', 'Enable webcam tracking', 'Activa el tracking de webcam')}</label>
+      </div>
+      <label class="campo spazio-sopra">${L('Link per OBS (Origine browser)', 'OBS link (Browser Source)', 'Enlace para OBS (Fuente de navegador)')}</label>
+      <div class="riga-flessibile">
+        <input type="text" id="trk-url" class="campo-largo" readonly value="${L('caricamento…', 'loading…', 'cargando…')}">
+        <button class="btn secondario" id="trk-copia">${_bIco(ICO.pacco)}${L('Copia', 'Copy', 'Copiar')}</button>
+      </div>
+      <p class="suggerimento">${L('In OBS aggiungi una', 'In OBS add a', 'En OBS añade una')} <strong>${L('Origine browser', 'Browser Source', 'Fuente de navegador')}</strong> ${L('con questo link e la stessa larghezza/altezza della tua webcam (es. 1280×720). Alla prima apertura consenti l\'accesso alla webcam.', 'with this link and the same width/height as your webcam (e.g. 1280×720). On first open, allow webcam access.', 'con este enlace y el mismo ancho/alto que tu webcam (p. ej. 1280×720). En la primera apertura permite el acceso a la webcam.')}</p>
+      <label class="campo spazio-sopra">${L('Gesto/espressione → effetto', 'Gesture/expression → effect', 'Gesto/expresión → efecto')}</label>
+      <datalist id="trk-eff-list"></datalist>
+      <div class="trk-mappa">${righeTrk}</div>
+      <p class="spazio-sopra"><button class="btn" id="trk-salva">${L('Salva mappatura', 'Save mapping', 'Guardar mapeo')}</button></p>
+      <p class="suggerimento">${L('Per reazioni più ricche (messaggi in chat, contatori, cooldown per ruolo) usa i', 'For richer reactions (chat messages, counters, per-role cooldown) use', 'Para reacciones más ricas (mensajes en el chat, contadores, cooldown por rol) usa los')} <strong>${L('Moduli', 'Modules', 'Módulos')}</strong>: ${L('QUANDO «Gesto webcam» → ALLORA…', 'WHEN «Webcam gesture» → THEN…', 'CUANDO «Gesto webcam» → ENTONCES…')}</p>
+    </div>
+
     <div class="carta">
       <h2>${_hIco(ICO.libro)}${L('Libreria condivisa', 'Shared library', 'Biblioteca compartida')}</h2>
       <p>${L('Sfoglia', 'Browse', 'Explora')} <strong class="primo-piano">${L('effetti, gif, video, foto e suoni', 'effects, gifs, videos, photos and sounds', 'efectos, gifs, vídeos, fotos y sonidos')}</strong> ${L('condivisi dagli altri streamer', 'shared by other streamers', 'compartidos por otros streamers')}
@@ -9106,7 +9138,7 @@ function caricaDatiScheda(id) {
   if (id === 'alert') caricaAlert();
   if (id === 'regia') caricaRegia();
   if (id === 'studio') caricaStudio();
-  if (id === 'effetti') { caricaEffetti(); caricaPremi(); caricaSuoniPremi(); caricaLibreria(); }
+  if (id === 'effetti') { caricaEffetti(); caricaPremi(); caricaSuoniPremi(); caricaLibreria(); caricaTracking(); }
   if (id === 'emote') caricaEmote7TV();
   if (id === 'moduli') { caricaModuli(); caricaContatori(); }
   if (id === 'memoria') caricaStatistiche();
@@ -9328,6 +9360,36 @@ async function caricaCitazioni() {
 }
 
 // --- effetti & suoni ----------------------------------------------------
+
+// Tracking webcam (P6): link OBS + mappatura gesto→effetto. Handler idempotenti
+// (onX=) perché la scheda si può riaprire più volte.
+async function caricaTracking() {
+  const urlEl = document.getElementById('trk-url');
+  if (!urlEl) return;
+  try { const d = await api('/api/tracking/url'); urlEl.value = d?.url || ''; }
+  catch { urlEl.value = ''; }
+  // datalist effetti (autocompletamento, best-effort): riusa la lista dei Moduli
+  try {
+    const list = document.getElementById('trk-eff-list');
+    const cmds = (datiModuli?.effettiDisponibili || []).map((e) => e.comando || e).filter(Boolean);
+    if (list && cmds.length) list.innerHTML = [...new Set(cmds)].slice(0, 200).map((c) => `<option value="${esc(c)}">`).join('');
+  } catch { /* niente */ }
+  const btnCopia = document.getElementById('trk-copia');
+  if (btnCopia) btnCopia.onclick = () => {
+    const v = urlEl.value || '';
+    if (v && navigator.clipboard) navigator.clipboard.writeText(v).then(() => toast(L('Link copiato ✓', 'Link copied ✓', 'Enlace copiado ✓'))).catch(() => {});
+  };
+  const btnSalva = document.getElementById('trk-salva');
+  if (btnSalva) btnSalva.onclick = () => conErrore(async () => {
+    const mappa = {};
+    document.querySelectorAll('.trk-eff').forEach((inp) => {
+      const g = inp.dataset.g, v = (inp.value || '').trim().toLowerCase().replace(/^!/, '');
+      if (g && v) mappa[g] = v;
+    });
+    const attivo = !!document.getElementById('trk-attivo')?.checked;
+    await salvaImpostazioni({ tracking: { attivo, mappa } }, L('Mappatura salvata ✓', 'Mapping saved ✓', 'Mapeo guardado ✓'));
+  });
+}
 
 async function caricaEffetti() {
   const ul = document.getElementById('lista-effetti');
@@ -9633,11 +9695,13 @@ const EVENTI = [
   ['first', 'Primo messaggio di un utente'],
   ['online', 'Sei andato in live'],
   ['offline', 'Fine live'],
+  ['gesto', 'Gesto webcam (mani/volto)'],
 ];
 const EVENTI_TXT = {
   follow: 'arriva un nuovo follow', subscribe: 'qualcuno si abbona', raid: 'parte un raid',
   cheer: 'arrivano dei bits', redemption: 'riscattano un premio coi punti',
   first: 'un utente scrive per la prima volta', online: 'vai in live', offline: 'finisce la live',
+  gesto: 'fai un gesto alla webcam (usa $gesto / $emozione nel testo)',
 };
 const TRIGGER = [
   ['comando', 'Un comando in chat'],
