@@ -41,6 +41,9 @@ const MAPPA_EVENTI = {
   'channel.channel_points_custom_reward_redemption.add': 'redemption',
   'stream.online': 'online',
   'stream.offline': 'offline',
+  // Gesti/espressioni dalla webcam (overlay tracking, libreria Human): un gesto
+  // della mano o un'emozione del volto può far scattare un Modulo.
+  'tracking.gesture': 'gesto',
 };
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -382,6 +385,8 @@ export class ModulesEngine {
         const tr = modulo.trigger || {};
         if (tr.tipo !== 'evento') continue;
         if ((tr.evento || '') !== evento) continue;
+        // per i gesti webcam: filtro opzionale sul gesto specifico (vuoto = qualsiasi)
+        if (evento === 'gesto' && tr.gesto && norm(tr.gesto) !== norm(ctx._vars?.gesto)) continue;
         await this.esegui(modulo, ctx, say);
       }
     } catch (e) {
@@ -921,6 +926,9 @@ export class ModulesEngine {
       titolotarget: bersaglioInfo?.title || '',
       // variabili evento
       raider: ev.raider || '',
+      // tracking webcam: gesto della mano ed emozione dominante del volto
+      gesto: ev.gesto || '',
+      emozione: ev.emozione || '',
       viewers: ev.viewers != null && ev.viewers !== '' ? String(ev.viewers) : '',
       mesi: ev.mesi != null && ev.mesi !== '' ? String(ev.mesi) : '',
       bits: ev.bits != null && ev.bits !== '' ? String(ev.bits) : '',
@@ -1014,6 +1022,9 @@ export class ModulesEngine {
         mesi: d.cumulative_months ?? d.duration_months,
         bits: d.bits,
         premio: d.reward?.title || '',
+        // tracking webcam: gesto della mano ($gesto) ed emozione del volto ($emozione)
+        gesto: d.gesto || '',
+        emozione: d.emozione || '',
         user,
       },
     };
