@@ -200,7 +200,7 @@
     const urlStream = '/overlay/' + encodeURIComponent(login) + '/stream' + location.search;
     // PIÙ OVERLAY: questo overlay ha un id (?o=). Dal tema riceve il suo LAYOUT:
     // cosa mostra (mostra) e dove (xy), così ogni link OBS ha il suo aspetto.
-    const MIO = { mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true }, xy: {}, stile: { alert: null, chat: null } };
+    const MIO = { mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true }, xy: {}, stile: { alert: null, chat: null }, widget: {} };
     const mostra = (k) => MIO.mostra[k] !== false;
 
     const palco = document.getElementById('palco');
@@ -695,7 +695,7 @@
         else if (dati.tipo === 'penitenza') { if (mostra('effetti')) penitenza(dati); }
         else if (dati.tipo === 'alert') alert(dati);
         else if (dati.tipo === 'chat') chat(dati);
-        else if (dati.tipo === 'widget') { if (mostra(dati.id === 'ultimoSub' ? 'ws' : 'wf')) widget(dati.id, dati.cfg, dati.valore); }
+        else if (dati.tipo === 'widget') { if (mostra(dati.id === 'ultimoSub' ? 'ws' : 'wf')) widget(dati.id, (MIO.widget && MIO.widget[dati.id]) || dati.cfg, dati.valore); }
         else if (dati.tipo === 'tema') caricaTema();   // ricarica il MIO tema (per ?o=id)
         else if (dati.tipo === 'testo') { if (mostra('effetti')) mostraTesto(dati); }
         else if (dati.tipo === 'contatore') contatore(dati);   // widget contatore persistente (morti/parole…)
@@ -741,6 +741,7 @@
       MIO.stile = { alert: (t && t.alertStile) || null, chat: (t && t.chatStile) || null };
       try { document.getElementById('css-utente').textContent = String(t.css || '').slice(0, 8000); } catch (e) { /* niente */ }
       const w = t.widget || {};
+      MIO.widget = w;   // config widget di QUESTO overlay: la riusa anche l'update SSE
       const stato = t.stato || {};
       // widget mostrati solo se questo overlay li prevede
       widget('ultimoFollower', mostra('wf') ? w.ultimoFollower : { attivo: false }, stato.ultimoFollower);
