@@ -3689,7 +3689,7 @@ function pannelloAlert() {
     <div class="carta">
       <h2>${_hIco(ICO.righello)}${L('Anteprima e layout', 'Preview and layout', 'Vista previa y diseño')}</h2>
       <p>${L('Personalizza', 'Customize', 'Personaliza')} <strong>${L('tutto', 'everything', 'todo')}</strong> ${L('ciò che appare a schermo: alert, chat, widget… colori, font, forma, animazioni.', 'that appears on screen: alerts, chat, widgets… colors, fonts, shape, animations.', 'lo que aparece en pantalla: alertas, chat, widgets… colores, fuentes, forma, animaciones.')}
-      ${L('Posizioni e "cosa mostra" valgono per l\'', 'Positions and "what to show" apply to the', 'Las posiciones y "qué mostrar" valen para el')}<strong>${L('overlay selezionato qui sopra', 'overlay selected above', 'overlay seleccionado arriba')}</strong>; ${L('stile e testi sono condivisi.', 'style and texts are shared.', 'el estilo y los textos son compartidos.')}
+      ${L('Posizioni, "cosa mostra" e l\'', 'Positions, "what to show" and the ', 'Las posiciones, "qué mostrar" y el ')}<strong>${L('aspetto (colori, font, forma, animazioni, CSS)', 'appearance (colors, fonts, shape, animations, CSS)', 'aspecto (colores, fuentes, forma, animaciones, CSS)')}</strong> ${L('valgono per l\'', 'apply to the ', 'valen para el ')}<strong>${L('overlay selezionato qui sopra', 'overlay selected above', 'overlay seleccionado arriba')}</strong>; ${L('i testi degli alert e i comportamenti restano condivisi.', 'alert texts and behaviors stay shared.', 'los textos de las alertas y los comportamientos quedan compartidos.')}
       ${L('L\'', 'The ', 'La ')}<strong>${L('anteprima qui sotto è dal vivo', 'preview below is live', 'vista previa de abajo es en vivo')}</strong>.</p>
       <p class="spazio-sopra"><button class="btn grande" id="ovl-salva-tutto">${L('Salva overlay', 'Save overlay', 'Guardar overlay')}</button>
         <span class="suggerimento">${L('Salva tutto in un colpo: alert, chat, widget e il layout dell\'overlay selezionato.', 'Save everything at once: alerts, chat, widgets and the selected overlay\'s layout.', 'Guarda todo de una vez: alertas, chat, widgets y el diseño del overlay seleccionado.')}</span></p>
@@ -3952,18 +3952,57 @@ function _raccogliChat() {
 }
 function _raccogliWidget() { return { ultimoFollower: _leggiWidget('wf'), ultimoSub: _leggiWidget('ws') }; }
 
-async function salvaAlert(silenzioso) {
-  await salvaImpostazioni({ alerts: _raccogliAlerts() }, silenzioso ? null : L('Alert salvati ✓', 'Alerts saved ✓', 'Alertas guardadas ✓'));
+// Opzione B — SALVATAGGIO overlay: il CONTENUTO/comportamento (messaggi alert,
+// posizioni predefinite, durata, max chat…) resta CONDIVISO (canale); l'ASPETTO
+// (colori, font, forma, animazioni, widget, CSS) va SOLO nell'overlay scelto, così
+// gli altri link NON cambiano. Il look di canale non viene toccato: fa da default
+// per gli overlay che non ne hanno uno proprio.
+async function _salvaOverlayCorrente(msg, ancheLayout) {
+  const ov = overlays.find((o) => o.id === overlaySel);
+  const imp = impostazioni();
+  const alertsCanale = _raccogliAlerts(); const alertLook = alertsCanale.stile; alertsCanale.stile = imp.alerts.stile;
+  const chatCanale = _raccogliChat(); const chatLook = chatCanale.stile; chatCanale.stile = imp.chatOverlay.stile;
+  if (ov) {
+    ov.stile = { alerts: alertLook, chat: chatLook, widget: _raccogliWidget() };
+    ov.css = _v('ovl-css') || '';
+    if (ancheLayout) {
+      ov.xy = { alert: posXY.alert, chat: posXY.chat, wf: posXY.wf, ws: posXY.ws };
+      ov.mostra = { alert: mostraChk('alert'), chat: mostraChk('chat'), wf: mostraChk('wf'), ws: mostraChk('ws'), effetti: mostraChk('effetti') };
+    }
+  }
+  await salvaImpostazioni({ alerts: alertsCanale, chatOverlay: chatCanale, overlays: _overlaysPayload() }, msg);
 }
-async function salvaChatOverlay(silenzioso) {
-  await salvaImpostazioni({ chatOverlay: _raccogliChat() }, silenzioso ? null : L('Chat a schermo salvata ✓', 'On-screen chat saved ✓', 'Chat en pantalla guardado ✓'));
-}
-async function salvaWidget(silenzioso) {
-  await salvaImpostazioni({ overlayWidget: _raccogliWidget() }, silenzioso ? null : L('Widget salvati ✓', 'Widgets saved ✓', 'Widgets guardados ✓'));
-}
+async function salvaAlert(silenzioso) { await _salvaOverlayCorrente(silenzioso ? null : L('Alert salvati ✓', 'Alerts saved ✓', 'Alertas guardadas ✓'), false); }
+async function salvaChatOverlay(silenzioso) { await _salvaOverlayCorrente(silenzioso ? null : L('Chat a schermo salvata ✓', 'On-screen chat saved ✓', 'Chat en pantalla guardado ✓'), false); }
+async function salvaWidget(silenzioso) { await _salvaOverlayCorrente(silenzioso ? null : L('Widget salvati ✓', 'Widgets saved ✓', 'Widgets guardados ✓'), false); }
+async function salvaCss(silenzioso) { await _salvaOverlayCorrente(silenzioso ? null : L('CSS salvato ✓', 'CSS saved ✓', 'CSS guardado ✓'), false); }
 
-async function salvaCss(silenzioso) {
-  await salvaImpostazioni({ overlayCss: _v('ovl-css') || '' }, silenzioso ? null : L('CSS salvato ✓', 'CSS saved ✓', 'CSS guardado ✓'));
+// Riempie i controlli di ASPETTO (alert/chat/widget/CSS) dall'overlay scelto.
+// Se l'overlay non ha uno stile proprio, usa quello di canale come default.
+function _applicaStileOverlay(ov) {
+  const imp = impostazioni();
+  const al = (ov && ov.stile && ov.stile.alerts) || imp.alerts.stile || {};
+  const ch = (ov && ov.stile && ov.stile.chat) || imp.chatOverlay.stile || {};
+  const wcfg = (ov && ov.stile && ov.stile.widget) || imp.overlayWidget || {};
+  const css = (ov && ov.css != null && ov.css !== '') ? ov.css : (imp.overlayCss || '');
+  _imposta('al-st-anim', al.animazione); _imposta('al-st-font', al.font); _imposta('al-st-gfont', al.googleFont || ''); _imposta('al-st-dim', al.dimTesto);
+  _imposta('al-st-bg', al.sfondo); _imposta('al-st-op', al.opacita); _imposta('al-st-fg', al.testo);
+  _imposta('al-st-radius', al.bordoRaggio); _imposta('al-st-border', al.bordoSpessore);
+  _imposta('al-st-glow', al.glow !== false); _imposta('al-st-icon', al.icona !== false);
+  _imposta('co-st-dim', ch.dim); _imposta('co-st-font', ch.font); _imposta('co-st-gfont', ch.googleFont || ''); _imposta('co-st-anim', ch.animazione); _imposta('co-st-larg', ch.larghezza);
+  _imposta('co-st-bg', ch.sfondo); _imposta('co-st-op', ch.opacita); _imposta('co-st-fg', ch.testo); _imposta('co-st-radius', ch.bordoRaggio);
+  const modo = (ch.username && ch.username !== 'twitch') ? 'fisso' : 'twitch';
+  _imposta('co-st-user', modo); if (modo === 'fisso') _imposta('co-st-usercol', ch.username);
+  _imposta('co-st-ombra', ch.ombra !== false); _imposta('co-st-bold', ch.grassettoUser !== false);
+  [['wf', wcfg.ultimoFollower], ['ws', wcfg.ultimoSub]].forEach(([pref, wc]) => {
+    if (!wc) return; const ws = wc.stile || {};
+    _imposta(`${pref}-attivo`, wc.attivo); _imposta(`${pref}-pos`, wc.posizione); _imposta(`${pref}-testo`, wc.testo);
+    _imposta(`${pref}-font`, ws.font); _imposta(`${pref}-dim`, ws.dim); _imposta(`${pref}-bg`, ws.sfondo);
+    _imposta(`${pref}-op`, ws.opacita); _imposta(`${pref}-fg`, ws.testo); _imposta(`${pref}-acc`, ws.accento); _imposta(`${pref}-radius`, ws.bordoRaggio);
+  });
+  _imposta('ovl-css', css);
+  document.querySelectorAll('#scheda-alert input[type="range"]').forEach((r) => { const s = _g(r.id + '-v'); if (s) s.textContent = r.value; });
+  aggiornaAnteprima();
 }
 
 // --- anteprima dal vivo -------------------------------------------------
@@ -4289,6 +4328,7 @@ function caricaOverlaySel() {
   posXY = { alert: ov.xy?.alert || null, chat: ov.xy?.chat || null, wf: ov.xy?.wf || null, ws: ov.xy?.ws || null };
   ['alert', 'chat', 'wf', 'ws', 'effetti'].forEach((k) => { const c = _g('mostra-' + k); if (c) c.checked = ov.mostra?.[k] !== false; });
   const i = _g('inp-overlay-url'); if (i) i.value = ov.url || '';
+  _applicaStileOverlay(ov);   // Opzione B: carica anche l'ASPETTO proprio di questo overlay
   deseleziona();
   aggiornaAnteprima();
 }
@@ -4311,7 +4351,10 @@ async function nuovoOverlay() {
   const nome = (prompt(L('Nome del nuovo overlay:', 'New overlay name:', 'Nombre del nuevo overlay:')) || '').trim();
   if (!nome) return;
   const id = 'ov' + Math.random().toString(36).slice(2, 8);
-  overlays.push({ id, nome, mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true }, xy: {}, css: '' });
+  // parte dall'aspetto dell'overlay attuale (così i nuovi non nascono "spogli")
+  const corr = overlays.find((o) => o.id === overlaySel);
+  const seedStile = corr && corr.stile ? JSON.parse(JSON.stringify(corr.stile)) : null;
+  overlays.push({ id, nome, mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true }, xy: {}, css: (corr && corr.css) || '', stile: seedStile });
   overlaySel = id;
   await salvaImpostazioni({ overlays: _overlaysPayload() }, null);
   await caricaOverlays();                 // ricarica per avere il link dal server
@@ -4335,19 +4378,11 @@ async function eliminaOverlay() {
   toast(L('Overlay eliminato.', 'Overlay deleted.', 'Overlay eliminado.'));
 }
 
-// Salva TUTTO l'overlay in un colpo: stile/testi (alert, chat, widget) + il
-// layout (posizioni e "cosa mostra") dell'overlay selezionato.
+// Salva TUTTO l'overlay in un colpo: aspetto (alert, chat, widget, CSS) + il
+// layout (posizioni e "cosa mostra"). L'aspetto è di QUESTO overlay; i testi/
+// comportamenti restano condivisi (li salva sul canale senza toccarne il look).
 async function salvaTuttoOverlay() {
-  const ov = overlays.find((o) => o.id === overlaySel);
-  if (ov) {
-    ov.xy = { alert: posXY.alert, chat: posXY.chat, wf: posXY.wf, ws: posXY.ws };
-    ov.mostra = { alert: mostraChk('alert'), chat: mostraChk('chat'), wf: mostraChk('wf'), ws: mostraChk('ws'), effetti: mostraChk('effetti') };
-  }
-  await salvaImpostazioni({
-    alerts: _raccogliAlerts(), chatOverlay: _raccogliChat(), overlayWidget: _raccogliWidget(),
-    overlays: _overlaysPayload(),
-  }, null);
-  toast(L('Overlay salvato ✓', 'Overlay saved ✓', 'Overlay guardado ✓'));
+  await _salvaOverlayCorrente(L('Overlay salvato ✓', 'Overlay saved ✓', 'Overlay guardado ✓'), true);
 }
 
 function caricaAlert() {
