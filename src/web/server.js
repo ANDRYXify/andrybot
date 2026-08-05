@@ -2539,19 +2539,24 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       // le impostazioni). Le immagini restano nel canale; la condivisione
       // pubblica passa dalla libreria effetti.
       const sfImg = String(gr.sfondoImg || '');
-      // sfondoImg valido = data URL immagine (caricata dal PC) OPPURE un media
-      // della libreria condivisa del sito (stessa origine → export senza taint).
-      const sfImgOk = (/^data:image\/(png|jpeg|webp);base64,/.test(sfImg) && sfImg.length <= 700000)
-        || /^\/api\/streamer\/libreria\/media\/\d+$/.test(sfImg);
+      const logoImg = String(gr.logoImg || '');
+      // immagine valida = data URL (caricata dal PC) OPPURE un media della
+      // libreria condivisa del sito (stessa origine → export senza taint).
+      const imgOk = (v) => (/^data:image\/(png|jpeg|webp);base64,/.test(v) && v.length <= 700000)
+        || /^\/api\/streamer\/libreria\/media\/\d+$/.test(v);
+      const veloN = Math.max(0, Math.min(85, Math.round(Number(gr.velo)) || 0));
       out.grafiche = {
         tipo: ['programmazione', 'live'].includes(gr.tipo) ? gr.tipo : 'programmazione',
         tema: str(gr.tema, 20),
         accento: /^#[0-9a-fA-F]{6}$/.test(String(gr.accento || '')) ? String(gr.accento) : '',
+        coloreTesto: /^#[0-9a-fA-F]{6}$/.test(String(gr.coloreTesto || '')) ? String(gr.coloreTesto) : '',
+        velo: veloN,
         titolo: str(gr.titolo, 40), handle: str(gr.handle, 40), logo: str(gr.logo, 8),
+        logoImg: imgOk(logoImg) ? logoImg : '',
         gioco: str(gr.gioco, 40), sottotitolo: str(gr.sottotitolo, 60),
         sfondo: ['tema', 'tinta', 'immagine'].includes(gr.sfondo) ? gr.sfondo : 'tema',
         sfondoColore: /^#[0-9a-fA-F]{6}$/.test(String(gr.sfondoColore || '')) ? String(gr.sfondoColore) : '',
-        sfondoImg: sfImgOk ? sfImg : '',
+        sfondoImg: imgOk(sfImg) ? sfImg : '',
         giorni,
       };
     }

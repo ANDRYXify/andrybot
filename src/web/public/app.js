@@ -1731,24 +1731,39 @@ const GR_TEMI = {
   tramonto: { nome: 'Tramonto', bg: ['#2a0e2e', '#7a1f3d'], testo: '#fff5f0', tenue: '#ffd0c4', acc: '#ff7a59', riga: 'rgba(255,255,255,.08)' },
   pastello: { nome: 'Pastello', bg: ['#f4f0ff', '#e6f0ff'], testo: '#241b3d', tenue: '#6b6a86', acc: '#7c5cff', riga: 'rgba(60,40,120,.08)' },
   minimal:  { nome: 'Minimal',  bg: ['#111113', '#111113'], testo: '#ffffff', tenue: '#a8a8b3', acc: '#ffffff', riga: 'rgba(255,255,255,.10)' },
+  // Temi ANIMATI (come gli sfondi dell'overlay): l'anteprima si muove e si può
+  // scaricare come video. `anima` = tipo di movimento disegnato ogni frame.
+  aurora:    { nome: 'Aurora ✨',  bg: ['#07132a', '#0b2a3f'], testo: '#eaf6ff', tenue: '#a9cbe0', acc: '#38bdf8', riga: 'rgba(56,189,248,.10)', anima: 'aurora' },
+  particelle:{ nome: 'Particelle ✨', bg: ['#0d0b1a', '#1b1436'], testo: '#ffffff', tenue: '#c3bde0', acc: '#a855f7', riga: 'rgba(168,85,247,.10)', anima: 'particelle' },
+  onde:      { nome: 'Onde ✨',   bg: ['#08131f', '#0c2233'], testo: '#eafcff', tenue: '#8fd3e6', acc: '#22d3ee', riga: 'rgba(34,211,238,.10)', anima: 'onde' },
 };
 const GR_TEMA_IDS = Object.keys(GR_TEMI);
-// immagine di sfondo in cache per il canvas (data URL → <img> precaricata)
+const grafAnimato = (c) => !!(GR_TEMI[c.tema] && GR_TEMI[c.tema].anima) && c.sfondo === 'tema';
+// stelle per lo sfondo "particelle" (stabili tra i frame)
+const GR_STELLE = Array.from({ length: 90 }, (_, i) => ({
+  x: ((i * 97) % 100) / 100, y: ((i * 53) % 100) / 100, r: 0.6 + (i % 5) * 0.5, f: 0.4 + (i % 7) / 10,
+}));
+// immagini in cache per il canvas (data URL/URL → <img> precaricata): sfondo e logo
 const grafImg = { el: null, pronto: false, src: '' };
-function grafCaricaImg(src, poi) {
-  if (!src) { grafImg.el = null; grafImg.pronto = false; grafImg.src = ''; poi && poi(); return; }
-  if (grafImg.src === src && grafImg.pronto) { poi && poi(); return; }
+const grafLogo = { el: null, pronto: false, src: '' };
+let grafRAF = null;   // handle del loop d'anteprima dei temi animati (uno solo)
+function grafCaricaIn(cache, src, poi) {
+  if (!src) { cache.el = null; cache.pronto = false; cache.src = ''; poi && poi(); return; }
+  if (cache.src === src && cache.pronto) { poi && poi(); return; }
   const im = new Image();
-  im.onload = () => { grafImg.el = im; grafImg.pronto = true; grafImg.src = src; poi && poi(); };
-  im.onerror = () => { grafImg.el = null; grafImg.pronto = false; poi && poi(); };
+  im.onload = () => { cache.el = im; cache.pronto = true; cache.src = src; poi && poi(); };
+  im.onerror = () => { cache.el = null; cache.pronto = false; poi && poi(); };
   im.src = src;
 }
+const grafCaricaImg = (src, poi) => grafCaricaIn(grafImg, src, poi);
+const grafCaricaLogo = (src, poi) => grafCaricaIn(grafLogo, src, poi);
 
 function grafDefault() {
   const canale = stato?.user?.login || 'iltuocanale';
   return {
     tipo: 'programmazione', tema: 'notte', accento: '',
-    titolo: '', handle: '@' + canale, logo: '🎮',
+    titolo: '', handle: '@' + canale, logo: '🎮', logoImg: '',
+    coloreTesto: '', velo: 45,
     gioco: '', sottotitolo: '',
     sfondo: 'tema', sfondoColore: '', sfondoImg: '',
     giorni: GR_GIORNI.map((g) => ({ g, ora: '21:00', att: '', off: false })),
@@ -1804,8 +1819,13 @@ function pannelloGrafiche() {
               <button type="button" class="btn secondario" id="gr-sfondo-lib">${_bIco(ICO.libro)}${L('Dalla libreria/pool', 'From library/pool', 'De la biblioteca/pool')}</button>
             </div>
             <div id="gr-lib-box" class="gr-lib-box" hidden></div>
-            <p class="suggerimento">${L('Carica dal PC oppure scegli dalla', 'Upload from your PC or pick from the', 'Sube desde el PC o elige de la')} <strong>${L('libreria condivisa', 'shared library', 'biblioteca compartida')}</strong> ${L('(le immagini rese pubbliche dagli altri streamer). Consiglio: una foto poco contrastata così il testo resta leggibile.', '(images made public by other streamers). Tip: a low-contrast photo so the text stays readable.', '(imágenes hechas públicas por otros streamers). Consejo: una foto poco contrastada para que el texto se lea.')}
+            <p class="suggerimento">${L('Carica dal PC oppure scegli dalla', 'Upload from your PC or pick from the', 'Sube desde el PC o elige de la')} <strong>${L('libreria condivisa', 'shared library', 'biblioteca compartida')}</strong> ${L('(le immagini rese pubbliche dagli altri streamer).', '(images made public by other streamers).', '(imágenes hechas públicas por otros streamers).')}
               ${c.sfondoImg ? `· <a href="#" id="gr-sfondo-togli">${L('togli immagine', 'remove image', 'quitar imagen')}</a>` : ''}</p>
+          </div>
+
+          <div class="gr-velo-box spazio-sopra" ${c.sfondo === 'tema' ? 'hidden' : ''}>
+            <label class="campo" for="gr-velo">${L('Leggibilità (velo sullo sfondo)', 'Readability (veil over background)', 'Legibilidad (velo sobre el fondo)')} <span class="tenue" id="gr-velo-val">${Number(c.velo) || 0}%</span></label>
+            <input type="range" id="gr-velo" min="0" max="85" value="${Number(c.velo) || 0}" style="width:100%">
           </div>
 
           <div class="riga-flessibile spazio-sopra">
@@ -1819,6 +1839,15 @@ function pannelloGrafiche() {
             </div>
           </div>
 
+          <div class="spazio-sopra">
+            <label class="campo" for="gr-coloretesto">${L('Colore del testo', 'Text colour', 'Color del texto')}</label>
+            <div class="riga-flessibile">
+              <input type="color" id="gr-coloretesto" value="${esc(c.coloreTesto || (GR_TEMI[c.tema] || GR_TEMI.notte).testo)}">
+              <button type="button" class="btn secondario mini" id="gr-coloretesto-auto"${c.coloreTesto ? '' : ' disabled'}>${L('Auto (contrasto)', 'Auto (contrast)', 'Auto (contraste)')}</button>
+              <span class="suggerimento">${L('vuoto = si adatta da solo allo sfondo', 'empty = adapts to the background', 'vacío = se adapta al fondo')}</span>
+            </div>
+          </div>
+
           <div class="riga-flessibile spazio-sopra">
             <div style="flex:1">
               <label class="campo" for="gr-handle">${L('Handle / nome', 'Handle / name', 'Handle / nombre')}</label>
@@ -1826,8 +1855,13 @@ function pannelloGrafiche() {
             </div>
             <div style="width:120px">
               <label class="campo" for="gr-logo">${L('Logo (emoji)', 'Logo (emoji)', 'Logo (emoji)')}</label>
-              <input type="text" id="gr-logo" maxlength="4" value="${esc(c.logo)}">
+              <input type="text" id="gr-logo" maxlength="4" value="${esc(c.logo)}" ${c.logoImg ? 'disabled' : ''}>
             </div>
+          </div>
+          <div class="riga-flessibile spazio-sopra">
+            <label class="campo" style="margin:0 8px 0 0">${L('…oppure logo immagine', '…or image logo', '…o logo imagen')}</label>
+            <input type="file" id="gr-logo-file" accept="image/*">
+            ${c.logoImg ? `<img src="${esc(c.logoImg)}" alt="" class="gr-logo-prev"> <a href="#" id="gr-logo-togli" class="suggerimento">${L('togli', 'remove', 'quitar')}</a>` : ''}
           </div>
 
           <div class="gr-solo-prog" ${c.tipo === 'live' ? 'hidden' : ''}>
@@ -1872,8 +1906,41 @@ function grRoundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-// Disegna la grafica sul canvas secondo la config. Cuore di P5.
-function grafDisegna(canvas, c) {
+// strato di sfondo ANIMATO (disegnato ogni frame): aurora / particelle / onde.
+function grafAnimaSfondo(ctx, W, H, t, tipo, acc) {
+  const s = t / 1000;
+  if (tipo === 'aurora') {
+    const col = [acc, '#22d3ee', '#a855f7'];
+    for (let i = 0; i < 3; i++) {
+      const y = H * (0.22 + 0.24 * i) + Math.sin(s * 0.6 + i) * 60;
+      const g = ctx.createLinearGradient(0, y - 190, 0, y + 190);
+      g.addColorStop(0, col[i] + '00'); g.addColorStop(0.5, col[i] + '3a'); g.addColorStop(1, col[i] + '00');
+      ctx.fillStyle = g; ctx.fillRect(0, y - 190, W, 380);
+    }
+  } else if (tipo === 'particelle') {
+    ctx.fillStyle = '#ffffff';
+    for (const st of GR_STELLE) {
+      ctx.globalAlpha = 0.25 + 0.5 * (0.5 + 0.5 * Math.sin(s * st.f * 3 + st.x * 20));
+      const px = (st.x * W + s * 9 * st.f) % W;
+      ctx.beginPath(); ctx.arc(px, st.y * H, st.r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  } else if (tipo === 'onde') {
+    ctx.strokeStyle = acc + '3a'; ctx.lineWidth = 3;
+    for (let k = 0; k < 4; k++) {
+      ctx.beginPath();
+      for (let x = 0; x <= W; x += 12) {
+        const y = H * (0.34 + 0.14 * k) + Math.sin(x / 120 + s * 1.2 + k) * 26;
+        x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+  }
+}
+
+// Disegna la grafica sul canvas secondo la config. Cuore di P5. `t` = tempo (ms)
+// per i temi animati; 0 per un fotogramma statico.
+function grafDisegna(canvas, c, t = 0) {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const tema = GR_TEMI[c.tema] || GR_TEMI.notte;
@@ -1883,37 +1950,60 @@ function grafDisegna(canvas, c) {
   canvas.width = W; canvas.height = H;
   const S = 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
 
-  // sfondo: immagine (cover) · tinta unita · gradiente del tema. Poi, per tinta
-  // e immagine, un velo scuro leggero perché il testo resti leggibile.
+  // COLORE TESTO: scelto dallo streamer, altrimenti automatico in base allo
+  // sfondo (chiaro su scuro/immagine, scuro su chiaro) → sempre leggibile.
+  const hex = (v) => /^#[0-9a-fA-F]{6}$/.test(String(v || ''));
+  const bgScuro = c.sfondo === 'immagine' ? true
+    : c.sfondo === 'tinta' ? eScuroHex(c.sfondoColore || '#141225')
+    : eScuroHex(tema.bg[0]);
+  const txt = hex(c.coloreTesto) ? c.coloreTesto
+    : (c.sfondo === 'tema' ? tema.testo : (bgScuro ? '#ffffff' : '#0d0d12'));
+  const tenue2 = (c.sfondo === 'tema' && !hex(c.coloreTesto)) ? tema.tenue : (txt + 'c8');
+  const ombra = eScuroHex(txt) ? 'rgba(255,255,255,.42)' : 'rgba(0,0,0,.5)';
+
+  // sfondo: immagine (cover) · tinta unita · gradiente (animato) del tema
   if (c.sfondo === 'immagine' && grafImg.el && grafImg.pronto) {
     const iw = grafImg.el.naturalWidth || 1, ih = grafImg.el.naturalHeight || 1;
-    const s = Math.max(W / iw, H / ih);           // cover
-    const dw = iw * s, dh = ih * s;
-    ctx.drawImage(grafImg.el, (W - dw) / 2, (H - dh) / 2, dw, dh);
-    ctx.fillStyle = 'rgba(8,6,18,.42)'; ctx.fillRect(0, 0, W, H);
+    const sc = Math.max(W / iw, H / ih);
+    ctx.drawImage(grafImg.el, (W - iw * sc) / 2, (H - ih * sc) / 2, iw * sc, ih * sc);
   } else if (c.sfondo === 'tinta') {
-    ctx.fillStyle = /^#[0-9a-fA-F]{6}$/.test(c.sfondoColore || '') ? c.sfondoColore : '#141225';
+    ctx.fillStyle = hex(c.sfondoColore) ? c.sfondoColore : '#141225';
     ctx.fillRect(0, 0, W, H);
   } else {
     const g = ctx.createLinearGradient(0, 0, W, H);
     g.addColorStop(0, tema.bg[0]); g.addColorStop(1, tema.bg[1]);
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    if (tema.anima) grafAnimaSfondo(ctx, W, H, t, tema.anima, acc);
   }
-  // alone d'accento (sempre, dà profondità)
+  // VELO di leggibilità (regolabile dallo streamer): schiarisce o scurisce verso
+  // l'opposto del testo, così le scritte staccano sempre. Solo tinta/immagine.
+  const velo = Math.max(0, Math.min(85, Number(c.velo) || 0)) / 100;
+  if (velo > 0 && c.sfondo !== 'tema') {
+    ctx.fillStyle = eScuroHex(txt) ? `rgba(250,250,255,${velo})` : `rgba(6,6,14,${velo})`;
+    ctx.fillRect(0, 0, W, H);
+  }
+  // alone d'accento (dà profondità)
   const alone = ctx.createRadialGradient(W * 0.85, H * 0.1, 40, W * 0.85, H * 0.1, W * 0.8);
   alone.addColorStop(0, acc + '44'); alone.addColorStop(1, acc + '00');
   ctx.fillStyle = alone; ctx.fillRect(0, 0, W, H);
 
   const pad = 90;
-  // intestazione: logo + handle
+  // intestazione: logo (IMMAGINE o emoji) + handle
   ctx.textBaseline = 'alphabetic';
-  ctx.font = `600 46px ${S}`;
-  ctx.fillStyle = tema.testo;
   ctx.textAlign = 'left';
-  const logo = String(c.logo || '').trim();
-  if (logo) { ctx.font = `48px ${S}`; ctx.fillText(logo, pad, 130); }
+  if (c.logoImg && grafLogo.el && grafLogo.pronto) {
+    const L0 = 78, li = grafLogo.el, lw = li.naturalWidth || 1, lh = li.naturalHeight || 1;
+    const ls = Math.max(L0 / lw, L0 / lh);
+    ctx.save();
+    grRoundRect(ctx, pad, 62, L0, L0, 18); ctx.clip();
+    ctx.drawImage(li, pad + (L0 - lw * ls) / 2, 62 + (L0 - lh * ls) / 2, lw * ls, lh * ls);
+    ctx.restore();
+  } else {
+    const logo = String(c.logo || '').trim();
+    if (logo) { ctx.font = `48px ${S}`; ctx.fillStyle = txt; ctx.fillText(logo, pad, 130); }
+  }
   ctx.font = `700 40px ${S}`;
-  ctx.fillStyle = tema.tenue;
+  ctx.fillStyle = tenue2;
   ctx.textAlign = 'right';
   ctx.fillText(grClip(ctx, c.handle || '', W - pad * 2 - 90), W - pad, 128);
 
@@ -1923,26 +2013,28 @@ function grafDisegna(canvas, c) {
     ctx.fillStyle = acc;
     ctx.font = `800 40px ${S}`;
     ctx.fillText((L('PROGRAMMAZIONE', 'SCHEDULE', 'PROGRAMACIÓN')), pad, 250);
-    ctx.fillStyle = tema.testo;
-    ctx.font = `900 96px ${S}`;
+    ctx.save();
+    ctx.shadowColor = ombra; ctx.shadowBlur = 14; ctx.shadowOffsetY = 2;
+    ctx.fillStyle = txt; ctx.font = `900 96px ${S}`;
     ctx.fillText(grClip(ctx, (c.titolo || L('LA SETTIMANA', 'THE WEEK', 'LA SEMANA')).toUpperCase(), W - pad * 2), pad, 350);
+    ctx.restore();
 
-    // righe giorni
+    // righe giorni: su immagine/tinta il pannello riga è più marcato (leggibilità)
+    const rigaBg = c.sfondo === 'tema' ? tema.riga : (eScuroHex(txt) ? 'rgba(255,255,255,.40)' : 'rgba(0,0,0,.32)');
     const y0 = 440, rh = (H - y0 - pad) / 7;
     c.giorni.forEach((r, i) => {
       const y = y0 + i * rh;
       grRoundRect(ctx, pad, y, W - pad * 2, rh - 16, 26);
-      ctx.fillStyle = tema.riga; ctx.fill();
-      // giorno
+      ctx.fillStyle = rigaBg; ctx.fill();
       ctx.fillStyle = acc; ctx.font = `800 40px ${S}`; ctx.textAlign = 'left';
       ctx.fillText(r.g, pad + 34, y + rh / 2 + 2);
       if (r.off) {
-        ctx.fillStyle = tema.tenue; ctx.font = `600 34px ${S}`;
+        ctx.fillStyle = tenue2; ctx.font = `600 34px ${S}`;
         ctx.fillText(L('riposo', 'day off', 'descanso'), pad + 200, y + rh / 2 + 2);
       } else {
-        ctx.fillStyle = tema.testo; ctx.font = `800 40px ${S}`;
+        ctx.fillStyle = txt; ctx.font = `800 40px ${S}`;
         ctx.fillText(r.ora || '—', pad + 200, y + rh / 2 + 2);
-        ctx.fillStyle = tema.testo; ctx.font = `500 36px ${S}`;
+        ctx.fillStyle = txt; ctx.font = `500 36px ${S}`;
         ctx.fillText(grClip(ctx, r.att || '—', W - pad * 2 - 430), pad + 400, y + rh / 2 + 2);
       }
     });
@@ -1952,10 +2044,13 @@ function grafDisegna(canvas, c) {
     ctx.beginPath(); ctx.arc(pad + 22, cy - 150, 26, 0, Math.PI * 2);
     ctx.fillStyle = '#ff3b30'; ctx.fill();
     ctx.textAlign = 'left';
-    ctx.fillStyle = tema.tenue; ctx.font = `800 44px ${S}`;
+    ctx.fillStyle = tenue2; ctx.font = `800 44px ${S}`;
     ctx.fillText(L('IN DIRETTA ORA', 'LIVE NOW', 'EN DIRECTO'), pad + 70, cy - 136);
-    ctx.fillStyle = tema.testo; ctx.font = `900 150px ${S}`;
+    ctx.save();
+    ctx.shadowColor = ombra; ctx.shadowBlur = 16; ctx.shadowOffsetY = 2;
+    ctx.fillStyle = txt; ctx.font = `900 150px ${S}`;
     ctx.fillText(grClip(ctx, (c.titolo || 'LIVE').toUpperCase(), W - pad * 2), pad, cy + 20);
+    ctx.restore();
     if (c.gioco) {
       grRoundRect(ctx, pad, cy + 90, Math.min(W - pad * 2, ctx.measureText(c.gioco).width + 220), 96, 48);
       ctx.fillStyle = acc; ctx.fill();
@@ -1964,7 +2059,7 @@ function grafDisegna(canvas, c) {
       ctx.fillText('🎮 ' + grClip(ctx, c.gioco, W - pad * 2 - 240), pad + 44, cy + 154);
     }
     if (c.sottotitolo) {
-      ctx.fillStyle = tema.tenue; ctx.font = `500 52px ${S}`; ctx.textAlign = 'left';
+      ctx.fillStyle = tenue2; ctx.font = `500 52px ${S}`; ctx.textAlign = 'left';
       ctx.fillText(grClip(ctx, c.sottotitolo, W - pad * 2), pad, cy + 300);
     }
     // barra accento in basso
@@ -1986,7 +2081,13 @@ function initGrafiche() {
   const canvas = document.getElementById('gr-canvas');
   if (!canvas) return;
   let c = grafConfig();
-  const ridisegna = () => grafDisegna(canvas, c);
+  // Un solo loop d'anteprima: se il tema è animato gira a rAF, altrimenti un
+  // fotogramma statico. Annulla sempre il loop precedente (anche di una riapertura).
+  const frame = () => { grafDisegna(canvas, c, performance.now()); grafRAF = requestAnimationFrame(frame); };
+  const ridisegna = () => {
+    if (grafRAF) { cancelAnimationFrame(grafRAF); grafRAF = null; }
+    if (grafAnimato(c)) frame(); else grafDisegna(canvas, c, 0);
+  };
 
   const setTipo = (t) => {
     c.tipo = t;
@@ -2012,6 +2113,7 @@ function initGrafiche() {
   const mostraSfondo = () => {
     document.querySelector('.gr-sfondo-tinta')?.toggleAttribute('hidden', c.sfondo !== 'tinta');
     document.querySelector('.gr-sfondo-img')?.toggleAttribute('hidden', c.sfondo !== 'immagine');
+    document.querySelector('.gr-velo-box')?.toggleAttribute('hidden', c.sfondo === 'tema');
   };
   document.querySelectorAll('[data-gr-sfondo]').forEach((b) => b.addEventListener('click', () => {
     c.sfondo = b.dataset.grSfondo;
@@ -2057,6 +2159,37 @@ function initGrafiche() {
   });
   document.getElementById('gr-sfondo-togli')?.addEventListener('click', (e) => {
     e.preventDefault(); c.sfondoImg = ''; grafCaricaImg('', ridisegna);
+  });
+
+  // ── colore del testo (con auto-contrasto) + velo di leggibilità
+  const colTesto = document.getElementById('gr-coloretesto');
+  colTesto?.addEventListener('input', () => { c.coloreTesto = colTesto.value; document.getElementById('gr-coloretesto-auto')?.removeAttribute('disabled'); ridisegna(); });
+  document.getElementById('gr-coloretesto-auto')?.addEventListener('click', (e) => { c.coloreTesto = ''; e.currentTarget.setAttribute('disabled', ''); ridisegna(); });
+  const veloEl = document.getElementById('gr-velo');
+  veloEl?.addEventListener('input', () => { c.velo = Number(veloEl.value) || 0; const v = document.getElementById('gr-velo-val'); if (v) v.textContent = c.velo + '%'; ridisegna(); });
+
+  // ── logo immagine: carica dal PC (ridimensionato) o togli → torna all'emoji
+  if (c.logoImg) grafCaricaLogo(c.logoImg, ridisegna);
+  document.getElementById('gr-logo-file')?.addEventListener('change', (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    const im = new Image();
+    im.onload = () => {
+      const max = 256, s = Math.min(1, max / Math.max(im.naturalWidth, im.naturalHeight));
+      const cv = document.createElement('canvas');
+      cv.width = Math.round(im.naturalWidth * s); cv.height = Math.round(im.naturalHeight * s);
+      cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
+      c.logoImg = cv.toDataURL('image/png');
+      const le = document.getElementById('gr-logo'); if (le) le.disabled = true;
+      grafCaricaLogo(c.logoImg, ridisegna);
+    };
+    im.onerror = () => toast(L('Immagine non valida', 'Invalid image', 'Imagen no válida'), 'errore');
+    im.src = URL.createObjectURL(f);
+  });
+  document.getElementById('gr-logo-togli')?.addEventListener('click', (e) => {
+    e.preventDefault(); c.logoImg = '';
+    const le = document.getElementById('gr-logo'); if (le) le.disabled = false;
+    grafCaricaLogo('', ridisegna);
   });
 
   document.querySelectorAll('.gr-riga-giorno').forEach((row) => {
