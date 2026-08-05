@@ -256,6 +256,32 @@
     } catch { /* niente */ }
   }
 
+  // Chiede la webcam con getUserMedia DIRETTO: più affidabile in OBS della
+  // scorciatoia di Human e, soprattutto, ci dà l'errore VERO da mostrare (negata,
+  // occupata, assente…), così lo streamer sa cosa fare.
+  async function avviaWebcam() {
+    if (!location.protocol.startsWith('https') && location.hostname !== 'localhost') {
+      setStato('la webcam serve una pagina sicura (https). Apri il link con https://'); return false;
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setStato('questo browser non espone la webcam (aggiorna OBS: serve una fonte browser recente)'); return false;
+    }
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+    } catch (e) {
+      const n = (e && e.name) || '';
+      if (n === 'NotAllowedError' || n === 'SecurityError') setStato('webcam NEGATA: consenti la fotocamera. In OBS apri il link una volta anche nel browser e concedi il permesso; poi ricarica la fonte.');
+      else if (n === 'NotReadableError' || n === 'TrackStartError' || n === 'AbortError') setStato('webcam OCCUPATA da un\'altra fonte: NON aggiungere anche una sorgente «Dispositivo di acquisizione video» con la stessa webcam — questo overlay È già la webcam.');
+      else if (n === 'NotFoundError' || n === 'OverconstrainedError') setStato('nessuna webcam trovata: collega/scegli una fotocamera.');
+      else setStato('webcam non disponibile: ' + (e && e.message ? e.message : n || e));
+      return false;
+    }
+    video.srcObject = stream;
+    try { await video.play(); } catch { /* alcune fonti non richiedono play() */ }
+    return true;
+  }
+
   async function avvia() {
     if (!key) { setStato('chiave overlay mancante nel link'); return; }
     connettiComandi();
@@ -263,9 +289,8 @@
       setStato('carico i modelli…');
       await human.load();
       await human.warmup();
-      setStato('avvio webcam…');
-      await human.webcam.start({ element: video, crop: false });
-      if (!video.srcObject && human.webcam && human.webcam.stream) video.srcObject = human.webcam.stream;
+      setStato('chiedo la webcam…');
+      if (!await avviaWebcam()) return;   // errore già mostrato, con la soluzione
       setStato('attivo');
       loop();
     } catch (e) {
