@@ -94,6 +94,7 @@ function impostazioni() {
     comandiChat: (s.comandiChat && typeof s.comandiChat === 'object') ? s.comandiChat : { attivo: false },
     watchtime: (s.watchtime && typeof s.watchtime === 'object') ? s.watchtime : { attivo: true },
     comandiBase: (s.comandiBase && typeof s.comandiBase === 'object') ? s.comandiBase : { attivo: true },
+    grafiche: (s.grafiche && typeof s.grafiche === 'object') ? s.grafiche : null,
     tiktok: (s.tiktok && typeof s.tiktok === 'object') ? s.tiktok : { username: '', attivo: false, annunciaChat: false, messaggio: '', postAttivo: false, postAnnunciaChat: false, postMessaggio: '' },
     youtube: (s.youtube && typeof s.youtube === 'object') ? s.youtube : { canale: '', attivo: false, annunciaChat: false, messaggio: '' },
     instagram: (s.instagram && typeof s.instagram === 'object') ? s.instagram : { userId: '', attivo: false, annunciaChat: false, messaggio: '' },
@@ -1131,6 +1132,7 @@ const GRUPPI = [
   { id: 'notifiche', nome: 'Notifiche', schede: [
     ['notifiche', 'Notifiche'],
     ['pagina', 'Pagina link'],
+    ['grafiche', 'Grafiche'],
   ] },
 ];
 
@@ -1173,6 +1175,7 @@ const T_SCHEDA = {
   sottoscrizione: ['Sottoscrizione', 'Subscription', 'Suscripción'],
   pagina: ['Pagina link', 'Link page', 'Página de enlaces'],
   effetti: ['Effetti & suoni', 'Effects & sounds', 'Efectos y sonidos'],
+  grafiche: ['Grafiche social', 'Social graphics', 'Gráficas sociales'],
   admin: ['Admin', 'Admin', 'Admin'],
 };
 const tGruppo = (id, fb) => { const t = T_GRUPPO[id]; return t ? L(t[0], t[1], t[2]) : (fb || id); };
@@ -1206,6 +1209,7 @@ const ICONA = {
   alert:       _ico('<rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/><path d="M6 8h4"/><path d="M6 11h2"/>'),
   emote:       _ico('<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><line x1="9" x2="9.01" y1="9.5" y2="9.5"/><line x1="15" x2="15.01" y1="9.5" y2="9.5"/>'),
   notifiche:   _ico('<path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5 2 6H4c.5-1 2-2 2-6"/><path d="M10.3 20a1.9 1.9 0 0 0 3.4 0"/>'),
+  grafiche:    _ico('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.5-3.5a2 2 0 0 0-2.8 0L4 22"/>'),
   sottoscrizione: _ico('<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 14.5h4"/>'),
   pagina:      _ico('<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.8 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.8-1.7"/>'),
   admin:       _ico('<path d="M4 8.5 7.5 16h9L20 8.5l-4.3 3L12 5 8.3 11.5z"/><path d="M7.5 19h9"/>'),
@@ -1703,12 +1707,284 @@ function vistaPiattaforma() {
     ${pannello7TV()}
     ${pannelloNotifiche()}
     ${pannelloPaginaLink()}
+    ${pannelloGrafiche()}
     ${stato.isAdmin ? pannello('admin', vistaAdminContenuto()) : ''}`;
 }
 
 function pannello(id, contenuto) {
   const dentro = schedaBloccata(id) ? paginaBloccata(id) : contenuto;
   return `<section class="pannello-scheda${id === schedaAttiva ? ' visibile' : ''}" id="scheda-${id}" data-scheda="${id}">${dentro}</section>`;
+}
+
+// ══════════════════════════════════════════════════ GRAFICHE SOCIAL (P5)
+// Studio grafico lato client: due formati pronti da pubblicare — PROGRAMMAZIONE
+// settimanale e "LIVE ORA" — con temi curati, tutto personalizzabile (testi,
+// colori, logo, orari) e salvato, così resta pronto da modificare. Il disegno è
+// su <canvas> (nessun font esterno: stack di sistema, CSP-safe) e si scarica in
+// PNG. Niente server: è tutto qui.
+const GR_GIORNI = ['LUN', 'MAR', 'MER', 'GIO', 'VEN', 'SAB', 'DOM'];
+const GR_TEMI = {
+  notte:    { nome: 'Notte',    bg: ['#0f1020', '#241b3d'], testo: '#ffffff', tenue: '#b9b6d6', acc: '#8b5cf6', riga: 'rgba(255,255,255,.07)' },
+  neon:     { nome: 'Neon',     bg: ['#04111a', '#06263a'], testo: '#eafcff', tenue: '#8fd3e6', acc: '#22d3ee', riga: 'rgba(34,211,238,.10)' },
+  tramonto: { nome: 'Tramonto', bg: ['#2a0e2e', '#7a1f3d'], testo: '#fff5f0', tenue: '#ffd0c4', acc: '#ff7a59', riga: 'rgba(255,255,255,.08)' },
+  pastello: { nome: 'Pastello', bg: ['#f4f0ff', '#e6f0ff'], testo: '#241b3d', tenue: '#6b6a86', acc: '#7c5cff', riga: 'rgba(60,40,120,.08)' },
+  minimal:  { nome: 'Minimal',  bg: ['#111113', '#111113'], testo: '#ffffff', tenue: '#a8a8b3', acc: '#ffffff', riga: 'rgba(255,255,255,.10)' },
+};
+const GR_TEMA_IDS = Object.keys(GR_TEMI);
+
+function grafDefault() {
+  const canale = stato?.user?.login || 'iltuocanale';
+  return {
+    tipo: 'programmazione', tema: 'notte', accento: '',
+    titolo: '', handle: '@' + canale, logo: '🎮',
+    gioco: '', sottotitolo: '',
+    giorni: GR_GIORNI.map((g) => ({ g, ora: '21:00', att: '', off: false })),
+  };
+}
+function grafConfig() {
+  const s = impostazioni().grafiche;
+  const d = grafDefault();
+  if (!s || typeof s !== 'object') return d;
+  const giorni = Array.isArray(s.giorni) && s.giorni.length === 7 ? s.giorni : d.giorni;
+  return { ...d, ...s, giorni: giorni.map((x, i) => ({ g: GR_GIORNI[i], ora: String(x?.ora || ''), att: String(x?.att || ''), off: !!x?.off })) };
+}
+
+function pannelloGrafiche() {
+  const c = grafConfig();
+  const temaChips = GR_TEMA_IDS.map((id) =>
+    `<button type="button" class="gr-tema${c.tema === id ? ' on' : ''}" data-gr-tema="${id}">${esc(GR_TEMI[id].nome)}</button>`).join('');
+  const righeProg = c.giorni.map((r, i) => `
+    <div class="gr-riga-giorno" data-gr-i="${i}">
+      <span class="gr-gg">${r.g}</span>
+      <input type="time" class="gr-ora" value="${esc(r.ora)}" ${r.off ? 'disabled' : ''}>
+      <input type="text" class="gr-att" maxlength="34" placeholder="${L('gioco / attività', 'game / activity', 'juego / actividad')}" value="${esc(r.att)}" ${r.off ? 'disabled' : ''}>
+      <label class="gr-off"><input type="checkbox" class="gr-riposo" ${r.off ? 'checked' : ''}> ${L('riposo', 'off', 'descanso')}</label>
+    </div>`).join('');
+  return pannello('grafiche', `
+    <div class="carta">
+      <h2>${_hIco(ICO.grafico || ICONA.grafiche)}${L('Grafiche social', 'Social graphics', 'Gráficas sociales')}</h2>
+      <p>${L('Due grafiche pronte da pubblicare: la', 'Two ready-to-post graphics: the', 'Dos gráficas listas para publicar: la')} <strong class="primo-piano">${L('programmazione settimanale', 'weekly schedule', 'programación semanal')}</strong> ${L('e', 'and', 'y')} <strong class="primo-piano">«${L('Live ora', 'Live now', 'En directo')}»</strong>. ${L('Scegli un tema, personalizza tutto e scarica il PNG. Le tue impostazioni restano salvate, pronte da rimodificare.', 'Pick a theme, customize everything and download the PNG. Your settings stay saved, ready to re-edit.', 'Elige un tema, personaliza todo y descarga el PNG. Tus ajustes quedan guardados, listos para reeditar.')}</p>
+
+      <div class="gr-tipo">
+        <button type="button" class="gr-tipo-b${c.tipo === 'programmazione' ? ' on' : ''}" data-gr-tipo="programmazione">🗓️ ${L('Programmazione', 'Schedule', 'Programación')}</button>
+        <button type="button" class="gr-tipo-b${c.tipo === 'live' ? ' on' : ''}" data-gr-tipo="live">🔴 ${L('Live ora', 'Live now', 'En directo')}</button>
+      </div>
+
+      <div class="gr-studio">
+        <div class="gr-controlli">
+          <label class="campo">${L('Tema', 'Theme', 'Tema')}</label>
+          <div class="gr-temi">${temaChips}</div>
+
+          <div class="riga-flessibile spazio-sopra">
+            <div style="flex:1">
+              <label class="campo" for="gr-titolo">${L('Titolo', 'Title', 'Título')}</label>
+              <input type="text" id="gr-titolo" maxlength="30" placeholder="${L('es. LA SETTIMANA', 'e.g. THE WEEK', 'p. ej. LA SEMANA')}" value="${esc(c.titolo)}">
+            </div>
+            <div style="width:120px">
+              <label class="campo" for="gr-accento">${L('Accento', 'Accent', 'Acento')}</label>
+              <input type="color" id="gr-accento" value="${esc(c.accento || GR_TEMI[c.tema].acc)}">
+            </div>
+          </div>
+
+          <div class="riga-flessibile spazio-sopra">
+            <div style="flex:1">
+              <label class="campo" for="gr-handle">${L('Handle / nome', 'Handle / name', 'Handle / nombre')}</label>
+              <input type="text" id="gr-handle" maxlength="30" value="${esc(c.handle)}">
+            </div>
+            <div style="width:120px">
+              <label class="campo" for="gr-logo">${L('Logo (emoji)', 'Logo (emoji)', 'Logo (emoji)')}</label>
+              <input type="text" id="gr-logo" maxlength="4" value="${esc(c.logo)}">
+            </div>
+          </div>
+
+          <div class="gr-solo-prog" ${c.tipo === 'live' ? 'hidden' : ''}>
+            <label class="campo spazio-sopra">${L('Settimana (orari e attività)', 'Week (times and activities)', 'Semana (horarios y actividades)')}</label>
+            <div class="gr-giorni">${righeProg}</div>
+          </div>
+
+          <div class="gr-solo-live" ${c.tipo === 'programmazione' ? 'hidden' : ''}>
+            <label class="campo spazio-sopra" for="gr-gioco">${L('Gioco / categoria', 'Game / category', 'Juego / categoría')}</label>
+            <input type="text" id="gr-gioco" maxlength="34" placeholder="${L('es. Just Chatting', 'e.g. Just Chatting', 'p. ej. Just Chatting')}" value="${esc(c.gioco)}">
+            <label class="campo spazio-sopra" for="gr-sottotitolo">${L('Sottotitolo', 'Subtitle', 'Subtítulo')}</label>
+            <input type="text" id="gr-sottotitolo" maxlength="48" placeholder="${L('es. Vieni a salutare!', 'e.g. Come say hi!', '¡Ven a saludar!')}" value="${esc(c.sottotitolo)}">
+          </div>
+
+          <p class="spazio-sopra">
+            <button class="btn" id="gr-scarica">${_bIco(ICO.scarica || ICO.pacco)}${L('Scarica PNG', 'Download PNG', 'Descargar PNG')}</button>
+            <button class="btn secondario" id="gr-salva">${L('Salva impostazioni', 'Save settings', 'Guardar ajustes')}</button>
+          </p>
+        </div>
+
+        <div class="gr-anteprima">
+          <canvas id="gr-canvas" width="1080" height="1080" aria-label="${L('anteprima grafica', 'graphic preview', 'vista previa')}"></canvas>
+        </div>
+      </div>
+    </div>`);
+}
+
+// disegno di una parola/frase tagliata a una larghezza massima (ellissi)
+function grClip(ctx, testo, max) {
+  let t = String(testo || '');
+  if (ctx.measureText(t).width <= max) return t;
+  while (t.length > 1 && ctx.measureText(t + '…').width > max) t = t.slice(0, -1);
+  return t + '…';
+}
+function grRoundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+// Disegna la grafica sul canvas secondo la config. Cuore di P5.
+function grafDisegna(canvas, c) {
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const tema = GR_TEMI[c.tema] || GR_TEMI.notte;
+  const acc = /^#[0-9a-fA-F]{6}$/.test(c.accento || '') ? c.accento : tema.acc;
+  const prog = c.tipo !== 'live';
+  const W = 1080, H = prog ? 1350 : 1080;
+  canvas.width = W; canvas.height = H;
+  const S = 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
+
+  // sfondo: gradiente diagonale + alone d'accento
+  const g = ctx.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, tema.bg[0]); g.addColorStop(1, tema.bg[1]);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const alone = ctx.createRadialGradient(W * 0.85, H * 0.1, 40, W * 0.85, H * 0.1, W * 0.8);
+  alone.addColorStop(0, acc + '44'); alone.addColorStop(1, acc + '00');
+  ctx.fillStyle = alone; ctx.fillRect(0, 0, W, H);
+
+  const pad = 90;
+  // intestazione: logo + handle
+  ctx.textBaseline = 'alphabetic';
+  ctx.font = `600 46px ${S}`;
+  ctx.fillStyle = tema.testo;
+  ctx.textAlign = 'left';
+  const logo = String(c.logo || '').trim();
+  if (logo) { ctx.font = `48px ${S}`; ctx.fillText(logo, pad, 130); }
+  ctx.font = `700 40px ${S}`;
+  ctx.fillStyle = tema.tenue;
+  ctx.textAlign = 'right';
+  ctx.fillText(grClip(ctx, c.handle || '', W - pad * 2 - 90), W - pad, 128);
+
+  if (prog) {
+    // titolo grande
+    ctx.textAlign = 'left';
+    ctx.fillStyle = acc;
+    ctx.font = `800 40px ${S}`;
+    ctx.fillText((L('PROGRAMMAZIONE', 'SCHEDULE', 'PROGRAMACIÓN')), pad, 250);
+    ctx.fillStyle = tema.testo;
+    ctx.font = `900 96px ${S}`;
+    ctx.fillText(grClip(ctx, (c.titolo || L('LA SETTIMANA', 'THE WEEK', 'LA SEMANA')).toUpperCase(), W - pad * 2), pad, 350);
+
+    // righe giorni
+    const y0 = 440, rh = (H - y0 - pad) / 7;
+    c.giorni.forEach((r, i) => {
+      const y = y0 + i * rh;
+      grRoundRect(ctx, pad, y, W - pad * 2, rh - 16, 26);
+      ctx.fillStyle = tema.riga; ctx.fill();
+      // giorno
+      ctx.fillStyle = acc; ctx.font = `800 40px ${S}`; ctx.textAlign = 'left';
+      ctx.fillText(r.g, pad + 34, y + rh / 2 + 2);
+      if (r.off) {
+        ctx.fillStyle = tema.tenue; ctx.font = `600 34px ${S}`;
+        ctx.fillText(L('riposo', 'day off', 'descanso'), pad + 200, y + rh / 2 + 2);
+      } else {
+        ctx.fillStyle = tema.testo; ctx.font = `800 40px ${S}`;
+        ctx.fillText(r.ora || '—', pad + 200, y + rh / 2 + 2);
+        ctx.fillStyle = tema.testo; ctx.font = `500 36px ${S}`;
+        ctx.fillText(grClip(ctx, r.att || '—', W - pad * 2 - 430), pad + 400, y + rh / 2 + 2);
+      }
+    });
+  } else {
+    // LIVE ORA: pallino + scritta grande, gioco, sottotitolo
+    const cy = 470;
+    ctx.beginPath(); ctx.arc(pad + 22, cy - 150, 26, 0, Math.PI * 2);
+    ctx.fillStyle = '#ff3b30'; ctx.fill();
+    ctx.textAlign = 'left';
+    ctx.fillStyle = tema.tenue; ctx.font = `800 44px ${S}`;
+    ctx.fillText(L('IN DIRETTA ORA', 'LIVE NOW', 'EN DIRECTO'), pad + 70, cy - 136);
+    ctx.fillStyle = tema.testo; ctx.font = `900 150px ${S}`;
+    ctx.fillText(grClip(ctx, (c.titolo || 'LIVE').toUpperCase(), W - pad * 2), pad, cy + 20);
+    if (c.gioco) {
+      grRoundRect(ctx, pad, cy + 90, Math.min(W - pad * 2, ctx.measureText(c.gioco).width + 220), 96, 48);
+      ctx.fillStyle = acc; ctx.fill();
+      ctx.fillStyle = eScuroHex(acc) ? '#fff' : '#111';
+      ctx.font = `800 46px ${S}`; ctx.textAlign = 'left';
+      ctx.fillText('🎮 ' + grClip(ctx, c.gioco, W - pad * 2 - 240), pad + 44, cy + 154);
+    }
+    if (c.sottotitolo) {
+      ctx.fillStyle = tema.tenue; ctx.font = `500 52px ${S}`; ctx.textAlign = 'left';
+      ctx.fillText(grClip(ctx, c.sottotitolo, W - pad * 2), pad, cy + 300);
+    }
+    // barra accento in basso
+    ctx.fillStyle = acc; ctx.fillRect(0, H - 24, W, 24);
+  }
+}
+// luminanza: true se il colore è scuro (per scegliere testo bianco/nero sopra)
+function eScuroHex(hex) {
+  const m = /^#?([0-9a-fA-F]{6})$/.exec(String(hex || ''));
+  if (!m) return true;
+  const n = parseInt(m[1], 16);
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) < 140;
+}
+
+// Aggancia i controlli dello studio grafico e disegna l'anteprima. Chiamata
+// quando si apre la scheda (caricaDatiScheda).
+function initGrafiche() {
+  const canvas = document.getElementById('gr-canvas');
+  if (!canvas) return;
+  let c = grafConfig();
+  const ridisegna = () => grafDisegna(canvas, c);
+
+  const setTipo = (t) => {
+    c.tipo = t;
+    document.querySelectorAll('[data-gr-tipo]').forEach((b) => b.classList.toggle('on', b.dataset.grTipo === t));
+    document.querySelector('.gr-solo-prog')?.toggleAttribute('hidden', t === 'live');
+    document.querySelector('.gr-solo-live')?.toggleAttribute('hidden', t !== 'live');
+    ridisegna();
+  };
+  document.querySelectorAll('[data-gr-tipo]').forEach((b) => b.addEventListener('click', () => setTipo(b.dataset.grTipo)));
+  document.querySelectorAll('[data-gr-tema]').forEach((b) => b.addEventListener('click', () => {
+    c.tema = b.dataset.grTema;
+    document.querySelectorAll('[data-gr-tema]').forEach((x) => x.classList.toggle('on', x === b));
+    const accEl = document.getElementById('gr-accento');
+    if (accEl) { c.accento = ''; accEl.value = GR_TEMI[c.tema].acc; }
+    ridisegna();
+  }));
+  const bind = (id, k) => document.getElementById(id)?.addEventListener('input', (e) => { c[k] = e.target.value; ridisegna(); });
+  bind('gr-titolo', 'titolo'); bind('gr-handle', 'handle'); bind('gr-logo', 'logo');
+  bind('gr-accento', 'accento'); bind('gr-gioco', 'gioco'); bind('gr-sottotitolo', 'sottotitolo');
+
+  document.querySelectorAll('.gr-riga-giorno').forEach((row) => {
+    const i = Number(row.dataset.grI);
+    const ora = row.querySelector('.gr-ora'), att = row.querySelector('.gr-att'), off = row.querySelector('.gr-riposo');
+    ora?.addEventListener('input', () => { c.giorni[i].ora = ora.value; ridisegna(); });
+    att?.addEventListener('input', () => { c.giorni[i].att = att.value; ridisegna(); });
+    off?.addEventListener('change', () => { c.giorni[i].off = off.checked; if (ora) ora.disabled = off.checked; if (att) att.disabled = off.checked; ridisegna(); });
+  });
+
+  document.getElementById('gr-scarica')?.addEventListener('click', () => {
+    grafDisegna(canvas, c);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `socialbot-${c.tipo}-${(stato?.user?.login || 'canale')}.png`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    }, 'image/png');
+  });
+  document.getElementById('gr-salva')?.addEventListener('click', () => conErrore(async () => {
+    await salvaImpostazioni({ grafiche: c }, L('Grafica salvata ✓', 'Graphic saved ✓', 'Gráfica guardada ✓'));
+  }));
+
+  ridisegna();
 }
 
 // --- scheda Stato -------------------------------------------------------
@@ -8837,6 +9113,7 @@ function caricaDatiScheda(id) {
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); }
   if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaDiscord(); caricaTgLogin(); }
   if (id === 'pagina') caricaPaginaLink();
+  if (id === 'grafiche') initGrafiche();
   if (id === 'regole') caricaStatoListaBot();
   if (id === 'sottoscrizione') caricaSottoscrizione();
   if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaSalute(); caricaBackup(); caricaAnima(); caricaLLM(); }
