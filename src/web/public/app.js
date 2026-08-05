@@ -295,7 +295,7 @@ function _demoGet(via) {
     '/api/discord/stato': { configurato: false, attivo: false, messaggio: '', nomeBot: '', avatar: '', anteprima: '' },
     '/api/abbonamento/piani': { attivo: false,
       free: { id: 'free', nome: 'Essenziale', prezzoTesto: 'Gratis', sommario: 'Gratis, basta registrarsi.' },
-      base: { id: 'base', nome: 'Base', prezzoTesto: '\u20ac2,99/mese', sommario: 'Studio Web e un moderatore.' },
+      base: { id: 'base', nome: 'Base', prezzoTesto: '\u20ac2,99/mese', sommario: 'Social & Notifiche e un moderatore.' },
       addon: [
         { id: 'giochi', nome: 'Giochi & Classifiche', prezzoTesto: '\u20ac2,79/mese', sommario: 'Minigiochi, monete, classifiche e VIP.' },
         { id: 'effetti', nome: 'Effetti & Punti canale', prezzoTesto: '\u20ac1,79/mese', sommario: 'Alert ed effetti riscattabili a punti canale.' },
@@ -921,7 +921,6 @@ async function caricaPiani() {
   // card non sembra ripetere solo il gratis); poi ciò che eredita dall'Essenziale.
   const inclusiBase = [
     { t: L('Social & Notifiche: avvisi live su Telegram/Discord + nuovi post', 'Social & Notifications: live alerts on Telegram/Discord + new posts', 'Social y Notificaciones: avisos live en Telegram/Discord + nuevos posts'), base: true },
-    { t: L('Studio Web: vai live senza OBS', 'Web Studio: go live without OBS', 'Estudio Web: sal en directo sin OBS'), base: true },
     { t: L('1 moderatore incluso', '1 moderator included', '1 moderador incluido'), base: true },
     { t: L('Comandi & moduli illimitati', 'Unlimited commands & modules', 'Comandos y módulos ilimitados') },
     { t: L('Antispam, moderazione & scudo anti-bot/anti-raid', 'Anti-spam, moderation & anti-bot/anti-raid shield', 'Antispam, moderación y escudo anti-bot/anti-raid') },
@@ -1116,7 +1115,8 @@ const GRUPPI = [
   ] },
   { id: 'diretta', nome: 'Diretta', schede: [
     ['regia', 'Regia'],
-    ['studio', 'Studio Web'],
+    // Studio Web temporaneamente nascosto (WIP): fa laggare le live. Il codice
+    // resta, si riattiva rimettendo questa voce quando le prestazioni sono a posto.
     ['clip', 'Clip'],
     ['ascolto', 'Comandi a voce'],
   ] },
@@ -1396,7 +1396,8 @@ const CAPACITA = [
   ] },
   { ico: '<rect x="2" y="6" width="14" height="12" rx="2"/><path d="m22 8-6 4 6 4V8Z"/>', area: ['La tua diretta', 'Your stream', 'Tu directo'], voci: [
     { pacc: 'free', t: ['Regia della diretta', 'Stream control room', 'Realización del directo'], d: ['Titolo, categoria, tag, marker, pubblicità e raid dal pannello.', 'Title, category, tags, markers, ads and raids from the panel.', 'Título, categoría, etiquetas, marcadores, anuncios y raids desde el panel.'] },
-    { pacc: 'base', t: ['Studio Web: live senza OBS', 'Web Studio: live without OBS', 'Estudio Web: directo sin OBS'], d: ['Vai in diretta dal browser: scene, webcam, schermo, mixer audio, fino al 2K.', 'Go live from the browser: scenes, webcam, screen, audio mixer, up to 2K.', 'Emite desde el navegador: escenas, webcam, pantalla, mezclador de audio, hasta 2K.'] },
+    // Studio Web nascosto (WIP): fa laggare le live. Card di presentazione tolta finché non si risolve; il codice resta.
+    // { pacc: 'base', t: ['Studio Web: live senza OBS', 'Web Studio: live without OBS', 'Estudio Web: directo sin OBS'], d: ['Vai in diretta dal browser: scene, webcam, schermo, mixer audio, fino al 2K.', 'Go live from the browser: scenes, webcam, screen, audio mixer, up to 2K.', 'Emite desde el navegador: escenas, webcam, pantalla, mezclador de audio, hasta 2K.'] },
     { pacc: 'clip', t: ['Clip automatiche', 'Automatic clips', 'Clips automáticos'], d: ['Quando la chat si accende il bot clippa da solo.', 'When chat lights up the bot clips on its own.', 'Cuando el chat se enciende el bot clipea solo.'] },
     { pacc: 'voce', t: ['Comandi a voce', 'Voice commands', 'Comandos por voz'], d: ['Cambi titolo, fai una clip o dai il VIP parlando. L’audio non lascia il tuo PC.', 'Change the title, make a clip or grant VIP by speaking. The audio never leaves your PC.', 'Cambias el título, haces un clip o das el VIP hablando. El audio no sale de tu PC.'] },
   ] },
@@ -6711,7 +6712,8 @@ async function caricaSottoscrizione() {
   const VOCI = [
     ['moduli', L('Comandi e automazioni', 'Commands and automations', 'Comandos y automatizaciones')],
     ['overlay', L('Overlay per OBS', 'OBS overlay', 'Overlay para OBS')],
-    ['studio', L('Studio Web (live senza OBS)', 'Web Studio (live without OBS)', 'Estudio Web (directo sin OBS)')],
+    // Studio Web nascosto (WIP: fa laggare le live) — niente riga "acceso ✓" finché non si risolve.
+    // ['studio', L('Studio Web (live senza OBS)', 'Web Studio (live without OBS)', 'Estudio Web (directo sin OBS)')],
     ['effetti', L('Effetti e punti canale', 'Effects and channel points', 'Efectos y puntos de canal')],
     ['giochi', L('Giochi e classifiche', 'Games and leaderboards', 'Juegos y clasificaciones')],
     ['musica', L('Richieste musicali', 'Music requests', 'Peticiones musicales')],
