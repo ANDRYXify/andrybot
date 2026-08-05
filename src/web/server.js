@@ -2465,6 +2465,27 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (b.comandiChat !== undefined) {
       out.comandiChat = { attivo: !!((b.comandiChat || {}).attivo) };
     }
+    // comandi base pronti (!so/!followage/!uptime): OPT-OUT, default accesi
+    if (b.comandiBase !== undefined) {
+      out.comandiBase = { attivo: (b.comandiBase || {}).attivo !== false };
+    }
+    // Grafiche social (P5): config dello studio grafico. Solo dati testuali/di
+    // stile, tutto limitato in lunghezza (rese SOLO lato client su canvas).
+    if (b.grafiche !== undefined) {
+      const gr = b.grafiche || {};
+      const str = (v, n) => String(v == null ? '' : v).slice(0, n);
+      const giorni = Array.isArray(gr.giorni) ? gr.giorni.slice(0, 7).map((x) => ({
+        ora: str(x?.ora, 5), att: str(x?.att, 40), off: !!x?.off,
+      })) : [];
+      out.grafiche = {
+        tipo: ['programmazione', 'live'].includes(gr.tipo) ? gr.tipo : 'programmazione',
+        tema: str(gr.tema, 20),
+        accento: /^#[0-9a-fA-F]{6}$/.test(String(gr.accento || '')) ? String(gr.accento) : '',
+        titolo: str(gr.titolo, 40), handle: str(gr.handle, 40), logo: str(gr.logo, 8),
+        gioco: str(gr.gioco, 40), sottotitolo: str(gr.sottotitolo, 60),
+        giorni,
+      };
+    }
     // premio VIP periodico (top monete)
     if (b.premioVip !== undefined) {
       const p = b.premioVip || {};
