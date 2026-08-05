@@ -585,6 +585,14 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.json({ ok: true });
   });
 
+  // URL da incollare in OBS (Browser Source) per l'overlay tracking, con la
+  // chiave overlay del canale. Solo per il proprietario/mod loggato.
+  app.get('/api/tracking/url', requireLogin, (req, res) => {
+    const login = currentUser(req).login;
+    const key = effects.overlayKey(login);
+    res.json({ url: `${config.baseUrl}/tracking/${encodeURIComponent(login)}?key=${encodeURIComponent(key)}` });
+  });
+
   // Link "bello" per OBS: /o/<nick>/<nome-overlay>. Reindirizza al link reale con
   // la chiave (gestita dal server) e l'overlay giusto (?o=id). Comodo da copiare;
   // l'overlay funziona identico. Nota: è indovinabile (nick + nome), quindi meno

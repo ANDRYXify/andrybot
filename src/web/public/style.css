@@ -1471,3 +1471,13 @@ input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focu
   .gr-riga-giorno { flex-wrap: wrap; }
   .gr-riga-giorno .gr-att { flex-basis: 100%; order: 3; }
 }
+
+/* ── Tracking webcam (P6): mappatura gesto → effetto ─────────────────────── */
+.trk-mappa { display: flex; flex-direction: column; gap: 6px; }
+.trk-riga { display: flex; align-items: center; gap: 10px; }
+.trk-riga .trk-et { flex: 0 0 150px; font-weight: 600; color: var(--testo-2); font-size: .92rem; }
+.trk-riga .trk-eff { flex: 1 1 auto; min-width: 0; }
+@media (max-width: 480px) {
+  .trk-riga { flex-wrap: wrap; }
+  .trk-riga .trk-et { flex-basis: 100%; }
+}
