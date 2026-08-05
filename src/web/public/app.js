@@ -1799,8 +1799,12 @@ function pannelloGrafiche() {
             <input type="color" id="gr-sfondo-colore" value="${esc(c.sfondoColore || '#141225')}">
           </div>
           <div class="gr-sfondo-img spazio-sopra" ${c.sfondo === 'immagine' ? '' : 'hidden'}>
-            <input type="file" id="gr-sfondo-file" accept="image/*">
-            <p class="suggerimento">${L('L\'immagine viene ridimensionata e resta nel tuo canale. Consiglio: usa una foto poco contrastata così il testo resta leggibile.', 'The image is resized and stays in your channel. Tip: use a low-contrast photo so the text stays readable.', 'La imagen se redimensiona y queda en tu canal. Consejo: usa una foto poco contrastada para que el texto se lea bien.')}
+            <div class="riga-flessibile">
+              <input type="file" id="gr-sfondo-file" accept="image/*">
+              <button type="button" class="btn secondario" id="gr-sfondo-lib">${_bIco(ICO.libro)}${L('Dalla libreria/pool', 'From library/pool', 'De la biblioteca/pool')}</button>
+            </div>
+            <div id="gr-lib-box" class="gr-lib-box" hidden></div>
+            <p class="suggerimento">${L('Carica dal PC oppure scegli dalla', 'Upload from your PC or pick from the', 'Sube desde el PC o elige de la')} <strong>${L('libreria condivisa', 'shared library', 'biblioteca compartida')}</strong> ${L('(le immagini rese pubbliche dagli altri streamer). Consiglio: una foto poco contrastata così il testo resta leggibile.', '(images made public by other streamers). Tip: a low-contrast photo so the text stays readable.', '(imágenes hechas públicas por otros streamers). Consejo: una foto poco contrastada para que el texto se lea.')}
               ${c.sfondoImg ? `· <a href="#" id="gr-sfondo-togli">${L('togli immagine', 'remove image', 'quitar imagen')}</a>` : ''}</p>
           </div>
 
@@ -2031,6 +2035,25 @@ function initGrafiche() {
     };
     im.onerror = () => toast(L('Immagine non valida', 'Invalid image', 'Imagen no válida'), 'errore');
     im.src = URL.createObjectURL(f);
+  });
+  document.getElementById('gr-sfondo-lib')?.addEventListener('click', async () => {
+    const box = document.getElementById('gr-lib-box');
+    if (!box) return;
+    if (!box.hidden) { box.hidden = true; return; }
+    box.hidden = false;
+    box.innerHTML = `<p class="vuoto">${L('Carico…', 'Loading…', 'Cargando…')}</p>`;
+    try {
+      const d = await api('/api/streamer/libreria?tipo=immagine&miei=1');
+      const items = (d?.items || []).filter((x) => x.tipo === 'immagine');
+      if (!items.length) { box.innerHTML = `<p class="vuoto">${L('Nessuna immagine pubblica ancora. Caricane una in «Effetti & suoni» spuntando «Rendi pubblico».', 'No public images yet. Upload one in «Effects & sounds» ticking «Make it public».', 'Aún no hay imágenes públicas. Sube una en «Efectos y sonidos» marcando «Hazlo público».')}</p>`; return; }
+      box.innerHTML = items.slice(0, 40).map((x) =>
+        `<button type="button" class="gr-lib-el" data-url="${esc(x.url)}" title="${esc(x.nome)}"><img src="${esc(x.url)}" alt="" loading="lazy"></button>`).join('');
+      box.querySelectorAll('.gr-lib-el').forEach((b) => b.addEventListener('click', () => {
+        c.sfondoImg = b.dataset.url; grafCaricaImg(c.sfondoImg, ridisegna); box.hidden = true;
+      }));
+    } catch {
+      box.innerHTML = `<p class="vuoto">${L('Libreria non disponibile (serve l\'add-on Effetti).', 'Library unavailable (needs the Effects add-on).', 'Biblioteca no disponible (necesita el add-on de Efectos).')}</p>`;
+    }
   });
   document.getElementById('gr-sfondo-togli')?.addEventListener('click', (e) => {
     e.preventDefault(); c.sfondoImg = ''; grafCaricaImg('', ridisegna);
