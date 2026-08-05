@@ -277,7 +277,7 @@
       stream = await navigator.mediaDevices.getUserMedia(vincoli());
     } catch (e) {
       const n = (e && e.name) || '';
-      if (n === 'NotAllowedError' || n === 'SecurityError') setStato('webcam NEGATA: consenti la fotocamera. In OBS apri il link una volta anche nel browser e concedi il permesso; poi ricarica la fonte.');
+      if (n === 'NotAllowedError' || n === 'SecurityError') setStato('webcam NEGATA da OBS (la fonte browser blocca la fotocamera; concederla in un ALTRO browser non conta, è un browser diverso). Soluzione affidabile: apri questo link in Chrome a tutto schermo e in OBS usa «Cattura finestra» su Chrome. In alternativa, su OBS 30.1+: Proprietà della fonte → «Autorizzazioni pagina» → consenti la fotocamera.');
       else if (n === 'NotReadableError' || n === 'TrackStartError' || n === 'AbortError') setStato('webcam OCCUPATA da un\'altra fonte: NON aggiungere anche una sorgente «Dispositivo di acquisizione video» con la stessa webcam — questo overlay È già la webcam.');
       else if (n === 'NotFoundError' || n === 'OverconstrainedError') setStato('nessuna webcam trovata: collega/scegli una fotocamera.');
       else setStato('webcam non disponibile: ' + (e && e.message ? e.message : n || e));
