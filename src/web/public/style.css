@@ -1449,3 +1449,25 @@ input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focu
 :root[data-theme="dark"] body::before { opacity: 1; }
 :root[data-theme="dark"] .btn.secondario { background: var(--surface-2); }
 :root[data-theme="dark"] .btn.secondario:hover { background: var(--surface-3); }
+
+/* ── Grafiche social (P5): studio grafico + anteprima canvas ─────────────── */
+.gr-tipo { display: flex; gap: 8px; margin: .6rem 0 1rem; }
+.gr-tipo-b { flex: 1; padding: .6rem .8rem; border: 1px solid var(--bordo); border-radius: var(--r-m); background: var(--sfondo-2, rgba(127,127,127,.05)); color: var(--testo-2); font-weight: 600; cursor: pointer; }
+.gr-tipo-b.on { border-color: var(--acc-bordo); background: var(--acc-tint); color: var(--testo); }
+.gr-studio { display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-start; }
+.gr-controlli { flex: 1 1 320px; min-width: 280px; }
+.gr-anteprima { flex: 1 1 300px; min-width: 260px; position: sticky; top: 16px; }
+#gr-canvas { width: 100%; height: auto; max-width: 420px; border-radius: 14px; box-shadow: var(--om-m); display: block; margin: 0 auto; background: #111; }
+.gr-temi { display: flex; flex-wrap: wrap; gap: 6px; }
+.gr-tema { padding: .35rem .7rem; border: 1px solid var(--bordo); border-radius: 999px; background: transparent; color: var(--testo-2); font-size: .86rem; cursor: pointer; }
+.gr-tema.on { border-color: var(--acc-bordo); background: var(--acc-tint); color: var(--testo); font-weight: 600; }
+.gr-giorni { display: flex; flex-direction: column; gap: 6px; }
+.gr-riga-giorno { display: flex; align-items: center; gap: 8px; }
+.gr-riga-giorno .gr-gg { flex: 0 0 42px; font-weight: 800; color: var(--acc); font-size: .82rem; }
+.gr-riga-giorno .gr-ora { flex: 0 0 108px; }
+.gr-riga-giorno .gr-att { flex: 1 1 auto; min-width: 0; }
+.gr-riga-giorno .gr-off { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 4px; font-size: .8rem; color: var(--testo-3); white-space: nowrap; }
+@media (max-width: 560px) {
+  .gr-riga-giorno { flex-wrap: wrap; }
+  .gr-riga-giorno .gr-att { flex-basis: 100%; order: 3; }
+}
