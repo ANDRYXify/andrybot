@@ -635,8 +635,17 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // mani ed espressioni del volto. Gira CLIENT-SIDE in OBS (la webcam vive nel
   // Browser Source, il server NON la vede mai). Stessa chiave overlay del canale.
   const trackingHtml = join(publicDir, 'tracking-overlay.html');
+  const trackingPlayHtml = join(publicDir, 'tracking-play.html');
+  const trackingDetectHtml = join(publicDir, 'tracking-detector.html');
   app.get('/tracking/:login', (req, res) => {
     if (!chiaveOk(req)) return notFound(res);
+    // Modalità "split" (facecam nativa, niente perdita/ritardo):
+    //  ?vista=detect → RILEVATORE: webcam in Chrome, manda gesti/espressioni;
+    //  ?vista=play   → OVERLAY GIOCHI in OBS: trasparente, senza webcam;
+    //  (default)     → tutto-in-uno (per chi in OBS può dare la webcam alla fonte).
+    const v = String(req.query.vista || '');
+    if (v === 'play') return res.sendFile(trackingPlayHtml);
+    if (v === 'detect') return res.sendFile(trackingDetectHtml);
     res.sendFile(trackingHtml);
   });
 
@@ -695,6 +704,17 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const login = String(req.params.login).toLowerCase();
     const trk = streamers.get(login)?.settings?.tracking || {};
     res.json({ camera: String(trk.camera || '').slice(0, 100) });
+  });
+
+  // SPLIT: il RILEVATORE (Chrome) manda qui il gesto/espressione CORRENTE quando
+  // cambia; il server lo inoltra all'overlay giochi in OBS (canale tracking). È a
+  // bassa latenza (solo un nome, niente immagini) e protetto dalla chiave overlay.
+  app.post('/api/tracking/:login/stato', (req, res) => {
+    if (!chiaveOk(req)) return res.status(403).json({ errore: 'chiave non valida' });
+    const login = String(req.params.login).toLowerCase();
+    const pul = (v) => String(v || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 24);
+    effects.emitTrk(login, { azione: 'stato', gesto: pul(req.body?.gesto), emozione: pul(req.body?.emozione) });
+    res.json({ ok: true });
   });
 
   // URL da incollare in OBS (Browser Source) per l'overlay tracking, con la
