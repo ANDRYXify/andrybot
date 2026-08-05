@@ -21,6 +21,7 @@ const norm = (s) => String(s || '').toLowerCase();
 export class EffectsEngine {
   constructor() {
     this._clients = new Map();    // channel → Set<res> (connessioni SSE degli overlay)
+    this._trkClients = new Map(); // channel → Set<res> (overlay TRACKING: canale a parte)
     this._cooldown = new Map();   // 'channel|comando' → epoch ms di fine cooldown
   }
 
@@ -65,11 +66,40 @@ export class EffectsEngine {
   // Keepalive: un commento SSE che non fa nulla, serve solo a tenere viva la
   // connessione dietro reverse proxy (Caddy). server.js lo chiama ogni ~15s.
   ping() {
-    for (const set of this._clients.values()) {
-      for (const res of set) {
-        try { res.write(': ping\n\n'); } catch { /* ignora: il close pulirà */ }
+    for (const m of [this._clients, this._trkClients]) {
+      for (const set of m.values()) {
+        for (const res of set) {
+          try { res.write(': ping\n\n'); } catch { /* ignora: il close pulirà */ }
+        }
       }
     }
+  }
+
+  // ---------------------------------------------- canale TRACKING (minigiochi)
+  // Stesso meccanismo SSE degli overlay, ma su un registro a parte: i comandi dei
+  // giochi (avvio da chat, sfide) NON devono finire nell'overlay principale.
+  addTrkClient(channel, res) {
+    const ch = norm(channel);
+    let set = this._trkClients.get(ch);
+    if (!set) { set = new Set(); this._trkClients.set(ch, set); }
+    set.add(res);
+  }
+  removeTrkClient(channel, res) {
+    const ch = norm(channel);
+    const set = this._trkClients.get(ch);
+    if (!set) return;
+    set.delete(res);
+    if (!set.size) this._trkClients.delete(ch);
+  }
+  emitTrk(channel, payload) {
+    const set = this._trkClients.get(norm(channel));
+    if (!set || !set.size) return;
+    const riga = `data: ${JSON.stringify(payload)}\n\n`;
+    for (const res of set) { try { res.write(riga); } catch { /* pulirà il close */ } }
+  }
+  hasTrkClients(channel) {
+    const set = this._trkClients.get(norm(channel));
+    return !!(set && set.size);
   }
 
   // ------------------------------------------------------ chiavi e URL overlay
