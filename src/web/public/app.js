@@ -94,6 +94,7 @@ function impostazioni() {
     comandiChat: (s.comandiChat && typeof s.comandiChat === 'object') ? s.comandiChat : { attivo: false },
     watchtime: (s.watchtime && typeof s.watchtime === 'object') ? s.watchtime : { attivo: true },
     comandiBase: (s.comandiBase && typeof s.comandiBase === 'object') ? s.comandiBase : { attivo: true },
+    tracking: (s.tracking && typeof s.tracking === 'object') ? s.tracking : { attivo: true, giochi: true, mappa: {} },
     grafiche: (s.grafiche && typeof s.grafiche === 'object') ? s.grafiche : null,
     tiktok: (s.tiktok && typeof s.tiktok === 'object') ? s.tiktok : { username: '', attivo: false, annunciaChat: false, messaggio: '', postAttivo: false, postAnnunciaChat: false, postMessaggio: '' },
     youtube: (s.youtube && typeof s.youtube === 'object') ? s.youtube : { canale: '', attivo: false, annunciaChat: false, messaggio: '' },
@@ -6049,6 +6050,11 @@ function pannelloEffetti() {
       <label class="campo spazio-sopra">${L('Gesto/espressione → effetto', 'Gesture/expression → effect', 'Gesto/expresión → efecto')}</label>
       <datalist id="trk-eff-list"></datalist>
       <div class="trk-mappa">${righeTrk}</div>
+      <div class="riga-check spazio-sopra">
+        <input type="checkbox" id="trk-giochi" ${trk.giochi !== false ? 'checked' : ''}>
+        <label for="trk-giochi">${L('Minigiochi con la webcam (gesti ed espressioni)', 'Webcam minigames (gestures and expressions)', 'Minijuegos con la webcam (gestos y expresiones)')}</label>
+      </div>
+      <p class="suggerimento">${L('Si giocano NELLO stesso overlay. Avvio a gesto:', 'They play in the SAME overlay. Start by gesture:', 'Se juegan en el MISMO overlay. Inicio por gesto:')} ${L('tieni', 'hold', 'mantén')} <strong>✋</strong> ${L('~1s, poi scegli col gesto', '~1s, then pick with a gesture', '~1s, luego elige con un gesto')} (✌️ ${L('Mima', 'Mimic', 'Imita')} · 👍 ${L('Non ridere', "Don't laugh", 'No te rías')} · ☝️ Reaction). ${L('Oppure da chat:', 'Or from chat:', 'O desde el chat:')} <code>!mima</code>, <code>!nonridere</code>, <code>!reaction</code>, <code>!battaglia</code> ${L('(nella Battaglia gli spettatori scrivono', '(in Battle viewers type', '(en la Batalla los espectadores escriben')} <code>!sfida ✌️</code>). ${L('I punteggi finiscono in chat.', 'Scores go to chat.', 'Las puntuaciones van al chat.')}</p>
       <p class="spazio-sopra"><button class="btn" id="trk-salva">${L('Salva mappatura', 'Save mapping', 'Guardar mapeo')}</button></p>
       <p class="suggerimento">${L('Per reazioni più ricche (messaggi in chat, contatori, cooldown per ruolo) usa i', 'For richer reactions (chat messages, counters, per-role cooldown) use', 'Para reacciones más ricas (mensajes en el chat, contadores, cooldown por rol) usa los')} <strong>${L('Moduli', 'Modules', 'Módulos')}</strong>: ${L('QUANDO «Gesto webcam» → ALLORA…', 'WHEN «Webcam gesture» → THEN…', 'CUANDO «Gesto webcam» → ENTONCES…')}</p>
     </div>
@@ -9797,7 +9803,8 @@ async function caricaTracking() {
       if (g && v) mappa[g] = v;
     });
     const attivo = !!document.getElementById('trk-attivo')?.checked;
-    await salvaImpostazioni({ tracking: { attivo, mappa } }, L('Mappatura salvata ✓', 'Mapping saved ✓', 'Mapeo guardado ✓'));
+    const giochi = !!document.getElementById('trk-giochi')?.checked;
+    await salvaImpostazioni({ tracking: { attivo, giochi, mappa } }, L('Mappatura salvata ✓', 'Mapping saved ✓', 'Mapeo guardado ✓'));
   });
 }
 

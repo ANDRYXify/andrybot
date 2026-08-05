@@ -662,6 +662,26 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.json({ ok: true });
   });
 
+  // I minigiochi webcam annunciano in chat (punteggi/esiti) tramite questo endpoint.
+  // Autenticato con la chiave overlay; SOLO testo, una riga, ripulito e a cadenza
+  // limitata (niente comandi, niente spam). Rispetta l'interruttore tracking.giochi.
+  const _sayUltimo = new Map();   // login → ts
+  app.post('/api/tracking/:login/say', (req, res) => {
+    if (!chiaveOk(req)) return res.status(403).json({ errore: 'chiave non valida' });
+    const login = String(req.params.login).toLowerCase();
+    const trk = streamers.get(login)?.settings?.tracking || {};
+    if (trk.attivo === false || trk.giochi === false) return res.json({ ok: true, ignorato: true });
+    const ora = Date.now();
+    if (ora - (_sayUltimo.get(login) || 0) < 3000) return res.json({ ok: true, ignorato: true });
+    // una riga, niente caratteri di controllo, max 200; togli il '!' iniziale così
+    // il messaggio non può innescare un comando del bot.
+    let testo = String(req.body?.testo || '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200).replace(/^!+/, '');
+    if (!testo) return res.status(400).json({ errore: 'testo mancante' });
+    _sayUltimo.set(login, ora);
+    try { manager.say(login, testo); } catch { /* niente */ }
+    res.json({ ok: true });
+  });
+
   // URL da incollare in OBS (Browser Source) per l'overlay tracking, con la
   // chiave overlay del canale. Solo per il proprietario/mod loggato.
   app.get('/api/tracking/url', requireLogin, (req, res) => {
@@ -2567,7 +2587,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
           if (gk && ev) mappa[gk] = ev;
         }
       }
-      out.tracking = { attivo: t.attivo !== false, mappa };
+      out.tracking = { attivo: t.attivo !== false, giochi: t.giochi !== false, mappa };
     }
     // Grafiche social (P5): config dello studio grafico. Solo dati testuali/di
     // stile, tutto limitato in lunghezza (rese SOLO lato client su canvas).
