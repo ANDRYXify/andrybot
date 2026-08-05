@@ -40,8 +40,11 @@ export const FREE = {
 // illimitato), booleani = on/off. L'unione con gli add-on la calcola funzioniDi().
 export const BASE = {
   id: 'base', nome: 'Base', prezzo: 2.99, prezzoTesto: '€2,99/mese', priceEnv: 'base', icona: '🤖',
-  sommario: 'Tutto l’Essenziale più lo Studio Web (vai live senza OBS) e un moderatore che ti aiuta.',
-  funzioni: { moduli: Infinity, giochi: false, notifiche: false, clipAuto: false, voce: false, moderatori: 1, effetti: false, overlay: true, telegram: false, studio: true },
+  sommario: 'Tutto l’Essenziale più Social & Notifiche (avvisi live su Telegram/Discord e nuovi post), lo Studio Web (vai live senza OBS) e un moderatore.',
+  // Social & Notifiche ora è INCLUSO nel Base (notifiche + telegram): prima era
+  // un add-on a pagamento, ma è di fatto essenziale. Chi l'aveva comprato non
+  // perde nulla; chi prende il Base ora ce l'ha dentro.
+  funzioni: { moduli: Infinity, giochi: false, notifiche: true, clipAuto: false, voce: false, moderatori: 1, effetti: false, overlay: true, telegram: true, studio: true },
 };
 
 // ── ADD-ON à la carte: pacchetti componibili, ognuno un prezzo Stripe a sé ───
@@ -65,6 +68,9 @@ export const ADDON = [
     priceEnv: 'addon_notifiche', icona: '📣',
     sommario: 'Avvisa quando vai in diretta su Telegram e Discord; avvisa i nuovi post/video su TikTok, YouTube e Instagram.',
     funzioni: { notifiche: true, telegram: true },
+    // Ora incluso nel Base: resta definito per i bundle e per chi l'aveva già
+    // comprato, ma NON va più offerto come acquisto separato (è già nel Base).
+    inclusoBase: true,
   },
   {
     id: 'clip', nome: 'Clip Automatiche', prezzo: 0.99, prezzoTesto: '€0,99/mese',
@@ -181,7 +187,9 @@ export function pianiPubblici() {
   return {
     free: esponi(FREE),
     base: esponi(BASE),
-    addon: ADDON.map(esponi),
+    // gli add-on inclusi nel Base (es. Social & Notifiche) non si offrono più à la
+    // carte: restano definiti solo per i bundle e per chi li aveva già comprati.
+    addon: ADDON.filter((a) => !a.inclusoBase).map(esponi),
     bundle: BUNDLE.map((b) => ({ id: b.id, nome: b.nome, icona: b.icona, sommario: b.sommario,
       addon: b.addon, prezzo: b.prezzo, prezzoTesto: b.prezzoTesto, prezzoPieno: b.prezzoPieno, prezzoPienoTesto: b.prezzoPienoTesto, sconto: b.sconto })),
     community: esponi(TIER_COMMUNITY),
