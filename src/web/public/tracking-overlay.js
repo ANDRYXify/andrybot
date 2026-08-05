@@ -69,14 +69,36 @@
     } catch { /* rete: pazienza, riproverà al prossimo gesto */ }
   }
 
-  // ── aggancio MINIGIOCHI (per il futuro): una funzione registrata riceve, ad
-  // ogni frame, { hands, faces, gestures, result, ctx, W, H }. Non implementiamo
-  // giochi ora: qui c'è solo il punto d'innesto, chiaro e stabile.
+  // ── il gioco può far ANNUNCIARE qualcosa in chat al bot (punteggi, esiti). Solo
+  // testo, corto e ripulito lato server; niente immagini né video.
+  const ultimoSay = { t: 0 };
+  async function annuncia(testo) {
+    if (!key || !testo) return;
+    const now = performance.now();
+    if (now - ultimoSay.t < 3000) return;   // anti-spam client (il server ha il suo)
+    ultimoSay.t = now;
+    try {
+      await fetch(`/api/tracking/${encodeURIComponent(login)}/say?key=${encodeURIComponent(key)}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ testo: String(testo).slice(0, 200) }), keepalive: true,
+      });
+    } catch { /* rete: pazienza */ }
+  }
+
+  // ── aggancio MINIGIOCHI: la funzione registrata riceve, ad ogni frame,
+  // { hands, faces, gestures, result, ctx, W, H }. Espone anche i riconoscitori
+  // (gesti/emozione), l'annuncio in chat e un canale di ritorno per i comandi.
   const minigioco = { fn: null };
+  const comando = { fn: null };
   window.SB_TRACKING = {
     registraMinigioco(fn) { minigioco.fn = typeof fn === 'function' ? fn : null; },
     fermaMinigioco() { minigioco.fn = null; },
+    onComando(fn) { comando.fn = typeof fn === 'function' ? fn : null; },
+    _comando(c) { if (comando.fn) { try { comando.fn(c); } catch { /* niente */ } } },
     notifyBot,
+    annuncia,
+    rilevaGesto,
+    emozione: emozioneDominante,
     get human() { return human; },
   };
 
