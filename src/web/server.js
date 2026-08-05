@@ -429,7 +429,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // sono visibili anche senza pass, per far conoscere il bot. NON espongono dati
   // reali: /api/me senza sessione risponde solo "nessun utente" e tutte le API
   // con i dati dello streamer restano chiuse dietro il pass.
-  const VETRINA = new Set(['/', '/index.html', '/app.js', '/style.css', '/presets.js', '/overlay-skin.css']);
+  const VETRINA = new Set(['/', '/index.html', '/app.js', '/style.css', '/presets.js', '/overlay-skin.css',
+    // script degli overlay OBS: pubblici (nessun segreto), servono senza sessione
+    // altrimenti l'overlay tracking resta bloccato su "avvio…" (script non caricati)
+    '/tracking-overlay.js', '/tracking-games.js']);
   app.use((req, res, next) => {
     // Rivalida la sessione a OGNI richiesta (regola: se non paghi e non sei un
     // membro community verificato+abilitato, NON entri). Ricava da zero i contesti
@@ -682,6 +685,16 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     _sayUltimo.set(login, ora);
     try { manager.say(login, testo); } catch { /* niente */ }
     res.json({ ok: true });
+  });
+
+  // Opzioni dell'overlay tracking, lette al caricamento (protette dalla chiave):
+  // per ora QUALE webcam usare (etichetta scelta dallo streamer; '' = default di
+  // sistema). L'etichetta è il nome del dispositivo, uguale tra browser e OBS.
+  app.get('/api/tracking/:login/opzioni', (req, res) => {
+    if (!chiaveOk(req)) return notFound(res);
+    const login = String(req.params.login).toLowerCase();
+    const trk = streamers.get(login)?.settings?.tracking || {};
+    res.json({ camera: String(trk.camera || '').slice(0, 100) });
   });
 
   // URL da incollare in OBS (Browser Source) per l'overlay tracking, con la
@@ -2601,7 +2614,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
           if (gk && ev) mappa[gk] = ev;
         }
       }
-      out.tracking = { attivo: t.attivo !== false, giochi: t.giochi !== false, mappa };
+      out.tracking = { attivo: t.attivo !== false, giochi: t.giochi !== false, camera: String(t.camera || '').slice(0, 100), mappa };
     }
     // Grafiche social (P5): config dello studio grafico. Solo dati testuali/di
     // stile, tutto limitato in lunghezza (rese SOLO lato client su canvas).
