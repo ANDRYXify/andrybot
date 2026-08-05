@@ -200,7 +200,7 @@
     const urlStream = '/overlay/' + encodeURIComponent(login) + '/stream' + location.search;
     // PIÙ OVERLAY: questo overlay ha un id (?o=). Dal tema riceve il suo LAYOUT:
     // cosa mostra (mostra) e dove (xy), così ogni link OBS ha il suo aspetto.
-    const MIO = { mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true }, xy: {} };
+    const MIO = { mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true }, xy: {}, stile: { alert: null, chat: null } };
     const mostra = (k) => MIO.mostra[k] !== false;
 
     const palco = document.getElementById('palco');
@@ -502,7 +502,9 @@
       if (alertOccupato || !codaAlert.length) return;
       alertOccupato = true;
       const ev = codaAlert.shift();
-      const st = ev.stile || {};
+      // stile di QUESTO overlay se impostato (Opzione B), altrimenti quello che
+      // arriva con l'evento (= stile di canale). Così ogni link ha il suo look.
+      const st = MIO.stile.alert || ev.stile || {};
       posizionaContenitore(alertBox, MIO.xy.alert || ev.xy, ev.posizione || 'alto-centro');
       const card = document.createElement('div');
       card.className = 'alert-card anim-' + (st.animazione || 'slide') + (st.glow ? ' glow' : '') + (st.icona === false ? ' senza-ico' : '');
@@ -591,7 +593,7 @@
     // --- CHAT a schermo --------------------------------------------------
     function chat(ev) {
       if (!mostra('chat')) return;
-      const st = ev.stile || {};
+      const st = MIO.stile.chat || ev.stile || {};
       posizionaContenitore(chatBox, MIO.xy.chat || ev.xy, ev.posizione || 'basso-sinistra');
       if (st.larghezza) chatBox.style.maxWidth = st.larghezza + 'vw';
       const destra = !ev.xy && /destra/.test(ev.posizione || '');
@@ -734,6 +736,9 @@
     function applicaTema(t) {
       MIO.mostra = (t && t.mostra) ? t.mostra : MIO.mostra;
       MIO.xy = (t && t.xy) ? t.xy : {};
+      // Opzione B: stile di alert/chat proprio di questo overlay (se il server lo
+      // manda). null = uso lo stile dell'evento (canale).
+      MIO.stile = { alert: (t && t.alertStile) || null, chat: (t && t.chatStile) || null };
       try { document.getElementById('css-utente').textContent = String(t.css || '').slice(0, 8000); } catch (e) { /* niente */ }
       const w = t.widget || {};
       const stato = t.stato || {};
