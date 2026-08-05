@@ -4294,7 +4294,9 @@ function caricaOverlaySel() {
 }
 // payload "pulito" degli overlay per il salvataggio (senza url, che è calcolato)
 function _overlaysPayload() {
-  return overlays.map((o) => ({ id: o.id, nome: o.nome, mostra: o.mostra, xy: o.xy, css: o.css || '' }));
+  // `stile` = aspetto proprio dell'overlay (Opzione B): va SEMPRE conservato, così
+  // un salvataggio di layout/rinomina/nuovo non azzera lo stile per-overlay.
+  return overlays.map((o) => ({ id: o.id, nome: o.nome, mostra: o.mostra, xy: o.xy, css: o.css || '', stile: o.stile || null }));
 }
 // salva il layout (posizioni + cosa mostra) dell'overlay selezionato
 async function salvaLayoutOverlay(silenzioso) {

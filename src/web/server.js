@@ -62,6 +62,79 @@ const unoDi = (v, lista, def) => (lista.includes(v) ? v : def);
 const xyOk = (v) => (v && Number.isFinite(Number(v.x)) && Number.isFinite(Number(v.y)))
   ? { x: clampInt(v.x, 0, 100, 50), y: clampInt(v.y, 0, 100, 50), s: clampInt(v.s, 30, 300, 100), r: clampInt(v.r, -180, 180, 0) } : null;
 
+// STILE dell'overlay (alert / chat / widget). Estratti in funzioni riusabili: gli
+// STESSI campi valgono sia per lo stile di CANALE sia per lo stile PER-OVERLAY
+// (Opzione B: ogni overlay può avere il suo aspetto, non solo il layout).
+const normAlertStile = (st) => {
+  st = st || {};
+  return {
+    animazione: unoDi(st.animazione, ['slide', 'pop', 'zoom', 'fade', 'flip', 'bounce'], 'slide'),
+    dimTesto: clampInt(st.dimTesto, 14, 56, 27),
+    sfondo: hexOk(st.sfondo, '#0f0f14'),
+    opacita: clampInt(st.opacita, 0, 100, 88),
+    testo: hexOk(st.testo, '#ffffff'),
+    bordoRaggio: clampInt(st.bordoRaggio, 0, 40, 18),
+    bordoSpessore: clampInt(st.bordoSpessore, 0, 10, 2),
+    glow: st.glow !== false,
+    icona: st.icona !== false,
+    font: unoDi(st.font, FONT_OVL, 'sistema'),
+    googleFont: String(st.googleFont || '').replace(/[^a-zA-Z0-9 ]/g, '').trim().slice(0, 50),
+  };
+};
+const normChatStile = (st) => {
+  st = st || {};
+  return {
+    dim: unoDi(st.dim, ['piccola', 'media', 'grande', 'enorme'], 'media'),
+    sfondo: hexOk(st.sfondo, '#0f0f14'),
+    opacita: clampInt(st.opacita, 0, 100, 78),
+    testo: hexOk(st.testo, '#f2f2f5'),
+    username: (st.username === 'twitch' || /^#[0-9a-fA-F]{6}$/.test(String(st.username))) ? st.username : 'twitch',
+    bordoRaggio: clampInt(st.bordoRaggio, 0, 30, 10),
+    ombra: st.ombra !== false,
+    font: unoDi(st.font, FONT_OVL, 'sistema'),
+    googleFont: String(st.googleFont || '').replace(/[^a-zA-Z0-9 ]/g, '').trim().slice(0, 50),
+    larghezza: clampInt(st.larghezza, 18, 60, 30),
+    animazione: unoDi(st.animazione, ['slide', 'fade', 'nessuna'], 'slide'),
+    grassettoUser: st.grassettoUser !== false,
+  };
+};
+const normWidgetStile = (st) => {
+  st = st || {};
+  return {
+    dim: unoDi(st.dim, ['piccola', 'media', 'grande'], 'media'),
+    sfondo: hexOk(st.sfondo, '#0f0f14'),
+    opacita: clampInt(st.opacita, 0, 100, 85),
+    testo: hexOk(st.testo, '#ffffff'),
+    accento: hexOk(st.accento, '#9146ff'),
+    bordoRaggio: clampInt(st.bordoRaggio, 0, 30, 12),
+    font: unoDi(st.font, FONT_OVL, 'sistema'),
+  };
+};
+// Stile PER-OVERLAY completo (tutti i campi opzionali): { alerts, chat, widget }.
+// Ritorna null se non c'è nulla di valido → l'overlay eredita lo stile di canale.
+const normOverlayWidgetCfg = (w) => {
+  const posW = ['alto-sinistra', 'alto-destra', 'basso-sinistra', 'basso-destra'];
+  const wid = (x, testoDef) => {
+    x = x || {};
+    return {
+      attivo: !!x.attivo,
+      posizione: posW.includes(x.posizione) ? x.posizione : 'basso-destra',
+      xy: xyOk(x.xy),
+      testo: String(x.testo || testoDef).slice(0, 80),
+      stile: normWidgetStile(x.stile),
+    };
+  };
+  return { ultimoFollower: wid(w?.ultimoFollower, 'Ultimo follower: {nome}'), ultimoSub: wid(w?.ultimoSub, 'Ultimo sub: {nome}') };
+};
+const normOverlayStile = (s) => {
+  if (!s || typeof s !== 'object') return null;
+  const out = {};
+  if (s.alerts) out.alerts = normAlertStile(s.alerts);
+  if (s.chat) out.chat = normChatStile(s.chat);
+  if (s.widget) out.widget = normOverlayWidgetCfg(s.widget);
+  return Object.keys(out).length ? out : null;
+};
+
 // --- PIÙ OVERLAY: ogni overlay ha un suo LAYOUT (quali elementi mostra e dove)
 // e un suo CSS, con un link OBS a sé. Lo STILE/TESTO restano condivisi a livello
 // di canale (alerts/chatOverlay/overlayWidget). Retro-compatibile: se non c'è
@@ -615,11 +688,24 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!chiaveOk(req)) return notFound(res);
     const login = String(req.params.login).toLowerCase();
     const base = manager.alerts?.tema(login) || { css: '', widget: {}, stato: {} };
-    // layout dell'overlay richiesto (?o=id): cosa mostra + dove. Il CSS è quello
-    // dell'overlay (per "principale" coincide con quello di canale).
+    // Overlay richiesto (?o=id): ha il SUO layout (cosa mostra + dove) e, con
+    // l'Opzione B, il SUO stile completo. Ciò che non ha, lo eredita dal canale.
     const ov = overlayById(streamers.get(login)?.settings, String(req.query.o || ''));
-    // CSS avanzato condiviso (vale per tutti gli overlay); il layout è per-overlay
-    res.json({ ...base, mostra: ov.mostra || _mostraDefault(), xy: ov.xy || {} });
+    const st = ov.stile || {};
+    res.json({
+      // CSS: quello dell'overlay se impostato, altrimenti quello di canale
+      css: (ov.css != null && ov.css !== '') ? ov.css : base.css,
+      // WIDGET (config + stile): per-overlay se presente, altrimenti di canale.
+      // Lo STATO (nome ultimo follower/sub) resta di canale: è un dato, non stile.
+      widget: st.widget || base.widget,
+      stato: base.stato,
+      mostra: ov.mostra || _mostraDefault(),
+      xy: ov.xy || {},
+      // STILE di alert/chat di QUESTO overlay (null → l'overlay usa lo stile che
+      // arriva con l'evento, cioè quello di canale). Così ogni link ha il suo look.
+      alertStile: st.alerts || null,
+      chatStile: st.chat || null,
+    });
   });
 
   // Mappa emote 7TV (globali + del canale) per la "chat a schermo": l'overlay la
@@ -2220,19 +2306,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         posizione: posAlert.includes(p.posizione) ? p.posizione : 'alto-centro',
         xy: xyOk(p.xy),
         durata: clampInt(p.durata, 2000, 20000, 6000),
-        stile: {
-          animazione: unoDi(st.animazione, ['slide', 'pop', 'zoom', 'fade', 'flip', 'bounce'], 'slide'),
-          dimTesto: clampInt(st.dimTesto, 14, 56, 27),
-          sfondo: hexOk(st.sfondo, '#0f0f14'),
-          opacita: clampInt(st.opacita, 0, 100, 88),
-          testo: hexOk(st.testo, '#ffffff'),
-          bordoRaggio: clampInt(st.bordoRaggio, 0, 40, 18),
-          bordoSpessore: clampInt(st.bordoSpessore, 0, 10, 2),
-          glow: st.glow !== false,
-          icona: st.icona !== false,
-          font: unoDi(st.font, FONT_OVL, 'sistema'),
-          googleFont: String(st.googleFont || '').replace(/[^a-zA-Z0-9 ]/g, '').trim().slice(0, 50),
-        },
+        stile: normAlertStile(st),
         follow: evt(p.follow),
         sub: evt(p.sub),
         cheer: { ...evt(p.cheer), minBits: clampInt(p.cheer?.minBits, 0, 1e9, 0) },
@@ -2250,48 +2324,12 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         xy: xyOk(c.xy),
         max: clampInt(c.max, 1, 20, 8),
         fadeSec: clampInt(c.fadeSec, 0, 120, 0),
-        stile: {
-          dim: unoDi(st.dim, ['piccola', 'media', 'grande', 'enorme'], 'media'),
-          sfondo: hexOk(st.sfondo, '#0f0f14'),
-          opacita: clampInt(st.opacita, 0, 100, 78),
-          testo: hexOk(st.testo, '#f2f2f5'),
-          username: (st.username === 'twitch' || /^#[0-9a-fA-F]{6}$/.test(String(st.username))) ? st.username : 'twitch',
-          bordoRaggio: clampInt(st.bordoRaggio, 0, 30, 10),
-          ombra: st.ombra !== false,
-          font: unoDi(st.font, FONT_OVL, 'sistema'),
-          googleFont: String(st.googleFont || '').replace(/[^a-zA-Z0-9 ]/g, '').trim().slice(0, 50),
-          larghezza: clampInt(st.larghezza, 18, 60, 30),
-          animazione: unoDi(st.animazione, ['slide', 'fade', 'nessuna'], 'slide'),
-          grassettoUser: st.grassettoUser !== false,
-        },
+        stile: normChatStile(st),
       };
     }
     // WIDGET persistenti dell'overlay (ultimo follower / ultimo sub)
     if (b.overlayWidget !== undefined) {
-      const w = b.overlayWidget || {};
-      const posW = ['alto-sinistra', 'alto-destra', 'basso-sinistra', 'basso-destra'];
-      const wid = (x, testoDef) => {
-        x = x || {}; const st = x.stile || {};
-        return {
-          attivo: !!x.attivo,
-          posizione: posW.includes(x.posizione) ? x.posizione : 'basso-destra',
-          xy: xyOk(x.xy),
-          testo: String(x.testo || testoDef).slice(0, 80),
-          stile: {
-            dim: unoDi(st.dim, ['piccola', 'media', 'grande'], 'media'),
-            sfondo: hexOk(st.sfondo, '#0f0f14'),
-            opacita: clampInt(st.opacita, 0, 100, 85),
-            testo: hexOk(st.testo, '#ffffff'),
-            accento: hexOk(st.accento, '#9146ff'),
-            bordoRaggio: clampInt(st.bordoRaggio, 0, 30, 12),
-            font: unoDi(st.font, FONT_OVL, 'sistema'),
-          },
-        };
-      };
-      out.overlayWidget = {
-        ultimoFollower: wid(w.ultimoFollower, 'Ultimo follower: {nome}'),
-        ultimoSub: wid(w.ultimoSub, 'Ultimo sub: {nome}'),
-      };
+      out.overlayWidget = normOverlayWidgetCfg(b.overlayWidget || {});
     }
     // CSS avanzato dell'overlay (libertà totale sul proprio overlay)
     if (b.overlayCss !== undefined) out.overlayCss = String(b.overlayCss || '').slice(0, 8000);
@@ -2307,6 +2345,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
           mostra: { alert: m.alert !== false, chat: m.chat !== false, wf: m.wf !== false, ws: m.ws !== false, effetti: m.effetti !== false },
           xy: { alert: xyOk(xy.alert), chat: xyOk(xy.chat), wf: xyOk(xy.wf), ws: xyOk(xy.ws) },
           css: String(o?.css || '').slice(0, 8000),
+          stile: normOverlayStile(o?.stile),   // Opzione B: aspetto proprio (null → eredita dal canale)
         };
       });
       // id UNICI (l'url dell'overlay li usa)
@@ -2903,7 +2942,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const sep = base.includes('?') ? '&' : '?';
     const root = config.baseUrl.replace(/\/$/, '');
     const overlays = overlaysDi(streamers.get(login)?.settings).map((o) => ({
-      id: o.id, nome: o.nome, mostra: o.mostra || _mostraDefault(), xy: o.xy || {}, css: o.css || '',
+      id: o.id, nome: o.nome, mostra: o.mostra || _mostraDefault(), xy: o.xy || {}, css: o.css || '', stile: o.stile || null,
       // link "bello" per OBS (senza ?key) + link privato con chiave, come alternativa
       url: `${root}/o/${encodeURIComponent(login)}/${slugify(o.nome)}`,
       urlKey: `${base}${sep}o=${encodeURIComponent(o.id)}`,
