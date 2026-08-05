@@ -1736,6 +1736,9 @@ const GR_TEMI = {
   aurora:    { nome: 'Aurora ✨',  bg: ['#07132a', '#0b2a3f'], testo: '#eaf6ff', tenue: '#a9cbe0', acc: '#38bdf8', riga: 'rgba(56,189,248,.10)', anima: 'aurora' },
   particelle:{ nome: 'Particelle ✨', bg: ['#0d0b1a', '#1b1436'], testo: '#ffffff', tenue: '#c3bde0', acc: '#a855f7', riga: 'rgba(168,85,247,.10)', anima: 'particelle' },
   onde:      { nome: 'Onde ✨',   bg: ['#08131f', '#0c2233'], testo: '#eafcff', tenue: '#8fd3e6', acc: '#22d3ee', riga: 'rgba(34,211,238,.10)', anima: 'onde' },
+  matrix:    { nome: 'Matrix ✨', bg: ['#010a02', '#031006'], testo: '#c9ffd2', tenue: '#5fd77a', acc: '#33ff77', riga: 'rgba(51,255,119,.12)', anima: 'matrix' },
+  synthwave: { nome: 'Synthwave ✨', bg: ['#1a0533', '#3a0a4a'], testo: '#ffffff', tenue: '#ffb3e6', acc: '#ff3ca6', riga: 'rgba(255,60,166,.12)', anima: 'griglia' },
+  scanline:  { nome: 'Scanline ✨', bg: ['#04121a', '#071a26'], testo: '#eafcff', tenue: '#8fd3e6', acc: '#2ee6c6', riga: 'rgba(46,230,198,.12)', anima: 'scanline' },
 };
 const GR_TEMA_IDS = Object.keys(GR_TEMI);
 const grafAnimato = (c) => !!(GR_TEMI[c.tema] && GR_TEMI[c.tema].anima) && c.sfondo === 'tema';
@@ -1937,6 +1940,43 @@ function grafAnimaSfondo(ctx, W, H, t, tipo, acc) {
       }
       ctx.stroke();
     }
+  } else if (tipo === 'matrix') {
+    // pioggia di glifi katakana verdi (vero effetto Matrix)
+    ctx.font = '28px "Courier New", monospace'; ctx.textAlign = 'left';
+    const passo = 30, cols = Math.floor(W / passo);
+    for (let i = 0; i < cols; i++) {
+      const vel = 90 + (i * 37) % 120;
+      const head = (s * vel + i * 131) % (H + 300);
+      for (let j = 0; j < 14; j++) {
+        const y = head - j * passo;
+        if (y < -passo || y > H) continue;
+        const ch = String.fromCharCode(0x30A0 + ((i * 7 + j * 13 + ((s * 6) | 0)) % 96));
+        ctx.fillStyle = j === 0 ? 'rgba(210,255,215,.95)' : `rgba(51,255,119,${Math.max(0, 0.55 - j * 0.045)})`;
+        ctx.fillText(ch, i * passo + 5, y);
+      }
+    }
+  } else if (tipo === 'griglia') {
+    // griglia prospettica anni-80 + sole
+    const hor = H * 0.6;
+    const sun = ctx.createLinearGradient(0, hor - 200, 0, hor + 30);
+    sun.addColorStop(0, '#ffd15c'); sun.addColorStop(1, acc);
+    ctx.fillStyle = sun; ctx.beginPath(); ctx.arc(W / 2, hor, 150, Math.PI, 0); ctx.fill();
+    ctx.strokeStyle = acc + '77'; ctx.lineWidth = 2;
+    for (let i = -12; i <= 12; i++) { ctx.beginPath(); ctx.moveTo(W / 2, hor); ctx.lineTo(W / 2 + i * (W / 7), H); ctx.stroke(); }
+    for (let k = 0; k < 16; k++) {
+      const yy = hor + ((s * 70 + k * 42) % (H - hor));
+      ctx.globalAlpha = (yy - hor) / (H - hor);
+      ctx.beginPath(); ctx.moveTo(0, yy); ctx.lineTo(W, yy); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  } else if (tipo === 'scanline') {
+    // righe orizzontali + banda luminosa che scorre (CRT)
+    ctx.fillStyle = acc + '14';
+    for (let y = ((s * 40) % 8); y < H; y += 8) ctx.fillRect(0, y, W, 2);
+    const by = ((s * 130) % (H + 240)) - 120;
+    const bg = ctx.createLinearGradient(0, by - 120, 0, by + 120);
+    bg.addColorStop(0, acc + '00'); bg.addColorStop(0.5, acc + '26'); bg.addColorStop(1, acc + '00');
+    ctx.fillStyle = bg; ctx.fillRect(0, by - 120, W, 240);
   }
 }
 
