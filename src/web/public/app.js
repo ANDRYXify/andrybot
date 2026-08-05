@@ -1906,10 +1906,11 @@ function pannelloGrafiche() {
 
           <p class="spazio-sopra">
             <button class="btn" id="gr-scarica">${_bIco(ICO.scarica || ICO.pacco)}${L('Scarica PNG', 'Download PNG', 'Descargar PNG')}</button>
-            <button class="btn secondario" id="gr-scarica-video">${_bIco(ICO.video)}${L('Scarica video', 'Download video', 'Descargar vídeo')}</button>
+            <button class="btn secondario" id="gr-scarica-gif">${_bIco(ICO.video)}${L('Scarica GIF animata', 'Download animated GIF', 'Descargar GIF animado')}</button>
+            <button class="btn secondario" id="gr-scarica-video">${_bIco(ICO.video)}${L('Video (registra 5s)', 'Video (records 5s)', 'Vídeo (graba 5s)')}</button>
             <button class="btn secondario" id="gr-salva">${L('Salva impostazioni', 'Save settings', 'Guardar ajustes')}</button>
           </p>
-          <p class="suggerimento">${L('Il video (WebM, 5s) ha senso con i temi animati ✨. Il PNG va bene per tutto.', 'The video (WebM, 5s) makes sense with animated themes ✨. The PNG works for everything.', 'El vídeo (WebM, 5s) tiene sentido con los temas animados ✨. El PNG sirve para todo.')}</p>
+          <p class="suggerimento">${L('La GIF animata si crea al volo, senza registrare ✨ (ideale per i temi animati). Il PNG va bene per tutto; il video WebM è più pesante ma di qualità più alta.', 'The animated GIF is built on the fly, no recording ✨ (ideal for animated themes). The PNG works for everything; the WebM video is heavier but higher quality.', 'El GIF animado se crea al vuelo, sin grabar ✨ (ideal para temas animados). El PNG sirve para todo; el vídeo WebM es más pesado pero de mayor calidad.')}</p>
         </div>
 
         <div class="gr-anteprima">
@@ -2278,6 +2279,45 @@ function initGrafiche() {
   document.getElementById('gr-salva')?.addEventListener('click', () => conErrore(async () => {
     await salvaImpostazioni({ grafiche: c }, L('Grafica salvata ✓', 'Graphic saved ✓', 'Gráfica guardada ✓'));
   }));
+
+  // export GIF ANIMATA — SENZA registrare: disegna i frame offline (più veloce del
+  // tempo reale) e li comprime con l'encoder GIF autonomo. Ideale per i temi animati.
+  document.getElementById('gr-scarica-gif')?.addEventListener('click', async (ev) => {
+    const btn = ev.currentTarget; const testo = btn.textContent;
+    if (!window.SB_GIF) { toast(L('Export GIF non disponibile su questo browser.', 'GIF export unavailable on this browser.', 'Exportación GIF no disponible en este navegador.'), 'errore'); return; }
+    if (grafRAF) { cancelAnimationFrame(grafRAF); grafRAF = null; }   // ferma l'anteprima: tutta la CPU alla GIF
+    btn.disabled = true;
+    try {
+      // GIF a lato lungo ~480px (stesso rapporto dell'anteprima) su un canvas a parte
+      const scala = Math.min(1, 480 / Math.max(canvas.width, canvas.height));
+      const gw = Math.round(canvas.width * scala), gh = Math.round(canvas.height * scala);
+      const off = document.createElement('canvas'); off.width = gw; off.height = gh;
+      const octx = off.getContext('2d', { willReadFrequently: true });
+      const animato = grafAnimato(c);
+      const fps = 12.5, dt = 1000 / fps;
+      const nFrame = animato ? 50 : 1;   // ~4s in loop se animato; 1 frame se statico
+      const frames = [];
+      for (let i = 0; i < nFrame; i++) {
+        grafDisegna(off, c, i * dt);
+        frames.push(octx.getImageData(0, 0, gw, gh).data);
+        btn.textContent = L('Creo… ', 'Building… ', 'Creando… ') + Math.round((i + 1) / nFrame * 100) + '%';
+        if (i % 4 === 0) await new Promise((r) => setTimeout(r, 0));   // tieni viva la UI
+      }
+      btn.textContent = L('Comprimo…', 'Compressing…', 'Comprimiendo…');
+      await new Promise((r) => setTimeout(r, 0));
+      const bytes = window.SB_GIF.encode(frames, gw, gh, Math.round(100 / fps));
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([bytes], { type: 'image/gif' }));
+      a.download = `socialbot-${c.tipo}-${(stato?.user?.login || 'canale')}.gif`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 8000);
+    } catch (e) {
+      toast(L('GIF non riuscita: ', 'GIF failed: ', 'GIF fallida: ') + (e && e.message ? e.message : e), 'errore');
+    } finally {
+      btn.disabled = false; btn.textContent = testo;
+      ridisegna();   // riavvia l'anteprima (animata o statica)
+    }
+  });
 
   // export VIDEO (WebM) — registra il canvas per 5s (utile coi temi animati)
   document.getElementById('gr-scarica-video')?.addEventListener('click', (ev) => {
