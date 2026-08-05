@@ -16,6 +16,8 @@
   const params = new URLSearchParams(location.search);
   const login = decodeURIComponent((location.pathname.split('/').filter(Boolean).pop() || '')).toLowerCase();
   const key = params.get('key') || '';
+  // webcam scelta dallo streamer: dal link (?cam=) o dalle opzioni del canale.
+  let camPreferita = params.get('cam') || '';
   const video = document.getElementById('cam');
   const fx = document.getElementById('fx');
   const ctx = fx.getContext('2d');
@@ -269,9 +271,10 @@
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       setStato('questo browser non espone la webcam (aggiorna OBS: serve una fonte browser recente)'); return false;
     }
+    const vincoli = (extra) => ({ video: { width: { ideal: 1280 }, height: { ideal: 720 }, ...(extra || {}) }, audio: false });
     let stream;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+      stream = await navigator.mediaDevices.getUserMedia(vincoli());
     } catch (e) {
       const n = (e && e.name) || '';
       if (n === 'NotAllowedError' || n === 'SecurityError') setStato('webcam NEGATA: consenti la fotocamera. In OBS apri il link una volta anche nel browser e concedi il permesso; poi ricarica la fonte.');
@@ -279,6 +282,21 @@
       else if (n === 'NotFoundError' || n === 'OverconstrainedError') setStato('nessuna webcam trovata: collega/scegli una fotocamera.');
       else setStato('webcam non disponibile: ' + (e && e.message ? e.message : n || e));
       return false;
+    }
+    // WEBCAM SCELTA: lo streamer può fissare quale usare (per NOME, uguale tra
+    // browser e OBS; se ha messo un numero, per posizione). Le etichette compaiono
+    // solo DOPO aver ottenuto il permesso, per questo enumeriamo qui.
+    const pref = String(camPreferita || '').trim();
+    if (pref && navigator.mediaDevices.enumerateDevices) {
+      try {
+        const cams = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'videoinput');
+        const scelto = /^\d+$/.test(pref) ? cams[Number(pref)] : cams.find((d) => (d.label || '').toLowerCase().includes(pref.toLowerCase()));
+        const attuale = stream.getVideoTracks()[0]?.getSettings?.().deviceId;
+        if (scelto && scelto.deviceId && scelto.deviceId !== attuale) {
+          stream.getTracks().forEach((t) => t.stop());
+          stream = await navigator.mediaDevices.getUserMedia(vincoli({ deviceId: { exact: scelto.deviceId } }));
+        }
+      } catch { /* se non riesco a cambiarla, tengo quella di default */ }
     }
     video.srcObject = stream;
     try { await video.play(); } catch { /* alcune fonti non richiedono play() */ }
@@ -294,6 +312,13 @@
       // warmup è solo un pre-riscaldamento: se inciampa, la prima detect scalda da
       // sé — non deve impedire l'avvio.
       try { await human.warmup(); } catch (e) { /* pazienza: scalda alla prima detect */ }
+      // quale webcam usare (se non forzata dal link): opzione salvata del canale
+      if (!camPreferita && key) {
+        try {
+          const r = await fetch(`/api/tracking/${encodeURIComponent(login)}/opzioni?key=${encodeURIComponent(key)}`);
+          if (r.ok) { const o = await r.json(); camPreferita = (o && o.camera) || ''; }
+        } catch { /* niente: userò la webcam di default */ }
+      }
       setStato('chiedo la webcam…');
       if (!await avviaWebcam()) return;   // errore già mostrato, con la soluzione
       setStato('attivo');
