@@ -5909,6 +5909,7 @@ function pannelloModuli() {
         <input type="checkbox" id="chk-comandi-base" ${(imp.comandiBase?.attivo !== false) ? 'checked' : ''}>
         <label for="chk-comandi-base">${L('Comandi base pronti:', 'Ready-made base commands:', 'Comandos base listos:')} <code>!so</code>/<code>!shoutout</code>, <code>!followage</code>, <code>!uptime</code> ${L('(non sostituiscono mai i tuoi comandi con lo stesso nome; lo shoutout è per mod/streamer e serve essere in diretta)', "(never replace your own commands with the same name; shoutout is for mods/streamer and needs you to be live)", '(nunca sustituyen tus comandos con el mismo nombre; el shoutout es para mods/streamer y requiere estar en directo)')}</label>
       </div>
+      <p class="suggerimento spazio-sopra">${_bIco(ICO.scudo)}${L('Trasparenza IA (AI Act): in chat è sempre attivo', 'AI transparency (AI Act): always active in chat', 'Transparencia de IA (AI Act): siempre activo en el chat')} <code>!bot</code>/<code>!ia</code> — ${L('chiunque può sapere che alcune risposte sono generate da un\'intelligenza artificiale. È indipendente dall\'interruttore qui sopra.', "anyone can learn some replies are AI-generated. It's independent from the toggle above.", 'cualquiera puede saber que algunas respuestas son generadas por IA. Es independiente del interruptor de arriba.')}</p>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-comodita">${L('Salva', 'Save', 'Guardar')}</button></p>
     </div>
 
