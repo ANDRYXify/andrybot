@@ -2539,6 +2539,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       // le impostazioni). Le immagini restano nel canale; la condivisione
       // pubblica passa dalla libreria effetti.
       const sfImg = String(gr.sfondoImg || '');
+      // sfondoImg valido = data URL immagine (caricata dal PC) OPPURE un media
+      // della libreria condivisa del sito (stessa origine → export senza taint).
+      const sfImgOk = (/^data:image\/(png|jpeg|webp);base64,/.test(sfImg) && sfImg.length <= 700000)
+        || /^\/api\/streamer\/libreria\/media\/\d+$/.test(sfImg);
       out.grafiche = {
         tipo: ['programmazione', 'live'].includes(gr.tipo) ? gr.tipo : 'programmazione',
         tema: str(gr.tema, 20),
@@ -2547,7 +2551,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         gioco: str(gr.gioco, 40), sottotitolo: str(gr.sottotitolo, 60),
         sfondo: ['tema', 'tinta', 'immagine'].includes(gr.sfondo) ? gr.sfondo : 'tema',
         sfondoColore: /^#[0-9a-fA-F]{6}$/.test(String(gr.sfondoColore || '')) ? String(gr.sfondoColore) : '',
-        sfondoImg: /^data:image\/(png|jpeg|webp);base64,/.test(sfImg) && sfImg.length <= 700000 ? sfImg : '',
+        sfondoImg: sfImgOk ? sfImg : '',
         giorni,
       };
     }
