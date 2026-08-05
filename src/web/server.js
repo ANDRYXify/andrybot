@@ -223,7 +223,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     httpOnly: true,
   }));
   // Cattura il corpo RAW (serve al webhook Stripe per verificare la firma).
-  app.use(express.json({ verify: (req, _res, buf) => { req.rawBody = buf; } }));
+  // `limit` alzato a 2MB: le impostazioni possono contenere immagini (sfondo delle
+  // grafiche social fino a ~700KB, logo, CSS degli overlay). Col default di express
+  // (100KB) il salvataggio delle grafiche con sfondo falliva con 413. I singoli
+  // campi restano capati dalla validazione e le rotte sono autenticate.
+  app.use(express.json({ limit: '2mb', verify: (req, _res, buf) => { req.rawBody = buf; } }));
 
   // ESCHE: subito dopo il parser del corpo (serve per riconoscere il canarino)
   // e prima di ogni altra regola. Chi bussa a porte che qui non esistono trova
