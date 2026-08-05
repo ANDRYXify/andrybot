@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>SocialBot · Tracking overlay</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+    #wrap { position: fixed; inset: 0; }
+    /* video e canvas riempiono lo stesso box: teniamoli allineati (imposta la
+       Browser Source di OBS con lo stesso rapporto della webcam, es. 1280x720). */
+    #cam, #fx { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    #fx { pointer-events: none; }
+    #stato {
+      position: absolute; left: 12px; bottom: 10px; z-index: 3;
+      font: 600 13px system-ui, sans-serif; color: #fff; opacity: .6;
+      background: rgba(0,0,0,.4); padding: 4px 10px; border-radius: 8px;
+    }
+    body.pronto #stato { display: none; }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <video id="cam" autoplay muted playsinline></video>
+    <canvas id="fx"></canvas>
+    <div id="stato">SocialBot tracking · avvio…</div>
+  </div>
+  <!-- Human di vladmandic. Preferenza "solo server": in futuro si può auto-ospitare
+       da /vendor/human.js; oggi dalla CDN (nessuna CSP da aggiornare in questo repo). -->
+  <script src="https://cdn.jsdelivr.net/npm/@vladmandic/human@3/dist/human.js"></script>
+  <script src="/tracking-overlay.js"></script>
+</body>
+</html>
