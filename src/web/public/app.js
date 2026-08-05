@@ -295,11 +295,10 @@ function _demoGet(via) {
     '/api/discord/stato': { configurato: false, attivo: false, messaggio: '', nomeBot: '', avatar: '', anteprima: '' },
     '/api/abbonamento/piani': { attivo: false,
       free: { id: 'free', nome: 'Essenziale', prezzoTesto: 'Gratis', sommario: 'Gratis, basta registrarsi.' },
-      base: { id: 'base', nome: 'Base', prezzoTesto: '\u20ac2,99/mese', sommario: 'Social & Notifiche e un moderatore.' },
+      base: { id: 'base', nome: 'Base', prezzoTesto: '\u20ac2,99/mese', sommario: 'Avvisi live, nuovi post e un moderatore.' },
       addon: [
         { id: 'giochi', nome: 'Giochi & Classifiche', prezzoTesto: '\u20ac2,79/mese', sommario: 'Minigiochi, monete, classifiche e VIP.' },
         { id: 'effetti', nome: 'Effetti & Punti canale', prezzoTesto: '\u20ac1,79/mese', sommario: 'Alert ed effetti riscattabili a punti canale.' },
-        { id: 'notifiche', nome: 'Social & Notifiche', prezzoTesto: '\u20ac2,99/mese', sommario: 'Avvisi live su Telegram e Discord.' },
         { id: 'clip', nome: 'Clip Automatiche', prezzoTesto: '\u20ac0,99/mese', sommario: 'I momenti migliori clippati da soli.' },
         { id: 'voce', nome: 'Comandi Vocali', prezzoTesto: '\u20ac0,99/mese', sommario: 'Guida il bot parlando.' },
         { id: 'squadra', nome: 'Squadra', prezzoTesto: '\u20ac2,99/mese', sommario: 'Fino a 10 moderatori.' },
@@ -920,7 +919,7 @@ async function caricaPiani() {
   // Cosa include la Base. In cima i vantaggi che AGGIUNGE all'Essenziale (così la
   // card non sembra ripetere solo il gratis); poi ciò che eredita dall'Essenziale.
   const inclusiBase = [
-    { t: L('Social & Notifiche: avvisi live su Telegram/Discord + nuovi post', 'Social & Notifications: live alerts on Telegram/Discord + new posts', 'Social y Notificaciones: avisos live en Telegram/Discord + nuevos posts'), base: true },
+    { t: L('Avvisi live su Telegram/Discord + nuovi post', 'Live alerts on Telegram/Discord + new posts', 'Avisos live en Telegram/Discord + nuevos posts'), base: true },
     { t: L('1 moderatore incluso', '1 moderator included', '1 moderador incluido'), base: true },
     { t: L('Comandi & moduli illimitati', 'Unlimited commands & modules', 'Comandos y módulos ilimitados') },
     { t: L('Antispam, moderazione & scudo anti-bot/anti-raid', 'Anti-spam, moderation & anti-bot/anti-raid shield', 'Antispam, moderación y escudo anti-bot/anti-raid') },
@@ -945,7 +944,7 @@ async function caricaPiani() {
           <div class="piano-prezzo">€${prezzoIt(base.prezzo)}<span>${perMese}</span></div>
         </div>
         <ul class="piano-funzioni">
-          ${inclusiBase.map((x) => `<li${x.base ? ' class="pf-base"' : ''}><span class="pf-val si">✓</span> ${esc(x.t)}${x.base ? ` <span class="pf-tag">${L('nel Base', 'in Base', 'en Base')}</span>` : ''}</li>`).join('')}
+          ${inclusiBase.map((x) => `<li${x.base ? ' class="pf-base"' : ''}><span class="pf-val si">✓</span> ${esc(x.t)}</li>`).join('')}
         </ul>
       </div>
 

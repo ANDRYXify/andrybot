@@ -40,7 +40,7 @@ export const FREE = {
 // illimitato), booleani = on/off. L'unione con gli add-on la calcola funzioniDi().
 export const BASE = {
   id: 'base', nome: 'Base', prezzo: 2.99, prezzoTesto: '€2,99/mese', priceEnv: 'base', icona: '🤖',
-  sommario: 'Tutto l’Essenziale più Social & Notifiche (avvisi live su Telegram/Discord e nuovi post) e un moderatore.',
+  sommario: 'Tutto l’Essenziale, più gli avvisi live su Telegram/Discord e i nuovi post, e un moderatore.',
   // Social & Notifiche ora è INCLUSO nel Base (notifiche + telegram): prima era
   // un add-on a pagamento, ma è di fatto essenziale. Chi l'aveva comprato non
   // perde nulla; chi prende il Base ora ce l'ha dentro.
