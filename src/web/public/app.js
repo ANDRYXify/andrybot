@@ -6086,6 +6086,12 @@ function pannelloEffetti() {
           <label class="riga-check"><input type="checkbox" id="ef-trail" ${trk.effetti?.trail !== false ? 'checked' : ''}> ✨ ${L('Trail mani', 'Hand trails', 'Estelas')}</label>
           <label class="riga-check"><input type="checkbox" id="ef-combo" ${trk.effetti?.combo !== false ? 'checked' : ''}> 🔗 Combo</label>
         </div>
+        <div class="tenue spazio-sopra" style="font-size:.85rem">${L('Effetti sul viso', 'Face effects', 'Efectos en la cara')}</div>
+        <div class="riga-flessibile" style="flex-wrap:wrap;gap:.7rem">
+          <label class="riga-check"><input type="checkbox" id="ef-laser" ${trk.effetti?.laser !== false ? 'checked' : ''}> 👀 ${L('Laser occhi (sorpresa)', 'Eye laser (surprise)', 'Láser en ojos (sorpresa)')}</label>
+          <label class="riga-check"><input type="checkbox" id="ef-fuoco" ${trk.effetti?.fuoco !== false ? 'checked' : ''}> 🐉 ${L('Fuoco bocca (bocca aperta)', 'Mouth fire (open mouth)', 'Fuego boca (boca abierta)')}</label>
+          <label class="riga-check"><input type="checkbox" id="ef-aura" ${trk.effetti?.aura !== false ? 'checked' : ''}> 😇 ${L('Aura sorriso', 'Smile aura', 'Aura sonrisa')}</label>
+        </div>
         <label class="campo spazio-sopra" for="ef-sens">${L('Sensibilità', 'Sensitivity', 'Sensibilidad')} <span class="tenue" id="ef-sens-val">${trk.effetti?.sensibilita || 5}</span> <span class="tenue">— ${L('più alta = pose più facili da attivare', 'higher = poses easier to trigger', 'más alta = poses más fáciles')}</span></label>
         <input type="range" id="ef-sens" min="1" max="10" value="${trk.effetti?.sensibilita || 5}" class="campo-largo">
         <div class="riga-flessibile spazio-sopra" style="flex-wrap:wrap;gap:.7rem">
@@ -9867,6 +9873,7 @@ async function caricaTracking() {
       sensibilita: Number(document.getElementById('ef-sens')?.value) || 5,
       kamehameha: chk('ef-kamehameha'), fireball: chk('ef-fireball'), fulmini: chk('ef-fulmini'),
       trail: chk('ef-trail'), combo: chk('ef-combo'),
+      laser: chk('ef-laser'), fuoco: chk('ef-fuoco'), aura: chk('ef-aura'),
     };
     const giochiSel = { mima: chk('g-mima'), nonridere: chk('g-nonridere'), reaction: chk('g-reaction'), battaglia: chk('g-battaglia') };
     await salvaImpostazioni({ tracking: { attivo, giochi, camera, effetti, giochiSel, mappa } }, L('Impostazioni salvate ✓', 'Settings saved ✓', 'Ajustes guardados ✓'));

@@ -58,6 +58,10 @@
   let carica = null;      // { x,y,liv,tPuls }
   let shake = 0;
   let combo = 0, comboT = 0;
+  // ── effetti sul VISO (Fase 2): coord occhi/bocca/testa in 0..1 (fonte, non specchiate)
+  let laser = null;       // occhi laser { lnx,lny,rnx,rny, t, spegni }
+  let fuoco = null;       // fuoco/fumo dalla bocca { nx,ny, t }
+  let halo = null;        // aura/corona sul sorriso { nx,ny,r, t, spegni }
 
   function aura(col, x, y, r) { return { col, x, y, r }; }
 
@@ -96,6 +100,31 @@
     trailPunti[i].push({ nx: x, ny: y, vita: 1 });
     if (trailPunti[i].length > 24) trailPunti[i].shift();
   }
+  // ── VISO: laser occhi -----------------------------------------------------
+  function laserOn(p) {
+    p = p || {};
+    if (!laser) laser = { lnx: 0.42, lny: 0.42, rnx: 0.58, rny: 0.42, t: 0 };
+    if (p.lx != null) laser.lnx = p.lx; if (p.ly != null) laser.lny = p.ly;
+    if (p.rx != null) laser.rnx = p.rx; if (p.ry != null) laser.rny = p.ry;
+    laser.spegni = false; laser.t = Math.min(1, laser.t + 0.2);
+    if (Math.random() < 0.12) suono('fulmine');
+  }
+  function laserOff() { if (laser) laser.spegni = true; }
+  // ── VISO: fuoco dalla bocca -----------------------------------------------
+  function fuocoSpara(p) {
+    p = p || {};
+    if (!fuoco) fuoco = { nx: p.x ?? 0.5, ny: p.y ?? 0.62, t: 0 };
+    fuoco.nx = p.x ?? fuoco.nx; fuoco.ny = p.y ?? fuoco.ny; fuoco.t = 0.32;
+    if (Math.random() < 0.22) suono('fireball');
+  }
+  // ── VISO: aura/corona sul sorriso -----------------------------------------
+  function auraOn(p) {
+    p = p || {};
+    if (!halo) halo = { nx: p.x ?? 0.5, ny: p.y ?? 0.4, r: p.r ?? 0.16, t: 0 };
+    halo.nx = p.x ?? halo.nx; halo.ny = p.y ?? halo.ny; if (p.r != null) halo.r = p.r;
+    halo.spegni = false; halo.t = Math.min(1, halo.t + 0.06);
+  }
+  function auraOff() { if (halo) halo.spegni = true; }
   let comboOn = true;
   function pulsaCombo() { if (!comboOn) return; combo++; comboT = 1.8; }
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -212,13 +241,75 @@
       if (o.diss && Math.random() < 0.6) particelle.push({ x: x + rand(-o.r, o.r), y: y + rand(-o.r, o.r), vx: rand(-1, 1), vy: rand(-3, -1), vita: 1, col: '180,180,200', size: rand(1, 2.5) });
     }
 
+    // ── EFFETTI SUL VISO ---------------------------------------------------
+    // laser occhi: due raggi rossi che divergono verso il basso-esterno
+    if (laser) {
+      if (laser.spegni) { laser.t -= 0.09 * dt; if (laser.t <= 0) laser = null; }
+      else laser.t = Math.min(1, laser.t + 0.15 * dt);
+    }
+    if (laser) {
+      const inten = clamp(laser.t, 0, 1);
+      const lx0 = px(laser.lnx, W), ly0 = py(laser.lny, H);
+      const rx0 = px(laser.rnx, W), ry0 = py(laser.rny, H);
+      const cx = (lx0 + rx0) / 2, cy = (ly0 + ry0) / 2, sep = Math.abs(rx0 - lx0) || 40;
+      const L = Math.hypot(W, H);
+      [[lx0, ly0], [rx0, ry0]].forEach(([x, y], idx) => {
+        let dx = (x - cx), dy = (y - cy) + sep * 0.95;   // outward + giù
+        const len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
+        const flick = 0.82 + 0.18 * Math.sin(performance.now() / 38 + idx * 2);
+        const ex = x + ux * L, ey = y + uy * L, w = (5 + 11 * inten) * flick;
+        const grad = ctx.createLinearGradient(x, y, ex, ey);
+        grad.addColorStop(0, `rgba(255,90,60,${0.9 * inten})`); grad.addColorStop(1, 'rgba(255,0,0,0)');
+        ctx.strokeStyle = grad; ctx.lineCap = 'round';
+        ctx.lineWidth = w * 2.4; ctx.globalAlpha = 0.4 * inten; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(ex, ey); ctx.stroke(); ctx.globalAlpha = 1;
+        ctx.lineWidth = w; ctx.strokeStyle = `rgba(255,60,45,${0.9 * inten})`; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(ex, ey); ctx.stroke();
+        ctx.lineWidth = w * 0.35; ctx.strokeStyle = `rgba(255,235,225,${inten})`; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(ex, ey); ctx.stroke();
+        const g = ctx.createRadialGradient(x, y, 0, x, y, w * 2.2);
+        g.addColorStop(0, `rgba(255,255,255,${inten})`); g.addColorStop(0.5, `rgba(255,80,60,${0.8 * inten})`); g.addColorStop(1, 'rgba(255,0,0,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, w * 2.2, 0, 7); ctx.fill();
+      });
+    }
+    // fuoco/fumo dalla bocca: getto di particelle verso il basso, giallo→rosso
+    if (fuoco) { fuoco.t -= 0.03 * dt; if (fuoco.t <= 0) fuoco = null; }
+    if (fuoco) {
+      const x = px(fuoco.nx, W), y = py(fuoco.ny, H);
+      const g = ctx.createRadialGradient(x, y, 0, x, y, 34);
+      g.addColorStop(0, 'rgba(255,225,130,.85)'); g.addColorStop(1, 'rgba(255,120,0,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, 34, 0, 7); ctx.fill();
+      for (let k = 0; k < 3; k++) {
+        const a = Math.PI / 2 + rand(-0.55, 0.55), v = rand(3, 8.5);
+        particelle.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vita: 1, size: rand(3, 6.5), fuoco: true });
+      }
+    }
+    // aura/corona sul sorriso: anello dorato pulsante + scintille orbitanti
+    if (halo) {
+      if (halo.spegni) { halo.t -= 0.06 * dt; if (halo.t <= 0) halo = null; }
+      else halo.t = Math.min(1, halo.t + 0.05 * dt);
+    }
+    if (halo) {
+      const x = px(halo.nx, W), y = py(halo.ny, H), inten = clamp(halo.t, 0, 1);
+      const R = (halo.r || 0.16) * H * (0.96 + 0.04 * Math.sin(performance.now() / 300));
+      for (let k = 0; k < 3; k++) { ctx.strokeStyle = `rgba(255,${210 - k * 22},120,${(0.5 - k * 0.13) * inten})`; ctx.lineWidth = 10 - k * 3; ctx.beginPath(); ctx.arc(x, y, R + k * 4, 0, 7); ctx.stroke(); }
+      const nS = 10;
+      for (let k = 0; k < nS; k++) {
+        const a = performance.now() / 620 + k * (7 / nS);
+        const sx = x + Math.cos(a) * R, sy = y + Math.sin(a) * R * 0.82;
+        const s = Math.max(1, (2 + 2 * Math.sin(performance.now() / 120 + k)) * inten);
+        const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, s * 2);
+        g.addColorStop(0, `rgba(255,240,180,${inten})`); g.addColorStop(1, 'rgba(255,200,80,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(sx, sy, s * 2, 0, 7); ctx.fill();
+      }
+    }
+
     // particelle generiche
     for (let i = particelle.length - 1; i >= 0; i--) {
       const p = particelle[i];
       if (p.risucchio) { p.x += (p.tx - p.x) * 0.18 * dt; p.y += (p.ty - p.y) * 0.18 * dt; p.vita -= 0.05 * dt; }
-      else { p.x += (p.vx || 0) * dt; p.y += (p.vy || 0) * dt; if (p.vy != null) p.vy += 0.15 * dt; p.vita -= 0.03 * dt; }
+      else { p.x += (p.vx || 0) * dt; p.y += (p.vy || 0) * dt; if (p.vy != null) p.vy += 0.15 * dt; p.vita -= (p.fuoco ? 0.05 : 0.03) * dt; }
       if (p.vita <= 0) { particelle.splice(i, 1); continue; }
-      ctx.fillStyle = `rgba(${p.col},${p.vita})`; ctx.beginPath(); ctx.arc(p.x, p.y, (p.size || 2) * p.vita, 0, 7); ctx.fill();
+      if (p.fuoco) { const v = p.vita; ctx.fillStyle = `rgba(255,${Math.round(70 + 160 * v)},${Math.round(20 * v)},${v})`; }
+      else ctx.fillStyle = `rgba(${p.col},${p.vita})`;
+      ctx.beginPath(); ctx.arc(p.x, p.y, (p.size || 2) * p.vita, 0, 7); ctx.fill();
     }
 
     ctx.globalCompositeOperation = 'source-over';
@@ -241,6 +332,7 @@
 
   window.SB_FX = {
     spawn, caricaSu, caricaGiu, spara, mano, combo: pulsaCombo,
+    laserOn, laserOff, fuoco: fuocoSpara, auraOn, auraOff,
     suoni(on) { suoniOn = !!on; }, specchia(on) { mirror = !!on; }, abilitaCombo(on) { comboOn = !!on; if (!on) { combo = 0; comboT = 0; } },
     caricaAttiva() { return !!carica; }, livelloCarica() { return carica ? carica.liv : 0; },
     aggiornaEDisegna,
