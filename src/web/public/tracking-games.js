@@ -167,8 +167,10 @@
   }
 
   const GIOCHI = { mima: giocoMima, reaction: giocoReaction, nonridere: giocoNonRidere, battaglia: giocoBattaglia };
+  // quali giochi sono attivi dal pannello dashboard (default tutti)
+  const ATTIVO = (id) => (window.SB_GIOCHI_ATTIVI ? window.SB_GIOCHI_ATTIVI[id] !== false : true);
   function avviaGioco(id) {
-    const f = GIOCHI[id]; if (!f) return;
+    const f = GIOCHI[id]; if (!f || !ATTIVO(id) || window.SB_GIOCHI_MASTER === false) return;
     G = f(); modo = 'gioca';
     try { T.annuncia && T.annuncia('🎮 Via al gioco: ' + G.nome + '! Guardate lo schermo 👀'); } catch { /* niente */ }
   }
@@ -180,16 +182,17 @@
     { g: 'point', id: 'reaction', et: '☝️ Reaction rush' },
   ];
   function disegnaMenu(ctx, g, W, H) {
+    const voci = VOCI.filter((v) => ATTIVO(v.id));
     pannello(ctx, W * 0.14, H * 0.14, W * 0.72, H * 0.72, 26);
     testo(ctx, '🎮 SCEGLI COL GESTO', W / 2, H * 0.24, Math.round(H * 0.055), '#fff');
-    VOCI.forEach((v, i) => {
+    voci.forEach((v, i) => {
       const y = H * (0.38 + i * 0.15);
       const on = g === v.g;
       testo(ctx, v.et, W / 2, y, Math.round(H * 0.055), on ? '#34d399' : '#e5e7eb');
       if (on) anello(ctx, W * 0.24, y, Math.round(H * 0.03), Math.min(1, tenutoDa() / 800), '#34d399');
     });
     testo(ctx, '✊ esci', W / 2, H * 0.8, Math.round(H * 0.042), '#9ca3af');
-    const sel = VOCI.find((v) => v.g === g);
+    const sel = voci.find((v) => v.g === g);
     if (sel && tenutoDa() >= 800) { avviaGioco(sel.id); return; }
     if (g === 'fist' && tenutoDa() >= 700) modo = 'idle';
   }
@@ -206,6 +209,7 @@
   let _lastTick = nowMs();
   T.registraMinigioco(({ hands, faces, ctx, W, H }) => {
     const dt = Math.min(120, nowMs() - _lastTick); _lastTick = nowMs();   // ms reali dall'ultimo frame (cap anti-scatti)
+    if (window.SB_GIOCHI_MASTER === false) { modo = 'idle'; G = null; return; }   // giochi spenti dal pannello
     const g = hands && hands[0] ? (T.rilevaGesto ? T.rilevaGesto(hands[0]) : '') : '';
     const emo = (T.emozione && faces) ? T.emozione(faces[0]) : '';
     aggiornaHold(g);

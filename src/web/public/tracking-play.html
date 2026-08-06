@@ -108,11 +108,27 @@
         requestAnimationFrame(loop);
       }
 
+      // Applica la config del canale (pannello dashboard): specchio, suoni, combo,
+      // quali giochi. Il ?flip nel link, se c'è, vince sullo specchio salvato.
+      function applicaOpzioni(o) {
+        const ef = (o && o.effetti) || {}, FX = window.SB_FX;
+        if (FX) {
+          FX.specchia(params.get('flip') != null ? params.get('flip') !== '0' : ef.specchio !== false);
+          FX.suoni(ef.suoni !== false); FX.abilitaCombo(ef.combo !== false);
+        }
+        window.SB_GIOCHI_MASTER = !o || o.giochi !== false;
+        window.SB_GIOCHI_ATTIVI = (o && o.giochiSel) || {};
+      }
+      async function opzioni() {
+        try { const r = await fetch(`/api/tracking/${encodeURIComponent(login)}/opzioni?key=${encodeURIComponent(key)}`); if (r.ok) applicaOpzioni(await r.json()); }
+        catch { /* uso i default */ }
+      }
+
       // Carica motore effetti + giochi DOPO aver definito SB_TRACKING, poi avvia.
       const caricaScript = (src, cb) => { const s = document.createElement('script'); s.src = src; s.onload = cb; s.onerror = () => setStato('script non caricato: ' + src); document.head.appendChild(s); };
       caricaScript('/tracking-fx.js', () => {
-        if (window.SB_FX) window.SB_FX.specchia(params.get('flip') !== '0');   // default specchiato (facecam selfie)
-        caricaScript('/tracking-games.js', () => { connetti(); loop(); });
+        if (window.SB_FX) window.SB_FX.specchia(params.get('flip') !== '0');   // default finché non arriva la config
+        caricaScript('/tracking-games.js', async () => { await opzioni(); connetti(); loop(); });
       });
     })();
   </script>
