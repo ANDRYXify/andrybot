@@ -2006,6 +2006,34 @@ function grafAnimaSfondo(ctx, W, H, t, tipo, acc) {
   }
 }
 
+// ── helper grafica social: colori, tinte, grana, testo con tracking
+let _grNoise = null;
+const grHexRgb = (h) => { const m = /^#?([0-9a-fA-F]{6})$/.exec(String(h || '')); if (!m) return [136, 92, 246]; const n = parseInt(m[1], 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+const grRgba = (h, a) => { const [r, g, b] = grHexRgb(h); return `rgba(${r},${g},${b},${a})`; };
+// ruota la tinta di un colore (per il secondo "blob" e i gradienti) — torna rgb()
+function grHueShift(h, deg) {
+  let [r, g, b] = grHexRgb(h); r /= 255; g /= 255; b /= 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn; let hh = 0, s = 0; const l = (mx + mn) / 2;
+  if (d) { s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn); hh = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; hh /= 6; }
+  hh = (hh + deg / 360) % 1; if (hh < 0) hh += 1;
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
+  const cv = (tt) => { if (tt < 0) tt += 1; if (tt > 1) tt -= 1; if (tt < 1 / 6) return p + (q - p) * 6 * tt; if (tt < 1 / 2) return q; if (tt < 2 / 3) return p + (q - p) * (2 / 3 - tt) * 6; return p; };
+  const to = (x) => Math.round(x * 255);
+  return `rgb(${to(cv(hh + 1 / 3))},${to(cv(hh))},${to(cv(hh - 1 / 3))})`;
+}
+// grana fine (film grain) come pattern, per togliere l'effetto "piatto"
+function grNoise(ctx) {
+  if (!_grNoise) { const c = document.createElement('canvas'); c.width = c.height = 140; const x = c.getContext('2d'), d = x.createImageData(140, 140); for (let i = 0; i < d.data.length; i += 4) { const v = Math.random() * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255; } x.putImageData(d, 0, 0); _grNoise = c; }
+  return ctx.createPattern(_grNoise, 'repeat');
+}
+// testo con spaziatura tra le lettere (tracking) — robusto su ogni browser
+function grTxt(ctx, s, x, y, ls) {
+  s = String(s); const sp = ls || 0; if (!sp) { ctx.fillText(s, x, y); return; }
+  const al = ctx.textAlign; let cx = x;
+  if (al === 'right' || al === 'center') { let tot = 0; for (const ch of s) tot += ctx.measureText(ch).width + sp; cx = al === 'right' ? x - tot + sp : x - tot / 2; }
+  ctx.textAlign = 'left'; for (const ch of s) { ctx.fillText(ch, cx, y); cx += ctx.measureText(ch).width + sp; } ctx.textAlign = al;
+}
+
 // Disegna la grafica sul canvas secondo la config. Cuore di P5. `t` = tempo (ms)
 // per i temi animati; 0 per un fotogramma statico.
 function grafDisegna(canvas, c, t = 0) {
@@ -2013,125 +2041,84 @@ function grafDisegna(canvas, c, t = 0) {
   const ctx = canvas.getContext('2d');
   const tema = GR_TEMI[c.tema] || GR_TEMI.notte;
   const acc = /^#[0-9a-fA-F]{6}$/.test(c.accento || '') ? c.accento : tema.acc;
+  const acc2 = grHueShift(acc, -42);                      // secondo colore del "mesh"
   const prog = c.tipo !== 'live';
   const W = 1080, H = prog ? 1350 : 1080;
   canvas.width = W; canvas.height = H;
   const S = 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
 
-  // COLORE TESTO: scelto dallo streamer, altrimenti automatico in base allo
-  // sfondo (chiaro su scuro/immagine, scuro su chiaro) → sempre leggibile.
   const hex = (v) => /^#[0-9a-fA-F]{6}$/.test(String(v || ''));
   const bgScuro = c.sfondo === 'immagine' ? true
     : c.sfondo === 'tinta' ? eScuroHex(c.sfondoColore || '#141225')
     : eScuroHex(tema.bg[0]);
   const txt = hex(c.coloreTesto) ? c.coloreTesto
     : (c.sfondo === 'tema' ? tema.testo : (bgScuro ? '#ffffff' : '#0d0d12'));
-  const tenue2 = (c.sfondo === 'tema' && !hex(c.coloreTesto)) ? tema.tenue : (txt + 'c8');
-  const ombra = eScuroHex(txt) ? 'rgba(255,255,255,.42)' : 'rgba(0,0,0,.5)';
+  const scuroTxt = eScuroHex(txt);
+  const tenue2 = (c.sfondo === 'tema' && !hex(c.coloreTesto)) ? tema.tenue : grRgba(txt, 0.72);
+  const accRGB = 'rgb(' + grHexRgb(acc).join(',') + ')';
+  const blob = (cx, cy, r, col, a) => { const gg = ctx.createRadialGradient(cx, cy, 0, cx, cy, r); gg.addColorStop(0, col.replace('rgb(', 'rgba(').replace(')', ',' + a + ')')); gg.addColorStop(1, col.replace('rgb(', 'rgba(').replace(')', ',0)')); ctx.fillStyle = gg; ctx.fillRect(0, 0, W, H); };
 
-  // sfondo: immagine (cover) · tinta unita · gradiente (animato) del tema
+  // ===== SFONDO a strati: base · velo · blob "mesh" · vignetta · grana
+  const conAnima = c.sfondo === 'tema' && tema.anima;
   if (c.sfondo === 'immagine' && grafImg.el && grafImg.pronto) {
-    const iw = grafImg.el.naturalWidth || 1, ih = grafImg.el.naturalHeight || 1;
-    const sc = Math.max(W / iw, H / ih);
+    const iw = grafImg.el.naturalWidth || 1, ih = grafImg.el.naturalHeight || 1, sc = Math.max(W / iw, H / ih);
     ctx.drawImage(grafImg.el, (W - iw * sc) / 2, (H - ih * sc) / 2, iw * sc, ih * sc);
   } else if (c.sfondo === 'tinta') {
-    ctx.fillStyle = hex(c.sfondoColore) ? c.sfondoColore : '#141225';
-    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = hex(c.sfondoColore) ? c.sfondoColore : '#141225'; ctx.fillRect(0, 0, W, H);
   } else {
-    const g = ctx.createLinearGradient(0, 0, W, H);
-    g.addColorStop(0, tema.bg[0]); g.addColorStop(1, tema.bg[1]);
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    if (tema.anima) grafAnimaSfondo(ctx, W, H, t, tema.anima, acc);
+    const g = ctx.createLinearGradient(0, 0, W * 0.3, H); g.addColorStop(0, tema.bg[0]); g.addColorStop(1, tema.bg[1]); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    if (conAnima) grafAnimaSfondo(ctx, W, H, t, tema.anima, acc);
   }
-  // VELO di leggibilità (regolabile dallo streamer): schiarisce o scurisce verso
-  // l'opposto del testo, così le scritte staccano sempre. Solo tinta/immagine.
   const velo = Math.max(0, Math.min(85, Number(c.velo) || 0)) / 100;
-  if (velo > 0 && c.sfondo !== 'tema') {
-    ctx.fillStyle = eScuroHex(txt) ? `rgba(250,250,255,${velo})` : `rgba(6,6,14,${velo})`;
-    ctx.fillRect(0, 0, W, H);
-  }
-  // alone d'accento (dà profondità)
-  const alone = ctx.createRadialGradient(W * 0.85, H * 0.1, 40, W * 0.85, H * 0.1, W * 0.8);
-  alone.addColorStop(0, acc + '44'); alone.addColorStop(1, acc + '00');
-  ctx.fillStyle = alone; ctx.fillRect(0, 0, W, H);
+  if (velo > 0 && c.sfondo !== 'tema') { ctx.fillStyle = scuroTxt ? `rgba(250,250,255,${velo})` : `rgba(6,6,14,${velo})`; ctx.fillRect(0, 0, W, H); }
+  if (!conAnima) {                                        // blob di profondità (spenti sui temi animati)
+    const su = c.sfondo === 'immagine' ? 0.7 : 1;
+    blob(W * 0.92, H * 0.06, W * 0.9, accRGB, (scuroTxt ? 0.42 : 0.30) * su);
+    blob(W * 0.05, H * 0.98, W * 0.85, acc2, (scuroTxt ? 0.34 : 0.24) * su);
+    blob(W * 0.15, H * 0.08, W * 0.5, accRGB, (scuroTxt ? 0.14 : 0.10) * su);
+  } else { blob(W * 0.9, H * 0.08, W * 0.7, accRGB, 0.20); }
+  const vg = ctx.createRadialGradient(W / 2, H * 0.42, H * 0.3, W / 2, H * 0.5, H * 0.85); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, scuroTxt ? 'rgba(0,0,0,.38)' : 'rgba(0,0,0,.10)'); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+  ctx.save(); ctx.globalAlpha = scuroTxt ? 0.05 : 0.035; ctx.globalCompositeOperation = 'overlay'; ctx.fillStyle = grNoise(ctx); ctx.fillRect(0, 0, W, H); ctx.restore();
 
-  const pad = 90;
-  // intestazione: logo (IMMAGINE o emoji) + handle
+  const pad = 96;
+  // ===== HEADER: logo (immagine o emoji) + handle + hairline sfumata
   ctx.textBaseline = 'alphabetic';
-  ctx.textAlign = 'left';
   if (c.logoImg && grafLogo.el && grafLogo.pronto) {
-    const L0 = 78, li = grafLogo.el, lw = li.naturalWidth || 1, lh = li.naturalHeight || 1;
-    const ls = Math.max(L0 / lw, L0 / lh);
-    ctx.save();
-    grRoundRect(ctx, pad, 62, L0, L0, 18); ctx.clip();
-    ctx.drawImage(li, pad + (L0 - lw * ls) / 2, 62 + (L0 - lh * ls) / 2, lw * ls, lh * ls);
-    ctx.restore();
-  } else {
-    const logo = String(c.logo || '').trim();
-    if (logo) { ctx.font = `48px ${S}`; ctx.fillStyle = txt; ctx.fillText(logo, pad, 130); }
-  }
-  ctx.font = `700 40px ${S}`;
-  ctx.fillStyle = tenue2;
-  ctx.textAlign = 'right';
-  ctx.fillText(grClip(ctx, c.handle || '', W - pad * 2 - 90), W - pad, 128);
+    const L0 = 84, li = grafLogo.el, lw = li.naturalWidth || 1, lh = li.naturalHeight || 1, ls = Math.max(L0 / lw, L0 / lh);
+    ctx.save(); grRoundRect(ctx, pad, 60, L0, L0, 20); ctx.clip(); ctx.drawImage(li, pad + (L0 - lw * ls) / 2, 60 + (L0 - lh * ls) / 2, lw * ls, lh * ls); ctx.restore();
+  } else { const logo = String(c.logo || '').trim(); if (logo) { ctx.textAlign = 'left'; ctx.font = `54px ${S}`; ctx.fillStyle = txt; ctx.fillText(logo, pad, 132); } }
+  ctx.textAlign = 'right'; ctx.font = `700 38px ${S}`; ctx.fillStyle = tenue2;
+  grTxt(ctx, grClip(ctx, c.handle || '', W - pad * 2 - 130), W - pad, 126, 1);
+  const hl = ctx.createLinearGradient(pad, 0, W - pad, 0); hl.addColorStop(0, grRgba(acc, 0)); hl.addColorStop(0.15, grRgba(acc, 0.9)); hl.addColorStop(0.85, grRgba(txt, 0.25)); hl.addColorStop(1, grRgba(txt, 0)); ctx.fillStyle = hl; ctx.fillRect(pad, 168, W - pad * 2, 3);
 
   if (prog) {
-    // titolo grande
-    ctx.textAlign = 'left';
-    ctx.fillStyle = acc;
-    ctx.font = `800 40px ${S}`;
-    ctx.fillText((L('PROGRAMMAZIONE', 'SCHEDULE', 'PROGRAMACIÓN')), pad, 250);
-    ctx.save();
-    ctx.shadowColor = ombra; ctx.shadowBlur = 14; ctx.shadowOffsetY = 2;
-    ctx.fillStyle = txt; ctx.font = `900 96px ${S}`;
-    ctx.fillText(grClip(ctx, (c.titolo || L('LA SETTIMANA', 'THE WEEK', 'LA SEMANA')).toUpperCase(), W - pad * 2), pad, 350);
-    ctx.restore();
-
-    // righe giorni: su immagine/tinta il pannello riga è più marcato (leggibilità)
-    const rigaBg = c.sfondo === 'tema' ? tema.riga : (eScuroHex(txt) ? 'rgba(255,255,255,.40)' : 'rgba(0,0,0,.32)');
-    const y0 = 440, rh = (H - y0 - pad) / 7;
+    ctx.textAlign = 'left'; ctx.fillStyle = acc; ctx.font = `800 34px ${S}`;
+    grTxt(ctx, L('PALINSESTO SETTIMANALE', 'WEEKLY SCHEDULE', 'PROGRAMACIÓN SEMANAL').toUpperCase(), pad, 268, 8);
+    ctx.font = `900 104px ${S}`;
+    const tit = grClip(ctx, (c.titolo || L('LA SETTIMANA', 'THE WEEK', 'LA SEMANA')).toUpperCase(), W - pad * 2);
+    const tw = ctx.measureText(tit).width, tg = ctx.createLinearGradient(pad, 0, Math.min(W - pad, pad + tw), 0); tg.addColorStop(0, txt); tg.addColorStop(1, acc);
+    ctx.save(); ctx.shadowColor = grRgba(acc, 0.45); ctx.shadowBlur = 28; ctx.shadowOffsetY = 6; ctx.fillStyle = tg; ctx.fillText(tit, pad, 372); ctx.restore();
+    const y0 = 452, rh = (H - y0 - pad + 6) / 7;
     c.giorni.forEach((r, i) => {
-      const y = y0 + i * rh;
-      grRoundRect(ctx, pad, y, W - pad * 2, rh - 16, 26);
-      ctx.fillStyle = rigaBg; ctx.fill();
-      ctx.fillStyle = acc; ctx.font = `800 40px ${S}`; ctx.textAlign = 'left';
-      ctx.fillText(r.g, pad + 34, y + rh / 2 + 2);
-      if (r.off) {
-        ctx.fillStyle = tenue2; ctx.font = `600 34px ${S}`;
-        ctx.fillText(L('riposo', 'day off', 'descanso'), pad + 200, y + rh / 2 + 2);
-      } else {
-        ctx.fillStyle = txt; ctx.font = `800 40px ${S}`;
-        ctx.fillText(r.ora || '—', pad + 200, y + rh / 2 + 2);
-        ctx.fillStyle = txt; ctx.font = `500 36px ${S}`;
-        ctx.fillText(grClip(ctx, r.att || '—', W - pad * 2 - 430), pad + 400, y + rh / 2 + 2);
-      }
+      const y = y0 + i * rh, hh = rh - 16;
+      grRoundRect(ctx, pad, y, W - pad * 2, hh, 24); ctx.fillStyle = scuroTxt ? `rgba(255,255,255,${i % 2 ? 0.05 : 0.085})` : `rgba(0,0,0,${i % 2 ? 0.05 : 0.09})`; ctx.fill();
+      ctx.strokeStyle = grRgba(txt, 0.06); ctx.lineWidth = 1.5; ctx.stroke();
+      grRoundRect(ctx, pad, y + hh * 0.18, 10, hh * 0.64, 5); ctx.fillStyle = r.off ? grRgba(txt, 0.25) : acc; ctx.fill();
+      const my = y + hh / 2 + 2;
+      ctx.textAlign = 'left'; ctx.fillStyle = r.off ? tenue2 : acc; ctx.font = `800 42px ${S}`; ctx.fillText(r.g, pad + 42, my);
+      if (r.off) { ctx.fillStyle = tenue2; ctx.font = `600 34px ${S}`; grTxt(ctx, L('RIPOSO', 'DAY OFF', 'DESCANSO'), pad + 210, my, 3); }
+      else { ctx.fillStyle = txt; ctx.font = `800 42px ${S}`; ctx.fillText(r.ora || '—', pad + 210, my); ctx.fillStyle = tenue2; ctx.font = `500 37px ${S}`; ctx.fillText(grClip(ctx, r.att || '—', W - pad * 2 - 470), pad + 430, my); }
     });
   } else {
-    // LIVE ORA: pallino + scritta grande, gioco, sottotitolo
-    const cy = 470;
-    ctx.beginPath(); ctx.arc(pad + 22, cy - 150, 26, 0, Math.PI * 2);
-    ctx.fillStyle = '#ff3b30'; ctx.fill();
-    ctx.textAlign = 'left';
-    ctx.fillStyle = tenue2; ctx.font = `800 44px ${S}`;
-    ctx.fillText(L('IN DIRETTA ORA', 'LIVE NOW', 'EN DIRECTO'), pad + 70, cy - 136);
-    ctx.save();
-    ctx.shadowColor = ombra; ctx.shadowBlur = 16; ctx.shadowOffsetY = 2;
-    ctx.fillStyle = txt; ctx.font = `900 150px ${S}`;
-    ctx.fillText(grClip(ctx, (c.titolo || 'LIVE').toUpperCase(), W - pad * 2), pad, cy + 20);
-    ctx.restore();
-    if (c.gioco) {
-      grRoundRect(ctx, pad, cy + 90, Math.min(W - pad * 2, ctx.measureText(c.gioco).width + 220), 96, 48);
-      ctx.fillStyle = acc; ctx.fill();
-      ctx.fillStyle = eScuroHex(acc) ? '#fff' : '#111';
-      ctx.font = `800 46px ${S}`; ctx.textAlign = 'left';
-      ctx.fillText('🎮 ' + grClip(ctx, c.gioco, W - pad * 2 - 240), pad + 44, cy + 154);
-    }
-    if (c.sottotitolo) {
-      ctx.fillStyle = tenue2; ctx.font = `500 52px ${S}`; ctx.textAlign = 'left';
-      ctx.fillText(grClip(ctx, c.sottotitolo, W - pad * 2), pad, cy + 300);
-    }
-    // barra accento in basso
-    ctx.fillStyle = acc; ctx.fillRect(0, H - 24, W, 24);
+    const cy = 520;
+    ctx.save(); ctx.shadowColor = 'rgba(255,59,48,.9)'; ctx.shadowBlur = 24; ctx.beginPath(); ctx.arc(pad + 20, cy - 176, 22, 0, Math.PI * 2); ctx.fillStyle = '#ff3b30'; ctx.fill(); ctx.restore();
+    ctx.textAlign = 'left'; ctx.fillStyle = tenue2; ctx.font = `800 40px ${S}`; grTxt(ctx, L('IN DIRETTA ORA', 'LIVE NOW', 'EN DIRECTO'), pad + 66, cy - 162, 7);
+    ctx.font = `900 168px ${S}`; const tit = grClip(ctx, (c.titolo || 'LIVE').toUpperCase(), W - pad * 2);
+    const tw = ctx.measureText(tit).width, tg = ctx.createLinearGradient(pad, 0, Math.min(W - pad, pad + tw), cy); tg.addColorStop(0, txt); tg.addColorStop(1, acc);
+    ctx.save(); ctx.shadowColor = grRgba(acc, 0.5); ctx.shadowBlur = 34; ctx.shadowOffsetY = 6; ctx.fillStyle = tg; ctx.fillText(tit, pad, cy); ctx.restore();
+    if (c.gioco) { ctx.font = `800 46px ${S}`; const gw = Math.min(W - pad * 2, ctx.measureText(c.gioco).width + 250); grRoundRect(ctx, pad, cy + 56, gw, 104, 52); const cg = ctx.createLinearGradient(pad, 0, pad + gw, 0); cg.addColorStop(0, acc); cg.addColorStop(1, grHueShift(acc, -30)); ctx.fillStyle = cg; ctx.fill(); ctx.fillStyle = eScuroHex(acc) ? '#fff' : '#111'; ctx.textAlign = 'left'; ctx.fillText('🎮  ' + grClip(ctx, c.gioco, W - pad * 2 - 280), pad + 42, cy + 124); }
+    if (c.sottotitolo) { ctx.fillStyle = tenue2; ctx.font = `500 54px ${S}`; ctx.textAlign = 'left'; ctx.fillText(grClip(ctx, c.sottotitolo, W - pad * 2), pad, cy + 270); }
+    const bb = ctx.createLinearGradient(0, 0, W, 0); bb.addColorStop(0, acc); bb.addColorStop(1, grHueShift(acc, -40)); ctx.fillStyle = bb; ctx.fillRect(0, H - 22, W, 22);
   }
 }
 // luminanza: true se il colore è scuro (per scegliere testo bianco/nero sopra)
