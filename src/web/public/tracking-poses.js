@@ -194,11 +194,17 @@
     // molto aperta), aura/corona (sorriso). Uso emozioni Human (robuste) + la mesh
     // per le posizioni; fallback sul box se la mesh manca. Coord normalizzate 0..1.
     const F = (faces || [])[0];
-    if (F) {
-      const box = F.box || F.boxRaw || [0, 0, 0, 0];
-      const bx = box[0], by = box[1], bw = box[2] || 1, bh = box[3] || 1;
+    const box0 = F && (F.box || F.boxRaw);
+    const boxOk = Array.isArray(box0) && box0.length >= 4 && box0.slice(0, 4).every(Number.isFinite);
+    if (F && boxOk) {
+      const bx = box0[0], by = box0[1], bw = box0[2] || 1, bh = box0[3] || 1;
       const mesh = F.mesh || F.meshRaw || null;
-      const pt = (idx, fx, fy) => { const q = mesh && mesh[idx]; return q ? { x: (q[0] ?? q.x) / W, y: (q[1] ?? q.y) / H } : { x: (bx + bw * fx) / W, y: (by + bh * fy) / H }; };
+      const fnum = (v) => (Number.isFinite(v) ? v : NaN);
+      const pt = (idx, fx, fy) => {
+        const q = mesh && mesh[idx]; let x = q ? fnum(q[0] ?? q.x) : NaN, y = q ? fnum(q[1] ?? q.y) : NaN;
+        if (!Number.isFinite(x) || !Number.isFinite(y)) { x = bx + bw * fx; y = by + bh * fy; }
+        return { x: x / W, y: y / H };
+      };
       const occhioL = pt(159, 0.32, 0.42), occhioR = pt(386, 0.68, 0.42), bocca = pt(13, 0.50, 0.78);
       const emo = {}; (F.emotion || []).forEach((e) => { if (e && e.emotion) emo[e.emotion] = e.score || 0; });
       // apertura bocca: distanza labbro sup/inf interni (mesh 13/14) / altezza volto
