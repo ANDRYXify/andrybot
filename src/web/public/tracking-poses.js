@@ -29,6 +29,7 @@
   let _cap = null, _ultimoSalva = 0;
   let lastPuntatore = 0;   // throttle invio puntatore (puzzle)
   let snapReady = false, snapReadyT = 0, lastSnap = 0;   // snap di Thanos
+  let freezeT = 0, freezeArmato = true, lastFreeze = 0;  // slow-mo / freeze (due ✌️)
 
   // punta dell'indice (keypoint 8) normalizzata; fallback al centro mano
   const puntaIndice = (h, c, W, H) => { const kp = h.keypoints || h.landmarks, p = kp && kp[8]; return { x: (p ? (p[0] ?? p.x) : c.x) / W, y: (p ? (p[1] ?? p.y) : c.y) / H }; };
@@ -180,6 +181,14 @@
         }
       }
     } else snapReady = false;
+
+    // ── SLOW-MO / FREEZE (Fase 5): due mani ✌️ tenute ~0.6s → "tempo fermo".
+    // NB: l'overlay sta SOPRA la facecam nativa, non ferma il video: rallenta e
+    // tinge gli effetti (slow-motion cinematografico dello strato effetti).
+    if (E.freeze !== false && M.length === 2 && M[0].open === 'victory' && M[1].open === 'victory') {
+      if (!freezeT) freezeT = now;
+      if (freezeArmato && now - freezeT > 600 && now - lastFreeze > 3000) { freezeArmato = false; lastFreeze = now; FX.congela(2.5); T.inviaFx({ tipo: 'freeze' }); }
+    } else { freezeT = 0; freezeArmato = true; }
 
     // ── EFFETTI SUL VISO (Fase 2): laser occhi (sorpresa), fuoco bocca (bocca
     // molto aperta), aura/corona (sorriso). Uso emozioni Human (robuste) + la mesh
