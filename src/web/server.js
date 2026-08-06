@@ -432,7 +432,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   const VETRINA = new Set(['/', '/index.html', '/app.js', '/style.css', '/presets.js', '/overlay-skin.css',
     // script degli overlay OBS: pubblici (nessun segreto), servono senza sessione
     // altrimenti l'overlay tracking resta bloccato su "avvio…" (script non caricati)
-    '/tracking-overlay.js', '/tracking-games.js', '/tracking-fx.js', '/tracking-poses.js']);
+    '/tracking-overlay.js', '/tracking-games.js', '/tracking-fx.js', '/tracking-fx-gl.js', '/tracking-poses.js']);
   app.use((req, res, next) => {
     // Rivalida la sessione a OGNI richiesta (regola: se non paghi e non sei un
     // membro community verificato+abilitato, NON entri). Ricava da zero i contesti
@@ -451,6 +451,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
         || req.path.startsWith('/api/abbonamento/')   // piani/checkout/portale: auth propria
         || req.path.startsWith('/overlay/') || req.path.startsWith('/o/')   // overlay OBS + link "belli"
         || req.path.startsWith('/tracking/')       // overlay TRACKING in OBS (pagina + stream): protetto dalla chiave
+        || req.path.startsWith('/vendor/')         // librerie vendorizzate (PixiJS): pubbliche, nessun segreto
         || req.path.startsWith('/api/tracking/')   // gesti/say dell'overlay tracking (chiave overlay; /url resta requireLogin)
         || req.path.startsWith('/u/')        // link-page pubblica: la serviamo noi dal DB
         || req.path.startsWith('/assets/')   // bundle JS/CSS della link-page (proxy verso Vercel)
