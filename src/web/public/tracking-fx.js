@@ -96,7 +96,8 @@
     trailPunti[i].push({ nx: x, ny: y, vita: 1 });
     if (trailPunti[i].length > 24) trailPunti[i].shift();
   }
-  function pulsaCombo() { combo++; comboT = 1.8; }
+  let comboOn = true;
+  function pulsaCombo() { if (!comboOn) return; combo++; comboT = 1.8; }
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
   // ── update + draw ---------------------------------------------------------
@@ -240,7 +241,7 @@
 
   window.SB_FX = {
     spawn, caricaSu, caricaGiu, spara, mano, combo: pulsaCombo,
-    suoni(on) { suoniOn = !!on; }, specchia(on) { mirror = !!on; },
+    suoni(on) { suoniOn = !!on; }, specchia(on) { mirror = !!on; }, abilitaCombo(on) { comboOn = !!on; if (!on) { combo = 0; comboT = 0; } },
     caricaAttiva() { return !!carica; }, livelloCarica() { return carica ? carica.liv : 0; },
     aggiornaEDisegna,
   };
