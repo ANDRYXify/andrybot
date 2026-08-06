@@ -460,6 +460,13 @@ aggiungiColonna('streamers', 'avatar', "TEXT NOT NULL DEFAULT ''");
   }
 })();
 
+// Periodo di GRAZIA e controllo MANUALE (vedi gate.js): quando uno streamer sparisce
+// dalla lista del sito NON lo spegniamo subito, ma dopo `grazia_fino` (timestamp ms;
+// -1 = grazia già consumata). `manuale=1` = stato deciso dall'admin: il sync col sito
+// lo rispetta e non lo sovrascrive più.
+aggiungiColonna('streamers', 'grazia_fino', 'INTEGER NOT NULL DEFAULT 0');
+aggiungiColonna('streamers', 'manuale', 'INTEGER NOT NULL DEFAULT 0');
+
 // Migrazione dominio dei LINK PROFILO: chi ha dati vecchi (moduli/conoscenza)
 // aveva "andryxify.it/u/<canale>" scritto nei testi; lo portiamo al dominio
 // ufficiale "socialbot.live/u/<canale>". Idempotente (il WHERE non matcha più
@@ -672,6 +679,14 @@ export const streamers = {
   setStatus(login, status) {
     db.prepare('UPDATE streamers SET status=?, approved_at=CASE WHEN ?=\'approved\' THEN ? ELSE approved_at END WHERE login=?')
       .run(status, status, now(), login.toLowerCase());
+  },
+  // periodo di grazia: timestamp (ms) di scadenza; 0 = nessuna grazia, -1 = consumata
+  setGrazia(login, ts) {
+    db.prepare('UPDATE streamers SET grazia_fino=? WHERE login=?').run(Math.round(Number(ts) || 0), login.toLowerCase());
+  },
+  // controllo manuale dell'admin: 1 = il sync col sito non tocca più questo streamer
+  setManuale(login, on) {
+    db.prepare('UPDATE streamers SET manuale=? WHERE login=?').run(on ? 1 : 0, login.toLowerCase());
   },
   // Registra/aggiorna uno streamer già APPROVATO dal sito (andryxify.it è la
   // fonte di verità: chi arriva con un pass valido è per definizione abilitato).
