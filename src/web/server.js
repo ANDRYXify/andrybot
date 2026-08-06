@@ -432,7 +432,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   const VETRINA = new Set(['/', '/index.html', '/app.js', '/style.css', '/presets.js', '/overlay-skin.css',
     // script degli overlay OBS: pubblici (nessun segreto), servono senza sessione
     // altrimenti l'overlay tracking resta bloccato su "avvio…" (script non caricati)
-    '/tracking-overlay.js', '/tracking-games.js']);
+    '/tracking-overlay.js', '/tracking-games.js', '/tracking-fx.js', '/tracking-poses.js']);
   app.use((req, res, next) => {
     // Rivalida la sessione a OGNI richiesta (regola: se non paghi e non sei un
     // membro community verificato+abilitato, NON entri). Ricava da zero i contesti
@@ -714,6 +714,28 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const login = String(req.params.login).toLowerCase();
     const pul = (v) => String(v || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 24);
     effects.emitTrk(login, { azione: 'stato', gesto: pul(req.body?.gesto), emozione: pul(req.body?.emozione) });
+    res.json({ ok: true });
+  });
+
+  // SPLIT: il RILEVATORE manda gli EFFETTI riconosciuti (fireball, fulmine, carica
+  // kamehameha, trail delle mani…) all'overlay in OBS. Solo numeri/nomi validati,
+  // niente immagini. Discreti a evento, continui (carica/mano) a ~12fps.
+  const _fxTipi = new Set(['fireball', 'fulmine', 'snap', 'onda', 'carica', 'spara', 'caricaGiu', 'mano', 'combo']);
+  app.post('/api/tracking/:login/fx', (req, res) => {
+    if (!chiaveOk(req)) return res.status(403).json({ errore: 'chiave non valida' });
+    const login = String(req.params.login).toLowerCase();
+    const b = req.body || {};
+    const tipo = String(b.tipo || '');
+    if (!_fxTipi.has(tipo)) return res.status(400).json({ errore: 'tipo non valido' });
+    const n01 = (v) => (Number.isFinite(Number(v)) ? Math.max(0, Math.min(1, Number(v))) : undefined);
+    const nd = (v) => (Number.isFinite(Number(v)) ? Math.max(-2, Math.min(2, Number(v))) : undefined);
+    effects.emitTrk(login, {
+      azione: 'fx', tipo,
+      x: n01(b.x), y: n01(b.y), dx: nd(b.dx), dy: nd(b.dy),
+      ax: n01(b.ax), ay: n01(b.ay), bx: n01(b.bx), by: n01(b.by),
+      forza: Number.isFinite(Number(b.forza)) ? Math.max(0, Math.min(2, Number(b.forza))) : undefined,
+      liv: n01(b.liv), i: (b.i === 1 || b.i === '1') ? 1 : 0,
+    });
     res.json({ ok: true });
   });
 
