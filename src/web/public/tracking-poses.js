@@ -28,6 +28,7 @@
   let framingT = 0, scattoArmato = true, lastMirino = 0;   // inquadratura → scatto
   let _cap = null, _ultimoSalva = 0;
   let lastPuntatore = 0;   // throttle invio puntatore (puzzle)
+  let snapReady = false, snapReadyT = 0, lastSnap = 0;   // snap di Thanos
 
   // punta dell'indice (keypoint 8) normalizzata; fallback al centro mano
   const puntaIndice = (h, c, W, H) => { const kp = h.keypoints || h.landmarks, p = kp && kp[8]; return { x: (p ? (p[0] ?? p.x) : c.x) / W, y: (p ? (p[1] ?? p.y) : c.y) / H }; };
@@ -161,6 +162,24 @@
       const pz = pinch(hands[0], sens);
       if (pz) { lastPuntatore = now; T.inviaFx({ tipo: 'puntatore', x: pz.x / W, y: pz.y / H, liv: pz.giu ? 1 : 0 }); }
     }
+
+    // ── SNAP di Thanos (Fase 5): pollice+medio si toccano poi si STACCANO di
+    // scatto (indice esteso → è uno schiocco, non un pugno). → flash viola + cenere.
+    if (E.snap !== false && hands && hands[0]) {
+      const k = hands[0].keypoints || hands[0].landmarks;
+      if (Array.isArray(k) && k.length >= 21) {
+        const gx = (p) => (p[0] ?? p.x ?? 0), gy = (p) => (p[1] ?? p.y ?? 0);
+        const dd = (a, b) => Math.hypot(gx(a) - gx(b), gy(a) - gy(b));
+        const palmo = dd(k[0], k[9]) || 1;
+        const indiceEsteso = dd(k[0], k[8]) > dd(k[0], k[6]) * 1.05;
+        const vicino = indiceEsteso && dd(k[4], k[12]) < palmo * (0.34 + (sens - 5) * 0.02);
+        if (vicino && !snapReady) { snapReady = true; snapReadyT = now; }
+        else if (!vicino && snapReady) {
+          snapReady = false;
+          if (now - snapReadyT < 450 && now - lastSnap > 1200) { lastSnap = now; const x = gx(k[12]) / W, y = gy(k[12]) / H; FX.spawn('snap', { x, y }); T.inviaFx({ tipo: 'snap', x, y }); }
+        }
+      }
+    } else snapReady = false;
 
     // ── EFFETTI SUL VISO (Fase 2): laser occhi (sorpresa), fuoco bocca (bocca
     // molto aperta), aura/corona (sorriso). Uso emozioni Human (robuste) + la mesh

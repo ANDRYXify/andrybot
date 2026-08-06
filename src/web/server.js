@@ -707,7 +707,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       camera: String(trk.camera || '').slice(0, 100),
       giochi: trk.giochi !== false,
       giochiSel: trk.giochiSel || { mima: true, nonridere: true, reaction: true, battaglia: true },
-      effetti: trk.effetti || { attivo: true, specchio: true, suoni: true, sensibilita: 5, kamehameha: true, fireball: true, fulmini: true, trail: true, combo: true, laser: true, fuoco: true, aura: true, scatto: true, puzzle: false },
+      effetti: trk.effetti || { attivo: true, specchio: true, suoni: true, sensibilita: 5, kamehameha: true, fireball: true, fulmini: true, trail: true, combo: true, laser: true, fuoco: true, aura: true, scatto: true, snap: true, puzzle: false },
     });
   });
 
@@ -2681,6 +2681,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
           laser: ef.laser !== false, fuoco: ef.fuoco !== false, aura: ef.aura !== false,
           // inquadratura → scatto (Fase 3)
           scatto: ef.scatto !== false,
+          // snap di Thanos (Fase 5)
+          snap: ef.snap !== false,
           // puzzle "aggancia-e-segui" (Fase 4): default OFF (invia il puntatore
           // in continuo quando attivo, quindi lo accende chi lo usa davvero)
           puzzle: ef.puzzle === true,

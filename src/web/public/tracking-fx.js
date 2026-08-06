@@ -66,6 +66,8 @@
   // ── inquadratura/scatto (Fase 3): mirino "a cornice" + flash con miniatura
   let mirino = null;      // { ax,ay,bx,by } cornice in composizione (0..1)
   const scatti = [];      // { ax,ay,bx,by, t, thumb } flash+miniatura in corso
+  // ── snap di Thanos (Fase 5): flash viola + cenere + vignettatura
+  let thanos = null;      // { nx,ny, t, emit }
 
   function aura(col, x, y, r) { return { col, x, y, r }; }
 
@@ -81,7 +83,8 @@
       suono('fulmine'); pulsaCombo();
     } else if (tipo === 'snap') {
       onde.push({ nx: p.x ?? 0.5, ny: p.y ?? 0.5, r: 0, vita: 1, diss: true });
-      suono('snap'); shake = Math.max(shake, 10); pulsaCombo();
+      thanos = { nx: p.x ?? 0.5, ny: p.y ?? 0.5, t: 1, emit: true };   // flash viola + cenere
+      suono('snap'); shake = Math.max(shake, 13); pulsaCombo();
     } else if (tipo === 'onda') {
       onde.push({ nx: p.x ?? 0.5, ny: p.y ?? 0.5, r: 0, vita: 1 });
     }
@@ -313,18 +316,38 @@
       }
     }
 
+    // snap di Thanos: alla prima comparsa sputa la cenere; poi un flash viola
+    if (thanos) {
+      const x = px(thanos.nx, W), y = py(thanos.ny, H);
+      if (thanos.emit) {
+        thanos.emit = false;
+        for (let k = 0; k < 46; k++) { const a = rand(0, 7), d = rand(4, 90); particelle.push({ x: x + Math.cos(a) * d, y: y + Math.sin(a) * d, vx: rand(-0.8, 0.8), vy: rand(-2.6, -0.6), vita: 1, size: rand(1.5, 4), ash: true }); }
+      }
+      thanos.t -= 0.02 * dt; if (thanos.t <= 0) thanos = null;
+      else { const r = Math.hypot(W, H) * (0.2 + (1 - thanos.t) * 0.5), g = ctx.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, `rgba(150,80,220,${0.5 * thanos.t})`); g.addColorStop(0.6, `rgba(90,40,160,${0.25 * thanos.t})`); g.addColorStop(1, 'rgba(60,20,120,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); }
+    }
+
     // particelle generiche
     for (let i = particelle.length - 1; i >= 0; i--) {
       const p = particelle[i];
       if (p.risucchio) { p.x += (p.tx - p.x) * 0.18 * dt; p.y += (p.ty - p.y) * 0.18 * dt; p.vita -= 0.05 * dt; }
+      else if (p.ash) { p.x += (p.vx || 0) * dt; p.y += (p.vy || 0) * dt; p.vy = (p.vy || 0) - 0.02 * dt; p.vita -= 0.012 * dt; }   // cenere: sale e sfuma
       else { p.x += (p.vx || 0) * dt; p.y += (p.vy || 0) * dt; if (p.vy != null) p.vy += 0.15 * dt; p.vita -= (p.fuoco ? 0.05 : 0.03) * dt; }
       if (p.vita <= 0) { particelle.splice(i, 1); continue; }
       if (p.fuoco) { const v = p.vita; ctx.fillStyle = `rgba(255,${Math.round(70 + 160 * v)},${Math.round(20 * v)},${v})`; }
+      else if (p.ash) ctx.fillStyle = `rgba(${Math.round(150 + 40 * p.vita)},${Math.round(120 + 30 * p.vita)},${Math.round(160 + 40 * p.vita)},${p.vita})`;
       else ctx.fillStyle = `rgba(${p.col},${p.vita})`;
       ctx.beginPath(); ctx.arc(p.x, p.y, (p.size || 2) * p.vita, 0, 7); ctx.fill();
     }
 
     ctx.globalCompositeOperation = 'source-over';
+
+    // snap di Thanos: vignettatura viola che stringe lo schermo
+    if (thanos) {
+      const v = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.3, W / 2, H / 2, Math.max(W, H) * 0.72);
+      v.addColorStop(0, 'rgba(40,10,70,0)'); v.addColorStop(1, `rgba(30,6,60,${0.55 * thanos.t})`);
+      ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+    }
 
     // ── INQUADRATURA: mirino a cornice (staffe agli angoli) mentre componi
     if (mirino) {
