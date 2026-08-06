@@ -2275,9 +2275,13 @@ function initGrafiche() {
     if (grafRAF) { cancelAnimationFrame(grafRAF); grafRAF = null; }   // ferma l'anteprima: tutta la CPU alla GIF
     btn.disabled = true;
     try {
-      // GIF a lato lungo ~480px (stesso rapporto dell'anteprima) su un canvas a parte
-      const scala = Math.min(1, 480 / Math.max(canvas.width, canvas.height));
-      const gw = Math.round(canvas.width * scala), gh = Math.round(canvas.height * scala);
+      // Renderizzo a PIENA risoluzione e poi RIMPICCIOLISCO: grafDisegna forza sempre
+      // il canvas a 1080×H, quindi disegnare su un canvas già piccolo lo ritagliava
+      // (leggeva solo la finestra 480×480 in alto a sinistra).
+      const full = document.createElement('canvas');
+      grafDisegna(full, c, 0);                       // porta `full` a 1080×H reali
+      const scala = Math.min(1, 480 / Math.max(full.width, full.height));
+      const gw = Math.round(full.width * scala), gh = Math.round(full.height * scala);
       const off = document.createElement('canvas'); off.width = gw; off.height = gh;
       const octx = off.getContext('2d', { willReadFrequently: true });
       const animato = grafAnimato(c);
@@ -2285,7 +2289,9 @@ function initGrafiche() {
       const nFrame = animato ? 50 : 1;   // ~4s in loop se animato; 1 frame se statico
       const frames = [];
       for (let i = 0; i < nFrame; i++) {
-        grafDisegna(off, c, i * dt);
+        grafDisegna(full, c, i * dt);
+        octx.clearRect(0, 0, gw, gh);
+        octx.drawImage(full, 0, 0, gw, gh);          // downscale pulito, niente ritaglio
         frames.push(octx.getImageData(0, 0, gw, gh).data);
         btn.textContent = L('Creo… ', 'Building… ', 'Creando… ') + Math.round((i + 1) / nFrame * 100) + '%';
         if (i % 4 === 0) await new Promise((r) => setTimeout(r, 0));   // tieni viva la UI
