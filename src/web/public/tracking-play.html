@@ -16,6 +16,12 @@
       background: rgba(0,0,0,.55); padding: 7px 11px; border-radius: 10px; max-width: 680px;
     }
     body.pronto #stato { display: none; }
+    /* meme reazione: compare quando fai un'espressione, entra a rimbalzo ed esce */
+    #meme { position: fixed; top: 6%; right: 5%; z-index: 4; pointer-events: none; }
+    #meme .meme-img { display: block; max-width: 34vw; max-height: 42vh; filter: drop-shadow(0 12px 28px rgba(0,0,0,.55)); }
+    #meme .meme-emoji { font: 900 22vh/1 system-ui, "Segoe UI Emoji", "Apple Color Emoji", sans-serif; filter: drop-shadow(0 8px 22px rgba(0,0,0,.55)); }
+    @keyframes memeIn { 0% { transform: translateX(30px) scale(.3) rotate(-8deg); opacity: 0; } 55% { transform: translateX(0) scale(1.15) rotate(3deg); opacity: 1; } 100% { transform: translateX(0) scale(1) rotate(0); opacity: 1; } }
+    @keyframes memeOut { to { transform: translateY(-24px) scale(.8); opacity: 0; } }
   </style>
 </head>
 <body>
@@ -38,6 +44,33 @@
       let lastGesto = '', lastEmo = '';
       // trail fluido: interpolo a 60fps verso l'ultima posizione ricevuta di ogni mano
       const manoTarget = [null, null], manoSmooth = [null, null];
+
+      // ── MEME dalle espressioni: quando arriva un'emozione, mostra il meme abbinato
+      // (emoji grande o immagine/GIF) con entrata a rimbalzo, suono e uscita.
+      const MEME_DEFAULT = { happy: '😂', surprise: '😱', angry: '🤬', sad: '😭', fear: '😨', disgust: '🤢' };
+      let memeMap = {}, memeOn = true, memeSuono = true, memeBox = null, memeLast = 0, _memeAC = null;
+      const memeCd = {};
+      function memePop() {
+        if (!memeSuono) return;
+        try { _memeAC = _memeAC || new (window.AudioContext || window.webkitAudioContext)(); const o = _memeAC.createOscillator(), g = _memeAC.createGain(), t = _memeAC.currentTime; o.type = 'triangle'; o.frequency.setValueAtTime(320, t); o.frequency.exponentialRampToValueAtTime(880, t + 0.12); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.14, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.25); o.connect(g); g.connect(_memeAC.destination); o.start(t); o.stop(t + 0.28); } catch { /* niente */ }
+      }
+      function mostraMeme(emo) {
+        if (!memeOn || !emo) return;
+        const map = Object.keys(memeMap).length ? memeMap : MEME_DEFAULT;
+        const val = map[emo]; if (!val) return;
+        const now = performance.now();
+        if (now - (memeCd[emo] || 0) < 4500 || now - memeLast < 1000) return;   // no spam
+        memeCd[emo] = now; memeLast = now;
+        if (!memeBox) { memeBox = document.createElement('div'); memeBox.id = 'meme'; document.body.appendChild(memeBox); }
+        const url = /^(https?:|\/|data:)/.test(val);
+        const el = document.createElement(url ? 'img' : 'div');
+        if (url) { el.className = 'meme-img'; el.referrerPolicy = 'no-referrer'; el.onerror = () => { if (el.parentNode) el.remove(); }; el.src = val; }
+        else { el.className = 'meme-emoji'; el.textContent = val; }
+        memeBox.innerHTML = ''; memeBox.appendChild(el);
+        el.style.animation = 'memeIn .5s cubic-bezier(.2,1.3,.4,1) both';
+        memePop();
+        setTimeout(() => { el.style.animation = 'memeOut .4s ease-in forwards'; setTimeout(() => { if (el.parentNode) el.remove(); }, 420); }, 2600);
+      }
 
       // annuncio in chat (punteggi/esiti) via il bot: solo testo, ripulito lato server.
       const ultimoSay = { t: 0 };
@@ -97,7 +130,7 @@
             let d; try { d = JSON.parse(m.data); } catch { return; }
             if (!d) return;
             document.body.classList.add('pronto');
-            if (d.azione === 'stato') { lastGesto = d.gesto || ''; lastEmo = d.emozione || ''; }
+            if (d.azione === 'stato') { lastGesto = d.gesto || ''; lastEmo = d.emozione || ''; mostraMeme(d.emozione); }
             else if (d.azione === 'fx') applicaFx(d);
             else if (cmdFn) { try { cmdFn(d); } catch { /* niente */ } }
           };
@@ -146,6 +179,7 @@
         window.SB_GIOCHI_ATTIVI = (o && o.giochiSel) || {};
         window.SB_SPECCHIO = params.get('flip') != null ? params.get('flip') !== '0' : ef.specchio !== false;
         window.SB_PUZZLE_ON = ef.puzzle === true;
+        memeMap = (o && o.mappaMeme) || {}; memeOn = ef.meme !== false; memeSuono = ef.suoni !== false;
       }
       async function opzioni() {
         try { const r = await fetch(`/api/tracking/${encodeURIComponent(login)}/opzioni?key=${encodeURIComponent(key)}`); if (r.ok) applicaOpzioni(await r.json()); }
