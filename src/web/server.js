@@ -707,7 +707,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       camera: String(trk.camera || '').slice(0, 100),
       giochi: trk.giochi !== false,
       giochiSel: trk.giochiSel || { mima: true, nonridere: true, reaction: true, battaglia: true },
-      effetti: trk.effetti || { attivo: true, specchio: true, suoni: true, sensibilita: 5, kamehameha: true, fireball: true, fulmini: true, trail: true, combo: true, laser: true, fuoco: true, aura: true },
+      effetti: trk.effetti || { attivo: true, specchio: true, suoni: true, sensibilita: 5, kamehameha: true, fireball: true, fulmini: true, trail: true, combo: true, laser: true, fuoco: true, aura: true, scatto: true },
     });
   });
 
@@ -726,7 +726,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // kamehameha, trail delle mani…) all'overlay in OBS. Solo numeri/nomi validati,
   // niente immagini. Discreti a evento, continui (carica/mano) a ~12fps.
   const _fxTipi = new Set(['fireball', 'fulmine', 'snap', 'onda', 'carica', 'spara', 'caricaGiu', 'mano', 'combo',
-    'laser', 'laserOff', 'fuoco', 'aura', 'auraOff']);
+    'laser', 'laserOff', 'fuoco', 'aura', 'auraOff', 'mirino', 'mirinoGiu', 'scatto']);
   app.post('/api/tracking/:login/fx', (req, res) => {
     if (!chiaveOk(req)) return res.status(403).json({ errore: 'chiave non valida' });
     const login = String(req.params.login).toLowerCase();
@@ -2677,8 +2677,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
           sensibilita: clampInt(ef.sensibilita, 1, 10, 5),
           kamehameha: ef.kamehameha !== false, fireball: ef.fireball !== false, fulmini: ef.fulmini !== false,
           trail: ef.trail !== false, combo: ef.combo !== false,
-          // effetti sul viso (Fase 2, default on quando arriveranno)
+          // effetti sul viso (Fase 2)
           laser: ef.laser !== false, fuoco: ef.fuoco !== false, aura: ef.aura !== false,
+          // inquadratura → scatto (Fase 3)
+          scatto: ef.scatto !== false,
         },
         mappa,
       };
