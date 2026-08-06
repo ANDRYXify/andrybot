@@ -78,34 +78,36 @@
     p = p || {};
     if (tipo === 'fireball') {
       // origine mano + direzione (dir in gradi o dx/dy). Precalcolo px a disegno.
-      fireballs.push({ nx: p.x ?? 0.5, ny: p.y ?? 0.5, dx: p.dx ?? 0.6, dy: p.dy ?? -0.2, forza: clamp(p.forza ?? 1, 0.4, 2), eta: 0, vita: 1, scia: [] });
+      fireballs.push({ nx: nz(p.x, 0.5), ny: nz(p.y, 0.5), dx: nz(p.dx, 0.6), dy: nz(p.dy, -0.2), forza: clamp(nz(p.forza, 1), 0.4, 2), eta: 0, vita: 1, scia: [] });
       suono('fireball'); pulsaCombo();
     } else if (tipo === 'fulmine') {
-      fulmini.push({ anx: p.ax ?? 0.35, any: p.ay ?? 0.5, bnx: p.bx ?? 0.65, bny: p.by ?? 0.5, vita: 1 });
+      fulmini.push({ anx: nz(p.ax, 0.35), any: nz(p.ay, 0.5), bnx: nz(p.bx, 0.65), bny: nz(p.by, 0.5), vita: 1 });
       suono('fulmine'); pulsaCombo();
     } else if (tipo === 'snap') {
-      onde.push({ nx: p.x ?? 0.5, ny: p.y ?? 0.5, r: 0, vita: 1, diss: true });
-      thanos = { nx: p.x ?? 0.5, ny: p.y ?? 0.5, t: 1, emit: true };   // flash viola + cenere
+      onde.push({ nx: nz(p.x, 0.5), ny: nz(p.y, 0.5), r: 0, vita: 1, diss: true });
+      thanos = { nx: nz(p.x, 0.5), ny: nz(p.y, 0.5), t: 1, emit: true };   // flash viola + cenere
       suono('snap'); shake = Math.max(shake, 13); pulsaCombo();
     } else if (tipo === 'onda') {
-      onde.push({ nx: p.x ?? 0.5, ny: p.y ?? 0.5, r: 0, vita: 1 });
+      onde.push({ nx: nz(p.x, 0.5), ny: nz(p.y, 0.5), r: 0, vita: 1 });
     }
   }
   function caricaSu(p) {
-    if (!carica) { carica = { nx: p.x ?? 0.5, ny: p.y ?? 0.5, liv: 0 }; }
-    carica.nx = p.x ?? carica.nx; carica.ny = p.y ?? carica.ny;
-    carica.liv = clamp((p.liv != null ? p.liv : carica.liv + 0.02), 0, 1);
+    p = p || {};
+    if (!carica) { carica = { nx: nz(p.x, 0.5), ny: nz(p.y, 0.5), liv: 0 }; }
+    carica.nx = nz(p.x, carica.nx); carica.ny = nz(p.y, carica.ny);
+    carica.liv = clamp(nz(p.liv, carica.liv + 0.02), 0, 1);
     if (Math.random() < 0.4) suono('carica');
   }
   function caricaGiu() { carica = null; }
   function spara(p) {
-    const forza = clamp((p && p.forza != null) ? p.forza : (carica ? carica.liv : 0.6), 0.2, 1);
-    raggi.push({ nx: (p && p.x) ?? (carica ? carica.nx : 0.5), ny: (p && p.y) ?? (carica ? carica.ny : 0.5),
-      dx: (p && p.dx) ?? 1, dy: (p && p.dy) ?? 0, vita: 1, forza });
+    p = p || {};
+    const forza = clamp(nz(p.forza, carica ? carica.liv : 0.6), 0.2, 1);
+    raggi.push({ nx: nz(p.x, carica ? carica.nx : 0.5), ny: nz(p.y, carica ? carica.ny : 0.5),
+      dx: nz(p.dx, 1), dy: nz(p.dy, 0), vita: 1, forza });
     carica = null; suono('kamehameha'); shake = Math.max(shake, 8 + forza * 14); pulsaCombo();
   }
   function mano(i, x, y) {
-    if (i !== 0 && i !== 1) return;
+    if (i !== 0 && i !== 1 || !Number.isFinite(x) || !Number.isFinite(y)) return;
     trailPunti[i].push({ nx: x, ny: y, vita: 1 });
     if (trailPunti[i].length > 24) trailPunti[i].shift();
   }
@@ -113,8 +115,8 @@
   function laserOn(p) {
     p = p || {};
     if (!laser) laser = { lnx: 0.42, lny: 0.42, rnx: 0.58, rny: 0.42, t: 0 };
-    if (p.lx != null) laser.lnx = p.lx; if (p.ly != null) laser.lny = p.ly;
-    if (p.rx != null) laser.rnx = p.rx; if (p.ry != null) laser.rny = p.ry;
+    laser.lnx = nz(p.lx, laser.lnx); laser.lny = nz(p.ly, laser.lny);
+    laser.rnx = nz(p.rx, laser.rnx); laser.rny = nz(p.ry, laser.rny);
     laser.spegni = false; laser.t = Math.min(1, laser.t + 0.2);
     if (Math.random() < 0.12) suono('fulmine');
   }
@@ -122,31 +124,32 @@
   // ── VISO: fuoco dalla bocca -----------------------------------------------
   function fuocoSpara(p) {
     p = p || {};
-    if (!fuoco) fuoco = { nx: p.x ?? 0.5, ny: p.y ?? 0.62, t: 0 };
-    fuoco.nx = p.x ?? fuoco.nx; fuoco.ny = p.y ?? fuoco.ny; fuoco.t = 0.32;
+    if (!fuoco) fuoco = { nx: nz(p.x, 0.5), ny: nz(p.y, 0.62), t: 0 };
+    fuoco.nx = nz(p.x, fuoco.nx); fuoco.ny = nz(p.y, fuoco.ny); fuoco.t = 0.32;
     if (Math.random() < 0.22) suono('fireball');
   }
   // ── VISO: aura/corona sul sorriso -----------------------------------------
   function auraOn(p) {
     p = p || {};
-    if (!halo) halo = { nx: p.x ?? 0.5, ny: p.y ?? 0.4, r: p.r ?? 0.16, t: 0 };
-    halo.nx = p.x ?? halo.nx; halo.ny = p.y ?? halo.ny; if (p.r != null) halo.r = p.r;
+    if (!halo) halo = { nx: nz(p.x, 0.5), ny: nz(p.y, 0.4), r: nz(p.r, 0.16), t: 0 };
+    halo.nx = nz(p.x, halo.nx); halo.ny = nz(p.y, halo.ny); halo.r = clamp(nz(p.r, halo.r), 0.02, 1);
     halo.spegni = false; halo.t = Math.min(1, halo.t + 0.06);
   }
   function auraOff() { if (halo) halo.spegni = true; }
   // ── SLOW-MO / FREEZE: ferma il "tempo" degli effetti per qualche secondo ---
   function congela(sec) { freeze = Math.max(freeze, sec || 2.5); suono('freeze'); }
   // ── INQUADRATURA: mirino a cornice mentre componi -------------------------
-  function mirinoOn(p) { p = p || {}; mirino = { ax: p.ax ?? 0.3, ay: p.ay ?? 0.3, bx: p.bx ?? 0.7, by: p.by ?? 0.7 }; }
+  function mirinoOn(p) { p = p || {}; mirino = { ax: nz(p.ax, 0.3), ay: nz(p.ay, 0.3), bx: nz(p.bx, 0.7), by: nz(p.by, 0.7) }; }
   function mirinoGiu() { mirino = null; }
   function scatto(p) {
     p = p || {}; mirino = null;
-    scatti.push({ ax: p.ax ?? 0.3, ay: p.ay ?? 0.3, bx: p.bx ?? 0.7, by: p.by ?? 0.7, t: 1, thumb: p.thumb || null });
+    scatti.push({ ax: nz(p.ax, 0.3), ay: nz(p.ay, 0.3), bx: nz(p.bx, 0.7), by: nz(p.by, 0.7), t: 1, thumb: p.thumb || null });
     suono('scatto'); shake = Math.max(shake, 6);
   }
   let comboOn = true;
   function pulsaCombo() { if (!comboOn) return; combo++; comboT = 1.8; }
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const nz = (v, d) => (Number.isFinite(v) ? v : d);   // numero finito o default (?? non ferma NaN)
 
   // ── update + draw ---------------------------------------------------------
   function aggiornaEDisegna(ctx, W, H, dtMs) {
