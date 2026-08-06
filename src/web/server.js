@@ -4351,6 +4351,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       return res.status(400).json({ errore: 'login o stato non validi' });
     }
     streamers.setStatus(login, status);
+    // Scelta MANUALE dell'admin: il sync col sito la rispetta (non la sovrascrive).
+    // Passa { manuale:false } per rimettere lo streamer in automatico (torna a
+    // dipendere dalla lista del sito, con periodo di grazia).
+    streamers.setManuale(login, req.body?.manuale !== false);
+    streamers.setGrazia(login, 0);   // azzera un'eventuale grazia in corso
     if (status === 'approved') { seedStreamer(login); avviaPretrain(login); }
     sync();
     res.json({ ok: true });
