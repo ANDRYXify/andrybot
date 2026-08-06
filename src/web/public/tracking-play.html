@@ -9,7 +9,7 @@
     /* Trasparente: in OBS si mette SOPRA la tua facecam nativa. Nessuna webcam qui:
        i gesti/espressioni arrivano dal "rilevatore" via il canale tracking. */
     html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
-    #fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    #fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
     #stato {
       position: absolute; left: 12px; bottom: 12px; z-index: 3;
       font: 600 14px/1.35 system-ui, sans-serif; color: #fff; opacity: .85;
@@ -153,11 +153,18 @@
       }
 
       // Carica motore effetti + giochi DOPO aver definito SB_TRACKING, poi avvia.
-      const caricaScript = (src, cb) => { const s = document.createElement('script'); s.src = src; s.onload = cb; s.onerror = () => setStato('script non caricato: ' + src); document.head.appendChild(s); };
-      caricaScript('/tracking-fx.js', () => {
-        if (window.SB_FX) window.SB_FX.specchia(params.get('flip') !== '0');   // default finché non arriva la config
-        caricaScript('/tracking-games.js', async () => { await opzioni(); connetti(); loop(); });
-      });
+      // Motore preferito: PixiJS/WebGL (look "vero"); se non parte, ripiego 2D.
+      const caricaScript = (src) => new Promise((res) => { const s = document.createElement('script'); s.src = src; s.onload = () => res(true); s.onerror = () => res(false); document.head.appendChild(s); });
+      window.SB_FX_ZINDEX = 0;   // effetti SOTTO la UI dei giochi (#fx z-index:1)
+      (async () => {
+        await caricaScript('/vendor/pixi.min.js');
+        await caricaScript('/vendor/pixi-filters.min.js');
+        await caricaScript('/tracking-fx-gl.js');
+        if (!window.SB_FX) await caricaScript('/tracking-fx.js');   // ripiego 2D (niente WebGL)
+        if (window.SB_FX) window.SB_FX.specchia(params.get('flip') !== '0');
+        await caricaScript('/tracking-games.js');
+        await opzioni(); connetti(); loop();
+      })();
     })();
   </script>
 </body>

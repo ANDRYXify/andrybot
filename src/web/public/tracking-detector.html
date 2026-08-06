@@ -35,10 +35,19 @@
     <div id="stato">SocialBot tracking · avvio…</div>
   </div>
   <!-- modalità RILEVATORE: manda lo stato all'overlay giochi (niente giochi locali) -->
-  <script>window.SB_INVIA_STATO = true;</script>
+  <script>window.SB_INVIA_STATO = true; window.SB_FX_ZINDEX = 2;</script>
   <script src="https://cdn.jsdelivr.net/npm/@vladmandic/human@3/dist/human.js"></script>
   <script src="/tracking-overlay.js"></script>
-  <script src="/tracking-fx.js"></script>
-  <script src="/tracking-poses.js"></script>
+  <!-- motore effetti: PixiJS/WebGL con ripiego 2D, poi le pose -->
+  <script src="/vendor/pixi.min.js"></script>
+  <script src="/vendor/pixi-filters.min.js"></script>
+  <script src="/tracking-fx-gl.js"></script>
+  <script>
+    (function () {
+      var poses = function () { var p = document.createElement('script'); p.src = '/tracking-poses.js'; document.body.appendChild(p); };
+      if (window.SB_FX) return poses();                 // WebGL attivo
+      var s = document.createElement('script'); s.src = '/tracking-fx.js'; s.onload = poses; s.onerror = poses; document.body.appendChild(s);   // ripiego 2D
+    })();
+  </script>
 </body>
 </html>
