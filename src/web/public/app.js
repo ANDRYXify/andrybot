@@ -6028,6 +6028,14 @@ function pannelloEffetti() {
       <input type="text" class="trk-eff" list="trk-eff-list" data-g="${g}" maxlength="40" placeholder="${L('comando effetto (es. airhorn)', 'effect command (e.g. airhorn)', 'comando de efecto (p. ej. airhorn)')}" value="${esc(mappa[g] || '')}">
       <input type="text" class="trk-chat" data-g="${g}" maxlength="120" placeholder="${L('scrivi in chat (es. una emote)', 'write in chat (e.g. an emote)', 'escribe en el chat (p. ej. una emote)')}" value="${esc(mappaChat[g] || '')}">
     </div>`).join('');
+  // MEME dalle espressioni: emozione → emoji o URL immagine/GIF (default emoji)
+  const mm = (trk.mappaMeme && typeof trk.mappaMeme === 'object') ? trk.mappaMeme : {};
+  const MEME_EMO = [['happy', '😂'], ['surprise', '😱'], ['angry', '🤬'], ['sad', '😭'], ['fear', '😨'], ['disgust', '🤢']];
+  const memeLbl = { happy: L('Risata', 'Laugh', 'Risa'), surprise: L('Sorpresa', 'Surprise', 'Sorpresa'), angry: L('Rabbia', 'Anger', 'Enfado'), sad: L('Tristezza', 'Sadness', 'Tristeza'), fear: L('Paura', 'Fear', 'Miedo'), disgust: L('Disgusto', 'Disgust', 'Asco') };
+  const righeMeme = MEME_EMO.map(([e, def]) => `
+    <div class="trk-riga"><span class="trk-et">${def} ${memeLbl[e]}</span>
+      <input type="text" class="mm-in" data-e="${e}" maxlength="300" placeholder="${L('emoji o URL immagine/GIF', 'emoji or image/GIF URL', 'emoji o URL imagen/GIF')}" value="${esc(mm[e] || def)}">
+    </div>`).join('');
   return pannello('effetti', `
     <div class="carta">
       <h2>${_hIco(ICO.effetti)}${L('Effetti dai gesti (webcam)', 'Effects from gestures (webcam)', 'Efectos por gestos (webcam)')}</h2>
@@ -6108,6 +6116,9 @@ function pannelloEffetti() {
           <label class="riga-check"><input type="checkbox" id="g-reaction" ${trk.giochiSel?.reaction !== false ? 'checked' : ''}> ☝️ Reaction</label>
           <label class="riga-check"><input type="checkbox" id="g-battaglia" ${trk.giochiSel?.battaglia !== false ? 'checked' : ''}> ⚔️ ${L('Battaglia', 'Battle', 'Batalla')}</label>
         </div>
+        <h4 class="spazio-sopra"><label class="riga-check" style="margin:0"><input type="checkbox" id="ef-meme" ${trk.effetti?.meme !== false ? 'checked' : ''}> 😂 ${L('Meme dalle espressioni', 'Meme from expressions', 'Meme por expresiones')}</label></h4>
+        <p class="suggerimento">${L('Fai una faccia e compare a schermo il meme abbinato. Metti un\'emoji oppure incolla l\'URL di un\'immagine/GIF (anche dalla tua libreria «Effetti»). Lascia vuoto per disattivarne uno.', 'Make a face and the matching meme pops up. Put an emoji or paste an image/GIF URL (also from your «Effects» library). Leave blank to disable one.', 'Haz una cara y aparece el meme correspondiente. Pon un emoji o pega la URL de una imagen/GIF (también de tu biblioteca «Efectos»). Deja vacío para desactivar uno.')}</p>
+        <div class="trk-mappa">${righeMeme}</div>
       </details>
       <p class="spazio-sopra"><button class="btn" id="trk-salva">${L('Salva impostazioni webcam', 'Save webcam settings', 'Guardar ajustes de webcam')}</button></p>
       <p class="suggerimento">${L('Per reazioni più ricche (messaggi in chat, contatori, cooldown per ruolo) usa i', 'For richer reactions (chat messages, counters, per-role cooldown) use', 'Para reacciones más ricas (mensajes en el chat, contadores, cooldown por rol) usa los')} <strong>${L('Moduli', 'Modules', 'Módulos')}</strong>: ${L('QUANDO «Gesto webcam» → ALLORA…', 'WHEN «Webcam gesture» → THEN…', 'CUANDO «Gesto webcam» → ENTONCES…')}</p>
@@ -9882,10 +9893,12 @@ async function caricaTracking() {
       kamehameha: chk('ef-kamehameha'), fireball: chk('ef-fireball'), fulmini: chk('ef-fulmini'),
       trail: chk('ef-trail'), combo: chk('ef-combo'), snap: chk('ef-snap'), freeze: chk('ef-freeze'),
       laser: chk('ef-laser'), fuoco: chk('ef-fuoco'), aura: chk('ef-aura'),
-      scatto: chk('ef-scatto'), puzzle: chk('ef-puzzle'),
+      scatto: chk('ef-scatto'), puzzle: chk('ef-puzzle'), meme: chk('ef-meme'),
     };
+    const mappaMeme = {};
+    document.querySelectorAll('.mm-in').forEach((inp) => { const e = inp.dataset.e, v = (inp.value || '').trim(); if (e && v) mappaMeme[e] = v; });
     const giochiSel = { mima: chk('g-mima'), nonridere: chk('g-nonridere'), reaction: chk('g-reaction'), battaglia: chk('g-battaglia') };
-    await salvaImpostazioni({ tracking: { attivo, giochi, camera, effetti, giochiSel, mappa, mappaChat } }, L('Impostazioni salvate ✓', 'Settings saved ✓', 'Ajustes guardados ✓'));
+    await salvaImpostazioni({ tracking: { attivo, giochi, camera, effetti, giochiSel, mappa, mappaChat, mappaMeme } }, L('Impostazioni salvate ✓', 'Settings saved ✓', 'Ajustes guardados ✓'));
   });
   // sensibilità: aggiorna l'etichetta dal vivo
   const efSens = document.getElementById('ef-sens');

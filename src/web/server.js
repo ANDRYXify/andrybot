@@ -714,7 +714,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       camera: String(trk.camera || '').slice(0, 100),
       giochi: trk.giochi !== false,
       giochiSel: trk.giochiSel || { mima: true, nonridere: true, reaction: true, battaglia: true },
-      effetti: trk.effetti || { attivo: true, specchio: true, suoni: true, sensibilita: 5, kamehameha: true, fireball: true, fulmini: true, trail: true, combo: true, laser: true, fuoco: true, aura: true, scatto: true, snap: true, freeze: true, puzzle: false },
+      effetti: trk.effetti || { attivo: true, specchio: true, suoni: true, sensibilita: 5, kamehameha: true, fireball: true, fulmini: true, trail: true, combo: true, laser: true, fuoco: true, aura: true, scatto: true, snap: true, freeze: true, puzzle: false, meme: true },
+      // meme dalle espressioni (popup reazione): mappa emozione → emoji/immagine
+      mappaMeme: (trk.mappaMeme && typeof trk.mappaMeme === 'object') ? trk.mappaMeme : {},
     });
   });
 
@@ -2680,6 +2682,16 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
           if (gk && ev) mappaChat[gk] = ev;
         }
       }
+      // espressione → meme (emoji o URL immagine) da mostrare a schermo
+      const _emoOk = new Set(['happy', 'sad', 'angry', 'surprise', 'fear', 'disgust', 'neutral']);
+      const mappaMeme = {};
+      if (t.mappaMeme && typeof t.mappaMeme === 'object') {
+        for (const [k, v] of Object.entries(t.mappaMeme).slice(0, 12)) {
+          const ek = String(k).toLowerCase().trim();
+          const ev = String(v || '').replace(/[\r\n]+/g, ' ').slice(0, 300).trim();
+          if (_emoOk.has(ek) && ev) mappaMeme[ek] = ev;
+        }
+      }
       const gs = t.giochiSel || {}, ef = t.effetti || {};
       out.tracking = {
         attivo: t.attivo !== false,
@@ -2699,12 +2711,15 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
           scatto: ef.scatto !== false,
           // snap di Thanos + slow-mo/freeze (Fase 5)
           snap: ef.snap !== false, freeze: ef.freeze !== false,
+          // meme dalle espressioni (popup reazione)
+          meme: ef.meme !== false,
           // puzzle "aggancia-e-segui" (Fase 4): default OFF (invia il puntatore
           // in continuo quando attivo, quindi lo accende chi lo usa davvero)
           puzzle: ef.puzzle === true,
         },
         mappa,
         mappaChat,
+        mappaMeme,
       };
     }
     // Grafiche social (P5): config dello studio grafico. Solo dati testuali/di
