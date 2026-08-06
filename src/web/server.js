@@ -670,6 +670,12 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       const eff = map[gesto] || map[emozione] || '';
       if (eff) effects.fire(login, eff);
     } catch { /* niente */ }
+    // mappa gesto→testo in chat (settings.tracking.mappaChat): scrive una emote/frase
+    try {
+      const mc = streamers.get(login)?.settings?.tracking?.mappaChat || {};
+      const testo = mc[gesto] || mc[emozione] || '';
+      if (testo) manager.say(login, String(testo).slice(0, 120));
+    } catch { /* niente */ }
     // evento per i Moduli (QUANDO gesto=X → ALLORA …) + event-bus operatore
     try { modules.onEvent({ type: 'tracking.gesture', channel: login, data: { gesto, emozione } }, (t) => manager.say(login, t)); } catch { /* niente */ }
     try { manager.bus?.emit?.('event', { type: 'tracking.gesture', channel: login, data: { gesto, emozione } }); } catch { /* niente */ }
@@ -2664,6 +2670,15 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
           if (gk && ev) mappa[gk] = ev;
         }
       }
+      // gesto → testo/emote da scrivere in chat (una riga, ripulita come i messaggi)
+      const mappaChat = {};
+      if (t.mappaChat && typeof t.mappaChat === 'object') {
+        for (const [k, v] of Object.entries(t.mappaChat).slice(0, 24)) {
+          const gk = String(k).toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 24);
+          const ev = String(v || '').replace(/[\r\n]+/g, ' ').slice(0, 120).trim();
+          if (gk && ev) mappaChat[gk] = ev;
+        }
+      }
       const gs = t.giochiSel || {}, ef = t.effetti || {};
       out.tracking = {
         attivo: t.attivo !== false,
@@ -2688,6 +2703,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
           puzzle: ef.puzzle === true,
         },
         mappa,
+        mappaChat,
       };
     }
     // Grafiche social (P5): config dello studio grafico. Solo dati testuali/di

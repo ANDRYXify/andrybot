@@ -6028,10 +6028,12 @@ const TRK_GESTI = [
 function pannelloEffetti() {
   const trk = impostazioni().tracking || {};
   const mappa = (trk.mappa && typeof trk.mappa === 'object') ? trk.mappa : {};
+  const mappaChat = (trk.mappaChat && typeof trk.mappaChat === 'object') ? trk.mappaChat : {};
   const righeTrk = TRK_GESTI.map(([g, et]) => `
     <div class="trk-riga">
       <span class="trk-et">${et}</span>
       <input type="text" class="trk-eff" list="trk-eff-list" data-g="${g}" maxlength="40" placeholder="${L('comando effetto (es. airhorn)', 'effect command (e.g. airhorn)', 'comando de efecto (p. ej. airhorn)')}" value="${esc(mappa[g] || '')}">
+      <input type="text" class="trk-chat" data-g="${g}" maxlength="120" placeholder="${L('scrivi in chat (es. una emote)', 'write in chat (e.g. an emote)', 'escribe en el chat (p. ej. una emote)')}" value="${esc(mappaChat[g] || '')}">
     </div>`).join('');
   return pannello('effetti', `
     <div class="carta">
@@ -6068,7 +6070,8 @@ function pannelloEffetti() {
         <button type="button" class="btn secondario" id="trk-cam-rileva">${L('Rileva webcam', 'Detect webcams', 'Detectar webcams')}</button>
       </div>
       <p class="suggerimento">${L('Premi «Rileva webcam» e consenti la fotocamera per vedere i nomi, scegli la tua e premi «Salva mappatura». Il nome vale anche nell\'overlay in OBS.', 'Press «Detect webcams» and allow the camera to see the names, pick yours and press «Save mapping». The name works in the OBS overlay too.', 'Pulsa «Detectar webcams» y permite la cámara para ver los nombres, elige la tuya y pulsa «Guardar mapeo». El nombre vale también en el overlay de OBS.')}</p>
-      <label class="campo spazio-sopra">${L('Gesto/espressione → effetto', 'Gesture/expression → effect', 'Gesto/expresión → efecto')}</label>
+      <label class="campo spazio-sopra">${L('Gesto/espressione → effetto e/o scrittura in chat', 'Gesture/expression → effect and/or chat message', 'Gesto/expresión → efecto y/o mensaje en el chat')}</label>
+      <p class="suggerimento">${L('Per ogni gesto: a sinistra il comando effetto, a destra un testo/emote che il bot scrive in chat. Lascia vuoto ciò che non ti serve.', 'For each gesture: on the left the effect command, on the right a text/emote the bot writes in chat. Leave blank what you don\'t need.', 'Para cada gesto: a la izquierda el comando de efecto, a la derecha un texto/emote que el bot escribe en el chat. Deja vacío lo que no necesites.')}</p>
       <datalist id="trk-eff-list"></datalist>
       <div class="trk-mappa">${righeTrk}</div>
       <div class="riga-check spazio-sopra">
@@ -9870,6 +9873,11 @@ async function caricaTracking() {
       const g = inp.dataset.g, v = (inp.value || '').trim().toLowerCase().replace(/^!/, '');
       if (g && v) mappa[g] = v;
     });
+    const mappaChat = {};
+    document.querySelectorAll('.trk-chat').forEach((inp) => {
+      const g = inp.dataset.g, v = (inp.value || '').trim();
+      if (g && v) mappaChat[g] = v;
+    });
     const attivo = !!document.getElementById('trk-attivo')?.checked;
     const giochi = !!document.getElementById('trk-giochi')?.checked;
     const camera = document.getElementById('trk-cam')?.value || '';
@@ -9883,7 +9891,7 @@ async function caricaTracking() {
       scatto: chk('ef-scatto'), puzzle: chk('ef-puzzle'),
     };
     const giochiSel = { mima: chk('g-mima'), nonridere: chk('g-nonridere'), reaction: chk('g-reaction'), battaglia: chk('g-battaglia') };
-    await salvaImpostazioni({ tracking: { attivo, giochi, camera, effetti, giochiSel, mappa } }, L('Impostazioni salvate ✓', 'Settings saved ✓', 'Ajustes guardados ✓'));
+    await salvaImpostazioni({ tracking: { attivo, giochi, camera, effetti, giochiSel, mappa, mappaChat } }, L('Impostazioni salvate ✓', 'Settings saved ✓', 'Ajustes guardados ✓'));
   });
   // sensibilità: aggiorna l'etichetta dal vivo
   const efSens = document.getElementById('ef-sens');
