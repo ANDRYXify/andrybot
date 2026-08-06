@@ -166,11 +166,79 @@
     };
   }
 
-  const GIOCHI = { mima: giocoMima, reaction: giocoReaction, nonridere: giocoNonRidere, battaglia: giocoBattaglia };
+  // PUZZLE "aggancia-e-segui" (Fase 4): 3×3. Il PUNTATORE (pinch pollice+indice)
+  // arriva dal rilevatore via fx (window.SB_PUNTATORE). Pizzichi su un pezzo per
+  // agganciarlo, lo segui in modo smussato, apri per mollare → snap-to-grid
+  // generoso. Vinci quando ogni pezzo è nella sua cella. Nessuna immagine reale:
+  // l'immagine da ricomporre è generata sul momento.
+  function giocoPuzzle() {
+    const N = 3;
+    let W0 = 0, H0 = 0, side = 0, cell = 0, ox = 0, oy = 0, img = null;
+    const pezzi = [];
+    let held = -1, prevGiu = false, vinto = false, tVinto = 0, started = nowMs();
+    function costruisci(W, H) {
+      side = Math.min(W, H) * 0.72; cell = side / N; ox = (W - side) / 2; oy = (H - side) / 2; W0 = W; H0 = H;
+      img = document.createElement('canvas'); img.width = side; img.height = side;
+      const c = img.getContext('2d');
+      const g = c.createLinearGradient(0, 0, side, side); g.addColorStop(0, '#8b5cf6'); g.addColorStop(0.5, '#22d3ee'); g.addColorStop(1, '#f59e0b');
+      c.fillStyle = g; c.fillRect(0, 0, side, side);
+      for (let k = 0; k < 9; k++) { c.globalAlpha = 0.18; c.fillStyle = ['#fff', '#000'][k % 2]; c.beginPath(); c.arc(Math.random() * side, Math.random() * side, side * (0.07 + Math.random() * 0.12), 0, 7); c.fill(); }
+      c.globalAlpha = 1; c.fillStyle = 'rgba(255,255,255,.92)'; c.strokeStyle = 'rgba(0,0,0,.5)'; c.lineWidth = 4; c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = `800 ${Math.round(cell * 0.42)}px system-ui`;
+      for (let r = 0; r < N; r++) for (let col = 0; col < N; col++) { const n = r * N + col + 1; c.strokeText(n, col * cell + cell / 2, r * cell + cell / 2); c.fillText(n, col * cell + cell / 2, r * cell + cell / 2); }
+      const celle = []; for (let r = 0; r < N; r++) for (let col = 0; col < N; col++) celle.push({ col, r });
+      const perm = celle.slice(); for (let i = perm.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [perm[i], perm[j]] = [perm[j], perm[i]]; }
+      pezzi.length = 0;
+      for (let i = 0; i < celle.length; i++) { const cc = celle[i], sc = perm[i]; pezzi.push({ cc: cc.col, cr: cc.r, x: ox + sc.col * cell + cell / 2, y: oy + sc.r * cell + cell / 2, held: false, offx: 0, offy: 0 }); }
+    }
+    const cellaVicina = (x, y) => ({ col: Math.max(0, Math.min(N - 1, Math.round((x - ox - cell / 2) / cell))), r: Math.max(0, Math.min(N - 1, Math.round((y - oy - cell / 2) / cell))) });
+    const inCella = (p) => { const c = cellaVicina(p.x, p.y); return c.col === p.cc && c.r === p.cr && Math.hypot(p.x - (ox + p.cc * cell + cell / 2), p.y - (oy + p.cr * cell + cell / 2)) < cell * 0.5; };
+    return {
+      nome: 'Puzzle', puzzle: true,
+      tick({ dt, ctx, W, H }) {
+        if (!img || W !== W0 || H !== H0) costruisci(W, H);
+        const P = window.SB_PUNTATORE, valido = P && (nowMs() - (P.t || 0) < 400);
+        const spx = window.SB_SPECCHIO !== false;
+        const px = valido ? (spx ? (1 - P.x) : P.x) * W : -999, py = valido ? P.y * H : -999, giu = valido && P.giu;
+        // immagine-fantasma + slot
+        ctx.save(); ctx.globalAlpha = 0.12; ctx.drawImage(img, ox, oy, side, side); ctx.restore();
+        for (let r = 0; r < N; r++) for (let col = 0; col < N; col++) { ctx.strokeStyle = 'rgba(255,255,255,.22)'; ctx.lineWidth = 2; ctx.strokeRect(ox + col * cell, oy + r * cell, cell, cell); }
+        // aggancia
+        if (giu && !prevGiu && held < 0) {
+          for (let i = pezzi.length - 1; i >= 0; i--) { const p = pezzi[i]; if (Math.abs(px - p.x) < cell / 2 && Math.abs(py - p.y) < cell / 2) { p.held = true; p.offx = p.x - px; p.offy = p.y - py; pezzi.splice(i, 1); pezzi.push(p); held = pezzi.length - 1; break; } }
+        }
+        if (held >= 0) {
+          const p = pezzi[held];
+          if (giu) { const k = Math.min(1, 0.02 * dt), tx = px + p.offx, ty = py + p.offy; p.x += (tx - p.x) * k; p.y += (ty - p.y) * k; }
+          else { const c = cellaVicina(p.x, p.y); p.x = ox + c.col * cell + cell / 2; p.y = oy + c.r * cell + cell / 2; p.held = false; held = -1; }
+        }
+        prevGiu = giu;
+        // pezzi
+        for (const p of pezzi) {
+          const ok = inCella(p);
+          ctx.save(); if (p.held) { ctx.shadowColor = 'rgba(0,0,0,.55)'; ctx.shadowBlur = 18; }
+          ctx.drawImage(img, p.cc * cell, p.cr * cell, cell, cell, p.x - cell / 2, p.y - cell / 2, cell, cell);
+          ctx.shadowBlur = 0; ctx.lineWidth = p.held ? 4 : 3; ctx.strokeStyle = ok ? 'rgba(52,211,153,.95)' : (p.held ? 'rgba(255,255,255,.95)' : 'rgba(139,92,246,.8)');
+          ctx.strokeRect(p.x - cell / 2, p.y - cell / 2, cell, cell); ctx.restore();
+        }
+        // cursore
+        if (valido) { ctx.save(); ctx.beginPath(); ctx.arc(px, py, giu ? 11 : 16, 0, 7); ctx.fillStyle = giu ? 'rgba(52,211,153,.9)' : 'rgba(255,255,255,.5)'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.stroke(); ctx.restore(); }
+        else testo(ctx, '🖐️ muovi la mano e pizzica (pollice+indice)', W / 2, oy + side + H * 0.06, Math.round(H * 0.04), '#c4b5fd');
+        const fatti = pezzi.filter(inCella).length;
+        testo(ctx, '🧩 PUZZLE  ' + fatti + '/' + (N * N), W / 2, Math.max(H * 0.06, oy - H * 0.04), Math.round(H * 0.05), '#fff');
+        if (!vinto && fatti === N * N) { vinto = true; tVinto = nowMs(); try { T.annuncia && T.annuncia('🧩 Puzzle completato in ' + Math.round((nowMs() - started) / 1000) + 's! 🎉'); } catch { /* niente */ } }
+        if (vinto) { testo(ctx, '🎉 COMPLETATO!', W / 2, H * 0.5, Math.round(H * 0.09), '#34d399'); if (nowMs() - tVinto > 3500) { modo = 'idle'; G = null; } }
+      },
+    };
+  }
+
+  const GIOCHI = { mima: giocoMima, reaction: giocoReaction, nonridere: giocoNonRidere, battaglia: giocoBattaglia, puzzle: giocoPuzzle };
   // quali giochi sono attivi dal pannello dashboard (default tutti)
   const ATTIVO = (id) => (window.SB_GIOCHI_ATTIVI ? window.SB_GIOCHI_ATTIVI[id] !== false : true);
   function avviaGioco(id) {
-    const f = GIOCHI[id]; if (!f || !ATTIVO(id) || window.SB_GIOCHI_MASTER === false) return;
+    const f = GIOCHI[id]; if (!f) return;
+    // il puzzle dipende dal suo interruttore (effetti.puzzle), non dal master giochi
+    if (id === 'puzzle') { if (window.SB_PUZZLE_ON === false) return; }
+    else if (!ATTIVO(id) || window.SB_GIOCHI_MASTER === false) return;
     G = f(); modo = 'gioca';
     try { T.annuncia && T.annuncia('🎮 Via al gioco: ' + G.nome + '! Guardate lo schermo 👀'); } catch { /* niente */ }
   }
@@ -209,7 +277,9 @@
   let _lastTick = nowMs();
   T.registraMinigioco(({ hands, faces, ctx, W, H }) => {
     const dt = Math.min(120, nowMs() - _lastTick); _lastTick = nowMs();   // ms reali dall'ultimo frame (cap anti-scatti)
-    if (window.SB_GIOCHI_MASTER === false) { modo = 'idle'; G = null; return; }   // giochi spenti dal pannello
+    // giochi spenti dal pannello: torna idle — ma NON interrompere il puzzle,
+    // che ha un interruttore suo (effetti.puzzle) ed è indipendente dal master.
+    if (window.SB_GIOCHI_MASTER === false && !(G && G.puzzle)) { modo = 'idle'; G = null; return; }
     const g = hands && hands[0] ? (T.rilevaGesto ? T.rilevaGesto(hands[0]) : '') : '';
     const emo = (T.emozione && faces) ? T.emozione(faces[0]) : '';
     aggiornaHold(g);

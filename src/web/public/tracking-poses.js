@@ -27,9 +27,20 @@
   let laserAcceso = false, auraAccesa = false;       // per mandare l'OFF una volta sola
   let framingT = 0, scattoArmato = true, lastMirino = 0;   // inquadratura → scatto
   let _cap = null, _ultimoSalva = 0;
+  let lastPuntatore = 0;   // throttle invio puntatore (puzzle)
 
   // punta dell'indice (keypoint 8) normalizzata; fallback al centro mano
   const puntaIndice = (h, c, W, H) => { const kp = h.keypoints || h.landmarks, p = kp && kp[8]; return { x: (p ? (p[0] ?? p.x) : c.x) / W, y: (p ? (p[1] ?? p.y) : c.y) / H }; };
+
+  // PINCH (pollice+indice) → puntatore per il puzzle. Torna { x,y (px video), giu }.
+  // Soglia relativa al palmo (polso→nocca medio), modulata dalla sensibilità.
+  function pinch(h, sens) {
+    const k = h.keypoints || h.landmarks; if (!Array.isArray(k) || k.length < 21) return null;
+    const gx = (p) => (p[0] ?? p.x ?? 0), gy = (p) => (p[1] ?? p.y ?? 0);
+    const d = (a, b) => Math.hypot(gx(a) - gx(b), gy(a) - gy(b));
+    const palmo = d(k[0], k[9]) || 1, gap = d(k[4], k[8]);
+    return { x: (gx(k[4]) + gx(k[8])) / 2, y: (gy(k[4]) + gy(k[8])) / 2, giu: gap < palmo * (0.40 + (sens - 5) * 0.02) };
+  }
 
   // Cattura il RITAGLIO inquadrato dalla webcam del rilevatore (mai inviato al
   // server: resta nel browser). Torna un canvas usabile come miniatura e lo salva
@@ -142,6 +153,13 @@
     } else {
       if (framingT) { framingT = 0; FX.mirinoGiu(); T.inviaFx({ tipo: 'mirinoGiu' }); }
       if (!inquadra) scattoArmato = true;               // pose lasciata → riarma
+    }
+
+    // ── PUZZLE (Fase 4): manda il PUNTATORE (pinch) all'overlay, dove gira il
+    // gioco "aggancia-e-segui". Solo se il puzzle è acceso dal pannello, ~20fps.
+    if (E.puzzle === true && hands && hands[0] && now - lastPuntatore > 50) {
+      const pz = pinch(hands[0], sens);
+      if (pz) { lastPuntatore = now; T.inviaFx({ tipo: 'puntatore', x: pz.x / W, y: pz.y / H, liv: pz.giu ? 1 : 0 }); }
     }
 
     // ── EFFETTI SUL VISO (Fase 2): laser occhi (sorpresa), fuoco bocca (bocca
