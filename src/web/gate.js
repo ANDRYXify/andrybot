@@ -140,6 +140,19 @@ export function startApprovalSync({ manager, everyMs = 5 * 60_000 } = {}) {
       }
     }
 
+    // 0.5) INVARIANTE COMMUNITY: un membro community ha accesso "di diritto" (lo ha
+    //      verificato il sito quando è stato abilitato, ed è registrato nel NOSTRO DB).
+    //      Non deve MAI restare 'disabled' per colpa di una lista del sito parziale o
+    //      glitchata (es. dopo la migrazione dominio). Se lo troviamo disabilitato, lo
+    //      ripristiniamo — indipendentemente dal fatto che il sito risponda o meno.
+    for (const s of streamers.list()) {
+      if (s.community && s.status === 'disabled') {
+        streamers.setStatus(s.login, 'approved');
+        log.info(`Ripristino: #${s.login} è community → riapprovato (accesso di diritto, mai revocato dal sito)`);
+        cambiato = true;
+      }
+    }
+
     // 1) Trial "settimana gratis" scaduti: si azzera il trial (torna al piano
     //    gratis). NON tocchiamo MAI `bot_enabled`: se la persona è comunque
     //    abilitata dal sito (community) il bot deve restare acceso. Se l'accesso
@@ -159,6 +172,9 @@ export function startApprovalSync({ manager, everyMs = 5 * 60_000 } = {}) {
       for (const s of streamers.list()) {
         // gli ABBONATI self-service (Stripe) non dipendono dal sito: non si revocano
         if (subscriptions.attivo(s.login)) continue;
+        // i COMMUNITY hanno accesso di diritto (registrato nel nostro DB): la lista
+        // del sito non li revoca mai — così un suo glitch/parzialità non spegne i bot
+        if (s.community) continue;
         if (s.status === 'approved' && !attivi.has(s.login)) {
           streamers.setStatus(s.login, 'disabled');
           log.info(`Abilitazione revocata dal sito per #${s.login}: bot disattivato`);
