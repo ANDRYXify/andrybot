@@ -81,6 +81,7 @@
         else if (t === 'mirino') FX.mirinoOn(d);
         else if (t === 'mirinoGiu') FX.mirinoGiu();
         else if (t === 'scatto') FX.scatto(d);
+        else if (t === 'puntatore') window.SB_PUNTATORE = { x: d.x, y: d.y, giu: d.liv > 0.5, t: performance.now() };
       }
 
       // Canale di ritorno: stato del rilevatore (gesto/emozione), EFFETTI e comandi (chat).
@@ -126,6 +127,8 @@
         }
         window.SB_GIOCHI_MASTER = !o || o.giochi !== false;
         window.SB_GIOCHI_ATTIVI = (o && o.giochiSel) || {};
+        window.SB_SPECCHIO = params.get('flip') != null ? params.get('flip') !== '0' : ef.specchio !== false;
+        window.SB_PUZZLE_ON = ef.puzzle === true;
       }
       async function opzioni() {
         try { const r = await fetch(`/api/tracking/${encodeURIComponent(login)}/opzioni?key=${encodeURIComponent(key)}`); if (r.ok) applicaOpzioni(await r.json()); }

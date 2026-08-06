@@ -31,9 +31,21 @@ export function tryComando(effects, msg, say) {
     if (testo[0] !== '!') return false;
     const ch = msg.channel;
     const trk = streamers.get(ch)?.settings?.tracking || {};
-    if (trk.attivo === false || trk.giochi === false) return false;   // giochi spenti: non tocchiamo nulla
+    if (trk.attivo === false) return false;
     const parti = testo.slice(1).split(/\s+/);
     const cmd = (parti[0] || '').toLowerCase();
+
+    // PUZZLE: dipende dall'interruttore effetti.puzzle (non dal flag giochi). Avvio
+    // solo streamer/mod; serve un overlay tracking collegato.
+    if (cmd === 'puzzle' || cmd === 'puzzlestop') {
+      if (trk.effetti?.puzzle !== true) return false;
+      if (!(msg.isMod || msg.isBroadcaster)) return true;
+      if (!effects?.hasTrkClients?.(ch)) { say('Per il puzzle apri prima l\'overlay tracking in OBS 🎥 (scheda «Effetti» → Link OBS del tracking) e attiva il Puzzle nel pannello.'); return true; }
+      effects.emitTrk(ch, cmd === 'puzzlestop' ? { azione: 'stop' } : { azione: 'start', gioco: 'puzzle' });
+      return true;
+    }
+
+    if (trk.giochi === false) return false;   // altri giochi: rispettano il flag giochi
 
     if (cmd === 'giochi' || cmd === 'gioca') {
       say('🎮 Giochi webcam: !mima · !nonridere · !reaction · !battaglia — nella Battaglia la chat sfida con !sfida ✌️/👍/✋/☝️/✊');
