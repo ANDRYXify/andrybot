@@ -63,7 +63,19 @@
         emozione(f) { return (f && f.emo) || ''; },
       };
 
-      // Canale di ritorno: stato del rilevatore (gesto/emozione) + comandi (chat).
+      // Applica un evento EFFETTO (dal rilevatore) al motore SB_FX.
+      function applicaFx(d) {
+        const FX = window.SB_FX; if (!FX) return;
+        const t = d.tipo;
+        if (t === 'fireball' || t === 'fulmine' || t === 'snap' || t === 'onda') FX.spawn(t, d);
+        else if (t === 'carica') FX.caricaSu(d);
+        else if (t === 'caricaGiu') FX.caricaGiu();
+        else if (t === 'spara') FX.spara(d);
+        else if (t === 'mano') FX.mano(d.i, d.x, d.y);
+        else if (t === 'combo') FX.combo();
+      }
+
+      // Canale di ritorno: stato del rilevatore (gesto/emozione), EFFETTI e comandi (chat).
       function connetti() {
         if (!key) { setStato('chiave mancante nel link'); return; }
         try {
@@ -72,7 +84,9 @@
           es.onmessage = (m) => {
             let d; try { d = JSON.parse(m.data); } catch { return; }
             if (!d) return;
-            if (d.azione === 'stato') { lastGesto = d.gesto || ''; lastEmo = d.emozione || ''; document.body.classList.add('pronto'); }
+            document.body.classList.add('pronto');
+            if (d.azione === 'stato') { lastGesto = d.gesto || ''; lastEmo = d.emozione || ''; }
+            else if (d.azione === 'fx') applicaFx(d);
             else if (cmdFn) { try { cmdFn(d); } catch { /* niente */ } }
           };
           es.onerror = () => { /* riprova da solo */ };
@@ -83,19 +97,23 @@
       window.addEventListener('resize', ridimensiona);
       ridimensiona();
 
+      let _lastTick = 0;
       function loop() {
         const W = fx.width, H = fx.height;
         ctx.clearRect(0, 0, W, H);
+        const now = performance.now(), dt = now - (_lastTick || now); _lastTick = now;
+        // effetti cinematici (sotto), poi la UI dei giochi (sopra, leggibile)
+        if (window.SB_FX) { try { window.SB_FX.aggiornaEDisegna(ctx, W, H, dt); } catch { /* niente */ } }
         if (gameFn) { try { gameFn({ hands: lastGesto ? [{ g: lastGesto }] : [], faces: lastEmo ? [{ emo: lastEmo }] : [], ctx, W, H }); } catch { /* niente */ } }
         requestAnimationFrame(loop);
       }
 
-      // Carica il motore giochi DOPO aver definito SB_TRACKING, poi avvia.
-      const s = document.createElement('script');
-      s.src = '/tracking-games.js';
-      s.onload = () => { connetti(); loop(); };
-      s.onerror = () => setStato('motore giochi non caricato');
-      document.head.appendChild(s);
+      // Carica motore effetti + giochi DOPO aver definito SB_TRACKING, poi avvia.
+      const caricaScript = (src, cb) => { const s = document.createElement('script'); s.src = src; s.onload = cb; s.onerror = () => setStato('script non caricato: ' + src); document.head.appendChild(s); };
+      caricaScript('/tracking-fx.js', () => {
+        if (window.SB_FX) window.SB_FX.specchia(params.get('flip') !== '0');   // default specchiato (facecam selfie)
+        caricaScript('/tracking-games.js', () => { connetti(); loop(); });
+      });
     })();
   </script>
 </body>
