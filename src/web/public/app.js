@@ -6094,7 +6094,9 @@ function pannelloEffetti() {
         </div>
         <div class="riga-flessibile" style="flex-wrap:wrap;gap:.7rem">
           <label class="riga-check"><input type="checkbox" id="ef-scatto" ${trk.effetti?.scatto !== false ? 'checked' : ''}> 📸 ${L('Inquadratura → scatto (2 mani a cornice)', 'Frame → snapshot (two-hand frame)', 'Encuadre → foto (marco con dos manos)')}</label>
+          <label class="riga-check"><input type="checkbox" id="ef-puzzle" ${trk.effetti?.puzzle === true ? 'checked' : ''}> 🧩 ${L('Puzzle con le mani (pizzica e trascina)', 'Hand puzzle (pinch & drag)', 'Puzzle con las manos (pellizca y arrastra)')}</label>
         </div>
+        <div class="tenue" style="font-size:.8rem">${L('Puzzle: attivalo, apri l\'overlay in OBS, poi in chat scrivi', 'Puzzle: enable it, open the OBS overlay, then type in chat', 'Puzzle: actívalo, abre el overlay en OBS y escribe en el chat')} <code>!puzzle</code> (<code>!puzzlestop</code> ${L('per uscire', 'to exit', 'para salir')}).</div>
         <label class="campo spazio-sopra" for="ef-sens">${L('Sensibilità', 'Sensitivity', 'Sensibilidad')} <span class="tenue" id="ef-sens-val">${trk.effetti?.sensibilita || 5}</span> <span class="tenue">— ${L('più alta = pose più facili da attivare', 'higher = poses easier to trigger', 'más alta = poses más fáciles')}</span></label>
         <input type="range" id="ef-sens" min="1" max="10" value="${trk.effetti?.sensibilita || 5}" class="campo-largo">
         <div class="riga-flessibile spazio-sopra" style="flex-wrap:wrap;gap:.7rem">
@@ -9877,7 +9879,7 @@ async function caricaTracking() {
       kamehameha: chk('ef-kamehameha'), fireball: chk('ef-fireball'), fulmini: chk('ef-fulmini'),
       trail: chk('ef-trail'), combo: chk('ef-combo'),
       laser: chk('ef-laser'), fuoco: chk('ef-fuoco'), aura: chk('ef-aura'),
-      scatto: chk('ef-scatto'),
+      scatto: chk('ef-scatto'), puzzle: chk('ef-puzzle'),
     };
     const giochiSel = { mima: chk('g-mima'), nonridere: chk('g-nonridere'), reaction: chk('g-reaction'), battaglia: chk('g-battaglia') };
     await salvaImpostazioni({ tracking: { attivo, giochi, camera, effetti, giochiSel, mappa } }, L('Impostazioni salvate ✓', 'Settings saved ✓', 'Ajustes guardados ✓'));
