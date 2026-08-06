@@ -23,8 +23,10 @@
   const prevOpen = [null, null];   // stato apertura per mano (fireball: fist→open)
   const manoInviata = [null, null];// ultima posizione inviata (per non spammare)
   let lastMano = 0, lastCarica = 0, lastFulmine = 0, lastTick = 0;
+  let lastLaser = 0, lastFuoco = 0, lastAura = 0;   // throttle invii viso
+  let laserAcceso = false, auraAccesa = false;       // per mandare l'OFF una volta sola
 
-  T.registraMinigioco(({ hands, ctx, W, H }) => {
+  T.registraMinigioco(({ hands, faces, ctx, W, H }) => {
     const now = performance.now();
     const E = (window.SB_OPZIONI && window.SB_OPZIONI.effetti) || {};
     if (E.attivo === false) { lastTick = now; return; }   // effetti spenti dal pannello
@@ -83,6 +85,47 @@
       });
     } else { M.forEach((m, i) => { prevOpen[i] = m.open; }); }
     for (let i = M.length; i < 2; i++) prevOpen[i] = null;
+
+    // ── EFFETTI SUL VISO (Fase 2): laser occhi (sorpresa), fuoco bocca (bocca
+    // molto aperta), aura/corona (sorriso). Uso emozioni Human (robuste) + la mesh
+    // per le posizioni; fallback sul box se la mesh manca. Coord normalizzate 0..1.
+    const F = (faces || [])[0];
+    if (F) {
+      const box = F.box || F.boxRaw || [0, 0, 0, 0];
+      const bx = box[0], by = box[1], bw = box[2] || 1, bh = box[3] || 1;
+      const mesh = F.mesh || F.meshRaw || null;
+      const pt = (idx, fx, fy) => { const q = mesh && mesh[idx]; return q ? { x: (q[0] ?? q.x) / W, y: (q[1] ?? q.y) / H } : { x: (bx + bw * fx) / W, y: (by + bh * fy) / H }; };
+      const occhioL = pt(159, 0.32, 0.42), occhioR = pt(386, 0.68, 0.42), bocca = pt(13, 0.50, 0.78);
+      const emo = {}; (F.emotion || []).forEach((e) => { if (e && e.emotion) emo[e.emotion] = e.score || 0; });
+      // apertura bocca: distanza labbro sup/inf interni (mesh 13/14) / altezza volto
+      let boccaAperta = 0;
+      if (mesh && mesh[13] && mesh[14]) boccaAperta = Math.abs((mesh[14][1] ?? mesh[14].y) - (mesh[13][1] ?? mesh[13].y)) / (bh || 1);
+
+      // LASER — sorpresa (occhi spalancati / sopracciglia su)
+      if (E.laser !== false) {
+        if ((emo.surprise || 0) > 0.55 - (sens - 5) * 0.03) {
+          const p = { lx: occhioL.x, ly: occhioL.y, rx: occhioR.x, ry: occhioR.y };
+          FX.laserOn(p); laserAcceso = true;
+          if (now - lastLaser > 90) { lastLaser = now; T.inviaFx({ tipo: 'laser', ...p }); }
+        } else if (laserAcceso) { FX.laserOff(); T.inviaFx({ tipo: 'laserOff' }); laserAcceso = false; }
+      }
+      // FUOCO — bocca molto aperta
+      if (E.fuoco !== false && boccaAperta > 0.12 - (sens - 5) * 0.008) {
+        const p = { x: bocca.x, y: bocca.y };
+        FX.fuoco(p); if (now - lastFuoco > 70) { lastFuoco = now; T.inviaFx({ tipo: 'fuoco', ...p }); }
+      }
+      // AURA — sorriso (felicità)
+      if (E.aura !== false) {
+        if ((emo.happy || 0) > 0.60 - (sens - 5) * 0.03) {
+          const p = { x: (bx + bw * 0.5) / W, y: (by + bh * 0.5) / H, r: (bh * 0.62) / H };
+          FX.auraOn(p); auraAccesa = true;
+          if (now - lastAura > 120) { lastAura = now; T.inviaFx({ tipo: 'aura', ...p }); }
+        } else if (auraAccesa) { FX.auraOff(); T.inviaFx({ tipo: 'auraOff' }); auraAccesa = false; }
+      }
+    } else if (laserAcceso || auraAccesa) {
+      if (laserAcceso) { FX.laserOff(); T.inviaFx({ tipo: 'laserOff' }); laserAcceso = false; }
+      if (auraAccesa) { FX.auraOff(); T.inviaFx({ tipo: 'auraOff' }); auraAccesa = false; }
+    }
 
     // ANTEPRIMA locale (nel rilevatore): disegna gli stessi effetti sopra il video
     FX.aggiornaEDisegna(ctx, W, H, now - (lastTick || now));

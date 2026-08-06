@@ -725,7 +725,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // SPLIT: il RILEVATORE manda gli EFFETTI riconosciuti (fireball, fulmine, carica
   // kamehameha, trail delle mani…) all'overlay in OBS. Solo numeri/nomi validati,
   // niente immagini. Discreti a evento, continui (carica/mano) a ~12fps.
-  const _fxTipi = new Set(['fireball', 'fulmine', 'snap', 'onda', 'carica', 'spara', 'caricaGiu', 'mano', 'combo']);
+  const _fxTipi = new Set(['fireball', 'fulmine', 'snap', 'onda', 'carica', 'spara', 'caricaGiu', 'mano', 'combo',
+    'laser', 'laserOff', 'fuoco', 'aura', 'auraOff']);
   app.post('/api/tracking/:login/fx', (req, res) => {
     if (!chiaveOk(req)) return res.status(403).json({ errore: 'chiave non valida' });
     const login = String(req.params.login).toLowerCase();
@@ -740,6 +741,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       ax: n01(b.ax), ay: n01(b.ay), bx: n01(b.bx), by: n01(b.by),
       forza: Number.isFinite(Number(b.forza)) ? Math.max(0, Math.min(2, Number(b.forza))) : undefined,
       liv: n01(b.liv), i: (b.i === 1 || b.i === '1') ? 1 : 0,
+      // effetti sul viso: posizioni occhi + raggio aura (0..1)
+      lx: n01(b.lx), ly: n01(b.ly), rx: n01(b.rx), ry: n01(b.ry), r: n01(b.r),
     });
     res.json({ ok: true });
   });
