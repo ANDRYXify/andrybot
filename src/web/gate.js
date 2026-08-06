@@ -22,6 +22,11 @@ import { streamers, subscriptions } from '../db.js';
 
 const log = makeLog('gate');
 
+// Periodo di GRAZIA: quando uno streamer non è più nella lista del sito, non lo
+// spegniamo subito ma dopo questi giorni (env GRACE_DAYS, default 7). 0 = subito.
+const GRACE_DAYS = Math.max(0, Number(process.env.GRACE_DAYS) || 7);
+const GRACE_MS = GRACE_DAYS * 86_400_000;
+
 // User-Agent neutro: lo scudo anti-scanner del sito penalizza gli UA di
 // automazione headless, quindi ci presentiamo come il servizio che siamo.
 const UA = 'socialbot.live/1.0 (+https://socialbot.live)';
@@ -129,7 +134,7 @@ export function startApprovalSync({ manager, everyMs = 5 * 60_000 } = {}) {
     //    non riaccendiamo mai per sbaglio chi ha spento il bot di sua volontà.
     if (listaSito) {
       for (const s of streamers.list()) {
-        if (s.botEnabled || !attivi.has(s.login)) continue;
+        if (s.manuale || s.botEnabled || !attivi.has(s.login)) continue;
         const sub = subscriptions.get(s.login);
         if (sub && sub.status === 'canceled') {
           streamers.setEnabled(s.login, true);
@@ -137,19 +142,6 @@ export function startApprovalSync({ manager, everyMs = 5 * 60_000 } = {}) {
           log.info(`Ripristino: #${s.login} è community → bot riacceso (un trial scaduto non deve spegnerlo)`);
           cambiato = true;
         }
-      }
-    }
-
-    // 0.5) INVARIANTE COMMUNITY: un membro community ha accesso "di diritto" (lo ha
-    //      verificato il sito quando è stato abilitato, ed è registrato nel NOSTRO DB).
-    //      Non deve MAI restare 'disabled' per colpa di una lista del sito parziale o
-    //      glitchata (es. dopo la migrazione dominio). Se lo troviamo disabilitato, lo
-    //      ripristiniamo — indipendentemente dal fatto che il sito risponda o meno.
-    for (const s of streamers.list()) {
-      if (s.community && s.status === 'disabled') {
-        streamers.setStatus(s.login, 'approved');
-        log.info(`Ripristino: #${s.login} è community → riapprovato (accesso di diritto, mai revocato dal sito)`);
-        cambiato = true;
       }
     }
 
@@ -165,19 +157,33 @@ export function startApprovalSync({ manager, everyMs = 5 * 60_000 } = {}) {
       cambiato = true;
     }
 
-    // 2) revoca chi non è più abilitato sul sito. Salta se il sito è muto o la
-    //    lista è vuota (quasi certo un disguido: parsing o endpoint cambiato),
-    //    per non spegnere per sbaglio tutti i bot.
+    // 2) GRAZIA + revoca in base alla lista del sito. Chi non è più nella lista NON
+    //    viene spento subito: parte un PERIODO DI GRAZIA (GRACE_DAYS, default 7). Se
+    //    rientra prima, la grazia si azzera; se scade, allora si disabilita.
+    //    Esenti: gli abbonati Stripe e chi è gestito a MANO dall'admin (manuale=1).
+    //    Salta tutto se il sito è muto/lista vuota (disguido → non revocare nulla).
+    //    Ripristina anche i community disabilitati per errore dal vecchio revoke secco.
     if (listaSito) {
+      const ora = Date.now();
       for (const s of streamers.list()) {
-        // gli ABBONATI self-service (Stripe) non dipendono dal sito: non si revocano
-        if (subscriptions.attivo(s.login)) continue;
-        // i COMMUNITY hanno accesso di diritto (registrato nel nostro DB): la lista
-        // del sito non li revoca mai — così un suo glitch/parzialità non spegne i bot
-        if (s.community) continue;
-        if (s.status === 'approved' && !attivi.has(s.login)) {
-          streamers.setStatus(s.login, 'disabled');
-          log.info(`Abilitazione revocata dal sito per #${s.login}: bot disattivato`);
+        if (s.manuale) continue;                       // stato deciso dall'admin: intoccabile
+        if (subscriptions.attivo(s.login)) continue;   // Stripe: non dipende dal sito
+        if (attivi.has(s.login)) {                     // riconfermato dal sito
+          if (s.grazia_fino) streamers.setGrazia(s.login, 0);
+          if (s.status === 'disabled') { streamers.setStatus(s.login, 'approved'); log.info(`#${s.login} riconfermato dal sito → riapprovato`); cambiato = true; }
+          continue;
+        }
+        // NON è nella lista del sito
+        if (s.status === 'approved') {
+          const scad = s.grazia_fino > 0 ? s.grazia_fino : (ora + GRACE_MS);
+          if (s.grazia_fino <= 0 && GRACE_MS > 0) { streamers.setGrazia(s.login, scad); log.info(`#${s.login} non confermato dal sito: grazia di ${GRACE_DAYS}g (scade ${new Date(scad).toISOString()})`); }
+          else if (ora >= scad) { streamers.setStatus(s.login, 'disabled'); streamers.setGrazia(s.login, -1); log.info(`Grazia scaduta per #${s.login}: bot disattivato`); cambiato = true; }
+          // altrimenti: in grazia, resta approved
+        } else if (s.status === 'disabled' && s.community && s.grazia_fino === 0) {
+          // community disabilitato per errore dal vecchio revoke immediato (grazia mai
+          // partita): lo rimettiamo approved dandogli la grazia piena.
+          streamers.setStatus(s.login, 'approved'); streamers.setGrazia(s.login, ora + GRACE_MS);
+          log.info(`Ripristino con grazia: #${s.login} community disabilitato per errore → riapprovato per ${GRACE_DAYS}g`);
           cambiato = true;
         }
       }

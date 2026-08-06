@@ -11409,12 +11409,13 @@ async function caricaTabellaAdmin() {
       <tr>
         <td>${esc(s.display || s.login)}</td>
         <td><code>${esc(s.login)}</code></td>
-        <td>${badgeStato[s.status] || esc(s.status)}</td>
+        <td>${badgeStato[s.status] || esc(s.status)}${s.manuale ? ` <span class="badge" title="${L('Gestito a mano: il sync col sito non lo tocca', 'Manual: the site sync leaves it alone', 'Manual: la sync del sitio no lo toca')}">🔒 ${L('manuale', 'manual', 'manual')}</span>` : (Number(s.grazia_fino) > 0 ? ` <span class="badge giallo" title="${L('In grazia: verrà disabilitato se non riconfermato', 'In grace: will be disabled if not reconfirmed', 'En gracia: se deshabilitará si no se reconfirma')} (${new Date(Number(s.grazia_fino)).toLocaleDateString()})">⏳ ${L('grazia', 'grace', 'gracia')}</span>` : '')}</td>
         <td>${s.permessiOk ? '✔' : '✘'}</td>
         <td>${s.knowledgeCount}</td>
         <td>
           ${s.status !== 'approved' ? `<button class="btn mini" data-azione="approved" data-login="${esc(s.login)}">${L('Approva', 'Approve', 'Aprobar')}</button>` : ''}
           ${s.status === 'approved' ? `<button class="btn secondario mini" data-azione="disabled" data-login="${esc(s.login)}">${L('Disabilita', 'Disable', 'Deshabilitar')}</button>` : ''}
+          ${s.manuale ? `<button class="btn secondario mini" data-azione="auto" data-login="${esc(s.login)}" data-stato="${esc(s.status)}" title="${L('Rimetti sotto il controllo automatico del sito', 'Put back under the site auto-control', 'Vuelve al control automático del sitio')}">↻ ${L('Auto', 'Auto', 'Auto')}</button>` : ''}
           <button class="btn pericolo mini" data-azione="rimuovi" data-login="${esc(s.login)}">${L('Rimuovi', 'Remove', 'Quitar')}</button>
         </td>
       </tr>`).join('');
@@ -11429,10 +11430,13 @@ async function caricaTabellaAdmin() {
           if (!confirm(L(`Rimuovere del tutto ${login}? Verranno eliminati anche i suoi permessi.`, `Completely remove ${login}? Their permissions will be deleted too.`, `¿Eliminar por completo a ${login}? También se borrarán sus permisos.`))) return;
           await api('/api/admin/rimuovi', { method: 'POST', body: { login } });
           toast(L(`${login} rimosso.`, `${login} removed.`, `${login} eliminado.`));
+        } else if (azione === 'auto') {
+          await api('/api/admin/stato', { method: 'POST', body: { login, status: btn.dataset.stato || 'approved', manuale: false } });
+          toast(L(`${login} torna in automatico (sync col sito).`, `${login} back to auto (site sync).`, `${login} vuelve a automático (sync del sitio).`));
         } else {
           if (azione === 'disabled' && !confirm(L(`Disabilitare ${login}? Il bot uscirà dal suo canale.`, `Disable ${login}? The bot will leave their channel.`, `¿Deshabilitar a ${login}? El bot saldrá de su canal.`))) return;
           await api('/api/admin/stato', { method: 'POST', body: { login, status: azione } });
-          toast(azione === 'approved' ? L(`${login} approvato! Il bot si sta pre-addestrando.`, `${login} approved! The bot is pre-training.`, `¡${login} aprobado! El bot se está pre-entrenando.`) : L(`${login} disabilitato.`, `${login} disabled.`, `${login} deshabilitado.`));
+          toast(azione === 'approved' ? L(`${login} approvato (manuale)! Il bot si sta pre-addestrando.`, `${login} approved (manual)! The bot is pre-training.`, `¡${login} aprobado (manual)! El bot se está pre-entrenando.`) : L(`${login} disabilitato (manuale).`, `${login} disabled (manual).`, `${login} deshabilitado (manual).`));
         }
         // ricarica stato globale (canali attivi) e tabella
         stato = await api('/api/me');
