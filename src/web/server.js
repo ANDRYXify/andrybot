@@ -703,7 +703,12 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!chiaveOk(req)) return notFound(res);
     const login = String(req.params.login).toLowerCase();
     const trk = streamers.get(login)?.settings?.tracking || {};
-    res.json({ camera: String(trk.camera || '').slice(0, 100) });
+    res.json({
+      camera: String(trk.camera || '').slice(0, 100),
+      giochi: trk.giochi !== false,
+      giochiSel: trk.giochiSel || { mima: true, nonridere: true, reaction: true, battaglia: true },
+      effetti: trk.effetti || { attivo: true, specchio: true, suoni: true, sensibilita: 5, kamehameha: true, fireball: true, fulmini: true, trail: true, combo: true, laser: true, fuoco: true, aura: true },
+    });
   });
 
   // SPLIT: il RILEVATORE (Chrome) manda qui il gesto/espressione CORRENTE quando
@@ -2656,7 +2661,24 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
           if (gk && ev) mappa[gk] = ev;
         }
       }
-      out.tracking = { attivo: t.attivo !== false, giochi: t.giochi !== false, camera: String(t.camera || '').slice(0, 100), mappa };
+      const gs = t.giochiSel || {}, ef = t.effetti || {};
+      out.tracking = {
+        attivo: t.attivo !== false,
+        giochi: t.giochi !== false,
+        camera: String(t.camera || '').slice(0, 100),
+        // quali dei 4 minigiochi sono attivi (default tutti)
+        giochiSel: { mima: gs.mima !== false, nonridere: gs.nonridere !== false, reaction: gs.reaction !== false, battaglia: gs.battaglia !== false },
+        // effetti cinematici: master + per-effetto + resa (sensibilità/specchio/suoni)
+        effetti: {
+          attivo: ef.attivo !== false, specchio: ef.specchio !== false, suoni: ef.suoni !== false,
+          sensibilita: clampInt(ef.sensibilita, 1, 10, 5),
+          kamehameha: ef.kamehameha !== false, fireball: ef.fireball !== false, fulmini: ef.fulmini !== false,
+          trail: ef.trail !== false, combo: ef.combo !== false,
+          // effetti sul viso (Fase 2, default on quando arriveranno)
+          laser: ef.laser !== false, fuoco: ef.fuoco !== false, aura: ef.aura !== false,
+        },
+        mappa,
+      };
     }
     // Grafiche social (P5): config dello studio grafico. Solo dati testuali/di
     // stile, tutto limitato in lunghezza (rese SOLO lato client su canvas).

@@ -6076,7 +6076,31 @@ function pannelloEffetti() {
         <label for="trk-giochi">${L('Minigiochi con la webcam (gesti ed espressioni)', 'Webcam minigames (gestures and expressions)', 'Minijuegos con la webcam (gestos y expresiones)')}</label>
       </div>
       <p class="suggerimento">${L('Si giocano NELLO stesso overlay. Avvio a gesto:', 'They play in the SAME overlay. Start by gesture:', 'Se juegan en el MISMO overlay. Inicio por gesto:')} ${L('tieni', 'hold', 'mantén')} <strong>✋</strong> ${L('~1s, poi scegli col gesto', '~1s, then pick with a gesture', '~1s, luego elige con un gesto')} (✌️ ${L('Mima', 'Mimic', 'Imita')} · 👍 ${L('Non ridere', "Don't laugh", 'No te rías')} · ☝️ Reaction). ${L('Oppure da chat:', 'Or from chat:', 'O desde el chat:')} <code>!mima</code>, <code>!nonridere</code>, <code>!reaction</code>, <code>!battaglia</code> ${L('(nella Battaglia gli spettatori scrivono', '(in Battle viewers type', '(en la Batalla los espectadores escriben')} <code>!sfida ✌️</code>). ${L('I punteggi finiscono in chat.', 'Scores go to chat.', 'Las puntuaciones van al chat.')}</p>
-      <p class="spazio-sopra"><button class="btn" id="trk-salva">${L('Salva mappatura', 'Save mapping', 'Guardar mapeo')}</button></p>
+      <details class="spazio-sopra" ${trk.effetti ? '' : 'open'}>
+        <summary><strong>${L('Effetti & giochi — accendi/spegni e regola', 'Effects & games — toggle and tune', 'Efectos y juegos — activa/desactiva y ajusta')}</strong></summary>
+        <div class="riga-check spazio-sopra"><input type="checkbox" id="ef-attivo" ${trk.effetti?.attivo !== false ? 'checked' : ''}><label for="ef-attivo"><strong>${L('Effetti cinematici', 'Cinematic effects', 'Efectos cinematográficos')}</strong> (master)</label></div>
+        <div class="riga-flessibile" style="flex-wrap:wrap;gap:.7rem">
+          <label class="riga-check"><input type="checkbox" id="ef-kamehameha" ${trk.effetti?.kamehameha !== false ? 'checked' : ''}> 🔵 Kamehameha</label>
+          <label class="riga-check"><input type="checkbox" id="ef-fireball" ${trk.effetti?.fireball !== false ? 'checked' : ''}> 🔥 Fireball</label>
+          <label class="riga-check"><input type="checkbox" id="ef-fulmini" ${trk.effetti?.fulmini !== false ? 'checked' : ''}> ⚡ ${L('Fulmini', 'Lightning', 'Rayos')}</label>
+          <label class="riga-check"><input type="checkbox" id="ef-trail" ${trk.effetti?.trail !== false ? 'checked' : ''}> ✨ ${L('Trail mani', 'Hand trails', 'Estelas')}</label>
+          <label class="riga-check"><input type="checkbox" id="ef-combo" ${trk.effetti?.combo !== false ? 'checked' : ''}> 🔗 Combo</label>
+        </div>
+        <label class="campo spazio-sopra" for="ef-sens">${L('Sensibilità', 'Sensitivity', 'Sensibilidad')} <span class="tenue" id="ef-sens-val">${trk.effetti?.sensibilita || 5}</span> <span class="tenue">— ${L('più alta = pose più facili da attivare', 'higher = poses easier to trigger', 'más alta = poses más fáciles')}</span></label>
+        <input type="range" id="ef-sens" min="1" max="10" value="${trk.effetti?.sensibilita || 5}" class="campo-largo">
+        <div class="riga-flessibile spazio-sopra" style="flex-wrap:wrap;gap:.7rem">
+          <label class="riga-check"><input type="checkbox" id="ef-specchio" ${trk.effetti?.specchio !== false ? 'checked' : ''}> ${L('Specchia (facecam selfie)', 'Mirror (selfie facecam)', 'Espejo (facecam selfie)')}</label>
+          <label class="riga-check"><input type="checkbox" id="ef-suoni" ${trk.effetti?.suoni !== false ? 'checked' : ''}> ${L('Suoni', 'Sounds', 'Sonidos')}</label>
+        </div>
+        <h4 class="spazio-sopra">${L('Minigiochi (quali attivi)', 'Minigames (which are on)', 'Minijuegos (cuáles activos)')}</h4>
+        <div class="riga-flessibile" style="flex-wrap:wrap;gap:.7rem">
+          <label class="riga-check"><input type="checkbox" id="g-mima" ${trk.giochiSel?.mima !== false ? 'checked' : ''}> ✌️ Mima</label>
+          <label class="riga-check"><input type="checkbox" id="g-nonridere" ${trk.giochiSel?.nonridere !== false ? 'checked' : ''}> 👍 ${L('Non ridere', "Don't laugh", 'No reír')}</label>
+          <label class="riga-check"><input type="checkbox" id="g-reaction" ${trk.giochiSel?.reaction !== false ? 'checked' : ''}> ☝️ Reaction</label>
+          <label class="riga-check"><input type="checkbox" id="g-battaglia" ${trk.giochiSel?.battaglia !== false ? 'checked' : ''}> ⚔️ ${L('Battaglia', 'Battle', 'Batalla')}</label>
+        </div>
+      </details>
+      <p class="spazio-sopra"><button class="btn" id="trk-salva">${L('Salva impostazioni webcam', 'Save webcam settings', 'Guardar ajustes de webcam')}</button></p>
       <p class="suggerimento">${L('Per reazioni più ricche (messaggi in chat, contatori, cooldown per ruolo) usa i', 'For richer reactions (chat messages, counters, per-role cooldown) use', 'Para reacciones más ricas (mensajes en el chat, contadores, cooldown por rol) usa los')} <strong>${L('Moduli', 'Modules', 'Módulos')}</strong>: ${L('QUANDO «Gesto webcam» → ALLORA…', 'WHEN «Webcam gesture» → THEN…', 'CUANDO «Gesto webcam» → ENTONCES…')}</p>
     </div>
 
@@ -9837,8 +9861,19 @@ async function caricaTracking() {
     const attivo = !!document.getElementById('trk-attivo')?.checked;
     const giochi = !!document.getElementById('trk-giochi')?.checked;
     const camera = document.getElementById('trk-cam')?.value || '';
-    await salvaImpostazioni({ tracking: { attivo, giochi, camera, mappa } }, L('Mappatura salvata ✓', 'Mapping saved ✓', 'Mapeo guardado ✓'));
+    const chk = (id) => !!document.getElementById(id)?.checked;
+    const effetti = {
+      attivo: chk('ef-attivo'), specchio: chk('ef-specchio'), suoni: chk('ef-suoni'),
+      sensibilita: Number(document.getElementById('ef-sens')?.value) || 5,
+      kamehameha: chk('ef-kamehameha'), fireball: chk('ef-fireball'), fulmini: chk('ef-fulmini'),
+      trail: chk('ef-trail'), combo: chk('ef-combo'),
+    };
+    const giochiSel = { mima: chk('g-mima'), nonridere: chk('g-nonridere'), reaction: chk('g-reaction'), battaglia: chk('g-battaglia') };
+    await salvaImpostazioni({ tracking: { attivo, giochi, camera, effetti, giochiSel, mappa } }, L('Impostazioni salvate ✓', 'Settings saved ✓', 'Ajustes guardados ✓'));
   });
+  // sensibilità: aggiorna l'etichetta dal vivo
+  const efSens = document.getElementById('ef-sens');
+  if (efSens) efSens.oninput = () => { const s = document.getElementById('ef-sens-val'); if (s) s.textContent = efSens.value; };
 
   // Scelta webcam: mostra quella salvata; «Rileva» chiede il permesso ed elenca
   // le fotocamere per NOME (etichetta), che vale identica anche in OBS.

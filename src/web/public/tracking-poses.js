@@ -26,40 +26,45 @@
 
   T.registraMinigioco(({ hands, ctx, W, H }) => {
     const now = performance.now();
+    const E = (window.SB_OPZIONI && window.SB_OPZIONI.effetti) || {};
+    if (E.attivo === false) { lastTick = now; return; }   // effetti spenti dal pannello
+    FX.suoni(E.suoni !== false); FX.abilitaCombo(E.combo !== false);
+    // sensibilità 1..10 → soglie (più alta = pose più facili da attivare)
+    const sens = Number(E.sensibilita) || 5;
+    const chargeMax = 0.16 + (sens - 5) * 0.008;   // mani "unite": finestra più larga
+    const fulmineMin = 0.38 - (sens - 5) * 0.012;  // mani "lontane": basta meno distanza
     firedKame = false;
     const M = (hands || []).slice(0, 2).map((h) => { const c = centro(h); return { nx: c.x / W, ny: c.y / H, open: T.rilevaGesto ? T.rilevaGesto(h) : '' }; });
 
-    // TRAIL: anteprima locale sempre fluida; all'overlay mando solo se la mano si
-    // MUOVE davvero (mani ferme → zero traffico), a ~12fps.
-    M.forEach((m, i) => FX.mano(i, m.nx, m.ny));
-    if (now - lastMano > 80) {
-      lastMano = now;
-      M.forEach((m, i) => {
-        const l = manoInviata[i];
-        if (!l || Math.hypot(m.nx - l.x, m.ny - l.y) > 0.012) { manoInviata[i] = { x: m.nx, y: m.ny }; T.inviaFx({ tipo: 'mano', i, x: m.nx, y: m.ny }); }
-      });
+    // TRAIL — anteprima locale fluida; all'overlay solo se la mano si MUOVE (~12fps)
+    if (E.trail !== false) {
+      M.forEach((m, i) => FX.mano(i, m.nx, m.ny));
+      if (now - lastMano > 80) {
+        lastMano = now;
+        M.forEach((m, i) => { const l = manoInviata[i]; if (!l || Math.hypot(m.nx - l.x, m.ny - l.y) > 0.012) { manoInviata[i] = { x: m.nx, y: m.ny }; T.inviaFx({ tipo: 'mano', i, x: m.nx, y: m.ny }); } });
+      }
     }
 
     if (M.length === 2) {
       const dist = Math.hypot(M[0].nx - M[1].nx, M[0].ny - M[1].ny);
       const midx = (M[0].nx + M[1].nx) / 2, midy = (M[0].ny + M[1].ny) / 2;
-      // KAMEHAMEHA — mani unite = carica
-      if (dist < 0.16) {
-        if (!charge) charge = { t0: now };
-        charge.liv = Math.min(1, (now - charge.t0) / 1800);
-        FX.caricaSu({ x: midx, y: midy, liv: charge.liv });
-        if (now - lastCarica > 90) { lastCarica = now; T.inviaFx({ tipo: 'carica', x: midx, y: midy, liv: charge.liv }); }
-      } else if (charge && dist > 0.30) {
-        // rilascio: se abbastanza carico → RAGGIO nella direzione delle mani
-        if (charge.liv > 0.22) {
-          const ang = Math.atan2(midy - 0.5, midx - 0.5);
-          const p = { x: midx, y: midy, dx: Math.cos(ang), dy: Math.sin(ang), forza: charge.liv };
-          FX.spara(p); T.inviaFx({ tipo: 'spara', ...p }); firedKame = true;
-        } else { FX.caricaGiu(); T.inviaFx({ tipo: 'caricaGiu' }); }
-        charge = null;
-      }
-      // FULMINI — due mani aperte e lontane (non in carica)
-      if (!charge && M[0].open === 'openpalm' && M[1].open === 'openpalm' && dist > 0.38 && now - lastFulmine > 120) {
+      if (E.kamehameha !== false) {
+        if (dist < chargeMax) {                       // mani unite = carica
+          if (!charge) charge = { t0: now };
+          charge.liv = Math.min(1, (now - charge.t0) / 1800);
+          FX.caricaSu({ x: midx, y: midy, liv: charge.liv });
+          if (now - lastCarica > 90) { lastCarica = now; T.inviaFx({ tipo: 'carica', x: midx, y: midy, liv: charge.liv }); }
+        } else if (charge && dist > 0.30) {           // rilascio = raggio
+          if (charge.liv > 0.22) {
+            const ang = Math.atan2(midy - 0.5, midx - 0.5);
+            const p = { x: midx, y: midy, dx: Math.cos(ang), dy: Math.sin(ang), forza: charge.liv };
+            FX.spara(p); T.inviaFx({ tipo: 'spara', ...p }); firedKame = true;
+          } else { FX.caricaGiu(); T.inviaFx({ tipo: 'caricaGiu' }); }
+          charge = null;
+        }
+      } else if (charge) { FX.caricaGiu(); T.inviaFx({ tipo: 'caricaGiu' }); charge = null; }
+      // FULMINI — due mani aperte e lontane
+      if (E.fulmini !== false && !charge && M[0].open === 'openpalm' && M[1].open === 'openpalm' && dist > fulmineMin && now - lastFulmine > 120) {
         lastFulmine = now;
         const p = { ax: M[0].nx, ay: M[0].ny, bx: M[1].nx, by: M[1].ny };
         FX.spawn('fulmine', p); T.inviaFx({ tipo: 'fulmine', ...p });
@@ -67,14 +72,16 @@
     } else if (charge) { FX.caricaGiu(); T.inviaFx({ tipo: 'caricaGiu' }); charge = null; }
 
     // FIREBALL — pugno→apertura di una mano (non durante il kamehameha)
-    M.forEach((m, i) => {
-      if (!charge && !firedKame && prevOpen[i] === 'fist' && m.open === 'openpalm') {
-        const ang = Math.atan2(m.ny - 0.5, m.nx - 0.5);
-        const p = { x: m.nx, y: m.ny, dx: Math.cos(ang), dy: Math.sin(ang), forza: 1.1 };
-        FX.spawn('fireball', p); T.inviaFx({ tipo: 'fireball', ...p });
-      }
-      prevOpen[i] = m.open;
-    });
+    if (E.fireball !== false) {
+      M.forEach((m, i) => {
+        if (!charge && !firedKame && prevOpen[i] === 'fist' && m.open === 'openpalm') {
+          const ang = Math.atan2(m.ny - 0.5, m.nx - 0.5);
+          const p = { x: m.nx, y: m.ny, dx: Math.cos(ang), dy: Math.sin(ang), forza: 1.1 };
+          FX.spawn('fireball', p); T.inviaFx({ tipo: 'fireball', ...p });
+        }
+        prevOpen[i] = m.open;
+      });
+    } else { M.forEach((m, i) => { prevOpen[i] = m.open; }); }
     for (let i = M.length; i < 2; i++) prevOpen[i] = null;
 
     // ANTEPRIMA locale (nel rilevatore): disegna gli stessi effetti sopra il video
