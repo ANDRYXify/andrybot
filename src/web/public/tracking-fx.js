@@ -40,6 +40,7 @@
     else if (tipo === 'carica') { beep(200, 700, 0.25, 'sine', 0.05); }
     else if (tipo === 'fulmine') { rumore(0.18, 0.14); beep(1400, 300, 0.12, 'square', 0.06); }
     else if (tipo === 'snap') { rumore(0.05, 0.2); beep(1800, 200, 0.08, 'square', 0.05); }
+    else if (tipo === 'scatto') { rumore(0.03, 0.18); beep(2600, 1200, 0.05, 'square', 0.05); beep(900, 500, 0.06, 'square', 0.04); }
     else if (tipo === 'impatto') { beep(90, 40, 0.25, 'sine', 0.2); rumore(0.2, 0.1); }
   }
 
@@ -62,6 +63,9 @@
   let laser = null;       // occhi laser { lnx,lny,rnx,rny, t, spegni }
   let fuoco = null;       // fuoco/fumo dalla bocca { nx,ny, t }
   let halo = null;        // aura/corona sul sorriso { nx,ny,r, t, spegni }
+  // ── inquadratura/scatto (Fase 3): mirino "a cornice" + flash con miniatura
+  let mirino = null;      // { ax,ay,bx,by } cornice in composizione (0..1)
+  const scatti = [];      // { ax,ay,bx,by, t, thumb } flash+miniatura in corso
 
   function aura(col, x, y, r) { return { col, x, y, r }; }
 
@@ -125,6 +129,14 @@
     halo.spegni = false; halo.t = Math.min(1, halo.t + 0.06);
   }
   function auraOff() { if (halo) halo.spegni = true; }
+  // ── INQUADRATURA: mirino a cornice mentre componi -------------------------
+  function mirinoOn(p) { p = p || {}; mirino = { ax: p.ax ?? 0.3, ay: p.ay ?? 0.3, bx: p.bx ?? 0.7, by: p.by ?? 0.7 }; }
+  function mirinoGiu() { mirino = null; }
+  function scatto(p) {
+    p = p || {}; mirino = null;
+    scatti.push({ ax: p.ax ?? 0.3, ay: p.ay ?? 0.3, bx: p.bx ?? 0.7, by: p.by ?? 0.7, t: 1, thumb: p.thumb || null });
+    suono('scatto'); shake = Math.max(shake, 6);
+  }
   let comboOn = true;
   function pulsaCombo() { if (!comboOn) return; combo++; comboT = 1.8; }
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -313,6 +325,39 @@
     }
 
     ctx.globalCompositeOperation = 'source-over';
+
+    // ── INQUADRATURA: mirino a cornice (staffe agli angoli) mentre componi
+    if (mirino) {
+      const x0 = Math.min(px(mirino.ax, W), px(mirino.bx, W)), x1 = Math.max(px(mirino.ax, W), px(mirino.bx, W));
+      const y0 = Math.min(py(mirino.ay, H), py(mirino.by, H)), y1 = Math.max(py(mirino.ay, H), py(mirino.by, H));
+      const s = Math.max(14, Math.min(x1 - x0, y1 - y0) * 0.18);
+      ctx.strokeStyle = 'rgba(255,255,255,.92)'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.setLineDash([]);
+      const staffa = (cx, cy, sx, sy) => { ctx.beginPath(); ctx.moveTo(cx + sx * s, cy); ctx.lineTo(cx, cy); ctx.lineTo(cx, cy + sy * s); ctx.stroke(); };
+      staffa(x0, y0, 1, 1); staffa(x1, y0, -1, 1); staffa(x0, y1, 1, -1); staffa(x1, y1, -1, -1);
+      ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.beginPath(); ctx.arc((x0 + x1) / 2, (y0 + y1) / 2, 3, 0, 7); ctx.fill();
+    }
+    // ── SCATTO: flash bianco + miniatura che rimpicciolisce verso un angolo
+    for (let i = scatti.length - 1; i >= 0; i--) {
+      const s = scatti[i]; s.t -= (dtMs || 16) / 1000 / 2.2; if (s.t <= 0) { scatti.splice(i, 1); continue; }
+      const x0 = Math.min(px(s.ax, W), px(s.bx, W)), x1 = Math.max(px(s.ax, W), px(s.bx, W));
+      const y0 = Math.min(py(s.ay, H), py(s.by, H)), y1 = Math.max(py(s.ay, H), py(s.by, H));
+      if (s.t > 0.82) { ctx.fillStyle = `rgba(255,255,255,${(s.t - 0.82) / 0.18})`; ctx.fillRect(0, 0, W, H); }   // flash
+      // interpolo dal rettangolo pieno → miniatura "Polaroid" in basso a destra
+      const k = clamp((0.82 - s.t) / 0.82, 0, 1), e = k * k * (3 - 2 * k);
+      const tw = W * 0.22, th = tw * ((y1 - y0) / Math.max(1, x1 - x0));
+      const tX = W - tw - 24, tY = H - th - 24;
+      const rx = x0 + (tX - x0) * e, ry = y0 + (tY - y0) * e;
+      const rw = (x1 - x0) + (tw - (x1 - x0)) * e, rh = (y1 - y0) + (th - (y1 - y0)) * e;
+      const alpha = s.t < 0.16 ? s.t / 0.16 : 1;
+      ctx.save(); ctx.globalAlpha = alpha;
+      ctx.fillStyle = '#fff'; ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 2;
+      const pad = 6 * e; ctx.fillRect(rx - pad, ry - pad, rw + pad * 2, rh + pad * 3.2);   // bordo bianco Polaroid
+      if (s.thumb) { try { ctx.drawImage(s.thumb, rx, ry, rw, rh); } catch { /* niente */ } }
+      else { ctx.fillStyle = 'rgba(20,26,45,.9)'; ctx.fillRect(rx, ry, rw, rh); ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.font = `${Math.round(rh * 0.5)}px system-ui`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('📷', rx + rw / 2, ry + rh / 2); }
+      ctx.strokeRect(rx - pad, ry - pad, rw + pad * 2, rh + pad * 3.2);
+      ctx.restore();
+    }
+
     // combo HUD
     if (comboT > 0) { comboT -= (dtMs || 16) / 1000;
       if (combo >= 2) {
@@ -333,6 +378,7 @@
   window.SB_FX = {
     spawn, caricaSu, caricaGiu, spara, mano, combo: pulsaCombo,
     laserOn, laserOff, fuoco: fuocoSpara, auraOn, auraOff,
+    mirinoOn, mirinoGiu, scatto,
     suoni(on) { suoniOn = !!on; }, specchia(on) { mirror = !!on; }, abilitaCombo(on) { comboOn = !!on; if (!on) { combo = 0; comboT = 0; } },
     caricaAttiva() { return !!carica; }, livelloCarica() { return carica ? carica.liv : 0; },
     aggiornaEDisegna,

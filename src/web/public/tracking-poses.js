@@ -25,6 +25,43 @@
   let lastMano = 0, lastCarica = 0, lastFulmine = 0, lastTick = 0;
   let lastLaser = 0, lastFuoco = 0, lastAura = 0;   // throttle invii viso
   let laserAcceso = false, auraAccesa = false;       // per mandare l'OFF una volta sola
+  let framingT = 0, scattoArmato = true, lastMirino = 0;   // inquadratura → scatto
+  let _cap = null, _ultimoSalva = 0;
+
+  // punta dell'indice (keypoint 8) normalizzata; fallback al centro mano
+  const puntaIndice = (h, c, W, H) => { const kp = h.keypoints || h.landmarks, p = kp && kp[8]; return { x: (p ? (p[0] ?? p.x) : c.x) / W, y: (p ? (p[1] ?? p.y) : c.y) / H }; };
+
+  // Cattura il RITAGLIO inquadrato dalla webcam del rilevatore (mai inviato al
+  // server: resta nel browser). Torna un canvas usabile come miniatura e lo salva
+  // come PNG nei Download dello streamer. Rispetta lo specchio (facecam selfie).
+  function catturaRitaglio(rect, specchia) {
+    try {
+      const vid = document.getElementById('cam');
+      if (!vid || !vid.videoWidth) return null;
+      const vw = vid.videoWidth, vh = vid.videoHeight;
+      const x0 = Math.min(rect.ax, rect.bx) * vw, x1 = Math.max(rect.ax, rect.bx) * vw;
+      const y0 = Math.min(rect.ay, rect.by) * vh, y1 = Math.max(rect.ay, rect.by) * vh;
+      const sw = Math.max(2, x1 - x0), sh = Math.max(2, y1 - y0);
+      if (!_cap) _cap = document.createElement('canvas');
+      _cap.width = Math.round(sw); _cap.height = Math.round(sh);
+      const c = _cap.getContext('2d');
+      c.save(); if (specchia) { c.translate(_cap.width, 0); c.scale(-1, 1); }
+      c.drawImage(vid, x0, y0, sw, sh, 0, 0, _cap.width, _cap.height); c.restore();
+      salvaPng(_cap);
+      return _cap;
+    } catch { return null; }
+  }
+  function salvaPng(canvas) {
+    try {
+      const now = performance.now(); if (now - _ultimoSalva < 1500) return; _ultimoSalva = now;
+      canvas.toBlob((blob) => {
+        if (!blob) return; const url = URL.createObjectURL(blob), a = document.createElement('a');
+        a.href = url; a.download = 'socialbot-scatto-' + Date.now() + '.png';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+      }, 'image/png');
+    } catch { /* niente */ }
+  }
 
   T.registraMinigioco(({ hands, faces, ctx, W, H }) => {
     const now = performance.now();
@@ -36,7 +73,7 @@
     const chargeMax = 0.16 + (sens - 5) * 0.008;   // mani "unite": finestra più larga
     const fulmineMin = 0.38 - (sens - 5) * 0.012;  // mani "lontane": basta meno distanza
     firedKame = false;
-    const M = (hands || []).slice(0, 2).map((h) => { const c = centro(h); return { nx: c.x / W, ny: c.y / H, open: T.rilevaGesto ? T.rilevaGesto(h) : '' }; });
+    const M = (hands || []).slice(0, 2).map((h) => { const c = centro(h); const tip = puntaIndice(h, c, W, H); return { nx: c.x / W, ny: c.y / H, tx: tip.x, ty: tip.y, open: T.rilevaGesto ? T.rilevaGesto(h) : '' }; });
 
     // TRAIL — anteprima locale fluida; all'overlay solo se la mano si MUOVE (~12fps)
     if (E.trail !== false) {
@@ -85,6 +122,27 @@
       });
     } else { M.forEach((m, i) => { prevOpen[i] = m.open; }); }
     for (let i = M.length; i < 2; i++) prevOpen[i] = null;
+
+    // ── INQUADRATURA → SCATTO (Fase 3): due mani con indice esteso = cornice a
+    // due angoli; tenuta ~0.8s → flash + miniatura. Il ritaglio è catturato SOLO
+    // nel rilevatore (mai inviato); all'overlay va solo la cornice/flash.
+    const inquadra = E.scatto !== false && M.length === 2 && !charge && M[0].open === 'point' && M[1].open === 'point';
+    if (inquadra && Math.abs(M[1].tx - M[0].tx) > 0.14 && Math.abs(M[1].ty - M[0].ty) > 0.12 && scattoArmato) {
+      const rect = { ax: M[0].tx, ay: M[0].ty, bx: M[1].tx, by: M[1].ty };
+      if (!framingT) framingT = now;
+      FX.mirinoOn(rect);
+      if (now - lastMirino > 90) { lastMirino = now; T.inviaFx({ tipo: 'mirino', ...rect }); }
+      if (now - framingT > 800) {                       // tenuta → scatto
+        scattoArmato = false; framingT = 0;
+        FX.mirinoGiu(); T.inviaFx({ tipo: 'mirinoGiu' });
+        const thumb = catturaRitaglio(rect, E.specchio !== false);
+        FX.scatto({ ...rect, thumb });
+        T.inviaFx({ tipo: 'scatto', ...rect });
+      }
+    } else {
+      if (framingT) { framingT = 0; FX.mirinoGiu(); T.inviaFx({ tipo: 'mirinoGiu' }); }
+      if (!inquadra) scattoArmato = true;               // pose lasciata → riarma
+    }
 
     // ── EFFETTI SUL VISO (Fase 2): laser occhi (sorpresa), fuoco bocca (bocca
     // molto aperta), aura/corona (sorriso). Uso emozioni Human (robuste) + la mesh
