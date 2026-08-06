@@ -41,6 +41,7 @@
     else if (tipo === 'fulmine') { rumore(0.18, 0.14); beep(1400, 300, 0.12, 'square', 0.06); }
     else if (tipo === 'snap') { rumore(0.05, 0.2); beep(1800, 200, 0.08, 'square', 0.05); }
     else if (tipo === 'scatto') { rumore(0.03, 0.18); beep(2600, 1200, 0.05, 'square', 0.05); beep(900, 500, 0.06, 'square', 0.04); }
+    else if (tipo === 'freeze') { beep(600, 60, 0.6, 'sine', 0.14); beep(300, 30, 0.8, 'triangle', 0.1); }
     else if (tipo === 'impatto') { beep(90, 40, 0.25, 'sine', 0.2); rumore(0.2, 0.1); }
   }
 
@@ -68,6 +69,7 @@
   const scatti = [];      // { ax,ay,bx,by, t, thumb } flash+miniatura in corso
   // ── snap di Thanos (Fase 5): flash viola + cenere + vignettatura
   let thanos = null;      // { nx,ny, t, emit }
+  let freeze = 0;         // "tempo fermo" (secondi rimasti): rallenta gli effetti + tinta
 
   function aura(col, x, y, r) { return { col, x, y, r }; }
 
@@ -132,6 +134,8 @@
     halo.spegni = false; halo.t = Math.min(1, halo.t + 0.06);
   }
   function auraOff() { if (halo) halo.spegni = true; }
+  // ── SLOW-MO / FREEZE: ferma il "tempo" degli effetti per qualche secondo ---
+  function congela(sec) { freeze = Math.max(freeze, sec || 2.5); suono('freeze'); }
   // ── INQUADRATURA: mirino a cornice mentre componi -------------------------
   function mirinoOn(p) { p = p || {}; mirino = { ax: p.ax ?? 0.3, ay: p.ay ?? 0.3, bx: p.bx ?? 0.7, by: p.by ?? 0.7 }; }
   function mirinoGiu() { mirino = null; }
@@ -146,7 +150,10 @@
 
   // ── update + draw ---------------------------------------------------------
   function aggiornaEDisegna(ctx, W, H, dtMs) {
-    const dt = Math.min(50, dtMs || 16) / 16;   // in "frame" a 60fps
+    const realMs = dtMs || 16;
+    if (freeze > 0) freeze -= realMs / 1000;              // il freeze scorre in tempo REALE
+    const slow = freeze > 0 ? 0.32 : 1;                   // slow-motion degli effetti
+    const dt = Math.min(50, realMs) / 16 * slow;          // in "frame" a 60fps (rallentato se freeze)
     ctx.save();
     if (shake > 0.3) { ctx.translate(rand(-shake, shake), rand(-shake, shake)); shake *= Math.pow(0.86, dt); } else shake = 0;
     ctx.globalCompositeOperation = 'lighter';
@@ -348,6 +355,16 @@
       v.addColorStop(0, 'rgba(40,10,70,0)'); v.addColorStop(1, `rgba(30,6,60,${0.55 * thanos.t})`);
       ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
     }
+    // slow-mo / freeze: tinta blu + onde temporali dal centro + indicatore
+    if (freeze > 0) {
+      const inten = Math.min(1, freeze);
+      ctx.fillStyle = `rgba(40,90,180,${0.15 * inten})`; ctx.fillRect(0, 0, W, H);
+      const R = Math.max(W, H) * 0.6, tnow = performance.now() / 1000;
+      for (let k = 0; k < 3; k++) { const rr = ((tnow * 0.5 + k / 3) % 1) * R; ctx.strokeStyle = `rgba(150,200,255,${0.28 * inten * (1 - rr / R)})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(W / 2, H / 2, rr, 0, 7); ctx.stroke(); }
+      ctx.save(); ctx.globalAlpha = inten; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = `800 ${Math.round(H * 0.055)}px system-ui, sans-serif`; ctx.lineWidth = Math.round(H * 0.008); ctx.strokeStyle = 'rgba(0,0,0,.55)';
+      ctx.strokeText('⏳ TEMPO FERMO', W / 2, H * 0.9); ctx.fillStyle = 'rgba(210,235,255,.95)'; ctx.fillText('⏳ TEMPO FERMO', W / 2, H * 0.9); ctx.restore();
+    }
 
     // ── INQUADRATURA: mirino a cornice (staffe agli angoli) mentre componi
     if (mirino) {
@@ -401,7 +418,7 @@
   window.SB_FX = {
     spawn, caricaSu, caricaGiu, spara, mano, combo: pulsaCombo,
     laserOn, laserOff, fuoco: fuocoSpara, auraOn, auraOff,
-    mirinoOn, mirinoGiu, scatto,
+    mirinoOn, mirinoGiu, scatto, congela,
     suoni(on) { suoniOn = !!on; }, specchia(on) { mirror = !!on; }, abilitaCombo(on) { comboOn = !!on; if (!on) { combo = 0; comboT = 0; } },
     caricaAttiva() { return !!carica; }, livelloCarica() { return carica ? carica.liv : 0; },
     aggiornaEDisegna,

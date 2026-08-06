@@ -6089,6 +6089,7 @@ function pannelloEffetti() {
           <label class="riga-check"><input type="checkbox" id="ef-trail" ${trk.effetti?.trail !== false ? 'checked' : ''}> ✨ ${L('Trail mani', 'Hand trails', 'Estelas')}</label>
           <label class="riga-check"><input type="checkbox" id="ef-combo" ${trk.effetti?.combo !== false ? 'checked' : ''}> 🔗 Combo</label>
           <label class="riga-check"><input type="checkbox" id="ef-snap" ${trk.effetti?.snap !== false ? 'checked' : ''}> 🫰 ${L('Snap di Thanos', 'Thanos snap', 'Chasquido de Thanos')}</label>
+          <label class="riga-check"><input type="checkbox" id="ef-freeze" ${trk.effetti?.freeze !== false ? 'checked' : ''}> ⏳ ${L('Tempo fermo (2 mani ✌️)', 'Time freeze (two ✌️)', 'Tiempo detenido (2 ✌️)')}</label>
         </div>
         <div class="tenue spazio-sopra" style="font-size:.85rem">${L('Effetti sul viso', 'Face effects', 'Efectos en la cara')}</div>
         <div class="riga-flessibile" style="flex-wrap:wrap;gap:.7rem">
@@ -9886,7 +9887,7 @@ async function caricaTracking() {
       attivo: chk('ef-attivo'), specchio: chk('ef-specchio'), suoni: chk('ef-suoni'),
       sensibilita: Number(document.getElementById('ef-sens')?.value) || 5,
       kamehameha: chk('ef-kamehameha'), fireball: chk('ef-fireball'), fulmini: chk('ef-fulmini'),
-      trail: chk('ef-trail'), combo: chk('ef-combo'), snap: chk('ef-snap'),
+      trail: chk('ef-trail'), combo: chk('ef-combo'), snap: chk('ef-snap'), freeze: chk('ef-freeze'),
       laser: chk('ef-laser'), fuoco: chk('ef-fuoco'), aura: chk('ef-aura'),
       scatto: chk('ef-scatto'), puzzle: chk('ef-puzzle'),
     };
