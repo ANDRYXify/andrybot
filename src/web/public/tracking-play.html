@@ -36,6 +36,8 @@
 
       let gameFn = null, cmdFn = null;
       let lastGesto = '', lastEmo = '';
+      // trail fluido: interpolo a 60fps verso l'ultima posizione ricevuta di ogni mano
+      const manoTarget = [null, null], manoSmooth = [null, null];
 
       // annuncio in chat (punteggi/esiti) via il bot: solo testo, ripulito lato server.
       const ultimoSay = { t: 0 };
@@ -71,7 +73,7 @@
         else if (t === 'carica') FX.caricaSu(d);
         else if (t === 'caricaGiu') FX.caricaGiu();
         else if (t === 'spara') FX.spara(d);
-        else if (t === 'mano') FX.mano(d.i, d.x, d.y);
+        else if (t === 'mano') { const i = d.i === 1 ? 1 : 0; manoTarget[i] = { x: d.x, y: d.y, t: performance.now() }; }
         else if (t === 'combo') FX.combo();
         else if (t === 'laser') FX.laserOn(d);
         else if (t === 'laserOff') FX.laserOff();
@@ -107,11 +109,25 @@
       window.addEventListener('resize', ridimensiona);
       ridimensiona();
 
+      // emette il trail delle mani interpolato (liscio) verso l'ultimo dato ricevuto
+      function emettiTrail(now) {
+        const FX = window.SB_FX; if (!FX) return;
+        for (let i = 0; i < 2; i++) {
+          const tg = manoTarget[i];
+          if (tg && now - tg.t < 250) {
+            if (!manoSmooth[i]) manoSmooth[i] = { x: tg.x, y: tg.y };
+            manoSmooth[i].x += (tg.x - manoSmooth[i].x) * 0.4;
+            manoSmooth[i].y += (tg.y - manoSmooth[i].y) * 0.4;
+            FX.mano(i, manoSmooth[i].x, manoSmooth[i].y);
+          } else manoSmooth[i] = null;
+        }
+      }
       let _lastTick = 0;
       function loop() {
         const W = fx.width, H = fx.height;
         ctx.clearRect(0, 0, W, H);
         const now = performance.now(), dt = now - (_lastTick || now); _lastTick = now;
+        emettiTrail(now);
         // effetti cinematici (sotto), poi la UI dei giochi (sopra, leggibile)
         if (window.SB_FX) { try { window.SB_FX.aggiornaEDisegna(ctx, W, H, dt); } catch { /* niente */ } }
         if (gameFn) { try { gameFn({ hands: lastGesto ? [{ g: lastGesto }] : [], faces: lastEmo ? [{ emo: lastEmo }] : [], ctx, W, H }); } catch { /* niente */ } }

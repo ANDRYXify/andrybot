@@ -83,17 +83,17 @@
     FX.suoni(E.suoni !== false); FX.abilitaCombo(E.combo !== false);
     // sensibilità 1..10 → soglie (più alta = pose più facili da attivare)
     const sens = Number(E.sensibilita) || 5;
-    const chargeMax = 0.16 + (sens - 5) * 0.008;   // mani "unite": finestra più larga
-    const fulmineMin = 0.38 - (sens - 5) * 0.012;  // mani "lontane": basta meno distanza
+    const chargeMax = 0.17 + (sens - 5) * 0.008;   // mani "unite": finestra più larga
+    const fulmineMin = 0.33 - (sens - 5) * 0.014;  // mani "lontane": basta meno distanza
     firedKame = false;
     const M = (hands || []).slice(0, 2).map((h) => { const c = centro(h); const tip = puntaIndice(h, c, W, H); return { nx: c.x / W, ny: c.y / H, tx: tip.x, ty: tip.y, open: T.rilevaGesto ? T.rilevaGesto(h) : '' }; });
 
     // TRAIL — anteprima locale fluida; all'overlay solo se la mano si MUOVE (~12fps)
     if (E.trail !== false) {
       M.forEach((m, i) => FX.mano(i, m.nx, m.ny));
-      if (now - lastMano > 80) {
+      if (now - lastMano > 33) {                     // ~30fps: trail fluido
         lastMano = now;
-        M.forEach((m, i) => { const l = manoInviata[i]; if (!l || Math.hypot(m.nx - l.x, m.ny - l.y) > 0.012) { manoInviata[i] = { x: m.nx, y: m.ny }; T.inviaFx({ tipo: 'mano', i, x: m.nx, y: m.ny }); } });
+        M.forEach((m, i) => { const l = manoInviata[i]; if (!l || Math.hypot(m.nx - l.x, m.ny - l.y) > 0.006) { manoInviata[i] = { x: m.nx, y: m.ny }; T.inviaFx({ tipo: 'mano', i, x: m.nx, y: m.ny }); } });
       }
     }
 
@@ -103,11 +103,11 @@
       if (E.kamehameha !== false) {
         if (dist < chargeMax) {                       // mani unite = carica
           if (!charge) charge = { t0: now };
-          charge.liv = Math.min(1, (now - charge.t0) / 1800);
+          charge.liv = Math.min(1, (now - charge.t0) / 900);   // carica rapida
           FX.caricaSu({ x: midx, y: midy, liv: charge.liv });
-          if (now - lastCarica > 90) { lastCarica = now; T.inviaFx({ tipo: 'carica', x: midx, y: midy, liv: charge.liv }); }
-        } else if (charge && dist > 0.30) {           // rilascio = raggio
-          if (charge.liv > 0.22) {
+          if (now - lastCarica > 45) { lastCarica = now; T.inviaFx({ tipo: 'carica', x: midx, y: midy, liv: charge.liv }); }
+        } else if (charge && dist > 0.28) {           // rilascio = raggio
+          if (charge.liv > 0.15) {
             const ang = Math.atan2(midy - 0.5, midx - 0.5);
             const p = { x: midx, y: midy, dx: Math.cos(ang), dy: Math.sin(ang), forza: charge.liv };
             FX.spara(p); T.inviaFx({ tipo: 'spara', ...p }); firedKame = true;
@@ -116,7 +116,7 @@
         }
       } else if (charge) { FX.caricaGiu(); T.inviaFx({ tipo: 'caricaGiu' }); charge = null; }
       // FULMINI — due mani aperte e lontane
-      if (E.fulmini !== false && !charge && M[0].open === 'openpalm' && M[1].open === 'openpalm' && dist > fulmineMin && now - lastFulmine > 120) {
+      if (E.fulmini !== false && !charge && M[0].open === 'openpalm' && M[1].open === 'openpalm' && dist > fulmineMin && now - lastFulmine > 90) {
         lastFulmine = now;
         const p = { ax: M[0].nx, ay: M[0].ny, bx: M[1].nx, by: M[1].ny };
         FX.spawn('fulmine', p); T.inviaFx({ tipo: 'fulmine', ...p });
@@ -144,8 +144,8 @@
       const rect = { ax: M[0].tx, ay: M[0].ty, bx: M[1].tx, by: M[1].ty };
       if (!framingT) framingT = now;
       FX.mirinoOn(rect);
-      if (now - lastMirino > 90) { lastMirino = now; T.inviaFx({ tipo: 'mirino', ...rect }); }
-      if (now - framingT > 800) {                       // tenuta → scatto
+      if (now - lastMirino > 50) { lastMirino = now; T.inviaFx({ tipo: 'mirino', ...rect }); }
+      if (now - framingT > 550) {                       // tenuta → scatto
         scattoArmato = false; framingT = 0;
         FX.mirinoGiu(); T.inviaFx({ tipo: 'mirinoGiu' });
         const thumb = catturaRitaglio(rect, E.specchio !== false);
@@ -159,7 +159,7 @@
 
     // ── PUZZLE (Fase 4): manda il PUNTATORE (pinch) all'overlay, dove gira il
     // gioco "aggancia-e-segui". Solo se il puzzle è acceso dal pannello, ~20fps.
-    if (E.puzzle === true && hands && hands[0] && now - lastPuntatore > 50) {
+    if (E.puzzle === true && hands && hands[0] && now - lastPuntatore > 33) {
       const pz = pinch(hands[0], sens);
       if (pz) { lastPuntatore = now; T.inviaFx({ tipo: 'puntatore', x: pz.x / W, y: pz.y / H, liv: pz.giu ? 1 : 0 }); }
     }
@@ -177,7 +177,7 @@
         if (vicino && !snapReady) { snapReady = true; snapReadyT = now; }
         else if (!vicino && snapReady) {
           snapReady = false;
-          if (now - snapReadyT < 450 && now - lastSnap > 1200) { lastSnap = now; const x = gx(k[12]) / W, y = gy(k[12]) / H; FX.spawn('snap', { x, y }); T.inviaFx({ tipo: 'snap', x, y }); }
+          if (now - snapReadyT < 550 && now - lastSnap > 900) { lastSnap = now; const x = gx(k[12]) / W, y = gy(k[12]) / H; FX.spawn('snap', { x, y }); T.inviaFx({ tipo: 'snap', x, y }); }
         }
       }
     } else snapReady = false;
@@ -187,7 +187,7 @@
     // tinge gli effetti (slow-motion cinematografico dello strato effetti).
     if (E.freeze !== false && M.length === 2 && M[0].open === 'victory' && M[1].open === 'victory') {
       if (!freezeT) freezeT = now;
-      if (freezeArmato && now - freezeT > 600 && now - lastFreeze > 3000) { freezeArmato = false; lastFreeze = now; FX.congela(2.5); T.inviaFx({ tipo: 'freeze' }); }
+      if (freezeArmato && now - freezeT > 450 && now - lastFreeze > 3000) { freezeArmato = false; lastFreeze = now; FX.congela(2.5); T.inviaFx({ tipo: 'freeze' }); }
     } else { freezeT = 0; freezeArmato = true; }
 
     // ── EFFETTI SUL VISO (Fase 2): laser occhi (sorpresa), fuoco bocca (bocca
