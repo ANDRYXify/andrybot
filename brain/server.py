@@ -190,6 +190,17 @@ class Handler(BaseHTTPRequestHandler):
             situ = str(d.get("situazione") or "").strip()
             if situ:
                 ctx["situazione"] = situ[:200]
+            # MODULI del "manuale umano" pertinenti a QUESTO momento (max 2-3): il bot
+            # applica ciò che ha imparato su come reagire alle emozioni/situazioni umane.
+            # Solo in live (nei modi privati il ragionamento è già disteso).
+            if modo == "live":
+                try:
+                    storia_txt = " ".join(r.get("testo", "") for r in ctx.get("storia", []))[:400]
+                    scelti = mente.seleziona_moduli(testo, storia_txt, k=2)
+                    if scelti:
+                        ctx["moduli"] = scelti
+                except Exception:
+                    pass
             # personhood: nome della "persona" (dall'anima) e spunto per il proattivo
             nb = str(d.get("nome_bot") or "").strip()
             if nb:

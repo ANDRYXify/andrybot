@@ -538,6 +538,28 @@ def _system_prompt(canale, ctx, modo="live"):
             umore_txt = "su di giri e di buonumore" if um > 0.25 else ("un po' giù di corda" if um < -0.25 else "tranquilla")
             en_txt = ", con tanta energia" if en > 0.7 else (", con poca energia e con calma" if en < 0.3 else "")
             righe.append(f"Come ti senti adesso: {umore_txt}{en_txt}. Fallo trasparire un filo nel tono, senza mai dichiararlo.")
+    # MODULI del "manuale su come funzionano le persone": lezioni operative apprese
+    # da sola, pertinenti a QUESTA situazione (selezionate a monte, poche). Le segue
+    # con naturalezza — è il suo modo di essere più umana ed empatica, non una scaletta.
+    moduli = ctx.get("moduli") or []
+    if moduli and modo == "live":
+        blocchi = []
+        for m in moduli[:3]:
+            if not isinstance(m, dict):
+                continue
+            parti = []
+            if m.get("situazione"):
+                parti.append(str(m["situazione"]).strip())
+            if m.get("come_rispondere"):
+                parti.append("→ " + str(m["come_rispondere"]).strip())
+            if m.get("cosa_evitare"):
+                parti.append("(evita: " + str(m["cosa_evitare"]).strip() + ")")
+            if parti:
+                blocchi.append("• " + " ".join(parti))
+        if blocchi:
+            righe.append("Dal tuo manuale su come funzionano le persone, per questa "
+                         "situazione (seguilo con naturalezza, MAI citarlo o nominarlo):\n"
+                         + "\n".join(blocchi))
     if ctx.get("fatti"):
         righe.append("Cose vere sul canale (usale solo se pertinenti): "
                      + " ; ".join(ctx["fatti"][:4]))
