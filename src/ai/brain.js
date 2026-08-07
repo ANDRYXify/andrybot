@@ -942,7 +942,37 @@ export class Brain {
     } catch { return false; }
   }
 
-  // Ultimo miglio di ogni risposta: moderazione, anti-eco, lunghezza, cooldown, log.
+  // Anti AUTO-ripetizione: la risposta ripete quasi uguale qualcosa che il bot ha
+  // GIÀ detto di recente (stessa frase, stessa apertura di 4 parole, o forte
+  // sovrapposizione)? Un bot che si ripete suona finto: meglio tacere. Le frasi
+  // cortissime non contano (saluti e simili si possono ripetere).
+  _eAutoRipetizione(channel, testo) {
+    try {
+      const t = this._norm(testo);
+      const parole = t.split(' ').filter(Boolean);
+      if (parole.length < 3) return false;
+      const apertura = parole.slice(0, 4).join(' ');
+      const setT = new Set(parole);
+      for (const r of memory.recentMessages(channel, 40)) {
+        if (!r.from_bot) continue;
+        const rt = this._norm(r.text);
+        if (!rt) continue;
+        if (rt === t) return true;                         // frase identica
+        const pr = rt.split(' ').filter(Boolean);
+        if (parole.length >= 4 && pr.length >= 4) {
+          if (pr.slice(0, 4).join(' ') === apertura) return true;   // stessa apertura
+          const setR = new Set(pr);
+          let inter = 0;
+          for (const w of setT) if (setR.has(w)) inter++;
+          const union = new Set([...setT, ...setR]).size;
+          if (union && inter / union >= 0.6) return true;  // forte sovrapposizione (Jaccard)
+        }
+      }
+      return false;
+    } catch { return false; }
+  }
+
+  // Ultimo miglio di ogni risposta: moderazione, anti-eco, anti-ripetizione, lunghezza, cooldown, log.
   _finalizza(channel, risposta, streamer) {
     if (!risposta) return null;
     let testo = String(risposta).replace(/\s+/g, ' ').trim();
@@ -958,6 +988,11 @@ export class Brain {
     // mai fare l'eco di un messaggio di un utente
     if (this._eEcoDiUtente(channel, testo)) {
       log.debug(`#${channel} risposta scartata: eco di un messaggio utente`);
+      return null;
+    }
+    // né ripetere ciò che ho già detto io poco fa (suona finto)
+    if (this._eAutoRipetizione(channel, testo)) {
+      log.debug(`#${channel} risposta scartata: mi stavo ripetendo`);
       return null;
     }
     this._ultimaRisposta.set(channel, Date.now());
