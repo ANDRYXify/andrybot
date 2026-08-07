@@ -14,6 +14,7 @@ continuità e la crescita vengono da qui.
 """
 import os
 import re
+import json
 import time
 import sqlite3
 import threading
@@ -30,6 +31,41 @@ def _now():
 
 def _norm(s):
     return re.sub(r"\s+", " ", (s or "").strip().lower())
+
+
+def _lista_json(v, maxn, maxlen, minuscolo=False):
+    """Normalizza un valore (lista, stringa JSON o stringa) in una lista di
+    stringhe pulite, troncata a maxn elementi e maxlen caratteri l'una."""
+    if isinstance(v, str):
+        try:
+            v = json.loads(v)
+        except Exception:
+            v = [v]
+    if not isinstance(v, list):
+        v = []
+    out = []
+    for x in v:
+        s = re.sub(r"\s+", " ", str(x)).strip()[:maxlen]
+        if minuscolo:
+            s = s.lower()
+        if s:
+            out.append(s)
+        if len(out) >= maxn:
+            break
+    return out
+
+
+def _riga_modulo(r):
+    """Riga SQLite → dict, con i campi JSON (segnali/esempi/chiavi) deserializzati."""
+    d = dict(r)
+    for k in ("segnali", "esempi", "chiavi"):
+        try:
+            d[k] = json.loads(d.get(k) or "[]")
+        except Exception:
+            d[k] = []
+        if not isinstance(d[k], list):
+            d[k] = []
+    return d
 
 
 class Coscienza:
@@ -72,8 +108,32 @@ class Coscienza:
                     socievolezza REAL DEFAULT 0.5,
                     nati_il INTEGER, aggiornato INTEGER
                 );
+                -- MODULI: il "manuale di come funziona un essere umano". GLOBALE
+                -- (una sola raccolta per Lia, condivisa da tutti i canali: la
+                -- psicologia umana non cambia da streamer a streamer). Ogni modulo
+                -- è una lezione operativa e azionabile su una situazione umana.
+                CREATE TABLE IF NOT EXISTS moduli (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    dominio TEXT DEFAULT 'emozioni',
+                    nome TEXT NOT NULL,                 -- il nome della lacuna (univoco)
+                    situazione TEXT DEFAULT '',
+                    segnali TEXT DEFAULT '[]',          -- JSON: segnali da riconoscere
+                    come_rispondere TEXT DEFAULT '',
+                    cosa_evitare TEXT DEFAULT '',
+                    esempi TEXT DEFAULT '[]',           -- JSON: 0-2 mini esempi
+                    chiavi TEXT DEFAULT '[]',           -- JSON: parole normalizzate per il match
+                    fonte TEXT DEFAULT '',
+                    qualita REAL DEFAULT 0.5,
+                    stato TEXT DEFAULT 'bozza',         -- bozza | attivo | sospeso
+                    usi INTEGER DEFAULT 0,
+                    successi INTEGER DEFAULT 0,
+                    fallimenti INTEGER DEFAULT 0,
+                    creato INTEGER, aggiornato INTEGER
+                );
                 CREATE INDEX IF NOT EXISTS i_ricordi ON ricordi(canale, login, ts);
                 CREATE INDEX IF NOT EXISTS i_scambi ON scambi(canale, login, ts);
+                CREATE UNIQUE INDEX IF NOT EXISTS i_moduli_nome ON moduli(nome);
+                CREATE INDEX IF NOT EXISTS i_moduli_stato ON moduli(dominio, stato);
                 """
             )
             self.db.commit()
@@ -258,3 +318,74 @@ class Coscienza:
         with _lock:
             righe = self.db.execute("SELECT canale FROM stato").fetchall()
             return [r["canale"] for r in righe]
+
+    # ------------------------------------------------------ MODULI (manuale umano)
+    # Il "manuale di come funziona un essere umano": moduli operativi GLOBALI (una
+    # sola raccolta, condivisa da tutti i canali). Qui c'è solo lo storage; lo
+    # studio dal web, la selezione e la revisione arrivano nei pezzi successivi.
+
+    def salva_modulo(self, m):
+        """Crea o aggiorna (chiave: nome) un modulo. Alla revisione conserva i
+        contatori d'uso e la data di creazione. Ritorna il modulo salvato o None."""
+        nome = _norm(m.get("nome"))
+        if not nome:
+            return None
+        dominio = (str(m.get("dominio") or "emozioni").strip() or "emozioni")[:40]
+        situazione = str(m.get("situazione") or "").strip()[:500]
+        come = str(m.get("come_rispondere") or "").strip()[:600]
+        evita = str(m.get("cosa_evitare") or "").strip()[:500]
+        segnali = json.dumps(_lista_json(m.get("segnali"), 8, 120), ensure_ascii=False)
+        esempi = json.dumps(_lista_json(m.get("esempi"), 3, 200), ensure_ascii=False)
+        chiavi = json.dumps(_lista_json(m.get("chiavi"), 24, 40, minuscolo=True), ensure_ascii=False)
+        fonte = str(m.get("fonte") or "").strip()[:60]
+        try:
+            qualita = max(0.0, min(1.0, float(m.get("qualita", 0.5))))
+        except Exception:
+            qualita = 0.5
+        stato = m.get("stato") if m.get("stato") in ("bozza", "attivo", "sospeso") else "bozza"
+        ora = _now()
+        with _lock:
+            gia = self.db.execute("SELECT id FROM moduli WHERE nome=?", (nome,)).fetchone()
+            if gia:
+                self.db.execute(
+                    "UPDATE moduli SET dominio=?, situazione=?, segnali=?, come_rispondere=?, "
+                    "cosa_evitare=?, esempi=?, chiavi=?, fonte=?, qualita=?, stato=?, aggiornato=? "
+                    "WHERE nome=?",
+                    (dominio, situazione, segnali, come, evita, esempi, chiavi, fonte,
+                     qualita, stato, ora, nome),
+                )
+            else:
+                self.db.execute(
+                    "INSERT INTO moduli(dominio, nome, situazione, segnali, come_rispondere, "
+                    "cosa_evitare, esempi, chiavi, fonte, qualita, stato, creato, aggiornato) "
+                    "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (dominio, nome, situazione, segnali, come, evita, esempi, chiavi, fonte,
+                     qualita, stato, ora, ora),
+                )
+            self.db.commit()
+        return self.modulo(nome)
+
+    def modulo(self, nome):
+        with _lock:
+            r = self.db.execute("SELECT * FROM moduli WHERE nome=?", (_norm(nome),)).fetchone()
+        return _riga_modulo(r) if r else None
+
+    def moduli(self, dominio=None, stato=None):
+        q, cond, args = "SELECT * FROM moduli", [], []
+        if dominio:
+            cond.append("dominio=?"); args.append(str(dominio))
+        if stato:
+            cond.append("stato=?"); args.append(str(stato))
+        if cond:
+            q += " WHERE " + " AND ".join(cond)
+        q += " ORDER BY qualita DESC, id ASC"
+        with _lock:
+            righe = self.db.execute(q, tuple(args)).fetchall()
+        return [_riga_modulo(r) for r in righe]
+
+    def conta_moduli(self, stato=None):
+        with _lock:
+            if stato:
+                return self.db.execute(
+                    "SELECT COUNT(*) c FROM moduli WHERE stato=?", (stato,)).fetchone()["c"]
+            return self.db.execute("SELECT COUNT(*) c FROM moduli").fetchone()["c"]
