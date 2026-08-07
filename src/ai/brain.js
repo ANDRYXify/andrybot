@@ -378,6 +378,30 @@ export class Brain {
     }
   }
 
+  // MEMORIA A BREVE TERMINE della conversazione: le ultime righe della chat del
+  // canale (chi ha detto cosa, incluse le mie risposte). Serve al cervello per
+  // capire il DISCORSO in corso quando viene tirato in ballo — non solo l'ultima
+  // frase. Compatta: niente comandi, righe corte, salta il messaggio attuale (già
+  // passato come `testo`). Ritorna al massimo ~8 righe in ordine cronologico.
+  _storiaRecente(channel, testoCorrente) {
+    try {
+      const corr = this._norm(testoCorrente);
+      const righe = memory.recentMessages(channel, 18) || [];
+      const out = [];
+      for (const r of righe) {
+        const t = String(r.text || '').replace(/\s+/g, ' ').trim();
+        if (!t || t.startsWith('!')) continue;                       // niente comandi
+        if (!r.from_bot && this._norm(t) === corr) continue;         // è il messaggio attuale
+        out.push({
+          nome: r.from_bot ? 'io' : String(r.display || r.user || 'utente').slice(0, 24),
+          testo: t.slice(0, 160),
+          io: !!r.from_bot,
+        });
+      }
+      return out.slice(-8);
+    } catch { return []; }
+  }
+
   // Impara dalla COMMUNITY in uno spazio pubblico (chat di GRUPPO Telegram, come
   // dalla chat Twitch): nutre SOLO la coscienza (persone/fatti), MAI lo stile
   // personale. Ammesso perché i gruppi sono pubblici; in privato invece nulla.
@@ -765,6 +789,7 @@ export class Brain {
         const risposta = await brainpy.rispondi({
           canale: streamer.display || channel, login: user, nome, testo: text, tono, conoscenza,
           stile: this._stileStreamer(channel),   // la voce vera dello streamer (esempi di stile)
+          storia: this._storiaRecente(channel, text),   // il discorso in corso in chat (memoria a breve termine)
           lineeGuida: guide.applicabili(channel, { piattaforma: 'twitch', privato: false, sonoIo: false }),   // regole valide in chat pubblica
         });
         if (risposta) return this._finalizza(channel, risposta, streamer);
