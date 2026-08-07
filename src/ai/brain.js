@@ -917,23 +917,33 @@ export class Brain {
         if (risposta) return this._finalizza(channel, risposta, streamer);
       }
 
-      // ---- d. FALLBACK quando il modello non è pronto ------------------
-      // (primo avvio: sta ancora scaricando/caricando il modello, oppure non è
-      // installato). Niente personalità finta: solo un'onestà se ci citano con
-      // una domanda; altrimenti silenzio. Appena il modello è pronto, parla lui.
-      if (menziona && text.includes('?')) {
-        // prima di arrendersi: se ha internet, prova a cercare la risposta da sé
-        if (this._internetOn(channel)) {
-          const web = await this._cercaWeb(channel, text);
-          if (web) {
-            const r = await brainpy.rispondi({
-              canale: streamer.display || channel, login: user, nome, testo: text, tono, web,
-              lineeGuida: guide.applicabili(channel, { piattaforma: 'twitch', privato: false, sonoIo: false }), stile: this._stileStreamer(channel), timeoutMs: 12000,
-            });
-            if (r) return this._finalizza(channel, r, streamer);
+      // ---- d. FALLBACK quando il modello non è pronto/è lento ----------
+      // (primo avvio: sta scaricando/caricando il modello; oppure è lento o assente).
+      // DEGRADAZIONE ELEGANTE: se mi hanno CHIAMATO non lascio mai a vuoto. Con una
+      // domanda provo il web e sennò ammetto con garbo; con un semplice richiamo
+      // rispondo con un cenno (saluto/eccomi). Appena il modello è pronto, parla lui.
+      if (menziona) {
+        if (text.includes('?')) {
+          // prima di arrendersi: se ha internet, prova a cercare la risposta da sé
+          if (this._internetOn(channel)) {
+            const web = await this._cercaWeb(channel, text);
+            if (web) {
+              const r = await brainpy.rispondi({
+                canale: streamer.display || channel, login: user, nome, testo: text, tono, web,
+                storia: this._storiaRecente(channel, text),
+                lineeGuida: guide.applicabili(channel, { piattaforma: 'twitch', privato: false, sonoIo: false }),
+                stile: this._stileStreamer(channel), timeoutMs: 12000,
+              });
+              if (r) return this._finalizza(channel, r, streamer);
+            }
           }
+          return this._finalizza(channel, compila(scegli(NON_LO_SO), variabili), streamer);
         }
-        return this._finalizza(channel, compila(scegli(NON_LO_SO), variabili), streamer);
+        // mi hanno chiamato senza una domanda: rispondo comunque con un cenno
+        // (mai ignorare chi mi nomina), scegliendo tra saluto ed "eccomi".
+        const salutato = /(^|[^a-z])(ciao|ehi|hey|buongiorno|buonasera|buond[iì]|salve|weil[aà]|hola)([^a-z]|$)/.test(lower);
+        const pool = (salutato ? SALUTI : ECCOMI)[tono] || ECCOMI.scherzoso;
+        return this._finalizza(channel, compila(scegli(pool), variabili), streamer);
       }
       return null;
     } catch (e) {
