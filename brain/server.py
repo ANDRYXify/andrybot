@@ -103,6 +103,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._osserva()
         if self.path.startswith("/distilla"):
             return self._distilla()
+        if self.path.startswith("/impara_modulo"):
+            return self._impara_modulo()
         if self.path.startswith("/ricarica"):
             return self._ricarica()
         if self.path.startswith("/prova"):
@@ -197,6 +199,26 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, {"risposta": risposta})
         except Exception as e:
             return self._json(200, {"risposta": None, "errore": str(e)[:120]})
+
+    def _impara_modulo(self):
+        # AUTO-APPRENDIMENTO: studia una situazione umana e ne ricava un MODULO
+        # operativo (non un riassunto), che salva nel "manuale" GLOBALE. La ricerca
+        # web la fa il bot Node (dove vive l'accesso a internet) e passa qui lo
+        # `web`; qui c'è la sintesi (il maestro) + il salvataggio in coscienza.
+        d = self._leggi()
+        nome = str(d.get("nome") or "").strip()
+        dominio = (str(d.get("dominio") or "emozioni").strip() or "emozioni")
+        web = str(d.get("web") or "").strip()
+        if not nome:
+            return self._json(400, {"errore": "nome mancante"})
+        try:
+            mod = G.sintetizza_modulo(nome, web, dominio=dominio)
+            if not mod:
+                return self._json(200, {"ok": False, "motivo": "sintesi non riuscita (cervello non pronto o output non valido)"})
+            salvato = mente.salva_modulo(mod)
+            return self._json(200, {"ok": bool(salvato), "modulo": salvato})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
     def _ricarica(self):
         # cambia modello a caldo (in base a data/llm.json aggiornato dalla dashboard)

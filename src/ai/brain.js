@@ -580,6 +580,28 @@ export class Brain {
     } catch (e) { log.debug('forgia:', e?.message || e); return { colmate: 0 }; }
   }
 
+  // AUTO-APPRENDIMENTO — studia UNA pagina del "manuale su come funzionano le
+  // persone". Cerca online l'argomento (la lacuna), applica un filtro qualità
+  // minimo (la fonte deve avere sostanza), poi chiede al cervello di SINTETIZZARE
+  // un modulo operativo (non un riassunto) e lo salva. Il manuale è GLOBALE (una
+  // sola raccolta, non per canale). Ritorna il modulo salvato o null; non lancia.
+  async studiaModulo(nomeLacuna, { dominio = 'emozioni', query = '', diarioCanale = '' } = {}) {
+    try {
+      const nome = String(nomeLacuna || '').trim();
+      if (!nome) return null;
+      let web = null;
+      try { web = await internet.cerca(query || nome); } catch { web = null; }
+      // filtro qualità minimo: la fonte deve avere sostanza, altrimenti si sintetizza
+      // dal solo buon senso (il cervello lo segna fonte='buonsenso', qualità più bassa).
+      const fonte = (web && String(web).trim().length >= 120) ? String(web).trim() : '';
+      const mod = await brainpy.imparaModulo({ nome, dominio, web: fonte });
+      if (mod && diarioCanale) {
+        try { diario.add(diarioCanale, 'modulo', `Ho studiato una pagina del mio manuale umano: «${nome}»`); } catch { /* niente */ }
+      }
+      return mod;
+    } catch (e) { log.debug('studiaModulo:', e?.message || e); return null; }
+  }
+
   // MESSAGGIO PROATTIVO (Telegram, chat privata col proprietario): scrive LEI per
   // prima, di sua iniziativa. La curiosità nasce dalle LACUNE della rete (le cose
   // che non sa ancora): così è naturale che te le venga a chiedere — e imparando la
