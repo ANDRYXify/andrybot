@@ -73,8 +73,20 @@ export function createMessageHandler({ chat, brain, botLogin }) {
 
     // f. per tutto il resto decide il cervello: se e cosa rispondere
     if (brain.shouldReply({ channel, botLogin, user, text, streamer, isSelf })) {
+      const t0 = Date.now();
       const risposta = await brain.chatReply({ channel, user, display, text, streamer, botLogin });
-      if (risposta) chat.say(channel, risposta);
+      if (risposta) {
+        // RITMO UMANO: una risposta non deve comparire in modo robotico-istantaneo
+        // (il percorso veloce del cervello risponde in pochi ms). La portiamo a un
+        // minimo "da persona che legge e scrive" — proporzionale alla lunghezza, con
+        // un pizzico di variabilità — MA senza aggiungere attesa se il cervello ci ha
+        // già messo del suo (così non si sacrifica la reattività quando genera davvero).
+        const trascorso = Date.now() - t0;
+        const target = Math.min(2800, 700 + risposta.length * 26) * (0.85 + Math.random() * 0.3);
+        const attesa = Math.max(0, Math.round(target) - trascorso);
+        if (attesa > 0) await new Promise((r) => setTimeout(r, attesa));
+        chat.say(channel, risposta);
+      }
     }
   };
 }
