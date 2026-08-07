@@ -402,6 +402,19 @@ export class Brain {
     } catch { return []; }
   }
 
+  // COSCIENZA DEL MOMENTO: com'è la diretta ADESSO (gioco, titolo, spettatori,
+  // uptime, live sì/no). Usa la "vista" già in cache dell'osservatore live
+  // (aggiornata ogni 2 min): ZERO chiamate a Helix qui → nessun rischio limiti.
+  // Ritorna una stringa compatta o null.
+  _situazione(channel) {
+    try {
+      const ctx = memory.streamContext(channel);   // "In live su X: ... da Yh Zm" oppure null = offline
+      if (ctx) return String(ctx).slice(0, 200);
+      const gioco = memory.facts(channel).find((f) => f.key === 'gioco_recente')?.value;
+      return gioco ? ('Ora offline (ultima diretta su ' + String(gioco).slice(0, 60) + ')') : 'Ora offline';
+    } catch { return null; }
+  }
+
   // Impara dalla COMMUNITY in uno spazio pubblico (chat di GRUPPO Telegram, come
   // dalla chat Twitch): nutre SOLO la coscienza (persone/fatti), MAI lo stile
   // personale. Ammesso perché i gruppi sono pubblici; in privato invece nulla.
@@ -790,6 +803,7 @@ export class Brain {
           canale: streamer.display || channel, login: user, nome, testo: text, tono, conoscenza,
           stile: this._stileStreamer(channel),   // la voce vera dello streamer (esempi di stile)
           storia: this._storiaRecente(channel, text),   // il discorso in corso in chat (memoria a breve termine)
+          situazione: this._situazione(channel),   // com'è la diretta adesso (gioco/live/uptime) — coscienza del momento
           lineeGuida: guide.applicabili(channel, { piattaforma: 'twitch', privato: false, sonoIo: false }),   // regole valide in chat pubblica
         });
         if (risposta) return this._finalizza(channel, risposta, streamer);

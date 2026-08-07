@@ -503,6 +503,23 @@ def _system_prompt(canale, ctx, modo="live"):
                 "(le righe 'io:' sono TUE; NON rispondere a ogni riga, rispondi solo a "
                 "chi ti ha appena scritto e resta sul filo del discorso):\n" + "\n".join(linee)
             )
+    # SITUAZIONE: com'è la diretta ADESSO (gioco/live/uptime). Coscienza del momento:
+    # così sa se siete live, a cosa giocate e da quanto — e può starci sopra.
+    if ctx.get("situazione") and modo == "live":
+        righe.append("Com'è la diretta in questo momento (usalo se pertinente, non forzarlo): "
+                     + str(ctx["situazione"])[:200])
+    # UMORE del momento: dà un colore emotivo alla risposta (parte della coscienza).
+    # Sfuma nel tempo (si calma da solo). Va fatto TRASPARIRE nel tono, mai dichiarato.
+    if modo == "live":
+        try:
+            um = float(ctx.get("umore") or 0.0)
+            en = float(ctx.get("energia") or 0.5)
+        except Exception:
+            um, en = 0.0, 0.5
+        if um > 0.25 or um < -0.25 or en > 0.7 or en < 0.3:
+            umore_txt = "su di giri e di buonumore" if um > 0.25 else ("un po' giù di corda" if um < -0.25 else "tranquilla")
+            en_txt = ", con tanta energia" if en > 0.7 else (", con poca energia e con calma" if en < 0.3 else "")
+            righe.append(f"Come ti senti adesso: {umore_txt}{en_txt}. Fallo trasparire un filo nel tono, senza mai dichiararlo.")
     if ctx.get("fatti"):
         righe.append("Cose vere sul canale (usale solo se pertinenti): "
                      + " ; ".join(ctx["fatti"][:4]))
