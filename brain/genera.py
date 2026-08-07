@@ -478,12 +478,22 @@ def _system_prompt(canale, ctx, modo="live"):
     # nei modi privati l'interlocutore è già chiarito nel blocco identità (sopra);
     # qui lo aggiungo solo in chat pubblica (live) per non ripetermi/confondermi.
     if p.get("nome") and modo == "live":
+        inter = int(p.get("interazioni") or 0)
+        aff = float(p.get("affinita") or 0)
+        note = str(p.get("note") or "").strip()
         if p.get("nuova"):
-            righe.append(f"Stai parlando con {p['nome']}, che non conosci ancora: accoglila con calore.")
-        elif (p.get("affinita") or 0) >= 0.3:
-            righe.append(f"Stai parlando con {p['nome']}, che ti è simpatico/a e conosci da un po'.")
+            righe.append(f"Stai parlando con {p['nome']}, una faccia nuova che non conosci ancora: accoglila con calore.")
         else:
-            righe.append(f"Stai parlando con {p['nome']}.")
+            quanto = "da tantissimo" if inter >= 40 else ("da un bel po'" if inter >= 12 else "da un po'")
+            calore = ", a cui vuoi bene" if aff >= 0.5 else (", che ti è simpatico/a" if aff >= 0.25 else "")
+            righe.append(
+                f"Stai parlando con {p['nome']}, che conosci {quanto}{calore} "
+                f"(vi siete già scritti {inter} volte). Se torna utile, richiama con naturalezza "
+                f"qualcosa che sai di lui/lei o che vi eravate detti ('l'altra volta dicevi…') — "
+                f"senza sembrare un archivio e senza inventare."
+            )
+        if note:
+            righe.append(f"Cosa sai di {p['nome']}: {note[:200]}.")
     # STORIA: il filo della conversazione appena successa in chat (memoria a breve
     # termine). Serve al modello per capire DI COSA si parla, non solo l'ultima frase.
     storia = ctx.get("storia") or []
@@ -580,7 +590,7 @@ def genera(canale, ctx, testo, timeout_s=30, modo="live"):
     # 2) chiedi al maestro (endpoint esterno se collegato, sennò modello locale)
     try:
         turni = [((mu[:200] if mu else mu), (mb[:200] if mb else mb))
-                 for mu, mb in ctx.get("scambi", [])[-2:]]
+                 for mu, mb in ctx.get("scambi", [])[-3:]]
         # allenamento/studio: più disteso e ragionato; proattiva: messaggio corto
         max_tok = 90 if proattivo else (150 if studio else ((220 if _endpoint_cfg() else 140) if allena else MAX_TOKEN))
         grezzo = _completa(_system_prompt(canale, ctx, modo), turni, testo,
