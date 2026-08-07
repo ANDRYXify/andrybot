@@ -14,6 +14,8 @@ import * as brainpy from './brainpy.js';
 const log = makeLog('brain');
 
 const COOLDOWN_RISPOSTA = 45_000;   // minimo tra due risposte del cervello per canale
+const COOLDOWN_FOLLOWUP = 15_000;   // cooldown ridotto mentre si continua un filo con la stessa persona
+const FOLLOWUP_MS = 120_000;        // per quanto resta "aperto" il filo dopo una risposta
 const COOLDOWN_EVENTO = 10_000;     // minimo tra due annunci dello stesso evento per canale
 const MAX_RISPOSTA = 400;           // lunghezza massima di una risposta
 
@@ -287,11 +289,17 @@ const INTENTI_NOTI = /come va\b|come stai|come butta|come procede|come andiamo|c
 
 // Il messaggio "sembra rispondibile"? Cioè assomiglia a qualcosa che il bot sa
 // già gestire: una domanda ('?'), un intento noto o una parola social/link.
+// Segnali di emozione: quando qualcuno "si apre" (tristezza, ansia, gioia,
+// gratitudine…) il bot ha senso che si faccia vivo con empatia — anche senza
+// menzione — sfruttando il suo "manuale umano".
+const EMOZIONE_CUES = /(^|[^a-z])(trist|gi[uù]\b|piango|piange|depress|ansi|paura|spavent|angosc|arrabbi|incazz|frustrat|felic|content|emozionat|orgoglios|delus|grazie|ti voglio bene|mi manchi|mi sento)/i;
+
 function sembraRispondibile(text) {
   const t = String(text || '').toLowerCase();
   if (!t) return false;
   if (t.includes('?')) return true;
   if (INTENTI_NOTI.test(t)) return true;
+  if (EMOZIONE_CUES.test(t)) return true;
   return PAROLE_SOCIAL.some((p) => t.includes(p));
 }
 
@@ -307,6 +315,7 @@ export class Brain {
     this._ultimoEvento = new Map();     // 'canale|tipo' → ts ultimo annuncio
     this._stileCache = new Map();       // canale → { ts, frasi } (voce dello streamer)
     this._lastDistill = new Map();      // canale → ts ultima distillazione (allenamento)
+    this._conversazione = new Map();    // canale → { user, ts }: con chi sto parlando (per il follow-up)
   }
 
   // Materiale di ALLENAMENTO: le parole vere dello streamer da cui distillare —
@@ -702,15 +711,32 @@ export class Brain {
 
   // ------------------------------------------------------------ shouldReply
 
+  // Segna con chi il bot sta parlando ORA (chi ha appena ricevuto una risposta):
+  // apre la "finestra di follow-up" così, se questa persona ribatte a breve, il bot
+  // continua il filo senza aspettare il cooldown pieno. Chiamato dopo ogni risposta.
+  segnaConversazione(channel, user) {
+    if (!channel || !user) return;
+    this._conversazione.set(channel, { user: String(user).toLowerCase(), ts: Date.now() });
+  }
+
   shouldReply({ channel, botLogin, user, text, streamer, isSelf } = {}) {
     try {
       if (isSelf || !streamer || !channel || !text) return false;
-      if (BOT_NOTI.has(String(user || '').toLowerCase())) return false;
-
-      // respiro: mai due risposte del cervello troppo vicine (i comandi ! non c'entrano)
-      if (Date.now() - (this._ultimaRisposta.get(channel) || 0) < COOLDOWN_RISPOSTA) return false;
+      const uLow = String(user || '').toLowerCase();
+      if (BOT_NOTI.has(uLow)) return false;
 
       const settings = streamer.settings || {};
+      // FOLLOW-UP: sto continuando un filo con la STESSA persona a cui ho appena
+      // risposto (entro la finestra)? Allora il "respiro" tra due risposte è più
+      // corto, così è possibile un vero botta e risposta invece di un colpo solo.
+      const conv = this._conversazione.get(channel);
+      const inFollowUp = !!(conv && uLow && conv.user === uLow
+        && (Date.now() - conv.ts) < FOLLOWUP_MS && settings.rispostaMenzioni !== false);
+
+      // respiro: mai due risposte del cervello troppo vicine (i comandi ! non c'entrano)
+      const cooldown = inFollowUp ? COOLDOWN_FOLLOWUP : COOLDOWN_RISPOSTA;
+      if (Date.now() - (this._ultimaRisposta.get(channel) || 0) < cooldown) return false;
+
       if (menzionaBot(text, botLogin || channel)) return settings.rispostaMenzioni !== false;
 
       // manopola: probabilità base "spontanea" (0 = zitto). Stesso clamp del
@@ -733,6 +759,15 @@ export class Brain {
       // amici: il bot si fa vivo con loro un filo più volentieri (solo se l'autonomia è > 0)
       if (spont > 0 && user && persona.amicizia(user).livello >= 2) {
         p = Math.max(p, Math.min(0.5, spont * 2 + 0.05));
+      }
+
+      // FOLLOW-UP: la persona con cui stavo parlando ribatte (anche senza menzione)
+      // e ha davvero detto qualcosa (non un "ok" secco) → continuo il filo volentieri.
+      // Solo con la chat autonoma accesa (rispetta la manopola: a spontaneità 0 il bot
+      // resta "solo su menzione"), ma con probabilità alta perché è una conversazione viva.
+      if (inFollowUp && spont > 0
+        && (sembraRispondibile(text) || String(text).trim().split(/\s+/).filter(Boolean).length >= 3)) {
+        p = Math.max(p, 0.8);
       }
 
       return Math.random() < p;
