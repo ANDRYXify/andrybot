@@ -170,6 +170,10 @@ class Handler(BaseHTTPRequestHandler):
                     })
                 if righe:
                     ctx["storia"] = righe
+            # SITUAZIONE: com'è la diretta adesso (gioco/live/uptime). Coscienza del momento.
+            situ = str(d.get("situazione") or "").strip()
+            if situ:
+                ctx["situazione"] = situ[:200]
             # personhood: nome della "persona" (dall'anima) e spunto per il proattivo
             nb = str(d.get("nome_bot") or "").strip()
             if nb:
