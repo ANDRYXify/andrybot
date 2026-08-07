@@ -66,6 +66,28 @@ export async function distilla(canale, frasi = []) {
   } finally { clearTimeout(to); }
 }
 
+// AUTO-APPRENDIMENTO: chiede al cervello di sintetizzare e salvare un MODULO del
+// "manuale umano" da un argomento (+ eventuale fonte web già filtrata dal bot).
+// La sintesi usa il maestro e può metterci: timeout ampio. Ritorna il modulo
+// salvato, `true`, oppure null (cervello non pronto / sintesi fallita).
+export async function imparaModulo({ nome, dominio, web } = {}) {
+  if (!nome) return null;
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 60_000);
+  try {
+    const r = await fetch(BASE + '/impara_modulo', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome, dominio, web }), signal: ac.signal,
+    });
+    if (!r.ok) return null;
+    const d = await r.json().catch(() => null);
+    return d && d.ok ? (d.modulo || true) : null;
+  } catch (e) {
+    log.debug('imparaModulo:', e?.message || e);
+    return null;
+  } finally { clearTimeout(to); }
+}
+
 // Nutre la coscienza con ciò che passa in chat (impara persone/fatti). Fire-and-
 // forget: non attende e non blocca nulla.
 export function osserva({ canale, login, nome, testo } = {}) {
