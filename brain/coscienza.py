@@ -68,6 +68,70 @@ def _riga_modulo(r):
     return d
 
 
+# Lessico emozioni (le 6 base di Ekman). Serve a capire QUALE emozione porta un
+# messaggio, così da agganciare il modulo giusto del manuale. Leggero e senza
+# dipendenze: parole/frammenti + emoji. Non è una scienza esatta, è un aggancio.
+_EMO_LEX = {
+    "gioia": ["felic", "content", "gioia", "evviva", "fantastic", "bellissim", "adoro",
+              "che bello", "grande", "hype", "gasat", "carich", "top", "meravigli",
+              "😄", "😁", "😍", "🥳", "🔥", "❤", "😂"],
+    "tristezza": ["trist", "giù", "depress", "sconfort", "piang", "male", "da solo", "sola",
+                  "soffr", "malincon", "vuoto", "delus", "sfigat", "sfortun", "😢", "😭", "😞", "💔", "🥺"],
+    "rabbia": ["arrabbi", "incazz", "rabbia", "furios", "odio", "basta", "nervos", "frustrat",
+               "tilt", "che palle", "vaffa", "rosica", "assurdo che", "😡", "🤬", "😠"],
+    "paura": ["paura", "spavent", "ansia", "ansios", "terror", "preoccup", "angosc", "tremo",
+              "panico", "ho i nervi", "😨", "😰", "😱"],
+    "sorpresa": ["wow", "incredibile", "non ci credo", "assurdo", "ma dai", "shock", "sorpres",
+                 "oddio", "cosa??", "davvero??", "😮", "😲", "🤯"],
+    "disgusto": ["disgust", "schifo", "vomit", "nausea", "orribile", "ributtante", "raccapricc",
+                 "che schifo", "🤮", "🤢"],
+}
+
+
+_TAVOLA_ACCENTI = str.maketrans("àáâãäèéêëìíîïòóôõöùúûü", "aaaaaeeeeiiiiooooouuuu")
+
+
+def _fold(s):
+    """minuscolo, spazi compattati e ACCENTI RIMOSSI: gli utenti scrivono 'giu'
+    per 'giù', 'perche' per 'perché'. Così il match non salta per un accento."""
+    return _norm(s).translate(_TAVOLA_ACCENTI)
+
+
+def rileva_emozione(testo):
+    """Rileva le emozioni presenti in un testo. Ritorna {emozione: conteggio} per
+    le emozioni trovate (vuoto se nessuna). Aggancio lessicale robusto: senza accenti,
+    parole/stem su confine di parola (niente falsi positivi tipo 'giu' in 'giusto'),
+    frasi ed emoji per sottostringa. Non è un giudizio, è un aggancio."""
+    t = _fold(testo)
+    if not t:
+        return {}
+    parole = set(re.findall(r"[a-z0-9]{2,}", t))
+    punteggi = {}
+    for emo, voci in _EMO_LEX.items():
+        s = 0
+        for v in voci:
+            vf = _fold(v)
+            if not vf:
+                # emoji/simbolo (gli accenti non c'entrano): sottostringa sul testo
+                if v in testo:
+                    s += 1
+                continue
+            if " " in vf:
+                # frase multi-parola (es. "da solo", "che palle"): sottostringa
+                if vf in t:
+                    s += 1
+            else:
+                # parola o stem: confine di parola — esatta, o prefisso se lo stem è
+                # abbastanza lungo (>=4) da non generare falsi positivi corti.
+                for w in parole:
+                    if w == vf or (len(vf) >= 4 and w.startswith(vf)):
+                        s += 1
+                        break
+        if s:
+            punteggi[emo] = s
+    return punteggi
+
+
 class Coscienza:
     def __init__(self, db_path=DB_PATH):
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
@@ -389,3 +453,39 @@ class Coscienza:
                 return self.db.execute(
                     "SELECT COUNT(*) c FROM moduli WHERE stato=?", (stato,)).fetchone()["c"]
             return self.db.execute("SELECT COUNT(*) c FROM moduli").fetchone()["c"]
+
+    def seleziona_moduli(self, messaggio, storia="", k=2, soglia=0.35):
+        """Sceglie i POCHI moduli del manuale pertinenti a questo momento (vincolo di
+        budget: solo i rilevanti, mai tutti). Punteggio = emozione + parole chiave +
+        qualità + tasso di successo. Ritorna una lista (0-3) di moduli attivi.
+        Nessun embedding: scoring lessicale (come già altrove nel codice), sostituibile."""
+        testo = (str(messaggio or "") + " " + str(storia or "")).strip()
+        if not testo:
+            return []
+        attivi = self.moduli(stato="attivo")
+        if not attivi:
+            return []
+        emo = rileva_emozione(testo)
+        parole = set(re.findall(r"[a-z0-9]{3,}", _fold(testo)))
+        segnati = []
+        for m in attivi:
+            nome_l = _fold(m.get("nome"))
+            # 1) match emozione: il modulo cita un'emozione rilevata nel messaggio?
+            em_match = 0.0
+            for e, cnt in emo.items():
+                if e in nome_l or e in _fold(m.get("dominio")):
+                    em_match = max(em_match, min(1.0, 0.5 + 0.15 * cnt))
+            # 2) sovrapposizione con le parole chiave del modulo
+            chiavi = set(_fold(x) for x in (m.get("chiavi") or []) if str(x).strip())
+            ov = len(parole & chiavi)
+            ov_score = min(1.0, ov / 3.0) if chiavi else 0.0
+            # 3) affidabilità storica (poco peso finché non ha abbastanza usi)
+            usi = int(m.get("usi") or 0)
+            succ = int(m.get("successi") or 0)
+            tasso = (succ / usi) if usi >= 3 else 0.5
+            punteggio = (0.5 * em_match + 0.3 * ov_score
+                         + 0.1 * float(m.get("qualita") or 0.5) + 0.1 * tasso)
+            if punteggio >= soglia:
+                segnati.append((punteggio, m))
+        segnati.sort(key=lambda x: x[0], reverse=True)
+        return [m for _, m in segnati[:max(1, min(3, int(k)))]]
