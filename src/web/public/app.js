@@ -2488,6 +2488,17 @@ function pannelloStato() {
       <div id="rete-panoramica"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
     </div>
     <div class="carta">
+      <h2>${_hIco(ICO.cervello)}${L('La mente in 3D', 'The mind in 3D', 'La mente en 3D')}</h2>
+      <p>${L('Uno schema tridimensionale del cervello del bot: al centro Lia, attorno la sua logica e — nel suo «manuale su come funzionano le persone» — le emozioni con i moduli che ha imparato. Trascina per ruotare, rotella per lo zoom, clicca un nodo per vedere cosa fa.', 'A three-dimensional map of the bot’s brain: Lia at the center, its logic around her and — in its “manual on how people work” — the emotions with the modules it has learned. Drag to rotate, wheel to zoom, click a node to see what it does.', 'Un esquema tridimensional del cerebro del bot: Lia en el centro, su lógica alrededor y — en su «manual sobre cómo funcionan las personas» — las emociones con los módulos que ha aprendido. Arrastra para rotar, rueda para el zoom, clica un nodo para ver qué hace.')}</p>
+      <div id="mente3d-wrap" style="display:flex;flex-wrap:wrap;gap:14px;margin-top:8px">
+        <div style="position:relative;flex:1 1 340px;min-height:380px;border-radius:14px;overflow:hidden;background:var(--sfondo-lieve,rgba(130,110,220,.06))">
+          <canvas id="mente3d-canvas" style="width:100%;height:100%;display:block"></canvas>
+          <div id="mente3d-legenda" style="position:absolute;left:10px;bottom:10px;font-size:.72em;line-height:1.5;opacity:.92;pointer-events:none"></div>
+        </div>
+        <div id="mente3d-dettaglio" class="suggerimento" style="flex:1 1 240px;align-self:flex-start"></div>
+      </div>
+    </div>
+    <div class="carta">
       <h2>${_hIco(ICO.telefono)}${L('Installa l\'app', 'Install the app', 'Instala la app')}</h2>
       <p>${L('Installa la dashboard', 'Install the dashboard', 'Instala el panel')} <strong class="primo-piano">${L('come app', 'as an app', 'como app')}</strong> ${L('sul telefono o sul PC: la apri a schermo intero come un\'app vera, senza doverla cercare nel browser.', 'on your phone or PC: open it full-screen like a real app, no need to look for it in the browser.', 'en el móvil o el PC: la abres a pantalla completa como una app de verdad, sin buscarla en el navegador.')}</p>
       <p class="spazio-sopra">
@@ -9617,7 +9628,7 @@ async function conErrore(fn) {
 // carica i dati "pigri" della scheda selezionata
 function caricaDatiScheda(id) {
   if (schedaBloccata(id)) return;   // pagina bloccata: nessuna API (darebbe 403)
-  if (id === 'stato') { caricaPasskey(); caricaModeratori(); caricaRetePanoramica(); }
+  if (id === 'stato') { caricaPasskey(); caricaModeratori(); caricaRetePanoramica(); caricaMente3d(); }
   if (id === 'personalita') caricaGuide();
   if (id === 'conoscenza') caricaConoscenza();
   if (id === 'clip') caricaClip();
@@ -11119,6 +11130,108 @@ async function aggiornaRetePanoramica(box, primo) {
     await api('/api/streamer/forgia', { method: 'POST', body: {} });
     toast(L('Ci sto lavorando — studio le mie lacune e distillo. Torna tra poco.', "I'm on it — studying my gaps and distilling. Check back soon.", 'Estoy en ello — estudio mis lagunas y destilo. Vuelve pronto.'));
   }));
+}
+
+// ============================ LA MENTE IN 3D (grafo del cervello) ============================
+let _mente3dCtrl = null;
+const _MENTE_EMOZIONI = [
+  { key: 'gioia', label: 'gioia', color: '#f5c542' },
+  { key: 'tristezza', label: 'tristezza', color: '#4f8ff5' },
+  { key: 'rabbia', label: 'rabbia', color: '#f5544f' },
+  { key: 'paura', label: 'paura', color: '#9b6bf5' },
+  { key: 'sorpresa', label: 'sorpresa', color: '#31c8b0' },
+  { key: 'disgusto', label: 'disgusto', color: '#7bbf4a' },
+];
+
+// costruisce nodi+archi del grafo dai dati della mente (core → logica; manuale →
+// emozioni → moduli). Il modulo si aggancia all'emozione citata nel suo nome.
+function _menteGrafo(d) {
+  const moduli = Array.isArray(d?.moduli) ? d.moduli : [];
+  const nodes = [], links = [];
+  nodes.push({ id: 'core', label: 'Lia', group: 'core', color: '#c4b5fd', size: 22, data: { tipo: 'core', rete: d?.rete || {}, nmod: moduli.length } });
+  const LOG = [
+    ['log:intenti', 'Intenti', L('Dati precisi (gioco, uptime, clip, link): non passano dal modello.', 'Precise data (game, uptime, clip, link): they skip the model.', 'Datos precisos (juego, uptime, clip, enlace): no pasan por el modelo.')],
+    ['log:conoscenza', 'Conoscenza', L('Le risposte curate dal sito e scritte da te.', 'Curated answers from the site and written by you.', 'Respuestas curadas del sitio y escritas por ti.')],
+    ['log:rete', 'Rete', L('Il motore veloce che cresce da solo: risponde all\'istante a ciò che sa.', 'The fast engine that grows on its own: instant answers to what it knows.', 'El motor rápido que crece solo: responde al instante a lo que sabe.')],
+    ['log:ragiona', 'Ragionamento', L('Il cervello logico: deduce dai fatti, non è statistico.', 'The logical brain: it deduces from facts, not statistical.', 'El cerebro lógico: deduce de los hechos, no es estadístico.')],
+    ['log:manuale', 'Manuale', L('Il suo manuale su come funzionano le persone: emozioni e moduli imparati.', 'Its manual on how people work: emotions and learned modules.', 'Su manual sobre cómo funcionan las personas: emociones y módulos aprendidos.')],
+    ['log:maestro', 'Maestro', L('Il modello linguistico (7B locale o endpoint) che mette le parole.', 'The language model (local 7B or endpoint) that puts the words.', 'El modelo lingüístico (7B local o endpoint) que pone las palabras.')],
+  ];
+  for (const [id, label, desc] of LOG) {
+    nodes.push({ id, label, group: 'logica', color: '#8f97ad', size: 12, data: { tipo: 'logica', desc } });
+    links.push({ source: 'core', target: id, rest: 62 });
+  }
+  for (const e of _MENTE_EMOZIONI) {
+    nodes.push({ id: 'emo:' + e.key, label: e.label, group: 'emozione', color: e.color, size: 13, data: { tipo: 'emozione' } });
+    links.push({ source: 'log:manuale', target: 'emo:' + e.key, rest: 82 });
+  }
+  const fold = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  let i = 0;
+  for (const m of moduli) {
+    const nome = fold(m.nome);
+    const e = _MENTE_EMOZIONI.find((x) => nome.includes(x.key));
+    const usi = Number(m.usi) || 0, q = Number(m.qualita) || 0.5;
+    const size = 5 + Math.min(9, usi) * 0.5 + q * 4;
+    const ring = m.stato === 'sospeso' ? '#f5544f' : (m.stato === 'bozza' ? '#e0b23c' : null);
+    nodes.push({ id: 'mod:' + (m.nome || i), label: m.nome || '?', group: 'modulo', color: e ? e.color : '#a99cf0', size, data: { tipo: 'modulo', m, ring } });
+    links.push({ source: e ? 'emo:' + e.key : 'log:manuale', target: 'mod:' + (m.nome || i), rest: 46 });
+    i++;
+  }
+  return { nodes, links };
+}
+
+function _menteLegenda() {
+  const box = document.getElementById('mente3d-legenda');
+  if (!box) return;
+  const dot = (c) => `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${c};margin-right:4px;vertical-align:middle"></span>`;
+  const anello = (c) => `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;border:2px solid ${c};margin-right:4px;vertical-align:middle"></span>`;
+  box.innerHTML = _MENTE_EMOZIONI.map((e) => `${dot(e.color)}${e.label}`).join(' &nbsp; ')
+    + `<br>${dot('#8f97ad')}${L('logica', 'logic', 'lógica')} &nbsp; ${anello('#e0b23c')}${L('bozza', 'draft', 'borrador')} &nbsp; ${anello('#f5544f')}${L('sospeso', 'suspended', 'suspendido')}`;
+}
+
+function _menteDettaglio(sel) {
+  const box = document.getElementById('mente3d-dettaglio');
+  if (!box) return;
+  if (!sel) { box.innerHTML = `<p class="tenue">${L('Clicca un nodo per vedere cosa fa.', 'Click a node to see what it does.', 'Clica un nodo para ver qué hace.')}</p>`; return; }
+  const g = sel.group, dt = sel.data || {};
+  if (g === 'core') {
+    const r = dt.rete || {};
+    box.innerHTML = `<h4 style="margin:.1em 0 .3em">${esc(sel.label)}</h4>
+      <p>${L('La mente del bot', "The bot's mind", 'La mente del bot')}: <strong>${dt.nmod || 0}</strong> ${L('moduli nel manuale', 'modules in the manual', 'módulos en el manual')}.</p>
+      <p class="tenue">${L('Rete', 'Network', 'Red')}: ${r.nodi || 0} ${L('nodi', 'nodes', 'nodos')} · ${Math.round((r.fiducia || 0) * 100)}% ${L('fiducia', 'confidence', 'confianza')}.</p>`;
+    return;
+  }
+  if (g === 'logica') { box.innerHTML = `<h4 style="margin:.1em 0 .3em">${esc(sel.label)}</h4><p>${esc(dt.desc || '')}</p>`; return; }
+  if (g === 'emozione') { box.innerHTML = `<h4 style="margin:.1em 0 .3em">${L('Emozione', 'Emotion', 'Emoción')}: ${esc(sel.label)}</h4><p class="tenue">${L('Attorno trovi i moduli imparati per riconoscerla e rispondere.', 'Around it are the modules learned to recognize it and respond.', 'Alrededor están los módulos aprendidos para reconocerla y responder.')}</p>`; return; }
+  const m = dt.m || {};
+  const badge = m.stato === 'attivo' ? '<span class="badge verde">attivo</span>'
+    : m.stato === 'sospeso' ? '<span class="badge" style="background:#f5544f;color:#fff">sospeso</span>'
+      : '<span class="badge">bozza</span>';
+  const seg = Array.isArray(m.segnali) ? m.segnali : [];
+  box.innerHTML = `<h4 style="margin:.1em 0 .3em">${esc(m.nome || '')}</h4>
+    <p style="margin:.2em 0">${badge} <span class="tenue">${L('usato', 'used', 'usado')} ${m.usi || 0}× · ${m.successi || 0} ✓ / ${m.fallimenti || 0} ✗ · ${Math.round((m.qualita || 0) * 100)}%${m.fonte ? ' · ' + esc(m.fonte) : ''}</span></p>
+    ${m.situazione ? `<p><strong>${L('Quando', 'When', 'Cuándo')}:</strong> ${esc(m.situazione)}</p>` : ''}
+    ${m.come_rispondere ? `<p><strong>${L('Come rispondo', 'How I respond', 'Cómo respondo')}:</strong> ${esc(m.come_rispondere)}</p>` : ''}
+    ${m.cosa_evitare ? `<p><strong>${L('Cosa evito', 'What I avoid', 'Qué evito')}:</strong> ${esc(m.cosa_evitare)}</p>` : ''}
+    ${seg.length ? `<p class="tenue"><strong>${L('Segnali', 'Signals', 'Señales')}:</strong> ${seg.map(esc).join(' · ')}</p>` : ''}`;
+}
+
+// carica i dati della mente e monta il grafo 3D nella carta della Panoramica
+async function caricaMente3d() {
+  const canvas = document.getElementById('mente3d-canvas');
+  if (!canvas || !window.SB_MENTE) return;
+  if (_mente3dCtrl) { try { _mente3dCtrl.destroy(); } catch { /* niente */ } _mente3dCtrl = null; }
+  _menteLegenda();
+  _menteDettaglio(null);
+  let d;
+  try { d = await api('/api/streamer/mente'); }
+  catch { const box = document.getElementById('mente3d-dettaglio'); if (box) box.innerHTML = `<p class="vuoto">${L('Non disponibile ora.', 'Not available now.', 'No disponible ahora.')}</p>`; return; }
+  try {
+    _mente3dCtrl = window.SB_MENTE.crea(canvas, _menteGrafo(d), {
+      dark: (typeof temaScuroAttivo === 'function') ? temaScuroAttivo() : false,
+      onSelect: (n) => _menteDettaglio(n),
+    });
+  } catch (e) { /* il grafo è un extra: se fallisce, la dashboard resta intera */ }
 }
 
 // carica e disegna la gestione del modello IA (solo operatore)

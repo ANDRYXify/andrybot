@@ -205,6 +205,9 @@
     // ---- loop --------------------------------------------------------------
     function tick() {
       if (!running) return;
+      // auto-spegnimento: se il canvas è stato tolto dal DOM (cambio scheda della
+      // SPA) smettiamo e liberiamo i listener — niente RAF sprecati né perdite.
+      if (!canvas.isConnected) { running = false; stacca(); return; }
       passo();
       if (autoRot && !trascino) yaw += 0.0016;
       proietta();
@@ -276,22 +279,26 @@
     canvas.addEventListener('wheel', rotella, { passive: false });
     raf = requestAnimationFrame(tick);
 
+    let staccato = false;
+    function stacca() {
+      if (staccato) return;
+      staccato = true;
+      cancelAnimationFrame(raf);
+      ro?.disconnect();
+      canvas.removeEventListener('mousedown', giu);
+      window.removeEventListener('mousemove', muovi);
+      window.removeEventListener('mouseup', su);
+      canvas.removeEventListener('touchstart', giu);
+      canvas.removeEventListener('touchmove', muovi);
+      canvas.removeEventListener('touchend', su);
+      canvas.removeEventListener('wheel', rotella);
+    }
+
     return {
       aggiorna(d) { carica(d || {}); },
       tema(d) { dark = !!d; },
       seleziona(id) { selId = id || null; alpha = Math.max(alpha, 0.2); },
-      destroy() {
-        running = false;
-        cancelAnimationFrame(raf);
-        ro?.disconnect();
-        canvas.removeEventListener('mousedown', giu);
-        window.removeEventListener('mousemove', muovi);
-        window.removeEventListener('mouseup', su);
-        canvas.removeEventListener('touchstart', giu);
-        canvas.removeEventListener('touchmove', muovi);
-        canvas.removeEventListener('touchend', su);
-        canvas.removeEventListener('wheel', rotella);
-      },
+      destroy() { running = false; stacca(); },
     };
   }
 
