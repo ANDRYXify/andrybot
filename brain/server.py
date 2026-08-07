@@ -70,13 +70,18 @@ class Handler(BaseHTTPRequestHandler):
         return self._json(404, {"errore": "non trovato"})
 
     def _moduli(self):
-        # elenco COMPATTO del "manuale umano" (senza i testi lunghi): serve al bot
-        # per sapere cosa è già stato imparato (seeding) e per un cruscotto.
+        # elenco del "manuale umano". Compatto di default (per il seeding); con
+        # ?full=1 include anche i testi (per il grafo/cruscotto della mente).
+        from urllib.parse import urlparse, parse_qs
+        full = (parse_qs(urlparse(self.path).query).get("full", ["0"])[0] in ("1", "true", "si"))
         try:
-            out = [{"nome": m["nome"], "dominio": m["dominio"], "stato": m["stato"],
-                    "qualita": m["qualita"], "usi": m["usi"],
-                    "successi": m["successi"], "fallimenti": m["fallimenti"]}
-                   for m in mente.moduli()]
+            if full:
+                out = mente.moduli()   # dict completi (situazione/come_rispondere/…)
+            else:
+                out = [{"nome": m["nome"], "dominio": m["dominio"], "stato": m["stato"],
+                        "qualita": m["qualita"], "usi": m["usi"],
+                        "successi": m["successi"], "fallimenti": m["fallimenti"]}
+                       for m in mente.moduli()]
             return self._json(200, {"moduli": out})
         except Exception as e:
             return self._json(200, {"moduli": [], "errore": str(e)[:120]})
