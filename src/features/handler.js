@@ -86,6 +86,9 @@ export function createMessageHandler({ chat, brain, botLogin }) {
         const attesa = Math.max(0, Math.round(target) - trascorso);
         if (attesa > 0) await new Promise((r) => setTimeout(r, attesa));
         chat.say(channel, risposta);
+        // apre la finestra di follow-up: se questa persona ribatte a breve, il bot
+        // continua il filo (cooldown ridotto) invece di rispondere una volta sola.
+        brain.segnaConversazione?.(channel, user);
       }
     }
   };
