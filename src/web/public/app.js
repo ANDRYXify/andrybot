@@ -6499,7 +6499,6 @@ async function caricaEmote7TV() {
       await api('/api/seventv/disconnect', { method: 'POST', body: {} });
       toast(L('7TV scollegato.', '7TV disconnected.', '7TV desconectado.')); caricaEmote7TV();
     }));
-    _svtvCaricaSet();
   } else if (!proprietario) {
     conn.innerHTML = `<p class="suggerimento">${L('7TV non è ancora collegato. Solo il proprietario del canale può collegarlo.', '7TV is not connected yet. Only the channel owner can connect it.', '7TV aún no está conectado. Solo el propietario del canal puede conectarlo.')}</p>`;
   } else {
@@ -6563,6 +6562,10 @@ async function caricaEmote7TV() {
 
   // carica una TUA emote (immagine/gif/video → 7TV)
   document.getElementById('svtv-carica-btn')?.addEventListener('click', () => _svtvCarica());
+
+  // Il set del canale è PUBBLICO: caricalo SEMPRE (collegato o no). Il token 7TV
+  // serve solo per MODIFICARE (aggiungi/togli/rinomina), non per leggere le emote.
+  _svtvCaricaSet();
 }
 
 // Upload multipart di un file → il server lo converte in webp e lo carica su 7TV.
@@ -6627,7 +6630,11 @@ async function _svtvCaricaSet() {
   const testa = `<p><strong>${esc(set.nome || L('Set attivo', 'Active set', 'Set activo'))}</strong>${cap}</p>`;
   if (!emotes.length) { box.innerHTML = testa + `<p class="vuoto">${L('Nessuna emote nel set. Aggiungine qui sotto!', 'No emotes in the set. Add some below!', '¡No hay emotes en el set. Añade algunas abajo!')}</p>`; return; }
   const proprietario = stato?.ruolo !== 'moderatore';
-  box.innerHTML = testa + `<div class="svtv-griglia">` + emotes.map((e) => _svtvEmoteCard(e, proprietario
+  const puoModificare = proprietario && _svtvCollegato;   // modificare richiede il token 7TV
+  const avviso = (proprietario && !_svtvCollegato)
+    ? `<p class="suggerimento">${L('Queste sono le emote del tuo canale (sola lettura). Collega il tuo account 7TV qui sopra per aggiungerne, toglierne o rinominarle.', 'These are your channel emotes (read-only). Connect your 7TV account above to add, remove or rename them.', 'Estas son las emotes de tu canal (solo lectura). Conecta tu cuenta 7TV arriba para añadir, quitar o renombrar.')}</p>`
+    : '';
+  box.innerHTML = testa + avviso + `<div class="svtv-griglia">` + emotes.map((e) => _svtvEmoteCard(e, puoModificare
     ? `<button type="button" class="btn secondario mini svtv-rinomina" data-id="${esc(e.id)}" data-nome="${esc(e.nome)}" title="${L('Rinomina', 'Rename', 'Renombrar')}">${_bIco(ICO.scrivi || ICO.moduli)}</button>
        <button type="button" class="btn pericolo mini svtv-rimuovi" data-id="${esc(e.id)}" data-nome="${esc(e.nome)}" title="${L('Togli', 'Remove', 'Quitar')}">✕</button>`
     : '')).join('') + `</div>`;
