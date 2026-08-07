@@ -152,6 +152,24 @@ class Handler(BaseHTTPRequestHandler):
             sti = d.get("stile")
             if isinstance(sti, list) and sti:
                 ctx["stile"] = [str(x)[:160] for x in sti[:8] if str(x).strip()]
+            # STORIA: le ultime righe della chat del canale (memoria a breve termine).
+            # Ogni voce: {nome, testo, io}. Serve a capire il discorso in corso.
+            st_chat = d.get("storia")
+            if isinstance(st_chat, list) and st_chat:
+                righe = []
+                for x in st_chat[-8:]:
+                    if not isinstance(x, dict):
+                        continue
+                    testo_r = str(x.get("testo") or "").strip()
+                    if not testo_r:
+                        continue
+                    righe.append({
+                        "nome": (str(x.get("nome") or "").strip() or "utente")[:24],
+                        "testo": testo_r[:160],
+                        "io": bool(x.get("io")),
+                    })
+                if righe:
+                    ctx["storia"] = righe
             # personhood: nome della "persona" (dall'anima) e spunto per il proattivo
             nb = str(d.get("nome_bot") or "").strip()
             if nb:

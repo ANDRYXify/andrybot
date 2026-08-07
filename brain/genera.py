@@ -484,6 +484,25 @@ def _system_prompt(canale, ctx, modo="live"):
             righe.append(f"Stai parlando con {p['nome']}, che ti è simpatico/a e conosci da un po'.")
         else:
             righe.append(f"Stai parlando con {p['nome']}.")
+    # STORIA: il filo della conversazione appena successa in chat (memoria a breve
+    # termine). Serve al modello per capire DI COSA si parla, non solo l'ultima frase.
+    storia = ctx.get("storia") or []
+    if storia and modo == "live":
+        linee = []
+        for x in storia[-8:]:
+            if not isinstance(x, dict):
+                continue
+            testo_r = str(x.get("testo") or "").strip()
+            if not testo_r:
+                continue
+            etich = "io" if x.get("io") else (str(x.get("nome") or "utente").strip() or "utente")
+            linee.append(f"{etich}: {testo_r}")
+        if linee:
+            righe.append(
+                "Ecco cosa si è appena detto in chat, per capire il discorso in corso "
+                "(le righe 'io:' sono TUE; NON rispondere a ogni riga, rispondi solo a "
+                "chi ti ha appena scritto e resta sul filo del discorso):\n" + "\n".join(linee)
+            )
     if ctx.get("fatti"):
         righe.append("Cose vere sul canale (usale solo se pertinenti): "
                      + " ; ".join(ctx["fatti"][:4]))
