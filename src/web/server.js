@@ -4553,6 +4553,28 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.status(500).json({ errore: 'errore interno' });
   });
 
+  // RI-AGGANCIO WEBHOOK TELEGRAM (auto-guarigione). Il webhook interattivo viene
+  // registrato UNA volta su config.baseUrl; se il dominio cambia (es. migrazione a
+  // socialbot.live) Telegram continua a consegnare al VECCHIO URL — che dopo il 301
+  // non riceve più (Telegram non segue i redirect) → la chat privata con Lia smette
+  // di funzionare. All'avvio ri-registriamo ogni webhook interattivo sul baseUrl
+  // ATTUALE: idempotente, e sana da sé i cambi di dominio passati e futuri.
+  if (String(config.baseUrl).startsWith('https')) {
+    setTimeout(async () => {
+      let sanati = 0;
+      try {
+        for (const c of tgConf.listInterattivi()) {
+          try {
+            const url = `${config.baseUrl.replace(/\/$/, '')}/tg/${c.webhook_secret}`;
+            const r = await telegram.impostaWebhook(c.token, url, c.webhook_secret);
+            if (r && r.ok !== false) sanati++;
+          } catch (e) { log.debug(`re-webhook #${c.channel}:`, e?.message || e); }
+        }
+        if (sanati) log.info(`Telegram: ${sanati} webhook interattivi ri-agganciati a ${config.baseUrl}`);
+      } catch (e) { log.debug('re-webhook telegram:', e?.message || e); }
+    }, 8000).unref?.();   // dopo l'avvio, senza bloccare il boot
+  }
+
   const server = app.listen(config.port, () => {
     log.info(`Dashboard in ascolto su ${config.baseUrl} (porta ${config.port})`);
   });

@@ -1159,6 +1159,11 @@ export const tgConf = {
     if (!s) return null;
     return db.prepare('SELECT * FROM telegram WHERE webhook_secret=? AND interattivo=1').get(s) || null;
   },
+  // tutti i canali con la modalità interattiva accesa e un token: servono per
+  // ri-registrare il webhook all'avvio (es. dopo un cambio di dominio/baseUrl).
+  listInterattivi() {
+    return db.prepare("SELECT * FROM telegram WHERE interattivo=1 AND token<>'' AND webhook_secret<>''").all();
+  },
   remove(channel) { db.prepare('DELETE FROM telegram WHERE channel=?').run(String(channel).toLowerCase()); },
 };
 
