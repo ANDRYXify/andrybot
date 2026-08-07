@@ -9,7 +9,11 @@ import { makeLog } from '../logger.js';
 const log = makeLog('brainpy');
 
 const BASE = process.env.BRAIN_URL || 'http://brain:8091';
-const TIMEOUT_CHAT = Number(process.env.BRAIN_TIMEOUT_MS || '9000') || 9000;
+// Attesa massima per una risposta live. Il 7B su CPU (8 vCPU) è più lento del 3B:
+// gli diamo respiro (15s) così risponde davvero invece di andare in timeout. Il
+// bot parla comunque di rado (cooldown 45s), quindi un pensiero di ~10-15s va bene.
+// Con un endpoint esterno (il "maestro" sul tuo PC) le risposte tornano istantanee.
+const TIMEOUT_CHAT = Number(process.env.BRAIN_TIMEOUT_MS || '15000') || 15000;
 
 // Chiede una risposta contestuale al cervello. Ritorna stringa o null.
 // `stile` = alcune frasi vere dello streamer (la sua voce), per farlo suonare come lui.

@@ -29,9 +29,12 @@ SCELTA_FILE = os.path.join(DATA_DIR, "llm.json")
 # Scaletta modelli per fascia di RAM (Qwen2.5 Instruct, GGUF). Più RAM, più grande
 # il modello / migliore la quantizzazione → chiacchiera migliore. Override con
 # LLM_MODEL_URL (o LLM_MODEL_PATH per un file locale, es. un fine-tune tuo).
-# Nota: sui box da 8 GB (es. Hetzner CX33) il 3B gira in Q5 (qualità più alta del
-# Q4, entra comodo lasciando RAM al bot). 7B non ci sta senza rischiare l'OOM.
+# Nota: sui box da 16 GB (es. Hetzner CX43) gira il 7B in Q4 (~4.7 GB residenti):
+# salto netto di qualità, lasciando RAM al bot; su CPU è più lento (vedi timeout).
+# Sui box da 8 GB (CX33) il 3B in Q5. File SINGOLI (il downloader non gestisce i
+# GGUF spezzettati): il 7B viene dal repo bartowski, che li tiene in un unico file.
 _TIERS = [
+    (13.0, "https://huggingface.co/bartowski/Qwen2.5-7B-Instruct-GGUF/resolve/main/Qwen2.5-7B-Instruct-Q4_K_M.gguf"),
     (7.0, "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q5_k_m.gguf"),
     (6.0, "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q4_k_m.gguf"),
     (3.0, "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf"),
@@ -39,7 +42,9 @@ _TIERS = [
 ]
 
 MAX_TOKEN = int(os.environ.get("LLM_MAX_TOKEN", "80"))
-CONTEXT = int(os.environ.get("LLM_CONTEXT", "1024"))
+# Contesto: 2048 di default. Il 7B su 16 GB lo regge con margine, e serve spazio
+# per il prompt più ricco (storia della chat, situazione, cronologia per-utente).
+CONTEXT = int(os.environ.get("LLM_CONTEXT", "2048"))
 
 _lock = threading.Lock()
 _stato = {"stato": "spento", "modello": None, "motivo": None}
@@ -230,6 +235,7 @@ def _ram_gb():
 # più libero per una chat Twitch. Restano comunque la moderazione del bot e le
 # "parole vietate" a filtrare l'uscita — e le regole di Twitch valgono sempre.
 _MODELLI = {
+    "qwen7b": "https://huggingface.co/bartowski/Qwen2.5-7B-Instruct-GGUF/resolve/main/Qwen2.5-7B-Instruct-Q4_K_M.gguf",
     "qwen": "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q5_k_m.gguf",
     "gemma": "https://huggingface.co/bartowski/gemma-2-2b-it-GGUF/resolve/main/gemma-2-2b-it-Q4_K_M.gguf",
     "gemma-uncensored": "https://huggingface.co/bartowski/gemma-2-2b-it-abliterated-GGUF/resolve/main/gemma-2-2b-it-abliterated-Q4_K_M.gguf",
