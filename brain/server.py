@@ -65,7 +65,21 @@ class Handler(BaseHTTPRequestHandler):
             return self._corpus()
         if self.path.startswith("/rete"):
             return self._rete()
+        if self.path.startswith("/moduli"):
+            return self._moduli()
         return self._json(404, {"errore": "non trovato"})
+
+    def _moduli(self):
+        # elenco COMPATTO del "manuale umano" (senza i testi lunghi): serve al bot
+        # per sapere cosa è già stato imparato (seeding) e per un cruscotto.
+        try:
+            out = [{"nome": m["nome"], "dominio": m["dominio"], "stato": m["stato"],
+                    "qualita": m["qualita"], "usi": m["usi"],
+                    "successi": m["successi"], "fallimenti": m["fallimenti"]}
+                   for m in mente.moduli()]
+            return self._json(200, {"moduli": out})
+        except Exception as e:
+            return self._json(200, {"moduli": [], "errore": str(e)[:120]})
 
     def _corpus(self):
         # il dataset della sua mente (coppie domanda→risposta consolidate)

@@ -146,6 +146,21 @@ export async function reteStato(canale) {
   } catch { return null; } finally { clearTimeout(to); }
 }
 
+// Elenco compatto dei MODULI del "manuale umano" (globale): [{nome, dominio,
+// stato, qualita, usi, successi, fallimenti}]. Ritorna [] se vuoto, null se il
+// cervello non risponde (così chi semina sa distinguere "vuoto" da "riprova").
+export async function moduli() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 4000);
+  try {
+    const r = await fetch(BASE + '/moduli', { signal: ac.signal });
+    if (!r.ok) return null;
+    const d = await r.json().catch(() => null);
+    return Array.isArray(d?.moduli) ? d.moduli : [];
+  } catch (e) { log.debug('moduli:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
 // Il dataset della "mente" della rete per un canale: coppie {q, a} consolidate.
 export async function reteCorpus(canale) {
   if (!canale) return [];
