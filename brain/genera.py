@@ -147,6 +147,9 @@ def _chat_endpoint(cfg, messaggi, max_tokens, temperature, top_p, timeout_s):
         "max_tokens": int(max_tokens),
         "temperature": temperature,
         "top_p": top_p,
+        # scoraggia le ripetizioni e i tic linguistici (chi non li supporta li ignora)
+        "presence_penalty": 0.3,
+        "frequency_penalty": 0.3,
         "stream": False,
     }).encode("utf-8")
     req = urllib.request.Request(_endpoint_url(cfg["url"]), data=corpo, method="POST")
@@ -201,7 +204,10 @@ def _completa_locale(messaggi, max_tokens, temperature, top_p, timeout_s):
             with _lock:
                 out = _llm.create_chat_completion(
                     messages=messaggi, max_tokens=int(max_tokens),
-                    temperature=temperature, top_p=top_p, top_k=40, repeat_penalty=1.1,
+                    temperature=temperature, top_p=top_p, top_k=50,
+                    # min_p taglia la "coda" improbabile (meno assurdità); repeat_penalty
+                    # più deciso riduce le ripetizioni tipiche dei modelli piccoli.
+                    min_p=0.05, repeat_penalty=1.15,
                 )
             risultato["t"] = out["choices"][0]["message"]["content"]
         except Exception as e:
@@ -623,9 +629,11 @@ def genera(canale, ctx, testo, timeout_s=30, modo="live"):
                  for mu, mb in ctx.get("scambi", [])[-3:]]
         # allenamento/studio: più disteso e ragionato; proattiva: messaggio corto
         max_tok = 90 if proattivo else (150 if studio else ((220 if _endpoint_cfg() else 140) if allena else MAX_TOKEN))
+        # temperatura per modalità: proattiva più estrosa, studio prudente, chat
+        # live un filo più calda (0.78) per un tono naturale, allenamento a 0.7.
+        temp = 0.85 if proattivo else 0.4 if studio else 0.7 if allena else 0.78
         grezzo = _completa(_system_prompt(canale, ctx, modo), turni, testo,
-                           max_tok, temperature=(0.85 if proattivo else (0.4 if studio else 0.7)),
-                           top_p=0.9, timeout_s=timeout_s)
+                           max_tok, temperature=temp, top_p=0.9, timeout_s=timeout_s)
         risposta = _pulisci(grezzo) if grezzo else None
     except Exception:
         risposta = None
