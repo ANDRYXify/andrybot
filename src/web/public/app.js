@@ -171,7 +171,7 @@ function inApp() {
 }
 
 async function caricaStato() {
-  if (DEMO) { stato = statoDemo(); render(); montaDemo(); return; }
+  if (DEMO) { stato = statoDemo(); render(); montaDemo(); window.SB_SPLASH_OFF?.(); return; }
   try {
     stato = await api('/api/me');
   } catch (e) {
@@ -179,9 +179,11 @@ async function caricaStato() {
     // si va allo sblocco con passkey (che, se serve, rimanda al sito).
     if (inApp()) { location.href = '/sblocca'; return; }
     app.innerHTML = `<div class="carta"><h2>Ops!</h2><p>Impossibile contattare il server: ${esc(e.message)}</p></div>`;
+    window.SB_SPLASH_OFF?.();
     return;
   }
   render();
+  window.SB_SPLASH_OFF?.();
   // promo "settimana gratis" appena assegnata
   if (new URLSearchParams(location.search).get('promo') === '1') {
     // il dettaglio (cosa, fino a quando, cosa accade dopo) sta nel banner
