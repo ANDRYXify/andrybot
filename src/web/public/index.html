@@ -188,8 +188,53 @@
     ]
   }
   </script>
+
+  <!-- SPLASH di caricamento: copre la pagina finché app.js non disegna la dashboard,
+       così non si vede il lampo dell'HTML statico "grezzo". CSS inline = compare
+       subito, prima ancora di style.css. Tema già risolto in cima (data-theme). -->
+  <style>
+    #splash { position: fixed; inset: 0; z-index: 99999; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 24px; background: #0c0c11; color: #fff;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      transition: opacity .45s ease, visibility .45s ease; }
+    :root[data-theme="light"] #splash { background: #ffffff; color: #0c0c11; }
+    #splash.via { opacity: 0; visibility: hidden; pointer-events: none; }
+    #splash .sp-box { position: relative; display: flex; align-items: center; justify-content: center; }
+    #splash .sp-logo { width: 84px; height: 84px; border-radius: 21px; display: block;
+      box-shadow: 0 14px 44px rgba(124,92,255,.4); animation: sp-pulse 1.6s ease-in-out infinite; }
+    #splash .sp-ring { position: absolute; width: 124px; height: 124px; border-radius: 50%;
+      border: 3px solid rgba(124,92,255,.16); border-top-color: #7c5cff; animation: sp-spin .9s linear infinite; }
+    #splash .sp-nome { font-weight: 800; font-size: 21px; letter-spacing: .3px; text-align: center; }
+    #splash .sp-nome small { display: block; font-weight: 500; font-size: 11px; opacity: .55;
+      letter-spacing: 2.5px; text-transform: uppercase; margin-top: 5px; }
+    @keyframes sp-spin { to { transform: rotate(360deg); } }
+    @keyframes sp-pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+    @media (prefers-reduced-motion: reduce) { #splash .sp-ring, #splash .sp-logo { animation: none; } }
+  </style>
+  <noscript><style>#splash { display: none !important; }</style></noscript>
 </head>
 <body>
+  <div id="splash" role="status" aria-label="Caricamento SocialBot">
+    <div class="sp-box"><span class="sp-ring"></span><img class="sp-logo" src="/icons/icon-192.png" alt="" width="84" height="84"></div>
+    <div class="sp-nome">SocialBot<small>caricamento…</small></div>
+  </div>
+  <script>
+    (function () {
+      var s = document.getElementById('splash'); if (!s) return;
+      var fatto = false;
+      function via() { if (fatto) return; fatto = true; s.classList.add('via'); setTimeout(function () { if (s.parentNode) s.parentNode.removeChild(s); }, 550); }
+      window.SB_SPLASH_OFF = via;
+      // via appena app.js prende il controllo di #app (rimpiazza la vetrina statica)
+      try {
+        var app = document.getElementById('app');
+        if (app && window.MutationObserver) {
+          var mo = new MutationObserver(function () { mo.disconnect(); via(); });
+          mo.observe(app, { childList: true });
+        }
+      } catch (e) { /* niente */ }
+      setTimeout(via, 7000);   // rete di sicurezza: non restare mai bloccato
+    })();
+  </script>
 
   <!-- notifiche a scomparsa -->
   <div id="toast-box" aria-live="polite"></div>
