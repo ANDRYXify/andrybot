@@ -22,6 +22,18 @@ const BOT_NOTI = new Set(['nightbot', 'streamelements', 'moobot', 'streamlabs', 
 
 const TONI = ['scherzoso', 'amichevole', 'serio'];
 
+// SEMI del "manuale umano": il primo dominio è le 6 emozioni base (Ekman). Il bot
+// le studia una alla volta (una per giro) finché il set base è 'attivo', poi si
+// ferma. `query` = cosa cercare online per sintetizzare il modulo operativo.
+const SEMI_EMOZIONI = [
+  { nome: 'riconoscere e rispondere alla gioia', query: 'come condividere la gioia e l\'entusiasmo di qualcuno empatia psicologia' },
+  { nome: 'riconoscere e rispondere alla tristezza', query: 'come consolare una persona triste cosa dire empatia' },
+  { nome: 'riconoscere e rispondere alla rabbia', query: 'come rispondere a una persona arrabbiata o frustrata calmare empatia' },
+  { nome: 'riconoscere e rispondere alla paura', query: 'come rassicurare una persona spaventata o ansiosa empatia' },
+  { nome: 'riconoscere e rispondere alla sorpresa', query: 'come reagire alla sorpresa e allo stupore di qualcuno' },
+  { nome: 'riconoscere e rispondere al disgusto', query: 'come rispondere quando qualcuno prova disgusto o forte disapprovazione' },
+];
+
 // ======================================================================
 // LA PERSONALITÀ: pool di template per tono. {user} = chi scrive,
 // {canale} = display del canale. Frasi brevi, vive, da chat Twitch.
@@ -600,6 +612,26 @@ export class Brain {
       }
       return mod;
     } catch (e) { log.debug('studiaModulo:', e?.message || e); return null; }
+  }
+
+  // SEEDING del manuale: studia il PROSSIMO modulo base ancora mancante (o non
+  // ancora 'attivo'), UNO per chiamata. Quando il set base è completo non fa più
+  // nulla (solo una lettura leggera). Guidato dai timer di reflection. Non lancia.
+  async seminaProssimoModulo() {
+    try {
+      const esistenti = await brainpy.moduli();
+      if (esistenti === null) return null;   // cervello non raggiungibile: riprova al giro dopo
+      const attivi = new Set(
+        (Array.isArray(esistenti) ? esistenti : [])
+          .filter((m) => m && m.stato === 'attivo')
+          .map((m) => String(m.nome || '').toLowerCase().trim()),
+      );
+      const prossimo = SEMI_EMOZIONI.find((s) => !attivi.has(s.nome.toLowerCase()));
+      if (!prossimo) return null;            // set base completo: niente da seminare
+      const mod = await this.studiaModulo(prossimo.nome, { dominio: 'emozioni', query: prossimo.query });
+      if (mod) log.info(`manuale umano: appresa una pagina → «${prossimo.nome}»`);
+      return mod;
+    } catch (e) { log.debug('seminaProssimoModulo:', e?.message || e); return null; }
   }
 
   // MESSAGGIO PROATTIVO (Telegram, chat privata col proprietario): scrive LEI per
