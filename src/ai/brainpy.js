@@ -149,11 +149,11 @@ export async function reteStato(canale) {
 // Elenco compatto dei MODULI del "manuale umano" (globale): [{nome, dominio,
 // stato, qualita, usi, successi, fallimenti}]. Ritorna [] se vuoto, null se il
 // cervello non risponde (così chi semina sa distinguere "vuoto" da "riprova").
-export async function moduli() {
+export async function moduli(full = false) {
   const ac = new AbortController();
   const to = setTimeout(() => ac.abort(), 4000);
   try {
-    const r = await fetch(BASE + '/moduli', { signal: ac.signal });
+    const r = await fetch(BASE + '/moduli' + (full ? '?full=1' : ''), { signal: ac.signal });
     if (!r.ok) return null;
     const d = await r.json().catch(() => null);
     return Array.isArray(d?.moduli) ? d.moduli : [];

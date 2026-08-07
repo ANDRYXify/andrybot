@@ -2875,6 +2875,16 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json(r);
   }));
 
+  // MENTE: i dati per il GRAFO 3D del cervello — i moduli del "manuale umano"
+  // (globale, con testi e contatori) + un riassunto della piccola rete del canale.
+  // Sola lettura: nessun segreto, è la mente condivisa di Lia resa navigabile.
+  app.get('/api/streamer/mente', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const moduli = await brainpy.moduli(true).catch(() => null) || [];
+    const rete = await brainpy.reteStato(login).catch(() => null) || { nodi: 0, solidi: 0, curiosita: 0, fiducia: 0 };
+    res.json({ moduli, rete: { nodi: rete.nodi || 0, solidi: rete.solidi || 0, fiducia: rete.fiducia || 0, curiosita: rete.curiosita || 0 } });
+  }));
+
   // FORGIA: le dice di lavorare ORA sulla sua mente (studia le lacune dal web +
   // distilla altro materiale nella rete). Torna subito; il lavoro va in background.
   app.post('/api/streamer/forgia', requireLogin, wrap(async (req, res) => {
