@@ -11134,21 +11134,30 @@ async function aggiornaRetePanoramica(box, primo) {
 
 // ============================ LA MENTE IN 3D (grafo del cervello) ============================
 let _mente3dCtrl = null;
+// Palette EMOZIONI validata (script del design-system) con varianti chiaro/scuro.
+// Sei tinte semantiche fisse non possono essere TUTTE distinguibili al 100% sotto
+// daltonismo (tetto teorico ~8 tinte): perciò il colore è RINFORZO — ogni hub è
+// sempre etichettato, in cluster separati e nella legenda.
 const _MENTE_EMOZIONI = [
-  { key: 'gioia', label: 'gioia', color: '#f5c542' },
-  { key: 'tristezza', label: 'tristezza', color: '#4f8ff5' },
-  { key: 'rabbia', label: 'rabbia', color: '#f5544f' },
-  { key: 'paura', label: 'paura', color: '#9b6bf5' },
-  { key: 'sorpresa', label: 'sorpresa', color: '#31c8b0' },
-  { key: 'disgusto', label: 'disgusto', color: '#7bbf4a' },
+  { key: 'gioia', label: 'gioia', light: '#eda100', dark: '#c98500' },
+  { key: 'tristezza', label: 'tristezza', light: '#2a78d6', dark: '#3987e5' },
+  { key: 'rabbia', label: 'rabbia', light: '#e34948', dark: '#e66767' },
+  { key: 'paura', label: 'paura', light: '#4a3aa7', dark: '#bb7ad0' },
+  { key: 'sorpresa', label: 'sorpresa', light: '#1baf7a', dark: '#199e70' },
+  { key: 'disgusto', label: 'disgusto', light: '#008300', dark: '#1f9e2f' },
 ];
+const _menteCol = (e, dark) => (dark ? e.dark : e.light);
+const _menteNeutro = (dark) => (dark ? '#9aa0b0' : '#6b7280');    // logica
+const _menteCore = (dark) => (dark ? '#b3a6f0' : '#6d5bd0');      // Lia (accento firma)
+const _menteBozza = (dark) => (dark ? '#e0b23c' : '#c98a1e');     // anello stato
+const _menteSosp = (dark) => (dark ? '#e66767' : '#d03b3b');
 
 // costruisce nodi+archi del grafo dai dati della mente (core → logica; manuale →
 // emozioni → moduli). Il modulo si aggancia all'emozione citata nel suo nome.
-function _menteGrafo(d) {
+function _menteGrafo(d, dark) {
   const moduli = Array.isArray(d?.moduli) ? d.moduli : [];
   const nodes = [], links = [];
-  nodes.push({ id: 'core', label: 'Lia', group: 'core', color: '#c4b5fd', size: 22, data: { tipo: 'core', rete: d?.rete || {}, nmod: moduli.length } });
+  nodes.push({ id: 'core', label: 'Lia', group: 'core', color: _menteCore(dark), size: 22, data: { tipo: 'core', rete: d?.rete || {}, nmod: moduli.length } });
   const LOG = [
     ['log:intenti', 'Intenti', L('Dati precisi (gioco, uptime, clip, link): non passano dal modello.', 'Precise data (game, uptime, clip, link): they skip the model.', 'Datos precisos (juego, uptime, clip, enlace): no pasan por el modelo.')],
     ['log:conoscenza', 'Conoscenza', L('Le risposte curate dal sito e scritte da te.', 'Curated answers from the site and written by you.', 'Respuestas curadas del sitio y escritas por ti.')],
@@ -11158,12 +11167,12 @@ function _menteGrafo(d) {
     ['log:maestro', 'Maestro', L('Il modello linguistico (7B locale o endpoint) che mette le parole.', 'The language model (local 7B or endpoint) that puts the words.', 'El modelo lingüístico (7B local o endpoint) que pone las palabras.')],
   ];
   for (const [id, label, desc] of LOG) {
-    nodes.push({ id, label, group: 'logica', color: '#8f97ad', size: 12, data: { tipo: 'logica', desc } });
-    links.push({ source: 'core', target: id, rest: 62 });
+    nodes.push({ id, label, group: 'logica', color: _menteNeutro(dark), size: 12, data: { tipo: 'logica', desc } });
+    links.push({ source: 'core', target: id, rest: 70 });
   }
   for (const e of _MENTE_EMOZIONI) {
-    nodes.push({ id: 'emo:' + e.key, label: e.label, group: 'emozione', color: e.color, size: 13, data: { tipo: 'emozione' } });
-    links.push({ source: 'log:manuale', target: 'emo:' + e.key, rest: 82 });
+    nodes.push({ id: 'emo:' + e.key, label: e.label, group: 'emozione', color: _menteCol(e, dark), size: 13, data: { tipo: 'emozione' } });
+    links.push({ source: 'log:manuale', target: 'emo:' + e.key, rest: 96 });
   }
   const fold = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   let i = 0;
@@ -11172,21 +11181,21 @@ function _menteGrafo(d) {
     const e = _MENTE_EMOZIONI.find((x) => nome.includes(x.key));
     const usi = Number(m.usi) || 0, q = Number(m.qualita) || 0.5;
     const size = 5 + Math.min(9, usi) * 0.5 + q * 4;
-    const ring = m.stato === 'sospeso' ? '#f5544f' : (m.stato === 'bozza' ? '#e0b23c' : null);
-    nodes.push({ id: 'mod:' + (m.nome || i), label: m.nome || '?', group: 'modulo', color: e ? e.color : '#a99cf0', size, data: { tipo: 'modulo', m, ring } });
-    links.push({ source: e ? 'emo:' + e.key : 'log:manuale', target: 'mod:' + (m.nome || i), rest: 46 });
+    const ring = m.stato === 'sospeso' ? _menteSosp(dark) : (m.stato === 'bozza' ? _menteBozza(dark) : null);
+    nodes.push({ id: 'mod:' + (m.nome || i), label: m.nome || '?', group: 'modulo', color: e ? _menteCol(e, dark) : _menteNeutro(dark), size, data: { tipo: 'modulo', m, ring } });
+    links.push({ source: e ? 'emo:' + e.key : 'log:manuale', target: 'mod:' + (m.nome || i), rest: 54 });
     i++;
   }
   return { nodes, links };
 }
 
-function _menteLegenda() {
+function _menteLegenda(dark) {
   const box = document.getElementById('mente3d-legenda');
   if (!box) return;
   const dot = (c) => `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${c};margin-right:4px;vertical-align:middle"></span>`;
   const anello = (c) => `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;border:2px solid ${c};margin-right:4px;vertical-align:middle"></span>`;
-  box.innerHTML = _MENTE_EMOZIONI.map((e) => `${dot(e.color)}${e.label}`).join(' &nbsp; ')
-    + `<br>${dot('#8f97ad')}${L('logica', 'logic', 'lógica')} &nbsp; ${anello('#e0b23c')}${L('bozza', 'draft', 'borrador')} &nbsp; ${anello('#f5544f')}${L('sospeso', 'suspended', 'suspendido')}`;
+  box.innerHTML = _MENTE_EMOZIONI.map((e) => `${dot(_menteCol(e, dark))}${e.label}`).join(' &nbsp; ')
+    + `<br>${dot(_menteNeutro(dark))}${L('logica', 'logic', 'lógica')} &nbsp; ${anello(_menteBozza(dark))}${L('bozza', 'draft', 'borrador')} &nbsp; ${anello(_menteSosp(dark))}${L('sospeso', 'suspended', 'suspendido')}`;
 }
 
 function _menteDettaglio(sel) {
@@ -11221,14 +11230,15 @@ async function caricaMente3d() {
   const canvas = document.getElementById('mente3d-canvas');
   if (!canvas || !window.SB_MENTE) return;
   if (_mente3dCtrl) { try { _mente3dCtrl.destroy(); } catch { /* niente */ } _mente3dCtrl = null; }
-  _menteLegenda();
+  const dark = (typeof temaScuroAttivo === 'function') ? temaScuroAttivo() : false;
+  _menteLegenda(dark);
   _menteDettaglio(null);
   let d;
   try { d = await api('/api/streamer/mente'); }
   catch { const box = document.getElementById('mente3d-dettaglio'); if (box) box.innerHTML = `<p class="vuoto">${L('Non disponibile ora.', 'Not available now.', 'No disponible ahora.')}</p>`; return; }
   try {
-    _mente3dCtrl = window.SB_MENTE.crea(canvas, _menteGrafo(d), {
-      dark: (typeof temaScuroAttivo === 'function') ? temaScuroAttivo() : false,
+    _mente3dCtrl = window.SB_MENTE.crea(canvas, _menteGrafo(d, dark), {
+      dark,
       onSelect: (n) => _menteDettaglio(n),
     });
   } catch (e) { /* il grafo è un extra: se fallisce, la dashboard resta intera */ }

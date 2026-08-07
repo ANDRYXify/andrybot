@@ -19,6 +19,19 @@
 
   const nz = (v, d = 0) => (Number.isFinite(v) ? v : d);
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const TAU = Math.PI * 2;
+
+  // mescola un colore verso il nero (amt<0) o il bianco (amt>0). Serve per il
+  // bordo sottile del nodo (una versione più scura/chiara del suo colore).
+  function shade(col, amt) {
+    const m = /^#?([0-9a-f]{6})$/i.exec(String(col || ''));
+    if (!m) return col;
+    const n = parseInt(m[1], 16);
+    let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    const t = amt < 0 ? 0 : 255, p = Math.min(1, Math.abs(amt));
+    r = Math.round(r + (t - r) * p); g = Math.round(g + (t - g) * p); b = Math.round(b + (t - b) * p);
+    return `rgb(${r},${g},${b})`;
+  }
 
   function crea(canvas, dati, opts = {}) {
     if (!canvas) return { destroy() {}, aggiorna() {}, tema() {}, seleziona() {} };
@@ -74,9 +87,10 @@
       for (const n of nodi) perId.set(n.id, n);
       const ls = Array.isArray(d?.links) ? d.links : [];
       archi = [];
+      for (const n of nodi) n._adj = new Set();
       for (const l of ls) {
         const a = perId.get(l.source), b = perId.get(l.target);
-        if (a && b && a !== b) archi.push({ a, b, rest: nz(l.rest, 78) });
+        if (a && b && a !== b) { archi.push({ a, b, rest: nz(l.rest, 78) }); a._adj.add(b.id); b._adj.add(a.id); }
       }
       alpha = 1;   // ri-scalda: rilassa la nuova topologia
     }
@@ -85,7 +99,7 @@
     function passo() {
       if (alpha < 0.02) { alpha = 0; return; }
       const n = nodi.length;
-      const kRep = 1400, kSpring = 0.02, kCenter = 0.006, damping = 0.86;
+      const kRep = 2100, kSpring = 0.02, kCenter = 0.0055, damping = 0.86;
       // repulsione O(n^2): va benissimo per qualche decina di nodi
       for (let i = 0; i < n; i++) {
         const a = nodi[i];
@@ -146,58 +160,86 @@
     // ---- disegno -----------------------------------------------------------
     function colori() {
       return dark
-        ? { bg0: 'rgba(18,16,30,0)', linea: 'rgba(160,150,210,', testo: '#e8e6f5', alone: 'rgba(0,0,0,0.55)' }
-        : { bg0: 'rgba(250,250,255,0)', linea: 'rgba(90,70,160,', testo: '#241f3a', alone: 'rgba(255,255,255,0.65)' };
+        ? { vin0: '#191627', vin1: '#100e1b', edge: '150,145,180', edgeHi: '205,198,240',
+            testo: '#edecf5', testoSoft: 'rgba(237,236,245,0.62)', outline: 'rgba(14,12,24,0.9)',
+            ombra: 'rgba(0,0,0,0.5)', anelloSel: '#ffffff', coreRing: 'rgba(255,255,255,0.55)', bordo: -0.34 }
+        : { vin0: '#f7f6fc', vin1: '#eae8f4', edge: '120,112,150', edgeHi: '70,58,120',
+            testo: '#26223c', testoSoft: 'rgba(38,34,60,0.6)', outline: 'rgba(248,247,253,0.92)',
+            ombra: 'rgba(60,52,92,0.20)', anelloSel: '#26223c', coreRing: 'rgba(80,62,150,0.5)', bordo: -0.16 };
     }
     function disegna() {
       const C = colori();
-      ctx.clearRect(0, 0, W, H);
-      // archi (dietro)
-      ctx.lineWidth = 1;
+      // sfondo con leggera vignettatura (focus al centro, aria professionale)
+      const g = ctx.createRadialGradient(cx, cy, Math.min(W, H) * 0.1, cx, cy, Math.max(W, H) * 0.72);
+      g.addColorStop(0, C.vin0); g.addColorStop(1, C.vin1);
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+      // FOCUS: se sto sopra/ho selezionato un nodo, evidenzio lui e i suoi vicini,
+      // il resto sfuma. È la lettura "professionale" di un grafo: si isola il contesto.
+      const focus = hoverId || selId;
+      const fnode = focus ? perId.get(focus) : null;
+      const fset = fnode ? new Set([focus, ...fnode._adj]) : null;
+
+      // archi
       for (const l of archi) {
         const a = l.a, b = l.b;
+        const attivo = !fset || (a.id === focus || b.id === focus);
         const near = (a.depth + b.depth) / 2;
-        const al = clamp(0.10 + (near + 160) / 900, 0.05, 0.5);
-        ctx.strokeStyle = C.linea + al.toFixed(3) + ')';
-        ctx.beginPath();
-        ctx.moveTo(a.sx, a.sy); ctx.lineTo(b.sx, b.sy); ctx.stroke();
+        let al = clamp(0.05 + (near + 160) / 1150, 0.035, 0.3);
+        if (fset) al = attivo ? clamp(al * 2.6, 0.2, 0.75) : al * 0.22;
+        ctx.strokeStyle = `rgba(${attivo && fset ? C.edgeHi : C.edge},${al.toFixed(3)})`;
+        ctx.lineWidth = attivo && fset ? 1.5 : 1;
+        ctx.beginPath(); ctx.moveTo(a.sx, a.sy); ctx.lineTo(b.sx, b.sy); ctx.stroke();
       }
-      // nodi (ordinati dal più lontano al più vicino)
+
+      // nodi (dal più lontano al più vicino)
       const ord = nodi.slice().sort((p, q) => p.depth - q.depth);
       for (const a of ord) {
         const sel = a.id === selId, hov = a.id === hoverId;
-        const fade = clamp(0.45 + (a.depth + 180) / 700, 0.35, 1);
+        const dim = fset && !fset.has(a.id);
+        const prof = clamp(0.55 + (a.depth + 180) / 820, 0.4, 1);
+        const fade = prof * (dim ? 0.24 : 1);
+        // corpo con ombra morbida (profondità); niente ombra sui nodi sfumati
         ctx.globalAlpha = fade;
-        // alone
-        ctx.beginPath();
-        ctx.arc(a.sx, a.sy, a.sr + (sel ? 6 : 3), 0, Math.PI * 2);
-        ctx.fillStyle = C.alone; ctx.fill();
-        // corpo
-        ctx.beginPath();
-        ctx.arc(a.sx, a.sy, a.sr, 0, Math.PI * 2);
+        if (!dim) { ctx.save(); ctx.shadowColor = C.ombra; ctx.shadowBlur = 9; ctx.shadowOffsetY = 2; }
+        ctx.beginPath(); ctx.arc(a.sx, a.sy, a.sr, 0, TAU);
         ctx.fillStyle = a.color; ctx.fill();
-        // anello di stato/evidenza
-        if (sel || hov || (a.data && a.data.ring)) {
-          ctx.lineWidth = sel ? 3 : 2;
-          ctx.strokeStyle = sel ? '#ffffff' : (a.data && a.data.ring ? a.data.ring : 'rgba(255,255,255,0.7)');
-          ctx.beginPath(); ctx.arc(a.sx, a.sy, a.sr + (sel ? 4 : 2.5), 0, Math.PI * 2); ctx.stroke();
+        if (!dim) ctx.restore();
+        // bordo sottile: una versione più scura del colore del nodo
+        ctx.lineWidth = 1; ctx.strokeStyle = shade(a.color, C.bordo);
+        ctx.beginPath(); ctx.arc(a.sx, a.sy, a.sr, 0, TAU); ctx.stroke();
+        // core: doppio anello firma
+        if (a.group === 'core') {
+          ctx.lineWidth = 1.4; ctx.strokeStyle = C.coreRing;
+          ctx.beginPath(); ctx.arc(a.sx, a.sy, a.sr + 4.5, 0, TAU); ctx.stroke();
+        }
+        // anello di STATO (bozza/sospeso): l'unico colore "forte" oltre al nodo
+        if (a.data && a.data.ring && !dim) {
+          ctx.lineWidth = 2; ctx.strokeStyle = a.data.ring;
+          ctx.beginPath(); ctx.arc(a.sx, a.sy, a.sr + 2.6, 0, TAU); ctx.stroke();
+        }
+        // evidenza selezione/hover
+        if (sel || hov) {
+          ctx.lineWidth = sel ? 2.4 : 1.6; ctx.strokeStyle = C.anelloSel;
+          ctx.beginPath(); ctx.arc(a.sx, a.sy, a.sr + (sel ? 4 : 3), 0, TAU); ctx.stroke();
         }
         ctx.globalAlpha = 1;
-        // etichetta: hub, selezionato, hover, o nodi grandi
-        if (sel || hov || a.group === 'core' || a.group === 'emozione' || a.group === 'logica' || a.size >= 12) {
-          etichetta(a, C, sel || hov);
-        }
+        // etichette: hub sempre (core/emozione/logica), moduli solo nel focus/hover/sel
+        const hub = a.group === 'core' || a.group === 'emozione' || a.group === 'logica';
+        if (!dim && (sel || hov || hub || (fset && fset.has(a.id)))) etichetta(a, C, sel || hov, fade);
       }
     }
-    function etichetta(a, C, forte) {
+    function etichetta(a, C, forte, fade) {
       const t = a.label;
-      ctx.font = (forte ? '600 ' : '') + Math.round(clamp(a.sr + 6, 10, 15)) + 'px system-ui, sans-serif';
-      const w = ctx.measureText(t).width;
-      const x = a.sx + a.sr + 5, y = a.sy + 4;
-      ctx.globalAlpha = forte ? 1 : 0.85;
-      ctx.fillStyle = C.alone;
-      ctx.fillRect(x - 3, y - 12, w + 6, 16);
-      ctx.fillStyle = C.testo;
+      const size = Math.round(clamp(a.sr + 4.5, 10.5, 14));
+      ctx.font = (forte ? '600 ' : '500 ') + size + 'px ui-sans-serif, system-ui, -apple-system, sans-serif';
+      ctx.textBaseline = 'middle';
+      const x = a.sx + a.sr + 6, y = a.sy;
+      ctx.globalAlpha = forte ? 1 : clamp(0.9 * fade, 0.4, 1);
+      // outline morbido per leggibilità (niente riquadro: più pulito)
+      ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.strokeStyle = C.outline;
+      ctx.strokeText(t, x, y);
+      ctx.fillStyle = forte ? C.testo : C.testoSoft;
       ctx.fillText(t, x, y);
       ctx.globalAlpha = 1;
     }
@@ -209,7 +251,7 @@
       // SPA) smettiamo e liberiamo i listener — niente RAF sprecati né perdite.
       if (!canvas.isConnected) { running = false; stacca(); return; }
       passo();
-      if (autoRot && !trascino) yaw += 0.0016;
+      if (autoRot && !trascino) yaw += 0.0009;
       proietta();
       disegna();
       raf = requestAnimationFrame(tick);
