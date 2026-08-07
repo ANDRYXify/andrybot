@@ -231,24 +231,43 @@ const EV_FOLLOW = [
   'Benvenuto a bordo, {nome}! Grazie del follow 🚀',
   '{nome} è dei nostri ora! Grazie del follow 🙌',
   'Grande {nome}, grazie del follow! Fatti sentire in chat 😄',
+  'Oh, un nuovo volto! Benvenuto {nome}, grazie del follow ✨',
+  '{nome} ha premuto follow! Ottima scelta, resta con noi 😎',
+  'Nuovo follower: {nome}! Grazie, ci fa piacere averti qui 🤗',
 ];
 const EV_SUB = [
   'Grazie della sub{tier}, {nome}! Sei un grande 💜',
   '{nome} con la sub{tier}! Grazie di cuore 🙌',
   'Sub{tier} di {nome}! Abbraccio virtuale in arrivo 🤗',
   'Grande {nome}, grazie per la sub{tier}! 🎉',
+  '{nome} si è abbonato{tier}! Non dovevi… ma grazie, ci tenevo 💜',
+  'Sub{tier} in cassa da {nome}! Sei ufficialmente uno dei nostri 🔥',
+  'Che dire {nome}: sub{tier} apprezzatissima, grazie davvero 😄',
 ];
 const EV_RAID = [
   'Raid di {nome} con {viewers} persone! Benvenuti tutti 🎉',
   'Aprite le porte: arriva il raid di {nome}! Benvenuti in {viewers} 🙌',
   '{nome} ci porta {viewers} persone! Fatevi sentire in chat, benvenuti 💜',
   'Benvenuti raider di {nome}! Mettetevi comodi, qui si sta bene 🔥',
+  'RAID! {nome} sfonda con {viewers} persone, che entrata 🚀',
+  'Occhio che arriva {nome} col suo esercito ({viewers})! Benvenuti tutti 🎊',
+  '{viewers} nuovi amici grazie a {nome}! Un saluto in chat, forza 💪',
 ];
 const EV_ONLINE = [
   'Siamo live! Chiamate tutti, si comincia 🔴',
   'Si parte! Benvenuti alla live di oggi 🎬',
   'Live iniziata! Mettetevi comodi 💜',
   'Eccoci, si va in onda! Buona live a tutti 🔴',
+  'Semaforo verde, si accende tutto! Benvenuti 🟢',
+  'Ci siamo, si comincia! Avvisate chi dovete avvisare 📣',
+];
+const EV_CHEER = [
+  'Grazie per i {bits} bits, {nome}! Sei una forza 💎',
+  '{nome} lancia {bits} bits! Grazie di cuore 🙌',
+  'Bits in arrivo: {bits} da {nome}! Grande 💜',
+  '{nome}, {bits} bits?! Ti adoro, grazie ✨',
+  'Pioggia di bits: {bits} da {nome}! Sei un mito 🔥',
+  'Grazie {nome} per i {bits} bits, li apprezzo tantissimo 😄',
 ];
 const EV_RISCATTO = [
   '{nome} ha riscattato "{titolo}"! Punti ben spesi 😄',
@@ -1066,6 +1085,13 @@ export class Brain {
           });
           break;
         }
+        case 'channel.cheer': {
+          const bits = data.bits ?? 0;
+          if (!bits) return;
+          const nome = data.is_anonymous ? 'un anonimo generoso' : (data.user_name || 'qualcuno');
+          testo = compila(scegli(EV_CHEER), { nome, bits });
+          break;
+        }
         case 'stream.online': {
           testo = scegli(EV_ONLINE);
           break;
@@ -1082,6 +1108,9 @@ export class Brain {
       }
 
       this._ultimoEvento.set(chiave, Date.now());
+      // tocco d'anima: colore dell'umore attuale (persona.onEvento sopra l'ha già
+      // aggiornato, quindi dopo un raid/sub la firma è più "carica").
+      testo = persona.colora(testo);
       log.info(`#${channel} evento ${type} → ${testo}`);
       say(testo);
     } catch (e) {
