@@ -158,6 +158,12 @@ class Handler(BaseHTTPRequestHandler):
         try:
             mente.incontra(canale, login, nome)
             mente.reagisci(canale, _delta_umore(testo), 0.02)
+            # REVISIONE del manuale: questo messaggio è anche la reazione al turno
+            # precedente del bot → giudica se i moduli usati allora hanno funzionato.
+            try:
+                mente.valuta_reazione(canale, login, testo)
+            except Exception:
+                pass
             ctx = mente.contesto(canale, login, testo, tono)
             # conoscenza curata passata dal bot (profilo del sito): la mettiamo
             # davanti ai fatti così il cervello sa social/info del canale.
@@ -221,6 +227,15 @@ class Handler(BaseHTTPRequestHandler):
             risposta = G.genera(canale, ctx, testo, timeout_s=timeout_s, modo=modo)
             if risposta:
                 mente.registra_scambio(canale, login, testo, risposta)
+                # ricorda i moduli usati in questa risposta, per giudicarli quando
+                # l'utente ribatte (revisione dell'auto-apprendimento).
+                if ctx.get("moduli"):
+                    try:
+                        mente.ricorda_moduli_usati(
+                            canale, login,
+                            [m.get("id") for m in ctx["moduli"] if isinstance(m, dict) and m.get("id")])
+                    except Exception:
+                        pass
             return self._json(200, {"risposta": risposta})
         except Exception as e:
             return self._json(200, {"risposta": None, "errore": str(e)[:120]})

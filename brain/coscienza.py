@@ -132,6 +132,28 @@ def rileva_emozione(testo):
     return punteggi
 
 
+# Reazione dell'utente al turno PRECEDENTE del bot: serve a capire se un modulo
+# ha funzionato. Segnali chiari, per non introdurre rumore (i casi ambigui → 0).
+_REA_POS = ["grazie", "meglio", "mi hai aiut", "gentile", "sei un grande", "sei grande",
+            "hai ragione", "ti voglio bene", "ahah", "haha", "che carin", "🙏", "❤", "🥰", "😊", "💜"]
+_REA_NEG = ["non hai capito", "che c'entra", "che centra", "inutile", "smettila", "sta zitt",
+            "non mi aiut", "lasciami", "non serve", "peggio", "che due palle", "🙄"]
+
+
+def _reazione(testo):
+    """+1 se l'utente reagisce bene, -1 se male, 0 se neutro/ambiguo (nessun segnale)."""
+    t = _fold(testo)
+    if not t:
+        return 0
+    pos = sum(1 for p in _REA_POS if _fold(p) in t)
+    neg = sum(1 for n in _REA_NEG if _fold(n) in t)
+    if neg > pos:
+        return -1
+    if pos > neg:
+        return 1
+    return 0
+
+
 class Coscienza:
     def __init__(self, db_path=DB_PATH):
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
@@ -139,6 +161,9 @@ class Coscienza:
         self.db.row_factory = sqlite3.Row
         self._schema()
         self._assicura_stato()
+        # moduli usati nell'ultima risposta a (canale, login): serve a giudicare
+        # se hanno funzionato quando l'utente ribatte. In memoria (best-effort).
+        self._moduli_pendenti = {}
 
     # ---------------------------------------------------------------- schema
     def _schema(self):
@@ -409,12 +434,16 @@ class Coscienza:
         stato = m.get("stato") if m.get("stato") in ("bozza", "attivo", "sospeso") else "bozza"
         ora = _now()
         with _lock:
-            gia = self.db.execute("SELECT id FROM moduli WHERE nome=?", (nome,)).fetchone()
+            gia = self.db.execute("SELECT id, stato FROM moduli WHERE nome=?", (nome,)).fetchone()
             if gia:
+                # REVISIONE dopo un fallimento: se il modulo era SOSPESO, la versione
+                # rivista riparte con la fedina pulita (contatori azzerati), così ha
+                # una chance equa invece di ereditare i fallimenti della vecchia.
+                azzera = " , successi=0, fallimenti=0" if gia["stato"] == "sospeso" else ""
                 self.db.execute(
                     "UPDATE moduli SET dominio=?, situazione=?, segnali=?, come_rispondere=?, "
-                    "cosa_evitare=?, esempi=?, chiavi=?, fonte=?, qualita=?, stato=?, aggiornato=? "
-                    "WHERE nome=?",
+                    "cosa_evitare=?, esempi=?, chiavi=?, fonte=?, qualita=?, stato=?, aggiornato=?"
+                    + azzera + " WHERE nome=?",
                     (dominio, situazione, segnali, come, evita, esempi, chiavi, fonte,
                      qualita, stato, ora, nome),
                 )
@@ -489,3 +518,45 @@ class Coscienza:
                 segnati.append((punteggio, m))
         segnati.sort(key=lambda x: x[0], reverse=True)
         return [m for _, m in segnati[:max(1, min(3, int(k)))]]
+
+    # -------------------------------------------------- REVISIONE (esito dei moduli)
+    def _usa_modulo(self, mid):
+        with _lock:
+            self.db.execute("UPDATE moduli SET usi=usi+1, aggiornato=? WHERE id=?", (_now(), mid))
+            self.db.commit()
+
+    def _esito_modulo(self, mid, ok):
+        """Aggiunge un successo o un fallimento (senza toccare `usi`). Se un modulo
+        accumula fallimenti (>=3 e più dei successi), lo SOSPENDE: verrà ristudiato
+        dal ciclo di seeding (che rivede tutto ciò che non è 'attivo')."""
+        col = "successi" if ok else "fallimenti"
+        with _lock:
+            self.db.execute(
+                "UPDATE moduli SET " + col + "=" + col + "+1, aggiornato=? WHERE id=?", (_now(), mid))
+            r = self.db.execute("SELECT successi, fallimenti FROM moduli WHERE id=?", (mid,)).fetchone()
+            if r and r["fallimenti"] >= 3 and r["fallimenti"] > r["successi"]:
+                self.db.execute("UPDATE moduli SET stato='sospeso', aggiornato=? WHERE id=?", (_now(), mid))
+            self.db.commit()
+
+    def ricorda_moduli_usati(self, canale, login, ids):
+        """Registra quali moduli sono stati usati nella risposta a (canale, login)
+        e ne conta subito l'uso (esito neutro finché l'utente non ribatte)."""
+        ids = [i for i in (ids or []) if i]
+        if not ids:
+            return
+        self._moduli_pendenti[(canale, login)] = {"ids": ids, "ts": _now()}
+        for i in ids:
+            self._usa_modulo(i)
+
+    def valuta_reazione(self, canale, login, testo_nuovo):
+        """Alla mossa successiva dello stesso utente giudica se i moduli usati la
+        volta prima hanno funzionato (dal tono della sua risposta). TTL 10 min: oltre,
+        il segnale non è affidabile. Neutro → nessun aggiornamento (l'uso è già contato)."""
+        p = self._moduli_pendenti.pop((canale, login), None)
+        if not p or (_now() - p["ts"]) > 600:
+            return
+        rea = _reazione(testo_nuovo)
+        if rea == 0:
+            return
+        for i in p["ids"]:
+            self._esito_modulo(i, rea > 0)
