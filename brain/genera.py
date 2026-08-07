@@ -42,9 +42,10 @@ _TIERS = [
 ]
 
 MAX_TOKEN = int(os.environ.get("LLM_MAX_TOKEN", "80"))
-# Contesto: 2048 di default. Il 7B su 16 GB lo regge con margine, e serve spazio
-# per il prompt più ricco (storia della chat, situazione, cronologia per-utente).
-CONTEXT = int(os.environ.get("LLM_CONTEXT", "2048"))
+# Contesto: 4096 di default. Il 7B regge fino a 32k nativi; a 4096 la KV cache
+# costa ~0,5 GB sui 16 GB del server e lascia spazio al prompt ricco (storia,
+# situazione, cronologia utente) E ai MODULI del "manuale umano" iniettati.
+CONTEXT = int(os.environ.get("LLM_CONTEXT", "4096"))
 
 _lock = threading.Lock()
 _stato = {"stato": "spento", "modello": None, "motivo": None}
