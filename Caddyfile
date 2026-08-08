@@ -44,23 +44,37 @@
 socialbot.live {
 	encode gzip
 
-	# Link-page pubblica degli streamer (/u/<login>): ADESSO LA SERVE IL BOT,
-	# generata dal NOSTRO database (renderLinkPage in features/linkpagina.js).
-	# Prima veniva reverse-proxata alla vecchia SPA su Vercel (www.andryxify.it):
-	# era quella la "pagina vecchia" che compariva nonostante le modifiche fatte
-	# qui. Tolto il proxy, /u/* (e tutto il resto) va all'app: si vede la pagina
-	# nuova, personalizzabile e autosufficiente. Non serve più proxare /assets/*
-	# né /api/streamer-verify: la pagina nuova è HTML+CSS+JS inline, senza bundle
-	# esterni. (Il bot ha comunque un fallback per /api/streamer-verify.)
+	# --- Header di sicurezza (tutte le risposte, 404 inclusi) ---
+	# Messi a livello di sito: valgono anche per le risposte "Not Found"
+	# del labirinto, per i file statici e per i redirect.
+	header {
+		# HSTS: forza HTTPS. Parti breve (1 giorno); quando sei sicuro
+		# alza a "max-age=31536000; includeSubDomains; preload".
+		Strict-Transport-Security "max-age=86400"
+		# anti-clickjacking: la dashboard non va incorniciata da altri siti.
+		# (frame-ancestors nella CSP fa lo stesso, ma questo copre browser vecchi)
+		X-Frame-Options "DENY"
+		# niente MIME-sniffing
+		X-Content-Type-Options "nosniff"
+		# referrer prudente
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# limita API del browser che non servono. NB: NON blocco camera/microphone
+		# perché l'overlay tracking usa la webcam nel Browser Source.
+		Permissions-Policy "geolocation=(), payment=(), usb=(), magnetometer=()"
+		# CSP: SPA con script inline + font Google + 7TV + media utente + canvas.
+		# 'unsafe-inline' è un compromesso per non rompere la dashboard.
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
+		# togli l'header che rivela il server (coerente col "labirinto")
+		-Server
+	}
+
 	handle {
 		reverse_proxy bot:8090 {
-			# Chiave del nostro edge: se EDGE_KEY è impostata nell'ambiente, il bot
-			# serve SOLO le richieste che la portano (vedi "blinda l'origine" nel
-			# codice). Se è vuota, questo header è vuoto e non cambia nulla.
 			header_up X-Edge-Key {env.EDGE_KEY}
 		}
 	}
 }
+
 
 # www → dominio nudo (canonico)
 www.socialbot.live {
