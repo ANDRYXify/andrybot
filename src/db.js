@@ -1937,6 +1937,20 @@ export const effects = {
     return db.prepare(sql).all(...args);
   },
   incUsi(id) { db.prepare('UPDATE effects SET usi=usi+1 WHERE id=?').run(id); },
+  // I MIEI effetti (di un canale), pubblici o privati, filtrabili per tipo. Servono
+  // alla libreria delle grafiche: le tue immagini si riusano SEMPRE, anche se non
+  // le hai rese pubbliche.
+  myList({ channel, tipo, limit = 120 } = {}) {
+    let sql = 'SELECT * FROM effects WHERE channel=? AND attivo=1';
+    const args = [String(channel || '').toLowerCase()];
+    if (tipo && ['audio', 'immagine', 'video'].includes(tipo)) { sql += ' AND tipo=?'; args.push(tipo); }
+    sql += ' ORDER BY ts DESC LIMIT ?';
+    args.push(Math.max(1, Math.min(300, Math.round(limit) || 120)));
+    return db.prepare(sql).all(...args);
+  },
+  // Effetto per id di QUALSIASI canale (senza vincolo di pubblico): serve al media
+  // server per lasciar vedere al PROPRIETARIO anche i propri media non pubblici.
+  anyById(id) { return db.prepare('SELECT * FROM effects WHERE id=? AND attivo=1').get(id) || null; },
 };
 
 // ---------------------------------------------------------------- moduli (automazioni)

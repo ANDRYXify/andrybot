@@ -3296,23 +3296,38 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const tipo = String(req.query.tipo || '');
     const q = String(req.query.q || '');
     const includiMiei = /^(1|true)$/i.test(String(req.query.miei || ''));
-    const items = effectsDb.sharedList({ tipo, q, escludi: includiMiei ? null : login }).map((e) => ({
+    // Con miei=1 (es. libreria delle grafiche): le TUE immagini si riusano SEMPRE,
+    // pubbliche o private, e in cima; poi quelle pubbliche della community. Senza
+    // miei=1: solo le pubbliche degli altri (import effetti).
+    let righe;
+    if (includiMiei) {
+      const mie = effectsDb.myList({ channel: login, tipo });
+      const viste = new Set(mie.map((e) => e.id));
+      const altrui = effectsDb.sharedList({ tipo, q, escludi: login }).filter((e) => !viste.has(e.id));
+      righe = [...mie, ...altrui];
+    } else {
+      righe = effectsDb.sharedList({ tipo, q, escludi: login });
+    }
+    const items = righe.map((e) => ({
       id: e.id, nome: e.nome || e.comando, tipo: e.tipo,
       autore: e.autore || e.channel, combo: !!e.suono_file, usi: e.usi || 0,
-      mio: e.channel === login,
+      mio: e.channel === login, pubblico: !!e.pubblico,
       url: `/api/streamer/libreria/media/${e.id}`,
       suonoUrl: e.suono_file ? `/api/streamer/libreria/media/${e.id}/audio` : null,
     }));
     res.json({ items });
   }));
 
-  // Serve il media di un effetto PUBBLICO (anteprima nella libreria). Sicuro:
-  // solo se pubblico, e usa il nome file salvato nel DB (niente path dall'utente).
+  // Serve il media di un effetto per l'anteprima nella libreria. Sicuro: consentito
+  // solo se l'effetto è PUBBLICO, oppure se è del richiedente stesso (così vedi anche
+  // le TUE immagini private). Usa il nome file salvato nel DB (mai path dall'utente).
   const serviLibreria = (colonna) => (req, res) => {
     const id = parseInt(req.params.id, 10);
-    const eff = Number.isFinite(id) ? effectsDb.pubblicoById(id) : null;
-    const file = eff ? eff[colonna] : '';
-    if (!eff || !file || !/^[A-Za-z0-9._-]+$/.test(file)) return notFound(res);
+    const login = currentUser(req)?.login;
+    const eff = Number.isFinite(id) ? (effectsDb.pubblicoById(id) || effectsDb.anyById(id)) : null;
+    const consentito = eff && (eff.pubblico || (login && eff.channel === login));
+    const file = consentito ? eff[colonna] : '';
+    if (!consentito || !file || !/^[A-Za-z0-9._-]+$/.test(file)) return notFound(res);
     res.sendFile(join(effectsRoot, eff.channel, file), { maxAge: '300s' }, (err) => { if (err && !res.headersSent) notFound(res); });
   };
   app.get('/api/streamer/libreria/media/:id', requireLogin, serviLibreria('file'));
