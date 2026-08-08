@@ -2145,7 +2145,7 @@ function grafDisegna(canvas, c, t = 0, scala = 1) {
     ctx.font = `900 104px ${S}`;
     const tit = grClip(ctx, (c.titolo || L('LA SETTIMANA', 'THE WEEK', 'LA SEMANA')).toUpperCase(), W - pad * 2);
     const tw = ctx.measureText(tit).width, tg = ctx.createLinearGradient(pad, 0, Math.min(W - pad, pad + tw), 0); tg.addColorStop(0, txt); tg.addColorStop(1, acc);
-    ctx.save(); ctx.shadowColor = grRgba(acc, 0.45); ctx.shadowBlur = 28; ctx.shadowOffsetY = 6; ctx.fillStyle = tg; ctx.fillText(tit, pad, 372); ctx.restore();
+    ctx.fillStyle = grRgba(acc, 0.5); ctx.fillText(tit, pad + 3, 377); ctx.fillStyle = tg; ctx.fillText(tit, pad, 372);   // ombra NETTA (niente blur → niente grana JPEG)
     const y0 = 452, rh = (H - y0 - pad + 6) / 7;
     c.giorni.forEach((r, i) => {
       const y = y0 + i * rh, hh = rh - 16;
@@ -2163,7 +2163,7 @@ function grafDisegna(canvas, c, t = 0, scala = 1) {
     ctx.textAlign = 'left'; ctx.fillStyle = tenue2; ctx.font = `800 40px ${S}`; grTxt(ctx, L('IN DIRETTA ORA', 'LIVE NOW', 'EN DIRECTO'), pad + 66, cy - 162, 7);
     ctx.font = `900 168px ${S}`; const tit = grClip(ctx, (c.titolo || 'LIVE').toUpperCase(), W - pad * 2);
     const tw = ctx.measureText(tit).width, tg = ctx.createLinearGradient(pad, 0, Math.min(W - pad, pad + tw), cy); tg.addColorStop(0, txt); tg.addColorStop(1, acc);
-    ctx.save(); ctx.shadowColor = grRgba(acc, 0.5); ctx.shadowBlur = 34; ctx.shadowOffsetY = 6; ctx.fillStyle = tg; ctx.fillText(tit, pad, cy); ctx.restore();
+    ctx.fillStyle = grRgba(acc, 0.5); ctx.fillText(tit, pad + 3, cy + 5); ctx.fillStyle = tg; ctx.fillText(tit, pad, cy);   // ombra NETTA (niente blur → niente grana JPEG)
     if (c.gioco) { ctx.font = `800 46px ${S}`; const gw = Math.min(W - pad * 2, ctx.measureText(c.gioco).width + 250); grRoundRect(ctx, pad, cy + 56, gw, 104, 52); const cg = ctx.createLinearGradient(pad, 0, pad + gw, 0); cg.addColorStop(0, acc); cg.addColorStop(1, grHueShift(acc, -30)); ctx.fillStyle = cg; ctx.fill(); ctx.fillStyle = eScuroHex(acc) ? '#fff' : '#111'; ctx.textAlign = 'left'; ctx.fillText('🎮  ' + grClip(ctx, c.gioco, W - pad * 2 - 280), pad + 42, cy + 124); }
     if (c.sottotitolo) { ctx.fillStyle = tenue2; ctx.font = `500 54px ${S}`; ctx.textAlign = 'left'; ctx.fillText(grClip(ctx, c.sottotitolo, W - pad * 2), pad, cy + 270); }
     const bb = ctx.createLinearGradient(0, 0, W, 0); bb.addColorStop(0, acc); bb.addColorStop(1, grHueShift(acc, -40)); ctx.fillStyle = bb; ctx.fillRect(0, H - 22, W, 22);
@@ -2228,7 +2228,9 @@ function initGrafiche() {
   };
   const ridisegna = () => {
     if (grafRAF) { cancelAnimationFrame(grafRAF); grafRAF = null; }
-    if (grafAnimato(c)) frame(); else grafDisegna(canvas, c, 0);
+    // anteprima statica a 2×: sullo schermo il testo si vede nitido come nell'export.
+    // (i temi animati restano a 1× per non appesantire il loop.)
+    if (grafAnimato(c)) frame(); else grafDisegna(canvas, c, 0, 2);
     aggiornaDidascalia();
   };
 
