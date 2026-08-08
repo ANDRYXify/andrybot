@@ -1458,6 +1458,21 @@ input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focu
 .gr-controlli { flex: 1 1 320px; min-width: 280px; }
 .gr-anteprima { flex: 1 1 300px; min-width: 260px; position: sticky; top: 16px; }
 #gr-canvas { width: 100%; height: auto; max-width: 420px; border-radius: 14px; box-shadow: var(--om-m); display: block; margin: 0 auto; background: #111; }
+/* Editor grafiche su MOBILE: l'anteprima si ancora in alto (sotto la barra) e i
+   controlli scorrono sotto — così vedi le modifiche in diretta senza dover
+   scendere in fondo alla pagina. */
+@media (max-width: 720px) {
+  .gr-studio { flex-direction: column; gap: 12px; }
+  .gr-anteprima {
+    order: -1;                                            /* prima dei controlli */
+    position: sticky; top: var(--top-h); z-index: 20;
+    align-self: stretch; background: var(--surface);      /* copre i controlli sotto */
+    padding: 10px 0 12px; margin: 0;
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 10px 18px -12px rgba(0, 0, 0, .55);
+  }
+  #gr-canvas { width: auto; height: auto; max-width: 62vw; max-height: 38vh; }
+}
 .gr-temi, .gr-sfondo-scelte { display: flex; flex-wrap: wrap; gap: 6px; }
 .gr-lib-box { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; margin-top: 8px; max-height: 240px; overflow: auto; }
 .gr-lib-el { padding: 0; border: 1px solid var(--bordo); border-radius: 8px; overflow: hidden; cursor: pointer; background: none; aspect-ratio: 1; }
