@@ -2287,7 +2287,7 @@ function initGrafiche() {
     box.hidden = false;
     box.innerHTML = `<p class="vuoto">${L('Carico…', 'Loading…', 'Cargando…')}</p>`;
     try {
-      const d = await api('/api/streamer/libreria?tipo=immagine&miei=1');
+      const d = await api('/api/streamer/libreria?tipo=immagine&miei=1&privati=1');
       const items = (d?.items || []).filter((x) => x.tipo === 'immagine');
       if (!items.length) { box.innerHTML = `<p class="vuoto">${L('Nessuna immagine ancora. Caricane una come effetto in «Effetti & suoni» (anche senza renderla pubblica) e la ritrovi qui.', 'No images yet. Upload one as an effect in «Effects & sounds» (even without making it public) and you\'ll find it here.', 'Aún no hay imágenes. Sube una como efecto en «Efectos y sonidos» (aunque no la hagas pública) y la encontrarás aquí.')}</p>`; return; }
       // le tue immagini prima (badge «tua»), poi quelle pubbliche della community
@@ -10164,8 +10164,10 @@ function libItemHtml(it) {
   return `<div class="lib-card" data-id="${it.id}">
     <div class="lib-media-wrap">${media}${it.combo ? '<span class="lib-combo">combo</span>' : ''}</div>
     <div class="lib-nome" title="${esc(it.nome)}">${esc(it.nome)}</div>
-    <div class="meta">${L('di', 'by', 'de')} ${esc(it.autore)}${it.usi ? ' · ' + it.usi + ' ' + L('usi', 'uses', 'usos') : ''}</div>
-    <div class="lib-azioni">${audio}<button type="button" class="btn mini lib-importa" data-id="${it.id}">${_bIco(ICO.piu)}${L('Aggiungi', 'Add', 'Añadir')}</button></div>
+    <div class="meta">${it.mio ? `<strong>${L('tuo', 'yours', 'tuyo')}</strong>` : L('di', 'by', 'de') + ' ' + esc(it.autore)}${it.usi ? ' · ' + it.usi + ' ' + L('usi', 'uses', 'usos') : ''}</div>
+    <div class="lib-azioni">${audio}${it.mio
+      ? `<span class="lib-mia">${L('già tua', 'already yours', 'ya tuya')}</span>`
+      : `<button type="button" class="btn mini lib-importa" data-id="${it.id}">${_bIco(ICO.piu)}${L('Aggiungi', 'Add', 'Añadir')}</button>`}</div>
   </div>`;
 }
 
@@ -10174,9 +10176,11 @@ async function caricaLibreria() {
   if (!g) return;
   const q = (document.getElementById('lib-cerca')?.value || '').trim();
   try {
-    const d = await api(`/api/streamer/libreria?tipo=${encodeURIComponent(_libTipo)}&q=${encodeURIComponent(q)}`);
+    // miei=1: mostra anche i TUOI effetti pubblici (marcati «tuo»), così vedi
+    // subito ciò che hai condiviso e la libreria non sembra vuota se sei da solo.
+    const d = await api(`/api/streamer/libreria?tipo=${encodeURIComponent(_libTipo)}&q=${encodeURIComponent(q)}&miei=1`);
     if (!d.items.length) {
-      g.innerHTML = `<p class="vuoto">${L('Ancora niente qui. Sii il primo a condividere: carica un effetto e spunta “Rendi pubblico”!', 'Nothing here yet. Be the first to share: upload an effect and tick “Make it public”!', 'Aún no hay nada aquí. Sé el primero en compartir: sube un efecto y marca “Hazlo público”.')}</p>`;
+      g.innerHTML = `<p class="vuoto">${L('Ancora niente qui. Condividi il primo: carica un effetto in «Effetti & suoni» e spunta “Rendi pubblico” — comparirà qui.', 'Nothing here yet. Share the first one: upload an effect in «Effects & sounds» and tick “Make it public” — it will show here.', 'Aún no hay nada. Comparte el primero: sube un efecto en «Efectos y sonidos» y marca “Hazlo público” — aparecerá aquí.')}</p>`;
       return;
     }
     g.innerHTML = d.items.map(libItemHtml).join('');
