@@ -1772,8 +1772,17 @@ function grafDefault() {
     coloreTesto: '', velo: 45,
     gioco: '', sottotitolo: '',
     sfondo: 'tema', sfondoColore: '', sfondoImg: '',
+    qr: false, dest: 'u',   // QR + link del canale sull'immagine; dest: 'u' (pagina /u) o 'twitch'
     giorni: GR_GIORNI.map((g) => ({ g, ora: '21:00', att: '', off: false })),
   };
+}
+
+// URL di destinazione del QR/condivisione, dal login del canale.
+function grafUrlCanale(c) {
+  const login = (stato?.user?.login || 'iltuocanale').toLowerCase();
+  return (c && c.dest === 'twitch')
+    ? 'twitch.tv/' + login
+    : 'socialbot.live/u/' + login;
 }
 // Comprime un'immagine in un data URL JPEG che sta SOTTO al limite del server
 // (il canale accetta sfondi fino a 700KB: puntiamo più in basso così non viene
@@ -2122,6 +2131,40 @@ function grafDisegna(canvas, c, t = 0) {
     if (c.sottotitolo) { ctx.fillStyle = tenue2; ctx.font = `500 54px ${S}`; ctx.textAlign = 'left'; ctx.fillText(grClip(ctx, c.sottotitolo, W - pad * 2), pad, cy + 270); }
     const bb = ctx.createLinearGradient(0, 0, W, 0); bb.addColorStop(0, acc); bb.addColorStop(1, grHueShift(acc, -40)); ctx.fillStyle = bb; ctx.fillRect(0, H - 22, W, 22);
   }
+  grafQr(ctx, c, W, H, pad, txt, S);   // badge "scansiona": il QR porta al canale
+}
+
+// Disegna il badge QR + URL del canale in basso a destra (se attivo). Su Instagram
+// l'immagine del feed non è cliccabile: il QR è il modo per farla "portare" al canale.
+// Cache dei moduli per non ricalcolarli a ogni fotogramma dei temi animati.
+let _grQr = null;
+function grafQr(ctx, c, W, H, pad, txt, S) {
+  if (!c || !c.qr || typeof qrcode !== 'function') return;
+  try {
+    const url = grafUrlCanale(c);
+    const full = 'https://' + url;
+    if (!_grQr || _grQr.url !== full) {
+      const q = qrcode(0, 'M'); q.addData(full); q.make();
+      const nn = q.getModuleCount(), mods = [];
+      for (let r = 0; r < nn; r++) { const row = []; for (let col = 0; col < nn; col++) row.push(q.isDark(r, col)); mods.push(row); }
+      _grQr = { url: full, n: nn, mods };
+    }
+    const P = 210, cardX = W - pad - P, cardY = H - pad - P - 46;
+    // card bianca con ombra (il QR va su bianco per essere scansionabile)
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.30)'; ctx.shadowBlur = 22; ctx.shadowOffsetY = 6;
+    ctx.fillStyle = '#ffffff'; grRoundRect(ctx, cardX, cardY, P, P, 26); ctx.fill(); ctx.restore();
+    const n = _grQr.n, quiet = 20, area = P - quiet * 2, cell = area / n;
+    ctx.fillStyle = '#0d0d12';
+    for (let r = 0; r < n; r++) for (let col = 0; col < n; col++) {
+      if (_grQr.mods[r][col]) ctx.fillRect(cardX + quiet + col * cell, cardY + quiet + r * cell, cell + 0.6, cell + 0.6);
+    }
+    // URL sotto (per chi preferisce digitarlo)
+    ctx.save();
+    ctx.textAlign = 'center'; ctx.font = `700 30px ${S}`;
+    ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = 8; ctx.fillStyle = txt;
+    ctx.fillText(url, cardX + P / 2, cardY + P + 36);
+    ctx.restore(); ctx.textAlign = 'left';
+  } catch (e) { /* il QR è un extra: se fallisce, la grafica resta intatta */ }
 }
 // luminanza: true se il colore è scuro (per scegliere testo bianco/nero sopra)
 function eScuroHex(hex) {
