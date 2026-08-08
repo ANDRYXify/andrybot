@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join, basename } from 'node:path';
 import { config, SCOPES, missingConfig } from '../config.js';
 import { makeLog } from '../logger.js';
-import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb, friends } from '../db.js';
+import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb, friends, sfondi as sfondiDb } from '../db.js';
 import { points, vips, tgConf, dcConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO } from '../db.js';
 import { renderLinkPage, renderInformativa } from '../features/linkpagina.js';
@@ -593,6 +593,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // ------------------------------------------------------------ EFFETTI: cartelle e upload
   // gli effetti vivono in data/effects/<login>/, i file in arrivo in data/tmp/
   const effectsRoot = join(config.dataDir, 'effects');
+  const sfondiRoot = join(config.dataDir, 'sfondi');   // libreria sfondi delle grafiche
   const tmpDir = join(config.dataDir, 'tmp');
   mkdirSync(tmpDir, { recursive: true });
 
@@ -2739,7 +2740,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       // immagine valida = data URL (caricata dal PC) OPPURE un media della
       // libreria condivisa del sito (stessa origine → export senza taint).
       const imgOk = (v) => (/^data:image\/(png|jpeg|webp);base64,/.test(v) && v.length <= 700000)
-        || /^\/api\/streamer\/libreria\/media\/\d+$/.test(v);
+        || /^\/api\/streamer\/libreria\/media\/\d+$/.test(v)
+        || /^\/api\/streamer\/sfondi\/media\/\d+$/.test(v);
       const veloN = Math.max(0, Math.min(85, Math.round(Number(gr.velo)) || 0));
       out.grafiche = {
         tipo: ['programmazione', 'live'].includes(gr.tipo) ? gr.tipo : 'programmazione',
@@ -3335,6 +3337,68 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   };
   app.get('/api/streamer/libreria/media/:id', requireLogin, serviLibreria('file'));
   app.get('/api/streamer/libreria/media/:id/audio', requireLogin, serviLibreria('suono_file'));
+
+  // ---- Libreria SFONDI delle grafiche --------------------------------------
+  // Immagini caricate dallo streamer per gli sfondi delle grafiche social. NON
+  // sono gated su un add-on: le grafiche stanno nel piano Base. Vivono come FILE
+  // (in data/sfondi/<login>/), così restano leggere e riusabili senza gonfiare le
+  // impostazioni: le grafiche referenziano solo l'URL /media/<id>. Sempre private.
+  const SFONDO_DATAURL_MAX = 1_600_000;   // ~1.2MB di immagine, sotto il limite JSON (2MB)
+  const SFONDO_EXT = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp' };
+
+  app.get('/api/streamer/sfondi', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const items = sfondiDb.list(login).map((s) => ({
+      id: s.id, nome: s.nome || '', url: `/api/streamer/sfondi/media/${s.id}`,
+    }));
+    res.json({ items });
+  }));
+
+  // Carica un nuovo sfondo (data URL già ridimensionato dal browser). Decodifica
+  // il base64 e lo scrive su disco con nome generato (mai un path dall'utente).
+  app.post('/api/streamer/sfondi', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (streamers.get(login)?.status !== 'approved') return res.status(403).json({ errore: 'non sei ancora abilitato' });
+    const dataUrl = String(req.body?.dataUrl || '');
+    const nome = String(req.body?.nome || '').slice(0, 60).trim();
+    if (dataUrl.length > SFONDO_DATAURL_MAX) return res.status(400).json({ errore: 'immagine troppo grande' });
+    const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(dataUrl);
+    if (!m) return res.status(400).json({ errore: 'immagine non valida' });
+    let buf;
+    try { buf = Buffer.from(m[2], 'base64'); } catch { buf = null; }
+    if (!buf || !buf.length || buf.length > 1_300_000) return res.status(400).json({ errore: 'immagine non valida' });
+    const destDir = join(sfondiRoot, login);
+    mkdirSync(destDir, { recursive: true });
+    const file = `${Date.now()}_${crypto.randomBytes(4).toString('hex')}${SFONDO_EXT[m[1]]}`;
+    let riga;
+    try {
+      writeFileSync(join(destDir, file), buf);
+      riga = sfondiDb.add(login, { file, nome });
+    } catch (e) {
+      await pulisciTemp(join(destDir, file));
+      return res.status(400).json({ errore: e?.message || 'salvataggio non riuscito' });
+    }
+    res.json({ ok: true, id: riga.id, nome: riga.nome, url: `/api/streamer/sfondi/media/${riga.id}` });
+  }));
+
+  app.delete('/api/streamer/sfondi/:id', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) return res.status(400).json({ errore: 'id non valido' });
+    const file = sfondiDb.remove(login, id);
+    if (file) await pulisciTemp(join(sfondiRoot, login, file));
+    res.json({ ok: true });
+  }));
+
+  // Serve un'immagine di sfondo: SOLO al proprietario (mai pubblica). Nome dal DB.
+  app.get('/api/streamer/sfondi/media/:id', requireLogin, (req, res) => {
+    const login = currentUser(req)?.login;
+    const id = parseInt(req.params.id, 10);
+    const s = (login && Number.isFinite(id)) ? sfondiDb.byId(login, id) : null;
+    const file = s?.file || '';
+    if (!file || !/^[A-Za-z0-9._-]+$/.test(file)) return notFound(res);
+    res.sendFile(join(sfondiRoot, login, file), { maxAge: '300s' }, (err) => { if (err && !res.headersSent) notFound(res); });
+  });
 
   // Importa un effetto pubblico nella PROPRIA libreria (copia i file). Resta
   // privato di default; l'attribuzione all'autore originale viene conservata.
