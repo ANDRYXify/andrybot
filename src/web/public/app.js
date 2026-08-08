@@ -1871,7 +1871,7 @@ function pannelloGrafiche() {
               <button type="button" class="btn secondario" id="gr-sfondo-lib">${_bIco(ICO.libro)}${L('Dalla libreria/pool', 'From library/pool', 'De la biblioteca/pool')}</button>
             </div>
             <div id="gr-lib-box" class="gr-lib-box" hidden></div>
-            <p class="suggerimento">${L('Carica dal PC oppure scegli dalla', 'Upload from your PC or pick from the', 'Sube desde el PC o elige de la')} <strong>${L('libreria condivisa', 'shared library', 'biblioteca compartida')}</strong> ${L('(le immagini rese pubbliche dagli altri streamer).', '(images made public by other streamers).', '(imágenes hechas públicas por otros streamers).')}
+            <p class="suggerimento">${L('Carica dal PC oppure scegli dalla', 'Upload from your PC or pick from the', 'Sube desde el PC o elige de la')} <strong>${L('libreria', 'library', 'biblioteca')}</strong>: ${L('le TUE immagini caricate come effetti (anche private) e quelle pubbliche della community.', 'YOUR images uploaded as effects (even private) plus the community\'s public ones.', 'TUS imágenes subidas como efectos (incluso privadas) más las públicas de la comunidad.')}
               ${c.sfondoImg ? `· <a href="#" id="gr-sfondo-togli">${L('togli immagine', 'remove image', 'quitar imagen')}</a>` : ''}</p>
           </div>
 
@@ -2289,14 +2289,21 @@ function initGrafiche() {
     try {
       const d = await api('/api/streamer/libreria?tipo=immagine&miei=1');
       const items = (d?.items || []).filter((x) => x.tipo === 'immagine');
-      if (!items.length) { box.innerHTML = `<p class="vuoto">${L('Nessuna immagine pubblica ancora. Caricane una in «Effetti & suoni» spuntando «Rendi pubblico».', 'No public images yet. Upload one in «Effects & sounds» ticking «Make it public».', 'Aún no hay imágenes públicas. Sube una en «Efectos y sonidos» marcando «Hazlo público».')}</p>`; return; }
-      box.innerHTML = items.slice(0, 40).map((x) =>
-        `<button type="button" class="gr-lib-el" data-url="${esc(x.url)}" title="${esc(x.nome)}"><img src="${esc(x.url)}" alt="" loading="lazy"></button>`).join('');
+      if (!items.length) { box.innerHTML = `<p class="vuoto">${L('Nessuna immagine ancora. Caricane una come effetto in «Effetti & suoni» (anche senza renderla pubblica) e la ritrovi qui.', 'No images yet. Upload one as an effect in «Effects & sounds» (even without making it public) and you\'ll find it here.', 'Aún no hay imágenes. Sube una como efecto en «Efectos y sonidos» (aunque no la hagas pública) y la encontrarás aquí.')}</p>`; return; }
+      // le tue immagini prima (badge «tua»), poi quelle pubbliche della community
+      box.innerHTML = items.slice(0, 48).map((x) =>
+        `<button type="button" class="gr-lib-el" data-url="${esc(x.url)}" title="${esc(x.nome || '')}${x.mio ? '' : ' · @' + esc(x.autore || '')}">
+          <img src="${esc(x.url)}" alt="" loading="lazy">
+          <span class="gr-lib-tag">${x.mio ? L('tua', 'yours', 'tuya') : '@' + esc(x.autore || '')}</span>
+        </button>`).join('');
       box.querySelectorAll('.gr-lib-el').forEach((b) => b.addEventListener('click', () => {
         c.sfondoImg = b.dataset.url; grafCaricaImg(c.sfondoImg, ridisegna); box.hidden = true;
       }));
-    } catch {
-      box.innerHTML = `<p class="vuoto">${L('Libreria non disponibile (serve l\'add-on Effetti).', 'Library unavailable (needs the Effects add-on).', 'Biblioteca no disponible (necesita el add-on de Efectos).')}</p>`;
+    } catch (e) {
+      const gated = /403|piano|add-?on|pacchetto/i.test(String(e?.message || e));
+      box.innerHTML = `<p class="vuoto">${gated
+        ? L('La libreria immagini serve l\'add-on «Effetti».', 'The image library needs the «Effects» add-on.', 'La biblioteca de imágenes necesita el add-on «Efectos».')
+        : L('Libreria non disponibile ora, riprova.', 'Library unavailable now, try again.', 'Biblioteca no disponible ahora, inténtalo de nuevo.')}</p>`;
     }
   });
   document.getElementById('gr-sfondo-togli')?.addEventListener('click', (e) => {
