@@ -1107,42 +1107,41 @@ function vistaDisabilitato() {
 // dispersivi) mostriamo poche categorie chiare e, dentro ognuna, le sue schede.
 // NB: gli id delle schede restano identici a prima (li usano i pannelli).
 const GRUPPI = [
-  { id: 'panoramica', nome: 'Panoramica', schede: [
-    ['stato', 'Stato'],
-    ['sottoscrizione', 'Sottoscrizione'],
-  ] },
-  { id: 'personaggio', nome: 'Personaggio', schede: [
+  { id: 'bot', nome: 'Il tuo bot', schede: [
     ['personalita', 'Personalità'],
     ['conoscenza', 'Conoscenza'],
     ['memoria', 'Memoria'],
+    ['avatar', 'Avatar 3D'],
   ] },
-  { id: 'chat', nome: 'Chat & comandi', schede: [
+  { id: 'pubblico', nome: 'Chat e pubblico', schede: [
     ['moduli', 'Comandi'],
+    ['ascolto', 'Comandi vocali'],
     ['regole', 'Moderazione'],
     ['giochi', 'Giochi & classifiche'],
-  ] },
-  { id: 'diretta', nome: 'Diretta', schede: [
-    ['regia', 'Regia'],
-    // Studio Web temporaneamente nascosto (WIP): fa laggare le live. Il codice
-    // resta, si riattiva rimettendo questa voce quando le prestazioni sono a posto.
-    ['clip', 'Clip'],
-    ['ascolto', 'Comandi a voce'],
-  ] },
-  { id: 'interazione', nome: 'Interazione', schede: [
-    ['musica', 'Musica'],
     ['sondaggi', 'Sondaggi & predizioni'],
     ['giveaway', 'Giveaway'],
     ['penitenze', 'Penitenze'],
   ] },
-  { id: 'overlay', nome: 'Overlay', schede: [
+  { id: 'diretta', nome: 'Durante la diretta', schede: [
+    ['regia', 'Regia'],
+    // Studio Web temporaneamente nascosto (WIP): fa laggare le live. Il codice
+    // resta, si riattiva rimettendo la voce ['studio', 'Studio Web'] qui.
+    ['clip', 'Clip'],
+    ['musica', 'Musica'],
+  ] },
+  { id: 'scena', nome: 'Scena & overlay', schede: [
     ['alert', 'Overlay Studio'],
     ['effetti', 'Effetti & suoni'],
-    ['emote', '7TV · Emote'],
+    ['emote', 'Emote (7TV)'],
   ] },
-  { id: 'notifiche', nome: 'Notifiche', schede: [
-    ['notifiche', 'Notifiche'],
+  { id: 'vetrina', nome: 'La tua vetrina', schede: [
     ['pagina', 'Pagina link'],
     ['grafiche', 'Grafiche'],
+    ['notifiche', 'Notifiche social'],
+  ] },
+  { id: 'account', nome: 'Account', schede: [
+    ['stato', 'Stato'],
+    ['sottoscrizione', 'Abbonamento'],
   ] },
 ];
 
@@ -1161,13 +1160,12 @@ function schedaValida(id) {
 // stabili; il testo mostrato si risolve a runtime con L(), così cambia con la
 // lingua (i nomi in GRUPPI restano come fallback italiano).
 const T_GRUPPO = {
-  panoramica: ['Panoramica', 'Overview', 'Resumen'],
-  personaggio: ['Personaggio', 'Character', 'Personaje'],
-  chat: ['Chat & comandi', 'Chat & commands', 'Chat y comandos'],
-  diretta: ['Diretta', 'Live', 'Directo'],
-  interazione: ['Interazione', 'Interaction', 'Interacción'],
-  overlay: ['Overlay', 'Overlay', 'Overlay'],
-  notifiche: ['Notifiche', 'Notifications', 'Notificaciones'],
+  bot: ['Il tuo bot', 'Your bot', 'Tu bot'],
+  pubblico: ['Chat e pubblico', 'Chat & audience', 'Chat y público'],
+  diretta: ['Durante la diretta', 'During the live', 'Durante el directo'],
+  scena: ['Scena & overlay', 'Scene & overlay', 'Escena y overlay'],
+  vetrina: ['La tua vetrina', 'Your showcase', 'Tu escaparate'],
+  account: ['Account', 'Account', 'Cuenta'],
   admin: ['Admin', 'Admin', 'Admin'],
 };
 const T_SCHEDA = {
@@ -1175,21 +1173,22 @@ const T_SCHEDA = {
   personalita: ['Personalità', 'Personality', 'Personalidad'],
   conoscenza: ['Conoscenza', 'Knowledge', 'Conocimiento'],
   memoria: ['Memoria', 'Memory', 'Memoria'],
+  avatar: ['Avatar 3D', 'Avatar 3D', 'Avatar 3D'],
   moduli: ['Comandi', 'Commands', 'Comandos'],
   regole: ['Moderazione', 'Moderation', 'Moderación'],
   giochi: ['Giochi & classifiche', 'Games & leaderboards', 'Juegos y clasificaciones'],
   regia: ['Regia', 'Control room', 'Realización'],
   studio: ['Studio Web', 'Web Studio', 'Estudio Web'],
   clip: ['Clip', 'Clips', 'Clips'],
-  ascolto: ['Comandi a voce', 'Voice commands', 'Comandos por voz'],
+  ascolto: ['Comandi vocali', 'Voice commands', 'Comandos de voz'],
   musica: ['Musica', 'Music', 'Música'],
   sondaggi: ['Sondaggi & predizioni', 'Polls & predictions', 'Encuestas y predicciones'],
   giveaway: ['Giveaway', 'Giveaway', 'Sorteo'],
   penitenze: ['Penitenze', 'Forfeits', 'Penitencias'],
   alert: ['Overlay Studio', 'Overlay Studio', 'Overlay Studio'],
-  emote: ['7TV · Emote', '7TV · Emotes', '7TV · Emotes'],
-  notifiche: ['Notifiche', 'Notifications', 'Notificaciones'],
-  sottoscrizione: ['Sottoscrizione', 'Subscription', 'Suscripción'],
+  emote: ['Emote (7TV)', 'Emotes (7TV)', 'Emotes (7TV)'],
+  notifiche: ['Notifiche social', 'Social notifications', 'Notificaciones sociales'],
+  sottoscrizione: ['Abbonamento', 'Subscription', 'Suscripción'],
   pagina: ['Pagina link', 'Link page', 'Página de enlaces'],
   effetti: ['Effetti & suoni', 'Effects & sounds', 'Efectos y sonidos'],
   grafiche: ['Grafiche social', 'Social graphics', 'Gráficas sociales'],
@@ -1213,6 +1212,7 @@ const ICONA = {
   personalita: _ico('<path d="M12 3c.35 3.8 1.4 4.85 5 5.2-3.6.35-4.65 1.4-5 5.2-.35-3.8-1.4-4.85-5-5.2 3.6-.35 4.65-1.4 5-5.2Z"/><path d="M18.5 15c.15 1.6.6 2.05 2.2 2.2-1.6.15-2.05.6-2.2 2.2-.15-1.6-.6-2.05-2.2-2.2 1.6-.15 2.05-.6 2.2-2.2Z"/>'),
   conoscenza:  _ico('<path d="M5 4.5h11a2 2 0 0 1 2 2v13H7a2 2 0 0 1-2-2Z"/><path d="M9 4.5v15"/>'),
   memoria:     _ico('<path d="M4 21V4"/><path d="M4 21h16"/><path d="M8.5 21v-6"/><path d="M13 21V9"/><path d="M17.5 21v-9"/>'),
+  avatar:      _ico('<path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="M3 7l9 5 9-5"/><path d="M12 12v10"/>'),
   moduli:      _ico('<rect x="3" y="4" width="18" height="16" rx="2.2"/><path d="M7.5 9.5 10.5 12l-3 2.5"/><path d="M13 15h4"/>'),
   regole:      _ico('<path d="M12 3.2 19 6v5c0 4.8-3.4 7.8-7 8.8-3.6-1-7-4-7-8.8V6z"/>'),
   giochi:      _ico('<rect x="2" y="7.5" width="20" height="9" rx="4.5"/><path d="M7 11v3"/><path d="M5.5 12.5h3"/><circle cx="16" cy="11.5" r=".9" fill="currentColor" stroke="none"/><circle cx="18" cy="13.5" r=".9" fill="currentColor" stroke="none"/>'),
@@ -1708,6 +1708,7 @@ function vistaPiattaforma() {
     ${pannelloPersonalita()}
     ${pannelloConoscenza()}
     ${pannelloMemoria()}
+    ${pannelloAvatar()}
     ${pannelloModuli()}
     ${pannelloContatori()}
     ${pannelloRegole()}
@@ -2536,6 +2537,23 @@ function badgePermesso(ok, nome) {
     : `<span class="badge giallo">${nome} ${L('da concedere', 'to grant', 'por conceder')}</span>`;
 }
 
+// Scheda "Avatar 3D": lo schema tridimensionale del cervello del bot (era una
+// carta dentro "Stato"). Sta nel gruppo "Il tuo bot".
+function pannelloAvatar() {
+  return pannello('avatar', `
+    <div class="carta">
+      <h2>${_hIco(ICO.cervello)}${L('Avatar 3D del bot', '3D avatar of the bot', 'Avatar 3D del bot')}</h2>
+      <p>${L('Uno schema tridimensionale del cervello del bot: al centro Lia, attorno la sua logica e — nel suo «manuale su come funzionano le persone» — le emozioni con i moduli che ha imparato. Trascina per ruotare, rotella per lo zoom, clicca un nodo per vedere cosa fa.', 'A three-dimensional map of the bot’s brain: Lia at the center, its logic around her and — in its “manual on how people work” — the emotions with the modules it has learned. Drag to rotate, wheel to zoom, click a node to see what it does.', 'Un esquema tridimensional del cerebro del bot: Lia en el centro, su lógica alrededor y — en su «manual sobre cómo funcionan las personas» — las emociones con los módulos que ha aprendido. Arrastra para rotar, rueda para el zoom, clica un nodo para ver qué hace.')}</p>
+      <div id="mente3d-wrap" style="display:flex;flex-wrap:wrap;gap:14px;margin-top:8px">
+        <div style="position:relative;flex:1 1 340px;min-height:420px;border-radius:14px;overflow:hidden;background:var(--sfondo-lieve,rgba(130,110,220,.06))">
+          <canvas id="mente3d-canvas" style="width:100%;height:100%;display:block"></canvas>
+          <div id="mente3d-legenda" style="position:absolute;left:10px;bottom:10px;font-size:.72em;line-height:1.5;opacity:.92;pointer-events:none"></div>
+        </div>
+        <div id="mente3d-dettaglio" class="suggerimento" style="flex:1 1 240px;align-self:flex-start"></div>
+      </div>
+    </div>`);
+}
+
 function pannelloStato() {
   const login = stato.user.login;
   // "in chat adesso" = davvero connesso (non solo unità esistente): usa connessi[]
@@ -2667,17 +2685,6 @@ function pannelloStato() {
       <h2>${_hIco(ICO.germoglio)}${L('La piccola rete che impara', 'The little network that learns', 'La pequeña red que aprende')}</h2>
       <p>${L('Il motore veloce del bot che', 'The bot’s fast engine that', 'El motor rápido del bot que')} <strong class="primo-piano">${L('cresce da solo', 'grows on its own', 'crece solo')}</strong>: ${L('risponde all\'istante a ciò che ha già imparato e, quando incontra qualcosa di nuovo, se lo segna e lo impara dal maestro. Più lo alleni (anche via DM su Telegram), più sa fare da sé.', 'answers instantly to what it already learned and, when it meets something new, notes it and learns it from the teacher. The more you train it (also via Telegram DM), the more it can do on its own.', 'responde al instante a lo que ya aprendió y, cuando encuentra algo nuevo, lo anota y lo aprende del maestro. Cuanto más lo entrenas (también por DM en Telegram), más sabe hacer solo.')}</p>
       <div id="rete-panoramica"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
-    </div>
-    <div class="carta">
-      <h2>${_hIco(ICO.cervello)}${L('La mente in 3D', 'The mind in 3D', 'La mente en 3D')}</h2>
-      <p>${L('Uno schema tridimensionale del cervello del bot: al centro Lia, attorno la sua logica e — nel suo «manuale su come funzionano le persone» — le emozioni con i moduli che ha imparato. Trascina per ruotare, rotella per lo zoom, clicca un nodo per vedere cosa fa.', 'A three-dimensional map of the bot’s brain: Lia at the center, its logic around her and — in its “manual on how people work” — the emotions with the modules it has learned. Drag to rotate, wheel to zoom, click a node to see what it does.', 'Un esquema tridimensional del cerebro del bot: Lia en el centro, su lógica alrededor y — en su «manual sobre cómo funcionan las personas» — las emociones con los módulos que ha aprendido. Arrastra para rotar, rueda para el zoom, clica un nodo para ver qué hace.')}</p>
-      <div id="mente3d-wrap" style="display:flex;flex-wrap:wrap;gap:14px;margin-top:8px">
-        <div style="position:relative;flex:1 1 340px;min-height:380px;border-radius:14px;overflow:hidden;background:var(--sfondo-lieve,rgba(130,110,220,.06))">
-          <canvas id="mente3d-canvas" style="width:100%;height:100%;display:block"></canvas>
-          <div id="mente3d-legenda" style="position:absolute;left:10px;bottom:10px;font-size:.72em;line-height:1.5;opacity:.92;pointer-events:none"></div>
-        </div>
-        <div id="mente3d-dettaglio" class="suggerimento" style="flex:1 1 240px;align-self:flex-start"></div>
-      </div>
     </div>
     <div class="carta">
       <h2>${_hIco(ICO.telefono)}${L('Installa l\'app', 'Install the app', 'Instala la app')}</h2>
@@ -9809,7 +9816,8 @@ async function conErrore(fn) {
 // carica i dati "pigri" della scheda selezionata
 function caricaDatiScheda(id) {
   if (schedaBloccata(id)) return;   // pagina bloccata: nessuna API (darebbe 403)
-  if (id === 'stato') { caricaPasskey(); caricaModeratori(); caricaRetePanoramica(); caricaMente3d(); }
+  if (id === 'stato') { caricaPasskey(); caricaModeratori(); caricaRetePanoramica(); }
+  if (id === 'avatar') caricaMente3d();
   if (id === 'personalita') caricaGuide();
   if (id === 'conoscenza') caricaConoscenza();
   if (id === 'clip') caricaClip();

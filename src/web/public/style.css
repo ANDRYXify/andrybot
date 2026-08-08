@@ -64,9 +64,9 @@
   /* barra in alto */
   --top-h: 60px;
   /* colori-firma dei gruppi di navigazione (tenui, mai sgargianti) */
-  --g-panoramica: #9146ff; --g-personaggio: #5b8def; --g-chat: #2fb98a;
-  --g-diretta: #f2635a; --g-interazione: #e0913a; --g-overlay: #d364b8;
-  --g-notifiche: #3aa6c9; --g-admin: var(--acc);
+  --g-bot: #9146ff; --g-pubblico: #2fb98a; --g-diretta: #f2635a;
+  --g-scena: #d364b8; --g-vetrina: #3aa6c9; --g-account: #5b8def;
+  --g-admin: var(--acc);
 }
 
 html { scroll-behavior: smooth; }
@@ -1410,9 +1410,9 @@ input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focu
     --om-m: 0 6px 20px rgba(0, 0, 0, .5);
     --om-l: 0 22px 54px rgba(0, 0, 0, .66);
     --sheen: rgba(255, 255, 255, .05);
-    --g-panoramica: #b48bff; --g-personaggio: #78a9ff; --g-chat: #4fd8ab;
-    --g-diretta: #ff8078; --g-interazione: #f4b062; --g-overlay: #ec8bd6;
-    --g-notifiche: #57c6e6; --g-admin: var(--acc);
+    --g-bot: #b48bff; --g-pubblico: #4fd8ab; --g-diretta: #ff8078;
+    --g-scena: #ec8bd6; --g-vetrina: #57c6e6; --g-account: #78a9ff;
+    --g-admin: var(--acc);
   }
   :root:not([data-theme]) body::before { opacity: 1; }
   :root:not([data-theme]) .btn.secondario { background: var(--surface-2); }
@@ -1443,9 +1443,9 @@ input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focu
   --om-m: 0 6px 20px rgba(0, 0, 0, .5);
   --om-l: 0 22px 54px rgba(0, 0, 0, .66);
   --sheen: rgba(255, 255, 255, .05);
-  --g-panoramica: #b48bff; --g-personaggio: #78a9ff; --g-chat: #4fd8ab;
-  --g-diretta: #ff8078; --g-interazione: #f4b062; --g-overlay: #ec8bd6;
-  --g-notifiche: #57c6e6; --g-admin: var(--acc);
+  --g-bot: #b48bff; --g-pubblico: #4fd8ab; --g-diretta: #ff8078;
+  --g-scena: #ec8bd6; --g-vetrina: #57c6e6; --g-account: #78a9ff;
+  --g-admin: var(--acc);
 }
 :root[data-theme="dark"] body::before { opacity: 1; }
 :root[data-theme="dark"] .btn.secondario { background: var(--surface-2); }
