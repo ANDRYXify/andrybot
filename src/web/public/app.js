@@ -1950,7 +1950,7 @@ function pannelloGrafiche() {
             <button class="btn secondario" id="gr-scarica-video">${_bIco(ICO.video)}${L('Video (registra 5s)', 'Video (records 5s)', 'Vídeo (graba 5s)')}</button>
             <button class="btn secondario" id="gr-salva">${L('Salva impostazioni', 'Save settings', 'Guardar ajustes')}</button>
           </p>
-          <p class="suggerimento">${L('La GIF animata si crea al volo, senza registrare ✨ (ideale per i temi animati). Il PNG va bene per tutto; il video WebM è più pesante ma di qualità più alta.', 'The animated GIF is built on the fly, no recording ✨ (ideal for animated themes). The PNG works for everything; the WebM video is heavier but higher quality.', 'El GIF animado se crea al vuelo, sin grabar ✨ (ideal para temas animados). El PNG sirve para todo; el vídeo WebM es más pesado pero de mayor calidad.')}</p>
+          <p class="suggerimento">${L('PNG e Condividi escono in alta risoluzione 2× (2160 px): più nitidi, e Instagram li ridimensiona invece di sgranarli. La GIF animata si crea al volo, senza registrare ✨ (ideale per i temi animati); il video WebM è più pesante ma di qualità più alta.', 'PNG and Share export at 2× high resolution (2160 px): sharper, and Instagram downsizes them instead of making them grainy. The animated GIF is built on the fly, no recording ✨ (ideal for animated themes); the WebM video is heavier but higher quality.', 'PNG y Compartir salen en alta resolución 2× (2160 px): más nítidos, e Instagram los redimensiona en vez de granularlos. El GIF animado se crea al vuelo, sin grabar ✨ (ideal para temas animados); el vídeo WebM es más pesado pero de mayor calidad.')}</p>
         </div>
 
         <div class="gr-anteprima">
@@ -2075,8 +2075,13 @@ function grTxt(ctx, s, x, y, ls) {
 }
 
 // Disegna la grafica sul canvas secondo la config. Cuore di P5. `t` = tempo (ms)
-// per i temi animati; 0 per un fotogramma statico.
-function grafDisegna(canvas, c, t = 0) {
+// per i temi animati; 0 per un fotogramma statico. `scala` = fattore di
+// SUPERSAMPLING: 1 per l'anteprima, 2 in export. Tutto il disegno resta in
+// coordinate 1080×H (logiche) ma il canvas è scala× più grande e il contesto è
+// scalato: testo, forme e gradienti vengono ri-rasterizzati NITIDI a piena
+// risoluzione (2160×2700). Instagram poi ridimensiona → resa molto più pulita
+// che caricare un 1080 nativo (che IG si limita a ricomprimere in JPEG).
+function grafDisegna(canvas, c, t = 0, scala = 1) {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const tema = GR_TEMI[c.tema] || GR_TEMI.notte;
@@ -2084,7 +2089,10 @@ function grafDisegna(canvas, c, t = 0) {
   const acc2 = grHueShift(acc, -42);                      // secondo colore del "mesh"
   const prog = c.tipo !== 'live';
   const W = 1080, H = prog ? 1350 : 1080;
-  canvas.width = W; canvas.height = H;
+  const sc = Math.max(1, Math.min(3, Number(scala) || 1));
+  canvas.width = Math.round(W * sc); canvas.height = Math.round(H * sc);
+  ctx.setTransform(sc, 0, 0, sc, 0, 0);                   // disegno in 1080, esco a sc×
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
   const S = 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
 
   const hex = (v) => /^#[0-9a-fA-F]{6}$/.test(String(v || ''));
@@ -2333,8 +2341,10 @@ function initGrafiche() {
   });
 
   document.getElementById('gr-scarica')?.addEventListener('click', () => {
-    grafDisegna(canvas, c);
-    canvas.toBlob((blob) => {
+    // render OFFSCREEN a 2× (2160×2700): PNG nitido, l'anteprima resta com'è
+    const full = document.createElement('canvas');
+    grafDisegna(full, c, 0, 2);
+    full.toBlob((blob) => {
       if (!blob) return;
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
@@ -2365,12 +2375,13 @@ function initGrafiche() {
     const btn = ev.currentTarget, testo0 = btn.textContent;
     btn.disabled = true;
     try {
-      // render a PIENA risoluzione (grafDisegna forza sempre 1080×H)
+      // render a 2× (2160×2700) per una resa nitida; JPEG 0.92 tiene il file
+      // leggero per la condivisione (IG lo ricomprime comunque).
       const full = document.createElement('canvas');
-      grafDisegna(full, c, 0);
-      const blob = await new Promise((res) => full.toBlob(res, 'image/png'));
+      grafDisegna(full, c, 0, 2);
+      const blob = await new Promise((res) => full.toBlob(res, 'image/jpeg', 0.92));
       if (!blob) throw new Error('render');
-      const file = new File([blob], `socialbot-${c.tipo}-${(stato?.user?.login || 'canale')}.png`, { type: 'image/png' });
+      const file = new File([blob], `socialbot-${c.tipo}-${(stato?.user?.login || 'canale')}.jpg`, { type: 'image/jpeg' });
       const dida = (document.getElementById('gr-didascalia')?.value || grafDidascalia(c)).trim();
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         // mobile: apre il foglio di condivisione → scegli Instagram (feed o storia)
@@ -2401,7 +2412,7 @@ function initGrafiche() {
       // (leggeva solo la finestra 480×480 in alto a sinistra).
       const full = document.createElement('canvas');
       grafDisegna(full, c, 0);                       // porta `full` a 1080×H reali
-      const scala = Math.min(1, 480 / Math.max(full.width, full.height));
+      const scala = Math.min(1, 600 / Math.max(full.width, full.height));   // GIF un po' più nitida (era 480)
       const gw = Math.round(full.width * scala), gh = Math.round(full.height * scala);
       const off = document.createElement('canvas'); off.width = gw; off.height = gh;
       const octx = off.getContext('2d', { willReadFrequently: true });
