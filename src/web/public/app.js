@@ -182,6 +182,12 @@ async function caricaStato() {
     window.SB_SPLASH_OFF?.();
     return;
   }
+  // RIPRISTINO SEZIONE dopo un ricarico: se nell'URL c'è #sezione valida (e sei
+  // approvato), riapriamo QUELLA scheda invece di tornare sempre alla Panoramica.
+  if (stato?.streamer?.status === 'approved') {
+    const hInit = decodeURIComponent((location.hash || '').replace(/^#/, ''));
+    if (hInit && schedaValida(hInit) && !schedaBloccata(hInit) && (hInit !== 'admin' || stato?.isAdmin)) schedaAttiva = hInit;
+  }
   render();
   window.SB_SPLASH_OFF?.();
   // promo "settimana gratis" appena assegnata
@@ -1143,6 +1149,13 @@ const GRUPPI = [
 // Area riservata all'operatore (andryxify): compare come scheda a sé SOLO per
 // l'admin, così il pannello "Anima" non è più sempre in fondo a ogni scheda.
 const GRUPPO_ADMIN = { id: 'admin', nome: 'Admin', schede: [['admin', 'Admin']] };
+
+// id di scheda valido? (per ripristinare la sezione dall'hash dopo un ricarico)
+function schedaValida(id) {
+  if (!id) return false;
+  if (id === 'admin') return true;
+  return GRUPPI.some((g) => g.schede.some(([sid]) => sid === id));
+}
 
 // Etichette TRADOTTE della navigazione (id → [it, en, es]). Gli id restano
 // stabili; il testo mostrato si risolve a runtime con L(), così cambia con la
@@ -10157,7 +10170,9 @@ let _libCercaTimer = null;
 function libItemHtml(it) {
   let media;
   if (it.tipo === 'immagine') media = `<img class="lib-media" src="${esc(it.url)}" loading="lazy" alt="">`;
-  else if (it.tipo === 'video') media = `<video class="lib-media" src="${esc(it.url)}" muted playsinline loop preload="metadata"></video>`;
+  // video: #t=0.1 forza un fotogramma-poster (niente più riquadro nero), e
+  // autoplay muto in loop dà un'anteprima "viva". playsinline per iOS.
+  else if (it.tipo === 'video') media = `<video class="lib-media" src="${esc(it.url)}#t=0.1" muted playsinline loop autoplay preload="metadata"></video>`;
   else media = '<div class="lib-media lib-audio"></div>';
   const audio = (it.tipo === 'audio' || it.combo)
     ? `<button type="button" class="btn secondario mini lib-play" data-audio="${esc(it.suonoUrl || it.url)}" title="${L('Ascolta', 'Listen', 'Escuchar')}">▶</button>` : '';
@@ -11891,6 +11906,8 @@ function vaiAScheda(id) {
   chiudiMenuMobile();                       // su mobile chiude il cassetto
   if (id === schedaAttiva) return;
   schedaAttiva = id;
+  // ricorda la sezione nell'URL (#id): così un ricarico ti riporta QUI, non alla home
+  try { history.replaceState(null, '', '#' + id); } catch { /* niente */ }
   // Una scheda logica può avere PIÙ <section> (es. Comandi = moduli + contatori):
   // le gestiamo tutte, non solo la prima che troverebbe getElementById.
   const sezioni = [...document.querySelectorAll('.pannello-scheda')].filter((p) => p.dataset.scheda === id);
