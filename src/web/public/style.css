@@ -771,6 +771,7 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .lib-nome { font-weight: 600; font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lib-azioni { display: flex; align-items: center; gap: .4rem; margin-top: auto; }
 .lib-azioni .lib-importa { flex: 1; }
+.lib-mia { flex: 1; text-align: center; font-size: .72rem; font-weight: 700; color: var(--testo-2); background: var(--surface-2); border: 1px dashed var(--border); border-radius: 999px; padding: .3rem .5rem; }
 
 /* --- 7TV: gestione emote ----------------------------------------------- */
 .svtv-griglia { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: .6rem; }

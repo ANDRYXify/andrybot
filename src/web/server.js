@@ -3296,12 +3296,15 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const tipo = String(req.query.tipo || '');
     const q = String(req.query.q || '');
     const includiMiei = /^(1|true)$/i.test(String(req.query.miei || ''));
-    // Con miei=1 (es. libreria delle grafiche): le TUE immagini si riusano SEMPRE,
-    // pubbliche o private, e in cima; poi quelle pubbliche della community. Senza
-    // miei=1: solo le pubbliche degli altri (import effetti).
+    const includiPrivati = /^(1|true)$/i.test(String(req.query.privati || ''));
+    // miei=1: includi ANCHE le tue (in cima), non solo quelle degli altri. Di norma
+    // solo le tue PUBBLICHE (libreria condivisa); con privati=1 anche le private
+    // (libreria delle grafiche, dove riusi le TUE immagini a prescindere).
     let righe;
     if (includiMiei) {
-      const mie = effectsDb.myList({ channel: login, tipo });
+      let mie = effectsDb.myList({ channel: login, tipo });
+      if (!includiPrivati) mie = mie.filter((e) => e.pubblico);
+      if (q.trim()) { const p = q.trim().toLowerCase(); mie = mie.filter((e) => `${e.comando} ${e.nome || ''}`.toLowerCase().includes(p)); }
       const viste = new Set(mie.map((e) => e.id));
       const altrui = effectsDb.sharedList({ tipo, q, escludi: login }).filter((e) => !viste.has(e.id));
       righe = [...mie, ...altrui];
