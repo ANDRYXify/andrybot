@@ -1784,6 +1784,19 @@ function grafUrlCanale(c) {
     ? 'twitch.tv/' + login
     : 'socialbot.live/u/' + login;
 }
+
+// Didascalia pronta per il post, con il link del canale in fondo. Modificabile.
+function grafDidascalia(c) {
+  const url = grafUrlCanale(c);
+  const handle = String(c.handle || '').trim();
+  const coda = `👉 ${url}${handle ? '\n' + handle : ''}`;
+  if (c.tipo === 'live') {
+    const gioco = String(c.gioco || '').trim();
+    const sub = String(c.sottotitolo || '').trim() || L('Passa a salutare in chat!', 'Come say hi in chat!', '¡Pásate a saludar en el chat!');
+    return `🔴 ${L('LIVE ORA', 'LIVE NOW', 'EN DIRECTO')}${gioco ? ' · ' + gioco : ''}! ${sub}\n${coda}`;
+  }
+  return `🗓️ ${L('La mia settimana in diretta', 'My week of streams', 'Mi semana en directo')} 💜\n${L('Segna gli orari e ci vediamo live!', 'Save the times and see you live!', '¡Apunta los horarios y nos vemos en directo!')}\n${coda}`;
+}
 // Comprime un'immagine in un data URL JPEG che sta SOTTO al limite del server
 // (il canale accetta sfondi fino a 700KB: puntiamo più in basso così non viene
 // mai scartato in silenzio). Prima abbassa la qualità, poi rimpicciolisce.
@@ -1915,8 +1928,24 @@ function pannelloGrafiche() {
             <input type="text" id="gr-sottotitolo" maxlength="48" placeholder="${L('es. Vieni a salutare!', 'e.g. Come say hi!', '¡Ven a saludar!')}" value="${esc(c.sottotitolo)}">
           </div>
 
+          <div class="spazio-sopra gr-social">
+            <label class="campo">${L('Condivisione & link al canale', 'Sharing & channel link', 'Compartir y enlace al canal')}</label>
+            <div class="gr-sfondo-scelte">
+              <button type="button" class="gr-tema${c.dest !== 'twitch' ? ' on' : ''}" data-gr-dest="u">socialbot.live/u/…</button>
+              <button type="button" class="gr-tema${c.dest === 'twitch' ? ' on' : ''}" data-gr-dest="twitch">twitch.tv/…</button>
+            </div>
+            <label class="riga-check spazio-sopra"><input type="checkbox" id="gr-qr" ${c.qr ? 'checked' : ''}> <strong>${L('Stampa un QR + il link del canale sull\'immagine', 'Print a QR + the channel link on the image', 'Imprime un QR + el enlace del canal en la imagen')}</strong></label>
+            <p class="suggerimento">${L('Su Instagram l\'immagine del feed non è cliccabile: col QR chi la vede arriva comunque al canale. Per un link tappabile usa lo sticker «link» nelle Storie o il link in bio.', 'On Instagram feed images aren\'t clickable: with the QR viewers still reach the channel. For a tappable link use the «link» sticker in Stories or the link in bio.', 'En Instagram la imagen del feed no es clicable: con el QR quien la ve igual llega al canal. Para un enlace tocable usa el sticker «enlace» en Stories o el link en bio.')}</p>
+            <label class="campo spazio-sopra" for="gr-didascalia">${L('Didascalia pronta', 'Ready-made caption', 'Descripción lista')} <span class="tenue">${L('(modificabile)', '(editable)', '(editable)')}</span></label>
+            <textarea id="gr-didascalia" rows="3" class="campo-largo" style="resize:vertical"></textarea>
+            <p class="spazio-sopra">
+              <button class="btn" id="gr-condividi">${_bIco(ICO.condividi)}${L('Condividi', 'Share', 'Compartir')}</button>
+              <button class="btn secondario mini" id="gr-copia-didascalia">${L('Copia didascalia', 'Copy caption', 'Copiar descripción')}</button>
+            </p>
+          </div>
+
           <p class="spazio-sopra">
-            <button class="btn" id="gr-scarica">${_bIco(ICO.scarica || ICO.pacco)}${L('Scarica PNG', 'Download PNG', 'Descargar PNG')}</button>
+            <button class="btn secondario" id="gr-scarica">${_bIco(ICO.scarica || ICO.pacco)}${L('Scarica PNG', 'Download PNG', 'Descargar PNG')}</button>
             <button class="btn secondario" id="gr-scarica-gif">${_bIco(ICO.video)}${L('Scarica GIF animata', 'Download animated GIF', 'Descargar GIF animado')}</button>
             <button class="btn secondario" id="gr-scarica-video">${_bIco(ICO.video)}${L('Video (registra 5s)', 'Video (records 5s)', 'Vídeo (graba 5s)')}</button>
             <button class="btn secondario" id="gr-salva">${L('Salva impostazioni', 'Save settings', 'Guardar ajustes')}</button>
@@ -2184,9 +2213,15 @@ function initGrafiche() {
   // Un solo loop d'anteprima: se il tema è animato gira a rAF, altrimenti un
   // fotogramma statico. Annulla sempre il loop precedente (anche di una riapertura).
   const frame = () => { grafDisegna(canvas, c, performance.now()); grafRAF = requestAnimationFrame(frame); };
+  let didascaliaManuale = false;   // l'utente ha modificato a mano la didascalia?
+  const aggiornaDidascalia = () => {
+    const ta = document.getElementById('gr-didascalia');
+    if (ta && !didascaliaManuale) ta.value = grafDidascalia(c);
+  };
   const ridisegna = () => {
     if (grafRAF) { cancelAnimationFrame(grafRAF); grafRAF = null; }
     if (grafAnimato(c)) frame(); else grafDisegna(canvas, c, 0);
+    aggiornaDidascalia();
   };
 
   const setTipo = (t) => {
@@ -2311,6 +2346,47 @@ function initGrafiche() {
   document.getElementById('gr-salva')?.addEventListener('click', () => conErrore(async () => {
     await salvaImpostazioni({ grafiche: c }, L('Grafica salvata ✓', 'Graphic saved ✓', 'Gráfica guardada ✓'));
   }));
+
+  // ── condivisione & link al canale (QR / destinazione / didascalia / condividi)
+  document.querySelectorAll('[data-gr-dest]').forEach((b) => b.addEventListener('click', () => {
+    c.dest = b.dataset.grDest === 'twitch' ? 'twitch' : 'u';
+    document.querySelectorAll('[data-gr-dest]').forEach((x) => x.classList.toggle('on', x === b));
+    ridisegna();   // aggiorna QR (se attivo) e didascalia
+  }));
+  document.getElementById('gr-qr')?.addEventListener('change', (e) => { c.qr = !!e.target.checked; ridisegna(); });
+  const taDida = document.getElementById('gr-didascalia');
+  taDida?.addEventListener('input', () => { didascaliaManuale = true; });
+  document.getElementById('gr-copia-didascalia')?.addEventListener('click', async () => {
+    const t = (document.getElementById('gr-didascalia')?.value || grafDidascalia(c)).trim();
+    try { await navigator.clipboard.writeText(t); toast(L('Didascalia copiata ✓', 'Caption copied ✓', 'Descripción copiada ✓')); }
+    catch { toast(L('Copia non riuscita: selezionala a mano.', 'Copy failed: select it manually.', 'No se pudo copiar: selecciónala a mano.'), 'errore'); }
+  });
+  document.getElementById('gr-condividi')?.addEventListener('click', async (ev) => {
+    const btn = ev.currentTarget, testo0 = btn.textContent;
+    btn.disabled = true;
+    try {
+      // render a PIENA risoluzione (grafDisegna forza sempre 1080×H)
+      const full = document.createElement('canvas');
+      grafDisegna(full, c, 0);
+      const blob = await new Promise((res) => full.toBlob(res, 'image/png'));
+      if (!blob) throw new Error('render');
+      const file = new File([blob], `socialbot-${c.tipo}-${(stato?.user?.login || 'canale')}.png`, { type: 'image/png' });
+      const dida = (document.getElementById('gr-didascalia')?.value || grafDidascalia(c)).trim();
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        // mobile: apre il foglio di condivisione → scegli Instagram (feed o storia)
+        await navigator.share({ files: [file], text: dida, title: 'SocialBot' });
+      } else {
+        // desktop / niente Web Share: scarica il PNG + copia la didascalia
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = file.name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+        try { await navigator.clipboard.writeText(dida); } catch { /* niente */ }
+        toast(L('Immagine scaricata e didascalia copiata: apri Instagram e incolla ✨', 'Image downloaded and caption copied: open Instagram and paste ✨', 'Imagen descargada y descripción copiada: abre Instagram y pega ✨'));
+      }
+    } catch (e) {
+      if (!e || e.name !== 'AbortError') toast(L('Condivisione non riuscita.', 'Sharing failed.', 'No se pudo compartir.'), 'errore');
+    } finally { btn.disabled = false; btn.textContent = testo0; }
+  });
+  aggiornaDidascalia();   // riempi la didascalia pronta al primo caricamento
 
   // export GIF ANIMATA — SENZA registrare: disegna i frame offline (più veloce del
   // tempo reale) e li comprime con l'encoder GIF autonomo. Ideale per i temi animati.
