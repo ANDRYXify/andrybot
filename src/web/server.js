@@ -2753,6 +2753,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         sfondo: ['tema', 'tinta', 'immagine'].includes(gr.sfondo) ? gr.sfondo : 'tema',
         sfondoColore: /^#[0-9a-fA-F]{6}$/.test(String(gr.sfondoColore || '')) ? String(gr.sfondoColore) : '',
         sfondoImg: imgOk(sfImg) ? sfImg : '',
+        qr: !!gr.qr,                                        // stampa il QR + link del canale
+        dest: gr.dest === 'twitch' ? 'twitch' : 'u',        // destinazione: pagina /u o Twitch
         giorni,
       };
     }
