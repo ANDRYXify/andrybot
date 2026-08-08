@@ -165,6 +165,15 @@ CREATE TABLE IF NOT EXISTS effects (        -- "Effetti & Suoni": comandi chat �
 -- indice UNIVOCO su (channel, comando): serve anche all'UPSERT (ON CONFLICT)
 CREATE UNIQUE INDEX IF NOT EXISTS idx_effects_channel_comando ON effects(channel, comando);
 
+CREATE TABLE IF NOT EXISTS sfondi (        -- "Libreria sfondi" delle grafiche social
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  channel TEXT NOT NULL,
+  file TEXT NOT NULL,                        -- nome file relativo in data/sfondi/<channel>/
+  nome TEXT NOT NULL DEFAULT '',
+  ts INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_sfondi_channel ON sfondi(channel);
+
 CREATE TABLE IF NOT EXISTS modules (       -- "Moduli": automazioni QUANDO→SE→ALLORA per canale
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   channel TEXT NOT NULL,
@@ -1951,6 +1960,41 @@ export const effects = {
   // Effetto per id di QUALSIASI canale (senza vincolo di pubblico): serve al media
   // server per lasciar vedere al PROPRIETARIO anche i propri media non pubblici.
   anyById(id) { return db.prepare('SELECT * FROM effects WHERE id=? AND attivo=1').get(id) || null; },
+};
+
+// ---------------------------------------------------------------- libreria sfondi (grafiche)
+// Sfondi caricati dallo streamer per le grafiche social. Sono file su disco
+// (in data/sfondi/<channel>/), NON dentro le impostazioni: così restano leggeri
+// e riusabili, e le grafiche referenziano solo l'URL /media/<id>.
+const MAX_SFONDI = 40;   // tetto di sfondi per canale (attento ai limiti di spazio)
+
+export const sfondi = {
+  list(channel) {
+    return db.prepare('SELECT * FROM sfondi WHERE channel=? ORDER BY ts DESC').all(String(channel || '').toLowerCase());
+  },
+  count(channel) {
+    return db.prepare('SELECT COUNT(*) c FROM sfondi WHERE channel=?').get(String(channel || '').toLowerCase()).c;
+  },
+  // Registra un nuovo sfondo (il file è già stato scritto su disco dal chiamante).
+  // Applica il tetto MAX_SFONDI. Ritorna la riga appena creata (con id).
+  add(channel, { file, nome }) {
+    const ch = String(channel || '').toLowerCase();
+    if (this.count(ch) >= MAX_SFONDI) throw new Error(`hai raggiunto il massimo di ${MAX_SFONDI} sfondi`);
+    const info = db.prepare('INSERT INTO sfondi (channel, file, nome, ts) VALUES (?,?,?,?)')
+      .run(ch, String(file), String(nome || '').slice(0, 60), now());
+    return db.prepare('SELECT * FROM sfondi WHERE id=?').get(info.lastInsertRowid) || null;
+  },
+  // Sfondo per id nel canale del proprietario (per servire/eliminare in sicurezza).
+  byId(channel, id) {
+    return db.prepare('SELECT * FROM sfondi WHERE channel=? AND id=?').get(String(channel || '').toLowerCase(), id) || null;
+  },
+  // Elimina uno sfondo e ritorna il nome file da cancellare dal disco (o null).
+  remove(channel, id) {
+    const r = db.prepare('SELECT file FROM sfondi WHERE channel=? AND id=?').get(String(channel || '').toLowerCase(), id);
+    if (!r) return null;
+    db.prepare('DELETE FROM sfondi WHERE channel=? AND id=?').run(String(channel || '').toLowerCase(), id);
+    return r.file;
+  },
 };
 
 // ---------------------------------------------------------------- moduli (automazioni)

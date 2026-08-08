@@ -1880,11 +1880,12 @@ function pannelloGrafiche() {
           </div>
           <div class="gr-sfondo-img spazio-sopra" ${c.sfondo === 'immagine' ? '' : 'hidden'}>
             <div class="riga-flessibile">
-              <input type="file" id="gr-sfondo-file" accept="image/*">
-              <button type="button" class="btn secondario" id="gr-sfondo-lib">${_bIco(ICO.libro)}${L('Dalla libreria/pool', 'From library/pool', 'De la biblioteca/pool')}</button>
+              <label class="btn secondario" for="gr-sfondo-file">${_bIco(ICO.carica || '')}${L('Carica dal PC', 'Upload from PC', 'Subir desde el PC')}</label>
+              <input type="file" id="gr-sfondo-file" accept="image/*" hidden>
+              <button type="button" class="btn secondario" id="gr-sfondo-lib">${_bIco(ICO.libro)}${L('La tua libreria sfondi', 'Your background library', 'Tu biblioteca de fondos')}</button>
             </div>
             <div id="gr-lib-box" class="gr-lib-box" hidden></div>
-            <p class="suggerimento">${L('Carica dal PC oppure scegli dalla', 'Upload from your PC or pick from the', 'Sube desde el PC o elige de la')} <strong>${L('libreria', 'library', 'biblioteca')}</strong>: ${L('le TUE immagini caricate come effetti (anche private) e quelle pubbliche della community.', 'YOUR images uploaded as effects (even private) plus the community\'s public ones.', 'TUS imágenes subidas como efectos (incluso privadas) más las públicas de la comunidad.')}
+            <p class="suggerimento">${L('Carica un\'immagine dal PC: viene salvata nella tua', 'Upload an image from your PC: it\'s saved to your', 'Sube una imagen desde el PC: se guarda en tu')} <strong>${L('libreria sfondi', 'background library', 'biblioteca de fondos')}</strong> ${L('e la puoi riusare quando vuoi.', 'so you can reuse it anytime.', 'y la puedes reutilizar cuando quieras.')}
               ${c.sfondoImg ? `· <a href="#" id="gr-sfondo-togli">${L('togli immagine', 'remove image', 'quitar imagen')}</a>` : ''}</p>
           </div>
 
@@ -2280,44 +2281,72 @@ function initGrafiche() {
     if (c.sfondo === 'immagine' && c.sfondoImg) grafCaricaImg(c.sfondoImg, ridisegna); else ridisegna();
   }));
   document.getElementById('gr-sfondo-colore')?.addEventListener('input', (e) => { c.sfondoColore = e.target.value; ridisegna(); });
+  // Carica un file dal PC: lo salva nella LIBRERIA SFONDI (file sul server, non
+  // dentro le impostazioni) e lo usa. Così lo ritrovi sempre e non gonfi il salvataggio.
   document.getElementById('gr-sfondo-file')?.addEventListener('change', (e) => {
     const f = e.target.files && e.target.files[0];
     if (!f) return;
+    e.target.value = '';   // permette di ricaricare lo stesso file
     const im = new Image();
-    im.onload = () => {
-      // max 1280px lato lungo, e SEMPRE sotto ~680KB (sotto il cap del server),
-      // così il salvataggio non viene rifiutato né lo sfondo scartato in silenzio.
-      c.sfondoImg = grafDataUrlSotto(im, 680000, 1280);
-      grafCaricaImg(c.sfondoImg, ridisegna);
+    im.onload = async () => {
+      // lato lungo 1440px, sotto ~1.2MB: qualità buona ma leggera per il server.
+      const dataUrl = grafDataUrlSotto(im, 1200000, 1440);
+      try {
+        const r = await api('/api/streamer/sfondi', { method: 'POST', body: { dataUrl } });
+        c.sfondoImg = r.url;            // referenzia il file salvato (URL corto)
+        grafCaricaImg(c.sfondoImg, ridisegna);
+        toast(L('Sfondo salvato in libreria ✓', 'Background saved to library ✓', 'Fondo guardado en la biblioteca ✓'));
+        const box = document.getElementById('gr-lib-box');
+        if (box && !box.hidden) mostraLibreriaSfondi(box);   // aggiorna se aperta
+      } catch (err) {
+        // ripiego: usa lo sfondo "al volo" (versione più piccola, va nelle impostazioni)
+        c.sfondoImg = grafDataUrlSotto(im, 680000, 1280);
+        grafCaricaImg(c.sfondoImg, ridisegna);
+        toast(L('Sfondo applicato (non salvato in libreria)', 'Background applied (not saved to library)', 'Fondo aplicado (no guardado en la biblioteca)'), 'errore');
+      }
     };
     im.onerror = () => toast(L('Immagine non valida', 'Invalid image', 'Imagen no válida'), 'errore');
     im.src = URL.createObjectURL(f);
   });
-  document.getElementById('gr-sfondo-lib')?.addEventListener('click', async () => {
+  // Riempie il box con i TUOI sfondi salvati (con anteprima ed eliminazione).
+  async function mostraLibreriaSfondi(box) {
+    box.innerHTML = `<p class="vuoto">${L('Carico…', 'Loading…', 'Cargando…')}</p>`;
+    try {
+      const d = await api('/api/streamer/sfondi');
+      const items = d?.items || [];
+      if (!items.length) {
+        box.innerHTML = `<p class="vuoto">${L('Nessuno sfondo salvato. Usa «Carica dal PC» qui sopra: lo sfondo resta qui e lo puoi riusare.', 'No saved backgrounds. Use «Upload from PC» above: the background stays here so you can reuse it.', 'No hay fondos guardados. Usa «Subir desde el PC» arriba: el fondo se queda aquí para reutilizarlo.')}</p>`;
+        return;
+      }
+      box.innerHTML = items.map((x) =>
+        `<div class="gr-lib-el${c.sfondoImg === x.url ? ' sel' : ''}" data-url="${esc(x.url)}" title="${esc(x.nome || '')}">
+          <img src="${esc(x.url)}" alt="" loading="lazy">
+          <button type="button" class="gr-lib-x" data-id="${x.id}" title="${L('Elimina', 'Delete', 'Eliminar')}" aria-label="${L('Elimina', 'Delete', 'Eliminar')}">×</button>
+        </div>`).join('');
+      box.querySelectorAll('.gr-lib-el').forEach((el) => el.addEventListener('click', (ev) => {
+        if (ev.target.closest('.gr-lib-x')) return;   // il click sulla × non seleziona
+        c.sfondoImg = el.dataset.url; grafCaricaImg(c.sfondoImg, ridisegna); box.hidden = true;
+      }));
+      box.querySelectorAll('.gr-lib-x').forEach((b) => b.addEventListener('click', async (ev) => {
+        ev.stopPropagation();
+        const id = b.dataset.id;
+        const url = `/api/streamer/sfondi/media/${id}`;
+        try {
+          await api('/api/streamer/sfondi/' + id, { method: 'DELETE' });
+          if (c.sfondoImg === url) { c.sfondoImg = ''; grafCaricaImg('', ridisegna); }
+          mostraLibreriaSfondi(box);
+        } catch { toast(L('Non è stato possibile eliminare', 'Could not delete', 'No se pudo eliminar'), 'errore'); }
+      }));
+    } catch {
+      box.innerHTML = `<p class="vuoto">${L('Libreria non disponibile ora, riprova.', 'Library unavailable now, try again.', 'Biblioteca no disponible ahora, inténtalo de nuevo.')}</p>`;
+    }
+  }
+  document.getElementById('gr-sfondo-lib')?.addEventListener('click', () => {
     const box = document.getElementById('gr-lib-box');
     if (!box) return;
     if (!box.hidden) { box.hidden = true; return; }
     box.hidden = false;
-    box.innerHTML = `<p class="vuoto">${L('Carico…', 'Loading…', 'Cargando…')}</p>`;
-    try {
-      const d = await api('/api/streamer/libreria?tipo=immagine&miei=1&privati=1');
-      const items = (d?.items || []).filter((x) => x.tipo === 'immagine');
-      if (!items.length) { box.innerHTML = `<p class="vuoto">${L('Nessuna immagine ancora. Caricane una come effetto in «Effetti & suoni» (anche senza renderla pubblica) e la ritrovi qui.', 'No images yet. Upload one as an effect in «Effects & sounds» (even without making it public) and you\'ll find it here.', 'Aún no hay imágenes. Sube una como efecto en «Efectos y sonidos» (aunque no la hagas pública) y la encontrarás aquí.')}</p>`; return; }
-      // le tue immagini prima (badge «tua»), poi quelle pubbliche della community
-      box.innerHTML = items.slice(0, 48).map((x) =>
-        `<button type="button" class="gr-lib-el" data-url="${esc(x.url)}" title="${esc(x.nome || '')}${x.mio ? '' : ' · @' + esc(x.autore || '')}">
-          <img src="${esc(x.url)}" alt="" loading="lazy">
-          <span class="gr-lib-tag">${x.mio ? L('tua', 'yours', 'tuya') : '@' + esc(x.autore || '')}</span>
-        </button>`).join('');
-      box.querySelectorAll('.gr-lib-el').forEach((b) => b.addEventListener('click', () => {
-        c.sfondoImg = b.dataset.url; grafCaricaImg(c.sfondoImg, ridisegna); box.hidden = true;
-      }));
-    } catch (e) {
-      const gated = /403|piano|add-?on|pacchetto/i.test(String(e?.message || e));
-      box.innerHTML = `<p class="vuoto">${gated
-        ? L('La libreria immagini serve l\'add-on «Effetti».', 'The image library needs the «Effects» add-on.', 'La biblioteca de imágenes necesita el add-on «Efectos».')
-        : L('Libreria non disponibile ora, riprova.', 'Library unavailable now, try again.', 'Biblioteca no disponible ahora, inténtalo de nuevo.')}</p>`;
-    }
+    mostraLibreriaSfondi(box);
   });
   document.getElementById('gr-sfondo-togli')?.addEventListener('click', (e) => {
     e.preventDefault(); c.sfondoImg = ''; grafCaricaImg('', ridisegna);
