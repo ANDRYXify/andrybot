@@ -11351,24 +11351,32 @@ let _mente3dCtrl = null;
 // Sei tinte semantiche fisse non possono essere TUTTE distinguibili al 100% sotto
 // daltonismo (tetto teorico ~8 tinte): perciò il colore è RINFORZO — ogni hub è
 // sempre etichettato, in cluster separati e nella legenda.
-const _MENTE_EMOZIONI = [
-  { key: 'gioia', label: 'gioia', light: '#eda100', dark: '#c98500' },
-  { key: 'tristezza', label: 'tristezza', light: '#2a78d6', dark: '#3987e5' },
-  { key: 'rabbia', label: 'rabbia', light: '#e34948', dark: '#e66767' },
-  { key: 'paura', label: 'paura', light: '#4a3aa7', dark: '#bb7ad0' },
-  { key: 'sorpresa', label: 'sorpresa', light: '#1baf7a', dark: '#199e70' },
-  { key: 'disgusto', label: 'disgusto', light: '#008300', dark: '#1f9e2f' },
+// Gli 8 DOMINI del manuale (cluster del grafo). Colore = rinforzo: ogni hub è
+// sempre etichettato, separato e in legenda, quindi tinte non 100% distinguibili
+// sotto daltonismo restano leggibili (come già per le emozioni).
+const _MENTE_DOMINI = [
+  { key: 'emozioni', label: 'emozioni', light: '#e34948', dark: '#e66767' },
+  { key: 'sociale', label: 'sociale', light: '#2a78d6', dark: '#4f97e8' },
+  { key: 'diretta', label: 'diretta', light: '#e69a00', dark: '#e0a83a' },
+  { key: 'community', label: 'community', light: '#1f9e4f', dark: '#35b866' },
+  { key: 'gaming', label: 'gaming', light: '#5a4fd0', dark: '#8f82e6' },
+  { key: 'umorismo', label: 'umorismo', light: '#d247a8', dark: '#e070c0' },
+  { key: 'moderazione', label: 'moderazione', light: '#b5622f', dark: '#d07a45' },
+  { key: 'conversazione', label: 'conversazione', light: '#0e9aa7', dark: '#35bccb' },
 ];
+const _menteDom = (key) => _MENTE_DOMINI.find((x) => x.key === key) || null;
 const _menteCol = (e, dark) => (dark ? e.dark : e.light);
 const _menteNeutro = (dark) => (dark ? '#9aa0b0' : '#6b7280');    // logica
 const _menteCore = (dark) => (dark ? '#b3a6f0' : '#6d5bd0');      // Lia (accento firma)
 const _menteBozza = (dark) => (dark ? '#e0b23c' : '#c98a1e');     // anello stato
 const _menteSosp = (dark) => (dark ? '#e66767' : '#d03b3b');
 
-// costruisce nodi+archi del grafo dai dati della mente (core → logica; manuale →
-// emozioni → moduli). Il modulo si aggancia all'emozione citata nel suo nome.
+// costruisce nodi+archi del grafo dai dati della mente: core → logica; manuale →
+// 8 DOMINI (hub) → moduli, più gli ARCHI ASSOCIATIVI fra moduli (la rete che
+// collega "tutto con tutto"). Un dominio compare quando ha almeno un modulo.
 function _menteGrafo(d, dark) {
   const moduli = Array.isArray(d?.moduli) ? d.moduli : [];
+  const linksAssoc = Array.isArray(d?.links) ? d.links : [];
   const nodes = [], links = [];
   nodes.push({ id: 'core', label: 'Lia', group: 'core', color: _menteCore(dark), size: 22, data: { tipo: 'core', rete: d?.rete || {}, nmod: moduli.length } });
   const LOG = [
@@ -11376,28 +11384,45 @@ function _menteGrafo(d, dark) {
     ['log:conoscenza', 'Conoscenza', L('Le risposte curate dal sito e scritte da te.', 'Curated answers from the site and written by you.', 'Respuestas curadas del sitio y escritas por ti.')],
     ['log:rete', 'Rete', L('Il motore veloce che cresce da solo: risponde all\'istante a ciò che sa.', 'The fast engine that grows on its own: instant answers to what it knows.', 'El motor rápido que crece solo: responde al instante a lo que sabe.')],
     ['log:ragiona', 'Ragionamento', L('Il cervello logico: deduce dai fatti, non è statistico.', 'The logical brain: it deduces from facts, not statistical.', 'El cerebro lógico: deduce de los hechos, no es estadístico.')],
-    ['log:manuale', 'Manuale', L('Il suo manuale su come funzionano le persone: emozioni e moduli imparati.', 'Its manual on how people work: emotions and learned modules.', 'Su manual sobre cómo funcionan las personas: emociones y módulos aprendidos.')],
+    ['log:manuale', 'Manuale', L('Il suo manuale su persone e diretta: gli 8 domini con i moduli imparati, collegati fra loro.', 'Its manual on people and streaming: the 8 domains with learned modules, linked together.', 'Su manual sobre personas y directo: los 8 dominios con los módulos aprendidos, conectados entre sí.')],
     ['log:maestro', 'Maestro', L('Il modello linguistico (7B locale o endpoint) che mette le parole.', 'The language model (local 7B or endpoint) that puts the words.', 'El modelo lingüístico (7B local o endpoint) que pone las palabras.')],
   ];
   for (const [id, label, desc] of LOG) {
     nodes.push({ id, label, group: 'logica', color: _menteNeutro(dark), size: 12, data: { tipo: 'logica', desc } });
     links.push({ source: 'core', target: id, rest: 70 });
   }
-  for (const e of _MENTE_EMOZIONI) {
-    nodes.push({ id: 'emo:' + e.key, label: e.label, group: 'emozione', color: _menteCol(e, dark), size: 13, data: { tipo: 'emozione' } });
-    links.push({ source: 'log:manuale', target: 'emo:' + e.key, rest: 96 });
+  // hub di DOMINIO: solo quelli che hanno almeno un modulo (il cervello si vede crescere)
+  const perDom = {};
+  for (const m of moduli) { const k = String(m.dominio || 'conversazione'); perDom[k] = (perDom[k] || 0) + 1; }
+  const hubDi = {};
+  for (const dom of _MENTE_DOMINI) {
+    if (!perDom[dom.key]) continue;
+    hubDi[dom.key] = 'dom:' + dom.key;
+    nodes.push({ id: hubDi[dom.key], label: dom.label, group: 'dominio', color: _menteCol(dom, dark), size: 13, data: { tipo: 'dominio', key: dom.key, n: perDom[dom.key] } });
+    links.push({ source: 'log:manuale', target: hubDi[dom.key], rest: 96 });
   }
-  const fold = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  let i = 0;
+  // moduli: agganciati al loro dominio. id numerico stabile \u2192 mappa per gli archi
+  const idToNode = new Map();
   for (const m of moduli) {
-    const nome = fold(m.nome);
-    const e = _MENTE_EMOZIONI.find((x) => nome.includes(x.key));
+    const dom = _menteDom(m.dominio);
     const usi = Number(m.usi) || 0, q = Number(m.qualita) || 0.5;
     const size = 5 + Math.min(9, usi) * 0.5 + q * 4;
     const ring = m.stato === 'sospeso' ? _menteSosp(dark) : (m.stato === 'bozza' ? _menteBozza(dark) : null);
-    nodes.push({ id: 'mod:' + (m.nome || i), label: m.nome || '?', group: 'modulo', color: e ? _menteCol(e, dark) : _menteNeutro(dark), size, data: { tipo: 'modulo', m, ring } });
-    links.push({ source: e ? 'emo:' + e.key : 'log:manuale', target: 'mod:' + (m.nome || i), rest: 54 });
-    i++;
+    const nid = 'mod:' + (m.id != null ? m.id : (m.nome || nodes.length));
+    nodes.push({ id: nid, label: m.nome || '?', group: 'modulo', color: dom ? _menteCol(dom, dark) : _menteNeutro(dark), size, data: { tipo: 'modulo', m, ring } });
+    links.push({ source: hubDi[m.dominio] || 'log:manuale', target: nid, rest: 52 });
+    if (m.id != null) idToNode.set(Number(m.id), nid);
+  }
+  // ARCHI ASSOCIATIVI fra moduli (co-attivazione + affinit\u00e0): molla pi\u00f9 lenta degli
+  // agganci al dominio, cos\u00ec i cluster restano leggibili ma i collegamenti si vedono.
+  const forti = linksAssoc
+    .filter((l) => Number(l.peso) >= 0.5)
+    .sort((a, b) => Number(b.peso) - Number(a.peso))
+    .slice(0, 160);
+  for (const l of forti) {
+    const s = idToNode.get(Number(l.a)), t = idToNode.get(Number(l.b));
+    if (!s || !t) continue;
+    links.push({ source: s, target: t, rest: Math.max(60, 92 - Math.min(24, Number(l.peso)) * 1.2) });
   }
   return { nodes, links };
 }
@@ -11407,7 +11432,7 @@ function _menteLegenda(dark) {
   if (!box) return;
   const dot = (c) => `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${c};margin-right:4px;vertical-align:middle"></span>`;
   const anello = (c) => `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;border:2px solid ${c};margin-right:4px;vertical-align:middle"></span>`;
-  box.innerHTML = _MENTE_EMOZIONI.map((e) => `${dot(_menteCol(e, dark))}${e.label}`).join(' &nbsp; ')
+  box.innerHTML = _MENTE_DOMINI.map((e) => `${dot(_menteCol(e, dark))}${e.label}`).join(' &nbsp; ')
     + `<br>${dot(_menteNeutro(dark))}${L('logica', 'logic', 'lógica')} &nbsp; ${anello(_menteBozza(dark))}${L('bozza', 'draft', 'borrador')} &nbsp; ${anello(_menteSosp(dark))}${L('sospeso', 'suspended', 'suspendido')}`;
 }
 
@@ -11424,7 +11449,7 @@ function _menteDettaglio(sel) {
     return;
   }
   if (g === 'logica') { box.innerHTML = `<h4 style="margin:.1em 0 .3em">${esc(sel.label)}</h4><p>${esc(dt.desc || '')}</p>`; return; }
-  if (g === 'emozione') { box.innerHTML = `<h4 style="margin:.1em 0 .3em">${L('Emozione', 'Emotion', 'Emoción')}: ${esc(sel.label)}</h4><p class="tenue">${L('Attorno trovi i moduli imparati per riconoscerla e rispondere.', 'Around it are the modules learned to recognize it and respond.', 'Alrededor están los módulos aprendidos para reconocerla y responder.')}</p>`; return; }
+  if (g === 'dominio') { box.innerHTML = `<h4 style="margin:.1em 0 .3em">${L('Dominio', 'Domain', 'Dominio')}: ${esc(sel.label)}</h4><p class="tenue">${(dt.n || 0)} ${L('moduli imparati qui. Attorno li vedi; i fili verso altri moduli sono i collegamenti che Lia ha costruito.', 'modules learned here. Around you see them; the threads to other modules are the links Lia built.', 'módulos aprendidos aquí. Alrededor los ves; los hilos hacia otros módulos son los enlaces que Lia construyó.')}</p>`; return; }
   const m = dt.m || {};
   const badge = m.stato === 'attivo' ? '<span class="badge verde">attivo</span>'
     : m.stato === 'sospeso' ? '<span class="badge" style="background:#f5544f;color:#fff">sospeso</span>'

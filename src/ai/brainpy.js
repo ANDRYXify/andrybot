@@ -178,6 +178,20 @@ export async function moduli(full = false) {
   finally { clearTimeout(to); }
 }
 
+// I collegamenti fra moduli (rete associativa) per il grafo 3D. Array [{a,b,peso}]
+// (vuoto se nulla o errore). Mai lancia.
+export async function linkModuli() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 4000);
+  try {
+    const r = await fetch(BASE + '/links', { signal: ac.signal });
+    if (!r.ok) return [];
+    const d = await r.json().catch(() => null);
+    return Array.isArray(d?.links) ? d.links : [];
+  } catch (e) { log.debug('linkModuli:', e?.message || e); return []; }
+  finally { clearTimeout(to); }
+}
+
 // Il dataset della "mente" della rete per un canale: coppie {q, a} consolidate.
 export async function reteCorpus(canale) {
   if (!canale) return [];

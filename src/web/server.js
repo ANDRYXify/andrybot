@@ -2885,8 +2885,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   app.get('/api/streamer/mente', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const moduli = await brainpy.moduli(true).catch(() => null) || [];
+    const links = await brainpy.linkModuli().catch(() => []) || [];
     const rete = await brainpy.reteStato(login).catch(() => null) || { nodi: 0, solidi: 0, curiosita: 0, fiducia: 0 };
-    res.json({ moduli, rete: { nodi: rete.nodi || 0, solidi: rete.solidi || 0, fiducia: rete.fiducia || 0, curiosita: rete.curiosita || 0 } });
+    res.json({ moduli, links, rete: { nodi: rete.nodi || 0, solidi: rete.solidi || 0, fiducia: rete.fiducia || 0, curiosita: rete.curiosita || 0 } });
   }));
 
   // FORGIA: le dice di lavorare ORA sulla sua mente (studia le lacune dal web +
