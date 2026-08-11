@@ -304,6 +304,16 @@ class Coscienza:
                     creato INTEGER, aggiornato INTEGER
                 );
                 CREATE INDEX IF NOT EXISTS i_lacune_stato ON lacune(stato, visto);
+                -- COLLEGAMENTI fra moduli: la rete associativa di Lia ("collega tutto
+                -- con tutto"). Peso alto = due moduli parenti (per tema) o spesso
+                -- usati insieme (rinforzo hebbiano). Non orientato: a < b sempre.
+                CREATE TABLE IF NOT EXISTS moduli_link (
+                    a INTEGER NOT NULL,
+                    b INTEGER NOT NULL,
+                    peso REAL DEFAULT 0,
+                    aggiornato INTEGER,
+                    PRIMARY KEY (a, b)
+                );
                 """
             )
             self.db.commit()
@@ -537,7 +547,12 @@ class Coscienza:
                      qualita, stato, ora, ora),
                 )
             self.db.commit()
-        return self.modulo(nome)
+        salvato = self.modulo(nome)
+        # appena un modulo diventa ATTIVO, lo tesso nella rete: si collega ai
+        # parenti tematici (affinità). La co-attivazione lo rinforza poi con l'uso.
+        if salvato and salvato.get("id") and salvato.get("stato") == "attivo":
+            self.collega_per_affinita(salvato["id"])
+        return salvato
 
     def modulo(self, nome):
         with _lock:
@@ -680,6 +695,100 @@ class Coscienza:
         except Exception:
             return False
 
+    # ------------------------------------------- RETE ASSOCIATIVA (collega i moduli)
+    # I moduli non sono nodi isolati: si collegano fra loro. Due sorgenti di legame:
+    #  · AFFINITÀ tematica (parole chiave / dominio condivisi), calcolata al salvataggio;
+    #  · CO-ATTIVAZIONE (usati insieme nella stessa risposta) → rinforzo "hebbiano".
+    # Il peso cresce con l'uso: la rete diventa quella di QUESTO canale, viva.
+    def _collega(self, x, y, delta, ts=None):
+        """Rafforza (o crea) il legame non orientato fra due moduli. NON committa:
+        il chiamante fa un commit unico (batch). a < b per identità canonica."""
+        try:
+            x, y = int(x), int(y)
+        except Exception:
+            return
+        if not x or not y or x == y:
+            return
+        a, b = (x, y) if x < y else (y, x)
+        t = ts or _now()
+        self.db.execute(
+            "INSERT INTO moduli_link(a, b, peso, aggiornato) VALUES(?,?,?,?) "
+            "ON CONFLICT(a, b) DO UPDATE SET peso=peso+?, aggiornato=?",
+            (a, b, float(delta), t, float(delta), t))
+
+    def collega_per_affinita(self, mid, base=0.5):
+        """Collega un modulo agli altri ATTIVI che condividono >=2 parole chiave o lo
+        stesso dominio: la parentela tematica di base della rete. Best-effort."""
+        try:
+            with _lock:
+                r = self.db.execute("SELECT dominio, chiavi FROM moduli WHERE id=?", (mid,)).fetchone()
+                if not r:
+                    return
+                try:
+                    mk = set(_fold(x) for x in json.loads(r["chiavi"] or "[]"))
+                except Exception:
+                    mk = set()
+                dom = r["dominio"]
+                altri = self.db.execute(
+                    "SELECT id, dominio, chiavi FROM moduli WHERE id<>? AND stato='attivo'", (mid,)).fetchall()
+                for o in altri:
+                    try:
+                        ok = set(_fold(x) for x in json.loads(o["chiavi"] or "[]"))
+                    except Exception:
+                        ok = set()
+                    peso = 0.0
+                    if len(mk & ok) >= 2:
+                        peso += base
+                    if o["dominio"] == dom:
+                        peso += base * 0.6
+                    if peso > 0:
+                        self._collega(mid, o["id"], peso)
+                self.db.commit()
+        except Exception:
+            pass
+
+    def rinforza_coattivazione(self, ids):
+        """Due (o più) moduli usati INSIEME nella stessa risposta si rinforzano a
+        vicenda: 'fire together, wire together'. Rende viva la rete con l'uso reale."""
+        ids = [i for i in (ids or []) if i]
+        if len(ids) < 2:
+            return
+        try:
+            with _lock:
+                t = _now()
+                for i in range(len(ids)):
+                    for j in range(i + 1, len(ids)):
+                        self._collega(ids[i], ids[j], 1.0, ts=t)
+                self.db.commit()
+        except Exception:
+            pass
+
+    def vicini(self, mid, k=3, soglia=0.6):
+        """I moduli più collegati a `mid` (peso decrescente, oltre soglia). Serve allo
+        spreading activation nella selezione. Ritorna [{id, peso}]."""
+        try:
+            with _lock:
+                rows = self.db.execute(
+                    "SELECT a, b, peso FROM moduli_link WHERE (a=? OR b=?) AND peso>=? "
+                    "ORDER BY peso DESC LIMIT ?", (int(mid), int(mid), float(soglia), int(k))).fetchall()
+            out = []
+            for r in rows:
+                out.append({"id": r["b"] if r["a"] == int(mid) else r["a"], "peso": round(float(r["peso"]), 2)})
+            return out
+        except Exception:
+            return []
+
+    def link_grafo(self, limit=500):
+        """Tutti i collegamenti fra moduli (per il grafo 3D): coppie di id + peso."""
+        try:
+            with _lock:
+                rows = self.db.execute(
+                    "SELECT a, b, peso FROM moduli_link WHERE peso>0 ORDER BY peso DESC LIMIT ?",
+                    (int(limit),)).fetchall()
+            return [{"a": r["a"], "b": r["b"], "peso": round(float(r["peso"]), 2)} for r in rows]
+        except Exception:
+            return []
+
     # -------------------------------------------------- REVISIONE (esito dei moduli)
     def _usa_modulo(self, mid):
         with _lock:
@@ -708,6 +817,8 @@ class Coscienza:
         self._moduli_pendenti[(canale, login)] = {"ids": ids, "ts": _now()}
         for i in ids:
             self._usa_modulo(i)
+        # usati insieme → si rinforzano a vicenda (la rete impara dalle co-occorrenze)
+        self.rinforza_coattivazione(ids)
 
     def valuta_reazione(self, canale, login, testo_nuovo):
         """Alla mossa successiva dello stesso utente giudica se i moduli usati la
