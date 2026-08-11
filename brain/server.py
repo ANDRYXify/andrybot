@@ -67,6 +67,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._rete()
         if self.path.startswith("/moduli"):
             return self._moduli()
+        if self.path.startswith("/lacune"):
+            return self._lacune()
         return self._json(404, {"errore": "non trovato"})
 
     def _moduli(self):
@@ -85,6 +87,19 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, {"moduli": out})
         except Exception as e:
             return self._json(200, {"moduli": [], "errore": str(e)[:120]})
+
+    def _lacune(self):
+        # le lacune RICORRENTI dalla chat reale, da studiare (apprendimento autonomo).
+        from urllib.parse import urlparse, parse_qs
+        q = parse_qs(urlparse(self.path).query)
+        try:
+            minv = int(q.get("min", ["2"])[0])
+        except Exception:
+            minv = 2
+        try:
+            return self._json(200, {"lacune": mente.lacune_da_studiare(min_visto=minv, limit=8)})
+        except Exception as e:
+            return self._json(200, {"lacune": [], "errore": str(e)[:120]})
 
     def _corpus(self):
         # il dataset della sua mente (coppie domanda→risposta consolidate)
@@ -210,6 +225,11 @@ class Handler(BaseHTTPRequestHandler):
                     scelti = mente.seleziona_moduli(testo, storia_txt, k=2)
                     if scelti:
                         ctx["moduli"] = scelti
+                    elif len(str(testo).strip()) >= 12 and not str(testo).lstrip().startswith("!"):
+                        # nessun modulo copriva questa situazione reale: se è
+                        # sostanziosa (non un comando né due parole), segnala la
+                        # LACUNA. Se ricorre, Lia la studierà da sola.
+                        mente.registra_lacuna(testo)
                 except Exception:
                     pass
             # personhood: nome della "persona" (dall'anima) e spunto per il proattivo
@@ -261,6 +281,13 @@ class Handler(BaseHTTPRequestHandler):
             if not mod:
                 return self._json(200, {"ok": False, "motivo": "sintesi non riuscita (cervello non pronto o output non valido)"})
             salvato = mente.salva_modulo(mod)
+            # se veniva da una LACUNA reale, chiudila: è stata imparata.
+            lac = str(d.get("lacuna") or "").strip()
+            if salvato and lac:
+                try:
+                    mente.chiudi_lacuna(lac)
+                except Exception:
+                    pass
             return self._json(200, {"ok": bool(salvato), "modulo": salvato})
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})

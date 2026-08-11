@@ -672,7 +672,7 @@ export class Brain {
   // minimo (la fonte deve avere sostanza), poi chiede al cervello di SINTETIZZARE
   // un modulo operativo (non un riassunto) e lo salva. Il manuale è GLOBALE (una
   // sola raccolta, non per canale). Ritorna il modulo salvato o null; non lancia.
-  async studiaModulo(nomeLacuna, { dominio = 'emozioni', query = '', diarioCanale = '' } = {}) {
+  async studiaModulo(nomeLacuna, { dominio = 'emozioni', query = '', diarioCanale = '', lacuna = '' } = {}) {
     try {
       const nome = String(nomeLacuna || '').trim();
       if (!nome) return null;
@@ -681,7 +681,7 @@ export class Brain {
       // filtro qualità minimo: la fonte deve avere sostanza, altrimenti si sintetizza
       // dal solo buon senso (il cervello lo segna fonte='buonsenso', qualità più bassa).
       const fonte = (web && String(web).trim().length >= 120) ? String(web).trim() : '';
-      const mod = await brainpy.imparaModulo({ nome, dominio, web: fonte });
+      const mod = await brainpy.imparaModulo({ nome, dominio, web: fonte, lacuna });
       if (mod && diarioCanale) {
         try { diario.add(diarioCanale, 'modulo', `Ho studiato una pagina del mio manuale umano: «${nome}»`); } catch { /* niente */ }
       }
@@ -708,7 +708,26 @@ export class Brain {
       const mancanti = SEMI
         .map((s, i) => ({ ...s, i }))
         .filter((s) => !attivi.has(s.nome.toLowerCase()));
-      if (!mancanti.length) return null;     // set base completo: niente da seminare
+      const baseCompleta = mancanti.length === 0;
+
+      // APPRENDIMENTO AUTONOMO: le lacune reali della chat. Se il set base è
+      // completo le studio tutte (ricorrenza >=2); se sto ancora costruendo la
+      // base, solo quelle MOLTO ricorrenti (>=3) — così un tema caldo del canale
+      // non aspetta, ma la base si costruisce lo stesso. La lacuna studiata viene
+      // chiusa dal cervello (non si ristudia).
+      try {
+        const gaps = await brainpy.lacune(baseCompleta ? 2 : 3);
+        const gap = (Array.isArray(gaps) ? gaps : []).find((g) => Array.isArray(g?.chiavi) && g.chiavi.length >= 2);
+        if (gap) {
+          const kw = gap.chiavi.slice(0, 4).join(' ');
+          const nome = `capire e rispondere quando si parla di ${gap.chiavi.slice(0, 3).join(', ')}`;
+          const query = `come rispondere in una chat quando qualcuno parla di ${kw}`;
+          const mod = await this.studiaModulo(nome, { dominio: gap.dominio || 'conversazione', query, lacuna: gap.chiave });
+          if (mod) { log.info(`manuale: imparata una LACUNA reale [${gap.dominio}] → «${nome}»`); return mod; }
+        }
+      } catch { /* nessuna lacuna o cervello occupato: passo ai semi */ }
+
+      if (baseCompleta) return null;         // base pronta e nessuna lacuna: niente da fare
       mancanti.sort((a, b) => ((perDominio[a.dominio] || 0) - (perDominio[b.dominio] || 0)) || (a.i - b.i));
       const prossimo = mancanti[0];
       const mod = await this.studiaModulo(prossimo.nome, { dominio: prossimo.dominio, query: prossimo.query });

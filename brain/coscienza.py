@@ -154,6 +154,74 @@ def _reazione(testo):
     return 0
 
 
+# --------------------------------------------------- APPRENDIMENTO AUTONOMO (lacune)
+# Parole troppo comuni per essere "argomento": non fanno chiave né lacuna.
+_STOP = set(_fold(w) for w in (
+    "che chi cosa come dove quando perche pero anzi cioe quindi allora mentre "
+    "sono sei siamo siete essere stato stata avere abbiamo hanno aveva avevo "
+    "questo quello quella queste questi quelli molto poco tanto proprio davvero "
+    "adesso ora oggi ieri domani sempre mai ancora gia poi anche pure solo "
+    "non piu meno bene male tutto niente nulla qualcosa qualcuno ognuno "
+    "per con senza sopra sotto dentro fuori tra fra dopo prima verso "
+    "mio mia tuo tua suo sua nostro vostro loro miei tuoi suoi "
+    "lui lei noi voi essi loro gli le lo la il un uno una dei delle degli "
+    " mi ti ci vi si ne se ma se od ed di da in su a e o "
+    "fare faccio fai fatto detto dico dice dici vedo vedi visto "
+    "grazie ciao ehi raga ragazzi bot lia"
+).split())
+
+# Segnali per dedurre il DOMINIO di una lacuna dal testo (match su parola/stem).
+_LEX_DOMINIO = {
+    "diretta": ["raid", "sub", "resub", "abbonat", "dona", "bits", "follow", "seguit", "live", "diretta", "stream", "prime"],
+    "gaming": ["gioco", "giocare", "boss", "livello", "morto", "morte", "vinto", "vittoria", "perso", "rage", "loot", "nemico", "partita", "match", "clutch", "spawn"],
+    "moderazione": ["troll", "spam", "insult", "hater", "offend", "flame", "spoiler", "bannat", "ban", "timeout", "rissa", "litig"],
+    "community": ["community", "veteran", "regular", "insider", "meme interno", "goal", "obiettiv", "clan", "gilda", "server"],
+    "umorismo": ["battuta", "scherz", "meme", "ridere", "ironia", "sarcasm", "lol", "ahah", "divertent"],
+    "emozioni": ["felice", "content", "triste", "piang", "arrabbi", "furia", "paura", "ansia", "sorpres", "schifo", "disgust", "emozion"],
+    "sociale": ["nuovo", "benvenut", "presentar", "conoscer", "complimenti", "amico", "amica", "notizia", "compleann"],
+}
+
+
+def _chiavi_da_testo(testo, n=4):
+    """Le n parole-argomento di un messaggio: normalizzate, lunghe >=4, non stopword,
+    in ordine d'apparizione (deduplicate). Sono l'identità di una lacuna e la base
+    per cercarla online. Ritorna una lista (eventualmente vuota)."""
+    out, viste = [], set()
+    for w in re.findall(r"[a-z0-9]{4,}", _fold(testo)):
+        if w in _STOP or w in viste:
+            continue
+        viste.add(w)
+        out.append(w)
+        if len(out) >= n:
+            break
+    return out
+
+
+def _dominio_da_testo(testo):
+    """Deduce il dominio di conoscenza più probabile di un messaggio (default
+    'conversazione'). Aggancio lessicale: vince il dominio con più segnali."""
+    t = _fold(testo)
+    if not t:
+        return "conversazione"
+    parole = set(re.findall(r"[a-z0-9]{3,}", t))
+    best, best_n = "conversazione", 0
+    for dom, voci in _LEX_DOMINIO.items():
+        n = 0
+        for v in voci:
+            vf = _fold(v)
+            if " " in vf:
+                if vf in t:
+                    n += 1
+            else:
+                for w in parole:
+                    if w == vf or (len(vf) >= 4 and w.startswith(vf)):
+                        n += 1
+                        break
+        if n > best_n:
+            best, best_n = dom, n
+    return best
+
+
 class Coscienza:
     def __init__(self, db_path=DB_PATH):
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
@@ -223,6 +291,19 @@ class Coscienza:
                 CREATE INDEX IF NOT EXISTS i_scambi ON scambi(canale, login, ts);
                 CREATE UNIQUE INDEX IF NOT EXISTS i_moduli_nome ON moduli(nome);
                 CREATE INDEX IF NOT EXISTS i_moduli_stato ON moduli(dominio, stato);
+                -- LACUNE: situazioni della chat REALE che nessun modulo copriva.
+                -- Quando una situazione RICORRE, Lia la studia da sola (apprendimento
+                -- autonomo, oltre il catalogo dei semi). GLOBALE come i moduli.
+                CREATE TABLE IF NOT EXISTS lacune (
+                    chiave TEXT PRIMARY KEY,             -- insieme di parole normalizzato (identità)
+                    dominio TEXT DEFAULT 'conversazione',
+                    esempio TEXT DEFAULT '',             -- un messaggio d'esempio (contesto)
+                    chiavi TEXT DEFAULT '[]',            -- JSON delle parole chiave
+                    visto INTEGER DEFAULT 0,             -- quante volte è ricorsa
+                    stato TEXT DEFAULT 'aperta',         -- aperta | studiata | ignora
+                    creato INTEGER, aggiornato INTEGER
+                );
+                CREATE INDEX IF NOT EXISTS i_lacune_stato ON lacune(stato, visto);
                 """
             )
             self.db.commit()
@@ -518,6 +599,86 @@ class Coscienza:
                 segnati.append((punteggio, m))
         segnati.sort(key=lambda x: x[0], reverse=True)
         return [m for _, m in segnati[:max(1, min(3, int(k)))]]
+
+    # ---------------------------------------------- LACUNE (apprendimento autonomo)
+    def registra_lacuna(self, messaggio):
+        """La chat ha detto qualcosa che NESSUN modulo copriva: se è sostanzioso e
+        NON già coperto da un modulo attivo, segna la situazione come lacuna (o ne
+        incrementa il conteggio se ricorre). Quando una lacuna ricorre, il ciclo di
+        seeding la studia da sola. Best-effort: non lancia."""
+        try:
+            chiavi = _chiavi_da_testo(messaggio, 4)
+            if len(chiavi) < 2:
+                return  # troppo poco "argomento": non è una lacuna utile
+            cset = set(chiavi)
+            # già coperta da un modulo attivo con >=2 chiavi in comune? lascia stare
+            for m in self.moduli(stato="attivo"):
+                mk = set(_fold(x) for x in (m.get("chiavi") or []))
+                if len(cset & mk) >= 2:
+                    return
+            dom = _dominio_da_testo(messaggio)
+            with _lock:
+                # cerca una lacuna APERTA "simile" (>=2 parole in comune): è la STESSA
+                # situazione detta con altre parole/altro ordine → incremento quella,
+                # così la ricorrenza è robusta ai sinonimi e non si spezza in tante
+                # quasi-uguali. (Le poche lacune aperte: scansione economica.)
+                simile = None
+                for r in self.db.execute("SELECT chiave, chiavi FROM lacune WHERE stato='aperta'").fetchall():
+                    try:
+                        rk = set(json.loads(r["chiavi"] or "[]"))
+                    except Exception:
+                        rk = set()
+                    if len(cset & rk) >= 2:
+                        simile = r["chiave"]
+                        break
+                if simile:
+                    self.db.execute(
+                        "UPDATE lacune SET visto=visto+1, dominio=?, aggiornato=? WHERE chiave=?",
+                        (dom, _now(), simile))
+                else:
+                    chiave = "|".join(sorted(chiavi[:3]))
+                    # INSERT OR IGNORE: se coincide con una lacuna GIÀ studiata non la
+                    # riapre (quella situazione è già stata imparata).
+                    self.db.execute(
+                        "INSERT OR IGNORE INTO lacune(chiave, dominio, esempio, chiavi, visto, stato, creato, aggiornato) "
+                        "VALUES(?,?,?,?,1,'aperta',?,?)",
+                        (chiave, dom, str(messaggio or "")[:200],
+                         json.dumps(chiavi, ensure_ascii=False), _now(), _now()))
+                self.db.commit()
+        except Exception:
+            pass
+
+    def lacune_da_studiare(self, min_visto=2, limit=5):
+        """Le lacune RICORRENTI ancora aperte (viste almeno `min_visto` volte), più
+        frequenti prima. È ciò che Lia dovrebbe imparare dalla chat vera."""
+        try:
+            with _lock:
+                rows = self.db.execute(
+                    "SELECT * FROM lacune WHERE stato='aperta' AND visto>=? "
+                    "ORDER BY visto DESC, aggiornato DESC LIMIT ?",
+                    (int(min_visto), int(limit))).fetchall()
+            out = []
+            for r in rows:
+                try:
+                    chiavi = json.loads(r["chiavi"] or "[]")
+                except Exception:
+                    chiavi = []
+                out.append({"chiave": r["chiave"], "dominio": r["dominio"] or "conversazione",
+                            "esempio": r["esempio"] or "", "chiavi": chiavi, "visto": int(r["visto"] or 0)})
+            return out
+        except Exception:
+            return []
+
+    def chiudi_lacuna(self, chiave, stato="studiata"):
+        """Segna una lacuna come studiata (o ignorata): non verrà più ristudiata."""
+        try:
+            with _lock:
+                self.db.execute("UPDATE lacune SET stato=?, aggiornato=? WHERE chiave=?",
+                                (str(stato), _now(), str(chiave)))
+                self.db.commit()
+            return True
+        except Exception:
+            return False
 
     # -------------------------------------------------- REVISIONE (esito dei moduli)
     def _usa_modulo(self, mid):
