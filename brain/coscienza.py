@@ -559,6 +559,11 @@ class Coscienza:
             r = self.db.execute("SELECT * FROM moduli WHERE nome=?", (_norm(nome),)).fetchone()
         return _riga_modulo(r) if r else None
 
+    def modulo_per_id(self, mid):
+        with _lock:
+            r = self.db.execute("SELECT * FROM moduli WHERE id=?", (int(mid),)).fetchone()
+        return _riga_modulo(r) if r else None
+
     def moduli(self, dominio=None, stato=None):
         q, cond, args = "SELECT * FROM moduli", [], []
         if dominio:
@@ -603,7 +608,9 @@ class Coscienza:
             # 2) sovrapposizione con le parole chiave del modulo
             chiavi = set(_fold(x) for x in (m.get("chiavi") or []) if str(x).strip())
             ov = len(parole & chiavi)
-            ov_score = min(1.0, ov / 3.0) if chiavi else 0.0
+            # 2 parole in comune = pieno: coi domini non-emotivi (diretta, gaming…)
+            # il match è per argomento, non per emozione, e non deve essere troppo raro.
+            ov_score = min(1.0, ov / 2.0) if chiavi else 0.0
             # 3) affidabilità storica (poco peso finché non ha abbastanza usi)
             usi = int(m.get("usi") or 0)
             succ = int(m.get("successi") or 0)
@@ -613,7 +620,21 @@ class Coscienza:
             if punteggio >= soglia:
                 segnati.append((punteggio, m))
         segnati.sort(key=lambda x: x[0], reverse=True)
-        return [m for _, m in segnati[:max(1, min(3, int(k)))]]
+        scelti = [m for _, m in segnati[:max(1, min(3, int(k)))]]
+        # SPREADING ACTIVATION: aggancia UN modulo "vicino" al più pertinente lungo
+        # la rete associativa (Pezzo C), se non è già dentro e il legame è forte —
+        # così Lia collega conoscenze correlate ("il tutto con tutto") senza sforare
+        # il budget del prompt (un solo innesto).
+        if scelti:
+            gia = {mm.get("id") for mm in scelti}
+            for v in self.vicini(scelti[0].get("id"), k=3, soglia=0.5):
+                if v["id"] in gia:
+                    continue
+                mv = self.modulo_per_id(v["id"])
+                if mv and mv.get("stato") == "attivo":
+                    scelti.append(mv)
+                    break
+        return scelti
 
     # ---------------------------------------------- LACUNE (apprendimento autonomo)
     def registra_lacuna(self, messaggio):
