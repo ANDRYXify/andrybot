@@ -24,16 +24,63 @@ const BOT_NOTI = new Set(['nightbot', 'streamelements', 'moobot', 'streamlabs', 
 
 const TONI = ['scherzoso', 'amichevole', 'serio'];
 
-// SEMI del "manuale umano": il primo dominio è le 6 emozioni base (Ekman). Il bot
-// le studia una alla volta (una per giro) finché il set base è 'attivo', poi si
-// ferma. `query` = cosa cercare online per sintetizzare il modulo operativo.
-const SEMI_EMOZIONI = [
-  { nome: 'riconoscere e rispondere alla gioia', query: 'come condividere la gioia e l\'entusiasmo di qualcuno empatia psicologia' },
-  { nome: 'riconoscere e rispondere alla tristezza', query: 'come consolare una persona triste cosa dire empatia' },
-  { nome: 'riconoscere e rispondere alla rabbia', query: 'come rispondere a una persona arrabbiata o frustrata calmare empatia' },
-  { nome: 'riconoscere e rispondere alla paura', query: 'come rassicurare una persona spaventata o ansiosa empatia' },
-  { nome: 'riconoscere e rispondere alla sorpresa', query: 'come reagire alla sorpresa e allo stupore di qualcuno' },
-  { nome: 'riconoscere e rispondere al disgusto', query: 'come rispondere quando qualcuno prova disgusto o forte disapprovazione' },
+// SEMI del "manuale umano": il set base da cui parte l'auto-apprendimento. NON
+// più solo le emozioni: un manuale COMPLETO su come funzionano le persone E una
+// diretta Twitch, diviso in DOMINI. Il bot ne studia uno per giro (bilanciando i
+// domini, vedi seminaProssimoModulo) finché il set base è 'attivo'; dopo, cresce
+// da solo dalle lacune reali della chat. `dominio` = cluster nel grafo; `query` =
+// cosa cercare online per sintetizzare il modulo operativo.
+const SEMI = [
+  // — emozioni base (Ekman): riconoscerle e rispondere —
+  { dominio: 'emozioni', nome: 'riconoscere e rispondere alla gioia', query: 'come condividere la gioia e l\'entusiasmo di qualcuno empatia psicologia' },
+  { dominio: 'emozioni', nome: 'riconoscere e rispondere alla tristezza', query: 'come consolare una persona triste cosa dire empatia' },
+  { dominio: 'emozioni', nome: 'riconoscere e rispondere alla rabbia', query: 'come rispondere a una persona arrabbiata o frustrata calmare empatia' },
+  { dominio: 'emozioni', nome: 'riconoscere e rispondere alla paura', query: 'come rassicurare una persona spaventata o ansiosa empatia' },
+  { dominio: 'emozioni', nome: 'riconoscere e rispondere alla sorpresa', query: 'come reagire alla sorpresa e allo stupore di qualcuno' },
+  { dominio: 'emozioni', nome: 'riconoscere e rispondere al disgusto', query: 'come rispondere quando qualcuno prova disgusto o forte disapprovazione' },
+  // — sociale: relazioni e situazioni fra persone —
+  { dominio: 'sociale', nome: 'accogliere un nuovo arrivato in chat', query: 'come accogliere e far sentire benvenuta una persona nuova in una community' },
+  { dominio: 'sociale', nome: 'far parlare un timido o un lurker', query: 'come mettere a proprio agio una persona timida che scrive per la prima volta' },
+  { dominio: 'sociale', nome: 'ricevere un complimento con grazia', query: 'come rispondere a un complimento senza imbarazzo o falsa modestia' },
+  { dominio: 'sociale', nome: 'fare un complimento sincero', query: 'come fare un complimento sincero e specifico senza esagerare' },
+  { dominio: 'sociale', nome: 'reagire a una bella notizia di qualcuno', query: 'come condividere la felicità per una bella notizia di un\'altra persona' },
+  { dominio: 'sociale', nome: 'accogliere uno sfogo o una brutta notizia', query: 'come ascoltare e sostenere qualcuno che si sfoga o dà una brutta notizia' },
+  { dominio: 'sociale', nome: 'usare i dettagli personali che ricordi', query: 'come usare i dettagli personali che ricordi di qualcuno per farlo sentire visto' },
+  // — diretta: eventi tipici di una live Twitch —
+  { dominio: 'diretta', nome: 'reagire a un raid in arrivo', query: 'come accogliere un raid su Twitch e i nuovi arrivati con energia' },
+  { dominio: 'diretta', nome: 'ringraziare per un sub o un resub', query: 'come ringraziare in modo personale per un abbonamento o un resub su Twitch' },
+  { dominio: 'diretta', nome: 'reagire a una donazione o ai bits', query: 'come reagire con gratitudine a una donazione o ai bits durante una live' },
+  { dominio: 'diretta', nome: 'accogliere un nuovo follower', query: 'come salutare e ringraziare un nuovo follower senza suonare automatico' },
+  { dominio: 'diretta', nome: 'coprire una difficoltà tecnica in diretta', query: 'come intrattenere la chat durante un problema tecnico in live streaming' },
+  { dominio: 'diretta', nome: 'creare hype all\'inizio della diretta', query: 'come aprire una diretta con energia e coinvolgere subito la chat' },
+  { dominio: 'diretta', nome: 'salutare bene a fine diretta', query: 'come chiudere una diretta ringraziando e lasciando un buon ricordo' },
+  // — community: dinamiche di gruppo —
+  { dominio: 'community', nome: 'riconoscere e rilanciare le battute interne', query: 'come nascono e si alimentano le inside joke di una community online' },
+  { dominio: 'community', nome: 'trattare veterani e nuovi in modo giusto', query: 'come bilanciare l\'attenzione tra membri storici e nuovi arrivati in una community' },
+  { dominio: 'community', nome: 'alimentare un momento di hype collettivo', query: 'come cavalcare e amplificare un momento di hype in una chat live' },
+  { dominio: 'community', nome: 'placare una tensione in chat', query: 'come disinnescare una piccola tensione o litigio in una chat senza schierarsi' },
+  // — moderazione: conflitti e comportamenti difficili —
+  { dominio: 'moderazione', nome: 'disinnescare un troll senza dargli corda', query: 'come gestire un troll in chat senza alimentarlo de-escalation' },
+  { dominio: 'moderazione', nome: 'gestire lo spam ripetuto con calma', query: 'come rispondere allo spam ripetuto in chat senza aggressività' },
+  { dominio: 'moderazione', nome: 'rispondere alla negatività con calma', query: 'come rispondere con calma a un commento negativo o a un hater' },
+  { dominio: 'moderazione', nome: 'gestire il backseat gaming', query: 'come gestire con leggerezza chi fa backseat gaming e dice sempre cosa fare' },
+  { dominio: 'moderazione', nome: 'fermare uno spoiler in chat', query: 'come gestire chi scrive spoiler in chat senza rovinare agli altri' },
+  // — gaming: reazioni al gioco e ai suoi momenti —
+  { dominio: 'gaming', nome: 'reagire a una vittoria o a un clutch', query: 'come reagire con entusiasmo a una vittoria o a una giocata clutch nei videogiochi' },
+  { dominio: 'gaming', nome: 'reagire a una sconfitta o al rage', query: 'come alleggerire una sconfitta o un momento di rage nei videogiochi' },
+  { dominio: 'gaming', nome: 'reagire a uno jumpscare', query: 'come reagire con ironia a uno jumpscare in un gioco horror' },
+  { dominio: 'gaming', nome: 'incoraggiare in un punto difficile del gioco', query: 'come incoraggiare qualcuno bloccato in un punto difficile di un videogioco' },
+  // — umorismo: intrattenere con leggerezza —
+  { dominio: 'umorismo', nome: 'fare una battuta al momento giusto', query: 'come inserire una battuta leggera al momento giusto senza forzare timing comico' },
+  { dominio: 'umorismo', nome: 'rispondere a una presa in giro amichevole', query: 'come stare al gioco in un banter amichevole senza offendere' },
+  { dominio: 'umorismo', nome: 'rilanciare un meme del momento', query: 'come riconoscere e rilanciare un meme del momento in una chat' },
+  { dominio: 'umorismo', nome: 'usare l\'ironia senza risultare cattiva', query: 'come usare l\'ironia in modo affettuoso e non tagliente' },
+  // — conversazione: tenere viva e naturale una chiacchierata —
+  { dominio: 'conversazione', nome: 'tenere viva la conversazione con domande', query: 'come fare domande aperte per tenere viva una conversazione' },
+  { dominio: 'conversazione', nome: 'cambiare argomento in modo naturale', query: 'come cambiare argomento in una conversazione in modo fluido e naturale' },
+  { dominio: 'conversazione', nome: 'ammettere di non sapere con umiltà', query: 'come ammettere di non sapere qualcosa con onestà e curiosità' },
+  { dominio: 'conversazione', nome: 'riconoscere il sarcasmo', query: 'come riconoscere il sarcasmo e l\'ironia in un messaggio scritto' },
+  { dominio: 'conversazione', nome: 'rianimare una chat morta', query: 'come rilanciare una conversazione quando la chat è silenziosa o morta' },
 ];
 
 // ======================================================================
@@ -642,22 +689,30 @@ export class Brain {
     } catch (e) { log.debug('studiaModulo:', e?.message || e); return null; }
   }
 
-  // SEEDING del manuale: studia il PROSSIMO modulo base ancora mancante (o non
-  // ancora 'attivo'), UNO per chiamata. Quando il set base è completo non fa più
-  // nulla (solo una lettura leggera). Guidato dai timer di reflection. Non lancia.
+  // SEEDING del manuale: studia il PROSSIMO modulo base ancora mancante, UNO per
+  // chiamata, BILANCIANDO i domini — pesca il prossimo seme non ancora appreso dal
+  // dominio che al momento ha MENO moduli attivi. Così il "cervello" cresce largo
+  // su tutti i temi invece di riempire un dominio alla volta (e il grafo si popola
+  // in modo equilibrato). Quando il set base è completo non fa più nulla. Guidato
+  // dai timer di reflection; non lancia. Ritorna il modulo appreso o null.
   async seminaProssimoModulo() {
     try {
       const esistenti = await brainpy.moduli();
       if (esistenti === null) return null;   // cervello non raggiungibile: riprova al giro dopo
-      const attivi = new Set(
-        (Array.isArray(esistenti) ? esistenti : [])
-          .filter((m) => m && m.stato === 'attivo')
-          .map((m) => String(m.nome || '').toLowerCase().trim()),
-      );
-      const prossimo = SEMI_EMOZIONI.find((s) => !attivi.has(s.nome.toLowerCase()));
-      if (!prossimo) return null;            // set base completo: niente da seminare
-      const mod = await this.studiaModulo(prossimo.nome, { dominio: 'emozioni', query: prossimo.query });
-      if (mod) log.info(`manuale umano: appresa una pagina → «${prossimo.nome}»`);
+      const lista = (Array.isArray(esistenti) ? esistenti : []).filter((m) => m && m.stato === 'attivo');
+      const attivi = new Set(lista.map((m) => String(m.nome || '').toLowerCase().trim()));
+      // quanti moduli attivi ha già ciascun dominio (per bilanciare)
+      const perDominio = {};
+      for (const m of lista) { const d = String(m.dominio || 'emozioni'); perDominio[d] = (perDominio[d] || 0) + 1; }
+      // semi ancora da imparare, ordinati per: dominio meno popolato, poi ordine catalogo
+      const mancanti = SEMI
+        .map((s, i) => ({ ...s, i }))
+        .filter((s) => !attivi.has(s.nome.toLowerCase()));
+      if (!mancanti.length) return null;     // set base completo: niente da seminare
+      mancanti.sort((a, b) => ((perDominio[a.dominio] || 0) - (perDominio[b.dominio] || 0)) || (a.i - b.i));
+      const prossimo = mancanti[0];
+      const mod = await this.studiaModulo(prossimo.nome, { dominio: prossimo.dominio, query: prossimo.query });
+      if (mod) log.info(`manuale: appresa una pagina [${prossimo.dominio}] → «${prossimo.nome}» (mancano ${mancanti.length - 1})`);
       return mod;
     } catch (e) { log.debug('seminaProssimoModulo:', e?.message || e); return null; }
   }

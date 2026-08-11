@@ -10,10 +10,13 @@ const log = makeLog('reflection');
 const PRIMO_GIRO = 10 * 60_000;          // 10 minuti dopo l'avvio
 const OGNI = 6 * 60 * 60_000;            // poi ogni 6 ore
 
-// SEEDING del "manuale umano": costruisce il set base (le emozioni) una pagina
-// alla volta, in fretta all'inizio, poi da sé si azzittisce quando è completo.
+// SEEDING del "manuale umano": costruisce il set base (~45 moduli su 8 domini:
+// emozioni, sociale, diretta, community, moderazione, gaming, umorismo,
+// conversazione) una pagina alla volta, bilanciando i domini; poi da sé si
+// azzittisce quando è completo e lascia spazio all'apprendimento dalle lacune
+// reali. Una sola ricerca web + sintesi per giro: gentile con le risorse.
 const SEED_PRIMO = 3 * 60_000;           // 3 min dopo l'avvio: inizia a costruire il manuale
-const SEED_OGNI = 25 * 60_000;           // poi una pagina ogni 25 min (finché il set base non è completo)
+const SEED_OGNI = 12 * 60_000;           // poi una pagina ogni 12 min (finché il set base non è completo)
 
 // Avvia i timer di riflessione. Ritorna una funzione che li ferma.
 export function scheduleReflection({ brain }) {
