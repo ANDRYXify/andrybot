@@ -69,6 +69,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._moduli()
         if self.path.startswith("/lacune"):
             return self._lacune()
+        if self.path.startswith("/links"):
+            return self._links()
         return self._json(404, {"errore": "non trovato"})
 
     def _moduli(self):
@@ -100,6 +102,13 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, {"lacune": mente.lacune_da_studiare(min_visto=minv, limit=8)})
         except Exception as e:
             return self._json(200, {"lacune": [], "errore": str(e)[:120]})
+
+    def _links(self):
+        # i collegamenti fra moduli (rete associativa) per il grafo 3D della mente.
+        try:
+            return self._json(200, {"links": mente.link_grafo()})
+        except Exception as e:
+            return self._json(200, {"links": [], "errore": str(e)[:120]})
 
     def _corpus(self):
         # il dataset della sua mente (coppie domanda→risposta consolidate)
