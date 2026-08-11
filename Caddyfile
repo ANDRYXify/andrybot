@@ -40,41 +40,86 @@
 	}
 }
 
+# --- Header di sicurezza COMUNI a ogni risposta --------------
+# Snippet riusato dai vari gruppi qui sotto: quello che è UGUALE ovunque sta
+# qui una volta sola; la CSP e l'anti-frame cambiano per gruppo (vedi sotto),
+# perché alcune NOSTRE pagine hanno bisogno di sorgenti esterne precise.
+(sicurezza_comune) {
+	# HSTS: forza HTTPS per un anno, sottodomini inclusi (solo www, già su HTTPS).
+	# 'preload' NON incluso: è un impegno formale (lista dei browser) — attivalo
+	# tu quando sei certo, aggiungendo "; preload" e iscrivendoti su hstspreload.org
+	Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	# niente MIME-sniffing
+	X-Content-Type-Options "nosniff"
+	# referrer prudente
+	Referrer-Policy "strict-origin-when-cross-origin"
+	# limita API del browser che non servono. NB: NON blocco camera/microphone
+	# perché il tracking e la voce usano webcam/microfono nel Browser Source.
+	Permissions-Policy "geolocation=(), payment=(), usb=(), magnetometer=()"
+	# togli l'header che rivela il server (coerente col "labirinto")
+	-Server
+}
+
 # --- Dominio UFFICIALE: serve l'app -------------------------
+# Perché più blocchi `handle` invece di un solo `header` di sito? La CSP deve
+# cambiare per POCHE pagine nostre che caricano sorgenti esterne fidate:
+#  · /tgapp  → la Mini App gira DENTRO Telegram (script telegram.org + iframe
+#              di Telegram Web): CSP dedicata, niente X-Frame-Options.
+#  · /voce.html e /tracking/* → riconoscimento vocale e webcam sul dispositivo
+#              (transformers.js/Human da jsdelivr, modelli HuggingFace/GitHub,
+#              WASM + worker): serve allargare script/connect SOLO qui.
+#  · tutto il resto (dashboard, overlay, vetrina, 404 del labirinto) → CSP
+#              stretta e X-Frame-Options DENY, come prima.
+# Ogni `handle` è esclusivo (vince il primo che combacia): così ogni risposta
+# riceve UN SOLO set di header, senza ambiguità di precedenza.
 socialbot.live {
 	encode gzip
 
-	# --- Header di sicurezza (tutte le risposte, 404 inclusi) ---
-	# Messi a livello di sito: valgono anche per le risposte "Not Found"
-	# del labirinto, per i file statici e per i redirect.
-	header {
-		# HSTS: forza HTTPS. Parti breve (1 giorno); quando sei sicuro
-		# alza a "max-age=31536000; includeSubDomains; preload".
-		Strict-Transport-Security "max-age=86400"
-		# anti-clickjacking: la dashboard non va incorniciata da altri siti.
-		# (frame-ancestors nella CSP fa lo stesso, ma questo copre browser vecchi)
-		X-Frame-Options "DENY"
-		# niente MIME-sniffing
-		X-Content-Type-Options "nosniff"
-		# referrer prudente
-		Referrer-Policy "strict-origin-when-cross-origin"
-		# limita API del browser che non servono. NB: NON blocco camera/microphone
-		# perché l'overlay tracking usa la webcam nel Browser Source.
-		Permissions-Policy "geolocation=(), payment=(), usb=(), magnetometer=()"
-		# CSP: SPA con script inline + font Google + 7TV + media utente + canvas.
-		# 'unsafe-inline' è un compromesso per non rompere la dashboard.
-		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
-		# togli l'header che rivela il server (coerente col "labirinto")
-		-Server
+	@tgapp path /tgapp /tgapp.html
+	@ml path /voce.html /tracking/*
+
+	# --- Mini App Telegram: script SDK + framing di Telegram Web -----------
+	handle @tgapp {
+		header {
+			import sicurezza_comune
+			# NIENTE X-Frame-Options: la Mini App è incorniciata da Telegram Web.
+			Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://telegram.org; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self'; frame-ancestors https://web.telegram.org https://*.telegram.org; base-uri 'self'; object-src 'none'"
+		}
+		reverse_proxy bot:8090 {
+			header_up X-Edge-Key {env.EDGE_KEY}
+		}
 	}
 
+	# --- Voce (Whisper) e tracking (Human): ML sul dispositivo ------------
+	# Sono pagine NOSTRE che girano top-level (OBS/scheda): resta X-Frame DENY.
+	# Allarghiamo SOLO script/connect/worker verso i CDN dei modelli e il WASM.
+	handle @ml {
+		header {
+			import sicurezza_comune
+			X-Frame-Options "DENY"
+			Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://cdn.jsdelivr.net https://vladmandic.github.io https://huggingface.co https://*.hf.co https://cdn-lfs.huggingface.co https://cdn-lfs-us-1.hf.co; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
+		}
+		reverse_proxy bot:8090 {
+			header_up X-Edge-Key {env.EDGE_KEY}
+		}
+	}
+
+	# --- Tutto il resto: CSP stretta, anti-clickjacking pieno ------------
 	handle {
+		header {
+			import sicurezza_comune
+			# anti-clickjacking: la dashboard non va incorniciata da altri siti.
+			# (frame-ancestors nella CSP fa lo stesso, ma questo copre browser vecchi)
+			X-Frame-Options "DENY"
+			# CSP: SPA con script inline + font Google + 7TV + media utente + canvas.
+			# 'unsafe-inline' è un compromesso per non rompere la dashboard.
+			Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
+		}
 		reverse_proxy bot:8090 {
 			header_up X-Edge-Key {env.EDGE_KEY}
 		}
 	}
 }
-
 
 # www → dominio nudo (canonico)
 www.socialbot.live {
