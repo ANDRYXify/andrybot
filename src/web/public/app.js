@@ -488,7 +488,23 @@ function aggiornaSpiegazioneDemo() { /* sostituita da guidaSchedaHtml() */ }
 
 // ------------------------------------------------------------------ render principale
 
+// Ricorda lo scorrimento attorno a un ridisegno del DOM e lo ripristina dopo il
+// reflow: salvare/aggiornare NON deve buttarti in cima alla pagina.
+function conScrollFermo(fn) {
+  const y = window.scrollY || window.pageYOffset || 0;
+  const ripristina = () => { try { window.scrollTo(0, y); } catch { /* niente */ } };
+  let r;
+  try { r = fn(); } catch (e) { requestAnimationFrame(ripristina); throw e; }
+  if (r && typeof r.then === 'function') { r.then(ripristina, ripristina); return r; }
+  requestAnimationFrame(ripristina);
+  return r;
+}
+
 function render() {
+  // dove sono ora: dopo un ridisegno (es. dopo un salvataggio che rinfresca lo
+  // stato) rimetto la pagina dov'era, invece di rimbalzare in cima. La vera
+  // navigazione tra schede usa vaiAScheda(), che scorre in cima apposta.
+  const _syRender = (stato && stato.user) ? (window.scrollY || 0) : 0;
   renderAreaUtente();
   const navTop = document.getElementById('nav-top');
   const navDrawer = document.getElementById('nav-drawer');
@@ -539,6 +555,8 @@ function render() {
   // prima le rendo richiudibili (cambia il DOM), poi le rivelo
   if (conPiattaforma) document.querySelectorAll('.pannello-scheda').forEach((p) => rendiCartePieghevoli(p, p.dataset.scheda));
   rivelaCarte();   // scroll-reveal delle carte appena disegnate
+  // ripristina la posizione precedente (vedi _syRender): niente rimbalzo in cima
+  if (_syRender) requestAnimationFrame(() => { try { window.scrollTo(0, _syRender); } catch { /* niente */ } });
 }
 
 // ------------------------------------------------------------------ scroll-reveal
@@ -7733,7 +7751,7 @@ async function caricaPaginaLink(ridisegna = false) {
         `Publicada ✓ — ${scartati} bloque(s) no guardados: falta una etiqueta o una dirección válida (https://…).`)
       : L('Pubblicata ✓ è già online.', 'Published ✓ it’s already live.', 'Publicada ✓ ya está online.');
     toast(L('Pagina pubblicata ✓', 'Page published ✓', 'Página publicada ✓'));
-    caricaPaginaLink();
+    conScrollFermo(() => caricaPaginaLink());
   });
 
   const spegni = document.getElementById('lp-spegni');
@@ -7741,7 +7759,7 @@ async function caricaPaginaLink(ridisegna = false) {
     if (!confirm(L('Togliere la pagina dal web? I contenuti restano salvati.', 'Take the page offline? The contents stay saved.', '¿Quitar la página de la web? El contenido queda guardado.'))) return;
     await api('/api/linkpage', { method: 'DELETE' });
     toast(L('Pagina tolta dal web.', 'Page taken offline.', 'Página quitada de la web.'));
-    caricaPaginaLink();
+    conScrollFermo(() => caricaPaginaLink());
   });
 }
 
