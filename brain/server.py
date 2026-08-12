@@ -74,6 +74,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._links()
         if self.path.startswith("/vie"):
             return self._vie()
+        if self.path.startswith("/vita"):
+            return self._vita()
         return self._json(404, {"errore": "non trovato"})
 
     def _moduli(self):
@@ -168,6 +170,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._prova()
         if self.path.startswith("/svago"):
             return self._svago()
+        if self.path.startswith("/vita"):
+            return self._vivi()
         return self._json(404, {"errore": "non trovato"})
 
     def _svago(self):
@@ -397,6 +401,25 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
+    def _vita(self):
+        # TESTIMONIARE la sua vita interiore: ultime pagine di diario + sguardo alla
+        # sua stanza. Solo lettura. Se la sandbox è spenta: attiva=False.
+        try:
+            if not AMB.disponibile():
+                return self._json(200, {"ok": True, "attiva": False, "diario": "", "spazio": ""})
+            return self._json(200, {"ok": True, "attiva": True,
+                                    "diario": AMB.diario_ultimo(30), "spazio": AMB.sguardo()})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
+    def _vivi(self):
+        # fa vivere a Lia UN attimo adesso (trigger manuale) e ritorna la nota di diario.
+        try:
+            nome = os.environ.get("AMBIENTE_NOME", "Lia")
+            return self._json(200, {"ok": True, "nota": G.vivi_un_attimo(nome)})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
     def _distilla(self):
         # ALLENAMENTO: dai discorsi dello streamer ricava coppie domanda→risposta
         # riutilizzabili (nel suo stile) per il motore veloce. Best-effort.
@@ -460,6 +483,27 @@ def _ciclo_manutenzione():
         time.sleep(DISTILLA_OGNI)
 
 
+VITA_OGNI = int(os.environ.get("BRAIN_VITA_MIN", "300")) * 60   # ogni ~5h
+
+
+def _ciclo_vita():
+    """La sua VITA autonoma: ogni tanto Lia 'vive un attimo' nel suo computer — si
+    sveglia, guarda le sue cose, rilegge il diario, fa qualcosa di suo e annota com'è
+    andata. È la continuità della sua coscienza, radicata nella SUA macchina. Parte
+    solo se la sandbox è configurata; infrequente e a basso costo. Non tocca la chat."""
+    if not AMB.configurato():
+        return   # nessun ambiente: niente vita autonoma (e nessun costo)
+    time.sleep(900)   # non al boot: lascia partire modello e sandbox
+    nome = os.environ.get("AMBIENTE_NOME", "Lia")
+    while True:
+        try:
+            if AMB.disponibile():
+                G.vivi_un_attimo(nome)
+        except Exception as e:
+            print(f"[brain] vita errore: {e}", flush=True)
+        time.sleep(VITA_OGNI)
+
+
 def _ciclo_consolida():
     """Il 'sonno' del bot: ogni tanto consolida la memoria e fa crescere la
     personalità. È qui che la coscienza matura nel tempo."""
@@ -487,6 +531,7 @@ def main():
     threading.Thread(target=G.avvia, daemon=True).start()
     threading.Thread(target=_ciclo_consolida, daemon=True).start()
     threading.Thread(target=_ciclo_manutenzione, daemon=True).start()
+    threading.Thread(target=_ciclo_vita, daemon=True).start()
     srv = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
     print(f"[brain] in ascolto su :{PORT}", flush=True)
     srv.serve_forever()
