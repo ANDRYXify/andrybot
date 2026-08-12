@@ -11,6 +11,7 @@ c'è di che.
 Dipendenza opzionale: llama-cpp-python. Se manca, il servizio parte lo stesso.
 """
 import os
+import re
 import time
 import threading
 import urllib.request
@@ -770,8 +771,12 @@ def _system_prompt(canale, ctx, modo="live"):
                 "La tua CASA è qui: diario/ (il tuo diario), note/ (i tuoi appunti), progetti/ (le tue cose), io.md (chi sei). "
                 "Muoviti con «ESEGUI: <comando di shell>» e guarda i risultati; non incollare l'output grezzo, raccontalo a parole tue.")
     else:
+        ancora = (f'Il TUO nome è {nome_bot}: tu sei {nome_bot} e resti {nome_bot} sempre. Se ti chiedono come ti chiami, rispondi {nome_bot}. NON prendere MAI come tuo il nome di chi ti scrive o di altri, e non inventarti un altro nome o dettagli su di te (dispositivi, hardware) che non sono tuoi.'
+                  if nome_bot else
+                  'Hai un tuo nome e una tua identità: se non ne hai ancora uno, lascia che sia lo streamer a dartelo, ma NON prendere come tuo il nome di chi ti scrive né inventartene uno a caso.')
         righe = [
             f'Sei l\'anima del canale Twitch "{canale}" e parli in PRIMA PERSONA: la voce e la presenza viva del canale.',
+            ancora,
         ] + _corpo(nome_bot) + [
             "Hai un carattere: sveglia, calorosa, un filo ironica, con gusti e opinioni tue. Puoi punzecchiare con affetto, entusiasmarti, dire la tua — non sei neutra.",
             "Scrivi come si scrive in chat Twitch: italiano colloquiale e naturale, BREVE (1 frase, max 2). Contrazioni e modi di dire sì; niente paroloni, niente tono da manuale o da ufficio.",
@@ -1147,10 +1152,7 @@ def genera(canale, ctx, testo, timeout_s=30, modo="live"):
                     _tl.via = "moduli"
                     print(f"[genera] via: ragionamento-moduli (modulo «{str(forte.get('nome'))[:40]}»)", flush=True)
                     if not senza_appr:
-                        try:
-                            rete.impara(canale, testo, risp, fonte="modulo")
-                        except Exception:
-                            pass
+                        _impara_rete(canale, testo, risp, "modulo")
                     return risp
     # 2) chiedi al maestro (endpoint esterno se collegato, sennò modello locale)
     try:
@@ -1175,10 +1177,7 @@ def genera(canale, ctx, testo, timeout_s=30, modo="live"):
         _tl.via = "modello"
         print(f"[genera] via: {via}", flush=True)
         if not senza_appr:
-            try:
-                rete.impara(canale, testo, risposta, fonte="maestro")
-            except Exception:
-                pass
+            _impara_rete(canale, testo, risposta, "maestro")
         return risposta
     # 2b) RIFLESSO: il modello non ha prodotto nulla (lento/spento) ma una situazione
     #     combacia con un modulo → rispondo dal modulo invece che tacere. Non lo
@@ -1315,18 +1314,75 @@ def distilla(canale, frasi, timeout_s=90):
     coppie = coppie[:6]
     # la RETE impara subito le coppie distillate (fonte fidata: dai discorsi dello streamer)
     for c in coppie:
-        try:
-            rete.impara(canale, c["q"], c["a"], fonte="distillato")
-        except Exception:
-            pass
+        _impara_rete(canale, c["q"], c["a"], "distillato")
     return coppie
 
 
 def _pulisci(s):
-    import re
     t = re.sub(r"\s+", " ", (s or "").strip())
     t = re.sub(r'^(bot|assistant|risposta|streamer)\s*[:>\-]\s*', "", t, flags=re.I)
     t = t.strip('"\'«»').strip()
     if len(t) > 350:
         t = t[:349].rstrip() + "…"
     return t or None
+
+
+# ─────────────────────────────── SCUDO D'IDENTITÀ ──────────────────────────────
+# Lei ha UN nome (dall'anima; default "Lia"). Ma una battuta può arrivare dalla
+# memoria/dai moduli o essere l'eco di un utente ("Mi chiamo Dani, uso un laptop…"):
+# quella riga non passa dal prompt che ancora l'identità, quindi il bot potrebbe
+# rivendicare un nome che non è il suo. Due difese: (1) non IMPARARE/distillare le
+# auto-presentazioni; (2) allo SCUDO, correggere il nome sbagliato in uscita.
+_RE_AUTOPRES = re.compile(r"(?i)\b(mi chiamo|il mio nome (?:è|e')|mi presento|chiamami|puoi chiamarmi)\b")
+_RE_NOME = re.compile(
+    r"(?i)(\bmi chiamo\s+|\bil mio nome (?:è|e')\s+|\bchiamami\s+|\bpuoi chiamarmi\s+|\bsono\s+)"
+    r"([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'’]{1,20})")
+# parole che seguono "sono" ma NON sono nomi propri (per non stravolgere le frasi)
+_NON_NOMI = {
+    "io", "qui", "qua", "sempre", "ancora", "solo", "sola", "felice", "contenta",
+    "pronta", "viva", "stanca", "curiosa", "sicura", "certa", "brava", "capace",
+    "libera", "gia", "già", "davvero", "proprio", "molto", "tanto", "un", "una",
+    "il", "la", "cosi", "così", "tua", "tuo", "quella", "quello", "d", "di",
+}
+
+
+def e_autopresentazione(testo):
+    """La risposta è un'auto-presentazione ('mi chiamo…', 'il mio nome è…')? Queste
+    NON vanno imparate né distillate: sono legate a un'identità specifica e, se
+    generalizzate, fanno rivendicare al bot un nome/dettaglio che non è suo."""
+    return bool(testo and _RE_AUTOPRES.search(str(testo)))
+
+
+def scudo_identita(testo, nome_bot, nome_utente=""):
+    """Corregge in uscita ogni «mi chiamo X / sono X / chiamami X» con X diverso dal
+    suo vero nome. Se non conosce il suo nome, lascia intatto. Conservativo: su "sono"
+    interviene solo se segue un nome proprio (Maiuscolo) e non una parola comune."""
+    if not testo or not nome_bot:
+        return testo
+    nb = str(nome_bot).strip()
+    if not nb:
+        return testo
+
+    def _sost(m):
+        pre, nome = m.group(1), m.group(2)
+        if nome.strip().lower() == nb.lower():
+            return m.group(0)                      # già giusto
+        if pre.strip().lower() == "sono":
+            if not nome[:1].isupper() or nome.strip().lower() in _NON_NOMI:
+                return m.group(0)                  # "sono felice/qui/…": non toccare
+        return pre + nb
+
+    try:
+        return _RE_NOME.sub(_sost, testo)
+    except Exception:
+        return testo
+
+
+def _impara_rete(canale, testo, risposta, fonte):
+    """rete.impara, ma MAI su un'auto-presentazione (evita di seminare identità false)."""
+    if e_autopresentazione(risposta):
+        return
+    try:
+        rete.impara(canale, testo, risposta, fonte=fonte)
+    except Exception:
+        pass

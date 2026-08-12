@@ -377,6 +377,73 @@ def esporta(canale, min_forza=1.0):
         return out
 
 
+# ── Dimenticare: togliere dalla memoria le risposte "avvelenate" (auto-presentazioni
+#    con un nome che non è il suo, o una frase precisa indicata dal proprietario) ──
+_RE_AUTOPRES_RETE = re.compile(r"(?i)\b(mi chiamo|il mio nome (?:è|e')|mi presento|chiamami|puoi chiamarmi)\b")
+
+
+def _elenco_canali():
+    canali = set(_cache.keys())
+    try:
+        for f in os.listdir(RETE_DIR):
+            if f.endswith(".json"):
+                canali.add(f[:-5])
+    except Exception:
+        pass
+    return canali
+
+
+def _pulisci_nodi(canale, filtro):
+    """Rimuove dai nodi le risposte per cui filtro(risposta) è True; se un nodo che
+    aveva risposte resta senza, elimina il nodo. Ritorna quante risposte ha tolto."""
+    st = _carica(canale)
+    tolte, nuovi = 0, []
+    for n in st.get("nodi", []):
+        varr = n.get("risposte") or []
+        if not varr:
+            nuovi.append(n)                       # nodo-lacuna: lascialo
+            continue
+        keep = [r for r in varr if not filtro(r)]
+        tolte += len(varr) - len(keep)
+        if keep:
+            n["risposte"] = keep
+            nuovi.append(n)
+        # tutte tolte → il nodo sparisce
+    if tolte:
+        st["nodi"] = nuovi
+        _salva(canale)
+    return tolte
+
+
+def dimentica_autopresentazioni():
+    """Ripulisce da OGNI canale le risposte che sono auto-presentazioni ('mi chiamo…'):
+    così un nome sbagliato smette di riaffiorare dalla memoria. Ritorna il totale."""
+    tot = 0
+    for c in _elenco_canali():
+        try:
+            with _lock:
+                tot += _pulisci_nodi(c, lambda r: bool(_RE_AUTOPRES_RETE.search(str(r or ""))))
+        except Exception:
+            pass
+    return tot
+
+
+def dimentica(frase, canale=None):
+    """Toglie dalla memoria le risposte che contengono `frase` (una cosa specifica da
+    far dimenticare al bot), su un canale o su tutti. Ritorna quante ne ha tolte."""
+    f = str(frase or "").strip().lower()
+    if len(f) < 3:
+        return 0
+    tot = 0
+    for c in ([canale] if canale else list(_elenco_canali())):
+        try:
+            with _lock:
+                tot += _pulisci_nodi(c, lambda r: f in str(r or "").lower())
+        except Exception:
+            pass
+    return tot
+
+
 def riepilogo():
     """Sommario globale (tutti i canali visti finora) per /health."""
     with _lock:

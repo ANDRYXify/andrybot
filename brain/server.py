@@ -160,6 +160,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._pulizia_modelli()
         if self.path.startswith("/distilla_moduli"):   # PRIMA di /distilla (prefisso)
             return self._distilla_moduli()
+        if self.path.startswith("/dimentica"):
+            return self._dimentica()
         if self.path.startswith("/distilla"):
             return self._distilla()
         if self.path.startswith("/impara_modulo"):
@@ -321,6 +323,10 @@ class Handler(BaseHTTPRequestHandler):
             # in allenamento lascio più tempo (risposta più lunga e ragionata)
             timeout_s = 38 if modo == "allenamento" else 30
             risposta = G.genera(canale, ctx, testo, timeout_s=timeout_s, modo=modo)
+            # SCUDO D'IDENTITÀ: non deve mai dire di chiamarsi con un nome che non è il
+            # suo (identità che trapela da memoria/moduli/echi). Corregge in uscita.
+            if risposta:
+                risposta = G.scudo_identita(risposta, ctx.get("nome_bot"))
             if risposta:
                 via = G.ultima_via()
                 try:
@@ -329,8 +335,9 @@ class Handler(BaseHTTPRequestHandler):
                     pass
                 # DISTILLAZIONE: se ha risposto il MODELLO (nessun modulo copriva questa
                 # situazione), tieni la risposta come materia prima → col tempo diventa
-                # un modulo e la stessa situazione non servirà più il modello.
-                if via == "modello" and modo in ("live", "allenamento"):
+                # un modulo e la stessa situazione non servirà più il modello. MAI le
+                # auto-presentazioni (nome/dettagli personali): non vanno generalizzate.
+                if via == "modello" and modo in ("live", "allenamento") and not G.e_autopresentazione(risposta):
                     try:
                         mente.cattura_distillato(canale, testo, risposta)
                     except Exception:
@@ -398,6 +405,20 @@ class Handler(BaseHTTPRequestHandler):
         # distilla ORA le risposte del modello in moduli (trigger manuale/di prova).
         try:
             return self._json(200, {"ok": True, "distillazione": mente.distilla_in_moduli()})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
+    def _dimentica(self):
+        # fa DIMENTICARE al bot una frase precisa (dalla memoria e dai moduli): utile
+        # per togliere una cosa sbagliata che continua a ripetere. Owner-only lato Node.
+        d = self._leggi() or {}
+        frase = str(d.get("frase") or "").strip()
+        if len(frase) < 3:
+            return self._json(400, {"errore": "frase troppo corta"})
+        try:
+            rete_n = R.dimentica(frase)
+            mod_n = mente.dimentica(frase)
+            return self._json(200, {"ok": True, "rete": rete_n, "moduli": mod_n})
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
@@ -545,9 +566,22 @@ def _ciclo_consolida():
             print(f"[brain] consolida errore: {e}", flush=True)
 
 
+def _bonifica_avvio():
+    # UNA volta all'avvio: toglie dalla memoria e dai moduli le auto-presentazioni
+    # ('mi chiamo…') già imparate → un nome sbagliato smette di riaffiorare.
+    try:
+        n1 = R.dimentica_autopresentazioni()
+        n2 = mente.bonifica_identita()
+        if n1 or n2:
+            print(f"[brain] bonifica identità: tolte {n1} risposte in memoria, {n2} esempi nei moduli.", flush=True)
+    except Exception as e:
+        print(f"[brain] bonifica identità errore: {e}", flush=True)
+
+
 def main():
     # carica il modello in background (non blocca il server)
     threading.Thread(target=G.avvia, daemon=True).start()
+    threading.Thread(target=_bonifica_avvio, daemon=True).start()
     threading.Thread(target=_ciclo_consolida, daemon=True).start()
     threading.Thread(target=_ciclo_manutenzione, daemon=True).start()
     threading.Thread(target=_ciclo_vita, daemon=True).start()

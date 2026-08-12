@@ -224,6 +224,11 @@ def _dominio_da_testo(testo):
     return best
 
 
+# Auto-presentazioni ('mi chiamo…'): non devono stare negli esempi dei moduli, o il
+# bot le ripete rivendicando un nome/dettaglio che non è suo.
+_RE_AUTOPRES_MOD = re.compile(r"(?i)\b(mi chiamo|il mio nome (?:è|e')|mi presento|chiamami|puoi chiamarmi)\b")
+
+
 class Coscienza:
     def __init__(self, db_path=DB_PATH):
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
@@ -1152,3 +1157,54 @@ class Coscienza:
                 self.db.execute("DELETE FROM distillati WHERE id IN (" + qm + ")", tuple(consumati))
                 self.db.commit()
         return esito
+
+    # ------------------------------------------ BONIFICA IDENTITÀ / DIMENTICARE
+    def _pulisci_esempi(self, tieni):
+        """Applica `tieni(esempio)` a tutti i moduli, scartando gli esempi per cui
+        è False. Ritorna quanti esempi ha rimosso. Best-effort."""
+        rimossi = 0
+        with _lock:
+            righe = self.db.execute("SELECT id, esempi FROM moduli").fetchall()
+        for r in righe:
+            try:
+                esempi = json.loads(r["esempi"] or "[]")
+            except Exception:
+                continue
+            keep = [e for e in esempi if tieni(str(e or ""))]
+            if len(keep) != len(esempi):
+                rimossi += len(esempi) - len(keep)
+                with _lock:
+                    self.db.execute("UPDATE moduli SET esempi=?, aggiornato=? WHERE id=?",
+                                    (json.dumps(keep, ensure_ascii=False), _now(), r["id"]))
+                    self.db.commit()
+        return rimossi
+
+    def bonifica_identita(self):
+        """Toglie dai moduli gli ESEMPI che sono auto-presentazioni ('mi chiamo…'):
+        non devono diventare risposte pronte, o il bot rivendica un nome non suo.
+        Pulisce anche i distillati grezzi. Ritorna quanti esempi ha rimosso."""
+        rimossi = self._pulisci_esempi(lambda e: not _RE_AUTOPRES_MOD.search(e))
+        try:
+            with _lock:
+                self.db.execute("DELETE FROM distillati WHERE "
+                                "risposta LIKE '%mi chiamo%' OR risposta LIKE '%il mio nome%' "
+                                "OR risposta LIKE '%chiamami%' OR risposta LIKE '%mi presento%'")
+                self.db.commit()
+        except Exception:
+            pass
+        return rimossi
+
+    def dimentica(self, frase):
+        """Toglie dai moduli (e dai distillati) tutto ciò che contiene `frase`: una cosa
+        specifica da far dimenticare al bot. Ritorna quanti esempi ha tolto."""
+        f = str(frase or "").strip().lower()
+        if len(f) < 3:
+            return 0
+        rimossi = self._pulisci_esempi(lambda e: f not in e.lower())
+        try:
+            with _lock:
+                self.db.execute("DELETE FROM distillati WHERE lower(risposta) LIKE ?", ('%' + f + '%',))
+                self.db.commit()
+        except Exception:
+            pass
+        return rimossi
