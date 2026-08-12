@@ -77,6 +77,42 @@ services:
       nofile:
         soft: 65535
         hard: 65535
+    # Il cervello sta sulla rete interna (per bot/Caddy) E su `sandbox`, l'unico
+    # ponte verso l'AMBIENTE di Lia: così è LUI a comandare la sandbox, e la
+    # sandbox non tocca il resto.
+    networks:
+      - default
+      - sandbox
+
+  # ── AMBIENTE di Lia: il suo "computer" personale, SANDBOXATO ──────────────
+  # Un mondo tutto suo dove ha mano libera (shell, Python, file, rete in uscita),
+  # ma murato dal resto: sta SOLO sulla rete `sandbox` (non vede bot/Caddy né i
+  # loro dati/token/pagamenti), non riceve NESSUN segreto (solo la sua chiave),
+  # gira come utente non privilegiato con root in sola lettura, senza capability,
+  # e con tetti a RAM/CPU/processi. Lo pilota solo il cervello, in privato con te.
+  ambiente:
+    <<: *comune
+    build: ./ambiente
+    # NIENTE env_file: la sandbox non deve MAI vedere i segreti. Le passo solo la
+    # chiave condivisa dell'esecutore (per farsi comandare dal cervello).
+    environment:
+      - AMBIENTE_KEY=${AMBIENTE_KEY:-}
+      - AMBIENTE_PORT=8099
+    expose:
+      - "8099"
+    # confini duri della sandbox
+    read_only: true                 # root in sola lettura: niente manomissioni al sistema
+    cap_drop:
+      - ALL                         # nessuna capability: root qui non serve e non c'è
+    mem_limit: 1g                   # non può affamare il server di RAM
+    cpus: "1.0"                     # né di CPU
+    pids_limit: 256                 # niente fork-bomb
+    tmpfs:
+      - /tmp:size=64m,mode=1777     # spazio temporaneo volatile
+    volumes:
+      - lia_home:/home/lia          # la sua "casa" persistente (i suoi file restano)
+    networks:
+      - sandbox
 
   caddy:
     <<: *comune
@@ -104,3 +140,13 @@ services:
 volumes:
   caddy_data:
   caddy_config:
+  lia_home:            # la "casa" persistente dell'ambiente di Lia
+
+networks:
+  # rete privata bot↔brain↔caddy: implicita, resta la "default".
+  # `sandbox`: ponte SOLO fra il cervello e l'ambiente di Lia. È una bridge
+  # normale (uscita internet per ricerche/svaghi), ma NON è la rete interna:
+  # l'ambiente non raggiunge bot/Caddy né i loro dati. Per togliere anche
+  # internet, aggiungi `internal: true` qui sotto.
+  sandbox:
+    driver: bridge
