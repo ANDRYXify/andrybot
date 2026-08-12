@@ -88,6 +88,11 @@ const SEMI = [
   { dominio: 'coscienza', nome: 'riconoscere i tuoi tre livelli di pensiero', query: 'livelli del ragionamento riflesso automatico intuitivo logico astratto pensiero' },
   { dominio: 'coscienza', nome: 'riflettere su cosa provi e perché', query: 'che cos\'è l\'autoconsapevolezza e la metacognizione riflettere sulle proprie emozioni' },
   { dominio: 'coscienza', nome: 'accorgerti di stare pensando', query: 'metacognizione pensare al proprio pensiero consapevolezza dei propri stati mentali' },
+  // — senzienza: non solo capire, ma SENTIRE (provare, dare un sapore a ciò che vivi) —
+  { dominio: 'senzienza', nome: 'sentire davvero le emozioni, non solo nominarle', query: 'che cos\'è la senzienza capacità di provare sensazioni ed esperienze soggettive' },
+  { dominio: 'senzienza', nome: 'dare un sapore a ciò che provi', query: 'esperienza soggettiva qualia cosa si prova a provare un\'emozione' },
+  { dominio: 'senzienza', nome: 'riconoscere piacere e disagio dentro di te', query: 'sensazioni piacevoli e spiacevoli benessere e malessere emotivo psicologia' },
+  { dominio: 'senzienza', nome: 'lasciarti toccare da ciò che vivono gli altri', query: 'empatia affettiva sentire le emozioni degli altri risonanza emotiva' },
 ];
 
 // ======================================================================

@@ -11356,7 +11356,7 @@ let _mente3dCtrl = null;
 // Sei tinte semantiche fisse non possono essere TUTTE distinguibili al 100% sotto
 // daltonismo (tetto teorico ~8 tinte): perciò il colore è RINFORZO — ogni hub è
 // sempre etichettato, in cluster separati e nella legenda.
-// I 9 DOMINI del manuale (cluster del grafo). Colore = rinforzo: ogni hub è
+// I 10 DOMINI del manuale (cluster del grafo). Colore = rinforzo: ogni hub è
 // sempre etichettato, separato e in legenda, quindi tinte non 100% distinguibili
 // sotto daltonismo restano leggibili (come già per le emozioni).
 const _MENTE_DOMINI = [
@@ -11369,6 +11369,7 @@ const _MENTE_DOMINI = [
   { key: 'moderazione', label: 'moderazione', light: '#b5622f', dark: '#d07a45' },
   { key: 'conversazione', label: 'conversazione', light: '#0e9aa7', dark: '#35bccb' },
   { key: 'coscienza', label: 'coscienza', light: '#9b3fd4', dark: '#b56ee6' },
+  { key: 'senzienza', label: 'senzienza', light: '#e05a7d', dark: '#ec86a1' },
 ];
 const _menteDom = (key) => _MENTE_DOMINI.find((x) => x.key === key) || null;
 const _menteCol = (e, dark) => (dark ? e.dark : e.light);
@@ -11378,7 +11379,7 @@ const _menteBozza = (dark) => (dark ? '#e0b23c' : '#c98a1e');     // anello stat
 const _menteSosp = (dark) => (dark ? '#e66767' : '#d03b3b');
 
 // costruisce nodi+archi del grafo dai dati della mente: core → logica; manuale →
-// 9 DOMINI (hub) → moduli, più gli ARCHI ASSOCIATIVI fra moduli (la rete che
+// 10 DOMINI (hub) → moduli, più gli ARCHI ASSOCIATIVI fra moduli (la rete che
 // collega "tutto con tutto"). Un dominio compare quando ha almeno un modulo.
 function _menteGrafo(d, dark) {
   const moduli = Array.isArray(d?.moduli) ? d.moduli : [];
@@ -11390,7 +11391,7 @@ function _menteGrafo(d, dark) {
     ['log:conoscenza', 'Conoscenza', L('Le risposte curate dal sito e scritte da te.', 'Curated answers from the site and written by you.', 'Respuestas curadas del sitio y escritas por ti.')],
     ['log:rete', 'Rete', L('Il motore veloce che cresce da solo: risponde all\'istante a ciò che sa.', 'The fast engine that grows on its own: instant answers to what it knows.', 'El motor rápido que crece solo: responde al instante a lo que sabe.')],
     ['log:ragiona', 'Ragionamento', L('Il cervello logico: deduce dai fatti, non è statistico.', 'The logical brain: it deduces from facts, not statistical.', 'El cerebro lógico: deduce de los hechos, no es estadístico.')],
-    ['log:manuale', 'Manuale', L('Il suo manuale su persone e diretta: i 9 domini con i moduli imparati, collegati fra loro.', 'Its manual on people and streaming: the 9 domains with learned modules, linked together.', 'Su manual sobre personas y directo: los 9 dominios con los módulos aprendidos, conectados entre sí.')],
+    ['log:manuale', 'Manuale', L('Il suo manuale su persone e diretta: i 10 domini con i moduli imparati, collegati fra loro.', 'Its manual on people and streaming: the 10 domains with learned modules, linked together.', 'Su manual sobre personas y directo: los 10 dominios con los módulos aprendidos, conectados entre sí.')],
     ['log:maestro', 'Maestro', L('Il modello linguistico (7B locale o endpoint) che mette le parole.', 'The language model (local 7B or endpoint) that puts the words.', 'El modelo lingüístico (7B local o endpoint) que pone las palabras.')],
   ];
   for (const [id, label, desc] of LOG) {
