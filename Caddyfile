@@ -55,7 +55,7 @@
 	Referrer-Policy "strict-origin-when-cross-origin"
 	# limita API del browser che non servono. NB: NON blocco camera/microphone
 	# perché il tracking e la voce usano webcam/microfono nel Browser Source.
-	Permissions-Policy "geolocation=(), payment=(), usb=(), magnetometer=()"
+	Permissions-Policy "camera=(self), microphone=(self), display-capture=(self), geolocation=(), payment=(), usb=(), magnetometer=()"
 	# togli l'header che rivela il server (coerente col "labirinto")
 	-Server
 }
