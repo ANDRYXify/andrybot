@@ -280,6 +280,19 @@ export async function pulisciModelli(giorni) {
   finally { clearTimeout(to); }
 }
 
+// La MENTE che Lia si plasma da sé (~/mente): sincronizza ORA i suoi moduli nel
+// motore reale e ritorna {attiva, moduli, importati} o null.
+export async function mente() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 20_000);
+  try {
+    const r = await fetch(BASE + '/mente', { method: 'POST', signal: ac.signal });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('mente:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
 // Fa DIMENTICARE al bot una frase precisa (dalla memoria e dai moduli): per
 // togliere una cosa sbagliata che ripete. Ritorna {ok, rete, moduli} o null.
 export async function dimentica(frase) {

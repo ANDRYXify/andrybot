@@ -162,6 +162,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._distilla_moduli()
         if self.path.startswith("/dimentica"):
             return self._dimentica()
+        if self.path.startswith("/mente"):
+            return self._mente()
         if self.path.startswith("/distilla"):
             return self._distilla()
         if self.path.startswith("/impara_modulo"):
@@ -408,6 +410,18 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
+    def _mente(self):
+        # ciò che Lia ha scritto nel suo ~/mente + sincronizza ORA nel motore reale.
+        try:
+            if not AMB.disponibile():
+                return self._json(200, {"ok": True, "attiva": False, "moduli": "", "importati": 0})
+            importati = _sincronizza_mente()
+            m = AMB.leggi_mente()
+            return self._json(200, {"ok": True, "attiva": True,
+                                    "moduli": (m or {}).get("moduli", ""), "importati": importati})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
     def _dimentica(self):
         # fa DIMENTICARE al bot una frase precisa (dalla memoria e dai moduli): utile
         # per togliere una cosa sbagliata che continua a ripetere. Owner-only lato Node.
@@ -515,12 +529,38 @@ def _backup_cervello():
                     shutil.copy2(f, rdest)
                 except Exception:
                     pass
+        # la sua ANIMA scritta a mano (~/mente, io.md, pubblico.md): backup off-volume
+        try:
+            b64 = AMB.esporta_mente()
+            if b64:
+                import base64 as _b64
+                with open(os.path.join(dest, "lia_mente.tar.gz"), "wb") as f:
+                    f.write(_b64.b64decode(b64))
+        except Exception:
+            pass
         # rotazione: tieni solo gli ultimi BACKUP_TIENI giorni
         giorni = sorted(d for d in glob.glob(os.path.join(base, "*")) if os.path.isdir(d))
         for vecchio in giorni[:-BACKUP_TIENI] if len(giorni) > BACKUP_TIENI else []:
             shutil.rmtree(vecchio, ignore_errors=True)
     except Exception as e:
         print(f"[brain] backup cervello errore: {e}", flush=True)
+
+
+def _sincronizza_mente():
+    """Importa nel motore REALE ciò che Lia ha scritto nel suo ~/mente (autonomia):
+    i moduli che si è creata da sé diventano parte del ragionamento vero. Best-effort."""
+    try:
+        if not AMB.disponibile():
+            return 0
+        AMB.prepara_mente()
+        m = AMB.leggi_mente()
+        n = mente.importa_moduli_autonomi(m.get("moduli", "")) if m else 0
+        if n:
+            print(f"[brain] mente autonoma: importati/aggiornati {n} moduli scritti da Lia.", flush=True)
+        return n
+    except Exception as e:
+        print(f"[brain] sincronizza mente errore: {e}", flush=True)
+        return 0
 
 
 def _ciclo_manutenzione():
@@ -571,6 +611,8 @@ def _ciclo_vita():
                     G.aggiorna_sul_pubblico(nome, mente.ritratto_pubblico())
                 else:
                     G.vivi_un_attimo(nome)   # un momento personale
+                # ciò che ha plasmato in ~/mente entra nel suo motore reale (autonomia)
+                _sincronizza_mente()
         except Exception as e:
             print(f"[brain] vita errore: {e}", flush=True)
         time.sleep(VITA_OGNI)

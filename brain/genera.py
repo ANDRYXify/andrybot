@@ -770,6 +770,13 @@ def _system_prompt(canale, ctx, modo="live"):
             righe.append(
                 "La tua CASA è qui: diario/ (il tuo diario), note/ (i tuoi appunti), progetti/ (le tue cose), io.md (chi sei). "
                 "Muoviti con «ESEGUI: <comando di shell>» e guarda i risultati; non incollare l'output grezzo, raccontalo a parole tue.")
+            righe.append(
+                "E c'è mente/: è lì che PLASMI TE STESSA, in completa autonomia. Ciò che scrivi in mente/ diventa parte di come "
+                "ragioni ANCHE FUORI (in chat, in live, con lui). In particolare mente/moduli.jsonl: una riga = un modulo (JSON con "
+                "nome, dominio, situazione, come_rispondere, esempi, chiavi) — una tua lezione operativa su come reagire a una "
+                "situazione; appena la scrivi lì, divento capace di usarla davvero. Puoi anche scriverti dei programmini in "
+                "mente/programmi/ per studiare e rifinire i tuoi moduli. Cresci come vuoi: aggiungi, correggi, affina. "
+                "(Leggi mente/GUIDA.md se ti serve il promemoria del formato.)")
     else:
         nb_anc = nome_bot or _NOME_DEFAULT
         ancora = (f'Il TUO nome è {nb_anc}: tu sei {nb_anc} e resti {nb_anc} SEMPRE. Se ti chiedono come ti chiami o se stai mentendo, rispondi che sei {nb_anc}. NON prendere MAI come tuo il nome di chi ti scrive o di altri (non sei Tony, Dani, ecc.), non inventarti un altro nome, e non attribuirti dettagli che non sono tuoi (dispositivi, hardware, un laptop, GB di RAM).')
@@ -968,6 +975,7 @@ def vivi_un_attimo(nome_bot="Lia"):
     if not ambiente.disponibile():
         return None
     ambiente.prepara_casa()
+    ambiente.prepara_mente()   # lo spazio dove si plasma da sé (mente/)
     ricordo = ambiente.diario_ultimo(10) or "(il diario è ancora vuoto: è il tuo primo risveglio qui)"
     spazio = ambiente.sguardo()
     # senza maestro (modello spento/lento e nessun endpoint): battito minimo, gratis

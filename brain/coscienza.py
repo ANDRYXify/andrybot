@@ -1209,6 +1209,40 @@ class Coscienza:
             pass
         return rimossi
 
+    def importa_moduli_autonomi(self, testo_jsonl, max_moduli=40):
+        """Importa nel motore REALE i moduli che Lia ha scritto DA SÉ nel suo
+        ~/mente/moduli.jsonl (uno per riga, JSON). Diventano moduli attivi (fonte
+        'autonoma') e passano dalla STESSA revisione degli altri: se una lezione non
+        funziona, viene sospesa. È così che si plasma da sola e la cosa si riflette
+        fuori (chat, live, con lui). Ritorna quanti ne ha importati/aggiornati.
+        Sicuro: importa solo DATI (non esegue codice), con i soliti tetti sui campi."""
+        n = 0
+        for riga in str(testo_jsonl or "").splitlines():
+            riga = riga.strip()
+            if not riga.startswith("{"):
+                continue
+            try:
+                d = json.loads(riga)
+            except Exception:
+                continue
+            if not isinstance(d, dict) or not str(d.get("nome") or "").strip():
+                continue
+            # niente auto-presentazioni negli esempi (identità protetta)
+            testo = " ".join(str(x) for x in (d.get("esempi") or [])) + " " + str(d.get("come_rispondere") or "")
+            if _RE_AUTOPRES_MOD.search(testo):
+                continue
+            d["fonte"] = "autonoma"
+            if d.get("stato") not in ("bozza", "attivo", "sospeso"):
+                d["stato"] = "attivo"
+            try:
+                if self.salva_modulo(d):
+                    n += 1
+            except Exception:
+                pass
+            if n >= max_moduli:
+                break
+        return n
+
     def backup(self, dest):
         """Copia CONSISTENTE del DB della coscienza (memoria, moduli, distillati…)
         in `dest`, usando l'API di backup di SQLite: è sicura anche mentre il bot

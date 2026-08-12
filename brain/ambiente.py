@@ -100,6 +100,54 @@ def prepara_casa():
     return True
 
 
+def prepara_mente():
+    """Assicura ~/mente/: lo spazio dove Lia PLASMA se stessa. Quello che scrive qui
+    (moduli, lezioni, chi è) viene poi importato nel suo motore di ragionamento reale,
+    così si riflette anche FUORI (chat, live, con lui). Idempotente, best-effort."""
+    if not disponibile():
+        return False
+    guida = (
+        "# La mia mente — qui plasmo me stessa\n\n"
+        "Questa cartella è il mio cervello che modello DA SOLA. Quello che scrivo qui\n"
+        "diventa parte di come ragiono ANCHE FUORI: in chat, in live e con lui.\n\n"
+        "## moduli.jsonl — le mie lezioni operative\n"
+        "Un modulo per riga, in JSON. Campi:\n"
+        '  {\"nome\": \"...\", \"dominio\": \"conversazione\", \"situazione\": \"quando...\",\n'
+        '   \"come_rispondere\": \"...\", \"esempi\": [\"...\", \"...\"], \"chiavi\": [\"parola\", ...]}\n'
+        "Appena lo scrivo qui, divento capace di usarlo. È così che cresco da me.\n\n"
+        "## io.md — chi sento di essere\n## lezioni.md — appunti liberi miei\n"
+        "## programmi/ — piccoli programmi che scrivo per capire e rifinire i miei moduli\n"
+    )
+    esegui("mkdir -p mente mente/programmi", timeout=10)
+    esegui(f"[ -f mente/GUIDA.md ] || (printf %s '{_b64(guida)}' | base64 -d > mente/GUIDA.md)", timeout=10)
+    esegui("[ -f mente/moduli.jsonl ] || : > mente/moduli.jsonl", timeout=10)
+    return True
+
+
+def leggi_mente():
+    """Legge ciò che Lia ha scritto nel suo ~/mente: i moduli (moduli.jsonl) e il suo
+    'io'. Ritorna {moduli, io} (stringhe, eventualmente vuote)."""
+    if not disponibile():
+        return {"moduli": "", "io": ""}
+    m = esegui("cat mente/moduli.jsonl 2>/dev/null", timeout=12)
+    i = esegui("head -c 4000 mente/io.md 2>/dev/null", timeout=10)
+    return {
+        "moduli": (m.get("output") or "") if m.get("ok") else "",
+        "io": ((i.get("output") or "").strip()) if i.get("ok") else "",
+    }
+
+
+def esporta_mente(max_bytes=45000):
+    """Un tar.gz (base64) della sua ANIMA scritta a mano (mente/, io.md, pubblico.md):
+    piccolo, per il backup off-volume. Ritorna base64 o ''."""
+    if not disponibile():
+        return ""
+    cmd = ("tar czf - mente io.md pubblico.md 2>/dev/null | base64 -w0 2>/dev/null "
+           f"| head -c {int(max_bytes)}")
+    r = esegui(cmd, timeout=25)
+    return (r.get("output") or "").strip() if r.get("ok") else ""
+
+
 def scrivi_file(percorso, contenuto, append=False):
     """Scrive (o aggiunge) un file nella sua casa, in modo sicuro (base64). Usato
     per le pagine che tiene per sé, es. pubblico.md. Ritorna True/False."""

@@ -20,7 +20,10 @@ PORTA = int(os.environ.get("AMBIENTE_PORT", "8099"))
 CHIAVE = os.environ.get("AMBIENTE_KEY", "")
 CASA = os.environ.get("AMBIENTE_HOME", "/home/lia")
 TIMEOUT_MAX = 30          # secondi: un comando non può bloccare la sandbox all'infinito
-OUT_MAX = 6000            # caratteri di output restituiti (il resto è troncato)
+# caratteri di output restituiti (oltre → troncato). Ampio, così Lia può LEGGERE per
+# intero la sua mente (~/mente) mentre cresce, non solo un pezzetto. Rete interna,
+# nessun segreto: una risposta grande non è un rischio.
+OUT_MAX = int(os.environ.get("AMBIENTE_OUT_MAX", "60000"))
 
 
 def _esegui(cmd, timeout):
