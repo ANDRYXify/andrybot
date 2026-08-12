@@ -515,7 +515,7 @@ class Coscienza:
         come = str(m.get("come_rispondere") or "").strip()[:600]
         evita = str(m.get("cosa_evitare") or "").strip()[:500]
         segnali = json.dumps(_lista_json(m.get("segnali"), 8, 120), ensure_ascii=False)
-        esempi = json.dumps(_lista_json(m.get("esempi"), 3, 200), ensure_ascii=False)
+        esempi = json.dumps(_lista_json(m.get("esempi"), 6, 200), ensure_ascii=False)
         chiavi = json.dumps(_lista_json(m.get("chiavi"), 24, 40, minuscolo=True), ensure_ascii=False)
         fonte = str(m.get("fonte") or "").strip()[:60]
         try:

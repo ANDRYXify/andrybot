@@ -873,7 +873,8 @@ def sintetizza_modulo(nome, web="", dominio="emozioni", timeout_s=45):
         '"segnali": ["2-5 segnali concreti da riconoscere in chat"], '
         '"come_rispondere": "strategia breve e azionabile, 1-2 frasi", '
         '"cosa_evitare": "cosa NON fare, 1 frase", '
-        '"esempi": ["1-2 esempi brevissimi di frase giusta"], '
+        '"esempi": ["4-6 modi BREVISSIMI e VARIATI di dire la cosa giusta, in prima '
+        'persona, come le diresti davvero in chat (sono le battute che userai)"], '
         '"chiavi": ["5-10 parole chiave che attivano questo modulo"]}. '
         "Tutto in ITALIANO, frasi brevi e pratiche."
     )
@@ -882,7 +883,7 @@ def sintetizza_modulo(nome, web="", dominio="emozioni", timeout_s=45):
         f"Fonte trovata online (spunto, non affidabile): «{str(web or '')[:600]}»."
     )
     try:
-        grezzo = _completa(sistema, [], utente, max_tokens=340, temperature=0.4,
+        grezzo = _completa(sistema, [], utente, max_tokens=440, temperature=0.4,
                            top_p=0.9, timeout_s=timeout_s)
     except Exception:
         grezzo = None
