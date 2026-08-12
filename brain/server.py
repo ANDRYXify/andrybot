@@ -71,6 +71,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._lacune()
         if self.path.startswith("/links"):
             return self._links()
+        if self.path.startswith("/vie"):
+            return self._vie()
         return self._json(404, {"errore": "non trovato"})
 
     def _moduli(self):
@@ -109,6 +111,13 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, {"links": mente.link_grafo()})
         except Exception as e:
             return self._json(200, {"links": [], "errore": str(e)[:120]})
+
+    def _vie(self):
+        # conteggio delle "vie" del ragionamento (cruscotto: moduli vs modello).
+        try:
+            return self._json(200, {"vie": mente.vie()})
+        except Exception as e:
+            return self._json(200, {"vie": {}, "errore": str(e)[:120]})
 
     def _corpus(self):
         # il dataset della sua mente (coppie domanda→risposta consolidate)
@@ -292,6 +301,10 @@ class Handler(BaseHTTPRequestHandler):
             timeout_s = 38 if modo == "allenamento" else 30
             risposta = G.genera(canale, ctx, testo, timeout_s=timeout_s, modo=modo)
             if risposta:
+                try:
+                    mente.conta_via(G.ultima_via())   # cruscotto: quale "cervello" ha risposto
+                except Exception:
+                    pass
                 mente.registra_scambio(canale, login, testo, risposta)
                 # ricorda i moduli usati in questa risposta, per giudicarli quando
                 # l'utente ribatte (revisione dell'auto-apprendimento).

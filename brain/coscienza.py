@@ -314,6 +314,14 @@ class Coscienza:
                     aggiornato INTEGER,
                     PRIMARY KEY (a, b)
                 );
+                -- VIE del ragionamento: quante risposte sono nate da ogni "cervello"
+                -- (deduzione/memoria/moduli/modello/riflesso). Per il cruscotto: si
+                -- VEDE quanto il ragionamento a moduli sta prendendo il posto del modello.
+                CREATE TABLE IF NOT EXISTS vie (
+                    via TEXT PRIMARY KEY,
+                    n INTEGER NOT NULL DEFAULT 0,
+                    aggiornato INTEGER
+                );
                 """
             )
             self.db.commit()
@@ -803,6 +811,29 @@ class Coscienza:
             return out
         except Exception:
             return []
+
+    def conta_via(self, via):
+        """Registra che una risposta è nata da questa "via" del ragionamento."""
+        via = str(via or "").strip().lower()
+        if via not in ("deduzione", "memoria", "moduli", "modello", "riflesso"):
+            return
+        try:
+            with _lock:
+                self.db.execute(
+                    "INSERT INTO vie(via, n, aggiornato) VALUES(?,1,?) "
+                    "ON CONFLICT(via) DO UPDATE SET n=n+1, aggiornato=?", (via, _now(), _now()))
+                self.db.commit()
+        except Exception:
+            pass
+
+    def vie(self):
+        """Conteggio delle vie del ragionamento (per il cruscotto). Dict via→n."""
+        try:
+            with _lock:
+                rows = self.db.execute("SELECT via, n FROM vie").fetchall()
+            return {r["via"]: int(r["n"]) for r in rows}
+        except Exception:
+            return {}
 
     def link_grafo(self, limit=500):
         """Tutti i collegamenti fra moduli (per il grafo 3D): coppie di id + peso."""

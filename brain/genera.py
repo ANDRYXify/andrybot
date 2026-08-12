@@ -52,6 +52,13 @@ CONTEXT = int(os.environ.get("LLM_CONTEXT", "2048"))
 
 _lock = threading.Lock()
 _stato = {"stato": "spento", "modello": None, "motivo": None}
+# VIA del ragionamento dell'ultima genera() PER THREAD (ogni richiesta ha il suo
+# thread → niente corse). Il server la legge e la conta nel cruscotto.
+_tl = threading.local()
+
+
+def ultima_via():
+    return getattr(_tl, "via", None)
 _llm = None
 _gemma = False   # il modello caricato è della famiglia Gemma? (niente ruolo "system")
 # stato dell'endpoint esterno (LM Studio / Ollama / OpenAI-compatibile): il "maestro"
@@ -744,6 +751,7 @@ def genera(canale, ctx, testo, timeout_s=30, modo="live"):
     """
     testo = (testo or "")[:300]
     canale = (canale or "").strip()
+    _tl.via = None            # quale "cervello" risponderà (per il cruscotto)
     allena = (modo == "allenamento")
     proattivo = (modo == "proattivo")
     studio = (modo == "studio")        # sta studiando una lacuna su una fonte (web)
@@ -757,6 +765,7 @@ def genera(canale, ctx, testo, timeout_s=30, modo="live"):
         except Exception:
             ded = None
         if ded and ded.get("sicura") and ded.get("risposta"):
+            _tl.via = "deduzione"
             print("[genera] via: deduzione (logica, senza modello)", flush=True)
             return _pulisci(ded["risposta"])
     # 1) LIVE: la rete conosce già la risposta? (nei modi diretti salto: voglio il ragionamento)
@@ -766,6 +775,7 @@ def genera(canale, ctx, testo, timeout_s=30, modo="live"):
         except Exception:
             hit = None
         if hit and hit.get("risposta"):
+            _tl.via = "memoria"
             print("[genera] via: memoria (rete, senza modello)", flush=True)
             return _pulisci(hit["risposta"])
     # 1.5) RAGIONAMENTO MODULARE: se la situazione è chiaramente riconosciuta (un
@@ -782,6 +792,7 @@ def genera(canale, ctx, testo, timeout_s=30, modo="live"):
             if base:
                 risp = _pulisci(_naturalizza(canale, ctx, base, timeout_s) or base)
                 if risp:
+                    _tl.via = "moduli"
                     print(f"[genera] via: ragionamento-moduli (modulo «{str(forte.get('nome'))[:40]}»)", flush=True)
                     if not senza_appr:
                         try:
@@ -809,6 +820,7 @@ def genera(canale, ctx, testo, timeout_s=30, modo="live"):
         risposta = None
     if risposta:
         via = "modello+moduli" if ctx.get("moduli") else "modello"
+        _tl.via = "modello"
         print(f"[genera] via: {via}", flush=True)
         if not senza_appr:
             try:
@@ -822,6 +834,7 @@ def genera(canale, ctx, testo, timeout_s=30, modo="live"):
     if modo in ("live", "allenamento"):
         rifl = _riflesso_modulo(ctx)
         if rifl:
+            _tl.via = "riflesso"
             print("[genera] via: riflesso-modulo (il modello non ha risposto)", flush=True)
             return rifl
     # 3) lacuna: la rete impara di non sapere (non nei modi senza apprendimento)
