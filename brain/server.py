@@ -299,7 +299,8 @@ class Handler(BaseHTTPRequestHandler):
                     try:
                         mente.ricorda_moduli_usati(
                             canale, login,
-                            [m.get("id") for m in ctx["moduli"] if isinstance(m, dict) and m.get("id")])
+                            [m.get("id") for m in ctx["moduli"] if isinstance(m, dict) and m.get("id")],
+                            messaggio=testo)   # la situazione che li ha attivati (per legarla se funziona)
                     except Exception:
                         pass
             return self._json(200, {"risposta": risposta})

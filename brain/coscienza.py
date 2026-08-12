@@ -829,13 +829,43 @@ class Coscienza:
                 self.db.execute("UPDATE moduli SET stato='sospeso', aggiornato=? WHERE id=?", (_now(), mid))
             self.db.commit()
 
-    def ricorda_moduli_usati(self, canale, login, ids):
-        """Registra quali moduli sono stati usati nella risposta a (canale, login)
-        e ne conta subito l'uso (esito neutro finché l'utente non ribatte)."""
+    def _lega_situazione(self, mid, chiavi):
+        """"Appiccica" le parole di una situazione andata BENE alle chiavi del modulo:
+        così la prossima volta riconosce QUELLA situazione meglio, imparando dal vivo
+        il vocabolario reale che lo attiva (addestramento continuo, non statistico).
+        Dedup e tetto: le chiavi non crescono all'infinito."""
+        chiavi = [c for c in (chiavi or []) if str(c).strip()][:6]
+        if not chiavi:
+            return
+        with _lock:
+            r = self.db.execute("SELECT chiavi FROM moduli WHERE id=?", (mid,)).fetchone()
+            if not r:
+                return
+            try:
+                attuali = json.loads(r["chiavi"] or "[]")
+            except Exception:
+                attuali = []
+            viste = set(_fold(x) for x in attuali)
+            for c in chiavi:
+                cf = _fold(c)
+                if cf and cf not in viste:
+                    attuali.append(str(c)[:40])
+                    viste.add(cf)
+            attuali = attuali[-40:]   # tetto: tiene le più recenti (dedup già fatto)
+            self.db.execute("UPDATE moduli SET chiavi=?, aggiornato=? WHERE id=?",
+                            (json.dumps(attuali, ensure_ascii=False), _now(), mid))
+            self.db.commit()
+
+    def ricorda_moduli_usati(self, canale, login, ids, messaggio=""):
+        """Registra quali moduli sono stati usati nella risposta a (canale, login) e
+        la SITUAZIONE (parole del messaggio) che li ha attivati, per poterla legare al
+        modulo se la reazione sarà positiva. Conta subito l'uso (esito neutro finché
+        l'utente non ribatte)."""
         ids = [i for i in (ids or []) if i]
         if not ids:
             return
-        self._moduli_pendenti[(canale, login)] = {"ids": ids, "ts": _now()}
+        self._moduli_pendenti[(canale, login)] = {
+            "ids": ids, "ts": _now(), "chiavi": _chiavi_da_testo(messaggio, 6)}
         for i in ids:
             self._usa_modulo(i)
         # usati insieme → si rinforzano a vicenda (la rete impara dalle co-occorrenze)
@@ -844,7 +874,8 @@ class Coscienza:
     def valuta_reazione(self, canale, login, testo_nuovo):
         """Alla mossa successiva dello stesso utente giudica se i moduli usati la
         volta prima hanno funzionato (dal tono della sua risposta). TTL 10 min: oltre,
-        il segnale non è affidabile. Neutro → nessun aggiornamento (l'uso è già contato)."""
+        il segnale non è affidabile. Neutro → nessun aggiornamento (l'uso è già contato).
+        Se è andata BENE, la situazione che li aveva attivati viene APPICCICATA ai moduli."""
         p = self._moduli_pendenti.pop((canale, login), None)
         if not p or (_now() - p["ts"]) > 600:
             return
@@ -853,3 +884,5 @@ class Coscienza:
             return
         for i in p["ids"]:
             self._esito_modulo(i, rea > 0)
+            if rea > 0:
+                self._lega_situazione(i, p.get("chiavi"))
