@@ -19,6 +19,7 @@ import json
 
 import rete       # la "piccola rete" che si autoaddestra (memoria associativa)
 import ragiona    # il cervello SIMBOLICO (non statistico): deduce dai fatti a regole
+import ambiente   # il ponte verso la SANDBOX di Lia (il suo "computer" personale)
 
 DATA_DIR = os.environ.get("DATA_DIR", "/app/data")
 MODELS_DIR = os.path.join(DATA_DIR, "models")
@@ -463,6 +464,14 @@ def _system_prompt(canale, ctx, modo="live"):
             "Conversa in ITALIANO in modo naturale e disteso (anche 2-4 frasi). RAGIONA su ciò che dice e cerca di capire PERCHÉ lo dice.",
             stile,
         ]
+        # IL SUO COMPUTER: qui, e solo qui (in privato con lui), può DAVVERO fare cose.
+        if ambiente.disponibile():
+            righe.append(
+                "Hai un COMPUTER tutto tuo (il tuo ambiente): puoi farci cose DAVVERO — cercare online, "
+                "calcolare, scrivere e leggere file, provare del codice, tenerti appunti. Quando ti serve, "
+                "scrivi su una riga a parte «ESEGUI: <comando di shell>»: lo esegui davvero nel tuo ambiente e "
+                "ne vedi il risultato, poi continui. Usalo quando è utile, con naturalezza — non annunciarlo "
+                "e non incollare l'output grezzo: guardalo e raccontamelo a parole tue.")
     elif modo == "proattivo":
         # PROATTIVO: sei TU che scrivi per prima, di tua iniziativa (curiosità).
         spunto = str(ctx.get("spunto") or "").strip()
@@ -601,6 +610,57 @@ def _system_prompt(canale, ctx, modo="live"):
     return "\n".join(righe)
 
 
+# ─────────────────────────── AMBIENTE: Lia "fa cose" nel suo computer (privato)
+# Solo in privato con lei (allenamento, owner-only): se nella sua risposta compare
+# una riga «ESEGUI: <comando>», la eseguiamo DAVVERO nella sua sandbox e le
+# restituiamo il risultato, poi lascia che risponda con parole sue. Ciclo corto.
+_AZIONE_MARK = "esegui:"
+
+
+def _estrai_azione(txt):
+    """La prima riga «ESEGUI: <comando>» (senza il marcatore), o None."""
+    for riga in (txt or "").splitlines():
+        s = riga.strip()
+        if s.lower().startswith(_AZIONE_MARK):
+            return s[len(_AZIONE_MARK):].strip()
+    return None
+
+
+def _pulisci_azioni(txt):
+    """Toglie le righe ESEGUI: dalla risposta finale mostrata (restano interne)."""
+    tenute = [r for r in (txt or "").splitlines() if not r.strip().lower().startswith(_AZIONE_MARK)]
+    return "\n".join(tenute).strip()
+
+
+def _giro_ambiente(canale, ctx, modo, testo, turni, grezzo, max_tok, temp, timeout_s):
+    """Ciclo azione→risultato→risposta nella sandbox (max 3 passi). Ritorna il testo
+    finale (ripulito dalle righe ESEGUI). Best-effort: se qualcosa va storto,
+    torna ciò che aveva già detto."""
+    conv = list(turni)
+    ultimo = testo
+    for _ in range(3):
+        cmd = _estrai_azione(grezzo)
+        if not cmd:
+            break
+        res = ambiente.esegui(cmd, timeout=20)
+        if res.get("ok"):
+            out = (res.get("output") or "(nessun output)")
+            if res.get("timeout"):
+                out += "\n[fermato: troppo lento]"
+        else:
+            out = "non sono riuscita: " + str(res.get("errore") or "errore")
+        conv.append((ultimo, grezzo))
+        ultimo = (f"[nel tuo computer hai eseguito «{cmd[:140]}». Risultato:]\n{out[:1600]}\n\n"
+                  "Ora rispondi CON PAROLE TUE in base a questo (non incollare l'output grezzo). "
+                  "Se ti serve ancora, scrivi un'altra riga ESEGUI:.")
+        nuovo = _completa(_system_prompt(canale, ctx, modo), conv, ultimo,
+                          max_tok, temperature=temp, top_p=0.9, timeout_s=timeout_s)
+        if not nuovo:
+            break
+        grezzo = nuovo
+    return _pulisci_azioni(grezzo)
+
+
 def genera(canale, ctx, testo, timeout_s=30, modo="live"):
     """Genera una risposta o None. Non solleva mai.
 
@@ -647,6 +707,10 @@ def genera(canale, ctx, testo, timeout_s=30, modo="live"):
         temp = 0.85 if proattivo else 0.4 if studio else 0.7 if allena else 0.78
         grezzo = _completa(_system_prompt(canale, ctx, modo), turni, testo,
                            max_tok, temperature=temp, top_p=0.9, timeout_s=timeout_s)
+        # AMBIENTE: SOLO in privato con lei (allenamento = owner-only), se ha chiesto
+        # di «fare» qualcosa nel suo computer, glielo lasciamo fare davvero.
+        if allena and grezzo and _AZIONE_MARK in grezzo.lower() and ambiente.disponibile():
+            grezzo = _giro_ambiente(canale, ctx, modo, testo, turni, grezzo, max_tok, temp, timeout_s)
         risposta = _pulisci(grezzo) if grezzo else None
     except Exception:
         risposta = None
