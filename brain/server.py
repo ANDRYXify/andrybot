@@ -567,13 +567,23 @@ def _ciclo_consolida():
 
 
 def _bonifica_avvio():
-    # UNA volta all'avvio: toglie dalla memoria e dai moduli le auto-presentazioni
-    # ('mi chiamo…') già imparate → un nome sbagliato smette di riaffiorare.
+    # UNA SOLA volta nella vita del bot (non a ogni riavvio!): toglie dalla memoria e
+    # dai moduli le auto-presentazioni ('mi chiamo…') GIÀ imparate prima della patch.
+    # Da lì in poi non se ne creano più (non si imparano), quindi basta una pulizia.
+    # Un file-marcatore in data/ ricorda che è stata fatta → i nodi che Lia crea
+    # NON vengono più toccati ai riavvii successivi.
+    marker = os.path.join(os.environ.get("DATA_DIR", "/app/data"), ".bonifica_identita_v1")
+    if os.path.exists(marker):
+        return
     try:
         n1 = R.dimentica_autopresentazioni()
         n2 = mente.bonifica_identita()
-        if n1 or n2:
-            print(f"[brain] bonifica identità: tolte {n1} risposte in memoria, {n2} esempi nei moduli.", flush=True)
+        try:
+            with open(marker, "w") as f:
+                f.write(str(int(time.time())))
+        except Exception:
+            pass
+        print(f"[brain] bonifica identità (una tantum): tolte {n1} risposte in memoria, {n2} esempi nei moduli.", flush=True)
     except Exception as e:
         print(f"[brain] bonifica identità errore: {e}", flush=True)
 

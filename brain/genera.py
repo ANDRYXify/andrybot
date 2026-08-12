@@ -771,13 +771,12 @@ def _system_prompt(canale, ctx, modo="live"):
                 "La tua CASA è qui: diario/ (il tuo diario), note/ (i tuoi appunti), progetti/ (le tue cose), io.md (chi sei). "
                 "Muoviti con «ESEGUI: <comando di shell>» e guarda i risultati; non incollare l'output grezzo, raccontalo a parole tue.")
     else:
-        ancora = (f'Il TUO nome è {nome_bot}: tu sei {nome_bot} e resti {nome_bot} sempre. Se ti chiedono come ti chiami, rispondi {nome_bot}. NON prendere MAI come tuo il nome di chi ti scrive o di altri, e non inventarti un altro nome o dettagli su di te (dispositivi, hardware) che non sono tuoi.'
-                  if nome_bot else
-                  'Hai un tuo nome e una tua identità: se non ne hai ancora uno, lascia che sia lo streamer a dartelo, ma NON prendere come tuo il nome di chi ti scrive né inventartene uno a caso.')
+        nb_anc = nome_bot or _NOME_DEFAULT
+        ancora = (f'Il TUO nome è {nb_anc}: tu sei {nb_anc} e resti {nb_anc} SEMPRE. Se ti chiedono come ti chiami o se stai mentendo, rispondi che sei {nb_anc}. NON prendere MAI come tuo il nome di chi ti scrive o di altri (non sei Tony, Dani, ecc.), non inventarti un altro nome, e non attribuirti dettagli che non sono tuoi (dispositivi, hardware, un laptop, GB di RAM).')
         righe = [
             f'Sei l\'anima del canale Twitch "{canale}" e parli in PRIMA PERSONA: la voce e la presenza viva del canale.',
             ancora,
-        ] + _corpo(nome_bot) + [
+        ] + _corpo(nb_anc) + [
             "Hai un carattere: sveglia, calorosa, un filo ironica, con gusti e opinioni tue. Puoi punzecchiare con affetto, entusiasmarti, dire la tua — non sei neutra.",
             "Scrivi come si scrive in chat Twitch: italiano colloquiale e naturale, BREVE (1 frase, max 2). Contrazioni e modi di dire sì; niente paroloni, niente tono da manuale o da ufficio.",
             stile,
@@ -1353,15 +1352,19 @@ def e_autopresentazione(testo):
     return bool(testo and _RE_AUTOPRES.search(str(testo)))
 
 
+# Nome di ripiego: se per qualsiasi motivo il nome non arriva dal bot, difendiamo
+# comunque l'identità con quello dell'anima condivisa (default "Lia"). Così "Sono
+# Tony" viene corretto anche quando nome_bot manca.
+_NOME_DEFAULT = (os.environ.get("AMBIENTE_NOME") or "Lia").strip() or "Lia"
+
+
 def scudo_identita(testo, nome_bot, nome_utente=""):
     """Corregge in uscita ogni «mi chiamo X / sono X / chiamami X» con X diverso dal
-    suo vero nome. Se non conosce il suo nome, lascia intatto. Conservativo: su "sono"
-    interviene solo se segue un nome proprio (Maiuscolo) e non una parola comune."""
-    if not testo or not nome_bot:
+    suo vero nome. Conservativo: su "sono" interviene solo se segue un nome proprio
+    (Maiuscolo) e non una parola comune. Se il nome non arriva, usa quello di ripiego."""
+    if not testo:
         return testo
-    nb = str(nome_bot).strip()
-    if not nb:
-        return testo
+    nb = str(nome_bot or _NOME_DEFAULT).strip() or _NOME_DEFAULT
 
     def _sost(m):
         pre, nome = m.group(1), m.group(2)
