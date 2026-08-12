@@ -165,6 +165,8 @@ _STOP = set(_fold(w) for w in (
     "per con senza sopra sotto dentro fuori tra fra dopo prima verso "
     "mio mia tuo tua suo sua nostro vostro loro miei tuoi suoi "
     "lui lei noi voi essi loro gli le lo la il un uno una dei delle degli "
+    "del dello della dal dallo dalla dai dagli dalle al allo alla ai agli alle "
+    "nel nello nella nei negli nelle sul sullo sulla sui sugli sulle col coi cui "
     " mi ti ci vi si ne se ma se od ed di da in su a e o "
     "fare faccio fai fatto detto dico dice dici vedo vedi visto "
     "grazie ciao ehi raga ragazzi bot lia"
@@ -322,6 +324,20 @@ class Coscienza:
                     n INTEGER NOT NULL DEFAULT 0,
                     aggiornato INTEGER
                 );
+                -- DISTILLATI: risposte partorite dal MODELLO (l'LLM) in situazioni che
+                -- nessun modulo copriva. Sono la "materia prima" da cui distillare nuovi
+                -- moduli (o arricchire gli esistenti): così il ragionamento a moduli
+                -- prende gradualmente il posto del modello e il bisogno dell'LLM cala.
+                CREATE TABLE IF NOT EXISTS distillati (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    canale TEXT DEFAULT '',
+                    dominio TEXT DEFAULT 'conversazione',
+                    chiavi TEXT DEFAULT '[]',            -- JSON: parole-argomento della situazione
+                    situazione TEXT DEFAULT '',          -- il messaggio che l'ha innescata
+                    risposta TEXT DEFAULT '',            -- ciò che il modello ha risposto (ripulito)
+                    quando INTEGER
+                );
+                CREATE INDEX IF NOT EXISTS i_distillati_q ON distillati(quando);
                 """
             )
             self.db.commit()
@@ -922,3 +938,161 @@ class Coscienza:
             self._esito_modulo(i, rea > 0)
             if rea > 0:
                 self._lega_situazione(i, p.get("chiavi"))
+
+    # ------------------------------------------ DISTILLAZIONE (LLM → moduli)
+    # Idea del padrone: "estrai le cose utili dall'LLM e rimodulale ad hoc, così da
+    # rimuovere gradualmente il bisogno della LLM". Ogni volta che a rispondere è
+    # stato il MODELLO (nessun modulo copriva quella situazione), teniamo da parte la
+    # sua risposta. Quando una stessa situazione RICORRE, la trasformiamo in un
+    # MODULO — nuovo o arricchendo l'esistente — con le risposte reali come esempi.
+    # Da lì in poi risponde il modulo (veloce, senza modello): il carico si sposta.
+    def cattura_distillato(self, canale, situazione, risposta, dominio=None, chiavi=None):
+        """Conserva una risposta del modello come materia prima da distillare.
+        Best-effort, con filtri di qualità e un tetto sulla tabella (~500)."""
+        try:
+            risp = str(risposta or "").strip()
+            situ = str(situazione or "").strip()
+            if not risp or not (4 <= len(risp) <= 200):
+                return   # non è un buon esempio riutilizzabile
+            if risp.startswith("!") or "http://" in risp or "https://" in risp:
+                return
+            ch = list(chiavi) if chiavi else _chiavi_da_testo(situ, 6)
+            if len(ch) < 2:
+                return   # troppo poco "argomento": non distillabile
+            dom = str(dominio or _dominio_da_testo(situ) or "conversazione")[:40]
+            with _lock:
+                self.db.execute(
+                    "INSERT INTO distillati(canale, dominio, chiavi, situazione, risposta, quando) "
+                    "VALUES(?,?,?,?,?,?)",
+                    (str(canale or "")[:60], dom,
+                     json.dumps(_lista_json(ch, 8, 40, minuscolo=True), ensure_ascii=False),
+                     situ[:300], risp[:200], _now()))
+                self.db.execute(
+                    "DELETE FROM distillati WHERE id NOT IN "
+                    "(SELECT id FROM distillati ORDER BY id DESC LIMIT 500)")
+                self.db.commit()
+        except Exception:
+            pass
+
+    def _arricchisci_modulo(self, mid, nuovi_esempi, nuove_chiavi):
+        """Aggiunge a un modulo esistente gli esempi (risposte reali del modello) e le
+        chiavi, con dedup e tetto, più un piccolo bonus di qualità. Così il modulo, la
+        prossima volta, scatta da solo al posto del modello. Ritorna True se aggiornato."""
+        with _lock:
+            r = self.db.execute("SELECT esempi, chiavi, qualita FROM moduli WHERE id=?", (mid,)).fetchone()
+            if not r:
+                return False
+            try:
+                esempi = json.loads(r["esempi"] or "[]")
+            except Exception:
+                esempi = []
+            viste = set(_fold(x) for x in esempi)
+            agg = False
+            for e in (nuovi_esempi or []):
+                ef = _fold(e)
+                if ef and ef not in viste:
+                    esempi.append(str(e)[:200]); viste.add(ef); agg = True
+            esempi = esempi[-8:]
+            try:
+                chiavi = json.loads(r["chiavi"] or "[]")
+            except Exception:
+                chiavi = []
+            vistek = set(_fold(x) for x in chiavi)
+            for c in (nuove_chiavi or []):
+                cf = _fold(c)
+                if cf and cf not in vistek:
+                    chiavi.append(str(c)[:40]); vistek.add(cf)
+            chiavi = chiavi[-40:]
+            q = min(1.0, float(r["qualita"] or 0.5) + (0.03 if agg else 0.0))
+            self.db.execute(
+                "UPDATE moduli SET esempi=?, chiavi=?, qualita=?, aggiornato=? WHERE id=?",
+                (json.dumps(esempi, ensure_ascii=False),
+                 json.dumps(chiavi, ensure_ascii=False), q, _now(), mid))
+            self.db.commit()
+        return True
+
+    def distilla_in_moduli(self, min_n=2, max_azioni=4):
+        """Raggruppa i distillati per argomento (chiavi in comune) e, per ogni gruppo
+        RICORRENTE (>=min_n), arricchisce il modulo affine o ne crea uno nuovo con le
+        risposte reali come esempi. Poi consuma i distillati usati. È il motore che nel
+        tempo sposta il carico dal modello ai moduli. Ritorna un riepilogo."""
+        esito = {"creati": 0, "arricchiti": 0, "gruppi": 0}
+        with _lock:
+            righe = self.db.execute(
+                "SELECT id, dominio, chiavi, risposta FROM distillati ORDER BY id ASC").fetchall()
+        items = []
+        for r in righe:
+            try:
+                ch = set(_fold(x) for x in json.loads(r["chiavi"] or "[]") if str(x).strip())
+            except Exception:
+                ch = set()
+            if len(ch) >= 2:
+                items.append({"id": r["id"], "dominio": r["dominio"], "chiavi": ch,
+                              "risposta": r["risposta"]})
+        if not items:
+            return esito
+        # clustering greedy per sovrapposizione di chiavi (>=2 in comune)
+        cluster = []
+        for it in items:
+            messo = False
+            for c in cluster:
+                if len(it["chiavi"] & c["chiavi"]) >= 2:
+                    c["items"].append(it); c["chiavi"] |= it["chiavi"]; messo = True
+                    break
+            if not messo:
+                cluster.append({"chiavi": set(it["chiavi"]), "items": [it]})
+        attivi = self.moduli(stato="attivo")
+        consumati, azioni = [], 0
+        for c in cluster:
+            if azioni >= max_azioni:
+                break
+            gruppo = c["items"]
+            if len(gruppo) < min_n:
+                continue
+            esito["gruppi"] += 1
+            # esempi = le risposte reali del modello (dedup, max 6)
+            esempi, viste = [], set()
+            for it in gruppo:
+                ef = _fold(it["risposta"])
+                if ef and ef not in viste:
+                    esempi.append(it["risposta"]); viste.add(ef)
+            esempi = esempi[:6]
+            chiavi = [x for x in c["chiavi"] if x][:12]
+            domc = {}
+            for it in gruppo:
+                domc[it["dominio"]] = domc.get(it["dominio"], 0) + 1
+            dominio = max(domc, key=domc.get) if domc else "conversazione"
+            # 1) modulo attivo già affine (>=2 chiavi in comune)? → arricchiscilo
+            miglior, best_ov, cset = None, 0, set(chiavi)
+            for m in attivi:
+                mk = set(_fold(x) for x in (m.get("chiavi") or []))
+                ov = len(cset & mk)
+                if ov > best_ov:
+                    miglior, best_ov = m, ov
+            if miglior and best_ov >= 2:
+                if self._arricchisci_modulo(miglior["id"], esempi, chiavi):
+                    esito["arricchiti"] += 1; azioni += 1
+                    consumati += [it["id"] for it in gruppo]
+                continue
+            # 2) nessuno affine: CREA un modulo nuovo dalle risposte reali del modello
+            top = chiavi[:3]
+            mod = {
+                "nome": "rispondere quando si parla di " + ", ".join(top),
+                "dominio": dominio,
+                "situazione": "Quando in chat si parla di " + ", ".join(top) + ".",
+                "segnali": chiavi[:8],
+                "come_rispondere": "Rispondi come faresti di solito in queste situazioni, "
+                                   "restando te stessa: breve, calda, nel tuo stile.",
+                "cosa_evitare": "Non suonare finta o ripetitiva; non spiegare troppo.",
+                "esempi": esempi, "chiavi": chiavi,
+                "fonte": "distillato", "qualita": 0.55, "stato": "attivo",
+            }
+            if self.salva_modulo(mod):
+                esito["creati"] += 1; azioni += 1
+                consumati += [it["id"] for it in gruppo]
+        if consumati:
+            with _lock:
+                qm = ",".join("?" for _ in consumati)
+                self.db.execute("DELETE FROM distillati WHERE id IN (" + qm + ")", tuple(consumati))
+                self.db.commit()
+        return esito

@@ -305,10 +305,19 @@ class Handler(BaseHTTPRequestHandler):
             timeout_s = 38 if modo == "allenamento" else 30
             risposta = G.genera(canale, ctx, testo, timeout_s=timeout_s, modo=modo)
             if risposta:
+                via = G.ultima_via()
                 try:
-                    mente.conta_via(G.ultima_via())   # cruscotto: quale "cervello" ha risposto
+                    mente.conta_via(via)   # cruscotto: quale "cervello" ha risposto
                 except Exception:
                     pass
+                # DISTILLAZIONE: se ha risposto il MODELLO (nessun modulo copriva questa
+                # situazione), tieni la risposta come materia prima → col tempo diventa
+                # un modulo e la stessa situazione non servirà più il modello.
+                if via == "modello" and modo in ("live", "allenamento"):
+                    try:
+                        mente.cattura_distillato(canale, testo, risposta)
+                    except Exception:
+                        pass
                 mente.registra_scambio(canale, login, testo, risposta)
                 # ricorda i moduli usati in questa risposta, per giudicarli quando
                 # l'utente ribatte (revisione dell'auto-apprendimento).
@@ -368,6 +377,13 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
+    def _distilla_moduli(self):
+        # distilla ORA le risposte del modello in moduli (trigger manuale/di prova).
+        try:
+            return self._json(200, {"ok": True, "distillazione": mente.distilla_in_moduli()})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
     def _distilla(self):
         # ALLENAMENTO: dai discorsi dello streamer ricava coppie domanda→risposta
         # riutilizzabili (nel suo stile) per il motore veloce. Best-effort.
@@ -404,19 +420,31 @@ class Handler(BaseHTTPRequestHandler):
         return self._json(200, {"ok": True})
 
 
-PULIZIA_OGNI = int(os.environ.get("BRAIN_PULIZIA_ORE", "24")) * 3600
+DISTILLA_OGNI = int(os.environ.get("BRAIN_DISTILLA_MIN", "180")) * 60   # ogni ~3h
+PULIZIA_OGNI = int(os.environ.get("BRAIN_PULIZIA_ORE", "24")) * 3600    # una volta al giorno
 
 
 def _ciclo_manutenzione():
-    """Manutenzione autonoma del cervello, in background e di rado: libera il disco
-    dai modelli inutilizzati (i GGUF pesano GB). Non tocca l'attivo né la riserva."""
+    """Manutenzione autonoma del cervello, in background e di rado:
+      • DISTILLA le risposte del modello in MODULI → il carico si sposta dal modello
+        ai moduli (meno bisogno dell'LLM, visibile nel cruscotto delle 'vie');
+      • libera il disco dai modelli inutilizzati (i GGUF pesano GB), mai l'attivo."""
     time.sleep(600)   # non al boot: lascia caricare il modello prima
+    ultima_pulizia = 0.0
     while True:
         try:
-            G.pulisci_modelli()
+            r = mente.distilla_in_moduli()
+            if r and (r.get("creati") or r.get("arricchiti")):
+                print(f"[brain] distillazione LLM→moduli: {r}", flush=True)
         except Exception as e:
-            print(f"[brain] manutenzione errore: {e}", flush=True)
-        time.sleep(PULIZIA_OGNI)
+            print(f"[brain] distillazione errore: {e}", flush=True)
+        if time.time() - ultima_pulizia > PULIZIA_OGNI:
+            ultima_pulizia = time.time()
+            try:
+                G.pulisci_modelli()
+            except Exception as e:
+                print(f"[brain] pulizia errore: {e}", flush=True)
+        time.sleep(DISTILLA_OGNI)
 
 
 def _ciclo_consolida():
