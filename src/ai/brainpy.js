@@ -280,6 +280,24 @@ export async function pulisciModelli(giorni) {
   finally { clearTimeout(to); }
 }
 
+// Fa DIMENTICARE al bot una frase precisa (dalla memoria e dai moduli): per
+// togliere una cosa sbagliata che ripete. Ritorna {ok, rete, moduli} o null.
+export async function dimentica(frase) {
+  const f = String(frase || '').trim();
+  if (f.length < 3) return null;
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 15_000);
+  try {
+    const r = await fetch(BASE + '/dimentica', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ frase: f }), signal: ac.signal,
+    });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('dimentica:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
 // Il dataset della "mente" della rete per un canale: coppie {q, a} consolidate.
 export async function reteCorpus(canale) {
   if (!canale) return [];

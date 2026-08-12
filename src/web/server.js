@@ -4162,7 +4162,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         // COMANDI privati per ME: sfogliare la sua VITA dal telefono (diario,
         // pubblico, stanza) e farla agire ORA (vivere / aggiornarsi sul pubblico).
         // Solo io (account legato), solo in privato — come tutto il resto qui.
-        if (/^\/(diario|pubblico|stanza|vivi|aggiorna|aiuto)\b/.test(low)) {
+        if (/^\/(diario|pubblico|stanza|vivi|aggiorna|dimentica|aiuto)\b/.test(low)) {
           const escTg = (x) => String(x ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
           const inviaBlocco = (titolo, corpo) => {
             const c = String(corpo || '').trim() || '—';
@@ -4172,7 +4172,19 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
           const cmd = low.replace(/^\//, '').split(/\s+/)[0];
           if (cmd === 'aiuto') {
             telegram.inviaMessaggio(conf.token, chat.id,
-              'I miei comandi privati (solo tu):\n/diario — le ultime pagine del mio diario\n/pubblico — chi ci segue e di cosa parla\n/stanza — i file nel mio spazio\n/vivi — vivo un attimo nel mio spazio, adesso\n/aggiorna — mi aggiorno sul pubblico, adesso\n/regole — le linee guida che mi hai dato').catch(() => {});
+              'I miei comandi privati (solo tu):\n/diario — le ultime pagine del mio diario\n/pubblico — chi ci segue e di cosa parla\n/stanza — i file nel mio spazio\n/vivi — vivo un attimo nel mio spazio, adesso\n/aggiorna — mi aggiorno sul pubblico, adesso\n/dimentica <frase> — cancello dalla memoria ciò che contiene quella frase\n/regole — le linee guida che mi hai dato').catch(() => {});
+            return;
+          }
+          if (cmd === 'dimentica') {
+            const frase = raw.replace(/^\/dimentica\b\s*/i, '').trim();
+            if (frase.length < 3) {
+              telegram.inviaMessaggio(conf.token, chat.id, 'Dimmi COSA far dimenticare, es: /dimentica mi chiamo Dani').catch(() => {});
+              return;
+            }
+            const r = await brainpy.dimentica(frase).catch(() => null);
+            telegram.inviaMessaggio(conf.token, chat.id, r
+              ? `Fatto: dimenticato «${escTg(frase.slice(0, 80))}» (${(r.rete || 0)} in memoria, ${(r.moduli || 0)} negli esempi). 🗑️`
+              : 'Non ci sono riuscita ora — riprova tra poco.').catch(() => {});
             return;
           }
           if (cmd === 'vivi' || cmd === 'aggiorna') {
