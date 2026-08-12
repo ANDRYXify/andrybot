@@ -153,6 +153,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._chat()
         if self.path.startswith("/osserva"):
             return self._osserva()
+        if self.path.startswith("/pulizia_modelli"):
+            return self._pulizia_modelli()
+        if self.path.startswith("/distilla_moduli"):   # PRIMA di /distilla (prefisso)
+            return self._distilla_moduli()
         if self.path.startswith("/distilla"):
             return self._distilla()
         if self.path.startswith("/impara_modulo"):
@@ -352,6 +356,18 @@ class Handler(BaseHTTPRequestHandler):
         threading.Thread(target=G.ricarica, daemon=True).start()
         return self._json(200, {"ok": True, "genera": G.stato()})
 
+    def _pulizia_modelli(self):
+        # libera disco: cancella i .gguf non usati da troppo (mai l'attivo/la riserva).
+        d = self._leggi() or {}
+        try:
+            giorni = float(d.get("giorni")) if d.get("giorni") is not None else None
+        except Exception:
+            giorni = None
+        try:
+            return self._json(200, {"ok": True, "pulizia": G.pulisci_modelli(giorni)})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
     def _distilla(self):
         # ALLENAMENTO: dai discorsi dello streamer ricava coppie domanda→risposta
         # riutilizzabili (nel suo stile) per il motore veloce. Best-effort.
@@ -388,6 +404,21 @@ class Handler(BaseHTTPRequestHandler):
         return self._json(200, {"ok": True})
 
 
+PULIZIA_OGNI = int(os.environ.get("BRAIN_PULIZIA_ORE", "24")) * 3600
+
+
+def _ciclo_manutenzione():
+    """Manutenzione autonoma del cervello, in background e di rado: libera il disco
+    dai modelli inutilizzati (i GGUF pesano GB). Non tocca l'attivo né la riserva."""
+    time.sleep(600)   # non al boot: lascia caricare il modello prima
+    while True:
+        try:
+            G.pulisci_modelli()
+        except Exception as e:
+            print(f"[brain] manutenzione errore: {e}", flush=True)
+        time.sleep(PULIZIA_OGNI)
+
+
 def _ciclo_consolida():
     """Il 'sonno' del bot: ogni tanto consolida la memoria e fa crescere la
     personalità. È qui che la coscienza matura nel tempo."""
@@ -414,6 +445,7 @@ def main():
     # carica il modello in background (non blocca il server)
     threading.Thread(target=G.avvia, daemon=True).start()
     threading.Thread(target=_ciclo_consolida, daemon=True).start()
+    threading.Thread(target=_ciclo_manutenzione, daemon=True).start()
     srv = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
     print(f"[brain] in ascolto su :{PORT}", flush=True)
     srv.serve_forever()

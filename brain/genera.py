@@ -588,6 +588,92 @@ def ricarica():
     avvia()
 
 
+# ─────────────────────────────────── PULIZIA: modelli inutilizzati (spazio disco)
+# I GGUF pesano GB: quelli non usati da troppo tempo occupano disco per niente
+# (dopo un declassamento, dopo aver cambiato modello…). Questo li cancella, MAI
+# quello attivo né l'ultima riserva. Se serve di nuovo, si ri-scarica da solo.
+TTL_MODELLI_GIORNI = float(os.environ.get("LLM_TTL_GIORNI", "14"))
+
+
+def _protetti():
+    """Basename dei modelli da NON cancellare mai: l'attivo, la riserva più piccola,
+    e quelli forzati da dashboard/.env (file locale)."""
+    prot = set()
+    if _stato.get("modello"):
+        prot.add(os.path.basename(str(_stato["modello"])))
+    prot.add(_TIERS[-1][1].split("/")[-1])   # riserva minima (fallback)
+    try:
+        fdash = str(_scelta_dashboard().get("file") or "").strip()
+        if fdash:
+            prot.add(os.path.basename(fdash))
+    except Exception:
+        pass
+    for env in ("LLM_MODEL_PATH",):
+        v = os.environ.get(env)
+        if v:
+            prot.add(os.path.basename(v))
+    return prot
+
+
+def pulisci_modelli(giorni=None):
+    """Cancella i .gguf non usati da più di `giorni` (default TTL). Ritorna un
+    riepilogo. Non solleva mai. Tiene sempre l'attivo, la riserva e almeno un file."""
+    giorni = TTL_MODELLI_GIORNI if giorni is None else float(giorni)
+    esito = {"rimossi": [], "liberati_mb": 0, "tenuti": []}
+    try:
+        if not os.path.isdir(MODELS_DIR):
+            return esito
+        _perf_carica()   # per la data d'ultimo uso registrata
+        ora = time.time()
+        limite = giorni * 86400
+        prot = _protetti()
+        ggufs = [f for f in os.listdir(MODELS_DIR) if f.lower().endswith(".gguf")]
+        # data d'ultimo uso = max(perf, mtime del file) — robusto se il perf manca
+        def _ultimo(f):
+            p = os.path.join(MODELS_DIR, f)
+            try:
+                mt = os.path.getmtime(p)
+            except Exception:
+                mt = 0
+            reg = int((_perf.get(f) or {}).get("ultimo_uso", 0))
+            return max(mt, reg)
+        # non lasciare MAI zero modelli: se tutti sarebbero da togliere, tieni il più recente
+        candidati = [f for f in ggufs if f not in prot and (ora - _ultimo(f)) > limite]
+        if candidati and len(candidati) >= len(ggufs):
+            piu_recente = max(ggufs, key=_ultimo)
+            candidati = [f for f in candidati if f != piu_recente]
+        with _perf_lock:
+            for f in candidati:
+                p = os.path.join(MODELS_DIR, f)
+                try:
+                    mb = int(os.path.getsize(p) / (1024 * 1024))
+                    os.remove(p)
+                    esito["rimossi"].append(f)
+                    esito["liberati_mb"] += mb
+                    _perf.pop(f, None)          # via anche la statistica orfana
+                    _declassati.pop(f, None)
+                except Exception:
+                    pass
+            # via anche i download parziali (.part) vecchi di oltre un giorno
+            for f in os.listdir(MODELS_DIR):
+                if f.endswith(".part"):
+                    p = os.path.join(MODELS_DIR, f)
+                    try:
+                        if (ora - os.path.getmtime(p)) > 86400:
+                            os.remove(p)
+                    except Exception:
+                        pass
+            if esito["rimossi"]:
+                _perf_salva()
+        esito["tenuti"] = sorted(set(ggufs) - set(esito["rimossi"]))
+        if esito["rimossi"]:
+            print(f"[genera] pulizia modelli: rimossi {esito['rimossi']} "
+                  f"(~{esito['liberati_mb']} MB liberati).", flush=True)
+    except Exception as e:
+        print(f"[genera] pulizia modelli errore: {e}", flush=True)
+    return esito
+
+
 # CORPO DIGITALE — il "sé incarnato" di Lia: non un programma, una PERSONA con un
 # corpo digitale che sente e vive in prima persona. Le nozioni umane imparate
 # diventano il suo vissuto (istinti), non una scaletta. Valvola AI-Act: non finge
