@@ -676,6 +676,20 @@ def _giro_ambiente(canale, ctx, modo, testo, turni, grezzo, max_tok, temp, timeo
     return _pulisci_azioni(grezzo)
 
 
+def _riflesso_modulo(ctx):
+    """RIFLESSO situazionale: quando il modello statistico non produce nulla (lento o
+    spento), rispondi dal MODULO più pertinente usando il suo esempio già pronto. È
+    meglio una reazione GIUSTA alla situazione che un «non mi è venuta». Testo o None."""
+    for m in (ctx.get("moduli") or [])[:2]:
+        if not isinstance(m, dict):
+            continue
+        for e in (m.get("esempi") or []):
+            e = str(e).strip()
+            if e:
+                return _pulisci(e)
+    return None
+
+
 def genera(canale, ctx, testo, timeout_s=30, modo="live"):
     """Genera una risposta o None. Non solleva mai.
 
@@ -702,6 +716,7 @@ def genera(canale, ctx, testo, timeout_s=30, modo="live"):
         except Exception:
             ded = None
         if ded and ded.get("sicura") and ded.get("risposta"):
+            print("[genera] via: deduzione (logica, senza modello)", flush=True)
             return _pulisci(ded["risposta"])
     # 1) LIVE: la rete conosce già la risposta? (nei modi diretti salto: voglio il ragionamento)
     if not diretto:
@@ -710,6 +725,7 @@ def genera(canale, ctx, testo, timeout_s=30, modo="live"):
         except Exception:
             hit = None
         if hit and hit.get("risposta"):
+            print("[genera] via: memoria (rete, senza modello)", flush=True)
             return _pulisci(hit["risposta"])
     # 2) chiedi al maestro (endpoint esterno se collegato, sennò modello locale)
     try:
@@ -730,12 +746,22 @@ def genera(canale, ctx, testo, timeout_s=30, modo="live"):
     except Exception:
         risposta = None
     if risposta:
+        via = "modello+moduli" if ctx.get("moduli") else "modello"
+        print(f"[genera] via: {via}", flush=True)
         if not senza_appr:
             try:
                 rete.impara(canale, testo, risposta, fonte="maestro")
             except Exception:
                 pass
         return risposta
+    # 2b) RIFLESSO: il modello non ha prodotto nulla (lento/spento) ma una situazione
+    #     combacia con un modulo → rispondo dal modulo invece che tacere. Non lo
+    #     "imparo" nella rete (non è farina del maestro, è un riflesso).
+    if modo in ("live", "allenamento"):
+        rifl = _riflesso_modulo(ctx)
+        if rifl:
+            print("[genera] via: riflesso-modulo (il modello non ha risposto)", flush=True)
+            return rifl
     # 3) lacuna: la rete impara di non sapere (non nei modi senza apprendimento)
     if not senza_appr:
         try:
