@@ -50,8 +50,23 @@ MAX_TOKEN = int(os.environ.get("LLM_MAX_TOKEN", "80"))
 # centinaia di MB, e lascia comunque spazio al prompt ricco e ai moduli.
 CONTEXT = int(os.environ.get("LLM_CONTEXT", "2048"))
 
+# AUTO-SCELTA del modello: il box è troppo lento per questo modello? lo declasso
+# da solo. PERF_FILE tiene lo storico prestazioni per modello (latenza, timeout) e
+# la lista dei modelli "declassati" (troppo lenti qui) con la data — così alla
+# prossima scelta ripiego sul più piccolo, e dopo una tregua lo ri-provo.
+PERF_FILE = os.path.join(DATA_DIR, "llm_perf.json")
+AUTO_MIN_CAMPIONI = int(os.environ.get("LLM_AUTO_MIN", "6"))      # campioni prima di fidarsi del tasso
+AUTO_SOGLIA_TIMEOUT = float(os.environ.get("LLM_AUTO_SOGLIA", "0.5"))  # oltre questo tasso di timeout = lento
+AUTO_STREAK = int(os.environ.get("LLM_AUTO_STREAK", "3"))         # timeout di fila per declassare a caldo
+DECLASSA_ORE = float(os.environ.get("LLM_DECLASSA_ORE", "24"))    # tregua prima di ri-provare un modello declassato
+
 _lock = threading.Lock()
 _stato = {"stato": "spento", "modello": None, "motivo": None}
+# PRESTAZIONI per modello e modelli DECLASSATI (auto-scelta). Persistiti su disco.
+_perf_lock = threading.Lock()
+_perf = {}          # basename -> {chiamate, ok, timeout, ms_tot, ultimo_uso}
+_declassati = {}    # basename -> timestamp del declassamento
+_streak = {"modello": None, "n": 0, "ultimo_riavvio": 0}   # timeout di fila (auto-guarigione)
 # VIA del ragionamento dell'ultima genera() PER THREAD (ogni richiesta ha il suo
 # thread → niente corse). Il server la legge e la conta nel cruscotto.
 _tl = threading.local()
@@ -80,6 +95,20 @@ def stato():
         s["rete"] = rete.riepilogo()
     except Exception:
         s["rete"] = None
+    # AUTO-SCELTA: come sta andando il modello attivo e quali ha declassato.
+    try:
+        mod = _stato.get("modello")
+        r = _perf.get(mod or "") or {}
+        ch = int(r.get("chiamate", 0))
+        s["auto"] = {
+            "automatico": _in_auto(),
+            "chiamate": ch,
+            "tasso_timeout": round(int(r.get("timeout", 0)) / ch, 2) if ch else None,
+            "ms_medio": round(float(r.get("ms_tot", 0.0)) / ch) if ch else None,
+            "declassati": sorted(_declassati.keys()),
+        }
+    except Exception:
+        s["auto"] = None
     return s
 
 
@@ -224,9 +253,20 @@ def _completa_locale(messaggi, max_tokens, temperature, top_p, timeout_s):
             risultato["e"] = e
 
     th = threading.Thread(target=_lavoro, daemon=True)
+    t0 = time.time()
     th.start()
     th.join(timeout_s)
-    if th.is_alive() or "e" in risultato:
+    andato_timeout = th.is_alive()
+    errore = "e" in risultato
+    ms = (time.time() - t0) * 1000.0
+    # misuro OGNI generazione: alimenta l'auto-scelta del modello (troppo lento?).
+    try:
+        _perf_registra(_stato.get("modello"), ms, ok=(not andato_timeout and not errore),
+                       andato_timeout=andato_timeout)
+        _auto_valuta(andato_timeout)
+    except Exception:
+        pass
+    if andato_timeout or errore:
         return None
     return risultato.get("t")
 
@@ -269,6 +309,109 @@ def _scelta_dashboard():
     return {}
 
 
+# ─────────────────────────────── AUTO-SCELTA: prestazioni + declassamento ──────
+# Idea: su questo box il modello X è troppo lento (va in timeout)? Lo scopro
+# misurando OGNI generazione e, in automatico, ripiego sul modello più piccolo.
+# Niente magia: statistica semplice, persistita, con una tregua per ri-tentare.
+
+def _perf_carica():
+    global _perf, _declassati
+    try:
+        if os.path.exists(PERF_FILE):
+            with open(PERF_FILE) as f:
+                d = json.load(f) or {}
+            if isinstance(d, dict):
+                _perf = d.get("modelli") if isinstance(d.get("modelli"), dict) else {}
+                _declassati = d.get("declassati") if isinstance(d.get("declassati"), dict) else {}
+    except Exception:
+        _perf, _declassati = {}, {}
+
+
+def _perf_salva():
+    try:
+        os.makedirs(DATA_DIR, exist_ok=True)
+        tmp = PERF_FILE + ".part"
+        with open(tmp, "w") as f:
+            json.dump({"modelli": _perf, "declassati": _declassati}, f)
+        os.replace(tmp, PERF_FILE)
+    except Exception:
+        pass
+
+
+def _perf_registra(modello, ms, ok, andato_timeout):
+    """Registra l'esito di UNA generazione locale (per il modello attivo)."""
+    if not modello:
+        return
+    with _perf_lock:
+        r = _perf.get(modello) or {"chiamate": 0, "ok": 0, "timeout": 0, "ms_tot": 0.0, "ultimo_uso": 0}
+        r["chiamate"] = int(r.get("chiamate", 0)) + 1
+        if ok:
+            r["ok"] = int(r.get("ok", 0)) + 1
+        if andato_timeout:
+            r["timeout"] = int(r.get("timeout", 0)) + 1
+        r["ms_tot"] = float(r.get("ms_tot", 0.0)) + max(0.0, float(ms))
+        r["ultimo_uso"] = int(time.time())
+        _perf[modello] = r
+        _perf_salva()
+
+
+def _tocca_uso(modello):
+    """Segna 'usato adesso' un modello (per la pulizia disco), senza altra statistica."""
+    if not modello:
+        return
+    with _perf_lock:
+        r = _perf.get(modello) or {"chiamate": 0, "ok": 0, "timeout": 0, "ms_tot": 0.0, "ultimo_uso": 0}
+        r["ultimo_uso"] = int(time.time())
+        _perf[modello] = r
+        _perf_salva()
+
+
+def _in_auto():
+    """Siamo in selezione AUTOMATICA? (nessun modello forzato da dashboard o .env)"""
+    s = _scelta_dashboard()
+    if s.get("url") or s.get("file"):
+        return False
+    if s.get("modello") in _MODELLI:
+        return False
+    if os.environ.get("LLM_MODEL_URL") or os.environ.get("LLM_MODEL_PATH"):
+        return False
+    if os.environ.get("LLM_MODELLO", "").strip().lower() in _MODELLI:
+        return False
+    return True
+
+
+def _declassa(modello):
+    """Marca un modello come 'troppo lento su questo box': alla prossima scelta
+    verrà saltato per una tregua (poi ri-tentato, nel caso fosse un carico passeggero)."""
+    if not modello:
+        return
+    with _perf_lock:
+        _declassati[modello] = int(time.time())
+        _perf_salva()
+
+
+def _auto_valuta(andato_timeout):
+    """Auto-guarigione a caldo: se il modello attivo va in timeout N volte di fila
+    (e siamo in automatico, senza endpoint esterno), lo declasso e ricarico → parte
+    il modello più piccolo. Con cooldown per non rimbalzare."""
+    if _endpoint_cfg() or not _in_auto():
+        return
+    mod = _stato.get("modello")
+    with _perf_lock:
+        if _streak["modello"] != mod:
+            _streak.update(modello=mod, n=0)
+        _streak["n"] = _streak["n"] + 1 if andato_timeout else 0
+        streak = _streak["n"]
+        scorso = _streak["ultimo_riavvio"]
+    if streak >= AUTO_STREAK and (time.time() - scorso) > 300:
+        with _perf_lock:
+            _streak["ultimo_riavvio"] = time.time()
+            _streak["n"] = 0
+        _declassa(mod)
+        print(f"[genera] auto: «{mod}» troppo lento ({streak} timeout di fila) → declasso e passo al più piccolo.", flush=True)
+        threading.Thread(target=ricarica, daemon=True).start()
+
+
 def _scegli_modello():
     # 1) scelta dalla dashboard (admin): ha la precedenza
     s = _scelta_dashboard()
@@ -283,11 +426,25 @@ def _scegli_modello():
     nome = os.environ.get("LLM_MODELLO", "").strip().lower()
     if nome in _MODELLI:
         return _MODELLI[nome]
-    # 3) automatico in base alla RAM
+    # 3) AUTOMATICO: il più grande che (a) sta nella RAM e (b) non è stato
+    #    declassato di recente per lentezza né ha un tasso di timeout troppo alto.
+    #    Così su un box lento si assesta da solo su un modello che risponde in tempo.
     gb = _ram_gb()
+    ora = time.time()
+    tregua = DECLASSA_ORE * 3600
     for soglia, u in _TIERS:
-        if gb >= soglia:
-            return u
+        if gb < soglia:
+            continue
+        base = u.split("/")[-1]
+        dts = _declassati.get(base)
+        if dts and (ora - float(dts)) < tregua:
+            continue   # declassato di recente: troppo lento su questo box → salto
+        r = _perf.get(base)
+        if r and int(r.get("chiamate", 0)) >= AUTO_MIN_CAMPIONI:
+            tasso = int(r.get("timeout", 0)) / max(1, int(r.get("chiamate", 0)))
+            if tasso >= AUTO_SOGLIA_TIMEOUT:
+                continue   # storicamente va in timeout troppo spesso → salto
+        return u
     return _TIERS[-1][1]
 
 
@@ -354,6 +511,7 @@ def avvia():
         if _stato["stato"] in ("carico", "pronto"):
             return
         _stato["stato"] = "carico"
+    _perf_carica()   # storico prestazioni + modelli declassati (per l'auto-scelta)
     try:
         # se hai collegato un endpoint esterno in modalità "solo", NON carico il
         # modello locale: mi bastano l'endpoint (il maestro) + la rete → RAM libera.
@@ -409,6 +567,7 @@ def avvia():
         with _lock:
             _llm = model
             _stato.update(stato="pronto", motivo=None)
+        _tocca_uso(_stato.get("modello"))   # 'usato adesso' (per la pulizia disco)
         print(f"[genera] pronto (modello {_stato['modello']}, RAM {_ram_gb():.1f}GB).", flush=True)
     except Exception as e:
         _stato.update(stato="errore", motivo=str(e))
