@@ -4159,6 +4159,41 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       if (chat.type === 'private' && sonoIoTg && !inGruppo) {
         const raw = String(testo).trim();
         const low = raw.toLowerCase();
+        // COMANDI privati per ME: sfogliare la sua VITA dal telefono (diario,
+        // pubblico, stanza) e farla agire ORA (vivere / aggiornarsi sul pubblico).
+        // Solo io (account legato), solo in privato — come tutto il resto qui.
+        if (/^\/(diario|pubblico|stanza|vivi|aggiorna|aiuto)\b/.test(low)) {
+          const escTg = (x) => String(x ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+          const inviaBlocco = (titolo, corpo) => {
+            const c = String(corpo || '').trim() || '—';
+            const clip = c.length > 3500 ? c.slice(0, 3500) + '\n…' : c;
+            telegram.inviaMessaggio(conf.token, chat.id, `<b>${escTg(titolo)}</b>\n<pre>${escTg(clip)}</pre>`).catch(() => {});
+          };
+          const cmd = low.replace(/^\//, '').split(/\s+/)[0];
+          if (cmd === 'aiuto') {
+            telegram.inviaMessaggio(conf.token, chat.id,
+              'I miei comandi privati (solo tu):\n/diario — le ultime pagine del mio diario\n/pubblico — chi ci segue e di cosa parla\n/stanza — i file nel mio spazio\n/vivi — vivo un attimo nel mio spazio, adesso\n/aggiorna — mi aggiorno sul pubblico, adesso\n/regole — le linee guida che mi hai dato').catch(() => {});
+            return;
+          }
+          if (cmd === 'vivi' || cmd === 'aggiorna') {
+            telegram.inviaMessaggio(conf.token, chat.id, cmd === 'vivi'
+              ? '🌱 Vado a vivere un attimo nel mio spazio… ti dico com\'è andata.'
+              : '👀 Mi aggiorno su chi ci segue…').catch(() => {});
+            const r = await brainpy.vivi(cmd === 'vivi' ? 'vita' : 'pubblico').catch(() => null);
+            telegram.inviaMessaggio(conf.token, chat.id,
+              (r && r.nota) ? escTg(r.nota) : 'Il mio spazio non è raggiungibile ora 😔').catch(() => {});
+            return;
+          }
+          const v = await brainpy.vita().catch(() => null);
+          if (!v || !v.attiva) {
+            telegram.inviaMessaggio(conf.token, chat.id, 'La mia macchina è spenta ora — non riesco ad affacciarmi nel mio spazio.').catch(() => {});
+            return;
+          }
+          if (cmd === 'diario') inviaBlocco('Il mio diario', v.diario);
+          else if (cmd === 'pubblico') inviaBlocco('Il mio pubblico', v.pubblico);
+          else if (cmd === 'stanza') inviaBlocco('La mia stanza', v.spazio);
+          return;
+        }
         if (/^\/regole\b/.test(low)) {
           const l = guide.list(login);
           const out = l.length
