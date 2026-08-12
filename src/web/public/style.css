@@ -1524,3 +1524,7 @@ input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focu
 .cru-n { font-variant-numeric: tabular-nums; color: var(--testo-tenue, #6b7280); white-space: nowrap; }
 .cru-mod { margin: 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 3px; }
 .cru-mod li { font-size: .88rem; }
+
+/* VITA di Lia (pannello admin): diario, pubblico e stanza in blocchi leggibili */
+.vita-azioni { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.vita-pre { white-space: pre-wrap; word-break: break-word; max-height: 300px; overflow: auto; margin: .3em 0 1.1em; padding: 12px 14px; border-radius: 12px; font-size: .84rem; line-height: 1.55; background: color-mix(in srgb, var(--testo) 5%, transparent); border: 1px solid color-mix(in srgb, var(--testo) 14%, transparent); }

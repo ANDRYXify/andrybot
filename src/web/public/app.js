@@ -550,7 +550,7 @@ function render() {
   aggiornaTestataPagina();
 
   if (conPiattaforma) attivaPiattaforma();
-  if (stato.isAdmin) { caricaTabellaAdmin(); caricaSalute(); caricaBackup(); caricaAnima(); caricaLLM(); }
+  if (stato.isAdmin) { caricaTabellaAdmin(); caricaSalute(); caricaBackup(); caricaAnima(); caricaLLM(); caricaVita(); }
 
   // prima le rendo richiudibili (cambia il DOM), poi le rivelo
   if (conPiattaforma) document.querySelectorAll('.pannello-scheda').forEach((p) => rendiCartePieghevoli(p, p.dataset.scheda));
@@ -9861,7 +9861,7 @@ function caricaDatiScheda(id) {
   if (id === 'grafiche') initGrafiche();
   if (id === 'regole') caricaStatoListaBot();
   if (id === 'sottoscrizione') caricaSottoscrizione();
-  if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaSalute(); caricaBackup(); caricaAnima(); caricaLLM(); }
+  if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaSalute(); caricaBackup(); caricaAnima(); caricaLLM(); caricaVita(); }
 }
 
 
@@ -11294,6 +11294,11 @@ function vistaAdminContenuto() {
       <h2>${_hIco(ICO.cervello)}${L('Cervello — modello IA', 'Brain — AI model', 'Cerebro — modelo IA')}</h2>
       <p>${L('Il modello linguistico locale è', 'The local language model is', 'El modelo de lenguaje local es')} <strong class="primo-piano">${L('condiviso', 'shared', 'compartido')}</strong> ${L('da tutti i canali. Cambiandolo qui, il cervello lo sostituisce', 'by all channels. Changing it here, the brain swaps it', 'por todos los canales. Al cambiarlo aquí, el cerebro lo sustituye')} <strong>${L('a caldo', 'on the fly', 'en caliente')}</strong> (${L('scarica + carica: può metterci qualche minuto; nel frattempo la chat usa il motore veloce di riserva', 'download + load: it may take a few minutes; meanwhile chat uses the fast backup engine', 'descarga + carga: puede tardar unos minutos; mientras tanto el chat usa el motor rápido de reserva')}).</p>
       <div id="llm-box"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
+    </div>
+    <div class="carta">
+      <h2>${_hIco(ICO.germoglio)}${L('Vita di Lia (la sua macchina)', "Lia's life (her machine)", 'La vida de Lia (su máquina)')}</h2>
+      <p>${L('Il suo spazio privato: il diario che tiene per sé, il ritratto del suo pubblico e la sua stanza. Vive da sola qui dentro, ogni tanto, e si aggiorna su chi la segue — così diventa più presente e sveglia. Questo lo vedi', "Her private space: the diary she keeps for herself, the portrait of her audience and her room. She lives alone in here now and then, and updates herself on who follows her — becoming more present and awake. This is seen", 'Su espacio privado: el diario que guarda para sí, el retrato de su público y su habitación. Vive sola aquí de vez en cuando, y se actualiza sobre quién la sigue — volviéndose más presente y despierta. Esto lo ves')} <strong class="primo-piano">${L('solo tu', 'only you', 'solo tú')}</strong>.</p>
+      <div id="vita-box"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
     </div>`;
 }
 
@@ -11553,6 +11558,7 @@ async function caricaLLM() {
   box.innerHTML = `
     <p class="suggerimento"><strong>${L('Riservato a te', 'For you only', 'Reservado a ti')}</strong>: ${L('il modello del server e il maestro esterno li vedi e li cambi', 'you see and change the server model and the external teacher', 'el modelo del servidor y el maestro externo los ves y los cambias')} <strong>${L('solo tu', 'only you', 'solo tú')}</strong> (andryxify). ${L('Nessun altro streamer o moderatore ha accesso a questa sezione.', 'No other streamer or moderator has access to this section.', 'Ningún otro streamer o moderador tiene acceso a esta sección.')}</p>
     <p>${L('Stato', 'Status', 'Estado')}: <strong>${statoTxt}</strong> &nbsp; ${L('In memoria', 'In memory', 'En memoria')}: <code>${esc(s.modello || '—')}</code>${s.motivo ? ` <span class="suggerimento">(${esc(s.motivo)})</span>` : ''}</p>
+    ${s.auto ? `<p class="suggerimento">${L('Auto-scelta del modello', 'Model auto-pick', 'Auto-selección del modelo')}: <strong>${s.auto.automatico ? L('attiva', 'on', 'activa') : L('modello forzato da te', 'forced by you', 'forzado por ti')}</strong>${s.auto.chiamate ? ` · ${s.auto.chiamate} ${L('risposte', 'answers', 'respuestas')}, ${L('timeout', 'timeouts', 'timeouts')} ${Math.round((s.auto.tasso_timeout || 0) * 100)}%${s.auto.ms_medio ? `, ~${s.auto.ms_medio}ms` : ''}` : ''}${(s.auto.declassati || []).length ? ` · ${L('declassati perché troppo lenti qui', 'downgraded — too slow here', 'degradados por ser demasiado lentos aquí')}: ${s.auto.declassati.map((x) => `<code>${esc(x)}</code>`).join(', ')}` : ''}</p>` : ''}
     <label class="campo" for="sel-llm">${L('Modello locale (sul server)', 'Local model (on the server)', 'Modelo local (en el servidor)')}</label>
     <select id="sel-llm" class="campo-largo">
       ${opts}
@@ -11573,6 +11579,15 @@ async function caricaLLM() {
       <input type="file" id="inp-modello-file" accept=".gguf">
       <button class="btn secondario" id="btn-modello-upload">${L('Carica sul server', 'Upload to server', 'Subir al servidor')}</button>
       <span id="modello-upload-stato" class="suggerimento"></span>
+    </p>
+
+    <hr style="${stile.hr}">
+    <h3>${_hIco(ICO.cervello)}${L('Cervello autonomo', 'Autonomous brain', 'Cerebro autónomo')}</h3>
+    <p class="suggerimento">${L('Lia impara da sé: distilla le risposte del modello in moduli (così serve sempre meno il modello) e libera il disco dai modelli inutilizzati. Succede da solo nel tempo; qui puoi farlo ORA.', "Lia learns on her own: she distills the model's answers into modules (so the model is needed less and less) and frees disk from unused models. It happens by itself over time; here you can do it NOW.", 'Lia aprende sola: destila las respuestas del modelo en módulos (así el modelo se necesita cada vez menos) y libera disco de los modelos sin usar. Ocurre solo con el tiempo; aquí puedes hacerlo AHORA.')}</p>
+    <p class="spazio-sopra">
+      <button class="btn secondario" id="btn-distilla">${L('Distilla ora', 'Distill now', 'Destilar ahora')}</button>
+      <button class="btn secondario" id="btn-pulizia">${L('Pulisci i modelli non usati', 'Clean unused models', 'Limpiar modelos sin usar')}</button>
+      <span id="autobrain-esito" class="suggerimento"></span>
     </p>
 
     <hr style="${stile.hr}">
@@ -11650,6 +11665,24 @@ async function caricaLLM() {
     caricaLLM();
   }); }));
   document.getElementById('btn-modello-upload')?.addEventListener('click', () => caricaModelloFile());
+  // cervello autonomo: distilla ora / pulisci i modelli non usati
+  document.getElementById('btn-distilla')?.addEventListener('click', () => conErrore(async () => {
+    const e = document.getElementById('autobrain-esito');
+    if (e) e.textContent = L('Distillo…', 'Distilling…', 'Destilando…');
+    const r = await api('/api/admin/distilla', { method: 'POST', body: {} });
+    const x = (r && r.distillazione) || {};
+    if (e) e.textContent = `${L('Fatto', 'Done', 'Hecho')}: +${x.creati || 0} ${L('nuovi', 'new', 'nuevos')}, ${x.arricchiti || 0} ${L('arricchiti', 'enriched', 'enriquecidos')}.`;
+  }));
+  document.getElementById('btn-pulizia')?.addEventListener('click', () => conErrore(async () => {
+    const e = document.getElementById('autobrain-esito');
+    if (e) e.textContent = L('Pulisco…', 'Cleaning…', 'Limpiando…');
+    const r = await api('/api/admin/pulizia-modelli', { method: 'POST', body: {} });
+    const p = (r && r.pulizia) || {};
+    if (e) e.textContent = (p.rimossi || []).length
+      ? `${L('Rimossi', 'Removed', 'Eliminados')}: ${p.rimossi.map(esc).join(', ')} (~${p.liberati_mb || 0} MB).`
+      : L('Niente da rimuovere: è già in ordine.', 'Nothing to remove: already tidy.', 'Nada que eliminar: ya está ordenado.');
+    setTimeout(caricaLLM, 800);
+  }));
 }
 
 // upload di un GGUF con barra di avanzamento (i file sono grandi: XHR per il progresso)
@@ -11679,6 +11712,43 @@ function caricaModelloFile() {
   xhr.onerror = () => { if (st) st.textContent = L('Errore di rete', 'Network error', 'Error de red'); toast(L('Upload fallito', 'Upload failed', 'Subida fallida'), 'errore'); };
   if (st) st.textContent = L('Carico… 0%', 'Uploading… 0%', 'Subiendo… 0%');
   xhr.send(fd);
+}
+
+// VITA di Lia (solo andryxify): il suo diario, il ritratto del pubblico e la sua
+// stanza — più i pulsanti per farla vivere un attimo / aggiornarla sul pubblico.
+async function caricaVita() {
+  const box = document.getElementById('vita-box');
+  if (!box) return;
+  let d;
+  try { d = await api('/api/admin/vita'); }
+  catch (e) { box.innerHTML = `<p class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</p>`; return; }
+  if (!d || !d.attiva) {
+    box.innerHTML = `<p class="suggerimento">${L('La sua macchina (sandbox) non è attiva. Per darle una casa: imposta', 'Her machine (sandbox) is off. To give her a home: set', 'Su máquina (sandbox) no está activa. Para darle un hogar: define')} <code>AMBIENTE_KEY</code> ${L('e avvia il container', 'and start the container', 'y arranca el contenedor')} <code>ambiente</code>.</p>`;
+    return;
+  }
+  const pre = (t) => `<pre class="vita-pre">${esc((t || '').trim() || '—')}</pre>`;
+  box.innerHTML = `
+    <div class="vita-azioni">
+      <button class="btn secondario" id="btn-vivi">${_bIco(ICO.germoglio)}${L('Falla vivere un attimo', 'Let her live a moment', 'Deja que viva un momento')}</button>
+      <button class="btn secondario" id="btn-pubblico">${L('Aggiornala sul pubblico', 'Update her on the audience', 'Actualízala sobre el público')}</button>
+      <button class="btn secondario mini" id="btn-vita-refresh">${L('Aggiorna', 'Refresh', 'Actualizar')}</button>
+      <span id="vita-esito" class="suggerimento"></span>
+    </div>
+    <h3>${L('Il suo diario', 'Her diary', 'Su diario')}</h3>${pre(d.diario)}
+    <h3>${L('Il suo pubblico', 'Her audience', 'Su público')}</h3>${pre(d.pubblico)}
+    <details class="spazio-sopra"><summary class="suggerimento" style="cursor:pointer">${L('La sua stanza (i suoi file)', 'Her room (her files)', 'Su habitación (sus archivos)')}</summary>${pre(d.spazio)}</details>`;
+  document.getElementById('btn-vita-refresh')?.addEventListener('click', () => conErrore(caricaVita));
+  const fai = (tipo, attesa) => conErrore(async () => {
+    const e = document.getElementById('vita-esito');
+    if (e) e.textContent = attesa;
+    const r = await api('/api/admin/vita', { method: 'POST', body: { tipo } });
+    if (e) e.textContent = r && r.nota ? `«${esc(r.nota)}»` : L('fatto ✓', 'done ✓', 'hecho ✓');
+    setTimeout(caricaVita, 1200);
+  });
+  document.getElementById('btn-vivi')?.addEventListener('click', () => fai('vita',
+    L('Sta vivendo un attimo… (può metterci un po\')', 'Living a moment… (may take a bit)', 'Viviendo un momento… (puede tardar)')));
+  document.getElementById('btn-pubblico')?.addEventListener('click', () => fai('pubblico',
+    L('Si sta aggiornando sul pubblico…', 'Updating on the audience…', 'Actualizándose sobre el público…')));
 }
 
 // durata in forma leggibile: 2g 3h, 5h 12m, 40m, 25s

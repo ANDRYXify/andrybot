@@ -4635,6 +4635,29 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json(r || { ok: false, motivo: 'cervello non raggiungibile' });
   }));
 
+  // ── VITA di Lia (la sua macchina): diario, stanza, pubblico. Solo andryxify.
+  app.get('/api/admin/vita', requireAdmin, wrap(async (req, res) => {
+    const v = await brainpy.vita().catch(() => null);
+    res.json(v || { attiva: false, diario: '', spazio: '', pubblico: '' });
+  }));
+  // falla vivere un attimo ORA: tipo 'vita' (personale) o 'pubblico'
+  app.post('/api/admin/vita', requireAdmin, wrap(async (req, res) => {
+    const tipo = (req.body?.tipo === 'pubblico') ? 'pubblico' : 'vita';
+    const r = await brainpy.vivi(tipo).catch(() => null);
+    res.json(r || { ok: false });
+  }));
+  // ── Cervello autonomo: distilla ORA le risposte in moduli. Solo andryxify.
+  app.post('/api/admin/distilla', requireAdmin, wrap(async (req, res) => {
+    const r = await brainpy.distillaModuli().catch(() => null);
+    res.json(r || { ok: false });
+  }));
+  // ── Libera il disco dai modelli non usati. Solo andryxify.
+  app.post('/api/admin/pulizia-modelli', requireAdmin, wrap(async (req, res) => {
+    const g = Number(req.body?.giorni);
+    const r = await brainpy.pulisciModelli(Number.isFinite(g) ? g : undefined).catch(() => null);
+    res.json(r || { ok: false });
+  }));
+
   // ------------------------------------------------------------ avvio
 
   // qualsiasi rotta non gestita (anche per chi è dentro): 404 sobrio,
