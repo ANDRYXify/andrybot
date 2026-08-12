@@ -1514,3 +1514,13 @@ input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focu
   font-size: .68rem; font-weight: 700; letter-spacing: .02em; vertical-align: 1px;
   color: var(--acc); background: var(--acc-tint); border: 1px solid var(--acc-bordo);
 }
+
+/* Cruscotto "come ragiona" (scheda Avatar 3D) */
+#mente-cruscotto .cru-barre { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.cru-riga { display: grid; grid-template-columns: minmax(120px, 40%) 1fr auto; align-items: center; gap: 8px; font-size: .86rem; }
+.cru-lab { color: var(--testo-tenue, #6b7280); }
+.cru-barra { height: 9px; border-radius: 999px; background: color-mix(in srgb, var(--testo) 10%, transparent); overflow: hidden; }
+.cru-barra > span { display: block; height: 100%; border-radius: 999px; transition: width .5s var(--molla, ease); }
+.cru-n { font-variant-numeric: tabular-nums; color: var(--testo-tenue, #6b7280); white-space: nowrap; }
+.cru-mod { margin: 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 3px; }
+.cru-mod li { font-size: .88rem; }

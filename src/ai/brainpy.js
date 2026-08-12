@@ -210,6 +210,20 @@ export async function svago({ canale, nomeBot, stile, lineeGuida } = {}) {
   finally { clearTimeout(to); }
 }
 
+// Conteggio delle "vie" del ragionamento (deduzione/memoria/moduli/modello/riflesso)
+// per il cruscotto. Oggetto via→n (vuoto se nulla o errore). Mai lancia.
+export async function vie() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 4000);
+  try {
+    const r = await fetch(BASE + '/vie', { signal: ac.signal });
+    if (!r.ok) return {};
+    const d = await r.json().catch(() => null);
+    return (d && typeof d.vie === 'object' && d.vie) ? d.vie : {};
+  } catch (e) { log.debug('vie:', e?.message || e); return {}; }
+  finally { clearTimeout(to); }
+}
+
 // Il dataset della "mente" della rete per un canale: coppie {q, a} consolidate.
 export async function reteCorpus(canale) {
   if (!canale) return [];

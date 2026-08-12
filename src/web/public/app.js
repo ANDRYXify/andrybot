@@ -2569,6 +2569,11 @@ function pannelloAvatar() {
         </div>
         <div id="mente3d-dettaglio" class="suggerimento" style="flex:1 1 240px;align-self:flex-start"></div>
       </div>
+    </div>
+    <div class="carta">
+      <h2>${_hIco(ICO.germoglio || ICO.cervello)}${L('Come ragiona', 'How it reasons', 'Cómo razona')}</h2>
+      <p>${L('Da quale «cervello» nascono le sue risposte. Più cresce la fetta dei moduli, meno dipende dal modello linguistico: sta imparando a ragionare da sé.', 'Which “brain” its replies come from. The bigger the modules’ share, the less it depends on the language model: it’s learning to reason on its own.', 'De qué «cerebro» nacen sus respuestas. Cuanto mayor es la parte de los módulos, menos depende del modelo: está aprendiendo a razonar por sí misma.')}</p>
+      <div id="mente-cruscotto"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
     </div>`);
 }
 
@@ -11463,6 +11468,42 @@ function _menteDettaglio(sel) {
     ${seg.length ? `<p class="tenue"><strong>${L('Segnali', 'Signals', 'Señales')}:</strong> ${seg.map(esc).join(' · ')}</p>` : ''}`;
 }
 
+// CRUSCOTTO "come ragiona": da quale cervello nascono le risposte + moduli più attivi.
+function _menteCruscotto(d) {
+  const box = document.getElementById('mente-cruscotto');
+  if (!box) return;
+  const vie = (d && d.vie) || {};
+  const ordine = [
+    ['deduzione', L('Deduzione (logica)', 'Deduction (logic)', 'Deducción (lógica)'), '#5b8def'],
+    ['memoria', L('Memoria (rete)', 'Memory (net)', 'Memoria (red)'), '#3aa6c9'],
+    ['moduli', L('Ragionamento a moduli', 'Module reasoning', 'Razonamiento por módulos'), '#1f9e4f'],
+    ['riflesso', L('Riflesso (modulo)', 'Reflex (module)', 'Reflejo (módulo)'), '#2fb98a'],
+    ['modello', L('Modello (genera)', 'Model (generate)', 'Modelo (genera)'), '#e0913a'],
+  ];
+  const tot = ordine.reduce((s, [k]) => s + (Number(vie[k]) || 0), 0);
+  const senzaMod = ordine.filter(([k]) => k !== 'modello').reduce((s, [k]) => s + (Number(vie[k]) || 0), 0);
+  const perc = (n) => (tot ? Math.round(n * 100 / tot) : 0);
+  const barre = ordine.map(([k, lab, col]) => {
+    const n = Number(vie[k]) || 0;
+    return `<div class="cru-riga"><span class="cru-lab">${lab}</span>
+      <span class="cru-barra"><span style="width:${perc(n)}%;background:${col}"></span></span>
+      <span class="cru-n">${n} · ${perc(n)}%</span></div>`;
+  }).join('');
+  const mods = (Array.isArray(d?.moduli) ? d.moduli : []).slice()
+    .sort((a, b) => (Number(b.usi) || 0) - (Number(a.usi) || 0)).slice(0, 6);
+  const listaMod = mods.length
+    ? mods.map((m) => `<li><strong>${esc(m.nome || '?')}</strong> <span class="tenue">· ${Number(m.usi) || 0} ${L('usi', 'uses', 'usos')} · ${Array.isArray(m.chiavi) ? m.chiavi.length : 0} ${L('situazioni', 'situations', 'situaciones')}</span></li>`).join('')
+    : `<li class="vuoto">${L('ancora nessun modulo attivo', 'no active module yet', 'aún ningún módulo activo')}</li>`;
+  const titolo = tot
+    ? L(`<strong>${perc(senzaMod)}%</strong> delle risposte nasce dai suoi moduli o senza il modello — il resto lo mette il modello linguistico.`,
+        `<strong>${perc(senzaMod)}%</strong> of replies come from its modules or without the model — the rest is the language model.`,
+        `<strong>${perc(senzaMod)}%</strong> de las respuestas nacen de sus módulos o sin el modelo — el resto lo pone el modelo.`)
+    : L('Ancora nessuna risposta registrata: parlaci un po’ e questo si riempie.', 'No replies recorded yet: chat a bit and this fills up.', 'Aún no hay respuestas: chatea un poco y esto se llena.');
+  box.innerHTML = `<p>${titolo}</p><div class="cru-barre">${barre}</div>
+    <h3 style="margin:.9em 0 .3em;font-size:.95em">${L('Moduli più attivi', 'Most active modules', 'Módulos más activos')}</h3>
+    <ul class="cru-mod">${listaMod}</ul>`;
+}
+
 // carica i dati della mente e monta il grafo 3D nella carta della Panoramica
 async function caricaMente3d() {
   const canvas = document.getElementById('mente3d-canvas');
@@ -11474,6 +11515,7 @@ async function caricaMente3d() {
   let d;
   try { d = await api('/api/streamer/mente'); }
   catch { const box = document.getElementById('mente3d-dettaglio'); if (box) box.innerHTML = `<p class="vuoto">${L('Non disponibile ora.', 'Not available now.', 'No disponible ahora.')}</p>`; return; }
+  try { _menteCruscotto(d); } catch { /* il cruscotto è un extra */ }
   try {
     _mente3dCtrl = window.SB_MENTE.crea(canvas, _menteGrafo(d, dark), {
       dark,
