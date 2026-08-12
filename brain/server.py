@@ -419,9 +419,16 @@ class Handler(BaseHTTPRequestHandler):
 
     def _vivi(self):
         # fa vivere a Lia UN attimo adesso (trigger manuale) e ritorna la nota di diario.
+        # tipo: 'vita' (momento personale) | 'pubblico' (si aggiorna sul suo pubblico).
+        d = self._leggi() or {}
+        tipo = str(d.get("tipo") or "vita").strip()
         try:
             nome = os.environ.get("AMBIENTE_NOME", "Lia")
-            return self._json(200, {"ok": True, "nota": G.vivi_un_attimo(nome)})
+            if tipo == "pubblico":
+                nota = G.aggiorna_sul_pubblico(nome, mente.ritratto_pubblico())
+            else:
+                nota = G.vivi_un_attimo(nome)
+            return self._json(200, {"ok": True, "tipo": tipo, "nota": nota})
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 

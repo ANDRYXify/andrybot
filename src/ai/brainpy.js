@@ -224,6 +224,62 @@ export async function vie() {
   finally { clearTimeout(to); }
 }
 
+// VITA di Lia (la sua macchina): diario, stanza, ritratto del pubblico. Sola
+// lettura. Ritorna {attiva, diario, spazio, pubblico} o null.
+export async function vita() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 8000);
+  try {
+    const r = await fetch(BASE + '/vita', { signal: ac.signal });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('vita:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
+// Falla vivere un attimo ORA: tipo='vita' (momento personale) o 'pubblico'
+// (si aggiorna sul suo pubblico). Ritorna {ok, tipo, nota} o null. Attesa ampia.
+export async function vivi(tipo = 'vita') {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 70_000);
+  try {
+    const r = await fetch(BASE + '/vita', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tipo }), signal: ac.signal,
+    });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('vivi:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
+// Distilla ORA le risposte del modello in moduli. Ritorna {ok, distillazione} o null.
+export async function distillaModuli() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 30_000);
+  try {
+    const r = await fetch(BASE + '/distilla_moduli', { method: 'POST', signal: ac.signal });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('distillaModuli:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
+// Libera il disco dai modelli non usati. `giorni` opzionale. Ritorna {ok, pulizia} o null.
+export async function pulisciModelli(giorni) {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 30_000);
+  try {
+    const r = await fetch(BASE + '/pulizia_modelli', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(giorni != null ? { giorni } : {}), signal: ac.signal,
+    });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('pulisciModelli:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
 // Il dataset della "mente" della rete per un canale: coppie {q, a} consolidate.
 export async function reteCorpus(canale) {
   if (!canale) return [];
