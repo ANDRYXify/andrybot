@@ -100,6 +100,15 @@ def prepara_casa():
     return True
 
 
+def scrivi_file(percorso, contenuto, append=False):
+    """Scrive (o aggiunge) un file nella sua casa, in modo sicuro (base64). Usato
+    per le pagine che tiene per sé, es. pubblico.md. Ritorna True/False."""
+    if not disponibile():
+        return False
+    r = _scrivi(percorso, contenuto, append=append)
+    return bool(r.get("ok"))
+
+
 def diario_scrivi(testo, tag=""):
     """Aggiunge una voce, datata, al diario del mese (diario/AAAA-MM.md). È così che
     la sua esistenza lascia una traccia che dura. Best-effort."""

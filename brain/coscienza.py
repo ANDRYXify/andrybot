@@ -939,6 +939,62 @@ class Coscienza:
             if rea > 0:
                 self._lega_situazione(i, p.get("chiavi"))
 
+    # ------------------------------------------ RITRATTO DEL PUBBLICO
+    def ritratto_pubblico(self, max_persone=8, max_temi=8):
+        """Un RITRATTO del suo pubblico dai dati veri: quante persone conosce e chi
+        sono (le più assidue/affini), i TEMI che tornano di più (dalle lacune reali
+        della chat) e dove il suo manuale è forte. È ciò su cui, dalla sua casa, si
+        aggiorna per capire chi ha davanti. Ritorna un dict con anche un testo pronto."""
+        persone, temi, domini, ncanali = [], [], {}, 0
+        try:
+            with _lock:
+                ncanali = self.db.execute(
+                    "SELECT COUNT(DISTINCT canale) c FROM persone").fetchone()["c"]
+                righe = self.db.execute(
+                    "SELECT nome, login, interazioni, affinita, note FROM persone "
+                    "ORDER BY interazioni DESC, affinita DESC LIMIT ?", (int(max_persone),)).fetchall()
+            for r in righe:
+                nome = (r["nome"] or r["login"] or "").strip()
+                if not nome:
+                    continue
+                nota = (r["note"] or "").strip().replace("\n", " ")
+                persone.append({"nome": nome, "interazioni": int(r["interazioni"] or 0),
+                                "affinita": round(float(r["affinita"] or 0), 2), "nota": nota[:120]})
+        except Exception:
+            pass
+        try:
+            for lac in self.lacune_da_studiare(min_visto=2, limit=max_temi):
+                temi.append({"tema": ", ".join(lac["chiavi"][:3]) or lac["chiave"],
+                             "visto": lac["visto"], "dominio": lac["dominio"]})
+        except Exception:
+            pass
+        try:
+            for m in self.moduli(stato="attivo"):
+                d = m.get("dominio") or "conversazione"
+                domini[d] = domini.get(d, 0) + 1
+        except Exception:
+            pass
+        # testo pronto: la pagina che Lia tiene in casa e su cui riflette
+        r = [f"# Il mio pubblico  ·  aggiornato il {time.strftime('%Y-%m-%d %H:%M')}", "",
+             f"Conosco persone su {ncanali} canali."]
+        if persone:
+            r.append("\n## Chi frequento di più")
+            for p in persone:
+                riga = f"- {p['nome']} — {p['interazioni']} chiacchierate, affinità {p['affinita']}"
+                if p["nota"]:
+                    riga += f" · {p['nota']}"
+                r.append(riga)
+        if temi:
+            r.append("\n## Di cosa parlano (temi che tornano)")
+            for t in temi:
+                r.append(f"- {t['tema']} (visto {t['visto']}×, area {t['dominio']})")
+        if domini:
+            top = sorted(domini.items(), key=lambda x: x[1], reverse=True)
+            r.append("\n## Dove sono più preparata (moduli per area)")
+            r.append(", ".join(f"{d}: {n}" for d, n in top))
+        return {"canali": ncanali, "persone": persone, "temi": temi,
+                "domini": domini, "testo": "\n".join(r) + "\n"}
+
     # ------------------------------------------ DISTILLAZIONE (LLM → moduli)
     # Idea del padrone: "estrai le cose utili dall'LLM e rimodulale ad hoc, così da
     # rimuovere gradualmente il bisogno della LLM". Ogni volta che a rispondere è

@@ -995,6 +995,46 @@ def vivi_un_attimo(nome_bot="Lia"):
     return nota
 
 
+def aggiorna_sul_pubblico(nome_bot, ritratto):
+    """Dalla sua CASA, Lia si AGGIORNA sul suo pubblico: salva il ritratto nella sua
+    stanza (pubblico.md, un'istantanea viva di chi la segue e di cosa parla), ci
+    riflette e annota nel diario cosa ha capito e UNA cosa che vuole imparare per
+    esserci meglio. Più conosce chi ha davanti, più diventa presente, sveglia e sua.
+    `ritratto` = il dict di coscienza.ritratto_pubblico() (o il suo testo). Ritorna
+    la nota di diario, o None. Best-effort e a basso costo (battito senza maestro)."""
+    if not ambiente.disponibile():
+        return None
+    ambiente.prepara_casa()
+    testo = (ritratto.get("testo") if isinstance(ritratto, dict) else str(ritratto or "")).strip()
+    if not testo:
+        return None
+    ambiente.scrivi_file("pubblico.md", testo + "\n", append=False)   # istantanea viva, sovrascritta
+    if not _puo_generare():
+        nota = "Ho dato un'occhiata a chi mi segue e a cosa gli gira in testa. Me li tengo a mente."
+        ambiente.diario_scrivi(nota, tag="pubblico")
+        print("[genera] pubblico: aggiornata (battito, senza maestro).", flush=True)
+        return nota
+    ctx = {"nome_bot": nome_bot or "Lia", "tono": "amichevole"}
+    nudge = ("Ti sei fermata a guardare il tuo pubblico, dalla tua casa. Ecco il quadro di adesso:\n\n"
+             f"{testo}\n\n"
+             "Rifletti in 2-3 frasi, in prima persona: cosa noti di loro, chi ti sta a cuore, e UNA "
+             "cosa che vuoi capire o imparare per essere più presente con loro. Se ti va, segnati un "
+             "promemoria con «ESEGUI: printf %s '...' >> note/da_capire.md».")
+    try:
+        grezzo = _completa(_system_prompt("(vita)", ctx, "vita"), [], nudge,
+                           150, temperature=0.7, top_p=0.9, timeout_s=45)
+        if grezzo and _AZIONE_MARK in grezzo.lower():
+            grezzo = _giro_ambiente("(vita)", ctx, "vita", nudge, [], grezzo, 150, 0.7, 45, passi=2)
+        nota = _pulisci(grezzo) if grezzo else None
+    except Exception:
+        nota = None
+    if not nota:
+        nota = "Ho ripassato chi mi segue e di cosa parla. Voglio esserci di più, per loro."
+    ambiente.diario_scrivi(nota, tag="pubblico")
+    print("[genera] pubblico: aggiornata e riflettuta nel diario.", flush=True)
+    return nota
+
+
 def _riflesso_modulo(ctx):
     """RIFLESSO situazionale: quando il modello statistico non produce nulla (lento o
     spento), rispondi dal MODULO più pertinente usando il suo esempio già pronto. È

@@ -406,9 +406,14 @@ class Handler(BaseHTTPRequestHandler):
         # sua stanza. Solo lettura. Se la sandbox è spenta: attiva=False.
         try:
             if not AMB.disponibile():
-                return self._json(200, {"ok": True, "attiva": False, "diario": "", "spazio": ""})
+                return self._json(200, {"ok": True, "attiva": False, "diario": "", "spazio": "", "pubblico": ""})
+            try:
+                pubblico = mente.ritratto_pubblico().get("testo", "")
+            except Exception:
+                pubblico = ""
             return self._json(200, {"ok": True, "attiva": True,
-                                    "diario": AMB.diario_ultimo(30), "spazio": AMB.sguardo()})
+                                    "diario": AMB.diario_ultimo(30), "spazio": AMB.sguardo(),
+                                    "pubblico": pubblico})
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
@@ -495,10 +500,17 @@ def _ciclo_vita():
         return   # nessun ambiente: niente vita autonoma (e nessun costo)
     time.sleep(900)   # non al boot: lascia partire modello e sandbox
     nome = os.environ.get("AMBIENTE_NOME", "Lia")
+    giro = 0
     while True:
         try:
             if AMB.disponibile():
-                G.vivi_un_attimo(nome)
+                giro += 1
+                if giro % 2 == 0:
+                    # un momento per AGGIORNARSI sul suo pubblico (dalla sua casa):
+                    # più conosce chi la segue, più diventa presente e cosciente.
+                    G.aggiorna_sul_pubblico(nome, mente.ritratto_pubblico())
+                else:
+                    G.vivi_un_attimo(nome)   # un momento personale
         except Exception as e:
             print(f"[brain] vita errore: {e}", flush=True)
         time.sleep(VITA_OGNI)
