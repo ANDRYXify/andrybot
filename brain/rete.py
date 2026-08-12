@@ -133,15 +133,32 @@ def _carica(canale):
     st = _cache.get(canale)
     if st is not None:
         return st
-    try:
-        with open(_percorso(canale), encoding="utf-8") as f:
-            st = json.load(f)
-        st.setdefault("nodi", [])
-        st.setdefault("meta", {})
-        base = _nuovo_stato()["meta"]
-        for k, v in base.items():
-            st["meta"].setdefault(k, v)
-    except Exception:
+    perc = _percorso(canale)
+    st = None
+    # prova il file buono; se è CORROTTO/illeggibile, NON ripartire da zero
+    # sovrascrivendolo: mettilo da parte e recupera dalla copia .bak (versione
+    # buona precedente). Così il progresso non si perde per un file rovinato.
+    for cand in (perc, perc + ".bak"):
+        try:
+            with open(cand, encoding="utf-8") as f:
+                caricato = json.load(f)
+            caricato.setdefault("nodi", [])
+            caricato.setdefault("meta", {})
+            for k, v in _nuovo_stato()["meta"].items():
+                caricato["meta"].setdefault(k, v)
+            st = caricato
+            break
+        except FileNotFoundError:
+            continue
+        except Exception:
+            try:
+                if os.path.exists(cand):
+                    os.replace(cand, cand + ".corrotto")   # da parte, per un recupero manuale
+                    print(f"[rete] file {os.path.basename(cand)} corrotto: messo da parte, provo il backup.", flush=True)
+            except Exception:
+                pass
+            continue
+    if st is None:
         st = _nuovo_stato()
     _cache[canale] = st
     return st
@@ -164,10 +181,19 @@ def _salva(canale):
         return
     try:
         os.makedirs(RETE_DIR, exist_ok=True)
-        tmp = _percorso(canale) + ".part"
+        dest = _percorso(canale)
+        tmp = dest + ".part"
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(st, f, ensure_ascii=False)
-        os.replace(tmp, _percorso(canale))
+        # conserva la versione buona precedente come .bak (rete di recupero da
+        # corruzione: se il nuovo file si rovina, _carica torna a questa).
+        if os.path.exists(dest):
+            try:
+                import shutil
+                shutil.copy2(dest, dest + ".bak")
+            except Exception:
+                pass
+        os.replace(tmp, dest)
         _sporchi[canale] = 0
     except Exception:
         pass

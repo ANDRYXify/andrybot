@@ -491,15 +491,46 @@ class Handler(BaseHTTPRequestHandler):
 
 DISTILLA_OGNI = int(os.environ.get("BRAIN_DISTILLA_MIN", "180")) * 60   # ogni ~3h
 PULIZIA_OGNI = int(os.environ.get("BRAIN_PULIZIA_ORE", "24")) * 3600    # una volta al giorno
+BACKUP_TIENI = int(os.environ.get("BRAIN_BACKUP_TIENI", "7"))           # quanti backup giornalieri tenere
+
+
+def _backup_cervello():
+    """Istantanea giornaliera del PROGRESSO di Lia (coscienza.db + la rete) in
+    data/brain_backups/AAAA-MM-GG/, con rotazione. Così ciò che impara è sempre
+    recuperabile, anche in caso di file rovinato o errore. Best-effort."""
+    import shutil
+    import glob
+    dati = os.environ.get("DATA_DIR", "/app/data")
+    base = os.path.join(dati, "brain_backups")
+    dest = os.path.join(base, time.strftime("%Y-%m-%d"))
+    try:
+        os.makedirs(dest, exist_ok=True)
+        mente.backup(os.path.join(dest, "coscienza.db"))
+        rete_src = os.path.join(dati, "rete")
+        if os.path.isdir(rete_src):
+            rdest = os.path.join(dest, "rete")
+            os.makedirs(rdest, exist_ok=True)
+            for f in glob.glob(os.path.join(rete_src, "*.json")):
+                try:
+                    shutil.copy2(f, rdest)
+                except Exception:
+                    pass
+        # rotazione: tieni solo gli ultimi BACKUP_TIENI giorni
+        giorni = sorted(d for d in glob.glob(os.path.join(base, "*")) if os.path.isdir(d))
+        for vecchio in giorni[:-BACKUP_TIENI] if len(giorni) > BACKUP_TIENI else []:
+            shutil.rmtree(vecchio, ignore_errors=True)
+    except Exception as e:
+        print(f"[brain] backup cervello errore: {e}", flush=True)
 
 
 def _ciclo_manutenzione():
     """Manutenzione autonoma del cervello, in background e di rado:
       • DISTILLA le risposte del modello in MODULI → il carico si sposta dal modello
         ai moduli (meno bisogno dell'LLM, visibile nel cruscotto delle 'vie');
+      • fa un BACKUP giornaliero del progresso (coscienza + rete): non si perde nulla;
       • libera il disco dai modelli inutilizzati (i GGUF pesano GB), mai l'attivo."""
     time.sleep(600)   # non al boot: lascia caricare il modello prima
-    ultima_pulizia = 0.0
+    ultima_giornaliera = 0.0
     while True:
         try:
             r = mente.distilla_in_moduli()
@@ -507,8 +538,9 @@ def _ciclo_manutenzione():
                 print(f"[brain] distillazione LLM→moduli: {r}", flush=True)
         except Exception as e:
             print(f"[brain] distillazione errore: {e}", flush=True)
-        if time.time() - ultima_pulizia > PULIZIA_OGNI:
-            ultima_pulizia = time.time()
+        if time.time() - ultima_giornaliera > PULIZIA_OGNI:
+            ultima_giornaliera = time.time()
+            _backup_cervello()                 # PRIMA il backup: mette al sicuro il progresso
             try:
                 G.pulisci_modelli()
             except Exception as e:

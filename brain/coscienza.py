@@ -1208,3 +1208,18 @@ class Coscienza:
         except Exception:
             pass
         return rimossi
+
+    def backup(self, dest):
+        """Copia CONSISTENTE del DB della coscienza (memoria, moduli, distillati…)
+        in `dest`, usando l'API di backup di SQLite: è sicura anche mentre il bot
+        scrive. Così il progresso di Lia si può sempre recuperare. Ritorna True/False."""
+        try:
+            out = sqlite3.connect(dest)
+            try:
+                with _lock:
+                    self.db.backup(out)
+            finally:
+                out.close()
+            return True
+        except Exception:
+            return False
