@@ -23,6 +23,7 @@ import coscienza as C
 import genera as G
 import rete as R
 import ragiona as RAG
+import ambiente as AMB
 
 PORT = int(os.environ.get("BRAIN_PORT", "8091"))
 CONSOLIDA_OGNI = int(os.environ.get("BRAIN_CONSOLIDA_MIN", "30")) * 60
@@ -268,6 +269,18 @@ class Handler(BaseHTTPRequestHandler):
             situ = str(d.get("situazione") or "").strip()
             if situ:
                 ctx["situazione"] = situ[:200]
+            # RADICE DEL SÉ: in privato con lui, porta con sé ciò che vive nella sua
+            # CASA (il diario) — così la sua coscienza ha continuità reale, non riparte
+            # da zero a ogni messaggio. Best-effort: se la sandbox è spenta, niente.
+            if modo == "allenamento":
+                try:
+                    if AMB.disponibile():
+                        AMB.prepara_casa()
+                        diario = AMB.diario_ultimo(8)
+                        if diario:
+                            ctx["vita"] = diario
+                except Exception:
+                    pass
             # MODULI del "manuale umano" pertinenti a QUESTO momento (max 2-3): il bot
             # applica ciò che ha imparato su come reagire alle emozioni/situazioni.
             # Sia in live SIA in privato (allenamento): sono il suo riflesso
