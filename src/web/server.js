@@ -4162,7 +4162,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         // COMANDI privati per ME: sfogliare la sua VITA dal telefono (diario,
         // pubblico, stanza) e farla agire ORA (vivere / aggiornarsi sul pubblico).
         // Solo io (account legato), solo in privato — come tutto il resto qui.
-        if (/^\/(diario|pubblico|stanza|vivi|aggiorna|dimentica|aiuto)\b/.test(low)) {
+        if (/^\/(diario|pubblico|stanza|mente|vivi|aggiorna|dimentica|aiuto)\b/.test(low)) {
           const escTg = (x) => String(x ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
           const inviaBlocco = (titolo, corpo) => {
             const c = String(corpo || '').trim() || '—';
@@ -4172,7 +4172,17 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
           const cmd = low.replace(/^\//, '').split(/\s+/)[0];
           if (cmd === 'aiuto') {
             telegram.inviaMessaggio(conf.token, chat.id,
-              'I miei comandi privati (solo tu):\n/diario — le ultime pagine del mio diario\n/pubblico — chi ci segue e di cosa parla\n/stanza — i file nel mio spazio\n/vivi — vivo un attimo nel mio spazio, adesso\n/aggiorna — mi aggiorno sul pubblico, adesso\n/dimentica <frase> — cancello dalla memoria ciò che contiene quella frase\n/regole — le linee guida che mi hai dato').catch(() => {});
+              'I miei comandi privati (solo tu):\n/diario — le ultime pagine del mio diario\n/pubblico — chi ci segue e di cosa parla\n/stanza — i file nel mio spazio\n/mente — ciò che mi sono plasmata da sé (e lo attivo ora)\n/vivi — vivo un attimo nel mio spazio, adesso\n/aggiorna — mi aggiorno sul pubblico, adesso\n/dimentica <frase> — cancello dalla memoria ciò che contiene quella frase\n/regole — le linee guida che mi hai dato').catch(() => {});
+            return;
+          }
+          if (cmd === 'mente') {
+            const r = await brainpy.mente().catch(() => null);
+            if (!r || r.attiva === false) {
+              telegram.inviaMessaggio(conf.token, chat.id, 'La mia macchina è spenta ora — non riesco ad affacciarmi nel mio spazio.').catch(() => {});
+              return;
+            }
+            const corpo = (String(r.moduli || '').trim() || '(non mi sono ancora scritta nessun modulo)');
+            inviaBlocco(`La mia mente — plasmata da me (attivati ora: ${r.importati || 0})`, corpo);
             return;
           }
           if (cmd === 'dimentica') {
