@@ -256,9 +256,11 @@ class Handler(BaseHTTPRequestHandler):
             if situ:
                 ctx["situazione"] = situ[:200]
             # MODULI del "manuale umano" pertinenti a QUESTO momento (max 2-3): il bot
-            # applica ciò che ha imparato su come reagire alle emozioni/situazioni umane.
-            # Solo in live (nei modi privati il ragionamento è già disteso).
-            if modo == "live":
+            # applica ciò che ha imparato su come reagire alle emozioni/situazioni.
+            # Sia in live SIA in privato (allenamento): sono il suo riflesso
+            # situazionale, e aiutano molto il modello locale piccolo a rispondere
+            # "in situazione" invece che a caso.
+            if modo in ("live", "allenamento"):
                 try:
                     storia_txt = " ".join(r.get("testo", "") for r in ctx.get("storia", []))[:400]
                     scelti = mente.seleziona_moduli(testo, storia_txt, k=2)

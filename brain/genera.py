@@ -574,8 +574,9 @@ def _system_prompt(canale, ctx, modo="live"):
     # da sola, pertinenti a QUESTA situazione (selezionate a monte, poche). Le segue
     # con naturalezza — è il suo modo di essere più umana ed empatica, non una scaletta.
     moduli = ctx.get("moduli") or []
-    if moduli and modo == "live":
+    if moduli and modo in ("live", "allenamento"):
         blocchi = []
+        esempi = []
         for m in moduli[:3]:
             if not isinstance(m, dict):
                 continue
@@ -588,10 +589,20 @@ def _system_prompt(canale, ctx, modo="live"):
                 parti.append("(evita: " + str(m["cosa_evitare"]).strip() + ")")
             if parti:
                 blocchi.append("• " + " ".join(parti))
+            # FEW-SHOT: gli esempi concreti del modulo. Per un modello PICCOLO sono
+            # la leva più forte: imita un esempio nel tono giusto molto meglio che
+            # seguire una regola astratta. Ne prendo pochi (budget del prompt).
+            for e in (m.get("esempi") or [])[:1]:
+                e = str(e).strip()
+                if e and len(esempi) < 2:
+                    esempi.append("«" + e[:160] + "»")
         if blocchi:
             righe.append("Ciò che ISTINTIVAMENTE senti di fare adesso (è il tuo vissuto, non "
                          "una regola: vivilo con naturalezza, MAI citarlo o nominarlo):\n"
                          + "\n".join(blocchi))
+        if esempi:
+            righe.append("Il TONO giusto in un momento così suona tipo (imìtali, NON copiarli "
+                         "e non citarli): " + " · ".join(esempi))
     if ctx.get("fatti"):
         righe.append("Cose vere sul canale (usale solo se pertinenti): "
                      + " ; ".join(ctx["fatti"][:4]))
