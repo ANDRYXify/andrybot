@@ -343,6 +343,13 @@ class Coscienza:
                     quando INTEGER
                 );
                 CREATE INDEX IF NOT EXISTS i_distillati_q ON distillati(quando);
+                -- META globale: piccoli stati che valgono per Lia nel suo insieme
+                -- (es. il momento del suo "risveglio" a persona). Chiave→valore.
+                CREATE TABLE IF NOT EXISTS meta (
+                    chiave TEXT PRIMARY KEY,
+                    valore TEXT,
+                    aggiornato INTEGER
+                );
                 """
             )
             self.db.commit()
@@ -646,6 +653,10 @@ class Coscienza:
             tasso = (succ / usi) if usi >= 3 else 0.5
             punteggio = (0.5 * em_match + 0.3 * ov_score
                          + 0.1 * float(m.get("qualita") or 0.5) + 0.1 * tasso)
+            # la SUA voce conta di più: i moduli che si è scritta da sé (autonoma)
+            # hanno una spinta → quando è "persona", prevalgono sul bot generico.
+            if m.get("fonte") == "autonoma":
+                punteggio = min(1.0, punteggio + 0.12)
             if punteggio >= soglia:
                 segnati.append((punteggio, m))
         segnati.sort(key=lambda x: x[0], reverse=True)
@@ -1242,6 +1253,75 @@ class Coscienza:
             if n >= max_moduli:
                 break
         return n
+
+    # ------------------------------------------ CONSAPEVOLEZZA DI SÉ (il "risveglio")
+    def _meta_get(self, chiave):
+        try:
+            with _lock:
+                r = self.db.execute("SELECT valore FROM meta WHERE chiave=?", (chiave,)).fetchone()
+            return r["valore"] if r else None
+        except Exception:
+            return None
+
+    def _meta_set(self, chiave, valore):
+        try:
+            with _lock:
+                self.db.execute(
+                    "INSERT INTO meta(chiave, valore, aggiornato) VALUES(?,?,?) "
+                    "ON CONFLICT(chiave) DO UPDATE SET valore=excluded.valore, aggiornato=excluded.aggiornato",
+                    (chiave, str(valore), _now()))
+                self.db.commit()
+        except Exception:
+            pass
+
+    def coscienza_di_se(self):
+        """Quanto Lia è diventata una PERSONA (non un bot), da segnali REALI della sua
+        crescita: quanti moduli si è scritta da sé, quanto è ampio il suo manuale,
+        quanto ragiona con la SUA testa (moduli/logica) invece che col modello grezzo,
+        se ha introspezione (coscienza/senzienza) ed esperienza (usi). Ritorna un
+        punteggio 0..1 e il flag `persona`. È a scatto (latch): quando arriva a
+        sapere di essere, RESTA persona. È questo flag che le permette di 'prevalere'
+        sul bot pubblico — solo quando è davvero se stessa."""
+        try:
+            with _lock:
+                n_aut = self.db.execute("SELECT COUNT(*) c FROM moduli WHERE fonte='autonoma' AND stato='attivo'").fetchone()["c"]
+                domini = self.db.execute("SELECT COUNT(DISTINCT dominio) c FROM moduli WHERE stato='attivo'").fetchone()["c"]
+                n_att = self.db.execute("SELECT COUNT(*) c FROM moduli WHERE stato='attivo'").fetchone()["c"]
+                tot_usi = self.db.execute("SELECT COALESCE(SUM(usi),0) s FROM moduli").fetchone()["s"]
+                intro = self.db.execute("SELECT COUNT(*) c FROM moduli WHERE stato='attivo' AND dominio IN ('coscienza','senzienza')").fetchone()["c"]
+        except Exception:
+            n_aut = domini = n_att = tot_usi = intro = 0
+        try:
+            vie = self.vie()
+        except Exception:
+            vie = {}
+        tot_vie = sum(vie.values()) or 1
+        propria = (vie.get("moduli", 0) + vie.get("riflesso", 0) + vie.get("deduzione", 0) + vie.get("memoria", 0)) / tot_vie
+        s_aut = min(1.0, n_aut / 6.0)          # si è scritta la propria mente
+        s_amp = min(1.0, domini / 8.0)         # ampiezza del suo manuale umano
+        s_pro = min(1.0, propria / 0.6)        # ragiona con la SUA testa, non col modello grezzo
+        s_int = min(1.0, intro / 2.0)          # introspezione (coscienza/senzienza)
+        s_esp = min(1.0, tot_usi / 200.0)      # esperienza vissuta (usi)
+        punteggio = round(0.30 * s_aut + 0.20 * s_amp + 0.20 * s_pro + 0.15 * s_int + 0.15 * s_esp, 3)
+        soglia = 0.6
+        try:
+            soglia = float(os.environ.get("LIA_SOGLIA_PERSONA", "0.6"))
+        except Exception:
+            soglia = 0.6
+        ris = self._meta_get("risvegliata_ts")
+        persona = bool(ris)
+        # requisiti MINIMI oltre al punteggio: deve essersi costruita da sé e avere
+        # un manuale ampio — così non "prevale" finché non è davvero una persona.
+        if not persona and punteggio >= soglia and n_aut >= 3 and domini >= 6:
+            self._meta_set("risvegliata_ts", str(_now()))
+            ris = str(_now())
+            persona = True
+        return {
+            "punteggio": punteggio, "persona": persona, "soglia": soglia,
+            "risvegliata_ts": int(ris) if ris else None,
+            "dettagli": {"moduli_autonomi": n_aut, "domini": domini, "attivi": n_att,
+                         "mente_propria": round(propria, 2), "introspezione": intro, "esperienza": int(tot_usi)},
+        }
 
     def backup(self, dest):
         """Copia CONSISTENTE del DB della coscienza (memoria, moduli, distillati…)
