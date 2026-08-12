@@ -620,7 +620,10 @@ class Coscienza:
             if punteggio >= soglia:
                 segnati.append((punteggio, m))
         segnati.sort(key=lambda x: x[0], reverse=True)
-        scelti = [m for _, m in segnati[:max(1, min(3, int(k)))]]
+        scelti = []
+        for punteggio, m in segnati[:max(1, min(3, int(k)))]:
+            m["_punteggio"] = round(float(punteggio), 3)   # confidenza: la usa il ragionamento modulare
+            scelti.append(m)
         # SPREADING ACTIVATION: aggancia UN modulo "vicino" al più pertinente lungo
         # la rete associativa (Pezzo C), se non è già dentro e il legame è forte —
         # così Lia collega conoscenze correlate ("il tutto con tutto") senza sforare
@@ -632,6 +635,8 @@ class Coscienza:
                     continue
                 mv = self.modulo_per_id(v["id"])
                 if mv and mv.get("stato") == "attivo":
+                    mv["_punteggio"] = round(min(0.55, 0.3 + 0.05 * float(v.get("peso") or 0)), 3)
+                    mv["_via"] = "associazione"
                     scelti.append(mv)
                     break
         return scelti

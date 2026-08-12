@@ -690,6 +690,47 @@ def _riflesso_modulo(ctx):
     return None
 
 
+# ───────────────── RAGIONAMENTO MODULARE (il "cervello umano" fatto coi moduli)
+# Quando una situazione è chiaramente riconosciuta, la RISPOSTA nasce dal MODULO
+# (non generata a caso dal modello): scelgo una sua battuta e, se il modello c'è,
+# la "naturalizzo" con parole sue. Se il modello è spento/lento, rispondo lo stesso
+# — dalla battuta del modulo. Così l'intelligenza sta nei moduli, non nel modello:
+# il tetto si abbassa e basta un modello piccolo (o nessuno).
+REFLEX_SOGLIA = 0.55   # sopra questo punteggio la situazione è "riconosciuta" → si ragiona coi moduli
+
+
+def _componi_da_modulo(m):
+    """Sceglie UNA battuta dal modulo, ruotando fra le sue varianti (anti-ripetizione
+    basata sugli usi). Ritorna la battuta grezza (da naturalizzare) o None."""
+    if not isinstance(m, dict):
+        return None
+    esempi = [str(e).strip() for e in (m.get("esempi") or []) if str(e).strip()]
+    if not esempi:
+        return None
+    usi = int(m.get("usi") or 0)
+    return esempi[usi % len(esempi)]
+
+
+def _naturalizza(canale, ctx, base, timeout_s):
+    """Passa la battuta del modulo al modello SOLO per rifrasarla nel suo tono (compito
+    facile anche per un modello piccolo, prompt corto). Ritorna la versione naturale, o
+    None se il modello è spento/lento (nel qual caso il chiamante usa la battuta grezza)."""
+    nome = str(ctx.get("nome_bot") or "").strip()
+    nome_u = str((ctx.get("persona") or {}).get("nome") or "").strip()
+    adatta = (" e a " + nome_u) if nome_u else ""
+    sistema = (
+        "Sei " + (nome or "una persona vera") + ": parli in PRIMA PERSONA, breve, nel tuo tono "
+        "naturale, MAI come un assistente. Ti do UNA battuta: riscrivila con parole TUE (puoi "
+        "adattarla al momento" + adatta + "), SENZA cambiarne il senso, senza spiegazioni e senza "
+        "virgolette. Rispondi solo con la battuta rifrasata.")
+    try:
+        out = _completa(sistema, [], str(base), max_tokens=80, temperature=0.85,
+                        top_p=0.9, timeout_s=min(int(timeout_s), 12))
+        return _pulisci(out) if out else None
+    except Exception:
+        return None
+
+
 def genera(canale, ctx, testo, timeout_s=30, modo="live"):
     """Genera una risposta o None. Non solleva mai.
 
@@ -727,6 +768,27 @@ def genera(canale, ctx, testo, timeout_s=30, modo="live"):
         if hit and hit.get("risposta"):
             print("[genera] via: memoria (rete, senza modello)", flush=True)
             return _pulisci(hit["risposta"])
+    # 1.5) RAGIONAMENTO MODULARE: se la situazione è chiaramente riconosciuta (un
+    #      modulo forte combacia), la risposta la decide il MODULO, non il modello.
+    #      Il modello (se c'è) la rifrasa soltanto; se è spento/lento, rispondo dalla
+    #      battuta del modulo. Qui l'intelligenza sta nei moduli → basta un modello
+    #      piccolo (o nessuno). Vale in live e in privato con te.
+    if modo in ("live", "allenamento"):
+        moduli = ctx.get("moduli") or []
+        forte = moduli[0] if (moduli and isinstance(moduli[0], dict)
+                              and float(moduli[0].get("_punteggio") or 0) >= REFLEX_SOGLIA) else None
+        if forte:
+            base = _componi_da_modulo(forte)
+            if base:
+                risp = _pulisci(_naturalizza(canale, ctx, base, timeout_s) or base)
+                if risp:
+                    print(f"[genera] via: ragionamento-moduli (modulo «{str(forte.get('nome'))[:40]}»)", flush=True)
+                    if not senza_appr:
+                        try:
+                            rete.impara(canale, testo, risp, fonte="modulo")
+                        except Exception:
+                            pass
+                    return risp
     # 2) chiedi al maestro (endpoint esterno se collegato, sennò modello locale)
     try:
         turni = [((mu[:200] if mu else mu), (mb[:200] if mb else mb))
