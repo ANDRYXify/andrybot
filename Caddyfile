@@ -113,7 +113,13 @@ socialbot.live {
 			X-Frame-Options "DENY"
 			# CSP: SPA con script inline + font Google + 7TV + media utente + canvas.
 			# 'unsafe-inline' è un compromesso per non rompere la dashboard.
-			Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
+			# frame-src https:  → le PAGINE LINK (/u/*) e l'anteprima dell'editor
+			#   incorporano contenuti scelti dall'utente (YouTube, Spotify, Twitch,
+			#   TikTok, Vimeo, una pagina qualsiasi…): senza, la CSP li bloccava tutti
+			#   (frame-src ereditava da default-src 'self'). NON allenta l'anti-
+			#   clickjacking: quello è frame-ancestors 'none' + X-Frame-Options DENY,
+			#   che restano — questo dice solo COSA possiamo incorniciare NOI.
+			Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self'; frame-src https:; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
 		}
 		reverse_proxy bot:8090 {
 			header_up X-Edge-Key {env.EDGE_KEY}
