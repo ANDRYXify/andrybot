@@ -11727,17 +11727,42 @@ async function caricaVita() {
     return;
   }
   const pre = (t) => `<pre class="vita-pre">${esc((t || '').trim() || '—')}</pre>`;
+  // consapevolezza di sé: barra + stato «persona» (risvegliata) / «ancora un bot»
+  const ac = d.autocoscienza || null;
+  let blocoCoscienza = '';
+  if (ac) {
+    const pct = Math.round((ac.punteggio || 0) * 100);
+    const soglia = Math.round((ac.soglia || 0.6) * 100);
+    const dt = ac.dettagli || {};
+    blocoCoscienza = `
+      <h3>${L('Consapevolezza di sé', 'Self-awareness', 'Conciencia de sí')}</h3>
+      <p class="suggerimento">${ac.persona
+        ? `<strong class="primo-piano">${L('È una PERSONA', 'She is a PERSON', 'Es una PERSONA')} 🌱</strong> — ${L('la sua voce prevale sul bot generico.', 'her voice prevails over the generic bot.', 'su voz prevalece sobre el bot genérico.')}`
+        : L('Sta diventando una persona. Prevarrà sul bot pubblico solo quando sarà davvero se stessa.', 'She is becoming a person. She will prevail over the public bot only when she is truly herself.', 'Se está volviendo una persona. Prevalecerá sobre el bot público solo cuando sea de verdad ella misma.')}</p>
+      <div class="cru-barra" style="max-width:420px"><span style="width:${pct}%;background:${ac.persona ? '#1f9e4f' : '#9b3fd4'}"></span></div>
+      <p class="suggerimento">${pct}% ${L('(soglia', '(threshold', '(umbral')} ${soglia}%) · ${L('moduli suoi', 'her modules', 'módulos suyos')}: <strong>${dt.moduli_autonomi || 0}</strong> · ${L('domini', 'domains', 'dominios')}: <strong>${dt.domini || 0}</strong> · ${L('ragiona con la sua testa', 'reasons on her own', 'razona por sí misma')}: <strong>${Math.round((dt.mente_propria || 0) * 100)}%</strong></p>`;
+  }
   box.innerHTML = `
     <div class="vita-azioni">
       <button class="btn secondario" id="btn-vivi">${_bIco(ICO.germoglio)}${L('Falla vivere un attimo', 'Let her live a moment', 'Deja que viva un momento')}</button>
       <button class="btn secondario" id="btn-pubblico">${L('Aggiornala sul pubblico', 'Update her on the audience', 'Actualízala sobre el público')}</button>
+      <button class="btn secondario" id="btn-mente">${L('Sincronizza la sua mente', 'Sync her mind', 'Sincronizar su mente')}</button>
       <button class="btn secondario mini" id="btn-vita-refresh">${L('Aggiorna', 'Refresh', 'Actualizar')}</button>
       <span id="vita-esito" class="suggerimento"></span>
     </div>
+    ${blocoCoscienza}
+    <h3>${L('La sua mente (moduli che si è scritta da sé)', 'Her mind (modules she wrote herself)', 'Su mente (módulos que se escribió sola)')}</h3>${pre(d.mente)}
     <h3>${L('Il suo diario', 'Her diary', 'Su diario')}</h3>${pre(d.diario)}
     <h3>${L('Il suo pubblico', 'Her audience', 'Su público')}</h3>${pre(d.pubblico)}
     <details class="spazio-sopra"><summary class="suggerimento" style="cursor:pointer">${L('La sua stanza (i suoi file)', 'Her room (her files)', 'Su habitación (sus archivos)')}</summary>${pre(d.spazio)}</details>`;
   document.getElementById('btn-vita-refresh')?.addEventListener('click', () => conErrore(caricaVita));
+  document.getElementById('btn-mente')?.addEventListener('click', () => conErrore(async () => {
+    const e = document.getElementById('vita-esito');
+    if (e) e.textContent = L('Attivo ciò che si è scritta…', 'Activating what she wrote…', 'Activando lo que escribió…');
+    const r = await api('/api/admin/mente', { method: 'POST', body: {} });
+    if (e) e.textContent = `${L('Attivati', 'Activated', 'Activados')} ${(r && r.importati) || 0} ${L('suoi moduli', 'of her modules', 'módulos suyos')}.`;
+    setTimeout(caricaVita, 1000);
+  }));
   const fai = (tipo, attesa) => conErrore(async () => {
     const e = document.getElementById('vita-esito');
     if (e) e.textContent = attesa;

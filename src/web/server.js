@@ -4703,6 +4703,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const r = await brainpy.vivi(tipo).catch(() => null);
     res.json(r || { ok: false });
   }));
+  // ── La sua MENTE plasmata da sé: sincronizza ORA nel motore reale. Solo andryxify.
+  app.post('/api/admin/mente', requireAdmin, wrap(async (req, res) => {
+    const r = await brainpy.mente().catch(() => null);
+    res.json(r || { ok: false });
+  }));
   // ── Cervello autonomo: distilla ORA le risposte in moduli. Solo andryxify.
   app.post('/api/admin/distilla', requireAdmin, wrap(async (req, res) => {
     const r = await brainpy.distillaModuli().catch(() => null);

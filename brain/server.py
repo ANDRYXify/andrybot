@@ -470,9 +470,14 @@ class Handler(BaseHTTPRequestHandler):
                 pubblico = mente.ritratto_pubblico().get("testo", "")
             except Exception:
                 pubblico = ""
+            try:
+                mente_txt = (AMB.leggi_mente() or {}).get("moduli", "")
+            except Exception:
+                mente_txt = ""
             return self._json(200, {"ok": True, "attiva": True,
                                     "diario": AMB.diario_ultimo(30), "spazio": AMB.sguardo(),
-                                    "pubblico": pubblico, "autocoscienza": _autocoscienza()})
+                                    "pubblico": pubblico, "mente": mente_txt,
+                                    "autocoscienza": _autocoscienza()})
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
