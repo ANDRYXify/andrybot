@@ -342,8 +342,8 @@ export class BotManager {
         if (!conf?.token || !conf.owner_tg_id) continue;       // Telegram non legato al proprietario
         if ((conf.dm_modo || 'me') === 'off') continue;        // DM privati spenti
         const ultimo = this._tgProattivoUltimo.get(login) || 0;
-        if (ORA - ultimo < 3.5 * 3600_000) continue;           // almeno ~3 ore e mezza dall'ultima
-        if (Math.random() > 0.45) continue;                    // non a orologeria: a volte tace
+        if (ORA - ultimo < 2.5 * 3600_000) continue;           // almeno ~2 ore e mezza dall'ultima
+        if (Math.random() > 0.55) continue;                    // non a orologeria: a volte tace
         this._tgProattivoUltimo.set(login, ORA);               // segna subito (evita doppioni)
         this.brain?.messaggioProattivo(login, { nome: conf.owner_tg_nome || '' })
           .then((testo) => { if (testo) telegram.inviaMessaggio(conf.token, conf.owner_tg_id, testo).catch(() => {}); })

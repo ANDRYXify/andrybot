@@ -192,6 +192,24 @@ export async function linkModuli() {
   finally { clearTimeout(to); }
 }
 
+// SVAGO: Lia fa qualcosa per sé nel suo computer (la sandbox) e lo racconta.
+// Ritorna il testo (stringa) o null se non ha l'ambiente / non è uscito nulla.
+export async function svago({ canale, nomeBot, stile, lineeGuida } = {}) {
+  if (!canale) return null;
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 60_000);
+  try {
+    const r = await fetch(BASE + '/svago', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ canale, nomeBot, stile, lineeGuida }), signal: ac.signal,
+    });
+    if (!r.ok) return null;
+    const d = await r.json().catch(() => null);
+    return d && d.testo ? String(d.testo) : null;
+  } catch (e) { log.debug('svago:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
 // Il dataset della "mente" della rete per un canale: coppie {q, a} consolidate.
 export async function reteCorpus(canale) {
   if (!canale) return [];

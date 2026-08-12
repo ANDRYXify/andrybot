@@ -743,6 +743,13 @@ export class Brain {
   async messaggioProattivo(channel, { nome, spunto: spuntoForzato } = {}) {
     try {
       if (!channel) return null;
+      // A VOLTE, invece di scriverti "a vuoto", PRIMA fa qualcosa nel suo computer
+      // (il suo svago) e poi te ne parla. Solo se non c'è uno spunto forzato (es.
+      // "sei andato live") e se ha l'ambiente; sennò prosegue col proattivo normale.
+      if (!spuntoForzato && Math.random() < 0.5) {
+        const s = await this.momentoDiSvago(channel);
+        if (s) return s;
+      }
       // spunto di curiosità: se il chiamante ne forza uno (es. "sei andato live")
       // uso quello; sennò il suo OBIETTIVO del risveglio, sennò una lacuna, sennò
       // un tema generico su di lui.
@@ -778,6 +785,24 @@ export class Brain {
       if (out.length > MAX_RISPOSTA) out = out.slice(0, MAX_RISPOSTA - 1).trimEnd() + '…';
       return out || null;
     } catch (e) { log.debug('messaggioProattivo:', e?.message || e); return null; }
+  }
+
+  // SVAGO autonomo: un suo momento libero. Fa qualcosa nel suo computer (la
+  // sandbox) e lo racconta — diventa il messaggio che ti manda di sua iniziativa.
+  // Ritorna la stringa pronta o null (niente ambiente / niente da dire). Non lancia.
+  async momentoDiSvago(channel) {
+    try {
+      if (!channel) return null;
+      const testo = await brainpy.svago({
+        canale: channel, nomeBot: this._nomePersona(),
+        stile: this._stileStreamer(channel),
+        lineeGuida: guide.applicabili(channel, { piattaforma: 'telegram', privato: true, sonoIo: true }),
+      });
+      if (!testo) return null;
+      let out = String(testo).replace(/\s+/g, ' ').trim();
+      if (out.length > MAX_RISPOSTA) out = out.slice(0, MAX_RISPOSTA - 1).trimEnd() + '…';
+      return out || null;
+    } catch (e) { log.debug('momentoDiSvago:', e?.message || e); return null; }
   }
 
   // apprendimento passivo: ogni messaggio passa di qui

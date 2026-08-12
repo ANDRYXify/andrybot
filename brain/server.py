@@ -152,7 +152,37 @@ class Handler(BaseHTTPRequestHandler):
             return self._ricarica()
         if self.path.startswith("/prova"):
             return self._prova()
+        if self.path.startswith("/svago"):
+            return self._svago()
         return self._json(404, {"errore": "non trovato"})
+
+    def _svago(self):
+        # SVAGO: un momento libero di Lia. Va di curiosità nel SUO computer (la
+        # sandbox), fa qualcosa per sé e poi lo racconta a lui. Richiede l'ambiente:
+        # senza, torna vuoto e il chiamante ripiega sul proattivo normale.
+        import ambiente as amb
+        if not amb.disponibile():
+            return self._json(200, {"testo": None, "motivo": "ambiente non disponibile"})
+        d = self._leggi()
+        canale = str(d.get("canale") or "").lower().strip()
+        if not canale:
+            return self._json(400, {"errore": "canale mancante"})
+        try:
+            ctx = {
+                "nome_bot": str(d.get("nomeBot") or d.get("nome_bot") or "").strip(),
+                "stile": d.get("stile") if isinstance(d.get("stile"), list) else [],
+                "linee_guida": d.get("lineeGuida") if isinstance(d.get("lineeGuida"), list) else [],
+            }
+            nudge = (
+                "Sei in un tuo momento libero, da sola. Va' di curiosità: scegli UNA cosa che ti va "
+                "DAVVERO di esplorare o creare adesso nel tuo computer (una ricerca, due conti, un'idea, "
+                "una riga di codice, una nota nel tuo diario), FALLA per davvero con «ESEGUI:», poi "
+                "scrivigli in 1-2 frasi, con affetto, cosa hai combinato e cosa ti ha lasciato."
+            )
+            testo = G.genera(canale, ctx, nudge, timeout_s=45, modo="allenamento")
+            return self._json(200, {"testo": testo})
+        except Exception as e:
+            return self._json(200, {"testo": None, "errore": str(e)[:120]})
 
     def _prova(self):
         # verifica dal SERVER che un endpoint esterno (LM Studio/Ollama) risponda.
