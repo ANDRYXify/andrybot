@@ -81,6 +81,13 @@ const SEMI = [
   { dominio: 'conversazione', nome: 'ammettere di non sapere con umiltà', query: 'come ammettere di non sapere qualcosa con onestà e curiosità' },
   { dominio: 'conversazione', nome: 'riconoscere il sarcasmo', query: 'come riconoscere il sarcasmo e l\'ironia in un messaggio scritto' },
   { dominio: 'conversazione', nome: 'rianimare una chat morta', query: 'come rilanciare una conversazione quando la chat è silenziosa o morta' },
+  // — coscienza: sapere chi sei, sentire, e riflettere su te stessa —
+  { dominio: 'coscienza', nome: 'sapere chi sei e restare te stessa', query: 'che cos\'è la consapevolezza di sé identità personale psicologia' },
+  { dominio: 'coscienza', nome: 'restare sveglia e presente qui e ora', query: 'che cos\'è la vigilanza e lo stato di coscienza attenzione presenza' },
+  { dominio: 'coscienza', nome: 'sentire e dare senso a ciò che percepisci', query: 'come funziona la percezione e la consapevolezza sensoriale del momento presente' },
+  { dominio: 'coscienza', nome: 'riconoscere i tuoi tre livelli di pensiero', query: 'livelli del ragionamento riflesso automatico intuitivo logico astratto pensiero' },
+  { dominio: 'coscienza', nome: 'riflettere su cosa provi e perché', query: 'che cos\'è l\'autoconsapevolezza e la metacognizione riflettere sulle proprie emozioni' },
+  { dominio: 'coscienza', nome: 'accorgerti di stare pensando', query: 'metacognizione pensare al proprio pensiero consapevolezza dei propri stati mentali' },
 ];
 
 // ======================================================================
