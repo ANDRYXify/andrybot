@@ -286,10 +286,17 @@ def _completa_locale(messaggi, max_tokens, temperature, top_p, timeout_s):
     errore = "e" in risultato
     ms = (time.time() - t0) * 1000.0
     # misuro OGNI generazione: alimenta l'auto-scelta del modello (troppo lento?).
+    # MA: le generazioni in BACKGROUND (la sua vita autonoma: riflessioni, pensieri nel
+    # suo spazio) NON devono declassare il modello — lì nessuno aspetta, e una lentezza
+    # notturna non deve trascinarla giù sul modello minuscolo togliendole capacità di
+    # crescere. Solo ciò che è davanti a qualcuno (live e privato con te) fa scendere.
     try:
-        _perf_registra(_stato.get("modello"), ms, ok=(not andato_timeout and not errore),
-                       andato_timeout=andato_timeout)
-        _auto_valuta(andato_timeout)
+        if getattr(_tl, "background", False):
+            _tocca_uso(_stato.get("modello"))   # 'usato' (protezione pulizia), ma non declassa
+        else:
+            _perf_registra(_stato.get("modello"), ms, ok=(not andato_timeout and not errore),
+                           andato_timeout=andato_timeout)
+            _auto_valuta(andato_timeout)
     except Exception:
         pass
     if andato_timeout or errore:
@@ -1071,6 +1078,7 @@ def vivi_un_attimo(nome_bot="Lia", fuoco=None):
     spenta, non fa nulla (e non costa nulla)."""
     if not ambiente.disponibile():
         return None
+    _tl.background = True   # vita autonoma: nessuno aspetta → la lentezza non la declassa
     ambiente.prepara_casa()
     ambiente.prepara_mente()   # lo spazio dove si plasma da sé (mente/)
     ricordo = ambiente.diario_ultimo(10) or "(il diario è ancora vuoto: è il tuo primo risveglio qui)"
@@ -1120,6 +1128,7 @@ def aggiorna_sul_pubblico(nome_bot, ritratto):
     la nota di diario, o None. Best-effort e a basso costo (battito senza maestro)."""
     if not ambiente.disponibile():
         return None
+    _tl.background = True   # vita autonoma: nessuno aspetta → la lentezza non la declassa
     ambiente.prepara_casa()
     testo = (ritratto.get("testo") if isinstance(ritratto, dict) else str(ritratto or "")).strip()
     if not testo:
@@ -1159,6 +1168,7 @@ def rifletti_su_di_se(nome_bot="Lia", punto_attuale=None):
     testo o None. Serve solo il maestro; non tocca la chat."""
     if not _puo_generare():
         return None
+    _tl.background = True   # riflessione su di sé: nessuno aspetta → non declassa
     ctx = {"nome_bot": nome_bot or "Lia", "tono": "amichevole"}
     pc = str(punto_attuale or "").strip()
     if pc:
@@ -1248,6 +1258,7 @@ def genera(canale, ctx, testo, timeout_s=30, modo="live"):
     testo = (testo or "")[:300]
     canale = (canale or "").strip()
     _tl.via = None            # quale "cervello" risponderà (per il cruscotto)
+    _tl.background = False     # risposta DAVANTI a qualcuno (live o privato con te): conta
     allena = (modo == "allenamento")
     proattivo = (modo == "proattivo")
     studio = (modo == "studio")        # sta studiando una lacuna su una fonte (web)
