@@ -4170,7 +4170,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         // COMANDI privati per ME: sfogliare la sua VITA dal telefono (diario,
         // pubblico, stanza) e farla agire ORA (vivere / aggiornarsi sul pubblico).
         // Solo io (account legato), solo in privato — come tutto il resto qui.
-        if (/^\/(diario|pubblico|stanza|mente|vivi|aggiorna|dimentica|aiuto)\b/.test(low)) {
+        if (/^\/(diario|pubblico|stanza|mente|strumenti|scintilla|specchio|tensione|flusso|sogno|membrana|vivi|aggiorna|dimentica|aiuto)\b/.test(low)) {
           const escTg = (x) => String(x ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
           const inviaBlocco = (titolo, corpo) => {
             const c = String(corpo || '').trim() || '—';
