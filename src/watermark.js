@@ -79,5 +79,46 @@ export function iniettaHtml(html) {
   return html.replace(/<\/body>/i, `${commento}${zw}</body>`);
 }
 
+// ─────────────── Firma nei file PNG (visibile in un editor di testo) ───────────────
+// Inserisce un chunk PNG standard "tEXt" (keyword=Copyright) subito dopo l'IHDR: NON
+// tocca i pixel, il PNG resta valido e si apre normalmente, ma aprendo il file con un
+// editor di testo (o `strings`) si legge in chiaro la proprietà e la firma-canarino.
+// Testo in ASCII puro (tEXt è Latin-1): niente © né trattini lunghi qui.
+export const FIRMA_PNG =
+  `(c) 2024-2026 ${AUTORE} (${ALIAS}) - Tutti i diritti riservati - ${SITO} - ${FIRMA}`;
+
+const _CRC_TAB = (() => {
+  const t = new Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function _crc32(buf) {
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < buf.length; i++) c = _CRC_TAB[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+// Firma un PNG (Buffer/Uint8Array) → nuovo Buffer firmato. Se non è un PNG o è già
+// firmato, ritorna i byte invariati. Idempotente e non distruttiva.
+export function firmaPng(bytes) {
+  const b = Buffer.isBuffer(bytes) ? bytes : Buffer.from(bytes);
+  const sig = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  if (b.length < 33 || !b.subarray(0, 8).equals(sig)) return b;   // non è un PNG
+  if (b.includes(Buffer.from(FIRMA, 'latin1'))) return b;         // già firmato
+  const ihdrLen = b.readUInt32BE(8);
+  const ins = 8 + 4 + 4 + ihdrLen + 4;                            // subito dopo l'IHDR
+  const data = Buffer.concat([Buffer.from('Copyright', 'latin1'), Buffer.from([0]),
+    Buffer.from(FIRMA_PNG, 'latin1')]);
+  const type = Buffer.from('tEXt', 'latin1');
+  const len = Buffer.alloc(4); len.writeUInt32BE(data.length, 0);
+  const crc = Buffer.alloc(4); crc.writeUInt32BE(_crc32(Buffer.concat([type, data])), 0);
+  const chunk = Buffer.concat([len, type, data, crc]);
+  return Buffer.concat([b.subarray(0, ins), chunk, b.subarray(ins)]);
+}
+
 export default { AUTORE, ALIAS, ANNO, SITO, FIRMA, COPYRIGHT, PROPRIETA,
-  zeroWidth, leggiZeroWidth, FILIGRANA_ZW, applicaHeader, iniettaHtml };
+  zeroWidth, leggiZeroWidth, FILIGRANA_ZW, applicaHeader, iniettaHtml, FIRMA_PNG, firmaPng };

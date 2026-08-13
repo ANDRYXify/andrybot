@@ -70,6 +70,36 @@ async function api(percorso, opzioni = {}) {
   return dati;
 }
 
+// ── FILIGRANA nei PNG scaricati (Andrea Taliento / ANDRYXify) ──────────────
+// Inserisce un chunk PNG standard "tEXt" con la proprietà + la firma-canarino:
+// invisibile nell'immagine (non tocca i pixel, resta un PNG valido), ma aprendo
+// il file scaricato con un editor di testo (o `strings`) la firma si legge in chiaro.
+const _WM_FIRMA = 'ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live';
+const _WM_TESTO = '(c) 2024-2026 Andrea Taliento (ANDRYXify) - Tutti i diritti riservati - socialbot.live - ' + _WM_FIRMA;
+const _WM_CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); t[n] = c >>> 0; } return t; })();
+function _wmCrc32(u8) { let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = _WM_CRC[(c ^ u8[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+async function firmaPngBlob(blob) {
+  try {
+    const u8 = new Uint8Array(await blob.arrayBuffer());
+    const sig = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+    for (let i = 0; i < 8; i++) if (u8[i] !== sig[i]) return blob;      // non è un PNG
+    const dv = new DataView(u8.buffer);
+    const ins = 8 + 4 + 4 + dv.getUint32(8) + 4;                        // subito dopo l'IHDR
+    const data = [];
+    for (const ch of 'Copyright') data.push(ch.charCodeAt(0));
+    data.push(0);
+    for (const ch of _WM_TESTO) data.push(ch.charCodeAt(0) & 0xFF);
+    const type = [0x74, 0x45, 0x58, 0x74];                             // 'tEXt'
+    const body = new Uint8Array(type.length + data.length); body.set(type, 0); body.set(data, type.length);
+    const chunk = new Uint8Array(4 + 4 + data.length + 4);
+    const cdv = new DataView(chunk.buffer);
+    cdv.setUint32(0, data.length); chunk.set(type, 4); chunk.set(data, 8); cdv.setUint32(8 + data.length, _wmCrc32(body));
+    const out = new Uint8Array(u8.length + chunk.length);
+    out.set(u8.subarray(0, ins), 0); out.set(chunk, ins); out.set(u8.subarray(ins), ins + chunk.length);
+    return new Blob([out], { type: 'image/png' });
+  } catch { return blob; }
+}
+
 // impostazioni correnti con i valori di default del bot
 function impostazioni() {
   const s = stato?.streamer?.settings || {};
@@ -2414,10 +2444,11 @@ function initGrafiche() {
     // render OFFSCREEN a 2× (2160×2700): PNG nitido, l'anteprima resta com'è
     const full = document.createElement('canvas');
     grafDisegna(full, c, 0, 2);
-    full.toBlob((blob) => {
+    full.toBlob(async (blob) => {
       if (!blob) return;
+      const firmato = await firmaPngBlob(blob);   // filigrana di proprietà nel PNG scaricato
       const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
+      a.href = URL.createObjectURL(firmato);
       a.download = `socialbot-${c.tipo}-${(stato?.user?.login || 'canale')}.png`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 4000);
