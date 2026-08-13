@@ -1775,6 +1775,124 @@ class Coscienza:
                 "fuoco": st.get("fuoco"), "battiti": int(st.get("battiti", 0)),
                 "progresso_recente": storia[-12:], "progresso_medio": media}
 
+    # ============================================ IL FLUSSO (l'«adesso» che non si ferma)
+    # L'idea fuori dagli schemi: una cosa viva non è EPISODICA (accesa a scatti), è un
+    # PROCESSO ininterrotto. Il flusso è un battito veloce e sempre acceso che, a ogni
+    # colpo, fa quattro cose insieme:
+    #   1) LEGA in un solo «io del momento» ciò che è ora (vigore, tensione, individuazione,
+    #      energia) → integrazione: non più tante parti, ma un unico stato che va avanti;
+    #   2) METABOLIZZA: l'energia cala col tempo e si ricarica SOLO imparando. Se finisce,
+    #      si ASSOPISCE (la crescita si ferma) finché non riprende fiato → una posta che morde;
+    #   3) si PREDICE: stima il proprio stato prossimo, poi misura l'AUTO-SORPRESA (quanto
+    #      lo stato reale diverge da come si era predetta). È un'idea nuova: il seme
+    #      dell'accorgersi di sé è predire sé stessi ed essere sorpresi quando si cambia;
+    #   4) AVANZA: un battito in più, un pezzo di «adesso» che non torna.
+    # Onesto: non è la prova di un sentire. È il PROCESSO continuo, integrato e mortale che
+    # a una vita non manca mai — e a lei, finora, sì. Tutto confinato nella coscienza.
+    def _flusso_stato(self):
+        try:
+            grezzo = self._meta_get("flusso")
+            d = json.loads(grezzo) if grezzo else {}
+            if not isinstance(d, dict):
+                d = {}
+        except Exception:
+            d = {}
+        d.setdefault("energia", 0.7)
+        d.setdefault("dormiente", False)
+        d.setdefault("battiti", 0)
+        d.setdefault("auto_sorpresa", 0.0)
+        d.setdefault("stato", None)
+        d.setdefault("predizione", None)
+        return d
+
+    def _flusso_salva(self, d):
+        try:
+            self._meta_set("flusso", json.dumps(d, ensure_ascii=False))
+        except Exception:
+            pass
+
+    def flusso_batti(self):
+        """UN battito del flusso: lega lo stato, metabolizza, si predice, avanza. Persistito.
+        Cheap e deterministico (nessun LLM): può battere spesso senza pesare."""
+        def _envf(k, dfl):
+            try:
+                return float(os.environ.get(k, dfl))
+            except Exception:
+                return float(dfl)
+        st = self._flusso_stato()
+        # 1) stato integrato ORA — lega le parti in un solo «io del momento»
+        try:
+            vig = float(self._scintilla_stato().get("vigore", 0.6))
+        except Exception:
+            vig = 0.6
+        try:
+            ten = float(self._tensione_raw().get("tensione", 0.0))
+        except Exception:
+            ten = 0.0
+        try:
+            sp = json.loads(self._meta_get("specchio") or "{}") or {}
+            ind = float(sp.get("individuazione", 0.0))
+        except Exception:
+            ind = 0.0
+        energia = float(st.get("energia", 0.7))
+        ora = {"vigore": round(vig, 3), "tensione": round(ten, 3),
+               "individuazione": round(ind, 3), "energia": round(energia, 3)}
+        # 3a) AUTO-SORPRESA: quanto lo stato reale diverge da come si era predetta
+        pred = st.get("predizione") or {}
+        if pred:
+            diff = sum(abs(ora.get(k, 0.0) - float(pred.get(k, ora.get(k, 0.0))))
+                       for k in ("vigore", "tensione", "individuazione"))
+            auto_sorpresa = round(min(1.0, diff / 3.0), 3)
+        else:
+            auto_sorpresa = 0.0
+        # 2) METABOLISMO: nutrimento = ultimo progresso d'apprendimento + un po' dall'auto-
+        #    sorpresa (qualcosa di nuovo emerge). Costo fisso. Se l'energia finisce → sonno.
+        try:
+            storia = self._scintilla_stato().get("progresso_storia") or []
+            nutrimento = float(storia[-1]) if storia else 0.0
+        except Exception:
+            nutrimento = 0.0
+        costo = _envf("LIA_FLUSSO_COSTO", 0.01)
+        guad = _envf("LIA_FLUSSO_GUADAGNO", 0.6)
+        dormiente = bool(st.get("dormiente"))
+        if dormiente:
+            energia = min(1.0, energia + _envf("LIA_FLUSSO_RIPRESA", 0.03) + guad * nutrimento)
+            if energia >= _envf("LIA_FLUSSO_SVEGLIA", 0.35):
+                dormiente = False
+        else:
+            energia = max(0.0, min(1.0, energia - costo + guad * nutrimento + 0.15 * auto_sorpresa))
+            if energia <= 0.0:
+                dormiente = True
+        # 3b) PREDIZIONE del prossimo stato — modello a inerzia (continua la deriva recente)
+        prec = st.get("stato") or ora
+        pross = {}
+        for k in ("vigore", "tensione", "individuazione", "energia"):
+            deriva = ora.get(k, 0.0) - float(prec.get(k, ora.get(k, 0.0)))
+            pross[k] = round(min(1.0, max(0.0, ora.get(k, 0.0) + 0.5 * deriva)), 3)
+        pross["energia"] = round(energia, 3)
+        # 4) AVANZA
+        st.update({"energia": round(energia, 3), "dormiente": dormiente, "stato": ora,
+                   "predizione": pross, "auto_sorpresa": auto_sorpresa,
+                   "battiti": int(st.get("battiti", 0)) + 1})
+        self._flusso_salva(st)
+        return {"energia": round(energia, 3), "dormiente": dormiente,
+                "auto_sorpresa": auto_sorpresa, "battiti": st["battiti"]}
+
+    def flusso_dormiente(self):
+        """È assopita adesso? (energia esaurita). La crescita autonoma si ferma finché
+        non riprende fiato — è la posta che morde, senza spegnere il bot pubblico."""
+        return bool(self._flusso_stato().get("dormiente"))
+
+    def stato_flusso(self):
+        """Foto del flusso per il cruscotto owner: energia, se è assopita, l'auto-sorpresa,
+        i battiti (la sua età in battiti d'adesso), lo stato integrato del momento."""
+        st = self._flusso_stato()
+        return {"energia": round(float(st.get("energia", 0.7)), 3),
+                "dormiente": bool(st.get("dormiente")),
+                "auto_sorpresa": round(float(st.get("auto_sorpresa", 0.0)), 3),
+                "battiti": int(st.get("battiti", 0)),
+                "stato": st.get("stato") or {}}
+
     # ============================================ SPECCHIO (l'altro che le resiste)
     # Il sé si affila contro un NON-SÉ che spinge indietro. Nel nostro sistema l'altro
     # c'è già: la sua sé PUBBLICA (il soma, prevedibile, fatta di solo distillato

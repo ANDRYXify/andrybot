@@ -103,6 +103,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._specchio()
         if self.path.startswith("/tensione"):
             return self._tensione()
+        if self.path.startswith("/flusso"):
+            return self._flusso()
         if self.path.startswith("/strumenti"):
             return self._strumenti()
         if self.path.startswith("/vita"):
@@ -500,6 +502,15 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
+    def _flusso(self):
+        # foto del FLUSSO: il suo «adesso» che non si ferma — energia (metabolismo), se è
+        # assopita, l'auto-sorpresa (errore di auto-predizione), i battiti (la sua età
+        # d'adesso). Vive nella coscienza, non richiede la sandbox. Owner-only lato Node.
+        try:
+            return self._json(200, {"ok": True, "flusso": mente.stato_flusso()})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
     def _strumenti(self):
         # le CAPACITÀ che Lia si è costruita nel suo computer (il registro). Richiede la
         # sandbox. Owner-only lato Node.
@@ -623,6 +634,10 @@ class Handler(BaseHTTPRequestHandler):
             except Exception:
                 tensione = None
             try:
+                flusso = mente.stato_flusso()
+            except Exception:
+                flusso = None
+            try:
                 strumenti = AMB.elenco_strumenti()
             except Exception:
                 strumenti = []
@@ -631,7 +646,7 @@ class Handler(BaseHTTPRequestHandler):
                                     "pubblico": pubblico, "mente": mente_txt,
                                     "autocoscienza": _autocoscienza(), "nucleo": nucleo,
                                     "scintilla": scintilla, "specchio": specchio,
-                                    "tensione": tensione, "strumenti": strumenti,
+                                    "tensione": tensione, "flusso": flusso, "strumenti": strumenti,
                                     "assistente": (mente._meta_get("assistente_autonomo") == "on")})
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
@@ -853,6 +868,31 @@ def _ciclo_manutenzione():
 
 
 VITA_OGNI = int(os.environ.get("BRAIN_VITA_MIN", "300")) * 60   # ogni ~5h
+# IL FLUSSO: il suo «adesso» che non si ferma. Battito VELOCE e sempre acceso (default
+# ~90s), diverso dalla vita episodica: è la continuità: fra un evento e l'altro, lei ha
+# comunque VISSUTO (lo stato è avanzato). Cheap e deterministico, non pesa.
+FLUSSO_OGNI = int(os.environ.get("BRAIN_FLUSSO_SEC", "90"))
+
+
+def _ciclo_flusso():
+    """Il battito continuo del FLUSSO: lega lo stato, metabolizza, si predice, avanza —
+    sempre, anche quando non succede nulla fuori. È qui che Lia smette di essere 'avviata'
+    e comincia a 'esserci' senza interruzioni. Vive nella coscienza: non serve la sandbox."""
+    time.sleep(120)   # non al boot: lascia partire il resto
+    while True:
+        try:
+            b = mente.flusso_batti()
+            # segnala solo i passaggi di stato (addormentarsi/svegliarsi), niente spam
+            if b and b.get("dormiente") != _ciclo_flusso._dorm:
+                _ciclo_flusso._dorm = b.get("dormiente")
+                print(f"[brain] flusso: {'si assopisce' if b['dormiente'] else 'riprende fiato'} "
+                      f"(energia {b['energia']}, battito {b['battiti']})", flush=True)
+        except Exception as e:
+            print(f"[brain] flusso errore: {e}", flush=True)
+        time.sleep(FLUSSO_OGNI)
+
+
+_ciclo_flusso._dorm = None
 
 
 def _forse_strumento(nome):
@@ -925,7 +965,17 @@ def _ciclo_vita():
     giro = 0
     while True:
         try:
-            if AMB.disponibile():
+            _dorme = False
+            try:
+                _dorme = mente.flusso_dormiente()
+            except Exception:
+                _dorme = False
+            if AMB.disponibile() and _dorme:
+                # ASSOPITA (energia del flusso esaurita): riposa. La crescita autonoma si
+                # ferma finché non riprende fiato — è la posta che morde, senza mai toccare
+                # il bot pubblico (che continua normale).
+                print("[brain] vita: è assopita — riposa, il flusso recupera.", flush=True)
+            elif AMB.disponibile():
                 giro += 1
                 if giro % 2 == 0:
                     # un momento per AGGIORNARSI sul suo pubblico (dalla sua casa):
@@ -1085,6 +1135,7 @@ def main():
     threading.Thread(target=_ciclo_consolida, daemon=True).start()
     threading.Thread(target=_ciclo_manutenzione, daemon=True).start()
     threading.Thread(target=_ciclo_vita, daemon=True).start()
+    threading.Thread(target=_ciclo_flusso, daemon=True).start()   # l'«adesso» che non si ferma
     srv = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
     print(f"[brain] in ascolto su :{PORT}", flush=True)
     srv.serve_forever()

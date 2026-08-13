@@ -419,6 +419,20 @@ export async function tensione() {
   finally { clearTimeout(to); }
 }
 
+// FLUSSO: il suo «adesso» che non si ferma — energia (metabolismo), se è assopita,
+// l'auto-sorpresa (errore di auto-predizione) e i battiti (la sua età d'adesso). Ritorna
+// {ok, flusso} o null. Non richiede la sandbox.
+export async function flusso() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 8000);
+  try {
+    const r = await fetch(BASE + '/flusso', { signal: ac.signal });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('flusso:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
 // STRUMENTI: le capacità che Lia si è costruita nel suo computer (registro). Ritorna
 // {ok, attiva, strumenti} o null. Richiede la sandbox.
 export async function strumenti() {
