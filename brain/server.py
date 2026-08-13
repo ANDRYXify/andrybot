@@ -24,6 +24,7 @@ import coscienza as C
 import genera as G
 import rete as R
 import ragiona as RAG
+import filigrana   # filigrana di proprietà (Andrea Taliento / ANDRYXify)
 import ambiente as AMB
 
 PORT = int(os.environ.get("BRAIN_PORT", "8091"))
@@ -61,6 +62,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(corpo)))
+        filigrana.applica_header(self)   # filigrana di proprietà (Andrea Taliento / ANDRYXify)
         self.end_headers()
         self.wfile.write(corpo)
 
