@@ -491,6 +491,27 @@ aggiungiColonna('streamers', 'manuale', 'INTEGER NOT NULL DEFAULT 0');
   } catch { /* best-effort: non blocca l'avvio */ }
 })();
 
+// Migrazione del VECCHIO LINK DEL BOT nei testi salvati (comandi/auto-messaggi e risposte
+// imparate): prima di socialbot.live il bot stava su un vecchio dominio (es. bot.andryxify.it
+// / socialbot.it). Chi l'aveva scritto in un comando o auto-messaggio — o il bot che l'aveva
+// imparato — ogni tanto lo ripeteva in chat. Lo portiamo al dominio ufficiale. NON tocca il
+// sito principale andryxify.it (che è legittimo). Idempotente (il WHERE non matcha più dopo).
+(() => {
+  try {
+    const vecchi = ['bot.andryxify.it', 'socialbot.it', 'andrybot.andryxify.it'];
+    let tot = 0;
+    for (const v of vecchi) {
+      const a = db.prepare('UPDATE modules SET config = REPLACE(config, ?, ?) WHERE config LIKE ?').run(v, 'socialbot.live', '%' + v + '%');
+      const b = db.prepare('UPDATE knowledge SET risposta = REPLACE(risposta, ?, ?) WHERE risposta LIKE ?').run(v, 'socialbot.live', '%' + v + '%');
+      tot += (a.changes || 0) + (b.changes || 0);
+    }
+    if (tot > 0) {
+      // eslint-disable-next-line no-console
+      console.log(`[db] vecchio link del bot migrato → socialbot.live (${tot} testi)`);
+    }
+  } catch { /* best-effort */ }
+})();
+
 // Pulizia UNA-TANTUM della conoscenza 'auto' inquinata. Il vecchio
 // pre-addestramento scaricava l'HTML della SPA (SITE_URL/u/<login>), che per
 // qualsiasi login restituisce lo stesso guscio dell'app coi meta/social
