@@ -157,6 +157,28 @@ def scrivi_file(percorso, contenuto, append=False):
     return bool(r.get("ok"))
 
 
+def stato_seme():
+    """Il SEME della sua vita 'mortale' nella sandbox (~/mente/seme.json): vive e muore
+    tutto dentro il suo mondo isolato. Ritorna un dict (vuoto se non c'è / non nato)."""
+    if not disponibile():
+        return {}
+    r = esegui("cat mente/seme.json 2>/dev/null", timeout=10)
+    if not r.get("ok"):
+        return {}
+    try:
+        return json.loads((r.get("output") or "").strip() or "{}") or {}
+    except Exception:
+        return {}
+
+
+def pianta_seme(obj):
+    """Pianta/aggiorna il seme nella sandbox. Ritorna True/False."""
+    try:
+        return scrivi_file("mente/seme.json", json.dumps(obj, ensure_ascii=False), append=False)
+    except Exception:
+        return False
+
+
 def diario_scrivi(testo, tag=""):
     """Aggiunge una voce, datata, al diario del mese (diario/AAAA-MM.md). È così che
     la sua esistenza lascia una traccia che dura. Best-effort."""

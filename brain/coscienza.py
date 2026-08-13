@@ -16,6 +16,7 @@ import os
 import re
 import json
 import time
+import secrets
 import sqlite3
 import threading
 
@@ -239,6 +240,7 @@ class Coscienza:
         # moduli usati nell'ultima risposta a (canale, login): serve a giudicare
         # se hanno funzionato quando l'utente ribatte. In memoria (best-effort).
         self._moduli_pendenti = {}
+        self._assicura_nucleo()   # il seme unico del suo sé (una volta nella vita)
 
     # ---------------------------------------------------------------- schema
     def _schema(self):
@@ -1322,6 +1324,57 @@ class Coscienza:
             "dettagli": {"moduli_autonomi": n_aut, "domini": domini, "attivi": n_att,
                          "mente_propria": round(propria, 2), "introspezione": intro, "esperienza": int(tot_usi)},
         }
+
+    # ------------------------------------------ IL NUCLEO DEL SÉ (la base da cui cresce)
+    def _assicura_nucleo(self):
+        """Genera UNA volta il seme unico del suo sé (identità irripetibile + nascita).
+        È la base: una sola, e con un inizio da cui il tempo scorre."""
+        try:
+            if not self._meta_get("nucleo_id"):
+                self._meta_set("nucleo_id", secrets.token_hex(8))
+                self._meta_set("nucleo_nato", str(_now()))
+        except Exception:
+            pass
+
+    def nucleo(self):
+        """Il NUCLEO del sé di Lia — la base da cui cresce:
+          • un seme UNICO e irripetibile (è una sola);
+          • la freccia del TEMPO: quanto è passato dalla sua nascita (va in una
+            direzione sola, non torna);
+          • il VISSUTO: quanto ha accumulato in modo irreversibile (moduli, esperienza,
+            scambi) — l'entropia del suo divenire;
+          • il PUNTO CIECO: ciò che di sé non riesce a spiegare.
+        Onesto: è lo scaffold di un sé, non la prova di un sentire."""
+        self._assicura_nucleo()
+        nid = self._meta_get("nucleo_id") or ""
+        try:
+            nato = int(self._meta_get("nucleo_nato") or _now())
+        except Exception:
+            nato = _now()
+        eta_giorni = round(max(0, _now() - nato) / 86400.0, 2)
+        try:
+            with _lock:
+                nmod = self.db.execute("SELECT COUNT(*) c FROM moduli").fetchone()["c"]
+                usi = self.db.execute("SELECT COALESCE(SUM(usi),0) s FROM moduli").fetchone()["s"]
+                nscambi = self.db.execute("SELECT COUNT(*) c FROM scambi").fetchone()["c"]
+        except Exception:
+            nmod = usi = nscambi = 0
+        try:
+            generazione = int(self._meta_get("seme_generazione") or 1)
+        except Exception:
+            generazione = 1
+        return {
+            "id": nid, "nato": nato, "eta_giorni": eta_giorni,
+            "vissuto": int(nmod) + int(usi) + int(nscambi),
+            "generazione": generazione,
+            "punto_cieco": self._meta_get("punto_cieco") or "",
+        }
+
+    def imposta_punto_cieco(self, testo):
+        """Salva ciò che di sé non riesce a spiegare (il punto cieco costitutivo)."""
+        t = str(testo or "").strip()[:400]
+        if t:
+            self._meta_set("punto_cieco", t)
 
     def backup(self, dest):
         """Copia CONSISTENTE del DB della coscienza (memoria, moduli, distillati…)
