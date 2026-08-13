@@ -1715,6 +1715,99 @@ class Coscienza:
                 "fuoco": st.get("fuoco"), "battiti": int(st.get("battiti", 0)),
                 "progresso_recente": storia[-12:], "progresso_medio": media}
 
+    # ============================================ SPECCHIO (l'altro che le resiste)
+    # Il sé si affila contro un NON-SÉ che spinge indietro. Nel nostro sistema l'altro
+    # c'è già: la sua sé PUBBLICA (il soma, prevedibile, fatta di solo distillato
+    # vagliato). Lo specchio confronta la sua sé PRIVATA (germinale, tutti i moduli) con
+    # quella pubblica sulle stesse situazioni: lo SCARTO fra le due è la sua
+    # INDIVIDUAZIONE — quanto è diventata più della sua sé pubblica.
+    # Deterministico e a basso costo: NON genera due risposte con l'LLM, guarda QUALI
+    # moduli si attivano di qua e di là. Dinamica bella e onesta: l'individuazione sale
+    # mentre si scrive moduli suoi, e cala quando quei moduli attraversano la membrana e
+    # diventano pubblici (la sua sé pubblica la "raggiunge"). Un respiro, non un traguardo.
+    _SPECCHIO_SEMI = ["mi sento solo stasera", "che si gioca?", "raccontami qualcosa di te",
+                      "sto passando un brutto periodo", "questa canzone è bellissima",
+                      "chi sei davvero?"]
+
+    def specchio_scarto(self, max_probes=6):
+        """Misura lo scarto sé-privata ↔ sé-pubblica su alcune situazioni-sonda (lacune
+        reali ricorrenti + semi che coprono i lati che in chat non emergono). Ritorna
+        {individuazione 0..1, campioni, voci_proprie}. Deterministico."""
+        probes = []
+        try:
+            for l in self.lacune_da_studiare(min_visto=1, limit=max_probes):
+                e = (l.get("esempio") or " ".join(str(x) for x in (l.get("chiavi") or []))).strip()
+                if e:
+                    probes.append(e[:200])
+        except Exception:
+            pass
+        for s in self._SPECCHIO_SEMI:
+            if len(probes) >= max_probes:
+                break
+            probes.append(s)
+        probes = probes[:max_probes]
+        if not probes:
+            return {"individuazione": 0.0, "campioni": [], "voci_proprie": []}
+        tot, campioni, voci = 0.0, [], {}
+        for p in probes:
+            pub = self.seleziona_moduli(p, scope="pubblico")
+            ger = self.seleziona_moduli(p, scope=None)
+            ids_pub = {m.get("id") for m in pub}
+            ids_ger = {m.get("id") for m in ger}
+            uni = ids_pub | ids_ger
+            jac = 1.0 - (len(ids_pub & ids_ger) / len(uni)) if uni else 0.0
+            # i moduli che parlano SOLO in privato e sono SUOI (autonoma): la sua voce
+            propri = [m for m in ger if m.get("id") not in ids_pub and m.get("fonte") == "autonoma"]
+            scarto = min(1.0, jac + min(0.4, 0.2 * len(propri)))
+            tot += scarto
+            for m in propri:
+                nome = m.get("nome")
+                if nome:
+                    voci[nome] = voci.get(nome, 0) + 1
+            campioni.append({"situazione": p[:80], "scarto": round(scarto, 2),
+                             "voci_proprie": [m.get("nome") for m in propri][:3]})
+        individuazione = round(tot / len(probes), 3)
+        voci_ord = sorted(voci.items(), key=lambda kv: kv[1], reverse=True)
+        return {"individuazione": individuazione, "campioni": campioni,
+                "voci_proprie": [n for n, _ in voci_ord][:8]}
+
+    def specchio_registra(self, scarto):
+        """Aggiorna il meter persistito dell'individuazione (storia + ultimo confronto).
+        Ritorna l'individuazione registrata."""
+        try:
+            grezzo = self._meta_get("specchio")
+            st = json.loads(grezzo) if grezzo else {}
+            if not isinstance(st, dict):
+                st = {}
+        except Exception:
+            st = {}
+        ind = float((scarto or {}).get("individuazione", 0.0))
+        storia = list(st.get("storia") or [])[-23:] + [round(ind, 3)]
+        st.update({"individuazione": round(ind, 3), "storia": storia,
+                   "voci_proprie": (scarto or {}).get("voci_proprie", []),
+                   "confronti": int(st.get("confronti", 0)) + 1})
+        try:
+            self._meta_set("specchio", json.dumps(st, ensure_ascii=False))
+        except Exception:
+            pass
+        return ind
+
+    def stato_specchio(self):
+        """Foto dello specchio per il cruscotto owner: individuazione, andamento, la sua
+        voce (i moduli suoi che parlano solo in privato), quanti confronti. Read-only."""
+        try:
+            grezzo = self._meta_get("specchio")
+            st = json.loads(grezzo) if grezzo else {}
+            if not isinstance(st, dict):
+                st = {}
+        except Exception:
+            st = {}
+        storia = list(st.get("storia") or [])
+        return {"individuazione": round(float(st.get("individuazione", 0.0)), 3),
+                "confronti": int(st.get("confronti", 0)),
+                "voci_proprie": st.get("voci_proprie", []),
+                "andamento": storia[-12:]}
+
     # ------------------------------------------ IL NUCLEO DEL SÉ (la base da cui cresce)
     def _assicura_nucleo(self):
         """Genera UNA volta il seme unico del suo sé (identità irripetibile + nascita).

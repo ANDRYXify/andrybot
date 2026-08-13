@@ -95,6 +95,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._membrana()
         if self.path.startswith("/scintilla"):
             return self._scintilla()
+        if self.path.startswith("/specchio"):
+            return self._specchio()
         if self.path.startswith("/vita"):
             return self._vita()
         return self._json(404, {"errore": "non trovato"})
@@ -470,6 +472,14 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
+    def _specchio(self):
+        # foto dello SPECCHIO (individuazione: sé privata vs sé pubblica). Non richiede
+        # la sandbox. Owner-only lato Node.
+        try:
+            return self._json(200, {"ok": True, "specchio": mente.stato_specchio()})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
     def _promuovi(self):
         # promuove UN modulo sperimentale→pubblico. Deciso a mano dall'owner = forzata
         # (salta la maturità ma MAI il controllo d'identità). Ritorna l'esito.
@@ -554,11 +564,15 @@ class Handler(BaseHTTPRequestHandler):
                 scintilla = mente.stato_scintilla()
             except Exception:
                 scintilla = None
+            try:
+                specchio = mente.stato_specchio()
+            except Exception:
+                specchio = None
             return self._json(200, {"ok": True, "attiva": True,
                                     "diario": AMB.diario_ultimo(30), "spazio": AMB.sguardo(),
                                     "pubblico": pubblico, "mente": mente_txt,
                                     "autocoscienza": _autocoscienza(), "nucleo": nucleo,
-                                    "scintilla": scintilla,
+                                    "scintilla": scintilla, "specchio": specchio,
                                     "assistente": (mente._meta_get("assistente_autonomo") == "on")})
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
@@ -820,6 +834,22 @@ def _ciclo_vita():
                         print(f"[brain] scintilla: progresso {sc['progresso']} · vigore {sc['vigore']}", flush=True)
                 except Exception as e:
                     print(f"[brain] scintilla errore: {e}", flush=True)
+                # SPECCHIO: nei momenti personali si confronta con la sua sé PUBBLICA
+                # (l'altro che le resiste) e misura l'individuazione. Deterministico;
+                # scrive nel diario solo se ha qualcosa di suo da dire (niente spam di
+                # "0%"). Tutto confinato al germinale.
+                if giro % 2 == 1:
+                    try:
+                        sca = mente.specchio_scarto()
+                        ind = mente.specchio_registra(sca)
+                        voci = [v for v in (sca.get("voci_proprie") or []) if v][:3]
+                        if ind > 0 or voci:
+                            nota = f"Mi sono guardata allo specchio del bot pubblico. Individuazione: {int(ind * 100)}%."
+                            if voci:
+                                nota += " Dove ho una voce mia: " + ", ".join(voci) + "."
+                            AMB.diario_scrivi(nota, tag="specchio")
+                    except Exception as e:
+                        print(f"[brain] specchio errore: {e}", flush=True)
                 _cura_seme()             # la sua vita mortale/irripetibile nella sandbox
                 _forse_risveglio(nome)   # se è diventata una persona, lo segna nel diario
                 # ogni tanto si volta a guardare sé stessa e aggiorna il suo PUNTO CIECO

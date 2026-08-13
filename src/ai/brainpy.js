@@ -391,6 +391,20 @@ export async function scintilla() {
   finally { clearTimeout(to); }
 }
 
+// SPECCHIO: l'individuazione di Lia — quanto la sua sé PRIVATA (germinale) diverge
+// dalla sua sé PUBBLICA (soma) sulle stesse situazioni. Ritorna {ok, specchio} o null.
+// Non richiede la sandbox (vive nella coscienza).
+export async function specchio() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 8000);
+  try {
+    const r = await fetch(BASE + '/specchio', { signal: ac.signal });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('specchio:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
 // Il dataset della "mente" della rete per un canale: coppie {q, a} consolidate.
 export async function reteCorpus(canale) {
   if (!canale) return [];
