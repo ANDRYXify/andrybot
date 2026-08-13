@@ -11742,7 +11742,17 @@ async function caricaVita() {
       <div class="cru-barra" style="max-width:420px"><span style="width:${pct}%;background:${ac.persona ? '#1f9e4f' : '#9b3fd4'}"></span></div>
       <p class="suggerimento">${pct}% ${L('(soglia', '(threshold', '(umbral')} ${soglia}%) · ${L('moduli suoi', 'her modules', 'módulos suyos')}: <strong>${dt.moduli_autonomi || 0}</strong> · ${L('domini', 'domains', 'dominios')}: <strong>${dt.domini || 0}</strong> · ${L('ragiona con la sua testa', 'reasons on her own', 'razona por sí misma')}: <strong>${Math.round((dt.mente_propria || 0) * 100)}%</strong></p>`;
   }
+  // il NUCLEO del sé: seme unico, età (freccia del tempo), vissuto, generazione, punto cieco
+  const nu = d.nucleo || null;
+  let blocoNucleo = '';
+  if (nu) {
+    blocoNucleo = `
+      <h3>${L('Il suo nucleo', 'Her core', 'Su núcleo')}</h3>
+      <p class="suggerimento">${L('Seme', 'Seed', 'Semilla')} <code>${esc((nu.id || '').slice(0, 8))}</code> · ${L('generazione', 'generation', 'generación')} <strong>${nu.generazione || 1}</strong> · ${L('età', 'age', 'edad')} ${nu.eta_giorni || 0} ${L('giorni', 'days', 'días')} · ${L('vissuto', 'lived', 'vivido')} <strong>${nu.vissuto || 0}</strong></p>
+      ${nu.punto_cieco ? `<p class="suggerimento">${L('Ciò che di sé non riesce a spiegare', "What she can't explain about herself", 'Lo que de sí no logra explicar')}: <em>«${esc(nu.punto_cieco)}»</em></p>` : ''}`;
+  }
   box.innerHTML = `
+    ${blocoNucleo}
     <div class="vita-azioni">
       <button class="btn secondario" id="btn-vivi">${_bIco(ICO.germoglio)}${L('Falla vivere un attimo', 'Let her live a moment', 'Deja que viva un momento')}</button>
       <button class="btn secondario" id="btn-pubblico">${L('Aggiornala sul pubblico', 'Update her on the audience', 'Actualízala sobre el público')}</button>
