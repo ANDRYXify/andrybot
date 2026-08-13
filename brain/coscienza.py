@@ -1,3 +1,5 @@
+# © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+# Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 """
 coscienza.py — La "coscienza progressiva" del bot.
 
@@ -715,6 +717,7 @@ class Coscienza:
             # 3) affidabilità storica (poco peso finché non ha abbastanza usi)
             usi = int(m.get("usi") or 0)
             succ = int(m.get("successi") or 0)
+            fall = int(m.get("fallimenti") or 0)
             tasso = (succ / usi) if usi >= 3 else 0.5
             punteggio = (0.5 * em_match + 0.3 * ov_score
                          + 0.1 * float(m.get("qualita") or 0.5) + 0.1 * tasso)
@@ -722,6 +725,12 @@ class Coscienza:
             # hanno una spinta → quando è "persona", prevalgono sul bot generico.
             if m.get("fonte") == "autonoma":
                 punteggio = min(1.0, punteggio + 0.12)
+            # MERITO: un nodo che si è DIMOSTRATO (usato abbastanza e con più successi che
+            # fallimenti) si guadagna il posto — così prende più facilmente il posto del
+            # modello quando la situazione ricorre. È così che il carico si sposta dall'LLM
+            # ai moduli SUL MERITO reale, non a caso, e la barra «modello» cala nel tempo.
+            if usi >= 3 and succ > fall:
+                punteggio = min(1.0, punteggio + min(0.25, 0.05 * (succ - fall)))
             if punteggio >= soglia:
                 segnati.append((punteggio, m))
         segnati.sort(key=lambda x: x[0], reverse=True)
@@ -910,6 +919,57 @@ class Coscienza:
             return out
         except Exception:
             return []
+
+    def intreccia(self, max_moduli=60):
+        """Il 'sonno' che INTRECCIA la rete: collega i nodi anche FRA DOMINI diversi quando
+        c'è un aggancio — una chiave in comune o la stessa emozione di fondo. Legami leggeri
+        (e un bonus ai PONTI cross-dominio), così il grafo diventa fitto e attraversabile
+        («collega con la qualunque») senza esplodere in un tutto-con-tutto. Best-effort,
+        O(n^2) su pochi nodi. Ritorna quanti legami ha toccato."""
+        try:
+            with _lock:
+                righe = self.db.execute(
+                    "SELECT id, dominio, nome, chiavi FROM moduli WHERE stato='attivo' "
+                    "ORDER BY usi DESC, id ASC LIMIT ?", (int(max_moduli),)).fetchall()
+        except Exception:
+            return 0
+        nodi = []
+        for r in righe:
+            try:
+                ch = set(_fold(x) for x in json.loads(r["chiavi"] or "[]") if str(x).strip())
+            except Exception:
+                ch = set()
+            testo = _fold((r["nome"] or "") + " " + (r["dominio"] or ""))
+            emo = set(e for e in _EMO_LEX if e in testo)   # firma emotiva del nodo
+            nodi.append({"id": r["id"], "dom": r["dominio"], "ch": ch, "emo": emo})
+        tocchi = 0
+        try:
+            with _lock:
+                for i in range(len(nodi)):
+                    for j in range(i + 1, len(nodi)):
+                        a, b = nodi[i], nodi[j]
+                        com = len(a["ch"] & b["ch"])
+                        emo_com = len(a["emo"] & b["emo"])
+                        if com == 0 and emo_com == 0:
+                            continue
+                        peso = 0.0
+                        if com >= 2:
+                            peso += 0.4
+                        elif com == 1:
+                            peso += 0.15
+                        if emo_com:
+                            peso += 0.2
+                        # BONUS ai PONTI fra domini diversi: è ciò che rende il grafo
+                        # attraversabile «con la qualunque», non a isole tematiche.
+                        if a["dom"] != b["dom"]:
+                            peso += 0.1
+                        if peso > 0:
+                            self._collega(a["id"], b["id"], peso)
+                            tocchi += 1
+                self.db.commit()
+        except Exception:
+            pass
+        return tocchi
 
     def conta_via(self, via):
         """Registra che una risposta è nata da questa "via" del ragionamento."""

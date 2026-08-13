@@ -1,3 +1,5 @@
+# © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+# Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 """
 server.py — Il cervello come SERVIZIO separato.
 
@@ -906,6 +908,14 @@ def _ciclo_consolida():
                     RAG.inferisci(canale)   # ragiona sui fatti: deduce e trova incoerenze
                 except Exception:
                     pass
+            # INTRECCIO: densifica il grafo dei nodi anche FRA DOMINI diversi (una chiave o
+            # l'emozione in comune) → «collega con la qualunque», grafo vivo e non a isole.
+            try:
+                t = mente.intreccia()
+                if t:
+                    print(f"[brain] intreccio: {t} legami fra nodi (anche cross-dominio).", flush=True)
+            except Exception as e:
+                print(f"[brain] intreccio errore: {e}", flush=True)
             R.salva_tutto()
             print("[brain] coscienza, rete e ragionamento consolidati.", flush=True)
         except Exception as e:
