@@ -131,7 +131,10 @@ def stato():
             "ms_medio": round(float(r.get("ms_tot", 0.0)) / ch) if ch else None,
             "declassati": sorted(_declassati.keys()),
             "libero": (_scaletta() is _TIERS_LIBERI),   # scaletta uncensored attiva?
-            "prossimo": (_candidati_modello()[0].split("/")[-1] if _in_auto() else None),
+            "pin_duro": _pin_duro(),                     # file locale/endpoint = non si tocca
+            "ripiego": _auto_ripiega(),                  # può scendere se troppo lento?
+            # il prossimo modello se cala: c'è sempre, tranne con un pin DURO
+            "prossimo": (_candidati_modello()[0].split("/")[-1] if not _pin_duro() else None),
         }
     except Exception:
         s["auto"] = None
@@ -419,6 +422,27 @@ def _in_auto():
     return True
 
 
+def _pin_duro():
+    """Pin 'DURO', da rispettare SEMPRE (mai scavalcato dall'auto-declassamento): un file
+    locale (LLM_MODEL_PATH o la scelta 'file' da dashboard — es. un tuo fine-tune) o un
+    endpoint esterno. Sono scelte deliberate su un modello preciso.
+    Un pin 'morbido' (un nome dalla scaletta o un URL) NON è duro: se è troppo lento può
+    ripiegare su uno più leggero — perché lo scopo del motore è «se non lavora, scendi»."""
+    if _endpoint_cfg():
+        return True
+    if str(_scelta_dashboard().get("file") or "").strip():
+        return True
+    if os.environ.get("LLM_MODEL_PATH"):
+        return True
+    return False
+
+
+def _auto_ripiega():
+    """Il motore può scavalcare un pin MORBIDE troppo lento? Default sì (era la richiesta:
+    un bot che va in timeout è inutile). LLM_AUTO_RIPIEGA=0 per rispettare sempre il pin."""
+    return os.environ.get("LLM_AUTO_RIPIEGA", "1").strip().lower() not in ("0", "no", "false", "off")
+
+
 def _declassa(modello):
     """Marca un modello come 'troppo lento su questo box': alla prossima scelta
     verrà saltato per una tregua (poi ri-tentato, nel caso fosse un carico passeggero)."""
@@ -430,10 +454,11 @@ def _declassa(modello):
 
 
 def _auto_valuta(andato_timeout):
-    """Auto-guarigione a caldo: se il modello attivo va in timeout N volte di fila
-    (e siamo in automatico, senza endpoint esterno), lo declasso e ricarico → parte
-    il modello più piccolo. Con cooldown per non rimbalzare."""
-    if _endpoint_cfg() or not _in_auto():
+    """Auto-guarigione a caldo: se il modello attivo va in timeout N volte di fila, lo
+    declasso e ricarico → parte il modello più leggero. Vale in automatico E anche su un
+    modello FORZATO 'morbido' (nome/URL) troppo lento — perché un bot che va in timeout è
+    inutile. NON tocca un pin DURO (file locale/endpoint) né se LLM_AUTO_RIPIEGA=0."""
+    if _pin_duro() or not _auto_ripiega():
         return
     mod = _stato.get("modello")
     with _perf_lock:
@@ -460,19 +485,26 @@ def _scaletta():
 
 def _scelta_esplicita():
     """URL scelto ESPLICITAMENTE (dashboard o .env): ha la precedenza e NON va a cascata.
-    Ritorna l'URL o None (= automatico)."""
+    Ritorna l'URL o None (= automatico). MA: se è un pin MORBIDE (nome/URL, non un file
+    locale né un endpoint) ed è stato DECLASSATO perché troppo lento, lo lascia perdere e
+    torna None → il motore cade sulla scaletta automatica (più leggera). Così un modello
+    forzato che il box non regge non incastra più la chat."""
     s = _scelta_dashboard()
+    scelto = None
     if s.get("url"):
-        return str(s["url"])
-    if s.get("modello") in _MODELLI:
-        return _MODELLI[s["modello"]]
-    url = os.environ.get("LLM_MODEL_URL")
-    if url:
-        return url
-    nome = os.environ.get("LLM_MODELLO", "").strip().lower()
-    if nome in _MODELLI:
-        return _MODELLI[nome]
-    return None
+        scelto = str(s["url"])
+    elif s.get("modello") in _MODELLI:
+        scelto = _MODELLI[s["modello"]]
+    elif os.environ.get("LLM_MODEL_URL"):
+        scelto = os.environ.get("LLM_MODEL_URL")
+    elif os.environ.get("LLM_MODELLO", "").strip().lower() in _MODELLI:
+        scelto = _MODELLI[os.environ.get("LLM_MODELLO", "").strip().lower()]
+    if scelto and not _pin_duro() and _auto_ripiega():
+        base = scelto.split("/")[-1]
+        dts = _declassati.get(base)
+        if dts and (time.time() - float(dts)) < DECLASSA_ORE * 3600:
+            return None   # pin morbido troppo lento: ripiega sulla scaletta automatica
+    return scelto
 
 
 def _candidati_modello():
