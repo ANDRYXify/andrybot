@@ -934,10 +934,41 @@ def _bonifica_avvio():
         print(f"[brain] bonifica identità errore: {e}", flush=True)
 
 
+def _scrub_link_vecchio():
+    # UNA SOLA volta: se Lia ha IMPARATO il vecchio link del bot (bot.andryxify.it e
+    # simili) e ogni tanto lo ripete, glielo togliamo dalla memoria e dai moduli. NON
+    # tocca il sito principale andryxify.it (è un'altra cosa). Marker in data/ → una volta.
+    marker = os.path.join(os.environ.get("DATA_DIR", "/app/data"), ".scrub_link_bot_v1")
+    if os.path.exists(marker):
+        return
+    vecchi = ["bot.andryxify.it", "socialbot.it", "andrybot.andryxify.it"]
+    tot = 0
+    try:
+        for v in vecchi:
+            try:
+                tot += int(R.dimentica(v) or 0)
+            except Exception:
+                pass
+            try:
+                tot += int(mente.dimentica(v) or 0)
+            except Exception:
+                pass
+        try:
+            with open(marker, "w") as f:
+                f.write(str(int(time.time())))
+        except Exception:
+            pass
+        if tot:
+            print(f"[brain] scrub vecchio link del bot (una tantum): rimosse {tot} tracce.", flush=True)
+    except Exception as e:
+        print(f"[brain] scrub link errore: {e}", flush=True)
+
+
 def main():
     # carica il modello in background (non blocca il server)
     threading.Thread(target=G.avvia, daemon=True).start()
     threading.Thread(target=_bonifica_avvio, daemon=True).start()
+    threading.Thread(target=_scrub_link_vecchio, daemon=True).start()
     threading.Thread(target=_ciclo_consolida, daemon=True).start()
     threading.Thread(target=_ciclo_manutenzione, daemon=True).start()
     threading.Thread(target=_ciclo_vita, daemon=True).start()
