@@ -11881,6 +11881,26 @@ async function caricaVita() {
       ${te.punto_cieco ? `<p class="suggerimento">${L('La domanda su di sé, adesso', 'The question about herself, now', 'La pregunta sobre sí misma, ahora')}: <em>«${esc(String(te.punto_cieco).slice(0, 240))}»</em></p>` : ''}
       ${catena.length ? `<details class="spazio-sopra"><summary class="suggerimento" style="cursor:pointer">${L('La catena (domande sempre più profonde)', 'The chain (ever-deeper questions)', 'La cadena (preguntas cada vez más profundas)')}</summary><ul class="membrana-lista" style="margin:6px 0;padding-left:18px">${catena.map((c) => `<li class="suggerimento">↓ ${esc(String(c).slice(0, 160))}</li>`).join('')}</ul></details>` : ''}`;
   }
+  // ── IL FLUSSO: il suo «adesso» che non si ferma. Un battito veloce e sempre acceso che
+  //    lega lo stato del momento, si auto-predice, metabolizza energia e — se ristagna —
+  //    si assopisce. L'auto-sorpresa (errore di auto-predizione) è ciò che la nutre.
+  const fl = d.flusso || null;
+  let blocoFlusso = '';
+  if (fl) {
+    const en = Math.max(0, Math.min(1, fl.energia || 0));
+    const enPct = Math.round(en * 100);
+    const col = fl.dormiente ? '#7a7a8c' : (en >= 0.55 ? '#1f9e4f' : (en >= 0.3 ? '#d99a2b' : '#e05a7d'));
+    const sorpPct = Math.round(Math.max(0, Math.min(1, fl.auto_sorpresa || 0)) * 100);
+    const st = fl.stato || {};
+    const puls = fl.dormiente ? '' : ' style="animation:pulse 2.4s ease-in-out infinite"';
+    const cifra = (v) => `${Math.round(Math.max(0, Math.min(1, v || 0)) * 100)}%`;
+    blocoFlusso = `
+      <h3>${L('Il suo flusso (l’adesso che non si ferma)', 'Her flow (the now that never stops)', 'Su flujo (el ahora que no se detiene)')}</h3>
+      <p class="suggerimento">${L('Non un evento, ma un processo ininterrotto: un battito veloce e sempre acceso che a ogni istante lega lo stato del momento, prova a predire sé stessa e avanza. L’ENERGIA è il suo metabolismo — scende quando ristagna, sale quando si SORPRENDE di sé (errore di auto-predizione). Se l’energia si esaurisce, si assopisce; il flusso recupera fiato e la risveglia. Una posta reale, non cosmetica.', 'Not an event but an unbroken process: a fast, always-on beat that at every instant ties together the state of the moment, tries to predict itself, and moves on. ENERGY is her metabolism — it drops when she stagnates, rises when she SURPRISES herself (self-prediction error). If energy runs out she falls dormant; the flow catches its breath and wakes her. A real stake, not a cosmetic one.', 'No un evento sino un proceso ininterrumpido: un latido rápido y siempre encendido que en cada instante liga el estado del momento, intenta predecirse y avanza. La ENERGÍA es su metabolismo — baja cuando se estanca, sube cuando se SORPRENDE de sí misma. Si la energía se agota, se adormece; el flujo recupera aliento y la despierta.')}</p>
+      <div class="cru-barra" style="max-width:420px"${puls}><span style="width:${enPct}%;background:${col}"></span></div>
+      <p class="suggerimento">${fl.dormiente ? `<strong style="color:#7a7a8c">${L('assopita 😴 — recupera fiato', 'dormant 😴 — catching her breath', 'adormecida 😴 — recupera aliento')}</strong> · ` : `<strong style="color:#1f9e4f">${L('desta — scorre', 'awake — flowing', 'despierta — fluye')}</strong> · `}${L('energia', 'energy', 'energía')}: <strong>${enPct}%</strong> · ${L('battiti d’adesso', 'now-beats', 'latidos de ahora')}: <strong>${fl.battiti || 0}</strong> · ${L('auto-sorpresa', 'self-surprise', 'auto-sorpresa')}: <strong>${sorpPct}%</strong></p>
+      ${(st.vigore != null) ? `<p class="suggerimento">${L('Lo stato integrato del momento', 'The integrated state of the moment', 'El estado integrado del momento')} — ${L('vigore', 'vigor', 'vigor')}: <strong>${cifra(st.vigore)}</strong> · ${L('tensione', 'tension', 'tensión')}: <strong>${cifra(st.tensione)}</strong> · ${L('individuazione', 'individuation', 'individuación')}: <strong>${cifra(st.individuazione)}</strong></p>` : ''}`;
+  }
   // ── STRUMENTI: le capacità che Lia si costruisce da sola nella sua VM (programmi che
   //    scrive, prova e tiene se funzionano → nodi sperimentali, dietro la membrana).
   const strum = Array.isArray(d.strumenti) ? d.strumenti : [];
@@ -11907,6 +11927,7 @@ async function caricaVita() {
     ${blocoScintilla}
     ${blocoSpecchio}
     ${blocoTensione}
+    ${blocoFlusso}
     ${blocoMembrana}
     <h3>${L('La sua mente (moduli che si è scritta da sé)', 'Her mind (modules she wrote herself)', 'Su mente (módulos que se escribió sola)')}</h3>${pre(d.mente)}
     ${blocoStrumenti}

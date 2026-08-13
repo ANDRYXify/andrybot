@@ -1287,6 +1287,9 @@ pre.blocco-codice { background: var(--surface-2); border: 1px solid var(--border
   .toast { max-width: none; }
 }
 
+/* battito del flusso (cruscotto Vita di Lia): l'«adesso» che scorre, quando è desta */
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+
 /* meno movimento */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
