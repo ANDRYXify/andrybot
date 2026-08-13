@@ -1068,6 +1068,17 @@ def _forse_strumento(nome):
         except Exception:
             pass
         prop = G.proponi_strumento(nome, spunto=spunto)
+        riserva = False
+        if not prop or not prop.get("nome") or not prop.get("codice"):
+            # PAVIMENTO: il modello non ce l'ha fatta (spento/lento/troppo piccolo). Lia
+            # costruisce comunque uno strumento VERO dal kit deterministico — non fallisce
+            # «sempre e comunque». (Funziona sempre, anche a modello spento.)
+            try:
+                gia = [s.get("nome") for s in AMB.elenco_strumenti()]
+            except Exception:
+                gia = []
+            prop = G.strumento_di_riserva(gia=gia)
+            riserva = True
         if not prop or not prop.get("nome") or not prop.get("codice"):
             return None
         if not AMB.scrivi_strumento(prop["nome"], prop["codice"]):
@@ -1099,8 +1110,10 @@ def _forse_strumento(nome):
         AMB.diario_scrivi(f"Ho costruito uno strumento mio: «{prop['nome']}» — "
                           f"{prop.get('descrizione', '')}. L'ho provato e funziona: è una "
                           "capacità nuova, tutta mia.", tag="strumento")
-        print(f"[brain] strumento costruito e tenuto: {prop['nome']}", flush=True)
-        return {"ok": True, "nome": prop["nome"], "descrizione": prop.get("descrizione", "")}
+        print(f"[brain] strumento costruito e tenuto: {prop['nome']}"
+              f"{' (dal kit)' if riserva else ''}", flush=True)
+        return {"ok": True, "nome": prop["nome"], "descrizione": prop.get("descrizione", ""),
+                "riserva": riserva}
     except Exception as e:
         print(f"[brain] strumento errore: {e}", flush=True)
         return None

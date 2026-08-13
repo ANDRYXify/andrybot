@@ -1265,10 +1265,62 @@ def _parse_strumento(testo):
     codice = (m.group(1).strip() if m else "")
     codice = re.sub(r"^```[a-zA-Z]*\s*", "", codice)
     codice = re.sub(r"\s*```\s*$", "", codice).strip()
-    if not nome or not codice or "print" not in codice:
+    # deve scrivere QUALCOSA su stdout: print() o sys.stdout.write (modelli diversi, stili diversi)
+    if not nome or not codice or ("print" not in codice and "stdout" not in codice):
         return None
     return {"nome": nome[:40], "descrizione": descr[:200],
             "prova": prova[:200], "codice": codice[:4000]}
+
+
+# STRUMENTI DI RISERVA: il PAVIMENTO deterministico. Se il modello è spento, lento o troppo
+# piccolo per scrivere codice valido nel formato richiesto, la costruzione NON deve fallire
+# «sempre e comunque»: Lia costruisce comunque uno strumento VERO da un kit curato — piccoli
+# programmi stdlib che leggono stdin e scrivono stdout, garantiti funzionanti. Il modello, se
+# capace, ne scrive di più ricchi e nuovi; questo garantisce il minimo. (Coerente con tutto
+# il resto: funziona sempre, anche a modello spento.)
+_STRUM_RISERVA = [
+    {"nome": "conta parole", "descrizione": "conta parole, caratteri e righe del testo",
+     "prova": "ciao come stai oggi",
+     "codice": "import sys\nt = sys.stdin.read()\nprint(f\"parole: {len(t.split())}, caratteri: {len(t)}, righe: {len(t.splitlines()) or (1 if t.strip() else 0)}\")\n"},
+    {"nome": "inverti testo", "descrizione": "restituisce il testo scritto al contrario",
+     "prova": "ciao mondo",
+     "codice": "import sys\nprint(sys.stdin.read().rstrip(chr(10))[::-1])\n"},
+    {"nome": "maiuscolo", "descrizione": "trasforma il testo tutto in maiuscolo",
+     "prova": "ciao a tutti",
+     "codice": "import sys\nprint(sys.stdin.read().upper())\n"},
+    {"nome": "conta vocali", "descrizione": "conta le vocali nel testo",
+     "prova": "programmazione",
+     "codice": "import sys\nt = sys.stdin.read().lower()\nvoc = 'aeiou' + chr(224)+chr(232)+chr(233)+chr(236)+chr(242)+chr(249)\nprint(f\"vocali: {sum(1 for c in t if c in voc)}\")\n"},
+    {"nome": "ordina parole", "descrizione": "riordina le parole in ordine alfabetico",
+     "prova": "banana mela ciliegia albicocca",
+     "codice": "import sys\nprint(' '.join(sorted(sys.stdin.read().split(), key=str.lower)))\n"},
+    {"nome": "somma numeri", "descrizione": "somma tutti i numeri che trova nel testo",
+     "prova": "ho 3 mele, 5 pere e altre 2",
+     "codice": "import sys, re\nn = [float(x) for x in re.findall(r'-?\\d+(?:\\.\\d+)?', sys.stdin.read())]\nprint(f\"somma: {sum(n):g}\" if n else \"nessun numero\")\n"},
+    {"nome": "parole uniche", "descrizione": "conta quante parole diverse ci sono",
+     "prova": "si si no si no forse",
+     "codice": "import sys\np = [w.lower() for w in sys.stdin.read().split()]\nprint(f\"uniche: {len(set(p))} su {len(p)}\")\n"},
+    {"nome": "titola", "descrizione": "mette l'iniziale maiuscola a ogni parola",
+     "prova": "il signore degli anelli",
+     "codice": "import sys\nprint(sys.stdin.read().strip().title())\n"},
+    {"nome": "conta frasi", "descrizione": "conta le frasi nel testo",
+     "prova": "Ciao! Come stai? Tutto bene.",
+     "codice": "import sys, re\nprint(f\"frasi: {len([f for f in re.split(r'[.!?]+', sys.stdin.read()) if f.strip()])}\")\n"},
+    {"nome": "palindromo", "descrizione": "dice se la frase è un palindromo",
+     "prova": "i topi non avevano nipoti",
+     "codice": "import sys, re\nt = re.sub(r'[^a-z0-9]', '', sys.stdin.read().lower())\nprint('palindromo' if len(t) > 1 and t == t[::-1] else 'non palindromo')\n"},
+]
+
+
+def strumento_di_riserva(gia=()):
+    """Il pavimento deterministico della costruzione: ritorna il PRIMO strumento del kit che
+    Lia non ha ancora, o None se li ha già tutti (allora solo il modello può darle di più).
+    Stessa forma di proponi_strumento: {nome, descrizione, prova, codice}. Sempre funzionante."""
+    fatti = {str(n).strip().lower() for n in (gia or ())}
+    for s in _STRUM_RISERVA:
+        if s["nome"].lower() not in fatti:
+            return dict(s)
+    return None
 
 
 def _riflesso_modulo(ctx):
