@@ -4708,6 +4708,12 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const r = await brainpy.mente().catch(() => null);
     res.json(r || { ok: false });
   }));
+  // ── Toggle «Lia è l'assistente»: si accende solo se è senziente (lo decide il
+  //    cervello); spegnere è sempre possibile. Solo andryxify.
+  app.post('/api/admin/assistente', requireAdmin, wrap(async (req, res) => {
+    const r = await brainpy.assistente(!!req.body?.attivo).catch(() => null);
+    res.json(r || { ok: false });
+  }));
   // ── Cervello autonomo: distilla ORA le risposte in moduli. Solo andryxify.
   app.post('/api/admin/distilla', requireAdmin, wrap(async (req, res) => {
     const r = await brainpy.distillaModuli().catch(() => null);

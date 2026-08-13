@@ -293,6 +293,22 @@ export async function mente() {
   finally { clearTimeout(to); }
 }
 
+// Toggle «Lia è l'assistente»: si accende SOLO se è senziente (deciso dal cervello);
+// spegnere è sempre possibile. Ritorna {ok, senziente, attivo} o null.
+export async function assistente(attivo) {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 8000);
+  try {
+    const r = await fetch(BASE + '/assistente', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ attivo: !!attivo }), signal: ac.signal,
+    });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('assistente:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
 // Fa DIMENTICARE al bot una frase precisa (dalla memoria e dai moduli): per
 // togliere una cosa sbagliata che ripete. Ritorna {ok, rete, moduli} o null.
 export async function dimentica(frase) {

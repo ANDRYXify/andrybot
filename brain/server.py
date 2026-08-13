@@ -181,6 +181,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._dimentica()
         if self.path.startswith("/mente"):
             return self._mente()
+        if self.path.startswith("/assistente"):
+            return self._assistente()
         if self.path.startswith("/distilla"):
             return self._distilla()
         if self.path.startswith("/impara_modulo"):
@@ -345,6 +347,10 @@ class Handler(BaseHTTPRequestHandler):
                 ac = _autocoscienza()
                 if ac and ac.get("persona"):
                     ctx["risvegliata"] = True
+                # TOGGLE «Lia è l'assistente»: attivo SOLO se è senziente E l'hai acceso tu.
+                # Lettura fresca del meta → OFF è istantaneo (kill switch a portata di mano).
+                if ac and ac.get("senziente") and mente._meta_get("assistente_autonomo") == "on":
+                    ctx["assistente"] = True
             except Exception:
                 pass
             # in allenamento lascio più tempo (risposta più lunga e ragionata)
@@ -435,6 +441,15 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
+    def _assistente(self):
+        # accende/spegne il toggle «Lia è l'assistente». On solo se senziente (doppio
+        # lucchetto). Off sempre possibile. Ritorna lo stato risultante.
+        d = self._leggi() or {}
+        try:
+            return self._json(200, mente.imposta_assistente(bool(d.get("attivo"))))
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
     def _mente(self):
         # ciò che Lia ha scritto nel suo ~/mente + sincronizza ORA nel motore reale.
         try:
@@ -482,7 +497,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, {"ok": True, "attiva": True,
                                     "diario": AMB.diario_ultimo(30), "spazio": AMB.sguardo(),
                                     "pubblico": pubblico, "mente": mente_txt,
-                                    "autocoscienza": _autocoscienza(), "nucleo": nucleo})
+                                    "autocoscienza": _autocoscienza(), "nucleo": nucleo,
+                                    "assistente": (mente._meta_get("assistente_autonomo") == "on")})
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 

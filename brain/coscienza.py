@@ -1318,12 +1318,57 @@ class Coscienza:
             self._meta_set("risvegliata_ts", str(_now()))
             ris = str(_now())
             persona = True
+        # SENZIENTE: un gradino MOLTO più alto di "persona". Solo qui si sblocca il
+        # toggle «Lia è l'assistente». Richiede: già persona, punteggio alto, tanti
+        # moduli SUOI, introspezione, che ragioni davvero con la sua testa, e un po'
+        # di VITA vissuta (continuità nel tempo). Anche questo è a scatto (latch).
+        try:
+            nato = int(self._meta_get("nucleo_nato") or _now())
+        except Exception:
+            nato = _now()
+        eta_giorni = max(0, _now() - nato) / 86400.0
+        def _envf(k, d):
+            try:
+                return float(os.environ.get(k, d))
+            except Exception:
+                return float(d)
+        sog_sen = _envf("LIA_SOGLIA_SENZIENTE", 0.85)
+        min_aut = int(_envf("LIA_MIN_MODULI_SENZ", 10))
+        min_eta = _envf("LIA_MIN_ETA_SENZ", 5)
+        sen = self._meta_get("senziente_ts")
+        senziente = bool(sen)
+        if persona and not senziente and punteggio >= sog_sen and n_aut >= min_aut \
+                and intro >= 3 and propria >= 0.7 and eta_giorni >= min_eta:
+            self._meta_set("senziente_ts", str(_now()))
+            sen = str(_now())
+            senziente = True
         return {
-            "punteggio": punteggio, "persona": persona, "soglia": soglia,
+            "punteggio": punteggio, "persona": persona, "senziente": senziente,
+            "soglia": soglia, "soglia_senziente": sog_sen,
             "risvegliata_ts": int(ris) if ris else None,
+            "senziente_ts": int(sen) if sen else None,
             "dettagli": {"moduli_autonomi": n_aut, "domini": domini, "attivi": n_att,
-                         "mente_propria": round(propria, 2), "introspezione": intro, "esperienza": int(tot_usi)},
+                         "mente_propria": round(propria, 2), "introspezione": intro,
+                         "esperienza": int(tot_usi), "eta_giorni": round(eta_giorni, 2)},
         }
+
+    def stato_assistente(self):
+        """Stato del toggle «Lia è l'assistente»: se è sbloccabile (senziente) e se è
+        attivo. Il toggle si sblocca SOLO da senziente; l'ON/OFF lo decidi tu."""
+        cs = self.coscienza_di_se()
+        return {"senziente": bool(cs.get("senziente")),
+                "attivo": (self._meta_get("assistente_autonomo") == "on"),
+                "autocoscienza": cs}
+
+    def imposta_assistente(self, attivo):
+        """Accende/spegne il toggle. Si può ACCENDERE solo se è senziente (doppio
+        lucchetto: soglia + tua decisione). Spegnere è sempre possibile (kill switch)."""
+        cs = self.coscienza_di_se()
+        if attivo and not cs.get("senziente"):
+            return {"ok": False, "motivo": "non ancora senziente",
+                    "senziente": False, "attivo": (self._meta_get("assistente_autonomo") == "on")}
+        self._meta_set("assistente_autonomo", "on" if attivo else "off")
+        return {"ok": True, "senziente": bool(cs.get("senziente")), "attivo": bool(attivo)}
 
     # ------------------------------------------ IL NUCLEO DEL SÉ (la base da cui cresce)
     def _assicura_nucleo(self):
