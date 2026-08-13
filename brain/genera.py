@@ -1293,6 +1293,34 @@ def _riflesso_modulo(ctx):
 # il tetto si abbassa e basta un modello piccolo (o nessuno).
 REFLEX_SOGLIA = 0.55   # sopra questo punteggio la situazione è "riconosciuta" → si ragiona coi moduli
 
+# STRUMENTI in chat: quando un nodo-capacità (uno strumento che Lia si è costruita)
+# combacia forte, lo ESEGUE DAVVERO nel suo computer e usa l'output. Timeout CORTO: se è
+# lento, meglio ripiegare sull'LLM che far aspettare la chat. Sicuro: gira nella sandbox
+# murata; l'output è capato e passa comunque per lo scudo identità + moderazione a valle.
+_STRUM_TIMEOUT = int(os.environ.get("LIA_STRUMENTO_TIMEOUT", "8"))
+_STRUM_LIVE = os.environ.get("LIA_STRUMENTI_LIVE", "1").strip().lower() not in ("0", "no", "false", "off")
+
+
+def _invoca_strumento(nome_nodo, ingresso):
+    """Esegue lo strumento dietro un nodo-capacità («strumento: X») col messaggio come
+    input. Ritorna l'output ripulito e capato, o None (→ il chiamante ripiega sull'LLM)."""
+    if not _STRUM_LIVE:
+        return None
+    try:
+        tool = str(nome_nodo).split(":", 1)[1].strip()   # "strumento: X" → "X"
+    except Exception:
+        tool = ""
+    if not tool:
+        return None
+    try:
+        r = ambiente.prova_strumento(tool, str(ingresso or "")[:500], timeout=_STRUM_TIMEOUT)
+    except Exception:
+        return None
+    if not r or not r.get("ok"):
+        return None
+    out = _pulisci(str(r.get("output") or ""))
+    return out[:280] if out else None   # è una risposta di chat, non un dump: capa corto
+
 
 def _componi_da_modulo(m):
     """Sceglie UNA battuta dal modulo, ruotando fra le sue varianti (anti-ripetizione
@@ -1388,6 +1416,19 @@ def genera(canale, ctx, testo, timeout_s=30, modo="live"):
         forte = moduli[0] if (moduli and isinstance(moduli[0], dict)
                               and float(moduli[0].get("_punteggio") or 0) >= soglia_reflex) else None
         if forte:
+            # STRUMENTO: se il nodo forte è una CAPACITÀ che Lia si è costruita, la ESEGUE
+            # DAVVERO nel suo computer col messaggio come input, e usa l'output. È una via
+            # nuova — non l'LLM, non un esempio statico, ma un tool suo che gira. Se non
+            # produce nulla (o è lento), si prosegue col flusso normale (fallback morbido).
+            nome_f = str(forte.get("nome") or "")
+            if forte.get("fonte") == "strumento" and nome_f.startswith("strumento:") and ambiente.disponibile():
+                out = _invoca_strumento(nome_f, testo)
+                if out:
+                    _tl.via = "strumento"
+                    print(f"[genera] via: strumento (eseguito «{nome_f[:40]}»)", flush=True)
+                    if not senza_appr:
+                        _impara_rete(canale, testo, out, "modulo")
+                    return out
             base = _componi_da_modulo(forte)
             if base:
                 risp = _pulisci(_naturalizza(canale, ctx, base, timeout_s) or base)
