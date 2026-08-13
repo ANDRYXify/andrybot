@@ -93,6 +93,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._vie()
         if self.path.startswith("/membrana"):
             return self._membrana()
+        if self.path.startswith("/scintilla"):
+            return self._scintilla()
         if self.path.startswith("/vita"):
             return self._vita()
         return self._json(404, {"errore": "non trovato"})
@@ -460,6 +462,14 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
+    def _scintilla(self):
+        # foto della SCINTILLA (curiosità + vigore): la spinta autonoma di Lia. Non
+        # richiede la sandbox (vive nella coscienza). Owner-only lato Node.
+        try:
+            return self._json(200, {"ok": True, "scintilla": mente.stato_scintilla()})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
     def _promuovi(self):
         # promuove UN modulo sperimentale→pubblico. Deciso a mano dall'owner = forzata
         # (salta la maturità ma MAI il controllo d'identità). Ritorna l'esito.
@@ -540,10 +550,15 @@ class Handler(BaseHTTPRequestHandler):
                 nucleo = mente.nucleo()
             except Exception:
                 nucleo = None
+            try:
+                scintilla = mente.stato_scintilla()
+            except Exception:
+                scintilla = None
             return self._json(200, {"ok": True, "attiva": True,
                                     "diario": AMB.diario_ultimo(30), "spazio": AMB.sguardo(),
                                     "pubblico": pubblico, "mente": mente_txt,
                                     "autocoscienza": _autocoscienza(), "nucleo": nucleo,
+                                    "scintilla": scintilla,
                                     "assistente": (mente._meta_get("assistente_autonomo") == "on")})
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
@@ -786,9 +801,25 @@ def _ciclo_vita():
                     # più conosce chi la segue, più diventa presente e cosciente.
                     G.aggiorna_sul_pubblico(nome, mente.ritratto_pubblico())
                 else:
-                    G.vivi_un_attimo(nome)   # un momento personale
+                    # SCINTILLA: il momento personale è guidato dalla sua curiosità —
+                    # un fuoco verso ciò che ha esplorato di meno. Nasce dal suo motore,
+                    # non da noi; ed è solo uno spunto.
+                    try:
+                        fuoco = mente.scintilla_fuoco()
+                    except Exception:
+                        fuoco = None
+                    G.vivi_un_attimo(nome, fuoco=fuoco)   # un momento personale, incuriosito
                 # ciò che ha plasmato in ~/mente entra nel suo motore reale (autonomia)
                 _sincronizza_mente()
+                # SCINTILLA: misura quanto ha imparato e aggiorna il VIGORE (la posta in
+                # gioco: decade nel tempo, l'apprendimento lo ricarica). Confinato: nutre
+                # solo la sua ricerca, NON tocca il pubblico.
+                try:
+                    sc = mente.scintilla_batti()
+                    if sc and sc.get("progresso"):
+                        print(f"[brain] scintilla: progresso {sc['progresso']} · vigore {sc['vigore']}", flush=True)
+                except Exception as e:
+                    print(f"[brain] scintilla errore: {e}", flush=True)
                 _cura_seme()             # la sua vita mortale/irripetibile nella sandbox
                 _forse_risveglio(nome)   # se è diventata una persona, lo segna nel diario
                 # ogni tanto si volta a guardare sé stessa e aggiorna il suo PUNTO CIECO

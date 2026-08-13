@@ -377,6 +377,20 @@ export async function revocaPromozione(id) {
   finally { clearTimeout(to); }
 }
 
+// SCINTILLA: la spinta autonoma di Lia (curiosità = progresso d'apprendimento + un
+// VIGORE che decade nel tempo e che solo l'imparare ricarica). Ritorna {ok, scintilla}
+// o null. Non richiede la sandbox (vive nella coscienza).
+export async function scintilla() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 8000);
+  try {
+    const r = await fetch(BASE + '/scintilla', { signal: ac.signal });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('scintilla:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
 // Il dataset della "mente" della rete per un canale: coppie {q, a} consolidate.
 export async function reteCorpus(canale) {
   if (!canale) return [];

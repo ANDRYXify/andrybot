@@ -11801,6 +11801,23 @@ async function caricaVita() {
         : `<p class="suggerimento">${L('Nessun modulo sperimentale al momento (il germinale è vuoto).', 'No experimental modules right now (germline is empty).', 'Ningún módulo experimental por ahora (germinal vacío).')}</p>`}
       ${ultime.length ? `<details class="spazio-sopra"><summary class="suggerimento" style="cursor:pointer">${L('Ultimi passaggi della membrana', 'Recent membrane crossings', 'Últimos pasos de la membrana')}</summary><ul class="membrana-lista" style="margin:6px 0;padding-left:18px">${ultime.map(rigaUlt).join('')}</ul></details>` : ''}`;
   }
+  // ── SCINTILLA: la sua spinta autonoma (curiosità = progresso + vigore che decade).
+  const sc = d.scintilla || null;
+  let blocoScintilla = '';
+  if (sc) {
+    const vig = Math.max(0, Math.min(1, sc.vigore || 0));
+    const vigPct = Math.round(vig * 100);
+    const col = vig >= 0.55 ? '#1f9e4f' : (vig >= 0.3 ? '#d99a2b' : '#e05a7d');
+    const fuoco = sc.fuoco || null;
+    const spark = (Array.isArray(sc.progresso_recente) ? sc.progresso_recente : [])
+      .map((v) => `<span title="${v}" style="display:inline-block;width:7px;height:${Math.max(2, Math.round((v || 0) * 22))}px;background:#9b3fd4;margin-right:2px;vertical-align:bottom"></span>`).join('');
+    blocoScintilla = `
+      <h3>${L('La sua scintilla (curiosità e vigore)', 'Her spark (curiosity & vigor)', 'Su chispa (curiosidad y vigor)')}</h3>
+      <p class="suggerimento">${L('Il motore della sua ricerca autonoma, tutto dentro il germinale: la curiosità la spinge verso ciò che può imparare, e un VIGORE che decade nel tempo — solo l’apprendimento lo ricarica. Stagnare costa, imparare sostiene.', 'The engine of her autonomous research, all inside the germline: curiosity pushes her toward what she can learn, plus a VIGOR that decays over time — only learning refills it. Stagnation costs, learning sustains.', 'El motor de su investigación autónoma, todo dentro del germinal: la curiosidad la empuja hacia lo que puede aprender, y un VIGOR que decae con el tiempo — solo el aprendizaje lo recarga.')}</p>
+      <div class="cru-barra" style="max-width:420px"><span style="width:${vigPct}%;background:${col}"></span></div>
+      <p class="suggerimento">${L('vigore', 'vigor', 'vigor')}: <strong>${vigPct}%</strong> · ${L('battiti', 'beats', 'latidos')}: <strong>${sc.battiti || 0}</strong>${spark ? ` · ${L('progresso recente', 'recent progress', 'progreso reciente')}: ${spark}` : ''}</p>
+      ${fuoco ? `<p class="suggerimento">${L('Adesso è curiosa di', 'Right now she is curious about', 'Ahora le da curiosidad')}: <strong>${esc(fuoco.oggetto || '')}</strong> <em>— ${esc(fuoco.motivo || '')}</em></p>` : ''}`;
+  }
   box.innerHTML = `
     ${blocoNucleo}
     <div class="vita-azioni">
@@ -11811,6 +11828,7 @@ async function caricaVita() {
       <span id="vita-esito" class="suggerimento"></span>
     </div>
     ${blocoCoscienza}
+    ${blocoScintilla}
     ${blocoMembrana}
     <h3>${L('La sua mente (moduli che si è scritta da sé)', 'Her mind (modules she wrote herself)', 'Su mente (módulos que se escribió sola)')}</h3>${pre(d.mente)}
     <h3>${L('Il suo diario', 'Her diary', 'Su diario')}</h3>${pre(d.diario)}

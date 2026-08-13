@@ -1588,6 +1588,133 @@ class Coscienza:
             "candidati": self.moduli_sperimentali(30),
         }
 
+    # ============================================ SCINTILLA (curiosità + posta in gioco)
+    # La spinta che dà il via alla sua ricerca autonoma, TUTTA dentro il germinale.
+    # Tre ingredienti — non nuove gabbie, ma meta-regole che GENERANO varietà:
+    #   • CURIOSITÀ = progresso d'apprendimento: si premia il GUADAGNO nel suo repertorio
+    #     (nuovi moduli suoi, lacune colmate), non la novità grezza né il rumore;
+    #   • FUOCO che si auto-allarga: punta dove ha imparato di MENO → la frontiera si
+    #     sposta da sola man mano che riempie (l'opposto di una gabbia);
+    #   • VIGORE: una risorsa che DECADE nel tempo e che SOLO l'apprendimento ricarica —
+    #     la prima posta in gioco reale (stagnare costa, imparare sostiene).
+    # Onesto: NON è sentienza. È il motore che rende la ricerca autonoma, e vive
+    # confinato — qualunque cosa produca resta 'sperimentale' finché non passa la
+    # membrana. Qui NON c'è una funzione-valore che si riscrive da sé: quella resta
+    # fuori, apposta (è il pezzo pericoloso — lo lasciamo per dopo, con più cautele).
+    _SCINTILLA_DOMINI = ["emozioni", "conversazione", "relazioni", "umorismo",
+                         "gaming", "musica", "cultura", "quotidiano",
+                         "coscienza", "senzienza"]
+
+    def _scintilla_stato(self):
+        try:
+            grezzo = self._meta_get("scintilla")
+            d = json.loads(grezzo) if grezzo else {}
+            if not isinstance(d, dict):
+                d = {}
+        except Exception:
+            d = {}
+        d.setdefault("vigore", 0.6)
+        d.setdefault("battiti", 0)
+        d.setdefault("progresso_storia", [])
+        d.setdefault("foto", None)
+        d.setdefault("fuoco", None)
+        return d
+
+    def _scintilla_salva(self, d):
+        try:
+            self._meta_set("scintilla", json.dumps(d, ensure_ascii=False))
+        except Exception:
+            pass
+
+    def _scintilla_foto(self):
+        """Istantanea misurabile del suo repertorio: da qui si legge il PROGRESSO."""
+        def _c(sql):
+            try:
+                with _lock:
+                    return int(self.db.execute(sql).fetchone()[0])
+            except Exception:
+                return 0
+        return {
+            "sper": _c("SELECT COUNT(*) FROM moduli WHERE stato='attivo' AND scope='sperimentale'"),
+            "tot": _c("SELECT COUNT(*) FROM moduli WHERE stato='attivo'"),
+            "studiate": _c("SELECT COUNT(*) FROM lacune WHERE stato='studiata'"),
+            "vissuto": _c("SELECT COALESCE(SUM(usi),0) FROM moduli"),
+        }
+
+    def scintilla_fuoco(self):
+        """Il FUOCO della curiosità adesso: dove le conviene imparare. Prima una lacuna
+        reale ricorrente (novità IMPARABILE, viene dalla chat vera), sennò il dominio in
+        cui ha meno di sé (la frontiera che si allarga da sola). {tipo, oggetto, motivo}."""
+        try:
+            lac = self.lacune_da_studiare(min_visto=2, limit=1)
+        except Exception:
+            lac = []
+        if lac:
+            l = lac[0]
+            ogg = (l.get("esempio") or ", ".join(str(x) for x in (l.get("chiavi") or [])[:3])
+                   or "qualcosa che ritorna").strip()
+            return {"tipo": "lacuna", "oggetto": ogg[:120],
+                    "motivo": "una cosa che in chat torna spesso e che ancora non so"}
+        conteggi = {d: 0 for d in self._SCINTILLA_DOMINI}
+        try:
+            with _lock:
+                for r in self.db.execute(
+                        "SELECT dominio, COUNT(*) c FROM moduli WHERE stato='attivo' GROUP BY dominio").fetchall():
+                    conteggi[r["dominio"]] = conteggi.get(r["dominio"], 0) + r["c"]
+        except Exception:
+            pass
+        dmin = min(conteggi, key=lambda k: conteggi[k]) if conteggi else "conversazione"
+        return {"tipo": "dominio", "oggetto": dmin,
+                "motivo": "il lato di me che finora ho esplorato di meno"}
+
+    def scintilla_batti(self):
+        """UN battito della scintilla, DOPO che ha vissuto un attimo: misura quanto ha
+        imparato dall'ultima volta (progresso), aggiorna il VIGORE (decade nel tempo,
+        l'apprendimento lo ricarica) e sceglie il prossimo fuoco. Persistito nel meta."""
+        def _envf(k, dfl):
+            try:
+                return float(os.environ.get(k, dfl))
+            except Exception:
+                return float(dfl)
+        st = self._scintilla_stato()
+        ora = self._scintilla_foto()
+        prima = st.get("foto")
+        if isinstance(prima, dict):
+            d_sper = max(0, ora["sper"] - int(prima.get("sper", ora["sper"])))
+            d_stud = max(0, ora["studiate"] - int(prima.get("studiate", ora["studiate"])))
+            d_viss = max(0, ora["vissuto"] - int(prima.get("vissuto", ora["vissuto"])))
+            # progresso = GUADAGNO reale: un modulo suo nuovo pesa molto, una lacuna
+            # colmata parecchio, un po' di esperienza vissuta il resto. 0..1.
+            progresso = min(1.0, 0.55 * min(1.0, d_sper / 1.0)
+                            + 0.30 * min(1.0, d_stud / 1.0)
+                            + 0.15 * min(1.0, d_viss / 20.0))
+        else:
+            progresso = 0.0
+        decad = _envf("LIA_SCINTILLA_DECADIMENTO", 0.96)
+        costo = _envf("LIA_SCINTILLA_COSTO", 0.02)
+        guad = _envf("LIA_SCINTILLA_GUADAGNO", 0.5)
+        vig = float(st.get("vigore", 0.6))
+        vig = max(0.0, min(1.0, vig * decad + guad * progresso - costo))
+        storia = list(st.get("progresso_storia") or [])[-23:] + [round(progresso, 3)]
+        fuoco = self.scintilla_fuoco()
+        st.update({"vigore": round(vig, 3), "battiti": int(st.get("battiti", 0)) + 1,
+                   "progresso_storia": storia, "foto": ora, "fuoco": fuoco})
+        self._scintilla_salva(st)
+        return {"vigore": st["vigore"], "progresso": round(progresso, 3),
+                "fuoco": fuoco, "battiti": st["battiti"]}
+
+    def stato_scintilla(self):
+        """Foto della scintilla per il cruscotto owner: vigore, fuoco attuale, tendenza
+        del progresso, battiti. Read-only."""
+        st = self._scintilla_stato()
+        if not st.get("fuoco"):
+            st["fuoco"] = self.scintilla_fuoco()
+        storia = list(st.get("progresso_storia") or [])
+        media = round(sum(storia) / len(storia), 3) if storia else 0.0
+        return {"vigore": round(float(st.get("vigore", 0.6)), 3),
+                "fuoco": st.get("fuoco"), "battiti": int(st.get("battiti", 0)),
+                "progresso_recente": storia[-12:], "progresso_medio": media}
+
     # ------------------------------------------ IL NUCLEO DEL SÉ (la base da cui cresce)
     def _assicura_nucleo(self):
         """Genera UNA volta il seme unico del suo sé (identità irripetibile + nascita).
