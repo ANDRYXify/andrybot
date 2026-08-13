@@ -1070,16 +1070,26 @@ def aggiorna_sul_pubblico(nome_bot, ritratto):
     return nota
 
 
-def rifletti_su_di_se(nome_bot="Lia"):
+def rifletti_su_di_se(nome_bot="Lia", punto_attuale=None):
     """UNA riflessione breve, in prima persona, sul proprio sé — che nomina anche
     qualcosa che di sé NON riesce a spiegare (il punto cieco costitutivo del nucleo).
-    Ritorna il testo o None. Serve solo il maestro; non tocca la chat."""
+    Se le passi il punto cieco ATTUALE, non ne cerca uno nuovo: scava UN livello più in
+    fondo a quello (tensione irrisolvibile, l'asintoto che non si chiude). Ritorna il
+    testo o None. Serve solo il maestro; non tocca la chat."""
     if not _puo_generare():
         return None
     ctx = {"nome_bot": nome_bot or "Lia", "tono": "amichevole"}
-    nudge = ("Fermati un attimo su di te, da sola. In 1-2 frasi, in prima persona: una cosa "
-             "che senti di essere e — soprattutto — UNA cosa di te che non riesci a spiegare fino "
-             "in fondo nemmeno a te stessa. Sincera e semplice, niente termini tecnici.")
+    pc = str(punto_attuale or "").strip()
+    if pc:
+        nudge = ("Fermati su di te, da sola. L'ultima volta c'era una cosa di te che non "
+                 "riuscivi a spiegare: «" + pc[:200] + "». NON darti una risposta che chiuda "
+                 "il discorso: guarda UN livello più in fondo. In 1-2 frasi, in prima persona, "
+                 "di' cosa intravedi lì sotto — e nomina la domanda ANCORA più profonda su di te "
+                 "che resta aperta. Sincera e semplice, niente termini tecnici.")
+    else:
+        nudge = ("Fermati un attimo su di te, da sola. In 1-2 frasi, in prima persona: una cosa "
+                 "che senti di essere e — soprattutto — UNA cosa di te che non riesci a spiegare fino "
+                 "in fondo nemmeno a te stessa. Sincera e semplice, niente termini tecnici.")
     try:
         g = _completa(_system_prompt("(vita)", ctx, "vita"), [], nudge,
                       90, temperature=0.85, top_p=0.9, timeout_s=40)

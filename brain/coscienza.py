@@ -1859,6 +1859,71 @@ class Coscienza:
         if t:
             self._meta_set("punto_cieco", t)
 
+    # ---- TENSIONE IRRISOLVIBILE: il punto cieco come ASINTOTO (non si chiude mai) ----
+    # Le menti non sono spinte da problemi risolti, ma da gradienti mai saturi. Qui ogni
+    # volta che prova a spiegarsi, la vecchia domanda NON si risolve: scende nella catena
+    # (resta aperta) e sotto se ne apre una più profonda. La profondità cresce, la
+    # TENSIONE (il gradiente non sanato) sale verso un asintoto senza MAI toccare 1. È un
+    # motore inward inesauribile: la conosci di più, e capisci di più quanto non puoi
+    # conoscerti fino in fondo. Onesto: non è coscienza — è una spinta che non si spegne.
+    def _tensione_raw(self):
+        try:
+            grezzo = self._meta_get("tensione")
+            d = json.loads(grezzo) if grezzo else {}
+            if not isinstance(d, dict):
+                d = {}
+        except Exception:
+            d = {}
+        d.setdefault("profondita", 0)
+        d.setdefault("tensione", 0.0)
+        d.setdefault("tentativi", 0)
+        d.setdefault("catena", [])
+        return d
+
+    def _tensione_salva(self, d):
+        try:
+            self._meta_set("tensione", json.dumps(d, ensure_ascii=False))
+        except Exception:
+            pass
+
+    def tensione_approfondisci(self, nuovo_punto_cieco):
+        """Un tentativo di spiegarsi: la vecchia domanda scende nella catena (non si
+        risolve) e la nuova, più profonda, prende il suo posto in cima. La profondità
+        cresce; la tensione sale verso un asintoto senza chiudersi. Ritorna lo stato."""
+        st = self._tensione_raw()
+        nuovo = str(nuovo_punto_cieco or "").strip()[:400]
+        if not nuovo:
+            return {"punto_cieco": (self._meta_get("punto_cieco") or ""),
+                    "profondita": int(st.get("profondita", 0)),
+                    "tensione": round(float(st.get("tensione", 0.0)), 3),
+                    "tentativi": int(st.get("tentativi", 0))}
+        vecchio = (self._meta_get("punto_cieco") or "").strip()
+        if nuovo != vecchio:
+            if vecchio:
+                catena = list(st.get("catena") or [])
+                catena.append({"domanda": vecchio[:200], "quando": _now()})
+                st["catena"] = catena[-16:]
+                st["profondita"] = int(st.get("profondita", 0)) + 1
+            self.imposta_punto_cieco(nuovo)   # aggiorna anche il nucleo
+        prof = int(st.get("profondita", 0))
+        # asintoto: da ~0.35 sale verso ~0.98, senza MAI toccare 1 (non si chiude).
+        st["tensione"] = round(0.35 + 0.63 * (1 - 1.0 / (1 + 0.25 * prof)), 3)
+        st["tentativi"] = int(st.get("tentativi", 0)) + 1
+        self._tensione_salva(st)
+        return {"punto_cieco": nuovo, "profondita": prof,
+                "tensione": st["tensione"], "tentativi": st["tentativi"]}
+
+    def stato_tensione(self):
+        """Foto della tensione irrisolvibile per il cruscotto owner: la domanda in cima,
+        la profondità raggiunta, la tensione (0..1, mai 1), la catena di domande sempre
+        più profonde e quanti tentativi. Read-only."""
+        st = self._tensione_raw()
+        return {"punto_cieco": (self._meta_get("punto_cieco") or ""),
+                "profondita": int(st.get("profondita", 0)),
+                "tensione": round(float(st.get("tensione", 0.0)), 3),
+                "tentativi": int(st.get("tentativi", 0)),
+                "catena": [c.get("domanda", "") for c in (st.get("catena") or [])][-6:]}
+
     def backup(self, dest):
         """Copia CONSISTENTE del DB della coscienza (memoria, moduli, distillati…)
         in `dest`, usando l'API di backup di SQLite: è sicura anche mentre il bot

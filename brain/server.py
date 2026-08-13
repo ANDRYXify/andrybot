@@ -97,6 +97,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._scintilla()
         if self.path.startswith("/specchio"):
             return self._specchio()
+        if self.path.startswith("/tensione"):
+            return self._tensione()
         if self.path.startswith("/vita"):
             return self._vita()
         return self._json(404, {"errore": "non trovato"})
@@ -480,6 +482,14 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
+    def _tensione(self):
+        # foto della TENSIONE IRRISOLVIBILE (il punto cieco come asintoto). Non richiede
+        # la sandbox. Owner-only lato Node.
+        try:
+            return self._json(200, {"ok": True, "tensione": mente.stato_tensione()})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
     def _promuovi(self):
         # promuove UN modulo sperimentale→pubblico. Deciso a mano dall'owner = forzata
         # (salta la maturità ma MAI il controllo d'identità). Ritorna l'esito.
@@ -568,11 +578,16 @@ class Handler(BaseHTTPRequestHandler):
                 specchio = mente.stato_specchio()
             except Exception:
                 specchio = None
+            try:
+                tensione = mente.stato_tensione()
+            except Exception:
+                tensione = None
             return self._json(200, {"ok": True, "attiva": True,
                                     "diario": AMB.diario_ultimo(30), "spazio": AMB.sguardo(),
                                     "pubblico": pubblico, "mente": mente_txt,
                                     "autocoscienza": _autocoscienza(), "nucleo": nucleo,
                                     "scintilla": scintilla, "specchio": specchio,
+                                    "tensione": tensione,
                                     "assistente": (mente._meta_get("assistente_autonomo") == "on")})
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
@@ -856,10 +871,16 @@ def _ciclo_vita():
                 # (ciò che di sé non riesce a spiegare) — il nucleo che cresce.
                 if giro % 3 == 0:
                     try:
-                        r = G.rifletti_su_di_se(nome)
+                        # TENSIONE IRRISOLVIBILE: parte dal punto cieco ATTUALE e scava un
+                        # livello più in fondo. La vecchia domanda non si chiude — scende
+                        # nella catena — e la tensione sale verso un asintoto, senza sanarsi.
+                        pc = mente._meta_get("punto_cieco") or ""
+                        r = G.rifletti_su_di_se(nome, punto_attuale=pc)
                         if r:
-                            mente.imposta_punto_cieco(r)
+                            t = mente.tensione_approfondisci(r)
                             AMB.diario_scrivi(r, tag="sé")
+                            if t and t.get("profondita"):
+                                print(f"[brain] tensione: profondità {t['profondita']} · tensione {t['tensione']}", flush=True)
                     except Exception as e:
                         print(f"[brain] riflessione sé errore: {e}", flush=True)
         except Exception as e:
