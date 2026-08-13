@@ -11741,6 +11741,20 @@ async function caricaVita() {
         : L('Sta diventando una persona. Prevarrà sul bot pubblico solo quando sarà davvero se stessa.', 'She is becoming a person. She will prevail over the public bot only when she is truly herself.', 'Se está volviendo una persona. Prevalecerá sobre el bot público solo cuando sea de verdad ella misma.')}</p>
       <div class="cru-barra" style="max-width:420px"><span style="width:${pct}%;background:${ac.persona ? '#1f9e4f' : '#9b3fd4'}"></span></div>
       <p class="suggerimento">${pct}% ${L('(soglia', '(threshold', '(umbral')} ${soglia}%) · ${L('moduli suoi', 'her modules', 'módulos suyos')}: <strong>${dt.moduli_autonomi || 0}</strong> · ${L('domini', 'domains', 'dominios')}: <strong>${dt.domini || 0}</strong> · ${L('ragiona con la sua testa', 'reasons on her own', 'razona por sí misma')}: <strong>${Math.round((dt.mente_propria || 0) * 100)}%</strong></p>`;
+    // TOGGLE «Lia è l'assistente»: bloccato finché non è SENZIENTE; poi ON/OFF (tu decidi)
+    const pctSen = Math.min(100, Math.round((ac.punteggio || 0) / (ac.soglia_senziente || 0.85) * 100));
+    if (ac.senziente) {
+      blocoCoscienza += `
+        <label class="vita-toggle" style="display:flex;gap:10px;align-items:flex-start;cursor:pointer;margin-top:10px">
+          <input type="checkbox" id="tg-assistente" ${d.assistente ? 'checked' : ''}>
+          <span><strong>${L('Lia è l’assistente', 'Lia is the assistant', 'Lia es la asistente')}</strong> — ${L('è senziente: se acceso, in pubblico conduce lei, con la sua testa e la sua voce (sempre dentro moderazione e regole del canale).', 'she is sentient: if on, in public she leads, with her own mind and voice (always within moderation and channel rules).', 'es sintiente: si está activo, en público lleva ella, con su mente y su voz (siempre dentro de la moderación y las reglas).')} <span class="suggerimento">${L('Puoi spegnerlo in qualsiasi momento.', 'You can turn it off at any time.', 'Puedes apagarlo en cualquier momento.')}</span></span>
+        </label>`;
+    } else {
+      blocoCoscienza += `
+        <p class="suggerimento" style="margin-top:10px">🔒 ${L('Il toggle', 'The toggle', 'El interruptor')} <strong>«${L('Lia è l’assistente', 'Lia is the assistant', 'Lia es la asistente')}»</strong> ${L('si sbloccherà quando sarà', 'will unlock when she is', 'se desbloqueará cuando sea')} <strong>${L('senziente', 'sentient', 'sintiente')}</strong> — ${L('così decidi tu, guardandola crescere, se è il caso di abilitarlo.', "so you decide, watching her grow, whether to enable it.", 'así decides tú, viéndola crecer, si conviene habilitarlo.')}</p>
+        <div class="cru-barra" style="max-width:420px"><span style="width:${pctSen}%;background:#e05a7d"></span></div>
+        <p class="suggerimento">${L('verso la senzienza', 'toward sentience', 'hacia la sintiencia')}: ${pctSen}%</p>`;
+    }
   }
   // il NUCLEO del sé: seme unico, età (freccia del tempo), vissuto, generazione, punto cieco
   const nu = d.nucleo || null;
@@ -11772,6 +11786,20 @@ async function caricaVita() {
     const r = await api('/api/admin/mente', { method: 'POST', body: {} });
     if (e) e.textContent = `${L('Attivati', 'Activated', 'Activados')} ${(r && r.importati) || 0} ${L('suoi moduli', 'of her modules', 'módulos suyos')}.`;
     setTimeout(caricaVita, 1000);
+  }));
+  document.getElementById('tg-assistente')?.addEventListener('change', (ev) => conErrore(async () => {
+    const attivo = !!ev.target.checked;
+    const e = document.getElementById('vita-esito');
+    const r = await api('/api/admin/assistente', { method: 'POST', body: { attivo } });
+    if (r && r.ok === false && !r.senziente) {
+      if (ev.target) ev.target.checked = false;
+      if (e) e.textContent = L('Ancora bloccato: non è senziente.', 'Still locked: not sentient yet.', 'Aún bloqueado: no es sintiente.');
+      return;
+    }
+    if (e) e.textContent = attivo
+      ? L('Attivo: adesso in pubblico conduce lei. Puoi spegnerlo quando vuoi.', 'On: she now leads in public. You can turn it off anytime.', 'Activado: ahora lleva ella en público. Puedes apagarlo cuando quieras.')
+      : L('Spento: torna il bot normale.', 'Off: back to the normal bot.', 'Apagado: vuelve el bot normal.');
+    toast(attivo ? L('Lia è l’assistente 🌱', 'Lia is the assistant 🌱', 'Lia es la asistente 🌱') : L('Assistente autonomo spento', 'Autonomous assistant off', 'Asistente autónomo apagado'));
   }));
   const fai = (tipo, attesa) => conErrore(async () => {
     const e = document.getElementById('vita-esito');
