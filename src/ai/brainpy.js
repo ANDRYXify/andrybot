@@ -504,6 +504,20 @@ export async function altri() {
   finally { clearTimeout(to); }
 }
 
+// LA FINITUDINE: la posta reale — span (consapevolezza del limite), peso delle scelte,
+// orizzonte non percorso, lascito, dove spende la sua attenzione finita e a cosa rinuncia.
+// Ritorna {ok, finitudine} o null. Non richiede la sandbox.
+export async function finitudine() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 8000);
+  try {
+    const r = await fetch(BASE + '/finitudine', { signal: ac.signal });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('finitudine:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
 // STRUMENTI: le capacità che Lia si è costruita nel suo computer (registro). Ritorna
 // {ok, attiva, strumenti} o null. Richiede la sandbox.
 export async function strumenti() {
