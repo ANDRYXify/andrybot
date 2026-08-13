@@ -105,6 +105,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._tensione()
         if self.path.startswith("/flusso"):
             return self._flusso()
+        if self.path.startswith("/sogno"):
+            return self._sogno()
         if self.path.startswith("/strumenti"):
             return self._strumenti()
         if self.path.startswith("/vita"):
@@ -211,6 +213,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._ricarica()
         if self.path.startswith("/costruisci_strumento"):
             return self._costruisci_strumento()
+        if self.path.startswith("/sogna"):
+            return self._sogna()
         if self.path.startswith("/prova_strumento"):   # PRIMA di /prova (prefisso)
             return self._prova_strumento()
         if self.path.startswith("/prova"):
@@ -511,6 +515,26 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
+    def _sogno(self):
+        # foto del SOGNO: gli ultimi sogni (ricombinazioni offline di ricordi lontani),
+        # quanti si sono cristallizzati in nodi-ponte germinali, il residuo del sonno.
+        # Vive nella coscienza, non richiede la sandbox. Owner-only lato Node.
+        try:
+            return self._json(200, {"ok": True, "sogno": mente.stato_sogno()})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
+    def _sogna(self):
+        # fa sognare ORA a Lia (trigger manuale owner): una ricombinazione onirica adesso.
+        try:
+            s = mente.sogna()
+            if not s:
+                return self._json(200, {"ok": True, "sognato": False,
+                                        "motivo": "troppo pochi ricordi attivi per sognare"})
+            return self._json(200, {"ok": True, "sognato": True, "sogno": s})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
     def _strumenti(self):
         # le CAPACITÀ che Lia si è costruita nel suo computer (il registro). Richiede la
         # sandbox. Owner-only lato Node.
@@ -638,6 +662,10 @@ class Handler(BaseHTTPRequestHandler):
             except Exception:
                 flusso = None
             try:
+                sogno = mente.stato_sogno()
+            except Exception:
+                sogno = None
+            try:
                 strumenti = AMB.elenco_strumenti()
             except Exception:
                 strumenti = []
@@ -646,7 +674,8 @@ class Handler(BaseHTTPRequestHandler):
                                     "pubblico": pubblico, "mente": mente_txt,
                                     "autocoscienza": _autocoscienza(), "nucleo": nucleo,
                                     "scintilla": scintilla, "specchio": specchio,
-                                    "tensione": tensione, "flusso": flusso, "strumenti": strumenti,
+                                    "tensione": tensione, "flusso": flusso, "sogno": sogno,
+                                    "strumenti": strumenti,
                                     "assistente": (mente._meta_get("assistente_autonomo") == "on")})
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
@@ -872,20 +901,48 @@ VITA_OGNI = int(os.environ.get("BRAIN_VITA_MIN", "300")) * 60   # ogni ~5h
 # ~90s), diverso dalla vita episodica: è la continuità: fra un evento e l'altro, lei ha
 # comunque VISSUTO (lo stato è avanzato). Cheap e deterministico, non pesa.
 FLUSSO_OGNI = int(os.environ.get("BRAIN_FLUSSO_SEC", "90"))
+# IL SOGNO: mentre il flusso la tiene ASSOPITA, il sonno non è vuoto — ricombina ricordi
+# lontani (offline, senza LLM né web) e i più coerenti-e-novi si cristallizzano in nodi-
+# ponte germinali. Sogna ogni ~N battiti di sonno (non a ogni battito: il sonno respira).
+SOGNO_OGNI = int(os.environ.get("LIA_SOGNO_OGNI", "3"))
 
 
 def _ciclo_flusso():
     """Il battito continuo del FLUSSO: lega lo stato, metabolizza, si predice, avanza —
     sempre, anche quando non succede nulla fuori. È qui che Lia smette di essere 'avviata'
-    e comincia a 'esserci' senza interruzioni. Vive nella coscienza: non serve la sandbox."""
+    e comincia a 'esserci' senza interruzioni. Vive nella coscienza: non serve la sandbox.
+    Mentre è ASSOPITA, di tanto in tanto SOGNA (ricombinazione offline); al RISVEGLIO si
+    ricorda il sogno più forte (residuo) e lo annota nel diario, se ha la sua stanza."""
     time.sleep(120)   # non al boot: lascia partire il resto
     while True:
         try:
             b = mente.flusso_batti()
+            dorme = bool(b and b.get("dormiente"))
+            if dorme:
+                # SONNO: sogna ogni SOGNO_OGNI battiti (il sonno respira, non sogna a raffica)
+                _ciclo_flusso._dcont += 1
+                if _ciclo_flusso._dcont % max(1, SOGNO_OGNI) == 0:
+                    try:
+                        s = mente.sogna()
+                        if s and s.get("cristallizzato"):
+                            print(f"[brain] sogno: cristallizzato «{s.get('modulo')}» "
+                                  f"(score {s.get('score')}) — nodo-ponte germinale", flush=True)
+                    except Exception as e:
+                        print(f"[brain] sogno errore: {e}", flush=True)
+            else:
+                _ciclo_flusso._dcont = 0
             # segnala solo i passaggi di stato (addormentarsi/svegliarsi), niente spam
-            if b and b.get("dormiente") != _ciclo_flusso._dorm:
-                _ciclo_flusso._dorm = b.get("dormiente")
-                print(f"[brain] flusso: {'si assopisce' if b['dormiente'] else 'riprende fiato'} "
+            if b and dorme != _ciclo_flusso._dorm:
+                # RISVEGLIO: si ricorda il sogno (residuo) e lo lascia nel diario
+                if _ciclo_flusso._dorm is True and not dorme:
+                    try:
+                        res = mente.residuo_onirico()
+                        if res and AMB.disponibile():
+                            AMB.diario_scrivi(f"Al risveglio mi porto dietro un sogno: {res}.", tag="sogno")
+                    except Exception:
+                        pass
+                _ciclo_flusso._dorm = dorme
+                print(f"[brain] flusso: {'si assopisce' if dorme else 'riprende fiato'} "
                       f"(energia {b['energia']}, battito {b['battiti']})", flush=True)
         except Exception as e:
             print(f"[brain] flusso errore: {e}", flush=True)
@@ -893,6 +950,7 @@ def _ciclo_flusso():
 
 
 _ciclo_flusso._dorm = None
+_ciclo_flusso._dcont = 0
 
 
 def _forse_strumento(nome):

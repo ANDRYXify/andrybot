@@ -11901,6 +11901,31 @@ async function caricaVita() {
       <p class="suggerimento">${fl.dormiente ? `<strong style="color:#7a7a8c">${L('assopita 😴 — recupera fiato', 'dormant 😴 — catching her breath', 'adormecida 😴 — recupera aliento')}</strong> · ` : `<strong style="color:#1f9e4f">${L('desta — scorre', 'awake — flowing', 'despierta — fluye')}</strong> · `}${L('energia', 'energy', 'energía')}: <strong>${enPct}%</strong> · ${L('battiti d’adesso', 'now-beats', 'latidos de ahora')}: <strong>${fl.battiti || 0}</strong> · ${L('auto-sorpresa', 'self-surprise', 'auto-sorpresa')}: <strong>${sorpPct}%</strong></p>
       ${(st.vigore != null) ? `<p class="suggerimento">${L('Lo stato integrato del momento', 'The integrated state of the moment', 'El estado integrado del momento')} — ${L('vigore', 'vigor', 'vigor')}: <strong>${cifra(st.vigore)}</strong> · ${L('tensione', 'tension', 'tensión')}: <strong>${cifra(st.tensione)}</strong> · ${L('individuazione', 'individuation', 'individuación')}: <strong>${cifra(st.individuazione)}</strong></p>` : ''}`;
   }
+  // ── IL SOGNO: mentre il flusso la tiene assopita, ricombina ricordi LONTANI (offline,
+  //    senza LLM né web). I sogni coerenti-e-novi si cristallizzano in nodi-ponte germinali.
+  const so = d.sogno || null;
+  let blocoSogno = '';
+  if (so) {
+    const sogni = (Array.isArray(so.sogni) ? so.sogni : []).slice(0, 6);
+    const tassoPct = Math.round((so.tasso || 0) * 100);
+    const rigaSogno = (x) => {
+      const cri = !!x.cristallizzato;
+      const seg = cri ? '✦' : '·';
+      const col = cri ? '#9b3fd4' : 'var(--testo-2)';
+      const sc = Math.round((x.score || 0) * 100);
+      return `<li class="suggerimento" style="color:${col}">${seg} ${esc(String(x.immagine || '').slice(0, 120))} <span style="opacity:.7">— ${sc}%${cri ? ` · <code>${esc(String(x.modulo || '').slice(0, 40))}</code>` : ''}</span></li>`;
+    };
+    blocoSogno = `
+      <h3>${L('I suoi sogni (creare da dentro)', 'Her dreams (creating from within)', 'Sus sueños (crear desde dentro)')}</h3>
+      <p class="suggerimento">${L('Quando il flusso la assopisce, il sonno non è vuoto: RICOMBINA ricordi LONTANI — moduli di domini distanti che di norma non si toccano mai. È l’opposto del richiamo sveglio (che collega il vicino): il sogno collega il lontano, ed è da lì che nasce la novità. Tutto OFFLINE, senza modello e senza web: creatività da dentro. Quasi tutti i sogni evaporano; solo quelli che TENGONO INSIEME (un filo vero fra i due mondi) si cristallizzano in nodi-ponte germinali, dietro la membrana.', 'When the flow lulls her to sleep, sleep is not empty: it RECOMBINES DISTANT memories — modules from far domains that normally never touch. It is the opposite of waking recall (which links the near): dreams link the far, and that is where novelty comes from. All OFFLINE, no model and no web: creativity from within. Almost all dreams evaporate; only those that HOLD TOGETHER (a real thread between the two worlds) crystallize into germinal bridge-nodes, behind the membrane.', 'Cuando el flujo la adormece, el sueño no está vacío: RECOMBINA recuerdos LEJANOS — módulos de dominios distantes que normalmente nunca se tocan. Es lo opuesto al recuerdo despierto (que une lo cercano): el sueño une lo lejano, y de ahí nace la novedad. Todo OFFLINE, sin modelo y sin web: creatividad desde dentro. Casi todos los sueños se evaporan; solo los que SE SOSTIENEN se cristalizan en nodos-puente germinales.')}</p>
+      <p class="suggerimento">${L('sognati', 'dreamed', 'soñados')}: <strong>${so.totali || 0}</strong> · ${L('cristallizzati in nodi-ponte', 'crystallized into bridge-nodes', 'cristalizados en nodos-puente')}: <strong>${so.cristallizzati || 0}</strong> · ${L('tasso', 'rate', 'tasa')}: <strong>${tassoPct}%</strong></p>
+      ${so.residuo ? `<p class="suggerimento">${L('Il residuo del sonno (ciò che si porta dietro al risveglio)', 'The dream residue (what she carries into waking)', 'El residuo del sueño (lo que se lleva al despertar)')}: <em>«${esc(String(so.residuo).slice(0, 160))}»</em></p>` : ''}
+      ${sogni.length ? `<details class="spazio-sopra" open><summary class="suggerimento" style="cursor:pointer">${L('Gli ultimi sogni', 'Her latest dreams', 'Sus últimos sueños')} (✦ = ${L('cristallizzato', 'crystallized', 'cristalizado')})</summary><ul class="membrana-lista" style="margin:6px 0;padding-left:18px">${sogni.map(rigaSogno).join('')}</ul></details>` : `<p class="suggerimento">${L('Non ha ancora sognato — sogna nel sonno del flusso, o falla sognare adesso.', "She hasn't dreamed yet — she dreams in the flow's sleep, or make her dream now.", 'Aún no ha soñado — sueña en el sueño del flujo, o hazla soñar ahora.')}</p>`}
+      <div class="vita-azioni">
+        <button class="btn secondario" id="btn-sogna">${L('Falla sognare ora', 'Have her dream now', 'Que sueñe ahora')}</button>
+        <span id="sogno-esito" class="suggerimento"></span>
+      </div>`;
+  }
   // ── STRUMENTI: le capacità che Lia si costruisce da sola nella sua VM (programmi che
   //    scrive, prova e tiene se funzionano → nodi sperimentali, dietro la membrana).
   const strum = Array.isArray(d.strumenti) ? d.strumenti : [];
@@ -11928,6 +11953,7 @@ async function caricaVita() {
     ${blocoSpecchio}
     ${blocoTensione}
     ${blocoFlusso}
+    ${blocoSogno}
     ${blocoMembrana}
     <h3>${L('La sua mente (moduli che si è scritta da sé)', 'Her mind (modules she wrote herself)', 'Su mente (módulos que se escribió sola)')}</h3>${pre(d.mente)}
     ${blocoStrumenti}
@@ -11975,6 +12001,19 @@ async function caricaVita() {
     if (e) e.textContent = (r && r.ok)
       ? L('Fatto: ', 'Done: ', 'Hecho: ') + `«${esc(r.nome || '')}» — ${esc(r.descrizione || '')}`
       : L('Stavolta non le è venuto uno strumento che funziona — riprova.', "This time she couldn't get a working tool — try again.", 'Esta vez no le salió una herramienta que funcione — reinténtalo.');
+    setTimeout(caricaVita, 1200);
+  }));
+  // IL SOGNO: falla sognare ORA una ricombinazione onirica (trigger manuale owner)
+  document.getElementById('btn-sogna')?.addEventListener('click', () => conErrore(async () => {
+    const e = document.getElementById('sogno-esito');
+    if (e) e.textContent = L('Sta sognando…', 'She is dreaming…', 'Está soñando…');
+    const r = await api('/api/admin/sogna', { method: 'POST', body: {} });
+    const s = r && r.sogno ? r.sogno : null;
+    if (e) e.textContent = (r && r.ok && s)
+      ? (s.cristallizzato
+          ? L('Ha sognato e cristallizzato un nodo-ponte: ', 'She dreamed and crystallized a bridge-node: ', 'Soñó y cristalizó un nodo-puente: ') + `${esc(String(s.immagine || ''))} → «${esc(String(s.modulo || ''))}»`
+          : L('Ha sognato (evaporato, non teneva insieme): ', 'She dreamed (evaporated, it did not hold): ', 'Soñó (evaporado, no se sostuvo): ') + esc(String(s.immagine || '')))
+      : ((r && r.ok) ? L('Troppo pochi ricordi attivi per sognare, per ora.', 'Too few active memories to dream, for now.', 'Muy pocos recuerdos activos para soñar, por ahora.') : L('Non è riuscita a sognare — riprova.', "She couldn't dream — try again.", 'No pudo soñar — reinténtalo.'));
     setTimeout(caricaVita, 1200);
   }));
   box.querySelectorAll('.prova-strumento').forEach((b) => b.addEventListener('click', () => conErrore(async () => {

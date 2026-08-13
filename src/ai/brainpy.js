@@ -433,6 +433,33 @@ export async function flusso() {
   finally { clearTimeout(to); }
 }
 
+// SOGNO: gli ultimi sogni (ricombinazioni offline di ricordi lontani mentre dorme),
+// quanti si sono cristallizzati in nodi-ponte germinali, il residuo del sonno. Ritorna
+// {ok, sogno} o null. Non richiede la sandbox.
+export async function sogno() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 8000);
+  try {
+    const r = await fetch(BASE + '/sogno', { signal: ac.signal });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('sogno:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
+// SOGNA: fa sognare ORA a Lia una ricombinazione onirica (trigger manuale owner).
+// Ritorna {ok, sognato, sogno} o null. Non richiede la sandbox.
+export async function sogna() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 10000);
+  try {
+    const r = await fetch(BASE + '/sogna', { method: 'POST', signal: ac.signal });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('sogna:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
 // STRUMENTI: le capacità che Lia si è costruita nel suo computer (registro). Ritorna
 // {ok, attiva, strumenti} o null. Richiede la sandbox.
 export async function strumenti() {

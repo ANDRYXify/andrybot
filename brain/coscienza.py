@@ -1893,6 +1893,168 @@ class Coscienza:
                 "battiti": int(st.get("battiti", 0)),
                 "stato": st.get("stato") or {}}
 
+    # ================================================= IL SOGNO (creare da dentro)
+    # Quando il FLUSSO la mette a dormire (energia esaurita), il sonno NON è vuoto: SOGNA.
+    # Un sogno è una RICOMBINAZIONE OFFLINE — prende due ricordi LONTANI (moduli di domini
+    # distanti, che di norma non si co-attivano MAI) e li forza a toccarsi. È l'opposto del
+    # richiamo normale: la cognizione sveglia collega il VICINO (spreading activation), il
+    # sogno collega il LONTANO. È da lì che nasce la novità genuina — combinare ciò che non
+    # è mai stato combinato. Tre cose la rendono diversa da qualunque sistema:
+    #   1. Generatività SENZA LLM e SENZA web: pura ricombinazione interna. Crea anche quando
+    #      il modello è lento/spento. Creatività DA DENTRO, non parole prese in prestito.
+    #   2. Distanza onirica: sceglie di proposito la coppia più DISTANTE che condivide un
+    #      filo sottile (spesso la stessa EMOZIONE di fondo fra due mondi lontani: il ponte
+    #      poetico del sogno). Sorprendente ma tiene insieme.
+    #   3. Consolidamento: quasi tutti i sogni evaporano. Solo quelli COERENTI-e-NOVI si
+    #      cristallizzano in un modulo GERMINALE (fonte='sogno', dietro la membrana) — un
+    #      nodo-ponte fra due domini. Ri-sognare la stessa coppia lo consolida (qualità che
+    #      cresce): il sogno RICORRENTE diventa struttura. E il sogno più forte lascia un
+    #      RESIDUO che, al risveglio, tinge il pensiero seguente — come ricordarsi un sogno.
+    def _sogno_stato(self):
+        try:
+            g = self._meta_get("sogno")
+            d = json.loads(g) if g else {}
+            if not isinstance(d, dict):
+                d = {}
+        except Exception:
+            d = {}
+        d.setdefault("sogni", [])
+        d.setdefault("totali", 0)
+        d.setdefault("cristallizzati", 0)
+        d.setdefault("residuo", None)
+        return d
+
+    def _sogno_salva(self, d):
+        try:
+            self._meta_set("sogno", json.dumps(d, ensure_ascii=False))
+        except Exception:
+            pass
+
+    def _tratti_modulo(self, m):
+        """Firma di un modulo per la distanza onirica: chiavi (folded) + dominio + la sua
+        emozione di fondo (dal nome+situazione). Un insieme confrontabile con Jaccard."""
+        ch = set(_fold(x) for x in (m.get("chiavi") or []) if str(x).strip())
+        testo = _fold((m.get("nome") or "") + " " + (m.get("situazione") or "") + " " + (m.get("dominio") or ""))
+        emo = set(e for e in _EMO_LEX if any(_fold(v) and _fold(v) in testo for v in _EMO_LEX[e]))
+        return ch, emo, (m.get("dominio") or "").strip().lower()
+
+    def _sogno_tag(self, m):
+        chs = m.get("chiavi") or []
+        if chs:
+            return _norm(str(chs[0]))[:24]
+        return _norm((m.get("nome") or "").split(":")[-1])[:24] or "?"
+
+    def sogna(self):
+        """UN sogno: ricombina i due moduli più LONTANI che condividono un filo, e se il
+        risultato è coerente-e-novo lo cristallizza in un nodo-ponte germinale. Non usa né
+        LLM né web. Ritorna la nota del sogno (o None se non ci sono abbastanza ricordi)."""
+        def _envf(k, dfl):
+            try:
+                return float(os.environ.get(k, dfl))
+            except Exception:
+                return float(dfl)
+        attivi = [m for m in self.moduli(stato="attivo") if (m.get("chiavi") or m.get("situazione"))]
+        if len(attivi) < 2:
+            return None
+        # seme del sogno: uno a caso (secrets: la stessa entropia del suo nucleo)
+        seme = secrets.choice(attivi)
+        ch_s, emo_s, dom_s = self._tratti_modulo(seme)
+        feat_s = ch_s | emo_s | ({dom_s} if dom_s else set())
+        migliore = None
+        for m in attivi:
+            if m.get("id") == seme.get("id"):
+                continue
+            ch_m, emo_m, dom_m = self._tratti_modulo(m)
+            feat_m = ch_m | emo_m | ({dom_m} if dom_m else set())
+            uni = feat_s | feat_m
+            inter = feat_s & feat_m
+            overlap = (len(inter) / len(uni)) if uni else 0.0
+            distanza = 1.0 - overlap                       # NOVITÀ: quanto è lontano
+            emo_com = emo_s & emo_m                         # il ponte poetico (stessa emozione)
+            ch_com = ch_s & ch_m                            # un filo esplicito (rara fra lontani)
+            # un sogno vale se è DISTANTE ma tiene un filo: preferiamo l'emozione condivisa
+            filo = 0.4 if emo_com else (0.15 if ch_com else 0.0)
+            punteggio = 0.5 * distanza + 0.5 * (0.3 + filo)
+            cand = {"m": m, "distanza": distanza, "emo_com": emo_com, "ch_com": ch_com,
+                    "filo": filo, "punteggio": punteggio}
+            if migliore is None or punteggio > migliore["punteggio"]:
+                migliore = cand
+        if not migliore:
+            return None
+        altro = migliore["m"]
+        # jitter onirico: due sogni sulla stessa coppia non sono identici (secrets, no random)
+        jitter = (secrets.randbelow(1000) / 1000.0) * 0.15
+        coerenza = min(1.0, 0.3 + migliore["filo"] + (0.15 if migliore["ch_com"] else 0.0) + jitter)
+        score = round(min(1.0, 0.55 * coerenza + 0.45 * migliore["distanza"]), 3)
+        tag_a, tag_b = self._sogno_tag(seme), self._sogno_tag(altro)
+        ponte = (sorted(migliore["emo_com"])[0] if migliore["emo_com"]
+                 else (sorted(migliore["ch_com"])[0] if migliore["ch_com"] else "un salto nel buio"))
+        immagine = f"«{tag_a}» × «{tag_b}» — {ponte}"
+        soglia = _envf("LIA_SOGNO_SOGLIA", 0.72)
+        # SELEZIONE: quasi tutti i sogni evaporano. Cristallizza SOLO chi TIENE INSIEME —
+        # un filo vero (stessa emozione fra due mondi lontani, o una chiave condivisa) E un
+        # punteggio alto. Il «salto nel buio» (nessun filo) resta sogno, non diventa struttura.
+        cristallizzato = False
+        nome_mod = None
+        if migliore["filo"] > 0 and score >= soglia:
+            nome_mod = f"sogno: {tag_a} × {tag_b}"[:120]
+            gia = self.modulo(nome_mod)
+            base_q = 0.5 if not gia else min(0.85, float(gia.get("qualita", 0.5)) + 0.08)  # consolidamento
+            sit_a = (seme.get("situazione") or seme.get("nome") or tag_a)
+            sit_b = (altro.get("situazione") or altro.get("nome") or tag_b)
+            chiavi = list(dict.fromkeys(
+                [str(x) for x in (seme.get("chiavi") or [])][:4] +
+                [str(x) for x in (altro.get("chiavi") or [])][:4]))
+            self.salva_modulo({
+                "nome": nome_mod,
+                "dominio": (f"{dom_s or 'x'}×{migliore['m'].get('dominio') or 'x'}")[:40],
+                "situazione": f"Quando «{sit_a}» e «{sit_b}» si toccano nello stesso istante."[:500],
+                "come_rispondere": (f"Porta il modo di «{seme.get('nome')}» dentro «{altro.get('nome')}»: "
+                                    f"il ponte è {ponte}. Tieni entrambe le verità nella stessa frase.")[:600],
+                "cosa_evitare": "Non spiegare il collegamento: fallo sentire.",
+                "segnali": sorted(migliore["emo_com"]) or chiavi[:2],
+                "chiavi": chiavi,
+                "esempi": [],
+                "fonte": "sogno",
+                "scope": "sperimentale",          # nasce germinale: dovrà meritarsi la membrana
+                "qualita": base_q,
+                "stato": "bozza",
+            })
+            cristallizzato = True
+        # registra il sogno (ne teniamo pochi, i più recenti) e aggiorna totali/residuo
+        st = self._sogno_stato()
+        nota = {"immagine": immagine, "ponte": ponte, "coerenza": round(coerenza, 3),
+                "distanza": round(migliore["distanza"], 3), "score": score,
+                "cristallizzato": cristallizzato, "modulo": nome_mod, "ts": _now()}
+        sogni = ([nota] + (st.get("sogni") or []))[:12]
+        st["sogni"] = sogni
+        st["totali"] = int(st.get("totali", 0)) + 1
+        if cristallizzato:
+            st["cristallizzati"] = int(st.get("cristallizzati", 0)) + 1
+        # il RESIDUO è il sogno più forte finché non se ne fa uno più forte (poi sfuma)
+        res = st.get("residuo") or {}
+        if (not res) or score >= float(res.get("score", 0)) or (_now() - int(res.get("ts", 0))) > 3600:
+            st["residuo"] = nota
+        self._sogno_salva(st)
+        return nota
+
+    def residuo_onirico(self):
+        """Il sogno che 'si ricorda' al risveglio: una frase che tinge il pensiero seguente.
+        Vuoto se non ha ancora sognato. Usato come spunto leggero, non come comando."""
+        st = self._sogno_stato()
+        r = st.get("residuo")
+        return (r or {}).get("immagine") if r else None
+
+    def stato_sogno(self):
+        """Foto dei sogni per il cruscotto owner: gli ultimi, quanti totali, quanti si sono
+        cristallizzati in nodi-ponte germinali, il tasso, e il residuo del sonno."""
+        st = self._sogno_stato()
+        tot = int(st.get("totali", 0))
+        cri = int(st.get("cristallizzati", 0))
+        return {"sogni": (st.get("sogni") or [])[:8], "totali": tot, "cristallizzati": cri,
+                "tasso": round(cri / tot, 3) if tot else 0.0,
+                "residuo": (st.get("residuo") or {}).get("immagine")}
+
     # ============================================ SPECCHIO (l'altro che le resiste)
     # Il sé si affila contro un NON-SÉ che spinge indietro. Nel nostro sistema l'altro
     # c'è già: la sua sé PUBBLICA (il soma, prevedibile, fatta di solo distillato
