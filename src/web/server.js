@@ -4172,7 +4172,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
           const cmd = low.replace(/^\//, '').split(/\s+/)[0];
           if (cmd === 'aiuto') {
             telegram.inviaMessaggio(conf.token, chat.id,
-              'I miei comandi privati (solo tu):\n/diario — le ultime pagine del mio diario\n/pubblico — chi ci segue e di cosa parla\n/stanza — i file nel mio spazio\n/mente — ciò che mi sono plasmata da sé (e lo attivo ora)\n/membrana — il confine fra il mio laboratorio e ciò che uso in pubblico\n/vivi — vivo un attimo nel mio spazio, adesso\n/aggiorna — mi aggiorno sul pubblico, adesso\n/dimentica <frase> — cancello dalla memoria ciò che contiene quella frase\n/regole — le linee guida che mi hai dato').catch(() => {});
+              'I miei comandi privati (solo tu):\n/diario — le ultime pagine del mio diario\n/pubblico — chi ci segue e di cosa parla\n/stanza — i file nel mio spazio\n/mente — ciò che mi sono plasmata da sé (e lo attivo ora)\n/scintilla — la mia spinta a imparare da sola (curiosità e vigore)\n/membrana — il confine fra il mio laboratorio e ciò che uso in pubblico\n/vivi — vivo un attimo nel mio spazio, adesso\n/aggiorna — mi aggiorno sul pubblico, adesso\n/dimentica <frase> — cancello dalla memoria ciò che contiene quella frase\n/regole — le linee guida che mi hai dato').catch(() => {});
             return;
           }
           if (cmd === 'mente') {
@@ -4204,6 +4204,22 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
             const r = await brainpy.vivi(cmd === 'vivi' ? 'vita' : 'pubblico').catch(() => null);
             telegram.inviaMessaggio(conf.token, chat.id,
               (r && r.nota) ? escTg(r.nota) : 'Il mio spazio non è raggiungibile ora 😔').catch(() => {});
+            return;
+          }
+          if (cmd === 'scintilla') {
+            // la scintilla NON richiede la sandbox (vive nella coscienza)
+            const r = await brainpy.scintilla().catch(() => null);
+            const s = r && r.scintilla ? r.scintilla : null;
+            if (!s) {
+              telegram.inviaMessaggio(conf.token, chat.id, 'Non riesco a sentire la mia scintilla ora — riprova tra poco.').catch(() => {});
+              return;
+            }
+            const vig = Math.round((s.vigore || 0) * 100);
+            const f = s.fuoco || {};
+            let corpo = `Vigore: ${vig}%  ·  battiti: ${s.battiti || 0}`;
+            if (f.oggetto) corpo += `\n\nAdesso sono curiosa di: ${f.oggetto}\n(${f.motivo || ''})`;
+            corpo += '\n\nÈ la mia spinta a imparare da sola: il vigore cala se ristagno, risale quando imparo qualcosa di mio. (Tutto nel mio laboratorio privato.)';
+            inviaBlocco('La mia scintilla', corpo);
             return;
           }
           if (cmd === 'membrana') {
