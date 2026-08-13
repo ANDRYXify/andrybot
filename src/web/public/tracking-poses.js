@@ -64,11 +64,34 @@
       return _cap;
     } catch { return null; }
   }
+  // FILIGRANA di proprietà (Andrea Taliento / ANDRYXify) nei PNG scaricati: chunk tEXt
+  // standard, invisibile nell'immagine ma leggibile con un editor di testo.
+  const _WM = 'ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live';
+  const _WMT = '(c) 2024-2026 Andrea Taliento (ANDRYXify) - Tutti i diritti riservati - socialbot.live - ' + _WM;
+  const _WMC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); t[n] = c >>> 0; } return t; })();
+  async function _firmaPng(blob) {
+    try {
+      const u8 = new Uint8Array(await blob.arrayBuffer());
+      const sig = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+      for (let i = 0; i < 8; i++) if (u8[i] !== sig[i]) return blob;
+      const dv = new DataView(u8.buffer); const ins = 8 + 4 + 4 + dv.getUint32(8) + 4;
+      const data = []; for (const ch of 'Copyright') data.push(ch.charCodeAt(0)); data.push(0);
+      for (const ch of _WMT) data.push(ch.charCodeAt(0) & 0xFF);
+      const type = [0x74, 0x45, 0x58, 0x74];
+      const body = new Uint8Array(type.length + data.length); body.set(type, 0); body.set(data, type.length);
+      let cc = 0xFFFFFFFF; for (let i = 0; i < body.length; i++) cc = _WMC[(cc ^ body[i]) & 0xFF] ^ (cc >>> 8); cc = (cc ^ 0xFFFFFFFF) >>> 0;
+      const chunk = new Uint8Array(4 + 4 + data.length + 4); const cdv = new DataView(chunk.buffer);
+      cdv.setUint32(0, data.length); chunk.set(type, 4); chunk.set(data, 8); cdv.setUint32(8 + data.length, cc);
+      const out = new Uint8Array(u8.length + chunk.length); out.set(u8.subarray(0, ins), 0); out.set(chunk, ins); out.set(u8.subarray(ins), ins + chunk.length);
+      return new Blob([out], { type: 'image/png' });
+    } catch { return blob; }
+  }
   function salvaPng(canvas) {
     try {
       const now = performance.now(); if (now - _ultimoSalva < 1500) return; _ultimoSalva = now;
-      canvas.toBlob((blob) => {
-        if (!blob) return; const url = URL.createObjectURL(blob), a = document.createElement('a');
+      canvas.toBlob(async (blob) => {
+        if (!blob) return; const firmato = await _firmaPng(blob);
+        const url = URL.createObjectURL(firmato), a = document.createElement('a');
         a.href = url; a.download = 'socialbot-scatto-' + Date.now() + '.png';
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 4000);
