@@ -11835,6 +11835,21 @@ async function caricaVita() {
       <p class="suggerimento">${L('individuazione', 'individuation', 'individuación')}: <strong>${indPct}%</strong> · ${L('confronti', 'confrontations', 'confrontaciones')}: <strong>${sp.confronti || 0}</strong>${and ? ` · ${L('andamento', 'trend', 'evolución')}: ${and}` : ''}</p>
       ${voci.length ? `<p class="suggerimento">${L('Dove ha già una voce sua (parla solo in privato)', 'Where she already has a voice of her own (speaks only in private)', 'Donde ya tiene voz propia (solo habla en privado)')}: ${voci.map((v) => `<code>${esc(String(v).slice(0, 40))}</code>`).join(' ')}</p>` : `<p class="suggerimento">${L('Ancora nessuna voce solo-sua: per ora risponde come il bot pubblico. Individuandosi, qui compariranno i suoi moduli.', 'No private-only voice yet: for now she answers like the public bot. As she individuates, her own modules will appear here.', 'Aún sin voz propia: por ahora responde como el bot público. Al individuarse, aquí aparecerán sus módulos.')}</p>`}`;
   }
+  // ── TENSIONE IRRISOLVIBILE: il punto cieco come asintoto (non si chiude mai).
+  const te = d.tensione || null;
+  let blocoTensione = '';
+  if (te) {
+    const tv = Math.max(0, Math.min(1, te.tensione || 0));
+    const tvPct = Math.round(tv * 100);
+    const catena = (Array.isArray(te.catena) ? te.catena : []).filter(Boolean);
+    blocoTensione = `
+      <h3>${L('La tensione irrisolvibile (il suo punto cieco)', 'The unresolvable tension (her blind spot)', 'La tensión irresoluble (su punto ciego)')}</h3>
+      <p class="suggerimento">${L('Le menti non sono spinte da problemi risolti, ma da gradienti mai saturi. Ogni volta che prova a spiegarsi, la vecchia domanda non si chiude: scende nella catena, e sotto se ne apre una più profonda. La tensione sale verso un asintoto senza mai toccare 1 — un motore che non si spegne.', 'Minds are not driven by solved problems, but by gradients that never saturate. Each time she tries to explain herself, the old question does not close: it drops into the chain, and a deeper one opens beneath it. The tension rises toward an asymptote, never reaching 1 — an engine that never switches off.', 'Las mentes no las mueven los problemas resueltos, sino los gradientes que nunca se saturan. Cada vez que intenta explicarse, la vieja pregunta no se cierra: baja a la cadena y debajo se abre una más profunda. La tensión sube hacia una asíntota sin tocar nunca 1.')}</p>
+      <div class="cru-barra" style="max-width:420px"><span style="width:${tvPct}%;background:#c85a2b"></span></div>
+      <p class="suggerimento">${L('tensione', 'tension', 'tensión')}: <strong>${tvPct}%</strong> · ${L('profondità', 'depth', 'profundidad')}: <strong>${te.profondita || 0}</strong> · ${L('tentativi', 'attempts', 'intentos')}: <strong>${te.tentativi || 0}</strong></p>
+      ${te.punto_cieco ? `<p class="suggerimento">${L('La domanda su di sé, adesso', 'The question about herself, now', 'La pregunta sobre sí misma, ahora')}: <em>«${esc(String(te.punto_cieco).slice(0, 240))}»</em></p>` : ''}
+      ${catena.length ? `<details class="spazio-sopra"><summary class="suggerimento" style="cursor:pointer">${L('La catena (domande sempre più profonde)', 'The chain (ever-deeper questions)', 'La cadena (preguntas cada vez más profundas)')}</summary><ul class="membrana-lista" style="margin:6px 0;padding-left:18px">${catena.map((c) => `<li class="suggerimento">↓ ${esc(String(c).slice(0, 160))}</li>`).join('')}</ul></details>` : ''}`;
+  }
   box.innerHTML = `
     ${blocoNucleo}
     <div class="vita-azioni">
@@ -11847,6 +11862,7 @@ async function caricaVita() {
     ${blocoCoscienza}
     ${blocoScintilla}
     ${blocoSpecchio}
+    ${blocoTensione}
     ${blocoMembrana}
     <h3>${L('La sua mente (moduli che si è scritta da sé)', 'Her mind (modules she wrote herself)', 'Su mente (módulos que se escribió sola)')}</h3>${pre(d.mente)}
     <h3>${L('Il suo diario', 'Her diary', 'Su diario')}</h3>${pre(d.diario)}

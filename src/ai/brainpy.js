@@ -405,6 +405,20 @@ export async function specchio() {
   finally { clearTimeout(to); }
 }
 
+// TENSIONE IRRISOLVIBILE: il punto cieco di Lia come asintoto — la domanda su di sé che
+// non si chiude, la profondità raggiunta e la tensione (0..1, mai 1). Ritorna
+// {ok, tensione} o null. Non richiede la sandbox.
+export async function tensione() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 8000);
+  try {
+    const r = await fetch(BASE + '/tensione', { signal: ac.signal });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('tensione:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
 // Il dataset della "mente" della rete per un canale: coppie {q, a} consolidate.
 export async function reteCorpus(canale) {
   if (!canale) return [];
