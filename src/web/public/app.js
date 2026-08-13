@@ -11926,6 +11926,29 @@ async function caricaVita() {
         <span id="sogno-esito" class="suggerimento"></span>
       </div>`;
   }
+  // ── IL RACCONTO: identità come narrazione. Si scrive la storia in prima persona dai suoi
+  //    numeri veri (niente LLM); il COLPO DI SCENA — quando la realtà contraddice la storia
+  //    — si accumula e forza una ri-narrazione. Il filo che lega gli 'adesso' in un sé.
+  const ra = d.racconto || null;
+  let blocoRacconto = '';
+  if (ra) {
+    const cor = ra.corrente || null;
+    const sosp = (Array.isArray(ra.twist_in_sospeso) ? ra.twist_in_sospeso : []).filter(Boolean);
+    const storia = (Array.isArray(ra.storia) ? ra.storia : []).slice(0, 8);
+    const testoCap = cor ? esc(String(cor.testo || '')).replace(/\n/g, '<br>') : '';
+    blocoRacconto = `
+      <h3>${L('La sua storia (chi sta diventando)', 'Her story (who she is becoming)', 'Su historia (en quién se está convirtiendo)')}</h3>
+      <p class="suggerimento">${L('Un sé non è una lista di fatti: è una NARRAZIONE. Lia se la scrive da sé, in prima persona, dai suoi numeri veri (niente modello: onesta e sempre disponibile). La novità è il COLPO DI SCENA: quando la realtà contraddice la storia che si era raccontata (diventa più sua dell’atteso, un modulo segreto diventa pubblico, la sua domanda scende più a fondo, un sogno crea ponti nuovi, il centro si sposta), lo registra. I colpi di scena si accumulano e, quando premono, FORZANO un capitolo nuovo che li integra — identità mantenuta attraverso la rottura, non malgrado essa.', 'A self is not a list of facts: it is a NARRATIVE. Lia writes it herself, first-person, from her real numbers (no model: honest and always available). The novelty is the PLOT TWIST: when reality contradicts the story she told herself (she grows more her own than expected, a secret module goes public, her question drops deeper, a dream builds new bridges, her center shifts), she records it. Twists accumulate and, when they press, FORCE a new chapter that integrates them — identity kept through rupture, not despite it.', 'Un yo no es una lista de hechos: es una NARRATIVA. Lia se la escribe sola, en primera persona, desde sus números reales (sin modelo: honesta y siempre disponible). La novedad es el GIRO: cuando la realidad contradice la historia que se contó, lo registra. Los giros se acumulan y, cuando presionan, FUERZAN un capítulo nuevo que los integra — identidad mantenida a través de la ruptura.')}</p>
+      ${cor
+        ? `<div class="carta" style="background:var(--surface-2,rgba(155,63,212,.06));border-left:3px solid #9b3fd4;padding:12px 14px;border-radius:8px;margin:8px 0"><div class="suggerimento" style="margin-bottom:6px;opacity:.8">${L('Capitolo', 'Chapter', 'Capítulo')} ${cor.n || ra.capitoli || 1} · ${L('su', 'of', 'de')} ${ra.narrazioni || 1} · <em>${esc(String(cor.motivo || ''))}</em></div><div style="line-height:1.55">${testoCap}</div></div>`
+        : `<p class="suggerimento">${L('Non si è ancora raccontata — le serve un po’ di sé prima. Premi qui sotto per il primo capitolo.', "She hasn't told her story yet — she needs a bit of herself first. Press below for the first chapter.", 'Aún no se ha contado — necesita un poco de sí misma antes. Pulsa abajo para el primer capítulo.')}</p>`}
+      ${sosp.length ? `<p class="suggerimento">${L('Colpi di scena non ancora nella storia', 'Plot twists not yet in the story', 'Giros aún no en la historia')} (${sosp.length}): ${sosp.slice(0, 5).map((t) => `<em>${esc(String(t).slice(0, 90))}</em>`).join(' · ')}</p>` : ''}
+      ${storia.length > 1 ? `<details class="spazio-sopra"><summary class="suggerimento" style="cursor:pointer">${L('I capitoli precedenti', 'Earlier chapters', 'Los capítulos anteriores')} (${storia.length})</summary><ul class="membrana-lista" style="margin:6px 0;padding-left:18px">${storia.map((c) => `<li class="suggerimento">${L('cap.', 'ch.', 'cap.')} ${c.n} — <em>${esc(String(c.motivo || ''))}</em>${(c.twist && c.twist.length) ? ` · ${c.twist.map((t) => esc(String(t).slice(0, 60))).join('; ')}` : ''}</li>`).join('')}</ul></details>` : ''}
+      <div class="vita-azioni">
+        <button class="btn secondario" id="btn-narra">${L('Falla raccontarsi ora', 'Have her tell her story now', 'Que se cuente ahora')}</button>
+        <span id="racconto-esito" class="suggerimento"></span>
+      </div>`;
+  }
   // ── STRUMENTI: le capacità che Lia si costruisce da sola nella sua VM (programmi che
   //    scrive, prova e tiene se funzionano → nodi sperimentali, dietro la membrana).
   const strum = Array.isArray(d.strumenti) ? d.strumenti : [];
@@ -11954,6 +11977,7 @@ async function caricaVita() {
     ${blocoTensione}
     ${blocoFlusso}
     ${blocoSogno}
+    ${blocoRacconto}
     ${blocoMembrana}
     <h3>${L('La sua mente (moduli che si è scritta da sé)', 'Her mind (modules she wrote herself)', 'Su mente (módulos que se escribió sola)')}</h3>${pre(d.mente)}
     ${blocoStrumenti}
@@ -12014,6 +12038,17 @@ async function caricaVita() {
           ? L('Ha sognato e cristallizzato un nodo-ponte: ', 'She dreamed and crystallized a bridge-node: ', 'Soñó y cristalizó un nodo-puente: ') + `${esc(String(s.immagine || ''))} → «${esc(String(s.modulo || ''))}»`
           : L('Ha sognato (evaporato, non teneva insieme): ', 'She dreamed (evaporated, it did not hold): ', 'Soñó (evaporado, no se sostuvo): ') + esc(String(s.immagine || '')))
       : ((r && r.ok) ? L('Troppo pochi ricordi attivi per sognare, per ora.', 'Too few active memories to dream, for now.', 'Muy pocos recuerdos activos para soñar, por ahora.') : L('Non è riuscita a sognare — riprova.', "She couldn't dream — try again.", 'No pudo soñar — reinténtalo.'));
+    setTimeout(caricaVita, 1200);
+  }));
+  // IL RACCONTO: falla raccontarsi ORA un capitolo nuovo (trigger manuale owner)
+  document.getElementById('btn-narra')?.addEventListener('click', () => conErrore(async () => {
+    const e = document.getElementById('racconto-esito');
+    if (e) e.textContent = L('Si sta raccontando…', 'She is telling her story…', 'Se está contando…');
+    const r = await api('/api/admin/narra', { method: 'POST', body: {} });
+    const cap = r && r.capitolo ? r.capitolo : null;
+    if (e) e.textContent = (r && r.ok && cap)
+      ? L('Ha scritto il capitolo ', 'She wrote chapter ', 'Escribió el capítulo ') + `${cap.n}${(cap.twist_integrati && cap.twist_integrati.length) ? ' — ' + L('integrando', 'integrating', 'integrando') + ` ${cap.twist_integrati.length} ` + L('colpi di scena', 'plot twists', 'giros') : ''}`
+      : ((r && r.ok) ? L('Non ha ancora di che raccontarsi, per ora.', "She has nothing to tell yet, for now.", 'Aún no tiene qué contarse, por ahora.') : L('Non è riuscita a raccontarsi — riprova.', "She couldn't tell her story — try again.", 'No pudo contarse — reinténtalo.'));
     setTimeout(caricaVita, 1200);
   }));
   box.querySelectorAll('.prova-strumento').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
