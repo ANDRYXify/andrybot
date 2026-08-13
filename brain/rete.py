@@ -33,6 +33,16 @@ import threading
 DATA_DIR = os.environ.get("DATA_DIR", "/app/data")
 RETE_DIR = os.path.join(DATA_DIR, "rete")
 
+# Creiamo SUBITO la cartella della rete (anche se ancora vuota): così, appena il
+# cervello parte, si vede `rete/` dentro il disco montato ed è prova concreta che
+# la memoria di Lia sta persistendo dove deve. (Prima nasceva solo alla prima cosa
+# imparata, quindi poteva "mancare" pur essendo tutto a posto.) Se per qualche
+# motivo non si può creare, non blocchiamo l'avvio: la creerà comunque _salva().
+try:
+    os.makedirs(RETE_DIR, exist_ok=True)
+except OSError:
+    pass
+
 # ── Parametri (scelti prudenti: la rete risponde da sola solo quando è sicura) ──
 SOGLIA_RICONOSCE = 0.74   # somiglianza minima per rispondere da soli (richiamo)
 SOGLIA_VICINO    = 0.86   # in apprendimento: sopra questa, RINFORZO invece di creare
