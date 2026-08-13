@@ -65,6 +65,17 @@ services:
     <<: *comune
     build: ./brain
     env_file: .env
+    # IMPORTANTISSIMO — persistenza del cervello di Lia.
+    # Il brain gira con WORKDIR /app/brain (diverso dal bot, che sta in /app).
+    # Se DATA_DIR arriva *relativo* da .env (es. ./data, che al bot va benissimo
+    # perché il suo cwd è /app), qui dentro diventa /app/brain/data: una cartella
+    # NON montata, che sparisce a ogni `docker compose up --build`. È per questo
+    # che coscienza.db e rete/ svanivano e "Lia rinasceva da zero" ogni deploy.
+    # Questo override forza il percorso ASSOLUTO già montato su ./data: vince su
+    # env_file e sul Dockerfile, così la memoria di Lia finisce SEMPRE sul disco
+    # del server e sopravvive per davvero ai redeploy.
+    environment:
+      - DATA_DIR=/app/data
     volumes:
       - ./data:/app/data      # coscienza (memoria) + modelli, persistono qui
     expose:
