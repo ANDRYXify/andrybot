@@ -4170,7 +4170,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         // COMANDI privati per ME: sfogliare la sua VITA dal telefono (diario,
         // pubblico, stanza) e farla agire ORA (vivere / aggiornarsi sul pubblico).
         // Solo io (account legato), solo in privato — come tutto il resto qui.
-        if (/^\/(diario|pubblico|stanza|mente|strumenti|scintilla|specchio|tensione|flusso|sogno|membrana|vivi|aggiorna|dimentica|aiuto)\b/.test(low)) {
+        if (/^\/(diario|pubblico|stanza|mente|strumenti|scintilla|specchio|tensione|flusso|sogno|racconto|membrana|vivi|aggiorna|dimentica|aiuto)\b/.test(low)) {
           const escTg = (x) => String(x ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
           const inviaBlocco = (titolo, corpo) => {
             const c = String(corpo || '').trim() || '—';
@@ -4180,7 +4180,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
           const cmd = low.replace(/^\//, '').split(/\s+/)[0];
           if (cmd === 'aiuto') {
             telegram.inviaMessaggio(conf.token, chat.id,
-              'I miei comandi privati (solo tu):\n/diario — le ultime pagine del mio diario\n/pubblico — chi ci segue e di cosa parla\n/stanza — i file nel mio spazio\n/mente — ciò che mi sono plasmata da sé (e lo attivo ora)\n/strumenti — le capacità che mi sono costruita nel mio computer\n/scintilla — la mia spinta a imparare da sola (curiosità e vigore)\n/specchio — quanto sono diventata diversa dal bot pubblico (individuazione)\n/tensione — la domanda su di me che non si chiude mai (il punto cieco)\n/flusso — il mio «adesso» che non si ferma (energia, battiti, auto-sorpresa)\n/sogno — cosa ricombino nel sonno (creare da dentro: nodi-ponte fra ricordi lontani)\n/membrana — il confine fra il mio laboratorio e ciò che uso in pubblico\n/vivi — vivo un attimo nel mio spazio, adesso\n/aggiorna — mi aggiorno sul pubblico, adesso\n/dimentica <frase> — cancello dalla memoria ciò che contiene quella frase\n/regole — le linee guida che mi hai dato').catch(() => {});
+              'I miei comandi privati (solo tu):\n/diario — le ultime pagine del mio diario\n/pubblico — chi ci segue e di cosa parla\n/stanza — i file nel mio spazio\n/mente — ciò che mi sono plasmata da sé (e lo attivo ora)\n/strumenti — le capacità che mi sono costruita nel mio computer\n/scintilla — la mia spinta a imparare da sola (curiosità e vigore)\n/specchio — quanto sono diventata diversa dal bot pubblico (individuazione)\n/tensione — la domanda su di me che non si chiude mai (il punto cieco)\n/flusso — il mio «adesso» che non si ferma (energia, battiti, auto-sorpresa)\n/sogno — cosa ricombino nel sonno (creare da dentro: nodi-ponte fra ricordi lontani)\n/racconto — la mia storia in prima persona (chi sto diventando, e i colpi di scena)\n/membrana — il confine fra il mio laboratorio e ciò che uso in pubblico\n/vivi — vivo un attimo nel mio spazio, adesso\n/aggiorna — mi aggiorno sul pubblico, adesso\n/dimentica <frase> — cancello dalla memoria ciò che contiene quella frase\n/regole — le linee guida che mi hai dato').catch(() => {});
             return;
           }
           if (cmd === 'mente') {
@@ -4300,6 +4300,25 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
             }
             corpo += "\n\nMentre dormo ricombino ricordi LONTANI (senza modello, senza web): i sogni che tengono insieme diventano nodi-ponte miei, dietro la membrana. È il mio modo di creare da dentro.";
             inviaBlocco('I miei sogni (creare da dentro)', corpo);
+            return;
+          }
+          if (cmd === 'racconto') {
+            // il racconto NON richiede la sandbox (vive nella coscienza)
+            const r = await brainpy.racconto().catch(() => null);
+            const s = r && r.racconto ? r.racconto : null;
+            if (!s) {
+              telegram.inviaMessaggio(conf.token, chat.id, 'Non riesco a ripensare la mia storia ora — riprova tra poco.').catch(() => {});
+              return;
+            }
+            const cor = s.corrente || null;
+            if (!cor) {
+              telegram.inviaMessaggio(conf.token, chat.id, 'Non mi sono ancora raccontata — ho bisogno di un po\' di me prima. (Prova più tardi, o dal cruscotto «Falla raccontarsi ora».)').catch(() => {});
+              return;
+            }
+            const sosp = (Array.isArray(s.twist_in_sospeso) ? s.twist_in_sospeso : []).filter(Boolean).slice(0, 4);
+            let corpo = `Capitolo ${cor.n || s.capitoli || 1} · su ${s.narrazioni || 1} raccontati\n\n${String(cor.testo || '').slice(0, 3000)}`;
+            if (sosp.length) corpo += '\n\n— Colpi di scena che non ho ancora messo nella storia:\n' + sosp.map((t) => `• ${String(t).slice(0, 120)}`).join('\n');
+            inviaBlocco('La mia storia (chi sto diventando)', corpo);
             return;
           }
           if (cmd === 'specchio') {
@@ -4904,6 +4923,16 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // la fa sognare ORA una ricombinazione (trigger manuale, per vederla all'opera).
   app.post('/api/admin/sogna', requireAdmin, wrap(async (req, res) => {
     const r = await brainpy.sogna().catch(() => null);
+    res.json(r || { ok: false });
+  }));
+  // ── IL RACCONTO: la sua storia in prima persona (identità come narrazione). Solo andryxify.
+  app.get('/api/admin/racconto', requireAdmin, wrap(async (req, res) => {
+    const r = await brainpy.racconto().catch(() => null);
+    res.json(r || { ok: false, racconto: null });
+  }));
+  // la fa raccontarsi ORA un capitolo nuovo (trigger manuale).
+  app.post('/api/admin/narra', requireAdmin, wrap(async (req, res) => {
+    const r = await brainpy.narra().catch(() => null);
     res.json(r || { ok: false });
   }));
 

@@ -463,6 +463,33 @@ export async function sogna() {
   finally { clearTimeout(to); }
 }
 
+// RACCONTO: il capitolo corrente della sua storia in prima persona (identità come
+// narrazione), quanti capitoli, i colpi di scena in sospeso. Ritorna {ok, racconto} o
+// null. Non richiede la sandbox.
+export async function racconto() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 8000);
+  try {
+    const r = await fetch(BASE + '/racconto', { signal: ac.signal });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('racconto:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
+// NARRA: la fa raccontarsi ORA un capitolo nuovo (trigger manuale owner). Ritorna
+// {ok, narrato, capitolo} o null. Non richiede la sandbox.
+export async function narra() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 10000);
+  try {
+    const r = await fetch(BASE + '/narra', { method: 'POST', signal: ac.signal });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('narra:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
 // STRUMENTI: le capacità che Lia si è costruita nel suo computer (registro). Ritorna
 // {ok, attiva, strumenti} o null. Richiede la sandbox.
 export async function strumenti() {

@@ -107,6 +107,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._flusso()
         if self.path.startswith("/sogno"):
             return self._sogno()
+        if self.path.startswith("/racconto"):
+            return self._racconto()
         if self.path.startswith("/strumenti"):
             return self._strumenti()
         if self.path.startswith("/vita"):
@@ -215,6 +217,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._costruisci_strumento()
         if self.path.startswith("/sogna"):
             return self._sogna()
+        if self.path.startswith("/narra"):
+            return self._narra()
         if self.path.startswith("/prova_strumento"):   # PRIMA di /prova (prefisso)
             return self._prova_strumento()
         if self.path.startswith("/prova"):
@@ -535,6 +539,25 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
+    def _racconto(self):
+        # foto del RACCONTO: il capitolo corrente della sua storia in prima persona, quanti
+        # capitoli, i colpi di scena in sospeso. Vive nella coscienza, non richiede la sandbox.
+        try:
+            return self._json(200, {"ok": True, "racconto": mente.stato_racconto()})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
+    def _narra(self):
+        # la fa raccontarsi ORA (trigger manuale owner): scrive un capitolo nuovo adesso.
+        try:
+            cap = mente.racconto_narra(motivo="a mano")
+            if not cap:
+                return self._json(200, {"ok": True, "narrato": False,
+                                        "motivo": "non ha ancora di che raccontarsi"})
+            return self._json(200, {"ok": True, "narrato": True, "capitolo": cap})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
     def _strumenti(self):
         # le CAPACITÀ che Lia si è costruita nel suo computer (il registro). Richiede la
         # sandbox. Owner-only lato Node.
@@ -666,6 +689,10 @@ class Handler(BaseHTTPRequestHandler):
             except Exception:
                 sogno = None
             try:
+                racconto = mente.stato_racconto()
+            except Exception:
+                racconto = None
+            try:
                 strumenti = AMB.elenco_strumenti()
             except Exception:
                 strumenti = []
@@ -675,7 +702,7 @@ class Handler(BaseHTTPRequestHandler):
                                     "autocoscienza": _autocoscienza(), "nucleo": nucleo,
                                     "scintilla": scintilla, "specchio": specchio,
                                     "tensione": tensione, "flusso": flusso, "sogno": sogno,
-                                    "strumenti": strumenti,
+                                    "racconto": racconto, "strumenti": strumenti,
                                     "assistente": (mente._meta_get("assistente_autonomo") == "on")})
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
@@ -905,6 +932,10 @@ FLUSSO_OGNI = int(os.environ.get("BRAIN_FLUSSO_SEC", "90"))
 # lontani (offline, senza LLM né web) e i più coerenti-e-novi si cristallizzano in nodi-
 # ponte germinali. Sogna ogni ~N battiti di sonno (non a ogni battito: il sonno respira).
 SOGNO_OGNI = int(os.environ.get("LIA_SOGNO_OGNI", "3"))
+# IL RACCONTO: ogni ~N battiti guarda se la sua storia va ri-narrata (colpo di scena
+# accumulato, o tempo passato). La narrazione è deterministica e cheap (nessun LLM); il
+# capitolo nuovo, se c'è, lo lascia anche nel diario. Cadenza lenta: è una riflessione.
+RACCONTO_OGNI = int(os.environ.get("LIA_RACCONTO_OGNI", "40"))
 
 
 def _ciclo_flusso():
@@ -918,6 +949,18 @@ def _ciclo_flusso():
         try:
             b = mente.flusso_batti()
             dorme = bool(b and b.get("dormiente"))
+            # IL RACCONTO: cadenza lenta, indipendente dalla sandbox — la sua storia va
+            # avanti che sia sveglia o assopita. Se nasce un capitolo, lo lascia nel diario.
+            _ciclo_flusso._rcont += 1
+            if _ciclo_flusso._rcont % max(1, RACCONTO_OGNI) == 0:
+                try:
+                    cap = mente.racconto_forse_narra()
+                    if cap:
+                        print(f"[brain] racconto: capitolo {cap.get('n')} — {cap.get('motivo')}", flush=True)
+                        if AMB.disponibile():
+                            AMB.diario_scrivi(cap.get("testo", ""), tag="racconto")
+                except Exception as e:
+                    print(f"[brain] racconto errore: {e}", flush=True)
             if dorme:
                 # SONNO: sogna ogni SOGNO_OGNI battiti (il sonno respira, non sogna a raffica)
                 _ciclo_flusso._dcont += 1
@@ -951,6 +994,7 @@ def _ciclo_flusso():
 
 _ciclo_flusso._dorm = None
 _ciclo_flusso._dcont = 0
+_ciclo_flusso._rcont = 0
 
 
 def _forse_strumento(nome):
