@@ -2,6 +2,12 @@
   "name": "andrybot",
   "version": "1.0.0",
   "description": "SocialBot — bot Twitch procedurale e progressivo per andryxify.it",
+  "author": "Andrea Taliento (ANDRYXify)",
+  "license": "UNLICENSED",
+  "private": true,
+  "copyright": "© 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live",
+  "signature": "ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live",
+  "homepage": "https://socialbot.live",
   "type": "module",
   "main": "src/index.js",
   "engines": {

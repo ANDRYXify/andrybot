@@ -12,6 +12,7 @@ import { unlink, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, basename } from 'node:path';
 import { config, SCOPES, missingConfig } from '../config.js';
+import * as filigrana from '../watermark.js';   // filigrana di proprietà (Andrea Taliento / ANDRYXify)
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb, friends, sfondi as sfondiDb } from '../db.js';
 import { points, vips, tgConf, dcConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
@@ -204,6 +205,13 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
 
   // dietro reverse proxy (nginx/caddy) serve per cookie "secure" e IP reali
   app.set('trust proxy', config.proxyFidati);   // Caddy = 1; con un edge DDoS L7 davanti, 2
+
+  // FILIGRANA DI PROPRIETÀ INTELLETTUALE (Andrea Taliento / ANDRYXify) — PRIMA di tutto,
+  // così viaggia su OGNI risposta (pagine, API, overlay, statici). Invisibile all'utente
+  // (header, si vedono solo in DevTools/curl), persistente, si porta dietro ogni copia o
+  // deploy del bot. Togliamo anche l'X-Powered-By di Express (niente impronta altrui).
+  app.disable('x-powered-by');
+  app.use((req, res, next) => { filigrana.applicaHeader(res); next(); });
 
   // Le sessioni DEVONO essere firmate con un segreto reale. `config.sessionSecret`
   // è sempre valorizzato (env → file persistito → effimero casuale): se per

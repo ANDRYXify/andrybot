@@ -64,6 +64,13 @@
 	Permissions-Policy "camera=(self), microphone=(self), display-capture=(self), geolocation=(), payment=(), usb=(), magnetometer=()"
 	# togli l'header che rivela il server (coerente col "labirinto")
 	-Server
+	# FILIGRANA DI PROPRIETÀ INTELLETTUALE (Andrea Taliento / ANDRYXify) — a livello di
+	# EDGE: la portano TUTTE le risposte servite (pagine, API, overlay, statici). Strato
+	# in più oltre a quello dell'app: invisibile all'utente, persistente, si porta dietro
+	# qualunque copia del setup.
+	X-Author "Andrea Taliento (ANDRYXify)"
+	X-Copyright "© 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live"
+	X-Content-Owner "ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live"
 }
 
 # --- Dominio UFFICIALE: serve l'app -------------------------
