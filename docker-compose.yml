@@ -32,11 +32,10 @@ services:
     build: .
     env_file: .env
     volumes:
-      # Database e memoria del bot su un VOLUME DOCKER con nome fisso
-      # (andrybot_data): sopravvive a riavvii, rebuild E anche a un re-clone o
-      # `git clean` del repo (un bind ./data si perderebbe in quei casi). NON
-      # verrà mai svuotato da un deploy normale. Vedi migrazione nel README.
-      - andrybot_data:/app/data
+      # Database e memoria del bot: bind sul disco del server. Sopravvive a
+      # riavvii e rebuild. (Per un volume più robusto contro re-clone/git clean
+      # vedi il README: va fatto CON migrazione dei dati, mai a secco.)
+      - ./data:/app/data
     expose:
       # Porta interna: la vede solo Caddy, NON è aperta su internet.
       - "8090"
@@ -67,7 +66,7 @@ services:
     build: ./brain
     env_file: .env
     volumes:
-      - andrybot_data:/app/data   # coscienza, moduli, rete, modelli, backup: volume persistente
+      - ./data:/app/data      # coscienza (memoria) + modelli, persistono qui
     expose:
       - "8091"
     # Il modello linguistico può aprire diversi file: alziamo anche qui il tetto.
@@ -143,12 +142,6 @@ volumes:
   caddy_data:
   caddy_config:
   lia_home:            # la "casa" persistente dell'ambiente di Lia
-  # Dati e MEMORIA di Lia (coscienza.db, moduli, rete, modelli, backup). Nome
-  # FISSO così è lo stesso volume ad ogni deploy, a prescindere da dove/come
-  # cloni il repo. Sopravvive a `up --build`, a un re-clone e a `git clean`.
-  # ⚠️ L'unico comando che lo cancella è `docker compose down -v`: NON usarlo.
-  andrybot_data:
-    name: andrybot_data
 
 networks:
   # rete privata bot↔brain↔caddy: implicita, resta la "default".
