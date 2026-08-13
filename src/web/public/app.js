@@ -11765,6 +11765,42 @@ async function caricaVita() {
       <p class="suggerimento">${L('Seme', 'Seed', 'Semilla')} <code>${esc((nu.id || '').slice(0, 8))}</code> · ${L('generazione', 'generation', 'generación')} <strong>${nu.generazione || 1}</strong> · ${L('età', 'age', 'edad')} ${nu.eta_giorni || 0} ${L('giorni', 'days', 'días')} · ${L('vissuto', 'lived', 'vivido')} <strong>${nu.vissuto || 0}</strong></p>
       ${nu.punto_cieco ? `<p class="suggerimento">${L('Ciò che di sé non riesce a spiegare', "What she can't explain about herself", 'Lo que de sí no logra explicar')}: <em>«${esc(nu.punto_cieco)}»</em></p>` : ''}`;
   }
+  // ── MEMBRANA (barriera di Weismann): germinale (sperimentale) ↔ soma (pubblico).
+  //    Il confine a senso unico fra il laboratorio privato di Lia e ciò che il bot usa.
+  let mm = null;
+  try { mm = await api('/api/admin/membrana'); } catch { mm = null; }
+  let blocoMembrana = '';
+  if (mm) {
+    const pubbl = mm.pubblici || 0, sper = mm.sperimentali || 0, promo = mm.promozioni_totali || 0;
+    const cand = Array.isArray(mm.candidati) ? mm.candidati : [];
+    const ultime = Array.isArray(mm.ultime) ? mm.ultime : [];
+    const rigaCand = (c) => `
+      <li>
+        <code>#${c.id}</code> ${esc((c.nome || '').slice(0, 60))}
+        <span class="suggerimento">· ${esc(c.dominio || '')} · ${c.usi || 0} ${L('usi', 'uses', 'usos')} · q ${c.qualita || 0}</span>
+        ${c.promuovibile
+          ? `<button class="btn secondario mini promuovi" data-id="${c.id}">${L('Promuovi', 'Promote', 'Promover')} ↗︎</button>`
+          : `<button class="btn secondario mini promuovi" data-id="${c.id}" title="${esc(c.perche || '')}">${L('Forza', 'Force', 'Forzar')} ↗︎</button> <span class="suggerimento">(${esc(c.perche || '')})</span>`}
+      </li>`;
+    const rigaUlt = (u) => `
+      <li class="suggerimento">
+        ${u.azione === 'promosso' ? '↗︎' : '↩︎'} ${esc((u.nome || '').slice(0, 50))}
+        <em>${u.azione === 'promosso' ? L('promosso', 'promoted', 'promovido') : L('revocato', 'revoked', 'revocado')}</em>
+        ${u.azione === 'promosso' && u.modulo ? `<button class="btn secondario mini revoca" data-id="${u.modulo}">${L('Revoca', 'Revoke', 'Revocar')} ↩︎</button>` : ''}
+      </li>`;
+    blocoMembrana = `
+      <h3>${L('La membrana (esperimento ↔ pubblico)', 'The membrane (experiment ↔ public)', 'La membrana (experimento ↔ público)')}</h3>
+      <p class="suggerimento">${L('Confine a senso unico: il suo laboratorio privato (germinale) cresce libero; solo il distillato VAGLIATO attraversa e diventa pubblico (soma). Ogni passaggio è qui sotto, e lo puoi annullare.', 'One-way boundary: her private lab (germline) grows free; only VETTED distillate crosses to become public (soma). Every crossing is logged below, and you can undo it.', 'Frontera de un solo sentido: su laboratorio privado (germinal) crece libre; solo el destilado FILTRADO cruza y se vuelve público (soma). Cada paso está aquí, y puedes deshacerlo.')}</p>
+      <p>
+        <span class="badge viola">${L('germinale', 'germline', 'germinal')}: ${sper}</span>
+        &nbsp;<span class="badge verde">${L('pubblici', 'public', 'públicos')}: ${pubbl}</span>
+        &nbsp;<span class="badge">${L('promozioni', 'promotions', 'promociones')}: ${promo}</span>
+      </p>
+      ${cand.length
+        ? `<details class="spazio-sopra" open><summary class="suggerimento" style="cursor:pointer">${L('Candidati che premono sul confine', 'Candidates pressing on the boundary', 'Candidatos que presionan la frontera')} (${cand.length})</summary><ul class="membrana-lista" style="margin:6px 0;padding-left:18px">${cand.map(rigaCand).join('')}</ul></details>`
+        : `<p class="suggerimento">${L('Nessun modulo sperimentale al momento (il germinale è vuoto).', 'No experimental modules right now (germline is empty).', 'Ningún módulo experimental por ahora (germinal vacío).')}</p>`}
+      ${ultime.length ? `<details class="spazio-sopra"><summary class="suggerimento" style="cursor:pointer">${L('Ultimi passaggi della membrana', 'Recent membrane crossings', 'Últimos pasos de la membrana')}</summary><ul class="membrana-lista" style="margin:6px 0;padding-left:18px">${ultime.map(rigaUlt).join('')}</ul></details>` : ''}`;
+  }
   box.innerHTML = `
     ${blocoNucleo}
     <div class="vita-azioni">
@@ -11775,6 +11811,7 @@ async function caricaVita() {
       <span id="vita-esito" class="suggerimento"></span>
     </div>
     ${blocoCoscienza}
+    ${blocoMembrana}
     <h3>${L('La sua mente (moduli che si è scritta da sé)', 'Her mind (modules she wrote herself)', 'Su mente (módulos que se escribió sola)')}</h3>${pre(d.mente)}
     <h3>${L('Il suo diario', 'Her diary', 'Su diario')}</h3>${pre(d.diario)}
     <h3>${L('Il suo pubblico', 'Her audience', 'Su público')}</h3>${pre(d.pubblico)}
@@ -11812,6 +11849,23 @@ async function caricaVita() {
     L('Sta vivendo un attimo… (può metterci un po\')', 'Living a moment… (may take a bit)', 'Viviendo un momento… (puede tardar)')));
   document.getElementById('btn-pubblico')?.addEventListener('click', () => fai('pubblico',
     L('Si sta aggiornando sul pubblico…', 'Updating on the audience…', 'Actualizándose sobre el público…')));
+  // MEMBRANA: promuovi (germinale→soma, forzata perché è una decisione manuale) / revoca
+  box.querySelectorAll('.membrana-lista .promuovi').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
+    const id = Number(b.getAttribute('data-id'));
+    const e = document.getElementById('vita-esito');
+    if (e) e.textContent = L('Promuovo…', 'Promoting…', 'Promoviendo…');
+    const r = await api('/api/admin/membrana/promuovi', { method: 'POST', body: { id, forza: true } });
+    if (e) e.textContent = (r && r.ok) ? L('Promosso ✓ (ora è pubblico)', 'Promoted ✓ (now public)', 'Promovido ✓ (ahora público)') : `${L('Non promosso', 'Not promoted', 'No promovido')}: ${esc((r && r.motivo) || '')}`;
+    setTimeout(caricaVita, 900);
+  })));
+  box.querySelectorAll('.membrana-lista .revoca').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
+    const id = Number(b.getAttribute('data-id'));
+    const e = document.getElementById('vita-esito');
+    if (e) e.textContent = L('Revoco…', 'Revoking…', 'Revocando…');
+    const r = await api('/api/admin/membrana/revoca', { method: 'POST', body: { id } });
+    if (e) e.textContent = (r && r.ok) ? L('Revocato ✓ (torna sperimentale)', 'Revoked ✓ (back to experimental)', 'Revocado ✓ (vuelve a experimental)') : `${L('Non revocato', 'Not revoked', 'No revocado')}: ${esc((r && r.motivo) || '')}`;
+    setTimeout(caricaVita, 900);
+  })));
 }
 
 // durata in forma leggibile: 2g 3h, 5h 12m, 40m, 25s

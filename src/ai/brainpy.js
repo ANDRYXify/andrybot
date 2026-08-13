@@ -327,6 +327,56 @@ export async function dimentica(frase) {
   finally { clearTimeout(to); }
 }
 
+// MEMBRANA (barriera di Weismann) germinale↔soma: foto del confine fra i moduli
+// sperimentali (il laboratorio privato di Lia) e quelli pubblici (ciò che il bot usa),
+// + registro promozioni + candidati. Ritorna {ok, membrana} o null. Owner-only lato route.
+export async function membrana() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 8000);
+  try {
+    const r = await fetch(BASE + '/membrana', { signal: ac.signal });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('membrana:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
+// Promuove UN modulo sperimentale→pubblico (deciso a mano dall'owner = forzata: salta la
+// maturità ma MAI il controllo d'identità). Ritorna {ok, motivo, modulo} o null.
+export async function promuovi(id, forza = true) {
+  const mid = Number(id);
+  if (!Number.isFinite(mid)) return null;
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 8000);
+  try {
+    const r = await fetch(BASE + '/promuovi', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: mid, forza: !!forza }), signal: ac.signal,
+    });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('promuovi:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
+// Revoca una promozione: riporta un modulo pubblico→sperimentale (kill switch della
+// membrana; il bot pubblico smette all'istante di usarlo). Ritorna {ok, modulo} o null.
+export async function revocaPromozione(id) {
+  const mid = Number(id);
+  if (!Number.isFinite(mid)) return null;
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 8000);
+  try {
+    const r = await fetch(BASE + '/revoca_promozione', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: mid }), signal: ac.signal,
+    });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('revocaPromozione:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
 // Il dataset della "mente" della rete per un canale: coppie {q, a} consolidate.
 export async function reteCorpus(canale) {
   if (!canale) return [];
