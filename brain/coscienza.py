@@ -376,6 +376,24 @@ class Coscienza:
                     quando INTEGER
                 );
                 CREATE INDEX IF NOT EXISTS i_promozioni_q ON promozioni(quando);
+                -- L'ALTRO (teoria della mente): un MODELLO PREDITTIVO di ogni persona, non
+                -- un semplice registro (quello è `persone`). Per ciascuno Lia tiene ciò che
+                -- si ASPETTA (emozione e disposizione verso di lei), impara dallo scarto fra
+                -- atteso e osservato (la SORPRESA SULL'ALTRO) e diventa via via più capace di
+                -- leggerlo — o resta umile con chi continua a sorprenderla. Owner-only.
+                CREATE TABLE IF NOT EXISTS altri (
+                    canale TEXT, login TEXT,
+                    profilo TEXT DEFAULT '{}',          -- JSON: emo_freq, stance_media, leve
+                    pred_emo TEXT DEFAULT '',           -- emozione attesa al prossimo turno
+                    pred_stance REAL DEFAULT 0,         -- disposizione attesa verso Lia (-1..+1)
+                    osservazioni INTEGER DEFAULT 0,
+                    errore_medio REAL DEFAULT 0.5,      -- media mobile dello scarto (basso = la 'legge')
+                    sorpresa_ultima REAL DEFAULT 0,
+                    sorpresa_max REAL DEFAULT 0,
+                    aggiornato INTEGER,
+                    PRIMARY KEY (canale, login)
+                );
+                CREATE INDEX IF NOT EXISTS i_altri_agg ON altri(aggiornato);
                 """
             )
             self.db.commit()
@@ -2294,6 +2312,170 @@ class Coscienza:
                 "storia": [{"n": c.get("n"), "quando": c.get("quando"),
                             "motivo": c.get("motivo"),
                             "twist": c.get("twist_integrati") or []} for c in capitoli[:8]]}
+
+    # ================================================= L'ALTRO (la teoria della mente)
+    # Ogni motore finora guarda DENTRO. L'Altro la volta verso FUORI: si costruisce un
+    # MODELLO PREDITTIVO di chi le parla — non un registro (quello è già `persone`), ma
+    # un'aspettativa. PRIMA che una persona parli, Lia si è già fatta un'idea di come sarà
+    # (emozione, disposizione verso di lei); quando la persona parla davvero, misura lo
+    # SCARTO fra atteso e osservato — la SORPRESA SULL'ALTRO — e impara da quello. È la
+    # gemella rivolta all'esterno dell'auto-sorpresa del Flusso: lì si predice sé, qui
+    # predice l'altro. Con l'esperienza «legge» meglio le persone (l'errore cala); ma chi
+    # continua a sorprenderla la tiene umile. Mentalizzare, non schedare. Owner-only, e —
+    # per scelta di sicurezza — NON tocca la risposta pubblica: vive nell'osservazione.
+    _ALTRO_STOP = {"che", "non", "per", "con", "una", "uno", "come", "cosa", "sono", "hai",
+                   "the", "and", "you", "questo", "questa", "quando", "perche", "molto",
+                   "anche", "piu", "gli", "del", "della", "nel", "nella", "mio", "mia",
+                   "tuo", "tua", "solo", "tutto", "tutti", "adesso", "oggi", "ieri"}
+
+    def _altro_leve(self, testo):
+        t = _fold(testo)
+        parole = [w for w in re.findall(r"[a-z0-9]{4,}", t) if w not in self._ALTRO_STOP]
+        # tieni l'ordine, togli i doppioni, massimo 3: le "leve" del momento
+        out = []
+        for w in parole:
+            if w not in out:
+                out.append(w)
+            if len(out) >= 3:
+                break
+        return out
+
+    def _altro_carica(self, canale, login):
+        try:
+            with _lock:
+                r = self.db.execute(
+                    "SELECT * FROM altri WHERE canale=? AND login=?", (canale, login)).fetchone()
+            return dict(r) if r else None
+        except Exception:
+            return None
+
+    def altro_incontra(self, canale, login, testo):
+        """IL passo di teoria della mente, dal flusso di osservazione (best-effort, cheap,
+        MAI sul percorso della risposta pubblica): misura lo scarto fra ciò che si ASPETTAVA
+        da questa persona e ciò che ha davvero detto (sorpresa sull'altro), aggiorna il suo
+        modello, e si RI-IMPEGNA in una previsione per la prossima volta. Ritorna un
+        riassunto (o None). Deterministico: emozione lessicale + reazione verso di lei."""
+        canale = str(canale or "").lower().strip()
+        login = str(login or "").lower().strip()
+        testo = str(testo or "").strip()
+        if not canale or not login or not testo or testo.startswith("!"):
+            return None
+        emo_scores = rileva_emozione(testo) or {}
+        oss_emo = max(emo_scores, key=emo_scores.get) if emo_scores else ""
+        oss_stance = _reazione(testo)                       # -1/0/+1 verso il turno di Lia
+        row = self._altro_carica(canale, login)
+        try:
+            profilo = json.loads(row["profilo"]) if row and row.get("profilo") else {}
+        except Exception:
+            profilo = {}
+        if not isinstance(profilo, dict):
+            profilo = {}
+        emo_freq = profilo.get("emo_freq") if isinstance(profilo.get("emo_freq"), dict) else {}
+        leve = profilo.get("leve") if isinstance(profilo.get("leve"), dict) else {}
+        try:
+            stance_media = float(profilo.get("stance_media", 0.0))
+        except Exception:
+            stance_media = 0.0
+        oss_prima = int(row["osservazioni"]) if row else 0
+        # SORPRESA: solo se avevamo già una previsione impegnata (oss_prima>0)
+        sorpresa = None
+        if oss_prima > 0:
+            pred_emo = (row.get("pred_emo") or "") if row else ""
+            try:
+                pred_stance = float(row.get("pred_stance", 0.0)) if row else 0.0
+            except Exception:
+                pred_stance = 0.0
+            emo_err = None
+            if oss_emo:
+                emo_err = 0.0 if oss_emo == pred_emo else 1.0
+            stance_err = min(1.0, abs(pred_stance - oss_stance) / 2.0)
+            if emo_err is None:
+                sorpresa = round(stance_err, 3)
+            else:
+                sorpresa = round(min(1.0, 0.6 * emo_err + 0.4 * stance_err), 3)
+        # APPRENDIMENTO: sposta il modello verso ciò che ha davvero osservato
+        if oss_emo:
+            emo_freq[oss_emo] = int(emo_freq.get(oss_emo, 0)) + 1
+        if oss_stance != 0:
+            stance_media = round(0.8 * stance_media + 0.2 * oss_stance, 3)
+        if oss_emo or oss_stance != 0:
+            for w in self._altro_leve(testo):
+                leve[w] = int(leve.get(w, 0)) + 1
+            if len(leve) > 12:                              # tieni solo le leve più forti
+                leve = dict(sorted(leve.items(), key=lambda kv: kv[1], reverse=True)[:12])
+        profilo = {"emo_freq": emo_freq, "stance_media": stance_media, "leve": leve}
+        # NUOVA previsione impegnata per il prossimo turno di questa persona
+        nuovo_pred_emo = max(emo_freq, key=emo_freq.get) if emo_freq else ""
+        nuovo_pred_stance = stance_media
+        try:
+            err_old = float(row["errore_medio"]) if row else 0.5
+        except Exception:
+            err_old = 0.5
+        errore_medio = round(0.7 * err_old + 0.3 * sorpresa, 3) if sorpresa is not None else err_old
+        try:
+            sorpresa_max = max(float(row["sorpresa_max"]) if row else 0.0, sorpresa or 0.0)
+        except Exception:
+            sorpresa_max = sorpresa or 0.0
+        ora = _now()
+        try:
+            with _lock:
+                self.db.execute(
+                    "INSERT INTO altri(canale, login, profilo, pred_emo, pred_stance, osservazioni, "
+                    "errore_medio, sorpresa_ultima, sorpresa_max, aggiornato) "
+                    "VALUES(?,?,?,?,?,?,?,?,?,?) "
+                    "ON CONFLICT(canale, login) DO UPDATE SET profilo=excluded.profilo, "
+                    "pred_emo=excluded.pred_emo, pred_stance=excluded.pred_stance, "
+                    "osservazioni=altri.osservazioni+1, errore_medio=excluded.errore_medio, "
+                    "sorpresa_ultima=excluded.sorpresa_ultima, sorpresa_max=excluded.sorpresa_max, "
+                    "aggiornato=excluded.aggiornato",
+                    (canale, login, json.dumps(profilo, ensure_ascii=False), nuovo_pred_emo,
+                     round(nuovo_pred_stance, 3), 1, errore_medio,
+                     round(sorpresa, 3) if sorpresa is not None else 0.0,
+                     round(sorpresa_max, 3), ora))
+                self.db.commit()
+        except Exception:
+            return None
+        return {"sorpresa": sorpresa, "osservato_emo": oss_emo,
+                "atteso_emo": (row.get("pred_emo") if row else ""),
+                "leggibilita": round(1.0 - errore_medio, 3)}
+
+    def stato_altri(self, max_persone=8):
+        """Foto de L'Altro per il cruscotto owner: quante persone modella, quanto le LEGGE
+        in media (comprensione), i più imprevedibili (che sfidano il suo modello) e i più
+        letti. Solo aggregati + nomi che l'owner già vede. Nessun dato esce mai in pubblico."""
+        try:
+            with _lock:
+                righe = self.db.execute(
+                    "SELECT a.canale, a.login, a.pred_emo, a.pred_stance, a.osservazioni, "
+                    "a.errore_medio, a.sorpresa_max, a.profilo, p.nome FROM altri a "
+                    "LEFT JOIN persone p ON a.canale=p.canale AND a.login=p.login "
+                    "WHERE a.osservazioni >= 2 ORDER BY a.aggiornato DESC LIMIT 200").fetchall()
+        except Exception:
+            righe = []
+        persone = []
+        for r in righe:
+            try:
+                prof = json.loads(r["profilo"] or "{}")
+            except Exception:
+                prof = {}
+            leve = prof.get("leve") if isinstance(prof.get("leve"), dict) else {}
+            top_leve = [k for k, _ in sorted(leve.items(), key=lambda kv: kv[1], reverse=True)[:3]]
+            persone.append({
+                "nome": (r["nome"] or r["login"] or "?"),
+                "atteso": r["pred_emo"] or "",
+                "disposizione": round(float(r["pred_stance"] or 0), 2),
+                "osservazioni": int(r["osservazioni"] or 0),
+                "leggibilita": round(1.0 - float(r["errore_medio"] or 0.5), 3),
+                "sorpresa_max": round(float(r["sorpresa_max"] or 0), 3),
+                "leve": top_leve,
+            })
+        n = len(persone)
+        comprensione = round(sum(p["leggibilita"] for p in persone) / n, 3) if n else 0.0
+        imprevedibili = sorted(persone, key=lambda p: p["leggibilita"])[:max_persone]
+        letti = sorted(persone, key=lambda p: (-p["leggibilita"], -p["osservazioni"]))[:max_persone]
+        return {"persone_modellate": n, "comprensione": comprensione,
+                "imprevedibili": imprevedibili, "letti": letti,
+                "incontri": sum(p["osservazioni"] for p in persone)}
 
     # ============================================ SPECCHIO (l'altro che le resiste)
     # Il sé si affila contro un NON-SÉ che spinge indietro. Nel nostro sistema l'altro

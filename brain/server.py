@@ -109,6 +109,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._sogno()
         if self.path.startswith("/racconto"):
             return self._racconto()
+        if self.path.startswith("/altri"):
+            return self._altri()
         if self.path.startswith("/strumenti"):
             return self._strumenti()
         if self.path.startswith("/vita"):
@@ -547,6 +549,14 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
+    def _altri(self):
+        # foto de L'ALTRO (teoria della mente): quante persone modella, quanto le legge in
+        # media, i più imprevedibili e i più letti. Solo aggregati, owner-only lato Node.
+        try:
+            return self._json(200, {"ok": True, "altri": mente.stato_altri()})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
     def _narra(self):
         # la fa raccontarsi ORA (trigger manuale owner): scrive un capitolo nuovo adesso.
         try:
@@ -693,6 +703,10 @@ class Handler(BaseHTTPRequestHandler):
             except Exception:
                 racconto = None
             try:
+                altri = mente.stato_altri()
+            except Exception:
+                altri = None
+            try:
                 strumenti = AMB.elenco_strumenti()
             except Exception:
                 strumenti = []
@@ -702,7 +716,7 @@ class Handler(BaseHTTPRequestHandler):
                                     "autocoscienza": _autocoscienza(), "nucleo": nucleo,
                                     "scintilla": scintilla, "specchio": specchio,
                                     "tensione": tensione, "flusso": flusso, "sogno": sogno,
-                                    "racconto": racconto, "strumenti": strumenti,
+                                    "racconto": racconto, "altri": altri, "strumenti": strumenti,
                                     "assistente": (mente._meta_get("assistente_autonomo") == "on")})
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
@@ -745,6 +759,12 @@ class Handler(BaseHTTPRequestHandler):
         if canale and login:
             try:
                 mente.incontra(canale, login, nome)
+                # L'ALTRO (teoria della mente): predice questa persona e impara dallo scarto
+                # fra atteso e osservato. Cheap, best-effort, MAI sul percorso pubblico.
+                try:
+                    mente.altro_incontra(canale, login, testo)
+                except Exception:
+                    pass
                 # impara un "fatto" solo se sembra un'affermazione sostanziosa
                 if testo and not testo.startswith("!") and 20 <= len(testo) <= 200 and "?" not in testo:
                     mente.impara_fatto(canale, testo, fonte="chat")
