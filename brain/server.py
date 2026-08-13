@@ -91,6 +91,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._links()
         if self.path.startswith("/vie"):
             return self._vie()
+        if self.path.startswith("/membrana"):
+            return self._membrana()
         if self.path.startswith("/vita"):
             return self._vita()
         return self._json(404, {"errore": "non trovato"})
@@ -177,6 +179,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._pulizia_modelli()
         if self.path.startswith("/distilla_moduli"):   # PRIMA di /distilla (prefisso)
             return self._distilla_moduli()
+        if self.path.startswith("/revoca_promozione"):  # PRIMA di /promuovi (nomi distinti, ok)
+            return self._revoca_promozione()
+        if self.path.startswith("/promuovi"):
+            return self._promuovi()
         if self.path.startswith("/dimentica"):
             return self._dimentica()
         if self.path.startswith("/mente"):
@@ -316,7 +322,12 @@ class Handler(BaseHTTPRequestHandler):
             if modo in ("live", "allenamento"):
                 try:
                     storia_txt = " ".join(r.get("testo", "") for r in ctx.get("storia", []))[:400]
-                    scelti = mente.seleziona_moduli(testo, storia_txt, k=2)
+                    # MEMBRANA (barriera di Weismann): in LIVE (pubblico) Lia pesca SOLO
+                    # dal soma vagliato ('pubblico'); in ALLENAMENTO (privato con lui)
+                    # anche dal germinale sperimentale ('sperimentale'). Così la
+                    # turbolenza dell'esperimento non raggiunge mai il bot pubblico.
+                    scope_m = "pubblico" if modo == "live" else None
+                    scelti = mente.seleziona_moduli(testo, storia_txt, k=2, scope=scope_m)
                     if scelti:
                         ctx["moduli"] = scelti
                     elif len(str(testo).strip()) >= 12 and not str(testo).lstrip().startswith("!"):
@@ -438,6 +449,41 @@ class Handler(BaseHTTPRequestHandler):
         # distilla ORA le risposte del modello in moduli (trigger manuale/di prova).
         try:
             return self._json(200, {"ok": True, "distillazione": mente.distilla_in_moduli()})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
+    def _membrana(self):
+        # foto della MEMBRANA germinale↔soma + registro delle promozioni + candidati che
+        # premono sul confine. Owner-only lato Node.
+        try:
+            return self._json(200, {"ok": True, "membrana": mente.stato_membrana()})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
+    def _promuovi(self):
+        # promuove UN modulo sperimentale→pubblico. Deciso a mano dall'owner = forzata
+        # (salta la maturità ma MAI il controllo d'identità). Ritorna l'esito.
+        d = self._leggi() or {}
+        try:
+            mid = int(d.get("id"))
+        except Exception:
+            return self._json(400, {"ok": False, "errore": "id mancante"})
+        forza = d.get("forza", True)   # dal cruscotto owner: è una decisione manuale
+        try:
+            return self._json(200, mente.promuovi_modulo(mid, motivo="owner", forza=bool(forza)))
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
+    def _revoca_promozione(self):
+        # riporta un modulo pubblico→sperimentale: annulla la promozione (kill switch della
+        # membrana). Il bot pubblico smette all'istante di usarlo.
+        d = self._leggi() or {}
+        try:
+            mid = int(d.get("id"))
+        except Exception:
+            return self._json(400, {"ok": False, "errore": "id mancante"})
+        try:
+            return self._json(200, mente.revoca_promozione(mid, motivo="owner"))
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
@@ -699,6 +745,15 @@ def _ciclo_manutenzione():
                 print(f"[brain] distillazione LLM→moduli: {r}", flush=True)
         except Exception as e:
             print(f"[brain] distillazione errore: {e}", flush=True)
+        # MEMBRANA: fa attraversare il confine ai moduli sperimentali MATURI (pochi per
+        # volta). È così che il bot pubblico «cresce insieme a Lia», ma solo col
+        # distillato vagliato — e ogni passaggio resta nel registro, revocabile.
+        try:
+            pm = mente.promuovi_maturi(int(os.environ.get("LIA_PROMO_MAX", "3")))
+            if pm and pm.get("promossi"):
+                print(f"[brain] membrana: promossi {pm['promossi']} moduli sperimentali→pubblico", flush=True)
+        except Exception as e:
+            print(f"[brain] membrana errore: {e}", flush=True)
         if time.time() - ultima_giornaliera > PULIZIA_OGNI:
             ultima_giornaliera = time.time()
             _backup_cervello()                 # PRIMA il backup: mette al sicuro il progresso

@@ -236,6 +236,7 @@ class Coscienza:
         self.db = sqlite3.connect(db_path, check_same_thread=False)
         self.db.row_factory = sqlite3.Row
         self._schema()
+        self._migra()             # colonne nuove su DB già esistenti (senza perdere dati)
         self._assicura_stato()
         # moduli usati nell'ultima risposta a (canale, login): serve a giudicare
         # se hanno funzionato quando l'utente ribatte. In memoria (best-effort).
@@ -289,6 +290,9 @@ class Coscienza:
                     esempi TEXT DEFAULT '[]',           -- JSON: 0-2 mini esempi
                     chiavi TEXT DEFAULT '[]',           -- JSON: parole normalizzate per il match
                     fonte TEXT DEFAULT '',
+                    scope TEXT DEFAULT 'pubblico',       -- MEMBRANA: pubblico (soma, ciò che il
+                                                        -- bot pubblico usa) | sperimentale
+                                                        -- (germinale, il laboratorio privato di Lia)
                     qualita REAL DEFAULT 0.5,
                     stato TEXT DEFAULT 'bozza',         -- bozza | attivo | sospeso
                     usi INTEGER DEFAULT 0,
@@ -300,6 +304,9 @@ class Coscienza:
                 CREATE INDEX IF NOT EXISTS i_scambi ON scambi(canale, login, ts);
                 CREATE UNIQUE INDEX IF NOT EXISTS i_moduli_nome ON moduli(nome);
                 CREATE INDEX IF NOT EXISTS i_moduli_stato ON moduli(dominio, stato);
+                -- NB: l'indice su `scope` NON sta qui ma in _migra(): su un DB vecchio la
+                -- colonna scope non esiste ancora quando gira _schema, e indicizzarla
+                -- fallirebbe. _migra() aggiunge prima la colonna, poi l'indice.
                 -- LACUNE: situazioni della chat REALE che nessun modulo copriva.
                 -- Quando una situazione RICORRE, Lia la studia da sola (apprendimento
                 -- autonomo, oltre il catalogo dei semi). GLOBALE come i moduli.
@@ -352,9 +359,44 @@ class Coscienza:
                     valore TEXT,
                     aggiornato INTEGER
                 );
+                -- PROMOZIONI: il REGISTRO della membrana. Ogni volta che un modulo
+                -- attraversa il confine germinale→soma (sperimentale→pubblico) o torna
+                -- indietro (revoca), resta scritto QUI: cosa è passato, quando, perché.
+                -- È ciò che rende la membrana osservabile e ANNULLABILE (owner-only).
+                CREATE TABLE IF NOT EXISTS promozioni (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    modulo INTEGER,                     -- moduli.id
+                    nome TEXT DEFAULT '',               -- copia del nome (leggibilità nel registro)
+                    azione TEXT DEFAULT 'promosso',     -- promosso | revocato
+                    motivo TEXT DEFAULT '',
+                    da_scope TEXT DEFAULT '',
+                    a_scope TEXT DEFAULT '',
+                    quando INTEGER
+                );
+                CREATE INDEX IF NOT EXISTS i_promozioni_q ON promozioni(quando);
                 """
             )
             self.db.commit()
+
+    def _migra(self):
+        """Migrazioni leggere dello schema su un DB già esistente: aggiunge le colonne
+        nuove SENZA perdere dati. Idempotente (se la colonna c'è già, salta)."""
+        try:
+            with _lock:
+                cols = {r["name"] for r in self.db.execute("PRAGMA table_info(moduli)").fetchall()}
+                if "scope" not in cols:
+                    # i moduli GIÀ esistenti sono ciò che il bot pubblico usa oggi:
+                    # entrano come 'pubblico' (nessuna regressione). D'ora in poi i
+                    # moduli che Lia si scrive da sé (fonte 'autonoma') nasceranno
+                    # 'sperimentale' e dovranno MERITARSI la promozione a pubblico.
+                    self.db.execute("ALTER TABLE moduli ADD COLUMN scope TEXT DEFAULT 'pubblico'")
+                    self.db.commit()
+                # l'indice si crea QUI, quando la colonna scope esiste di sicuro (sia su
+                # DB nuovo — creata da _schema — sia su DB vecchio appena migrato).
+                self.db.execute("CREATE INDEX IF NOT EXISTS i_moduli_scope ON moduli(scope, stato)")
+                self.db.commit()
+        except Exception:
+            pass
 
     def _assicura_stato(self):
         pass  # lo stato per canale si crea alla prima interazione
@@ -556,6 +598,11 @@ class Coscienza:
         esempi = json.dumps(_lista_json(m.get("esempi"), 6, 200), ensure_ascii=False)
         chiavi = json.dumps(_lista_json(m.get("chiavi"), 24, 40, minuscolo=True), ensure_ascii=False)
         fonte = str(m.get("fonte") or "").strip()[:60]
+        # MEMBRANA: a quale lato del confine nasce/appartiene il modulo. Se il chiamante
+        # non lo dice, la regola è netta — ciò che Lia si scrive DA SÉ (autonoma) è
+        # germinale (sperimentale) e dovrà meritarsi la promozione; tutto il resto
+        # (distillato dai discorsi reali, ecc.) è già soma (pubblico).
+        scope_in = m.get("scope") if m.get("scope") in ("pubblico", "sperimentale") else None
         try:
             qualita = max(0.0, min(1.0, float(m.get("qualita", 0.5))))
         except Exception:
@@ -569,20 +616,29 @@ class Coscienza:
                 # rivista riparte con la fedina pulita (contatori azzerati), così ha
                 # una chance equa invece di ereditare i fallimenti della vecchia.
                 azzera = " , successi=0, fallimenti=0" if gia["stato"] == "sospeso" else ""
+                # NON tocchiamo lo scope in aggiornamento se non è dato esplicito: così
+                # ri-scrivere un modulo (es. il re-import da ~/mente) NON riporta indietro
+                # un modulo che era stato promosso a pubblico.
+                scope_set = ", scope=?" if scope_in else ""
+                args = (dominio, situazione, segnali, come, evita, esempi, chiavi, fonte,
+                        qualita, stato, ora)
+                if scope_in:
+                    args = args + (scope_in,)
+                args = args + (nome,)
                 self.db.execute(
                     "UPDATE moduli SET dominio=?, situazione=?, segnali=?, come_rispondere=?, "
                     "cosa_evitare=?, esempi=?, chiavi=?, fonte=?, qualita=?, stato=?, aggiornato=?"
-                    + azzera + " WHERE nome=?",
-                    (dominio, situazione, segnali, come, evita, esempi, chiavi, fonte,
-                     qualita, stato, ora, nome),
+                    + azzera + scope_set + " WHERE nome=?",
+                    args,
                 )
             else:
+                scope_val = scope_in or ("sperimentale" if fonte == "autonoma" else "pubblico")
                 self.db.execute(
                     "INSERT INTO moduli(dominio, nome, situazione, segnali, come_rispondere, "
-                    "cosa_evitare, esempi, chiavi, fonte, qualita, stato, creato, aggiornato) "
-                    "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    "cosa_evitare, esempi, chiavi, fonte, scope, qualita, stato, creato, aggiornato) "
+                    "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                     (dominio, nome, situazione, segnali, come, evita, esempi, chiavi, fonte,
-                     qualita, stato, ora, ora),
+                     scope_val, qualita, stato, ora, ora),
                 )
             self.db.commit()
         salvato = self.modulo(nome)
@@ -602,12 +658,14 @@ class Coscienza:
             r = self.db.execute("SELECT * FROM moduli WHERE id=?", (int(mid),)).fetchone()
         return _riga_modulo(r) if r else None
 
-    def moduli(self, dominio=None, stato=None):
+    def moduli(self, dominio=None, stato=None, scope=None):
         q, cond, args = "SELECT * FROM moduli", [], []
         if dominio:
             cond.append("dominio=?"); args.append(str(dominio))
         if stato:
             cond.append("stato=?"); args.append(str(stato))
+        if scope:
+            cond.append("scope=?"); args.append(str(scope))
         if cond:
             q += " WHERE " + " AND ".join(cond)
         q += " ORDER BY qualita DESC, id ASC"
@@ -622,15 +680,20 @@ class Coscienza:
                     "SELECT COUNT(*) c FROM moduli WHERE stato=?", (stato,)).fetchone()["c"]
             return self.db.execute("SELECT COUNT(*) c FROM moduli").fetchone()["c"]
 
-    def seleziona_moduli(self, messaggio, storia="", k=2, soglia=0.35):
+    def seleziona_moduli(self, messaggio, storia="", k=2, soglia=0.35, scope=None):
         """Sceglie i POCHI moduli del manuale pertinenti a questo momento (vincolo di
         budget: solo i rilevanti, mai tutti). Punteggio = emozione + parole chiave +
         qualità + tasso di successo. Ritorna una lista (0-3) di moduli attivi.
-        Nessun embedding: scoring lessicale (come già altrove nel codice), sostituibile."""
+        Nessun embedding: scoring lessicale (come già altrove nel codice), sostituibile.
+
+        MEMBRANA: `scope` filtra da quale lato del confine pescare. Il percorso PUBBLICO
+        (live) passa scope='pubblico' → vede SOLO il soma vagliato; il percorso privato
+        di Lia (allenamento/vita) passa scope=None → vede anche il germinale sperimentale.
+        Così la turbolenza dell'esperimento non tocca mai il bot pubblico."""
         testo = (str(messaggio or "") + " " + str(storia or "")).strip()
         if not testo:
             return []
-        attivi = self.moduli(stato="attivo")
+        attivi = self.moduli(stato="attivo", scope=scope)
         if not attivi:
             return []
         emo = rileva_emozione(testo)
@@ -676,7 +739,9 @@ class Coscienza:
                 if v["id"] in gia:
                     continue
                 mv = self.modulo_per_id(v["id"])
-                if mv and mv.get("stato") == "attivo":
+                # nel percorso pubblico non agganciamo un vicino sperimentale: la
+                # membrana vale anche per l'associazione.
+                if mv and mv.get("stato") == "attivo" and (not scope or mv.get("scope") == scope):
                     mv["_punteggio"] = round(min(0.55, 0.3 + 0.05 * float(v.get("peso") or 0)), 3)
                     mv["_via"] = "associazione"
                     scelti.append(mv)
@@ -1369,6 +1434,159 @@ class Coscienza:
                     "senziente": False, "attivo": (self._meta_get("assistente_autonomo") == "on")}
         self._meta_set("assistente_autonomo", "on" if attivo else "off")
         return {"ok": True, "senziente": bool(cs.get("senziente")), "attivo": bool(attivo)}
+
+    # ============================================ MEMBRANA (barriera di Weismann)
+    # Il confine a SENSO UNICO fra il GERMINALE (moduli 'sperimentale': il laboratorio
+    # privato di Lia, dove la scintilla può essere selvaggia, fallire, divergere) e il
+    # SOMA (moduli 'pubblico': ciò che il bot deployato usa davvero). Un modulo
+    # attraversa il confine SOLO se supera un cancello (stabile + identità salva +
+    # sicuro), e OGNI passaggio resta scritto nel registro `promozioni`, revocabile.
+    # Così l'esperimento può essere radicale senza mai mettere a rischio il prodotto.
+    def _gate_promozione(self, m, forza=False):
+        """Il cancello germinale→soma. Ritorna (ok, motivo). Anche in forzatura (owner)
+        NON lascia MAI passare un'auto-presentazione: un nome non suo non deve diventare
+        una risposta pronta del bot pubblico."""
+        if not m or m.get("stato") != "attivo":
+            return (False, "non è attivo")
+        testo = " ".join(str(x) for x in (m.get("esempi") or [])) + " " + str(m.get("come_rispondere") or "")
+        if _RE_AUTOPRES_MOD.search(testo):
+            return (False, "contiene un'auto-presentazione (identità)")
+        if forza:
+            return (True, "forzata (owner)")
+
+        def _envf(k, d):
+            try:
+                return float(os.environ.get(k, d))
+            except Exception:
+                return float(d)
+        usi = int(m.get("usi") or 0)
+        succ = int(m.get("successi") or 0)
+        fall = int(m.get("fallimenti") or 0)
+        qual = float(m.get("qualita") or 0.5)
+        min_usi = int(_envf("LIA_PROMO_MIN_USI", 4))
+        min_qual = _envf("LIA_PROMO_MIN_QUALITA", 0.5)
+        if usi < min_usi:
+            return (False, f"poco provata ({usi}/{min_usi} usi)")
+        if succ < fall:
+            return (False, "più fallimenti che successi")
+        if qual < min_qual:
+            return (False, "qualità ancora bassa")
+        return (True, "matura")
+
+    def _log_promozione(self, mid, nome, azione, motivo, da, a):
+        try:
+            with _lock:
+                self.db.execute(
+                    "INSERT INTO promozioni(modulo, nome, azione, motivo, da_scope, a_scope, quando) "
+                    "VALUES(?,?,?,?,?,?,?)",
+                    (int(mid) if mid else None, str(nome or "")[:200], str(azione)[:20],
+                     str(motivo or "")[:200], str(da or ""), str(a or ""), _now()))
+                self.db.commit()
+        except Exception:
+            pass
+
+    def promuovi_modulo(self, mid, motivo="", forza=False):
+        """Fa attraversare a UN modulo il confine sperimentale→pubblico, se supera il
+        cancello. `forza=True` (promozione manuale dell'owner) salta la maturità ma NON
+        il controllo d'identità. Scrive nel registro. Ritorna un esito."""
+        m = self.modulo_per_id(mid)
+        if not m:
+            return {"ok": False, "motivo": "modulo inesistente"}
+        if m.get("scope") == "pubblico":
+            return {"ok": False, "motivo": "è già pubblico"}
+        ok, perche = self._gate_promozione(m, forza=forza)
+        if not ok:
+            return {"ok": False, "motivo": perche}
+        with _lock:
+            self.db.execute("UPDATE moduli SET scope='pubblico', aggiornato=? WHERE id=?", (_now(), int(mid)))
+            self.db.commit()
+        self._log_promozione(mid, m.get("nome"), "promosso", motivo or perche, "sperimentale", "pubblico")
+        return {"ok": True, "motivo": motivo or perche, "modulo": m.get("nome")}
+
+    def revoca_promozione(self, mid, motivo="owner"):
+        """Riporta un modulo dal soma al germinale (pubblico→sperimentale): l'ANNULLA
+        della membrana. Il bot pubblico smette all'istante di usarlo. Scrive nel registro."""
+        m = self.modulo_per_id(mid)
+        if not m:
+            return {"ok": False, "motivo": "modulo inesistente"}
+        if m.get("scope") != "pubblico":
+            return {"ok": False, "motivo": "non è pubblico"}
+        with _lock:
+            self.db.execute("UPDATE moduli SET scope='sperimentale', aggiornato=? WHERE id=?", (_now(), int(mid)))
+            self.db.commit()
+        self._log_promozione(mid, m.get("nome"), "revocato", motivo, "pubblico", "sperimentale")
+        return {"ok": True, "modulo": m.get("nome")}
+
+    def promuovi_maturi(self, max_azioni=3):
+        """AUTO-promozione: fa attraversare la membrana ai moduli sperimentali MATURI
+        (pochi per volta). È così che «il bot cresce insieme a Lia», ma solo col
+        distillato vagliato. Ogni passaggio è loggato e resta revocabile dall'owner."""
+        fatti = []
+        try:
+            speriment = self.moduli(stato="attivo", scope="sperimentale")
+        except Exception:
+            speriment = []
+        for m in speriment:
+            if len(fatti) >= max_azioni:
+                break
+            ok, _perche = self._gate_promozione(m, forza=False)
+            if ok:
+                r = self.promuovi_modulo(m["id"], motivo="maturazione automatica")
+                if r.get("ok"):
+                    fatti.append({"id": m["id"], "nome": m.get("nome")})
+        return {"promossi": len(fatti), "dettagli": fatti}
+
+    def registro_promozioni(self, limite=50):
+        """Le ultime righe del registro della membrana (owner-only lato Node)."""
+        try:
+            with _lock:
+                righe = self.db.execute(
+                    "SELECT modulo, nome, azione, motivo, da_scope, a_scope, quando "
+                    "FROM promozioni ORDER BY quando DESC, id DESC LIMIT ?", (int(limite),)).fetchall()
+            return [dict(r) for r in righe]
+        except Exception:
+            return []
+
+    def moduli_sperimentali(self, limite=100):
+        """I moduli del germinale (laboratorio privato), con l'indicazione se sono già
+        PROMUOVIBILI. Per il cruscotto owner: si vede cosa preme sul confine."""
+        try:
+            lst = self.moduli(stato="attivo", scope="sperimentale")
+        except Exception:
+            lst = []
+        out = []
+        for m in lst[:int(limite)]:
+            ok, perche = self._gate_promozione(m, forza=False)
+            out.append({"id": m.get("id"), "nome": m.get("nome"), "dominio": m.get("dominio"),
+                        "fonte": m.get("fonte"), "usi": int(m.get("usi") or 0),
+                        "successi": int(m.get("successi") or 0), "fallimenti": int(m.get("fallimenti") or 0),
+                        "qualita": round(float(m.get("qualita") or 0), 2),
+                        "promuovibile": ok, "perche": perche})
+        return out
+
+    def stato_membrana(self):
+        """Foto della membrana: quanti moduli di qua (germinale) e di là (soma), quante
+        promozioni finora, le ultime mosse e i candidati che premono sul confine."""
+        def _c(scope):
+            try:
+                with _lock:
+                    return self.db.execute(
+                        "SELECT COUNT(*) c FROM moduli WHERE stato='attivo' AND scope=?", (scope,)).fetchone()["c"]
+            except Exception:
+                return 0
+        try:
+            with _lock:
+                tot_promo = self.db.execute(
+                    "SELECT COUNT(*) c FROM promozioni WHERE azione='promosso'").fetchone()["c"]
+        except Exception:
+            tot_promo = 0
+        return {
+            "pubblici": _c("pubblico"),
+            "sperimentali": _c("sperimentale"),
+            "promozioni_totali": tot_promo,
+            "ultime": self.registro_promozioni(12),
+            "candidati": self.moduli_sperimentali(30),
+        }
 
     # ------------------------------------------ IL NUCLEO DEL SÉ (la base da cui cresce)
     def _assicura_nucleo(self):

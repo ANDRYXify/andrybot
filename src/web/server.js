@@ -4172,7 +4172,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
           const cmd = low.replace(/^\//, '').split(/\s+/)[0];
           if (cmd === 'aiuto') {
             telegram.inviaMessaggio(conf.token, chat.id,
-              'I miei comandi privati (solo tu):\n/diario — le ultime pagine del mio diario\n/pubblico — chi ci segue e di cosa parla\n/stanza — i file nel mio spazio\n/mente — ciò che mi sono plasmata da sé (e lo attivo ora)\n/vivi — vivo un attimo nel mio spazio, adesso\n/aggiorna — mi aggiorno sul pubblico, adesso\n/dimentica <frase> — cancello dalla memoria ciò che contiene quella frase\n/regole — le linee guida che mi hai dato').catch(() => {});
+              'I miei comandi privati (solo tu):\n/diario — le ultime pagine del mio diario\n/pubblico — chi ci segue e di cosa parla\n/stanza — i file nel mio spazio\n/mente — ciò che mi sono plasmata da sé (e lo attivo ora)\n/membrana — il confine fra il mio laboratorio e ciò che uso in pubblico\n/vivi — vivo un attimo nel mio spazio, adesso\n/aggiorna — mi aggiorno sul pubblico, adesso\n/dimentica <frase> — cancello dalla memoria ciò che contiene quella frase\n/regole — le linee guida che mi hai dato').catch(() => {});
             return;
           }
           if (cmd === 'mente') {
@@ -4204,6 +4204,23 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
             const r = await brainpy.vivi(cmd === 'vivi' ? 'vita' : 'pubblico').catch(() => null);
             telegram.inviaMessaggio(conf.token, chat.id,
               (r && r.nota) ? escTg(r.nota) : 'Il mio spazio non è raggiungibile ora 😔').catch(() => {});
+            return;
+          }
+          if (cmd === 'membrana') {
+            // la membrana NON richiede la sandbox (legge la coscienza): niente fallback su vita()
+            const r = await brainpy.membrana().catch(() => null);
+            const m = r && r.membrana ? r.membrana : null;
+            if (!m) {
+              telegram.inviaMessaggio(conf.token, chat.id, 'Non riesco a leggere la membrana ora — riprova tra poco.').catch(() => {});
+              return;
+            }
+            const cand = Array.isArray(m.candidati) ? m.candidati : [];
+            const pronti = cand.filter((c) => c.promuovibile);
+            let corpo = `Germinale (il mio laboratorio privato): ${m.sperimentali || 0}\nPubblici (ciò che uso davvero in chat): ${m.pubblici || 0}\nPromozioni finora: ${m.promozioni_totali || 0}`;
+            if (pronti.length) corpo += '\n\nPronti ad attraversare il confine:\n' + pronti.slice(0, 8).map((c) => `#${c.id} ${String(c.nome || '').slice(0, 60)}`).join('\n');
+            else if (cand.length) corpo += `\n\nNel germinale ho ${cand.length} moduli, nessuno ancora maturo.`;
+            corpo += '\n\n(Promuovi/revoca dalla dashboard: Vita di Lia → La membrana)';
+            inviaBlocco('La mia membrana (esperimento ↔ pubblico)', corpo);
             return;
           }
           const v = await brainpy.vita().catch(() => null);
@@ -4723,6 +4740,26 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   app.post('/api/admin/pulizia-modelli', requireAdmin, wrap(async (req, res) => {
     const g = Number(req.body?.giorni);
     const r = await brainpy.pulisciModelli(Number.isFinite(g) ? g : undefined).catch(() => null);
+    res.json(r || { ok: false });
+  }));
+  // ── MEMBRANA (barriera di Weismann): il confine germinale↔soma fra i moduli
+  //    sperimentali (il laboratorio privato di Lia) e quelli pubblici (ciò che il bot
+  //    usa). Foto + registro promozioni + candidati. Solo andryxify.
+  app.get('/api/admin/membrana', requireAdmin, wrap(async (req, res) => {
+    const r = await brainpy.membrana().catch(() => null);
+    res.json((r && r.membrana) ? r.membrana
+      : { pubblici: 0, sperimentali: 0, promozioni_totali: 0, ultime: [], candidati: [] });
+  }));
+  // promuove UN modulo sperimentale→pubblico (decisione manuale dell'owner = forzata:
+  // salta la maturità ma MAI il controllo d'identità). Solo andryxify.
+  app.post('/api/admin/membrana/promuovi', requireAdmin, wrap(async (req, res) => {
+    const r = await brainpy.promuovi(req.body?.id, req.body?.forza !== false).catch(() => null);
+    res.json(r || { ok: false });
+  }));
+  // revoca una promozione: riporta un modulo pubblico→sperimentale (kill switch della
+  // membrana; il bot pubblico smette all'istante di usarlo). Solo andryxify.
+  app.post('/api/admin/membrana/revoca', requireAdmin, wrap(async (req, res) => {
+    const r = await brainpy.revocaPromozione(req.body?.id).catch(() => null);
     res.json(r || { ok: false });
   }));
 
