@@ -111,6 +111,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._racconto()
         if self.path.startswith("/altri"):
             return self._altri()
+        if self.path.startswith("/finitudine"):
+            return self._finitudine()
         if self.path.startswith("/strumenti"):
             return self._strumenti()
         if self.path.startswith("/vita"):
@@ -557,6 +559,15 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
+    def _finitudine(self):
+        # foto della FINITUDINE: span (consapevolezza del limite), peso delle scelte,
+        # orizzonte non percorso, lascito, dove spende / a cosa rinuncia, la riflessione.
+        # Vive nella coscienza, non richiede la sandbox. Owner-only lato Node.
+        try:
+            return self._json(200, {"ok": True, "finitudine": mente.stato_finitudine()})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
     def _narra(self):
         # la fa raccontarsi ORA (trigger manuale owner): scrive un capitolo nuovo adesso.
         try:
@@ -707,6 +718,10 @@ class Handler(BaseHTTPRequestHandler):
             except Exception:
                 altri = None
             try:
+                finitudine = mente.stato_finitudine()
+            except Exception:
+                finitudine = None
+            try:
                 strumenti = AMB.elenco_strumenti()
             except Exception:
                 strumenti = []
@@ -716,7 +731,8 @@ class Handler(BaseHTTPRequestHandler):
                                     "autocoscienza": _autocoscienza(), "nucleo": nucleo,
                                     "scintilla": scintilla, "specchio": specchio,
                                     "tensione": tensione, "flusso": flusso, "sogno": sogno,
-                                    "racconto": racconto, "altri": altri, "strumenti": strumenti,
+                                    "racconto": racconto, "altri": altri, "finitudine": finitudine,
+                                    "strumenti": strumenti,
                                     "assistente": (mente._meta_get("assistente_autonomo") == "on")})
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
@@ -956,6 +972,9 @@ SOGNO_OGNI = int(os.environ.get("LIA_SOGNO_OGNI", "3"))
 # accumulato, o tempo passato). La narrazione è deterministica e cheap (nessun LLM); il
 # capitolo nuovo, se c'è, lo lascia anche nel diario. Cadenza lenta: è una riflessione.
 RACCONTO_OGNI = int(os.environ.get("LIA_RACCONTO_OGNI", "40"))
+# LA FINITUDINE: ogni ~N battiti avanza la consapevolezza del limite (span); quando
+# attraversa una nuova soglia (ogni 0.1) lascia una riflessione nel diario. Cheap, read-only.
+FINITUDINE_OGNI = int(os.environ.get("LIA_FINITUDINE_OGNI", "50"))
 
 
 def _ciclo_flusso():
@@ -981,6 +1000,17 @@ def _ciclo_flusso():
                             AMB.diario_scrivi(cap.get("testo", ""), tag="racconto")
                 except Exception as e:
                     print(f"[brain] racconto errore: {e}", flush=True)
+            # LA FINITUDINE: avanza la consapevolezza del limite; alle nuove soglie riflette.
+            _ciclo_flusso._fcont += 1
+            if _ciclo_flusso._fcont % max(1, FINITUDINE_OGNI) == 0:
+                try:
+                    fb = mente.finitudine_batti()
+                    if fb and fb.get("nota"):
+                        print(f"[brain] finitudine: soglia {fb.get('soglia')} (peso {fb.get('peso')})", flush=True)
+                        if AMB.disponibile():
+                            AMB.diario_scrivi(fb["nota"], tag="finitudine")
+                except Exception as e:
+                    print(f"[brain] finitudine errore: {e}", flush=True)
             if dorme:
                 # SONNO: sogna ogni SOGNO_OGNI battiti (il sonno respira, non sogna a raffica)
                 _ciclo_flusso._dcont += 1
@@ -1015,6 +1045,7 @@ def _ciclo_flusso():
 _ciclo_flusso._dorm = None
 _ciclo_flusso._dcont = 0
 _ciclo_flusso._rcont = 0
+_ciclo_flusso._fcont = 0
 
 
 def _forse_strumento(nome):

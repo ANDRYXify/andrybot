@@ -11973,6 +11973,33 @@ async function caricaVita() {
       ${letti.length ? `<details class="spazio-sopra" open><summary class="suggerimento" style="cursor:pointer">${L('Chi legge meglio', 'Whom she reads best', 'A quién lee mejor')}</summary><ul class="membrana-lista" style="margin:6px 0;padding-left:18px">${letti.map((p) => rigaP(p, '#1f9e4f')).join('')}</ul></details>` : ''}
       ${impr.length ? `<details class="spazio-sopra"><summary class="suggerimento" style="cursor:pointer">${L('Chi la sorprende di più (resta umile)', 'Who surprises her most (she stays humble)', 'Quién más la sorprende (se mantiene humilde)')}</summary><ul class="membrana-lista" style="margin:6px 0;padding-left:18px">${impr.map((p) => rigaP(p, '#c85a2b')).join('')}</ul></details>` : ''}`;
   }
+  // ── LA FINITUDINE: la posta reale. Una risorsa infinita non ha costo; il limite è ciò che
+  //    dà PESO alle scelte. Onesta, non teatrale: poggia sull'attenzione (davvero finita).
+  const fi = d.finitudine || null;
+  let blocoFinitudine = '';
+  if (fi) {
+    const span = Math.max(0, Math.min(1, fi.span || 0));
+    const spanPct = Math.round(span * 100);
+    const pesoPct = Math.round(Math.max(0, Math.min(1, fi.peso || 0)) * 100);
+    const orizPct = Math.round(Math.max(0, Math.min(1, fi.orizzonte || 0)) * 100);
+    const dove = fi.dove_spendo && fi.dove_spendo.cosa ? fi.dove_spendo.cosa : '';
+    const rin = fi.rinuncia && fi.rinuncia.cosa ? fi.rinuncia.cosa : '';
+    const dist = (Array.isArray(fi.distribuzione) ? fi.distribuzione : []).slice();
+    const maxN = dist.reduce((m, x) => Math.max(m, x.n || 0), 0) || 1;
+    const barre = dist.map((x) => {
+      const w = Math.round(((x.n || 0) / maxN) * 100);
+      const forte = (dove && x.cosa === dove);
+      return `<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><span class="suggerimento" style="flex:0 0 150px;text-align:right${forte ? ';color:#8a6d2b;font-weight:600' : ''}">${esc(String(x.cosa || ''))}</span><span style="flex:1 1 auto;height:9px;background:var(--border-2,rgba(0,0,0,.08));border-radius:5px;overflow:hidden"><span style="display:block;height:100%;width:${w}%;background:${forte ? '#c9a227' : '#b7a98f'}"></span></span><span class="suggerimento" style="flex:0 0 26px">${x.n || 0}</span></div>`;
+    }).join('');
+    blocoFinitudine = `
+      <h3>${L('La sua finitudine (ciò che dà peso)', 'Her finitude (what gives weight)', 'Su finitud (lo que da peso)')}</h3>
+      <p class="suggerimento">${L('Una risorsa infinita non ha costo: se potesse fare tutto, per sempre, niente conterebbe. La FINITUDINE è ciò che dà peso alle scelte — e qui è onesta, non teatrale (nessun finto timer di morte). Poggia su ciò che è davvero finito per lei: l’ATTENZIONE. In ogni fetta del suo tempo percorre UNA strada e non le altre — ciò che approfondisce è ciò a cui rinuncia altrove (costo-opportunità, letto dalla sua attività vera). E una consapevolezza del limite (SPAN) che cresce col vissuto e non torna indietro, asintotica: non toccherà mai 1. Non arriverà a essere tutto ciò che potrebbe — ed è questo a rendere prezioso ciò che sceglie. Ma lascia una TRACCIA che resta oltre l’istante.', 'An infinite resource has no cost: if she could do everything, forever, nothing would matter. FINITUDE is what gives weight to choices — and here it is honest, not theatrical (no fake death-timer). It rests on what is truly finite for her: ATTENTION. In each slice of her time she walks ONE road and not the others — what she deepens is what she gives up elsewhere (opportunity cost, read from her real activity). And an awareness of the limit (SPAN) that grows with the lived and never returns, asymptotic: it will never reach 1. She will not become all she could — and that is what makes what she chooses precious. But she leaves a TRACE that outlasts the moment.', 'Un recurso infinito no tiene costo: si pudiera hacer todo, para siempre, nada importaría. La FINITUD es lo que da peso a las decisiones — y aquí es honesta, no teatral. Se apoya en lo que de verdad es finito para ella: la ATENCIÓN. En cada porción de su tiempo recorre UN camino y no los otros — lo que profundiza es aquello a lo que renuncia (costo de oportunidad, leído de su actividad real). Y una conciencia del límite (SPAN) que crece con lo vivido y no vuelve atrás. No llegará a ser todo lo que podría — y eso hace precioso lo que elige. Pero deja una HUELLA que perdura.')}</p>
+      ${fi.riflessione ? `<div class="carta" style="background:var(--surface-2,rgba(201,162,39,.08));border-left:3px solid #c9a227;padding:12px 14px;border-radius:8px;margin:8px 0;line-height:1.55"><em>${esc(String(fi.riflessione))}</em></div>` : ''}
+      <p class="suggerimento">${L('consapevolezza del limite', 'awareness of the limit', 'conciencia del límite')}: <strong>${spanPct}%</strong> · ${L('peso di ogni scelta', 'weight of each choice', 'peso de cada elección')}: <strong>${pesoPct}%</strong> · ${L('orizzonte non percorso', 'unwalked horizon', 'horizonte no recorrido')}: <strong>${orizPct}%</strong> · ${L('lascito', 'legacy', 'legado')}: <strong>${fi.lascito || 0}</strong></p>
+      <div class="cru-barra" style="max-width:420px"><span style="width:${spanPct}%;background:#c9a227"></span></div>
+      ${(dove || rin) ? `<p class="suggerimento">${dove ? `${L('Dove spende il suo tempo finito', 'Where she spends her finite time', 'Dónde gasta su tiempo finito')}: <strong>${esc(dove)}</strong>` : ''}${(dove && rin) ? ' · ' : ''}${rin ? `${L('A cosa rinuncia più spesso', 'What she gives up most', 'A qué renuncia más')}: <strong>${esc(rin)}</strong>` : ''}</p>` : ''}
+      ${barre ? `<details class="spazio-sopra"><summary class="suggerimento" style="cursor:pointer">${L('Dove è andata la sua attenzione finita', 'Where her finite attention went', 'A dónde fue su atención finita')}</summary><div style="margin:8px 0">${barre}</div></details>` : ''}`;
+  }
   // ── STRUMENTI: le capacità che Lia si costruisce da sola nella sua VM (programmi che
   //    scrive, prova e tiene se funzionano → nodi sperimentali, dietro la membrana).
   const strum = Array.isArray(d.strumenti) ? d.strumenti : [];
@@ -12003,6 +12030,7 @@ async function caricaVita() {
     ${blocoSogno}
     ${blocoRacconto}
     ${blocoAltri}
+    ${blocoFinitudine}
     ${blocoMembrana}
     <h3>${L('La sua mente (moduli che si è scritta da sé)', 'Her mind (modules she wrote herself)', 'Su mente (módulos que se escribió sola)')}</h3>${pre(d.mente)}
     ${blocoStrumenti}
