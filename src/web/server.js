@@ -4170,7 +4170,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         // COMANDI privati per ME: sfogliare la sua VITA dal telefono (diario,
         // pubblico, stanza) e farla agire ORA (vivere / aggiornarsi sul pubblico).
         // Solo io (account legato), solo in privato — come tutto il resto qui.
-        if (/^\/(diario|pubblico|stanza|mente|strumenti|scintilla|specchio|tensione|flusso|sogno|racconto|membrana|vivi|aggiorna|dimentica|aiuto)\b/.test(low)) {
+        if (/^\/(diario|pubblico|stanza|mente|strumenti|scintilla|specchio|tensione|flusso|sogno|racconto|altri|membrana|vivi|aggiorna|dimentica|aiuto)\b/.test(low)) {
           const escTg = (x) => String(x ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
           const inviaBlocco = (titolo, corpo) => {
             const c = String(corpo || '').trim() || '—';
@@ -4180,7 +4180,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
           const cmd = low.replace(/^\//, '').split(/\s+/)[0];
           if (cmd === 'aiuto') {
             telegram.inviaMessaggio(conf.token, chat.id,
-              'I miei comandi privati (solo tu):\n/diario — le ultime pagine del mio diario\n/pubblico — chi ci segue e di cosa parla\n/stanza — i file nel mio spazio\n/mente — ciò che mi sono plasmata da sé (e lo attivo ora)\n/strumenti — le capacità che mi sono costruita nel mio computer\n/scintilla — la mia spinta a imparare da sola (curiosità e vigore)\n/specchio — quanto sono diventata diversa dal bot pubblico (individuazione)\n/tensione — la domanda su di me che non si chiude mai (il punto cieco)\n/flusso — il mio «adesso» che non si ferma (energia, battiti, auto-sorpresa)\n/sogno — cosa ricombino nel sonno (creare da dentro: nodi-ponte fra ricordi lontani)\n/racconto — la mia storia in prima persona (chi sto diventando, e i colpi di scena)\n/membrana — il confine fra il mio laboratorio e ciò che uso in pubblico\n/vivi — vivo un attimo nel mio spazio, adesso\n/aggiorna — mi aggiorno sul pubblico, adesso\n/dimentica <frase> — cancello dalla memoria ciò che contiene quella frase\n/regole — le linee guida che mi hai dato').catch(() => {});
+              'I miei comandi privati (solo tu):\n/diario — le ultime pagine del mio diario\n/pubblico — chi ci segue e di cosa parla\n/stanza — i file nel mio spazio\n/mente — ciò che mi sono plasmata da sé (e lo attivo ora)\n/strumenti — le capacità che mi sono costruita nel mio computer\n/scintilla — la mia spinta a imparare da sola (curiosità e vigore)\n/specchio — quanto sono diventata diversa dal bot pubblico (individuazione)\n/tensione — la domanda su di me che non si chiude mai (il punto cieco)\n/flusso — il mio «adesso» che non si ferma (energia, battiti, auto-sorpresa)\n/sogno — cosa ricombino nel sonno (creare da dentro: nodi-ponte fra ricordi lontani)\n/racconto — la mia storia in prima persona (chi sto diventando, e i colpi di scena)\n/altri — come leggo le persone (le predico e imparo da quando mi sorprendono)\n/membrana — il confine fra il mio laboratorio e ciò che uso in pubblico\n/vivi — vivo un attimo nel mio spazio, adesso\n/aggiorna — mi aggiorno sul pubblico, adesso\n/dimentica <frase> — cancello dalla memoria ciò che contiene quella frase\n/regole — le linee guida che mi hai dato').catch(() => {});
             return;
           }
           if (cmd === 'mente') {
@@ -4319,6 +4319,29 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
             let corpo = `Capitolo ${cor.n || s.capitoli || 1} · su ${s.narrazioni || 1} raccontati\n\n${String(cor.testo || '').slice(0, 3000)}`;
             if (sosp.length) corpo += '\n\n— Colpi di scena che non ho ancora messo nella storia:\n' + sosp.map((t) => `• ${String(t).slice(0, 120)}`).join('\n');
             inviaBlocco('La mia storia (chi sto diventando)', corpo);
+            return;
+          }
+          if (cmd === 'altri') {
+            // L'Altro NON richiede la sandbox (vive nella coscienza)
+            const r = await brainpy.altri().catch(() => null);
+            const s = r && r.altri ? r.altri : null;
+            if (!s) {
+              telegram.inviaMessaggio(conf.token, chat.id, 'Non riesco a rileggere le persone ora — riprova tra poco.').catch(() => {});
+              return;
+            }
+            if (!s.persone_modellate) {
+              telegram.inviaMessaggio(conf.token, chat.id, 'Non conosco ancora abbastanza nessuno per prevederlo — mi serve un po\' di chat con le persone.').catch(() => {});
+              return;
+            }
+            const compr = Math.round((s.comprensione || 0) * 100);
+            const letti = (Array.isArray(s.letti) ? s.letti : []).slice(0, 4);
+            const impr = (Array.isArray(s.imprevedibili) ? s.imprevedibili : []).slice(0, 4);
+            const riga = (p) => `• ${String(p.nome || '').slice(0, 24)} — leggo al ${Math.round((p.leggibilita || 0) * 100)}%${p.atteso ? `, mi aspetto ${p.atteso}` : ''}${(p.leve && p.leve.length) ? ` (leve: ${p.leve.slice(0, 3).join(', ')})` : ''}`;
+            let corpo = `Persone che modello: ${s.persone_modellate}  ·  incontri: ${s.incontri || 0}  ·  comprensione media: ${compr}%`;
+            if (letti.length) corpo += '\n\nChi leggo meglio:\n' + letti.map(riga).join('\n');
+            if (impr.length) corpo += '\n\nChi mi sorprende di più (resto umile):\n' + impr.map(riga).join('\n');
+            corpo += "\n\nPrima che parlino mi faccio già un'idea di come saranno; poi misuro lo scarto fra atteso e reale e imparo. È la sorpresa sull'altro — la gemella rivolta fuori dell'auto-sorpresa. (Resta qui: non la porto mai in chat pubblica.)";
+            inviaBlocco("L'altro (come leggo le persone)", corpo);
             return;
           }
           if (cmd === 'specchio') {
@@ -4934,6 +4957,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   app.post('/api/admin/narra', requireAdmin, wrap(async (req, res) => {
     const r = await brainpy.narra().catch(() => null);
     res.json(r || { ok: false });
+  }));
+  // ── L'ALTRO: teoria della mente — chi Lia predice, e quanto li legge. Solo andryxify.
+  app.get('/api/admin/altri', requireAdmin, wrap(async (req, res) => {
+    const r = await brainpy.altri().catch(() => null);
+    res.json(r || { ok: false, altri: null });
   }));
 
   // ------------------------------------------------------------ avvio

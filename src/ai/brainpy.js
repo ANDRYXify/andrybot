@@ -490,6 +490,20 @@ export async function narra() {
   finally { clearTimeout(to); }
 }
 
+// L'ALTRO (teoria della mente): quante persone Lia modella e predice, quanto le legge in
+// media (comprensione), i più imprevedibili e i più letti. Ritorna {ok, altri} o null.
+// Non richiede la sandbox. Solo aggregati, owner-only lato route.
+export async function altri() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 8000);
+  try {
+    const r = await fetch(BASE + '/altri', { signal: ac.signal });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('altri:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
 // STRUMENTI: le capacità che Lia si è costruita nel suo computer (registro). Ritorna
 // {ok, attiva, strumenti} o null. Richiede la sandbox.
 export async function strumenti() {

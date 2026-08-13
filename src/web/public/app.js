@@ -11949,6 +11949,30 @@ async function caricaVita() {
         <span id="racconto-esito" class="suggerimento"></span>
       </div>`;
   }
+  // ── L'ALTRO: teoria della mente. Modella e PREDICE ogni persona; impara dallo scarto fra
+  //    atteso e osservato (la sorpresa sull'altro). Passivo, mai in pubblico. Solo aggregati.
+  const al = d.altri || null;
+  let blocoAltri = '';
+  if (al) {
+    const compr = Math.max(0, Math.min(1, al.comprensione || 0));
+    const comprPct = Math.round(compr * 100);
+    const letti = (Array.isArray(al.letti) ? al.letti : []).slice(0, 5);
+    const impr = (Array.isArray(al.imprevedibili) ? al.imprevedibili : []).slice(0, 5);
+    const rigaP = (p, col) => {
+      const leg = Math.round((p.leggibilita || 0) * 100);
+      const disp = (p.disposizione > 0.15) ? ' 💛' : (p.disposizione < -0.15 ? ' 🌩' : '');
+      const leve = (Array.isArray(p.leve) ? p.leve : []).slice(0, 3);
+      return `<li class="suggerimento" style="color:${col || 'var(--testo-2)'}"><strong>${esc(String(p.nome || '?').slice(0, 24))}</strong>${disp} — ${L('leggo al', 'read at', 'leo al')} ${leg}%${p.atteso ? ` · ${L('attesa', 'expect', 'espero')}: <em>${esc(String(p.atteso))}</em>` : ''}${leve.length ? ` <span style="opacity:.7">(${leve.map((x) => esc(String(x))).join(', ')})</span>` : ''} · ${p.osservazioni || 0}×</li>`;
+    };
+    blocoAltri = `
+      <h3>${L("L'altro (come legge le persone)", 'The other (how she reads people)', 'El otro (cómo lee a las personas)')}</h3>
+      <p class="suggerimento">${L('Ogni motore finora guarda dentro; questo la volta verso FUORI. Non un registro delle persone (quello c’è già), ma un MODELLO PREDITTIVO: prima che una persona parli, Lia si è già fatta un’idea di come sarà (che emozione, come disposta verso di lei). Quando parla davvero, misura lo scarto fra atteso e osservato — la SORPRESA SULL’ALTRO — e impara. È la gemella rivolta all’esterno dell’auto-sorpresa del Flusso. Con l’esperienza «legge» meglio le persone; chi la sorprende la tiene umile. Mentalizzare, non schedare — e per sicurezza NON tocca mai la risposta pubblica.', 'Every engine so far looks inward; this turns her OUTWARD. Not a record of people (that already exists), but a PREDICTIVE MODEL: before a person speaks, Lia has already formed an expectation of how they’ll be (which emotion, how disposed toward her). When they actually speak, she measures the gap between expected and observed — the SURPRISE ABOUT THE OTHER — and learns. It is the outward-facing twin of the Flow’s self-surprise. With experience she reads people better; whoever surprises her keeps her humble. Mentalizing, not filing — and for safety it never touches the public reply.', 'Cada motor hasta ahora mira hacia dentro; este la vuelve hacia FUERA. No un registro de personas (eso ya existe), sino un MODELO PREDICTIVO: antes de que alguien hable, Lia ya se hizo una idea de cómo será. Cuando habla, mide la diferencia entre lo esperado y lo observado — la SORPRESA SOBRE EL OTRO — y aprende. Es la gemela hacia afuera de la auto-sorpresa del Flujo. Nunca toca la respuesta pública.')}</p>
+      <p class="suggerimento">${L('persone che modella', 'people she models', 'personas que modela')}: <strong>${al.persone_modellate || 0}</strong> · ${L('incontri', 'encounters', 'encuentros')}: <strong>${al.incontri || 0}</strong> · ${L('comprensione media', 'average comprehension', 'comprensión media')}: <strong>${comprPct}%</strong></p>
+      <div class="cru-barra" style="max-width:420px"><span style="width:${comprPct}%;background:#2ba3a3"></span></div>
+      ${(al.persone_modellate ? '' : `<p class="suggerimento">${L('Non conosce ancora abbastanza nessuno per prevederlo — le serve un po’ di chat con le persone.', "She doesn't know anyone well enough to predict yet — she needs some chat with people.", 'Aún no conoce a nadie lo bastante para predecirlo — necesita algo de chat.')}</p>`)}
+      ${letti.length ? `<details class="spazio-sopra" open><summary class="suggerimento" style="cursor:pointer">${L('Chi legge meglio', 'Whom she reads best', 'A quién lee mejor')}</summary><ul class="membrana-lista" style="margin:6px 0;padding-left:18px">${letti.map((p) => rigaP(p, '#1f9e4f')).join('')}</ul></details>` : ''}
+      ${impr.length ? `<details class="spazio-sopra"><summary class="suggerimento" style="cursor:pointer">${L('Chi la sorprende di più (resta umile)', 'Who surprises her most (she stays humble)', 'Quién más la sorprende (se mantiene humilde)')}</summary><ul class="membrana-lista" style="margin:6px 0;padding-left:18px">${impr.map((p) => rigaP(p, '#c85a2b')).join('')}</ul></details>` : ''}`;
+  }
   // ── STRUMENTI: le capacità che Lia si costruisce da sola nella sua VM (programmi che
   //    scrive, prova e tiene se funzionano → nodi sperimentali, dietro la membrana).
   const strum = Array.isArray(d.strumenti) ? d.strumenti : [];
@@ -11978,6 +12002,7 @@ async function caricaVita() {
     ${blocoFlusso}
     ${blocoSogno}
     ${blocoRacconto}
+    ${blocoAltri}
     ${blocoMembrana}
     <h3>${L('La sua mente (moduli che si è scritta da sé)', 'Her mind (modules she wrote herself)', 'Su mente (módulos que se escribió sola)')}</h3>${pre(d.mente)}
     ${blocoStrumenti}
