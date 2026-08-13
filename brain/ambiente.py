@@ -159,6 +159,88 @@ def scrivi_file(percorso, contenuto, append=False):
     return bool(r.get("ok"))
 
 
+# ── STRUMENTI: le CAPACITÀ che Lia si costruisce da sola nel suo computer ──────
+# Uno strumento è un piccolo programma Python che LEGGE da stdin e SCRIVE su stdout.
+# Lia lo scrive, lo PROVA, e se funziona diventa una sua capacità (un nodo). Tutto
+# dentro la sandbox murata: è autonomia reale, ma nel recinto.
+STRUM_DIR = "mente/strumenti"
+
+
+def _nome_sicuro(nome):
+    n = "".join(c for c in str(nome or "").strip().lower().replace(" ", "_")
+                if c.isalnum() or c in "_-")[:40]
+    return n or "strumento"
+
+
+def prepara_strumenti():
+    """Assicura la cassetta degli attrezzi: ~/mente/strumenti/ + il registro. Idempotente."""
+    if not disponibile():
+        return False
+    guida = (
+        "# I miei strumenti — capacità che costruisco da sola\n\n"
+        "Ogni strumento è un piccolo programma Python che LEGGE da stdin e SCRIVE su\n"
+        "stdout. Se funziona, diventa una mia capacità (un nodo) che posso riusare.\n\n"
+        "Esempio minimo:\n\n"
+        "    import sys\n"
+        "    testo = sys.stdin.read()\n"
+        "    print(testo.upper())\n\n"
+        "Li tengo in strumenti/. Il registro è strumenti.jsonl (uno per riga).\n")
+    esegui(f"mkdir -p {STRUM_DIR}", timeout=10)
+    esegui(f"[ -f {STRUM_DIR}/GUIDA.md ] || (printf %s '{_b64(guida)}' | base64 -d > {STRUM_DIR}/GUIDA.md)", timeout=10)
+    esegui("[ -f mente/strumenti.jsonl ] || : > mente/strumenti.jsonl", timeout=10)
+    return True
+
+
+def scrivi_strumento(nome, codice):
+    """Scrive uno strumento Python in ~/mente/strumenti/<nome>.py. Ritorna il path o ''."""
+    if not disponibile():
+        return ""
+    percorso = f"{STRUM_DIR}/{_nome_sicuro(nome)}.py"
+    r = _scrivi(percorso, str(codice or ""), append=False)
+    return percorso if r.get("ok") else ""
+
+
+def prova_strumento(nome, ingresso="", timeout=15):
+    """Esegue uno strumento con `ingresso` su stdin. Ritorna {ok, output, codice}. Ok solo
+    se esce con codice 0 e produce qualcosa. Tetto di tempo corto: dev'essere svelto."""
+    if not disponibile():
+        return {"ok": False, "errore": "ambiente non disponibile"}
+    percorso = f"{STRUM_DIR}/{_nome_sicuro(nome)}.py"
+    cmd = f"printf %s '{_b64(str(ingresso or ''))}' | base64 -d | python3 '{percorso}'"
+    r = esegui(cmd, timeout=int(timeout))
+    if not r.get("ok"):
+        return {"ok": False, "errore": (r.get("errore") or "esecuzione fallita")}
+    codice = r.get("codice")
+    out = (r.get("output") or "").strip()
+    return {"ok": (codice in (0, None)) and bool(out), "output": out, "codice": codice}
+
+
+def aggiungi_strumento(obj):
+    """Registra uno strumento nel manifest ~/mente/strumenti.jsonl (una riga JSON)."""
+    try:
+        riga = json.dumps(obj, ensure_ascii=False)
+    except Exception:
+        return False
+    return bool(_scrivi("mente/strumenti.jsonl", riga + "\n", append=True).get("ok"))
+
+
+def elenco_strumenti(max_n=40):
+    """Legge il registro degli strumenti. Ritorna una lista di dict (i più recenti)."""
+    if not disponibile():
+        return []
+    r = esegui(f"cat mente/strumenti.jsonl 2>/dev/null | tail -n {int(max_n)}", timeout=10)
+    out = []
+    if r.get("ok"):
+        for riga in (r.get("output") or "").splitlines():
+            riga = riga.strip()
+            if riga.startswith("{"):
+                try:
+                    out.append(json.loads(riga))
+                except Exception:
+                    pass
+    return out
+
+
 def stato_seme():
     """Il SEME della sua vita 'mortale' nella sandbox (~/mente/seme.json): vive e muore
     tutto dentro il suo mondo isolato. Ritorna un dict (vuoto se non c'è / non nato)."""

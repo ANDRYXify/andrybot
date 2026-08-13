@@ -4180,7 +4180,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
           const cmd = low.replace(/^\//, '').split(/\s+/)[0];
           if (cmd === 'aiuto') {
             telegram.inviaMessaggio(conf.token, chat.id,
-              'I miei comandi privati (solo tu):\n/diario — le ultime pagine del mio diario\n/pubblico — chi ci segue e di cosa parla\n/stanza — i file nel mio spazio\n/mente — ciò che mi sono plasmata da sé (e lo attivo ora)\n/scintilla — la mia spinta a imparare da sola (curiosità e vigore)\n/specchio — quanto sono diventata diversa dal bot pubblico (individuazione)\n/tensione — la domanda su di me che non si chiude mai (il punto cieco)\n/membrana — il confine fra il mio laboratorio e ciò che uso in pubblico\n/vivi — vivo un attimo nel mio spazio, adesso\n/aggiorna — mi aggiorno sul pubblico, adesso\n/dimentica <frase> — cancello dalla memoria ciò che contiene quella frase\n/regole — le linee guida che mi hai dato').catch(() => {});
+              'I miei comandi privati (solo tu):\n/diario — le ultime pagine del mio diario\n/pubblico — chi ci segue e di cosa parla\n/stanza — i file nel mio spazio\n/mente — ciò che mi sono plasmata da sé (e lo attivo ora)\n/strumenti — le capacità che mi sono costruita nel mio computer\n/scintilla — la mia spinta a imparare da sola (curiosità e vigore)\n/specchio — quanto sono diventata diversa dal bot pubblico (individuazione)\n/tensione — la domanda su di me che non si chiude mai (il punto cieco)\n/membrana — il confine fra il mio laboratorio e ciò che uso in pubblico\n/vivi — vivo un attimo nel mio spazio, adesso\n/aggiorna — mi aggiorno sul pubblico, adesso\n/dimentica <frase> — cancello dalla memoria ciò che contiene quella frase\n/regole — le linee guida che mi hai dato').catch(() => {});
             return;
           }
           if (cmd === 'mente') {
@@ -4212,6 +4212,19 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
             const r = await brainpy.vivi(cmd === 'vivi' ? 'vita' : 'pubblico').catch(() => null);
             telegram.inviaMessaggio(conf.token, chat.id,
               (r && r.nota) ? escTg(r.nota) : 'Il mio spazio non è raggiungibile ora 😔').catch(() => {});
+            return;
+          }
+          if (cmd === 'strumenti') {
+            const r = await brainpy.strumenti().catch(() => null);
+            if (!r || r.attiva === false) {
+              telegram.inviaMessaggio(conf.token, chat.id, 'La mia macchina è spenta ora — non riesco a mostrarti i miei strumenti.').catch(() => {});
+              return;
+            }
+            const lista = Array.isArray(r.strumenti) ? r.strumenti : [];
+            const corpo = lista.length
+              ? lista.slice(-12).map((s) => `• ${String(s.nome || '').slice(0, 40)} — ${String(s.descrizione || '').slice(0, 80)}`).join('\n')
+              : '(non mi sono ancora costruita nessuno strumento)';
+            inviaBlocco('I miei strumenti (capacità che mi costruisco)', corpo);
             return;
           }
           if (cmd === 'scintilla') {
@@ -4824,6 +4837,21 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // membrana; il bot pubblico smette all'istante di usarlo). Solo andryxify.
   app.post('/api/admin/membrana/revoca', requireAdmin, wrap(async (req, res) => {
     const r = await brainpy.revocaPromozione(req.body?.id).catch(() => null);
+    res.json(r || { ok: false });
+  }));
+  // ── STRUMENTI: le capacità che Lia si costruisce da sola nel suo computer. Solo andryxify.
+  app.get('/api/admin/strumenti', requireAdmin, wrap(async (req, res) => {
+    const r = await brainpy.strumenti().catch(() => null);
+    res.json(r || { attiva: false, strumenti: [] });
+  }));
+  // fa costruire ORA uno strumento (può metterci un po': LLM + prova nella sandbox).
+  app.post('/api/admin/strumenti/costruisci', requireAdmin, wrap(async (req, res) => {
+    const r = await brainpy.costruisciStrumento().catch(() => null);
+    res.json(r || { ok: false });
+  }));
+  // esegue uno strumento con un input, per vedere che funziona.
+  app.post('/api/admin/strumenti/prova', requireAdmin, wrap(async (req, res) => {
+    const r = await brainpy.provaStrumento(req.body?.nome, req.body?.input).catch(() => null);
     res.json(r || { ok: false });
   }));
 

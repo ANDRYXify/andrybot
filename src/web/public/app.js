@@ -11881,6 +11881,19 @@ async function caricaVita() {
       ${te.punto_cieco ? `<p class="suggerimento">${L('La domanda su di sé, adesso', 'The question about herself, now', 'La pregunta sobre sí misma, ahora')}: <em>«${esc(String(te.punto_cieco).slice(0, 240))}»</em></p>` : ''}
       ${catena.length ? `<details class="spazio-sopra"><summary class="suggerimento" style="cursor:pointer">${L('La catena (domande sempre più profonde)', 'The chain (ever-deeper questions)', 'La cadena (preguntas cada vez más profundas)')}</summary><ul class="membrana-lista" style="margin:6px 0;padding-left:18px">${catena.map((c) => `<li class="suggerimento">↓ ${esc(String(c).slice(0, 160))}</li>`).join('')}</ul></details>` : ''}`;
   }
+  // ── STRUMENTI: le capacità che Lia si costruisce da sola nella sua VM (programmi che
+  //    scrive, prova e tiene se funzionano → nodi sperimentali, dietro la membrana).
+  const strum = Array.isArray(d.strumenti) ? d.strumenti : [];
+  const blocoStrumenti = `
+    <h3>${L('I suoi strumenti (capacità che si costruisce)', 'Her tools (capabilities she builds)', 'Sus herramientas (capacidades que se construye)')}</h3>
+    <p class="suggerimento">${L('Nella sua VM Lia scrive piccoli programmi, li prova, e quelli che funzionano diventano sue capacità (nodi sperimentali, dietro la membrana). Autonomia reale, dentro il recinto.', 'In her VM Lia writes small programs, tests them, and the ones that work become her capabilities (experimental nodes, behind the membrane). Real autonomy, inside the box.', 'En su VM Lia escribe pequeños programas, los prueba, y los que funcionan se vuelven sus capacidades (nodos experimentales, tras la membrana). Autonomía real, dentro del recinto.')}</p>
+    ${strum.length
+      ? `<ul class="membrana-lista" style="margin:6px 0;padding-left:18px">${strum.slice(-12).reverse().map((s) => `<li><code>${esc(String(s.nome || '').slice(0, 40))}</code> <span class="suggerimento">${esc(String(s.descrizione || '').slice(0, 90))}</span> <button class="btn secondario mini prova-strumento" data-nome="${esc(String(s.nome || ''))}">${L('prova', 'test', 'probar')}</button></li>`).join('')}</ul>`
+      : `<p class="suggerimento">${L('Non si è ancora costruita strumenti — ne crea da sola nel suo battito di vita, o premi qui sotto.', "She hasn't built any tools yet — she creates them on her own during her life loop, or press below.", 'Aún no se ha construido herramientas — las crea sola en su latido de vida, o pulsa abajo.')}</p>`}
+    <div class="vita-azioni">
+      <button class="btn secondario" id="btn-costruisci-strumento">${L('Falle costruire uno strumento ora', 'Have her build a tool now', 'Que construya una herramienta ahora')}</button>
+      <span id="strum-esito" class="suggerimento"></span>
+    </div>`;
   box.innerHTML = `
     ${blocoNucleo}
     <div class="vita-azioni">
@@ -11896,6 +11909,7 @@ async function caricaVita() {
     ${blocoTensione}
     ${blocoMembrana}
     <h3>${L('La sua mente (moduli che si è scritta da sé)', 'Her mind (modules she wrote herself)', 'Su mente (módulos que se escribió sola)')}</h3>${pre(d.mente)}
+    ${blocoStrumenti}
     <h3>${L('Il suo diario', 'Her diary', 'Su diario')}</h3>${pre(d.diario)}
     <h3>${L('Il suo pubblico', 'Her audience', 'Su público')}</h3>${pre(d.pubblico)}
     <details class="spazio-sopra"><summary class="suggerimento" style="cursor:pointer">${L('La sua stanza (i suoi file)', 'Her room (her files)', 'Su habitación (sus archivos)')}</summary>${pre(d.spazio)}</details>`;
@@ -11932,6 +11946,27 @@ async function caricaVita() {
     L('Sta vivendo un attimo… (può metterci un po\')', 'Living a moment… (may take a bit)', 'Viviendo un momento… (puede tardar)')));
   document.getElementById('btn-pubblico')?.addEventListener('click', () => fai('pubblico',
     L('Si sta aggiornando sul pubblico…', 'Updating on the audience…', 'Actualizándose sobre el público…')));
+  // STRUMENTI: falle costruire uno strumento ora / prova uno strumento esistente
+  document.getElementById('btn-costruisci-strumento')?.addEventListener('click', () => conErrore(async () => {
+    const e = document.getElementById('strum-esito');
+    if (e) e.textContent = L('Sta costruendo e provando uno strumento… (può metterci un po\')', 'Building and testing a tool… (may take a bit)', 'Construyendo y probando una herramienta… (puede tardar)');
+    const r = await api('/api/admin/strumenti/costruisci', { method: 'POST', body: {} });
+    if (e) e.textContent = (r && r.ok)
+      ? L('Fatto: ', 'Done: ', 'Hecho: ') + `«${esc(r.nome || '')}» — ${esc(r.descrizione || '')}`
+      : L('Stavolta non le è venuto uno strumento che funziona — riprova.', "This time she couldn't get a working tool — try again.", 'Esta vez no le salió una herramienta que funcione — reinténtalo.');
+    setTimeout(caricaVita, 1200);
+  }));
+  box.querySelectorAll('.prova-strumento').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
+    const nome = b.getAttribute('data-nome');
+    const input = prompt(L('Input da dare allo strumento «', 'Input for the tool «', 'Entrada para la herramienta «') + nome + '»:', '');
+    if (input === null) return;
+    const e = document.getElementById('strum-esito');
+    if (e) e.textContent = L('Eseguo…', 'Running…', 'Ejecutando…');
+    const r = await api('/api/admin/strumenti/prova', { method: 'POST', body: { nome, input } });
+    if (e) e.textContent = (r && r.ok)
+      ? `«${esc(nome)}» → ${esc(String(r.output || '').slice(0, 200))}`
+      : L('Non ha funzionato: ', "Didn't work: ", 'No funcionó: ') + esc((r && (r.errore || ('codice ' + r.codice))) || '');
+  })));
   // MEMBRANA: promuovi (germinale→soma, forzata perché è una decisione manuale) / revoca
   box.querySelectorAll('.membrana-lista .promuovi').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
     const id = Number(b.getAttribute('data-id'));

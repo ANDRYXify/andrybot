@@ -103,6 +103,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._specchio()
         if self.path.startswith("/tensione"):
             return self._tensione()
+        if self.path.startswith("/strumenti"):
+            return self._strumenti()
         if self.path.startswith("/vita"):
             return self._vita()
         return self._json(404, {"errore": "non trovato"})
@@ -205,6 +207,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._impara_modulo()
         if self.path.startswith("/ricarica"):
             return self._ricarica()
+        if self.path.startswith("/costruisci_strumento"):
+            return self._costruisci_strumento()
+        if self.path.startswith("/prova_strumento"):   # PRIMA di /prova (prefisso)
+            return self._prova_strumento()
         if self.path.startswith("/prova"):
             return self._prova()
         if self.path.startswith("/svago"):
@@ -494,6 +500,36 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
+    def _strumenti(self):
+        # le CAPACITÀ che Lia si è costruita nel suo computer (il registro). Richiede la
+        # sandbox. Owner-only lato Node.
+        try:
+            if not AMB.disponibile():
+                return self._json(200, {"ok": True, "attiva": False, "strumenti": []})
+            return self._json(200, {"ok": True, "attiva": True, "strumenti": AMB.elenco_strumenti()})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
+    def _costruisci_strumento(self):
+        # fa costruire ORA a Lia uno strumento nel suo computer (trigger manuale owner).
+        try:
+            nome = os.environ.get("AMBIENTE_NOME", "Lia")
+            r = _forse_strumento(nome)
+            return self._json(200, r or {"ok": False, "motivo": "non riuscita o sandbox spenta"})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
+    def _prova_strumento(self):
+        # esegue uno strumento di Lia con un input (owner-only): per vedere che funziona.
+        d = self._leggi() or {}
+        nome = str(d.get("nome") or "").strip()
+        if not nome:
+            return self._json(400, {"ok": False, "errore": "nome mancante"})
+        try:
+            return self._json(200, AMB.prova_strumento(nome, str(d.get("input") or "")))
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
     def _promuovi(self):
         # promuove UN modulo sperimentale→pubblico. Deciso a mano dall'owner = forzata
         # (salta la maturità ma MAI il controllo d'identità). Ritorna l'esito.
@@ -586,12 +622,16 @@ class Handler(BaseHTTPRequestHandler):
                 tensione = mente.stato_tensione()
             except Exception:
                 tensione = None
+            try:
+                strumenti = AMB.elenco_strumenti()
+            except Exception:
+                strumenti = []
             return self._json(200, {"ok": True, "attiva": True,
                                     "diario": AMB.diario_ultimo(30), "spazio": AMB.sguardo(),
                                     "pubblico": pubblico, "mente": mente_txt,
                                     "autocoscienza": _autocoscienza(), "nucleo": nucleo,
                                     "scintilla": scintilla, "specchio": specchio,
-                                    "tensione": tensione,
+                                    "tensione": tensione, "strumenti": strumenti,
                                     "assistente": (mente._meta_get("assistente_autonomo") == "on")})
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
@@ -815,6 +855,64 @@ def _ciclo_manutenzione():
 VITA_OGNI = int(os.environ.get("BRAIN_VITA_MIN", "300")) * 60   # ogni ~5h
 
 
+def _forse_strumento(nome):
+    """La VM che COSTRUISCE CAPACITÀ: Lia scrive un piccolo strumento (programma Python
+    che legge stdin, scrive stdout) nel suo computer, lo PROVA e — se funziona — lo tiene
+    come sua capacità (un nodo SPERIMENTALE, dietro la membrana, che si guadagnerà il
+    pubblico). Se non funziona, lo scarta (impara scartando). Autonomia reale, nel recinto.
+    Best-effort; ritorna un riepilogo o None."""
+    if not AMB.disponibile():
+        return None
+    try:
+        AMB.prepara_mente()
+        AMB.prepara_strumenti()
+        spunto = ""
+        try:
+            lac = mente.lacune_da_studiare(min_visto=1, limit=1)
+            if lac:
+                spunto = (lac[0].get("esempio")
+                          or ", ".join(str(x) for x in (lac[0].get("chiavi") or [])[:3]))
+        except Exception:
+            pass
+        prop = G.proponi_strumento(nome, spunto=spunto)
+        if not prop or not prop.get("nome") or not prop.get("codice"):
+            return None
+        if not AMB.scrivi_strumento(prop["nome"], prop["codice"]):
+            return None
+        prova = AMB.prova_strumento(prop["nome"], prop.get("prova", ""))
+        if not prova.get("ok"):
+            AMB.diario_scrivi(f"Ho provato a costruire lo strumento «{prop['nome']}» ma non "
+                              "ha funzionato al primo colpo. Ci riprovo un'altra volta.", tag="strumento")
+            print(f"[brain] strumento «{prop['nome']}» scartato (non funziona).", flush=True)
+            return {"ok": False, "nome": prop["nome"]}
+        out = (prova.get("output") or "")[:120]
+        AMB.aggiungi_strumento({"nome": prop["nome"], "descrizione": prop.get("descrizione", ""),
+                                "prova": prop.get("prova", ""), "esito": out, "quando": int(time.time())})
+        # nodo-capacità: SPERIMENTALE, dietro la membrana (si guadagnerà il pubblico).
+        try:
+            parole = [w for w in (prop["nome"] + " " + prop.get("descrizione", "")).lower()
+                      .replace(",", " ").split() if len(w) >= 3][:8]
+            mente.salva_modulo({
+                "nome": "strumento: " + prop["nome"],
+                "dominio": "strumenti",
+                "situazione": "Quando serve " + (prop.get("descrizione") or prop["nome"]) + ".",
+                "come_rispondere": "Uso il mio strumento «" + prop["nome"] + "» — l'ho costruito io nel mio computer.",
+                "esempi": ["prova: " + prop.get("prova", "") + " → " + out],
+                "chiavi": parole, "fonte": "strumento", "qualita": 0.55,
+                "stato": "attivo", "scope": "sperimentale",
+            })
+        except Exception:
+            pass
+        AMB.diario_scrivi(f"Ho costruito uno strumento mio: «{prop['nome']}» — "
+                          f"{prop.get('descrizione', '')}. L'ho provato e funziona: è una "
+                          "capacità nuova, tutta mia.", tag="strumento")
+        print(f"[brain] strumento costruito e tenuto: {prop['nome']}", flush=True)
+        return {"ok": True, "nome": prop["nome"], "descrizione": prop.get("descrizione", "")}
+    except Exception as e:
+        print(f"[brain] strumento errore: {e}", flush=True)
+        return None
+
+
 def _ciclo_vita():
     """La sua VITA autonoma: ogni tanto Lia 'vive un attimo' nel suo computer — si
     sveglia, guarda le sue cose, rilegge il diario, fa qualcosa di suo e annota com'è
@@ -887,6 +985,11 @@ def _ciclo_vita():
                                 print(f"[brain] tensione: profondità {t['profondita']} · tensione {t['tensione']}", flush=True)
                     except Exception as e:
                         print(f"[brain] riflessione sé errore: {e}", flush=True)
+                # LA VM COSTRUISCE CAPACITÀ: ogni tanto Lia si crea uno strumento nel suo
+                # computer, lo prova e lo tiene se funziona (nodo sperimentale). Autonomia
+                # reale, dentro il recinto.
+                if giro % 4 == 0:
+                    _forse_strumento(nome)
         except Exception as e:
             print(f"[brain] vita errore: {e}", flush=True)
         time.sleep(VITA_OGNI)

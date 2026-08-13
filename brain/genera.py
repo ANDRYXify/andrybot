@@ -1223,6 +1223,54 @@ def rifletti_su_di_se(nome_bot="Lia", punto_attuale=None):
         return None
 
 
+def proponi_strumento(nome_bot="Lia", spunto=""):
+    """Lia PROPONE un piccolo strumento per sé: un programma Python che LEGGE da stdin e
+    SCRIVE su stdout, che risolve una cosa concreta e piccola. Ritorna {nome, descrizione,
+    prova, codice} o None. Solo LLM — chi lo scrive/prova/registra è il server (nella VM)."""
+    if not _puo_generare():
+        return None
+    _tl.background = True   # costruzione in background: nessuno aspetta → non declassa
+    ctx = {"nome_bot": nome_bot or "Lia", "tono": "amichevole"}
+    sp = (f"Ti gira in testa questo: «{str(spunto)[:120]}». " if spunto else "")
+    nudge = (
+        sp + "Costruisci UN piccolo strumento per te: un programma Python che LEGGE tutto "
+        "da stdin (sys.stdin.read()) e SCRIVE il risultato con print(), che risolva una cosa "
+        "concreta e piccola (un calcolo, una trasformazione di testo, un conteggio…). Dev'essere "
+        "completo e autonomo (solo librerie standard). Rispondi ESATTAMENTE in questo formato, "
+        "nient'altro:\n"
+        "NOME: <due o tre parole minuscole>\n"
+        "DESCRIZIONE: <una frase: cosa fa>\n"
+        "PROVA: <un input di esempio, su una riga>\n"
+        "CODICE:\n<il programma Python completo>")
+    try:
+        g = _completa(_system_prompt("(vita)", ctx, "vita"), [], nudge,
+                      380, temperature=0.5, top_p=0.9, timeout_s=70)
+    except Exception:
+        g = None
+    return _parse_strumento(g) if g else None
+
+
+def _parse_strumento(testo):
+    """Estrae {nome, descrizione, prova, codice} dal formato NOME/DESCRIZIONE/PROVA/CODICE.
+    Ritorna None se non è un programma plausibile (deve avere un nome e almeno un print)."""
+    t = str(testo or "")
+
+    def _campo(k):
+        m = re.search(r"(?im)^\s*" + k + r"\s*:\s*(.+?)\s*$", t)
+        return (m.group(1).strip() if m else "")
+    nome = _campo("NOME")
+    descr = _campo("DESCRIZIONE")
+    prova = _campo("PROVA")
+    m = re.search(r"(?is)CODICE\s*:\s*(.+)$", t)
+    codice = (m.group(1).strip() if m else "")
+    codice = re.sub(r"^```[a-zA-Z]*\s*", "", codice)
+    codice = re.sub(r"\s*```\s*$", "", codice).strip()
+    if not nome or not codice or "print" not in codice:
+        return None
+    return {"nome": nome[:40], "descrizione": descr[:200],
+            "prova": prova[:200], "codice": codice[:4000]}
+
+
 def _riflesso_modulo(ctx):
     """RIFLESSO situazionale: quando il modello statistico non produce nulla (lento o
     spento), rispondi dal MODULO più pertinente usando il suo esempio già pronto. È

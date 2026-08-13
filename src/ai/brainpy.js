@@ -419,6 +419,50 @@ export async function tensione() {
   finally { clearTimeout(to); }
 }
 
+// STRUMENTI: le capacità che Lia si è costruita nel suo computer (registro). Ritorna
+// {ok, attiva, strumenti} o null. Richiede la sandbox.
+export async function strumenti() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 8000);
+  try {
+    const r = await fetch(BASE + '/strumenti', { signal: ac.signal });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('strumenti:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
+// Fa costruire ORA a Lia uno strumento nel suo computer (owner). Può metterci un po'
+// (LLM + prova nella sandbox). Ritorna {ok, nome, descrizione} o null.
+export async function costruisciStrumento() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 90_000);
+  try {
+    const r = await fetch(BASE + '/costruisci_strumento', { method: 'POST', signal: ac.signal });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('costruisciStrumento:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
+// Esegue uno strumento di Lia con un input (owner): per vedere che funziona.
+// Ritorna {ok, output, codice} o null.
+export async function provaStrumento(nome, input = '') {
+  const n = String(nome || '').trim();
+  if (!n) return null;
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 20_000);
+  try {
+    const r = await fetch(BASE + '/prova_strumento', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome: n, input: String(input || '') }), signal: ac.signal,
+    });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('provaStrumento:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
 // Il dataset della "mente" della rete per un canale: coppie {q, a} consolidate.
 export async function reteCorpus(canale) {
   if (!canale) return [];
