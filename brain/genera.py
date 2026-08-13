@@ -43,6 +43,29 @@ _TIERS = [
     (0.0, "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf"),
 ]
 
+# Scaletta LIBERA (uncensored/abliterated): modelli senza i rifiuti e il tono da
+# manuale, per la chat — specie in privato con l'owner. Scende in modello E in
+# quantizzazione, fino a un modello minuscolo che risponde SEMPRE in tempo anche su
+# una CPU lenta: così, se il box non regge, il motore ripiega da solo su uno più
+# leggero (vedi _candidati_modello/_scarica_a_cascata). È la scaletta di DEFAULT
+# (LLM_LIBERO=1); con LLM_LIBERO=0 si torna alla Instruct qui sopra. URL verificati
+# (single-file GGUF, niente split). NB: in PUBBLICO l'uscita passa comunque per la
+# moderazione del bot e le parole vietate, e valgono sempre le regole di Twitch; in
+# privato con te, no. La soglia è la RAM totale minima per considerare quel tier.
+_TIERS_LIBERI = [
+    (13.0, "https://huggingface.co/mradermacher/Qwen2.5-7B-Instruct-abliterated-v2-GGUF/resolve/main/Qwen2.5-7B-Instruct-abliterated-v2.Q4_K_M.gguf"),
+    (10.0, "https://huggingface.co/mradermacher/Qwen2.5-7B-Instruct-abliterated-v2-GGUF/resolve/main/Qwen2.5-7B-Instruct-abliterated-v2.Q3_K_M.gguf"),
+    (6.0,  "https://huggingface.co/mradermacher/Qwen2.5-3B-Instruct-abliterated-GGUF/resolve/main/Qwen2.5-3B-Instruct-abliterated.Q4_K_M.gguf"),
+    (5.0,  "https://huggingface.co/mradermacher/Llama-3.2-3B-Instruct-abliterated-GGUF/resolve/main/Llama-3.2-3B-Instruct-abliterated.Q4_K_M.gguf"),
+    (4.0,  "https://huggingface.co/mradermacher/Qwen2.5-3B-Instruct-abliterated-GGUF/resolve/main/Qwen2.5-3B-Instruct-abliterated.Q3_K_M.gguf"),
+    (3.5,  "https://huggingface.co/mradermacher/Llama-3.2-3B-Instruct-abliterated-GGUF/resolve/main/Llama-3.2-3B-Instruct-abliterated.Q3_K_M.gguf"),
+    (3.0,  "https://huggingface.co/bartowski/gemma-2-2b-it-abliterated-GGUF/resolve/main/gemma-2-2b-it-abliterated-Q5_K_M.gguf"),
+    (2.5,  "https://huggingface.co/bartowski/gemma-2-2b-it-abliterated-GGUF/resolve/main/gemma-2-2b-it-abliterated-Q4_K_M.gguf"),
+    (2.0,  "https://huggingface.co/mradermacher/Llama-3.2-1B-Instruct-abliterated-GGUF/resolve/main/Llama-3.2-1B-Instruct-abliterated.Q4_K_M.gguf"),
+    (1.2,  "https://huggingface.co/mradermacher/Llama-3.2-1B-Instruct-abliterated-GGUF/resolve/main/Llama-3.2-1B-Instruct-abliterated.Q3_K_M.gguf"),
+    (0.0,  "https://huggingface.co/mradermacher/dolphin-2.9.3-qwen2-0.5b-GGUF/resolve/main/dolphin-2.9.3-qwen2-0.5b.Q4_K_M.gguf"),
+]
+
 MAX_TOKEN = int(os.environ.get("LLM_MAX_TOKEN", "80"))
 # Contesto: 2048 di default. Su CPU (niente GPU) più corto = prompt processato
 # MOLTO più in fretta → risposte in tempo utile. 2048 basta e avanza per una chat
@@ -107,6 +130,8 @@ def stato():
             "tasso_timeout": round(int(r.get("timeout", 0)) / ch, 2) if ch else None,
             "ms_medio": round(float(r.get("ms_tot", 0.0)) / ch) if ch else None,
             "declassati": sorted(_declassati.keys()),
+            "libero": (_scaletta() is _TIERS_LIBERI),   # scaletta uncensored attiva?
+            "prossimo": (_candidati_modello()[0].split("/")[-1] if _in_auto() else None),
         }
     except Exception:
         s["auto"] = None
@@ -297,6 +322,12 @@ _MODELLI = {
     "qwen": "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q5_k_m.gguf",
     "gemma": "https://huggingface.co/bartowski/gemma-2-2b-it-GGUF/resolve/main/gemma-2-2b-it-Q4_K_M.gguf",
     "gemma-uncensored": "https://huggingface.co/bartowski/gemma-2-2b-it-abliterated-GGUF/resolve/main/gemma-2-2b-it-abliterated-Q4_K_M.gguf",
+    # scorciatoie UNCENSORED (abliterated): senza rifiuti/tono da manuale
+    "qwen7b-uncensored": "https://huggingface.co/mradermacher/Qwen2.5-7B-Instruct-abliterated-v2-GGUF/resolve/main/Qwen2.5-7B-Instruct-abliterated-v2.Q4_K_M.gguf",
+    "qwen-uncensored": "https://huggingface.co/mradermacher/Qwen2.5-3B-Instruct-abliterated-GGUF/resolve/main/Qwen2.5-3B-Instruct-abliterated.Q4_K_M.gguf",
+    "llama-uncensored": "https://huggingface.co/mradermacher/Llama-3.2-3B-Instruct-abliterated-GGUF/resolve/main/Llama-3.2-3B-Instruct-abliterated.Q4_K_M.gguf",
+    "llama-mini-uncensored": "https://huggingface.co/mradermacher/Llama-3.2-1B-Instruct-abliterated-GGUF/resolve/main/Llama-3.2-1B-Instruct-abliterated.Q4_K_M.gguf",
+    "dolphin-mini": "https://huggingface.co/mradermacher/dolphin-2.9.3-qwen2-0.5b-GGUF/resolve/main/dolphin-2.9.3-qwen2-0.5b.Q4_K_M.gguf",
 }
 
 
@@ -413,40 +444,89 @@ def _auto_valuta(andato_timeout):
         threading.Thread(target=ricarica, daemon=True).start()
 
 
-def _scegli_modello():
-    # 1) scelta dalla dashboard (admin): ha la precedenza
+def _scaletta():
+    """La scaletta di modelli attiva. Di DEFAULT è quella LIBERA (uncensored/abliterated),
+    come richiesto per la chat — specie in privato; con LLM_LIBERO=0 torna alla Instruct."""
+    libero = os.environ.get("LLM_LIBERO", "1").strip().lower() not in ("0", "no", "false", "off")
+    return _TIERS_LIBERI if libero else _TIERS
+
+
+def _scelta_esplicita():
+    """URL scelto ESPLICITAMENTE (dashboard o .env): ha la precedenza e NON va a cascata.
+    Ritorna l'URL o None (= automatico)."""
     s = _scelta_dashboard()
     if s.get("url"):
         return str(s["url"])
     if s.get("modello") in _MODELLI:
         return _MODELLI[s["modello"]]
-    # 2) override da .env
     url = os.environ.get("LLM_MODEL_URL")
     if url:
         return url
     nome = os.environ.get("LLM_MODELLO", "").strip().lower()
     if nome in _MODELLI:
         return _MODELLI[nome]
-    # 3) AUTOMATICO: il più grande che (a) sta nella RAM e (b) non è stato
-    #    declassato di recente per lentezza né ha un tasso di timeout troppo alto.
-    #    Così su un box lento si assesta da solo su un modello che risponde in tempo.
+    return None
+
+
+def _candidati_modello():
+    """Lista ORDINATA di URL (dal migliore al più leggero) che (a) stanno nella RAM e
+    (b) non sono declassati né storicamente troppo lenti. Su CPU senza endpoint parte
+    PRUDENTE: NON dal modello più grosso (che su CPU va in timeout e fa fallire la chat),
+    ma da uno di taglia media — così risponde subito e, se serve, scende ancora. La
+    cascata di download salta da sola gli URL che falliscono."""
     gb = _ram_gb()
     ora = time.time()
     tregua = DECLASSA_ORE * 3600
-    for soglia, u in _TIERS:
+    scaletta = _scaletta()
+    prudente = (os.environ.get("LLM_CPU_PRUDENTE", "1").strip().lower() not in ("0", "no", "false", "off")
+                and not _endpoint_cfg())
+    tetto = float(os.environ.get("LLM_CPU_TETTO_GB", "8")) if prudente else 1e9
+    out = []
+    for soglia, u in scaletta:
         if gb < soglia:
             continue
+        if soglia > tetto:
+            continue   # prudenza CPU: come PRIMA scelta niente modelli troppo pesanti
         base = u.split("/")[-1]
         dts = _declassati.get(base)
         if dts and (ora - float(dts)) < tregua:
-            continue   # declassato di recente: troppo lento su questo box → salto
+            continue   # declassato di recente (troppo lento qui) → salto
         r = _perf.get(base)
         if r and int(r.get("chiamate", 0)) >= AUTO_MIN_CAMPIONI:
-            tasso = int(r.get("timeout", 0)) / max(1, int(r.get("chiamate", 0)))
-            if tasso >= AUTO_SOGLIA_TIMEOUT:
+            if int(r.get("timeout", 0)) / max(1, int(r.get("chiamate", 0))) >= AUTO_SOGLIA_TIMEOUT:
                 continue   # storicamente va in timeout troppo spesso → salto
-        return u
-    return _TIERS[-1][1]
+        out.append(u)
+    if not out:
+        out = [scaletta[-1][1]]   # la riserva minima è SEMPRE un'opzione (risponde sempre)
+    return out
+
+
+def _scegli_modello():
+    """Il modello 'preferito' adesso (esplicito se c'è, sennò il primo candidato auto)."""
+    return _scelta_esplicita() or _candidati_modello()[0]
+
+
+def _scarica_a_cascata():
+    """Scarica il PRIMO candidato che ci riesce, dal migliore al più leggero. Se un
+    download fallisce (404/rete/gated) o il modello è troppo pesante, declassa quell'URL e
+    passa al prossimo — così un link morto o un modello che il box non regge NON blocca la
+    chat: si ripiega su uno più leggero/quantizzato, DA SOLO. Ritorna il path o solleva."""
+    espl = _scelta_esplicita()
+    candidati = [espl] if espl else _candidati_modello()
+    ultimo_err = None
+    for u in candidati:
+        base = u.split("/")[-1]
+        _stato["modello"] = base
+        try:
+            return _scarica(u)
+        except Exception as e:
+            ultimo_err = e
+            print(f"[genera] «{base}» non scaricabile ({e}); scendo al più leggero.", flush=True)
+            if not espl:
+                _declassa(base)   # salta questo URL per una tregua (auto-guarigione)
+    if ultimo_err:
+        raise ultimo_err
+    raise RuntimeError("nessun modello candidato")
 
 
 def _scarica(url):
@@ -542,11 +622,11 @@ def avvia():
         elif locale and os.path.exists(locale):
             path = locale
             _stato["modello"] = os.path.basename(locale)
-        # 2) altrimenti scarica dalla scaletta/URL in base alla scelta e alla RAM
+        # 2) altrimenti scarica dalla scaletta in base a scelta/RAM, A CASCATA: se il
+        #    candidato migliore non si scarica o è troppo pesante, scende da solo su uno
+        #    più leggero/quantizzato (uncensored di default) finché non ne carica uno.
         else:
-            url = _scegli_modello()
-            _stato["modello"] = url.split("/")[-1]
-            path = _scarica(url)
+            path = _scarica_a_cascata()   # imposta _stato["modello"] sul candidato scelto
         global _gemma
         _gemma = "gemma" in str(_stato.get("modello") or "").lower()
         cpu = os.cpu_count() or 2
@@ -602,7 +682,8 @@ def _protetti():
     prot = set()
     if _stato.get("modello"):
         prot.add(os.path.basename(str(_stato["modello"])))
-    prot.add(_TIERS[-1][1].split("/")[-1])   # riserva minima (fallback)
+    prot.add(_TIERS[-1][1].split("/")[-1])        # riserva minima Instruct
+    prot.add(_scaletta()[-1][1].split("/")[-1])   # riserva minima della scaletta attiva
     try:
         fdash = str(_scelta_dashboard().get("file") or "").strip()
         if fdash:

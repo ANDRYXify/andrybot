@@ -4624,10 +4624,15 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
   // ---- ADMIN: gestione del MODELLO IA (globale: il cervello è condiviso) ----
   const LLM_MODELLI = [
-    { id: 'auto', nome: 'Automatico (in base alla RAM del server)' },
-    { id: 'qwen', nome: 'Qwen 2.5 3B — equilibrato' },
-    { id: 'gemma', nome: 'Gemma 2 2B — veloce' },
+    { id: 'auto', nome: 'Automatico — sceglie e gestisce da sé (senza freni, scende se il box non regge)' },
+    { id: 'qwen-uncensored', nome: 'Qwen 2.5 3B — senza freni (abliterated)' },
+    { id: 'llama-uncensored', nome: 'Llama 3.2 3B — senza freni (abliterated)' },
+    { id: 'qwen7b-uncensored', nome: 'Qwen 2.5 7B — senza freni (potente, lento su CPU)' },
+    { id: 'llama-mini-uncensored', nome: 'Llama 3.2 1B — senza freni (leggero)' },
     { id: 'gemma-uncensored', nome: 'Gemma 2 2B — senza freni (abliterated)' },
+    { id: 'dolphin-mini', nome: 'Dolphin 0.5B — minuscolo, risponde sempre in tempo' },
+    { id: 'qwen', nome: 'Qwen 2.5 3B — Instruct (con freni)' },
+    { id: 'gemma', nome: 'Gemma 2 2B — Instruct (con freni)' },
   ];
   const llmFile = join(config.dataDir, 'llm.json');
   const llmScelta = () => { try { return JSON.parse(readFileSync(llmFile, 'utf8')) || {}; } catch { return {}; } };
