@@ -545,6 +545,32 @@ export async function gira() {
   finally { clearTimeout(to); }
 }
 
+// L'INTEGRAZIONE: quante bozze aspettano di essere lavorate nel sé, quante ne ha
+// maturate/fuse/scartate. Ritorna {ok, integrazione} o null. Non richiede la sandbox.
+export async function integrazione() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 8000);
+  try {
+    const r = await fetch(BASE + '/integrazione', { signal: ac.signal });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('integrazione:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
+// INTEGRA: fa lavorare ORA le sue bozze nel sé (trigger manuale owner). Ritorna
+// {ok, esito} o null. Non richiede la sandbox.
+export async function integra() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 12000);
+  try {
+    const r = await fetch(BASE + '/integra', { method: 'POST', signal: ac.signal });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('integra:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
 // STRUMENTI: le capacità che Lia si è costruita nel suo computer (registro). Ritorna
 // {ok, attiva, strumenti} o null. Richiede la sandbox.
 export async function strumenti() {
