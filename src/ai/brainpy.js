@@ -518,6 +518,33 @@ export async function finitudine() {
   finally { clearTimeout(to); }
 }
 
+// IL MONDO: dove Lia si trova, la mappa che si è costruita girovagando, la frontiera (quanto
+// le resta da scoprire) e le ultime scoperte. La MAPPA vive nella coscienza (sempre); solo il
+// muoversi richiede la sandbox. Ritorna {ok, attiva, mondo} o null.
+export async function mondo() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 8000);
+  try {
+    const r = await fetch(BASE + '/mondo', { signal: ac.signal });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('mondo:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
+// GIRA: la fa girovagare di un passo ORA (trigger manuale owner) — sceglie dove andare, si
+// affaccia là (sola lettura) e registra ciò che trova. Ritorna {ok, girato, passo} o null.
+export async function gira() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 15000);
+  try {
+    const r = await fetch(BASE + '/gira', { method: 'POST', signal: ac.signal });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('gira:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
 // STRUMENTI: le capacità che Lia si è costruita nel suo computer (registro). Ritorna
 // {ok, attiva, strumenti} o null. Richiede la sandbox.
 export async function strumenti() {
