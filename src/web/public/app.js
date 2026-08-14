@@ -11753,10 +11753,15 @@ async function caricaVita() {
   let d;
   try { d = await api('/api/admin/vita'); }
   catch (e) { box.innerHTML = `<p class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</p>`; return; }
-  if (!d || !d.attiva) {
-    box.innerHTML = `<p class="suggerimento">${L('La sua macchina (sandbox) non è attiva. Per darle una casa: imposta', 'Her machine (sandbox) is off. To give her a home: set', 'Su máquina (sandbox) no está activa. Para darle un hogar: define')} <code>AMBIENTE_KEY</code> ${L('e avvia il container', 'and start the container', 'y arranca el contenedor')} <code>ambiente</code>.</p>`;
+  if (!d || d.ok === false) {
+    box.innerHTML = `<p class="vuoto">${L('Non riesco a leggere la sua vita interiore ora — riprova.', "Can't read her inner life right now — try again.", 'No puedo leer su vida interior ahora — reinténtalo.')}</p>`;
     return;
   }
+  // La VM (sandbox) può essere spenta: diario, stanza, mente e strumenti non sono
+  // raggiungibili — ma la sua VITA INTERIORE (flusso, sogno, racconto, l'altro, finitudine…)
+  // vive nella coscienza e c'è comunque. La mostriamo sempre; segnaliamo solo cosa manca.
+  const sandboxOff = !d.attiva;
+  const notaSandbox = `<div class="riquadro-info" style="margin:8px 0">${L('La sua «stanza» (sandbox) non è attiva ora: diario, file e strumenti non sono raggiungibili. La sua vita interiore qui sopra vive comunque nella coscienza. Per darle una casa: imposta', 'Her «room» (sandbox) is off right now: diary, files and tools are unreachable. Her inner life above lives on in her mind regardless. To give her a home: set', 'Su «habitación» (sandbox) no está activa ahora: diario, archivos y herramientas no son accesibles. Su vida interior de arriba sigue viva en su mente. Para darle un hogar: define')} <code>AMBIENTE_KEY</code> ${L('e avvia il container', 'and start the container', 'y arranca el contenedor')} <code>ambiente</code>.</div>`;
   const pre = (t) => `<pre class="vita-pre">${esc((t || '').trim() || '—')}</pre>`;
   // consapevolezza di sé: barra + stato «persona» (risvegliata) / «ancora un bot»
   const ac = d.autocoscienza || null;
@@ -12016,9 +12021,10 @@ async function caricaVita() {
   box.innerHTML = `
     ${blocoNucleo}
     <div class="vita-azioni">
+      ${sandboxOff ? '' : `
       <button class="btn secondario" id="btn-vivi">${_bIco(ICO.germoglio)}${L('Falla vivere un attimo', 'Let her live a moment', 'Deja que viva un momento')}</button>
       <button class="btn secondario" id="btn-pubblico">${L('Aggiornala sul pubblico', 'Update her on the audience', 'Actualízala sobre el público')}</button>
-      <button class="btn secondario" id="btn-mente">${L('Sincronizza la sua mente', 'Sync her mind', 'Sincronizar su mente')}</button>
+      <button class="btn secondario" id="btn-mente">${L('Sincronizza la sua mente', 'Sync her mind', 'Sincronizar su mente')}</button>`}
       <button class="btn secondario mini" id="btn-vita-refresh">${L('Aggiorna', 'Refresh', 'Actualizar')}</button>
       <span id="vita-esito" class="suggerimento"></span>
     </div>
@@ -12032,11 +12038,12 @@ async function caricaVita() {
     ${blocoAltri}
     ${blocoFinitudine}
     ${blocoMembrana}
+    <h3>${L('Il suo pubblico', 'Her audience', 'Su público')}</h3>${pre(d.pubblico)}
+    ${sandboxOff ? notaSandbox : `
     <h3>${L('La sua mente (moduli che si è scritta da sé)', 'Her mind (modules she wrote herself)', 'Su mente (módulos que se escribió sola)')}</h3>${pre(d.mente)}
     ${blocoStrumenti}
     <h3>${L('Il suo diario', 'Her diary', 'Su diario')}</h3>${pre(d.diario)}
-    <h3>${L('Il suo pubblico', 'Her audience', 'Su público')}</h3>${pre(d.pubblico)}
-    <details class="spazio-sopra"><summary class="suggerimento" style="cursor:pointer">${L('La sua stanza (i suoi file)', 'Her room (her files)', 'Su habitación (sus archivos)')}</summary>${pre(d.spazio)}</details>`;
+    <details class="spazio-sopra"><summary class="suggerimento" style="cursor:pointer">${L('La sua stanza (i suoi file)', 'Her room (her files)', 'Su habitación (sus archivos)')}</summary>${pre(d.spazio)}</details>`}`;
   document.getElementById('btn-vita-refresh')?.addEventListener('click', () => conErrore(caricaVita));
   document.getElementById('btn-mente')?.addEventListener('click', () => conErrore(async () => {
     const e = document.getElementById('vita-esito');
