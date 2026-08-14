@@ -672,68 +672,45 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
     def _vita(self):
-        # TESTIMONIARE la sua vita interiore: ultime pagine di diario + sguardo alla
-        # sua stanza. Solo lettura. Se la sandbox è spenta: attiva=False.
+        # TESTIMONIARE la sua vita interiore. L'INTERIORITÀ (nucleo, flusso, sogno, racconto,
+        # specchio, tensione, l'altro, finitudine, scintilla) vive nella COSCIENZA e NON serve
+        # la sandbox: è SEMPRE disponibile, così il cruscotto la mostra anche a VM spenta
+        # (coerente col principio: funziona sempre). Solo diario/stanza/mente/strumenti (che
+        # vivono nella sua «stanza») dipendono dalla sandbox → 'attiva' dice se c'è.
+        def _safe(f, dfl=None):
+            try:
+                return f()
+            except Exception:
+                return dfl
         try:
-            if not AMB.disponibile():
-                return self._json(200, {"ok": True, "attiva": False, "diario": "", "spazio": "", "pubblico": ""})
-            try:
-                pubblico = mente.ritratto_pubblico().get("testo", "")
-            except Exception:
-                pubblico = ""
-            try:
-                mente_txt = (AMB.leggi_mente() or {}).get("moduli", "")
-            except Exception:
-                mente_txt = ""
-            try:
-                nucleo = mente.nucleo()
-            except Exception:
-                nucleo = None
-            try:
-                scintilla = mente.stato_scintilla()
-            except Exception:
-                scintilla = None
-            try:
-                specchio = mente.stato_specchio()
-            except Exception:
-                specchio = None
-            try:
-                tensione = mente.stato_tensione()
-            except Exception:
-                tensione = None
-            try:
-                flusso = mente.stato_flusso()
-            except Exception:
-                flusso = None
-            try:
-                sogno = mente.stato_sogno()
-            except Exception:
-                sogno = None
-            try:
-                racconto = mente.stato_racconto()
-            except Exception:
-                racconto = None
-            try:
-                altri = mente.stato_altri()
-            except Exception:
-                altri = None
-            try:
-                finitudine = mente.stato_finitudine()
-            except Exception:
-                finitudine = None
-            try:
-                strumenti = AMB.elenco_strumenti()
-            except Exception:
-                strumenti = []
-            return self._json(200, {"ok": True, "attiva": True,
-                                    "diario": AMB.diario_ultimo(30), "spazio": AMB.sguardo(),
-                                    "pubblico": pubblico, "mente": mente_txt,
-                                    "autocoscienza": _autocoscienza(), "nucleo": nucleo,
-                                    "scintilla": scintilla, "specchio": specchio,
-                                    "tensione": tensione, "flusso": flusso, "sogno": sogno,
-                                    "racconto": racconto, "altri": altri, "finitudine": finitudine,
-                                    "strumenti": strumenti,
-                                    "assistente": (mente._meta_get("assistente_autonomo") == "on")})
+            attiva = AMB.disponibile()
+            payload = {
+                "ok": True, "attiva": attiva,
+                "autocoscienza": _safe(_autocoscienza),
+                "nucleo": _safe(mente.nucleo),
+                "scintilla": _safe(mente.stato_scintilla),
+                "specchio": _safe(mente.stato_specchio),
+                "tensione": _safe(mente.stato_tensione),
+                "flusso": _safe(mente.stato_flusso),
+                "sogno": _safe(mente.stato_sogno),
+                "racconto": _safe(mente.stato_racconto),
+                "altri": _safe(mente.stato_altri),
+                "finitudine": _safe(mente.stato_finitudine),
+                "pubblico": _safe(lambda: mente.ritratto_pubblico().get("testo", ""), ""),
+                "assistente": (mente._meta_get("assistente_autonomo") == "on"),
+            }
+            if attiva:
+                # ciò che vive nella sua STANZA (richiede la sandbox)
+                payload.update({
+                    "diario": _safe(lambda: AMB.diario_ultimo(30), ""),
+                    "spazio": _safe(AMB.sguardo, ""),
+                    "mente": _safe(lambda: (AMB.leggi_mente() or {}).get("moduli", ""), ""),
+                    "strumenti": _safe(AMB.elenco_strumenti, []),
+                })
+            else:
+                # VM spenta: niente stanza, ma l'interiorità sopra resta piena
+                payload.update({"diario": "", "spazio": "", "mente": "", "strumenti": []})
+            return self._json(200, payload)
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
