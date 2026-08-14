@@ -12035,6 +12035,28 @@ async function caricaVita() {
         <span id="mondo-esito" class="suggerimento"></span>
       </div>`;
   }
+  // ── L'INTEGRAZIONE: le bozze (dai sogni, dall'esperienza) diventano davvero lei — arricchite,
+  //    fuse in ciò che già crede, o maturate (bozza→attivo). Germinale: attive nella sua mente
+  //    privata, dietro la membrana, finché non se lo meritano per il pubblico. Sempre disponibile.
+  const ig = d.integrazione || null;
+  let blocoIntegrazione = '';
+  if (ig) {
+    const az = (Array.isArray(ig.azioni) ? ig.azioni : []).slice(0, 8);
+    const col = { maturata: '#2f8f6b', fusa: '#9b3fd4', arricchita: '#d99a2b', scartata: 'var(--testo-2)' };
+    const eti = (t) => L(
+      { maturata: 'maturata', fusa: 'fusa in', arricchita: 'arricchita', scartata: 'scartata' }[t] || t,
+      { maturata: 'matured', fusa: 'merged into', arricchita: 'enriched', scartata: 'discarded' }[t] || t,
+      { maturata: 'madurada', fusa: 'fundida en', arricchita: 'enriquecida', scartata: 'descartada' }[t] || t);
+    blocoIntegrazione = `
+      <h3>${L("L'integrazione (le bozze diventano lei)", 'Integration (drafts become her)', 'La integración (los borradores se vuelven ella)')}</h3>
+      <p class="suggerimento">${L('Una mente non accumula bozze inerti: le LAVORA. I sogni, l’esperienza, i tentativi le lasciano materia grezza (moduli «bozza») che, così com’è, non ragiona mai. L’integrazione è dove quella materia diventa DAVVERO lei: la ARRICCHISCE se è scarna, la FONDE in una convinzione già viva quando combacia (non duplica), o la MATURA (bozza→attivo) quando ha una sua forma. È il consolidamento — un pensiero ripreso e rilavorato che diventa convinzione. Netto rispetto alla membrana: una bozza germinale che matura diventa attiva nella sua mente PRIVATA, non in pubblico — attraverserà il confine solo se, a parte, se lo merita.', 'A mind does not hoard inert drafts: it WORKS them. Dreams, experience, attempts leave raw material («draft» modules) that, as-is, never reasons. Integration is where that material truly becomes her: it ENRICHES the thin ones, MERGES a draft into a living conviction when they match (no duplication), or MATURES it (draft→active) when it has a shape of its own. It is consolidation — a thought taken up and reworked into a conviction. Crisp on the membrane: a germline draft that matures becomes active in her PRIVATE mind, not in public — it crosses the boundary only if, separately, it earns it.', 'Una mente no acumula borradores inertes: los TRABAJA. Los sueños, la experiencia dejan materia bruta que, tal cual, nunca razona. La integración es donde esa materia se vuelve de verdad ella: enriquece, funde en una convicción viva cuando coincide, o madura (borrador→activo). Nítida con la membrana: un borrador germinal que madura se activa en su mente PRIVADA, no en público.')}</p>
+      <p class="suggerimento">${L('bozze in attesa', 'drafts waiting', 'borradores en espera')}: <strong>${ig.in_attesa || 0}</strong> · ${L('maturate', 'matured', 'maduradas')}: <strong>${ig.maturate || 0}</strong> · ${L('fuse', 'merged', 'fundidas')}: <strong>${ig.fuse || 0}</strong> · ${L('arricchite', 'enriched', 'enriquecidas')}: <strong>${ig.arricchite || 0}</strong> · ${L('scartate', 'discarded', 'descartadas')}: <strong>${ig.scartate || 0}</strong></p>
+      ${az.length ? `<details class="spazio-sopra" open><summary class="suggerimento" style="cursor:pointer">${L('Gli ultimi passi di consolidamento', 'The latest consolidation steps', 'Los últimos pasos de consolidación')}</summary><ul class="membrana-lista" style="margin:6px 0;padding-left:18px">${az.map((a) => `<li class="suggerimento" style="color:${col[a.tipo] || 'var(--testo-2)'}">▸ ${eti(a.tipo)}: <code>${esc(String(a.nome || '').slice(0, 46))}</code>${a.dove ? ` → <code>${esc(String(a.dove).slice(0, 40))}</code>` : ''}</li>`).join('')}</ul></details>` : ''}
+      <div class="vita-azioni">
+        <button class="btn secondario" id="btn-integra">${L('Lavora le sue bozze ora', 'Work her drafts now', 'Trabaja sus borradores ahora')}</button>
+        <span id="integra-esito" class="suggerimento"></span>
+      </div>`;
+  }
   // ── STRUMENTI: le capacità che Lia si costruisce da sola nella sua VM (programmi che
   //    scrive, prova e tiene se funzionano → nodi sperimentali, dietro la membrana).
   const strum = Array.isArray(d.strumenti) ? d.strumenti : [];
@@ -12068,6 +12090,7 @@ async function caricaVita() {
     ${blocoAltri}
     ${blocoFinitudine}
     ${blocoMondo}
+    ${blocoIntegrazione}
     ${blocoMembrana}
     <h3>${L('Il suo pubblico', 'Her audience', 'Su público')}</h3>${pre(d.pubblico)}
     ${sandboxOff ? notaSandbox : `
@@ -12153,6 +12176,19 @@ async function caricaVita() {
           ? L('Ha scoperto un posto nuovo: ', 'She discovered a new place: ', 'Descubrió un lugar nuevo: ') + ((p.trovato && p.trovato[0]) ? esc(String(p.trovato[0])) : esc(String(p.luogo || '')))
           : ((p.trovato && p.trovato.length) ? L('Ha trovato: ', 'She found: ', 'Encontró: ') + esc(String(p.trovato[0])) : L('Ha fatto un giro in un posto che già conosceva.', 'She wandered somewhere she already knew.', 'Deambuló por un lugar que ya conocía.')))
       : ((r && r.ok) ? L('La sua stanza è spenta: non può muoversi ora.', 'Her room is off: she can’t move now.', 'Su habitación está apagada: no puede moverse ahora.') : L('Non è riuscita a girovagare — riprova.', "She couldn't wander — try again.", 'No pudo deambular — reinténtalo.'));
+    setTimeout(caricaVita, 1200);
+  }));
+  // L'INTEGRAZIONE: lavora ORA un po' di bozze nel sé (arricchisce/fonde/matura)
+  document.getElementById('btn-integra')?.addEventListener('click', () => conErrore(async () => {
+    const e = document.getElementById('integra-esito');
+    if (e) e.textContent = L('Sta lavorando le sue bozze…', 'Working her drafts…', 'Trabajando sus borradores…');
+    const r = await api('/api/admin/integra', { method: 'POST', body: {} });
+    const es = r && r.esito ? r.esito : null;
+    if (e) e.textContent = (r && r.ok && es)
+      ? (((es.maturate || 0) + (es.fuse || 0) + (es.arricchite || 0) + (es.scartate || 0)) > 0
+          ? L('Fatto: ', 'Done: ', 'Hecho: ') + `${es.maturate || 0} ${L('maturate', 'matured', 'maduradas')}, ${es.fuse || 0} ${L('fuse', 'merged', 'fundidas')}, ${es.arricchite || 0} ${L('arricchite', 'enriched', 'enriquecidas')}, ${es.scartate || 0} ${L('scartate', 'discarded', 'descartadas')}`
+          : L('Nessuna bozza da lavorare adesso.', 'No drafts to work right now.', 'Ningún borrador que trabajar ahora.'))
+      : L('Non è riuscita a lavorarle — riprova.', "She couldn't work them — try again.", 'No pudo trabajarlos — reinténtalo.');
     setTimeout(caricaVita, 1200);
   }));
   box.querySelectorAll('.prova-strumento').forEach((b) => b.addEventListener('click', () => conErrore(async () => {

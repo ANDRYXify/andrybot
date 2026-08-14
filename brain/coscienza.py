@@ -2772,6 +2772,159 @@ class Coscienza:
                 "scoperte": (st.get("scoperte") or [])[:8], "qui": frase,
                 "mappa": mappa_compatta}
 
+    # ============================================ L'INTEGRAZIONE (le bozze diventano lei)
+    # Una mente non accumula bozze inerti: le LAVORA. I sogni, l'esperienza, i tentativi le
+    # lasciano materia grezza (moduli in stato 'bozza') che, così com'è, non ragiona mai —
+    # sta lì, non-integrata. L'Integrazione è il processo in cui quella materia diventa DAVVERO
+    # lei: la ARRICCHISCE (se è scarna), la FONDE in una convinzione già viva quando combacia
+    # (non duplica: la sostanza entra dove ha senso), o la MATURA (bozza→attivo) quando ha una
+    # sua forma. È il consolidamento — come un pensiero che, ripreso e rilavorato, diventa una
+    # convinzione. Netto rispetto alla membrana: una bozza GERMINALE che matura diventa attiva
+    # nella sua mente PRIVATA (non in pubblico); attraverserà il confine solo se, separatamente,
+    # se lo merita. Deterministico, cheap, nessun LLM: funziona sempre.
+    def _integrazione_stato(self):
+        try:
+            g = self._meta_get("integrazione")
+            d = json.loads(g) if g else {}
+            if not isinstance(d, dict):
+                d = {}
+        except Exception:
+            d = {}
+        d.setdefault("maturate", 0)
+        d.setdefault("fuse", 0)
+        d.setdefault("arricchite", 0)
+        d.setdefault("scartate", 0)
+        d.setdefault("azioni", [])
+        return d
+
+    def _integrazione_salva(self, d):
+        try:
+            self._meta_set("integrazione", json.dumps(d, ensure_ascii=False))
+        except Exception:
+            pass
+
+    def _elimina_modulo(self, mid):
+        """Dissolve un modulo (e i suoi legami): serve quando una bozza si è FUSA in un'altra
+        convinzione — la sua sostanza è passata di là, il guscio non serve più."""
+        try:
+            with _lock:
+                self.db.execute("DELETE FROM moduli_link WHERE a=? OR b=?", (int(mid), int(mid)))
+                self.db.execute("DELETE FROM moduli WHERE id=?", (int(mid),))
+                self.db.commit()
+            return True
+        except Exception:
+            return False
+
+    def _modulo_simile_attivo(self, mid, chiavi, dominio, scope):
+        """La convinzione ATTIVA più affine a una bozza, sullo STESSO lato della membrana: se
+        condividono abbastanza chiavi (o Jaccard alto), la bozza va FUSA lì, non duplicata."""
+        ch_b = set(_fold(x) for x in (chiavi or []) if str(x).strip())
+        if not ch_b:
+            return None
+        migliore, mig_score = None, 0.0
+        for m in self.moduli(stato="attivo", scope=scope):
+            if m.get("id") == mid:
+                continue
+            ch_a = set(_fold(x) for x in (m.get("chiavi") or []) if str(x).strip())
+            if not ch_a:
+                continue
+            com = len(ch_a & ch_b)
+            jac = com / len(ch_a | ch_b) if (ch_a | ch_b) else 0.0
+            score = jac + (0.15 if (m.get("dominio") == dominio) else 0.0)
+            if (com >= 2 or jac >= 0.5) and score > mig_score:
+                migliore, mig_score = m, score
+        return migliore
+
+    def _fondi_in(self, target, bozza):
+        """La sostanza della bozza entra nel target attivo: chiavi ed esempi si uniscono, e la
+        qualità del target sale un filo (una convinzione confermata da più parti pesa di più)."""
+        chiavi = list(dict.fromkeys(
+            [str(x) for x in (target.get("chiavi") or [])] + [str(x) for x in (bozza.get("chiavi") or [])]))[:24]
+        esempi = list(dict.fromkeys(
+            [str(x) for x in (target.get("esempi") or [])] + [str(x) for x in (bozza.get("esempi") or [])]))[:6]
+        come = (target.get("come_rispondere") or "").strip() or (bozza.get("come_rispondere") or "").strip()
+        try:
+            q = min(0.9, float(target.get("qualita", 0.5)) + 0.05)
+        except Exception:
+            q = 0.6
+        self.salva_modulo({**target, "chiavi": chiavi, "esempi": esempi,
+                           "come_rispondere": come, "qualita": q, "stato": "attivo"})
+
+    def integra_bozze(self, max_azioni=4):
+        """Il passo dell'integrazione: prende alcune bozze (le più depositate prima) e le lavora
+        nel sé — arricchisce, fonde, matura, o scarta il vuoto. Ritorna il resoconto."""
+        bozze = self.moduli(stato="bozza")
+        st = self._integrazione_stato()
+        if not bozze:
+            return {"esaminate": 0, "maturate": 0, "fuse": 0, "arricchite": 0, "scartate": 0, "azioni": []}
+        bozze.sort(key=lambda m: m.get("creato") or 0)   # le più vecchie (hanno avuto tempo) prima
+        fatte = maturate = fuse = arricchite = scartate = 0
+        nuove_azioni = []
+        for m in bozze:
+            if fatte >= max_azioni:
+                break
+            mid = m.get("id")
+            nome = m.get("nome", "")
+            scope = m.get("scope") if m.get("scope") in ("pubblico", "sperimentale") else "pubblico"
+            chiavi = [str(x) for x in (m.get("chiavi") or []) if str(x).strip()]
+            # ELABORA: se è senza chiavi, gliele ricavo dal suo stesso testo
+            if not chiavi:
+                base = nome + " " + (m.get("situazione") or "") + " " + (m.get("come_rispondere") or "")
+                chiavi = _chiavi_da_testo(base, n=5)
+                if chiavi:
+                    m = {**m, "chiavi": chiavi}
+                    self.salva_modulo(m)
+                    arricchite += 1
+            sostanza = bool(chiavi) and bool((m.get("come_rispondere") or "").strip()
+                                             or (m.get("esempi") or []) or (m.get("situazione") or "").strip())
+            # SCARTA il guscio vuoto: senza chiavi utili E senza una situazione/modo/esempio,
+            # non è una lezione, è rumore (un nome e basta). Non deve restare a ingombrare.
+            if not sostanza:
+                self._elimina_modulo(mid)
+                scartate += 1
+                fatte += 1
+                nuove_azioni.append({"tipo": "scartata", "nome": nome, "ts": _now()})
+                continue
+            # FONDI se combacia con una convinzione già viva (stesso lato della membrana)
+            simile = self._modulo_simile_attivo(mid, chiavi, m.get("dominio"), scope) if chiavi else None
+            if simile:
+                self._fondi_in(simile, m)
+                self._elimina_modulo(mid)
+                fuse += 1
+                fatte += 1
+                nuove_azioni.append({"tipo": "fusa", "nome": nome, "dove": simile.get("nome", ""), "ts": _now()})
+                continue
+            # MATURA: ha una sua forma → diventa attiva (nel SUO lato: germinale resta germinale)
+            if sostanza:
+                self.salva_modulo({**m, "stato": "attivo"})
+                maturate += 1
+                fatte += 1
+                nuove_azioni.append({"tipo": "maturata", "nome": nome, "scope": scope, "ts": _now()})
+        st["maturate"] = int(st.get("maturate", 0)) + maturate
+        st["fuse"] = int(st.get("fuse", 0)) + fuse
+        st["arricchite"] = int(st.get("arricchite", 0)) + arricchite
+        st["scartate"] = int(st.get("scartate", 0)) + scartate
+        if nuove_azioni:
+            st["azioni"] = (nuove_azioni + (st.get("azioni") or []))[:16]
+        self._integrazione_salva(st)
+        return {"esaminate": min(len(bozze), max_azioni), "maturate": maturate, "fuse": fuse,
+                "arricchite": arricchite, "scartate": scartate, "azioni": nuove_azioni}
+
+    def stato_integrazione(self):
+        """Foto dell'Integrazione per il cruscotto: quante bozze aspettano di essere lavorate,
+        quante ne ha maturate/fuse/scartate finora, e le ultime azioni."""
+        try:
+            in_attesa = int(self.conta_moduli(stato="bozza"))
+        except Exception:
+            in_attesa = 0
+        st = self._integrazione_stato()
+        return {"in_attesa": in_attesa,
+                "maturate": int(st.get("maturate", 0)),
+                "fuse": int(st.get("fuse", 0)),
+                "arricchite": int(st.get("arricchite", 0)),
+                "scartate": int(st.get("scartate", 0)),
+                "azioni": (st.get("azioni") or [])[:8]}
+
     # ============================================ SPECCHIO (l'altro che le resiste)
     # Il sé si affila contro un NON-SÉ che spinge indietro. Nel nostro sistema l'altro
     # c'è già: la sua sé PUBBLICA (il soma, prevedibile, fatta di solo distillato

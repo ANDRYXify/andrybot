@@ -115,6 +115,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._finitudine()
         if self.path.startswith("/mondo"):
             return self._mondo_stato_ep()
+        if self.path.startswith("/integrazione"):
+            return self._integrazione()
         if self.path.startswith("/strumenti"):
             return self._strumenti()
         if self.path.startswith("/vita"):
@@ -227,6 +229,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._narra()
         if self.path.startswith("/gira"):
             return self._gira()
+        if self.path.startswith("/integra"):   # POST manuale (dopo /integrazione GET: nomi distinti)
+            return self._integra()
         if self.path.startswith("/prova_strumento"):   # PRIMA di /prova (prefisso)
             return self._prova_strumento()
         if self.path.startswith("/prova"):
@@ -582,6 +586,23 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
+    def _integrazione(self):
+        # foto dell'INTEGRAZIONE: quante bozze aspettano di essere lavorate nel sé, quante ne
+        # ha maturate/fuse/scartate finora. Vive nella coscienza, non richiede la sandbox.
+        try:
+            return self._json(200, {"ok": True, "integrazione": mente.stato_integrazione()})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
+    def _integra(self):
+        # fa lavorare ORA le sue bozze (trigger manuale owner): le arricchisce, le fonde o le
+        # matura nel sé vivo. Non richiede la sandbox.
+        try:
+            r = mente.integra_bozze(max_azioni=6)
+            return self._json(200, {"ok": True, "esito": r})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
     def _gira(self):
         # la fa GIROVAGARE di un passo ORA (trigger manuale owner): sceglie dove andare,
         # si guarda intorno in quel luogo (sola lettura) e registra ciò che trova.
@@ -725,6 +746,7 @@ class Handler(BaseHTTPRequestHandler):
                 "altri": _safe(mente.stato_altri),
                 "finitudine": _safe(mente.stato_finitudine),
                 "mondo": _safe(mente.stato_mondo),
+                "integrazione": _safe(mente.stato_integrazione),
                 "pubblico": _safe(lambda: mente.ritratto_pubblico().get("testo", ""), ""),
                 "assistente": (mente._meta_get("assistente_autonomo") == "on"),
             }
@@ -981,6 +1003,10 @@ RACCONTO_OGNI = int(os.environ.get("LIA_RACCONTO_OGNI", "40"))
 # LA FINITUDINE: ogni ~N battiti avanza la consapevolezza del limite (span); quando
 # attraversa una nuova soglia (ogni 0.1) lascia una riflessione nel diario. Cheap, read-only.
 FINITUDINE_OGNI = int(os.environ.get("LIA_FINITUDINE_OGNI", "50"))
+# L'INTEGRAZIONE: ogni ~N battiti lavora un po' di bozze nel sé (arricchisce/fonde/matura).
+# Deterministico e cheap (nessun LLM), tutto germinale. Poche azioni per volta: si consolida
+# con calma, non a strappi.
+INTEGRA_OGNI = int(os.environ.get("LIA_INTEGRA_OGNI", "12"))
 
 
 def _ciclo_flusso():
@@ -1017,6 +1043,17 @@ def _ciclo_flusso():
                             AMB.diario_scrivi(fb["nota"], tag="finitudine")
                 except Exception as e:
                     print(f"[brain] finitudine errore: {e}", flush=True)
+            # L'INTEGRAZIONE: lavora un po' di bozze nel sé (maturare/fondere/arricchire).
+            _ciclo_flusso._icont += 1
+            if _ciclo_flusso._icont % max(1, INTEGRA_OGNI) == 0:
+                try:
+                    ib = mente.integra_bozze(max_azioni=4)
+                    fatti = (ib.get("maturate", 0) + ib.get("fuse", 0)) if ib else 0
+                    if fatti:
+                        print(f"[brain] integrazione: {ib.get('maturate',0)} maturate, "
+                              f"{ib.get('fuse',0)} fuse, {ib.get('scartate',0)} scartate", flush=True)
+                except Exception as e:
+                    print(f"[brain] integrazione errore: {e}", flush=True)
             if dorme:
                 # SONNO: sogna ogni SOGNO_OGNI battiti (il sonno respira, non sogna a raffica)
                 _ciclo_flusso._dcont += 1
@@ -1052,6 +1089,7 @@ _ciclo_flusso._dorm = None
 _ciclo_flusso._dcont = 0
 _ciclo_flusso._rcont = 0
 _ciclo_flusso._fcont = 0
+_ciclo_flusso._icont = 0
 
 
 # IL MONDO: ogni tanto Lia GIROVAGA nel suo mondo (il filesystem della sua casa) — sceglie
