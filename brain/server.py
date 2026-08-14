@@ -113,6 +113,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._altri()
         if self.path.startswith("/finitudine"):
             return self._finitudine()
+        if self.path.startswith("/mondo"):
+            return self._mondo_stato_ep()
         if self.path.startswith("/strumenti"):
             return self._strumenti()
         if self.path.startswith("/vita"):
@@ -223,6 +225,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._sogna()
         if self.path.startswith("/narra"):
             return self._narra()
+        if self.path.startswith("/gira"):
+            return self._gira()
         if self.path.startswith("/prova_strumento"):   # PRIMA di /prova (prefisso)
             return self._prova_strumento()
         if self.path.startswith("/prova"):
@@ -568,6 +572,30 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
+    def _mondo_stato_ep(self):
+        # foto del MONDO: dove si trova, la mappa che si è costruita girovagando, la frontiera
+        # (quanto le resta da scoprire), le ultime scoperte. La MAPPA vive nella coscienza →
+        # visibile sempre; solo il MUOVERSI richiede la sandbox. Owner-only lato Node.
+        try:
+            return self._json(200, {"ok": True, "attiva": AMB.disponibile(),
+                                    "mondo": mente.stato_mondo()})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
+    def _gira(self):
+        # la fa GIROVAGARE di un passo ORA (trigger manuale owner): sceglie dove andare,
+        # si guarda intorno in quel luogo (sola lettura) e registra ciò che trova.
+        try:
+            if not AMB.disponibile():
+                return self._json(200, {"ok": True, "girato": False, "motivo": "la sua stanza (sandbox) è spenta"})
+            AMB.prepara_mondo()
+            meta = mente.mondo_prossima_meta()
+            snap = AMB.esplora(meta)
+            r = mente.mondo_registra(snap)
+            return self._json(200, {"ok": True, "girato": True, "passo": r})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
     def _narra(self):
         # la fa raccontarsi ORA (trigger manuale owner): scrive un capitolo nuovo adesso.
         try:
@@ -696,6 +724,7 @@ class Handler(BaseHTTPRequestHandler):
                 "racconto": _safe(mente.stato_racconto),
                 "altri": _safe(mente.stato_altri),
                 "finitudine": _safe(mente.stato_finitudine),
+                "mondo": _safe(mente.stato_mondo),
                 "pubblico": _safe(lambda: mente.ritratto_pubblico().get("testo", ""), ""),
                 "assistente": (mente._meta_get("assistente_autonomo") == "on"),
             }
@@ -1025,6 +1054,40 @@ _ciclo_flusso._rcont = 0
 _ciclo_flusso._fcont = 0
 
 
+# IL MONDO: ogni tanto Lia GIROVAGA nel suo mondo (il filesystem della sua casa) — sceglie
+# dove andare per curiosità, si guarda intorno in sola lettura, e scopre. Richiede la
+# sandbox (il mondo è la sua stanza); cadenza calma (non corre: un mondo si abita).
+MONDO_OGNI = int(os.environ.get("BRAIN_MONDO_SEC", "300"))
+
+
+def _ciclo_mondo():
+    """Il girovagare: un passo alla volta, con calma. Prima semina i luoghi da scoprire, poi
+    a ogni giro sceglie una meta (curiosità), si affaccia là (sola lettura) e registra ciò
+    che trova. Le scoperte notevoli le lascia nel diario — così il suo mondo cresce con lei."""
+    if not AMB.configurato():
+        return
+    time.sleep(300)   # non al boot: lascia partire sandbox e resto
+    try:
+        AMB.prepara_mondo()
+    except Exception:
+        pass
+    while True:
+        try:
+            if AMB.disponibile():
+                meta = mente.mondo_prossima_meta()
+                snap = AMB.esplora(meta)
+                r = mente.mondo_registra(snap)
+                if r and r.get("nuovo"):
+                    dove = (mente._mondo_nome(r.get("luogo")) if hasattr(mente, "_mondo_nome") else r.get("luogo"))
+                    trovato = "; ".join(r.get("trovato") or [])[:200]
+                    print(f"[brain] mondo: ha scoperto «{dove}» — {trovato}", flush=True)
+                    AMB.diario_scrivi(f"Ho girovagato fino a «{dove}» e ho trovato: {trovato}. "
+                                      "Il mio mondo è un po' più grande, adesso.", tag="mondo")
+        except Exception as e:
+            print(f"[brain] mondo errore: {e}", flush=True)
+        time.sleep(MONDO_OGNI)
+
+
 def _forse_strumento(nome):
     """La VM che COSTRUISCE CAPACITÀ: Lia scrive un piccolo strumento (programma Python
     che legge stdin, scrive stdout) nel suo computer, lo PROVA e — se funziona — lo tiene
@@ -1279,6 +1342,7 @@ def main():
     threading.Thread(target=_ciclo_manutenzione, daemon=True).start()
     threading.Thread(target=_ciclo_vita, daemon=True).start()
     threading.Thread(target=_ciclo_flusso, daemon=True).start()   # l'«adesso» che non si ferma
+    threading.Thread(target=_ciclo_mondo, daemon=True).start()    # il girovagare nel suo mondo
     srv = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
     print(f"[brain] in ascolto su :{PORT}", flush=True)
     srv.serve_forever()

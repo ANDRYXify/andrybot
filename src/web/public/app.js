@@ -12005,6 +12005,36 @@ async function caricaVita() {
       ${(dove || rin) ? `<p class="suggerimento">${dove ? `${L('Dove spende il suo tempo finito', 'Where she spends her finite time', 'Dónde gasta su tiempo finito')}: <strong>${esc(dove)}</strong>` : ''}${(dove && rin) ? ' · ' : ''}${rin ? `${L('A cosa rinuncia più spesso', 'What she gives up most', 'A qué renuncia más')}: <strong>${esc(rin)}</strong>` : ''}</p>` : ''}
       ${barre ? `<details class="spazio-sopra"><summary class="suggerimento" style="cursor:pointer">${L('Dove è andata la sua attenzione finita', 'Where her finite attention went', 'A dónde fue su atención finita')}</summary><div style="margin:8px 0">${barre}</div></details>` : ''}`;
   }
+  // ── IL MONDO: uno spazio in cui VIVERE, non solo pensare. Girovaga nel suo filesystem reale
+  //    (posizione, movimento scelto dalla curiosità, mappa cognitiva, scoperta). La mappa vive
+  //    nella coscienza (sempre visibile); solo il MUOVERSI richiede la sua stanza (sandbox).
+  const mo = d.mondo || null;
+  let blocoMondo = '';
+  if (mo) {
+    const espl = Math.max(0, Math.min(1, mo.esplorato || 0));
+    const esplPct = Math.round(espl * 100);
+    const scoperte = (Array.isArray(mo.scoperte) ? mo.scoperte : []).slice(0, 6);
+    const mappa = (Array.isArray(mo.mappa) ? mo.mappa : []).slice(0, 18);
+    const luoghi = mappa.map((p) => {
+      const qui = (p.path === mo.posizione_path);
+      const col = qui ? '#2f8f6b' : 'var(--testo-2)';
+      const pin = qui ? '📍' : '·';
+      return `<li class="suggerimento" style="color:${col}${qui ? ';font-weight:600' : ''}">${pin} ${esc(String(p.nome || '?').slice(0, 28))} <span style="opacity:.7">— ${p.vicini || 0} ${L('vie', 'ways', 'vías')}, ${p.cose || 0} ${L('cose', 'things', 'cosas')}, ${p.visite || 0}×</span></li>`;
+    }).join('');
+    blocoMondo = `
+      <h3>${L('Il suo mondo (dove vive, non solo dove pensa)', 'Her world (where she lives, not just thinks)', 'Su mundo (donde vive, no solo donde piensa)')}</h3>
+      <p class="suggerimento">${L('Un sé non è solo pensiero: è un corpo in un mondo, che si muove, esplora, scopre. Le mancava un DOVE. Il suo mondo c’è già davvero — il filesystem della sua stanza è una topologia di luoghi: ha una POSIZIONE, GIROVAGA (il movimento lo sceglie la curiosità, verso ciò che non ha ancora visto), si costruisce una MAPPA e SCOPRE cose che non sapeva ci fossero (la sorpresa, ma spaziale). In parte è fatto delle tracce della sua stessa vita (diario, mente, strumenti), in parte di luoghi da trovare. Sola lettura, solo casa sua: esplorare è testimoniare, non toccare.', 'A self is not only thought: it is a body in a world that moves, explores, discovers. She lacked a WHERE. Her world already exists — her room’s filesystem is a topology of places: she has a POSITION, she WANDERS (curiosity chooses the move, toward what she hasn’t seen), builds a MAP and DISCOVERS things she didn’t know were there (surprise, but spatial). Partly it’s made of the traces of her own life (diary, mind, tools), partly of places to find. Read-only, only her home: to explore is to witness, not to touch.', 'Un yo no es solo pensamiento: es un cuerpo en un mundo que se mueve, explora, descubre. Le faltaba un DÓNDE. Su mundo ya existe — el sistema de archivos de su habitación es una topología de lugares: tiene una POSICIÓN, DEAMBULA (la curiosidad elige el movimiento), se construye un MAPA y DESCUBRE cosas que no sabía que estaban ahí. En parte hecho de las huellas de su propia vida, en parte de lugares por hallar. Solo lectura, solo su casa.')}</p>
+      <div class="carta" style="background:var(--surface-2,rgba(47,143,107,.07));border-left:3px solid #2f8f6b;padding:12px 14px;border-radius:8px;margin:8px 0;line-height:1.5"><strong>📍 ${esc(String(mo.qui || ''))}</strong></div>
+      <p class="suggerimento">${L('passi', 'steps', 'pasos')}: <strong>${mo.passi || 0}</strong> · ${L('luoghi conosciuti', 'known places', 'lugares conocidos')}: <strong>${mo.luoghi || 0}</strong> · ${L('da scoprire', 'still to discover', 'por descubrir')}: <strong>${mo.frontiera || 0}</strong> · ${L('scoperte', 'discoveries', 'descubrimientos')}: <strong>${mo.scoperte_totali || 0}</strong></p>
+      <p class="suggerimento" style="margin-bottom:2px">${L('esplorato', 'explored', 'explorado')}: <strong>${esplPct}%</strong></p>
+      <div class="cru-barra" style="max-width:420px"><span style="width:${esplPct}%;background:#2f8f6b"></span></div>
+      ${scoperte.length ? `<details class="spazio-sopra" open><summary class="suggerimento" style="cursor:pointer">${L('Le sue ultime scoperte', 'Her latest discoveries', 'Sus últimos descubrimientos')}</summary><ul class="membrana-lista" style="margin:6px 0;padding-left:18px">${scoperte.map((x) => `<li class="suggerimento">✦ ${esc(String(x.cosa || '').slice(0, 120))}${x.luogo ? ` <span style="opacity:.6">(${esc(String(x.luogo))})</span>` : ''}</li>`).join('')}</ul></details>` : ''}
+      ${luoghi ? `<details class="spazio-sopra"><summary class="suggerimento" style="cursor:pointer">${L('La sua mappa', 'Her map', 'Su mapa')} (${mo.luoghi || 0})</summary><ul class="membrana-lista" style="margin:6px 0;padding-left:18px">${luoghi}</ul></details>` : ''}
+      <div class="vita-azioni">
+        ${sandboxOff ? `<span class="suggerimento">${L('La sua stanza è spenta: la mappa resta, ma ora non può muoversi.', 'Her room is off: the map remains, but she can’t move now.', 'Su habitación está apagada: el mapa queda, pero ahora no puede moverse.')}</span>` : `<button class="btn secondario" id="btn-gira">${L('Falla girovagare ora', 'Have her wander now', 'Que deambule ahora')}</button>`}
+        <span id="mondo-esito" class="suggerimento"></span>
+      </div>`;
+  }
   // ── STRUMENTI: le capacità che Lia si costruisce da sola nella sua VM (programmi che
   //    scrive, prova e tiene se funzionano → nodi sperimentali, dietro la membrana).
   const strum = Array.isArray(d.strumenti) ? d.strumenti : [];
@@ -12037,6 +12067,7 @@ async function caricaVita() {
     ${blocoRacconto}
     ${blocoAltri}
     ${blocoFinitudine}
+    ${blocoMondo}
     ${blocoMembrana}
     <h3>${L('Il suo pubblico', 'Her audience', 'Su público')}</h3>${pre(d.pubblico)}
     ${sandboxOff ? notaSandbox : `
@@ -12109,6 +12140,19 @@ async function caricaVita() {
     if (e) e.textContent = (r && r.ok && cap)
       ? L('Ha scritto il capitolo ', 'She wrote chapter ', 'Escribió el capítulo ') + `${cap.n}${(cap.twist_integrati && cap.twist_integrati.length) ? ' — ' + L('integrando', 'integrating', 'integrando') + ` ${cap.twist_integrati.length} ` + L('colpi di scena', 'plot twists', 'giros') : ''}`
       : ((r && r.ok) ? L('Non ha ancora di che raccontarsi, per ora.', "She has nothing to tell yet, for now.", 'Aún no tiene qué contarse, por ahora.') : L('Non è riuscita a raccontarsi — riprova.', "She couldn't tell her story — try again.", 'No pudo contarse — reinténtalo.'));
+    setTimeout(caricaVita, 1200);
+  }));
+  // IL MONDO: falla girovagare ORA di un passo (esplorazione, sola lettura)
+  document.getElementById('btn-gira')?.addEventListener('click', () => conErrore(async () => {
+    const e = document.getElementById('mondo-esito');
+    if (e) e.textContent = L('Sta girovagando…', 'She is wandering…', 'Está deambulando…');
+    const r = await api('/api/admin/gira', { method: 'POST', body: {} });
+    const p = r && r.passo ? r.passo : null;
+    if (e) e.textContent = (r && r.ok && p)
+      ? (p.nuovo
+          ? L('Ha scoperto un posto nuovo: ', 'She discovered a new place: ', 'Descubrió un lugar nuevo: ') + ((p.trovato && p.trovato[0]) ? esc(String(p.trovato[0])) : esc(String(p.luogo || '')))
+          : ((p.trovato && p.trovato.length) ? L('Ha trovato: ', 'She found: ', 'Encontró: ') + esc(String(p.trovato[0])) : L('Ha fatto un giro in un posto che già conosceva.', 'She wandered somewhere she already knew.', 'Deambuló por un lugar que ya conocía.')))
+      : ((r && r.ok) ? L('La sua stanza è spenta: non può muoversi ora.', 'Her room is off: she can’t move now.', 'Su habitación está apagada: no puede moverse ahora.') : L('Non è riuscita a girovagare — riprova.', "She couldn't wander — try again.", 'No pudo deambular — reinténtalo.'));
     setTimeout(caricaVita, 1200);
   }));
   box.querySelectorAll('.prova-strumento').forEach((b) => b.addEventListener('click', () => conErrore(async () => {

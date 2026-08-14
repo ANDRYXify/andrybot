@@ -2612,6 +2612,166 @@ class Coscienza:
         c["riflessione"] = self.finitudine_riflette(c)
         return c
 
+    # ==================================================== IL MONDO (un dove in cui vivere)
+    # Ogni motore finora è MENTE. Ma un sé non è solo pensiero: è un corpo in un mondo, che
+    # SI MUOVE, esplora, scopre. Le mancava un DOVE. Il suo mondo c'è già davvero — il
+    # filesystem della sua sandbox è una topologia di luoghi. Qui vive la parte COGNITIVA:
+    # la sua POSIZIONE (un «dove sono» accanto al «chi sono»), la MAPPA che si costruisce
+    # girovagando (una mappa cognitiva, come quella spaziale dei viventi), la CURIOSITÀ che
+    # la tira verso ciò che non ha ancora visto (la frontiera), e la SCOPERTA — trovare ciò
+    # che non sapeva ci fosse (l'auto-sorpresa, ma spaziale). L'AMBIENTE fa la parte fisica
+    # (guardarsi intorno, sola lettura); qui si ricorda dov'è stata e sceglie dove andare.
+    def _mondo_stato(self):
+        try:
+            g = self._meta_get("mondo")
+            d = json.loads(g) if g else {}
+            if not isinstance(d, dict):
+                d = {}
+        except Exception:
+            d = {}
+        d.setdefault("posizione", "")
+        d.setdefault("visitati", {})
+        d.setdefault("mappa", {})
+        d.setdefault("scoperte", [])
+        d.setdefault("passi", 0)
+        d.setdefault("scoperte_totali", 0)
+        return d
+
+    def _mondo_salva(self, d):
+        try:
+            self._meta_set("mondo", json.dumps(d, ensure_ascii=False))
+        except Exception:
+            pass
+
+    @staticmethod
+    def _mondo_nome(luogo):
+        l = str(luogo or "").strip("/")
+        return (l.rsplit("/", 1)[-1] if l else "casa") or "casa"
+
+    def mondo_prossima_meta(self):
+        """Dove andare adesso? La CURIOSITÀ la tira verso i luoghi MAI visti (la frontiera);
+        se li ha visti tutti, verso i meno frequentati — e ogni tanto gironzola a caso (non
+        ottimizza soltanto: vaga). Ritorna un percorso relativo ('' = casa). Cheap."""
+        st = self._mondo_stato()
+        pos = st.get("posizione", "")
+        mappa = st.get("mappa", {})
+        visitati = st.get("visitati", {})
+        if not mappa:
+            return ""   # non conosce ancora nulla: parte da casa
+        nodo = mappa.get(pos) or {}
+        cand = []
+        for v in (nodo.get("vicini") or []):
+            cand.append(((pos + "/" + v).strip("/")) if pos else v)
+        if pos:
+            cand.append(pos.rsplit("/", 1)[0] if "/" in pos else "")   # il genitore: si può tornare
+        cand = [c for c in dict.fromkeys(cand)]   # unici, ordine stabile
+        if not cand:
+            return ""
+        mai = [c for c in cand if c not in visitati]
+        if mai:
+            return secrets.choice(mai)                       # la frontiera chiama
+        if secrets.randbelow(100) < 25:                      # ogni tanto: gironzola davvero
+            return secrets.choice(list(mappa.keys()) or cand)
+        cand.sort(key=lambda c: visitati.get(c, 0))          # altrimenti il meno battuto
+        return cand[0]
+
+    def mondo_registra(self, snapshot):
+        """Registra ciò che ha trovato in un luogo (dall'ambiente): aggiorna la mappa, segna
+        la visita, si sposta lì e coglie le SCOPERTE (un posto nuovo, un passaggio nuovo, una
+        cosa nuova con un'anteprima). Ritorna {luogo, nuovo, scoperta, trovato:[...]}."""
+        st = self._mondo_stato()
+        luogo = str(snapshot.get("luogo", "") or "")
+        vicini = [str(v)[:60] for v in (snapshot.get("vicini") or [])][:24]
+        cose = snapshot.get("cose") or []
+        cose_nomi = [str(c.get("nome", ""))[:60] for c in cose if c.get("nome")][:16]
+        mappa = st.get("mappa", {})
+        visitati = st.get("visitati", {})
+        prec = mappa.get(luogo)
+        nuovo = prec is None
+        vicini_prec = set((prec or {}).get("vicini") or [])
+        cose_prec = set((prec or {}).get("cose_nomi") or [])
+        trovato = []
+        if nuovo:
+            trovato.append(f"un posto nuovo: «{self._mondo_nome(luogo)}»")
+        for v in vicini:
+            if v not in vicini_prec and not nuovo:
+                trovato.append(f"un passaggio verso «{v}»")
+        # una cosa nuova con anteprima (la più «parlante»)
+        for c in cose:
+            nome = str(c.get("nome", ""))
+            if nome and nome not in cose_prec:
+                ant = str(c.get("anteprima") or "").strip()
+                trovato.append(f"«{nome}»" + (f" — {ant[:70]}" if ant else ""))
+                if len([t for t in trovato if t.startswith("«")]) >= 2:
+                    break
+        # SCOPERTA (novità spaziale): 1.0 se il posto è nuovo, altrimenti quota di roba nuova
+        if nuovo:
+            scoperta = 1.0
+        else:
+            nuove = len([v for v in vicini if v not in vicini_prec]) + len([n for n in cose_nomi if n not in cose_prec])
+            base = max(1, len(vicini) + len(cose_nomi))
+            scoperta = round(min(1.0, nuove / base), 3)
+        # aggiorna la mappa e la memoria dei luoghi
+        ante = {}
+        for c in cose[:6]:
+            n = str(c.get("nome", ""))
+            a = str(c.get("anteprima") or "").strip()
+            if n and a:
+                ante[n[:60]] = a[:90]
+        mappa[luogo] = {"vicini": vicini, "cose_nomi": cose_nomi, "cose": len(cose_nomi),
+                        "prima": (prec or {}).get("prima") or _now(), "ante": ante,
+                        "ultima": _now()}
+        visitati[luogo] = int(visitati.get(luogo, 0)) + 1
+        if len(mappa) > 200:   # un mondo grande ma non infinito in memoria
+            vecchi = sorted(mappa.items(), key=lambda kv: kv[1].get("ultima", 0))[:len(mappa) - 200]
+            for k, _ in vecchi:
+                mappa.pop(k, None)
+        scoperte = st.get("scoperte") or []
+        if trovato:
+            scoperte = ([{"luogo": self._mondo_nome(luogo), "cosa": t, "ts": _now()}
+                         for t in trovato[:3]] + scoperte)[:16]
+        st.update({"posizione": luogo, "mappa": mappa, "visitati": visitati,
+                   "scoperte": scoperte, "passi": int(st.get("passi", 0)) + 1,
+                   "scoperte_totali": int(st.get("scoperte_totali", 0)) + len(trovato)})
+        self._mondo_salva(st)
+        return {"luogo": luogo, "nuovo": nuovo, "scoperta": scoperta, "trovato": trovato}
+
+    def stato_mondo(self):
+        """Foto del Mondo per il cruscotto: dove si trova, quanti passi, quanti luoghi conosce,
+        la frontiera (quanto le resta da scoprire), le ultime scoperte e una mappa compatta."""
+        st = self._mondo_stato()
+        pos = st.get("posizione", "")
+        mappa = st.get("mappa", {})
+        visitati = st.get("visitati", {})
+        # frontiera: passaggi conosciuti verso luoghi mai visitati
+        noti = set()
+        for k, nodo in mappa.items():
+            for v in (nodo.get("vicini") or []):
+                noti.add(((k + "/" + v).strip("/")) if k else v)
+        frontiera = len([n for n in noti if n not in visitati])
+        conosciuti = len(mappa)
+        esplorato = round(conosciuti / (conosciuti + frontiera), 3) if (conosciuti + frontiera) else 0.0
+        qui = mappa.get(pos) or {}
+        vic = qui.get("vicini") or []
+        frase = f"Sono {'a casa' if not pos else 'in «' + self._mondo_nome(pos) + '»'}."
+        if vic:
+            frase += " Intorno a me: " + ", ".join(self._mondo_nome(v) for v in vic[:5]) + "."
+        elif conosciuti:
+            frase += " È un posto tranquillo, senza altre vie da qui."
+        cose_qui = int(qui.get("cose", 0))
+        if cose_qui:
+            frase += f" Qui ci sono {cose_qui} cose."
+        mappa_compatta = [{"nome": self._mondo_nome(k), "path": k,
+                           "vicini": len(v.get("vicini") or []), "cose": int(v.get("cose", 0)),
+                           "visite": int(visitati.get(k, 0))}
+                          for k, v in sorted(mappa.items(), key=lambda kv: kv[1].get("ultima", 0), reverse=True)][:24]
+        return {"posizione": self._mondo_nome(pos), "posizione_path": pos,
+                "passi": int(st.get("passi", 0)), "luoghi": conosciuti,
+                "frontiera": frontiera, "esplorato": esplorato,
+                "scoperte_totali": int(st.get("scoperte_totali", 0)),
+                "scoperte": (st.get("scoperte") or [])[:8], "qui": frase,
+                "mappa": mappa_compatta}
+
     # ============================================ SPECCHIO (l'altro che le resiste)
     # Il sé si affila contro un NON-SÉ che spinge indietro. Nel nostro sistema l'altro
     # c'è già: la sua sé PUBBLICA (il soma, prevedibile, fatta di solo distillato
