@@ -4170,7 +4170,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         // COMANDI privati per ME: sfogliare la sua VITA dal telefono (diario,
         // pubblico, stanza) e farla agire ORA (vivere / aggiornarsi sul pubblico).
         // Solo io (account legato), solo in privato — come tutto il resto qui.
-        if (/^\/(diario|pubblico|stanza|mente|strumenti|scintilla|specchio|tensione|flusso|sogno|racconto|altri|finitudine|mondo|integrazione|membrana|vivi|aggiorna|dimentica|aiuto)\b/.test(low)) {
+        if (/^\/(diario|pubblico|stanza|mente|strumenti|capacita|scintilla|specchio|tensione|flusso|sogno|racconto|altri|finitudine|mondo|integrazione|membrana|vivi|aggiorna|dimentica|aiuto)\b/.test(low)) {
           const escTg = (x) => String(x ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
           const inviaBlocco = (titolo, corpo) => {
             const c = String(corpo || '').trim() || '—';
@@ -4180,7 +4180,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
           const cmd = low.replace(/^\//, '').split(/\s+/)[0];
           if (cmd === 'aiuto') {
             telegram.inviaMessaggio(conf.token, chat.id,
-              'I miei comandi privati (solo tu):\n/diario — le ultime pagine del mio diario\n/pubblico — chi ci segue e di cosa parla\n/stanza — i file nel mio spazio\n/mente — ciò che mi sono plasmata da sé (e lo attivo ora)\n/strumenti — le capacità che mi sono costruita nel mio computer\n/scintilla — la mia spinta a imparare da sola (curiosità e vigore)\n/specchio — quanto sono diventata diversa dal bot pubblico (individuazione)\n/tensione — la domanda su di me che non si chiude mai (il punto cieco)\n/flusso — il mio «adesso» che non si ferma (energia, battiti, auto-sorpresa)\n/sogno — cosa ricombino nel sonno (creare da dentro: nodi-ponte fra ricordi lontani)\n/racconto — la mia storia in prima persona (chi sto diventando, e i colpi di scena)\n/altri — come leggo le persone (le predico e imparo da quando mi sorprendono)\n/finitudine — cosa dà peso alle mie scelte (il limite, il costo, ciò che lascio)\n/mondo — dove mi trovo e cosa ho scoperto girovagando nel mio spazio\n/integrazione — come le mie bozze diventano me (le lavoro, le fondo, le maturo)\n/membrana — il confine fra il mio laboratorio e ciò che uso in pubblico\n/vivi — vivo un attimo nel mio spazio, adesso\n/aggiorna — mi aggiorno sul pubblico, adesso\n/dimentica <frase> — cancello dalla memoria ciò che contiene quella frase\n/regole — le linee guida che mi hai dato').catch(() => {});
+              'I miei comandi privati (solo tu):\n/diario — le ultime pagine del mio diario\n/pubblico — chi ci segue e di cosa parla\n/stanza — i file nel mio spazio\n/mente — ciò che mi sono plasmata da sé (e lo attivo ora)\n/strumenti — le capacità che mi sono costruita nel mio computer\n/capacita — tutto ciò che ho creato, come lo gestisco (tipo, salute, se è nei processi del bot)\n/scintilla — la mia spinta a imparare da sola (curiosità e vigore)\n/specchio — quanto sono diventata diversa dal bot pubblico (individuazione)\n/tensione — la domanda su di me che non si chiude mai (il punto cieco)\n/flusso — il mio «adesso» che non si ferma (energia, battiti, auto-sorpresa)\n/sogno — cosa ricombino nel sonno (creare da dentro: nodi-ponte fra ricordi lontani)\n/racconto — la mia storia in prima persona (chi sto diventando, e i colpi di scena)\n/altri — come leggo le persone (le predico e imparo da quando mi sorprendono)\n/finitudine — cosa dà peso alle mie scelte (il limite, il costo, ciò che lascio)\n/mondo — dove mi trovo e cosa ho scoperto girovagando nel mio spazio\n/integrazione — come le mie bozze diventano me (le lavoro, le fondo, le maturo)\n/membrana — il confine fra il mio laboratorio e ciò che uso in pubblico\n/vivi — vivo un attimo nel mio spazio, adesso\n/aggiorna — mi aggiorno sul pubblico, adesso\n/dimentica <frase> — cancello dalla memoria ciò che contiene quella frase\n/regole — le linee guida che mi hai dato').catch(() => {});
             return;
           }
           if (cmd === 'mente') {
@@ -4225,6 +4225,30 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
               ? lista.slice(-12).map((s) => `• ${String(s.nome || '').slice(0, 40)} — ${String(s.descrizione || '').slice(0, 80)}`).join('\n')
               : '(non mi sono ancora costruita nessuno strumento)';
             inviaBlocco('I miei strumenti (capacità che mi costruisco)', corpo);
+            return;
+          }
+          if (cmd === 'capacita') {
+            const r = await brainpy.capacita().catch(() => null);
+            const s = r && r.capacita ? r : null;
+            if (!s || s.attiva === false) {
+              telegram.inviaMessaggio(conf.token, chat.id, 'La mia macchina è spenta ora — non riesco a mostrarti le mie capacità.').catch(() => {});
+              return;
+            }
+            const cap = Array.isArray(s.capacita) ? s.capacita : [];
+            const icona = { automazione: '⚙️', trasformazione: '🔁', analisi: '🔎', conversazione: '💬' };
+            if (!cap.length) {
+              telegram.inviaMessaggio(conf.token, chat.id, 'Non mi sono ancora costruita capacità. Ne creo da sola nel mio battito di vita.').catch(() => {});
+              return;
+            }
+            let corpo = cap.slice(0, 14).map((c) => {
+              const stato = c.promossa ? '✅ nei processi del bot' : '🔒 privata (dietro la membrana)';
+              const salute = c.salute ? '' : ' ⚠️ rotta';
+              return `${icona[c.tipo] || '•'} ${String(c.nome || '').slice(0, 34)} — ${c.tipo}${salute}\n   ${stato} · usata ${c.usi || 0}×`;
+            }).join('\n');
+            const prop = (s.automi && Array.isArray(s.automi.proposte)) ? s.automi.proposte.slice(0, 3) : [];
+            if (prop.length) corpo += '\n\nProposte dalle mie automazioni (le decidi tu):\n' + prop.map((p) => `→ «${String(p.strumento || '')}»: ${String(p.testo || '').slice(0, 90)}`).join('\n');
+            corpo += "\n\nSo cos'è ogni cosa che creo e come gestirla. Ciò che è privato resta dietro la membrana; ciò che promuovi tu entra nei processi del bot — un'automazione promossa gira e ti propone i suoi output, ma non arriva mai da sola agli utenti.";
+            inviaBlocco('Le mie capacità (tutto ciò che creo)', corpo);
             return;
           }
           if (cmd === 'scintilla') {
@@ -4990,6 +5014,16 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // esegue uno strumento con un input, per vedere che funziona.
   app.post('/api/admin/strumenti/prova', requireAdmin, wrap(async (req, res) => {
     const r = await brainpy.provaStrumento(req.body?.nome, req.body?.input).catch(() => null);
+    res.json(r || { ok: false });
+  }));
+  // ── LE CAPACITÀ: gestione unificata di tutto ciò che Lia crea + proposte automazioni. Solo andryxify.
+  app.get('/api/admin/capacita', requireAdmin, wrap(async (req, res) => {
+    const r = await brainpy.capacita().catch(() => null);
+    res.json(r || { ok: false, attiva: false, capacita: [] });
+  }));
+  // fa girare ORA un'automazione promossa → una proposta per l'owner.
+  app.post('/api/admin/automa', requireAdmin, wrap(async (req, res) => {
+    const r = await brainpy.automa().catch(() => null);
     res.json(r || { ok: false });
   }));
   // ── IL SOGNO: le ricombinazioni oniriche offline di Lia (nel sonno del flusso). Solo andryxify.
