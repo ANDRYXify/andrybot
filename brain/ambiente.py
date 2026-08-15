@@ -369,6 +369,21 @@ def pianta_luogo(sotto, nome, file, contenuto):
     return perc if r.get("ok") else ""
 
 
+def costruisci(luogo, cosa, contenuto):
+    """Erige una COSTRUZIONE (casa, pozzo, torre…) DENTRO un luogo del suo mondo: un file vero
+    nella cartella di quel luogo. Sicuro: solo dentro 'mondo/', nomi sanificati, base64. È così
+    che Lia costruisce il suo mondo davvero. Ritorna il percorso o ''."""
+    if not disponibile():
+        return ""
+    s = _luogo_sicuro(luogo)
+    if not s or not s.startswith("mondo"):
+        return ""     # si costruisce solo nei luoghi del suo mondo
+    n = _nome_sicuro(cosa)
+    perc = f"{s}/{n}.md"
+    r = _scrivi(perc, str(contenuto or "")[:1500], append=False)
+    return perc if r.get("ok") else ""
+
+
 def _luogo_sicuro(luogo):
     """Un percorso RELATIVO dentro casa: niente '..', niente assoluti/tilde, solo caratteri
     tranquilli. Ritorna il percorso ripulito ('' = casa) — mai qualcosa che esce da casa."""

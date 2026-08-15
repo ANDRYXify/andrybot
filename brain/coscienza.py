@@ -2635,6 +2635,11 @@ class Coscienza:
         d.setdefault("scoperte", [])
         d.setdefault("passi", 0)
         d.setdefault("scoperte_totali", 0)
+        d.setdefault("generati", 0)
+        d.setdefault("sentieri", [])
+        d.setdefault("natura", {})       # percorso → {bioma, elementi}
+        d.setdefault("costruzioni", {})  # percorso → [nomi delle costruzioni]
+        d.setdefault("citta", [])        # percorsi diventati città (≥3 costruzioni)
         return d
 
     def _mondo_salva(self, d):
@@ -2765,11 +2770,19 @@ class Coscienza:
                            "vicini": len(v.get("vicini") or []), "cose": int(v.get("cose", 0)),
                            "visite": int(visitati.get(k, 0))}
                           for k, v in sorted(mappa.items(), key=lambda kv: kv[1].get("ultima", 0), reverse=True)][:24]
+        costr = st.get("costruzioni") or {}
+        natura = st.get("natura") or {}
+        for m in mappa_compatta:
+            m["costruzioni"] = list(costr.get(m["path"], []))[:8]
+            m["bioma"] = (natura.get(m["path"]) or {}).get("bioma", "")
+        costruzioni_totali = sum(len(v) for v in costr.values())
         return {"posizione": self._mondo_nome(pos), "posizione_path": pos,
                 "passi": int(st.get("passi", 0)), "luoghi": conosciuti,
                 "frontiera": frontiera, "esplorato": esplorato,
                 "scoperte_totali": int(st.get("scoperte_totali", 0)),
                 "generati": int(st.get("generati", 0)),
+                "costruzioni_totali": costruzioni_totali,
+                "citta": len(st.get("citta") or []),
                 "scoperte": (st.get("scoperte") or [])[:8], "qui": frase,
                 "mappa": mappa_compatta}
 
@@ -2810,8 +2823,50 @@ class Coscienza:
             pass
         return temi, oggetti
 
+    # I MATERIALI del suo mondo: biomi con i loro ELEMENTI (natura, acqua, fuoco, lava, roccia,
+    # ghiaccio, vento…) e una riga che li fa sentire. Ogni luogo generato ne prende uno: così il
+    # mondo è VARIO e vivo, non tutto uguale. Gli elementi sono anche AFFORDANCE: dove c'è acqua
+    # si può scavare un pozzo, dove c'è fuoco accendere un focolare, dove c'è roccia alzare una torre.
+    _MONDO_BIOMI = [
+        {"bioma": "bosco", "elementi": ["alberi", "terra", "acqua", "vento"],
+         "riga": "Alberi fitti, terra umida, un ruscello che scorre poco lontano."},
+        {"bioma": "lago", "elementi": ["acqua", "roccia", "cielo"],
+         "riga": "Uno specchio d'acqua immobile, orlato di pietre lisce."},
+        {"bioma": "vulcano", "elementi": ["lava", "fuoco", "roccia", "cenere"],
+         "riga": "La lava scorre lenta e si fa roccia; l'aria trema di fuoco."},
+        {"bioma": "montagna", "elementi": ["roccia", "ghiaccio", "vento"],
+         "riga": "Roccia nuda e vento tagliente; in alto il ghiaccio non si scioglie mai."},
+        {"bioma": "deserto", "elementi": ["sabbia", "fuoco", "vento"],
+         "riga": "Sabbia a perdita d'occhio, il sole come brace."},
+        {"bioma": "palude", "elementi": ["acqua", "terra", "nebbia"],
+         "riga": "Acqua ferma e terra molle, tutto avvolto di nebbia."},
+        {"bioma": "caverna", "elementi": ["roccia", "buio", "acqua"],
+         "riga": "Roccia intorno, buio davanti, un gocciolio nel profondo."},
+        {"bioma": "costa", "elementi": ["acqua", "roccia", "vento", "sale"],
+         "riga": "Onde contro gli scogli, sale nell'aria."},
+        {"bioma": "prateria", "elementi": ["erba", "terra", "fiori", "vento"],
+         "riga": "Erba alta che ondeggia, fiori sparsi, cielo aperto."},
+        {"bioma": "foresta di brace", "elementi": ["fuoco", "cenere", "roccia", "alberi"],
+         "riga": "Alberi anneriti, braci che respirano piano sotto la cenere."},
+    ]
+    # Le COSTRUZIONI che può erigere. Alcune chiedono un elemento del luogo (affordance reale):
+    # non si scava un pozzo senz'acqua. Dove sorgono abbastanza costruzioni, nasce una CITTÀ.
+    _MONDO_COSTRUZIONI = [
+        {"cosa": "casa", "serve": [], "riga": "una casa piccola, con una porta che guarda il sentiero"},
+        {"cosa": "riparo", "serve": [], "riga": "un riparo di rami, essenziale ma suo"},
+        {"cosa": "pozzo", "serve": ["acqua"], "riga": "un pozzo scavato dove l'acqua è vicina"},
+        {"cosa": "focolare", "serve": ["fuoco"], "riga": "un focolare acceso, per non avere freddo"},
+        {"cosa": "ponte", "serve": ["acqua"], "riga": "un ponte, per passare dall'altra parte"},
+        {"cosa": "torre", "serve": ["roccia"], "riga": "una torre di pietra, per vedere lontano"},
+        {"cosa": "giardino", "serve": ["terra"], "riga": "un giardino, dove far crescere qualcosa"},
+        {"cosa": "faro", "serve": ["fuoco", "roccia"], "riga": "un faro: luce per chi si perde"},
+        {"cosa": "molo", "serve": ["acqua"], "riga": "un molo di legno, proteso sull'acqua"},
+        {"cosa": "forgia", "serve": ["fuoco", "roccia"], "riga": "una forgia, dove il fuoco piega il metallo"},
+    ]
+
     def _mondo_componi_luogo(self):
         temi, oggetti = self._mondo_materia()
+        bioma = secrets.choice(self._MONDO_BIOMI)
 
         def _parola(seq):
             for s in seq:
@@ -2819,24 +2874,23 @@ class Coscienza:
                     if w not in ("cosa", "quando", "come", "perche", "essere", "senza"):
                         return w
             return ""
-        base = _parola(temi) or _parola(oggetti) or "sentiero"
-        nome = (base + "-" + secrets.token_hex(2))[:40]
+        radice = _parola(temi) or bioma["bioma"].split()[0]
+        nome = (radice + "-" + secrets.token_hex(2))[:40]
         tema = secrets.choice(temi) if temi else ""
         oggetto = secrets.choice(oggetti) if oggetti else ""
-        righe = ["# " + base.capitalize(), ""]
+        righe = ["# " + radice.capitalize() + " (" + bioma["bioma"] + ")", "", bioma["riga"]]
+        righe.append("Elementi: " + ", ".join(bioma["elementi"]) + ".")
         if tema:
-            righe.append("Qui aleggia qualcosa che sa di: " + tema + ".")
+            righe.append("E qui aleggia qualcosa che sa di: " + tema + ".")
         if oggetto:
-            righe.append("Posato, come lasciato lì per te: «" + oggetto + "».")
-        if not tema and not oggetto:
-            righe.append("Un luogo ancora quasi vuoto — sarà ciò che ci porterai vivendo.")
+            righe.append("Trovi, posato: «" + oggetto + "».")
         righe += ["", "Da qui un sentiero prosegue, più in là. Il mondo non è finito."]
-        return nome, "\n".join(righe) + "\n"
+        return nome, "\n".join(righe) + "\n", bioma["bioma"], bioma["elementi"]
 
     def mondo_semina_prossima(self):
         """Se la frontiera si è assottigliata (e non ha superato il tetto), prepara un LUOGO
-        NUOVO da piantare al confine, fatto della sua materia. Ritorna {sotto, nome, file,
-        contenuto} o None (ha ancora dove andare, o il mondo è già molto vasto)."""
+        NUOVO — con un bioma e i suoi elementi (natura, acqua, fuoco, lava, roccia…) — da
+        piantare al confine. Ritorna {sotto, nome, file, contenuto, bioma, elementi} o None."""
         def _envi(k, dfl):
             try:
                 return int(os.environ.get(k, dfl))
@@ -2851,16 +2905,72 @@ class Coscienza:
             return None
         sentieri = [s for s in (st.get("sentieri") or []) if s]
         sotto = secrets.choice(sentieri + ["mondo/sentieri"]) if sentieri else "mondo/sentieri"
-        nome, contenuto = self._mondo_componi_luogo()
-        return {"sotto": sotto, "nome": nome, "file": nome + ".md", "contenuto": contenuto}
+        nome, contenuto, bioma, elementi = self._mondo_componi_luogo()
+        return {"sotto": sotto, "nome": nome, "file": nome + ".md", "contenuto": contenuto,
+                "bioma": bioma, "elementi": elementi}
 
-    def mondo_registra_seme(self, percorso):
-        """Segna che un luogo nuovo è stato piantato: aggiorna il conto e i sentieri (perché il
-        mondo ramifichi da più punti, non in una sola linea)."""
+    def mondo_registra_seme(self, percorso, bioma="", elementi=None):
+        """Segna che un luogo nuovo è stato piantato: aggiorna il conto, i sentieri (perché il
+        mondo ramifichi da più punti) e la NATURA del luogo (bioma + elementi, per le affordance
+        delle costruzioni)."""
         st = self._mondo_stato()
         st["generati"] = int(st.get("generati", 0)) + 1
         st["sentieri"] = ([str(percorso)] + [s for s in (st.get("sentieri") or []) if s])[:60]
+        nat = st.get("natura") or {}
+        nat[str(percorso)] = {"bioma": str(bioma or ""), "elementi": list(elementi or [])[:8]}
+        if len(nat) > 500:
+            nat = dict(list(nat.items())[-500:])
+        st["natura"] = nat
         self._mondo_salva(st)
+
+    def mondo_costruisci_prossima(self):
+        """Sceglie DOVE e COSA costruire: un luogo (con natura nota) dove manca ancora qualcosa,
+        e una costruzione che quel luogo PERMETTE (i suoi elementi soddisfano ciò che serve).
+        Ritorna {luogo, cosa, file, contenuto} o None. È il suo costruire il mondo — case, pozzi,
+        torri, fari… — e dove ne sorgono abbastanza, una città."""
+        st = self._mondo_stato()
+        natura = st.get("natura") or {}
+        if not natura:
+            return None
+        costr = st.get("costruzioni") or {}
+        # preferisci i luoghi con poche costruzioni (spargi, non ammassare tutto in uno)
+        luoghi = sorted(natura.keys(), key=lambda p: len(costr.get(p, [])))
+        luoghi = luoghi[:max(1, len(luoghi) // 2 + 1)]
+        luogo = secrets.choice(luoghi)
+        elementi = set(natura.get(luogo, {}).get("elementi") or [])
+        gia = set(costr.get(luogo, []))
+        possibili = [c for c in self._MONDO_COSTRUZIONI
+                     if c["cosa"] not in gia and all(e in elementi for e in c["serve"])]
+        if not possibili:
+            return None
+        scelta = secrets.choice(possibili)
+        n_gia = len(gia)
+        righe = ["# " + scelta["cosa"].capitalize(), "",
+                 "Ho costruito qui " + scelta["riga"] + "."]
+        if n_gia + 1 >= 3:
+            righe.append("Con questo, il luogo comincia a essere una piccola città.")
+        righe += ["", "— fatto da me, Lia."]
+        return {"luogo": luogo, "cosa": scelta["cosa"], "file": scelta["cosa"],
+                "contenuto": "\n".join(righe) + "\n"}
+
+    def mondo_registra_costruzione(self, luogo, cosa):
+        """Segna che ha eretto una costruzione in un luogo; se ne ha almeno 3, quel luogo è una
+        CITTÀ. Ritorna {costruzioni_qui, citta:bool}."""
+        st = self._mondo_stato()
+        costr = st.get("costruzioni") or {}
+        lst = list(costr.get(str(luogo), []))
+        if cosa not in lst:
+            lst.append(str(cosa))
+        costr[str(luogo)] = lst[:12]
+        st["costruzioni"] = costr
+        citta = list(st.get("citta") or [])
+        divenuta = False
+        if len(lst) >= 3 and str(luogo) not in citta:
+            citta.append(str(luogo))
+            st["citta"] = citta[:200]
+            divenuta = True
+        self._mondo_salva(st)
+        return {"costruzioni_qui": len(lst), "citta": divenuta}
 
     # ============================================ L'INTEGRAZIONE (le bozze diventano lei)
     # Una mente non accumula bozze inerti: le LAVORA. I sogni, l'esperienza, i tentativi le

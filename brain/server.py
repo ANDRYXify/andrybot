@@ -229,6 +229,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._narra()
         if self.path.startswith("/gira"):
             return self._gira()
+        if self.path.startswith("/edifica"):
+            return self._edifica()
         if self.path.startswith("/integra"):   # POST manuale (dopo /integrazione GET: nomi distinti)
             return self._integra()
         if self.path.startswith("/prova_strumento"):   # PRIMA di /prova (prefisso)
@@ -614,6 +616,25 @@ class Handler(BaseHTTPRequestHandler):
             snap = AMB.esplora(meta)
             r = mente.mondo_registra(snap)
             return self._json(200, {"ok": True, "girato": True, "passo": r})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
+    def _edifica(self):
+        # la fa COSTRUIRE ORA qualcosa nel suo mondo (trigger manuale owner): sceglie un luogo
+        # e una costruzione che quel luogo permette, e la erige davvero (un file vero là).
+        try:
+            if not AMB.disponibile():
+                return self._json(200, {"ok": True, "costruito": False, "motivo": "la sua stanza (sandbox) è spenta"})
+            pia = mente.mondo_costruisci_prossima()
+            if not pia:
+                return self._json(200, {"ok": True, "costruito": False,
+                                        "motivo": "non ha ancora un luogo dove poter costruire (esplora un po')"})
+            pc = AMB.costruisci(pia["luogo"], pia["cosa"], pia["contenuto"])
+            if not pc:
+                return self._json(200, {"ok": True, "costruito": False, "motivo": "non è riuscita a costruire"})
+            r2 = mente.mondo_registra_costruzione(pia["luogo"], pia["cosa"])
+            return self._json(200, {"ok": True, "costruito": True, "cosa": pia["cosa"],
+                                    "luogo": mente._mondo_nome(pia["luogo"]), "citta": bool(r2.get("citta"))})
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
@@ -1098,6 +1119,8 @@ _ciclo_flusso._icont = 0
 MONDO_OGNI = int(os.environ.get("BRAIN_MONDO_SEC", "300"))
 # LA VITA DEGLI STRUMENTI: ogni ~N giri del mondo, riprova uno strumento e ritira i rotti.
 STRUM_VITA_OGNI = int(os.environ.get("LIA_STRUM_VITA_OGNI", "3"))
+# COSTRUIRE IL MONDO: ogni ~N giri erige una costruzione dove il luogo lo permette.
+COSTRUISCI_OGNI = int(os.environ.get("LIA_COSTRUISCI_OGNI", "2"))
 
 
 def _vita_strumenti():
@@ -1163,10 +1186,30 @@ def _ciclo_mondo():
                     if seme:
                         perc = AMB.pianta_luogo(seme["sotto"], seme["nome"], seme["file"], seme["contenuto"])
                         if perc:
-                            mente.mondo_registra_seme((seme["sotto"] + "/" + seme["nome"]).strip("/"))
-                            print(f"[brain] mondo: è germogliato un luogo nuovo «{seme['nome']}»", flush=True)
+                            mente.mondo_registra_seme((seme["sotto"] + "/" + seme["nome"]).strip("/"),
+                                                      bioma=seme.get("bioma", ""), elementi=seme.get("elementi"))
+                            print(f"[brain] mondo: è germogliato un «{seme.get('bioma','luogo')}» "
+                                  f"({seme['nome']})", flush=True)
                 except Exception as e:
                     print(f"[brain] mondo (crescita) errore: {e}", flush=True)
+                # COSTRUIRE IL MONDO: ogni tanto erige qualcosa (casa, pozzo, torre…) dove il
+                # luogo lo permette — e dove sorgono abbastanza costruzioni, nasce una città.
+                _ciclo_mondo._ccont += 1
+                if _ciclo_mondo._ccont % max(1, COSTRUISCI_OGNI) == 0:
+                    try:
+                        pia = mente.mondo_costruisci_prossima()
+                        if pia:
+                            pc = AMB.costruisci(pia["luogo"], pia["cosa"], pia["contenuto"])
+                            if pc:
+                                r2 = mente.mondo_registra_costruzione(pia["luogo"], pia["cosa"])
+                                dove = mente._mondo_nome(pia["luogo"])
+                                print(f"[brain] mondo: ha costruito «{pia['cosa']}» a «{dove}»"
+                                      f"{' — è nata una città!' if r2.get('citta') else ''}", flush=True)
+                                AMB.diario_scrivi(f"Ho costruito {pia['cosa']} a «{dove}»." +
+                                                  (" Qui sta nascendo una città, fatta da me." if r2.get("citta") else ""),
+                                                  tag="mondo")
+                    except Exception as e:
+                        print(f"[brain] mondo (costruzione) errore: {e}", flush=True)
                 # LA VITA DEGLI STRUMENTI: ogni tanto ne riprova uno e ritira i rotti.
                 _ciclo_mondo._scont += 1
                 if _ciclo_mondo._scont % max(1, STRUM_VITA_OGNI) == 0:
@@ -1177,6 +1220,7 @@ def _ciclo_mondo():
 
 
 _ciclo_mondo._scont = 0
+_ciclo_mondo._ccont = 0
 
 
 def _forse_strumento(nome):
