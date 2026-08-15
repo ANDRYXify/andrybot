@@ -584,6 +584,34 @@ export async function integra() {
   finally { clearTimeout(to); }
 }
 
+// LE CAPACITÀ: la gestione unificata di tutto ciò che Lia crea (registro + nodi) — scopo,
+// tipo (automazione/trasformazione/analisi/conversazione), salute, se è privata o promossa nei
+// processi del bot, uso — più le proposte delle automazioni. Ritorna {ok, attiva, capacita,
+// automi} o null. Richiede la sandbox.
+export async function capacita() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 8000);
+  try {
+    const r = await fetch(BASE + '/capacita', { signal: ac.signal });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('capacita:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
+// AUTOMA: fa girare ORA un'automazione PROMOSSA e ne salva la proposta (trigger manuale owner).
+// Ritorna {ok, eseguita, proposta} o null. Richiede la sandbox.
+export async function automa() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 12000);
+  try {
+    const r = await fetch(BASE + '/automa', { method: 'POST', signal: ac.signal });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('automa:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
 // STRUMENTI: le capacità che Lia si è costruita nel suo computer (registro). Ritorna
 // {ok, attiva, strumenti} o null. Richiede la sandbox.
 export async function strumenti() {

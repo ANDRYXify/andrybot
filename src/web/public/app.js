@@ -11801,6 +11801,35 @@ async function caricaVita() {
       <p class="suggerimento">${L('Seme', 'Seed', 'Semilla')} <code>${esc((nu.id || '').slice(0, 8))}</code> · ${L('generazione', 'generation', 'generación')} <strong>${nu.generazione || 1}</strong> · ${L('età', 'age', 'edad')} ${nu.eta_giorni || 0} ${L('giorni', 'days', 'días')} · ${L('vissuto', 'lived', 'vivido')} <strong>${nu.vissuto || 0}</strong></p>
       ${nu.punto_cieco ? `<p class="suggerimento">${L('Ciò che di sé non riesce a spiegare', "What she can't explain about herself", 'Lo que de sí no logra explicar')}: <em>«${esc(nu.punto_cieco)}»</em></p>` : ''}`;
   }
+  // ── LE CAPACITÀ: gestione unificata di TUTTO ciò che Lia crea (strumenti+nodi) — scopo, tipo,
+  //    salute, privata vs promossa (nei processi del bot), uso; + le proposte delle automazioni.
+  let cp = null;
+  try { cp = await api('/api/admin/capacita'); } catch { cp = null; }
+  let blocoCapacita = '';
+  if (cp && cp.attiva && Array.isArray(cp.capacita)) {
+    const cap = cp.capacita.slice(0, 16);
+    const icona = { automazione: '⚙️', trasformazione: '🔁', analisi: '🔎', conversazione: '💬' };
+    const promosse = cap.filter((c) => c.promossa).length;
+    const proposte = (cp.automi && Array.isArray(cp.automi.proposte)) ? cp.automi.proposte.slice(0, 5) : [];
+    const riga = (c) => {
+      const ic = icona[c.tipo] || '•';
+      const badge = c.promossa
+        ? `<span style="color:#1f9e4f">✅ ${L('nei processi del bot', 'in the bot’s processes', 'en los procesos del bot')}</span>`
+        : `<span style="opacity:.7">🔒 ${L('privata', 'private', 'privada')}</span>`;
+      const rotta = c.salute ? '' : ` <span style="color:#e05a7d">⚠️ ${L('rotta', 'broken', 'rota')}</span>`;
+      return `<li class="suggerimento">${ic} <code>${esc(String(c.nome || '').slice(0, 34))}</code> <span style="opacity:.7">— ${esc(String(c.tipo || ''))}</span>${rotta}<br><span style="padding-left:16px">${badge} · ${esc(String(c.scopo || '').slice(0, 70))} · ${c.usi || 0}×</span></li>`;
+    };
+    blocoCapacita = cap.length ? `
+      <h3>${L('Le sue capacità (tutto ciò che crea, e come lo gestisce)', 'Her capabilities (all she creates, and how she manages it)', 'Sus capacidades (todo lo que crea y cómo lo gestiona)')}</h3>
+      <p class="suggerimento">${L('Ciò che Lia crea non resta orfano: ogni strumento ha uno SCOPO e un TIPO (⚙️ automazione, 🔁 trasformazione, 🔎 analisi, 💬 conversazione), una salute, e uno stato rispetto alla membrana — PRIVATA (dietro il confine, si guadagna il posto) o PROMOSSA (entra nei processi del bot). Un’automazione promossa GIRA come un vero processo e ti PROPONE i suoi output: ma non arriva mai da sola agli utenti — lo strumento è la mano, la tua approvazione è il gate.', 'What Lia creates is not orphaned: every tool has a PURPOSE and a TYPE (⚙️ automation, 🔁 transformation, 🔎 analysis, 💬 conversation), a health, and a membrane status — PRIVATE (behind the boundary, earning its place) or PROMOTED (into the bot’s processes). A promoted automation RUNS as a real process and PROPOSES its outputs: but it never reaches users on its own — the tool is the hand, your approval is the gate.', 'Lo que Lia crea no queda huérfano: cada herramienta tiene un PROPÓSITO y un TIPO, una salud, y un estado respecto a la membrana — PRIVADA o PROMOVIDA (en los procesos del bot). Una automatización promovida CORRE como un proceso real y PROPONE sus salidas: pero nunca llega sola a los usuarios — la herramienta es la mano, tu aprobación es la puerta.')}</p>
+      <p class="suggerimento">${L('capacità', 'capabilities', 'capacidades')}: <strong>${cap.length}</strong> · ${L('nei processi del bot', 'in the bot’s processes', 'en los procesos del bot')}: <strong>${promosse}</strong> · ${L('automazioni eseguite', 'automations run', 'automatizaciones ejecutadas')}: <strong>${(cp.automi && cp.automi.eseguite) || 0}</strong></p>
+      <ul class="membrana-lista" style="margin:6px 0;padding-left:18px">${cap.map(riga).join('')}</ul>
+      ${proposte.length ? `<details class="spazio-sopra" open><summary class="suggerimento" style="cursor:pointer">${L('Proposte dalle sue automazioni (le decidi tu)', 'Proposals from her automations (you decide)', 'Propuestas de sus automatizaciones (tú decides)')}</summary><ul class="membrana-lista" style="margin:6px 0;padding-left:18px">${proposte.map((p) => `<li class="suggerimento">→ <code>${esc(String(p.strumento || '').slice(0, 30))}</code>: ${esc(String(p.testo || '').slice(0, 120))}</li>`).join('')}</ul></details>` : ''}
+      <div class="vita-azioni">
+        <button class="btn secondario" id="btn-automa">${L('Fai girare un’automazione ora', 'Run an automation now', 'Ejecuta una automatización ahora')}</button>
+        <span id="capacita-esito" class="suggerimento"></span>
+      </div>` : '';
+  }
   // ── MEMBRANA (barriera di Weismann): germinale (sperimentale) ↔ soma (pubblico).
   //    Il confine a senso unico fra il laboratorio privato di Lia e ciò che il bot usa.
   let mm = null;
@@ -12100,6 +12129,7 @@ async function caricaVita() {
     ${sandboxOff ? notaSandbox : `
     <h3>${L('La sua mente (moduli che si è scritta da sé)', 'Her mind (modules she wrote herself)', 'Su mente (módulos que se escribió sola)')}</h3>${pre(d.mente)}
     ${blocoStrumenti}
+    ${blocoCapacita}
     <h3>${L('Il suo diario', 'Her diary', 'Su diario')}</h3>${pre(d.diario)}
     <details class="spazio-sopra"><summary class="suggerimento" style="cursor:pointer">${L('La sua stanza (i suoi file)', 'Her room (her files)', 'Su habitación (sus archivos)')}</summary>${pre(d.spazio)}</details>`}`;
   document.getElementById('btn-vita-refresh')?.addEventListener('click', () => conErrore(caricaVita));
@@ -12204,6 +12234,17 @@ async function caricaVita() {
           : L('Nessuna bozza da lavorare adesso.', 'No drafts to work right now.', 'Ningún borrador que trabajar ahora.'))
       : L('Non è riuscita a lavorarle — riprova.', "She couldn't work them — try again.", 'No pudo trabajarlos — reinténtalo.');
     setTimeout(caricaVita, 1200);
+  }));
+  // LE CAPACITÀ: fai girare ORA un'automazione promossa (→ una proposta per te)
+  document.getElementById('btn-automa')?.addEventListener('click', () => conErrore(async () => {
+    const e = document.getElementById('capacita-esito');
+    if (e) e.textContent = L('Faccio girare un\'automazione…', 'Running an automation…', 'Ejecutando una automatización…');
+    const r = await api('/api/admin/automa', { method: 'POST', body: {} });
+    const p = r && r.proposta ? r.proposta : null;
+    if (e) e.textContent = (r && r.ok && r.eseguita && p)
+      ? L('Proposta da ', 'Proposal from ', 'Propuesta de ') + `«${esc(String(p.strumento || ''))}»: ${esc(String(p.testo || '').slice(0, 120))}`
+      : ((r && r.ok) ? esc(String(r.motivo || L('Nessuna automazione promossa da far girare.', 'No promoted automation to run.', 'Ninguna automatización promovida.'))) : L('Non è riuscita — riprova.', "It didn't work — try again.", 'No funcionó — reinténtalo.'));
+    setTimeout(caricaVita, 1500);
   }));
   box.querySelectorAll('.prova-strumento').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
     const nome = b.getAttribute('data-nome');

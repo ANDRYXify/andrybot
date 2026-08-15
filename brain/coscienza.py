@@ -3133,6 +3133,43 @@ class Coscienza:
                 "scartate": int(st.get("scartate", 0)),
                 "azioni": (st.get("azioni") or [])[:8]}
 
+    # ================================== LE AUTOMAZIONI (i suoi strumenti nei processi del bot)
+    # Ciò che Lia crea non deve restare orfano: uno strumento di tipo 'automazione', quando
+    # attraversa la membrana (lo promuovi tu), può GIRARE come un vero processo del bot. Ma non
+    # agisce da solo sugli utenti: PRODUCE, a ogni giro, una PROPOSTA (un output candidato) che
+    # tu vedi e decidi se usare. La membrana regge: il suo strumento è la mano, la tua approvazione
+    # è il gate. È il primo, vero anello fra ciò che si costruisce e i processi del bot.
+    def _automi_stato(self):
+        try:
+            g = self._meta_get("automi")
+            d = json.loads(g) if g else {}
+            if not isinstance(d, dict):
+                d = {}
+        except Exception:
+            d = {}
+        d.setdefault("proposte", [])
+        d.setdefault("eseguite", 0)
+        return d
+
+    def registra_proposta_automa(self, strumento, output):
+        """Segna una PROPOSTA prodotta da uno strumento-automazione promosso: un output che
+        l'owner può vedere e usare (non arriva mai da solo agli utenti). Ritorna la proposta."""
+        st = self._automi_stato()
+        p = {"strumento": str(strumento or "")[:60], "testo": str(output or "").strip()[:280], "ts": _now()}
+        st["proposte"] = ([p] + (st.get("proposte") or []))[:12]
+        st["eseguite"] = int(st.get("eseguite", 0)) + 1
+        try:
+            self._meta_set("automi", json.dumps(st, ensure_ascii=False))
+        except Exception:
+            pass
+        return p
+
+    def stato_automi(self):
+        """Foto delle automazioni: le ultime proposte prodotte dai suoi strumenti-automazione
+        promossi, e quante ne ha eseguite in tutto."""
+        st = self._automi_stato()
+        return {"proposte": (st.get("proposte") or [])[:8], "eseguite": int(st.get("eseguite", 0))}
+
     # ============================================ SPECCHIO (l'altro che le resiste)
     # Il sé si affila contro un NON-SÉ che spinge indietro. Nel nostro sistema l'altro
     # c'è già: la sua sé PUBBLICA (il soma, prevedibile, fatta di solo distillato

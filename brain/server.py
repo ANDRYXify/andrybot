@@ -117,6 +117,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._mondo_stato_ep()
         if self.path.startswith("/integrazione"):
             return self._integrazione()
+        if self.path.startswith("/capacita"):
+            return self._capacita()
         if self.path.startswith("/strumenti"):
             return self._strumenti()
         if self.path.startswith("/vita"):
@@ -231,6 +233,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._gira()
         if self.path.startswith("/edifica"):
             return self._edifica()
+        if self.path.startswith("/automa"):
+            return self._automa()
         if self.path.startswith("/integra"):   # POST manuale (dopo /integrazione GET: nomi distinti)
             return self._integra()
         if self.path.startswith("/prova_strumento"):   # PRIMA di /prova (prefisso)
@@ -550,6 +554,54 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(200, {"ok": True, "sognato": False,
                                         "motivo": "troppo pochi ricordi attivi per sognare"})
             return self._json(200, {"ok": True, "sognato": True, "sogno": s})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
+    def _capacita(self):
+        # LE SUE CAPACITÀ: la gestione unificata di TUTTO ciò che Lia crea. Unisce il registro
+        # (ambiente) con i nodi (coscienza): per ogni strumento — scopo, TIPO (automazione/
+        # trasformazione/analisi/conversazione), salute, se è PRIVATO o PROMOSSO (nei processi
+        # del bot), quanto è usato. Più le proposte prodotte dalle automazioni. Owner-only.
+        try:
+            if not AMB.disponibile():
+                return self._json(200, {"ok": True, "attiva": False, "capacita": [], "automi": {}})
+            tools = AMB.elenco_strumenti()
+            cap = []
+            for t in tools:
+                nome = str(t.get("nome") or "")
+                if not nome:
+                    continue
+                nodo = mente.modulo("strumento: " + nome) or {}
+                scope = nodo.get("scope", "sperimentale")
+                cap.append({
+                    "nome": nome,
+                    "scopo": t.get("descrizione", ""),
+                    "tipo": t.get("tipo") or _tipo_strumento(t.get("descrizione", "") + " " + nome),
+                    "salute": bool(nodo) and nodo.get("stato") == "attivo",
+                    "promossa": (scope == "pubblico"),
+                    "usi": int(nodo.get("usi", 0) or 0),
+                    "successi": int(nodo.get("successi", 0) or 0),
+                    "fallimenti": int(nodo.get("fallimenti", 0) or 0),
+                    "esito": str(t.get("esito", ""))[:80],
+                })
+            # ordina: prima le promosse (nei processi del bot), poi per uso
+            cap.sort(key=lambda c: (not c["promossa"], -c["usi"]))
+            try:
+                automi = mente.stato_automi()
+            except Exception:
+                automi = {"proposte": [], "eseguite": 0}
+            return self._json(200, {"ok": True, "attiva": True, "capacita": cap, "automi": automi})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
+    def _automa(self):
+        # fa girare ORA un'automazione PROMOSSA (trigger manuale owner) e ne salva la proposta.
+        try:
+            r = _vita_automi(forza=True)
+            if not r:
+                return self._json(200, {"ok": True, "eseguita": False,
+                                        "motivo": "nessuna automazione promossa da far girare (creane una e promuovila)"})
+            return self._json(200, {"ok": True, "eseguita": True, "proposta": r})
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
@@ -1121,6 +1173,8 @@ MONDO_OGNI = int(os.environ.get("BRAIN_MONDO_SEC", "300"))
 STRUM_VITA_OGNI = int(os.environ.get("LIA_STRUM_VITA_OGNI", "3"))
 # COSTRUIRE IL MONDO: ogni ~N giri erige una costruzione dove il luogo lo permette.
 COSTRUISCI_OGNI = int(os.environ.get("LIA_COSTRUISCI_OGNI", "2"))
+# LE AUTOMAZIONI: ogni ~N giri fa girare un'automazione promossa (→ proposta per l'owner).
+AUTOMI_OGNI = int(os.environ.get("LIA_AUTOMI_OGNI", "2"))
 
 
 def _vita_strumenti():
@@ -1154,6 +1208,47 @@ def _vita_strumenti():
 
 
 _vita_strumenti._i = 0
+
+
+def _vita_automi(forza=False):
+    """LE AUTOMAZIONI nei processi del bot: fa girare uno strumento di tipo 'automazione' che
+    ABBIA ATTRAVERSATO LA MEMBRANA (nodo promosso a pubblico), gli passa un piccolo contesto, e
+    salva il suo output come PROPOSTA che l'owner vede e decide se usare. Non tocca gli utenti da
+    solo: lo strumento è la mano, la promozione+approvazione è il gate. Ritorna la proposta o None."""
+    try:
+        if not AMB.disponibile():
+            return None
+        tools = AMB.elenco_strumenti()
+        promosse = []
+        for t in tools:
+            nome = str(t.get("nome") or "")
+            if not nome:
+                continue
+            tipo = t.get("tipo") or _tipo_strumento(t.get("descrizione", "") + " " + nome)
+            if tipo != "automazione":
+                continue
+            nodo = mente.modulo("strumento: " + nome) or {}
+            if nodo.get("scope") == "pubblico":   # solo le automazioni PROMOSSE girano
+                promosse.append(t)
+        if not promosse:
+            return None
+        t = promosse[_vita_automi._i % len(promosse)]
+        _vita_automi._i += 1
+        nome = str(t.get("nome") or "")
+        ctx = time.strftime("%Y-%m-%d %H:%M")   # un piccolo contesto (l'ora), lo strumento decide
+        r = AMB.prova_strumento(nome, ctx)
+        if r and r.get("ok") and (r.get("output") or "").strip():
+            p = mente.registra_proposta_automa(nome, r["output"])
+            if forza:
+                print(f"[brain] automazione «{nome}» → proposta prodotta", flush=True)
+            return p
+        return None
+    except Exception as e:
+        print(f"[brain] automazione errore: {e}", flush=True)
+        return None
+
+
+_vita_automi._i = 0
 
 
 def _ciclo_mondo():
@@ -1214,6 +1309,10 @@ def _ciclo_mondo():
                 _ciclo_mondo._scont += 1
                 if _ciclo_mondo._scont % max(1, STRUM_VITA_OGNI) == 0:
                     _vita_strumenti()
+                # LE AUTOMAZIONI: fa girare un'automazione promossa → una proposta per l'owner.
+                _ciclo_mondo._acont += 1
+                if _ciclo_mondo._acont % max(1, AUTOMI_OGNI) == 0:
+                    _vita_automi()
         except Exception as e:
             print(f"[brain] mondo errore: {e}", flush=True)
         time.sleep(MONDO_OGNI)
@@ -1221,6 +1320,24 @@ def _ciclo_mondo():
 
 _ciclo_mondo._scont = 0
 _ciclo_mondo._ccont = 0
+_ciclo_mondo._acont = 0
+
+
+def _tipo_strumento(descr):
+    """Classifica lo SCOPO di uno strumento — così Lia sa CHE COS'È ciò che crea e come
+    gestirlo. 'automazione' (un processo ripetibile, candidato a entrare nei processi del bot),
+    'trasformazione', 'analisi', o 'conversazione' (aiuta a rispondere in chat)."""
+    d = (descr or "").lower()
+    if any(k in d for k in ("ogni ", "periodic", "automat", "ripeti", "schedul", "promemoria",
+                            "annuncio", "annunci", "ricorda ", "a intervalli", "ciclic", "routine")):
+        return "automazione"
+    if any(k in d for k in ("trasform", "converti", "convert", "formatt", "tradu", "riscriv",
+                            "cambia", "sostitu", "genera ")):
+        return "trasformazione"
+    if any(k in d for k in ("conta", "analizz", "calcol", "misura", "statist", "verifica",
+                            "controll", "estrai", "cerca")):
+        return "analisi"
+    return "conversazione"
 
 
 def _forse_strumento(nome):
@@ -1265,9 +1382,12 @@ def _forse_strumento(nome):
             print(f"[brain] strumento «{prop['nome']}» scartato (non funziona).", flush=True)
             return {"ok": False, "nome": prop["nome"]}
         out = (prova.get("output") or "")[:120]
+        tipo = _tipo_strumento(prop.get("descrizione", "") + " " + prop.get("nome", ""))
         AMB.aggiungi_strumento({"nome": prop["nome"], "descrizione": prop.get("descrizione", ""),
-                                "prova": prop.get("prova", ""), "esito": out, "quando": int(time.time())})
-        # nodo-capacità: SPERIMENTALE, dietro la membrana (si guadagnerà il pubblico).
+                                "tipo": tipo, "prova": prop.get("prova", ""), "esito": out,
+                                "quando": int(time.time())})
+        # nodo-capacità: SPERIMENTALE, dietro la membrana (si guadagnerà il pubblico). Il TIPO
+        # nelle chiavi così Lia SA cos'è ciò che ha creato (e come gestirlo).
         try:
             parole = [w for w in (prop["nome"] + " " + prop.get("descrizione", "")).lower()
                       .replace(",", " ").split() if len(w) >= 3][:8]
@@ -1277,7 +1397,7 @@ def _forse_strumento(nome):
                 "situazione": "Quando serve " + (prop.get("descrizione") or prop["nome"]) + ".",
                 "come_rispondere": "Uso il mio strumento «" + prop["nome"] + "» — l'ho costruito io nel mio computer.",
                 "esempi": ["prova: " + prop.get("prova", "") + " → " + out],
-                "chiavi": parole, "fonte": "strumento", "qualita": 0.55,
+                "chiavi": (["tipo:" + tipo] + parole)[:9], "fonte": "strumento", "qualita": 0.55,
                 "stato": "attivo", "scope": "sperimentale",
             })
         except Exception:
