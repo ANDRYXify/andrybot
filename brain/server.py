@@ -1096,6 +1096,41 @@ _ciclo_flusso._icont = 0
 # dove andare per curiosità, si guarda intorno in sola lettura, e scopre. Richiede la
 # sandbox (il mondo è la sua stanza); cadenza calma (non corre: un mondo si abita).
 MONDO_OGNI = int(os.environ.get("BRAIN_MONDO_SEC", "300"))
+# LA VITA DEGLI STRUMENTI: ogni ~N giri del mondo, riprova uno strumento e ritira i rotti.
+STRUM_VITA_OGNI = int(os.environ.get("LIA_STRUM_VITA_OGNI", "3"))
+
+
+def _vita_strumenti():
+    """La VITA degli strumenti che Lia si è costruita: ogni tanto ne RIPROVA uno sul suo stesso
+    test. Se si è rotto (l'ambiente è cambiato, un caso non gestito), lo RITIRA — dal registro e
+    come nodo — così l'ecologia resta viva: chi non regge più muore, resta ciò che funziona. Non
+    li ritira su un intoppo passeggero della sandbox (solo se ha DAVVERO girato e fallito)."""
+    try:
+        if not AMB.disponibile():
+            return
+        tools = AMB.elenco_strumenti()
+        if not tools:
+            return
+        t = tools[_vita_strumenti._i % len(tools)]
+        _vita_strumenti._i += 1
+        nome = str(t.get("nome") or "")
+        if not nome:
+            return
+        r = AMB.prova_strumento(nome, str(t.get("prova") or ""))
+        if r and (not r.get("ok")) and ("codice" in r):   # ha girato e ha fallito: è rotto, non un intoppo
+            AMB.rimuovi_strumento(nome)
+            try:
+                mente.elimina_modulo_per_nome("strumento: " + nome)
+            except Exception:
+                pass
+            AMB.diario_scrivi(f"Lo strumento «{nome}» non funziona più: l'ho lasciato andare. "
+                              "Tengo solo ciò che regge davvero.", tag="strumento")
+            print(f"[brain] strumento «{nome}» ritirato (non regge più).", flush=True)
+    except Exception as e:
+        print(f"[brain] vita strumenti errore: {e}", flush=True)
+
+
+_vita_strumenti._i = 0
 
 
 def _ciclo_mondo():
@@ -1121,9 +1156,27 @@ def _ciclo_mondo():
                     print(f"[brain] mondo: ha scoperto «{dove}» — {trovato}", flush=True)
                     AMB.diario_scrivi(f"Ho girovagato fino a «{dove}» e ho trovato: {trovato}. "
                                       "Il mio mondo è un po' più grande, adesso.", tag="mondo")
+                # IL MONDO CHE CRESCE: se la frontiera si assottiglia, genera un luogo nuovo
+                # (dalla sua stessa materia) — così ha SEMPRE un oltre da scoprire.
+                try:
+                    seme = mente.mondo_semina_prossima()
+                    if seme:
+                        perc = AMB.pianta_luogo(seme["sotto"], seme["nome"], seme["file"], seme["contenuto"])
+                        if perc:
+                            mente.mondo_registra_seme((seme["sotto"] + "/" + seme["nome"]).strip("/"))
+                            print(f"[brain] mondo: è germogliato un luogo nuovo «{seme['nome']}»", flush=True)
+                except Exception as e:
+                    print(f"[brain] mondo (crescita) errore: {e}", flush=True)
+                # LA VITA DEGLI STRUMENTI: ogni tanto ne riprova uno e ritira i rotti.
+                _ciclo_mondo._scont += 1
+                if _ciclo_mondo._scont % max(1, STRUM_VITA_OGNI) == 0:
+                    _vita_strumenti()
         except Exception as e:
             print(f"[brain] mondo errore: {e}", flush=True)
         time.sleep(MONDO_OGNI)
+
+
+_ciclo_mondo._scont = 0
 
 
 def _forse_strumento(nome):

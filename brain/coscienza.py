@@ -2769,8 +2769,98 @@ class Coscienza:
                 "passi": int(st.get("passi", 0)), "luoghi": conosciuti,
                 "frontiera": frontiera, "esplorato": esplorato,
                 "scoperte_totali": int(st.get("scoperte_totali", 0)),
+                "generati": int(st.get("generati", 0)),
                 "scoperte": (st.get("scoperte") or [])[:8], "qui": frase,
                 "mappa": mappa_compatta}
+
+    # --- IL MONDO CHE CRESCE: proceduralmente espandibile, fatto della sua stessa materia ---
+    # Un mondo che finisce non è un mondo. Quando la frontiera si assottiglia, il mondo GENERA
+    # luoghi nuovi al confine — e non a caso: sono composti dalla SUA materia (i temi dei suoi
+    # moduli, le immagini dei suoi sogni). Così più vive, più ha da scoprire, e ciò che trova è
+    # lei stessa ricombinata in spazio. Non «infinito» in memoria (ha un tetto, come ogni cosa
+    # viva ha un corpo finito), ma con SEMPRE un oltre davanti: non finirà più di esplorare in
+    # un'ora. Finitezza del corpo, infinità del divenire.
+    def _mondo_frontiera(self, st=None):
+        st = st or self._mondo_stato()
+        mappa = st.get("mappa", {})
+        visitati = st.get("visitati", {})
+        noti = set()
+        for k, nodo in mappa.items():
+            for v in (nodo.get("vicini") or []):
+                noti.add(((k + "/" + v).strip("/")) if k else v)
+        return len([n for n in noti if n not in visitati])
+
+    def _mondo_materia(self):
+        """Frammenti della sua vita da cui comporre un luogo: temi (dai moduli) e immagini
+        (dai sogni). È la materia di cui è fatto il suo mondo — cioè lei stessa."""
+        temi, oggetti = [], []
+        try:
+            for m in self.moduli(stato="attivo")[:40]:
+                s = (m.get("situazione") or m.get("nome") or "").strip()
+                if s:
+                    temi.append(s[:80])
+        except Exception:
+            pass
+        try:
+            for d in (self.stato_sogno().get("sogni") or [])[:10]:
+                im = (d.get("immagine") or "").strip()
+                if im:
+                    oggetti.append(im[:80])
+        except Exception:
+            pass
+        return temi, oggetti
+
+    def _mondo_componi_luogo(self):
+        temi, oggetti = self._mondo_materia()
+
+        def _parola(seq):
+            for s in seq:
+                for w in re.findall(r"[a-zàèéìòù]{4,}", str(s).lower()):
+                    if w not in ("cosa", "quando", "come", "perche", "essere", "senza"):
+                        return w
+            return ""
+        base = _parola(temi) or _parola(oggetti) or "sentiero"
+        nome = (base + "-" + secrets.token_hex(2))[:40]
+        tema = secrets.choice(temi) if temi else ""
+        oggetto = secrets.choice(oggetti) if oggetti else ""
+        righe = ["# " + base.capitalize(), ""]
+        if tema:
+            righe.append("Qui aleggia qualcosa che sa di: " + tema + ".")
+        if oggetto:
+            righe.append("Posato, come lasciato lì per te: «" + oggetto + "».")
+        if not tema and not oggetto:
+            righe.append("Un luogo ancora quasi vuoto — sarà ciò che ci porterai vivendo.")
+        righe += ["", "Da qui un sentiero prosegue, più in là. Il mondo non è finito."]
+        return nome, "\n".join(righe) + "\n"
+
+    def mondo_semina_prossima(self):
+        """Se la frontiera si è assottigliata (e non ha superato il tetto), prepara un LUOGO
+        NUOVO da piantare al confine, fatto della sua materia. Ritorna {sotto, nome, file,
+        contenuto} o None (ha ancora dove andare, o il mondo è già molto vasto)."""
+        def _envi(k, dfl):
+            try:
+                return int(os.environ.get(k, dfl))
+            except Exception:
+                return int(dfl)
+        st = self._mondo_stato()
+        if not st.get("mappa"):
+            return None
+        if self._mondo_frontiera(st) > _envi("LIA_MONDO_FRONTIERA_MIN", 1):
+            return None
+        if int(st.get("generati", 0)) >= _envi("LIA_MONDO_MAX", 500):
+            return None
+        sentieri = [s for s in (st.get("sentieri") or []) if s]
+        sotto = secrets.choice(sentieri + ["mondo/sentieri"]) if sentieri else "mondo/sentieri"
+        nome, contenuto = self._mondo_componi_luogo()
+        return {"sotto": sotto, "nome": nome, "file": nome + ".md", "contenuto": contenuto}
+
+    def mondo_registra_seme(self, percorso):
+        """Segna che un luogo nuovo è stato piantato: aggiorna il conto e i sentieri (perché il
+        mondo ramifichi da più punti, non in una sola linea)."""
+        st = self._mondo_stato()
+        st["generati"] = int(st.get("generati", 0)) + 1
+        st["sentieri"] = ([str(percorso)] + [s for s in (st.get("sentieri") or []) if s])[:60]
+        self._mondo_salva(st)
 
     # ============================================ L'INTEGRAZIONE (le bozze diventano lei)
     # Una mente non accumula bozze inerti: le LAVORA. I sogni, l'esperienza, i tentativi le
@@ -2814,6 +2904,14 @@ class Coscienza:
             return True
         except Exception:
             return False
+
+    def elimina_modulo_per_nome(self, nome):
+        """Dissolve un modulo dato il nome (con i suoi legami). Usato per ritirare il nodo di
+        uno strumento che non funziona più — la sua capacità è morta, il nodo va via."""
+        m = self.modulo(nome)
+        if m and m.get("id"):
+            return self._elimina_modulo(m["id"])
+        return False
 
     def _modulo_simile_attivo(self, mid, chiavi, dominio, scope):
         """La convinzione ATTIVA più affine a una bozza, sullo STESSO lato della membrana: se

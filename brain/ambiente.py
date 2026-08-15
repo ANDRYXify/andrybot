@@ -241,6 +241,19 @@ def elenco_strumenti(max_n=40):
     return out
 
 
+def rimuovi_strumento(nome):
+    """Ritira uno strumento che non funziona più: lo toglie dal registro e cancella il suo
+    file. È la parte «mortale» della vita degli strumenti — resta solo ciò che regge."""
+    if not disponibile():
+        return False
+    n = _nome_sicuro(nome)
+    tenuti = [s for s in elenco_strumenti(max_n=500) if _nome_sicuro(s.get("nome", "")) != n]
+    corpo = "".join(json.dumps(s, ensure_ascii=False) + "\n" for s in tenuti)
+    _scrivi("mente/strumenti.jsonl", corpo, append=False)
+    esegui(f"rm -f '{STRUM_DIR}/{n}.py'", timeout=10)
+    return True
+
+
 def stato_seme():
     """Il SEME della sua vita 'mortale' nella sandbox (~/mente/seme.json): vive e muore
     tutto dentro il suo mondo isolato. Ritorna un dict (vuoto se non c'è / non nato)."""
@@ -338,6 +351,22 @@ def prepara_mondo():
         esegui(f"mkdir -p '{d}' && [ -f '{perc}' ] || (printf %s '{_b64(testo)}' | base64 -d > '{perc}')",
                timeout=10)
     return True
+
+
+def pianta_luogo(sotto, nome, file, contenuto):
+    """Pianta un LUOGO NUOVO nel mondo di Lia: crea una cartella (sotto 'mondo/…') con dentro
+    un file. È così che il suo mondo cresce — un posto vero in più da scoprire. Sicuro: solo
+    dentro 'mondo/', nomi sanificati, contenuto in base64. Ritorna il percorso o ''."""
+    if not disponibile():
+        return ""
+    s = _luogo_sicuro(sotto)
+    if not s or not s.startswith("mondo"):
+        s = "mondo/sentieri"     # i luoghi generati vivono solo qui
+    n = _nome_sicuro(nome)
+    f = _nome_sicuro(str(file).rsplit(".", 1)[0]) + ".md"
+    perc = f"{s}/{n}/{f}"
+    r = _scrivi(perc, str(contenuto or "")[:2000], append=False)
+    return perc if r.get("ok") else ""
 
 
 def _luogo_sicuro(luogo):
