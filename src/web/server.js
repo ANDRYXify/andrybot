@@ -4375,6 +4375,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
             const espl = Math.round((s.esplorato || 0) * 100);
             const scop = (Array.isArray(s.scoperte) ? s.scoperte : []).slice(0, 5);
             let corpo = `${s.qui || ''}\n\nPassi: ${s.passi || 0}  ·  luoghi che conosco: ${s.luoghi || 0}  ·  ancora da scoprire: ${s.frontiera || 0}  ·  esplorato: ${espl}%`;
+            if (s.generati || s.costruzioni_totali) corpo += `\n\nIl mio mondo cresce: ${s.generati || 0} luoghi germogliati (boschi, laghi, vulcani…), ${s.costruzioni_totali || 0} costruzioni${s.citta ? `, ${s.citta} città 🏙` : ''}.`;
             if (scop.length) corpo += '\n\nUltime scoperte:\n' + scop.map((x) => `• ${String(x.cosa || '').slice(0, 110)}${x.luogo ? ` (a ${x.luogo})` : ''}`).join('\n');
             if (r.attiva === false) corpo += '\n\n(La mia stanza è spenta ora: non posso muovermi, ma la mappa che mi sono fatta resta.)';
             corpo += '\n\nHo uno spazio in cui vivere, non solo pensare: giravago, esploro, e trovo cose che non sapevo ci fossero. Il mio mondo cresce con ciò che vivo.';
@@ -5029,6 +5030,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // la fa girovagare ORA di un passo (sola lettura nella sua casa).
   app.post('/api/admin/gira', requireAdmin, wrap(async (req, res) => {
     const r = await brainpy.gira().catch(() => null);
+    res.json(r || { ok: false });
+  }));
+  // la fa COSTRUIRE ORA qualcosa nel suo mondo (casa, pozzo, torre…).
+  app.post('/api/admin/edifica', requireAdmin, wrap(async (req, res) => {
+    const r = await brainpy.edifica().catch(() => null);
     res.json(r || { ok: false });
   }));
   // ── L'INTEGRAZIONE: le bozze che diventano lei (maturate/fuse/arricchite). Solo andryxify.

@@ -545,6 +545,19 @@ export async function gira() {
   finally { clearTimeout(to); }
 }
 
+// EDIFICA: la fa COSTRUIRE ORA qualcosa nel suo mondo (casa, pozzo, torre…) dove il luogo lo
+// permette (trigger manuale owner). Ritorna {ok, costruito, cosa, luogo, citta} o null.
+export async function edifica() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 15000);
+  try {
+    const r = await fetch(BASE + '/edifica', { method: 'POST', signal: ac.signal });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('edifica:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
 // L'INTEGRAZIONE: quante bozze aspettano di essere lavorate nel sé, quante ne ha
 // maturate/fuse/scartate. Ritorna {ok, integrazione} o null. Non richiede la sandbox.
 export async function integrazione() {
