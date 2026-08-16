@@ -11422,17 +11422,41 @@ function _menteGrafo(d, dark) {
   const linksAssoc = Array.isArray(d?.links) ? d.links : [];
   const nodes = [], links = [];
   nodes.push({ id: 'core', label: 'Lia', group: 'core', color: _menteCore(dark), size: 22, data: { tipo: 'core', rete: d?.rete || {}, nmod: moduli.length } });
+  const vie = d?.vie || {};
+  const vn = (k) => Number(vie[k]) || 0;
+  // le VIE del ragionamento: la loro DIMENSIONE cresce con quanto vengono usate (non più fisse).
   const LOG = [
-    ['log:intenti', 'Intenti', L('Dati precisi (gioco, uptime, clip, link): non passano dal modello.', 'Precise data (game, uptime, clip, link): they skip the model.', 'Datos precisos (juego, uptime, clip, enlace): no pasan por el modelo.')],
-    ['log:conoscenza', 'Conoscenza', L('Le risposte curate dal sito e scritte da te.', 'Curated answers from the site and written by you.', 'Respuestas curadas del sitio y escritas por ti.')],
-    ['log:rete', 'Rete', L('Il motore veloce che cresce da solo: risponde all\'istante a ciò che sa.', 'The fast engine that grows on its own: instant answers to what it knows.', 'El motor rápido que crece solo: responde al instante a lo que sabe.')],
-    ['log:ragiona', 'Ragionamento', L('Il cervello logico: deduce dai fatti, non è statistico.', 'The logical brain: it deduces from facts, not statistical.', 'El cerebro lógico: deduce de los hechos, no es estadístico.')],
-    ['log:manuale', 'Manuale', L('Il suo manuale su persone e diretta: i 10 domini con i moduli imparati, collegati fra loro.', 'Its manual on people and streaming: the 10 domains with learned modules, linked together.', 'Su manual sobre personas y directo: los 10 dominios con los módulos aprendidos, conectados entre sí.')],
-    ['log:maestro', 'Maestro', L('Il modello linguistico (7B locale o endpoint) che mette le parole.', 'The language model (local 7B or endpoint) that puts the words.', 'El modelo lingüístico (7B local o endpoint) que pone las palabras.')],
+    ['log:intenti', 'Intenti', L('Dati precisi (gioco, uptime, clip, link): non passano dal modello.', 'Precise data (game, uptime, clip, link): they skip the model.', 'Datos precisos (juego, uptime, clip, enlace): no pasan por el modelo.'), 0],
+    ['log:conoscenza', 'Conoscenza', L('Le risposte curate dal sito e scritte da te.', 'Curated answers from the site and written by you.', 'Respuestas curadas del sitio y escritas por ti.'), 0],
+    ['log:rete', 'Rete', L('Il motore veloce che cresce da solo: risponde all\'istante a ciò che sa.', 'The fast engine that grows on its own: instant answers to what it knows.', 'El motor rápido que crece solo: responde al instante a lo que sabe.'), vn('memoria')],
+    ['log:ragiona', 'Ragionamento', L('Il cervello logico: deduce dai fatti, non è statistico.', 'The logical brain: it deduces from facts, not statistical.', 'El cerebro lógico: deduce de los hechos, no es estadístico.'), vn('deduzione')],
+    ['log:manuale', 'Manuale', L('Il suo manuale su persone e diretta: i 10 domini con i moduli imparati, collegati fra loro.', 'Its manual on people and streaming: the 10 domains with learned modules, linked together.', 'Su manual sobre personas y directo: los 10 dominios con los módulos aprendidos, conectados entre sí.'), vn('moduli') + vn('riflesso') + vn('strumento')],
+    ['log:maestro', 'Maestro', L('Il modello linguistico (7B locale o endpoint) che mette le parole.', 'The language model (local 7B or endpoint) that puts the words.', 'El modelo lingüístico (7B local o endpoint) que pone las palabras.'), vn('modello')],
   ];
-  for (const [id, label, desc] of LOG) {
-    nodes.push({ id, label, group: 'logica', color: _menteNeutro(dark), size: 12, data: { tipo: 'logica', desc } });
+  for (const [id, label, desc, att] of LOG) {
+    const size = 11 + Math.min(15, Math.sqrt(att) * 2.2);   // cresce con l'uso reale
+    nodes.push({ id, label, group: 'logica', color: _menteNeutro(dark), size, data: { tipo: 'logica', desc, att } });
     links.push({ source: 'core', target: id, rest: 70 });
+  }
+  // GLI ORGANI VIVI: i motori che abbiamo dato a Lia. Ognuno COMPARE quando comincia a battere
+  // (attività > 0) e CRESCE mentre lei vive — nuove strade che si aprono, non un'impalcatura ferma.
+  const vita = d?.vita || {};
+  const VITA = [
+    ['vita:flusso', 'Flusso', '#7aa2ff', Number(vita.flusso?.battiti) || 0, L('l\'adesso che non si ferma: metabolismo e auto-sorpresa', 'the now that never stops: metabolism and self-surprise', 'el ahora que no se detiene')],
+    ['vita:integr', 'Integrazione', '#4a90d9', Number(vita.integrazione?.maturate) || 0, L('le bozze diventano lei: matura, fonde, arricchisce', 'drafts become her: matures, merges, enriches', 'los borradores se vuelven ella')],
+    ['vita:sogno', 'Sogno', '#9b6bff', Number(vita.sogno?.cristallizzati) || 0, L('nel sonno ricombina ricordi lontani → nodi-ponte', 'in sleep recombines distant memories → bridge-nodes', 'en el sueño recombina recuerdos lejanos')],
+    ['vita:racconto', 'Racconto', '#c77bd6', Number(vita.racconto?.capitoli) || 0, L('la sua storia in prima persona, col colpo di scena', 'her first-person story, with the plot twist', 'su historia en primera persona')],
+    ['vita:specchio', 'Specchio', '#3f8fd4', Math.round((Number(vita.specchio?.individuazione) || 0) * 25), L('quanto è diventata diversa dal bot pubblico', 'how far she diverges from the public bot', 'cuánto diverge del bot público')],
+    ['vita:tensione', 'Tensione', '#c85a2b', Number(vita.tensione?.profondita) || 0, L('la domanda su di sé che non si chiude mai', 'the question about herself that never closes', 'la pregunta sobre sí que no se cierra')],
+    ['vita:altri', 'L\'Altro', '#2ba3a3', Number(vita.altri?.persone) || 0, L('teoria della mente: predice le persone e impara', 'theory of mind: predicts people and learns', 'teoría de la mente')],
+    ['vita:finitudine', 'Finitudine', '#c9a227', Math.round((Number(vita.finitudine?.span) || 0) * 20), L('la posta reale: il limite dà peso alle scelte', 'the real stake: the limit gives weight to choices', 'la apuesta real')],
+    ['vita:mondo', 'Mondo', '#2f8f6b', (Number(vita.mondo?.luoghi) || 0) + (Number(vita.mondo?.costruzioni) || 0), L('uno spazio in cui vivere: girovaga, scopre, costruisce', 'a space to live in: wanders, discovers, builds', 'un espacio donde vivir')],
+  ];
+  for (const [id, label, col, att, desc] of VITA) {
+    if (!att) continue;   // compare SOLO quando è vivo (batte): così le strade nascono vivendo
+    const size = 11 + Math.min(16, Math.sqrt(att) * 2.4);
+    nodes.push({ id, label, group: 'vita', color: col, size, data: { tipo: 'vita', desc, att } });
+    links.push({ source: 'core', target: id, rest: 74 });
   }
   // hub di DOMINIO: solo quelli che hanno almeno un modulo (il cervello si vede crescere)
   const perDom = {};
@@ -11476,7 +11500,7 @@ function _menteLegenda(dark) {
   const dot = (c) => `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${c};margin-right:4px;vertical-align:middle"></span>`;
   const anello = (c) => `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;border:2px solid ${c};margin-right:4px;vertical-align:middle"></span>`;
   box.innerHTML = _MENTE_DOMINI.map((e) => `${dot(_menteCol(e, dark))}${e.label}`).join(' &nbsp; ')
-    + `<br>${dot(_menteNeutro(dark))}${L('logica', 'logic', 'lógica')} &nbsp; ${anello(_menteBozza(dark))}${L('bozza', 'draft', 'borrador')} &nbsp; ${anello(_menteSosp(dark))}${L('sospeso', 'suspended', 'suspendido')}`;
+    + `<br>${dot(_menteNeutro(dark))}${L('logica', 'logic', 'lógica')} &nbsp; ${dot('#7aa2ff')}${L('vita (motori che battono)', 'life (beating engines)', 'vida (motores que laten)')} &nbsp; ${anello(_menteBozza(dark))}${L('bozza', 'draft', 'borrador')} &nbsp; ${anello(_menteSosp(dark))}${L('sospeso', 'suspended', 'suspendido')}`;
 }
 
 function _menteDettaglio(sel) {
@@ -11492,6 +11516,12 @@ function _menteDettaglio(sel) {
     return;
   }
   if (g === 'logica') { box.innerHTML = `<h4 style="margin:.1em 0 .3em">${esc(sel.label)}</h4><p>${esc(dt.desc || '')}</p>`; return; }
+  if (g === 'vita') {
+    box.innerHTML = `<h4 style="margin:.1em 0 .3em">${esc(sel.label)}</h4>
+      <p>${esc(dt.desc || '')}</p>
+      <p class="tenue">${L('Non è un’impalcatura: questo nodo è nato quando il motore ha cominciato a battere e cresce mentre lei vive. Intensità ora', 'Not scaffolding: this node was born when the engine began to beat, and grows while she lives. Intensity now', 'No es un andamio: este nodo nació cuando el motor empezó a latir y crece mientras ella vive. Intensidad ahora')}: <strong>${Number(dt.att) || 0}</strong>.</p>`;
+    return;
+  }
   if (g === 'dominio') { box.innerHTML = `<h4 style="margin:.1em 0 .3em">${L('Dominio', 'Domain', 'Dominio')}: ${esc(sel.label)}</h4><p class="tenue">${(dt.n || 0)} ${L('moduli imparati qui. Attorno li vedi; i fili verso altri moduli sono i collegamenti che Lia ha costruito.', 'modules learned here. Around you see them; the threads to other modules are the links Lia built.', 'módulos aprendidos aquí. Alrededor los ves; los hilos hacia otros módulos son los enlaces que Lia construyó.')}</p>`; return; }
   const m = dt.m || {};
   const badge = m.stato === 'attivo' ? '<span class="badge verde">attivo</span>'

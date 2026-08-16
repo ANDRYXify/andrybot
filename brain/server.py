@@ -95,6 +95,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._links()
         if self.path.startswith("/vie"):
             return self._vie()
+        if self.path.startswith("/pulsazioni"):
+            return self._pulsazioni()
         if self.path.startswith("/membrana"):
             return self._membrana()
         if self.path.startswith("/scintilla"):
@@ -168,6 +170,14 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, {"vie": mente.vie()})
         except Exception as e:
             return self._json(200, {"vie": {}, "errore": str(e)[:120]})
+
+    def _pulsazioni(self):
+        # le PULSAZIONI degli organi vivi (numeri compatti) per il grafo della mente: nodi che
+        # crescono mentre lei vive. Solo aggregati, nessun contenuto privato.
+        try:
+            return self._json(200, {"pulsazioni": mente.pulsazioni()})
+        except Exception as e:
+            return self._json(200, {"pulsazioni": {}, "errore": str(e)[:120]})
 
     def _corpus(self):
         # il dataset della sua mente (coppie domanda→risposta consolidate)

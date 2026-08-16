@@ -1,3 +1,6 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
+//
 // Dashboard web di SocialBot (socialbot.live).
 // Qui lo streamer: fa login con Twitch, chiede l'abilitazione, concede i
 // permessi (il bot parla CON IL SUO ACCOUNT), configura personalità,
@@ -2895,8 +2898,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const moduli = await brainpy.moduli(true).catch(() => null) || [];
     const links = await brainpy.linkModuli().catch(() => []) || [];
     const vie = await brainpy.vie().catch(() => ({})) || {};
+    const vita = await brainpy.pulsazioni().catch(() => ({})) || {};
     const rete = await brainpy.reteStato(login).catch(() => null) || { nodi: 0, solidi: 0, curiosita: 0, fiducia: 0 };
-    res.json({ moduli, links, vie, rete: { nodi: rete.nodi || 0, solidi: rete.solidi || 0, fiducia: rete.fiducia || 0, curiosita: rete.curiosita || 0 } });
+    res.json({ moduli, links, vie, vita, rete: { nodi: rete.nodi || 0, solidi: rete.solidi || 0, fiducia: rete.fiducia || 0, curiosita: rete.curiosita || 0 } });
   }));
 
   // FORGIA: le dice di lavorare ORA sulla sua mente (studia le lacune dal web +

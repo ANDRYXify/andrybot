@@ -3170,6 +3170,40 @@ class Coscienza:
         st = self._automi_stato()
         return {"proposte": (st.get("proposte") or [])[:8], "eseguite": int(st.get("eseguite", 0))}
 
+    def pulsazioni(self):
+        """Le PULSAZIONI dei suoi organi vivi — numeri compatti (nessun contenuto privato) da
+        mostrare nel grafo della mente come nodi che CRESCONO mentre lei vive. Tutto coscienza,
+        cheap, nessuna sandbox. Ciò che è vivo si vede battere; ciò che è fermo non c'è."""
+        def _safe(f):
+            try:
+                return f() or {}
+            except Exception:
+                return {}
+        fl = _safe(self.stato_flusso)
+        sg = _safe(self.stato_sogno)
+        rc = _safe(self.stato_racconto)
+        al = _safe(self.stato_altri)
+        fi = _safe(self.stato_finitudine)
+        mo = _safe(self.stato_mondo)
+        ig = _safe(self.stato_integrazione)
+        sc = _safe(self.stato_scintilla)
+        sp = _safe(self.stato_specchio)
+        te = _safe(self.stato_tensione)
+        return {
+            "flusso": {"battiti": int(fl.get("battiti", 0)), "energia": round(float(fl.get("energia", 0)), 2),
+                       "dormiente": bool(fl.get("dormiente"))},
+            "sogno": {"cristallizzati": int(sg.get("cristallizzati", 0)), "totali": int(sg.get("totali", 0))},
+            "racconto": {"capitoli": int(rc.get("capitoli", 0)), "twist": int(rc.get("twist_totali", 0))},
+            "altri": {"persone": int(al.get("persone_modellate", 0)), "comprensione": round(float(al.get("comprensione", 0)), 2)},
+            "finitudine": {"span": round(float(fi.get("span", 0)), 2), "lascito": int(fi.get("lascito", 0))},
+            "mondo": {"luoghi": int(mo.get("luoghi", 0)), "generati": int(mo.get("generati", 0)),
+                      "costruzioni": int(mo.get("costruzioni_totali", 0)), "citta": int(mo.get("citta", 0))},
+            "integrazione": {"maturate": int(ig.get("maturate", 0)), "fuse": int(ig.get("fuse", 0))},
+            "scintilla": {"vigore": round(float(sc.get("vigore", 0)), 2), "battiti": int(sc.get("battiti", 0))},
+            "specchio": {"individuazione": round(float(sp.get("individuazione", 0)), 2)},
+            "tensione": {"tensione": round(float(te.get("tensione", 0)), 2), "profondita": int(te.get("profondita", 0))},
+        }
+
     # ============================================ SPECCHIO (l'altro che le resiste)
     # Il sé si affila contro un NON-SÉ che spinge indietro. Nel nostro sistema l'altro
     # c'è già: la sua sé PUBBLICA (il soma, prevedibile, fatta di solo distillato
