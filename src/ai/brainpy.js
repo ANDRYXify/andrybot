@@ -227,6 +227,20 @@ export async function vie() {
   finally { clearTimeout(to); }
 }
 
+// PULSAZIONI degli organi vivi (flusso/sogno/racconto/altri/finitudine/mondo/…): numeri
+// compatti per il grafo della mente — nodi che crescono mentre Lia vive. Oggetto o {} (mai lancia).
+export async function pulsazioni() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 4000);
+  try {
+    const r = await fetch(BASE + '/pulsazioni', { signal: ac.signal });
+    if (!r.ok) return {};
+    const d = await r.json().catch(() => null);
+    return (d && typeof d.pulsazioni === 'object' && d.pulsazioni) ? d.pulsazioni : {};
+  } catch (e) { log.debug('pulsazioni:', e?.message || e); return {}; }
+  finally { clearTimeout(to); }
+}
+
 // VITA di Lia (la sua macchina): diario, stanza, ritratto del pubblico. Sola
 // lettura. Ritorna {attiva, diario, spazio, pubblico} o null.
 export async function vita() {
