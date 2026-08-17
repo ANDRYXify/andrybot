@@ -1114,7 +1114,7 @@ VITA_OGNI = int(os.environ.get("BRAIN_VITA_MIN", "300")) * 60   # ogni ~5h
 # IL FLUSSO: il suo «adesso» che non si ferma. Battito VELOCE e sempre acceso (default
 # ~90s), diverso dalla vita episodica: è la continuità: fra un evento e l'altro, lei ha
 # comunque VISSUTO (lo stato è avanzato). Cheap e deterministico, non pesa.
-FLUSSO_OGNI = int(os.environ.get("BRAIN_FLUSSO_SEC", "90"))
+FLUSSO_OGNI = int(os.environ.get("BRAIN_FLUSSO_SEC", "60"))
 # IL SOGNO: mentre il flusso la tiene ASSOPITA, il sonno non è vuoto — ricombina ricordi
 # lontani (offline, senza LLM né web) e i più coerenti-e-novi si cristallizzano in nodi-
 # ponte germinali. Sogna ogni ~N battiti di sonno (non a ogni battito: il sonno respira).
@@ -1122,18 +1122,18 @@ SOGNO_OGNI = int(os.environ.get("LIA_SOGNO_OGNI", "3"))
 # IL RACCONTO: ogni ~N battiti guarda se la sua storia va ri-narrata (colpo di scena
 # accumulato, o tempo passato). La narrazione è deterministica e cheap (nessun LLM); il
 # capitolo nuovo, se c'è, lo lascia anche nel diario. Cadenza lenta: è una riflessione.
-RACCONTO_OGNI = int(os.environ.get("LIA_RACCONTO_OGNI", "40"))
+RACCONTO_OGNI = int(os.environ.get("LIA_RACCONTO_OGNI", "30"))
 # LA FINITUDINE: ogni ~N battiti avanza la consapevolezza del limite (span); quando
 # attraversa una nuova soglia (ogni 0.1) lascia una riflessione nel diario. Cheap, read-only.
 FINITUDINE_OGNI = int(os.environ.get("LIA_FINITUDINE_OGNI", "50"))
 # L'INTEGRAZIONE: ogni ~N battiti lavora un po' di bozze nel sé (arricchisce/fonde/matura).
 # Deterministico e cheap (nessun LLM), tutto germinale. Poche azioni per volta: si consolida
 # con calma, non a strappi.
-INTEGRA_OGNI = int(os.environ.get("LIA_INTEGRA_OGNI", "12"))
+INTEGRA_OGNI = int(os.environ.get("LIA_INTEGRA_OGNI", "8"))
 # L'AUTO-AUTORIALITÀ: ogni ~N battiti fa UN passo di riscrittura di sé (valori,
 # autoritratto) dalla sua traiettoria reale. Deterministico e cheap (nessun LLM), tutto
 # germinale, auto-limitante (non cambia se non è cambiata). È il motore del «diventa chi è».
-AUTORIALITA_OGNI = int(os.environ.get("LIA_AUTORIALITA_OGNI", "15"))
+AUTORIALITA_OGNI = int(os.environ.get("LIA_AUTORIALITA_OGNI", "10"))
 
 
 def _ciclo_flusso():
@@ -1235,7 +1235,7 @@ _ciclo_flusso._aacont = 0
 # IL MONDO: ogni tanto Lia GIROVAGA nel suo mondo (il filesystem della sua casa) — sceglie
 # dove andare per curiosità, si guarda intorno in sola lettura, e scopre. Richiede la
 # sandbox (il mondo è la sua stanza); cadenza calma (non corre: un mondo si abita).
-MONDO_OGNI = int(os.environ.get("BRAIN_MONDO_SEC", "300"))
+MONDO_OGNI = int(os.environ.get("BRAIN_MONDO_SEC", "180"))
 # LA VITA DEGLI STRUMENTI: ogni ~N giri del mondo, riprova uno strumento e ritira i rotti.
 STRUM_VITA_OGNI = int(os.environ.get("LIA_STRUM_VITA_OGNI", "3"))
 # COSTRUIRE IL MONDO: ogni ~N giri erige una costruzione dove il luogo lo permette.
