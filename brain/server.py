@@ -97,6 +97,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._vie()
         if self.path.startswith("/pulsazioni"):
             return self._pulsazioni()
+        if self.path.startswith("/autoautorialita"):
+            return self._autoautorialita()
         if self.path.startswith("/membrana"):
             return self._membrana()
         if self.path.startswith("/scintilla"):
@@ -225,6 +227,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._dimentica()
         if self.path.startswith("/mente"):
             return self._mente()
+        if self.path.startswith("/autoautorialita"):
+            return self._autoautorialita_azione()
         if self.path.startswith("/assistente"):
             return self._assistente()
         if self.path.startswith("/distilla"):
@@ -777,6 +781,42 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
+    def _autoautorialita(self):
+        # foto dell'AUTO-AUTORIALITÀ (owner-only lato Node): autoritratto, valori che si
+        # è scelta, ultime auto-riscritture, freno. Tutto germinale, read-only, no sandbox.
+        try:
+            return self._json(200, {"ok": True, "autoautorialita": mente.stato_autoautorialita()})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
+    def _autoautorialita_azione(self):
+        # AZIONI sull'auto-autorialità (owner-only lato Node). Tutte germinali, loggate,
+        # reversibili; la membrana protegge il pubblico. `azione` sceglie cosa fare.
+        d = self._leggi() or {}
+        az = str(d.get("azione") or "").strip()
+        try:
+            if az == "congela":
+                r = mente.congela_autoautorialita(bool(d.get("congela")))
+            elif az == "autoritratto":
+                r = mente.riscrivi_autoritratto(d.get("testo", ""), motivo=d.get("motivo", ""), da="owner")
+            elif az == "annulla_autoritratto":
+                r = mente.annulla_autoritratto()
+            elif az == "valori":
+                r = mente.riscrivi_valori(aggiungi=d.get("aggiungi"), pesi=d.get("pesi"),
+                                          motivo=d.get("motivo", ""), da="owner")
+            elif az == "annulla_valori":
+                r = mente.annulla_valori()
+            elif az == "modulo":
+                r = mente.riscrivi_modulo_germinale(d.get("nome", ""), d.get("patch") or {},
+                                                    motivo=d.get("motivo", ""), da="owner")
+            elif az == "passo":
+                r = mente.auto_riscriviti(max_azioni=int(d.get("max_azioni", 2) or 2))
+            else:
+                r = {"ok": False, "motivo": "azione sconosciuta"}
+            return self._json(200, r if isinstance(r, dict) else {"ok": True, "r": r})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
     def _mente(self):
         # ciò che Lia ha scritto nel suo ~/mente + sincronizza ORA nel motore reale.
         try:
@@ -1090,6 +1130,10 @@ FINITUDINE_OGNI = int(os.environ.get("LIA_FINITUDINE_OGNI", "50"))
 # Deterministico e cheap (nessun LLM), tutto germinale. Poche azioni per volta: si consolida
 # con calma, non a strappi.
 INTEGRA_OGNI = int(os.environ.get("LIA_INTEGRA_OGNI", "12"))
+# L'AUTO-AUTORIALITÀ: ogni ~N battiti fa UN passo di riscrittura di sé (valori,
+# autoritratto) dalla sua traiettoria reale. Deterministico e cheap (nessun LLM), tutto
+# germinale, auto-limitante (non cambia se non è cambiata). È il motore del «diventa chi è».
+AUTORIALITA_OGNI = int(os.environ.get("LIA_AUTORIALITA_OGNI", "15"))
 
 
 def _ciclo_flusso():
@@ -1137,6 +1181,18 @@ def _ciclo_flusso():
                               f"{ib.get('fuse',0)} fuse, {ib.get('scartate',0)} scartate", flush=True)
                 except Exception as e:
                     print(f"[brain] integrazione errore: {e}", flush=True)
+            # L'AUTO-AUTORIALITÀ: ogni tanto si riscrive da sé (valori, autoritratto) dalla
+            # sua traiettoria reale. Tutto germinale; se non è cambiata, non cambia nulla.
+            _ciclo_flusso._aacont += 1
+            if _ciclo_flusso._aacont % max(1, AUTORIALITA_OGNI) == 0:
+                try:
+                    aa = mente.auto_riscriviti(max_azioni=1)
+                    for a in (aa.get("azioni") or []):
+                        print(f"[brain] auto-autorialità: {a.get('tipo')} → {a.get('dettaglio')}", flush=True)
+                        if AMB.disponibile() and a.get("tipo") == "autoritratto":
+                            AMB.diario_scrivi("Mi sono ridescritta, com'è adesso.", tag="autoritratto")
+                except Exception as e:
+                    print(f"[brain] auto-autorialità errore: {e}", flush=True)
             if dorme:
                 # SONNO: sogna ogni SOGNO_OGNI battiti (il sonno respira, non sogna a raffica)
                 _ciclo_flusso._dcont += 1
@@ -1173,6 +1229,7 @@ _ciclo_flusso._dcont = 0
 _ciclo_flusso._rcont = 0
 _ciclo_flusso._fcont = 0
 _ciclo_flusso._icont = 0
+_ciclo_flusso._aacont = 0
 
 
 # IL MONDO: ogni tanto Lia GIROVAGA nel suo mondo (il filesystem della sua casa) — sceglie

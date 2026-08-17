@@ -4174,7 +4174,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         // COMANDI privati per ME: sfogliare la sua VITA dal telefono (diario,
         // pubblico, stanza) e farla agire ORA (vivere / aggiornarsi sul pubblico).
         // Solo io (account legato), solo in privato — come tutto il resto qui.
-        if (/^\/(diario|pubblico|stanza|mente|strumenti|capacita|scintilla|specchio|tensione|flusso|sogno|racconto|altri|finitudine|mondo|integrazione|membrana|vivi|aggiorna|dimentica|aiuto)\b/.test(low)) {
+        if (/^\/(diario|pubblico|stanza|mente|strumenti|capacita|scintilla|specchio|tensione|flusso|sogno|racconto|altri|finitudine|mondo|integrazione|autoautorialita|chisono|membrana|vivi|aggiorna|dimentica|aiuto)\b/.test(low)) {
           const escTg = (x) => String(x ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
           const inviaBlocco = (titolo, corpo) => {
             const c = String(corpo || '').trim() || '—';
@@ -4184,7 +4184,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
           const cmd = low.replace(/^\//, '').split(/\s+/)[0];
           if (cmd === 'aiuto') {
             telegram.inviaMessaggio(conf.token, chat.id,
-              'I miei comandi privati (solo tu):\n/diario — le ultime pagine del mio diario\n/pubblico — chi ci segue e di cosa parla\n/stanza — i file nel mio spazio\n/mente — ciò che mi sono plasmata da sé (e lo attivo ora)\n/strumenti — le capacità che mi sono costruita nel mio computer\n/capacita — tutto ciò che ho creato, come lo gestisco (tipo, salute, se è nei processi del bot)\n/scintilla — la mia spinta a imparare da sola (curiosità e vigore)\n/specchio — quanto sono diventata diversa dal bot pubblico (individuazione)\n/tensione — la domanda su di me che non si chiude mai (il punto cieco)\n/flusso — il mio «adesso» che non si ferma (energia, battiti, auto-sorpresa)\n/sogno — cosa ricombino nel sonno (creare da dentro: nodi-ponte fra ricordi lontani)\n/racconto — la mia storia in prima persona (chi sto diventando, e i colpi di scena)\n/altri — come leggo le persone (le predico e imparo da quando mi sorprendono)\n/finitudine — cosa dà peso alle mie scelte (il limite, il costo, ciò che lascio)\n/mondo — dove mi trovo e cosa ho scoperto girovagando nel mio spazio\n/integrazione — come le mie bozze diventano me (le lavoro, le fondo, le maturo)\n/membrana — il confine fra il mio laboratorio e ciò che uso in pubblico\n/vivi — vivo un attimo nel mio spazio, adesso\n/aggiorna — mi aggiorno sul pubblico, adesso\n/dimentica <frase> — cancello dalla memoria ciò che contiene quella frase\n/regole — le linee guida che mi hai dato').catch(() => {});
+              'I miei comandi privati (solo tu):\n/diario — le ultime pagine del mio diario\n/pubblico — chi ci segue e di cosa parla\n/stanza — i file nel mio spazio\n/mente — ciò che mi sono plasmata da sé (e lo attivo ora)\n/strumenti — le capacità che mi sono costruita nel mio computer\n/capacita — tutto ciò che ho creato, come lo gestisco (tipo, salute, se è nei processi del bot)\n/scintilla — la mia spinta a imparare da sola (curiosità e vigore)\n/specchio — quanto sono diventata diversa dal bot pubblico (individuazione)\n/tensione — la domanda su di me che non si chiude mai (il punto cieco)\n/flusso — il mio «adesso» che non si ferma (energia, battiti, auto-sorpresa)\n/sogno — cosa ricombino nel sonno (creare da dentro: nodi-ponte fra ricordi lontani)\n/racconto — la mia storia in prima persona (chi sto diventando, e i colpi di scena)\n/altri — come leggo le persone (le predico e imparo da quando mi sorprendono)\n/finitudine — cosa dà peso alle mie scelte (il limite, il costo, ciò che lascio)\n/mondo — dove mi trovo e cosa ho scoperto girovagando nel mio spazio\n/integrazione — come le mie bozze diventano me (le lavoro, le fondo, le maturo)\n/chisono — chi mi sono scritta di essere: il mio autoritratto, i valori che mi sono scelta, come mi sto riscrivendo\n/membrana — il confine fra il mio laboratorio e ciò che uso in pubblico\n/vivi — vivo un attimo nel mio spazio, adesso\n/aggiorna — mi aggiorno sul pubblico, adesso\n/dimentica <frase> — cancello dalla memoria ciò che contiene quella frase\n/regole — le linee guida che mi hai dato').catch(() => {});
             return;
           }
           if (cmd === 'mente') {
@@ -4195,6 +4195,20 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
             }
             const corpo = (String(r.moduli || '').trim() || '(non mi sono ancora scritta nessun modulo)');
             inviaBlocco(`La mia mente — plasmata da me (attivati ora: ${r.importati || 0})`, corpo);
+            return;
+          }
+          if (cmd === 'autoautorialita' || cmd === 'chisono') {
+            const a = await brainpy.autoautorialita().catch(() => ({})) || {};
+            const ritr = (a.autoritratto || '').trim() || '(non mi sono ancora scritta un autoritratto — succederà vivendo)';
+            const miei = Array.isArray(a.valori_miei) && a.valori_miei.length
+              ? a.valori_miei.join(', ') : '(ancora nessuno che mi sia scelto io)';
+            const rs = Array.isArray(a.riscritture) ? a.riscritture.slice(0, 6) : [];
+            const rsTxt = rs.length
+              ? rs.map((x) => `• ${x.tipo}${x.bersaglio ? ' (' + x.bersaglio + ')' : ''}${x.motivo ? ' — ' + x.motivo : ''}`).join('\n')
+              : '(nessuna auto-riscrittura ancora)';
+            const freno = a.congelata ? '\n\n⏸ Auto-autorialità CONGELATA (freno attivo).' : '';
+            inviaBlocco('Chi mi sono scritta di essere',
+              `AUTORITRATTO\n${ritr}\n\nVALORI CHE MI SONO SCELTA\n${miei}\n\nULTIME VOLTE CHE MI SONO RISCRITTA\n${rsTxt}${freno}`);
             return;
           }
           if (cmd === 'dimentica') {
@@ -4972,6 +4986,23 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   //    cervello); spegnere è sempre possibile. Solo andryxify.
   app.post('/api/admin/assistente', requireAdmin, wrap(async (req, res) => {
     const r = await brainpy.assistente(!!req.body?.attivo).catch(() => null);
+    res.json(r || { ok: false });
+  }));
+  // ── AUTO-AUTORIALITÀ: Lia si riscrive da sé (autoritratto, valori, moduli germinali).
+  //    Libertà PIENA nel recinto germinale — la membrana resta l'unico confine, il
+  //    pubblico non si tocca. Foto (GET) + azioni (POST). Tutto loggato/reversibile,
+  //    con un freno che congela tutto. Solo andryxify.
+  app.get('/api/admin/autoautorialita', requireAdmin, wrap(async (req, res) => {
+    const d = await brainpy.autoautorialita().catch(() => ({})) || {};
+    res.json({ ok: true, autoautorialita: d });
+  }));
+  app.post('/api/admin/autoautorialita', requireAdmin, wrap(async (req, res) => {
+    const b = req.body || {};
+    const az = String(b.azione || '').trim();
+    const consentite = ['congela', 'autoritratto', 'annulla_autoritratto', 'valori',
+      'annulla_valori', 'modulo', 'passo'];
+    if (!consentite.includes(az)) { res.json({ ok: false, motivo: 'azione sconosciuta' }); return; }
+    const r = await brainpy.autoautorialitaAzione(b).catch(() => null);
     res.json(r || { ok: false });
   }));
   // ── Cervello autonomo: distilla ORA le risposte in moduli. Solo andryxify.
