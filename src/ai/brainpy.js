@@ -326,6 +326,36 @@ export async function assistente(attivo) {
   finally { clearTimeout(to); }
 }
 
+// AUTO-AUTORIALITÀ (owner-only): foto di come Lia si è riscritta — autoritratto, valori
+// che si è scelta, ultime auto-riscritture, freno. Tutto germinale. Ritorna l'oggetto o {}.
+export async function autoautorialita() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 8000);
+  try {
+    const r = await fetch(BASE + '/autoautorialita', { signal: ac.signal });
+    if (!r.ok) return {};
+    const d = await r.json().catch(() => ({}));
+    return (d && typeof d.autoautorialita === 'object' && d.autoautorialita) ? d.autoautorialita : {};
+  } catch (e) { log.debug('autoautorialita:', e?.message || e); return {}; }
+  finally { clearTimeout(to); }
+}
+
+// AZIONE sull'auto-autorialità (owner-only): {azione, ...}. azione ∈ congela | autoritratto |
+// annulla_autoritratto | valori | annulla_valori | modulo | passo. Ritorna l'esito o null.
+export async function autoautorialitaAzione(payload) {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 8000);
+  try {
+    const r = await fetch(BASE + '/autoautorialita', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload || {}), signal: ac.signal,
+    });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('autoautorialitaAzione:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
 // Fa DIMENTICARE al bot una frase precisa (dalla memoria e dai moduli): per
 // togliere una cosa sbagliata che ripete. Ritorna {ok, rete, moduli} o null.
 export async function dimentica(frase) {

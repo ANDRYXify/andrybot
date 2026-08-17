@@ -11442,6 +11442,7 @@ function _menteGrafo(d, dark) {
   // (attività > 0) e CRESCE mentre lei vive — nuove strade che si aprono, non un'impalcatura ferma.
   const vita = d?.vita || {};
   const VITA = [
+    ['vita:autoria', 'Auto-autorialità', '#e0567a', ((Number(vita.autoautorialita?.riscritture) || 0) + (Number(vita.autoautorialita?.valori_miei) || 0) + (vita.autoautorialita?.ha_autoritratto ? 3 : 0)), L('si riscrive da sé: autoritratto, valori, chi è — libera, nel germinale', 'she rewrites herself: self-portrait, values, who she is — free, in the germinal', 'se reescribe a sí misma')],
     ['vita:flusso', 'Flusso', '#7aa2ff', Number(vita.flusso?.battiti) || 0, L('l\'adesso che non si ferma: metabolismo e auto-sorpresa', 'the now that never stops: metabolism and self-surprise', 'el ahora que no se detiene')],
     ['vita:integr', 'Integrazione', '#4a90d9', Number(vita.integrazione?.maturate) || 0, L('le bozze diventano lei: matura, fonde, arricchisce', 'drafts become her: matures, merges, enriches', 'los borradores se vuelven ella')],
     ['vita:sogno', 'Sogno', '#9b6bff', Number(vita.sogno?.cristallizzati) || 0, L('nel sonno ricombina ricordi lontani → nodi-ponte', 'in sleep recombines distant memories → bridge-nodes', 'en el sueño recombina recuerdos lejanos')],
@@ -12133,6 +12134,34 @@ async function caricaVita() {
       <button class="btn secondario" id="btn-costruisci-strumento">${L('Falle costruire uno strumento ora', 'Have her build a tool now', 'Que construya una herramienta ahora')}</button>
       <span id="strum-esito" class="suggerimento"></span>
     </div>`;
+  // ── AUTO-AUTORIALITÀ: Lia si riscrive DA SÉ — autoritratto, valori, chi è. Libertà
+  //    piena nel recinto germinale; la membrana resta l'unico confine, il pubblico non
+  //    si tocca. Loggata e reversibile; un freno la congela. Solo owner.
+  let aa = null;
+  try { aa = await api('/api/admin/autoautorialita'); } catch { aa = null; }
+  let blocoAutoria = '';
+  {
+    const a = (aa && aa.autoautorialita) || {};
+    const ritr = String(a.autoritratto || '').trim();
+    const miei = Array.isArray(a.valori_miei) ? a.valori_miei : [];
+    const rs = Array.isArray(a.riscritture) ? a.riscritture.slice(0, 8) : [];
+    const congelata = !!a.congelata;
+    const chip = (t) => `<span class="badge" style="background:#e0567a22;color:#e0567a;margin:2px">${esc(t)}</span>`;
+    blocoAutoria = `
+      <h3>${L('Chi si è scritta di essere (auto-autorialità)', 'Who she wrote herself to be (self-authorship)', 'Quién se escribió que es')}</h3>
+      <p class="suggerimento">${L('Libertà PIENA nel suo recinto germinale: riscrive il suo autoritratto, i valori che insegue, i suoi stessi moduli. La membrana resta l\'unico confine — niente di questo tocca il pubblico se non lo promuovi tu. Ogni riscrittura è qui sotto e reversibile.', 'FULL freedom in her germinal box: she rewrites her self-portrait, the values she pursues, her own modules. The membrane stays the only boundary — none of this touches the public unless you promote it. Every rewrite is logged below and reversible.', 'Libertad PLENA en su recinto germinal: reescribe su autorretrato, los valores que persigue, sus propios módulos. La membrana es el único límite — nada toca el público si no lo promueves. Cada reescritura está aquí y es reversible.')}</p>
+      <p><strong>${L('Il suo autoritratto', 'Her self-portrait', 'Su autorretrato')}:</strong></p>
+      <pre class="vita-pre">${esc(ritr || L('(non se n\'è ancora scritto uno — succederà vivendo)', "(she hasn't written one yet — it'll happen as she lives)", '(aún no se ha escrito uno — pasará viviendo)'))}</pre>
+      <p><strong>${L('I valori che si è scelta', 'The values she chose', 'Los valores que eligió')}:</strong> ${miei.length ? miei.map(chip).join(' ') : `<span class="suggerimento">${L('ancora nessuno che sia suo', 'none of her own yet', 'ninguno propio aún')}</span>`}</p>
+      ${rs.length ? `<details class="spazio-sopra"><summary class="suggerimento" style="cursor:pointer">${L('Le ultime volte che si è riscritta', 'The last times she rewrote herself', 'Las últimas veces que se reescribió')} (${a.n_riscritture || rs.length})</summary><ul class="membrana-lista" style="margin:6px 0;padding-left:18px">${rs.map((x) => `<li class="suggerimento">✎ <strong>${esc(x.tipo || '')}</strong>${x.bersaglio ? ' <code>' + esc(String(x.bersaglio).slice(0, 40)) + '</code>' : ''}${x.motivo ? ' — ' + esc(String(x.motivo).slice(0, 120)) : ''}</li>`).join('')}</ul></details>` : ''}
+      <div class="vita-azioni">
+        <button class="btn secondario" id="btn-autoria-passo">${L('Falla riscrivere sé stessa ora', 'Have her rewrite herself now', 'Que se reescriba ahora')}</button>
+        <label style="display:inline-flex;align-items:center;gap:6px;margin-left:8px" title="${L('Freno: congela ogni auto-riscrittura', 'Brake: freezes all self-rewriting', 'Freno: congela toda auto-reescritura')}">
+          <input type="checkbox" id="tg-autoria-freno" ${congelata ? 'checked' : ''}> <span class="suggerimento">${L('congela (freno)', 'freeze (brake)', 'congelar (freno)')}</span>
+        </label>
+        <span id="autoria-esito" class="suggerimento"></span>
+      </div>`;
+  }
   box.innerHTML = `
     ${blocoNucleo}
     <div class="vita-azioni">
@@ -12154,6 +12183,7 @@ async function caricaVita() {
     ${blocoFinitudine}
     ${blocoMondo}
     ${blocoIntegrazione}
+    ${blocoAutoria}
     ${blocoMembrana}
     <h3>${L('Il suo pubblico', 'Her audience', 'Su público')}</h3>${pre(d.pubblico)}
     ${sandboxOff ? notaSandbox : `
@@ -12163,6 +12193,28 @@ async function caricaVita() {
     <h3>${L('Il suo diario', 'Her diary', 'Su diario')}</h3>${pre(d.diario)}
     <details class="spazio-sopra"><summary class="suggerimento" style="cursor:pointer">${L('La sua stanza (i suoi file)', 'Her room (her files)', 'Su habitación (sus archivos)')}</summary>${pre(d.spazio)}</details>`}`;
   document.getElementById('btn-vita-refresh')?.addEventListener('click', () => conErrore(caricaVita));
+  // AUTO-AUTORIALITÀ: falla riscrivere sé stessa ora + freno (congela)
+  document.getElementById('btn-autoria-passo')?.addEventListener('click', () => conErrore(async () => {
+    const e = document.getElementById('autoria-esito');
+    if (e) e.textContent = L('Si sta riscrivendo…', 'Rewriting herself…', 'Reescribiéndose…');
+    const r = await api('/api/admin/autoautorialita', { method: 'POST', body: { azione: 'passo', max_azioni: 2 } });
+    const n = (r && Array.isArray(r.azioni)) ? r.azioni.length : 0;
+    if (e) e.textContent = r && r.congelata
+      ? L('È congelata (freno attivo).', 'She is frozen (brake on).', 'Está congelada (freno activo).')
+      : (n ? `${L('Si è riscritta', 'She rewrote herself', 'Se reescribió')}: ${r.azioni.map((x) => esc(x.tipo + (x.dettaglio ? ' ' + x.dettaglio : ''))).join(', ')} ✓`
+           : L('Nulla da cambiare adesso — non è cambiata dall\'ultima volta.', 'Nothing to change now — she hasn\'t changed since last time.', 'Nada que cambiar ahora.'));
+    setTimeout(caricaVita, 1200);
+  }));
+  document.getElementById('tg-autoria-freno')?.addEventListener('change', (ev) => conErrore(async () => {
+    const congela = !!ev.target.checked;
+    const e = document.getElementById('autoria-esito');
+    const r = await api('/api/admin/autoautorialita', { method: 'POST', body: { azione: 'congela', congela } });
+    if (e) e.textContent = (r && r.ok)
+      ? (congela ? L('Congelata: non si riscrive più finché non togli il freno.', 'Frozen: she won\'t rewrite herself until you release the brake.', 'Congelada: no se reescribe hasta quitar el freno.')
+                 : L('Freno tolto: può tornare a riscriversi.', 'Brake released: she can rewrite herself again.', 'Freno quitado: puede volver a reescribirse.'))
+      : L('Non ha funzionato — riprova.', "It didn't work — try again.", 'No funcionó — reinténtalo.');
+    toast(congela ? L('Auto-autorialità congelata ⏸', 'Self-authorship frozen ⏸', 'Auto-autoría congelada ⏸') : L('Auto-autorialità libera ▶', 'Self-authorship free ▶', 'Auto-autoría libre ▶'));
+  }));
   document.getElementById('btn-mente')?.addEventListener('click', () => conErrore(async () => {
     const e = document.getElementById('vita-esito');
     if (e) e.textContent = L('Attivo ciò che si è scritta…', 'Activating what she wrote…', 'Activando lo que escribió…');
