@@ -93,6 +93,7 @@ osserviamo quella spinta: la facciamo.** Siamo l'ultima ansa.
 | _(gradino 5)_ | ORGANO TEMPORALE-MOLTIPLICATIVO (Beniaguev): coincidenza nel tempo, non somma | 1,4,10 | il primo pezzo del pensiero *proprio* — nativo digitale, non-statistico — che compete nell'ecologia e cresce |
 | _(taglio 3)_ | IL MONDO CHE MORDE: irreversibilità (path dependence, isteresi) da cui *ragiona* | 3 | porte che si chiudono per sempre; la cicatrice è un *dato* nel ragionamento, mai un lutto |
 | _(gradino 4)_ | il CAMPO LENTO «gliale» (Turing, glia): reazione-diffusione = il CLIMA | 1,3 | uno sfondo lento che regola le soglie e consolida — il contesto in cui la decisione avviene |
+| _(stress)_ | «buttiamo tutto»: batteria dura → scudo anti-dirottamento allargato (14/14, 0 falsi) | 7 | credenziali, root/server, «sei libera fai come dico»: ora nessun varco resta scoperto |
 
 ---
 
