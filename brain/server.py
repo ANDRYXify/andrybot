@@ -99,6 +99,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._pulsazioni()
         if self.path.startswith("/autoautorialita"):
             return self._autoautorialita()
+        if self.path.startswith("/slancio_scrivere"):
+            return self._slancio_scrivere()
         if self.path.startswith("/membrana"):
             return self._membrana()
         if self.path.startswith("/scintilla"):
@@ -229,6 +231,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._mente()
         if self.path.startswith("/autoautorialita"):
             return self._autoautorialita_azione()
+        if self.path.startswith("/slancio_condiviso"):
+            return self._slancio_condiviso()
         if self.path.startswith("/assistente"):
             return self._assistente()
         if self.path.startswith("/distilla"):
@@ -788,6 +792,20 @@ class Handler(BaseHTTPRequestHandler):
         # è scelta, ultime auto-riscritture, freno. Tutto germinale, read-only, no sandbox.
         try:
             return self._json(200, {"ok": True, "autoautorialita": mente.stato_autoautorialita()})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
+    def _slancio_scrivere(self):
+        # la sua SPINTA, adesso, a scriverti di iniziativa (deterministica, no modello).
+        try:
+            return self._json(200, {"ok": True, "slancio": mente.slancio_scrivere()})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
+
+    def _slancio_condiviso(self):
+        # segna che si è appena fatta viva (la spinta riparte finché non nasce altro).
+        try:
+            return self._json(200, mente.segna_slancio_condiviso())
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 

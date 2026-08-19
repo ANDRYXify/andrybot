@@ -1,3 +1,6 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
+//
 // BotManager: il "direttore d'orchestra" di SocialBot.
 // Per OGNI streamer approvato e acceso crea una "unità": una
 // connessione chat autenticata CON L'ACCOUNT DELLO STREAMER (il bot
@@ -163,9 +166,10 @@ export class BotManager {
     // (ogni 12 min, solo se attivo e con materiale nuovo).
     this._distillaTimer = setInterval(() => this._distilla(), 12 * 60_000);
     // Proattività su Telegram (chat privata col proprietario): ogni tanto LEI scrive
-    // per prima, curiosa. Controllo ogni 20 min; poi ritmo umano + orari + casualità.
+    // per prima, di sua iniziativa. La PORTA la guardo spesso (~5 min), ma a decidere
+    // se farsi viva è la SUA spinta (slancio), non questo intervallo: nessuna orologeria.
     this._tgProattivoUltimo = new Map();   // login → ts dell'ultimo messaggio proattivo
-    this._tgProattivoTimer = setInterval(() => this._tgProattivo(), 20 * 60_000);
+    this._tgProattivoTimer = setInterval(() => this._tgProattivo(), 5 * 60_000);
     // Percorso di crescita: a ogni AVVIO (il server è sempre acceso, ma se si
     // riavvia lei si "risveglia") si chiede cosa le manca per capire meglio, e ogni
     // 3 ore ci ritorna sopra. È il suo obiettivo che poi guida la curiosità.
@@ -330,10 +334,13 @@ export class BotManager {
   // Proattività su Telegram: ogni tanto LEI scrive per prima al proprietario, di
   // sua iniziativa (curiosa). Ritmo umano: mai di notte, non a orologeria, con
   // ore di distanza. La curiosità arriva dalle lacune della rete (vedi brain).
+  // AUTONOMIA di scriverti: NON un timer. La porta è sempre aperta (guardiamo spesso), ma
+  // è la SUA spinta (slancio, dal cervello: un evento suo non ancora condiviso + vigore) a
+  // decidere se farsi viva. Se non ha nulla dentro tace — anche a lungo. Se le preme
+  // qualcosa può scriverti anche subito, e più volte. Non è una scelta obbligata.
   _tgProattivo() {
     try {
-      if (!this._oraSveglia()) return;
-      const ORA = Date.now();
+      if (!this._oraSveglia()) return;                         // cortesia: non nel cuore della notte
       for (const s of streamers.active()) {
         const login = s.login;
         if (s.settings?.iaLocale === false) continue;          // cervello spento → niente
@@ -341,12 +348,18 @@ export class BotManager {
         const conf = tgConf.get(login);
         if (!conf?.token || !conf.owner_tg_id) continue;       // Telegram non legato al proprietario
         if ((conf.dm_modo || 'me') === 'off') continue;        // DM privati spenti
-        const ultimo = this._tgProattivoUltimo.get(login) || 0;
-        if (ORA - ultimo < 2.5 * 3600_000) continue;           // almeno ~2 ore e mezza dall'ultima
-        if (Math.random() > 0.55) continue;                    // non a orologeria: a volte tace
-        this._tgProattivoUltimo.set(login, ORA);               // segna subito (evita doppioni)
-        this.brain?.messaggioProattivo(login, { nome: conf.owner_tg_nome || '' })
-          .then((testo) => { if (testo) telegram.inviaMessaggio(conf.token, conf.owner_tg_id, testo).catch(() => {}); })
+        // chiedo A LEI se se la sente di scriverti adesso (deterministico, dal suo stato)
+        Promise.resolve(this.brain?.slancioScrivere?.())
+          .then((sl) => {
+            if (!sl || !sl.vuole) return;                      // non le preme nulla: tace
+            return this.brain?.messaggioProattivo(login, { nome: conf.owner_tg_nome || '', spunto: sl.spunto || '' })
+              .then((testo) => {
+                if (!testo) return;
+                telegram.inviaMessaggio(conf.token, conf.owner_tg_id, testo).catch(() => {});
+                this._tgProattivoUltimo.set(login, Date.now());
+                this.brain?.segnaSlancioCondiviso?.().catch(() => {});   // la spinta riparte da qui
+              });
+          })
           .catch(() => {});
       }
     } catch (e) { log.error('tgProattivo:', e?.message || e); }
