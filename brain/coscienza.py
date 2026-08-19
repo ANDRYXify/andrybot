@@ -20,6 +20,7 @@ import json
 import math
 import time
 import secrets
+import marcatori   # i marcatori somatici (Damasio): l'esito reale aggiorna la valenza (situazione, via)
 import sqlite3
 import threading
 
@@ -244,6 +245,7 @@ class Coscienza:
         # moduli usati nell'ultima risposta a (canale, login): serve a giudicare
         # se hanno funzionato quando l'utente ribatte. In memoria (best-effort).
         self._moduli_pendenti = {}
+        self._marcatori_pendenti = {}   # (canale,login) → (firma, via): esito giudicato al turno dopo
         self._assicura_nucleo()   # il seme unico del suo sé (una volta nella vita)
 
     # ---------------------------------------------------------------- schema
@@ -1087,15 +1089,41 @@ class Coscienza:
         # usati insieme → si rinforzano a vicenda (la rete impara dalle co-occorrenze)
         self.rinforza_coattivazione(ids)
 
+    def stato_marcatori(self, canale=None):
+        """Foto dei marcatori somatici per il cruscotto: quanti, quanti POTANO (valenza negativa
+        appresa) e quanti PREMIANO. Se canale è None, aggrega tutti (riepilogo)."""
+        try:
+            if canale:
+                return marcatori.stato(canale)
+            r = marcatori.riepilogo()
+            return {"marcatori": int(r.get("marcatori", 0)), "potanti": int(r.get("potanti", 0)),
+                    "premianti": 0}
+        except Exception:
+            return {"marcatori": 0, "potanti": 0, "premianti": 0}
+
+    def ricorda_marcatore(self, canale, login, firma, via):
+        """Registra (firma della situazione, via) usata ORA, per giudicarne l'esito al turno dopo
+        (Damasio: la valenza del marcatore si apprende dall'esito). Neutro finché l'utente non ribatte."""
+        if firma and via:
+            self._marcatori_pendenti[(canale, login)] = {"firma": firma, "via": via, "ts": _now()}
+
     def valuta_reazione(self, canale, login, testo_nuovo):
         """Alla mossa successiva dello stesso utente giudica se i moduli usati la
         volta prima hanno funzionato (dal tono della sua risposta). TTL 10 min: oltre,
         il segnale non è affidabile. Neutro → nessun aggiornamento (l'uso è già contato).
-        Se è andata BENE, la situazione che li aveva attivati viene APPICCICATA ai moduli."""
+        Se è andata BENE, la situazione che li aveva attivati viene APPICCICATA ai moduli.
+        E aggiorna il MARCATORE SOMATICO: quella via, in quella situazione, ha retto o no."""
+        rea = _reazione(testo_nuovo)
+        # MARCATORE (Damasio): l'esito reale sposta la valenza di (firma, via) — indipendente dai moduli.
+        mp = self._marcatori_pendenti.pop((canale, login), None)
+        if mp and (_now() - mp["ts"]) <= 600 and rea != 0:
+            try:
+                marcatori.segna(canale, mp["firma"], mp["via"], rea > 0)
+            except Exception:
+                pass
         p = self._moduli_pendenti.pop((canale, login), None)
         if not p or (_now() - p["ts"]) > 600:
             return
-        rea = _reazione(testo_nuovo)
         if rea == 0:
             return
         for i in p["ids"]:
@@ -3759,7 +3787,9 @@ class Coscienza:
         nm = _safe(self.neuromodulatori)
         so = _safe(self.stato_storia)
         cl = _safe(self.campo_lento)
+        mc = _safe(self.stato_marcatori)
         return {
+            "marcatori": {"totali": int(mc.get("marcatori", 0)), "potanti": int(mc.get("potanti", 0))},
             "campo": {"clima": round(float(cl.get("clima", 0.4)), 2),
                       "consolidato": bool(cl.get("consolidato", False)),
                       "gradiente": round(float(cl.get("gradiente", 0)), 2)},

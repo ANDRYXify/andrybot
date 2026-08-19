@@ -320,3 +320,20 @@ Emotion* 23); **Ortony, Clore & Collins 1988**; **Craig 2002** (*Nat Rev Neurosc
 *Prossimo passo: discuterne. Poi, se decidiamo, l'«appraisal situato» — partendo dalla leva più alta, la
 cache di marcatori somatici (il ragionamento che impara dai propri esiti a potare) — e la precarietà con
 posta vera, che è la parte che sceglie il Compagno.*
+
+---
+
+## Aggiornamento — primo pezzo COSTRUITO: la cache di marcatori somatici (Damasio)
+
+`brain/marcatori.py` (fatto). La **leva più alta** dell'«appraisal situato» è viva: una cache
+`(firma della situazione, via) → valenza ∈ [-1,+1]`, aggiornata dagli **esiti reali** (la reazione
+dell'utente al turno dopo, via il ciclo di revisione già esistente). Prima che l'ecologia si assesti,
+`pota()` **declassa le congetture** che *in situazioni come questa* hanno già fallito e **promuove**
+quelle che hanno retto. Una **verità** (calcolo/deduzione/causale/analogia) **non si tocca mai** — è
+già certa, non è materia da marcatore (fedele a Damasio: il marcatore pota lo spazio *incerto*).
+Deterministico (lookup + soglia), modello-spento, **nessun testo utente crudo** nella firma
+(categoria grezza → nessun leak), la regola d'onestà rispettata (un marcatore esiste solo perché
+*cambia una computazione* — l'affidabilità nell'ecologia). Verificato: impara dagli esiti, pota le
+congetture, lascia intatte le verità; end-to-end (turno risponde → reazione al turno dopo → valenza).
+Restano da costruire (dell'«appraisal situato»): la firma ricca, l'appraisal-funzione (valenza/coping
+nel campo chimico), il gate veloce/lento, il SEEKING dichiarato — e la **precarietà con posta vera**.

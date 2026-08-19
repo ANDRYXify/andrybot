@@ -25,6 +25,7 @@ import hashlib
 import rete       # la "piccola rete" che si autoaddestra (memoria associativa)
 import ragiona    # il cervello SIMBOLICO (non statistico): deduce dai fatti a regole
 import temporale  # l'organo TEMPORALE-MOLTIPLICATIVO (Beniaguev): coincidenza nel tempo, non somma
+import marcatori  # i MARCATORI SOMATICI (Damasio): pota le vie che in situazioni simili hanno fallito
 import ambiente   # il ponte verso la SANDBOX di Lia (il suo "computer" personale)
 
 DATA_DIR = os.environ.get("DATA_DIR", "/app/data")
@@ -103,6 +104,8 @@ _tl = threading.local()
 
 def ultima_via():
     return getattr(_tl, "via", None)
+def ultima_firma():
+    return getattr(_tl, "firma", None)
 _llm = None
 _gemma = False   # il modello caricato è della famiglia Gemma? (niente ruolo "system")
 # stato dell'endpoint esterno (LM Studio / Ollama / OpenAI-compatibile): il "maestro"
@@ -1075,6 +1078,14 @@ def _ecologia(canale, ctx, testo, modo):
             pass
     if not cand:
         return None
+    # MARCATORI SOMATICI (Damasio): PRIMA di assestare, pota le congetture che *in situazioni come
+    # questa* hanno già fallito (e promuovi quelle che hanno retto), dagli esiti reali passati. Una
+    # verità non si tocca. È il ragionamento che impara dalla propria storia a non ripetere i vicoli.
+    try:
+        fs = marcatori.firma(testo, modo)
+        cand = marcatori.pota(canale, fs, cand)
+    except Exception:
+        pass
     # raggruppa per risposta normalizzata; l'ACCORDO mette gli oscillatori nello stesso gruppo.
     gruppi = {}
     for nome, aff, risp, extra, verita in cand:
@@ -1754,6 +1765,10 @@ def _genera_interno(canale, ctx, testo, timeout_s=30, modo="live"):
     testo = (testo or "")[:300]
     canale = (canale or "").strip()
     _tl.via = None            # quale "cervello" risponderà (per il cruscotto)
+    try:
+        _tl.firma = marcatori.firma(testo, modo)   # la firma della situazione (per i marcatori)
+    except Exception:
+        _tl.firma = None
     _tl.background = False     # risposta DAVANTI a qualcuno (live o privato con te): conta
     allena = (modo == "allenamento")
     proattivo = (modo == "proattivo")
