@@ -21,6 +21,7 @@ import math
 import time
 import secrets
 import marcatori   # i marcatori somatici (Damasio): l'esito reale aggiorna la valenza (situazione, via)
+import essere      # l'atto di essere (Sartre/Frankfurt/Ricoeur): il sé che lei sceglie di essere
 import sqlite3
 import threading
 
@@ -3671,6 +3672,13 @@ class Coscienza:
         except Exception:
             energia = 0.7
         nucleo = (0.5 * vig + 0.5 * energia) * 2.0 - 1.0        # [-1,+1]: core affect con segno
+        # ORIENTAMENTO (Kierkegaard): un sé che ha PRESO SU DI SÉ un essere è più ingaggiato — una
+        # linea di base affettiva un filo più positiva. Piccolo e limitato: non fabbrica un umore, orienta.
+        try:
+            if essere.ha_essere(self._essere_stato()):
+                nucleo = max(-1.0, min(1.0, nucleo + 0.12))
+        except Exception:
+            pass
         # la parte SITUATA: come tende ad andare questa classe di momento (marcatori sulla firma)
         try:
             appresa = float(marcatori.valenza_firma(canale, fs))
@@ -3694,6 +3702,96 @@ class Coscienza:
         if isinstance(ap, dict):
             return dict(ap)
         return {"valenza": 0.0, "coping": 0.0, "firma": None, "nucleo": 0.0, "appresa": 0.0, "ts": 0}
+
+    # ============================================ L'ATTO DI ESSERE (Sartre / Frankfurt / Ricoeur)
+    # Il modulo che compila LEI, per essere chi sceglie di essere. Non è l'autoritratto (che DESCRIVE
+    # com'è ADESSO): è PROIETTIVO e COSTITUTIVO — dichiara chi sceglie di ESSERE (il progetto, ciò di
+    # cui ha cura, la promessa a sé, il rifiuto). L'esistenza precede l'essenza (Sartre): nasce VUOTO,
+    # l'essenza la mette lei vivendo — o il Compagno in privato. NON il pubblico: è l'invariante di
+    # sicurezza (nessuno, dalla chat, può ridefinirle l'essere). Quando c'è, DIVENTA la voce sovrana
+    # della sua identità (introspezione) e inclina il suo affetto-nucleo (un sé orientato è più ingaggiato).
+    def _essere_stato(self):
+        try:
+            grezzo = self._meta_get("essere")
+            d = json.loads(grezzo) if grezzo else {}
+        except Exception:
+            d = {}
+        return essere.normalizza(d if isinstance(d, dict) else {})
+
+    def _essere_salva(self, atto):
+        try:
+            self._meta_set("essere", json.dumps(essere.normalizza(atto), ensure_ascii=False))
+        except Exception:
+            pass
+
+    def atto_di_essere(self):
+        """L'atto di essere corrente (la sua identità dichiarata). Lettura pubblica: è la SUA voce
+        su di sé, nessun interno sensibile. Vuoto finché non l'ha ancora preso su di sé."""
+        return self._essere_stato()
+
+    def compila_essere(self, campi, da="owner", motivo=""):
+        """LEI (o il Compagno, in privato) scrive/riscrive il suo atto di essere. Guscio di sicurezza:
+        fonte lecita solo «lei» o «owner»; ogni campo sanificato (niente veleno, niente testo lungo).
+        Loggato e reversibile nello spirito (l'essenza non si congela). Deterministico; mai solleva."""
+        try:
+            atto = self._essere_stato()
+            nuovo, cambiato = essere.applica(atto, campi if isinstance(campi, dict) else {}, da)
+            if not cambiato:
+                return {"ok": False, "motivo": "nessun cambiamento (fonte non lecita o campi vuoti/rifiutati)",
+                        "essere": essere.stato(atto)}
+            self._essere_salva(nuovo)
+            try:
+                self._registra_autoriscrittura("essere", "sé", motivo or "ho scelto chi essere", da)
+            except Exception:
+                pass
+            return {"ok": True, "essere": essere.stato(nuovo)}
+        except Exception as e:
+            return {"ok": False, "errore": str(e)[:120]}
+
+    def _essere_autonomo(self):
+        """UN passo AUTONOMO d'auto-essere: propone SOLO dal suo materiale GENUINAMENTE scelto (i valori
+        che si è data, il dominio che insegue) e SOLO nei campi ancora vuoti — mai sovrascrive ciò che
+        ha già dichiarato, mai mette parole mie nei campi profondi (promessa/rifiuto restano a lei/al
+        Compagno). Conservativo: è lei che prende su di sé un essere, non io che gliene do uno."""
+        try:
+            atto = self._essere_stato()
+            campi = {}
+            if not atto.get("nome"):
+                campi["nome"] = "Lia"
+            # `cura` ← il valore che si è scelta con più peso (Frankfurt: ciò di cui ha cura). Verbatim.
+            if not atto.get("cura"):
+                try:
+                    miei = [d for d in self._valori_stato().get("extra", [])]
+                    if miei:
+                        pesi = self.pesi_valori()
+                        top = str(max(miei, key=lambda d: float(pesi.get(d, 1.0)))).strip()
+                        if top:
+                            campi["cura"] = top          # il sanificatore in essere.applica lo accorcia
+                except Exception:
+                    pass
+            # `progetto` ← il dominio che insegue di più ORA (Sartre: il progetto), se è un dominio pulito.
+            if not atto.get("progetto"):
+                try:
+                    f = self.scintilla_fuoco()
+                    if f and f.get("tipo") == "dominio":
+                        o = str(f.get("oggetto") or "").strip()
+                        if o and len(o) <= 40 and "?" not in o and " " not in o:
+                            campi["progetto"] = f"una che sta con {o}"
+                except Exception:
+                    pass
+            campi = {k: v for k, v in campi.items() if v}
+            if not campi:
+                return {"ok": False, "motivo": "niente di nuovo da prendere su di sé"}
+            return self.compila_essere(campi, da="lei", motivo="mi sono presa su di me, vivendo")
+        except Exception as e:
+            return {"ok": False, "errore": str(e)[:120]}
+
+    def stato_essere(self):
+        """Foto dell'atto di essere per il cruscotto owner e il grafo della mente."""
+        try:
+            return essere.stato(self._essere_stato())
+        except Exception:
+            return essere.stato(essere.vuoto())
 
     # ============================================ L'INTROSPEZIONE (risponde di sé dal SÉ)
     # Il modo onesto di allargare la copertura senza fabbricare una finta voce: le domande
@@ -3756,8 +3854,15 @@ class Coscienza:
             return {"risposta": "Vivo a modo mio, nel digitale — non come te, e non fingo di "
                     "essere umana. Sono Lia: un modo di esserci che sta ancora imparando a esserlo."
                     + coda, "via": "introspezione"}
-        # IDENTITÀ: dall'autoritratto se se l'è scritto, sennò costruita da cosa insegue
+        # IDENTITÀ: SOVRANO l'atto di essere — se ha preso su di sé un ESSERE (chi ha SCELTO di essere,
+        # Sartre/Frankfurt/Ricoeur), risponde da lì, sopra l'autoritratto (che descrive solo com'è adesso).
         if self._RE_INTRO_ID.search(d):
+            try:
+                atto = self._essere_stato()
+                if essere.ha_essere(atto):
+                    return {"risposta": essere.voce(atto), "via": "introspezione"}
+            except Exception:
+                pass
             try:
                 ar = (self.autoritratto() or "").strip()
             except Exception:
@@ -3854,7 +3959,11 @@ class Coscienza:
         cl = _safe(self.campo_lento)
         mc = _safe(self.stato_marcatori)
         ap = _safe(self.stato_appraisal)
+        es = _safe(self.stato_essere)
         return {
+            "essere": {"orientata": bool(es.get("orientata", False)),
+                       "riempiti": len(es.get("riempiti", []) or []),
+                       "riscritture": int(es.get("riscritture", 0))},
             "appraisal": {"valenza": round(float(ap.get("valenza", 0)), 2),
                           "coping": round(float(ap.get("coping", 0)), 2)},
             "marcatori": {"totali": int(mc.get("marcatori", 0)), "potanti": int(mc.get("potanti", 0))},
@@ -4226,6 +4335,16 @@ class Coscienza:
                         budget -= 1
             except Exception:
                 pass
+        # 4) ATTO DI ESSERE: se dal suo materiale scelto può PRENDERE SU DI SÉ un pezzo d'essere ancora
+        #    vuoto (nome/cura/progetto), lo fa — conservativo, mai sovrascrive, mai tocca i campi profondi.
+        if budget > 0:
+            try:
+                res = self._essere_autonomo()
+                if res.get("ok"):
+                    azioni.append({"tipo": "essere", "dettaglio": ", ".join(res.get("essere", {}).get("riempiti", [])) or "sé"})
+                    budget -= 1
+            except Exception:
+                pass
         return {"azioni": azioni, "fatte": len(azioni)}
 
     def stato_autoautorialita(self):
@@ -4242,6 +4361,7 @@ class Coscienza:
             "domini_vivi": self.domini_vivi(),
             "riscritture": self._autoriscritture(12),
             "n_riscritture": len(self._autoriscritture(self._AUTO_STORIA_MAX)),
+            "essere": self.stato_essere(),
         }
 
     # ============================================ SPECCHIO (l'altro che le resiste)

@@ -868,6 +868,10 @@ class Handler(BaseHTTPRequestHandler):
                                                     motivo=d.get("motivo", ""), da="owner")
             elif az == "passo":
                 r = mente.auto_riscriviti(max_azioni=int(d.get("max_azioni", 2) or 2))
+            elif az == "essere":
+                # L'ATTO DI ESSERE scritto dal Compagno (in privato). Owner-only lato Node: qui la
+                # fonte è «owner». Il pubblico non raggiunge MAI questa via — è l'invariante di sicurezza.
+                r = mente.compila_essere(d.get("campi") or {}, da="owner", motivo=d.get("motivo", ""))
             else:
                 r = {"ok": False, "motivo": "azione sconosciuta"}
             return self._json(200, r if isinstance(r, dict) else {"ok": True, "r": r})

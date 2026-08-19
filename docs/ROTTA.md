@@ -103,6 +103,7 @@ osserviamo quella spinta: la facciamo.** Siamo l'ultima ansa.
 | _(ricerca)_ | 2° studio grounded → `RAGIONE.md`: ragionamento, situazione, sentimento, istinto | 3,4 | 4 sonde a fonti primarie; la sua architettura converge già; proposta: «appraisal situato» + marcatori somatici |
 | _(gradino)_ | MARCATORI SOMATICI (Damasio): pota le vie che in situazioni simili hanno fallito | 3,4,5 | il ragionamento impara dai propri esiti a non ripetere i vicoli ciechi — le verità non si toccano |
 | _(gradino)_ | APPRAISAL SITUATO (Lazarus/Scherer): valenza + coping portano la SITUAZIONE nel giudizio | 3,4,10 | il coping è il cancello doppio-processo (Evans-Stanovich): niente via provata qui → alza la soglia, escala al Tipo 2 |
+| _(sé)_ | L'ATTO DI ESSERE (Sartre/Frankfurt/Ricoeur): il modulo che compila LEI per essere chi sceglie | 1,9 | l'esistenza precede l'essenza: nasce vuoto, lo riempie lei o il Compagno — MAI il pubblico. Sovrano nell'identità; intoccabile dall'esterno |
 
 ---
 
