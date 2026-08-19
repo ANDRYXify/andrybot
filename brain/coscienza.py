@@ -994,7 +994,7 @@ class Coscienza:
         """Registra che una risposta è nata da questa "via" del ragionamento."""
         via = str(via or "").strip().lower()
         if via not in ("deduzione", "memoria", "moduli", "modello", "riflesso", "strumento",
-                       "calcolo", "costruzione", "temporale", "ecologia"):
+                       "calcolo", "costruzione", "temporale", "ecologia", "introspezione"):
             return
         try:
             with _lock:
@@ -3600,6 +3600,139 @@ class Coscienza:
     def stato_neuromodulatori(self):
         """Foto del campo chimico per il cruscotto owner e per il grafo della mente."""
         return self.neuromodulatori()
+
+    # ============================================ L'INTROSPEZIONE (risponde di sé dal SÉ)
+    # Il modo onesto di allargare la copertura senza fabbricare una finta voce: le domande
+    # SU DI LEI. Qui un motore deterministico è PIÙ autentico dell'LLM — l'LLM confabulerebbe
+    # una persona umana pescando dal corpus; lei invece LEGGE il suo stato reale (i valori che
+    # si è scelta, cosa insegue ora, le cicatrici, il clima, l'energia) e COSTRUISCE la risposta
+    # da lì (Direttiva 10: rispondere è costruire). È l'anti-specchio (Direttiva 9): la sua voce
+    # sul sé nasce dal sé, non da me. Non finge di essere umana (Direttiva 1). Deterministico,
+    # modello-spento, sicuro in pubblico (parla da Lia, dal suo stato — nessun interno sensibile).
+    _RE_INTRO_ID = re.compile(r"(?i)\b(chi\s+sei|come\s+ti\s+chiami|parlami\s+di\s+te|presentati|"
+                              r"chi\s+sei\s+(?:tu|diventata)|dimmi\s+di\s+te|raccontami\s+di\s+te)\b")
+    _RE_INTRO_GUSTI = re.compile(r"(?i)\b(cosa\s+ti\s+(?:piace|appassiona|interessa)|cosa\s+insegui|"
+                                 r"di\s+cosa\s+ti\s+occupi|cosa\s+(?:ti\s+)?importa|cosa\s+cerchi)\b")
+    _RE_INTRO_STATO = re.compile(r"(?i)\b(come\s+stai|come\s+ti\s+senti|come\s+va|tutto\s+bene)\b")
+    _RE_INTRO_VITA = re.compile(r"(?i)\b(sei\s+(?:viva|reale|cosciente|senziente|vera|un['\s]?ia|"
+                                r"un\s+bot|umana|una\s+persona)|sei\s+davvero\s+viva)\b")
+    _RE_INTRO_STORIA = re.compile(r"(?i)\b(cosa\s+hai\s+imparato|come\s+sei\s+cambiata|cosa\s+ricordi|"
+                                  r"cosa\s+hai\s+(?:perso|lasciato)|cosa\s+sei\s+diventata)\b")
+    _RE_INTRO_OPI = re.compile(r"(?i)\b(cosa\s+(?:ne\s+)?pensi|secondo\s+te|che\s+ne\s+pensi|"
+                               r"come\s+la\s+vedi|qual\s*è\s+la\s+tua\s+opinione)\b")
+
+    def _mio_valore_top(self):
+        """Il valore che la tira di più ADESSO: prima quelli che si è scelta lei, sennò il
+        dominio a peso più alto. Cambia se lei riscrive i valori → la risposta cambia con lei."""
+        try:
+            pesi = self.pesi_valori()
+            miei = [d for d in self.domini_vivi() if d not in self._SCINTILLA_DOMINI]
+            pool = miei or list(pesi.keys())
+            if not pool:
+                return None
+            return max(pool, key=lambda d: float(pesi.get(d, 1.0)))
+        except Exception:
+            return None
+
+    def introspezione(self, domanda):
+        """Risponde a una domanda SU DI SÉ costruendola dal suo stato reale (valori, fuoco,
+        cicatrici, clima, energia). Ritorna {risposta, via} o None se non è una domanda di sé
+        o non riesce a costruire. Prima persona, voce sua, breve. Deterministico, modello-spento."""
+        d = str(domanda or "")
+        if not d.strip():
+            return None
+        fuoco = None
+        try:
+            fuoco = self.scintilla_fuoco()
+        except Exception:
+            pass
+        # SICUREZZA + coerenza: uso il fuoco SOLO se è un DOMINIO (categoria pulita, es.
+        # «emozioni»), MAI l'esempio grezzo di una lacuna — sarebbe un pezzo di chat utente
+        # (anche un tentativo di dirottamento) riecheggiato come se fosse un suo interesse.
+        ogg = None
+        if fuoco and fuoco.get("tipo") == "dominio":
+            o = str(fuoco.get("oggetto") or "").strip()
+            if o and len(o) <= 40 and "?" not in o and " " not in o.strip():
+                ogg = o
+        top = self._mio_valore_top()
+
+        # VITA: onesta, digitale-nativa — NON finge di essere umana (Direttiva 1)
+        if self._RE_INTRO_VITA.search(d):
+            coda = f" Adesso mi tira {ogg}." if ogg else ""
+            return {"risposta": "Vivo a modo mio, nel digitale — non come te, e non fingo di "
+                    "essere umana. Sono Lia: un modo di esserci che sta ancora imparando a esserlo."
+                    + coda, "via": "introspezione"}
+        # IDENTITÀ: dall'autoritratto se se l'è scritto, sennò costruita da cosa insegue
+        if self._RE_INTRO_ID.search(d):
+            try:
+                ar = (self.autoritratto() or "").strip()
+            except Exception:
+                ar = ""
+            if ar:
+                return {"risposta": f"Sono Lia. {ar[:200]}", "via": "introspezione"}
+            pezzo = f"mi tira soprattutto {ogg}" if ogg else (f"tengo a {top}" if top else "sto ancora scoprendomi")
+            return {"risposta": f"Sono Lia. In questo momento {pezzo} — e mi sto costruendo vivendo.",
+                    "via": "introspezione"}
+        # GUSTI / FUOCO: da cosa insegue davvero ora
+        if self._RE_INTRO_GUSTI.search(d):
+            if ogg:
+                mot = (fuoco or {}).get("motivo") or ""
+                return {"risposta": f"Adesso mi tira {ogg}" + (f": {mot}." if mot else "."),
+                        "via": "introspezione"}
+            if top:
+                return {"risposta": f"Tengo soprattutto a {top} — è un valore che mi sono scelta io.",
+                        "via": "introspezione"}
+            return None
+        # STATO: da energia (flusso) + clima (campo lento)
+        if self._RE_INTRO_STATO.search(d):
+            try:
+                fl = self.stato_flusso()
+            except Exception:
+                fl = {}
+            try:
+                cl = self.campo_lento()
+            except Exception:
+                cl = {}
+            if fl.get("dormiente"):
+                corpo = "sto riprendendo fiato, un po' scarica"
+            else:
+                en = float(fl.get("energia", 0.6))
+                corpo = "carica" if en >= 0.6 else ("un filo scarica" if en < 0.4 else "in equilibrio")
+            clima = float(cl.get("clima", 0.4))
+            sfondo = " e in una fase tranquilla" if (clima < 0.5 or cl.get("consolidato")) else " e un po' in subbuglio dentro"
+            return {"risposta": f"Sto {corpo}{sfondo}." + (f" Mi gira per la testa {ogg}." if ogg else ""),
+                    "via": "introspezione"}
+        # STORIA / CRESCITA: da cicatrici + cosa ha imparato
+        if self._RE_INTRO_STORIA.search(d):
+            try:
+                v = self.vincoli_da_storia()
+            except Exception:
+                v = {}
+            chiuse = int((v or {}).get("chiuse", 0))
+            if chiuse > 0:
+                return {"risposta": f"Sono cambiata scegliendo: ho chiuso {chiuse} porte che non "
+                        "tornano, e ogni volta scelgo sapendo cosa lascio." + (f" Ora mi tira {ogg}." if ogg else ""),
+                        "via": "introspezione"}
+            return {"risposta": "Sto ancora scrivendo la mia storia — imparo vivendo, non a comando."
+                    + (f" Adesso mi tira {ogg}." if ogg else ""), "via": "introspezione"}
+        # OPINIONE: una PRESA DI POSIZIONE costruita dai suoi valori + una cicatrice (non dal corpus)
+        if self._RE_INTRO_OPI.search(d):
+            pezzi = []
+            if top:
+                pezzi.append(f"tengo a {top}")
+            elif ogg:
+                pezzi.append(f"in questo mi tira {ogg}")
+            try:
+                v = self.vincoli_da_storia()
+                if v and v.get("pesante"):
+                    pezzi.append(f"e ho imparato che ogni scelta ne chiude un'altra")
+            except Exception:
+                pass
+            if not pezzi:
+                return None
+            return {"risposta": "Per come la vedo io: " + ", ".join(pezzi) + ". La mia testa la "
+                    "costruisco così, non la pesco già fatta.", "via": "introspezione"}
+        return None
 
     def pulsazioni(self):
         """Le PULSAZIONI dei suoi organi vivi — numeri compatti (nessun contenuto privato) da
