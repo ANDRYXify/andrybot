@@ -6942,6 +6942,15 @@ function pannelloModuli() {
         <button class="btn" id="btn-qc">${L('Aggiungi comando', 'Add command', 'Añadir comando')}</button>
         <span class="suggerimento">${L('Per condizioni, eventi, timer, effetti o webhook usa', 'For conditions, events, timers, effects or webhooks use', 'Para condiciones, eventos, temporizadores, efectos o webhooks usa')} <strong>${L('Nuovo modulo', 'New module', 'Nuevo módulo')}</strong> ${L('qui sotto.', 'below.', 'abajo.')}</span>
       </p>
+      <div class="riquadro-info spazio-sopra">
+        <strong>${L('Comandi pronti (1 clic)', 'Ready-made commands (1 click)', 'Comandos listos (1 clic)')}</strong>
+        <p class="suggerimento">${L('Creo per te il comando già configurato per i mod. Poi in chat basta', 'I create the command already set up for mods. Then in chat just type', 'Creo el comando ya configurado para mods. Luego en el chat basta')} <code>!categoria Fortnite</code> ${L('o', 'or', 'o')} <code>!titolo In diretta!</code> — ${L('e anche da Telegram in privato con', 'and also from Telegram in private with', 'y también desde Telegram en privado con')} <code>/categoria</code> · <code>/titolo</code>.</p>
+        <p>
+          <button class="btn secondario" id="btn-preset-categoria">🎮 ${L('Crea comando !categoria', 'Create !categoria command', 'Crear comando !categoria')}</button>
+          <button class="btn secondario" id="btn-preset-titolo">📝 ${L('Crea comando !titolo', 'Create !titolo command', 'Crear comando !titolo')}</button>
+          <span id="preset-esito" class="suggerimento"></span>
+        </p>
+      </div>
     </div>
 
     <div class="carta">
@@ -9541,6 +9550,25 @@ function attivaPiattaforma() {
     toast(L('Comando !', 'Command !', 'Comando !') + comando + L(' creato', ' created', ' creado'));
     caricaModuli();
   }));
+
+  // Comandi pronti in 1 clic: !categoria / !titolo (già configurati per i mod).
+  const presetComando = (tipo, etichetta) => conErrore(async () => {
+    const esito = document.getElementById('preset-esito');
+    const r = await api('/api/streamer/comandi/preset', { method: 'POST', body: { tipo } }).catch((e) => ({ ok: false, errore: e?.message }));
+    if (r && r.ok) {
+      if (esito) esito.textContent = r.giaEsiste
+        ? L('!', '!', '!') + r.comando + L(' esiste già ✓', ' already exists ✓', ' ya existe ✓')
+        : L('Creato: !', 'Created: !', 'Creado: !') + r.comando + ' ✓';
+      toast(r.giaEsiste ? L('Comando già presente', 'Command already there', 'Comando ya presente') : L('Comando !', 'Command !', 'Comando !') + r.comando + L(' creato', ' created', ' creado'));
+      caricaModuli();
+    } else if (r && r.upgrade) {
+      toast(r.errore || L('Limite comandi del piano raggiunto.', 'Plan command limit reached.', 'Límite de comandos del plan alcanzado.'), 'errore');
+    } else {
+      if (esito) esito.textContent = (r && r.errore) || L('Errore', 'Error', 'Error');
+    }
+  });
+  document.getElementById('btn-preset-categoria')?.addEventListener('click', () => presetComando('categoria'));
+  document.getElementById('btn-preset-titolo')?.addEventListener('click', () => presetComando('titolo'));
 
   // comodità in chat: gestione comandi dalla chat + ore guardate
   document.getElementById('btn-salva-comodita')?.addEventListener('click', () => conErrore(async () => {
