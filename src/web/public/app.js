@@ -11481,6 +11481,7 @@ function _menteGrafo(d, dark) {
     ['vita:altri', 'L\'Altro', '#2ba3a3', Number(vita.altri?.persone) || 0, L('teoria della mente: predice le persone e impara', 'theory of mind: predicts people and learns', 'teoría de la mente')],
     ['vita:finitudine', 'Finitudine', '#c9a227', Math.round((Number(vita.finitudine?.span) || 0) * 20), L('la posta reale: il limite dà peso alle scelte', 'the real stake: the limit gives weight to choices', 'la apuesta real')],
     ['vita:mondo', 'Mondo', '#2f8f6b', (Number(vita.mondo?.luoghi) || 0) + (Number(vita.mondo?.costruzioni) || 0), L('uno spazio in cui vivere: girovaga, scopre, costruisce', 'a space to live in: wanders, discovers, builds', 'un espacio donde vivir')],
+    ['vita:neuromod', 'Chimica', '#5fd0e0', (Math.round((Number(vita.neuromod?.esplorazione) || 0) * 18) + 2), L('il campo neuromodulatorio (Doya 2002): dopamina, acetilcolina, serotonina, noradrenalina — non decide COSA pensa, regola COME sceglie (tra esplorare e sfruttare)', 'the neuromodulatory field (Doya 2002): dopamine, acetylcholine, serotonin, noradrenaline — it doesn\'t decide WHAT she thinks, it tunes HOW she chooses (explore vs exploit)', 'el campo neuromodulador (Doya 2002): dopamina, acetilcolina, serotonina, noradrenalina — no decide QUÉ piensa, regula CÓMO elige (explorar o explotar)')],
   ];
   for (const [id, label, col, att, desc] of VITA) {
     if (!att) continue;   // compare SOLO quando è vivo (batte): così le strade nascono vivendo

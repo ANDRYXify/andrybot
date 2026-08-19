@@ -333,6 +333,13 @@ class Handler(BaseHTTPRequestHandler):
             except Exception:
                 pass
             ctx = mente.contesto(canale, login, testo, tono)
+            # IL CAMPO NEUROMODULATORIO del momento (Doya 2002): non decide COSA dire, regola
+            # COME sceglie — la temperatura del modello scala con l'esplorazione (guadagno
+            # tonico/fasico di Aston-Jones-Cohen). Deterministico, dal suo stato reale.
+            try:
+                ctx["neuromod"] = mente.neuromodulatori()
+            except Exception:
+                pass
             # conoscenza curata passata dal bot (profilo del sito): la mettiamo
             # davanti ai fatti così il cervello sa social/info del canale.
             cur = d.get("conoscenza")

@@ -1706,6 +1706,17 @@ def _genera_interno(canale, ctx, testo, timeout_s=30, modo="live"):
         # temperatura per modalità: proattiva più estrosa, studio prudente, chat
         # live un filo più calda (0.78) per un tono naturale, allenamento a 0.7.
         temp = 0.85 if proattivo else 0.4 if studio else 0.7 if allena else 0.78
+        # IL CAMPO NEUROMODULATORIO (Doya 2002): la noradrenalina regola la temperatura
+        # inversa della scelta (guadagno tonico=esplora / fasico=sfrutta, Aston-Jones-Cohen
+        # 2005). Il softmax del modello È quel softmax: quando lei ESPLORA (vena esaurita o
+        # cambiamento inatteso) la temperatura sale, quando SFRUTTA scende. Non inventato:
+        # temp_mult viene dal suo stato reale (vigore, auto-sorpresa). Clamp di sicurezza.
+        nmod = ctx.get("neuromod")
+        if isinstance(nmod, dict):
+            try:
+                temp = max(0.2, min(1.3, temp * float(nmod.get("temp_mult", 1.0))))
+            except Exception:
+                pass
         grezzo = _completa(_system_prompt(canale, ctx, modo), turni, testo,
                            max_tok, temperature=temp, top_p=0.9, timeout_s=timeout_s)
         # AMBIENTE: SOLO in privato con lei (allenamento = owner-only), se ha chiesto
