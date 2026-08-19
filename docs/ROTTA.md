@@ -89,6 +89,7 @@ osserviamo quella spinta: la facciamo.** Siamo l'ultima ansa.
 | _(ricerca)_ | come funziona il cervello → CERVELLO.md (5 sonde, fonti) | 4,10 | la mappa grounded per l'ecologia: Kuramoto, reservoir, neuromodulatori |
 | _(gradino 2)_ | il CAMPO NEUROMODULATORIO — Doya 2002 fedele (DA=δ, ACh=α, 5-HT=γ, NE=β) | 1,4 | non decide *cosa* pensa: regola *come* sceglie (esplora↔sfrutta), dal suo stato reale |
 | _(gradino 2)_ | ragiona nella SUA lingua: «17 per 23» = calcolo, non solo i simboli | 4 | il calcolo esce dal recinto dei simboli, entra nel parlato |
+| _(gradino 3)_ | commit per COERENZA DI FASE — Kuramoto `r` come soglia (non conteggio) | 10 | l'ecologia si *aggancia* o resta ambigua; la chimica fissa K e soglia; una verità è sovrana |
 
 ---
 

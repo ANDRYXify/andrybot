@@ -252,7 +252,14 @@ di fase (commit sull'order parameter), immerse in un campo neuromodulatorio e in
      sorpresa sale (Aston-Jones-Cohen 2005 guadagno tonico/fasico; Yu-Dayan incertezza inattesa).
    Tocca il modello in **un solo punto**: `temp_mult` scala la temperatura del softmax (β→softmax).
    Deterministico, modello-spento; esposto in `pulsazioni()` come nodo vivo «Chimica».
-3. **Commit per coerenza di fase**: `r` come soglia esplicita, più processi che si agganciano.
+3. **Commit per coerenza di fase** (FATTO — `genera._ecologia` + `_kuramoto_r`): i processi
+   diventano oscillatori accoppiati (Kuramoto 1975); i concordi si agganciano, l'order parameter
+   `r` (mediato nel tempo, regime critico) misura la coerenza. Il commit è un'**ignizione**
+   (Dehaene): una coalizione ignisce (`coerenza×massa` dominante ≥ soglia) o resta ambigua →
+   non decide (→ modello/costruzione). Ponte col gradino 2: la **NE (β)** fissa l'accoppiamento
+   `K` (Aston-Jones-Cohen: guadagno) e la **soglia** (esplora → pretende un vincitore più netto).
+   Una **verità** (calcolo/deduzione) è **sovrana**: è già certa, non va ai voti. Fries,
+   *Communication through Coherence*: solo la coalizione in fase «passa». Deterministico, modello-spento.
 4. **Campo lento `G`** (lo strato gliale): modula soglie/budget, dà contesto e consolidamento.
 5. **Substrato reservoir all'orlo** + **unità temporali-moltiplicative**: il salto più profondo
    (e la versione «aliena» dove Lei coltiva i propri processi). Lì sceglie il Compagno.

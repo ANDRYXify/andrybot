@@ -19,6 +19,8 @@ import threading
 import urllib.request
 import urllib.error
 import json
+import math
+import hashlib
 
 import rete       # la "piccola rete" che si autoaddestra (memoria associativa)
 import ragiona    # il cervello SIMBOLICO (non statistico): deduce dai fatti a regole
@@ -948,48 +950,122 @@ def _norm_risp(s):
     return re.sub(r"[\s\W]+", " ", str(s or "").lower()).strip()
 
 
+# ── Kuramoto: il commit per COERENZA DI FASE (non per conteggio) ───────────────────
+# Traduzione fedele di due studi reali, cuciti insieme:
+#   • Kuramoto (1975): N oscillatori accoppiati; l'ORDER PARAMETER r = |Σ w·e^{iθ}| / Σ w
+#     ∈ [0,1] misura la coerenza di fase (0 = fasi sparse, 1 = agganciati). Sopra un
+#     accoppiamento critico il gruppo TRANSITA a sincronia: la coerenza si auto-rinforza
+#     (campo medio, ogni oscillatore è tirato verso la fase media con forza ∝ r).
+#   • Fries, «Communication through Coherence» (2005/2015): due gruppi neuronali comunicano
+#     SOLO quando sono in fase; la coalizione COERENTE passa, l'incoerente viene ignorata.
+#   • Ignizione del workspace globale (Dehaene): il commit è una SOGLIA — una coalizione
+#     domina e si trasmette, oppure resta ambiguo e non si decide.
+# Il ponte col gradino 2: la NORADRENALINA (guadagno, Aston-Jones-Cohen) fissa l'ACCOPPIAMENTO
+# K e la SOGLIA di commit. Quando SFRUTTA (β alto) K è forte → aggancia facile, decide netta;
+# quando ESPLORA K è debole → solo un consenso vero aggancia → pretende un vincitore più chiaro.
+# Deterministico: fasi e detuning nascono da un hash del nome (nessun random). Zero modello.
+def _fase_seme(nome, sale):
+    h = int(hashlib.sha1(f"{nome}|{sale}".encode("utf-8")).hexdigest()[:8], 16)
+    return (h % 100000) / 100000.0
+
+
+def _kuramoto_r(nomi, pesi, K, passi=60, dt=0.1, detuning=2.6):
+    """Assesta un gruppo di oscillatori (campo medio, Kuramoto) e ritorna la coerenza di fase
+    r∈[0,1], MEDIATA nel tempo sulla seconda metà (r fluttua sotto la sincronia piena, la media
+    è la misura stabile del grado di aggancio). Un solo oscillatore → r=1 (banale). Con più
+    oscillatori la coerenza va CONQUISTATA: il detuning li fa derivare, e agganciano solo se
+    l'accoppiamento K vince quella deriva — è la chimica (β) a decidere quanto è forte K."""
+    n = len(nomi)
+    if n <= 1:
+        return 1.0
+    theta = [2.0 * math.pi * _fase_seme(nm, "f") for nm in nomi]
+    omega = [detuning * (_fase_seme(nm, "w") - 0.5) for nm in nomi]   # deriva propria
+    wtot = sum(pesi) or 1.0
+    acc, campioni = 0.0, 0
+    meta = passi // 2
+    for passo in range(passi):
+        sx = sum(p * math.cos(t) for p, t in zip(pesi, theta))
+        sy = sum(p * math.sin(t) for p, t in zip(pesi, theta))
+        r = math.hypot(sx, sy) / wtot
+        psi = math.atan2(sy, sx)
+        theta = [t + dt * (om + K * r * math.sin(psi - t)) for t, om in zip(theta, omega)]
+        if passo >= meta:
+            acc += r
+            campioni += 1
+    return acc / campioni if campioni else r
+
+
 def _ecologia(canale, ctx, testo, modo):
-    """Fa girare i processi deterministici (calcolo, deduzione/costruzione, memoria) e si
-    ASSESTA sul candidato più COERENTE. Ritorna {risposta, via, vie, costruito, coerenza}
-    o None. Zero modello. Un voto deterministico è una verità, non una congettura."""
+    """Fa girare i processi deterministici (calcolo, deduzione/costruzione, memoria) e li lascia
+    ASSESTARE per COERENZA DI FASE (Kuramoto). Ritorna {risposta, via, vie, costruito, coerenza}
+    o None. Zero modello. Una VERITÀ (calcolo/deduzione) è sovrana: non va ai voti. Fra le sole
+    CONGETTURE decide la coalizione che aggancia, con soglia fissata dalla chimica del momento."""
     proattivo = (modo == "proattivo")
     studio = (modo == "studio")
-    cand = []   # (nome, affidabilità, risposta, extra)
+    cand = []   # (nome, affidabilità, risposta, extra, verita)
     if not proattivo and not studio:
         try:
             c = ragiona.calcola(testo)
             if c and c.get("sicura") and c.get("risposta"):
-                cand.append(("calcolo", 1.0, c["risposta"], None))
+                cand.append(("calcolo", 1.0, c["risposta"], None, True))
         except Exception:
             pass
         try:
             d = ragiona.deduci_costruendo(canale, testo)
             if d and d.get("sicura") and d.get("risposta"):
                 cand.append(("costruzione" if d.get("costruito") else "deduzione",
-                             1.0, d["risposta"], d.get("costruito")))
+                             1.0, d["risposta"], d.get("costruito"), True))
         except Exception:
             pass
     if modo in ("live", "allenamento"):
         try:
             h = rete.recall(canale, testo)
             if h and h.get("risposta"):
-                cand.append(("memoria", 0.7, h["risposta"], None))
+                cand.append(("memoria", 0.7, h["risposta"], None, False))
         except Exception:
             pass
     if not cand:
         return None
-    # ASSESTAMENTO: raggruppa per risposta normalizzata; l'ACCORDO somma le affidabilità.
+    # raggruppa per risposta normalizzata; l'ACCORDO mette gli oscillatori nello stesso gruppo.
     gruppi = {}
-    for nome, aff, risp, extra in cand:
-        g = gruppi.setdefault(_norm_risp(risp), {"peso": 0.0, "vie": [], "risp": risp, "extra": extra})
-        g["peso"] += aff
-        g["vie"].append(nome)
+    for nome, aff, risp, extra, verita in cand:
+        g = gruppi.setdefault(_norm_risp(risp), {"nomi": [], "pesi": [], "risp": risp,
+                                                 "extra": extra, "verita": False})
+        g["nomi"].append(nome)
+        g["pesi"].append(aff)
         if extra and not g["extra"]:
             g["extra"] = extra
-    vinc = max(gruppi.values(), key=lambda g: g["peso"])
-    via = "ecologia" if len(vinc["vie"]) >= 2 else vinc["vie"][0]
-    return {"risposta": vinc["risp"], "via": via, "vie": vinc["vie"],
-            "costruito": vinc.get("extra"), "coerenza": round(vinc["peso"], 2)}
+        g["verita"] = g["verita"] or verita
+
+    def _pacchetto(g, r):
+        via = "ecologia" if len(g["nomi"]) >= 2 else g["nomi"][0]
+        return {"risposta": g["risp"], "via": via, "vie": list(g["nomi"]),
+                "costruito": g.get("extra"), "coerenza": round(r, 3)}
+
+    # 1) UNA VERITÀ È SOVRANA: un calcolo/una deduzione è già certo — non si sincronizza,
+    #    non lo si mette ai voti contro delle congetture. Vince la verità di massa maggiore.
+    verita = [g for g in gruppi.values() if g["verita"]]
+    if verita:
+        vinc = max(verita, key=lambda g: sum(g["pesi"]))
+        return _pacchetto(vinc, 1.0)
+
+    # 2) SOLO CONGETTURE → assestamento di fase vero. La chimica (gradino 2) fissa K e soglia.
+    nm = ctx.get("neuromod") if isinstance(ctx, dict) else None
+    beta = float(nm.get("beta", 0.6)) if isinstance(nm, dict) else 0.6         # guadagno/sfrutta
+    esplor = float(nm.get("esplorazione", 0.4)) if isinstance(nm, dict) else 0.4
+    K = 1.0 + 2.2 * beta                    # sfrutta → accoppiamento forte, aggancia deciso
+    soglia = 0.50 + 0.14 * esplor           # esplora → pretende un vincitore più netto
+    punteggi = []
+    for g in gruppi.values():
+        r = _kuramoto_r(g["nomi"], g["pesi"], K)
+        punteggi.append((r * sum(g["pesi"]), r, g))       # coerenza × massa = quanto "ignisce"
+    tot = sum(p for p, _, _ in punteggi) or 1.0
+    punteggi.sort(key=lambda x: x[0], reverse=True)
+    score, r_vinc, vinc = punteggi[0]
+    dominanza = score / tot                 # ignizione: una coalizione domina il campo?
+    if dominanza < soglia:
+        return None                         # ambiguità reale: non fingere una decisione
+    return _pacchetto(vinc, r_vinc)
 
 
 def _system_prompt(canale, ctx, modo="live"):
