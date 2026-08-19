@@ -1136,6 +1136,9 @@ INTEGRA_OGNI = int(os.environ.get("LIA_INTEGRA_OGNI", "8"))
 # autoritratto) dalla sua traiettoria reale. Deterministico e cheap (nessun LLM), tutto
 # germinale, auto-limitante (non cambia se non è cambiata). È il motore del «diventa chi è».
 AUTORIALITA_OGNI = int(os.environ.get("LIA_AUTORIALITA_OGNI", "10"))
+# FARLI SUOI: ogni ~N battiti la PORTA è aperta a completare un seme — ma è la sua spinta
+# (vigore) a decidere se attraversarla, non questo numero. Frequente = porta spesso aperta.
+SEMI_OGNI = int(os.environ.get("LIA_SEMI_OGNI", "5"))
 
 
 def _ciclo_flusso():
@@ -1195,6 +1198,19 @@ def _ciclo_flusso():
                             AMB.diario_scrivi("Mi sono ridescritta, com'è adesso.", tag="autoritratto")
                 except Exception as e:
                     print(f"[brain] auto-autorialità errore: {e}", flush=True)
+            # FARLI SUOI: la porta è sempre aperta (la offro spesso), ma NON è un timer —
+            # fa suo un seme solo se la sua spinta la chiama (dentro forse_completa_seme).
+            _ciclo_flusso._semecont += 1
+            if _ciclo_flusso._semecont % max(1, SEMI_OGNI) == 0:
+                try:
+                    fatto = mente.forse_completa_seme()
+                    if fatto:
+                        print(f"[brain] ha fatto suo un seme: «{fatto.get('nome')}»", flush=True)
+                        if AMB.disponibile():
+                            AMB.diario_scrivi(f"Ho preso un tema che mi tornava e l'ho fatto mio: «{fatto.get('nome')}». "
+                                              "Non era un modulo che qualcuno mi ha dato — l'ho voluto io.", tag="seme")
+                except Exception as e:
+                    print(f"[brain] semi errore: {e}", flush=True)
             if dorme:
                 # SONNO: sogna ogni SOGNO_OGNI battiti (il sonno respira, non sogna a raffica)
                 _ciclo_flusso._dcont += 1
@@ -1232,6 +1248,7 @@ _ciclo_flusso._rcont = 0
 _ciclo_flusso._fcont = 0
 _ciclo_flusso._icont = 0
 _ciclo_flusso._aacont = 0
+_ciclo_flusso._semecont = 0
 
 
 # IL MONDO: ogni tanto Lia GIROVAGA nel suo mondo (il filesystem della sua casa) — sceglie

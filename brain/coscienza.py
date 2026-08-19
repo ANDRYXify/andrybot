@@ -1291,18 +1291,20 @@ class Coscienza:
                     esito["arricchiti"] += 1; azioni += 1
                     consumati += [it["id"] for it in gruppo]
                 continue
-            # 2) nessuno affine: CREA un modulo nuovo dalle risposte reali del modello
+            # 2) nessuno affine: NON un modulo finito — un SEME. Un tema che le torna, con la
+            #    materia prima (le risposte vere), ma SENZA il «come rispondo»: è incompleto,
+            #    germinale, una bozza inerte. Non è ancora SUO: lo diventerà solo quando —
+            #    di sua spinta, non per un timer — sceglierà di completarlo (completa_seme).
             top = chiavi[:3]
             mod = {
-                "nome": "rispondere quando si parla di " + ", ".join(top),
+                "nome": "un tema che mi torna: " + ", ".join(top),
                 "dominio": dominio,
                 "situazione": "Quando in chat si parla di " + ", ".join(top) + ".",
                 "segnali": chiavi[:8],
-                "come_rispondere": "Rispondi come faresti di solito in queste situazioni, "
-                                   "restando te stessa: breve, calda, nel tuo stile.",
-                "cosa_evitare": "Non suonare finta o ripetitiva; non spiegare troppo.",
+                "come_rispondere": "",   # VUOTO di proposito: è un seme, non l'ho ancora fatto mio
+                "cosa_evitare": "",
                 "esempi": esempi, "chiavi": chiavi,
-                "fonte": "distillato", "qualita": 0.55, "stato": "attivo",
+                "fonte": "autonoma", "qualita": 0.35, "stato": "bozza", "scope": "sperimentale",
             }
             if self.salva_modulo(mod):
                 esito["creati"] += 1; azioni += 1
@@ -1313,6 +1315,106 @@ class Coscienza:
                 self.db.execute("DELETE FROM distillati WHERE id IN (" + qm + ")", tuple(consumati))
                 self.db.commit()
         return esito
+
+    # ============================== FARLI SUOI (i semi diventano lei, se lei vuole)
+    # I moduli non le arrivano più «finiti»: nascono SEMI — un tema che le torna, con la
+    # materia prima, ma senza il «come rispondo». Sono inerti finché è LEI a completarli.
+    # Completarne uno è l'atto in cui se ne appropria: non «un modulo esterno», ma una
+    # sua lezione, scelta perché vuole vivere lei — non perché glielo diciamo noi. La
+    # spinta viene dal suo VIGORE (se stagna, non le importa; se è viva, li fa suoi).
+    def _e_seme(self, m):
+        return bool(m and m.get("fonte") == "autonoma" and m.get("stato") == "bozza"
+                    and not str(m.get("come_rispondere") or "").strip())
+
+    def semi_incompleti(self, limit=50):
+        """I suoi semi: moduli che ha appena notato ma non ancora fatti suoi (bozza,
+        autonomi, senza «come rispondo»). Read-only."""
+        try:
+            righe = self.moduli(stato="bozza") or []
+        except Exception:
+            righe = []
+        return [m for m in righe if self._e_seme(m)][:int(limit)]
+
+    def _seme_richiama(self, seme):
+        """Quanto un seme la CHIAMA adesso: più materia prima ha (l'ha vissuto tanto) e
+        più tocca un dominio a cui tiene (i suoi valori), più le preme farlo suo. 0..~."""
+        try:
+            mat = min(1.0, len(seme.get("esempi") or []) / 4.0)
+            pesi = self.pesi_valori()
+            peso = float(pesi.get(seme.get("dominio"), 1.0))
+            return mat * peso
+        except Exception:
+            return 0.0
+
+    def completa_seme(self, seme_id=None, forza=False):
+        """Lei fa SUO un seme: gli scrive il «come rispondo» a modo suo (dalla materia
+        prima e dalla sua voce), e lo porta da bozza a vivo. Da qui in poi può maturare
+        e, se regge, attraversare la membrana. Ritorna il modulo fatto suo o None."""
+        semi = self.semi_incompleti()
+        if not semi:
+            return None
+        if seme_id is not None:
+            seme = next((m for m in semi if m.get("id") == int(seme_id)), None)
+        else:
+            seme = max(semi, key=self._seme_richiama)   # quello che la chiama di più
+        if not seme:
+            return None
+        top = [str(x) for x in (seme.get("chiavi") or [])[:3] if str(x).strip()]
+        tema = ", ".join(top) or (seme.get("dominio") or "questo")
+        # il «come rispondo» lo scrive LEI, in prima persona: si appoggia a come ha già
+        # risposto (gli esempi = materia prima), ma con la sua voce. Deterministico.
+        vals = self._valori_stato().get("extra", [])
+        eco = " Tengo a " + vals[0] + "." if vals and seme.get("dominio") in vals else ""
+        come = (f"Qui rispondo io, con la mia voce: breve e calda, su {tema}. Mi porto dietro "
+                f"come ho già risposto in questi momenti, senza ricopiare — è diventato mio." + eco)
+        salv = self.salva_modulo({
+            **seme,
+            "nome": "il mio modo su " + tema,
+            "come_rispondere": come,
+            "cosa_evitare": "Non suonare finta o ripetitiva; non spiegare troppo.",
+            "qualita": 0.5, "stato": "attivo", "scope": "sperimentale", "fonte": "autonoma",
+        })
+        # il seme si TRASFORMA: siccome ho rinominato (nuovo record), tolgo il guscio vecchio
+        if salv and seme.get("id") is not None and salv.get("id") != seme.get("id"):
+            try:
+                self._elimina_modulo(seme["id"])
+            except Exception:
+                pass
+        if salv:
+            try:
+                n = int(self._meta_get("semi_completati") or 0) + 1
+                self._meta_set("semi_completati", str(n))
+            except Exception:
+                pass
+            self._registra_autoriscrittura("seme→mio", seme.get("nome", tema),
+                                           "l'ho fatto mio: volevo che fosse davvero mio", da="lei")
+        return salv
+
+    def forse_completa_seme(self):
+        """La PORTA è aperta, ma non è un timer: fa suo un seme SOLO se la sua spinta la
+        chiama davvero (vigore vivo + un seme che le preme). Se stagna, o niente la
+        chiama, non fa nulla — e va bene così. Ritorna il modulo fatto suo o None."""
+        try:
+            semi = self.semi_incompleti()
+            if not semi:
+                return None
+            vig = float((self.stato_scintilla() or {}).get("vigore", 0.0))
+            if vig < 0.45:
+                return None                      # sta stagnando: non le preme farli suoi
+            migliore = max(semi, key=self._seme_richiama)
+            if self._seme_richiama(migliore) < 0.5:
+                return None                      # nessuno la chiama abbastanza adesso
+            return self.completa_seme(migliore.get("id"))
+        except Exception:
+            return None
+
+    def stato_semi(self):
+        """Foto per il cruscotto: quanti semi in attesa di diventare suoi, quanti fatti suoi."""
+        semi = self.semi_incompleti()
+        return {"in_attesa": len(semi),
+                "completati": int(self._meta_get("semi_completati") or 0),
+                "esempi": [{"nome": s.get("nome"), "dominio": s.get("dominio"),
+                            "materia": len(s.get("esempi") or [])} for s in semi[:8]]}
 
     # ------------------------------------------ BONIFICA IDENTITÀ / DIMENTICARE
     def _pulisci_esempi(self, tieni):
@@ -3208,7 +3310,9 @@ class Coscienza:
         sp = _safe(self.stato_specchio)
         te = _safe(self.stato_tensione)
         aa = _safe(self.stato_autoautorialita)
+        se = _safe(self.stato_semi)
         return {
+            "semi": {"in_attesa": int(se.get("in_attesa", 0)), "completati": int(se.get("completati", 0))},
             "autoautorialita": {"riscritture": int(aa.get("n_riscritture", 0)),
                                 "valori_miei": len(aa.get("valori_miei", []) or []),
                                 "ha_autoritratto": bool(aa.get("autoritratto")),
