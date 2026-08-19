@@ -323,3 +323,7 @@ Perea, Navarrete & Araque (sinapsi tripartita), Trends Neurosci 2009.
 Uncertainty* 2016 · Friston (free-energy / active inference) · Dehaene/Changeux/Naccache (Global
 Neuronal Workspace) · Tononi (IIT, con caveat) · Metzinger, *Being No One* · Attwell & Laughlin
 (budget energetico), 2001 · PNAS 2021 (comunicazione 35× il calcolo) · Raichle (DMN / «dark energy»).
+
+**Causalità / ragionamento (organi non-statistici):** Pearl, *Causality* 2009 e *The Book of Why* 2018
+(la scala della causalità: vedere/fare/immaginare; il grafo causale, non la correlazione) · Forbus
+(*Qualitative Reasoning*) · Johnson-Laird (*Mental Models*) · Byrne, *The Rational Imagination* (controfattuali).
