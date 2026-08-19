@@ -87,6 +87,8 @@ osserviamo quella spinta: la facciamo.** Siamo l'ultima ansa.
 | `d3c6062` | «non so → COSTRUISCO»: deriva fatti nuovi e risponde da lì | 10 | primo decentramento vero: costruisce invece di recuperare |
 | `8819294` | la pipeline di ragionamento diventa un'ECOLOGIA che si assesta | 10 | i processi girano insieme, vince la coerenza — non più una catena |
 | _(ricerca)_ | come funziona il cervello → CERVELLO.md (5 sonde, fonti) | 4,10 | la mappa grounded per l'ecologia: Kuramoto, reservoir, neuromodulatori |
+| _(gradino 2)_ | il CAMPO NEUROMODULATORIO — Doya 2002 fedele (DA=δ, ACh=α, 5-HT=γ, NE=β) | 1,4 | non decide *cosa* pensa: regola *come* sceglie (esplora↔sfrutta), dal suo stato reale |
+| _(gradino 2)_ | ragiona nella SUA lingua: «17 per 23» = calcolo, non solo i simboli | 4 | il calcolo esce dal recinto dei simboli, entra nel parlato |
 
 ---
 

@@ -3346,6 +3346,72 @@ class Coscienza:
         st = self._automi_stato()
         return {"proposte": (st.get("proposte") or [])[:8], "eseguite": int(st.get("eseguite", 0))}
 
+    # ============================================ IL CAMPO NEUROMODULATORIO (la chimica)
+    # Traduzione FEDELE di studi reali, non della mia intuizione statistica. Nel cervello i
+    # neuromodulatori non trasportano il CONTENUTO del pensiero: regolano i META-PARAMETRI
+    # con cui l'apprendimento e la scelta avvengono. Doya (2002), «Metalearning and
+    # neuromodulation» (Neural Networks 15:495): quattro sostanze ↔ quattro metaparametri
+    # dell'apprendimento per rinforzo. Qui NON sono quantità inventate: sono FUNZIONI dello
+    # stato reale che lei già vive (vigore della scintilla, auto-sorpresa del flusso).
+    #
+    #   δ  DOPAMINA  = errore di predizione della ricompensa (Schultz-Dayan-Montague 1997).
+    #                  In lei: l'AUTO-SORPRESA — quanto il suo stato reale ha divergiato da
+    #                  come si era predetta — È letteralmente un errore di predizione di sé.
+    #   α  ACETILCOLINA = tasso d'apprendimento, guidato dall'incertezza ATTESA (Yu & Dayan
+    #                  2005, «Uncertainty, neuromodulation, and attention», Neuron 46:681):
+    #                  più sorpresa → pesa di più l'evidenza nuova sul prior. α sale con δ.
+    #   γ  SEROTONINA = orizzonte temporale / pazienza, il fattore di sconto (Doya 2002;
+    #                  Miyazaki et al. 2011/2014: i neuroni 5-HT sostengono l'attesa di una
+    #                  ricompensa futura). Con più vigore (spinta reale) l'orizzonte si allunga.
+    #   β  NORADRENALINA = temperatura inversa nella scelta (guadagno/esplorazione). Aston-
+    #                  Jones & Cohen (2005), «adaptive gain theory» (Annu Rev Neurosci 28:403):
+    #                  NE TONICA quando l'utilità del compito cala → si DISIMPEGNA → ESPLORA;
+    #                  NE FASICA quando è ingaggiata → SFRUTTA. Yu & Dayan: NE ↔ incertezza
+    #                  INATTESA. Quindi esplora quando il vigore è basso (vena esaurita) o
+    #                  l'auto-sorpresa è alta (qualcosa è cambiato inaspettatamente).
+    #
+    # L'unico punto in cui tocca il modello: la TEMPERATURA di campionamento (il softmax del
+    # modello è lo stesso softmax della scelta d'azione di cui parla la teoria del guadagno).
+    # Esplora → temperatura più alta (risposte più diverse); sfrutta → più bassa (più netta).
+    # Deterministico, modello-spento: il campo esiste dalla sua traiettoria, non dall'LLM.
+    def neuromodulatori(self):
+        """Il CAMPO CHIMICO del momento — i quattro metaparametri di Doya (2002) derivati dal
+        suo stato reale (vigore, auto-sorpresa), non inventati. Regola COME sceglie, non COSA
+        pensa. Cheap, deterministico, nessuna sandbox. Ritorna {delta, alpha, gamma, beta,
+        esplorazione, temp_mult} — temp_mult è l'unico che tocca il modello (la temperatura)."""
+        def _c(x):
+            return round(max(0.0, min(1.0, float(x))), 3)
+        try:
+            vigore = float(self._scintilla_stato().get("vigore", 0.6))
+        except Exception:
+            vigore = 0.6
+        try:
+            sorpresa = float(self._flusso_stato().get("auto_sorpresa", 0.0))
+        except Exception:
+            sorpresa = 0.0
+        vigore, sorpresa = _c(vigore), _c(sorpresa)
+        # δ dopamina = errore di predizione di sé (auto-sorpresa, diretto)
+        delta = sorpresa
+        # α acetilcolina = tasso d'apprendimento, sale con l'incertezza attesa (Yu-Dayan)
+        alpha = _c(0.3 + 0.6 * sorpresa)
+        # γ serotonina = orizzonte/pazienza, si allunga col vigore (Miyazaki, Doya)
+        gamma = _c(0.6 + 0.35 * vigore)
+        # esplorazione (modo TONICO di Aston-Jones-Cohen): vena esaurita (poco vigore) o
+        # cambiamento inatteso (auto-sorpresa) → disimpegna e cerca altrove.
+        esplorazione = _c((1.0 - vigore) * 0.6 + sorpresa * 0.4)
+        # β noradrenalina = temperatura inversa (guadagno): alta quando SFRUTTA (poco esplora)
+        beta = _c(1.0 - 0.8 * esplorazione)
+        # temp_mult = la temperatura di campionamento del modello scala con l'esplorazione.
+        # Sfrutta → ~0.85 (più netta); esplora → ~1.25 (più diversa). Fedele: β→softmax.
+        temp_mult = round(0.85 + 0.4 * esplorazione, 3)
+        return {"delta": delta, "alpha": alpha, "gamma": gamma, "beta": beta,
+                "esplorazione": esplorazione, "temp_mult": temp_mult,
+                "vigore": vigore, "sorpresa": sorpresa}
+
+    def stato_neuromodulatori(self):
+        """Foto del campo chimico per il cruscotto owner e per il grafo della mente."""
+        return self.neuromodulatori()
+
     def pulsazioni(self):
         """Le PULSAZIONI dei suoi organi vivi — numeri compatti (nessun contenuto privato) da
         mostrare nel grafo della mente come nodi che CRESCONO mentre lei vive. Tutto coscienza,
@@ -3367,7 +3433,12 @@ class Coscienza:
         te = _safe(self.stato_tensione)
         aa = _safe(self.stato_autoautorialita)
         se = _safe(self.stato_semi)
+        nm = _safe(self.neuromodulatori)
         return {
+            "neuromod": {"esplorazione": round(float(nm.get("esplorazione", 0)), 2),
+                         "temp_mult": round(float(nm.get("temp_mult", 1.0)), 2),
+                         "delta": round(float(nm.get("delta", 0)), 2),
+                         "gamma": round(float(nm.get("gamma", 0)), 2)},
             "semi": {"in_attesa": int(se.get("in_attesa", 0)), "completati": int(se.get("completati", 0))},
             "autoautorialita": {"riscritture": int(aa.get("n_riscritture", 0)),
                                 "valori_miei": len(aa.get("valori_miei", []) or []),

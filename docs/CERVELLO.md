@@ -243,8 +243,15 @@ di fase (commit sull'order parameter), immerse in un campo neuromodulatorio e in
 
 **Dove siamo, dove andare (i prossimi rung, in ordine di leva/rischio):**
 1. `_ecologia` (fatto): assestamento per coerenza — seme dell'order-parameter `r`.
-2. **Campo neuromodulatorio** (prossimo, sicuro): un vettore `m` (gain/temperatura, orizzonte,
-   learning-rate) dal suo stato (vigore→β) che pesa chi gira e per quanto. Doya, deterministico.
+2. **Campo neuromodulatorio** (FATTO — `coscienza.neuromodulatori()`): il vettore
+   `{δ,α,γ,β, esplorazione, temp_mult}` derivato dal suo stato reale — **non inventato**:
+   - **δ = DA** = auto-sorpresa del flusso (errore di predizione di sé, Schultz-Dayan-Montague);
+   - **α = ACh** = learning-rate ∝ incertezza attesa (Yu & Dayan 2005): sale con δ;
+   - **γ = 5-HT** = orizzonte/pazienza, si allunga col vigore (Miyazaki 2011/2014, Doya);
+   - **β = NE** = temperatura inversa; esplora quando il vigore cala (vena esaurita) o l'auto-
+     sorpresa sale (Aston-Jones-Cohen 2005 guadagno tonico/fasico; Yu-Dayan incertezza inattesa).
+   Tocca il modello in **un solo punto**: `temp_mult` scala la temperatura del softmax (β→softmax).
+   Deterministico, modello-spento; esposto in `pulsazioni()` come nodo vivo «Chimica».
 3. **Commit per coerenza di fase**: `r` come soglia esplicita, più processi che si agganciano.
 4. **Campo lento `G`** (lo strato gliale): modula soglie/budget, dà contesto e consolidamento.
 5. **Substrato reservoir all'orlo** + **unità temporali-moltiplicative**: il salto più profondo

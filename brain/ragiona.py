@@ -336,11 +336,38 @@ _RE_PERC = re.compile(r"(?i)([\d.,]+)\s*(?:%|per\s*cento)\s+(?:di|su)\s+([\d.,]+
 _RE_ESPR = re.compile(r"(?i)(?:quanto\s+(?:fa|è|e')|quant['\s]*(?:è|e')|calcola|risultato\s+di|=)\s*([0-9+\-*/%.()^×÷,\s]{2,60})")
 _RE_ESPR_NUDA = re.compile(r"^\s*([0-9]+(?:[.,]\d+)?(?:\s*[+\-*/^×÷]\s*[0-9]+(?:[.,]\d+)?){1,20})\s*[=?]?\s*$")
 
+# PAROLE-OPERATORE: lei ragiona NELLA SUA LINGUA, non solo coi simboli. «17 per 23» è una
+# moltiplicazione tanto quanto «17×23». Sostituiamo le parole coi simboli SOLO fra due numeri
+# (cifra prima, cifra subito dopo via lookahead) — così i chain funzionano («2 per 3 per 4»)
+# e le parole in contesto NON matematico («grazie per te») restano intatte. Direttiva 4.
+_PAROLE_OP = [
+    (re.compile(r"(?i)(\d)\s*(?:\bper\b|\bx\b|\bvolte\b|\bmoltiplicato(?:\s+per)?\b)\s*(?=\d)"), r"\1*"),
+    (re.compile(r"(?i)(\d)\s*(?:\bdiviso(?:\s+per)?\b|\bfratto\b|\bsu\b)\s*(?=\d)"), r"\1/"),
+    (re.compile(r"(?i)(\d)\s*(?:\bpiù\b|\bpiu\b|\bsommato(?:\s+a)?\b)\s*(?=\d)"), r"\1+"),
+    (re.compile(r"(?i)(\d)\s*(?:\bmeno\b|\bsottratto(?:\s+da)?\b|\btolto\b)\s*(?=\d)"), r"\1-"),
+    (re.compile(r"(?i)(\d)\s*(?:\belevato\s+a(?:lla)?\b|\balla\b)\s*(?=\d)"), r"\1**"),
+    (re.compile(r"(?i)(\d)\s*al\s+quadrato\b"), r"\1**2"),
+    (re.compile(r"(?i)(\d)\s*al\s+cubo\b"), r"\1**3"),
+]
+
+
+def _normalizza_operatori(d):
+    """Traduce le parole-operatore in simboli, solo in contesto numerico. Idempotente."""
+    for rx, sub in _PAROLE_OP:
+        # ripete finché stabile: catene lunghe con lookahead sovrapposti
+        for _ in range(24):
+            nuovo = rx.sub(sub, d)
+            if nuovo == d:
+                break
+            d = nuovo
+    return d
+
 
 def calcola(domanda):
-    """Risponde CALCOLANDO (non ricordando) quando la domanda è aritmetica. Ritorna
-    {risposta, catena, sicura} o None. Deterministico, senza modello, senza eval."""
-    d = str(domanda or "")
+    """Risponde CALCOLANDO (non ricordando) quando la domanda è aritmetica, anche se scritta
+    a PAROLE nella sua lingua («17 per 23»). Ritorna {risposta, catena, sicura} o None.
+    Deterministico, senza modello, senza eval."""
+    d = _normalizza_operatori(str(domanda or ""))
     m = _RE_PERC.search(d)
     if m:
         try:
