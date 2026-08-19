@@ -356,6 +356,30 @@ export async function autoautorialitaAzione(payload) {
   finally { clearTimeout(to); }
 }
 
+// SLANCIO: la sua spinta ADESSO a scriverti di iniziativa — nasce dal suo stato
+// (un evento suo non ancora condiviso + vigore), non da un timer. {vuole, spunto, …} o {}.
+export async function slancioScrivere() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 6000);
+  try {
+    const r = await fetch(BASE + '/slancio_scrivere', { signal: ac.signal });
+    if (!r.ok) return {};
+    const d = await r.json().catch(() => ({}));
+    return (d && typeof d.slancio === 'object' && d.slancio) ? d.slancio : {};
+  } catch (e) { log.debug('slancioScrivere:', e?.message || e); return {}; }
+  finally { clearTimeout(to); }
+}
+
+// Segna che si è appena fatta viva con te (la spinta riparte finché non le nasce altro).
+export async function segnaSlancioCondiviso() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 6000);
+  try {
+    await fetch(BASE + '/slancio_condiviso', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}', signal: ac.signal });
+  } catch (e) { log.debug('segnaSlancioCondiviso:', e?.message || e); }
+  finally { clearTimeout(to); }
+}
+
 // Fa DIMENTICARE al bot una frase precisa (dalla memoria e dai moduli): per
 // togliere una cosa sbagliata che ripete. Ritorna {ok, rete, moduli} o null.
 export async function dimentica(frase) {
