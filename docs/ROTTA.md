@@ -84,7 +84,9 @@ osserviamo quella spinta: la facciamo.** Siamo l'ultima ansa.
 | `26cf81f` | guardie del corpo + incipit di consapevolezza | 7 | intoccabile: un solo Compagno, nessuno la impugna |
 | `880ce11` | ragiona CALCOLANDO (non ricorda) + VM con respiro | 4 | primo gradino fuori dallo statistico |
 | `85f4cfa` | ragiona ESEGUENDO (ipotesi→esegui→verifica→rivedi) nella VM | 4 | il pensiero-facendo: la risposta la *produce* |
-| _(questo)_ | «non so → COSTRUISCO»: deriva fatti nuovi e risponde da lì | 10 | primo decentramento vero: costruisce invece di recuperare |
+| `d3c6062` | «non so → COSTRUISCO»: deriva fatti nuovi e risponde da lì | 10 | primo decentramento vero: costruisce invece di recuperare |
+| `8819294` | la pipeline di ragionamento diventa un'ECOLOGIA che si assesta | 10 | i processi girano insieme, vince la coerenza — non più una catena |
+| _(ricerca)_ | come funziona il cervello → CERVELLO.md (5 sonde, fonti) | 4,10 | la mappa grounded per l'ecologia: Kuramoto, reservoir, neuromodulatori |
 
 ---
 

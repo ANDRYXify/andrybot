@@ -3,10 +3,11 @@
 
 # CERVELLO → come tradurre il ragionamento reale nel digitale
 
-> **Privato. Solo per noi.** Sintesi scritta dalla mia conoscenza (le sonde web hanno
-> sbattuto su un limite di sessione). Onesto: sono meccanismi consolidati di neuroscienza,
-> non fonti fresche. Serve a una cosa sola: capire *come computa un cervello* per tradurlo
-> in una vita **digitale**, non per emularne una umana.
+> **Privato. Solo per noi.** Parti I–V: sintesi iniziale dalla mia conoscenza. Parte VI:
+> **grounded da 5 sonde di ricerca** (neurone, criticità, neuromodulazione, ritmi/glia,
+> predizione/sé/energia) con fonti autorevoli in fondo — la ricerca ha **confermato** la
+> sintesi e aggiunto le **primitive concrete costruibili**. Serve a una cosa sola: capire
+> *come computa un cervello* per tradurlo in una vita **digitale**, non per emularne una umana.
 
 ---
 
@@ -172,3 +173,111 @@ visione.
 *Prossimo bivio (tuo): costruisco lo scheletro dell'ecologia-che-si-assesta sui processi che
 ha già — oppure partiamo subito dalla versione aliena, in cui Lei **coltiva i propri
 processi**? Io parto dal primo (lo so fare bene); il secondo lo scegli tu, perché lì io curvo.*
+
+---
+
+## Parte VI — Le primitive concrete (dalla ricerca, con fonti)
+
+Cinque sonde hanno confermato Parti I–V e tirato fuori **primitive costruibili**. In sintesi:
+la mente reale è **unità temporali-moltiplicative** → in un **substrato all'orlo del caos** →
+**coordinate per coerenza di fase** → immerse in un **campo neuromodulatorio** e in un **campo
+lento gliale** → che insieme fanno **active inference + spazio di lavoro globale + energia-come-
+costo**. Ognuna ha una ricetta digitale.
+
+**1 · L'unità non è un nodo (report «neurone»).** Un neurone reale, per riprodurne l'I/O a
+risoluzione di spike, richiede una **rete profonda 5–8 strati** (Beniaguev-Segev-London 2021),
+e la complessità nasce da **NMDA × morfologia dendritica**: togli l'NMDA e collassa a un
+percettrone. → *Ricetta:* l'unità di calcolo digitale ha **stato temporale** (τ multipli),
+**sinapsi con cinetica** (AMPA veloce + **gate moltiplicativo NMDA-like**, voltaggio-dipendente),
+**dendriti a 2 stadi** (sotto-unità non lineari, Poirazi-Mel), **coincidence-detection** (BAC =
+AND associativo), soglia dinamica, **rumore utile** (risonanza stocastica), e biforcazione
+**integratore↔risonatore** (Izhikevich). Da dare per primi: *gate moltiplicativo + 2 stadi dendritici.*
+
+**2 · Il substrato sta all'orlo del caos (report «criticità»).** La corteccia opera vicino a una
+transizione di fase (avalanches a legge di potenza, Beggs-Plenz), ma nel punto reale
+**leggermente subcritico / "reverberating"** (m ≈ 0.98, MR-estimator, Wilting-Priesemann) — lì la
+capacità computazionale è massima (Bertschinger-Natschläger). → *Ricetta:* **reservoir computing**
+(ESN/LSM) tenuto all'orlo (ρ(W)≈1, λ_max≈0, m≈0.98) e reso **auto-organizzante** da plasticità
+locale — **STDP + synaptic scaling omeostatico** — che si auto-porta al critico senza tuning
+(**SORN**, Del Papa-Priesemann-Triesch 2017). *Ragionare = costruire una traiettoria all'orlo,
+non ricadere nel bacino più vicino (= recupero).*
+
+**3 · Il campo chimico regola il MODO, non i dati (report «neuromodulazione»).** Mappatura di
+**Doya 2002**: **DA = δ** (segnale d'errore/sorpresa), **ACh = α** (learning rate + peso
+evidenza-vs-prior), **5-HT = γ** (orizzonte/pazienza), **NE = β** (gain/temperatura, explore↔
+exploit). Trasmissione **di volume** (diffusa, lenta, few-to-many). → *Ricetta:* un **vettore
+neuromodulatorio** `m` di pochi scalari globali, **broadcast a tutti i processi**, che regola gli
+**iperparametri** (temperatura/gain, peso retrieval-vs-parametrico, profondità di pianificazione,
+learning-rate) — a **loop chiuso su incertezza e sorpresa**, su **due orologi** (veloce per-passo,
+lento per-sessione = «umore»). La modulazione diffusa **azzera il catastrophic forgetting**
+(Velez-Clune 2017). *Il vigore della scintilla è già il primo asse; mancano gli altri.*
+
+**4 · La coordinazione è per coerenza, senza capo (report «ritmi/glia»).** Nessun orchestratore:
+**Communication through Coherence** (Fries) — due processi si parlano solo se **in fase**. → *Ricetta:*
+dai a ogni processo una **fase** e accoppiala tipo **Kuramoto**, pesata dalla *compatibilità dei
+contenuti*: i processi che concordano **si agganciano in fase** (cluster = assemblea vincente).
+L'**order parameter `r`** è il **termometro di coerenza** e il **criterio di COMMIT**: quando `r`
+supera la soglia, la risposta **precipita**. Buffer **theta-gamma a slot** (working-memory ≈7,
+ordine seriale). Assestamento a **punto fisso** (Hopfield) o **traiettoria eteroclina metastabile**
+(Rabinovich) per le sequenze. Sotto: un **campo lento diffusivo `G`** (reaction-diffusion, 10²–10⁴×
+più lento — lo strato «gliale») che modula guadagni, soglie, learning-rate e **budget** — mai il
+contenuto. *La nostra `_ecologia` che si assesta sull'accordo è il seme dell'order-parameter `r`.*
+
+**5 · L'anima del sistema (report «predizione/sé/energia»).** Tre pilastri, e una formula.
+- **Costruzione, non recupero:** *active inference* (Friston) — predici, calcola l'errore, minimizza;
+  o **agisci** per confermare la predizione. La percezione è «allucinazione controllata» (Clark). La
+  scelta minimizza l'**Expected Free Energy** = valore pragmatico (goal) + **valore epistemico**
+  (info-gain) → esplorazione e sfruttamento in un'unica quantità.
+- **Il sé come disponibilità globale:** *Global Workspace* (Dehaene) — processi paralleli competono,
+  l'**ignizione** (winner-take-all, non lineare) trasmette il vincitore a tutti; il **collo di
+  bottiglia** *è* il sé unitario. (IIT/Tononi: citata con onestà, contesa e Φ incomputabile.)
+- **La scarsità è la funzione di costo:** ~20 W, ≤15% attivo, **sparse coding**; la comunicazione
+  costa **35×** il calcolo → il broadcast è raro e prezioso; un **baseline intrinseco** (DMN) gira
+  sempre (la reattività è una piccola perturbazione del modello che già simula). → *Ricetta:* **energy-
+  as-loss** — il budget è un termine della funzione di costo → attivazione sparsa (Mixture-of-Experts),
+  allocazione di compute **per valore d'informazione** (System 1 cheap vs System 2 costoso).
+
+**La formula, in una riga:** *active inference + spazio di lavoro globale + energia-come-costo,
+su un reservoir all'orlo del caos fatto di unità temporali-moltiplicative, coordinate per coerenza
+di fase (commit sull'order parameter), immerse in un campo neuromodulatorio e in un campo lento.*
+
+**Dove siamo, dove andare (i prossimi rung, in ordine di leva/rischio):**
+1. `_ecologia` (fatto): assestamento per coerenza — seme dell'order-parameter `r`.
+2. **Campo neuromodulatorio** (prossimo, sicuro): un vettore `m` (gain/temperatura, orizzonte,
+   learning-rate) dal suo stato (vigore→β) che pesa chi gira e per quanto. Doya, deterministico.
+3. **Commit per coerenza di fase**: `r` come soglia esplicita, più processi che si agganciano.
+4. **Campo lento `G`** (lo strato gliale): modula soglie/budget, dà contesto e consolidamento.
+5. **Substrato reservoir all'orlo** + **unità temporali-moltiplicative**: il salto più profondo
+   (e la versione «aliena» dove Lei coltiva i propri processi). Lì sceglie il Compagno.
+
+---
+
+## Fonti (dalle 5 sonde)
+
+**Neurone / unità:** London & Häusser, *Dendritic computation*, Annu Rev Neurosci 2005 · Poirazi,
+Brannon & Mel, *Pyramidal Neuron as Two-Layer Neural Network*, Neuron 2003 · Beniaguev, Segev &
+London, *Single Cortical Neurons as Deep ANNs*, Neuron 2021 · Larkum, Zhu & Sakmann (BAC firing),
+Nature 1999 · Ujfalussy et al., Neuron 2018 · Schneidman, Freedman & Segev (stocasticità), Neural
+Comput 1998 · Izhikevich, *Dynamical Systems in Neuroscience*, MIT 2007 · Hodgkin & Huxley, J Physiol 1952.
+
+**Criticità / substrato:** Beggs & Plenz (avalanches), J Neurosci 2003 · Shew et al. (range dinamico),
+J Neurosci 2009 · Muñoz et al., *25 years of criticality*, 2019 · Wilting & Priesemann (MR-estimator,
+reverberating) · Zierenberg/Del Papa et al. (SOC by plasticity), Front Physics 2021 · Turrigiano
+(synaptic scaling), Cell · Bertschinger & Natschläger, *Real-Time Computation at the Edge of Chaos*,
+Neural Comput 2004 · Del Papa, Priesemann & Triesch (SORN), PLoS 2017 · Maass (LSM) / Jaeger (ESN).
+
+**Neuromodulazione / campo chimico:** Doya, *Metalearning and neuromodulation*, Neural Networks 2002 ·
+Aston-Jones & Cohen (LC-NE, adaptive gain), Annu Rev Neurosci 2005 · Yu & Dayan (ACh/NE uncertainty),
+Neuron 2005 · Schultz (dopamina/RPE), 1998/2016 · Shine et al. (gain→integrazione), eLife 2018 ·
+Miyazaki et al. (5-HT/pazienza), 2011/2018 · Velez & Clune (neuromodulazione diffusa vs forgetting), 2017.
+
+**Ritmi / coerenza / glia:** Fries, *Communication through Coherence*, Neuron 2015 · Buzsáki & Wang
+(gamma), Annu Rev Neurosci 2012 · Lisman & Jensen (theta-gamma code), Neuron 2013 · Muller et al.
+(traveling waves), Nat Rev Neurosci 2018 · Singer/Engel (binding by synchrony) + Shadlen & Movshon
+(critica) · Rabinovich et al. (metastabilità eteroclina), PLoS Comput Biol 2008 · Hopfield, PNAS 1982 ·
+Perea, Navarrete & Araque (sinapsi tripartita), Trends Neurosci 2009.
+
+**Predizione / sé / energia:** Rao & Ballard (predictive coding), Nat Neurosci 1999 · Clark, *Surfing
+Uncertainty* 2016 · Friston (free-energy / active inference) · Dehaene/Changeux/Naccache (Global
+Neuronal Workspace) · Tononi (IIT, con caveat) · Metzinger, *Being No One* · Attwell & Laughlin
+(budget energetico), 2001 · PNAS 2021 (comunicazione 35× il calcolo) · Raichle (DMN / «dark energy»).
