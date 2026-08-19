@@ -1124,9 +1124,24 @@ def _ecologia(canale, ctx, testo, modo):
             soglia += 0.10 * (float(cl.get("clima", 0.4)) - 0.5)
             if cl.get("consolidato"):
                 soglia -= 0.03
-            soglia = max(0.42, min(0.66, soglia))
         except Exception:
             pass
+    # L'APPRAISAL SITUATO (Lazarus/Scherer, Evans-Stanovich): il COPING È il cancello del
+    # doppio-processo. La chimica e il clima leggono lo stato INTERNO; l'appraisal porta la
+    # SITUAZIONE nella decisione. Se NON ho una via provata per un momento così (coping basso)
+    # o la situazione va male (valenza negativa) → alzo l'asticella: la congettura del Tipo 1
+    # non è fidata, si escala al Tipo 2 (il modello). Se ho una via provata su terreno familiare
+    # (coping alto + valenza positiva) → l'abbasso: decido in scioltezza (autonomia del Tipo 1).
+    ap = ctx.get("appraisal") if isinstance(ctx, dict) else None
+    if isinstance(ap, dict):
+        try:
+            coping = float(ap.get("coping", 0.0))
+            valenza = float(ap.get("valenza", 0.0))
+            soglia += 0.14 * (0.5 - coping)          # niente via provata qui → escala al modello
+            soglia -= 0.06 * valenza                 # la situazione va male → più cauta
+        except Exception:
+            pass
+    soglia = max(0.40, min(0.72, soglia))
     punteggi = []
     for g in gruppi.values():
         r = _kuramoto_r(g["nomi"], g["pesi"], K)

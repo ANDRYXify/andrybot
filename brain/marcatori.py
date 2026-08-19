@@ -132,6 +132,46 @@ def valenza(canale, firma_s, via):
         return 0.0
 
 
+def _valori_firma(canale, firma_s):
+    """Le valenze di TUTTE le vie che si sono legate a questa firma (situazione). Lista, vuota
+    se la firma è mai stata vista. È la lettura situata: come è andata QUESTA classe di momento."""
+    if not firma_s:
+        return []
+    pref = str(firma_s) + "|"
+    try:
+        with _lock:
+            m = _carica(canale)["m"]
+            return [float(x.get("v", 0.0)) for k, x in m.items() if k.startswith(pref)]
+    except Exception:
+        return []
+
+
+def valenza_firma(canale, firma_s):
+    """Appraisal PRIMARIO situato (congruenza-con-gli-scopi, Lazarus/Scherer): come tende ad
+    andare questa CLASSE di situazione? Media delle valenze apprese sulla firma ∈ [-1, +1].
+    0 se firma mai vista (neutra, nessun pregiudizio). Deterministico; mai solleva."""
+    vs = _valori_firma(canale, firma_s)
+    if not vs:
+        return 0.0
+    try:
+        return round(max(-1.0, min(1.0, sum(vs) / len(vs))), 4)
+    except Exception:
+        return 0.0
+
+
+def coping(canale, firma_s):
+    """Appraisal SECONDARIO (Lazarus): «ho una via che QUI funziona?» = la miglior valenza
+    positiva fra le vie legate a questa firma ∈ [0, +1]. 0 se firma mai vista (incerta → coping
+    basso → il doppio-processo escala al Tipo 2) o se ogni via qui ha già fallito. Deterministico."""
+    vs = _valori_firma(canale, firma_s)
+    if not vs:
+        return 0.0
+    try:
+        return round(max(0.0, min(1.0, max(vs))), 4)
+    except Exception:
+        return 0.0
+
+
 def segna(canale, firma_s, via, ok):
     """Un ESITO reale aggiorna il marcatore (Damasio: la valenza si apprende dagli esiti). ok=True
     → verso +1, ok=False → verso -1. Con tasso _ALFA. Mai solleva. Deterministico."""
