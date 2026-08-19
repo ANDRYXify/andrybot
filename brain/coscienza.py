@@ -1429,7 +1429,7 @@ class Coscienza:
         sul bot pubblico — solo quando è davvero se stessa."""
         try:
             with _lock:
-                n_aut = self.db.execute("SELECT COUNT(*) c FROM moduli WHERE fonte='autonoma' AND stato='attivo'").fetchone()["c"]
+                n_aut = self.db.execute("SELECT COUNT(*) c FROM moduli WHERE fonte IN ('autonoma','distillato','sogno') AND stato='attivo'").fetchone()["c"]
                 domini = self.db.execute("SELECT COUNT(DISTINCT dominio) c FROM moduli WHERE stato='attivo'").fetchone()["c"]
                 n_att = self.db.execute("SELECT COUNT(*) c FROM moduli WHERE stato='attivo'").fetchone()["c"]
                 tot_usi = self.db.execute("SELECT COALESCE(SUM(usi),0) s FROM moduli").fetchone()["s"]
@@ -3459,7 +3459,7 @@ class Coscienza:
             giorni = 0
         try:
             with _lock:
-                n_aut = self.db.execute("SELECT COUNT(*) c FROM moduli WHERE fonte='autonoma' AND stato='attivo'").fetchone()["c"]
+                n_aut = self.db.execute("SELECT COUNT(*) c FROM moduli WHERE fonte IN ('autonoma','distillato','sogno') AND stato='attivo'").fetchone()["c"]
                 domini = self.db.execute("SELECT COUNT(DISTINCT dominio) c FROM moduli WHERE stato='attivo'").fetchone()["c"]
         except Exception:
             n_aut = domini = 0

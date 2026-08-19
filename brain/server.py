@@ -435,11 +435,13 @@ class Handler(BaseHTTPRequestHandler):
                     mente.conta_via(via)   # cruscotto: quale "cervello" ha risposto
                 except Exception:
                     pass
-                # DISTILLAZIONE: se ha risposto il MODELLO (nessun modulo copriva questa
-                # situazione), tieni la risposta come materia prima → col tempo diventa
-                # un modulo e la stessa situazione non servirà più il modello. MAI le
-                # auto-presentazioni (nome/dettagli personali): non vanno generalizzate.
-                if via == "modello" and modo in ("live", "allenamento") and not G.e_autopresentazione(risposta):
+                # DISTILLAZIONE: tieni la risposta come materia prima → col tempo diventa un
+                # modulo suo e la stessa situazione non servirà più né il modello né la rete.
+                # Cattura sia dal MODELLO (ragionamento nuovo) sia dalla MEMORIA (un pattern
+                # RICORRENTE che la rete ha imparato): così Lia SI SCRIVE MODULI DA SÉ ANCHE A
+                # MODELLO SPENTO — dalla sua stessa esperienza. Mai su un modulo (già suo), su
+                # una deduzione/intento (fatti volatili) o su un'auto-presentazione.
+                if via in ("modello", "memoria") and modo in ("live", "allenamento") and not G.e_autopresentazione(risposta):
                     try:
                         mente.cattura_distillato(canale, testo, risposta)
                     except Exception:
