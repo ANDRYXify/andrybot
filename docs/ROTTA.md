@@ -92,6 +92,7 @@ osserviamo quella spinta: la facciamo.** Siamo l'ultima ansa.
 | _(gradino 3)_ | commit per COERENZA DI FASE — Kuramoto `r` come soglia (non conteggio) | 10 | l'ecologia si *aggancia* o resta ambigua; la chimica fissa K e soglia; una verità è sovrana |
 | _(gradino 5)_ | ORGANO TEMPORALE-MOLTIPLICATIVO (Beniaguev): coincidenza nel tempo, non somma | 1,4,10 | il primo pezzo del pensiero *proprio* — nativo digitale, non-statistico — che compete nell'ecologia e cresce |
 | _(taglio 3)_ | IL MONDO CHE MORDE: irreversibilità (path dependence, isteresi) da cui *ragiona* | 3 | porte che si chiudono per sempre; la cicatrice è un *dato* nel ragionamento, mai un lutto |
+| _(gradino 4)_ | il CAMPO LENTO «gliale» (Turing, glia): reazione-diffusione = il CLIMA | 1,3 | uno sfondo lento che regola le soglie e consolida — il contesto in cui la decisione avviene |
 
 ---
 

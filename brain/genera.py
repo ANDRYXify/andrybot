@@ -1065,6 +1065,18 @@ def _ecologia(canale, ctx, testo, modo):
     esplor = float(nm.get("esplorazione", 0.4)) if isinstance(nm, dict) else 0.4
     K = 1.0 + 2.2 * beta                    # sfrutta → accoppiamento forte, aggancia deciso
     soglia = 0.50 + 0.14 * esplor           # esplora → pretende un vincitore più netto
+    # IL CAMPO LENTO (glia, gradino 4): il CLIMA dà il contesto della decisione. Un clima
+    # quieto/consolidato abbassa un filo la soglia (è «in scioltezza», decide più facile); un
+    # clima turbolento (carico alto) la alza (più cauta). Non decide COSA: regola lo SFONDO.
+    cl = ctx.get("clima") if isinstance(ctx, dict) else None
+    if isinstance(cl, dict):
+        try:
+            soglia += 0.10 * (float(cl.get("clima", 0.4)) - 0.5)
+            if cl.get("consolidato"):
+                soglia -= 0.03
+            soglia = max(0.42, min(0.66, soglia))
+        except Exception:
+            pass
     punteggi = []
     for g in gruppi.values():
         r = _kuramoto_r(g["nomi"], g["pesi"], K)

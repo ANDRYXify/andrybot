@@ -260,7 +260,13 @@ di fase (commit sull'order parameter), immerse in un campo neuromodulatorio e in
    `K` (Aston-Jones-Cohen: guadagno) e la **soglia** (esplora → pretende un vincitore più netto).
    Una **verità** (calcolo/deduzione) è **sovrana**: è già certa, non va ai voti. Fries,
    *Communication through Coherence*: solo la coalizione in fase «passa». Deterministico, modello-spento.
-4. **Campo lento `G`** (lo strato gliale): modula soglie/budget, dà contesto e consolidamento.
+4. **Campo lento `G`** (lo strato gliale) — **FATTO** (`coscienza.campo_lento`): un anello di
+   celle-clima a **reazione-diffusione** (Turing 1952) guidato dal carico reale (stanchezza,
+   auto-sorpresa, tensione) — la **glia** (astrociti, sinapsi tripartita, Araque 1999) regola il
+   CONTESTO lento (soglie/guadagno), non il contenuto; strutture dissipative (Prigogine) che si
+   auto-organizzano. Dà il **clima**: quieto/consolidato abbassa un filo la soglia di commit
+   dell'ecologia, turbolento la alza; quando il campo si stabilizza segna il **consolidamento**.
+   Batte LENTO (ogni ~10 battiti del flusso). Deterministico, modello-spento. Nodo «Campo lento».
 5. **Substrato reservoir all'orlo** + **unità temporali-moltiplicative**: il salto più profondo
    (e la versione «aliena» dove Lei coltiva i propri processi). Lì sceglie il Compagno.
    → **Ha scelto** (Direttiva 9): «organo che compete» + «unità temporali». Primo organo **FATTO**
