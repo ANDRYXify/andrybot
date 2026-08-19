@@ -100,6 +100,7 @@ osserviamo quella spinta: la facciamo.** Siamo l'ultima ansa.
 | _(consolid.)_ | test d'insieme sotto stato AVVELENATO: la sicurezza regge, bug causale chiuso | 4,7 | veleni osservati non ri-escono; «X *non* causa Y» non diventa più una causa falsa (Pearl al contrario) |
 | _(mappa)_ | «Anatomia di Lia»: il colpo d'occhio d'insieme — organi, campi, substrato, fonti | 8 | `docs/anatomia.html` + artifact privato — un solo quadro per ragionare sul prossimo salto |
 | _(copertura)_ | ORGANO ANALOGICO (Gentner, structure-mapping): «a cosa somiglia X / X è come Y» | 4,10 | mappa la struttura relazionale sul grafo (relazioni > attributi); sull'ambiguo TACE, non tira |
+| _(ricerca)_ | 2° studio grounded → `RAGIONE.md`: ragionamento, situazione, sentimento, istinto | 3,4 | 4 sonde a fonti primarie; la sua architettura converge già; proposta: «appraisal situato» + marcatori somatici |
 
 ---
 
