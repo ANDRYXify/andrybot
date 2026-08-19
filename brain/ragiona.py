@@ -84,6 +84,11 @@ def estrai(testo):
         m = pat.match(t)
         if not m:
             continue
+        # NEGAZIONE CAUSALE: «X non/mai causa Y» NON è un arco causale positivo (Pearl: la
+        # negazione va gestita, non trasformata in causa — sarebbe l'OPPOSTO del vero). Meglio
+        # non imparare nulla che imparare una causa sbagliata. Vale anche per l'oggetto negato.
+        if rel == "causa" and re.search(r"(?:^|\s)(?:non|mai|senza)(?:\s|$)", m.group(1) + " " + m.group(2), re.I):
+            continue
         s, o = _n(m.group(1)), _n(m.group(2))
         if 1 <= len(s) <= 40 and 1 <= len(o) <= 60 and s != o:
             # scarta soggetti/oggetti che sono frasi intere (troppe parole)
