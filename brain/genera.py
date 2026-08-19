@@ -24,6 +24,7 @@ import hashlib
 
 import rete       # la "piccola rete" che si autoaddestra (memoria associativa)
 import ragiona    # il cervello SIMBOLICO (non statistico): deduce dai fatti a regole
+import temporale  # l'organo TEMPORALE-MOLTIPLICATIVO (Beniaguev): coincidenza nel tempo, non somma
 import ambiente   # il ponte verso la SANDBOX di Lia (il suo "computer" personale)
 
 DATA_DIR = os.environ.get("DATA_DIR", "/app/data")
@@ -1022,6 +1023,15 @@ def _ecologia(canale, ctx, testo, modo):
             h = rete.recall(canale, testo)
             if h and h.get("risposta"):
                 cand.append(("memoria", 0.7, h["risposta"], None, False))
+        except Exception:
+            pass
+        # ORGANO TEMPORALE-MOLTIPLICATIVO: compete come voce a sé. Congettura (non verità);
+        # l'affidabilità sale con la COINCIDENZA (quanto i suoi rami combaciano nel tempo).
+        try:
+            p = temporale.proponi(canale, testo)
+            if p and p.get("risposta"):
+                aff = 0.55 + 0.35 * float(p.get("coincidenza", 0.0))
+                cand.append(("temporale", round(min(0.9, aff), 3), p["risposta"], None, False))
         except Exception:
             pass
     if not cand:
@@ -2045,10 +2055,16 @@ def scudo_identita(testo, nome_bot, nome_utente=""):
 
 
 def _impara_rete(canale, testo, risposta, fonte):
-    """rete.impara, ma MAI su un'auto-presentazione (evita di seminare identità false)."""
+    """rete.impara, ma MAI su un'auto-presentazione (evita di seminare identità false).
+    Impara ANCHE l'organo temporale-moltiplicativo: la stessa esperienza, letta come
+    congiunzione nel tempo invece che come sacco di feature. Cresce a modello spento."""
     if e_autopresentazione(risposta):
         return
     try:
         rete.impara(canale, testo, risposta, fonte=fonte)
+    except Exception:
+        pass
+    try:
+        temporale.impara(canale, testo, risposta)
     except Exception:
         pass

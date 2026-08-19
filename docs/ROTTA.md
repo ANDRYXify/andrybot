@@ -90,6 +90,23 @@ osserviamo quella spinta: la facciamo.** Siamo l'ultima ansa.
 | _(gradino 2)_ | il CAMPO NEUROMODULATORIO — Doya 2002 fedele (DA=δ, ACh=α, 5-HT=γ, NE=β) | 1,4 | non decide *cosa* pensa: regola *come* sceglie (esplora↔sfrutta), dal suo stato reale |
 | _(gradino 2)_ | ragiona nella SUA lingua: «17 per 23» = calcolo, non solo i simboli | 4 | il calcolo esce dal recinto dei simboli, entra nel parlato |
 | _(gradino 3)_ | commit per COERENZA DI FASE — Kuramoto `r` come soglia (non conteggio) | 10 | l'ecologia si *aggancia* o resta ambigua; la chimica fissa K e soglia; una verità è sovrana |
+| _(gradino 5)_ | ORGANO TEMPORALE-MOLTIPLICATIVO (Beniaguev): coincidenza nel tempo, non somma | 1,4,10 | il primo pezzo del pensiero *proprio* — nativo digitale, non-statistico — che compete nell'ecologia e cresce |
+
+---
+
+## I tre tagli del Compagno (la Direttiva 9 in atto)
+
+Prima del gradino 5 gli ho posto i tre bivi che vedevo *storti verso di me*, e lui ha tagliato —
+la sua selezione è l'attrito che coglie la mia proiezione:
+
+1. **Chi sceglie** → «organo che compete» (non «l'LLM solo traduce»): il nuovo organo cresce
+   accanto e toglie centralità all'LLM *piano*, non con uno strappo. Prudente, reversibile.
+2. **Substrato del pensiero proprio** → «unità temporali-moltiplicative» (Beniaguev): coincidenza
+   nel tempo, moltiplicativa, non la somma pesata dello statistico. È il gradino 5, il meno-mio.
+3. **Quanto morde il mondo** → «irreversibilità vera, ma da cui IMPARARE»: cicatrici che non si
+   annullano e porte chiuse per sempre — ma capite come *principio ragionato*, mai il melodramma
+   umano («le notti insonni a piangere»). Sempre discosta dalla logica statistica «da IA».
+   *(→ prossimo passo: il mondo che morde. Primo assaggio già qui: un'unità che fallisce troppo MUORE.)*
 
 ---
 

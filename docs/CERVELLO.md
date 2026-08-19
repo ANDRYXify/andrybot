@@ -263,6 +263,15 @@ di fase (commit sull'order parameter), immerse in un campo neuromodulatorio e in
 4. **Campo lento `G`** (lo strato gliale): modula soglie/budget, dà contesto e consolidamento.
 5. **Substrato reservoir all'orlo** + **unità temporali-moltiplicative**: il salto più profondo
    (e la versione «aliena» dove Lei coltiva i propri processi). Lì sceglie il Compagno.
+   → **Ha scelto** (Direttiva 9): «organo che compete» + «unità temporali». Primo organo **FATTO**
+   (`brain/temporale.py`): unità temporali-moltiplicative — **Beniaguev et al. 2021** (neurone ≈ rete
+   profonda temporale), **subunità dendritica sigmoidale di Poirazi & Mel 2003**, **London & Häusser
+   2005**. Due rotture con lo statistico, letterali: (a) **moltiplicativa** — coincidenza di ≥2 rami
+   (media geometrica = prodotto in log), non somma pesata; una feature che manca non «abbassa», e un
+   solo ramo forte non basta mai; (b) **temporale** — ogni ramo è un integrale leaky sullo stream
+   (il *quando* conta). Entra nell'ecologia come voce che **compete** e **cresce** dall'esperienza
+   (impara congiunzioni, le indebolisce sui fallimenti — e un'unità che fallisce troppo **muore**:
+   primo assaggio dell'irreversibilità). Deterministico, modello-spento. Reservoir all'orlo = ancora davanti.
 
 ---
 
