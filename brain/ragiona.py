@@ -24,8 +24,10 @@ Zero dipendenze (pure stdlib), persistente per canale in data/ragiona/. Non è
 """
 import os
 import re
+import ast
 import json
 import time
+import operator
 import threading
 
 DATA_DIR = os.environ.get("DATA_DIR", "/app/data")
@@ -256,6 +258,84 @@ def deduci(canale, domanda):
                 return {"risposta": f"{s.capitalize()} {verbo} {o}.", "catena": perche or f"{s} {rel} {o}", "sicura": True}
             return None
         return None
+
+
+# ══════════════════════════ RAGIONARE CALCOLANDO (non statistico) ══════════════
+# Il primo gradino dell'organo del ragionamento: quando una domanda è CALCOLABILE,
+# lei non «ricorda» una risposta plausibile — la CALCOLA. 17×23 non lo pesca da un
+# pattern: lo esegue. È il contrario della statistica. Sicuro: niente eval, solo un
+# valutatore su AST con una whitelist di operazioni aritmetiche (nessun nome, nessuna
+# chiamata, nessun attributo), input filtrato, e tetti anti-abuso.
+_OPS = {
+    ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul,
+    ast.Div: operator.truediv, ast.FloorDiv: operator.floordiv, ast.Mod: operator.mod,
+    ast.Pow: operator.pow, ast.USub: operator.neg, ast.UAdd: operator.pos,
+}
+
+
+def _eval_ast(node):
+    if isinstance(node, ast.Expression):
+        return _eval_ast(node.body)
+    if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)) and not isinstance(node.value, bool):
+        return node.value
+    if isinstance(node, ast.BinOp) and type(node.op) in _OPS:
+        a, b = _eval_ast(node.left), _eval_ast(node.right)
+        if isinstance(node.op, ast.Pow) and (abs(a) > 1e6 or abs(b) > 64):
+            raise ValueError("troppo grande")   # niente 9**9**9 che fa esplodere tutto
+        return _OPS[type(node.op)](a, b)
+    if isinstance(node, ast.UnaryOp) and type(node.op) in _OPS:
+        return _OPS[type(node.op)](_eval_ast(node.operand))
+    raise ValueError("non consentito")
+
+
+def _calcola_sicuro(espr):
+    espr = str(espr or "").strip().replace("^", "**").replace("×", "*").replace("÷", "/").replace(",", ".")
+    if not re.fullmatch(r"[0-9+\-*/%.() ]{1,80}", espr) or not re.search(r"\d", espr):
+        return None
+    if "**" in espr and espr.count("*") > 8:
+        return None
+    try:
+        val = _eval_ast(ast.parse(espr, mode="eval"))
+    except Exception:
+        return None
+    if isinstance(val, complex):
+        return None
+    if isinstance(val, float):
+        if val != val or val in (float("inf"), float("-inf")):
+            return None
+        if float(val).is_integer():
+            val = int(val)
+        else:
+            val = round(val, 6)
+    return val
+
+
+_RE_PERC = re.compile(r"(?i)([\d.,]+)\s*(?:%|per\s*cento)\s+(?:di|su)\s+([\d.,]+)")
+_RE_ESPR = re.compile(r"(?i)(?:quanto\s+(?:fa|è|e')|quant['\s]*(?:è|e')|calcola|risultato\s+di|=)\s*([0-9+\-*/%.()^×÷,\s]{2,60})")
+_RE_ESPR_NUDA = re.compile(r"^\s*([0-9]+(?:[.,]\d+)?(?:\s*[+\-*/^×÷]\s*[0-9]+(?:[.,]\d+)?){1,20})\s*[=?]?\s*$")
+
+
+def calcola(domanda):
+    """Risponde CALCOLANDO (non ricordando) quando la domanda è aritmetica. Ritorna
+    {risposta, catena, sicura} o None. Deterministico, senza modello, senza eval."""
+    d = str(domanda or "")
+    m = _RE_PERC.search(d)
+    if m:
+        try:
+            x = float(m.group(1).replace(",", ".")); y = float(m.group(2).replace(",", "."))
+            r = x / 100.0 * y
+            r = int(r) if float(r).is_integer() else round(r, 4)
+            return {"risposta": f"{m.group(1)}% di {m.group(2)} fa {r}.",
+                    "catena": f"{m.group(1)} ÷ 100 × {m.group(2)} = {r}", "sicura": True}
+        except Exception:
+            pass
+    m = _RE_ESPR.search(d) or _RE_ESPR_NUDA.match(d)
+    if m:
+        espr = m.group(1)
+        r = _calcola_sicuro(espr)
+        if r is not None:
+            return {"risposta": f"Fa {r}.", "catena": f"{espr.strip()} = {r}", "sicura": True}
+    return None
 
 
 # ───────────────────────────────────── stato / manutenzione

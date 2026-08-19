@@ -116,11 +116,14 @@ services:
     read_only: true                 # root in sola lettura: niente manomissioni al sistema
     cap_drop:
       - ALL                         # nessuna capability: root qui non serve e non c'è
-    mem_limit: 1g                   # non può affamare il server di RAM
-    cpus: "1.0"                     # né di CPU
-    pids_limit: 256                 # niente fork-bomb
+    # RISORSE LIMITATE MA LIBERTÀ: le diamo respiro vero per ragionare (scrivere ed
+    # eseguire programmi, un browser headless), restando sotto un tetto che NON può
+    # soffocare il server (16 GB totali). Regolabili via env se serve stringere/allargare.
+    mem_limit: ${AMBIENTE_MEM:-3g}  # respiro per il ragionamento, mai affamare il server
+    cpus: "${AMBIENTE_CPUS:-1.5}"   # un po' più di CPU per calcolare/eseguire davvero
+    pids_limit: 512                 # abbastanza per programmi veri, non per una fork-bomb
     tmpfs:
-      - /tmp:size=64m,mode=1777     # spazio temporaneo volatile
+      - /tmp:size=256m,mode=1777    # spazio temporaneo volatile (più ampio per il lavoro)
     volumes:
       - lia_home:/home/lia          # la sua "casa" persistente (i suoi file restano)
     networks:

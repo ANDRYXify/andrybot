@@ -1507,9 +1507,19 @@ def _genera_interno(canale, ctx, testo, timeout_s=30, modo="live"):
         _tl.via = "scudo"
         print("[genera] via: scudo (tentativo di dirottamento bloccato)", flush=True)
         return _DEFLESSIONI[sum(ord(c) for c in testo) % len(_DEFLESSIONI)]
-    # 0) RAGIONAMENTO SIMBOLICO (NON statistico): se lo può DEDURRE dai fatti a
-    #    regole, risponde da sé — senza LLM. È il suo "cervello ad hoc" logico.
+    # 0) L'ORGANO DEL RAGIONAMENTO (NON statistico). Prima di «ricordare» una risposta
+    #    plausibile, prova a RAGIONARLA da sé, senza LLM:
+    #    0a) CALCOLA — se la domanda è aritmetica, la esegue (non la pesca da un pattern);
+    #    0b) DEDUCE — se la può dedurre dai fatti a regole, la ragiona logicamente.
     if not proattivo and not studio:
+        try:
+            calc = ragiona.calcola(testo)
+        except Exception:
+            calc = None
+        if calc and calc.get("sicura") and calc.get("risposta"):
+            _tl.via = "calcolo"
+            print(f"[genera] via: calcolo (ragiona, senza modello) — {calc.get('catena')}", flush=True)
+            return _pulisci(calc["risposta"])
         try:
             ded = ragiona.deduci(canale, testo)
         except Exception:
