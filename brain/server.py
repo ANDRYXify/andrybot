@@ -462,6 +462,12 @@ class Handler(BaseHTTPRequestHandler):
                     mente.conta_via(via)   # cruscotto: quale "cervello" ha risposto
                 except Exception:
                     pass
+                # MARCATORE SOMATICO (Damasio): ricorda (situazione, via) di ORA; l'esito verrà
+                # giudicato al turno dopo dalla reazione dell'utente → la valenza si apprende.
+                try:
+                    mente.ricorda_marcatore(canale, login, G.ultima_firma(), via)
+                except Exception:
+                    pass
                 # DISTILLAZIONE: tieni la risposta come materia prima → col tempo diventa un
                 # modulo suo e la stessa situazione non servirà più né il modello né la rete.
                 # Cattura sia dal MODELLO (ragionamento nuovo) sia dalla MEMORIA (un pattern
