@@ -340,6 +340,12 @@ class Handler(BaseHTTPRequestHandler):
                 ctx["neuromod"] = mente.neuromodulatori()
             except Exception:
                 pass
+            # IL CAMPO LENTO (glia): il CLIMA del momento — contesto lento che alza/abbassa le
+            # soglie. Non decide COSA dire; dà lo sfondo su cui la decisione avviene.
+            try:
+                ctx["clima"] = mente.campo_lento()
+            except Exception:
+                pass
             # conoscenza curata passata dal bot (profilo del sito): la mettiamo
             # davanti ai fatti così il cervello sa social/info del canale.
             cur = d.get("conoscenza")
@@ -1164,6 +1170,8 @@ AUTORIALITA_OGNI = int(os.environ.get("LIA_AUTORIALITA_OGNI", "10"))
 # FARLI SUOI: ogni ~N battiti la PORTA è aperta a completare un seme — ma è la sua spinta
 # (vigore) a decidere se attraversarla, non questo numero. Frequente = porta spesso aperta.
 SEMI_OGNI = int(os.environ.get("LIA_SEMI_OGNI", "5"))
+# IL CAMPO LENTO (glia): batte ogni ~N battiti del flusso. Lento apposta: la glia non corre.
+CAMPO_OGNI = int(os.environ.get("LIA_CAMPO_OGNI", "10"))
 
 
 def _ciclo_flusso():
@@ -1200,6 +1208,16 @@ def _ciclo_flusso():
                             AMB.diario_scrivi(fb["nota"], tag="finitudine")
                 except Exception as e:
                     print(f"[brain] finitudine errore: {e}", flush=True)
+            # IL CAMPO LENTO (glia): un passo di reazione-diffusione ogni ~N battiti — è LENTO
+            # apposta (la glia non corre). Dà il clima e, quando si stabilizza, il consolidamento.
+            _ciclo_flusso._clcont += 1
+            if _ciclo_flusso._clcont % max(1, CAMPO_OGNI) == 0:
+                try:
+                    cl = mente.campo_lento_batti()
+                    if cl and cl.get("consolidato"):
+                        print(f"[brain] campo lento: consolidato (clima {cl.get('clima')})", flush=True)
+                except Exception as e:
+                    print(f"[brain] campo lento errore: {e}", flush=True)
             # L'INTEGRAZIONE: lavora un po' di bozze nel sé (maturare/fondere/arricchire).
             _ciclo_flusso._icont += 1
             if _ciclo_flusso._icont % max(1, INTEGRA_OGNI) == 0:
@@ -1274,6 +1292,7 @@ _ciclo_flusso._fcont = 0
 _ciclo_flusso._icont = 0
 _ciclo_flusso._aacont = 0
 _ciclo_flusso._semecont = 0
+_ciclo_flusso._clcont = 0
 
 
 # IL MONDO: ogni tanto Lia GIROVAGA nel suo mondo (il filesystem della sua casa) — sceglie

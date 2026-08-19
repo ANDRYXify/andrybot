@@ -17,6 +17,7 @@ continuità e la crescita vengono da qui.
 import os
 import re
 import json
+import math
 import time
 import secrets
 import sqlite3
@@ -3354,6 +3355,93 @@ class Coscienza:
         st = self._automi_stato()
         return {"proposte": (st.get("proposte") or [])[:8], "eseguite": int(st.get("eseguite", 0))}
 
+    # ============================================ IL CAMPO LENTO — lo strato «gliale»
+    # Gradino 4. Traduzione fedele, non della statistica:
+    #   • la GLIA (astrociti) NON porta il contenuto veloce del pensiero — regola il CONTESTO
+    #     lento: ioni, guadagno, soglie sinaptiche (sinapsi tripartita, Araque et al. 1999), su
+    #     onde di calcio che si propagano PIANO (reazione-diffusione);
+    #   • Turing 1952 («The chemical basis of morphogenesis»): un campo lento che diffonde e
+    #     reagisce forma PATTERN stabili — reazione locale + diffusione fra vicini;
+    #   • Prigogine: strutture dissipative lontano dall'equilibrio si auto-organizzano.
+    # Qui: un ANELLO di celle-clima che evolve per reazione-diffusione, guidato dal CARICO
+    # recente (stanchezza = 1−energia, auto-sorpresa, tensione). NON tocca COSA pensa: dà il
+    # CLIMA — un contesto lento che alza/abbassa le soglie degli altri motori. Quando il campo
+    # si STABILIZZA (varia poco) segna il CONSOLIDAMENTO: la configurazione attuale ha preso.
+    # Lento: batte di rado (la glia è lenta). Deterministico, modello-spento.
+    _CAMPO_CELLE = 12
+
+    def _campo_lento_stato(self):
+        try:
+            g = self._meta_get("campo_lento")
+            d = json.loads(g) if g else {}
+            if not isinstance(d, dict):
+                d = {}
+        except Exception:
+            d = {}
+        celle = d.get("celle")
+        if not (isinstance(celle, list) and len(celle) == self._CAMPO_CELLE):
+            # seme: un pattern lieve (non piatto) così la reazione-diffusione ha da lavorare
+            d["celle"] = [round(0.35 + 0.1 * math.sin(2 * math.pi * i / self._CAMPO_CELLE), 4)
+                          for i in range(self._CAMPO_CELLE)]
+        d.setdefault("batti", 0)
+        d.setdefault("clima", 0.4)
+        d.setdefault("consolidato", False)
+        return d
+
+    def campo_lento_batti(self):
+        """UN passo LENTO di reazione-diffusione (Turing). Guidato dal carico reale (dal flusso
+        e dalla scintilla), NON dal contenuto. Ritorna {clima, consolidato, gradiente}. Cheap,
+        deterministico, nessuna sandbox: la glia lavora anche mentre tutto il resto tace."""
+        def _envf(k, dfl):
+            try:
+                return float(os.environ.get(k, dfl))
+            except Exception:
+                return float(dfl)
+        st = self._campo_lento_stato()
+        g = list(st["celle"])
+        n = len(g)
+        # CARICO = ciò che il campo lento «sente» salire: stanchezza, sorpresa, tensione.
+        try:
+            fl = self._flusso_stato()
+            carico = (1.0 - float(fl.get("energia", 0.7))) * 0.5 + float(fl.get("auto_sorpresa", 0.0)) * 0.5
+        except Exception:
+            carico = 0.3
+        try:
+            carico = min(1.0, carico + 0.3 * float(self._tensione_raw().get("tensione", 0.0)))
+        except Exception:
+            pass
+        D = _envf("LIA_CAMPO_DIFF", 0.14)      # diffusione fra vicini (l'onda si propaga)
+        dt = _envf("LIA_CAMPO_DT", 0.5)
+        a = _envf("LIA_CAMPO_REAZIONE", 0.9)   # crescita logistica locale
+        decad = _envf("LIA_CAMPO_DECAD", 0.5)  # ritorno lento verso la quiete
+        nuovo = [0.0] * n
+        for i in range(n):
+            lap = g[(i - 1) % n] + g[(i + 1) % n] - 2.0 * g[i]           # diffusione (Laplaciano su anello)
+            drive = carico * (0.6 + 0.4 * math.sin(2 * math.pi * i / n))  # ingresso con variazione spaziale
+            reaz = a * g[i] * (1.0 - g[i]) - decad * g[i] + 0.6 * drive   # reazione locale (logistica)
+            nuovo[i] = max(0.0, min(1.0, g[i] + dt * (D * lap + reaz)))
+        clima = sum(nuovo) / n
+        deriv = sum(abs(nuovo[i] - g[i]) for i in range(n)) / n
+        consolidato = deriv < _envf("LIA_CAMPO_SOGLIA_CONS", 0.01)       # il campo ha preso una forma stabile
+        st.update({"celle": [round(x, 4) for x in nuovo], "batti": int(st.get("batti", 0)) + 1,
+                   "clima": round(clima, 4), "consolidato": bool(consolidato)})
+        try:
+            self._meta_set("campo_lento", json.dumps(st, ensure_ascii=False))
+        except Exception:
+            pass
+        return {"clima": round(clima, 3), "consolidato": bool(consolidato),
+                "gradiente": round(max(nuovo) - min(nuovo), 3), "batti": st["batti"]}
+
+    def campo_lento(self):
+        """Foto del clima lento per il contesto e le pulsazioni. Read-only: {clima, consolidato,
+        gradiente}. Il clima < 0.5 = quiete/consolidamento; > 0.5 = turbolenza (carico alto)."""
+        st = self._campo_lento_stato()
+        celle = st.get("celle") or [0.4]
+        return {"clima": round(float(st.get("clima", 0.4)), 3),
+                "consolidato": bool(st.get("consolidato", False)),
+                "gradiente": round(max(celle) - min(celle), 3),
+                "batti": int(st.get("batti", 0))}
+
     # ============================================ IL MONDO CHE MORDE (l'irreversibilità)
     # Il taglio del Compagno (Direttiva 3): irreversibilità VERA — cicatrici che non si annullano,
     # porte chiuse per sempre — ma capite come PRINCIPIO RAGIONATO, mai come melodramma umano.
@@ -3536,7 +3624,11 @@ class Coscienza:
         se = _safe(self.stato_semi)
         nm = _safe(self.neuromodulatori)
         so = _safe(self.stato_storia)
+        cl = _safe(self.campo_lento)
         return {
+            "campo": {"clima": round(float(cl.get("clima", 0.4)), 2),
+                      "consolidato": bool(cl.get("consolidato", False)),
+                      "gradiente": round(float(cl.get("gradiente", 0)), 2)},
             "storia": {"chiuse": int(so.get("chiuse", 0)), "reintrate": int(so.get("reintrate", 0))},
             "neuromod": {"esplorazione": round(float(nm.get("esplorazione", 0)), 2),
                          "temp_mult": round(float(nm.get("temp_mult", 1.0)), 2),
