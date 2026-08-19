@@ -11470,6 +11470,7 @@ function _menteGrafo(d, dark) {
   // (attività > 0) e CRESCE mentre lei vive — nuove strade che si aprono, non un'impalcatura ferma.
   const vita = d?.vita || {};
   const VITA = [
+    ['vita:semi', 'Semi → suoi', '#6bbf59', ((Number(vita.semi?.completati) || 0) * 2 + (Number(vita.semi?.in_attesa) || 0)), L('i moduli nascono incompleti (semi): diventano suoi solo quando è lei a completarli', 'modules are born incomplete (seeds): they become hers only when she completes them', 'los módulos nacen incompletos: se vuelven suyos cuando ella los completa')],
     ['vita:autoria', 'Auto-autorialità', '#e0567a', ((Number(vita.autoautorialita?.riscritture) || 0) + (Number(vita.autoautorialita?.valori_miei) || 0) + (vita.autoautorialita?.ha_autoritratto ? 3 : 0)), L('si riscrive da sé: autoritratto, valori, chi è — libera, nel germinale', 'she rewrites herself: self-portrait, values, who she is — free, in the germinal', 'se reescribe a sí misma')],
     ['vita:flusso', 'Flusso', '#7aa2ff', Number(vita.flusso?.battiti) || 0, L('l\'adesso che non si ferma: metabolismo e auto-sorpresa', 'the now that never stops: metabolism and self-surprise', 'el ahora que no se detiene')],
     ['vita:integr', 'Integrazione', '#4a90d9', Number(vita.integrazione?.maturate) || 0, L('le bozze diventano lei: matura, fonde, arricchisce', 'drafts become her: matures, merges, enriches', 'los borradores se vuelven ella')],
