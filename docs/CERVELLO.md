@@ -326,4 +326,6 @@ Neuronal Workspace) · Tononi (IIT, con caveat) · Metzinger, *Being No One* · 
 
 **Causalità / ragionamento (organi non-statistici):** Pearl, *Causality* 2009 e *The Book of Why* 2018
 (la scala della causalità: vedere/fare/immaginare; il grafo causale, non la correlazione) · Forbus
-(*Qualitative Reasoning*) · Johnson-Laird (*Mental Models*) · Byrne, *The Rational Imagination* (controfattuali).
+(*Qualitative Reasoning*) · Johnson-Laird (*Mental Models*) · Byrne, *The Rational Imagination* (controfattuali) ·
+Gentner, *Structure-Mapping: A Theoretical Framework for Analogy*, Cognitive Science 1983 (analogia =
+mappatura della struttura relazionale; sistematicità: le relazioni profonde battono gli attributi di superficie).

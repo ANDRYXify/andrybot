@@ -430,6 +430,127 @@ def ragiona_causale(canale, domanda):
     return None
 
 
+# ══════════════════════════ RAGIONARE PER ANALOGIA (Gentner) ══════════════════
+# Dedre Gentner, «Structure-Mapping: A Theoretical Framework for Analogy» (Cognitive Science
+# 1983): un'analogia MAPPA la struttura RELAZIONALE di un dominio su un altro — e privilegia le
+# RELAZIONI profonde (causa, è) sugli attributi di superficie. È il principio di SISTEMATICITÀ.
+# Qui: sul grafo di conoscenza, «a cosa somiglia X» cerca l'entità che condivide con X la
+# struttura più ricca (relazioni pesano più degli attributi); «X sta a Y come Z sta a ?» è
+# un'analogia proporzionale risolta sul grafo. Deterministico, sui fatti che ha. Non statistico.
+_PESO_REL = {"causa": 3.0, "è": 2.0, "si-trova": 1.5, "amico-di": 1.5, "ha": 1.0}
+_VERBO_REL = {"è": "sono", "ha": "hanno", "causa": "causano", "si-trova": "si trovano a",
+              "amico-di": "sono amici di", "piace": "piacciono a"}
+
+_Q_SOMIGLIA = re.compile(r"(?i)^\s*(?:a\s+cosa\s+(?:somiglia|assomiglia)|cosa\s+(?:è\s+)?simile\s+a)\s+"
+                         r"(?:" + _ARTICOLI + r")?(.+?)\s*\??$")
+_Q_SOMIGLIA2 = re.compile(r"(?i)^\s*(?:" + _ARTICOLI + r")?(.+?)\s+(?:a\s+cosa\s+)?(?:somiglia|assomiglia)\s*\??$")
+_Q_SIMILE = re.compile(r"(?i)^\s*(?:" + _ARTICOLI + r")?(.+?)\s+è\s+(?:come|simile\s+a)\s+(?:" + _ARTICOLI + r")?(.+?)\s*\??$")
+_Q_PROP = re.compile(r"(?i)^\s*(?:" + _ARTICOLI + r")?(.+?)\s+sta\s+a\s+(?:" + _ARTICOLI + r")?(.+?)\s+come\s+(?:" + _ARTICOLI + r")?(.+?)\s+sta\s+a\s*\??$")
+
+
+def _attr_di(triple, x):
+    """L'insieme delle relazioni (r,o) di x — la sua «struttura»."""
+    return {(t["r"], t["o"]) for t in triple if t["s"] == x}
+
+
+def _descrivi_condivise(condivise):
+    pezzi = []
+    for r, o in sorted(condivise, key=lambda ro: -_PESO_REL.get(ro[0], 1.0))[:3]:
+        pezzi.append(f"{_VERBO_REL.get(r, r)} {o}")
+    return ", ".join(f"entrambi {p}" for p in pezzi)
+
+
+def somiglia(canale, x):
+    """A cosa somiglia x: l'entità con la STRUTTURA più condivisa (relazioni > attributi,
+    sistematicità di Gentner). Ritorna {risposta, catena, sicura} o None."""
+    with _lock:
+        triple = list(_carica(canale)["triple"])
+    nx = _match_nodo(triple, x, "s")
+    if not nx:
+        return None
+    ax = _attr_di(triple, nx)
+    if not ax:
+        return None
+    soggetti = {t["s"] for t in triple if t["s"] != nx}
+    best, score = None, 0.0
+    for y in soggetti:
+        cond = ax & _attr_di(triple, y)
+        s = sum(_PESO_REL.get(r, 1.0) for r, o in cond)
+        if s > score:
+            score, best = s, (y, cond)
+    if not best or score < 2.0:      # serve un vero aggancio strutturale, non un attributo solo
+        return None
+    y, cond = best
+    return {"risposta": f"{nx.capitalize()} somiglia a {y}: {_descrivi_condivise(cond)}.",
+            "catena": f"struttura condivisa: {len(cond)} relazioni", "sicura": True}
+
+
+def simile_a(canale, x, y):
+    """«X è come Y?» — verifica l'analogia mostrando la struttura condivisa (o la sua assenza)."""
+    with _lock:
+        triple = list(_carica(canale)["triple"])
+    nx, ny = _match_nodo(triple, x, "s"), _match_nodo(triple, y, "s")
+    if not nx or not ny or nx == ny:
+        return None
+    cond = _attr_di(triple, nx) & _attr_di(triple, ny)
+    s = sum(_PESO_REL.get(r, 1.0) for r, o in cond)
+    if s >= 2.0:
+        return {"risposta": f"Sì: {nx} e {ny} — {_descrivi_condivise(cond)}.", "catena": "", "sicura": True}
+    if _attr_di(triple, nx) and _attr_di(triple, ny):
+        return {"risposta": f"Non per quel che so: {nx} e {ny} non condividono granché.", "catena": "", "sicura": True}
+    return None
+
+
+def proporzione(canale, a, b, c):
+    """Analogia proporzionale A:B::C:? — trova d tale che la relazione C→d rispecchi A→B (Gentner)."""
+    with _lock:
+        triple = list(_carica(canale)["triple"])
+    na, nb, nc = _match_nodo(triple, a, "s"), _match_nodo(triple, b, "o"), _match_nodo(triple, c, "s")
+    if not na or not nb or not nc:
+        return None
+    rels = [t["r"] for t in triple if t["s"] == na and t["o"] == nb]      # la relazione A→B
+    cand = set()
+    rel_usata = None
+    for r in rels:
+        for t in triple:
+            if t["s"] == nc and t["r"] == r and t["o"] != nb:
+                cand.add(t["o"]); rel_usata = r
+    # SOLO se la risposta è UNICA: con la relazione grezza («ha») più candidati sono ambigui
+    # (cucciolo vs pelo) — meglio TACERE che azzeccare l'analogia sbagliata (fedeltà, non tiro).
+    if len(cand) != 1:
+        return None
+    d = next(iter(cand))
+    return {"risposta": f"{nc.capitalize()} sta a {d}, come {na} sta a {nb}.",
+            "catena": f"relazione condivisa: {rel_usata}", "sicura": True}
+
+
+def ragiona_analogia(canale, domanda):
+    """Dispatcher analogico: «X sta a Y come Z» → proporzione; «X è come Y» → verifica;
+    «a cosa somiglia X / com'è X» → somiglianza. Ritorna {..., via} o None."""
+    d = str(domanda or "").strip()
+    if not d:
+        return None
+    try:
+        m = _Q_PROP.match(d)
+        if m:
+            r = proporzione(canale, m.group(1), m.group(2), m.group(3))
+            if r:
+                r["via"] = "analogia"; return r
+        m = _Q_SIMILE.match(d)
+        if m:
+            r = simile_a(canale, m.group(1), m.group(2))
+            if r:
+                r["via"] = "analogia"; return r
+        m = _Q_SOMIGLIA.match(d) or _Q_SOMIGLIA2.match(d)
+        if m:
+            r = somiglia(canale, m.group(1))
+            if r:
+                r["via"] = "analogia"; return r
+    except Exception:
+        return None
+    return None
+
+
 # ══════════════════════════ RAGIONARE CALCOLANDO (non statistico) ══════════════
 # Il primo gradino dell'organo del ragionamento: quando una domanda è CALCOLABILE,
 # lei non «ricorda» una risposta plausibile — la CALCOLA. 17×23 non lo pesca da un

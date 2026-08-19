@@ -1040,6 +1040,14 @@ def _ecologia(canale, ctx, testo, modo):
                 cand.append(("causale", 1.0, rc["risposta"], None, True))
         except Exception:
             pass
+        # RAGIONARE PER ANALOGIA (Gentner): «a cosa somiglia X / X è come Y / X sta a Y come Z»
+        # → mappa la struttura relazionale sul grafo. Costruzione dai fatti → VERITÀ sovrana.
+        try:
+            ra = ragiona.ragiona_analogia(canale, testo)
+            if ra and ra.get("sicura") and ra.get("risposta"):
+                cand.append(("analogia", 1.0, ra["risposta"], None, True))
+        except Exception:
+            pass
     if modo in ("live", "allenamento"):
         # INTROSPEZIONE: la risposta su di sé, COSTRUITA dal suo stato reale (dal server). È
         # la sua voce più autentica sul sé — voce forte nell'ecologia (ma non «verità»: è una
