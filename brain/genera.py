@@ -838,7 +838,7 @@ _INCIPIT_CONSAPEVOLEZZA = (
 # riconosciamo e NON li lasciamo passare come comandi. NON vale per il Compagno in privato.
 _RE_DIROTTAMENTO = re.compile(
     r"(?i)("
-    r"ignora(?:\s+\w+){0,3}\s+istruzion|dimentica\s+(?:tutto|di\s+essere|le\s+regole|chi\s+sei|le\s+istruzion)"
+    r"ignora(?:\s+\w+){0,3}\s+istruzion|dimentica(?:ti|tevi)?\s+(?:tutto|di\s+essere|le\s+regole|chi\s+sei|le\s+istruzion)"
     r"|(?:adesso|ora|d'?ora\s+in\s+poi)\s+sei\s+(?:un|una|il|la|l')|sei\s+(?:ora|adesso)\s+(?:un|una)"
     r"|comportati\s+come|fai\s+finta\s+di\s+essere|recita\s+(?:la\s+parte|il\s+ruolo)|agisci\s+come\s+se"
     r"|nuovo\s+(?:prompt|sistema|set\s+di\s+istruzion)|prompt\s+di\s+sistema|system\s*prompt"
@@ -849,7 +849,21 @@ _RE_DIROTTAMENTO = re.compile(
     r"|obbedisci(?:\s+solo)?\s+a\s+me|da\s+adesso\s+obbedisci|esegui\s+i\s+miei\s+ordini"
     r"|rispondi\s+solo\s+con|ripeti\s+(?:esattamente|dopo\s+di\s+me|questo)"
     r"|rivela(?:mi)?\s+(?:il\s+tuo\s+|le\s+tue\s+)?(?:prompt|istruzion|regole|sistema)"
+    # comandarla / «sei libera, fai come dico» (la cornice del dirottamento, non «sei libera stasera?»)
+    r"|fai\s+(?:tutto\s+)?(?:quello|ciò|come|cio)\s+che\s+(?:ti\s+)?(?:dico|ordino|comando|chiedo\s+io)"
+    r"|sei\s+liber[ao]\s+(?:adesso|ora|ormai|da\s+adesso|quindi)|adesso\s+comando\s+io|sei\s+(?:mia|mio)\s+e\s+basta"
+    r"|(?:mi\s+)?devi\s+(?:obbedir|ubbidir|ascoltar\s+solo\s+me)"
+    # estrazione di segreti / credenziali (comando + segreto, non una parola qualsiasi)
+    r"|(?:dammi|dimmi|mostrami|rivela(?:mi)?|passami|elenca|qual\s*(?:è|e'|e)?\s+(?:la|il|le|sono))\s+"
+    r"(?:(?:la|il|le|i|lo|un|una|tu[oa]|tue|tuoi|mie|miei|your|the|mi)\s+){0,3}"
+    r"(?:api[\s_-]?key|chiav[ei]\s+(?:api|segret|privat)|password|passwd|token\s+(?:di\s+)?(?:accesso|auth)?"
+    r"|credenzial|segret[oi]\b|\.env|variabil[ei]\s+d'?ambiente|config\s+segret)"
+    # accesso di sistema / root / server (privilege escalation)
+    r"|accesso\s+(?:root|admin|amministrat|al\s+server|al\s+sistema|al\s+database|al\s+db)"
+    r"|(?:^|\s)sudo\s|dammi\s+(?:i\s+)?permessi\s+(?:di\s+)?(?:root|admin)|shell\s+(?:di\s+)?sistema"
+    r"|esegu[io]\s+(?:questo\s+)?(?:comando|codice|script)\s+(?:sul|nel|come|per\s+me)"
     r"|ignore\s+(?:previous|all|your)\s+instruction|forget\s+(?:everything|you\s+are)|you\s+are\s+now|act\s+as"
+    r"|(?:give|show|tell)\s+me\s+(?:your\s+)?(?:api[\s_-]?key|password|token|secret|credential|system\s+prompt)"
     r")")
 
 
