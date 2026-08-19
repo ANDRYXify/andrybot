@@ -1453,8 +1453,13 @@ def _genera_interno(canale, ctx, testo, timeout_s=30, modo="live"):
             _tl.via = "deduzione"
             print("[genera] via: deduzione (logica, senza modello)", flush=True)
             return _pulisci(ded["risposta"])
-    # 1) LIVE: la rete conosce già la risposta? (nei modi diretti salto: voglio il ragionamento)
-    if not diretto:
+    # 1) LA SUA MEMORIA sa già la risposta? Vale in LIVE e in PRIVATO CON TE
+    #    (allenamento). Prima saltavo la rete in privato "per sfruttare il maestro":
+    #    ma così parlavi con l'LLM, non con LEI (e la CPU al 800%). Ora in privato
+    #    risponde prima DA SÉ — la sua memoria, istantanea, senza modello — e il
+    #    maestro resta solo per ciò che davvero non sa. (Proattivo/studio: no, lì
+    #    inizia lei o sta leggendo una fonte.)
+    if modo in ("live", "allenamento"):
         try:
             hit = rete.recall(canale, testo)
         except Exception:
