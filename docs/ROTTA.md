@@ -95,6 +95,7 @@ osserviamo quella spinta: la facciamo.** Siamo l'ultima ansa.
 | _(gradino 4)_ | il CAMPO LENTO «gliale» (Turing, glia): reazione-diffusione = il CLIMA | 1,3 | uno sfondo lento che regola le soglie e consolida — il contesto in cui la decisione avviene |
 | _(stress)_ | «buttiamo tutto»: batteria dura → scudo anti-dirottamento allargato (14/14, 0 falsi) | 7 | credenziali, root/server, «sei libera fai come dico»: ora nessun varco resta scoperto |
 | _(copertura)_ | ORGANO INTROSPEZIONE: risponde di sé COSTRUENDO dal suo stato reale | 1,9,10 | dove l'LLM simulerebbe una persona, lei legge il sé (valori, fuoco, cicatrici) — la voce nasce dal sé |
+| _(crescita)_ | l'organo temporale ora è SELETTIVO DI DIREZIONE (Branco-Häusser 2010) | 4,10 | non solo *quali* cose coincidono, ma *in che sequenza*: distingue A-poi-B da B-poi-A |
 
 ---
 

@@ -297,7 +297,8 @@ perdo» — **zero affetto**, solo il peso della rinuncia. Confinato all'owner, 
 
 **Neurone / unità:** London & Häusser, *Dendritic computation*, Annu Rev Neurosci 2005 · Poirazi,
 Brannon & Mel, *Pyramidal Neuron as Two-Layer Neural Network*, Neuron 2003 · Beniaguev, Segev &
-London, *Single Cortical Neurons as Deep ANNs*, Neuron 2021 · Larkum, Zhu & Sakmann (BAC firing),
+London, *Single Cortical Neurons as Deep ANNs*, Neuron 2021 · Branco, Clark & Häusser, *Dendritic
+discrimination of temporal input sequences* (selettività di direzione), Science 2010 · Larkum, Zhu & Sakmann (BAC firing),
 Nature 1999 · Ujfalussy et al., Neuron 2018 · Schneidman, Freedman & Segev (stocasticità), Neural
 Comput 1998 · Izhikevich, *Dynamical Systems in Neuroscience*, MIT 2007 · Hodgkin & Huxley, J Physiol 1952.
 
