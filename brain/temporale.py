@@ -13,11 +13,15 @@ rami dendritici fanno subunità **moltiplicative** (gate tipo-NMDA, rilevatori d
 computazione si svolge **nel TEMPO** (finestre d'integrazione con costanti diverse), non in un
 colpo. Un singolo neurone equivale a una rete profonda temporale a 5–8 strati.
 
-Le due rotture con lo statistico, rese letterali:
+Le rotture con lo statistico, rese letterali:
   1) MOLTIPLICATIVA (Π, non Σ): l'unità s'accende solo se TUTTI i suoi rami sono soddisfatti —
      un AND di coincidenza. Una feature che manca AZZERA la risposta (non la "abbassa un po'").
   2) TEMPORALE: ogni ramo integra la sua feature con decadimento (integrale leaky sullo stream
      dei token = il tempo). Quando una cosa appare conta: la coincidenza è nel tempo, non nel sacco.
+  3) SELETTIVA DI DIREZIONE (Branco, Clark & Häusser 2010, Science): lo STESSO insieme di input,
+     in ORDINE diverso, dà una risposta diversa — un dendrite è direzione-selettivo. I rami sono
+     memorizzati nella sequenza appresa; l'ordine giusto rinforza, quello sbagliato smorza. Ora
+     l'organo distingue «il gioco crasha e poi torna» da «torna e poi il gioco crasha».
 
 È deterministico, a modello spento, e CRESCE dall'esperienza (impara congiunzioni che hanno
 funzionato, le indebolisce quando falliscono). Entra nell'ECOLOGIA (genera._ecologia) come un
@@ -139,6 +143,33 @@ def _coincidenza(stream, rami):
     return math.exp(sum(math.log(g) for g in attivi) / len(attivi))
 
 
+def _concordanza_ordine(stream, rami):
+    """SELETTIVITÀ DI DIREZIONE (Branco, Clark & Häusser 2010, Science): lo STESSO insieme di
+    input, in ORDINE diverso, dà una risposta diversa. `rami` è memorizzato nell'ordine appreso;
+    qui misuro quanto l'ordine di comparsa nel probe CONCORDA con quello appreso — concordanza di
+    Kendall ∈ [0,1] sulle coppie di rami presenti. 1 = stessa sequenza, 0 = invertita. Combinatorio,
+    NON statistico. Con meno di 2 rami presenti l'ordine non è definito → neutro (1.0)."""
+    pos = {}
+    for r in rami:
+        try:
+            pos[r] = stream.index(r)
+        except ValueError:
+            pass
+    presenti = [r for r in rami if r in pos]     # nell'ordine APPRESO (rami è già in ordine appreso)
+    if len(presenti) < 2:
+        return 1.0
+    conc = disc = 0
+    for i in range(len(presenti)):
+        for j in range(i + 1, len(presenti)):
+            pa, pb = pos[presenti[i]], pos[presenti[j]]   # appreso: presenti[i] prima di presenti[j]
+            if pa < pb:
+                conc += 1                                 # nel probe pure a-prima-di-b → concorde
+            elif pa > pb:
+                disc += 1
+    tot = conc + disc
+    return conc / tot if tot else 1.0
+
+
 # ───────────────────────────────────── proporre (competere nell'ecologia)
 def proponi(canale, domanda):
     """Fa scorrere la domanda negli oscillatori-unità e ritorna la risposta dell'unità che
@@ -151,13 +182,19 @@ def proponi(canale, domanda):
             st = _carica(canale)
             best, coinc, score = None, 0.0, 0.0
             for u in st["tmu"]:
-                c = _coincidenza(stream, u.get("rami") or [])
+                rami = u.get("rami") or []
+                c = _coincidenza(stream, rami)
                 if c < _SOGLIA_PROPONI:
                     continue                # il GATE è la coincidenza grezza (la coincidenza nel tempo)
-                # a parità di coincidenza, l'unità più FORTE (rinforzata dai successi) vince
-                s = c * (0.7 + 0.3 * min(1.0, u.get("forza", 1.0) / _FORZA_MAX))
+                # SELETTIVITÀ DI DIREZIONE (Branco-Häusser): l'ordine appreso rinforza, quello
+                # sbagliato smorza — ma non azzera (la coincidenza conta comunque). Ora l'organo
+                # distingue «il gioco crasha e poi torna» da «torna e poi il gioco crasha».
+                ordm = _concordanza_ordine(stream, rami)
+                c_eff = c * (0.6 + 0.4 * ordm)
+                # a parità, l'unità più FORTE (rinforzata dai successi) vince
+                s = c_eff * (0.7 + 0.3 * min(1.0, u.get("forza", 1.0) / _FORZA_MAX))
                 if s > score:
-                    score, coinc, best = s, c, u
+                    score, coinc, best = s, c_eff, u
             if not best:
                 return None
             best["usi"] = int(best.get("usi", 0)) + 1
@@ -184,13 +221,15 @@ def _rami_da(domanda):
     if len(stream) < 2:
         return []
     # salienza grezza: parole più lunghe = più distintive; primo-visto vince a parità.
-    visti, ordinati = set(), []
+    visti, distinti = set(), []
     for w in stream:
         if w not in visti:
             visti.add(w)
-            ordinati.append(w)
-    ordinati.sort(key=lambda w: (-len(w),))
-    return ordinati[:_RAMI_MAX]
+            distinti.append(w)                       # distinti in ORDINE D'APPARIZIONE (il tempo)
+    salienti = set(sorted(distinti, key=lambda w: -len(w))[:_RAMI_MAX])   # QUALI rami (salienza)
+    # ...ma li restituisco nell'ORDINE D'APPARIZIONE: così `rami` codifica la SEQUENZA appresa
+    # (serve alla selettività di direzione, Branco-Häusser). Salienza sceglie CHI, il tempo l'ORDINE.
+    return [w for w in distinti if w in salienti]
 
 
 def impara(canale, domanda, risposta, forza=0.6):
