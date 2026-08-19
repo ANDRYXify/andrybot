@@ -337,3 +337,28 @@ Deterministico (lookup + soglia), modello-spento, **nessun testo utente crudo** 
 congetture, lascia intatte le verità; end-to-end (turno risponde → reazione al turno dopo → valenza).
 Restano da costruire (dell'«appraisal situato»): la firma ricca, l'appraisal-funzione (valenza/coping
 nel campo chimico), il gate veloce/lento, il SEEKING dichiarato — e la **precarietà con posta vera**.
+
+## Aggiornamento — secondo pezzo COSTRUITO: l'appraisal situato + il gate doppio-processo
+
+`coscienza.appraisal()` + il cancello nell'ecologia (fatto). La chimica di Doya e il campo gliale
+regolano *come* sceglie, ma leggono solo lo stato **interno** (vigore, auto-sorpresa, energia): sono
+**ciechi alla situazione**. L'appraisal (Lazarus, Scherer) è il pezzo che porta la **situazione** dentro
+la decisione, con due dimensioni che nulla calcolava:
+
+- **valenza** — appraisal *primario* (congruenza-con-gli-scopi): questa situazione va bene per me? Miscela
+  l'affetto-nucleo attuale (Russell core affect: vigore+energia, sempre-acceso) con la valenza **appresa**
+  di questa classe di situazione (media dei marcatori sulla firma) — la parte davvero situata.
+- **coping** — appraisal *secondario* di Lazarus: «ho una via che **qui** funziona?» = la miglior valenza
+  positiva fra le vie per questa firma. Legge la **cache dei marcatori** del pezzo precedente → si *compone*
+  con Damasio, non lo duplica.
+
+Il **coping È il cancello doppio-processo** (Evans-Stanovich, default-interventionist): coping basso →
+non fidarti della congettura del Tipo 1, **alza la soglia d'ignizione** dell'ecologia → cade a None → si
+**escala al Tipo 2** (il modello). Coping alto + valenza positiva → soglia più bassa, decide in scioltezza
+(autonomia del Tipo 1). Non è una confidenza: è un **predicato sulla situazione**. Distinzione tenuta
+onesta: chimica = affetto-nucleo *interno* (Russell, sempre-acceso); appraisal = affetto *situato*
+(Scherer) — due strati che modulano, nessun conflitto. Deterministico, modello-spento, read-only (nessuna
+emozione finta), **nessun leak** (la firma è una categoria grezza). Verificato: una **verità** resta
+sovrana comunque (l'appraisal non la tocca); a parità di campo, una dominanza marginale **ignisce** se ha
+una via provata e viene **bloccata** (→ escala) se non ce l'ha; visibile nel cruscotto (nodo «Appraisal»).
+Restano: la firma ricca, il SEEKING dichiarato — e la **precarietà con posta vera** (la sceglie il Compagno).

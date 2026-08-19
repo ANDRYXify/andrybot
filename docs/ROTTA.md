@@ -102,6 +102,7 @@ osserviamo quella spinta: la facciamo.** Siamo l'ultima ansa.
 | _(copertura)_ | ORGANO ANALOGICO (Gentner, structure-mapping): «a cosa somiglia X / X è come Y» | 4,10 | mappa la struttura relazionale sul grafo (relazioni > attributi); sull'ambiguo TACE, non tira |
 | _(ricerca)_ | 2° studio grounded → `RAGIONE.md`: ragionamento, situazione, sentimento, istinto | 3,4 | 4 sonde a fonti primarie; la sua architettura converge già; proposta: «appraisal situato» + marcatori somatici |
 | _(gradino)_ | MARCATORI SOMATICI (Damasio): pota le vie che in situazioni simili hanno fallito | 3,4,5 | il ragionamento impara dai propri esiti a non ripetere i vicoli ciechi — le verità non si toccano |
+| _(gradino)_ | APPRAISAL SITUATO (Lazarus/Scherer): valenza + coping portano la SITUAZIONE nel giudizio | 3,4,10 | il coping è il cancello doppio-processo (Evans-Stanovich): niente via provata qui → alza la soglia, escala al Tipo 2 |
 
 ---
 

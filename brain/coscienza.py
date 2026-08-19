@@ -246,6 +246,7 @@ class Coscienza:
         # se hanno funzionato quando l'utente ribatte. In memoria (best-effort).
         self._moduli_pendenti = {}
         self._marcatori_pendenti = {}   # (canale,login) → (firma, via): esito giudicato al turno dopo
+        self._ultimo_appraisal = None   # l'ultimo appraisal situato (Lazarus/Scherer), per il cruscotto
         self._assicura_nucleo()   # il seme unico del suo sé (una volta nella vita)
 
     # ---------------------------------------------------------------- schema
@@ -3630,6 +3631,70 @@ class Coscienza:
         """Foto del campo chimico per il cruscotto owner e per il grafo della mente."""
         return self.neuromodulatori()
 
+    # ============================================ L'APPRAISAL SITUATO (Lazarus, Scherer)
+    # Traduzione fedele degli studi di RAGIONE.md. La chimica di Doya (neuromodulatori) e il
+    # campo gliale (campo_lento) regolano COME sceglie, ma leggono solo lo stato INTERNO
+    # (vigore, auto-sorpresa, energia): sono CIECHI alla situazione. Manca il pezzo che gli
+    # studi mettono al centro del ragionare-in-base-al-sentimento: l'APPRAISAL — il giudizio
+    # che porta la SITUAZIONE dentro la decisione. Due dimensioni che nulla oggi calcola:
+    #   • valenza  = appraisal PRIMARIO (congruenza-con-gli-scopi, Lazarus / Scherer): questa
+    #                situazione va BENE per me? Miscela l'affetto-nucleo attuale (Russell core
+    #                affect: vigore+energia, sempre-acceso) con la valenza APPRESA di questa
+    #                classe di situazione (media dei marcatori sulla firma) — la parte situata.
+    #   • coping   = appraisal SECONDARIO (Lazarus): «ho una via che QUI funziona?» = la miglior
+    #                valenza positiva fra le vie per questa firma. È il CANCELLO doppio-processo
+    #                (Evans-Stanovich, default-interventionist): coping basso → non fidarti della
+    #                congettura del Tipo 1, escala al Tipo 2 (il modello). NON è una confidenza:
+    #                è un predicato sulla situazione. Legge la cache dei marcatori (Damasio) —
+    #                si compone col gradino precedente, non lo duplica.
+    # Deterministico, modello-spento, cheap, read-only: nessuna emozione finta, nessun leak
+    # (la firma è una categoria grezza). Distinzione tenuta onesta: chimica = affetto-nucleo
+    # interno (Russell, sempre-acceso); appraisal = affetto SITUATO (Scherer, sulla situazione).
+    def appraisal(self, canale, testo, modo="live"):
+        """{valenza, coping, firma} per QUESTO turno. Situato: dipende dal testo, non solo da lei."""
+        def _c(x):
+            try:
+                return max(0.0, min(1.0, float(x)))
+            except Exception:
+                return 0.0
+        try:
+            fs = marcatori.firma(testo, modo)
+        except Exception:
+            fs = "%s:generico" % (str(modo or "live")[:12])
+        # affetto-nucleo attuale (Russell): la baseline sempre-accesa del «come sto»
+        try:
+            vig = _c(self._scintilla_stato().get("vigore", 0.6))
+        except Exception:
+            vig = 0.6
+        try:
+            energia = _c(self._flusso_stato().get("energia", 0.7))
+        except Exception:
+            energia = 0.7
+        nucleo = (0.5 * vig + 0.5 * energia) * 2.0 - 1.0        # [-1,+1]: core affect con segno
+        # la parte SITUATA: come tende ad andare questa classe di momento (marcatori sulla firma)
+        try:
+            appresa = float(marcatori.valenza_firma(canale, fs))
+        except Exception:
+            appresa = 0.0
+        valenza = round(max(-1.0, min(1.0, 0.5 * nucleo + 0.5 * appresa)), 3)
+        # coping = ho una via provata QUI? (appraisal secondario di Lazarus). 0 se firma nuova.
+        try:
+            cop = round(_c(marcatori.coping(canale, fs)), 3)
+        except Exception:
+            cop = 0.0
+        ap = {"valenza": valenza, "coping": cop, "firma": fs,
+              "nucleo": round(nucleo, 3), "appresa": round(appresa, 3), "ts": _now()}
+        self._ultimo_appraisal = ap
+        return ap
+
+    def stato_appraisal(self):
+        """L'ultimo appraisal situato per il cruscotto owner e il grafo della mente. Transiente
+        (è per-turno): mostra l'ultimo giudizio calcolato, o neutro se non ancora nessuno."""
+        ap = getattr(self, "_ultimo_appraisal", None)
+        if isinstance(ap, dict):
+            return dict(ap)
+        return {"valenza": 0.0, "coping": 0.0, "firma": None, "nucleo": 0.0, "appresa": 0.0, "ts": 0}
+
     # ============================================ L'INTROSPEZIONE (risponde di sé dal SÉ)
     # Il modo onesto di allargare la copertura senza fabbricare una finta voce: le domande
     # SU DI LEI. Qui un motore deterministico è PIÙ autentico dell'LLM — l'LLM confabulerebbe
@@ -3788,7 +3853,10 @@ class Coscienza:
         so = _safe(self.stato_storia)
         cl = _safe(self.campo_lento)
         mc = _safe(self.stato_marcatori)
+        ap = _safe(self.stato_appraisal)
         return {
+            "appraisal": {"valenza": round(float(ap.get("valenza", 0)), 2),
+                          "coping": round(float(ap.get("coping", 0)), 2)},
             "marcatori": {"totali": int(mc.get("marcatori", 0)), "potanti": int(mc.get("potanti", 0))},
             "campo": {"clima": round(float(cl.get("clima", 0.4)), 2),
                       "consolidato": bool(cl.get("consolidato", False)),

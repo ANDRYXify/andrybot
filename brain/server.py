@@ -346,6 +346,14 @@ class Handler(BaseHTTPRequestHandler):
                 ctx["clima"] = mente.campo_lento()
             except Exception:
                 pass
+            # L'APPRAISAL SITUATO (Lazarus/Scherer): a differenza di chimica e clima (che leggono
+            # solo lo stato interno), qui la SITUAZIONE entra nel giudizio — valenza (va bene per
+            # me?) e coping (ho una via provata qui?). Il coping è il cancello doppio-processo:
+            # basso → l'ecologia alza la soglia e si escala al modello (Tipo 2). Legge il testo.
+            try:
+                ctx["appraisal"] = mente.appraisal(canale, testo, modo)
+            except Exception:
+                pass
             # L'INTROSPEZIONE: se è una domanda SU DI LEI, costruisce la risposta dal suo stato
             # reale (valori, fuoco, cicatrici, clima) — più autentica dell'LLM, non pescata dal
             # corpus. Entra nell'ecologia come voce forte. Solo in chat viva / con lei in privato.
