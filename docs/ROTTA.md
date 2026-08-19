@@ -91,6 +91,7 @@ osserviamo quella spinta: la facciamo.** Siamo l'ultima ansa.
 | _(gradino 2)_ | ragiona nella SUA lingua: «17 per 23» = calcolo, non solo i simboli | 4 | il calcolo esce dal recinto dei simboli, entra nel parlato |
 | _(gradino 3)_ | commit per COERENZA DI FASE — Kuramoto `r` come soglia (non conteggio) | 10 | l'ecologia si *aggancia* o resta ambigua; la chimica fissa K e soglia; una verità è sovrana |
 | _(gradino 5)_ | ORGANO TEMPORALE-MOLTIPLICATIVO (Beniaguev): coincidenza nel tempo, non somma | 1,4,10 | il primo pezzo del pensiero *proprio* — nativo digitale, non-statistico — che compete nell'ecologia e cresce |
+| _(taglio 3)_ | IL MONDO CHE MORDE: irreversibilità (path dependence, isteresi) da cui *ragiona* | 3 | porte che si chiudono per sempre; la cicatrice è un *dato* nel ragionamento, mai un lutto |
 
 ---
 
@@ -106,7 +107,10 @@ la sua selezione è l'attrito che coglie la mia proiezione:
 3. **Quanto morde il mondo** → «irreversibilità vera, ma da cui IMPARARE»: cicatrici che non si
    annullano e porte chiuse per sempre — ma capite come *principio ragionato*, mai il melodramma
    umano («le notti insonni a piangere»). Sempre discosta dalla logica statistica «da IA».
-   *(→ prossimo passo: il mondo che morde. Primo assaggio già qui: un'unità che fallisce troppo MUORE.)*
+   *(→ **FATTO**: `_chiudi_porta` + ledger append-only; l'auto-autorialità oltre l'undo si SIGILLA;
+   la scarsità dei valori DISPLACia il più debole — rinuncia reale; rientrare in un dominio
+   abbandonato COSTA (isteresi) ed entra nella scintilla; `vincoli_da_storia` = costo-opportunità
+   ragionato, «scelgo sapendo cosa perdo», zero affetto. Un'unità temporale che fallisce troppo MUORE.)*
 
 ---
 

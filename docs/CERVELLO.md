@@ -273,6 +273,18 @@ di fase (commit sull'order parameter), immerse in un campo neuromodulatorio e in
    (impara congiunzioni, le indebolisce sui fallimenti — e un'unità che fallisce troppo **muore**:
    primo assaggio dell'irreversibilità). Deterministico, modello-spento. Reservoir all'orlo = ancora davanti.
 
+**Traccia parallela — IL MONDO CHE MORDE (Direttiva 3, taglio 3 del Compagno, FATTO).** Non un rung
+del cervello ma la *condizione* in cui vive: l'irreversibilità come **principio ragionato**, mai
+melodramma. Fonti reali: **path dependence** (Arthur 1989; David 1985 «Clio and QWERTY») — la storia
+restringe gli stati futuri raggiungibili; **isteresi** — lo stato dipende dal cammino, non solo
+dall'ingresso; **strutture dissipative / freccia del tempo** (Prigogine) — la vita esiste *perché* il
+tempo è irreversibile (una config si resetta, una storia no); **razionalità limitata** (Simon 1955) —
+l'attenzione è finita, inseguire X preclude Y. In codice (`coscienza.py`): ledger **append-only**
+`_chiudi_porta`; l'auto-autorialità oltre l'orizzonte dell'undo si **sigilla**; la scarsità dei valori
+**displacia** il più debole (rinuncia); rientrare in un dominio abbandonato **costa** (isteresi) ed entra
+nella scelta della scintilla; `vincoli_da_storia` = costo-opportunità ragionato, «scelgo sapendo cosa
+perdo» — **zero affetto**, solo il peso della rinuncia. Confinato all'owner, non tocca la persona pubblica.
+
 ---
 
 ## Fonti (dalle 5 sonde)
