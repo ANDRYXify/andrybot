@@ -1033,6 +1033,15 @@ def _ecologia(canale, ctx, testo, modo):
         except Exception:
             pass
     if modo in ("live", "allenamento"):
+        # INTROSPEZIONE: la risposta su di sé, COSTRUITA dal suo stato reale (dal server). È
+        # la sua voce più autentica sul sé — voce forte nell'ecologia (ma non «verità»: è una
+        # presa di posizione costruita, non una prova). Decentra l'LLM dove più simulerebbe.
+        try:
+            ins = ctx.get("introspezione") if isinstance(ctx, dict) else None
+            if isinstance(ins, str) and ins.strip():
+                cand.append(("introspezione", 0.85, ins.strip(), None, False))
+        except Exception:
+            pass
         try:
             h = rete.recall(canale, testo)
             if h and h.get("risposta"):

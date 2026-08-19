@@ -346,6 +346,16 @@ class Handler(BaseHTTPRequestHandler):
                 ctx["clima"] = mente.campo_lento()
             except Exception:
                 pass
+            # L'INTROSPEZIONE: se è una domanda SU DI LEI, costruisce la risposta dal suo stato
+            # reale (valori, fuoco, cicatrici, clima) — più autentica dell'LLM, non pescata dal
+            # corpus. Entra nell'ecologia come voce forte. Solo in chat viva / con lei in privato.
+            if modo in ("live", "allenamento"):
+                try:
+                    ins = mente.introspezione(testo)
+                    if ins and ins.get("risposta"):
+                        ctx["introspezione"] = ins["risposta"]
+                except Exception:
+                    pass
             # conoscenza curata passata dal bot (profilo del sito): la mettiamo
             # davanti ai fatti così il cervello sa social/info del canale.
             cur = d.get("conoscenza")
