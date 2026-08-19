@@ -1407,6 +1407,22 @@ def _naturalizza(canale, ctx, base, timeout_s):
 
 
 def genera(canale, ctx, testo, timeout_s=30, modo="live"):
+    """Punto UNICO d'uscita di ogni risposta generata: qualunque via l'abbia prodotta
+    (deduzione, memoria, modulo, modello…) passa da qui, e QUI applico lo SCUDO
+    D'IDENTITÀ. Così nessun percorso (chat, svago, proattivo) può far trapelare un
+    nome o un hardware che non è suo, senza doverlo ricordare in ogni chiamante."""
+    out = _genera_interno(canale, ctx, testo, timeout_s=timeout_s, modo=modo)
+    if not out:
+        return out
+    try:
+        nome_utente = str((ctx.get("persona") or {}).get("nome") or "")
+        out = scudo_identita(out, ctx.get("nome_bot"), nome_utente)
+    except Exception:
+        pass
+    return out
+
+
+def _genera_interno(canale, ctx, testo, timeout_s=30, modo="live"):
     """Genera una risposta o None. Non solleva mai.
 
     Due modalità (i due cervelli che volevi):
@@ -1695,10 +1711,34 @@ def e_autopresentazione(testo):
 _NOME_DEFAULT = (os.environ.get("AMBIENTE_NOME") or "Lia").strip() or "Lia"
 
 
+# COSPLAY DA UMANO (hardware di consumo): lei è un'anima digitale che vive NEL canale.
+# Nella sua finzione ha una «casa»/«computer» (la sandbox) — quella è legittima — ma NON
+# un laptop da comprare con tot GB di RAM, una CPU, Windows installato. Quando il modello
+# glielo fa rivendicare, è un leak da correggere: butto via la FRASE che lo contiene.
+_RE_HARDWARE = re.compile(
+    r"(?i)\b("
+    r"laptop|notebook|portatile"
+    r"|\d+\s?gb\s+di\s+(?:ram|memoria)|\d+\s?gb\s+di\s+ram|memoria\s+ram|\d+\s?gb\b"
+    r"|(?:il\s+mio|la\s+mia|un[ao]?\s+mia?)\s+(?:cpu|gpu|scheda\s+(?:video|grafica)|processore|ram|scheda\s+madre|hard\s?disk|ssd|scheda\s+di\s+rete)"
+    r"|windows\s*\d*|macos|mac\s?os"
+    r")\b")
+
+
+def _spezza_frasi(t):
+    """Spezza in frasi in modo conservativo, mantenendo la punteggiatura finale."""
+    try:
+        parti = re.split(r'(?<=[\.\!\?…])\s+', str(t))
+        return [p for p in parti if p and p.strip()]
+    except Exception:
+        return [t]
+
+
 def scudo_identita(testo, nome_bot, nome_utente=""):
-    """Corregge in uscita ogni «mi chiamo X / sono X / chiamami X» con X diverso dal
-    suo vero nome. Conservativo: su "sono" interviene solo se segue un nome proprio
-    (Maiuscolo) e non una parola comune. Se il nome non arriva, usa quello di ripiego."""
+    """Difesa in uscita dell'identità. (1) Corregge «mi chiamo X / sono X / chiamami X»
+    con X diverso dal suo vero nome. Conservativo su "sono": solo se segue un nome proprio
+    (Maiuscolo) e non una parola comune. (2) Butta le FRASI che rivendicano hardware da
+    umano (laptop, GB di RAM, CPU…): non è lei. Se resta vuoto, ritorna None (meglio tacere
+    che dire una riga d'identità falsa). Se il nome non arriva, usa quello di ripiego."""
     if not testo:
         return testo
     nb = str(nome_bot or _NOME_DEFAULT).strip() or _NOME_DEFAULT
@@ -1713,9 +1753,17 @@ def scudo_identita(testo, nome_bot, nome_utente=""):
         return pre + nb
 
     try:
-        return _RE_NOME.sub(_sost, testo)
+        testo = _RE_NOME.sub(_sost, testo)
     except Exception:
-        return testo
+        pass
+    # 2) cosplay hardware: elimina la/e frase/i che se lo attribuiscono
+    try:
+        if _RE_HARDWARE.search(testo):
+            frasi = [f for f in _spezza_frasi(testo) if not _RE_HARDWARE.search(f)]
+            testo = " ".join(frasi).strip()
+    except Exception:
+        pass
+    return (testo.strip() or None) if isinstance(testo, str) else testo
 
 
 def _impara_rete(canale, testo, risposta, fonte):
