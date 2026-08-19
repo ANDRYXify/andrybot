@@ -98,6 +98,7 @@ osserviamo quella spinta: la facciamo.** Siamo l'ultima ansa.
 | _(crescita)_ | l'organo temporale ora è SELETTIVO DI DIREZIONE (Branco-Häusser 2010) | 4,10 | non solo *quali* cose coincidono, ma *in che sequenza*: distingue A-poi-B da B-poi-A |
 | _(copertura)_ | ORGANO CAUSALE (scala di Pearl): «perché / cosa succede se / X o Y» | 4,10 | ragiona sulle CAUSE da un grafo causale che impara — non correlazione; copre l'aperto con una via sua |
 | _(consolid.)_ | test d'insieme sotto stato AVVELENATO: la sicurezza regge, bug causale chiuso | 4,7 | veleni osservati non ri-escono; «X *non* causa Y» non diventa più una causa falsa (Pearl al contrario) |
+| _(mappa)_ | «Anatomia di Lia»: il colpo d'occhio d'insieme — organi, campi, substrato, fonti | 8 | `docs/anatomia.html` + artifact privato — un solo quadro per ragionare sul prossimo salto |
 
 ---
 
