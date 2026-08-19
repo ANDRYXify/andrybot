@@ -11491,7 +11491,8 @@ function _menteGrafo(d, dark) {
   for (const [id, label, col, att, desc] of VITA) {
     if (!att) continue;   // compare SOLO quando è vivo (batte): così le strade nascono vivendo
     const size = 11 + Math.min(16, Math.sqrt(att) * 2.4);
-    nodes.push({ id, label, group: 'vita', color: col, size, data: { tipo: 'vita', desc, att } });
+    const chiave = id.split(':')[1];                 // es. 'neuromod' → i valori grezzi del campo
+    nodes.push({ id, label, group: 'vita', color: col, size, data: { tipo: 'vita', desc, att, extra: vita[chiave] || null } });
     links.push({ source: 'core', target: id, rest: 74 });
   }
   // hub di DOMINIO: solo quelli che hanno almeno un modulo (il cervello si vede crescere)
@@ -11539,6 +11540,33 @@ function _menteLegenda(dark) {
     + `<br>${dot(_menteNeutro(dark))}${L('logica', 'logic', 'lógica')} &nbsp; ${dot('#7aa2ff')}${L('vita (motori che battono)', 'life (beating engines)', 'vida (motores que laten)')} &nbsp; ${anello(_menteBozza(dark))}${L('bozza', 'draft', 'borrador')} &nbsp; ${anello(_menteSosp(dark))}${L('sospeso', 'suspended', 'suspendido')}`;
 }
 
+// mostra i VALORI VIVI del campo/organo selezionato (non solo la descrizione): così l'owner
+// vede davvero i numeri che battono — la chimica, il clima, le cicatrici — non un'etichetta.
+function _menteVitaValori(id, x) {
+  if (!x || typeof x !== 'object') return '';
+  const riga = (k, v) => `<div style="display:flex;justify-content:space-between;gap:1em"><span class="tenue">${k}</span><strong>${v}</strong></div>`;
+  let dentro = '';
+  if (id === 'vita:neuromod') {
+    dentro = riga(L('esplorazione ↔ sfruttamento', 'explore ↔ exploit', 'explorar ↔ explotar'), `${Math.round((Number(x.esplorazione) || 0) * 100)}%`)
+      + riga('temperatura ×', Number(x.temp_mult || 1).toFixed(2))
+      + riga('δ ' + L('dopamina (sorpresa)', 'dopamine (surprise)', 'dopamina (sorpresa)'), Number(x.delta || 0).toFixed(2))
+      + riga('γ ' + L('serotonina (orizzonte)', 'serotonin (horizon)', 'serotonina (horizonte)'), Number(x.gamma || 0).toFixed(2));
+  } else if (id === 'vita:campo') {
+    dentro = riga(L('clima', 'climate', 'clima'), `${Math.round((Number(x.clima) || 0) * 100)}% ${(Number(x.clima) || 0) < 0.5 ? L('(quieto)', '(calm)', '(tranquilo)') : L('(turbolento)', '(turbulent)', '(turbulento)')}`)
+      + riga(L('consolidato', 'consolidated', 'consolidado'), x.consolidato ? '✓' : '—')
+      + riga(L('gradiente (pattern)', 'gradient (pattern)', 'gradiente (patrón)'), Number(x.gradiente || 0).toFixed(2));
+  } else if (id === 'vita:storia') {
+    dentro = riga(L('porte chiuse (irreversibili)', 'closed doors (irreversible)', 'puertas cerradas'), Number(x.chiuse || 0))
+      + riga(L('domini abbandonati (costo di rientro)', 'abandoned domains (re-entry cost)', 'dominios abandonados'), Number(x.reintrate || 0));
+  } else {
+    // fallback generico: mostra le chiavi numeriche del campo
+    const chiavi = Object.keys(x).filter((k) => typeof x[k] === 'number' || typeof x[k] === 'boolean').slice(0, 6);
+    if (!chiavi.length) return '';
+    dentro = chiavi.map((k) => riga(k, typeof x[k] === 'boolean' ? (x[k] ? '✓' : '—') : Number(x[k]).toFixed(2))).join('');
+  }
+  return `<div style="margin:.4em 0;padding:.5em .6em;border:1px solid var(--bordo,#8883);border-radius:8px">${dentro}</div>`;
+}
+
 function _menteDettaglio(sel) {
   const box = document.getElementById('mente3d-dettaglio');
   if (!box) return;
@@ -11551,10 +11579,16 @@ function _menteDettaglio(sel) {
       <p class="tenue">${L('Rete', 'Network', 'Red')}: ${r.nodi || 0} ${L('nodi', 'nodes', 'nodos')} · ${Math.round((r.fiducia || 0) * 100)}% ${L('fiducia', 'confidence', 'confianza')}.</p>`;
     return;
   }
-  if (g === 'logica') { box.innerHTML = `<h4 style="margin:.1em 0 .3em">${esc(sel.label)}</h4><p>${esc(dt.desc || '')}</p>`; return; }
+  if (g === 'logica') {
+    const usato = Number(dt.att) || 0;
+    box.innerHTML = `<h4 style="margin:.1em 0 .3em">${esc(sel.label)}</h4><p>${esc(dt.desc || '')}</p>
+      <p class="tenue">${L('Ha risposto così', 'Answered this way', 'Respondió así')}: <strong>${usato}</strong> ${L('volte', 'times', 'veces')}.</p>`;
+    return;
+  }
   if (g === 'vita') {
     box.innerHTML = `<h4 style="margin:.1em 0 .3em">${esc(sel.label)}</h4>
       <p>${esc(dt.desc || '')}</p>
+      ${_menteVitaValori(sel.id, dt.extra)}
       <p class="tenue">${L('Non è un’impalcatura: questo nodo è nato quando il motore ha cominciato a battere e cresce mentre lei vive. Intensità ora', 'Not scaffolding: this node was born when the engine began to beat, and grows while she lives. Intensity now', 'No es un andamio: este nodo nació cuando el motor empezó a latir y crece mientras ella vive. Intensidad ahora')}: <strong>${Number(dt.att) || 0}</strong>.</p>`;
     return;
   }
@@ -11578,10 +11612,16 @@ function _menteCruscotto(d) {
   if (!box) return;
   const vie = (d && d.vie) || {};
   const ordine = [
+    ['calcolo', L('Calcolo (aritmetica)', 'Calculation (arithmetic)', 'Cálculo (aritmética)'), '#4f7bd0'],
     ['deduzione', L('Deduzione (logica)', 'Deduction (logic)', 'Deducción (lógica)'), '#5b8def'],
+    ['costruzione', L('Costruzione (non so→costruisco)', 'Construction (unknown→build)', 'Construcción'), '#6a7fe0'],
+    ['causale', L('Cause (scala di Pearl)', 'Causes (Pearl ladder)', 'Causas (escalera de Pearl)'), '#7b6fd6'],
+    ['temporale', L('Temporale (coincidenza)', 'Temporal (coincidence)', 'Temporal (coincidencia)'), '#5fb0c0'],
+    ['introspezione', L('Introspezione (dal sé)', 'Introspection (from self)', 'Introspección (del sí)'), '#c77bd6'],
     ['memoria', L('Memoria (rete)', 'Memory (net)', 'Memoria (red)'), '#3aa6c9'],
     ['moduli', L('Ragionamento a moduli', 'Module reasoning', 'Razonamiento por módulos'), '#1f9e4f'],
     ['riflesso', L('Riflesso (modulo)', 'Reflex (module)', 'Reflejo (módulo)'), '#2fb98a'],
+    ['ecologia', L('Ecologia (assestamento)', 'Ecology (settling)', 'Ecología (asentamiento)'), '#2f8f6b'],
     ['modello', L('Modello (genera)', 'Model (generate)', 'Modelo (genera)'), '#e0913a'],
   ];
   const tot = ordine.reduce((s, [k]) => s + (Number(vie[k]) || 0), 0);
