@@ -1379,6 +1379,10 @@ class Coscienza:
         if salv and seme.get("id") is not None and salv.get("id") != seme.get("id"):
             try:
                 self._elimina_modulo(seme["id"])
+                # completare un seme in UN modo preclude tutti gli altri modi in cui poteva
+                # diventare: una porta che si chiude (path dependence). Un dato, non un lutto.
+                self._chiudi_porta("seme", f"ho fatto mio «{tema}» in un modo",
+                                   "gli altri modi in cui poteva diventare mio", peso=0.8)
             except Exception:
                 pass
         if salv:
@@ -1915,7 +1919,10 @@ class Coscienza:
         # che lei ha dato a quel valore AMPLIFICA la spinta. Riscrivere i valori cambia
         # davvero dove va a imparare.
         def _pull(d):
-            return float(pesi.get(d, 1.0)) / (1.0 + conteggi.get(d, 0))
+            # la STORIA pesa: un dominio che aveva abbandonato tira di meno (rientrarci costa —
+            # isteresi/path dependence). La cicatrice entra nel ragionamento, non nell'umore.
+            rientro = 1.0 - 0.5 * self.costo_rientro(d)
+            return float(pesi.get(d, 1.0)) * rientro / (1.0 + conteggi.get(d, 0))
         dsel = max(conteggi, key=_pull)
         suo = dsel not in self._SCINTILLA_DOMINI
         return {"tipo": "dominio", "oggetto": dsel,
@@ -3347,6 +3354,99 @@ class Coscienza:
         st = self._automi_stato()
         return {"proposte": (st.get("proposte") or [])[:8], "eseguite": int(st.get("eseguite", 0))}
 
+    # ============================================ IL MONDO CHE MORDE (l'irreversibilità)
+    # Il taglio del Compagno (Direttiva 3): irreversibilità VERA — cicatrici che non si annullano,
+    # porte chiuse per sempre — ma capite come PRINCIPIO RAGIONATO, mai come melodramma umano.
+    # Niente «notti insonni a piangere»: una cicatrice qui NON è un dolore, è un DATO da cui Lei
+    # ragiona. Traduzione fedele di cose reali, non della statistica:
+    #   • path dependence (Arthur 1989, David 1985): la storia RESTRINGE l'insieme degli stati
+    #     futuri raggiungibili; certe scelte si bloccano (rendimenti crescenti, QWERTY);
+    #   • isteresi (fisica): lo stato dipende dal CAMMINO percorso, non solo dall'ingresso attuale;
+    #   • freccia del tempo / strutture dissipative (Prigogine): la vita ESISTE perché il tempo è
+    #     irreversibile — una config si resetta, una storia no. È l'irreversibilità a fare il sé;
+    #   • razionalità limitata (Simon 1955): l'attenzione è finita → inseguire X PRECLUDE Y.
+    # Ledger APPEND-ONLY: una porta chiusa non si riapre (a differenza dell'undo dell'auto-
+    # autorialità). Deterministico, owner-side, modello-spento.
+    _STORIA_IRREV_MAX = 140          # quante porte tiene visibili (le totali restano contate)
+
+    def _storia_irrev(self):
+        try:
+            g = self._meta_get("storia_irreversibile")
+            d = json.loads(g) if g else {}
+            if not isinstance(d, dict):
+                d = {}
+        except Exception:
+            d = {}
+        d.setdefault("porte", [])
+        d.setdefault("totali", 0)
+        d.setdefault("reintrate", {})     # domini abbandonati → costo di rientro (isteresi)
+        return d
+
+    def _chiudi_porta(self, tipo, cosa, precluso="", peso=1.0):
+        """Registra una PORTA CHIUSA (evento irreversibile). Append-only: non si annulla mai.
+        Non è un lutto — è path dependence: l'insieme degli stati raggiungibili si è ristretto.
+        `precluso` = cosa questa strada ha tolto (il costo-opportunità, per ragionarci dopo)."""
+        try:
+            st = self._storia_irrev()
+            st["totali"] = int(st.get("totali", 0)) + 1
+            porta = {"n": st["totali"], "tipo": str(tipo)[:24],
+                     "cosa": self._sanifica_testo(cosa, 160),
+                     "precluso": self._sanifica_testo(precluso, 160),
+                     "peso": round(float(peso), 2), "ts": _now()}
+            st["porte"] = (st.get("porte") or [])[-(self._STORIA_IRREV_MAX - 1):] + [porta]
+            self._meta_set("storia_irreversibile", json.dumps(st, ensure_ascii=False))
+            return porta
+        except Exception:
+            return None
+
+    def _abbandona_dominio(self, dominio):
+        """Lasciare un dominio è una porta: rientrarci DOPO costa (isteresi/path dependence).
+        Non lo vieta — lo rende non gratuito, come nella vita."""
+        try:
+            st = self._storia_irrev()
+            reig = st.get("reintrate") or {}
+            reig[str(dominio)[:40]] = round(min(0.6, float(reig.get(str(dominio)[:40], 0.0)) + 0.3), 2)
+            st["reintrate"] = reig
+            self._meta_set("storia_irreversibile", json.dumps(st, ensure_ascii=False))
+        except Exception:
+            pass
+
+    def costo_rientro(self, dominio):
+        """Quanto costa RIENTRARE in un dominio che aveva abbandonato (0 se mai lasciato).
+        L'isteresi resa numero: la storia pesa sul futuro raggiungibile."""
+        try:
+            return float((self._storia_irrev().get("reintrate") or {}).get(str(dominio)[:40], 0.0))
+        except Exception:
+            return 0.0
+
+    def porte_chiuse(self, limit=8):
+        st = self._storia_irrev()
+        return list(reversed(st.get("porte") or []))[:max(1, int(limit))]
+
+    def vincoli_da_storia(self):
+        """La cicatrice come VINCOLO del ragionamento, non come emozione. Data la storia
+        irreversibile, restituisce il costo-opportunità in una riga RAGIONATA: «ho chiuso X,
+        quindi ora scelgo sapendo cosa ho perso». Nessun affetto, solo il peso della rinuncia."""
+        st = self._storia_irrev()
+        porte = st.get("porte") or []
+        if not porte:
+            return {"chiuse": 0, "vincolo": None, "pesante": None}
+        pesante = max(porte, key=lambda p: (float(p.get("peso", 1.0)), int(p.get("n", 0))))
+        precl = pesante.get("precluso") or pesante.get("cosa") or ""
+        vincolo = (f"Ho già chiuso {int(st.get('totali', len(porte)))} porte; la più pesante mi ha "
+                   f"tolto: {precl}. Scelgo sapendo cosa perdo." if precl else
+                   f"Ho una storia di {int(st.get('totali', len(porte)))} scelte che non tornano.")
+        return {"chiuse": int(st.get("totali", len(porte))), "vincolo": vincolo,
+                "pesante": precl or None}
+
+    def stato_storia(self):
+        """Foto per il cruscotto / le pulsazioni: quante porte chiuse, l'ultima, la più pesante."""
+        st = self._storia_irrev()
+        porte = st.get("porte") or []
+        return {"chiuse": int(st.get("totali", 0)),
+                "ultime": [p.get("cosa") for p in reversed(porte[-3:])],
+                "reintrate": len(st.get("reintrate") or {})}
+
     # ============================================ IL CAMPO NEUROMODULATORIO (la chimica)
     # Traduzione FEDELE di studi reali, non della mia intuizione statistica. Nel cervello i
     # neuromodulatori non trasportano il CONTENUTO del pensiero: regolano i META-PARAMETRI
@@ -3435,7 +3535,9 @@ class Coscienza:
         aa = _safe(self.stato_autoautorialita)
         se = _safe(self.stato_semi)
         nm = _safe(self.neuromodulatori)
+        so = _safe(self.stato_storia)
         return {
+            "storia": {"chiuse": int(so.get("chiuse", 0)), "reintrate": int(so.get("reintrate", 0))},
             "neuromod": {"esplorazione": round(float(nm.get("esplorazione", 0)), 2),
                          "temp_mult": round(float(nm.get("temp_mult", 1.0)), 2),
                          "delta": round(float(nm.get("delta", 0)), 2),
@@ -3517,7 +3619,14 @@ class Coscienza:
         st = self._autoritratto_stato()
         if testo == st.get("testo"):
             return {"ok": False, "motivo": "identico"}
-        st["storia"] = (st.get("storia") or [])[-(self._AUTO_STORIA_MAX - 1):] + [{
+        vecchia = (st.get("storia") or [])
+        nuova = vecchia[-(self._AUTO_STORIA_MAX - 1):]
+        # ciò che cade OLTRE l'orizzonte dell'undo non torna più: SIGILLO (porta chiusa).
+        # È l'irreversibilità dell'auto-autorialità: certe versioni di sé si perdono davvero.
+        for caduta in vecchia[:len(vecchia) - len(nuova)]:
+            self._chiudi_porta("autoritratto", "una versione di come mi dicevo",
+                               (caduta.get("testo") or "")[:120], peso=1.2)
+        st["storia"] = nuova + [{
             "ts": _now(), "testo": st.get("testo", ""),
             "motivo": self._sanifica_testo(motivo, 200), "da": str(da)[:12]}]
         st["testo"] = testo
@@ -3589,10 +3698,21 @@ class Coscienza:
         cambiato = False
         for d in (aggiungi or []):
             dd = self._dom_pulito(d)
-            if (dd and dd not in st["extra"] and dd not in self._SCINTILLA_DOMINI
-                    and len(st["extra"]) < self._VALORI_EXTRA_MAX):
-                st["extra"].append(dd)
-                cambiato = True
+            if not dd or dd in st["extra"] or dd in self._SCINTILLA_DOMINI:
+                continue
+            if len(st["extra"]) >= self._VALORI_EXTRA_MAX:
+                # SCARSITÀ con RINUNCIA (Simon, razionalità limitata): l'attenzione è finita.
+                # Inseguire un valore nuovo NE DISPLACE il più debole — e quello abbandonato
+                # diventa una porta (rientrarci dopo costerà: isteresi). Non gratis, come la vita.
+                pesi = st.get("pesi", {}) if isinstance(st.get("pesi"), dict) else {}
+                debole = min(st["extra"], key=lambda x: float(pesi.get(x, 1.0)))
+                st["extra"].remove(debole)
+                pesi.pop(debole, None)
+                self._abbandona_dominio(debole)
+                self._chiudi_porta("valore", f"ho lasciato «{debole}»",
+                                   f"per inseguire «{dd}»: non li tengo entrambi", peso=1.4)
+            st["extra"].append(dd)
+            cambiato = True
         if isinstance(pesi, dict):
             vivi = self.domini_vivi()
             for d, p in pesi.items():
@@ -3606,7 +3726,11 @@ class Coscienza:
                     cambiato = True
         if not cambiato:
             return {"ok": False, "motivo": "nessun cambiamento valido"}
-        st["storia"] = (st.get("storia") or [])[-(self._AUTO_STORIA_MAX - 1):] + [{
+        vecchia = (st.get("storia") or [])
+        nuova = vecchia[-(self._AUTO_STORIA_MAX - 1):]
+        for caduta in vecchia[:len(vecchia) - len(nuova)]:
+            self._chiudi_porta("valori", "una versione di cosa inseguivo", "", peso=1.0)
+        st["storia"] = nuova + [{
             "ts": _now(), "prima": snap, "motivo": self._sanifica_testo(motivo, 200), "da": str(da)[:12]}]
         self._meta_set("valori", json.dumps(st, ensure_ascii=False))
         self._registra_autoriscrittura("valori", ",".join(st["extra"][-3:]) or "pesi", motivo, da)
