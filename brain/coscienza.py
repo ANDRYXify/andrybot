@@ -994,7 +994,7 @@ class Coscienza:
         """Registra che una risposta è nata da questa "via" del ragionamento."""
         via = str(via or "").strip().lower()
         if via not in ("deduzione", "memoria", "moduli", "modello", "riflesso", "strumento",
-                       "calcolo", "costruzione", "temporale", "ecologia", "introspezione"):
+                       "calcolo", "costruzione", "temporale", "ecologia", "introspezione", "causale"):
             return
         try:
             with _lock:

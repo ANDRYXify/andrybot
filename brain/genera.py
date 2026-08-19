@@ -1032,6 +1032,14 @@ def _ecologia(canale, ctx, testo, modo):
                              1.0, d["risposta"], d.get("costruito"), True))
         except Exception:
             pass
+        # RAGIONARE SULLE CAUSE (Pearl): «perché X / cosa succede se X / X o Y» → dal grafo
+        # causale che ha imparato. È una costruzione dai fatti (come la deduzione) → VERITÀ sovrana.
+        try:
+            rc = ragiona.ragiona_causale(canale, testo)
+            if rc and rc.get("sicura") and rc.get("risposta"):
+                cand.append(("causale", 1.0, rc["risposta"], None, True))
+        except Exception:
+            pass
     if modo in ("live", "allenamento"):
         # INTROSPEZIONE: la risposta su di sé, COSTRUITA dal suo stato reale (dal server). È
         # la sua voce più autentica sul sé — voce forte nell'ecologia (ma non «verità»: è una

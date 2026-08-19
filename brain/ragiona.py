@@ -66,6 +66,10 @@ _PAT = [
     ("amico-di",  re.compile(r"^\s*(.+?)\s+è\s+amic\w+\s+di\s+(.+)$", re.I)),
     ("piace",     re.compile(r"^\s*a\s+(.+?)\s+piac\w+\s+(.+)$", re.I)),
     ("non-è",     re.compile(r"^\s*(.+?)\s+non\s+è\s+(?:" + _ARTICOLI + r")?(.+)$", re.I)),
+    # CAUSALITÀ (cause→effetto): verbi non ambigui + «se … allora …». La scala di Pearl parte
+    # da qui — un ARCO causale, non una correlazione. (Escludo «porta a»: ambiguo col moto.)
+    ("causa",     re.compile(r"^\s*(?:" + _ARTICOLI + r")?(.+?)\s+(?:caus(?:a|ano)|provoc(?:a|ano)|produc(?:e|ono)|gener(?:a|ano)|comport(?:a|ano)|fa\s+venire|porta\s+alla?)\s+(?:" + _ARTICOLI + r")?(.+)$", re.I)),
+    ("causa",     re.compile(r"^\s*se\s+(.+?)\s+(?:allora\s+|,\s*)(.+)$", re.I)),
     ("ha",        re.compile(r"^\s*(.+?)\s+(?:ha|hanno)\s+(?:" + _ARTICOLI + r")?(.+)$", re.I)),
     ("è",         re.compile(r"^\s*(.+?)\s+(?:è|sono)\s+(?:" + _ARTICOLI + r")?(.+)$", re.I)),
 ]
@@ -280,6 +284,145 @@ def deduci_costruendo(canale, domanda):
         return None
     except Exception:
         return None
+
+
+# ══════════════════════════ RAGIONARE SULLE CAUSE (la scala di Pearl) ══════════
+# Judea Pearl, «The Book of Why» / «Causality»: la SCALA della causalità — vedere (associazione),
+# FARE (intervento), immaginare (controfattuale). La correlazione NON è causa: serve un GRAFO
+# causale, non una distribuzione. Qui lo percorriamo a mano (ragionamento qualitativo, Forbus;
+# modelli mentali, Johnson-Laird):
+#   • «perché X?»          → cerca le CAUSE a monte (chi porta a X);
+#   • «cosa succede se X?»  → propaga gli EFFETTI a valle (l'intervento, il «fare» di Pearl);
+#   • «X o Y?»             → CONFRONTA due cose sulle loro relazioni note.
+# Deterministico, SOLO sui fatti che Lei ha imparato (mai inventa: se non sa, tace). Non statistico.
+_Q_SESUCC = re.compile(r"(?i)^\s*(?:cosa|che\s+cosa|che|cosa\s+mi)\s+(?:succede|comporta|provoca|causa|"
+                       r"comporterebbe|succederebbe)\s+se\s+(?:" + _ARTICOLI + r")?(.+?)\s*\??$")
+_Q_PERCHE = re.compile(r"(?i)^\s*perch[ée']+\s+(?:c'?è\s+|ci\s+sono\s+|si\s+|" + _ARTICOLI + r")?(.+?)\s*\??$")
+_Q_OPPURE = re.compile(r"(?i)^\s*(?:è\s+meglio\s+|meglio\s+|preferisci\s+|scegli\s+|cosa\s+scegli,?\s+)?"
+                       r"(?:" + _ARTICOLI + r")?(.+?)\s+o(?:ppure)?\s+(?:" + _ARTICOLI + r")?(.+?)\s*\??$")
+
+
+def _match_nodo(triple, ent, campo):
+    """Il nodo REALE (fra i valori del campo 's' o 'o') che combacia con l'entità chiesta:
+    uguaglianza normalizzata, poi contenimento. None se non c'è — onesto: non inventa un nodo."""
+    e = _n(ent)
+    if not e or len(e) < 2:
+        return None
+    valori = [t[campo] for t in triple]
+    if e in valori:
+        return e
+    for v in valori:
+        if len(v) >= 3 and (e in v or v in e):
+            return v
+    return None
+
+
+def _percorri(triple, x, avanti, prof=3):
+    """Percorre il grafo causale da x: avanti=True → effetti (a valle), False → cause (a monte).
+    Ritorna [(nodo, catena)] in ampiezza, fino a prof livelli. Evita i cicli (visti)."""
+    fuori, visti, frontiera = [], {x}, [(x, [])]
+    for _ in range(prof):
+        nuova = []
+        for nodo, cat in frontiera:
+            for t in triple:
+                if t["r"] != "causa":
+                    continue
+                da, a = (nodo, t["o"]) if (avanti and t["s"] == nodo) else \
+                        (t["s"], nodo) if (not avanti and t["o"] == nodo) else (None, None)
+                if da is None:
+                    continue
+                prossimo = t["o"] if avanti else t["s"]
+                if prossimo in visti:
+                    continue
+                visti.add(prossimo)
+                c = cat + [f"{t['s']} causa {t['o']}"]
+                fuori.append((prossimo, c))
+                nuova.append((prossimo, c))
+        frontiera = nuova
+        if not frontiera:
+            break
+    return fuori
+
+
+def perche(canale, x):
+    """Le CAUSE a monte di x (Pearl: la spiegazione). Ritorna {risposta, catena, sicura} o None."""
+    with _lock:
+        triple = list(_carica(canale)["triple"])
+    nodo = _match_nodo(triple, x, "o")
+    if not nodo:
+        return None
+    cause = _percorri(triple, nodo, avanti=False)
+    if not cause:
+        return None
+    dirette = [c for c, cat in cause if len(cat) == 1][:3] or [cause[0][0]]
+    return {"risposta": f"{nodo.capitalize()} perché {' e '.join(dirette)}.",
+            "catena": " ; ".join(cause[0][1]), "sicura": True}
+
+
+def cosa_succede_se(canale, x):
+    """Gli EFFETTI a valle di x (Pearl: l'intervento). Ritorna {risposta, catena, sicura} o None."""
+    with _lock:
+        triple = list(_carica(canale)["triple"])
+    nodo = _match_nodo(triple, x, "s")
+    if not nodo:
+        return None
+    eff = _percorri(triple, nodo, avanti=True)
+    if not eff:
+        return None
+    passi = [e for e, cat in eff][:3]
+    lunga = max(eff, key=lambda ec: len(ec[1]))[1]
+    return {"risposta": f"Se {nodo}, allora {', e poi '.join(passi)}.",
+            "catena": " ; ".join(lunga), "sicura": True}
+
+
+def confronta(canale, a, b):
+    """CONFRONTO relazionale: cosa distingue a da b nelle loro proprietà note. Non un giudizio
+    di gusto — una differenza STRUTTURALE, dai fatti. Ritorna {risposta, sicura} o None."""
+    with _lock:
+        triple = list(_carica(canale)["triple"])
+    na, nb = _match_nodo(triple, a, "s"), _match_nodo(triple, b, "s")
+    if not na or not nb or na == nb:
+        return None
+
+    def attr(n):
+        return {(t["r"], t["o"]) for t in triple if t["s"] == n and t["r"] in ("è", "ha")}
+    aa, ab = attr(na), attr(nb)
+    solo_a, solo_b = aa - ab, ab - aa
+    pezzi = []
+    if solo_a:
+        r, o = sorted(solo_a)[0]; pezzi.append(f"{na} {r} {o}")
+    if solo_b:
+        r, o = sorted(solo_b)[0]; pezzi.append(f"{nb} invece {r} {o}")
+    if not pezzi:
+        return None
+    return {"risposta": "; ".join(pezzi) + ".", "catena": "", "sicura": True}
+
+
+def ragiona_causale(canale, domanda):
+    """Dispatcher: riconosce «cosa succede se / perché / X o Y» e risponde dal grafo causale.
+    Ritorna {risposta, catena, sicura, via} o None (se non è una di queste, o se non sa)."""
+    d = str(domanda or "").strip()
+    if not d:
+        return None
+    try:
+        m = _Q_SESUCC.match(d)
+        if m:
+            r = cosa_succede_se(canale, m.group(1))
+            if r:
+                r["via"] = "causale"; return r
+        m = _Q_PERCHE.match(d)
+        if m:
+            r = perche(canale, m.group(1))
+            if r:
+                r["via"] = "causale"; return r
+        m = _Q_OPPURE.match(d)
+        if m:
+            r = confronta(canale, m.group(1), m.group(2))
+            if r:
+                r["via"] = "causale"; return r
+    except Exception:
+        return None
+    return None
 
 
 # ══════════════════════════ RAGIONARE CALCOLANDO (non statistico) ══════════════
