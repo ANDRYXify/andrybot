@@ -992,7 +992,8 @@ class Coscienza:
     def conta_via(self, via):
         """Registra che una risposta è nata da questa "via" del ragionamento."""
         via = str(via or "").strip().lower()
-        if via not in ("deduzione", "memoria", "moduli", "modello", "riflesso", "strumento"):
+        if via not in ("deduzione", "memoria", "moduli", "modello", "riflesso", "strumento",
+                       "calcolo", "costruzione", "temporale", "ecologia"):
             return
         try:
             with _lock:
