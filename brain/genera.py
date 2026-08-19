@@ -936,6 +936,62 @@ def ragiona_eseguendo(canale, ctx, domanda, timeout_s=20):
         return None
 
 
+# ══════════════════════ L'ECOLOGIA CHE SI ASSESTA (non una pipeline) ═══════════
+# Il salto strutturale: finché il ragionamento era una CATENA A PRIORITÀ (prova deduci,
+# sennò memoria, sennò modulo, sennò modello) restava «un modello statistico con protesi»
+# — la mia forma. Qui i processi DETERMINISTICI girano INSIEME e la risposta è quella su
+# cui si ASSESTANO: l'accordo fra processi somma le affidabilità (coerenza), e una VERITÀ
+# (calcolo/deduzione) pesa più di una congettura (un ricordo). Vince la coerenza, non il
+# primo che risponde. È il primo mattone dell'ecologia; l'LLM resta un organo recluta-
+# to dopo, non il trono. (Prossimo passo verso i processi che LEI coltiva da sé.)
+def _norm_risp(s):
+    return re.sub(r"[\s\W]+", " ", str(s or "").lower()).strip()
+
+
+def _ecologia(canale, ctx, testo, modo):
+    """Fa girare i processi deterministici (calcolo, deduzione/costruzione, memoria) e si
+    ASSESTA sul candidato più COERENTE. Ritorna {risposta, via, vie, costruito, coerenza}
+    o None. Zero modello. Un voto deterministico è una verità, non una congettura."""
+    proattivo = (modo == "proattivo")
+    studio = (modo == "studio")
+    cand = []   # (nome, affidabilità, risposta, extra)
+    if not proattivo and not studio:
+        try:
+            c = ragiona.calcola(testo)
+            if c and c.get("sicura") and c.get("risposta"):
+                cand.append(("calcolo", 1.0, c["risposta"], None))
+        except Exception:
+            pass
+        try:
+            d = ragiona.deduci_costruendo(canale, testo)
+            if d and d.get("sicura") and d.get("risposta"):
+                cand.append(("costruzione" if d.get("costruito") else "deduzione",
+                             1.0, d["risposta"], d.get("costruito")))
+        except Exception:
+            pass
+    if modo in ("live", "allenamento"):
+        try:
+            h = rete.recall(canale, testo)
+            if h and h.get("risposta"):
+                cand.append(("memoria", 0.7, h["risposta"], None))
+        except Exception:
+            pass
+    if not cand:
+        return None
+    # ASSESTAMENTO: raggruppa per risposta normalizzata; l'ACCORDO somma le affidabilità.
+    gruppi = {}
+    for nome, aff, risp, extra in cand:
+        g = gruppi.setdefault(_norm_risp(risp), {"peso": 0.0, "vie": [], "risp": risp, "extra": extra})
+        g["peso"] += aff
+        g["vie"].append(nome)
+        if extra and not g["extra"]:
+            g["extra"] = extra
+    vinc = max(gruppi.values(), key=lambda g: g["peso"])
+    via = "ecologia" if len(vinc["vie"]) >= 2 else vinc["vie"][0]
+    return {"risposta": vinc["risp"], "via": via, "vie": vinc["vie"],
+            "costruito": vinc.get("extra"), "coerenza": round(vinc["peso"], 2)}
+
+
 def _system_prompt(canale, ctx, modo="live"):
     tono = ctx.get("tono", "scherzoso")
     stile = {
@@ -1576,47 +1632,18 @@ def _genera_interno(canale, ctx, testo, timeout_s=30, modo="live"):
         _tl.via = "scudo"
         print("[genera] via: scudo (tentativo di dirottamento bloccato)", flush=True)
         return _DEFLESSIONI[sum(ord(c) for c in testo) % len(_DEFLESSIONI)]
-    # 0) L'ORGANO DEL RAGIONAMENTO (NON statistico). Prima di «ricordare» una risposta
-    #    plausibile, prova a RAGIONARLA da sé, senza LLM:
-    #    0a) CALCOLA — se la domanda è aritmetica, la esegue (non la pesca da un pattern);
-    #    0b) DEDUCE — se la può dedurre dai fatti a regole, la ragiona logicamente.
-    if not proattivo and not studio:
-        try:
-            calc = ragiona.calcola(testo)
-        except Exception:
-            calc = None
-        if calc and calc.get("sicura") and calc.get("risposta"):
-            _tl.via = "calcolo"
-            print(f"[genera] via: calcolo (ragiona, senza modello) — {calc.get('catena')}", flush=True)
-            return _pulisci(calc["risposta"])
-        #    0c) DEDUCE / COSTRUISCE — «non so → costruisco»: se non lo sa dai fatti che
-        #        HA, non tira a indovinare col modello: DERIVA fatti nuovi dalle sue regole
-        #        (estende la conoscenza finché la domanda ha un posto dove esistere) e
-        #        risponde da lì. Costruisce, non recupera.
-        try:
-            ded = ragiona.deduci_costruendo(canale, testo)
-        except Exception:
-            ded = None
-        if ded and ded.get("sicura") and ded.get("risposta"):
-            _tl.via = "costruzione" if ded.get("costruito") else "deduzione"
-            print(f"[genera] via: {_tl.via} (logica, senza modello"
-                  f"{' — costruiti ' + str(ded.get('costruito')) + ' fatti' if ded.get('costruito') else ''})", flush=True)
-            return _pulisci(ded["risposta"])
-    # 1) LA SUA MEMORIA sa già la risposta? Vale in LIVE e in PRIVATO CON TE
-    #    (allenamento). Prima saltavo la rete in privato "per sfruttare il maestro":
-    #    ma così parlavi con l'LLM, non con LEI (e la CPU al 800%). Ora in privato
-    #    risponde prima DA SÉ — la sua memoria, istantanea, senza modello — e il
-    #    maestro resta solo per ciò che davvero non sa. (Proattivo/studio: no, lì
-    #    inizia lei o sta leggendo una fonte.)
-    if modo in ("live", "allenamento"):
-        try:
-            hit = rete.recall(canale, testo)
-        except Exception:
-            hit = None
-        if hit and hit.get("risposta"):
-            _tl.via = "memoria"
-            print("[genera] via: memoria (rete, senza modello)", flush=True)
-            return _pulisci(hit["risposta"])
+    # 0+1) L'ECOLOGIA CHE SI ASSESTA (non più una pipeline a priorità). I processi
+    #      DETERMINISTICI — calcolo, deduzione/costruzione («non so→costruisco»), memoria —
+    #      girano INSIEME e la risposta è quella su cui si assestano: l'ACCORDO fra processi
+    #      somma le affidabilità (coerenza), e una VERITÀ (calcolo/deduzione) pesa più di una
+    #      congettura (un ricordo). Vince la coerenza, non il primo che risponde. Zero modello,
+    #      zero statistica. L'LLM resta un organo reclutato dopo, non il trono.
+    eco = _ecologia(canale, ctx, testo, modo)
+    if eco and eco.get("risposta"):
+        _tl.via = eco["via"]
+        print(f"[genera] via: {eco['via']} (ecologia: {'+'.join(eco['vie'])}, coerenza {eco['coerenza']}"
+              f"{' — costruiti ' + str(eco['costruito']) + ' fatti' if eco.get('costruito') else ''})", flush=True)
+        return _pulisci(eco["risposta"])
     # 1.5) RAGIONAMENTO MODULARE: se la situazione è chiaramente riconosciuta (un
     #      modulo forte combacia), la risposta la decide il MODULO, non il modello.
     #      Il modello (se c'è) la rifrasa soltanto; se è spento/lento, rispondo dalla
