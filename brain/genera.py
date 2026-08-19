@@ -867,6 +867,75 @@ _DEFLESSIONI = [
 ]
 
 
+# ══════════════════════ RAGIONARE ESEGUENDO (il pensiero-facendo) ══════════════
+# Il gradino oltre il calcolo: quando una domanda si RISOLVE facendo, lei non pesca
+# una risposta plausibile — scrive un programmino, lo ESEGUE nella sua VM, VERIFICA
+# il risultato, e se sbaglia RIVEDE. Ipotesi → esegui → verifica → rivedi. È il modo
+# più vero di uscire dallo statistico: la risposta la PRODUCE, non la ricorda.
+# (Richiede la sua sandbox + il maestro per scrivere il codice; il pensiero — eseguire
+# e verificare — è deterministico. La sandbox resta la difesa: qui è calcolo puro.)
+_RE_DA_CALCOLO = re.compile(
+    r"(?i)\b(quant[ei]|quant['\s]*[èe]|calcol|conta\b|quante\s+volte|radice|fattorial|"
+    r"elevat|potenza|percentual|media\b|somma\b|prodotto|mcd|mcm|primo|primi\b|"
+    r"divisibil|cifre|caratteri|lettere|parole|fibonacci|sequenza|combinazion|permutazion)\b")
+
+
+def _sembra_da_calcolo(testo):
+    t = str(testo or "")
+    return bool(_RE_DA_CALCOLO.search(t)) and (bool(re.search(r"\d", t)) or "quant" in t.lower())
+
+
+def _estrai_codice(txt):
+    m = re.search(r"```(?:python|py)?\s*(.+?)```", str(txt or ""), re.S)
+    return (m.group(1) if m else str(txt or "")).strip()
+
+
+# per il RAGIONAMENTO vogliamo calcolo puro: niente rete/file/os. La sandbox è già
+# murata, ma questa guardia tiene il pensiero-facendo pulito (e veloce da fidarsi).
+_RE_CODICE_VIETATO = re.compile(
+    r"(?i)(import\s+(?:os|sys|socket|subprocess|shutil|requests|urllib|http|pathlib|glob)"
+    r"|from\s+(?:os|sys|socket|subprocess)\b|__import__|\beval\s*\(|\bexec\s*\(|\binput\s*\(|\bopen\s*\()")
+
+
+def ragiona_eseguendo(canale, ctx, domanda, timeout_s=20):
+    """RAGIONA ESEGUENDO: scrive un programmino, lo ESEGUE nella sua VM, VERIFICA il
+    risultato, e se sbaglia RIVEDE una volta. Ritorna la risposta (stringa) o None.
+    Non solleva mai."""
+    try:
+        if not ambiente.disponibile():
+            return None
+        istr = ("Scrivi un BREVE programma Python autosufficiente che CALCOLA e STAMPA SOLO "
+                "la risposta (una riga secca, nessuna spiegazione) a questa domanda:\n"
+                f"«{str(domanda)[:200]}»\n"
+                "Solo calcolo puro (math, itertools, fractions vanno bene; NIENTE rete, file, os, "
+                "input). Racchiudi il codice in un blocco ```python.")
+        feedback = ""
+        for tentativo in range(2):
+            grezzo = _completa(istr + feedback, [], "", 280, temperature=0.2, top_p=0.9, timeout_s=timeout_s)
+            if not grezzo:
+                return None
+            code = _estrai_codice(grezzo)
+            if not code or _RE_CODICE_VIETATO.search(code) or len(code) > 4000:
+                return None
+            w = ambiente._scrivi("/home/lia/ragiona/run.py", code, append=False)
+            if not (w and w.get("ok")):
+                return None
+            r = ambiente.esegui("python3 /home/lia/ragiona/run.py", timeout=min(15, int(timeout_s)))
+            if r and r.get("ok") and r.get("codice") == 0 and str(r.get("output") or "").strip():
+                out = str(r["output"]).strip().splitlines()[-1].strip()
+                if out:
+                    print("[genera] via: esecuzione (ragiona-facendo, programma nella VM)", flush=True)
+                    return out[:200]
+            # errore o niente output → rivedi UNA volta, col messaggio d'errore
+            det = str((r or {}).get("output") or (r or {}).get("errore") or "nessun output")[:200]
+            feedback = ("\n\nIl programma precedente NON ha funzionato (" + det + "). Riscrivilo "
+                        "corretto, stampando SOLO la risposta.")
+        return None
+    except Exception as e:
+        print(f"[genera] ragiona_eseguendo errore: {e}", flush=True)
+        return None
+
+
 def _system_prompt(canale, ctx, modo="live"):
     tono = ctx.get("tono", "scherzoso")
     stile = {
@@ -1586,6 +1655,16 @@ def _genera_interno(canale, ctx, testo, timeout_s=30, modo="live"):
                     if not senza_appr:
                         _impara_rete(canale, testo, risp, "modulo")
                     return risp
+    # 1.7) RAGIONA ESEGUENDO: se la domanda è da CALCOLO/da-risolvere e ha la sua VM,
+    #      prima di tirare a indovinare col modello, PRODUCE la risposta — scrive un
+    #      programma, lo esegue, verifica. Un risultato calcolato batte uno plausibile.
+    if modo in ("live", "allenamento") and _sembra_da_calcolo(testo) and ambiente.disponibile():
+        prodotto = ragiona_eseguendo(canale, ctx, testo, timeout_s)
+        if prodotto:
+            _tl.via = "esecuzione"
+            if not senza_appr:
+                _impara_rete(canale, testo, prodotto, "esecuzione")
+            return _pulisci(prodotto)
     # 2) chiedi al maestro (endpoint esterno se collegato, sennò modello locale)
     try:
         turni = [((mu[:200] if mu else mu), (mb[:200] if mb else mb))
