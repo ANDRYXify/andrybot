@@ -260,6 +260,28 @@ def deduci(canale, domanda):
         return None
 
 
+def deduci_costruendo(canale, domanda):
+    """«Non so → COSTRUISCO». Se non lo può dedurre dai fatti che HA, non tira a
+    indovinare: DERIVA fatti nuovi dalle sue regole (inferisci) — cioè estende la sua
+    conoscenza finché la domanda ha un posto dove trovare risposta — e RIPROVA. Se la
+    costruzione la porta a saperlo, risponde da lì (non dalla statistica, non dall'LLM).
+    Ritorna {risposta, catena, sicura, costruito} o None. Non solleva mai."""
+    try:
+        d = deduci(canale, domanda)
+        if d and d.get("risposta"):
+            return d
+        r = inferisci(canale)                     # COSTRUISCE: deriva fatti nuovi dalle regole
+        if not r or not r.get("nuovi"):
+            return None                            # non c'era nulla da costruire: onesto, tace
+        d = deduci(canale, domanda)                # riprova sulla conoscenza appena estesa
+        if d and d.get("risposta"):
+            d["costruito"] = int(r.get("nuovi", 0))
+            return d
+        return None
+    except Exception:
+        return None
+
+
 # ══════════════════════════ RAGIONARE CALCOLANDO (non statistico) ══════════════
 # Il primo gradino dell'organo del ragionamento: quando una domanda è CALCOLABILE,
 # lei non «ricorda» una risposta plausibile — la CALCOLA. 17×23 non lo pesca da un

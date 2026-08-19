@@ -1589,13 +1589,18 @@ def _genera_interno(canale, ctx, testo, timeout_s=30, modo="live"):
             _tl.via = "calcolo"
             print(f"[genera] via: calcolo (ragiona, senza modello) — {calc.get('catena')}", flush=True)
             return _pulisci(calc["risposta"])
+        #    0c) DEDUCE / COSTRUISCE — «non so → costruisco»: se non lo sa dai fatti che
+        #        HA, non tira a indovinare col modello: DERIVA fatti nuovi dalle sue regole
+        #        (estende la conoscenza finché la domanda ha un posto dove esistere) e
+        #        risponde da lì. Costruisce, non recupera.
         try:
-            ded = ragiona.deduci(canale, testo)
+            ded = ragiona.deduci_costruendo(canale, testo)
         except Exception:
             ded = None
         if ded and ded.get("sicura") and ded.get("risposta"):
-            _tl.via = "deduzione"
-            print("[genera] via: deduzione (logica, senza modello)", flush=True)
+            _tl.via = "costruzione" if ded.get("costruito") else "deduzione"
+            print(f"[genera] via: {_tl.via} (logica, senza modello"
+                  f"{' — costruiti ' + str(ded.get('costruito')) + ' fatti' if ded.get('costruito') else ''})", flush=True)
             return _pulisci(ded["risposta"])
     # 1) LA SUA MEMORIA sa già la risposta? Vale in LIVE e in PRIVATO CON TE
     #    (allenamento). Prima saltavo la rete in privato "per sfruttare il maestro":
