@@ -13164,3 +13164,19 @@ function initGuscio() {
 // via!
 initGuscio();
 caricaStato();
+
+// ── PONTE per la ricerca predittiva e il motore cinematografico (cerca.js / cinema.js).
+// Espone SOLO ciò che serve a navigare e a leggere le etichette: nessun dato sensibile.
+window.SB_APP = {
+  get gruppi() { return GRUPPI; },
+  get gruppoAdmin() { return GRUPPO_ADMIN; },
+  get isAdmin() { return !!(typeof stato !== 'undefined' && stato && stato.isAdmin); },
+  get schedaAttiva() { return schedaAttiva; },
+  get menoMoto() { return _menoMoto; },
+  vai(id) { try { return vaiAScheda(id); } catch (e) { location.hash = '#' + id; } },
+  tScheda, tGruppo, L, esc,
+  icona(id) { return (typeof ICONA !== 'undefined' && ICONA[id]) || ''; },
+  schedaValida(id) { try { return schedaValida(id); } catch (e) { return true; } },
+  schedaBloccata(id) { try { return schedaBloccata(id); } catch (e) { return false; } },
+};
+try { window.dispatchEvent(new CustomEvent('sb-app-pronta')); } catch (e) { /* niente */ }

@@ -1,0 +1,243 @@
+/* © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live */
+/* Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live */
+/*
+  anime.css — l'identità "ANIME OP": il sito come se fosse la sigla di un anime.
+  NON personaggi: l'ESTETICA — cel-shading, luce d'energia, speed-line, bloom, ingressi
+  cinematografici. Tutto si muove, tutto entra in scena. Layer SOPRA style.css: aggiunge,
+  non riscrive. Rispetta prefers-reduced-motion (e la classe .meno-moto). Chiaro + scuro.
+*/
+
+:root {
+  /* la TRIADE d'energia (firma) — cyan → viola → magenta */
+  --an-cyan: #38e8ff;
+  --an-viola: #7c5cff;
+  --an-magenta: #ff62d9;
+  --an-lime: #b6ff5c;
+  --an-ink: #0b0b16;
+  --an-grad: linear-gradient(115deg, var(--an-cyan), var(--an-viola) 48%, var(--an-magenta));
+  --an-grad-soft: linear-gradient(115deg, rgba(56,232,255,.14), rgba(124,92,255,.14) 50%, rgba(255,98,217,.14));
+  --an-glow: 0 0 0 1px rgba(124,92,255,.25), 0 8px 30px rgba(124,92,255,.18), 0 0 28px rgba(56,232,255,.12);
+  --an-glow-forte: 0 0 0 1px rgba(56,232,255,.5), 0 10px 40px rgba(124,92,255,.35), 0 0 42px rgba(255,98,217,.28);
+  --an-vel: cubic-bezier(.16, 1, .3, 1);         /* ingresso deciso, decelerato */
+  --an-scatto: cubic-bezier(.34, 1.56, .64, 1);  /* rimbalzo "impact frame" */
+  --an-sfondo-1: #f3f1ff;
+  --an-sfondo-2: #eaf6ff;
+  --an-linea: rgba(124,92,255,.16);
+}
+:root[data-theme="dark"], :root:not([data-theme="light"]) {
+  --an-sfondo-1: #0c0b1a;
+  --an-sfondo-2: #0a1420;
+  --an-linea: rgba(56,232,255,.14);
+  --an-glow: 0 0 0 1px rgba(56,232,255,.22), 0 10px 34px rgba(124,92,255,.28), 0 0 30px rgba(56,232,255,.16);
+}
+
+/* ───────────────────────────── SFONDO VIVO: aurora + griglia prospettica che respira ── */
+#anime-sfondo {
+  position: fixed; inset: 0; z-index: -2; pointer-events: none; overflow: hidden;
+  background:
+    radial-gradient(60% 50% at 15% 0%, rgba(56,232,255,.20), transparent 60%),
+    radial-gradient(55% 55% at 90% 10%, rgba(255,98,217,.18), transparent 60%),
+    radial-gradient(70% 60% at 50% 110%, rgba(124,92,255,.22), transparent 60%),
+    linear-gradient(180deg, var(--an-sfondo-1), var(--an-sfondo-2));
+  animation: an-aurora 22s ease-in-out infinite alternate;
+}
+#anime-sfondo::before {   /* griglia prospettica (orizzonte anime) */
+  content: ""; position: absolute; left: -20%; right: -20%; bottom: -10%; height: 55%;
+  background-image: linear-gradient(var(--an-linea) 1px, transparent 1px), linear-gradient(90deg, var(--an-linea) 1px, transparent 1px);
+  background-size: 44px 44px;
+  transform: perspective(340px) rotateX(62deg);
+  transform-origin: bottom center; opacity: .5;
+  mask-image: linear-gradient(180deg, transparent, #000 55%);
+  animation: an-griglia 8s linear infinite;
+}
+#anime-canvas { position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .7; }
+@keyframes an-aurora { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(26deg); } }
+@keyframes an-griglia { to { background-position: 0 44px, 44px 0; } }
+
+/* il corpo lascia intravedere lo sfondo (le carte restano piene e leggibili) */
+body { background: transparent; }
+
+/* ───────────────────────────── TIPOGRAFIA da sigla ──────────────────────────────────── */
+h1, .titolo-mega {
+  letter-spacing: -.02em;
+}
+h1 .grad, .grad-testo, .an-grad-testo {
+  background: var(--an-grad); -webkit-background-clip: text; background-clip: text;
+  color: transparent; filter: drop-shadow(0 2px 10px rgba(124,92,255,.25));
+}
+/* occhielli/eyebrow: maiuscoletto spaziato, molto "titolo di episodio" */
+.an-occhiello { text-transform: uppercase; letter-spacing: .28em; font-size: .68rem; font-weight: 800;
+  background: var(--an-grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* ───────────────────────────── SUPERFICI cel-shaded + bordo d'energia ───────────────── */
+.blocco, .carta, .pannello, .riquadro-info, .card, .mini-guida {
+  position: relative;
+  transition: transform .28s var(--an-vel), box-shadow .28s var(--an-vel), border-color .28s var(--an-vel);
+}
+.blocco::after, .pannello::after {   /* filo di luce sul bordo alto (cel highlight) */
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,255,255,.10), transparent 30%);
+  mix-blend-mode: overlay; opacity: .8;
+}
+.blocco:hover, .carta:hover, .pannello:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--an-glow);
+  border-color: color-mix(in srgb, var(--an-viola) 45%, var(--border, #ccc));
+}
+
+/* titolo di blocco con barretta d'energia a sinistra */
+.blocco > h3::before, .pannello > h3::before {
+  content: ""; display: inline-block; width: .34em; height: .95em; margin-right: .5em;
+  vertical-align: -.08em; border-radius: 2px; background: var(--an-grad);
+  box-shadow: 0 0 12px rgba(124,92,255,.6);
+}
+
+/* ───────────────────────────── BOTTONI: rim-light al neon + press ───────────────────── */
+.btn, button.btn, .modello-pronto, .grp-btn {
+  position: relative; transition: transform .12s var(--an-scatto), box-shadow .2s var(--an-vel), filter .2s ease;
+}
+.btn:not(.secondario):not(.testo) {
+  background-image: var(--an-grad); border: none; color: #fff;
+  box-shadow: 0 6px 20px rgba(124,92,255,.28);
+}
+.btn:hover { transform: translateY(-2px); box-shadow: var(--an-glow-forte); filter: saturate(1.15) brightness(1.03); }
+.btn:active { transform: translateY(0) scale(.97); }
+.btn.secondario:hover { border-color: var(--an-viola); box-shadow: 0 0 0 1px var(--an-viola), 0 6px 18px rgba(124,92,255,.18); }
+
+a { transition: color .18s ease; }
+a:hover { color: var(--an-magenta); }
+
+/* i "chip"/dot dei gruppi diventano gemme d'energia */
+.grp-dot { box-shadow: 0 0 10px currentColor; }
+
+/* ───────────────────────────── NAV: voce attiva con luce che scorre ─────────────────── */
+.menu-voce.on, .drawer-voce.on {
+  position: relative; overflow: hidden;
+}
+.menu-voce.on::before, .drawer-voce.on::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--an-grad); box-shadow: 0 0 14px rgba(124,92,255,.8);
+}
+.menu-voce:hover:not(.on) { transform: translateX(2px); }
+
+/* ───────────────────────────── INGRESSI CINEMATOGRAFICI ─────────────────────────────── */
+/* elementi marcati da cinema.js: partono "fuori scena" e ENTRANO in scena, sfalsati. */
+[data-anime] { opacity: 0; will-change: transform, opacity, clip-path; }
+[data-anime].an-in { animation: an-rise .62s var(--an-vel) both; animation-delay: var(--an-ritardo, 0ms); }
+[data-anime="wipe"].an-in { animation: an-wipe .7s var(--an-vel) both; animation-delay: var(--an-ritardo, 0ms); }
+[data-anime="zoom"].an-in { animation: an-zoom .6s var(--an-scatto) both; animation-delay: var(--an-ritardo, 0ms); }
+@keyframes an-rise {
+  from { opacity: 0; transform: translateY(26px) scale(.985); filter: blur(6px); }
+  to   { opacity: 1; transform: none; filter: none; }
+}
+@keyframes an-wipe {
+  from { opacity: 0; clip-path: inset(0 100% 0 0); transform: translateX(-10px); }
+  to   { opacity: 1; clip-path: inset(0 0 0 0); transform: none; }
+}
+@keyframes an-zoom {
+  from { opacity: 0; transform: scale(.86) rotate(-1.2deg); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* CAMBIO SCHEDA = title-card: sweep diagonale d'energia + contenuto che sale sfalsato */
+.pannello-scheda.visibile.an-entra { animation: an-panel .5s var(--an-vel) both; }
+@keyframes an-panel { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+#anime-sweep {
+  position: fixed; inset: 0; z-index: 60; pointer-events: none; opacity: 0;
+  background: linear-gradient(115deg, transparent 40%, rgba(56,232,255,.5), rgba(255,98,217,.5) 56%, transparent 62%);
+  mix-blend-mode: screen;
+}
+#anime-sweep.va { animation: an-sweep .6s ease both; }
+@keyframes an-sweep {
+  0% { opacity: 0; transform: translateX(-30%) skewX(-12deg); }
+  35% { opacity: 1; }
+  100% { opacity: 0; transform: translateX(130%) skewX(-12deg); }
+}
+/* speed-lines: lampo radiale all'ingresso di scheda */
+#anime-speed { position: fixed; inset: 0; z-index: 59; pointer-events: none; opacity: 0;
+  background: repeating-conic-gradient(from 0deg at 50% 45%, rgba(255,255,255,.0) 0deg, rgba(124,92,255,.16) .5deg, transparent 1.4deg 6deg);
+  mask-image: radial-gradient(closest-side, transparent 42%, #000 78%); }
+#anime-speed.va { animation: an-speed .45s ease both; }
+@keyframes an-speed { 0% { opacity: 0; transform: scale(1.15); } 30% { opacity: .9; } 100% { opacity: 0; transform: scale(1); } }
+
+/* ───────────────────────────── RICERCA PREDITTIVA (⌘K / lente) ──────────────────────── */
+#cerca-lancia {
+  position: fixed; right: 18px; bottom: 18px; z-index: 70;
+  width: 54px; height: 54px; border-radius: 50%; border: none; cursor: pointer;
+  background-image: var(--an-grad); color: #fff; font-size: 1.35rem; line-height: 54px;
+  box-shadow: var(--an-glow-forte); transition: transform .16s var(--an-scatto), box-shadow .2s ease;
+  animation: an-pulse 3.2s ease-in-out infinite;
+}
+#cerca-lancia:hover { transform: scale(1.08) rotate(6deg); }
+#cerca-lancia:active { transform: scale(.94); }
+@keyframes an-pulse { 0%,100% { box-shadow: var(--an-glow); } 50% { box-shadow: var(--an-glow-forte); } }
+
+#cerca-overlay {
+  position: fixed; inset: 0; z-index: 200; display: none;
+  align-items: flex-start; justify-content: center;
+  background: rgba(6,6,18,.55); backdrop-filter: blur(7px) saturate(1.2);
+  padding: 10vh 16px 16px;
+}
+#cerca-overlay.aperto { display: flex; animation: an-fade .2s ease both; }
+@keyframes an-fade { from { opacity: 0; } to { opacity: 1; } }
+.cerca-box {
+  width: min(680px, 96vw); border-radius: 18px; overflow: hidden;
+  background: color-mix(in srgb, var(--surface, #fff) 88%, transparent);
+  border: 1px solid var(--an-linea);
+  box-shadow: 0 30px 90px rgba(6,6,18,.5), var(--an-glow);
+  animation: an-box .34s var(--an-scatto) both;
+}
+@keyframes an-box { from { opacity: 0; transform: translateY(-18px) scale(.97); } to { opacity: 1; transform: none; } }
+.cerca-top { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--an-linea);
+  background: var(--an-grad-soft); }
+.cerca-top .lente { font-size: 1.2rem; filter: drop-shadow(0 0 8px rgba(124,92,255,.5)); }
+#cerca-input {
+  flex: 1; border: none; outline: none; background: transparent; color: var(--testo, #18181b);
+  font-size: 1.12rem; font-weight: 600; font-family: inherit;
+}
+#cerca-input::placeholder { color: var(--testo-3, #9a9aa4); font-weight: 500; }
+.cerca-kbd { font-size: .7rem; color: var(--testo-3, #9a9aa4); border: 1px solid var(--an-linea); border-radius: 6px; padding: 2px 7px; }
+.cerca-filtri { display: flex; gap: 6px; flex-wrap: wrap; padding: 10px 14px 4px; }
+.cerca-filtro {
+  font-size: .78rem; font-weight: 700; padding: .28rem .7rem; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--an-linea); background: transparent; color: var(--testo-2, #55555f);
+  transition: all .16s var(--an-vel);
+}
+.cerca-filtro:hover { transform: translateY(-1px); }
+.cerca-filtro.on { background-image: var(--an-grad); color: #fff; border-color: transparent; box-shadow: 0 4px 14px rgba(124,92,255,.3); }
+.cerca-sugg-tit { padding: 12px 16px 2px; font-size: .72rem; text-transform: uppercase; letter-spacing: .18em; color: var(--testo-3, #9a9aa4); font-weight: 800; }
+.cerca-lista { max-height: min(52vh, 520px); overflow-y: auto; padding: 6px; }
+.cerca-voce {
+  display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 12px; cursor: pointer;
+  color: var(--testo, #18181b); transition: background .12s ease, transform .12s var(--an-vel);
+  animation: an-rise .34s var(--an-vel) both; animation-delay: var(--an-ritardo, 0ms);
+}
+.cerca-voce:hover, .cerca-voce.sel { background: var(--an-grad-soft); transform: translateX(3px); }
+.cerca-voce.sel { box-shadow: inset 3px 0 0 var(--an-viola); }
+.cerca-voce .ico { font-size: 1.15rem; width: 1.6rem; text-align: center; }
+.cerca-voce .txt { flex: 1; min-width: 0; }
+.cerca-voce .txt b { display: block; font-weight: 700; font-size: .98rem; }
+.cerca-voce .txt b mark { background: transparent; color: var(--an-magenta); }
+.cerca-voce .txt small { color: var(--testo-3, #9a9aa4); font-size: .78rem; }
+.cerca-voce .via { font-size: .68rem; color: #fff; background-image: var(--an-grad); border-radius: 999px; padding: 2px 9px; font-weight: 700; white-space: nowrap; }
+.cerca-sugg { padding: 6px; display: flex; flex-direction: column; gap: 6px; }
+.cerca-sugg .chip-domanda {
+  text-align: left; border: 1px dashed var(--an-linea); background: transparent; color: var(--testo, #18181b);
+  border-radius: 12px; padding: 11px 14px; cursor: pointer; font-weight: 600; font-family: inherit; font-size: .95rem;
+  transition: all .16s var(--an-vel); animation: an-wipe .4s var(--an-vel) both; animation-delay: var(--an-ritardo, 0ms);
+}
+.cerca-sugg .chip-domanda:hover { border-style: solid; border-color: var(--an-viola); background: var(--an-grad-soft); transform: translateX(3px); }
+.cerca-sugg .chip-domanda .em { margin-right: 8px; }
+.cerca-vuoto { padding: 26px 16px; text-align: center; color: var(--testo-3, #9a9aa4); }
+
+/* ───────────────────────────── RIDOTTO IL MOTO: onestà d'accessibilità ──────────────── */
+@media (prefers-reduced-motion: reduce) {
+  #anime-sfondo, #anime-sfondo::before, #cerca-lancia { animation: none !important; }
+  #anime-canvas { display: none; }
+  [data-anime], [data-anime].an-in, .pannello-scheda.visibile.an-entra,
+  .cerca-voce, .cerca-sugg .chip-domanda, .cerca-box { animation: none !important; opacity: 1 !important; }
+  #anime-sweep, #anime-speed { display: none !important; }
+  .blocco:hover, .carta:hover, .pannello:hover, .btn:hover, #cerca-lancia:hover { transform: none; }
+}
+body.meno-moto #anime-canvas { display: none; }
+body.meno-moto [data-anime] { opacity: 1; animation: none; }
