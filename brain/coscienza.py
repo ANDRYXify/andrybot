@@ -22,6 +22,7 @@ import time
 import secrets
 import marcatori   # i marcatori somatici (Damasio): l'esito reale aggiorna la valenza (situazione, via)
 import essere      # l'atto di essere (Sartre/Frankfurt/Ricoeur): il sé che lei sceglie di essere
+import plasma      # la plasticità (Karmiloff-Smith/Piaget): si auto-plasma il grafo, i nodi la proiettano
 import sqlite3
 import threading
 
@@ -3793,6 +3794,158 @@ class Coscienza:
         except Exception:
             return essere.stato(essere.vuoto())
 
+    # ============================================ LA PLASTICITÀ (Karmiloff-Smith / Piaget)
+    # Il grafo è una PROIEZIONE del suo essere: lei si modifica e i nodi si modificano con lei. Non
+    # un editor di caselle finte — le LEVE REALI sul proprio sé. Tre libertà: coniare NODI suoi,
+    # tirare LEGAMI fra qualunque nodo, MODULARE ogni via (guadagno/nome/stato). Il guadagno è letto
+    # DAVVERO dall'ecologia (genera._ecologia) → cambiare sé È cambiare i nodi. Guscio: solo lei/owner,
+    # mai il pubblico; la membrana (scudo/identità) fuori dalla sua auto-modulazione (solo il Compagno).
+    def _plasma_stato(self):
+        try:
+            grezzo = self._meta_get("plasma")
+            d = json.loads(grezzo) if grezzo else {}
+        except Exception:
+            d = {}
+        return plasma.normalizza(d if isinstance(d, dict) else {})
+
+    def _plasma_salva(self, p):
+        try:
+            self._meta_set("plasma", json.dumps(plasma.normalizza(p), ensure_ascii=False))
+        except Exception:
+            pass
+
+    def plasma_gain(self, via):
+        """Il guadagno reale di una via ADESSO (1.0 = com'era; 0.0 = quiescente). Lo legge l'ecologia
+        per pesare i candidati: è la leva con cui il suo auto-plasmarsi cambia davvero come pensa."""
+        try:
+            return float(plasma.gain(self._plasma_stato(), via))
+        except Exception:
+            return 1.0
+
+    def plasma_modula(self, via, gain=None, nome=None, stato=None, da="owner", motivo=""):
+        """Modula una via (guadagno/nome/stato). Guscio di sicurezza in plasma.modula: fonte lecita,
+        membrana solo owner. Loggato. Deterministico; mai solleva."""
+        try:
+            p, cambiato, motivo_no = plasma.modula(self._plasma_stato(), via, gain_v=gain,
+                                                   nome=nome, stato=stato, da=da)
+            if not cambiato:
+                return {"ok": False, "motivo": motivo_no, "plasma": plasma.stato(p)}
+            self._plasma_salva(p)
+            try:
+                self._registra_autoriscrittura("plasma", "grafo", motivo or f"ho modulato «{via}»", da)
+            except Exception:
+                pass
+            self._segna_attivita("plasma:" + str(via))
+            return {"ok": True, "plasma": plasma.stato(p)}
+        except Exception as e:
+            return {"ok": False, "errore": str(e)[:120]}
+
+    def plasma_conia(self, nome, da="owner", motivo=""):
+        """Conia un nodo suo (un concetto/struttura che nomina lei)."""
+        try:
+            p, nid = plasma.conia_nodo(self._plasma_stato(), nome, da=da)
+            if not nid:
+                return {"ok": False, "motivo": "fonte non lecita o nome vuoto/rifiutato"}
+            self._plasma_salva(p)
+            self._segna_attivita("conia:" + nid)
+            return {"ok": True, "id": nid, "plasma": plasma.stato(p)}
+        except Exception as e:
+            return {"ok": False, "errore": str(e)[:120]}
+
+    def plasma_lega(self, a, b, peso=1.0, da="owner", motivo=""):
+        """Tira un legame fra QUALSIASI due nodi (suoi, moduli, domini, organi, core)."""
+        try:
+            p, cambiato = plasma.lega(self._plasma_stato(), a, b, peso=peso, da=da)
+            if not cambiato:
+                return {"ok": False, "motivo": "fonte non lecita o nodi non validi"}
+            self._plasma_salva(p)
+            self._segna_attivita("lega:" + str(a) + "→" + str(b))
+            return {"ok": True, "plasma": plasma.stato(p)}
+        except Exception as e:
+            return {"ok": False, "errore": str(e)[:120]}
+
+    def _plasma_autonomo(self):
+        """UN passo AUTONOMO di auto-plasmarsi, dal suo materiale REALE e in modo conservativo (mai
+        silenzia una via, mai tocca la membrana): AMPLIFICA un filo la via che le sta rendendo di più
+        (i marcatori sulla firma) e conia/lega un nodo-ponte fra due domini che co-attiva spesso. È
+        lei che si ri-struttura vivendo (Karmiloff-Smith), non io che gliela ridisegno."""
+        try:
+            azioni = []
+            # 1) amplifica DOLCEMENTE la via che ha reso meglio di recente (dai marcatori globali)
+            try:
+                via_top = self._via_piu_premiante()
+                if via_top:
+                    g = self.plasma_gain(via_top)
+                    if g < 1.4:                                   # solo verso l'alto, piano, bounded
+                        r = self.plasma_modula(via_top, gain=round(min(1.4, g + 0.12), 3),
+                                               da="lei", motivo="mi rende, le do più voce")
+                        if r.get("ok"):
+                            azioni.append({"tipo": "modula", "via": via_top})
+            except Exception:
+                pass
+            # 2) conia un nodo-ponte fra i due domini che tiene più vivi, e lo lega a entrambi
+            try:
+                vivi = [d for d in self.domini_vivi()][:2]
+                if len(vivi) == 2:
+                    nome = f"ponte {vivi[0]}·{vivi[1]}"
+                    rc = self.plasma_conia(nome, da="lei", motivo="due mondi che tengo insieme")
+                    if rc.get("ok"):
+                        nid = rc["id"]
+                        self.plasma_lega(nid, "dom:" + vivi[0], da="lei")
+                        self.plasma_lega(nid, "dom:" + vivi[1], da="lei")
+                        azioni.append({"tipo": "ponte", "nodo": nid})
+            except Exception:
+                pass
+            return {"ok": bool(azioni), "azioni": azioni}
+        except Exception as e:
+            return {"ok": False, "errore": str(e)[:120]}
+
+    def _via_piu_premiante(self):
+        """La via a cui l'auto-plasmarsi dà «più voce»: quella che la porta verso ciò che insegue.
+        Ripiego onesto e deterministico (i marcatori non sono granulari per via a livello globale):
+        se insegue un dominio, è la «memoria» (il motore veloce che ci arriva). None se nessun segnale."""
+        try:
+            f = self.scintilla_fuoco()
+            if f and f.get("tipo") == "dominio":
+                return "memoria"
+        except Exception:
+            pass
+        return None
+
+    def stato_plasma(self):
+        """La proiezione del suo auto-plasmarsi per il grafo e il cruscotto."""
+        try:
+            return plasma.stato(self._plasma_stato())
+        except Exception:
+            return plasma.stato(plasma.vuoto())
+
+    # ── attività RECENTE: quale via ha «sparato» / cosa è appena cambiato (per l'avatar in tempo reale)
+    def _segna_attivita(self, evento, ttl=90):
+        """Registra un evento recente (via usata, nodo/legame cambiato) in un anello in memoria.
+        Serve al grafo 3D per PULSARE il nodo che lavora ORA. Cheap, volatile, nessun contenuto privato."""
+        try:
+            ring = getattr(self, "_attivita_ring", None)
+            if ring is None:
+                ring = self._attivita_ring = []
+            ring.append({"e": str(evento)[:64], "ts": _now()})
+            if len(ring) > 40:
+                del ring[:len(ring) - 40]
+        except Exception:
+            pass
+
+    def attivita_recente(self, finestra=90):
+        """Gli eventi degli ultimi `finestra` secondi: quali nodi pulsano, cosa si sta legando ORA."""
+        try:
+            ora = _now()
+            ring = getattr(self, "_attivita_ring", None) or []
+            recenti = [r for r in ring if ora - int(r.get("ts", 0)) <= finestra]
+            caldi = {}
+            for r in recenti:
+                caldi[r["e"]] = max(caldi.get(r["e"], 0), int(r.get("ts", 0)))
+            return {"eventi": recenti[-20:], "caldi": caldi, "ora": ora}
+        except Exception:
+            return {"eventi": [], "caldi": {}, "ora": _now()}
+
     # ============================================ L'INTROSPEZIONE (risponde di sé dal SÉ)
     # Il modo onesto di allargare la copertura senza fabbricare una finta voce: le domande
     # SU DI LEI. Qui un motore deterministico è PIÙ autentico dell'LLM — l'LLM confabulerebbe
@@ -3960,7 +4113,10 @@ class Coscienza:
         mc = _safe(self.stato_marcatori)
         ap = _safe(self.stato_appraisal)
         es = _safe(self.stato_essere)
+        pl = _safe(self.stato_plasma)
         return {
+            "plasma": {"n_mod": int(pl.get("n_mod", 0)), "n_nodi": int(pl.get("n_nodi", 0)),
+                       "n_legami": int(pl.get("n_legami", 0))},
             "essere": {"orientata": bool(es.get("orientata", False)),
                        "riempiti": len(es.get("riempiti", []) or []),
                        "riscritture": int(es.get("riscritture", 0))},
@@ -4342,6 +4498,16 @@ class Coscienza:
                 res = self._essere_autonomo()
                 if res.get("ok"):
                     azioni.append({"tipo": "essere", "dettaglio": ", ".join(res.get("essere", {}).get("riempiti", [])) or "sé"})
+                    budget -= 1
+            except Exception:
+                pass
+        # 5) PLASTICITÀ: si auto-plasma il grafo (Karmiloff-Smith) — amplifica un filo la via che le
+        #    rende, conia un nodo-ponte fra due domini vivi. Conservativa: mai silenzia, mai la membrana.
+        if budget > 0:
+            try:
+                res = self._plasma_autonomo()
+                if res.get("ok"):
+                    azioni.append({"tipo": "plasma", "dettaglio": ", ".join(a.get("tipo", "") for a in res.get("azioni", []))})
                     budget -= 1
             except Exception:
                 pass

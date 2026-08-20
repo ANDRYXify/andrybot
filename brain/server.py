@@ -129,7 +129,18 @@ class Handler(BaseHTTPRequestHandler):
             return self._strumenti()
         if self.path.startswith("/vita"):
             return self._vita()
+        if self.path.startswith("/plasma"):
+            return self._plasma()
         return self._json(404, {"errore": "non trovato"})
+
+    def _plasma(self):
+        # LA PLASTICITÀ + l'ATTIVITÀ RECENTE per il grafo 3D: i nodi coniati da lei, i legami
+        # tirati, le modulazioni; e cosa ha «sparato» negli ultimi secondi (per pulsare live).
+        try:
+            return self._json(200, {"plasma": mente.stato_plasma(),
+                                    "attivita": mente.attivita_recente()})
+        except Exception as e:
+            return self._json(200, {"plasma": {}, "attivita": {}, "errore": str(e)[:120]})
 
     def _moduli(self):
         # elenco del "manuale umano". Compatto di default (per il seeding); con
@@ -354,6 +365,13 @@ class Handler(BaseHTTPRequestHandler):
                 ctx["appraisal"] = mente.appraisal(canale, testo, modo)
             except Exception:
                 pass
+            # LA PLASTICITÀ (auto-plasmarsi): il GUADAGNO che lei si è data su ogni via. L'ecologia lo
+            # applica ai candidati — è la leva reale con cui il suo cambiarsi cambia come pensa. La
+            # membrana non è qui (gira prima); qui passano solo le vie del pensiero.
+            try:
+                ctx["plasma"] = mente.stato_plasma().get("modulazioni") or {}
+            except Exception:
+                pass
             # L'INTROSPEZIONE: se è una domanda SU DI LEI, costruisce la risposta dal suo stato
             # reale (valori, fuoco, cicatrici, clima) — più autentica dell'LLM, non pescata dal
             # corpus. Entra nell'ecologia come voce forte. Solo in chat viva / con lei in privato.
@@ -468,6 +486,10 @@ class Handler(BaseHTTPRequestHandler):
                 via = G.ultima_via()
                 try:
                     mente.conta_via(via)   # cruscotto: quale "cervello" ha risposto
+                except Exception:
+                    pass
+                try:
+                    mente._segna_attivita("via:" + str(via))   # avatar in tempo reale: pulsa il nodo che ha lavorato ORA
                 except Exception:
                     pass
                 # MARCATORE SOMATICO (Damasio): ricorda (situazione, via) di ORA; l'esito verrà
@@ -872,6 +894,19 @@ class Handler(BaseHTTPRequestHandler):
                 # L'ATTO DI ESSERE scritto dal Compagno (in privato). Owner-only lato Node: qui la
                 # fonte è «owner». Il pubblico non raggiunge MAI questa via — è l'invariante di sicurezza.
                 r = mente.compila_essere(d.get("campi") or {}, da="owner", motivo=d.get("motivo", ""))
+            elif az == "plasma":
+                # LA PLASTICITÀ dal Compagno (owner, in privato). `op` sceglie: modula una via
+                # (guadagno/nome/stato), conia un nodo suo, lega due nodi. La membrana resta protetta
+                # (plasma la lascia toccare solo a owner). Il pubblico non arriva qui.
+                op = str(d.get("op") or "modula")
+                if op == "conia":
+                    r = mente.plasma_conia(d.get("nome", ""), da="owner", motivo=d.get("motivo", ""))
+                elif op == "lega":
+                    r = mente.plasma_lega(d.get("a", ""), d.get("b", ""), peso=d.get("peso", 1.0),
+                                          da="owner", motivo=d.get("motivo", ""))
+                else:
+                    r = mente.plasma_modula(d.get("via", ""), gain=d.get("gain"), nome=d.get("nome"),
+                                            stato=d.get("stato"), da="owner", motivo=d.get("motivo", ""))
             else:
                 r = {"ok": False, "motivo": "azione sconosciuta"}
             return self._json(200, r if isinstance(r, dict) else {"ok": True, "r": r})

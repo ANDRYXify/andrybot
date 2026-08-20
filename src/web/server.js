@@ -2900,7 +2900,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const vie = await brainpy.vie().catch(() => ({})) || {};
     const vita = await brainpy.pulsazioni().catch(() => ({})) || {};
     const rete = await brainpy.reteStato(login).catch(() => null) || { nodi: 0, solidi: 0, curiosita: 0, fiducia: 0 };
-    res.json({ moduli, links, vie, vita, rete: { nodi: rete.nodi || 0, solidi: rete.solidi || 0, fiducia: rete.fiducia || 0, curiosita: rete.curiosita || 0 } });
+    // LA PLASTICITÀ + l'ATTIVITÀ RECENTE: i nodi che si è coniata, i legami che ha tirato, le
+    // modulazioni; e cosa ha «lavorato» negli ultimi secondi → il grafo 3D pulsa in tempo reale.
+    const plx = await brainpy.plasma().catch(() => ({ plasma: {}, attivita: {} })) || { plasma: {}, attivita: {} };
+    res.json({ moduli, links, vie, vita, plasma: plx.plasma || {}, attivita: plx.attivita || {}, rete: { nodi: rete.nodi || 0, solidi: rete.solidi || 0, fiducia: rete.fiducia || 0, curiosita: rete.curiosita || 0 } });
   }));
 
   // FORGIA: le dice di lavorare ORA sulla sua mente (studia le lacune dal web +

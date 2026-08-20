@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // mente3d.js — grafo 3D della "mente" di Lia, disegnato a mano su Canvas 2D.
 //
 // Perché non three.js: niente CDN (CSP), niente 600 KB da vendorizzare né catene di
@@ -47,6 +49,9 @@
     let selId = null, hoverId = null;
     let raf = 0, running = true;
     let autoRot = true;    // ruota piano da sola quando non interagisci
+    const caldo = new Map();   // id → istante in cui il nodo ha «lavorato» (per pulsare in tempo reale)
+    const CALDO_MS = 5000;     // per quanto un nodo resta illuminato dopo aver sparato
+    const orologio = () => { try { return Date.now(); } catch (e) { return 0; } };
 
     // ---- dimensioni (DPR-aware) --------------------------------------------
     let W = 300, H = 300, cx = 150, cy = 150, dpr = 1;
@@ -205,6 +210,26 @@
         ctx.beginPath(); ctx.arc(a.sx, a.sy, a.sr, 0, TAU);
         ctx.fillStyle = a.color; ctx.fill();
         if (!dim) ctx.restore();
+        // PULSE «tempo reale»: se il nodo ha lavorato di recente, un alone che respira attorno —
+        // così vedi ORA su quali nodi sta lavorando e come procede il legame che si accende.
+        if (!dim) {
+          const t0 = caldo.get(a.id);
+          if (t0) {
+            const dt = orologio() - t0;
+            if (dt >= 0 && dt < CALDO_MS) {
+              const vita = 1 - dt / CALDO_MS;                       // svanisce piano
+              const battito = 0.5 + 0.5 * Math.sin(dt / 130);       // respiro
+              const rr = a.sr + 3 + battito * (5 + a.sr * 0.5);
+              ctx.save();
+              ctx.globalAlpha = fade * vita * (0.35 + 0.35 * battito);
+              ctx.lineWidth = 2; ctx.strokeStyle = a.color;
+              ctx.shadowColor = a.color; ctx.shadowBlur = 12 + battito * 10;
+              ctx.beginPath(); ctx.arc(a.sx, a.sy, rr, 0, TAU); ctx.stroke();
+              ctx.restore();
+              ctx.globalAlpha = fade;
+            }
+          }
+        }
         // bordo sottile: una versione più scura del colore del nodo
         ctx.lineWidth = 1; ctx.strokeStyle = shade(a.color, C.bordo);
         ctx.beginPath(); ctx.arc(a.sx, a.sy, a.sr, 0, TAU); ctx.stroke();
@@ -338,6 +363,14 @@
 
     return {
       aggiorna(d) { carica(d || {}); },
+      // marca i nodi che hanno «lavorato» ORA: pulsano finché non svaniscono. Non riscalda la
+      // simulazione (niente scossa al layout): è solo l'illuminazione dei nodi vivi in tempo reale.
+      attivita(ids) {
+        if (!Array.isArray(ids)) return;
+        const now = orologio();
+        for (const id of ids) if (id != null && perId.has(id)) caldo.set(String(id), now);
+        for (const k of caldo.keys()) if (now - caldo.get(k) > CALDO_MS + 500) caldo.delete(k);
+      },
       tema(d) { dark = !!d; },
       seleziona(id) { selId = id || null; alpha = Math.max(alpha, 0.2); },
       destroy() { running = false; stacca(); },

@@ -241,6 +241,20 @@ export async function pulsazioni() {
   finally { clearTimeout(to); }
 }
 
+// LA PLASTICITÀ + l'ATTIVITÀ RECENTE per il grafo 3D in tempo reale: i nodi coniati da lei, i
+// legami tirati, le modulazioni delle vie, e cosa ha «sparato» negli ultimi secondi (pulse live).
+export async function plasma() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 4000);
+  try {
+    const r = await fetch(BASE + '/plasma', { signal: ac.signal });
+    if (!r.ok) return { plasma: {}, attivita: {} };
+    const d = await r.json().catch(() => null);
+    return { plasma: (d && d.plasma) || {}, attivita: (d && d.attivita) || {} };
+  } catch (e) { log.debug('plasma:', e?.message || e); return { plasma: {}, attivita: {} }; }
+  finally { clearTimeout(to); }
+}
+
 // VITA di Lia (la sua macchina): diario, stanza, ritratto del pubblico. Sola
 // lettura. Ritorna {attiva, diario, spazio, pubblico} o null.
 export async function vita() {

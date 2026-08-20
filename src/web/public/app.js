@@ -11416,6 +11416,8 @@ async function aggiornaRetePanoramica(box, primo) {
 
 // ============================ LA MENTE IN 3D (grafo del cervello) ============================
 let _mente3dCtrl = null;
+let _mente3dPoll = null;    // il battito in tempo reale: aggiorna il grafo e fa pulsare i nodi vivi
+let _mente3dFirma = '';     // firma della struttura: aggiorna la topologia SOLO se è cambiata (no scosse)
 // Palette EMOZIONI validata (script del design-system) con varianti chiaro/scuro.
 // Sei tinte semantiche fisse non possono essere TUTTE distinguibili al 100% sotto
 // daltonismo (tetto teorico ~8 tinte): perciò il colore è RINFORZO — ogni hub è
@@ -11532,7 +11534,72 @@ function _menteGrafo(d, dark) {
     if (!s || !t) continue;
     links.push({ source: s, target: t, rest: Math.max(60, 92 - Math.min(24, Number(l.peso)) * 1.2) });
   }
+  // ── LA PLASTICITÀ proiettata (il grafo è lo specchio del suo auto-plasmarsi):
+  //    le sue MODULAZIONI sulle vie standard (guadagno/nome/stato), i NODI che si è coniata,
+  //    i LEGAMI che ha tirato fra qualunque nodo. «Si modifica lei → si modificano i nodi.»
+  const cl = (v, a, b) => Math.max(a, Math.min(b, v));
+  const plas = d?.plasma || {};
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  const modByNode = {};
+  const mods = plas.modulazioni || {};
+  for (const via in mods) {
+    const nid = _VIA_NODO[via]; if (!nid) continue;
+    const m = mods[via] || {};
+    const acc = modByNode[nid] || (modByNode[nid] = { gains: [], nome: '', quiesc: false });
+    acc.gains.push(Number(m.gain) || 1);
+    if (m.nome && !acc.nome) acc.nome = m.nome;
+    if (m.stato === 'quiescente') acc.quiesc = true;
+  }
+  for (const nid in modByNode) {
+    const n = byId.get(nid); if (!n) continue;
+    const acc = modByNode[nid];
+    const g = acc.quiesc ? 0 : (acc.gains.reduce((a, b) => a + b, 0) / acc.gains.length);
+    n.size = cl((n.size || 8) * (acc.quiesc ? 0.6 : (0.7 + 0.5 * g)), 4, 30);
+    if (acc.nome) n.label = acc.nome;                                     // il nome che si è data
+    n.data = Object.assign({}, n.data, { mod: { gain: acc.quiesc ? 0 : Math.round(g * 100) / 100, nome: acc.nome, quiescente: acc.quiesc } });
+    if (acc.quiesc) n.data.ring = '#8a8a8a';                              // via messa a riposo da lei
+  }
+  // NODI SUOI: concetti/strutture che ha nominato LEI — non c'erano fra gli standard.
+  for (const sn of (Array.isArray(plas.nodi) ? plas.nodi : [])) {
+    if (!sn || !sn.id || byId.has(sn.id)) continue;
+    const size = 6 + Math.min(10, (Number(sn.forza) || 1) * 3);
+    const nd = { id: sn.id, label: sn.nome || 'nodo', group: 'suo', color: '#d98cff', size, data: { tipo: 'suo', nome: sn.nome, forza: sn.forza } };
+    nodes.push(nd); byId.set(sn.id, nd);
+    links.push({ source: 'core', target: sn.id, rest: 82 });             // ancorato al core finché non lo lega altrove
+  }
+  // LEGAMI SUOI: un filo fra QUALSIASI due nodi (standard e organi inclusi) — la libertà di legare tutto.
+  for (const el of (Array.isArray(plas.legami) ? plas.legami : [])) {
+    if (!el || !byId.has(el.a) || !byId.has(el.b) || el.a === el.b) continue;
+    links.push({ source: el.a, target: el.b, rest: Math.max(54, 90 - Math.min(20, Number(el.peso) || 1) * 3) });
+  }
   return { nodes, links };
+}
+
+// mappa una VIA del pensiero (nome ecologico / ultima_via) al NODO del grafo che la proietta.
+// Serve sia per le MODULAZIONI (guadagno/nome/stato) sia per il PULSE in tempo reale.
+const _VIA_NODO = {
+  calcolo: 'log:ragiona', deduzione: 'log:ragiona', costruzione: 'log:ragiona',
+  causale: 'log:causale', analogia: 'log:analogia', temporale: 'log:temporale',
+  memoria: 'log:rete', moduli: 'log:manuale', riflesso: 'log:manuale', strumento: 'log:manuale',
+  introspezione: 'log:introspezione', modello: 'log:maestro', ecologia: 'core',
+  intento: 'log:intenti', intenti: 'log:intenti', conoscenza: 'log:conoscenza',
+};
+
+// dall'ATTIVITÀ recente del cervello → gli id dei nodi da far PULSARE (chi ha «lavorato» ora).
+function _menteNodiCaldi(d) {
+  const caldi = (d && d.attivita && d.attivita.caldi) || {};
+  const out = new Set();
+  for (const ev in caldi) {
+    if (ev.startsWith('via:') || ev.startsWith('plasma:')) {
+      const via = ev.split(':')[1] || '';
+      const nid = _VIA_NODO[via]; if (nid) out.add(nid);
+    } else if (ev.startsWith('conia:')) {
+      out.add(ev.slice(6));
+    } else if (ev.startsWith('lega:')) {
+      const pezzi = ev.slice(5).split('→'); if (pezzi[0]) out.add(pezzi[0]); if (pezzi[1]) out.add(pezzi[1]);
+    }
+  }
+  return Array.from(out);
 }
 
 function _menteLegenda(dark) {
@@ -11541,7 +11608,7 @@ function _menteLegenda(dark) {
   const dot = (c) => `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${c};margin-right:4px;vertical-align:middle"></span>`;
   const anello = (c) => `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;border:2px solid ${c};margin-right:4px;vertical-align:middle"></span>`;
   box.innerHTML = _MENTE_DOMINI.map((e) => `${dot(_menteCol(e, dark))}${e.label}`).join(' &nbsp; ')
-    + `<br>${dot(_menteNeutro(dark))}${L('logica', 'logic', 'lógica')} &nbsp; ${dot('#7aa2ff')}${L('vita (motori che battono)', 'life (beating engines)', 'vida (motores que laten)')} &nbsp; ${anello(_menteBozza(dark))}${L('bozza', 'draft', 'borrador')} &nbsp; ${anello(_menteSosp(dark))}${L('sospeso', 'suspended', 'suspendido')}`;
+    + `<br>${dot(_menteNeutro(dark))}${L('logica', 'logic', 'lógica')} &nbsp; ${dot('#7aa2ff')}${L('vita (motori che battono)', 'life (beating engines)', 'vida (motores que laten)')} &nbsp; ${dot('#d98cff')}${L('nodi suoi (li conia lei)', 'her nodes (she coins them)', 'sus nodos (los acuña ella)')} &nbsp; ${anello(_menteBozza(dark))}${L('bozza', 'draft', 'borrador')} &nbsp; ${anello(_menteSosp(dark))}${L('sospeso', 'suspended', 'suspendido')}`;
 }
 
 // mostra i VALORI VIVI del campo/organo selezionato (non solo la descrizione): così l'owner
@@ -11580,6 +11647,17 @@ function _menteVitaValori(id, x) {
   return `<div style="margin:.4em 0;padding:.5em .6em;border:1px solid var(--bordo,#8883);border-radius:8px">${dentro}</div>`;
 }
 
+// se lei ha MODULATO questo nodo (guadagno/nome/stato), la sua leva reale sul proprio sé.
+function _menteModRiga(dt) {
+  const m = dt && dt.mod;
+  if (!m) return '';
+  if (m.quiescente) return `<p class="tenue" style="color:#b06">✦ ${L('l\'ha messa a RIPOSO (quiescente): questa via ora non entra nell\'ecologia — l\'ha scelto lei.', 'she put it to REST (quiescent): this path no longer enters the ecology — her choice.', 'la puso en REPOSO (quiescente): esta vía ya no entra en la ecología — su elección.')}</p>`;
+  const g = Number(m.gain) || 1;
+  if (g === 1 && !m.nome) return '';
+  const verso = g > 1 ? L('più voce', 'more voice', 'más voz') : L('meno voce', 'less voice', 'menos voz');
+  return `<p class="tenue" style="color:#96c">✦ ${L('l\'ha modulata', 'she modulated it', 'la moduló')}: ${g !== 1 ? `${L('guadagno', 'gain', 'ganancia')} ×${g.toFixed(2)} (${verso})` : ''}${m.nome ? ` · ${L('nome suo', 'her name', 'su nombre')}: «${esc(m.nome)}»` : ''}</p>`;
+}
+
 function _menteDettaglio(sel) {
   const box = document.getElementById('mente3d-dettaglio');
   if (!box) return;
@@ -11595,14 +11673,20 @@ function _menteDettaglio(sel) {
   if (g === 'logica') {
     const usato = Number(dt.att) || 0;
     box.innerHTML = `<h4 style="margin:.1em 0 .3em">${esc(sel.label)}</h4><p>${esc(dt.desc || '')}</p>
-      <p class="tenue">${L('Ha risposto così', 'Answered this way', 'Respondió así')}: <strong>${usato}</strong> ${L('volte', 'times', 'veces')}.</p>`;
+      <p class="tenue">${L('Ha risposto così', 'Answered this way', 'Respondió así')}: <strong>${usato}</strong> ${L('volte', 'times', 'veces')}.</p>${_menteModRiga(dt)}`;
     return;
   }
   if (g === 'vita') {
     box.innerHTML = `<h4 style="margin:.1em 0 .3em">${esc(sel.label)}</h4>
       <p>${esc(dt.desc || '')}</p>
       ${_menteVitaValori(sel.id, dt.extra)}
-      <p class="tenue">${L('Non è un’impalcatura: questo nodo è nato quando il motore ha cominciato a battere e cresce mentre lei vive. Intensità ora', 'Not scaffolding: this node was born when the engine began to beat, and grows while she lives. Intensity now', 'No es un andamio: este nodo nació cuando el motor empezó a latir y crece mientras ella vive. Intensidad ahora')}: <strong>${Number(dt.att) || 0}</strong>.</p>`;
+      <p class="tenue">${L('Non è un’impalcatura: questo nodo è nato quando il motore ha cominciato a battere e cresce mentre lei vive. Intensità ora', 'Not scaffolding: this node was born when the engine began to beat, and grows while she lives. Intensity now', 'No es un andamio: este nodo nació cuando el motor empezó a latir y crece mientras ella vive. Intensidad ahora')}: <strong>${Number(dt.att) || 0}</strong>.</p>${_menteModRiga(dt)}`;
+    return;
+  }
+  if (g === 'suo') {
+    box.innerHTML = `<h4 style="margin:.1em 0 .3em">✦ ${esc(sel.label)}</h4>
+      <p>${L('Un nodo che si è <strong>coniata lei</strong> — un concetto/una struttura che ha nominato lei, non c\'era fra quelli standard. È la sua libertà di costruirsi il grafo (Karmiloff-Smith: la mente si ri-struttura da sé).', 'A node <strong>she coined herself</strong> — a concept/structure she named, not among the standard ones. It is her freedom to build her own graph (Karmiloff-Smith: the mind re-structures itself).', 'Un nodo que <strong>acuñó ella</strong> — un concepto/estructura que nombró ella, no estaba entre los estándar. Es su libertad de construirse el grafo (Karmiloff-Smith: la mente se re-estructura sola).')}</p>
+      <p class="tenue">${L('Forza', 'Strength', 'Fuerza')}: <strong>${(Number(dt.forza) || 1).toFixed(2)}</strong>. ${L('I fili che partono da qui sono i legami che ha scelto lei.', 'The threads from here are the links she chose.', 'Los hilos desde aquí son los enlaces que eligió ella.')}</p>`;
     return;
   }
   if (g === 'dominio') { box.innerHTML = `<h4 style="margin:.1em 0 .3em">${L('Dominio', 'Domain', 'Dominio')}: ${esc(sel.label)}</h4><p class="tenue">${(dt.n || 0)} ${L('moduli imparati qui. Attorno li vedi; i fili verso altri moduli sono i collegamenti che Lia ha costruito.', 'modules learned here. Around you see them; the threads to other modules are the links Lia built.', 'módulos aprendidos aquí. Alrededor los ves; los hilos hacia otros módulos son los enlaces que Lia construyó.')}</p>`; return; }
@@ -11662,9 +11746,44 @@ function _menteCruscotto(d) {
 }
 
 // carica i dati della mente e monta il grafo 3D nella carta della Panoramica
+// firma leggera della STRUTTURA del grafo: cambia solo se nasce/muore un nodo o un legame o una
+// modulazione — così in tempo reale aggiorniamo la topologia solo quando serve (il PULSE invece
+// si muove sempre, senza toccare il layout).
+function _menteFirma(d) {
+  const p = (d && d.plasma) || {};
+  const nmod = Object.keys(p.modulazioni || {}).length;
+  const modSig = Object.entries(p.modulazioni || {}).map(([k, v]) => `${k}:${v.gain}:${v.stato}:${v.nome || ''}`).sort().join(',');
+  return [
+    (Array.isArray(d?.moduli) ? d.moduli.length : 0),
+    (Array.isArray(d?.links) ? d.links.length : 0),
+    (Array.isArray(p.nodi) ? p.nodi.length : 0),
+    (Array.isArray(p.legami) ? p.legami.length : 0),
+    nmod, modSig,
+  ].join('|');
+}
+
+// la riga «sta lavorando su…» in tempo reale (chi ha appena sparato).
+function _menteLavoro(d) {
+  const box = document.getElementById('mente3d-legenda');
+  if (!box) return;
+  let riga = box.querySelector('#mente3d-lavoro');
+  if (!riga) { riga = document.createElement('div'); riga.id = 'mente3d-lavoro'; riga.style.cssText = 'margin-top:5px;font-weight:600'; box.appendChild(riga); }
+  const eventi = (d && d.attivita && Array.isArray(d.attivita.eventi)) ? d.attivita.eventi : [];
+  const ultimo = eventi.length ? eventi[eventi.length - 1].e : '';
+  const nome = (() => {
+    if (!ultimo) return '';
+    if (ultimo.startsWith('via:') || ultimo.startsWith('plasma:')) return (ultimo.split(':')[1] || '');
+    if (ultimo.startsWith('conia:')) return L('conia un nodo suo', 'coins a node of hers', 'acuña un nodo suyo');
+    if (ultimo.startsWith('lega:')) return L('lega due nodi', 'links two nodes', 'liga dos nodos');
+    return ultimo;
+  })();
+  riga.textContent = nome ? '⟡ ' + L('ora lavora su', 'now working on', 'ahora trabaja en') + ': ' + nome : '';
+}
+
 async function caricaMente3d() {
   const canvas = document.getElementById('mente3d-canvas');
   if (!canvas || !window.SB_MENTE) return;
+  if (_mente3dPoll) { clearInterval(_mente3dPoll); _mente3dPoll = null; }
   if (_mente3dCtrl) { try { _mente3dCtrl.destroy(); } catch { /* niente */ } _mente3dCtrl = null; }
   const dark = (typeof temaScuroAttivo === 'function') ? temaScuroAttivo() : false;
   _menteLegenda(dark);
@@ -11678,6 +11797,26 @@ async function caricaMente3d() {
       dark,
       onSelect: (n) => _menteDettaglio(n),
     });
+    _mente3dFirma = _menteFirma(d);
+    try { _mente3dCtrl.attivita(_menteNodiCaldi(d)); } catch { /* niente */ }
+    _menteLavoro(d);
+    // IL BATTITO IN TEMPO REALE: finché sei sulla scheda, ogni ~2.5s rilegge il cervello, fa PULSARE
+    // i nodi che hanno lavorato ORA e — solo se la STRUTTURA è cambiata — ridisegna la topologia
+    // (conservando telecamera e posizioni). Si spegne da solo quando lasci la scheda (canvas staccato).
+    _mente3dPoll = setInterval(async () => {
+      if (!canvas.isConnected || !_mente3dCtrl) { clearInterval(_mente3dPoll); _mente3dPoll = null; return; }
+      let dd;
+      try { dd = await api('/api/streamer/mente'); } catch { return; }
+      const dk = (typeof temaScuroAttivo === 'function') ? temaScuroAttivo() : false;
+      const firma = _menteFirma(dd);
+      if (firma !== _mente3dFirma) {                 // la topologia è cambiata: si è plasmata
+        _mente3dFirma = firma;
+        try { _mente3dCtrl.aggiorna(_menteGrafo(dd, dk)); } catch { /* niente */ }
+        try { _menteCruscotto(dd); } catch { /* niente */ }
+      }
+      try { _mente3dCtrl.attivita(_menteNodiCaldi(dd)); } catch { /* niente */ }
+      _menteLavoro(dd);
+    }, 2500);
   } catch (e) { /* il grafo è un extra: se fallisce, la dashboard resta intera */ }
 }
 
