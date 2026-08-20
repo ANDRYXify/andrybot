@@ -39,3 +39,14 @@ Atteso: **internet OK**, metadati e infra interna **irraggiungibili**.
 - `naviga(url, azione)` — `leggi` (testo), `schermata` (PNG), `pdf`.
 - `crea_progetto` / `scrivi_in_progetto` / `esegui_in_progetto` — apre cantieri e ci lavora davvero.
 - `stato_ecosistema` — strumenti, spazio, progetti, lavori. `ferma_tutto` — kill switch.
+
+## Autonoma, con un tetto che si regola da sé
+Lei fa **ciò che vuole** anche **da sola**, nel suo battito di vita: consuma un suo *desiderio*
+scritto (`installa:<pkg>` / `costruisci:<nome>` / testo), sennò prende un tool del dominio che
+insegue, sennò apre un cantiere suo. Il tutto **dentro un tetto automatico**:
+
+- **10% della RAM libera** → ogni lavoro autonomo gira sotto `ulimit -v` (non affama il server);
+- **10% del disco libero** → se il disco è tirato (< ~500 MB liberi) **non installa** da sola;
+- **cooldown ~30 min** fra un passo e l'altro (mai spam), **kill switch** sempre disponibile.
+
+Dal cruscotto admin: vedi il tetto, dài a Lia un **desiderio**, o falle fare **un passo ora**.

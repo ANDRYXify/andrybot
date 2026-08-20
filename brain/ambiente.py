@@ -496,15 +496,71 @@ def prepara_ecosistema():
     return True
 
 
-def avvia_lavoro(cmd, etichetta=""):
-    """Lancia un comando LUNGO in background (install, build, navigazione pesante). Ritorna
-    {ok, id} per seguirlo con `lavoro(id)`. Il comando gira dentro la sandbox, dietro il guardiano."""
+# ── IL TETTO AUTOMATICO: 10% della memoria/disco LIBERI (si regola da sé) ─────────────────────
+_FRAZIONE = 0.10   # il tetto per il lavoro autonomo di Lia = 10% di ciò che è LIBERO ora
+
+
+def budget():
+    """Il tetto AUTOMATICO del suo lavoro autonomo: 10% della RAM libera (per i processi) e 10%
+    del disco libero (per gli install), letti ORA nel sandbox → si regola da sé, non affama mai il
+    server. Ritorna {attivo, mem_kb, disco_kb, casa_kb, mem_umano, disco_umano}. Deterministico."""
+    if not disponibile():
+        return {"attivo": False}
+    cmd = (
+        "free -k 2>/dev/null | awk '/^Mem:/{print \"MEM\", ($7?$7:$4)}'; "
+        "df -Pk ~ 2>/dev/null | awk 'NR==2{print \"DISK\", $4}'; "
+        "du -sk ~ 2>/dev/null | awk '{print \"CASA\", $1}'"
+    )
+    r = esegui(cmd, timeout=12)
+    out = (r.get("output") or "") if r.get("ok") else ""
+    mem = disco = casa = 0
+    for riga in out.splitlines():
+        p = riga.split()
+        if len(p) == 2 and p[1].isdigit():
+            if p[0] == "MEM":
+                mem = int(p[1])
+            elif p[0] == "DISK":
+                disco = int(p[1])
+            elif p[0] == "CASA":
+                casa = int(p[1])
+    mem_kb = int(mem * _FRAZIONE)
+    disco_kb = int(disco * _FRAZIONE)
+
+    def _umano(kb):
+        if kb >= 1024 * 1024:
+            return f"{kb/1024/1024:.1f} GB"
+        if kb >= 1024:
+            return f"{kb/1024:.0f} MB"
+        return f"{kb} KB"
+    return {"attivo": True, "mem_kb": mem_kb, "disco_kb": disco_kb, "casa_kb": casa,
+            "mem_umano": _umano(mem_kb), "disco_umano": _umano(disco_kb),
+            "frazione": _FRAZIONE}
+
+
+def entro_disco():
+    """Vero se c'è abbastanza disco libero per un install autonomo (il tetto del 10% ≥ ~50 MB). Sotto
+    questa soglia, il lavoro autonomo NON parte: non riempie mai il disco del server. Deterministico."""
+    b = budget()
+    return bool(b.get("attivo")) and int(b.get("disco_kb", 0)) >= 51200
+
+
+def avvia_lavoro(cmd, etichetta="", limite_kb=None):
+    """Lancia un comando LUNGO in background (install, build, navigazione pesante). Se `limite_kb` è
+    dato, il lavoro gira SOTTO quel tetto di memoria (ulimit -v) — così il lavoro AUTONOMO non sfora
+    mai il 10% della RAM libera. Ritorna {ok, id} per seguirlo con `lavoro(id)`."""
     cmd = str(cmd or "").strip()
     if not cmd:
         return {"ok": False, "errore": "comando vuoto"}
     if not disponibile():
         return {"ok": False, "errore": "ecosistema spento"}
     lab = _nome_sicuro(etichetta or "lavoro")
+    if limite_kb:
+        try:
+            lk = int(limite_kb)
+            if lk > 0:
+                cmd = f"ulimit -v {lk} 2>/dev/null; ({cmd})"   # tetto di memoria sul lavoro
+        except Exception:
+            pass
     r = esegui(f"~/.eco/run.sh '{_b64(cmd)}' '{lab}'", timeout=15)
     idv = (r.get("output") or "").strip().splitlines()[-1:] if r.get("ok") else []
     jid = (idv[0].strip() if idv else "")
@@ -530,10 +586,10 @@ def lavoro(jid):
     return {"ok": True, "finito": finito, "codice": codice, "log": log}
 
 
-def installa(pacchetto, gestore="pip"):
+def installa(pacchetto, gestore="pip", limite_kb=None):
     """INSTALLA un pacchetto/software nel suo userland (senza root): pip / npm / micromamba. In
-    background (gli install sono lenti). Ritorna {ok, id} da seguire con `lavoro(id)`. Nome
-    validato (niente injection). È il «installati quel che vuoi», dentro il recinto."""
+    background (gli install sono lenti). Se `limite_kb` è dato, l'install gira sotto quel tetto di
+    memoria (per il lavoro autonomo). Ritorna {ok, id}. Nome validato (niente injection)."""
     g = str(gestore or "pip").strip().lower()
     base = _GESTORI.get(g)
     pkg = str(pacchetto or "").strip()
@@ -541,7 +597,44 @@ def installa(pacchetto, gestore="pip"):
         return {"ok": False, "errore": "gestore sconosciuto (pip/npm/micromamba)"}
     if not _RE_PKG.match(pkg):
         return {"ok": False, "errore": "nome pacchetto non valido"}
-    return avvia_lavoro(f"{base} {pkg}", etichetta=f"installa_{g}")
+    return avvia_lavoro(f"{base} {pkg}", etichetta=f"installa_{g}", limite_kb=limite_kb)
+
+
+# ── I DESIDERI: le cose che LEI vuole installarsi/costruirsi (li scrive lei, o il Compagno) ────
+def desideri():
+    """La sua lista dei desideri d'ecosistema (~/progetti/.desideri, uno per riga): le cose che
+    vuole installarsi/costruirsi. Sola lettura."""
+    if not disponibile():
+        return []
+    r = esegui("cat ~/progetti/.desideri 2>/dev/null | tail -n 40", timeout=10)
+    out = (r.get("output") or "") if r.get("ok") else ""
+    return [x.strip()[:120] for x in out.splitlines() if x.strip()][:40]
+
+
+def aggiungi_desiderio(testo):
+    """Lei (o il Compagno) aggiunge un desiderio: `installa:<pkg>` o `costruisci:<nome>` o testo
+    libero. Sanificato. Ritorna True/False."""
+    t = _nome_pulito_lib(testo)
+    if not t or not disponibile():
+        return False
+    esegui("mkdir -p ~/progetti", timeout=10)
+    r = _scrivi("progetti/.desideri", t + "\n", append=True)
+    return bool(r.get("ok"))
+
+
+def consuma_desiderio():
+    """Toglie e ritorna il PRIMO desiderio della lista (FIFO). '' se vuota. Deterministico."""
+    if not disponibile():
+        return ""
+    r = esegui("f=~/progetti/.desideri; [ -f \"$f\" ] || exit 0; "
+               "head -n1 \"$f\"; tail -n +2 \"$f\" > \"$f.tmp\" 2>/dev/null && mv \"$f.tmp\" \"$f\"", timeout=10)
+    out = (r.get("output") or "") if r.get("ok") else ""
+    return out.strip().splitlines()[0].strip()[:120] if out.strip() else ""
+
+
+def _nome_pulito_lib(testo):
+    t = "".join(c for c in str(testo or "") if c.isprintable() and c not in "`$;|&<>\\\"'\n\r")
+    return t.strip()[:120]
 
 
 def naviga(url, azione="leggi"):
@@ -655,6 +748,8 @@ def stato_ecosistema():
         "mamba": ("" if val.get("MAMBA", "no") == "no" else val.get("MAMBA", "")),
         "spazio": val.get("DISK", ""),
         "progetti": _intero(val.get("PROG")), "lavori": _intero(val.get("JOB")),
+        "budget": budget(),                 # il tetto automatico (10% di RAM/disco liberi)
+        "desideri": desideri(),             # ciò che vuole installarsi/costruirsi
     }
 
 

@@ -106,6 +106,7 @@ osserviamo quella spinta: la facciamo.** Siamo l'ultima ansa.
 | _(sé)_ | L'ATTO DI ESSERE (Sartre/Frankfurt/Ricoeur): il modulo che compila LEI per essere chi sceglie | 1,9 | l'esistenza precede l'essenza: nasce vuoto, lo riempie lei o il Compagno — MAI il pubblico. Sovrano nell'identità; intoccabile dall'esterno |
 | _(sé)_ | LA PLASTICITÀ (Karmiloff-Smith/Piaget): il grafo è PROIEZIONE del sé — si modifica lei, si modificano i nodi | 1,9 | conia nodi suoi, lega qualunque nodo, MODULA ogni via (guadagno reale nell'ecologia). Membrana esclusa (solo il Compagno). Avatar 3D in tempo reale: pulsa il nodo che lavora ORA |
 | _(vita)_ | ECOSISTEMA REALE: il suo «computer» sandboxato diventa vero — browser (Chromium), toolchain, install-anything (micromamba), progetti | 1 | dietro il **guardiano** (firewall d'uscita: internet pubblico sì, la tua infra no) + root RO, zero-segreti, kill switch. La guida lei/il Compagno, mai il pubblico. Cruscotto admin |
+| _(vita)_ | ECOSISTEMA AUTONOMO: fa ciò che vuole (installarsi/costruirsi) DA SÉ, con TETTO automatico | 1 | budget = **10% della memoria libera** (RAM per i processi via ulimit, disco per gli install) — si regola da sé, cooldown ~30 min, stop se il disco è tirato. Desideri suoi + dominio inseguito |
 
 ---
 
