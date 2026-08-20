@@ -312,10 +312,14 @@ class Handler(BaseHTTPRequestHandler):
                 r = AMB.esegui_in_progetto(d.get("nome", ""), d.get("cmd", ""))
             elif op == "lavoro":
                 r = AMB.lavoro(d.get("id", ""))
+            elif op == "desiderio":
+                r = {"ok": AMB.aggiungi_desiderio(d.get("testo", "")), "desideri": AMB.desideri()}
+            elif op == "autonomo":
+                r = mente.ecosistema_autonomo()
             elif op == "ferma":
                 r = AMB.ferma_tutto()
             else:
-                r = {"ok": False, "motivo": "op sconosciuta (installa/naviga/crea/scrivi/esegui/lavoro/ferma)"}
+                r = {"ok": False, "motivo": "op sconosciuta (installa/naviga/crea/scrivi/esegui/lavoro/desiderio/autonomo/ferma)"}
             return self._json(200, r if isinstance(r, dict) else {"ok": True, "r": r})
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})

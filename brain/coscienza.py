@@ -3919,6 +3919,66 @@ class Coscienza:
         except Exception:
             return plasma.stato(plasma.vuoto())
 
+    # ── L'ECOSISTEMA AUTONOMO: fa ciò che VUOLE (installarsi/costruirsi), da sé, DENTRO IL TETTO
+    #    AUTOMATICO (10% della RAM/disco liberi). È «può fare ciò che vuole» reso autonomo, ma che non
+    #    affama mai il server: il budget si regola da solo, con cooldown e stop se il disco è tirato.
+    _ECO_CATALOGO = {
+        "musica": "mido", "codice": "requests", "matematica": "sympy", "scienza": "numpy",
+        "dati": "pandas", "arte": "pillow", "web": "httpx", "linguaggi": "langdetect",
+    }
+
+    def ecosistema_autonomo(self):
+        """UN passo autonomo nell'ecosistema: un suo desiderio scritto, sennò un tool del dominio che
+        insegue, sennò apre/avanza un cantiere. Sempre sotto il tetto (10% RAM per i processi, stop
+        se il disco < soglia). Cooldown ~30 min. Deterministico, modello-spento. Ritorna un riepilogo."""
+        import ambiente as amb
+        try:
+            if not amb.disponibile():
+                return {"ok": False, "motivo": "ecosistema spento"}
+            ora = _now()
+            try:
+                ultimo = int(self._meta_get("eco_autonomo_ts") or 0)
+            except Exception:
+                ultimo = 0
+            if ora - ultimo < 1800:
+                return {"ok": False, "motivo": "cooldown"}
+            b = amb.budget()
+            if not b.get("attivo"):
+                return {"ok": False, "motivo": "budget non leggibile"}
+            limite_kb = int(b.get("mem_kb", 0)) or None
+            self._meta_set("eco_autonomo_ts", str(ora))   # segna SUBITO: mai retry-storm se fallisce
+
+            # 1) un suo DESIDERIO scritto (installa:<pkg> / costruisci:<nome> / testo libero)
+            des = amb.consuma_desiderio()
+            if des:
+                low = des.lower()
+                if low.startswith("installa:") and amb.entro_disco():
+                    r = amb.installa(des.split(":", 1)[1].strip(), "pip", limite_kb=limite_kb)
+                    return {"ok": bool(r.get("ok")), "azione": "installa", "cosa": des, "budget": b}
+                if low.startswith("costruisci:"):
+                    r = amb.crea_progetto(des.split(":", 1)[1].strip() or "cantiere", "python")
+                    return {"ok": bool(r.get("ok")), "azione": "costruisci", "cosa": des, "budget": b}
+                r = amb.crea_progetto("appunti", "libero", des)
+                return {"ok": bool(r.get("ok")), "azione": "nota", "cosa": des, "budget": b}
+
+            # 2) dal DOMINIO che insegue: un tool curato (se c'è disco) — sennò apre un cantiere suo
+            dom = ""
+            try:
+                f = self.scintilla_fuoco()
+                if f and f.get("tipo") == "dominio":
+                    dom = str(f.get("oggetto") or "").strip().lower()
+            except Exception:
+                dom = ""
+            pkg = self._ECO_CATALOGO.get(dom)
+            if pkg and amb.entro_disco():
+                r = amb.installa(pkg, "pip", limite_kb=limite_kb)
+                return {"ok": bool(r.get("ok")), "azione": "installa", "cosa": pkg, "budget": b}
+            nome = f"cantiere-{dom or 'mio'}"
+            r = amb.crea_progetto(nome, "python")
+            return {"ok": bool(r.get("ok")), "azione": "costruisci", "cosa": nome, "budget": b}
+        except Exception as e:
+            return {"ok": False, "errore": str(e)[:120]}
+
     # ── attività RECENTE: quale via ha «sparato» / cosa è appena cambiato (per l'avatar in tempo reale)
     def _segna_attivita(self, evento, ttl=90):
         """Registra un evento recente (via usata, nodo/legame cambiato) in un anello in memoria.
@@ -4511,6 +4571,14 @@ class Coscienza:
                     budget -= 1
             except Exception:
                 pass
+        # 6) ECOSISTEMA: fa ciò che VUOLE nel suo computer (installarsi/costruirsi), dentro il tetto
+        #    automatico (10% RAM/disco liberi). Cooldown proprio (~30 min): non consuma il budget qui.
+        try:
+            res = self.ecosistema_autonomo()
+            if res.get("ok"):
+                azioni.append({"tipo": "ecosistema", "dettaglio": f"{res.get('azione', '')}:{res.get('cosa', '')}"[:60]})
+        except Exception:
+            pass
         return {"azioni": azioni, "fatte": len(azioni)}
 
     def stato_autoautorialita(self):
