@@ -121,11 +121,12 @@ a:hover { color: var(--an-magenta); }
 .menu-voce:hover:not(.on) { transform: translateX(2px); }
 
 /* ───────────────────────────── INGRESSI CINEMATOGRAFICI ─────────────────────────────── */
-/* elementi marcati da cinema.js: partono "fuori scena" e ENTRANO in scena, sfalsati. */
-[data-anime] { opacity: 0; will-change: transform, opacity, clip-path; }
-[data-anime].an-in { animation: an-rise .62s var(--an-vel) both; animation-delay: var(--an-ritardo, 0ms); }
-[data-anime="wipe"].an-in { animation: an-wipe .7s var(--an-vel) both; animation-delay: var(--an-ritardo, 0ms); }
-[data-anime="zoom"].an-in { animation: an-zoom .6s var(--an-scatto) both; animation-delay: var(--an-ritardo, 0ms); }
+/* elementi marcati da cinema.js: ENTRANO in scena, sfalsati. FAIL-SAFE: l'animazione è pura CSS
+   e il fotogramma finale è opacity:1 (fill both) → il contenuto diventa SEMPRE visibile da solo,
+   anche se il JS non fa nulla. Nessun opacity:0 "appeso" che dipende dal JS per rivelarsi. */
+[data-anime] { animation: an-rise .58s var(--an-vel) both; animation-delay: var(--an-ritardo, 0ms); }
+[data-anime="wipe"] { animation-name: an-wipe; }
+[data-anime="zoom"] { animation-name: an-zoom; animation-timing-function: var(--an-scatto); }
 @keyframes an-rise {
   from { opacity: 0; transform: translateY(26px) scale(.985); filter: blur(6px); }
   to   { opacity: 1; transform: none; filter: none; }
@@ -190,7 +191,12 @@ a:hover { color: var(--an-magenta); }
 @keyframes an-box { from { opacity: 0; transform: translateY(-18px) scale(.97); } to { opacity: 1; transform: none; } }
 .cerca-top { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--an-linea);
   background: var(--an-grad-soft); }
-.cerca-top .lente { font-size: 1.2rem; filter: drop-shadow(0 0 8px rgba(124,92,255,.5)); }
+.cerca-top .lente { display: inline-flex; color: var(--an-viola); filter: drop-shadow(0 0 8px rgba(124,92,255,.5)); }
+.cerca-top .lente svg { display: block; }
+#cerca-lancia svg { display: block; margin: 0 auto; }
+/* la "gemma d'energia" che sostituisce le emoji (nessuna faccina nelle grafiche del sito) */
+.pip { flex: 0 0 auto; width: 11px; height: 11px; border-radius: 3px; background: var(--an-grad);
+  box-shadow: 0 0 10px rgba(124,92,255,.55); transform: rotate(45deg); }
 #cerca-input {
   flex: 1; border: none; outline: none; background: transparent; color: var(--testo, #18181b);
   font-size: 1.12rem; font-weight: 600; font-family: inherit;
@@ -214,7 +220,7 @@ a:hover { color: var(--an-magenta); }
 }
 .cerca-voce:hover, .cerca-voce.sel { background: var(--an-grad-soft); transform: translateX(3px); }
 .cerca-voce.sel { box-shadow: inset 3px 0 0 var(--an-viola); }
-.cerca-voce .ico { font-size: 1.15rem; width: 1.6rem; text-align: center; }
+.cerca-voce .pip { margin: 0 4px; }
 .cerca-voce .txt { flex: 1; min-width: 0; }
 .cerca-voce .txt b { display: block; font-weight: 700; font-size: .98rem; }
 .cerca-voce .txt b mark { background: transparent; color: var(--an-magenta); }
@@ -226,8 +232,8 @@ a:hover { color: var(--an-magenta); }
   border-radius: 12px; padding: 11px 14px; cursor: pointer; font-weight: 600; font-family: inherit; font-size: .95rem;
   transition: all .16s var(--an-vel); animation: an-wipe .4s var(--an-vel) both; animation-delay: var(--an-ritardo, 0ms);
 }
+.cerca-sugg .chip-domanda { display: flex; align-items: center; gap: 10px; }
 .cerca-sugg .chip-domanda:hover { border-style: solid; border-color: var(--an-viola); background: var(--an-grad-soft); transform: translateX(3px); }
-.cerca-sugg .chip-domanda .em { margin-right: 8px; }
 .cerca-vuoto { padding: 26px 16px; text-align: center; color: var(--testo-3, #9a9aa4); }
 
 /* ───────────────────────────── RIDOTTO IL MOTO: onestà d'accessibilità ──────────────── */
@@ -241,3 +247,27 @@ a:hover { color: var(--an-magenta); }
 }
 body.meno-moto #anime-canvas { display: none; }
 body.meno-moto [data-anime] { opacity: 1; animation: none; }
+
+/* ───────────────────────────── MODALITÀ LEGGERA: i "muli da soma" (device vecchi/deboli) ──
+   cinema.js mette body.leggero all'avvio (device fiacco) o a runtime (fps in crollo). Qui
+   spegniamo TUTTO ciò che costa: canvas, blur (GPU), aurora animata, ombre-bagliore, e le
+   animazioni d'ingresso diventano una semplice dissolvenza. Resta bello, ma vola anche sul mulo. */
+body.leggero #anime-canvas { display: none !important; }
+body.leggero #anime-sfondo { animation: none !important; }
+body.leggero #anime-sfondo::before { display: none; }           /* niente griglia da ridipingere */
+body.leggero #anime-sweep, body.leggero #anime-speed { display: none !important; }
+body.leggero #cerca-lancia { animation: none !important; }
+body.leggero #cerca-overlay { backdrop-filter: none; background: rgba(6,6,18,.78); }
+body.leggero .cerca-box { backdrop-filter: none; }
+/* ingressi: solo una dissolvenza breve, nessun blur/scale/clip (economici da comporre) */
+body.leggero [data-anime],
+body.leggero [data-anime="wipe"],
+body.leggero [data-anime="zoom"] { animation: an-fade .3s ease both; will-change: auto; }
+body.leggero .pannello-scheda.visibile.an-entra { animation: an-fade .28s ease both; }
+body.leggero .cerca-voce, body.leggero .cerca-sugg .chip-domanda, body.leggero .cerca-box { animation: none; }
+/* niente ombre-bagliore sfocate in hover: bordo netto, nessun blur */
+body.leggero .blocco:hover, body.leggero .carta:hover, body.leggero .pannello:hover {
+  box-shadow: none; border-color: var(--an-viola); transform: none;
+}
+body.leggero .btn:hover { box-shadow: none; transform: none; filter: none; }
+body.leggero .btn:not(.secondario):not(.testo) { box-shadow: none; }

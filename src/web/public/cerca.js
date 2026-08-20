@@ -10,6 +10,9 @@
 
   function L(it, en, es) { try { return window.SB_APP.L(it, en, es); } catch (e) { return it; } }
   function esc(s) { try { return window.SB_APP.esc(String(s)); } catch (e) { return String(s == null ? '' : s); } }
+  // niente emoji nelle grafiche del sito: la lente è un SVG nitido e a tema; i risultati e le
+  // domande usano una gemma d'energia (CSS), non faccine.
+  var SVG_LENTE = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.7"></circle><line x1="20.5" y1="20.5" x2="15.6" y2="15.6"></line></svg>';
 
   // parole chiave GENEROSE per scheda: così "ban", "monete", "spotify"... trovano la sezione giusta.
   var CHIAVI = {
@@ -38,15 +41,15 @@
     admin: 'admin operatore llm modello ecosistema vita di lia anima backup salute'
   };
 
-  // le DOMANDE che sbucano aprendo la lente → ognuna porta a una scheda.
+  // le DOMANDE che sbucano aprendo la lente → ognuna porta a una scheda. [testo, id] (niente emoji).
   function DOMANDE() {
     return [
-      ['🧩', L('Cerchi i comandi?', 'Looking for commands?', '¿Buscas los comandos?'), 'moduli'],
-      ['🛡️', L('Cerchi le impostazioni di moderazione?', 'Looking for moderation settings?', '¿Buscas la moderación?'), 'regole'],
-      ['🎭', L('Vuoi cambiare la personalità del bot?', 'Want to change the bot personality?', '¿Cambiar la personalidad del bot?'), 'personalita'],
-      ['🎬', L('Vuoi creare un overlay?', 'Want to build an overlay?', '¿Crear un overlay?'), 'alert'],
-      ['🎮', L('Cerchi giochi e classifiche?', 'Looking for games & leaderboards?', '¿Juegos y clasificaciones?'), 'giochi'],
-      ['🎵', L('Vuoi impostare la musica?', 'Want to set up music?', '¿Configurar la música?'), 'musica']
+      [L('Cerchi i comandi?', 'Looking for commands?', '¿Buscas los comandos?'), 'moduli'],
+      [L('Cerchi le impostazioni di moderazione?', 'Looking for moderation settings?', '¿Buscas la moderación?'), 'regole'],
+      [L('Vuoi cambiare la personalità del bot?', 'Want to change the bot personality?', '¿Cambiar la personalidad del bot?'), 'personalita'],
+      [L('Vuoi creare un overlay?', 'Want to build an overlay?', '¿Crear un overlay?'), 'alert'],
+      [L('Cerchi giochi e classifiche?', 'Looking for games & leaderboards?', '¿Juegos y clasificaciones?'), 'giochi'],
+      [L('Vuoi impostare la musica?', 'Want to set up music?', '¿Configurar la música?'), 'musica']
     ];
   }
 
@@ -103,14 +106,14 @@
     var lancia = document.createElement('button');
     lancia.id = 'cerca-lancia'; lancia.type = 'button';
     lancia.setAttribute('aria-label', L('Cerca tutto', 'Search everything', 'Buscar todo'));
-    lancia.innerHTML = '🔍';
+    lancia.innerHTML = SVG_LENTE;
     lancia.addEventListener('click', apri);
     document.body.appendChild(lancia);
 
     ov = document.createElement('div'); ov.id = 'cerca-overlay';
     ov.innerHTML =
       '<div class="cerca-box" role="dialog" aria-modal="true">' +
-        '<div class="cerca-top"><span class="lente">🔍</span>' +
+        '<div class="cerca-top"><span class="lente">' + SVG_LENTE + '</span>' +
           '<input id="cerca-input" autocomplete="off" spellcheck="false" placeholder="' +
             esc(L('Cerca qualsiasi cosa… comandi, moderazione, overlay…', 'Search anything… commands, moderation, overlays…', 'Busca cualquier cosa… comandos, moderación, overlays…')) + '">' +
           '<span class="cerca-kbd">Esc</span></div>' +
@@ -143,9 +146,9 @@
     var tutto = indice().filter(function (v) { return !filtro || v.gruppoId === filtro; });
     if (!q) {
       // niente scritto: le DOMANDE che sbucano + le sezioni del filtro
-      var dd = DOMANDE().filter(function (d) { return !filtro || (indice().find(function (v) { return v.id === d[2]; }) || {}).gruppoId === filtro; });
+      var dd = DOMANDE().filter(function (d) { return !filtro || (indice().find(function (v) { return v.id === d[1]; }) || {}).gruppoId === filtro; });
       var hs = '<div class="cerca-sugg-tit">' + esc(L('Cosa cerchi?', 'What are you looking for?', '¿Qué buscas?')) + '</div><div class="cerca-sugg">';
-      dd.forEach(function (d, i) { hs += '<button class="chip-domanda" data-id="' + esc(d[2]) + '" style="--an-ritardo:' + (i * 45) + 'ms"><span class="em">' + d[0] + '</span>' + esc(d[1]) + '</button>'; });
+      dd.forEach(function (d, i) { hs += '<button class="chip-domanda" data-id="' + esc(d[1]) + '" style="--an-ritardo:' + (i * 45) + 'ms"><span class="pip"></span>' + esc(d[0]) + '</button>'; });
       hs += '</div>';
       correnti = tutto;
       hs += righe(tutto, '', L('Tutte le sezioni', 'All sections', 'Todas las secciones'));
@@ -168,7 +171,7 @@
     h += '<div class="cerca-lista">';
     arr.forEach(function (v, i) {
       h += '<div class="cerca-voce' + (i === sel ? ' sel' : '') + '" data-id="' + esc(v.id) + '" data-i="' + i + '" style="--an-ritardo:' + Math.min(i, 10) * 28 + 'ms">' +
-        '<span class="ico">' + v.icona + '</span>' +
+        '<span class="pip"></span>' +
         '<span class="txt"><b>' + evidenzia(v.label, q) + '</b><small>' + esc(v.gruppo) + '</small></span>' +
         '<span class="via">' + esc(L('apri', 'open', 'abrir')) + '</span></div>';
     });
