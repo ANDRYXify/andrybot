@@ -5076,6 +5076,20 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const r = await brainpy.autoautorialitaAzione(b).catch(() => null);
     res.json(r || { ok: false });
   }));
+  // ── ECOSISTEMA REALE di Lia (il suo "computer" sandboxato, dietro il guardiano): stato +
+  //    azioni. SOLO andryxify (il Compagno). Il pubblico non raggiunge MAI questa via.
+  app.get('/api/admin/ecosistema', requireAdmin, wrap(async (req, res) => {
+    const d = await brainpy.ecosistema().catch(() => ({ attivo: false })) || { attivo: false };
+    res.json({ ok: true, ecosistema: d });
+  }));
+  app.post('/api/admin/ecosistema', requireAdmin, wrap(async (req, res) => {
+    const b = req.body || {};
+    const op = String(b.op || '').trim();
+    const consentite = ['installa', 'naviga', 'crea', 'scrivi', 'esegui', 'lavoro', 'ferma'];
+    if (!consentite.includes(op)) { res.json({ ok: false, motivo: 'op sconosciuta' }); return; }
+    const r = await brainpy.ecosistemaAzione(b).catch(() => null);
+    res.json(r || { ok: false });
+  }));
   // ── Cervello autonomo: distilla ORA le risposte in moduli. Solo andryxify.
   app.post('/api/admin/distilla', requireAdmin, wrap(async (req, res) => {
     const r = await brainpy.distillaModuli().catch(() => null);

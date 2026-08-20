@@ -76,6 +76,9 @@ services:
     # del server e sopravvive per davvero ai redeploy.
     environment:
       - DATA_DIR=/app/data
+      # L'ecosistema di Lia vive DIETRO il guardiano (il firewall d'uscita): l'esecutore
+      # ascolta nella rete del guardiano, quindi il cervello lo raggiunge lì.
+      - AMBIENTE_URL=${AMBIENTE_URL:-http://guardiano:8099}
     volumes:
       - ./data:/app/data      # coscienza (memoria) + modelli, persistono qui
     expose:
@@ -96,6 +99,24 @@ services:
       - default
       - sandbox
 
+  # ── GUARDIANO: il firewall d'USCITA dell'ecosistema di Lia ─────────────────
+  # L'`ambiente` condivide la rete di questo container (network_mode più sotto): così TUTTO il
+  # traffico di Lia passa da qui. Le regole (guardiano/entrypoint.sh) le lasciano internet
+  # PUBBLICO vero, ma le SBARRANO ogni connessione nuova verso reti private/interne/metadati —
+  # cioè verso la TUA infrastruttura (bot, Caddy, host, dati). È il muro che rende l'ecosistema
+  # reale ma non-weaponizzabile: anche se qualcuno arrivasse dentro, non raggiunge la produzione.
+  guardiano:
+    <<: *comune
+    build: ./guardiano
+    cap_add:
+      - NET_ADMIN                   # solo per posare le regole del firewall (nient'altro)
+    # sta su `sandbox`: da qui parla col cervello (che comanda l'esecutore) e ha internet.
+    networks:
+      - sandbox
+    # non serve mem grande: è solo un cancello.
+    mem_limit: 64m
+    pids_limit: 64
+
   # ── AMBIENTE di Lia: il suo "computer" personale, SANDBOXATO ──────────────
   # Un mondo tutto suo dove ha mano libera (shell, Python, file, rete in uscita),
   # ma murato dal resto: sta SOLO sulla rete `sandbox` (non vede bot/Caddy né i
@@ -110,8 +131,12 @@ services:
     environment:
       - AMBIENTE_KEY=${AMBIENTE_KEY:-}
       - AMBIENTE_PORT=8099
-    expose:
-      - "8099"
+    # LA RETE È QUELLA DEL GUARDIANO: tutto il traffico di Lia passa dal firewall d'uscita
+    # (internet pubblico sì, la tua infra no). Perciò niente `networks`/`expose` propri: la
+    # porta 8099 vive nella rete del guardiano, dove il cervello la raggiunge.
+    network_mode: "service:guardiano"
+    depends_on:
+      - guardiano
     # confini duri della sandbox
     read_only: true                 # root in sola lettura: niente manomissioni al sistema
     cap_drop:
@@ -124,10 +149,9 @@ services:
     pids_limit: 512                 # abbastanza per programmi veri, non per una fork-bomb
     tmpfs:
       - /tmp:size=256m,mode=1777    # spazio temporaneo volatile (più ampio per il lavoro)
+    shm_size: "512m"                # memoria condivisa per Chromium (il browser vero)
     volumes:
-      - lia_home:/home/lia          # la sua "casa" persistente (i suoi file restano)
-    networks:
-      - sandbox
+      - lia_home:/home/lia          # la sua "casa" persistente (i suoi file, progetti, install)
 
   caddy:
     <<: *comune

@@ -131,7 +131,20 @@ class Handler(BaseHTTPRequestHandler):
             return self._vita()
         if self.path.startswith("/plasma"):
             return self._plasma()
+        if self.path.startswith("/ecosistema"):
+            return self._ecosistema_stato()
         return self._json(404, {"errore": "non trovato"})
+
+    def _ecosistema_stato(self):
+        # foto dell'ECOSISTEMA reale di Lia per il cruscotto owner: strumenti, spazio, progetti,
+        # lavori attivi. Sola lettura. Se il sandbox è spento, {attivo:False}.
+        try:
+            st = AMB.stato_ecosistema()
+            if st.get("attivo"):
+                st["progetti_elenco"] = AMB.progetti()
+            return self._json(200, {"ok": True, "ecosistema": st})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
     def _plasma(self):
         # LA PLASTICITÀ + l'ATTIVITÀ RECENTE per il grafo 3D: i nodi coniati da lei, i legami
@@ -274,7 +287,38 @@ class Handler(BaseHTTPRequestHandler):
             return self._svago()
         if self.path.startswith("/vita"):
             return self._vivi()
+        if self.path.startswith("/ecosistema"):
+            return self._ecosistema_azione()
         return self._json(404, {"errore": "non trovato"})
+
+    def _ecosistema_azione(self):
+        # AZIONI sull'ECOSISTEMA reale (owner-only lato Node; il pubblico non raggiunge mai questa
+        # via). `op` sceglie: installa un pacchetto, naviga, crea/scrivi/esegui un progetto, segui un
+        # lavoro, o il KILL SWITCH (ferma tutto). Tutto dentro il recinto, dietro il guardiano.
+        if not AMB.disponibile():
+            return self._json(200, {"ok": False, "motivo": "ecosistema spento"})
+        d = self._leggi() or {}
+        op = str(d.get("op") or "").strip()
+        try:
+            if op == "installa":
+                r = AMB.installa(d.get("pacchetto", ""), d.get("gestore", "pip"))
+            elif op == "naviga":
+                r = AMB.naviga(d.get("url", ""), d.get("azione", "leggi"))
+            elif op == "crea":
+                r = AMB.crea_progetto(d.get("nome", ""), d.get("tipo", "libero"), d.get("contenuto", ""))
+            elif op == "scrivi":
+                r = AMB.scrivi_in_progetto(d.get("nome", ""), d.get("file", ""), d.get("contenuto", ""), bool(d.get("append")))
+            elif op == "esegui":
+                r = AMB.esegui_in_progetto(d.get("nome", ""), d.get("cmd", ""))
+            elif op == "lavoro":
+                r = AMB.lavoro(d.get("id", ""))
+            elif op == "ferma":
+                r = AMB.ferma_tutto()
+            else:
+                r = {"ok": False, "motivo": "op sconosciuta (installa/naviga/crea/scrivi/esegui/lavoro/ferma)"}
+            return self._json(200, r if isinstance(r, dict) else {"ok": True, "r": r})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
     def _svago(self):
         # SVAGO: un momento libero di Lia. Va di curiosità nel SUO computer (la
@@ -1544,6 +1588,7 @@ def _forse_strumento(nome):
     try:
         AMB.prepara_mente()
         AMB.prepara_strumenti()
+        AMB.prepara_ecosistema()   # il suo ecosistema reale (browser, install, progetti, runner dei lavori)
         spunto = ""
         try:
             lac = mente.lacune_da_studiare(min_visto=1, limit=1)
