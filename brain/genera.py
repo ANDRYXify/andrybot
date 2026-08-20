@@ -1086,6 +1086,25 @@ def _ecologia(canale, ctx, testo, modo):
         cand = marcatori.pota(canale, fs, cand)
     except Exception:
         pass
+    # PLASTICITÀ (auto-plasmarsi, Karmiloff-Smith): applica il GUADAGNO che lei si è data su ogni via.
+    # È la leva reale con cui cambiare sé cambia come pensa: gain>1 dà più voce, gain=0 (quiescente) la
+    # zittisce (lei ha scelto di non usarla ora). Bounded in plasma; la membrana non è qui (gira prima).
+    mod = ctx.get("plasma") if isinstance(ctx, dict) else None
+    if isinstance(mod, dict) and mod:
+        nuovo = []
+        for nome, aff, risp, extra, verita in cand:
+            m = mod.get(nome)
+            if isinstance(m, dict):
+                if m.get("stato") == "quiescente":
+                    continue                        # via messa a riposo da lei → non entra nel campo
+                try:
+                    aff = round(float(aff) * float(m.get("gain", 1.0)), 4)
+                except Exception:
+                    pass
+            nuovo.append((nome, aff, risp, extra, verita))
+        cand = nuovo
+        if not cand:
+            return None                             # ha zittito le vie in gioco → cade al modello (non muta)
     # raggruppa per risposta normalizzata; l'ACCORDO mette gli oscillatori nello stesso gruppo.
     gruppi = {}
     for nome, aff, risp, extra, verita in cand:
