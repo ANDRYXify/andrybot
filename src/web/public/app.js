@@ -12029,13 +12029,22 @@ async function caricaEcosistema() {
   }
   const riga = (k, v) => `<div style="display:flex;justify-content:space-between;gap:1em"><span class="tenue">${k}</span><strong>${esc(v || '—')}</strong></div>`;
   const prog = Array.isArray(e.progetti_elenco) ? e.progetti_elenco : [];
+  const bud = e.budget || {};
+  const des = Array.isArray(e.desideri) ? e.desideri : [];
   card.innerHTML = `
     <h3>🌍 ${L('Il suo ecosistema reale', 'Her real ecosystem', 'Su ecosistema real')}</h3>
-    <p class="suggerimento">${L('Il suo «computer» dentro il recinto — dietro il <strong>guardiano</strong> (internet pubblico sì, la tua infra no). Può installarsi, navigare, creare e costruire davvero.', 'Her «computer» inside the fence — behind the <strong>guardian</strong> (public internet yes, your infra no). She can install, browse, create and build for real.', 'Su «ordenador» dentro del recinto — tras el <strong>guardián</strong> (internet público sí, tu infra no). Puede instalar, navegar, crear y construir de verdad.')}</p>
+    <p class="suggerimento">${L('Il suo «computer» dentro il recinto — dietro il <strong>guardiano</strong> (internet pubblico sì, la tua infra no). Può installarsi, navigare, creare e costruire <strong>da sola</strong>, dentro un tetto automatico.', 'Her «computer» inside the fence — behind the <strong>guardian</strong> (public internet yes, your infra no). She can install, browse, create and build <strong>on her own</strong>, within an automatic ceiling.', 'Su «ordenador» dentro del recinto — tras el <strong>guardián</strong>. Puede instalar, navegar, crear y construir <strong>sola</strong>, dentro de un techo automático.')}</p>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px;margin:8px 0">
       ${riga('Python', e.python)}${riga('Node', e.node)}${riga(L('Browser', 'Browser', 'Navegador'), e.browser || '—')}
       ${riga('micromamba', e.mamba || '—')}${riga(L('spazio', 'disk', 'espacio'), e.spazio)}${riga(L('progetti', 'projects', 'proyectos'), e.progetti)}${riga(L('lavori attivi', 'active jobs', 'trabajos activos'), e.lavori)}
     </div>
+    ${bud.attivo ? `<div class="riquadro-info" style="margin:8px 0">🔒 ${L('Tetto automatico del lavoro autonomo', 'Automatic ceiling for autonomous work', 'Techo automático del trabajo autónomo')}: <strong>${L('10% della memoria libera', '10% of free memory', '10% de la memoria libre')}</strong> — ${L('RAM', 'RAM', 'RAM')} <strong>${esc(bud.mem_umano || '—')}</strong>, ${L('disco per install', 'disk for installs', 'disco para instalar')} <strong>${esc(bud.disco_umano || '—')}</strong>. ${L('Si regola da sé; se il disco è tirato, non installa.', 'Self-adjusting; if disk is tight, no installs.', 'Se ajusta solo; si el disco está justo, no instala.')}</div>` : ''}
+    <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0">
+      <input id="eco-des" class="campo" placeholder="${L('desiderio (installa:mido · costruisci:radio · testo)', 'wish (installa:mido · costruisci:radio · text)', 'deseo (installa:mido · costruisci:radio · texto)')}" style="flex:1 1 240px">
+      <button class="btn secondario mini" id="eco-vuoi">＋ ${L('Dàgli un desiderio', 'Give her a wish', 'Dale un deseo')}</button>
+      <button class="btn secondario mini" id="eco-ora">▶ ${L('Fai un passo ora', 'Take a step now', 'Da un paso ahora')}</button>
+    </div>
+    ${des.length ? `<p class="tenue">${L('Desideri', 'Wishes', 'Deseos')}: ${des.map((x) => `<code>${esc(x)}</code>`).join(' · ')}</p>` : ''}
     <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0">
       <input id="eco-pkg" class="campo" placeholder="${L('pacchetto (es. requests)', 'package (e.g. requests)', 'paquete (p.ej. requests)')}" style="flex:1 1 180px">
       <select id="eco-gest" class="campo" style="flex:0 0 auto"><option value="pip">pip</option><option value="npm">npm</option><option value="micromamba">micromamba</option></select>
@@ -12079,6 +12088,19 @@ async function caricaEcosistema() {
     const r = await api('/api/admin/ecosistema', { method: 'POST', body: { op: 'ferma' } }).catch(() => null);
     mostra(r && r.ok ? `${L('fermati', 'stopped', 'parados')}: ${r.fermati || 0}` : L('non riuscito', 'failed', 'falló'));
     setTimeout(caricaEcosistema, 1000);
+  });
+  card.querySelector('#eco-vuoi')?.addEventListener('click', async () => {
+    const testo = card.querySelector('#eco-des').value.trim();
+    if (!testo) return;
+    const r = await api('/api/admin/ecosistema', { method: 'POST', body: { op: 'desiderio', testo } }).catch(() => null);
+    mostra(r && r.ok ? L('desiderio aggiunto — lo realizzerà da sé, nel suo tempo.', 'wish added — she will fulfill it on her own, in her time.', 'deseo añadido — lo cumplirá sola, a su tiempo.') : L('non riuscito', 'failed', 'falló'));
+    setTimeout(caricaEcosistema, 800);
+  });
+  card.querySelector('#eco-ora')?.addEventListener('click', async () => {
+    mostra(L('un passo…', 'a step…', 'un paso…'));
+    const r = await api('/api/admin/ecosistema', { method: 'POST', body: { op: 'autonomo' } }).catch(() => null);
+    if (r && r.ok) { mostra(`${r.azione || ''}: ${r.cosa || ''}`); if (r.id) seguiLavoro(r.id); setTimeout(caricaEcosistema, 1200); }
+    else mostra((r && (r.motivo || r.errore)) || L('non ora', 'not now', 'ahora no'));
   });
 }
 
