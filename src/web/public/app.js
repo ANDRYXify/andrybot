@@ -11800,23 +11800,11 @@ async function caricaMente3d() {
     _mente3dFirma = _menteFirma(d);
     try { _mente3dCtrl.attivita(_menteNodiCaldi(d)); } catch { /* niente */ }
     _menteLavoro(d);
-    // IL BATTITO IN TEMPO REALE: finché sei sulla scheda, ogni ~2.5s rilegge il cervello, fa PULSARE
-    // i nodi che hanno lavorato ORA e — solo se la STRUTTURA è cambiata — ridisegna la topologia
-    // (conservando telecamera e posizioni). Si spegne da solo quando lasci la scheda (canvas staccato).
-    _mente3dPoll = setInterval(async () => {
-      if (!canvas.isConnected || !_mente3dCtrl) { clearInterval(_mente3dPoll); _mente3dPoll = null; return; }
-      let dd;
-      try { dd = await api('/api/streamer/mente'); } catch { return; }
-      const dk = (typeof temaScuroAttivo === 'function') ? temaScuroAttivo() : false;
-      const firma = _menteFirma(dd);
-      if (firma !== _mente3dFirma) {                 // la topologia è cambiata: si è plasmata
-        _mente3dFirma = firma;
-        try { _mente3dCtrl.aggiorna(_menteGrafo(dd, dk)); } catch { /* niente */ }
-        try { _menteCruscotto(dd); } catch { /* niente */ }
-      }
-      try { _mente3dCtrl.attivita(_menteNodiCaldi(dd)); } catch { /* niente */ }
-      _menteLavoro(dd);
-    }, 2500);
+    // NB: niente poll automatico. Prima c'era un setInterval che rileggeva il cervello ogni 2.5s
+    // (6 chiamate) SENZA aspettare la risposta: se il cervello era lento, le richieste si
+    // accavallavano e il carico del server esplodeva. Il grafo si carica una volta; per aggiornarlo
+    // basta ri-aprire la scheda. Il "battito live" verrà rimesso in modo sicuro (una chiamata per
+    // volta, intervallo ampio, solo a scheda visibile).
   } catch (e) { /* il grafo è un extra: se fallisce, la dashboard resta intera */ }
 }
 
