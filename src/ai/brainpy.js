@@ -370,6 +370,36 @@ export async function autoautorialitaAzione(payload) {
   finally { clearTimeout(to); }
 }
 
+// ECOSISTEMA REALE (owner/admin-only): foto del suo "computer" sandboxato — strumenti, spazio,
+// progetti, lavori attivi. {attivo, python, node, browser, spazio, progetti, ...} o {attivo:false}.
+export async function ecosistema() {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 8000);
+  try {
+    const r = await fetch(BASE + '/ecosistema', { signal: ac.signal });
+    if (!r.ok) return { attivo: false };
+    const d = await r.json().catch(() => ({}));
+    return (d && typeof d.ecosistema === 'object' && d.ecosistema) ? d.ecosistema : { attivo: false };
+  } catch (e) { log.debug('ecosistema:', e?.message || e); return { attivo: false }; }
+  finally { clearTimeout(to); }
+}
+
+// AZIONE sull'ecosistema (owner/admin-only): {op, ...}. op ∈ installa | naviga | crea | scrivi |
+// esegui | lavoro | ferma. Timeout generoso (gli avvii lanciano lavori in background). Esito o null.
+export async function ecosistemaAzione(payload) {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 20000);
+  try {
+    const r = await fetch(BASE + '/ecosistema', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload || {}), signal: ac.signal,
+    });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) { log.debug('ecosistemaAzione:', e?.message || e); return null; }
+  finally { clearTimeout(to); }
+}
+
 // SLANCIO: la sua spinta ADESSO a scriverti di iniziativa — nasce dal suo stato
 // (un evento suo non ancora condiviso + vigore), non da un timer. {vuole, spunto, …} o {}.
 export async function slancioScrivere() {

@@ -580,7 +580,7 @@ function render() {
   aggiornaTestataPagina();
 
   if (conPiattaforma) attivaPiattaforma();
-  if (stato.isAdmin) { caricaTabellaAdmin(); caricaSalute(); caricaBackup(); caricaAnima(); caricaLLM(); caricaVita(); }
+  if (stato.isAdmin) { caricaTabellaAdmin(); caricaSalute(); caricaBackup(); caricaAnima(); caricaLLM(); caricaVita(); caricaEcosistema(); }
 
   // prima le rendo richiudibili (cambia il DOM), poi le rivelo
   if (conPiattaforma) document.querySelectorAll('.pannello-scheda').forEach((p) => rendiCartePieghevoli(p, p.dataset.scheda));
@@ -9920,7 +9920,7 @@ function caricaDatiScheda(id) {
   if (id === 'grafiche') initGrafiche();
   if (id === 'regole') caricaStatoListaBot();
   if (id === 'sottoscrizione') caricaSottoscrizione();
-  if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaSalute(); caricaBackup(); caricaAnima(); caricaLLM(); caricaVita(); }
+  if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaSalute(); caricaBackup(); caricaAnima(); caricaLLM(); caricaVita(); caricaEcosistema(); }
 }
 
 
@@ -12005,6 +12005,83 @@ function caricaModelloFile() {
 
 // VITA di Lia (solo andryxify): il suo diario, il ritratto del pubblico e la sua
 // stanza — più i pulsanti per farla vivere un attimo / aggiornarla sul pubblico.
+// ── L'ECOSISTEMA REALE di Lia (admin-only): il suo "computer" sandboxato, dietro il guardiano.
+// Mostra strumenti/spazio/progetti/lavori e dà i comandi diretti (installa, naviga, kill switch).
+// Vive accanto alla sua «vita»: crea la sua card una volta, poi la rinfresca.
+async function caricaEcosistema() {
+  const anchor = document.getElementById('vita-box');
+  if (!anchor) return;
+  let card = document.getElementById('eco-card');
+  if (!card) {
+    card = document.createElement('section');
+    card.id = 'eco-card';
+    card.className = 'blocco';
+    card.style.marginTop = '18px';
+    anchor.parentNode.insertBefore(card, anchor.nextSibling);
+  }
+  let d;
+  try { d = await api('/api/admin/ecosistema'); } catch { card.innerHTML = ''; return; }
+  const e = (d && d.ecosistema) || { attivo: false };
+  if (!e.attivo) {
+    card.innerHTML = `<h3>🌍 ${L('Il suo ecosistema', 'Her ecosystem', 'Su ecosistema')}</h3>
+      <p class="vuoto">${L('Spento ora. Per accenderlo: imposta', 'Off now. To turn it on: set', 'Apagado ahora. Para encenderlo: define')} <code>AMBIENTE_KEY</code> ${L('e avvia i container', 'and start the containers', 'y arranca los contenedores')} <code>guardiano</code> + <code>ambiente</code>.</p>`;
+    return;
+  }
+  const riga = (k, v) => `<div style="display:flex;justify-content:space-between;gap:1em"><span class="tenue">${k}</span><strong>${esc(v || '—')}</strong></div>`;
+  const prog = Array.isArray(e.progetti_elenco) ? e.progetti_elenco : [];
+  card.innerHTML = `
+    <h3>🌍 ${L('Il suo ecosistema reale', 'Her real ecosystem', 'Su ecosistema real')}</h3>
+    <p class="suggerimento">${L('Il suo «computer» dentro il recinto — dietro il <strong>guardiano</strong> (internet pubblico sì, la tua infra no). Può installarsi, navigare, creare e costruire davvero.', 'Her «computer» inside the fence — behind the <strong>guardian</strong> (public internet yes, your infra no). She can install, browse, create and build for real.', 'Su «ordenador» dentro del recinto — tras el <strong>guardián</strong> (internet público sí, tu infra no). Puede instalar, navegar, crear y construir de verdad.')}</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px;margin:8px 0">
+      ${riga('Python', e.python)}${riga('Node', e.node)}${riga(L('Browser', 'Browser', 'Navegador'), e.browser || '—')}
+      ${riga('micromamba', e.mamba || '—')}${riga(L('spazio', 'disk', 'espacio'), e.spazio)}${riga(L('progetti', 'projects', 'proyectos'), e.progetti)}${riga(L('lavori attivi', 'active jobs', 'trabajos activos'), e.lavori)}
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0">
+      <input id="eco-pkg" class="campo" placeholder="${L('pacchetto (es. requests)', 'package (e.g. requests)', 'paquete (p.ej. requests)')}" style="flex:1 1 180px">
+      <select id="eco-gest" class="campo" style="flex:0 0 auto"><option value="pip">pip</option><option value="npm">npm</option><option value="micromamba">micromamba</option></select>
+      <button class="btn secondario mini" id="eco-installa">${L('Installa', 'Install', 'Instalar')}</button>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0">
+      <input id="eco-url" class="campo" placeholder="https://…" style="flex:1 1 200px">
+      <button class="btn secondario mini" id="eco-naviga">${L('Naviga (leggi)', 'Browse (read)', 'Navegar (leer)')}</button>
+      <button class="btn secondario mini" id="eco-ferma" style="margin-left:auto;color:#c0392b">⛔ ${L('Ferma tutto', 'Stop all', 'Parar todo')}</button>
+    </div>
+    ${prog.length ? `<p class="tenue" style="margin-top:6px">${L('Progetti', 'Projects', 'Proyectos')}: ${prog.map((p) => `<code>${esc(p.nome)}</code>`).join(' · ')}</p>` : ''}
+    <pre id="eco-esito" class="vita-pre" style="display:none;margin-top:8px"></pre>`;
+  const esito = card.querySelector('#eco-esito');
+  const mostra = (t) => { if (esito) { esito.style.display = 'block'; esito.textContent = t; } };
+  const seguiLavoro = async (id) => {
+    for (let i = 0; i < 20; i++) {
+      await new Promise((r) => setTimeout(r, 2500));
+      const r = await api('/api/admin/ecosistema', { method: 'POST', body: { op: 'lavoro', id } }).catch(() => null);
+      if (r && r.log) mostra(r.log.slice(-1200));
+      if (r && r.finito) { caricaEcosistema(); return; }
+    }
+  };
+  card.querySelector('#eco-installa')?.addEventListener('click', async () => {
+    const pacchetto = card.querySelector('#eco-pkg').value.trim();
+    const gestore = card.querySelector('#eco-gest').value;
+    if (!pacchetto) return;
+    mostra(L('avvio…', 'starting…', 'iniciando…'));
+    const r = await api('/api/admin/ecosistema', { method: 'POST', body: { op: 'installa', pacchetto, gestore } }).catch(() => null);
+    if (r && r.ok && r.id) { mostra(L('installazione in corso…', 'installing…', 'instalando…')); seguiLavoro(r.id); }
+    else mostra((r && (r.errore || r.motivo)) || L('non riuscito', 'failed', 'falló'));
+  });
+  card.querySelector('#eco-naviga')?.addEventListener('click', async () => {
+    const url = card.querySelector('#eco-url').value.trim();
+    if (!url) return;
+    mostra(L('carico la pagina…', 'loading page…', 'cargando página…'));
+    const r = await api('/api/admin/ecosistema', { method: 'POST', body: { op: 'naviga', url, azione: 'leggi' } }).catch(() => null);
+    mostra((r && r.testo) || (r && (r.errore || r.motivo)) || L('niente', 'nothing', 'nada'));
+  });
+  card.querySelector('#eco-ferma')?.addEventListener('click', async () => {
+    if (!confirm(L('Fermare tutti i lavori che ha in corso? (non cancella nulla)', 'Stop all her running jobs? (deletes nothing)', '¿Parar todos sus trabajos en curso? (no borra nada)'))) return;
+    const r = await api('/api/admin/ecosistema', { method: 'POST', body: { op: 'ferma' } }).catch(() => null);
+    mostra(r && r.ok ? `${L('fermati', 'stopped', 'parados')}: ${r.fermati || 0}` : L('non riuscito', 'failed', 'falló'));
+    setTimeout(caricaEcosistema, 1000);
+  });
+}
+
 async function caricaVita() {
   const box = document.getElementById('vita-box');
   if (!box) return;
