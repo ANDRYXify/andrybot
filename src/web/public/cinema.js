@@ -48,19 +48,20 @@
     // ── particelle d'energia (in pausa quando la scheda è nascosta) ──────────────────────
     function particelle(cv) {
       var ctx = cv.getContext('2d'), W = 0, H = 0, dpr = Math.min(2, window.devicePixelRatio || 1);
-      var colori = ['#38e8ff', '#7c5cff', '#ff62d9', '#b6ff5c'];
+      // polvere di brace: oro, vermiglio, crema calda — RADA e sottile (restraint / ma), non energia neon
+      var colori = ['#c39a4a', '#e24a2f', '#e8dcc4'];
       var p = [], raf = 0, vivo = true, tPrec = 0, lenti = 0, campioni = 0;
       function dim() {
         W = window.innerWidth; H = window.innerHeight;
         cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        var N = Math.max(16, Math.min(42, Math.round(W * H / 48000)));
+        var N = Math.max(10, Math.min(28, Math.round(W * H / 70000)));   // rade: il vuoto respira
         p = []; for (var i = 0; i < N; i++) p.push(nuova(true));
       }
       function nuova(sparsa) {
         return { x: Math.random() * W, y: sparsa ? Math.random() * H : H + 10,
-          r: 0.8 + Math.random() * 2.2, v: 0.14 + Math.random() * 0.42,
-          sway: 0.3 + Math.random() * 0.9, fase: Math.random() * 6.28,
-          c: colori[(Math.random() * colori.length) | 0], a: 0.14 + Math.random() * 0.36 };
+          r: 0.7 + Math.random() * 1.8, v: 0.08 + Math.random() * 0.28,   // salgono piano
+          sway: 0.25 + Math.random() * 0.7, fase: Math.random() * 6.28,
+          c: colori[(Math.random() * colori.length) | 0], a: 0.08 + Math.random() * 0.24 };
       }
       function passo(t) {
         if (!vivo) return;

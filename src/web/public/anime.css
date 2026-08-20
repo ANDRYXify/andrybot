@@ -1,273 +1,214 @@
 /* © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live */
 /* Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live */
 /*
-  anime.css — l'identità "ANIME OP": il sito come se fosse la sigla di un anime.
-  NON personaggi: l'ESTETICA — cel-shading, luce d'energia, speed-line, bloom, ingressi
-  cinematografici. Tutto si muove, tutto entra in scena. Layer SOPRA style.css: aggiunge,
-  non riscrive. Rispetta prefers-reduced-motion (e la classe .meno-moto). Chiaro + scuro.
+  anime.css — l'identità "ANIME ART-DIRECTED": il sito come una tavola d'anime curata, non il
+  cliché neon da IA. Fondata sulla ricerca (studi giapponesi premiati — SHIFTBRAIN, mount, monopo):
+    • palette d'eredità, UN accento (朱 vermiglio) — mai l'arcobaleno di gradienti;
+    • 間 (ma): lo spazio negativo respira, restraint sopra l'ornamento;
+    • CEL-SHADING: campiture piatte + un filo di luce netto sul bordo (no aloni sfocati);
+    • movimento che dà PESO e RITMO, easing decelerato ORGANICO — niente rimbalzo (lo "scattante");
+    • tipografia editoriale (Mincho serif per i titoli).
+  Layer SOPRA style.css: ridipinge le superfici esistenti. Chiaro (washi) e scuro (sumi). Rispetta
+  prefers-reduced-motion, .meno-moto e la modalità .leggero (device deboli).
 */
 
 :root {
-  /* la TRIADE d'energia (firma) — cyan → viola → magenta */
-  --an-cyan: #38e8ff;
-  --an-viola: #7c5cff;
-  --an-magenta: #ff62d9;
-  --an-lime: #b6ff5c;
-  --an-ink: #0b0b16;
-  --an-grad: linear-gradient(115deg, var(--an-cyan), var(--an-viola) 48%, var(--an-magenta));
-  --an-grad-soft: linear-gradient(115deg, rgba(56,232,255,.14), rgba(124,92,255,.14) 50%, rgba(255,98,217,.14));
-  --an-glow: 0 0 0 1px rgba(124,92,255,.25), 0 8px 30px rgba(124,92,255,.18), 0 0 28px rgba(56,232,255,.12);
-  --an-glow-forte: 0 0 0 1px rgba(56,232,255,.5), 0 10px 40px rgba(124,92,255,.35), 0 0 42px rgba(255,98,217,.28);
-  --an-vel: cubic-bezier(.16, 1, .3, 1);         /* ingresso deciso, decelerato */
-  --an-scatto: cubic-bezier(.34, 1.56, .64, 1);  /* rimbalzo "impact frame" */
-  --an-sfondo-1: #f3f1ff;
-  --an-sfondo-2: #eaf6ff;
-  --an-linea: rgba(124,92,255,.16);
+  /* ── palette d'eredità: UN accento firma + neutri caldi (niente arcobaleno) ── */
+  --shu: #e24a2f;            /* 朱 vermiglio — l'accento firma (torii / anime) */
+  --shu-scuro: #c23c26;
+  --ai: #26406b;            /* 藍 indaco — profondità, cielo d'alba */
+  --kin: #c39a4a;           /* 金 oro — accento raro, il filo di luce cel */
+  --sumi: #17141c;          /* 墨 inchiostro — nero caldo */
+  --washi: #f3ede1;         /* 和紙 carta — bianco caldo */
+  --an-accento: var(--shu);
+  --an-linea: rgba(226,74,47,.20);
+  --an-cel: rgba(255,255,255,.55);          /* il filo di luce del cel-shading (chiaro) */
+  --an-sfondo-1: #f4efe4;
+  --an-sfondo-2: #efe7d7;
+  --an-atmosfera: radial-gradient(120% 90% at 78% -10%, rgba(226,74,47,.10), transparent 55%),
+                  radial-gradient(90% 80% at 8% 8%, rgba(38,64,107,.10), transparent 55%);
+  /* MOVIMENTO organico, DECELERATO, senza rimbalzo (il segreto dell'anti-scattante) */
+  --an-ease: cubic-bezier(.16, 1, .3, 1);          /* easeOutExpo: entra deciso, si posa dolce */
+  --an-ease-morbido: cubic-bezier(.33, 1, .68, 1); /* easeOutCubic: hover, micro */
+  --an-dur-entra: .72s;
+  --an-dur-micro: .28s;
+  --an-glow: none;                                  /* niente aloni sfocati per default (cel, non neon) */
 }
 :root[data-theme="dark"], :root:not([data-theme="light"]) {
-  --an-sfondo-1: #0c0b1a;
-  --an-sfondo-2: #0a1420;
-  --an-linea: rgba(56,232,255,.14);
-  --an-glow: 0 0 0 1px rgba(56,232,255,.22), 0 10px 34px rgba(124,92,255,.28), 0 0 30px rgba(56,232,255,.16);
+  --sumi: #131017;
+  --washi: #ede6d8;
+  --an-linea: rgba(226,74,47,.28);
+  --an-cel: rgba(255,255,255,.14);
+  --an-sfondo-1: #141019;
+  --an-sfondo-2: #0f1620;   /* un velo d'indaco nel buio, come un cielo notturno d'anime */
+  --an-atmosfera: radial-gradient(120% 90% at 80% -8%, rgba(226,74,47,.16), transparent 55%),
+                  radial-gradient(95% 85% at 6% 4%, rgba(38,64,107,.28), transparent 60%);
 }
 
-/* ───────────────────────────── SFONDO VIVO: aurora + griglia prospettica che respira ── */
+/* ───────────────────────────── TIPOGRAFIA: Mincho editoriale per i titoli ─────────────── */
+h1, h2, .titolo-mega, .grad-testo, .an-grad-testo {
+  font-family: "Zen Old Mincho", "Hiragino Mincho ProN", "Yu Mincho", Georgia, "Times New Roman", serif;
+  letter-spacing: .005em; font-weight: 700;
+}
+h1 { letter-spacing: -.005em; }
+/* niente testo-gradiente arcobaleno: il titolo prende l'accento pieno, con un filo d'oro sotto */
+h1 .grad, .grad-testo, .an-grad-testo { color: var(--shu); background: none; -webkit-text-fill-color: currentColor; }
+.an-occhiello { font-family: inherit; text-transform: uppercase; letter-spacing: .3em; font-size: .68rem;
+  font-weight: 700; color: var(--shu); }
+
+/* ───────────────────────────── SFONDO: atmosfera calma + grana washi (niente aurora rainbow) ── */
 #anime-sfondo {
-  position: fixed; inset: 0; z-index: -2; pointer-events: none; overflow: hidden;
-  background:
-    radial-gradient(60% 50% at 15% 0%, rgba(56,232,255,.20), transparent 60%),
-    radial-gradient(55% 55% at 90% 10%, rgba(255,98,217,.18), transparent 60%),
-    radial-gradient(70% 60% at 50% 110%, rgba(124,92,255,.22), transparent 60%),
-    linear-gradient(180deg, var(--an-sfondo-1), var(--an-sfondo-2));
-  animation: an-aurora 22s ease-in-out infinite alternate;
+  position: fixed; inset: 0; z-index: -2; pointer-events: none;
+  background: var(--an-atmosfera), linear-gradient(180deg, var(--an-sfondo-1), var(--an-sfondo-2));
 }
-#anime-sfondo::before {   /* griglia prospettica (orizzonte anime) */
-  content: ""; position: absolute; left: -20%; right: -20%; bottom: -10%; height: 55%;
-  background-image: linear-gradient(var(--an-linea) 1px, transparent 1px), linear-gradient(90deg, var(--an-linea) 1px, transparent 1px);
-  background-size: 44px 44px;
-  transform: perspective(340px) rotateX(62deg);
-  transform-origin: bottom center; opacity: .5;
-  mask-image: linear-gradient(180deg, transparent, #000 55%);
-  animation: an-griglia 8s linear infinite;
+#anime-sfondo::after {   /* grana finissima come la carta washi (calma, non pattern) */
+  content: ""; position: absolute; inset: 0; opacity: .5; mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
 }
-#anime-canvas { position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .7; }
-@keyframes an-aurora { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(26deg); } }
-@keyframes an-griglia { to { background-position: 0 44px, 44px 0; } }
-
-/* il corpo lascia intravedere lo sfondo (le carte restano piene e leggibili) */
+#anime-canvas { position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .5; }
 body { background: transparent; }
 
-/* ───────────────────────────── TIPOGRAFIA da sigla ──────────────────────────────────── */
-h1, .titolo-mega {
-  letter-spacing: -.02em;
-}
-h1 .grad, .grad-testo, .an-grad-testo {
-  background: var(--an-grad); -webkit-background-clip: text; background-clip: text;
-  color: transparent; filter: drop-shadow(0 2px 10px rgba(124,92,255,.25));
-}
-/* occhielli/eyebrow: maiuscoletto spaziato, molto "titolo di episodio" */
-.an-occhiello { text-transform: uppercase; letter-spacing: .28em; font-size: .68rem; font-weight: 800;
-  background: var(--an-grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
-
-/* ───────────────────────────── SUPERFICI cel-shaded + bordo d'energia ───────────────── */
+/* ───────────────────────────── SUPERFICI cel-shaded: campitura piatta + filo di luce netto ── */
 .blocco, .carta, .pannello, .riquadro-info, .card, .mini-guida {
   position: relative;
-  transition: transform .28s var(--an-vel), box-shadow .28s var(--an-vel), border-color .28s var(--an-vel);
+  transition: transform var(--an-dur-micro) var(--an-ease-morbido),
+              border-color var(--an-dur-micro) var(--an-ease-morbido),
+              box-shadow var(--an-dur-micro) var(--an-ease-morbido);
 }
-.blocco::after, .pannello::after {   /* filo di luce sul bordo alto (cel highlight) */
-  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-  background: linear-gradient(180deg, rgba(255,255,255,.10), transparent 30%);
-  mix-blend-mode: overlay; opacity: .8;
+/* il "cel highlight": una linea di luce NETTA sul bordo superiore, non un alone */
+.blocco::before, .pannello::before, .carta::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; border-radius: inherit;
+  background: linear-gradient(90deg, transparent, var(--an-cel) 20%, var(--an-cel) 80%, transparent);
+  pointer-events: none;
 }
 .blocco:hover, .carta:hover, .pannello:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--an-glow);
-  border-color: color-mix(in srgb, var(--an-viola) 45%, var(--border, #ccc));
+  transform: translateY(-2px);
+  border-color: var(--shu);
+  box-shadow: -3px 0 0 var(--shu), 0 10px 26px rgba(23,20,28,.12);   /* barretta cel a sinistra, ombra netta */
 }
 
-/* titolo di blocco con barretta d'energia a sinistra */
+/* titolo di blocco: un tratto di pennello (barretta piena, non gradiente) */
 .blocco > h3::before, .pannello > h3::before {
-  content: ""; display: inline-block; width: .34em; height: .95em; margin-right: .5em;
-  vertical-align: -.08em; border-radius: 2px; background: var(--an-grad);
-  box-shadow: 0 0 12px rgba(124,92,255,.6);
+  content: ""; display: inline-block; width: .3em; height: .92em; margin-right: .55em;
+  vertical-align: -.06em; border-radius: 1px; background: var(--shu);
 }
 
-/* ───────────────────────────── BOTTONI: rim-light al neon + press ───────────────────── */
+/* ───────────────────────────── BOTTONI: cel piatto, accento pieno, pressione netta ──────── */
 .btn, button.btn, .modello-pronto, .grp-btn {
-  position: relative; transition: transform .12s var(--an-scatto), box-shadow .2s var(--an-vel), filter .2s ease;
+  transition: transform .12s var(--an-ease-morbido), background var(--an-dur-micro) var(--an-ease-morbido),
+              box-shadow var(--an-dur-micro) var(--an-ease-morbido), filter var(--an-dur-micro) ease;
 }
 .btn:not(.secondario):not(.testo) {
-  background-image: var(--an-grad); border: none; color: #fff;
-  box-shadow: 0 6px 20px rgba(124,92,255,.28);
+  background: var(--shu); border: none; color: #fff;
+  box-shadow: 0 2px 0 var(--shu-scuro);      /* ombra CEL netta (non sfocata) */
 }
-.btn:hover { transform: translateY(-2px); box-shadow: var(--an-glow-forte); filter: saturate(1.15) brightness(1.03); }
-.btn:active { transform: translateY(0) scale(.97); }
-.btn.secondario:hover { border-color: var(--an-viola); box-shadow: 0 0 0 1px var(--an-viola), 0 6px 18px rgba(124,92,255,.18); }
+.btn:not(.secondario):not(.testo):hover { background: var(--shu-scuro); transform: translateY(-1px); box-shadow: 0 3px 0 var(--shu-scuro); }
+.btn:active { transform: translateY(1px); box-shadow: 0 0 0 var(--shu-scuro); }
+.btn.secondario:hover { border-color: var(--shu); color: var(--shu); box-shadow: -2px 0 0 var(--shu); }
+a { transition: color var(--an-dur-micro) ease; }
+a:hover { color: var(--shu); }
+.grp-dot { box-shadow: none; }
 
-a { transition: color .18s ease; }
-a:hover { color: var(--an-magenta); }
-
-/* i "chip"/dot dei gruppi diventano gemme d'energia */
-.grp-dot { box-shadow: 0 0 10px currentColor; }
-
-/* ───────────────────────────── NAV: voce attiva con luce che scorre ─────────────────── */
-.menu-voce.on, .drawer-voce.on {
-  position: relative; overflow: hidden;
-}
+/* ───────────────────────────── NAV: voce attiva con un tratto d'inchiostro ──────────────── */
+.menu-voce.on, .drawer-voce.on { position: relative; }
 .menu-voce.on::before, .drawer-voce.on::before {
-  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-  background: var(--an-grad); box-shadow: 0 0 14px rgba(124,92,255,.8);
+  content: ""; position: absolute; left: 0; top: 15%; bottom: 15%; width: 3px; border-radius: 2px;
+  background: var(--shu);
 }
-.menu-voce:hover:not(.on) { transform: translateX(2px); }
+.menu-voce { transition: transform var(--an-dur-micro) var(--an-ease-morbido), color var(--an-dur-micro) ease; }
+.menu-voce:hover:not(.on) { transform: translateX(3px); color: var(--shu); }
 
-/* ───────────────────────────── INGRESSI CINEMATOGRAFICI ─────────────────────────────── */
-/* elementi marcati da cinema.js: ENTRANO in scena, sfalsati. FAIL-SAFE: l'animazione è pura CSS
-   e il fotogramma finale è opacity:1 (fill both) → il contenuto diventa SEMPRE visibile da solo,
-   anche se il JS non fa nulla. Nessun opacity:0 "appeso" che dipende dal JS per rivelarsi. */
-[data-anime] { animation: an-rise .58s var(--an-vel) both; animation-delay: var(--an-ritardo, 0ms); }
-[data-anime="wipe"] { animation-name: an-wipe; }
-[data-anime="zoom"] { animation-name: an-zoom; animation-timing-function: var(--an-scatto); }
-@keyframes an-rise {
-  from { opacity: 0; transform: translateY(26px) scale(.985); filter: blur(6px); }
-  to   { opacity: 1; transform: none; filter: none; }
-}
-@keyframes an-wipe {
-  from { opacity: 0; clip-path: inset(0 100% 0 0); transform: translateX(-10px); }
-  to   { opacity: 1; clip-path: inset(0 0 0 0); transform: none; }
-}
-@keyframes an-zoom {
-  from { opacity: 0; transform: scale(.86) rotate(-1.2deg); }
+/* ───────────────────────────── INGRESSI: dànno PESO e RITMO, decelerati, MAI a scatti ───── */
+/* cinema.js marca gli elementi UNA volta al load. Animazione pura CSS (fill both → finisce a
+   opacity:1): il contenuto si rivela SEMPRE da solo. Solo opacity + translateY leggero: niente
+   scale/blur/clip (gimmick), niente overshoot (era lo "scattante"). */
+[data-anime] { animation: an-sali var(--an-dur-entra) var(--an-ease) both; animation-delay: var(--an-ritardo, 0ms); }
+@keyframes an-sali {
+  from { opacity: 0; transform: translateY(14px); }
   to   { opacity: 1; transform: none; }
 }
+@keyframes an-fade { from { opacity: 0; } to { opacity: 1; } }
 
-/* CAMBIO SCHEDA = title-card: sweep diagonale d'energia + contenuto che sale sfalsato */
-.pannello-scheda.visibile.an-entra { animation: an-panel .5s var(--an-vel) both; }
-@keyframes an-panel { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-#anime-sweep {
-  position: fixed; inset: 0; z-index: 60; pointer-events: none; opacity: 0;
-  background: linear-gradient(115deg, transparent 40%, rgba(56,232,255,.5), rgba(255,98,217,.5) 56%, transparent 62%);
-  mix-blend-mode: screen;
-}
-#anime-sweep.va { animation: an-sweep .6s ease both; }
-@keyframes an-sweep {
-  0% { opacity: 0; transform: translateX(-30%) skewX(-12deg); }
-  35% { opacity: 1; }
-  100% { opacity: 0; transform: translateX(130%) skewX(-12deg); }
-}
-/* speed-lines: lampo radiale all'ingresso di scheda */
-#anime-speed { position: fixed; inset: 0; z-index: 59; pointer-events: none; opacity: 0;
-  background: repeating-conic-gradient(from 0deg at 50% 45%, rgba(255,255,255,.0) 0deg, rgba(124,92,255,.16) .5deg, transparent 1.4deg 6deg);
-  mask-image: radial-gradient(closest-side, transparent 42%, #000 78%); }
-#anime-speed.va { animation: an-speed .45s ease both; }
-@keyframes an-speed { 0% { opacity: 0; transform: scale(1.15); } 30% { opacity: .9; } 100% { opacity: 0; transform: scale(1); } }
-
-/* ───────────────────────────── RICERCA PREDITTIVA (⌘K / lente) ──────────────────────── */
+/* ───────────────────────────── RICERCA: lente pulita, sumi/washi, accento vermiglio ──────── */
 #cerca-lancia {
   position: fixed; right: 18px; bottom: 18px; z-index: 70;
-  width: 54px; height: 54px; border-radius: 50%; border: none; cursor: pointer;
-  background-image: var(--an-grad); color: #fff; font-size: 1.35rem; line-height: 54px;
-  box-shadow: var(--an-glow-forte); transition: transform .16s var(--an-scatto), box-shadow .2s ease;
-  animation: an-pulse 3.2s ease-in-out infinite;
+  width: 52px; height: 52px; border-radius: 14px; border: none; cursor: pointer;
+  background: var(--shu); color: #fff; box-shadow: 0 3px 0 var(--shu-scuro), 0 12px 30px rgba(23,20,28,.28);
+  transition: transform .16s var(--an-ease-morbido), box-shadow var(--an-dur-micro) ease;
 }
-#cerca-lancia:hover { transform: scale(1.08) rotate(6deg); }
-#cerca-lancia:active { transform: scale(.94); }
-@keyframes an-pulse { 0%,100% { box-shadow: var(--an-glow); } 50% { box-shadow: var(--an-glow-forte); } }
+#cerca-lancia:hover { transform: translateY(-2px); box-shadow: 0 5px 0 var(--shu-scuro), 0 16px 36px rgba(23,20,28,.32); }
+#cerca-lancia:active { transform: translateY(1px); box-shadow: 0 1px 0 var(--shu-scuro); }
+#cerca-lancia svg { display: block; margin: 0 auto; }
 
 #cerca-overlay {
   position: fixed; inset: 0; z-index: 200; display: none;
   align-items: flex-start; justify-content: center;
-  background: rgba(6,6,18,.55); backdrop-filter: blur(7px) saturate(1.2);
-  padding: 10vh 16px 16px;
+  background: rgba(23,20,28,.5); backdrop-filter: blur(6px);
+  padding: 12vh 16px 16px;
 }
-#cerca-overlay.aperto { display: flex; animation: an-fade .2s ease both; }
-@keyframes an-fade { from { opacity: 0; } to { opacity: 1; } }
+#cerca-overlay.aperto { display: flex; animation: an-fade .18s ease both; }
 .cerca-box {
-  width: min(680px, 96vw); border-radius: 18px; overflow: hidden;
-  background: color-mix(in srgb, var(--surface, #fff) 88%, transparent);
-  border: 1px solid var(--an-linea);
-  box-shadow: 0 30px 90px rgba(6,6,18,.5), var(--an-glow);
-  animation: an-box .34s var(--an-scatto) both;
+  width: min(660px, 96vw); border-radius: 16px; overflow: hidden;
+  background: var(--surface, #fff); border: 1px solid var(--an-linea);
+  box-shadow: 0 30px 80px rgba(23,20,28,.4);
+  animation: an-sali .4s var(--an-ease) both;
 }
-@keyframes an-box { from { opacity: 0; transform: translateY(-18px) scale(.97); } to { opacity: 1; transform: none; } }
-.cerca-top { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--an-linea);
-  background: var(--an-grad-soft); }
-.cerca-top .lente { display: inline-flex; color: var(--an-viola); filter: drop-shadow(0 0 8px rgba(124,92,255,.5)); }
+.cerca-top { display: flex; align-items: center; gap: 10px; padding: 15px 16px; border-bottom: 1px solid var(--an-linea); }
+.cerca-top .lente { display: inline-flex; color: var(--shu); }
 .cerca-top .lente svg { display: block; }
-#cerca-lancia svg { display: block; margin: 0 auto; }
-/* la "gemma d'energia" che sostituisce le emoji (nessuna faccina nelle grafiche del sito) */
-.pip { flex: 0 0 auto; width: 11px; height: 11px; border-radius: 3px; background: var(--an-grad);
-  box-shadow: 0 0 10px rgba(124,92,255,.55); transform: rotate(45deg); }
+.pip { flex: 0 0 auto; width: 8px; height: 8px; border-radius: 2px; background: var(--shu); }
 #cerca-input {
   flex: 1; border: none; outline: none; background: transparent; color: var(--testo, #18181b);
-  font-size: 1.12rem; font-weight: 600; font-family: inherit;
+  font-size: 1.1rem; font-weight: 600; font-family: inherit;
 }
 #cerca-input::placeholder { color: var(--testo-3, #9a9aa4); font-weight: 500; }
 .cerca-kbd { font-size: .7rem; color: var(--testo-3, #9a9aa4); border: 1px solid var(--an-linea); border-radius: 6px; padding: 2px 7px; }
-.cerca-filtri { display: flex; gap: 6px; flex-wrap: wrap; padding: 10px 14px 4px; }
+.cerca-filtri { display: flex; gap: 6px; flex-wrap: wrap; padding: 12px 14px 4px; }
 .cerca-filtro {
-  font-size: .78rem; font-weight: 700; padding: .28rem .7rem; border-radius: 999px; cursor: pointer;
+  font-size: .78rem; font-weight: 700; padding: .3rem .72rem; border-radius: 999px; cursor: pointer;
   border: 1px solid var(--an-linea); background: transparent; color: var(--testo-2, #55555f);
-  transition: all .16s var(--an-vel);
+  transition: all var(--an-dur-micro) var(--an-ease-morbido);
 }
-.cerca-filtro:hover { transform: translateY(-1px); }
-.cerca-filtro.on { background-image: var(--an-grad); color: #fff; border-color: transparent; box-shadow: 0 4px 14px rgba(124,92,255,.3); }
-.cerca-sugg-tit { padding: 12px 16px 2px; font-size: .72rem; text-transform: uppercase; letter-spacing: .18em; color: var(--testo-3, #9a9aa4); font-weight: 800; }
+.cerca-filtro:hover { color: var(--shu); border-color: var(--shu); }
+.cerca-filtro.on { background: var(--shu); color: #fff; border-color: var(--shu); }
+.cerca-sugg-tit { padding: 14px 16px 2px; font-size: .7rem; text-transform: uppercase; letter-spacing: .2em; color: var(--testo-3, #9a9aa4); font-weight: 800; }
 .cerca-lista { max-height: min(52vh, 520px); overflow-y: auto; padding: 6px; }
 .cerca-voce {
-  display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 12px; cursor: pointer;
-  color: var(--testo, #18181b); transition: background .12s ease, transform .12s var(--an-vel);
-  animation: an-rise .34s var(--an-vel) both; animation-delay: var(--an-ritardo, 0ms);
+  display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; cursor: pointer;
+  color: var(--testo, #18181b); transition: background .12s ease, transform .12s var(--an-ease-morbido);
+  animation: an-fade .26s ease both; animation-delay: var(--an-ritardo, 0ms);
 }
-.cerca-voce:hover, .cerca-voce.sel { background: var(--an-grad-soft); transform: translateX(3px); }
-.cerca-voce.sel { box-shadow: inset 3px 0 0 var(--an-viola); }
-.cerca-voce .pip { margin: 0 4px; }
+.cerca-voce:hover, .cerca-voce.sel { background: color-mix(in srgb, var(--shu) 8%, transparent); }
+.cerca-voce.sel { box-shadow: inset 3px 0 0 var(--shu); }
+.cerca-voce .pip { margin: 0 5px; }
 .cerca-voce .txt { flex: 1; min-width: 0; }
 .cerca-voce .txt b { display: block; font-weight: 700; font-size: .98rem; }
-.cerca-voce .txt b mark { background: transparent; color: var(--an-magenta); }
+.cerca-voce .txt b mark { background: transparent; color: var(--shu); font-weight: 800; }
 .cerca-voce .txt small { color: var(--testo-3, #9a9aa4); font-size: .78rem; }
-.cerca-voce .via { font-size: .68rem; color: #fff; background-image: var(--an-grad); border-radius: 999px; padding: 2px 9px; font-weight: 700; white-space: nowrap; }
+.cerca-voce .via { font-size: .68rem; color: var(--shu); border: 1px solid var(--an-linea); border-radius: 999px; padding: 2px 9px; font-weight: 700; white-space: nowrap; }
 .cerca-sugg { padding: 6px; display: flex; flex-direction: column; gap: 6px; }
 .cerca-sugg .chip-domanda {
-  text-align: left; border: 1px dashed var(--an-linea); background: transparent; color: var(--testo, #18181b);
-  border-radius: 12px; padding: 11px 14px; cursor: pointer; font-weight: 600; font-family: inherit; font-size: .95rem;
-  transition: all .16s var(--an-vel); animation: an-wipe .4s var(--an-vel) both; animation-delay: var(--an-ritardo, 0ms);
+  display: flex; align-items: center; gap: 10px; text-align: left; border: 1px solid var(--an-linea);
+  background: transparent; color: var(--testo, #18181b); border-radius: 12px; padding: 12px 14px;
+  cursor: pointer; font-weight: 600; font-family: inherit; font-size: .95rem;
+  transition: all var(--an-dur-micro) var(--an-ease-morbido); animation: an-fade .3s ease both; animation-delay: var(--an-ritardo, 0ms);
 }
-.cerca-sugg .chip-domanda { display: flex; align-items: center; gap: 10px; }
-.cerca-sugg .chip-domanda:hover { border-style: solid; border-color: var(--an-viola); background: var(--an-grad-soft); transform: translateX(3px); }
+.cerca-sugg .chip-domanda:hover { border-color: var(--shu); background: color-mix(in srgb, var(--shu) 7%, transparent); transform: translateX(3px); }
 .cerca-vuoto { padding: 26px 16px; text-align: center; color: var(--testo-3, #9a9aa4); }
 
-/* ───────────────────────────── RIDOTTO IL MOTO: onestà d'accessibilità ──────────────── */
+/* ───────────────────────────── ACCESSIBILITÀ + device deboli ───────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  #anime-sfondo, #anime-sfondo::before, #cerca-lancia { animation: none !important; }
+  [data-anime], .cerca-voce, .cerca-sugg .chip-domanda, .cerca-box, #cerca-overlay.aperto { animation: none !important; opacity: 1 !important; }
+  .blocco:hover, .carta:hover, .pannello:hover, .btn:hover, #cerca-lancia:hover, .menu-voce:hover { transform: none; }
   #anime-canvas { display: none; }
-  [data-anime], [data-anime].an-in, .pannello-scheda.visibile.an-entra,
-  .cerca-voce, .cerca-sugg .chip-domanda, .cerca-box { animation: none !important; opacity: 1 !important; }
-  #anime-sweep, #anime-speed { display: none !important; }
-  .blocco:hover, .carta:hover, .pannello:hover, .btn:hover, #cerca-lancia:hover { transform: none; }
 }
 body.meno-moto #anime-canvas { display: none; }
 body.meno-moto [data-anime] { opacity: 1; animation: none; }
 
-/* ───────────────────────────── MODALITÀ LEGGERA: i "muli da soma" (device vecchi/deboli) ──
-   cinema.js mette body.leggero all'avvio (device fiacco) o a runtime (fps in crollo). Qui
-   spegniamo TUTTO ciò che costa: canvas, blur (GPU), aurora animata, ombre-bagliore, e le
-   animazioni d'ingresso diventano una semplice dissolvenza. Resta bello, ma vola anche sul mulo. */
+/* MODALITÀ LEGGERA (muli da soma): via canvas, grana e blur; niente animazioni pesanti. Resta bello. */
 body.leggero #anime-canvas { display: none !important; }
-body.leggero #anime-sfondo { animation: none !important; }
-body.leggero #anime-sfondo::before { display: none; }           /* niente griglia da ridipingere */
-body.leggero #anime-sweep, body.leggero #anime-speed { display: none !important; }
-body.leggero #cerca-lancia { animation: none !important; }
-body.leggero #cerca-overlay { backdrop-filter: none; background: rgba(6,6,18,.78); }
-body.leggero .cerca-box { backdrop-filter: none; }
-/* ingressi: solo una dissolvenza breve, nessun blur/scale/clip (economici da comporre) */
-body.leggero [data-anime],
-body.leggero [data-anime="wipe"],
-body.leggero [data-anime="zoom"] { animation: an-fade .3s ease both; will-change: auto; }
-body.leggero .pannello-scheda.visibile.an-entra { animation: an-fade .28s ease both; }
+body.leggero #anime-sfondo::after { display: none; }
+body.leggero #cerca-overlay { backdrop-filter: none; background: rgba(23,20,28,.72); }
+body.leggero [data-anime] { animation: an-fade .3s ease both; }
 body.leggero .cerca-voce, body.leggero .cerca-sugg .chip-domanda, body.leggero .cerca-box { animation: none; }
-/* niente ombre-bagliore sfocate in hover: bordo netto, nessun blur */
-body.leggero .blocco:hover, body.leggero .carta:hover, body.leggero .pannello:hover {
-  box-shadow: none; border-color: var(--an-viola); transform: none;
-}
-body.leggero .btn:hover { box-shadow: none; transform: none; filter: none; }
-body.leggero .btn:not(.secondario):not(.testo) { box-shadow: none; }
+body.leggero .blocco:hover, body.leggero .carta:hover, body.leggero .pannello:hover { box-shadow: -3px 0 0 var(--shu); transform: none; }
