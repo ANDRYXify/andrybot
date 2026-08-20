@@ -11,6 +11,37 @@
   'use strict';
   var menoMoto = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
+  // ── I "MULI DA SOMA": device vecchi/deboli → modalità LEGGERA (niente canvas, niente blur,
+  //    niente aurora animata; solo semplici dissolvenze). Rilevata all'avvio E a runtime (se
+  //    gli fps crollano, degrada da solo). Onesto: la bellezza non deve impallare chi ha poco. ─
+  function deboleDevice() {
+    try {
+      if (localStorage.getItem('sb-leggero') === '1') return true;
+      if (localStorage.getItem('sb-leggero') === '0') return false;
+    } catch (e) { /* niente */ }
+    var n = navigator || {};
+    var c = n.connection || n.mozConnection || n.webkitConnection || {};
+    if (c.saveData) return true;                                   // l'utente ha chiesto "risparmia dati"
+    if (/(^|\s)(slow-2g|2g|3g)$/.test(c.effectiveType || '')) return true;
+    if (typeof n.deviceMemory === 'number' && n.deviceMemory > 0 && n.deviceMemory <= 4) return true;
+    if (typeof n.hardwareConcurrency === 'number' && n.hardwareConcurrency > 0 && n.hardwareConcurrency <= 2) return true;
+    return false;
+  }
+  var leggero = deboleDevice();
+
+  function passaLeggero(salva) {
+    if (leggero) return;
+    leggero = true;
+    document.body.classList.add('leggero');
+    var cv = document.getElementById('anime-canvas'); if (cv) cv.remove();
+    if (salva) { try { localStorage.setItem('sb-leggero', '1'); } catch (e) { /* niente */ } }
+  }
+  // API pubblica per un interruttore nel cruscotto (l'utente può forzare leggero/ricco)
+  window.SB_LEGGERO = {
+    stato: function () { return leggero; },
+    imposta: function (v) { try { localStorage.setItem('sb-leggero', v ? '1' : '0'); } catch (e) {} location.reload(); }
+  };
+
   // ── scenografia: sfondo, canvas particelle, sweep, speed-line ────────────────────────
   function elem(id, tag) {
     var e = document.getElementById(id);
@@ -18,10 +49,11 @@
     return e;
   }
   function scenografia() {
+    if (leggero) document.body.classList.add('leggero');
     elem('anime-sfondo');
     elem('anime-sweep');
     elem('anime-speed');
-    if (!menoMoto) particelle(elem('anime-canvas', 'canvas'));
+    if (!menoMoto && !leggero) particelle(elem('anime-canvas', 'canvas'));
   }
 
   // ── particelle d'energia (motes che salgono, leggere, in pausa se la scheda è nascosta) ─
@@ -29,6 +61,8 @@
     var ctx = cv.getContext('2d'), W = 0, H = 0, dpr = Math.min(2, window.devicePixelRatio || 1);
     var colori = ['#38e8ff', '#7c5cff', '#ff62d9', '#b6ff5c'];
     var N = 0, p = [], raf = 0, vivo = true;
+    // WATCHDOG fps: se il device arranca (frame lenti a raffica), degrada da solo a LEGGERO.
+    var tPrec = 0, lenti = 0, campioni = 0;
     function dim() {
       W = window.innerWidth; H = window.innerHeight;
       cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -43,6 +77,13 @@
     }
     function passo(t) {
       if (!vivo) return;
+      // watchdog: nei primi ~120 frame misura la fluidità; troppi frame lenti → degrada.
+      if (tPrec && campioni < 120) {
+        var dt = t - tPrec; campioni++;
+        if (dt > 34) lenti++;                       // < ~30 fps
+        if (campioni >= 40 && lenti > campioni * 0.5) { cancelAnimationFrame(raf); passaLeggero(true); return; }
+      }
+      tPrec = t;
       ctx.clearRect(0, 0, W, H);
       for (var i = 0; i < p.length; i++) {
         var q = p[i];
@@ -64,46 +105,42 @@
     raf = requestAnimationFrame(passo);
   }
 
-  // ── reveal on-scroll: gli elementi marcati [data-anime] ENTRANO quando entrano in vista ─
-  var io = ('IntersectionObserver' in window) ? new IntersectionObserver(function (voci) {
-    for (var i = 0; i < voci.length; i++) {
-      if (voci[i].isIntersecting) { voci[i].target.classList.add('an-in'); io.unobserve(voci[i].target); }
-    }
-  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.06 }) : null;
-
-  // marca (con ingresso sfalsato) gli elementi "da scena" dentro uno scope, se non già marcati.
+  // ── INGRESSO in scena: marca gli elementi con [data-anime]. L'animazione è PURA CSS (fill both,
+  //    fotogramma finale opacity:1) → il contenuto si rivela SEMPRE da solo, nessuna dipendenza dal
+  //    JS per tornare visibile. Se qualcosa qui fallisce, la pagina resta comunque piena e usabile.
   var SELETTORI = '.blocco, .carta, .pannello, .riquadro-info, .card, .mini-guida, .cap-scheda';
   function marca(scope) {
     if (menoMoto) return;
-    var root = scope || document;
-    var nodi = root.querySelectorAll(SELETTORI);
-    var n = 0;
-    for (var i = 0; i < nodi.length; i++) {
-      var el = nodi[i];
-      if (el.hasAttribute('data-anime') || el.closest('#cerca-overlay')) continue;
-      el.setAttribute('data-anime', n % 5 === 4 ? 'wipe' : 'rise');
-      el.style.setProperty('--an-ritardo', Math.min(n, 8) * 55 + 'ms');
-      n++;
-      if (io) io.observe(el); else el.classList.add('an-in');
-    }
+    try {
+      var root = scope || document;
+      var nodi = root.querySelectorAll(SELETTORI);
+      var n = 0;
+      for (var i = 0; i < nodi.length; i++) {
+        var el = nodi[i];
+        if (el.hasAttribute('data-anime') || el.closest('#cerca-overlay')) continue;
+        el.setAttribute('data-anime', n % 5 === 4 ? 'wipe' : 'rise');
+        el.style.setProperty('--an-ritardo', Math.min(n, 8) * 55 + 'ms');
+        n++;
+      }
+    } catch (e) { /* l'estetica non deve MAI rompere l'app */ }
   }
 
-  // ── CAMBIO SCHEDA = title card: sweep + speed-line + contenuto che entra ─────────────
+  // ── CAMBIO SCHEDA = title card: sweep + speed-line + il contenuto che ri-entra ───────────
   var ultimoSweep = 0;
   function titleCard(pannello) {
-    var ora = Date.now();
-    if (!menoMoto && ora - ultimoSweep > 350) {
-      ultimoSweep = ora;
-      lampo('anime-sweep'); lampo('anime-speed');
-    }
-    if (pannello) {
-      pannello.classList.remove('an-entra'); void pannello.offsetWidth; pannello.classList.add('an-entra');
-      // ri-marca il contenuto della scheda per l'ingresso sfalsato
-      pannello.querySelectorAll('[data-anime]').forEach(function (e) { e.classList.remove('an-in'); });
-      marca(pannello);
-      requestAnimationFrame(function () { pannello.querySelectorAll('[data-anime]').forEach(function (e, i) {
-        if (io) io.observe(e); }); });
-    }
+    try {
+      var ora = Date.now();
+      if (!menoMoto && !leggero && ora - ultimoSweep > 350) {
+        ultimoSweep = ora;
+        lampo('anime-sweep'); lampo('anime-speed');
+      }
+      if (pannello && !menoMoto) {
+        pannello.classList.remove('an-entra'); void pannello.offsetWidth; pannello.classList.add('an-entra');
+        // ri-avvia l'ingresso sfalsato: togli e rimetti data-anime → l'animazione CSS riparte.
+        pannello.querySelectorAll('[data-anime]').forEach(function (e) { e.removeAttribute('data-anime'); });
+        marca(pannello);
+      }
+    } catch (e) { /* mai rompere la navigazione */ }
   }
   function lampo(id) {
     var e = document.getElementById(id); if (!e) return;
@@ -115,16 +152,18 @@
     var app = document.getElementById('app') || document.body;
     var pendente = null;
     var mo = new MutationObserver(function (muts) {
-      var nuovoContenuto = false, schedaEntrata = null;
-      for (var i = 0; i < muts.length; i++) {
-        var m = muts[i];
-        if (m.type === 'attributes' && m.target.classList && m.target.classList.contains('pannello-scheda')) {
-          if (m.target.classList.contains('visibile')) schedaEntrata = m.target;
+      try {
+        var nuovoContenuto = false, schedaEntrata = null;
+        for (var i = 0; i < muts.length; i++) {
+          var m = muts[i];
+          if (m.type === 'attributes' && m.target.classList && m.target.classList.contains('pannello-scheda')) {
+            if (m.target.classList.contains('visibile')) schedaEntrata = m.target;
+          }
+          if (m.addedNodes && m.addedNodes.length) nuovoContenuto = true;
         }
-        if (m.addedNodes && m.addedNodes.length) nuovoContenuto = true;
-      }
-      if (schedaEntrata) titleCard(schedaEntrata);
-      if (nuovoContenuto) { clearTimeout(pendente); pendente = setTimeout(function () { marca(document); }, 60); }
+        if (schedaEntrata) titleCard(schedaEntrata);
+        if (nuovoContenuto) { clearTimeout(pendente); pendente = setTimeout(function () { marca(document); }, 60); }
+      } catch (e) { /* mai rompere l'app */ }
     });
     mo.observe(app, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
     // primo giro
