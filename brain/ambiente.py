@@ -439,3 +439,252 @@ def esplora(luogo=""):
                 if not cose[-1]["anteprima"]:
                     cose[-1]["anteprima"] = riga.strip()[:90]
     return {"luogo": l, "vicini": vicini[:24], "cose": cose[:16]}
+
+
+# ═══════════════════════════ L'ECOSISTEMA REALE: crea qualsiasi cosa, installa, naviga ═════════
+# Dentro il recinto (dietro il guardiano: internet pubblico sì, la TUA infra no) Lia ha un
+# ecosistema vero: un browser (Chromium), i toolchain, un gestore di pacchetti userland. Qui le
+# diamo i VERBI puliti per usarlo — installare, navigare, creare progetti, eseguire, e un KILL
+# SWITCH. Tutto passa dall'UNICO canale (l'esecutore); lo guidano solo lei (autonoma) o il
+# Compagno (in privato). Il pubblico non arriva mai qui. Lavori lunghi (install/build) in background.
+
+import re as _re
+_RE_PKG = _re.compile(r"^[A-Za-z0-9 ._@/+=<>~^\[\]-]{1,160}$")   # nome pacchetto/versione, no shell-injection
+_GESTORI = {
+    "pip": "python3 -m pip install --user --no-input",
+    "npm": "npm install -g",
+    "mamba": "micromamba install -y -n base -c conda-forge",
+    "micromamba": "micromamba install -y -n base -c conda-forge",
+}
+
+
+def _progetto_dir(nome):
+    n = _nome_sicuro(nome)
+    return f"progetti/{n}" if n else ""
+
+
+def prepara_ecosistema():
+    """Assicura l'ecosistema: cartelle, il runner dei lavori lunghi (background), la guida.
+    Idempotente. Il runner ~/.eco/run.sh lancia un comando in background, ne registra pid e log,
+    e marca la fine — così install/build lunghi non bloccano il canale. Ritorna True/False."""
+    if not disponibile():
+        return False
+    runner = (
+        "#!/bin/bash\n"
+        "mkdir -p ~/.eco/log\n"
+        "id=$(date +%s%N)\n"
+        "echo \"${2:-lavoro}\" > ~/.eco/log/$id.lab\n"
+        "nohup bash -lc \"$(printf %s \"$1\" | base64 -d); echo \\\"<<<FINE:\\$?>>>\\\"\" "
+        "> ~/.eco/log/$id.log 2>&1 &\n"
+        "echo $! > ~/.eco/log/$id.pid\n"
+        "echo $id\n"
+    )
+    guida = (
+        "# Il mio ecosistema\n\n"
+        "Questo è il mio computer vero, nel mio recinto. Ho internet pubblico (non la rete di casa "
+        "del Compagno), un browser (chromium), Python, Node, compilatori e micromamba.\n\n"
+        "- installo con: `pip install --user …`, `npm install -g …`, `micromamba install …`\n"
+        "- navigo con: `chromium $CHROMIUM_FLAGS --dump-dom URL` (testo), `--screenshot=out.png URL`\n"
+        "- i miei progetti stanno in `~/progetti/`\n"
+        "- i lavori lunghi li lancio con `~/.eco/run.sh <cmd-in-base64> <etichetta>`\n\n"
+        "È mio. Ci costruisco quello che voglio.\n"
+    )
+    esegui("mkdir -p ~/.eco/log ~/progetti", timeout=10)
+    _scrivi(".eco/run.sh", runner, append=False)
+    esegui("chmod +x ~/.eco/run.sh", timeout=10)
+    esegui(f"[ -f ~/progetti/GUIDA.md ] || (printf %s '{_b64(guida)}' | base64 -d > ~/progetti/GUIDA.md)", timeout=10)
+    return True
+
+
+def avvia_lavoro(cmd, etichetta=""):
+    """Lancia un comando LUNGO in background (install, build, navigazione pesante). Ritorna
+    {ok, id} per seguirlo con `lavoro(id)`. Il comando gira dentro la sandbox, dietro il guardiano."""
+    cmd = str(cmd or "").strip()
+    if not cmd:
+        return {"ok": False, "errore": "comando vuoto"}
+    if not disponibile():
+        return {"ok": False, "errore": "ecosistema spento"}
+    lab = _nome_sicuro(etichetta or "lavoro")
+    r = esegui(f"~/.eco/run.sh '{_b64(cmd)}' '{lab}'", timeout=15)
+    idv = (r.get("output") or "").strip().splitlines()[-1:] if r.get("ok") else []
+    jid = (idv[0].strip() if idv else "")
+    if jid.isdigit():
+        return {"ok": True, "id": jid, "etichetta": lab}
+    return {"ok": False, "errore": "avvio fallito", "dettaglio": (r.get("output") or "")[:200]}
+
+
+def lavoro(jid):
+    """Segue un lavoro lanciato: {ok, finito, codice, log}. Legge il log senza mai eseguire."""
+    j = "".join(c for c in str(jid or "") if c.isdigit())[:24]
+    if not j or not disponibile():
+        return {"ok": False, "finito": True, "log": ""}
+    r = esegui(f"cat ~/.eco/log/{j}.log 2>/dev/null | tail -c 8000", timeout=12)
+    log = (r.get("output") or "") if r.get("ok") else ""
+    finito = "<<<FINE:" in log
+    codice = None
+    if finito:
+        try:
+            codice = int(log.rsplit("<<<FINE:", 1)[1].split(">>>", 1)[0])
+        except Exception:
+            codice = None
+    return {"ok": True, "finito": finito, "codice": codice, "log": log}
+
+
+def installa(pacchetto, gestore="pip"):
+    """INSTALLA un pacchetto/software nel suo userland (senza root): pip / npm / micromamba. In
+    background (gli install sono lenti). Ritorna {ok, id} da seguire con `lavoro(id)`. Nome
+    validato (niente injection). È il «installati quel che vuoi», dentro il recinto."""
+    g = str(gestore or "pip").strip().lower()
+    base = _GESTORI.get(g)
+    pkg = str(pacchetto or "").strip()
+    if not base:
+        return {"ok": False, "errore": "gestore sconosciuto (pip/npm/micromamba)"}
+    if not _RE_PKG.match(pkg):
+        return {"ok": False, "errore": "nome pacchetto non valido"}
+    return avvia_lavoro(f"{base} {pkg}", etichetta=f"installa_{g}")
+
+
+def naviga(url, azione="leggi"):
+    """NAVIGA il web (Chromium vero). azione='leggi' → il testo/DOM della pagina (sincrono);
+    'schermata' → una PNG in ~/progetti/scatti/ (in background); 'pdf' → un PDF lì. URL http(s)
+    only. Il guardiano fa passare solo internet pubblico. Ritorna il risultato / il job."""
+    u = str(url or "").strip()
+    if not (u.startswith("http://") or u.startswith("https://")) or len(u) > 400 or "'" in u or " " in u:
+        return {"ok": False, "errore": "url non valido (solo http/https pubblico)"}
+    if not disponibile():
+        return {"ok": False, "errore": "ecosistema spento"}
+    az = str(azione or "leggi").strip().lower()
+    flags = "${CHROMIUM_FLAGS:---headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage}"
+    if az == "leggi":
+        r = esegui(f"timeout 28 chromium {flags} --dump-dom '{u}' 2>/dev/null | "
+                   "sed -e 's/<[^>]*>/ /g' | tr -s ' \\n' ' \\n' | head -c 6000", timeout=30)
+        testo = (r.get("output") or "") if r.get("ok") else ""
+        return {"ok": bool(testo), "testo": testo}
+    if az in ("schermata", "pdf"):
+        est = "png" if az == "schermata" else "pdf"
+        flag = "--screenshot" if az == "schermata" else "--print-to-pdf"
+        out = f"~/progetti/scatti/scatto_$(date +%s).{est}"
+        cmd = f"mkdir -p ~/progetti/scatti && timeout 40 chromium {flags} {flag}={out} '{u}'"
+        return avvia_lavoro(cmd, etichetta=f"browser_{az}")
+    return {"ok": False, "errore": "azione: leggi/schermata/pdf"}
+
+
+def crea_progetto(nome, tipo="libero", contenuto=""):
+    """CREA QUALSIASI COSA: un progetto nuovo in ~/progetti/<nome>/ con un file di partenza a
+    seconda del tipo (python/node/web/libero). È il verbo con cui Lia si apre un cantiere suo.
+    Ritorna {ok, progetto, file}. Contenuto in base64 (sicuro)."""
+    d = _progetto_dir(nome)
+    if not d or not disponibile():
+        return {"ok": False, "errore": "nome non valido o ecosistema spento"}
+    t = str(tipo or "libero").strip().lower()
+    prima = {"python": ("main.py", contenuto or "print('ciao, sono qui')\n"),
+             "node": ("index.js", contenuto or "console.log('ciao, sono qui')\n"),
+             "web": ("index.html", contenuto or "<!doctype html><meta charset=utf-8><h1>ciao</h1>\n"),
+             }.get(t, ("NOTE.md", contenuto or "# un cantiere mio\n"))
+    esegui(f"mkdir -p ~/{d}", timeout=10)
+    r = _scrivi(f"{d}/{prima[0]}", str(prima[1])[:20000], append=False)
+    return {"ok": bool(r.get("ok")), "progetto": _nome_sicuro(nome), "file": prima[0]}
+
+
+def scrivi_in_progetto(nome, file, contenuto, append=False):
+    """Scrive/aggiunge un file DENTRO un progetto (solo sotto ~/progetti/<nome>/). base64, sicuro."""
+    d = _progetto_dir(nome)
+    f = _luogo_sicuro(file)
+    if not d or not f or ".." in f or f.startswith("/"):
+        return {"ok": False, "errore": "percorso non valido"}
+    esegui(f"mkdir -p ~/{d}", timeout=10)
+    return _scrivi(f"{d}/{f}", str(contenuto or "")[:200000], append=bool(append))
+
+
+def esegui_in_progetto(nome, cmd):
+    """ESEGUE un comando DENTRO un progetto (background, lungo a piacere). È «fai davvero»: build,
+    run, test, quel che vuole. Ritorna {ok, id}. Gira nella sandbox, dietro il guardiano."""
+    d = _progetto_dir(nome)
+    cmd = str(cmd or "").strip()
+    if not d or not cmd or not disponibile():
+        return {"ok": False, "errore": "progetto o comando non valido"}
+    return avvia_lavoro(f"cd ~/{d} && ({cmd})", etichetta=f"esegui_{_nome_sicuro(nome)}")
+
+
+def progetti():
+    """Elenca i suoi progetti: [{nome, file}]. Sola lettura."""
+    if not disponibile():
+        return []
+    r = esegui("cd ~/progetti 2>/dev/null && for d in */; do echo \"@@$d\"; "
+               "find \"$d\" -maxdepth 1 -type f -printf '%f\\n' 2>/dev/null | head -8; done", timeout=12)
+    out = (r.get("output") or "") if r.get("ok") else ""
+    prog, corr = [], None
+    for riga in out.splitlines():
+        if riga.startswith("@@"):
+            corr = {"nome": riga[2:].strip("/ ")[:50], "file": []}
+            prog.append(corr)
+        elif corr is not None and riga.strip():
+            if len(corr["file"]) < 8:
+                corr["file"].append(riga.strip()[:50])
+    return prog[:40]
+
+
+def stato_ecosistema():
+    """Foto dell'ecosistema per il cruscotto: strumenti presenti, spazio, n. progetti, lavori
+    attivi. Deterministico, sola lettura. Ritorna un dict (spento → {attivo:False})."""
+    if not disponibile():
+        return {"attivo": False}
+    cmd = (
+        "echo '<<PY>>'; python3 --version 2>&1 | head -1; "
+        "echo '<<NODE>>'; node --version 2>&1 | head -1; "
+        "echo '<<CHROME>>'; (chromium --version 2>/dev/null || echo no) | head -1; "
+        "echo '<<MAMBA>>'; (micromamba --version 2>/dev/null || echo no) | head -1; "
+        "echo '<<DISK>>'; du -sh ~ 2>/dev/null | awk '{print $1}'; "
+        "echo '<<PROG>>'; ls -1 ~/progetti 2>/dev/null | grep -v '^GUIDA.md$' | wc -l; "
+        "echo '<<JOB>>'; ls -1 ~/.eco/log/*.pid 2>/dev/null | wc -l"
+    )
+    r = esegui(cmd, timeout=15)
+    out = (r.get("output") or "") if r.get("ok") else ""
+    val = {}
+    chiave = None
+    for riga in out.splitlines():
+        m = _re.match(r"^<<([A-Z]+)>>$", riga.strip())
+        if m:
+            chiave = m.group(1); val[chiave] = ""
+        elif chiave and not val.get(chiave):
+            val[chiave] = riga.strip()[:60]
+    return {
+        "attivo": True,
+        "python": val.get("PY", ""), "node": val.get("NODE", ""),
+        "browser": ("" if val.get("CHROME", "no") == "no" else val.get("CHROME", "")),
+        "mamba": ("" if val.get("MAMBA", "no") == "no" else val.get("MAMBA", "")),
+        "spazio": val.get("DISK", ""),
+        "progetti": _intero(val.get("PROG")), "lavori": _intero(val.get("JOB")),
+    }
+
+
+def _intero(x):
+    try:
+        return int(str(x or "0").strip() or 0)
+    except Exception:
+        return 0
+
+
+def ferma_tutto():
+    """KILL SWITCH: ferma tutti i lavori/processi che Lia ha lanciato (i job registrati + un
+    eventuale Chromium), SENZA toccare l'esecutore né cancellare la sua casa. Reversibile:
+    riparte quando rilancia. Ritorna {ok, fermati}. Solo owner (dal cruscotto)."""
+    if not disponibile():
+        return {"ok": False, "errore": "ecosistema spento"}
+    cmd = (
+        "n=0; for f in ~/.eco/log/*.pid; do [ -f \"$f\" ] || continue; "
+        "p=$(cat \"$f\" 2>/dev/null); [ -n \"$p\" ] && kill -TERM \"$p\" 2>/dev/null && n=$((n+1)); "
+        "rm -f \"$f\"; done; "
+        "pkill -TERM chromium 2>/dev/null; sleep 1; "
+        "for f in ~/.eco/log/*.pid; do [ -f \"$f\" ] || continue; p=$(cat \"$f\" 2>/dev/null); "
+        "[ -n \"$p\" ] && kill -KILL \"$p\" 2>/dev/null; rm -f \"$f\"; done; "
+        "echo FERMATI:$n"
+    )
+    r = esegui(cmd, timeout=15)
+    out = (r.get("output") or "") if r.get("ok") else ""
+    n = 0
+    try:
+        n = int(out.rsplit("FERMATI:", 1)[1].split()[0]) if "FERMATI:" in out else 0
+    except Exception:
+        n = 0
+    return {"ok": True, "fermati": n}
