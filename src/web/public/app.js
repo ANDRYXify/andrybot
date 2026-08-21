@@ -685,6 +685,7 @@ function cambiaLingua(l) {
   LINGUA = l;
   try { localStorage.setItem('lingua', l); } catch (e) {  }
   try { document.documentElement.lang = l; } catch (e) {  }
+  try { window.SB_CERCA && window.SB_CERCA.invalida(); } catch (e) {  }
   render();
 }
 
