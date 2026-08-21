@@ -1,15 +1,11 @@
-// Motore effetti "cinematici" in PixiJS (WebGL). Stessa API di SB_FX del motore
-// 2D (spawn/caricaSu/spara/mano/laser/fuoco/aura/mirino/scatto/congela/combo…),
-// ma la resa usa particelle additive + bloom → look vero, non gradienti disegnati.
-// Se PIXI non è caricato (OBS senza WebGL) NON definisce SB_FX: il loader carica il
-// motore 2D di ripiego. Coordinate 0..1; specchia(true) ribalta la X.
+
+
 (() => {
   'use strict';
-  if (!window.PIXI || !PIXI.Application) return;           // niente WebGL → ripiego 2D
+  if (!window.PIXI || !PIXI.Application) return;
   const F = PIXI.filters || {};
   const ADD = PIXI.BLEND_MODES.ADD;
 
-  // ── audio sintetico (identico al 2D): niente file, niente CDN
   let AC = null, suoniOn = true;
   function ac() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch { AC = null; } } return AC; }
   function suono(tipo) {
@@ -26,7 +22,6 @@
     else if (tipo === 'impatto') { beep(90, 40, 0.25, 'sine', 0.2); rumore(0.2, 0.1); }
   }
 
-  // ── stato / util
   const nz = (v, d) => (Number.isFinite(v) ? v : d);
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const rand = (a, b) => a + Math.random() * (b - a);
@@ -34,17 +29,16 @@
   const px = (x) => (mirror ? 1 - x : x) * W, py = (y) => y * H, sdx = (dx) => (mirror ? -dx : dx);
 
   let energia, hud, glowTex, ringTex;
-  const particelle = [];   // { sp, vx, vy, grav, decay, life, life0, s0, s1, tint0, tint1, suck, tx, ty, colora }
-  let orb = null;          // carica kamehameha { sp, aura, liv }
-  const raggi = [];        // { g, life, forza, ang, x, y }
-  const fulmini = [];      // { g, life, pts }
+  const particelle = [];
+  let orb = null;
+  const raggi = [];
+  const fulmini = [];
   const manoSp = [null, null];
   let laser = null, halo = null, fuocoT = 0, fuocoPos = { x: 0.5, y: 0.62 };
   let thanos = null, freeze = 0, shake = 0;
   let combo = 0, comboT = 0, comboTxt = null;
   let mirino = null; const scatti = [];
 
-  // texture glow radiale morbida (niente asset esterni)
   function makeGlow(size) {
     const g = new PIXI.Graphics();
     const r = size / 2;
@@ -59,7 +53,6 @@
 
   function sprite(tex, x, y, tint, scale, add) { const s = new PIXI.Sprite(tex); s.anchor.set(0.5); s.position.set(x, y); s.tint = tint; s.scale.set(scale); if (add !== false) s.blendMode = ADD; return s; }
 
-  // particella generica additiva (glow)
   function P(x, y, o) {
     if (particelle.length > 900) return;
     o = o || {};
@@ -69,7 +62,6 @@
   }
   const lerpCol = (a, b, t) => { const ar = (a >> 16) & 255, ag = (a >> 8) & 255, ab = a & 255, br = (b >> 16) & 255, bg = (b >> 8) & 255, bb = b & 255; return ((ar + (br - ar) * t) << 16) | ((ag + (bg - ag) * t) << 8) | (ab + (bb - ab) * t); };
 
-  // ── API ------------------------------------------------------------------
   function spawn(tipo, p) {
     p = p || {}; const x = px(nz(p.x, 0.5)), y = py(nz(p.y, 0.5));
     if (tipo === 'fireball') {
@@ -89,7 +81,7 @@
     p = p || {}; const x = px(nz(p.x, 0.5)), y = py(nz(p.y, 0.5)), liv = clamp(nz(p.liv, orb ? orb.liv : 0.2), 0, 1);
     if (!orb) { const sp = sprite(glowTex, x, y, 0xbfe6ff, 0.6); energia.addChild(sp); orb = { sp, liv }; }
     orb.sp.position.set(x, y); orb.liv = liv;
-    // particelle risucchiate verso l'orb
+
     if (Math.random() < 0.9) { const a = rand(0, 7), d = rand(120, 240) * (0.6 + liv); P(x + Math.cos(a) * d, y + Math.sin(a) * d, { suck: true, tx: x, ty: y, s0: rand(0.15, 0.4), s1: 0, tint0: 0x9fd8ff, decay: 0.03 }); }
     if (Math.random() < 0.3) suono('carica');
   }
@@ -100,7 +92,7 @@
     const dx = sdx(nz(p.dx, 1)), dy = nz(p.dy, 0), ang = Math.atan2(dy, dx);
     const g = new PIXI.Graphics(); g.blendMode = ADD; energia.addChild(g);
     raggi.push({ tipo: 'beam', g, x, y, ang, forza, life: 1 });
-    // muzzle flash
+
     for (let i = 0; i < 26; i++) { const a = rand(0, 7), v = rand(3, 11) * forza; P(x, y, { vx: Math.cos(a) * v, vy: Math.sin(a) * v, s0: rand(0.2, 0.5), s1: 0, tint0: 0xdff2ff, tint1: 0x3aa0ff, decay: 0.05 }); }
     caricaGiu(); suono('kamehameha'); shake = Math.max(shake, 10 + forza * 16); pulsaCombo();
   }
@@ -112,7 +104,7 @@
     if (Math.random() < 0.9) P(X + rand(-6, 6), Y + rand(-6, 6), { vx: rand(-0.6, 0.6), vy: rand(-0.6, 0.6), s0: rand(0.25, 0.5), s1: 0, tint0: 0x9fe0ff, tint1: 0x2f7cff, decay: 0.05 });
   }
   function pulsaCombo() { if (!comboOn) return; combo++; comboT = 1.8; }
-  // ── viso
+
   function laserOn(p) {
     p = p || {};
     if (!laser) { laser = { lnx: 0.42, lny: 0.42, rnx: 0.58, rny: 0.42, t: 0, gl: new PIXI.Graphics(), gr: new PIXI.Graphics() }; laser.gl.blendMode = ADD; laser.gr.blendMode = ADD; energia.addChild(laser.gl, laser.gr); }
@@ -127,7 +119,7 @@
     halo.nx = nz(p.x, halo.nx); halo.ny = nz(p.y, halo.ny); halo.r = clamp(nz(p.r, halo.r), 0.03, 1); halo.spegni = false; halo.t = Math.min(1, halo.t + 0.06);
   }
   function auraOff() { if (halo) halo.spegni = true; }
-  // ── inquadratura / snap / freeze
+
   function mirinoOn(p) { p = p || {}; mirino = { ax: nz(p.ax, 0.3), ay: nz(p.ay, 0.3), bx: nz(p.bx, 0.7), by: nz(p.by, 0.7) }; }
   function mirinoGiu() { mirino = null; }
   function scatto(p) {
@@ -137,22 +129,18 @@
   }
   function congela(sec) { freeze = Math.max(freeze, sec || 2.5); suono('freeze'); }
 
-  // ── update + render (guidato dal ticker Pixi) -----------------------------
   let hudGfx;
   function tick(delta) {
     const dt = Math.min(3, delta) * (freeze > 0 ? 0.32 : 1);
     const realS = Math.min(3, delta) / 60;
     if (freeze > 0) freeze -= realS;
-    // shake
+
     if (shake > 0.3) { app.stage.position.set(rand(-shake, shake), rand(-shake, shake)); shake *= Math.pow(0.86, dt); } else { app.stage.position.set(0, 0); shake = 0; }
 
-    // mani: svanisci se non aggiornate
     for (let i = 0; i < 2; i++) { const m = manoSp[i]; if (m) { if (performance.now() - (m._seen || 0) > 180) { m.alpha *= 0.85; if (m.alpha < 0.03) { m.destroy(); manoSp[i] = null; } } else { m.scale.set(0.9 + 0.08 * Math.sin(performance.now() / 120)); } } }
 
-    // orb carica: pulsa e cresce
     if (orb) { const s = 0.6 + orb.liv * 3.2, pul = s * (1 + 0.12 * Math.sin(performance.now() / 70)); orb.sp.scale.set(pul); orb.sp.tint = lerpCol(0x9fd8ff, 0xffffff, orb.liv); }
 
-    // particelle
     for (let i = particelle.length - 1; i >= 0; i--) {
       const q = particelle[i];
       if (q.suck) { q.sp.x += (q.tx - q.sp.x) * 0.16 * dt; q.sp.y += (q.ty - q.sp.y) * 0.16 * dt; }
@@ -164,7 +152,6 @@
       if (q.tint1 != null) q.sp.tint = lerpCol(q.tint1, q.tint0, q.life);
     }
 
-    // raggi / fireball / onde / beam
     for (let i = raggi.length - 1; i >= 0; i--) {
       const r = raggi[i];
       if (r.tipo === 'fireball') {
@@ -183,13 +170,11 @@
       }
     }
 
-    // fulmini
     for (let i = fulmini.length - 1; i >= 0; i--) {
       const f = fulmini[i]; f.life -= 0.06 * dt; if (f.life <= 0) { f.g.destroy(); fulmini.splice(i, 1); continue; }
       f.g.clear(); for (let pass = 0; pass < 2; pass++) { f.g.lineStyle(pass === 0 ? 9 : 3, pass === 0 ? 0x96c8ff : 0xffffff, (pass === 0 ? 0.6 : 1) * f.life); f.g.moveTo(f.ax, f.ay); const seg = 8; for (let s = 1; s < seg; s++) { const tt = s / seg, amp = 26 * (1 - Math.abs(0.5 - tt) * 2); f.g.lineTo(f.ax + (f.bx - f.ax) * tt + rand(-1, 1) * amp, f.ay + (f.by - f.ay) * tt + rand(-1, 1) * amp); } f.g.lineTo(f.bx, f.by); }
     }
 
-    // laser occhi
     if (laser) {
       if (laser.spegni) { laser.t -= 0.09 * dt; if (laser.t <= 0) { laser.gl.destroy(); laser.gr.destroy(); laser = null; } }
       else laser.t = Math.min(1, laser.t + 0.15 * dt);
@@ -200,10 +185,8 @@
       drawEye(laser.gl, lx, ly); drawEye(laser.gr, rx, ry);
     }
 
-    // fuoco bocca
     if (fuocoT > 0) { fuocoT -= realS; const x = px(fuocoPos.x), y = py(fuocoPos.y); for (let k = 0; k < 3; k++) { const a = Math.PI / 2 + rand(-0.55, 0.55), v = rand(3, 8.5); P(x, y, { vx: Math.cos(a) * v, vy: Math.sin(a) * v, grav: 0.05, s0: rand(0.35, 0.7), s1: 0.05, tint0: 0xffd76e, tint1: 0xff3300, decay: 0.05 }); } }
 
-    // aura sorriso
     if (halo) {
       if (halo.spegni) { halo.t -= 0.06 * dt; if (halo.t <= 0) { halo.ring.destroy(); halo.spk.forEach((s) => s.destroy()); halo = null; } }
       else halo.t = Math.min(1, halo.t + 0.05 * dt);
@@ -215,29 +198,27 @@
       for (let k = 0; k < nS; k++) { const a = performance.now() / 620 + k * (7 / nS); halo.spk[k].position.set(x + Math.cos(a) * R, y + Math.sin(a) * R * 0.82); halo.spk[k].alpha = inten; halo.spk[k].scale.set(0.2 + 0.12 * (1 + Math.sin(performance.now() / 120 + k))); }
     }
 
-    // snap di Thanos
     if (thanos) {
       const x = thanos.x, y = thanos.y;
       if (thanos.emit) { thanos.emit = false; for (let k = 0; k < 60; k++) { const a = rand(0, 7), d = rand(4, 110); P(x + Math.cos(a) * d, y + Math.sin(a) * d, { vx: rand(-1, 1), vy: rand(-3.2, -0.6), s0: rand(0.2, 0.5), s1: 0, tint0: 0xb98cff, tint1: 0x6a28a0, decay: 0.012 }); } }
       thanos.t -= 0.02 * dt; if (thanos.t <= 0) thanos = null;
     }
 
-    // ── HUD (source-over): combo, mirino, scatto, freeze
     if (!hudGfx) { hudGfx = new PIXI.Graphics(); hud.addChild(hudGfx); }
     hudGfx.clear();
-    // freeze tint + onde
+
     if (freeze > 0) {
       const inten = Math.min(1, freeze); hudGfx.beginFill(0x285ab4, 0.15 * inten); hudGfx.drawRect(0, 0, W, H); hudGfx.endFill();
       const R = Math.max(W, H) * 0.6, tn = performance.now() / 1000; for (let k = 0; k < 3; k++) { const rr = ((tn * 0.5 + k / 3) % 1) * R; hudGfx.lineStyle(3, 0x96c8ff, 0.28 * inten * (1 - rr / R)); hudGfx.drawCircle(W / 2, H / 2, rr); }
     }
-    // mirino
+
     if (mirino) {
       const x0 = Math.min(px(mirino.ax), px(mirino.bx)), x1 = Math.max(px(mirino.ax), px(mirino.bx)), y0 = Math.min(py(mirino.ay), py(mirino.by)), y1 = Math.max(py(mirino.ay), py(mirino.by)), s = Math.max(14, Math.min(x1 - x0, y1 - y0) * 0.18);
       hudGfx.lineStyle(4, 0xffffff, 0.92);
       const st = (cx, cy, sx, sy) => { hudGfx.moveTo(cx + sx * s, cy); hudGfx.lineTo(cx, cy); hudGfx.lineTo(cx, cy + sy * s); };
       st(x0, y0, 1, 1); st(x1, y0, -1, 1); st(x0, y1, 1, -1); st(x1, y1, -1, -1);
     }
-    // scatto: flash + miniatura Polaroid
+
     for (let i = scatti.length - 1; i >= 0; i--) {
       const s = scatti[i]; s.t -= realS / 2.2; if (s.t <= 0) { if (s.spr) s.spr.destroy(); scatti.splice(i, 1); continue; }
       if (s.t > 0.82) { hudGfx.beginFill(0xffffff, (s.t - 0.82) / 0.18); hudGfx.drawRect(0, 0, W, H); hudGfx.endFill(); }
@@ -247,7 +228,7 @@
       hudGfx.beginFill(0xffffff, s.t < 0.16 ? s.t / 0.16 : 1); hudGfx.drawRect(rx - pad, ry - pad, rw + pad * 2, rh + pad * 3.2); hudGfx.endFill();
       if (s.tex) { if (!s.spr) { s.spr = new PIXI.Sprite(s.tex); hud.addChild(s.spr); } s.spr.position.set(rx, ry); s.spr.width = rw; s.spr.height = rh; s.spr.alpha = s.t < 0.16 ? s.t / 0.16 : 1; }
     }
-    // combo HUD
+
     if (comboT > 0) { comboT -= realS; if (combo >= 2) { if (!comboTxt) { comboTxt = new PIXI.Text('', { fontFamily: 'system-ui, sans-serif', fontWeight: '800', fontSize: Math.round(H * 0.09), fill: 0xffd36e, stroke: 0x000000, strokeThickness: Math.round(H * 0.012) }); comboTxt.anchor.set(0.5); hud.addChild(comboTxt); } comboTxt.text = 'COMBO ×' + combo; comboTxt.position.set(W / 2, H * 0.16); comboTxt.alpha = clamp(comboT, 0, 1); comboTxt.visible = true; } if (comboT <= 0) { combo = 0; if (comboTxt) comboTxt.visible = false; } }
     else if (comboTxt) comboTxt.visible = false;
   }
@@ -259,12 +240,12 @@
     W = app.screen.width || window.innerWidth; H = app.screen.height || window.innerHeight;
     glowTex = makeGlow(128); ringTex = makeRing(64);
     energia = new PIXI.Container(); hud = new PIXI.Container(); app.stage.addChild(energia, hud);
-    // bloom leggero: fa "accendere" le zone luminose additive → look vero
-    try { if (F.AdvancedBloomFilter) energia.filters = [new F.AdvancedBloomFilter({ threshold: 0.35, bloomScale: 1.0, brightness: 1.0, blur: 5, quality: 4 })]; else if (F.GlowFilter) energia.filters = [new F.GlowFilter({ distance: 16, outerStrength: 1.4, quality: 0.3 })]; } catch { /* niente bloom */ }
+
+    try { if (F.AdvancedBloomFilter) energia.filters = [new F.AdvancedBloomFilter({ threshold: 0.35, bloomScale: 1.0, brightness: 1.0, blur: 5, quality: 4 })]; else if (F.GlowFilter) energia.filters = [new F.GlowFilter({ distance: 16, outerStrength: 1.4, quality: 0.3 })]; } catch {  }
     app.renderer.on('resize', () => { W = app.screen.width; H = app.screen.height; });
     app.ticker.add(tick);
   }
-  try { init(); } catch (e) { return; }   // se Pixi non inizializza → resta il 2D
+  try { init(); } catch (e) { return; }
 
   window.SB_FX = {
     spawn, caricaSu, caricaGiu, spara, mano, combo: pulsaCombo,
@@ -272,6 +253,6 @@
     suoni(on) { suoniOn = !!on; }, specchia(on) { mirror = !!on; }, abilitaCombo(on) { comboOn = !!on; if (!on) { combo = 0; comboT = 0; } },
     caricaAttiva() { return !!orb; }, livelloCarica() { return orb ? orb.liv : 0; },
     motore: 'webgl',
-    aggiornaEDisegna() { /* Pixi rende da sé nel ticker: no-op per compatibilità 2D */ },
+    aggiornaEDisegna() {  },
   };
 })();

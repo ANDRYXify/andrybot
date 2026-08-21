@@ -1,8 +1,5 @@
-// Libreria di SUONI PRESET sintetizzati con la Web Audio API: niente file da
-// caricare, niente copyright. La usano sia l'overlay (per farli partire in
-// diretta) sia la dashboard (per l'anteprima). Espone:
-//   window.SUONI_PRESET = { lista: [{id, nome}], suona(id, volume) }
-// `volume` è 0..100. Se un id non esiste, non fa nulla.
+
+
 (function () {
   'use strict';
 
@@ -11,11 +8,10 @@
     const C = window.AudioContext || window.webkitAudioContext;
     if (!C) return null;
     if (!AC) AC = new C();
-    if (AC.state === 'suspended') { try { AC.resume(); } catch (e) { /* niente */ } }
+    if (AC.state === 'suspended') { try { AC.resume(); } catch (e) {  } }
     return AC;
   }
 
-  // Un tono con rampa di frequenza e inviluppo esponenziale in chiusura.
   function tono(c, dest, { tipo = 'sine', f0, f1, t0, dur, picco = 0.3 }) {
     const osc = c.createOscillator();
     const g = c.createGain();
@@ -30,7 +26,6 @@
     osc.stop(t0 + dur + 0.02);
   }
 
-  // Un colpo di rumore (per tamburi, applausi, whoosh) filtrato.
   function rumore(c, dest, { t0, dur, picco = 0.3, tipoFiltro = 'bandpass', f0 = 1000, f1, q = 1 }) {
     const n = Math.floor(c.sampleRate * dur);
     const buf = c.createBuffer(1, n, c.sampleRate);
@@ -51,7 +46,6 @@
     src.stop(t0 + dur + 0.02);
   }
 
-  // Ogni preset: (c, dest, t0) → disegna il suono a partire da t0.
   const RICETTE = {
     campanello: (c, d, t) => { tono(c, d, { tipo: 'sine', f0: 1568, f1: 1568, t0: t, dur: 0.5, picco: 0.35 }); tono(c, d, { tipo: 'sine', f0: 2093, t0: t, dur: 0.35, picco: 0.15 }); },
     campana:    (c, d, t) => { tono(c, d, { tipo: 'sine', f0: 660, t0: t, dur: 1.4, picco: 0.32 }); tono(c, d, { tipo: 'sine', f0: 990, t0: t, dur: 1.0, picco: 0.14 }); tono(c, d, { tipo: 'sine', f0: 1980, t0: t, dur: 0.6, picco: 0.06 }); },
@@ -68,7 +62,6 @@
     salita:     (c, d, t) => { [392, 523, 659, 784, 1046].forEach((f, i) => tono(c, d, { tipo: 'square', f0: f, t0: t + i * 0.07, dur: 0.09, picco: 0.2 })); },
   };
 
-  // Etichette leggibili (ordine = ordine nel menu).
   const NOMI = {
     campanello: 'Campanello', campana: 'Campana', acqua: 'Goccia d\'acqua', moneta: 'Moneta',
     tamburo: 'Tamburo', trombetta: 'Trombetta', errore: 'Errore / buzzer', tada: 'Ta-daa!',
@@ -77,11 +70,6 @@
 
   const lista = Object.keys(RICETTE).map((id) => ({ id, nome: NOMI[id] || id }));
 
-  // suona(id, volume[, destino]).
-  //  · destino (opzionale) = { ac, nodi:[AudioNode,…] }: se presente, sintetizza
-  //    DENTRO quel contesto e collega l'uscita a quei nodi (es. il mixer dello
-  //    Studio Web → i suoni preset finiscono anche nella diretta e nel monitor
-  //    locale). Senza destino: nuovo contesto → altoparlanti (come prima).
   function suona(id, volume, destino) {
     const ricetta = RICETTE[id];
     if (!ricetta) return false;
@@ -91,8 +79,8 @@
     const v = Math.min(1, Math.max(0, (Number(volume) || 100) / 100));
     master.gain.value = v;
     const nodi = (destino && Array.isArray(destino.nodi) && destino.nodi.length) ? destino.nodi : [c.destination];
-    for (const n of nodi) { try { master.connect(n); } catch (e) { /* niente */ } }
-    try { if (c.state === 'suspended') c.resume(); } catch (e) { /* niente */ }
+    for (const n of nodi) { try { master.connect(n); } catch (e) {  } }
+    try { if (c.state === 'suspended') c.resume(); } catch (e) {  }
     try { ricetta(c, master, c.currentTime + 0.01); } catch (e) { return false; }
     return true;
   }

@@ -6,8 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <title>SocialBot · Overlay giochi</title>
   <style>
-    /* Trasparente: in OBS si mette SOPRA la tua facecam nativa. Nessuna webcam qui:
-       i gesti/espressioni arrivano dal "rilevatore" via il canale tracking. */
+    
     html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
     #fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
     #stato {
@@ -16,7 +15,7 @@
       background: rgba(0,0,0,.55); padding: 7px 11px; border-radius: 10px; max-width: 680px;
     }
     body.pronto #stato { display: none; }
-    /* meme reazione: compare quando fai un'espressione, entra a rimbalzo ed esce */
+    
     #meme { position: fixed; top: 6%; right: 5%; z-index: 4; pointer-events: none; }
     #meme .meme-img { display: block; max-width: 34vw; max-height: 42vh; filter: drop-shadow(0 12px 28px rgba(0,0,0,.55)); }
     #meme .meme-emoji { font: 900 22vh/1 system-ui, "Segoe UI Emoji", "Apple Color Emoji", sans-serif; filter: drop-shadow(0 8px 22px rgba(0,0,0,.55)); }
@@ -27,8 +26,7 @@
 <body>
   <canvas id="fx"></canvas>
   <div id="stato">SocialBot giochi · in attesa del rilevatore…</div>
-  <!-- SB_TRACKING va definito PRIMA di tracking-games.js: quindi il motore lo
-       carichiamo dinamicamente in fondo, dopo aver creato il ponte. -->
+  
   <script>
     (() => {
       'use strict';
@@ -42,24 +40,22 @@
 
       let gameFn = null, cmdFn = null;
       let lastGesto = '', lastEmo = '';
-      // trail fluido: interpolo a 60fps verso l'ultima posizione ricevuta di ogni mano
+
       const manoTarget = [null, null], manoSmooth = [null, null];
 
-      // ── MEME dalle espressioni: quando arriva un'emozione, mostra il meme abbinato
-      // (emoji grande o immagine/GIF) con entrata a rimbalzo, suono e uscita.
       const MEME_DEFAULT = { happy: '😂', surprise: '😱', angry: '🤬', sad: '😭', fear: '😨', disgust: '🤢' };
       let memeMap = {}, memeOn = true, memeSuono = true, memeBox = null, memeLast = 0, _memeAC = null;
       const memeCd = {};
       function memePop() {
         if (!memeSuono) return;
-        try { _memeAC = _memeAC || new (window.AudioContext || window.webkitAudioContext)(); const o = _memeAC.createOscillator(), g = _memeAC.createGain(), t = _memeAC.currentTime; o.type = 'triangle'; o.frequency.setValueAtTime(320, t); o.frequency.exponentialRampToValueAtTime(880, t + 0.12); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.14, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.25); o.connect(g); g.connect(_memeAC.destination); o.start(t); o.stop(t + 0.28); } catch { /* niente */ }
+        try { _memeAC = _memeAC || new (window.AudioContext || window.webkitAudioContext)(); const o = _memeAC.createOscillator(), g = _memeAC.createGain(), t = _memeAC.currentTime; o.type = 'triangle'; o.frequency.setValueAtTime(320, t); o.frequency.exponentialRampToValueAtTime(880, t + 0.12); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.14, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.25); o.connect(g); g.connect(_memeAC.destination); o.start(t); o.stop(t + 0.28); } catch {  }
       }
       function mostraMeme(emo) {
         if (!memeOn || !emo) return;
         const map = Object.keys(memeMap).length ? memeMap : MEME_DEFAULT;
         const val = map[emo]; if (!val) return;
         const now = performance.now();
-        if (now - (memeCd[emo] || 0) < 4500 || now - memeLast < 1000) return;   // no spam
+        if (now - (memeCd[emo] || 0) < 4500 || now - memeLast < 1000) return;
         memeCd[emo] = now; memeLast = now;
         if (!memeBox) { memeBox = document.createElement('div'); memeBox.id = 'meme'; document.body.appendChild(memeBox); }
         const url = /^(https?:|\/|data:)/.test(val);
@@ -72,7 +68,6 @@
         setTimeout(() => { el.style.animation = 'memeOut .4s ease-in forwards'; setTimeout(() => { if (el.parentNode) el.remove(); }, 420); }, 2600);
       }
 
-      // annuncio in chat (punteggi/esiti) via il bot: solo testo, ripulito lato server.
       const ultimoSay = { t: 0 };
       async function annuncia(testo) {
         if (!key || !testo) return;
@@ -84,21 +79,19 @@
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ testo: String(testo).slice(0, 200) }), keepalive: true,
           });
-        } catch { /* rete: pazienza */ }
+        } catch {  }
       }
 
-      // Ponte per tracking-games.js: qui i "gesti/volti" arrivano dallo stato SSE.
       window.SB_TRACKING = {
         registraMinigioco(fn) { gameFn = typeof fn === 'function' ? fn : null; },
         fermaMinigioco() { gameFn = null; },
         onComando(fn) { cmdFn = typeof fn === 'function' ? fn : null; },
-        _comando(c) { if (cmdFn) { try { cmdFn(c); } catch { /* niente */ } } },
+        _comando(c) { if (cmdFn) { try { cmdFn(c); } catch {  } } },
         annuncia,
         rilevaGesto(h) { return (h && h.g) || ''; },
         emozione(f) { return (f && f.emo) || ''; },
       };
 
-      // Applica un evento EFFETTO (dal rilevatore) al motore SB_FX.
       function applicaFx(d) {
         const FX = window.SB_FX; if (!FX) return;
         const t = d.tipo;
@@ -120,7 +113,6 @@
         else if (t === 'puntatore') window.SB_PUNTATORE = { x: d.x, y: d.y, giu: d.liv > 0.5, t: performance.now() };
       }
 
-      // Canale di ritorno: stato del rilevatore (gesto/emozione), EFFETTI e comandi (chat).
       function connetti() {
         if (!key) { setStato('chiave mancante nel link'); return; }
         try {
@@ -132,9 +124,9 @@
             document.body.classList.add('pronto');
             if (d.azione === 'stato') { lastGesto = d.gesto || ''; lastEmo = d.emozione || ''; mostraMeme(d.emozione); }
             else if (d.azione === 'fx') applicaFx(d);
-            else if (cmdFn) { try { cmdFn(d); } catch { /* niente */ } }
+            else if (cmdFn) { try { cmdFn(d); } catch {  } }
           };
-          es.onerror = () => { /* riprova da solo */ };
+          es.onerror = () => {  };
         } catch { setStato('impossibile collegarsi'); }
       }
 
@@ -142,7 +134,6 @@
       window.addEventListener('resize', ridimensiona);
       ridimensiona();
 
-      // emette il trail delle mani interpolato (liscio) verso l'ultimo dato ricevuto
       function emettiTrail(now) {
         const FX = window.SB_FX; if (!FX) return;
         for (let i = 0; i < 2; i++) {
@@ -161,14 +152,12 @@
         ctx.clearRect(0, 0, W, H);
         const now = performance.now(), dt = now - (_lastTick || now); _lastTick = now;
         emettiTrail(now);
-        // effetti cinematici (sotto), poi la UI dei giochi (sopra, leggibile)
-        if (window.SB_FX) { try { window.SB_FX.aggiornaEDisegna(ctx, W, H, dt); } catch { /* niente */ } }
-        if (gameFn) { try { gameFn({ hands: lastGesto ? [{ g: lastGesto }] : [], faces: lastEmo ? [{ emo: lastEmo }] : [], ctx, W, H }); } catch { /* niente */ } }
+
+        if (window.SB_FX) { try { window.SB_FX.aggiornaEDisegna(ctx, W, H, dt); } catch {  } }
+        if (gameFn) { try { gameFn({ hands: lastGesto ? [{ g: lastGesto }] : [], faces: lastEmo ? [{ emo: lastEmo }] : [], ctx, W, H }); } catch {  } }
         requestAnimationFrame(loop);
       }
 
-      // Applica la config del canale (pannello dashboard): specchio, suoni, combo,
-      // quali giochi. Il ?flip nel link, se c'è, vince sullo specchio salvato.
       function applicaOpzioni(o) {
         const ef = (o && o.effetti) || {}, FX = window.SB_FX;
         if (FX) {
@@ -183,24 +172,22 @@
       }
       async function opzioni() {
         try { const r = await fetch(`/api/tracking/${encodeURIComponent(login)}/opzioni?key=${encodeURIComponent(key)}`); if (r.ok) applicaOpzioni(await r.json()); }
-        catch { /* uso i default */ }
+        catch {  }
       }
 
-      // Carica motore effetti + giochi DOPO aver definito SB_TRACKING, poi avvia.
-      // Motore preferito: PixiJS/WebGL (look "vero"); se non parte, ripiego 2D.
       const caricaScript = (src) => new Promise((res) => { const s = document.createElement('script'); s.src = src; s.onload = () => res(true); s.onerror = () => res(false); document.head.appendChild(s); });
-      window.SB_FX_ZINDEX = 0;   // effetti SOTTO la UI dei giochi (#fx z-index:1)
+      window.SB_FX_ZINDEX = 0;
       (async () => {
         await caricaScript('/vendor/pixi.min.js');
         await caricaScript('/vendor/pixi-filters.min.js');
         await caricaScript('/tracking-fx-gl.js');
-        if (!window.SB_FX) await caricaScript('/tracking-fx.js');   // ripiego 2D (niente WebGL)
+        if (!window.SB_FX) await caricaScript('/tracking-fx.js');
         if (window.SB_FX) window.SB_FX.specchia(params.get('flip') !== '0');
         await caricaScript('/tracking-games.js');
         await opzioni(); connetti(); loop();
       })();
     })();
-  </script>
+</script>
 
 <!-- Questo software e tutto il suo contenuto (codice, logica, dati, motori di ragionamento e la persona "Lia") sono proprieta intellettuale di Andrea Taliento (ANDRYXify). © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live. ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->
 <span style="display:none" aria-hidden="true">​‌​‌​​​‌​‌‌‌​‌​‌​‌‌​​‌​‌​‌‌‌​​‌‌​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​​‌‌​​‌‌‌​‌​​​‌‌‌​‌‌‌​‌‌​​​​‌​‌‌‌​​‌​​‌‌​​‌​‌​​‌​​​​​​‌‌​​‌​‌​​‌​​​​​​‌‌‌​‌​​​‌‌‌​‌​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​‌‌​‌​​‌​‌‌​‌‌​​​​‌​​​​​​‌‌‌​​‌‌​‌‌‌​‌​‌​‌‌​‌‌‌‌​​‌​​​​​​‌‌​​​‌‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​‌​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​​‌​‌​​​​‌‌​​​‌‌​‌‌​‌‌‌‌​‌‌​​‌​​​‌‌​‌​​‌​‌‌​​​‌‌​‌‌​​‌​‌​​‌​‌‌​​​​‌​​​​​​‌‌​‌‌​​​‌‌​‌‌‌‌​‌‌​​‌‌‌​‌‌​‌​​‌​‌‌​​​‌‌​‌‌​​​​‌​​‌​‌‌​​​​‌​​​​​​‌‌​​‌​​​‌‌​​​​‌​‌‌‌​‌​​​‌‌​‌​​‌​​‌​‌‌​​​​‌​​​​​​‌‌​‌‌​‌​‌‌​‌‌‌‌​‌‌‌​‌​​​‌‌​‌‌‌‌​‌‌‌​​‌​​‌‌​‌​​‌​​‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌​​‌​​​​​​‌‌‌​​‌​​‌‌​​​​‌​‌‌​​‌‌‌​‌‌​‌​​‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌​​​​‌​‌‌​‌‌​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​‌‌​​‌​‌​​‌​​​​​​‌‌​‌‌​​​‌‌​​​​‌​​‌​​​​​​‌‌‌​​​​​‌‌​​‌​‌​‌‌‌​​‌​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌​​​​‌​​‌​​​​​​​‌​​​‌​​‌​​‌‌​​​‌‌​‌​​‌​‌‌​​​​‌​​‌​​​‌​​​‌​‌​​‌​​‌​​​​​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌​‌‌‌‌​​‌​​​​​​‌‌‌​​​​​‌‌‌​​‌​​‌‌​‌‌‌‌​‌‌‌​​​​​‌‌‌​​‌​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌‌​‌​​​‌‌​​​​‌​​‌​​​​​​‌‌​‌​​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​​‌​‌​‌‌​‌‌​​​‌‌​‌‌​​​‌‌​​‌​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌‌​‌​‌​‌‌​​​​‌​‌‌​‌‌​​​‌‌​​‌​‌​​‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌​​‌​​​​​​‌​​​​​‌​‌‌​‌‌‌​​‌‌​​‌​​​‌‌‌​​‌​​‌‌​​‌​‌​‌‌​​​​‌​​‌​​​​​​‌​‌​‌​​​‌‌​​​​‌​‌‌​‌‌​​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​​‌​‌​​​​‌​​​​​‌​‌​​‌‌‌​​‌​​​‌​​​‌​‌​​‌​​‌​‌‌​​‌​‌​‌‌​​​​‌‌​‌​​‌​‌‌​​‌‌​​‌‌‌‌​​‌​​‌​‌​​‌​​‌​‌‌‌​​​‌​​​​​‌‌​​​​‌​‌​‌​‌​​‌​​‌​​​​​​​‌‌​​‌​​​‌‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌‌‌​​​‌​‌​​​​​​​‌​​‌​​‌‌​​‌‌​​‌​​​‌‌​​​​​​‌‌​​‌​​​‌‌​‌‌​​​‌​​​​​​‌​​​​​‌​‌‌​‌‌‌​​‌‌​​‌​​​‌‌‌​​‌​​‌‌​​‌​‌​‌‌​​​​‌​​‌​​​​​​‌​‌​‌​​​‌‌​​​​‌​‌‌​‌‌​​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​​‌​‌​​​​‌​​​​​‌​‌​​‌‌‌​​‌​​​‌​​​‌​‌​​‌​​‌​‌‌​​‌​‌​‌‌​​​​‌‌​‌​​‌​‌‌​​‌‌​​‌‌‌‌​​‌​​‌​‌​​‌​​‌​​​​​‌‌‌​​​‌​‌​​​​​​​‌​​‌​‌​​​​‌​​​​​​‌​‌​‌​​​‌‌‌​‌​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌​‌​​‌​​‌​​​​​​‌‌​‌​​‌​​‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌​‌‌‌​​‌​​‌‌​‌​​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌​‌​​‌​​‌​​​​​​‌‌‌​​‌​​‌‌​‌​​‌​‌‌‌​​‌‌​‌‌​​‌​‌​‌‌‌​​‌​​‌‌‌​‌‌​​‌‌​​​​‌​‌‌‌​‌​​​‌‌​‌​​‌​​‌​​​​​‌‌‌​​​‌​‌​​​​​​​‌​​‌​‌​​​​‌​​​​​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​​​‌‌​‌‌​‌​​‌​‌‌​​​​‌​‌‌​‌‌​​​‌‌​​​‌​​‌‌​‌‌‌‌​‌‌‌​‌​​​​‌​‌‌‌​​‌‌​‌‌​​​‌‌​‌​​‌​‌‌‌​‌‌​​‌‌​​‌​‌​​‌​‌‌‌​​​‌​​​​​​‌​​​​​‌​‌​​‌‌‌​​‌​​​‌​​​‌​‌​​‌​​‌​‌‌​​‌​‌​‌‌​​​​​‌​‌‌​‌​‌​​‌​​‌​‌​‌​​​​​​‌‌‌​‌​​​‌‌‌​‌​​‌‌​​​​‌​​‌‌​‌‌‌​‌‌​​‌‌​​​‌‌​​‌‌​​‌‌‌​​‌​‌‌​​​‌‌​​‌‌​​​‌​‌‌​​‌​‌​​‌‌‌​​​​‌‌​​​‌​​​‌‌​‌​​​​‌‌​​‌​​​‌‌​‌​​​‌‌​​‌​​​​‌‌‌​​‌​​‌‌​​​​​​‌​‌‌​‌​​‌‌​‌​​​‌‌​​‌‌​​​‌‌​‌‌‌​‌‌​​​‌​​​‌​‌‌​‌​‌‌‌​‌​​​‌‌​​​​‌​‌‌​‌‌​​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌‌‌​‌​​​‌‌‌​‌​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​​​‌‌​‌‌​‌​​‌​‌‌​​​​‌​‌‌​‌‌​​​‌‌​​​‌​​‌‌​‌‌‌‌​‌‌‌​‌​​​​‌​‌‌‌​​‌‌​‌‌​​​‌‌​‌​​‌​‌‌‌​‌‌​​‌‌​​‌​‌⁣</span></body>

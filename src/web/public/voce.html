@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SocialBot — Ascolto vocale</title>
   <style>
-    /* Pagina autoconsistente: nessuna risorsa esterna, tema scuro coerente
-       con la dashboard (accento viola Twitch #9146FF). */
+    
     :root {
       --viola: #9146FF;
       --viola-chiaro: #a970ff;
@@ -40,7 +39,7 @@
     h2 { font-size: .85rem; text-transform: uppercase; letter-spacing: .06em; color: var(--testo-2); margin-bottom: .5rem; }
     .intro { color: var(--testo-2); margin: .5rem 0 1.4rem; }
 
-    /* avviso "serve Chrome/Edge" o errori bloccanti */
+    
     .avviso {
       background: rgba(242, 84, 91, .12);
       border: 1px solid rgba(242, 84, 91, .45);
@@ -51,7 +50,7 @@
       font-size: .95rem;
     }
 
-    /* bottone grande avvia/ferma */
+    
     .btn {
       display: block;
       width: 100%;
@@ -72,7 +71,7 @@
     .btn:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
     .btn.attivo { background: linear-gradient(135deg, #3a3a44 0%, #26262c 100%); box-shadow: 0 8px 24px rgba(0,0,0,.4); }
 
-    /* riga di stato sotto al bottone */
+    
     .stato {
       display: flex;
       align-items: center;
@@ -87,7 +86,7 @@
 
     .sezione { margin-bottom: 1.6rem; }
 
-    /* frasi in ascolto: chip */
+    
     .frasi { display: flex; flex-wrap: wrap; gap: .5rem; }
     .frasi .vuoto { color: var(--testo-2); font-style: italic; }
     .chip {
@@ -100,7 +99,7 @@
       font-weight: 600;
     }
 
-    /* registro scorrevole */
+    
     .log {
       background: var(--carta);
       border: 1px solid var(--bordo);
@@ -152,7 +151,6 @@
   <script>
     'use strict';
 
-    // --- riferimenti DOM -------------------------------------------------
     const btn = document.getElementById('btn');
     const statoBox = document.getElementById('stato');
     const statoTesto = document.getElementById('statoTesto');
@@ -160,56 +158,45 @@
     const logBox = document.getElementById('log');
     const noApi = document.getElementById('noApi');
 
-    // --- Web Speech API (Chrome/Edge). Se assente: si ferma qui. ---------
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-    let rec = null;            // istanza SpeechRecognition
-    let attivo = false;        // l'utente VUOLE ascoltare (guida i riavvii)
-    let frasi = [];            // frasi da ascoltare (minuscole), dal server
-    let catCfg = { attivo: false, trigger: 'categoria' };   // comando "cambia categoria a voce"
-    let titCfg = { attivo: false, trigger: 'titolo' };      // comando "cambia titolo a voce"
-    let imparaCfg = { attivo: false };                      // "impara mentre parlo" (solo il proprietario)
-    let ultimoImpara = { t: '', ts: 0 };                    // anti-doppioni per l'apprendimento vocale
-    let timerFrasi = null;     // ricarica periodica dell'elenco
+    let rec = null;
+    let attivo = false;
+    let frasi = [];
+    let catCfg = { attivo: false, trigger: 'categoria' };
+    let titCfg = { attivo: false, trigger: 'titolo' };
+    let imparaCfg = { attivo: false };
+    let ultimoImpara = { t: '', ts: 0 };
+    let timerFrasi = null;
     const escRe = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const ultimoScatto = new Map();   // frase → epoch ms ultimo invio (cooldown 4s)
+    const ultimoScatto = new Map();
     const COOLDOWN_MS = 4000;
     let logVuoto = true;
-    // Gestione errori di rete del riconoscitore: invece di riavviare ogni 300ms
-    // (spam nel registro), aspettiamo sempre di più e dopo un po' passiamo al
-    // motore LOCALE (che funziona anche dove il nativo non c'è: Dia/Arc/Brave…).
-    let erroriRete = 0;               // errori 'network' consecutivi
-    let backoffMs = 300;              // ritardo prima di riprovare (cresce con gli errori)
-    const BACKOFF_MAX = 15000;        // al massimo 15s tra un tentativo e l'altro
-    const MAX_ERRORI_RETE = 2;        // dopo 2 errori di rete di fila → motore locale
 
-    // --- MOTORE: 'nativo' (Chrome/Edge, Web Speech) o 'locale' (Whisper WASM,
-    // ovunque). Ricordiamo la scelta: chi è su Dia parte subito col locale. ----
+    let erroriRete = 0;
+    let backoffMs = 300;
+    const BACKOFF_MAX = 15000;
+    const MAX_ERRORI_RETE = 2;
+
     let motore = 'nativo';
-    try { if (localStorage.getItem('voce_motore') === 'locale') motore = 'locale'; } catch (e) { /* ignora */ }
+    try { if (localStorage.getItem('voce_motore') === 'locale') motore = 'locale'; } catch (e) {  }
 
-    // Motore locale (Whisper via transformers.js v3): scarica il modello UNA
-    // volta (poi resta in cache nel browser), trascrive la voce SUL TUO PC e
-    // cerca le parole chiave. Nessun servizio esterno: privacy totale.
-    // Usa la GPU (WebGPU) se disponibile → veloce E preciso (whisper-base);
-    // altrimenti ripiega su CPU (WASM) con un modello più leggero.
     const WHISPER_CDN = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.1';
-    const MODELLO_GPU = 'onnx-community/whisper-base';   // preciso, veloce su GPU
-    const MODELLO_CPU = 'Xenova/whisper-tiny';           // leggero, per il fallback CPU
+    const MODELLO_GPU = 'onnx-community/whisper-base';
+    const MODELLO_CPU = 'Xenova/whisper-tiny';
     const DTYPE_GPU = { encoder_model: 'fp32', decoder_model_merged: 'fp16' };
-    const FINESTRA_SEC = 5;           // secondi di audio per giro (più contesto = capisce meglio)
-    const PASSO_MS = 1800;            // ogni quanto trascriviamo (finestre sovrapposte)
-    const MAX_TOKEN = 64;             // tetto ai token generati
-    let motoreAttivo = null;          // 'GPU' | 'CPU' (per i log)
-    let asr = null;                   // pipeline Whisper (caricata una volta)
-    let asrInCaricamento = null;      // Promise di caricamento (evita doppi load)
+    const FINESTRA_SEC = 5;
+    const PASSO_MS = 1800;
+    const MAX_TOKEN = 64;
+    let motoreAttivo = null;
+    let asr = null;
+    let asrInCaricamento = null;
     let micStream = null, audioCtx = null, procNode = null, srcNode = null;
-    let chunkAudio = [];              // pezzi Float32 accumulati (finestra scorrevole)
-    let campioniTot = 0;             // campioni totali in coda
+    let chunkAudio = [];
+    let campioniTot = 0;
     let loopTimer = null;
-    let trascrivendo = false;         // una trascrizione alla volta
+    let trascrivendo = false;
 
-    // --- registro a video ------------------------------------------------
     function logga(testo) {
       if (logVuoto) { logBox.innerHTML = ''; logVuoto = false; }
       const ora = new Date().toLocaleTimeString('it-IT');
@@ -219,14 +206,13 @@
       spanOra.className = 'ora';
       spanOra.textContent = ora;
       riga.appendChild(spanOra);
-      riga.appendChild(document.createTextNode(testo));   // textContent: niente HTML
+      riga.appendChild(document.createTextNode(testo));
       logBox.appendChild(riga);
-      // tieni solo le ultime 200 righe
+
       while (logBox.childElementCount > 200) logBox.removeChild(logBox.firstChild);
       logBox.scrollTop = logBox.scrollHeight;
     }
 
-    // --- stato a video ---------------------------------------------------
     function aggiornaStato() {
       if (attivo) {
         statoBox.classList.add('on');
@@ -258,7 +244,6 @@
       }
     }
 
-    // --- server: elenco frasi da ascoltare -------------------------------
     async function caricaFrasi() {
       try {
         const res = await fetch('/api/streamer/voce', { headers: { 'Accept': 'application/json' } });
@@ -281,7 +266,6 @@
       }
     }
 
-    // --- server: ho sentito una frase ------------------------------------
     async function inviaFrase(frase) {
       logga('sentito "' + frase + '" → invio…');
       try {
@@ -310,15 +294,13 @@
       }
     }
 
-    // --- "impara mentre parlo": manda al cervello una frase che ho detto -----
-    // Solo testo (l'audio non lascia il PC). Best-effort, silenzioso.
     async function inviaImpara(frase) {
       try {
         await fetch('/api/streamer/ascolta', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ testo: frase }),
         });
-      } catch (e) { /* niente: apprendimento best-effort */ }
+      } catch (e) {  }
     }
 
     function sessioneScaduta() {
@@ -326,20 +308,18 @@
       ferma();
     }
 
-    // --- confronto: la frase sentita contiene una parola chiave? ---------
     function valuta(testo, finale) {
       const t = String(testo || '').toLowerCase();
       if (!t) return;
       const ora = Date.now();
-      // comando integrato VIP: solo su frase COMPLETA (es. "vip a chiara per un mese")
+
       if (finale && /\bvip\b\s+\S/.test(t)) {
         if (ora - (ultimoScatto.get('__vip') || 0) >= COOLDOWN_MS) {
           ultimoScatto.set('__vip', ora);
           inviaFrase(t);
         }
       }
-      // comando "cambia categoria": es. "categoria Fortnite" (solo frase completa).
-      // Mandiamo l'intera frase: il server estrae il gioco e imposta la categoria.
+
       if (finale && catCfg.attivo && catCfg.trigger &&
           new RegExp('(?:^|\\s)' + escRe(catCfg.trigger) + '\\s+\\S').test(t)) {
         if (ora - (ultimoScatto.get('__cat') || 0) >= COOLDOWN_MS) {
@@ -347,18 +327,15 @@
           inviaFrase(t);
         }
       }
-      // comando "cambia titolo": es. "titolo In diretta con la community!".
-      // Usiamo il transcript ORIGINALE (non minuscolizzato): il titolo è testo libero.
+
       if (finale && titCfg.attivo && titCfg.trigger &&
           new RegExp('(?:^|\\s)' + escRe(titCfg.trigger) + '\\s+\\S').test(t)) {
         if (ora - (ultimoScatto.get('__tit') || 0) >= COOLDOWN_MS) {
           ultimoScatto.set('__tit', ora);
-          inviaFrase(String(testo || '').trim());   // originale, con maiuscole/punteggiatura
+          inviaFrase(String(testo || '').trim());
         }
       }
-      // "impara mentre parlo": manda le frasi VERE che dico (non i comandi) al
-      // cervello, così mi sente parlare e cresce. Solo su frase completa, con
-      // anti-doppioni e un piccolo respiro. Il testo originale (con maiuscole).
+
       if (finale && imparaCfg.attivo) {
         const frase = String(testo || '').replace(/\s+/g, ' ').trim();
         const low = frase.toLowerCase();
@@ -370,16 +347,15 @@
           inviaImpara(frase);
         }
       }
-      // frasi configurate nei moduli
+
       for (const frase of frasi) {
         if (!frase || !t.includes(frase)) continue;
-        if (ora - (ultimoScatto.get(frase) || 0) < COOLDOWN_MS) continue;   // cooldown 4s per frase
+        if (ora - (ultimoScatto.get(frase) || 0) < COOLDOWN_MS) continue;
         ultimoScatto.set(frase, ora);
         inviaFrase(frase);
       }
     }
 
-    // --- riconoscitore vocale --------------------------------------------
     function creaRiconoscitore() {
       const r = new SR();
       r.lang = 'it-IT';
@@ -387,11 +363,10 @@
       r.interimResults = true;
 
       r.onresult = (ev) => {
-        // il riconoscimento funziona: azzera lo stato di errore di rete
+
         erroriRete = 0; backoffMs = 300;
         for (let i = ev.resultIndex; i < ev.results.length; i++) {
-          // valutiamo anche i risultati parziali: la reazione è più pronta
-          // (il comando VIP scatta però solo sul risultato definitivo)
+
           valuta(ev.results[i][0].transcript, ev.results[i].isFinal);
         }
       };
@@ -402,11 +377,9 @@
           logga('Permesso microfono negato. Consenti il microfono per questo sito (icona nella barra) e riprova.');
           ferma();
         } else if (err === 'no-speech' || err === 'aborted') {
-          // normale: onend rilancerà il riconoscimento
+
         } else if (err === 'network') {
-          // Il riconoscimento NATIVO del browser non raggiunge il servizio di
-          // Google (tipico di Dia/Arc/Brave). Dopo un paio di tentativi passiamo
-          // al motore LOCALE, che funziona ovunque.
+
           erroriRete++;
           if (erroriRete === 1) {
             logga('Il riconoscimento nativo non è disponibile in questo browser. Preparo il motore locale…');
@@ -419,25 +392,22 @@
         }
       };
 
-      // la modalità continua cade da sola ogni tanto: se siamo ancora attivi,
-      // rilanciamo il riconoscimento (con backoff se ci sono errori di rete).
       r.onend = () => {
         if (!attivo) { aggiornaStato(); return; }
         setTimeout(() => {
           if (!attivo) return;
-          try { r.start(); } catch (e) { /* in transizione: riproverà */ }
+          try { r.start(); } catch (e) {  }
         }, backoffMs);
       };
 
       return r;
     }
 
-    // --- avvio / stop (dispatcher per motore) ----------------------------
     function avvia() {
       attivo = true;
       aggiornaStato();
       caricaFrasi();
-      if (!timerFrasi) timerFrasi = setInterval(caricaFrasi, 60000);   // ricarica ogni 60s
+      if (!timerFrasi) timerFrasi = setInterval(caricaFrasi, 60000);
       if (motore === 'locale' || !SR) avviaLocale();
       else avviaNativo();
     }
@@ -452,34 +422,28 @@
       if (eraAttivo) logga('⏹ Ascolto fermato.');
     }
 
-    // --- motore NATIVO (Web Speech, Chrome/Edge) -------------------------
     function avviaNativo() {
       if (!SR) { passaALocale('(niente riconoscimento nativo in questo browser)'); return; }
       erroriRete = 0; backoffMs = 300;
       if (!rec) rec = creaRiconoscitore();
-      try { rec.start(); } catch (e) { /* già avviato */ }
+      try { rec.start(); } catch (e) {  }
       logga('Ascolto avviato (motore del browser).');
     }
     function fermaNativo(silenzioso) {
-      if (rec) { try { rec.stop(); } catch (e) { /* già fermo */ } }
+      if (rec) { try { rec.stop(); } catch (e) {  } }
       if (!silenzioso) logga('⏹ Motore browser fermato.');
     }
 
-    // --- passaggio al motore LOCALE --------------------------------------
     function passaALocale(motivo) {
       if (motore !== 'locale') {
         motore = 'locale';
-        try { localStorage.setItem('voce_motore', 'locale'); } catch (e) { /* ignora */ }
+        try { localStorage.setItem('voce_motore', 'locale'); } catch (e) {  }
         logga('Passo al motore LOCALE (funziona anche su Dia/Arc/Brave). ' + (motivo || ''));
       }
       fermaNativo(true);
       if (attivo) avviaLocale();
     }
 
-    // --- motore LOCALE (Whisper WASM, funziona ovunque) ------------------
-    // Carica transformers.js + il modello (UNA volta, poi resta in cache nel
-    // browser), apre il microfono e ogni PASSO_MS trascrive gli ultimi
-    // FINESTRA_SEC secondi. Tutto sul dispositivo: nessun servizio esterno.
     async function ensureWhisper() {
       if (asr) return asr;
       if (asrInCaricamento) return asrInCaricamento;
@@ -487,9 +451,8 @@
         logga('Preparo il motore vocale…');
         const mod = await import(WHISPER_CDN);
         const pipeline = mod.pipeline;
-        try { if (mod.env) mod.env.allowLocalModels = false; } catch (e) { /* ignora */ }
+        try { if (mod.env) mod.env.allowLocalModels = false; } catch (e) {  }
 
-        // Prima la GPU (WebGPU): veloce e precisa. Poi la CPU (WASM) come rete.
         const haGPU = (typeof navigator !== 'undefined' && !!navigator.gpu);
         const tentativi = [];
         if (haGPU) tentativi.push({ device: 'webgpu', model: MODELLO_GPU, dtype: DTYPE_GPU, nome: 'GPU' });
@@ -510,8 +473,7 @@
                 }
               },
             });
-            // warm-up: valida il backend con mezzo secondo di silenzio (se il
-            // device non regge, salta al successivo invece di fallire in chat)
+
             await p(new Float32Array(8000), { language: 'italian', task: 'transcribe' });
             motoreAttivo = cfg.nome;
             logga(`Motore vocale pronto (${cfg.nome}).`);
@@ -531,7 +493,7 @@
       try {
         logga('Ascolto avviato (motore locale, sul tuo dispositivo).');
         await ensureWhisper();
-        if (!attivo) return;   // fermato durante il caricamento
+        if (!attivo) return;
         micStream = await navigator.mediaDevices.getUserMedia({
           audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
         });
@@ -545,7 +507,7 @@
           const ch = e.inputBuffer.getChannelData(0);
           chunkAudio.push(new Float32Array(ch));
           campioniTot += ch.length;
-          while (campioniTot > maxCampioni && chunkAudio.length > 1) {   // finestra scorrevole
+          while (campioniTot > maxCampioni && chunkAudio.length > 1) {
             campioniTot -= chunkAudio[0].length;
             chunkAudio.shift();
           }
@@ -568,10 +530,10 @@
 
     function fermaLocale(silenzioso) {
       if (loopTimer) { clearInterval(loopTimer); loopTimer = null; }
-      try { if (procNode) procNode.disconnect(); } catch (e) { /* niente */ }
-      try { if (srcNode) srcNode.disconnect(); } catch (e) { /* niente */ }
-      try { if (audioCtx) audioCtx.close(); } catch (e) { /* niente */ }
-      try { if (micStream) micStream.getTracks().forEach((t) => t.stop()); } catch (e) { /* niente */ }
+      try { if (procNode) procNode.disconnect(); } catch (e) {  }
+      try { if (srcNode) srcNode.disconnect(); } catch (e) {  }
+      try { if (audioCtx) audioCtx.close(); } catch (e) {  }
+      try { if (micStream) micStream.getTracks().forEach((t) => t.stop()); } catch (e) {  }
       procNode = srcNode = audioCtx = micStream = null;
       chunkAudio = []; campioniTot = 0;
       if (!silenzioso) logga('⏹ Motore locale fermato.');
@@ -585,8 +547,8 @@
         const unito = new Float32Array(tot);
         let off = 0; for (const c of chunkAudio) { unito.set(c, off); off += c.length; }
         const a16 = resample16k(unito, audioCtx ? audioCtx.sampleRate : 16000);
-        if (a16.length < 16000 * 0.6) { trascrivendo = false; return; }   // troppo poco audio
-        // gate sul silenzio: se non stai parlando, non sprechiamo una trascrizione
+        if (a16.length < 16000 * 0.6) { trascrivendo = false; return; }
+
         let energia = 0;
         for (let i = 0; i < a16.length; i++) energia += a16[i] * a16[i];
         energia = Math.sqrt(energia / a16.length);
@@ -595,13 +557,12 @@
         const testo = (out && out.text ? String(out.text) : '').trim();
         if (testo) valuta(testo, true);
       } catch (e) {
-        // una trascrizione fallita non ferma l'ascolto
+
       } finally {
         trascrivendo = false;
       }
     }
 
-    // ricampionamento lineare a 16 kHz (Whisper vuole 16k mono)
     function resample16k(float32, fromRate) {
       if (!fromRate || fromRate === 16000) return float32;
       const ratio = fromRate / 16000;
@@ -617,15 +578,12 @@
       return out;
     }
 
-    // --- collegamento UI -------------------------------------------------
-    // Il bottone è SEMPRE attivo: se manca il riconoscimento nativo del browser
-    // usiamo il motore locale (che funziona ovunque).
     btn.addEventListener('click', () => { if (attivo) ferma(); else avvia(); });
     if (!SR) {
-      motore = 'locale';        // niente Web Speech: si va di locale
-      noApi.hidden = false;     // avviso informativo, NON bloccante
+      motore = 'locale';
+      noApi.hidden = false;
     }
-  </script>
+</script>
 
 <!-- Questo software e tutto il suo contenuto (codice, logica, dati, motori di ragionamento e la persona "Lia") sono proprieta intellettuale di Andrea Taliento (ANDRYXify). © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live. ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->
 <span style="display:none" aria-hidden="true">​‌​‌​​​‌​‌‌‌​‌​‌​‌‌​​‌​‌​‌‌‌​​‌‌​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​​‌‌​​‌‌‌​‌​​​‌‌‌​‌‌‌​‌‌​​​​‌​‌‌‌​​‌​​‌‌​​‌​‌​​‌​​​​​​‌‌​​‌​‌​​‌​​​​​​‌‌‌​‌​​​‌‌‌​‌​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​‌‌​‌​​‌​‌‌​‌‌​​​​‌​​​​​​‌‌‌​​‌‌​‌‌‌​‌​‌​‌‌​‌‌‌‌​​‌​​​​​​‌‌​​​‌‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​‌​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​​‌​‌​​​​‌‌​​​‌‌​‌‌​‌‌‌‌​‌‌​​‌​​​‌‌​‌​​‌​‌‌​​​‌‌​‌‌​​‌​‌​​‌​‌‌​​​​‌​​​​​​‌‌​‌‌​​​‌‌​‌‌‌‌​‌‌​​‌‌‌​‌‌​‌​​‌​‌‌​​​‌‌​‌‌​​​​‌​​‌​‌‌​​​​‌​​​​​​‌‌​​‌​​​‌‌​​​​‌​‌‌‌​‌​​​‌‌​‌​​‌​​‌​‌‌​​​​‌​​​​​​‌‌​‌‌​‌​‌‌​‌‌‌‌​‌‌‌​‌​​​‌‌​‌‌‌‌​‌‌‌​​‌​​‌‌​‌​​‌​​‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌​​‌​​​​​​‌‌‌​​‌​​‌‌​​​​‌​‌‌​​‌‌‌​‌‌​‌​​‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌​​​​‌​‌‌​‌‌​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​‌‌​​‌​‌​​‌​​​​​​‌‌​‌‌​​​‌‌​​​​‌​​‌​​​​​​‌‌‌​​​​​‌‌​​‌​‌​‌‌‌​​‌​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌​​​​‌​​‌​​​​​​​‌​​​‌​​‌​​‌‌​​​‌‌​‌​​‌​‌‌​​​​‌​​‌​​​‌​​​‌​‌​​‌​​‌​​​​​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌​‌‌‌‌​​‌​​​​​​‌‌‌​​​​​‌‌‌​​‌​​‌‌​‌‌‌‌​‌‌‌​​​​​‌‌‌​​‌​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌‌​‌​​​‌‌​​​​‌​​‌​​​​​​‌‌​‌​​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​​‌​‌​‌‌​‌‌​​​‌‌​‌‌​​​‌‌​​‌​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌‌​‌​‌​‌‌​​​​‌​‌‌​‌‌​​​‌‌​​‌​‌​​‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌​​‌​​​​​​‌​​​​​‌​‌‌​‌‌‌​​‌‌​​‌​​​‌‌‌​​‌​​‌‌​​‌​‌​‌‌​​​​‌​​‌​​​​​​‌​‌​‌​​​‌‌​​​​‌​‌‌​‌‌​​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​​‌​‌​​​​‌​​​​​‌​‌​​‌‌‌​​‌​​​‌​​​‌​‌​​‌​​‌​‌‌​​‌​‌​‌‌​​​​‌‌​‌​​‌​‌‌​​‌‌​​‌‌‌‌​​‌​​‌​‌​​‌​​‌​‌‌‌​​​‌​​​​​‌‌​​​​‌​‌​‌​‌​​‌​​‌​​​​​​​‌‌​​‌​​​‌‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌‌‌​​​‌​‌​​​​​​​‌​​‌​​‌‌​​‌‌​​‌​​​‌‌​​​​​​‌‌​​‌​​​‌‌​‌‌​​​‌​​​​​​‌​​​​​‌​‌‌​‌‌‌​​‌‌​​‌​​​‌‌‌​​‌​​‌‌​​‌​‌​‌‌​​​​‌​​‌​​​​​​‌​‌​‌​​​‌‌​​​​‌​‌‌​‌‌​​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​​‌​‌​​​​‌​​​​​‌​‌​​‌‌‌​​‌​​​‌​​​‌​‌​​‌​​‌​‌‌​​‌​‌​‌‌​​​​‌‌​‌​​‌​‌‌​​‌‌​​‌‌‌‌​​‌​​‌​‌​​‌​​‌​​​​​‌‌‌​​​‌​‌​​​​​​​‌​​‌​‌​​​​‌​​​​​​‌​‌​‌​​​‌‌‌​‌​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌​‌​​‌​​‌​​​​​​‌‌​‌​​‌​​‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌​‌‌‌​​‌​​‌‌​‌​​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌​‌​​‌​​‌​​​​​​‌‌‌​​‌​​‌‌​‌​​‌​‌‌‌​​‌‌​‌‌​​‌​‌​‌‌‌​​‌​​‌‌‌​‌‌​​‌‌​​​​‌​‌‌‌​‌​​​‌‌​‌​​‌​​‌​​​​​‌‌‌​​​‌​‌​​​​​​​‌​​‌​‌​​​​‌​​​​​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​​​‌‌​‌‌​‌​​‌​‌‌​​​​‌​‌‌​‌‌​​​‌‌​​​‌​​‌‌​‌‌‌‌​‌‌‌​‌​​​​‌​‌‌‌​​‌‌​‌‌​​​‌‌​‌​​‌​‌‌‌​‌‌​​‌‌​​‌​‌​​‌​‌‌‌​​​‌​​​​​​‌​​​​​‌​‌​​‌‌‌​​‌​​​‌​​​‌​‌​​‌​​‌​‌‌​​‌​‌​‌‌​​​​​‌​‌‌​‌​‌​​‌​​‌​‌​‌​​​​​​‌‌‌​‌​​​‌‌‌​‌​​‌‌​​​​‌​​‌‌​‌‌‌​‌‌​​‌‌​​​‌‌​​‌‌​​‌‌‌​​‌​‌‌​​​‌‌​​‌‌​​​‌​‌‌​​‌​‌​​‌‌‌​​​​‌‌​​​‌​​​‌‌​‌​​​​‌‌​​‌​​​‌‌​‌​​​‌‌​​‌​​​​‌‌‌​​‌​​‌‌​​​​​​‌​‌‌​‌​​‌‌​‌​​​‌‌​​‌‌​​​‌‌​‌‌‌​‌‌​​​‌​​​‌​‌‌​‌​‌‌‌​‌​​​‌‌​​​​‌​‌‌​‌‌​​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌‌‌​‌​​​‌‌‌​‌​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​​​‌‌​‌‌​‌​​‌​‌‌​​​​‌​‌‌​‌‌​​​‌‌​​​‌​​‌‌​‌‌‌‌​‌‌‌​‌​​​​‌​‌‌‌​​‌‌​‌‌​​​‌‌​‌​​‌​‌‌‌​‌‌​​‌‌​​‌​‌⁣</span></body>

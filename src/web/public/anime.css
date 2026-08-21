@@ -1,16 +1,6 @@
 /* © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live */
 /* Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live */
-/*
-  anime.css — sensibilità GARDEN EIGHT: minimalismo raffinato, near-monocromo, tanto respiro (間/ma),
-  sans pulito e leggero, il VUOTO separa (non le linee), movimento quasi assente. UN accento (vermiglio
-  caldo, cenno all'anime) usato con parsimonia.
 
-  REGOLA: UN SOLO TEMA, gestito da qui. Non stratifico una seconda palette: RIDEFINISCO i token di
-  style.css → tutto il sito (bottoni, link, chip, superfici, testo, bordi, gruppi) si ricolora coerente.
-  Niente più viola su beige. Chiaro e scuro. Rispetta reduced-motion e .leggero.
-*/
-
-/* ══════════════════ IL TEMA — token base ridefiniti (chiaro: carta calda + inchiostro) ══════════════════ */
 :root {
   --bg: #f4f1ea;
   --surface: #faf7f1;
@@ -23,18 +13,15 @@
   --testo-2: #726c63;
   --testo-3: #a49d92;
 
-  /* UN accento: vermiglio caldo, sta bene sulla carta. */
   --acc: #cf4428;
   --acc-600: #b63a20;
   --acc-soft: #f7ece6;
   --acc-tint: rgba(207, 68, 40, .09);
   --acc-bordo: #ecd6cc;
 
-  /* colori dei gruppi: TUTTI muti e coerenti (near-monocromo), niente arcobaleno nella nav. */
   --g-bot: #8a8378; --g-pubblico: #8a8378; --g-diretta: #8a8378;
   --g-scena: #8a8378; --g-vetrina: #8a8378; --g-account: #8a8378; --g-admin: var(--acc);
 
-  /* motion sereno, decelerato, MAI a scatti (niente overshoot). */
   --an-vel: cubic-bezier(.16, 1, .3, 1);
   --an-morbido: cubic-bezier(.33, 1, .68, 1);
   --an-dur: .9s;
@@ -61,11 +48,9 @@
   --g-scena: #6f6a60; --g-vetrina: #6f6a60; --g-account: #6f6a60; --g-admin: var(--acc);
 }
 
-/* ── sfondo: quasi piatto, sereno (nessuna aurora, nessun pattern) ──────────────────────── */
 #anime-sfondo { position: fixed; inset: 0; z-index: -2; pointer-events: none; background: var(--bg); }
 body { background: transparent; }
 
-/* ── TIPOGRAFIA: sans pulito, LEGGERO, ARIOSO. Grande contrasto di scala. Mai stretto. ──── */
 h1, h2, h3, .titolo-mega {
   font-family: "Zen Kaku Gothic New", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
@@ -76,17 +61,15 @@ h1 .grad, .grad-testo, .an-grad-testo { color: var(--acc); background: none; -we
 .an-occhiello { text-transform: uppercase; letter-spacing: .32em; font-size: .66rem; font-weight: 600; color: var(--testo-2); }
 p, li { line-height: 1.72; }
 
-/* ── SPAZIO (ma): le carte diventano zone aperte con una hairline, non compartimenti stretti. ── */
 .blocco, .pannello { padding: 1.7rem 1.8rem; border: 1px solid var(--border); border-radius: 10px; }
 .blocco + .blocco, .pannello + .pannello { margin-top: 1.4rem; }
 .blocco > h3, .pannello > h3 { margin-bottom: .9rem; }
-.blocco > h3::before, .pannello > h3::before { content: none; }   /* via ogni barretta */
+.blocco > h3::before, .pannello > h3::before { content: none; }
 .blocco, .carta, .pannello { transition: border-color .4s var(--an-morbido), background .4s var(--an-morbido); }
 .blocco:hover, .carta:hover, .pannello:hover {
   border-color: var(--border-2); background: color-mix(in srgb, var(--testo) 3%, transparent);
 }
 
-/* ── BOTTONI: monocromo essenziale. Il primario è inchiostro pieno (testo invertito). ──── */
 .btn, button.btn, .modello-pronto, .grp-btn { transition: opacity .3s var(--an-morbido), transform .18s var(--an-morbido), background .3s var(--an-morbido), color .3s var(--an-morbido), border-color .3s var(--an-morbido); }
 .btn:not(.secondario):not(.testo) {
   background: var(--testo); color: var(--bg); border: 1px solid var(--testo);
@@ -99,7 +82,6 @@ p, li { line-height: 1.72; }
 a:hover { color: var(--acc); }
 .grp-dot { box-shadow: none; }
 
-/* ── NAV: sobria. Voce attiva = un piccolo punto vermiglio; il resto è tipografia. ──────── */
 .menu-voce, .drawer-voce { transition: color .3s var(--an-morbido); }
 .menu-voce:hover:not(.on), .drawer-voce:hover:not(.on) { color: var(--testo); }
 .menu-voce.on, .drawer-voce.on { position: relative; color: var(--testo); }
@@ -108,19 +90,13 @@ a:hover { color: var(--acc); }
   border-radius: 50%; background: var(--acc);
 }
 
-/* ── MOVIMENTO GARDEN EIGHT: lo scroll-reveal fluido e la rivelazione "parola per parola" dei
-   titoli sono NATIVI di app.js + style.css (`.carta.rivela`→`.dentro`, tarato Material 3 / Apple
-   HIG, e `titoloParole()`/`.pt-parola`). Un SOLO sistema li possiede: quello dell'app. Qui NON si
-   duplica il reveal (due osservatori sulla stessa carta = tempi in conflitto e rischio "appeso").
-   Qui restano solo le micro-interazioni del puntatore (cursore, underline) che l'app non ha. ── */
 @keyframes gr-fade { from { opacity: 0; } to { opacity: 1; } }
-/* la scatola della ricerca emerge: sale un filo e si apre, decelerata (mai a scatti) */
+
 @keyframes gr-entra { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
 
-/* ── RICERCA: stessa quiete, molto vuoto, hairline, un cenno di vermiglio. ───────────────── */
 #cerca-lancia {
   position: fixed; z-index: 70;
-  /* SEMPRE dentro lo schermo: rispetta la safe-area del telefono (notch/barra home). */
+
   right: calc(18px + env(safe-area-inset-right, 0px));
   bottom: calc(18px + env(safe-area-inset-bottom, 0px));
   left: auto; top: auto;
@@ -183,8 +159,6 @@ a:hover { color: var(--acc); }
 .cerca-sugg .chip-domanda:hover { padding-left: 20px; }
 .cerca-vuoto { padding: 30px 16px; text-align: center; color: var(--testo-3); }
 
-/* ── CURSORE custom (desktop): un anello morbido che insegue + un punto preciso. L'anello cresce e
-   prende l'accento sui cliccabili; sui campi di testo diventa una "I" (affordance di scrittura). ── */
 #an-cursore-dot, #an-cursore-ring, #an-cursore-bar { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999; will-change: transform; }
 #an-cursore-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--acc); transition: opacity .2s ease; }
 #an-cursore-ring { width: 32px; height: 32px; transition: opacity .2s ease; }
@@ -193,17 +167,13 @@ a:hover { color: var(--acc); }
   transition: transform .28s var(--an-morbido), border-color .28s ease, background .28s ease;
 }
 #an-cursore-ring.su::before { transform: scale(1.75); border-color: var(--acc); background: color-mix(in srgb, var(--acc) 10%, transparent); }
-/* modalità testo: una "I" precisa (sostituisce anello+punto sui campi di scrittura) */
+
 #an-cursore-bar { width: 2px; height: 22px; margin: -11px 0 0 -1px; border-radius: 2px; background: var(--acc); opacity: 0; transition: opacity .15s ease; }
 body.modo-testo #an-cursore-bar { opacity: 1; }
 body.modo-testo #an-cursore-ring, body.modo-testo #an-cursore-dot { opacity: 0; }
 
-/* ── SOLO il cursore del sito: nasconde quello nativo, ma UNICAMENTE quando il custom è attivo
-   (cursore-on lo mette cinema.js a setup completo, solo su mouse preciso e moto ammesso). Se il
-   custom non parte — reduced-motion, device debole, touch, errore JS — il nativo RESTA. ── */
 body.cursore-on, body.cursore-on * { cursor: none !important; }
 
-/* ── LINK: sottolineatura che si DISEGNA da sinistra (solo link di testo nel contenuto). ──── */
 .blocco a:not(.btn):not(.menu-voce), .pannello a:not(.btn), p a:not(.btn) {
   text-decoration: none;
   background-image: linear-gradient(var(--acc), var(--acc));
@@ -212,16 +182,14 @@ body.cursore-on, body.cursore-on * { cursor: none !important; }
 }
 .blocco a:not(.btn):not(.menu-voce):hover, .pannello a:not(.btn):hover, p a:not(.btn):hover { background-size: 100% 1px; color: var(--acc); }
 
-/* ── accessibilità + device deboli ──────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .cerca-voce, .cerca-sugg .chip-domanda, .cerca-box, #cerca-overlay.aperto { animation: none !important; opacity: 1 !important; }
   .blocco:hover, .carta:hover, .pannello:hover, .btn:hover, #cerca-lancia:hover, .menu-voce:hover { transform: none; }
 }
-/* leggero: overlay ricerca senza blur pesante */
+
 body.leggero #cerca-overlay { backdrop-filter: none; background: color-mix(in srgb, var(--bg) 90%, transparent); }
 body.leggero .cerca-voce, body.leggero .cerca-sugg .chip-domanda, body.leggero .cerca-box { animation: none; }
 
-/* ── TELEFONO: la lente resta SEMPRE dentro; la ricerca diventa un foglio a tutta larghezza. ─── */
 @media (max-width: 640px) {
   #cerca-lancia {
     width: 46px; height: 46px;

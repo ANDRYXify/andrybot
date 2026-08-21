@@ -1,17 +1,10 @@
-// Minigiochi con la webcam per l'overlay tracking. Girano TUTTI client-side:
-// leggono gesti (dai landmark) ed espressioni del volto, disegnano sul canvas
-// dell'overlay e annunciano i risultati in chat via il bot. Nessuna immagine
-// lascia il PC. Si agganciano a window.SB_TRACKING.registraMinigioco.
-//
-// Avvio A GESTO (comodo in OBS): tieni ✋ per ~1,2s → menu; poi scegli col gesto
-// (✌️ Mima · 👍 Non ridere · ☝️ Reaction). ✊ esce. L'avvio DA CHAT (comandi) e la
-// "Battaglia con la chat" arrivano dal canale di ritorno (SB_TRACKING.onComando).
+
+
 (() => {
   'use strict';
   const T = window.SB_TRACKING;
   if (!T || !T.registraMinigioco) return;
 
-  // ────────────────────────────────────────────────────────── util di disegno
   const font = (ctx, peso, size) => { ctx.font = `${peso} ${size}px system-ui, "Segoe UI", sans-serif`; };
   function testo(ctx, s, x, y, size, col, align = 'center', peso = 800) {
     ctx.save(); font(ctx, peso, size); ctx.textAlign = align; ctx.textBaseline = 'middle';
@@ -35,7 +28,6 @@
   }
   const nowMs = () => performance.now();
 
-  // ─────────────────────────────────────────────────────────────── i gesti
   const GESTI = [
     { id: 'openpalm', emoji: '✋', nome: 'Mano aperta' },
     { id: 'fist', emoji: '✊', nome: 'Pugno' },
@@ -45,26 +37,17 @@
   ];
   const byId = (id) => GESTI.find((g) => g.id === id) || GESTI[0];
   const record = (g) => Number(localStorage.getItem('sb-trk-rec-' + g) || 0);
-  const salvaRecord = (g, v) => { if (v > record(g)) { try { localStorage.setItem('sb-trk-rec-' + g, String(v)); } catch { /* niente */ } return true; } return false; };
+  const salvaRecord = (g, v) => { if (v > record(g)) { try { localStorage.setItem('sb-trk-rec-' + g, String(v)); } catch {  } return true; } return false; };
 
-  // ─────────────────────────────────────────────── stato "gesto tenuto" (hold)
-  // Si AGGIORNA una sola volta per frame col gesto corrente, poi si interroga da
-  // quanto è tenuto. (Interrogarlo più volte a frame con gesti diversi lo
-  // azzererebbe: per questo aggiornamento e interrogazione sono separati.)
   let holdG = '', holdT = 0;
   function aggiornaHold(g) { if (g !== holdG) { holdG = g; holdT = nowMs(); } }
   const tenutoDa = () => (holdG ? nowMs() - holdT : 0);
 
-  // ───────────────────────────────────────────────────────── macchina a stati
-  let modo = 'idle';   // idle | menu | gioca | fine
-  let G = null;        // gioco attivo
+  let modo = 'idle';
+  let G = null;
   let finePunti = 0, fineTit = '', fineSott = '', fineT0 = 0;
 
   function vaiFine(titolo, punti, sott) { modo = 'fine'; fineTit = titolo; finePunti = punti; fineSott = sott || ''; fineT0 = nowMs(); }
-
-  // ───────────────────────────────────────────────────────────────── GIOCHI
-  // Ogni gioco: { nome, tick({g,emo,dt,ctx,W,H}) }. `dt` = ms dall'ultimo frame
-  // (Human in OBS non gira a 60fps, quindi gli accumuli usano il tempo REALE).
 
   function giocoMima() {
     let punti = 0, round = 0, bersaglio = null, tRound = 0, durata = 4000, colpito = 0;
@@ -76,11 +59,11 @@
       nome: 'Mima',
       tick({ g, dt, ctx, W, H }) {
         const rimasto = durata - (nowMs() - tRound);
-        // colpito: gesto = bersaglio tenuto ~280ms
+
         if (g === bersaglio.id) { colpito += dt; if (colpito >= 280) { punti++; prossimo(); } }
         else colpito = 0;
         if (rimasto <= 0) { const rec = salvaRecord('mima', punti); vaiFine('MIMA', punti, rec ? '🏆 nuovo record!' : 'record: ' + record('mima')); return; }
-        // disegno
+
         testo(ctx, 'MIMA IL GESTO', W / 2, H * 0.12, Math.round(H * 0.05), '#fff');
         testo(ctx, bersaglio.emoji, W / 2, H * 0.42, Math.round(H * 0.26), '#fff');
         testo(ctx, bersaglio.nome, W / 2, H * 0.62, Math.round(H * 0.06), '#c4b5fd');
@@ -104,7 +87,7 @@
         else colpito = 0;
         testo(ctx, '⚡ REACTION RUSH', W / 2, H * 0.12, Math.round(H * 0.05), '#fff');
         testo(ctx, bersaglio.emoji, W / 2, H * 0.44, Math.round(H * 0.24), '#fff');
-        // barra tempo
+
         const bw = W * 0.6, bx = W * 0.2, by = H * 0.66;
         ctx.save(); rrect(ctx, bx, by, bw, 16, 8); ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fill();
         rrect(ctx, bx, by, bw * (rimasto / 30000), 16, 8); ctx.fillStyle = '#f59e0b'; ctx.fill(); ctx.restore();
@@ -132,8 +115,6 @@
     };
   }
 
-  // Battaglia con la CHAT: gli spettatori scrivono !sfida <gesto>, tu devi rifarlo
-  // in 5s. Riesci → punto tuo; scade → punto alla chat. Primo a 5 vince.
   function giocoBattaglia() {
     let puntiTu = 0, puntiChat = 0, sfida = null, colpito = 0;
     const coda = [], META = 5;
@@ -146,9 +127,9 @@
       tick({ g, dt, ctx, W, H }) {
         if (!sfida && coda.length) { sfida = { ...coda.shift(), tScad: nowMs() + 5000 }; colpito = 0; }
         if (sfida) {
-          if (g === sfida.gesto) { colpito += dt; if (colpito >= 280) { puntiTu++; try { T.annuncia && T.annuncia('💪 Battuto @' + sfida.user + '! Tu ' + puntiTu + ' – Chat ' + puntiChat); } catch { /* niente */ } sfida = null; } }
+          if (g === sfida.gesto) { colpito += dt; if (colpito >= 280) { puntiTu++; try { T.annuncia && T.annuncia('💪 Battuto @' + sfida.user + '! Tu ' + puntiTu + ' – Chat ' + puntiChat); } catch {  } sfida = null; } }
           else colpito = 0;
-          if (sfida && sfida.tScad - nowMs() <= 0) { puntiChat++; try { T.annuncia && T.annuncia('😈 @' + sfida.user + ' ti frega! Tu ' + puntiTu + ' – Chat ' + puntiChat); } catch { /* niente */ } sfida = null; }
+          if (sfida && sfida.tScad - nowMs() <= 0) { puntiChat++; try { T.annuncia && T.annuncia('😈 @' + sfida.user + ' ti frega! Tu ' + puntiTu + ' – Chat ' + puntiChat); } catch {  } sfida = null; }
         }
         testo(ctx, '⚔️ TU ' + puntiTu + '  –  ' + puntiChat + ' CHAT', W / 2, H * 0.14, Math.round(H * 0.06), '#fff');
         if (sfida) {
@@ -166,11 +147,6 @@
     };
   }
 
-  // PUZZLE "aggancia-e-segui" (Fase 4): 3×3. Il PUNTATORE (pinch pollice+indice)
-  // arriva dal rilevatore via fx (window.SB_PUNTATORE). Pizzichi su un pezzo per
-  // agganciarlo, lo segui in modo smussato, apri per mollare → snap-to-grid
-  // generoso. Vinci quando ogni pezzo è nella sua cella. Nessuna immagine reale:
-  // l'immagine da ricomporre è generata sul momento.
   function giocoPuzzle() {
     const N = 3;
     let W0 = 0, H0 = 0, side = 0, cell = 0, ox = 0, oy = 0, img = null;
@@ -199,10 +175,10 @@
         const P = window.SB_PUNTATORE, valido = P && (nowMs() - (P.t || 0) < 400);
         const spx = window.SB_SPECCHIO !== false;
         const px = valido ? (spx ? (1 - P.x) : P.x) * W : -999, py = valido ? P.y * H : -999, giu = valido && P.giu;
-        // immagine-fantasma + slot
+
         ctx.save(); ctx.globalAlpha = 0.12; ctx.drawImage(img, ox, oy, side, side); ctx.restore();
         for (let r = 0; r < N; r++) for (let col = 0; col < N; col++) { ctx.strokeStyle = 'rgba(255,255,255,.22)'; ctx.lineWidth = 2; ctx.strokeRect(ox + col * cell, oy + r * cell, cell, cell); }
-        // aggancia
+
         if (giu && !prevGiu && held < 0) {
           for (let i = pezzi.length - 1; i >= 0; i--) { const p = pezzi[i]; if (Math.abs(px - p.x) < cell / 2 && Math.abs(py - p.y) < cell / 2) { p.held = true; p.offx = p.x - px; p.offy = p.y - py; pezzi.splice(i, 1); pezzi.push(p); held = pezzi.length - 1; break; } }
         }
@@ -212,7 +188,7 @@
           else { const c = cellaVicina(p.x, p.y); p.x = ox + c.col * cell + cell / 2; p.y = oy + c.r * cell + cell / 2; p.held = false; held = -1; }
         }
         prevGiu = giu;
-        // pezzi
+
         for (const p of pezzi) {
           const ok = inCella(p);
           ctx.save(); if (p.held) { ctx.shadowColor = 'rgba(0,0,0,.55)'; ctx.shadowBlur = 18; }
@@ -220,30 +196,29 @@
           ctx.shadowBlur = 0; ctx.lineWidth = p.held ? 4 : 3; ctx.strokeStyle = ok ? 'rgba(52,211,153,.95)' : (p.held ? 'rgba(255,255,255,.95)' : 'rgba(139,92,246,.8)');
           ctx.strokeRect(p.x - cell / 2, p.y - cell / 2, cell, cell); ctx.restore();
         }
-        // cursore
+
         if (valido) { ctx.save(); ctx.beginPath(); ctx.arc(px, py, giu ? 11 : 16, 0, 7); ctx.fillStyle = giu ? 'rgba(52,211,153,.9)' : 'rgba(255,255,255,.5)'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.stroke(); ctx.restore(); }
         else testo(ctx, '🖐️ muovi la mano e pizzica (pollice+indice)', W / 2, oy + side + H * 0.06, Math.round(H * 0.04), '#c4b5fd');
         const fatti = pezzi.filter(inCella).length;
         testo(ctx, '🧩 PUZZLE  ' + fatti + '/' + (N * N), W / 2, Math.max(H * 0.06, oy - H * 0.04), Math.round(H * 0.05), '#fff');
-        if (!vinto && fatti === N * N) { vinto = true; tVinto = nowMs(); try { T.annuncia && T.annuncia('🧩 Puzzle completato in ' + Math.round((nowMs() - started) / 1000) + 's! 🎉'); } catch { /* niente */ } }
+        if (!vinto && fatti === N * N) { vinto = true; tVinto = nowMs(); try { T.annuncia && T.annuncia('🧩 Puzzle completato in ' + Math.round((nowMs() - started) / 1000) + 's! 🎉'); } catch {  } }
         if (vinto) { testo(ctx, '🎉 COMPLETATO!', W / 2, H * 0.5, Math.round(H * 0.09), '#34d399'); if (nowMs() - tVinto > 3500) { modo = 'idle'; G = null; } }
       },
     };
   }
 
   const GIOCHI = { mima: giocoMima, reaction: giocoReaction, nonridere: giocoNonRidere, battaglia: giocoBattaglia, puzzle: giocoPuzzle };
-  // quali giochi sono attivi dal pannello dashboard (default tutti)
+
   const ATTIVO = (id) => (window.SB_GIOCHI_ATTIVI ? window.SB_GIOCHI_ATTIVI[id] !== false : true);
   function avviaGioco(id) {
     const f = GIOCHI[id]; if (!f) return;
-    // il puzzle dipende dal suo interruttore (effetti.puzzle), non dal master giochi
+
     if (id === 'puzzle') { if (window.SB_PUZZLE_ON === false) return; }
     else if (!ATTIVO(id) || window.SB_GIOCHI_MASTER === false) return;
     G = f(); modo = 'gioca';
-    try { T.annuncia && T.annuncia('🎮 Via al gioco: ' + G.nome + '! Guardate lo schermo 👀'); } catch { /* niente */ }
+    try { T.annuncia && T.annuncia('🎮 Via al gioco: ' + G.nome + '! Guardate lo schermo 👀'); } catch {  }
   }
 
-  // ─────────────────────────────────────────────────────────────── MENU a gesti
   const VOCI = [
     { g: 'victory', id: 'mima', et: '✌️ Mima il gesto' },
     { g: 'thumbup', id: 'nonridere', et: '👍 Non ridere' },
@@ -265,7 +240,6 @@
     if (g === 'fist' && tenutoDa() >= 700) modo = 'idle';
   }
 
-  // ─────────────────────────────────────────────────── comandi da chat (ret.)
   if (T.onComando) T.onComando((c) => {
     if (!c) return;
     if (c.azione === 'start' && GIOCHI[c.gioco]) avviaGioco(c.gioco);
@@ -273,19 +247,17 @@
     else if (c.azione === 'sfida' && G && G.sfida) G.sfida(c);
   });
 
-  // ──────────────────────────────────────────────────────── loop del controller
   let _lastTick = nowMs();
   T.registraMinigioco(({ hands, faces, ctx, W, H }) => {
-    const dt = Math.min(120, nowMs() - _lastTick); _lastTick = nowMs();   // ms reali dall'ultimo frame (cap anti-scatti)
-    // giochi spenti dal pannello: torna idle — ma NON interrompere il puzzle,
-    // che ha un interruttore suo (effetti.puzzle) ed è indipendente dal master.
+    const dt = Math.min(120, nowMs() - _lastTick); _lastTick = nowMs();
+
     if (window.SB_GIOCHI_MASTER === false && !(G && G.puzzle)) { modo = 'idle'; G = null; return; }
     const g = hands && hands[0] ? (T.rilevaGesto ? T.rilevaGesto(hands[0]) : '') : '';
     const emo = (T.emozione && faces) ? T.emozione(faces[0]) : '';
     aggiornaHold(g);
 
     if (modo === 'idle') {
-      // avvio a gesto: tieni ✋ per aprire il menu (mostra un anello di caricamento)
+
       if (g === 'openpalm') {
         const f = Math.min(1, tenutoDa() / 1200);
         if (f > 0.05) {
@@ -297,14 +269,14 @@
       return;
     }
     if (modo === 'menu') { disegnaMenu(ctx, g, W, H); return; }
-    if (modo === 'gioca' && G) { try { G.tick({ g, emo, dt, ctx, W, H }); } catch { /* niente */ } return; }
+    if (modo === 'gioca' && G) { try { G.tick({ g, emo, dt, ctx, W, H }); } catch {  } return; }
     if (modo === 'fine') {
       pannello(ctx, W * 0.14, H * 0.28, W * 0.72, H * 0.44, 26, 'rgba(10,10,18,.8)', '#34d399');
       testo(ctx, fineTit, W / 2, H * 0.4, Math.round(H * 0.07), '#fff');
       testo(ctx, String(finePunti), W / 2, H * 0.54, Math.round(H * 0.12), '#fde68a');
       if (fineSott) testo(ctx, fineSott, W / 2, H * 0.65, Math.round(H * 0.045), '#a7f3d0');
       if (nowMs() - fineT0 > 4500) {
-        try { T.annuncia && T.annuncia('🏁 ' + fineTit + ' — risultato: ' + finePunti + (fineSott ? ' (' + fineSott.replace(/[🏆]/g, '').trim() + ')' : '')); } catch { /* niente */ }
+        try { T.annuncia && T.annuncia('🏁 ' + fineTit + ' — risultato: ' + finePunti + (fineSott ? ' (' + fineSott.replace(/[🏆]/g, '').trim() + ')' : '')); } catch {  }
         modo = 'idle'; G = null;
       }
       return;

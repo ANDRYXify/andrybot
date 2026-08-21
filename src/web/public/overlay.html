@@ -6,7 +6,7 @@
   <title>SocialBot — Overlay effetti</title>
   <link rel="stylesheet" href="/overlay-skin.css">
   <style>
-    /* Sfondo TRASPARENTE: in OBS si vede solo l'effetto, non la pagina. */
+    
     html, body { margin: 0; padding: 0; height: 100%; }
     body {
       background: transparent;
@@ -14,7 +14,7 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
 
-    /* Il "palco": area centrale dove compaiono immagini e video. */
+    
     #palco {
       position: fixed;
       inset: 0;
@@ -33,13 +33,12 @@
       border-radius: 8px;
     }
     .effetto.dentro { opacity: 1; transform: scale(1); }
-    /* effetto a POSIZIONE LIBERA (dall'Overlay Studio): ancorato via left/top %
-       e trasformato con la scala (--fx-s) e la rotazione (--fx-r) scelte. */
+    
     .effetto.libero { position: absolute; max-width: none; max-height: 92vh;
       transform: translate(var(--fx-ax, -50%), var(--fx-ay, -50%)) scale(calc(var(--fx-s, 1) * .9)) rotate(var(--fx-r, 0deg)); }
     .effetto.libero.dentro { transform: translate(var(--fx-ax, -50%), var(--fx-ay, -50%)) scale(var(--fx-s, 1)) rotate(var(--fx-r, 0deg)); }
 
-    /* Etichetta con il nome del comando (usata soprattutto per gli audio). */
+    
     #etichette {
       position: fixed;
       left: 0; right: 0; bottom: 7vh;
@@ -65,7 +64,7 @@
     }
     .pillola.dentro { opacity: 1; transform: translateY(0); }
 
-    /* Testo a schermo (azione "overlayTesto" dei Moduli): centrato, con fade. */
+    
     #testi {
       position: fixed;
       inset: 0;
@@ -91,8 +90,7 @@
     }
     .testo-overlay.dentro { opacity: 1; transform: translateY(0) scale(1); }
 
-    /* Contatore PENITENZE: un riquadro con la parola vietata e quante volte è
-       stata "beccata"; a ogni colpo sale un "+1" rosso. Posizione impostabile. */
+    
     #penitenze {
       position: fixed;
       display: flex;
@@ -137,7 +135,7 @@
     .pen-card.colpito { animation: pen-scossa .32s ease; }
     @keyframes pen-scossa { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
     .pen-card .pen-esito { font-size: 1rem; font-weight: 800; }
-    /* "+1" che sale e sfuma */
+    
     .pen-piu {
       position: absolute; top: -.2rem; right: .6rem;
       color: var(--pen-colore, #ff2d2d);
@@ -147,7 +145,7 @@
     }
     @keyframes pen-sale { 0% { opacity: 0; transform: translateY(6px) scale(.8); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-42px) scale(1.15); } }
 
-    /* ALERT: solo il contenitore fisso (la "pelle" del cartello è in overlay-skin.css) */
+    
     #alert {
       position: fixed; left: 0; right: 0;
       display: flex; justify-content: center; pointer-events: none; z-index: 8;
@@ -156,7 +154,7 @@
     #alert.centro         { top: 50%; transform: translateY(-50%); }
     #alert.basso-centro   { bottom: 10vh; top: auto; align-items: flex-end; }
 
-    /* CHAT a schermo: solo il contenitore fisso in un angolo. */
+    
     #chatlive {
       position: fixed; display: flex; flex-direction: column; gap: .35rem;
       pointer-events: none; z-index: 6;
@@ -166,13 +164,13 @@
     #chatlive.basso-sinistra { bottom: 3vh; left: 2vw; }
     #chatlive.basso-destra   { bottom: 3vh; right: 2vw; align-items: flex-end; }
 
-    /* WIDGET persistenti (ultimo follower/sub…): un contenitore per angolo. */
+    
     .wbox { position: fixed; display: flex; flex-direction: column; gap: .5rem; pointer-events: none; z-index: 7; }
     .wbox.alto-sinistra  { top: 3vh; left: 2vw; }
     .wbox.alto-destra    { top: 3vh; right: 2vw; align-items: flex-end; }
     .wbox.basso-sinistra { bottom: 3vh; left: 2vw; }
     .wbox.basso-destra   { bottom: 3vh; right: 2vw; align-items: flex-end; }
-    /* widget contatore persistente (morti/parole…): posizionato a x/y % */
+    
     .contatore-widget { position: absolute; transform: translateY(-50%); padding: .12em .5em; border-radius: .3em; line-height: 1.15; white-space: nowrap; z-index: 8; pointer-events: none; text-shadow: 0 2px 8px rgba(0,0,0,.65), 0 0 2px rgba(0,0,0,.5); }
   </style>
 </head>
@@ -193,13 +191,10 @@
   <script>
     'use strict';
 
-    // --- ricava login e chiave dalla URL corrente -----------------------
-    // percorso atteso: /overlay/<login>   ·   query: ?key=...
-    const parti = location.pathname.split('/').filter(Boolean); // ['overlay', '<login>']
+    const parti = location.pathname.split('/').filter(Boolean);
     const login = parti[1] || '';
     const urlStream = '/overlay/' + encodeURIComponent(login) + '/stream' + location.search;
-    // PIÙ OVERLAY: questo overlay ha un id (?o=). Dal tema riceve il suo LAYOUT:
-    // cosa mostra (mostra) e dove (xy), così ogni link OBS ha il suo aspetto.
+
     const MIO = { mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true }, xy: {}, stile: { alert: null, chat: null }, widget: {} };
     const mostra = (k) => MIO.mostra[k] !== false;
 
@@ -210,7 +205,6 @@
     const alertBox = document.getElementById('alert');
     const chatBox = document.getElementById('chatlive');
 
-    // --- coda per gli effetti VISIVI (immagini/video): uno alla volta -----
     const codaVisiva = [];
     let occupato = false;
 
@@ -225,7 +219,7 @@
 
     function finito() {
       occupato = false;
-      // piccola pausa tra un effetto e l'altro
+
       setTimeout(mostraProssimo, 120);
     }
 
@@ -240,24 +234,20 @@
       return Math.min(1, Math.max(0, v / 100));
     }
 
-    // Applica la posizione libera (x,y %) + dimensione (s %) + rotazione (r°) a
-    // un elemento-effetto, se l'Overlay Studio l'ha impostata. Altrimenti resta
-    // centrato dal #palco (comportamento classico).
     function posizionaEffetto(el, pos) {
       if (!pos || pos.x == null) return;
       el.classList.add('libero');
       el.style.left = pos.x + '%'; el.style.top = pos.y + '%';
-      // ancoraggio consapevole della posizione (resta sempre dentro al palco)
+
       el.style.setProperty('--fx-ax', (-pos.x) + '%');
       el.style.setProperty('--fx-ay', (-pos.y) + '%');
       el.style.setProperty('--fx-s', (Number(pos.s) || 100) / 100);
       el.style.setProperty('--fx-r', (Number(pos.r) || 0) + 'deg');
     }
 
-    // COMBO: un effetto visivo può avere un suono abbinato → parte insieme al media.
     function suonaAbbinato(ev) {
       if (!ev || !ev.suonoUrl) return;
-      try { const a = new Audio(ev.suonoUrl); a.volume = volume01(ev); a.play().catch(() => {}); } catch (e) { /* niente */ }
+      try { const a = new Audio(ev.suonoUrl); a.volume = volume01(ev); a.play().catch(() => {}); } catch (e) {  }
     }
 
     function mostraImmagine(ev) {
@@ -276,8 +266,7 @@
     }
 
     function mostraVideo(ev) {
-      // GREEN SCREEN: se il premio a punti canale l'ha chiesto, togliamo il colore
-      // di sfondo (chroma-key) disegnando i frame su un canvas.
+
       if (ev.chroma && ev.chroma.colore) return mostraVideoChroma(ev);
       const v = document.createElement('video');
       v.className = 'effetto';
@@ -301,7 +290,7 @@
       v.addEventListener('ended', chiudi);
       v.addEventListener('error', chiudi);
       v.play().catch(() => {});
-      // rete di sicurezza: chiudi comunque dopo la durata indicata
+
       setTimeout(chiudi, durataMs(ev, 8000) + 600);
     }
 
@@ -310,9 +299,6 @@
       return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : [0, 255, 0];
     }
 
-    // Video con GREEN SCREEN: disegna ogni frame su un canvas e rende trasparenti
-    // i pixel vicini al colore-chiave. Il canvas è limitato in risoluzione così il
-    // per-pixel resta leggero. Il media è same-origin → niente "taint", getImageData ok.
     function mostraVideoChroma(ev) {
       const v = document.createElement('video');
       v.src = ev.url; v.autoplay = true; v.playsInline = true; v.volume = volume01(ev);
@@ -331,7 +317,7 @@
         if (chiuso) return;
         if (v.videoWidth) {
           if (!canvas.width) {
-            const sc = Math.min(1, 640 / v.videoWidth);   // cap risoluzione
+            const sc = Math.min(1, 640 / v.videoWidth);
             canvas.width = Math.max(2, Math.round(v.videoWidth * sc));
             canvas.height = Math.max(2, Math.round(v.videoHeight * sc));
           }
@@ -342,7 +328,7 @@
               if (Math.abs(d[i] - kr) + Math.abs(d[i + 1] - kg) + Math.abs(d[i + 2] - kb) < soglia) d[i + 3] = 0;
             }
             ctx.putImageData(img, 0, 0);
-          } catch (e) { /* niente chroma se non leggibile */ }
+          } catch (e) {  }
         }
         raf = requestAnimationFrame(disegna);
       };
@@ -359,31 +345,27 @@
       setTimeout(chiudi, durataMs(ev, 8000) + 600);
     }
 
-    // Gli audio possono sovrapporsi: li suoniamo subito, senza coda.
     function suona(ev) {
       try {
         const a = new Audio(ev.url);
         a.volume = volume01(ev);
         a.play().catch(() => {});
-      } catch (e) { /* audio non riproducibile: pazienza */ }
+      } catch (e) {  }
       etichettaVolatile(ev.comando, 1600);
     }
 
-    // Suono PRESET sintetizzato (nessun file): usa la libreria condivisa.
     function suonaPreset(ev) {
-      try { window.SUONI_PRESET && window.SUONI_PRESET.suona(ev.preset, ev.volume); } catch (e) { /* niente */ }
-      etichettaVolatile(ev.comando, 1600, false);   // titolo del premio, senza '!'
+      try { window.SUONI_PRESET && window.SUONI_PRESET.suona(ev.preset, ev.volume); } catch (e) {  }
+      etichettaVolatile(ev.comando, 1600, false);
     }
 
-    // Mostra un testo libero al centro dello schermo per `durata` ms, con fade.
-    // Usato dall'azione "overlayTesto" dei Moduli (payload { tipo:'testo', testo, durata }).
     function mostraTesto(ev) {
       const t = String(ev.testo || '').slice(0, 400);
       if (!t) return;
       const durata = durataMs(ev, 5000);
       const el = document.createElement('div');
       el.className = 'testo-overlay';
-      el.textContent = t;                     // textContent: niente HTML, niente injection
+      el.textContent = t;
       testi.appendChild(el);
       requestAnimationFrame(() => el.classList.add('dentro'));
       setTimeout(() => {
@@ -392,8 +374,7 @@
       }, durata);
     }
 
-    // --- contatore PENITENZE ---------------------------------------------
-    const penCard = {};   // id → elemento .pen-card
+    const penCard = {};
 
     function penitenza(ev) {
       if (ev.azione === 'start') penStart(ev);
@@ -420,7 +401,7 @@
       const num = card.querySelector('.pen-num');
       if (num) num.textContent = String(ev.count);
       card.classList.remove('colpito');
-      void card.offsetWidth;               // riavvia l'animazione
+      void card.offsetWidth;
       card.classList.add('colpito');
       const piu = document.createElement('div');
       piu.className = 'pen-piu';
@@ -446,7 +427,6 @@
       return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
 
-    // --- ALERT eventi (coda: uno alla volta) -----------------------------
     const codaAlert = [];
     let alertOccupato = false;
     const ALERT_ICO = {
@@ -456,10 +436,8 @@
       raid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>',
     };
 
-    // mappa nome-font → variabile CSS definita in overlay-skin.css
     const FONT = { sistema: 'var(--font-sistema)', rotondo: 'var(--font-rotondo)', condensato: 'var(--font-condensato)', mono: 'var(--font-mono)', serif: 'var(--font-serif)', manga: 'var(--font-manga)' };
-    // FONT GOOGLE: carica al volo un font dalla libreria Google e lo usa. Il nome
-    // arriva già ripulito dal server (solo lettere/numeri/spazi).
+
     const _gfont = new Set();
     function caricaFontGoogle(nome) {
       const n = String(nome || '').trim();
@@ -474,21 +452,17 @@
       return "'" + n + "', var(--font-sistema)";
     }
     const fontDi = (st) => (st && st.googleFont ? caricaFontGoogle(st.googleFont) : (FONT[(st || {}).font] || null));
-    // applica un oggetto {--var: valore} come stile inline
+
     function applicaVars(el, vars) { for (const k in vars) { if (vars[k] != null && vars[k] !== '') el.style.setProperty(k, String(vars[k])); } }
 
-    // posiziona un contenitore: se c'è xy (posizione libera dal drag) usa left/top
-    // in %, altrimenti torna alle classi d'angolo.
     function posizionaContenitore(el, xy, corner) {
       if (xy && xy.x != null) {
         el.className = '';
         el.style.left = xy.x + '%'; el.style.top = xy.y + '%';
         el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.width = 'auto';
-        // DIMENSIONE (s = scala %) e ROTAZIONE (r = gradi) impostate dall'editor
+
         var s = (Number(xy.s) || 100) / 100, r = Number(xy.r) || 0;
-        // ancoraggio "consapevole della posizione": translate(-x%,-y%) tiene sempre
-        // l'elemento DENTRO al palco (a sinistra hugga il bordo sx, a destra il dx…),
-        // così in basso a sinistra non esce più sotto/a lato.
+
         el.style.transform = 'translate(' + (-xy.x) + '%,' + (-xy.y) + '%) scale(' + s + ') rotate(' + r + 'deg)';
       } else {
         el.className = corner;
@@ -502,8 +476,7 @@
       if (alertOccupato || !codaAlert.length) return;
       alertOccupato = true;
       const ev = codaAlert.shift();
-      // stile di QUESTO overlay se impostato (Opzione B), altrimenti quello che
-      // arriva con l'evento (= stile di canale). Così ogni link ha il suo look.
+
       const st = MIO.stile.alert || ev.stile || {};
       posizionaContenitore(alertBox, MIO.xy.alert || ev.xy, ev.posizione || 'alto-centro');
       const card = document.createElement('div');
@@ -515,7 +488,7 @@
         '--size': st.dimTesto != null ? st.dimTesto + 'px' : null, '--font': fontDi(st) || null,
       });
       const testoHtml = escHtml(ev.testo || '').replace(/^(\S+)/, '<b>$1</b>');
-      // MEDIA opzionale (immagine/video caricato) mostrato sopra il testo
+
       let mediaHtml = '';
       if (ev.mediaUrl) {
         mediaHtml = ev.mediaTipo === 'video'
@@ -525,13 +498,13 @@
       card.innerHTML = mediaHtml + '<div class="alert-ico">' + (ALERT_ICO[ev.kind] || ALERT_ICO.follow) + '</div><div class="alert-testo">' + testoHtml + '</div>';
       alertBox.appendChild(card);
       const vol01 = (ev.volume != null ? ev.volume : 100) / 100;
-      const vid = card.querySelector('video.alert-media'); if (vid) { try { vid.volume = vol01; } catch (e) { /* niente */ } }
+      const vid = card.querySelector('video.alert-media'); if (vid) { try { vid.volume = vol01; } catch (e) {  } }
       requestAnimationFrame(() => card.classList.add('dentro'));
-      // SUONO: un file audio caricato (suonoUrl) oppure un preset sintetizzato
+
       try {
         if (ev.suonoUrl) { const au = new Audio(ev.suonoUrl); au.volume = vol01; au.play().catch(() => {}); }
         else if (ev.suono && window.SUONI_PRESET) window.SUONI_PRESET.suona(ev.suono, ev.volume != null ? ev.volume : 100);
-      } catch (e) { /* niente */ }
+      } catch (e) {  }
       const durata = Math.max(2000, Number(ev.durata) || 6000);
       setTimeout(() => {
         card.classList.remove('dentro');
@@ -539,26 +512,22 @@
       }, durata);
     }
 
-    // --- EMOTE 7TV -------------------------------------------------------
-    // Mappa nome→URL (globali 7TV + del canale), letta dal server e rinfrescata
-    // ogni tanto. Le emote compaiono come immagini dentro i messaggi di chat.
     let EMOTE = {};
     async function caricaEmote() {
       try {
         const r = await fetch('/overlay/' + encodeURIComponent(login) + '/emotes' + location.search);
         if (r.ok) { const m = await r.json(); if (m && typeof m === 'object') EMOTE = m; }
-      } catch (e) { /* niente: la chat resta comunque testuale */ }
+      } catch (e) {  }
     }
 
-    // --- STEMMI (badge) Twitch: mappa "setId/version" → url immagine ------
     let BADGE = {};
     async function caricaBadge() {
       try {
         const r = await fetch('/overlay/' + encodeURIComponent(login) + '/badges' + location.search);
         if (r.ok) { const m = await r.json(); if (m && typeof m === 'object') BADGE = m; }
-      } catch (e) { /* niente: la chat resta senza stemmi */ }
+      } catch (e) {  }
     }
-    // Aggiunge gli stemmi (Twitch dalla mappa + 7TV già risolto) prima del nome.
+
     function aggiungiStemmi(riga, ev) {
       const img = (src, alt) => {
         if (!src) return;
@@ -569,13 +538,11 @@
       if (ev.badges) for (const b of String(ev.badges).split(',')) { const u = BADGE[b.trim()]; if (u) img(u, b); }
       if (ev.badge7tv) img(ev.badge7tv, '7tv');
     }
-    // Riempie `riga` con il testo, sostituendo le PAROLE che sono emote con
-    // <img>. Split su spazi conservando la spaziatura originale; match esatto
-    // della parola (come fanno 7TV/BTTV): "Kappa" sì, "Kappa!" no.
+
     function testoConEmote(riga, testo, extra) {
       const pezzi = String(testo || '').split(/(\s+)/);
       for (const p of pezzi) {
-        // 7TV (mappa del canale) oppure emote NATIVA di Twitch (mappa del messaggio)
+
         const url = p && (EMOTE[p] || (extra && extra[p]));
         if (url) {
           const img = document.createElement('img');
@@ -590,7 +557,6 @@
       }
     }
 
-    // --- CHAT a schermo --------------------------------------------------
     function chat(ev) {
       if (!mostra('chat')) return;
       const st = MIO.stile.chat || ev.stile || {};
@@ -608,7 +574,7 @@
       const u = document.createElement('span');
       u.className = 'chat-user';
       u.textContent = ev.user || '';
-      // colore username: "twitch" = quello del mittente; altrimenti fisso
+
       const cu = (st.username && st.username !== 'twitch') ? st.username : ev.colore;
       if (cu) u.style.color = cu;
       riga.appendChild(u);
@@ -624,19 +590,17 @@
       }, fade * 1000);
     }
 
-    // --- WIDGET persistenti (ultimo follower/sub…) -----------------------
     const WIDGET_ICO = {
       ultimoFollower: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>',
       ultimoSub: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 15.09 8.26 22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>',
     };
     const wboxes = {};
     document.querySelectorAll('.wbox').forEach((b) => { wboxes[b.dataset.ang] = b; });
-    const widgetEl = {};   // id widget → elemento
+    const widgetEl = {};
 
-    // Costruisce/aggiorna un widget. cfg = configurazione, valore = testo dinamico.
     function widget(id, cfg, valore) {
       cfg = cfg || {};
-      // mostra SOLO se attivo; altrimenti rimuovi (niente widget vuoti)
+
       if (!cfg.attivo) { if (widgetEl[id]) { widgetEl[id].remove(); delete widgetEl[id]; } return; }
       const ang = cfg.posizione || 'basso-destra';
       let el = widgetEl[id];
@@ -647,8 +611,7 @@
         widgetEl[id] = el;
       }
       (wboxes[ang] || wboxes['basso-destra']).appendChild(el);
-      // posizione: quella di QUESTO overlay (MIO.xy) se impostata, altrimenti
-      // quella condivisa del widget (cfg.xy), altrimenti l'angolo.
+
       const xyEff = MIO.xy[id === 'ultimoSub' ? 'ws' : 'wf'] || cfg.xy;
       if (xyEff && xyEff.x != null) {
         const s = (Number(xyEff.s) || 100) / 100, r = Number(xyEff.r) || 0;
@@ -666,9 +629,6 @@
       el.querySelector('.w-testo').innerHTML = escHtml(tpl).replace(/\{nome\}/g, '<b>' + escHtml(valore || '—') + '</b>');
     }
 
-    // Mostra il nome del comando in una pillola che compare e sfuma.
-    // conPrefisso=true → antepone '!' (comandi chat); false → testo così com'è
-    // (es. titolo di un premio a punti canale).
     function etichettaVolatile(comando, durata, conPrefisso = true) {
       if (!comando) return;
       const el = document.createElement('div');
@@ -682,31 +642,28 @@
       }, Math.max(800, durata));
     }
 
-    // --- connessione SSE (riconnessione automatica nativa) ---------------
     function connetti() {
       const es = new EventSource(urlStream);
       es.onmessage = (m) => {
         let dati;
         try { dati = JSON.parse(m.data); } catch (e) { return; }
         if (!dati || !dati.tipo) return;
-        // ogni overlay mostra solo ciò che il suo layout prevede (mostra.*)
+
         if (dati.tipo === 'audio') { if (mostra('effetti')) suona(dati); }
         else if (dati.tipo === 'preset') { if (mostra('effetti')) suonaPreset(dati); }
         else if (dati.tipo === 'penitenza') { if (mostra('effetti')) penitenza(dati); }
         else if (dati.tipo === 'alert') alert(dati);
         else if (dati.tipo === 'chat') chat(dati);
         else if (dati.tipo === 'widget') { if (mostra(dati.id === 'ultimoSub' ? 'ws' : 'wf')) widget(dati.id, (MIO.widget && MIO.widget[dati.id]) || dati.cfg, dati.valore); }
-        else if (dati.tipo === 'tema') caricaTema();   // ricarica il MIO tema (per ?o=id)
+        else if (dati.tipo === 'tema') caricaTema();
         else if (dati.tipo === 'testo') { if (mostra('effetti')) mostraTesto(dati); }
-        else if (dati.tipo === 'contatore') contatore(dati);   // widget contatore persistente (morti/parole…)
+        else if (dati.tipo === 'contatore') contatore(dati);
         else { if (mostra('effetti')) { codaVisiva.push(dati); mostraProssimo(); } }
       };
-      // in caso di errore EventSource riprova da solo: non facciamo nulla
+
       es.onerror = () => {};
     }
 
-    // Widget CONTATORE persistente (morti/tentativi/parole…): un elemento per
-    // comando, posizionato e stilizzato dalla config; `mostra:false` lo rimuove.
     function fontStackCont(f) {
       const m = { system: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif', inter: 'Inter, system-ui, sans-serif', spaceGrotesk: '"Space Grotesk", Inter, sans-serif', jetBrainsMono: '"JetBrains Mono", ui-monospace, monospace', fraunces: 'Fraunces, Georgia, serif', bricolage: '"Bricolage Grotesque", Inter, sans-serif' };
       return m[f] || m.system;
@@ -720,8 +677,7 @@
       const x = isFinite(Number(d.x)) ? Number(d.x) : 6, y = isFinite(Number(d.y)) ? Number(d.y) : 84;
       el.style.left = x + '%';
       el.style.top = y + '%';
-      // ancora il widget all'angolo giusto: a sinistra parte dal bordo, a destra
-      // termina al bordo, al centro è centrato (così i preset toccano gli angoli).
+
       const tx = x <= 33 ? '0' : (x >= 67 ? '-100%' : '-50%');
       const ty = y <= 33 ? '0' : (y >= 67 ? '-100%' : '-50%');
       el.style.transform = 'translate(' + tx + ',' + ty + ')';
@@ -732,39 +688,36 @@
       el.style.fontFamily = fontStackCont(d.font);
     }
 
-    // Applica il TEMA di QUESTO overlay: layout (cosa mostra + dove), CSS e widget.
     function applicaTema(t) {
       MIO.mostra = (t && t.mostra) ? t.mostra : MIO.mostra;
       MIO.xy = (t && t.xy) ? t.xy : {};
-      // Opzione B: stile di alert/chat proprio di questo overlay (se il server lo
-      // manda). null = uso lo stile dell'evento (canale).
+
       MIO.stile = { alert: (t && t.alertStile) || null, chat: (t && t.chatStile) || null };
-      try { document.getElementById('css-utente').textContent = String(t.css || '').slice(0, 8000); } catch (e) { /* niente */ }
+      try { document.getElementById('css-utente').textContent = String(t.css || '').slice(0, 8000); } catch (e) {  }
       const w = t.widget || {};
-      MIO.widget = w;   // config widget di QUESTO overlay: la riusa anche l'update SSE
+      MIO.widget = w;
       const stato = t.stato || {};
-      // widget mostrati solo se questo overlay li prevede
+
       widget('ultimoFollower', mostra('wf') ? w.ultimoFollower : { attivo: false }, stato.ultimoFollower);
       widget('ultimoSub', mostra('ws') ? w.ultimoSub : { attivo: false }, stato.ultimoSub);
     }
 
-    // Al caricamento leggo il tema una volta (CSS + widget), poi mi tengo aggiornato via SSE.
     async function caricaTema() {
       try {
         const r = await fetch('/overlay/' + encodeURIComponent(login) + '/tema' + location.search);
         if (r.ok) applicaTema(await r.json());
-      } catch (e) { /* niente */ }
+      } catch (e) {  }
     }
 
     if (login) {
       connetti();
       caricaTema();
       caricaEmote();
-      setInterval(caricaEmote, 10 * 60 * 1000);   // le emote 7TV cambiano di rado
+      setInterval(caricaEmote, 10 * 60 * 1000);
       caricaBadge();
-      setInterval(caricaBadge, 30 * 60 * 1000);   // gli stemmi cambiano ancora meno
+      setInterval(caricaBadge, 30 * 60 * 1000);
     }
-  </script>
+</script>
 
 <!-- Questo software e tutto il suo contenuto (codice, logica, dati, motori di ragionamento e la persona "Lia") sono proprieta intellettuale di Andrea Taliento (ANDRYXify). © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live. ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->
 <span style="display:none" aria-hidden="true">​‌​‌​​​‌​‌‌‌​‌​‌​‌‌​​‌​‌​‌‌‌​​‌‌​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​​‌‌​​‌‌‌​‌​​​‌‌‌​‌‌‌​‌‌​​​​‌​‌‌‌​​‌​​‌‌​​‌​‌​​‌​​​​​​‌‌​​‌​‌​​‌​​​​​​‌‌‌​‌​​​‌‌‌​‌​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​‌‌​‌​​‌​‌‌​‌‌​​​​‌​​​​​​‌‌‌​​‌‌​‌‌‌​‌​‌​‌‌​‌‌‌‌​​‌​​​​​​‌‌​​​‌‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​‌​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​​‌​‌​​​​‌‌​​​‌‌​‌‌​‌‌‌‌​‌‌​​‌​​​‌‌​‌​​‌​‌‌​​​‌‌​‌‌​​‌​‌​​‌​‌‌​​​​‌​​​​​​‌‌​‌‌​​​‌‌​‌‌‌‌​‌‌​​‌‌‌​‌‌​‌​​‌​‌‌​​​‌‌​‌‌​​​​‌​​‌​‌‌​​​​‌​​​​​​‌‌​​‌​​​‌‌​​​​‌​‌‌‌​‌​​​‌‌​‌​​‌​​‌​‌‌​​​​‌​​​​​​‌‌​‌‌​‌​‌‌​‌‌‌‌​‌‌‌​‌​​​‌‌​‌‌‌‌​‌‌‌​​‌​​‌‌​‌​​‌​​‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌​​‌​​​​​​‌‌‌​​‌​​‌‌​​​​‌​‌‌​​‌‌‌​‌‌​‌​​‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌​​​​‌​‌‌​‌‌​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​‌‌​​‌​‌​​‌​​​​​​‌‌​‌‌​​​‌‌​​​​‌​​‌​​​​​​‌‌‌​​​​​‌‌​​‌​‌​‌‌‌​​‌​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌​​​​‌​​‌​​​​​​​‌​​​‌​​‌​​‌‌​​​‌‌​‌​​‌​‌‌​​​​‌​​‌​​​‌​​​‌​‌​​‌​​‌​​​​​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌​‌‌‌‌​​‌​​​​​​‌‌‌​​​​​‌‌‌​​‌​​‌‌​‌‌‌‌​‌‌‌​​​​​‌‌‌​​‌​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌‌​‌​​​‌‌​​​​‌​​‌​​​​​​‌‌​‌​​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​​‌​‌​‌‌​‌‌​​​‌‌​‌‌​​​‌‌​​‌​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌‌​‌​‌​‌‌​​​​‌​‌‌​‌‌​​​‌‌​​‌​‌​​‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌​​‌​​​​​​‌​​​​​‌​‌‌​‌‌‌​​‌‌​​‌​​​‌‌‌​​‌​​‌‌​​‌​‌​‌‌​​​​‌​​‌​​​​​​‌​‌​‌​​​‌‌​​​​‌​‌‌​‌‌​​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​​‌​‌​​​​‌​​​​​‌​‌​​‌‌‌​​‌​​​‌​​​‌​‌​​‌​​‌​‌‌​​‌​‌​‌‌​​​​‌‌​‌​​‌​‌‌​​‌‌​​‌‌‌‌​​‌​​‌​‌​​‌​​‌​‌‌‌​​​‌​​​​​‌‌​​​​‌​‌​‌​‌​​‌​​‌​​​​​​​‌‌​​‌​​​‌‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌‌‌​​​‌​‌​​​​​​​‌​​‌​​‌‌​​‌‌​​‌​​​‌‌​​​​​​‌‌​​‌​​​‌‌​‌‌​​​‌​​​​​​‌​​​​​‌​‌‌​‌‌‌​​‌‌​​‌​​​‌‌‌​​‌​​‌‌​​‌​‌​‌‌​​​​‌​​‌​​​​​​‌​‌​‌​​​‌‌​​​​‌​‌‌​‌‌​​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​​‌​‌​​​​‌​​​​​‌​‌​​‌‌‌​​‌​​​‌​​​‌​‌​​‌​​‌​‌‌​​‌​‌​‌‌​​​​‌‌​‌​​‌​‌‌​​‌‌​​‌‌‌‌​​‌​​‌​‌​​‌​​‌​​​​​‌‌‌​​​‌​‌​​​​​​​‌​​‌​‌​​​​‌​​​​​​‌​‌​‌​​​‌‌‌​‌​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌​‌​​‌​​‌​​​​​​‌‌​‌​​‌​​‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌​‌‌‌​​‌​​‌‌​‌​​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌​‌​​‌​​‌​​​​​​‌‌‌​​‌​​‌‌​‌​​‌​‌‌‌​​‌‌​‌‌​​‌​‌​‌‌‌​​‌​​‌‌‌​‌‌​​‌‌​​​​‌​‌‌‌​‌​​​‌‌​‌​​‌​​‌​​​​​‌‌‌​​​‌​‌​​​​​​​‌​​‌​‌​​​​‌​​​​​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​​​‌‌​‌‌​‌​​‌​‌‌​​​​‌​‌‌​‌‌​​​‌‌​​​‌​​‌‌​‌‌‌‌​‌‌‌​‌​​​​‌​‌‌‌​​‌‌​‌‌​​​‌‌​‌​​‌​‌‌‌​‌‌​​‌‌​​‌​‌​​‌​‌‌‌​​​‌​​​​​​‌​​​​​‌​‌​​‌‌‌​​‌​​​‌​​​‌​‌​​‌​​‌​‌‌​​‌​‌​‌‌​​​​​‌​‌‌​‌​‌​​‌​​‌​‌​‌​​​​​​‌‌‌​‌​​​‌‌‌​‌​​‌‌​​​​‌​​‌‌​‌‌‌​‌‌​​‌‌​​​‌‌​​‌‌​​‌‌‌​​‌​‌‌​​​‌‌​​‌‌​​​‌​‌‌​​‌​‌​​‌‌‌​​​​‌‌​​​‌​​​‌‌​‌​​​​‌‌​​‌​​​‌‌​‌​​​‌‌​​‌​​​​‌‌‌​​‌​​‌‌​​​​​​‌​‌‌​‌​​‌‌​‌​​​‌‌​​‌‌​​​‌‌​‌‌‌​‌‌​​​‌​​​‌​‌‌​‌​‌‌‌​‌​​​‌‌​​​​‌​‌‌​‌‌​​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌‌‌​‌​​​‌‌‌​‌​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​​​‌‌​‌‌​‌​​‌​‌‌​​​​‌​‌‌​‌‌​​​‌‌​​​‌​​‌‌​‌‌‌‌​‌‌‌​‌​​​​‌​‌‌‌​​‌‌​‌‌​​​‌‌​‌​​‌​‌‌‌​‌‌​​‌‌​​‌​‌⁣</span></body>

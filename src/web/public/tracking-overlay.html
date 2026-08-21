@@ -8,8 +8,7 @@
   <style>
     html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
     #wrap { position: fixed; inset: 0; }
-    /* video e canvas riempiono lo stesso box: teniamoli allineati (imposta la
-       Browser Source di OBS con lo stesso rapporto della webcam, es. 1280x720). */
+    
     #cam, #fx { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
     #fx { pointer-events: none; }
     #stato {
@@ -17,7 +16,7 @@
       max-width: 680px;
       font: 600 15px/1.35 system-ui, sans-serif; color: #fff; opacity: .92;
       background: rgba(0,0,0,.62); padding: 8px 12px; border-radius: 10px;
-      /* i messaggi d'errore possono essere lunghi: vanno a capo e restano leggibili */
+      
       white-space: normal; word-break: break-word;
     }
     body.pronto #stato { display: none; }
@@ -29,8 +28,7 @@
     <canvas id="fx"></canvas>
     <div id="stato">SocialBot tracking · avvio…</div>
   </div>
-  <!-- Human di vladmandic. Preferenza "solo server": in futuro si può auto-ospitare
-       da /vendor/human.js; oggi dalla CDN (nessuna CSP da aggiornare in questo repo). -->
+  
   <script src="https://cdn.jsdelivr.net/npm/@vladmandic/human@3/dist/human.js"></script>
   <script src="/tracking-overlay.js"></script>
   <script src="/tracking-games.js"></script>
