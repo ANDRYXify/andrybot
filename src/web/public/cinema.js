@@ -69,7 +69,9 @@
       }
       function posMorph() {
         if (!morphEl) return;
+        if (!morphEl.isConnected) { esciMorph(); return; }
         var r = morphEl.getBoundingClientRect();
+        if (!r.width && !r.height) { esciMorph(); return; }
         var ox = (tx - (r.left + r.width / 2)) * 0.12, oy = (ty - (r.top + r.height / 2)) * 0.12;
         ring.style.transform = 'translate(' + (r.left - PAD + ox) + 'px,' + (r.top - PAD + oy) + 'px)';
       }

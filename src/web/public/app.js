@@ -8385,15 +8385,16 @@ async function caricaScudo() {
   let d;
   try { d = await api('/api/antibot/console'); }
   catch (e) { box.innerHTML = `<p class="vuoto">${L('Non disponibile ora.', 'Not available now.', 'No disponible ahora.')}</p>`; return; }
-  const s = d.stato, sn = d.sintesi;
-  const quando = s.listaBot.aggiornata ? new Date(s.listaBot.aggiornata).toLocaleDateString() : '';
+  const s = d.stato || {}, sn = d.sintesi || {};
+  const lb = s.listaBot || {};
+  const quando = lb.aggiornata ? new Date(lb.aggiornata).toLocaleDateString() : '';
   box.innerHTML = `
     <div class="scudo-kpi">
       <div class="kpi ${s.attivo ? 'on' : 'off'}"><b>${s.attivo ? L('Attivo', 'On', 'Activo') : L('Spento', 'Off', 'Apagado')}</b><span>${L('protezione', 'protection', 'protección')}</span></div>
-      <div class="kpi"><b>${sn.oggi}</b><span>${L('oggi', 'today', 'hoy')}</span></div>
-      <div class="kpi"><b>${sn.settimana}</b><span>${L('7 giorni', '7 days', '7 días')}</span></div>
-      <div class="kpi ${sn.aperte ? 'warn' : ''}"><b>${sn.aperte}</b><span>${L('da rivedere', 'to review', 'por revisar')}</span></div>
-      <div class="kpi"><b>${Number(s.listaBot.conteggio || 0).toLocaleString('it')}</b><span>${L('bot noti', 'known bots', 'bots conocidos')}${quando ? ' · ' + quando : ''}</span></div>
+      <div class="kpi"><b>${sn.oggi || 0}</b><span>${L('oggi', 'today', 'hoy')}</span></div>
+      <div class="kpi"><b>${sn.settimana || 0}</b><span>${L('7 giorni', '7 days', '7 días')}</span></div>
+      <div class="kpi ${sn.aperte ? 'warn' : ''}"><b>${sn.aperte || 0}</b><span>${L('da rivedere', 'to review', 'por revisar')}</span></div>
+      <div class="kpi"><b>${Number(lb.conteggio || 0).toLocaleString('it')}</b><span>${L('bot noti', 'known bots', 'bots conocidos')}${quando ? ' · ' + quando : ''}</span></div>
     </div>
     ${!s.moderazioneOk ? `<p class="suggerimento spazio-sopra">${L('Per bannare davvero servono i permessi di moderazione.', 'To actually ban, moderation permissions are needed.', 'Para banear de verdad hacen falta permisos de moderación.')} <a class="btn secondario mini" href="/auth/permessi">${L('Concedi i permessi', 'Grant permissions', 'Concede los permisos')}</a></p>` : ''}`;
 
