@@ -22,7 +22,7 @@ import { points, vips, tgConf, dcConf, passkeys, managers, quotes, compleanni, m
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO } from '../db.js';
 import { renderLinkPage, renderInformativa } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
-import { statoListaBot } from '../features/antibot.js';
+import { statoListaBot, registro as registroAntibot, segnalazioniAperte, risolviSegnalazione, sintesiRegistro } from '../features/antibot.js';
 import { statoBackup, backupOra } from '../backup.js';
 import { risolviCanaleId } from '../features/youtube.js';
 import * as abbonamenti from '../features/abbonamenti.js';
@@ -1600,6 +1600,69 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const s = statoListaBot();
     res.json({ conteggio: s.conteggio, aggiornata: s.aggiornata });
   });
+
+  // Console anti-bot: la "certezza". Mostra COSA ha fatto lo scudo (registro con
+  // esito reale), le segnalazioni da rivedere, e le liste dello streamer.
+  const _abCfg = (login) => ({ ...(streamers.get(login)?.settings?.antibot || {}) });
+  app.get('/api/antibot/console', requireOwner, (req, res) => {
+    const login = currentUser(req).login.toLowerCase();
+    const cfg = _abCfg(login);
+    const lb = statoListaBot();
+    res.json({
+      stato: {
+        attivo: !!cfg.attivo,
+        azione: cfg.azione || 'ban',
+        avvisa: cfg.avvisa !== false,
+        moderazioneOk: moderazioneOk(login),
+        listaBot: { conteggio: lb.conteggio, aggiornata: lb.aggiornata },
+      },
+      sintesi: sintesiRegistro(login),
+      segnalazioni: segnalazioniAperte(login).slice(0, 100),
+      registro: registroAntibot(login, { limite: 120 }),
+      liste: { extra: Array.isArray(cfg.extra) ? cfg.extra : [], esenti: Array.isArray(cfg.esenti) ? cfg.esenti : [] },
+    });
+  });
+
+  // Risolve una segnalazione: 'blocca' (in blocklist), 'permetti' (in allowlist),
+  // 'ignora' (falso allarme). Le liste guidano lo scudo in modo deterministico.
+  app.post('/api/antibot/segnalazione', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login.toLowerCase();
+    const id = String(req.body?.id || '');
+    const esito = String(req.body?.esito || 'ignora');
+    if (!['blocca', 'permetti', 'ignora'].includes(esito)) return res.status(400).json({ errore: 'Esito non valido.' });
+    const aperte = segnalazioniAperte(login);
+    const v = aperte.find((x) => x.id === id);
+    if (!v) return res.status(404).json({ errore: 'Segnalazione non trovata.' });
+    if (esito === 'blocca' || esito === 'permetti') {
+      const campo = esito === 'blocca' ? 'extra' : 'esenti';
+      const s = streamers.get(login);
+      const ab = { ...(s?.settings?.antibot || {}) };
+      const lista = Array.isArray(ab[campo]) ? ab[campo].slice() : [];
+      const nome = String(v.login || '').toLowerCase();
+      if (nome && !lista.includes(nome)) lista.push(nome);
+      ab[campo] = lista.slice(0, 2000);
+      streamers.setSettings(login, { ...(s?.settings || {}), antibot: ab });
+    }
+    risolviSegnalazione(login, id, esito);
+    res.json({ ok: true });
+  }));
+
+  // Aggiunge/toglie un nome dalla blocklist ('extra') o allowlist ('esenti').
+  app.post('/api/antibot/lista', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login.toLowerCase();
+    const campo = req.body?.lista === 'esenti' ? 'esenti' : 'extra';
+    const azione = req.body?.azione === 'togli' ? 'togli' : 'aggiungi';
+    const nome = String(req.body?.nome || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 30);
+    if (!nome) return res.status(400).json({ errore: 'Nome non valido.' });
+    const s = streamers.get(login);
+    const ab = { ...(s?.settings?.antibot || {}) };
+    let lista = Array.isArray(ab[campo]) ? ab[campo].slice() : [];
+    if (azione === 'aggiungi') { if (!lista.includes(nome)) lista.push(nome); }
+    else lista = lista.filter((x) => x !== nome);
+    ab[campo] = lista.slice(0, 2000);
+    streamers.setSettings(login, { ...(s?.settings || {}), antibot: ab });
+    res.json({ ok: true, lista: ab[campo] });
+  }));
 
   // richiesta di abilitazione ("porta SocialBot nel tuo canale")
   app.post('/api/richiesta', requireLogin, wrap(async (req, res) => {
