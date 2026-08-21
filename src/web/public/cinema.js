@@ -1,16 +1,19 @@
 // © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
 // Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 //
-// cinema.js — l'atmosfera, in versione GARDEN EIGHT: minimale e serena. Niente particelle, niente
-// canvas: solo lo sfondo (piatto, dal tema) e un ingresso MORBIDO una volta al caricamento.
-// Regola d'oro: NON tocca MAI la navigazione (nessun observer, nessun timer). Se qualcosa va storto,
-// la pagina resta piena e usabile. Rispetta prefers-reduced-motion, .meno-moto e .leggero.
+// cinema.js — il MOVIMENTO Garden Eight: scroll-reveal fluido e sereno. Gli elementi salgono ed
+// emergono mentre scorri, decelerati e sfalsati; i titoli emergono da una maschera. Vivo, mai a scatti.
+//
+// SICUREZZA (lezione dei crash): l'osservatore del DOM guarda SOLO i nodi AGGIUNTI (childList), MAI gli
+// attributi → non può mordersi la coda (era quello il loop infinito). L'IntersectionObserver guarda la
+// visibilità e si STACCA dopo aver rivelato. NON tocca mai la navigazione. Tutto in try/catch. E un
+// FAIL-SAFE: il pre-stato nascosto vale solo con body.cinema-on, e un timeout rivela comunque tutto →
+// il contenuto non resta MAI invisibile. Rispetta prefers-reduced-motion, .meno-moto e .leggero.
 (function () {
   'use strict';
   try {
     var menoMoto = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
-    // "muli da soma": device deboli → modalità leggera (l'ingresso diventa una dissolvenza secca).
     function debole() {
       try {
         if (localStorage.getItem('sb-leggero') === '1') return true;
@@ -36,22 +39,66 @@
       }
     }
 
-    // ingresso MORBIDO una sola volta, sul contenuto visibile. Animazione pura CSS (fill both →
-    // finisce a opacity:1): il contenuto si rivela SEMPRE da solo. NON osserva e NON tocca la nav.
-    function ingresso() {
-      if (menoMoto) return;
-      try {
-        var vis = document.querySelector('.pannello-scheda.visibile') || document;
-        var nodi = vis.querySelectorAll('.blocco, .pannello, .carta, .card');
-        for (var i = 0; i < nodi.length && i < 30; i++) {
-          if (nodi[i].closest('#cerca-overlay')) continue;
-          nodi[i].setAttribute('data-anime', '1');
-          nodi[i].style.setProperty('--gr-ritardo', Math.min(i, 7) * 55 + 'ms');
-        }
-      } catch (e) { /* mai rompere nulla */ }
+    // elementi "da scena". I titoli emergono da una maschera; il resto sale e sfuma.
+    var SEL = '.blocco, .pannello, .carta, .card, .mini-guida, .cap-scheda, .pannello-scheda > h1, .pannello-scheda > h2';
+    var io = null;
+    function osservatoreVista() {
+      if (!('IntersectionObserver' in window)) return null;
+      return new IntersectionObserver(function (voci) {
+        try {
+          for (var i = 0; i < voci.length; i++) {
+            if (voci[i].isIntersecting) { voci[i].target.classList.add('rivelato'); io.unobserve(voci[i].target); }
+          }
+        } catch (e) { /* mai rompere */ }
+      }, { rootMargin: '0px 0px -6% 0px', threshold: 0.04 });
     }
 
-    function avvia() { sfondo(); setTimeout(ingresso, 380); }
+    // marca gli elementi non ancora marcati dentro uno scope e li mette in osservazione.
+    function marca(scope) {
+      try {
+        var root = scope || document;
+        var nodi = root.querySelectorAll(SEL);
+        for (var i = 0; i < nodi.length; i++) {
+          var el = nodi[i];
+          if (el.hasAttribute('data-reveal') || el.closest('#cerca-overlay')) continue;
+          var tag = el.tagName;
+          el.setAttribute('data-reveal', (tag === 'H1' || tag === 'H2') ? 'mask' : '1');
+          el.style.setProperty('--gr-ritardo', (i % 5) * 70 + 'ms');
+          if (io) io.observe(el); else el.classList.add('rivelato');
+        }
+      } catch (e) { /* l'estetica non rompe l'app */ }
+    }
+
+    // rete di sicurezza: dopo un po', qualunque cosa non ancora rivelata VIENE rivelata (mai appeso).
+    function reteSicurezza() {
+      try {
+        var pend = document.querySelectorAll('[data-reveal]:not(.rivelato)');
+        for (var i = 0; i < pend.length; i++) pend[i].classList.add('rivelato');
+      } catch (e) { /* niente */ }
+    }
+
+    function avvia() {
+      sfondo();
+      if (menoMoto) return;                     // nessun moto: il contenuto è già pieno e visibile
+      try { document.body.classList.add('cinema-on'); } catch (e) {}
+      io = osservatoreVista();
+      marca(document);
+      // osserva SOLO i nodi aggiunti (cambio scheda della SPA) → marca il nuovo contenuto. childList,
+      // MAI attributi: così aggiungere classi/attributi NON ri-scatena l'osservatore (niente loop).
+      try {
+        var app = document.getElementById('app') || document.body, tmr = null;
+        new MutationObserver(function (muts) {
+          try {
+            var nuovo = false;
+            for (var i = 0; i < muts.length; i++) if (muts[i].addedNodes && muts[i].addedNodes.length) { nuovo = true; break; }
+            if (nuovo) { clearTimeout(tmr); tmr = setTimeout(function () { marca(document); }, 70); }
+          } catch (e) { /* mai rompere l'app */ }
+        }).observe(app, { childList: true, subtree: true });
+      } catch (e) { /* niente */ }
+      // fail-safe finale: dopo 3.5s tutto ciò che è ancora nascosto viene mostrato.
+      setTimeout(reteSicurezza, 3500);
+    }
+
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', avvia);
     else avvia();
   } catch (e) { /* l'estetica non deve MAI impedire al sito di funzionare */ }
