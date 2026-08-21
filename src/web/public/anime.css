@@ -125,7 +125,11 @@ body.cinema-on [data-reveal="mask"]:not(.rivelato) { opacity: 0; transform: tran
 
 /* ── RICERCA: stessa quiete, molto vuoto, hairline, un cenno di vermiglio. ───────────────── */
 #cerca-lancia {
-  position: fixed; right: 20px; bottom: 20px; z-index: 70;
+  position: fixed; z-index: 70;
+  /* SEMPRE dentro lo schermo: rispetta la safe-area del telefono (notch/barra home). */
+  right: calc(18px + env(safe-area-inset-right, 0px));
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  left: auto; top: auto;
   width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--border-2); cursor: pointer;
   background: var(--surface); color: var(--testo); box-shadow: 0 6px 22px rgba(0,0,0,.10);
   transition: transform .3s var(--an-morbido), border-color .3s ease;
@@ -198,3 +202,17 @@ body.leggero [data-reveal] { transition: opacity .4s ease !important; }
 body.leggero [data-reveal]:not(.rivelato) { transform: none !important; clip-path: none !important; }
 body.leggero #cerca-overlay { backdrop-filter: none; background: color-mix(in srgb, var(--bg) 90%, transparent); }
 body.leggero .cerca-voce, body.leggero .cerca-sugg .chip-domanda, body.leggero .cerca-box { animation: none; }
+
+/* ── TELEFONO: la lente resta SEMPRE dentro; la ricerca diventa un foglio a tutta larghezza. ─── */
+@media (max-width: 640px) {
+  #cerca-lancia {
+    width: 46px; height: 46px;
+    right: calc(14px + env(safe-area-inset-right, 0px));
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  }
+  #cerca-overlay { padding: 7vh 10px calc(10px + env(safe-area-inset-bottom, 0px)); }
+  .cerca-box { width: 100%; max-width: 100%; max-height: 86vh; display: flex; flex-direction: column; }
+  .cerca-lista { max-height: none; flex: 1 1 auto; }
+  .cerca-top { padding: 15px 14px; }
+  #cerca-input { font-size: 1rem; }
+}
