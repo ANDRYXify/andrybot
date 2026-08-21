@@ -8273,6 +8273,12 @@ function pannelloScudo() {
       <div id="scudo-registro"></div>
     </div>
     <div class="carta">
+      <h2>${L('Pulizia follower', 'Follower cleanup', 'Limpieza de seguidores')}</h2>
+      <p class="suggerimento">${L('Controlla i follower più recenti contro la lista bot e le euristiche. Non banna nulla da solo: ti mostra i sospetti e decidi tu.', 'Checks your most recent followers against the bot list and heuristics. It bans nothing on its own: it shows suspects and you decide.', 'Comprueba tus seguidores más recientes contra la lista de bots y las heurísticas. No banea nada solo: te muestra sospechosos y decides tú.')}</p>
+      <p><button type="button" class="btn secondario" id="scudo-scan-btn">${L('Scansiona i follower recenti', 'Scan recent followers', 'Escanear seguidores recientes')}</button></p>
+      <div id="scudo-scan-esito"></div>
+    </div>
+    <div class="carta">
       <h2>${L('Le tue liste', 'Your lists', 'Tus listas')}</h2>
       <div class="scudo-liste">
         <div>
@@ -8295,6 +8301,7 @@ function pannelloScudo() {
 function scudoAzioneTesto(a) {
   return {
     ban: L('Bannato', 'Banned', 'Baneado'),
+    sbanna: L('Sbannato', 'Unbanned', 'Desbaneado'),
     timeout: L('Timeout', 'Timeout', 'Timeout'),
     segnala: L('Segnalato', 'Flagged', 'Señalado'),
     raffica: L('Ondata di follow', 'Follow wave', 'Oleada de follows'),
@@ -8323,8 +8330,33 @@ function scudoWire() {
     const ris = ev.target.closest('[data-scudo-ris]');
     if (ris) {
       ev.preventDefault();
-      try { await api('/api/antibot/segnalazione', { method: 'POST', body: { id: ris.dataset.scudoRis, esito: ris.dataset.esito } }); caricaScudo(); }
+      try {
+        const r = await api('/api/antibot/segnalazione', { method: 'POST', body: { id: ris.dataset.scudoRis, esito: ris.dataset.esito } });
+        if (ris.dataset.esito === 'blocca') toast(r.bannato ? L('Bloccato e bannato ✓', 'Blocked and banned ✓', 'Bloqueado y baneado ✓') : L('Messo in blocklist ✓', 'Added to blocklist ✓', 'Añadido a blocklist ✓'));
+        caricaScudo();
+      }
       catch (e) { toast(L('Non riuscito', 'Failed', 'Falló')); }
+      return;
+    }
+    if (ev.target.closest('#scudo-scan-btn')) {
+      ev.preventDefault();
+      const btn = ev.target.closest('#scudo-scan-btn'), out = document.getElementById('scudo-scan-esito');
+      btn.disabled = true;
+      if (out) out.innerHTML = `<p class="vuoto">${L('Scansiono i follower…', 'Scanning followers…', 'Escaneando seguidores…')}</p>`;
+      try { scudoRenderScan(await api('/api/antibot/scan', { method: 'POST' })); }
+      catch (e) { if (out) out.innerHTML = `<p class="vuoto">${L('Scansione non riuscita.', 'Scan failed.', 'Escaneo fallido.')}</p>`; }
+      btn.disabled = false;
+      return;
+    }
+    const ban = ev.target.closest('[data-scudo-ban]');
+    if (ban) {
+      ev.preventDefault();
+      ban.disabled = true;
+      try {
+        const r = await api('/api/antibot/azione', { method: 'POST', body: { userId: ban.dataset.userid, login: ban.dataset.login, azione: 'ban' } });
+        if (r.ok) { toast(L('Bannato ✓', 'Banned ✓', 'Baneado ✓')); const row = ban.closest('.scudo-seg'); if (row) row.remove(); }
+        else { toast(L('Non riuscito', 'Failed', 'Falló') + (r.motivo ? ': ' + r.motivo : '')); ban.disabled = false; }
+      } catch (e) { toast(L('Non riuscito', 'Failed', 'Falló')); ban.disabled = false; }
       return;
     }
     const add = ev.target.closest('[data-scudo-add]');
@@ -8396,6 +8428,24 @@ async function caricaScudo() {
 
   scudoRenderLista('extra', d.liste?.extra || []);
   scudoRenderLista('esenti', d.liste?.esenti || []);
+}
+function scudoRenderScan(d) {
+  const box = document.getElementById('scudo-scan-esito');
+  if (!box) return;
+  const list = d.sospetti || [];
+  const avviso = d.permessi === false ? `<p class="suggerimento">${L('Per bannare servono i permessi di moderazione.', 'To ban, moderation permissions are needed.', 'Para banear hacen falta permisos de moderación.')} <a class="btn secondario mini" href="/auth/permessi">${L('Concedi', 'Grant', 'Conceder')}</a></p>` : '';
+  box.innerHTML = avviso + (list.length
+    ? `<p class="suggerimento spazio-sopra">${L('Controllati', 'Checked', 'Comprobados')} ${d.scansionati} · <b>${list.length}</b> ${L('sospetti', 'suspects', 'sospechosos')}</p>` + list.map((v) => `
+      <div class="scudo-seg">
+        <div class="scudo-seg-info">
+          <b>@${esc(v.login || '?')}</b>
+          <span>${L('rischio', 'risk', 'riesgo')} ${v.rischio} · ${esc((v.motivi || []).join(', ') || L('nome sospetto', 'suspicious name', 'nombre sospechoso'))}</span>
+        </div>
+        <div class="scudo-seg-azioni">
+          <button type="button" class="btn mini" data-scudo-ban data-userid="${esc(v.userId)}" data-login="${esc(v.login)}">${L('Banna', 'Ban', 'Banear')}</button>
+        </div>
+      </div>`).join('')
+    : `<p class="vuoto spazio-sopra">${L('Nessun follower sospetto tra i recenti. Pulito.', 'No suspicious followers among the recent ones. All clean.', 'Ningún seguidor sospechoso entre los recientes. Limpio.')}</p>`);
 }
 function scudoRenderLista(campo, nomi) {
   const el = document.getElementById('scudo-lista-' + campo);
