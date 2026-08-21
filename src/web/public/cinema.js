@@ -60,14 +60,22 @@
     function cursore() {
       var ring = document.createElement('div'); ring.id = 'an-cursore-ring';
       var dot = document.createElement('div'); dot.id = 'an-cursore-dot';
-      document.body.appendChild(ring); document.body.appendChild(dot);
-      document.body.classList.add('cursore-on');
-      var tx = -100, ty = -100, rx = -100, ry = -100, vivo = true, raf = 0;
+      var bar = document.createElement('div'); bar.id = 'an-cursore-bar';   // "I" per i campi di testo
+      document.body.appendChild(ring); document.body.appendChild(dot); document.body.appendChild(bar);
+      var tx = -100, ty = -100, rx = -100, ry = -100, vivo = true, raf = 0, modo = '';
+      var SEL_TESTO = 'textarea, [contenteditable=""], [contenteditable="true"], input:not([type=button]):not([type=submit]):not([type=reset]):not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file])';
+      var SEL_CLIC = 'a, button, .btn, [data-scheda], .cerca-voce, .chip-domanda, summary, select, label, [role="button"]';
       function muovi(e) {
         tx = e.clientX; ty = e.clientY;
         dot.style.transform = 'translate(' + (tx - 2) + 'px,' + (ty - 2) + 'px)';
-        var s = e.target && e.target.closest && e.target.closest('a, button, .btn, [data-scheda], .cerca-voce, .chip-domanda, summary, input, textarea, select');
-        ring.classList.toggle('su', !!s);
+        bar.style.transform = 'translate(' + tx + 'px,' + ty + 'px)';
+        var t = e.target, m = '';
+        if (t && t.closest) { m = t.closest(SEL_TESTO) ? 'testo' : (t.closest(SEL_CLIC) ? 'link' : ''); }
+        if (m !== modo) {   // tocca il DOM SOLO quando lo stato cambia (niente lavoro a ogni pixel)
+          modo = m;
+          ring.classList.toggle('su', m === 'link');
+          document.body.classList.toggle('modo-testo', m === 'testo');
+        }
       }
       function passo() {
         if (!vivo) return;
@@ -76,10 +84,13 @@
         raf = requestAnimationFrame(passo);
       }
       window.addEventListener('mousemove', muovi, { passive: true });
-      window.addEventListener('mouseout', function (e) { if (!e.relatedTarget) { dot.style.opacity = ring.style.opacity = '0'; } }, { passive: true });
-      window.addEventListener('mouseover', function () { dot.style.opacity = ring.style.opacity = ''; }, { passive: true });
+      window.addEventListener('mouseout', function (e) { if (!e.relatedTarget) { dot.style.opacity = ring.style.opacity = bar.style.opacity = '0'; } }, { passive: true });
+      window.addEventListener('mouseover', function () { dot.style.opacity = ring.style.opacity = bar.style.opacity = ''; }, { passive: true });
       document.addEventListener('visibilitychange', function () { vivo = !document.hidden; if (vivo) { cancelAnimationFrame(raf); raf = requestAnimationFrame(passo); } });
       raf = requestAnimationFrame(passo);
+      // ULTIMO passo: solo ORA (elementi creati, listener attivi, rAF avviato) nascondiamo il cursore
+      // nativo. Se qualcosa sopra fosse fallito, non arriviamo qui → il nativo resta e si lavora.
+      document.body.classList.add('cursore-on');
     }
 
     // ── BOTTONI MAGNETICI: il bottone/lente sotto il cursore si sposta un filo VERSO il cursore.
