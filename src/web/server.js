@@ -1116,7 +1116,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       icone: ICONE_LINKPAGE,
       tipi: TIPI_BLOCCO,
       limiti: LIMITI_LINKPAGE,
-      avatarTwitch: await avatarDi(login),
+      avatarTwitch: await avatarDi(login, { aggiorna: true }),
       visite: visitePagina.riassunto(login),
       // per chi parte da zero: un primo blocco già pronto sul suo canale
       suggeriti: linkPage.esiste(login) ? [] : [
