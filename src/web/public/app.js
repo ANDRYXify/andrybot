@@ -12640,6 +12640,7 @@ window.SB_APP = {
   vai(id) { try { return vaiAScheda(id); } catch (e) { location.hash = '#' + id; } },
   tScheda, tGruppo, L, esc,
   icona(id) { return (typeof ICONA !== 'undefined' && ICONA[id]) || ''; },
+  desc(id) { try { const d = DESC[id]; return d ? L(d[0], d[1], d[2]) : ''; } catch (e) { return ''; } },
   schedaValida(id) { try { return schedaValida(id); } catch (e) { return true; } },
   schedaBloccata(id) { try { return schedaBloccata(id); } catch (e) { return false; } },
 };
