@@ -27,23 +27,38 @@ function ipPrivato(ip) {
   return false;
 }
 
-async function fetchSicuro(url) {
-  let u;
-  try { u = new URL(url); } catch { throw new Error('link non valido'); }
+// Valida protocollo + host: risolve il DNS e blocca gli IP privati/interni.
+async function validaUrl(u) {
   if (u.protocol !== 'https:' && u.protocol !== 'http:') throw new Error('solo link http/https');
-  // risolvi l'host e blocca gli IP privati (anti-SSRF)
   let indirizzi = [];
   try { indirizzi = await dns.lookup(u.hostname, { all: true }); }
   catch { throw new Error('host non raggiungibile'); }
   if (!indirizzi.length || indirizzi.some((a) => ipPrivato(a.address))) throw new Error('host non consentito');
+}
 
+async function fetchSicuro(url) {
+  let u;
+  try { u = new URL(url); } catch { throw new Error('link non valido'); }
   const ctrl = new AbortController();
   const to = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try {
-    const r = await fetch(u.href, { signal: ctrl.signal, redirect: 'follow', headers: { 'User-Agent': UA, Accept: 'text/html,application/json,text/plain,*/*' } });
-    if (!r.ok) throw new Error('la pagina ha risposto ' + r.status);
-    const buf = Buffer.from(await r.arrayBuffer());
-    return buf.subarray(0, MAX_BYTES).toString('utf8');
+    // Redirect gestiti a MANO: ogni salto viene ri-validato. Senza questo un URL
+    // pubblico che rimbalza su 169.254.169.254/127.0.0.1 verrebbe seguito e il suo
+    // contenuto interno tornerebbe al chiamante (esfiltrazione via SSRF).
+    for (let hop = 0; hop < 5; hop++) {
+      await validaUrl(u);
+      const r = await fetch(u.href, { signal: ctrl.signal, redirect: 'manual', headers: { 'User-Agent': UA, Accept: 'text/html,application/json,text/plain,*/*' } });
+      if (r.status >= 300 && r.status < 400) {
+        const loc = r.headers.get('location');
+        if (!loc) throw new Error('redirect senza destinazione');
+        u = new URL(loc, u.href);
+        continue;
+      }
+      if (!r.ok) throw new Error('la pagina ha risposto ' + r.status);
+      const buf = Buffer.from(await r.arrayBuffer());
+      return buf.subarray(0, MAX_BYTES).toString('utf8');
+    }
+    throw new Error('troppi redirect');
   } finally { clearTimeout(to); }
 }
 

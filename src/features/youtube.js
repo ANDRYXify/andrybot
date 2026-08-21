@@ -71,7 +71,13 @@ export async function risolviCanaleId(input, apiKey) {
   const mUrl = s.match(/channel\/(UC[A-Za-z0-9_-]{22})/);        // URL .../channel/UC...
   if (mUrl) return mUrl[1];
   let url;
-  if (/^https?:\/\//i.test(s)) url = s;
+  if (/^https?:\/\//i.test(s)) {
+    // SOLO domini YouTube: senza questo vincolo il server farebbe da fetcher di
+    // URL arbitrari (SSRF cieco verso host interni) su input dell'utente.
+    try { const h = new URL(s).hostname.toLowerCase(); if (!/(^|\.)youtube\.com$|(^|\.)youtu\.be$/.test(h)) return null; }
+    catch { return null; }
+    url = s;
+  }
   else if (s.startsWith('@')) url = 'https://www.youtube.com/' + s;
   else url = 'https://www.youtube.com/@' + s.replace(/^@/, '');
   const html = await getText(url);
