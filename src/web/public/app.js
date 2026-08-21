@@ -10292,6 +10292,15 @@ async function caricaModuli() {
   }
   disegnaListaModuli();
   disegnaConnettori();
+  try {
+    if (window.SB_CERCA) {
+      window.SB_CERCA.pulisci('cmd');
+      window.SB_CERCA.aggiungi((datiModuli?.moduli || []).map((m) => ({
+        id: 'moduli', label: m.nome || L('Comando', 'Command', 'Comando'), gruppoId: 'pubblico',
+        sotto: L('comando', 'command', 'comando'), chiavi: 'comando ' + (m.nome || '') + ' ' + riassuntoModulo(m),
+      })), 'cmd');
+    }
+  } catch (e) { /* la ricerca è un extra */ }
 }
 
 function disegnaListaModuli() {
