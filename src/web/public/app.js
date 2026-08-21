@@ -6955,7 +6955,7 @@ async function caricaPaginaLink(ridisegna = false) {
           <label class="campo spazio-sopra" for="lp-avatar">${L('Immagine del profilo', 'Profile picture', 'Imagen de perfil')}</label>
           <select id="lp-avatar" data-lpt="avatarModo">
             <option value=""${!LP.testa.avatar ? ' selected' : ''}>${L('Quella di Twitch', 'Your Twitch one', 'La de Twitch')}</option>
-            <option value="url"${LP.testa.avatar && LP.testa.avatar !== 'no' ? ' selected' : ''}>${L('Un\'immagine mia (indirizzo)', 'My own image (address)', 'Una imagen mía (dirección)')}</option>
+            <option value="url"${LP.testa.avatar && LP.testa.avatar !== 'no' ? ' selected' : ''}>${L('Un\'immagine mia (carica o incolla)', 'My own image (upload or paste)', 'Una imagen mía (sube o pega)')}</option>
             <option value="no"${LP.testa.avatar === 'no' ? ' selected' : ''}>${L('Nessuna', 'None', 'Ninguna')}</option>
           </select>
           <div id="lp-avatar-tw" class="lp-avatar-tw" ${LP.testa.avatar ? 'hidden' : ''}>
