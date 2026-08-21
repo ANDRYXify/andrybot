@@ -1076,7 +1076,8 @@ ${!anteprima && mov !== 'nessuno' ? `<script>${SCRIPT_SCROLLREVEAL}</script>` : 
   ${fxCanvas}
   <main class="telo">
     ${mostraAvatar ? (imgAvatar
-      ? `<img class="avatar" src="${esc(imgAvatar)}" alt="" width="88" height="88" loading="eager">`
+      ? `<img class="avatar" src="${esc(imgAvatar)}" alt="" width="88" height="88" loading="eager" onerror="this.style.display='none';var f=this.nextElementSibling;if(f)f.hidden=false;">
+         <div class="avatar" aria-hidden="true" hidden>${esc(iniziale(titolo))}</div>`
       : `<div class="avatar" aria-hidden="true">${esc(iniziale(titolo))}</div>`) : ''}
     <h1>${esc(titolo)}</h1>
     ${pagina.tagline ? `<p class="tag">${esc(pagina.tagline)}</p>` : ''}
