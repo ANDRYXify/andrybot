@@ -261,13 +261,19 @@ export async function salvaRegistro() {
   regDaSalvare = false;
   const obj = {};
   for (const [ch, arr] of registriMem) obj[ch] = arr;
-  await writeFile(REG_FILE(), JSON.stringify(obj)).catch(() => {});
+  await writeFile(REG_FILE(), JSON.stringify(obj)).catch((e) => log.warn('registro non salvato su disco:', e?.message || e));
 }
 
 export async function caricaRegistroDaDisco() {
   try {
     const j = JSON.parse(await readFile(REG_FILE(), 'utf8'));
-    for (const ch of Object.keys(j || {})) if (Array.isArray(j[ch])) registriMem.set(norm(ch), j[ch].slice(-REG_MAX));
+    for (const ch of Object.keys(j || {})) {
+      if (!Array.isArray(j[ch])) continue;
+      // Difesa da file corrotto/manomesso: teniamo solo voci ben formate, così
+      // sintesiRegistro/registro non esplodono su una riga null o senza campi.
+      const buoni = j[ch].filter((v) => v && typeof v === 'object' && v.id && v.azione);
+      registriMem.set(norm(ch), buoni.slice(-REG_MAX));
+    }
     log.info(`registro anti-bot: ripreso per ${registriMem.size} canali`);
   } catch (e) { /* prima volta: nessun file */ }
 }
@@ -329,8 +335,11 @@ export class AntiBot {
       return this._agisci(channel, userId, login, 'follow durante ondata', cfg);
     }
 
-    // 3. account sospetto (una chiamata a Twitch)
-    if (cfg.controllaAccount && this.helix?.getUserByLogin) {
+    // 3. account sospetto (una chiamata a Twitch). NON durante una raffica: lì
+    // l'attacco è già gestito in aggregato (passo 1), e fare una chiamata Helix
+    // per OGNI follow di un'ondata amplificherebbe l'attacco in centinaia di
+    // richieste. Fuori dalla raffica, una chiamata per follow va bene.
+    if (cfg.controllaAccount && this.helix?.getUserByLogin && !inRaffica(channel)) {
       const u = await this.helix.getUserByLogin(login).catch(() => null);
       const { rischio, motivi } = valutaAccount(u, cfg);
       if (rischio >= Number(cfg.soglia || 70)) return this._agisci(channel, userId, login, motivi.join(', '), cfg);

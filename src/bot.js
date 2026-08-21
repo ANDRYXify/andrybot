@@ -38,7 +38,7 @@ import { createMessageHandler } from './features/handler.js';
 import { ClipEngine } from './features/clips.js';
 import { PenitenzeEngine } from './features/penitenze.js';
 import { AlertsEngine } from './features/alerts.js';
-import { AntiBot, caricaListaBotDaDisco, aggiornaListaBot, caricaRegistroDaDisco } from './features/antibot.js';
+import { AntiBot, caricaListaBotDaDisco, aggiornaListaBot, caricaRegistroDaDisco, salvaRegistro } from './features/antibot.js';
 import { scheduleReflection } from './ai/reflection.js';
 import { StreamWatcher } from './stream/watcher.js';
 import { LiveListener } from './stream/listener.js';
@@ -205,6 +205,10 @@ export class BotManager {
     await this.events?.stop?.();
     // salva i modelli IA locali (semantica auto-addestrata) prima di chiudere
     try { model.salvaTutto(); } catch { /* niente */ }
+    // svuota su disco il registro anti-bot in sospeso (il salvataggio è
+    // debounced 4s: senza questo, ban/segnalazioni degli ultimi secondi si
+    // perderebbero a ogni riavvio/deploy).
+    try { await salvaRegistro(); } catch { /* niente */ }
     for (const [, u] of this.units) u.chat.disconnect();
     this.units.clear();
   }

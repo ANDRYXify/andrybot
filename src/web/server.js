@@ -1080,6 +1080,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       if (!r || !r.ok) return notFound(res);
       const buf = Buffer.from(await r.arrayBuffer());
       const tipo = r.headers.get('content-type') || 'image/png';
+      if (_avatarCache.size > 300) { const primo = _avatarCache.keys().next().value; if (primo !== undefined) _avatarCache.delete(primo); }
       _avatarCache.set(login, { buf, tipo, ts: Date.now() });
       res.set('Content-Type', tipo); res.set('Cache-Control', 'public, max-age=3600');
       res.end(buf);
@@ -1630,9 +1631,12 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const id = String(req.body?.id || '');
     const esito = String(req.body?.esito || 'ignora');
     if (!['blocca', 'permetti', 'ignora'].includes(esito)) return res.status(400).json({ errore: 'Esito non valido.' });
-    const aperte = segnalazioniAperte(login);
-    const v = aperte.find((x) => x.id === id);
+    const v = segnalazioniAperte(login).find((x) => x.id === id);
     if (!v) return res.status(404).json({ errore: 'Segnalazione non trovata.' });
+    // Chiudiamo PRIMA (flip sincrono di stato): se due richieste arrivano insieme,
+    // solo la prima ottiene un ritorno non-null → l'altra non ri-banna né ri-scrive.
+    const chiuso = risolviSegnalazione(login, id, esito);
+    if (!chiuso) return res.json({ ok: true, gia: true });
     let bannato = null;
     if (esito === 'blocca' || esito === 'permetti') {
       const campo = esito === 'blocca' ? 'extra' : 'esenti';
@@ -1644,24 +1648,27 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       ab[campo] = lista.slice(0, 2000);
       streamers.setSettings(login, { ...(s?.settings || {}), antibot: ab });
     }
-    // "Blocca sempre" bandisce ANCHE subito, se abbiamo l'id e i permessi: non
-    // solo lo mette in lista per il futuro. Registriamo l'esito reale.
+    // "Blocca sempre" bandisce ANCHE subito, se abbiamo l'id e i permessi.
     if (esito === 'blocca' && v.userId && moderazioneOk(login)) {
       const r = await helix.timeoutUser(login, v.userId, 0, 'anti-bot: bloccato dalla console').catch(() => null);
       bannato = !!r?.ok;
       registraAntibot(login, { login: v.login, userId: v.userId, azione: 'ban', motivo: 'bloccato dalla console', esito: r?.ok ? 'fatto' : 'fallito' });
     }
-    risolviSegnalazione(login, id, esito);
     res.json({ ok: true, bannato });
   }));
 
   // Scansiona i follower recenti contro la lista bot e le euristiche. NON agisce:
   // ritorna i sospetti, lo streamer decide. Stile "pulizia follower" di CommanderRoot.
+  const _scanCache = new Map();          // login → { ts, dati }
   app.post('/api/antibot/scan', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login.toLowerCase();
+    // Cooldown: la scansione chiama Helix (bucket condiviso tra tutti i canali).
+    // Entro 30s restituiamo l'ultimo risultato invece di rimartellare Twitch.
+    const c = _scanCache.get(login);
+    if (c && Date.now() - c.ts < 30000) return res.json({ ...c.dati, cache: true });
     const cfg = _abCfg(login);
     const foll = await helix.getRecentFollowers(login, { first: 100 });
-    if (!foll.length) return res.json({ sospetti: [], scansionati: 0, permessi: moderazioneOk(login) });
+    if (!foll.length) { const d = { sospetti: [], scansionati: 0, permessi: moderazioneOk(login) }; _scanCache.set(login, { ts: Date.now(), dati: d }); return res.json(d); }
     const ids = foll.map((f) => f.user_id).filter(Boolean);
     const utenti = await helix.getUsersByIds(ids);
     const perId = new Map(utenti.map((u) => [u.id, u]));
@@ -1677,7 +1684,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       }
     }
     sospetti.sort((a, b) => b.rischio - a.rischio);
-    res.json({ sospetti, scansionati: foll.length, permessi: moderazioneOk(login) });
+    const dati = { sospetti, scansionati: foll.length, permessi: moderazioneOk(login) };
+    _scanCache.set(login, { ts: Date.now(), dati });
+    res.json(dati);
   }));
 
   // Azione manuale su un utente (dalla scansione o dal registro): ban o revoca.
@@ -1686,7 +1695,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const userId = String(req.body?.userId || '');
     const nome = String(req.body?.login || '').toLowerCase();
     const azione = req.body?.azione === 'sbanna' ? 'sbanna' : 'ban';
-    if (!userId) return res.status(400).json({ errore: 'Manca l\'utente.' });
+    if (!/^\d+$/.test(userId)) return res.status(400).json({ errore: 'Utente non valido.' });
     if (!moderazioneOk(login)) return res.status(403).json({ errore: 'Servono i permessi di moderazione.' });
     const r = azione === 'sbanna'
       ? await helix.unbanUser(login, userId).catch(() => null)
