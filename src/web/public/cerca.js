@@ -10,28 +10,29 @@
   var SVG_LENTE = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.7"></circle><line x1="20.5" y1="20.5" x2="15.6" y2="15.6"></line></svg>';
 
   var CHIAVI = {
-    personalita: 'personalità carattere tono come parla stile prompt voce del bot indole',
-    conoscenza: 'conoscenza sapere informazioni faq risposte curate cosa sa',
-    memoria: 'memoria ricordi cervello storia conversazioni persone',
-    avatar: 'avatar 3d mente grafo nodi cervello di lia plasticità appraisal essere',
-    moduli: 'comandi command custom variabili trigger risposte automatiche !comando comando',
-    ascolto: 'comandi vocali voce parlato speech ascolto microfono',
-    regole: 'moderazione moderation ban timeout kick spam filtri parole vietate antibot follow-bot hate-raid sicurezza chat automod',
-    giochi: 'giochi minigiochi classifiche monete punti coin economia leaderboard watchtime fedeltà rank',
+    personalita: 'personalità carattere tono come parla stile prompt voce del bot indole descrizione',
+    conoscenza: 'conoscenza sapere informazioni faq risposte curate cosa sa insegna',
+    memoria: 'memoria ricordi cervello storia conversazioni persone statistiche',
+    avatar: 'avatar 3d mente grafo nodi cervello di lia plasticità appraisal essere coscienza',
+    moduli: 'comandi command custom variabili trigger risposte automatiche contatori !comando comando',
+    ascolto: 'comandi vocali voce parlato speech ascolto microfono a voce',
+    regole: 'moderazione moderation ban timeout kick spam filtri parole vietate link maiuscole flood automod chat pulita',
+    scudo: 'scudo anti-bot antibot blocca bot segnalazioni registro interventi follow-bot follow bot hate-raid raid banna sospetti pulizia follower blocklist allowlist lista bot commanderroot sery_bot certezza',
+    giochi: 'giochi minigiochi classifiche monete punti coin economia leaderboard ore guardate watchtime fedeltà rank vip',
     sondaggi: 'sondaggi predizioni poll prediction votazioni',
-    giveaway: 'giveaway estrazione premi raffle sorteggio',
-    penitenze: 'penitenze penalità punti canale sfide obbrobri',
-    regia: 'regia diretta live comandi rapidi durante la diretta',
-    clip: 'clip momenti highlight ritaglia',
-    musica: 'musica spotify song request canzoni richieste brani',
-    alert: 'overlay alert studio scena widget browser source obs allerte',
-    effetti: 'effetti suoni audio sound sfx immagini video',
+    giveaway: 'giveaway estrazione premi raffle sorteggio vincitori',
+    penitenze: 'penitenze penalità punti canale sfide riscatti contatore morti',
+    regia: 'regia diretta live comandi rapidi durante la diretta titolo categoria pubblicità',
+    clip: 'clip momenti highlight ritaglia registra',
+    musica: 'musica spotify song request canzoni richieste brani coda',
+    alert: 'overlay alert studio scena widget browser source obs allerte follow sub bit raid chat a schermo emote 7tv',
+    effetti: 'effetti suoni audio sound sfx immagini video premi punti canale',
     emote: 'emote 7tv emoji faccine',
-    pagina: 'pagina link bio linktree profilo vetrina sito',
-    grafiche: 'grafiche immagini sfondi banner locandine',
-    notifiche: 'notifiche social tiktok instagram youtube nuovi post',
-    stato: 'stato account piano pacchetti panoramica',
-    sottoscrizione: 'abbonamento subscription pagamento fattura rinnovo piano prezzo',
+    pagina: 'pagina link bio linktree profilo vetrina sito i miei link logo avatar',
+    grafiche: 'grafiche immagini sfondi banner locandine social',
+    notifiche: 'notifiche social tiktok instagram youtube discord telegram nuovi post avvisi live',
+    stato: 'stato account piano pacchetti panoramica permessi',
+    sottoscrizione: 'abbonamento subscription pagamento fattura rinnovo piano prezzo pacchetti',
     admin: 'admin operatore llm modello ecosistema vita di lia anima backup salute'
   };
 
@@ -39,6 +40,7 @@
     return [
       [L('Cerchi i comandi?', 'Looking for commands?', '¿Buscas los comandos?'), 'moduli'],
       [L('Cerchi le impostazioni di moderazione?', 'Looking for moderation settings?', '¿Buscas la moderación?'), 'regole'],
+      [L('Vuoi controllare lo scudo anti-bot?', 'Want to check the anti-bot shield?', '¿Revisar el escudo anti-bot?'), 'scudo'],
       [L('Vuoi cambiare la personalità del bot?', 'Want to change the bot personality?', '¿Cambiar la personalidad del bot?'), 'personalita'],
       [L('Vuoi creare un overlay?', 'Want to build an overlay?', '¿Crear un overlay?'), 'alert'],
       [L('Cerchi giochi e classifiche?', 'Looking for games & leaderboards?', '¿Juegos y clasificaciones?'), 'giochi'],
@@ -46,7 +48,11 @@
     ];
   }
 
-  function indice() {
+  var _dyn = [];
+  var _cache = null;
+  function invalida() { _cache = null; }
+
+  function baseIndice() {
     var A = window.SB_APP; if (!A) return [];
     var out = [], gruppi = (A.gruppi || []).slice();
     if (A.isAdmin && A.gruppoAdmin) gruppi.push(A.gruppoAdmin);
@@ -55,43 +61,53 @@
       (g.schede || []).forEach(function (s) {
         var id = s[0];
         if (A.schedaValida && !A.schedaValida(id)) return;
-        out.push({
-          id: id, label: A.tScheda(id, s[1]), gruppo: gnome, gruppoId: g.id,
-          icona: A.icona(id) || '•', chiavi: (CHIAVI[id] || '') + ' ' + A.tScheda(id, s[1]).toLowerCase()
-        });
+        var lab = A.tScheda(id, s[1]);
+        out.push({ id: id, label: lab, gruppo: gnome, gruppoId: g.id, icona: A.icona ? (A.icona(id) || '') : '', chiavi: (CHIAVI[id] || '') + ' ' + lab.toLowerCase() });
       });
     });
     return out;
   }
 
+  function indice() {
+    if (_cache) return _cache;
+    var base = baseIndice();
+    if (!base.length) return [];
+    var extra = _dyn.filter(function (v) { return !window.SB_APP || !window.SB_APP.schedaValida || window.SB_APP.schedaValida(v.id); });
+    _cache = base.concat(extra);
+    return _cache;
+  }
+
   function normal(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
-  function punteggio(voce, q) {
-    if (!q) return 0;
-    var lab = normal(voce.label), ch = normal(voce.chiavi), sc = 0;
-    var tok = q.split(/\s+/).filter(Boolean);
+  function sottoseq(testo, q) { var j = 0; for (var i = 0; i < testo.length && j < q.length; i++) if (testo[i] === q[j]) j++; return j === q.length; }
+
+  function punteggio(voce, tok) {
+    var lab = voce._nl || (voce._nl = normal(voce.label));
+    var ch = voce._nc || (voce._nc = normal(voce.chiavi));
+    var sc = 0;
     for (var i = 0; i < tok.length; i++) {
       var t = tok[i];
-      if (lab.startsWith(t)) sc += 60;
-      else if (lab.indexOf(t) >= 0) sc += 34;
-      else if (new RegExp('\\b' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(ch)) sc += 22;
-      else if (ch.indexOf(t) >= 0) sc += 12;
-      else if (sottoseq(lab, t)) sc += 6;
+      if (lab === t) sc += 120;
+      else if (lab.indexOf(t) === 0) sc += 72;
+      else if (new RegExp('\\b' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(lab)) sc += 55;
+      else if (lab.indexOf(t) >= 0) sc += 38;
+      else if (new RegExp('\\b' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(ch)) sc += 24;
+      else if (ch.indexOf(t) >= 0) sc += 13;
+      else if (t.length >= 3 && sottoseq(lab, t)) sc += 6;
       else return -1;
     }
     return sc;
   }
-  function sottoseq(testo, q) { var j = 0; for (var i = 0; i < testo.length && j < q.length; i++) if (testo[i] === q[j]) j++; return j === q.length; }
-  function evidenzia(label, q) {
-    var tok = (q || '').split(/\s+/).filter(Boolean).map(normal).sort(function (a, b) { return b.length - a.length; });
-    var nl = normal(label), fatto = label;
-    for (var i = 0; i < tok.length; i++) {
-      var k = nl.indexOf(tok[i]);
-      if (k >= 0) { fatto = esc(label.slice(0, k)) + '<mark>' + esc(label.slice(k, k + tok[i].length)) + '</mark>' + esc(label.slice(k + tok[i].length)); return fatto; }
+  function evidenzia(label, tok) {
+    var nl = normal(label);
+    var ord = tok.slice().sort(function (a, b) { return b.length - a.length; });
+    for (var i = 0; i < ord.length; i++) {
+      var k = nl.indexOf(ord[i]);
+      if (k >= 0) return esc(label.slice(0, k)) + '<mark>' + esc(label.slice(k, k + ord[i].length)) + '</mark>' + esc(label.slice(k + ord[i].length));
     }
     return esc(label);
   }
 
-  var ov, inp, lista, filtriBox, filtro = '', sel = 0, correnti = [];
+  var ov, inp, lista, filtriBox, filtro = '', sel = 0, correnti = [], _deb = null;
   function costruisci() {
     var lancia = document.createElement('button');
     lancia.id = 'cerca-lancia'; lancia.type = 'button';
@@ -116,7 +132,7 @@
     lista = ov.querySelector('.cerca-corpo');
 
     ov.addEventListener('click', function (e) { if (e.target === ov) chiudi(); });
-    inp.addEventListener('input', function () { sel = 0; disegna(); });
+    inp.addEventListener('input', function () { sel = 0; if (_deb) clearTimeout(_deb); _deb = setTimeout(disegna, 45); });
     inp.addEventListener('keydown', tasti);
   }
 
@@ -135,34 +151,35 @@
     var q = normal(inp.value.trim());
     var tutto = indice().filter(function (v) { return !filtro || v.gruppoId === filtro; });
     if (!q) {
-
       var dd = DOMANDE().filter(function (d) { return !filtro || (indice().find(function (v) { return v.id === d[1]; }) || {}).gruppoId === filtro; });
       var hs = '<div class="cerca-sugg-tit">' + esc(L('Cosa cerchi?', 'What are you looking for?', '¿Qué buscas?')) + '</div><div class="cerca-sugg">';
       dd.forEach(function (d, i) { hs += '<button class="chip-domanda" data-id="' + esc(d[1]) + '" style="--an-ritardo:' + (i * 45) + 'ms"><span class="pip"></span>' + esc(d[0]) + '</button>'; });
       hs += '</div>';
       correnti = tutto;
-      hs += righe(tutto, '', L('Tutte le sezioni', 'All sections', 'Todas las secciones'));
+      hs += righe(tutto, [], L('Tutte le sezioni', 'All sections', 'Todas las secciones'));
       lista.innerHTML = hs;
       aggancia();
       return;
     }
-    var res = tutto.map(function (v) { return { v: v, s: punteggio(v, q) }; })
+    var tok = q.split(/\s+/).filter(Boolean);
+    var res = tutto.map(function (v) { return { v: v, s: punteggio(v, tok) }; })
       .filter(function (x) { return x.s >= 0; })
-      .sort(function (a, b) { return b.s - a.s; })
+      .sort(function (a, b) { return b.s - a.s || a.v.label.length - b.v.label.length; })
+      .slice(0, 60)
       .map(function (x) { return x.v; });
     correnti = res;
-    lista.innerHTML = res.length ? righe(res, q, '') :
+    lista.innerHTML = res.length ? righe(res, tok, '') :
       '<div class="cerca-vuoto">' + esc(L('Niente per «', 'Nothing for “', 'Nada para «')) + esc(inp.value) + esc(L('». Prova un\'altra parola.', '”. Try another word.', '». Prueba otra palabra.')) + '</div>';
     aggancia();
   }
 
-  function righe(arr, q, titolo) {
+  function righe(arr, tok, titolo) {
     var h = titolo ? '<div class="cerca-sugg-tit">' + esc(titolo) + '</div>' : '';
     h += '<div class="cerca-lista">';
     arr.forEach(function (v, i) {
       h += '<div class="cerca-voce' + (i === sel ? ' sel' : '') + '" data-id="' + esc(v.id) + '" data-i="' + i + '" style="--an-ritardo:' + Math.min(i, 10) * 28 + 'ms">' +
         '<span class="pip"></span>' +
-        '<span class="txt"><b>' + evidenzia(v.label, q) + '</b><small>' + esc(v.gruppo) + '</small></span>' +
+        '<span class="txt"><b>' + evidenzia(v.label, tok) + '</b><small>' + esc(v.gruppo) + (v.sotto ? ' · ' + esc(v.sotto) : '') + '</small></span>' +
         '<span class="via">' + esc(L('apri', 'open', 'abrir')) + '</span></div>';
     });
     h += '</div>';
@@ -209,11 +226,32 @@
     }
   }
 
+  window.SB_CERCA = {
+    apri: function () { try { apri(); } catch (e) {} },
+    aggiungi: function (voci, tag) {
+      if (!Array.isArray(voci)) return;
+      var A = window.SB_APP;
+      voci.forEach(function (v) {
+        if (!v || !v.id || !v.label) return;
+        var gruppoId = v.gruppoId || '';
+        _dyn.push({
+          id: v.id, label: String(v.label), sotto: v.sotto || '',
+          gruppo: v.gruppo || (A && gruppoId ? A.tGruppo(gruppoId, gruppoId) : ''), gruppoId: gruppoId,
+          chiavi: (String(v.chiavi || '') + ' ' + String(v.label)).toLowerCase(), tag: tag || ''
+        });
+      });
+      invalida();
+    },
+    pulisci: function (tag) { _dyn = tag ? _dyn.filter(function (v) { return v.tag !== tag; }) : []; invalida(); },
+    invalida: invalida
+  };
+
   function avvia() {
     if (!window.SB_APP) { window.addEventListener('sb-app-pronta', avvia, { once: true }); return; }
     if (document.getElementById('cerca-lancia')) return;
     costruisci();
     document.addEventListener('keydown', scorciatoie);
+    window.addEventListener('sb-cerca-invalida', invalida);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', avvia);
   else avvia();
