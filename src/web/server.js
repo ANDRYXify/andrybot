@@ -1255,8 +1255,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 - Categoria: bot per chat di Twitch + strumenti per la diretta.
 - Lingua: italiano (interfaccia anche in inglese e spagnolo).
 - Pubblico: streamer di Twitch, soprattutto italiani.
-- Sito ufficiale: ${b}
-- Autore: andryxify — https://andryxify.it
+- Sito ufficiale: [${b.replace(/^https?:\/\//, '')}](${b}/)
+- Autore: [andryxify](https://andryxify.it)
 
 ## Cosa fa
 - Scrive in chat con l'account dello streamer, con il tono che gli viene dato.
@@ -1283,10 +1283,12 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 - Gratuito e completo per i membri abilitati della community di andryxify.it.
 
 ## Link
-- Home: ${b}/
-- Demo interattiva senza registrazione: ${b}/?demo=1
-- Privacy: ${b}/privacy
-- Termini: ${b}/termini
+- [Home](${b}/)
+- [Demo interattiva senza registrazione](${b}/?demo=1)
+- [Prezzi e pacchetti](${b}/#stato)
+- [Privacy](${b}/privacy)
+- [Termini di servizio](${b}/termini)
+- [andryxify (l'autore)](https://andryxify.it)
 `);
   });
 

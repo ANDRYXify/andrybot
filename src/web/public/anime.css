@@ -108,9 +108,19 @@ a:hover { color: var(--acc); }
   border-radius: 50%; background: var(--acc);
 }
 
-/* ── INGRESSO: quasi impercettibile — dissolvenza lenta + un filo di salita. Sereno, mai a scatti. ── */
-[data-anime] { animation: gr-entra var(--an-dur) var(--an-vel) both; animation-delay: var(--gr-ritardo, 0ms); }
-@keyframes gr-entra { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: none; } }
+/* ── MOVIMENTO GARDEN EIGHT: scroll-reveal fluido — gli elementi salgono ed emergono mentre
+   scorri, decelerati e sfalsati (mai a scatti). FAIL-SAFE: il pre-stato nascosto vale SOLO quando
+   cinema.js gestisce davvero (body.cinema-on) + un timeout rivela comunque tutto → il contenuto
+   non resta MAI appeso invisibile (la lezione dei crash). ── */
+[data-reveal] {
+  transition: opacity .85s var(--an-vel), transform .85s var(--an-vel), clip-path .95s var(--an-vel);
+  transition-delay: var(--gr-ritardo, 0ms);
+}
+body.cinema-on [data-reveal]:not(.rivelato) { opacity: 0; transform: translateY(22px); }
+/* i titoli emergono da una "maschera" (clip che si apre dal basso) — firma da studio */
+body.cinema-on [data-reveal="mask"]:not(.rivelato) { opacity: 0; transform: translateY(4px); clip-path: inset(0 0 105% 0); }
+[data-reveal="mask"] { transition-duration: 1s; }
+[data-reveal].rivelato { opacity: 1; transform: none; clip-path: inset(0 0 -20% 0); }
 @keyframes gr-fade { from { opacity: 0; } to { opacity: 1; } }
 
 /* ── RICERCA: stessa quiete, molto vuoto, hairline, un cenno di vermiglio. ───────────────── */
@@ -177,10 +187,14 @@ a:hover { color: var(--acc); }
 
 /* ── accessibilità + device deboli ──────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  [data-anime], .cerca-voce, .cerca-sugg .chip-domanda, .cerca-box, #cerca-overlay.aperto { animation: none !important; opacity: 1 !important; }
+  body.cinema-on [data-reveal]:not(.rivelato), body.cinema-on [data-reveal="mask"]:not(.rivelato) { opacity: 1 !important; transform: none !important; clip-path: none !important; }
+  [data-reveal] { transition: none !important; }
+  .cerca-voce, .cerca-sugg .chip-domanda, .cerca-box, #cerca-overlay.aperto { animation: none !important; opacity: 1 !important; }
   .blocco:hover, .carta:hover, .pannello:hover, .btn:hover, #cerca-lancia:hover, .menu-voce:hover { transform: none; }
 }
-body.meno-moto [data-anime] { opacity: 1; animation: none; }
+body.meno-moto [data-reveal] { opacity: 1 !important; transform: none !important; clip-path: none !important; transition: none !important; }
+/* leggero: rivela con una dissolvenza corta, senza clip/translate pesanti */
+body.leggero [data-reveal] { transition: opacity .4s ease !important; }
+body.leggero [data-reveal]:not(.rivelato) { transform: none !important; clip-path: none !important; }
 body.leggero #cerca-overlay { backdrop-filter: none; background: color-mix(in srgb, var(--bg) 90%, transparent); }
-body.leggero [data-anime] { animation: gr-fade .3s ease both; }
 body.leggero .cerca-voce, body.leggero .cerca-sugg .chip-domanda, body.leggero .cerca-box { animation: none; }
