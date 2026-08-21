@@ -1055,6 +1055,37 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.sendFile(join(effectsRoot, login, file), { maxAge: '7d' }, (err) => { if (err) notFound(res); });
   });
 
+  // Foto profilo di Twitch servita dalla NOSTRA origine. La CDN di Twitch
+  // (static-cdn.jtvnw.net) da certi browser/reti (blocker privacy, filtri) non
+  // si carica: l'immagine spariva anche se l'URL era valido. Qui la prende il
+  // server (che la raggiunge sempre) e la ristrasmette same-origin, con cache.
+  const _avatarCache = new Map();          // login → { buf, tipo, ts }
+  app.get('/u/:user/avatar', wrap(async (req, res) => {
+    const login = String(req.params.user || '').toLowerCase();
+    if (!/^[a-z0-9_]{1,30}$/.test(login)) return notFound(res);
+    const c = _avatarCache.get(login);
+    if (c && Date.now() - c.ts < 3600000) {
+      res.set('Content-Type', c.tipo); res.set('Cache-Control', 'public, max-age=3600');
+      return res.end(c.buf);
+    }
+    const url = await avatarDi(login);
+    if (!url) return notFound(res);
+    try {
+      let r = await fetch(url).catch(() => null);
+      // URL in cache scaduto (404)? Riprendiamo quello fresco da Twitch e riproviamo una volta.
+      if (!r || !r.ok) {
+        const fresh = await avatarDi(login, { aggiorna: true });
+        if (fresh && fresh !== url) r = await fetch(fresh).catch(() => null);
+      }
+      if (!r || !r.ok) return notFound(res);
+      const buf = Buffer.from(await r.arrayBuffer());
+      const tipo = r.headers.get('content-type') || 'image/png';
+      _avatarCache.set(login, { buf, tipo, ts: Date.now() });
+      res.set('Content-Type', tipo); res.set('Cache-Control', 'public, max-age=3600');
+      res.end(buf);
+    } catch (e) { notFound(res); }
+  }));
+
   // Informativa privacy della pagina pubblica. Va messa sempre, anche senza
   // cookie: il banner serve solo per i cookie non essenziali, ma dire chi tratta
   // i dati e quali è un obbligo che dai cookie non dipende.

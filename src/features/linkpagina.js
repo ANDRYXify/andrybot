@@ -707,7 +707,8 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   // "Nessuna" vuol dire NESSUNA: prima cadeva sull'iniziale del nome, cioè
   // esattamente il cerchio con la lettera che si voleva togliere.
   const mostraAvatar = t.avatarForma !== 'nessuno' && pagina.avatar !== 'no';
-  const imgAvatar = pagina.avatar === 'no' ? '' : (urlSicuro(pagina.avatar) || avatar || '');
+  const imgCustom = pagina.avatar === 'no' ? '' : urlSicuro(pagina.avatar);
+  const imgAvatar = imgCustom || (avatar && login ? `${baseUrl || ''}/u/${encodeURIComponent(login)}/avatar` : '');
 
   return `<!DOCTYPE html>
 <html lang="it">
@@ -1076,8 +1077,8 @@ ${!anteprima && mov !== 'nessuno' ? `<script>${SCRIPT_SCROLLREVEAL}</script>` : 
   ${fxCanvas}
   <main class="telo">
     ${mostraAvatar ? (imgAvatar
-      ? `<img class="avatar" src="${esc(imgAvatar)}" alt="" width="88" height="88" loading="eager" onerror="this.style.display='none';var f=this.nextElementSibling;if(f)f.hidden=false;">
-         <div class="avatar" aria-hidden="true" hidden>${esc(iniziale(titolo))}</div>`
+      ? `<img class="avatar" src="${esc(imgAvatar)}" alt="" width="88" height="88" loading="eager" onerror="this.style.display='none';var f=this.nextElementSibling;if(f)f.style.display='grid';">
+         <div class="avatar" aria-hidden="true" style="display:none">${esc(iniziale(titolo))}</div>`
       : `<div class="avatar" aria-hidden="true">${esc(iniziale(titolo))}</div>`) : ''}
     <h1>${esc(titolo)}</h1>
     ${pagina.tagline ? `<p class="tag">${esc(pagina.tagline)}</p>` : ''}
