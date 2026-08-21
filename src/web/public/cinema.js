@@ -1,19 +1,24 @@
 // © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
 // Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 //
-// cinema.js — il MOVIMENTO Garden Eight: scroll-reveal fluido e sereno. Gli elementi salgono ed
-// emergono mentre scorri, decelerati e sfalsati; i titoli emergono da una maschera. Vivo, mai a scatti.
+// cinema.js — lo STRATO DI INTERAZIONE Garden Eight (desktop): cursore custom morbido e bottoni
+// magnetici. NON tocca la navigazione, NON osserva il DOM.
 //
-// SICUREZZA (lezione dei crash): l'osservatore del DOM guarda SOLO i nodi AGGIUNTI (childList), MAI gli
-// attributi → non può mordersi la coda (era quello il loop infinito). L'IntersectionObserver guarda la
-// visibilità e si STACCA dopo aver rivelato. NON tocca mai la navigazione. Tutto in try/catch. E un
-// FAIL-SAFE: il pre-stato nascosto vale solo con body.cinema-on, e un timeout rivela comunque tutto →
-// il contenuto non resta MAI invisibile. Rispetta prefers-reduced-motion, .meno-moto e .leggero.
+// PERCHE COSI (correzione per costruzione, non per patch): lo scroll-reveal e la rivelazione
+// "parola per parola" dei titoli ESISTONO GIA, nativi, dentro app.js + style.css
+// (`.carta.rivela`→`.dentro` con un IntersectionObserver tarato su Material 3 / Apple HIG, e
+// `titoloParole()`/`.pt-parola`). Un secondo sistema di reveal qui dentro NON aggiungeva moto: si
+// SOVRAPPONEVA a quello dell'app (stessa carta, due osservatori, la mia regola vinceva per
+// specificita e imponeva tempi diversi) e ri-portava dentro l'osservazione del DOM che aveva
+// causato i crash. Quindi il reveal lo possiede UN SOLO sistema — quello dell'app. Qui resta solo
+// cio che l'app non ha: le micro-interazioni del puntatore fine. Tutto additivo, in try/catch,
+// inerte su touch e su prefers-reduced-motion / device deboli.
 (function () {
   'use strict';
   try {
     var menoMoto = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
+    // device debole ("mulo da soma"): meno effetti. Rispetta una scelta esplicita salvata.
     function debole() {
       try {
         if (localStorage.getItem('sb-leggero') === '1') return true;
@@ -39,69 +44,13 @@
       }
     }
 
-    // elementi "da scena". I titoli emergono da una maschera; il resto sale e sfuma.
-    var SEL = '.blocco, .pannello, .carta, .card, .mini-guida, .cap-scheda, .pannello-scheda > h1, .pannello-scheda > h2';
-    var io = null;
-    function osservatoreVista() {
-      if (!('IntersectionObserver' in window)) return null;
-      return new IntersectionObserver(function (voci) {
-        try {
-          for (var i = 0; i < voci.length; i++) {
-            if (voci[i].isIntersecting) { voci[i].target.classList.add('rivelato'); io.unobserve(voci[i].target); }
-          }
-        } catch (e) { /* mai rompere */ }
-      }, { rootMargin: '0px 0px -6% 0px', threshold: 0.04 });
-    }
-
-    // marca gli elementi non ancora marcati dentro uno scope e li mette in osservazione.
-    function marca(scope) {
-      try {
-        var root = scope || document;
-        var nodi = root.querySelectorAll(SEL);
-        for (var i = 0; i < nodi.length; i++) {
-          var el = nodi[i];
-          if (el.hasAttribute('data-reveal') || el.closest('#cerca-overlay')) continue;
-          var tag = el.tagName;
-          el.setAttribute('data-reveal', (tag === 'H1' || tag === 'H2') ? 'mask' : '1');
-          el.style.setProperty('--gr-ritardo', (i % 5) * 70 + 'ms');
-          if (io) io.observe(el); else el.classList.add('rivelato');
-        }
-      } catch (e) { /* l'estetica non rompe l'app */ }
-    }
-
-    // rete di sicurezza: dopo un po', qualunque cosa non ancora rivelata VIENE rivelata (mai appeso).
-    function reteSicurezza() {
-      try {
-        var pend = document.querySelectorAll('[data-reveal]:not(.rivelato)');
-        for (var i = 0; i < pend.length; i++) pend[i].classList.add('rivelato');
-      } catch (e) { /* niente */ }
-    }
-
     function avvia() {
       sfondo();
-      if (menoMoto) return;                     // nessun moto: il contenuto è già pieno e visibile
-      try { document.body.classList.add('cinema-on'); } catch (e) {}
-      io = osservatoreVista();
-      marca(document);
-      // osserva SOLO i nodi aggiunti (cambio scheda della SPA) → marca il nuovo contenuto. childList,
-      // MAI attributi: così aggiungere classi/attributi NON ri-scatena l'osservatore (niente loop).
-      try {
-        var app = document.getElementById('app') || document.body, tmr = null;
-        new MutationObserver(function (muts) {
-          try {
-            var nuovo = false;
-            for (var i = 0; i < muts.length; i++) if (muts[i].addedNodes && muts[i].addedNodes.length) { nuovo = true; break; }
-            if (nuovo) { clearTimeout(tmr); tmr = setTimeout(function () { marca(document); }, 70); }
-          } catch (e) { /* mai rompere l'app */ }
-        }).observe(app, { childList: true, subtree: true });
-      } catch (e) { /* niente */ }
-      // fail-safe finale: dopo 3.5s tutto ciò che è ancora nascosto viene mostrato.
-      setTimeout(reteSicurezza, 3500);
-      // interazioni desktop (mouse fine): cursore custom + bottoni magnetici. Solo se il dispositivo
-      // ha un puntatore preciso (niente su touch) e il moto è ammesso. NON toccano la navigazione.
+      if (menoMoto || leggero) return;   // niente micro-interazioni dove il moto non è gradito/conviene
+      // Interazioni SOLO con puntatore preciso (mouse): niente su touch.
       try {
         var finePointer = window.matchMedia && window.matchMedia('(pointer: fine)').matches;
-        if (finePointer && !leggero) { cursore(); magnetici(); }
+        if (finePointer) { cursore(); magnetici(); }
       } catch (e) { /* niente */ }
     }
 
