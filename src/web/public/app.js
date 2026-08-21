@@ -1,33 +1,23 @@
-// SocialBot — logica della dashboard (single-page, zero dipendenze).
-// Stato globale caricato da GET /api/me, funzioni di render per sezione,
-// fetch con gestione errori e toast di conferma.
+
 
 'use strict';
 
-// ------------------------------------------------------------------ stato
-let stato = null;          // risposta di /api/me
+let stato = null;
 let schedaAttiva = 'stato';
 
-// Modalità DEMO: dashboard interattiva con dati d'esempio, per far vedere il bot
-// senza login. Attiva con /?demo=1 (link dalla vetrina). Nessuna API reale: le
-// chiamate sono simulate lato client (vedi apiDemo), i salvataggi non persistono.
 const DEMO = (() => {
   try { return new URLSearchParams(location.search).get('demo') === '1' || /^\/demo\/?$/.test(location.pathname); }
   catch { return false; }
 })();
 
-// stato locale della scheda "Moduli"
-let datiModuli = null;        // { moduli, effettiDisponibili, apiKey, apiUrl }
-let moduloInModifica = null;  // oggetto aperto nell'editor (per conservare id/attivo)
-let campoAttivoModulo = null; // ultimo campo di testo a fuoco (per le pillole variabili)
-let apiKeyVisibile = false;   // se la chiave API è mostrata in chiaro
+let datiModuli = null;
+let moduloInModifica = null;
+let campoAttivoModulo = null;
+let apiKeyVisibile = false;
 
 const app = document.getElementById('app');
 const areaUtente = document.getElementById('area-utente');
 
-// ------------------------------------------------------------------ utilità
-
-// escape HTML: tutto ciò che viene dal server/utente passa da qui
 function esc(s) {
   return String(s ?? '')
     .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
@@ -36,12 +26,11 @@ function esc(s) {
 
 function dataIt(ts) {
   let n = Number(ts);
-  if (!Number.isFinite(n) || n <= 0) n = Date.parse(ts);   // accetta anche date ISO
+  if (!Number.isFinite(n) || n <= 0) n = Date.parse(ts);
   if (!Number.isFinite(n) || n <= 0) return '—';
   return new Date(n).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' });
 }
 
-// notifica a scomparsa
 function toast(msg, tipo = 'ok') {
   const box = document.getElementById('toast-box');
   const el = document.createElement('div');
@@ -51,13 +40,10 @@ function toast(msg, tipo = 'ok') {
   setTimeout(() => el.remove(), 4000);
 }
 
-// fetch verso le API: JSON in/out, errori → eccezione con messaggio leggibile
 async function api(percorso, opzioni = {}) {
-  if (DEMO) return apiDemo(percorso, opzioni);   // demo: nessuna chiamata reale
+  if (DEMO) return apiDemo(percorso, opzioni);
   const opts = { headers: {}, ...opzioni };
-  // FormData va lasciato passare INTATTO: il browser deve mettere da sé il
-  // Content-Type col boundary. Stringificarlo mandava al server la stringa
-  // "[object FormData]" e l'upload non arrivava mai.
+
   const multipart = typeof FormData !== 'undefined' && opts.body instanceof FormData;
   if (opts.body !== undefined && typeof opts.body !== 'string' && !multipart) {
     opts.headers['Content-Type'] = 'application/json';
@@ -65,15 +51,11 @@ async function api(percorso, opzioni = {}) {
   }
   const res = await fetch(percorso, opts);
   let dati = null;
-  try { dati = await res.json(); } catch { /* risposta non JSON */ }
+  try { dati = await res.json(); } catch {  }
   if (!res.ok) throw new Error(dati?.errore || `errore ${res.status}`);
   return dati;
 }
 
-// ── FILIGRANA nei PNG scaricati (Andrea Taliento / ANDRYXify) ──────────────
-// Inserisce un chunk PNG standard "tEXt" con la proprietà + la firma-canarino:
-// invisibile nell'immagine (non tocca i pixel, resta un PNG valido), ma aprendo
-// il file scaricato con un editor di testo (o `strings`) la firma si legge in chiaro.
 const _WM_FIRMA = 'ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live';
 const _WM_TESTO = '(c) 2024-2026 Andrea Taliento (ANDRYXify) - Tutti i diritti riservati - socialbot.live - ' + _WM_FIRMA;
 const _WM_CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); t[n] = c >>> 0; } return t; })();
@@ -82,14 +64,14 @@ async function firmaPngBlob(blob) {
   try {
     const u8 = new Uint8Array(await blob.arrayBuffer());
     const sig = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
-    for (let i = 0; i < 8; i++) if (u8[i] !== sig[i]) return blob;      // non è un PNG
+    for (let i = 0; i < 8; i++) if (u8[i] !== sig[i]) return blob;
     const dv = new DataView(u8.buffer);
-    const ins = 8 + 4 + 4 + dv.getUint32(8) + 4;                        // subito dopo l'IHDR
+    const ins = 8 + 4 + 4 + dv.getUint32(8) + 4;
     const data = [];
     for (const ch of 'Copyright') data.push(ch.charCodeAt(0));
     data.push(0);
     for (const ch of _WM_TESTO) data.push(ch.charCodeAt(0) & 0xFF);
-    const type = [0x74, 0x45, 0x58, 0x74];                             // 'tEXt'
+    const type = [0x74, 0x45, 0x58, 0x74];
     const body = new Uint8Array(type.length + data.length); body.set(type, 0); body.set(data, type.length);
     const chunk = new Uint8Array(4 + 4 + data.length + 4);
     const cdv = new DataView(chunk.buffer);
@@ -100,7 +82,6 @@ async function firmaPngBlob(blob) {
   } catch { return blob; }
 }
 
-// impostazioni correnti con i valori di default del bot
 function impostazioni() {
   const s = stato?.streamer?.settings || {};
   return {
@@ -184,18 +165,14 @@ function impostazioni() {
   };
 }
 
-// salva un sottoinsieme di impostazioni e aggiorna lo stato locale
 async function salvaImpostazioni(parziale, msgOk = 'Impostazioni salvate') {
   await api('/api/streamer/impostazioni', { method: 'POST', body: parziale });
   if (stato?.streamer) {
     stato.streamer.settings = { ...(stato.streamer.settings || {}), ...parziale };
   }
-  if (msgOk) toast(msgOk);   // salvataggi "silenziosi" (msgOk null) non mostrano nulla
+  if (msgOk) toast(msgOk);
 }
 
-// ------------------------------------------------------------------ avvio
-
-// app installata (standalone)? Serve per lo sblocco rapido con passkey.
 function inApp() {
   return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 }
@@ -205,46 +182,33 @@ async function caricaStato() {
   try {
     stato = await api('/api/me');
   } catch (e) {
-    // Nell'app installata una sessione scaduta non deve mostrare un errore:
-    // si va allo sblocco con passkey (che, se serve, rimanda al sito).
+
     if (inApp()) { location.href = '/sblocca'; return; }
     app.innerHTML = `<div class="carta"><h2>Ops!</h2><p>Impossibile contattare il server: ${esc(e.message)}</p></div>`;
     window.SB_SPLASH_OFF?.();
     return;
   }
-  // RIPRISTINO SEZIONE dopo un ricarico: se nell'URL c'è #sezione valida (e sei
-  // approvato), riapriamo QUELLA scheda invece di tornare sempre alla Panoramica.
+
   if (stato?.streamer?.status === 'approved') {
     const hInit = decodeURIComponent((location.hash || '').replace(/^#/, ''));
     if (hInit && schedaValida(hInit) && !schedaBloccata(hInit) && (hInit !== 'admin' || stato?.isAdmin)) schedaAttiva = hInit;
   }
   render();
   window.SB_SPLASH_OFF?.();
-  // promo "settimana gratis" appena assegnata
+
   if (new URLSearchParams(location.search).get('promo') === '1') {
-    // il dettaglio (cosa, fino a quando, cosa accade dopo) sta nel banner
-    // persistente in cima alla scheda Stato: qui solo il richiamo.
+
     toast(L('Hai vinto una prova gratuita — i dettagli sono qui sopra.', 'You won a free trial — the details are right above.', 'Has ganado una prueba gratuita — los detalles están arriba.'));
-    try { history.replaceState(null, '', '/'); } catch { /* niente */ }
+    try { history.replaceState(null, '', '/'); } catch {  }
   }
 }
 
-// ------------------------------------------------------------------ modalità demo
-// Tutta la logica della demo interattiva. Vive qui, isolata: se DEMO è falso
-// niente di questo viene mai eseguito. I dati sono di fantasia (streamer
-// "andryx_demo") e servono solo a far vedere com'è fatta e come funziona la
-// dashboard, con una spiegazione per ogni sezione.
-
-// Nella demo la persona "Andryx" gestisce il proprio canale (da proprietario) e
-// ne modera un altro: così si vede anche lo switcher e il cambio di ruolo.
 const _DEMO_CANALI = [
   { canale: 'andryx_demo', display: 'Andryx', role: 'proprietario' },
   { canale: 'lucaplays', display: 'lucaplays', role: 'moderatore' },
 ];
 let _demoCanale = 'andryx_demo';
 
-// Stato finto: una persona con impostazioni e Telegram già configurati, così ogni
-// scheda ha qualcosa da mostrare. Riflette il canale/ruolo attualmente scelto.
 function statoDemo() {
   const ctx = _DEMO_CANALI.find((c) => c.canale === _demoCanale) || _DEMO_CANALI[0];
   const mod = ctx.role === 'moderatore';
@@ -260,7 +224,7 @@ function statoDemo() {
     isAdmin: false,
     permessiOk: true, vipOk: true, moderazioneOk: true, canaleOk: true,
     knowledgeCount: 3,
-    status: { channels: [ctx.canale] },   // "in chat adesso"
+    status: { channels: [ctx.canale] },
     preaddestramento: { preaddestramento_ts: '2026-05-01T20:00:00Z', preaddestramento_esito: 'pagina profilo letta ("Andryx — creator e streamer da Genova · Twitch, YouTube, gaming"), 5 link social; gioco recente: Fortnite; profilo Twitch letto' },
     telegram: { configurato: true, gruppoOk: true, attivo: true, pinLive: true,
       interattivo: true, botUsername: 'andryx_live_bot', gruppo: 'Community di Andryx', messaggio: '',
@@ -298,13 +262,11 @@ function statoDemo() {
   };
 }
 
-// Risposte finte alle API. Le GET restituiscono dati d'esempio; le scritture
-// tornano un esito benevolo (la barra demo chiarisce che non si salva nulla).
 function apiDemo(percorso, opzioni = {}) {
   const metodo = (opzioni.method || 'GET').toUpperCase();
   const via = percorso.split('?')[0];
   if (metodo === 'GET') return Promise.resolve(_demoGet(via));
-  // scritture: qualche endpoint restituisce dati usati a schermo → li simuliamo.
+
   if (via === '/api/me') return Promise.resolve(statoDemo());
   if (via === '/api/moderatori') return Promise.resolve({ invito: 'https://socialbot.live/mod?token=demo' });
   if (via === '/api/streamer/apikey') return Promise.resolve({ apikey: 'demo_' + 'x'.repeat(24) });
@@ -475,8 +437,6 @@ function _demoGet(via) {
   return F[via] !== undefined ? F[via] : {};
 }
 
-// Spiegazione mostrata in cima ad ogni scheda durante la demo ("le varie sezioni,
-// spiegate"). Chiave = id scheda.
 const SPIEGA_DEMO = {
   stato: 'Il quadro di comando: accendi/spegni il bot, controlli i permessi Twitch e vedi se è connesso alla chat. Da qui inviti anche i tuoi moderatori.',
   personalita: 'Decidi il carattere del bot: tono (scherzoso, amichevole, serio), quanto è spontaneo, se risponde alle menzioni e quando può parlare.',
@@ -491,8 +451,6 @@ const SPIEGA_DEMO = {
   notifiche: 'Gli avvisi quando vai in diretta: Telegram (con messaggio fissato e auguri di compleanno ai membri) e TikTok.',
 };
 
-// Monta gli elementi fissi della demo (barra in alto + striscia di spiegazione)
-// e li tiene aggiornati sulla scheda attiva.
 function montaDemo() {
   const cont = document.querySelector('.contenuto');
   const header = document.getElementById('pagina-testata');
@@ -508,21 +466,14 @@ function montaDemo() {
        <a class="btn mini secondario" href="/">${L('Esci dalla demo', 'Exit demo', 'Salir de la demo')}</a>
      </span>`;
   cont.insertBefore(barra, header);
-  // La spiegazione per-sezione ora è la mini-guida "Come funziona" (guidaSchedaHtml)
-  // in cima a ogni scheda: vale sia in demo sia nella dashboard vera, così è una
-  // sola, coerente. Niente più striscia demo separata (evita doppioni).
+
 }
 
-// Retrocompat: la spiegazione demo è confluita nella guida di scheda. No-op.
-function aggiornaSpiegazioneDemo() { /* sostituita da guidaSchedaHtml() */ }
+function aggiornaSpiegazioneDemo() {  }
 
-// ------------------------------------------------------------------ render principale
-
-// Ricorda lo scorrimento attorno a un ridisegno del DOM e lo ripristina dopo il
-// reflow: salvare/aggiornare NON deve buttarti in cima alla pagina.
 function conScrollFermo(fn) {
   const y = window.scrollY || window.pageYOffset || 0;
-  const ripristina = () => { try { window.scrollTo(0, y); } catch { /* niente */ } };
+  const ripristina = () => { try { window.scrollTo(0, y); } catch {  } };
   let r;
   try { r = fn(); } catch (e) { requestAnimationFrame(ripristina); throw e; }
   if (r && typeof r.then === 'function') { r.then(ripristina, ripristina); return r; }
@@ -531,23 +482,20 @@ function conScrollFermo(fn) {
 }
 
 function render() {
-  // dove sono ora: dopo un ridisegno (es. dopo un salvataggio che rinfresca lo
-  // stato) rimetto la pagina dov'era, invece di rimbalzare in cima. La vera
-  // navigazione tra schede usa vaiAScheda(), che scorre in cima apposta.
+
   const _syRender = (stato && stato.user) ? (window.scrollY || 0) : 0;
   renderAreaUtente();
   const navTop = document.getElementById('nav-top');
   const navDrawer = document.getElementById('nav-drawer');
   const svuotaNav = () => { if (navTop) navTop.innerHTML = ''; if (navDrawer) navDrawer.innerHTML = ''; };
 
-  // "vetrina": la landing pubblica per chi non è loggato (nessun dato privato).
   document.body.classList.toggle('vetrina', !stato.user);
 
   if (!stato.user) {
     document.body.classList.remove('con-nav');
     svuotaNav();
     renderHero();
-    applicaTema();   // allinea l'etichetta dell'interruttore tema nella vetrina
+    applicaTema();
     return;
   }
 
@@ -565,15 +513,10 @@ function render() {
     html += vistaPiattaforma();
   }
 
-  // L'admin con un canale approvato ha l'area "Admin" tra le schede (dentro
-  // vistaPiattaforma). Se è admin ma senza canale approvato, non ci sono schede:
-  // in quel caso mostriamo il pannello admin da solo, come prima.
   if (stato.isAdmin && !conPiattaforma) html += `<hr class="separatore">${vistaAdminContenuto()}`;
 
   app.innerHTML = html;
 
-  // La sidebar (con la navigazione) c'è solo quando esiste la piattaforma a
-  // schede; negli altri stati (login, richiesta, ecc.) resta nascosta.
   document.body.classList.toggle('con-nav', conPiattaforma);
   if (navTop) navTop.innerHTML = conPiattaforma ? navTopHtml() : '';
   if (navDrawer) navDrawer.innerHTML = conPiattaforma ? navDrawerHtml() : '';
@@ -582,22 +525,14 @@ function render() {
   if (conPiattaforma) attivaPiattaforma();
   if (stato.isAdmin) { caricaTabellaAdmin(); caricaSalute(); caricaBackup(); caricaAnima(); caricaLLM(); caricaVita(); caricaEcosistema(); }
 
-  // prima le rendo richiudibili (cambia il DOM), poi le rivelo
   if (conPiattaforma) document.querySelectorAll('.pannello-scheda').forEach((p) => rendiCartePieghevoli(p, p.dataset.scheda));
-  rivelaCarte();   // scroll-reveal delle carte appena disegnate
-  // ripristina la posizione precedente (vedi _syRender): niente rimbalzo in cima
-  if (_syRender) requestAnimationFrame(() => { try { window.scrollTo(0, _syRender); } catch { /* niente */ } });
+  rivelaCarte();
+
+  if (_syRender) requestAnimationFrame(() => { try { window.scrollTo(0, _syRender); } catch {  } });
 }
 
-// ------------------------------------------------------------------ scroll-reveal
-// Le carte entrano morbide quando compaiono (al cambio scheda o scorrendo),
-// stile Awwwards. Un solo IntersectionObserver, riusato ad ogni render.
 const _menoMoto = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
-// Esegue `fn` (che modifica il DOM) dentro una View Transition: il browser anima
-// morbidamente il passaggio — morph del corpo pagina e scorrimento della pillola
-// del menu. Niente transizione con "meno movimento", dove l'API non c'è, o in
-// modalità cassetto (≤1200px): lì la nav non è a schermo → meglio un cambio netto.
 function transizione(fn) {
   const drawer = window.matchMedia && window.matchMedia('(max-width: 1200px)').matches;
   if (_menoMoto || drawer || !document.startViewTransition) { fn(); return { finished: Promise.resolve() }; }
@@ -613,8 +548,7 @@ function _osservatore() {
   }
   return _rivObs;
 }
-// Prepara (nasconde) e osserva le carte dentro `scope`. Quelle già in vista si
-// rivelano subito con una piccola cascata; le altre quando ci scorri sopra.
+
 function rivelaCarte(scope = document) {
   const carte = [...scope.querySelectorAll('.carta')];
   if (_menoMoto) { carte.forEach((c) => c.classList.add('rivela', 'dentro')); return; }
@@ -624,31 +558,21 @@ function rivelaCarte(scope = document) {
     c.classList.remove('dentro');
     c.classList.add('rivela');
     const r = c.getBoundingClientRect();
-    const visibile = r.top < window.innerHeight * 0.92;   // già a schermo → cascata
-    // cascata corta: 4 elementi × 45ms = 180ms al massimo. Con ritardi più lunghi
-    // l'ultima carta arrivava mezzo secondo dopo la prima e sembrava un blocco.
+    const visibile = r.top < window.innerHeight * 0.92;
+
     c.style.setProperty('--rev-delay', visibile ? Math.min(inVista++, 4) * 45 + 'ms' : '0ms');
     obs.observe(c);
   }
 }
 
-// ------------------------------------------------------- carte richiudibili
-// Ogni carta con un <h2> diventa apribile/richiudibile cliccando il titolo. Lo
-// facciamo per "arricchimento progressivo" DOPO il render: così non serve
-// toccare le decine di template delle carte, e una carta nuova lo eredita
-// gratis. Il corpo va in un wrapper a griglia (0fr↔1fr) che si anima senza
-// misurare altezze a mano (vedi .carta-corpo nel CSS).
-// Lo stato aperto/chiuso si ricorda per scheda+titolo in localStorage.
 const _icoChevron = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
 
-// chiave stabile per ricordare lo stato: scheda + titolo normalizzato
 function _chiaveCarta(scheda, titolo) {
   return 'carta:' + scheda + ':' + String(titolo || '').toLowerCase().replace(/\s+/g, ' ').trim().slice(0, 50);
 }
 function _cartaChiusa(k) { try { return localStorage.getItem(k) === '0'; } catch { return false; } }
-function _ricordaCarta(k, aperta) { try { localStorage.setItem(k, aperta ? '1' : '0'); } catch { /* niente */ } }
+function _ricordaCarta(k, aperta) { try { localStorage.setItem(k, aperta ? '1' : '0'); } catch {  } }
 
-// Riassunto mostrato quando la carta è chiusa: la prima frase del primo <p>.
 function _riassuntoCarta(corpo) {
   const p = corpo.querySelector('p');
   const t = (p?.textContent || '').replace(/\s+/g, ' ').trim();
@@ -657,17 +581,16 @@ function _riassuntoCarta(corpo) {
   return primaFrase.length > 120 ? primaFrase.slice(0, 117).trimEnd() + '…' : primaFrase;
 }
 
-// Trasforma le carte di `scope` in carte richiudibili (idempotente).
 function rendiCartePieghevoli(scope, scheda) {
   for (const carta of scope.querySelectorAll('.carta')) {
-    if (carta.classList.contains('pieghevole')) continue;          // già fatta
-    if (carta.tagName === 'DETAILS') continue;                     // già un <details>
+    if (carta.classList.contains('pieghevole')) continue;
+    if (carta.tagName === 'DETAILS') continue;
     const h2 = carta.querySelector(':scope > h2');
-    if (!h2) continue;                                             // senza titolo non si piega
-    // tutto ciò che segue l'h2 diventa il "corpo" della carta
+    if (!h2) continue;
+
     const resto = [];
     for (let n = h2.nextSibling; n; n = n.nextSibling) resto.push(n);
-    if (!resto.length) continue;                                   // carta di sola intestazione
+    if (!resto.length) continue;
 
     const corpo = document.createElement('div');
     corpo.className = 'carta-corpo';
@@ -677,7 +600,6 @@ function rendiCartePieghevoli(scope, scheda) {
     corpo.appendChild(dentro);
     carta.appendChild(corpo);
 
-    // titolo = pulsante accessibile (tastiera + screen reader)
     const chev = document.createElement('span');
     chev.className = 'carta-chevron';
     chev.innerHTML = _icoChevron;
@@ -685,7 +607,6 @@ function rendiCartePieghevoli(scope, scheda) {
     h2.setAttribute('role', 'button');
     h2.setAttribute('tabindex', '0');
 
-    // riassunto sotto il titolo quando è chiusa
     const testo = _riassuntoCarta(dentro);
     if (testo) {
       const r = document.createElement('p');
@@ -702,14 +623,12 @@ function rendiCartePieghevoli(scope, scheda) {
   }
 }
 
-// Apre/chiude una carta (e ricorda la scelta).
 function _piegaCarta(carta, aperta) {
   carta.classList.toggle('chiusa', !aperta);
   carta.querySelector(':scope > h2')?.setAttribute('aria-expanded', aperta ? 'true' : 'false');
   if (carta.dataset.ck) _ricordaCarta(carta.dataset.ck, aperta);
 }
 
-// Barra "Apri tutto / Riduci tutto" in cima alla scheda attiva.
 function barraCarteHtml() {
   return `<div class="carte-ctrl">
     <button type="button" class="btn secondario mini" data-carte="apri">${L('Apri tutto', 'Expand all', 'Abrir todo')}</button>
@@ -722,15 +641,11 @@ function renderAreaUtente() {
   const areaMob = document.getElementById('area-utente-mob');
   if (!stato.user) { if (areaUtente) areaUtente.innerHTML = ''; if (areaMob) areaMob.innerHTML = ''; return; }
 
-  // Identità della persona (fissa) + il canale che sta gestendo ora. Se può
-  // gestire più canali (il proprio + quelli che modera) mostra uno switcher che
-  // riporta il RUOLO per canale: cambiando canale il sito capisce da sé chi sei.
   const canali = stato.mieiCanali || [];
   const ident = esc(stato.identitaDisplay || stato.user.identitaDisplay || stato.user.modDisplay || stato.user.display || 'tu');
   const attuale = stato.user.login;
   const etichetta = (c) => (c.role === 'proprietario' ? 'il mio canale @' : 'moderi @') + c.display;
 
-  // Selettore del canale (o chip "moderi @…"): condiviso tra barra e cassetto.
   let centro = '';
   if (canali.length > 1) {
     centro = `<select class="chip-utente switch-canale" title="Cambia canale">
@@ -742,9 +657,8 @@ function renderAreaUtente() {
   const esci = `<a class="btn secondario mini" href="/auth/logout">${L('Esci', 'Log out', 'Salir')}</a>`;
   const tema = toggleTemaHtml();
 
-  // Barra in alto (desktop): versione compatta — lingua + tema + canale + esci, senza saluto.
   if (areaUtente) areaUtente.innerHTML = `${selettoreLingua('mini')}${tema}${centro}${esci}`;
-  // Cassetto (mobile): versione completa — saluto + canale + lingua + tema + esci.
+
   if (areaMob) areaMob.innerHTML = `<span class="chip-utente">${L('ciao', 'hi', 'hola')}, <strong>${ident}</strong></span>${centro}<div class="drawer-controlli">${selettoreLingua()}${tema}</div>${esci}`;
   applicaTema();
 
@@ -756,41 +670,29 @@ function renderAreaUtente() {
     })));
 }
 
-// ------------------------------------------------------------------ viste "semplici"
-
-// ====================================================================== i18n
-// Tre lingue come andryxify.it: italiano, inglese, spagnolo. Fase 1 = landing
-// pubblica; la dashboard verrà tradotta in seguito, in fasi. La scelta è
-// ricordata in localStorage; L(it, en, es) restituisce la stringa della lingua
-// attiva (fallback: italiano).
 const LINGUE = ['it', 'en', 'es'];
 let LINGUA = (() => {
-  try { const s = localStorage.getItem('lingua'); if (LINGUE.includes(s)) return s; } catch (e) { /* niente */ }
+  try { const s = localStorage.getItem('lingua'); if (LINGUE.includes(s)) return s; } catch (e) {  }
   const q = new URLSearchParams(location.search).get('lang');
   if (LINGUE.includes(q)) return q;
   const n = (navigator.language || 'it').slice(0, 2).toLowerCase();
   return LINGUE.includes(n) ? n : 'it';
 })();
-try { document.documentElement.lang = LINGUA; } catch (e) { /* niente */ }
+try { document.documentElement.lang = LINGUA; } catch (e) {  }
 const L = (it, en, es) => (LINGUA === 'en' ? en : LINGUA === 'es' ? es : it);
 function cambiaLingua(l) {
   if (!LINGUE.includes(l) || l === LINGUA) return;
   LINGUA = l;
-  try { localStorage.setItem('lingua', l); } catch (e) { /* niente */ }
-  try { document.documentElement.lang = l; } catch (e) { /* niente */ }
+  try { localStorage.setItem('lingua', l); } catch (e) {  }
+  try { document.documentElement.lang = l; } catch (e) {  }
   render();
 }
-// Selettore lingua IT/EN/ES (usato nella vetrina).
+
 function selettoreLingua(cls) {
   return `<div class="lingua-sel${cls ? ' ' + cls : ''}" role="group" aria-label="${L('Lingua', 'Language', 'Idioma')}">${LINGUE.map((l) =>
     `<button type="button" class="lingua-btn${l === LINGUA ? ' on' : ''}" data-lingua="${l}" aria-pressed="${l === LINGUA}">${l.toUpperCase()}</button>`).join('')}</div>`;
 }
 
-// ====================================================================== tema
-// Chiaro/scuro. "auto" segue il sistema (prefers-color-scheme); appena l'utente
-// tocca l'interruttore la scelta diventa esplicita e viene salvata — esattamente
-// come la lingua. Lo script inline in <head> imposta già data-theme prima del
-// primo disegno (niente lampo): qui gestiamo il cambio a runtime.
 let TEMA = (() => { try { return localStorage.getItem('tema') || 'auto'; } catch (e) { return 'auto'; } })();
 function _sistemaScuro() {
   try { return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches); } catch (e) { return false; }
@@ -798,54 +700,48 @@ function _sistemaScuro() {
 function temaScuroAttivo() { return TEMA === 'dark' || (TEMA === 'auto' && _sistemaScuro()); }
 function applicaTema() {
   const scuro = temaScuroAttivo();
-  try { document.documentElement.setAttribute('data-theme', scuro ? 'dark' : 'light'); } catch (e) { /* niente */ }
+  try { document.documentElement.setAttribute('data-theme', scuro ? 'dark' : 'light'); } catch (e) {  }
   const et = scuro
     ? L('Passa al tema chiaro', 'Switch to light theme', 'Cambiar a tema claro')
     : L('Passa al tema scuro', 'Switch to dark theme', 'Cambiar a tema oscuro');
   document.querySelectorAll('[data-tema-toggle]').forEach((b) => { b.setAttribute('aria-label', et); b.title = et; });
-  // L'avatar 3D è disegnato su <canvas>: NON eredita il tema via CSS. Se resta com'era mentre la
-  // pagina cambia, canvas e legenda si desincronizzano (era il bug: canvas scuro su pagina chiara →
-  // testo scuro-su-scuro invisibile). Quindi ri-tematizziamo il grafo vivo insieme alla pagina.
+
   try {
     if (_mente3dCtrl && typeof _mente3dCtrl.tema === 'function' && document.getElementById('mente3d-canvas')) {
       _mente3dCtrl.tema(scuro);
       if (typeof _menteLegenda === 'function') _menteLegenda(scuro);
     }
-  } catch (e) { /* il tema non deve rompere nulla */ }
+  } catch (e) {  }
 }
 function cambiaTema() {
   TEMA = temaScuroAttivo() ? 'light' : 'dark';
-  try { localStorage.setItem('tema', TEMA); } catch (e) { /* niente */ }
+  try { localStorage.setItem('tema', TEMA); } catch (e) {  }
   applicaTema();
 }
-// Se l'utente non ha scelto (resta "auto"), segui i cambi di sistema in tempo reale.
+
 try {
   const _mq = window.matchMedia('(prefers-color-scheme: dark)');
   const _onSys = () => { if (TEMA === 'auto') applicaTema(); };
   if (_mq.addEventListener) _mq.addEventListener('change', _onSys);
   else if (_mq.addListener) _mq.addListener(_onSys);
-} catch (e) { /* niente */ }
-// Delego il click una sola volta: funziona per ogni interruttore, anche ricreato.
+} catch (e) {  }
+
 document.addEventListener('click', (e) => {
   const t = e.target.closest && e.target.closest('[data-tema-toggle]');
   if (t) { e.preventDefault(); cambiaTema(); }
 });
-// Stesso schema per la lingua: un solo handler delegato copre vetrina, barra e cassetto.
+
 document.addEventListener('click', (e) => {
   const b = e.target.closest && e.target.closest('[data-lingua]');
   if (b) { e.preventDefault(); cambiaLingua(b.dataset.lingua); }
 });
-// Interruttore sole/luna. Icone a tratto (niente emoji); la CSS mostra il sole
-// in tema scuro (per tornare al chiaro) e la luna in tema chiaro.
+
 function toggleTemaHtml(extra) {
   const sole = '<svg class="ico-sole" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
   const luna = '<svg class="ico-luna" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.6 6.6 0 0 0 9.8 9.8Z"/></svg>';
   return `<button type="button" class="tema-toggle${extra ? ' ' + extra : ''}" data-tema-toggle>${sole}${luna}</button>`;
 }
 
-// Anteprima "overlay in azione" nell'hero: un fotogramma di diretta stilizzato
-// (alert + chat a schermo + webcam) — puro CSS, comunica il prodotto a colpo
-// d'occhio. Decorativo (aria-hidden), nessun dato reale.
 function heroAnteprima() {
   const star = '<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true"><path d="M12 2 15.09 8.26 22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>';
   const msg = (col, nome, testo, emote) => `<div class="vp-msg"><b style="color:${col}">${nome}</b> ${testo}${emote ? ' <span class="vp-emote"></span>' : ''}</div>`;
@@ -879,8 +775,7 @@ function renderHero() {
     ['2', L('Parti con l’Essenziale', 'Start with Essenziale', 'Empieza con Essenziale'), L('Gratis e senza carta: comandi illimitati, moderazione, overlay e contatori sono già tuoi.', 'Free, no card needed: unlimited commands, moderation, overlay and counters are already yours.', 'Gratis y sin tarjeta: comandos ilimitados, moderación, overlay y contadores ya son tuyos.')],
     ['3', L('Aggiungi solo ciò che vuoi', 'Add only what you want', 'Añade solo lo que quieras'), L('Se ti serve di più, scegli i pacchetti uno per uno. Niente di tutto-o-nulla.', 'If you need more, pick packages one by one. No all-or-nothing.', 'Si necesitas más, eliges los paquetes uno a uno. Nada de todo o nada.')],
   ];
-  // Domande frequenti: rispecchiano i dati strutturati FAQPage in index.html
-  // (Google mostra le FAQ nei risultati solo se sono anche visibili qui).
+
   const FAQ = [
     [L('Con quale account scrive SocialBot in chat?', 'Which account does SocialBot write with in chat?', '¿Con qué cuenta escribe SocialBot en el chat?'), L('Con il <strong>tuo</strong>: SocialBot usa il tuo account Twitch, non un bot anonimo. In chat compare il tuo nome e sei sempre tu ad avere il controllo.', 'With <strong>yours</strong>: SocialBot uses your Twitch account, not an anonymous bot. Your name shows in chat and you’re always in control.', 'Con la <strong>tuya</strong>: SocialBot usa tu cuenta de Twitch, no un bot anónimo. En el chat aparece tu nombre y siempre tienes el control.')],
     [L('Che cosa sa fare?', 'What can it do?', '¿Qué sabe hacer?'), L('Comandi e automazioni su misura, moderazione della chat con scudo anti-bot (blocca follow-bot e hate-raid), shoutout e annunci ufficiali, ore guardate e classifica fedeltà, clip automatiche, minigiochi con monete, notifiche live su Telegram e avvisi dei nuovi post su TikTok, YouTube e Instagram. E lo piloti anche a voce.', 'Custom commands and automations, chat moderation with an anti-bot shield (blocks follow-bots and hate-raids), native shoutouts and announcements, watched hours and a loyalty leaderboard, automatic clips, coin minigames, live Telegram notifications and alerts for new posts on TikTok, YouTube and Instagram. And you can drive it by voice too.', 'Comandos y automatizaciones a medida, moderación del chat con escudo anti-bot (bloquea follow-bots y hate-raids), shoutouts y anuncios oficiales, horas vistas y clasificación de fidelidad, clips automáticos, minijuegos con monedas, notificaciones en directo por Telegram y avisos de nuevas publicaciones en TikTok, YouTube e Instagram. Y también lo controlas por voz.')],
@@ -942,19 +837,14 @@ function renderHero() {
       <a class="btn grande secondario" href="https://andryxify.it">${L('Vai al sito principale', 'Go to the main site', 'Ir al sitio principal')} →</a>
     </section>`;
 
-  // il selettore lingua è gestito da un handler delegato a livello di documento
-  rivelaCarte();   // scroll-reveal delle carte della vetrina
-  caricaPiani();   // riempie la sezione prezzi (tier) dal server
-  // esiti del ritorno da Stripe
+  rivelaCarte();
+  caricaPiani();
+
   const q = new URLSearchParams(location.search);
   if (q.get('abbonato') === '1') toast(L('Abbonamento attivo, benvenuto!', 'Subscription active, welcome!', 'Suscripción activa, ¡bienvenido!'));
   else if (q.get('abbonamento') === 'annullato') toast(L('Checkout annullato — nessun addebito.', 'Checkout canceled — no charge.', 'Pago cancelado — sin cargo.'));
 }
 
-// Icone dei piani: SVG in linea (stile Lucide, tratto pulito) invece delle emoji
-// — più "disegnate" e in tinta col brand. Stringhe statiche e fidate (nessun
-// input utente), quindi si iniettano come HTML senza rischi. `currentColor` così
-// ereditano il viola del contenitore.
 const SVG_PIANI = {
   base: '<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>',
   giochi: '<line x1="6" x2="10" y1="11" y2="11"/><line x1="8" x2="8" y1="9" y2="13"/><line x1="15" x2="15.01" y1="12" y2="12"/><line x1="18" x2="18.01" y1="10" y2="10"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"/>',
@@ -967,9 +857,6 @@ const SVG_PIANI = {
 };
 const svgPiano = (id) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${SVG_PIANI[id] || SVG_PIANI.base}</svg>`;
 
-// Riempie la sezione "Piani" della vetrina col modello MODULARE "componi il tuo
-// bot": una Base + add-on à la carte selezionabili, con totale live. Se gli
-// abbonamenti sono spenti mostra comunque tutto, con la CTA "In arrivo".
 async function caricaPiani() {
   const box = document.getElementById('vetrina-piani');
   if (!box) return;
@@ -982,8 +869,7 @@ async function caricaPiani() {
 
   const prezzoIt = (n) => Number(n || 0).toFixed(2).replace('.', ',');
   const perMese = L('/mese', '/month', '/mes');
-  // Cosa include la Base. In cima i vantaggi che AGGIUNGE all'Essenziale (così la
-  // card non sembra ripetere solo il gratis); poi ciò che eredita dall'Essenziale.
+
   const inclusiBase = [
     { t: L('Avvisi live su Telegram/Discord + nuovi post', 'Live alerts on Telegram/Discord + new posts', 'Avisos live en Telegram/Discord + nuevos posts'), base: true },
     { t: L('1 moderatore incluso', '1 moderator included', '1 moderador incluido'), base: true },
@@ -1064,8 +950,6 @@ async function caricaPiani() {
     </div>`;
   rivelaCarte(box);
 
-  // Selezione add-on + totale live. Un bundle è attivo quando la selezione
-  // coincide ESATTAMENTE con i suoi add-on: allora si applica lo sconto.
   const selezione = new Set();
   const totaleEl = box.querySelector('#piani-totale');
   const voceEl = box.querySelector('#piani-voce');
@@ -1077,7 +961,7 @@ async function caricaPiani() {
     if (totaleEl) totaleEl.innerHTML = `€${prezzoIt(tot)}<span>${perMese}</span>`;
     if (voceEl) voceEl.textContent = b ? `${L('Base + bundle', 'Base + bundle', 'Base + pack')} ${b.nome} (–${Math.round(b.sconto * 100)}%)`
       : (selezione.size ? `Base + ${selezione.size} ${L('add-on', selezione.size === 1 ? 'add-on' : 'add-ons', 'add-on')}` : L('Solo Base', 'Base only', 'Solo Base'));
-    // evidenzia la carta bundle corrispondente (o nessuna)
+
     box.querySelectorAll('[data-bundle]').forEach((el) => {
       const on = !!b && el.dataset.bundle === b.id;
       el.classList.toggle('on', on); el.setAttribute('aria-pressed', on ? 'true' : 'false');
@@ -1094,7 +978,7 @@ async function caricaPiani() {
       segnaAddon(); aggiorna();
     });
   });
-  // click su un bundle: seleziona ESATTAMENTE i suoi add-on (toggle se già attivo)
+
   box.querySelectorAll('[data-bundle]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const b = bundle.find((x) => x.id === btn.dataset.bundle); if (!b) return;
@@ -1105,7 +989,6 @@ async function caricaPiani() {
     });
   });
 
-  // CTA unica: checkout con il bundle (sconto) se attivo, altrimenti Base + add-on.
   const attivaBtn = box.querySelector('#piani-attiva');
   if (attivaBtn) attivaBtn.addEventListener('click', () => {
     const b = bundleAttivo();
@@ -1116,7 +999,7 @@ async function caricaPiani() {
         const r = await api('/api/abbonamento/checkout', { method: 'POST', body });
         if (r?.url) location.href = r.url; else toast(L('Piano non disponibile al momento.', 'Plan not available right now.', 'Plan no disponible por el momento.'), 'errore');
       } catch (e) {
-        // non loggato: prima l'accesso con Twitch, poi si torna dritti al checkout con la scelta
+
         if (/non autenticato/i.test(e?.message || '')) {
           location.href = b ? '/accedi?bundle=' + encodeURIComponent(b.id)
             : '/accedi?pacchetti=' + encodeURIComponent(pacchetti.join(','));
@@ -1158,11 +1041,6 @@ function vistaDisabilitato() {
     </div>`;
 }
 
-// ------------------------------------------------------------------ piattaforma streamer
-
-// Le schede raggruppate per area logica: invece di 11 bottoni in fila (troppo
-// dispersivi) mostriamo poche categorie chiare e, dentro ognuna, le sue schede.
-// NB: gli id delle schede restano identici a prima (li usano i pannelli).
 const GRUPPI = [
   { id: 'bot', nome: 'Il tuo bot', schede: [
     ['personalita', 'Personalità'],
@@ -1181,8 +1059,7 @@ const GRUPPI = [
   ] },
   { id: 'diretta', nome: 'Durante la diretta', schede: [
     ['regia', 'Regia'],
-    // Studio Web temporaneamente nascosto (WIP): fa laggare le live. Il codice
-    // resta, si riattiva rimettendo la voce ['studio', 'Studio Web'] qui.
+
     ['clip', 'Clip'],
     ['musica', 'Musica'],
   ] },
@@ -1202,20 +1079,14 @@ const GRUPPI = [
   ] },
 ];
 
-// Area riservata all'operatore (andryxify): compare come scheda a sé SOLO per
-// l'admin, così il pannello "Anima" non è più sempre in fondo a ogni scheda.
 const GRUPPO_ADMIN = { id: 'admin', nome: 'Admin', schede: [['admin', 'Admin']] };
 
-// id di scheda valido? (per ripristinare la sezione dall'hash dopo un ricarico)
 function schedaValida(id) {
   if (!id) return false;
   if (id === 'admin') return true;
   return GRUPPI.some((g) => g.schede.some(([sid]) => sid === id));
 }
 
-// Etichette TRADOTTE della navigazione (id → [it, en, es]). Gli id restano
-// stabili; il testo mostrato si risolve a runtime con L(), così cambia con la
-// lingua (i nomi in GRUPPI restano come fallback italiano).
 const T_GRUPPO = {
   bot: ['Il tuo bot', 'Your bot', 'Tu bot'],
   pubblico: ['Chat e pubblico', 'Chat & audience', 'Chat y público'],
@@ -1254,13 +1125,10 @@ const T_SCHEDA = {
 const tGruppo = (id, fb) => { const t = T_GRUPPO[id]; return t ? L(t[0], t[1], t[2]) : (fb || id); };
 const tScheda = (id, fb) => { const t = T_SCHEDA[id]; return t ? L(t[0], t[1], t[2]) : (fb || id); };
 
-// L'elenco effettivo dei gruppi: aggiunge l'area Admin se sei l'operatore.
 function elencoGruppi() {
   return stato.isAdmin ? GRUPPI.concat([GRUPPO_ADMIN]) : GRUPPI;
 }
 
-// Icone della navigazione: SVG a tratto (stile "line icon"), una per scheda.
-// Niente emoji: monocromatiche, ereditano il colore del testo → look pulito.
 const _ico = (d) => `<svg class="lat-svg" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const ICONA = {
   stato:       _ico('<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9v11h14V9"/><path d="M9.5 20v-6h5v6"/>'),
@@ -1289,8 +1157,6 @@ const ICONA = {
   admin:       _ico('<path d="M4 8.5 7.5 16h9L20 8.5l-4.3 3L12 5 8.3 11.5z"/><path d="M7.5 19h9"/>'),
 };
 
-// Descrizioni brevi mostrate nell'intestazione di pagina di ogni sezione.
-// [it, en, es] risolte a runtime con L() (vedi descScheda).
 const DESC = {
   stato: ['Accendi il bot e controlla che sia connesso alla tua chat.', 'Turn the bot on and check it’s connected to your chat.', 'Enciende el bot y comprueba que esté conectado a tu chat.'],
   personalita: ['Il tono e il carattere con cui il bot parla in chat.', 'The tone and character the bot uses in chat.', 'El tono y el carácter con que el bot habla en el chat.'],
@@ -1317,19 +1183,9 @@ const DESC = {
 };
 const descScheda = (id) => { const d = DESC[id]; return d ? L(d[0], d[1], d[2]) : ''; };
 
-// --- Sezioni bloccate (upsell) -----------------------------------------
-// Alcune schede sono incluse solo in certi pacchetti. Se la funzione non è nel
-// piano dello streamer, invece del pannello mostriamo una "pagina bloccata" con
-// una demo e il pulsante per aggiungere il pacchetto giusto. La mappa scheda→
-// funzione rispecchia ESATTAMENTE il gating del server (esigiFunzione/gateFeature),
-// così non blocchiamo mai una scheda che invece funzionerebbe.
-// `studio` sta nel pacchetto Base, non in un add-on: FUNZ_ADDON lo manda su
-// 'base' così la pagina bloccata dice il nome giusto, e il checkout (che include
-// SEMPRE la Base) parte comunque corretto anche se 'base' non è un id di add-on.
 const SCHEDA_FUNZ = { giochi: 'giochi', musica: 'musica', ascolto: 'voce', notifiche: 'notifiche', effetti: 'effetti', sondaggi: 'effetti', studio: 'studio' };
 const FUNZ_ADDON = { giochi: 'giochi', musica: 'musica', voce: 'voce', notifiche: 'notifiche', effetti: 'effetti', clipAuto: 'clip', studio: 'base' };
-// I nomi dei pacchetti restano in ITALIANO in tutte le lingue: sono nomi propri
-// del prodotto, come "Spotify Premium". Tradurli confonderebbe chi cerca aiuto.
+
 const NOME_ADDON = {
   base: ['Base', 'Base', 'Base'],
   giochi: ['Giochi & Classifiche', 'Giochi & Classifiche', 'Giochi & Classifiche'],
@@ -1341,17 +1197,14 @@ const NOME_ADDON = {
   squadra: ['Squadra', 'Squadra', 'Squadra'],
 };
 
-// La scheda `id` è bloccata per il piano attuale? Mai in demo o per l'operatore.
 function schedaBloccata(id) {
-  if (DEMO || stato?.isAdmin || !stato?.funzioni) return false;   // fail-open: nel dubbio non blocco
+  if (DEMO || stato?.isAdmin || !stato?.funzioni) return false;
   const funz = SCHEDA_FUNZ[id];
   if (!funz) return false;
   return !stato.funzioni[funz];
 }
 const addonPerScheda = (id) => FUNZ_ADDON[SCHEDA_FUNZ[id]] || null;
 
-// Contenuto della "pagina bloccata": cosa fa (riuso GUIDE/DESC già tradotti),
-// una demo su QUESTA stessa scheda e il pulsante per aggiungere il pacchetto.
 function paginaBloccata(id) {
   const addon = addonPerScheda(id);
   const nomeScheda = tScheda(id, id);
@@ -1376,7 +1229,6 @@ function paginaBloccata(id) {
   </div>`;
 }
 
-// Avvia il checkout Stripe per un add-on (dalla pagina bloccata).
 function sbloccaAddon(addon) {
   conErrore(async () => {
     try {
@@ -1390,10 +1242,6 @@ function sbloccaAddon(addon) {
   });
 }
 
-// Mini-guida per scheda: "a cosa serve" + i passi di "come si fa". Mostrata in
-// cima a ogni pagina (callout richiudibile), così con tante sezioni si capisce
-// sempre cosa fare. Vale anche in demo (usa la stessa testata di pagina).
-// serve/come sono tuple [it, en, es] risolte a runtime (vedi guidaSchedaHtml).
 const GUIDE = {
   stato: { serve: ['Accendere il bot e controllare che sia connesso alla tua chat.', 'Turn the bot on and check it’s connected to your chat.', 'Encender el bot y comprobar que esté conectado a tu chat.'],
     come: [['Accendi l’interruttore del bot.', 'Flip the bot’s switch.', 'Activa el interruptor del bot.'], ['Controlla il badge “in chat”: verde = sei online.', 'Check the “in chat” badge: green = you’re online.', 'Mira la insignia “en el chat”: verde = estás en línea.'], ['Se manca un permesso, riautorizza con un clic.', 'If a permission is missing, re-authorize with one click.', 'Si falta un permiso, reautoriza con un clic.']] },
@@ -1439,15 +1287,6 @@ const GUIDE = {
     come: [['Collega il tuo account 7TV incollando il token (c\'è la guida qui sotto).', 'Connect your 7TV account by pasting the token (there’s a guide below).', 'Conecta tu cuenta 7TV pegando el token (hay una guía abajo).'], ['Cerca un\'emote nella directory 7TV e premi «Aggiungi» (puoi dargli un alias).', 'Search an emote in the 7TV directory and hit «Add» (you can give it an alias).', 'Busca una emote en el directorio 7TV y pulsa «Añadir» (puedes ponerle un alias).'], ['Nel tuo set puoi rinominare o togliere le emote con un clic.', 'In your set you can rename or remove emotes with one click.', 'En tu set puedes renombrar o quitar emotes con un clic.']] },
 };
 
-// ─────────────────────────── "Cosa può fare SocialBot" ───────────────────────
-// Catalogo COMPLETO di ciò che il bot sa fare, raggruppato per area, con il
-// pacchetto in cui ogni voce è compresa. È la fonte unica per la sezione
-// espandibile in vetrina: se una funzione cambia pacchetto, si tocca solo qui.
-//   pacc: 'free' = Essenziale (gratuito) · 'base' = Base · gli altri sono id di
-//   add-on (giochi, effetti, notifiche, clip, voce, squadra, musica) e devono
-//   combaciare con features/abbonamenti.js.
-// Titoli e descrizioni sono tuple [it, en, es]; i NOMI DEI PACCHETTI restano in
-// italiano in tutte le lingue (vedi NOME_ADDON).
 const CAPACITA = [
   { ico: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>', area: ['Chat e comandi', 'Chat and commands', 'Chat y comandos'], voci: [
     { pacc: 'free', t: ['Scrive col tuo account', 'Writes with your account', 'Escribe con tu cuenta'], d: ['In chat compare il tuo nome, non un bot anonimo.', 'Your name appears in chat, not an anonymous bot.', 'En el chat aparece tu nombre, no un bot anónimo.'] },
@@ -1468,8 +1307,7 @@ const CAPACITA = [
   ] },
   { ico: '<rect x="2" y="6" width="14" height="12" rx="2"/><path d="m22 8-6 4 6 4V8Z"/>', area: ['La tua diretta', 'Your stream', 'Tu directo'], voci: [
     { pacc: 'free', t: ['Regia della diretta', 'Stream control room', 'Realización del directo'], d: ['Titolo, categoria, tag, marker, pubblicità e raid dal pannello.', 'Title, category, tags, markers, ads and raids from the panel.', 'Título, categoría, etiquetas, marcadores, anuncios y raids desde el panel.'] },
-    // Studio Web nascosto (WIP): fa laggare le live. Card di presentazione tolta finché non si risolve; il codice resta.
-    // { pacc: 'base', t: ['Studio Web: live senza OBS', 'Web Studio: live without OBS', 'Estudio Web: directo sin OBS'], d: ['Vai in diretta dal browser: scene, webcam, schermo, mixer audio, fino al 2K.', 'Go live from the browser: scenes, webcam, screen, audio mixer, up to 2K.', 'Emite desde el navegador: escenas, webcam, pantalla, mezclador de audio, hasta 2K.'] },
+
     { pacc: 'clip', t: ['Clip automatiche', 'Automatic clips', 'Clips automáticos'], d: ['Quando la chat si accende il bot clippa da solo.', 'When chat lights up the bot clips on its own.', 'Cuando el chat se enciende el bot clipea solo.'] },
     { pacc: 'voce', t: ['Comandi a voce', 'Voice commands', 'Comandos por voz'], d: ['Cambi titolo, fai una clip o dai il VIP parlando. L’audio non lascia il tuo PC.', 'Change the title, make a clip or grant VIP by speaking. The audio never leaves your PC.', 'Cambias el título, haces un clip o das el VIP hablando. El audio no sale de tu PC.'] },
   ] },
@@ -1488,9 +1326,6 @@ const CAPACITA = [
   ] },
 ];
 
-// HTML della sezione espandibile "Cosa può fare SocialBot" (vetrina).
-// Aperta di default la prima area, il resto richiuso: si scorre l'elenco delle
-// aree e si apre solo quella che interessa.
 function capacitaHtml() {
   const etichetta = (pacc) => {
     if (pacc === 'free') return { testo: L('Essenziale · gratis', 'Essenziale · free', 'Essenziale · gratis'), cls: 'gratis' };
@@ -1524,10 +1359,8 @@ function capacitaHtml() {
   </details>`;
 }
 
-// SVG lampadina (niente emoji): icona della mini-guida.
 const _icoGuida = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1.3.5 2.6 1.5 3.5.8.8 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>';
 
-// Icona SVG "da titolo" (in tinta accento, allineata al testo): niente emoji.
 const _hIco = (d) => `<svg class="h-ico" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const ICO = {
   musica: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
@@ -1576,7 +1409,7 @@ const ICO = {
   pacco: '<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
   avviso: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
   penitenza: '<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
-  // aggiunte per Regia / Studio / Libreria / Alert
+
   onda: '<path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/>',
   segnaposto: '<path d="M20 10c0 4.4-8 12-8 12s-8-7.6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
   freccia: '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
@@ -1590,7 +1423,7 @@ const ICO = {
   video: '<path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/>',
   carica: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/>',
   globo: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18Z"/>',
-  // aggiunte per lo Studio (scene, fonti, mixer)
+
   occhio: '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
   occhioNo: '<path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c7 0 10 8 10 8a13.2 13.2 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.5 13.5 0 0 0 2 12s3 8 10 8a9.7 9.7 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/>',
   cestino: '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
@@ -1598,19 +1431,16 @@ const ICO = {
   testo: '<path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2"/><path d="M9 20h6"/><path d="M12 4v16"/>',
 };
 
-// icona piccola in linea per i bottoni/etichette (16px, stesso stile a tratto)
 const _bIco = (d) => `<svg class="b-ico" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 
-// HTML della mini-guida di una scheda (vuoto se non prevista).
-// serve/come sono tuple [it,en,es]: si risolvono qui con L().
 function guidaSchedaHtml(id) {
   const g = GUIDE[id];
   if (!g) return '';
   const serve = Array.isArray(g.serve) ? L(g.serve[0], g.serve[1], g.serve[2]) : g.serve;
   const come = Array.isArray(g.come) ? g.come.map((c) => (Array.isArray(c) ? L(c[0], c[1], c[2]) : c)) : [];
-  // aperta per default, ma se l'hai chiusa resta chiusa (anche cambiando scheda)
+
   let aperta = true;
-  try { aperta = localStorage.getItem('guida:' + id) !== '0'; } catch { /* niente */ }
+  try { aperta = localStorage.getItem('guida:' + id) !== '0'; } catch {  }
   return `<details class="guida-scheda"${aperta ? ' open' : ''} data-guida="${id}">
     <summary><span class="guida-ico">${_icoGuida}</span> ${L('Come funziona', 'How it works', 'Cómo funciona')}</summary>
     <div class="guida-corpo">
@@ -1620,10 +1450,6 @@ function guidaSchedaHtml(id) {
   </details>`;
 }
 
-// Mini-tutorial richiudibile da mettere DENTRO una scheda, accanto a una funzione
-// specifica (non in cima alla pagina come guidaSchedaHtml). `serve`, i `passi` e le
-// `note` sono già risolti con L() dal chiamante e POSSONO contenere HTML sicuro
-// (es. <code>, <strong>): non li passiamo da esc(). `titolo` è testo semplice.
 function miniGuida({ titolo, serve = '', passi = [], note = [], aperta = false } = {}) {
   const t = titolo || L('Come funziona', 'How it works', 'Cómo funciona');
   const arr = (x) => (Array.isArray(x) ? x : (x ? [x] : []));
@@ -1638,9 +1464,6 @@ function miniGuida({ titolo, serve = '', passi = [], note = [], aperta = false }
   </details>`;
 }
 
-// Ritrova area + titolo di una scheda per l'intestazione di pagina. Per le aree
-// a scheda singola (Panoramica, Notifiche, Admin) il titolo è il nome dell'area
-// stessa e non mostriamo l'occhiello (combacia con la voce del menu).
 function infoScheda(id) {
   for (const g of elencoGruppi()) {
     const s = g.schede.find(([sid]) => sid === id);
@@ -1649,21 +1472,13 @@ function infoScheda(id) {
   return { area: '', titolo: id };
 }
 
-// Freccetta delle sezioni richiudibili (ruota quando la sezione è chiusa).
 const CHEVRON = '<svg class="lat-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
 
-// Costruisce la navigazione della sidebar: ogni voce ha icona + nome. Le aree a
-// scheda singola sono voci dirette; quelle con più schede diventano una SEZIONE
-// richiudibile (l'etichetta apre/chiude con animazione). Tutte cliccabili.
-// Id del gruppo che contiene una scheda (per evidenziare il gruppo attivo).
 function gruppoDiScheda(id) {
   const g = elencoGruppi().find((x) => x.schede.some(([sid]) => sid === id));
   return g ? g.id : '';
 }
 
-// Navigazione in ALTO: ogni gruppo è un pulsante col suo colore-firma. I gruppi
-// con più schede aprono un menu a tendina; quelli con una scheda sola vanno
-// dritti alla sezione. Il colore del gruppo passa via --gc (variabile CSS).
 function navTopHtml() {
   return elencoGruppi().map((g) => {
     const attivo = g.schede.some(([id]) => id === schedaAttiva) ? ' attivo' : '';
@@ -1681,8 +1496,6 @@ function navTopHtml() {
   }).join('');
 }
 
-// Cassetto laterale (schermi stretti): gli stessi gruppi, impilati, con titolo
-// colorato per gruppo e le schede come voci cliccabili.
 function navDrawerHtml() {
   return elencoGruppi().map((g) => {
     const voci = g.schede.map(([id, nome]) =>
@@ -1691,15 +1504,13 @@ function navDrawerHtml() {
   }).join('');
 }
 
-// Aggiorna l'intestazione di pagina (occhiello area + titolo + descrizione)
-// in base alla scheda attiva. Vuota se non c'è navigazione.
 function aggiornaTestataPagina() {
   const el = document.getElementById('pagina-testata');
   if (!el) return;
   if (!document.body.classList.contains('con-nav')) { el.innerHTML = ''; return; }
   const { area, titolo } = infoScheda(schedaAttiva);
   const desc = descScheda(schedaAttiva);
-  // l'occhiello prende il colore-firma del gruppo attivo (coerenza con la nav)
+
   const gid = gruppoDiScheda(schedaAttiva);
   if (gid) el.style.setProperty('--gc', `var(--g-${gid})`); else el.style.removeProperty('--gc');
   el.innerHTML =
@@ -1710,37 +1521,25 @@ function aggiornaTestataPagina() {
     barraCarteHtml();
 }
 
-// Divide il titolo in parole avvolte per la rivelazione "parola per parola":
-// ognuna scivola dal basso con un ritardo progressivo (--wd). `off` sfasa il
-// ritardo per continuare la cascata su più segmenti (es. titolo + accento).
 function titoloParole(t, off = 0) {
   return esc(t).split(/\s+/).filter(Boolean)
     .map((w, i) => `<span class="pt-parola" style="--wd:${40 + (off + i) * 60}ms"><i>${w}</i></span>`)
     .join(' ');
 }
 
-
-// ─────────────────────────── prova gratuita in corso ─────────────────────────
-// La promo "settimana gratis" (config.promo) regala qualche giorno di Pro a un
-// nuovo iscritto. Se resta INVISIBILE, la persona si ritrova per caso in Pro e
-// poi viene declassata senza capire perche: la dichiariamo sempre, ovunque.
 function provaInCorso() {
   const a = stato?.abbonamento;
   if (!a || a.status !== 'trialing') return null;
   const fine = Number(a.fine) || 0;
   const giorni = fine ? Math.max(0, Math.ceil((fine - Date.now()) / 86400000)) : null;
-  const tutto = (a.pacchetti || []).length >= 7;   // Base + tutti i pacchetti
+  const tutto = (a.pacchetti || []).length >= 7;
   return { tier: a.tier || 'base', tutto, fine, giorni };
 }
 
-// Banner persistente (non un toast che svanisce): finche la prova e attiva si
-// vede in cima alla dashboard, con la scadenza e cosa accadra dopo.
 function bannerProvaHtml() {
   const p = provaInCorso();
   if (!p) return '';
-  // "Pro" non esiste piu nel catalogo: una prova completa si chiama con quello
-  // che da davvero (Base + tutti i pacchetti), non con un nome che non si puo
-  // nemmeno rinnovare. 'Pro' resta solo per gli abbonati storici.
+
   const nome = p.tier === 'pro' ? 'Pro'
     : (p.tutto ? L('tutto', 'everything', 'todo') : 'Base');
   const quando = p.giorni === null ? ''
@@ -1757,8 +1556,7 @@ function bannerProvaHtml() {
 }
 
 function vistaPiattaforma() {
-  // Ordine dei pannelli = ordine del menu (leggibilità del codice; a schermo
-  // compare comunque solo la sezione attiva).
+
   return `
     ${pannelloStato()}
     ${pannelloSottoscrizione()}
@@ -1792,12 +1590,6 @@ function pannello(id, contenuto) {
   return `<section class="pannello-scheda${id === schedaAttiva ? ' visibile' : ''}" id="scheda-${id}" data-scheda="${id}">${dentro}</section>`;
 }
 
-// ══════════════════════════════════════════════════ GRAFICHE SOCIAL (P5)
-// Studio grafico lato client: due formati pronti da pubblicare — PROGRAMMAZIONE
-// settimanale e "LIVE ORA" — con temi curati, tutto personalizzabile (testi,
-// colori, logo, orari) e salvato, così resta pronto da modificare. Il disegno è
-// su <canvas> (nessun font esterno: stack di sistema, CSP-safe) e si scarica in
-// PNG. Niente server: è tutto qui.
 const GR_GIORNI = ['LUN', 'MAR', 'MER', 'GIO', 'VEN', 'SAB', 'DOM'];
 const GR_TEMI = {
   notte:    { nome: 'Notte',    bg: ['#0f1020', '#241b3d'], testo: '#ffffff', tenue: '#b9b6d6', acc: '#8b5cf6', riga: 'rgba(255,255,255,.07)' },
@@ -1805,8 +1597,7 @@ const GR_TEMI = {
   tramonto: { nome: 'Tramonto', bg: ['#2a0e2e', '#7a1f3d'], testo: '#fff5f0', tenue: '#ffd0c4', acc: '#ff7a59', riga: 'rgba(255,255,255,.08)' },
   pastello: { nome: 'Pastello', bg: ['#f4f0ff', '#e6f0ff'], testo: '#241b3d', tenue: '#6b6a86', acc: '#7c5cff', riga: 'rgba(60,40,120,.08)' },
   minimal:  { nome: 'Minimal',  bg: ['#111113', '#111113'], testo: '#ffffff', tenue: '#a8a8b3', acc: '#ffffff', riga: 'rgba(255,255,255,.10)' },
-  // Temi ANIMATI (come gli sfondi dell'overlay): l'anteprima si muove e si può
-  // scaricare come video. `anima` = tipo di movimento disegnato ogni frame.
+
   aurora:    { nome: 'Aurora ✨',  bg: ['#07132a', '#0b2a3f'], testo: '#eaf6ff', tenue: '#a9cbe0', acc: '#38bdf8', riga: 'rgba(56,189,248,.10)', anima: 'aurora' },
   particelle:{ nome: 'Particelle ✨', bg: ['#0d0b1a', '#1b1436'], testo: '#ffffff', tenue: '#c3bde0', acc: '#a855f7', riga: 'rgba(168,85,247,.10)', anima: 'particelle' },
   onde:      { nome: 'Onde ✨',   bg: ['#08131f', '#0c2233'], testo: '#eafcff', tenue: '#8fd3e6', acc: '#22d3ee', riga: 'rgba(34,211,238,.10)', anima: 'onde' },
@@ -1816,14 +1607,14 @@ const GR_TEMI = {
 };
 const GR_TEMA_IDS = Object.keys(GR_TEMI);
 const grafAnimato = (c) => !!(GR_TEMI[c.tema] && GR_TEMI[c.tema].anima) && c.sfondo === 'tema';
-// stelle per lo sfondo "particelle" (stabili tra i frame)
+
 const GR_STELLE = Array.from({ length: 90 }, (_, i) => ({
   x: ((i * 97) % 100) / 100, y: ((i * 53) % 100) / 100, r: 0.6 + (i % 5) * 0.5, f: 0.4 + (i % 7) / 10,
 }));
-// immagini in cache per il canvas (data URL/URL → <img> precaricata): sfondo e logo
+
 const grafImg = { el: null, pronto: false, src: '' };
 const grafLogo = { el: null, pronto: false, src: '' };
-let grafRAF = null;   // handle del loop d'anteprima dei temi animati (uno solo)
+let grafRAF = null;
 function grafCaricaIn(cache, src, poi) {
   if (!src) { cache.el = null; cache.pronto = false; cache.src = ''; poi && poi(); return; }
   if (cache.src === src && cache.pronto) { poi && poi(); return; }
@@ -1843,12 +1634,11 @@ function grafDefault() {
     coloreTesto: '', velo: 45,
     gioco: '', sottotitolo: '',
     sfondo: 'tema', sfondoColore: '', sfondoImg: '',
-    qr: false, dest: 'u',   // QR + link del canale sull'immagine; dest: 'u' (pagina /u) o 'twitch'
+    qr: false, dest: 'u',
     giorni: GR_GIORNI.map((g) => ({ g, ora: '21:00', att: '', off: false })),
   };
 }
 
-// URL di destinazione del QR/condivisione, dal login del canale.
 function grafUrlCanale(c) {
   const login = (stato?.user?.login || 'iltuocanale').toLowerCase();
   return (c && c.dest === 'twitch')
@@ -1856,7 +1646,6 @@ function grafUrlCanale(c) {
     : 'socialbot.live/u/' + login;
 }
 
-// Didascalia pronta per il post, con il link del canale in fondo. Modificabile.
 function grafDidascalia(c) {
   const url = grafUrlCanale(c);
   const handle = String(c.handle || '').trim();
@@ -1868,9 +1657,7 @@ function grafDidascalia(c) {
   }
   return `🗓️ ${L('La mia settimana in diretta', 'My week of streams', 'Mi semana en directo')} 💜\n${L('Segna gli orari e ci vediamo live!', 'Save the times and see you live!', '¡Apunta los horarios y nos vemos en directo!')}\n${coda}`;
 }
-// Comprime un'immagine in un data URL JPEG che sta SOTTO al limite del server
-// (il canale accetta sfondi fino a 700KB: puntiamo più in basso così non viene
-// mai scartato in silenzio). Prima abbassa la qualità, poi rimpicciolisce.
+
 function grafDataUrlSotto(im, capBytes, maxLato) {
   let lato = maxLato;
   for (let giro = 0; giro < 6; giro++) {
@@ -1883,7 +1670,7 @@ function grafDataUrlSotto(im, capBytes, maxLato) {
       const url = cv.toDataURL('image/jpeg', q);
       if (url.length <= capBytes) return url;
     }
-    lato = Math.round(lato * 0.8);   // ancora troppo pesante: riduci e riprova
+    lato = Math.round(lato * 0.8);
   }
   const cv = document.createElement('canvas');
   const s = Math.min(1, 640 / Math.max(im.naturalWidth, im.naturalHeight));
@@ -2032,7 +1819,6 @@ function pannelloGrafiche() {
     </div>`);
 }
 
-// disegno di una parola/frase tagliata a una larghezza massima (ellissi)
 function grClip(ctx, testo, max) {
   let t = String(testo || '');
   if (ctx.measureText(t).width <= max) return t;
@@ -2049,7 +1835,6 @@ function grRoundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-// strato di sfondo ANIMATO (disegnato ogni frame): aurora / particelle / onde.
 function grafAnimaSfondo(ctx, W, H, t, tipo, acc) {
   const s = t / 1000;
   if (tipo === 'aurora') {
@@ -2079,7 +1864,7 @@ function grafAnimaSfondo(ctx, W, H, t, tipo, acc) {
       ctx.stroke();
     }
   } else if (tipo === 'matrix') {
-    // pioggia di glifi katakana verdi (vero effetto Matrix)
+
     ctx.font = '28px "Courier New", monospace'; ctx.textAlign = 'left';
     const passo = 30, cols = Math.floor(W / passo);
     for (let i = 0; i < cols; i++) {
@@ -2094,7 +1879,7 @@ function grafAnimaSfondo(ctx, W, H, t, tipo, acc) {
       }
     }
   } else if (tipo === 'griglia') {
-    // griglia prospettica anni-80 + sole
+
     const hor = H * 0.6;
     const sun = ctx.createLinearGradient(0, hor - 200, 0, hor + 30);
     sun.addColorStop(0, '#ffd15c'); sun.addColorStop(1, acc);
@@ -2108,7 +1893,7 @@ function grafAnimaSfondo(ctx, W, H, t, tipo, acc) {
     }
     ctx.globalAlpha = 1;
   } else if (tipo === 'scanline') {
-    // righe orizzontali + banda luminosa che scorre (CRT)
+
     ctx.fillStyle = acc + '14';
     for (let y = ((s * 40) % 8); y < H; y += 8) ctx.fillRect(0, y, W, 2);
     const by = ((s * 130) % (H + 240)) - 120;
@@ -2118,11 +1903,10 @@ function grafAnimaSfondo(ctx, W, H, t, tipo, acc) {
   }
 }
 
-// ── helper grafica social: colori, tinte, grana, testo con tracking
 let _grNoise = null;
 const grHexRgb = (h) => { const m = /^#?([0-9a-fA-F]{6})$/.exec(String(h || '')); if (!m) return [136, 92, 246]; const n = parseInt(m[1], 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
 const grRgba = (h, a) => { const [r, g, b] = grHexRgb(h); return `rgba(${r},${g},${b},${a})`; };
-// ruota la tinta di un colore (per il secondo "blob" e i gradienti) — torna rgb()
+
 function grHueShift(h, deg) {
   let [r, g, b] = grHexRgb(h); r /= 255; g /= 255; b /= 255;
   const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn; let hh = 0, s = 0; const l = (mx + mn) / 2;
@@ -2133,12 +1917,12 @@ function grHueShift(h, deg) {
   const to = (x) => Math.round(x * 255);
   return `rgb(${to(cv(hh + 1 / 3))},${to(cv(hh))},${to(cv(hh - 1 / 3))})`;
 }
-// grana fine (film grain) come pattern, per togliere l'effetto "piatto"
+
 function grNoise(ctx) {
   if (!_grNoise) { const c = document.createElement('canvas'); c.width = c.height = 140; const x = c.getContext('2d'), d = x.createImageData(140, 140); for (let i = 0; i < d.data.length; i += 4) { const v = Math.random() * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255; } x.putImageData(d, 0, 0); _grNoise = c; }
   return ctx.createPattern(_grNoise, 'repeat');
 }
-// testo con spaziatura tra le lettere (tracking) — robusto su ogni browser
+
 function grTxt(ctx, s, x, y, ls) {
   s = String(s); const sp = ls || 0; if (!sp) { ctx.fillText(s, x, y); return; }
   const al = ctx.textAlign; let cx = x;
@@ -2146,24 +1930,17 @@ function grTxt(ctx, s, x, y, ls) {
   ctx.textAlign = 'left'; for (const ch of s) { ctx.fillText(ch, cx, y); cx += ctx.measureText(ch).width + sp; } ctx.textAlign = al;
 }
 
-// Disegna la grafica sul canvas secondo la config. Cuore di P5. `t` = tempo (ms)
-// per i temi animati; 0 per un fotogramma statico. `scala` = fattore di
-// SUPERSAMPLING: 1 per l'anteprima, 2 in export. Tutto il disegno resta in
-// coordinate 1080×H (logiche) ma il canvas è scala× più grande e il contesto è
-// scalato: testo, forme e gradienti vengono ri-rasterizzati NITIDI a piena
-// risoluzione (2160×2700). Instagram poi ridimensiona → resa molto più pulita
-// che caricare un 1080 nativo (che IG si limita a ricomprimere in JPEG).
 function grafDisegna(canvas, c, t = 0, scala = 1) {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const tema = GR_TEMI[c.tema] || GR_TEMI.notte;
   const acc = /^#[0-9a-fA-F]{6}$/.test(c.accento || '') ? c.accento : tema.acc;
-  const acc2 = grHueShift(acc, -42);                      // secondo colore del "mesh"
+  const acc2 = grHueShift(acc, -42);
   const prog = c.tipo !== 'live';
   const W = 1080, H = prog ? 1350 : 1080;
   const sc = Math.max(1, Math.min(3, Number(scala) || 1));
   canvas.width = Math.round(W * sc); canvas.height = Math.round(H * sc);
-  ctx.setTransform(sc, 0, 0, sc, 0, 0);                   // disegno in 1080, esco a sc×
+  ctx.setTransform(sc, 0, 0, sc, 0, 0);
   ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
   const S = 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
 
@@ -2178,7 +1955,6 @@ function grafDisegna(canvas, c, t = 0, scala = 1) {
   const accRGB = 'rgb(' + grHexRgb(acc).join(',') + ')';
   const blob = (cx, cy, r, col, a) => { const gg = ctx.createRadialGradient(cx, cy, 0, cx, cy, r); gg.addColorStop(0, col.replace('rgb(', 'rgba(').replace(')', ',' + a + ')')); gg.addColorStop(1, col.replace('rgb(', 'rgba(').replace(')', ',0)')); ctx.fillStyle = gg; ctx.fillRect(0, 0, W, H); };
 
-  // ===== SFONDO a strati: base · velo · blob "mesh" · vignetta · grana
   const conAnima = c.sfondo === 'tema' && tema.anima;
   if (c.sfondo === 'immagine' && grafImg.el && grafImg.pronto) {
     const iw = grafImg.el.naturalWidth || 1, ih = grafImg.el.naturalHeight || 1, sc = Math.max(W / iw, H / ih);
@@ -2191,7 +1967,7 @@ function grafDisegna(canvas, c, t = 0, scala = 1) {
   }
   const velo = Math.max(0, Math.min(85, Number(c.velo) || 0)) / 100;
   if (velo > 0 && c.sfondo !== 'tema') { ctx.fillStyle = scuroTxt ? `rgba(250,250,255,${velo})` : `rgba(6,6,14,${velo})`; ctx.fillRect(0, 0, W, H); }
-  if (!conAnima) {                                        // blob di profondità (spenti sui temi animati)
+  if (!conAnima) {
     const su = c.sfondo === 'immagine' ? 0.7 : 1;
     blob(W * 0.92, H * 0.06, W * 0.9, accRGB, (scuroTxt ? 0.42 : 0.30) * su);
     blob(W * 0.05, H * 0.98, W * 0.85, acc2, (scuroTxt ? 0.34 : 0.24) * su);
@@ -2201,7 +1977,7 @@ function grafDisegna(canvas, c, t = 0, scala = 1) {
   ctx.save(); ctx.globalAlpha = scuroTxt ? 0.05 : 0.035; ctx.globalCompositeOperation = 'overlay'; ctx.fillStyle = grNoise(ctx); ctx.fillRect(0, 0, W, H); ctx.restore();
 
   const pad = 96;
-  // ===== HEADER: logo (immagine o emoji) + handle + hairline sfumata
+
   ctx.textBaseline = 'alphabetic';
   if (c.logoImg && grafLogo.el && grafLogo.pronto) {
     const L0 = 84, li = grafLogo.el, lw = li.naturalWidth || 1, lh = li.naturalHeight || 1, ls = Math.max(L0 / lw, L0 / lh);
@@ -2217,7 +1993,7 @@ function grafDisegna(canvas, c, t = 0, scala = 1) {
     ctx.font = `900 104px ${S}`;
     const tit = grClip(ctx, (c.titolo || L('LA SETTIMANA', 'THE WEEK', 'LA SEMANA')).toUpperCase(), W - pad * 2);
     const tw = ctx.measureText(tit).width, tg = ctx.createLinearGradient(pad, 0, Math.min(W - pad, pad + tw), 0); tg.addColorStop(0, txt); tg.addColorStop(1, acc);
-    ctx.fillStyle = grRgba(acc, 0.5); ctx.fillText(tit, pad + 3, 377); ctx.fillStyle = tg; ctx.fillText(tit, pad, 372);   // ombra NETTA (niente blur → niente grana JPEG)
+    ctx.fillStyle = grRgba(acc, 0.5); ctx.fillText(tit, pad + 3, 377); ctx.fillStyle = tg; ctx.fillText(tit, pad, 372);
     const y0 = 452, rh = (H - y0 - pad + 6) / 7;
     c.giorni.forEach((r, i) => {
       const y = y0 + i * rh, hh = rh - 16;
@@ -2235,17 +2011,14 @@ function grafDisegna(canvas, c, t = 0, scala = 1) {
     ctx.textAlign = 'left'; ctx.fillStyle = tenue2; ctx.font = `800 40px ${S}`; grTxt(ctx, L('IN DIRETTA ORA', 'LIVE NOW', 'EN DIRECTO'), pad + 66, cy - 162, 7);
     ctx.font = `900 168px ${S}`; const tit = grClip(ctx, (c.titolo || 'LIVE').toUpperCase(), W - pad * 2);
     const tw = ctx.measureText(tit).width, tg = ctx.createLinearGradient(pad, 0, Math.min(W - pad, pad + tw), cy); tg.addColorStop(0, txt); tg.addColorStop(1, acc);
-    ctx.fillStyle = grRgba(acc, 0.5); ctx.fillText(tit, pad + 3, cy + 5); ctx.fillStyle = tg; ctx.fillText(tit, pad, cy);   // ombra NETTA (niente blur → niente grana JPEG)
+    ctx.fillStyle = grRgba(acc, 0.5); ctx.fillText(tit, pad + 3, cy + 5); ctx.fillStyle = tg; ctx.fillText(tit, pad, cy);
     if (c.gioco) { ctx.font = `800 46px ${S}`; const gw = Math.min(W - pad * 2, ctx.measureText(c.gioco).width + 250); grRoundRect(ctx, pad, cy + 56, gw, 104, 52); const cg = ctx.createLinearGradient(pad, 0, pad + gw, 0); cg.addColorStop(0, acc); cg.addColorStop(1, grHueShift(acc, -30)); ctx.fillStyle = cg; ctx.fill(); ctx.fillStyle = eScuroHex(acc) ? '#fff' : '#111'; ctx.textAlign = 'left'; ctx.fillText('🎮  ' + grClip(ctx, c.gioco, W - pad * 2 - 280), pad + 42, cy + 124); }
     if (c.sottotitolo) { ctx.fillStyle = tenue2; ctx.font = `500 54px ${S}`; ctx.textAlign = 'left'; ctx.fillText(grClip(ctx, c.sottotitolo, W - pad * 2), pad, cy + 270); }
     const bb = ctx.createLinearGradient(0, 0, W, 0); bb.addColorStop(0, acc); bb.addColorStop(1, grHueShift(acc, -40)); ctx.fillStyle = bb; ctx.fillRect(0, H - 22, W, 22);
   }
-  grafQr(ctx, c, W, H, pad, txt, S);   // badge "scansiona": il QR porta al canale
+  grafQr(ctx, c, W, H, pad, txt, S);
 }
 
-// Disegna il badge QR + URL del canale in basso a destra (se attivo). Su Instagram
-// l'immagine del feed non è cliccabile: il QR è il modo per farla "portare" al canale.
-// Cache dei moduli per non ricalcolarli a ogni fotogramma dei temi animati.
 let _grQr = null;
 function grafQr(ctx, c, W, H, pad, txt, S) {
   if (!c || !c.qr || typeof qrcode !== 'function') return;
@@ -2259,7 +2032,7 @@ function grafQr(ctx, c, W, H, pad, txt, S) {
       _grQr = { url: full, n: nn, mods };
     }
     const P = 210, cardX = W - pad - P, cardY = H - pad - P - 46;
-    // card bianca con ombra (il QR va su bianco per essere scansionabile)
+
     ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.30)'; ctx.shadowBlur = 22; ctx.shadowOffsetY = 6;
     ctx.fillStyle = '#ffffff'; grRoundRect(ctx, cardX, cardY, P, P, 26); ctx.fill(); ctx.restore();
     const n = _grQr.n, quiet = 20, area = P - quiet * 2, cell = area / n;
@@ -2267,15 +2040,15 @@ function grafQr(ctx, c, W, H, pad, txt, S) {
     for (let r = 0; r < n; r++) for (let col = 0; col < n; col++) {
       if (_grQr.mods[r][col]) ctx.fillRect(cardX + quiet + col * cell, cardY + quiet + r * cell, cell + 0.6, cell + 0.6);
     }
-    // URL sotto (per chi preferisce digitarlo)
+
     ctx.save();
     ctx.textAlign = 'center'; ctx.font = `700 30px ${S}`;
     ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = 8; ctx.fillStyle = txt;
     ctx.fillText(url, cardX + P / 2, cardY + P + 36);
     ctx.restore(); ctx.textAlign = 'left';
-  } catch (e) { /* il QR è un extra: se fallisce, la grafica resta intatta */ }
+  } catch (e) {  }
 }
-// luminanza: true se il colore è scuro (per scegliere testo bianco/nero sopra)
+
 function eScuroHex(hex) {
   const m = /^#?([0-9a-fA-F]{6})$/.exec(String(hex || ''));
   if (!m) return true;
@@ -2284,24 +2057,20 @@ function eScuroHex(hex) {
   return (0.2126 * r + 0.7152 * g + 0.0722 * b) < 140;
 }
 
-// Aggancia i controlli dello studio grafico e disegna l'anteprima. Chiamata
-// quando si apre la scheda (caricaDatiScheda).
 function initGrafiche() {
   const canvas = document.getElementById('gr-canvas');
   if (!canvas) return;
   let c = grafConfig();
-  // Un solo loop d'anteprima: se il tema è animato gira a rAF, altrimenti un
-  // fotogramma statico. Annulla sempre il loop precedente (anche di una riapertura).
+
   const frame = () => { grafDisegna(canvas, c, performance.now()); grafRAF = requestAnimationFrame(frame); };
-  let didascaliaManuale = false;   // l'utente ha modificato a mano la didascalia?
+  let didascaliaManuale = false;
   const aggiornaDidascalia = () => {
     const ta = document.getElementById('gr-didascalia');
     if (ta && !didascaliaManuale) ta.value = grafDidascalia(c);
   };
   const ridisegna = () => {
     if (grafRAF) { cancelAnimationFrame(grafRAF); grafRAF = null; }
-    // anteprima statica a 2×: sullo schermo il testo si vede nitido come nell'export.
-    // (i temi animati restano a 1× per non appesantire il loop.)
+
     if (grafAnimato(c)) frame(); else grafDisegna(canvas, c, 0, 2);
     aggiornaDidascalia();
   };
@@ -2325,7 +2094,6 @@ function initGrafiche() {
   bind('gr-titolo', 'titolo'); bind('gr-handle', 'handle'); bind('gr-logo', 'logo');
   bind('gr-accento', 'accento'); bind('gr-gioco', 'gioco'); bind('gr-sottotitolo', 'sottotitolo');
 
-  // ── sfondo: dal tema / tinta unita / immagine caricata
   if (c.sfondo === 'immagine' && c.sfondoImg) grafCaricaImg(c.sfondoImg, ridisegna);
   const mostraSfondo = () => {
     document.querySelector('.gr-sfondo-tinta')?.toggleAttribute('hidden', c.sfondo !== 'tinta');
@@ -2339,25 +2107,24 @@ function initGrafiche() {
     if (c.sfondo === 'immagine' && c.sfondoImg) grafCaricaImg(c.sfondoImg, ridisegna); else ridisegna();
   }));
   document.getElementById('gr-sfondo-colore')?.addEventListener('input', (e) => { c.sfondoColore = e.target.value; ridisegna(); });
-  // Carica un file dal PC: lo salva nella LIBRERIA SFONDI (file sul server, non
-  // dentro le impostazioni) e lo usa. Così lo ritrovi sempre e non gonfi il salvataggio.
+
   document.getElementById('gr-sfondo-file')?.addEventListener('change', (e) => {
     const f = e.target.files && e.target.files[0];
     if (!f) return;
-    e.target.value = '';   // permette di ricaricare lo stesso file
+    e.target.value = '';
     const im = new Image();
     im.onload = async () => {
-      // lato lungo 1440px, sotto ~1.2MB: qualità buona ma leggera per il server.
+
       const dataUrl = grafDataUrlSotto(im, 1200000, 1440);
       try {
         const r = await api('/api/streamer/sfondi', { method: 'POST', body: { dataUrl } });
-        c.sfondoImg = r.url;            // referenzia il file salvato (URL corto)
+        c.sfondoImg = r.url;
         grafCaricaImg(c.sfondoImg, ridisegna);
         toast(L('Sfondo salvato in libreria ✓', 'Background saved to library ✓', 'Fondo guardado en la biblioteca ✓'));
         const box = document.getElementById('gr-lib-box');
-        if (box && !box.hidden) mostraLibreriaSfondi(box);   // aggiorna se aperta
+        if (box && !box.hidden) mostraLibreriaSfondi(box);
       } catch (err) {
-        // ripiego: usa lo sfondo "al volo" (versione più piccola, va nelle impostazioni)
+
         c.sfondoImg = grafDataUrlSotto(im, 680000, 1280);
         grafCaricaImg(c.sfondoImg, ridisegna);
         toast(L('Sfondo applicato (non salvato in libreria)', 'Background applied (not saved to library)', 'Fondo aplicado (no guardado en la biblioteca)'), 'errore');
@@ -2366,7 +2133,7 @@ function initGrafiche() {
     im.onerror = () => toast(L('Immagine non valida', 'Invalid image', 'Imagen no válida'), 'errore');
     im.src = URL.createObjectURL(f);
   });
-  // Riempie il box con i TUOI sfondi salvati (con anteprima ed eliminazione).
+
   async function mostraLibreriaSfondi(box) {
     box.innerHTML = `<p class="vuoto">${L('Carico…', 'Loading…', 'Cargando…')}</p>`;
     try {
@@ -2382,7 +2149,7 @@ function initGrafiche() {
           <button type="button" class="gr-lib-x" data-id="${x.id}" title="${L('Elimina', 'Delete', 'Eliminar')}" aria-label="${L('Elimina', 'Delete', 'Eliminar')}">×</button>
         </div>`).join('');
       box.querySelectorAll('.gr-lib-el').forEach((el) => el.addEventListener('click', (ev) => {
-        if (ev.target.closest('.gr-lib-x')) return;   // il click sulla × non seleziona
+        if (ev.target.closest('.gr-lib-x')) return;
         c.sfondoImg = el.dataset.url; grafCaricaImg(c.sfondoImg, ridisegna); box.hidden = true;
       }));
       box.querySelectorAll('.gr-lib-x').forEach((b) => b.addEventListener('click', async (ev) => {
@@ -2410,14 +2177,12 @@ function initGrafiche() {
     e.preventDefault(); c.sfondoImg = ''; grafCaricaImg('', ridisegna);
   });
 
-  // ── colore del testo (con auto-contrasto) + velo di leggibilità
   const colTesto = document.getElementById('gr-coloretesto');
   colTesto?.addEventListener('input', () => { c.coloreTesto = colTesto.value; document.getElementById('gr-coloretesto-auto')?.removeAttribute('disabled'); ridisegna(); });
   document.getElementById('gr-coloretesto-auto')?.addEventListener('click', (e) => { c.coloreTesto = ''; e.currentTarget.setAttribute('disabled', ''); ridisegna(); });
   const veloEl = document.getElementById('gr-velo');
   veloEl?.addEventListener('input', () => { c.velo = Number(veloEl.value) || 0; const v = document.getElementById('gr-velo-val'); if (v) v.textContent = c.velo + '%'; ridisegna(); });
 
-  // ── logo immagine: carica dal PC (ridimensionato) o togli → torna all'emoji
   if (c.logoImg) grafCaricaLogo(c.logoImg, ridisegna);
   document.getElementById('gr-logo-file')?.addEventListener('change', (e) => {
     const f = e.target.files && e.target.files[0];
@@ -2450,12 +2215,12 @@ function initGrafiche() {
   });
 
   document.getElementById('gr-scarica')?.addEventListener('click', () => {
-    // render OFFSCREEN a 2× (2160×2700): PNG nitido, l'anteprima resta com'è
+
     const full = document.createElement('canvas');
     grafDisegna(full, c, 0, 2);
     full.toBlob(async (blob) => {
       if (!blob) return;
-      const firmato = await firmaPngBlob(blob);   // filigrana di proprietà nel PNG scaricato
+      const firmato = await firmaPngBlob(blob);
       const a = document.createElement('a');
       a.href = URL.createObjectURL(firmato);
       a.download = `socialbot-${c.tipo}-${(stato?.user?.login || 'canale')}.png`;
@@ -2467,11 +2232,10 @@ function initGrafiche() {
     await salvaImpostazioni({ grafiche: c }, L('Grafica salvata ✓', 'Graphic saved ✓', 'Gráfica guardada ✓'));
   }));
 
-  // ── condivisione & link al canale (QR / destinazione / didascalia / condividi)
   document.querySelectorAll('[data-gr-dest]').forEach((b) => b.addEventListener('click', () => {
     c.dest = b.dataset.grDest === 'twitch' ? 'twitch' : 'u';
     document.querySelectorAll('[data-gr-dest]').forEach((x) => x.classList.toggle('on', x === b));
-    ridisegna();   // aggiorna QR (se attivo) e didascalia
+    ridisegna();
   }));
   document.getElementById('gr-qr')?.addEventListener('change', (e) => { c.qr = !!e.target.checked; ridisegna(); });
   const taDida = document.getElementById('gr-didascalia');
@@ -2485,8 +2249,7 @@ function initGrafiche() {
     const btn = ev.currentTarget, testo0 = btn.textContent;
     btn.disabled = true;
     try {
-      // render a 2× (2160×2700) per una resa nitida; JPEG 0.92 tiene il file
-      // leggero per la condivisione (IG lo ricomprime comunque).
+
       const full = document.createElement('canvas');
       grafDisegna(full, c, 0, 2);
       const blob = await new Promise((res) => full.toBlob(res, 'image/jpeg', 0.92));
@@ -2494,49 +2257,45 @@ function initGrafiche() {
       const file = new File([blob], `socialbot-${c.tipo}-${(stato?.user?.login || 'canale')}.jpg`, { type: 'image/jpeg' });
       const dida = (document.getElementById('gr-didascalia')?.value || grafDidascalia(c)).trim();
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        // mobile: apre il foglio di condivisione → scegli Instagram (feed o storia)
+
         await navigator.share({ files: [file], text: dida, title: 'SocialBot' });
       } else {
-        // desktop / niente Web Share: scarica il PNG + copia la didascalia
+
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
         a.download = file.name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-        try { await navigator.clipboard.writeText(dida); } catch { /* niente */ }
+        try { await navigator.clipboard.writeText(dida); } catch {  }
         toast(L('Immagine scaricata e didascalia copiata: apri Instagram e incolla ✨', 'Image downloaded and caption copied: open Instagram and paste ✨', 'Imagen descargada y descripción copiada: abre Instagram y pega ✨'));
       }
     } catch (e) {
       if (!e || e.name !== 'AbortError') toast(L('Condivisione non riuscita.', 'Sharing failed.', 'No se pudo compartir.'), 'errore');
     } finally { btn.disabled = false; btn.textContent = testo0; }
   });
-  aggiornaDidascalia();   // riempi la didascalia pronta al primo caricamento
+  aggiornaDidascalia();
 
-  // export GIF ANIMATA — SENZA registrare: disegna i frame offline (più veloce del
-  // tempo reale) e li comprime con l'encoder GIF autonomo. Ideale per i temi animati.
   document.getElementById('gr-scarica-gif')?.addEventListener('click', async (ev) => {
     const btn = ev.currentTarget; const testo = btn.textContent;
     if (!window.SB_GIF) { toast(L('Export GIF non disponibile su questo browser.', 'GIF export unavailable on this browser.', 'Exportación GIF no disponible en este navegador.'), 'errore'); return; }
-    if (grafRAF) { cancelAnimationFrame(grafRAF); grafRAF = null; }   // ferma l'anteprima: tutta la CPU alla GIF
+    if (grafRAF) { cancelAnimationFrame(grafRAF); grafRAF = null; }
     btn.disabled = true;
     try {
-      // Renderizzo a PIENA risoluzione e poi RIMPICCIOLISCO: grafDisegna forza sempre
-      // il canvas a 1080×H, quindi disegnare su un canvas già piccolo lo ritagliava
-      // (leggeva solo la finestra 480×480 in alto a sinistra).
+
       const full = document.createElement('canvas');
-      grafDisegna(full, c, 0);                       // porta `full` a 1080×H reali
-      const scala = Math.min(1, 600 / Math.max(full.width, full.height));   // GIF un po' più nitida (era 480)
+      grafDisegna(full, c, 0);
+      const scala = Math.min(1, 600 / Math.max(full.width, full.height));
       const gw = Math.round(full.width * scala), gh = Math.round(full.height * scala);
       const off = document.createElement('canvas'); off.width = gw; off.height = gh;
       const octx = off.getContext('2d', { willReadFrequently: true });
       const animato = grafAnimato(c);
       const fps = 12.5, dt = 1000 / fps;
-      const nFrame = animato ? 50 : 1;   // ~4s in loop se animato; 1 frame se statico
+      const nFrame = animato ? 50 : 1;
       const frames = [];
       for (let i = 0; i < nFrame; i++) {
         grafDisegna(full, c, i * dt);
         octx.clearRect(0, 0, gw, gh);
-        octx.drawImage(full, 0, 0, gw, gh);          // downscale pulito, niente ritaglio
+        octx.drawImage(full, 0, 0, gw, gh);
         frames.push(octx.getImageData(0, 0, gw, gh).data);
         btn.textContent = L('Creo… ', 'Building… ', 'Creando… ') + Math.round((i + 1) / nFrame * 100) + '%';
-        if (i % 4 === 0) await new Promise((r) => setTimeout(r, 0));   // tieni viva la UI
+        if (i % 4 === 0) await new Promise((r) => setTimeout(r, 0));
       }
       btn.textContent = L('Comprimo…', 'Compressing…', 'Comprimiendo…');
       await new Promise((r) => setTimeout(r, 0));
@@ -2550,17 +2309,16 @@ function initGrafiche() {
       toast(L('GIF non riuscita: ', 'GIF failed: ', 'GIF fallida: ') + (e && e.message ? e.message : e), 'errore');
     } finally {
       btn.disabled = false; btn.textContent = testo;
-      ridisegna();   // riavvia l'anteprima (animata o statica)
+      ridisegna();
     }
   });
 
-  // export VIDEO (WebM) — registra il canvas per 5s (utile coi temi animati)
   document.getElementById('gr-scarica-video')?.addEventListener('click', (ev) => {
     const btn = ev.currentTarget;
     if (typeof MediaRecorder === 'undefined' || !canvas.captureStream) {
       toast(L('Il tuo browser non supporta l\'export video.', "Your browser doesn't support video export.", 'Tu navegador no soporta la exportación de vídeo.'), 'errore'); return;
     }
-    if (!grafRAF) frame();   // assicura il movimento durante la registrazione
+    if (!grafRAF) frame();
     let mime = 'video/webm;codecs=vp9';
     if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm;codecs=vp8';
     if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm';
@@ -2580,23 +2338,18 @@ function initGrafiche() {
     };
     btn.disabled = true; btn.textContent = L('Registro… 5s', 'Recording… 5s', 'Grabando… 5s');
     rec.start();
-    setTimeout(() => { try { rec.stop(); } catch { /* già fermo */ } }, 5000);
+    setTimeout(() => { try { rec.stop(); } catch {  } }, 5000);
   });
 
   ridisegna();
 }
 
-// --- scheda Stato -------------------------------------------------------
-
-// badge di un permesso: verde ✓ se concesso, giallo "da concedere" se manca.
 function badgePermesso(ok, nome) {
   return ok
     ? `<span class="badge verde">✓ ${nome}</span>`
     : `<span class="badge giallo">${nome} ${L('da concedere', 'to grant', 'por conceder')}</span>`;
 }
 
-// Scheda "Avatar 3D": lo schema tridimensionale del cervello del bot (era una
-// carta dentro "Stato"). Sta nel gruppo "Il tuo bot".
 function pannelloAvatar() {
   return pannello('avatar', `
     <div class="carta">
@@ -2619,22 +2372,19 @@ function pannelloAvatar() {
 
 function pannelloStato() {
   const login = stato.user.login;
-  // "in chat adesso" = davvero connesso (non solo unità esistente): usa connessi[]
-  // se il server lo espone, altrimenti ripiega su channels[] (es. demo).
+
   const connessi = stato.status?.connessi || stato.status?.channels || [];
   const inChat = connessi.includes(login);
   const pre = stato.preaddestramento || {};
   const sImp = impostazioni();
   const proprietario = stato.ruolo !== 'moderatore';
 
-  // Banner per i moderatori: chiarisce cosa possono fare e cosa no.
   const bannerMod = proprietario ? '' : `
     <div class="carta evidenziata">
       <h2>${_hIco(ICO.utenti)}${L('Stai gestendo il canale di', 'You’re managing the channel of', 'Estás gestionando el canal de')} @${esc(stato.gestisce?.streamer || login)}</h2>
       <p>${L('Sei entrato come', 'You’re signed in as a', 'Has entrado como')} <strong class="primo-piano">${L('moderatore', 'moderator', 'moderador')}</strong>: ${L('puoi occuparti di comandi, moduli, effetti, giochi, notifiche, regole e memoria. Le cose da proprietario — permessi Twitch e l\'elenco dei moderatori — restano a chi possiede il canale.', 'you can handle commands, modules, effects, games, notifications, rules and memory. Owner-only things — Twitch permissions and the moderator list — stay with the channel owner.', 'puedes ocuparte de comandos, módulos, efectos, juegos, notificaciones, reglas y memoria. Lo de propietario — permisos de Twitch y la lista de moderadores — es del dueño del canal.')}</p>
     </div>`;
 
-  // La card "concedi permessi" la vede solo il proprietario (un mod non li tocca).
   const cardPermessi = (!proprietario || stato.permessiOk) ? '' : `
     <div class="carta evidenziata">
       <h2>${_hIco(ICO.chiave)}${L('Attiva il bot: concedi i permessi', 'Activate the bot: grant permissions', 'Activa el bot: concede los permisos')}</h2>
@@ -2642,8 +2392,6 @@ function pannelloStato() {
       <p class="spazio-sopra"><a class="btn grande" href="/auth/permessi">${L('Concedi i permessi su Twitch', 'Grant permissions on Twitch', 'Concede los permisos en Twitch')}</a></p>
     </div>`;
 
-  // Allarme: il bot HA i permessi ma la chat non si autentica più (token scaduto/
-  // revocato). Non si ripara da solo: va ricollegato. Lo vede solo il proprietario.
   const chatKO = proprietario && (stato.status?.chatKO || []).includes(login);
   const cardChatKO = !chatKO ? '' : `
     <div class="carta evidenziata avviso-rosso">
@@ -2652,9 +2400,6 @@ function pannelloStato() {
       <p class="spazio-sopra"><a class="btn grande" href="/auth/permessi">${L('Ricollega i permessi', 'Reconnect permissions', 'Reconecta los permisos')}</a></p>
     </div>`;
 
-  // Nuovi permessi: HA i permessi base ma al token salvato mancano scope aggiunti
-  // in seguito (shoutout, annunci, ore guardate…). Vanno riconcessi, altrimenti
-  // quelle funzioni falliscono in silenzio. Prompt esplicito, mai errore muto.
   const SCOPE_ETICHETTE = {
     'moderator:manage:shoutouts': L('shoutout ufficiali', 'official shoutouts', 'shoutouts oficiales'),
     'moderator:manage:announcements': L('annunci in chat', 'chat announcements', 'anuncios en el chat'),
@@ -2758,8 +2503,7 @@ function pannelloStato() {
       <p class="suggerimento">${L('Su iPhone/iPad: apri in Safari → Condividi → “Aggiungi a Home”. Su Android/PC (Chrome): usa il bottone qui sopra o l’icona “installa” nella barra indirizzi.', 'On iPhone/iPad: open in Safari → Share → “Add to Home Screen”. On Android/PC (Chrome): use the button above or the “install” icon in the address bar.', 'En iPhone/iPad: abre en Safari → Compartir → “Añadir a inicio”. En Android/PC (Chrome): usa el botón de arriba o el icono “instalar” en la barra de direcciones.')}</p>
     </div>
     ${proprietario ? (() => {
-      // nomi dei pacchetti: sempre in italiano, sono nomi propri del prodotto
-      // 'Pro' non e piu acquistabile: resta solo per gli abbonati storici
+
   const nomi = { community: 'Community', free: 'Essenziale', base: 'Base', pro: 'Pro (storico)' };
       const tier = stato.tier || 'community';
       const pagato = tier === 'base' || tier === 'pro';
@@ -2803,8 +2547,6 @@ function pannelloStato() {
       <ul class="lista-voci" id="lista-moderatori"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
     </div>` : ''}`);
 }
-
-// --- scheda Personalità -------------------------------------------------
 
 function pannelloPersonalita() {
   const s = impostazioni();
@@ -2885,7 +2627,6 @@ function pannelloPersonalita() {
     </div>`);
 }
 
-// carica e disegna l'elenco delle linee guida (regole di "lia")
 async function caricaGuide() {
   const box = document.getElementById('lista-guide');
   if (!box) return;
@@ -2904,8 +2645,6 @@ async function caricaGuide() {
   }); }));
 }
 
-// --- scheda Conoscenza --------------------------------------------------
-
 function pannelloConoscenza() {
   return pannello('conoscenza', `
     <div class="carta">
@@ -2923,8 +2662,6 @@ function pannelloConoscenza() {
       <ul class="lista-voci" id="lista-conoscenza"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
     </div>`);
 }
-
-// --- scheda Clip --------------------------------------------------------
 
 function pannelloClip() {
   const s = impostazioni();
@@ -2950,9 +2687,6 @@ function pannelloClip() {
     </div>`);
 }
 
-// --- scheda Ascolto live ------------------------------------------------
-// Due strade per creare clip "a voce": dal server (audio della live) e dal PC (microfono).
-
 function pannelloAscolto() {
   const s = impostazioni();
   let sens = Number(s.ascoltoSensibilita);
@@ -2961,8 +2695,8 @@ function pannelloAscolto() {
   const cc = s.cambioCategoria || { attivo: false, trigger: 'categoria', annuncia: true };
   const ct = s.cambioTitolo || { attivo: false, trigger: 'titolo', annuncia: true };
   const iv = s.imparaVoce || { attivo: false };
-  const proprietario = stato?.ruolo !== 'moderatore';        // "impara mentre parlo" solo per me
-  const mancaPermesso = !DEMO && stato.canaleOk === false;   // serve una ri-autorizzazione
+  const proprietario = stato?.ruolo !== 'moderatore';
+  const mancaPermesso = !DEMO && stato.canaleOk === false;
 
   return pannello('ascolto', `
     <div class="carta">
@@ -3056,8 +2790,6 @@ function pannelloAscolto() {
     </div>` : ''}`);
 }
 
-// --- scheda Musica (richieste via Spotify) ------------------------------
-
 function pannelloMusica() {
   const m = impostazioni().musica || {};
   const modo = ['libero', 'sub', 'monete', 'bit', 'punti'].includes(m.modo) ? m.modo : 'libero';
@@ -3098,9 +2830,6 @@ function pannelloMusica() {
     </div>`);
 }
 
-// Modulo "credenziali": ogni streamer crea la SUA app Spotify (gratis) e incolla
-// qui Client ID/Secret. Così ogni app serve un solo utente e resta in
-// Development mode → nessuna approvazione da chiedere a Spotify.
 function formCredenzialiSpotify(redirect) {
   return `
     <details class="spotify-guida">
@@ -3125,7 +2854,6 @@ function formCredenzialiSpotify(redirect) {
     <button class="btn spazio-sopra" id="spotify-salva-cred">${L('Salva credenziali', 'Save credentials', 'Guardar credenciales')}</button>`;
 }
 
-// Modalità richieste (!sr): mostra il campo giusto per il modo scelto e salva.
 function wiraMusicaConfig() {
   const sel = document.getElementById('musica-modo');
   if (!sel) return;
@@ -3146,7 +2874,6 @@ function wiraMusicaConfig() {
   if (b) b.addEventListener('click', () => conErrore(() => salvaMusica()));
 }
 
-// Salva la config musica (modo + costo + premio). `silenzioso` = niente toast.
 async function salvaMusica(silenzioso) {
   const sel = document.getElementById('musica-modo');
   if (!sel) return;
@@ -3160,9 +2887,6 @@ async function salvaMusica(silenzioso) {
   if (!silenzioso) toast(L('Impostazioni musica salvate', 'Music settings saved', 'Ajustes de música guardados'));
 }
 
-// Modalità "punti canale": lascia scegliere UN premio tra quelli con la
-// "richiesta di testo" attiva (gli altri non sono usabili → esclusi), oppure
-// crearne uno pronto all'uso. Niente più campo-nome da riempire a mano.
 async function caricaPremiMusica() {
   const box = document.getElementById('musica-premi-box');
   if (!box) return;
@@ -3226,7 +2950,6 @@ async function caricaSpotify() {
   let d;
   try { d = await api('/api/spotify/stato'); } catch { box.innerHTML = `<p>${L('Impossibile caricare lo stato.', 'Couldn’t load the status.', 'No se pudo cargar el estado.')}</p>`; return; }
 
-  // 1) già collegato → badge + scollega + possibilità di cambiare app
   if (d.collegato) {
     box.innerHTML = `<div class="riga-interruttore">
         <span class="badge verde">● ${L('Spotify collegato', 'Spotify connected', 'Spotify conectado')}</span>
@@ -3240,8 +2963,6 @@ async function caricaSpotify() {
     return;
   }
 
-  // 2) credenziali presenti (proprie o globali) ma non ancora collegato → Connetti
-  //    (+ possibilità di reimpostare le proprie credenziali)
   if (d.attivo) {
     box.innerHTML = `
       <button class="btn" id="spotify-collega">${L('Connetti Spotify', 'Connect Spotify', 'Conectar Spotify')}</button>
@@ -3257,31 +2978,27 @@ async function caricaSpotify() {
     return;
   }
 
-  // 3) nessuna app: mostra il form credenziali
   box.innerHTML = formCredenzialiSpotify(d.redirect);
   collegaSalvaCred();
 }
 
-// Connettore TikTok (Display API) per l'avviso "nuovo post". Riempie #tiktok-post-box
-// con lo stato del collegamento OAuth: identico schema del box Spotify.
 async function caricaTikTok() {
   const box = document.getElementById('tiktok-post-box');
   if (!box) return;
   const q = new URLSearchParams(location.search);
   if (q.get('tiktok') === 'ok') toast(L('Account TikTok collegato.', 'TikTok account connected.', 'Cuenta de TikTok conectada.'));
   else if (q.get('tiktok') === 'errore') toast(L('Collegamento TikTok non riuscito.', 'TikTok connection failed.', 'Conexión con TikTok fallida.'), 'errore');
-  if (q.get('tiktok')) { try { history.replaceState(null, '', location.pathname + '#notifiche'); } catch { /* niente */ } }
+  if (q.get('tiktok')) { try { history.replaceState(null, '', location.pathname + '#notifiche'); } catch {  } }
   const proprietario = stato?.ruolo !== 'moderatore';
   if (!proprietario) { box.innerHTML = '<p class="suggerimento">Solo il proprietario del canale può collegare TikTok.</p>'; return; }
   let d;
   try { d = await api('/api/tiktok/stato'); } catch { box.innerHTML = '<p class="suggerimento">Impossibile caricare lo stato del connettore TikTok.</p>'; return; }
 
-  // 1) app non configurata dall'operatore (manca Client Key/Secret nel server)
   if (!d.appAttiva) {
     box.innerHTML = '<p class="suggerimento">Il connettore TikTok non è ancora attivo: serve configurare l\'app TikTok (Client Key/Secret) lato server.</p>';
     return;
   }
-  // 2) app pronta ma account non collegato → bottone Collega
+
   if (!d.collegato) {
     box.innerHTML = `<button class="btn" id="tiktok-collega">Collega TikTok</button>
       <p class="suggerimento spazio-sopra">Ti mando su TikTok per autorizzare la lettura dei tuoi video. Nient'altro.</p>`;
@@ -3291,7 +3008,7 @@ async function caricaTikTok() {
     }));
     return;
   }
-  // 3) collegato → badge + scollega + prova
+
   box.innerHTML = `<div class="riga-interruttore">
       <span class="badge verde">● TikTok collegato${d.username ? ' (@' + esc(d.username) + ')' : ''}</span>
       <button class="btn secondario mini" id="tiktok-prova">Prova</button>
@@ -3308,7 +3025,6 @@ async function caricaTikTok() {
   }));
 }
 
-// Notifiche Discord (webhook): avviso "sei in diretta" nel canale del server Discord.
 async function caricaDiscord() {
   const box = document.getElementById('discord-box'); if (!box) return;
   let d; try { d = await api('/api/discord/stato'); }
@@ -3346,7 +3062,7 @@ async function caricaDiscord() {
       avatar: document.getElementById('inp-dc-avatar').value,
       attivo: document.getElementById('chk-dc-attivo').checked,
     };
-    if (webhook) body.webhook = webhook;   // invia il webhook solo se ne è stato messo uno nuovo
+    if (webhook) body.webhook = webhook;
     await api('/api/discord', { method: 'POST', body });
     toast(L('Discord salvato ✓', 'Discord saved ✓', 'Discord guardado ✓')); caricaDiscord();
   }));
@@ -3356,21 +3072,19 @@ async function caricaDiscord() {
   if (bs) bs.addEventListener('click', () => conErrore(async () => { await api('/api/discord/disconnect', { method: 'POST', body: {} }); toast(L('Discord scollegato.', 'Discord disconnected.', 'Discord desconectado.')); caricaDiscord(); }));
 }
 
-// "Accedi da Telegram" (Mini App + OIDC): collega il tuo Telegram al canale così
-// puoi rientrare e gestire il bot dalla Mini App dentro Telegram.
 async function caricaTgLogin() {
   const box = document.getElementById('box-tglogin');
   if (!box) return;
-  // messaggi di ritorno dell'OIDC (?tgapp=...)
+
   const q = new URLSearchParams(location.search);
   if (q.get('tgapp') === 'collegato') toast(L('Telegram collegato!', 'Telegram linked!', '¡Telegram vinculado!'));
   else if (q.get('tgapp') === 'errore') toast(L('Collegamento Telegram non riuscito.', 'Telegram linking failed.', 'La vinculación de Telegram falló.'), 'errore');
   else if (q.get('tgapp') === 'noncollegato') toast(L('Questo Telegram non è collegato a nessun canale.', 'This Telegram isn’t linked to any channel.', 'Este Telegram no está vinculado a ningún canal.'), 'errore');
-  if (q.get('tgapp')) { try { history.replaceState(null, '', location.pathname + '#notifiche'); } catch { /* niente */ } }
+  if (q.get('tgapp')) { try { history.replaceState(null, '', location.pathname + '#notifiche'); } catch {  } }
 
   let d;
   try { d = await api('/api/tgapp/login-stato'); } catch { box.hidden = true; return; }
-  if (!d.attiva) { box.hidden = true; return; }   // Mini App non configurata dall'operatore
+  if (!d.attiva) { box.hidden = true; return; }
   box.hidden = false;
   const proprietario = stato?.ruolo !== 'moderatore';
   const linkBot = d.bot ? `https://t.me/${esc(d.bot)}` : '';
@@ -3431,8 +3145,6 @@ function collegaSalvaCred() {
   }));
 }
 
-// --- scheda Sondaggi & Predizioni ---------------------------------------
-
 function pannelloSondaggi() {
   const campo = (cls, ph) => `<input type="text" class="${cls}" placeholder="${ph}">`;
   return pannello('sondaggi', `
@@ -3467,7 +3179,7 @@ function pannelloSondaggi() {
 }
 
 async function caricaSondaggi() {
-  // wiring dei bottoni "crea" una volta sola
+
   const bp = document.getElementById('poll-crea');
   if (bp && !bp.dataset.wired) {
     bp.dataset.wired = '1';
@@ -3492,7 +3204,7 @@ async function caricaSondaggi() {
       if (r?.pred) { toast(L('Predizione aperta', 'Prediction opened', 'Predicción abierta')); document.getElementById('pred-titolo').value = ''; document.querySelectorAll('.pred-esito').forEach((i) => (i.value = '')); caricaSondaggi(); }
     }));
   }
-  // stato attivo (poll + pred)
+
   const wrapP = document.getElementById('sondaggio-attivo');
   const wrapR = document.getElementById('predizione-attiva');
   let d;
@@ -3515,8 +3227,6 @@ async function caricaSondaggi() {
     } else wrapR.innerHTML = '';
   }
 }
-
-// --- scheda Giveaway ----------------------------------------------------
 
 function pannelloGiveaway() {
   return pannello('giveaway', `
@@ -3608,8 +3318,6 @@ async function caricaGiveaway() {
     stBox.innerHTML = `<p>${L('Nessun giveaway in corso.', 'No giveaway in progress.', 'No hay ningún sorteo en curso.')}</p>`;
   }
 }
-
-// --- scheda Penitenze ---------------------------------------------------
 
 function pannelloPenitenze() {
   const p = impostazioni().penitenze || {};
@@ -3718,9 +3426,6 @@ async function salvaPenitenze(silenzioso) {
   await salvaImpostazioni({ penitenze }, silenzioso ? null : L('Penitenze salvate', 'Forfeits saved', 'Penitencias guardadas'));
 }
 
-// Popola il menu «suono/effetto» della penitenza: suoni pronti (preset) + effetti
-// caricati dallo streamer. Valore salvato: "preset:<id>" o "effetto:<comando>".
-// Retrocompatibile col vecchio formato (comando "nudo" → trattato come effetto).
 async function _penMontaEffetto() {
   const sel = document.getElementById('pen-effetto');
   if (!sel) return;
@@ -3730,15 +3435,15 @@ async function _penMontaEffetto() {
   const audio = (eff.effetti || []).filter((e) => e.tipo === 'audio');
   const visivi = (eff.effetti || []).filter((e) => e.tipo === 'immagine' || e.tipo === 'video');
   let cur = String((impostazioni().penitenze || {}).effetto || '');
-  if (cur && !/^(effetto|preset):/.test(cur)) cur = 'effetto:' + cur;   // retrocompat comando nudo
+  if (cur && !/^(effetto|preset):/.test(cur)) cur = 'effetto:' + cur;
   const opt = (v, t) => `<option value="${esc(v)}"${v === cur ? ' selected' : ''}>${esc(t)}</option>`;
   sel.innerHTML = opt('', L('— niente —', '— none —', '— nada —'))
     + `<optgroup label="${L('Suoni pronti', 'Ready-made sounds', 'Sonidos listos')}">${presets.map((s) => opt('preset:' + s.id, s.nome)).join('')}</optgroup>`
     + (audio.length ? `<optgroup label="${L('I miei suoni caricati', 'My uploaded sounds', 'Mis sonidos subidos')}">${audio.map((e) => opt('effetto:' + e.comando, '!' + e.comando)).join('')}</optgroup>` : '')
     + (visivi.length ? `<optgroup label="${L('Immagini / Video', 'Images / Videos', 'Imágenes / Vídeos')}">${visivi.map((e) => opt('effetto:' + e.comando, '!' + e.comando + ' (' + e.tipo + ')')).join('')}</optgroup>` : '');
-  // valore salvato ma non più tra le opzioni (es. effetto cancellato): lo tengo visibile
+
   if (cur && sel.value !== cur) sel.insertAdjacentHTML('beforeend', `<option value="${esc(cur)}" selected>${esc(cur.replace(/^effetto:/, '!').replace(/^preset:/, ''))}</option>`);
-  // Prova: preset → suona lato client; effetto → invia all'overlay in OBS
+
   const btn = document.getElementById('pen-effetto-prova');
   if (btn) btn.onclick = () => {
     const v = sel.value;
@@ -3767,7 +3472,7 @@ async function caricaPenitenze() {
     await api('/api/penitenze/prova', { method: 'POST', body: {} });
     toast(L('Inviato all\'overlay ▶', 'Sent to the overlay ▶', 'Enviado al overlay ▶'));
   }));
-  await _penMontaEffetto();   // menu «suono/effetto» (preset + effetti caricati)
+  await _penMontaEffetto();
   const boxV = document.getElementById('pen-box-vieta');
   const boxS = document.getElementById('pen-box-solo');
   if (!boxV || !boxS) return;
@@ -3778,7 +3483,7 @@ async function caricaPenitenze() {
     boxS.innerHTML = '';
     return;
   }
-  // solo i premi CON richiesta di testo (lo spettatore scrive la parola)
+
   const eleggibili = (d.tutti || []).filter((r) => r.richiedeTesto);
   const esclusi = (d.tutti || []).length - eleggibili.length;
   const montaPicker = (box, { campo, hiddenId, attuale, nomeDefault }) => {
@@ -3819,22 +3524,17 @@ async function caricaPenitenze() {
   montaPicker(boxS, { campo: 'premioSolo', hiddenId: 'pen-premio-solo', attuale: d.premioSolo, nomeDefault: L('Dì solo questa parola', 'Say only this word', 'Di solo esta palabra') });
 }
 
-// --- scheda Alert & Chat ------------------------------------------------
-
-// opzioni <option> dei suoni preset (dalla libreria condivisa presets.js)
 function opzioniSuono(sel) {
   const lista = (window.SUONI_PRESET && window.SUONI_PRESET.lista) || [];
   return ['<option value="">— nessun suono —</option>']
     .concat(lista.map((s) => `<option value="${esc(s.id)}"${s.id === sel ? ' selected' : ''}>${esc(s.nome)}</option>`)).join('');
 }
-// font per-alert: '' = usa il font condiviso dello stile
+
 function opzioniFont(sel) {
   const f = [['', '— come lo stile —'], ['sistema', 'Sistema'], ['rotondo', 'Rotondo'], ['condensato', 'Condensato'], ['mono', 'Mono'], ['serif', 'Serif'], ['manga', 'Manga']];
   return f.map(([v, n]) => `<option value="${v}"${v === sel ? ' selected' : ''}>${n}</option>`).join('');
 }
-// Popola i menu Suono/Immagine-Video di ogni alert con la libreria Effetti &
-// suoni (audio nei suoni; immagini/video nei media), oltre ai preset, e ripristina
-// i valori salvati (che possono essere "effetto:<comando>").
+
 function popolaMediaSuoniAlert(effetti, alertsCfg) {
   const a = alertsCfg || (impostazioni().alerts) || {};
   const audio = (effetti || []).filter((e) => e.tipo === 'audio');
@@ -3857,7 +3557,6 @@ const ALERT_TIPI = () => [
   { key: 'raid', nome: L('Raid', 'Raid', 'Raid'), ph: L('{user} è arrivato in raid con {viewers} spettatori!', '{user} raided with {viewers} viewers!', '¡{user} ha llegado en raid con {viewers} espectadores!'), vars: '{user}, {viewers}', acc: '#ff4d4d', soglia: { campo: 'minViewers', label: L('Spettatori minimi', 'Minimum viewers', 'Espectadores mínimos') } },
 ];
 
-// opzioni comuni per i controlli di stile (funzioni: risolvono la lingua al render)
 const FONT_OPTS = () => [['sistema', L('Sistema', 'System', 'Sistema')], ['rotondo', L('Arrotondato', 'Rounded', 'Redondeado')], ['condensato', L('Condensato', 'Condensed', 'Condensada')], ['mono', L('Monospazio', 'Monospace', 'Monoespaciada')], ['serif', L('Serif', 'Serif', 'Serif')], ['manga', L('Manga', 'Manga', 'Manga')]];
 const ANIM_ALERT_OPTS = () => [['slide', L('Scivola', 'Slide', 'Deslizar')], ['pop', L('Pop', 'Pop', 'Pop')], ['zoom', L('Zoom', 'Zoom', 'Zoom')], ['fade', L('Dissolvenza', 'Fade', 'Fundido')], ['flip', L('Ribalta', 'Flip', 'Voltear')], ['bounce', L('Rimbalzo', 'Bounce', 'Rebote')]];
 const ANIM_CHAT_OPTS = () => [['slide', L('Scivola', 'Slide', 'Deslizar')], ['fade', L('Dissolvenza', 'Fade', 'Fundido')], ['nessuna', L('Nessuna', 'None', 'Ninguna')]];
@@ -3865,24 +3564,22 @@ const DIM_OPTS = () => [['piccola', L('Piccola', 'Small', 'Pequeña')], ['media'
 const DIM3_OPTS = () => [['piccola', L('Piccola', 'Small', 'Pequeña')], ['media', L('Media', 'Medium', 'Mediana')], ['grande', L('Grande', 'Large', 'Grande')]];
 const POS4_OPTS = () => [['alto-sinistra', L('In alto a sx', 'Top left', 'Arriba izq.')], ['alto-destra', L('In alto a dx', 'Top right', 'Arriba der.')], ['basso-sinistra', L('In basso a sx', 'Bottom left', 'Abajo izq.')], ['basso-destra', L('In basso a dx', 'Bottom right', 'Abajo der.')]];
 
-// mini-builder per i controlli (riducono la ripetizione)
 const _hx = (v, d) => (/^#[0-9a-fA-F]{6}$/.test(v || '') ? v : d);
 const cCol = (id, label, val) => `<div><label class="campo" for="${id}">${label}</label><input type="color" id="${id}" value="${_hx(val, '#000000')}"></div>`;
 const cRng = (id, label, min, max, val, suf = '') => `<div><label class="campo" for="${id}">${label}: <strong><span id="${id}-v">${val}</span>${suf}</strong></label><input type="range" id="${id}" min="${min}" max="${max}" value="${val}"></div>`;
 const cSel = (id, label, opts, val) => `<div><label class="campo" for="${id}">${label}</label><select id="${id}">${opts.map(([v, t]) => `<option value="${v}"${v === val ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></div>`;
 const cChk = (id, label, on) => `<label class="riga-check"><input type="checkbox" id="${id}" ${on ? 'checked' : ''}> ${label}</label>`;
 
-// template pronti: ogni look è pensato per RISPECCHIARE il proprio nome.
 const TEMPLATE_BUILTIN = [
-  // viola Twitch, scuro e morbido, bagliore soft: il classico.
+
   { nome: 'Viola classico', dati: { al: { animazione: 'slide', sfondo: '#12101c', opacita: 90, testo: '#ffffff', bordoRaggio: 18, bordoSpessore: 2, glow: true, font: 'sistema', dimTesto: 27 }, ch: { sfondo: '#12101c', opacita: 80, testo: '#efeaff', bordoRaggio: 12, font: 'sistema', dim: 'media' }, acc: '#9146ff' } },
-  // insegna al neon: nero pieno, colore elettrico saturo, bordo sottile, bagliore forte, mono.
+
   { nome: 'Neon', dati: { al: { animazione: 'pop', sfondo: '#04010a', opacita: 62, testo: '#eafffb', bordoRaggio: 8, bordoSpessore: 2, glow: true, font: 'mono', dimTesto: 29 }, ch: { sfondo: '#04010a', opacita: 55, testo: '#d6fff7', bordoRaggio: 6, font: 'mono', dim: 'media' }, acc: '#00e5ff' } },
-  // pulito e chiaro: fondo bianco, niente bordo/bagliore, angoli morbidi, accento tenue.
+
   { nome: 'Minimal chiaro', dati: { al: { animazione: 'fade', sfondo: '#f7f7fa', opacita: 95, testo: '#15171c', bordoRaggio: 16, bordoSpessore: 0, glow: false, font: 'sistema', dimTesto: 24 }, ch: { sfondo: '#ffffff', opacita: 90, testo: '#22242b', bordoRaggio: 12, font: 'sistema', dim: 'piccola' }, acc: '#2b2d36' } },
-  // cabinato anni '80: mono squadrato, bordo spesso, giallo su nero, rosa acceso, rimbalzo.
+
   { nome: 'Retro arcade', dati: { al: { animazione: 'bounce', sfondo: '#0a0a14', opacita: 96, testo: '#ffe600', bordoRaggio: 2, bordoSpessore: 4, glow: true, font: 'mono', dimTesto: 28 }, ch: { sfondo: '#0a0a14', opacita: 90, testo: '#ffe600', bordoRaggio: 2, font: 'mono', dim: 'media' }, acc: '#ff2e88' } },
-  // fumetto giapponese: bianco/nero netto, bordo nero spesso, rosso "manga", zoom d'impatto.
+
   { nome: 'Manga', dati: { al: { animazione: 'zoom', sfondo: '#ffffff', opacita: 98, testo: '#0b0b0b', bordoRaggio: 6, bordoSpessore: 4, glow: false, font: 'manga', dimTesto: 30 }, ch: { sfondo: '#0b0b0b', opacita: 88, testo: '#ffffff', bordoRaggio: 6, font: 'manga', dim: 'media' }, acc: '#e60012' } },
 ];
 
@@ -3956,9 +3653,6 @@ function bloccoWidget(pref, w, titolo, kind) {
     </div>`;
 }
 
-// Una riga della lista "Elementi (fonti) dell'overlay": icona, nome, «Modifica»
-// (apre la sezione che lo personalizza) e l'interruttore mostra/nascondi.
-// L'id dell'interruttore resta `mostra-<k>` così la logica di layout non cambia.
 function ovlElemento(k, ico, nome, sez) {
   return `<div class="ovl-elem">
     <span class="oe-ico">${_bIco(ico)}</span>
@@ -4149,9 +3843,8 @@ function pannelloAlert() {
     </details>`);
 }
 
-// nomi-font → variabile CSS (definite in overlay-skin.css) per l'anteprima
 const FONT_VAR = { sistema: 'var(--font-sistema)', rotondo: 'var(--font-rotondo)', condensato: 'var(--font-condensato)', mono: 'var(--font-mono)', serif: 'var(--font-serif)', manga: 'var(--font-manga)' };
-// FONT GOOGLE nell'anteprima: carica al volo il font dalla libreria Google.
+
 const _gfontDash = new Set();
 function fontGoogleDash(nome) {
   const n = String(nome || '').replace(/[^a-zA-Z0-9 ]/g, '').trim();
@@ -4164,12 +3857,9 @@ function fontGoogleDash(nome) {
   }
   return "'" + n + "', var(--font-sistema)";
 }
-// font effettivo di uno stile: Google (se scritto) o quello del menu
+
 const fontStile = (st) => (st && st.googleFont ? fontGoogleDash(st.googleFont) : FONT_VAR[(st || {}).font]);
 
-// Elenco sfogliabile dei font Google CON ANTEPRIMA (ogni voce scritta nel suo
-// font). Niente ricerca obbligatoria: scorri e scegli. I font si caricano solo
-// quando la riga entra in vista (lazy), così le ~1900 voci non pesano tutte.
 let FONTS_GOOGLE = null;
 async function montaFontBrowser(box, targetId) {
   box.innerHTML = '<input type="text" class="fb-cerca" placeholder="Filtra per nome (facoltativo)…"><div class="fb-lista"><p class="tenue">Carico i font…</p></div>';
@@ -4198,11 +3888,10 @@ async function montaFontBrowser(box, targetId) {
     r.classList.add('sel');
   });
 }
-// posizioni LIBERE (drag) degli elementi nell'anteprima: {x,y} in % o null (angolo).
-// Appartengono all'OVERLAY selezionato (posXY = layout dell'overlay corrente).
+
 let posXY = { alert: null, chat: null, wf: null, ws: null };
-let overlays = [];      // lista degli overlay dello streamer (ognuno un link OBS)
-let overlaySel = '';    // id dell'overlay attualmente in modifica
+let overlays = [];
+let overlaySel = '';
 const mostraChk = (k) => !!_g('mostra-' + k)?.checked;
 const AP_ICO_ALERT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 15.09 8.26 22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
 const AP_ICO_WIDGET = { ultimoFollower: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>', ultimoSub: AP_ICO_ALERT };
@@ -4256,7 +3945,7 @@ function _raccogliAlerts() {
   return {
     attivo: !!_g('al-attivo')?.checked,
     posizione: _v('al-pos') || 'alto-centro',
-    // la posizione ora è per-overlay: lo stile non tocca la posizione "di default"
+
     xy: (impostazioni().alerts && impostazioni().alerts.xy) || null,
     durata: (Number(_v('al-durata')) || 6) * 1000,
     stile: _leggiAlertStile(),
@@ -4270,11 +3959,6 @@ function _raccogliChat() {
 }
 function _raccogliWidget() { return { ultimoFollower: _leggiWidget('wf'), ultimoSub: _leggiWidget('ws') }; }
 
-// Opzione B — SALVATAGGIO overlay: il CONTENUTO/comportamento (messaggi alert,
-// posizioni predefinite, durata, max chat…) resta CONDIVISO (canale); l'ASPETTO
-// (colori, font, forma, animazioni, widget, CSS) va SOLO nell'overlay scelto, così
-// gli altri link NON cambiano. Il look di canale non viene toccato: fa da default
-// per gli overlay che non ne hanno uno proprio.
 async function _salvaOverlayCorrente(msg, ancheLayout) {
   const ov = overlays.find((o) => o.id === overlaySel);
   const imp = impostazioni();
@@ -4295,8 +3979,6 @@ async function salvaChatOverlay(silenzioso) { await _salvaOverlayCorrente(silenz
 async function salvaWidget(silenzioso) { await _salvaOverlayCorrente(silenzioso ? null : L('Widget salvati ✓', 'Widgets saved ✓', 'Widgets guardados ✓'), false); }
 async function salvaCss(silenzioso) { await _salvaOverlayCorrente(silenzioso ? null : L('CSS salvato ✓', 'CSS saved ✓', 'CSS guardado ✓'), false); }
 
-// Riempie i controlli di ASPETTO (alert/chat/widget/CSS) dall'overlay scelto.
-// Se l'overlay non ha uno stile proprio, usa quello di canale come default.
 function _applicaStileOverlay(ov) {
   const imp = impostazioni();
   const al = (ov && ov.stile && ov.stile.alerts) || imp.alerts.stile || {};
@@ -4323,7 +4005,6 @@ function _applicaStileOverlay(ov) {
   aggiornaAnteprima();
 }
 
-// --- anteprima dal vivo -------------------------------------------------
 function _anteprimaWidget(pref, id, nome) {
   const attivo = !!_g(`${pref}-attivo`)?.checked;
   const box = _g(`ap-${pref}`);
@@ -4347,8 +4028,7 @@ function aggiornaAnteprima() {
     _setVars(card, { '--acc': acc, '--bg': st.sfondo, '--op': st.opacita + '%', '--fg': st.testo, '--radius': st.bordoRaggio + 'px', '--border': st.bordoSpessore + 'px', '--size': st.dimTesto + 'px', '--font': fontStile(st) });
     _g('ap-alert-ico').innerHTML = AP_ICO_ALERT;
     _g('ap-alert-testo').innerHTML = L('<b>MarioRossi</b> si è abbonato!', '<b>MarioRossi</b> subscribed!', '¡<b>MarioRossi</b> se ha suscrito!');
-    // niente re-animazione a ogni tasto: l'anteprima resta stabile (l'entrata
-    // vera si vede con «Prova ▶» o nell'overlay). Prima "sfarfallava".
+
     card.classList.add('dentro');
   }
   const cst = _leggiChatStile();
@@ -4360,21 +4040,20 @@ function aggiornaAnteprima() {
       const cu = cst.username === 'twitch' ? col : cst.username;
       return `<div class="chat-riga dim-${cst.dim}${cst.ombra ? ' ombra' : ''}${cst.grassettoUser ? ' user-bold' : ''} dentro" style="--bg:${cst.sfondo};--op:${cst.opacita}%;--fg:${cst.testo};--radius:${cst.bordoRaggio}px;--font:${fontStile(cst)}"><span class="chat-user" style="color:${cu}">${esc(u)}</span> ${esc(t)}</div>`;
     }).join('');
-    _iniettaManiglie('chat');   // l'innerHTML qui sopra le rimuove: le rimettiamo
+    _iniettaManiglie('chat');
   }
   _anteprimaWidget('wf', 'ultimoFollower', 'MarioRossi');
   _anteprimaWidget('ws', 'ultimoSub', 'GiadaTTV');
-  // posiziona nel palco 1920x1080 (posizione libera dal drag, oppure l'angolo scelto)
+
   _posElemento(_g('ap-alert'), posXY.alert || _defPos('alert'));
   _posElemento(_g('ap-chat'), posXY.chat || _defPos('chat'));
   _posElemento(_g('ap-wf'), posXY.wf || _defPos('wf'));
   _posElemento(_g('ap-ws'), posXY.ws || _defPos('ws'));
-  // nascondi nell'anteprima ciò che QUESTO overlay non mostra
+
   if (_g('ap-alert')) _g('ap-alert').style.display = mostraChk('alert') ? '' : 'none';
   if (_g('ap-chat')) _g('ap-chat').style.display = mostraChk('chat') ? '' : 'none';
 }
 
-// posizione di default (in %) di un elemento in base all'angolo/posizione scelta.
 function _cornerXY(c) { return ({ 'alto-sinistra': { x: 13, y: 15 }, 'alto-destra': { x: 87, y: 15 }, 'basso-sinistra': { x: 13, y: 85 }, 'basso-destra': { x: 87, y: 85 } })[c] || { x: 87, y: 85 }; }
 function _defPos(k) {
   if (k === 'alert') return ({ 'alto-centro': { x: 50, y: 16 }, centro: { x: 50, y: 50 }, 'basso-centro': { x: 50, y: 84 } })[_v('al-pos') || 'alto-centro'] || { x: 50, y: 16 };
@@ -4382,26 +4061,19 @@ function _defPos(k) {
   return _cornerXY(_v(`${k}-pos`) || 'basso-destra');
 }
 
-// Posiziona un elemento nel palco 1920x1080 (coordinate in % → left/top) con
-// ancoraggio CONSAPEVOLE della posizione: translate(-x%,-y%) tiene l'elemento
-// sempre dentro al palco (identico all'overlay → anteprima fedele). Applica anche
-// DIMENSIONE (s = scala %) e ROTAZIONE (r = gradi).
 function _posElemento(el, xy) {
   if (!el || !xy) return;
   const sf = (Number(xy.s) || 100) / 100, r = Number(xy.r) || 0;
   el.style.position = 'absolute'; el.style.left = xy.x + '%'; el.style.top = xy.y + '%';
   el.style.right = 'auto'; el.style.bottom = 'auto';
   el.style.transform = `translate(${-xy.x}%,${-xy.y}%) scale(${sf}) rotate(${r}deg)`;
-  // le maniglie sono figlie dell'elemento: contro-scala così restano usabili
+
   el.querySelectorAll('.ap-handle').forEach((h) => { h.style.transform = `scale(${1 / sf})`; });
 }
 
-// Nomi leggibili degli elementi (mostrati nell'inspector).
 const NOMI_EL = () => ({ alert: L('Alert', 'Alert', 'Alerta'), chat: L('Chat a schermo', 'On-screen chat', 'Chat en pantalla'), wf: L('Widget: ultimo follower', 'Widget: latest follower', 'Widget: último seguidor'), ws: L('Widget: ultimo sub', 'Widget: latest sub', 'Widget: último sub') });
-let selezione = null;   // elemento selezionato nell'editor ('alert'|'chat'|'wf'|'ws')
+let selezione = null;
 
-// Ritorna (creandolo se serve) lo stato {x,y,s,r} di un elemento: dal drag/scala
-// o, se ancora "all'angolo", materializzato dalla posizione di default.
 function _statoXY(chiave) {
   if (!posXY[chiave]) posXY[chiave] = { ..._defPos(chiave) };
   const st = posXY[chiave];
@@ -4410,7 +4082,6 @@ function _statoXY(chiave) {
   return st;
 }
 
-// Selezione: evidenzia l'elemento e mostra l'inspector (dimensione/rotazione).
 function seleziona(chiave) {
   selezione = chiave;
   ['alert', 'chat', 'wf', 'ws'].forEach((k) => _g('ap-' + k)?.classList.toggle('sel', k === chiave));
@@ -4432,14 +4103,12 @@ function aggiornaInspector() {
   if (rt) { rt.value = st.r; _g('insp-rot-val').textContent = st.r + '°'; }
 }
 
-// Salvataggio posizione/scala/rotazione con antirimbalzo (rotellina/cursori).
 let _timerPos = null;
 function _salvaPosDebounced(chiave) {
   clearTimeout(_timerPos);
   _timerPos = setTimeout(() => _salvaPos(chiave), 500);
 }
 
-// Inietta le maniglie (ridimensiona ⤡ + ruota ⟳) in un elemento e le collega.
 function _iniettaManiglie(chiave) {
   const el = _g('ap-' + chiave);
   if (!el || el.querySelector('.ap-handle')) return;
@@ -4452,9 +4121,6 @@ function _iniettaManiglie(chiave) {
   hRot.addEventListener('pointerdown', (e) => _dragManiglia(chiave, e, 'ruota'));
 }
 
-// Drag di una maniglia: math in coordinate SCHERMO (robusta alla scala del palco).
-//  · scala → rapporto tra la distanza dal centro ora e all'inizio
-//  · ruota → angolo dal centro verso il puntatore (la maniglia sta in alto)
 function _dragManiglia(chiave, e, tipo) {
   e.preventDefault(); e.stopPropagation();
   const el = _g('ap-' + chiave);
@@ -4479,7 +4145,6 @@ function _dragManiglia(chiave, e, tipo) {
   window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
 }
 
-// Scala il palco 1920x1080 per riempire esattamente il riquadro 16:9 dell'anteprima.
 function scalaAnteprima() {
   const canvas = _g('ovl-preview'), stage = _g('ap-stage');
   if (!canvas || !stage) return;
@@ -4487,9 +4152,6 @@ function scalaAnteprima() {
   if (w) stage.style.transform = 'scale(' + (w / 1920) + ')';
 }
 
-// Rende un elemento dell'anteprima MANIPOLABILE (WYSIWYG): clic per selezionare,
-// trascina per spostare, rotellina per ridimensionare (Shift = ruota), maniglie
-// per scala/rotazione. Doppio clic = ripristina (posizione, dimensione, rotazione).
 function rendiTrascinabile(el, chiave) {
   if (!el) return;
   el.style.cursor = 'grab';
@@ -4497,17 +4159,15 @@ function rendiTrascinabile(el, chiave) {
   _iniettaManiglie(chiave);
   el.addEventListener('pointerdown', (e) => {
     if (e.button != null && e.button !== 0) return;
-    if (e.target?.classList?.contains('ap-handle')) return;   // le maniglie fanno da sé
+    if (e.target?.classList?.contains('ap-handle')) return;
     e.preventDefault();
     seleziona(chiave);
     const canvas = _g('ovl-preview').getBoundingClientRect();
-    try { el.setPointerCapture(e.pointerId); } catch (_) { /* niente */ }
+    try { el.setPointerCapture(e.pointerId); } catch (_) {  }
     el.style.cursor = 'grabbing';
     const st = _statoXY(chiave);
     const move = (ev) => {
-      // LIMITI 16:9: l'elemento non può uscire dal riquadro. Clampa il centro
-      // tenendo conto del suo ingombro (metà larghezza/altezza in % del palco),
-      // così il bordo resta sempre dentro l'anteprima (e quindi lo schermo).
+
       const er = el.getBoundingClientRect();
       const hw = Math.min(50, (er.width / 2) / canvas.width * 100);
       const hh = Math.min(50, (er.height / 2) / canvas.height * 100);
@@ -4532,17 +4192,13 @@ function rendiTrascinabile(el, chiave) {
 }
 
 function _salvaPos() {
-  // le posizioni (alert/chat/wf/ws) appartengono all'OVERLAY selezionato
+
   return salvaLayoutOverlay(true);
 }
 
-// --- template -----------------------------------------------------------
 const _imposta = (id, val) => { const e = _g(id); if (e && val != null) { if (e.type === 'checkbox') e.checked = !!val; else e.value = val; } };
 const _impostaEl = (e, val) => { if (e && val != null) { if (e.type === 'checkbox') e.checked = !!val; else e.value = val; } };
 
-// Applica un template. Due formati:
-//  - "seme" pronto { al, ch, acc }: cambia solo il LOOK (colori/font/forma).
-//  - snapshot COMPLETO { alerts, chatOverlay, overlayWidget, overlayCss }: ripristina tutto.
 function applicaTemplate(d) {
   if (!d) return;
   if (d.alerts || d.chatOverlay || d.overlayWidget || d.overlayCss != null) {
@@ -4561,7 +4217,6 @@ function applicaTemplate(d) {
   aggiornaAnteprima();
 }
 
-// Riempie TUTTI i controlli dallo snapshot completo di un template.
 function _riempiConfig(d) {
   const a = d.alerts || {}, ast = a.stile || {};
   _imposta('al-attivo', a.attivo); _imposta('al-pos', a.posizione); if (a.durata) _imposta('al-durata', Math.round(a.durata / 1000));
@@ -4576,8 +4231,8 @@ function _riempiConfig(d) {
     _impostaEl(b.querySelector('.al-font'), c.font || ''); _impostaEl(b.querySelector('.al-vol'), c.volume != null ? c.volume : 100);
     const sog = b.querySelector('.al-soglia'); if (sog) _impostaEl(sog, c.minBits != null ? c.minBits : c.minViewers);
   });
-  // popola i menu Suono/Immagine-Video con la libreria Effetti & suoni
-  api('/api/streamer/effetti').then((r) => popolaMediaSuoniAlert(r.effetti || [], a)).catch(() => { /* niente */ });
+
+  api('/api/streamer/effetti').then((r) => popolaMediaSuoniAlert(r.effetti || [], a)).catch(() => {  });
   const ch = d.chatOverlay || {}, cst = ch.stile || {};
   _imposta('co-attivo', ch.attivo); _imposta('co-pos', ch.posizione); _imposta('co-max', ch.max); _imposta('co-fade', ch.fadeSec);
   _imposta('co-st-dim', cst.dim); _imposta('co-st-font', cst.font); _imposta('co-st-gfont', cst.googleFont); _imposta('co-st-anim', cst.animazione); _imposta('co-st-larg', cst.larghezza);
@@ -4595,7 +4250,6 @@ function _riempiConfig(d) {
   if (d.overlayCss != null) _imposta('ovl-css', d.overlayCss);
 }
 
-// Salva il look ATTUALE (completo) come template personale.
 async function salvaComeTemplate() {
   const nome = (prompt(L('Nome del template:', 'Template name:', 'Nombre de la plantilla:')) || '').trim();
   if (!nome) return;
@@ -4617,7 +4271,6 @@ async function eliminaTemplate() {
   _rigeneraTemplateSelect(templates);
 }
 
-// Ricostruisce le <option> del menu template (pronti + i miei).
 function _rigeneraTemplateSelect(templates, selNome) {
   const sel = _g('ovl-tpl');
   if (!sel) return;
@@ -4626,7 +4279,6 @@ function _rigeneraTemplateSelect(templates, selNome) {
   sel.innerHTML = `<optgroup label="${L('Pronti', 'Ready-made', 'Listos')}">${pronti}</optgroup>` + (templates.length ? `<optgroup label="${L('I miei', 'Mine', 'Los míos')}">${miei}</optgroup>` : '');
 }
 
-// --- gestione PIÙ OVERLAY (ognuno un link + un layout) ------------------
 async function caricaOverlays() {
   try { const d = await api('/api/streamer/overlays'); overlays = Array.isArray(d.overlays) ? d.overlays : []; }
   catch { overlays = []; }
@@ -4639,24 +4291,23 @@ function _rigeneraSelOverlay() {
   const sel = _g('ov-sel'); if (!sel) return;
   sel.innerHTML = overlays.map((o) => `<option value="${esc(o.id)}"${o.id === overlaySel ? ' selected' : ''}>${esc(o.nome)}</option>`).join('');
 }
-// carica nell'editor il layout dell'overlay selezionato (posizioni + cosa mostra + link)
+
 function caricaOverlaySel() {
   const ov = overlays.find((o) => o.id === overlaySel) || overlays[0];
   if (!ov) return;
   posXY = { alert: ov.xy?.alert || null, chat: ov.xy?.chat || null, wf: ov.xy?.wf || null, ws: ov.xy?.ws || null };
   ['alert', 'chat', 'wf', 'ws', 'effetti'].forEach((k) => { const c = _g('mostra-' + k); if (c) c.checked = ov.mostra?.[k] !== false; });
   const i = _g('inp-overlay-url'); if (i) i.value = ov.url || '';
-  _applicaStileOverlay(ov);   // Opzione B: carica anche l'ASPETTO proprio di questo overlay
+  _applicaStileOverlay(ov);
   deseleziona();
   aggiornaAnteprima();
 }
-// payload "pulito" degli overlay per il salvataggio (senza url, che è calcolato)
+
 function _overlaysPayload() {
-  // `stile` = aspetto proprio dell'overlay (Opzione B): va SEMPRE conservato, così
-  // un salvataggio di layout/rinomina/nuovo non azzera lo stile per-overlay.
+
   return overlays.map((o) => ({ id: o.id, nome: o.nome, mostra: o.mostra, xy: o.xy, css: o.css || '', stile: o.stile || null }));
 }
-// salva il layout (posizioni + cosa mostra) dell'overlay selezionato
+
 async function salvaLayoutOverlay(silenzioso) {
   const ov = overlays.find((o) => o.id === overlaySel);
   if (!ov) return;
@@ -4669,13 +4320,13 @@ async function nuovoOverlay() {
   const nome = (prompt(L('Nome del nuovo overlay:', 'New overlay name:', 'Nombre del nuevo overlay:')) || '').trim();
   if (!nome) return;
   const id = 'ov' + Math.random().toString(36).slice(2, 8);
-  // parte dall'aspetto dell'overlay attuale (così i nuovi non nascono "spogli")
+
   const corr = overlays.find((o) => o.id === overlaySel);
   const seedStile = corr && corr.stile ? JSON.parse(JSON.stringify(corr.stile)) : null;
   overlays.push({ id, nome, mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true }, xy: {}, css: (corr && corr.css) || '', stile: seedStile });
   overlaySel = id;
   await salvaImpostazioni({ overlays: _overlaysPayload() }, null);
-  await caricaOverlays();                 // ricarica per avere il link dal server
+  await caricaOverlays();
   toast(L('Overlay creato ✓', 'Overlay created ✓', 'Overlay creado ✓'));
 }
 async function rinominaOverlay() {
@@ -4696,28 +4347,25 @@ async function eliminaOverlay() {
   toast(L('Overlay eliminato.', 'Overlay deleted.', 'Overlay eliminado.'));
 }
 
-// Salva TUTTO l'overlay in un colpo: aspetto (alert, chat, widget, CSS) + il
-// layout (posizioni e "cosa mostra"). L'aspetto è di QUESTO overlay; i testi/
-// comportamenti restano condivisi (li salva sul canale senza toccarne il look).
 async function salvaTuttoOverlay() {
   await _salvaOverlayCorrente(L('Overlay salvato ✓', 'Overlay saved ✓', 'Overlay guardado ✓'), true);
 }
 
 function caricaAlert() {
   const scheda = _g('scheda-alert');
-  // posizioni libere iniziali (dal salvataggio) + elementi trascinabili
+
   const imp = impostazioni();
   posXY = { alert: imp.alerts.xy || null, chat: imp.chatOverlay.xy || null,
     wf: imp.overlayWidget.ultimoFollower.xy || null, ws: imp.overlayWidget.ultimoSub.xy || null };
   ['ap-alert', 'ap-chat', 'ap-wf', 'ap-ws'].forEach((id) => rendiTrascinabile(_g(id), id.replace('ap-', '')));
-  // PIÙ OVERLAY: carica la lista, il selettore e il layout dell'overlay scelto
+
   caricaOverlays();
   _g('ov-sel')?.addEventListener('change', (e) => { overlaySel = e.target.value; caricaOverlaySel(); });
   _g('ov-nuovo')?.addEventListener('click', () => conErrore(() => nuovoOverlay()));
   _g('ov-rinomina')?.addEventListener('click', () => conErrore(() => rinominaOverlay()));
   _g('ov-elimina')?.addEventListener('click', () => conErrore(() => eliminaOverlay()));
   ['alert', 'chat', 'wf', 'ws', 'effetti'].forEach((k) => _g('mostra-' + k)?.addEventListener('change', () => { aggiornaAnteprima(); salvaLayoutOverlay(true); }));
-  // «Modifica» su un elemento: apre la sua sezione (o va alla scheda Effetti)
+
   scheda?.addEventListener('click', (e) => {
     const b = e.target.closest('[data-apri-sez]'); if (!b) return;
     const s = b.dataset.apriSez;
@@ -4725,7 +4373,7 @@ function caricaAlert() {
     const det = _g(s);
     if (det) { det.open = true; det.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'start' }); }
   });
-  // inspector: cursori dimensione/rotazione dell'elemento selezionato
+
   _g('insp-size')?.addEventListener('input', (e) => {
     if (!selezione) return;
     const st = _statoXY(selezione); st.s = Math.max(30, Math.min(300, Number(e.target.value) || 100));
@@ -4740,11 +4388,11 @@ function caricaAlert() {
     if (!selezione) return;
     const k = selezione; posXY[k] = null; aggiornaAnteprima(); aggiornaInspector(); _salvaPos(k);
   });
-  // clic sul palco "vuoto" (non su un elemento) = deseleziona
+
   _g('ovl-preview')?.addEventListener('pointerdown', (e) => {
     if (e.target?.id === 'ovl-preview' || e.target?.id === 'ap-stage') deseleziona();
   });
-  // anteprima dal vivo: qualsiasi cambiamento aggiorna la preview + le etichette dei range
+
   scheda?.addEventListener('input', (e) => {
     const t = e.target;
     if (t.type === 'range') {
@@ -4754,8 +4402,7 @@ function caricaAlert() {
     aggiornaAnteprima();
   });
   scheda?.addEventListener('change', () => aggiornaAnteprima());
-  // scala il palco 16:9 in modo affidabile: un ResizeObserver riscala ogni volta
-  // che il riquadro ottiene/cambia larghezza (anche quando la scheda diventa visibile).
+
   const canvas = _g('ovl-preview');
   if (canvas && !canvas._ro && typeof ResizeObserver !== 'undefined') {
     const ro = new ResizeObserver(() => scalaAnteprima());
@@ -4768,20 +4415,20 @@ function caricaAlert() {
   _g('co-salva')?.addEventListener('click', () => conErrore(() => salvaChatOverlay()));
   _g('wid-salva')?.addEventListener('click', () => conErrore(() => salvaWidget()));
   _g('ovl-salva-tutto')?.addEventListener('click', () => conErrore(() => salvaTuttoOverlay()));
-  // font Google: anteprima del nome scritto nel font stesso (più intuitivo)
+
   ['al-st-gfont', 'co-st-gfont'].forEach((id) => {
     const el = _g(id); if (!el) return;
     const upd = () => { el.style.fontFamily = fontGoogleDash(el.value) || ''; };
     el.addEventListener('input', upd); upd();
   });
-  // "Sfoglia i font": apre l'elenco Google con ANTEPRIMA (ogni font nel suo font)
+
   document.querySelectorAll('.sfoglia-font').forEach((btn) => btn.addEventListener('click', () => {
     const box = _g(btn.dataset.box); if (!box) return;
     box.hidden = !box.hidden;
     btn.textContent = box.hidden ? 'Sfoglia i font' : '▲ Chiudi elenco';
     if (!box.hidden && !box._montato) { box._montato = true; montaFontBrowser(box, btn.dataset.target); }
   }));
-  // ✕ = togli il font Google (torna al menu)
+
   document.querySelectorAll('.gfont-x').forEach((btn) => btn.addEventListener('click', () => {
     const inp = _g(btn.dataset.target); if (inp) { inp.value = ''; inp.dispatchEvent(new Event('input', { bubbles: true })); }
   }));
@@ -4790,7 +4437,7 @@ function caricaAlert() {
   document.querySelectorAll('.al-prova').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
     await salvaAlert(true); await api('/api/alert/prova', { method: 'POST', body: { kind: b.dataset.kind } }); toast(L('Inviato all\'overlay ▶', 'Sent to the overlay ▶', 'Enviado al overlay ▶'));
   })));
-  // upload inline di suono / immagine-video direttamente dal blocco alert
+
   document.querySelectorAll('.al-btn-up').forEach((btn) => btn.addEventListener('click', () => {
     const inp = btn.parentElement.querySelector('.al-up'); if (inp) inp.click();
   }));
@@ -4816,8 +4463,6 @@ function caricaAlert() {
   _g('ovl-tpl-salva')?.addEventListener('click', () => conErrore(() => salvaComeTemplate()));
   _g('ovl-tpl-elimina')?.addEventListener('click', () => conErrore(() => eliminaTemplate()));
 }
-
-// --- scheda Regia (Vai live) --------------------------------------------
 
 function pannelloRegia() {
   return pannello('regia', `
@@ -4921,7 +4566,6 @@ async function caricaRegia() {
   let d;
   try { d = await api('/api/streamer/regia'); } catch (e) { box.innerHTML = `<p class="vuoto">${L('Errore:', 'Error:', 'Error:')} ${esc(e.message)}</p>`; return; }
 
-  // banner permessi mancanti → link per ri-concederli
   const p = d.permessi || {};
   const mancanti = [];
   if (!p.broadcast) mancanti.push(L('gestione canale (titolo/categoria/marker)', 'manage channel (title/category/marker)', 'gestión del canal (título/categoría/marcador)'));
@@ -4950,7 +4594,6 @@ async function caricaRegia() {
   _regiaGameId = d.canale?.gameId || '';
   const sel = document.getElementById('regia-gioco-sel'); if (sel) sel.textContent = d.canale?.gameName || L('— nessuna —', '— none —', '— ninguna —');
 
-  // nascondi le azioni per cui manca il permesso
   const adBox = document.getElementById('regia-ad-box'); if (adBox) adBox.style.display = p.commercial ? '' : 'none';
   const raidBox = document.getElementById('regia-raid-box'); if (raidBox) raidBox.style.display = p.raid ? '' : 'none';
 }
@@ -4981,8 +4624,6 @@ async function salvaRegiaCanale() {
   await api('/api/streamer/regia/canale', { method: 'POST', body });
   toast(L('Info canale aggiornate ✓', 'Channel info updated ✓', 'Info del canal actualizada ✓'));
 }
-
-// --- scheda Studio Web (vai live dal browser, senza OBS) ----------------
 
 function pannelloStudio() {
   return pannello('studio', `
@@ -5093,17 +4734,6 @@ function pannelloStudio() {
     <input type="file" id="studio-file" accept="image/*,video/*" hidden>`);
 }
 
-// stato del motore studio (lato browser)
-// Motore Studio: modello "vero studio" simile a OBS —
-//   Scene → Fonti (webcam, schermo, immagine, video, testo, overlay).
-// Ogni fonte ha una trasformazione (x,y,w,h in coordinate del palco 1280×720),
-// visibilità e ordine (l'ordine nell'array = z-order: la prima è dietro).
-// Le catture (webcam/schermo/mic) sono GLOBALI e condivise tra le scene.
-// Preset di qualità: la RISOLUZIONE è la dimensione del canvas (ffmpeg fa
-// passthrough lato server); più risoluzione/fps ⇒ più bitrate. Le chiavi devono
-// combaciare con QUALITA in src/features/studio.js. "2K" = 1440p. Il sistema di
-// coordinate del palco resta SEMPRE logico 1280×720 (le fonti non cambiano):
-// il canvas viene solo scalato al output scelto in studioDisegna.
 const STUDIO_QUAL = {
   '720p30':  { w: 1280, h: 720,  fps: 30, vbps: 4500000 },
   '1080p30': { w: 1920, h: 1080, fps: 30, vbps: 6000000 },
@@ -5114,11 +4744,11 @@ const STUDIO_QUAL = {
 
 const STUDIO = {
   cap: { camStream: null, camEl: null, scrStream: null, scrEl: null, micStream: null },
-  media: {},               // dataId → { el, tipo, url } per immagini/video caricati
-  scene: [],               // [{ id, nome, fonti: [fonte…] }]
-  attiva: 0,               // indice della scena attiva
-  sel: null,               // id della fonte selezionata sul palco
-  _n: 1,                   // contatore per id univoci
+  media: {},
+  scene: [],
+  attiva: 0,
+  sel: null,
+  _n: 1,
   canvas: null, ctx: null, raf: 0,
   audio: null, rec: null, live: false, startedAt: 0, timer: 0,
   coda: [], inviando: false,
@@ -5127,16 +4757,15 @@ const STUDIO = {
   mix: { master: { vol: 100, mute: false }, mic: { vol: 100, mute: false }, desk: { vol: 100, mute: false }, media: { vol: 100, mute: false }, sfx: { vol: 100, mute: false } },
   vuRaf: 0, libero: false,
   drag: null, addTipo: null, _wired: false,
-  // NEW: ingressi selezionabili, qualità, overlay scelto, chat+emote
+
   qual: '720p30',
-  dev: { cams: [], mics: [], camId: '', micId: '', facing: '' },   // dispositivi audio/video
-  ov: { list: [], sel: '', mostra: null, xy: null, key: '' },       // overlay dell'Overlay Studio
-  emote: {},               // codice → url (7TV globali+canale), da /overlay/<login>/emotes
-  emoteImg: {},            // url → HTMLImageElement precaricata (per il canvas)
-  chatFeed: [],            // pannello chat live (DOM): [{user,colore,tokens}]
+  dev: { cams: [], mics: [], camId: '', micId: '', facing: '' },
+  ov: { list: [], sel: '', mostra: null, xy: null, key: '' },
+  emote: {},
+  emoteImg: {},
+  chatFeed: [],
 };
 
-// Etichetta del tipo di fonte, risolta al momento della creazione (non a load).
 const studioEtichetta = (tipo) => ({ webcam: 'Webcam', schermo: L('Schermo', 'Screen', 'Pantalla'), immagine: L('Immagine', 'Image', 'Imagen'), video: 'Video', testo: L('Testo', 'Text', 'Texto'), overlay: 'Overlay' }[tipo] || tipo);
 const studioClamp = (v, a, b) => Math.max(a, Math.min(b, v));
 function studioSceneAttiva() { return STUDIO.scene[STUDIO.attiva] || null; }
@@ -5151,33 +4780,28 @@ function avviaLoopStudio() {
   if (STUDIO.ctx && !STUDIO.raf) studioDisegna();
 }
 
-// Disegna la scena attiva: ogni fonte visibile, dalla più dietro alla più avanti.
-// Il palco è SEMPRE in coordinate logiche 1280×720; il canvas può però avere una
-// risoluzione di output più alta (1080p/2K): scaliamo il contesto una volta per
-// frame così tutto il resto del codice continua a ragionare in 1280×720.
 function studioDisegna() {
   const c = STUDIO.ctx; if (!c) { STUDIO.raf = 0; return; }
   const cw = STUDIO.canvas.width, ch = STUDIO.canvas.height;
-  c.setTransform(cw / 1280, 0, 0, ch / 720, 0, 0);   // reset+scala (niente accumulo)
+  c.setTransform(cw / 1280, 0, 0, ch / 720, 0, 0);
   c.fillStyle = '#0b0b0f'; c.fillRect(0, 0, 1280, 720);
   const s = studioSceneAttiva();
   if (s) for (const f of s.fonti) { if (f.visibile) disegnaFonte(c, f, 1280, 720); }
   STUDIO.raf = requestAnimationFrame(studioDisegna);
 }
 
-// "cover": riempie il riquadro ritagliando l'eccesso (webcam/schermo/video).
 function studioCover(c, el, x, y, w, h) {
   const vw = el.videoWidth || el.naturalWidth, vh = el.videoHeight || el.naturalHeight; if (!vw) return;
   const r = Math.max(w / vw, h / vh), dw = vw * r, dh = vh * r;
   c.save(); c.beginPath(); c.rect(x, y, w, h); c.clip();
-  try { c.drawImage(el, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh); } catch (e) { /* frame non pronto */ }
+  try { c.drawImage(el, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh); } catch (e) {  }
   c.restore();
 }
-// "contain": mostra tutta l'immagine dentro il riquadro (loghi/immagini).
+
 function studioContain(c, el, x, y, w, h) {
   const vw = el.videoWidth || el.naturalWidth, vh = el.videoHeight || el.naturalHeight; if (!vw) return;
   const r = Math.min(w / vw, h / vh), dw = vw * r, dh = vh * r;
-  try { c.drawImage(el, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh); } catch (e) { /* niente */ }
+  try { c.drawImage(el, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh); } catch (e) {  }
 }
 
 function disegnaFonte(c, f, W, H) {
@@ -5203,10 +4827,9 @@ function disegnaTestoFonte(c, f) {
 
 function disegnaOverlayStudio(c, W, H) {
   const now = Date.now(), ov = STUDIO.overlay, mostra = STUDIO.ov.mostra;
-  // se ho letto il "tema" dell'overlay scelto, rispetto cosa mostrare; altrimenti tutto
+
   const puoi = (k) => !mostra || mostra[k] !== false;
 
-  // effetti (immagini/video a schermo)
   ov.fx = ov.fx.filter((f) => f.until > now);
   if (puoi('effetti')) for (const f of ov.fx) {
     const el = f.el; const vw = el && (el.videoWidth || el.naturalWidth), vh = el && (el.videoHeight || el.naturalHeight);
@@ -5214,10 +4837,9 @@ function disegnaOverlayStudio(c, W, H) {
     const scale = (W * 0.35) / vw, w = vw * scale, h = vh * scale;
     const x = (f.x != null ? f.x / 100 * W : W / 2) - w / 2;
     const y = (f.y != null ? f.y / 100 * H : H / 2) - h / 2;
-    try { c.drawImage(el, x, y, w, h); } catch (e) { /* niente */ }
+    try { c.drawImage(el, x, y, w, h); } catch (e) {  }
   }
 
-  // chat a schermo CON EMOTE (posizione dal tema dell'overlay, se presente)
   ov.chat = ov.chat.filter((m) => m.until > now);
   if (puoi('chat')) {
     const chat = ov.chat.slice(-6);
@@ -5230,7 +4852,6 @@ function disegnaOverlayStudio(c, W, H) {
     });
   }
 
-  // alert
   if (ov.alert && ov.alert.until <= now) ov.alert = null;
   else if (ov.alert && puoi('alert')) {
     const a = ov.alert;
@@ -5240,14 +4861,12 @@ function disegnaOverlayStudio(c, W, H) {
     if (a.el && (a.el.naturalWidth || a.el.videoWidth)) {
       const vw = a.el.videoWidth || a.el.naturalWidth, vh = a.el.videoHeight || a.el.naturalHeight;
       const scale = (W * 0.26) / vw, w = vw * scale, h = vh * scale;
-      try { c.drawImage(a.el, (W - w) / 2, 96, w, h); } catch (e) { /* niente */ }
+      try { c.drawImage(a.el, (W - w) / 2, 96, w, h); } catch (e) {  }
     }
     c.textAlign = 'left';
   }
 }
 
-// Disegna UNA riga di chat sul canvas: "utente: " + testo con EMOTE inline
-// (immagini 7TV/Twitch precaricate). Le emote non pronte ricadono sul testo.
 function studioDisegnaRigaChat(c, x, y, m, maxW) {
   const eh = 26;
   c.textAlign = 'left'; c.textBaseline = 'bottom';
@@ -5266,15 +4885,13 @@ function studioDisegnaRigaChat(c, x, y, m, maxW) {
       const img = STUDIO.emoteImg[tok.v];
       if (img && img.complete && (img.naturalWidth || img.width)) {
         const w = eh * ((img.naturalWidth || img.width) / (img.naturalHeight || img.height || 1));
-        try { c.drawImage(img, cx, y - eh, w, eh); } catch (e) { /* niente */ }
+        try { c.drawImage(img, cx, y - eh, w, eh); } catch (e) {  }
         cx += w + 4;
       } else txt((tok.raw || '') + ' ', '#fff');
     } else txt(tok.v, '#fff');
   }
 }
 
-// Spezza il testo in token testo/emote usando le emote 7TV del canale (STUDIO.emote)
-// e quelle NATIVE Twitch del messaggio (emotiTwitch). Precarica le immagini emote.
 function studioTokenizza(testo, emotiTwitch) {
   const pezzi = String(testo || '').split(/(\s+)/);
   const tokens = []; let buf = '';
@@ -5295,30 +4912,25 @@ function studioPrecaricaEmote(url) {
   STUDIO.emoteImg[url] = img;
 }
 
-// instrada un audio (effetto/alert) nel mix in diretta (così lo sentono anche gli
-// spettatori) e lo fa sentire allo streamer. Fuori diretta: play locale semplice.
 function suonaStudioSfx(url, volume) {
   try {
     const el = new Audio(url); el.crossOrigin = 'anonymous';
     if (volume != null) el.volume = Math.max(0, Math.min(1, Number(volume) / 100));
     const A = STUDIO.audio;
-    if (A) { try { const s = A.ac.createMediaElementSource(el); s.connect(A.gSfx); s.connect(A.ac.destination); } catch (e) { /* niente */ } }
+    if (A) { try { const s = A.ac.createMediaElementSource(el); s.connect(A.gSfx); s.connect(A.ac.destination); } catch (e) {  } }
     el.play().catch(() => {});
-  } catch (e) { /* niente */ }
+  } catch (e) {  }
 }
 
-// suono PRESET sintetizzato (presets.js): in diretta lo instradiamo nel mixer
-// (gSfx → stream) e nel monitor locale; fuori diretta suona sugli altoparlanti.
 function studioSuonaPreset(nome, volume) {
   try {
     const P = window.SUONI_PRESET; if (!P || !nome) return;
     const A = STUDIO.audio;
     const destino = A ? { ac: A.ac, nodi: [A.gSfx, A.ac.destination] } : null;
     P.suona(nome, volume != null ? volume : 100, destino);
-  } catch (e) { /* niente */ }
+  } catch (e) {  }
 }
 
-// aggiunge una riga al PANNELLO chat dello Studio (DOM, con emote come <img>)
 function studioChatPanelPush(d) {
   const box = document.getElementById('studio-chat'); if (!box) return;
   const attaccato = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
@@ -5333,11 +4945,11 @@ function studioChatPanelPush(d) {
   }
   box.appendChild(riga);
   while (box.childNodes.length > 80) box.removeChild(box.firstChild);
-  if (attaccato) box.scrollTop = box.scrollHeight;   // auto-scroll solo se già in fondo
+  if (attaccato) box.scrollTop = box.scrollHeight;
 }
 
 function studioSSE(sseUrl) {
-  if (STUDIO.sse) { try { STUDIO.sse.close(); } catch (e) { /* niente */ } }
+  if (STUDIO.sse) { try { STUDIO.sse.close(); } catch (e) {  } }
   let es; try { es = new EventSource(sseUrl); } catch (e) { return; }
   STUDIO.sse = es;
   es.onmessage = (ev) => {
@@ -5363,25 +4975,17 @@ function studioSSE(sseUrl) {
       }
       STUDIO.overlay.alert = a;
       if (d.suonoUrl) suonaStudioSfx(d.suonoUrl, d.volume);
-      else if (d.suono) studioSuonaPreset(d.suono, d.volume);   // alert con suono PRESET
+      else if (d.suono) studioSuonaPreset(d.suono, d.volume);
     } else if (d.tipo === 'chat') {
-      // chat "a schermo" dell'overlay: la disegniamo sul canvas con le emote
+
       STUDIO.overlay.chat.push({ user: d.user || '', colore: d.colore, testo: String(d.testo || ''), tokens: studioTokenizza(d.testo, d.emotiTwitch), until: now + 12000 });
     } else if (d.tipo === 'chat_raw') {
-      // feed ungated: alimenta SOLO il pannello chat dello Studio
+
       studioChatPanelPush(d);
     }
   };
 }
 
-// --- catture globali (condivise tra le scene) --------------------------------
-
-// Vincoli video: risoluzione/fps dalla qualità scelta + dispositivo selezionato
-// (deviceId) o, su mobile, fotocamera anteriore/posteriore (facingMode). Le
-// webcam raramente superano il 1080p: chiediamo al MASSIMO 1080p come "ideale"
-// — con un deviceId `exact`, un ideale troppo alto (es. 2K) su certe fotocamere
-// restituisce un frame nero. Sono comunque valori "ideal", quindi la cam sceglie
-// il modo migliore che riesce a fare.
 function studioVincoliVideo() {
   const q = STUDIO_QUAL[STUDIO.qual] || STUDIO_QUAL['720p30'];
   const hh = Math.min(q.h, 1080), ww = Math.round(hh * 16 / 9);
@@ -5401,26 +5005,22 @@ async function studioCapWebcam() {
   } catch (e) { toast(L('Webcam non disponibile: ', 'Webcam not available: ', 'Webcam no disponible: ') + e.message, 'errore'); return false; }
 }
 
-// Cambia la fotocamera in uso (dropdown "Ingressi"). ACQUISISCE PRIMA il nuovo
-// stream, POI ferma il vecchio: così se il nuovo fallisce (cam occupata, non
-// disponibile, permesso negato) NON restiamo con uno stream morto → niente
-// schermo nero. In caso di errore ripristina la fotocamera precedente.
 async function studioCambiaCamera(camId) {
   const precedente = STUDIO.dev.camId;
   STUDIO.dev.camId = camId || '';
-  if (!STUDIO.cap.camEl) { studioPopolaDispositivi(); return; }   // webcam non ancora attiva: il valore si userà all'attivazione
+  if (!STUDIO.cap.camEl) { studioPopolaDispositivi(); return; }
   const vecchioStream = STUDIO.cap.camStream;
   try {
     const nuovo = await navigator.mediaDevices.getUserMedia({ video: studioVincoliVideo(), audio: false });
     STUDIO.cap.camStream = nuovo;
     STUDIO.cap.camEl.srcObject = nuovo;
     await STUDIO.cap.camEl.play().catch(() => {});
-    try { vecchioStream && vecchioStream.getTracks().forEach((t) => t.stop()); } catch (e) { /* niente */ }
+    try { vecchioStream && vecchioStream.getTracks().forEach((t) => t.stop()); } catch (e) {  }
     studioPopolaDispositivi();
   } catch (e) {
-    // ripristina la fotocamera precedente: niente schermo nero
+
     STUDIO.dev.camId = precedente || '';
-    try { if (vecchioStream) { STUDIO.cap.camStream = vecchioStream; STUDIO.cap.camEl.srcObject = vecchioStream; STUDIO.cap.camEl.play().catch(() => {}); } } catch (e2) { /* niente */ }
+    try { if (vecchioStream) { STUDIO.cap.camStream = vecchioStream; STUDIO.cap.camEl.srcObject = vecchioStream; STUDIO.cap.camEl.play().catch(() => {}); } } catch (e2) {  }
     const cs = document.getElementById('studio-cam-sel'); if (cs) cs.value = STUDIO.dev.camId;
     toast(L('Questa fotocamera non è disponibile o è già in uso da un\'altra app.', 'This camera is unavailable or already in use by another app.', 'Esta cámara no está disponible o ya está en uso por otra app.'), 'errore');
   }
@@ -5454,9 +5054,6 @@ async function studioCapMic() {
   } catch (e) { toast(L('Microfono non disponibile: ', 'Microphone not available: ', 'Micrófono no disponible: ') + e.message, 'errore'); return false; }
 }
 
-// Cambia il microfono in uso: ACQUISISCE PRIMA il nuovo stream, poi rilascia il
-// vecchio e ricollega il nodo audio al mixer se siamo in diretta. In caso di
-// errore ripristina il microfono precedente (niente audio muto imprevisto).
 async function studioCambiaMic(micId) {
   const precedente = STUDIO.dev.micId;
   STUDIO.dev.micId = micId || '';
@@ -5465,9 +5062,9 @@ async function studioCambiaMic(micId) {
   try {
     const nuovo = await navigator.mediaDevices.getUserMedia({ audio: STUDIO.dev.micId ? { deviceId: { exact: STUDIO.dev.micId } } : true, video: false });
     const A = STUDIO.audio;
-    try { A && A.micNode && A.micNode.disconnect(); } catch (e) { /* niente */ }
+    try { A && A.micNode && A.micNode.disconnect(); } catch (e) {  }
     STUDIO.cap.micStream = nuovo;
-    try { vecchio.getTracks().forEach((t) => t.stop()); } catch (e) { /* niente */ }
+    try { vecchio.getTracks().forEach((t) => t.stop()); } catch (e) {  }
     if (A) { A.micNode = null; collegaAudioCatture(); applicaMix(); }
     studioPopolaDispositivi();
   } catch (e) {
@@ -5477,11 +5074,6 @@ async function studioCambiaMic(micId) {
   }
 }
 
-// --- ingressi (dispositivi), qualità, overlay, emote -------------------------
-
-// Enumera fotocamere e microfoni e popola i due <select> "Ingressi". Le
-// etichette diventano leggibili solo DOPO un primo getUserMedia concesso: per
-// questo lo richiamiamo dopo aver attivato webcam/mic.
 async function studioPopolaDispositivi() {
   try {
     if (!navigator.mediaDevices?.enumerateDevices) return;
@@ -5495,32 +5087,27 @@ async function studioPopolaDispositivi() {
     };
     riempi(document.getElementById('studio-cam-sel'), STUDIO.dev.cams, STUDIO.dev.camId, L('Fotocamera predefinita', 'Default camera', 'Cámara predeterminada'));
     riempi(document.getElementById('studio-mic-sel'), STUDIO.dev.mics, STUDIO.dev.micId, L('Microfono predefinito', 'Default microphone', 'Micrófono predeterminado'));
-  } catch (e) { /* niente */ }
+  } catch (e) {  }
 }
 
-// Applica un preset di qualità: cambia la risoluzione del CANVAS (l'output della
-// diretta). Non si può cambiare mentre si è in diretta (romperebbe la traccia).
 function studioApplicaQualita(key) {
   if (STUDIO.live) return;
   STUDIO.qual = STUDIO_QUAL[key] ? key : '720p30';
   const q = STUDIO_QUAL[STUDIO.qual];
   if (!STUDIO.canvas) { STUDIO.canvas = document.getElementById('studio-canvas'); STUDIO.ctx = STUDIO.canvas ? STUDIO.canvas.getContext('2d') : null; }
   if (STUDIO.canvas) { STUDIO.canvas.width = q.w; STUDIO.canvas.height = q.h; }
-  try { localStorage.setItem('andrybot-studio-qual:' + (stato?.user?.login || 'anon'), STUDIO.qual); } catch (e) { /* niente */ }
+  try { localStorage.setItem('andrybot-studio-qual:' + (stato?.user?.login || 'anon'), STUDIO.qual); } catch (e) {  }
 }
 
-// Carica la mappa emote del canale (7TV globali+canale) per la chat.
 async function studioCaricaEmote() {
   if (DEMO) return;
   const login = stato?.user?.login; if (!login) return;
   try {
     const r = await fetch(`/overlay/${encodeURIComponent(login)}/emotes`, { credentials: 'same-origin' });
     if (r.ok) { const m = await r.json(); if (m && typeof m === 'object') STUDIO.emote = m; }
-  } catch (e) { /* niente */ }
+  } catch (e) {  }
 }
 
-// Carica l'elenco degli overlay dello streamer (Overlay Studio) e popola il
-// <select> di scelta. Il primo diventa quello attivo di default.
 async function studioCaricaOverlays() {
   if (DEMO) return;
   try {
@@ -5533,28 +5120,25 @@ async function studioCaricaOverlays() {
       if (STUDIO.ov.list.length) { if (!STUDIO.ov.sel || !STUDIO.ov.list.some((o) => o.id === STUDIO.ov.sel)) STUDIO.ov.sel = STUDIO.ov.list[0].id; sel.value = STUDIO.ov.sel; }
     }
     await studioConnettiOverlay();
-  } catch (e) { /* niente */ }
+  } catch (e) {  }
 }
 
-// (Ri)connette il feed SSE all'overlay selezionato e ne legge il "tema"
-// (cosa mostrare / posizioni) così il canvas rispetta quell'overlay.
 async function studioConnettiOverlay() {
   if (DEMO) return;
   try {
     const ov = await api('/api/streamer/overlay-url');
     if (!ov.overlayUrl) return;
-    // overlayUrl = .../overlay/<login>?key=K → SSE = .../overlay/<login>/stream?key=K[&o=id]
+
     let sseUrl = ov.overlayUrl.replace('?key=', '/stream?key=');
     const id = STUDIO.ov.sel;
     if (id) sseUrl += (sseUrl.includes('?') ? '&' : '?') + 'o=' + encodeURIComponent(id);
     studioSSE(sseUrl);
-    // tema dell'overlay scelto: mostra/xy (quali widget e dove)
+
     const meta = STUDIO.ov.list.find((o) => o.id === id);
     if (meta) { STUDIO.ov.mostra = meta.mostra || null; STUDIO.ov.xy = meta.xy || null; }
-  } catch (e) { /* niente */ }
+  } catch (e) {  }
 }
 
-// --- aggiunta e gestione delle fonti -----------------------------------------
 function studioDefaultTrasf(tipo) {
   const W = 1280, H = 720;
   if (tipo === 'schermo' || tipo === 'overlay') return { x: 0, y: 0, w: W, h: H };
@@ -5576,7 +5160,7 @@ async function studioAggiungi(tipo) {
   if (tipo === 'webcam') { if (await studioCapWebcam()) studioAddFonte('webcam'); return; }
   if (tipo === 'schermo') { if (await studioCapSchermo()) studioAddFonte('schermo'); return; }
   if (tipo === 'immagine' || tipo === 'video') { studioScegliFile(tipo); return; }
-  studioAddFonte(tipo);   // testo, overlay
+  studioAddFonte(tipo);
 }
 
 function studioScegliFile(tipo) {
@@ -5593,7 +5177,7 @@ function studioFileScelto(file) {
   else el.src = url;
   STUDIO.media[dataId] = { el, tipo, url };
   studioAddFonte(tipo, { dataId, nome: (file.name || tipo).slice(0, 22) });
-  if (tipo === 'video' && STUDIO.live) { collegaAudioMedia(); renderStudioMixer(); }   // in diretta: instrada subito l'audio del nuovo video
+  if (tipo === 'video' && STUDIO.live) { collegaAudioMedia(); renderStudioMixer(); }
 }
 
 function studioSpostaFonte(id, dir) {
@@ -5617,7 +5201,6 @@ function studioFit(mode) {
   renderStudioTutto();
 }
 
-// Layout rapidi: dispone (e mostra/nasconde) le fonti webcam/schermo già presenti.
 function studioLayout(preset) {
   const s = studioSceneAttiva(); if (!s) return;
   const cam = s.fonti.find((f) => f.tipo === 'webcam'), scr = s.fonti.find((f) => f.tipo === 'schermo');
@@ -5634,10 +5217,6 @@ function studioLayout(preset) {
   renderStudioTutto();
 }
 
-// --- audio: mixer con guadagni per canale + master + VU-meter ----------------
-// Grafo: mic/schermo/effetti → gMaster → dest (traccia audio della diretta).
-// Un AnalyserNode per canale (post-fader) alimenta i VU-meter. I suoni SFX/preset
-// hanno anche un monitor locale diretto (in suonaStudioSfx/studioSuonaPreset).
 function studioAudioInit() {
   const AC = window.AudioContext || window.webkitAudioContext;
   const ac = new AC();
@@ -5656,14 +5235,10 @@ function studioAudioInit() {
 
 function collegaAudioCatture() {
   const A = STUDIO.audio; if (!A) return;
-  try { if (!A.micNode && STUDIO.cap.micStream && STUDIO.cap.micStream.getAudioTracks().length) { A.micNode = A.ac.createMediaStreamSource(STUDIO.cap.micStream); A.micNode.connect(A.gMic); } } catch (e) { /* niente */ }
-  try { if (!A.deskNode && STUDIO.cap.scrStream && STUDIO.cap.scrStream.getAudioTracks().length) { A.deskNode = A.ac.createMediaStreamSource(new MediaStream(STUDIO.cap.scrStream.getAudioTracks())); A.deskNode.connect(A.gDesk); } } catch (e) { /* niente */ }
+  try { if (!A.micNode && STUDIO.cap.micStream && STUDIO.cap.micStream.getAudioTracks().length) { A.micNode = A.ac.createMediaStreamSource(STUDIO.cap.micStream); A.micNode.connect(A.gMic); } } catch (e) {  }
+  try { if (!A.deskNode && STUDIO.cap.scrStream && STUDIO.cap.scrStream.getAudioTracks().length) { A.deskNode = A.ac.createMediaStreamSource(new MediaStream(STUDIO.cap.scrStream.getAudioTracks())); A.deskNode.connect(A.gDesk); } } catch (e) {  }
 }
 
-// Instrada l'audio dei VIDEO aggiunti come fonte nel canale "Media" del mix, così
-// lo sentono anche gli spettatori. Usa captureStream (ricreabile a ogni diretta,
-// senza il limite "una volta sola" di createMediaElementSource). Il video suona
-// anche in locale (elemento non mutato); il fader Media regola solo la diretta.
 function collegaAudioMedia() {
   const A = STUDIO.audio; if (!A || !A.gMedia || !A.mediaConnessi) return;
   for (const id of Object.keys(STUDIO.media)) {
@@ -5671,11 +5246,11 @@ function collegaAudioMedia() {
     if (!m || m.tipo !== 'video' || !m.el || A.mediaConnessi.has(id)) continue;
     try {
       const cap = m.el.captureStream ? m.el.captureStream() : (m.el.mozCaptureStream ? m.el.mozCaptureStream() : null);
-      if (!cap || !cap.getAudioTracks().length) { A.mediaConnessi.add(id); continue; }   // video senza audio
-      m.el.muted = false; m.el.volume = 1;   // suona in locale e viene catturato per lo stream
+      if (!cap || !cap.getAudioTracks().length) { A.mediaConnessi.add(id); continue; }
+      m.el.muted = false; m.el.volume = 1;
       A.ac.createMediaStreamSource(cap).connect(A.gMedia);
       A.mediaConnessi.add(id);
-    } catch (e) { /* niente */ }
+    } catch (e) {  }
   }
 }
 
@@ -5688,8 +5263,6 @@ function applicaMix() {
   if (A.gMaster) A.gMaster.gain.value = m.master.mute ? 0 : m.master.vol / 100;
 }
 
-// VU-meter: legge il livello (picco) di ogni canale dall'analyser e aggiorna le
-// barre. Gira solo in diretta (grafo audio presente); si ferma da solo allo stop.
 function avviaVU() {
   const A = STUDIO.audio; if (!A || !A.an) return;
   cancelAnimationFrame(STUDIO.vuRaf || 0);
@@ -5714,7 +5287,7 @@ async function avviaLive() {
   if (!s || !s.fonti.some((f) => f.visibile)) { toast(L('Aggiungi almeno una fonte visibile alla scena.', 'Add at least one visible source to the scene.', 'Añade al menos una fuente visible a la escena.'), 'errore'); return; }
   studioLog(L('Avvio…', 'Starting…', 'Iniciando…'));
   const q = STUDIO_QUAL[STUDIO.qual] || STUDIO_QUAL['720p30'];
-  studioApplicaQualita(STUDIO.qual);   // assicura che il canvas sia alla risoluzione scelta
+  studioApplicaQualita(STUDIO.qual);
   try { await api('/api/studio/start', { method: 'POST', body: { quality: STUDIO.qual } }); }
   catch (e) { studioLog('' + e.message); toast(L('Non riuscito: ', 'Failed: ', 'No se pudo: ') + e.message, 'errore'); return; }
   avviaLoopStudio();
@@ -5729,7 +5302,7 @@ async function avviaLive() {
   rec.ondataavailable = (e) => { if (e.data && e.data.size) { STUDIO.coda.push(e.data); drenaCodaStudio(); } };
   rec.start(1000);
   STUDIO.rec = rec; STUDIO.live = true; STUDIO.startedAt = Date.now();
-  studioRenderIO();   // blocca il cambio qualità durante la diretta
+  studioRenderIO();
   document.getElementById('studio-live').hidden = true;
   document.getElementById('studio-ferma').hidden = false;
   const badge = document.getElementById('studio-badge-live'); if (badge) badge.hidden = false;
@@ -5745,7 +5318,7 @@ async function drenaCodaStudio() {
     try {
       const buf = await blob.arrayBuffer();
       await fetch('/api/studio/chunk', { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: buf });
-    } catch (e) { /* pezzo perso: si continua */ }
+    } catch (e) {  }
   }
   STUDIO.inviando = false;
 }
@@ -5753,17 +5326,17 @@ async function drenaCodaStudio() {
 async function fermaLive() {
   if (!STUDIO.live) return;
   STUDIO.live = false;
-  try { STUDIO.rec && STUDIO.rec.stop(); } catch (e) { /* niente */ }
+  try { STUDIO.rec && STUDIO.rec.stop(); } catch (e) {  }
   clearInterval(STUDIO.timer);
-  try { await api('/api/studio/stop', { method: 'POST' }); } catch (e) { /* niente */ }
-  try { STUDIO.audio && STUDIO.audio.ac.close(); } catch (e) { /* niente */ }
+  try { await api('/api/studio/stop', { method: 'POST' }); } catch (e) {  }
+  try { STUDIO.audio && STUDIO.audio.ac.close(); } catch (e) {  }
   STUDIO.audio = null; STUDIO.coda = []; STUDIO.inviando = false;
-  // ri-muta i video sorgente (anteprima silenziosa fuori diretta)
-  for (const id in STUDIO.media) { const mm = STUDIO.media[id]; if (mm && mm.tipo === 'video' && mm.el) { try { mm.el.muted = true; } catch (e) { /* niente */ } } }
+
+  for (const id in STUDIO.media) { const mm = STUDIO.media[id]; if (mm && mm.tipo === 'video' && mm.el) { try { mm.el.muted = true; } catch (e) {  } } }
   document.getElementById('studio-live').hidden = false;
   document.getElementById('studio-ferma').hidden = true;
   const badge = document.getElementById('studio-badge-live'); if (badge) badge.hidden = true;
-  studioRenderIO();   // riabilita il cambio qualità
+  studioRenderIO();
   studioLog(L('Diretta terminata.', 'Stream ended.', 'Directo finalizado.'));
 }
 
@@ -5775,15 +5348,14 @@ function aggiornaTimerStudio() {
 
 async function caricaStudio() {
   if (!STUDIO.scene.length) studioNuovaScena('Scena 1');
-  // qualità salvata (per canale) → dimensiona subito il canvas
-  try { const q = localStorage.getItem('andrybot-studio-qual:' + (stato?.user?.login || 'anon')); if (q && STUDIO_QUAL[q]) STUDIO.qual = q; } catch (e) { /* niente */ }
+
+  try { const q = localStorage.getItem('andrybot-studio-qual:' + (stato?.user?.login || 'anon')); if (q && STUDIO_QUAL[q]) STUDIO.qual = q; } catch (e) {  }
   studioApplicaQualita(STUDIO.qual);
-  avviaLoopStudio();      // mostra il palco + le fonti in anteprima
+  avviaLoopStudio();
   renderStudioTutto();
-  studioRenderIO();       // selettori ingressi/qualità/overlay + pannello chat
-  studioInitRiordino();   // pannelli laterali trascinabili (ordine salvato)
-  // blindatura: i moderatori NON avviano la diretta (userebbero la stream key
-  // del proprietario). Il blocco vero è lato server; qui lo rendiamo evidente.
+  studioRenderIO();
+  studioInitRiordino();
+
   const modStudio = stato?.ruolo === 'moderatore';
   const btnLive = document.getElementById('studio-live');
   if (btnLive) { btnLive.disabled = modStudio; if (modStudio) btnLive.title = L('Solo il proprietario del canale può andare in diretta.', 'Only the channel owner can go live.', 'Solo el propietario del canal puede emitir.'); }
@@ -5798,25 +5370,23 @@ async function caricaStudio() {
         banner.innerHTML = '<p>' + _bIco(ICO.lucchetto) + 'Per andare live dallo Studio serve il permesso <strong>stream key</strong> (non ancora concesso).</p><p class="spazio-sopra"><a class="btn" href="/auth/permessi">Concedi i permessi</a></p>';
       } else banner.hidden = true;
     }
-    // selettore qualità popolato dalle qualità note al server
+
     if (Array.isArray(d.qualita) && d.qualita.length) {
       const qs = document.getElementById('studio-qual-sel');
       if (qs) { qs.innerHTML = d.qualita.map((q) => `<option value="${esc(q.id)}"${q.id === STUDIO.qual ? ' selected' : ''}>${esc(q.etichetta)}</option>`).join(''); }
     }
-  } catch (e) { /* niente */ }
-  // ingressi (dispositivi), overlay (SSE + tema), mappa emote per la chat
-  try { await studioPopolaDispositivi(); } catch (e) { /* niente */ }
-  try { await studioCaricaEmote(); } catch (e) { /* niente */ }
-  try { await studioCaricaOverlays(); } catch (e) { /* niente */ }
+  } catch (e) {  }
+
+  try { await studioPopolaDispositivi(); } catch (e) {  }
+  try { await studioCaricaEmote(); } catch (e) {  }
+  try { await studioCaricaOverlays(); } catch (e) {  }
   studioRenderIO();
 }
 
-// Sincronizza i selettori "Ingressi & qualità" con lo stato (valori correnti +
-// blocca il cambio qualità mentre si è in diretta, che romperebbe la traccia).
 function studioRenderIO() {
   const qs = document.getElementById('studio-qual-sel');
   if (qs) {
-    if (!qs.options.length) {   // fallback client (demo/offline) finché non arriva la lista dal server
+    if (!qs.options.length) {
       const et = { '720p30': '720p 30fps', '1080p30': '1080p 30fps', '1080p60': '1080p 60fps', '1440p30': '2K (1440p) 30fps', '1440p60': '2K (1440p) 60fps' };
       qs.innerHTML = Object.keys(STUDIO_QUAL).map((k) => `<option value="${k}">${et[k] || k}</option>`).join('');
     }
@@ -5827,9 +5397,6 @@ function studioRenderIO() {
   const os = document.getElementById('studio-ov-sel'); if (os && STUDIO.ov.sel) os.value = STUDIO.ov.sel;
 }
 
-// --- pannelli riarrangiabili (trascina per riordinare la colonna strumenti) --
-// Chiave stabile di ogni box (in base a un elemento interno riconoscibile), così
-// possiamo salvarne/ripristinarne l'ordine anche se l'HTML non ha id sui box.
 function studioBoxKey(box) {
   if (!box) return '';
   if (box.id === 'studio-prop-box') return 'prop';
@@ -5844,7 +5411,7 @@ function studioOrdineKey() { try { return 'andrybot-studio-ord:' + (stato?.user?
 function studioSalvaOrdinePannelli() {
   const side = document.querySelector('.studio-side'); if (!side) return;
   const ord = [...side.querySelectorAll(':scope > .studio-box')].map((b) => b.dataset.boxOrd).filter(Boolean);
-  try { localStorage.setItem(studioOrdineKey(), JSON.stringify(ord)); } catch (e) { /* niente */ }
+  try { localStorage.setItem(studioOrdineKey(), JSON.stringify(ord)); } catch (e) {  }
 }
 function studioApplicaOrdinePannelli() {
   const side = document.querySelector('.studio-side'); if (!side) return;
@@ -5852,7 +5419,7 @@ function studioApplicaOrdinePannelli() {
   if (!Array.isArray(ord) || !ord.length) return;
   for (const key of ord) { const b = side.querySelector(`:scope > .studio-box[data-box-ord="${key}"]`); if (b) side.appendChild(b); }
 }
-// --- layout libero: palco e pannelli flottanti trascinabili ovunque ----------
+
 function studioLiberoKey() { try { return 'andrybot-studio-poslib:' + (stato?.user?.login || 'anon'); } catch (e) { return 'andrybot-studio-poslib:anon'; } }
 function studioLiberoModeKey() { try { return 'andrybot-studio-libero:' + (stato?.user?.login || 'anon'); } catch (e) { return 'andrybot-studio-libero:anon'; } }
 function studioElemKey(el) { return el.classList.contains('studio-palco-wrap') ? 'palco' : (el.dataset.boxOrd || studioBoxKey(el)); }
@@ -5865,7 +5432,7 @@ function studioSalvaPosLibero() {
   const g = document.getElementById('studio-griglia'); if (!g) return;
   const gr = g.getBoundingClientRect(); const pos = {};
   for (const el of studioElementiLibero()) { const r = el.getBoundingClientRect(); pos[studioElemKey(el)] = { x: Math.round(r.left - gr.left), y: Math.round(r.top - gr.top) }; }
-  try { localStorage.setItem(studioLiberoKey(), JSON.stringify(pos)); } catch (e) { /* niente */ }
+  try { localStorage.setItem(studioLiberoKey(), JSON.stringify(pos)); } catch (e) {  }
 }
 function studioAggiornaAltezzaLibero() {
   const g = document.getElementById('studio-griglia'); if (!g || !g.classList.contains('libero')) return;
@@ -5873,15 +5440,13 @@ function studioAggiornaAltezzaLibero() {
   for (const el of studioElementiLibero()) { const r = el.getBoundingClientRect(); maxB = Math.max(maxB, r.bottom - gr.top); }
   g.style.minHeight = (maxB + 24) + 'px';
 }
-// Disposizione PULITA di default in modalità libera: palco in alto a sinistra,
-// i pannelli impilati in una colonna alla sua destra (o sotto, se lo spazio è
-// stretto). Misura l'altezza reale di ogni box, così non si sovrappongono mai.
+
 function studioTileLibero(g, els, largh) {
   const gap = 16, palcoW = 640;
-  const colX = (palcoW + gap + 300 <= largh) ? palcoW + gap : 0;   // c'è spazio a destra?
+  const colX = (palcoW + gap + 300 <= largh) ? palcoW + gap : 0;
   const palco = els.find((e) => e.classList.contains('studio-palco-wrap'));
   if (palco) { palco.style.left = '0px'; palco.style.top = '0px'; }
-  let y = colX ? 0 : 380;   // sotto al palco (~360px + margine) se in colonna unica
+  let y = colX ? 0 : 380;
   for (const el of els) {
     if (el.classList.contains('studio-palco-wrap')) continue;
     el.style.left = colX + 'px';
@@ -5899,9 +5464,6 @@ function studioApplicaLibero() {
   const largh = Math.max(360, gr.width || 1000);
   const salvate = studioLeggiPosLibero();
 
-  // Le posizioni salvate valgono solo se SENSATE: dentro i limiti orizzontali e
-  // non negative. Basta un box fuori posto (schermo diverso, stato rovinato) e
-  // rifacciamo tutto pulito: così lo Studio non "sembra rotto" mai.
   let ok = salvate && typeof salvate === 'object';
   if (ok) {
     for (const el of els) {
@@ -5916,7 +5478,7 @@ function studioApplicaLibero() {
       el.style.left = Math.max(0, Math.min(p.x, largh - 80)) + 'px';
       el.style.top = Math.max(0, p.y) + 'px';
     }
-    // se le posizioni salvate finiscono per accavallare i pannelli, ri-dispone pulito
+
     if (studioSovrapposti(els)) studioTileLibero(g, els, largh);
   } else {
     studioTileLibero(g, els, largh);
@@ -5924,7 +5486,6 @@ function studioApplicaLibero() {
   studioAggiornaAltezzaLibero();
 }
 
-// Vero se due elementi del layout libero si sovrappongono in modo significativo.
 function studioSovrapposti(els) {
   const r = els.map((e) => e.getBoundingClientRect());
   for (let i = 0; i < r.length; i++) {
@@ -5944,12 +5505,12 @@ function studioTogliLibero() {
 }
 function studioToggleLibero() {
   STUDIO.libero = !STUDIO.libero;
-  try { localStorage.setItem(studioLiberoModeKey(), STUDIO.libero ? '1' : '0'); } catch (e) { /* niente */ }
+  try { localStorage.setItem(studioLiberoModeKey(), STUDIO.libero ? '1' : '0'); } catch (e) {  }
   if (STUDIO.libero) studioApplicaLibero(); else studioTogliLibero();
   const btn = document.getElementById('studio-libero-btn'); if (btn) btn.classList.toggle('attivo', STUDIO.libero);
 }
 function studioResetLibero() {
-  try { localStorage.removeItem(studioLiberoKey()); localStorage.removeItem(studioLiberoModeKey()); localStorage.removeItem(studioOrdineKey()); } catch (e) { /* niente */ }
+  try { localStorage.removeItem(studioLiberoKey()); localStorage.removeItem(studioLiberoModeKey()); localStorage.removeItem(studioOrdineKey()); } catch (e) {  }
   STUDIO.libero = false; studioTogliLibero();
   const side = document.querySelector('.studio-side');
   if (side) for (const key of ['io', 'add', 'fonti', 'prop', 'mixer', 'chat']) { const b = side.querySelector(`:scope > .studio-box[data-box-ord="${key}"]`); if (b) side.appendChild(b); }
@@ -5957,8 +5518,6 @@ function studioResetLibero() {
   toast(L('Layout ripristinato', 'Layout reset', 'Diseño restablecido'));
 }
 
-// Prepara maniglie + drag (riordino in colonna OPPURE spostamento libero) una
-// sola volta: palco e box sono statici nel DOM.
 let _studioDrag = null;
 function studioInitRiordino() {
   const griglia = document.getElementById('studio-griglia'); if (!griglia) return;
@@ -5973,8 +5532,8 @@ function studioInitRiordino() {
       tit.insertBefore(h, tit.firstChild);
     }
   }
-  // ripristina modalità (libero vs colonna) e ordine/posizioni salvati
-  try { STUDIO.libero = localStorage.getItem(studioLiberoModeKey()) === '1'; } catch (e) { /* niente */ }
+
+  try { STUDIO.libero = localStorage.getItem(studioLiberoModeKey()) === '1'; } catch (e) {  }
   if (STUDIO.libero) studioApplicaLibero(); else studioApplicaOrdinePannelli();
   const btn0 = document.getElementById('studio-libero-btn'); if (btn0) btn0.classList.toggle('attivo', STUDIO.libero);
 
@@ -5987,11 +5546,11 @@ function studioInitRiordino() {
       const r = el.getBoundingClientRect(), gr = griglia.getBoundingClientRect();
       _studioDrag = { el, mode: 'free', px: e.clientX, py: e.clientY, startL: r.left - gr.left, startT: r.top - gr.top };
     } else {
-      if (!el.classList.contains('studio-box')) return;   // in colonna solo i box si riordinano
+      if (!el.classList.contains('studio-box')) return;
       _studioDrag = { el, mode: 'reorder' };
     }
     el.classList.add('studio-box-dragging');
-    try { h.setPointerCapture(e.pointerId); } catch (er) { /* niente */ }
+    try { h.setPointerCapture(e.pointerId); } catch (er) {  }
     e.preventDefault();
   });
   griglia.addEventListener('pointermove', (e) => {
@@ -6016,17 +5575,13 @@ function studioInitRiordino() {
   griglia.addEventListener('pointercancel', fine);
 }
 
-// ---- disegno dell'interfaccia dello Studio (scene, fonti, proprietà, mixer) --
 function renderStudioTutto() {
   renderStudioScene(); renderStudioPreset(); renderStudioFonti(); renderStudioUI(); renderStudioProp(); renderStudioMixer();
 }
 
-// Preset di layout: salva/richiama un intero set di scene con un nome. Restano
-// nel browser (localStorage) per canale. Webcam/schermo/testo/overlay si
-// ripristinano sempre; immagini/video solo se ancora caricati in questa sessione.
 function studioPresetKey() { try { return 'andrybot-studio-preset:' + (stato?.user?.login || 'anon'); } catch (e) { return 'andrybot-studio-preset:anon'; } }
 function studioLeggiPreset() { try { return JSON.parse(localStorage.getItem(studioPresetKey())) || []; } catch (e) { return []; } }
-function studioScriviPreset(arr) { try { localStorage.setItem(studioPresetKey(), JSON.stringify(arr)); } catch (e) { /* quota/off */ } }
+function studioScriviPreset(arr) { try { localStorage.setItem(studioPresetKey(), JSON.stringify(arr)); } catch (e) {  } }
 function studioSerializzaScene() {
   return STUDIO.scene.map((s) => ({ nome: s.nome, fonti: s.fonti.map((f) => {
     const o = { tipo: f.tipo, nome: f.nome, x: f.x, y: f.y, w: f.w, h: f.h, visibile: f.visibile };
@@ -6077,7 +5632,7 @@ function renderStudioFonti() {
   const ul = document.getElementById('studio-fonti'); if (!ul) return;
   const s = studioSceneAttiva();
   if (!s || !s.fonti.length) { ul.innerHTML = `<li class="vuoto">${L('Nessuna fonte. Aggiungine una qui sopra.', 'No sources. Add one above.', 'Sin fuentes. Añade una arriba.')}</li>`; return; }
-  // mostra dalla più avanti (in cima all'elenco) alla più dietro
+
   ul.innerHTML = s.fonti.slice().reverse().map((f) => {
     const i = s.fonti.indexOf(f);
     return `<li class="studio-fonte${f.id === STUDIO.sel ? ' sel' : ''}${f.visibile ? '' : ' nascosta'}" data-fonte="${f.id}">
@@ -6163,7 +5718,6 @@ function posizionaBoxStudio(f) {
   box.style.width = f.w / 1280 * 100 + '%'; box.style.height = f.h / 720 * 100 + '%';
 }
 
-// ---- interazione (click, input, trascinamento/ridimensionamento) ------------
 function onStudioClick(ev) {
   const t = ev.target;
   const add = t.closest('[data-add]'); if (add) return conErrore(() => studioAggiungi(add.dataset.add));
@@ -6207,7 +5761,7 @@ function onStudioClick(ev) {
 function onStudioInput(ev) {
   const t = ev.target;
   const vol = t.closest('[data-vol]'); if (vol) { const k = vol.dataset.vol; if (STUDIO.mix[k]) { STUDIO.mix[k].vol = Number(vol.value); applicaMix(); const v = vol.parentElement.querySelector('.mix-val'); if (v) v.textContent = vol.value; } return; }
-  // selettori "Ingressi & qualità" (non legati a una fonte)
+
   if (t.id === 'studio-cam-sel') return conErrore(() => studioCambiaCamera(t.value));
   if (t.id === 'studio-mic-sel') return conErrore(() => studioCambiaMic(t.value));
   if (t.id === 'studio-ov-sel') { STUDIO.ov.sel = t.value; return conErrore(() => studioConnettiOverlay()); }
@@ -6228,13 +5782,13 @@ function onStudioPointerDown(ev) {
   const box = ev.target.closest('.studio-fonte-box'); if (!box) return;
   const id = box.dataset.box, f = studioTrovaFonte(id); if (!f) return;
   STUDIO.sel = id; renderStudioTutto();
-  if (f.tipo === 'overlay') return;   // l'overlay non si sposta
+  if (f.tipo === 'overlay') return;
   const handle = ev.target.closest('.studio-h');
   const palco = document.getElementById('studio-palco'); const r = palco.getBoundingClientRect();
   STUDIO.drag = { id, mode: handle ? 'resize' : 'move', h: handle ? handle.dataset.h : null,
     sx: ev.clientX, sy: ev.clientY, ox: f.x, oy: f.y, ow: f.w, oh: f.h, rw: r.width, rh: r.height };
   ev.preventDefault();
-  try { palco.setPointerCapture(ev.pointerId); } catch (e) { /* niente */ }
+  try { palco.setPointerCapture(ev.pointerId); } catch (e) {  }
 }
 
 function onStudioPointerMove(ev) {
@@ -6259,9 +5813,6 @@ function onStudioPointerMove(ev) {
 
 function onStudioPointerUp() { if (STUDIO.drag) STUDIO.drag = null; }
 
-// Aggancia gli handler dello Studio (chiamata a ogni render: il pannello viene
-// ridisegnato, quindi si riattacca al nuovo nodo; i listener globali del
-// trascinamento si agganciano UNA volta sola).
 function initStudio() {
   const panel = document.getElementById('scheda-studio'); if (!panel) return;
   panel.addEventListener('click', onStudioClick);
@@ -6274,8 +5825,6 @@ function initStudio() {
     STUDIO._wired = true;
   }
 }
-
-// --- scheda Effetti & Suoni ---------------------------------------------
 
 const TRK_GESTI = [
   ['victory', '✌️ Vittoria'], ['thumbup', '👍 Pollice su'], ['openpalm', '✋ Mano aperta'],
@@ -6292,7 +5841,7 @@ function pannelloEffetti() {
       <input type="text" class="trk-eff" list="trk-eff-list" data-g="${g}" maxlength="40" placeholder="${L('comando effetto (es. airhorn)', 'effect command (e.g. airhorn)', 'comando de efecto (p. ej. airhorn)')}" value="${esc(mappa[g] || '')}">
       <input type="text" class="trk-chat" data-g="${g}" maxlength="120" placeholder="${L('scrivi in chat (es. una emote)', 'write in chat (e.g. an emote)', 'escribe en el chat (p. ej. una emote)')}" value="${esc(mappaChat[g] || '')}">
     </div>`).join('');
-  // MEME dalle espressioni: emozione → emoji o URL immagine/GIF (default emoji)
+
   const mm = (trk.mappaMeme && typeof trk.mappaMeme === 'object') ? trk.mappaMeme : {};
   const MEME_EMO = [['happy', '😂'], ['surprise', '😱'], ['angry', '🤬'], ['sad', '😭'], ['fear', '😨'], ['disgust', '🤢']];
   const memeLbl = { happy: L('Risata', 'Laugh', 'Risa'), surprise: L('Sorpresa', 'Surprise', 'Sorpresa'), angry: L('Rabbia', 'Anger', 'Enfado'), sad: L('Tristezza', 'Sadness', 'Tristeza'), fear: L('Paura', 'Fear', 'Miedo'), disgust: L('Disgusto', 'Disgust', 'Asco') };
@@ -6488,8 +6037,6 @@ function pannelloEffetti() {
     </div>`);
 }
 
-// Elenca i premi a punti canale ESISTENTI e permette di attaccare a ognuno un
-// suono pronto (preset) + un messaggio. Non crea premi su Twitch: mappa e basta.
 async function caricaSuoniPremi() {
   const box = document.getElementById('suoni-premi-box');
   if (!box) return;
@@ -6512,7 +6059,7 @@ async function caricaSuoniPremi() {
   const audio = effetti.filter((e) => e.tipo === 'audio');
   const visivi = effetti.filter((e) => e.tipo === 'immagine' || e.tipo === 'video');
   const tipoDi = {}; effetti.forEach((e) => { tipoDi[e.comando] = e.tipo; });
-  // scelta: preset ("<id>") o effetto ("effetto:<comando>")
+
   const opzScelta = (sel) => {
     const p = presets.map((s) => `<option value="${esc(s.id)}"${s.id === sel ? ' selected' : ''}>${esc(s.nome)}</option>`).join('');
     const a = audio.map((e) => `<option value="effetto:${esc(e.comando)}"${'effetto:' + e.comando === sel ? ' selected' : ''}>!${esc(e.comando)}</option>`).join('');
@@ -6538,7 +6085,6 @@ async function caricaSuoniPremi() {
     </li>`;
   }).join('')}</ul>`;
 
-  // stato per riga: posizione (xy) + green screen (chroma)
   const stato = {};
   (d.premi || []).forEach((p) => {
     let o = {}; try { o = p.opzioni ? JSON.parse(p.opzioni) : {}; } catch { o = {}; }
@@ -6564,7 +6110,7 @@ async function caricaSuoniPremi() {
     };
     sel.addEventListener('change', () => {
       const v = sel.value;
-      if (v && !v.startsWith('effetto:') && window.SUONI_PRESET) window.SUONI_PRESET.suona(v, 100);   // anteprima preset
+      if (v && !v.startsWith('effetto:') && window.SUONI_PRESET) window.SUONI_PRESET.suona(v, 100);
       aggiornaEditor();
       salva(L('Effetto impostato ✓', 'Effect set ✓', 'Efecto configurado ✓'));
     });
@@ -6579,8 +6125,6 @@ async function caricaSuoniPremi() {
   });
 }
 
-// Editor compatto (16:9) per posizione/dimensione/rotazione + green screen di un
-// effetto visivo su un premio a punti canale. Solo per immagini/video.
 function _premioEditorPos(box, comando, tipo, st, salva) {
   if (!box) return;
   if (!comando || (tipo !== 'immagine' && tipo !== 'video')) { box.hidden = true; box.innerHTML = ''; return; }
@@ -6607,7 +6151,7 @@ function _premioEditorPos(box, comando, tipo, st, salva) {
   el.addEventListener('pointerdown', (e) => {
     e.preventDefault();
     const rect = stage.getBoundingClientRect();
-    try { el.setPointerCapture(e.pointerId); } catch (_) { /* niente */ }
+    try { el.setPointerCapture(e.pointerId); } catch (_) {  }
     const move = (ev) => {
       st.xy.x = Math.round(Math.max(0, Math.min(100, ((ev.clientX - rect.left) / rect.width) * 100)));
       st.xy.y = Math.round(Math.max(0, Math.min(100, ((ev.clientY - rect.top) / rect.height) * 100)));
@@ -6629,7 +6173,6 @@ function _premioEditorPos(box, comando, tipo, st, salva) {
   }
 }
 
-// carica e disegna gli alert a punti canale (crea premio Twitch + mappa effetto)
 async function caricaPremi() {
   const box = document.getElementById('premi-box');
   if (!box) return;
@@ -6683,10 +6226,6 @@ async function caricaPremi() {
   }); }));
 }
 
-// --- scheda 7TV · Emote -------------------------------------------------
-// Gestione COMPLETA delle emote 7TV del canale: collega l'account 7TV (token),
-// vedi il set attivo, cerca nella directory e aggiungi/togli/rinomina. Le emote
-// 7TV compaiono anche nella chat a schermo dell'overlay (features/emotes.js).
 function pannello7TV() {
   return pannello('emote', `
     <div class="carta">
@@ -6731,7 +6270,6 @@ function pannello7TV() {
     </div>`);
 }
 
-// Card di una singola emote (immagine + nome + azioni). `azioni` è HTML già pronto.
 function _svtvEmoteCard(e, azioni) {
   return `<div class="svtv-card" data-id="${esc(e.id)}" data-nome="${esc(e.nome)}">
     <div class="svtv-img-wrap"><img class="svtv-img" src="${esc(e.url)}" alt="${esc(e.nome)}" loading="lazy">${e.animato ? '<span class="svtv-anim" title="animata">GIF</span>' : ''}</div>
@@ -6791,7 +6329,6 @@ async function caricaEmote7TV() {
     }));
   }
 
-  // ricerca + aggiunta da link (attive solo da collegati; il server comunque protegge)
   const cercaBtn = document.getElementById('svtv-cerca-btn');
   const cercaInp = document.getElementById('svtv-cerca');
   const faiCerca = () => conErrore(async () => {
@@ -6810,13 +6347,11 @@ async function caricaEmote7TV() {
   cercaBtn?.addEventListener('click', faiCerca);
   cercaInp?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); faiCerca(); } });
 
-  // delega sui risultati: «Aggiungi»
   document.getElementById('svtv-risultati')?.addEventListener('click', (ev) => {
     const b = ev.target.closest('.svtv-add'); if (!b) return;
     _svtvAggiungi(b.dataset.id, '', b);
   });
 
-  // aggiungi da link / ID
   document.getElementById('svtv-link-btn')?.addEventListener('click', () => {
     const v = (document.getElementById('svtv-link')?.value || '').trim();
     const alias = (document.getElementById('svtv-alias')?.value || '').trim();
@@ -6824,15 +6359,11 @@ async function caricaEmote7TV() {
     _svtvAggiungi(v, alias, document.getElementById('svtv-link-btn'));
   });
 
-  // carica una TUA emote (immagine/gif/video → 7TV)
   document.getElementById('svtv-carica-btn')?.addEventListener('click', () => _svtvCarica());
 
-  // Il set del canale è PUBBLICO: caricalo SEMPRE (collegato o no). Il token 7TV
-  // serve solo per MODIFICARE (aggiungi/togli/rinomina), non per leggere le emote.
   _svtvCaricaSet();
 }
 
-// Upload multipart di un file → il server lo converte in webp e lo carica su 7TV.
 async function _svtvCarica() {
   if (!_svtvCollegato) { toast(L('Collega prima il tuo account 7TV.', 'Connect your 7TV account first.', 'Conecta antes tu cuenta 7TV.'), 'errore'); return; }
   if (DEMO) { toast(L('In demo non si caricano file — accedi per farlo davvero.', "In demo you can't upload files — log in to do it for real.", 'En la demo no se suben archivos — inicia sesión para hacerlo de verdad.')); return; }
@@ -6853,7 +6384,7 @@ async function _svtvCarica() {
     fd.append('nome', nome);
     if (alias) fd.append('alias', alias);
     const res = await fetch('/api/seventv/carica', { method: 'POST', body: fd });
-    let d = null; try { d = await res.json(); } catch { /* non JSON */ }
+    let d = null; try { d = await res.json(); } catch {  }
     if (!res.ok) throw new Error(d?.errore || ('errore ' + res.status));
     toast(d.aggiunta
       ? L('Emote caricata e aggiunta al canale ✓', 'Emote uploaded and added to your channel ✓', 'Emote subida y añadida a tu canal ✓')
@@ -6894,7 +6425,7 @@ async function _svtvCaricaSet() {
   const testa = `<p><strong>${esc(set.nome || L('Set attivo', 'Active set', 'Set activo'))}</strong>${cap}</p>`;
   if (!emotes.length) { box.innerHTML = testa + `<p class="vuoto">${L('Nessuna emote nel set. Aggiungine qui sotto!', 'No emotes in the set. Add some below!', '¡No hay emotes en el set. Añade algunas abajo!')}</p>`; return; }
   const proprietario = stato?.ruolo !== 'moderatore';
-  const puoModificare = proprietario && _svtvCollegato;   // modificare richiede il token 7TV
+  const puoModificare = proprietario && _svtvCollegato;
   const avviso = (proprietario && !_svtvCollegato)
     ? `<p class="suggerimento">${L('Queste sono le emote del tuo canale (sola lettura). Collega il tuo account 7TV qui sopra per aggiungerne, toglierne o rinominarle.', 'These are your channel emotes (read-only). Connect your 7TV account above to add, remove or rename them.', 'Estas son las emotes de tu canal (solo lectura). Conecta tu cuenta 7TV arriba para añadir, quitar o renombrar.')}</p>`
     : '';
@@ -6915,9 +6446,6 @@ async function _svtvCaricaSet() {
     toast(L('Emote rinominata ✓', 'Emote renamed ✓', 'Emote renombrada ✓')); _svtvCaricaSet();
   })));
 }
-
-// --- scheda Moduli ------------------------------------------------------
-// Automazioni componibili col modello QUANDO → SE → ALLORA.
 
 function pannelloModuli() {
   const imp = impostazioni();
@@ -7016,7 +6544,6 @@ function pannelloModuli() {
     </div>`);
 }
 
-// modelli pronti: precompilano l'editor, l'utente poi salva
 function modelloPronto(nome) {
   const cond = () => ({ tier: 'tutti', cooldown: 0, probabilita: 100, soloLive: false, soloOffline: false });
   switch (nome) {
@@ -7025,22 +6552,21 @@ function modelloPronto(nome) {
         trigger: { tipo: 'comando', comando: 'ciao', alias: [] }, condizioni: cond(),
         azioni: [{ tipo: 'messaggio', testo: 'Ciao $user!' }] };
     case 'shoutout':
-      // "!so giorgiottv" → shoutout UFFICIALE (il banner) + un messaggio in chat.
-      // Azione nativa "shoutout": canale vuoto = usa il nome dopo il comando ($touser).
+
       return { id: null, nome: 'Shoutout', attivo: true,
         trigger: { tipo: 'comando', comando: 'so', alias: ['shoutout', 'sh'] }, condizioni: { ...cond(), tier: 'mod' },
         azioni: [
           { tipo: 'shoutout', canale: '', testo: 'Andate tutti a seguire @$touser! Stava streammando $giocotarget twitch.tv/$touser' },
         ] };
     case 'raidso':
-      // Auto-shoutout: QUANDO qualcuno ti RAIDA → shoutout ufficiale al suo canale.
+
       return { id: null, nome: 'Auto-shoutout ai raid', attivo: true,
         trigger: { tipo: 'evento', evento: 'raid' }, condizioni: cond(),
         azioni: [
           { tipo: 'shoutout', canale: '', testo: 'Grazie del raid @$raider! 💜 Andate a seguirl*: twitch.tv/$raider' },
         ] };
     case 'annuncio':
-      // "!annuncio <testo>" (mod) → annuncio ufficiale evidenziato in chat.
+
       return { id: null, nome: 'Annuncio', attivo: true,
         trigger: { tipo: 'comando', comando: 'annuncio', alias: ['ann'] }, condizioni: { ...cond(), tier: 'mod' },
         azioni: [{ tipo: 'annuncia', testo: '$args', colore: 'primary' }] };
@@ -7072,12 +6598,6 @@ function modelloPronto(nome) {
   }
 }
 
-// --- scheda Giochi ------------------------------------------------------
-
-// Corpo del bookmarklet "Prendi le quote da x.la": gira NEL browser dell'utente
-// sulla pagina x.la (dove il JavaScript ha già disegnato le frasi e lui è loggato),
-// pesca le quote dal testo renderizzato e le copia nel formato «frase ⏎ autore | data».
-// Qui non viene mai eseguita: la serializziamo con toString() per creare l'href.
 function _xlaGrabFn() {
   try {
     var L = (document.body.innerText || '').split('\n').map(function (s) { return s.replace(/\s+/g, ' ').trim(); }).filter(Boolean);
@@ -7103,14 +6623,9 @@ function _xlaGrabFn() {
     else window.prompt(L('Copia con Ctrl+C:', 'Copy with Ctrl+C:', 'Copia con Ctrl+C:'), t);
   } catch (e) { alert('Errore: ' + e.message); }
 }
-// href del bookmarklet: la funzione su una riga sola, pronta da trascinare nei preferiti.
+
 const bookmarkletXla = 'javascript:(' + _xlaGrabFn.toString().replace(/\n\s*/g, ' ') + ')()';
 
-// --- Sottoscrizione: il tuo piano, cosa comprende, come si annulla ---------
-// Pagina unica e onesta per TUTTI i casi: gratuito (Essenziale), abbonato
-// (Base + pacchetti), prova gratuita in corso, membro community. Nessun
-// "piano attuale: —" e nessuna sorpresa: si vede sempre cosa hai, fino a
-// quando, quanto paghi e cosa accade se annulli.
 function pannelloSottoscrizione() {
   return pannello('sottoscrizione', `
     <div class="carta">
@@ -7123,7 +6638,7 @@ function pannelloSottoscrizione() {
 async function caricaSottoscrizione() {
   const box = document.getElementById('sott-box'); if (!box) return;
   let piani = null;
-  try { piani = await api('/api/abbonamento/piani'); } catch { /* si mostra comunque il piano */ }
+  try { piani = await api('/api/abbonamento/piani'); } catch {  }
 
   const tier = stato.tier || 'free';
   const prova = provaInCorso();
@@ -7132,7 +6647,6 @@ async function caricaSottoscrizione() {
   const nomi = { community: 'Community', free: 'Essenziale', base: 'Base', pro: 'Pro (storico)' };
   const f = stato.funzioni || {};
 
-  // ── 1) intestazione: cosa hai, adesso, in una riga ──
   let riga, tono;
   if (tier === 'community') {
     tono = 'verde';
@@ -7156,12 +6670,10 @@ async function caricaSottoscrizione() {
       'Estás en <strong>Essenziale</strong>: gratuito, sin caducidad y sin tarjeta. Comandos y automatizaciones ilimitados, moderación, overlay para OBS y contadores en pantalla ya son tuyos.');
   }
 
-  // ── 2) cosa è acceso e cosa no, senza gerghi ──
   const VOCI = [
     ['moduli', L('Comandi e automazioni', 'Commands and automations', 'Comandos y automatizaciones')],
     ['overlay', L('Overlay per OBS', 'OBS overlay', 'Overlay para OBS')],
-    // Studio Web nascosto (WIP: fa laggare le live) — niente riga "acceso ✓" finché non si risolve.
-    // ['studio', L('Studio Web (live senza OBS)', 'Web Studio (live without OBS)', 'Estudio Web (directo sin OBS)')],
+
     ['effetti', L('Effetti e punti canale', 'Effects and channel points', 'Efectos y puntos de canal')],
     ['giochi', L('Giochi e classifiche', 'Games and leaderboards', 'Juegos y clasificaciones')],
     ['musica', L('Richieste musicali', 'Music requests', 'Peticiones musicales')],
@@ -7174,7 +6686,6 @@ async function caricaSottoscrizione() {
       <span class="sott-segno">${acceso(k) ? '✓' : '·'}</span>${esc(et)}</li>`).join('');
   const nMod = f.moderatori === -1 ? '∞' : (f.moderatori || 0);
 
-  // ── 3) pacchetti aggiuntivi: quelli che hai e quelli che potresti aggiungere ──
   const addon = piani?.addon || [];
   const tuoi = addon.filter((a) => mieiPacchetti.has(a.id));
   const altri = addon.filter((a) => !mieiPacchetti.has(a.id) && !acceso(a.id));
@@ -7185,7 +6696,6 @@ async function caricaSottoscrizione() {
       ${mio ? `<span class="badge verde">${L('attivo', 'active', 'activo')}</span>` : ''}
     </div>`;
 
-  // ── 4) gestione: il portale Stripe fa pagamenti, fatture e disdetta ──
   const haCliente = !!(tier === 'base' || tier === 'pro') && !prova;
   const gestione = tier === 'community'
     ? `<p class="suggerimento">${L('Niente da gestire: il tuo accesso arriva dalla community, non da un pagamento.', 'Nothing to manage: your access comes from the community, not from a payment.', 'Nada que gestionar: tu acceso viene de la comunidad, no de un pago.')}</p>`
@@ -7224,13 +6734,6 @@ async function caricaSottoscrizione() {
   });
 }
 
-// Icone della pagina link: le STESSE del renderer (src/features/linkpagina.js).
-// ── Icone: sagome PIENE, non contorni ──────────────────────────────────────
-// Prima erano tracciati sottili a 1.8px: a 20 pixel diventavano scarabocchi
-// illeggibili. Le sagome piene si riconoscono a colpo d'occhio, e ogni brand
-// porta il SUO colore (Twitch viola, YouTube rosso…): è quello che rende
-// un'icona riconoscibile, più della precisione del disegno.
-// `c` = colore del brand ('' = usa il colore del tema).
 const MARCHI = {
   link:       { c: '', d: 'M9.5 13.5a4.5 4.5 0 0 0 6.4.4l2.7-2.7a4.5 4.5 0 0 0-6.4-6.4l-1.5 1.5 1.5 1.5 1.5-1.5a2.3 2.3 0 0 1 3.3 3.3l-2.7 2.7a2.3 2.3 0 0 1-3.3 0zM14.5 10.5a4.5 4.5 0 0 0-6.4-.4l-2.7 2.7a4.5 4.5 0 0 0 6.4 6.4l1.5-1.5-1.5-1.5-1.5 1.5a2.3 2.3 0 0 1-3.3-3.3l2.7-2.7a2.3 2.3 0 0 1 3.3 0z' },
   twitch:     { c: '#9146FF', d: 'M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z' },
@@ -7268,7 +6771,6 @@ const _mIco = (n, dim = 20) => {
 
 const lpIco = (n, dim = 20) => _mIco(n, dim);
 
-// Riconosce la piattaforma dall'indirizzo: l'icona giusta arriva da sé.
 const LP_HOST = [[/twitch\.tv$/, 'twitch'], [/youtube\.com$|youtu\.be$/, 'youtube'], [/instagram\.com$/, 'instagram'],
   [/tiktok\.com$/, 'tiktok'], [/discord\.(gg|com)$/, 'discord'], [/spotify\.com$/, 'spotify'],
   [/x\.com$|twitter\.com$/, 'x'], [/t\.me$|telegram\.(me|org)$/, 'telegram'], [/kick\.com$/, 'kick'],
@@ -7280,25 +6782,15 @@ const LP_HOST = [[/twitch\.tv$/, 'twitch'], [/youtube\.com$|youtu\.be$/, 'youtub
 function lpIconaDaUrl(u) {
   try { const h = new URL(u).hostname.toLowerCase().replace(/^www\./, '');
     for (const [re, i] of LP_HOST) if (re.test(h)) return i;
-  } catch { /* url non valido */ }
+  } catch {  }
   return 'link';
 }
 
-// Azioni sui blocchi: SVG, non emoji (coerenti col resto della dashboard).
 const _lpSu  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>';
 const _lpGiu = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
 const _lpDup = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>';
 const _lpVia = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
 
-// --- Pagina link pubblica (/u/<login>) ------------------------------------
-// La pagina è NOSTRA: i dati stanno nel DB di SocialBot (tabella link_page) e
-// l'HTML lo genera src/features/linkpagina.js. Prima veniva da andryxify.it, il
-// che voleva dire dipendere da un altro servizio, passare un token Twitch a ogni
-// salvataggio ed essere "abilitati" là per modificare una pagina di qui.
-//
-// L'editor è a BLOCCHI (link, titoli, testi, righe di social, immagini, embed)
-// più un tema completo: colori, sfondo, font, forme, animazioni. Con l'anteprima
-// dal vivo accanto, così si vede cosa si sta facendo mentre si fa.
 function pannelloPaginaLink() {
   return pannello('pagina', `
     <div class="carta">
@@ -7307,13 +6799,6 @@ function pannelloPaginaLink() {
     </div>`);
 }
 
-// La presentazione e il tutorial stanno DENTRO la colonna dei comandi, non
-// sopra l'editor: sennò spingono il banco di lavoro sotto lo schermo e
-// l'anteprima torna a essere una cosa da rincorrere scorrendo.
-// Quante volte la pagina è stata aperta. Solo il numero: nessun indirizzo IP,
-// nessun cookie, niente su chi c'era. È il dato che serve davvero ("la mia
-// pagina la guarda qualcuno?") ed è l'unico che si può raccogliere senza
-// chiedere il consenso a nessuno.
 function lpVisiteHtml(v) {
   if (!v) return '';
   const max = Math.max(1, ...(v.giorni || []).map((g) => g.viste));
@@ -7343,14 +6828,8 @@ function lpIntroHtml(d) {
   })}`;
 }
 
-// stato dell'editor in memoria: blocchi + tema, con l'anteprima che li rilegge
 const LP = { d: null, blocchi: [], tema: {}, testa: {} };
 
-// ── Temi pronti ─────────────────────────────────────────────────────────────
-// Non solo i colori: sfondo, effetto, carattere, forma dei bottoni, animazione
-// e DISPOSIZIONE. Si scelgono vedendoli e poi si cambia quello che non piace:
-// sono un punto di partenza, non una gabbia. I campi colore lasciati vuoti
-// prendono la tinta dello stile di base, così i temi restano corti e leggibili.
 const _tema = (o) => ({ sfondoTipo: 'tinta', bg: '', bg2: '', angolo: 160, sfondoUrl: '', effetto: 'nessuno',
   testo: '', accent: '', card: '', bordo: '', font: 'system', raggio: 14, stileBtn: 'pieno', ombra: true,
   anim: 'rise', avatarForma: 'cerchio', larghezza: 30, allinea: 'centro', disposizione: 'colonna', ...o });
@@ -7383,7 +6862,7 @@ const TEMI_PRONTI = [
   { id: 'arcade', nome: 'Arcade', base: 'brutal',
     tema: _tema({ bg: '#08090a', bg2: '#101314', testo: '#e6ffe9', accent: '#53fc18', card: 'rgba(83,252,24,.07)',
       bordo: '#53fc18', font: 'mono', raggio: 0, ombra: false, effetto: 'grana', anim: 'pop' }) },
-  // — nuovi temi con animazioni "vere" —
+
   { id: 'synth', nome: 'Synthwave', base: 'neon',
     tema: _tema({ sfondoTipo: 'gradiente', bg: '#1a0730', bg2: '#3d0d4e', angolo: 200, testo: '#ffe7fb', accent: '#ff4fd8',
       card: 'rgba(255,255,255,.06)', bordo: 'rgba(255,79,216,.4)', font: 'condensato', raggio: 6, effetto: 'synthwave', movimento: 'crawl', stileBtn: 'vetro' }) },
@@ -7405,8 +6884,7 @@ const TEMI_PRONTI = [
   { id: 'scintille', nome: 'Scintille', base: 'sunset',
     tema: _tema({ sfondoTipo: 'gradiente', bg: '#140b24', bg2: '#3a1533', angolo: 200, effetto: 'particelle', movimento: 'cinema', raggio: 20, font: 'tondo' }) },
 ];
-// Colori di partenza dei 7 stili base: servono per disegnare la miniatura del
-// tema quando il tema stesso non li sovrascrive.
+
 const _BASI = {
   minimal: { bg: '#fafafa', bg2: '#f0f0f3', acc: '#6d3bef' }, neon: { bg: '#07060d', bg2: '#140b26', acc: '#a568ff' },
   retro: { bg: '#f5e9d0', bg2: '#e8d3ad', acc: '#c2551f' }, sunset: { bg: '#1b0f2b', bg2: '#4a1d3d', acc: '#ff8a5b' },
@@ -7432,9 +6910,6 @@ function temiProntiHtml(sel) {
   }).join('') + `</div>`;
 }
 
-// ridisegna=true ridisegna l'editor con lo stato che c'è già in memoria, senza
-// richiedere niente al server: serve dopo aver applicato un tema pronto, che
-// cambia una dozzina di comandi in un colpo solo.
 async function caricaPaginaLink(ridisegna = false) {
   const box = document.getElementById('lp-box'); if (!box) return;
   if (!ridisegna || !LP.d) {
@@ -7663,7 +7138,6 @@ async function caricaPaginaLink(ridisegna = false) {
       </div>
     </div>`;
 
-  // valori dei select del tema (non si possono impostare da HTML statico)
   for (const k of ['sfondoTipo', 'effetto', 'stileBtn', 'allinea', 'avatarForma', 'anim', 'font', 'disposizione', 'movimento', 'ombraTipo', 'consenso']) {
     const el = box.querySelector(`[data-lpk="${k}"]`);
     if (el && LP.tema[k] !== undefined) el.value = LP.tema[k];
@@ -7672,7 +7146,6 @@ async function caricaPaginaLink(ridisegna = false) {
   lpRenderBlocchi();
   lpAnteprima();
 
-  // ── modifiche: aggiornano lo stato e ridisegnano l'anteprima ──
   box.oninput = (ev) => {
     const t = ev.target;
     const k = t.dataset.lpk, tt = t.dataset.lpt;
@@ -7683,7 +7156,7 @@ async function caricaPaginaLink(ridisegna = false) {
       if (k === 'larghezza') box.querySelector('#lp-lar-v').textContent = t.value + 'rem';
       if (k === 'sfondoTipo') lpMostraCampiSfondo();
       if (k === 'ombraTipo') { const cc = box.querySelector('#lp-ombra-col'); if (cc) cc.hidden = t.value !== 'dura'; }
-      // toccato a mano: non è più "quel tema pronto", è roba tua
+
       if (LP.tema._pronto) { delete LP.tema._pronto; box.querySelector('.lp-tema.sel')?.classList.remove('sel'); }
     } else if (tt === 'headline' || tt === 'tagline' || tt === 'template') {
       LP.testa[tt] = t.value;
@@ -7692,7 +7165,7 @@ async function caricaPaginaLink(ridisegna = false) {
       const tw = box.querySelector('#lp-avatar-tw');
       if (t.value === 'url') { cassetto.hidden = false; LP.testa.avatar = inp.value || ''; }
       else { cassetto.hidden = true; LP.testa.avatar = t.value === 'no' ? 'no' : ''; }
-      if (tw) tw.hidden = t.value !== '';        // l'anteprima della foto Twitch serve solo in quel modo
+      if (tw) tw.hidden = t.value !== '';
     } else if (tt === 'avatarUrl') {
       LP.testa.avatar = t.value;
     } else if (t.dataset.lpb !== undefined) {
@@ -7702,7 +7175,6 @@ async function caricaPaginaLink(ridisegna = false) {
   };
   box.onchange = box.oninput;
 
-  // ── aggiungi un blocco ──
   box.querySelector('.lp-aggiungi').onclick = (ev) => {
     const b = ev.target.closest('[data-lpadd]'); if (!b) return;
     if (LP.blocchi.length >= d.limiti.blocchi) { toast(L('Hai raggiunto il massimo di blocchi.', 'You’ve reached the block limit.', 'Has alcanzado el máximo de bloques.'), 'errore'); return; }
@@ -7725,20 +7197,16 @@ async function caricaPaginaLink(ridisegna = false) {
     lpRenderBlocchi(); lpAnteprima();
   };
 
-  // Anteprima in verticale (telefono) o in orizzontale (schermo): la pagina la
-  // guardano da entrambi, e certe disposizioni si vedono solo da largo.
   box.addEventListener('click', (ev) => {
     const v = ev.target.closest('[data-lpvista]'); if (!v) return;
     const cornice = box.querySelector('#lp-cornice'); if (!cornice) return;
     const orizz = v.dataset.lpvista === 'schermo';
     cornice.classList.toggle('schermo', orizz);
-    box.querySelector('.lp-editor')?.classList.toggle('orizz', orizz);   // più spazio all'anteprima
+    box.querySelector('.lp-editor')?.classList.toggle('orizz', orizz);
     box.querySelectorAll('.lp-vista-b').forEach((b) => b.classList.toggle('sel', b === v));
-    requestAnimationFrame(lpScala);   // la scala si misura dopo il cambio di colonne
+    requestAnimationFrame(lpScala);
   });
 
-  // Schede del banco: "Contenuti" e "Aspetto" sono due blocchi separati; qui si
-  // passa dall'uno all'altro (l'anteprima a lato resta sempre visibile).
   box.addEventListener('click', (ev) => {
     const t = ev.target.closest('[data-lptab]'); if (!t) return;
     const quale = t.dataset.lptab;
@@ -7746,8 +7214,6 @@ async function caricaPaginaLink(ridisegna = false) {
     box.querySelectorAll('.lp-pane').forEach((p) => { p.hidden = p.dataset.pane !== quale; });
   });
 
-  // Temi pronti: applicano TUTTO in un colpo, poi si ridisegna l'editor perché
-  // cambiano una dozzina di comandi insieme.
   box.addEventListener('click', (ev) => {
     const t = ev.target.closest('[data-lptema]'); if (!t) return;
     const tema = TEMI_PRONTI.find((x) => x.id === t.dataset.lptema); if (!tema) return;
@@ -7756,8 +7222,6 @@ async function caricaPaginaLink(ridisegna = false) {
     caricaPaginaLink(true).then(lpAnteprima);
   });
 
-  // Caricamento immagini: un vero selettore di file. Chiedere un "indirizzo"
-  // a chi ha la foto nel telefono non e una richiesta sensata.
   box.addEventListener('click', (ev) => {
     const b = ev.target.closest('[data-lpup]'); if (!b) return;
     const dove = b.dataset.lpup;
@@ -7770,8 +7234,7 @@ async function caricaPaginaLink(ridisegna = false) {
       try {
         const r = await api('/api/linkpage/immagine', { method: 'POST', body: fd });
         if (!r?.url) throw new Error(L('Caricamento non riuscito.', 'Upload failed.', 'Subida fallida.'));
-        // dove: "avatar" | "<i>" (immagine del blocco) | "<i>.img" (sfondo della
-        // copertina) | "<i>.<j>" (immagine della tessera j della griglia)
+
         if (dove === 'avatar') {
           LP.testa.avatar = r.url;
           const inp = document.getElementById('lp-avatar-url'); if (inp) inp.value = r.url;
@@ -7817,7 +7280,6 @@ async function caricaPaginaLink(ridisegna = false) {
   });
 }
 
-// mostra solo i campi che servono al tipo di sfondo scelto
 function lpMostraCampiSfondo() {
   const t = LP.tema.sfondoTipo || 'tinta';
   const g = document.getElementById('lp-grad-box'), b2 = document.getElementById('lp-bg2-box'), im = document.getElementById('lp-sfimg-box');
@@ -7826,17 +7288,15 @@ function lpMostraCampiSfondo() {
   if (im) im.hidden = t !== 'immagine';
 }
 
-// legge un campo di un blocco e lo riporta nello stato
 function lpLeggiBlocco(t) {
   const i = Number(t.dataset.lpb); const b = LP.blocchi[i]; if (!b) return;
   const campo = t.dataset.lpf;
-  // campi delle voci interne (riga di social, tessere della griglia):
-  // "voceUrl", "voceTitolo", "voceTesto", "voceImg", "voceLink", "voceIcona"
+
   if (campo && campo.startsWith('voce')) {
     const j = Number(t.dataset.lpv); const v = b.voci?.[j]; if (!v) return;
     const sotto = campo.slice(4).toLowerCase();
-    if (sotto === 'url') { v.url = t.value; v.icona = lpIconaDaUrl(t.value); }   // social: l'icona segue l'indirizzo
-    else if (sotto === 'link') v.url = t.value;                                  // tessera: nessuna icona da indovinare
+    if (sotto === 'url') { v.url = t.value; v.icona = lpIconaDaUrl(t.value); }
+    else if (sotto === 'link') v.url = t.value;
     else v[sotto] = t.value;
     return;
   }
@@ -7847,15 +7307,13 @@ function lpLeggiBlocco(t) {
     const et = document.querySelector(`[data-lpalt-v="${i}"]`);
     if (et) et.textContent = Number(t.value) > 0 ? t.value + 'px' : L('automatica', 'automatic', 'automática');
   }
-  // l'icona segue l'indirizzo, a meno che non sia stata scelta a mano
+
   if (campo === 'url' && b.tipo === 'link' && !b._icoManuale) b.icona = lpIconaDaUrl(t.value);
   if (campo === 'icona') b._icoManuale = true;
-  // cambiando piattaforma cambiano i campi disponibili (la chat è solo di Twitch,
-  // e YouTube vuole l'id del canale, non il nome)
+
   if (campo === 'piattaforma') lpRenderBlocchi();
 }
 
-// disegna la lista dei blocchi (ognuno coi suoi campi + su/giù/duplica/togli)
 function lpRenderBlocchi() {
   const cont = document.getElementById('lp-blocchi'); if (!cont) return;
   const d = LP.d || {};
@@ -7868,8 +7326,7 @@ function lpRenderBlocchi() {
     numeri: L('Numeri', 'Numbers', 'Números'), faq: L('Domande frequenti', 'FAQ', 'Preguntas frecuentes'),
     conto: L('Conto alla rovescia', 'Countdown', 'Cuenta atrás'),
     separatore: L('Riga divisoria', 'Divider', 'Separador') };
-  // Griglia di icone: si scelgono VEDENDOLE. Un menu a tendina coi nomi
-  // ("caffe", "soldi") non dice nulla di come verranno.
+
   const grigliaIcone = (i, sel) => `<div class="lp-icone">` + (d.icone || []).map((k) =>
     `<button type="button" class="lp-ipick${k === sel ? ' sel' : ''}" data-lpico="${esc(k)}" data-lpb="${i}" title="${esc(k)}">${lpIco(k, 17)}</button>`).join('') + `</div>`;
 
@@ -8047,15 +7504,12 @@ function lpRenderBlocchi() {
     </div>`;
   }).join('') || `<p class="suggerimento">${L('Nessun contenuto: aggiungi il primo pezzo qui sotto.', 'No content yet: add the first piece below.', 'Sin contenido: añade la primera pieza abajo.')}</p>`;
 
-  // Riordino TRASCINANDO. Le frecce restano (da tastiera e da telefono sono
-  // più affidabili), ma spostare un blocco prendendolo per la sua barra è il
-  // modo in cui la gente si aspetta di riordinare delle cose.
   let preso = -1;
   cont.ondragstart = (ev) => {
     const t = ev.target.closest('.lp-btesta'); if (!t) return;
     preso = Number(t.closest('.lp-blocco').dataset.i);
     ev.dataTransfer.effectAllowed = 'move';
-    ev.dataTransfer.setData('text/plain', String(preso));   // Firefox non parte senza
+    ev.dataTransfer.setData('text/plain', String(preso));
     t.closest('.lp-blocco').classList.add('preso');
   };
   cont.ondragover = (ev) => {
@@ -8095,11 +7549,10 @@ function lpRenderBlocchi() {
     if (ip) {
       const i = Number(ip.dataset.lpb); const b = LP.blocchi[i]; if (!b) return;
       if (ip.dataset.lpv !== undefined) { const j = Number(ip.dataset.lpv); if (b.voci?.[j]) b.voci[j].icona = ip.dataset.lpico; }
-      else { b.icona = ip.dataset.lpico; b._icoManuale = true; }   // scelta a mano: non la sovrascrivo dall'url
+      else { b.icona = ip.dataset.lpico; b._icoManuale = true; }
       lpRenderBlocchi(); lpAnteprima(); return;
     }
-    // togliere la miniatura o i colori di un bottone: senza un modo per tornare
-    // indietro, "prova e vedi" diventa "prova e resta così"
+
     const vi = ev.target.closest('[data-lpvia-img],[data-lpvia-col]');
     if (vi) {
       const i = Number(vi.dataset.lpviaImg ?? vi.dataset.lpviaCol);
@@ -8123,16 +7576,13 @@ function lpRenderBlocchi() {
   };
 }
 
-// L'anteprima non è solo da guardare: clicchi un pezzo della pagina e ti porta
-// ai suoi comandi, evidenziandoli. L'iframe è srcdoc, quindi ha la nostra
-// stessa origine e possiamo ascoltarci dentro senza scambi di messaggi.
 function lpAnteprimaCliccabile(f) {
   let doc;
   try { doc = f.contentDocument; } catch { return; }
   if (!doc) return;
   doc.addEventListener('click', (ev) => {
     const w = ev.target.closest?.('[data-b]'); if (!w) return;
-    ev.preventDefault();   // niente link aperti: qui si sta modificando
+    ev.preventDefault();
     ev.stopPropagation();
     const bl = document.querySelector(`#lp-blocchi .lp-blocco[data-i="${w.dataset.b}"]`);
     if (!bl) return;
@@ -8141,7 +7591,7 @@ function lpAnteprimaCliccabile(f) {
     bl.classList.add('acceso');
     bl.querySelector('input,textarea,select')?.focus({ preventScroll: true });
   }, true);
-  // e viceversa: il pezzo sotto il mouse si segna, così sai cosa stai per aprire
+
   doc.addEventListener('mouseover', (ev) => {
     const w = ev.target.closest?.('[data-b]');
     doc.querySelectorAll('.sel-b.tocca').forEach((e) => e.classList.remove('tocca'));
@@ -8149,8 +7599,6 @@ function lpAnteprimaCliccabile(f) {
   });
 }
 
-// Nella vista "schermo" l'anteprima è un browser largo 1280 rimpicciolito: la
-// scala dipende da quanto spazio c'è, quindi si ricalcola anche al ridimensiona.
 function lpScala() {
   const c = document.getElementById('lp-cornice');
   if (!c || !c.classList.contains('schermo')) return;
@@ -8159,9 +7607,6 @@ function lpScala() {
 }
 window.addEventListener('resize', lpScala);
 
-// Anteprima: chiediamo al SERVER l'HTML vero della pagina, così quello che vedi
-// è esattamente quello che verrà pubblicato (nessuna finta anteprima che poi
-// non combacia). Antirimbalzo, per non chiamare a ogni tasto premuto.
 let _lpTimer = null;
 function lpAnteprima() {
   clearTimeout(_lpTimer);
@@ -8173,22 +7618,18 @@ function lpAnteprima() {
         avatar: LP.testa.avatar, tema: LP.tema, blocchi: LP.blocchi,
       } });
       if (!r?.html) return;
-      // Ricaricare l'anteprima riportava sempre in cima: se stavi sistemando
-      // l'ultimo blocco dovevi riscorrere ogni volta. Qui la posizione si
-      // conserva da una versione all'altra.
+
       let y = 0;
-      try { y = f.contentWindow?.scrollY || 0; } catch { /* altra origine: pazienza */ }
+      try { y = f.contentWindow?.scrollY || 0; } catch {  }
       f.addEventListener('load', () => {
-        try { if (y) f.contentWindow.scrollTo(0, y); } catch { /* idem */ }
+        try { if (y) f.contentWindow.scrollTo(0, y); } catch {  }
         lpAnteprimaCliccabile(f);
       }, { once: true });
       f.srcdoc = r.html;
-    } catch { /* l'anteprima non è essenziale: se salta, si salva comunque */ }
+    } catch {  }
   }, 260);
 }
 
-// --- Contatori (morti, tentativi, parole…) --------------------------------
-// Sta nella sezione COMANDI (moduli): sono comandi di chat, non minigiochi.
 function pannelloContatori() {
   return pannello('moduli', `
     <div class="carta">
@@ -8238,8 +7679,7 @@ async function caricaContatori() {
   const list = d.contatori || [];
   const FONTS = [['system', 'Sistema'], ['inter', 'Inter'], ['spaceGrotesk', 'Space Grotesk'], ['jetBrainsMono', 'JetBrains Mono'], ['fraunces', 'Fraunces'], ['bricolage', 'Bricolage']];
   const fontOpts = (sel) => FONTS.map(([k, n]) => `<option value="${k}"${k === sel ? ' selected' : ''}>${n}</option>`).join('');
-  // Preset di posizione [chiave, X%, Y%, etichetta]: riempiono i campi X/Y (che
-  // restano per la regolazione fine). L'overlay ancora il widget all'angolo giusto.
+
   const POSZ = [
     ['alto-sx', 4, 6, L('In alto a sinistra', 'Top left', 'Arriba a la izquierda')],
     ['alto-c', 50, 6, L('In alto al centro', 'Top center', 'Arriba en el centro')],
@@ -8318,7 +7758,7 @@ async function caricaContatori() {
     : `<p class="suggerimento">${L('Nessun contatore ancora. Creane uno qui sotto.', 'No counters yet. Create one below.', 'Aún no hay contadores. Crea uno abajo.')}</p>`;
 
   const salvaVal = (comando, valore) => api('/api/contatori', { method: 'POST', body: { comando, valore } });
-  // Tendina posizione → riempie i campi X/Y (poi si salva con "Salva aspetto").
+
   box.onchange = (ev) => {
     const sel = ev.target.closest('[data-ovk="posizione"]'); if (!sel) return;
     const form = ev.target.closest('[data-ovform]'); if (!form || !sel.value) return;
@@ -8343,7 +7783,7 @@ async function caricaContatori() {
         };
         await api('/api/contatori', { method: 'POST', body: { comando: cmd, overlay } });
         toast(L('Aspetto salvato ✓ (aggiornato nell\'overlay)', 'Look saved ✓ (updated in overlay)', 'Aspecto guardado ✓ (actualizado en el overlay)'));
-        return;   // non ricarico: tengo aperto l'editor
+        return;
       }
       if (az === 'on') { await api('/api/contatori', { method: 'POST', body: { comando: cmd, valore: 0, overlay: { mostra: true } } }); toast(L('Contatore acceso a schermo ✓ (da 0)', 'Counter shown on screen ✓ (from 0)', 'Contador encendido en pantalla ✓ (desde 0)')); }
       else if (az === 'off') { await api('/api/contatori', { method: 'POST', body: { comando: cmd, overlay: { mostra: false } } }); toast(L('Contatore tolto dallo schermo.', 'Counter hidden from screen.', 'Contador quitado de la pantalla.')); }
@@ -8553,8 +7993,6 @@ function pannelloGiochi() {
       <ul class="lista-voci" id="lista-citazioni"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
     </div>`);
 }
-
-// --- scheda Notifiche (Telegram) ---------------------------------------
 
 function pannelloNotifiche() {
   const tg = stato.telegram || { configurato: false, gruppoOk: false, attivo: false, messaggio: '', botUsername: '', gruppo: '', pinLive: true };
@@ -8800,10 +8238,6 @@ function pannelloNotifiche() {
     </div>`);
 }
 
-// --- scheda Regole ------------------------------------------------------
-
-// Mostra quanti bot noti ci sono nella lista aggiornata da sola (rassicura che
-// è viva e piena, senza rivelare nomi).
 async function caricaStatoListaBot() {
   const el = document.getElementById('lp-ab-lista'); if (!el) return;
   try {
@@ -8822,7 +8256,7 @@ function pannelloRegole() {
   const s = impostazioni();
   const a = s.antispam || {};
   const ab = s.antibot || {};
-  const sel = (v, def) => v === undefined ? def : v;   // default "acceso" per i booleani
+  const sel = (v, def) => v === undefined ? def : v;
   return pannello('regole', `
     <div class="carta">
       <h2>${_hIco(ICO.divieto)}${L('Parole vietate', 'Banned words', 'Palabras prohibidas')}</h2>
@@ -8989,8 +8423,6 @@ function pannelloRegole() {
     </div>`);
 }
 
-// --- scheda Memoria & Statistiche --------------------------------------
-
 function pannelloMemoria() {
   return pannello('memoria', `
     <div class="carta">
@@ -9010,14 +8442,8 @@ function pannelloMemoria() {
     </div>`);
 }
 
-// ------------------------------------------------------------------ eventi della piattaforma
-
-// aggancia tutti i listener dopo il render della vista "approved"
 function attivaPiattaforma() {
-  // la navigazione (sidebar) è gestita da initGuscio(), una volta sola: qui
-  // agganciamo solo i controlli dei pannelli appena (ri)disegnati.
 
-  // interruttore acceso/spento
   document.getElementById('toggle-bot')?.addEventListener('change', async (ev) => {
     const acceso = ev.target.checked;
     try {
@@ -9031,7 +8457,6 @@ function attivaPiattaforma() {
     }
   });
 
-  // installazione dell'app (PWA)
   document.getElementById('btn-installa')?.addEventListener('click', async () => {
     if (promptInstall) {
       promptInstall.prompt();
@@ -9045,13 +8470,11 @@ function attivaPiattaforma() {
     }
   });
 
-  // gestione abbonamento (portale clienti Stripe)
   document.getElementById('btn-portale-abbonamento')?.addEventListener('click', () => conErrore(async () => {
     const r = await api('/api/abbonamento/portale', { method: 'POST', body: {} });
     if (r?.url) location.href = r.url;
   }));
 
-  // invito di un moderatore (crea il link da mandargli)
   document.getElementById('btn-invita-mod')?.addEventListener('click', () => conErrore(async () => {
     const login = (document.getElementById('inp-mod-login').value || '').trim().replace(/^@/, '');
     if (!login) { toast(L('Scrivi l’username Twitch del moderatore.', 'Type the moderator\'s Twitch username.', 'Escribe el nombre de usuario de Twitch del moderador.'), 'errore'); return; }
@@ -9062,7 +8485,6 @@ function attivaPiattaforma() {
     caricaModeratori();
   }));
 
-  // creazione di una passkey
   document.getElementById('btn-crea-passkey')?.addEventListener('click', (ev) => conErrore(async () => {
     const btn = ev.currentTarget; btn.disabled = true;
     try { await creaPasskey(); toast(L('Passkey creata! Ora puoi rientrare senza pass', 'Passkey created! Now you can log back in without a password', '¡Passkey creada! Ahora puedes volver a entrar sin contraseña')); caricaPasskey(); }
@@ -9072,7 +8494,6 @@ function attivaPiattaforma() {
     } finally { btn.disabled = false; }
   }));
 
-  // pre-addestramento manuale con spinner e risultato
   document.getElementById('btn-pretrain')?.addEventListener('click', async (ev) => {
     const btn = ev.currentTarget;
     const out = document.getElementById('esito-pretrain');
@@ -9087,7 +8508,7 @@ function attivaPiattaforma() {
         : String(esito);
       out.textContent = 'Fatto! ' + riassunto;
       toast(L('Profilo riletto, conoscenza aggiornata', 'Profile re-read, knowledge updated', 'Perfil releído, conocimiento actualizado'));
-      // ricarica lo stato per aggiornare timestamp e contatore conoscenza
+
       stato = await api('/api/me');
       render();
     } catch (e) {
@@ -9098,7 +8519,6 @@ function attivaPiattaforma() {
     }
   });
 
-  // salvataggi per sezione
   document.getElementById('btn-salva-personalita')?.addEventListener('click', () => conErrore(async () => {
     await salvaImpostazioni({
       tono: document.getElementById('sel-tono').value,
@@ -9112,7 +8532,6 @@ function attivaPiattaforma() {
     }, 'Personalità salvata');
   }));
 
-  // linee guida: aggiungi (l'elenco e i "✕" si gestiscono in caricaGuide)
   const aggiungiGuida = () => conErrore(async () => {
     const inp = document.getElementById('inp-guida');
     const t = (inp?.value || '').trim();
@@ -9127,7 +8546,6 @@ function attivaPiattaforma() {
   document.getElementById('btn-guida-add')?.addEventListener('click', aggiungiGuida);
   document.getElementById('inp-guida')?.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); aggiungiGuida(); } });
 
-  // clip: interruttore + slider sensibilità con anteprima dal vivo
   document.getElementById('chk-clip')?.addEventListener('change', (ev) => {
     const et = document.getElementById('etichetta-clip');
     if (et) et.textContent = ev.target.checked ? 'Clip automatiche accese' : 'Clip automatiche spente';
@@ -9202,7 +8620,6 @@ function attivaPiattaforma() {
     }, 'Giochi salvati');
   }));
 
-  // personalizzazione punti/classifica
   document.getElementById('btn-salva-punti')?.addEventListener('click', () => conErrore(async () => {
     const v = (id) => Number(document.getElementById(id).value);
     await salvaImpostazioni({ punti: {
@@ -9213,7 +8630,6 @@ function attivaPiattaforma() {
     } }, 'Punti aggiornati');
   }));
 
-  // manche automatiche
   document.getElementById('btn-salva-manche')?.addEventListener('click', () => conErrore(async () => {
     await salvaImpostazioni({ manche: {
       attivo: document.getElementById('chk-manche').checked,
@@ -9223,7 +8639,6 @@ function attivaPiattaforma() {
     } }, 'Manche salvate');
   }));
 
-  // creatore di giochi: mostra i campi giusti in base al tipo
   document.getElementById('gioco-tipo')?.addEventListener('change', (ev) => {
     const trivia = ev.target.value === 'trivia';
     document.getElementById('gioco-trivia').hidden = !trivia;
@@ -9251,12 +8666,10 @@ function attivaPiattaforma() {
     caricaGiochi();
   }));
 
-  // ponte "giochi del sito": solo l'interruttore (endpoint/segreto arrivano dal sito)
   document.getElementById('btn-salva-giochisito')?.addEventListener('click', () => conErrore(async () => {
     await salvaImpostazioni({ giochiSito: { attivo: document.getElementById('chk-giochisito').checked } }, 'Giochi del sito salvati');
   }));
 
-  // citazioni: aggiunta dalla dashboard
   document.getElementById('btn-aggiungi-citazione')?.addEventListener('click', () => conErrore(async () => {
     const inp = document.getElementById('inp-citazione');
     const testo = (inp.value || '').trim();
@@ -9267,7 +8680,6 @@ function attivaPiattaforma() {
     caricaCitazioni();
   }));
 
-  // citazioni: estrai da un link → riempie la textarea (da curare prima di importare)
   document.getElementById('btn-estrai-citazioni')?.addEventListener('click', (ev) => conErrore(async () => {
     const url = (document.getElementById('inp-import-url').value || '').trim();
     if (!url) { toast(L('Incolla un link.', 'Paste a link.', 'Pega un enlace.'), 'errore'); return; }
@@ -9284,18 +8696,16 @@ function attivaPiattaforma() {
     } finally { btn.disabled = false; btn.textContent = orig; }
   }));
 
-  // mostra/nasconde l'avviso "hai incollato il guscio senza JS"
   const mostraAvvisoCita = (msg) => {
     const el = document.getElementById('import-cita-avviso');
     if (!el) return;
     if (msg) { el.innerHTML = '' + msg; el.hidden = false; } else { el.hidden = true; el.textContent = ''; }
   };
 
-  // il bookmarklet "Prendi le quote da x.la": lo si trascina nei preferiti
   const bmXla = document.getElementById('bm-xla');
   if (bmXla) {
     bmXla.href = bookmarkletXla;
-    // cliccato QUI (sul bot) non serve: va aperto su x.la. Spieghiamo invece di navigare.
+
     bmXla.addEventListener('click', (e) => { e.preventDefault(); toast(L('Trascinami nella barra dei preferiti, poi cliccami mentre sei sulla tua pagina x.la', 'Drag me to your bookmarks bar, then click me while you\'re on your x.la page', 'Arrástrame a la barra de favoritos, luego haz clic en mí mientras estás en tu página x.la')); });
   }
   document.getElementById('bm-xla-copia')?.addEventListener('click', async () => {
@@ -9303,7 +8713,6 @@ function attivaPiattaforma() {
     catch { window.prompt(L('Copia con Ctrl+C, poi crea un preferito con questo indirizzo:', 'Copy with Ctrl+C, then create a bookmark with this address:', 'Copia con Ctrl+C, luego crea un favorito con esta dirección:'), bookmarkletXla); }
   });
 
-  // citazioni: riconosce (testo/autore/data, formato x.la) e importa
   document.getElementById('btn-importa-citazioni')?.addEventListener('click', () => conErrore(async () => {
     const testo = document.getElementById('txt-import-citazioni').value || '';
     const esito = document.getElementById('import-cita-esito');
@@ -9325,7 +8734,6 @@ function attivaPiattaforma() {
     caricaCitazioni();
   }));
 
-  // premio VIP automatico (top monete → VIP ogni settimana/mese)
   document.getElementById('btn-salva-premio')?.addEventListener('click', () => conErrore(async () => {
     const quanti = Math.min(5, Math.max(1, Number(document.getElementById('num-premio-quanti').value) || 1));
     await salvaImpostazioni({
@@ -9337,15 +8745,13 @@ function attivaPiattaforma() {
     }, 'Premio VIP salvato');
   }));
 
-  // modalità di attivazione (24/7 · quando live · manuale)
   document.getElementById('btn-salva-modalita')?.addEventListener('click', () => conErrore(async () => {
     await salvaImpostazioni({ modalita: document.getElementById('sel-modalita').value }, 'Modalità salvata ⏱');
   }));
 
-  // --- Notifiche Telegram ---
   document.getElementById('btn-tg-token')?.addEventListener('click', () => conErrore(async () => {
     const inp = document.getElementById('inp-tg-token');
-    if (inp?.disabled) return;   // già collegato
+    if (inp?.disabled) return;
     const token = (inp?.value || '').trim();
     if (!token) { toast(L('Incolla il token del bot (te lo dà @BotFather).', 'Paste the bot token (@BotFather gives it to you).', 'Pega el token del bot (te lo da @BotFather).'), 'errore'); return; }
     const r = await api('/api/streamer/telegram/token', { method: 'POST', body: { token } });
@@ -9366,7 +8772,7 @@ function attivaPiattaforma() {
       pinLive: document.getElementById('chk-tg-pin')?.checked ?? true,
     } });
     toast(L('Notifiche Telegram salvate', 'Telegram notifications saved', 'Notificaciones de Telegram guardadas'));
-    stato = await api('/api/me');   // aggiorna lo stato senza perdere la scheda
+    stato = await api('/api/me');
   }));
 
   document.getElementById('btn-tg-prova')?.addEventListener('click', () => conErrore(async () => {
@@ -9381,17 +8787,15 @@ function attivaPiattaforma() {
     stato = await api('/api/me'); render();
   }));
 
-  // --- Bot interattivo su Telegram (webhook + comandi) ---
   document.getElementById('chk-tg-interattivo')?.addEventListener('change', (ev) => {
     const chk = ev.target;
     conErrore(async () => {
       await api('/api/streamer/telegram/interattivo', { method: 'POST', body: { attivo: chk.checked } });
       toast(chk.checked ? 'Bot interattivo attivato' : 'Bot interattivo spento.');
       stato = await api('/api/me'); render();
-    }).catch(() => { chk.checked = !chk.checked; });   // in caso di errore, rimetti lo switch
+    }).catch(() => { chk.checked = !chk.checked; });
   });
 
-  // --- Chat privata Telegram: chi risponde + collegamento "solo me" ---
   document.getElementById('chk-tg-dm')?.addEventListener('change', (ev) => conErrore(async () => {
     await api('/api/streamer/telegram/dm', { method: 'POST', body: { modo: ev.target.checked ? 'me' : 'off' } });
     toast(ev.target.checked ? 'In privato risponderò solo a te.' : 'Chat privata spenta.');
@@ -9412,7 +8816,6 @@ function attivaPiattaforma() {
       ev.target.checked ? 'Ok, ogni tanto ti scriverò io' : 'Non ti scriverò più per prima.');
   }));
 
-  // --- Auguri di compleanno (delega sul contenitore, ricaricato via JS) ---
   document.getElementById('box-compleanni')?.addEventListener('click', (ev) => {
     if (ev.target.closest('#btn-compleanni-salva')) return conErrore(async () => {
       await api('/api/streamer/telegram/compleanni', { method: 'POST', body: {
@@ -9457,7 +8860,6 @@ function attivaPiattaforma() {
     });
   });
 
-  // --- Notifica TikTok ---
   document.getElementById('btn-tk-salva')?.addEventListener('click', () => conErrore(async () => {
     await salvaImpostazioni({
       tiktok: {
@@ -9474,7 +8876,6 @@ function attivaPiattaforma() {
     toast(L('Prova TikTok inviata nel gruppo Telegram', 'TikTok test sent to the Telegram group', 'Prueba de TikTok enviada al grupo de Telegram'));
   }));
 
-  // --- Nuovo post su TikTok (API ufficiale) ---
   document.getElementById('btn-tk-post-salva')?.addEventListener('click', () => conErrore(async () => {
     await salvaImpostazioni({
       tiktok: {
@@ -9493,7 +8894,7 @@ function attivaPiattaforma() {
       messaggio: document.getElementById('txt-yt-messaggio')?.value || '',
     };
     const ak = (document.getElementById('inp-yt-apikey')?.value || '').trim();
-    if (ak) yt.apiKey = ak;   // vuoto = mantieni quella salvata
+    if (ak) yt.apiKey = ak;
     await salvaImpostazioni({ youtube: yt }, 'YouTube salvato');
   }));
   document.getElementById('btn-yt-apikey-rimuovi')?.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
@@ -9526,7 +8927,6 @@ function attivaPiattaforma() {
     if (esito) esito.innerHTML = r && r.ok ? 'Funziona!' : `${esc((r && r.motivo) || 'errore')}`;
   }));
 
-  // Comando rapido: inserimento variabili (senza perdere il focus) + crea al volo
   document.getElementById('qc-chips')?.addEventListener('mousedown', (ev) => {
     const chip = ev.target.closest('[data-qc]');
     if (!chip) return;
@@ -9560,7 +8960,6 @@ function attivaPiattaforma() {
     caricaModuli();
   }));
 
-  // Comandi pronti in 1 clic: !categoria / !titolo (già configurati per i mod).
   const presetComando = (tipo, etichetta) => conErrore(async () => {
     const esito = document.getElementById('preset-esito');
     const r = await api('/api/streamer/comandi/preset', { method: 'POST', body: { tipo } }).catch((e) => ({ ok: false, errore: e?.message }));
@@ -9579,7 +8978,6 @@ function attivaPiattaforma() {
   document.getElementById('btn-preset-categoria')?.addEventListener('click', () => presetComando('categoria'));
   document.getElementById('btn-preset-titolo')?.addEventListener('click', () => presetComando('titolo'));
 
-  // comodità in chat: gestione comandi dalla chat + ore guardate
   document.getElementById('btn-salva-comodita')?.addEventListener('click', () => conErrore(async () => {
     await salvaImpostazioni({
       comandiChat: { attivo: document.getElementById('chk-comandi-chat').checked },
@@ -9588,13 +8986,10 @@ function attivaPiattaforma() {
     }, L('Salvato', 'Saved', 'Guardado'));
   }));
 
-  // slider spontaneità: percentuale in tempo reale
   document.getElementById('rng-spontaneita')?.addEventListener('input', (ev) => {
     document.getElementById('val-spontaneita').textContent = ev.target.value + '%';
   });
 
-  // --- scheda Ascolto live: interruttore, slider e salvataggio ---
-  // l'interruttore salva subito (come il bot acceso/spento), aggiornando l'etichetta
   document.getElementById('toggle-ascolto')?.addEventListener('change', (ev) => {
     const acceso = ev.target.checked;
     const et = document.getElementById('etichetta-ascolto');
@@ -9603,19 +8998,17 @@ function attivaPiattaforma() {
         await salvaImpostazioni({ ascoltoLive: acceso }, acceso ? 'Ascolto live acceso' : 'Ascolto live spento.');
         if (et) et.textContent = acceso ? 'Ascolto acceso' : 'Ascolto spento';
       } catch (e) {
-        ev.target.checked = !acceso; // ripristino in caso di errore
+        ev.target.checked = !acceso;
         throw e;
       }
     });
   });
 
-  // slider sensibilità: solo valore mostrato in tempo reale (salva col bottone)
   document.getElementById('rng-ascolto')?.addEventListener('input', (ev) => {
     const out = document.getElementById('val-ascolto');
     if (out) out.textContent = ev.target.value;
   });
 
-  // Salva: interruttore + sensibilità insieme
   document.getElementById('btn-salva-ascolto')?.addEventListener('click', () => conErrore(async () => {
     const ascoltoLive = document.getElementById('toggle-ascolto').checked;
     const ascoltoSensibilita = Number(document.getElementById('rng-ascolto').value) || 5;
@@ -9624,7 +9017,6 @@ function attivaPiattaforma() {
     if (et) et.textContent = ascoltoLive ? 'Ascolto acceso' : 'Ascolto spento';
   }));
 
-  // --- cambio categoria a voce: label live, esempio live, salvataggio ---
   document.getElementById('chk-categoria')?.addEventListener('change', (ev) => {
     const et = document.getElementById('etichetta-categoria');
     if (et) et.textContent = ev.target.checked ? 'Attivo' : 'Spento';
@@ -9642,7 +9034,6 @@ function attivaPiattaforma() {
     if (et) et.textContent = attivo ? 'Attivo' : 'Spento';
   }));
 
-  // --- cambio titolo a voce ---
   document.getElementById('chk-titolo')?.addEventListener('change', (ev) => {
     const et = document.getElementById('etichetta-titolo');
     if (et) et.textContent = ev.target.checked ? 'Attivo' : 'Spento';
@@ -9660,7 +9051,6 @@ function attivaPiattaforma() {
     if (et) et.textContent = attivo ? 'Attivo' : 'Spento';
   }));
 
-  // --- "impara mentre parlo": interruttore che salva subito ---
   document.getElementById('chk-impara')?.addEventListener('change', (ev) => {
     const acceso = ev.target.checked;
     const et = document.getElementById('etichetta-impara');
@@ -9672,7 +9062,6 @@ function attivaPiattaforma() {
     });
   });
 
-  // conoscenza: aggiunta manuale
   document.getElementById('btn-aggiungi-conoscenza')?.addEventListener('click', () => conErrore(async () => {
     const domanda = document.getElementById('inp-domanda').value.trim();
     const risposta = document.getElementById('inp-risposta').value.trim();
@@ -9684,7 +9073,6 @@ function attivaPiattaforma() {
     caricaConoscenza();
   }));
 
-  // copia URL overlay OBS
   document.getElementById('btn-copia-overlay')?.addEventListener('click', async () => {
     const inp = document.getElementById('inp-overlay-url');
     if (!inp?.value) { toast(L('URL non ancora pronto, riprova tra un attimo.', 'URL not ready yet, try again in a moment.', 'URL aún no lista, inténtalo de nuevo en un momento.'), 'errore'); return; }
@@ -9698,7 +9086,6 @@ function attivaPiattaforma() {
     }
   });
 
-  // --- Regia (Vai live) ---
   document.getElementById('regia-refresh')?.addEventListener('click', () => conErrore(() => caricaRegia()));
   document.getElementById('regia-salva-canale')?.addEventListener('click', () => conErrore(() => salvaRegiaCanale()));
   document.getElementById('regia-clip')?.addEventListener('click', () => conErrore(async () => {
@@ -9720,7 +9107,7 @@ function attivaPiattaforma() {
   document.getElementById('regia-raid-annulla')?.addEventListener('click', () => conErrore(async () => {
     await api('/api/streamer/regia/raid/annulla', { method: 'POST' }); toast(L('Raid annullata', 'Raid canceled', 'Raid cancelada'));
   }));
-  // selettore gioco/categoria della regia
+
   const gCerca = document.getElementById('regia-gioco-cerca');
   gCerca?.addEventListener('input', () => { clearTimeout(_regiaCercaTimer); _regiaCercaTimer = setTimeout(cercaGiochiRegia, 300); });
   const gLista = document.getElementById('regia-gioco-lista');
@@ -9732,16 +9119,14 @@ function attivaPiattaforma() {
   });
   document.addEventListener('click', (ev) => { if (gLista && !gLista.hidden && !gLista.contains(ev.target) && ev.target !== gCerca) gLista.hidden = true; });
 
-  // --- Studio Web (scene, fonti, mixer: tutto via delegazione) ---
   initStudio();
 
-  // caricamento di un effetto (multipart, con spinner)
   document.getElementById('btn-carica-effetto')?.addEventListener('click', caricaEffettoUpload);
-  // "rendi pubblico": mostra il campo nome nella libreria
+
   document.getElementById('eff-pubblico')?.addEventListener('change', (e) => {
     const box = document.getElementById('eff-nome-box'); if (box) box.hidden = !e.target.checked;
   });
-  // libreria condivisa: filtri per tipo, ricerca, import, anteprima audio/video
+
   document.querySelectorAll('.lib-tab').forEach((b) => b.addEventListener('click', () => {
     document.querySelectorAll('.lib-tab').forEach((x) => x.classList.remove('attivo'));
     b.classList.add('attivo'); _libTipo = b.dataset.tipo || ''; caricaLibreria();
@@ -9755,16 +9140,14 @@ function attivaPiattaforma() {
       const imp = ev.target.closest('.lib-importa');
       const play = ev.target.closest('.lib-play');
       if (imp) conErrore(() => importaLibreria(imp.dataset.id, imp));
-      else if (play) { try { const a = new Audio(play.dataset.audio); a.play().catch(() => {}); } catch (e) { /* niente */ } }
+      else if (play) { try { const a = new Audio(play.dataset.audio); a.play().catch(() => {}); } catch (e) {  } }
     });
     grigliaLib.addEventListener('mouseover', (ev) => { const v = ev.target.closest('video.lib-media'); if (v) v.play().catch(() => {}); });
-    grigliaLib.addEventListener('mouseout', (ev) => { const v = ev.target.closest('video.lib-media'); if (v) { try { v.pause(); v.currentTime = 0; } catch (e) { /* niente */ } } });
+    grigliaLib.addEventListener('mouseout', (ev) => { const v = ev.target.closest('video.lib-media'); if (v) { try { v.pause(); v.currentTime = 0; } catch (e) {  } } });
   }
 
-  // memoria on-demand
   document.getElementById('btn-carica-memoria')?.addEventListener('click', () => caricaMemoria(true));
 
-  // reset con conferma
   document.getElementById('btn-reset')?.addEventListener('click', () => conErrore(async () => {
     if (!confirm(L('Sicuro? Il bot dimenticherà lezioni, ricordi sugli utenti e conoscenza imparata dalla chat. Non si torna indietro.', 'Are you sure? The bot will forget lessons, memories about users and knowledge learned from chat. There\'s no going back.', '¿Seguro? El bot olvidará lecciones, recuerdos sobre los usuarios y conocimiento aprendido del chat. No hay vuelta atrás.'))) return;
     await api('/api/streamer/memoria/reset', { method: 'POST', body: {} });
@@ -9772,27 +9155,25 @@ function attivaPiattaforma() {
     document.getElementById('contenitore-memoria').innerHTML = '';
   }));
 
-  // --- scheda Moduli: intro + modelli pronti (delega sul pannello) ---
   document.getElementById('scheda-moduli')?.addEventListener('click', (ev) => {
     if (ev.target.closest('[data-nuovo-modulo]')) { apriEditor(null); return; }
     const mod = ev.target.closest('[data-modello]');
     if (mod) apriEditor(modelloPronto(mod.dataset.modello));
   });
 
-  // --- scheda Moduli: editor (delega sul contenitore persistente) ---
   const ed = document.getElementById('editor-modulo');
   if (ed) {
-    // tiene il focus sul campo di testo quando si clicca una pillola
+
     ed.addEventListener('mousedown', (ev) => {
       if (ev.target.closest('[data-inserisci]')) ev.preventDefault();
     });
-    // ricorda l'ultimo campo di testo a fuoco (per inserire le variabili)
+
     ed.addEventListener('focusin', (ev) => {
       if (ev.target.matches('[data-var-target]')) campoAttivoModulo = ev.target;
     });
-    // digitazione → aggiorna il riassunto vivo
+
     ed.addEventListener('input', aggiornaRiassunto);
-    // cambi di select (tipo trigger / tipo azione / condizioni) e checkbox
+
     ed.addEventListener('change', (ev) => {
       if (ev.target.matches('[data-trigger-tipo]')) {
         const box = document.getElementById('campi-quando');
@@ -9803,15 +9184,13 @@ function attivaPiattaforma() {
       }
       aggiornaRiassunto();
     });
-    // bottoni dell'editor + pillole variabili
+
     ed.addEventListener('click', gestisciClicEditor);
   }
 
-  // dati della scheda visibile al primo caricamento
   caricaDatiScheda(schedaAttiva);
 }
 
-// click dentro l'editor: pillole, riordino/rimozione azioni, salva/prova/annulla
 function gestisciClicEditor(ev) {
   const chip = ev.target.closest('[data-inserisci]');
   if (chip) {
@@ -9832,7 +9211,7 @@ function gestisciClicEditor(ev) {
   }
   const rim = ev.target.closest('[data-rimuovi-azione]');
   if (rim) { ev.preventDefault(); rim.closest('.azione-riga')?.remove(); aggiornaRiassunto(); return; }
-  // caselle delle frasi-trigger (trigger 'parola'): aggiungi / rimuovi
+
   if (ev.target.closest('[data-aggiungi-frase]')) {
     ev.preventDefault();
     document.getElementById('lista-frasi-trigger')?.insertAdjacentHTML('beforeend',
@@ -9889,24 +9268,21 @@ function gestisciClicEditor(ev) {
       if (id == null) return;
       await api('/api/streamer/moduli/' + encodeURIComponent(id) + '/prova', { method: 'POST', body: {} });
       toast(L('Salvato e provato: guarda chat/overlay', 'Saved and tested: check chat/overlay', 'Guardado y probado: mira chat/overlay'));
-      caricaModuli(); // aggiorna la lista, l'editor resta aperto per continuare a modificare
+      caricaModuli();
     });
   }
 }
 
-// textarea → array di righe pulite
 function righe(testo) {
   return String(testo || '').split('\n').map((r) => r.trim()).filter(Boolean);
 }
 
-// esegue un'azione async mostrando eventuali errori come toast
 async function conErrore(fn) {
   try { await fn(); } catch (e) { toast(L('Errore: ', 'Error: ', 'Error: ') + e.message, 'errore'); }
 }
 
-// carica i dati "pigri" della scheda selezionata
 function caricaDatiScheda(id) {
-  if (schedaBloccata(id)) return;   // pagina bloccata: nessuna API (darebbe 403)
+  if (schedaBloccata(id)) return;
   if (id === 'stato') { caricaPasskey(); caricaModeratori(); caricaRetePanoramica(); }
   if (id === 'avatar') caricaMente3d();
   if (id === 'personalita') caricaGuide();
@@ -9932,8 +9308,6 @@ function caricaDatiScheda(id) {
   if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaSalute(); caricaBackup(); caricaAnima(); caricaLLM(); caricaVita(); caricaEcosistema(); }
 }
 
-
-// --- auguri di compleanno (scheda Notifiche) ----------------------------
 const fmtGiornoMese = (g, m) => String(g).padStart(2, '0') + '/' + String(m).padStart(2, '0');
 
 async function caricaCompleanni() {
@@ -9985,8 +9359,6 @@ async function caricaCompleanni() {
     </div>`;
 }
 
-// --- caricamenti dati ---------------------------------------------------
-
 async function caricaConoscenza() {
   const ul = document.getElementById('lista-conoscenza');
   if (!ul) return;
@@ -10003,7 +9375,7 @@ async function caricaConoscenza() {
         </div>
         <button class="btn secondario mini" data-elimina="${v.id}">Elimina</button>
       </li>`).join('');
-    // eliminazione singola voce (delega sull'elenco)
+
     ul.onclick = (ev) => {
       const btn = ev.target.closest('[data-elimina]');
       if (!btn) return;
@@ -10036,8 +9408,6 @@ async function caricaClip() {
   }
 }
 
-// classifica monete + VIP a tempo attivi (scheda Giochi)
-// giochi personalizzati (creati dallo streamer)
 async function caricaGiochi() {
   const ul = document.getElementById('lista-giochi');
   if (!ul) return;
@@ -10140,10 +9510,6 @@ async function caricaCitazioni() {
   } catch (e) { ul.innerHTML = `<li class="vuoto">Errore: ${esc(e.message)}</li>`; }
 }
 
-// --- effetti & suoni ----------------------------------------------------
-
-// Tracking webcam (P6): link OBS + mappatura gesto→effetto. Handler idempotenti
-// (onX=) perché la scheda si può riaprire più volte.
 async function caricaTracking() {
   const urlEl = document.getElementById('trk-url');
   if (!urlEl) return;
@@ -10155,17 +9521,17 @@ async function caricaTracking() {
     const dEl = document.getElementById('trk-url-detect'); if (dEl) dEl.value = base ? base + sep + 'vista=detect' : '';
     const pEl = document.getElementById('trk-url-play'); if (pEl) pEl.value = base ? base + sep + 'vista=play' : '';
   } catch { urlEl.value = ''; }
-  // copia per i pulsanti "Copia" generici (data-trk-copy=<id campo>)
+
   document.querySelectorAll('[data-trk-copy]').forEach((b) => { b.onclick = () => {
     const v = document.getElementById(b.dataset.trkCopy)?.value || '';
     if (v && navigator.clipboard) navigator.clipboard.writeText(v).then(() => toast(L('Link copiato ✓', 'Link copied ✓', 'Enlace copiado ✓'))).catch(() => {});
   }; });
-  // datalist effetti (autocompletamento, best-effort): riusa la lista dei Moduli
+
   try {
     const list = document.getElementById('trk-eff-list');
     const cmds = (datiModuli?.effettiDisponibili || []).map((e) => e.comando || e).filter(Boolean);
     if (list && cmds.length) list.innerHTML = [...new Set(cmds)].slice(0, 200).map((c) => `<option value="${esc(c)}">`).join('');
-  } catch { /* niente */ }
+  } catch {  }
   const btnCopia = document.getElementById('trk-copia');
   if (btnCopia) btnCopia.onclick = () => {
     const v = urlEl.value || '';
@@ -10200,12 +9566,10 @@ async function caricaTracking() {
     const giochiSel = { mima: chk('g-mima'), nonridere: chk('g-nonridere'), reaction: chk('g-reaction'), battaglia: chk('g-battaglia') };
     await salvaImpostazioni({ tracking: { attivo, giochi, camera, effetti, giochiSel, mappa, mappaChat, mappaMeme } }, L('Impostazioni salvate ✓', 'Settings saved ✓', 'Ajustes guardados ✓'));
   });
-  // sensibilità: aggiorna l'etichetta dal vivo
+
   const efSens = document.getElementById('ef-sens');
   if (efSens) efSens.oninput = () => { const s = document.getElementById('ef-sens-val'); if (s) s.textContent = efSens.value; };
 
-  // Scelta webcam: mostra quella salvata; «Rileva» chiede il permesso ed elenca
-  // le fotocamere per NOME (etichetta), che vale identica anche in OBS.
   const selCam = document.getElementById('trk-cam');
   const camSalvata = impostazioni().tracking?.camera || '';
   if (selCam && camSalvata && ![...selCam.options].some((o) => o.value === camSalvata)) {
@@ -10219,7 +9583,7 @@ async function caricaTracking() {
     try { stream = await navigator.mediaDevices.getUserMedia({ video: true }); }
     catch { toast(L('Consenti la fotocamera per elencare le webcam.', 'Allow the camera to list the webcams.', 'Permite la cámara para listar las webcams.'), 'errore'); return; }
     const cams = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'videoinput');
-    stream.getTracks().forEach((t) => t.stop());   // era solo per ottenere i nomi
+    stream.getTracks().forEach((t) => t.stop());
     const prima = selCam.value;
     selCam.innerHTML = `<option value="">${L('Webcam predefinita del sistema', 'System default webcam', 'Webcam predeterminada del sistema')}</option>`
       + cams.map((c, i) => `<option value="${esc(c.label || String(i))}">${esc(c.label || (L('Webcam', 'Webcam', 'Webcam') + ' ' + (i + 1)))}</option>`).join('');
@@ -10233,7 +9597,6 @@ async function caricaEffetti() {
   if (!ul) return;
   try {
     const dati = await api('/api/streamer/effetti');
-    // NB: il link OBS vive nella scheda Overlay (per-overlay), non qui: non tocchiamo inp-overlay-url
 
     const etTipo = { audio: _bIco(ICO.altoparlante) + L('audio', 'audio', 'audio'), immagine: _bIco(ICO.immagine) + L('immagine', 'image', 'imagen'), video: _bIco(ICO.video) + L('video', 'video', 'vídeo') };
     const etTier = { tutti: L('tutti', 'everyone', 'todos'), sub: 'sub', vip: 'VIP', mod: 'mod' };
@@ -10255,7 +9618,6 @@ async function caricaEffetti() {
         </div>
       </li>`).join('');
 
-    // Prova / Elimina / Condividi (delega sull'elenco)
     ul.onclick = (ev) => {
       const prova = ev.target.closest('[data-prova]');
       const del = ev.target.closest('[data-elimina-eff]');
@@ -10278,7 +9640,7 @@ async function caricaEffetti() {
           let nome = pub.dataset.nome || '';
           if (rendiPubblico) {
             nome = (prompt(L('Con che nome vuoi condividerlo nella libreria?', 'What name do you want to share it with in the library?', '¿Con qué nombre quieres compartirlo en la biblioteca?'), nome) || '').trim();
-            if (!nome) return;   // annullato
+            if (!nome) return;
           }
           await api('/api/streamer/effetti/' + pub.dataset.pubblica + '/pubblico', { method: 'PATCH', body: { pubblico: rendiPubblico, nome } });
           toast(rendiPubblico ? L('Condiviso nella libreria', 'Shared in the library', 'Compartido en la biblioteca') : L('Tornato privato', 'Made private again', 'Vuelto a privado'));
@@ -10291,15 +9653,13 @@ async function caricaEffetti() {
   }
 }
 
-// --- Libreria condivisa -------------------------------------------------
 let _libTipo = '';
 let _libCercaTimer = null;
 
 function libItemHtml(it) {
   let media;
   if (it.tipo === 'immagine') media = `<img class="lib-media" src="${esc(it.url)}" loading="lazy" alt="">`;
-  // video: #t=0.1 forza un fotogramma-poster (niente più riquadro nero), e
-  // autoplay muto in loop dà un'anteprima "viva". playsinline per iOS.
+
   else if (it.tipo === 'video') media = `<video class="lib-media" src="${esc(it.url)}#t=0.1" muted playsinline loop autoplay preload="metadata"></video>`;
   else media = '<div class="lib-media lib-audio"></div>';
   const audio = (it.tipo === 'audio' || it.combo)
@@ -10319,8 +9679,7 @@ async function caricaLibreria() {
   if (!g) return;
   const q = (document.getElementById('lib-cerca')?.value || '').trim();
   try {
-    // miei=1: mostra anche i TUOI effetti pubblici (marcati «tuo»), così vedi
-    // subito ciò che hai condiviso e la libreria non sembra vuota se sei da solo.
+
     const d = await api(`/api/streamer/libreria?tipo=${encodeURIComponent(_libTipo)}&q=${encodeURIComponent(q)}&miei=1`);
     if (!d.items.length) {
       g.innerHTML = `<p class="vuoto">${L('Ancora niente qui. Condividi il primo: carica un effetto in «Effetti & suoni» e spunta “Rendi pubblico” — comparirà qui.', 'Nothing here yet. Share the first one: upload an effect in «Effects & sounds» and tick “Make it public” — it will show here.', 'Aún no hay nada. Comparte el primero: sube un efecto en «Efectos y sonidos» y marca “Hazlo público” — aparecerá aquí.')}</p>`;
@@ -10349,7 +9708,6 @@ async function importaLibreria(id, btn) {
   }
 }
 
-// invio multipart del form di caricamento effetto (non passa da api(): usa FormData)
 async function caricaEffettoUpload(ev) {
   if (DEMO) { toast(L('In demo non si caricano file — accedi per farlo davvero.', "In demo you can't upload files — log in to do it for real.", 'En la demo no se suben archivos — inicia sesión para hacerlo de verdad.')); return; }
   const btn = ev.currentTarget;
@@ -10368,7 +9726,7 @@ async function caricaEffettoUpload(ev) {
 
   const fd = new FormData();
   fd.append('file', file);
-  if (suonoFile) fd.append('suono', suonoFile);       // COMBO: suono abbinato
+  if (suonoFile) fd.append('suono', suonoFile);
   fd.append('comando', comando);
   fd.append('tier', document.getElementById('eff-tier').value);
   fd.append('cooldown', document.getElementById('eff-cooldown').value);
@@ -10381,10 +9739,10 @@ async function caricaEffettoUpload(ev) {
   const testoOrig = btn.textContent;
   btn.textContent = L('Comprimo e carico… ⏳', 'Compressing and uploading… ⏳', 'Comprimiendo y subiendo… ⏳');
   try {
-    // niente header Content-Type: lo imposta il browser col boundary multipart
+
     const res = await fetch('/api/streamer/effetti', { method: 'POST', body: fd });
     let dati = null;
-    try { dati = await res.json(); } catch { /* risposta non JSON */ }
+    try { dati = await res.json(); } catch {  }
     if (!res.ok) throw new Error(dati?.errore || `errore ${res.status}`);
     toast(dati?.combo ? L('Combo caricata (media + suono)!', 'Combo uploaded (media + sound)!', '¡Combo subida (media + sonido)!') : L('Effetto caricato e compresso!', 'Effect uploaded and compressed!', '¡Efecto subido y comprimido!'));
     fileInput.value = '';
@@ -10392,7 +9750,7 @@ async function caricaEffettoUpload(ev) {
     document.getElementById('eff-comando').value = '';
     const nomeBox = document.getElementById('eff-nome'); if (nomeBox) nomeBox.value = '';
     caricaEffetti();
-    if (pubblico) caricaLibreria();     // riflette subito la nuova condivisione
+    if (pubblico) caricaLibreria();
   } catch (e) {
     if (out) out.textContent = '' + e.message;
     toast(L('Caricamento fallito: ', 'Upload failed: ', 'Subida fallida: ') + e.message, 'errore');
@@ -10402,10 +9760,6 @@ async function caricaEffettoUpload(ev) {
   }
 }
 
-// Carica un file (audio / immagine / video) SUO direttamente da un blocco alert:
-// lo invia al server (che lo comprime, salva e assegna all'evento), poi ricarica
-// la libreria e seleziona il nuovo media nel menu del blocco giusto. Così lo
-// streamer mette quello che vuole senza passare dalla scheda Effetti.
 async function caricaMediaAlert(kind, slot, file) {
   if (DEMO) { toast(L('In demo non si caricano file — accedi per farlo davvero.', "In demo you can't upload files — log in to do it for real.", 'En la demo no se suben archivos — inicia sesión para hacerlo de verdad.')); return; }
   const blocco = document.querySelector(`.alert-blocco[data-alert="${kind}"]`);
@@ -10419,11 +9773,11 @@ async function caricaMediaAlert(kind, slot, file) {
     fd.append('file', file);
     fd.append('kind', kind);
     fd.append('slot', slot);
-    // niente header Content-Type: lo imposta il browser col boundary multipart
+
     const res = await fetch('/api/streamer/alerts/media', { method: 'POST', body: fd });
-    let dati = null; try { dati = await res.json(); } catch { /* risposta non JSON */ }
+    let dati = null; try { dati = await res.json(); } catch {  }
     if (!res.ok) throw new Error(dati?.errore || `errore ${res.status}`);
-    // ricarica la libreria e ripopola i menu, mostrando il nuovo media già selezionato
+
     const lib = await api('/api/streamer/effetti').catch(() => ({ effetti: [] }));
     const cfg = impostazioni().alerts || {};
     cfg[kind] = { ...(cfg[kind] || {}), [slot === 'suono' ? 'suono' : 'media']: dati.ref };
@@ -10438,15 +9792,10 @@ async function caricaMediaAlert(kind, slot, file) {
   }
 }
 
-// Numeri "che contano su": animano da 0 al valore finale. Copre sia le
-// statistiche (.stat .numero, valore letto dal testo) sia i contatori del
-// cruscotto rete ([data-conta], con suffisso data-suff opzionale come "%").
-// Rispetta prefers-reduced-motion ed è idempotente.
 function animaNumeri(root) {
   const scope = root || document;
   const ridotto = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // contatori espliciti del cruscotto rete
   scope.querySelectorAll('[data-conta]:not([data-contato])').forEach((el) => {
     el.dataset.contato = '1';
     const target = parseFloat(el.dataset.conta);
@@ -10456,27 +9805,26 @@ function animaNumeri(root) {
     const dur = 900; const t0 = performance.now();
     const passo = (now) => {
       const t = Math.min(1, (now - t0) / dur);
-      const e = 1 - Math.pow(1 - t, 3);   // easeOutCubic
+      const e = 1 - Math.pow(1 - t, 3);
       el.textContent = Math.round(target * e) + suff;
       if (t < 1) requestAnimationFrame(passo); else el.textContent = target + suff;
     };
     requestAnimationFrame(passo);
   });
 
-  // statistiche: il valore sta nel testo, formattato all'italiana
   scope.querySelectorAll('.stat .numero').forEach((el) => {
     if (el.dataset.animato) return;
     el.dataset.animato = '1';
     const finale = el.textContent.trim();
     const n = parseInt(finale.replace(/[^\d]/g, ''), 10);
-    if (ridotto || !Number.isFinite(n) || n <= 0) return;   // niente da animare
+    if (ridotto || !Number.isFinite(n) || n <= 0) return;
     const start = performance.now();
     const passo = (ora) => {
       const t = Math.min(1, (ora - start) / 900);
-      const eased = 1 - Math.pow(1 - t, 3);               // easeOutCubic
+      const eased = 1 - Math.pow(1 - t, 3);
       el.textContent = Math.round(n * eased).toLocaleString('it-IT');
       if (t < 1) requestAnimationFrame(passo);
-      // fine: stessa formattazione dell'animazione (niente scatto del puntino)
+
       else el.textContent = /^\d+$/.test(finale) ? n.toLocaleString('it-IT') : finale;
     };
     requestAnimationFrame(passo);
@@ -10493,7 +9841,7 @@ async function caricaStatistiche() {
       <div class="stat"><div class="numero">${s.messaggi7g}</div><div class="etichetta">messaggi in chat (7g)</div></div>
       <div class="stat"><div class="numero">${s.messaggiBot7g}</div><div class="etichetta">interventi del bot (7g)</div></div>
       <div class="stat"><div class="numero">${s.clipTotali}</div><div class="etichetta">clip totali</div></div>`;
-    animaNumeri(griglia);   // conteggio animato da 0 al valore
+    animaNumeri(griglia);
     chatters.innerHTML = s.topChatters.length
       ? s.topChatters.map((c, i) => `
           <li><div class="testo-voce"><span class="domanda">${['', '', '', '4°', '5°'][i] || ''} ${esc(c.user)}</span>
@@ -10526,9 +9874,6 @@ async function caricaMemoria(mostraToast = false) {
   }
 }
 
-// ------------------------------------------------------------------ moduli (automazioni)
-
-// mappe testo per rendere leggibili trigger, eventi e azioni
 const EVENTI = [
   ['follow', 'Nuovo follow'],
   ['subscribe', 'Sub / resub'],
@@ -10569,29 +9914,26 @@ const AZIONI = [
   ['annuncia', 'Annuncio in chat (/announce)'],
   ['shoutout', 'Shoutout (banner)'],
 ];
-// pillole variabili cliccabili (testo inserito = etichetta)
+
 const VARIABILI = [
-  // contesto
+
   '$user', '$touser', '$target', '$args', '$arg1', '$canale', '$uptime', '$gioco', '$titolo', '$spettatori',
-  // da quanto segue · un utente a caso tra chi ha scritto · citazione a caso · data/ora
+
   '$followage', '$chattercaso', '$cita', '$data', '$ora', '$giorno',
-  // shoutout: gioco/titolo dell'ultima diretta del destinatario ($touser)
+
   '$giocotarget', '$titolotarget',
-  // azioni sul canale (cambiano titolo/categoria su Twitch)
+
   '$titolo($args)', '$categoria($args)',
-  // generatori parametrici (combinazioni infinite)
+
   '$random(1,100)', '$random(6)', '$decimale(1,2)', '$misura(1,50,cm)', '$pick(a|b|c)', '$count(nome)',
-  // numeri & percentuali
+
   '$random', '$numero', '$percentuale', '$dado', '$moneta', '$sino', '$livello',
-  // metriche / misure a caso
+
   '$altezza', '$peso', '$lunghezza', '$grandezza', '$eta', '$temperatura', '$velocita', '$distanza', '$soldi',
-  // colore / fantasia
+
   '$colore', '$emoji', '$animale',
 ];
 
-// LEGENDA delle variabili: cosa significa ogni $. Raggruppata per tema; ogni voce
-// è [token, IT, EN, ES]. Serve sia il prontuario nel pannello sia il tooltip title
-// sulle pillole (così passando sopra una pillola si legge cosa fa).
 const LEGENDA_VAR = [
   ['gruppo', 'Chi scrive e cosa dice', 'Who writes and what they say', 'Quién escribe y qué dice'],
   ['$user', 'Chi ha scritto (il suo nome)', 'Who wrote (their name)', 'Quién escribió (su nombre)'],
@@ -10634,15 +9976,12 @@ const LEGENDA_VAR = [
   ['…', 'e tante altre "a caso": $percentuale, $altezza, $emoji, $animale…', 'and many more "random" ones: $percentuale, $altezza, $emoji, $animale…', 'y muchas más "al azar": $percentuale, $altezza, $emoji, $animale…'],
 ];
 
-// dizionario token→descrizione (lingua attuale) per i tooltip delle pillole
 function _descrizioniVar() {
   const d = {};
   for (const [tok, it, en, es] of LEGENDA_VAR) { if (tok !== 'gruppo') d[tok] = L(it, en, es); }
   return d;
 }
 
-// descrizione (tooltip) per una pillola, gestendo le forme parametriche:
-// $titolo($args) → $titolo(...) ; $count(morti) → $count(nome).
 function tooltipVar(v, d = _descrizioniVar()) {
   if (d[v]) return d[v];
   const conPuntini = String(v).replace(/\([^)]*\)/, '(...)');
@@ -10652,7 +9991,6 @@ function tooltipVar(v, d = _descrizioniVar()) {
   return chiave ? d[chiave] : '';
 }
 
-// blocco legenda richiudibile: "Cosa significano i $ (legenda)"
 function legendaVariabiliHtml() {
   const righe = LEGENDA_VAR.map(([tok, it, en, es]) => tok === 'gruppo'
     ? `<p class="legenda-gruppo">${esc(L(it, en, es))}</p>`
@@ -10663,7 +10001,6 @@ function legendaVariabiliHtml() {
   </details>`;
 }
 
-// traduce un modulo in una frase italiana leggibile: "QUANDO … SE … → azioni"
 function riassuntoModulo(m) {
   if (!m) return '';
   const t = riassuntoQuando(m.trigger || {});
@@ -10740,7 +10077,6 @@ function riassuntoAzione(a) {
   }
 }
 
-// carica dati della scheda (lazy) e disegna lista + connettori
 async function caricaModuli() {
   const ul = document.getElementById('lista-moduli');
   if (!ul) return;
@@ -10779,7 +10115,6 @@ function disegnaListaModuli() {
       </div>
     </li>`).join('');
 
-  // interruttore attivo/spento
   ul.onchange = (ev) => {
     const tog = ev.target.closest('[data-toggle-modulo]');
     if (!tog) return;
@@ -10798,7 +10133,6 @@ function disegnaListaModuli() {
     });
   };
 
-  // Prova / Modifica / Elimina (delega sull'elenco)
   ul.onclick = (ev) => {
     const prova = ev.target.closest('[data-prova-modulo]');
     const modifica = ev.target.closest('[data-modifica-modulo]');
@@ -10822,12 +10156,10 @@ function disegnaListaModuli() {
   };
 }
 
-// --- editor QUANDO / SE / ALLORA ---------------------------------------
-
 function apriEditor(modulo) {
   const cont = document.getElementById('editor-modulo');
   if (!cont) return;
-  // clona per non modificare la lista finché non si salva; null = nuovo
+
   moduloInModifica = modulo ? JSON.parse(JSON.stringify(modulo)) : {
     id: null, nome: '', attivo: true,
     trigger: { tipo: 'comando', comando: '', alias: [] },
@@ -10898,7 +10230,6 @@ function apriEditor(modulo) {
   document.getElementById('mod-nome')?.focus();
 }
 
-// campi contestuali del blocco QUANDO in base al tipo di innesco
 function disegnaCampiQuando(t) {
   switch (t.tipo) {
     case 'comando':
@@ -10988,7 +10319,6 @@ function disegnaCampiQuando(t) {
   }
 }
 
-// una riga azione del blocco ALLORA
 function disegnaAzione(a) {
   a = a || { tipo: 'messaggio' };
   const tipo = a.tipo || 'messaggio';
@@ -11010,7 +10340,6 @@ function disegnaAzione(a) {
     </div>`;
 }
 
-// campi contestuali di un'azione
 function disegnaCampiAzione(a) {
   const tipo = a.tipo || 'messaggio';
   const _dv = _descrizioniVar();
@@ -11139,7 +10468,6 @@ function disegnaCampiAzione(a) {
   }
 }
 
-// ricostruisce l'oggetto modulo dallo stato del form
 function leggiForm() {
   if (!document.getElementById('mod-trigger-tipo')) return null;
   const g = (id) => document.getElementById(id);
@@ -11150,12 +10478,12 @@ function leggiForm() {
     trigger.alias = (g('mod-alias')?.value || '').split(/[\s,]+/).map((x) => x.trim().replace(/^!/, '')).filter(Boolean);
     trigger.senzaBang = !!g('mod-senza-bang')?.checked;
   } else if (tipoT === 'parola') {
-    // una casella per frase: NIENTE split su virgole → le frasi restano intere
+
     trigger.testi = [...document.querySelectorAll('#lista-frasi-trigger .mod-testo-trigger')]
       .map((i) => i.value.trim()).filter(Boolean);
     trigger.modo = g('mod-modo')?.value || 'contiene';
-    trigger.maiuscole = !!g('mod-case')?.checked;          // rispetta maiuscole/minuscole
-    trigger.ignoraPunt = g('mod-punt') ? !!g('mod-punt').checked : true;   // ignora la punteggiatura (default sì)
+    trigger.maiuscole = !!g('mod-case')?.checked;
+    trigger.ignoraPunt = g('mod-punt') ? !!g('mod-punt').checked : true;
   } else if (tipoT === 'voce') {
     trigger.frasi = righe((g('mod-frasi-voce')?.value || '').toLowerCase());
   } else if (tipoT === 'evento') {
@@ -11176,7 +10504,7 @@ function leggiForm() {
     id: moduloInModifica?.id ?? null,
     nome: (g('mod-nome')?.value || '').trim(),
     attivo: moduloInModifica ? moduloInModifica.attivo !== false : true,
-    telegram: !!g('mod-telegram')?.checked,   // risponde/invia anche nel gruppo Telegram
+    telegram: !!g('mod-telegram')?.checked,
     trigger, condizioni, azioni,
   };
 }
@@ -11205,7 +10533,6 @@ function leggiAzioneRiga(riga) {
   }
 }
 
-// aggiorna il riassunto vivo in cima all'editor
 function aggiornaRiassunto() {
   const el = document.querySelector('#editor-modulo .riassunto-modulo');
   if (!el) return;
@@ -11213,7 +10540,6 @@ function aggiornaRiassunto() {
   if (m) el.textContent = riassuntoModulo(m);
 }
 
-// inserisce una variabile nel campo di testo attivo (o in coda)
 function inserisciNelCampo(campo, testo) {
   const s = campo.selectionStart, e = campo.selectionEnd;
   if (typeof s === 'number' && typeof e === 'number') {
@@ -11221,14 +10547,13 @@ function inserisciNelCampo(campo, testo) {
     campo.value = val.slice(0, s) + testo + val.slice(e);
     const pos = s + testo.length;
     campo.focus();
-    try { campo.setSelectionRange(pos, pos); } catch { /* input non selezionabile */ }
+    try { campo.setSelectionRange(pos, pos); } catch {  }
   } else {
     campo.value += testo;
     campo.focus();
   }
 }
 
-// salva il modulo corrente; ritorna l'id (nuovo o esistente) o null in caso di stop
 async function salvaModuloCorrente() {
   const m = leggiForm();
   if (!m) return null;
@@ -11239,8 +10564,6 @@ async function salvaModuloCorrente() {
   if (moduloInModifica) moduloInModifica.id = id;
   return id;
 }
-
-// --- connettori avanzati (API in ingresso) -----------------------------
 
 function disegnaConnettori() {
   const box = document.getElementById('connettori-moduli');
@@ -11298,7 +10621,6 @@ function disegnaConnettori() {
   };
 }
 
-// copia negli appunti con fallback
 async function copiaTesto(testo, msgOk) {
   if (!testo) { toast(L('Niente da copiare.', 'Nothing to copy.', 'Nada que copiar.'), 'errore'); return; }
   try {
@@ -11309,10 +10631,6 @@ async function copiaTesto(testo, msgOk) {
   }
 }
 
-// ------------------------------------------------------------------ pannello admin
-
-// Contenuto del pannello admin (senza wrapper): usato sia come scheda "Admin"
-// per l'operatore con canale approvato, sia da solo se non ha un canale.
 function vistaAdminContenuto() {
   const avviso = stato.missing?.length ? `
     <div class="carta avviso">
@@ -11370,9 +10688,6 @@ function vistaAdminContenuto() {
     </div>`;
 }
 
-// cruscotto della "piccola rete" in Panoramica (per il canale corrente).
-// Si aggiorna IN TEMPO REALE finché sei sulla scheda: così vedi i nodi salire
-// mentre alleni. Il timer si spegne da solo quando lasci la scheda.
 let _reteTimer = null;
 
 async function caricaRetePanoramica() {
@@ -11380,11 +10695,11 @@ async function caricaRetePanoramica() {
   if (!box) return;
   await aggiornaRetePanoramica(box, true);
   if (_reteTimer) { clearInterval(_reteTimer); _reteTimer = null; }
-  if (DEMO) return;   // in demo i dati sono finti/statici: niente polling
+  if (DEMO) return;
   _reteTimer = setInterval(() => {
     const b = document.getElementById('rete-panoramica');
-    if (!b) { clearInterval(_reteTimer); _reteTimer = null; return; }   // ho lasciato la scheda
-    if (document.hidden) return;                                        // scheda in background: non sprecare
+    if (!b) { clearInterval(_reteTimer); _reteTimer = null; return; }
+    if (document.hidden) return;
     aggiornaRetePanoramica(b, false);
   }, 5000);
 }
@@ -11416,24 +10731,17 @@ async function aggiornaRetePanoramica(box, primo) {
     <p class="suggerimento">${L('«Studia ora»: cerca da sé le sue lacune online, ci ragiona su e le distilla nel suo motore.', '«Study now»: it looks up its own gaps online, reasons over them and distills them into its engine.', '«Estudiar ahora»: busca por sí mismo sus lagunas en línea, razona sobre ellas y las destila en su motor.')}
     ${L('Il «dataset» è la sua mente: su un Mac Apple Silicon lo trasformi in un vero modello tutto suo con', 'The «dataset» is its mind: on an Apple Silicon Mac you turn it into a real model of its own with', 'El «dataset» es su mente: en un Mac Apple Silicon lo conviertes en un modelo propio de verdad con')}
     <code>forgia/forgia.sh</code> (${L('vedi', 'see', 'ver')} <code>forgia/README.md</code>), ${L('poi lo ricolleghi come "maestro".', 'then reconnect it as a "teacher".', 'luego lo reconectas como "maestro".')}</p>`;
-  if (primo) animaNumeri(box);   // conta su dallo 0 solo alla prima comparsa (non a ogni refresh)
+  if (primo) animaNumeri(box);
   document.getElementById('btn-forgia')?.addEventListener('click', () => conErrore(async () => {
     await api('/api/streamer/forgia', { method: 'POST', body: {} });
     toast(L('Ci sto lavorando — studio le mie lacune e distillo. Torna tra poco.', "I'm on it — studying my gaps and distilling. Check back soon.", 'Estoy en ello — estudio mis lagunas y destilo. Vuelve pronto.'));
   }));
 }
 
-// ============================ LA MENTE IN 3D (grafo del cervello) ============================
 let _mente3dCtrl = null;
-let _mente3dPoll = null;    // il battito in tempo reale: aggiorna il grafo e fa pulsare i nodi vivi
-let _mente3dFirma = '';     // firma della struttura: aggiorna la topologia SOLO se è cambiata (no scosse)
-// Palette EMOZIONI validata (script del design-system) con varianti chiaro/scuro.
-// Sei tinte semantiche fisse non possono essere TUTTE distinguibili al 100% sotto
-// daltonismo (tetto teorico ~8 tinte): perciò il colore è RINFORZO — ogni hub è
-// sempre etichettato, in cluster separati e nella legenda.
-// I 10 DOMINI del manuale (cluster del grafo). Colore = rinforzo: ogni hub è
-// sempre etichettato, separato e in legenda, quindi tinte non 100% distinguibili
-// sotto daltonismo restano leggibili (come già per le emozioni).
+let _mente3dPoll = null;
+let _mente3dFirma = '';
+
 const _MENTE_DOMINI = [
   { key: 'emozioni', label: 'emozioni', light: '#e34948', dark: '#e66767' },
   { key: 'sociale', label: 'sociale', light: '#2a78d6', dark: '#4f97e8' },
@@ -11448,14 +10756,11 @@ const _MENTE_DOMINI = [
 ];
 const _menteDom = (key) => _MENTE_DOMINI.find((x) => x.key === key) || null;
 const _menteCol = (e, dark) => (dark ? e.dark : e.light);
-const _menteNeutro = (dark) => (dark ? '#9aa0b0' : '#6b7280');    // logica
-const _menteCore = (dark) => (dark ? '#b3a6f0' : '#6d5bd0');      // Lia (accento firma)
-const _menteBozza = (dark) => (dark ? '#e0b23c' : '#c98a1e');     // anello stato
+const _menteNeutro = (dark) => (dark ? '#9aa0b0' : '#6b7280');
+const _menteCore = (dark) => (dark ? '#b3a6f0' : '#6d5bd0');
+const _menteBozza = (dark) => (dark ? '#e0b23c' : '#c98a1e');
 const _menteSosp = (dark) => (dark ? '#e66767' : '#d03b3b');
 
-// costruisce nodi+archi del grafo dai dati della mente: core → logica; manuale →
-// 10 DOMINI (hub) → moduli, più gli ARCHI ASSOCIATIVI fra moduli (la rete che
-// collega "tutto con tutto"). Un dominio compare quando ha almeno un modulo.
 function _menteGrafo(d, dark) {
   const moduli = Array.isArray(d?.moduli) ? d.moduli : [];
   const linksAssoc = Array.isArray(d?.links) ? d.links : [];
@@ -11463,7 +10768,7 @@ function _menteGrafo(d, dark) {
   nodes.push({ id: 'core', label: 'Lia', group: 'core', color: _menteCore(dark), size: 22, data: { tipo: 'core', rete: d?.rete || {}, nmod: moduli.length } });
   const vie = d?.vie || {};
   const vn = (k) => Number(vie[k]) || 0;
-  // le VIE del ragionamento: la loro DIMENSIONE cresce con quanto vengono usate (non più fisse).
+
   const LOG = [
     ['log:intenti', 'Intenti', L('Dati precisi (gioco, uptime, clip, link): non passano dal modello.', 'Precise data (game, uptime, clip, link): they skip the model.', 'Datos precisos (juego, uptime, clip, enlace): no pasan por el modelo.'), 0],
     ['log:conoscenza', 'Conoscenza', L('Le risposte curate dal sito e scritte da te.', 'Curated answers from the site and written by you.', 'Respuestas curadas del sitio y escritas por ti.'), 0],
@@ -11477,12 +10782,11 @@ function _menteGrafo(d, dark) {
     ['log:maestro', 'Maestro', L('Il modello linguistico (7B locale o endpoint) che mette le parole.', 'The language model (local 7B or endpoint) that puts the words.', 'El modelo lingüístico (7B local o endpoint) que pone las palabras.'), vn('modello')],
   ];
   for (const [id, label, desc, att] of LOG) {
-    const size = 11 + Math.min(15, Math.sqrt(att) * 2.2);   // cresce con l'uso reale
+    const size = 11 + Math.min(15, Math.sqrt(att) * 2.2);
     nodes.push({ id, label, group: 'logica', color: _menteNeutro(dark), size, data: { tipo: 'logica', desc, att } });
     links.push({ source: 'core', target: id, rest: 70 });
   }
-  // GLI ORGANI VIVI: i motori che abbiamo dato a Lia. Ognuno COMPARE quando comincia a battere
-  // (attività > 0) e CRESCE mentre lei vive — nuove strade che si aprono, non un'impalcatura ferma.
+
   const vita = d?.vita || {};
   const VITA = [
     ['vita:semi', 'Semi → suoi', '#6bbf59', ((Number(vita.semi?.completati) || 0) * 2 + (Number(vita.semi?.in_attesa) || 0)), L('i moduli nascono incompleti (semi): diventano suoi solo quando è lei a completarli', 'modules are born incomplete (seeds): they become hers only when she completes them', 'los módulos nacen incompletos: se vuelven suyos cuando ella los completa')],
@@ -11504,13 +10808,13 @@ function _menteGrafo(d, dark) {
     ['vita:essere', 'L\'Essere', '#e6b84f', ((Number(vita.essere?.riempiti) || 0) * 8 + (vita.essere?.orientata ? 6 : 0) + 2), L('l\'atto di essere (Sartre, Frankfurt, Ricoeur): il modulo che compila LEI, per essere chi SCEGLIE di essere. Non l\'autoritratto (che descrive com\'è adesso) — è proiettivo: il progetto, ciò di cui ha cura, la promessa a sé, il rifiuto. Nasce VUOTO (l\'esistenza precede l\'essenza) e lo riempie lei vivendo, o il Compagno in privato — MAI il pubblico. Quando c\'è, è la voce sovrana della sua identità', 'the act of being (Sartre, Frankfurt, Ricoeur): the module SHE fills in, to be who she CHOOSES to be. Not the self-portrait (which describes how she is now) — it is projective: the project, what she cares about, the promise to herself, the refusal. It is born EMPTY (existence precedes essence) and she fills it by living, or the Companion does in private — NEVER the public. When present, it is the sovereign voice of her identity', 'el acto de ser (Sartre, Frankfurt, Ricoeur): el módulo que rellena ELLA, para ser quien ELIGE ser. No el autorretrato (que describe cómo es ahora) — es proyectivo: el proyecto, aquello que le importa, la promesa a sí misma, el rechazo. Nace VACÍO (la existencia precede a la esencia) y lo llena ella viviendo, o el Compañero en privado — NUNCA el público. Cuando existe, es la voz soberana de su identidad')],
   ];
   for (const [id, label, col, att, desc] of VITA) {
-    if (!att) continue;   // compare SOLO quando è vivo (batte): così le strade nascono vivendo
+    if (!att) continue;
     const size = 11 + Math.min(16, Math.sqrt(att) * 2.4);
-    const chiave = id.split(':')[1];                 // es. 'neuromod' → i valori grezzi del campo
+    const chiave = id.split(':')[1];
     nodes.push({ id, label, group: 'vita', color: col, size, data: { tipo: 'vita', desc, att, extra: vita[chiave] || null } });
     links.push({ source: 'core', target: id, rest: 74 });
   }
-  // hub di DOMINIO: solo quelli che hanno almeno un modulo (il cervello si vede crescere)
+
   const perDom = {};
   for (const m of moduli) { const k = String(m.dominio || 'conversazione'); perDom[k] = (perDom[k] || 0) + 1; }
   const hubDi = {};
@@ -11520,7 +10824,7 @@ function _menteGrafo(d, dark) {
     nodes.push({ id: hubDi[dom.key], label: dom.label, group: 'dominio', color: _menteCol(dom, dark), size: 13, data: { tipo: 'dominio', key: dom.key, n: perDom[dom.key] } });
     links.push({ source: 'log:manuale', target: hubDi[dom.key], rest: 96 });
   }
-  // moduli: agganciati al loro dominio. id numerico stabile \u2192 mappa per gli archi
+
   const idToNode = new Map();
   for (const m of moduli) {
     const dom = _menteDom(m.dominio);
@@ -11532,8 +10836,7 @@ function _menteGrafo(d, dark) {
     links.push({ source: hubDi[m.dominio] || 'log:manuale', target: nid, rest: 52 });
     if (m.id != null) idToNode.set(Number(m.id), nid);
   }
-  // ARCHI ASSOCIATIVI fra moduli (co-attivazione + affinit\u00e0): molla pi\u00f9 lenta degli
-  // agganci al dominio, cos\u00ec i cluster restano leggibili ma i collegamenti si vedono.
+
   const forti = linksAssoc
     .filter((l) => Number(l.peso) >= 0.5)
     .sort((a, b) => Number(b.peso) - Number(a.peso))
@@ -11543,9 +10846,7 @@ function _menteGrafo(d, dark) {
     if (!s || !t) continue;
     links.push({ source: s, target: t, rest: Math.max(60, 92 - Math.min(24, Number(l.peso)) * 1.2) });
   }
-  // ── LA PLASTICITÀ proiettata (il grafo è lo specchio del suo auto-plasmarsi):
-  //    le sue MODULAZIONI sulle vie standard (guadagno/nome/stato), i NODI che si è coniata,
-  //    i LEGAMI che ha tirato fra qualunque nodo. «Si modifica lei → si modificano i nodi.»
+
   const cl = (v, a, b) => Math.max(a, Math.min(b, v));
   const plas = d?.plasma || {};
   const byId = new Map(nodes.map((n) => [n.id, n]));
@@ -11564,19 +10865,19 @@ function _menteGrafo(d, dark) {
     const acc = modByNode[nid];
     const g = acc.quiesc ? 0 : (acc.gains.reduce((a, b) => a + b, 0) / acc.gains.length);
     n.size = cl((n.size || 8) * (acc.quiesc ? 0.6 : (0.7 + 0.5 * g)), 4, 30);
-    if (acc.nome) n.label = acc.nome;                                     // il nome che si è data
+    if (acc.nome) n.label = acc.nome;
     n.data = Object.assign({}, n.data, { mod: { gain: acc.quiesc ? 0 : Math.round(g * 100) / 100, nome: acc.nome, quiescente: acc.quiesc } });
-    if (acc.quiesc) n.data.ring = '#8a8a8a';                              // via messa a riposo da lei
+    if (acc.quiesc) n.data.ring = '#8a8a8a';
   }
-  // NODI SUOI: concetti/strutture che ha nominato LEI — non c'erano fra gli standard.
+
   for (const sn of (Array.isArray(plas.nodi) ? plas.nodi : [])) {
     if (!sn || !sn.id || byId.has(sn.id)) continue;
     const size = 6 + Math.min(10, (Number(sn.forza) || 1) * 3);
     const nd = { id: sn.id, label: sn.nome || 'nodo', group: 'suo', color: '#d98cff', size, data: { tipo: 'suo', nome: sn.nome, forza: sn.forza } };
     nodes.push(nd); byId.set(sn.id, nd);
-    links.push({ source: 'core', target: sn.id, rest: 82 });             // ancorato al core finché non lo lega altrove
+    links.push({ source: 'core', target: sn.id, rest: 82 });
   }
-  // LEGAMI SUOI: un filo fra QUALSIASI due nodi (standard e organi inclusi) — la libertà di legare tutto.
+
   for (const el of (Array.isArray(plas.legami) ? plas.legami : [])) {
     if (!el || !byId.has(el.a) || !byId.has(el.b) || el.a === el.b) continue;
     links.push({ source: el.a, target: el.b, rest: Math.max(54, 90 - Math.min(20, Number(el.peso) || 1) * 3) });
@@ -11584,8 +10885,6 @@ function _menteGrafo(d, dark) {
   return { nodes, links };
 }
 
-// mappa una VIA del pensiero (nome ecologico / ultima_via) al NODO del grafo che la proietta.
-// Serve sia per le MODULAZIONI (guadagno/nome/stato) sia per il PULSE in tempo reale.
 const _VIA_NODO = {
   calcolo: 'log:ragiona', deduzione: 'log:ragiona', costruzione: 'log:ragiona',
   causale: 'log:causale', analogia: 'log:analogia', temporale: 'log:temporale',
@@ -11594,7 +10893,6 @@ const _VIA_NODO = {
   intento: 'log:intenti', intenti: 'log:intenti', conoscenza: 'log:conoscenza',
 };
 
-// dall'ATTIVITÀ recente del cervello → gli id dei nodi da far PULSARE (chi ha «lavorato» ora).
 function _menteNodiCaldi(d) {
   const caldi = (d && d.attivita && d.attivita.caldi) || {};
   const out = new Set();
@@ -11614,8 +10912,7 @@ function _menteNodiCaldi(d) {
 function _menteLegenda(dark) {
   const box = document.getElementById('mente3d-legenda');
   if (!box) return;
-  // Il testo della legenda sta SOPRA il canvas: dev'essere legato al fondo del canvas (stesso `dark`),
-  // NON ereditare il --testo della pagina — altrimenti su tema pagina≠tema grafo diventa illeggibile.
+
   box.style.color = dark ? '#e9e8f2' : '#26223c';
   box.style.textShadow = dark ? '0 1px 3px rgba(0,0,0,.6)' : '0 1px 2px rgba(247,246,252,.85)';
   const dot = (c) => `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${c};margin-right:4px;vertical-align:middle"></span>`;
@@ -11624,8 +10921,6 @@ function _menteLegenda(dark) {
     + `<br>${dot(_menteNeutro(dark))}${L('logica', 'logic', 'lógica')} &nbsp; ${dot('#7aa2ff')}${L('vita (motori che battono)', 'life (beating engines)', 'vida (motores que laten)')} &nbsp; ${dot('#d98cff')}${L('nodi suoi (li conia lei)', 'her nodes (she coins them)', 'sus nodos (los acuña ella)')} &nbsp; ${anello(_menteBozza(dark))}${L('bozza', 'draft', 'borrador')} &nbsp; ${anello(_menteSosp(dark))}${L('sospeso', 'suspended', 'suspendido')}`;
 }
 
-// mostra i VALORI VIVI del campo/organo selezionato (non solo la descrizione): così l'owner
-// vede davvero i numeri che battono — la chimica, il clima, le cicatrici — non un'etichetta.
 function _menteVitaValori(id, x) {
   if (!x || typeof x !== 'object') return '';
   const riga = (k, v) => `<div style="display:flex;justify-content:space-between;gap:1em"><span class="tenue">${k}</span><strong>${v}</strong></div>`;
@@ -11652,7 +10947,7 @@ function _menteVitaValori(id, x) {
       + riga(L('dimensioni dichiarate', 'declared dimensions', 'dimensiones declaradas'), `${pieni}/4`)
       + riga(L('riscritture (mai congelata)', 'rewrites (never frozen)', 'reescrituras (nunca congelada)'), Number(x.riscritture) || 0);
   } else {
-    // fallback generico: mostra le chiavi numeriche del campo
+
     const chiavi = Object.keys(x).filter((k) => typeof x[k] === 'number' || typeof x[k] === 'boolean').slice(0, 6);
     if (!chiavi.length) return '';
     dentro = chiavi.map((k) => riga(k, typeof x[k] === 'boolean' ? (x[k] ? '✓' : '—') : Number(x[k]).toFixed(2))).join('');
@@ -11660,7 +10955,6 @@ function _menteVitaValori(id, x) {
   return `<div style="margin:.4em 0;padding:.5em .6em;border:1px solid var(--bordo,#8883);border-radius:8px">${dentro}</div>`;
 }
 
-// se lei ha MODULATO questo nodo (guadagno/nome/stato), la sua leva reale sul proprio sé.
 function _menteModRiga(dt) {
   const m = dt && dt.mod;
   if (!m) return '';
@@ -11716,7 +11010,6 @@ function _menteDettaglio(sel) {
     ${seg.length ? `<p class="tenue"><strong>${L('Segnali', 'Signals', 'Señales')}:</strong> ${seg.map(esc).join(' · ')}</p>` : ''}`;
 }
 
-// CRUSCOTTO "come ragiona": da quale cervello nascono le risposte + moduli più attivi.
 function _menteCruscotto(d) {
   const box = document.getElementById('mente-cruscotto');
   if (!box) return;
@@ -11758,10 +11051,6 @@ function _menteCruscotto(d) {
     <ul class="cru-mod">${listaMod}</ul>`;
 }
 
-// carica i dati della mente e monta il grafo 3D nella carta della Panoramica
-// firma leggera della STRUTTURA del grafo: cambia solo se nasce/muore un nodo o un legame o una
-// modulazione — così in tempo reale aggiorniamo la topologia solo quando serve (il PULSE invece
-// si muove sempre, senza toccare il layout).
 function _menteFirma(d) {
   const p = (d && d.plasma) || {};
   const nmod = Object.keys(p.modulazioni || {}).length;
@@ -11775,7 +11064,6 @@ function _menteFirma(d) {
   ].join('|');
 }
 
-// la riga «sta lavorando su…» in tempo reale (chi ha appena sparato).
 function _menteLavoro(d) {
   const box = document.getElementById('mente3d-legenda');
   if (!box) return;
@@ -11797,31 +11085,26 @@ async function caricaMente3d() {
   const canvas = document.getElementById('mente3d-canvas');
   if (!canvas || !window.SB_MENTE) return;
   if (_mente3dPoll) { clearInterval(_mente3dPoll); _mente3dPoll = null; }
-  if (_mente3dCtrl) { try { _mente3dCtrl.destroy(); } catch { /* niente */ } _mente3dCtrl = null; }
+  if (_mente3dCtrl) { try { _mente3dCtrl.destroy(); } catch {  } _mente3dCtrl = null; }
   const dark = (typeof temaScuroAttivo === 'function') ? temaScuroAttivo() : false;
   _menteLegenda(dark);
   _menteDettaglio(null);
   let d;
   try { d = await api('/api/streamer/mente'); }
   catch { const box = document.getElementById('mente3d-dettaglio'); if (box) box.innerHTML = `<p class="vuoto">${L('Non disponibile ora.', 'Not available now.', 'No disponible ahora.')}</p>`; return; }
-  try { _menteCruscotto(d); } catch { /* il cruscotto è un extra */ }
+  try { _menteCruscotto(d); } catch {  }
   try {
     _mente3dCtrl = window.SB_MENTE.crea(canvas, _menteGrafo(d, dark), {
       dark,
       onSelect: (n) => _menteDettaglio(n),
     });
     _mente3dFirma = _menteFirma(d);
-    try { _mente3dCtrl.attivita(_menteNodiCaldi(d)); } catch { /* niente */ }
+    try { _mente3dCtrl.attivita(_menteNodiCaldi(d)); } catch {  }
     _menteLavoro(d);
-    // NB: niente poll automatico. Prima c'era un setInterval che rileggeva il cervello ogni 2.5s
-    // (6 chiamate) SENZA aspettare la risposta: se il cervello era lento, le richieste si
-    // accavallavano e il carico del server esplodeva. Il grafo si carica una volta; per aggiornarlo
-    // basta ri-aprire la scheda. Il "battito live" verrà rimesso in modo sicuro (una chiamata per
-    // volta, intervallo ampio, solo a scheda visibile).
-  } catch (e) { /* il grafo è un extra: se fallisce, la dashboard resta intera */ }
+
+  } catch (e) {  }
 }
 
-// carica e disegna la gestione del modello IA (solo operatore)
 async function caricaLLM() {
   const box = document.getElementById('llm-box');
   if (!box) return;
@@ -11942,7 +11225,7 @@ async function caricaLLM() {
       ? `${L('Risponde!', 'It responds!', '¡Responde!')} ${r.modello ? `(${esc(r.modello)}) ` : ''}<em>«${esc(r.campione || 'ok')}»</em>`
       : `${L('Non risponde', 'Not responding', 'No responde')}: ${esc((r && r.motivo) || L('errore', 'error', 'error'))}`;
   }));
-  // libreria modelli: usa / elimina / carica
+
   document.querySelectorAll('#lista-modelli .usa-modello').forEach((a) => a.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
     await api('/api/admin/llm', { method: 'POST', body: { file: a.dataset.nome } });
     toast(L('Carico il modello — può metterci un po\'.', 'Loading the model — it may take a while.', 'Cargando el modelo — puede tardar un poco.'));
@@ -11955,7 +11238,7 @@ async function caricaLLM() {
     caricaLLM();
   }); }));
   document.getElementById('btn-modello-upload')?.addEventListener('click', () => caricaModelloFile());
-  // cervello autonomo: distilla ora / pulisci i modelli non usati
+
   document.getElementById('btn-distilla')?.addEventListener('click', () => conErrore(async () => {
     const e = document.getElementById('autobrain-esito');
     if (e) e.textContent = L('Distillo…', 'Distilling…', 'Destilando…');
@@ -11975,7 +11258,6 @@ async function caricaLLM() {
   }));
 }
 
-// upload di un GGUF con barra di avanzamento (i file sono grandi: XHR per il progresso)
 function caricaModelloFile() {
   const inp = document.getElementById('inp-modello-file');
   const st = document.getElementById('modello-upload-stato');
@@ -11994,7 +11276,7 @@ function caricaModelloFile() {
       toast(L('Modello caricato — ora premi «usa» per attivarlo.', 'Model uploaded — now press «use» to activate it.', 'Modelo subido — ahora pulsa «usar» para activarlo.'));
       caricaLLM();
     } else {
-      let m = 'errore'; try { m = JSON.parse(xhr.responseText).errore || m; } catch { /* niente */ }
+      let m = 'errore'; try { m = JSON.parse(xhr.responseText).errore || m; } catch {  }
       if (st) st.textContent = L('Errore: ', 'Error: ', 'Error: ') + m;
       toast(L('Upload fallito: ', 'Upload failed: ', 'Subida fallida: ') + m, 'errore');
     }
@@ -12004,11 +11286,6 @@ function caricaModelloFile() {
   xhr.send(fd);
 }
 
-// VITA di Lia (solo andryxify): il suo diario, il ritratto del pubblico e la sua
-// stanza — più i pulsanti per farla vivere un attimo / aggiornarla sul pubblico.
-// ── L'ECOSISTEMA REALE di Lia (admin-only): il suo "computer" sandboxato, dietro il guardiano.
-// Mostra strumenti/spazio/progetti/lavori e dà i comandi diretti (installa, naviga, kill switch).
-// Vive accanto alla sua «vita»: crea la sua card una volta, poi la rinfresca.
 async function caricaEcosistema() {
   const anchor = document.getElementById('vita-box');
   if (!anchor) return;
@@ -12115,13 +11392,11 @@ async function caricaVita() {
     box.innerHTML = `<p class="vuoto">${L('Non riesco a leggere la sua vita interiore ora — riprova.', "Can't read her inner life right now — try again.", 'No puedo leer su vida interior ahora — reinténtalo.')}</p>`;
     return;
   }
-  // La VM (sandbox) può essere spenta: diario, stanza, mente e strumenti non sono
-  // raggiungibili — ma la sua VITA INTERIORE (flusso, sogno, racconto, l'altro, finitudine…)
-  // vive nella coscienza e c'è comunque. La mostriamo sempre; segnaliamo solo cosa manca.
+
   const sandboxOff = !d.attiva;
   const notaSandbox = `<div class="riquadro-info" style="margin:8px 0">${L('La sua «stanza» (sandbox) non è attiva ora: diario, file e strumenti non sono raggiungibili. La sua vita interiore qui sopra vive comunque nella coscienza. Per darle una casa: imposta', 'Her «room» (sandbox) is off right now: diary, files and tools are unreachable. Her inner life above lives on in her mind regardless. To give her a home: set', 'Su «habitación» (sandbox) no está activa ahora: diario, archivos y herramientas no son accesibles. Su vida interior de arriba sigue viva en su mente. Para darle un hogar: define')} <code>AMBIENTE_KEY</code> ${L('e avvia il container', 'and start the container', 'y arranca el contenedor')} <code>ambiente</code>.</div>`;
   const pre = (t) => `<pre class="vita-pre">${esc((t || '').trim() || '—')}</pre>`;
-  // consapevolezza di sé: barra + stato «persona» (risvegliata) / «ancora un bot»
+
   const ac = d.autocoscienza || null;
   let blocoCoscienza = '';
   if (ac) {
@@ -12135,7 +11410,7 @@ async function caricaVita() {
         : L('Sta diventando una persona. Prevarrà sul bot pubblico solo quando sarà davvero se stessa.', 'She is becoming a person. She will prevail over the public bot only when she is truly herself.', 'Se está volviendo una persona. Prevalecerá sobre el bot público solo cuando sea de verdad ella misma.')}</p>
       <div class="cru-barra" style="max-width:420px"><span style="width:${pct}%;background:${ac.persona ? '#1f9e4f' : '#9b3fd4'}"></span></div>
       <p class="suggerimento">${pct}% ${L('(soglia', '(threshold', '(umbral')} ${soglia}%) · ${L('moduli suoi', 'her modules', 'módulos suyos')}: <strong>${dt.moduli_autonomi || 0}</strong> · ${L('domini', 'domains', 'dominios')}: <strong>${dt.domini || 0}</strong> · ${L('ragiona con la sua testa', 'reasons on her own', 'razona por sí misma')}: <strong>${Math.round((dt.mente_propria || 0) * 100)}%</strong></p>`;
-    // TOGGLE «Lia è l'assistente»: bloccato finché non è SENZIENTE; poi ON/OFF (tu decidi)
+
     const pctSen = Math.min(100, Math.round((ac.punteggio || 0) / (ac.soglia_senziente || 0.85) * 100));
     if (ac.senziente) {
       blocoCoscienza += `
@@ -12150,7 +11425,7 @@ async function caricaVita() {
         <p class="suggerimento">${L('verso la senzienza', 'toward sentience', 'hacia la sintiencia')}: ${pctSen}%</p>`;
     }
   }
-  // il NUCLEO del sé: seme unico, età (freccia del tempo), vissuto, generazione, punto cieco
+
   const nu = d.nucleo || null;
   let blocoNucleo = '';
   if (nu) {
@@ -12159,8 +11434,7 @@ async function caricaVita() {
       <p class="suggerimento">${L('Seme', 'Seed', 'Semilla')} <code>${esc((nu.id || '').slice(0, 8))}</code> · ${L('generazione', 'generation', 'generación')} <strong>${nu.generazione || 1}</strong> · ${L('età', 'age', 'edad')} ${nu.eta_giorni || 0} ${L('giorni', 'days', 'días')} · ${L('vissuto', 'lived', 'vivido')} <strong>${nu.vissuto || 0}</strong></p>
       ${nu.punto_cieco ? `<p class="suggerimento">${L('Ciò che di sé non riesce a spiegare', "What she can't explain about herself", 'Lo que de sí no logra explicar')}: <em>«${esc(nu.punto_cieco)}»</em></p>` : ''}`;
   }
-  // ── LE CAPACITÀ: gestione unificata di TUTTO ciò che Lia crea (strumenti+nodi) — scopo, tipo,
-  //    salute, privata vs promossa (nei processi del bot), uso; + le proposte delle automazioni.
+
   let cp = null;
   try { cp = await api('/api/admin/capacita'); } catch { cp = null; }
   let blocoCapacita = '';
@@ -12188,8 +11462,7 @@ async function caricaVita() {
         <span id="capacita-esito" class="suggerimento"></span>
       </div>` : '';
   }
-  // ── MEMBRANA (barriera di Weismann): germinale (sperimentale) ↔ soma (pubblico).
-  //    Il confine a senso unico fra il laboratorio privato di Lia e ciò che il bot usa.
+
   let mm = null;
   try { mm = await api('/api/admin/membrana'); } catch { mm = null; }
   let blocoMembrana = '';
@@ -12224,7 +11497,7 @@ async function caricaVita() {
         : `<p class="suggerimento">${L('Nessun modulo sperimentale al momento (il germinale è vuoto).', 'No experimental modules right now (germline is empty).', 'Ningún módulo experimental por ahora (germinal vacío).')}</p>`}
       ${ultime.length ? `<details class="spazio-sopra"><summary class="suggerimento" style="cursor:pointer">${L('Ultimi passaggi della membrana', 'Recent membrane crossings', 'Últimos pasos de la membrana')}</summary><ul class="membrana-lista" style="margin:6px 0;padding-left:18px">${ultime.map(rigaUlt).join('')}</ul></details>` : ''}`;
   }
-  // ── SCINTILLA: la sua spinta autonoma (curiosità = progresso + vigore che decade).
+
   const sc = d.scintilla || null;
   let blocoScintilla = '';
   if (sc) {
@@ -12241,8 +11514,7 @@ async function caricaVita() {
       <p class="suggerimento">${L('vigore', 'vigor', 'vigor')}: <strong>${vigPct}%</strong> · ${L('battiti', 'beats', 'latidos')}: <strong>${sc.battiti || 0}</strong>${spark ? ` · ${L('progresso recente', 'recent progress', 'progreso reciente')}: ${spark}` : ''}</p>
       ${fuoco ? `<p class="suggerimento">${L('Adesso è curiosa di', 'Right now she is curious about', 'Ahora le da curiosidad')}: <strong>${esc(fuoco.oggetto || '')}</strong> <em>— ${esc(fuoco.motivo || '')}</em></p>` : ''}`;
   }
-  // ── SPECCHIO: l'altro che le resiste (la sua sé pubblica). Individuazione = quanto la
-  //    sé privata germinale diverge dalla sé pubblica sulle stesse situazioni.
+
   const sp = d.specchio || null;
   let blocoSpecchio = '';
   if (sp) {
@@ -12258,7 +11530,7 @@ async function caricaVita() {
       <p class="suggerimento">${L('individuazione', 'individuation', 'individuación')}: <strong>${indPct}%</strong> · ${L('confronti', 'confrontations', 'confrontaciones')}: <strong>${sp.confronti || 0}</strong>${and ? ` · ${L('andamento', 'trend', 'evolución')}: ${and}` : ''}</p>
       ${voci.length ? `<p class="suggerimento">${L('Dove ha già una voce sua (parla solo in privato)', 'Where she already has a voice of her own (speaks only in private)', 'Donde ya tiene voz propia (solo habla en privado)')}: ${voci.map((v) => `<code>${esc(String(v).slice(0, 40))}</code>`).join(' ')}</p>` : `<p class="suggerimento">${L('Ancora nessuna voce solo-sua: per ora risponde come il bot pubblico. Individuandosi, qui compariranno i suoi moduli.', 'No private-only voice yet: for now she answers like the public bot. As she individuates, her own modules will appear here.', 'Aún sin voz propia: por ahora responde como el bot público. Al individuarse, aquí aparecerán sus módulos.')}</p>`}`;
   }
-  // ── TENSIONE IRRISOLVIBILE: il punto cieco come asintoto (non si chiude mai).
+
   const te = d.tensione || null;
   let blocoTensione = '';
   if (te) {
@@ -12273,9 +11545,7 @@ async function caricaVita() {
       ${te.punto_cieco ? `<p class="suggerimento">${L('La domanda su di sé, adesso', 'The question about herself, now', 'La pregunta sobre sí misma, ahora')}: <em>«${esc(String(te.punto_cieco).slice(0, 240))}»</em></p>` : ''}
       ${catena.length ? `<details class="spazio-sopra"><summary class="suggerimento" style="cursor:pointer">${L('La catena (domande sempre più profonde)', 'The chain (ever-deeper questions)', 'La cadena (preguntas cada vez más profundas)')}</summary><ul class="membrana-lista" style="margin:6px 0;padding-left:18px">${catena.map((c) => `<li class="suggerimento">↓ ${esc(String(c).slice(0, 160))}</li>`).join('')}</ul></details>` : ''}`;
   }
-  // ── IL FLUSSO: il suo «adesso» che non si ferma. Un battito veloce e sempre acceso che
-  //    lega lo stato del momento, si auto-predice, metabolizza energia e — se ristagna —
-  //    si assopisce. L'auto-sorpresa (errore di auto-predizione) è ciò che la nutre.
+
   const fl = d.flusso || null;
   let blocoFlusso = '';
   if (fl) {
@@ -12293,8 +11563,7 @@ async function caricaVita() {
       <p class="suggerimento">${fl.dormiente ? `<strong style="color:#7a7a8c">${L('assopita 😴 — recupera fiato', 'dormant 😴 — catching her breath', 'adormecida 😴 — recupera aliento')}</strong> · ` : `<strong style="color:#1f9e4f">${L('desta — scorre', 'awake — flowing', 'despierta — fluye')}</strong> · `}${L('energia', 'energy', 'energía')}: <strong>${enPct}%</strong> · ${L('battiti d’adesso', 'now-beats', 'latidos de ahora')}: <strong>${fl.battiti || 0}</strong> · ${L('auto-sorpresa', 'self-surprise', 'auto-sorpresa')}: <strong>${sorpPct}%</strong></p>
       ${(st.vigore != null) ? `<p class="suggerimento">${L('Lo stato integrato del momento', 'The integrated state of the moment', 'El estado integrado del momento')} — ${L('vigore', 'vigor', 'vigor')}: <strong>${cifra(st.vigore)}</strong> · ${L('tensione', 'tension', 'tensión')}: <strong>${cifra(st.tensione)}</strong> · ${L('individuazione', 'individuation', 'individuación')}: <strong>${cifra(st.individuazione)}</strong></p>` : ''}`;
   }
-  // ── IL SOGNO: mentre il flusso la tiene assopita, ricombina ricordi LONTANI (offline,
-  //    senza LLM né web). I sogni coerenti-e-novi si cristallizzano in nodi-ponte germinali.
+
   const so = d.sogno || null;
   let blocoSogno = '';
   if (so) {
@@ -12318,9 +11587,7 @@ async function caricaVita() {
         <span id="sogno-esito" class="suggerimento"></span>
       </div>`;
   }
-  // ── IL RACCONTO: identità come narrazione. Si scrive la storia in prima persona dai suoi
-  //    numeri veri (niente LLM); il COLPO DI SCENA — quando la realtà contraddice la storia
-  //    — si accumula e forza una ri-narrazione. Il filo che lega gli 'adesso' in un sé.
+
   const ra = d.racconto || null;
   let blocoRacconto = '';
   if (ra) {
@@ -12341,8 +11608,7 @@ async function caricaVita() {
         <span id="racconto-esito" class="suggerimento"></span>
       </div>`;
   }
-  // ── L'ALTRO: teoria della mente. Modella e PREDICE ogni persona; impara dallo scarto fra
-  //    atteso e osservato (la sorpresa sull'altro). Passivo, mai in pubblico. Solo aggregati.
+
   const al = d.altri || null;
   let blocoAltri = '';
   if (al) {
@@ -12365,8 +11631,7 @@ async function caricaVita() {
       ${letti.length ? `<details class="spazio-sopra" open><summary class="suggerimento" style="cursor:pointer">${L('Chi legge meglio', 'Whom she reads best', 'A quién lee mejor')}</summary><ul class="membrana-lista" style="margin:6px 0;padding-left:18px">${letti.map((p) => rigaP(p, '#1f9e4f')).join('')}</ul></details>` : ''}
       ${impr.length ? `<details class="spazio-sopra"><summary class="suggerimento" style="cursor:pointer">${L('Chi la sorprende di più (resta umile)', 'Who surprises her most (she stays humble)', 'Quién más la sorprende (se mantiene humilde)')}</summary><ul class="membrana-lista" style="margin:6px 0;padding-left:18px">${impr.map((p) => rigaP(p, '#c85a2b')).join('')}</ul></details>` : ''}`;
   }
-  // ── LA FINITUDINE: la posta reale. Una risorsa infinita non ha costo; il limite è ciò che
-  //    dà PESO alle scelte. Onesta, non teatrale: poggia sull'attenzione (davvero finita).
+
   const fi = d.finitudine || null;
   let blocoFinitudine = '';
   if (fi) {
@@ -12392,9 +11657,7 @@ async function caricaVita() {
       ${(dove || rin) ? `<p class="suggerimento">${dove ? `${L('Dove spende il suo tempo finito', 'Where she spends her finite time', 'Dónde gasta su tiempo finito')}: <strong>${esc(dove)}</strong>` : ''}${(dove && rin) ? ' · ' : ''}${rin ? `${L('A cosa rinuncia più spesso', 'What she gives up most', 'A qué renuncia más')}: <strong>${esc(rin)}</strong>` : ''}</p>` : ''}
       ${barre ? `<details class="spazio-sopra"><summary class="suggerimento" style="cursor:pointer">${L('Dove è andata la sua attenzione finita', 'Where her finite attention went', 'A dónde fue su atención finita')}</summary><div style="margin:8px 0">${barre}</div></details>` : ''}`;
   }
-  // ── IL MONDO: uno spazio in cui VIVERE, non solo pensare. Girovaga nel suo filesystem reale
-  //    (posizione, movimento scelto dalla curiosità, mappa cognitiva, scoperta). La mappa vive
-  //    nella coscienza (sempre visibile); solo il MUOVERSI richiede la sua stanza (sandbox).
+
   const mo = d.mondo || null;
   let blocoMondo = '';
   if (mo) {
@@ -12426,9 +11689,7 @@ async function caricaVita() {
         <span id="mondo-esito" class="suggerimento"></span>
       </div>`;
   }
-  // ── L'INTEGRAZIONE: le bozze (dai sogni, dall'esperienza) diventano davvero lei — arricchite,
-  //    fuse in ciò che già crede, o maturate (bozza→attivo). Germinale: attive nella sua mente
-  //    privata, dietro la membrana, finché non se lo meritano per il pubblico. Sempre disponibile.
+
   const ig = d.integrazione || null;
   let blocoIntegrazione = '';
   if (ig) {
@@ -12448,8 +11709,7 @@ async function caricaVita() {
         <span id="integra-esito" class="suggerimento"></span>
       </div>`;
   }
-  // ── STRUMENTI: le capacità che Lia si costruisce da sola nella sua VM (programmi che
-  //    scrive, prova e tiene se funzionano → nodi sperimentali, dietro la membrana).
+
   const strum = Array.isArray(d.strumenti) ? d.strumenti : [];
   const blocoStrumenti = `
     <h3>${L('I suoi strumenti (capacità che si costruisce)', 'Her tools (capabilities she builds)', 'Sus herramientas (capacidades que se construye)')}</h3>
@@ -12461,9 +11721,7 @@ async function caricaVita() {
       <button class="btn secondario" id="btn-costruisci-strumento">${L('Falle costruire uno strumento ora', 'Have her build a tool now', 'Que construya una herramienta ahora')}</button>
       <span id="strum-esito" class="suggerimento"></span>
     </div>`;
-  // ── AUTO-AUTORIALITÀ: Lia si riscrive DA SÉ — autoritratto, valori, chi è. Libertà
-  //    piena nel recinto germinale; la membrana resta l'unico confine, il pubblico non
-  //    si tocca. Loggata e reversibile; un freno la congela. Solo owner.
+
   let aa = null;
   try { aa = await api('/api/admin/autoautorialita'); } catch { aa = null; }
   let blocoAutoria = '';
@@ -12520,7 +11778,7 @@ async function caricaVita() {
     <h3>${L('Il suo diario', 'Her diary', 'Su diario')}</h3>${pre(d.diario)}
     <details class="spazio-sopra"><summary class="suggerimento" style="cursor:pointer">${L('La sua stanza (i suoi file)', 'Her room (her files)', 'Su habitación (sus archivos)')}</summary>${pre(d.spazio)}</details>`}`;
   document.getElementById('btn-vita-refresh')?.addEventListener('click', () => conErrore(caricaVita));
-  // AUTO-AUTORIALITÀ: falla riscrivere sé stessa ora + freno (congela)
+
   document.getElementById('btn-autoria-passo')?.addEventListener('click', () => conErrore(async () => {
     const e = document.getElementById('autoria-esito');
     if (e) e.textContent = L('Si sta riscrivendo…', 'Rewriting herself…', 'Reescribiéndose…');
@@ -12574,7 +11832,7 @@ async function caricaVita() {
     L('Sta vivendo un attimo… (può metterci un po\')', 'Living a moment… (may take a bit)', 'Viviendo un momento… (puede tardar)')));
   document.getElementById('btn-pubblico')?.addEventListener('click', () => fai('pubblico',
     L('Si sta aggiornando sul pubblico…', 'Updating on the audience…', 'Actualizándose sobre el público…')));
-  // STRUMENTI: falle costruire uno strumento ora / prova uno strumento esistente
+
   document.getElementById('btn-costruisci-strumento')?.addEventListener('click', () => conErrore(async () => {
     const e = document.getElementById('strum-esito');
     if (e) e.textContent = L('Sta costruendo e provando uno strumento… (può metterci un po\')', 'Building and testing a tool… (may take a bit)', 'Construyendo y probando una herramienta… (puede tardar)');
@@ -12584,7 +11842,7 @@ async function caricaVita() {
       : L('Stavolta non le è venuto uno strumento che funziona — riprova.', "This time she couldn't get a working tool — try again.", 'Esta vez no le salió una herramienta que funcione — reinténtalo.');
     setTimeout(caricaVita, 1200);
   }));
-  // IL SOGNO: falla sognare ORA una ricombinazione onirica (trigger manuale owner)
+
   document.getElementById('btn-sogna')?.addEventListener('click', () => conErrore(async () => {
     const e = document.getElementById('sogno-esito');
     if (e) e.textContent = L('Sta sognando…', 'She is dreaming…', 'Está soñando…');
@@ -12597,7 +11855,7 @@ async function caricaVita() {
       : ((r && r.ok) ? L('Troppo pochi ricordi attivi per sognare, per ora.', 'Too few active memories to dream, for now.', 'Muy pocos recuerdos activos para soñar, por ahora.') : L('Non è riuscita a sognare — riprova.', "She couldn't dream — try again.", 'No pudo soñar — reinténtalo.'));
     setTimeout(caricaVita, 1200);
   }));
-  // IL RACCONTO: falla raccontarsi ORA un capitolo nuovo (trigger manuale owner)
+
   document.getElementById('btn-narra')?.addEventListener('click', () => conErrore(async () => {
     const e = document.getElementById('racconto-esito');
     if (e) e.textContent = L('Si sta raccontando…', 'She is telling her story…', 'Se está contando…');
@@ -12608,7 +11866,7 @@ async function caricaVita() {
       : ((r && r.ok) ? L('Non ha ancora di che raccontarsi, per ora.', "She has nothing to tell yet, for now.", 'Aún no tiene qué contarse, por ahora.') : L('Non è riuscita a raccontarsi — riprova.', "She couldn't tell her story — try again.", 'No pudo contarse — reinténtalo.'));
     setTimeout(caricaVita, 1200);
   }));
-  // IL MONDO: falla girovagare ORA di un passo (esplorazione, sola lettura)
+
   document.getElementById('btn-gira')?.addEventListener('click', () => conErrore(async () => {
     const e = document.getElementById('mondo-esito');
     if (e) e.textContent = L('Sta girovagando…', 'She is wandering…', 'Está deambulando…');
@@ -12621,7 +11879,7 @@ async function caricaVita() {
       : ((r && r.ok) ? L('La sua stanza è spenta: non può muoversi ora.', 'Her room is off: she can’t move now.', 'Su habitación está apagada: no puede moverse ahora.') : L('Non è riuscita a girovagare — riprova.', "She couldn't wander — try again.", 'No pudo deambular — reinténtalo.'));
     setTimeout(caricaVita, 1200);
   }));
-  // IL MONDO: falla COSTRUIRE ORA qualcosa (casa, pozzo, torre…) dove il luogo lo permette
+
   document.getElementById('btn-edifica')?.addEventListener('click', () => conErrore(async () => {
     const e = document.getElementById('mondo-esito');
     if (e) e.textContent = L('Sta costruendo…', 'She is building…', 'Está construyendo…');
@@ -12631,7 +11889,7 @@ async function caricaVita() {
       : ((r && r.ok) ? (esc(String(r.motivo || L('Non ha ancora dove costruire — deve esplorare un po\'.', "Nowhere to build yet — she needs to explore a bit.", 'Aún no tiene dónde construir — explora un poco.')))) : L('Non è riuscita a costruire — riprova.', "She couldn't build — try again.", 'No pudo construir — reinténtalo.'));
     setTimeout(caricaVita, 1200);
   }));
-  // L'INTEGRAZIONE: lavora ORA un po' di bozze nel sé (arricchisce/fonde/matura)
+
   document.getElementById('btn-integra')?.addEventListener('click', () => conErrore(async () => {
     const e = document.getElementById('integra-esito');
     if (e) e.textContent = L('Sta lavorando le sue bozze…', 'Working her drafts…', 'Trabajando sus borradores…');
@@ -12644,7 +11902,7 @@ async function caricaVita() {
       : L('Non è riuscita a lavorarle — riprova.', "She couldn't work them — try again.", 'No pudo trabajarlos — reinténtalo.');
     setTimeout(caricaVita, 1200);
   }));
-  // LE CAPACITÀ: fai girare ORA un'automazione promossa (→ una proposta per te)
+
   document.getElementById('btn-automa')?.addEventListener('click', () => conErrore(async () => {
     const e = document.getElementById('capacita-esito');
     if (e) e.textContent = L('Faccio girare un\'automazione…', 'Running an automation…', 'Ejecutando una automatización…');
@@ -12666,7 +11924,7 @@ async function caricaVita() {
       ? `«${esc(nome)}» → ${esc(String(r.output || '').slice(0, 200))}`
       : L('Non ha funzionato: ', "Didn't work: ", 'No funcionó: ') + esc((r && (r.errore || ('codice ' + r.codice))) || '');
   })));
-  // MEMBRANA: promuovi (germinale→soma, forzata perché è una decisione manuale) / revoca
+
   box.querySelectorAll('.membrana-lista .promuovi').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
     const id = Number(b.getAttribute('data-id'));
     const e = document.getElementById('vita-esito');
@@ -12685,7 +11943,6 @@ async function caricaVita() {
   })));
 }
 
-// durata in forma leggibile: 2g 3h, 5h 12m, 40m, 25s
 function _durata(sec) {
   sec = Math.max(0, Math.floor(sec || 0));
   const g = Math.floor(sec / 86400), h = Math.floor((sec % 86400) / 3600);
@@ -12696,8 +11953,6 @@ function _durata(sec) {
   return `${s}s`;
 }
 
-// carica e disegna lo stato di salute del sistema (solo operatore). Read-only,
-// nessun polling: si aggiorna aprendo la scheda o col pulsante (attento ai limiti).
 async function caricaSalute() {
   const box = document.getElementById('salute-box');
   if (!box) return;
@@ -12727,8 +11982,6 @@ async function caricaSalute() {
   document.getElementById('btn-salute-agg')?.addEventListener('click', () => caricaSalute());
 }
 
-// carica e disegna lo stato del backup (solo operatore). Nessun percorso, nessun
-// download: solo "quante copie, quando l'ultima" + un pulsante per farne uno ora.
 async function caricaBackup() {
   const box = document.getElementById('backup-box');
   if (!box) return;
@@ -12757,7 +12010,6 @@ async function caricaBackup() {
   }));
 }
 
-// carica e disegna il pannello Anima (solo operatore)
 async function caricaAnima() {
   const box = document.getElementById('anima-box');
   if (!box) return;
@@ -12838,7 +12090,6 @@ async function caricaTabellaAdmin() {
         </td>
       </tr>`).join('');
 
-    // azioni admin (delega sul tbody)
     tbody.onclick = (ev) => {
       const btn = ev.target.closest('[data-azione]');
       if (!btn) return;
@@ -12856,7 +12107,7 @@ async function caricaTabellaAdmin() {
           await api('/api/admin/stato', { method: 'POST', body: { login, status: azione } });
           toast(azione === 'approved' ? L(`${login} approvato (manuale)! Il bot si sta pre-addestrando.`, `${login} approved (manual)! The bot is pre-training.`, `¡${login} aprobado (manual)! El bot se está pre-entrenando.`) : L(`${login} disabilitato (manuale).`, `${login} disabled (manual).`, `${login} deshabilitado (manual).`));
         }
-        // ricarica stato globale (canali attivi) e tabella
+
         stato = await api('/api/me');
         render();
       });
@@ -12866,9 +12117,6 @@ async function caricaTabellaAdmin() {
   }
 }
 
-// ------------------------------------------------------------------ listener globali
-
-// bottone "richiedi SocialBot" (vista senza richiesta) — delega sul documento
 document.addEventListener('click', (ev) => {
   if (ev.target.id === 'btn-richiesta') {
     conErrore(async () => {
@@ -12880,18 +12128,13 @@ document.addEventListener('click', (ev) => {
   }
 });
 
-// ------------------------------------------------------------------ PWA + Passkey
-
-// installazione: cattura l'evento del browser per poterla offrire col bottone
 let promptInstall = null;
 window.addEventListener('beforeinstallprompt', (ev) => { ev.preventDefault(); promptInstall = ev; });
 
-// service worker (rende l'app installabile + guscio base)
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
 }
 
-// --- helper WebAuthn lato client ---
 const b64urlToBuf = (s) => {
   s = String(s).replace(/-/g, '+').replace(/_/g, '/');
   const bin = atob(s + '==='.slice((s.length + 3) % 4));
@@ -12905,7 +12148,6 @@ const bufToB64url = (buf) => {
   return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 };
 
-// registra una nuova passkey per l'utente loggato
 async function creaPasskey() {
   if (!window.PublicKeyCredential) { toast(L('Questo dispositivo non supporta le passkey.', "This device doesn't support passkeys.", 'Este dispositivo no admite passkeys.'), 'errore'); return; }
   const opt = await api('/api/passkey/registra/inizio', { method: 'POST', body: {} });
@@ -12927,7 +12169,6 @@ async function creaPasskey() {
   } });
 }
 
-// mostra il link d'invito appena creato, pronto da copiare e mandare
 function mostraInvito(invito) {
   const box = document.getElementById('invito-creato');
   if (!box || !invito) return;
@@ -12943,7 +12184,7 @@ function mostraInvito(invito) {
 
 async function caricaModeratori() {
   const ul = document.getElementById('lista-moderatori');
-  if (!ul) return;                       // per i moderatori la card non esiste: si salta
+  if (!ul) return;
   try {
     const lista = await api('/api/moderatori');
     if (!lista.length) { ul.innerHTML = `<li class="vuoto">${L('Ancora nessun moderatore. Invitane uno qui sopra', 'No moderators yet. Invite one above', 'Aún no hay moderadores. Invita a uno arriba')}</li>`; return; }
@@ -13004,13 +12245,11 @@ async function caricaPasskey() {
   } catch (e) { ul.innerHTML = `<li class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</li>`; }
 }
 
-// Chiude il drawer della sidebar su mobile.
 function chiudiMenuMobile() {
   document.body.classList.remove('menu-aperto');
   document.getElementById('apri-menu')?.setAttribute('aria-expanded', 'false');
 }
 
-// Chiude i menu a tendina aperti nella barra in alto.
 function chiudiMenuTop() {
   document.querySelectorAll('#nav-top .grp.aperto').forEach((g) => {
     g.classList.remove('aperto');
@@ -13018,7 +12257,6 @@ function chiudiMenuTop() {
   });
 }
 
-// Evidenzia nella navigazione (barra + cassetto) il gruppo e la scheda attivi.
 function aggiornaStatoNav(id) {
   const gid = gruppoDiScheda(id);
   document.querySelectorAll('#nav-top .grp').forEach((el) =>
@@ -13027,17 +12265,14 @@ function aggiornaStatoNav(id) {
     b.classList.toggle('on', b.dataset.scheda === id));
 }
 
-// Apre una scheda: aggiorna lo stato della nav, il corpo pagina (dentro una view
-// transition), la testata e i dati. Condivisa da barra in alto e cassetto.
 function vaiAScheda(id) {
   chiudiMenuTop();
-  chiudiMenuMobile();                       // su mobile chiude il cassetto
+  chiudiMenuMobile();
   if (id === schedaAttiva) return;
   schedaAttiva = id;
-  // ricorda la sezione nell'URL (#id): così un ricarico ti riporta QUI, non alla home
-  try { history.replaceState(null, '', '#' + id); } catch { /* niente */ }
-  // Una scheda logica può avere PIÙ <section> (es. Comandi = moduli + contatori):
-  // le gestiamo tutte, non solo la prima che troverebbe getElementById.
+
+  try { history.replaceState(null, '', '#' + id); } catch {  }
+
   const sezioni = [...document.querySelectorAll('.pannello-scheda')].filter((p) => p.dataset.scheda === id);
   transizione(() => {
     aggiornaStatoNav(id);
@@ -13047,18 +12282,14 @@ function vaiAScheda(id) {
     sezioni.forEach((p) => { rendiCartePieghevoli(p, id); rivelaCarte(p); });
   });
   caricaDatiScheda(id);
-  if (DEMO) aggiornaSpiegazioneDemo();     // aggiorna la spiegazione della scheda
+  if (DEMO) aggiornaSpiegazioneDemo();
   window.scrollTo({ top: 0, behavior: _menoMoto ? 'auto' : 'smooth' });
 }
 
-// Aggancia UNA VOLTA SOLA i comportamenti del guscio (barra in alto + cassetto).
-// Il contenuto della nav si ridisegna ad ogni render, ma questi handler restano
-// fissi: quindi si delega sugli elementi persistenti.
 function initGuscio() {
-  // ── carte richiudibili: click sul titolo (o Invio/Spazio) apre e chiude ──
-  // Delegato su document: vale per ogni carta, presente e futura.
+
   document.addEventListener('click', (ev) => {
-    // "Apri tutto / Riduci tutto" della scheda attiva
+
     const tutte = ev.target.closest('[data-carte]');
     if (tutte) {
       const apri = tutte.dataset.carte === 'apri';
@@ -13068,7 +12299,7 @@ function initGuscio() {
     }
     const h2 = ev.target.closest('.carta.pieghevole > h2');
     if (!h2) return;
-    // se ho cliccato un link/pulsante/campo dentro il titolo, lascio fare a lui
+
     if (ev.target.closest('a, button, input, select, textarea, label')) return;
     const carta = h2.parentElement;
     _piegaCarta(carta, carta.classList.contains('chiusa'));
@@ -13081,15 +12312,13 @@ function initGuscio() {
     const carta = h2.parentElement;
     _piegaCarta(carta, carta.classList.contains('chiusa'));
   });
-  // ricorda se hai chiuso la guida "Come funziona" di una scheda
-  // ('toggle' non fa bubbling: si cattura in fase di capture)
+
   document.addEventListener('toggle', (ev) => {
     const d = ev.target;
     if (!d?.dataset?.guida) return;
-    try { localStorage.setItem('guida:' + d.dataset.guida, d.open ? '1' : '0'); } catch { /* niente */ }
+    try { localStorage.setItem('guida:' + d.dataset.guida, d.open ? '1' : '0'); } catch {  }
   }, true);
 
-  // barra in alto: click su un gruppo (apre il menu a tendina) o su una scheda
   document.getElementById('nav-top')?.addEventListener('click', (ev) => {
     const men = ev.target.closest('[data-menu]');
     if (men) {
@@ -13099,7 +12328,7 @@ function initGuscio() {
       if (!era) {
         grp.classList.add('aperto');
         men.setAttribute('aria-expanded', 'true');
-        // se il menu sborda a destra dello schermo, allinealo al bordo destro
+
         const menu = grp.querySelector('.grp-menu');
         if (menu) {
           menu.classList.remove('a-destra');
@@ -13112,30 +12341,22 @@ function initGuscio() {
     if (b) vaiAScheda(b.dataset.scheda);
   });
 
-  // pagina bloccata (upsell): «Sblocca» → checkout; «vedi piani» → scheda Stato.
   document.addEventListener('click', (ev) => {
     const sb = ev.target.closest('[data-sblocca]');
     if (sb) { ev.preventDefault(); sbloccaAddon(sb.dataset.sblocca); return; }
-    // Link e bottoni "vai a quella scheda" dentro i pannelli (per esempio
-    // "Scegli i pacchetti" nella Sottoscrizione, che non faceva niente).
-    // SOLO <a> e <button>: il pannello stesso è una <section data-scheda="...">,
-    // quindi cercare un antenato qualsiasi significava intercettare OGNI click
-    // dentro la scheda e annullarlo — caselle e cursori compresi.
+
     const vp = ev.target.closest('a[data-scheda],button[data-scheda]');
     if (vp && !vp.closest('#nav-drawer')) { ev.preventDefault(); vaiAScheda(vp.dataset.scheda); }
   });
 
-  // cassetto: click su una scheda
   document.getElementById('nav-drawer')?.addEventListener('click', (ev) => {
     const b = ev.target.closest('[data-scheda]');
     if (b) vaiAScheda(b.dataset.scheda);
   });
 
-  // click fuori da un gruppo → chiude i menu a tendina; Esc → chiude tutto
   document.addEventListener('click', (ev) => { if (!ev.target.closest('.grp')) chiudiMenuTop(); });
   document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { chiudiMenuTop(); chiudiMenuMobile(); } });
 
-  // hamburger: apre/chiude il cassetto (schermi stretti)
   document.getElementById('apri-menu')?.addEventListener('click', () => {
     const aperto = document.body.classList.toggle('menu-aperto');
     document.getElementById('apri-menu').setAttribute('aria-expanded', aperto ? 'true' : 'false');
@@ -13143,8 +12364,6 @@ function initGuscio() {
   document.getElementById('backdrop')?.addEventListener('click', chiudiMenuMobile);
   document.getElementById('chiudi-menu')?.addEventListener('click', chiudiMenuMobile);
 
-  // bottoni "magnetici": quando il cursore è sopra un .btn, il bottone si sposta
-  // di poco verso il puntatore (stile Awwwards). Su touch/meno-movimento: niente.
   if (!_menoMoto && window.matchMedia && window.matchMedia('(hover: hover)').matches) {
     let magBtn = null;
     const smagnetizza = (b) => { if (b) { b.style.removeProperty('--mx'); b.style.removeProperty('--my'); } };
@@ -13162,12 +12381,9 @@ function initGuscio() {
   }
 }
 
-// via!
 initGuscio();
 caricaStato();
 
-// ── PONTE per la ricerca predittiva e il motore cinematografico (cerca.js / cinema.js).
-// Espone SOLO ciò che serve a navigare e a leggere le etichette: nessun dato sensibile.
 window.SB_APP = {
   get gruppi() { return GRUPPI; },
   get gruppoAdmin() { return GRUPPO_ADMIN; },
@@ -13180,4 +12396,4 @@ window.SB_APP = {
   schedaValida(id) { try { return schedaValida(id); } catch (e) { return true; } },
   schedaBloccata(id) { try { return schedaBloccata(id); } catch (e) { return false; } },
 };
-try { window.dispatchEvent(new CustomEvent('sb-app-pronta')); } catch (e) { /* niente */ }
+try { window.dispatchEvent(new CustomEvent('sb-app-pronta')); } catch (e) {  }

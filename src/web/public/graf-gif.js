@@ -1,22 +1,12 @@
-// Encoder GIF89a animato, autonomo e SENZA dipendenze/CDN: prende una lista di
-// frame RGBA (Uint8ClampedArray, larghezza×altezza×4) e restituisce i byte di una
-// GIF animata in loop. Serve alle "Grafiche social" per esportare i temi animati
-// SENZA registrare in tempo reale: i frame si disegnano offline e si codificano qui.
-//
-// Pipeline: palette globale via median-cut (≤256 colori) → mappatura con dithering
-// Floyd–Steinberg (gradienti più puliti) → compressione LZW dei frame.
-//
-// Espone window.SB_GIF.encode(frames, w, h, delayCs) → Uint8Array.
-// - frames: array di Uint8ClampedArray|Uint8Array (RGBA) tutti w*h*4
-// - delayCs: ritardo per frame in centesimi di secondo (es. 8 = ~12.5fps)
+
+
 (() => {
   'use strict';
 
-  // ── median-cut: da un campione di pixel RGB ricava una palette di `maxColori`.
   function medianCut(campione, maxColori) {
-    // campione: array piatto [r,g,b, r,g,b, …]
+
     const n = campione.length / 3;
-    let box = { lo: 0, hi: n }; // useremo indici su un array di punti
+    let box = { lo: 0, hi: n };
     const punti = new Array(n);
     for (let i = 0; i < n; i++) punti[i] = [campione[i * 3], campione[i * 3 + 1], campione[i * 3 + 2]];
 
@@ -33,7 +23,7 @@
 
     let boxes = [box];
     while (boxes.length < maxColori) {
-      // scegli il box con l'estensione massima e almeno 2 punti
+
       let idx = -1, best = -1, canale = 0;
       for (let i = 0; i < boxes.length; i++) {
         const b = boxes[i];
@@ -42,34 +32,32 @@
         const m = Math.max(e.r, e.g, e.b);
         if (m > best) { best = m; idx = i; canale = e.r >= e.g && e.r >= e.b ? 0 : (e.g >= e.b ? 1 : 2); }
       }
-      if (idx < 0) break; // niente più da dividere
+      if (idx < 0) break;
       const b = boxes[idx];
-      // ordina il sotto-intervallo sul canale scelto e taglia a metà (mediana)
+
       const seg = punti.slice(b.lo, b.hi).sort((x, y) => x[canale] - y[canale]);
       for (let i = 0; i < seg.length; i++) punti[b.lo + i] = seg[i];
       const mid = b.lo + (b.hi - b.lo >> 1);
       boxes.splice(idx, 1, { lo: b.lo, hi: mid }, { lo: mid, hi: b.hi });
     }
 
-    // colore medio di ogni box → palette
     const palette = [];
     for (const b of boxes) {
       let r = 0, g = 0, bl = 0; const cnt = b.hi - b.lo || 1;
       for (let i = b.lo; i < b.hi; i++) { r += punti[i][0]; g += punti[i][1]; bl += punti[i][2]; }
       palette.push([Math.round(r / cnt), Math.round(g / cnt), Math.round(bl / cnt)]);
     }
-    while (palette.length < 2) palette.push([0, 0, 0]); // GIF: minimo 2 colori
+    while (palette.length < 2) palette.push([0, 0, 0]);
     return palette;
   }
 
-  // cache 15-bit (5/5/5) → indice palette più vicino, per mappare velocemente.
   function costruisciCache(palette) {
     const cache = new Int16Array(32768).fill(-1);
     return (r, g, b) => {
       const key = (r >> 3 << 10) | (g >> 3 << 5) | (b >> 3);
       let idx = cache[key];
       if (idx >= 0) return idx;
-      // centro della cella per la ricerca (approssimazione, coerente col dithering)
+
       const cr = (r & ~7) + 4, cg = (g & ~7) + 4, cb = (b & ~7) + 4;
       let best = 0, bestD = Infinity;
       for (let i = 0; i < palette.length; i++) {
@@ -82,7 +70,6 @@
     };
   }
 
-  // scrittore di byte a crescita automatica
   function Bytes() {
     let buf = new Uint8Array(1 << 16), len = 0;
     const grow = (n) => { if (len + n <= buf.length) return; let cap = buf.length; while (cap < len + n) cap *= 2; const nb = new Uint8Array(cap); nb.set(buf); buf = nb; };
@@ -95,7 +82,6 @@
     };
   }
 
-  // LZW GIF: comprime gli indici (Uint8Array) con codice minimo `minCode`.
   function lzw(indici, minCode) {
     const out = Bytes();
     const clear = 1 << minCode;
@@ -106,7 +92,6 @@
     let next = eoi + 1;
     reset();
 
-    // accumulatore di bit → byte (little-endian nei sub-blocchi da 255)
     let acc = 0, accBits = 0;
     const blocco = [];
     const flushBlocco = () => { if (!blocco.length) return; out.u8(blocco.length); for (const b of blocco) out.u8(b); blocco.length = 0; };
@@ -131,7 +116,7 @@
     emit(eoi);
     if (accBits > 0) { blocco.push(acc & 0xff); }
     flushBlocco();
-    out.u8(0); // block terminator
+    out.u8(0);
     return out.get();
   }
 
@@ -139,10 +124,8 @@
     if (!frames || !frames.length) throw new Error('nessun frame');
     delayCs = Math.max(2, Math.round(delayCs || 8));
 
-    // 1) campione di pixel da (fino a) 6 frame distribuiti, per la palette globale.
-    // Bastano poche migliaia di punti: la palette è stabile e resta veloce.
     const passiF = Math.max(1, Math.floor(frames.length / 6));
-    const passoP = Math.max(1, Math.floor((w * h) / 3000)); // ~3k pixel per frame
+    const passoP = Math.max(1, Math.floor((w * h) / 3000));
     const campione = [];
     for (let f = 0; f < frames.length; f += passiF) {
       const d = frames[f];
@@ -151,28 +134,24 @@
     const palette = medianCut(campione, 256);
     const nearest = costruisciCache(palette);
 
-    // dimensione della tabella colori: potenza di 2 (2..256)
-    let bits = 1; while ((1 << bits) < palette.length) bits++; // 1..8
+    let bits = 1; while ((1 << bits) < palette.length) bits++;
     const tableLen = 1 << bits;
     const minCode = Math.max(2, bits);
 
-    // 2) intestazione GIF + Logical Screen Descriptor + Global Color Table
     const out = Bytes();
     out.str('GIF89a');
     out.u16(w); out.u16(h);
-    out.u8(0xF0 | (bits - 1)); // GCT presente, risoluzione, no sort, size=bits-1
-    out.u8(0); out.u8(0);      // bg color index, pixel aspect
+    out.u8(0xF0 | (bits - 1));
+    out.u8(0); out.u8(0);
     for (let i = 0; i < tableLen; i++) { const p = palette[i] || [0, 0, 0]; out.u8(p[0]); out.u8(p[1]); out.u8(p[2]); }
 
-    // NETSCAPE2.0 → loop infinito
     out.u8(0x21); out.u8(0xFF); out.u8(0x0B); out.str('NETSCAPE2.0'); out.u8(0x03); out.u8(0x01); out.u16(0); out.u8(0);
 
-    // 3) frame
     const idxBuf = new Uint8Array(w * h);
-    // errori Floyd–Steinberg su una riga corrente e la successiva (per canale)
+
     for (let f = 0; f < frames.length; f++) {
       const src = frames[f];
-      // buffer float per il dithering (copiamo RGB del frame)
+
       const rr = new Float32Array(w * h), gg = new Float32Array(w * h), bb = new Float32Array(w * h);
       for (let i = 0; i < w * h; i++) { const j = i * 4; rr[i] = src[j]; gg[i] = src[j + 1]; bb[i] = src[j + 2]; }
       for (let y = 0; y < h; y++) {
@@ -183,7 +162,7 @@
           idxBuf[i] = pi;
           const p = palette[pi];
           const er = r - p[0], eg = g - p[1], eb = b - p[2];
-          // diffusione: →7/16, ↙3/16, ↓5/16, ↘1/16
+
           if (x + 1 < w) { rr[i + 1] += er * 7 / 16; gg[i + 1] += eg * 7 / 16; bb[i + 1] += eb * 7 / 16; }
           if (y + 1 < h) {
             if (x > 0) { rr[i + w - 1] += er * 3 / 16; gg[i + w - 1] += eg * 3 / 16; bb[i + w - 1] += eb * 3 / 16; }
@@ -192,15 +171,15 @@
           }
         }
       }
-      // Graphic Control Extension (delay, nessuna trasparenza, dispose=1)
+
       out.u8(0x21); out.u8(0xF9); out.u8(0x04); out.u8(0x04); out.u16(delayCs); out.u8(0); out.u8(0);
-      // Image Descriptor (nessuna tabella locale)
+
       out.u8(0x2C); out.u16(0); out.u16(0); out.u16(w); out.u16(h); out.u8(0);
       out.u8(minCode);
       out.raw(lzw(idxBuf, minCode));
     }
 
-    out.u8(0x3B); // trailer
+    out.u8(0x3B);
     return out.get();
   }
 

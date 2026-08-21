@@ -6,8 +6,7 @@
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0c0c11" media="(prefers-color-scheme: dark)">
 
-  <!-- Tema: risolto PRIMA di dipingere la pagina, così non c'è il lampo bianco.
-       "auto" segue il sistema; "dark"/"light" è la scelta salvata dall'utente. -->
+  
   <script>
     (function () {
       try {
@@ -19,7 +18,7 @@
         document.documentElement.setAttribute('data-theme', 'light');
       }
     })();
-  </script>
+</script>
 
   <title>SocialBot — bot per Twitch in italiano | socialbot.live</title>
   <meta name="description" content="SocialBot (socialbot.live, di andryxify) è il bot per Twitch in italiano che scrive in chat col TUO account: comandi su misura, moderazione e scudo anti-bot (ferma follow-bot e hate-raid, mette in attesa gli account appena creati), clip automatiche, overlay per OBS personalizzabile (alert con immagini/video/green screen, chat a schermo, widget, emote 7TV), richieste musicali Spotify, effetti sui punti canale e notifiche live. Con demo da provare subito.">
@@ -28,7 +27,7 @@
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
   <link rel="canonical" href="https://socialbot.live/">
 
-  <!-- Open Graph (anteprima nelle chat e sui social) -->
+  
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="SocialBot">
   <meta property="og:locale" content="it_IT">
@@ -40,7 +39,7 @@
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="SocialBot — il bot per Twitch di andryxify.it">
 
-  <!-- Twitter/X -->
+  
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="SocialBot · Bot per Twitch italiano che parla con la tua voce">
   <meta name="twitter:description" content="Il bot per Twitch in italiano che scrive col tuo account. Overlay OBS (alert, chat, widget, 7TV, green screen), comandi, musica, clip, notifiche live.">
@@ -57,8 +56,7 @@
   <link rel="alternate" hreflang="x-default" href="https://socialbot.live/">
 
   <link rel="stylesheet" href="style.css">
-  <!-- Sans pulito e geometrico per i titoli (sensibilità Garden Eight). Google Fonts è permesso
-       dalla CSP; font-display swap → non blocca il render, ok anche sui device deboli. -->
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@300;400;500;700&display=swap">
@@ -67,8 +65,7 @@
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
   <link rel="icon" href="/icons/icon-192.png">
 
-  <!-- Dati strutturati: aiutano Google a capire cos'è SocialBot e a mostrare
-       risultati arricchiti (scheda prodotto + domande frequenti). -->
+  
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -195,9 +192,7 @@
   }
   </script>
 
-  <!-- SPLASH di caricamento: copre la pagina finché app.js non disegna la dashboard,
-       così non si vede il lampo dell'HTML statico "grezzo". CSS inline = compare
-       subito, prima ancora di style.css. Tema già risolto in cima (data-theme). -->
+  
   <style>
     #splash { position: fixed; inset: 0; z-index: 99999; display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 24px; background: #0c0c11; color: #fff;
@@ -230,24 +225,23 @@
       var fatto = false;
       function via() { if (fatto) return; fatto = true; s.classList.add('via'); setTimeout(function () { if (s.parentNode) s.parentNode.removeChild(s); }, 550); }
       window.SB_SPLASH_OFF = via;
-      // via appena app.js prende il controllo di #app (rimpiazza la vetrina statica)
+
       try {
         var app = document.getElementById('app');
         if (app && window.MutationObserver) {
           var mo = new MutationObserver(function () { mo.disconnect(); via(); });
           mo.observe(app, { childList: true });
         }
-      } catch (e) { /* niente */ }
-      setTimeout(via, 7000);   // rete di sicurezza: non restare mai bloccato
+      } catch (e) {  }
+      setTimeout(via, 7000);
     })();
-  </script>
+</script>
 
-  <!-- notifiche a scomparsa -->
+  
   <div id="toast-box" aria-live="polite"></div>
 
   <div class="guscio">
-    <!-- barra in alto: marchio, navigazione a gruppi (menu a tendina) e strumenti.
-         Sostituisce la vecchia colonna a sinistra: riempita da app.js. -->
+    
     <header class="barra-top" id="barra-top">
       <a class="marchio" href="/">
         <img class="marchio-segno" src="/icons/icon-192.png" alt="SocialBot" width="30" height="30">
@@ -260,7 +254,7 @@
       </button>
     </header>
 
-    <!-- cassetto laterale: appare su schermi stretti al posto della barra -->
+    
     <div class="backdrop" id="backdrop"></div>
     <aside class="drawer" id="drawer" aria-label="Menu">
       <div class="drawer-testa">
@@ -277,9 +271,7 @@
       <div class="contenuto">
         <header class="pagina-testata" id="pagina-testata"></header>
         <div id="app">
-          <!-- Contenuto REALE nell'HTML: i motori di ricerca (anche senza eseguire
-               JavaScript) leggono subito cos'è SocialBot. Con JS attivo, app.js
-               disegna la vetrina interattiva al suo posto. -->
+          
           <section class="vetrina-hero">
             <span class="vetrina-occhiello">SocialBot · il bot di andryxify.it</span>
             <h1 class="vetrina-titolo">SocialBot: il bot per Twitch che parla con la tua voce</h1>
@@ -342,7 +334,7 @@
     </main>
   </div>
 
-  <!-- banner cookie (solo informativo: usiamo un unico cookie tecnico) -->
+  
   <div id="cookie-banner" class="cookie-banner" hidden>
     <p>Usiamo solo un <strong>cookie tecnico</strong> per tenerti connesso dopo l'accesso.
       Nessun tracciamento, nessuna pubblicità. <a href="/privacy">Dettagli</a></p>
@@ -355,12 +347,12 @@
         var b = document.getElementById('cookie-banner'); if (!b) return;
         b.hidden = false;
         document.getElementById('cookie-ok').addEventListener('click', function () {
-          try { localStorage.setItem('cookie-ok', '1'); } catch (e) { /* niente */ }
+          try { localStorage.setItem('cookie-ok', '1'); } catch (e) {  }
           b.hidden = true;
         });
-      } catch (e) { /* niente */ }
+      } catch (e) {  }
     })();
-  </script>
+</script>
 
   <link rel="stylesheet" href="overlay-skin.css">
   <script src="presets.js"></script>
@@ -368,7 +360,7 @@
   <script src="vendor/qrcode.js"></script>
   <script src="mente3d.js"></script>
   <script src="app.js"></script>
-  <!-- estetica ANIME OP: motore cinematografico + ricerca predittiva (dopo app.js: usano window.SB_APP) -->
+  
   <script src="cinema.js" defer></script>
   <script src="cerca.js" defer></script>
 

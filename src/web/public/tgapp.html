@@ -48,7 +48,7 @@
     }
     button.big:active { opacity: .8; }
     button.ghost { background: color-mix(in srgb, var(--fg) 8%, transparent); color: var(--fg); }
-    /* switch */
+    
     .sw { position: relative; width: 50px; height: 30px; flex: none; }
     .sw input { opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
     .sw .track { position: absolute; inset: 0; border-radius: 999px; background: color-mix(in srgb, var(--fg) 18%, transparent); transition: background .2s; pointer-events: none; }
@@ -77,7 +77,7 @@
 
   <script>
     const TG = window.Telegram && window.Telegram.WebApp;
-    // lingua da Telegram (it/en/es), default it
+
     const lc = (TG?.initDataUnsafe?.user?.language_code || navigator.language || 'it').slice(0, 2);
     const LANG = ['it', 'en', 'es'].includes(lc) ? lc : (lc === 'es' ? 'es' : lc.startsWith('en') ? 'en' : 'it');
     const L = (it, en, es) => (LANG === 'en' ? en : LANG === 'es' ? es : it);
@@ -99,7 +99,6 @@
 
     function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 
-    // ── stato: NON in Telegram ──
     function vistaFuoriTelegram() {
       app.innerHTML = `<div class="card center">
         <p>${L('Apri questa pagina dal bot <b>SocialBot</b> su Telegram.', 'Open this page from the <b>SocialBot</b> bot on Telegram.', 'Abre esta página desde el bot <b>SocialBot</b> en Telegram.')}</p>
@@ -107,7 +106,6 @@
       </div>`;
     }
 
-    // ── stato: da collegare (mostra il codice) ──
     function vistaCollega(codice, nome) {
       app.innerHTML = `
         <div class="card">
@@ -124,7 +122,6 @@
       document.getElementById('ricontrolla').onclick = avvia;
     }
 
-    // ── stato: collegato (dashboard compatta) ──
     async function vistaDashboard(sess) {
       app.innerHTML = `<div class="spin"></div>`;
       let st;
@@ -149,7 +146,7 @@
         catch { sw.checked = !sw.checked; TG?.showAlert?.(L('Operazione non riuscita.', 'Action failed.', 'La acción falló.')); }
         finally { sw.disabled = false; }
       };
-      // la Mini App è già su socialbot.live: la sessione (cookie) vale anche per «/»
+
       document.getElementById('apri').onclick = () => { location.href = '/'; };
     }
 
@@ -168,7 +165,7 @@
 
     if (TG) { try { TG.ready(); TG.expand(); } catch {} }
     avvia();
-  </script>
+</script>
 
 <!-- Questo software e tutto il suo contenuto (codice, logica, dati, motori di ragionamento e la persona "Lia") sono proprieta intellettuale di Andrea Taliento (ANDRYXify). © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live. ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->
 <span style="display:none" aria-hidden="true">​‌​‌​​​‌​‌‌‌​‌​‌​‌‌​​‌​‌​‌‌‌​​‌‌​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​​‌‌​​‌‌‌​‌​​​‌‌‌​‌‌‌​‌‌​​​​‌​‌‌‌​​‌​​‌‌​​‌​‌​​‌​​​​​​‌‌​​‌​‌​​‌​​​​​​‌‌‌​‌​​​‌‌‌​‌​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​‌‌​‌​​‌​‌‌​‌‌​​​​‌​​​​​​‌‌‌​​‌‌​‌‌‌​‌​‌​‌‌​‌‌‌‌​​‌​​​​​​‌‌​​​‌‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​‌​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​​‌​‌​​​​‌‌​​​‌‌​‌‌​‌‌‌‌​‌‌​​‌​​​‌‌​‌​​‌​‌‌​​​‌‌​‌‌​​‌​‌​​‌​‌‌​​​​‌​​​​​​‌‌​‌‌​​​‌‌​‌‌‌‌​‌‌​​‌‌‌​‌‌​‌​​‌​‌‌​​​‌‌​‌‌​​​​‌​​‌​‌‌​​​​‌​​​​​​‌‌​​‌​​​‌‌​​​​‌​‌‌‌​‌​​​‌‌​‌​​‌​​‌​‌‌​​​​‌​​​​​​‌‌​‌‌​‌​‌‌​‌‌‌‌​‌‌‌​‌​​​‌‌​‌‌‌‌​‌‌‌​​‌​​‌‌​‌​​‌​​‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌​​‌​​​​​​‌‌‌​​‌​​‌‌​​​​‌​‌‌​​‌‌‌​‌‌​‌​​‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌​​​​‌​‌‌​‌‌​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​‌‌​​‌​‌​​‌​​​​​​‌‌​‌‌​​​‌‌​​​​‌​​‌​​​​​​‌‌‌​​​​​‌‌​​‌​‌​‌‌‌​​‌​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌​​​​‌​​‌​​​​​​​‌​​​‌​​‌​​‌‌​​​‌‌​‌​​‌​‌‌​​​​‌​​‌​​​‌​​​‌​‌​​‌​​‌​​​​​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌​‌‌‌‌​​‌​​​​​​‌‌‌​​​​​‌‌‌​​‌​​‌‌​‌‌‌‌​‌‌‌​​​​​‌‌‌​​‌​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌‌​‌​​​‌‌​​​​‌​​‌​​​​​​‌‌​‌​​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​​‌​‌​‌‌​‌‌​​​‌‌​‌‌​​​‌‌​​‌​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌‌​‌​‌​‌‌​​​​‌​‌‌​‌‌​​​‌‌​​‌​‌​​‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌​​‌​​​​​​‌​​​​​‌​‌‌​‌‌‌​​‌‌​​‌​​​‌‌‌​​‌​​‌‌​​‌​‌​‌‌​​​​‌​​‌​​​​​​‌​‌​‌​​​‌‌​​​​‌​‌‌​‌‌​​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​​‌​‌​​​​‌​​​​​‌​‌​​‌‌‌​​‌​​​‌​​​‌​‌​​‌​​‌​‌‌​​‌​‌​‌‌​​​​‌‌​‌​​‌​‌‌​​‌‌​​‌‌‌‌​​‌​​‌​‌​​‌​​‌​‌‌‌​​​‌​​​​​‌‌​​​​‌​‌​‌​‌​​‌​​‌​​​​​​​‌‌​​‌​​​‌‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌‌‌​​​‌​‌​​​​​​​‌​​‌​​‌‌​​‌‌​​‌​​​‌‌​​​​​​‌‌​​‌​​​‌‌​‌‌​​​‌​​​​​​‌​​​​​‌​‌‌​‌‌‌​​‌‌​​‌​​​‌‌‌​​‌​​‌‌​​‌​‌​‌‌​​​​‌​​‌​​​​​​‌​‌​‌​​​‌‌​​​​‌​‌‌​‌‌​​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​​‌​‌​​​​‌​​​​​‌​‌​​‌‌‌​​‌​​​‌​​​‌​‌​​‌​​‌​‌‌​​‌​‌​‌‌​​​​‌‌​‌​​‌​‌‌​​‌‌​​‌‌‌‌​​‌​​‌​‌​​‌​​‌​​​​​‌‌‌​​​‌​‌​​​​​​​‌​​‌​‌​​​​‌​​​​​​‌​‌​‌​​​‌‌‌​‌​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌​‌​​‌​​‌​​​​​​‌‌​‌​​‌​​‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌​‌‌‌​​‌​​‌‌​‌​​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌​‌​​‌​​‌​​​​​​‌‌‌​​‌​​‌‌​‌​​‌​‌‌‌​​‌‌​‌‌​​‌​‌​‌‌‌​​‌​​‌‌‌​‌‌​​‌‌​​​​‌​‌‌‌​‌​​​‌‌​‌​​‌​​‌​​​​​‌‌‌​​​‌​‌​​​​​​​‌​​‌​‌​​​​‌​​​​​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​​​‌‌​‌‌​‌​​‌​‌‌​​​​‌​‌‌​‌‌​​​‌‌​​​‌​​‌‌​‌‌‌‌​‌‌‌​‌​​​​‌​‌‌‌​​‌‌​‌‌​​​‌‌​‌​​‌​‌‌‌​‌‌​​‌‌​​‌​‌​​‌​‌‌‌​​​‌​​​​​​‌​​​​​‌​‌​​‌‌‌​​‌​​​‌​​​‌​‌​​‌​​‌​‌‌​​‌​‌​‌‌​​​​​‌​‌‌​‌​‌​​‌​​‌​‌​‌​​​​​​‌‌‌​‌​​​‌‌‌​‌​​‌‌​​​​‌​​‌‌​‌‌‌​‌‌​​‌‌​​​‌‌​​‌‌​​‌‌‌​​‌​‌‌​​​‌‌​​‌‌​​​‌​‌‌​​‌​‌​​‌‌‌​​​​‌‌​​​‌​​​‌‌​‌​​​​‌‌​​‌​​​‌‌​‌​​​‌‌​​‌​​​​‌‌‌​​‌​​‌‌​​​​​​‌​‌‌​‌​​‌‌​‌​​​‌‌​​‌‌​​​‌‌​‌‌‌​‌‌​​​‌​​​‌​‌‌​‌​‌‌‌​‌​​​‌‌​​​​‌​‌‌​‌‌​​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌‌‌​‌​​​‌‌‌​‌​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​​​‌‌​‌‌​‌​​‌​‌‌​​​​‌​‌‌​‌‌​​​‌‌​​​‌​​‌‌​‌‌‌‌​‌‌‌​‌​​​​‌​‌‌‌​​‌‌​‌‌​​​‌‌​‌​​‌​‌‌‌​‌‌​​‌‌​​‌​‌⁣</span></body>

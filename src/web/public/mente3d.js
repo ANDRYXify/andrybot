@@ -1,21 +1,6 @@
 // © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
 // Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
-// mente3d.js — grafo 3D della "mente" di Lia, disegnato a mano su Canvas 2D.
-//
-// Perché non three.js: niente CDN (CSP), niente 600 KB da vendorizzare né catene di
-// dipendenze. Per qualche decina di nodi basta e avanza un piccolo motore proprio:
-// simulazione a forze (repulsione + molle + centro), proiezione prospettica 3D,
-// rotazione col trascinamento, zoom con la rotella, click sul nodo. Leggero e nostro.
-//
-// API globale:
-//   const ctrl = SB_MENTE.crea(canvas, { nodes, links }, { onSelect, dark });
-//   ctrl.aggiorna({ nodes, links });   // nuovi dati (conserva le posizioni note)
-//   ctrl.tema(dark);                   // cambia chiaro/scuro
-//   ctrl.seleziona(id);               // seleziona un nodo da fuori
-//   ctrl.destroy();                    // ferma tutto e libera i listener
-//
-//   node: { id, label, group, color, size, data }
-//   link: { source, target }
+
 (function () {
   'use strict';
 
@@ -23,8 +8,6 @@
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const TAU = Math.PI * 2;
 
-  // mescola un colore verso il nero (amt<0) o il bianco (amt>0). Serve per il
-  // bordo sottile del nodo (una versione più scura/chiara del suo colore).
   function shade(col, amt) {
     const m = /^#?([0-9a-f]{6})$/i.exec(String(col || ''));
     if (!m) return col;
@@ -41,19 +24,18 @@
     let dark = !!opts.dark;
     const onSelect = typeof opts.onSelect === 'function' ? opts.onSelect : () => {};
 
-    let nodi = [];         // { id, label, group, color, size, data, x,y,z, vx,vy,vz, sx,sy,sr,depth }
+    let nodi = [];
     const perId = new Map();
-    let archi = [];        // { a: nodo, b: nodo, rest }
-    let alpha = 1;         // "temperatura" della simulazione (si raffredda da sola)
+    let archi = [];
+    let alpha = 1;
     let yaw = 0.5, pitch = -0.35, zoom = 1;
     let selId = null, hoverId = null;
     let raf = 0, running = true;
-    let autoRot = true;    // ruota piano da sola quando non interagisci
-    const caldo = new Map();   // id → istante in cui il nodo ha «lavorato» (per pulsare in tempo reale)
-    const CALDO_MS = 5000;     // per quanto un nodo resta illuminato dopo aver sparato
+    let autoRot = true;
+    const caldo = new Map();
+    const CALDO_MS = 5000;
     const orologio = () => { try { return Date.now(); } catch (e) { return 0; } };
 
-    // ---- dimensioni (DPR-aware) --------------------------------------------
     let W = 300, H = 300, cx = 150, cy = 150, dpr = 1;
     function ridimensiona() {
       const r = canvas.getBoundingClientRect();
@@ -66,13 +48,12 @@
       cx = W / 2; cy = H / 2;
     }
 
-    // ---- costruzione grafo -------------------------------------------------
     function carica(d) {
       const nuovi = Array.isArray(d?.nodes) ? d.nodes : [];
-      const vecchie = perId;   // per conservare posizioni tra un aggiorna e l'altro
+      const vecchie = perId;
       nodi = nuovi.map((n) => {
         const p = vecchie.get(n.id);
-        // posizione iniziale su una sfera (o riusa la vecchia, per continuità)
+
         const t = Math.random() * Math.PI * 2, u = Math.random() * 2 - 1;
         const rr = 120 + Math.random() * 40;
         return {
@@ -97,15 +78,14 @@
         const a = perId.get(l.source), b = perId.get(l.target);
         if (a && b && a !== b) { archi.push({ a, b, rest: nz(l.rest, 78) }); a._adj.add(b.id); b._adj.add(a.id); }
       }
-      alpha = 1;   // ri-scalda: rilassa la nuova topologia
+      alpha = 1;
     }
 
-    // ---- simulazione a forze (un passo) ------------------------------------
     function passo() {
       if (alpha < 0.02) { alpha = 0; return; }
       const n = nodi.length;
       const kRep = 2100, kSpring = 0.02, kCenter = 0.0055, damping = 0.86;
-      // repulsione O(n^2): va benissimo per qualche decina di nodi
+
       for (let i = 0; i < n; i++) {
         const a = nodi[i];
         for (let j = i + 1; j < n; j++) {
@@ -120,7 +100,7 @@
           b.vx -= ux * f; b.vy -= uy * f; b.vz -= uz * f;
         }
       }
-      // molle lungo gli archi (verso la lunghezza a riposo)
+
       for (const l of archi) {
         const a = l.a, b = l.b;
         let dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z;
@@ -130,7 +110,7 @@
         a.vx += ux * f; a.vy += uy * f; a.vz += uz * f;
         b.vx -= ux * f; b.vy -= uy * f; b.vz -= uz * f;
       }
-      // richiamo verso il centro + integrazione
+
       for (const a of nodi) {
         a.vx -= a.x * kCenter; a.vy -= a.y * kCenter; a.vz -= a.z * kCenter;
         a.vx *= damping; a.vy *= damping; a.vz *= damping;
@@ -139,17 +119,16 @@
       alpha *= 0.985;
     }
 
-    // ---- proiezione 3D → 2D ------------------------------------------------
     const FOCAL = 460;
     function proietta() {
       const cy0 = Math.cos(yaw), sy0 = Math.sin(yaw);
       const cx0 = Math.cos(pitch), sx0 = Math.sin(pitch);
       for (const a of nodi) {
-        // yaw attorno a Y
+
         const x1 = a.x * cy0 + a.z * sy0;
         const z1 = -a.x * sy0 + a.z * cy0;
         const y1 = a.y;
-        // pitch attorno a X
+
         const y2 = y1 * cx0 - z1 * sx0;
         const z2 = y1 * sx0 + z1 * cx0;
         const x2 = x1;
@@ -158,11 +137,10 @@
         a.sx = cx + x2 * s;
         a.sy = cy + y2 * s;
         a.sr = Math.max(1.5, a.size * s);
-        a.depth = z2;   // più grande = più vicino
+        a.depth = z2;
       }
     }
 
-    // ---- disegno -----------------------------------------------------------
     function colori() {
       return dark
         ? { vin0: '#191627', vin1: '#100e1b', edge: '150,145,180', edgeHi: '205,198,240',
@@ -174,18 +152,15 @@
     }
     function disegna() {
       const C = colori();
-      // sfondo con leggera vignettatura (focus al centro, aria professionale)
+
       const g = ctx.createRadialGradient(cx, cy, Math.min(W, H) * 0.1, cx, cy, Math.max(W, H) * 0.72);
       g.addColorStop(0, C.vin0); g.addColorStop(1, C.vin1);
       ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
 
-      // FOCUS: se sto sopra/ho selezionato un nodo, evidenzio lui e i suoi vicini,
-      // il resto sfuma. È la lettura "professionale" di un grafo: si isola il contesto.
       const focus = hoverId || selId;
       const fnode = focus ? perId.get(focus) : null;
       const fset = fnode ? new Set([focus, ...fnode._adj]) : null;
 
-      // archi
       for (const l of archi) {
         const a = l.a, b = l.b;
         const attivo = !fset || (a.id === focus || b.id === focus);
@@ -197,28 +172,26 @@
         ctx.beginPath(); ctx.moveTo(a.sx, a.sy); ctx.lineTo(b.sx, b.sy); ctx.stroke();
       }
 
-      // nodi (dal più lontano al più vicino)
       const ord = nodi.slice().sort((p, q) => p.depth - q.depth);
       for (const a of ord) {
         const sel = a.id === selId, hov = a.id === hoverId;
         const dim = fset && !fset.has(a.id);
         const prof = clamp(0.55 + (a.depth + 180) / 820, 0.4, 1);
         const fade = prof * (dim ? 0.24 : 1);
-        // corpo con ombra morbida (profondità); niente ombra sui nodi sfumati
+
         ctx.globalAlpha = fade;
         if (!dim) { ctx.save(); ctx.shadowColor = C.ombra; ctx.shadowBlur = 9; ctx.shadowOffsetY = 2; }
         ctx.beginPath(); ctx.arc(a.sx, a.sy, a.sr, 0, TAU);
         ctx.fillStyle = a.color; ctx.fill();
         if (!dim) ctx.restore();
-        // PULSE «tempo reale»: se il nodo ha lavorato di recente, un alone che respira attorno —
-        // così vedi ORA su quali nodi sta lavorando e come procede il legame che si accende.
+
         if (!dim) {
           const t0 = caldo.get(a.id);
           if (t0) {
             const dt = orologio() - t0;
             if (dt >= 0 && dt < CALDO_MS) {
-              const vita = 1 - dt / CALDO_MS;                       // svanisce piano
-              const battito = 0.5 + 0.5 * Math.sin(dt / 130);       // respiro
+              const vita = 1 - dt / CALDO_MS;
+              const battito = 0.5 + 0.5 * Math.sin(dt / 130);
               const rr = a.sr + 3 + battito * (5 + a.sr * 0.5);
               ctx.save();
               ctx.globalAlpha = fade * vita * (0.35 + 0.35 * battito);
@@ -230,26 +203,26 @@
             }
           }
         }
-        // bordo sottile: una versione più scura del colore del nodo
+
         ctx.lineWidth = 1; ctx.strokeStyle = shade(a.color, C.bordo);
         ctx.beginPath(); ctx.arc(a.sx, a.sy, a.sr, 0, TAU); ctx.stroke();
-        // core: doppio anello firma
+
         if (a.group === 'core') {
           ctx.lineWidth = 1.4; ctx.strokeStyle = C.coreRing;
           ctx.beginPath(); ctx.arc(a.sx, a.sy, a.sr + 4.5, 0, TAU); ctx.stroke();
         }
-        // anello di STATO (bozza/sospeso): l'unico colore "forte" oltre al nodo
+
         if (a.data && a.data.ring && !dim) {
           ctx.lineWidth = 2; ctx.strokeStyle = a.data.ring;
           ctx.beginPath(); ctx.arc(a.sx, a.sy, a.sr + 2.6, 0, TAU); ctx.stroke();
         }
-        // evidenza selezione/hover
+
         if (sel || hov) {
           ctx.lineWidth = sel ? 2.4 : 1.6; ctx.strokeStyle = C.anelloSel;
           ctx.beginPath(); ctx.arc(a.sx, a.sy, a.sr + (sel ? 4 : 3), 0, TAU); ctx.stroke();
         }
         ctx.globalAlpha = 1;
-        // etichette: hub sempre (core/emozione/logica), moduli solo nel focus/hover/sel
+
         const hub = a.group === 'core' || a.group === 'emozione' || a.group === 'logica';
         if (!dim && (sel || hov || hub || (fset && fset.has(a.id)))) etichetta(a, C, sel || hov, fade);
       }
@@ -261,7 +234,7 @@
       ctx.textBaseline = 'middle';
       const x = a.sx + a.sr + 6, y = a.sy;
       ctx.globalAlpha = forte ? 1 : clamp(0.9 * fade, 0.4, 1);
-      // outline morbido per leggibilità (niente riquadro: più pulito)
+
       ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.strokeStyle = C.outline;
       ctx.strokeText(t, x, y);
       ctx.fillStyle = forte ? C.testo : C.testoSoft;
@@ -269,11 +242,9 @@
       ctx.globalAlpha = 1;
     }
 
-    // ---- loop --------------------------------------------------------------
     function tick() {
       if (!running) return;
-      // auto-spegnimento: se il canvas è stato tolto dal DOM (cambio scheda della
-      // SPA) smettiamo e liberiamo i listener — niente RAF sprecati né perdite.
+
       if (!canvas.isConnected) { running = false; stacca(); return; }
       passo();
       if (autoRot && !trascino) yaw += 0.0009;
@@ -282,7 +253,6 @@
       raf = requestAnimationFrame(tick);
     }
 
-    // ---- interazione -------------------------------------------------------
     let trascino = false, mosso = false, lx = 0, ly = 0;
     function pos(ev) {
       const r = canvas.getBoundingClientRect();
@@ -314,7 +284,7 @@
         onSelect(n ? { id: n.id, label: n.label, group: n.group, data: n.data } : null);
       }
       trascino = false;
-      setTimeout(() => { if (!trascino) autoRot = true; }, 4000);   // riprende a ruotare da sola
+      setTimeout(() => { if (!trascino) autoRot = true; }, 4000);
     }
     function rotella(ev) {
       ev.preventDefault();
@@ -330,7 +300,6 @@
       return best;
     }
 
-    // ---- avvio / ciclo di vita --------------------------------------------
     const ro = ('ResizeObserver' in window) ? new ResizeObserver(() => ridimensiona()) : null;
     ridimensiona();
     carica(dati || {});
@@ -363,8 +332,7 @@
 
     return {
       aggiorna(d) { carica(d || {}); },
-      // marca i nodi che hanno «lavorato» ORA: pulsano finché non svaniscono. Non riscalda la
-      // simulazione (niente scossa al layout): è solo l'illuminazione dei nodi vivi in tempo reale.
+
       attivita(ids) {
         if (!Array.isArray(ids)) return;
         const now = orologio();
