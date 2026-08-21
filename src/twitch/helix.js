@@ -527,6 +527,31 @@ export class Helix {
     } catch { return null; }
   }
 
+  // Follower recenti del canale (dai più nuovi). [{ user_id, user_login, user_name, followed_at }].
+  // Richiede lo scope 'moderator:read:followers' sul token del broadcaster.
+  async getRecentFollowers(channelLogin, { first = 100 } = {}) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return [];
+    const token = await this.auth.getToken('broadcaster', channelLogin);
+    try {
+      const j = await this._request('GET', '/channels/followers', { query: { broadcaster_id: s.user_id, first: Math.min(100, Math.max(1, first)) }, token });
+      return j?.data || [];
+    } catch (e) { log.debug('getRecentFollowers:', e?.message || e); return []; }
+  }
+
+  // Utenti in blocco per id (fino a 100). Basta il token applicazione.
+  // [{ id, login, display_name, created_at, profile_image_url, description }].
+  async getUsersByIds(ids) {
+    const arr = (ids || []).filter(Boolean).map(String).slice(0, 100);
+    if (!arr.length) return [];
+    const params = new URLSearchParams();
+    for (const id of arr) params.append('id', id);
+    try {
+      const j = await this._request('GET', '/users?' + params.toString());
+      return j?.data || [];
+    } catch (e) { log.debug('getUsersByIds:', e?.message || e); return []; }
+  }
+
   // Revoca un ban/timeout. Ritorna { ok } o { ok:false, motivo }.
   async unbanUser(channelLogin, userId) {
     const s = streamers.get(channelLogin);

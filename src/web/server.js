@@ -22,7 +22,7 @@ import { points, vips, tgConf, dcConf, passkeys, managers, quotes, compleanni, m
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO } from '../db.js';
 import { renderLinkPage, renderInformativa } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
-import { statoListaBot, registro as registroAntibot, segnalazioniAperte, risolviSegnalazione, sintesiRegistro } from '../features/antibot.js';
+import { statoListaBot, registro as registroAntibot, segnalazioniAperte, risolviSegnalazione, sintesiRegistro, registra as registraAntibot, nomeBot, valutaAccount } from '../features/antibot.js';
 import { statoBackup, backupOra } from '../backup.js';
 import { risolviCanaleId } from '../features/youtube.js';
 import * as abbonamenti from '../features/abbonamenti.js';
@@ -1633,6 +1633,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const aperte = segnalazioniAperte(login);
     const v = aperte.find((x) => x.id === id);
     if (!v) return res.status(404).json({ errore: 'Segnalazione non trovata.' });
+    let bannato = null;
     if (esito === 'blocca' || esito === 'permetti') {
       const campo = esito === 'blocca' ? 'extra' : 'esenti';
       const s = streamers.get(login);
@@ -1643,8 +1644,55 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       ab[campo] = lista.slice(0, 2000);
       streamers.setSettings(login, { ...(s?.settings || {}), antibot: ab });
     }
+    // "Blocca sempre" bandisce ANCHE subito, se abbiamo l'id e i permessi: non
+    // solo lo mette in lista per il futuro. Registriamo l'esito reale.
+    if (esito === 'blocca' && v.userId && moderazioneOk(login)) {
+      const r = await helix.timeoutUser(login, v.userId, 0, 'anti-bot: bloccato dalla console').catch(() => null);
+      bannato = !!r?.ok;
+      registraAntibot(login, { login: v.login, userId: v.userId, azione: 'ban', motivo: 'bloccato dalla console', esito: r?.ok ? 'fatto' : 'fallito' });
+    }
     risolviSegnalazione(login, id, esito);
-    res.json({ ok: true });
+    res.json({ ok: true, bannato });
+  }));
+
+  // Scansiona i follower recenti contro la lista bot e le euristiche. NON agisce:
+  // ritorna i sospetti, lo streamer decide. Stile "pulizia follower" di CommanderRoot.
+  app.post('/api/antibot/scan', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login.toLowerCase();
+    const cfg = _abCfg(login);
+    const foll = await helix.getRecentFollowers(login, { first: 100 });
+    if (!foll.length) return res.json({ sospetti: [], scansionati: 0, permessi: moderazioneOk(login) });
+    const ids = foll.map((f) => f.user_id).filter(Boolean);
+    const utenti = await helix.getUsersByIds(ids);
+    const perId = new Map(utenti.map((u) => [u.id, u]));
+    const sospetti = [];
+    for (const f of foll) {
+      const u = perId.get(f.user_id);
+      const nb = nomeBot(f.user_login, cfg);
+      const val = valutaAccount(u, cfg);
+      if (nb || val.rischio >= Number(cfg.soglia || 70)) {
+        const motivi = val.motivi.slice();
+        if (nb && !motivi.includes('nome da bot')) motivi.unshift('nome da bot');
+        sospetti.push({ login: f.user_login, userId: f.user_id, rischio: Math.max(val.rischio, nb ? 60 : 0), motivi, seguito: f.followed_at });
+      }
+    }
+    sospetti.sort((a, b) => b.rischio - a.rischio);
+    res.json({ sospetti, scansionati: foll.length, permessi: moderazioneOk(login) });
+  }));
+
+  // Azione manuale su un utente (dalla scansione o dal registro): ban o revoca.
+  app.post('/api/antibot/azione', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login.toLowerCase();
+    const userId = String(req.body?.userId || '');
+    const nome = String(req.body?.login || '').toLowerCase();
+    const azione = req.body?.azione === 'sbanna' ? 'sbanna' : 'ban';
+    if (!userId) return res.status(400).json({ errore: 'Manca l\'utente.' });
+    if (!moderazioneOk(login)) return res.status(403).json({ errore: 'Servono i permessi di moderazione.' });
+    const r = azione === 'sbanna'
+      ? await helix.unbanUser(login, userId).catch(() => null)
+      : await helix.timeoutUser(login, userId, 0, 'anti-bot: dalla console').catch(() => null);
+    registraAntibot(login, { login: nome, userId, azione: azione === 'sbanna' ? 'sbanna' : 'ban', motivo: 'dalla console', esito: r?.ok ? 'fatto' : 'fallito' });
+    res.json({ ok: !!r?.ok, motivo: r?.motivo || '' });
   }));
 
   // Aggiunge/toglie un nome dalla blocklist ('extra') o allowlist ('esenti').
