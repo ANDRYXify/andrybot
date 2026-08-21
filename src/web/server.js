@@ -505,7 +505,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // wrapper per le route async: qualsiasi errore → 500 JSON (mai HTML)
   const wrap = (fn) => (req, res) => Promise.resolve(fn(req, res)).catch((e) => {
     log.error(req.method, req.path, '→', e?.message || e);
-    if (!res.headersSent) res.status(500).json({ errore: e?.message || 'errore interno' });
+    // Al client un messaggio GENERICO: il testo grezzo di un errore SQLite/filesystem
+    // rivela percorsi, nomi di vincoli e struttura interna — ricognizione per un
+    // attaccante. Gli errori "gentili" per l'utente usano già res.status(4xx) espliciti.
+    if (!res.headersSent) res.status(500).json({ errore: 'errore interno' });
   });
 
   // Pre-addestramento "fire and forget": legge il profilo andryxify.it
@@ -597,6 +600,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (yt && yt.apiKey) s.settings = { ...s.settings, youtube: { ...yt, apiKey: '', apiKeySet: true } };
     const ig = s.settings?.instagram;
     if (ig && ig.token) s.settings = { ...s.settings, instagram: { ...ig, token: '', tokenSet: true } };
+    // La chiave API del canale (controlla il canale via /api/ext) e la overlayKey
+    // NON devono viaggiare in /api/me: il proprietario le prende da rotte dedicate.
+    // Così una sessione con meno privilegi (moderatore) non se le porta via.
+    if (s.settings?.apiKey) s.settings = { ...s.settings, apiKey: '', apiKeySet: true };
+    if (s.settings?.overlayKey) s.settings = { ...s.settings, overlayKey: '', overlayKeySet: true };
     return s;
   };
 
@@ -882,6 +890,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   app.get('/overlay/:login/media/:file', (req, res) => {
     if (!chiaveOk(req)) return notFound(res);
     const login = String(req.params.login).toLowerCase();
+    // anche il login è un segmento di percorso: stesso vincolo dei file (difesa
+    // in profondità contro la risalita di cartella, oltre alla chiave overlay).
+    if (!/^[a-z0-9_]{1,30}$/.test(login)) return notFound(res);
     const file = String(req.params.file || '');
     // deve essere un basename semplice: niente separatori né risalite di cartella
     if (!/^[A-Za-z0-9._-]+$/.test(file) || file.includes('..')) return notFound(res);
@@ -3851,11 +3862,15 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   app.get('/api/streamer/moduli', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const effettiDisponibili = effectsDb.list(login).filter((e) => e.attivo).map((e) => e.comando);
+    // La chiave API controlla il canale: la vede/crea SOLO il proprietario, mai
+    // un moderatore (che altrimenti la userebbe per comandare il canale anche
+    // dopo essere stato tolto). apiKeyOrCrea la conierebbe: non farlo per i mod.
+    const owner = isOwner(req);
     res.json({
       moduli: modulesDb.list(login),
       effettiDisponibili,
-      apiKey: apiKeyOrCrea(login),
-      apiUrl: `${config.baseUrl}/api/ext/${login}`,
+      apiKey: owner ? apiKeyOrCrea(login) : undefined,
+      apiUrl: owner ? `${config.baseUrl}/api/ext/${login}` : undefined,
     });
   }));
 
@@ -3943,8 +3958,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json({ ok: true });
   }));
 
-  // rigenera la chiave API in ingresso del canale
-  app.post('/api/streamer/apikey', requireLogin, wrap(async (req, res) => {
+  // rigenera la chiave API in ingresso del canale. SOLO il proprietario: un
+  // moderatore non deve poter coniare/ruotare la chiave (romperebbe le
+  // integrazioni dell'owner o si darebbe un accesso persistente).
+  app.post('/api/streamer/apikey', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
     res.json({ apiKey: generaApiKey(login) });
   }));
