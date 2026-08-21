@@ -189,6 +189,26 @@ body.cinema-on [data-reveal="mask"]:not(.rivelato) { opacity: 0; transform: tran
 .cerca-sugg .chip-domanda:hover { padding-left: 20px; }
 .cerca-vuoto { padding: 30px 16px; text-align: center; color: var(--testo-3); }
 
+/* ── CURSORE custom (desktop): un anello morbido che insegue + un punto preciso. Additivo: NON
+   nasconde il cursore vero (è un gestionale, si deve lavorare). Cresce e prende l'accento sull'hover. */
+#an-cursore-dot, #an-cursore-ring { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999; will-change: transform; }
+#an-cursore-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--acc); transition: opacity .2s ease; }
+#an-cursore-ring { width: 32px; height: 32px; transition: opacity .2s ease; }
+#an-cursore-ring::before {
+  content: ""; position: absolute; inset: 0; border-radius: 50%; border: 1px solid var(--testo-2);
+  transition: transform .28s var(--an-morbido), border-color .28s ease, background .28s ease;
+}
+#an-cursore-ring.su::before { transform: scale(1.75); border-color: var(--acc); background: color-mix(in srgb, var(--acc) 10%, transparent); }
+
+/* ── LINK: sottolineatura che si DISEGNA da sinistra (solo link di testo nel contenuto). ──── */
+.blocco a:not(.btn):not(.menu-voce), .pannello a:not(.btn), p a:not(.btn) {
+  text-decoration: none;
+  background-image: linear-gradient(var(--acc), var(--acc));
+  background-size: 0% 1px; background-position: 0 100%; background-repeat: no-repeat;
+  transition: background-size .35s var(--an-morbido), color .3s ease; padding-bottom: 1px;
+}
+.blocco a:not(.btn):not(.menu-voce):hover, .pannello a:not(.btn):hover, p a:not(.btn):hover { background-size: 100% 1px; color: var(--acc); }
+
 /* ── accessibilità + device deboli ──────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   body.cinema-on [data-reveal]:not(.rivelato), body.cinema-on [data-reveal="mask"]:not(.rivelato) { opacity: 1 !important; transform: none !important; clip-path: none !important; }

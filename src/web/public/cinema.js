@@ -97,6 +97,57 @@
       } catch (e) { /* niente */ }
       // fail-safe finale: dopo 3.5s tutto ciò che è ancora nascosto viene mostrato.
       setTimeout(reteSicurezza, 3500);
+      // interazioni desktop (mouse fine): cursore custom + bottoni magnetici. Solo se il dispositivo
+      // ha un puntatore preciso (niente su touch) e il moto è ammesso. NON toccano la navigazione.
+      try {
+        var finePointer = window.matchMedia && window.matchMedia('(pointer: fine)').matches;
+        if (finePointer && !leggero) { cursore(); magnetici(); }
+      } catch (e) { /* niente */ }
+    }
+
+    // ── CURSORE custom: un anello morbido che INSEGUE il puntatore (easing) + un punto preciso.
+    //    Sull'hover di link/bottoni l'anello CRESCE e prende l'accento. Non nasconde il cursore vero
+    //    (è un gestionale: si deve poter lavorare). rAF leggero, in pausa a scheda nascosta. ──
+    function cursore() {
+      var ring = document.createElement('div'); ring.id = 'an-cursore-ring';
+      var dot = document.createElement('div'); dot.id = 'an-cursore-dot';
+      document.body.appendChild(ring); document.body.appendChild(dot);
+      document.body.classList.add('cursore-on');
+      var tx = -100, ty = -100, rx = -100, ry = -100, vivo = true, raf = 0;
+      function muovi(e) {
+        tx = e.clientX; ty = e.clientY;
+        dot.style.transform = 'translate(' + (tx - 2) + 'px,' + (ty - 2) + 'px)';
+        var s = e.target && e.target.closest && e.target.closest('a, button, .btn, [data-scheda], .cerca-voce, .chip-domanda, summary, input, textarea, select');
+        ring.classList.toggle('su', !!s);
+      }
+      function passo() {
+        if (!vivo) return;
+        rx += (tx - rx) * 0.18; ry += (ty - ry) * 0.18;
+        ring.style.transform = 'translate(' + (rx - 16) + 'px,' + (ry - 16) + 'px)';
+        raf = requestAnimationFrame(passo);
+      }
+      window.addEventListener('mousemove', muovi, { passive: true });
+      window.addEventListener('mouseout', function (e) { if (!e.relatedTarget) { dot.style.opacity = ring.style.opacity = '0'; } }, { passive: true });
+      window.addEventListener('mouseover', function () { dot.style.opacity = ring.style.opacity = ''; }, { passive: true });
+      document.addEventListener('visibilitychange', function () { vivo = !document.hidden; if (vivo) { cancelAnimationFrame(raf); raf = requestAnimationFrame(passo); } });
+      raf = requestAnimationFrame(passo);
+    }
+
+    // ── BOTTONI MAGNETICI: il bottone/lente sotto il cursore si sposta un filo VERSO il cursore.
+    //    Delegato su document → funziona anche col contenuto ridisegnato dalla SPA, senza ri-agganci. ──
+    function magnetici() {
+      var SELM = '.btn, #cerca-lancia, .grp-btn';
+      var attuale = null;
+      window.addEventListener('mousemove', function (e) {
+        try {
+          var el = e.target && e.target.closest && e.target.closest(SELM);
+          if (el !== attuale) { if (attuale) attuale.style.transform = ''; attuale = el; }
+          if (!el) return;
+          var r = el.getBoundingClientRect();
+          var dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+          el.style.transform = 'translate(' + (dx * 0.22).toFixed(1) + 'px,' + (dy * 0.28).toFixed(1) + 'px)';
+        } catch (er) { /* niente */ }
+      }, { passive: true });
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', avvia);
