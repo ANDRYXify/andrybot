@@ -183,9 +183,9 @@ a:hover { color: var(--acc); }
 .cerca-sugg .chip-domanda:hover { padding-left: 20px; }
 .cerca-vuoto { padding: 30px 16px; text-align: center; color: var(--testo-3); }
 
-/* ── CURSORE custom (desktop): un anello morbido che insegue + un punto preciso. Additivo: NON
-   nasconde il cursore vero (è un gestionale, si deve lavorare). Cresce e prende l'accento sull'hover. */
-#an-cursore-dot, #an-cursore-ring { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999; will-change: transform; }
+/* ── CURSORE custom (desktop): un anello morbido che insegue + un punto preciso. L'anello cresce e
+   prende l'accento sui cliccabili; sui campi di testo diventa una "I" (affordance di scrittura). ── */
+#an-cursore-dot, #an-cursore-ring, #an-cursore-bar { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999; will-change: transform; }
 #an-cursore-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--acc); transition: opacity .2s ease; }
 #an-cursore-ring { width: 32px; height: 32px; transition: opacity .2s ease; }
 #an-cursore-ring::before {
@@ -193,6 +193,15 @@ a:hover { color: var(--acc); }
   transition: transform .28s var(--an-morbido), border-color .28s ease, background .28s ease;
 }
 #an-cursore-ring.su::before { transform: scale(1.75); border-color: var(--acc); background: color-mix(in srgb, var(--acc) 10%, transparent); }
+/* modalità testo: una "I" precisa (sostituisce anello+punto sui campi di scrittura) */
+#an-cursore-bar { width: 2px; height: 22px; margin: -11px 0 0 -1px; border-radius: 2px; background: var(--acc); opacity: 0; transition: opacity .15s ease; }
+body.modo-testo #an-cursore-bar { opacity: 1; }
+body.modo-testo #an-cursore-ring, body.modo-testo #an-cursore-dot { opacity: 0; }
+
+/* ── SOLO il cursore del sito: nasconde quello nativo, ma UNICAMENTE quando il custom è attivo
+   (cursore-on lo mette cinema.js a setup completo, solo su mouse preciso e moto ammesso). Se il
+   custom non parte — reduced-motion, device debole, touch, errore JS — il nativo RESTA. ── */
+body.cursore-on, body.cursore-on * { cursor: none !important; }
 
 /* ── LINK: sottolineatura che si DISEGNA da sinistra (solo link di testo nel contenuto). ──── */
 .blocco a:not(.btn):not(.menu-voce), .pannello a:not(.btn), p a:not(.btn) {
