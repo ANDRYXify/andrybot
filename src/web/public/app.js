@@ -803,6 +803,15 @@ function applicaTema() {
     ? L('Passa al tema chiaro', 'Switch to light theme', 'Cambiar a tema claro')
     : L('Passa al tema scuro', 'Switch to dark theme', 'Cambiar a tema oscuro');
   document.querySelectorAll('[data-tema-toggle]').forEach((b) => { b.setAttribute('aria-label', et); b.title = et; });
+  // L'avatar 3D è disegnato su <canvas>: NON eredita il tema via CSS. Se resta com'era mentre la
+  // pagina cambia, canvas e legenda si desincronizzano (era il bug: canvas scuro su pagina chiara →
+  // testo scuro-su-scuro invisibile). Quindi ri-tematizziamo il grafo vivo insieme alla pagina.
+  try {
+    if (_mente3dCtrl && typeof _mente3dCtrl.tema === 'function' && document.getElementById('mente3d-canvas')) {
+      _mente3dCtrl.tema(scuro);
+      if (typeof _menteLegenda === 'function') _menteLegenda(scuro);
+    }
+  } catch (e) { /* il tema non deve rompere nulla */ }
 }
 function cambiaTema() {
   TEMA = temaScuroAttivo() ? 'light' : 'dark';
@@ -11605,6 +11614,10 @@ function _menteNodiCaldi(d) {
 function _menteLegenda(dark) {
   const box = document.getElementById('mente3d-legenda');
   if (!box) return;
+  // Il testo della legenda sta SOPRA il canvas: dev'essere legato al fondo del canvas (stesso `dark`),
+  // NON ereditare il --testo della pagina — altrimenti su tema pagina≠tema grafo diventa illeggibile.
+  box.style.color = dark ? '#e9e8f2' : '#26223c';
+  box.style.textShadow = dark ? '0 1px 3px rgba(0,0,0,.6)' : '0 1px 2px rgba(247,246,252,.85)';
   const dot = (c) => `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${c};margin-right:4px;vertical-align:middle"></span>`;
   const anello = (c) => `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;border:2px solid ${c};margin-right:4px;vertical-align:middle"></span>`;
   box.innerHTML = _MENTE_DOMINI.map((e) => `${dot(_menteCol(e, dark))}${e.label}`).join(' &nbsp; ')
