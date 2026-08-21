@@ -38,7 +38,7 @@ import { createMessageHandler } from './features/handler.js';
 import { ClipEngine } from './features/clips.js';
 import { PenitenzeEngine } from './features/penitenze.js';
 import { AlertsEngine } from './features/alerts.js';
-import { AntiBot, caricaListaBotDaDisco, aggiornaListaBot } from './features/antibot.js';
+import { AntiBot, caricaListaBotDaDisco, aggiornaListaBot, caricaRegistroDaDisco } from './features/antibot.js';
 import { scheduleReflection } from './ai/reflection.js';
 import { StreamWatcher } from './stream/watcher.js';
 import { LiveListener } from './stream/listener.js';
@@ -134,6 +134,7 @@ export class BotManager {
     // disco subito (istantaneo), poi si scarica la fresca dopo 30s (per non
     // rallentare l'avvio) e la si rinfresca ogni 12 ore.
     caricaListaBotDaDisco().catch(() => {});
+    caricaRegistroDaDisco().catch(() => {});
     setTimeout(() => aggiornaListaBot().catch(() => {}), 30_000);
     this._listaBotTimer = setInterval(() => aggiornaListaBot().catch(() => {}), 12 * 60 * 60_000);
     // Ore guardate: ogni 5 minuti, per ogni canale LIVE, accredito il tempo a chi

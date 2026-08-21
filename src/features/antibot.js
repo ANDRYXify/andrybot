@@ -179,6 +179,99 @@ function segnaFollow(channel, cfg) {
 }
 export const inRaffica = (channel) => (raffiche.get(channel) || 0) > Date.now();
 
+// ── Registro degli interventi (la "certezza") ────────────────────────────────
+// Lo scudo non deve solo agire: deve LASCIARE TRACCIA. Ogni intervento (ban,
+// timeout, raffica, trattenuta in chat, segnalazione, raid) finisce qui con
+// l'esito REALE su Twitch (andato o fallito). Lo streamer lo rivede dalla sua
+// console, risolve le segnalazioni e all'occorrenza annulla. Persistito su
+// disco, con un tetto per canale così non cresce all'infinito.
+const REG_MAX = 500;
+const registriMem = new Map();          // channel → [voce, …] (le recenti in coda)
+let regSeq = 0;
+let regDaSalvare = false;
+let regTimer = null;
+const REG_FILE = () => join(config.dataDir, 'registro-antibot.json');
+
+function nuovoId() { return Date.now().toString(36) + '-' + (regSeq++).toString(36); }
+
+// Registra un intervento. azione: ban|timeout|segnala|raffica|raid|chat-trattieni|chat-segnala.
+// esito: fatto|fallito|avviso|in-attesa. stato: aperto (da rivedere) | chiuso | risolto.
+export function registra(channel, dati) {
+  const ch = norm(channel);
+  if (!ch) return null;
+  const arr = registriMem.get(ch) || [];
+  const voce = {
+    id: nuovoId(), ts: Date.now(),
+    login: norm(dati.login) || '', userId: dati.userId || '',
+    azione: dati.azione || 'segnala', motivo: String(dati.motivo || ''),
+    esito: dati.esito || 'fatto', stato: dati.stato || 'chiuso', ris: null,
+  };
+  arr.push(voce);
+  if (arr.length > REG_MAX) arr.splice(0, arr.length - REG_MAX);
+  registriMem.set(ch, arr);
+  programmaSalvataggioReg();
+  return voce;
+}
+
+export function registro(channel, { limite = 100 } = {}) {
+  const arr = registriMem.get(norm(channel)) || [];
+  return arr.slice(-limite).reverse();
+}
+
+export function segnalazioniAperte(channel) {
+  return (registriMem.get(norm(channel)) || []).filter((v) => v.stato === 'aperto').reverse();
+}
+
+// Lo streamer chiude una segnalazione: 'ignora' (era ok), 'permetti' (esenta),
+// 'ban'/'timeout' (l'ha già gestita il chiamante). Qui si segna solo l'esito.
+export function risolviSegnalazione(channel, id, esito) {
+  const arr = registriMem.get(norm(channel)) || [];
+  const v = arr.find((x) => x.id === id && x.stato === 'aperto');
+  if (!v) return null;
+  v.stato = 'risolto';
+  v.ris = { esito: String(esito || 'ignora'), ts: Date.now() };
+  programmaSalvataggioReg();
+  return v;
+}
+
+export function sintesiRegistro(channel) {
+  const arr = registriMem.get(norm(channel)) || [];
+  const ora = Date.now(), g = 86400000;
+  const perAzione = {};
+  let oggi = 0, settimana = 0, aperte = 0;
+  for (const v of arr) {
+    perAzione[v.azione] = (perAzione[v.azione] || 0) + 1;
+    if (ora - v.ts < g) oggi++;
+    if (ora - v.ts < 7 * g) settimana++;
+    if (v.stato === 'aperto') aperte++;
+  }
+  return { totale: arr.length, oggi, settimana, aperte, perAzione };
+}
+
+function programmaSalvataggioReg() {
+  regDaSalvare = true;
+  if (regTimer) return;
+  regTimer = setTimeout(salvaRegistro, 4000);
+  if (regTimer.unref) regTimer.unref();
+}
+
+export async function salvaRegistro() {
+  regTimer = null;
+  if (!regDaSalvare) return;
+  regDaSalvare = false;
+  const obj = {};
+  for (const [ch, arr] of registriMem) obj[ch] = arr;
+  await writeFile(REG_FILE(), JSON.stringify(obj)).catch(() => {});
+}
+
+export async function caricaRegistroDaDisco() {
+  try {
+    const j = JSON.parse(await readFile(REG_FILE(), 'utf8'));
+    for (const ch of Object.keys(j || {})) if (Array.isArray(j[ch])) registriMem.set(norm(ch), j[ch].slice(-REG_MAX));
+    log.info(`registro anti-bot: ripreso per ${registriMem.size} canali`);
+  } catch (e) { /* prima volta: nessun file */ }
+}
+
 export class AntiBot {
   constructor({ helix, alert, say, chatSettings } = {}) {
     this.helix = helix;
@@ -193,11 +286,15 @@ export class AntiBot {
     if (cfg.azione === 'segnala') {
       log.warn(`#${channel} bot segnalato: @${login} (${motivo})`);
       if (cfg.avvisa) this.say?.(channel, `⚠️ Possibile bot: @${login} (${motivo})`);
+      registra(channel, { login, userId, azione: 'segnala', motivo, esito: 'in-attesa', stato: 'aperto' });
       return;
     }
     const durata = cfg.azione === 'timeout' ? Number(cfg.timeoutSec || 1209600) : 0;
     const r = await this.helix?.timeoutUser?.(channel, userId, durata, `anti-bot: ${motivo}`).catch(() => null);
+    const esito = r?.ok ? 'fatto' : 'fallito';
     if (r?.ok) log.info(`#${channel} anti-bot: @${login} ${durata ? 'in timeout' : 'bannato'} (${motivo})`);
+    else log.warn(`#${channel} anti-bot: @${login} NON ${durata ? 'messo in timeout' : 'bannato'} (${motivo}) — permesso mancante?`);
+    registra(channel, { login, userId, azione: durata ? 'timeout' : 'ban', motivo, esito });
   }
 
   // Evento follow (channel.follow v2): user_id, user_login, user_name.
@@ -220,6 +317,7 @@ export class AntiBot {
         if (cfg.avvisa) this.say?.(channel, `🛡️ Rilevata un'ondata di follow sospetti: attivo la protezione.`);
         this.alert?.(channel, { tipo: 'antibot', testo: 'Ondata di follow sospetti' });
         if (cfg.rafficaChiudiChat) this.chatSettings?.(channel, { followersOnly: true }).catch(() => {});
+        registra(channel, { azione: 'raffica', motivo: `${quanti} follow in ${cfg.rafficaSecondi}s${cfg.rafficaChiudiChat ? ' · chat ai soli follower' : ''}`, esito: 'avviso' });
       }
     }
 
@@ -264,11 +362,13 @@ export class AntiBot {
         if (cfg.chatNuoviAzione === 'segnala') {
           log.warn(`#${channel} account nuovissimo in chat: @${login} (${Math.floor(ore)}h)`);
           if (cfg.avvisa) this.say?.(channel, `👀 @${login} ha un account nuovo di zecca (${Math.floor(ore)}h): occhio, mod.`);
+          registra(channel, { login, userId: msg.userId, azione: 'chat-segnala', motivo: `account di ${Math.floor(ore)}h che scrive`, esito: 'in-attesa', stato: 'aperto' });
           return false;                       // lasciato in chat, solo segnalato
         }
-        await this.helix?.deleteMessage?.(channel, msg.id).catch(() => {});
+        const del = await this.helix?.deleteMessage?.(channel, msg.id).then(() => true).catch(() => false);
         log.info(`#${channel} messaggio trattenuto: @${login} (account di ${Math.floor(ore)}h)`);
         if (cfg.avvisa) this.say?.(channel, `🛡️ Messaggio di @${login} trattenuto: account creato da poco. Mod, se è ok fatelo riscrivere.`);
+        registra(channel, { login, userId: msg.userId, azione: 'chat-trattieni', motivo: `account di ${Math.floor(ore)}h`, esito: del ? 'fatto' : 'fallito' });
         return true;                          // trattenuto: il messaggio si ferma qui
       }
     }
@@ -284,6 +384,7 @@ export class AntiBot {
     const n = Number(ev.data?.viewers || 0);
     if (n >= 50 && cfg.avvisa) {
       this.alert?.(channel, { tipo: 'antibot', testo: `Raid da ${n}: controlla che sia genuino` });
+      registra(channel, { login: norm(ev.data?.from_login || ev.data?.from_name), azione: 'raid', motivo: `raid da ${n} spettatori`, esito: 'avviso' });
     }
   }
 }
