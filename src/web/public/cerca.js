@@ -1,20 +1,14 @@
 // © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
 // Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
-//
-// cerca.js — la RICERCA PREDITTIVA: una lente sempre a portata (⌘K / "/"), un indice di
-// TUTTO il pannello (sezioni + parole chiave generose), filtri comodi per gruppo, e le
-// DOMANDE che sbucano appena apri ("Cerchi comandi?", "Cerchi la moderazione?"...). Naviga
-// riusando il router dell'app (window.SB_APP.vai). Zero dipendenze; i18n dall'app.
+
 (function () {
   'use strict';
 
   function L(it, en, es) { try { return window.SB_APP.L(it, en, es); } catch (e) { return it; } }
   function esc(s) { try { return window.SB_APP.esc(String(s)); } catch (e) { return String(s == null ? '' : s); } }
-  // niente emoji nelle grafiche del sito: la lente è un SVG nitido e a tema; i risultati e le
-  // domande usano una gemma d'energia (CSS), non faccine.
+
   var SVG_LENTE = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.7"></circle><line x1="20.5" y1="20.5" x2="15.6" y2="15.6"></line></svg>';
 
-  // parole chiave GENEROSE per scheda: così "ban", "monete", "spotify"... trovano la sezione giusta.
   var CHIAVI = {
     personalita: 'personalità carattere tono come parla stile prompt voce del bot indole',
     conoscenza: 'conoscenza sapere informazioni faq risposte curate cosa sa',
@@ -41,7 +35,6 @@
     admin: 'admin operatore llm modello ecosistema vita di lia anima backup salute'
   };
 
-  // le DOMANDE che sbucano aprendo la lente → ognuna porta a una scheda. [testo, id] (niente emoji).
   function DOMANDE() {
     return [
       [L('Cerchi i comandi?', 'Looking for commands?', '¿Buscas los comandos?'), 'moduli'],
@@ -53,7 +46,6 @@
     ];
   }
 
-  // ── costruisce l'indice dalle sezioni reali dell'app (+ admin se sei tu) ──────────────
   function indice() {
     var A = window.SB_APP; if (!A) return [];
     var out = [], gruppi = (A.gruppi || []).slice();
@@ -72,7 +64,6 @@
     return out;
   }
 
-  // ── scoring predittivo: prefisso > parola intera > sottosequenza. Generoso ma ordinato. ─
   function normal(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
   function punteggio(voce, q) {
     if (!q) return 0;
@@ -85,7 +76,7 @@
       else if (new RegExp('\\b' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(ch)) sc += 22;
       else if (ch.indexOf(t) >= 0) sc += 12;
       else if (sottoseq(lab, t)) sc += 6;
-      else return -1;   // un token che non aggancia nulla → scarta
+      else return -1;
     }
     return sc;
   }
@@ -100,7 +91,6 @@
     return esc(label);
   }
 
-  // ── UI ────────────────────────────────────────────────────────────────────────────────
   var ov, inp, lista, filtriBox, filtro = '', sel = 0, correnti = [];
   function costruisci() {
     var lancia = document.createElement('button');
@@ -145,7 +135,7 @@
     var q = normal(inp.value.trim());
     var tutto = indice().filter(function (v) { return !filtro || v.gruppoId === filtro; });
     if (!q) {
-      // niente scritto: le DOMANDE che sbucano + le sezioni del filtro
+
       var dd = DOMANDE().filter(function (d) { return !filtro || (indice().find(function (v) { return v.id === d[1]; }) || {}).gruppoId === filtro; });
       var hs = '<div class="cerca-sugg-tit">' + esc(L('Cosa cerchi?', 'What are you looking for?', '¿Qué buscas?')) + '</div><div class="cerca-sugg">';
       dd.forEach(function (d, i) { hs += '<button class="chip-domanda" data-id="' + esc(d[1]) + '" style="--an-ritardo:' + (i * 45) + 'ms"><span class="pip"></span>' + esc(d[0]) + '</button>'; });
@@ -208,9 +198,8 @@
     document.addEventListener('keydown', globali, true);
   }
   function chiudi() { if (ov) ov.classList.remove('aperto'); document.removeEventListener('keydown', globali, true); }
-  function globali(e) { /* nulla: i tasti dentro l'input bastano */ }
+  function globali(e) {  }
 
-  // scorciatoie globali: ⌘K / Ctrl+K, e "/" quando non stai scrivendo altrove
   function scorciatoie(e) {
     var k = e.key.toLowerCase();
     if ((e.metaKey || e.ctrlKey) && k === 'k') { e.preventDefault(); ov && ov.classList.contains('aperto') ? chiudi() : apri(); return; }
