@@ -1003,7 +1003,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!s) return '';                        // è una cache dello streamer, non lo crea
     if (s.avatar && !aggiorna) return s.avatar;
     const ultimo = avatarUltimoTentativo.get(l) || 0;
-    if (!aggiorna && Date.now() - ultimo < 600000) return s.avatar || '';
+    // Se NON abbiamo ancora nessuna foto, riproviamo presto (60s): non ha senso
+    // restare 10 minuti senza avatar per colpa di un singolo tentativo andato male.
+    const attesa = s.avatar ? 600000 : 60000;
+    if (!aggiorna && Date.now() - ultimo < attesa) return s.avatar || '';
     avatarUltimoTentativo.set(l, Date.now());
     try {
       const u = await helix?.getUserByLogin?.(l);
