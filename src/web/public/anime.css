@@ -164,12 +164,17 @@ body.cerca-aperta { overflow: hidden; }
 
 #an-cursore-dot, #an-cursore-ring, #an-cursore-bar { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999; will-change: transform; }
 #an-cursore-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--acc); transition: opacity .2s ease; }
-#an-cursore-ring { width: 32px; height: 32px; transition: opacity .2s ease; }
+#an-cursore-ring { width: 32px; height: 32px; border-radius: 50%; transition: width .25s var(--an-morbido), height .25s var(--an-morbido), border-radius .25s var(--an-morbido), background .2s ease, box-shadow .2s ease, opacity .2s ease; }
 #an-cursore-ring::before {
-  content: ""; position: absolute; inset: 0; border-radius: 50%; border: 1px solid var(--testo-2);
-  transition: transform .28s var(--an-morbido), border-color .28s ease, background .28s ease;
+  content: ""; position: absolute; inset: 0; border-radius: inherit; border: 1px solid var(--testo-2);
+  transition: opacity .2s ease, border-color .28s ease;
 }
-#an-cursore-ring.su::before { transform: scale(1.75); border-color: var(--acc); background: color-mix(in srgb, var(--acc) 10%, transparent); }
+#an-cursore-ring.morph {
+  transition: width .25s var(--an-morbido), height .25s var(--an-morbido), border-radius .25s var(--an-morbido), transform .16s var(--an-morbido), background .2s ease, box-shadow .2s ease, opacity .2s ease;
+  background: color-mix(in srgb, var(--acc) 12%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--acc) 40%, transparent);
+}
+#an-cursore-ring.morph::before { opacity: 0; }
 
 #an-cursore-bar { width: 2px; height: 22px; margin: -11px 0 0 -1px; border-radius: 2px; background: var(--acc); opacity: 0; transition: opacity .15s ease; }
 body.modo-testo #an-cursore-bar { opacity: 1; }
