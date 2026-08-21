@@ -5,6 +5,7 @@ import Database from 'better-sqlite3';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { config } from './config.js';
+import { cifra, decifra, eCifrato } from './segreti.js';
 
 mkdirSync(config.dataDir, { recursive: true });
 export const db = new Database(join(config.dataDir, 'andrybot.db'));
@@ -667,23 +668,40 @@ export const tokens = {
       VALUES (?,?,?,?,?,?,?,?)
       ON CONFLICT(kind, login) DO UPDATE SET user_id=excluded.user_id, access_token=excluded.access_token,
         refresh_token=excluded.refresh_token, scopes=excluded.scopes, expires_at=excluded.expires_at, updated_at=excluded.updated_at`)
-      .run(kind, login.toLowerCase(), t.userId || '', t.accessToken, t.refreshToken || '', (t.scopes || []).join(' '), t.expiresAt || 0, now());
+      .run(kind, login.toLowerCase(), t.userId || '', cifra(t.accessToken), cifra(t.refreshToken || ''), (t.scopes || []).join(' '), t.expiresAt || 0, now());
   },
   get(kind, login) {
     const r = db.prepare('SELECT * FROM tokens WHERE kind=? AND login=?').get(kind, login.toLowerCase());
     if (!r) return null;
-    return { userId: r.user_id, accessToken: r.access_token, refreshToken: r.refresh_token,
+    return { userId: r.user_id, accessToken: decifra(r.access_token), refreshToken: decifra(r.refresh_token),
       scopes: r.scopes ? r.scopes.split(' ') : [], expiresAt: r.expires_at };
   },
   // il token del bot è unico: il primo (e unico) con kind='bot'
   getBot() {
     const r = db.prepare("SELECT * FROM tokens WHERE kind='bot' ORDER BY updated_at DESC LIMIT 1").get();
     if (!r) return null;
-    return { login: r.login, userId: r.user_id, accessToken: r.access_token, refreshToken: r.refresh_token,
+    return { login: r.login, userId: r.user_id, accessToken: decifra(r.access_token), refreshToken: decifra(r.refresh_token),
       scopes: r.scopes ? r.scopes.split(' ') : [], expiresAt: r.expires_at };
   },
   delete(kind, login) { db.prepare('DELETE FROM tokens WHERE kind=? AND login=?').run(kind, login.toLowerCase()); },
 };
+
+// Migrazione una-tantum: cifra a riposo i token ancora in chiaro. Idempotente
+// (salta quelli già cifrati). Gira all'avvio, come le altre migrazioni del DB.
+export function migraTokenCifratura() {
+  try {
+    const righe = db.prepare('SELECT kind, login, access_token, refresh_token FROM tokens').all();
+    const upd = db.prepare('UPDATE tokens SET access_token=?, refresh_token=? WHERE kind=? AND login=?');
+    let n = 0;
+    for (const r of righe) {
+      const a = r.access_token || '', b = r.refresh_token || '';
+      if ((eCifrato(a) || !a) && (eCifrato(b) || !b)) continue;
+      upd.run(cifra(a), cifra(b), r.kind, r.login);
+      n++;
+    }
+    return n;
+  } catch (e) { return 0; }
+}
 
 // ---------------------------------------------------------------- streamer
 export const streamers = {
