@@ -193,11 +193,11 @@
   function apri() {
     if (!ov) return;
     filtro = ''; sel = 0;
-    filtri(); ov.classList.add('aperto'); disegna();
+    filtri(); ov.classList.add('aperto'); document.body.classList.add('cerca-aperta'); disegna();
     setTimeout(function () { inp.value = ''; inp.focus(); }, 30);
     document.addEventListener('keydown', globali, true);
   }
-  function chiudi() { if (ov) ov.classList.remove('aperto'); document.removeEventListener('keydown', globali, true); }
+  function chiudi() { if (ov) ov.classList.remove('aperto'); document.body.classList.remove('cerca-aperta'); document.removeEventListener('keydown', globali, true); }
   function globali(e) {  }
 
   function scorciatoie(e) {
