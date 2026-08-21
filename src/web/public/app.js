@@ -1052,6 +1052,7 @@ const GRUPPI = [
     ['moduli', 'Comandi'],
     ['ascolto', 'Comandi vocali'],
     ['regole', 'Moderazione'],
+    ['scudo', 'Scudo anti-bot'],
     ['giochi', 'Giochi & classifiche'],
     ['sondaggi', 'Sondaggi & predizioni'],
     ['giveaway', 'Giveaway'],
@@ -1104,6 +1105,7 @@ const T_SCHEDA = {
   avatar: ['Avatar 3D', 'Avatar 3D', 'Avatar 3D'],
   moduli: ['Comandi', 'Commands', 'Comandos'],
   regole: ['Moderazione', 'Moderation', 'Moderación'],
+  scudo: ['Scudo anti-bot', 'Anti-bot shield', 'Escudo anti-bot'],
   giochi: ['Giochi & classifiche', 'Games & leaderboards', 'Juegos y clasificaciones'],
   regia: ['Regia', 'Control room', 'Realización'],
   studio: ['Studio Web', 'Web Studio', 'Estudio Web'],
@@ -1140,6 +1142,7 @@ const ICONA = {
   avatar:      _ico('<path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="M3 7l9 5 9-5"/><path d="M12 12v10"/>'),
   moduli:      _ico('<rect x="3" y="4" width="18" height="16" rx="2.2"/><path d="M7.5 9.5 10.5 12l-3 2.5"/><path d="M13 15h4"/>'),
   regole:      _ico('<path d="M12 3.2 19 6v5c0 4.8-3.4 7.8-7 8.8-3.6-1-7-4-7-8.8V6z"/>'),
+  scudo:       _ico('<path d="M12 3.2 19 6v5c0 4.8-3.4 7.8-7 8.8-3.6-1-7-4-7-8.8V6z"/><path d="m9 12 2 2 4-4"/>'),
   giochi:      _ico('<rect x="2" y="7.5" width="20" height="9" rx="4.5"/><path d="M7 11v3"/><path d="M5.5 12.5h3"/><circle cx="16" cy="11.5" r=".9" fill="currentColor" stroke="none"/><circle cx="18" cy="13.5" r=".9" fill="currentColor" stroke="none"/>'),
   effetti:     _ico('<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9.5a4 4 0 0 1 0 5"/>'),
   clip:        _ico('<rect x="3" y="5" width="18" height="14" rx="2.2"/><path d="M8 5v14"/><path d="M16 5v14"/><path d="M3 9.5h5"/><path d="M16 9.5h5"/><path d="M3 14.5h5"/><path d="M16 14.5h5"/>'),
@@ -1567,6 +1570,7 @@ function vistaPiattaforma() {
     ${pannelloModuli()}
     ${pannelloContatori()}
     ${pannelloRegole()}
+    ${pannelloScudo()}
     ${pannelloGiochi()}
     ${pannelloRegia()}
     ${pannelloStudio()}
@@ -8252,6 +8256,155 @@ async function caricaStatoListaBot() {
   } catch { el.textContent = ''; }
 }
 
+function pannelloScudo() {
+  return pannello('scudo', `
+    <div class="carta">
+      <h2>${_hIco(ICO.scudo)}${L('Scudo anti-bot', 'Anti-bot shield', 'Escudo anti-bot')}</h2>
+      <p>${L('Cosa ha fatto lo scudo, in chiaro. Rivedi le segnalazioni, e insegna chi bloccare sempre e chi non toccare mai. Le regole le imposti in', 'What the shield did, in plain sight. Review the reports, and teach it who to always block and who to never touch. You set the rules in', 'Lo que hizo el escudo, a la vista. Revisa los avisos y enséñale a quién bloquear siempre y a quién no tocar. Las reglas se configuran en')} <a href="#regole" data-scheda="regole">${L('Moderazione', 'Moderation', 'Moderación')}</a>.</p>
+      <div id="scudo-stato" class="scudo-stato"><p class="vuoto">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+    </div>
+    <div class="carta">
+      <h2>${L('Da rivedere', 'To review', 'Por revisar')}</h2>
+      <p class="suggerimento">${L('Casi in cui lo scudo ha avvisato senza agire: decidi tu.', 'Cases where the shield warned without acting: you decide.', 'Casos en que el escudo avisó sin actuar: decides tú.')}</p>
+      <div id="scudo-segnalazioni"></div>
+    </div>
+    <div class="carta">
+      <h2>${L('Interventi recenti', 'Recent actions', 'Acciones recientes')}</h2>
+      <div id="scudo-registro"></div>
+    </div>
+    <div class="carta">
+      <h2>${L('Le tue liste', 'Your lists', 'Tus listas')}</h2>
+      <div class="scudo-liste">
+        <div>
+          <h3>${L('Blocca sempre', 'Always block', 'Bloquear siempre')}</h3>
+          <p class="suggerimento">${L('Questi nomi vengono sempre fermati.', 'These names are always stopped.', 'Estos nombres se paran siempre.')}</p>
+          <div class="riga-flessibile"><input id="scudo-add-extra" maxlength="30" placeholder="${L('nome account', 'account name', 'nombre cuenta')}"><button type="button" class="btn secondario mini" data-scudo-add="extra">${L('Aggiungi', 'Add', 'Añadir')}</button></div>
+          <div id="scudo-lista-extra" class="scudo-chips"></div>
+        </div>
+        <div>
+          <h3>${L('Non toccare mai', 'Never touch', 'Nunca tocar')}</h3>
+          <p class="suggerimento">${L('Questi non vengono mai fermati (oltre a mod, VIP e sub).', 'These are never stopped (besides mods, VIPs and subs).', 'Estos nunca se paran (además de mods, VIP y subs).')}</p>
+          <div class="riga-flessibile"><input id="scudo-add-esenti" maxlength="30" placeholder="${L('nome account', 'account name', 'nombre cuenta')}"><button type="button" class="btn secondario mini" data-scudo-add="esenti">${L('Aggiungi', 'Add', 'Añadir')}</button></div>
+          <div id="scudo-lista-esenti" class="scudo-chips"></div>
+        </div>
+      </div>
+    </div>
+  `);
+}
+
+function scudoAzioneTesto(a) {
+  return {
+    ban: L('Bannato', 'Banned', 'Baneado'),
+    timeout: L('Timeout', 'Timeout', 'Timeout'),
+    segnala: L('Segnalato', 'Flagged', 'Señalado'),
+    raffica: L('Ondata di follow', 'Follow wave', 'Oleada de follows'),
+    raid: L('Raid sospetto', 'Suspicious raid', 'Raid sospechoso'),
+    'chat-trattieni': L('Messaggio trattenuto', 'Message held', 'Mensaje retenido'),
+    'chat-segnala': L('Account nuovo in chat', 'New account in chat', 'Cuenta nueva en chat'),
+  }[a] || a;
+}
+function scudoEsito(e) {
+  const m = {
+    fatto: ['ok', L('fatto', 'done', 'hecho')],
+    fallito: ['ko', L('non riuscito', 'failed', 'fallido')],
+    avviso: ['warn', L('avviso', 'warning', 'aviso')],
+    'in-attesa': ['warn', L('in attesa', 'pending', 'pendiente')],
+  }[e] || ['', e];
+  return `<span class="scudo-esito ${m[0]}">${m[1]}</span>`;
+}
+function scudoQuando(ts) {
+  try { return new Date(ts).toLocaleString(undefined, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; }
+}
+
+let _scudoWired = false;
+function scudoWire() {
+  if (_scudoWired) return; _scudoWired = true;
+  document.addEventListener('click', async (ev) => {
+    const ris = ev.target.closest('[data-scudo-ris]');
+    if (ris) {
+      ev.preventDefault();
+      try { await api('/api/antibot/segnalazione', { method: 'POST', body: { id: ris.dataset.scudoRis, esito: ris.dataset.esito } }); caricaScudo(); }
+      catch (e) { toast(L('Non riuscito', 'Failed', 'Falló')); }
+      return;
+    }
+    const add = ev.target.closest('[data-scudo-add]');
+    if (add) {
+      ev.preventDefault();
+      const campo = add.dataset.scudoAdd, inp = document.getElementById('scudo-add-' + campo);
+      const nome = (inp?.value || '').trim();
+      if (!nome) return;
+      try { await api('/api/antibot/lista', { method: 'POST', body: { lista: campo, azione: 'aggiungi', nome } }); if (inp) inp.value = ''; caricaScudo(); }
+      catch (e) { toast(L('Non riuscito', 'Failed', 'Falló')); }
+      return;
+    }
+    const del = ev.target.closest('[data-scudo-del]');
+    if (del) {
+      ev.preventDefault();
+      try { await api('/api/antibot/lista', { method: 'POST', body: { lista: del.dataset.scudoDel, azione: 'togli', nome: del.dataset.nome } }); caricaScudo(); }
+      catch (e) { /* niente */ }
+    }
+  });
+}
+
+async function caricaScudo() {
+  scudoWire();
+  const box = document.getElementById('scudo-stato');
+  if (!box) return;
+  let d;
+  try { d = await api('/api/antibot/console'); }
+  catch (e) { box.innerHTML = `<p class="vuoto">${L('Non disponibile ora.', 'Not available now.', 'No disponible ahora.')}</p>`; return; }
+  const s = d.stato, sn = d.sintesi;
+  const quando = s.listaBot.aggiornata ? new Date(s.listaBot.aggiornata).toLocaleDateString() : '';
+  box.innerHTML = `
+    <div class="scudo-kpi">
+      <div class="kpi ${s.attivo ? 'on' : 'off'}"><b>${s.attivo ? L('Attivo', 'On', 'Activo') : L('Spento', 'Off', 'Apagado')}</b><span>${L('protezione', 'protection', 'protección')}</span></div>
+      <div class="kpi"><b>${sn.oggi}</b><span>${L('oggi', 'today', 'hoy')}</span></div>
+      <div class="kpi"><b>${sn.settimana}</b><span>${L('7 giorni', '7 days', '7 días')}</span></div>
+      <div class="kpi ${sn.aperte ? 'warn' : ''}"><b>${sn.aperte}</b><span>${L('da rivedere', 'to review', 'por revisar')}</span></div>
+      <div class="kpi"><b>${Number(s.listaBot.conteggio || 0).toLocaleString('it')}</b><span>${L('bot noti', 'known bots', 'bots conocidos')}${quando ? ' · ' + quando : ''}</span></div>
+    </div>
+    ${!s.moderazioneOk ? `<p class="suggerimento spazio-sopra">${L('Per bannare davvero servono i permessi di moderazione.', 'To actually ban, moderation permissions are needed.', 'Para banear de verdad hacen falta permisos de moderación.')} <a class="btn secondario mini" href="/auth/permessi">${L('Concedi i permessi', 'Grant permissions', 'Concede los permisos')}</a></p>` : ''}`;
+
+  const seg = document.getElementById('scudo-segnalazioni');
+  if (seg) seg.innerHTML = (d.segnalazioni && d.segnalazioni.length)
+    ? d.segnalazioni.map((v) => `
+      <div class="scudo-seg">
+        <div class="scudo-seg-info">
+          <b>@${esc(v.login || '?')}</b>
+          <span>${esc(scudoAzioneTesto(v.azione))} · ${esc(v.motivo || '')}</span>
+          <small>${scudoQuando(v.ts)}</small>
+        </div>
+        <div class="scudo-seg-azioni">
+          <button type="button" class="btn mini" data-scudo-ris="${esc(v.id)}" data-esito="blocca">${L('Blocca sempre', 'Always block', 'Bloquear')}</button>
+          <button type="button" class="btn secondario mini" data-scudo-ris="${esc(v.id)}" data-esito="permetti">${L('Permetti', 'Allow', 'Permitir')}</button>
+          <button type="button" class="btn secondario mini" data-scudo-ris="${esc(v.id)}" data-esito="ignora">${L('Ignora', 'Dismiss', 'Ignorar')}</button>
+        </div>
+      </div>`).join('')
+    : `<p class="vuoto">${L('Niente da rivedere. Tutto sotto controllo.', 'Nothing to review. All clear.', 'Nada por revisar. Todo en orden.')}</p>`;
+
+  const reg = document.getElementById('scudo-registro');
+  if (reg) reg.innerHTML = (d.registro && d.registro.length)
+    ? `<div class="scudo-reg">${d.registro.map((v) => `
+      <div class="scudo-reg-riga">
+        <span class="scudo-reg-a">${esc(scudoAzioneTesto(v.azione))}</span>
+        <span class="scudo-reg-chi">${v.login ? '@' + esc(v.login) : ''}</span>
+        <span class="scudo-reg-perche">${esc(v.motivo || '')}</span>
+        ${scudoEsito(v.esito)}
+        <small>${scudoQuando(v.ts)}</small>
+      </div>`).join('')}</div>`
+    : `<p class="vuoto">${L('Ancora nessun intervento registrato.', 'No actions recorded yet.', 'Aún no hay acciones registradas.')}</p>`;
+
+  scudoRenderLista('extra', d.liste?.extra || []);
+  scudoRenderLista('esenti', d.liste?.esenti || []);
+}
+function scudoRenderLista(campo, nomi) {
+  const el = document.getElementById('scudo-lista-' + campo);
+  if (!el) return;
+  el.innerHTML = nomi.length
+    ? nomi.map((n) => `<span class="scudo-chip">@${esc(n)}<button type="button" class="scudo-chip-x" data-scudo-del="${campo}" data-nome="${esc(n)}" aria-label="${L('Togli', 'Remove', 'Quitar')}">×</button></span>`).join('')
+    : `<span class="suggerimento">${L('Vuota.', 'Empty.', 'Vacía.')}</span>`;
+}
+
 function pannelloRegole() {
   const s = impostazioni();
   const a = s.antispam || {};
@@ -9304,6 +9457,7 @@ function caricaDatiScheda(id) {
   if (id === 'pagina') caricaPaginaLink();
   if (id === 'grafiche') initGrafiche();
   if (id === 'regole') caricaStatoListaBot();
+  if (id === 'scudo') caricaScudo();
   if (id === 'sottoscrizione') caricaSottoscrizione();
   if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaSalute(); caricaBackup(); caricaAnima(); caricaLLM(); caricaVita(); caricaEcosistema(); }
 }
