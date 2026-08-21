@@ -240,6 +240,7 @@
           chiavi: (String(v.chiavi || '') + ' ' + String(v.label)).toLowerCase(), tag: tag || ''
         });
       });
+      if (_dyn.length > 3000) _dyn = _dyn.slice(_dyn.length - 3000);
       invalida();
     },
     pulisci: function (tag) { _dyn = tag ? _dyn.filter(function (v) { return v.tag !== tag; }) : []; invalida(); },
