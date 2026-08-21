@@ -648,9 +648,17 @@ function renderAreaUtente() {
 
   let centro = '';
   if (canali.length > 1) {
-    centro = `<select class="chip-utente switch-canale" title="Cambia canale">
-      ${canali.map((c) => `<option value="${esc(c.canale)}" ${c.canale === attuale ? 'selected' : ''}>${esc(etichetta(c))}</option>`).join('')}
-    </select>`;
+    const chevron = '<svg class="sc-freccia" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
+    const check = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+    const corr = canali.find((c) => c.canale === attuale) || canali[0];
+    centro = `<div class="switch-canale-box">
+      <button type="button" class="chip-utente switch-canale-btn" aria-haspopup="listbox" aria-expanded="false" title="${L('Cambia canale', 'Switch channel', 'Cambiar canal')}">
+        <span class="sc-corrente">${esc(etichetta(corr))}</span>${chevron}
+      </button>
+      <div class="switch-canale-menu" role="listbox" hidden>
+        ${canali.map((c) => `<button type="button" role="option" class="sc-voce${c.canale === attuale ? ' sel' : ''}" data-canale="${esc(c.canale)}" aria-selected="${c.canale === attuale}"><span class="sc-testo">${esc(etichetta(c))}</span><span class="sc-check">${c.canale === attuale ? check : ''}</span></button>`).join('')}
+      </div>
+    </div>`;
   } else if (stato.ruolo === 'moderatore') {
     centro = `<span class="chip-utente">moderi <strong>@${esc(stato.user.display || attuale)}</strong></span>`;
   }
@@ -662,12 +670,36 @@ function renderAreaUtente() {
   if (areaMob) areaMob.innerHTML = `<span class="chip-utente">${L('ciao', 'hi', 'hola')}, <strong>${ident}</strong></span>${centro}<div class="drawer-controlli">${selettoreLingua()}${tema}</div>${esci}`;
   applicaTema();
 
-  document.querySelectorAll('.switch-canale').forEach((sel) =>
-    sel.addEventListener('change', (ev) => conErrore(async () => {
-      await api('/api/cambia-canale', { method: 'POST', body: { channel: ev.target.value } });
+  document.querySelectorAll('.switch-canale-btn').forEach((btn) =>
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const menu = btn.parentElement.querySelector('.switch-canale-menu');
+      const chiuso = menu.hasAttribute('hidden');
+      document.querySelectorAll('.switch-canale-menu').forEach((m) => m.setAttribute('hidden', ''));
+      document.querySelectorAll('.switch-canale-btn').forEach((b) => b.setAttribute('aria-expanded', 'false'));
+      if (chiuso) { menu.removeAttribute('hidden'); btn.setAttribute('aria-expanded', 'true'); }
+    }));
+  document.querySelectorAll('.sc-voce').forEach((v) =>
+    v.addEventListener('click', () => conErrore(async () => {
+      const canale = v.dataset.canale;
+      v.closest('.switch-canale-menu')?.setAttribute('hidden', '');
+      if (canale === attuale) return;
+      await api('/api/cambia-canale', { method: 'POST', body: { channel: canale } });
       stato = await api('/api/me'); render();
       toast(L('Ora gestisci @', 'Now managing @', 'Ahora gestionas @') + (stato.user.display || stato.user.login) + (stato.ruolo === 'moderatore' ? L(' come moderatore', ' as moderator', ' como moderador') : L(' come proprietario', ' as owner', ' como propietario')));
     })));
+  wireSwitchCanaleGlobale();
+}
+
+let _scGlobaleWired = false;
+function wireSwitchCanaleGlobale() {
+  if (_scGlobaleWired) return; _scGlobaleWired = true;
+  const chiudi = () => {
+    document.querySelectorAll('.switch-canale-menu').forEach((m) => m.setAttribute('hidden', ''));
+    document.querySelectorAll('.switch-canale-btn').forEach((b) => b.setAttribute('aria-expanded', 'false'));
+  };
+  document.addEventListener('click', (e) => { if (!e.target.closest('.switch-canale-box')) chiudi(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') chiudi(); });
 }
 
 const LINGUE = ['it', 'en', 'es'];
