@@ -48,8 +48,12 @@
       document.body.appendChild(ring); document.body.appendChild(dot); document.body.appendChild(bar);
       var tx = -100, ty = -100, rx = -100, ry = -100, vivo = true, raf = 0, modo = '', morphEl = null;
       var SEL_TESTO = 'textarea, [contenteditable=""], [contenteditable="true"], input:not([type=button]):not([type=submit]):not([type=reset]):not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file])';
-      var SEL_MORPH = 'a, button, .btn, .grp-btn, .menu-voce, .drawer-voce, [data-scheda], .cerca-voce, .cerca-filtro, .chip-domanda, summary, label.riga-check, [role="button"]';
+      var SEL_MORPH = 'a, button, .btn, .grp-btn, .menu-voce, .drawer-voce, .cerca-filtro, .chip-domanda, [role="button"]';
       var PAD = 6;
+      function morfabile(el) {
+        var r = el.getBoundingClientRect();
+        return r.width > 8 && r.height > 8 && r.width <= 360 && r.height <= 64;
+      }
       function raggioDi(el) {
         try { var v = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0; return Math.min(v + PAD, 999); } catch (e) { return 10; }
       }
@@ -83,6 +87,7 @@
         var t = e.target;
         var testo = (t && t.closest) ? t.closest(SEL_TESTO) : null;
         var morph = (!testo && t && t.closest) ? t.closest(SEL_MORPH) : null;
+        if (morph && !morfabile(morph)) morph = null;
         var m = testo ? 'testo' : (morph ? 'link' : '');
         if (m !== modo) { modo = m; document.body.classList.toggle('modo-testo', m === 'testo'); }
         if (morph) { if (morph !== morphEl) entraMorph(morph); else posMorph(); }
