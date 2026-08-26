@@ -44,6 +44,9 @@
 // Niente di tutto questo tocca il traffico legittimo, e niente viene scritto su
 // disco: solo contatori in memoria, con un tetto e una potatura automatica.
 
+import { existsSync, statSync } from 'node:fs';
+import { join, dirname, normalize } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { makeLog } from '../logger.js';
 
 const log = makeLog('esche');
@@ -100,9 +103,43 @@ const PREFISSI = ['/wp-', '/wordpress/', '/.git/', '/.svn/', '/.hg/', '/.aws/', 
   '/.kube/', '/phpmyadmin/', '/phpmyadmin', '/vendor/', '/cgi-bin/', '/actuator/', '/administrator/',
   '/wp-content/', '/wp-includes/', '/wp-admin/', '/goform/', '/boaform/', '/solr/'];
 
+// ROBA NOSTRA: un indirizzo che corrisponde a un file che pubblichiamo davvero
+// NON e mai un attacco, e la trappola non deve nemmeno guardarlo.
+//
+// Serve perche i prefissi qui sopra sono per forza larghi: `/vendor/` c'e
+// perche `/vendor/phpunit/...` e fra gli indirizzi piu scansionati al mondo. Ma
+// sotto `/vendor/` ci stanno anche le NOSTRE librerie e i NOSTRI caratteri
+// (human.js, i modelli, pixi, il QR, i .woff2). Risultato: la difesa serviva la
+// pagina-esca al posto di human.js, e dopo dodici file l'utente finiva in
+// castigo con 429 su tutto il resto. Il tracking non poteva funzionare.
+//
+// La regola giusta non e togliere `/vendor/` dalla lista — riaprirebbe la
+// superficie vera — ma dire una volta sola che cio che serviamo non e un'esca.
+// Cosi qualunque cosa si vendorizzi domani e al sicuro da se, e tutto cio che
+// NON pubblichiamo resta in trappola. Nessuna scappatoia: per passare di qui un
+// indirizzo deve corrispondere a un file che abbiamo messo noi.
+const RADICE_PUB = join(dirname(fileURLToPath(import.meta.url)), 'public');
+const nostri = new Map();
+const MAX_NOSTRI = 4000;
+function eNostro(percorso) {
+  const cache = nostri.get(percorso);
+  if (cache !== undefined) return cache;
+  let ok = false;
+  try {
+    if (!percorso.includes('..') && !percorso.includes('\0')) {
+      const f = normalize(join(RADICE_PUB, decodeURIComponent(percorso)));
+      ok = f.startsWith(RADICE_PUB + '/') && existsSync(f) && statSync(f).isFile();
+    }
+  } catch { ok = false; }
+  if (nostri.size >= MAX_NOSTRI) nostri.clear();
+  nostri.set(percorso, ok);
+  return ok;
+}
+
 const eEsca = (percorso) => {
   const p = percorso.toLowerCase();
-  return ESCHE.has(p) || PREFISSI.some((x) => p.startsWith(x));
+  if (!ESCHE.has(p) && !PREFISSI.some((x) => p.startsWith(x))) return false;
+  return !eNostro(percorso);
 };
 
 // ── Stato in memoria ─────────────────────────────────────────────────────────
