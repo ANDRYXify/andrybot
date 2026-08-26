@@ -86,7 +86,14 @@
 # Ogni `handle` è esclusivo (vince il primo che combacia): così ogni risposta
 # riceve UN SOLO set di header, senza ambiguità di precedenza.
 socialbot.live {
-	encode gzip
+	# zstd prima di gzip: Chrome lo prende e comprime meglio, gli altri
+	# ricadono su gzip. app.js e un file grosso, qui si vede.
+	encode zstd gzip
+
+	# I font sono nostri e non cambiano mai col nome che hanno: un anno di
+	# cache immutabile evita di riscaricarli a ogni visita.
+	@fontlocali path /vendor/font/*
+	header @fontlocali Cache-Control "public, max-age=31536000, immutable"
 
 	@tgapp path /tgapp /tgapp.html
 	@ml path /voce.html /tracking/*
