@@ -592,3 +592,78 @@ body.senza-cursore.cursore-on, body.senza-cursore.cursore-on * { cursor: default
   display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
+
+.volere {
+  margin: 12px 0; padding: 13px 15px 14px;
+  border: 1px solid var(--border); border-radius: var(--r-l);
+  background: var(--surface-2);
+}
+.vol-testa {
+  display: flex; flex-wrap: wrap; align-items: baseline;
+  justify-content: space-between; gap: 4px 14px;
+}
+.vol-occhiello {
+  text-transform: uppercase; letter-spacing: .28em;
+  font-size: .64rem; font-weight: 600; color: var(--testo-2);
+}
+.vol-ritmo {
+  font-size: .74rem; color: var(--testo-3);
+  font-variant-numeric: tabular-nums;
+}
+.vol-spiega {
+  margin: 8px 0 0; font-size: .82rem; line-height: 1.5; color: var(--testo-2);
+  max-width: 66ch;
+}
+.vol-lista { list-style: none; margin: 11px 0 0; padding: 0; display: grid; gap: 9px; }
+.vol-voce {
+  display: grid; grid-template-columns: 54px minmax(0, 1fr) auto;
+  grid-template-areas: "metro corpo tag";
+  align-items: center; gap: 12px;
+}
+.vol-metro { grid-area: metro; }
+.vol-corpo { grid-area: corpo; }
+.vol-tag { grid-area: tag; }
+.vol-metro {
+  height: 4px; border-radius: 999px; background: var(--border-2); overflow: hidden;
+}
+.vol-metro i {
+  display: block; height: 100%; border-radius: 999px; background: var(--acc);
+  transition: width var(--t-medio, .4s) var(--molla-medio, var(--an-morbido));
+}
+.vol-voce.proposta .vol-metro i { background: var(--ambra); }
+.vol-corpo { min-width: 0; }
+.vol-corpo strong {
+  display: block; font-weight: 600; font-size: .9rem; color: var(--testo);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.vol-corpo em {
+  display: block; font-style: normal; font-size: .78rem; line-height: 1.45;
+  color: var(--testo-3);
+}
+.vol-tag {
+  text-transform: uppercase; letter-spacing: .12em; font-size: .6rem; font-weight: 600;
+  padding: 3px 7px; border-radius: var(--r-s); white-space: nowrap;
+  color: var(--testo-2); border: 1px solid var(--border-2); background: var(--surface);
+}
+.vol-voce.proposta .vol-tag {
+  color: var(--ambra); border-color: var(--ambra-bordo); background: var(--ambra-soft);
+}
+.vol-fermo {
+  margin: 9px 0 0; padding: 7px 10px; font-size: .8rem; line-height: 1.45;
+  color: var(--ambra); background: var(--ambra-soft);
+  border: 1px solid var(--ambra-bordo); border-radius: var(--r-m);
+}
+.vol-lasciato { margin: 10px 0 0; font-size: .76rem; color: var(--testo-3); }
+.vol-lasciato code {
+  font-size: .72rem; padding: 1px 5px; border-radius: var(--r-xs);
+  background: var(--surface-3); color: var(--testo-2);
+}
+@media (max-width: 560px) {
+  .vol-voce {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "corpo tag" "metro metro";
+    align-items: start; row-gap: 7px; column-gap: 10px;
+  }
+  .vol-corpo strong { white-space: normal; }
+  .vol-lista { gap: 14px; }
+}

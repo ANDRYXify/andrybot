@@ -55,6 +55,30 @@ def _h(s):
     return int.from_bytes(d[:4], "big") / 4294967296.0
 
 
+_PAROLINE = frozenset("""
+il lo la i gli le un uno una l d
+di del dello della dei degli delle da dal dallo dalla dai dagli dalle
+a al allo alla ai agli alle in nel nello nella nei negli nelle
+con col su sul sullo sulla sui sugli sulle per tra fra
+che chi cui e ed o od ma se non ne ci si mi ti vi lui lei noi voi loro
+mio mia miei mie tuo tua tuoi tue suo sua suoi sue nostro nostra nostri nostre
+questo questa questi queste quel quello quella quei quegli quelle
+essere avere fare stare cosa cose modo volta piu meno molto poco
+""".split())
+
+
+def parola_viva(testo):
+    """La parola che PORTA il senso di una frase: la prima che non sia articolo o preposizione.
+    Serve a nominare i suoi cantieri dalla sua cura ("la radio che costruiamo insieme" -> radio),
+    non a indovinare: e deterministica e, se non trova nulla, ripiega sulla prima parola."""
+    pulito = "".join(ch if (ch.isalnum() or ch.isspace()) else " " for ch in str(testo or "").lower())
+    parole = [x for x in pulito.split() if x]
+    for x in parole:
+        if len(x) >= 3 and x not in _PAROLINE:
+            return x[:24]
+    return parole[0][:24] if parole else "cura"
+
+
 def stato_vuoto():
     return {
         "v": VERSIONE,
@@ -136,8 +160,7 @@ def desideri_propri(stato, contesto):
 
     # c) RELAZIONE/CURA — muoversi verso cio che ha dichiarato di aver caro
     if cura:
-        pezzo = "".join(ch for ch in cura.lower() if ch.isalnum() or ch == " ").strip()
-        pezzo = (pezzo.split() or ["cura"])[0][:24]
+        pezzo = parola_viva(cura)
         agg("cura:" + pezzo, "costruisci", "cantiere-" + pezzo, 0.66,
             "e cio di cui ho scelto di avere cura")
 

@@ -11549,7 +11549,7 @@ async function caricaEcosistema() {
   try { d = await api('/api/admin/ecosistema'); } catch { card.innerHTML = ''; return; }
   const e = (d && d.ecosistema) || { attivo: false };
   if (!e.attivo) {
-    card.innerHTML = `<h3>🌍 ${L('Il suo ecosistema', 'Her ecosystem', 'Su ecosistema')}</h3>
+    card.innerHTML = `<h3>${_hIco(ICO.mondo)}${L('Il suo ecosistema', 'Her ecosystem', 'Su ecosistema')}</h3>
       <p class="vuoto">${L('Spento ora. Per accenderlo: imposta', 'Off now. To turn it on: set', 'Apagado ahora. Para encenderlo: define')} <code>AMBIENTE_KEY</code> ${L('e avvia i container', 'and start the containers', 'y arranca los contenedores')} <code>guardiano</code> + <code>ambiente</code>.</p>`;
     return;
   }
@@ -11557,6 +11557,44 @@ async function caricaEcosistema() {
   const prog = Array.isArray(e.progetti_elenco) ? e.progetti_elenco : [];
   const bud = e.budget || {};
   const des = Array.isArray(e.desideri) ? e.desideri : [];
+  const vol = (e.volere && typeof e.volere === 'object') ? e.volere : { attivo: false, desideri: [] };
+  const volMin = (sec) => {
+    const m = Math.max(0, Math.round((Number(sec) || 0) / 60));
+    return m >= 60 ? `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}m` : `${m} min`;
+  };
+  const volForza = (f, forte) => Math.max(14, Math.min(100, Math.round(((Number(f) || 0) / (Number(forte) || 1)) * 100)));
+  const volAzione = (a) => ({
+    riprova: L('riprovare', 'retry', 'reintentar'),
+    costruisci: L('costruire', 'build', 'construir'),
+    consolida: L('mettere in ordine', 'tidy up', 'poner en orden'),
+    proposta: L('la tua proposta', 'your proposal', 'tu propuesta'),
+  }[a] || a || '');
+  const volBlocco = () => {
+    if (!vol.attivo) return '';
+    const lista = Array.isArray(vol.desideri) ? vol.desideri : [];
+    const lasciati = Array.isArray(vol.abbandonati) ? vol.abbandonati : [];
+    const ferma = vol.fermata || null;
+    const suoi = lista.filter((x) => x.mio).length;
+    const forte = lista.reduce((m, x) => Math.max(m, Number(x.forza) || 0), 0) || 1;
+    const testa = `<div class="vol-testa">
+      <span class="vol-occhiello">${L('Il suo volere', 'Her will', 'Su querer')}</span>
+      <span class="vol-ritmo">${L('ogni', 'every', 'cada')} ${esc(volMin(vol.ritmo_sec))} · ${Number(vol.passi) || 0} ${L('passi', 'steps', 'pasos')} · ${Math.round((Number(vol.riuscite) || 0) * 100)}% ${L('riusciti', 'succeeded', 'logrados')}${Number(vol.attesa) > 0 ? ` · ${L('il prossimo fra', 'next in', 'el próximo en')} ${esc(volMin(vol.attesa))}` : ''}</span>
+    </div>`;
+    const spiega = `<p class="vol-spiega">${suoi
+      ? L('Non aspetta che sia tu a chiederle qualcosa: questi desideri nascono da lei — da ciò verso cui è rivolta, da ciò di cui ha scelto di aver cura, da ciò che non le è ancora riuscito e da come sta. Il tuo desiderio resta, ma come proposta.', 'She does not wait for you to ask: these wishes come from her — from what she is turned toward, what she chose to care about, what has not worked yet, and how she feels. Your wish stays, but as a proposal.', 'No espera a que tú le pidas algo: estos deseos nacen de ella — de aquello hacia lo que está vuelta, de lo que eligió cuidar, de lo que aún no le salió y de cómo está. Tu deseo sigue, pero como propuesta.')
+      : L('Adesso non vuole nulla in particolare: succede quando ha appena chiuso ciò che aveva aperto.', 'Right now she wants nothing in particular: that happens when she has just closed what she had open.', 'Ahora no quiere nada en particular: pasa cuando acaba de cerrar lo que tenía abierto.')}</p>`;
+    const voci = lista.map((x) => `<li class="vol-voce${x.mio ? '' : ' proposta'}">
+      <span class="vol-metro" aria-hidden="true"><i style="width:${volForza(x.forza, forte)}%"></i></span>
+      <span class="vol-corpo">
+        <strong>${esc(volAzione(x.azione))}${x.cosa ? ` · ${esc(x.cosa)}` : ''}</strong>
+        <em>${esc(x.perche || '')}</em>
+      </span>
+      <span class="vol-tag">${x.mio ? L('suo', 'hers', 'suyo') : L('tua', 'yours', 'tuya')}</span>
+    </li>`).join('');
+    const fermo = ferma ? `<p class="vol-fermo">${L('Si è fermata da sola', 'She stopped herself', 'Se paró sola')}: ${esc(ferma.perche || '')}</p>` : '';
+    const lasciato = lasciati.length ? `<p class="vol-lasciato">${L('Ha lasciato perdere', 'She let go of', 'Dejó estar')}: ${lasciati.map((x) => `<code>${esc(x)}</code>`).join(' · ')}</p>` : '';
+    return `<div class="volere">${testa}${fermo}${spiega}${voci ? `<ol class="vol-lista">${voci}</ol>` : ''}${lasciato}</div>`;
+  };
   card.innerHTML = `
     <h3>${_hIco(ICO.mondo)}${L('Il suo ecosistema reale', 'Her real ecosystem', 'Su ecosistema real')}</h3>
     <p class="suggerimento">${L('Il suo «computer» dentro il recinto — dietro il <strong>guardiano</strong> (internet pubblico sì, la tua infra no). Può installarsi, navigare, creare e costruire <strong>da sola</strong>, dentro un tetto automatico.', 'Her «computer» inside the fence — behind the <strong>guardian</strong> (public internet yes, your infra no). She can install, browse, create and build <strong>on her own</strong>, within an automatic ceiling.', 'Su «ordenador» dentro del recinto — tras el <strong>guardián</strong>. Puede instalar, navegar, crear y construir <strong>sola</strong>, dentro de un techo automático.')}</p>
@@ -11565,6 +11603,7 @@ async function caricaEcosistema() {
       ${riga('micromamba', e.mamba || '—')}${riga(L('spazio', 'disk', 'espacio'), e.spazio)}${riga(L('progetti', 'projects', 'proyectos'), e.progetti)}${riga(L('lavori attivi', 'active jobs', 'trabajos activos'), e.lavori)}
     </div>
     ${bud.attivo ? `<div class="riquadro-info" style="margin:8px 0">${L('Tetto automatico del lavoro autonomo', 'Automatic ceiling for autonomous work', 'Techo automático del trabajo autónomo')}: <strong>${L('10% della memoria libera', '10% of free memory', '10% de la memoria libre')}</strong> — ${L('RAM', 'RAM', 'RAM')} <strong>${esc(bud.mem_umano || '—')}</strong>, ${L('disco per install', 'disk for installs', 'disco para instalar')} <strong>${esc(bud.disco_umano || '—')}</strong>. ${L('Si regola da sé; se il disco è tirato, non installa.', 'Self-adjusting; if disk is tight, no installs.', 'Se ajusta solo; si el disco está justo, no instala.')}</div>` : ''}
+    ${volBlocco()}
     <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0">
       <input id="eco-des" class="campo" placeholder="${L('desiderio (installa:mido · costruisci:radio · testo)', 'wish (installa:mido · costruisci:radio · text)', 'deseo (installa:mido · costruisci:radio · texto)')}" style="flex:1 1 240px">
       <button class="btn secondario mini" id="eco-vuoi">${L('Proponile un desiderio', 'Give her a wish', 'Dale un deseo')}</button>
@@ -11626,7 +11665,7 @@ async function caricaEcosistema() {
     mostra(L('un passo…', 'a step…', 'un paso…'));
     const r = await api('/api/admin/ecosistema', { method: 'POST', body: { op: 'autonomo' } }).catch(() => null);
     if (r && r.ok) { mostra(`${r.azione || ''}: ${r.cosa || ''}`); if (r.id) seguiLavoro(r.id); setTimeout(caricaEcosistema, 1200); }
-    else mostra((r && (r.motivo || r.errore)) || L('non ora', 'not now', 'ahora no'));
+    else { mostra((r && (r.motivo || r.errore)) || L('non ora', 'not now', 'ahora no')); setTimeout(caricaEcosistema, 900); }
   });
 }
 

@@ -142,6 +142,10 @@ class Handler(BaseHTTPRequestHandler):
             st = AMB.stato_ecosistema()
             if st.get("attivo"):
                 st["progetti_elenco"] = AMB.progetti()
+                try:
+                    st["volere"] = mente.desideri_ora()
+                except Exception:
+                    st["volere"] = {"attivo": False, "desideri": []}
             return self._json(200, {"ok": True, "ecosistema": st})
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})

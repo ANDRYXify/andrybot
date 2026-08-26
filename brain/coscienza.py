@@ -3937,9 +3937,10 @@ class Coscienza:
         except Exception:
             pass
 
-    def _volere_contesto(self, amb):
+    def _volere_contesto(self, amb, consuma=True):
         """Da cosa nascono i suoi desideri: il fuoco, la cura, il corpo, cio che ha aperto e cio
-        che non le e riuscito. Nessuno di questi campi viene dal Compagno, tranne la proposta."""
+        che non le e riuscito. Nessuno di questi campi viene dal Compagno, tranne la proposta.
+        consuma=False = sola lettura: sbircia la proposta senza toglierla dalla coda (cruscotto)."""
         ctx = {"fuoco": "", "cura": "", "valenza": 0.0, "progetti": [], "strumenti": [],
                "lacune": [], "proposta": ""}
         try:
@@ -3972,7 +3973,10 @@ class Coscienza:
         except Exception:
             pass
         try:
-            ctx["proposta"] = amb.consuma_desiderio() or ""
+            if consuma:
+                ctx["proposta"] = amb.consuma_desiderio() or ""
+            else:
+                ctx["proposta"] = ((amb.desideri() or [""]) + [""])[0] or ""
         except Exception:
             pass
         return ctx
@@ -4077,6 +4081,43 @@ class Coscienza:
             return volere.riassunto(self._volere_stato())
         except Exception:
             return {}
+
+    def desideri_ora(self):
+        """COSA VUOLE ADESSO, in sola lettura. Calcola i desideri esattamente come farebbe per
+        agire, ma non agisce e non toglie nulla dalla coda: serve al cruscotto per mostrare che
+        e lei a volere, e quanto. Nessuna scrittura di stato."""
+        fuori = {"attivo": False, "desideri": []}
+        try:
+            import ambiente as amb
+            if not amb.disponibile():
+                return fuori
+            vs = self._volere_stato()
+            b = amb.budget()
+            b = b if isinstance(b, dict) else {}
+            ctx = self._volere_contesto(amb, consuma=False)
+            cand = volere.desideri_propri(vs, ctx) or []
+            stop, perche = volere.deve_fermarsi(vs, b)
+            try:
+                ultimo = int(self._meta_get("eco_autonomo_ts") or 0)
+            except Exception:
+                ultimo = 0
+            passo = int(vs.get("ritmo") or volere.RITMO_BASE)
+            fuori = volere.riassunto(vs)
+            fuori["attivo"] = True
+            fuori["desideri"] = [{
+                "cosa": str(d.get("oggetto") or "")[:60],
+                "azione": d.get("azione"),
+                "forza": d.get("forza"),
+                "perche": d.get("perche"),
+                "mio": d.get("azione") != "proposta",
+            } for d in cand[:6]]
+            fuori["fermata"] = ({"perche": perche} if stop else None)
+            fuori["fuoco"] = ctx.get("fuoco") or ""
+            fuori["cura"] = ctx.get("cura") or ""
+            fuori["attesa"] = max(0, passo - max(0, _now() - ultimo)) if ultimo else 0
+        except Exception:
+            pass
+        return fuori
 
     # ── attività RECENTE: quale via ha «sparato» / cosa è appena cambiato (per l'avatar in tempo reale)
     def _segna_attivita(self, evento, ttl=90):

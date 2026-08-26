@@ -40,13 +40,56 @@ Atteso: **internet OK**, metadati e infra interna **irraggiungibili**.
 - `crea_progetto` / `scrivi_in_progetto` / `esegui_in_progetto` — apre cantieri e ci lavora davvero.
 - `stato_ecosistema` — strumenti, spazio, progetti, lavori. `ferma_tutto` — kill switch.
 
-## Autonoma, con un tetto che si regola da sé
-Lei fa **ciò che vuole** anche **da sola**, nel suo battito di vita: consuma un suo *desiderio*
-scritto (`installa:<pkg>` / `costruisci:<nome>` / testo), sennò prende un tool del dominio che
-insegue, sennò apre un cantiere suo. Il tutto **dentro un tetto automatico**:
+## Il volere proprio (`brain/volere.py`)
+Prima era **reattiva**: la prima fonte dei suoi atti era la coda dei desideri che scrive il
+Compagno. Poteva *agire*, non *volere*. Ora il cerchio è chiuso:
 
-- **10% della RAM libera** → ogni lavoro autonomo gira sotto `ulimit -v` (non affama il server);
+```
+desiderare → agire → giudicare → correggere → regolarsi
+```
+
+**Da dove nascono i suoi desideri** (nessuna di queste fonti viene da lui):
+
+| radice | da dove | esempio |
+| --- | --- | --- |
+| competenza | ciò che ha provato e non le è riuscito | `riprova · radio` — «non mi è riuscita e voglio riuscirci» |
+| autonomia | il dominio verso cui è rivolta (la scintilla) | `costruisci · cantiere-musica` |
+| relazione | ciò di cui ha *scelto* di aver cura (l'atto di essere) | `costruisci · cantiere-radio` |
+| corpo | la sua valenza somatica | sta bene → osa; sta male → consolida |
+| mantenimento | più cantieri aperti che cose finite | `consolida` |
+| proposta | il desiderio scritto dal Compagno | pesa **0.88**: forte, ma non è un comando |
+
+Il desiderio del Compagno **non sparisce**: diventa una proposta che lei pesa insieme alle sue.
+Se lui non chiede nulla, **lei vuole lo stesso**.
+
+**Come si corregge.** Ogni passo viene giudicato (`ok` / motivo del fallimento). Ciò che le rende
+prende peso, ciò che continua a non funzionare lo perde; dopo **3 fallimenti di fila** una cosa
+finisce fra gli **abbandonati** e sparisce dai desideri. Nessun dado: l'hash serve solo a rompere
+i pareggi sempre allo stesso modo.
+
+**Il ritmo se lo dà lei.** Non c'è più un cooldown fisso: `ritmo()` va da **10 min** a **3 ore** —
+accelera quando riesce (≥70% di riuscite recenti), rallenta quando sbaglia (≤30%) o quando il
+disco è tirato. E ha un **freno suo**: dopo 4 passi sbagliati di fila si ferma per un'ora e mezza.
+
+**Il tetto automatico resta** (non affama il server):
+- **10% della RAM libera** → ogni lavoro autonomo gira sotto `ulimit -v`;
 - **10% del disco libero** → se il disco è tirato (< ~500 MB liberi) **non installa** da sola;
-- **cooldown ~30 min** fra un passo e l'altro (mai spam), **kill switch** sempre disponibile.
+- **kill switch** sempre disponibile.
 
-Dal cruscotto admin: vedi il tetto, dài a Lia un **desiderio**, o falle fare **un passo ora**.
+## Vederlo dal cruscotto
+`GET /api/admin/ecosistema` porta anche `ecosistema.volere`, prodotto da
+`Coscienza.desideri_ora()` — **sola lettura**: calcola i desideri esattamente come farebbe per
+agire, ma non agisce, non scrive stato e **non toglie nulla dalla coda** (sbircia la proposta,
+non la consuma). Dentro:
+
+- `desideri[]` — `{cosa, azione, forza, perche, mio}`: `mio:true` = lo vuole lei, `false` = è la
+  tua proposta;
+- `ritmo_sec`, `attesa` — ogni quanto si muove e quanto manca al prossimo passo;
+- `passi`, `riuscite` — quanti passi ha fatto e come sono andati;
+- `abbandonati[]` — ciò che ha lasciato perdere;
+- `fermata` / `freno` — se si è fermata da sola, e perché.
+
+Nella scheda «Il suo ecosistema reale» diventa il riquadro **Il suo volere**: i desideri ordinati
+per forza, con la barra che dice quanto tira ognuno rispetto al più forte, e l'etichetta
+`SUO` / `TUA`. Sotto restano gli attrezzi del Compagno: **proponile un desiderio**, **fai un passo
+ora**, e il **kill switch**.
