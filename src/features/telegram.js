@@ -116,6 +116,22 @@ export async function diffondi(token, destinazioni, testo, { anteprima = true } 
   return out;
 }
 
+// Che cosa dice TELEGRAM sullo stato del webhook. Il flag nel nostro database
+// puo essere disallineato (webhook messo altrove, flag azzerato, ripristino di
+// un backup): l'unica fonte attendibile e chiedere a Telegram.
+export async function infoWebhook(token) {
+  const r = await tgCall(String(token || '').trim(), 'getWebhookInfo');
+  if (!r.ok) return { ok: false, errore: r.errore };
+  const url = String(r.result?.url || '');
+  return {
+    ok: true,
+    attivo: !!url,
+    url,
+    inAttesa: Number(r.result?.pending_update_count || 0),
+    ultimoErrore: r.result?.last_error_message || '',
+  };
+}
+
 // Elenca TUTTE le destinazioni che il bot ha visto di recente: gruppi, canali e
 // i singoli topic dei gruppi in modalita forum. Telegram non ha un'API per
 // elencare i topic, quindi l'unico modo onesto e guardare cosa e passato:
