@@ -10,7 +10,11 @@
 
   var K_MODO = 'sb-plancia', K_SUONO = 'sb-plancia-suono';
   function modoOn() { try { return localStorage.getItem(K_MODO) === '1'; } catch (e) { return false; } }
-  function setModo(v) { try { localStorage.setItem(K_MODO, v ? '1' : '0'); } catch (e) {} aggiornaLancia(); }
+  function setModo(v) {
+    try { localStorage.setItem(K_MODO, v ? '1' : '0'); } catch (e) {}
+    aggiornaLancia();
+    try { if (window.SB_PILOTA) { v ? window.SB_PILOTA.attiva() : window.SB_PILOTA.disattiva(); } } catch (e) {}
+  }
   function suonoOn() { try { return localStorage.getItem(K_SUONO) === '1'; } catch (e) { return false; } }
   function setSuono(v) { try { localStorage.setItem(K_SUONO, v ? '1' : '0'); } catch (e) {} }
 
@@ -251,6 +255,7 @@
     apri: function () { try { apri(); } catch (e) {} },
     chiudi: chiudi,
     modo: modoOn,
+    bip: bip,
     impostaModo: function (v) { setModo(!!v); if (!v) chiudi(); }
   };
 

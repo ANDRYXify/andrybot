@@ -1,0 +1,354 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
+
+(function () {
+  'use strict';
+  function A() { return window.SB_APP; }
+  function L(it, en, es) { try { return A().L(it, en, es); } catch (e) { return it; } }
+  function esc(s) { try { return A().esc(String(s)); } catch (e) { return String(s == null ? '' : s); } }
+
+  var K_MODO = 'sb-plancia';
+  function modoOn() { try { return localStorage.getItem(K_MODO) === '1'; } catch (e) { return false; } }
+
+  var SEL = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), summary, [role="button"], [tabindex]:not([tabindex="-1"])';
+  var SEL_TESTO = 'input:not([type=button]):not([type=submit]):not([type=reset]):not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]), textarea';
+
+  var attivo = false, anello = null, legenda = null, corrente = null, rafPad = 0, osk = null, oskTarget = null, oskMaiusc = false, oskSimboli = false;
+
+  function visibile(el) {
+    try {
+      if (el.disabled || el.hidden) return false;
+      if (el.closest('[hidden]')) return false;
+      var r = el.getBoundingClientRect();
+      if (r.width < 4 || r.height < 4) return false;
+      var st = getComputedStyle(el);
+      if (st.visibility === 'hidden' || st.display === 'none' || +st.opacity < 0.05) return false;
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function ambito() {
+    if (osk && !osk.hidden) return osk;
+    var pl = document.getElementById('plancia-overlay');
+    if (pl && !pl.hidden) return pl;
+    var cv = document.getElementById('cerca-overlay');
+    if (cv && cv.classList.contains('aperto')) return cv;
+    return document;
+  }
+
+  function lista() {
+    try {
+      var root = ambito();
+      var out = [], n = root.querySelectorAll(SEL);
+      for (var i = 0; i < n.length; i++) if (visibile(n[i])) out.push(n[i]);
+      return out;
+    } catch (e) { return []; }
+  }
+
+  function punteggio(c, t, dir) {
+    var cx = c.left + c.width / 2, cy = c.top + c.height / 2;
+    var tx = t.left + t.width / 2, ty = t.top + t.height / 2;
+    var T = 6;
+    if (dir === 'right' && t.left < c.right - T) return -1;
+    if (dir === 'left' && t.right > c.left + T) return -1;
+    if (dir === 'down' && t.top < c.bottom - T) return -1;
+    if (dir === 'up' && t.bottom > c.top + T) return -1;
+    var primario, perp;
+    if (dir === 'left' || dir === 'right') {
+      primario = Math.abs(tx - cx);
+      perp = Math.abs(ty - cy);
+      var ov = Math.min(c.bottom, t.bottom) - Math.max(c.top, t.top);
+      if (ov > 0) perp = Math.max(0, perp - ov);
+    } else {
+      primario = Math.abs(ty - cy);
+      perp = Math.abs(tx - cx);
+      var ox = Math.min(c.right, t.right) - Math.max(c.left, t.left);
+      if (ox > 0) perp = Math.max(0, perp - ox);
+    }
+    return primario + perp * 2.6;
+  }
+
+  function vaiVerso(dir) {
+    var els = lista();
+    if (!els.length) return;
+    if (!corrente || !corrente.isConnected || !visibile(corrente) || els.indexOf(corrente) < 0) { metti(els[0]); return; }
+    var c = corrente.getBoundingClientRect(), best = null, bestS = Infinity;
+    for (var i = 0; i < els.length; i++) {
+      if (els[i] === corrente) continue;
+      var s = punteggio(c, els[i].getBoundingClientRect(), dir);
+      if (s >= 0 && s < bestS) { bestS = s; best = els[i]; }
+    }
+    if (best) metti(best);
+  }
+
+  function metti(el) {
+    if (!el) return;
+    corrente = el;
+    try { el.focus({ preventScroll: true }); } catch (e) { try { el.focus(); } catch (e2) {} }
+    try { el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' }); } catch (e) {}
+    setTimeout(aggiornaAnello, 60);
+    aggiornaAnello();
+    aggiornaLegenda();
+    suono(520, 0.04, 0.03);
+  }
+
+  function creaAnello() {
+    anello = document.createElement('div'); anello.id = 'pil-anello'; anello.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(anello);
+  }
+  function aggiornaAnello() {
+    if (!anello) return;
+    if (!corrente || !corrente.isConnected || !visibile(corrente)) { anello.classList.remove('vivo'); return; }
+    try {
+      var r = corrente.getBoundingClientRect(), p = 6;
+      anello.style.transform = 'translate3d(' + (r.left - p) + 'px,' + (r.top - p) + 'px,0)';
+      anello.style.width = (r.width + p * 2) + 'px';
+      anello.style.height = (r.height + p * 2) + 'px';
+      var br = 10;
+      try { br = Math.min(parseFloat(getComputedStyle(corrente).borderTopLeftRadius) || 0, 900) + p; } catch (e) {}
+      anello.style.borderRadius = br + 'px';
+      anello.classList.add('vivo');
+    } catch (e) { /* niente */ }
+  }
+
+  function creaLegenda() {
+    legenda = document.createElement('div'); legenda.id = 'pil-legenda';
+    document.body.appendChild(legenda);
+  }
+  function tastoHtml(t, testo, cls) { return '<span class="pil-t"><b class="pil-b ' + (cls || '') + '">' + esc(t) + '</b>' + esc(testo) + '</span>'; }
+  function aggiornaLegenda() {
+    if (!legenda) return;
+    var h = '';
+    if (osk && !osk.hidden) {
+      h = tastoHtml('A', L('scrivi', 'type', 'escribir'), 'a') + tastoHtml('B', L('chiudi', 'close', 'cerrar'), 'b') +
+          tastoHtml('X', L('cancella', 'delete', 'borrar'), 'x') + tastoHtml('Y', L('spazio', 'space', 'espacio'), 'y');
+    } else {
+      var suTesto = corrente && corrente.matches && corrente.matches(SEL_TESTO);
+      h = tastoHtml('A', suTesto ? L('scrivi', 'type', 'escribir') : L('seleziona', 'select', 'seleccionar'), 'a') +
+          tastoHtml('B', L('indietro', 'back', 'atrás'), 'b') +
+          tastoHtml('Y', L('cerca', 'search', 'buscar'), 'y') +
+          '<span class="pil-t"><b class="pil-b">LB/RB</b>' + esc(L('sezione', 'section', 'sección')) + '</span>' +
+          '<span class="pil-t"><b class="pil-b">☰</b>' + esc(L('Plancia', 'Deck', 'Consola')) + '</span>';
+    }
+    legenda.innerHTML = h;
+  }
+
+  function suono(f, d, v) { try { if (window.SB_PLANCIA && window.SB_PLANCIA.bip) window.SB_PLANCIA.bip(f, d, v); } catch (e) {} }
+
+  function attiva() {
+    if (attivo) return;
+    attivo = true;
+    document.body.classList.add('pilota-on');
+    if (!anello) creaAnello();
+    if (!legenda) creaLegenda();
+    aggiornaLegenda();
+    window.addEventListener('scroll', aggiornaAnello, true);
+    window.addEventListener('resize', aggiornaAnello);
+    avviaPad();
+  }
+  function disattiva() {
+    attivo = false;
+    document.body.classList.remove('pilota-on');
+    if (anello) anello.classList.remove('vivo');
+    window.removeEventListener('scroll', aggiornaAnello, true);
+    window.removeEventListener('resize', aggiornaAnello);
+    chiudiOsk();
+  }
+
+  var TASTI_ABC = [
+    ['1','2','3','4','5','6','7','8','9','0'],
+    ['q','w','e','r','t','y','u','i','o','p'],
+    ['a','s','d','f','g','h','j','k','l','-'],
+    ['z','x','c','v','b','n','m','.','_','@']
+  ];
+  var TASTI_SIM = [
+    ['!','?','#','$','%','&','*','(',')','+'],
+    ['/','\\',':',';','"','\'','<','>','[',']'],
+    ['{','}','|','=','~','^','`','€','£','§'],
+    ['à','è','é','ì','ò','ù','ç','°','§',',']
+  ];
+
+  function apriOsk(target) {
+    if (!target) return;
+    oskTarget = target;
+    if (!osk) {
+      osk = document.createElement('div'); osk.id = 'pil-osk';
+      document.body.appendChild(osk);
+    }
+    osk.hidden = false;
+    disegnaOsk();
+    document.body.classList.add('osk-on');
+    var primo = osk.querySelector('.pil-k');
+    if (primo) metti(primo);
+    aggiornaLegenda();
+  }
+  function chiudiOsk() {
+    if (!osk || osk.hidden) return;
+    osk.hidden = true;
+    document.body.classList.remove('osk-on');
+    var t = oskTarget; oskTarget = null;
+    aggiornaLegenda();
+    if (t && t.isConnected) metti(t);
+  }
+  function disegnaOsk() {
+    var righe = oskSimboli ? TASTI_SIM : TASTI_ABC;
+    var val = oskTarget ? String(oskTarget.value || '') : '';
+    var h = '<div class="pil-osk-box">' +
+      '<div class="pil-osk-testa"><span class="pil-osk-eti">' + esc(etichettaDi(oskTarget)) + '</span>' +
+      '<div class="pil-osk-val">' + (val ? esc(val) : '<i>' + esc(L('vuoto', 'empty', 'vacío')) + '</i>') + '<span class="pil-caret"></span></div></div>' +
+      '<div class="pil-osk-griglia">';
+    righe.forEach(function (r) {
+      h += '<div class="pil-osk-riga">';
+      r.forEach(function (k) {
+        var lab = (oskMaiusc && !oskSimboli) ? k.toUpperCase() : k;
+        h += '<button type="button" class="pil-k" data-k="' + esc(lab) + '">' + esc(lab) + '</button>';
+      });
+      h += '</div>';
+    });
+    h += '<div class="pil-osk-riga pil-osk-azioni">' +
+      '<button type="button" class="pil-k pil-k-w" data-a="maiusc">' + esc(oskMaiusc ? 'abc' : 'ABC') + '</button>' +
+      '<button type="button" class="pil-k pil-k-w" data-a="simboli">' + esc(oskSimboli ? 'abc' : '#+=') + '</button>' +
+      '<button type="button" class="pil-k pil-k-sp" data-a="spazio">' + esc(L('spazio', 'space', 'espacio')) + '</button>' +
+      '<button type="button" class="pil-k pil-k-w" data-a="canc">⌫</button>' +
+      '<button type="button" class="pil-k pil-k-ok" data-a="fatto">' + esc(L('Fatto', 'Done', 'Hecho')) + '</button>' +
+      '</div></div></div>';
+    osk.innerHTML = h;
+    osk.querySelectorAll('.pil-k').forEach(function (b) { b.addEventListener('click', function () { premiTasto(b); }); });
+  }
+  function etichettaDi(el) {
+    if (!el) return '';
+    try {
+      var id = el.id, lab = id ? document.querySelector('label[for="' + CSS.escape(id) + '"]') : null;
+      if (lab) return lab.textContent.trim().slice(0, 60);
+      if (el.getAttribute('aria-label')) return el.getAttribute('aria-label').slice(0, 60);
+      if (el.placeholder) return el.placeholder.slice(0, 60);
+    } catch (e) {}
+    return L('Scrivi', 'Type', 'Escribe');
+  }
+  function scrivi(txt) {
+    if (!oskTarget) return;
+    try {
+      oskTarget.value = String(oskTarget.value || '') + txt;
+      oskTarget.dispatchEvent(new Event('input', { bubbles: true }));
+    } catch (e) {}
+    aggiornaVal();
+  }
+  function cancella() {
+    if (!oskTarget) return;
+    try {
+      var v = String(oskTarget.value || '');
+      oskTarget.value = v.slice(0, -1);
+      oskTarget.dispatchEvent(new Event('input', { bubbles: true }));
+    } catch (e) {}
+    aggiornaVal();
+  }
+  function aggiornaVal() {
+    if (!osk) return;
+    var box = osk.querySelector('.pil-osk-val');
+    if (!box || !oskTarget) return;
+    var val = String(oskTarget.value || '');
+    box.innerHTML = (val ? esc(val) : '<i>' + esc(L('vuoto', 'empty', 'vacío')) + '</i>') + '<span class="pil-caret"></span>';
+  }
+  function premiTasto(b) {
+    var a = b.dataset.a;
+    if (a === 'maiusc') { oskMaiusc = !oskMaiusc; ridisegnaOsk(); return; }
+    if (a === 'simboli') { oskSimboli = !oskSimboli; ridisegnaOsk(); return; }
+    if (a === 'spazio') { scrivi(' '); suono(430, 0.04, 0.03); return; }
+    if (a === 'canc') { cancella(); suono(330, 0.05, 0.035); return; }
+    if (a === 'fatto') { suono(760, 0.09, 0.05); chiudiOsk(); return; }
+    var k = b.dataset.k;
+    if (k) { scrivi(k); suono(620, 0.035, 0.028); }
+  }
+  function ridisegnaOsk() {
+    var idx = -1, tutti = osk.querySelectorAll('.pil-k');
+    for (var i = 0; i < tutti.length; i++) if (tutti[i] === corrente) { idx = i; break; }
+    disegnaOsk();
+    var nuovi = osk.querySelectorAll('.pil-k');
+    metti(nuovi[Math.max(0, Math.min(nuovi.length - 1, idx))] || nuovi[0]);
+  }
+
+  function azionaA() {
+    if (!corrente) { var e = lista(); if (e.length) metti(e[0]); return; }
+    if (osk && !osk.hidden) { if (corrente.classList.contains('pil-k')) premiTasto(corrente); return; }
+    if (corrente.matches && corrente.matches(SEL_TESTO)) { apriOsk(corrente); return; }
+    suono(700, 0.07, 0.045);
+    try { corrente.click(); } catch (e) {}
+    setTimeout(function () { aggiornaAnello(); aggiornaLegenda(); }, 220);
+  }
+  function azionaB() {
+    if (osk && !osk.hidden) { chiudiOsk(); return; }
+    var cv = document.getElementById('cerca-overlay');
+    if (cv && cv.classList.contains('aperto')) { try { window.SB_CERCA && window.SB_CERCA.chiudi ? window.SB_CERCA.chiudi() : null; } catch (e) {} var esc2 = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }); document.dispatchEvent(esc2); return; }
+    var pl = document.getElementById('plancia-overlay');
+    if (pl && !pl.hidden) return;
+    try { window.SB_PLANCIA && window.SB_PLANCIA.apri(); } catch (e) {}
+  }
+  function azionaY() { try { window.SB_CERCA && window.SB_CERCA.apri(); } catch (e) {} setTimeout(function () { var e = lista(); if (e.length) metti(e[0]); }, 120); }
+  function sezione(d) {
+    try {
+      var a = A(); if (!a) return;
+      var tutte = [];
+      (a.gruppi || []).forEach(function (g) { (g.schede || []).forEach(function (s) { if (!a.schedaValida || a.schedaValida(s[0])) tutte.push(s[0]); }); });
+      var i = tutte.indexOf(a.schedaAttiva);
+      if (i < 0) i = 0;
+      var n = Math.max(0, Math.min(tutte.length - 1, i + d));
+      if (n === i) return;
+      a.vai(tutte[n]);
+      suono(480, 0.06, 0.04);
+      setTimeout(function () { corrente = null; var e = lista(); if (e.length) metti(e[0]); }, 260);
+    } catch (e) {}
+  }
+
+  var st = { x: 0, y: 0, a: false, b: false, x2: false, y2: false, lb: false, rb: false, menu: false };
+  function pad() {
+    if (!attivo) { rafPad = 0; return; }
+    var gps = [];
+    try { gps = navigator.getGamepads ? navigator.getGamepads() : []; } catch (e) { gps = []; }
+    var gp = null;
+    for (var i = 0; i < gps.length; i++) if (gps[i]) { gp = gps[i]; break; }
+    var plAperta = (function () { var p = document.getElementById('plancia-overlay'); return p && !p.hidden; })();
+    if (gp && !plAperta) {
+      var ax = gp.axes || [], bt = gp.buttons || [], now = Date.now();
+      var dx = ax[0] || 0, dy = ax[1] || 0;
+      var r = dx > 0.55 || (bt[15] && bt[15].pressed), l = dx < -0.55 || (bt[14] && bt[14].pressed);
+      var d = dy > 0.55 || (bt[13] && bt[13].pressed), u = dy < -0.55 || (bt[12] && bt[12].pressed);
+      if (r || l) { if (!st.x || now - st.x > 165) { st.x = now; vaiVerso(r ? 'right' : 'left'); } } else st.x = 0;
+      if (d || u) { if (!st.y || now - st.y > 165) { st.y = now; vaiVerso(d ? 'down' : 'up'); } } else st.y = 0;
+      var pA = bt[0] && bt[0].pressed, pB = bt[1] && bt[1].pressed, pX = bt[2] && bt[2].pressed, pY = bt[3] && bt[3].pressed;
+      var pLB = bt[4] && bt[4].pressed, pRB = bt[5] && bt[5].pressed, pMenu = (bt[9] && bt[9].pressed);
+      if (pA && !st.a) { st.a = true; azionaA(); } if (!pA) st.a = false;
+      if (pB && !st.b) { st.b = true; azionaB(); } if (!pB) st.b = false;
+      if (pX && !st.x2) { st.x2 = true; if (osk && !osk.hidden) { cancella(); suono(330, 0.05, 0.035); } } if (!pX) st.x2 = false;
+      if (pY && !st.y2) { st.y2 = true; if (osk && !osk.hidden) { scrivi(' '); } else azionaY(); } if (!pY) st.y2 = false;
+      if (pLB && !st.lb) { st.lb = true; sezione(-1); } if (!pLB) st.lb = false;
+      if (pRB && !st.rb) { st.rb = true; sezione(1); } if (!pRB) st.rb = false;
+      if (pMenu && !st.menu) { st.menu = true; try { window.SB_PLANCIA && window.SB_PLANCIA.apri(); } catch (e) {} } if (!pMenu) st.menu = false;
+      var ry = ax[3] || 0;
+      if (Math.abs(ry) > 0.3) window.scrollBy(0, ry * 16);
+    }
+    rafPad = requestAnimationFrame(pad);
+  }
+  function avviaPad() { if (!rafPad) rafPad = requestAnimationFrame(pad); }
+  window.addEventListener('gamepadconnected', function () { if (attivo) avviaPad(); });
+
+  document.addEventListener('pointerdown', function (e) {
+    if (!attivo) return;
+    var t = e.target && e.target.closest ? e.target.closest(SEL) : null;
+    if (t && visibile(t)) { corrente = t; aggiornaAnello(); aggiornaLegenda(); }
+  }, true);
+
+  window.SB_PILOTA = {
+    attiva: attiva, disattiva: disattiva,
+    stato: function () { return attivo; },
+    tastiera: apriOsk,
+    aggiorna: function () { aggiornaAnello(); aggiornaLegenda(); }
+  };
+
+  function avvia() {
+    if (!A()) { window.addEventListener('sb-app-pronta', avvia, { once: true }); return; }
+    if (modoOn()) attiva();
+    window.addEventListener('storage', function (e) { if (e.key === K_MODO) { modoOn() ? attiva() : disattiva(); } });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', avvia);
+  else avvia();
+})();
