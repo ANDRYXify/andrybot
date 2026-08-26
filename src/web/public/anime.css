@@ -156,6 +156,14 @@ body.cerca-aperta { overflow: hidden; }
 .cerca-filtro.on { color: var(--testo); border-bottom-color: var(--acc); }
 .cerca-sugg-tit { padding: 16px 18px 4px; font-size: .64rem; text-transform: uppercase; letter-spacing: .26em; color: var(--testo-3); font-weight: 600; }
 .cerca-lista { padding: 6px 8px 10px; }
+.cerca-forse {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem;
+  margin: 12px 18px 0; padding: .5rem .7rem; border-radius: var(--r-m);
+  font-size: .8rem; line-height: 1.5; color: var(--testo-2);
+  background: var(--surface-2); border: 1px solid var(--border);
+}
+.cerca-forse b { color: var(--acc); font-weight: 600; }
+.cerca-forse i { font-style: normal; color: var(--testo-3); text-decoration: line-through; }
 .cerca-voce {
   display: flex; align-items: center; gap: 14px; padding: 14px 12px; border-radius: 8px; cursor: pointer;
   color: var(--testo); border-bottom: 1px solid var(--border);
