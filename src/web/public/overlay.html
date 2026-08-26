@@ -658,7 +658,7 @@
         else if (dati.tipo === 'tema') caricaTema();
         else if (dati.tipo === 'testo') { if (mostra('effetti')) mostraTesto(dati); }
         else if (dati.tipo === 'contatore') contatore(dati);
-        else { if (mostra('effetti')) { codaVisiva.push(dati); mostraProssimo(); } }
+        else if (dati.tipo === 'immagine' || dati.tipo === 'video') { if (mostra('effetti')) { codaVisiva.push(dati); mostraProssimo(); } }
       };
 
       es.onerror = () => {};
