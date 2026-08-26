@@ -532,7 +532,11 @@
       const img = (src, alt) => {
         if (!src) return;
         const i = document.createElement('img');
-        i.className = 'chat-badge'; i.src = src; i.alt = alt || ''; i.loading = 'lazy';
+        i.className = 'chat-badge'; i.alt = ''; i.decoding = 'async';
+        i.referrerPolicy = 'no-referrer';
+        i.title = alt || '';
+        i.addEventListener('error', () => { i.remove(); }, { once: true });
+        i.src = src;
         riga.appendChild(i);
       };
       if (ev.badges) for (const b of String(ev.badges).split(',')) { const u = BADGE[b.trim()]; if (u) img(u, b); }
@@ -547,9 +551,12 @@
         if (url) {
           const img = document.createElement('img');
           img.className = 'emote';
+          img.alt = '';
+          img.decoding = 'async';
+          img.referrerPolicy = 'no-referrer';
+          img.title = p;
+          img.addEventListener('error', () => { img.replaceWith(document.createTextNode(p)); }, { once: true });
           img.src = url;
-          img.alt = p;
-          img.loading = 'lazy';
           riga.appendChild(img);
         } else if (p) {
           riga.appendChild(document.createTextNode(p));
