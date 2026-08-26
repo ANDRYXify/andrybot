@@ -143,3 +143,87 @@ qualsiasi (che deve continuare a non ricevere risposta).
 puzzle e si verifica che **non** siano il gradiente (quota di viola 1,4% contro
 il ~60% del finto, quaranta tinte diverse). Poi si ridimensiona la finestra e si
 controlla che la scena resti disegnata.
+
+## Lo scatto con l'inquadratura
+
+«Sensibilita assurda, anche col massimo non fa lo scatto.» Era peggio di una
+soglia sbagliata: **alzare la sensibilita lo rendeva piu difficile.**
+
+### Perche la sensibilita andava al contrario
+
+La posa dell'inquadratura (due mani che puntano, a formare un rettangolo)
+veniva controllata **dopo** la carica del kamehameha, e pretendeva `!charge`.
+La carica si innesca quando le due mani sono vicine:
+
+```js
+const chargeMax = 0.17 + (sens - 5) * 0.008;   // a sensibilita 10 → 0,21
+```
+
+Quando inquadri, le mani sono **vicine** — e quella soglia **cresce** con la
+sensibilita. Quindi piu alzavi il cursore, prima la carica si prendeva il gesto
+e piu l'inquadratura diventava irraggiungibile. E la carica, una volta
+innescata, resta finche le mani non si allontanano oltre 0,28: bastava un
+attimo per restare bloccati.
+
+Adesso i due gesti si distinguono per **intenzione**, non per ordine di
+valutazione: se **entrambe le mani puntano** e lo scatto e acceso, la carica
+non parte — e se era gia innescata **si spegne da sola**. Verificato:
+
+| mani vicine (0,10) | prima | dopo |
+| --- | --- | --- |
+| aperte (kamehameha) | carica | **carica** (non ho rotto niente) |
+| che puntano (inquadratura) | carica → scatto bloccato | **niente carica** |
+| carica gia innescata, poi punto | resta bloccata | **si spegne** |
+
+### Perche il cursore non toccava lo scatto
+
+Le soglie del riquadro erano **numeri fissi**, `0.14` e `0.12`, su **entrambi**
+gli assi. `sens` li non compariva proprio: il cursore della sensibilita, su
+questo gesto, non faceva **nulla**. E chiedendo 0,14 di larghezza *e* 0,12 di
+altezza, qualunque inquadratura stretta era impossibile a ogni sensibilita.
+
+Ora tre soglie scalano insieme, e nella direzione giusta:
+
+| sens | lato minimo | diagonale minima | tenuta |
+| ---: | ---: | ---: | ---: |
+| 1 | 0,130 | 0,298 | 770 ms |
+| 5 | 0,090 | 0,210 | 550 ms |
+| 10 | 0,040 | 0,100 | 275 ms |
+
+Con l'effetto che serviva:
+
+| inquadratura | prima | dopo |
+| --- | --- | --- |
+| ampia (0,30 × 0,26) | scattava | da sens 1 |
+| viso (0,20 × 0,16) | scattava | da sens 3 |
+| primo piano (0,12 × 0,10) | **mai** | da sens 8 |
+| molto stretta (0,08 × 0,07) | **mai** | a sens 10 |
+| mani sovrapposte (0,02) | mai | **mai** (giusto cosi) |
+
+Il controllo per asse resta, ma con un lato minimo piu piccolo, e in piu si
+chiede una **diagonale**: cosi un rettangolo vero passa e due mani appiccicate
+no, senza dover indovinare due numeri scollegati.
+
+### E se non scatta, adesso lo vedi
+
+Prima il mirino compariva **solo** quando il riquadro era gia abbastanza
+grande: se era troppo stretto non succedeva niente di niente, e non c'era modo
+di capire se ti stesse riconoscendo o no.
+
+Adesso il mirino compare **appena riconosce la posa** e segue le dita; il conto
+alla rovescia parte solo quando il riquadro e abbastanza aperto. Se non scatta,
+almeno vedi che ti sta guardando — e che devi allargare.
+
+### Collaudo
+
+`scratchpad/t_scatto.mjs` estrae le formule **dal file** (non le riscrive) e
+verifica che le tre soglie calino in modo monotono con la sensibilita e che
+ogni inquadratura realistica sia raggiungibile.
+
+`scratchpad/t_scatto2.mjs` fa girare la **macchina a stati vera**, estratta dal
+sorgente, con mani finte: inquadratura ampia (scatta a ogni sensibilita),
+stretta (no a 5, **si a 10**), mani sovrapposte (mirino si, scatto no), mani
+aperte (niente), lampo di 150 ms (niente).
+
+`scratchpad/t_carica.mjs` verifica il conflitto fra carica e inquadratura nei
+tre casi della tabella qui sopra.

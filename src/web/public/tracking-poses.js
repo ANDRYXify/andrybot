@@ -19,7 +19,7 @@
   let lastMano = 0, lastCarica = 0, lastFulmine = 0, lastTick = 0;
   let lastLaser = 0, lastFuoco = 0, lastAura = 0;
   let laserAcceso = false, auraAccesa = false;
-  let framingT = 0, scattoArmato = true, lastMirino = 0;
+  let framingT = 0, scattoArmato = true, lastMirino = 0, mirinoSu = false;
   let _cap = null, _ultimoSalva = 0;
   let lastPuntatore = 0;
   let snapReady = false, snapReadyT = 0, lastSnap = 0;
@@ -106,10 +106,12 @@
       }
     }
 
+    const duePunti = M.length === 2 && M[0].open === 'point' && M[1].open === 'point';
+
     if (M.length === 2) {
       const dist = Math.hypot(M[0].nx - M[1].nx, M[0].ny - M[1].ny);
       const midx = (M[0].nx + M[1].nx) / 2, midy = (M[0].ny + M[1].ny) / 2;
-      if (E.kamehameha !== false) {
+      if (E.kamehameha !== false && !(duePunti && E.scatto !== false)) {
         if (dist < chargeMax) {
           if (!charge) charge = { t0: now };
           charge.liv = Math.min(1, (now - charge.t0) / 900);
@@ -144,21 +146,32 @@
     } else { M.forEach((m, i) => { prevOpen[i] = m.open; }); }
     for (let i = M.length; i < 2; i++) prevOpen[i] = null;
 
-    const inquadra = E.scatto !== false && M.length === 2 && !charge && M[0].open === 'point' && M[1].open === 'point';
-    if (inquadra && Math.abs(M[1].tx - M[0].tx) > 0.14 && Math.abs(M[1].ty - M[0].ty) > 0.12 && scattoArmato) {
+    const inquadra = E.scatto !== false && duePunti && !charge;
+    const larg = Math.abs(M.length === 2 ? M[1].tx - M[0].tx : 0);
+    const alt = Math.abs(M.length === 2 ? M[1].ty - M[0].ty : 0);
+    const latoMin = Math.max(0.03, 0.09 - (sens - 5) * 0.010);
+    const diagMin = Math.max(0.08, 0.21 - (sens - 5) * 0.022);
+    const tenutaMs = Math.max(260, 550 - (sens - 5) * 55);
+    const riquadroOk = larg > latoMin && alt > latoMin && Math.hypot(larg, alt) > diagMin;
+    if (inquadra && scattoArmato) {
       const rect = { ax: M[0].tx, ay: M[0].ty, bx: M[1].tx, by: M[1].ty };
-      if (!framingT) framingT = now;
+      mirinoSu = true;
       FX.mirinoOn(rect);
       if (now - lastMirino > 50) { lastMirino = now; T.inviaFx({ tipo: 'mirino', ...rect }); }
-      if (now - framingT > 550) {
-        scattoArmato = false; framingT = 0;
-        FX.mirinoGiu(); T.inviaFx({ tipo: 'mirinoGiu' });
-        const thumb = catturaRitaglio(rect, E.specchio !== false);
-        FX.scatto({ ...rect, thumb });
-        T.inviaFx({ tipo: 'scatto', ...rect });
+      if (!riquadroOk) { framingT = 0; }
+      else {
+        if (!framingT) framingT = now;
+        if (now - framingT > tenutaMs) {
+          scattoArmato = false; framingT = 0; mirinoSu = false;
+          FX.mirinoGiu(); T.inviaFx({ tipo: 'mirinoGiu' });
+          const thumb = catturaRitaglio(rect, E.specchio !== false);
+          FX.scatto({ ...rect, thumb });
+          T.inviaFx({ tipo: 'scatto', ...rect });
+        }
       }
     } else {
-      if (framingT) { framingT = 0; FX.mirinoGiu(); T.inviaFx({ tipo: 'mirinoGiu' }); }
+      framingT = 0;
+      if (mirinoSu) { mirinoSu = false; FX.mirinoGiu(); T.inviaFx({ tipo: 'mirinoGiu' }); }
       if (!inquadra) scattoArmato = true;
     }
 
