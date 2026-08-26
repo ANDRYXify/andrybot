@@ -87,9 +87,26 @@ dirlo subito che restare in silenzio per sempre.
 ## Le dirette della community
 
 Ogni streamer decide **per il proprio gruppo** se annunciare anche le dirette dei membri della
-community. Acceso l'interruttore, la lista si allinea da sola a chi e `community=1`: chi entra
-compare, chi esce sparisce, e chi hai aggiunto **a mano** non viene mai toccato (li distingue la
-colonna `fonte`). Non aggiunge mai te stesso.
+community. Acceso l'interruttore, la lista si allinea da sola: chi entra compare, chi esce sparisce,
+e chi hai aggiunto **a mano** non viene mai toccato (li distingue la colonna `fonte`). Non aggiunge
+mai te stesso.
+
+**Chi conta come membro.** Non basta avere un account: chi si iscrive gratis e chi compra un piano
+NON entra in questa lista. Il criterio sta in un posto solo, `streamers.membriCommunity(escludi)`,
+e chiede tutte queste cose insieme:
+
+| condizione | perche |
+| --- | --- |
+| `user_id <> ''` | registrato e riconosciuto su Twitch, non un nome scritto a mano |
+| `status = 'approved'` | non in attesa, non disabilitato |
+| `community = 1` | verificato dal pass di andryxify.it — lo mette solo `markCommunity()`, mai Stripe ne l'iscrizione gratuita |
+| `manuale = 1` **oppure** `grazia_fino <= 0` | ancora confermato dal sito adesso; chi e in **periodo di grazia** e sparito dalla lista del sito, quindi non conta piu (gli account gestiti a mano li decide l'admin) |
+| `login <> ` il tuo | non annunci te stesso |
+
+Chi perde una di queste condizioni esce dalla lista al giro successivo (due minuti) senza che
+nessuno debba fare niente; se rientra, ci ritorna allo stesso modo. Il predicato e **uno solo** ed e
+usato da tutti e tre i posti che ne hanno bisogno (l'interruttore, il conteggio mostrato nella
+scheda e il giro periodico del bot), cosi la regola non puo divergere.
 
 Dove finiscono lo decide la **matrice**, come tutto il resto: sono streamer come gli altri, quindi
 il filtro «di chi» di ogni destinazione vale anche per loro.
@@ -106,3 +123,9 @@ Verificato su un database isolato, scenario per scenario: migrazione idempotente
 due topic insieme, instradamento per evento (`live` a tre posti, `ig` al solo topic dopo aver
 ristretto il generale), amici fusi senza badare a maiuscole, filtro per streamer (il canale annuncia
 solo l'amico e non me), spegnimento e rimozione, e **nessuna perdita fra canali diversi**.
+
+Per la lista community, undici account costruiti apposta: membro confermato, membro gestito a mano,
+iscritto gratis, cliente pagante, membro in grazia, disabilitato, in attesa, senza `user_id`, grazia
+gia consumata, se stesso. Passano solo i confermati e quello a mano; togliendo la conferma a uno
+esce da solo al giro dopo e rientra quando la riprende, mentre l'amico aggiunto a mano non viene
+mai sfiorato.

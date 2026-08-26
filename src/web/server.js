@@ -4244,7 +4244,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       })),
       amici: tgAmici.lista(login).map((a) => ({ id: a.id, login: a.login, display: a.display, messaggio: a.messaggio, attivo: !!a.attivo, fonte: a.fonte || 'mano' })),
       communityLive: !!c?.community_live,
-      communityQuanti: streamers.list().filter((x) => x.community && x.login !== login).length,
+      communityQuanti: streamers.membriCommunity(login).length,
       eventi: TG_EVENTI,
       io: login,
     });
@@ -4421,7 +4421,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     tgConf.set(login, { communityLive: attivo });
     // allinea subito la lista, senza aspettare il giro dei due minuti
     tgAmici.sincronizzaCommunity(login, attivo
-      ? streamers.list().filter((x) => x.community && x.login !== login).map((x) => ({ login: x.login, display: x.display }))
+      ? streamers.membriCommunity(login).map((x) => ({ login: x.login, display: x.display }))
       : []);
     res.json({ ok: true, quanti: attivo ? tgAmici.lista(login).filter((a) => a.fonte === 'community').length : 0 });
   }));
