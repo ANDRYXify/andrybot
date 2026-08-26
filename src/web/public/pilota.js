@@ -21,9 +21,13 @@
     if (!v) liberaCursore();
   }
   function segnaPad() {
-    try { if (window.SB_CURSORE_VIS) window.SB_CURSORE_VIS(false); } catch (e) {}
     if (!padVivo) { padVivo = true; try { document.body.classList.add('pad-vivo'); } catch (e) {} aggiornaLegenda(); }
     navIndiretta(true);
+  }
+  function zonaMorta(v, soglia) {
+    var a = Math.abs(v);
+    if (!(a > soglia)) return 0;
+    return (v < 0 ? -1 : 1) * (a - soglia) / (1 - soglia);
   }
   function spegniPad() {
     padVivo = false;
@@ -334,8 +338,12 @@
   }
 
   var st = { x: 0, y: 0, a: false, b: false, x2: false, y2: false, lb: false, rb: false, menu: false };
+  var ultimoPad = 0, dtPad = 0;
   function pad() {
-    if (!attivo) { rafPad = 0; return; }
+    if (!attivo) { rafPad = 0; ultimoPad = 0; return; }
+    var oraPad = (window.performance && performance.now) ? performance.now() : Date.now();
+    dtPad = ultimoPad ? Math.min(0.05, (oraPad - ultimoPad) / 1000) : 0.016;
+    ultimoPad = oraPad;
     var gps = [];
     try { gps = navigator.getGamepads ? navigator.getGamepads() : []; } catch (e) { gps = []; }
     var gp = null;
@@ -343,14 +351,17 @@
     var plAperta = (function () { var p = document.getElementById('plancia-overlay'); return p && !p.hidden; })();
     if (gp && !plAperta) {
       var ax = gp.axes || [], bt = gp.buttons || [], now = Date.now();
-      var dx = ax[0] || 0, dy = ax[1] || 0;
-      var r = dx > 0.55 || (bt[15] && bt[15].pressed), l = dx < -0.55 || (bt[14] && bt[14].pressed);
-      var d = dy > 0.55 || (bt[13] && bt[13].pressed), u = dy < -0.55 || (bt[12] && bt[12].pressed);
+      var std = gp.mapping === 'standard';
+      var dx = zonaMorta(ax[0] || 0, 0.35), dy = zonaMorta(ax[1] || 0, 0.35);
+      var r = dx > 0.45 || (std && bt[15] && bt[15].pressed), l = dx < -0.45 || (std && bt[14] && bt[14].pressed);
+      var d = dy > 0.45 || (std && bt[13] && bt[13].pressed), u = dy < -0.45 || (std && bt[12] && bt[12].pressed);
       if (r || l || d || u || (bt[0] && bt[0].pressed) || (bt[1] && bt[1].pressed)) segnaPad();
       if (r || l) { if (!st.x || now - st.x > 165) { st.x = now; vaiVerso(r ? 'right' : 'left'); } } else st.x = 0;
       if (d || u) { if (!st.y || now - st.y > 165) { st.y = now; vaiVerso(d ? 'down' : 'up'); } } else st.y = 0;
-      var pA = bt[0] && bt[0].pressed, pB = bt[1] && bt[1].pressed, pX = bt[2] && bt[2].pressed, pY = bt[3] && bt[3].pressed;
-      var pLB = bt[4] && bt[4].pressed, pRB = bt[5] && bt[5].pressed, pMenu = (bt[9] && bt[9].pressed);
+      var pA = std && bt[0] && bt[0].pressed, pB = std && bt[1] && bt[1].pressed;
+      var pX = std && bt[2] && bt[2].pressed, pY = std && bt[3] && bt[3].pressed;
+      var pLB = std && bt[4] && bt[4].pressed, pRB = std && bt[5] && bt[5].pressed;
+      var pMenu = std && bt[9] && bt[9].pressed;
       if (pA && !st.a) { st.a = true; azionaA(); } if (!pA) st.a = false;
       if (pB && !st.b) { st.b = true; azionaB(); } if (!pB) st.b = false;
       if (pX && !st.x2) { st.x2 = true; if (osk && !osk.hidden) { cancella(); suono(330, 0.05, 0.035); } } if (!pX) st.x2 = false;
@@ -358,8 +369,10 @@
       if (pLB && !st.lb) { st.lb = true; sezione(-1); } if (!pLB) st.lb = false;
       if (pRB && !st.rb) { st.rb = true; sezione(1); } if (!pRB) st.rb = false;
       if (pMenu && !st.menu) { st.menu = true; try { window.SB_PLANCIA && window.SB_PLANCIA.apri(); } catch (e) {} } if (!pMenu) st.menu = false;
-      var ry = ax[3] || 0;
-      if (Math.abs(ry) > 0.3) window.scrollBy(0, ry * 16);
+      if (std) {
+        var ry = zonaMorta(ax[3] || 0, 0.35);
+        if (ry) { try { window.scrollBy({ top: ry * 1100 * Math.min(0.05, dtPad), behavior: 'instant' }); } catch (er) { window.scrollBy(0, ry * 1100 * Math.min(0.05, dtPad)); } }
+      }
     }
     seguiAnello();
     rafPad = requestAnimationFrame(pad);
