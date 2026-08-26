@@ -20,9 +20,17 @@
       if (el.disabled || el.hidden) return false;
       if (el.closest('[hidden]')) return false;
       var r = el.getBoundingClientRect();
-      if (r.width < 4 || r.height < 4) return false;
+      if (r.width < 6 || r.height < 6) return false;
+      var vw = window.innerWidth || 0, vh = window.innerHeight || 0;
+      if (r.right <= 0 || r.bottom <= 0 || r.left >= vw || r.top >= vh) return false;
       var st = getComputedStyle(el);
       if (st.visibility === 'hidden' || st.display === 'none' || +st.opacity < 0.05) return false;
+      if (!el.offsetParent && st.position !== 'fixed') return false;
+      var cx = Math.min(vw - 1, Math.max(1, r.left + r.width / 2));
+      var cy = Math.min(vh - 1, Math.max(1, r.top + r.height / 2));
+      var sopra = document.elementFromPoint(cx, cy);
+      if (!sopra) return false;
+      if (sopra !== el && !el.contains(sopra) && !sopra.contains(el)) return false;
       return true;
     } catch (e) { return false; }
   }
@@ -95,6 +103,16 @@
   function creaAnello() {
     anello = document.createElement('div'); anello.id = 'pil-anello'; anello.setAttribute('aria-hidden', 'true');
     document.body.appendChild(anello);
+  }
+  var ultimoRect = '';
+  function seguiAnello() {
+    if (!attivo || !anello) return;
+    if (!corrente || !corrente.isConnected) { if (anello.classList.contains('vivo')) anello.classList.remove('vivo'); return; }
+    try {
+      var r = corrente.getBoundingClientRect();
+      var firma = (r.left | 0) + ',' + (r.top | 0) + ',' + (r.width | 0) + ',' + (r.height | 0);
+      if (firma !== ultimoRect) { ultimoRect = firma; aggiornaAnello(); }
+    } catch (e) { /* niente */ }
   }
   function aggiornaAnello() {
     if (!anello) return;
@@ -326,6 +344,7 @@
       var ry = ax[3] || 0;
       if (Math.abs(ry) > 0.3) window.scrollBy(0, ry * 16);
     }
+    seguiAnello();
     rafPad = requestAnimationFrame(pad);
   }
   function avviaPad() { if (!rafPad) rafPad = requestAnimationFrame(pad); }
