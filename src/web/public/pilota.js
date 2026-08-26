@@ -381,6 +381,16 @@
   }, true);
   window.addEventListener('gamepaddisconnected', function () { spegniPad(); });
 
+  (function tracciaModalita() {
+    function punta(v) { try { document.body.classList.toggle('puntatore', !!v); } catch (e) {} }
+    document.addEventListener('pointerdown', function () { punta(true); }, true);
+    document.addEventListener('keydown', function (e) {
+      var k = e.key;
+      if (k === 'Tab' || k === 'ArrowUp' || k === 'ArrowDown' || k === 'ArrowLeft' || k === 'ArrowRight' ||
+          k === 'Enter' || k === ' ' || k === 'Escape') punta(false);
+    }, true);
+  })();
+
   window.SB_PILOTA = {
     attiva: attiva, disattiva: disattiva,
     stato: function () { return attivo; },
