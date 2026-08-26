@@ -82,7 +82,15 @@
         ring.style.width = ring.style.height = ring.style.borderRadius = '';
         dot.style.opacity = '';
       }
+      function mostraCursore(v) { try { document.body.classList.toggle('senza-cursore', !v); } catch (e) {} }
+      window.SB_CURSORE_VIS = mostraCursore;
+      document.addEventListener('keydown', function (ev) {
+        var k = ev.key;
+        if (k === 'Tab' || k === 'ArrowUp' || k === 'ArrowDown' || k === 'ArrowLeft' || k === 'ArrowRight' ||
+            k === 'Enter' || k === ' ' || k === 'Escape') mostraCursore(false);
+      }, true);
       function muovi(e) {
+        mostraCursore(true);
         tx = e.clientX; ty = e.clientY;
         dot.style.transform = 'translate(' + (tx - 2) + 'px,' + (ty - 2) + 'px)';
         bar.style.transform = 'translate(' + tx + 'px,' + ty + 'px)';

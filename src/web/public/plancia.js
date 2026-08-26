@@ -91,24 +91,25 @@
       muovi(d > 0 ? 1 : -1);
     }, { passive: false });
 
-    var giu = false, x0 = 0, base = 0, mosso = 0;
+    var giu = false, x0 = 0, base = 0, catturato = false;
     pista.addEventListener('pointerdown', function (e) {
       if (!aperto) return;
-      giu = true; trascinato = false; x0 = e.clientX; base = focus; mosso = 0;
-      try { pista.setPointerCapture(e.pointerId); } catch (er) {}
+      giu = true; trascinato = false; catturato = false; x0 = e.clientX; base = focus;
     });
     pista.addEventListener('pointermove', function (e) {
       if (!giu || !aperto) return;
       var dx = e.clientX - x0;
-      if (Math.abs(dx) > 8) trascinato = true;
+      if (Math.abs(dx) <= 10) return;
+      if (!catturato) { catturato = true; trascinato = true; try { pista.setPointerCapture(e.pointerId); } catch (er) {} }
       var passo = Math.round(-dx / 86);
       var n = Math.max(0, Math.min(voci.length - 1, base + passo));
-      if (n !== focus) { var dir = n > focus ? 1 : -1; focus = n; mosso++; aggiorna(dir); }
+      if (n !== focus) { var dir = n > focus ? 1 : -1; focus = n; aggiorna(dir); }
     });
     function su(e) {
       if (!giu) return;
       giu = false;
-      try { pista.releasePointerCapture(e.pointerId); } catch (er) {}
+      if (catturato) { try { pista.releasePointerCapture(e.pointerId); } catch (er) {} }
+      catturato = false;
       setTimeout(function () { trascinato = false; }, 40);
     }
     pista.addEventListener('pointerup', su);
@@ -184,8 +185,7 @@
       '<div class="pl-eroe-grp">' + esc(v.gruppo) + '</div>' +
       '<h2 class="pl-eroe-nome">' + esc(v.nome) + '</h2>' +
       '<p class="pl-eroe-desc">' + esc(v.desc) + '</p>' +
-      '<div class="pl-eroe-hint">' + esc(L('Invio o A per aprire', 'Enter or A to open', 'Intro o A para abrir')) +
-        (v.bloccata ? ' · ' + esc(L('bloccata dal tuo piano', 'locked by your plan', 'bloqueada por tu plan')) : '') + '</div>';
+      (v.bloccata ? '<div class="pl-eroe-hint">' + esc(L('bloccata dal tuo piano', 'locked by your plan', 'bloqueada por tu plan')) + '</div>' : '');
     animaEroe(dir || 0);
     rail.querySelectorAll('.pl-tile').forEach(function (t) { t.classList.toggle('fuoco', +t.dataset.i === focus); });
     var atmo = overlay.querySelector('.pl-atmo');
@@ -254,6 +254,7 @@
   }
 
   function tasti(e) {
+    try { if (window.SB_CURSORE_VIS) window.SB_CURSORE_VIS(false); } catch (er) {}
     if (e.key === 'Escape') { e.preventDefault(); chiudi(); }
     else if (e.key === 'ArrowRight') { e.preventDefault(); muovi(1); }
     else if (e.key === 'ArrowLeft') { e.preventDefault(); muovi(-1); }
@@ -275,6 +276,7 @@
       var dx = ax[0] || 0, dy = ax[1] || 0;
       var dr = dx > 0.55 || (bt[15] && bt[15].pressed), dl = dx < -0.55 || (bt[14] && bt[14].pressed);
       var dd = dy > 0.55 || (bt[13] && bt[13].pressed), du = dy < -0.55 || (bt[12] && bt[12].pressed);
+      if (dr || dl || dd || du) { try { if (window.SB_CURSORE_VIS) window.SB_CURSORE_VIS(false); } catch (er) {} }
       if (dr || dl) { if (!padStato.x || now - padStato.x > 130) { padStato.x = now; if (aperto) muovi(dr ? 1 : -1); } } else padStato.x = 0;
       if (dd || du) { if (!padStato.y || now - padStato.y > 220) { padStato.y = now; if (aperto) saltaGruppo(dd ? 1 : -1); } } else padStato.y = 0;
       var aBtn = bt[0] && bt[0].pressed, bBtn = bt[1] && bt[1].pressed;
