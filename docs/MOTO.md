@@ -66,11 +66,30 @@ Sweep del puntatore avanti e indietro su cinque bottoni in fila, tre volte:
 | `getBoundingClientRect` per 40 eventi | 120 | **40** |
 | giri di rAF in 1 s da fermo | ~2600 | **0** |
 
-## Il campo ambientale
+## Il campo ambientale — e la trappola delle variabili CSS
 
-`#anime-sfondo` ha due aloni: uno respira su un `@keyframes` lento, l'altro segue il puntatore
-tramite `--pnt-x` / `--pnt-y`, scritte dallo stesso giro con una molla molto lenta (2.7 s). Prima
-che il puntatore si sia mosso il campo resta a zero: nessuno scivolamento all'apertura.
+`#anime-sfondo` ha due aloni: uno respira su un `@keyframes` lento, l'altro (`#an-campo`) segue il
+puntatore, mosso dallo stesso giro con una molla molto lenta (2.7 s). Prima che il puntatore si sia
+mosso il campo resta a zero: nessuno scivolamento all'apertura.
+
+**Mai scrivere una variabile CSS su `:root` a ogni fotogramma.** La prima versione lo faceva
+(`--pnt-x` / `--pnt-y`) e il cursore arrancava. Una custom property sulla radice invalida lo stile
+di **tutto** il documento: il costo cresce col numero di nodi, e non c'entra nulla con quanto è
+piccolo l'elemento che volevi muovere.
+
+Misurato sulla pagina vera (155 nodi soltanto — il cruscotto autenticato ne ha molti di più):
+
+| scrittura, per fotogramma | costo |
+| --- | --- |
+| `--pnt-x` + `--pnt-y` su `:root` | **4.38 ms** |
+| `transform` su una foglia | 0.033 ms |
+| `transform` sul campo sfocato (promosso a layer) | 0.007 ms |
+| `width` + `height` sull'anello (`contain: layout style size`) | 0.067 ms |
+| `getBoundingClientRect()` | ~0 ms |
+
+Il giro completo del motore è passato da **2.01 ms a 0.127 ms per fotogramma (−94%)** spostando il
+campo da una variabile sulla radice a un `transform` diretto su un elemento suo. Un frame a 60 Hz
+dura 16.7 ms: la vecchia versione ne bruciava un quarto per muovere un alone sfocato.
 
 ## Stati vivi
 
