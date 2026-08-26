@@ -29,6 +29,68 @@
     if (!(a > soglia)) return 0;
     return (v < 0 ? -1 : 1) * (a - soglia) / (1 - soglia);
   }
+
+  var pX = -1, pY = -1, sopra = null, modoPuntatore = false, idPunt = 0;
+  function centraPuntatore() {
+    if (pX >= 0) return;
+    pX = (window.innerWidth || 800) / 2;
+    pY = (window.innerHeight || 600) / 2;
+  }
+  function elementoSotto(x, y) {
+    try {
+      var e = document.elementFromPoint(x, y);
+      if (!e) return null;
+      var t = e.closest ? e.closest(SEL) : null;
+      return t && visibile(t) ? t : null;
+    } catch (err) { return null; }
+  }
+  function mandaPuntatore(tipo, x, y, bersaglio, extra) {
+    var el = bersaglio || document.elementFromPoint(x, y) || document.body;
+    var o = {
+      bubbles: true, cancelable: true, composed: true, view: window,
+      clientX: x, clientY: y, screenX: x, screenY: y,
+      pointerId: 3, pointerType: 'mouse', isPrimary: true, button: 0, buttons: extra && extra.buttons || 0,
+    };
+    try { el.dispatchEvent(new PointerEvent(tipo, o)); } catch (e) {
+      try { el.dispatchEvent(new MouseEvent(tipo.replace('pointer', 'mouse'), o)); } catch (e2) {  }
+    }
+    return el;
+  }
+  function muoviPuntatore(dx, dy) {
+    centraPuntatore();
+    var vw = window.innerWidth || 800, vh = window.innerHeight || 600;
+    pX = Math.max(2, Math.min(vw - 2, pX + dx));
+    pY = Math.max(2, Math.min(vh - 2, pY + dy));
+    modoPuntatore = true;
+    navIndiretta(false);
+    try { if (window.SB_CURSORE_VIS) window.SB_CURSORE_VIS(true); } catch (e) {  }
+
+    var sotto2 = elementoSotto(pX, pY);
+    var grezzo = document.elementFromPoint(pX, pY) || document.body;
+    if (sotto2 !== sopra) {
+      if (sopra) { mandaPuntatore('pointerout', pX, pY, sopra); mandaPuntatore('pointerleave', pX, pY, sopra); }
+      sopra = sotto2;
+      if (sopra) { mandaPuntatore('pointerover', pX, pY, sopra); mandaPuntatore('pointerenter', pX, pY, sopra); }
+      corrente = sopra || corrente;
+      aggiornaLegenda();
+    }
+    mandaPuntatore('pointermove', pX, pY, grezzo);
+    try {
+      if (sopra && window.SB_CURSORE) window.SB_CURSORE.versoElemento(sopra);
+      else if (window.SB_CURSORE) window.SB_CURSORE.libera();
+    } catch (e) {  }
+  }
+  function clicPuntatore() {
+    centraPuntatore();
+    var el = document.elementFromPoint(pX, pY);
+    if (!el) return false;
+    var t = (el.closest && el.closest(SEL)) || el;
+    mandaPuntatore('pointerdown', pX, pY, el, { buttons: 1 });
+    mandaPuntatore('pointerup', pX, pY, el);
+    try { t.focus && t.focus({ preventScroll: true }); } catch (e) {  }
+    try { t.click ? t.click() : mandaPuntatore('click', pX, pY, el); } catch (e) {  }
+    return true;
+  }
   function spegniPad() {
     padVivo = false;
     try { document.body.classList.remove('pad-vivo'); } catch (e) {}
@@ -160,9 +222,12 @@
           tastoHtml('X', L('cancella', 'delete', 'borrar'), 'x') + tastoHtml('Y', L('spazio', 'space', 'espacio'), 'y');
     } else {
       var suTesto = corrente && corrente.matches && corrente.matches(SEL_TESTO);
-      h = tastoHtml('A', suTesto ? L('scrivi', 'type', 'escribir') : L('seleziona', 'select', 'seleccionar'), 'a') +
+      h = '<span class="pil-t"><b class="pil-b">L</b>' + esc(L('punta', 'point', 'apunta')) + '</span>' +
+          tastoHtml('A', suTesto ? L('scrivi', 'type', 'escribir') : (modoPuntatore ? L('clicca', 'click', 'clica') : L('seleziona', 'select', 'seleccionar')), 'a') +
           tastoHtml('B', L('indietro', 'back', 'atrás'), 'b') +
           tastoHtml('Y', L('cerca', 'search', 'buscar'), 'y') +
+          '<span class="pil-t"><b class="pil-b">✛</b>' + esc(L('salta', 'jump', 'salta')) + '</span>' +
+          '<span class="pil-t"><b class="pil-b">R</b>' + esc(L('scorri', 'scroll', 'desplaza')) + '</span>' +
           '<span class="pil-t"><b class="pil-b">LB/RB</b>' + esc(L('sezione', 'section', 'sección')) + '</span>' +
           '<span class="pil-t"><b class="pil-b">☰</b>' + esc(L('Plancia', 'Deck', 'Consola')) + '</span>';
     }
@@ -352,17 +417,25 @@
     if (gp && !plAperta) {
       var ax = gp.axes || [], bt = gp.buttons || [], now = Date.now();
       var std = gp.mapping === 'standard';
-      var dx = zonaMorta(ax[0] || 0, 0.35), dy = zonaMorta(ax[1] || 0, 0.35);
-      var r = dx > 0.45 || (std && bt[15] && bt[15].pressed), l = dx < -0.45 || (std && bt[14] && bt[14].pressed);
-      var d = dy > 0.45 || (std && bt[13] && bt[13].pressed), u = dy < -0.45 || (std && bt[12] && bt[12].pressed);
-      if (r || l || d || u || (bt[0] && bt[0].pressed) || (bt[1] && bt[1].pressed)) segnaPad();
-      if (r || l) { if (!st.x || now - st.x > 165) { st.x = now; vaiVerso(r ? 'right' : 'left'); } } else st.x = 0;
-      if (d || u) { if (!st.y || now - st.y > 165) { st.y = now; vaiVerso(d ? 'down' : 'up'); } } else st.y = 0;
+      var lx = zonaMorta(ax[0] || 0, 0.18), ly = zonaMorta(ax[1] || 0, 0.18);
+      var r = std && bt[15] && bt[15].pressed, l = std && bt[14] && bt[14].pressed;
+      var d = std && bt[13] && bt[13].pressed, u = std && bt[12] && bt[12].pressed;
+      if (r || l || d || u || lx || ly || (std && bt[0] && bt[0].pressed) || (std && bt[1] && bt[1].pressed)) segnaPad();
+
+      if (lx || ly) {
+        var forza = Math.min(1, Math.sqrt(lx * lx + ly * ly));
+        var vel = Math.max(window.innerWidth || 800, window.innerHeight || 600) * 1.15 * forza * forza * dtPad;
+        var norma = forza ? forza : 1;
+        muoviPuntatore((lx / norma) * vel, (ly / norma) * vel);
+      }
+
+      if (r || l) { if (!st.x || now - st.x > 165) { st.x = now; modoPuntatore = false; navIndiretta(true); vaiVerso(r ? 'right' : 'left'); } } else st.x = 0;
+      if (d || u) { if (!st.y || now - st.y > 165) { st.y = now; modoPuntatore = false; navIndiretta(true); vaiVerso(d ? 'down' : 'up'); } } else st.y = 0;
       var pA = std && bt[0] && bt[0].pressed, pB = std && bt[1] && bt[1].pressed;
       var pX = std && bt[2] && bt[2].pressed, pY = std && bt[3] && bt[3].pressed;
       var pLB = std && bt[4] && bt[4].pressed, pRB = std && bt[5] && bt[5].pressed;
       var pMenu = std && bt[9] && bt[9].pressed;
-      if (pA && !st.a) { st.a = true; azionaA(); } if (!pA) st.a = false;
+      if (pA && !st.a) { st.a = true; if (modoPuntatore) clicPuntatore(); else azionaA(); } if (!pA) st.a = false;
       if (pB && !st.b) { st.b = true; azionaB(); } if (!pB) st.b = false;
       if (pX && !st.x2) { st.x2 = true; if (osk && !osk.hidden) { cancella(); suono(330, 0.05, 0.035); } } if (!pX) st.x2 = false;
       if (pY && !st.y2) { st.y2 = true; if (osk && !osk.hidden) { scrivi(' '); } else azionaY(); } if (!pY) st.y2 = false;
