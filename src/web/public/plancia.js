@@ -262,7 +262,6 @@
   }
 
   function tasti(e) {
-    try { if (window.SB_CURSORE_VIS) window.SB_CURSORE_VIS(false); } catch (er) {}
     if (e.key === 'Escape') { e.preventDefault(); chiudi(); }
     else if (e.key === 'ArrowRight') { e.preventDefault(); muovi(1); }
     else if (e.key === 'ArrowLeft') { e.preventDefault(); muovi(-1); }
@@ -295,7 +294,6 @@
       var dd = dy > 0.45 || (std && bt[13] && bt[13].pressed), du = dy < -0.45 || (std && bt[12] && bt[12].pressed);
       var aBtn = std && bt[0] && bt[0].pressed, bBtn = std && bt[1] && bt[1].pressed;
       if (aperto) {
-        if (dr || dl || dd || du) { try { if (window.SB_CURSORE_VIS) window.SB_CURSORE_VIS(false); } catch (er) {} }
         if (dr || dl) { if (!padStato.x || now - padStato.x > 130) { padStato.x = now; muovi(dr ? 1 : -1); } } else padStato.x = 0;
         if (dd || du) { if (!padStato.y || now - padStato.y > 220) { padStato.y = now; saltaGruppo(dd ? 1 : -1); } } else padStato.y = 0;
         if (aBtn && !padStato.a) { padStato.a = true; apriVoce(voci[focus]); }

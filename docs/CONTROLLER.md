@@ -76,6 +76,51 @@ cose: la velocita e legata al **tempo** e non ai fotogrammi (su uno schermo a
 `html { scroll-behavior: smooth }` ogni micro-scorrimento veniva animato e il
 movimento risultava molle.
 
+## Il puntatore: la levetta guida il cursore
+
+Navigare saltando da un elemento all'altro va bene per una lista, ma su una
+pagina vera e scomodo: se il salto non trova quello che vuoi, sei bloccato.
+
+La mossa giusta non e costruire un secondo sistema accanto al cursore: il
+cursore **e gia guidato da `pointermove`**. Quindi il pad diventa una **sorgente
+di puntatore**, e tutto cio che gia reagisce al mouse — l'anello che si deforma
+sugli elementi, il campo magnetico dello sfondo, gli stati degli elementi —
+reagisce a lui senza sapere che c'e un controller.
+
+`muoviPuntatore()` tiene una posizione `pX,pY`, la limita alla finestra e
+manda i veri eventi `pointerover` / `pointerenter` / `pointermove` /
+`pointerout` / `pointerleave` sull'elemento sotto. Se sotto c'e qualcosa di
+interattivo, chiede all'anello di posarcisi sopra (`versoElemento`); se no lo
+lascia libero. A preme: `pointerdown`, `pointerup`, `focus`, `click` nel punto.
+
+**La velocita e al quadrato della pendenza** (`forza * forza`): vicino al centro
+si muove piano e si prende la mira, a fondo corsa vola. Il fondo scala e legato
+al lato piu lungo della finestra (`×1,15` al secondo) cosi il tocco e lo stesso
+su qualunque schermo, ed e legato al **tempo**, non ai fotogrammi.
+
+I comandi restano completi:
+
+| | |
+| --- | --- |
+| levetta sinistra | muove il **puntatore** |
+| tasti direzionali | **saltano** da un elemento all'altro (utile nei moduli) |
+| A | clicca dov'e il puntatore, o attiva l'elemento a fuoco |
+| levetta destra | scorre |
+| LB / RB | sezione precedente / successiva |
+| Menu | apre la Plancia |
+
+## Un difetto trovato mentre lo si costruiva
+
+L'anello restava invisibile anche dopo le correzioni. Con una sonda su
+`SB_CURSORE_VIS` si e visto il perche: `plancia.js` chiamava `(false)` **a ogni
+fotogramma** e `pilota.js` `(true)` a ogni fotogramma. Si contendevano lo stesso
+interruttore sessanta volte al secondo.
+
+Quella chiamata era anche **inutile**: la classe `plancia-on` gia nasconde
+l'anello via CSS. Tolta: la regola dichiarativa decide, nessuno la contraddice
+a mano. Verificato — opacita **1** mentre si muove la levetta e anche tre
+secondi dopo averla mollata.
+
 ## Collaudo
 
 `scratchpad/t_pad3.mjs`, con gamepad finto:
@@ -84,4 +129,12 @@ movimento risultava molle.
 2. premendo A la Plancia **non** si apre (un gestore solo);
 3. levetta ferma a 0,30: la pagina si muove di **0 px**;
 4. pad non standard con assi a −1: **0 px** e nessuna finestra che si apre;
-5. la levetta muove ancora il fuoco (non ho rotto la navigazione).
+5. i tasti direzionali muovono ancora il fuoco (non ho rotto la navigazione).
+
+`scratchpad/t_punt.mjs`, sul puntatore:
+
+1. la levetta genera veri `pointermove` e il puntatore si sposta;
+2. si ferma ai bordi della finestra, non esce;
+3. portandolo sul bersaglio, `elementFromPoint` **e** il bersaglio, l'anello e
+   li sopra con opacita 1, e premendo A il bersaglio riceve il clic;
+4. i tasti direzionali muovono ancora il fuoco.
