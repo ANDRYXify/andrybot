@@ -384,6 +384,10 @@ body.meno-moto .pl-rail, body.meno-moto .pl-tile { transition: none; }
   body.pad-vivo #plancia-overlay { padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px)); }
 }
 
+body.puntatore :focus:not(input):not(textarea):not(select),
+body.puntatore :focus-visible:not(input):not(textarea):not(select) {
+  outline: none !important;
+}
 body.nav-indiretta :focus,
 body.nav-indiretta :focus-visible {
   outline: 2px solid var(--acc);
