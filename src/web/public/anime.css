@@ -1193,3 +1193,20 @@ body.leggero .vivo::after, body.meno-moto .vivo::after { animation: none; opacit
   .sv-tasti { flex: 1 1 auto; }
   .sv-tasti .btn { flex: 1 1 auto; justify-content: center; }
 }
+
+.tg-community {
+  display: flex; align-items: flex-start; gap: .7rem; cursor: pointer;
+  margin: .5rem 0 .2rem; padding: .75rem .85rem; border-radius: var(--r-m);
+  border: 1px solid var(--border); background: var(--surface-2);
+  transition: border-color .2s ease, background .2s ease;
+}
+.tg-community:hover { border-color: var(--border-2); }
+.tg-community:has(input:checked) { border-color: var(--acc-bordo); background: var(--acc-soft); }
+.tg-community input { accent-color: var(--acc); margin-top: .18rem; flex: 0 0 auto; }
+.tg-community-corpo { display: grid; gap: .18rem; }
+.tg-community-corpo strong { font-size: .9rem; font-weight: 600; }
+.tg-community-corpo > span { font-size: .8rem; line-height: 1.5; color: var(--testo-3); }
+.tg-amico.auto {
+  padding-left: .5rem; color: var(--acc); border-color: var(--acc-bordo); background: var(--acc-soft);
+  gap: .35rem; cursor: default;
+}
