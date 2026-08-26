@@ -256,6 +256,7 @@
     if (!overlay) return;
     overlay.hidden = true; aperto = false;
     document.body.classList.remove('plancia-on');
+    try { if (window.SB_CURSORE_VIS) window.SB_CURSORE_VIS(true); } catch (e) {}
     document.removeEventListener('keydown', tasti, true);
     try { window.SB_PILOTA && window.SB_PILOTA.aggiorna(); } catch (e) {}
   }
@@ -273,6 +274,14 @@
   }
 
   var padStato = { x: 0, y: 0, a: false, b: false };
+  function zonaMorta(v, soglia) {
+    var a = Math.abs(v);
+    if (!(a > soglia)) return 0;
+    return (v < 0 ? -1 : 1) * (a - soglia) / (1 - soglia);
+  }
+  function pilotaVivo() {
+    try { return !!(window.SB_PILOTA && window.SB_PILOTA.stato && window.SB_PILOTA.stato()); } catch (e) { return false; }
+  }
   function pad() {
     var gps = [];
     try { gps = navigator.getGamepads ? navigator.getGamepads() : []; } catch (e) { gps = []; }
@@ -280,16 +289,22 @@
     for (var i = 0; i < gps.length; i++) { if (gps[i]) { gp = gps[i]; any = true; break; } }
     if (gp) {
       var ax = gp.axes || [], bt = gp.buttons || [], now = Date.now();
-      var dx = ax[0] || 0, dy = ax[1] || 0;
-      var dr = dx > 0.55 || (bt[15] && bt[15].pressed), dl = dx < -0.55 || (bt[14] && bt[14].pressed);
-      var dd = dy > 0.55 || (bt[13] && bt[13].pressed), du = dy < -0.55 || (bt[12] && bt[12].pressed);
-      if (dr || dl || dd || du) { try { if (window.SB_CURSORE_VIS) window.SB_CURSORE_VIS(false); } catch (er) {} }
-      if (dr || dl) { if (!padStato.x || now - padStato.x > 130) { padStato.x = now; if (aperto) muovi(dr ? 1 : -1); } } else padStato.x = 0;
-      if (dd || du) { if (!padStato.y || now - padStato.y > 220) { padStato.y = now; if (aperto) saltaGruppo(dd ? 1 : -1); } } else padStato.y = 0;
-      var aBtn = bt[0] && bt[0].pressed, bBtn = bt[1] && bt[1].pressed;
-      if (aBtn && !padStato.a) { padStato.a = true; if (aperto) apriVoce(voci[focus]); else { if (!modoOn()) setModo(true); apri(); } }
+      var std = gp.mapping === 'standard';
+      var dx = zonaMorta(ax[0] || 0, 0.35), dy = zonaMorta(ax[1] || 0, 0.35);
+      var dr = dx > 0.45 || (std && bt[15] && bt[15].pressed), dl = dx < -0.45 || (std && bt[14] && bt[14].pressed);
+      var dd = dy > 0.45 || (std && bt[13] && bt[13].pressed), du = dy < -0.45 || (std && bt[12] && bt[12].pressed);
+      var aBtn = std && bt[0] && bt[0].pressed, bBtn = std && bt[1] && bt[1].pressed;
+      if (aperto) {
+        if (dr || dl || dd || du) { try { if (window.SB_CURSORE_VIS) window.SB_CURSORE_VIS(false); } catch (er) {} }
+        if (dr || dl) { if (!padStato.x || now - padStato.x > 130) { padStato.x = now; muovi(dr ? 1 : -1); } } else padStato.x = 0;
+        if (dd || du) { if (!padStato.y || now - padStato.y > 220) { padStato.y = now; saltaGruppo(dd ? 1 : -1); } } else padStato.y = 0;
+        if (aBtn && !padStato.a) { padStato.a = true; apriVoce(voci[focus]); }
+        if (bBtn && !padStato.b) { padStato.b = true; chiudi(); }
+      } else {
+        padStato.x = 0; padStato.y = 0;
+        if (aBtn && !padStato.a && !pilotaVivo()) { padStato.a = true; if (!modoOn()) setModo(true); apri(); }
+      }
       if (!aBtn) padStato.a = false;
-      if (bBtn && !padStato.b) { padStato.b = true; if (aperto) chiudi(); }
       if (!bBtn) padStato.b = false;
     }
     if (any || aperto) rafPad = requestAnimationFrame(pad);
