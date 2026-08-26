@@ -89,9 +89,23 @@ reagisce a lui senza sapere che c'e un controller.
 
 `muoviPuntatore()` tiene una posizione `pX,pY`, la limita alla finestra e
 manda i veri eventi `pointerover` / `pointerenter` / `pointermove` /
-`pointerout` / `pointerleave` sull'elemento sotto. Se sotto c'e qualcosa di
-interattivo, chiede all'anello di posarcisi sopra (`versoElemento`); se no lo
-lascia libero. A preme: `pointerdown`, `pointerup`, `focus`, `click` nel punto.
+`pointerout` / `pointerleave` sull'elemento sotto. **E finisce li.** A preme:
+`pointerdown`, `pointerup`, `focus`, `click` nel punto.
+
+**Niente di piu, ed e il punto.** Alla prima stesura avevo aggiunto anche
+`versoElemento()` per far posare l'anello sull'elemento, e `libera()` quando
+sotto non c'era niente. Era sbagliato: il gestore `pointermove` di `cinema.js`
+fa **gia** tutto — mostra il cursore, aggiorna la posizione e decide il morph da
+`e.target.closest(SEL_MORPH)`. Le mie chiamate arrivavano dopo e glielo
+**cancellavano** (`libera()` azzera il bersaglio) o lo **ricentravano**
+(`versoElemento()` mette `centra = true`, che riporta il puntatore al centro
+dell'elemento e combatte il movimento libero). Da fuori si vedeva cosi: il
+cursore sparisce e non si deforma.
+
+La regola e una: **il pad e un mouse.** Manda gli eventi di un mouse e non tocca
+nient'altro. Tutto quello che il sito fa gia col mouse — il morph, il campo
+magnetico, la modalita testo, il cursore che ricompare — succede da se, senza
+sapere che c'e un controller.
 
 **La velocita e al quadrato della pendenza** (`forza * forza`): vicino al centro
 si muove piano e si prende la mira, a fondo corsa vola. Il fondo scala e legato
@@ -102,7 +116,7 @@ I comandi restano completi:
 
 | | |
 | --- | --- |
-| levetta sinistra | muove il **puntatore** |
+| levetta sinistra | muove il **puntatore** (anche con la Plancia aperta) |
 | tasti direzionali | **saltano** da un elemento all'altro (utile nei moduli) |
 | A | clicca dov'e il puntatore, o attiva l'elemento a fuoco |
 | levetta destra | scorre |
@@ -189,6 +203,20 @@ e cinque le condizioni:
 | nessun puntatore fine (solo pad) | **anello assente** | c'e, opacita 1, si deforma |
 | tutte e tre insieme | **anello assente** | c'e, opacita 1, si deforma |
 
+## Due difetti chiusi per strada
+
+**Il cursore spariva dentro la Plancia.** Avevo scritto io una regola
+`body.plancia-on { opacity: 0 }` per nasconderlo li dentro. Sbagliata per lo
+stesso motivo: un mouse dentro la Plancia si vede. Regola tolta, e la levetta
+adesso muove il puntatore **anche** con la console aperta. A clicca quello che
+c'e sotto; la Plancia si fa da parte (`SB_PILOTA.puntatore()`) invece di aprire
+la piastrella a fuoco.
+
+**`aperto` e `overlay.hidden` potevano divergere.** `apri()` usciva subito se il
+flag interno diceva «gia aperta», anche quando il pannello era nascosto nel DOM:
+da li in poi la Plancia non si riapriva piu. Ora `apri()` si ripara da solo
+guardando il DOM, che e l'unica verita.
+
 ## Collaudo
 
 `scratchpad/t_pad3.mjs`, con gamepad finto:
@@ -205,4 +233,6 @@ e cinque le condizioni:
 2. si ferma ai bordi della finestra, non esce;
 3. portandolo sul bersaglio, `elementFromPoint` **e** il bersaglio, l'anello e
    li sopra con opacita 1, e premendo A il bersaglio riceve il clic;
-4. i tasti direzionali muovono ancora il fuoco.
+4. i tasti direzionali muovono ancora il fuoco;
+5. con la **Plancia aperta** il puntatore continua a muoversi e l'anello resta
+   visibile.
