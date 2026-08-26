@@ -955,3 +955,69 @@ body.leggero .vivo::after, body.meno-moto .vivo::after { animation: none; opacit
 .ovl-elem.oe-spento .oe-ico { opacity: .45; }
 .ovl-elem.oe-spento .oe-nome { color: var(--testo-3); }
 .ovl-elem .oe-mod { margin-left: 8px; }
+
+.tg-elenco { display: grid; gap: 7px; margin: 8px 0 0; }
+.tg-dest {
+  border: 1px solid var(--border); border-radius: var(--r-m); background: var(--surface-2); overflow: hidden;
+}
+.tg-dest.spenta { opacity: .62; }
+.tg-dest > summary {
+  list-style: none; cursor: pointer; display: flex; align-items: center; gap: .7rem;
+  padding: .62rem .8rem; min-height: 44px;
+}
+.tg-dest > summary::-webkit-details-marker { display: none; }
+.tg-dest-ico {
+  flex: 0 0 auto; display: grid; place-items: center; width: 30px; height: 30px;
+  border-radius: 8px; color: var(--acc); background: var(--acc-tint); border: 1px solid var(--acc-bordo);
+}
+.tg-dest-corpo { min-width: 0; display: grid; }
+.tg-dest-corpo strong { font-size: .92rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tg-dest-corpo > span { font-size: .78rem; color: var(--testo-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tg-dest-stato { margin-left: auto; font-size: .72rem; color: var(--ambra); font-weight: 600; }
+.tg-topic {
+  display: inline-block; margin-left: .4rem; padding: .05rem .42rem; border-radius: 999px;
+  font-size: .7rem; font-weight: 600; color: var(--acc);
+  background: var(--acc-tint); border: 1px solid var(--acc-bordo);
+}
+.tg-dest-corpo-apri { padding: 0 .8rem .8rem; border-top: 1px solid var(--border); padding-top: .7rem; }
+.tg-spunte { display: flex; flex-wrap: wrap; gap: 6px; margin-top: .35rem; }
+.tg-spunta {
+  display: inline-flex; align-items: center; gap: .42rem; cursor: pointer;
+  padding: .3rem .6rem; border-radius: 999px; font-size: .8rem;
+  border: 1px solid var(--border-2); background: var(--surface);
+  transition: border-color .2s ease, background .2s ease, color .2s ease;
+}
+.tg-spunta:has(input:checked) { border-color: var(--acc-bordo); background: var(--acc-soft); color: var(--acc); font-weight: 600; }
+.tg-spunta input { accent-color: var(--acc); margin: 0; }
+
+.tg-trovate { display: grid; gap: 6px; margin-top: 8px; }
+.tg-trovata {
+  display: flex; align-items: center; gap: .7rem; text-align: left; cursor: pointer;
+  padding: .55rem .75rem; border-radius: var(--r-m); font: inherit; color: var(--testo);
+  border: 1px dashed var(--border-2); background: var(--surface);
+  transition: border-color .2s ease, background .2s ease;
+}
+.tg-trovata:hover { border-color: var(--acc); background: var(--acc-soft); }
+.tg-trovata strong { font-size: .9rem; font-weight: 600; }
+.tg-trovata .tenue { display: block; font-size: .74rem; color: var(--testo-3); }
+
+.tg-mappa { margin-top: 14px; padding: .8rem .9rem; border-radius: var(--r-m); background: var(--surface-2); border: 1px solid var(--border); }
+.tg-mappa ul { list-style: none; margin: .4rem 0 0; padding: 0; display: grid; gap: .34rem; }
+.tg-mappa li { display: flex; flex-wrap: wrap; gap: .5rem; font-size: .82rem; color: var(--testo-3); }
+.tg-mappa li b { color: var(--testo); font-weight: 600; margin-left: auto; text-align: right; }
+
+.tg-amici { display: flex; flex-wrap: wrap; gap: 6px; margin-top: .4rem; }
+.tg-amico {
+  display: inline-flex; align-items: center; gap: .3rem; padding: .28rem .3rem .28rem .7rem;
+  border-radius: 999px; font-size: .84rem; font-weight: 600;
+  border: 1px solid var(--border-2); background: var(--surface-2);
+}
+.tg-amico.spenta { opacity: .55; }
+.tg-amico button {
+  border: 0; background: none; cursor: pointer; color: var(--testo-3); font-size: 1rem; line-height: 1;
+  padding: 0 .3rem; border-radius: 50%;
+}
+.tg-amico button:hover { color: var(--rosso); }
+@media (max-width: 560px) {
+  .tg-mappa li b { margin-left: 0; text-align: left; flex: 1 1 100%; }
+}

@@ -298,6 +298,23 @@ function _demoGet(via) {
   const F = {
     '/api/me': statoDemo(),
     '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://socialbot.live/tiktok/callback' },
+    '/api/streamer/telegram/destinazioni': {
+      io: 'andryx_demo',
+      eventi: [
+        { k: 'live', it: 'Diretta su Twitch', en: 'Twitch live', es: 'Directo en Twitch' },
+        { k: 'tiktok', it: 'Diretta su TikTok', en: 'TikTok live', es: 'Directo en TikTok' },
+        { k: 'yt', it: 'Nuovo video su YouTube', en: 'New YouTube video', es: 'Nuevo vídeo en YouTube' },
+        { k: 'ig', it: 'Nuovo post su Instagram', en: 'New Instagram post', es: 'Nueva publicación en Instagram' },
+        { k: 'tt', it: 'Nuovo post su TikTok', en: 'New TikTok post', es: 'Nueva publicación en TikTok' },
+      ],
+      destinazioni: [
+        { id: 1, chatId: '-1001', titolo: 'Community di Andryx', tipo: 'supergroup', threadId: '12', threadNome: 'Live', eventi: ['live', 'tiktok'], streamer: [], pin: true, attivo: true },
+        { id: 2, chatId: '-1001', titolo: 'Community di Andryx', tipo: 'supergroup', threadId: '31', threadNome: 'instagram', eventi: ['ig'], streamer: [], pin: false, attivo: true },
+        { id: 3, chatId: '-1002', titolo: 'Canale annunci', tipo: 'channel', threadId: '', threadNome: '', eventi: ['live'], streamer: ['andryx_demo'], pin: false, attivo: true },
+        { id: 4, chatId: '-1003', titolo: 'Gruppo amici', tipo: 'group', threadId: '', threadNome: '', eventi: ['live'], streamer: ['lucaplays'], pin: false, attivo: false },
+      ],
+      amici: [{ id: 1, login: 'lucaplays', display: 'LucaPlays', messaggio: '', attivo: true }],
+    },
     '/api/streamer/overlays': { overlays: [
       { id: 'principale', nome: 'Overlay principale', mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true },
         xy: { alert: { x: 50, y: 14 }, chat: { x: 16, y: 78 }, wf: { x: 86, y: 62 }, ws: { x: 86, y: 82 } },
@@ -961,6 +978,178 @@ function chiediTesto({ titolo = '', testo = '', valore = '', ok = 'OK' } = {}) {
       if (b) return via(b.dataset.mdl === 'ok' ? campo.value : null);
       if (ev.target === el) via(null);
     });
+  });
+}
+
+let _tgDati = null;
+
+const TG_ICO_TIPO = (t) => (t === 'channel'
+  ? '<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>'
+  : '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>');
+
+async function caricaTgDestinazioni() {
+  const box = document.getElementById('tg-destinazioni');
+  if (!box) return;
+  let d;
+  try { d = await api('/api/streamer/telegram/destinazioni'); } catch { box.innerHTML = ''; return; }
+  _tgDati = d;
+  const eventi = d.eventi || [];
+  const nomeEv = (k) => { const e = eventi.find((x) => x.k === k); return e ? L(e.it, e.en, e.es) : k; };
+  const amici = d.amici || [];
+  const persone = [{ login: d.io, display: L('Io', 'Me', 'Yo') }, ...amici.map((a) => ({ login: a.login, display: a.display || a.login }))];
+
+  const carta = (t) => {
+    const dove = esc(t.titolo || t.chatId) + (t.threadNome ? ' <span class="tg-topic">' + esc(t.threadNome) + '</span>' : '');
+    const evTxt = t.eventi.length ? t.eventi.map(nomeEv).join(' · ') : L('tutti gli eventi', 'all events', 'todos los eventos');
+    const chiTxt = t.streamer.length
+      ? t.streamer.map((l) => (persone.find((p) => p.login === l)?.display || l)).join(', ')
+      : L('tutti', 'everyone', 'todos');
+    return `<details class="tg-dest${t.attivo ? '' : ' spenta'}" data-dest="${t.id}">
+      <summary>
+        <span class="tg-dest-ico">${_bIco(TG_ICO_TIPO(t.tipo))}</span>
+        <span class="tg-dest-corpo"><strong>${dove}</strong><span>${esc(evTxt)} · ${esc(chiTxt)}</span></span>
+        <span class="tg-dest-stato">${t.attivo ? '' : L('spenta', 'off', 'apagada')}</span>
+      </summary>
+      <div class="tg-dest-corpo-apri">
+        <p class="campo">${L('Quali avvisi arrivano qui', 'Which alerts land here', 'Qué avisos llegan aquí')}</p>
+        <div class="tg-spunte">
+          ${eventi.map((e) => `<label class="tg-spunta"><input type="checkbox" data-ev="${e.k}"${t.eventi.length === 0 || t.eventi.includes(e.k) ? ' checked' : ''}><span>${esc(L(e.it, e.en, e.es))}</span></label>`).join('')}
+        </div>
+        <p class="campo spazio-sopra">${L('Di chi', 'Whose', 'De quién')}</p>
+        <div class="tg-spunte">
+          ${persone.map((pp) => `<label class="tg-spunta"><input type="checkbox" data-chi="${esc(pp.login)}"${t.streamer.length === 0 || t.streamer.includes(pp.login) ? ' checked' : ''}><span>${esc(pp.display)}</span></label>`).join('')}
+        </div>
+        <div class="riga-flessibile spazio-sopra">
+          <label class="tg-spunta"><input type="checkbox" data-pin${t.pin ? ' checked' : ''}><span>${L('Fissa l’avviso qui', 'Pin the alert here', 'Fija el aviso aquí')}</span></label>
+          <label class="tg-spunta"><input type="checkbox" data-attivo${t.attivo ? ' checked' : ''}><span>${L('Attiva', 'Active', 'Activa')}</span></label>
+          <button type="button" class="btn secondario mini" data-prova>${L('Prova', 'Test', 'Probar')}</button>
+          <button type="button" class="btn secondario mini" data-togli style="margin-left:auto;color:var(--rosso)">${L('Togli', 'Remove', 'Quitar')}</button>
+        </div>
+      </div>
+    </details>`;
+  };
+
+  const mappa = eventi.map((e) => {
+    const dove = (d.destinazioni || []).filter((t) => t.attivo
+      && (!t.eventi.length || t.eventi.includes(e.k)));
+    return `<li><span>${esc(L(e.it, e.en, e.es))}</span><b>${dove.length
+      ? dove.map((t) => esc(t.threadNome || t.titolo || t.chatId)).join(', ')
+      : L('da nessuna parte', 'nowhere', 'a ninguna parte')}</b></li>`;
+  }).join('');
+
+  box.innerHTML = `
+    <p class="campo">${L('Dove arrivano gli avvisi', 'Where the alerts land', 'Dónde llegan los avisos')}</p>
+    <div class="tg-elenco">${(d.destinazioni || []).map(carta).join('')
+      || `<p class="vuoto">${L('Nessuna destinazione: aggiungi il bot a un gruppo o a un canale, scrivi un messaggio lì dentro e premi il tasto qui sotto.', 'No destination yet: add the bot to a group or channel, write a message in there and press the button below.', 'Sin destinos: añade el bot a un grupo o canal, escribe un mensaje ahí y pulsa el botón de abajo.')}</p>`}</div>
+    <div class="riga-flessibile spazio-sopra">
+      <button type="button" class="btn secondario" id="tg-cerca-dest">${_bIco(ICO.piu)}${L('Aggiungi gruppo, canale o topic', 'Add group, channel or topic', 'Añadir grupo, canal o topic')}</button>
+    </div>
+    <div id="tg-trovate"></div>
+
+    ${(d.destinazioni || []).length ? `<div class="tg-mappa">
+      <p class="campo">${L('Dove finisce cosa', 'What goes where', 'Qué acaba dónde')}</p>
+      <ul>${mappa}</ul>
+    </div>` : ''}
+
+    <p class="campo spazio-sopra">${L('Altri streamer da annunciare', 'Other streamers to announce', 'Otros streamers a anunciar')}</p>
+    <p class="suggerimento">${L('Le loro dirette vengono annunciate insieme alle tue. Poi scegli qui sopra, per ogni destinazione, di chi vuoi gli avvisi.', 'Their lives are announced alongside yours. Then pick above, per destination, whose alerts you want.', 'Sus directos se anuncian junto a los tuyos. Luego eliges arriba, por destino, de quién quieres los avisos.')}</p>
+    <div class="tg-amici">
+      ${amici.map((a) => `<span class="tg-amico${a.attivo ? '' : ' spenta'}">${esc(a.display || a.login)}<button type="button" data-amico-togli="${a.id}" aria-label="${L('Togli', 'Remove', 'Quitar')}">×</button></span>`).join('')}
+    </div>
+    <div class="riga-flessibile spazio-sopra">
+      <input type="text" id="tg-amico-nome" class="campo-largo" placeholder="${L('nome canale Twitch (es. pincopallo)', 'Twitch channel name (e.g. pincopallo)', 'nombre del canal de Twitch')}" maxlength="25">
+      <button type="button" class="btn secondario" id="tg-amico-add">${L('Aggiungi', 'Add', 'Añadir')}</button>
+    </div>`;
+}
+
+function _tgLeggiDest(el) {
+  const spunte = (sel) => [...el.querySelectorAll(sel)].filter((i) => i.checked).map((i) => i.dataset.ev || i.dataset.chi);
+  const tuttiEv = [...el.querySelectorAll('[data-ev]')].length;
+  const tuttiChi = [...el.querySelectorAll('[data-chi]')].length;
+  const ev = spunte('[data-ev]'), chi = spunte('[data-chi]');
+  return {
+    eventi: ev.length === tuttiEv ? [] : ev,      // tutti spuntati = nessun filtro
+    streamer: chi.length === tuttiChi ? [] : chi,
+    pin: !!el.querySelector('[data-pin]')?.checked,
+    attivo: !!el.querySelector('[data-attivo]')?.checked,
+  };
+}
+
+function collegaTgDestinazioni() {
+  const box = document.getElementById('tg-destinazioni');
+  if (!box || box.dataset.collegato) return;
+  box.dataset.collegato = '1';
+
+  box.addEventListener('change', (e) => {
+    const d = e.target.closest('.tg-dest');
+    if (!d) return;
+    conErrore(async () => {
+      await api('/api/streamer/telegram/destinazioni/' + d.dataset.dest, { method: 'PATCH', body: _tgLeggiDest(d) });
+      await caricaTgDestinazioni();
+    });
+  });
+
+  box.addEventListener('click', (e) => {
+    const prova = e.target.closest('[data-prova]');
+    if (prova) {
+      const d = prova.closest('.tg-dest');
+      return conErrore(async () => {
+        await api('/api/streamer/telegram/destinazioni/' + d.dataset.dest + '/prova', { method: 'POST', body: {} });
+        toast(L('Anteprima mandata: guarda su Telegram.', 'Preview sent: check Telegram.', 'Vista previa enviada: mira en Telegram.'));
+      });
+    }
+    const togli = e.target.closest('[data-togli]');
+    if (togli) {
+      const d = togli.closest('.tg-dest');
+      if (!confirm(L('Togliere questa destinazione? Gli avvisi non arriveranno più lì.', 'Remove this destination? Alerts will stop landing there.', '¿Quitar este destino? Los avisos dejarán de llegar ahí.'))) return;
+      return conErrore(async () => {
+        await api('/api/streamer/telegram/destinazioni/' + d.dataset.dest, { method: 'DELETE' });
+        await caricaTgDestinazioni();
+      });
+    }
+    const ta = e.target.closest('[data-amico-togli]');
+    if (ta) {
+      return conErrore(async () => {
+        await api('/api/streamer/telegram/amici/' + ta.dataset.amicoTogli, { method: 'DELETE' });
+        await caricaTgDestinazioni();
+      });
+    }
+    if (e.target.closest('#tg-amico-add')) {
+      const inp = document.getElementById('tg-amico-nome');
+      const v = (inp?.value || '').trim();
+      if (!v) return;
+      return conErrore(async () => {
+        const r = await api('/api/streamer/telegram/amici', { method: 'POST', body: { login: v } });
+        inp.value = '';
+        toast(L(`«${r.display}» aggiunto: annuncerò anche le sue dirette.`, `«${r.display}» added: I'll announce their lives too.`, `«${r.display}» añadido: anunciaré también sus directos.`));
+        await caricaTgDestinazioni();
+      });
+    }
+    if (e.target.closest('#tg-cerca-dest')) {
+      const dove = document.getElementById('tg-trovate');
+      dove.innerHTML = `<p class="suggerimento">${L('guardo cosa ha visto il bot…', 'checking what the bot has seen…', 'miro qué ha visto el bot…')}</p>`;
+      return conErrore(async () => {
+        const r = await api('/api/streamer/telegram/destinazioni/rileva', { method: 'POST', body: {} });
+        const nuove = (r.trovate || []).filter((t) => !t.gia);
+        if (!nuove.length) {
+          dove.innerHTML = `<p class="suggerimento">${L('Niente di nuovo. Scrivi un messaggio nel gruppo, nel canale o <strong>dentro il topic</strong> che vuoi collegare, poi riprova.', 'Nothing new. Write a message in the group, channel or <strong>inside the topic</strong> you want to connect, then try again.', 'Nada nuevo. Escribe un mensaje en el grupo, canal o <strong>dentro del topic</strong> que quieras conectar, y reinténtalo.')}</p>`;
+          return;
+        }
+        dove.innerHTML = `<div class="tg-trovate">${nuove.map((t, i) => `
+          <button type="button" class="tg-trovata" data-nuova="${i}">
+            <span class="tg-dest-ico">${_bIco(TG_ICO_TIPO(t.tipo))}</span>
+            <span><strong>${esc(t.titolo)}</strong>${t.threadNome ? `<span class="tg-topic">${esc(t.threadNome)}</span>` : ''}
+            <span class="tenue">${t.tipo === 'channel' ? L('canale', 'channel', 'canal') : L('gruppo', 'group', 'grupo')}</span></span>
+          </button>`).join('')}</div>`;
+        dove.querySelectorAll('[data-nuova]').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
+          const t = nuove[Number(b.dataset.nuova)];
+          await api('/api/streamer/telegram/destinazioni', { method: 'POST', body: t });
+          dove.innerHTML = '';
+          toast(L('Destinazione collegata ✓', 'Destination connected ✓', 'Destino conectado ✓'));
+          await caricaTgDestinazioni();
+        })));
+      });
+    }
   });
 }
 
@@ -8530,6 +8719,8 @@ function pannelloNotifiche() {
           : L('Nessun gruppo ancora collegato.', 'No group connected yet.', 'Aún no hay grupo conectado.')}</span>
       </div>
 
+      <div id="tg-destinazioni" class="spazio-sopra"></div>
+
       <label class="campo spazio-sopra" for="txt-tg-messaggio">${L('Messaggio dell\'avviso', 'Alert message', 'Mensaje del aviso')}</label>
       <textarea id="txt-tg-messaggio" rows="5" placeholder="${esc(msgDefault)}">${esc(tg.messaggio || '')}</textarea>
       <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code> <code>{titolo}</code> <code>{gioco}</code>
@@ -10001,7 +10192,7 @@ function caricaDatiScheda(id) {
   if (id === 'moduli') { caricaModuli(); caricaContatori(); }
   if (id === 'memoria') caricaStatistiche();
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); }
-  if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaDiscord(); caricaTgLogin(); }
+  if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaDiscord(); caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); }
   if (id === 'pagina') caricaPaginaLink();
   if (id === 'grafiche') initGrafiche();
   if (id === 'regole') caricaStatoListaBot();

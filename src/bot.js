@@ -8,7 +8,7 @@
 // eventi Twitch. Tiene tutto sincronizzato con la dashboard.
 import { makeLog } from './logger.js';
 import { config } from './config.js';
-import { tokens, streamers, memory, tgConf, dcConf, compleanni, pointAlerts } from './db.js';
+import { tokens, streamers, memory, tgConf, tgDest, tgAmici, dcConf, compleanni, pointAlerts } from './db.js';
 import { ChatBot } from './twitch/chat.js';
 import { EventHub } from './twitch/events.js';
 import { Brain } from './ai/brain.js';
@@ -149,6 +149,9 @@ export class BotManager {
     avviaBackupAuto();
     // TikTok: rilevamento live best-effort (l'affidabile è il webhook)
     this._tiktokTimer = setInterval(() => this._controllaTikTok().catch(() => {}), 3 * 60_000);
+    // Dirette degli amici da annunciare su Telegram: non sono canali gestiti dal
+    // bot, quindi nessun evento arriva da solo — vanno guardati.
+    this._amiciTimer = setInterval(() => this._giroAmiciTelegram().catch(() => {}), 2 * 60_000);
     // Nuovi post: avvisa quando esce un nuovo video su YouTube (via RSS, ogni 10 min).
     this._ytId = new Map();     // login → id canale YouTube risolto (cache)
     this._postTimer = setInterval(() => this._controllaPost().catch(() => {}), 10 * 60_000);
@@ -189,6 +192,7 @@ export class BotManager {
     clearInterval(this._watchtimeTimer);
     stopBackupAuto();
     clearInterval(this._tiktokTimer);
+    clearInterval(this._amiciTimer);
     clearInterval(this._postTimer);
     clearInterval(this._annunciTimer);
     clearInterval(this._distillaTimer);
@@ -738,29 +742,62 @@ export class BotManager {
   async _notificaTelegram(login) {
     try {
       const conf = tgConf.get(login);
-      if (!conf?.attivo || !conf.token || !conf.chat_id) return;
+      if (!conf?.attivo || !conf.token) return;
       const info = await this.helix.getStream(login).catch(() => null);
       const streamId = String(info?.id || '');
       if (streamId && streamId === conf.ultima_live) return;   // già avvisato per questa diretta
       const s = streamers.get(login);
-      const r = await telegram.notificaLive(conf, { login, display: s?.display || login }, info);
-      if (r?.ok) {
-        if (streamId) tgConf.setUltimaLive(login, streamId);
-        log.info(`notifica Telegram inviata per #${login}`);
-        // Se richiesto, fissa l'avviso in cima al gruppo e ricorda il suo id
-        // così a live spenta possiamo eliminarlo. Il pin richiede che il bot
-        // sia admin: se non lo è fallisce in silenzio (l'avviso resta comunque).
-        const msgId = r.result?.message_id;
-        if (msgId) {
-          tgConf.setMsgId(login, msgId);
-          if (conf.pin_live) {
-            // silenzioso:false → il "fissato" avvisa TUTTI i membri del gruppo
-            const p = await telegram.fissaMessaggio(conf.token, conf.chat_id, msgId, { silenzioso: false });
-            if (!p.ok) log.warn(`pin Telegram #${login}: ${p.errore} (il bot è admin del gruppo con permesso di fissare?)`);
-          }
-        }
-      }
+      const r = await this._diffondiTelegram(login, conf, 'live', login,
+        telegram.costruisciMessaggioLive({ login, display: s?.display || login }, info, conf.messaggio),
+        { pin: true });
+      if (r.inviati && streamId) tgConf.setUltimaLive(login, streamId);
     } catch (e) { log.error(`notifica Telegram #${login}:`, e?.message || e); }
+  }
+
+  // Manda un avviso a TUTTE le destinazioni ammesse per quell'evento e quello
+  // streamer (gruppo, canale, topic). Ogni destinazione ricorda il proprio
+  // message_id, così a live finita si chiude quella giusta in ognuna.
+  async _diffondiTelegram(login, conf, evento, streamerLogin, testo, { pin = false } = {}) {
+    tgDest.migra(login, conf);                       // il vecchio gruppo unico diventa la prima destinazione
+    const dest = tgDest.perEvento(login, evento, streamerLogin);
+    if (!dest.length) return { inviati: 0 };
+    const esiti = await telegram.diffondi(conf.token, dest, testo, { anteprima: true });
+    let inviati = 0;
+    for (const e of esiti) {
+      if (!e.ok) continue;
+      inviati++;
+      const msgId = e.result?.message_id;
+      if (!msgId) continue;
+      if (pin) tgDest.setMsgId(e.dest.id, msgId);
+      if (pin && e.dest.pin) {
+        const p = await telegram.fissaMessaggio(conf.token, e.dest.chat_id, msgId, { silenzioso: false });
+        if (!p.ok) log.warn(`pin Telegram ${e.dest.titolo || e.dest.chat_id}: ${p.errore} (il bot è admin con permesso di fissare?)`);
+      }
+    }
+    if (inviati) log.info(`Telegram: «${evento}» di #${streamerLogin} inviato a ${inviati}/${dest.length} destinazioni di #${login}`);
+    return { inviati, totale: dest.length };
+  }
+
+  // Le dirette degli ALTRI streamer che il canale ha scelto di annunciare.
+  // Giro periodico: gli amici non sono canali gestiti dal bot, quindi nessun
+  // evento arriva da solo — bisogna guardarli. Anti-doppioni sull'id diretta.
+  async _giroAmiciTelegram() {
+    for (const ch of tgAmici.canaliConAmici()) {
+      try {
+        const conf = tgConf.get(ch);
+        if (!conf?.attivo || !conf.token) continue;
+        for (const a of tgAmici.attivi(ch)) {
+          const info = await this.helix.getStream(a.login).catch(() => null);
+          const streamId = String(info?.id || '');
+          if (!streamId) continue;                       // non è live: niente da fare
+          if (streamId === a.ultima_live) continue;      // già annunciata
+          const testo = telegram.costruisciMessaggioLive(
+            { login: a.login, display: a.display || a.login }, info, a.messaggio || conf.messaggio);
+          const r = await this._diffondiTelegram(ch, conf, 'live', a.login, testo, { pin: false });
+          if (r.inviati) tgAmici.setUltimaLive(ch, a.login, streamId);
+        }
+      } catch (e) { log.debug(`amici Telegram #${ch}:`, e?.message || e); }
+    }
   }
 
   // Manda la notifica Discord "è live" nel canale dello streamer (via webhook),
@@ -784,14 +821,17 @@ export class BotManager {
   async _chiudiTelegram(login) {
     try {
       const conf = tgConf.get(login);
-      if (!conf?.token || !conf.chat_id) return;
-      const msgId = conf.msg_id;
-      if (!msgId) return;
-      tgConf.setMsgId(login, '');   // azzera comunque: un solo tentativo
-      if (!conf.pin_live) return;   // eliminazione legata all'opzione "fissa/elimina"
-      const r = await telegram.eliminaMessaggio(conf.token, conf.chat_id, msgId);
-      if (r.ok) log.info(`avviso Telegram eliminato per #${login} (live finita)`);
-      else log.warn(`elimina Telegram #${login}: ${r.errore}`);
+      if (!conf?.token) return;
+      for (const d of tgDest.lista(login)) {
+        if (!d.msg_id) continue;
+        const msgId = d.msg_id;
+        tgDest.setMsgId(d.id, '');    // azzera comunque: un solo tentativo per destinazione
+        if (!d.pin) continue;         // l'eliminazione segue l'opzione «fissa» di QUELLA destinazione
+        const r = await telegram.eliminaMessaggio(conf.token, d.chat_id, msgId);
+        if (r.ok) log.info(`avviso Telegram eliminato in ${d.titolo || d.chat_id} (live di #${login} finita)`);
+        else log.warn(`elimina Telegram ${d.titolo || d.chat_id}: ${r.errore}`);
+      }
+      if (conf.msg_id) tgConf.setMsgId(login, '');
     } catch (e) { log.error(`chiudi Telegram #${login}:`, e?.message || e); }
   }
 
@@ -881,15 +921,20 @@ export class BotManager {
       // Telegram (basta che il bot+gruppo siano collegati: indipendente dal
       // toggle "avviso live Twitch"). Cattura il message_id per fissarlo/eliminarlo.
       const conf = tgConf.get(l);
-      if (conf?.token && conf.chat_id) {
+      if (conf?.token) {
         try {
-          const r = await telegram.notificaTikTok(conf, { login: l, display: s?.display || l }, tk.username, tk.messaggio);
-          const msgId = r?.ok ? r.result?.message_id : null;
+          const testo = telegram.costruisciMessaggioTikTok({ login: l, display: s?.display || l }, tk.username, tk.messaggio);
+          tgDest.migra(l, conf);
+          const dest = tgDest.perEvento(l, 'tiktok', l);
+          const esiti = await telegram.diffondi(conf.token, dest, testo, { anteprima: true });
+          const primo = esiti.find((e) => e.ok && e.result?.message_id);
+          const msgId = primo?.result?.message_id || null;
           if (msgId) {
             tgConf.setMsgIdTk(l, msgId);
-            if (conf.pin_live) {
-              const p = await telegram.fissaMessaggio(conf.token, conf.chat_id, msgId, { silenzioso: false });
-              if (!p.ok) log.warn(`pin TikTok Telegram #${l}: ${p.errore} (il bot è admin del gruppo con permesso di fissare?)`);
+            for (const e of esiti) {
+              if (!e.ok || !e.dest.pin || !e.result?.message_id) continue;
+              const p = await telegram.fissaMessaggio(conf.token, e.dest.chat_id, e.result.message_id, { silenzioso: false });
+              if (!p.ok) log.warn(`pin TikTok Telegram ${e.dest.titolo || e.dest.chat_id}: ${p.errore}`);
             }
           }
         } catch (e) { log.warn(`notifica TikTok Telegram #${l}:`, e?.message || e); }
@@ -964,8 +1009,14 @@ export class BotManager {
       const l = String(login || '').toLowerCase();
       const s = streamers.get(l);
       const conf = tgConf.get(l);
-      if (conf?.token && conf.chat_id) {
-        await telegram.notificaPost(conf, { login: l, display: s?.display || l }, { piattaforma, titolo, url, messaggio }).catch(() => {});
+      if (conf?.token) {
+        tgDest.migra(l, conf);
+        // ogni piattaforma ha il suo evento: cosi «instagram» puo finire in un
+        // topic e «youtube» in un altro, come lo streamer ha deciso.
+        const ev = ({ instagram: 'ig', tiktok: 'tt', youtube: 'yt' })[piattaforma] || 'yt';
+        const testo = telegram.costruisciMessaggioPost({ login: l, display: s?.display || l }, { piattaforma, titolo, url, messaggio });
+        const dest = tgDest.perEvento(l, ev, l);
+        await telegram.diffondi(conf.token, dest, testo, { anteprima: true }).catch(() => {});
       }
       if (annunciaChat && this.units.has(l) && url) {
         const info = { tiktok: ['🎵', 'TikTok'], instagram: ['📸', 'Instagram'], youtube: ['📺', 'YouTube'] }[piattaforma] || ['📺', 'YouTube'];

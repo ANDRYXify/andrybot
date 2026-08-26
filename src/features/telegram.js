@@ -88,16 +88,74 @@ export async function rilevaGruppo(token) {
 }
 
 // --------------------------------------------------------- invio
-export async function inviaMessaggio(token, chatId, testo, { anteprima = true } = {}) {
-  return tgCall(token, 'sendMessage', {
-    post: true,
-    params: {
-      chat_id: chatId,
-      text: testo,
-      parse_mode: 'HTML',
-      disable_web_page_preview: !anteprima,
-    },
+export async function inviaMessaggio(token, chatId, testo, { anteprima = true, threadId = '' } = {}) {
+  const params = {
+    chat_id: chatId,
+    text: testo,
+    parse_mode: 'HTML',
+    disable_web_page_preview: !anteprima,
+  };
+  // topic dei gruppi in modalita forum: senza questo il messaggio finisce nel
+  // «Generale» anche se lo streamer ha scelto un argomento preciso.
+  const t = String(threadId || '').trim();
+  if (t) params.message_thread_id = t;
+  return tgCall(token, 'sendMessage', { post: true, params });
+}
+
+// Manda lo STESSO testo a piu destinazioni (gruppo, canale, topic). Sequenziale
+// di proposito: Telegram limita la frequenza, e una destinazione che fallisce
+// non deve impedire alle altre di ricevere. Ritorna un esito per destinazione.
+export async function diffondi(token, destinazioni, testo, { anteprima = true } = {}) {
+  const out = [];
+  for (const d of (destinazioni || [])) {
+    const r = await inviaMessaggio(token, d.chat_id, testo, { anteprima, threadId: d.thread_id })
+      .catch((e) => ({ ok: false, errore: e?.message || String(e) }));
+    if (!r.ok) log.warn(`telegram → ${d.titolo || d.chat_id}${d.thread_nome ? ' / ' + d.thread_nome : ''}: ${r.errore}`);
+    out.push({ dest: d, ...r });
+  }
+  return out;
+}
+
+// Elenca TUTTE le destinazioni che il bot ha visto di recente: gruppi, canali e
+// i singoli topic dei gruppi in modalita forum. Telegram non ha un'API per
+// elencare i topic, quindi l'unico modo onesto e guardare cosa e passato:
+// chi vuole un topic ci scrive dentro una volta, e da li lo troviamo.
+export async function rilevaDestinazioni(token) {
+  const r = await tgCall(String(token || '').trim(), 'getUpdates', {
+    params: { timeout: 0, offset: -100, allowed_updates: '["message","my_chat_member","channel_post"]' },
   });
+  if (!r.ok) return { ok: false, errore: r.errore };
+  const updates = Array.isArray(r.result) ? r.result : [];
+  const viste = new Map();
+  const aggiungi = (chat, threadId, threadNome) => {
+    if (!chat || !chat.id) return;
+    const tid = threadId ? String(threadId) : '';
+    const k = chat.id + ':' + tid;
+    const prec = viste.get(k);
+    viste.set(k, {
+      chatId: String(chat.id),
+      titolo: chat.title || chat.first_name || chat.username || '(chat)',
+      tipo: chat.type || 'group',
+      forum: !!chat.is_forum,
+      threadId: tid,
+      threadNome: threadNome || prec?.threadNome || (tid ? 'topic ' + tid : ''),
+    });
+  };
+  for (const u of updates) {
+    const m = u?.message || u?.channel_post;
+    if (m?.chat) {
+      const nome = m.reply_to_message?.forum_topic_created?.name || m.forum_topic_created?.name || '';
+      aggiungi(m.chat, m.is_topic_message ? m.message_thread_id : '', nome);
+      // il gruppo «Generale» resta comunque una destinazione valida
+      if (m.is_topic_message) aggiungi(m.chat, '', '');
+    }
+    if (u?.my_chat_member?.chat) aggiungi(u.my_chat_member.chat, '', '');
+  }
+  const lista = [...viste.values()].filter((d) => d.tipo !== 'private' || d.chatId);
+  if (!lista.length) {
+    return { ok: false, errore: 'niente da collegare: aggiungi il bot al gruppo o al canale, scrivi un messaggio (nel topic giusto, se usi i topic) e riprova' };
+  }
+  return { ok: true, destinazioni: lista };
 }
 
 // --------------------------------------------------------- webhook (interattivo)
@@ -209,14 +267,18 @@ export const MESSAGGIO_POST_YT_DEFAULT = '📺 <b>{nome}</b> ha caricato un nuov
 export const MESSAGGIO_POST_TT_DEFAULT = '🎵 <b>{nome}</b> ha un nuovo post su <b>TikTok</b>!\n\n👉 {link}';
 export const MESSAGGIO_POST_IG_DEFAULT = '📸 <b>{nome}</b> ha un nuovo post su <b>Instagram</b>!\n\n{titolo}\n👉 {link}';
 
-export async function notificaPost(conf, streamer, { piattaforma, titolo, url, messaggio } = {}) {
-  if (!conf?.token || !conf?.chat_id) return { ok: false, errore: 'telegram non configurato' };
+export function costruisciMessaggioPost(streamer, { piattaforma, titolo, url, messaggio } = {}) {
   const nome = escHtml(streamer?.display || streamer?.login || '');
   const def = piattaforma === 'tiktok' ? MESSAGGIO_POST_TT_DEFAULT
     : piattaforma === 'instagram' ? MESSAGGIO_POST_IG_DEFAULT
     : MESSAGGIO_POST_YT_DEFAULT;
   const t = (messaggio && String(messaggio).trim()) || def;
-  const testo = t.replace(/\{(nome|titolo|link)\}/g, (_, k) => (k === 'nome' ? nome : k === 'titolo' ? escHtml(titolo || '') : (url || '')));
+  return t.replace(/\{(nome|titolo|link)\}/g, (_, k) => (k === 'nome' ? nome : k === 'titolo' ? escHtml(titolo || '') : (url || '')));
+}
+
+export async function notificaPost(conf, streamer, { piattaforma, titolo, url, messaggio } = {}) {
+  if (!conf?.token || !conf?.chat_id) return { ok: false, errore: 'telegram non configurato' };
+  const testo = costruisciMessaggioPost(streamer, { piattaforma, titolo, url, messaggio });
   const r = await inviaMessaggio(conf.token, conf.chat_id, testo, { anteprima: true });
   if (!r.ok) log.warn(`notifica post #${streamer?.login}: ${r.errore}`);
   return r;
