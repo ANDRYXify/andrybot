@@ -121,6 +121,74 @@ l'anello via CSS. Tolta: la regola dichiarativa decide, nessuno la contraddice
 a mano. Verificato — opacita **1** mentre si muove la levetta e anche tre
 secondi dopo averla mollata.
 
+## Il difetto che rendeva vano tutto il resto
+
+«Il cursore sparisce, non morpha, col controller non va nulla.» I miei collaudi
+passavano, quindi mi mancava una condizione. Era in `cinema.js`, tre righe:
+
+```js
+function avvia() {
+  sfondo();
+  if (menoMoto || leggero) return;                     // ← 1 e 2
+  if (matchMedia('(pointer: fine)').matches) motore(); // ← 3
+}
+```
+
+Tre cancelli, e bastava uno solo:
+
+1. **«riduci animazioni»** attivo nel sistema operativo — comunissimo;
+2. **dispositivo giudicato debole**: basta che il browser dichiari `deviceMemory
+   ≤ 4` o `hardwareConcurrency ≤ 2`, oppure risparmio dati, oppure rete lenta;
+3. **nessun puntatore «fine»** — e un **controller non e un puntatore fine**.
+
+In ognuno di quei casi il motore del cursore **non partiva affatto**: l'anello
+non veniva nemmeno creato, e `window.SB_CURSORE` restava lo stub inerte
+
+```js
+{ versoElemento: function () { return false; }, libera: function () {} }
+```
+
+Da cui, esattamente: il cursore **sparisce** (l'elemento non esiste), **non
+morpha** (`versoElemento` risponde `false` e basta), e col controller **non va
+nulla** — i clic partivano, ma senza vedere dove stavi puntando.
+
+### La correzione
+
+L'anello ha due ruoli, e li stavamo trattando come uno solo. Come **decorazione**
+deve rispettare «riduci animazioni» e i dispositivi deboli. Come **indicatore
+del puntatore e del fuoco** per chi naviga col pad o da tastiera **deve esistere
+sempre**: non e un vezzo, e il puntatore.
+
+Quindi il motore parte **sempre**, e cio che «riduci animazioni» e i dispositivi
+deboli spengono e la **fisica**, non l'esistenza:
+
+```js
+var secco = menoMoto || leggero;
+function integra(m, meta, dt, w, z) {
+  if (secco) { m.p = meta; m.v = 0; return meta; }   // niente molle: si posa e basta
+  …
+}
+```
+
+Il campo ambientale dello sfondo — quello si e pura decorazione — resta spento
+quando `secco`. E il cancello `pointer: fine` sparisce: l'anello nasce a
+`(-200,-200)`, fuori schermo, e resta invisibile finche qualcosa non lo guida;
+il tocco e gia ignorato a parte. Non serviva un permesso, bastava non muoverlo.
+
+### Collaudo
+
+`scratchpad/t_cursore.mjs` guida il puntatore col pad finto fino a un bersaglio
+e controlla che l'anello **esista, si veda, si deformi e ci arrivi** — in tutte
+e cinque le condizioni:
+
+| condizione | prima | dopo |
+| --- | --- | --- |
+| normale | funziona | funziona |
+| «riduci animazioni» | **anello assente** | c'e, opacita 1, si deforma |
+| dispositivo debole | **anello assente** | c'e, opacita 1, si deforma |
+| nessun puntatore fine (solo pad) | **anello assente** | c'e, opacita 1, si deforma |
+| tutte e tre insieme | **anello assente** | c'e, opacita 1, si deforma |
+
 ## Collaudo
 
 `scratchpad/t_pad3.mjs`, con gamepad finto:

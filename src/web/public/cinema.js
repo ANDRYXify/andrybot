@@ -46,15 +46,15 @@
 
     function avvia() {
       sfondo();
-      if (menoMoto || leggero) return;
-      try {
-        if (window.matchMedia && window.matchMedia('(pointer: fine)').matches) motore();
-      } catch (e) {  }
+      motore();
     }
 
     function molla(v) { return { p: v, v: 0 }; }
 
+    var secco = menoMoto || leggero;
+
     function integra(m, meta, dt, w, z) {
+      if (secco) { m.p = meta; m.v = 0; return meta; }
       var n = Math.min(12, Math.ceil(dt / 0.01)) || 1, h = dt / n, i;
       for (i = 0; i < n; i++) {
         m.v += (w * w * (meta - m.p) - 2 * z * w * m.v) * h;
@@ -137,9 +137,11 @@
         var X = integra(mX, tx, dt, wp, zp), Y = integra(mY, ty, dt, wp, zp);
         var W = integra(mW, tw, dt, 48, 0.88), H = integra(mH, th, dt, 48, 0.88), R = integra(mR, tr, dt, 48, 0.88);
 
-        var fx = noto ? stretta((px / vw) * 2 - 1, -1, 1) : 0;
-        var fy = noto ? stretta((py / vh) * 2 - 1, -1, 1) : 0;
-        integra(cX, fx, dt, 2.4, 1); integra(cY, fy, dt, 2.4, 1);
+        if (!secco) {
+          var fx = noto ? stretta((px / vw) * 2 - 1, -1, 1) : 0;
+          var fy = noto ? stretta((py / vh) * 2 - 1, -1, 1) : 0;
+          integra(cX, fx, dt, 2.4, 1); integra(cY, fy, dt, 2.4, 1);
+        }
 
         if (Math.abs(X - sX) > 0.05 || Math.abs(Y - sY) > 0.05) {
           sX = X; sY = Y;
@@ -148,7 +150,7 @@
         if (Math.abs(W - sW) > 0.06) { sW = W; ring.style.width = W.toFixed(2) + 'px'; }
         if (Math.abs(H - sH) > 0.06) { sH = H; ring.style.height = H.toFixed(2) + 'px'; }
         if (Math.abs(R - sR) > 0.06) { sR = R; ring.style.borderRadius = R.toFixed(2) + 'px'; }
-        if (campo && (Math.abs(cX.p - sCX) > 0.006 || Math.abs(cY.p - sCY) > 0.006)) {
+        if (!secco && campo && (Math.abs(cX.p - sCX) > 0.006 || Math.abs(cY.p - sCY) > 0.006)) {
           sCX = cX.p; sCY = cY.p;
           campo.style.transform = 'translate3d(' + (cX.p * AMP_X).toFixed(1) + 'px,' + (cY.p * AMP_Y).toFixed(1) + 'px,0)';
         }
