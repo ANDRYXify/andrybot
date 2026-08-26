@@ -735,3 +735,86 @@ body.leggero .vivo::after, body.meno-moto .vivo::after { animation: none; opacit
   #an-campo { transform: none; will-change: auto; }
   .vivo::after { animation: none; opacity: 0; }
 }
+
+.barra-giu { display: none; }
+.bt-sezione { display: none; }
+
+@media (max-width: 720px) {
+  body.con-nav { --top-h: 54px; }
+
+  body.con-nav .barra-giu {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 49;
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    backdrop-filter: blur(18px) saturate(1.35); -webkit-backdrop-filter: blur(18px) saturate(1.35);
+    border-top: 1px solid var(--border);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .bg-voce {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    min-height: 56px; padding: 7px 2px 8px; border: 0; background: none; cursor: pointer;
+    color: var(--testo-3); font: inherit; -webkit-tap-highlight-color: transparent;
+    transition: color .18s ease, transform .12s var(--molla-lieve);
+  }
+  .bg-voce:active { transform: scale(.94); }
+  .bg-ico {
+    display: grid; place-items: center; width: 46px; height: 26px; border-radius: 999px;
+    background: transparent; transition: background .22s var(--molla-lieve);
+  }
+  .bg-ico .lat-svg { width: 19px; height: 19px; stroke-width: 1.8; }
+  .bg-eti { font-size: .625rem; font-weight: 600; letter-spacing: .01em; line-height: 1; }
+  .bg-voce.on { color: var(--acc); }
+  .bg-voce.on .bg-ico { background: var(--acc-tint); }
+  .bg-voce.on .bg-eti { font-weight: 700; }
+
+  body.con-nav .contenuto { padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
+  body.con-nav .apri-menu { display: none; }
+  body.con-nav #cerca-lancia {
+    bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+    width: 44px; height: 44px;
+  }
+  body.con-nav #plancia-lancia { display: none !important; }
+  body.con-nav .cookie-banner { bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
+  body.menu-aperto #cerca-lancia { opacity: 0; pointer-events: none; }
+
+  body.con-nav .riga-interruttore { flex-wrap: wrap; row-gap: .5rem; }
+  body.con-nav .riga-interruttore .etichetta-stato { white-space: nowrap; flex: 1 1 auto; }
+  body.con-nav .riga-interruttore .badge { flex: 0 0 auto; }
+
+  body.con-nav .bt-sezione {
+    display: block; min-width: 0; flex: 1 1 auto;
+    font-size: .95rem; font-weight: 600; letter-spacing: -.01em; color: var(--testo);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    opacity: 0; transform: translateY(6px); pointer-events: none;
+    transition: opacity .26s var(--molla-lieve), transform .26s var(--molla-lieve);
+  }
+  body.con-nav.titolo-via .bt-sezione { opacity: 1; transform: none; }
+  body.con-nav.titolo-via .marchio-testo { display: none; }
+  body.con-nav .marchio { flex: 0 0 auto; }
+
+  body.con-nav .contenuto { padding-top: 1.1rem; }
+  body.con-nav .carta { padding: 1rem 1.05rem; margin-bottom: .7rem; border-radius: var(--r-m); }
+  body.con-nav #pagina-testata { margin-bottom: .9rem; }
+  body.con-nav #pagina-testata h1 { font-size: 1.42rem; line-height: 1.15; margin: .1rem 0 .3rem; }
+  body.con-nav #pagina-testata > p { font-size: .86rem; line-height: 1.45; margin-bottom: .7rem; }
+  body.con-nav .pt-occhiello { font-size: .6rem; letter-spacing: .22em; }
+  body.con-nav .guida-scheda { border-radius: var(--r-m); }
+  body.con-nav .guida-scheda summary { min-height: 44px; font-size: .9rem; }
+  body.con-nav .carte-ctrl {
+    display: flex; justify-content: flex-end; gap: 6px; margin: .35rem 0 .55rem;
+  }
+  body.con-nav .carte-ctrl .suggerimento { display: none; }
+  body.con-nav .carte-ctrl .btn {
+    padding: .22rem .55rem; font-size: .72rem; min-height: 0; border-radius: var(--r-s);
+    color: var(--testo-2);
+  }
+
+  body.con-nav p:has(> .btn):has(> .suggerimento) {
+    display: flex; flex-direction: column; align-items: flex-start; gap: .4rem;
+  }
+  body.con-nav p:has(> .btn):has(> .suggerimento) > .suggerimento { display: block; }
+}
+
+@media (max-width: 720px) and (display-mode: standalone) {
+  body.con-nav .barra-giu { padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px); }
+}

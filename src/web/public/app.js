@@ -638,7 +638,9 @@ function barraCarteHtml() {
   return `<div class="carte-ctrl">
     <button type="button" class="btn secondario mini" data-carte="apri">${L('Apri tutto', 'Expand all', 'Abrir todo')}</button>
     <button type="button" class="btn secondario mini" data-carte="chiudi">${L('Riduci tutto', 'Collapse all', 'Reducir todo')}</button>
-    <span class="suggerimento">${L('Clicca il titolo di una scheda per aprirla o ridurla.', 'Click a card’s title to expand or collapse it.', 'Haz clic en el título de una tarjeta para abrirla o reducirla.')}</span>
+    <span class="suggerimento">${tocco()
+      ? L('Tocca il titolo di una scheda per aprirla o ridurla.', 'Tap a card’s title to expand or collapse it.', 'Toca el título de una tarjeta para abrirla o reducirla.')
+      : L('Clicca il titolo di una scheda per aprirla o ridurla.', 'Click a card’s title to expand or collapse it.', 'Haz clic en el título de una tarjeta para abrirla o reducirla.')}</span>
   </div>`;
 }
 
@@ -1481,8 +1483,11 @@ function guidaSchedaHtml(id) {
   const serve = Array.isArray(g.serve) ? L(g.serve[0], g.serve[1], g.serve[2]) : g.serve;
   const come = Array.isArray(g.come) ? g.come.map((c) => (Array.isArray(c) ? L(c[0], c[1], c[2]) : c)) : [];
 
-  let aperta = true;
-  try { aperta = localStorage.getItem('guida:' + id) !== '0'; } catch {  }
+  let aperta = !stretto();
+  try {
+    const v = localStorage.getItem('guida:' + id);
+    if (v === '0') aperta = false; else if (v === '1') aperta = true;
+  } catch {  }
   return `<details class="guida-scheda"${aperta ? ' open' : ''} data-guida="${id}">
     <summary><span class="guida-ico">${_icoGuida}</span> ${L('Come funziona', 'How it works', 'Cómo funciona')}</summary>
     <div class="guida-corpo">
@@ -1538,6 +1543,61 @@ function navTopHtml() {
   }).join('');
 }
 
+function stretto() {
+  try { return !!(window.matchMedia && window.matchMedia('(max-width: 720px)').matches); } catch { return false; }
+}
+function tocco() {
+  try { return !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches); } catch { return false; }
+}
+
+const T_GIU = {
+  stato: ['Stato', 'Status', 'Estado'],
+  bot: ['Bot', 'Bot', 'Bot'],
+  pubblico: ['Chat', 'Chat', 'Chat'],
+  diretta: ['Diretta', 'Live', 'Directo'],
+  altro: ['Altro', 'More', 'Más'],
+};
+const _icoAltro = _ico('<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>');
+
+function barraGiuHtml() {
+  const gruppi = elencoGruppi();
+  const voce = (chiave, ico, attivo, attr) =>
+    `<button type="button" class="bg-voce${attivo ? ' on' : ''}" ${attr}>
+      <span class="bg-ico">${ico}</span><span class="bg-eti">${esc(L(...T_GIU[chiave]))}</span></button>`;
+  let coperta = schedaAttiva === 'stato';
+  let out = voce('stato', ICONA.stato || '', schedaAttiva === 'stato', 'data-scheda="stato"');
+  for (const gid of ['bot', 'pubblico', 'diretta']) {
+    const g = gruppi.find((x) => x.id === gid);
+    if (!g || !g.schede.length) continue;
+    const prima = g.schede.find(([id]) => !schedaBloccata(id)) || g.schede[0];
+    const attivo = g.schede.some(([id]) => id === schedaAttiva);
+    if (attivo) coperta = true;
+    out += voce(gid, ICONA[g.schede[0][0]] || '', attivo, `data-scheda="${prima[0]}"`);
+  }
+  out += voce('altro', _icoAltro, !coperta, 'data-apri-menu="1"');
+  return out;
+}
+
+function aggiornaBarraGiu() {
+  const el = document.getElementById('barra-giu');
+  if (!el) return;
+  el.innerHTML = document.body.classList.contains('con-nav') ? barraGiuHtml() : '';
+}
+
+let _ossTitolo = null;
+function osservaTitolo() {
+  const h = document.querySelector('#pagina-testata h1');
+  const et = document.getElementById('bt-sezione');
+  if (et) et.textContent = document.body.classList.contains('con-nav') ? (infoScheda(schedaAttiva).titolo || '') : '';
+  if (_ossTitolo) { _ossTitolo.disconnect(); _ossTitolo = null; }
+  document.body.classList.remove('titolo-via');
+  if (!h || typeof IntersectionObserver === 'undefined') return;
+  _ossTitolo = new IntersectionObserver((v) => {
+    for (const x of v) document.body.classList.toggle('titolo-via', !x.isIntersecting);
+  }, { rootMargin: '-54px 0px 0px 0px', threshold: 0 });
+  _ossTitolo.observe(h);
+}
+
 function navDrawerHtml() {
   return elencoGruppi().map((g) => {
     const voci = g.schede.map(([id, nome]) =>
@@ -1549,7 +1609,9 @@ function navDrawerHtml() {
 function aggiornaTestataPagina() {
   const el = document.getElementById('pagina-testata');
   if (!el) return;
-  if (!document.body.classList.contains('con-nav')) { el.innerHTML = ''; return; }
+  if (!document.body.classList.contains('con-nav')) {
+    el.innerHTML = ''; aggiornaBarraGiu(); osservaTitolo(); return;
+  }
   const { area, titolo } = infoScheda(schedaAttiva);
   const desc = descScheda(schedaAttiva);
 
@@ -1561,6 +1623,8 @@ function aggiornaTestataPagina() {
     `${desc ? `<p>${esc(desc)}</p>` : ''}` +
     guidaSchedaHtml(schedaAttiva) +
     barraCarteHtml();
+  aggiornaBarraGiu();
+  osservaTitolo();
 }
 
 function titoloParole(t, off = 0) {
@@ -2485,7 +2549,7 @@ function pannelloStato() {
         ${inChat
           ? `<span class="badge verde"><i class="vivo"></i>${L('in chat adesso', 'in chat now', 'en el chat ahora')}</span>`
           : `<span class="badge"><i class="spento"></i>${L('non connesso', 'not connected', 'no conectado')}</span>`}
-        ${stato.permessiOk ? `<span class="badge viola">${L('permessi ok', 'permissions ok', 'permisos ok')}</span>` : `<span class="badge rosso">${L('permessi mancanti', 'missing permissions', 'faltan permisos')}</span>`}
+        ${stato.permessiOk ? `<span class="badge verde">${L('permessi ok', 'permissions ok', 'permisos ok')}</span>` : `<span class="badge rosso">${L('permessi mancanti', 'missing permissions', 'faltan permisos')}</span>`}
       </div>
 
       ${proprietario ? `
@@ -12639,6 +12703,13 @@ function initGuscio() {
 
     const vp = ev.target.closest('a[data-scheda],button[data-scheda]');
     if (vp && !vp.closest('#nav-drawer')) { ev.preventDefault(); vaiAScheda(vp.dataset.scheda); }
+  });
+
+  document.getElementById('barra-giu')?.addEventListener('click', (ev) => {
+    if (ev.target.closest('[data-apri-menu]')) {
+      const aperto = document.body.classList.toggle('menu-aperto');
+      document.getElementById('apri-menu')?.setAttribute('aria-expanded', aperto ? 'true' : 'false');
+    }
   });
 
   document.getElementById('nav-drawer')?.addEventListener('click', (ev) => {
