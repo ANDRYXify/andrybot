@@ -31,16 +31,30 @@ export function tryComando(effects, msg, say) {
     if (testo[0] !== '!') return false;
     const ch = msg.channel;
     const trk = streamers.get(ch)?.settings?.tracking || {};
-    if (trk.attivo === false) return false;
+    if (trk.attivo === false) {
+      // Stesso principio: se il tracking e spento del tutto, chi comanda deve
+      // saperlo. Agli altri restiamo in silenzio, per non riempire la chat.
+      const c0 = testo.slice(1).split(/\s+/)[0].toLowerCase();
+      if ((msg.isMod || msg.isBroadcaster) && ['puzzle', 'puzzlestop', 'mima', 'nonridere', 'reaction', 'battaglia', 'giochi', 'gioca'].includes(c0)) {
+        say('Il tracking webcam e spento: accendilo nel pannello, scheda «Effetti & suoni».');
+        return true;
+      }
+      return false;
+    }
     const parti = testo.slice(1).split(/\s+/);
     const cmd = (parti[0] || '').toLowerCase();
 
     // PUZZLE: dipende dall'interruttore effetti.puzzle (non dal flag giochi). Avvio
     // solo streamer/mod; serve un overlay tracking collegato.
     if (cmd === 'puzzle' || cmd === 'puzzlestop') {
-      if (trk.effetti?.puzzle !== true) return false;
+      // Un comando che esiste deve dire PERCHE non parte: prima taceva e basta,
+      // e chi lo scriveva non aveva modo di capire cosa mancasse.
       if (!(msg.isMod || msg.isBroadcaster)) return true;
-      if (!effects?.hasTrkClients?.(ch)) { say('Per il puzzle apri prima l\'overlay tracking in OBS 🎥 (scheda «Effetti» → Link OBS del tracking) e attiva il Puzzle nel pannello.'); return true; }
+      if (trk.effetti?.puzzle !== true) {
+        say('Il Puzzle e spento: accendilo nel pannello, scheda «Effetti & suoni» → 🧩 «Puzzle con le mani», poi riscrivi !puzzle.');
+        return true;
+      }
+      if (!effects?.hasTrkClients?.(ch)) { say('Per il puzzle apri prima l\'overlay tracking in OBS 🎥 (scheda «Effetti» → Link OBS del tracking).'); return true; }
       effects.emitTrk(ch, cmd === 'puzzlestop' ? { azione: 'stop' } : { azione: 'start', gioco: 'puzzle' });
       return true;
     }

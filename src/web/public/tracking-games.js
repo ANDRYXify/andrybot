@@ -151,19 +151,66 @@
     const N = 3;
     let W0 = 0, H0 = 0, side = 0, cell = 0, ox = 0, oy = 0, img = null;
     const pezzi = [];
-    let held = -1, prevGiu = false, vinto = false, tVinto = 0, started = nowMs();
+    const LATO_FOTO = 720;
+    let held = -1, prevGiu = false, vinto = false, tVinto = 0, started = nowMs(), conFoto = false, foto = null;
+    function sorgenteFoto() {
+      const f = window.SB_PUZZLE_FOTO;
+      if (f && f.width && f.height) return f;
+      const v = document.getElementById('cam');
+      if (v && v.videoWidth > 0 && v.videoHeight > 0 && v.readyState >= 2) return v;
+      return null;
+    }
+    function disegnaFoto(c, fonte, lato) {
+      const fw = fonte.videoWidth || fonte.width, fh = fonte.videoHeight || fonte.height;
+      const l = Math.min(fw, fh), sx = (fw - l) / 2, sy = (fh - l) / 2;
+      const specchia = window.SB_SPECCHIO !== false && !(fonte.width && !fonte.videoWidth);
+      c.save();
+      if (specchia) { c.translate(lato, 0); c.scale(-1, 1); }
+      c.drawImage(fonte, sx, sy, l, l, 0, 0, lato, lato);
+      c.restore();
+      return true;
+    }
+    function scattaUnaVolta() {
+      if (foto) return;
+      foto = document.createElement('canvas'); foto.width = LATO_FOTO; foto.height = LATO_FOTO;
+      const c = foto.getContext('2d');
+      const fonte = sorgenteFoto();
+      conFoto = false;
+      if (fonte) { try { conFoto = disegnaFoto(c, fonte, LATO_FOTO); } catch (e) { conFoto = false; } }
+      if (conFoto) return;
+      const g = c.createLinearGradient(0, 0, LATO_FOTO, LATO_FOTO);
+      g.addColorStop(0, '#8b5cf6'); g.addColorStop(0.5, '#22d3ee'); g.addColorStop(1, '#f59e0b');
+      c.fillStyle = g; c.fillRect(0, 0, LATO_FOTO, LATO_FOTO);
+      for (let k = 0; k < 9; k++) { c.globalAlpha = 0.18; c.fillStyle = ['#fff', '#000'][k % 2]; c.beginPath(); c.arc(Math.random() * LATO_FOTO, Math.random() * LATO_FOTO, LATO_FOTO * (0.07 + Math.random() * 0.12), 0, 7); c.fill(); }
+      c.globalAlpha = 1;
+    }
     function costruisci(W, H) {
+      const oldOx = ox, oldOy = oy, oldCell = cell;
       side = Math.min(W, H) * 0.72; cell = side / N; ox = (W - side) / 2; oy = (H - side) / 2; W0 = W; H0 = H;
+      scattaUnaVolta();
       img = document.createElement('canvas'); img.width = side; img.height = side;
       const c = img.getContext('2d');
-      const g = c.createLinearGradient(0, 0, side, side); g.addColorStop(0, '#8b5cf6'); g.addColorStop(0.5, '#22d3ee'); g.addColorStop(1, '#f59e0b');
-      c.fillStyle = g; c.fillRect(0, 0, side, side);
-      for (let k = 0; k < 9; k++) { c.globalAlpha = 0.18; c.fillStyle = ['#fff', '#000'][k % 2]; c.beginPath(); c.arc(Math.random() * side, Math.random() * side, side * (0.07 + Math.random() * 0.12), 0, 7); c.fill(); }
-      c.globalAlpha = 1; c.fillStyle = 'rgba(255,255,255,.92)'; c.strokeStyle = 'rgba(0,0,0,.5)'; c.lineWidth = 4; c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = `800 ${Math.round(cell * 0.42)}px system-ui`;
-      for (let r = 0; r < N; r++) for (let col = 0; col < N; col++) { const n = r * N + col + 1; c.strokeText(n, col * cell + cell / 2, r * cell + cell / 2); c.fillText(n, col * cell + cell / 2, r * cell + cell / 2); }
+      c.drawImage(foto, 0, 0, LATO_FOTO, LATO_FOTO, 0, 0, side, side);
+      if (pezzi.length && oldCell) {
+        for (const p of pezzi) {
+          p.x = ox + ((p.x - oldOx) / oldCell) * cell;
+          p.y = oy + ((p.y - oldOy) / oldCell) * cell;
+        }
+      }
+      const dim = Math.round(cell * (conFoto ? 0.2 : 0.42));
+      c.fillStyle = conFoto ? 'rgba(255,255,255,.8)' : 'rgba(255,255,255,.92)';
+      c.strokeStyle = 'rgba(0,0,0,.55)'; c.lineWidth = conFoto ? 3 : 4;
+      c.textAlign = conFoto ? 'left' : 'center'; c.textBaseline = conFoto ? 'top' : 'middle';
+      c.font = `800 ${dim}px system-ui`;
+      for (let r = 0; r < N; r++) for (let col = 0; col < N; col++) {
+        const n = r * N + col + 1;
+        const tx = conFoto ? col * cell + cell * 0.08 : col * cell + cell / 2;
+        const ty = conFoto ? r * cell + cell * 0.06 : r * cell + cell / 2;
+        c.strokeText(n, tx, ty); c.fillText(n, tx, ty);
+      }
+      if (pezzi.length) return;
       const celle = []; for (let r = 0; r < N; r++) for (let col = 0; col < N; col++) celle.push({ col, r });
       const perm = celle.slice(); for (let i = perm.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [perm[i], perm[j]] = [perm[j], perm[i]]; }
-      pezzi.length = 0;
       for (let i = 0; i < celle.length; i++) { const cc = celle[i], sc = perm[i]; pezzi.push({ cc: cc.col, cr: cc.r, x: ox + sc.col * cell + cell / 2, y: oy + sc.r * cell + cell / 2, held: false, offx: 0, offy: 0 }); }
     }
     const cellaVicina = (x, y) => ({ col: Math.max(0, Math.min(N - 1, Math.round((x - ox - cell / 2) / cell))), r: Math.max(0, Math.min(N - 1, Math.round((y - oy - cell / 2) / cell))) });
