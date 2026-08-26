@@ -94,3 +94,52 @@ quei 71 byte erano la pagina-esca dell'anti-scanner (vedi
 | peso totale | 7,8 MB |
 | rilevamento | 4,7 giri/s senza GPU |
 | errori pagina / 404 | **0** |
+
+## Il puzzle
+
+Tre cose, tutte vere.
+
+**1. Non poteva funzionare.** Il puzzle si guida col **pizzico** (pollice +
+indice): `tracking-poses.js` calcola la posizione fra i due polpastrelli dai
+punti della mano e la manda come `puntatore`. Ma i punti della mano non
+esistevano — mancava `handlandmark-lite` (vedi sopra). Senza punti, `pinch()`
+restituiva sempre `null`, il puntatore non partiva mai, e a schermo restava per
+sempre «muovi la mano e pizzica».
+
+**2. Non faceva la foto.** L'immagine da ricomporre era un **gradiente
+generato** con sopra i numeri: viola-ciano-ambra e nove cerchi a caso. Mai una
+foto. Ora il puzzle prende un **fotogramma vero della webcam**: nella pagina
+overlay la telecamera e li accanto (`#cam`), quindi si ritaglia il quadrato
+centrale, si rispecchia se lo specchio e attivo, e si taglia in nove. I numeri
+restano, ma piccoli in un angolo di ogni pezzo, cosi la foto si vede.
+
+Lo scatto e **uno solo per partita**: prima veniva rifatto ogni volta che
+cambiavano le dimensioni, quindi bastava ridimensionare la fonte in OBS per
+ritrovarsi con un'altra foto e i pezzi rimescolati a meta gioco. Adesso la foto
+si prende una volta (720×720), e sul ridimensionamento si rifa solo la
+geometria: i pezzi vengono **riproporzionati** dove stavano.
+
+**3. `!puzzle` taceva.** Il comando aveva tre porte chiuse e le attraversava in
+silenzio: tracking spento, puzzle spento, non sei mod. Chi scriveva `!puzzle`
+non riceveva niente e non aveva modo di capire cosa mancasse.
+
+Ora ogni porta chiusa **dice quale**, ma solo a streamer e moderatori (agli
+spettatori si resta zitti, per non riempire la chat):
+
+| situazione | cosa risponde |
+| --- | --- |
+| tracking spento | «Il tracking webcam e spento: accendilo nel pannello, scheda «Effetti & suoni».» |
+| puzzle spento | «Il Puzzle e spento: accendilo nel pannello → 🧩 «Puzzle con le mani», poi riscrivi !puzzle.» |
+| nessun overlay in OBS | «Per il puzzle apri prima l'overlay tracking in OBS 🎥…» |
+| tutto pronto | niente da dire: parte |
+
+### Collaudo
+
+`scratchpad/t_puzzlecmd.mjs` — le quattro situazioni piu lo spettatore
+qualsiasi (che deve continuare a non ricevere risposta).
+
+`scratchpad/t_puzzle.mjs` — pagina overlay vera con webcam finta: si manda
+`{azione:'start', gioco:'puzzle'}`, si campionano i pixel dentro l'area del
+puzzle e si verifica che **non** siano il gradiente (quota di viola 1,4% contro
+il ~60% del finto, quaranta tinte diverse). Poi si ridimensiona la finestra e si
+controlla che la scena resti disegnata.
