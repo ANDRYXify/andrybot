@@ -131,7 +131,7 @@
       (qualche decina di MB), poi funziona anche offline.
     </div>
 
-    <button id="btn" class="btn" type="button">▶ Avvia ascolto</button>
+    <button id="btn" class="btn" type="button">Avvia ascolto</button>
 
     <div id="stato" class="stato"><span class="pallino"></span><span id="statoTesto">Fermo</span></div>
 
@@ -217,12 +217,12 @@
       if (attivo) {
         statoBox.classList.add('on');
         statoTesto.textContent = 'In ascolto…';
-        btn.textContent = '⏹ Ferma';
+        btn.textContent = 'Ferma';
         btn.classList.add('attivo');
       } else {
         statoBox.classList.remove('on');
         statoTesto.textContent = 'Fermo';
-        btn.textContent = '▶ Avvia ascolto';
+        btn.textContent = 'Avvia ascolto';
         btn.classList.remove('attivo');
       }
     }
@@ -419,7 +419,7 @@
       fermaLocale(true);
       if (timerFrasi) { clearInterval(timerFrasi); timerFrasi = null; }
       aggiornaStato();
-      if (eraAttivo) logga('⏹ Ascolto fermato.');
+      if (eraAttivo) logga('Ascolto fermato.');
     }
 
     function avviaNativo() {
@@ -431,7 +431,7 @@
     }
     function fermaNativo(silenzioso) {
       if (rec) { try { rec.stop(); } catch (e) {  } }
-      if (!silenzioso) logga('⏹ Motore browser fermato.');
+      if (!silenzioso) logga('Motore browser fermato.');
     }
 
     function passaALocale(motivo) {
@@ -519,11 +519,21 @@
         logga('Sto ascoltando (locale). La prima trascrizione può metterci qualche secondo.');
       } catch (e) {
         const msg = (e && e.message) ? e.message : String(e);
-        if (/Permission|NotAllowed|denied/i.test(msg)) {
-          logga('Permesso microfono negato. Consenti il microfono per questo sito e premi Avvia.');
-        } else {
-          logga('Motore locale non avviato: ' + msg);
+        if (/Permission|NotAllowed|denied|NotFound|NotReadable/i.test(msg)) {
+          logga('Permesso microfono negato o microfono non disponibile. Consenti il microfono per questo sito e premi Avvia.');
+          ferma();
+          return;
         }
+        fermaLocale(true);
+        logga('Motore locale non disponibile (' + msg.slice(0, 80) + ').');
+        if (SR) {
+          motore = 'nativo';
+          try { localStorage.setItem('voce_motore', 'nativo'); } catch (er) {  }
+          logga('Passo al motore del browser, che non ha bisogno di scaricare nulla.');
+          avviaNativo();
+          return;
+        }
+        logga('Nessun motore vocale disponibile in questo browser: prova con Chrome.');
         ferma();
       }
     }
@@ -536,7 +546,7 @@
       try { if (micStream) micStream.getTracks().forEach((t) => t.stop()); } catch (e) {  }
       procNode = srcNode = audioCtx = micStream = null;
       chunkAudio = []; campioniTot = 0;
-      if (!silenzioso) logga('⏹ Motore locale fermato.');
+      if (!silenzioso) logga('Motore locale fermato.');
     }
 
     async function cicloTrascrizione() {
