@@ -60,6 +60,23 @@ gruppi, canali e topic — invece di una destinazione sola come prima.
 L'invio usa `message_thread_id`: senza, il messaggio finisce nel «Generale» anche se hai scelto un
 topic.
 
+## Il webhook vieta getUpdates — e va bene cosi
+
+Se il bot e in modalita **interattiva**, Telegram ha un webhook attivo e rifiuta `getUpdates` con
+`Conflict: can't use getUpdates method while webhook is active`. Spegnere il webhook per rilevare
+sarebbe una toppa: il bot smetterebbe di rispondere proprio mentre lo stai configurando.
+
+La strada giusta e l'opposta: **col webhook acceso ogni messaggio arriva gia a noi**, quindi i posti
+li impariamo da li. Il gestore del webhook, come prima cosa e prima di ogni altro controllo, registra
+in `telegram_visto` la coppia *chat + topic* di ogni messaggio che passa — anche di quelli senza
+testo — insieme al nome del topic quando Telegram lo include. Poi «Aggiungi» unisce due fonti:
+quello che il webhook ha visto e, **solo se il webhook e spento**, `getUpdates`.
+
+**Serve un comando, non un messaggio qualsiasi.** Con la privacy del bot accesa (il default di
+BotFather) un bot in gruppo riceve solo i comandi e le risposte dirette. Percio l'istruzione e:
+scrivi `/collega` **dentro** il topic che vuoi collegare. Un messaggio normale potrebbe non
+arrivargli mai, e resteresti a chiederti perche il topic non compare.
+
 ## Le dirette degli amici
 
 Un amico non e un canale gestito dal bot, quindi **nessun evento arriva da solo**: c'e un giro ogni

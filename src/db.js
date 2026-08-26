@@ -272,6 +272,17 @@ CREATE TABLE IF NOT EXISTS telegram_dest (  -- DOVE notificare: piu gruppi/canal
 );
 CREATE INDEX IF NOT EXISTS idx_tgdest_ch ON telegram_dest(channel);
 
+CREATE TABLE IF NOT EXISTS telegram_visto (  -- chat e topic che il bot ha VISTO passare
+  channel TEXT NOT NULL,                   -- login twitch che possiede il bot
+  chat_id TEXT NOT NULL,
+  thread_id TEXT NOT NULL DEFAULT '',      -- message_thread_id del topic (vuoto = generale)
+  titolo TEXT NOT NULL DEFAULT '',
+  tipo TEXT NOT NULL DEFAULT 'group',
+  thread_nome TEXT NOT NULL DEFAULT '',
+  ts INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (channel, chat_id, thread_id)
+);
+
 CREATE TABLE IF NOT EXISTS telegram_amico (  -- ALTRI streamer di cui annunciare la diretta
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   channel TEXT NOT NULL,                   -- login twitch che possiede la configurazione
@@ -1235,6 +1246,32 @@ export const tgDest = {
     const n = db.prepare('SELECT COUNT(*) c FROM telegram_dest WHERE channel=?').get(ch)?.c || 0;
     if (n > 0) return;
     this.aggiungi({ channel: ch, chatId: conf.chat_id, titolo: conf.chat_titolo || '', tipo: 'group', pin: conf.pin_live ? 1 : 0 });
+  },
+};
+
+// Chat e topic che il bot ha visto passare. Serve quando il webhook e acceso:
+// in quel caso getUpdates e vietato da Telegram, ma ogni messaggio arriva
+// comunque a noi — quindi i posti li impariamo da li, senza spegnere niente.
+export const tgVisti = {
+  segna({ channel, chatId, threadId = '', titolo = '', tipo = 'group', threadNome = '' }) {
+    if (!channel || !chatId) return;
+    const ch = String(channel).toLowerCase();
+    const tid = String(threadId || '');
+    const prec = db.prepare('SELECT thread_nome FROM telegram_visto WHERE channel=? AND chat_id=? AND thread_id=?')
+      .get(ch, String(chatId), tid);
+    db.prepare(`INSERT INTO telegram_visto (channel, chat_id, thread_id, titolo, tipo, thread_nome, ts)
+      VALUES (?,?,?,?,?,?,?)
+      ON CONFLICT(channel, chat_id, thread_id) DO UPDATE SET titolo=excluded.titolo, tipo=excluded.tipo,
+        thread_nome=excluded.thread_nome, ts=excluded.ts`)
+      .run(ch, String(chatId), tid, String(titolo || '').slice(0, 120), String(tipo || 'group'),
+        String(threadNome || prec?.thread_nome || (tid ? 'topic ' + tid : '')).slice(0, 80), Date.now());
+  },
+  lista(channel) {
+    return db.prepare('SELECT * FROM telegram_visto WHERE channel=? ORDER BY ts DESC LIMIT 60')
+      .all(String(channel).toLowerCase());
+  },
+  pulisci(channel) {
+    db.prepare('DELETE FROM telegram_visto WHERE channel=?').run(String(channel).toLowerCase());
   },
 };
 

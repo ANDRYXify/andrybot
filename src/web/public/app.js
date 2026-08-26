@@ -1132,10 +1132,10 @@ function collegaTgDestinazioni() {
         const r = await api('/api/streamer/telegram/destinazioni/rileva', { method: 'POST', body: {} });
         const nuove = (r.trovate || []).filter((t) => !t.gia);
         if (!nuove.length) {
-          dove.innerHTML = `<p class="suggerimento">${L('Niente di nuovo. Scrivi un messaggio nel gruppo, nel canale o <strong>dentro il topic</strong> che vuoi collegare, poi riprova.', 'Nothing new. Write a message in the group, channel or <strong>inside the topic</strong> you want to connect, then try again.', 'Nada nuevo. Escribe un mensaje en el grupo, canal o <strong>dentro del topic</strong> que quieras conectar, y reinténtalo.')}</p>`;
+          dove.innerHTML = `<p class="suggerimento">${L('Niente di nuovo. Scrivi <code>/collega</code> <strong>dentro</strong> il gruppo, il canale o il topic che vuoi collegare, poi riprova. Serve un <strong>comando</strong>: se la privacy del bot è accesa, i messaggi normali non gli arrivano.', 'Nothing new. Write <code>/collega</code> <strong>inside</strong> the group, channel or topic you want to connect, then try again. It must be a <strong>command</strong>: with bot privacy on, ordinary messages never reach it.', 'Nada nuevo. Escribe <code>/collega</code> <strong>dentro</strong> del grupo, canal o topic que quieras conectar, y reinténtalo. Tiene que ser un <strong>comando</strong>: con la privacidad del bot activada, los mensajes normales no le llegan.')}</p>`;
           return;
         }
-        dove.innerHTML = `<div class="tg-trovate">${nuove.map((t, i) => `
+        dove.innerHTML = `${r.daWebhook ? `<p class="suggerimento">${L('Il bot interattivo è acceso, quindi i posti li imparo mentre ci scrivi dentro. Se un topic non compare: scrivici <code>/collega</code> e ripremi qui.', 'The interactive bot is on, so I learn places as you write in them. If a topic is missing: write <code>/collega</code> in it and press again.', 'El bot interactivo está encendido, así que aprendo los sitios mientras escribes en ellos. Si falta un topic: escribe <code>/collega</code> dentro y vuelve a pulsar.')}</p>` : ''}<div class="tg-trovate">${nuove.map((t, i) => `
           <button type="button" class="tg-trovata" data-nuova="${i}">
             <span class="tg-dest-ico">${_bIco(TG_ICO_TIPO(t.tipo))}</span>
             <span><strong>${esc(t.titolo)}</strong>${t.threadNome ? `<span class="tg-topic">${esc(t.threadNome)}</span>` : ''}
@@ -4753,6 +4753,126 @@ function scalaAnteprima() {
   if (w) stage.style.transform = 'scale(' + (w / 1920) + ')';
 }
 
+const OVL_W = 1920, OVL_H = 1080;          // la tela vera dell'overlay, in pixel
+const SNAP_PX = 8;                          // soglia di aggancio, in pixel di schermo
+const _pct = (px, tot) => (px / tot) * 100;
+const _arr = (n) => Math.round(n * 100) / 100;   // due decimali: 0.01% = 0.19px su 1920
+
+let _storia = [], _storiaAvanti = [], _storiaInCorso = false;
+
+function _istantanea() {
+  return JSON.stringify({ xy: posXY, mostra: ['alert', 'chat', 'wf', 'ws', 'effetti'].reduce((o, k) => (o[k] = mostraChk(k), o), {}) });
+}
+function _ricorda() {
+  if (_storiaInCorso) return;
+  const foto = _istantanea();
+  if (_storia.length && _storia[_storia.length - 1] === foto) return;
+  _storia.push(foto);
+  if (_storia.length > 60) _storia.shift();
+  _storiaAvanti.length = 0;
+  _aggiornaBottoniStoria();
+}
+function _applicaIstantanea(foto) {
+  try {
+    const d = JSON.parse(foto);
+    posXY = d.xy || {};
+    for (const [k, v] of Object.entries(d.mostra || {})) { const c = _g('mostra-' + k); if (c) c.checked = !!v; }
+    _storiaInCorso = true;
+    aggiornaAnteprima();
+    salvaLayoutOverlay(true);
+    _storiaInCorso = false;
+    aggiornaInspector();
+  } catch (e) {  }
+}
+function annullaOvl() {
+  if (_storia.length < 2) return;
+  _storiaAvanti.push(_storia.pop());
+  _applicaIstantanea(_storia[_storia.length - 1]);
+  _aggiornaBottoniStoria();
+}
+function ripetiOvl() {
+  const f = _storiaAvanti.pop();
+  if (!f) return;
+  _storia.push(f);
+  _applicaIstantanea(f);
+  _aggiornaBottoniStoria();
+}
+function _aggiornaBottoniStoria() {
+  const a = _g('ovl-annulla'), r = _g('ovl-ripeti');
+  if (a) a.disabled = _storia.length < 2;
+  if (r) r.disabled = !_storiaAvanti.length;
+}
+
+// Dove agganciarsi: i punti notevoli della tela e i bordi/centri degli ALTRI
+// livelli accesi. Ritorna la posizione corretta e le guide da disegnare.
+function _aggancia(chiave, x, y, hw, hh, canvas) {
+  const soglia = _pct(SNAP_PX, canvas.width);
+  const sogliaY = _pct(SNAP_PX, canvas.height);
+  const vx = [{ v: 50, c: 1 }, { v: hw, c: 0 }, { v: 100 - hw, c: 0 }, { v: 33.33, c: 0 }, { v: 66.67, c: 0 }];
+  const vy = [{ v: 50, c: 1 }, { v: hh, c: 0 }, { v: 100 - hh, c: 0 }, { v: 33.33, c: 0 }, { v: 66.67, c: 0 }];
+  for (const k of ['alert', 'chat', 'wf', 'ws']) {
+    if (k === chiave || !mostraChk(k)) continue;
+    const o = posXY[k] || _defPos(k);
+    if (!o) continue;
+    vx.push({ v: o.x, c: 2 });
+    vy.push({ v: o.y, c: 2 });
+  }
+  let gx = null, gy = null;
+  let mx = soglia, my = sogliaY;
+  for (const t of vx) if (Math.abs(x - t.v) < mx) { mx = Math.abs(x - t.v); gx = t; }
+  for (const t of vy) if (Math.abs(y - t.v) < my) { my = Math.abs(y - t.v); gy = t; }
+  return {
+    x: gx ? gx.v : x,
+    y: gy ? gy.v : y,
+    guide: [gx && { asse: 'x', v: gx.v, c: gx.c }, gy && { asse: 'y', v: gy.v, c: gy.c }].filter(Boolean),
+  };
+}
+
+function _mostraGuide(guide) {
+  const stage = _g('ap-stage');
+  if (!stage) return;
+  stage.querySelectorAll('.ap-guida').forEach((g) => g.remove());
+  for (const g of guide || []) {
+    const el = document.createElement('i');
+    el.className = 'ap-guida ap-guida-' + g.asse + (g.c === 1 ? ' centro' : g.c === 2 ? ' pari' : '');
+    if (g.asse === 'x') el.style.left = g.v + '%'; else el.style.top = g.v + '%';
+    stage.appendChild(el);
+  }
+}
+
+// Spostamento da tastiera: un passo = un pixel VERO della tela 1920x1080, come
+// nei programmi di grafica. Shift = dieci pixel.
+function _spostaTasti(chiave, dx, dy, grande) {
+  const st = _statoXY(chiave);
+  const p = grande ? 10 : 1;
+  st.x = _arr(Math.max(0, Math.min(100, st.x + _pct(dx * p, OVL_W))));
+  st.y = _arr(Math.max(0, Math.min(100, st.y + _pct(dy * p, OVL_H))));
+  _posElemento(_g('ap-' + chiave), st);
+  aggiornaInspector();
+  _ricorda();
+  _salvaPosDebounced(chiave);
+}
+
+function allineaOvl(dove) {
+  if (!selezione) return;
+  const st = _statoXY(selezione);
+  const el = _g('ap-' + selezione);
+  const canvas = _g('ovl-preview')?.getBoundingClientRect();
+  const er = el?.getBoundingClientRect();
+  const hw = (er && canvas) ? Math.min(50, _pct(er.width / 2, canvas.width)) : 0;
+  const hh = (er && canvas) ? Math.min(50, _pct(er.height / 2, canvas.height)) : 0;
+  const m = {
+    sx: () => { st.x = _arr(hw); }, cx: () => { st.x = 50; }, dx: () => { st.x = _arr(100 - hw); },
+    su: () => { st.y = _arr(hh); }, cy: () => { st.y = 50; }, giu: () => { st.y = _arr(100 - hh); },
+  };
+  if (!m[dove]) return;
+  m[dove]();
+  _posElemento(el, st);
+  aggiornaInspector();
+  _ricorda();
+  _salvaPos(selezione);
+}
+
 function rendiTrascinabile(el, chiave) {
   if (!el) return;
   el.style.cursor = 'grab';
@@ -4767,18 +4887,28 @@ function rendiTrascinabile(el, chiave) {
     try { el.setPointerCapture(e.pointerId); } catch (_) {  }
     el.style.cursor = 'grabbing';
     const st = _statoXY(chiave);
+    const er0 = el.getBoundingClientRect();
+    const hw = Math.min(50, _pct(er0.width / 2, canvas.width));
+    const hh = Math.min(50, _pct(er0.height / 2, canvas.height));
+    const scartoX = _pct(e.clientX - (er0.left + er0.width / 2), canvas.width);
+    const scartoY = _pct(e.clientY - (er0.top + er0.height / 2), canvas.height);
     const move = (ev) => {
-
-      const er = el.getBoundingClientRect();
-      const hw = Math.min(50, (er.width / 2) / canvas.width * 100);
-      const hh = Math.min(50, (er.height / 2) / canvas.height * 100);
-      const x = ((ev.clientX - canvas.left) / canvas.width) * 100;
-      const y = ((ev.clientY - canvas.top) / canvas.height) * 100;
-      st.x = Math.round(Math.max(hw, Math.min(100 - hw, x)));
-      st.y = Math.round(Math.max(hh, Math.min(100 - hh, y)));
+      let x = _pct(ev.clientX - canvas.left, canvas.width) - scartoX;
+      let y = _pct(ev.clientY - canvas.top, canvas.height) - scartoY;
+      // Alt tenuto premuto = libero, senza agganci (come nei programmi di grafica)
+      let guide = [];
+      if (!ev.altKey) { const a = _aggancia(chiave, x, y, hw, hh, canvas); x = a.x; y = a.y; guide = a.guide; }
+      st.x = _arr(Math.max(hw, Math.min(100 - hw, x)));
+      st.y = _arr(Math.max(hh, Math.min(100 - hh, y)));
       _posElemento(el, st);
+      _mostraGuide(guide);
+      aggiornaInspector();
     };
-    const up = () => { el.style.cursor = 'grab'; el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); _salvaPos(chiave); };
+    const up = () => {
+      el.style.cursor = 'grab';
+      el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up);
+      _mostraGuide([]); _ricorda(); _salvaPos(chiave);
+    };
     el.addEventListener('pointermove', move);
     el.addEventListener('pointerup', up);
   });
@@ -4787,9 +4917,9 @@ function rendiTrascinabile(el, chiave) {
     const st = _statoXY(chiave);
     if (e.shiftKey) { let r = (st.r || 0) + (e.deltaY < 0 ? 4 : -4); while (r > 180) r -= 360; while (r < -180) r += 360; st.r = r; }
     else { st.s = Math.max(30, Math.min(300, (st.s || 100) + (e.deltaY < 0 ? 4 : -4))); }
-    seleziona(chiave); _posElemento(el, st); _salvaPosDebounced(chiave);
+    seleziona(chiave); _posElemento(el, st); aggiornaInspector(); _ricorda(); _salvaPosDebounced(chiave);
   }, { passive: false });
-  el.addEventListener('dblclick', () => { posXY[chiave] = null; deseleziona(); aggiornaAnteprima(); _salvaPos(chiave); });
+  el.addEventListener('dblclick', () => { posXY[chiave] = null; deseleziona(); aggiornaAnteprima(); _ricorda(); _salvaPos(chiave); });
 }
 
 function _salvaPos() {
