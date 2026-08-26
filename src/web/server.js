@@ -18,7 +18,7 @@ import { config, SCOPES, missingConfig } from '../config.js';
 import * as filigrana from '../watermark.js';   // filigrana di proprietà (Andrea Taliento / ANDRYXify)
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb, friends, sfondi as sfondiDb } from '../db.js';
-import { points, vips, tgConf, tgDest, tgAmici, tgVisti, dcConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
+import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO } from '../db.js';
 import { renderLinkPage, renderInformativa } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
@@ -34,6 +34,7 @@ import { StudioEngine, QUALITA as STUDIO_QUALITA } from '../features/studio.js';
 import { seedStreamer } from '../features/seed.js';
 import * as vip from '../features/vip.js';
 import * as telegram from '../features/telegram.js';
+import * as feedmod from '../features/feed.js';
 import * as categoria from '../features/categoria.js';
 import * as compleanniFeat from '../features/compleanni.js';
 import * as tiktok from '../features/tiktok.js';
@@ -4346,6 +4347,68 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const r = await telegram.inviaMessaggio(c.token, d.chat_id, '🧪 <i>Anteprima notifica</i>\n\n' + testo, { threadId: d.thread_id });
     if (!r.ok) return res.status(400).json({ errore: r.errore });
     res.json({ ok: true });
+  }));
+
+  // ── SORGENTI (feed) dei post: Instagram e qualunque altra cosa ────────────
+  app.get('/api/streamer/feed', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    res.json({
+      fonti: feedFonti.lista(login).map((f) => ({
+        id: f.id, nome: f.nome, evento: f.evento, url: f.url, messaggio: f.messaggio,
+        attivo: !!f.attivo, ultimoTitolo: f.ultimo_titolo, ultimoUrl: f.ultimo_url,
+        vistoTs: f.visto_ts, errore: f.errore, mai: !f.ultimo_id,
+      })),
+      eventi: TG_EVENTI.filter((e) => ['ig', 'yt', 'tt'].includes(e.k)),
+    });
+  }));
+
+  app.post('/api/streamer/feed', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const url = String(req.body?.url || '').trim();
+    const via = await feedmod.indirizzoAmmesso(url);
+    if (!via.ok) return res.status(400).json({ errore: via.errore });
+    if (feedFonti.lista(login).length >= 10) return res.status(400).json({ errore: 'massimo 10 sorgenti' });
+    // si prova PRIMA di salvare: meglio dirlo subito che scoprirlo fra dieci minuti
+    const p = await feedmod.leggi(url);
+    if (!p.ok) return res.status(400).json({ errore: p.errore });
+    const id = feedFonti.aggiungi({
+      channel: login, url,
+      nome: String(req.body?.nome || '').slice(0, 60) || (p.voci[0]?.titolo || '').slice(0, 40) || 'Sorgente',
+      evento: ['ig', 'yt', 'tt'].includes(req.body?.evento) ? req.body.evento : 'ig',
+      messaggio: String(req.body?.messaggio || '').slice(0, 600),
+    });
+    // registra dove siamo ORA: cosi non annuncia un post gia vecchio
+    feedFonti.segnaEsito(id, { ultimoId: p.voci[0].id, titolo: p.voci[0].titolo, url: p.voci[0].url });
+    res.json({ ok: true, id, trovate: p.voci.length, prima: p.voci[0] });
+  }));
+
+  app.patch('/api/streamer/feed/:id', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (!feedFonti.aggiorna(login, req.params.id, req.body || {})) return res.status(404).json({ errore: 'sorgente non trovata' });
+    res.json({ ok: true });
+  }));
+
+  app.delete('/api/streamer/feed/:id', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (!feedFonti.rimuovi(login, req.params.id)) return res.status(404).json({ errore: 'sorgente non trovata' });
+    res.json({ ok: true });
+  }));
+
+  // Prova adesso: dice cosa vede E dove finirebbe, senza aspettare il giro.
+  app.post('/api/streamer/feed/:id/prova', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const f = feedFonti.get(login, req.params.id);
+    if (!f) return res.status(404).json({ errore: 'sorgente non trovata' });
+    const r = await feedmod.leggi(f.url);
+    feedFonti.segnaEsito(f.id, r.ok
+      ? { titolo: r.voci[0]?.titolo, url: r.voci[0]?.url, errore: '' }
+      : { errore: r.errore });
+    if (!r.ok) return res.status(400).json({ errore: r.errore });
+    const dest = tgDest.perEvento(login, f.evento, login);
+    res.json({
+      ok: true, quante: r.voci.length, prima: r.voci[0],
+      dove: dest.map((d) => (d.thread_nome || d.titolo || d.chat_id)),
+    });
   }));
 
   // Annuncio automatico delle dirette dei membri della community: acceso o spento

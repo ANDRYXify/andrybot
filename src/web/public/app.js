@@ -1288,6 +1288,103 @@ function azzeraBarraSalva() {
   _mostraBarraSalva(false);
 }
 
+const FEED_ETI = { ig: ['Instagram', '#e1306c'], yt: ['YouTube', '#ff0033'], tt: ['TikTok', '#25f4ee'] };
+
+async function caricaFeed() {
+  const box = document.getElementById('feed-fonti');
+  if (!box) return;
+  let d;
+  try { d = await api('/api/streamer/feed'); } catch { box.innerHTML = ''; return; }
+  const quando = (ts) => {
+    if (!ts) return L('mai', 'never', 'nunca');
+    const m = Math.round((Date.now() - ts) / 60000);
+    if (m < 1) return L('adesso', 'just now', 'ahora');
+    if (m < 60) return m + L(' min fa', ' min ago', ' min');
+    const h = Math.round(m / 60);
+    return h < 24 ? h + L(' ore fa', 'h ago', ' h') : Math.round(h / 24) + L(' giorni fa', 'd ago', ' d');
+  };
+  const carte = (d.fonti || []).map((f) => {
+    const [nome, col] = FEED_ETI[f.evento] || ['?', 'var(--testo-3)'];
+    return `<div class="fd-fonte${f.attivo ? '' : ' spenta'}${f.errore ? ' guaio' : ''}" data-feed="${f.id}">
+      <span class="fd-tipo" style="--fc:${col}">${esc(nome)}</span>
+      <div class="fd-corpo">
+        <strong>${esc(f.nome || f.url)}</strong>
+        <span class="fd-url">${esc(String(f.url).replace(/^https?:\/\//, '').slice(0, 62))}</span>
+        ${f.errore
+          ? `<span class="fd-errore">${_bIco(ICO.avviso)}${esc(f.errore)}</span>`
+          : `<span class="fd-ultimo">${f.ultimoTitolo
+            ? L('ultimo visto: ', 'last seen: ', 'último visto: ') + esc(String(f.ultimoTitolo).slice(0, 58))
+            : L('niente ancora', 'nothing yet', 'nada aún')} <i>· ${L('controllato', 'checked', 'comprobado')} ${quando(f.vistoTs)}</i></span>`}
+      </div>
+      <div class="fd-az">
+        <button type="button" class="btn secondario mini" data-fd-prova="${f.id}">${L('Prova', 'Test', 'Probar')}</button>
+        <label class="interruttore fd-sw" title="${L('Attiva', 'Active', 'Activa')}"><input type="checkbox" data-fd-on="${f.id}"${f.attivo ? ' checked' : ''}><span class="levetta"></span></label>
+        <button type="button" class="fd-togli" data-fd-togli="${f.id}" aria-label="${L('Togli', 'Remove', 'Quitar')}">×</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  box.innerHTML = `
+    <p class="campo">${L('Sorgenti dei post', 'Post sources', 'Fuentes de las publicaciones')}</p>
+    <p class="suggerimento">${L('Instagram non ha un modo stabile di dire «è uscito un post» senza le sue API ufficiali: qualunque scorciatoia prima o poi si rompe. Qui invece c’è una <strong>presa</strong>: incolla l’indirizzo di un feed (RSS, Atom o JSON) e lo guardo io ogni dieci minuti. Vale per Instagram come per qualunque altra cosa.', 'Instagram has no stable way to say «a post is out» without its official APIs: every shortcut breaks sooner or later. Here there’s a <strong>socket</strong> instead: paste a feed address (RSS, Atom or JSON) and I’ll watch it every ten minutes. Works for Instagram and anything else.', 'Instagram no tiene forma estable de decir «hay una publicación nueva» sin sus API oficiales: cualquier atajo acaba rompiéndose. Aquí hay un <strong>enchufe</strong>: pega la dirección de un feed (RSS, Atom o JSON) y lo miro cada diez minutos. Sirve para Instagram y para cualquier otra cosa.')}</p>
+    <div class="fd-elenco">${carte || `<p class="vuoto">${L('Nessuna sorgente ancora.', 'No source yet.', 'Ninguna fuente todavía.')}</p>`}</div>
+    <div class="fd-nuova">
+      <div class="riga-flessibile">
+        <select id="fd-evento" class="campo">
+          ${(d.eventi || []).map((e) => `<option value="${e.k}">${esc(L(e.it, e.en, e.es))}</option>`).join('')}
+        </select>
+        <input type="text" id="fd-url" class="campo-largo" placeholder="https://… (RSS, Atom o JSON)" maxlength="500">
+        <button type="button" class="btn secondario" id="fd-aggiungi">${L('Aggiungi', 'Add', 'Añadir')}</button>
+      </div>
+      <p class="suggerimento">${L('Per Instagram servono ponti di terzi, che non controlliamo e possono smettere di funzionare: i più usati sono <code>rsshub.app/picuki/profile/TUONOME</code> e una <a href="https://rss-bridge.github.io/rss-bridge/" target="_blank" rel="noopener">RSS-Bridge</a> tua. Se un giorno smette, lo vedi qui scritto invece di restare in silenzio.', 'Instagram needs third-party bridges we don’t control and which can stop working: the common ones are <code>rsshub.app/picuki/profile/YOURNAME</code> and your own <a href="https://rss-bridge.github.io/rss-bridge/" target="_blank" rel="noopener">RSS-Bridge</a>. If one day it stops, you’ll read it here instead of hearing silence.', 'Para Instagram hacen falta puentes de terceros que no controlamos y que pueden dejar de funcionar: los más usados son <code>rsshub.app/picuki/profile/TUNOMBRE</code> y tu propio <a href="https://rss-bridge.github.io/rss-bridge/" target="_blank" rel="noopener">RSS-Bridge</a>. Si un día deja de ir, lo lees aquí en vez de oír silencio.')}</p>
+    </div>`;
+}
+
+function collegaFeed() {
+  const box = document.getElementById('feed-fonti');
+  if (!box || box.dataset.collegato) return;
+  box.dataset.collegato = '1';
+
+  box.addEventListener('click', (e) => {
+    const pr = e.target.closest('[data-fd-prova]');
+    if (pr) return conErrore(async () => {
+      const r = await api('/api/streamer/feed/' + pr.dataset.fdProva + '/prova', { method: 'POST', body: {} });
+      toast(r.dove?.length
+        ? L(`Vedo «${(r.prima?.titolo || '').slice(0, 40)}» — finirebbe in: ${r.dove.join(', ')}`, `I see «${(r.prima?.titolo || '').slice(0, 40)}» — it would land in: ${r.dove.join(', ')}`, `Veo «${(r.prima?.titolo || '').slice(0, 40)}» — acabaría en: ${r.dove.join(', ')}`)
+        : L(`Vedo «${(r.prima?.titolo || '').slice(0, 40)}», ma non arriverebbe da nessuna parte: spunta una destinazione nella matrice.`, `I see «${(r.prima?.titolo || '').slice(0, 40)}», but it would land nowhere: tick a destination in the matrix.`, `Veo «${(r.prima?.titolo || '').slice(0, 40)}», pero no llegaría a ninguna parte: marca un destino en la matriz.`), r.dove?.length ? 'ok' : 'errore');
+      await caricaFeed();
+    });
+    const tg = e.target.closest('[data-fd-togli]');
+    if (tg) {
+      if (!confirm(L('Togliere questa sorgente?', 'Remove this source?', '¿Quitar esta fuente?'))) return;
+      return conErrore(async () => {
+        await api('/api/streamer/feed/' + tg.dataset.fdTogli, { method: 'DELETE' });
+        await caricaFeed();
+      });
+    }
+    if (e.target.closest('#fd-aggiungi')) {
+      const url = (document.getElementById('fd-url')?.value || '').trim();
+      const evento = document.getElementById('fd-evento')?.value || 'ig';
+      if (!url) return;
+      return conErrore(async () => {
+        const r = await api('/api/streamer/feed', { method: 'POST', body: { url, evento } });
+        toast(L(`Sorgente collegata: ${r.trovate} voci lette. Avviserò dalla prossima.`, `Source connected: ${r.trovate} entries read. I'll alert from the next one.`, `Fuente conectada: ${r.trovate} entradas leídas. Avisaré desde la próxima.`));
+        document.getElementById('fd-url').value = '';
+        await caricaFeed();
+      });
+    }
+  });
+
+  box.addEventListener('change', (e) => {
+    const on = e.target.closest('[data-fd-on]');
+    if (!on) return;
+    conErrore(async () => {
+      await api('/api/streamer/feed/' + on.dataset.fdOn, { method: 'PATCH', body: { attivo: on.checked } });
+      await caricaFeed();
+    });
+  });
+}
+
 function mostraBenvenuto() {
   if (document.getElementById('benvenuto')) return;
   const nome = stato?.gestisce?.streamer || stato?.user?.display || stato?.user?.login || '';
@@ -9136,6 +9233,7 @@ function pannelloNotifiche() {
       </div>
 
       <div id="tg-destinazioni" class="spazio-sopra"></div>
+      <div id="feed-fonti" class="spazio-sopra"></div>
 
       <label class="campo spazio-sopra" for="txt-tg-messaggio">${L('Messaggio dell\'avviso', 'Alert message', 'Mensaje del aviso')}</label>
       <textarea id="txt-tg-messaggio" rows="5" placeholder="${esc(msgDefault)}">${esc(tg.messaggio || '')}</textarea>
@@ -10608,7 +10706,7 @@ function caricaDatiScheda(id) {
   if (id === 'moduli') { caricaModuli(); caricaContatori(); }
   if (id === 'memoria') caricaStatistiche();
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); }
-  if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaDiscord(); caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); }
+  if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaDiscord(); caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaFeed(); caricaFeed(); }
   if (id === 'pagina') caricaPaginaLink();
   if (id === 'grafiche') initGrafiche();
   if (id === 'regole') caricaStatoListaBot();

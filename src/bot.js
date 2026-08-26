@@ -8,7 +8,7 @@
 // eventi Twitch. Tiene tutto sincronizzato con la dashboard.
 import { makeLog } from './logger.js';
 import { config } from './config.js';
-import { tokens, streamers, memory, tgConf, tgDest, tgAmici, tgMsg, dcConf, compleanni, pointAlerts } from './db.js';
+import { tokens, streamers, memory, tgConf, tgDest, tgAmici, tgMsg, feedFonti, dcConf, compleanni, pointAlerts } from './db.js';
 import { ChatBot } from './twitch/chat.js';
 import { EventHub } from './twitch/events.js';
 import { Brain } from './ai/brain.js';
@@ -29,6 +29,7 @@ import * as antispam from './features/antispam.js';
 import * as tiktok from './features/tiktok.js';
 import * as youtube from './features/youtube.js';
 import * as instagram from './features/instagram.js';
+import * as feed from './features/feed.js';
 import * as compleanniFeat from './features/compleanni.js';
 import * as gamesbridge from './features/gamesbridge.js';
 import * as quotes from './features/quotes.js';
@@ -1017,6 +1018,8 @@ export class BotManager {
             }
           }
         }
+        // --- Feed generici dello streamer (Instagram e qualunque altra cosa) ---
+        await this._giroFeed(s.login);
         // --- TikTok (API ufficiale: account collegato in OAuth, scope video.list) ---
         const tk = s.settings?.tiktok;
         if (tk?.postAttivo && tiktok.collegato(s.login)) {
@@ -1032,6 +1035,34 @@ export class BotManager {
         }
       }
     } catch (e) { log.error('controllaPost:', e?.message || e); }
+  }
+
+  // Legge i feed che lo streamer ha collegato e avvisa quando esce una voce nuova.
+  // La prima lettura NON avvisa: registra soltanto dov'eravamo, altrimenti al
+  // collegamento partirebbe l'annuncio di un post vecchio.
+  async _giroFeed(login) {
+    const l = String(login || '').toLowerCase();
+    for (const f of feedFonti.lista(l)) {
+      if (!f.attivo) continue;
+      try {
+        const r = await feed.leggi(f.url);
+        if (!r.ok) { feedFonti.segnaEsito(f.id, { errore: r.errore }); continue; }
+        const v = r.voci[0];
+        if (!v?.id) { feedFonti.segnaEsito(f.id, { errore: 'voce senza identificativo' }); continue; }
+        const primaVolta = !f.ultimo_id;
+        const nuova = v.id !== f.ultimo_id;
+        feedFonti.segnaEsito(f.id, { ultimoId: v.id, titolo: v.titolo, url: v.url, errore: '' });
+        if (nuova && !primaVolta) {
+          await this.notificaPost(l, {
+            piattaforma: ({ ig: 'instagram', tt: 'tiktok', yt: 'youtube' })[f.evento] || 'youtube',
+            titolo: v.titolo || '', url: v.url || '', messaggio: f.messaggio,
+          });
+          log.info(`feed «${f.nome || f.url}» → nuova voce per #${l}`);
+        }
+      } catch (e) {
+        feedFonti.segnaEsito(f.id, { errore: e?.message || 'errore' });
+      }
+    }
   }
 
   // Manda l'avviso di un nuovo post (YouTube/TikTok): gruppo Telegram + eventuale

@@ -1210,3 +1210,37 @@ body.leggero .vivo::after, body.meno-moto .vivo::after { animation: none; opacit
   padding-left: .5rem; color: var(--acc); border-color: var(--acc-bordo); background: var(--acc-soft);
   gap: .35rem; cursor: default;
 }
+
+.fd-elenco { display: grid; gap: 7px; margin: 8px 0 0; }
+.fd-fonte {
+  display: flex; align-items: center; gap: .7rem; flex-wrap: wrap;
+  padding: .6rem .75rem; border-radius: var(--r-m);
+  border: 1px solid var(--border); background: var(--surface-2);
+}
+.fd-fonte.spenta { opacity: .55; }
+.fd-fonte.guaio { border-color: var(--ambra-bordo); background: var(--ambra-soft); }
+.fd-tipo {
+  flex: 0 0 auto; font-size: .64rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  padding: .22rem .5rem; border-radius: 999px; color: var(--fc);
+  border: 1px solid color-mix(in srgb, var(--fc) 40%, transparent);
+  background: color-mix(in srgb, var(--fc) 12%, transparent);
+}
+.fd-corpo { min-width: 0; flex: 1 1 240px; display: grid; gap: .1rem; }
+.fd-corpo strong { font-size: .88rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fd-url { font-size: .72rem; color: var(--testo-3); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fd-ultimo { font-size: .74rem; color: var(--testo-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fd-ultimo i { font-style: normal; opacity: .75; }
+.fd-errore { display: inline-flex; align-items: center; gap: .35rem; font-size: .74rem; font-weight: 600; color: var(--ambra); }
+.fd-az { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.fd-togli {
+  border: 0; background: none; cursor: pointer; color: var(--testo-3); font-size: 1.15rem; line-height: 1;
+  padding: 0 .25rem; border-radius: 50%;
+}
+.fd-togli:hover { color: var(--rosso); }
+.fd-nuova { margin-top: 10px; }
+.fd-nuova .suggerimento { margin-top: .45rem; }
+.fd-nuova code { font-size: .74rem; }
+@media (max-width: 560px) {
+  .fd-az { margin-left: 0; width: 100%; }
+  .fd-az .btn { flex: 1 1 auto; }
+}

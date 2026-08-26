@@ -272,6 +272,23 @@ CREATE TABLE IF NOT EXISTS telegram_dest (  -- DOVE notificare: piu gruppi/canal
 );
 CREATE INDEX IF NOT EXISTS idx_tgdest_ch ON telegram_dest(channel);
 
+CREATE TABLE IF NOT EXISTS feed_fonte (   -- feed da cui accorgersi dei post nuovi
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  channel TEXT NOT NULL,
+  nome TEXT NOT NULL DEFAULT '',
+  evento TEXT NOT NULL DEFAULT 'ig',       -- quale avviso: ig | yt | tt
+  url TEXT NOT NULL,
+  messaggio TEXT NOT NULL DEFAULT '',      -- testo personalizzato (vuoto = standard)
+  attivo INTEGER NOT NULL DEFAULT 1,
+  ultimo_id TEXT NOT NULL DEFAULT '',      -- ultima voce gia annunciata
+  ultimo_titolo TEXT NOT NULL DEFAULT '',
+  ultimo_url TEXT NOT NULL DEFAULT '',
+  visto_ts INTEGER NOT NULL DEFAULT 0,     -- quando l'abbiamo controllato l'ultima volta
+  errore TEXT NOT NULL DEFAULT '',         -- perche l'ultimo controllo e fallito
+  ts INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_feed_ch ON feed_fonte(channel);
+
 CREATE TABLE IF NOT EXISTS telegram_msg (  -- avvisi live mandati: uno per destinazione E per streamer
   channel TEXT NOT NULL,
   dest_id INTEGER NOT NULL,
@@ -1292,6 +1309,52 @@ export const tgVisti = {
   },
   pulisci(channel) {
     db.prepare('DELETE FROM telegram_visto WHERE channel=?').run(String(channel).toLowerCase());
+  },
+};
+
+// I feed da cui accorgersi dei post nuovi. Una PRESA generica: qualunque cosa
+// sappia produrre un RSS, un Atom o un JSON Feed diventa una sorgente.
+export const feedFonti = {
+  lista(channel) {
+    return db.prepare('SELECT * FROM feed_fonte WHERE channel=? ORDER BY id').all(String(channel).toLowerCase());
+  },
+  get(channel, id) {
+    return db.prepare('SELECT * FROM feed_fonte WHERE channel=? AND id=?')
+      .get(String(channel).toLowerCase(), Number(id) || 0) || null;
+  },
+  attivi() {
+    return db.prepare('SELECT * FROM feed_fonte WHERE attivo=1').all();
+  },
+  aggiungi({ channel, nome = '', evento = 'ig', url, messaggio = '' }) {
+    const info = db.prepare('INSERT INTO feed_fonte (channel, nome, evento, url, messaggio, attivo, ts) VALUES (?,?,?,?,?,1,?)')
+      .run(String(channel).toLowerCase(), String(nome || '').slice(0, 60), String(evento || 'ig'),
+        String(url).slice(0, 500), String(messaggio || '').slice(0, 600), Date.now());
+    return info.lastInsertRowid;
+  },
+  aggiorna(channel, id, campi = {}) {
+    const f = this.get(channel, id);
+    if (!f) return null;
+    db.prepare('UPDATE feed_fonte SET nome=?, evento=?, messaggio=?, attivo=?, ts=? WHERE id=?')
+      .run(campi.nome !== undefined ? String(campi.nome).slice(0, 60) : f.nome,
+        campi.evento !== undefined ? String(campi.evento) : f.evento,
+        campi.messaggio !== undefined ? String(campi.messaggio).slice(0, 600) : f.messaggio,
+        campi.attivo !== undefined ? (campi.attivo ? 1 : 0) : f.attivo,
+        Date.now(), f.id);
+    return this.get(channel, id);
+  },
+  rimuovi(channel, id) {
+    return db.prepare('DELETE FROM feed_fonte WHERE channel=? AND id=?')
+      .run(String(channel).toLowerCase(), Number(id) || 0).changes > 0;
+  },
+  // esito di un controllo: cosa abbiamo visto e, se e andata male, perche
+  segnaEsito(id, { ultimoId, titolo = '', url = '', errore = '' } = {}) {
+    const f = db.prepare('SELECT * FROM feed_fonte WHERE id=?').get(Number(id) || 0);
+    if (!f) return;
+    db.prepare('UPDATE feed_fonte SET ultimo_id=?, ultimo_titolo=?, ultimo_url=?, visto_ts=?, errore=? WHERE id=?')
+      .run(ultimoId !== undefined ? String(ultimoId || '') : f.ultimo_id,
+        titolo ? String(titolo).slice(0, 200) : f.ultimo_titolo,
+        url ? String(url).slice(0, 400) : f.ultimo_url,
+        Date.now(), String(errore || '').slice(0, 200), f.id);
   },
 };
 
