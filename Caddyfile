@@ -113,11 +113,16 @@ socialbot.live {
 	# --- Voce (Whisper) e tracking (Human): ML sul dispositivo ------------
 	# Sono pagine NOSTRE che girano top-level (OBS/scheda): resta X-Frame DENY.
 	# Allarghiamo SOLO script/connect/worker verso i CDN dei modelli e il WASM.
+	# `connect-src data: blob:` NON e una concessione a terzi: Human scalda i
+	# modelli con un'immagine incorporata come data-URI e la legge con fetch.
+	# Senza, la fetch veniva rifiutata dalla CSP e l'inizializzazione moriva con
+	# "TypeError: Failed to fetch" (riprodotto sul banco applicando questa stessa
+	# CSP). `blob:` serve agli stessi worker gia ammessi in worker-src.
 	handle @ml {
 		header {
 			import sicurezza_comune
 			X-Frame-Options "DENY"
-			Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://cdn.jsdelivr.net https://vladmandic.github.io https://huggingface.co https://*.hf.co https://cdn-lfs.huggingface.co https://cdn-lfs-us-1.hf.co; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
+			Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' data: blob: https://cdn.jsdelivr.net https://vladmandic.github.io https://huggingface.co https://*.hf.co https://cdn-lfs.huggingface.co https://cdn-lfs-us-1.hf.co; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
 		}
 		reverse_proxy bot:8090 {
 			header_up X-Edge-Key {env.EDGE_KEY}
