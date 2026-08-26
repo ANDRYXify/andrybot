@@ -32,6 +32,11 @@ const TOLLERANZA_WEBHOOK_S = 300; // 5 min: finestra anti-replay dei webhook Str
 export const FREE = {
   id: 'free', nome: 'Essenziale', prezzo: 0, prezzoTesto: 'Gratis', priceEnv: null, icona: '🎈',
   sommario: 'Gratis, basta registrarsi: comandi illimitati, moderazione, overlay per OBS e contatori a schermo.',
+  nome3: ['Essenziale', 'Essenziale', 'Essenziale'],
+  sommario3: [
+    'Gratis, basta registrarsi: comandi illimitati, moderazione, overlay per OBS e contatori a schermo.',
+    'Free, just sign up: unlimited commands, moderation, OBS overlay and on-screen counters.',
+    'Gratis, solo con registrarte: comandos ilimitados, moderación, overlay para OBS y contadores en pantalla.'],
   funzioni: { moduli: Infinity, giochi: false, notifiche: false, clipAuto: false, voce: false, moderatori: 0, effetti: false, overlay: true, telegram: false, studio: false },
 };
 
@@ -41,6 +46,11 @@ export const FREE = {
 export const BASE = {
   id: 'base', nome: 'Base', prezzo: 2.99, prezzoTesto: '€2,99/mese', priceEnv: 'base', icona: '🤖',
   sommario: 'Tutto l’Essenziale, più gli avvisi live su Telegram/Discord e i nuovi post, e un moderatore.',
+  nome3: ['Base', 'Base', 'Base'],
+  sommario3: [
+    'Tutto l’Essenziale, più gli avvisi live su Telegram/Discord e i nuovi post, e un moderatore.',
+    'Everything in Essenziale, plus live alerts on Telegram/Discord and new posts, and one moderator.',
+    'Todo lo de Essenziale, más los avisos en directo en Telegram/Discord y las nuevas publicaciones, y un moderador.'],
   // Social & Notifiche ora è INCLUSO nel Base (notifiche + telegram): prima era
   // un add-on a pagamento, ma è di fatto essenziale. Chi l'aveva comprato non
   // perde nulla; chi prende il Base ora ce l'ha dentro.
@@ -55,18 +65,33 @@ export const ADDON = [
     id: 'giochi', nome: 'Giochi & Classifiche', prezzo: 2.79, prezzoTesto: '€2,79/mese',
     priceEnv: 'addon_giochi', icona: '🎮',
     sommario: 'Minigiochi in chat, monete, classifiche e premio VIP ai più attivi.',
+    nome3: ['Giochi & Classifiche', 'Games & Leaderboards', 'Juegos y Clasificaciones'],
+    sommario3: [
+      'Minigiochi in chat, monete, classifiche e premio VIP ai più attivi.',
+      'Chat minigames, coins, leaderboards and a VIP reward for the most active.',
+      'Minijuegos en el chat, monedas, clasificaciones y premio VIP a los más activos.'],
     funzioni: { giochi: true },
   },
   {
     id: 'effetti', nome: 'Effetti & Punti canale', prezzo: 1.79, prezzoTesto: '€1,79/mese',
     priceEnv: 'addon_effetti', icona: '✨',
     sommario: 'Alert ed effetti in overlay, anche riscattabili con i punti canale.',
+    nome3: ['Effetti & Punti canale', 'Effects & Channel Points', 'Efectos y Puntos de canal'],
+    sommario3: [
+      'Alert ed effetti in overlay, anche riscattabili con i punti canale.',
+      'Overlay alerts and effects, redeemable with channel points too.',
+      'Alertas y efectos en overlay, también canjeables con puntos de canal.'],
     funzioni: { effetti: true },
   },
   {
     id: 'notifiche', nome: 'Social & Notifiche', prezzo: 2.99, prezzoTesto: '€2,99/mese',
     priceEnv: 'addon_notifiche', icona: '📣',
     sommario: 'Avvisa quando vai in diretta su Telegram e Discord; avvisa i nuovi post/video su TikTok, YouTube e Instagram.',
+    nome3: ['Social & Notifiche', 'Social & Notifications', 'Social y Notificaciones'],
+    sommario3: [
+      'Avvisa quando vai in diretta su Telegram e Discord; avvisa i nuovi post/video su TikTok, YouTube e Instagram.',
+      'Announces when you go live on Telegram and Discord; alerts new posts/videos on TikTok, YouTube and Instagram.',
+      'Avisa cuando sales en directo en Telegram y Discord; avisa de nuevas publicaciones/vídeos en TikTok, YouTube e Instagram.'],
     funzioni: { notifiche: true, telegram: true },
     // Ora incluso nel Base: resta definito per i bundle e per chi l'aveva già
     // comprato, ma NON va più offerto come acquisto separato (è già nel Base).
@@ -76,24 +101,44 @@ export const ADDON = [
     id: 'clip', nome: 'Clip Automatiche', prezzo: 0.99, prezzoTesto: '€0,99/mese',
     priceEnv: 'addon_clip', icona: '🎬',
     sommario: 'I momenti migliori clippati e salvati in automatico durante la diretta.',
+    nome3: ['Clip Automatiche', 'Automatic Clips', 'Clips Automáticos'],
+    sommario3: [
+      'I momenti migliori clippati e salvati in automatico durante la diretta.',
+      'Your best moments clipped and saved automatically while you stream.',
+      'Los mejores momentos clipados y guardados automáticamente durante el directo.'],
     funzioni: { clipAuto: true },
   },
   {
     id: 'voce', nome: 'Comandi Vocali', prezzo: 0.99, prezzoTesto: '€0,99/mese',
     priceEnv: 'addon_voce', icona: '🎙️',
     sommario: 'Guida il bot con la voce: cambia titolo, categoria e assegna VIP mentre streami.',
+    nome3: ['Comandi Vocali', 'Voice Commands', 'Comandos por Voz'],
+    sommario3: [
+      'Guida il bot con la voce: cambia titolo, categoria e assegna VIP mentre streami.',
+      'Drive the bot with your voice: change title, category and grant VIP while you stream.',
+      'Controla el bot con la voz: cambia título, categoría y da VIP mientras haces directo.'],
     funzioni: { voce: true },
   },
   {
     id: 'squadra', nome: 'Squadra', prezzo: 2.99, prezzoTesto: '€2,99/mese',
     priceEnv: 'addon_squadra', icona: '👥',
     sommario: 'Fino a 10 moderatori per gestire il canale in team con i tuoi mod.',
+    nome3: ['Squadra', 'Team', 'Equipo'],
+    sommario3: [
+      'Fino a 10 moderatori per gestire il canale in team con i tuoi mod.',
+      'Up to 10 moderators to run the channel as a team with your mods.',
+      'Hasta 10 moderadores para llevar el canal en equipo con tus mods.'],
     funzioni: { moderatori: 10 },
   },
   {
     id: 'musica', nome: 'Richieste Musicali', prezzo: 2.79, prezzoTesto: '€2,79/mese',
     priceEnv: 'addon_musica', icona: '🎵',
     sommario: 'Gli spettatori mettono canzoni in coda su Spotify con !sr.',
+    nome3: ['Richieste Musicali', 'Song Requests', 'Peticiones Musicales'],
+    sommario3: [
+      'Gli spettatori mettono canzoni in coda su Spotify con !sr.',
+      'Viewers queue songs on Spotify with !sr.',
+      'Los espectadores ponen canciones en cola en Spotify con !sr.'],
     funzioni: { musica: true },
   },
 ];
@@ -103,6 +148,11 @@ export const ADDON = [
 export const TIER_COMMUNITY = {
   id: 'community', nome: 'Community', prezzo: 0, prezzoTesto: 'Membro community', priceEnv: null, icona: '🎁',
   sommario: 'Accesso completo riservato ai membri abilitati di andryxify.it.',
+  nome3: ['Community', 'Community', 'Community'],
+  sommario3: [
+    'Accesso completo riservato ai membri abilitati di andryxify.it.',
+    'Full access reserved to enabled members of andryxify.it.',
+    'Acceso completo reservado a los miembros habilitados de andryxify.it.'],
   funzioni: { moduli: Infinity, giochi: true, notifiche: true, clipAuto: true, voce: true, moderatori: 20, effetti: true, overlay: true, telegram: true, musica: true, studio: true },
 };
 
@@ -127,11 +177,23 @@ export function normalizzaPacchetti(x) {
 const _sommaAddon = (ids) => ids.reduce((t, id) => t + (addonById(id)?.prezzo || 0), 0);
 export const BUNDLE = [
   { id: 'creator', nome: 'Creator', icona: '🎨', priceEnv: 'bundle_creator', prezzo: 4.49, addon: ['effetti', 'notifiche', 'clip'],
-    sommario: 'Presenza e visibilità: overlay ed effetti, avvisi live sui social, clip automatiche.' },
+    sommario: 'Presenza e visibilità: overlay ed effetti, avvisi live sui social, clip automatiche.',
+    sommario3: [
+      'Presenza e visibilità: overlay ed effetti, avvisi live sui social, clip automatiche.',
+      'Presence and reach: overlay and effects, live alerts on socials, automatic clips.',
+      'Presencia y visibilidad: overlay y efectos, avisos en directo en redes, clips automáticos.'] },
   { id: 'interazione', nome: 'Interazione', icona: '🎉', priceEnv: 'bundle_interazione', prezzo: 5.49, addon: ['musica', 'giochi', 'voce'],
-    sommario: 'Community attiva: richieste musicali, minigiochi e monete, comandi a voce.' },
+    sommario: 'Community attiva: richieste musicali, minigiochi e monete, comandi a voce.',
+    sommario3: [
+      'Community attiva: richieste musicali, minigiochi e monete, comandi a voce.',
+      'An active community: song requests, minigames and coins, voice commands.',
+      'Comunidad activa: peticiones musicales, minijuegos y monedas, comandos por voz.'] },
   { id: 'tutto', nome: 'Tutto', icona: '🚀', priceEnv: 'bundle_tutto', prezzo: 12.49, addon: [...ADDON_IDS],
-    sommario: 'Ogni super-potere sbloccato: tutti gli add-on in un colpo solo.' },
+    sommario: 'Ogni super-potere sbloccato: tutti gli add-on in un colpo solo.',
+    sommario3: [
+      'Ogni super-potere sbloccato: tutti gli add-on in un colpo solo.',
+      'Every super-power unlocked: all the add-ons in one go.',
+      'Cada superpoder desbloqueado: todos los add-ons de una vez.'] },
 ].map((b) => {
   const pieno = Math.round(_sommaAddon(b.addon) * 100) / 100;
   const sconto = pieno > 0 ? Math.round((1 - b.prezzo / pieno) * 100) / 100 : 0;
@@ -183,14 +245,14 @@ export function limite(funzioni, chiave) {
 // Vetrina pubblica: la forma dei piani per il client (Infinity → -1, non-serializz.).
 export function pianiPubblici() {
   const san = (f) => Object.fromEntries(Object.entries(f).map(([k, v]) => [k, v === Infinity ? -1 : v]));
-  const esponi = (p) => ({ id: p.id, nome: p.nome, icona: p.icona, prezzo: p.prezzo, prezzoTesto: p.prezzoTesto, sommario: p.sommario, funzioni: san(p.funzioni) });
+  const esponi = (p) => ({ id: p.id, nome: p.nome, nome3: p.nome3 || null, icona: p.icona, prezzo: p.prezzo, prezzoTesto: p.prezzoTesto, sommario: p.sommario, sommario3: p.sommario3 || null, funzioni: san(p.funzioni) });
   return {
     free: esponi(FREE),
     base: esponi(BASE),
     // gli add-on inclusi nel Base (es. Social & Notifiche) non si offrono più à la
     // carte: restano definiti solo per i bundle e per chi li aveva già comprati.
     addon: ADDON.filter((a) => !a.inclusoBase).map(esponi),
-    bundle: BUNDLE.map((b) => ({ id: b.id, nome: b.nome, icona: b.icona, sommario: b.sommario,
+    bundle: BUNDLE.map((b) => ({ id: b.id, nome: b.nome, icona: b.icona, sommario: b.sommario, sommario3: b.sommario3 || null,
       addon: b.addon, prezzo: b.prezzo, prezzoTesto: b.prezzoTesto, prezzoPieno: b.prezzoPieno, prezzoPienoTesto: b.prezzoPienoTesto, sconto: b.sconto })),
     community: esponi(TIER_COMMUNITY),
   };

@@ -446,7 +446,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     '/graf-gif.js', '/mente3d.js', '/vendor/qrcode.js',
     // estetica ANIME OP + ricerca predittiva: DEVONO caricarsi sulla vetrina pubblica
     // (è ciò che rende futuristica la home per i visitatori). Nessun dato sensibile.
-    '/anime.css', '/cinema.js', '/cerca.js', '/plancia.js', '/pilota.js',
+    '/anime.css', '/vetrina.css', '/cinema.js', '/cerca.js', '/plancia.js', '/pilota.js',
     // script degli overlay OBS: pubblici (nessun segreto), servono senza sessione
     // altrimenti l'overlay tracking resta bloccato su "avvio…" (script non caricati)
     '/tracking-overlay.js', '/tracking-games.js', '/tracking-fx.js', '/tracking-fx-gl.js', '/tracking-poses.js']);
@@ -913,9 +913,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   app.get('/entra', wrap(async (req, res) => {
     const passRaw = String(req.query.pass || '').trim();
     if (!passRaw) {
-      // login diretto con Twitch (nessun `compra`: ingresso puro, gate al callback)
+      // login diretto con Twitch (nessun `compra`: ingresso puro, gate al callback).
+      // `?nuovo=1` = ha premuto «Registrati»: al rientro apriamo il benvenuto.
       const state = crypto.randomUUID();
-      req.session.selfFlow = { state };
+      req.session.selfFlow = { state, nuovo: req.query.nuovo === '1' };
       return res.redirect(auth.authUrl([], state));
     }
     const who = await redeemPass(passRaw);
@@ -1421,7 +1422,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         const url = await abbonamenti.creaCheckout({ login, pacchetti: sf.pacchetti || [], bundle: sf.bundle || null }).catch(() => null);
         if (url) { if (!req.session.user) req.session.abbonando = { login, display: disp }; return res.redirect(url); }
       }
-      if (req.session.user) return res.redirect(promoVinta ? '/?promo=1' : '/');
+      if (req.session.user) {
+        if (promoVinta) return res.redirect('/?promo=1');
+        return res.redirect(sf.nuovo ? '/?benvenuto=1' : '/');
+      }
       // caso limite (nessun contesto): vede solo i piani e può fare checkout
       req.session.abbonando = { login, display: disp };
       return res.redirect('/?abbonati=1');
