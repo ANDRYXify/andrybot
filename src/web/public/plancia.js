@@ -166,7 +166,8 @@
     voci = indice();
     var h = '';
     voci.forEach(function (v, i) {
-      h += '<button type="button" role="option" class="pl-tile' + (v.bloccata ? ' bloccata' : '') + (v.inizioGruppo && i ? ' stacco' : '') + '" data-i="' + i + '" style="--pl-r:' + Math.min(i, 10) * 34 + 'ms">' +
+      if (v.inizioGruppo && i) h += '<span class="pl-sep" aria-hidden="true"></span>';
+      h += '<button type="button" role="option" class="pl-tile' + (v.bloccata ? ' bloccata' : '') + '" data-i="' + i + '" style="--pl-r:' + Math.min(i, 10) * 34 + 'ms">' +
         '<span class="pl-tile-ico">' + v.icona + '</span>' +
         '<span class="pl-tile-nome">' + esc(v.nome) + '</span>' +
         (v.bloccata ? '<span class="pl-tile-lock" aria-hidden="true">' + ICO_LOCK + '</span>' : '') +
