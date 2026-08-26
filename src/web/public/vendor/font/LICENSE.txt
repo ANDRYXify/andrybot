@@ -1,0 +1,19 @@
+I file .woff2 in questa cartella sono sottoinsiemi latin / latin-ext dei
+seguenti caratteri, distribuiti con la SIL Open Font License 1.1 (OFL-1.1).
+Non sono opera di socialbot.live: sono ridistribuiti alle condizioni della
+loro licenza, che consente l'uso, la modifica e la ridistribuzione anche
+incorporata in un sito web.
+
+- Archivo — Copyright (c) Omnibus-Type
+  https://fonts.google.com/specimen/Archivo
+- Instrument Serif — Copyright (c) Instrument
+  https://fonts.google.com/specimen/Instrument+Serif
+- Zen Kaku Gothic New — Copyright (c) Yoshimichi Ohira
+  https://fonts.google.com/specimen/Zen+Kaku+Gothic+New
+
+Testo completo della licenza: https://openfontlicense.org/
+(SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007)
+
+Sono ospitati qui, e non presi da un dominio di terzi, per due ragioni:
+il primo disegno della pagina non deve dipendere da un server esterno, e
+l'indirizzo IP di chi visita non deve finire a un terzo senza consenso.

@@ -441,7 +441,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // sono visibili anche senza pass, per far conoscere il bot. NON espongono dati
   // reali: /api/me senza sessione risponde solo "nessun utente" e tutte le API
   // con i dati dello streamer restano chiuse dietro il pass.
-  const VETRINA = new Set(['/', '/index.html', '/app.js', '/style.css', '/presets.js', '/overlay-skin.css',
+  const VETRINA = new Set(['/', '/index.html', '/app.js', '/style.css', '/font.css', '/presets.js', '/overlay-skin.css',
     // asset del guscio referenziati da index.html: senza questi la home dà 404 ai crawler
     // (SEO: "broken internal JS/CSS") e agli utenti non loggati. Nessun segreto: sono statici.
     '/graf-gif.js', '/mente3d.js', '/vendor/qrcode.js',
@@ -482,6 +482,23 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
 
   // file statici della dashboard (serviti solo a chi ha superato il cancello)
   const publicDir = join(dirname(fileURLToPath(import.meta.url)), 'public');
+
+  // GUSCIO: `body.vetrina` deciso QUI, non dal JS. Prima lo metteva app.js dopo
+  // /api/me, e nel frattempo la pagina aveva gia disegnato la colonna stretta
+  // della dashboard (640px) per poi allargarsi a quella della vetrina (1180px):
+  // uno scarto di layout di 0,15 CLS, sopra la soglia buona di 0,1. Chi e loggato
+  // e chi no lo sa il server a costo zero (e in sessione), quindi lo scrive nel
+  // primo HTML e la larghezza e giusta gia al primo disegno.
+  const gusciaHtml = readFileSync(join(publicDir, 'index.html'), 'utf8');
+  const gusciaVetrina = gusciaHtml.replace('<body>', '<body class="vetrina">');
+  const serviGuscio = (req, res) => {
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.set('Cache-Control', 'no-cache');
+    res.set('Vary', 'Cookie');
+    res.send(currentUser(req) ? gusciaHtml : gusciaVetrina);
+  };
+  app.get(['/', '/index.html'], serviGuscio);
+
   app.use(express.static(publicDir));
 
   function requireLogin(req, res, next) {

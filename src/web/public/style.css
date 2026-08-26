@@ -311,7 +311,7 @@ body.menu-aperto .drawer { transform: none; }
 .carta.rivela.dentro { opacity: 1; transform: none; will-change: auto; }
 @keyframes appare { from { opacity: 0; } to { opacity: 1; } }
 
-#app { view-transition-name: contenuto; }
+#app { view-transition-name: contenuto; min-height: min(94svh, 900px); }
 ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
 ::view-transition-old(contenuto) { animation: vt-esce .22s var(--ease) both; }
 ::view-transition-new(contenuto) { animation: vt-entra .34s var(--rev-ease) both; }
