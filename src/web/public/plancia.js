@@ -166,18 +166,12 @@
       '</button>';
     });
     rail.innerHTML = h;
-    var fine = false;
-    try { fine = !!(window.matchMedia && window.matchMedia('(pointer: fine)').matches); } catch (e) {}
     rail.querySelectorAll('.pl-tile').forEach(function (t) {
       t.addEventListener('click', function () {
         if (trascinato) return;
         var i = +t.dataset.i;
         if (i !== focus) { var d = i - focus; focus = i; aggiorna(d, true); }
         apriVoce(voci[i]);
-      });
-      if (fine) t.addEventListener('mouseenter', function () {
-        var i = +t.dataset.i;
-        if (i !== focus) { var d = i - focus; focus = i; aggiorna(d); }
       });
     });
     if (focus >= voci.length) focus = 0;
