@@ -18,7 +18,7 @@ import { config, SCOPES, missingConfig } from '../config.js';
 import * as filigrana from '../watermark.js';   // filigrana di proprietà (Andrea Taliento / ANDRYXify)
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb, friends, sfondi as sfondiDb } from '../db.js';
-import { points, vips, tgConf, tgDest, tgAmici, dcConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
+import { points, vips, tgConf, tgDest, tgAmici, tgVisti, dcConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO } from '../db.js';
 import { renderLinkPage, renderInformativa } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
@@ -4241,10 +4241,34 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const login = currentUser(req).login;
     const c = tgConf.get(login);
     if (!c?.token) return res.status(400).json({ errore: 'prima collega il bot con il token' });
-    const r = await telegram.rilevaDestinazioni(c.token);
-    if (!r.ok) return res.status(400).json({ errore: r.errore });
+
+    // Due fonti, unite. Col webhook acceso Telegram VIETA getUpdates: in quel
+    // caso valgono solo le chat che il webhook ha gia visto passare.
+    const viste = new Map();
+    for (const v of tgVisti.lista(login)) {
+      viste.set(v.chat_id + ':' + (v.thread_id || ''), {
+        chatId: v.chat_id, titolo: v.titolo, tipo: v.tipo,
+        threadId: v.thread_id || '', threadNome: v.thread_nome || '',
+      });
+    }
+    let notaWebhook = false;
+    if (!c.interattivo) {
+      const r = await telegram.rilevaDestinazioni(c.token);
+      if (r.ok) for (const d of r.destinazioni) viste.set(d.chatId + ':' + (d.threadId || ''), d);
+    } else notaWebhook = true;
+
+    if (!viste.size) {
+      return res.status(400).json({
+        errore: notaWebhook
+          ? 'non ho ancora visto nessun posto. Scrivi «/collega» DENTRO il gruppo, il canale o il topic che vuoi collegare (un comando arriva sempre al bot, un messaggio normale no se la privacy è accesa), poi riprova.'
+          : 'niente da collegare: aggiungi il bot al gruppo o al canale, scrivi «/collega» lì dentro (nel topic giusto, se usi i topic) e riprova.',
+      });
+    }
     const gia = new Set(tgDest.lista(login).map((d) => d.chat_id + ':' + (d.thread_id || '')));
-    res.json({ ok: true, trovate: r.destinazioni.map((d) => ({ ...d, gia: gia.has(d.chatId + ':' + (d.threadId || '')) })) });
+    res.json({
+      ok: true, daWebhook: notaWebhook,
+      trovate: [...viste.values()].map((d) => ({ ...d, gia: gia.has(d.chatId + ':' + (d.threadId || '')) })),
+    });
   }));
 
   app.post('/api/streamer/telegram/destinazioni', requireLogin, wrap(async (req, res) => {
@@ -4473,9 +4497,27 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     }
     res.json({ ok: true });   // conferma subito a Telegram, poi elabora
     try {
-      const msg = req.body?.message;
+      const msg = req.body?.message || req.body?.channel_post;
       const chat = msg?.chat;
       const testo = msg?.text;
+      // Impara DOVE il bot puo scrivere, prima di ogni altra cosa: con il webhook
+      // acceso Telegram vieta getUpdates, quindi questa e l'unica fonte onesta
+      // di chat e topic. Vale anche per i messaggi senza testo.
+      if (chat?.id) {
+        tgVisti.segna({
+          channel: conf.channel,
+          chatId: String(chat.id),
+          threadId: msg.is_topic_message ? String(msg.message_thread_id || '') : '',
+          titolo: chat.title || chat.first_name || chat.username || '(chat)',
+          tipo: chat.type || 'group',
+          threadNome: msg.reply_to_message?.forum_topic_created?.name || msg.forum_topic_created?.name || '',
+        });
+        // il «Generale» del gruppo resta comunque una destinazione valida
+        if (msg.is_topic_message) {
+          tgVisti.segna({ channel: conf.channel, chatId: String(chat.id), threadId: '',
+            titolo: chat.title || '(gruppo)', tipo: chat.type || 'supergroup' });
+        }
+      }
       if (!chat || !testo) return;
       const login = conf.channel;
       const s = streamers.get(login);
