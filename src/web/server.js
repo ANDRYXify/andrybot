@@ -18,7 +18,7 @@ import { config, SCOPES, missingConfig } from '../config.js';
 import * as filigrana from '../watermark.js';   // filigrana di proprietà (Andrea Taliento / ANDRYXify)
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb, friends, sfondi as sfondiDb } from '../db.js';
-import { points, vips, tgConf, dcConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
+import { points, vips, tgConf, tgDest, tgAmici, dcConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO } from '../db.js';
 import { renderLinkPage, renderInformativa } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
@@ -4207,6 +4207,122 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json({ ok: true, gruppo: r.titolo, privato: !!r.privato });
   }));
 
+  // Gli eventi che si possono instradare. La chiave e quella usata nel filtro
+  // `eventi` delle destinazioni; i nomi servono solo a mostrarli.
+  const TG_EVENTI = [
+    { k: 'live', it: 'Diretta su Twitch', en: 'Twitch live', es: 'Directo en Twitch' },
+    { k: 'tiktok', it: 'Diretta su TikTok', en: 'TikTok live', es: 'Directo en TikTok' },
+    { k: 'yt', it: 'Nuovo video su YouTube', en: 'New YouTube video', es: 'Nuevo vídeo en YouTube' },
+    { k: 'ig', it: 'Nuovo post su Instagram', en: 'New Instagram post', es: 'Nueva publicación en Instagram' },
+    { k: 'tt', it: 'Nuovo post su TikTok', en: 'New TikTok post', es: 'Nueva publicación en TikTok' },
+  ];
+
+  // ── DESTINAZIONI: piu gruppi/canali, ognuno con topic ed eventi propri ─────
+  // Elenca cosa c'e e quali eventi si possono instradare.
+  app.get('/api/streamer/telegram/destinazioni', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const c = tgConf.get(login);
+    if (c) tgDest.migra(login, c);       // il vecchio gruppo unico diventa la prima destinazione
+    res.json({
+      destinazioni: tgDest.lista(login).map((d) => ({
+        id: d.id, chatId: d.chat_id, titolo: d.titolo, tipo: d.tipo,
+        threadId: d.thread_id, threadNome: d.thread_nome,
+        eventi: d.eventi ? d.eventi.split(',') : [], streamer: d.streamer ? d.streamer.split(',') : [],
+        pin: !!d.pin, attivo: !!d.attivo,
+      })),
+      amici: tgAmici.lista(login).map((a) => ({ id: a.id, login: a.login, display: a.display, messaggio: a.messaggio, attivo: !!a.attivo })),
+      eventi: TG_EVENTI,
+      io: login,
+    });
+  }));
+
+  // Guarda cosa ha visto il bot di recente: gruppi, canali e singoli topic.
+  app.post('/api/streamer/telegram/destinazioni/rileva', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const c = tgConf.get(login);
+    if (!c?.token) return res.status(400).json({ errore: 'prima collega il bot con il token' });
+    const r = await telegram.rilevaDestinazioni(c.token);
+    if (!r.ok) return res.status(400).json({ errore: r.errore });
+    const gia = new Set(tgDest.lista(login).map((d) => d.chat_id + ':' + (d.thread_id || '')));
+    res.json({ ok: true, trovate: r.destinazioni.map((d) => ({ ...d, gia: gia.has(d.chatId + ':' + (d.threadId || '')) })) });
+  }));
+
+  app.post('/api/streamer/telegram/destinazioni', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const c = tgConf.get(login);
+    if (!c?.token) return res.status(400).json({ errore: 'prima collega il bot con il token' });
+    const chatId = String(req.body?.chatId || '').trim();
+    if (!chatId) return res.status(400).json({ errore: 'manca la chat' });
+    if (tgDest.lista(login).length >= 20) return res.status(400).json({ errore: 'massimo 20 destinazioni' });
+    const id = tgDest.aggiungi({
+      channel: login, chatId,
+      titolo: String(req.body?.titolo || '').slice(0, 120),
+      tipo: String(req.body?.tipo || 'group'),
+      threadId: String(req.body?.threadId || ''),
+      threadNome: String(req.body?.threadNome || '').slice(0, 80),
+      eventi: req.body?.eventi, streamer: req.body?.streamer,
+      pin: !!req.body?.pin,
+    });
+    telegram.inviaMessaggio(c.token, chatId,
+      '✅ Collegato! Da qui in poi vi avviserò in questo posto.',
+      { threadId: String(req.body?.threadId || '') }).catch(() => {});
+    res.json({ ok: true, id });
+  }));
+
+  app.patch('/api/streamer/telegram/destinazioni/:id', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const d = tgDest.aggiorna(login, req.params.id, req.body || {});
+    if (!d) return res.status(404).json({ errore: 'destinazione non trovata' });
+    res.json({ ok: true });
+  }));
+
+  app.delete('/api/streamer/telegram/destinazioni/:id', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (!tgDest.rimuovi(login, req.params.id)) return res.status(404).json({ errore: 'destinazione non trovata' });
+    res.json({ ok: true });
+  }));
+
+  // prova: manda l'anteprima ESATTAMENTE dove finirebbe davvero
+  app.post('/api/streamer/telegram/destinazioni/:id/prova', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const c = tgConf.get(login);
+    const d = tgDest.get(login, req.params.id);
+    if (!c?.token || !d) return res.status(400).json({ errore: 'destinazione non trovata' });
+    const info = await helix.getStream(login).catch(() => null);
+    const s = streamers.get(login);
+    const testo = telegram.costruisciMessaggioLive({ login, display: s?.display || login }, info, c.messaggio);
+    const r = await telegram.inviaMessaggio(c.token, d.chat_id, '🧪 <i>Anteprima notifica</i>\n\n' + testo, { threadId: d.thread_id });
+    if (!r.ok) return res.status(400).json({ errore: r.errore });
+    res.json({ ok: true });
+  }));
+
+  // ── AMICI: altri streamer di cui annunciare la diretta ────────────────────
+  app.post('/api/streamer/telegram/amici', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const chiesto = String(req.body?.login || '').trim().toLowerCase().replace(/^@/, '');
+    if (!/^[a-z0-9_]{3,25}$/.test(chiesto)) return res.status(400).json({ errore: 'nome canale Twitch non valido' });
+    if (chiesto === login) return res.status(400).json({ errore: 'il tuo canale è già annunciato' });
+    if (tgAmici.lista(login).length >= 10) return res.status(400).json({ errore: 'massimo 10 streamer' });
+    // esiste davvero su Twitch? meglio dirlo subito che restare in silenzio per sempre
+    const u = await helix.getUserByLogin(chiesto).catch(() => null);
+    if (!u) return res.status(400).json({ errore: `su Twitch non trovo il canale «${chiesto}»` });
+    const id = tgAmici.aggiungi({ channel: login, login: chiesto, display: u.display_name || chiesto, messaggio: String(req.body?.messaggio || '').slice(0, 600) });
+    res.json({ ok: true, id, display: u.display_name || chiesto });
+  }));
+
+  app.patch('/api/streamer/telegram/amici/:id', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const a = tgAmici.aggiorna(login, req.params.id, req.body || {});
+    if (!a) return res.status(404).json({ errore: 'streamer non trovato' });
+    res.json({ ok: true });
+  }));
+
+  app.delete('/api/streamer/telegram/amici/:id', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (!tgAmici.rimuovi(login, req.params.id)) return res.status(404).json({ errore: 'streamer non trovato' });
+    res.json({ ok: true });
+  }));
+
   // salva impostazioni notifica (accesa/spenta + testo)
   app.post('/api/streamer/telegram/impostazioni', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
@@ -4215,7 +4331,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const attivo = !!req.body?.attivo;
     const messaggio = String(req.body?.messaggio ?? '').slice(0, 800);
     const pinLive = !!req.body?.pinLive;
-    if (attivo && !c.chat_id) return res.status(400).json({ errore: 'collega prima un gruppo (Rileva gruppo)' });
+    if (attivo && !c.chat_id && !tgDest.lista(login).length) return res.status(400).json({ errore: 'collega prima un gruppo o un canale' });
     tgConf.set(login, { attivo, messaggio, pinLive });
     res.json({ ok: true });
   }));

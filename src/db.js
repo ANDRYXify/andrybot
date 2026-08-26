@@ -254,6 +254,37 @@ CREATE TABLE IF NOT EXISTS telegram (     -- notifiche Telegram: un bot+gruppo P
   ts INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS telegram_dest (  -- DOVE notificare: piu gruppi/canali, anche per topic
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  channel TEXT NOT NULL,                   -- login twitch che possiede la configurazione
+  chat_id TEXT NOT NULL,                   -- id del gruppo o del canale Telegram
+  titolo TEXT NOT NULL DEFAULT '',         -- nome leggibile (solo per mostrarlo)
+  tipo TEXT NOT NULL DEFAULT 'group',      -- group | supergroup | channel | private
+  thread_id TEXT NOT NULL DEFAULT '',      -- message_thread_id del topic (vuoto = generale)
+  thread_nome TEXT NOT NULL DEFAULT '',    -- nome del topic (solo per mostrarlo)
+  eventi TEXT NOT NULL DEFAULT '',         -- CSV degli eventi ammessi (vuoto = tutti)
+  streamer TEXT NOT NULL DEFAULT '',       -- CSV di login ammessi (vuoto = tutti)
+  pin INTEGER NOT NULL DEFAULT 0,          -- fissa qui l'avviso live?
+  attivo INTEGER NOT NULL DEFAULT 1,
+  msg_id TEXT NOT NULL DEFAULT '',         -- ultimo avviso live inviato QUI (per fissare/eliminare)
+  ts INTEGER NOT NULL DEFAULT 0,
+  UNIQUE(channel, chat_id, thread_id)
+);
+CREATE INDEX IF NOT EXISTS idx_tgdest_ch ON telegram_dest(channel);
+
+CREATE TABLE IF NOT EXISTS telegram_amico (  -- ALTRI streamer di cui annunciare la diretta
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  channel TEXT NOT NULL,                   -- login twitch che possiede la configurazione
+  login TEXT NOT NULL,                     -- login twitch dell'amico
+  display TEXT NOT NULL DEFAULT '',
+  messaggio TEXT NOT NULL DEFAULT '',      -- template dedicato (vuoto = quello del canale)
+  attivo INTEGER NOT NULL DEFAULT 1,
+  ultima_live TEXT NOT NULL DEFAULT '',    -- id dell'ultima diretta annunciata (anti-doppioni)
+  ts INTEGER NOT NULL DEFAULT 0,
+  UNIQUE(channel, login)
+);
+CREATE INDEX IF NOT EXISTS idx_tgamico_ch ON telegram_amico(channel);
+
 CREATE TABLE IF NOT EXISTS brain_model (  -- IA locale: modello auto-addestrato per canale
   channel TEXT PRIMARY KEY,                -- login twitch minuscolo
   data TEXT NOT NULL DEFAULT '',           -- JSON: vocabolario + vettori semantici (base64)
@@ -1135,6 +1166,114 @@ export const dcConf = {
     return v;
   },
   setUltimaLive(channel, streamId) { this.set(channel, { ultimaLive: String(streamId || '') }); },
+};
+
+const _csv = (x) => (Array.isArray(x) ? x : String(x || '').split(','))
+  .map((v) => String(v || '').trim().toLowerCase()).filter(Boolean);
+const _inCsv = (campo, valore) => {
+  const l = _csv(campo);
+  return !l.length || l.includes(String(valore || '').toLowerCase());
+};
+
+// DOVE mandare le notifiche: piu gruppi/canali, ognuno con il suo topic e i suoi
+// filtri (quali eventi, quali streamer). Vuoto = nessun filtro, cioe tutto.
+export const tgDest = {
+  lista(channel) {
+    return db.prepare('SELECT * FROM telegram_dest WHERE channel=? ORDER BY id').all(String(channel).toLowerCase());
+  },
+  get(channel, id) {
+    return db.prepare('SELECT * FROM telegram_dest WHERE channel=? AND id=?').get(String(channel).toLowerCase(), Number(id) || 0) || null;
+  },
+  // le destinazioni a cui questo evento, per questo streamer, deve arrivare
+  perEvento(channel, evento, streamerLogin) {
+    return this.lista(channel).filter((d) => d.attivo
+      && _inCsv(d.eventi, evento)
+      && _inCsv(d.streamer, streamerLogin || channel));
+  },
+  aggiungi({ channel, chatId, titolo = '', tipo = 'group', threadId = '', threadNome = '', eventi = '', streamer = '', pin = 0, attivo = 1 }) {
+    const ch = String(channel).toLowerCase();
+    const info = db.prepare(`INSERT INTO telegram_dest (channel, chat_id, titolo, tipo, thread_id, thread_nome, eventi, streamer, pin, attivo, ts)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?)
+      ON CONFLICT(channel, chat_id, thread_id) DO UPDATE SET titolo=excluded.titolo, tipo=excluded.tipo,
+        thread_nome=excluded.thread_nome, attivo=excluded.attivo, ts=excluded.ts`)
+      .run(ch, String(chatId), String(titolo).slice(0, 120), String(tipo), String(threadId || ''), String(threadNome || '').slice(0, 80),
+        _csv(eventi).join(','), _csv(streamer).join(','), pin ? 1 : 0, attivo ? 1 : 0, Date.now());
+    return info.lastInsertRowid
+      || (db.prepare('SELECT id FROM telegram_dest WHERE channel=? AND chat_id=? AND thread_id=?')
+        .get(ch, String(chatId), String(threadId || ''))?.id || 0);
+  },
+  aggiorna(channel, id, campi = {}) {
+    const d = this.get(channel, id);
+    if (!d) return null;
+    const v = {
+      titolo: campi.titolo !== undefined ? String(campi.titolo).slice(0, 120) : d.titolo,
+      thread_id: campi.threadId !== undefined ? String(campi.threadId || '') : d.thread_id,
+      thread_nome: campi.threadNome !== undefined ? String(campi.threadNome || '').slice(0, 80) : d.thread_nome,
+      eventi: campi.eventi !== undefined ? _csv(campi.eventi).join(',') : d.eventi,
+      streamer: campi.streamer !== undefined ? _csv(campi.streamer).join(',') : d.streamer,
+      pin: campi.pin !== undefined ? (campi.pin ? 1 : 0) : d.pin,
+      attivo: campi.attivo !== undefined ? (campi.attivo ? 1 : 0) : d.attivo,
+    };
+    db.prepare(`UPDATE telegram_dest SET titolo=@titolo, thread_id=@thread_id, thread_nome=@thread_nome,
+      eventi=@eventi, streamer=@streamer, pin=@pin, attivo=@attivo, ts=@ts WHERE id=@id`)
+      .run({ ...v, id: d.id, ts: Date.now() });
+    return this.get(channel, id);
+  },
+  rimuovi(channel, id) {
+    return db.prepare('DELETE FROM telegram_dest WHERE channel=? AND id=?')
+      .run(String(channel).toLowerCase(), Number(id) || 0).changes > 0;
+  },
+  setMsgId(id, msgId) {
+    db.prepare('UPDATE telegram_dest SET msg_id=? WHERE id=?').run(String(msgId || ''), Number(id) || 0);
+  },
+  // Migrazione dal modello a UNA destinazione: se il canale non ne ha ancora
+  // nessuna ma aveva un gruppo collegato, quello diventa la prima destinazione.
+  // Idempotente: gira a ogni lettura senza duplicare nulla.
+  migra(channel, conf) {
+    const ch = String(channel).toLowerCase();
+    if (!conf?.chat_id) return;
+    const n = db.prepare('SELECT COUNT(*) c FROM telegram_dest WHERE channel=?').get(ch)?.c || 0;
+    if (n > 0) return;
+    this.aggiungi({ channel: ch, chatId: conf.chat_id, titolo: conf.chat_titolo || '', tipo: 'group', pin: conf.pin_live ? 1 : 0 });
+  },
+};
+
+// ALTRI streamer di cui annunciare la diretta (oltre alla propria).
+export const tgAmici = {
+  lista(channel) {
+    return db.prepare('SELECT * FROM telegram_amico WHERE channel=? ORDER BY login').all(String(channel).toLowerCase());
+  },
+  attivi(channel) { return this.lista(channel).filter((a) => a.attivo); },
+  aggiungi({ channel, login, display = '', messaggio = '' }) {
+    const ch = String(channel).toLowerCase();
+    const lg = String(login || '').trim().toLowerCase().replace(/^@/, '');
+    if (!lg) return 0;
+    db.prepare(`INSERT INTO telegram_amico (channel, login, display, messaggio, attivo, ts) VALUES (?,?,?,?,1,?)
+      ON CONFLICT(channel, login) DO UPDATE SET display=excluded.display, messaggio=excluded.messaggio, ts=excluded.ts`)
+      .run(ch, lg, String(display || lg).slice(0, 60), String(messaggio || '').slice(0, 600), Date.now());
+    return db.prepare('SELECT id FROM telegram_amico WHERE channel=? AND login=?').get(ch, lg)?.id || 0;
+  },
+  aggiorna(channel, id, campi = {}) {
+    const ch = String(channel).toLowerCase();
+    const a = db.prepare('SELECT * FROM telegram_amico WHERE channel=? AND id=?').get(ch, Number(id) || 0);
+    if (!a) return null;
+    db.prepare('UPDATE telegram_amico SET messaggio=?, attivo=?, ts=? WHERE id=?')
+      .run(campi.messaggio !== undefined ? String(campi.messaggio).slice(0, 600) : a.messaggio,
+        campi.attivo !== undefined ? (campi.attivo ? 1 : 0) : a.attivo, Date.now(), a.id);
+    return db.prepare('SELECT * FROM telegram_amico WHERE id=?').get(a.id);
+  },
+  rimuovi(channel, id) {
+    return db.prepare('DELETE FROM telegram_amico WHERE channel=? AND id=?')
+      .run(String(channel).toLowerCase(), Number(id) || 0).changes > 0;
+  },
+  setUltimaLive(channel, login, streamId) {
+    db.prepare('UPDATE telegram_amico SET ultima_live=? WHERE channel=? AND login=?')
+      .run(String(streamId || ''), String(channel).toLowerCase(), String(login).toLowerCase());
+  },
+  // tutti i canali che hanno almeno un amico attivo (per il giro di controllo)
+  canaliConAmici() {
+    return db.prepare('SELECT DISTINCT channel FROM telegram_amico WHERE attivo=1').all().map((r) => r.channel);
+  },
 };
 
 export const tgConf = {
