@@ -750,9 +750,9 @@ function wireSwitchCanaleGlobale() {
 
 const LINGUE = ['it', 'en', 'es'];
 let LINGUA = (() => {
-  try { const s = localStorage.getItem('lingua'); if (LINGUE.includes(s)) return s; } catch (e) {  }
   const q = new URLSearchParams(location.search).get('lang');
-  if (LINGUE.includes(q)) return q;
+  if (LINGUE.includes(q)) { try { localStorage.setItem('lingua', q); } catch (e) {  } return q; }
+  try { const s = localStorage.getItem('lingua'); if (LINGUE.includes(s)) return s; } catch (e) {  }
   const n = (navigator.language || 'it').slice(0, 2).toLowerCase();
   return LINGUE.includes(n) ? n : 'it';
 })();

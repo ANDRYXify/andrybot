@@ -490,12 +490,80 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // e chi no lo sa il server a costo zero (e in sessione), quindi lo scrive nel
   // primo HTML e la larghezza e giusta gia al primo disegno.
   const gusciaHtml = readFileSync(join(publicDir, 'index.html'), 'utf8');
-  const gusciaVetrina = gusciaHtml.replace('<body>', '<body class="vetrina">');
+
+  // LINGUE INDICIZZABILI. index.html dichiara tre alternative hreflang
+  // (it/en/es) ma serviva SEMPRE l'italiano, con `<html lang="it">` e un
+  // `canonical` che puntava a `/`. Per Google quel canonical significa
+  // «?lang=en e un duplicato della home italiana»: le versioni inglese e
+  // spagnola non potevano essere indicizzate, e l'intero gruppo hreflang si
+  // annullava da solo. Ora ogni lingua ha il suo guscio, col proprio
+  // `lang`, titolo, descrizione, og:* e canonical che punta a SE STESSO.
+  const META_LINGUA = {
+    it: {
+      html: 'it', ogLocale: 'it_IT', url: 'https://socialbot.live/',
+      titolo: 'SocialBot — bot per Twitch in italiano | socialbot.live',
+      desc: 'Il bot per Twitch in italiano che scrive in chat col TUO account: comandi, moderazione con scudo anti-bot, overlay per OBS, clip e avvisi live. Gratis, con demo.',
+      ogTitolo: 'SocialBot · Bot per Twitch italiano che parla con la tua voce',
+      ogDesc: 'Il bot per Twitch in italiano che scrive in chat col tuo account: comandi su misura, overlay per OBS (alert, chat a schermo, widget, emote 7TV, green screen), musica, clip, dirette dal browser senza OBS e notifiche live.',
+      twTitolo: 'SocialBot · Bot per Twitch italiano che parla con la tua voce',
+      twDesc: 'Il bot per Twitch in italiano che scrive col tuo account. Overlay OBS (alert, chat, widget, 7TV, green screen), comandi, musica, clip, notifiche live.',
+    },
+    en: {
+      html: 'en', ogLocale: 'en_GB', url: 'https://socialbot.live/?lang=en',
+      titolo: 'SocialBot — the Twitch bot that writes with your own account',
+      desc: 'The Twitch bot that writes in chat with YOUR own account: custom commands, moderation with an anti-bot shield, OBS overlay, clips and live alerts. Free, with a demo.',
+      ogTitolo: 'SocialBot · The Twitch bot that speaks with your own voice',
+      ogDesc: 'The Twitch bot that writes in chat with your own account: custom commands, OBS overlay (alerts, on-screen chat, widgets, 7TV emotes, green screen), music, clips, streaming from the browser without OBS and live alerts.',
+      twTitolo: 'SocialBot · The Twitch bot that speaks with your own voice',
+      twDesc: 'The Twitch bot that writes with your own account. OBS overlay (alerts, chat, widgets, 7TV, green screen), commands, music, clips, live alerts.',
+    },
+    es: {
+      html: 'es', ogLocale: 'es_ES', url: 'https://socialbot.live/?lang=es',
+      titolo: 'SocialBot — el bot de Twitch que escribe con tu propia cuenta',
+      desc: 'El bot de Twitch que escribe en el chat con TU cuenta: comandos, moderación con escudo anti-bot, overlay para OBS, clips y avisos en directo. Gratis, con demo.',
+      ogTitolo: 'SocialBot · El bot de Twitch que habla con tu propia voz',
+      ogDesc: 'El bot de Twitch que escribe en el chat con tu propia cuenta: comandos a medida, overlay para OBS (avisos, chat en pantalla, widgets, emotes 7TV, pantalla verde), música, clips, directos desde el navegador sin OBS y avisos en directo.',
+      twTitolo: 'SocialBot · El bot de Twitch que habla con tu propia voz',
+      twDesc: 'El bot de Twitch que escribe con tu propia cuenta. Overlay OBS (avisos, chat, widgets, 7TV, pantalla verde), comandos, música, clips, avisos en directo.',
+    },
+  };
+
+  // Costruisce il guscio di una lingua. Ogni sostituzione e verificata: se
+  // index.html cambia e un ancoraggio non c'e piu, il server NON parte, invece
+  // di servire in silenzio delle alternative hreflang rotte.
+  const gusciaDi = (codice) => {
+    const m = META_LINGUA[codice], base = META_LINGUA.it;
+    let h = gusciaHtml;
+    const cambia = (da, a) => {
+      if (!h.includes(da)) throw new Error(`guscio ${codice}: non trovo in index.html → ${da.slice(0, 90)}`);
+      h = h.replace(da, a);
+    };
+    cambia('<html lang="it">', `<html lang="${m.html}">`);
+    cambia(`<title>${base.titolo}</title>`, `<title>${m.titolo}</title>`);
+    cambia(`<meta name="description" content="${base.desc}">`, `<meta name="description" content="${m.desc}">`);
+    cambia('<link rel="canonical" href="https://socialbot.live/">', `<link rel="canonical" href="${m.url}">`);
+    cambia('<meta property="og:locale" content="it_IT">', `<meta property="og:locale" content="${m.ogLocale}">`);
+    cambia('<meta property="og:url" content="https://socialbot.live/">', `<meta property="og:url" content="${m.url}">`);
+    cambia(`<meta property="og:title" content="${base.ogTitolo}">`, `<meta property="og:title" content="${m.ogTitolo}">`);
+    cambia(`<meta property="og:description" content="${base.ogDesc}">`, `<meta property="og:description" content="${m.ogDesc}">`);
+    cambia(`<meta name="twitter:title" content="${base.twTitolo}">`, `<meta name="twitter:title" content="${m.twTitolo}">`);
+    cambia(`<meta name="twitter:description" content="${base.twDesc}">`, `<meta name="twitter:description" content="${m.twDesc}">`);
+    h = h.split('"inLanguage": "it-IT"').join(`"inLanguage": "${m.html}-${m.html === 'en' ? 'GB' : m.html.toUpperCase()}"`);
+    return h;
+  };
+
+  // Quattro gusci precalcolati: tre lingue per chi non e loggato (con
+  // `body.vetrina` gia messo, vedi docs/VELOCITA.md) e quello nudo per la
+  // dashboard, che la lingua se la sceglie da sola una volta dentro.
+  const GUSCI = {};
+  for (const codice of Object.keys(META_LINGUA)) GUSCI[codice] = gusciaDi(codice).replace('<body>', '<body class="vetrina">');
   const serviGuscio = (req, res) => {
     res.set('Content-Type', 'text/html; charset=utf-8');
     res.set('Cache-Control', 'no-cache');
     res.set('Vary', 'Cookie');
-    res.send(currentUser(req) ? gusciaHtml : gusciaVetrina);
+    if (currentUser(req)) return res.send(gusciaHtml);
+    const chiesta = String(req.query?.lang || '').toLowerCase();
+    res.send(GUSCI[chiesta] || GUSCI.it);
   };
   app.get(['/', '/index.html'], serviGuscio);
 
@@ -1278,21 +1346,37 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // sitemap DINAMICA: oltre alle pagine fisse elenca le pagine link pubblicate.
   // Ognuna è contenuto reale e indicizzabile, e dà al dominio superficie su cui
   // essere trovato (una sitemap da 3 righe non fa scoprire niente).
+  //
+  // ATTENZIONE: qui NON deve esistere anche un `public/sitemap.xml`. Ci stava, e
+  // `express.static` (registrato molto prima) lo serviva al posto di questa
+  // rotta: la sitemap vera non e mai uscita e i motori vedevano tre righe ferme
+  // al 26 luglio. Il file e stato tolto: la sitemap la fa solo questa rotta.
+  //
+  // La home compare TRE volte, una per lingua, e ogni voce porta con se il
+  // gruppo completo di alternative `xhtml:link`: e la forma che Google chiede
+  // per dichiarare le lingue da sitemap, e vale insieme agli hreflang nell'HTML.
+  const escXml = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
   app.get('/sitemap.xml', wrap(async (req, res) => {
     const b = config.baseUrl;
     const oggi = new Date().toISOString().slice(0, 10);
-    const voci = [
-      { u: `${b}/`, p: '1.0', f: 'weekly' },
-      { u: `${b}/privacy`, p: '0.3', f: 'yearly' },
-      { u: `${b}/termini`, p: '0.3', f: 'yearly' },
-    ];
+    const LINGUE_URL = { it: `${b}/`, en: `${b}/?lang=en`, es: `${b}/?lang=es` };
+    const alternative = Object.entries(LINGUE_URL)
+      .map(([l, u]) => `    <xhtml:link rel="alternate" hreflang="${l}" href="${escXml(u)}"/>`)
+      .concat([`    <xhtml:link rel="alternate" hreflang="x-default" href="${escXml(LINGUE_URL.it)}"/>`])
+      .join('\n');
+    const voci = Object.values(LINGUE_URL).map((u) => ({ u, p: '1.0', f: 'weekly', alt: true }));
+    voci.push({ u: `${b}/privacy`, p: '0.3', f: 'yearly' });
+    voci.push({ u: `${b}/termini`, p: '0.3', f: 'yearly' });
     try {
       for (const r of db.prepare('SELECT channel, ts FROM link_page WHERE attiva=1 ORDER BY ts DESC LIMIT 5000').all()) {
         voci.push({ u: `${b}/u/${r.channel}`, p: '0.6', f: 'weekly', m: new Date(r.ts || Date.now()).toISOString().slice(0, 10) });
       }
     } catch { /* tabella non ancora creata */ }
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`
-      + voci.map((v) => `  <url><loc>${v.u}</loc><lastmod>${v.m || oggi}</lastmod><changefreq>${v.f}</changefreq><priority>${v.p}</priority></url>`).join('\n')
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n`
+      + `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n`
+      + voci.map((v) => `  <url>\n    <loc>${escXml(v.u)}</loc>\n`
+        + (v.alt ? alternative + '\n' : '')
+        + `    <lastmod>${v.m || oggi}</lastmod>\n    <changefreq>${v.f}</changefreq>\n    <priority>${v.p}</priority>\n  </url>`).join('\n')
       + `\n</urlset>\n`;
     res.set('Cache-Control', 'public, max-age=0, s-maxage=3600');
     res.type('application/xml').send(xml);
