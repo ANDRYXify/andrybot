@@ -24,14 +24,23 @@
       imposta: function (v) { try { localStorage.setItem('sb-leggero', v ? '1' : '0'); } catch (e) {} location.reload(); }
     };
 
-    function mostraCursore(v) { try { document.body.classList.toggle('senza-cursore', !v); } catch (e) {} }
+    var nascosto = false;
+    function mostraCursore(v) {
+      try {
+        if (nascosto === !v) return;
+        nascosto = !v;
+        document.body.classList.toggle('senza-cursore', nascosto);
+      } catch (e) {}
+    }
     window.SB_CURSORE_VIS = mostraCursore;
     window.SB_CURSORE = { versoElemento: function () { return false; }, libera: function () {} };
 
     function sfondo() {
       if (leggero) { try { document.body.classList.add('leggero'); } catch (e) {} }
-      if (!document.getElementById('anime-sfondo')) {
-        var e = document.createElement('div'); e.id = 'anime-sfondo'; document.body.appendChild(e);
+      var f = document.getElementById('anime-sfondo');
+      if (!f) { f = document.createElement('div'); f.id = 'anime-sfondo'; document.body.appendChild(f); }
+      if (!document.getElementById('an-campo')) {
+        var c = document.createElement('div'); c.id = 'an-campo'; f.appendChild(c);
       }
     }
 
@@ -68,7 +77,7 @@
       var bar = document.createElement('div'); bar.id = 'an-cursore-bar';
       document.body.appendChild(ring); document.body.appendChild(dot); document.body.appendChild(bar);
 
-      var radice = document.documentElement, corpo = document.body;
+      var corpo = document.body, campo = document.getElementById('an-campo');
       var px = -200, py = -200, pxV = -200, pyV = -200, noto = false;
       var cand = null, mira = null, scartato = null, rett = null, raggio = BASE / 2;
       var rimisura = true, centra = false, modo = '', morfando = false;
@@ -78,6 +87,7 @@
       var mX = molla(-200), mY = molla(-200), mW = molla(BASE), mH = molla(BASE), mR = molla(BASE / 2);
       var cX = molla(0), cY = molla(0);
       var sX = -1e9, sY = -1e9, sW = -1, sH = -1, sR = -1, sCX = -9, sCY = -9;
+      var AMP_X = 62, AMP_Y = 46;
 
       function morfabile(r) { return r.width > 8 && r.height > 8 && r.width <= 360 && r.height <= 64; }
 
@@ -138,8 +148,10 @@
         if (Math.abs(W - sW) > 0.06) { sW = W; ring.style.width = W.toFixed(2) + 'px'; }
         if (Math.abs(H - sH) > 0.06) { sH = H; ring.style.height = H.toFixed(2) + 'px'; }
         if (Math.abs(R - sR) > 0.06) { sR = R; ring.style.borderRadius = R.toFixed(2) + 'px'; }
-        if (Math.abs(cX.p - sCX) > 0.004) { sCX = cX.p; radice.style.setProperty('--pnt-x', cX.p.toFixed(3)); }
-        if (Math.abs(cY.p - sCY) > 0.004) { sCY = cY.p; radice.style.setProperty('--pnt-y', cY.p.toFixed(3)); }
+        if (campo && (Math.abs(cX.p - sCX) > 0.006 || Math.abs(cY.p - sCY) > 0.006)) {
+          sCX = cX.p; sCY = cY.p;
+          campo.style.transform = 'translate3d(' + (cX.p * AMP_X).toFixed(1) + 'px,' + (cY.p * AMP_Y).toFixed(1) + 'px,0)';
+        }
 
         var m = !!mira;
         if (m !== morfando) { morfando = m; ring.classList.toggle('morph', m); corpo.classList.toggle('morfando', m); }

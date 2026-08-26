@@ -685,11 +685,11 @@ body.senza-cursore.cursore-on, body.senza-cursore.cursore-on * { cursor: default
   transition-duration: .08s;
 }
 
-#anime-sfondo::before {
-  content: ""; position: absolute; inset: -25%;
+#an-campo {
+  position: absolute; inset: -25%; pointer-events: none;
   background: radial-gradient(30% 34% at 62% 66%, color-mix(in srgb, var(--acc) 26%, transparent), transparent 70%);
   filter: blur(64px); opacity: .3;
-  transform: translate3d(calc(var(--pnt-x, 0) * 5%), calc(var(--pnt-y, 0) * 5%), 0);
+  will-change: transform; backface-visibility: hidden;
 }
 
 .vivo {
@@ -729,9 +729,9 @@ body.senza-cursore.cursore-on, body.senza-cursore.cursore-on * { cursor: default
 @keyframes toast-entra { from { opacity: 0; transform: translate3d(18px, 8px, 0) scale(.96); } }
 @keyframes toast-esce { to { opacity: 0; transform: translate3d(26px, 0, 0) scale(.97); } }
 
-body.leggero #anime-sfondo::before, body.meno-moto #anime-sfondo::before { opacity: .18; transform: none; }
+body.leggero #an-campo, body.meno-moto #an-campo { opacity: .18; transform: none; will-change: auto; }
 body.leggero .vivo::after, body.meno-moto .vivo::after { animation: none; opacity: 0; }
 @media (prefers-reduced-motion: reduce) {
-  #anime-sfondo::before { transform: none; }
+  #an-campo { transform: none; will-change: auto; }
   .vivo::after { animation: none; opacity: 0; }
 }
