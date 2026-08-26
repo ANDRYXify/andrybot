@@ -300,6 +300,8 @@ function _demoGet(via) {
     '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://socialbot.live/tiktok/callback' },
     '/api/streamer/telegram/destinazioni': {
       io: 'andryx_demo',
+      webhook: { attivo: true, nostro: true, inAttesa: 0, errore: '' },
+      visti: 5,
       eventi: [
         { k: 'live', it: 'Diretta su Twitch', en: 'Twitch live', es: 'Directo en Twitch' },
         { k: 'tiktok', it: 'Diretta su TikTok', en: 'TikTok live', es: 'Directo en TikTok' },
@@ -1037,8 +1039,16 @@ async function caricaTgDestinazioni() {
       : L('da nessuna parte', 'nowhere', 'a ninguna parte')}</b></li>`;
   }).join('');
 
+  const wh = d.webhook;
+  const statoWh = !wh ? '' : (!wh.attivo
+    ? `<p class="tg-stato ok">${_bIco('<path d="M20 6 9 17l-5-5"/>')}${L('Rilevamento diretto attivo: premi «Aggiungi» e ti mostro tutto quello che il bot ha visto.', 'Direct detection on: press «Add» and I’ll show everything the bot has seen.', 'Detección directa activa: pulsa «Añadir» y te muestro todo lo que el bot ha visto.')}</p>`
+    : (wh.nostro
+      ? `<p class="tg-stato ok">${_bIco('<path d="M20 6 9 17l-5-5"/>')}${L(`Il bot risponde nel gruppo, quindi imparo i posti mentre ci scrivi: ne conosco <strong>${d.visti || 0}</strong>. Per aggiungerne uno scrivi <code>/collega</code> lì dentro — ti risponderò sul posto.`, `The bot replies in the group, so I learn places as you write in them: I know <strong>${d.visti || 0}</strong>. To add one write <code>/collega</code> in there — I’ll reply on the spot.`, `El bot responde en el grupo, así que aprendo los sitios mientras escribes: conozco <strong>${d.visti || 0}</strong>. Para añadir uno escribe <code>/collega</code> ahí dentro — te responderé en el sitio.`)}</p>`
+      : `<p class="tg-stato guaio">${_bIco(ICO.avviso)}${L('Il bot ha un collegamento attivo verso un <strong>altro indirizzo</strong>: i suoi messaggi non arrivano qui. Spegni e riaccendi «il bot risponde nel gruppo» qui sotto.', 'The bot has an active hook to <strong>another address</strong>: its messages don’t reach us. Turn «the bot replies in the group» off and on again below.', 'El bot tiene un enlace activo hacia <strong>otra dirección</strong>: sus mensajes no llegan aquí. Apaga y enciende «el bot responde en el grupo» abajo.')}</p>`));
+
   box.innerHTML = `
     <p class="campo">${L('Dove arrivano gli avvisi', 'Where the alerts land', 'Dónde llegan los avisos')}</p>
+    ${statoWh}
     <div class="tg-elenco">${(d.destinazioni || []).map(carta).join('')
       || `<p class="vuoto">${L('Nessuna destinazione: aggiungi il bot a un gruppo o a un canale, scrivi un messaggio lì dentro e premi il tasto qui sotto.', 'No destination yet: add the bot to a group or channel, write a message in there and press the button below.', 'Sin destinos: añade el bot a un grupo o canal, escribe un mensaje ahí y pulsa el botón de abajo.')}</p>`}</div>
     <div class="riga-flessibile spazio-sopra">

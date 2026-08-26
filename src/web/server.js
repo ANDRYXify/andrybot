@@ -4223,7 +4223,18 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const login = currentUser(req).login;
     const c = tgConf.get(login);
     if (c) tgDest.migra(login, c);       // il vecchio gruppo unico diventa la prima destinazione
+    // stato REALE del webhook secondo Telegram: serve a spiegare, non a decidere
+    let wh = null;
+    if (c?.token) {
+      const w = await telegram.infoWebhook(c.token).catch(() => null);
+      if (w?.ok) {
+        const radice = config.baseUrl.replace(/\/$/, '');
+        wh = { attivo: w.attivo, nostro: !w.attivo || (w.url.startsWith(radice) && w.url.includes('/tg/')), inAttesa: w.inAttesa, errore: w.ultimoErrore };
+      }
+    }
     res.json({
+      webhook: wh,
+      visti: tgVisti.lista(login).length,
       destinazioni: tgDest.lista(login).map((d) => ({
         id: d.id, chatId: d.chat_id, titolo: d.titolo, tipo: d.tipo,
         threadId: d.thread_id, threadNome: d.thread_nome,
@@ -4251,16 +4262,31 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         threadId: v.thread_id || '', threadNome: v.thread_nome || '',
       });
     }
-    let notaWebhook = false;
-    if (!c.interattivo) {
+    // Lo stato del webhook lo chiediamo a TELEGRAM, non al nostro flag: il flag
+    // puo essere disallineato e getUpdates fallirebbe con «Conflict».
+    const wh = await telegram.infoWebhook(c.token).catch(() => null);
+    const webhookAttivo = wh?.ok ? wh.attivo : !!c.interattivo;
+    let notaWebhook = webhookAttivo;
+    if (!webhookAttivo) {
       const r = await telegram.rilevaDestinazioni(c.token);
-      if (r.ok) for (const d of r.destinazioni) viste.set(d.chatId + ':' + (d.threadId || ''), d);
-    } else notaWebhook = true;
+      // cintura e bretelle: se Telegram dice comunque «Conflict», il webhook c'e
+      if (!r.ok && /webhook is active/i.test(r.errore || '')) notaWebhook = true;
+      else if (r.ok) for (const d of r.destinazioni) viste.set(d.chatId + ':' + (d.threadId || ''), d);
+    }
+
+    // Il webhook e acceso ma NON punta a noi: i messaggi del bot vanno altrove e
+    // non li vedremo mai. Dirlo subito vale piu di mille tentativi di «/collega».
+    const nostro = wh?.url ? wh.url.includes('/tg/') && wh.url.startsWith(config.baseUrl.replace(/\/$/, '')) : true;
+    if (webhookAttivo && !nostro && !viste.size) {
+      return res.status(400).json({
+        errore: `il bot ha un webhook attivo verso un altro indirizzo (${(wh.url || '').slice(0, 60)}…), quindi i suoi messaggi non arrivano qui. Spegni e riaccendi «il bot risponde nel gruppo» qui sotto per rimetterlo a posto, poi riprova.`,
+      });
+    }
 
     if (!viste.size) {
       return res.status(400).json({
         errore: notaWebhook
-          ? 'non ho ancora visto nessun posto. Scrivi «/collega» DENTRO il gruppo, il canale o il topic che vuoi collegare (un comando arriva sempre al bot, un messaggio normale no se la privacy è accesa), poi riprova.'
+          ? 'non ho ancora visto nessun posto. Scrivi «/collega» DENTRO il gruppo, il canale o il topic che vuoi collegare (un comando arriva sempre al bot; un messaggio normale no, se la privacy del bot è accesa), poi riprova.'
           : 'niente da collegare: aggiungi il bot al gruppo o al canale, scrivi «/collega» lì dentro (nel topic giusto, se usi i topic) e riprova.',
       });
     }
@@ -4525,6 +4551,20 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       if (!conf.chat_id && (chat.type === 'group' || chat.type === 'supergroup')) {
         tgConf.set(login, { chatId: String(chat.id), chatTitolo: chat.title || '(gruppo)' });
       }
+      // "/collega" in un gruppo, canale o topic: conferma SUL POSTO che l'abbiamo
+      // visto. Chiude il cerchio: la conferma arriva dove stai guardando, invece
+      // di farti tornare nel pannello a indovinare se ha funzionato.
+      if (chat.type !== 'private' && /^\/collega\b/i.test(String(testo).trim())) {
+        const tid = msg.is_topic_message ? String(msg.message_thread_id || '') : '';
+        const nome = msg.reply_to_message?.forum_topic_created?.name || '';
+        const pulisci = (x) => String(x ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+        const dove = tid ? `«${pulisci(nome || 'questo argomento')}»` : (chat.type === 'channel' ? 'questo canale' : 'questo gruppo');
+        telegram.inviaMessaggio(conf.token, String(chat.id),
+          `✅ Ti vedo: ${dove}.\n\nOra nel pannello, in <b>Notifiche → Telegram</b>, premi <b>«Aggiungi gruppo, canale o topic»</b> e mi troverai in elenco.`,
+          { threadId: tid }).catch(() => {});
+        return;
+      }
+
       // "/collega CODICE" in privato: lega l'account del proprietario (per il "solo me")
       if (chat.type === 'private' && /^\/collega\b/i.test(String(testo).trim())) {
         const code = String(testo).trim().split(/\s+/)[1] || '';

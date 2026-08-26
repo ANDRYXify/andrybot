@@ -1021,3 +1021,12 @@ body.leggero .vivo::after, body.meno-moto .vivo::after { animation: none; opacit
 @media (max-width: 560px) {
   .tg-mappa li b { margin-left: 0; text-align: left; flex: 1 1 100%; }
 }
+
+.tg-stato {
+  display: flex; align-items: flex-start; gap: .5rem; margin: 6px 0 2px;
+  padding: .55rem .75rem; border-radius: var(--r-m); font-size: .82rem; line-height: 1.45;
+}
+.tg-stato svg { flex: 0 0 auto; margin-top: .16rem; }
+.tg-stato.ok { color: var(--verde); background: var(--verde-soft); border: 1px solid var(--verde-bordo); }
+.tg-stato.guaio { color: var(--ambra); background: var(--ambra-soft); border: 1px solid var(--ambra-bordo); }
+.tg-stato code { background: color-mix(in srgb, currentColor 14%, transparent); padding: .05rem .35rem; border-radius: var(--r-xs); }
