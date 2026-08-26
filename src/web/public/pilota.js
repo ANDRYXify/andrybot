@@ -14,6 +14,21 @@
   var SEL_TESTO = 'input:not([type=button]):not([type=submit]):not([type=reset]):not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]), textarea';
 
   var attivo = false, anello = null, legenda = null, corrente = null, rafPad = 0, osk = null, oskTarget = null, oskMaiusc = false, oskSimboli = false;
+  var padVivo = false;
+
+  function navIndiretta(v) {
+    try { document.body.classList.toggle('nav-indiretta', !!v); } catch (e) {}
+    if (!v) liberaCursore();
+  }
+  function segnaPad() {
+    if (!padVivo) { padVivo = true; try { document.body.classList.add('pad-vivo'); } catch (e) {} aggiornaLegenda(); }
+    navIndiretta(true);
+  }
+  function spegniPad() {
+    padVivo = false;
+    try { document.body.classList.remove('pad-vivo'); } catch (e) {}
+    navIndiretta(false);
+  }
 
   function visibile(el) {
     try {
@@ -100,14 +115,11 @@
     suono(520, 0.04, 0.03);
   }
 
-  function creaAnello() {
-    anello = document.createElement('div'); anello.id = 'pil-anello'; anello.setAttribute('aria-hidden', 'true');
-    document.body.appendChild(anello);
-  }
+  function creaAnello() { anello = null; }
   var ultimoRect = '';
   function seguiAnello() {
-    if (!attivo || !anello) return;
-    if (!corrente || !corrente.isConnected) { if (anello.classList.contains('vivo')) anello.classList.remove('vivo'); return; }
+    if (!attivo) return;
+    if (!corrente || !corrente.isConnected) { liberaCursore(); return; }
     try {
       var r = corrente.getBoundingClientRect();
       var firma = (r.left | 0) + ',' + (r.top | 0) + ',' + (r.width | 0) + ',' + (r.height | 0);
@@ -115,19 +127,13 @@
     } catch (e) { /* niente */ }
   }
   function aggiornaAnello() {
-    if (!anello) return;
-    if (!corrente || !corrente.isConnected || !visibile(corrente)) { anello.classList.remove('vivo'); return; }
-    try {
-      var r = corrente.getBoundingClientRect(), p = 6;
-      anello.style.transform = 'translate3d(' + (r.left - p) + 'px,' + (r.top - p) + 'px,0)';
-      anello.style.width = (r.width + p * 2) + 'px';
-      anello.style.height = (r.height + p * 2) + 'px';
-      var br = 10;
-      try { br = Math.min(parseFloat(getComputedStyle(corrente).borderTopLeftRadius) || 0, 900) + p; } catch (e) {}
-      anello.style.borderRadius = br + 'px';
-      anello.classList.add('vivo');
-    } catch (e) { /* niente */ }
+    if (!corrente || !corrente.isConnected || !visibile(corrente)) { liberaCursore(); return; }
+    var ind = false;
+    try { ind = document.body.classList.contains('nav-indiretta'); } catch (e) {}
+    if (!ind) { liberaCursore(); return; }
+    try { if (window.SB_CURSORE) window.SB_CURSORE.versoElemento(corrente); } catch (e) {}
   }
+  function liberaCursore() { try { if (window.SB_CURSORE) window.SB_CURSORE.libera(); } catch (e) {} }
 
   function creaLegenda() {
     legenda = document.createElement('div'); legenda.id = 'pil-legenda';
@@ -166,6 +172,7 @@
     document.body.classList.add('pilota-on');
     if (!anello) creaAnello();
     if (!legenda) creaLegenda();
+    navIndiretta(false);
     aggiornaLegenda();
     window.addEventListener('scroll', aggiornaAnello, true);
     window.addEventListener('resize', aggiornaAnello);
@@ -174,7 +181,8 @@
   function disattiva() {
     attivo = false;
     document.body.classList.remove('pilota-on');
-    if (anello) anello.classList.remove('vivo');
+    spegniPad();
+    liberaCursore();
     window.removeEventListener('scroll', aggiornaAnello, true);
     window.removeEventListener('resize', aggiornaAnello);
     chiudiOsk();
@@ -337,6 +345,7 @@
       var dx = ax[0] || 0, dy = ax[1] || 0;
       var r = dx > 0.55 || (bt[15] && bt[15].pressed), l = dx < -0.55 || (bt[14] && bt[14].pressed);
       var d = dy > 0.55 || (bt[13] && bt[13].pressed), u = dy < -0.55 || (bt[12] && bt[12].pressed);
+      if (r || l || d || u || (bt[0] && bt[0].pressed) || (bt[1] && bt[1].pressed)) segnaPad();
       if (r || l) { if (!st.x || now - st.x > 165) { st.x = now; vaiVerso(r ? 'right' : 'left'); } } else st.x = 0;
       if (d || u) { if (!st.y || now - st.y > 165) { st.y = now; vaiVerso(d ? 'down' : 'up'); } } else st.y = 0;
       var pA = bt[0] && bt[0].pressed, pB = bt[1] && bt[1].pressed, pX = bt[2] && bt[2].pressed, pY = bt[3] && bt[3].pressed;
@@ -359,9 +368,18 @@
 
   document.addEventListener('pointerdown', function (e) {
     if (!attivo) return;
+    navIndiretta(false);
     var t = e.target && e.target.closest ? e.target.closest(SEL) : null;
-    if (t && visibile(t)) { corrente = t; aggiornaAnello(); aggiornaLegenda(); }
+    if (t && visibile(t)) { corrente = t; aggiornaLegenda(); }
   }, true);
+  document.addEventListener('keydown', function (e) {
+    if (!attivo) return;
+    var k = e.key;
+    if (k === 'ArrowUp' || k === 'ArrowDown' || k === 'ArrowLeft' || k === 'ArrowRight' || k === 'Tab') {
+      navIndiretta(true); aggiornaAnello();
+    }
+  }, true);
+  window.addEventListener('gamepaddisconnected', function () { spegniPad(); });
 
   window.SB_PILOTA = {
     attiva: attiva, disattiva: disattiva,

@@ -103,6 +103,21 @@
         } else { rx = tx; ry = ty; }
         raf = requestAnimationFrame(passo);
       }
+      window.SB_CURSORE = {
+        versoElemento: function (el) {
+          try {
+            if (!el || !el.isConnected) { esciMorph(); return false; }
+            if (!morfabile(el)) { esciMorph(); return false; }
+            var r = el.getBoundingClientRect();
+            tx = r.left + r.width / 2; ty = r.top + r.height / 2;
+            rx = tx; ry = ty;
+            dot.style.opacity = '0';
+            entraMorph(el);
+            return true;
+          } catch (e) { return false; }
+        },
+        libera: function () { try { esciMorph(); } catch (e) {} }
+      };
       window.addEventListener('mousemove', muovi, { passive: true });
       window.addEventListener('mouseout', function (e) { if (!e.relatedTarget) { dot.style.opacity = ring.style.opacity = bar.style.opacity = '0'; } }, { passive: true });
       window.addEventListener('mouseover', function () { if (!morphEl) dot.style.opacity = ''; ring.style.opacity = bar.style.opacity = ''; }, { passive: true });

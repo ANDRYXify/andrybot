@@ -309,8 +309,8 @@ body.plancia-on { overflow: hidden; }
   animation: gr-fade .3s ease both;
 }
 #plancia-overlay[hidden] { display: none; }
-body.pilota-on #plancia-overlay { padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px)); }
-body.pilota-on .pl-guida { display: none; }
+body.pad-vivo #plancia-overlay { padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px)); }
+body.pad-vivo .pl-guida { display: none; }
 .pl-atmo {
   position: absolute; inset: -20%; pointer-events: none; z-index: 0;
   background:
@@ -381,20 +381,15 @@ body.meno-moto .pl-rail, body.meno-moto .pl-tile { transition: none; }
   .pl-tile.fuoco { transform: scale(1.14) translateY(-3px); }
   .pl-tile-nome { font-size: .9rem; }
   .pl-guida { display: none; }
-  body.pilota-on #plancia-overlay { padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px)); }
+  body.pad-vivo #plancia-overlay { padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px)); }
 }
 
-#pil-anello {
-  position: fixed; top: 0; left: 0; z-index: 240; pointer-events: none; opacity: 0;
-  border: 2px solid var(--acc); border-radius: 12px;
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--acc) 22%, transparent), 0 12px 34px -10px var(--acc);
-  background: color-mix(in srgb, var(--acc) 7%, transparent);
-  transition: transform .15s cubic-bezier(.22,.9,.28,1), width .15s cubic-bezier(.22,.9,.28,1), height .15s cubic-bezier(.22,.9,.28,1),
-              border-radius .15s ease, opacity .12s ease;
-  will-change: transform, width, height;
+body.nav-indiretta :focus,
+body.nav-indiretta :focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 3px;
+  border-radius: 3px;
 }
-#pil-anello.vivo { opacity: 1; }
-body.meno-moto #pil-anello { transition: opacity .18s ease; }
 
 #pil-legenda {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 250;
@@ -405,8 +400,8 @@ body.meno-moto #pil-anello { transition: opacity .18s ease; }
   border-top: 1px solid var(--border);
   font-size: .8rem; color: var(--testo-2);
 }
-body:not(.pilota-on) #pil-legenda { display: none; }
-body.pilota-on { padding-bottom: 52px; }
+body:not(.pad-vivo) #pil-legenda { display: none; }
+body.pad-vivo { padding-bottom: 52px; }
 .pil-t { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
 .pil-b {
   display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px;
@@ -452,8 +447,8 @@ body.pilota-on { padding-bottom: 52px; }
   #pil-legenda { gap: 12px; font-size: .72rem; }
 }
 
-body.pilota-on #cerca-lancia { bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
-body.pilota-on #plancia-lancia { bottom: calc(130px + env(safe-area-inset-bottom, 0px)); }
+body.pad-vivo #cerca-lancia { bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
+body.pad-vivo #plancia-lancia { bottom: calc(130px + env(safe-area-inset-bottom, 0px)); }
 
 @media (pointer: coarse) {
   .btn, button.btn, a.btn { min-height: 44px; padding: .6rem 1.1rem; }
@@ -489,9 +484,9 @@ body.pilota-on #plancia-lancia { bottom: calc(130px + env(safe-area-inset-bottom
 @media (max-width: 640px) {
   #pil-legenda { gap: 10px; padding: 9px 10px calc(9px + env(safe-area-inset-bottom, 0px)); font-size: .7rem; }
   #pil-legenda .pil-t:nth-child(n+4) { display: none; }
-  body.pilota-on { padding-bottom: 46px; }
-  body.pilota-on #cerca-lancia { bottom: calc(60px + env(safe-area-inset-bottom, 0px)); }
-  body.pilota-on #plancia-lancia { bottom: calc(116px + env(safe-area-inset-bottom, 0px)); }
+  body.pad-vivo { padding-bottom: 46px; }
+  body.pad-vivo #cerca-lancia { bottom: calc(60px + env(safe-area-inset-bottom, 0px)); }
+  body.pad-vivo #plancia-lancia { bottom: calc(116px + env(safe-area-inset-bottom, 0px)); }
   #plancia-lancia { min-width: 46px; height: 46px; padding: 0 11px; }
   .pl-lancia-txt { display: none; }
   .scudo-kpi .kpi { flex: 1 1 calc(50% - 5px); }
