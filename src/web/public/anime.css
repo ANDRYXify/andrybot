@@ -857,3 +857,101 @@ body.leggero .vivo::after, body.meno-moto .vivo::after { animation: none; opacit
   .bv-carta h2 { font-size: 1.3rem; }
   .bv-azioni { flex-direction: column; }
 }
+
+.ovl-schede {
+  display: grid; gap: 10px; margin: 12px 0 0;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+}
+.ovl-scheda {
+  display: flex; flex-direction: column; gap: 7px; text-align: left;
+  padding: 10px 11px 11px; border-radius: var(--r-l); cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface-2); color: var(--testo);
+  font: inherit; -webkit-tap-highlight-color: transparent;
+  transition: border-color .22s ease, background .22s ease, transform .2s var(--molla-lieve);
+}
+.ovl-scheda:hover { border-color: var(--border-2); transform: translateY(-1px); }
+.ovl-scheda:active { transform: translateY(0) scale(.99); }
+.ovl-scheda.on { border-color: var(--acc); background: var(--acc-soft); box-shadow: 0 0 0 1px var(--acc-tint); }
+.ovl-scheda-nome {
+  font-size: .9rem; font-weight: 600; line-height: 1.25;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ovl-scheda.on .ovl-scheda-nome { color: var(--acc); }
+.ovl-scheda-nota { font-size: .72rem; color: var(--testo-3); font-variant-numeric: tabular-nums; }
+
+.ovl-mappa {
+  position: relative; display: block; aspect-ratio: 16 / 9; border-radius: var(--r-s);
+  background:
+    linear-gradient(90deg, var(--border) 1px, transparent 1px) 0 0 / 25% 100%,
+    linear-gradient(0deg, var(--border) 1px, transparent 1px) 0 0 / 100% 33.4%,
+    var(--surface-3);
+  border: 1px solid var(--border); overflow: hidden;
+}
+.om-p {
+  position: absolute; width: 22%; height: 13%; translate: -50% -50%;
+  border-radius: 3px; background: var(--testo-3); opacity: .85;
+}
+.ovl-scheda.on .om-p { background: var(--acc); }
+.om-p.om-alert { width: 42%; height: 17%; }
+.om-p.om-chat { width: 34%; height: 26%; border-radius: 4px; opacity: .6; }
+
+.ovl-scheda.ovl-nuovo {
+  align-items: center; justify-content: center; text-align: center;
+  border-style: dashed; background: transparent; color: var(--testo-2); min-height: 118px;
+}
+.ovl-scheda.ovl-nuovo:hover { border-color: var(--acc); color: var(--acc); }
+.ovl-scheda.ovl-nuovo svg { width: 20px; height: 20px; }
+
+.ovl-azioni {
+  grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px;
+  padding-top: 2px;
+}
+
+.ovl-consegna {
+  margin: 14px 0 0; padding: 13px 14px 14px; border-radius: var(--r-l);
+  border: 1px solid var(--acc-bordo); background: var(--acc-soft);
+}
+.ovl-consegna-testa { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 9px; }
+.ovl-occhiello {
+  font-size: .64rem; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--acc);
+}
+.ovl-consegna-az { margin-left: auto; display: flex; gap: 6px; }
+.ovl-url {
+  width: 100%; padding: .62rem .8rem; border-radius: var(--r-m);
+  border: 1px solid var(--acc-bordo); background: var(--surface);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .86rem; color: var(--testo); text-overflow: ellipsis;
+}
+.ovl-url:focus { outline: 2px solid var(--acc); outline-offset: 1px; }
+.ovl-ricetta {
+  counter-reset: ovr; list-style: none; margin: 10px 0 0; padding: 0;
+  display: grid; gap: 5px;
+}
+.ovl-ricetta li {
+  display: flex; gap: .55rem; font-size: .82rem; line-height: 1.45; color: var(--testo-2);
+}
+.ovl-ricetta li::before {
+  counter-increment: ovr; content: counter(ovr);
+  flex: 0 0 auto; display: grid; place-items: center; width: 17px; height: 17px; margin-top: .1rem;
+  border-radius: 50%; background: var(--acc); color: #fff;
+  font-size: .62rem; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.ovl-ricetta b { color: var(--testo); font-weight: 600; }
+
+.ovl-elem[data-mira] { cursor: pointer; }
+.ovl-elem[data-mira]:hover { border-color: var(--acc-bordo); }
+.ovl-elem[data-mira]:hover .oe-nome { color: var(--acc); }
+
+.mdl-campo { margin-top: .3rem; }
+.mdl-carta h2 { margin-bottom: .4rem; }
+
+.oe-nota {
+  font: inherit; font-size: .7rem; font-weight: 600; cursor: pointer;
+  padding: .16rem .5rem; margin-left: auto; border-radius: 999px; white-space: nowrap;
+  color: var(--ambra); background: var(--ambra-soft); border: 1px solid var(--ambra-bordo);
+  transition: background .2s ease, color .2s ease;
+}
+.oe-nota:hover { background: var(--ambra); color: var(--bg); }
+.ovl-elem.oe-spento .oe-ico { opacity: .45; }
+.ovl-elem.oe-spento .oe-nome { color: var(--testo-3); }
+.ovl-elem .oe-mod { margin-left: 8px; }

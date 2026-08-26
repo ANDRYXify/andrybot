@@ -298,6 +298,16 @@ function _demoGet(via) {
   const F = {
     '/api/me': statoDemo(),
     '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://socialbot.live/tiktok/callback' },
+    '/api/streamer/overlays': { overlays: [
+      { id: 'principale', nome: 'Overlay principale', mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true },
+        xy: { alert: { x: 50, y: 14 }, chat: { x: 16, y: 78 }, wf: { x: 86, y: 62 }, ws: { x: 86, y: 82 } },
+        css: '', stile: null, url: 'https://socialbot.live/o/andryx_demo/overlay-principale' },
+      { id: 'ovsolochat', nome: 'Solo chat', mostra: { alert: false, chat: true, wf: false, ws: false, effetti: false },
+        xy: { chat: { x: 22, y: 50 } }, css: '', stile: null, url: 'https://socialbot.live/o/andryx_demo/solo-chat' },
+      { id: 'ovpausa', nome: 'Schermata di pausa', mostra: { alert: true, chat: false, wf: true, ws: true, effetti: true },
+        xy: { alert: { x: 50, y: 50 }, wf: { x: 22, y: 84 }, ws: { x: 78, y: 84 } },
+        css: '', stile: null, url: 'https://socialbot.live/o/andryx_demo/schermata-di-pausa' },
+    ] },
     '/api/discord/stato': { configurato: false, attivo: false, messaggio: '', nomeBot: '', avatar: '', anteprima: '' },
     '/api/abbonamento/piani': { attivo: false,
       free: { id: 'free', nome: 'Essenziale', prezzoTesto: 'Gratis', sommario: 'Gratis, basta registrarsi.' },
@@ -914,6 +924,44 @@ function montaConfiguratore(root, d, { gia = [], suOk = null } = {}) {
     location.href = '/accedi' + (q.toString() ? '?' + q : '');
   });
   aggiorna();
+}
+
+function chiediTesto({ titolo = '', testo = '', valore = '', ok = 'OK' } = {}) {
+  return new Promise((risolvi) => {
+    const el = document.createElement('div');
+    el.className = 'bv-velo mdl-chiedi';
+    el.innerHTML = `<div class="bv-carta mdl-carta" role="dialog" aria-modal="true">
+      <h2>${esc(titolo)}</h2>
+      ${testo ? `<p class="bv-intro">${esc(testo)}</p>` : ''}
+      <input type="text" class="campo-largo mdl-campo" value="${esc(valore)}" maxlength="40" autocomplete="off">
+      <div class="bv-azioni">
+        <button type="button" class="btn grande" data-mdl="ok">${esc(ok)}</button>
+        <button type="button" class="btn grande secondario" data-mdl="no">${L('Annulla', 'Cancel', 'Cancelar')}</button>
+      </div>
+    </div>`;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('dentro'));
+    const campo = el.querySelector('.mdl-campo');
+    campo.focus(); campo.select();
+    let chiuso = false;
+    const via = (v) => {
+      if (chiuso) return; chiuso = true;
+      document.removeEventListener('keydown', tasti, true);
+      el.classList.remove('dentro');
+      setTimeout(() => el.remove(), 240);
+      risolvi(v);
+    };
+    const tasti = (ev) => {
+      if (ev.key === 'Escape') { ev.preventDefault(); via(null); }
+      else if (ev.key === 'Enter' && ev.target === campo) { ev.preventDefault(); via(campo.value); }
+    };
+    document.addEventListener('keydown', tasti, true);
+    el.addEventListener('click', (ev) => {
+      const b = ev.target.closest('[data-mdl]');
+      if (b) return via(b.dataset.mdl === 'ok' ? campo.value : null);
+      if (ev.target === el) via(null);
+    });
+  });
 }
 
 function mostraBenvenuto() {
@@ -3691,7 +3739,7 @@ function pannelloPenitenze() {
       <label class="campo spazio-sopra" for="pen-effetto">${L('Suono/effetto quando scatta la penitenza (facoltativo)', 'Sound/effect when the forfeit triggers (optional)', 'Sonido/efecto cuando salta la penitencia (opcional)')}</label>
       <div class="riga-flessibile">
         <select id="pen-effetto" class="campo-largo"><option value="">${L('— niente —', '— none —', '— nada —')}</option></select>
-        <button type="button" class="btn secondario mini" id="pen-effetto-prova" title="${L('Prova', 'Test', 'Probar')}">▶</button>
+        <button type="button" class="btn secondario mini" id="pen-effetto-prova" title="${L('Prova', 'Test', 'Probar')}">${_bIco('<path d="m6 3 14 9-14 9Z"/>')}</button>
       </div>
       <p class="suggerimento">${L('Scegli un suono pronto o un tuo effetto (audio/immagine/video). Ne carichi altri dalla scheda «Effetti & suoni».', 'Pick a ready-made sound or one of your effects (audio/image/video). Upload more from the «Effects & sounds» tab.', 'Elige un sonido listo o uno de tus efectos (audio/imagen/vídeo). Sube más desde la pestaña «Efectos y sonidos».')}</p>
       <p class="spazio-sopra"><button class="btn" id="pen-salva">${L('Salva', 'Save', 'Guardar')}</button></p>
@@ -3776,7 +3824,7 @@ async function _penMontaEffetto() {
     if (v.startsWith('preset:') && window.SUONI_PRESET) window.SUONI_PRESET.suona(v.slice(7), 100);
     else conErrore(async () => {
       await api('/api/streamer/effetti/test', { method: 'POST', body: { comando: v.startsWith('effetto:') ? v.slice(8) : v } });
-      toast(L('Inviato all\'overlay ▶', 'Sent to the overlay ▶', 'Enviado al overlay ▶'));
+      toast(L('Inviato all\'overlay', 'Sent to the overlay', 'Enviado al overlay'));
     });
   };
 }
@@ -3795,7 +3843,7 @@ async function caricaPenitenze() {
   document.getElementById('pen-ov-prova')?.addEventListener('click', () => conErrore(async () => {
     await salvaPenitenze(true);
     await api('/api/penitenze/prova', { method: 'POST', body: {} });
-    toast(L('Inviato all\'overlay ▶', 'Sent to the overlay ▶', 'Enviado al overlay ▶'));
+    toast(L('Inviato all\'overlay', 'Sent to the overlay', 'Enviado al overlay'));
   }));
   await _penMontaEffetto();
   const boxV = document.getElementById('pen-box-vieta');
@@ -3948,7 +3996,7 @@ function bloccoAlert(t, a) {
         </div>
       </div>
       <p class="suggerimento"><strong>${L('Metti quello che vuoi:', 'Put whatever you want:', 'Pon lo que quieras:')}</strong> ${L('scegli dai tuoi effetti', 'choose from your effects', 'elige entre tus efectos')} <em>${L('oppure', 'or', 'o')}</em> ${L('carica un file al volo qui sopra. Suono e immagine/video', 'upload a file on the fly above. Sound and image/video', 'sube un archivo al vuelo arriba. Sonido e imagen/vídeo')} <strong>${L('partono insieme', 'play together', 'se reproducen juntos')}</strong> — ${L('così puoi avere, ad esempio, la tua GIF', 'so you can have, for example, your GIF', 'así puedes tener, por ejemplo, tu GIF')} <em>${L('con', 'with', 'con')}</em> ${L('il tuo suono.', 'your sound.', 'tu sonido.')}</p>
-      <p class="spazio-sopra"><button type="button" class="btn secondario mini al-prova" data-kind="${t.key}">${L('Prova', 'Test', 'Probar')} ▶</button></p>
+      <p class="spazio-sopra"><button type="button" class="btn secondario mini al-prova" data-kind="${t.key}">${_bIco('<path d="m6 3 14 9-14 9Z"/>')}${L('Prova', 'Test', 'Probar')}</button></p>
     </div>`;
 }
 
@@ -3974,12 +4022,13 @@ function bloccoWidget(pref, w, titolo, kind) {
         ${cCol(`${pref}-acc`, L('Nome', 'Name', 'Nombre'), st.accento)}
         ${cRng(`${pref}-radius`, L('Angoli', 'Corners', 'Esquinas'), 0, 30, st.bordoRaggio, 'px')}
       </div>
-      <p class="spazio-sopra"><button type="button" class="btn secondario mini w-prova" data-kind="${kind}">${L('Prova', 'Test', 'Probar')} ▶</button></p>
+      <p class="spazio-sopra"><button type="button" class="btn secondario mini w-prova" data-kind="${kind}">${_bIco('<path d="m6 3 14 9-14 9Z"/>')}${L('Prova', 'Test', 'Probar')}</button></p>
     </div>`;
 }
 
 function ovlElemento(k, ico, nome, sez) {
-  return `<div class="ovl-elem">
+  const mirabile = ['alert', 'chat', 'wf', 'ws'].includes(k);
+  return `<div class="ovl-elem"${mirabile ? ` data-mira="${k}"` : ''}>
     <span class="oe-ico">${_bIco(ico)}</span>
     <span class="oe-nome">${esc(nome)}</span>
     <button type="button" class="oe-mod" data-apri-sez="${sez}">${L('Modifica', 'Edit', 'Editar')}</button>
@@ -4001,16 +4050,22 @@ function pannelloAlert() {
       <h2>${_hIco(ICO.monitor)}${L('I miei overlay', 'My overlays', 'Mis overlays')}</h2>
       <p>${L('Puoi avere', 'You can have', 'Puedes tener')} <strong>${L('più overlay', 'multiple overlays', 'varios overlays')}</strong>, ${L('ognuno col suo', 'each with its own', 'cada uno con su')} <strong>${L('link OBS', 'OBS link', 'enlace OBS')}</strong> ${L('e il suo', 'and its own', 'y su propio')} <strong>${L('layout', 'layout', 'diseño')}</strong>
       (${L('cosa mostra e dove', 'what it shows and where', 'qué muestra y dónde')}). ${L('Es. un overlay "solo alert" in una scena e uno "solo chat" in un\'altra.', 'E.g. an "alerts only" overlay in one scene and a "chat only" one in another.', 'Ej. un overlay "solo alertas" en una escena y otro "solo chat" en otra.')}</p>
-      <div class="riga-flessibile">
-        <select id="ov-sel" class="campo-largo"></select>
-        <button class="btn secondario" id="ov-nuovo">${L('Nuovo', 'New', 'Nuevo')}</button>
-        <button class="btn secondario" id="ov-rinomina">${L('Rinomina', 'Rename', 'Renombrar')}</button>
-        <button class="btn secondario" id="ov-elimina">${L('Elimina', 'Delete', 'Eliminar')}</button>
-      </div>
-      <label class="campo spazio-sopra">${L('Link OBS di questo overlay', 'OBS link for this overlay', 'Enlace OBS de este overlay')} <span class="tenue">— ${L('Sorgenti → Browser, 1920×1080, sfondo trasparente', 'Sources → Browser, 1920×1080, transparent background', 'Fuentes → Navegador, 1920×1080, fondo transparente')}</span></label>
-      <div class="riga-flessibile">
-        <input type="text" id="inp-overlay-url" class="campo-largo" readonly value="" placeholder="${L('caricamento…', 'loading…', 'cargando…')}">
-        <button class="btn secondario" id="btn-copia-overlay">${L('Copia', 'Copy', 'Copiar')}</button>
+      <div class="ovl-schede" id="ovl-schede"></div>
+
+      <div class="ovl-consegna">
+        <div class="ovl-consegna-testa">
+          <span class="ovl-occhiello">${L('Link OBS di questo overlay', 'OBS link for this overlay', 'Enlace OBS de este overlay')}</span>
+          <div class="ovl-consegna-az">
+            <button type="button" class="btn mini secondario" id="btn-apri-overlay">${_bIco(ICO.occhio)}${L('Apri', 'Open', 'Abrir')}</button>
+            <button type="button" class="btn mini" id="btn-copia-overlay">${_bIco('<rect width="13" height="13" x="9" y="9" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>')}${L('Copia', 'Copy', 'Copiar')}</button>
+          </div>
+        </div>
+        <input type="text" id="inp-overlay-url" class="ovl-url" readonly value="" placeholder="${L('caricamento…', 'loading…', 'cargando…')}">
+        <ol class="ovl-ricetta">
+          <li>${L('In OBS: <b>Sorgenti → + → Browser</b>', 'In OBS: <b>Sources → + → Browser</b>', 'En OBS: <b>Fuentes → + → Navegador</b>')}</li>
+          <li>${L('Incolla il link e metti <b>1920 × 1080</b>', 'Paste the link and set <b>1920 × 1080</b>', 'Pega el enlace y pon <b>1920 × 1080</b>')}</li>
+          <li>${L('Spunta <b>«Aggiorna browser quando la scena diventa attiva»</b>', 'Tick <b>«Refresh browser when scene becomes active»</b>', 'Marca <b>«Actualizar navegador cuando la escena se active»</b>')}</li>
+        </ol>
       </div>
       <label class="campo spazio-sopra">${L('Elementi (fonti) di questo overlay', 'Elements (sources) of this overlay', 'Elementos (fuentes) de este overlay')} <span class="tenue">— ${L('accendi/spegni cosa compare, poi personalizzali con «Modifica»', 'turn on/off what appears, then customize them with «Edit»', 'activa/desactiva qué aparece, luego personalízalos con «Editar»')}</span></label>
       <div class="ovl-elementi">
@@ -4059,7 +4114,7 @@ function pannelloAlert() {
           <span class="ovl-insp-val" id="insp-rot-val">0°</span>
         </div>
       </div>
-      <p class="suggerimento"><strong>${L('Clicca', 'Click', 'Haz clic en')}</strong> ${L('un elemento per selezionarlo, poi', 'an element to select it, then', 'un elemento para seleccionarlo, luego')} <strong>${L('trascinalo', 'drag it', 'arrástralo')}</strong> ${L('per spostarlo, usa le', 'to move it, use the', 'para moverlo, usa los')} <strong>${L('maniglie', 'handles', 'tiradores')}</strong> (⤡ ${L('dimensione', 'size', 'tamaño')} · ⟳ ${L('rotazione', 'rotation', 'rotación')}) ${L('o i cursori qui sopra.', 'or the sliders above.', 'o los deslizadores de arriba.')} ${L('Scorciatoie:', 'Shortcuts:', 'Atajos:')} <strong>${L('rotellina', 'wheel', 'rueda')}</strong> = ${L('ridimensiona', 'resize', 'redimensionar')}, <strong>Shift+${L('rotellina', 'wheel', 'rueda')}</strong> = ${L('ruota', 'rotate', 'rotar')}, <strong>${L('doppio clic', 'double click', 'doble clic')}</strong> = ${L('ripristina', 'reset', 'restablecer')}. ${L('Usa «Prova ▶» per vederli nell\'overlay in OBS.', 'Use «Test ▶» to see them in the overlay in OBS.', 'Usa «Probar ▶» para verlos en el overlay en OBS.')}</p>
+      <p class="suggerimento"><strong>${L('Clicca', 'Click', 'Haz clic en')}</strong> ${L('un elemento per selezionarlo, poi <strong>trascinalo</strong> per spostarlo; usa le maniglie agli angoli o i cursori qui sopra. Scorciatoie: <strong>rotellina</strong> = ridimensiona, <strong>Shift+rotellina</strong> = ruota, <strong>doppio clic</strong> = ripristina. Con «Prova» li vedi nell\'overlay dentro OBS.', 'an element to select it, then <strong>drag</strong> it to move; use the corner handles or the sliders above. Shortcuts: <strong>wheel</strong> = resize, <strong>Shift+wheel</strong> = rotate, <strong>double click</strong> = reset. Use «Test» to see them in the overlay inside OBS.', 'un elemento para seleccionarlo, luego <strong>arrástralo</strong> para moverlo; usa los tiradores de las esquinas o los cursores de arriba. Atajos: <strong>rueda</strong> = redimensiona, <strong>Shift+rueda</strong> = rota, <strong>doble clic</strong> = restablece. Con «Probar» los ves en el overlay dentro de OBS.')}</p>
     </div>
 
     <details class="carta sez" id="sez-alert">
@@ -4145,7 +4200,7 @@ function pannelloAlert() {
       </div>
       <p class="spazio-sopra">
         <button class="btn" id="co-salva">${L('Salva chat', 'Save chat', 'Guardar chat')}</button>
-        <button class="btn secondario" id="co-prova">${L('Prova', 'Test', 'Probar')} ▶</button>
+        <button class="btn secondario" id="co-prova">${_bIco('<path d="m6 3 14 9-14 9Z"/>')}${L('Prova', 'Test', 'Probar')}</button>
       </p>
     </details>
 
@@ -4330,11 +4385,42 @@ function _applicaStileOverlay(ov) {
   aggiornaAnteprima();
 }
 
+const ATTIVO_DI = { alert: 'al-attivo', chat: 'co-attivo', wf: 'wf-attivo', ws: 'ws-attivo' };
+
+function _elementoAcceso(k) {
+  const id = ATTIVO_DI[k];
+  if (!id) return true;
+  const c = _g(id);
+  return c ? !!c.checked : true;
+}
+function _accendiElemento(k, v) {
+  const c = ATTIVO_DI[k] && _g(ATTIVO_DI[k]);
+  if (!c || c.checked === !!v) return false;
+  c.checked = !!v;
+  c.dispatchEvent(new Event('change', { bubbles: true }));
+  return true;
+}
+function _aggiornaStatoLivelli() {
+  for (const k of ['alert', 'chat', 'wf', 'ws']) {
+    const riga = document.querySelector(`.ovl-elem[data-mira="${k}"]`);
+    if (!riga) continue;
+    const spento = mostraChk(k) && !_elementoAcceso(k);
+    riga.classList.toggle('oe-spento', spento);
+    let n = riga.querySelector('.oe-nota');
+    if (spento && !n) {
+      n = document.createElement('button');
+      n.type = 'button'; n.className = 'oe-nota'; n.dataset.accendi = k;
+      n.textContent = L('spento — accendi', 'off — turn on', 'apagado — enciende');
+      n.title = L('Questo elemento è spento del tutto: nell’overlay non comparirà.', 'This element is fully off: it won’t appear in the overlay.', 'Este elemento está apagado del todo: no aparecerá en el overlay.');
+      riga.insertBefore(n, riga.querySelector('.oe-mod'));
+    } else if (!spento && n) n.remove();
+  }
+}
+
 function _anteprimaWidget(pref, id, nome) {
-  const attivo = !!_g(`${pref}-attivo`)?.checked;
   const box = _g(`ap-${pref}`);
   if (!box) return;
-  if (!attivo || !mostraChk(pref)) { box.style.display = 'none'; return; }
+  if (!mostraChk(pref)) { box.style.display = 'none'; return; }
   box.style.display = '';
   const w = _leggiWidget(pref).stile;
   const el = _g(`ap-${pref}-el`);
@@ -4377,6 +4463,7 @@ function aggiornaAnteprima() {
 
   if (_g('ap-alert')) _g('ap-alert').style.display = mostraChk('alert') ? '' : 'none';
   if (_g('ap-chat')) _g('ap-chat').style.display = mostraChk('chat') ? '' : 'none';
+  _aggiornaStatoLivelli();
 }
 
 function _cornerXY(c) { return ({ 'alto-sinistra': { x: 13, y: 15 }, 'alto-destra': { x: 87, y: 15 }, 'basso-sinistra': { x: 13, y: 85 }, 'basso-destra': { x: 87, y: 85 } })[c] || { x: 87, y: 85 }; }
@@ -4612,9 +4699,42 @@ async function caricaOverlays() {
   _rigeneraSelOverlay();
   caricaOverlaySel();
 }
+const OVL_LIV = () => [
+  { k: 'alert', n: L('Alert', 'Alerts', 'Alertas') },
+  { k: 'chat', n: L('Chat', 'Chat', 'Chat') },
+  { k: 'wf', n: L('Follower', 'Follower', 'Seguidor') },
+  { k: 'ws', n: L('Sub', 'Sub', 'Sub') },
+];
+
+function _mappaOverlay(o) {
+  const punti = OVL_LIV().filter((l) => o.mostra?.[l.k] !== false).map((l) => {
+    const xy = (o.xy && o.xy[l.k]) || null;
+    const x = xy && Number.isFinite(+xy.x) ? +xy.x : ({ alert: 50, chat: 16, wf: 86, ws: 86 })[l.k];
+    const y = xy && Number.isFinite(+xy.y) ? +xy.y : ({ alert: 16, chat: 82, wf: 82, ws: 66 })[l.k];
+    return `<i class="om-p om-${l.k}" style="left:${Math.max(4, Math.min(96, x))}%;top:${Math.max(6, Math.min(94, y))}%" title="${esc(l.n)}"></i>`;
+  }).join('');
+  return `<span class="ovl-mappa" aria-hidden="true">${punti}</span>`;
+}
+
 function _rigeneraSelOverlay() {
-  const sel = _g('ov-sel'); if (!sel) return;
-  sel.innerHTML = overlays.map((o) => `<option value="${esc(o.id)}"${o.id === overlaySel ? ' selected' : ''}>${esc(o.nome)}</option>`).join('');
+  const box = _g('ovl-schede'); if (!box) return;
+  const carte = overlays.map((o) => {
+    const on = o.id === overlaySel;
+    const acceso = OVL_LIV().filter((l) => o.mostra?.[l.k] !== false).length + (o.mostra?.effetti !== false ? 1 : 0);
+    return `<button type="button" class="ovl-scheda${on ? ' on' : ''}" data-ovl="${esc(o.id)}">
+      ${_mappaOverlay(o)}
+      <span class="ovl-scheda-nome">${esc(o.nome)}</span>
+      <span class="ovl-scheda-nota">${acceso} ${acceso === 1 ? L('livello acceso', 'layer on', 'capa activa') : L('livelli accesi', 'layers on', 'capas activas')}</span>
+    </button>`;
+  }).join('');
+  const piu = overlays.length < 12
+    ? `<button type="button" class="ovl-scheda ovl-nuovo" id="ov-nuovo">${_hIco(ICO.piu)}<span class="ovl-scheda-nome">${L('Nuovo overlay', 'New overlay', 'Nuevo overlay')}</span></button>`
+    : '';
+  box.innerHTML = carte + piu + `<div class="ovl-azioni">
+    <button type="button" class="btn mini secondario" id="ov-rinomina">${L('Rinomina', 'Rename', 'Renombrar')}</button>
+    <button type="button" class="btn mini secondario" id="ov-duplica">${L('Duplica', 'Duplicate', 'Duplicar')}</button>
+    <button type="button" class="btn mini secondario" id="ov-elimina" style="color:var(--rosso)">${L('Elimina', 'Delete', 'Eliminar')}</button>
+  </div>`;
 }
 
 function caricaOverlaySel() {
@@ -4642,7 +4762,11 @@ async function salvaLayoutOverlay(silenzioso) {
 }
 async function nuovoOverlay() {
   if (overlays.length >= 12) { toast(L('Massimo 12 overlay.', 'Maximum 12 overlays.', 'Máximo 12 overlays.')); return; }
-  const nome = (prompt(L('Nome del nuovo overlay:', 'New overlay name:', 'Nombre del nuevo overlay:')) || '').trim();
+  const nome = (await chiediTesto({
+    titolo: L('Nuovo overlay', 'New overlay', 'Nuevo overlay'),
+    testo: L('Ogni overlay ha un link OBS suo: uno per scena, se vuoi.', 'Each overlay has its own OBS link: one per scene, if you like.', 'Cada overlay tiene su propio enlace OBS: uno por escena, si quieres.'),
+    valore: L('Overlay 2', 'Overlay 2', 'Overlay 2'), ok: L('Crea', 'Create', 'Crear'),
+  }) || '').trim();
   if (!nome) return;
   const id = 'ov' + Math.random().toString(36).slice(2, 8);
 
@@ -4654,9 +4778,32 @@ async function nuovoOverlay() {
   await caricaOverlays();
   toast(L('Overlay creato ✓', 'Overlay created ✓', 'Overlay creado ✓'));
 }
+async function duplicaOverlay() {
+  if (overlays.length >= 12) { toast(L('Massimo 12 overlay.', 'Maximum 12 overlays.', 'Máximo 12 overlays.')); return; }
+  const ov = overlays.find((o) => o.id === overlaySel); if (!ov) return;
+  const base = ov.nome + ' ' + L('(copia)', '(copy)', '(copia)');
+  const nome = (await chiediTesto({
+    titolo: L('Duplica overlay', 'Duplicate overlay', 'Duplicar overlay'),
+    testo: L('Il nuovo overlay parte con lo stesso layout, gli stessi livelli e lo stesso aspetto — ma con un link OBS suo.', 'The new overlay starts with the same layout, layers and look — but with its own OBS link.', 'El nuevo overlay empieza con el mismo diseño, capas y aspecto — pero con su propio enlace OBS.'),
+    valore: base, ok: L('Duplica', 'Duplicate', 'Duplicar'),
+  }) || '').trim();
+  if (!nome) return;
+  const clone = JSON.parse(JSON.stringify({ mostra: ov.mostra, xy: ov.xy, css: ov.css || '', stile: ov.stile || null }));
+  overlays.push({ id: 'ov' + Math.random().toString(36).slice(2, 8), nome, ...clone });
+  overlaySel = overlays[overlays.length - 1].id;
+  await salvaImpostazioni({ overlays: _overlaysPayload() }, null);
+  await caricaOverlays();
+  toast(L('Overlay duplicato ✓', 'Overlay duplicated ✓', 'Overlay duplicado ✓'));
+}
+
 async function rinominaOverlay() {
   const ov = overlays.find((o) => o.id === overlaySel); if (!ov) return;
-  const nome = (prompt(L('Nuovo nome:', 'New name:', 'Nuevo nombre:'), ov.nome) || '').trim(); if (!nome) return;
+  const nome = (await chiediTesto({
+    titolo: L('Rinomina overlay', 'Rename overlay', 'Renombrar overlay'),
+    testo: L('Il nome compare solo qui: il link OBS non cambia.', 'The name only shows here: the OBS link stays the same.', 'El nombre solo aparece aquí: el enlace OBS no cambia.'),
+    valore: ov.nome, ok: L('Rinomina', 'Rename', 'Renombrar'),
+  }) || '').trim();
+  if (!nome) return;
   ov.nome = nome;
   await salvaImpostazioni({ overlays: _overlaysPayload() }, null);
   _rigeneraSelOverlay(); toast(L('Rinominato ✓', 'Renamed ✓', 'Renombrado ✓'));
@@ -4685,11 +4832,40 @@ function caricaAlert() {
   ['ap-alert', 'ap-chat', 'ap-wf', 'ap-ws'].forEach((id) => rendiTrascinabile(_g(id), id.replace('ap-', '')));
 
   caricaOverlays();
-  _g('ov-sel')?.addEventListener('change', (e) => { overlaySel = e.target.value; caricaOverlaySel(); });
-  _g('ov-nuovo')?.addEventListener('click', () => conErrore(() => nuovoOverlay()));
-  _g('ov-rinomina')?.addEventListener('click', () => conErrore(() => rinominaOverlay()));
-  _g('ov-elimina')?.addEventListener('click', () => conErrore(() => eliminaOverlay()));
-  ['alert', 'chat', 'wf', 'ws', 'effetti'].forEach((k) => _g('mostra-' + k)?.addEventListener('change', () => { aggiornaAnteprima(); salvaLayoutOverlay(true); }));
+  _g('ovl-schede')?.addEventListener('click', (e) => {
+    if (e.target.closest('#ov-nuovo')) return conErrore(() => nuovoOverlay());
+    if (e.target.closest('#ov-rinomina')) return conErrore(() => rinominaOverlay());
+    if (e.target.closest('#ov-duplica')) return conErrore(() => duplicaOverlay());
+    if (e.target.closest('#ov-elimina')) return conErrore(() => eliminaOverlay());
+    const c = e.target.closest('[data-ovl]');
+    if (c && c.dataset.ovl !== overlaySel) { overlaySel = c.dataset.ovl; _rigeneraSelOverlay(); caricaOverlaySel(); }
+  });
+  _g('scheda-alert')?.addEventListener('click', (e) => {
+    if (e.target.closest('.oe-mod, .oe-sw, input, label')) return;
+    const r = e.target.closest('[data-mira]');
+    if (!r) return;
+    const k = r.dataset.mira;
+    if (!mostraChk(k)) { toast(L('Questo livello è spento in questo overlay.', 'This layer is off in this overlay.', 'Esta capa está apagada en este overlay.')); return; }
+    seleziona(k);
+    _g('ovl-preview')?.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'center' });
+  });
+  _g('btn-apri-overlay')?.addEventListener('click', () => {
+    const u = _g('inp-overlay-url')?.value;
+    if (!u) { toast(L('URL non ancora pronto, riprova tra un attimo.', 'URL not ready yet, try again in a moment.', 'URL aún no lista, inténtalo de nuevo en un momento.'), 'errore'); return; }
+    window.open(u, '_blank', 'noopener');
+  });
+  ['alert', 'chat', 'wf', 'ws', 'effetti'].forEach((k) => _g('mostra-' + k)?.addEventListener('change', (e) => {
+    if (e.target.checked && !_elementoAcceso(k)) _accendiElemento(k, true);
+    aggiornaAnteprima(); salvaLayoutOverlay(true);
+  }));
+  _g('scheda-alert')?.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-accendi]');
+    if (!b) return;
+    e.stopPropagation();
+    _accendiElemento(b.dataset.accendi, true);
+    aggiornaAnteprima();
+    toast(L('Elemento acceso ✓', 'Element turned on ✓', 'Elemento encendido ✓'));
+  });
 
   scheda?.addEventListener('click', (e) => {
     const b = e.target.closest('[data-apri-sez]'); if (!b) return;
@@ -4760,7 +4936,7 @@ function caricaAlert() {
   _g('css-salva')?.addEventListener('click', () => conErrore(() => salvaCss()));
 
   document.querySelectorAll('.al-prova').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
-    await salvaAlert(true); await api('/api/alert/prova', { method: 'POST', body: { kind: b.dataset.kind } }); toast(L('Inviato all\'overlay ▶', 'Sent to the overlay ▶', 'Enviado al overlay ▶'));
+    await salvaAlert(true); await api('/api/alert/prova', { method: 'POST', body: { kind: b.dataset.kind } }); toast(L('Inviato all\'overlay', 'Sent to the overlay', 'Enviado al overlay'));
   })));
 
   document.querySelectorAll('.al-btn-up').forEach((btn) => btn.addEventListener('click', () => {
@@ -4773,10 +4949,10 @@ function caricaAlert() {
     inp.value = '';
   })));
   _g('co-prova')?.addEventListener('click', () => conErrore(async () => {
-    await salvaChatOverlay(true); await api('/api/alert/prova', { method: 'POST', body: { kind: 'chat' } }); toast(L('Inviato all\'overlay ▶', 'Sent to the overlay ▶', 'Enviado al overlay ▶'));
+    await salvaChatOverlay(true); await api('/api/alert/prova', { method: 'POST', body: { kind: 'chat' } }); toast(L('Inviato all\'overlay', 'Sent to the overlay', 'Enviado al overlay'));
   }));
   document.querySelectorAll('.w-prova').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
-    await salvaWidget(true); await api('/api/alert/prova', { method: 'POST', body: { kind: b.dataset.kind } }); toast(L('Inviato all\'overlay ▶', 'Sent to the overlay ▶', 'Enviado al overlay ▶'));
+    await salvaWidget(true); await api('/api/alert/prova', { method: 'POST', body: { kind: b.dataset.kind } }); toast(L('Inviato all\'overlay', 'Sent to the overlay', 'Enviado al overlay'));
   })));
 
   _g('ovl-tpl-applica')?.addEventListener('click', () => {
@@ -6442,7 +6618,7 @@ async function caricaSuoniPremi() {
     li.querySelector('.prova-suono').addEventListener('click', () => {
       const v = sel.value;
       if (v && !v.startsWith('effetto:') && window.SUONI_PRESET) window.SUONI_PRESET.suona(v, 100);
-      else if (v) api('/api/streamer/effetti/test', { method: 'POST', body: { comando: comandoSel() } }).then(() => toast(L('Inviato all\'overlay ▶', 'Sent to the overlay ▶', 'Enviado al overlay ▶'))).catch(() => toast(L('Apri prima l\'overlay in OBS.', 'Open the overlay in OBS first.', 'Abre antes el overlay en OBS.')));
+      else if (v) api('/api/streamer/effetti/test', { method: 'POST', body: { comando: comandoSel() } }).then(() => toast(L('Inviato all\'overlay', 'Sent to the overlay', 'Enviado al overlay'))).catch(() => toast(L('Apri prima l\'overlay in OBS.', 'Open the overlay in OBS first.', 'Abre antes el overlay en OBS.')));
       else toast(L('Scegli prima un effetto.', 'Choose an effect first.', 'Elige antes un efecto.'));
     });
     li.querySelector('.msg-suono').addEventListener('change', () => salva(L('Messaggio salvato ✓', 'Message saved ✓', 'Mensaje guardado ✓')));
@@ -10189,7 +10365,7 @@ function libItemHtml(it) {
   else if (it.tipo === 'video') media = `<video class="lib-media" src="${esc(it.url)}#t=0.1" muted playsinline loop autoplay preload="metadata"></video>`;
   else media = '<div class="lib-media lib-audio"></div>';
   const audio = (it.tipo === 'audio' || it.combo)
-    ? `<button type="button" class="btn secondario mini lib-play" data-audio="${esc(it.suonoUrl || it.url)}" title="${L('Ascolta', 'Listen', 'Escuchar')}">▶</button>` : '';
+    ? `<button type="button" class="btn secondario mini lib-play" data-audio="${esc(it.suonoUrl || it.url)}" title="${L('Ascolta', 'Listen', 'Escuchar')}">${_bIco('<path d="m6 3 14 9-14 9Z"/>')}</button>` : '';
   return `<div class="lib-card" data-id="${it.id}">
     <div class="lib-media-wrap">${media}${it.combo ? '<span class="lib-combo">combo</span>' : ''}</div>
     <div class="lib-nome" title="${esc(it.nome)}">${esc(it.nome)}</div>
@@ -12372,7 +12548,7 @@ async function caricaVita() {
       ? (congela ? L('Congelata: non si riscrive più finché non togli il freno.', 'Frozen: she won\'t rewrite herself until you release the brake.', 'Congelada: no se reescribe hasta quitar el freno.')
                  : L('Freno tolto: può tornare a riscriversi.', 'Brake released: she can rewrite herself again.', 'Freno quitado: puede volver a reescribirse.'))
       : L('Non ha funzionato — riprova.', "It didn't work — try again.", 'No funcionó — reinténtalo.');
-    toast(congela ? L('Auto-autorialità congelata ⏸', 'Self-authorship frozen ⏸', 'Auto-autoría congelada ⏸') : L('Auto-autorialità libera ▶', 'Self-authorship free ▶', 'Auto-autoría libre ▶'));
+    toast(congela ? L('Auto-autorialità congelata', 'Self-authorship frozen', 'Auto-autoría congelada') : L('Auto-autorialità libera ▶', 'Self-authorship free ▶', 'Auto-autoría libre ▶'));
   }));
   document.getElementById('btn-mente')?.addEventListener('click', () => conErrore(async () => {
     const e = document.getElementById('vita-esito');
