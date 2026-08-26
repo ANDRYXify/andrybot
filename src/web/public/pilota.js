@@ -137,6 +137,13 @@
   function aggiornaLegenda() {
     if (!legenda) return;
     var h = '';
+    var pl = document.getElementById('plancia-overlay');
+    if (pl && !pl.hidden) {
+      legenda.innerHTML = tastoHtml('A', L('apri', 'open', 'abrir'), 'a') + tastoHtml('B', L('esci', 'exit', 'salir'), 'b') +
+        '<span class="pil-t"><b class="pil-b">←→</b>' + esc(L('scorri', 'scroll', 'desplaza')) + '</span>' +
+        '<span class="pil-t"><b class="pil-b">↑↓</b>' + esc(L('gruppo', 'group', 'grupo')) + '</span>';
+      return;
+    }
     if (osk && !osk.hidden) {
       h = tastoHtml('A', L('scrivi', 'type', 'escribir'), 'a') + tastoHtml('B', L('chiudi', 'close', 'cerrar'), 'b') +
           tastoHtml('X', L('cancella', 'delete', 'borrar'), 'x') + tastoHtml('Y', L('spazio', 'space', 'espacio'), 'y');
