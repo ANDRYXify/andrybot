@@ -1031,13 +1031,28 @@ async function caricaTgDestinazioni() {
     </details>`;
   };
 
-  const mappa = eventi.map((e) => {
-    const dove = (d.destinazioni || []).filter((t) => t.attivo
-      && (!t.eventi.length || t.eventi.includes(e.k)));
-    return `<li><span>${esc(L(e.it, e.en, e.es))}</span><b>${dove.length
-      ? dove.map((t) => esc(t.threadNome || t.titolo || t.chatId)).join(', ')
-      : L('da nessuna parte', 'nowhere', 'a ninguna parte')}</b></li>`;
+  const dest = d.destinazioni || [];
+  const accetta = (t, k) => !t.eventi.length || t.eventi.includes(k);
+  const intestazioni = dest.map((t) => `<th title="${esc((t.titolo || t.chatId) + (t.threadNome ? ' / ' + t.threadNome : ''))}">
+      <span class="tgm-dove">${esc(t.threadNome || t.titolo || t.chatId)}</span>
+      ${t.threadNome ? `<span class="tgm-sotto">${esc(t.titolo)}</span>` : `<span class="tgm-sotto">${t.tipo === 'channel' ? L('canale', 'channel', 'canal') : L('gruppo', 'group', 'grupo')}</span>`}
+      ${t.attivo ? '' : `<span class="tgm-spenta">${L('spenta', 'off', 'apagada')}</span>`}
+    </th>`).join('');
+  const righe = eventi.map((e) => {
+    const dove = dest.filter((t) => t.attivo && accetta(t, e.k)).length;
+    return `<tr${dove ? '' : ' class="orfano"'}>
+      <th scope="row">${esc(L(e.it, e.en, e.es))}${dove ? '' : `<span class="tgm-orfano">${L('non arriva da nessuna parte', 'lands nowhere', 'no llega a ninguna parte')}</span>`}</th>
+      ${dest.map((t) => `<td>
+        <label class="tgm-cella${t.attivo ? '' : ' via'}">
+          <input type="checkbox" data-mx-dest="${t.id}" data-mx-ev="${e.k}"${accetta(t, e.k) ? ' checked' : ''}${t.attivo ? '' : ' disabled'}>
+          <span></span>
+        </label></td>`).join('')}
+    </tr>`;
   }).join('');
+  const matrice = dest.length ? `<div class="tgm-guscio"><table class="tgm">
+      <thead><tr><th class="tgm-ang">${L('Avviso', 'Alert', 'Aviso')}</th>${intestazioni}</tr></thead>
+      <tbody>${righe}</tbody>
+    </table></div>` : '';
 
   const wh = d.webhook;
   const statoWh = !wh ? '' : (!wh.attivo
@@ -1056,9 +1071,10 @@ async function caricaTgDestinazioni() {
     </div>
     <div id="tg-trovate"></div>
 
-    ${(d.destinazioni || []).length ? `<div class="tg-mappa">
-      <p class="campo">${L('Dove finisce cosa', 'What goes where', 'Qué acaba dónde')}</p>
-      <ul>${mappa}</ul>
+    ${dest.length ? `<div class="tg-mappa">
+      <p class="campo">${L('Quale avviso va dove', 'Which alert goes where', 'Qué aviso va dónde')}</p>
+      <p class="suggerimento">${L('Spunta l’incrocio: la riga è l’avviso, la colonna è il posto. Quello che vedi qui è esattamente quello che succederà.', 'Tick the crossing: the row is the alert, the column is the place. What you see here is exactly what will happen.', 'Marca el cruce: la fila es el aviso, la columna es el sitio. Lo que ves aquí es exactamente lo que pasará.')}</p>
+      ${matrice}
     </div>` : ''}
 
     <p class="campo spazio-sopra">${L('Altri streamer da annunciare', 'Other streamers to announce', 'Otros streamers a anunciar')}</p>
@@ -1091,6 +1107,19 @@ function collegaTgDestinazioni() {
   box.dataset.collegato = '1';
 
   box.addEventListener('change', (e) => {
+    const mx = e.target.closest('[data-mx-dest]');
+    if (mx) {
+      const idDest = mx.dataset.mxDest;
+      const tutte = [...box.querySelectorAll(`[data-mx-dest="${idDest}"]`)];
+      const scelti = tutte.filter((i) => i.checked).map((i) => i.dataset.mxEv);
+      return conErrore(async () => {
+        await api('/api/streamer/telegram/destinazioni/' + idDest, {
+          method: 'PATCH',
+          body: { eventi: scelti.length === tutte.length ? [] : scelti },
+        });
+        await caricaTgDestinazioni();
+      });
+    }
     const d = e.target.closest('.tg-dest');
     if (!d) return;
     conErrore(async () => {
@@ -1161,6 +1190,77 @@ function collegaTgDestinazioni() {
       });
     }
   });
+}
+
+let _salvaBarra = null, _salvaSporco = false, _salvaOsservatore = null;
+
+function _bottoniSalva(pan) {
+  if (!pan) return [];
+  return [...pan.querySelectorAll('button[id*="salva"], button[id*="save"]')]
+    .filter((b) => !b.disabled && b.offsetParent !== null && !/modello|template|cred/i.test(b.id))
+    .slice(0, 3);
+}
+
+function _mostraBarraSalva(mostra) {
+  if (!_salvaBarra) return;
+  _salvaBarra.classList.toggle('dentro', !!mostra);
+  document.body.classList.toggle('con-salva', !!mostra);
+}
+
+function aggiornaBarraSalva() {
+  if (!_salvaBarra) return;
+  const pan = document.querySelector('.pannello-scheda.visibile');
+  const bottoni = _salvaSporco ? _bottoniSalva(pan) : [];
+  if (!bottoni.length) { _mostraBarraSalva(false); return; }
+  const zona = _salvaBarra.querySelector('.sv-tasti');
+  zona.innerHTML = '';
+  for (const b of bottoni) {
+    const proxy = document.createElement('button');
+    proxy.type = 'button';
+    proxy.className = 'btn' + (bottoni.length > 1 && b !== bottoni[0] ? ' secondario' : '');
+    proxy.textContent = (b.textContent || L('Salva', 'Save', 'Guardar')).trim().slice(0, 34);
+    proxy.addEventListener('click', () => {
+      b.click();
+      _salvaSporco = false;
+      _mostraBarraSalva(false);
+    });
+    zona.appendChild(proxy);
+  }
+  _mostraBarraSalva(true);
+}
+
+function avviaBarraSalva() {
+  if (_salvaBarra) return;
+  _salvaBarra = document.createElement('div');
+  _salvaBarra.id = 'barra-salva';
+  _salvaBarra.className = 'sv-barra';
+  _salvaBarra.innerHTML = `<span class="sv-testo">${_bIco(ICO.avviso)}${L('Hai modifiche non salvate', 'You have unsaved changes', 'Tienes cambios sin guardar')}</span><span class="sv-tasti"></span>`;
+  document.body.appendChild(_salvaBarra);
+
+  const sporca = (ev) => {
+    const t = ev.target;
+    if (!t || !t.closest) return;
+    if (!t.closest('.pannello-scheda.visibile')) return;
+    if (!/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+    if (t.closest('#tg-destinazioni, .ovl-schede, .ovl-barra, .ovl-livelli, .ovl-inspector, .cerca-guscio')) return;
+    if (_salvaSporco) return;
+    _salvaSporco = true;
+    aggiornaBarraSalva();
+  };
+  document.addEventListener('input', sporca, true);
+  document.addEventListener('change', sporca, true);
+
+  document.addEventListener('click', (ev) => {
+    const b = ev.target.closest?.('button[id*="salva"], button[id*="save"]');
+    if (!b || b.closest('.sv-barra')) return;
+    _salvaSporco = false;
+    _mostraBarraSalva(false);
+  }, true);
+}
+
+function azzeraBarraSalva() {
+  _salvaSporco = false;
+  _mostraBarraSalva(false);
 }
 
 function mostraBenvenuto() {
@@ -13514,6 +13614,7 @@ function vaiAScheda(id) {
     sezioni.forEach((p) => { rendiCartePieghevoli(p, id); rivelaCarte(p); });
   });
   caricaDatiScheda(id);
+  azzeraBarraSalva();
   if (DEMO) aggiornaSpiegazioneDemo();
   window.scrollTo({ top: 0, behavior: _menoMoto ? 'auto' : 'smooth' });
 }
@@ -13580,6 +13681,8 @@ function initGuscio() {
     const vp = ev.target.closest('a[data-scheda],button[data-scheda]');
     if (vp && !vp.closest('#nav-drawer')) { ev.preventDefault(); vaiAScheda(vp.dataset.scheda); }
   });
+
+  avviaBarraSalva();
 
   document.getElementById('barra-giu')?.addEventListener('click', (ev) => {
     if (ev.target.closest('[data-apri-menu]')) {
