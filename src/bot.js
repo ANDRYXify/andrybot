@@ -794,8 +794,7 @@ export class BotManager {
         if (!conf?.attivo || !conf.token) continue;
         // la lista automatica segue la community: chi entra compare, chi esce sparisce
         if (conf.community_live) {
-          tgAmici.sincronizzaCommunity(ch, streamers.list()
-            .filter((x) => x.community && x.login !== ch)
+          tgAmici.sincronizzaCommunity(ch, streamers.membriCommunity(ch)
             .map((x) => ({ login: x.login, display: x.display })));
         } else {
           tgAmici.sincronizzaCommunity(ch, []);

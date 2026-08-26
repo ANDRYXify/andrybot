@@ -798,6 +798,18 @@ export const streamers = {
     return db.prepare('SELECT * FROM streamers ORDER BY requested_at DESC').all()
       .map(r => ({ ...r, settings: safeJson(r.settings), botEnabled: !!r.bot_enabled, community: !!r.community }));
   },
+  // MEMBRI COMMUNITY CONFERMATI, adesso. È l'unico posto dove si decide chi
+  // conta come membro: registrato su Twitch (user_id), approvato, verificato dal
+  // pass di andryxify.it (community=1) e ANCORA nella lista del sito — chi è in
+  // periodo di grazia è sparito dalla lista, quindi non conta più. Chi ha solo
+  // comprato un piano o si e' iscritto gratis non ha community=1 e resta fuori.
+  // Gli account gestiti a mano dall'admin (manuale=1) li decide l'admin.
+  membriCommunity(escludi = '') {
+    return db.prepare(`SELECT login, display, avatar FROM streamers
+      WHERE community=1 AND status='approved' AND user_id<>'' AND login<>?
+        AND (manuale=1 OR grazia_fino<=0)
+      ORDER BY display COLLATE NOCASE, login`).all(String(escludi || '').toLowerCase());
+  },
   // canali dove il bot deve stare adesso: approvati + accesi
   active() {
     return db.prepare("SELECT * FROM streamers WHERE status='approved' AND bot_enabled=1").all()
