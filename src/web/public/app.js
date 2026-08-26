@@ -1439,6 +1439,7 @@ const ICO = {
   fotocamera: '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
   divieto: '<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>',
   scudo: '<path d="M12 3.2 19 6v5c0 4.8-3.4 7.8-7 8.8-3.6-1-7-4-7-8.8V6z"/>',
+  mondo: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18"/>',
   grafico: '<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
   corona: '<path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/>',
   cuore: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
@@ -11557,17 +11558,17 @@ async function caricaEcosistema() {
   const bud = e.budget || {};
   const des = Array.isArray(e.desideri) ? e.desideri : [];
   card.innerHTML = `
-    <h3>🌍 ${L('Il suo ecosistema reale', 'Her real ecosystem', 'Su ecosistema real')}</h3>
+    <h3>${_hIco(ICO.mondo)}${L('Il suo ecosistema reale', 'Her real ecosystem', 'Su ecosistema real')}</h3>
     <p class="suggerimento">${L('Il suo «computer» dentro il recinto — dietro il <strong>guardiano</strong> (internet pubblico sì, la tua infra no). Può installarsi, navigare, creare e costruire <strong>da sola</strong>, dentro un tetto automatico.', 'Her «computer» inside the fence — behind the <strong>guardian</strong> (public internet yes, your infra no). She can install, browse, create and build <strong>on her own</strong>, within an automatic ceiling.', 'Su «ordenador» dentro del recinto — tras el <strong>guardián</strong>. Puede instalar, navegar, crear y construir <strong>sola</strong>, dentro de un techo automático.')}</p>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px;margin:8px 0">
+    <div class="eco-versioni">
       ${riga('Python', e.python)}${riga('Node', e.node)}${riga(L('Browser', 'Browser', 'Navegador'), e.browser || '—')}
       ${riga('micromamba', e.mamba || '—')}${riga(L('spazio', 'disk', 'espacio'), e.spazio)}${riga(L('progetti', 'projects', 'proyectos'), e.progetti)}${riga(L('lavori attivi', 'active jobs', 'trabajos activos'), e.lavori)}
     </div>
-    ${bud.attivo ? `<div class="riquadro-info" style="margin:8px 0">🔒 ${L('Tetto automatico del lavoro autonomo', 'Automatic ceiling for autonomous work', 'Techo automático del trabajo autónomo')}: <strong>${L('10% della memoria libera', '10% of free memory', '10% de la memoria libre')}</strong> — ${L('RAM', 'RAM', 'RAM')} <strong>${esc(bud.mem_umano || '—')}</strong>, ${L('disco per install', 'disk for installs', 'disco para instalar')} <strong>${esc(bud.disco_umano || '—')}</strong>. ${L('Si regola da sé; se il disco è tirato, non installa.', 'Self-adjusting; if disk is tight, no installs.', 'Se ajusta solo; si el disco está justo, no instala.')}</div>` : ''}
+    ${bud.attivo ? `<div class="riquadro-info" style="margin:8px 0">${L('Tetto automatico del lavoro autonomo', 'Automatic ceiling for autonomous work', 'Techo automático del trabajo autónomo')}: <strong>${L('10% della memoria libera', '10% of free memory', '10% de la memoria libre')}</strong> — ${L('RAM', 'RAM', 'RAM')} <strong>${esc(bud.mem_umano || '—')}</strong>, ${L('disco per install', 'disk for installs', 'disco para instalar')} <strong>${esc(bud.disco_umano || '—')}</strong>. ${L('Si regola da sé; se il disco è tirato, non installa.', 'Self-adjusting; if disk is tight, no installs.', 'Se ajusta solo; si el disco está justo, no instala.')}</div>` : ''}
     <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0">
       <input id="eco-des" class="campo" placeholder="${L('desiderio (installa:mido · costruisci:radio · testo)', 'wish (installa:mido · costruisci:radio · text)', 'deseo (installa:mido · costruisci:radio · texto)')}" style="flex:1 1 240px">
-      <button class="btn secondario mini" id="eco-vuoi">＋ ${L('Dàgli un desiderio', 'Give her a wish', 'Dale un deseo')}</button>
-      <button class="btn secondario mini" id="eco-ora">▶ ${L('Fai un passo ora', 'Take a step now', 'Da un paso ahora')}</button>
+      <button class="btn secondario mini" id="eco-vuoi">${L('Proponile un desiderio', 'Give her a wish', 'Dale un deseo')}</button>
+      <button class="btn secondario mini" id="eco-ora">${L('Fai un passo ora', 'Take a step now', 'Da un paso ahora')}</button>
     </div>
     ${des.length ? `<p class="tenue">${L('Desideri', 'Wishes', 'Deseos')}: ${des.map((x) => `<code>${esc(x)}</code>`).join(' · ')}</p>` : ''}
     <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0">
@@ -11578,7 +11579,7 @@ async function caricaEcosistema() {
     <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0">
       <input id="eco-url" class="campo" placeholder="https://…" style="flex:1 1 200px">
       <button class="btn secondario mini" id="eco-naviga">${L('Naviga (leggi)', 'Browse (read)', 'Navegar (leer)')}</button>
-      <button class="btn secondario mini" id="eco-ferma" style="margin-left:auto;color:#c0392b">⛔ ${L('Ferma tutto', 'Stop all', 'Parar todo')}</button>
+      <button class="btn secondario mini" id="eco-ferma" style="margin-left:auto;color:var(--rosso)">${L('Ferma tutto', 'Stop all', 'Parar todo')}</button>
     </div>
     ${prog.length ? `<p class="tenue" style="margin-top:6px">${L('Progetti', 'Projects', 'Proyectos')}: ${prog.map((p) => `<code>${esc(p.nome)}</code>`).join(' · ')}</p>` : ''}
     <pre id="eco-esito" class="vita-pre" style="display:none;margin-top:8px"></pre>`;

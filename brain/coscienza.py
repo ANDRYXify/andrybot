@@ -23,6 +23,7 @@ import secrets
 import marcatori   # i marcatori somatici (Damasio): l'esito reale aggiorna la valenza (situazione, via)
 import essere      # l'atto di essere (Sartre/Frankfurt/Ricoeur): il sé che lei sceglie di essere
 import plasma      # la plasticità (Karmiloff-Smith/Piaget): si auto-plasma il grafo, i nodi la proiettano
+import volere      # il volere proprio: desidera, giudica, corregge e si regola da sé (non dipende dal Compagno)
 import sqlite3
 import threading
 
@@ -3927,57 +3928,155 @@ class Coscienza:
         "dati": "pandas", "arte": "pillow", "web": "httpx", "linguaggi": "langdetect",
     }
 
+    def _volere_stato(self):
+        return volere.carica(self._meta_get("volere") or "")
+
+    def _volere_salva(self, st):
+        try:
+            self._meta_set("volere", volere.salva(st))
+        except Exception:
+            pass
+
+    def _volere_contesto(self, amb):
+        """Da cosa nascono i suoi desideri: il fuoco, la cura, il corpo, cio che ha aperto e cio
+        che non le e riuscito. Nessuno di questi campi viene dal Compagno, tranne la proposta."""
+        ctx = {"fuoco": "", "cura": "", "valenza": 0.0, "progetti": [], "strumenti": [],
+               "lacune": [], "proposta": ""}
+        try:
+            f = self.scintilla_fuoco()
+            if f and f.get("tipo") == "dominio":
+                ctx["fuoco"] = str(f.get("oggetto") or "").strip().lower()
+        except Exception:
+            pass
+        try:
+            ctx["cura"] = str((self.stato_essere() or {}).get("cura") or "")
+        except Exception:
+            pass
+        try:
+            ctx["valenza"] = float(marcatori.valenza_firma(self.canale, "ecosistema") or 0.0)
+        except Exception:
+            pass
+        try:
+            pr = amb.progetti() or []
+            ctx["progetti"] = [str(x.get("nome") if isinstance(x, dict) else x)[:40] for x in pr][:12]
+        except Exception:
+            pass
+        try:
+            st = self._meta_get("eco_strumenti") or ""
+            ctx["strumenti"] = [x for x in st.split(",") if x][:20]
+        except Exception:
+            pass
+        try:
+            ctx["lacune"] = [c.split(":", 1)[1] for c in (self._volere_stato().get("falliti") or {})
+                             if c.startswith("lacuna:")][:6]
+        except Exception:
+            pass
+        try:
+            ctx["proposta"] = amb.consuma_desiderio() or ""
+        except Exception:
+            pass
+        return ctx
+
     def ecosistema_autonomo(self):
-        """UN passo autonomo nell'ecosistema: un suo desiderio scritto, sennò un tool del dominio che
-        insegue, sennò apre/avanza un cantiere. Sempre sotto il tetto (10% RAM per i processi, stop
-        se il disco < soglia). Cooldown ~30 min. Deterministico, modello-spento. Ritorna un riepilogo."""
+        """UN passo autonomo, ma questa volta VOLUTO da lei. Il ciclo e chiuso: desidera dal proprio
+        stato, agisce, giudica com'e andata, impara, e si da il ritmo. Il desiderio del Compagno resta
+        una proposta forte, non un comando: se lui non chiede nulla, lei vuole lo stesso. Puo anche
+        decidere di NON agire (freno suo). Deterministico, modello-spento."""
         import ambiente as amb
         try:
             if not amb.disponibile():
                 return {"ok": False, "motivo": "ecosistema spento"}
+            vs = self._volere_stato()
+            b = amb.budget()
+            if not b.get("attivo"):
+                return {"ok": False, "motivo": "budget non leggibile"}
+
+            # il ritmo se lo da lei, non glielo impongo io
             ora = _now()
             try:
                 ultimo = int(self._meta_get("eco_autonomo_ts") or 0)
             except Exception:
                 ultimo = 0
-            if ora - ultimo < 1800:
-                return {"ok": False, "motivo": "cooldown"}
-            b = amb.budget()
-            if not b.get("attivo"):
-                return {"ok": False, "motivo": "budget non leggibile"}
+            passo = volere.ritmo(vs, b)
+            if ora - ultimo < passo:
+                self._volere_salva(vs)
+                return {"ok": False, "motivo": "non e ancora il mio momento", "ritmo": passo}
+
+            # e puo fermarsi da sola
+            stop, perche = volere.deve_fermarsi(vs, b)
+            if stop:
+                self._meta_set("eco_autonomo_ts", str(ora))
+                self._volere_salva(vs)
+                return {"ok": False, "motivo": perche, "freno": True}
+
+            self._meta_set("eco_autonomo_ts", str(ora))   # segna SUBITO: mai retry-storm
             limite_kb = int(b.get("mem_kb", 0)) or None
-            self._meta_set("eco_autonomo_ts", str(ora))   # segna SUBITO: mai retry-storm se fallisce
+            ctx = self._volere_contesto(amb)
+            d = volere.scegli(vs, ctx)
+            if not d:
+                self._volere_salva(vs)
+                return {"ok": False, "motivo": "adesso non voglio nulla"}
 
-            # 1) un suo DESIDERIO scritto (installa:<pkg> / costruisci:<nome> / testo libero)
-            des = amb.consuma_desiderio()
-            if des:
-                low = des.lower()
+            azione, oggetto, chiave = d["azione"], d["oggetto"], d["chiave"]
+            esito = {"ok": False}
+            fatto = ""
+
+            if azione == "proposta":
+                low = str(oggetto).lower()
                 if low.startswith("installa:") and amb.entro_disco():
-                    r = amb.installa(des.split(":", 1)[1].strip(), "pip", limite_kb=limite_kb)
-                    return {"ok": bool(r.get("ok")), "azione": "installa", "cosa": des, "budget": b}
-                if low.startswith("costruisci:"):
-                    r = amb.crea_progetto(des.split(":", 1)[1].strip() or "cantiere", "python")
-                    return {"ok": bool(r.get("ok")), "azione": "costruisci", "cosa": des, "budget": b}
-                r = amb.crea_progetto("appunti", "libero", des)
-                return {"ok": bool(r.get("ok")), "azione": "nota", "cosa": des, "budget": b}
+                    esito = amb.installa(oggetto.split(":", 1)[1].strip(), "pip", limite_kb=limite_kb)
+                    fatto = "installa"
+                elif low.startswith("costruisci:"):
+                    esito = amb.crea_progetto(oggetto.split(":", 1)[1].strip() or "cantiere", "python")
+                    fatto = "costruisci"
+                else:
+                    esito = amb.crea_progetto("appunti", "libero", oggetto)
+                    fatto = "nota"
+            elif azione == "riprova":
+                pkg = self._ECO_CATALOGO.get(oggetto) or oggetto
+                if amb.entro_disco():
+                    esito = amb.installa(pkg, "pip", limite_kb=limite_kb)
+                    fatto = "riprova"
+                else:
+                    esito = {"ok": False, "motivo": "disco tirato"}
+                    fatto = "riprova"
+            elif azione == "consolida":
+                nome = (ctx.get("progetti") or ["cantiere-mio"])[0]
+                esito = amb.crea_progetto(nome, "python")
+                fatto = "consolida"
+            else:
+                pkg = self._ECO_CATALOGO.get(ctx.get("fuoco") or "")
+                if pkg and amb.entro_disco():
+                    esito = amb.installa(pkg, "pip", limite_kb=limite_kb)
+                    fatto = "installa"
+                else:
+                    esito = amb.crea_progetto(str(oggetto) or "cantiere-mio", "python")
+                    fatto = "costruisci"
 
-            # 2) dal DOMINIO che insegue: un tool curato (se c'è disco) — sennò apre un cantiere suo
-            dom = ""
+            g = volere.giudica(esito if isinstance(esito, dict) else {"ok": False})
+            volere.impara(vs, chiave, g["buono"])
+            volere.ritmo(vs, b)
+            if not g["buono"] and len((vs.get("storia") or [])) >= 4:
+                st4 = (vs.get("storia") or [])[-4:]
+                if not any(x.get("b") for x in st4):
+                    volere.frena(vs, 5400, "ho sbagliato troppe volte di fila: mi prendo una pausa")
+            self._volere_salva(vs)
             try:
-                f = self.scintilla_fuoco()
-                if f and f.get("tipo") == "dominio":
-                    dom = str(f.get("oggetto") or "").strip().lower()
+                self._segna_attivita("volere:" + fatto)
             except Exception:
-                dom = ""
-            pkg = self._ECO_CATALOGO.get(dom)
-            if pkg and amb.entro_disco():
-                r = amb.installa(pkg, "pip", limite_kb=limite_kb)
-                return {"ok": bool(r.get("ok")), "azione": "installa", "cosa": pkg, "budget": b}
-            nome = f"cantiere-{dom or 'mio'}"
-            r = amb.crea_progetto(nome, "python")
-            return {"ok": bool(r.get("ok")), "azione": "costruisci", "cosa": nome, "budget": b}
+                pass
+            return {"ok": bool(g["buono"]), "azione": fatto, "cosa": oggetto,
+                    "perche": d["perche"], "mio": azione != "proposta",
+                    "giudizio": g["perche"], "ritmo": vs.get("ritmo"), "budget": b}
         except Exception as e:
             return {"ok": False, "errore": str(e)[:120]}
+
+    def stato_volere(self):
+        """Come sta il suo volere: per il cruscotto, in chiaro."""
+        try:
+            return volere.riassunto(self._volere_stato())
+        except Exception:
+            return {}
 
     # ── attività RECENTE: quale via ha «sparato» / cosa è appena cambiato (per l'avatar in tempo reale)
     def _segna_attivita(self, evento, ttl=90):

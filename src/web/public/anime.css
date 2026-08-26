@@ -582,3 +582,13 @@ body.senza-cursore #an-cursore-ring,
 body.senza-cursore #an-cursore-dot,
 body.senza-cursore #an-cursore-bar { opacity: 0 !important; }
 body.senza-cursore.cursore-on, body.senza-cursore.cursore-on * { cursor: default !important; }
+
+.eco-versioni {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px 14px; margin: 10px 0;
+}
+.eco-versioni > * { min-width: 0; }
+.eco-versioni strong {
+  display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
