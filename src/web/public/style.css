@@ -1,3 +1,6 @@
+/* © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live */
+/* Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live */
+
 
 
 :root {
@@ -48,7 +51,7 @@
   --g-admin: var(--acc);
 }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: clip; }
 
 :target, [id] { scroll-margin-top: calc(var(--top-h) + 1rem); }
 
@@ -235,15 +238,6 @@ body.menu-aperto .drawer { transform: none; }
 .carta.avviso-rosso { border-color: var(--rosso-bordo); background: var(--rosso-soft); }
 .carta.avviso-rosso h2 { color: var(--rosso); }
 
-.cap-scheda { max-width: 860px; margin-inline: auto; }
-.cap-scheda > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
-.cap-scheda > summary::-webkit-details-marker { display: none; }
-.cap-scheda > summary h2 { margin: 0; }
-.cap-scheda > summary::after { content: ''; margin-left: auto; width: .55rem; height: .55rem; border-right: 2px solid var(--acc); border-bottom: 2px solid var(--acc); transform: rotate(45deg); transition: transform var(--dur-micro) var(--ease-back); }
-.cap-scheda[open] > summary::after { transform: rotate(-135deg); }
-.cap-sommario { font-size: .84rem; color: var(--testo-3); font-variant-numeric: tabular-nums; }
-.cap-corpo { margin-top: .9rem; }
-.cap-intro { font-size: .92rem; line-height: 1.55; margin-bottom: .9rem; }
 
 .cap-area { border-top: 1px solid var(--border); }
 .cap-area > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: .5rem; padding: .75rem 0; font-weight: 700; font-size: .95rem; color: var(--testo); }

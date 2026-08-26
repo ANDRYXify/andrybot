@@ -294,7 +294,7 @@ body.vetrina em, body.vetrina .vt-corsivo {
 .vt-passo strong { display: block; font-size: 1rem; margin-bottom: .3rem; }
 .vt-passo p { margin: 0; font-size: .88rem; line-height: 1.55; color: var(--testo-2); }
 
-.vt-store { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); align-items: start; }
+.vt-store { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); align-items: stretch; }
 .vt-piano {
   display: flex; flex-direction: column; gap: .85rem;
   padding: 1.5rem 1.5rem 1.6rem; border-radius: 16px;
@@ -316,6 +316,67 @@ body.vetrina em, body.vetrina .vt-corsivo {
 .vt-elenco li { display: flex; gap: .55rem; font-size: .88rem; line-height: 1.45; color: var(--testo-2); }
 .vt-elenco svg { flex: 0 0 auto; width: 15px; height: 15px; margin-top: .16rem; color: var(--verde); }
 .vt-piano .vt-btn { margin-top: auto; width: 100%; }
+
+.vt-pacchi { margin-top: 18px; }
+.vt-pacchi-tit {
+  margin: 0 0 .7rem; font-family: Archivo, system-ui, sans-serif;
+  font-size: .68rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--testo-2);
+}
+.vt-pacchi-tit span {
+  display: inline-block; margin-left: .55rem; font-family: inherit;
+  font-weight: 500; letter-spacing: .04em; text-transform: none; color: var(--testo-3);
+}
+.vt-pacco {
+  display: flex; flex-direction: column; gap: .35rem; width: 100%; text-align: left;
+  font: inherit; color: inherit; cursor: pointer;
+  padding-right: 4.6rem;
+}
+.vt-pacco > h3 { margin: 0; }
+.vt-pacco > p { flex: 1 1 auto; }
+.vt-pacco-sconto {
+  position: absolute; top: .95rem; right: 1rem; z-index: 2;
+  font-family: Archivo, system-ui, sans-serif; font-size: .66rem; font-weight: 700;
+  letter-spacing: .06em; padding: .2rem .5rem; border-radius: 999px;
+  color: var(--verde); background: var(--verde-soft); border: 1px solid var(--verde-bordo);
+  font-variant-numeric: tabular-nums;
+}
+.vt-pacco-prezzo {
+  display: flex; align-items: baseline; gap: .4rem; margin-top: .75rem;
+  font-variant-numeric: tabular-nums;
+}
+.vt-pacco-prezzo s { font-size: .82rem; color: var(--testo-3); text-decoration-thickness: 1px; }
+.vt-pacco-prezzo b { font-family: Archivo, system-ui, sans-serif; font-size: 1.32rem; font-weight: 700; letter-spacing: -.03em; }
+.vt-pacco-prezzo i { font-style: normal; font-size: .8rem; color: var(--testo-3); }
+.vt-pacco:focus-visible { outline: 2px solid var(--acc); outline-offset: 3px; }
+.vt-pacco.on { border-color: var(--acc-bordo); background: linear-gradient(168deg, var(--acc-soft), var(--surface)); }
+.vt-pacco.on::before { opacity: 1; }
+.vt-pacco.on .vt-pacco-sconto { color: var(--acc); background: var(--acc-tint); border-color: var(--acc-bordo); }
+.vt-pacco.on .vt-pacco-prezzo b { color: var(--acc); }
+
+.vt-community {
+  margin: 18px 0 0; padding: .95rem 1.15rem; border-radius: 12px;
+  font-size: .9rem; line-height: 1.6; color: var(--testo-2);
+  border: 1px solid var(--verde-bordo); background: var(--verde-soft);
+}
+.vt-community strong { color: var(--verde); font-weight: 600; }
+.vt-community a { color: var(--verde); }
+
+.vt-cap {
+  padding: 1.15rem 1.35rem 1.25rem; border-radius: 16px;
+  border: 1px solid var(--border); background: var(--surface);
+}
+.vt-cap-conta {
+  margin: 0 0 .35rem; font-size: .88rem; line-height: 1.7; color: var(--testo-2);
+  font-variant-numeric: tabular-nums;
+}
+.vt-cap-conta b {
+  font-family: Archivo, system-ui, sans-serif; font-size: 1.15rem;
+  font-weight: 700; letter-spacing: -.02em; color: var(--testo);
+}
+.vt-cap-conta span { color: var(--testo-3); margin: 0 .35rem; }
+.vt-cap .cap-area:first-of-type { border-top: 0; }
+.vt-cap .cap-elenco { margin-bottom: .6rem; }
 
 .vt-comp-guscio { margin-top: 18px; }
 .vt-comp-tit { margin: 0 0 .4rem; font-size: 1.16rem; font-weight: 700; letter-spacing: -.02em; }
@@ -449,6 +510,10 @@ body.vetrina em, body.vetrina .vt-corsivo {
   .vt-alert { font-size: .78rem; padding: .5rem .8rem; max-width: 88%; white-space: normal; }
   .vt-conto .vt-btn { margin-left: 0; width: 100%; }
   .vt-comp, .vt-piano { padding: 1.1rem 1.1rem 1.2rem; }
+  .vt-cap { padding: 1rem 1rem 1.1rem; }
+  .vt-pacco { padding-right: 1.35rem; }
+  .vt-pacco-sconto { position: static; align-self: flex-start; margin-bottom: .5rem; }
+  .vt-pacchi-tit span { display: block; margin-left: 0; margin-top: .2rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

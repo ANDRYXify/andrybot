@@ -64,7 +64,13 @@
         '</span></div>' +
       '<div class="pl-eroe"></div>' +
       '<div class="pl-pista"><div class="pl-rail" role="listbox" aria-label="' + esc(L('Sezioni', 'Sections', 'Secciones')) + '"></div></div>' +
-      '<div class="pl-guida"><span>←→</span> ' + esc(L('scorri', 'scroll', 'desplaza')) + ' &nbsp; <span>↑↓</span> ' + esc(L('salta gruppo', 'jump group', 'saltar grupo')) + ' &nbsp; <span>Invio</span> ' + esc(L('apri', 'open', 'abrir')) + ' &nbsp; <span>Esc</span> ' + esc(L('esci', 'exit', 'salir')) + ' &nbsp; <span>A</span><span>B</span> ' + esc(L('col controller', 'with a controller', 'con el mando')) + '</div>';
+      '<div class="pl-guida">' +
+      '<b class="pl-cop"><span>←→</span> ' + esc(L('scorri', 'scroll', 'desplaza')) + '</b>' +
+      '<b class="pl-cop"><span>↑↓</span> ' + esc(L('salta gruppo', 'jump group', 'saltar grupo')) + '</b>' +
+      '<b class="pl-cop"><span>Invio</span> ' + esc(L('apri', 'open', 'abrir')) + '</b>' +
+      '<b class="pl-cop"><span>Esc</span> ' + esc(L('esci', 'exit', 'salir')) + '</b>' +
+      '<b class="pl-cop"><span>A</span><span>B</span> ' + esc(L('col controller', 'with a controller', 'con el mando')) + '</b>' +
+      '</div>';
     document.body.appendChild(overlay);
     eroe = overlay.querySelector('.pl-eroe');
     rail = overlay.querySelector('.pl-rail');

@@ -1583,159 +1583,102 @@ async function caricaPiani() {
   if (!box) return;
   let dati;
   try { dati = await api('/api/abbonamento/piani'); } catch { box.remove(); return; }
-  const base = dati.base;
-  const addon = dati.addon || [];
+  const base = dati.base, free = dati.free;
   const bundle = dati.bundle || [];
   if (!base) { box.remove(); return; }
-
-  const prezzoIt = (n) => Number(n || 0).toFixed(2).replace('.', ',');
   const perMese = L('/mese', '/month', '/mes');
+  const spunta = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
 
-  const inclusiBase = [
-    { t: L('Avvisi live su Telegram/Discord + nuovi post', 'Live alerts on Telegram/Discord + new posts', 'Avisos live en Telegram/Discord + nuevos posts'), base: true },
-    { t: L('1 moderatore incluso', '1 moderator included', '1 moderador incluido'), base: true },
-    { t: L('Comandi & moduli illimitati', 'Unlimited commands & modules', 'Comandos y módulos ilimitados') },
-    { t: L('Antispam, moderazione & scudo anti-bot/anti-raid', 'Anti-spam, moderation & anti-bot/anti-raid shield', 'Antispam, moderación y escudo anti-bot/anti-raid') },
-    { t: L('Overlay per OBS', 'OBS overlay', 'Overlay para OBS') },
+  const inclusiFree = [
+    L('Comandi e moduli illimitati', 'Unlimited commands and modules', 'Comandos y módulos ilimitados'),
+    L('Moderazione con scudo anti-bot', 'Moderation with anti-bot shield', 'Moderación con escudo anti-bot'),
+    L('Overlay per OBS e contatori a schermo', 'OBS overlay and on-screen counters', 'Overlay para OBS y contadores'),
   ];
+  const inclusiBase = [
+    L('Tutto l’Essenziale', 'Everything in Essenziale', 'Todo lo de Essenziale'),
+    L('Avvisi live su Telegram e Discord', 'Live alerts on Telegram and Discord', 'Avisos en directo en Telegram y Discord'),
+    L('Avvisi dei nuovi post sui social', 'Alerts for new social posts', 'Avisos de nuevas publicaciones'),
+    L('Un moderatore incluso', 'One moderator included', 'Un moderador incluido'),
+  ];
+  const piano = ({ nome, prezzo, sotto, testo, voci, punta, azione, i }) => `
+    <article class="vt-piano${punta ? ' punta' : ''}" style="--i:${i}">
+      ${punta ? `<span class="vt-piano-tag">${L('il più scelto', 'most picked', 'el más elegido')}</span>` : ''}
+      <h3>${esc(nome)}</h3>
+      <div class="vt-prezzo"><b>${prezzo}</b><span>${sotto}</span></div>
+      <p>${esc(testo)}</p>
+      <ul class="vt-elenco">${voci.map((v) => `<li>${spunta}${esc(v)}</li>`).join('')}</ul>
+      ${azione}
+    </article>`;
 
   box.innerHTML = `
-    <div class="vetrina-piani-testa">
-      <h2>${L('Componi il tuo bot', 'Build your bot', 'Compón tu bot')}</h2>
-      <p>${dati.attivo
-        ? L('Parti dalla Base e aggiungi solo i super-poteri che ti servono.', 'Start from Base and add only the super-powers you need.', 'Empieza por la Base y añade solo los súper-poderes que necesitas.')
-        : L('Presto potrai attivarlo — parti dalla Base e aggiungi solo i super-poteri che ti servono.', 'Coming soon — start from Base and add only the super-powers you need.', 'Muy pronto — empieza por la Base y añade solo los súper-poderes que necesitas.')}</p>
+    <div class="vt-store">
+      ${piano({
+        i: 0,
+        nome: tP(free, 'nome') || 'Essenziale',
+        prezzo: L('Gratis', 'Free', 'Gratis'),
+        sotto: L('per sempre', 'forever', 'para siempre'),
+        testo: L('Basta registrarsi. Nessuna carta, nessuna scadenza.', 'Just sign up. No card, no expiry.', 'Solo regístrate. Sin tarjeta, sin caducidad.'),
+        voci: inclusiFree,
+        punta: false,
+        azione: `<a class="vt-btn" href="/entra?nuovo=1">${L('Inizia gratis', 'Start free', 'Empieza gratis')}</a>`,
+      })}
+      ${piano({
+        i: 1,
+        nome: tP(base, 'nome') || 'Base',
+        prezzo: '€' + Number(base.prezzo || 0).toFixed(2).replace('.', ','),
+        sotto: perMese,
+        testo: tP(base, 'sommario'),
+        voci: inclusiBase,
+        punta: true,
+        azione: `<button type="button" class="vt-btn" data-vai-comp>${L('Componi il tuo', 'Build yours', 'Compón el tuyo')}</button>`,
+      })}
     </div>
-    <div class="piani-componi">
-      <div class="piano-base carta rivela">
-        <div class="piano-base-testa">
-          <span class="piano-icona">${svgPiano('base')}</span>
-          <div>
-            <h3>${esc(tP(base, 'nome'))}</h3>
-            <p class="piano-somm">${esc(tP(base, 'sommario'))}</p>
-          </div>
-          <div class="piano-prezzo">€${prezzoIt(base.prezzo)}<span>${perMese}</span></div>
-        </div>
-        <ul class="piano-funzioni">
-          ${inclusiBase.map((x) => `<li${x.base ? ' class="pf-base"' : ''}><span class="pf-val si">✓</span> ${esc(x.t)}</li>`).join('')}
-        </ul>
+
+    ${bundle.length ? `
+    <div class="vt-pacchi">
+      <p class="vt-pacchi-tit vt-rivela">${L('Pacchetti pronti', 'Ready-made packs', 'Packs listos')} <span>${L('un clic e ti riempio la lista qui sotto', 'one click and I fill in the list below', 'un clic y te relleno la lista de abajo')}</span></p>
+      <div class="vt-griglia">
+        ${bundle.map((b, i) => {
+          const risp = b.prezzoPieno > b.prezzo;
+          return `<button type="button" class="vt-carta vt-pacco" data-pacco="${esc(b.id)}" aria-pressed="false" style="--i:${i}">
+            ${risp ? `<span class="vt-pacco-sconto">−${Math.round(b.sconto * 100)}%</span>` : ''}
+            <h3>${esc(b.nome)}</h3>
+            <p>${esc(tP(b, 'sommario'))}</p>
+            <span class="vt-pacco-prezzo">${risp ? `<s>+€${Number(b.prezzoPieno).toFixed(2).replace('.', ',')}</s>` : ''}<b>+€${Number(b.prezzo).toFixed(2).replace('.', ',')}</b><i>${perMese}</i></span>
+          </button>`;
+        }).join('')}
       </div>
+    </div>` : ''}
 
-      ${bundle.length ? (() => {
-        const maxSc = Math.round(Math.max(0, ...bundle.map((b) => b.sconto || 0)) * 100);
-        return `<div class="bundle-blocco">
-        <h4 class="addon-titolo">${L('Bundle pronti', 'Ready-made bundles', 'Packs listos')}${maxSc > 0 ? ` <span>· ${L('fino al', 'up to', 'hasta')} –${maxSc}% ${L('sugli add-on', 'on add-ons', 'en los add-on')}</span>` : ''}</h4>
-        <div class="bundle-griglia">
-          ${bundle.map((b) => {
-            const risp = b.prezzoPieno > b.prezzo;
-            return `<button type="button" class="bundle-carta" data-bundle="${esc(b.id)}" aria-pressed="false">
-              <span class="bundle-icona">${svgPiano(b.addon[0] || 'base')}</span>
-              <span class="bundle-prezzo">${risp ? `<span class="bundle-sconto">–${Math.round(b.sconto * 100)}%</span> <s>+€${prezzoIt(b.prezzoPieno)}</s> ` : ''}<strong>+€${prezzoIt(b.prezzo)}</strong><small>${perMese}</small></span>
-              <span class="bundle-testo">
-                <span class="bundle-nome">${esc(b.nome)}</span>
-                <span class="bundle-somm">${esc(tP(b, 'sommario'))}</span>
-              </span>
-            </button>`;
-          }).join('')}
-        </div>
-      </div>`;
-      })() : ''}
+    <div class="vt-comp-guscio vt-rivela" id="vt-comp-guscio"></div>
 
-      <div class="addon-blocco">
-        <h4 class="addon-titolo">${L('Aggiungi super-poteri', 'Add super-powers', 'Añade súper-poderes')} <span>· à la carte</span></h4>
-        <div class="addon-griglia">
-          ${addon.map((a) => `
-            <button type="button" class="addon-carta" data-addon="${esc(a.id)}" aria-pressed="false">
-              <span class="addon-icona">${svgPiano(a.id)}</span>
-              <span class="addon-testo">
-                <span class="addon-nome">${esc(tP(a, 'nome'))}</span>
-                <span class="addon-somm">${esc(tP(a, 'sommario'))}</span>
-              </span>
-              <span class="addon-prezzo">+€${prezzoIt(a.prezzo)}</span>
-            </button>`).join('')}
-        </div>
-      </div>
+    <p class="vt-community vt-rivela">${L('<strong>Sei già un membro abilitato della community di <a href="https://andryxify.it">andryxify.it</a>?</strong> SocialBot è <strong>gratis e completo</strong> per te — non ti serve nessun piano.', '<strong>Already an enabled member of the <a href="https://andryxify.it">andryxify.it</a> community?</strong> SocialBot is <strong>free and complete</strong> for you — no plan needed.', '<strong>¿Ya eres miembro habilitado de la comunidad de <a href="https://andryxify.it">andryxify.it</a>?</strong> SocialBot es <strong>gratis y completo</strong> para ti — no necesitas ningún plan.')}</p>`;
 
-      <div class="piani-riepilogo">
-        <div class="riepilogo-conto">
-          <span class="riepilogo-voce" id="piani-voce">${L('Solo Base', 'Base only', 'Solo Base')}</span>
-          <span class="riepilogo-tot" id="piani-totale">€${prezzoIt(base.prezzo)}<span>${perMese}</span></span>
-        </div>
-        ${dati.attivo
-          ? `<button class="btn grande" id="piani-attiva">${L('Attiva SocialBot', 'Activate SocialBot', 'Activa SocialBot')} →</button>`
-          : `<button class="btn grande secondario" disabled>${L('In arrivo', 'Coming soon', 'Muy pronto')}</button>`}
-      </div>
-    </div>
-    <div class="piani-community">
-      ${L('<strong>Sei già un membro abilitato della community di <a href="https://andryxify.it">andryxify.it</a>?</strong> SocialBot è <strong>gratis e completo</strong> per te — non ti serve nessun piano.', '<strong>Already an enabled member of the <a href="https://andryxify.it">andryxify.it</a> community?</strong> SocialBot is <strong>free and complete</strong> for you — no plan needed.', '<strong>¿Ya eres miembro habilitado de la comunidad de <a href="https://andryxify.it">andryxify.it</a>?</strong> SocialBot es <strong>gratis y completo</strong> para ti — no necesitas ningún plan.')}
-    </div>`;
-  rivelaCarte(box);
+  const guscio = box.querySelector('#vt-comp-guscio');
+  guscio.innerHTML = configuratoreHtml(dati, { titolo: L('Aggiungi i super-poteri', 'Add the super-powers', 'Añade los súper-poderes') });
+  montaConfiguratore(guscio, dati);
 
-  const selezione = new Set();
-  const totaleEl = box.querySelector('#piani-totale');
-  const voceEl = box.querySelector('#piani-voce');
-  const bundleAttivo = () => bundle.find((b) => b.addon.length === selezione.size && b.addon.every((id) => selezione.has(id))) || null;
-  const aggiorna = () => {
-    const b = bundleAttivo();
-    let tot = Number(base.prezzo || 0) + (b ? Number(b.prezzo || 0)
-      : [...selezione].reduce((t, id) => t + Number(addon.find((x) => x.id === id)?.prezzo || 0), 0));
-    if (totaleEl) totaleEl.innerHTML = `€${prezzoIt(tot)}<span>${perMese}</span>`;
-    if (voceEl) voceEl.textContent = b ? `${L('Base + bundle', 'Base + bundle', 'Base + pack')} ${b.nome} (–${Math.round(b.sconto * 100)}%)`
-      : (selezione.size ? `Base + ${selezione.size} ${L('add-on', selezione.size === 1 ? 'add-on' : 'add-ons', 'add-on')}` : L('Solo Base', 'Base only', 'Solo Base'));
+  const vaiAlComp = () => guscio.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'start' });
+  box.querySelector('[data-vai-comp]')?.addEventListener('click', vaiAlComp);
 
-    box.querySelectorAll('[data-bundle]').forEach((el) => {
-      const on = !!b && el.dataset.bundle === b.id;
-      el.classList.toggle('on', on); el.setAttribute('aria-pressed', on ? 'true' : 'false');
-    });
-  };
-  const segnaAddon = () => box.querySelectorAll('[data-addon]').forEach((el) => {
-    const on = selezione.has(el.dataset.addon);
-    el.classList.toggle('on', on); el.setAttribute('aria-pressed', on ? 'true' : 'false');
-  });
-  box.querySelectorAll('[data-addon]').forEach((btn) => {
+  box.querySelectorAll('[data-pacco]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      const id = btn.dataset.addon;
-      if (selezione.has(id)) selezione.delete(id); else selezione.add(id);
-      segnaAddon(); aggiorna();
+      const b = bundle.find((x) => x.id === btn.dataset.pacco);
+      if (!b) return;
+      const caselle = [...guscio.querySelectorAll('input[type=checkbox]')];
+      if (!caselle.length) return;
+      const gia = caselle.filter((c) => c.checked).map((c) => c.value);
+      const uguale = gia.length === b.addon.length && b.addon.every((id) => gia.includes(id));
+      for (const c of caselle) c.checked = uguale ? false : b.addon.includes(c.value);
+      caselle[0].dispatchEvent(new Event('change', { bubbles: true }));
+      box.querySelectorAll('[data-pacco]').forEach((e) => {
+        const acceso = !uguale && e === btn;
+        e.classList.toggle('on', acceso);
+        e.setAttribute('aria-pressed', acceso ? 'true' : 'false');
+      });
+      vaiAlComp();
     });
   });
-
-  box.querySelectorAll('[data-bundle]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const b = bundle.find((x) => x.id === btn.dataset.bundle); if (!b) return;
-      const giaAttivo = bundleAttivo()?.id === b.id;
-      selezione.clear();
-      if (!giaAttivo) b.addon.forEach((id) => selezione.add(id));
-      segnaAddon(); aggiorna();
-    });
-  });
-
-  const attivaBtn = box.querySelector('#piani-attiva');
-  if (attivaBtn) attivaBtn.addEventListener('click', () => {
-    const b = bundleAttivo();
-    const pacchetti = [...selezione];
-    conErrore(async () => {
-      try {
-        const body = b ? { bundle: b.id } : { pacchetti };
-        const r = await api('/api/abbonamento/checkout', { method: 'POST', body });
-        if (r?.url) location.href = r.url; else toast(L('Piano non disponibile al momento.', 'Plan not available right now.', 'Plan no disponible por el momento.'), 'errore');
-      } catch (e) {
-
-        if (/non autenticato/i.test(e?.message || '')) {
-          location.href = b ? '/accedi?bundle=' + encodeURIComponent(b.id)
-            : '/accedi?pacchetti=' + encodeURIComponent(pacchetti.join(','));
-          return;
-        }
-        throw e;
-      }
-    });
-  });
-
-  const sotto = document.createElement('div');
-  sotto.className = 'vt-comp-guscio';
-  sotto.innerHTML = configuratoreHtml(dati, { titolo: L('Componi il tuo bot', 'Build your bot', 'Compón tu bot') });
-  box.appendChild(sotto);
-  montaConfiguratore(sotto, dati);
 }
 
 function vistaRichiesta() {
@@ -2079,14 +2022,14 @@ function capacitaHtml() {
   }).join('');
   const nFree = CAPACITA.reduce((n, g) => n + g.voci.filter((v) => v.pacc === 'free').length, 0);
   const nTot = CAPACITA.reduce((n, g) => n + g.voci.length, 0);
-  return `<details class="carta rivela cap-scheda">
-    <summary><h2>${L('Cosa può fare SocialBot', 'What SocialBot can do', 'Qué puede hacer SocialBot')}</h2>
-      <span class="cap-sommario">${nTot} ${L('funzioni · di cui', 'features · of which', 'funciones · de las cuales')} ${nFree} ${L('gratis', 'free', 'gratis')}</span></summary>
-    <div class="cap-corpo">
-      <p class="cap-intro">${L('Tutto quello che il bot sa fare, e in quale pacchetto è compreso. Con l’<strong>Essenziale</strong> — gratis, basta registrarsi — il bot funziona già nella tua chat.', 'Everything the bot can do, and which package includes it. With <strong>Essenziale</strong> — free, you just register — the bot already works in your chat.', 'Todo lo que el bot sabe hacer, y en qué paquete está incluido. Con <strong>Essenziale</strong> — gratis, solo registrarse — el bot ya funciona en tu chat.')}</p>
-      ${aree}
-    </div>
-  </details>`;
+  return `<div class="vt-cap vt-rivela">
+    <p class="vt-cap-conta">
+      <b>${nTot}</b> ${L('funzioni in tutto', 'features in total', 'funciones en total')}
+      <span aria-hidden="true">·</span>
+      <b>${nFree}</b> ${L('già tue con l’Essenziale gratis', 'already yours with the free Essenziale', 'ya tuyas con el Essenziale gratis')}
+    </p>
+    ${aree}
+  </div>`;
 }
 
 const _icoGuida = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1.3.5 2.6 1.5 3.5.8.8 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>';
