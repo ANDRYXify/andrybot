@@ -74,6 +74,45 @@
     bs.addEventListener('click', function () { setSuono(!suonoOn()); aggiornaSuono(); bip(660, 0.07, 0.05); });
     aggiornaSuono();
     window.addEventListener('resize', function () { if (aperto) glide(); });
+    interazioni();
+  }
+
+  var trascinato = false;
+  function interazioni() {
+    var ruotaT = 0;
+    pista.addEventListener('wheel', function (e) {
+      if (!aperto) return;
+      e.preventDefault();
+      var d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      if (Math.abs(d) < 4) return;
+      var ora = Date.now();
+      if (ora - ruotaT < 90) return;
+      ruotaT = ora;
+      muovi(d > 0 ? 1 : -1);
+    }, { passive: false });
+
+    var giu = false, x0 = 0, base = 0, mosso = 0;
+    pista.addEventListener('pointerdown', function (e) {
+      if (!aperto) return;
+      giu = true; trascinato = false; x0 = e.clientX; base = focus; mosso = 0;
+      try { pista.setPointerCapture(e.pointerId); } catch (er) {}
+    });
+    pista.addEventListener('pointermove', function (e) {
+      if (!giu || !aperto) return;
+      var dx = e.clientX - x0;
+      if (Math.abs(dx) > 8) trascinato = true;
+      var passo = Math.round(-dx / 86);
+      var n = Math.max(0, Math.min(voci.length - 1, base + passo));
+      if (n !== focus) { var dir = n > focus ? 1 : -1; focus = n; mosso++; aggiorna(dir); }
+    });
+    function su(e) {
+      if (!giu) return;
+      giu = false;
+      try { pista.releasePointerCapture(e.pointerId); } catch (er) {}
+      setTimeout(function () { trascinato = false; }, 40);
+    }
+    pista.addEventListener('pointerup', su);
+    pista.addEventListener('pointercancel', su);
   }
 
   function aggiornaSuono() {
@@ -127,10 +166,18 @@
       '</button>';
     });
     rail.innerHTML = h;
+    var fine = false;
+    try { fine = !!(window.matchMedia && window.matchMedia('(pointer: fine)').matches); } catch (e) {}
     rail.querySelectorAll('.pl-tile').forEach(function (t) {
       t.addEventListener('click', function () {
+        if (trascinato) return;
         var i = +t.dataset.i;
-        if (i === focus) apriVoce(voci[i]); else { var d = i - focus; focus = i; aggiorna(d); }
+        if (i !== focus) { var d = i - focus; focus = i; aggiorna(d, true); }
+        apriVoce(voci[i]);
+      });
+      if (fine) t.addEventListener('mouseenter', function () {
+        var i = +t.dataset.i;
+        if (i !== focus) { var d = i - focus; focus = i; aggiorna(d); }
       });
     });
     if (focus >= voci.length) focus = 0;
@@ -201,6 +248,7 @@
     document.body.classList.add('plancia-on');
     document.addEventListener('keydown', tasti, true);
     setTimeout(glide, 30);
+    try { window.SB_PILOTA && window.SB_PILOTA.aggiorna(); } catch (e) {}
     avviaPad();
   }
   function chiudi() {
@@ -208,6 +256,7 @@
     overlay.hidden = true; aperto = false;
     document.body.classList.remove('plancia-on');
     document.removeEventListener('keydown', tasti, true);
+    try { window.SB_PILOTA && window.SB_PILOTA.aggiorna(); } catch (e) {}
   }
 
   function tasti(e) {
@@ -232,8 +281,8 @@
       var dx = ax[0] || 0, dy = ax[1] || 0;
       var dr = dx > 0.55 || (bt[15] && bt[15].pressed), dl = dx < -0.55 || (bt[14] && bt[14].pressed);
       var dd = dy > 0.55 || (bt[13] && bt[13].pressed), du = dy < -0.55 || (bt[12] && bt[12].pressed);
-      if (dr || dl) { if (!padStato.x || now - padStato.x > 160) { padStato.x = now; if (aperto) muovi(dr ? 1 : -1); } } else padStato.x = 0;
-      if (dd || du) { if (!padStato.y || now - padStato.y > 260) { padStato.y = now; if (aperto) saltaGruppo(dd ? 1 : -1); } } else padStato.y = 0;
+      if (dr || dl) { if (!padStato.x || now - padStato.x > 130) { padStato.x = now; if (aperto) muovi(dr ? 1 : -1); } } else padStato.x = 0;
+      if (dd || du) { if (!padStato.y || now - padStato.y > 220) { padStato.y = now; if (aperto) saltaGruppo(dd ? 1 : -1); } } else padStato.y = 0;
       var aBtn = bt[0] && bt[0].pressed, bBtn = bt[1] && bt[1].pressed;
       if (aBtn && !padStato.a) { padStato.a = true; if (aperto) apriVoce(voci[focus]); else { if (!modoOn()) setModo(true); apri(); } }
       if (!aBtn) padStato.a = false;
