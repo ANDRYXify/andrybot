@@ -244,7 +244,8 @@
   }
 
   function apri() {
-    if (!overlay || aperto) return;
+    if (!overlay) return;
+    if (aperto && !overlay.hidden) return;
     disegna(); overlay.hidden = false; aperto = true;
     document.body.classList.add('plancia-on');
     document.addEventListener('keydown', tasti, true);
@@ -281,6 +282,9 @@
   function pilotaVivo() {
     try { return !!(window.SB_PILOTA && window.SB_PILOTA.stato && window.SB_PILOTA.stato()); } catch (e) { return false; }
   }
+  function pilotaPunta() {
+    try { return !!(window.SB_PILOTA && window.SB_PILOTA.puntatore && window.SB_PILOTA.puntatore()); } catch (e) { return false; }
+  }
   function pad() {
     var gps = [];
     try { gps = navigator.getGamepads ? navigator.getGamepads() : []; } catch (e) { gps = []; }
@@ -296,7 +300,7 @@
       if (aperto) {
         if (dr || dl) { if (!padStato.x || now - padStato.x > 130) { padStato.x = now; muovi(dr ? 1 : -1); } } else padStato.x = 0;
         if (dd || du) { if (!padStato.y || now - padStato.y > 220) { padStato.y = now; saltaGruppo(dd ? 1 : -1); } } else padStato.y = 0;
-        if (aBtn && !padStato.a) { padStato.a = true; apriVoce(voci[focus]); }
+        if (aBtn && !padStato.a) { padStato.a = true; if (!pilotaPunta()) apriVoce(voci[focus]); }
         if (bBtn && !padStato.b) { padStato.b = true; chiudi(); }
       } else {
         padStato.x = 0; padStato.y = 0;

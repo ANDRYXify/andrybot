@@ -50,6 +50,7 @@
       bubbles: true, cancelable: true, composed: true, view: window,
       clientX: x, clientY: y, screenX: x, screenY: y,
       pointerId: 3, pointerType: 'mouse', isPrimary: true, button: 0, buttons: extra && extra.buttons || 0,
+      relatedTarget: extra && 'rel' in extra ? extra.rel : null,
     };
     try { el.dispatchEvent(new PointerEvent(tipo, o)); } catch (e) {
       try { el.dispatchEvent(new MouseEvent(tipo.replace('pointer', 'mouse'), o)); } catch (e2) {  }
@@ -62,23 +63,18 @@
     pX = Math.max(2, Math.min(vw - 2, pX + dx));
     pY = Math.max(2, Math.min(vh - 2, pY + dy));
     modoPuntatore = true;
-    navIndiretta(false);
-    try { if (window.SB_CURSORE_VIS) window.SB_CURSORE_VIS(true); } catch (e) {  }
+    if (document.body.classList.contains('nav-indiretta')) navIndiretta(false);
 
-    var sotto2 = elementoSotto(pX, pY);
     var grezzo = document.elementFromPoint(pX, pY) || document.body;
-    if (sotto2 !== sopra) {
-      if (sopra) { mandaPuntatore('pointerout', pX, pY, sopra); mandaPuntatore('pointerleave', pX, pY, sopra); }
-      sopra = sotto2;
-      if (sopra) { mandaPuntatore('pointerover', pX, pY, sopra); mandaPuntatore('pointerenter', pX, pY, sopra); }
-      corrente = sopra || corrente;
-      aggiornaLegenda();
+    if (grezzo !== sopra) {
+      if (sopra) { mandaPuntatore('pointerout', pX, pY, sopra, { rel: grezzo }); mandaPuntatore('pointerleave', pX, pY, sopra, { rel: grezzo }); }
+      sopra = grezzo;
+      mandaPuntatore('pointerover', pX, pY, grezzo, { rel: null });
+      mandaPuntatore('pointerenter', pX, pY, grezzo, { rel: null });
+      var att = grezzo.closest ? grezzo.closest(SEL) : null;
+      if (att && visibile(att)) { corrente = att; aggiornaLegenda(); }
     }
     mandaPuntatore('pointermove', pX, pY, grezzo);
-    try {
-      if (sopra && window.SB_CURSORE) window.SB_CURSORE.versoElemento(sopra);
-      else if (window.SB_CURSORE) window.SB_CURSORE.libera();
-    } catch (e) {  }
   }
   function clicPuntatore() {
     centraPuntatore();
@@ -414,31 +410,39 @@
     var gp = null;
     for (var i = 0; i < gps.length; i++) if (gps[i]) { gp = gps[i]; break; }
     var plAperta = (function () { var p = document.getElementById('plancia-overlay'); return p && !p.hidden; })();
-    if (gp && !plAperta) {
+    if (gp) {
       var ax = gp.axes || [], bt = gp.buttons || [], now = Date.now();
       var std = gp.mapping === 'standard';
       var lx = zonaMorta(ax[0] || 0, 0.18), ly = zonaMorta(ax[1] || 0, 0.18);
+      if (lx || ly) {
+        segnaPad();
+        var forzaP = Math.min(1, Math.sqrt(lx * lx + ly * ly));
+        var velP = Math.max(window.innerWidth || 800, window.innerHeight || 600) * 1.15 * forzaP * forzaP * dtPad;
+        muoviPuntatore((lx / forzaP) * velP, (ly / forzaP) * velP);
+      }
+      var giuA = std && bt[0] && bt[0].pressed;
+      if (giuA && !st.a) {
+        st.a = true;
+        segnaPad();
+        if (modoPuntatore) clicPuntatore();
+        else if (!plAperta) azionaA();
+      }
+      if (!giuA) st.a = false;
+    }
+    if (gp && !plAperta) {
       var r = std && bt[15] && bt[15].pressed, l = std && bt[14] && bt[14].pressed;
       var d = std && bt[13] && bt[13].pressed, u = std && bt[12] && bt[12].pressed;
-      if (r || l || d || u || lx || ly || (std && bt[0] && bt[0].pressed) || (std && bt[1] && bt[1].pressed)) segnaPad();
-
-      if (lx || ly) {
-        var forza = Math.min(1, Math.sqrt(lx * lx + ly * ly));
-        var vel = Math.max(window.innerWidth || 800, window.innerHeight || 600) * 1.15 * forza * forza * dtPad;
-        var norma = forza ? forza : 1;
-        muoviPuntatore((lx / norma) * vel, (ly / norma) * vel);
-      }
+      if (r || l || d || u || (std && bt[1] && bt[1].pressed)) segnaPad();
 
       if (r || l) { if (!st.x || now - st.x > 165) { st.x = now; modoPuntatore = false; navIndiretta(true); vaiVerso(r ? 'right' : 'left'); } } else st.x = 0;
       if (d || u) { if (!st.y || now - st.y > 165) { st.y = now; modoPuntatore = false; navIndiretta(true); vaiVerso(d ? 'down' : 'up'); } } else st.y = 0;
-      var pA = std && bt[0] && bt[0].pressed, pB = std && bt[1] && bt[1].pressed;
-      var pX = std && bt[2] && bt[2].pressed, pY = std && bt[3] && bt[3].pressed;
+      var tB = std && bt[1] && bt[1].pressed;
+      var tX = std && bt[2] && bt[2].pressed, tY = std && bt[3] && bt[3].pressed;
       var pLB = std && bt[4] && bt[4].pressed, pRB = std && bt[5] && bt[5].pressed;
       var pMenu = std && bt[9] && bt[9].pressed;
-      if (pA && !st.a) { st.a = true; if (modoPuntatore) clicPuntatore(); else azionaA(); } if (!pA) st.a = false;
-      if (pB && !st.b) { st.b = true; azionaB(); } if (!pB) st.b = false;
-      if (pX && !st.x2) { st.x2 = true; if (osk && !osk.hidden) { cancella(); suono(330, 0.05, 0.035); } } if (!pX) st.x2 = false;
-      if (pY && !st.y2) { st.y2 = true; if (osk && !osk.hidden) { scrivi(' '); } else azionaY(); } if (!pY) st.y2 = false;
+      if (tB && !st.b) { st.b = true; azionaB(); } if (!tB) st.b = false;
+      if (tX && !st.x2) { st.x2 = true; if (osk && !osk.hidden) { cancella(); suono(330, 0.05, 0.035); } } if (!tX) st.x2 = false;
+      if (tY && !st.y2) { st.y2 = true; if (osk && !osk.hidden) { scrivi(' '); } else azionaY(); } if (!tY) st.y2 = false;
       if (pLB && !st.lb) { st.lb = true; sezione(-1); } if (!pLB) st.lb = false;
       if (pRB && !st.rb) { st.rb = true; sezione(1); } if (!pRB) st.rb = false;
       if (pMenu && !st.menu) { st.menu = true; try { window.SB_PLANCIA && window.SB_PLANCIA.apri(); } catch (e) {} } if (!pMenu) st.menu = false;
@@ -481,6 +485,7 @@
   window.SB_PILOTA = {
     attiva: attiva, disattiva: disattiva,
     stato: function () { return attivo; },
+    puntatore: function () { return attivo && modoPuntatore; },
     tastiera: apriOsk,
     aggiorna: function () { aggiornaAnello(); aggiornaLegenda(); }
   };
