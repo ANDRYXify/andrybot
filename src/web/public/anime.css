@@ -499,3 +499,86 @@ body.pad-vivo #plancia-lancia { bottom: calc(130px + env(safe-area-inset-bottom,
   .scudo-seg-azioni .btn:first-child { grid-column: 1 / -1; }
   .scudo-liste { gap: 26px; }
 }
+
+/* materia: ogni elemento ha una massa, e il moto discende da quella */
+:root {
+  --molla-lieve: linear(0,0.0058,0.0217,0.0457,0.0761,0.1115,0.1506,0.1923,0.2357,0.28,0.3245,0.3687,0.4122,0.4545,0.4955,0.5349,0.5726,0.6084,0.6422,0.6741,0.704,0.7319,0.7579,0.782,0.8043,0.8249,0.8438,0.8611,0.8769,0.8913,0.9043,0.9162,0.9268,0.9364,0.9451,0.9528,0.9597,0.9658,0.9712,0.976,0.9802,0.9839,0.9871,0.9899,0.9923,0.9944,0.9962,0.9977,0.9989,1,1.0008,1.0016,1.0021,1.0026,1.0029,1.0031,1.0033,1.0034,1.0034,1.0034,1.0034,1.0033,1.0032,1.0031,1);
+  --molla-medio: linear(0,0.0063,0.0236,0.0497,0.0827,0.1211,0.1635,0.2085,0.2552,0.3028,0.3504,0.3976,0.4437,0.4885,0.5316,0.5728,0.6119,0.6489,0.6836,0.716,0.7462,0.7741,0.7998,0.8235,0.8451,0.8648,0.8826,0.8988,0.9133,0.9263,0.9379,0.9482,0.9574,0.9654,0.9724,0.9786,0.9839,0.9884,0.9923,0.9957,0.9984,1.0007,1.0026,1.0042,1.0054,1.0063,1.007,1.0075,1.0078,1.0079,1.0079,1.0079,1.0077,1.0075,1.0072,1.0069,1.0066,1.0062,1.0058,1.0055,1.0051,1.0047,1.0043,1.004,1);
+  --molla-pieno: linear(0,0.0068,0.0253,0.0534,0.0889,0.13,0.1753,0.2234,0.2731,0.3236,0.3741,0.4238,0.4723,0.5191,0.564,0.6067,0.6469,0.6847,0.72,0.7527,0.7828,0.8105,0.8358,0.8587,0.8795,0.8982,0.9149,0.9298,0.9429,0.9545,0.9647,0.9735,0.9811,0.9876,0.9931,0.9977,1.0016,1.0047,1.0073,1.0093,1.0108,1.0119,1.0126,1.0131,1.0133,1.0133,1.0131,1.0128,1.0124,1.0119,1.0113,1.0107,1.01,1.0093,1.0087,1.008,1.0073,1.0067,1.0061,1.0055,1.005,1.0044,1.0039,1.0035,1);
+  --molla-scena: linear(0,0.006,0.0226,0.0477,0.0795,0.1164,0.1571,0.2005,0.2456,0.2915,0.3376,0.3833,0.4282,0.4718,0.5139,0.5542,0.5927,0.6291,0.6634,0.6956,0.7256,0.7536,0.7795,0.8034,0.8254,0.8455,0.8639,0.8807,0.8959,0.9096,0.9219,0.933,0.9429,0.9517,0.9596,0.9665,0.9726,0.9779,0.9826,0.9866,0.9901,0.9931,0.9956,0.9978,0.9995,1.001,1.0022,1.0032,1.004,1.0045,1.005,1.0052,1.0054,1.0055,1.0055,1.0054,1.0053,1.0052,1.005,1.0048,1.0045,1.0043,1.004,1.0038,1);
+
+  --t-lieve: 290ms;
+  --t-medio: 414ms;
+  --t-pieno: 621ms;
+  --t-scena: 808ms;
+}
+
+@supports not (transition-timing-function: linear(0, 1)) {
+  :root {
+    --molla-lieve: cubic-bezier(.2,.9,.3,1);
+    --molla-medio: cubic-bezier(.2,.85,.28,1);
+    --molla-pieno: cubic-bezier(.18,.85,.25,1);
+    --molla-scena: cubic-bezier(.16,.88,.22,1);
+  }
+}
+
+.btn, button.btn, a.btn, .grp-btn, .modello-pronto {
+  transition: transform var(--t-medio) var(--molla-medio), opacity .2s ease,
+              background .24s ease, color .24s ease, border-color .24s ease, box-shadow var(--t-medio) var(--molla-medio);
+}
+.btn:active, .grp-btn:active { transform: translateY(1px) scale(.985); }
+
+.levetta, .levetta::before, .pip, .badge, .scudo-chip, .cerca-filtro, .pil-b {
+  transition: transform var(--t-lieve) var(--molla-lieve), background var(--t-lieve) ease,
+              border-color var(--t-lieve) ease, color var(--t-lieve) ease;
+}
+.interruttore input:checked + .levetta::before { transition: transform var(--t-lieve) var(--molla-lieve); }
+
+.carta, .blocco, .pannello, .cerca-box, .switch-canale-menu, .pil-osk-box {
+  transition: transform var(--t-pieno) var(--molla-pieno), border-color .34s ease, background .34s ease, box-shadow var(--t-pieno) var(--molla-pieno);
+}
+
+.pl-tile { transition: transform var(--t-medio) var(--molla-medio), opacity .18s ease, border-color .2s ease, box-shadow var(--t-medio) var(--molla-medio), background .18s ease; }
+.pl-rail { transition: transform var(--t-pieno) var(--molla-pieno); }
+.pl-eroe.pl-mosso { animation: pl-eroe-entra var(--t-pieno) var(--molla-pieno) both; }
+#an-cursore-ring { transition: width var(--t-lieve) var(--molla-lieve), height var(--t-lieve) var(--molla-lieve), border-radius var(--t-lieve) var(--molla-lieve), background .2s ease, box-shadow .2s ease, opacity .2s ease; }
+#an-cursore-ring.morph { transition: width var(--t-lieve) var(--molla-lieve), height var(--t-lieve) var(--molla-lieve), border-radius var(--t-lieve) var(--molla-lieve), transform var(--t-lieve) var(--molla-lieve), background .2s ease, box-shadow .2s ease, opacity .2s ease; }
+
+/* risposta alla luce: la superficie coglie un riflesso quando la tocchi, come un materiale vero */
+.btn:not(.secondario):not(.testo), .pl-tile { position: relative; overflow: hidden; }
+.btn:not(.secondario):not(.testo)::after, .pl-tile::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0;
+  background: linear-gradient(105deg, transparent 38%, var(--sheen) 50%, transparent 62%);
+  transform: translateX(-120%);
+  transition: opacity .2s ease;
+}
+.btn:not(.secondario):not(.testo):hover::after, .pl-tile.fuoco::after {
+  opacity: 1; animation: lucida var(--t-pieno) var(--molla-pieno) both;
+}
+@keyframes lucida { from { transform: translateX(-120%); } to { transform: translateX(120%); } }
+
+/* respiro: vita lenta e appena percepibile, cosi lo sfondo non e mai morto */
+#anime-sfondo::after {
+  content: ""; position: absolute; inset: -30%;
+  background: radial-gradient(38% 42% at 32% 28%, var(--acc-tint), transparent 68%);
+  filter: blur(48px); opacity: .5;
+  animation: respiro 26s ease-in-out infinite alternate;
+}
+@keyframes respiro {
+  from { transform: translate3d(-3%, -2%, 0) scale(1); }
+  to   { transform: translate3d(4%, 3%, 0) scale(1.09); }
+}
+.pl-atmo { animation: respiro 22s ease-in-out infinite alternate; }
+
+body.leggero #anime-sfondo::after, body.meno-moto #anime-sfondo::after { animation: none; opacity: .3; }
+@media (prefers-reduced-motion: reduce) {
+  #anime-sfondo::after, .pl-atmo { animation: none !important; }
+  .btn::after, .pl-tile::after { display: none; }
+  :root { --molla-lieve: ease; --molla-medio: ease; --molla-pieno: ease; --molla-scena: ease;
+          --t-lieve: .01ms; --t-medio: .01ms; --t-pieno: .01ms; --t-scena: .01ms; }
+}
+
+body.senza-cursore #an-cursore-ring,
+body.senza-cursore #an-cursore-dot,
+body.senza-cursore #an-cursore-bar { opacity: 0 !important; }
+body.senza-cursore.cursore-on, body.senza-cursore.cursore-on * { cursor: default !important; }

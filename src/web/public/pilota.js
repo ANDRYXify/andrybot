@@ -21,6 +21,7 @@
     if (!v) liberaCursore();
   }
   function segnaPad() {
+    try { if (window.SB_CURSORE_VIS) window.SB_CURSORE_VIS(false); } catch (e) {}
     if (!padVivo) { padVivo = true; try { document.body.classList.add('pad-vivo'); } catch (e) {} aggiornaLegenda(); }
     navIndiretta(true);
   }
