@@ -304,16 +304,24 @@ body.plancia-on { overflow: hidden; }
 
 #plancia-overlay {
   position: fixed; inset: 0; z-index: 210; display: flex; flex-direction: column;
-  background: var(--bg);
-  background-image: radial-gradient(120% 80% at 80% -10%, var(--acc-tint), transparent 60%);
-  padding: clamp(14px, 2.4vw, 26px) clamp(16px, 4vw, 56px) clamp(10px, 1.6vw, 18px);
-  animation: gr-fade .28s ease both;
+  background: var(--bg); overflow: hidden;
+  padding: clamp(14px, 2.4vw, 28px) 0 clamp(12px, 1.8vw, 20px);
+  animation: gr-fade .3s ease both;
 }
 #plancia-overlay[hidden] { display: none; }
+.pl-atmo {
+  position: absolute; inset: -20%; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(46% 52% at var(--pl-x, 30%) 26%, color-mix(in srgb, var(--acc) 26%, transparent), transparent 70%),
+    radial-gradient(60% 60% at calc(var(--pl-x, 30%) + 22%) 84%, color-mix(in srgb, var(--acc) 12%, transparent), transparent 72%);
+  filter: blur(30px); opacity: .55;
+  transition: background-position 1s var(--an-vel), opacity .6s ease;
+}
+.pl-top, .pl-eroe, .pl-guida { position: relative; z-index: 2; padding-left: clamp(20px, 5vw, 76px); padding-right: clamp(20px, 5vw, 76px); }
 .pl-top { display: flex; align-items: center; justify-content: space-between; flex: 0 0 auto; }
 .pl-top-azioni { display: inline-flex; align-items: center; gap: 10px; }
 .pl-marchio { display: inline-flex; align-items: center; gap: 10px; color: var(--testo-2); }
-.pl-marchio b { font-weight: 500; letter-spacing: .04em; text-transform: uppercase; font-size: .8rem; }
+.pl-marchio b { font-weight: 500; letter-spacing: .04em; text-transform: uppercase; font-size: .78rem; }
 .pl-suono {
   width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; cursor: pointer;
   border: 1px solid var(--border-2); background: transparent; color: var(--testo-3);
@@ -322,40 +330,47 @@ body.plancia-on { overflow: hidden; }
 .pl-suono:hover { color: var(--testo); }
 .pl-suono.on { color: var(--acc); border-color: var(--acc-bordo); }
 
-.pl-eroe { flex: 0 0 auto; display: flex; align-items: center; gap: clamp(18px, 3.4vw, 46px); padding: clamp(10px, 2.4vh, 30px) 0; }
-@keyframes pl-eroe-entra { from { opacity: .2; transform: translate(var(--pl-dx, 0), var(--pl-dy, 0)); } to { opacity: 1; transform: none; } }
-.pl-eroe.pl-mosso { animation: pl-eroe-entra .42s var(--an-vel) both; }
-.pl-eroe-ico { flex: 0 0 auto; width: clamp(74px, 10vw, 128px); height: clamp(74px, 10vw, 128px); border-radius: 24px; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--border-2); color: var(--acc); box-shadow: var(--om-l); }
-.pl-eroe-ico svg { width: 52%; height: 52%; }
-.pl-eroe-txt { min-width: 0; max-width: 760px; }
-.pl-eroe-grp { text-transform: uppercase; letter-spacing: .28em; font-size: .68rem; font-weight: 600; color: var(--testo-3); margin-bottom: .45rem; }
-.pl-eroe-nome { font-family: "Zen Kaku Gothic New", sans-serif; font-weight: 500; font-size: clamp(1.8rem, 4.4vw, 3rem); line-height: 1.05; letter-spacing: -.02em; color: var(--testo); }
-.pl-eroe-desc { color: var(--testo-2); font-size: clamp(.95rem, 1.35vw, 1.12rem); line-height: 1.55; margin-top: .6rem; }
-.pl-eroe-hint { margin-top: .8rem; font-size: .8rem; color: var(--testo-3); }
+.pl-eroe { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: flex-end; min-height: 0; padding-bottom: 4px; max-width: 900px; overflow: hidden; }
+@keyframes pl-eroe-entra { from { opacity: 0; transform: translateX(var(--pl-dx, 0)); } to { opacity: 1; transform: none; } }
+.pl-eroe.pl-mosso { animation: pl-eroe-entra .46s var(--an-vel) both; }
+.pl-eroe-grp { text-transform: uppercase; letter-spacing: .3em; font-size: .7rem; font-weight: 600; color: var(--acc); margin-bottom: .6rem; }
+.pl-eroe-nome { font-family: "Zen Kaku Gothic New", sans-serif; font-weight: 500; font-size: clamp(2.4rem, 6.4vw, 5rem); line-height: 1; letter-spacing: -.028em; color: var(--testo); }
+.pl-eroe-desc { color: var(--testo-2); font-size: clamp(1rem, 1.5vw, 1.24rem); line-height: 1.5; margin-top: .9rem; max-width: 62ch; }
+.pl-eroe-hint { margin-top: 1.1rem; font-size: .82rem; color: var(--testo-3); }
 
-.pl-corpo { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; padding-bottom: 6px; }
-.pl-corpo::-webkit-scrollbar { display: none; }
-.pl-scaffale { padding: 2px 0 10px; opacity: .62; transition: opacity .3s ease; }
-.pl-scaffale.attivo { opacity: 1; }
-.pl-scaffale-tit { text-transform: uppercase; letter-spacing: .2em; font-size: .64rem; font-weight: 700; color: var(--testo-3); margin: 0 0 8px 4px; }
-.pl-scaffale.attivo .pl-scaffale-tit { color: var(--acc); }
-.pl-rail { display: flex; align-items: stretch; gap: 13px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; padding: 8px 4px 12px; scrollbar-width: none; }
-.pl-rail::-webkit-scrollbar { display: none; }
-.pl-tile { flex: 0 0 auto; width: clamp(112px, 13vw, 148px); height: clamp(94px, 11vw, 120px); border-radius: 15px; border: 1px solid var(--border-2); background: var(--surface); color: var(--testo); cursor: pointer; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; padding: 13px; position: relative; box-shadow: var(--om-s); transition: transform .26s var(--an-morbido), border-color .26s ease, box-shadow .26s ease, background .26s ease; }
-body:not(.leggero):not(.meno-moto) .pl-tile { animation: gr-entra .4s var(--an-vel) both; animation-delay: var(--pl-r, 0ms); }
-.pl-tile-ico { color: var(--testo-2); transition: color .26s ease; }
-.pl-tile-ico svg { width: 24px; height: 24px; }
-.pl-tile-nome { font-weight: 500; font-size: .88rem; line-height: 1.2; text-align: left; }
-.pl-tile-lock { position: absolute; top: 11px; right: 11px; color: var(--testo-3); display: inline-flex; }
-.pl-tile:hover { border-color: var(--testo-3); }
-.pl-tile.fuoco { transform: translateY(-5px) scale(1.06); border-color: var(--acc); background: color-mix(in srgb, var(--acc) 8%, var(--surface)); box-shadow: 0 14px 34px -12px var(--acc), var(--om-m); }
+.pl-pista { position: relative; z-index: 2; flex: 0 0 auto; overflow: hidden; padding: 54px 0 16px clamp(20px, 5vw, 76px); }
+.pl-rail { display: flex; align-items: flex-end; gap: 18px; will-change: transform; transition: transform .5s var(--an-vel); }
+.pl-tile {
+  flex: 0 0 auto; width: clamp(122px, 12.5vw, 158px); height: clamp(122px, 12.5vw, 158px);
+  border-radius: 18px; border: 1px solid var(--border-2); background: var(--surface); color: var(--testo);
+  cursor: pointer; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between;
+  padding: 16px; position: relative; box-shadow: var(--om-s); opacity: .58;
+  transform-origin: center bottom;
+  transition: transform .42s var(--an-vel), opacity .38s ease, border-color .38s ease, box-shadow .42s ease, background .38s ease;
+}
+.pl-tile.stacco { margin-left: 34px; }
+.pl-tile.stacco::before { content: ""; position: absolute; left: -26px; top: 22%; bottom: 22%; width: 1px; background: var(--border-2); }
+.pl-tile-ico { color: var(--testo-2); transition: color .38s ease; }
+.pl-tile-ico svg { width: 27px; height: 27px; }
+.pl-tile-nome { font-weight: 500; font-size: .93rem; line-height: 1.2; text-align: left; }
+.pl-tile-lock { position: absolute; top: 13px; right: 13px; color: var(--testo-3); display: inline-flex; }
+.pl-tile:hover { opacity: .82; }
+.pl-tile.fuoco {
+  opacity: 1; transform: scale(1.3) translateY(-4px); z-index: 3;
+  border-color: var(--acc); background: color-mix(in srgb, var(--acc) 9%, var(--surface));
+  box-shadow: 0 22px 50px -16px var(--acc), var(--om-m);
+}
 .pl-tile.fuoco .pl-tile-ico { color: var(--acc); }
-.pl-tile.bloccata { opacity: .6; }
+.pl-tile.bloccata { filter: grayscale(.35); }
 
-.pl-guida { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; color: var(--testo-3); font-size: .76rem; padding-top: 4px; }
+.pl-guida { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; color: var(--testo-3); font-size: .76rem; padding-top: 18px; }
 .pl-guida span { display: inline-grid; place-items: center; min-width: 24px; height: 21px; padding: 0 6px; border: 1px solid var(--border-2); border-radius: 6px; color: var(--testo-2); font-weight: 600; font-size: .7rem; }
+body.leggero .pl-atmo, body.meno-moto .pl-atmo { filter: none; opacity: .3; }
+body.meno-moto .pl-rail, body.meno-moto .pl-tile { transition: none; }
 @media (max-width: 720px) {
-  .pl-eroe { flex-direction: column; align-items: flex-start; gap: 14px; padding: 8px 0 14px; }
-  .pl-eroe-ico { width: 64px; height: 64px; border-radius: 18px; }
+  .pl-eroe-nome { font-size: clamp(1.9rem, 9vw, 2.6rem); }
+  .pl-eroe-desc { font-size: .96rem; margin-top: .6rem; }
+  .pl-tile { width: 116px; height: 116px; border-radius: 15px; }
+  .pl-tile.fuoco { transform: scale(1.16) translateY(-3px); }
   .pl-guida { display: none; }
 }
