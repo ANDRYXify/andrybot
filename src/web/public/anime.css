@@ -182,14 +182,17 @@ body.cerca-aperta { overflow: hidden; }
 .cerca-vuoto { padding: 30px 16px; text-align: center; color: var(--testo-3); }
 
 #an-cursore-dot, #an-cursore-ring, #an-cursore-bar { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999; will-change: transform; }
-#an-cursore-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--acc); transition: opacity .2s ease; }
-#an-cursore-ring { width: 32px; height: 32px; border-radius: 50%; transition: width .25s var(--an-morbido), height .25s var(--an-morbido), border-radius .25s var(--an-morbido), background .2s ease, box-shadow .2s ease, opacity .2s ease; }
+#an-cursore-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--acc); transition: opacity .18s ease; }
+#an-cursore-ring {
+  width: 32px; height: 32px; border-radius: 16px;
+  contain: layout style size; will-change: transform, width, height;
+  transition: background .2s ease, box-shadow .2s ease, opacity .18s ease;
+}
 #an-cursore-ring::before {
   content: ""; position: absolute; inset: 0; border-radius: inherit; border: 1px solid var(--testo-2);
   transition: opacity .2s ease, border-color .28s ease;
 }
 #an-cursore-ring.morph {
-  transition: width .25s var(--an-morbido), height .25s var(--an-morbido), border-radius .25s var(--an-morbido), transform .16s var(--an-morbido), background .2s ease, box-shadow .2s ease, opacity .2s ease;
   background: color-mix(in srgb, var(--acc) 12%, transparent);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--acc) 40%, transparent);
 }
@@ -198,6 +201,8 @@ body.cerca-aperta { overflow: hidden; }
 #an-cursore-bar { width: 2px; height: 22px; margin: -11px 0 0 -1px; border-radius: 2px; background: var(--acc); opacity: 0; transition: opacity .15s ease; }
 body.modo-testo #an-cursore-bar { opacity: 1; }
 body.modo-testo #an-cursore-ring, body.modo-testo #an-cursore-dot { opacity: 0; }
+body.morfando #an-cursore-dot { opacity: 0; }
+body.fuori-pagina #an-cursore-ring, body.fuori-pagina #an-cursore-dot, body.fuori-pagina #an-cursore-bar { opacity: 0; }
 
 body.cursore-on, body.cursore-on * { cursor: none !important; }
 
@@ -500,7 +505,6 @@ body.pad-vivo #plancia-lancia { bottom: calc(130px + env(safe-area-inset-bottom,
   .scudo-liste { gap: 26px; }
 }
 
-/* materia: ogni elemento ha una massa, e il moto discende da quella */
 :root {
   --molla-lieve: linear(0,0.0058,0.0217,0.0457,0.0761,0.1115,0.1506,0.1923,0.2357,0.28,0.3245,0.3687,0.4122,0.4545,0.4955,0.5349,0.5726,0.6084,0.6422,0.6741,0.704,0.7319,0.7579,0.782,0.8043,0.8249,0.8438,0.8611,0.8769,0.8913,0.9043,0.9162,0.9268,0.9364,0.9451,0.9528,0.9597,0.9658,0.9712,0.976,0.9802,0.9839,0.9871,0.9899,0.9923,0.9944,0.9962,0.9977,0.9989,1,1.0008,1.0016,1.0021,1.0026,1.0029,1.0031,1.0033,1.0034,1.0034,1.0034,1.0034,1.0033,1.0032,1.0031,1);
   --molla-medio: linear(0,0.0063,0.0236,0.0497,0.0827,0.1211,0.1635,0.2085,0.2552,0.3028,0.3504,0.3976,0.4437,0.4885,0.5316,0.5728,0.6119,0.6489,0.6836,0.716,0.7462,0.7741,0.7998,0.8235,0.8451,0.8648,0.8826,0.8988,0.9133,0.9263,0.9379,0.9482,0.9574,0.9654,0.9724,0.9786,0.9839,0.9884,0.9923,0.9957,0.9984,1.0007,1.0026,1.0042,1.0054,1.0063,1.007,1.0075,1.0078,1.0079,1.0079,1.0079,1.0077,1.0075,1.0072,1.0069,1.0066,1.0062,1.0058,1.0055,1.0051,1.0047,1.0043,1.004,1);
@@ -541,10 +545,7 @@ body.pad-vivo #plancia-lancia { bottom: calc(130px + env(safe-area-inset-bottom,
 .pl-tile { transition: transform var(--t-medio) var(--molla-medio), opacity .18s ease, border-color .2s ease, box-shadow var(--t-medio) var(--molla-medio), background .18s ease; }
 .pl-rail { transition: transform var(--t-pieno) var(--molla-pieno); }
 .pl-eroe.pl-mosso { animation: pl-eroe-entra var(--t-pieno) var(--molla-pieno) both; }
-#an-cursore-ring { transition: width var(--t-lieve) var(--molla-lieve), height var(--t-lieve) var(--molla-lieve), border-radius var(--t-lieve) var(--molla-lieve), background .2s ease, box-shadow .2s ease, opacity .2s ease; }
-#an-cursore-ring.morph { transition: width var(--t-lieve) var(--molla-lieve), height var(--t-lieve) var(--molla-lieve), border-radius var(--t-lieve) var(--molla-lieve), transform var(--t-lieve) var(--molla-lieve), background .2s ease, box-shadow .2s ease, opacity .2s ease; }
 
-/* risposta alla luce: la superficie coglie un riflesso quando la tocchi, come un materiale vero */
 .btn:not(.secondario):not(.testo), .pl-tile { position: relative; overflow: hidden; }
 .btn:not(.secondario):not(.testo)::after, .pl-tile::after {
   content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0;
@@ -557,7 +558,6 @@ body.pad-vivo #plancia-lancia { bottom: calc(130px + env(safe-area-inset-bottom,
 }
 @keyframes lucida { from { transform: translateX(-120%); } to { transform: translateX(120%); } }
 
-/* respiro: vita lenta e appena percepibile, cosi lo sfondo non e mai morto */
 #anime-sfondo::after {
   content: ""; position: absolute; inset: -30%;
   background: radial-gradient(38% 42% at 32% 28%, var(--acc-tint), transparent 68%);
@@ -666,4 +666,72 @@ body.senza-cursore.cursore-on, body.senza-cursore.cursore-on * { cursor: default
   }
   .vol-corpo strong { white-space: normal; }
   .vol-lista { gap: 14px; }
+}
+
+
+.btn, button.btn, a.btn, .grp-btn, .modello-pronto {
+  transition: transform .16s var(--molla-lieve), opacity .2s ease,
+              background .24s ease, color .24s ease, border-color .24s ease, box-shadow var(--t-medio) var(--molla-medio);
+  transform: translate3d(var(--mx, 0px), var(--my, 0px), 0);
+}
+.btn:hover, .grp-btn:hover, .modello-pronto:hover {
+  transform: translate3d(var(--mx, 0px), calc(var(--my, 0px) - 1px), 0);
+}
+.btn:not(.secondario):not(.testo):hover {
+  opacity: .82; transform: translate3d(var(--mx, 0px), calc(var(--my, 0px) - 1px), 0);
+}
+.btn:active, .grp-btn:active, .btn:not(.secondario):not(.testo):active {
+  transform: translate3d(var(--mx, 0px), calc(var(--my, 0px) + 1px), 0) scale(.981);
+  transition-duration: .08s;
+}
+
+#anime-sfondo::before {
+  content: ""; position: absolute; inset: -25%;
+  background: radial-gradient(30% 34% at 62% 66%, color-mix(in srgb, var(--acc) 26%, transparent), transparent 70%);
+  filter: blur(64px); opacity: .3;
+  transform: translate3d(calc(var(--pnt-x, 0) * 5%), calc(var(--pnt-y, 0) * 5%), 0);
+}
+
+.vivo {
+  position: relative; display: inline-block; flex: 0 0 auto;
+  width: 7px; height: 7px; margin-right: .45em; border-radius: 50%;
+  background: currentColor; vertical-align: baseline;
+}
+.vivo::after {
+  content: ""; position: absolute; inset: 0; border-radius: 50%; background: currentColor;
+  animation: onda-viva 2.6s ease-out infinite;
+}
+@keyframes onda-viva {
+  0% { transform: scale(1); opacity: .5; }
+  70%, 100% { transform: scale(2.7); opacity: 0; }
+}
+
+.btn.pericolo:not(.secondario):not(.testo) {
+  background: var(--rosso); border-color: var(--rosso); color: #fff;
+}
+.btn.pericolo:not(.secondario):not(.testo):hover {
+  background: var(--rosso); border-color: var(--rosso); color: #fff; opacity: .86;
+}
+
+.spento {
+  display: inline-block; flex: 0 0 auto;
+  width: 7px; height: 7px; margin-right: .45em; border-radius: 50%;
+  background: currentColor; opacity: .5; vertical-align: baseline;
+}
+
+::view-transition-old(contenuto) { animation: vt-esce .2s var(--molla-lieve) both; }
+::view-transition-new(contenuto) { animation: vt-entra var(--t-pieno) var(--molla-pieno) both; }
+@keyframes vt-esce { to { opacity: 0; transform: translateY(-8px) scale(.994); } }
+@keyframes vt-entra { from { opacity: 0; transform: translateY(16px) scale(.988); } }
+
+.toast { animation: toast-entra var(--t-medio) var(--molla-medio) both; }
+.toast.esce { animation: toast-esce .34s var(--an-vel) both; }
+@keyframes toast-entra { from { opacity: 0; transform: translate3d(18px, 8px, 0) scale(.96); } }
+@keyframes toast-esce { to { opacity: 0; transform: translate3d(26px, 0, 0) scale(.97); } }
+
+body.leggero #anime-sfondo::before, body.meno-moto #anime-sfondo::before { opacity: .18; transform: none; }
+body.leggero .vivo::after, body.meno-moto .vivo::after { animation: none; opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  #anime-sfondo::before { transform: none; }
+  .vivo::after { animation: none; opacity: 0; }
 }
