@@ -37,7 +37,12 @@ function toast(msg, tipo = 'ok') {
   el.className = 'toast' + (tipo === 'errore' ? ' errore' : '');
   el.textContent = msg;
   box.appendChild(el);
-  setTimeout(() => el.remove(), 4000);
+  setTimeout(() => {
+    el.classList.add('esce');
+    const via = () => el.remove();
+    el.addEventListener('animationend', via, { once: true });
+    setTimeout(via, 700);
+  }, 4000);
 }
 
 async function api(percorso, opzioni = {}) {
@@ -2478,8 +2483,8 @@ function pannelloStato() {
         </label>
         <span class="etichetta-stato" id="etichetta-bot">${stato.streamer.botEnabled ? L('Bot acceso', 'Bot on', 'Bot encendido') : L('Bot spento', 'Bot off', 'Bot apagado')}</span>
         ${inChat
-          ? `<span class="badge verde">● ${L('in chat adesso', 'in chat now', 'en el chat ahora')}</span>`
-          : `<span class="badge">○ ${L('non connesso', 'not connected', 'no conectado')}</span>`}
+          ? `<span class="badge verde"><i class="vivo"></i>${L('in chat adesso', 'in chat now', 'en el chat ahora')}</span>`
+          : `<span class="badge"><i class="spento"></i>${L('non connesso', 'not connected', 'no conectado')}</span>`}
         ${stato.permessiOk ? `<span class="badge viola">${L('permessi ok', 'permissions ok', 'permisos ok')}</span>` : `<span class="badge rosso">${L('permessi mancanti', 'missing permissions', 'faltan permisos')}</span>`}
       </div>
 
@@ -2747,8 +2752,8 @@ function pannelloAscolto() {
         </label>
         <span class="etichetta-stato" id="etichetta-ascolto">${s.ascoltoLive ? L('Ascolto acceso', 'Listening on', 'Escucha activada') : L('Ascolto spento', 'Listening off', 'Escucha desactivada')}</span>
         ${inAscolto
-          ? `<span class="badge verde">● ${L('in ascolto ora', 'listening now', 'escuchando ahora')}</span>`
-          : `<span class="badge">○ ${L('non in ascolto', 'not listening', 'sin escuchar')}</span>`}
+          ? `<span class="badge verde"><i class="vivo"></i>${L('in ascolto ora', 'listening now', 'escuchando ahora')}</span>`
+          : `<span class="badge"><i class="spento"></i>${L('non in ascolto', 'not listening', 'sin escuchar')}</span>`}
       </div>
       <label class="campo" for="rng-ascolto">${L('Sensibilità:', 'Sensitivity:', 'Sensibilidad:')} <span id="val-ascolto">${sens}</span></label>
       <input type="range" id="rng-ascolto" min="1" max="10" step="1" value="${sens}">
@@ -2990,7 +2995,7 @@ async function caricaSpotify() {
 
   if (d.collegato) {
     box.innerHTML = `<div class="riga-interruttore">
-        <span class="badge verde">● ${L('Spotify collegato', 'Spotify connected', 'Spotify conectado')}</span>
+        <span class="badge verde"><i class="vivo"></i>${L('Spotify collegato', 'Spotify connected', 'Spotify conectado')}</span>
         <button class="btn secondario" id="spotify-scollega">${L('Scollega', 'Disconnect', 'Desconectar')}</button>
       </div>
       <p class="suggerimento spazio-sopra">${d.proprio ? L('Stai usando la tua app Spotify.', 'You’re using your own Spotify app.', 'Estás usando tu app de Spotify.') : L('Stai usando l\'app condivisa dell\'operatore.', 'You’re using the operator’s shared app.', 'Estás usando la app compartida del operador.')}</p>`;
@@ -3048,7 +3053,7 @@ async function caricaTikTok() {
   }
 
   box.innerHTML = `<div class="riga-interruttore">
-      <span class="badge verde">● TikTok collegato${d.username ? ' (@' + esc(d.username) + ')' : ''}</span>
+      <span class="badge verde"><i class="vivo"></i>TikTok collegato${d.username ? ' (@' + esc(d.username) + ')' : ''}</span>
       <button class="btn secondario mini" id="tiktok-prova">Prova</button>
       <button class="btn secondario mini" id="tiktok-scollega">Scollega</button>
     </div>`;
@@ -3132,7 +3137,7 @@ async function caricaTgLogin() {
 
   if (d.collegato) {
     box.innerHTML = testa + `<div class="riga-interruttore">
-        <span class="badge verde">● ${L('Telegram collegato', 'Telegram linked', 'Telegram vinculado')}${d.username ? ' (@' + esc(d.username) + ')' : ''}</span>
+        <span class="badge verde"><i class="vivo"></i>${L('Telegram collegato', 'Telegram linked', 'Telegram vinculado')}${d.username ? ' (@' + esc(d.username) + ')' : ''}</span>
         ${proprietario ? `<button class="btn secondario mini" id="tgl-scollega">${L('Scollega', 'Unlink', 'Desvincular')}</button>` : ''}
       </div>
       ${linkBot ? `<p class="suggerimento spazio-sopra">${L('Apri la Mini App:', 'Open the Mini App:', 'Abre la Mini App:')} <a href="${linkBot}" target="_blank" rel="noopener">@${esc(d.bot)}</a></p>` : ''}`;
@@ -6330,7 +6335,7 @@ async function caricaEmote7TV() {
 
   if (d.collegato) {
     conn.innerHTML = `<div class="riga-interruttore">
-        <span class="badge verde">● ${L('7TV collegato', '7TV connected', '7TV conectado')}${d.username ? ' (@' + esc(d.username) + ')' : ''}</span>
+        <span class="badge verde"><i class="vivo"></i>${L('7TV collegato', '7TV connected', '7TV conectado')}${d.username ? ' (@' + esc(d.username) + ')' : ''}</span>
         ${proprietario ? `<button class="btn secondario mini" id="svtv-scollega">${L('Scollega', 'Disconnect', 'Desconectar')}</button>` : ''}
       </div>
       ${proprietario ? '' : `<p class="suggerimento spazio-sopra">${L('Solo il proprietario del canale può collegare o scollegare 7TV.', 'Only the channel owner can connect or disconnect 7TV.', 'Solo el propietario del canal puede conectar o desconectar 7TV.')}</p>`}`;
@@ -10892,7 +10897,7 @@ function vistaAdminContenuto() {
     <div class="carta">
       <h2>${_hIco(ICO.corona)}${L('Pannello andryxify', 'andryxify panel', 'Panel de andryxify')}</h2>
       <p class="spazio-sopra">
-        Bot: ${st.running ? `<span class="badge verde">● ${L('in esecuzione', 'running', 'en ejecución')}</span>` : `<span class="badge rosso">○ ${L('fermo', 'stopped', 'detenido')}</span>`}
+        Bot: ${st.running ? `<span class="badge verde"><i class="vivo"></i>${L('in esecuzione', 'running', 'en ejecución')}</span>` : `<span class="badge rosso"><i class="spento"></i>${L('fermo', 'stopped', 'detenido')}</span>`}
         &nbsp; ${L('Canali attivi', 'Active channels', 'Canales activos')}: ${st.channels?.length
           ? st.channels.map((c) => `<span class="badge viola">#${esc(c)}</span>`).join(' ')
           : `<span class="badge">${L('nessuno', 'none', 'ninguno')}</span>`}
@@ -12250,7 +12255,7 @@ async function caricaSalute() {
   const ko = (d.chatKO || []).length;
   box.innerHTML = `
     <p>
-      ${d.running ? `<span class="badge verde">● ${L('in esecuzione', 'running', 'en ejecución')}</span>` : `<span class="badge rosso">○ ${L('fermo', 'stopped', 'detenido')}</span>`}
+      ${d.running ? `<span class="badge verde"><i class="vivo"></i>${L('in esecuzione', 'running', 'en ejecución')}</span>` : `<span class="badge rosso"><i class="spento"></i>${L('fermo', 'stopped', 'detenido')}</span>`}
       &nbsp; <span class="badge">${L('acceso da', 'up for', 'activo desde hace')} ${_durata(d.uptime)}</span>
       &nbsp; <span class="badge viola">${d.streamers} ${L('streamer', 'streamers', 'streamers')}</span>
     </p>
@@ -12280,8 +12285,8 @@ async function caricaBackup() {
   box.innerHTML = `
     <p>
       ${d.attivo
-        ? `<span class="badge verde">● ${L('attivo', 'active', 'activo')}</span>`
-        : `<span class="badge rosso">○ ${L('disattivato', 'off', 'desactivado')}</span>`}
+        ? `<span class="badge verde"><i class="vivo"></i>${L('attivo', 'active', 'activo')}</span>`
+        : `<span class="badge rosso"><i class="spento"></i>${L('disattivato', 'off', 'desactivado')}</span>`}
       &nbsp; <span class="badge viola">${d.conteggio} ${L('copie', 'copies', 'copias')}</span>
       &nbsp; <span class="badge">${L('ultima', 'last', 'última')}: ${esc(quando)}</span>
       &nbsp; <span class="badge">${mb}</span>
@@ -12652,19 +12657,25 @@ function initGuscio() {
   document.getElementById('chiudi-menu')?.addEventListener('click', chiudiMenuMobile);
 
   if (!_menoMoto && window.matchMedia && window.matchMedia('(hover: hover)').matches) {
-    let magBtn = null;
+    let magBtn = null, magCx = 0, magCy = 0, magNoto = false;
     const smagnetizza = (b) => { if (b) { b.style.removeProperty('--mx'); b.style.removeProperty('--my'); } };
+    const scorda = () => { magNoto = false; };
     document.addEventListener('pointermove', (ev) => {
       const b = ev.target.closest?.('.btn');
-      if (b !== magBtn) { smagnetizza(magBtn); magBtn = b; }
+      if (b !== magBtn) { smagnetizza(magBtn); magBtn = b; magNoto = false; }
       if (!b || b.disabled) return;
-      const r = b.getBoundingClientRect();
-      const dx = ev.clientX - (r.left + r.width / 2);
-      const dy = ev.clientY - (r.top + r.height / 2);
-      b.style.setProperty('--mx', (dx * 0.22).toFixed(1) + 'px');
-      b.style.setProperty('--my', (dy * 0.32).toFixed(1) + 'px');
+      if (!magNoto) {
+        smagnetizza(b);
+        const r = b.getBoundingClientRect();
+        if (!r.width) return;
+        magCx = r.left + r.width / 2; magCy = r.top + r.height / 2; magNoto = true;
+      }
+      b.style.setProperty('--mx', ((ev.clientX - magCx) * 0.22).toFixed(1) + 'px');
+      b.style.setProperty('--my', ((ev.clientY - magCy) * 0.32).toFixed(1) + 'px');
     }, { passive: true });
-    document.addEventListener('pointerdown', () => smagnetizza(magBtn), { passive: true });
+    document.addEventListener('pointerdown', () => { smagnetizza(magBtn); scorda(); }, { passive: true });
+    window.addEventListener('scroll', scorda, { passive: true, capture: true });
+    window.addEventListener('resize', scorda, { passive: true });
   }
 }
 
