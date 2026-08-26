@@ -272,6 +272,15 @@ CREATE TABLE IF NOT EXISTS telegram_dest (  -- DOVE notificare: piu gruppi/canal
 );
 CREATE INDEX IF NOT EXISTS idx_tgdest_ch ON telegram_dest(channel);
 
+CREATE TABLE IF NOT EXISTS telegram_msg (  -- avvisi live mandati: uno per destinazione E per streamer
+  channel TEXT NOT NULL,
+  dest_id INTEGER NOT NULL,
+  streamer TEXT NOT NULL,
+  msg_id TEXT NOT NULL DEFAULT '',
+  ts INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (channel, dest_id, streamer)
+);
+
 CREATE TABLE IF NOT EXISTS telegram_visto (  -- chat e topic che il bot ha VISTO passare
   channel TEXT NOT NULL,                   -- login twitch che possiede il bot
   chat_id TEXT NOT NULL,
@@ -291,6 +300,7 @@ CREATE TABLE IF NOT EXISTS telegram_amico (  -- ALTRI streamer di cui annunciare
   messaggio TEXT NOT NULL DEFAULT '',      -- template dedicato (vuoto = quello del canale)
   attivo INTEGER NOT NULL DEFAULT 1,
   ultima_live TEXT NOT NULL DEFAULT '',    -- id dell'ultima diretta annunciata (anti-doppioni)
+  fonte TEXT NOT NULL DEFAULT 'mano',      -- mano = aggiunto da te · community = automatico
   ts INTEGER NOT NULL DEFAULT 0,
   UNIQUE(channel, login)
 );
@@ -455,6 +465,16 @@ CREATE TABLE IF NOT EXISTS point_alerts (    -- premi a PUNTI CANALE Twitch → 
 // --- migrazioni leggere: aggiunge colonne nuove a DB già esistenti ------------
 // CREATE TABLE IF NOT EXISTS non tocca le tabelle già create, quindi le colonne
 // aggiunte dopo il primo avvio vanno inserite a mano (idempotente).
+function _colonneTelegram() {
+  try {
+    const c = db.prepare('PRAGMA table_info(telegram_amico)').all();
+    if (!c.some((x) => x.name === 'fonte')) db.exec("ALTER TABLE telegram_amico ADD COLUMN fonte TEXT NOT NULL DEFAULT 'mano'");
+    const t = db.prepare('PRAGMA table_info(telegram)').all();
+    if (!t.some((x) => x.name === 'community_live')) db.exec('ALTER TABLE telegram ADD COLUMN community_live INTEGER NOT NULL DEFAULT 0');
+  } catch (e) {  }
+}
+_colonneTelegram();
+
 function aggiungiColonna(tabella, colonna, definizione) {
   const cols = db.prepare(`PRAGMA table_info(${tabella})`).all();
   if (!cols.some((c) => c.name === colonna)) {
@@ -1275,6 +1295,24 @@ export const tgVisti = {
   },
 };
 
+// Gli avvisi live gia mandati, per destinazione E per streamer: senza questo,
+// la diretta di un amico che finisce cancellerebbe l'avviso della mia.
+export const tgMsg = {
+  segna(channel, destId, streamer, msgId) {
+    db.prepare(`INSERT INTO telegram_msg (channel, dest_id, streamer, msg_id, ts) VALUES (?,?,?,?,?)
+      ON CONFLICT(channel, dest_id, streamer) DO UPDATE SET msg_id=excluded.msg_id, ts=excluded.ts`)
+      .run(String(channel).toLowerCase(), Number(destId) || 0, String(streamer).toLowerCase(), String(msgId || ''), Date.now());
+  },
+  perStreamer(channel, streamer) {
+    return db.prepare('SELECT * FROM telegram_msg WHERE channel=? AND streamer=? AND msg_id<>\'\'')
+      .all(String(channel).toLowerCase(), String(streamer).toLowerCase());
+  },
+  pulisci(channel, streamer) {
+    db.prepare('DELETE FROM telegram_msg WHERE channel=? AND streamer=?')
+      .run(String(channel).toLowerCase(), String(streamer).toLowerCase());
+  },
+};
+
 // ALTRI streamer di cui annunciare la diretta (oltre alla propria).
 export const tgAmici = {
   lista(channel) {
@@ -1311,6 +1349,31 @@ export const tgAmici = {
   canaliConAmici() {
     return db.prepare('SELECT DISTINCT channel FROM telegram_amico WHERE attivo=1').all().map((r) => r.channel);
   },
+  // Allinea la lista automatica ai membri della community: chi entra compare, chi
+  // esce sparisce. Non tocca chi hai aggiunto a mano (fonte='mano'), e non
+  // aggiunge mai te stesso. Idempotente: girarla mille volte non cambia nulla.
+  sincronizzaCommunity(channel, membri) {
+    const ch = String(channel).toLowerCase();
+    const voluti = new Map();
+    for (const m of (membri || [])) {
+      const lg = String(m.login || '').toLowerCase();
+      if (!lg || lg === ch) continue;
+      voluti.set(lg, String(m.display || lg).slice(0, 60));
+    }
+    const ora = db.prepare("SELECT login FROM telegram_amico WHERE channel=? AND fonte='community'").all(ch).map((r) => r.login);
+    for (const l of ora) if (!voluti.has(l)) db.prepare("DELETE FROM telegram_amico WHERE channel=? AND login=? AND fonte='community'").run(ch, l);
+    for (const [lg, disp] of voluti) {
+      db.prepare(`INSERT INTO telegram_amico (channel, login, display, messaggio, attivo, fonte, ts) VALUES (?,?,?,'',1,'community',?)
+        ON CONFLICT(channel, login) DO UPDATE SET display=excluded.display`)
+        .run(ch, lg, disp, Date.now());
+    }
+    return voluti.size;
+  },
+  // Tutti gli streamer da guardare per questo canale: quelli a mano + la community
+  // (se il canale l'ha accesa). La distinzione la porta la colonna `fonte`.
+  daGuardare(channel) {
+    return this.attivi(channel);
+  },
 };
 
 export const tgConf = {
@@ -1323,6 +1386,7 @@ export const tgConf = {
     const v = {
       token: campi.token !== undefined ? String(campi.token) : cur.token,
       chat_id: campi.chatId !== undefined ? String(campi.chatId) : cur.chat_id,
+      community_live: campi.communityLive !== undefined ? (campi.communityLive ? 1 : 0) : (cur.community_live || 0),
       chat_titolo: campi.chatTitolo !== undefined ? String(campi.chatTitolo) : cur.chat_titolo,
       bot_username: campi.botUsername !== undefined ? String(campi.botUsername) : cur.bot_username,
       attivo: campi.attivo !== undefined ? (campi.attivo ? 1 : 0) : cur.attivo,
@@ -1332,9 +1396,9 @@ export const tgConf = {
       msg_id: campi.msgId !== undefined ? String(campi.msgId) : (cur.msg_id ?? ''),
       msg_id_tk: campi.msgIdTk !== undefined ? String(campi.msgIdTk) : (cur.msg_id_tk ?? ''),
     };
-    db.prepare(`INSERT INTO telegram (channel, token, chat_id, chat_titolo, bot_username, attivo, messaggio, ultima_live, pin_live, msg_id, msg_id_tk, ts)
-      VALUES (@channel, @token, @chat_id, @chat_titolo, @bot_username, @attivo, @messaggio, @ultima_live, @pin_live, @msg_id, @msg_id_tk, @ts)
-      ON CONFLICT(channel) DO UPDATE SET token=excluded.token, chat_id=excluded.chat_id, chat_titolo=excluded.chat_titolo,
+    db.prepare(`INSERT INTO telegram (channel, token, chat_id, chat_titolo, bot_username, attivo, messaggio, ultima_live, pin_live, msg_id, msg_id_tk, community_live, ts)
+      VALUES (@channel, @token, @chat_id, @chat_titolo, @bot_username, @attivo, @messaggio, @ultima_live, @pin_live, @msg_id, @msg_id_tk, @community_live, @ts)
+      ON CONFLICT(channel) DO UPDATE SET token=excluded.token, chat_id=excluded.chat_id, chat_titolo=excluded.chat_titolo, community_live=excluded.community_live,
         bot_username=excluded.bot_username, attivo=excluded.attivo, messaggio=excluded.messaggio,
         ultima_live=excluded.ultima_live, pin_live=excluded.pin_live, msg_id=excluded.msg_id, msg_id_tk=excluded.msg_id_tk, ts=excluded.ts`)
       .run({ channel: c, ...v, ts: now() });

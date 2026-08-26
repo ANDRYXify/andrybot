@@ -315,7 +315,13 @@ function _demoGet(via) {
         { id: 3, chatId: '-1002', titolo: 'Canale annunci', tipo: 'channel', threadId: '', threadNome: '', eventi: ['live'], streamer: ['andryx_demo'], pin: false, attivo: true },
         { id: 4, chatId: '-1003', titolo: 'Gruppo amici', tipo: 'group', threadId: '', threadNome: '', eventi: ['live'], streamer: ['lucaplays'], pin: false, attivo: false },
       ],
-      amici: [{ id: 1, login: 'lucaplays', display: 'LucaPlays', messaggio: '', attivo: true }],
+      communityLive: true,
+      communityQuanti: 14,
+      amici: [
+        { id: 1, login: 'lucaplays', display: 'LucaPlays', messaggio: '', attivo: true, fonte: 'mano' },
+        { id: 2, login: 'giada_ttv', display: 'Giada_TTV', messaggio: '', attivo: true, fonte: 'community' },
+        { id: 3, login: 'marco99', display: 'Marco99', messaggio: '', attivo: true, fonte: 'community' },
+      ],
     },
     '/api/streamer/overlays': { overlays: [
       { id: 'principale', nome: 'Overlay principale', mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true },
@@ -1079,8 +1085,17 @@ async function caricaTgDestinazioni() {
 
     <p class="campo spazio-sopra">${L('Altri streamer da annunciare', 'Other streamers to announce', 'Otros streamers a anunciar')}</p>
     <p class="suggerimento">${L('Le loro dirette vengono annunciate insieme alle tue. Poi scegli qui sopra, per ogni destinazione, di chi vuoi gli avvisi.', 'Their lives are announced alongside yours. Then pick above, per destination, whose alerts you want.', 'Sus directos se anuncian junto a los tuyos. Luego eliges arriba, por destino, de quién quieres los avisos.')}</p>
+    <label class="tg-community">
+      <input type="checkbox" id="tg-community"${d.communityLive ? ' checked' : ''}>
+      <span class="tg-community-corpo">
+        <strong>${L('Annuncia anche le dirette della community', 'Announce community members’ lives too', 'Anuncia también los directos de la comunidad')}</strong>
+        <span>${L(`Quando un membro della community va in diretta, l’avviso compare dove hai deciso nella matrice — fissato e tolto da solo a diretta finita. Ora la community conta <strong>${d.communityQuanti || 0}</strong> canali, e la lista si aggiorna da sé.`, `When a community member goes live, the alert lands where you decided in the matrix — pinned and removed by itself when the live ends. The community currently has <strong>${d.communityQuanti || 0}</strong> channels, and the list keeps itself up to date.`, `Cuando un miembro de la comunidad emite, el aviso llega donde decidiste en la matriz — fijado y quitado solo al terminar. La comunidad tiene ahora <strong>${d.communityQuanti || 0}</strong> canales, y la lista se actualiza sola.`)}</span>
+      </span>
+    </label>
     <div class="tg-amici">
-      ${amici.map((a) => `<span class="tg-amico${a.attivo ? '' : ' spenta'}">${esc(a.display || a.login)}<button type="button" data-amico-togli="${a.id}" aria-label="${L('Togli', 'Remove', 'Quitar')}">×</button></span>`).join('')}
+      ${amici.map((a) => a.fonte === 'community'
+        ? `<span class="tg-amico auto" title="${L('Dalla community: entra ed esce da solo', 'From the community: comes and goes by itself', 'De la comunidad: entra y sale solo')}">${_bIco(ICO.utenti)}${esc(a.display || a.login)}</span>`
+        : `<span class="tg-amico${a.attivo ? '' : ' spenta'}">${esc(a.display || a.login)}<button type="button" data-amico-togli="${a.id}" aria-label="${L('Togli', 'Remove', 'Quitar')}">×</button></span>`).join('')}
     </div>
     <div class="riga-flessibile spazio-sopra">
       <input type="text" id="tg-amico-nome" class="campo-largo" placeholder="${L('nome canale Twitch (es. pincopallo)', 'Twitch channel name (e.g. pincopallo)', 'nombre del canal de Twitch')}" maxlength="25">
@@ -1107,6 +1122,16 @@ function collegaTgDestinazioni() {
   box.dataset.collegato = '1';
 
   box.addEventListener('change', (e) => {
+    if (e.target.id === 'tg-community') {
+      const attivo = e.target.checked;
+      return conErrore(async () => {
+        const r = await api('/api/streamer/telegram/community', { method: 'POST', body: { attivo } });
+        toast(attivo
+          ? L(`Annuncerò le dirette di ${r.quanti} canali della community.`, `I'll announce lives from ${r.quanti} community channels.`, `Anunciaré los directos de ${r.quanti} canales de la comunidad.`)
+          : L('Annuncio della community spento.', 'Community announcing off.', 'Anuncio de la comunidad apagado.'));
+        await caricaTgDestinazioni();
+      });
+    }
     const mx = e.target.closest('[data-mx-dest]');
     if (mx) {
       const idDest = mx.dataset.mxDest;

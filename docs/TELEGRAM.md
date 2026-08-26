@@ -84,6 +84,22 @@ Un amico non e un canale gestito dal bot, quindi **nessun evento arriva da solo*
 diretta. Prima di accettare un amico si controlla che il canale **esista davvero** su Twitch: meglio
 dirlo subito che restare in silenzio per sempre.
 
+## Le dirette della community
+
+Ogni streamer decide **per il proprio gruppo** se annunciare anche le dirette dei membri della
+community. Acceso l'interruttore, la lista si allinea da sola a chi e `community=1`: chi entra
+compare, chi esce sparisce, e chi hai aggiunto **a mano** non viene mai toccato (li distingue la
+colonna `fonte`). Non aggiunge mai te stesso.
+
+Dove finiscono lo decide la **matrice**, come tutto il resto: sono streamer come gli altri, quindi
+il filtro «di chi» di ogni destinazione vale anche per loro.
+
+**Il punto delicato: fissare e togliere.** Con piu dirette annunciate insieme, un solo `msg_id` per
+destinazione non basta — la fine della diretta di uno cancellerebbe l'avviso di un altro. Percio
+c'e `telegram_msg`, con chiave `(canale, destinazione, streamer)`: ogni avviso ricorda il proprio
+messaggio, e quando quella diretta finisce si toglie **solo il suo**. La fine si rileva nel giro dei
+due minuti: se Twitch dice che non e piu live e avevamo annunciato, si chiude.
+
 ## Collaudo
 
 Verificato su un database isolato, scenario per scenario: migrazione idempotente, gruppo + canale +

@@ -4241,7 +4241,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         eventi: d.eventi ? d.eventi.split(',') : [], streamer: d.streamer ? d.streamer.split(',') : [],
         pin: !!d.pin, attivo: !!d.attivo,
       })),
-      amici: tgAmici.lista(login).map((a) => ({ id: a.id, login: a.login, display: a.display, messaggio: a.messaggio, attivo: !!a.attivo })),
+      amici: tgAmici.lista(login).map((a) => ({ id: a.id, login: a.login, display: a.display, messaggio: a.messaggio, attivo: !!a.attivo, fonte: a.fonte || 'mano' })),
+      communityLive: !!c?.community_live,
+      communityQuanti: streamers.list().filter((x) => x.community && x.login !== login).length,
       eventi: TG_EVENTI,
       io: login,
     });
@@ -4344,6 +4346,21 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const r = await telegram.inviaMessaggio(c.token, d.chat_id, '🧪 <i>Anteprima notifica</i>\n\n' + testo, { threadId: d.thread_id });
     if (!r.ok) return res.status(400).json({ errore: r.errore });
     res.json({ ok: true });
+  }));
+
+  // Annuncio automatico delle dirette dei membri della community: acceso o spento
+  // da ogni streamer per il PROPRIO gruppo. Dove finiscono lo decide la matrice.
+  app.post('/api/streamer/telegram/community', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const c = tgConf.get(login);
+    if (!c?.token) return res.status(400).json({ errore: 'prima collega il bot con il token' });
+    const attivo = !!req.body?.attivo;
+    tgConf.set(login, { communityLive: attivo });
+    // allinea subito la lista, senza aspettare il giro dei due minuti
+    tgAmici.sincronizzaCommunity(login, attivo
+      ? streamers.list().filter((x) => x.community && x.login !== login).map((x) => ({ login: x.login, display: x.display }))
+      : []);
+    res.json({ ok: true, quanti: attivo ? tgAmici.lista(login).filter((a) => a.fonte === 'community').length : 0 });
   }));
 
   // ── AMICI: altri streamer di cui annunciare la diretta ────────────────────

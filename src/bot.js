@@ -8,7 +8,7 @@
 // eventi Twitch. Tiene tutto sincronizzato con la dashboard.
 import { makeLog } from './logger.js';
 import { config } from './config.js';
-import { tokens, streamers, memory, tgConf, tgDest, tgAmici, dcConf, compleanni, pointAlerts } from './db.js';
+import { tokens, streamers, memory, tgConf, tgDest, tgAmici, tgMsg, dcConf, compleanni, pointAlerts } from './db.js';
 import { ChatBot } from './twitch/chat.js';
 import { EventHub } from './twitch/events.js';
 import { Brain } from './ai/brain.js';
@@ -757,7 +757,7 @@ export class BotManager {
   // Manda un avviso a TUTTE le destinazioni ammesse per quell'evento e quello
   // streamer (gruppo, canale, topic). Ogni destinazione ricorda il proprio
   // message_id, così a live finita si chiude quella giusta in ognuna.
-  async _diffondiTelegram(login, conf, evento, streamerLogin, testo, { pin = false } = {}) {
+  async _diffondiTelegram(login, conf, evento, streamerLogin, testo, { pin = false, chi = null } = {}) {
     tgDest.migra(login, conf);                       // il vecchio gruppo unico diventa la prima destinazione
     const dest = tgDest.perEvento(login, evento, streamerLogin);
     if (!dest.length) return { inviati: 0 };
@@ -768,7 +768,10 @@ export class BotManager {
       inviati++;
       const msgId = e.result?.message_id;
       if (!msgId) continue;
-      if (pin) tgDest.setMsgId(e.dest.id, msgId);
+      if (pin) {
+        if (chi) tgMsg.segna(login, e.dest.id, chi, msgId);
+        else tgDest.setMsgId(e.dest.id, msgId);
+      }
       if (pin && e.dest.pin) {
         const p = await telegram.fissaMessaggio(conf.token, e.dest.chat_id, msgId, { silenzioso: false });
         if (!p.ok) log.warn(`pin Telegram ${e.dest.titolo || e.dest.chat_id}: ${p.errore} (il bot è admin con permesso di fissare?)`);
@@ -782,22 +785,51 @@ export class BotManager {
   // Giro periodico: gli amici non sono canali gestiti dal bot, quindi nessun
   // evento arriva da solo — bisogna guardarli. Anti-doppioni sull'id diretta.
   async _giroAmiciTelegram() {
-    for (const ch of tgAmici.canaliConAmici()) {
+    const canali = new Set(tgAmici.canaliConAmici());
+    for (const s of streamers.list()) if (tgConf.get(s.login)?.community_live) canali.add(s.login);
+    for (const ch of canali) {
       try {
         const conf = tgConf.get(ch);
         if (!conf?.attivo || !conf.token) continue;
-        for (const a of tgAmici.attivi(ch)) {
+        // la lista automatica segue la community: chi entra compare, chi esce sparisce
+        if (conf.community_live) {
+          tgAmici.sincronizzaCommunity(ch, streamers.list()
+            .filter((x) => x.community && x.login !== ch)
+            .map((x) => ({ login: x.login, display: x.display })));
+        } else {
+          tgAmici.sincronizzaCommunity(ch, []);
+        }
+        for (const a of tgAmici.daGuardare(ch)) {
           const info = await this.helix.getStream(a.login).catch(() => null);
           const streamId = String(info?.id || '');
-          if (!streamId) continue;                       // non è live: niente da fare
+          if (!streamId) {
+            // non è live: se avevamo annunciato la sua diretta, chiudiamola
+            if (a.ultima_live) { await this._chiudiLiveEsterna(ch, conf, a.login); tgAmici.setUltimaLive(ch, a.login, ''); }
+            continue;
+          }
           if (streamId === a.ultima_live) continue;      // già annunciata
           const testo = telegram.costruisciMessaggioLive(
             { login: a.login, display: a.display || a.login }, info, a.messaggio || conf.messaggio);
-          const r = await this._diffondiTelegram(ch, conf, 'live', a.login, testo, { pin: false });
+          const r = await this._diffondiTelegram(ch, conf, 'live', a.login, testo, { pin: true, chi: a.login });
           if (r.inviati) tgAmici.setUltimaLive(ch, a.login, streamId);
         }
       } catch (e) { log.debug(`amici Telegram #${ch}:`, e?.message || e); }
     }
+  }
+
+  // Diretta di un altro streamer finita: togli l'avviso SOLO suo, in ogni
+  // destinazione dove era stato fissato. Gli avvisi degli altri restano intatti.
+  async _chiudiLiveEsterna(login, conf, chi) {
+    try {
+      for (const m of tgMsg.perStreamer(login, chi)) {
+        const d = tgDest.get(login, m.dest_id);
+        if (d?.pin && m.msg_id) {
+          const r = await telegram.eliminaMessaggio(conf.token, d.chat_id, m.msg_id);
+          if (!r.ok) log.debug(`elimina live di ${chi} in ${d.titolo || d.chat_id}: ${r.errore}`);
+        }
+      }
+      tgMsg.pulisci(login, chi);
+    } catch (e) { log.debug(`chiudi live esterna ${chi}:`, e?.message || e); }
   }
 
   // Manda la notifica Discord "è live" nel canale dello streamer (via webhook),
