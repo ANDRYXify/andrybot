@@ -530,6 +530,10 @@ function render() {
   if (conPiattaforma) attivaPiattaforma();
   if (stato.isAdmin) { caricaTabellaAdmin(); caricaSalute(); caricaBackup(); caricaAnima(); caricaLLM(); caricaVita(); caricaEcosistema(); }
 
+  try {
+    if (conPiattaforma && new URLSearchParams(location.search).get('benvenuto') === '1') mostraBenvenuto();
+  } catch {  }
+
   if (conPiattaforma) document.querySelectorAll('.pannello-scheda').forEach((p) => rendiCartePieghevoli(p, p.dataset.scheda));
   rivelaCarte();
 
@@ -783,22 +787,202 @@ function toggleTemaHtml(extra) {
 }
 
 function heroAnteprima() {
-  const star = '<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true"><path d="M12 2 15.09 8.26 22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>';
-  const msg = (col, nome, testo, emote) => `<div class="vp-msg"><b style="color:${col}">${nome}</b> ${testo}${emote ? ' <span class="vp-emote"></span>' : ''}</div>`;
-  return `<div class="vetrina-preview" aria-hidden="true">
-    <div class="vp-frame">
-      <span class="vp-scene">${L('SCHERMO / GIOCO', 'SCREEN / GAME', 'PANTALLA / JUEGO')}</span>
-      <span class="vp-live">● LIVE</span>
-      <div class="vp-alert"><span class="vp-alert-ic">${star}</span><span class="vp-alert-tx"><b>${L('Nuovo follower!', 'New follower!', '¡Nuevo follower!')}</b> MarioRossi</span></div>
-      <div class="vp-cam">webcam</div>
-      <div class="vp-chat">
-        ${msg('#ff5c8a', 'lucaplays', L('ciao a tutti!', 'hi everyone!', '¡hola a todos!'))}
-        ${msg('#5b8def', 'giada_ttv', L('che bella live', 'great stream', 'qué buen directo'), true)}
-        ${msg('#2fb98a', 'marco99', 'GG!')}
-      </div>
+  const stella = '<svg class="vt-stella" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2 15.09 8.26 22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>';
+  const riga = (cls, nome, testo) => `<li><b class="${cls}">${esc(nome)}</b> ${esc(testo)}</li>`;
+  return `<figure class="vt-vetro" aria-hidden="true">
+    <div class="vt-schermo">
+      <div class="vt-gioco"></div>
+      <span class="vt-scena-eti">${L('la tua diretta', 'your stream', 'tu directo')}</span>
+      <span class="vt-etichetta vt-live"><i class="vivo"></i>Live</span>
+      <span class="vt-etichetta vt-spett"><i></i>&nbsp;${L('spettatori', 'watching', 'viendo')}</span>
+      <div class="vt-alert">${stella}<span><b>${L('Nuovo follower!', 'New follower!', '¡Nuevo follower!')}</b> MarioRossi</span></div>
+      <ul class="vt-chat">
+        ${riga('n1', 'lucaplays', L('ciao a tutti!', 'hi everyone!', '¡hola a todos!'))}
+        ${riga('n2', 'giada_ttv', '!social')}
+        <li class="bot"><b>${esc(L('il tuo canale', 'your channel', 'tu canal'))}</b> ${esc(L('Mi trovi su socialbot.live/u/luca', 'Find me at socialbot.live/u/luca', 'Me encuentras en socialbot.live/u/luca'))}</li>
+        ${riga('n3', 'marco99', 'GG!')}
+        ${riga('n4', 'sara_v', L('che bella diretta', 'great stream', 'qué buen directo'))}
+      </ul>
+      <div class="vt-cam">webcam</div>
     </div>
-    <p class="vp-cap">${L("L'overlay in azione: alert, chat a schermo e widget — tutto personalizzabile.", 'The overlay in action: alerts, on-screen chat and widgets — fully customizable.', 'El overlay en acción: alertas, chat en pantalla y widgets — todo personalizable.')}</p>
+    <figcaption class="vt-didascalia">${L('L’overlay dal vivo: avvisi, chat a schermo e widget — tutto tuo da personalizzare.', 'The overlay live: alerts, on-screen chat and widgets — all yours to customize.', 'El overlay en vivo: avisos, chat en pantalla y widgets — todo tuyo para personalizar.')}</figcaption>
+  </figure>`;
+}
+
+let _pianiCache = null;
+async function pianiDati() {
+  if (_pianiCache) return _pianiCache;
+  const d = await api('/api/abbonamento/piani').catch(() => null);
+  if (d) _pianiCache = d;
+  return d;
+}
+
+const _eur = (n) => '€' + Number(n || 0).toFixed(2).replace('.', ',');
+const tP = (o, campo) => {
+  const t = o && o[campo + '3'];
+  return (Array.isArray(t) && t.length === 3) ? L(t[0], t[1], t[2]) : ((o && o[campo]) || '');
+};
+const _spunta = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+
+function configuratoreHtml(d, { scelti = [], gia = [], titolo = null } = {}) {
+  if (!d || !Array.isArray(d.addon)) return '';
+  const posseduti = new Set(gia);
+  const disponibili = d.addon.filter((a) => !posseduti.has(a.id));
+  if (!disponibili.length) {
+    return `<div class="vt-comp"><p class="vt-testo">${L('Hai già tutti gli extra. Non c’è altro da aggiungere.', 'You already have every extra. Nothing left to add.', 'Ya tienes todos los extras. No queda nada por añadir.')}</p></div>`;
+  }
+  const scelta = new Set(scelti);
+  const righe = disponibili.map((a) => `
+    <label class="vt-extra">
+      <input type="checkbox" value="${esc(a.id)}"${scelta.has(a.id) ? ' checked' : ''}>
+      <span class="vt-spunta">${_spunta}</span>
+      <span class="vt-extra-corpo">
+        <strong>${esc(tP(a, 'nome'))}</strong>
+        <span>${esc(tP(a, 'sommario'))}</span>
+      </span>
+      <span class="vt-extra-prezzo">+${esc(_eur(a.prezzo))}</span>
+    </label>`).join('');
+  return `<div class="vt-comp" data-comp>
+    <h3 class="vt-comp-tit">${titolo || L('Componi il tuo', 'Build yours', 'Compón el tuyo')}</h3>
+    <p class="vt-testo">${posseduti.size
+      ? L('Spunta cosa aggiungere: il totale è quello che pagherai in più al mese.', 'Tick what to add: the total is what you’ll pay extra each month.', 'Marca qué añadir: el total es lo que pagarás de más al mes.')
+      : L('Spunta cosa ti serve. Il canone Base è compreso nel totale, e puoi cambiare idea quando vuoi.', 'Tick what you need. The Base fee is included in the total, and you can change your mind anytime.', 'Marca lo que necesitas. La cuota Base está incluida en el total, y puedes cambiar de idea cuando quieras.')}</p>
+    <div class="vt-comp-griglia">${righe}</div>
+    <div class="vt-conto">
+      <span class="vt-conto-tot"><b data-tot>${esc(_eur(posseduti.size ? 0 : d.base.prezzo))}</b><span>${L('/mese', '/month', '/mes')}</span></span>
+      <span class="vt-conto-nota" data-nota></span>
+      <button type="button" class="vt-btn vt-btn-primo" data-vai>${L('Attiva', 'Activate', 'Activar')}</button>
+      <span class="vt-risparmio" data-risp hidden></span>
+    </div>
   </div>`;
+}
+
+function montaConfiguratore(root, d, { gia = [], suOk = null } = {}) {
+  const box = root && root.querySelector('[data-comp]');
+  if (!box || !d) return;
+  const posseduti = new Set(gia);
+  const base = posseduti.size ? 0 : Number(d.base?.prezzo || 0);
+  const prezzoDi = (id) => Number((d.addon.find((a) => a.id === id) || {}).prezzo || 0);
+  const tot = box.querySelector('[data-tot]');
+  const nota = box.querySelector('[data-nota]');
+  const risp = box.querySelector('[data-risp]');
+  const vai = box.querySelector('[data-vai]');
+
+  const scelti = () => [...box.querySelectorAll('input[type=checkbox]:checked')].map((i) => i.value);
+
+  const miglioreBundle = (ids) => {
+    if (!ids.length || posseduti.size) return null;
+    let vinc = null;
+    for (const b of (d.bundle || [])) {
+      const copre = ids.every((x) => b.addon.includes(x));
+      if (!copre) continue;
+      const somma = ids.reduce((t, x) => t + prezzoDi(x), 0);
+      if (b.prezzo < somma && (!vinc || b.prezzo < vinc.prezzo)) vinc = { ...b, somma };
+    }
+    return vinc;
+  };
+
+  const aggiorna = () => {
+    const ids = scelti();
+    const somma = ids.reduce((t, x) => t + prezzoDi(x), 0);
+    const b = miglioreBundle(ids);
+    const totale = base + (b ? b.prezzo : somma);
+    tot.textContent = _eur(totale);
+    const n = ids.length;
+    const parola = L('extra', n === 1 ? 'extra' : 'extras', n === 1 ? 'extra' : 'extras');
+    nota.textContent = n
+      ? (posseduti.size ? `${n} ${parola}` : `Base + ${n} ${parola}`)
+      : (posseduti.size ? L('niente di scelto', 'nothing picked', 'nada elegido') : L('solo il canone Base', 'Base fee only', 'solo la cuota Base'));
+    if (b) {
+      risp.hidden = false;
+      risp.innerHTML = `${_bIco('<path d="M20 6 9 17l-5-5"/>')} ${esc(L(
+        `Col pacchetto «${b.nome}» paghi ${_eur(b.prezzo)} invece di ${_eur(b.somma)} — applicato.`,
+        `With the «${b.nome}» pack you pay ${_eur(b.prezzo)} instead of ${_eur(b.somma)} — applied.`,
+        `Con el paquete «${b.nome}» pagas ${_eur(b.prezzo)} en vez de ${_eur(b.somma)} — aplicado.`))}`;
+    } else risp.hidden = true;
+    vai.disabled = posseduti.size > 0 && !ids.length;
+    box.dataset.bundle = b ? b.id : '';
+  };
+
+  box.addEventListener('change', (e) => { if (e.target.matches('input[type=checkbox]')) aggiorna(); });
+  vai.addEventListener('click', () => {
+    const ids = scelti();
+    const b = box.dataset.bundle || null;
+    if (typeof suOk === 'function') { suOk({ pacchetti: ids, bundle: b }); return; }
+    const q = new URLSearchParams();
+    if (b) q.set('bundle', b); else if (ids.length) q.set('pacchetti', ids.join(','));
+    location.href = '/accedi' + (q.toString() ? '?' + q : '');
+  });
+  aggiorna();
+}
+
+function mostraBenvenuto() {
+  if (document.getElementById('benvenuto')) return;
+  const nome = stato?.gestisce?.streamer || stato?.user?.display || stato?.user?.login || '';
+  const passo = (ico, t, d) => `<li><span class="bv-ico">${_hIco(ico)}</span><div><strong>${t}</strong><p>${d}</p></div></li>`;
+  const el = document.createElement('div');
+  el.id = 'benvenuto';
+  el.className = 'bv-velo';
+  el.innerHTML = `<div class="bv-carta" role="dialog" aria-modal="true" aria-labelledby="bv-tit">
+    <span class="bv-occhiello">${L('Benvenuto', 'Welcome', 'Bienvenido')}</span>
+    <h2 id="bv-tit">${esc(nome) ? esc(nome) + ',' : ''} ${L('il tuo bot è pronto', 'your bot is ready', 'tu bot está listo')}</h2>
+    <p class="bv-intro">${L('Non devi configurare niente per cominciare. Ecco dove sei.', 'You don’t have to set up anything to begin. Here’s where you are.', 'No tienes que configurar nada para empezar. Esto es lo que hay.')}</p>
+    <ol class="bv-passi">
+      ${passo(ICO.spina, L('Il canale è collegato', 'Your channel is connected', 'Tu canal está conectado'),
+        L('SocialBot scrive in chat <strong>col tuo account</strong>: in chat compare il tuo nome, e puoi spegnerlo quando vuoi.', 'SocialBot writes in chat <strong>with your account</strong>: your name shows in chat, and you can switch it off anytime.', 'SocialBot escribe en el chat <strong>con tu cuenta</strong>: aparece tu nombre, y puedes apagarlo cuando quieras.'))}
+      ${passo(ICO.germoglio, L('L’Essenziale è già tuo, gratis', 'Essenziale is already yours, free', 'Essenziale ya es tuyo, gratis'),
+        L('Comandi illimitati, moderazione con scudo anti-bot, overlay per OBS e contatori a schermo. Per sempre, senza carta.', 'Unlimited commands, moderation with the anti-bot shield, OBS overlay and on-screen counters. Forever, no card.', 'Comandos ilimitados, moderación con escudo anti-bot, overlay para OBS y contadores en pantalla. Para siempre, sin tarjeta.'))}
+      ${passo(ICO.pacco, L('Gli extra si aggiungono dopo', 'Extras come later', 'Los extras se añaden después'),
+        L('Giochi, musica, clip automatiche, comandi vocali: li accendi <strong>uno per uno, quando ti servono</strong> — e li spegni quando non ti servono più.', 'Games, music, automatic clips, voice commands: turn them on <strong>one by one, when you need them</strong> — and off when you don’t.', 'Juegos, música, clips automáticos, comandos por voz: los enciendes <strong>uno a uno, cuando los necesitas</strong> — y los apagas cuando no.'))}
+    </ol>
+    <div class="bv-azioni">
+      <button type="button" class="btn grande" data-bv="via">${L('Comincia', 'Get started', 'Empezar')}</button>
+      <button type="button" class="btn grande secondario" data-bv="extra">${L('Guarda gli extra', 'See the extras', 'Ver los extras')}</button>
+    </div>
+  </div>`;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('dentro'));
+
+  const chiudi = () => {
+    el.classList.remove('dentro');
+    setTimeout(() => el.remove(), 260);
+    try {
+      const u = new URL(location.href);
+      u.searchParams.delete('benvenuto');
+      history.replaceState(null, '', u.pathname + (u.search || '') + (u.hash || ''));
+    } catch {  }
+    try { localStorage.setItem('benvenuto-visto', '1'); } catch {  }
+  };
+  el.addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-bv]');
+    if (!b && ev.target !== el) return;
+    if (b?.dataset.bv === 'extra') { chiudi(); vaiAScheda('sottoscrizione'); return; }
+    chiudi();
+  });
+  document.addEventListener('keydown', function esc(ev) {
+    if (ev.key !== 'Escape') return;
+    document.removeEventListener('keydown', esc);
+    chiudi();
+  });
+  el.querySelector('[data-bv="via"]')?.focus();
+}
+
+function vetrinaCapacita() {
+  const c = (ico, t, d) => `<article class="vt-carta"><span class="vt-carta-ico">${_hIco(ico)}</span><h3>${t}</h3><p>${d}</p></article>`;
+  return [
+    c(ICO.chat, L('Scrive col tuo account', 'It writes with your account', 'Escribe con tu cuenta'),
+      L('Niente bot anonimo: in chat compare il tuo nome, e il controllo resta tuo.', 'No anonymous bot: your name shows in chat, and control stays yours.', 'Nada de bot anónimo: en el chat aparece tu nombre y el control es tuyo.')),
+    c(ICO.scudo, L('Scudo anti-bot', 'Anti-bot shield', 'Escudo anti-bot'),
+      L('Ferma follow-bot e hate-raid prima che tocchino la tua community.', 'Stops follow-bots and hate-raids before they reach your community.', 'Detiene follow-bots y hate-raids antes de que lleguen a tu comunidad.')),
+    c(ICO.moduli, L('Comandi e automazioni', 'Commands and automations', 'Comandos y automatizaciones'),
+      L('Illimitati e già dal piano gratuito: parole, eventi, timer, variabili.', 'Unlimited, free plan included: words, events, timers, variables.', 'Ilimitados, ya en el plan gratis: palabras, eventos, temporizadores, variables.')),
+    c(ICO.monitor, L('Overlay per OBS', 'Overlay for OBS', 'Overlay para OBS'),
+      L('Avvisi, chat a schermo, contatori e classifiche: un link e sei in scena.', 'Alerts, on-screen chat, counters and leaderboards: one link and you are on.', 'Avisos, chat en pantalla, contadores y clasificaciones: un enlace y estás en escena.')),
+    c(ICO.tv, L('Diretta senza OBS', 'Go live without OBS', 'Directo sin OBS'),
+      L('Vai in onda dal browser: webcam, schermo e scene, senza installare nulla.', 'Go live from the browser: webcam, screen and scenes, nothing to install.', 'Emite desde el navegador: webcam, pantalla y escenas, sin instalar nada.')),
+    c(ICO.musica, L('Musica, clip e giochi', 'Music, clips and games', 'Música, clips y juegos'),
+      L('Richieste su Spotify, momenti migliori clippati da soli, minigiochi con monete.', 'Spotify requests, best moments clipped automatically, coin minigames.', 'Peticiones en Spotify, mejores momentos clipados solos, minijuegos con monedas.')),
+  ].map((h, i) => h.replace('<article class="vt-carta"', `<article class="vt-carta" style="--i:${i}"`)).join('');
 }
 
 function renderHero() {
@@ -827,54 +1011,82 @@ function renderHero() {
   app.innerHTML = `
     ${msgErrore ? `<div class="carta avviso"><p>${esc(msgErrore)}</p></div>` : ''}
 
-    <section class="vetrina-hero">
-      <div class="vetrina-controlli">${selettoreLingua()}${toggleTemaHtml()}</div>
-      <span class="vetrina-occhiello">${L('SocialBot · il bot di andryxify.it', 'SocialBot · the bot by andryxify.it', 'SocialBot · el bot de andryxify.it')}</span>
-      <h1 class="vetrina-titolo">${titoloParole(L('Il bot per Twitch che parla', 'The Twitch bot that speaks', 'El bot de Twitch que habla'))} <span class="acc">${titoloParole(L('con la tua voce', 'with your own voice', 'con tu propia voz'), 5)}</span></h1>
-      <p class="vetrina-sub">${L('<strong>Bot per Twitch in italiano</strong> che vive nella tua chat e scrive <strong>con il tuo account</strong> — niente bot anonimi. Comandi su misura, moderazione con <strong>scudo anti-bot</strong>, <strong>overlay per OBS</strong>, clip, musica e persino <strong>dirette dal browser senza OBS</strong>.', '<strong>Twitch bot</strong> that lives in your chat and writes <strong>with your own account</strong> — no anonymous bots. Custom commands, moderation with an <strong>anti-bot shield</strong>, <strong>OBS overlay</strong>, clips, music and even <strong>going live from the browser without OBS</strong>.', '<strong>Bot para Twitch</strong> que vive en tu chat y escribe <strong>con tu cuenta</strong> — nada de bots anónimos. Comandos a medida, moderación con <strong>escudo anti-bot</strong>, <strong>overlay para OBS</strong>, clips, música e incluso <strong>directos desde el navegador sin OBS</strong>.')}</p>
-      <div class="vetrina-azioni">
-        <a class="btn grande" href="/entra">${L('Accedi con Twitch', 'Log in with Twitch', 'Entra con Twitch')}</a>
-        <a class="btn grande secondario" href="/?demo=1">▶ ${L('Prova la demo', 'Try the demo', 'Prueba la demo')}</a>
+    <section class="vt-scena">
+      <div class="vt-strumenti">${selettoreLingua()}</div>
+      <span class="vt-occhiello"><i class="vivo"></i>${L('SocialBot · il bot di andryxify.it', 'SocialBot · the bot by andryxify.it', 'SocialBot · el bot de andryxify.it')}</span>
+      <h1 class="vt-titolo">${L('Il bot per Twitch che parla', 'The Twitch bot that speaks', 'El bot de Twitch que habla')} <em>${L('con la tua voce', 'with your own voice', 'con tu propia voz')}</em></h1>
+      <p class="vt-sub">${L('Vive nella tua chat e scrive <strong>con il tuo account</strong> — niente bot anonimi. Comandi su misura, <strong>scudo anti-bot</strong>, overlay per OBS, clip, musica e persino <strong>dirette dal browser senza OBS</strong>.', 'It lives in your chat and writes <strong>with your own account</strong> — no anonymous bots. Custom commands, an <strong>anti-bot shield</strong>, OBS overlay, clips, music and even <strong>going live from the browser without OBS</strong>.', 'Vive en tu chat y escribe <strong>con tu cuenta</strong> — nada de bots anónimos. Comandos a medida, <strong>escudo anti-bot</strong>, overlay para OBS, clips, música e incluso <strong>directos desde el navegador sin OBS</strong>.')}</p>
+      <div class="vt-azioni">
+        <a class="vt-btn vt-btn-primo" href="/entra?nuovo=1">${L('Registrati con Twitch', 'Sign up with Twitch', 'Regístrate con Twitch')}</a>
+        <a class="vt-btn" href="/entra">${L('Accedi', 'Log in', 'Entrar')}</a>
       </div>
-      <ul class="vetrina-chip" aria-label="${L('In breve', 'At a glance', 'En breve')}">
-        ${[L('In italiano', 'Multilingual', 'Multilingüe'), L('Scrive col tuo account', 'Uses your account', 'Con tu cuenta'), L('Anche senza OBS', 'Even without OBS', 'Incluso sin OBS'), L('Gratis per la community', 'Free for the community', 'Gratis para la comunidad')].map((t) =>
-          `<li>${_bIco('<path d="M20 6 9 17l-5-5"/>')}${t}</li>`).join('')}
-      </ul>
+      <p class="vt-sotto">${L('L’<b>Essenziale è gratis per sempre</b> · nessuna carta richiesta · <a href="/?demo=1">guarda la demo</a>', 'The <b>Essenziale plan is free forever</b> · no card needed · <a href="/?demo=1">see the demo</a>', 'El <b>plan Essenziale es gratis para siempre</b> · sin tarjeta · <a href="/?demo=1">mira la demo</a>')}</p>
       ${heroAnteprima()}
-      <p class="nota">${L('Con «Accedi con Twitch» entri <strong>subito nella dashboard</strong> se sei uno streamer <strong>abilitato</strong> su <a href="https://andryxify.it">andryxify.it</a> o hai un <strong>abbonamento</strong> — <strong>senza passkey</strong>. Altrimenti da qui scegli un piano.', 'With «Log in with Twitch» you go <strong>straight to the dashboard</strong> if you’re an <strong>enabled</strong> streamer on <a href="https://andryxify.it">andryxify.it</a> or you have a <strong>subscription</strong> — <strong>no passkey</strong>. Otherwise pick a plan from here.', 'Con «Entra con Twitch» accedes <strong>directo al panel</strong> si eres un streamer <strong>habilitado</strong> en <a href="https://andryxify.it">andryxify.it</a> o tienes una <strong>suscripción</strong> — <strong>sin passkey</strong>. Si no, elige un plan desde aquí.')}</p>
-      <p class="vetrina-accessi">${L('Preferisci un altro modo?', 'Prefer another way?', '¿Prefieres otra forma?')}
-        <a href="/sblocca">${L('Entra con passkey', 'Log in with a passkey', 'Entra con passkey')}</a>
-        <span aria-hidden="true">·</span>
-        <a href="/mod">${L('Accesso moderatore', 'Moderator access', 'Acceso moderador')}</a>
-      </p>
     </section>
 
-    ${capacitaHtml()}
+    <section class="vt-sez">
+      <div class="vt-testa centro vt-rivela">
+        <span class="vt-occhio">${L('Cosa sa fare', 'What it does', 'Qué sabe hacer')}</span>
+        <h2 class="vt-tit">${L('Tutto quello che serve,', 'Everything you need,', 'Todo lo que hace falta,')} <em>${L('niente che non serva', 'nothing you don’t', 'nada que no')}</em></h2>
+        <p class="vt-testo">${L('Un solo pannello per la chat, la moderazione, la scena e la community. Quello che non usi non lo paghi.', 'One panel for chat, moderation, your scene and your community. You don’t pay for what you don’t use.', 'Un solo panel para el chat, la moderación, la escena y la comunidad. Lo que no usas, no lo pagas.')}</p>
+      </div>
+      <div class="vt-griglia">${vetrinaCapacita()}</div>
+    </section>
 
-    <section class="carta rivela vetrina-come">
-      <h2>${L('Come si attiva', 'How to get started', 'Cómo se activa')}</h2>
-      <div class="vetrina-passi">
-        ${STEP.map(([n, t, d]) => `
-          <div class="vetrina-passo">
-            <span class="vetrina-passo-n">${n}</span>
-            <div><strong>${t}</strong><p>${d}</p></div>
+    <section class="vt-sez">
+      <div class="vt-testa vt-rivela">
+        <span class="vt-occhio">${L('Nel dettaglio', 'In detail', 'En detalle')}</span>
+        <h2 class="vt-tit">${L('Ogni funzione, e', 'Every feature, and', 'Cada función, y')} <em>${L('in quale piano sta', 'which plan it’s in', 'en qué plan está')}</em></h2>
+        <p class="vt-testo">${L('Niente sorprese: qui c’è tutto, con accanto scritto se è già tuo o se è un extra.', 'No surprises: it’s all here, marked as already yours or as an extra.', 'Sin sorpresas: está todo, con la marca de si ya es tuyo o si es un extra.')}</p>
+      </div>
+      ${capacitaHtml()}
+    </section>
+
+    <section class="vt-sez">
+      <div class="vt-testa vt-rivela">
+        <span class="vt-occhio">${L('Come si attiva', 'How to start', 'Cómo se activa')}</span>
+        <h2 class="vt-tit">${L('Tre passi,', 'Three steps,', 'Tres pasos,')} <em>${L('due minuti', 'two minutes', 'dos minutos')}</em></h2>
+      </div>
+      <div class="vt-passi">
+        ${STEP.map(([n, t, d], i) => `
+          <div class="vt-passo" style="--i:${i}">
+            <span class="vt-num">${n}</span>
+            <strong>${t}</strong><p>${d}</p>
           </div>`).join('')}
       </div>
     </section>
 
-    <section class="vetrina-piani" id="vetrina-piani" aria-label="${L('Piani', 'Plans', 'Planes')}"></section>
-
-    <section class="carta rivela vetrina-faq" aria-label="${L('Domande frequenti', 'FAQ', 'Preguntas frecuentes')}">
-      <h2>${L('Domande frequenti', 'Frequently asked questions', 'Preguntas frecuentes')}</h2>
-      ${FAQ.map(([q, a]) => `<details class="faq-item"><summary>${q}</summary><p>${a}</p></details>`).join('')}
+    <section class="vt-sez" id="listino">
+      <div class="vt-testa centro vt-rivela">
+        <span class="vt-occhio">${L('Il listino', 'Pricing', 'Precios')}</span>
+        <h2 class="vt-tit">${L('Parti gratis.', 'Start free.', 'Empieza gratis.')} <em>${L('Aggiungi quando vuoi.', 'Add whenever you like.', 'Añade cuando quieras.')}</em></h2>
+        <p class="vt-testo">${L('Nessun tutto-o-nulla: scegli i pezzi uno per uno, e li puoi aggiungere o togliere anche dopo, dal pannello.', 'No all-or-nothing: pick the pieces one by one, and add or remove them later from the dashboard.', 'Nada de todo o nada: eliges las piezas una a una, y las añades o quitas después desde el panel.')}</p>
+      </div>
+      <div class="vetrina-piani" id="vetrina-piani"></div>
     </section>
 
-    <section class="carta rivela vetrina-cta">
-      <div>
-        <h2>${L('Fai parte di andryxify.it', 'Part of andryxify.it', 'Parte de andryxify.it')}</h2>
-        <p>${L('SocialBot è uno dei tasselli del mondo andryxify: profili, giochi e community in un unico posto.', 'SocialBot is one piece of the andryxify world: profiles, games and community in one place.', 'SocialBot es una pieza del mundo andryxify: perfiles, juegos y comunidad en un solo lugar.')}</p>
+    <section class="vt-sez">
+      <div class="vt-testa vt-rivela">
+        <span class="vt-occhio">${L('Domande', 'Questions', 'Preguntas')}</span>
+        <h2 class="vt-tit">${L('Quello che', 'What people', 'Lo que')} <em>${L('chiedono di più', 'ask most', 'más preguntan')}</em></h2>
       </div>
-      <a class="btn grande secondario" href="https://andryxify.it">${L('Vai al sito principale', 'Go to the main site', 'Ir al sitio principal')} →</a>
+      <div class="vt-faq vt-rivela">
+        ${FAQ.map(([q, a]) => `<details><summary>${q}</summary><p>${a}</p></details>`).join('')}
+      </div>
+    </section>
+
+    <section class="vt-fine vt-rivela">
+      <h2 class="vt-tit">${L('Pronto a farlo parlare?', 'Ready to give it a voice?', '¿Listo para darle voz?')}</h2>
+      <p class="vt-testo">${L('Registrarsi è un click con Twitch. L’Essenziale è gratis per sempre, e gli extra li aggiungi quando ti servono davvero — non prima.', 'Signing up is one click with Twitch. Essenziale is free forever, and you add extras when you actually need them — not before.', 'Registrarse es un clic con Twitch. Essenziale es gratis para siempre, y añades extras cuando de verdad los necesitas — no antes.')}</p>
+      <div class="vt-azioni">
+        <a class="vt-btn vt-btn-primo" href="/entra?nuovo=1">${L('Registrati con Twitch', 'Sign up with Twitch', 'Regístrate con Twitch')}</a>
+        <a class="vt-btn" href="https://andryxify.it">${L('Vai al sito principale', 'Go to the main site', 'Ir al sitio principal')}</a>
+      </div>
+      <p class="vt-sotto">${L('Preferisci un altro modo?', 'Prefer another way?', '¿Prefieres otra forma?')}
+        <a href="/sblocca">${L('Entra con passkey', 'Log in with a passkey', 'Entra con passkey')}</a>
+        <span aria-hidden="true">·</span>
+        <a href="/mod">${L('Accesso moderatore', 'Moderator access', 'Acceso moderador')}</a>
+      </p>
     </section>`;
 
   rivelaCarte();
@@ -930,8 +1142,8 @@ async function caricaPiani() {
         <div class="piano-base-testa">
           <span class="piano-icona">${svgPiano('base')}</span>
           <div>
-            <h3>${esc(base.nome)}</h3>
-            <p class="piano-somm">${esc(base.sommario)}</p>
+            <h3>${esc(tP(base, 'nome'))}</h3>
+            <p class="piano-somm">${esc(tP(base, 'sommario'))}</p>
           </div>
           <div class="piano-prezzo">€${prezzoIt(base.prezzo)}<span>${perMese}</span></div>
         </div>
@@ -952,7 +1164,7 @@ async function caricaPiani() {
               <span class="bundle-prezzo">${risp ? `<span class="bundle-sconto">–${Math.round(b.sconto * 100)}%</span> <s>+€${prezzoIt(b.prezzoPieno)}</s> ` : ''}<strong>+€${prezzoIt(b.prezzo)}</strong><small>${perMese}</small></span>
               <span class="bundle-testo">
                 <span class="bundle-nome">${esc(b.nome)}</span>
-                <span class="bundle-somm">${esc(b.sommario)}</span>
+                <span class="bundle-somm">${esc(tP(b, 'sommario'))}</span>
               </span>
             </button>`;
           }).join('')}
@@ -967,8 +1179,8 @@ async function caricaPiani() {
             <button type="button" class="addon-carta" data-addon="${esc(a.id)}" aria-pressed="false">
               <span class="addon-icona">${svgPiano(a.id)}</span>
               <span class="addon-testo">
-                <span class="addon-nome">${esc(a.nome)}</span>
-                <span class="addon-somm">${esc(a.sommario)}</span>
+                <span class="addon-nome">${esc(tP(a, 'nome'))}</span>
+                <span class="addon-somm">${esc(tP(a, 'sommario'))}</span>
               </span>
               <span class="addon-prezzo">+€${prezzoIt(a.prezzo)}</span>
             </button>`).join('')}
@@ -1049,6 +1261,12 @@ async function caricaPiani() {
       }
     });
   });
+
+  const sotto = document.createElement('div');
+  sotto.className = 'vt-comp-guscio';
+  sotto.innerHTML = configuratoreHtml(dati, { titolo: L('Componi il tuo bot', 'Build your bot', 'Compón tu bot') });
+  box.appendChild(sotto);
+  montaConfiguratore(sotto, dati);
 }
 
 function vistaRichiesta() {
@@ -6797,9 +7015,9 @@ async function caricaSottoscrizione() {
   const tuoi = addon.filter((a) => mieiPacchetti.has(a.id));
   const altri = addon.filter((a) => !mieiPacchetti.has(a.id) && !acceso(a.id));
   const cardAddon = (a, mio) => `<div class="sott-pacc${mio ? ' mio' : ''}">
-      <strong>${esc(a.nome)}</strong>
+      <strong>${esc(tP(a, 'nome'))}</strong>
       <span class="sott-pacc-prezzo">${esc(a.prezzoTesto || '')}</span>
-      <span class="sott-pacc-som">${esc(a.sommario || '')}</span>
+      <span class="sott-pacc-som">${esc(tP(a, 'sommario'))}</span>
       ${mio ? `<span class="badge verde">${L('attivo', 'active', 'activo')}</span>` : ''}
     </div>`;
 

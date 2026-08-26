@@ -818,3 +818,42 @@ body.leggero .vivo::after, body.meno-moto .vivo::after { animation: none; opacit
 @media (max-width: 720px) and (display-mode: standalone) {
   body.con-nav .barra-giu { padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px); }
 }
+
+.bv-velo {
+  position: fixed; inset: 0; z-index: 300; display: grid; place-items: center;
+  padding: 20px; overflow-y: auto;
+  background: color-mix(in srgb, var(--bg) 76%, transparent);
+  backdrop-filter: blur(10px) saturate(1.2); -webkit-backdrop-filter: blur(10px) saturate(1.2);
+  opacity: 0; transition: opacity .26s var(--an-vel);
+}
+.bv-velo.dentro { opacity: 1; }
+.bv-carta {
+  width: min(560px, 100%); padding: 1.7rem 1.8rem 1.6rem; border-radius: 18px;
+  background: var(--surface); border: 1px solid var(--border-2); box-shadow: var(--om-l);
+  transform: translateY(18px) scale(.97);
+  transition: transform var(--t-pieno) var(--molla-pieno);
+}
+.bv-velo.dentro .bv-carta { transform: none; }
+.bv-occhiello {
+  display: block; font-size: .64rem; font-weight: 600; letter-spacing: .28em;
+  text-transform: uppercase; color: var(--acc); margin-bottom: .5rem;
+}
+.bv-carta h2 { margin: 0 0 .5rem; font-size: 1.5rem; font-weight: 600; letter-spacing: -.02em; line-height: 1.15; }
+.bv-intro { margin: 0 0 1.2rem; font-size: .92rem; line-height: 1.55; color: var(--testo-2); }
+.bv-passi { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
+.bv-passi li { display: flex; gap: .85rem; align-items: flex-start; }
+.bv-ico {
+  flex: 0 0 auto; display: grid; place-items: center; width: 34px; height: 34px;
+  border-radius: 10px; color: var(--acc); background: var(--acc-tint); border: 1px solid var(--acc-bordo);
+}
+.bv-ico svg { width: 17px; height: 17px; }
+.bv-passi li > div > strong { display: block; font-size: .96rem; margin-bottom: .18rem; }
+.bv-passi p strong { font-weight: 600; color: var(--testo); }
+.bv-passi p { margin: 0; font-size: .87rem; line-height: 1.5; color: var(--testo-2); }
+.bv-azioni { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 1.5rem; }
+.bv-azioni .btn { flex: 1 1 auto; justify-content: center; }
+@media (max-width: 560px) {
+  .bv-carta { padding: 1.3rem 1.25rem 1.35rem; border-radius: 15px; }
+  .bv-carta h2 { font-size: 1.3rem; }
+  .bv-azioni { flex-direction: column; }
+}
