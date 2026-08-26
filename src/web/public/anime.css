@@ -1030,3 +1030,96 @@ body.leggero .vivo::after, body.meno-moto .vivo::after { animation: none; opacit
 .tg-stato.ok { color: var(--verde); background: var(--verde-soft); border: 1px solid var(--verde-bordo); }
 .tg-stato.guaio { color: var(--ambra); background: var(--ambra-soft); border: 1px solid var(--ambra-bordo); }
 .tg-stato code { background: color-mix(in srgb, currentColor 14%, transparent); padding: .05rem .35rem; border-radius: var(--r-xs); }
+
+.ovl-barra {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px;
+  padding: 7px 9px; border-radius: var(--r-m);
+  border: 1px solid var(--border); background: var(--surface-2);
+}
+.ovl-gruppo { display: flex; align-items: center; gap: 3px; }
+.ovl-gruppo + .ovl-gruppo { padding-left: 10px; border-left: 1px solid var(--border-2); }
+.ovl-gruppo.ovl-zoom { margin-left: auto; padding-left: 10px; border-left: 1px solid var(--border-2); }
+.ovl-tasto {
+  display: grid; place-items: center; width: 32px; height: 32px; padding: 0;
+  border-radius: var(--r-s); border: 1px solid transparent; background: transparent;
+  color: var(--testo-2); cursor: pointer; font: inherit;
+  transition: background .18s ease, color .18s ease, border-color .18s ease;
+}
+.ovl-tasto:hover:not(:disabled) { background: var(--surface-3); color: var(--testo); border-color: var(--border-2); }
+.ovl-tasto:disabled { opacity: .35; cursor: default; }
+.ovl-tasto.testo { width: auto; padding: 0 .7rem; font-size: .8rem; font-weight: 600; }
+.ovl-sep { width: 1px; height: 18px; background: var(--border-2); margin: 0 3px; }
+.ovl-spunta {
+  display: inline-flex; align-items: center; gap: .35rem; cursor: pointer;
+  font-size: .78rem; color: var(--testo-2); white-space: nowrap;
+}
+.ovl-spunta input { accent-color: var(--acc); margin: 0; }
+.ovl-zoom-v { font-size: .78rem; font-variant-numeric: tabular-nums; color: var(--testo-2); min-width: 40px; text-align: center; }
+
+.ovl-scena { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 10px; margin-top: 10px; align-items: start; }
+.ovl-tela { --ovl-zoom: 1; overflow: auto; }
+.ovl-tela #ovl-preview { width: calc(100% * var(--ovl-zoom)); min-width: calc(100% * var(--ovl-zoom)); margin: 0; }
+
+.ovl-livelli {
+  border: 1px solid var(--border); border-radius: var(--r-m); background: var(--surface-2);
+  padding: 7px; display: grid; gap: 3px; align-content: start;
+}
+.ovl-livelli-tit {
+  margin: 0 0 2px; padding: .2rem .35rem; font-size: .62rem; font-weight: 600;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--testo-3);
+}
+.ovl-liv {
+  display: flex; align-items: center; gap: .5rem; width: 100%; text-align: left;
+  padding: .4rem .45rem; border-radius: var(--r-s); border: 1px solid transparent;
+  background: transparent; color: var(--testo); font: inherit; cursor: pointer;
+  transition: background .18s ease, border-color .18s ease;
+}
+.ovl-liv:hover { background: var(--surface-3); }
+.ovl-liv.scelto { background: var(--acc-soft); border-color: var(--acc-bordo); }
+.ovl-liv.via { opacity: .5; }
+.ovl-liv-ico { flex: 0 0 auto; color: var(--testo-3); display: grid; place-items: center; }
+.ovl-liv.scelto .ovl-liv-ico { color: var(--acc); }
+.ovl-liv-corpo { min-width: 0; display: grid; }
+.ovl-liv-corpo strong { font-size: .8rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ovl-liv-corpo span { font-size: .68rem; color: var(--testo-3); font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ovl-liv-avviso {
+  flex: 0 0 auto; display: grid; place-items: center; width: 16px; height: 16px; border-radius: 50%;
+  font-size: .66rem; font-weight: 700; color: var(--bg); background: var(--ambra);
+}
+.ovl-liv-occhio { flex: 0 0 auto; display: grid; place-items: center; padding: 2px; border-radius: 5px; color: var(--testo-3); }
+.ovl-liv-occhio:hover { background: var(--surface); color: var(--acc); }
+
+.ap-guida { position: absolute; z-index: 40; pointer-events: none; background: var(--acc); opacity: .9; }
+.ap-guida-x { top: 0; bottom: 0; width: 1px; margin-left: -.5px; }
+.ap-guida-y { left: 0; right: 0; height: 1px; margin-top: -.5px; }
+.ap-guida.centro { background: #ff3ea5; box-shadow: 0 0 6px rgba(255, 62, 165, .6); }
+.ap-guida.pari { background: #3ecfff; box-shadow: 0 0 6px rgba(62, 207, 255, .5); }
+
+#ovl-preview.senza-griglia .ap-stage { background-image: none; }
+#ovl-preview.con-sicure::after {
+  content: ""; position: absolute; inset: 5%; z-index: 30; pointer-events: none;
+  border: 1px dashed rgba(255, 255, 255, .35); border-radius: 4px;
+}
+#ovl-preview.con-sicure::before {
+  content: ""; position: absolute; inset: 10%; z-index: 30; pointer-events: none;
+  border: 1px dashed rgba(255, 210, 60, .45);
+}
+
+.ovl-insp-num { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 2px; }
+.ovl-insp-num label {
+  display: inline-flex; align-items: center; gap: .35rem; font-size: .76rem; color: var(--testo-3);
+}
+.ovl-insp-num input {
+  width: 68px; padding: .28rem .4rem; font-size: .82rem; font-variant-numeric: tabular-nums;
+  border: 1px solid var(--border-2); border-radius: var(--r-xs);
+  background: var(--surface); color: var(--testo);
+}
+.ovl-insp-num i { font-style: normal; color: var(--testo-3); font-size: .74rem; }
+
+@media (max-width: 900px) {
+  .ovl-scena { grid-template-columns: minmax(0, 1fr); }
+  .ovl-livelli { display: flex; flex-wrap: wrap; gap: 4px; }
+  .ovl-livelli-tit { flex: 1 1 100%; }
+  .ovl-liv { width: auto; flex: 1 1 150px; }
+  .ovl-gruppo.ovl-zoom { margin-left: 0; }
+}

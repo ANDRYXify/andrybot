@@ -4291,7 +4291,34 @@ function pannelloAlert() {
         <button class="btn secondario" id="ovl-tpl-salva">${L('Salva come mio modello…', 'Save as my template…', 'Guardar como mi plantilla…')}</button>
         <button class="btn secondario" id="ovl-tpl-elimina">${L('Elimina', 'Delete', 'Eliminar')}</button>
       </div>
-      <div class="ovl-anteprima spazio-sopra" id="ovl-preview">
+      <div class="ovl-barra spazio-sopra">
+        <div class="ovl-gruppo">
+          <button type="button" class="ovl-tasto" id="ovl-annulla" title="${L('Annulla', 'Undo', 'Deshacer')} (Ctrl+Z)" disabled>${_bIco('<path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>')}</button>
+          <button type="button" class="ovl-tasto" id="ovl-ripeti" title="${L('Ripeti', 'Redo', 'Rehacer')} (Ctrl+Y)" disabled>${_bIco('<path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/>')}</button>
+        </div>
+        <div class="ovl-gruppo" id="ovl-allinea">
+          <button type="button" class="ovl-tasto" data-all="sx" title="${L('Allinea a sinistra', 'Align left', 'Alinear a la izquierda')}">${_bIco('<path d="M4 3v18"/><rect x="8" y="6" width="12" height="5" rx="1"/><rect x="8" y="14" width="8" height="5" rx="1"/>')}</button>
+          <button type="button" class="ovl-tasto" data-all="cx" title="${L('Centra in orizzontale', 'Center horizontally', 'Centrar en horizontal')}">${_bIco('<path d="M12 3v18"/><rect x="4" y="6" width="16" height="5" rx="1"/><rect x="7" y="14" width="10" height="5" rx="1"/>')}</button>
+          <button type="button" class="ovl-tasto" data-all="dx" title="${L('Allinea a destra', 'Align right', 'Alinear a la derecha')}">${_bIco('<path d="M20 3v18"/><rect x="4" y="6" width="12" height="5" rx="1"/><rect x="8" y="14" width="8" height="5" rx="1"/>')}</button>
+          <span class="ovl-sep"></span>
+          <button type="button" class="ovl-tasto" data-all="su" title="${L('Allinea in alto', 'Align top', 'Alinear arriba')}">${_bIco('<path d="M3 4h18"/><rect x="6" y="8" width="5" height="12" rx="1"/><rect x="14" y="8" width="5" height="8" rx="1"/>')}</button>
+          <button type="button" class="ovl-tasto" data-all="cy" title="${L('Centra in verticale', 'Center vertically', 'Centrar en vertical')}">${_bIco('<path d="M3 12h18"/><rect x="6" y="4" width="5" height="16" rx="1"/><rect x="14" y="7" width="5" height="10" rx="1"/>')}</button>
+          <button type="button" class="ovl-tasto" data-all="giu" title="${L('Allinea in basso', 'Align bottom', 'Alinear abajo')}">${_bIco('<path d="M3 20h18"/><rect x="6" y="4" width="5" height="12" rx="1"/><rect x="14" y="8" width="5" height="8" rx="1"/>')}</button>
+        </div>
+        <div class="ovl-gruppo">
+          <label class="ovl-spunta"><input type="checkbox" id="ovl-griglia" checked><span>${L('Griglia', 'Grid', 'Rejilla')}</span></label>
+          <label class="ovl-spunta"><input type="checkbox" id="ovl-sicura"><span>${L('Zone sicure', 'Safe areas', 'Zonas seguras')}</span></label>
+        </div>
+        <div class="ovl-gruppo ovl-zoom">
+          <button type="button" class="ovl-tasto" id="ovl-zoom-meno" title="${L('Rimpicciolisci', 'Zoom out', 'Alejar')}">${_bIco('<circle cx="11" cy="11" r="7"/><path d="M8 11h6M21 21l-4.3-4.3"/>')}</button>
+          <span class="ovl-zoom-v" id="ovl-zoom-v">100%</span>
+          <button type="button" class="ovl-tasto" id="ovl-zoom-piu" title="${L('Ingrandisci', 'Zoom in', 'Acercar')}">${_bIco('<circle cx="11" cy="11" r="7"/><path d="M8 11h6M11 8v6M21 21l-4.3-4.3"/>')}</button>
+          <button type="button" class="ovl-tasto testo" id="ovl-zoom-fit">${L('Adatta', 'Fit', 'Ajustar')}</button>
+        </div>
+      </div>
+      <div class="ovl-scena">
+      <div class="ovl-tela" id="ovl-tela">
+      <div class="ovl-anteprima" id="ovl-preview">
         <div class="ap-stage" id="ap-stage">
           <div class="ap-el alert-card" id="ap-alert"><div class="alert-ico" id="ap-alert-ico"></div><div class="alert-testo" id="ap-alert-testo"></div></div>
           <div class="ap-el ap-chat" id="ap-chat"></div>
@@ -4299,9 +4326,18 @@ function pannelloAlert() {
           <div class="ap-el" id="ap-ws"><div class="ovl-widget" id="ap-ws-el"><span class="w-ico"></span><span class="w-testo"></span></div></div>
         </div>
       </div>
+      </div>
+      <aside class="ovl-livelli" id="ovl-livelli"></aside>
+      </div>
       <div class="ovl-inspector" id="ovl-inspector" hidden>
         <div class="ovl-insp-testa"><span class="ovl-insp-nome" id="insp-nome">${L('Elemento', 'Element', 'Elemento')}</span>
           <button type="button" class="ovl-insp-reset" id="insp-reset" title="${L('Ripristina posizione, dimensione e rotazione', 'Reset position, size and rotation', 'Restablecer posición, tamaño y rotación')}">${L('Ripristina', 'Reset', 'Restablecer')}</button></div>
+        <div class="ovl-insp-num">
+          <label>X <input type="number" id="insp-x" step="0.1" min="0" max="100"><i>%</i></label>
+          <label>Y <input type="number" id="insp-y" step="0.1" min="0" max="100"><i>%</i></label>
+          <label>${L('Dim', 'Size', 'Tam')} <input type="number" id="insp-s" step="1" min="30" max="300"><i>%</i></label>
+          <label>${L('Rot', 'Rot', 'Rot')} <input type="number" id="insp-r" step="1" min="-180" max="180"><i>°</i></label>
+        </div>
         <div class="ovl-insp-riga">
           <label for="insp-size">${L('Dimensione', 'Size', 'Tamaño')}</label>
           <input type="range" id="insp-size" min="30" max="300" step="1" value="100">
@@ -4704,7 +4740,9 @@ function deseleziona() {
   aggiornaInspector();
 }
 function aggiornaInspector() {
-  const box = _g('ovl-inspector'); if (!box) return;
+  const box = _g('ovl-inspector');
+  _rendiLivelli();
+  if (!box) return;
   if (!selezione) { box.hidden = true; return; }
   box.hidden = false;
   const st = _statoXY(selezione);
@@ -4712,6 +4750,113 @@ function aggiornaInspector() {
   const sz = _g('insp-size'), rt = _g('insp-rot');
   if (sz) { sz.value = st.s; _g('insp-size-val').textContent = st.s + '%'; }
   if (rt) { rt.value = st.r; _g('insp-rot-val').textContent = st.r + '°'; }
+  const fissa = (id, v) => { const e = _g(id); if (e && document.activeElement !== e) e.value = v; };
+  fissa('insp-x', _arr(st.x)); fissa('insp-y', _arr(st.y)); fissa('insp-s', st.s); fissa('insp-r', st.r);
+}
+
+const OVL_LIVELLI = () => [
+  { k: 'alert', ico: ICO.megafono, n: L('Alert eventi', 'Event alerts', 'Alertas de eventos') },
+  { k: 'chat', ico: ICO.chat, n: L('Chat a schermo', 'On-screen chat', 'Chat en pantalla') },
+  { k: 'wf', ico: ICO.cuore, n: L('Ultimo follower', 'Latest follower', 'Último seguidor') },
+  { k: 'ws', ico: ICO.medaglia, n: L('Ultimo sub', 'Latest sub', 'Último sub') },
+];
+
+function _rendiLivelli() {
+  const box = _g('ovl-livelli');
+  if (!box) return;
+  box.innerHTML = `<p class="ovl-livelli-tit">${L('Livelli', 'Layers', 'Capas')}</p>` + OVL_LIVELLI().map((l) => {
+    const acceso = mostraChk(l.k);
+    const spento = acceso && !_elementoAcceso(l.k);
+    const st = posXY[l.k];
+    return `<button type="button" class="ovl-liv${selezione === l.k ? ' scelto' : ''}${acceso ? '' : ' via'}" data-liv="${l.k}">
+      <span class="ovl-liv-ico">${_bIco(l.ico)}</span>
+      <span class="ovl-liv-corpo"><strong>${esc(l.n)}</strong><span>${acceso
+        ? (st ? `${Math.round(st.x)}% · ${Math.round(st.y)}%${st.s && st.s !== 100 ? ' · ' + st.s + '%' : ''}` : L('posizione standard', 'default position', 'posición estándar'))
+        : L('non in questo overlay', 'not in this overlay', 'no en este overlay')}</span></span>
+      ${spento ? `<span class="ovl-liv-avviso" title="${L('L’elemento è spento del tutto', 'The element is fully off', 'El elemento está apagado del todo')}">!</span>` : ''}
+      <span class="ovl-liv-occhio" data-occhio="${l.k}" role="button" tabindex="0"
+        title="${acceso ? L('Togli da questo overlay', 'Remove from this overlay', 'Quitar de este overlay') : L('Metti in questo overlay', 'Add to this overlay', 'Poner en este overlay')}">${_bIco(acceso ? ICO.occhio : ICO.occhioNo)}</span>
+    </button>`;
+  }).join('');
+}
+
+let _zoomOvl = 1;
+function _applicaZoom(v) {
+  _zoomOvl = Math.max(0.5, Math.min(2, v));
+  const t = _g('ovl-tela');
+  if (t) t.style.setProperty('--ovl-zoom', _zoomOvl);
+  const et = _g('ovl-zoom-v');
+  if (et) et.textContent = Math.round(_zoomOvl * 100) + '%';
+}
+
+function collegaEditorOvl() {
+  const scheda = _g('scheda-alert');
+  if (!scheda || scheda.dataset.editor) return;
+  scheda.dataset.editor = '1';
+
+  _g('ovl-livelli')?.addEventListener('click', (e) => {
+    const occ = e.target.closest('[data-occhio]');
+    if (occ) {
+      e.stopPropagation();
+      const k = occ.dataset.occhio;
+      const c = _g('mostra-' + k);
+      if (!c) return;
+      c.checked = !c.checked;
+      c.dispatchEvent(new Event('change', { bubbles: true }));
+      return;
+    }
+    const b = e.target.closest('[data-liv]');
+    if (!b) return;
+    const k = b.dataset.liv;
+    if (!mostraChk(k)) { toast(L('Questo livello non è in questo overlay: accendilo con l’occhio.', 'This layer is not in this overlay: turn it on with the eye.', 'Esta capa no está en este overlay: enciéndela con el ojo.')); return; }
+    seleziona(k);
+  });
+
+  _g('ovl-annulla')?.addEventListener('click', annullaOvl);
+  _g('ovl-ripeti')?.addEventListener('click', ripetiOvl);
+  _g('ovl-allinea')?.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-all]');
+    if (!b) return;
+    if (!selezione) { toast(L('Scegli prima un livello.', 'Pick a layer first.', 'Elige antes una capa.')); return; }
+    allineaOvl(b.dataset.all);
+  });
+  _g('ovl-griglia')?.addEventListener('change', (e) => _g('ovl-preview')?.classList.toggle('senza-griglia', !e.target.checked));
+  _g('ovl-sicura')?.addEventListener('change', (e) => _g('ovl-preview')?.classList.toggle('con-sicure', e.target.checked));
+  _g('ovl-zoom-meno')?.addEventListener('click', () => _applicaZoom(_zoomOvl - 0.25));
+  _g('ovl-zoom-piu')?.addEventListener('click', () => _applicaZoom(_zoomOvl + 0.25));
+  _g('ovl-zoom-fit')?.addEventListener('click', () => _applicaZoom(1));
+
+  for (const [id, campo] of [['insp-x', 'x'], ['insp-y', 'y'], ['insp-s', 's'], ['insp-r', 'r']]) {
+    _g(id)?.addEventListener('input', () => {
+      if (!selezione) return;
+      const st = _statoXY(selezione);
+      const v = parseFloat(_g(id).value);
+      if (!Number.isFinite(v)) return;
+      st[campo] = campo === 'x' || campo === 'y' ? _arr(Math.max(0, Math.min(100, v))) : Math.round(v);
+      _posElemento(_g('ap-' + selezione), st);
+      _rendiLivelli();
+      _ricorda('campo:' + id);
+      _salvaPosDebounced(selezione);
+    });
+    _g(id)?.addEventListener('change', () => _ricorda());
+  }
+
+  document.addEventListener('keydown', (e) => {
+    const scheda2 = _g('scheda-alert');
+    if (!scheda2 || !scheda2.closest('.pannello-scheda')?.classList.contains('visibile')) return;
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName || '')) return;
+    const mod = e.ctrlKey || e.metaKey;
+    if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); return e.shiftKey ? ripetiOvl() : annullaOvl(); }
+    if (mod && e.key.toLowerCase() === 'y') { e.preventDefault(); return ripetiOvl(); }
+    if (e.key === 'Escape') { deseleziona(); return; }
+    if (!selezione) return;
+    const passi = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+    if (passi) { e.preventDefault(); return _spostaTasti(selezione, passi[0], passi[1], e.shiftKey); }
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault();
+      posXY[selezione] = null; aggiornaAnteprima(); _ricorda(); _salvaPos(selezione);
+    }
+  });
 }
 
 let _timerPos = null;
@@ -4773,12 +4918,20 @@ let _storia = [], _storiaAvanti = [], _storiaInCorso = false;
 function _istantanea() {
   return JSON.stringify({ xy: posXY, mostra: ['alert', 'chat', 'wf', 'ws', 'effetti'].reduce((o, k) => (o[k] = mostraChk(k), o), {}) });
 }
-function _ricorda() {
+let _ultimoRicordo = 0, _ultimaFusione = '';
+function _ricorda(fusione) {
   if (_storiaInCorso) return;
   const foto = _istantanea();
   if (_storia.length && _storia[_storia.length - 1] === foto) return;
-  _storia.push(foto);
-  if (_storia.length > 60) _storia.shift();
+  const ora = performance.now();
+  const fondibile = fusione && fusione === _ultimaFusione && ora - _ultimoRicordo < 700 && _storia.length > 1;
+  if (fondibile) _storia[_storia.length - 1] = foto;
+  else {
+    _storia.push(foto);
+    if (_storia.length > 60) _storia.shift();
+  }
+  _ultimoRicordo = ora;
+  _ultimaFusione = fusione || '';
   _storiaAvanti.length = 0;
   _aggiornaBottoniStoria();
 }
@@ -4813,8 +4966,6 @@ function _aggiornaBottoniStoria() {
   if (r) r.disabled = !_storiaAvanti.length;
 }
 
-// Dove agganciarsi: i punti notevoli della tela e i bordi/centri degli ALTRI
-// livelli accesi. Ritorna la posizione corretta e le guide da disegnare.
 function _aggancia(chiave, x, y, hw, hh, canvas) {
   const soglia = _pct(SNAP_PX, canvas.width);
   const sogliaY = _pct(SNAP_PX, canvas.height);
@@ -4850,8 +5001,6 @@ function _mostraGuide(guide) {
   }
 }
 
-// Spostamento da tastiera: un passo = un pixel VERO della tela 1920x1080, come
-// nei programmi di grafica. Shift = dieci pixel.
 function _spostaTasti(chiave, dx, dy, grande) {
   const st = _statoXY(chiave);
   const p = grande ? 10 : 1;
@@ -4859,7 +5008,7 @@ function _spostaTasti(chiave, dx, dy, grande) {
   st.y = _arr(Math.max(0, Math.min(100, st.y + _pct(dy * p, OVL_H))));
   _posElemento(_g('ap-' + chiave), st);
   aggiornaInspector();
-  _ricorda();
+  _ricorda('tasti:' + chiave + ':' + (dx ? 'x' : 'y'));
   _salvaPosDebounced(chiave);
 }
 
@@ -4905,7 +5054,6 @@ function rendiTrascinabile(el, chiave) {
     const move = (ev) => {
       let x = _pct(ev.clientX - canvas.left, canvas.width) - scartoX;
       let y = _pct(ev.clientY - canvas.top, canvas.height) - scartoY;
-      // Alt tenuto premuto = libero, senza agganci (come nei programmi di grafica)
       let guide = [];
       if (!ev.altKey) { const a = _aggancia(chiave, x, y, hw, hh, canvas); x = a.x; y = a.y; guide = a.guide; }
       st.x = _arr(Math.max(hw, Math.min(100 - hw, x)));
@@ -4927,7 +5075,7 @@ function rendiTrascinabile(el, chiave) {
     const st = _statoXY(chiave);
     if (e.shiftKey) { let r = (st.r || 0) + (e.deltaY < 0 ? 4 : -4); while (r > 180) r -= 360; while (r < -180) r += 360; st.r = r; }
     else { st.s = Math.max(30, Math.min(300, (st.s || 100) + (e.deltaY < 0 ? 4 : -4))); }
-    seleziona(chiave); _posElemento(el, st); aggiornaInspector(); _ricorda(); _salvaPosDebounced(chiave);
+    seleziona(chiave); _posElemento(el, st); aggiornaInspector(); _ricorda('rotella:' + chiave); _salvaPosDebounced(chiave);
   }, { passive: false });
   el.addEventListener('dblclick', () => { posXY[chiave] = null; deseleziona(); aggiornaAnteprima(); _ricorda(); _salvaPos(chiave); });
 }
@@ -5161,6 +5309,9 @@ function caricaAlert() {
   ['ap-alert', 'ap-chat', 'ap-wf', 'ap-ws'].forEach((id) => rendiTrascinabile(_g(id), id.replace('ap-', '')));
 
   caricaOverlays();
+  collegaEditorOvl();
+  _applicaZoom(1);
+  setTimeout(() => _ricorda(), 400);
   _g('ovl-schede')?.addEventListener('click', (e) => {
     if (e.target.closest('#ov-nuovo')) return conErrore(() => nuovoOverlay());
     if (e.target.closest('#ov-rinomina')) return conErrore(() => rinominaOverlay());
