@@ -711,9 +711,10 @@ function renderAreaUtente() {
   const esci = `<a class="btn secondario mini" href="/auth/logout">${L('Esci', 'Log out', 'Salir')}</a>`;
   const tema = toggleTemaHtml();
 
-  if (areaUtente) areaUtente.innerHTML = `${selettoreLingua('mini')}${tema}${centro}${esci}`;
+  const audio = toggleSuonoHtml('mini');
+  if (areaUtente) areaUtente.innerHTML = `${selettoreLingua('mini')}${audio}${tema}${centro}${esci}`;
 
-  if (areaMob) areaMob.innerHTML = `<span class="chip-utente">${L('ciao', 'hi', 'hola')}, <strong>${ident}</strong></span>${centro}<div class="drawer-controlli">${selettoreLingua()}${tema}</div>${esci}`;
+  if (areaMob) areaMob.innerHTML = `<span class="chip-utente">${L('ciao', 'hi', 'hola')}, <strong>${ident}</strong></span>${centro}<div class="drawer-controlli">${selettoreLingua()}${toggleSuonoHtml()}${tema}</div>${esci}`;
   applicaTema();
 
   document.querySelectorAll('.switch-canale-btn').forEach((btn) =>
@@ -813,6 +814,32 @@ document.addEventListener('click', (e) => {
 document.addEventListener('click', (e) => {
   const b = e.target.closest && e.target.closest('[data-lingua]');
   if (b) { e.preventDefault(); cambiaLingua(b.dataset.lingua); }
+});
+
+function suonoAcceso() { try { return !!(window.SB_SUONO && window.SB_SUONO.acceso()); } catch (e) { return false; } }
+function toggleSuonoHtml(extra) {
+  const on = suonoAcceso();
+  const acceso = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
+  const spento = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m16 9 5 6M21 9l-5 6"/></svg>';
+  const et = on ? L('Suoni accesi', 'Sounds on', 'Sonidos activos') : L('Suoni spenti', 'Sounds off', 'Sonidos apagados');
+  return `<button type="button" class="suono-toggle${extra ? ' ' + extra : ''}${on ? ' on' : ''}" data-suono-toggle aria-pressed="${on}" aria-label="${esc(et)}" title="${esc(et)}">${on ? acceso : spento}</button>`;
+}
+function aggiornaToggleSuono() {
+  document.querySelectorAll('[data-suono-toggle]').forEach((b) => {
+    const p = b.parentNode; if (!p) return;
+    const nuovo = document.createElement('div');
+    nuovo.innerHTML = toggleSuonoHtml(b.classList.contains('mini') ? 'mini' : '');
+    p.replaceChild(nuovo.firstElementChild, b);
+  });
+}
+document.addEventListener('click', (e) => {
+  const t = e.target.closest && e.target.closest('[data-suono-toggle]');
+  if (!t) return;
+  e.preventDefault();
+  const nuovo = !suonoAcceso();
+  try { window.SB_SUONO && window.SB_SUONO.imposta(nuovo); } catch (er) {  }
+  aggiornaToggleSuono();
+  if (nuovo) { try { window.SB_SUONO.suona('conferma'); } catch (er) {  } }
 });
 
 function toggleTemaHtml(extra) {

@@ -312,11 +312,18 @@ body.menu-aperto .drawer { transform: none; }
 @keyframes appare { from { opacity: 0; } to { opacity: 1; } }
 
 #app { view-transition-name: contenuto; min-height: min(94svh, 900px); }
+
+@view-transition { navigation: auto; }
+.barra-top { view-transition-name: testata; }
+.marchio-segno { view-transition-name: marchio; }
+.pie { view-transition-name: piede; }
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) { animation: none !important; }
+}
 ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
-::view-transition-old(contenuto) { animation: vt-esce .22s var(--ease) both; }
-::view-transition-new(contenuto) { animation: vt-entra .34s var(--rev-ease) both; }
-@keyframes vt-esce { to { opacity: 0; transform: translateY(-10px); } }
-@keyframes vt-entra { from { opacity: 0; transform: translateY(14px); } }
 
 body.vetrina .contenuto { max-width: 1040px; }
 
@@ -579,10 +586,9 @@ body.vetrina .contenuto { max-width: 1040px; }
   font-size: .9rem; font-weight: 600; font-family: inherit; cursor: pointer; text-decoration: none;
 
   transform: translate(var(--mx, 0px), var(--my, 0px));
-  transition: background var(--molla), transform .18s var(--ease), box-shadow var(--molla);
+  transition: background var(--molla), transform var(--t-molla-su, .34s) var(--molla-medio, var(--ease)), box-shadow var(--molla);
 }
 .btn:hover { background: var(--acc-600); color: #fff; box-shadow: 0 8px 20px rgba(109, 59, 239, .3); text-decoration: none; transform: translate(var(--mx, 0px), calc(var(--my, 0px) - 1px)); }
-.btn:active { transform: translate(var(--mx, 0px), var(--my, 0px)) scale(.97); transition-duration: .07s; }
 .btn:disabled { opacity: .5; cursor: wait; box-shadow: none; }
 .btn.grande { padding: .7rem 1.5rem; min-height: 44px; font-size: .98rem; }
 .btn.secondario { background: var(--surface); border: 1px solid var(--border-2); color: var(--testo); }

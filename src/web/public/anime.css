@@ -89,7 +89,6 @@ p, li { line-height: 1.72; }
   border-color: var(--border-2); background: color-mix(in srgb, var(--testo) 3%, transparent);
 }
 
-.btn, button.btn, .modello-pronto, .grp-btn { transition: opacity .3s var(--an-morbido), transform .18s var(--an-morbido), background .3s var(--an-morbido), color .3s var(--an-morbido), border-color .3s var(--an-morbido); }
 .btn:not(.secondario):not(.testo) {
   background: var(--testo); color: var(--bg); border: 1px solid var(--testo);
   box-shadow: none; border-radius: 8px; font-weight: 500;
@@ -97,7 +96,6 @@ p, li { line-height: 1.72; }
 .btn:not(.secondario):not(.testo):hover { opacity: .82; transform: none; }
 .btn.secondario { background: transparent; border: 1px solid var(--border-2); color: var(--testo); box-shadow: none; border-radius: 8px; }
 .btn.secondario:hover { border-color: var(--testo); color: var(--testo); }
-.btn:active { transform: translateY(1px); }
 a:hover { color: var(--acc); }
 .grp-dot { box-shadow: none; }
 
@@ -523,6 +521,10 @@ body.pad-vivo #plancia-lancia { bottom: calc(130px + env(safe-area-inset-bottom,
   --t-medio: 414ms;
   --t-pieno: 621ms;
   --t-scena: 808ms;
+
+  --t-molla-giu: 90ms;
+  --t-molla-su: 340ms;
+  --giu-secco: cubic-bezier(.2, .8, .3, 1);
 }
 
 @supports not (transition-timing-function: linear(0, 1)) {
@@ -534,11 +536,11 @@ body.pad-vivo #plancia-lancia { bottom: calc(130px + env(safe-area-inset-bottom,
   }
 }
 
-.btn, button.btn, a.btn, .grp-btn, .modello-pronto {
-  transition: transform var(--t-medio) var(--molla-medio), opacity .2s ease,
-              background .24s ease, color .24s ease, border-color .24s ease, box-shadow var(--t-medio) var(--molla-medio);
+.pl-tile:active, .cerca-voce:active, .chip-domanda:active, .menu-voce:active, .drawer-voce:active {
+  transition-duration: var(--t-molla-giu);
+  transition-timing-function: var(--giu-secco);
+  transform: translateY(1px) scale(.972);
 }
-.btn:active, .grp-btn:active { transform: translateY(1px) scale(.985); }
 
 .levetta, .levetta::before, .pip, .badge, .scudo-chip, .cerca-filtro, .pil-b {
   transition: transform var(--t-lieve) var(--molla-lieve), background var(--t-lieve) ease,
@@ -681,9 +683,12 @@ body.pad-vivo.cursore-on, body.pad-vivo.cursore-on * { cursor: none !important; 
 }
 
 
+.btn, button.btn, a.btn, .grp-btn, .modello-pronto,
+.pl-tile, .cerca-voce, .chip-domanda, .menu-voce, .drawer-voce {
+  transition: transform var(--t-molla-su) var(--molla-medio), opacity .2s ease,
+              background .24s ease, color .24s ease, border-color .24s ease, box-shadow var(--t-molla-su) var(--molla-medio);
+}
 .btn, button.btn, a.btn, .grp-btn, .modello-pronto {
-  transition: transform .16s var(--molla-lieve), opacity .2s ease,
-              background .24s ease, color .24s ease, border-color .24s ease, box-shadow var(--t-medio) var(--molla-medio);
   transform: translate3d(var(--mx, 0px), var(--my, 0px), 0);
 }
 .btn:hover, .grp-btn:hover, .modello-pronto:hover {
@@ -692,9 +697,11 @@ body.pad-vivo.cursore-on, body.pad-vivo.cursore-on * { cursor: none !important; 
 .btn:not(.secondario):not(.testo):hover {
   opacity: .82; transform: translate3d(var(--mx, 0px), calc(var(--my, 0px) - 1px), 0);
 }
-.btn:active, .grp-btn:active, .btn:not(.secondario):not(.testo):active {
-  transform: translate3d(var(--mx, 0px), calc(var(--my, 0px) + 1px), 0) scale(.981);
-  transition-duration: .08s;
+.btn:active, button.btn:active, a.btn:active, .grp-btn:active, .modello-pronto:active,
+.btn:not(.secondario):not(.testo):active {
+  transform: translate3d(var(--mx, 0px), calc(var(--my, 0px) + 1px), 0) scale(.972);
+  transition-duration: var(--t-molla-giu);
+  transition-timing-function: var(--giu-secco);
 }
 
 #an-campo {
@@ -731,8 +738,13 @@ body.pad-vivo.cursore-on, body.pad-vivo.cursore-on * { cursor: none !important; 
   background: currentColor; opacity: .5; vertical-align: baseline;
 }
 
-::view-transition-old(contenuto) { animation: vt-esce .2s var(--molla-lieve) both; }
-::view-transition-new(contenuto) { animation: vt-entra var(--t-pieno) var(--molla-pieno) both; }
+::view-transition-group(contenuto) { animation-duration: var(--t-medio); }
+::view-transition-old(contenuto) { animation: vt-esce .15s cubic-bezier(.4, 0, 1, 1) both; }
+::view-transition-new(contenuto) { animation: vt-entra var(--t-medio) var(--molla-medio) 50ms both; }
+::view-transition-group(testata), ::view-transition-group(marchio), ::view-transition-group(piede) {
+  animation-duration: var(--t-medio);
+  animation-timing-function: var(--molla-medio);
+}
 @keyframes vt-esce { to { opacity: 0; transform: translateY(-8px) scale(.994); } }
 @keyframes vt-entra { from { opacity: 0; transform: translateY(16px) scale(.988); } }
 
