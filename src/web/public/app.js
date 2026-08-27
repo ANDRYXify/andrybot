@@ -3180,6 +3180,8 @@ function pannelloStato() {
     'channel:edit:commercial': L('pubblicità', 'ads', 'publicidad'),
     'channel:read:ads': L('programmazione pubblicità', 'ad schedule', 'programación de anuncios'),
     'channel:read:stream_key': L('Studio Web (stream key)', 'Web Studio (stream key)', 'Estudio Web (stream key)'),
+    'moderator:manage:chat_settings': L('serranda dello scudo (chat ai follower, chat lenta)', 'shield shutter (followers-only, slow chat)', 'persiana del escudo (solo seguidores, chat lento)'),
+    'moderator:manage:shield_mode': L('Shield Mode di Twitch', 'Twitch Shield Mode', 'Shield Mode de Twitch'),
     'clips:edit': L('creazione clip', 'clip creation', 'creación de clips'),
     'channel:read:subscriptions': L('eventi sub', 'sub events', 'eventos de sub'),
     'moderator:read:followers': L('eventi follow', 'follow events', 'eventos de follow'),

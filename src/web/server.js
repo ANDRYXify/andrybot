@@ -22,7 +22,7 @@ import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, pass
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO } from '../db.js';
 import { renderLinkPage, renderInformativa } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
-import { statoListaBot, registro as registroAntibot, segnalazioniAperte, risolviSegnalazione, sintesiRegistro, registra as registraAntibot, nomeBot, valutaAccount } from '../features/antibot.js';
+import { statoListaBot, registro as registroAntibot, segnalazioniAperte, risolviSegnalazione, sintesiRegistro, registra as registraAntibot, nomeBot, valutaAccount, assetto as assettoAntibot, sogliaRaffica, codaBan } from '../features/antibot.js';
 import { statoBackup, backupOra } from '../backup.js';
 import { risolviCanaleId } from '../features/youtube.js';
 import * as abbonamenti from '../features/abbonamenti.js';
@@ -1733,6 +1733,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         avvisa: cfg.avvisa !== false,
         moderazioneOk: moderazioneOk(login),
         listaBot: { conteggio: lb.conteggio, aggiornata: lb.aggiornata },
+        assetto: assettoAntibot(login),
+        sogliaViva: sogliaRaffica(login, cfg),
+        coda: codaBan(login),
+        assettoAuto: cfg.assettoAuto !== false,
+        bloccoSulNascere: cfg.bloccoSulNascere !== false,
       },
       sintesi: sintesiRegistro(login),
       segnalazioni: segnalazioniAperte(login).slice(0, 100),
@@ -2939,6 +2944,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         chatMinOre: Math.min(720, Math.max(1, Math.round(Number(a.chatMinOre)) || 24)),
         chatNuoviAzione: ['elimina', 'segnala'].includes(a.chatNuoviAzione) ? a.chatNuoviAzione : 'elimina',
         avvisa: a.avvisa !== false,
+        assettoAuto: a.assettoAuto !== false,
+        bloccoSulNascere: a.bloccoSulNascere !== false,
+        coroQuanti: Math.min(20, Math.max(3, Math.round(Number(a.coroQuanti)) || 4)),
       };
     }
     // ore guardate (watchtime): sempre attive salvo che lo streamer le spenga
