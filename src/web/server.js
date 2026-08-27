@@ -23,6 +23,7 @@ import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPA
 import { renderLinkPage, renderInformativa } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
 import { GUIDE, paginaGuida, paginaIndice, urlGuide } from './guide.js';
+import { AntiBot } from '../features/antibot.js';
 import { statoListaBot, registro as registroAntibot, segnalazioniAperte, risolviSegnalazione, sintesiRegistro, registra as registraAntibot, nomeBot, valutaAccount, assetto as assettoAntibot, sogliaRaffica, codaBan } from '../features/antibot.js';
 import { statoBackup, backupOra } from '../backup.js';
 import { risolviCanaleId } from '../features/youtube.js';
@@ -1747,6 +1748,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // Console anti-bot: la "certezza". Mostra COSA ha fatto lo scudo (registro con
   // esito reale), le segnalazioni da rivedere, e le liste dello streamer.
   const _abCfg = (login) => ({ ...(streamers.get(login)?.settings?.antibot || {}) });
+  const _pulizie = new Map();
+  // La pulizia della lista follower ha bisogno solo di Helix e della lista dei
+  // bot noti (che è del modulo, condivisa): non serve l'istanza del bot vivo.
+  const _scudo = new AntiBot({ helix });
   app.get('/api/antibot/console', requireOwner, (req, res) => {
     const login = currentUser(req).login.toLowerCase();
     const cfg = _abCfg(login);
@@ -1763,6 +1768,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         coda: codaBan(login),
         assettoAuto: cfg.assettoAuto !== false,
         bloccoSulNascere: cfg.bloccoSulNascere !== false,
+        togliFollow: cfg.togliFollow !== false,
+        pulizia: _pulizie.get(login) || null,
       },
       sintesi: sintesiRegistro(login),
       segnalazioni: segnalazioniAperte(login).slice(0, 100),
@@ -1834,6 +1841,27 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const dati = { sospetti, scansionati: foll.length, permessi: moderazioneOk(login) };
     _scanCache.set(login, { ts: Date.now(), dati });
     res.json(dati);
+  }));
+
+  // Pulizia della lista follower: prima si guarda, poi si agisce.
+  // In prova restituisce chi verrebbe tolto senza toccare niente. Confermata,
+  // parte in sottofondo (un canale grande sono migliaia di chiamate a Twitch) e
+  // l'avanzamento si legge dalla console.
+  app.post('/api/antibot/pulizia', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login.toLowerCase();
+    const prova = req.body?.prova !== false;
+    const inCorso = _pulizie.get(login);
+    if (inCorso && inCorso.attiva) return res.json({ ...inCorso, giaInCorso: true });
+    if (prova) {
+      const e = await _scudo.pulisciFollower(login, { max: 3000, prova: true });
+      return res.json({ prova: true, guardati: e.guardati, totale: e.totale, trovati: e.trovati.slice(0, 200), quanti: e.trovati.length });
+    }
+    const stato = { attiva: true, guardati: 0, trovati: 0, bloccati: 0, falliti: 0, avvio: Date.now() };
+    _pulizie.set(login, stato);
+    res.json({ avviata: true });
+    _scudo.pulisciFollower(login, { max: 3000, alPasso: (p) => Object.assign(stato, p) })
+      .then((e) => Object.assign(stato, e, { trovati: e.trovati.length, attiva: false, fine: Date.now() }))
+      .catch(() => Object.assign(stato, { attiva: false, errore: true }));
   }));
 
   // Azione manuale su un utente (dalla scansione o dal registro): ban o revoca.
@@ -2972,6 +3000,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         assettoAuto: a.assettoAuto !== false,
         bloccoSulNascere: a.bloccoSulNascere !== false,
         coroQuanti: Math.min(20, Math.max(3, Math.round(Number(a.coroQuanti)) || 4)),
+        togliFollow: a.togliFollow !== false,
       };
     }
     // ore guardate (watchtime): sempre attive salvo che lo streamer le spenga

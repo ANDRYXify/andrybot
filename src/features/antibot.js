@@ -63,6 +63,7 @@ export const ANTIBOT_DEFAULT = {
   assettoAuto: true,           // alza serranda + Shield Mode durante un attacco
   bloccoSulNascere: true,      // ban in blocco dell'ondata quando è artificiale
   coroQuanti: 4,               // quante bocche diverse per lo stesso messaggio = coro
+  togliFollow: true,           // sui follow-bot certi usa il BLOCCO, che toglie il follow
 };
 
 // Bot NOTORIAMENTE buoni: non si toccano mai. In minuscolo.
@@ -602,7 +603,14 @@ export class AntiBot {
         }
         const v = c.lista.shift();
         c.chiInCoda.delete(v.userId);
-        const r = await this.helix?.timeoutUser?.(ch, v.userId, 0, `anti-bot: ${v.motivo || 'ondata'}`).catch(() => null);
+        // Prima il blocco, che è ciò che toglie il follow. Il ban da solo
+        // lascerebbe il follow finto nella lista: l'attacco resterebbe a segno.
+        let r = null, azione = 'blocca';
+        if (cfg.togliFollow !== false) r = await this.helix?.bloccaUtente?.(ch, v.userId, v.motivo || 'follow-bot').catch(() => null);
+        if (!r?.ok) {
+          azione = 'ban';
+          r = await this.helix?.timeoutUser?.(ch, v.userId, 0, `anti-bot: ${v.motivo || 'ondata'}`).catch(() => null);
+        }
         if (r?.motivo === 'errore Twitch') {
           // può essere un 429: si rientra e si riprova più piano
           c.pausaFino = Date.now() + 5000;
@@ -610,7 +618,7 @@ export class AntiBot {
           c.chiInCoda.add(v.userId);
           continue;
         }
-        registra(ch, { login: v.login, userId: v.userId, azione: 'ban', motivo: v.motivo || 'ondata follow-bot', esito: r?.ok ? 'fatto' : 'fallito' });
+        registra(ch, { login: v.login, userId: v.userId, azione, motivo: v.motivo || 'ondata follow-bot', esito: r?.ok ? 'fatto' : 'fallito' });
         await new Promise((r2) => setTimeout(r2, Math.round(1000 / CODA_AL_SEC)));
       }
     } finally {
@@ -618,12 +626,33 @@ export class AntiBot {
     }
   }
 
-  async _agisci(channel, userId, login, motivo, cfg) {
+  // Sui FOLLOW il ban non basta, e per anni gli scudi hanno sbagliato proprio qui:
+  // un account bannato RESTA follower. Il numero gonfiato dal follow-bot resta
+  // gonfiato, ed è quello il danno — il rapporto follower/spettatori conta per
+  // Affiliato e Partner, e chi arriva sul canale lo legge. Solo il BLOCCO toglie
+  // il follow, e in più impedisce di rifarlo. In chat invece l'azione giusta
+  // resta il ban: è moderazione, non pulizia della lista follower.
+  async _togliFollow(channel, userId, login, motivo, cfg) {
+    if (cfg.togliFollow === false) return null;
+    const r = await this.helix?.bloccaUtente?.(channel, userId, motivo).catch(() => null);
+    if (r?.ok) log.info(`#${channel} @${login} bloccato: follow rimosso e non può rifarlo`);
+    else if (r?.motivo === 'permesso mancante') log.warn(`#${channel} non posso togliere il follow a @${login}: manca user:manage:blocked_users`);
+    return r;
+  }
+
+  async _agisci(channel, userId, login, motivo, cfg, origine = 'chat') {
     if (cfg.azione === 'segnala') {
       log.warn(`#${channel} bot segnalato: @${login} (${motivo})`);
       if (cfg.avvisa) this.say?.(channel, `⚠️ Possibile bot: @${login} (${motivo})`);
       registra(channel, { login, userId, azione: 'segnala', motivo, esito: 'in-attesa', stato: 'aperto' });
       return;
+    }
+    if (origine === 'follow') {
+      const b = await this._togliFollow(channel, userId, login, motivo, cfg);
+      if (b?.ok) {
+        registra(channel, { login, userId, azione: 'blocca', motivo, esito: 'fatto' });
+        return;
+      }
     }
     const durata = cfg.azione === 'timeout' ? Number(cfg.timeoutSec || 1209600) : 0;
     const r = await this.helix?.timeoutUser?.(channel, userId, durata, `anti-bot: ${motivo}`).catch(() => null);
@@ -671,7 +700,7 @@ export class AntiBot {
     }
 
     // nome già noto come bot: si agisce sempre, attacco o non attacco
-    if (cfg.nomiBot && nomeBot(login, cfg)) return this._agisci(channel, userId, login, 'nome da bot', cfg);
+    if (cfg.nomiBot && nomeBot(login, cfg)) return this._agisci(channel, userId, login, 'nome da bot', cfg, 'follow');
 
     // Attacco in corso e ondata giudicata artificiale: ogni follow che arriva
     // adesso viene dallo stesso posto e va in coda senza altre domande.
@@ -691,7 +720,7 @@ export class AntiBot {
 
     // vecchio interruttore: bannare i follow dell'ondata anche senza certezza
     if (cfg.raffica && cfg.rafficaBanna && inRaffica(channel)) {
-      return this._agisci(channel, userId, login, 'follow durante ondata', cfg);
+      return this._agisci(channel, userId, login, 'follow durante ondata', cfg, 'follow');
     }
 
     // 3. account sospetto (una chiamata a Twitch). NON durante una raffica: lì
@@ -700,7 +729,7 @@ export class AntiBot {
     if (cfg.controllaAccount && this.helix?.getUserByLogin && !inRaffica(channel)) {
       const u = await this.helix.getUserByLogin(login).catch(() => null);
       const { rischio, motivi } = valutaAccount(u, cfg);
-      if (rischio >= Number(cfg.soglia || 70)) return this._agisci(channel, userId, login, motivi.join(', '), cfg);
+      if (rischio >= Number(cfg.soglia || 70)) return this._agisci(channel, userId, login, motivi.join(', '), cfg, 'follow');
     }
   }
 
@@ -754,6 +783,54 @@ export class AntiBot {
       }
     }
     return false;
+  }
+
+  // ── Pulizia della lista follower ──────────────────────────────────────────
+  // La difesa in tempo reale ferma quello che arriva adesso. Non tocca chi è già
+  // dentro: i bot che hanno seguito prima che lo scudo fosse acceso, e quelli
+  // finiti nella lista pubblica soltanto dopo aver seguito. Restano lì a gonfiare
+  // il numero, che è il danno vero di un follow-bot.
+  //
+  // Qui si scorre la lista follower e si BLOCCA chi è riconosciuto — di nuovo:
+  // blocco, non ban, perché è l'unica azione che toglie il follow.
+  //
+  // Due prudenze. Si guardano solo i nomi già noti o che corrispondono ai
+  // pattern, mai il punteggio di sospetto: qui non c'è un attacco in corso a
+  // giustificare un margine di errore, e un fan vero rimosso non torna. E si va
+  // al ritmo della coda, perché un canale con diecimila follower sono cento
+  // pagine e altrettante migliaia di chiamate.
+  async pulisciFollower(channel, { max = 3000, prova = false, alPasso = null } = {}) {
+    const ch = norm(channel);
+    const cfg = this.cfg(ch);
+    const esiti = { guardati: 0, trovati: [], bloccati: 0, falliti: 0, totale: 0 };
+    let cursore = '', pagine = 0;
+    while (esiti.guardati < max && pagine < 60) {
+      const arr = await this.helix?.getRecentFollowers?.(ch, { first: 100, dopo: cursore }).catch(() => []);
+      if (!arr || !arr.length) break;
+      if (!esiti.totale) esiti.totale = arr.totale || 0;
+      pagine++;
+      for (const f of arr) {
+        esiti.guardati++;
+        const login = norm(f.user_login || f.user_name);
+        if (!login || BUONI.has(login)) continue;
+        if ((cfg.esenti || []).map(norm).includes(login)) continue;
+        if (!nomeBot(login, cfg)) continue;
+        esiti.trovati.push({ login, userId: f.user_id, seguito: f.followed_at });
+      }
+      cursore = arr.cursore || '';
+      if (!cursore) break;
+      if (alPasso) alPasso({ ...esiti, trovati: esiti.trovati.length });
+    }
+    if (prova || !esiti.trovati.length) return esiti;
+
+    for (const v of esiti.trovati) {
+      const r = await this.helix?.bloccaUtente?.(ch, v.userId, 'follow-bot noto').catch(() => null);
+      if (r?.ok) esiti.bloccati++; else esiti.falliti++;
+      registra(ch, { login: v.login, userId: v.userId, azione: 'blocca', motivo: 'pulizia lista follower: nome da bot noto', esito: r?.ok ? 'fatto' : 'fallito' });
+      await new Promise((r2) => setTimeout(r2, Math.round(1000 / CODA_AL_SEC)));
+    }
+    log.info(`#${ch} pulizia follower: ${esiti.bloccati} bot rimossi su ${esiti.guardati} guardati`);
+    return esiti;
   }
 
   // Evento raid: un raid enorme da un account minuscolo/nuovo è un classico
