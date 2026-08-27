@@ -353,3 +353,42 @@ come il primo, e che una navigazione senza clic **non** rubi il nome.
 Che il browser non stia scartando tutto in silenzio si controlla su
 `transition.ready`, e che stia davvero interpolando dalla presenza di
 `::view-transition-group(contenuto)` fra le animazioni vive.
+
+---
+
+## L'anello che restava appeso
+
+Passando il mouse su una voce di menu il cursore ci morfa sopra: diventa un
+rettangolo grande quanto la voce. Cliccando, la sezione cambiava e il menu si
+chiudeva — ma **il rettangolo restava lì**, sospeso in alto sopra il titolo della
+pagina nuova, 231×50, per sempre.
+
+### Perché
+
+Il motore del cursore si **addormenta quando tutto è fermo**: quando posizione,
+dimensione e raggio hanno raggiunto il bersaglio, il ciclo si ferma per non
+bruciare un frame al secondo per niente. È giusto così.
+
+Il problema è la sequenza. Al clic il motore era già addormentato da un pezzo (il
+mouse era fermo sulla voce). Il clic chiude il menu e cambia sezione: la voce
+smette di esistere. Ma il motore dorme, e i suoi risvegli erano legati a
+`pointermove`, `scroll`, `resize` e `keydown` — nessuno dei quali accade se il
+mouse resta fermo dopo aver cliccato. Nessuno gli diceva che il mondo sotto era
+cambiato, e continuava a disegnare l'ultimo rettangolo che aveva calcolato.
+
+Il codice per accorgersene c'era già ed era corretto (`morfabile()` scarta un
+elemento scollegato o largo zero): semplicemente non veniva mai eseguito.
+
+### La correzione
+
+Un clic è **l'evento che cambia il DOM**. Da ora apre una finestra di vigilanza:
+il motore si sveglia e per 800 ms rimisura la mira a ogni frame, senza potersi
+riaddormentare. Dentro quella finestra la voce sparisce, `morfabile()` la scarta,
+e il cursore torna libero. `pointerdown` ne apre una più corta.
+
+La finestra dura più delle transizioni di chiusura del menu di proposito: se
+durasse meno, il motore si riaddormenterebbe mentre la voce è ancora lì — visibile
+e valida — e si ritroverebbe nello stesso stato di prima.
+
+`t_anello3.mjs` riproduce il caso esatto col mouse — morph sulla voce, clic,
+attesa — e verifica che l'anello torni piccolo e ci resti.
