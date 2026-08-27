@@ -610,6 +610,31 @@ function _osservatore() {
   return _rivObs;
 }
 
+// In due tempi. `preparaCarte` mette le carte allo stato iniziale, invisibili,
+// senza avviare niente: serve perche' lo SCATTO che il browser prende del nuovo
+// stato le catturi gia' invisibili, e il contenitore si apra vuoto.
+// `rivelaCarte` avvia davvero, e va chiamata a transizione finita.
+function preparaCarte(scope = document) {
+  if (_menoMoto) return;
+  for (const c of scope.querySelectorAll('.carta')) {
+    c.classList.remove('dentro');
+    c.classList.add('rivela');
+  }
+}
+
+// Fa ripartire la comparsa. La classe si toglie, si forza il ricalcolo e si
+// rimette: senza quel passaggio il browser non vede un cambiamento e alla
+// seconda visita della stessa sezione le animazioni non ripartirebbero.
+function avviaComparsa(sezioni) {
+  const t = document.getElementById('pagina-testata');
+  if (t) {
+    t.classList.remove('entra');
+    void t.offsetWidth;
+    t.classList.add('entra');
+  }
+  (sezioni || []).forEach((p) => rivelaCarte(p));
+}
+
 function rivelaCarte(scope = document) {
   const carte = [...scope.querySelectorAll('.carta')];
   if (_menoMoto) { carte.forEach((c) => c.classList.add('rivela', 'dentro')); return; }
@@ -621,7 +646,10 @@ function rivelaCarte(scope = document) {
     const r = c.getBoundingClientRect();
     const visibile = r.top < window.innerHeight * 0.92;
 
-    c.style.setProperty('--rev-delay', visibile ? Math.min(inVista++, 4) * 45 + 'ms' : '0ms');
+    // Le carte continuano la scala della testata (occhiello 0, titolo 40,
+    // sottotitolo 120, guida 180): la prima carta parte da li, non da zero.
+    // Chi entra dopo, scorrendo, non ha ritardo: aspetterebbe due volte.
+    c.style.setProperty('--rev-delay', visibile ? 230 + Math.min(inVista++, 5) * 55 + 'ms' : '0ms');
     obs.observe(c);
   }
 }
@@ -2170,6 +2198,14 @@ function guidaSchedaHtml(id) {
     </div>
   </details>`;
 }
+
+document.addEventListener('toggle', (e) => {
+  const d = e.target;
+  if (!d || !d.classList || !d.classList.contains('guida-scheda')) return;
+  const id = d.dataset.guida;
+  if (!id) return;
+  try { localStorage.setItem('guida:' + id, d.open ? '1' : '0'); } catch {  }
+}, true);
 
 function miniGuida({ titolo, serve = '', passi = [], note = [], aperta = false } = {}) {
   const t = titolo || L('Come funziona', 'How it works', 'Cómo funciona');
@@ -13729,9 +13765,10 @@ function vaiAScheda(id) {
     document.querySelectorAll('.pannello-scheda').forEach((p) =>
       p.classList.toggle('visibile', p.dataset.scheda === id));
     aggiornaTestataPagina();
-    sezioni.forEach((p) => { rendiCartePieghevoli(p, id); rivelaCarte(p); });
+    sezioni.forEach((p) => { rendiCartePieghevoli(p, id); preparaCarte(p); });
   });
-  try { tr.finished.then(() => morphDa(null), () => morphDa(null)); } catch { morphDa(null); }
+  const finita = () => { morphDa(null); avviaComparsa(sezioni); };
+  try { tr.finished.then(finita, finita); } catch { finita(); }
   setTimeout(() => morphDa(null), 1600);
   caricaDatiScheda(id);
   azzeraBarraSalva();
