@@ -69,7 +69,7 @@
 
     function motore() {
       var SEL_TESTO = 'textarea, [contenteditable=""], [contenteditable="true"], input:not([type=button]):not([type=submit]):not([type=reset]):not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file])';
-      var SEL_MORPH = 'a, button, .btn, .grp-btn, .menu-voce, .drawer-voce, .cerca-filtro, .chip-domanda, [role="button"]';
+      var SEL_MORPH = 'a, button, .btn, .grp-btn, .menu-voce, .drawer-voce, .cerca-filtro, .chip-domanda, .cerca-voce, [role="button"]';
       var PAD = 6, BASE = 32;
 
       var ring = document.createElement('div'); ring.id = 'an-cursore-ring';

@@ -20,9 +20,27 @@
     try { document.body.classList.toggle('nav-indiretta', !!v); } catch (e) {}
     if (!v) liberaCursore();
   }
-  function segnaPad() {
+  function avvistaPad() {
     if (!padVivo) { padVivo = true; try { document.body.classList.add('pad-vivo'); } catch (e) {} aggiornaLegenda(); }
+    guida(true);
+  }
+  function segnaPad() {
+    avvistaPad();
     navIndiretta(true);
+  }
+  function inputPad(gp) {
+    if (!gp) return false;
+    var ax = gp.axes || [], bt = gp.buttons || [], i;
+    for (i = 0; i < ax.length; i++) if (Math.abs(ax[i] || 0) > 0.25) return true;
+    for (i = 0; i < bt.length; i++) if (bt[i] && bt[i].pressed) return true;
+    return false;
+  }
+  var padGuida = false;
+  function guida(v) {
+    v = !!v;
+    if (padGuida === v) return;
+    padGuida = v;
+    try { document.body.classList.toggle('pad-guida', v); } catch (e) {}
   }
   function zonaMorta(v, soglia) {
     var a = Math.abs(v);
@@ -90,6 +108,7 @@
   function spegniPad() {
     padVivo = false;
     try { document.body.classList.remove('pad-vivo'); } catch (e) {}
+    guida(false);
     navIndiretta(false);
   }
 
@@ -175,7 +194,7 @@
     setTimeout(aggiornaAnello, 60);
     aggiornaAnello();
     aggiornaLegenda();
-    suono(520, 0.04, 0.03);
+    voce('tocco');
   }
 
   function creaAnello() { anello = null; }
@@ -187,7 +206,7 @@
       var r = corrente.getBoundingClientRect();
       var firma = (r.left | 0) + ',' + (r.top | 0) + ',' + (r.width | 0) + ',' + (r.height | 0);
       if (firma !== ultimoRect) { ultimoRect = firma; aggiornaAnello(); }
-    } catch (e) { /* niente */ }
+    } catch (e) {  }
   }
   function aggiornaAnello() {
     if (!corrente || !corrente.isConnected || !visibile(corrente)) { liberaCursore(); return; }
@@ -230,7 +249,7 @@
     legenda.innerHTML = h;
   }
 
-  function suono(f, d, v) { try { if (window.SB_PLANCIA && window.SB_PLANCIA.bip) window.SB_PLANCIA.bip(f, d, v); } catch (e) {} }
+  function voce(n) { try { if (window.SB_SUONO && window.SB_SUONO.suona) window.SB_SUONO.suona(n); } catch (e) {} }
 
   function attiva() {
     if (attivo) return;
@@ -352,11 +371,11 @@
     var a = b.dataset.a;
     if (a === 'maiusc') { oskMaiusc = !oskMaiusc; ridisegnaOsk(); return; }
     if (a === 'simboli') { oskSimboli = !oskSimboli; ridisegnaOsk(); return; }
-    if (a === 'spazio') { scrivi(' '); suono(430, 0.04, 0.03); return; }
-    if (a === 'canc') { cancella(); suono(330, 0.05, 0.035); return; }
-    if (a === 'fatto') { suono(760, 0.09, 0.05); chiudiOsk(); return; }
+    if (a === 'spazio') { scrivi(' '); voce('tocco'); return; }
+    if (a === 'canc') { cancella(); voce('commuta'); return; }
+    if (a === 'fatto') { voce('conferma'); chiudiOsk(); return; }
     var k = b.dataset.k;
-    if (k) { scrivi(k); suono(620, 0.035, 0.028); }
+    if (k) { scrivi(k); voce('tocco'); }
   }
   function ridisegnaOsk() {
     var idx = -1, tutti = osk.querySelectorAll('.pil-k');
@@ -370,7 +389,7 @@
     if (!corrente) { var e = lista(); if (e.length) metti(e[0]); return; }
     if (osk && !osk.hidden) { if (corrente.classList.contains('pil-k')) premiTasto(corrente); return; }
     if (corrente.matches && corrente.matches(SEL_TESTO)) { apriOsk(corrente); return; }
-    suono(700, 0.07, 0.045);
+    voce('conferma');
     try { corrente.click(); } catch (e) {}
     setTimeout(function () { aggiornaAnello(); aggiornaLegenda(); }, 220);
   }
@@ -393,7 +412,7 @@
       var n = Math.max(0, Math.min(tutte.length - 1, i + d));
       if (n === i) return;
       a.vai(tutte[n]);
-      suono(480, 0.06, 0.04);
+      voce('commuta');
       setTimeout(function () { corrente = null; var e = lista(); if (e.length) metti(e[0]); }, 260);
     } catch (e) {}
   }
@@ -409,11 +428,21 @@
     try { gps = navigator.getGamepads ? navigator.getGamepads() : []; } catch (e) { gps = []; }
     var gp = null;
     for (var i = 0; i < gps.length; i++) if (gps[i]) { gp = gps[i]; break; }
+    if (inputPad(gp)) avvistaPad();
     var plAperta = (function () { var p = document.getElementById('plancia-overlay'); return p && !p.hidden; })();
     if (plAperta) modoPuntatore = false;
+
+    var ax = gp ? (gp.axes || []) : [], bt = gp ? (gp.buttons || []) : [], now = Date.now();
+    var std = !!gp && gp.mapping === 'standard';
+    function giu(i) { return !!(std && bt[i] && bt[i].pressed); }
+    var tA = giu(0), tB = giu(1), tX = giu(2), tY = giu(3);
+    var pLB = giu(4), pRB = giu(5), pMenu = giu(9);
+    var nA = tA && !st.a, nB = tB && !st.b, nX = tX && !st.x2, nY = tY && !st.y2;
+    var nLB = pLB && !st.lb, nRB = pRB && !st.rb, nMenu = pMenu && !st.menu;
+    st.a = tA; st.b = tB; st.x2 = tX; st.y2 = tY; st.lb = pLB; st.rb = pRB; st.menu = pMenu;
+    if (!gp || plAperta) { st.x = 0; st.y = 0; }
+
     if (gp && !plAperta) {
-      var ax = gp.axes || [], bt = gp.buttons || [], now = Date.now();
-      var std = gp.mapping === 'standard';
       var lx = zonaMorta(ax[0] || 0, 0.18), ly = zonaMorta(ax[1] || 0, 0.18);
       if (lx || ly) {
         segnaPad();
@@ -421,26 +450,19 @@
         var velP = Math.max(window.innerWidth || 800, window.innerHeight || 600) * 1.15 * forzaP * forzaP * dtPad;
         muoviPuntatore((lx / forzaP) * velP, (ly / forzaP) * velP);
       }
-      var giuA = std && bt[0] && bt[0].pressed;
-      if (giuA && !st.a) { st.a = true; segnaPad(); if (modoPuntatore) clicPuntatore(); else azionaA(); }
-      if (!giuA) st.a = false;
+      if (nA) { segnaPad(); if (modoPuntatore) clicPuntatore(); else azionaA(); }
 
-      var r = std && bt[15] && bt[15].pressed, l = std && bt[14] && bt[14].pressed;
-      var d = std && bt[13] && bt[13].pressed, u = std && bt[12] && bt[12].pressed;
-      if (r || l || d || u || (std && bt[1] && bt[1].pressed)) segnaPad();
+      var r = giu(15), l = giu(14), d = giu(13), u = giu(12);
+      if (r || l || d || u || tB) segnaPad();
 
       if (r || l) { if (!st.x || now - st.x > 165) { st.x = now; modoPuntatore = false; navIndiretta(true); vaiVerso(r ? 'right' : 'left'); } } else st.x = 0;
       if (d || u) { if (!st.y || now - st.y > 165) { st.y = now; modoPuntatore = false; navIndiretta(true); vaiVerso(d ? 'down' : 'up'); } } else st.y = 0;
-      var tB = std && bt[1] && bt[1].pressed;
-      var tX = std && bt[2] && bt[2].pressed, tY = std && bt[3] && bt[3].pressed;
-      var pLB = std && bt[4] && bt[4].pressed, pRB = std && bt[5] && bt[5].pressed;
-      var pMenu = std && bt[9] && bt[9].pressed;
-      if (tB && !st.b) { st.b = true; azionaB(); } if (!tB) st.b = false;
-      if (tX && !st.x2) { st.x2 = true; if (osk && !osk.hidden) { cancella(); suono(330, 0.05, 0.035); } } if (!tX) st.x2 = false;
-      if (tY && !st.y2) { st.y2 = true; if (osk && !osk.hidden) { scrivi(' '); } else azionaY(); } if (!tY) st.y2 = false;
-      if (pLB && !st.lb) { st.lb = true; sezione(-1); } if (!pLB) st.lb = false;
-      if (pRB && !st.rb) { st.rb = true; sezione(1); } if (!pRB) st.rb = false;
-      if (pMenu && !st.menu) { st.menu = true; try { window.SB_PLANCIA && window.SB_PLANCIA.apri(); } catch (e) {} } if (!pMenu) st.menu = false;
+      if (nB) azionaB();
+      if (nX && osk && !osk.hidden) { cancella(); voce('commuta'); }
+      if (nY) { if (osk && !osk.hidden) scrivi(' '); else azionaY(); }
+      if (nLB) sezione(-1);
+      if (nRB) sezione(1);
+      if (nMenu) { try { window.SB_PLANCIA && window.SB_PLANCIA.apri(); } catch (e) {} }
       if (std) {
         var ry = zonaMorta(ax[3] || 0, 0.35);
         if (ry) { try { window.scrollBy({ top: ry * 1100 * Math.min(0.05, dtPad), behavior: 'instant' }); } catch (er) { window.scrollBy(0, ry * 1100 * Math.min(0.05, dtPad)); } }
@@ -469,6 +491,14 @@
 
   (function tracciaModalita() {
     function punta(v) { try { document.body.classList.toggle('puntatore', !!v); } catch (e) {} }
+    function mano(e) {
+      if (!e || !e.isTrusted) return;
+      if (e.pointerType === 'touch') return;
+      guida(false);
+    }
+    window.addEventListener('pointermove', mano, { passive: true, capture: true });
+    window.addEventListener('pointerdown', mano, { passive: true, capture: true });
+    window.addEventListener('wheel', function (e) { if (e && e.isTrusted) guida(false); }, { passive: true, capture: true });
     document.addEventListener('pointerdown', function () { punta(true); }, true);
     document.addEventListener('keydown', function (e) {
       var k = e.key;
