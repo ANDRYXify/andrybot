@@ -116,7 +116,7 @@ I comandi restano completi:
 
 | | |
 | --- | --- |
-| levetta sinistra | muove il **puntatore** (anche con la Plancia aperta) |
+| levetta sinistra | muove il **puntatore** (nella Plancia: scorre le piastrelle) |
 | tasti direzionali | **saltano** da un elemento all'altro (utile nei moduli) |
 | A | clicca dov'e il puntatore, o attiva l'elemento a fuoco |
 | levetta destra | scorre |
@@ -203,14 +203,29 @@ e cinque le condizioni:
 | nessun puntatore fine (solo pad) | **anello assente** | c'e, opacita 1, si deforma |
 | tutte e tre insieme | **anello assente** | c'e, opacita 1, si deforma |
 
-## Due difetti chiusi per strada
+## Due superfici, due linguaggi
 
-**Il cursore spariva dentro la Plancia.** Avevo scritto io una regola
-`body.plancia-on { opacity: 0 }` per nasconderlo li dentro. Sbagliata per lo
-stesso motivo: un mouse dentro la Plancia si vede. Regola tolta, e la levetta
-adesso muove il puntatore **anche** con la console aperta. A clicca quello che
-c'e sotto; la Plancia si fa da parte (`SB_PILOTA.puntatore()`) invece di aprire
-la piastrella a fuoco.
+Il pad e un mouse **nella dashboard**. La Plancia no: e una console, e il suo
+linguaggio e un altro — la levetta scorre le piastrelle, A apre, B esce. Ha
+anche la sua legenda che lo dice.
+
+Avevo provato a rendere il puntatore universale, Plancia compresa. Sbagliato, e
+si vedeva subito:
+
+- **il cursore scattava mentre scorrevi le sezioni.** Con la console aperta la
+  levetta faceva **due cose insieme**: `plancia.js` scorreva la rotaia e
+  `pilota.js` muoveva il puntatore. Le piastrelle scivolavano sotto un puntatore
+  fermo e l'anello saltava da una all'altra a ogni fotogramma.
+- **A non faceva niente.** `modoPuntatore` restava vero dopo il primo uso della
+  levetta nella dashboard, quindi sulla Plancia A finiva in `clicPuntatore()`,
+  e la Plancia si tirava indietro perche il pilota «stava puntando».
+  **Nessuno dei due gestiva il tasto.**
+
+La regola torna a essere quella semplice: **la Plancia possiede il pad quando e
+aperta.** Il pilota li dentro non muove niente e `modoPuntatore` viene azzerato,
+cosi quando esci A torna a comportarsi come deve. Il cursore resta nascosto
+finche la console e aperta (`body.plancia-on`) e **torna da solo** alla
+chiusura — verificato, perche era il difetto della volta prima.
 
 **`aperto` e `overlay.hidden` potevano divergere.** `apri()` usciva subito se il
 flag interno diceva «gia aperta», anche quando il pannello era nascosto nel DOM:
@@ -234,5 +249,6 @@ guardando il DOM, che e l'unica verita.
 3. portandolo sul bersaglio, `elementFromPoint` **e** il bersaglio, l'anello e
    li sopra con opacita 1, e premendo A il bersaglio riceve il clic;
 4. i tasti direzionali muovono ancora il fuoco;
-5. con la **Plancia aperta** il puntatore continua a muoversi e l'anello resta
-   visibile.
+5. con la **Plancia aperta**: la levetta scorre le piastrelle, genera **zero**
+   `pointermove` (era quello a farlo scattare), l'anello e a opacita 0, A apre
+   la voce — e alla chiusura l'anello torna a opacita 1.

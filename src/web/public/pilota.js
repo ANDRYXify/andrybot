@@ -410,7 +410,8 @@
     var gp = null;
     for (var i = 0; i < gps.length; i++) if (gps[i]) { gp = gps[i]; break; }
     var plAperta = (function () { var p = document.getElementById('plancia-overlay'); return p && !p.hidden; })();
-    if (gp) {
+    if (plAperta) modoPuntatore = false;
+    if (gp && !plAperta) {
       var ax = gp.axes || [], bt = gp.buttons || [], now = Date.now();
       var std = gp.mapping === 'standard';
       var lx = zonaMorta(ax[0] || 0, 0.18), ly = zonaMorta(ax[1] || 0, 0.18);
@@ -421,15 +422,9 @@
         muoviPuntatore((lx / forzaP) * velP, (ly / forzaP) * velP);
       }
       var giuA = std && bt[0] && bt[0].pressed;
-      if (giuA && !st.a) {
-        st.a = true;
-        segnaPad();
-        if (modoPuntatore) clicPuntatore();
-        else if (!plAperta) azionaA();
-      }
+      if (giuA && !st.a) { st.a = true; segnaPad(); if (modoPuntatore) clicPuntatore(); else azionaA(); }
       if (!giuA) st.a = false;
-    }
-    if (gp && !plAperta) {
+
       var r = std && bt[15] && bt[15].pressed, l = std && bt[14] && bt[14].pressed;
       var d = std && bt[13] && bt[13].pressed, u = std && bt[12] && bt[12].pressed;
       if (r || l || d || u || (std && bt[1] && bt[1].pressed)) segnaPad();

@@ -588,7 +588,10 @@ body.leggero #anime-sfondo::after, body.meno-moto #anime-sfondo::after { animati
 
 body.senza-cursore #an-cursore-ring,
 body.senza-cursore #an-cursore-dot,
-body.senza-cursore #an-cursore-bar { opacity: 0 !important; }
+body.senza-cursore #an-cursore-bar,
+body.plancia-on #an-cursore-ring,
+body.plancia-on #an-cursore-dot,
+body.plancia-on #an-cursore-bar { opacity: 0 !important; }
 body.senza-cursore.cursore-on, body.senza-cursore.cursore-on * { cursor: default !important; }
 body.pad-vivo.cursore-on, body.pad-vivo.cursore-on * { cursor: none !important; }
 
