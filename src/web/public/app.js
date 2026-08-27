@@ -577,6 +577,23 @@ function render() {
 
 const _menoMoto = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
+let _morphDa = null;
+document.addEventListener('click', (ev) => {
+  const b = ev.target && ev.target.closest ? ev.target.closest('[data-scheda]') : null;
+  _morphDa = (b && b.dataset.scheda) ? b : null;
+}, true);
+
+let _morphEl = null;
+function morphDa(el) {
+  const app = document.getElementById('app');
+  if (_morphEl && _morphEl !== el) { try { _morphEl.style.viewTransitionName = ''; } catch {  } }
+  _morphEl = el || null;
+  if (_morphEl) {
+    if (app) app.style.viewTransitionName = 'none';
+    try { _morphEl.style.viewTransitionName = 'contenuto'; } catch {  }
+  } else if (app) app.style.viewTransitionName = '';
+}
+
 function transizione(fn) {
   const drawer = window.matchMedia && window.matchMedia('(max-width: 1200px)').matches;
   if (_menoMoto || drawer || !document.startViewTransition) { fn(); return { finished: Promise.resolve() }; }
@@ -13693,21 +13710,28 @@ function aggiornaStatoNav(id) {
 }
 
 function vaiAScheda(id) {
-  chiudiMenuTop();
-  chiudiMenuMobile();
-  if (id === schedaAttiva) return;
+  morphDa(null);
+  const org = (_morphDa && _morphDa.isConnected && _morphDa.dataset.scheda === id) ? _morphDa : null;
+  _morphDa = null;
+  if (id === schedaAttiva) { chiudiMenuTop(); chiudiMenuMobile(); return; }
   schedaAttiva = id;
 
   try { history.replaceState(null, '', '#' + id); } catch {  }
 
   const sezioni = [...document.querySelectorAll('.pannello-scheda')].filter((p) => p.dataset.scheda === id);
-  transizione(() => {
+  if (org && !_menoMoto) morphDa(org);
+  const tr = transizione(() => {
+    morphDa(null);
+    chiudiMenuTop();
+    chiudiMenuMobile();
     aggiornaStatoNav(id);
     document.querySelectorAll('.pannello-scheda').forEach((p) =>
       p.classList.toggle('visibile', p.dataset.scheda === id));
     aggiornaTestataPagina();
     sezioni.forEach((p) => { rendiCartePieghevoli(p, id); rivelaCarte(p); });
   });
+  try { tr.finished.then(() => morphDa(null), () => morphDa(null)); } catch { morphDa(null); }
+  setTimeout(() => morphDa(null), 1600);
   caricaDatiScheda(id);
   azzeraBarraSalva();
   if (DEMO) aggiornaSpiegazioneDemo();
