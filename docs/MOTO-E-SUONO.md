@@ -392,3 +392,64 @@ e valida — e si ritroverebbe nello stesso stato di prima.
 
 `t_anello3.mjs` riproduce il caso esatto col mouse — morph sulla voce, clic,
 attesa — e verifica che l'anello torni piccolo e ci resti.
+
+---
+
+## Le sezioni: una colonna sola e un ordine di comparsa
+
+### Tre larghezze nella stessa vista
+
+La scheda "Come funziona" era larga 720 px, i controlli sotto 1003, le carte 1003:
+tre bordi destri diversi allineati a niente, nella stessa colonna. Si vede subito
+e non si sa dire cosa non va — che è il modo in cui una pagina diventa "meh".
+
+Il 720 non era arbitrario: una riga di testo larga 1003 px è scomoda da leggere.
+Ma quella misura era applicata alla cosa sbagliata. **La larghezza del contenitore
+la decide la griglia, quella della riga di testo la leggibilità**: erano confuse
+in una. Ora la scheda occupa la colonna come tutto il resto e il testo dentro ha
+la sua misura (68 caratteri), quindi si ottengono entrambe le cose invece di
+sacrificarne una.
+
+### La guida non ricordava di essere stata chiusa
+
+Il pannello "Come funziona" occupa un quarto di schermo in ogni sezione. È
+richiudibile, e il codice **leggeva** lo stato salvato — ma nessuno lo
+**scriveva**: chiudevi, cambiavi sezione, tornavi, ed era di nuovo aperto. Ora un
+ascoltatore su `toggle` lo registra.
+
+### La sezione entrava al contrario
+
+L'occhiello partiva a 20 ms, il sottotitolo a 340 e finiva a 940. Le carte
+partivano a 0 e finivano a 180. **Il contenuto arrivava prima del suo titolo**, e
+non per una scelta: erano due animazioni scritte in momenti diversi che non si
+conoscevano.
+
+Ora c'è una scala sola, dall'alto in basso come si legge: occhiello 0, titolo 40,
+sottotitolo 120, guida 180, controlli 200, prima carta 230, poi 55 ms per carta.
+Tutto finisce entro 640 ms. Le carte che entrano dopo, scorrendo, non hanno
+ritardo: aspetterebbero due volte.
+
+Traslazione da 14 a 22 px — 14 px non si leggono come movimento, si leggono come
+sfarfallio — e la molla del resto del sito al posto della curva che aveva solo
+questa animazione.
+
+### Perché l'orchestrazione partiva invisibile
+
+Il primo tentativo non si vedeva affatto, e la ragione vale la pena scriverla:
+**durante una transizione di vista il browser mostra uno scatto fermo del nuovo
+stato**. Qualunque animazione dei figli gira sotto quello scatto — invisibile — e
+quando la transizione finisce è già conclusa.
+
+Quindi la comparsa non parte più alla creazione degli elementi, ma quando il
+contenitore ha **finito di aprirsi** (`transition.finished`). Le carte vengono
+messe allo stato iniziale prima dello scatto, così lo scatto le cattura
+invisibili: il rettangolo del morph si apre vuoto e poi la sezione si popola.
+Che è la cosa giusta anche a raccontarla.
+
+Un dettaglio necessario: la classe che avvia la comparsa si toglie, si forza il
+ricalcolo e si rimette. Senza quel passaggio il browser non vede un cambiamento e
+alla seconda visita della stessa sezione non ripartirebbe niente.
+
+E gli elementi partono invisibili solo dove il movimento è gradito: con "riduci
+animazioni" attivo non si nasconde nulla, così non esiste un percorso in cui la
+pagina resti vuota.
