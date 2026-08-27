@@ -447,7 +447,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     '/graf-gif.js', '/mente3d.js', '/vendor/qrcode.js',
     // estetica ANIME OP + ricerca predittiva: DEVONO caricarsi sulla vetrina pubblica
     // (è ciò che rende futuristica la home per i visitatori). Nessun dato sensibile.
-    '/anime.css', '/vetrina.css', '/cinema.js', '/cerca.js', '/plancia.js', '/pilota.js',
+    '/anime.css', '/vetrina.css', '/cinema.js', '/cerca.js', '/plancia.js', '/pilota.js', '/suono.js',
     // script degli overlay OBS: pubblici (nessun segreto), servono senza sessione
     // altrimenti l'overlay tracking resta bloccato su "avvio…" (script non caricati)
     '/tracking-overlay.js', '/tracking-games.js', '/tracking-fx.js', '/tracking-fx-gl.js', '/tracking-poses.js']);
