@@ -267,3 +267,89 @@ la prima pressione di A veniva mangiata e il pad sembrava rotto a intermittenza.
 Lo stato dei tasti descrive **il pad**, non il contesto: ora si legge e si aggiorna
 sempre, e solo l'**azione** resta dentro il gate. Una pressione fatta mentre
 comanda la Plancia viene consumata da lei, e nessuna pressione va persa.
+
+---
+
+## Il morph: il bottone diventa la sezione
+
+Premi una voce del menu e quella voce **si allarga fino a diventare la sezione**,
+invece di sparire mentre la pagina fa una dissolvenza.
+
+### Non serviva un meccanismo nuovo
+
+`#app` — il contenitore del contenuto — ha già `view-transition-name: contenuto`.
+Finora quel gruppo andava da `#app` a `#app`: stesso rettangolo, nessun movimento,
+solo la dissolvenza incrociata.
+
+Per avere un morph servono **due elementi diversi che condividono il nome**: il
+bottone nello scatto "prima", la sezione in quello "dopo". Quindi il nome non è
+un attributo fisso: è un **prestito**.
+
+```
+prima:  #app cede il nome  →  il bottone premuto lo tiene
+dopo:   il bottone lo restituisce  →  #app lo riprende
+```
+
+Il browser fa il resto: interpola posizione e dimensione fra i due rettangoli.
+Nella prova: da 219×39 (la voce di menu) a 1003×2113 (la sezione).
+
+### La regola che rende impossibile romperlo
+
+Se **due** elementi portano lo stesso `view-transition-name` nello stesso scatto,
+il browser annulla l'intera transizione — non solo quel gruppo. È l'errore in cui
+si cade sempre, ed è invisibile finché non si guarda.
+
+Qui non può succedere: il prestito passa da una sola funzione che tiene **una sola
+variabile**. Dare il nome a qualcuno significa toglierlo a chi ce l'aveva, nella
+stessa istruzione. Non esistono due portatori perché non c'è un modo di scriverli.
+
+### Da dove viene il bottone
+
+L'origine si cattura in **un punto solo**: un ascoltatore in fase di cattura sul
+`click` che ricorda l'ultimo `[data-scheda]` premuto. Serve perché la navigazione
+è chiamata da tre gestori diversi (menu, barra, cassetto) e passare l'origine a
+ognuno avrebbe voluto dire scrivere la stessa cosa in tre posti.
+
+Se la navigazione **non** viene da un clic — un link con hash, una chiamata da
+codice, un comando vocale — l'origine non c'è e la transizione resta quella
+normale. Corretto: non c'è nessun bottone da cui espandersi.
+
+### Il menu si chiude dopo lo scatto
+
+`chiudiMenuTop()` stava **prima** della transizione. Così, quando il browser
+scattava la foto del "prima", la voce era già stata nascosta: niente rettangolo di
+partenza, niente morph. Ora la chiusura avviene **dentro** il callback, cioè dopo
+lo scatto. In più è anche più bello: la voce non sparisce di colpo, vola via a
+diventare la sezione.
+
+### Il ritorno
+
+Il nome prestato torna a `#app` in tre modi indipendenti: nel callback, quando la
+transizione finisce (sia che riesca sia che venga interrotta), e con una rete di
+sicurezza a 1,6 secondi. In più `vaiAScheda` ripulisce all'ingresso. Se il nome
+restasse appeso, `#app` resterebbe con `view-transition-name: none` e **tutte** le
+transizioni successive perderebbero il gruppo del contenuto: vale tre righe.
+
+### I tempi
+
+L'espansione dura `--t-medio` (414 ms) con la molla — l'overshoot fa la differenza
+fra "si ingrandisce" e "scatta al suo posto". Lo scatto del bottone svanisce in
+120 ms, così non lo si vede stirato; il contenuto nuovo entra con 60 ms di ritardo,
+mentre il rettangolo si sta ancora aprendo. Entrambi con `object-fit: cover`
+ancorato in alto a sinistra: senza, lo snapshot del bottone si deformerebbe
+allungandosi.
+
+Sotto i 1200 px di larghezza le transizioni erano già disattivate (là c'è il
+cassetto, non il menu): il morph segue quella scelta.
+
+### Il collaudo
+
+`t_morph.mjs` verifica quello che a occhio non si vede: che nello scatto "prima"
+il portatore sia **esattamente uno** e sia il bottone premuto, che `#app` abbia
+ceduto il nome, che il portatore sia più piccolo della sezione (altrimenti non c'è
+espansione), che dopo non resti nessun nome appeso, che il secondo morph funzioni
+come il primo, e che una navigazione senza clic **non** rubi il nome.
+
+Che il browser non stia scartando tutto in silenzio si controlla su
+`transition.ready`, e che stia davvero interpolando dalla presenza di
+`::view-transition-group(contenuto)` fra le animazioni vive.

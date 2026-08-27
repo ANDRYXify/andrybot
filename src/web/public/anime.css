@@ -738,9 +738,18 @@ body.pad-guida.cursore-on, body.pad-guida.cursore-on * { cursor: none !important
   background: currentColor; opacity: .5; vertical-align: baseline;
 }
 
-::view-transition-group(contenuto) { animation-duration: var(--t-medio); }
-::view-transition-old(contenuto) { animation: vt-esce .15s cubic-bezier(.4, 0, 1, 1) both; }
-::view-transition-new(contenuto) { animation: vt-entra var(--t-medio) var(--molla-medio) 50ms both; }
+::view-transition-group(contenuto) {
+  animation-duration: var(--t-medio);
+  animation-timing-function: var(--molla-medio);
+}
+::view-transition-old(contenuto) {
+  animation: vt-esce .12s cubic-bezier(.4, 0, 1, 1) both;
+  object-fit: cover; object-position: top left;
+}
+::view-transition-new(contenuto) {
+  animation: vt-entra var(--t-medio) var(--molla-medio) 60ms both;
+  object-fit: cover; object-position: top left;
+}
 ::view-transition-group(testata), ::view-transition-group(marchio), ::view-transition-group(piede) {
   animation-duration: var(--t-medio);
   animation-timing-function: var(--molla-medio);
