@@ -38,7 +38,36 @@ function nomeMoneta(channel) {
 
 // Configurazione punti/classifica per canale (personalizzabile dalla dashboard).
 // Valori di default = quelli storici, così i canali esistenti non cambiano nulla.
-const PUNTI_DEFAULT = { perMessaggio: 2, ogniSecondi: 60, trivia: 25, duello: 15, slotCosto: 10, slotVinci: 200, slotCoppia: 20, topN: 5 };
+// L'economia delle monete.
+//
+// Com'era: si guadagnava SOLO scrivendo, due monete al minuto. Chi guardava in
+// silenzio per due ore prendeva zero; chi scriveva «ok» ogni minuto ne prendeva
+// centoventi. Cosi si premia il rumore, non la presenza — ed e' un invito a
+// tenere una macro che scrive in chat.
+//
+// Com'e' ora, sul modello dei sistemi fedelta' collaudati (StreamElements,
+// Streamlabs): due flussi che si SOMMANO.
+//
+//   presenza   a chi c'e', anche in silenzio, a ogni giro
+//   attivita'  in piu' a chi ha scritto in quel giro
+//
+// piu' i moltiplicatori per abbonati e VIP, e una regola che il direttore ha
+// chiesto esplicitamente: chi resta in lurk a lungo continua a guadagnare, ma
+// GRADUALMENTE MENO. Non a zero — la presenza vale sempre qualcosa — ma
+// scendendo di un passo a ogni giro senza partecipare, fino a un minimo. Chi
+// torna a parlare risale subito a quota piena.
+//
+// Tutto solo mentre il canale e' in diretta: a canale spento non c'e' niente da
+// premiare, e il flusso continuo a bocce ferme e' proprio cio' che svaluta la
+// moneta.
+const PUNTI_DEFAULT = {
+  perMessaggio: 2, ogniSecondi: 60,
+  perPresenza: 5, perAttivita: 5,
+  moltSub: 1.5, moltVip: 1.25,
+  lurkPasso: 0.15, lurkMinimo: 0.35,
+  soloLive: true,
+  trivia: 25, duello: 15, slotCosto: 10, slotVinci: 200, slotCoppia: 20, topN: 5,
+};
 function numClamp(v, def, lo, hi) { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : def; }
 function cfgPunti(channel) {
   const p = streamers.get(channel)?.settings?.punti || {};
@@ -51,9 +80,136 @@ function cfgPunti(channel) {
     slotVinci:    numClamp(p.slotVinci,    PUNTI_DEFAULT.slotVinci, 0, 1000000),
     slotCoppia:   numClamp(p.slotCoppia,   PUNTI_DEFAULT.slotCoppia, 0, 100000),
     topN:         numClamp(p.topN,         PUNTI_DEFAULT.topN, 3, 10),
+    perPresenza:  numClamp(p.perPresenza,  PUNTI_DEFAULT.perPresenza, 0, 10000),
+    perAttivita:  numClamp(p.perAttivita,  PUNTI_DEFAULT.perAttivita, 0, 10000),
+    moltSub:      numFra(p.moltSub,        PUNTI_DEFAULT.moltSub, 1, 10),
+    moltVip:      numFra(p.moltVip,        PUNTI_DEFAULT.moltVip, 1, 10),
+    lurkPasso:    numFra(p.lurkPasso,      PUNTI_DEFAULT.lurkPasso, 0, 1),
+    lurkMinimo:   numFra(p.lurkMinimo,     PUNTI_DEFAULT.lurkMinimo, 0, 1),
+    soloLive:     p.soloLive !== false,
   };
 }
+function numFra(v, def, lo, hi) { const n = Number(v); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : def; }
+
+// Quanto vale la presenza di chi non partecipa da `giri` giri: piena finche'
+// partecipa, poi scende di un passo per volta e si ferma al minimo.
+export function fattoreLurk(giri, cfg) {
+  const passo = cfg.lurkPasso ?? PUNTI_DEFAULT.lurkPasso;
+  const minimo = cfg.lurkMinimo ?? PUNTI_DEFAULT.lurkMinimo;
+  return Math.max(minimo, 1 - Math.max(0, giri) * passo);
+}
+
+// Quante monete spettano a una persona in questo giro.
+export function quotaGiro({ attivo, giriFermo, sub, vip }, cfg) {
+  const base = (cfg.perPresenza || 0) * fattoreLurk(attivo ? 0 : giriFermo, cfg);
+  const extra = attivo ? (cfg.perAttivita || 0) : 0;
+  const molt = sub ? (cfg.moltSub || 1) : (vip ? (cfg.moltVip || 1) : 1);
+  return Math.round((base + extra) * molt);
+}
+
+// Chi ha scritto dall'ultimo giro, e da quanti giri uno sta zitto.
+const attiviGiro = new Map();     // canale → Set(utente)
+const fermiDa = new Map();        // canale → Map(utente → giri)
+
+// I ruoli non costano una chiamata: ogni messaggio in chat porta con se' i
+// distintivi di chi scrive, quindi basta ricordarli. Chi non ha mai parlato
+// resta senza moltiplicatore, che e' il comportamento prudente.
+const ruoliVisti = new Map();     // canale → Map(utente → { sub, vip })
+
+function segnaAttivita(channel, utente, msg) {
+  const ch = String(channel || '').toLowerCase();
+  const u = String(utente || '').toLowerCase();
+  let s2 = attiviGiro.get(ch);
+  if (!s2) { s2 = new Set(); attiviGiro.set(ch, s2); }
+  s2.add(u);
+  if (msg) {
+    let r = ruoliVisti.get(ch);
+    if (!r) { r = new Map(); ruoliVisti.set(ch, r); }
+    r.set(u, { sub: !!msg.isSub, vip: !!msg.isVip });
+    if (r.size > 5000) { let n = 0; for (const k of r.keys()) { r.delete(k); if (++n >= 2000) break; } }
+  }
+}
+
+export function ruoliDi(channel) {
+  const r = ruoliVisti.get(String(channel || '').toLowerCase());
+  if (!r) return {};
+  const out = {};
+  for (const [k, v] of r) out[k] = v;
+  return out;
+}
+
+// Un giro dell'economia. `presenti` e' la lista di chi e' in chat (anche in
+// silenzio); `ruoli` dice chi e' sub o VIP. Ritorna quanto e' stato dato, per
+// i collaudi e per la console.
+export function giroMonete(channel, presenti, { ruoli = null, live = true } = {}) {
+  const ch = String(channel || '').toLowerCase();
+  if (!ruoli) ruoli = ruoliDi(ch);
+  const esito = { accreditati: 0, monete: 0, saltati: 0 };
+  if (!attivi(ch)) return esito;
+  const cfg = cfgPunti(ch);
+  if (cfg.soloLive && !live) { attiviGiro.delete(ch); return esito; }
+  if (!(cfg.perPresenza > 0 || cfg.perAttivita > 0)) return esito;
+
+  const parlanti = attiviGiro.get(ch) || new Set();
+  let fermi = fermiDa.get(ch);
+  if (!fermi) { fermi = new Map(); fermiDa.set(ch, fermi); }
+
+  for (const grezzo of presenti || []) {
+    const u = String(grezzo || '').toLowerCase();
+    if (!u || u.startsWith('[')) { esito.saltati++; continue; }
+    const attivo = parlanti.has(u);
+    const giri = attivo ? 0 : (fermi.get(u) || 0) + 1;
+    fermi.set(u, giri);
+    const r = ruoli[u] || {};
+    const q = quotaGiro({ attivo, giriFermo: giri, sub: !!r.sub, vip: !!r.vip }, cfg);
+    if (q > 0) { points.add(ch, u, q); esito.accreditati++; esito.monete += q; }
+  }
+  // chi non c'e' piu' non deve restare in memoria a crescere all'infinito
+  const presenti2 = new Set((presenti || []).map((x) => String(x).toLowerCase()));
+  for (const k of fermi.keys()) if (!presenti2.has(k)) fermi.delete(k);
+  attiviGiro.delete(ch);
+  return esito;
+}
 const medaglia = (i) => ['🥇', '🥈', '🥉'][i] || `${i + 1}°`;
+
+// Riempie i segnaposto di un modello. Nasce da un difetto vero: un esito del
+// duello conteneva {a} due volte e la sostituzione ne cambiava una sola, quindi
+// in chat compariva «vince {a}!». Qui si sostituiscono TUTTE le occorrenze e,
+// se resta un segnaposto non risolto, si lancia: un modello scritto male viene
+// scoperto dai collaudi invece che dagli spettatori.
+export function riempi(modello, valori) {
+  let t = String(modello);
+  for (const [k, v] of Object.entries(valori)) t = t.split('{' + k + '}').join(String(v));
+  const resto = t.match(/\{[a-z0-9_]+\}/i);
+  if (resto) throw new Error(`modello con segnaposto non risolto: ${resto[0]} in "${modello}"`);
+  return t;
+}
+
+// Chi ha parlato di recente, per canale. Serve per non far sfidare fantasmi:
+// prima bastava scrivere !duello @chiunque perche' il bot annunciasse un duello
+// con un nome inventato e gli accreditasse pure le monete.
+const VISTI_MS = 30 * 60 * 1000;
+const visti = new Map();
+
+export function segnaPresenza(channel, utente) {
+  const ch = String(channel || '').toLowerCase();
+  const u = String(utente || '').toLowerCase();
+  if (!ch || !u) return;
+  let m = visti.get(ch);
+  if (!m) { m = new Map(); visti.set(ch, m); }
+  m.set(u, Date.now());
+  if (m.size > 3000) {
+    const limite = Date.now() - VISTI_MS;
+    for (const [k, t] of m) if (t < limite) m.delete(k);
+  }
+}
+
+export function inChat(channel, utente) {
+  const m = visti.get(String(channel || '').toLowerCase());
+  if (!m) return false;
+  const t = m.get(String(utente || '').toLowerCase());
+  return !!t && Date.now() - t < VISTI_MS;
+}
 
 // --------------------------------------------------------- monete: accredito passivo
 // Chi chatta guadagna qualche moneta (throttle 60s per persona).
@@ -62,6 +218,8 @@ export function accredita(msg) {
     if (!msg) return;
     const u = String(msg.user || '').toLowerCase();
     if (!u || u.startsWith('[')) return;
+    segnaPresenza(msg.channel, u);
+    segnaAttivita(msg.channel, u, msg);
     if (!attivi(msg.channel)) return;
     const c = cfgPunti(msg.channel);
     if (c.perMessaggio <= 0) return;
@@ -146,9 +304,101 @@ function avviaRound(channel, round, say) {
 
 // Lancia una manche a caso (gioco scelto a caso tra trivia/parola/numero, con i
 // giochi personalizzati mescolati). Chiamata dallo scheduler del bot.
+// --- altri tipi di manche, tutti sullo stesso schema -----------------------
+// Un round e' { tipo, annuncio, controlla(testo), soluzione, durata }: aggiungerne
+// uno vuol dire scrivere una funzione che lo costruisce, e ognuno accetta il suo
+// materiale dai giochi personalizzati del canale invece di un elenco fisso.
+
+// Mescola le lettere di una parola, garantendo che il risultato sia diverso
+// dall'originale: un anagramma uguale alla parola non e' un gioco.
+function mescola(parola) {
+  const car = [...String(parola)];
+  if (car.length < 3) return null;
+  for (let tent = 0; tent < 12; tent++) {
+    for (let i = car.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [car[i], car[j]] = [car[j], car[i]];
+    }
+    const fatto = car.join('');
+    if (norm(fatto) !== norm(parola)) return fatto;
+  }
+  return null;
+}
+
+function roundAnagramma(channel) {
+  const custom = giochiCustom(channel, 'anagramma').flatMap((g) => Array.isArray(g.config?.parole) ? g.config.parole : []);
+  const pool = (custom.length ? custom : BANCA_PAROLE).filter((p) => String(p).trim().length >= 4);
+  if (!pool.length) return null;
+  const p = String(scegli(pool)).trim();
+  const mischiata = mescola(p);
+  if (!mischiata) return null;
+  const target = norm(p);
+  return {
+    tipo: 'anagramma',
+    annuncio: `🔤 ANAGRAMMA: rimetti in ordine «${mischiata.toUpperCase()}»`,
+    controlla: (t) => t === target, soluzione: p, durata: 45000,
+  };
+}
+
+const EMOJI_SEQ = ['🍒', '⭐', '💎', '🔥', '🎲', '🎯', '🍋', '🔔', '⚡', '🌙'];
+function roundSequenza(channel) {
+  const custom = giochiCustom(channel, 'sequenza');
+  const quanti = numClamp(custom[0]?.config?.lunghezza, 4, 3, 8);
+  const tavolozza = (Array.isArray(custom[0]?.config?.simboli) && custom[0].config.simboli.length >= 3)
+    ? custom[0].config.simboli : EMOJI_SEQ;
+  const seq = Array.from({ length: quanti }, () => scegli(tavolozza));
+  const testo = seq.join('');
+  return {
+    tipo: 'sequenza',
+    annuncio: `🧩 SEQUENZA: ricopiala esattamente → ${seq.join(' ')}`,
+    controlla: (t, grezzo) => String(grezzo || '').replace(/\s+/g, '') === testo,
+    soluzione: testo, durata: 30000,
+  };
+}
+
+function roundDomandaCustom(channel) {
+  // Un tipo libero: lo streamer scrive annuncio e risposte accettate. E' il piu'
+  // versatile — ci si fa un indovinello, una citazione, un «quale gioco e'?».
+  const g = scegli(giochiCustom(channel, 'domanda'));
+  if (!g) return null;
+  const testo = String(g.config?.domanda || g.nome || '').trim();
+  const risposte = (Array.isArray(g.config?.risposte) ? g.config.risposte : []).map(norm).filter(Boolean);
+  if (!testo || !risposte.length) return null;
+  return {
+    tipo: 'domanda',
+    annuncio: `❓ ${testo}`,
+    controlla: (t) => risposte.includes(t),
+    soluzione: g.config.risposte[0], durata: numClamp(g.config?.durataSec, 45, 10, 300) * 1000,
+  };
+}
+
+// I tipi di manche esistenti, con il nome da mostrare e se accettano materiale
+// dallo streamer. Un posto solo: da qui si servono la dashboard, il collaudo e
+// il sorteggio, invece di tre elenchi che possono divergere.
+const COSTRUTTORI = {
+  trivia:    { fai: (c) => roundTrivia(c),    nome: 'Quiz',      materiale: 'domande' },
+  parola:    { fai: (c) => roundParola(c),    nome: 'Reflex',    materiale: 'parole' },
+  numero:    { fai: (c) => roundNumero(c),    nome: 'Numero',    materiale: null },
+  anagramma: { fai: (c) => roundAnagramma(c), nome: 'Anagramma', materiale: 'parole' },
+  sequenza:  { fai: (c) => roundSequenza(c),  nome: 'Sequenza',  materiale: 'simboli' },
+  domanda:   { fai: (c) => roundDomandaCustom(c), nome: 'Domanda tua', materiale: 'domanda+risposte' },
+};
+
+export function tipiManche() {
+  return Object.entries(COSTRUTTORI).map(([id, v]) => ({ id, nome: v.nome, materiale: v.materiale }));
+}
+
+// Costruisce una manche senza avviarla: serve a provarla dalla dashboard e a
+// collaudare che ogni tipo produca davvero qualcosa di giocabile.
+export function costruisciManche(channel, tipo) {
+  const c = COSTRUTTORI[tipo];
+  if (!c) return null;
+  try { return c.fai(channel); } catch { return null; }
+}
+
 export function avviaManche(channel, say) {
   if (!attivi(channel) || roundAttivo.has(channel)) return false;
-  const builders = [roundTrivia, roundParola, roundNumero];
+  const builders = Object.values(COSTRUTTORI).map((c) => c.fai);
   // prova qualche costruttore finché uno produce un round valido
   for (const b of builders.sort(() => Math.random() - 0.5)) {
     const r = b(channel);
@@ -165,10 +415,17 @@ const OTTO = [
   'Segui il tuo istinto.', 'Ho i miei dubbi…', 'Ovvio che sì!', 'Nemmeno per sogno 😄',
 ];
 const SLOT_SIMBOLI = ['🍒', '🍋', '🔔', '⭐', '💎', '7️⃣'];
+// Esposti per il collaudo: ogni modello viene riempito con valori finti e deve
+// uscirne senza segnaposto residui. Cosi un {a} scritto due volte, o un {c} che
+// nessuno riempie, si scopre prima di finire in chat.
+export const MODELLI = {
+  duello: () => ({ elenco: DUELLO_ESITI, valori: { a: 'Tizio', b: 'Caio' } }),
+};
+
 const DUELLO_ESITI = [
   '{a} stende {b} con una mossa leggendaria! 🥊',
   '{b} inciampa e {a} vince senza fatica 😂',
-  '{a} e {b} se le danno di santa ragione… vince {a}! 🔥',
+  '{a} e {b} se le danno di santa ragione, e alla fine la spunta {a}! 🔥',
   '{a} sconfigge {b} e ruba pure la scena ✨',
 ];
 // pesca: tabella del pescato (peso = probabilità relativa, v = monete vinte)
@@ -209,7 +466,9 @@ export function tryGame(msg, say) {
     const round = roundAttivo.get(channel);
     if (round) {
       if (Date.now() > round.scadenza) { roundAttivo.delete(channel); }
-      else if (!String(msg.text).startsWith('!') && round.controlla(norm(msg.text))) {
+      // Il testo arriva sia normalizzato sia grezzo: le manche a parole usano il
+      // primo, quelle a simboli il secondo (norm() toglie le emoji).
+      else if (!String(msg.text).startsWith('!') && round.controlla(norm(msg.text), msg.text)) {
         roundAttivo.delete(channel);
         points.add(channel, msg.user, round.premio);
         say(`🎉 Esatto ${nome}! (${round.soluzione}) +${round.premio} ${moneta()}!`);
@@ -292,12 +551,16 @@ export function tryGame(msg, say) {
         const sfidato = (args[0] || '').replace(/^@/, '').toLowerCase();
         if (!sfidato) { say(`⚔️ Sfida qualcuno: !duello @nome`); return true; }
         if (sfidato === msg.user.toLowerCase()) { say(`${nome}, non puoi sfidare te stesso 😄`); return true; }
+        if (!/^[a-z0-9_]{3,25}$/.test(sfidato)) { say(`⚔️ «${sfidato}» non è un nome valido.`); return true; }
+        // Nessun duello con i fantasmi: si sfida chi è in chat, non un nome
+        // qualsiasi. Senza questo, le monete finivano su profili inesistenti.
+        if (!inChat(channel, sfidato)) { say(`⚔️ @${sfidato} non è in chat: puoi sfidare solo chi c'è.`); return true; }
         if (inCooldown(channel + '|duello', 15000)) { say('⚔️ Un duello alla volta, aspettate un attimo!'); return true; }
         const vince = Math.random() < 0.5;
         const a = vince ? nome : sfidato, b = vince ? sfidato : nome;
         const premio = cfgPunti(channel).duello;
         points.add(channel, vince ? msg.user : sfidato, premio);
-        say('⚔️ ' + scegli(DUELLO_ESITI).replace('{a}', a).replace('{b}', b) + ` (+${premio} ${moneta()})`);
+        say('⚔️ ' + riempi(scegli(DUELLO_ESITI), { a, b }) + ` (+${premio} ${moneta()})`);
         return true;
       }
 
