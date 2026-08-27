@@ -2265,7 +2265,10 @@ function guidaSchedaHtml(id) {
   const serve = Array.isArray(g.serve) ? L(g.serve[0], g.serve[1], g.serve[2]) : g.serve;
   const come = Array.isArray(g.come) ? g.come.map((c) => (Array.isArray(c) ? L(c[0], c[1], c[2]) : c)) : [];
 
-  let aperta = !stretto();
+  // Nel banco degli overlay la guida parte chiusa: e' un'area di lavoro, e
+  // duecentocinquanta pixel di istruzioni sopra la tela sono duecentocinquanta
+  // pixel in meno di tela. Resta la scelta dello streamer se l'ha espressa.
+  let aperta = !stretto() && !SOTTO_SCHEDE[id];
   try {
     const v = localStorage.getItem('guida:' + id);
     if (v === '0') aperta = false; else if (v === '1') aperta = true;
@@ -2338,6 +2341,16 @@ function tFamiglia(id, def) {
 // Telegram — che e' giusto sia lungo, essendo un elenco. Il difetto era averlo
 // nella stessa pagina di cose che non c'entrano.
 const SOTTO_SCHEDE = {
+  // Il banco degli overlay: la tela occupa la pagina da sola, perche' e' il
+  // punto dell'esercizio. Prima cominciava a 1543px, in fondo a una pagina che
+  // conteneva anche gli overlay, il link OBS e le carte dell'aspetto: per
+  // arrivare a vederla bisognava scorrere una schermata e mezza.
+  alert: {
+    attributo: 'parte',
+    voci: [
+      ['banco', 'Disposizione'], ['overlay', 'I tuoi overlay'], ['aspetto', 'Aspetto'],
+    ],
+  },
   notifiche: {
     attributo: 'rete',
     voci: [
@@ -2396,6 +2409,7 @@ document.addEventListener('click', (ev) => {
   applicaSottoSchede(scheda);
   const pan = document.querySelector('.pannello-scheda.visibile');
   if (pan) rivelaCarte(pan);
+  requestAnimationFrame(misuraSopraBanco);
 });
 
 // Le schede di una famiglia, sotto il titolo. Portano `data-scheda`, quindi
@@ -4696,7 +4710,7 @@ function pannelloAlert() {
   const opzTpl = `<optgroup label="${lblPronti}">${TEMPLATE_BUILTIN.map((t, i) => `<option value="b${i}">${esc(t.nome)}</option>`).join('')}</optgroup>`
     + (p.overlayTemplates.length ? `<optgroup label="${lblMiei}">${p.overlayTemplates.map((t, i) => `<option value="u${i}">${esc(t.nome)}</option>`).join('')}</optgroup>` : '');
   return pannello('alert', `
-    <div class="carta">
+    <div class="carta" data-parte="overlay">
       <h2>${_hIco(ICO.monitor)}${L('I miei overlay', 'My overlays', 'Mis overlays')}</h2>
       <p>${L('Puoi avere', 'You can have', 'Puedes tener')} <strong>${L('più overlay', 'multiple overlays', 'varios overlays')}</strong>, ${L('ognuno col suo', 'each with its own', 'cada uno con su')} <strong>${L('link OBS', 'OBS link', 'enlace OBS')}</strong> ${L('e il suo', 'and its own', 'y su propio')} <strong>${L('layout', 'layout', 'diseño')}</strong>
       (${L('cosa mostra e dove', 'what it shows and where', 'qué muestra y dónde')}). ${L('Es. un overlay "solo alert" in una scena e uno "solo chat" in un\'altra.', 'E.g. an "alerts only" overlay in one scene and a "chat only" one in another.', 'Ej. un overlay "solo alertas" en una escena y otro "solo chat" en otra.')}</p>
@@ -4728,7 +4742,7 @@ function pannelloAlert() {
       <p class="suggerimento">${L('Tienilo per te: chi ha questo link può far comparire cose nel tuo overlay.', 'Keep it to yourself: anyone with this link can make things appear in your overlay.', 'Guárdalo para ti: quien tenga este enlace puede hacer aparecer cosas en tu overlay.')}</p>
     </div>
 
-    <div class="carta">
+    <div class="carta" data-parte="banco">
       <h2>${_hIco(ICO.righello)}${L('Anteprima e layout', 'Preview and layout', 'Vista previa y diseño')}</h2>
       <p>${L('Personalizza', 'Customize', 'Personaliza')} <strong>${L('tutto', 'everything', 'todo')}</strong> ${L('ciò che appare a schermo: alert, chat, widget… colori, font, forma, animazioni.', 'that appears on screen: alerts, chat, widgets… colors, fonts, shape, animations.', 'lo que aparece en pantalla: alertas, chat, widgets… colores, fuentes, forma, animaciones.')}
       ${L('Posizioni, "cosa mostra" e l\'', 'Positions, "what to show" and the ', 'Las posiciones, "qué mostrar" y el ')}<strong>${L('aspetto (colori, font, forma, animazioni, CSS)', 'appearance (colors, fonts, shape, animations, CSS)', 'aspecto (colores, fuentes, forma, animaciones, CSS)')}</strong> ${L('valgono per l\'', 'apply to the ', 'valen para el ')}<strong>${L('overlay selezionato qui sopra', 'overlay selected above', 'overlay seleccionado arriba')}</strong>; ${L('i testi degli alert e i comportamenti restano condivisi.', 'alert texts and behaviors stay shared.', 'los textos de las alertas y los comportamientos quedan compartidos.')}
@@ -4803,7 +4817,7 @@ function pannelloAlert() {
       <p class="suggerimento"><strong>${L('Clicca', 'Click', 'Haz clic en')}</strong> ${L('un elemento per selezionarlo, poi <strong>trascinalo</strong> per spostarlo; usa le maniglie agli angoli o i cursori qui sopra. Scorciatoie: <strong>rotellina</strong> = ridimensiona, <strong>Shift+rotellina</strong> = ruota, <strong>doppio clic</strong> = ripristina. Con «Prova» li vedi nell\'overlay dentro OBS.', 'an element to select it, then <strong>drag</strong> it to move; use the corner handles or the sliders above. Shortcuts: <strong>wheel</strong> = resize, <strong>Shift+wheel</strong> = rotate, <strong>double click</strong> = reset. Use «Test» to see them in the overlay inside OBS.', 'un elemento para seleccionarlo, luego <strong>arrástralo</strong> para moverlo; usa los tiradores de las esquinas o los cursores de arriba. Atajos: <strong>rueda</strong> = redimensiona, <strong>Shift+rueda</strong> = rota, <strong>doble clic</strong> = restablece. Con «Probar» los ves en el overlay dentro de OBS.')}</p>
     </div>
 
-    <details class="carta sez" id="sez-alert">
+    <details class="carta sez" data-parte="aspetto" id="sez-alert">
       <summary><h3>${_hIco(ICO.megafono)}${L('Alert eventi', 'Event alerts', 'Alertas de eventos')}</h3></summary>
       <p>${L('Un cartello animato con suono quando arriva un follow, un sub, dei bit o un raid.', 'An animated banner with sound when a follow, sub, bits or a raid comes in.', 'Un cartel animado con sonido cuando llega un follow, un sub, bits o un raid.')}</p>
       <div class="riga-interruttore spazio-sopra">
@@ -4844,7 +4858,7 @@ function pannelloAlert() {
       <p class="spazio-sopra"><button class="btn" id="al-salva">${L('Salva alert', 'Save alerts', 'Guardar alertas')}</button></p>
     </details>
 
-    <details class="carta sez" id="sez-chat">
+    <details class="carta sez" data-parte="aspetto" id="sez-chat">
       <summary><h3>${_hIco(ICO.chat)}${L('Chat a schermo', 'On-screen chat', 'Chat en pantalla')}</h3></summary>
       <p>${L('I messaggi della chat scorrono in sovraimpressione nell\'overlay.', 'Chat messages scroll as an overlay on screen.', 'Los mensajes del chat se muestran superpuestos en el overlay.')}</p>
       <div class="riga-interruttore spazio-sopra">
@@ -4890,7 +4904,7 @@ function pannelloAlert() {
       </p>
     </details>
 
-    <details class="carta sez" id="sez-widget">
+    <details class="carta sez" data-parte="aspetto" id="sez-widget">
       <summary><h3>${_hIco(ICO.medaglia)}${L('Widget: ultimo follower / ultimo sub', 'Widgets: latest follower / latest sub', 'Widgets: último seguidor / último sub')}</h3></summary>
       <p>${L('Etichette', 'Labels', 'Etiquetas')} <strong>${L('sempre a schermo', 'always on screen', 'siempre en pantalla')}</strong> ${L('che si aggiornano da sole quando arriva un nuovo follower o sub.', 'that update themselves when a new follower or sub arrives.', 'que se actualizan solas cuando llega un nuevo seguidor o sub.')}</p>
       <div class="alert-griglia spazio-sopra">
@@ -4900,7 +4914,7 @@ function pannelloAlert() {
       <p class="spazio-sopra"><button class="btn" id="wid-salva">${L('Salva widget', 'Save widgets', 'Guardar widgets')}</button></p>
     </details>
 
-    <details class="carta sez">
+    <details class="carta sez" data-parte="aspetto">
       <summary><h3>${_hIco(ICO.moduli)}${L('CSS avanzato', 'Advanced CSS', 'CSS avanzado')} <span class="tenue">— ${L('libertà totale', 'total freedom', 'libertad total')}</span></h3></summary>
       <p>${L('Per chi vuole spingersi oltre: CSS applicato al tuo overlay. Le classi principali sono', 'For those who want to go further: CSS applied to your overlay. The main classes are', 'Para quien quiere ir más allá: CSS aplicado a tu overlay. Las clases principales son')}
       <code>.alert-card</code>, <code>.chat-riga</code>, <code>.ovl-widget</code>, <code>.pen-card</code>.</p>
@@ -5193,6 +5207,7 @@ function deseleziona() {
 function aggiornaInspector() {
   const box = _g('ovl-inspector');
   _rendiLivelli();
+  aggiornaPiedeBanco();
   if (!box) return;
   if (!selezione) { box.hidden = true; return; }
   box.hidden = false;
@@ -5204,6 +5219,91 @@ function aggiornaInspector() {
   const fissa = (id, v) => { const e = _g(id); if (e && document.activeElement !== e) e.value = v; };
   fissa('insp-x', _arr(st.x)); fissa('insp-y', _arr(st.y)); fissa('insp-s', st.s); fissa('insp-r', st.r);
 }
+
+// ── IL BANCO ───────────────────────────────────────────────────────────────
+// L'editor degli overlay diventa un'area di lavoro alta quanto lo schermo
+// invece di una pagina che scorre. Il pezzo grosso e' CSS; qui si fanno le due
+// cose che il CSS non puo': portare l'ispettore dentro la scena (nel documento
+// stava dopo, quindi non poteva essere una colonna) e tenere aggiornata la riga
+// delle coordinate in fondo.
+function montaBanco() {
+  const carta = document.querySelector('#ovl-tela')?.closest('.carta');
+  if (!carta) return;
+  carta.classList.add('ovl-banco');
+
+  const scena = carta.querySelector('.ovl-scena');
+  const insp = _g('ovl-inspector');
+  if (scena && insp && insp.parentElement !== scena) scena.appendChild(insp);
+
+  if (!insp.querySelector('.ovl-vuoto')) {
+    const v = document.createElement('p');
+    v.className = 'ovl-vuoto';
+    v.textContent = L('Scegli un elemento a sinistra o sulla tela per modificarlo.',
+      'Pick an element on the left or on the canvas to edit it.',
+      'Elige un elemento a la izquierda o en el lienzo para editarlo.');
+    insp.appendChild(v);
+  }
+
+  if (!carta.querySelector('.ovl-piede')) {
+    const piede = document.createElement('div');
+    piede.className = 'ovl-piede';
+    piede.id = 'ovl-piede';
+    carta.appendChild(piede);
+  }
+  document.body.classList.add('banco-on');
+  // due giri: il primo assesta il layout, il secondo misura sul risultato
+  requestAnimationFrame(() => requestAnimationFrame(misuraSopraBanco));
+  aggiornaPiedeBanco();
+}
+
+// Il banco vale solo per la sua sezione: uscendo, la pagina torna normale.
+function smontaBanco() {
+  document.body.classList.remove('banco-on');
+  document.documentElement.style.removeProperty('--banco-sopra');
+  if (_osservaTestata) { try { _osservaTestata.disconnect(); } catch (e) {  } _osservaTestata = null; }
+}
+
+// Quanto spazio occupa quello che sta sopra il banco: serve al CSS per sapere
+// quanto e' alto il banco senza far scorrere la pagina.
+//
+// La misura va presa quando il layout e' fermo. Presa troppo presto dava 26px
+// invece di 688, e il banco veniva alto quanto tutto lo schermo: sforava in
+// basso di seicento pixel. Ora si rimisura anche quando la testata cambia
+// altezza — apri la guida e lo spazio si aggiorna da solo.
+let _osservaTestata = null;
+function misuraSopraBanco() {
+  const carta = document.querySelector('.carta.ovl-banco');
+  if (!carta) { document.documentElement.style.removeProperty('--banco-sopra'); return; }
+  const y = carta.getBoundingClientRect().top + window.scrollY;
+  if (y < 40) return;                       // layout non ancora assestato
+  document.documentElement.style.setProperty('--banco-sopra', Math.round(y + 26) + 'px');
+
+  const testata = document.getElementById('pagina-testata');
+  if (testata && !_osservaTestata && window.ResizeObserver) {
+    _osservaTestata = new ResizeObserver(() => misuraSopraBanco());
+    _osservaTestata.observe(testata);
+  }
+}
+
+function aggiornaPiedeBanco() {
+  const piede = _g('ovl-piede');
+  if (!piede) return;
+  const sel = typeof selezione !== 'undefined' ? selezione : null;
+  if (!sel) {
+    piede.innerHTML = `<span>${esc(L('Niente selezionato', 'Nothing selected', 'Nada seleccionado'))}</span>`
+      + `<span class="ovl-piede-dx">${esc(L('frecce per spostare · Maiusc per dieci volte tanto', 'arrows to move · Shift for ten times as much', 'flechas para mover · Mayús para diez veces más'))}</span>`;
+    return;
+  }
+  const st = _statoXY(sel);
+  const nome = (NOMI_EL()[sel] || sel);
+  piede.innerHTML = `<span><b>${esc(nome)}</b></span>`
+    + `<span>X <b>${_arr(st.x)}%</b></span><span>Y <b>${_arr(st.y)}%</b></span>`
+    + `<span>${esc(L('Dim', 'Size', 'Tam'))} <b>${st.s}%</b></span>`
+    + `<span>${esc(L('Rot', 'Rot', 'Rot'))} <b>${st.r}°</b></span>`
+    + `<span class="ovl-piede-dx">${esc(L('frecce per spostare · Maiusc per dieci volte tanto', 'arrows to move · Shift for ten times as much', 'flechas para mover · Mayús para diez veces más'))}</span>`;
+}
+
+window.addEventListener('resize', () => { misuraSopraBanco(); });
 
 const OVL_LIVELLI = () => [
   { k: 'alert', ico: ICO.megafono, n: L('Alert eventi', 'Event alerts', 'Alertas de eventos') },
@@ -10978,7 +11078,8 @@ function caricaDatiScheda(id) {
   if (id === 'sondaggi') caricaSondaggi();
   if (id === 'giveaway') caricaGiveaway();
   if (id === 'penitenze') caricaPenitenze();
-  if (id === 'alert') caricaAlert();
+  if (id === 'alert') { caricaAlert(); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); }); }
+  else smontaBanco();
   if (id === 'regia') caricaRegia();
   if (id === 'studio') caricaStudio();
   if (id === 'effetti') { caricaEffetti(); caricaPremi(); caricaSuoniPremi(); caricaLibreria(); caricaTracking(); }
