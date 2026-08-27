@@ -232,6 +232,8 @@ export const SCOPES = {
     'moderator:manage:announcements', // annunci in chat (/announce) dai Moduli
     'moderator:manage:shoutouts',     // shoutout ufficiale (/shoutout) dai Moduli
     'moderator:read:chatters',        // chi è in chat (ore guardate / fedeltà)
+    'moderator:manage:chat_settings', // serranda dello scudo: chat ai soli follower / lenta
+    'moderator:manage:shield_mode',   // Shield Mode di Twitch, alzata dallo scudo sotto attacco
     'channel:manage:raids',       // Regia: avviare/annullare una raid
     'channel:edit:commercial',    // Regia: lanciare una pubblicità (ad-break)
     'channel:read:ads',           // Regia: leggere la programmazione delle pubblicità

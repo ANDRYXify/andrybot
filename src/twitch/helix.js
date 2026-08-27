@@ -588,6 +588,46 @@ export class Helix {
     }
   }
 
+  // Shield Mode: la difesa nativa di Twitch, quella che lo streamer alzerebbe a
+  // mano dalla dashboard quando è sotto attacco. Un solo interruttore che porta
+  // con sé tutte le restrizioni che il canale ha configurato lì.
+  // PUT /helix/moderation/shield_mode, scope moderator:manage:shield_mode.
+  async shieldMode(channelLogin, attivo) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return { ok: false, motivo: 'dati mancanti' };
+    try {
+      const token = await this.auth.getToken('broadcaster', channelLogin);
+      await this._request('PUT', '/moderation/shield_mode', {
+        query: { broadcaster_id: s.user_id, moderator_id: s.user_id }, token,
+        body: { is_active: !!attivo },
+      });
+      return { ok: true };
+    } catch (e) {
+      if (e.status === 401 || e.status === 403) return { ok: false, motivo: 'permesso mancante' };
+      log.debug('shieldMode:', e?.message || e);
+      return { ok: false, motivo: 'errore Twitch' };
+    }
+  }
+
+  // Chat lenta: un messaggio ogni N secondi. Da sola non ferma un raid, ma
+  // strozza il volume mentre le altre difese fanno effetto.
+  async chatLenta(channelLogin, attivo, secondi = 10) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return { ok: false, motivo: 'dati mancanti' };
+    try {
+      const token = await this.auth.getToken('broadcaster', channelLogin);
+      await this._request('PATCH', '/chat/settings', {
+        query: { broadcaster_id: s.user_id, moderator_id: s.user_id }, token,
+        body: { slow_mode: !!attivo, slow_mode_wait_time: Math.min(120, Math.max(3, Math.round(secondi))) },
+      });
+      return { ok: true };
+    } catch (e) {
+      if (e.status === 401 || e.status === 403) return { ok: false, motivo: 'permesso mancante' };
+      log.debug('chatLenta:', e?.message || e);
+      return { ok: false, motivo: 'errore Twitch' };
+    }
+  }
+
   // Chat ai soli follower (o la riapre): la "serranda" durante un attacco
   // follow-bot. minMinuti = da quanto devono seguire (0 = anche appena seguiti).
   // Richiede lo scope moderator:manage:chat_settings. Ritorna { ok }.
