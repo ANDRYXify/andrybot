@@ -113,6 +113,48 @@ nel confronto**: venti persone che scrivono "lol" o una emote insieme sono una
 chat viva, non un attacco. Quattro bocche diverse sullo stesso messaggio lungo
 entro mezzo minuto alzano l'assetto e il messaggio viene tolto.
 
+## Il difetto che rendeva inutile metà del lavoro
+
+Twitch ha due azioni che sembrano equivalenti e non lo sono affatto:
+
+- **Bannare** impedisce di scrivere e di interagire. **L'account resta follower.**
+- **Bloccare** lo toglie dalla lista follower e gli impedisce di seguire di nuovo.
+
+Lo scudo bannava. Quindi dopo un attacco da mille follow-bot il canale restava
+con mille follower finti in più: il numero gonfiato — che è **il danno vero** di
+un follow-bot, perché il rapporto follower/spettatori conta per Affiliato e
+Partner e chi arriva sul canale lo legge — non veniva toccato. L'attacco restava
+a segno anche quando lo scudo aveva "funzionato".
+
+È lo stesso motivo per cui gli strumenti di riferimento del settore
+(CommanderRoot, Sery_Bot) parlano di *blocklist* e non di ban.
+
+Ora:
+
+- **sui follow** si blocca (`PUT /helix/users/blocks`), e il ban resta come
+  ripiego se il blocco fallisce;
+- **in chat** si banna, perché lì è moderazione e non pulizia della lista;
+- la coda dell'ondata blocca invece di bannare, quindi ripulisce davvero.
+
+## Pulire quello che è già dentro
+
+La difesa in tempo reale ferma quello che arriva adesso. Non tocca chi è già nella
+lista: i bot che hanno seguito prima che lo scudo fosse acceso, e quelli finiti
+nelle liste pubbliche **dopo** aver seguito.
+
+`pulisciFollower` scorre la lista follower e blocca i riconosciuti, con due
+prudenze:
+
+- guarda **solo** i nomi noti o corrispondenti ai pattern, mai il punteggio di
+  sospetto. Qui non c'è un attacco in corso a giustificare un margine d'errore, e
+  un fan vero rimosso non torna;
+- va al ritmo della coda, perché un canale con diecimila follower sono cento
+  pagine e altrettante migliaia di chiamate.
+
+L'endpoint `/api/antibot/pulizia` funziona in due tempi: **in prova** dice chi
+verrebbe tolto senza toccare niente; confermata, parte in sottofondo e
+l'avanzamento si legge dalla console. Prima si guarda, poi si agisce.
+
 ## Permessi
 
 Servono due scope nuovi, e chi era già collegato deve riautorizzare (la dashboard
@@ -120,6 +162,7 @@ lo segnala da sola, come per gli altri):
 
 - `moderator:manage:chat_settings` — la serranda: chat ai soli follower, chat lenta.
 - `moderator:manage:shield_mode` — lo Shield Mode di Twitch.
+- `user:manage:blocked_users` — il blocco, l'unica azione che toglie il follow.
 
 Senza, lo scudo funziona lo stesso ma con una mano legata: banna e trattiene, non
 può chiudere la chat.
@@ -144,7 +187,10 @@ somigliano e vanno distinti:
 - al rientro tutto torna com'era;
 - un coro di cinque account identici alza l'assetto e il messaggio sparisce;
 - venti persone che scrivono "lol" non alzano niente;
-- la firma resiste ad accenti, link e punteggiatura cambiati.
+- la firma resiste ad accenti, link e punteggiatura cambiati;
+- un follow-bot viene **bloccato** e non solo bannato, mentre in chat si banna;
+- la pulizia in prova non tocca niente, quella vera prende i due bot e **non**
+  sfiora né i fan veri né Nightbot.
 
 ## Fonti
 

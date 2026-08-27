@@ -3199,6 +3199,7 @@ function pannelloStato() {
     'channel:read:stream_key': L('Studio Web (stream key)', 'Web Studio (stream key)', 'Estudio Web (stream key)'),
     'moderator:manage:chat_settings': L('serranda dello scudo (chat ai follower, chat lenta)', 'shield shutter (followers-only, slow chat)', 'persiana del escudo (solo seguidores, chat lento)'),
     'moderator:manage:shield_mode': L('Shield Mode di Twitch', 'Twitch Shield Mode', 'Shield Mode de Twitch'),
+    'user:manage:blocked_users': L('togliere i follower finti (blocco)', 'remove fake followers (block)', 'quitar seguidores falsos (bloqueo)'),
     'clips:edit': L('creazione clip', 'clip creation', 'creación de clips'),
     'channel:read:subscriptions': L('eventi sub', 'sub events', 'eventos de sub'),
     'moderator:read:followers': L('eventi follow', 'follow events', 'eventos de follow'),

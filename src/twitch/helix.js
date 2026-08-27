@@ -529,13 +529,18 @@ export class Helix {
 
   // Follower recenti del canale (dai più nuovi). [{ user_id, user_login, user_name, followed_at }].
   // Richiede lo scope 'moderator:read:followers' sul token del broadcaster.
-  async getRecentFollowers(channelLogin, { first = 100 } = {}) {
+  async getRecentFollowers(channelLogin, { first = 100, dopo = '' } = {}) {
     const s = streamers.get(channelLogin);
     if (!s?.user_id) return [];
     const token = await this.auth.getToken('broadcaster', channelLogin);
     try {
-      const j = await this._request('GET', '/channels/followers', { query: { broadcaster_id: s.user_id, first: Math.min(100, Math.max(1, first)) }, token });
-      return j?.data || [];
+      const query = { broadcaster_id: s.user_id, first: Math.min(100, Math.max(1, first)) };
+      if (dopo) query.after = dopo;
+      const j = await this._request('GET', '/channels/followers', { query, token });
+      const arr = j?.data || [];
+      arr.cursore = j?.pagination?.cursor || '';
+      arr.totale = j?.total || 0;
+      return arr;
     } catch (e) { log.debug('getRecentFollowers:', e?.message || e); return []; }
   }
 
@@ -584,6 +589,41 @@ export class Helix {
       if (e.status === 401) return { ok: false, motivo: 'permesso mancante' };
       if (e.status === 409) return { ok: true, gia: true };   // già bannato
       log.debug('timeoutUser:', e?.message || e);
+      return { ok: false, motivo: 'errore Twitch' };
+    }
+  }
+
+  // BLOCCO. Non è un ban: è la voce "blocca" del profilo, ed è l'unica cosa che
+  // TOGLIE il follow. Un account bannato resta follower — il numero gonfiato dal
+  // follow-bot resta gonfiato — mentre uno bloccato sparisce dalla lista follower
+  // e non può più seguire. Contro i follow-bot è questa l'arma, non il ban.
+  // PUT /helix/users/blocks, scope user:manage:blocked_users. Il blocco è a nome
+  // dello streamer, non del canale: usa il suo token.
+  async bloccaUtente(channelLogin, userId, motivo = 'follow-bot') {
+    if (!userId) return { ok: false, motivo: 'dati mancanti' };
+    try {
+      const token = await this.auth.getToken('broadcaster', channelLogin);
+      await this._request('PUT', '/users/blocks', {
+        query: { target_user_id: String(userId), reason: 'spam', source_context: 'chat' }, token,
+      });
+      return { ok: true };
+    } catch (e) {
+      if (e.status === 401 || e.status === 403) return { ok: false, motivo: 'permesso mancante' };
+      if (e.status === 400) return { ok: false, motivo: 'non posso bloccarlo' };
+      log.debug('bloccaUtente:', e?.message || e);
+      return { ok: false, motivo: 'errore Twitch' };
+    }
+  }
+
+  async sbloccaUtente(channelLogin, userId) {
+    if (!userId) return { ok: false, motivo: 'dati mancanti' };
+    try {
+      const token = await this.auth.getToken('broadcaster', channelLogin);
+      await this._request('DELETE', '/users/blocks', { query: { target_user_id: String(userId) }, token });
+      return { ok: true };
+    } catch (e) {
+      if (e.status === 401 || e.status === 403) return { ok: false, motivo: 'permesso mancante' };
+      log.debug('sbloccaUtente:', e?.message || e);
       return { ok: false, motivo: 'errore Twitch' };
     }
   }
