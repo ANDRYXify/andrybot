@@ -92,3 +92,104 @@ degli streamer, non del prodotto.
 Il passo successivo, quando si vuole, e una manciata di pagine vere — una per
 argomento — servite gia scritte dal server (non dalla SPA), cosi le leggono sia
 Google sia le IA. E un lavoro di contenuti prima che di codice.
+
+---
+
+## Perché "bot twitch" non ci trovava: mancava il contenuto, non la tecnica
+
+### La misura
+
+Prima di toccare qualcosa, cosa vedeva davvero un motore di ricerca:
+
+| segnale | stato |
+|---|---|
+| `robots.txt` | a posto, `Allow: /`, sitemap dichiarata |
+| `sitemap.xml` | valida, servita, con hreflang |
+| `canonical` per lingua | corretto, ognuno punta a sé |
+| `hreflang` it/en/es + x-default | corretto |
+| dati strutturati | presenti |
+| `socialbot.it` | 301 su `socialbot.live` |
+| testo nell'HTML servito | 21 KB, non serve JS per leggerlo |
+| **URL di contenuto** | **1** |
+
+La tecnica era già a posto. Quello che mancava è che la sitemap aveva sette voci
+di cui **tre erano la stessa vetrina in tre lingue** e due erano le pagine legali:
+una sola pagina con qualcosa da dire.
+
+Cercando anche solo il nome del dominio, il sito non compariva.
+
+### Cosa dice la ricerca sul 2026
+
+Tre cose cambiano l'ordine delle priorità:
+
+- **Google non supporta IndexNow.** Lo supportano Bing, Yandex, Naver, Seznam e
+  Yep. Per Google restano Search Console e i collegamenti.
+- **`llms.txt` non conta** né per il ranking né per gli AI Overviews: la
+  documentazione di Google lo dice esplicitamente. Il file resta perché serve a
+  disambiguare il nome "SocialBot" per gli assistenti, ma non è una leva SEO.
+- **Il collo di bottiglia non è la sottomissione, è lo spessore.** Una pagina
+  sottile resta "scansionata, non indicizzata" anche quando la si sottopone a
+  mano. E gli AI Overviews usano gli stessi sistemi di ranking della ricerca
+  normale: non c'è una scorciatoia separata.
+
+C'è anche un fatto sulla forma della query. In italiano "bot twitch" è occupata
+da **guide e confronti**, non da homepage di prodotto: chi cerca vuole capire
+come si fa, non atterrare su una vetrina. Per comparire lì bisogna rispondere a
+quella domanda.
+
+### Cosa è stato fatto
+
+Cinque guide vere, servite come HTML completo senza JavaScript, con il foglio di
+stile dentro la pagina (tre chilobyte: una richiesta in meno vale più di una
+cache) e il font già ospitato qui.
+
+| pagina | parole | intento |
+|---|---|---|
+| `/guide/bot-per-twitch-italiano` | 1027 | confronto, "quale bot scelgo" |
+| `/guide/come-mettere-un-bot-su-twitch` | 893 | procedura |
+| `/guide/follow-bot-e-hate-raid` | 1422 | problema urgente |
+| `/guide/comandi-chat-twitch` | 911 | riferimento |
+| `/guide/overlay-obs-per-twitch` | 919 | procedura |
+
+Ognuna con `Article` o `HowTo`, `BreadcrumbList` e `FAQPage` nei dati
+strutturati, canonical, Open Graph, collegamenti fra guide e dalla home.
+
+La guida sui follow-bot è la più lunga di proposito: è l'unica dove abbiamo
+qualcosa di **originale** da dire — la distinzione fra un'ondata artificiale e
+una clip andata bene misurata sulla cadenza degli arrivi — e il contenuto
+originale è ciò che i motori e gli assistenti citano. Il resto sono guide
+oneste su cose note.
+
+Il contenuto vive in `src/web/guide.js` come struttura di dati, non come file
+HTML sparsi: una guida in più è una voce in più, e da lì si aggiornano da sole
+sitemap, indice e collegamenti incrociati.
+
+### Il collaudo
+
+Un controllo automatico rifiuta le pagine sottili (sotto le 700 parole), quelle
+senza dati strutturati, senza canonical o senza `h1`, e i `title` sopra i 65
+caratteri o le `description` sopra i 165 — che verrebbero troncati nei risultati.
+Cinque descrizioni erano fuori misura e sono state riscritte.
+
+### Cosa resta da fare, e richiede te
+
+Queste due cose non le può fare il codice:
+
+1. **Google Search Console** — verificare la proprietà di `socialbot.live` e
+   sottoporre la sitemap. È il canale con cui Google scopre il sito in giorni
+   invece che in settimane. Serve il codice di verifica: si mette come meta tag
+   nell'`head` o come record DNS.
+2. **Bing Webmaster Tools** — stessa cosa, e da lì si abilita IndexNow, che Bing
+   supporta davvero.
+
+Un sito nuovo, senza collegamenti in entrata, viene tipicamente indicizzato in
+tre-sette giorni dopo la sottomissione. Il posizionamento su una query
+competitiva richiede molto più tempo e, soprattutto, che qualcuno colleghi il
+sito: quello nessun accorgimento tecnico lo sostituisce.
+
+### Fonti
+
+- [Google — llms.txt non ha effetto sul ranking](https://www.digitalapplied.com/blog/google-llms-txt-no-seo-value-lighthouse-audit-2026)
+- [IndexNow: chi lo supporta nel 2026](https://pressonify.ai/blog/indexnow-instant-indexing-press-releases-2026)
+- [Indicizzazione di un sito nuovo](https://www.trysight.ai/blog/website-not-getting-indexed-fast)
+- [AI Overviews e sistemi di ranking](https://www.seoinc.com/seo-blog/ai-seo/)

@@ -390,6 +390,10 @@ body.vetrina .contenuto { max-width: 1040px; }
 :root[data-theme="dark"] .tema-toggle .ico-sole { display: block; }
 :root[data-theme="dark"] .tema-toggle .ico-luna { display: none; }
 
+.pie-guide { font-size: .84rem; color: var(--testo-3); line-height: 2; margin: .2rem 0 .5rem; }
+.pie-guide a { color: var(--testo-3); text-decoration: none; }
+.pie-guide a:hover { color: var(--acc); text-decoration: underline; }
+
 .vetrina-chip { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem 1.1rem; margin: .2rem 0 0; padding: 0; }
 .vetrina-chip li { display: inline-flex; align-items: center; gap: .35rem; font-size: .86rem; font-weight: 600; color: var(--testo-2); }
 .vetrina-chip .b-ico { margin: 0; color: var(--verde); }

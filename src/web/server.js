@@ -22,6 +22,7 @@ import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, pass
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO } from '../db.js';
 import { renderLinkPage, renderInformativa } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
+import { GUIDE, paginaGuida, paginaIndice, urlGuide } from './guide.js';
 import { statoListaBot, registro as registroAntibot, segnalazioniAperte, risolviSegnalazione, sintesiRegistro, registra as registraAntibot, nomeBot, valutaAccount, assetto as assettoAntibot, sogliaRaffica, codaBan } from '../features/antibot.js';
 import { statoBackup, backupOra } from '../backup.js';
 import { risolviCanaleId } from '../features/youtube.js';
@@ -471,6 +472,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
         || req.path.startsWith('/tracking/')       // overlay TRACKING in OBS (pagina + stream): protetto dalla chiave
         || req.path.startsWith('/vendor/')         // librerie vendorizzate (PixiJS): pubbliche, nessun segreto
         || req.path.startsWith('/api/tracking/')   // gesti/say dell'overlay tracking (chiave overlay; /url resta requireLogin)
+        || req.path === '/guide' || req.path.startsWith('/guide/')  // guide: contenuto pubblico, indicizzabile
         || req.path.startsWith('/u/')        // link-page pubblica: la serviamo noi dal DB
         || req.path.startsWith('/assets/')   // bundle JS/CSS della link-page (proxy verso Vercel)
         || req.path === '/api/streamer-verify'   // API JSON della link-page (proxy verso Vercel)
@@ -1365,6 +1367,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       .concat([`    <xhtml:link rel="alternate" hreflang="x-default" href="${escXml(LINGUE_URL.it)}"/>`])
       .join('\n');
     const voci = Object.values(LINGUE_URL).map((u) => ({ u, p: '1.0', f: 'weekly', alt: true }));
+    for (const g of urlGuide()) voci.push({ u: g.loc, p: g.prio, f: g.freq, m: g.lastmod });
     voci.push({ u: `${b}/privacy`, p: '0.3', f: 'yearly' });
     voci.push({ u: `${b}/termini`, p: '0.3', f: 'yearly' });
     try {
@@ -1442,6 +1445,28 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   });
 
   // Informativa privacy & sicurezza (pubblica: dev'essere sempre consultabile)
+  // Le guide: pagine di contenuto vere, servite come HTML completo. Vedi
+  // src/web/guide.js per il perché esistono e come sono fatte.
+  const GUIDA_HTML = new Map();
+  app.get('/guide', (req, res) => {
+    if (!GUIDA_HTML.has('#indice')) GUIDA_HTML.set('#indice', paginaIndice());
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.set('Cache-Control', 'public, max-age=0, s-maxage=3600');
+    res.send(GUIDA_HTML.get('#indice'));
+  });
+  app.get('/guide/:slug', (req, res, next) => {
+    const slug = String(req.params.slug || '').toLowerCase();
+    if (!/^[a-z0-9-]{2,80}$/.test(slug)) return next();
+    if (!GUIDA_HTML.has(slug)) {
+      const h = paginaGuida(slug);
+      if (!h) return next();
+      GUIDA_HTML.set(slug, h);
+    }
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.set('Cache-Control', 'public, max-age=0, s-maxage=3600');
+    res.send(GUIDA_HTML.get(slug));
+  });
+
   app.get('/privacy', (req, res) => res.sendFile(join(publicDir, 'privacy.html')));
   // Termini di servizio (pubblici: richiesti anche dalle app di terzi, es. TikTok)
   app.get(['/termini', '/terms'], (req, res) => res.sendFile(join(publicDir, 'termini.html')));
