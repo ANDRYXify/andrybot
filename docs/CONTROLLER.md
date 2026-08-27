@@ -252,3 +252,47 @@ guardando il DOM, che e l'unica verita.
 5. con la **Plancia aperta**: la levetta scorre le piastrelle, genera **zero**
    `pointermove` (era quello a farlo scattare), l'anello e a opacita 0, A apre
    la voce — e alla chiusura l'anello torna a opacita 1.
+
+---
+
+## La ricerca col controller
+
+Era inservibile, e per un motivo strutturale: `pilota.js` **non sapeva che la
+ricerca esistesse**. Zero riferimenti a `cerca-aperta` in tutto il file. Con la
+ricerca aperta il pilota continuava a muovere il puntatore e il fuoco nella
+pagina sottostante, come se non stesse succedendo niente — e il pannello davanti
+restava lì, immobile, mentre sotto si spostavano cose che non si vedevano.
+
+È lo stesso difetto della Plancia, che avevo già corretto: **un pannello modale
+aperto possiede il pad**. La Plancia era stata sistemata, la ricerca no.
+
+### Il pad diventa una tastiera
+
+Con la ricerca aperta il pad non naviga per conto suo: **traduce in tasti**.
+
+| pad | tasto | effetto |
+|---|---|---|
+| croce su/giù, levetta | ↑ ↓ | scorre i risultati |
+| A | Invio | apre quello scelto |
+| B | Esc | chiude |
+| X | — | apre la tastiera a schermo per scrivere |
+
+La ragione di tradurre invece di navigare: **come si scorrono i risultati lo sa
+`cerca.js`**, che ordina, filtra e tiene il conto della selezione. Due
+navigazioni separate sullo stesso elenco divergerebbero al primo cambiamento —
+basterebbe aggiungere un filtro e una delle due lo ignorerebbe. Così ce n'è una
+sola, e il pad è un modo di premere i suoi tasti.
+
+### Il ritmo della ripetizione
+
+Il primo tentativo scorreva **due** risultati per pressione: con una soglia
+unica da 170 ms, tenere premuto il tasto per i 200 ms di una pressione normale
+faceva scattare due passi.
+
+Ora vale la regola della ripetizione dei tasti, che tutti conoscono senza saperlo:
+il primo passo è immediato, il secondo arriva dopo **430 ms**, poi si ripete ogni
+170. Una pressione singola sposta di uno; tenendo premuto si scorre.
+
+`t_cercapad.mjs` verifica che una pressione sposti esattamente di un risultato,
+che la pagina sotto **non** si muova mentre cerchi, e che B e A facciano quello
+che dicono.
