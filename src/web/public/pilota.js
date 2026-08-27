@@ -431,6 +431,8 @@
     if (inputPad(gp)) avvistaPad();
     var plAperta = (function () { var p = document.getElementById('plancia-overlay'); return p && !p.hidden; })();
     if (plAperta) modoPuntatore = false;
+    var cercaAperta = (function () { try { return document.body.classList.contains('cerca-aperta'); } catch (e) { return false; } })();
+    if (cercaAperta) modoPuntatore = false;
 
     var ax = gp ? (gp.axes || []) : [], bt = gp ? (gp.buttons || []) : [], now = Date.now();
     var std = !!gp && gp.mapping === 'standard';
@@ -441,6 +443,43 @@
     var nLB = pLB && !st.lb, nRB = pRB && !st.rb, nMenu = pMenu && !st.menu;
     st.a = tA; st.b = tB; st.x2 = tX; st.y2 = tY; st.lb = pLB; st.rb = pRB; st.menu = pMenu;
     if (!gp || plAperta) { st.x = 0; st.y = 0; }
+
+    // RICERCA APERTA. E' un pannello modale come la Plancia: finche' e' su, il
+    // pad appartiene a lei. Prima il pilota la ignorava del tutto e continuava a
+    // muovere puntatore e fuoco nella pagina sottostante, che e' esattamente il
+    // modo in cui una ricerca aperta diventa inservibile col controller.
+    //
+    // Il pad qui non naviga da se': diventa una tastiera. Come si scorrono i
+    // risultati lo sa cerca.js e resta l'unico a saperlo — due navigazioni
+    // separate sullo stesso elenco divergerebbero al primo cambiamento.
+    if (gp && cercaAperta) {
+      var inpC = document.getElementById('cerca-input');
+      var manda = function (tasto) {
+        if (!inpC) return;
+        try { inpC.focus({ preventScroll: true }); } catch (e) {}
+        try {
+          inpC.dispatchEvent(new KeyboardEvent('keydown', { key: tasto, bubbles: true, cancelable: true }));
+        } catch (e) {}
+      };
+      var giuC = giu(13) || zonaMorta(ax[1] || 0, 0.5) > 0;
+      var suC = giu(12) || zonaMorta(ax[1] || 0, 0.5) < 0;
+      // Come la ripetizione dei tasti: il primo passo e' immediato, il secondo
+      // arriva dopo una pausa, poi si ripete in fretta. Con un ritmo unico da
+      // 170ms una pressione normale ne faceva due e saltava un risultato.
+      if (giuC || suC) {
+        var attesa = !st.cN ? 0 : (st.cN === 1 ? 430 : 170);
+        if (!st.cT || now - st.cT >= attesa) {
+          st.cT = now; st.cN = (st.cN || 0) + 1;
+          segnaPad(); manda(giuC ? 'ArrowDown' : 'ArrowUp');
+        }
+      } else { st.cT = 0; st.cN = 0; }
+      if (nA) { segnaPad(); manda('Enter'); }
+      if (nB) { segnaPad(); manda('Escape'); }
+      if (nX) { segnaPad(); apriOsk(inpC); }
+      seguiAnello();
+      rafPad = requestAnimationFrame(pad);
+      return;
+    }
 
     if (gp && !plAperta) {
       var lx = zonaMorta(ax[0] || 0, 0.18), ly = zonaMorta(ax[1] || 0, 0.18);
