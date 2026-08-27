@@ -453,3 +453,59 @@ alla seconda visita della stessa sezione non ripartirebbe niente.
 E gli elementi partono invisibili solo dove il movimento è gradito: con "riduci
 animazioni" attivo non si nasconde nulla, così non esiste un percorso in cui la
 pagina resti vuota.
+
+---
+
+## La barra «modifiche non salvate»: una trappola in tre punti
+
+Tocchi un campo e compare in basso una barra che dice «Hai modifiche non
+salvate». Fin qui giusto. Il problema è che da lì **non si usciva**: la barra
+offriva solo pulsanti di salvataggio. Niente annulla, niente chiusura. L'unico
+modo per liberarsene era salvare — cioè fare la cosa che forse non volevi fare.
+
+Tre difetti distinti, tutti verificati nel codice.
+
+### Nessuna via d'uscita
+
+La barra costruiva i suoi pulsanti copiando quelli di salvataggio del pannello.
+Solo quelli. Ora ce ne sono due tipi:
+
+- **Annulla**, che ricarica la sezione dai dati salvati — le modifiche non
+  salvate spariscono per davvero, invece di restare in giro con l'avviso
+  nascosto;
+- la **X**, che mette via l'avviso senza toccare niente: le modifiche restano
+  dove sono e la barra torna alla prossima che fai. Anche Esc fa questo, perché
+  è quello che si prova per primo.
+
+La X è 28×28 px: sotto i 24 sarebbe fuori norma (WCAG 2.5.8) e soprattutto
+difficile da centrare col pollice, che è dove serve di più.
+
+### Copriva il contenuto
+
+Il codice metteva `body.con-salva` quando la barra compariva, e **nessuna regola
+CSS usava quella classe**. Una classe scritta per riservare lo spazio, che non
+riservava niente: la barra galleggiava sopra l'ultima carta della pagina, cioè
+proprio sui comandi che stavi per usare. Ora `con-salva` aggiunge il margine in
+fondo, 92 px su desktop e 168 su mobile con la barra di navigazione.
+
+### Tre pulsanti e un indovinello
+
+La barra proponeva **tutti** i salvataggi del pannello: nella sezione Giochi
+uscivano «Salva», «Salva punti» e «Salva manche» insieme, e sceglierne uno era
+un indovinello — due su tre riguardavano roba che non avevi toccato.
+
+Ora la barra ricorda **in quale carta** stavi scrivendo e propone il salvataggio
+di quella. Toccando un campo dei punti escono due pulsanti, non tre: «Annulla» e
+«Salva punti».
+
+### Su schermo stretto
+
+La barra va su due righe, quindi il tondo da 999 px non andava più bene e
+soprattutto la X, lasciata al flusso naturale, andava a capo da sola finendo
+staccata sopra il campo sottostante. Ora l'ordine è esplicito: prima riga testo e
+X, seconda riga i pulsanti a piena larghezza, e la barra occupa la larghezza
+dello schermo meno i margini.
+
+`t_salva.mjs` prova entrambe le larghezze e verifica che ci sia una via d'uscita,
+che la X chiuda davvero e liberi lo spazio, che nessun comando resti coperto e
+che i pulsanti proposti non siano più di tre.
