@@ -631,8 +631,22 @@ function avviaComparsa(sezioni) {
     t.classList.remove('entra');
     void t.offsetWidth;
     t.classList.add('entra');
+    t.classList.remove('pronta');
   }
   (sezioni || []).forEach((p) => rivelaCarte(p));
+}
+
+// Arma la comparsa: da qui in poi la testata sta nascosta finche' non parte.
+// Va chiamata solo da chi la fara' partire davvero, e con una rete di sicurezza
+// che la scopre comunque se qualcosa andasse storto per strada.
+function armaComparsa() {
+  const t = document.getElementById('pagina-testata');
+  if (!t || _menoMoto) return;
+  t.classList.remove('entra');
+  t.classList.add('pronta');
+  setTimeout(() => {
+    if (t.classList.contains('pronta') && !t.classList.contains('entra')) avviaComparsa([]);
+  }, 1400);
 }
 
 function rivelaCarte(scope = document) {
@@ -1834,28 +1848,42 @@ function vistaDisabilitato() {
     </div>`;
 }
 
+// FAMIGLIE. Sezioni che condividono una voce di menu e si mostrano con delle
+// schede dentro la pagina, invece di occupare una riga di menu ciascuna.
+//
+// Il motivo viene da una misura: delle 24 sezioni, otto stavano sotto una
+// schermata — troppo poco per meritare una voce propria — mentre quattro
+// superavano le quattro schermate. Il difetto era lo squilibrio, non il numero.
+// Quindi si accorpano le piccole che hanno lo stesso scopo, e le grandi restano
+// dove sono.
+//
+// Gli id delle sezioni NON cambiano. Ci sono trenta riferimenti nella sola
+// ricerca, più i collegamenti interni, l'ancora nell'indirizzo e i comandi
+// vocali: cambiarli avrebbe rotto tutto quanto per una questione di menu.
+// `vaiAScheda('memoria')` continua a funzionare esattamente come prima, e apre
+// la famiglia giusta con la sua scheda accesa.
+const FAMIGLIE = [
+  { id: 'bot', nome: 'Il bot', parti: ['personalita', 'conoscenza', 'memoria'] },
+  { id: 'comandi', nome: 'Comandi', parti: ['moduli', 'ascolto'] },
+  { id: 'moderazione', nome: 'Moderazione', parti: ['regole', 'scudo'] },
+  { id: 'interazione', nome: 'Giochi', parti: ['giochi', 'sondaggi', 'giveaway', 'penitenze'] },
+  { id: 'inonda', nome: 'Regia', parti: ['regia', 'clip', 'musica'] },
+];
+const famigliaDi = (scheda) => FAMIGLIE.find((f) => f.parti.includes(scheda)) || null;
+const stessaFamiglia = (a, b) => { const fa = famigliaDi(a); return !!fa && fa === famigliaDi(b); };
+
 const GRUPPI = [
   { id: 'bot', nome: 'Il tuo bot', schede: [
-    ['personalita', 'Personalità'],
-    ['conoscenza', 'Conoscenza'],
-    ['memoria', 'Memoria'],
+    ['personalita', 'Il bot'],
     ['avatar', 'Avatar 3D'],
   ] },
   { id: 'pubblico', nome: 'Chat e pubblico', schede: [
     ['moduli', 'Comandi'],
-    ['ascolto', 'Comandi vocali'],
     ['regole', 'Moderazione'],
-    ['scudo', 'Scudo anti-bot'],
-    ['giochi', 'Giochi & classifiche'],
-    ['sondaggi', 'Sondaggi & predizioni'],
-    ['giveaway', 'Giveaway'],
-    ['penitenze', 'Penitenze'],
+    ['giochi', 'Giochi'],
   ] },
   { id: 'diretta', nome: 'Durante la diretta', schede: [
     ['regia', 'Regia'],
-
-    ['clip', 'Clip'],
-    ['musica', 'Musica'],
   ] },
   { id: 'scena', nome: 'Scena & overlay', schede: [
     ['alert', 'Overlay Studio'],
@@ -1878,6 +1906,7 @@ const GRUPPO_ADMIN = { id: 'admin', nome: 'Admin', schede: [['admin', 'Admin']] 
 function schedaValida(id) {
   if (!id) return false;
   if (id === 'admin') return true;
+  if (FAMIGLIE.some((f) => f.parti.includes(id))) return true;
   return GRUPPI.some((g) => g.schede.some(([sid]) => sid === id));
 }
 
@@ -2273,6 +2302,14 @@ function miniGuida({ titolo, serve = '', passi = [], note = [], aperta = false }
 }
 
 function infoScheda(id) {
+  // In una famiglia il titolone e' quello della famiglia: le sue parti si
+  // scelgono con le schede sotto, e non ha senso che il titolo salti a ogni
+  // scheda quando la pagina e' la stessa.
+  const f = famigliaDi(id);
+  if (f) {
+    const g = elencoGruppi().find((x) => x.schede.some(([sid]) => f.parti.includes(sid)));
+    return { area: g ? tGruppo(g.id, g.nome) : '', titolo: tFamiglia(f.id, f.nome) };
+  }
   for (const g of elencoGruppi()) {
     const s = g.schede.find(([sid]) => sid === id);
     if (s) return g.schede.length === 1 ? { area: '', titolo: tGruppo(g.id, g.nome) } : { area: tGruppo(g.id, g.nome), titolo: tScheda(s[0], s[1]) };
@@ -2280,10 +2317,54 @@ function infoScheda(id) {
   return { area: '', titolo: id };
 }
 
+const FAM_ETI = {
+  bot: ['Il bot', 'The bot', 'El bot'],
+  comandi: ['Comandi', 'Commands', 'Comandos'],
+  moderazione: ['Moderazione', 'Moderation', 'Moderación'],
+  interazione: ['Giochi', 'Games', 'Juegos'],
+  inonda: ['Regia', 'Live control', 'Realización'],
+};
+function tFamiglia(id, def) {
+  const e = FAM_ETI[id];
+  return e ? L(e[0], e[1], e[2]) : def;
+}
+
+// Le schede di una famiglia, sotto il titolo. Portano `data-scheda`, quindi
+// funzionano con la navigazione che c'e' gia': non serve un secondo modo di
+// cambiare pagina che possa divergere dal primo.
+function barraFamigliaHtml(id) {
+  const f = famigliaDi(id);
+  if (!f || f.parti.length < 2) return '';
+  const voci = f.parti.map((p) => {
+    const t = tScheda(p, _nomeSchedaGrezzo(p));
+    const on = p === id;
+    return `<button type="button" class="fam-scheda${on ? ' on' : ''}" data-scheda="${esc(p)}"`
+      + `${on ? ' aria-current="page"' : ''}>${esc(t)}</button>`;
+  }).join('');
+  return `<div class="fam-barra" role="tablist" aria-label="${esc(tFamiglia(f.id, f.nome))}">${voci}</div>`;
+}
+
+// Il nome originale di una scheda, quello che aveva quando era una voce di menu.
+const NOMI_SCHEDA = {
+  personalita: 'Personalità', conoscenza: 'Conoscenza', memoria: 'Memoria',
+  moduli: 'Comandi', ascolto: 'Comandi vocali',
+  regole: 'Filtri e regole', scudo: 'Scudo anti-bot',
+  giochi: 'Giochi & classifiche', sondaggi: 'Sondaggi & predizioni',
+  giveaway: 'Giveaway', penitenze: 'Penitenze',
+  regia: 'Regia', clip: 'Clip', musica: 'Musica',
+};
+const _nomeSchedaGrezzo = (id) => NOMI_SCHEDA[id] || id;
+
 const CHEVRON = '<svg class="lat-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
 
+// Il gruppo di una scheda: se la scheda fa parte di una famiglia, e' il gruppo
+// della voce di menu che rappresenta quella famiglia.
 function gruppoDiScheda(id) {
-  const g = elencoGruppi().find((x) => x.schede.some(([sid]) => sid === id));
+  const diretto = elencoGruppi().find((x) => x.schede.some(([sid]) => sid === id));
+  if (diretto) return diretto.id;
+  const f = famigliaDi(id);
+  if (!f) return '';
+  const g = elencoGruppi().find((x) => x.schede.some(([sid]) => f.parti.includes(sid)));
   return g ? g.id : '';
 }
 
@@ -2382,6 +2463,7 @@ function aggiornaTestataPagina() {
     `${area ? `<div class="pt-occhiello">${esc(area)}</div>` : ''}` +
     `<h1>${titoloParole(titolo)}</h1>` +
     `${desc ? `<p>${esc(desc)}</p>` : ''}` +
+    barraFamigliaHtml(schedaAttiva) +
     guidaSchedaHtml(schedaAttiva) +
     barraCarteHtml();
   aggiornaBarraGiu();
@@ -13844,13 +13926,16 @@ function aggiornaStatoNav(id) {
   const gid = gruppoDiScheda(id);
   document.querySelectorAll('#nav-top .grp').forEach((el) =>
     el.classList.toggle('attivo', el.dataset.grp === gid));
-  document.querySelectorAll('#nav-top .menu-voce, #nav-drawer .drawer-voce').forEach((b) =>
-    b.classList.toggle('on', b.dataset.scheda === id));
+  const f = famigliaDi(id);
+  document.querySelectorAll('#nav-top .menu-voce, #nav-drawer .drawer-voce, #nav-top .grp-btn[data-scheda]').forEach((b) =>
+    b.classList.toggle('on', b.dataset.scheda === id
+      || !!(f && f.parti.includes(b.dataset.scheda))));
 }
 
 function vaiAScheda(id) {
   morphDa(null);
-  const org = (_morphDa && _morphDa.isConnected && _morphDa.dataset.scheda === id) ? _morphDa : null;
+  const org = (_morphDa && _morphDa.isConnected && _morphDa.dataset.scheda === id
+    && !stessaFamiglia(id, schedaAttiva)) ? _morphDa : null;
   _morphDa = null;
   if (id === schedaAttiva) { chiudiMenuTop(); chiudiMenuMobile(); return; }
   schedaAttiva = id;
@@ -13867,6 +13952,7 @@ function vaiAScheda(id) {
     document.querySelectorAll('.pannello-scheda').forEach((p) =>
       p.classList.toggle('visibile', p.dataset.scheda === id));
     aggiornaTestataPagina();
+    armaComparsa();
     sezioni.forEach((p) => { rendiCartePieghevoli(p, id); preparaCarte(p); });
   });
   const finita = () => { morphDa(null); avviaComparsa(sezioni); };

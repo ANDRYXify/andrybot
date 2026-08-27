@@ -232,6 +232,7 @@ body.menu-aperto .drawer { transform: none; }
 .pagina-testata.entra p { animation-delay: .12s; }
 .pagina-testata.entra > .guida-scheda { animation: pt-in .48s var(--molla-lieve, var(--rev-ease)) .18s backwards; }
 .pagina-testata.entra > .carte-ctrl { animation: pt-in .48s var(--molla-lieve, var(--rev-ease)) .2s backwards; }
+.pagina-testata.entra > .fam-barra { animation: pt-in .46s var(--molla-lieve, var(--rev-ease)) .15s backwards; }
 .pagina-testata.entra .pt-parola > i { animation-play-state: running; }
 /* Prima che la comparsa parta i pezzi devono essere gia' invisibili, altrimenti
    lo scatto della transizione li cattura visibili e poi li vedresti entrare una
@@ -239,10 +240,17 @@ body.menu-aperto .drawer { transform: none; }
    attivo non si nasconde niente, cosi non c'e' modo di restare con la pagina
    vuota se qualcosa va storto. */
 @media (prefers-reduced-motion: no-preference) {
-  .pagina-testata:not(.entra) > .pt-occhiello,
-  .pagina-testata:not(.entra) > p,
-  .pagina-testata:not(.entra) > .guida-scheda,
-  .pagina-testata:not(.entra) > .carte-ctrl { opacity: 0; }
+  /* Si nasconde SOLO se qualcuno ha detto che seguira' una comparsa (.pronta).
+     Prima bastava l'assenza di .entra, e chi arrivava da un indirizzo con
+     l'ancora — o al primo caricamento — non passava da chi accende .entra:
+     titolo e sottotitolo restavano invisibili per sempre, lasciando mezza
+     schermata vuota sopra le carte. Il nascondimento e' un impegno che si
+     prende chi sa di poterlo sciogliere. */
+  .pagina-testata.pronta:not(.entra) > .pt-occhiello,
+  .pagina-testata.pronta:not(.entra) > p,
+  .pagina-testata.pronta:not(.entra) > .fam-barra,
+  .pagina-testata.pronta:not(.entra) > .guida-scheda,
+  .pagina-testata.pronta:not(.entra) > .carte-ctrl { opacity: 0; }
 }
 @keyframes pt-in { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
 
@@ -654,6 +662,40 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
 input[type="number"] { width: 92px; background: var(--surface); border: 1px solid var(--border-2); border-radius: var(--r-s); color: var(--testo); padding: .5rem .6rem; font-size: .92rem; transition: border-color var(--molla), box-shadow var(--molla); }
 input[type="number"]:focus { outline: none; border-color: var(--acc); box-shadow: 0 0 0 3px var(--acc-tint); }
 input[type="checkbox"] { accent-color: var(--acc); width: 1.05rem; height: 1.05rem; }
+/* Le schede di una famiglia. Sono una riga di scelte, non dei pulsanti: il peso
+   visivo sta nella scheda accesa, le altre restano quiete. */
+.fam-barra {
+  display: flex; flex-wrap: wrap; gap: 4px;
+  margin: 1rem 0 0;
+  padding: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  width: fit-content;
+  max-width: 100%;
+}
+.fam-scheda {
+  border: 0; background: none; cursor: pointer;
+  font: inherit; font-size: .89rem; font-weight: 600;
+  color: var(--testo-2);
+  padding: .42rem .95rem;
+  border-radius: 999px;
+  min-height: 34px;
+  white-space: nowrap;
+  transition: color .2s ease, background .2s ease, box-shadow .2s ease;
+}
+.fam-scheda:hover { color: var(--testo); }
+.fam-scheda.on {
+  background: var(--surface);
+  color: var(--acc);
+  box-shadow: var(--om-s);
+}
+@media (max-width: 640px) {
+  .fam-barra { width: 100%; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+  .fam-barra::-webkit-scrollbar { display: none; }
+  .fam-scheda { flex: 0 0 auto; }
+}
+
 .sotto-titolo {
   margin: 1.5rem 0 .4rem; font-size: .96rem; font-weight: 700; letter-spacing: -.01em;
   color: var(--testo); padding-top: 1.1rem; border-top: 1px solid var(--border);
