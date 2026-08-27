@@ -102,7 +102,7 @@ function impostazioni() {
     giochi: s.giochi !== false,
     promoSocial: s.promoSocial !== false,
     nomeMonete: (typeof s.nomeMonete === 'string' && s.nomeMonete.trim()) || 'monete',
-    punti: { perMessaggio: 2, ogniSecondi: 60, trivia: 25, duello: 15, slotCosto: 10, slotVinci: 200, slotCoppia: 20, topN: 5, ...(s.punti && typeof s.punti === 'object' ? s.punti : {}) },
+    punti: { perMessaggio: 2, ogniSecondi: 60, trivia: 25, duello: 15, slotCosto: 10, slotVinci: 200, slotCoppia: 20, topN: 5, perPresenza: 5, perAttivita: 5, moltSub: 1.5, moltVip: 1.25, lurkPasso: 0.15, lurkMinimo: 0.35, soloLive: true, ...(s.punti && typeof s.punti === 'object' ? s.punti : {}) },
     manche: { attivo: false, minMin: 15, maxMin: 45, soloLive: false, ...(s.manche && typeof s.manche === 'object' ? s.manche : {}) },
     premioVip: (s.premioVip && typeof s.premioVip === 'object') ? s.premioVip : { attivo: false, periodo: 'settimana', quanti: 1 },
     antispam: (s.antispam && typeof s.antispam === 'object') ? s.antispam : {},
@@ -9088,13 +9088,24 @@ function pannelloGiochi() {
         <label class="campo-num">${L('Slot: vincita coppia', 'Slot: pair win', 'Slot: premio pareja')}<input type="number" id="pt-slotCoppia" min="0" max="100000" value="${s.punti.slotCoppia}"></label>
         <label class="campo-num">${L('Quanti in classifica', 'How many on the board', 'Cuántos en la clasificación')}<input type="number" id="pt-topN" min="3" max="10" value="${s.punti.topN}"></label>
       </div>
+      <h3 class="sotto-titolo">${L('Guadagno mentre guardano', 'Earning while watching', 'Ganancia mientras miran')}</h3>
+      <p>${L('Ogni cinque minuti, chi è in chat riceve la <strong>presenza</strong> — anche se sta zitto — e chi ha scritto in quel giro riceve in più la <strong>partecipazione</strong>. Chi resta a lungo in silenzio continua a guadagnare, ma scendendo un gradino per volta fino a un minimo: appena riscrive torna a quota piena.', 'Every five minutes, whoever is in chat gets <strong>presence</strong> — even in silence — and whoever wrote in that round also gets <strong>participation</strong>. Someone silent for a long time keeps earning, but one step lower each round down to a floor: as soon as they write again they are back to full.', 'Cada cinco minutos, quien está en el chat recibe la <strong>presencia</strong> — aunque calle — y quien escribió en esa ronda recibe además la <strong>participación</strong>. Quien calla mucho sigue ganando, pero bajando un escalón por ronda hasta un mínimo: en cuanto vuelve a escribir recupera la cuota completa.')}</p>
+      <div class="griglia-punti">
+        <label class="campo-num">${L('Presenza (per giro)', 'Presence (per round)', 'Presencia (por ronda)')}<input type="number" id="pt-perPresenza" min="0" max="10000" value="${s.punti.perPresenza}"></label>
+        <label class="campo-num">${L('Partecipazione (in più)', 'Participation (extra)', 'Participación (extra)')}<input type="number" id="pt-perAttivita" min="0" max="10000" value="${s.punti.perAttivita}"></label>
+        <label class="campo-num">${L('Moltiplicatore abbonati', 'Subscriber multiplier', 'Multiplicador suscriptores')}<input type="number" id="pt-moltSub" min="1" max="10" step="0.05" value="${s.punti.moltSub}"></label>
+        <label class="campo-num">${L('Moltiplicatore VIP', 'VIP multiplier', 'Multiplicador VIP')}<input type="number" id="pt-moltVip" min="1" max="10" step="0.05" value="${s.punti.moltVip}"></label>
+        <label class="campo-num">${L('Quanto cala per giro in silenzio', 'Drop per silent round', 'Cuánto baja por ronda en silencio')}<input type="number" id="pt-lurkPasso" min="0" max="1" step="0.05" value="${s.punti.lurkPasso}"></label>
+        <label class="campo-num">${L('Non scende sotto', 'Never below', 'No baja de')}<input type="number" id="pt-lurkMinimo" min="0" max="1" step="0.05" value="${s.punti.lurkMinimo}"></label>
+      </div>
+      <p><label class="riga-check"><input type="checkbox" id="pt-soloLive"${s.punti.soloLive !== false ? ' checked' : ''}> ${L('Solo mentre sei in diretta', 'Only while you are live', 'Solo mientras estás en directo')}</label></p>
       <p class="suggerimento">${L('“Punti per messaggio” a 0 = nessun guadagno passivo dal chattare. Lo slot tris scala su questo valore (pieno, 7⃣ 75%, resto 40%).', '“Points per message” at 0 = no passive earning from chatting. The slot three-of-a-kind scales on this value (full, 7⃣ 75%, rest 40%).', '“Puntos por mensaje” a 0 = sin ganancia pasiva por charlar. El trío de la slot escala sobre este valor (completo, 7⃣ 75%, resto 40%).')}</p>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-punti">${L('Salva punti', 'Save points', 'Guardar puntos')}</button></p>
     </div>
     <div class="carta">
       <h2>${_hIco(ICO.dado)}${L('Manche automatiche', 'Automatic rounds', 'Rondas automáticas')}</h2>
       <p>${L('Lascia che sia', 'Let', 'Deja que sea')} <strong class="primo-piano">${L('il bot', 'the bot', 'el bot')}</strong> ${L('a lanciare i giochi: ogni tanto, a sorpresa, parte una', 'launch the games: now and then, by surprise, a', 'quien lance los juegos: de vez en cuando, por sorpresa, empieza una')}
-      <strong class="primo-piano">${L('manche', 'round', 'ronda')}</strong> ${L('(trivia, reflex sulla parola, indovina il numero) e il primo che risponde vince.', '(trivia, word reflex, guess the number) starts and the first to answer wins.', '(trivia, reflejo con la palabra, adivina el número) y el primero que responde gana.')}</p>
+      <strong class="primo-piano">${L('manche', 'round', 'ronda')}</strong> ${L('(quiz, reflex sulla parola, indovina il numero, anagramma, sequenza di simboli e le domande scritte da te) e il primo che risponde vince.', '(quiz, word reflex, guess the number, anagram, symbol sequence and the questions you write yourself) starts and the first to answer wins.', '(quiz, reflejo con la palabra, adivina el número, anagrama, secuencia de símbolos y las preguntas que escribes tú) y el primero que responde gana.')}</p>
       <div class="riga-check">
         <input type="checkbox" id="chk-manche" ${s.manche.attivo ? 'checked' : ''}>
         <label for="chk-manche">${L('Attiva le manche automatiche', 'Enable automatic rounds', 'Activa las rondas automáticas')}</label>
@@ -9115,8 +9126,11 @@ function pannelloGiochi() {
       <p>${L('Crea i tuoi giochi: entrano nel giro delle manche automatiche (mescolati a quelli di default).', 'Create your own games: they join the automatic rounds rotation (mixed with the default ones).', 'Crea tus propios juegos: entran en la rotación de rondas automáticas (mezclados con los de serie).')}</p>
       <div class="riga-flessibile">
         <select id="gioco-tipo">
-          <option value="trivia">${L('Trivia (domande & risposte)', 'Trivia (questions & answers)', 'Trivia (preguntas y respuestas)')}</option>
+          <option value="trivia">${L('Quiz (domande & risposte)', 'Quiz (questions & answers)', 'Quiz (preguntas y respuestas)')}</option>
           <option value="parola">${L('Parola veloce (reflex)', 'Fast word (reflex)', 'Palabra rápida (reflejo)')}</option>
+          <option value="anagramma">${L('Anagramma (lettere mescolate)', 'Anagram (scrambled letters)', 'Anagrama (letras mezcladas)')}</option>
+          <option value="sequenza">${L('Sequenza di simboli', 'Symbol sequence', 'Secuencia de símbolos')}</option>
+          <option value="domanda">${L('Domanda tua (una sola)', 'Your own question (single)', 'Tu pregunta (una sola)')}</option>
         </select>
         <input type="text" id="gioco-nome" maxlength="60" placeholder="${L('Nome del gioco (es. Trivia gaming)', 'Game name (e.g. Gaming trivia)', 'Nombre del juego (p. ej. Trivia gaming)')}">
       </div>
@@ -9127,6 +9141,19 @@ function pannelloGiochi() {
       <div id="gioco-parola" class="spazio-sopra" hidden>
         <label class="campo">${L('Parole — una per riga (il bot ne pesca una e il primo che la scrive vince)', 'Words — one per line (the bot picks one and the first to type it wins)', 'Palabras — una por línea (el bot elige una y el primero que la escribe gana)')}</label>
         <textarea id="gioco-parole" rows="5" placeholder="pizza&#10;combo perfetta&#10;gg wp"></textarea>
+        <p class="suggerimento" id="gioco-nota-anagramma" hidden>${L('Per gli anagrammi servono parole di almeno quattro lettere: il bot mescola le lettere e chi rimette la parola in ordine vince.', 'Anagrams need words of at least four letters: the bot scrambles them and whoever unscrambles first wins.', 'Los anagramas necesitan palabras de al menos cuatro letras: el bot las mezcla y gana quien las reordena.')}</p>
+      </div>
+      <div id="gioco-sequenza" class="spazio-sopra" hidden>
+        <label class="campo">${L('Simboli — separati da spazio (almeno tre). Il bot ne mostra una sequenza e vince chi la ricopia esatta.', 'Symbols — space separated (at least three). The bot shows a sequence and whoever copies it exactly wins.', 'Símbolos — separados por espacio (al menos tres). El bot muestra una secuencia y gana quien la copia exacta.')}</label>
+        <input type="text" id="gioco-simboli" placeholder="🍒 ⭐ 💎 🔥 🎲">
+        <label class="campo-num spazio-sopra">${L('Quanti simboli per sequenza', 'How many symbols per sequence', 'Cuántos símbolos por secuencia')}<input type="number" id="gioco-lunghezza" min="3" max="8" value="4"></label>
+      </div>
+      <div id="gioco-domanda" class="spazio-sopra" hidden>
+        <label class="campo">${L('La domanda', 'The question', 'La pregunta')}</label>
+        <input type="text" id="gioco-testo" maxlength="240" placeholder="${L('Qual è il mio gioco preferito?', 'What is my favourite game?', '¿Cuál es mi juego favorito?')}">
+        <label class="campo spazio-sopra">${L('Risposte accettate — separate da virgola', 'Accepted answers — comma separated', 'Respuestas aceptadas — separadas por comas')}</label>
+        <input type="text" id="gioco-risposte" placeholder="${L('elden ring, eldenring', 'elden ring, eldenring', 'elden ring, eldenring')}">
+        <label class="campo-num spazio-sopra">${L('Secondi per rispondere', 'Seconds to answer', 'Segundos para responder')}<input type="number" id="gioco-durata" min="10" max="300" value="45"></label>
       </div>
       <p class="spazio-sopra"><button class="btn" id="btn-crea-gioco">${L('Crea gioco', 'Create game', 'Crear juego')}</button></p>
       <h3>${L('Giochi creati', 'Created games', 'Juegos creados')}</h3>
@@ -10056,6 +10083,12 @@ function attivaPiattaforma() {
     const v = (id) => Number(document.getElementById(id).value);
     await salvaImpostazioni({ punti: {
       perMessaggio: v('pt-perMessaggio'), ogniSecondi: v('pt-ogniSecondi'),
+      perPresenza: v('pt-perPresenza'), perAttivita: v('pt-perAttivita'),
+      moltSub: parseFloat(document.getElementById('pt-moltSub')?.value) || 1.5,
+      moltVip: parseFloat(document.getElementById('pt-moltVip')?.value) || 1.25,
+      lurkPasso: parseFloat(document.getElementById('pt-lurkPasso')?.value) ?? 0.15,
+      lurkMinimo: parseFloat(document.getElementById('pt-lurkMinimo')?.value) ?? 0.35,
+      soloLive: !!document.getElementById('pt-soloLive')?.checked,
       trivia: v('pt-trivia'), duello: v('pt-duello'),
       slotCosto: v('pt-slotCosto'), slotVinci: v('pt-slotVinci'),
       slotCoppia: v('pt-slotCoppia'), topN: v('pt-topN'),
@@ -10071,11 +10104,19 @@ function attivaPiattaforma() {
     } }, 'Manche salvate');
   }));
 
-  document.getElementById('gioco-tipo')?.addEventListener('change', (ev) => {
-    const trivia = ev.target.value === 'trivia';
-    document.getElementById('gioco-trivia').hidden = !trivia;
-    document.getElementById('gioco-parola').hidden = trivia;
-  });
+  // Ogni tipo di gioco dice quale pannello gli serve: un posto solo, cosi
+  // aggiungerne uno non vuol dire ricordarsi di tre `if` sparsi.
+  const PANNELLO_GIOCO = { trivia: 'gioco-trivia', parola: 'gioco-parola', anagramma: 'gioco-parola', sequenza: 'gioco-sequenza', domanda: 'gioco-domanda' };
+  function mostraPannelloGioco(tipo) {
+    const voluto = PANNELLO_GIOCO[tipo] || 'gioco-trivia';
+    for (const id of new Set(Object.values(PANNELLO_GIOCO))) {
+      const el = document.getElementById(id);
+      if (el) el.hidden = id !== voluto;
+    }
+    const nota = document.getElementById('gioco-nota-anagramma');
+    if (nota) nota.hidden = tipo !== 'anagramma';
+  }
+  document.getElementById('gioco-tipo')?.addEventListener('change', (ev) => mostraPannelloGioco(ev.target.value));
   document.getElementById('btn-crea-gioco')?.addEventListener('click', () => conErrore(async () => {
     const tipo = document.getElementById('gioco-tipo').value;
     const nome = document.getElementById('gioco-nome').value.trim();
@@ -10086,6 +10127,15 @@ function attivaPiattaforma() {
         return { q: (q || '').trim(), a: (ris || '').split(',').map((x) => x.trim()).filter(Boolean) };
       }).filter((d) => d.q && d.a.length);
       if (!body.domande.length) { toast(L('Aggiungi almeno una domanda con risposta.', 'Add at least one question with an answer.', 'Añade al menos una pregunta con respuesta.'), 'errore'); return; }
+    } else if (tipo === 'sequenza') {
+      body.simboli = document.getElementById('gioco-simboli').value.split(/\s+/).map((x) => x.trim()).filter(Boolean);
+      body.lunghezza = parseInt(document.getElementById('gioco-lunghezza').value, 10) || 4;
+      if (body.simboli.length < 3) { toast(L('Servono almeno tre simboli.', 'At least three symbols are needed.', 'Se necesitan al menos tres símbolos.'), 'errore'); return; }
+    } else if (tipo === 'domanda') {
+      body.domanda = document.getElementById('gioco-testo').value.trim();
+      body.risposte = document.getElementById('gioco-risposte').value.split(',').map((x) => x.trim()).filter(Boolean);
+      body.durataSec = parseInt(document.getElementById('gioco-durata').value, 10) || 45;
+      if (!body.domanda || !body.risposte.length) { toast(L('Servono la domanda e almeno una risposta.', 'The question and at least one answer are needed.', 'Hacen falta la pregunta y al menos una respuesta.'), 'errore'); return; }
     } else {
       body.parole = document.getElementById('gioco-parole').value.split('\n').map((p) => p.trim()).filter(Boolean);
       if (!body.parole.length) { toast(L('Aggiungi almeno una parola.', 'Add at least one word.', 'Añade al menos una palabra.'), 'errore'); return; }
@@ -10094,6 +10144,7 @@ function attivaPiattaforma() {
     document.getElementById('gioco-nome').value = '';
     document.getElementById('gioco-domande').value = '';
     document.getElementById('gioco-parole').value = '';
+    ['gioco-simboli', 'gioco-testo', 'gioco-risposte'].forEach((id) => { const e = document.getElementById(id); if (e) e.value = ''; });
     toast(L('Gioco creato!', 'Game created!', '¡Juego creado!'));
     caricaGiochi();
   }));
@@ -10861,7 +10912,7 @@ async function caricaGiochi() {
             </div>
           </li>`;
         }).join('')
-      : '<li class="vuoto">Nessun gioco tuo ancora: creane uno qui sopra! I giochi di default (trivia, reflex, numero) funzionano comunque.</li>';
+      : '<li class="vuoto">Nessun gioco tuo ancora: creane uno qui sopra! Quelli di serie (quiz, reflex, numero, anagramma, sequenza) funzionano comunque.</li>';
     ul.onclick = (ev) => {
       const tog = ev.target.closest('[data-gioco-toggle]');
       const del = ev.target.closest('[data-gioco-elimina]');

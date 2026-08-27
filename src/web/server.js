@@ -2927,6 +2927,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (b.punti !== undefined) {
       const p = b.punti || {};
       const c = (v, def, lo, hi) => { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : def; };
+      const f = (v, def, lo, hi) => { const n = Number(v); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : def; };
       out.punti = {
         perMessaggio: c(p.perMessaggio, 2, 0, 1000),
         ogniSecondi:  c(p.ogniSecondi, 60, 5, 3600),
@@ -2936,6 +2937,13 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         slotVinci:    c(p.slotVinci, 200, 0, 1000000),
         slotCoppia:   c(p.slotCoppia, 20, 0, 100000),
         topN:         c(p.topN, 5, 3, 10),
+        perPresenza:  c(p.perPresenza, 5, 0, 10000),
+        perAttivita:  c(p.perAttivita, 5, 0, 10000),
+        moltSub:      f(p.moltSub, 1.5, 1, 10),
+        moltVip:      f(p.moltVip, 1.25, 1, 10),
+        lurkPasso:    f(p.lurkPasso, 0.15, 0, 1),
+        lurkMinimo:   f(p.lurkMinimo, 0.35, 0, 1),
+        soloLive:     p.soloLive !== false,
       };
     }
     // richieste musicali (!sr): modo di pagamento/permesso + costo + premio
@@ -4298,7 +4306,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (!esigiFunzione(req, res, 'giochi', 'I giochi personalizzati')) return;
     const login = currentUser(req).login;
     const b = req.body || {};
-    const tipo = ['trivia', 'parola'].includes(b.tipo) ? b.tipo : null;
+    const tipo = ['trivia', 'parola', 'anagramma', 'sequenza', 'domanda'].includes(b.tipo) ? b.tipo : null;
     if (!tipo) return res.status(400).json({ errore: 'tipo di gioco non valido' });
     const nome = String(b.nome || '').trim().slice(0, 60);
     let config = {};
@@ -4308,10 +4316,25 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         .filter((d) => d.q && d.a.length).slice(0, 200);
       if (!domande.length) return res.status(400).json({ errore: 'aggiungi almeno una domanda con una risposta' });
       config = { domande };
+    } else if (tipo === 'sequenza') {
+      const simboli = (Array.isArray(b.simboli) ? b.simboli : [])
+        .map((x) => String(x).trim().slice(0, 8)).filter(Boolean).slice(0, 24);
+      if (simboli.length < 3) return res.status(400).json({ errore: 'servono almeno tre simboli' });
+      const lunghezza = Math.min(8, Math.max(3, Math.round(Number(b.lunghezza)) || 4));
+      config = { simboli, lunghezza };
+    } else if (tipo === 'domanda') {
+      const domanda = String(b.domanda || '').trim().slice(0, 240);
+      const risposte = (Array.isArray(b.risposte) ? b.risposte : [])
+        .map((x) => String(x).trim().slice(0, 80)).filter(Boolean).slice(0, 10);
+      if (!domanda || !risposte.length) return res.status(400).json({ errore: 'servono la domanda e almeno una risposta' });
+      config = { domanda, risposte, durataSec: Math.min(300, Math.max(10, Math.round(Number(b.durataSec)) || 45)) };
     } else {
       const parole = (Array.isArray(b.parole) ? b.parole : [])
         .map((p) => String(p).trim().slice(0, 60)).filter(Boolean).slice(0, 300);
       if (!parole.length) return res.status(400).json({ errore: 'aggiungi almeno una parola' });
+      if (tipo === 'anagramma' && !parole.some((p) => p.length >= 4)) {
+        return res.status(400).json({ errore: 'per gli anagrammi servono parole di almeno quattro lettere' });
+      }
       config = { parole };
     }
     if (!b.id && giochiDb.count(login) >= 50) return res.status(400).json({ errore: 'hai raggiunto il massimo di giochi' });

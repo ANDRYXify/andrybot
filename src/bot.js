@@ -274,7 +274,13 @@ export class BotManager {
         const stream = await this.helix.getStream(login);
         if (!stream) continue;
         const chatters = await this.helix.getChatters(login);
-        if (chatters.length) watchtime.accredita(login, chatters, passoSec);
+        if (chatters.length) {
+          watchtime.accredita(login, chatters, passoSec);
+          // Stesso giro, stessa lista: le monete di presenza non costano
+          // nemmeno una chiamata in piu' a Twitch.
+          try { games.giroMonete(login, chatters, { live: true }); }
+          catch (e) { log.debug(`#${login} monete:`, e?.message || e); }
+        }
       } catch (e) { log.debug(`#${login} ore:`, e?.message || e); }
     }
   }

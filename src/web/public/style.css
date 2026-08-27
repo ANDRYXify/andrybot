@@ -654,6 +654,12 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
 input[type="number"] { width: 92px; background: var(--surface); border: 1px solid var(--border-2); border-radius: var(--r-s); color: var(--testo); padding: .5rem .6rem; font-size: .92rem; transition: border-color var(--molla), box-shadow var(--molla); }
 input[type="number"]:focus { outline: none; border-color: var(--acc); box-shadow: 0 0 0 3px var(--acc-tint); }
 input[type="checkbox"] { accent-color: var(--acc); width: 1.05rem; height: 1.05rem; }
+.sotto-titolo {
+  margin: 1.5rem 0 .4rem; font-size: .96rem; font-weight: 700; letter-spacing: -.01em;
+  color: var(--testo); padding-top: 1.1rem; border-top: 1px solid var(--border);
+}
+.sotto-titolo:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+
 .riga-check { display: flex; align-items: center; gap: .55rem; margin: .7rem 0; }
 .riga-check label { cursor: pointer; }
 
