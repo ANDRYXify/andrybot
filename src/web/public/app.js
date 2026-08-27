@@ -2329,6 +2329,75 @@ function tFamiglia(id, def) {
   return e ? L(e[0], e[1], e[2]) : def;
 }
 
+// SOTTO-SCHEDE. Le famiglie accorpano sezioni diverse; queste dividono UNA
+// sezione troppo grande. Non cambiano pagina: filtrano le carte.
+//
+// Nasce da una misura: Notifiche social pesava 7,6 schermate con 106 campi, e
+// chi voleva configurare TikTok doveva scorrere in mezzo a tutto Telegram per
+// arrivarci. Di quei 106 campi, 66 stanno in un elenco solo — le destinazioni
+// Telegram — che e' giusto sia lungo, essendo un elenco. Il difetto era averlo
+// nella stessa pagina di cose che non c'entrano.
+const SOTTO_SCHEDE = {
+  notifiche: {
+    attributo: 'rete',
+    voci: [
+      ['telegram', 'Telegram'], ['tiktok', 'TikTok'], ['youtube', 'YouTube'],
+      ['instagram', 'Instagram'], ['discord', 'Discord'],
+    ],
+  },
+};
+
+function sottoScelta(scheda) {
+  const cfg = SOTTO_SCHEDE[scheda];
+  if (!cfg) return '';
+  let v = '';
+  try { v = localStorage.getItem('sotto:' + scheda) || ''; } catch {  }
+  return cfg.voci.some(([id]) => id === v) ? v : cfg.voci[0][0];
+}
+
+function sottoSchedeHtml(scheda) {
+  const cfg = SOTTO_SCHEDE[scheda];
+  if (!cfg) return '';
+  const ora = sottoScelta(scheda);
+  const voci = cfg.voci.map(([id, nome]) => {
+    const on = id === ora;
+    return `<button type="button" class="fam-scheda${on ? ' on' : ''}" data-sotto="${esc(id)}"`
+      + `${on ? ' aria-current="true"' : ''}>${esc(nome)}</button>`;
+  }).join('');
+  return `<div class="fam-barra" role="tablist">${voci}</div>`;
+}
+
+// Mostra solo le carte della sotto-scheda scelta. Le altre restano nel
+// documento ma nascoste: non vanno ricostruite, e quello che ci hai scritto
+// dentro resta dov'e' se torni indietro.
+function applicaSottoSchede(scheda) {
+  const cfg = SOTTO_SCHEDE[scheda];
+  if (!cfg) return;
+  const pan = document.querySelector('.pannello-scheda.visibile');
+  if (!pan) return;
+  const ora = sottoScelta(scheda);
+  for (const c of pan.querySelectorAll('.carta[data-' + cfg.attributo + ']')) {
+    c.hidden = c.dataset[cfg.attributo] !== ora;
+  }
+}
+
+document.addEventListener('click', (ev) => {
+  const b = ev.target.closest?.('[data-sotto]');
+  if (!b) return;
+  const scheda = schedaAttiva;
+  if (!SOTTO_SCHEDE[scheda]) return;
+  ev.preventDefault();
+  try { localStorage.setItem('sotto:' + scheda, b.dataset.sotto); } catch {  }
+  document.querySelectorAll('[data-sotto]').forEach((x) => {
+    const on = x === b;
+    x.classList.toggle('on', on);
+    if (on) x.setAttribute('aria-current', 'true'); else x.removeAttribute('aria-current');
+  });
+  applicaSottoSchede(scheda);
+  const pan = document.querySelector('.pannello-scheda.visibile');
+  if (pan) rivelaCarte(pan);
+});
+
 // Le schede di una famiglia, sotto il titolo. Portano `data-scheda`, quindi
 // funzionano con la navigazione che c'e' gia': non serve un secondo modo di
 // cambiare pagina che possa divergere dal primo.
@@ -2464,6 +2533,7 @@ function aggiornaTestataPagina() {
     `<h1>${titoloParole(titolo)}</h1>` +
     `${desc ? `<p>${esc(desc)}</p>` : ''}` +
     barraFamigliaHtml(schedaAttiva) +
+    sottoSchedeHtml(schedaAttiva) +
     guidaSchedaHtml(schedaAttiva) +
     barraCarteHtml();
   aggiornaBarraGiu();
@@ -9390,8 +9460,8 @@ function pannelloNotifiche() {
   const igc = impostazioni().instagram || {};
   const msgDefault = '{nome} è in diretta!\n\n{titolo}\n{gioco}\n\n{link}';
   return pannello('notifiche', `
-    <div class="carta" id="box-tglogin" hidden></div>
-    <div class="carta">
+    <div class="carta" data-rete="telegram" id="box-tglogin" hidden></div>
+    <div class="carta" data-rete="telegram">
       <h2>${_hIco(ICO.megafono)}${L('Avviso "sono in diretta" su Telegram', '"I’m live" alert on Telegram', 'Aviso "estoy en directo" en Telegram')}</h2>
       <p>${L('Collega il', 'Connect', 'Conecta')} <strong class="primo-piano">${L('tuo', 'your own', 'tu')}</strong> ${L('bot Telegram e il tuo gruppo: quando vai live, il bot avvisa i tuoi follower nel gruppo. Le chiavi sono tue e restano tue.', 'Telegram bot and your group: when you go live, the bot alerts your followers in the group. The keys are yours and stay yours.', 'bot de Telegram y tu grupo: cuando estás en directo, el bot avisa a tus seguidores en el grupo. Las claves son tuyas y siguen siéndolo.')}</p>
 
@@ -9446,7 +9516,7 @@ function pannelloNotifiche() {
     </div>
 
     ${tg.configurato ? `
-    <div class="carta">
+    <div class="carta" data-rete="telegram">
       <h2>${_hIco(ICO.bot)}${L('Bot interattivo su Telegram', 'Interactive bot on Telegram', 'Bot interactivo en Telegram')}</h2>
       <p>${L('Con la', 'With', 'Con el')} <strong class="primo-piano">${L('modalità interattiva', 'interactive mode', 'modo interactivo')}</strong> ${L('il bot <strong>legge i messaggi</strong> del gruppo e risponde ai comandi. I comandi si creano in <strong>Chat &amp; comandi → Comandi</strong>: crea un modulo con innesco <em>Comando</em> e spunta <strong>«Abilita anche su Telegram»</strong> (su Telegram funziona anche senza <code>!</code>). Valgono anche a voce dall\'ascolto vocale.', 'the bot <strong>reads the group’s messages</strong> and replies to commands. Commands are created in <strong>Chat &amp; commands → Commands</strong>: create a module with a <em>Command</em> trigger and check <strong>“Enable on Telegram too”</strong> (on Telegram it works even without <code>!</code>). They also work by voice from voice listening.', 'el bot <strong>lee los mensajes</strong> del grupo y responde a los comandos. Los comandos se crean en <strong>Chat y comandos → Comandos</strong>: crea un módulo con disparador <em>Comando</em> y marca <strong>«Habilitar también en Telegram»</strong> (en Telegram funciona incluso sin <code>!</code>). También valen por voz desde la escucha por voz.')}</p>
 
@@ -9478,14 +9548,14 @@ function pannelloNotifiche() {
       <p class="suggerimento">${L('Nel <strong>gruppo</strong> invece il bot funziona per tutti (e impara dalla chat come su Twitch). Il privato resta solo tuo.', 'In the <strong>group</strong>, instead, the bot works for everyone (and learns from chat like on Twitch). Private stays yours only.', 'En el <strong>grupo</strong>, en cambio, el bot funciona para todos (y aprende del chat como en Twitch). El privado sigue siendo solo tuyo.')}</p>
     </div>
 
-    <div class="carta">
+    <div class="carta" data-rete="telegram">
       <h2>${_hIco(ICO.torta)}${L('Auguri di compleanno', 'Birthday wishes', 'Felicitaciones de cumpleaños')}</h2>
       <p>${L('Il bot fa gli', 'The bot sends', 'El bot da las')} <strong class="primo-piano">${L('auguri automatici', 'automatic wishes', 'felicitaciones automáticas')}</strong> ${L('nel gruppo il giorno del compleanno dei membri. Loro possono registrarsi da soli scrivendo', 'in the group on members’ birthdays. They can register themselves by typing', 'en el grupo el día del cumpleaños de los miembros. Ellos pueden registrarse solos escribiendo')} <code>/compleanno 25/12</code> ${L('nel gruppo (serve il bot interattivo qui sopra), oppure li aggiungi tu qui sotto.', 'in the group (needs the interactive bot above), or you add them below.', 'en el grupo (necesita el bot interactivo de arriba), o los añades tú abajo.')}</p>
       <div id="box-compleanni"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
     </div>
     ` : ''}
 
-    <div class="carta">
+    <div class="carta" data-rete="tiktok">
       <h2>${_hIco(ICO.musica)}${L('Notifica live TikTok', 'TikTok live alert', 'Aviso de directo en TikTok')}</h2>
       <p>${L('Quando vai in diretta su', 'When you go live on', 'Cuando estás en directo en')} <strong class="primo-piano">TikTok</strong>, ${L('avviso il gruppo Telegram (e, se vuoi, la chat Twitch). Su TikTok non esiste una chat-bot come su Twitch: qui facciamo la notifica.', 'I alert the Telegram group (and, if you want, the Twitch chat). On TikTok there’s no chat-bot like on Twitch: here we do the notification.', 'aviso al grupo de Telegram (y, si quieres, al chat de Twitch). En TikTok no existe un chat-bot como en Twitch: aquí hacemos la notificación.')}</p>
 
@@ -9525,7 +9595,7 @@ function pannelloNotifiche() {
       <p class="suggerimento"><strong class="primo-piano">${L('Nuovo post su TikTok:', 'New TikTok post:', 'Nuevo post en TikTok:')}</strong> ${L('ora è automatico via API ufficiale — vedi la card qui sotto. In alternativa resta il webhook con corpo', 'it’s now automatic via the official API — see the card below. Alternatively the webhook remains, with body', 'ahora es automático vía API oficial — mira la tarjeta de abajo. Como alternativa queda el webhook con cuerpo')} <code>{"azione":"tiktok-post","url":"…"}</code>.</p>
     </div>
 
-    <div class="carta">
+    <div class="carta" data-rete="tiktok">
       <h2>${_hIco(ICO.fotocamera)}${L('Nuovo post su TikTok', 'New TikTok post', 'Nuevo post en TikTok')}</h2>
       <p>${L('Quando pubblichi un', 'When you publish a', 'Cuando publicas un')} <strong class="primo-piano">${L('nuovo video', 'new video', 'nuevo vídeo')}</strong> ${L('su TikTok, avviso il gruppo Telegram (e, se vuoi, la chat Twitch). Uso l\'<strong>API ufficiale di TikTok</strong>: colleghi il tuo account una volta e ci penso io.', 'on TikTok, I alert the Telegram group (and, if you want, the Twitch chat). I use the <strong>official TikTok API</strong>: connect your account once and I take care of it.', 'en TikTok, aviso al grupo de Telegram (y, si quieres, al chat de Twitch). Uso la <strong>API oficial de TikTok</strong>: conectas tu cuenta una vez y yo me encargo.')}</p>
       <div id="tiktok-post-box" class="spazio-sopra"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
@@ -9546,7 +9616,7 @@ function pannelloNotifiche() {
       <p class="suggerimento">${L('Il controllo parte ogni ~10 minuti; il primo giro dopo il collegamento memorizza solo l\'ultimo video (non avvisa).', 'The check runs every ~10 minutes; the first pass after connecting only stores the latest video (no alert).', 'La comprobación se hace cada ~10 minutos; la primera vuelta tras conectar solo memoriza el último vídeo (no avisa).')}</p>
     </div>
 
-    <div class="carta">
+    <div class="carta" data-rete="discord">
       <h2>${_hIco(ICO.moduli)}${L('Discord — avviso "sei in diretta"', 'Discord — "you\'re live" alert', 'Discord — aviso "estás en directo"')}</h2>
       <p>${L('Quando vai in diretta, posto un avviso nel canale del tuo server Discord (embed con titolo, gioco, spettatori e miniatura). <strong>Nessun bot da creare, nessun token</strong>: incolli solo il <strong>webhook</strong> del canale.', 'When you go live, I post an alert in your Discord server channel (embed with title, game, viewers and thumbnail). <strong>No bot to create, no token</strong>: you just paste the channel <strong>webhook</strong>.', 'Cuando vas en directo, publico un aviso en el canal de tu servidor de Discord (embed con título, juego, espectadores y miniatura). <strong>Ningún bot que crear, ningún token</strong>: solo pegas el <strong>webhook</strong> del canal.')}</p>
 
@@ -9566,7 +9636,7 @@ function pannelloNotifiche() {
       <div id="discord-box" class="spazio-sopra"><p class="suggerimento">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
     </div>
 
-    <div class="carta">
+    <div class="carta" data-rete="youtube">
       <h2>${_hIco(ICO.tv)}${L('Nuovo video su YouTube', 'New YouTube video', 'Nuevo vídeo en YouTube')}</h2>
       <p>${L('Quando esce un', 'When a', 'Cuando sale un')} <strong class="primo-piano">${L('nuovo video', 'new video', 'nuevo vídeo')}</strong> ${L('sul tuo canale YouTube, avviso il gruppo Telegram (e, se vuoi, la chat Twitch). Funziona con il feed pubblico di YouTube:', 'comes out on your YouTube channel, I alert the Telegram group (and, if you want, the Twitch chat). It works with YouTube’s public feed:', 'sale en tu canal de YouTube, aviso al grupo de Telegram (y, si quieres, al chat de Twitch). Funciona con el feed público de YouTube:')} <strong>${L('affidabile e senza chiavi', 'reliable and key-free', 'fiable y sin claves')}</strong>.</p>
 
@@ -9598,7 +9668,7 @@ function pannelloNotifiche() {
       <p class="suggerimento">${L('Il controllo parte ogni ~10 minuti; il primo giro serve solo a memorizzare l\'ultimo video (non avvisa).', 'The check runs every ~10 minutes; the first pass only stores the latest video (no alert).', 'La comprobación se hace cada ~10 minutos; la primera vuelta solo memoriza el último vídeo (no avisa).')}</p>
     </div>
 
-    <div class="carta">
+    <div class="carta" data-rete="instagram">
       <h2>${_hIco(ICO.fotocamera)}${L('Nuovo post su Instagram', 'New Instagram post', 'Nuevo post en Instagram')}</h2>
       <p>${L('Quando pubblichi su', 'When you post on', 'Cuando publicas en')} <strong class="primo-piano">Instagram</strong>, ${L('avviso il gruppo Telegram (e, se vuoi, la chat Twitch). Instagram non ha un feed pubblico, quindi serve la <strong>tua API</strong>: l\'<em>Instagram Graph API</em> (account Business/Creator collegato a una Pagina Facebook).', 'I alert the Telegram group (and, if you want, the Twitch chat). Instagram has no public feed, so you need <strong>your own API</strong>: the <em>Instagram Graph API</em> (Business/Creator account linked to a Facebook Page).', 'aviso al grupo de Telegram (y, si quieres, al chat de Twitch). Instagram no tiene feed público, así que hace falta <strong>tu API</strong>: la <em>Instagram Graph API</em> (cuenta Business/Creator vinculada a una Página de Facebook).')}</p>
 
@@ -13954,6 +14024,7 @@ function vaiAScheda(id) {
     aggiornaTestataPagina();
     armaComparsa();
     sezioni.forEach((p) => { rendiCartePieghevoli(p, id); preparaCarte(p); });
+    applicaSottoSchede(id);
   });
   const finita = () => { morphDa(null); avviaComparsa(sezioni); };
   try { tr.finished.then(finita, finita); } catch { finita(); }
