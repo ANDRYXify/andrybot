@@ -104,9 +104,19 @@
 
       function vivo() { return !document.hidden; }
 
+      var vigilaFino = 0;
+      function vigila(ms) {
+        var ora = (window.performance && performance.now) ? performance.now() : 0;
+        vigilaFino = Math.max(vigilaFino, ora + (ms || 700));
+        rimisura = true;
+        sveglia();
+      }
+
       function giro(t) {
         var dt = tPrec ? stretta((t - tPrec) / 1000, 0.001, 0.12) : 1 / 60;
         tPrec = t;
+        var vigile = t < vigilaFino;
+        if (vigile) rimisura = true;
 
         if (cand === scartato) cand = null;
         if (cand !== mira) { mira = cand; rimisura = true; if (!mira) rett = null; }
@@ -165,7 +175,7 @@
                     quieta(mW, tw, 0.06, 0.06) && quieta(mH, th, 0.06, 0.06) &&
                     quieta(mR, tr, 0.06, 0.06) && quieta(cX, fx, 0.003, 0.004) && quieta(cY, fy, 0.003, 0.004);
         pxV = px; pyV = py;
-        if (fermo || !vivo()) { acceso = false; raf = 0; return; }
+        if ((fermo && !vigile) || !vivo()) { acceso = false; raf = 0; return; }
         raf = requestAnimationFrame(giro);
       }
 
@@ -192,6 +202,9 @@
       window.addEventListener('pointerover', function () { corpo.classList.remove('fuori-pagina'); }, { passive: true });
 
       window.addEventListener('scroll', function () { rimisura = true; sveglia(); }, { passive: true, capture: true });
+
+      window.addEventListener('click', function () { vigila(800); }, { passive: true, capture: true });
+      window.addEventListener('pointerdown', function () { vigila(400); }, { passive: true, capture: true });
       window.addEventListener('resize', function () {
         vw = window.innerWidth || 1; vh = window.innerHeight || 1;
         rimisura = true; sveglia();
