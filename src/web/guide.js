@@ -449,8 +449,13 @@ function scheletro({ titolo, desc, url, corpo, ld }) {
 <meta property="og:locale" content="it_IT">
 <meta property="og:title" content="${esc(titolo)}"><meta property="og:description" content="${esc(desc)}">
 <meta property="og:url" content="${esc(url)}">
-<meta name="twitter:card" content="summary"><meta name="twitter:title" content="${esc(titolo)}">
+<meta property="og:image" content="${SITO}/icons/og-guide.png?v=1">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Guide di SocialBot su Twitch, bot e overlay">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(titolo)}">
 <meta name="twitter:description" content="${esc(desc)}">
+<meta name="twitter:image" content="${SITO}/icons/og-guide.png?v=1">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/font.css">
 <style>${CSS}</style>
