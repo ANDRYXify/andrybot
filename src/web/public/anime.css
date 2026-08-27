@@ -1090,6 +1090,113 @@ body.leggero .vivo::after, body.meno-moto .vivo::after { animation: none; opacit
 .ovl-zoom-v { font-size: .78rem; font-variant-numeric: tabular-nums; color: var(--testo-2); min-width: 40px; text-align: center; }
 
 .ovl-scena { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 10px; margin-top: 10px; align-items: start; }
+
+/* Nel banco la testata si fa da parte: il titolo su una riga, niente
+   sottotitolo e niente «apri tutto / riduci tutto» (con una carta sola non
+   significano niente). Prima l'intestazione occupava 688px e all'area di lavoro
+   ne restavano 262. */
+body.banco-on .pagina-testata { margin-bottom: .6rem; }
+body.banco-on .pagina-testata > p,
+body.banco-on .pagina-testata > .carte-ctrl { display: none; }
+body.banco-on .pagina-testata h1 { font-size: clamp(1.3rem, 1.1rem + .8vw, 1.55rem); }
+body.banco-on .pagina-testata > .guida-scheda { margin-top: .7rem; }
+body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; overflow: auto; }
+
+/* ── IL BANCO ────────────────────────────────────────────────────────────────
+   L'editor smette di essere una pagina che scorre e diventa un'area di lavoro
+   alta quanto lo schermo. La misura che ha motivato tutto: la tela cominciava a
+   1543px e i comandi che la modificano a 2564, su una finestra alta 950. Fra i
+   due c'erano mille pixel: era aritmeticamente impossibile vedere quello che
+   stavi cambiando mentre lo cambiavi.
+
+   La regola da cui discende il resto: il banco non scorre MAI. Se un pannello
+   ha piu' roba di quanta ne entra, scorre quel pannello — non la pagina. */
+.carta.ovl-banco {
+  display: flex; flex-direction: column;
+  height: calc(100svh - var(--banco-sopra, 132px));
+  min-height: 440px;
+  padding: 0; overflow: hidden;
+  margin-bottom: 0;
+}
+/* Le carte sono pieghevoli: il contenuto vive dentro .carta-corpo >
+   .carta-corpo-in, non come figlio diretto. Sono loro a dover diventare
+   contenitori a piena altezza, altrimenti la griglia sotto non ha spazio in cui
+   distendersi. */
+.carta.ovl-banco > .carta-corpo,
+.carta.ovl-banco > .carta-corpo > .carta-corpo-in {
+  display: flex; flex-direction: column;
+  flex: 1 1 auto; min-height: 0;
+  margin: 0; padding: 0; overflow: hidden;
+}
+/* Nel banco l'area di lavoro e' il contenuto: le spiegazioni stanno nella
+   guida della sezione, non addosso alla tela. */
+.carta.ovl-banco h2,
+.carta.ovl-banco .carta-corpo-in > p,
+.carta.ovl-banco .carta-corpo-in > label.campo { display: none; }
+.carta.ovl-banco .carta-corpo-in > .riga-flessibile,
+.carta.ovl-banco .ovl-barra {
+  flex: none; margin: 0; border-radius: 0;
+  border-bottom: 1px solid var(--border);
+  padding: 8px 10px; background: var(--surface);
+}
+.carta.ovl-banco .carta-corpo-in > .riga-flessibile { gap: 8px; flex-wrap: wrap; }
+
+.carta.ovl-banco .ovl-scena {
+  flex: 1 1 auto; min-height: 0; margin: 0;
+  grid-template-columns: 190px minmax(0, 1fr) 268px;
+  gap: 0; align-items: stretch;
+}
+.carta.ovl-banco .ovl-livelli {
+  order: 1; border: 0; border-right: 1px solid var(--border);
+  border-radius: 0; overflow-y: auto; align-content: start;
+}
+.carta.ovl-banco .ovl-tela {
+  order: 2; display: grid; place-items: center;
+  padding: 14px; background: var(--surface-2);
+  overflow: auto;
+}
+.carta.ovl-banco .ovl-inspector {
+  order: 3; margin: 0; border: 0; border-left: 1px solid var(--border);
+  border-radius: 0; overflow-y: auto; background: var(--surface);
+}
+/* L'ispettore c'e' sempre, anche senza selezione: un pannello che appare e
+   scompare fa ballare la tela a ogni clic. Quando non c'e' niente di
+   selezionato dice cosa fare. */
+/* L'ispettore c'e' sempre: quando non c'e' selezione mostra solo il suo
+   messaggio, cosi la colonna non resta un rettangolo bianco senza spiegazione. */
+.carta.ovl-banco .ovl-inspector[hidden] { display: block; }
+.carta.ovl-banco .ovl-inspector[hidden] > *:not(.ovl-vuoto) { display: none; }
+.carta.ovl-banco .ovl-inspector:not([hidden]) > .ovl-vuoto { display: none; }
+.carta.ovl-banco .ovl-vuoto {
+  padding: 1.1rem .9rem; color: var(--testo-3); font-size: .86rem; line-height: 1.5;
+}
+
+/* La riga in fondo: le coordinate esatte della selezione. E' questa che rende
+   l'editor preciso — trascinare va bene per la posizione approssimativa, ma per
+   allineare due cose serve un numero scritto. */
+.ovl-piede {
+  flex: none; display: flex; align-items: center; gap: 14px;
+  padding: 7px 12px; border-top: 1px solid var(--border);
+  background: var(--surface); color: var(--testo-3);
+  font-size: .78rem; font-variant-numeric: tabular-nums;
+}
+.ovl-piede b { color: var(--testo-2); font-weight: 600; }
+.ovl-piede .ovl-piede-dx { margin-left: auto; }
+
+@media (max-width: 1100px) {
+  .carta.ovl-banco .ovl-scena { grid-template-columns: 154px minmax(0, 1fr) 216px; }
+}
+@media (max-width: 860px) {
+  /* Sotto questa larghezza tre colonne non ci stanno: la tela sopra, e sotto
+     livelli e proprieta' affiancati. La tela resta comunque sempre in vista. */
+  .carta.ovl-banco { height: auto; overflow: visible; }
+  .carta.ovl-banco > .carta-corpo,
+  .carta.ovl-banco > .carta-corpo > .carta-corpo-in { overflow: visible; }
+  .carta.ovl-banco .ovl-scena { grid-template-columns: 1fr 1fr; }
+  .carta.ovl-banco .ovl-tela { order: 1; grid-column: 1 / -1; border-bottom: 1px solid var(--border); }
+  .carta.ovl-banco .ovl-livelli { order: 2; border-right: 1px solid var(--border); }
+  .carta.ovl-banco .ovl-inspector { order: 3; }
+}
 .ovl-tela { --ovl-zoom: 1; overflow: auto; }
 .ovl-tela #ovl-preview { width: calc(100% * var(--ovl-zoom)); min-width: calc(100% * var(--ovl-zoom)); margin: 0; }
 
