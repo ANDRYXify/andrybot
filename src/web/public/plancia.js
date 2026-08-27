@@ -27,22 +27,12 @@
   }
 
   var actx = null;
-  function bip(freq, dur, vol) {
+  function voce(nome) {
     if (!suonoOn()) return;
-    try {
-      var AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return;
-      if (!actx) actx = new AC();
-      if (actx.state === 'suspended') actx.resume();
-      var t = actx.currentTime;
-      var o = actx.createOscillator(), g = actx.createGain();
-      o.type = 'sine'; o.frequency.setValueAtTime(freq, t);
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(vol, t + 0.008);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      o.connect(g); g.connect(actx.destination);
-      o.start(t); o.stop(t + dur + 0.03);
-    } catch (e) { /* niente */ }
+    try { if (window.SB_SUONO && window.SB_SUONO.suona) window.SB_SUONO.suona(nome); } catch (e) {}
+  }
+  function bip(freq) {
+    voce(freq >= 700 ? 'conferma' : (freq >= 470 ? 'commuta' : 'tocco'));
   }
 
   var overlay = null, eroe = null, rail = null, pista = null, voci = [], focus = 0, aperto = false, rafPad = 0;
@@ -77,7 +67,7 @@
     pista = overlay.querySelector('.pl-pista');
     overlay.querySelector('.pl-esci').addEventListener('click', function () { setModo(false); chiudi(); });
     var bs = overlay.querySelector('.pl-suono');
-    bs.addEventListener('click', function () { setSuono(!suonoOn()); aggiornaSuono(); bip(660, 0.07, 0.05); });
+    bs.addEventListener('click', function () { setSuono(!suonoOn()); aggiornaSuono(); voce('conferma'); });
     aggiornaSuono();
     window.addEventListener('resize', function () { if (aperto) glide(); });
     interazioni();
@@ -198,7 +188,7 @@
     var atmo = overlay.querySelector('.pl-atmo');
     if (atmo && voci.length > 1) atmo.style.setProperty('--pl-x', (12 + (focus / (voci.length - 1)) * 76) + '%');
     glide();
-    if (!muto) bip(560, 0.05, 0.035);
+    if (!muto) voce('tocco');
   }
 
   function glide() {
@@ -214,7 +204,7 @@
       void eroe.offsetWidth;
       eroe.style.setProperty('--pl-dx', (dir > 0 ? 34 : dir < 0 ? -34 : 0) + 'px');
       eroe.classList.add('pl-mosso');
-    } catch (e) { /* niente */ }
+    } catch (e) {  }
   }
 
   function muovi(d) {
@@ -238,7 +228,7 @@
   }
   function apriVoce(v) {
     if (!v) return;
-    bip(780, 0.11, 0.06);
+    voce('conferma');
     chiudi();
     try { A().vai(v.id); } catch (e) { location.hash = '#' + v.id; }
   }

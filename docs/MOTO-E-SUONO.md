@@ -142,3 +142,128 @@ al primo gesto, come richiedono i browser.
 ## Prestazioni
 
 Niente e peggiorato: FCP 176 ms, LCP 868 ms, CLS 0,0029, blocco 149 ms.
+
+---
+
+## Revisione: il suono per significato, il puntatore per proprietario
+
+### Perché i primi suoni suonavano male
+
+Erano costruiti con oscillatori a frequenze definite. `conferma` faceva 660 Hz poi
+990 Hz: una quinta giusta ascendente. `errore` faceva 220 → 176: una terza minore
+discendente. La Plancia aveva per conto suo un secondo motore audio che emetteva
+sinusoidi pure a 330, 430, 480, 520, 620, 700 e 760 Hz, collegate direttamente
+all'uscita senza filtro né compressore.
+
+Un oscillatore a frequenza fissa produce **una nota**. Un'interfaccia che canta
+note è una musichetta, e suona come un giocattolo. Il difetto non era nella
+taratura: era nel metodo di sintesi.
+
+### Cosa suona invece un'interfaccia di qualità
+
+Un buon suono d'interfaccia è l'impronta acustica di **un oggetto piccolo e
+smorzato che viene toccato**: un impulso eccita alcune risonanze del materiale,
+che decadono in poche decine di millisecondi. Non c'è una portante e non c'è
+un'altezza — perché i modi di una barra non stanno in rapporto armonico.
+
+I rapporti dei primi tre modi flessionali di una barra libera-libera sono
+**1 : 2.756 : 5.404**. Sono numeri reali della fisica delle barre, ed è
+esattamente il motivo per cui una barra colpita non ha un'altezza definita:
+nessuna fondamentale comune da cui l'orecchio possa estrarre una nota.
+
+Il motore ora fa questo (`suono.js`):
+
+- un **mazzuolo**: rumore passa-basso di 3,8 ms, il contatto;
+- tre **modi**: passa-banda a `f0`, `f0·2.756`, `f0·5.404`, con pesi 1 / 0,42 / 0,19
+  e decadimenti decrescenti;
+- inviluppi sempre esponenziali da 0,0001, mai un valore imposto di colpo;
+- bus passa-basso a 5,4 kHz e compressore: niente frizzi, niente stanza.
+
+Il riverbero a convoluzione è stato tolto: un oggetto che tocchi non sta in una
+sala. La differenza fra "va bene" e "è andata male" la fanno **registro e durata**
+(132 Hz per 150 ms contro 296 Hz per 85 ms), non un intervallo musicale.
+
+C'è ora **un solo motore audio**: la Plancia e il pilota non sintetizzano più
+niente per conto proprio, chiedono una voce a `SB_SUONO`.
+
+### La misura che tiene onesto il risultato
+
+`t_suono.mjs` misura, oltre a picco e sporcizia, l'**altezza percepibile**:
+autocorrelazione normalizzata del segmento sostenuto, cercando il massimo fra
+60 e 1200 Hz. Una nota pura vale ~0,99. Le otto voci attuali stanno fra 0,12 e
+0,45, con la soglia di allarme a 0,72.
+
+| voce | picco | durata | tonalità |
+|---|---|---|---|
+| tocco | 0,089 | 19 ms | 0,28 |
+| premi | 0,144 | 29 ms | 0,36 |
+| commuta | 0,118 | 22 ms | 0,21 |
+| conferma | 0,161 | 88 ms | 0,45 |
+| errore | 0,157 | 93 ms | 0,45 |
+| apri | 0,088 | 85 ms | 0,25 |
+| chiudi | 0,089 | 68 ms | 0,25 |
+| passa | 0,050 | 16 ms | 0,12 |
+
+### Quando si sente qualcosa
+
+La regola vecchia legava il suono al **tipo di elemento**: qualunque bottone o
+link faceva `premi`, e ogni `pointerover` faceva `passa`. Così lo stesso suono
+usciva per cose che significano cose diverse, e il mouse che passeggiava sulla
+pagina produceva rumore continuo. Un checkbox ne faceva due (uno al `pointerdown`,
+uno al `change`).
+
+La regola nuova lega il suono a **ciò che è accaduto**:
+
+- il passaggio del mouse non fa niente — sfiorare non è un fatto;
+- `premi` sulla pressione di un comando che agisce, esclusi i commutabili;
+- `commuta` solo su `change`, l'unico evento che dice davvero che lo stato è cambiato;
+- `apri` / `chiudi` osservando le classi di stato del corpo pagina — ma **solo se
+  nessuna pressione le ha precedute entro 220 ms**: se hai cliccato, il clic ha già
+  parlato, e il pannello che aggiunge la sua voce sarebbe un doppione. Parla il
+  pannello quando si apre da solo (scorciatoia da tastiera, Esc, gesto del pad);
+- `conferma` / `errore` osservando i messaggi che compaiono, che sono l'esito vero.
+
+Un fatto, un suono. `t_agganci.mjs` lo verifica caso per caso, incluso il silenzio
+totale a suoni spenti.
+
+L'interruttore sta nella barra in alto accanto a tema e lingua, e nel cassetto su
+mobile. I suoni sono **spenti finché non li accendi**. Fino a ora quel bottone era
+invisibile: `.suono-toggle` non aveva **nessuna regola CSS** e collassava a 0×0
+fra il selettore di lingua e la luna. Ora condivide la regola di `.tema-toggle`
+invece di averne una gemella — così i due interruttori non possono più divergere.
+
+### Di chi è il puntatore
+
+C'era una classe sola, `pad-vivo`, che diceva due cose diverse: "esiste un pad
+collegato" (che governa il layout e la legenda) e "il pad sta guidando adesso"
+(che governa il cursore). Non veniva mai tolta quando l'utente tornava al mouse,
+e una regola nascondeva il cursore nella Plancia **sempre** — quindi col mouse la
+Plancia diventava inusabile.
+
+Ora i due fatti sono due classi:
+
+- `pad-vivo` — un pad è collegato. Durevole: legenda, spazi, scorciatoie.
+- `pad-guida` — il pad è il dispositivo che comanda ora. Volatile: si accende
+  quando il pad produce input, si spegne al primo `pointermove` **fidato**
+  (`isTrusted`, così gli eventi che il pad stesso sintetizza non se la tolgono
+  da sola).
+
+Il disegno del cursore rappresenta **il puntatore, chiunque lo muova**: col mouse
+sempre, col pad quando il pad muove il puntatore. Sparisce in un caso solo — nella
+Plancia guidata dal pad, dove la navigazione è a fuoco e il puntatore non
+rappresenta niente.
+
+Il riconoscimento del pad è stato spostato **fuori** da chi lo consuma: prima
+stava dentro il ramo "la Plancia non è aperta", quindi mentre la Plancia era
+aperta nessuno si accorgeva che il pad stesse guidando.
+
+### Il tasto mangiato
+
+Lo stesso errore, in forma peggiore, stava nei tasti. I flag di fronte
+(`st.a`, `st.b`, …) venivano aggiornati **dentro** il gate `!plancia aperta`.
+Premendo A per aprire la Plancia, `st.a` restava bloccato a `true`: alla chiusura,
+la prima pressione di A veniva mangiata e il pad sembrava rotto a intermittenza.
+
+Lo stato dei tasti descrive **il pad**, non il contesto: ora si legge e si aggiorna
+sempre, e solo l'**azione** resta dentro il gate. Una pressione fatta mentre
+comanda la Plancia viene consumata da lei, e nessuna pressione va persa.

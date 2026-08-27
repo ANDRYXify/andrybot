@@ -591,11 +591,11 @@ body.leggero #anime-sfondo::after, body.meno-moto #anime-sfondo::after { animati
 body.senza-cursore #an-cursore-ring,
 body.senza-cursore #an-cursore-dot,
 body.senza-cursore #an-cursore-bar,
-body.plancia-on #an-cursore-ring,
-body.plancia-on #an-cursore-dot,
-body.plancia-on #an-cursore-bar { opacity: 0 !important; }
+body.plancia-on.pad-guida #an-cursore-ring,
+body.plancia-on.pad-guida #an-cursore-dot,
+body.plancia-on.pad-guida #an-cursore-bar { opacity: 0 !important; }
 body.senza-cursore.cursore-on, body.senza-cursore.cursore-on * { cursor: default !important; }
-body.pad-vivo.cursore-on, body.pad-vivo.cursore-on * { cursor: none !important; }
+body.pad-guida.cursore-on, body.pad-guida.cursore-on * { cursor: none !important; }
 
 .eco-versioni {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
