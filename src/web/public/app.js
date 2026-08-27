@@ -1290,12 +1290,19 @@ function collegaTgDestinazioni() {
 }
 
 let _salvaBarra = null, _salvaSporco = false, _salvaOsservatore = null;
+let _salvaCarta = null, _salvaChiusa = false;
 
 function _bottoniSalva(pan) {
   if (!pan) return [];
-  return [...pan.querySelectorAll('button[id*="salva"], button[id*="save"]')]
-    .filter((b) => !b.disabled && b.offsetParent !== null && !/modello|template|cred/i.test(b.id))
-    .slice(0, 3);
+  const buono = (b) => !b.disabled && b.offsetParent !== null && !/modello|template|cred/i.test(b.id);
+  const sel = 'button[id*="salva"], button[id*="save"]';
+  // Se so dove stavi scrivendo, il salvataggio di quella carta viene per primo
+  // ed e' l'unico che offro: gli altri riguardano roba che non hai toccato.
+  if (_salvaCarta && _salvaCarta.isConnected) {
+    const suoi = [..._salvaCarta.querySelectorAll(sel)].filter(buono);
+    if (suoi.length) return suoi.slice(0, 2);
+  }
+  return [...pan.querySelectorAll(sel)].filter(buono).slice(0, 3);
 }
 
 function _mostraBarraSalva(mostra) {
@@ -1305,12 +1312,28 @@ function _mostraBarraSalva(mostra) {
 }
 
 function aggiornaBarraSalva() {
-  if (!_salvaBarra) return;
+  if (!_salvaBarra || _salvaChiusa) return;
   const pan = document.querySelector('.pannello-scheda.visibile');
   const bottoni = _salvaSporco ? _bottoniSalva(pan) : [];
   if (!bottoni.length) { _mostraBarraSalva(false); return; }
   const zona = _salvaBarra.querySelector('.sv-tasti');
   zona.innerHTML = '';
+
+  // Scarta: ricarica la sezione dai dati salvati, cosi le modifiche non salvate
+  // spariscono per davvero invece di restare in giro con l'avviso nascosto.
+  const annulla = document.createElement('button');
+  annulla.type = 'button';
+  annulla.className = 'btn testo sv-annulla';
+  annulla.textContent = L('Annulla', 'Discard', 'Descartar');
+  annulla.addEventListener('click', () => {
+    _salvaSporco = false;
+    _salvaCarta = null;
+    _mostraBarraSalva(false);
+    try { caricaDatiScheda(schedaAttiva); } catch (e) {  }
+    toast(L('Modifiche annullate', 'Changes discarded', 'Cambios descartados'));
+  });
+  zona.appendChild(annulla);
+
   for (const b of bottoni) {
     const proxy = document.createElement('button');
     proxy.type = 'button';
@@ -1319,6 +1342,7 @@ function aggiornaBarraSalva() {
     proxy.addEventListener('click', () => {
       b.click();
       _salvaSporco = false;
+      _salvaCarta = null;
       _mostraBarraSalva(false);
     });
     zona.appendChild(proxy);
@@ -1331,8 +1355,28 @@ function avviaBarraSalva() {
   _salvaBarra = document.createElement('div');
   _salvaBarra.id = 'barra-salva';
   _salvaBarra.className = 'sv-barra';
-  _salvaBarra.innerHTML = `<span class="sv-testo">${_bIco(ICO.avviso)}${L('Hai modifiche non salvate', 'You have unsaved changes', 'Tienes cambios sin guardar')}</span><span class="sv-tasti"></span>`;
+  _salvaBarra.setAttribute('role', 'status');
+  _salvaBarra.innerHTML = `<span class="sv-testo">${_bIco(ICO.avviso)}${L('Hai modifiche non salvate', 'You have unsaved changes', 'Tienes cambios sin guardar')}</span><span class="sv-tasti"></span>`
+    + `<button type="button" class="sv-chiudi" data-sv-chiudi aria-label="${esc(L('Chiudi l\'avviso', 'Dismiss', 'Cerrar el aviso'))}" title="${esc(L('Chiudi l\'avviso', 'Dismiss', 'Cerrar el aviso'))}">`
+    + '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
   document.body.appendChild(_salvaBarra);
+
+  // Chiudere non salva e non scarta: mette via l'avviso. Le modifiche restano
+  // dove sono, e la barra ritorna alla prossima che fai. Senza questa uscita
+  // l'unico modo di liberarsi della barra era salvare.
+  _salvaBarra.addEventListener('click', (ev) => {
+    if (!ev.target.closest('[data-sv-chiudi]')) return;
+    _salvaChiusa = true;
+    _mostraBarraSalva(false);
+  });
+
+  // Esc fa la stessa cosa della X, che e' quello che chiunque prova per primo.
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Escape' || !_salvaSporco || _salvaChiusa) return;
+    if (!_salvaBarra.classList.contains('dentro')) return;
+    _salvaChiusa = true;
+    _mostraBarraSalva(false);
+  });
 
   const sporca = (ev) => {
     const t = ev.target;
@@ -1340,8 +1384,13 @@ function avviaBarraSalva() {
     if (!t.closest('.pannello-scheda.visibile')) return;
     if (!/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
     if (t.closest('#tg-destinazioni, .ovl-schede, .ovl-barra, .ovl-livelli, .ovl-inspector, .cerca-guscio')) return;
+    // Ricorda in quale carta si stava scrivendo: il pulsante giusto e' quello
+    // di QUELLA carta. Prima la barra proponeva tutti i salvataggi del pannello
+    // — «Salva», «Salva punti», «Salva manche» — e sceglierne uno era un indovinello.
+    _salvaCarta = t.closest('.carta') || null;
     if (_salvaSporco) return;
     _salvaSporco = true;
+    _salvaChiusa = false;
     aggiornaBarraSalva();
   };
   document.addEventListener('input', sporca, true);
@@ -1357,6 +1406,8 @@ function avviaBarraSalva() {
 
 function azzeraBarraSalva() {
   _salvaSporco = false;
+  _salvaChiusa = false;
+  _salvaCarta = null;
   _mostraBarraSalva(false);
 }
 

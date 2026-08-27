@@ -1219,11 +1219,39 @@ body.leggero .vivo::after, body.meno-moto .vivo::after { animation: none; opacit
 }
 .sv-tasti { display: flex; gap: 6px; margin-left: auto; }
 .sv-tasti .btn { min-height: 38px; padding: 0 1rem; font-size: .86rem; }
+.sv-tasti .sv-annulla { padding: 0 .7rem; color: var(--testo-2); }
+.sv-tasti .sv-annulla:hover { color: var(--testo); }
+
+/* La X. Almeno 28px per lato: sotto i 24 sarebbe fuori norma (WCAG 2.5.8) e
+   soprattutto difficile da centrare col pollice, che e' dove serve di piu'. */
+.sv-chiudi {
+  flex: none; width: 28px; height: 28px; margin-left: 2px;
+  display: inline-grid; place-items: center;
+  border: 1px solid var(--border); border-radius: 50%;
+  background: var(--surface-2); color: var(--testo-3);
+  cursor: pointer; padding: 0;
+  transition: color .18s ease, background .18s ease, border-color .18s ease;
+}
+.sv-chiudi:hover { color: var(--testo); border-color: var(--border-2); background: var(--surface-3); }
+
+/* La barra galleggia sopra il contenuto: senza questo spazio copriva l'ultima
+   carta della pagina, e proprio i comandi che stavi per usare. La classe veniva
+   gia' messa dal codice ma non esisteva nessuna regola che la usasse. */
+body.con-salva { padding-bottom: 92px; }
+@media (max-width: 720px) {
+  body.con-salva { padding-bottom: 116px; }
+  body.con-nav.con-salva { padding-bottom: 168px; }
+}
 @media (max-width: 720px) {
   body.con-nav .sv-barra { bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
-  .sv-barra { padding: .55rem .6rem .55rem .8rem; gap: 8px; }
-  .sv-testo { font-size: .8rem; }
-  .sv-tasti { flex: 1 1 auto; }
+  /* Su schermo stretto la barra sta su due righe, quindi il tondo da 999px non
+     va piu' bene. E l'ordine conta: prima riga testo + X, seconda i tasti a
+     piena larghezza. Lasciata al flusso naturale la X andava a capo da sola,
+     staccata, sopra il campo che stava sotto la barra. */
+  .sv-barra { padding: .6rem .7rem; gap: 8px; border-radius: 18px; width: calc(100vw - 24px); }
+  .sv-testo { font-size: .8rem; order: 1; white-space: normal; }
+  .sv-chiudi { order: 2; margin-left: auto; }
+  .sv-tasti { order: 3; flex: 1 0 100%; margin-left: 0; }
   .sv-tasti .btn { flex: 1 1 auto; justify-content: center; }
 }
 
