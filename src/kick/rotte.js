@@ -56,13 +56,25 @@ export function montaKick(app, { requireLogin, currentUser, wrap, suMessaggio, s
     catch (e) { log.error(`@${login}: scambio codice Kick fallito — ${e?.message || e}`); return male('Kick ha rifiutato il collegamento'); }
 
     api.salvaToken(login, token);
+
+    // Senza l'id Kick il collegamento e' INUTILE: ogni evento in arrivo dice
+    // «broadcaster 12345» e noi non sapremmo di chi e' il canale, quindi lo
+    // butteremmo via in silenzio. Meglio dirlo subito che sembrare collegati e
+    // non fare niente.
     const io = await api.ioSuKick(login);
-    if (io.ok && io.userId) api.salvaToken(login, token, io.userId);
+    if (!io.ok || !io.userId) {
+      api.scollega(login);
+      log.error(`@${login}: Kick non dice chi sono — ${io.errore || 'nessun id'}`);
+      return male('Kick non ha detto chi sei: riprova');
+    }
+    api.salvaToken(login, token, io.userId);
 
     const isc = await api.iscrivi(login);
-    if (!isc.ok) log.error(`@${login}: iscrizione agli eventi Kick fallita — ${isc.errore}`);
-    else log.info(`@${login}: Kick collegato (@${io.nome || '?'}) e iscritto agli eventi`);
-
+    if (!isc.ok) {
+      log.error(`@${login}: iscrizione agli eventi Kick fallita — ${isc.errore}`);
+      return male('collegato, ma gli eventi non arrivano: ' + String(isc.errore || '').slice(0, 60));
+    }
+    log.info(`@${login}: Kick collegato (@${io.nome || '?'}, id ${io.userId}) e iscritto agli eventi`);
     res.redirect('/?kick=ok');
   }));
 
