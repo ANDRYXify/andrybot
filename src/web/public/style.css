@@ -1,8 +1,6 @@
 /* © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live */
 /* Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live */
 
-
-
 :root {
   color-scheme: light;
 
@@ -214,17 +212,6 @@ body.menu-aperto .drawer { transform: none; }
 .pagina-testata h1 { font-size: clamp(1.55rem, 1.05rem + 1.9vw, 2.05rem); font-weight: 800; letter-spacing: -.032em; line-height: 1.1; }
 .pagina-testata p { color: var(--testo-2); font-size: 1rem; margin-top: .5rem; max-width: 62ch; }
 
-/* La sezione entra dall'alto in basso, come si legge: occhiello, titolo,
-   sottotitolo, guida, carte. Prima il sottotitolo partiva a 340ms e finiva a
-   940, mentre le carte avevano gia finito a 180: il contenuto arrivava prima
-   del suo titolo. I ritardi qui sotto sono una scala sola, e le carte la
-   continuano (--rev-delay, in app.js) invece di avere una cadenza propria.
-
-   Tutto e legato alla classe .entra, non alla semplice presenza dell'elemento:
-   durante una transizione di vista il browser mostra uno SCATTO fermo del nuovo
-   stato, e qualunque animazione dei figli girerebbe sotto quello scatto, cioe
-   invisibile. La classe viene messa quando il contenitore ha finito di aprirsi,
-   cosi la sezione si popola dopo essersi aperta invece che durante. */
 .pagina-testata.entra > .pt-occhiello, .pagina-testata.entra > p {
   animation: pt-in .46s var(--molla-lieve, var(--rev-ease)) backwards;
 }
@@ -234,18 +221,7 @@ body.menu-aperto .drawer { transform: none; }
 .pagina-testata.entra > .carte-ctrl { animation: pt-in .48s var(--molla-lieve, var(--rev-ease)) .2s backwards; }
 .pagina-testata.entra > .fam-barra { animation: pt-in .46s var(--molla-lieve, var(--rev-ease)) .15s backwards; }
 .pagina-testata.entra .pt-parola > i { animation-play-state: running; }
-/* Prima che la comparsa parta i pezzi devono essere gia' invisibili, altrimenti
-   lo scatto della transizione li cattura visibili e poi li vedresti entrare una
-   seconda volta. Solo dove il movimento e' gradito: con «riduci animazioni»
-   attivo non si nasconde niente, cosi non c'e' modo di restare con la pagina
-   vuota se qualcosa va storto. */
 @media (prefers-reduced-motion: no-preference) {
-  /* Si nasconde SOLO se qualcuno ha detto che seguira' una comparsa (.pronta).
-     Prima bastava l'assenza di .entra, e chi arrivava da un indirizzo con
-     l'ancora — o al primo caricamento — non passava da chi accende .entra:
-     titolo e sottotitolo restavano invisibili per sempre, lasciando mezza
-     schermata vuota sopra le carte. Il nascondimento e' un impegno che si
-     prende chi sa di poterlo sciogliere. */
   .pagina-testata.pronta:not(.entra) > .pt-occhiello,
   .pagina-testata.pronta:not(.entra) > p,
   .pagina-testata.pronta:not(.entra) > .fam-barra,
@@ -273,7 +249,6 @@ body.menu-aperto .drawer { transform: none; }
 .carta.avviso h2, .carta.avviso p { color: var(--ambra); }
 .carta.avviso-rosso { border-color: var(--rosso-bordo); background: var(--rosso-soft); }
 .carta.avviso-rosso h2 { color: var(--rosso); }
-
 
 .cap-area { border-top: 1px solid var(--border); }
 .cap-area > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: .5rem; padding: .75rem 0; font-weight: 700; font-size: .95rem; color: var(--testo); }
@@ -662,8 +637,6 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
 input[type="number"] { width: 92px; background: var(--surface); border: 1px solid var(--border-2); border-radius: var(--r-s); color: var(--testo); padding: .5rem .6rem; font-size: .92rem; transition: border-color var(--molla), box-shadow var(--molla); }
 input[type="number"]:focus { outline: none; border-color: var(--acc); box-shadow: 0 0 0 3px var(--acc-tint); }
 input[type="checkbox"] { accent-color: var(--acc); width: 1.05rem; height: 1.05rem; }
-/* Le schede di una famiglia. Sono una riga di scelte, non dei pulsanti: il peso
-   visivo sta nella scheda accesa, le altre restano quiete. */
 .fam-barra {
   display: flex; flex-wrap: wrap; gap: 4px;
   margin: 1rem 0 0;
