@@ -231,3 +231,56 @@ Più del doppio di superficie di lavoro, senza togliere un comando.
 - **Alt** durante il trascinamento sospende l'aggancio alle guide.
 - **Canc** riporta l'elemento alla posizione standard.
 - **Ctrl+Z / Ctrl+Y** annulla e ripete.
+
+## Una pagina sola
+
+Le sotto-schede — *Disposizione · I tuoi overlay · Aspetto* — sono sparite.
+Erano una divisione dello stesso lavoro: per cambiare il colore di un alert e
+poi rimetterlo a posto sulla tela bisognava cambiare scheda due volte.
+
+L'ordine adesso è quello in cui si lavora:
+
+1. **il banco**, alto quanto lo schermo, che è il motivo per cui si apre la sezione;
+2. **i tuoi overlay**, col link OBS e la ricetta per OBS;
+3. **l'aspetto**, quattro sezioni richiudibili — alert, chat, widget, CSS.
+
+E il pannello delle proprietà porta un pulsante **«Colori, font, animazione…»**
+che apre la sezione dell'elemento selezionato: dalla tela ai suoi colori in un
+clic, senza cercarla.
+
+## Il telefono
+
+Il banco lavora in orizzontale. In verticale sotto i 620px, al suo posto compare
+un cartello che dice di girare il telefono — **le altre carte restano**, così dal
+telefono si copia comunque il link OBS e si cambiano testi e colori. In
+orizzontale il banco c'è tutto: su uno schermo basso (sotto i 560px) la guida si
+richiude, l'intestazione si stringe e la tela viene 477×268 su un iPhone messo
+di lato.
+
+## Il salvataggio
+
+La barra in fondo — «hai modifiche non salvate» — esisteva anche quando il
+pulsante **Salva** era lì, a venti pixel di distanza: due modi per fare la
+stessa cosa, e quello più invadente copriva la pagina.
+
+La regola adesso è una sola: **la barra offre un salvataggio che non hai già
+sotto gli occhi.** Se il pulsante è nella parte visibile della pagina la barra
+non c'è; se scorri e lo perdi di vista, torna. Si ripensa a ogni scorrimento e a
+ogni ridimensionamento, perché è quello che cambia la risposta.
+
+E se te ne vai con delle modifiche in sospeso — cambiando sezione, o chiudendo
+la scheda del browser — te lo si chiede prima: **Salva ed esci · Esci senza
+salvare · Resta qui**. La domanda sta su un solo passaggio, l'unico da cui si
+cambia sezione, e prima di rientrarci azzera la condizione che l'ha fatta
+scattare: non può ripetersi in cerchio.
+
+### Un pulsante che urlava
+
+`.btn.testo` — la variante quieta — era **nominata in nove regole e definita in
+nessuna**. Chi la usava non otteneva un pulsante discreto: cadeva sul fondo
+predefinito di `.btn`, cioè il colore d'accento, e diventava il pulsante più
+gridato della finestra. Era il caso di «Annulla» nella barra di salvataggio: la
+via d'uscita era la cosa più vistosa dello schermo.
+
+Adesso `.btn.testo` esiste davvero: trasparente, testo tenue, e si accende
+appena al passaggio del mouse.
