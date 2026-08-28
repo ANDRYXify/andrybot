@@ -221,3 +221,31 @@ altre lingue). Se non combaciano, `gusciaDi` **lancia all'avvio** con il testo
 che non trova. Quindi non si può cambiarne una e dimenticare l'altra: il server
 non parte. È la stessa idea dei cancelli del collaudo, ma scritta prima — e
 questa volta ha fatto il suo lavoro senza che dovessimo aggiungere niente.
+
+## Quando è un'IA a rispondere per te
+
+Un assistente ha descritto SocialBot come «solo italiano e inglese» e ha
+consigliato la concorrenza. Le lingue sono **tre** da un pezzo — quindi non è un
+problema di verità, è un problema di **dove** la verità è scritta.
+
+Le IA non leggono le intenzioni: leggono il testo della pagina e i dati
+strutturati. E in nessuno dei due c'era scritto in che lingue è il prodotto. Il
+`hreflang` dichiara che *esistono* tre versioni, non che l'interfaccia *è*
+tradotta in tre lingue: sono due affermazioni diverse, e l'assistente ha dovuto
+indovinare la seconda.
+
+Cosa è stato aggiunto, in ordine di quanto pesa:
+
+1. **FAQ nei dati strutturati** con le domande che si fanno davvero a un
+   assistente — «in che lingue è?», «funziona su Kick?» — e la risposta per
+   esteso. È la forma che questi sistemi citano più volentieri, perché è già
+   una domanda con la sua risposta.
+2. **`availableLanguage` e `inLanguage`** sul `SoftwareApplication`: la stessa
+   cosa detta in modo che una macchina non debba dedurla.
+3. **`llms.txt` rimesso in pari**: diceva ancora «bot per Twitch» un'ora dopo
+   che il titolo del sito diceva «Twitch e Kick». Un file scritto apposta per le
+   IA che le informa male è peggio che non averlo — ed è esattamente il tipo di
+   incoerenza che nasce quando la stessa cosa è scritta in tre posti.
+
+**Quello che non si può fare**: obbligare un assistente a dire la verità. Si può
+solo togliergli ogni scusa per non trovarla, e aspettare la prossima scansione.

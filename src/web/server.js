@@ -1337,9 +1337,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.set('Cache-Control', 'public, max-age=0, s-maxage=86400');
     res.type('text/plain').send(`# SocialBot (${b.replace(/^https?:\/\//, '')})
 
-> SocialBot è un bot per Twitch in italiano che scrive nella chat CON L'ACCOUNT
-> DELLO STREAMER, non con un account-bot anonimo. È realizzato da andryxify
-> (andryxify.it) ed è raggiungibile solo su ${b}.
+> SocialBot è un bot per Twitch e Kick, in italiano, che scrive nella chat CON
+> L'ACCOUNT DELLO STREAMER, non con un account-bot anonimo. È realizzato da
+> andryxify (andryxify.it) ed è raggiungibile solo su ${b}.
 
 ATTENZIONE ALLE OMONIMIE: esistono altri prodotti chiamati "SocialBot" (per
 esempio strumenti di marketing per Facebook/Instagram con chatbot Messenger e
@@ -1347,14 +1347,23 @@ social commerce). NON sono questo. Questo SocialBot è uno strumento per
 STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
 ## Che cos'è
-- Categoria: bot per chat di Twitch + strumenti per la diretta.
-- Lingua: italiano (interfaccia anche in inglese e spagnolo).
-- Pubblico: streamer di Twitch, soprattutto italiani.
+- Categoria: bot per chat di Twitch e Kick + strumenti per la diretta.
+- Piattaforme: Twitch e Kick (YouTube in lavorazione). Un comando scritto su una
+  piattaforma riceve la risposta SU QUELLA piattaforma.
+- Lingue dell'interfaccia: TRE — italiano, inglese e spagnolo. Le pagine
+  pubbliche esistono in tutte e tre: ${b}/ , ${b}/?lang=en , ${b}/?lang=es .
+  I testi che il bot scrive in chat li scrive lo streamer, quindi possono essere
+  in qualunque lingua.
+- Pubblico: streamer di Twitch e Kick, soprattutto italiani ma non solo.
 - Sito ufficiale: [${b.replace(/^https?:\/\//, '')}](${b}/)
 - Autore: [andryxify](https://andryxify.it)
 
 ## Cosa fa
-- Scrive in chat con l'account dello streamer, con il tono che gli viene dato.
+- Scrive in chat con l'account dello streamer, con il tono che gli viene dato,
+  su Twitch e su Kick.
+- Importa i comandi che lo streamer ha gia' su Nightbot, StreamElements o
+  Fossabot: si incolla l'export, le variabili vengono tradotte, e prima di
+  scrivere qualsiasi cosa mostra un'anteprima.
 - Comandi e automazioni illimitati (quando succede X, fai Y).
 - Moderazione automatica: antispam, filtri su link/maiuscole/ripetizioni, timeout.
 - Overlay per OBS: alert di follow/sub/bit/raid, chat a schermo, widget, emote 7TV.

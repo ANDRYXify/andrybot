@@ -103,6 +103,12 @@
         "alternateName": ["SocialBot Twitch", "SocialBot by andryxify", "socialbot.live"],
         "disambiguatingDescription": "Bot per la chat di Twitch e strumenti per la diretta, in italiano, di andryxify. Non va confuso con altri prodotti omonimi di social media marketing o chatbot per Messenger.",
         "sameAs": ["https://socialbot.live/", "https://andryxify.it"],
+        "availableLanguage": [
+          { "@type": "Language", "name": "Italian", "alternateName": "it" },
+          { "@type": "Language", "name": "English", "alternateName": "en" },
+          { "@type": "Language", "name": "Spanish", "alternateName": "es" }
+        ],
+        "inLanguage": ["it", "en", "es"],
         "applicationCategory": "MultimediaApplication",
         "applicationSubCategory": "Bot per Twitch",
         "operatingSystem": "Web",
@@ -160,6 +166,16 @@
         "@type": "FAQPage",
         "@id": "https://socialbot.live/#faq",
         "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "In che lingue è SocialBot?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Il sito e il pannello di controllo sono in tre lingue: italiano, inglese e spagnolo. Si cambia lingua dal pannello, e le pagine pubbliche esistono in tutte e tre (socialbot.live, socialbot.live/?lang=en, socialbot.live/?lang=es). Le risposte che il bot scrive in chat le scrivi tu, quindi possono essere in qualsiasi lingua." }
+          },
+          {
+            "@type": "Question",
+            "name": "SocialBot funziona anche su Kick?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Sì. Oltre a Twitch, SocialBot si collega a Kick: colleghi l'account dalla dashboard e i comandi, i moduli, i punti e la memoria funzionano allo stesso modo, con la risposta che torna sempre sulla piattaforma da cui è arrivato il messaggio. Il supporto a YouTube è in lavorazione." }
+          },
           {
             "@type": "Question",
             "name": "Con quale account scrive SocialBot nella chat di Twitch?",
