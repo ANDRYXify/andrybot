@@ -2205,6 +2205,12 @@ export function normComando(s) {
   return String(s || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24);
 }
 
+// Base di partenza per il comando, ricavata dal nome del file caricato: via
+// l'estensione, i separatori diventano "_".
+export function baseDaFile(nomeFile) {
+  return normComando(String(nomeFile || '').replace(/\.[^.]+$/, '').replace(/[\s.\-]+/g, '_'));
+}
+
 const MAX_EFFETTI = 60;   // tetto di effetti per canale
 
 export const effects = {
@@ -2219,6 +2225,18 @@ export const effects = {
   },
   count(channel) {
     return db.prepare('SELECT COUNT(*) c FROM effects WHERE channel=?').get(channel).c;
+  },
+  // Ogni media caricato entra nella libreria con una PROPRIA identità: il comando.
+  // Da una base (nome file, nome nella libreria, comando d'origine) si conia un
+  // comando libero nel canale, così un caricamento non ne cancella mai un altro.
+  // `tieni` = comando già assegnato a quel campo: se la base coincide, lo si
+  // riusa (ricaricare lo stesso file lo sostituisce, non ne accumula copie).
+  comandoLibero(channel, base, tieni = '') {
+    const b = normComando(base) || 'media';
+    if (tieni && normComando(tieni) === b) return b;
+    let c = b, n = 2;
+    while (this.get(channel, c)) { c = normComando(b + '_' + n) || (b + String(n)); n++; if (n > 99) break; }
+    return c;
   },
   // Inserisce o SOSTITUISCE (UPSERT su channel+comando). Se esisteva già,
   // ritorna il vecchio nome file (così il chiamante può cancellarlo dal disco),

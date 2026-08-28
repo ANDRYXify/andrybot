@@ -17,7 +17,7 @@ import { dirname, join, basename } from 'node:path';
 import { config, SCOPES, missingConfig } from '../config.js';
 import * as filigrana from '../watermark.js';   // filigrana di proprietà (Andrea Taliento / ANDRYXify)
 import { makeLog } from '../logger.js';
-import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, modules as modulesDb, friends, sfondi as sfondiDb } from '../db.js';
+import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, friends, sfondi as sfondiDb } from '../db.js';
 import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO } from '../db.js';
 import { renderLinkPage, renderInformativa } from '../features/linkpagina.js';
@@ -759,20 +759,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   const tmpDir = join(config.dataDir, 'tmp');
   mkdirSync(tmpDir, { recursive: true });
 
-  // Ogni media caricato entra nella libreria con una PROPRIA identita': il comando.
-  // Da una base (nome file, nome nella libreria, comando d'origine) si conia un
-  // comando libero nel canale, così un caricamento non ne cancella mai un altro.
-  // `tieni` = comando gia' assegnato a questo campo: se la base coincide, si
-  // riusa (ricaricare lo stesso file lo sostituisce, non ne accumula copie).
-  function comandoLibero(login, base, tieni = '') {
-    const b = normComando(base) || 'media';
-    if (tieni && normComando(tieni) === b) return b;
-    let c = b, n = 2;
-    while (effectsDb.get(login, c)) { c = normComando(b + '_' + n) || (b + String(n)); n++; if (n > 99) break; }
-    return c;
-  }
-  // Base di partenza ricavata dal nome del file caricato (senza estensione).
-  const baseDaFile = (nomeFile) => normComando(String(nomeFile || '').replace(/\.[^.]+$/, ''));
+  const comandoLibero = (login, base, tieni) => effectsDb.comandoLibero(login, base, tieni);
 
   // Studio Web: motore delle dirette dal browser (ffmpeg → RTMP Twitch).
   const studio = new StudioEngine();

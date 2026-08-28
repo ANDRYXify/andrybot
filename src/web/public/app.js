@@ -2806,6 +2806,7 @@ function pannelloGrafiche() {
               <label class="btn secondario" for="gr-sfondo-file">${_bIco(ICO.carica || '')}${L('Carica dal PC', 'Upload from PC', 'Subir desde el PC')}</label>
               <input type="file" id="gr-sfondo-file" accept="image/*" hidden>
               <button type="button" class="btn secondario" id="gr-sfondo-lib">${_bIco(ICO.libro)}${L('La tua libreria sfondi', 'Your background library', 'Tu biblioteca de fondos')}</button>
+              <button type="button" class="btn secondario" id="gr-sfondo-media">${_bIco(ICO.immagine)}${L('Dai tuoi media', 'From your media', 'De tus medios')}</button>
             </div>
             <div id="gr-lib-box" class="gr-lib-box" hidden></div>
             <p class="suggerimento">${L('Carica un\'immagine dal PC: viene salvata nella tua', 'Upload an image from your PC: it\'s saved to your', 'Sube una imagen desde el PC: se guarda en tu')} <strong>${L('libreria sfondi', 'background library', 'biblioteca de fondos')}</strong> ${L('e la puoi riusare quando vuoi.', 'so you can reuse it anytime.', 'y la puedes reutilizar cuando quieras.')}
@@ -3244,6 +3245,13 @@ function initGrafiche() {
       box.innerHTML = `<p class="vuoto">${L('Libreria non disponibile ora, riprova.', 'Library unavailable now, try again.', 'Biblioteca no disponible ahora, inténtalo de nuevo.')}</p>`;
     }
   }
+  document.getElementById('gr-sfondo-media')?.addEventListener('click', () => conErrore(async () => {
+    const scelta = await scegliDallaLibreria({ tipi: ['immagine'], titolo: L('Scegli lo sfondo', 'Choose the background', 'Elige el fondo') });
+    if (!scelta || !scelta.url) return;
+    const box = document.getElementById('gr-lib-box'); if (box) box.hidden = true;
+    c.sfondoImg = scelta.url;
+    grafCaricaImg(c.sfondoImg, ridisegna);
+  }));
   document.getElementById('gr-sfondo-lib')?.addEventListener('click', () => {
     const box = document.getElementById('gr-lib-box');
     if (!box) return;
@@ -4447,6 +4455,7 @@ function pannelloPenitenze() {
       <label class="campo spazio-sopra" for="pen-effetto">${L('Suono/effetto quando scatta la penitenza (facoltativo)', 'Sound/effect when the forfeit triggers (optional)', 'Sonido/efecto cuando salta la penitencia (opcional)')}</label>
       <div class="riga-flessibile">
         <select id="pen-effetto" class="campo-largo"><option value="">${L('— niente —', '— none —', '— nada —')}</option></select>
+        <button type="button" class="btn secondario mini ico-sola" id="pen-effetto-lib" title="${L('Dalla libreria', 'From the library', 'De la biblioteca')}" aria-label="${esc(L('Dalla libreria', 'From the library', 'De la biblioteca'))}">${_bIco(ICO.libro)}</button>
         <button type="button" class="btn secondario mini ico-sola" id="pen-effetto-prova" title="${L('Prova', 'Test', 'Probar')}" aria-label="${esc(L('Prova', 'Test', 'Probar'))}">${_bIco('<path d="m6 3 14 9-14 9Z"/>')}</button>
       </div>
       <p class="suggerimento">${L('Scegli un suono pronto o un tuo effetto (audio/immagine/video). Ne carichi altri dalla scheda «Effetti & suoni».', 'Pick a ready-made sound or one of your effects (audio/image/video). Upload more from the «Effects & sounds» tab.', 'Elige un sonido listo o uno de tus efectos (audio/imagen/vídeo). Sube más desde la pestaña «Efectos y sonidos».')}</p>
@@ -4524,6 +4533,15 @@ async function _penMontaEffetto() {
     + (visivi.length ? `<optgroup label="${L('Immagini / Video', 'Images / Videos', 'Imágenes / Vídeos')}">${visivi.map((e) => opt('effetto:' + e.comando, '!' + e.comando + ' (' + e.tipo + ')')).join('')}</optgroup>` : '');
 
   if (cur && sel.value !== cur) sel.insertAdjacentHTML('beforeend', `<option value="${esc(cur)}" selected>${esc(cur.replace(/^effetto:/, '!').replace(/^preset:/, ''))}</option>`);
+
+  const btnLib = document.getElementById('pen-effetto-lib');
+  if (btnLib) btnLib.onclick = () => conErrore(async () => {
+    const scelta = await scegliDallaLibreria({ titolo: L('Scegli cosa far partire', 'Choose what plays', 'Elige qué se lanza') });
+    if (!scelta) return;
+    metti(sel, scelta.ref, '!' + scelta.comando + (scelta.tipo && scelta.tipo !== 'audio' ? ` (${scelta.tipo})` : ''));
+    await salvaPenitenze(true);
+    toast(L('Effetto impostato ✓', 'Effect set ✓', 'Efecto configurado ✓'));
+  });
 
   const btn = document.getElementById('pen-effetto-prova');
   if (btn) btn.onclick = () => {
@@ -7822,6 +7840,7 @@ function pannelloEffetti() {
   const righeMeme = MEME_EMO.map(([e, def]) => `
     <div class="trk-riga"><span class="trk-et">${def} ${memeLbl[e]}</span>
       <input type="text" class="mm-in" data-e="${e}" maxlength="300" placeholder="${L('emoji o URL immagine/GIF', 'emoji or image/GIF URL', 'emoji o URL imagen/GIF')}" value="${esc(mm[e] || def)}">
+      <button type="button" class="btn secondario mini mm-lib ico-sola" title="${L('Dalla libreria', 'From the library', 'De la biblioteca')}" aria-label="${L('Dalla libreria', 'From the library', 'De la biblioteca')}">${_bIco(ICO.libro)}</button>
     </div>`).join('');
   return pannello('effetti', `
     <div class="carta">
@@ -7940,12 +7959,13 @@ function pannelloEffetti() {
         <input type="file" id="eff-suono" accept="audio/*">
       </div>
 
-      <label class="campo" for="eff-comando">${L('Comando in chat', 'Chat command', 'Comando en el chat')}</label>
+      <label class="campo" for="eff-comando">${L('Comando in chat', 'Chat command', 'Comando en el chat')} <span class="tenue">— ${L('facoltativo', 'optional', 'opcional')}</span></label>
       <div class="riga-flessibile">
         <span class="prefisso-cmd">!</span>
         <input type="text" id="eff-comando" class="campo-largo" placeholder="airhorn" maxlength="24">
       </div>
-      <p class="suggerimento">${L('Solo lettere minuscole, numeri e "_". Chi lo scrive in chat fa partire l\'effetto.', 'Only lowercase letters, numbers and "_". Whoever types it in chat triggers the effect.', 'Solo letras minúsculas, números y "_". Quien lo escribe en el chat activa el efecto.')}</p>
+      <p class="suggerimento">${L('Solo lettere minuscole, numeri e "_". Chi lo scrive in chat fa partire l\'effetto.', 'Only lowercase letters, numbers and "_". Whoever types it in chat triggers the effect.', 'Solo letras minúsculas, números y "_". Quien lo escribe en el chat activa el efecto.')}
+      ${L('Lascialo vuoto se questo media ti serve solo per gli alert, l\'overlay o per condividerlo: il nome lo prende dal file.', "Leave it empty if you only need this medium for alerts, the overlay or to share it: it takes its name from the file.", 'Déjalo vacío si este medio solo te sirve para las alertas, el overlay o para compartirlo: toma el nombre del archivo.')}</p>
 
       <div class="griglia-campi spazio-sopra">
         <div>
@@ -8051,7 +8071,8 @@ async function caricaSuoniPremi() {
         <span class="nome-premio"><strong>${esc(r.title)}</strong> <span class="suggerimento">${r.cost || 0} ${L('punti', 'points', 'puntos')}</span></span>
         <span class="controlli-suono">
           <select class="sel-effetto">${opzScelta(selVal)}</select>
-          <button type="button" class="btn secondario mini prova-suono" title="${L('Prova', 'Test', 'Probar')}">${svgPlay}</button>
+          <button type="button" class="btn secondario mini sel-lib ico-sola" title="${L('Dalla libreria', 'From the library', 'De la biblioteca')}" aria-label="${L('Dalla libreria', 'From the library', 'De la biblioteca')}">${_bIco(ICO.libro)}</button>
+          <button type="button" class="btn secondario mini prova-suono ico-sola" title="${L('Prova', 'Test', 'Probar')}" aria-label="${L('Prova', 'Test', 'Probar')}">${svgPlay}</button>
         </span>
       </div>
       <input type="text" class="campo-largo msg-suono spazio-sopra" maxlength="300" placeholder="${L('Messaggio in chat (facoltativo, {user} = chi riscatta)', 'Chat message (optional, {user} = who redeems)', 'Mensaje en el chat (opcional, {user} = quien canjea)')}" value="${esc(m.testo || '')}">
@@ -8094,6 +8115,14 @@ async function caricaSuoniPremi() {
       else if (v) api('/api/streamer/effetti/test', { method: 'POST', body: { comando: comandoSel() } }).then(() => toast(L('Inviato all\'overlay', 'Sent to the overlay', 'Enviado al overlay'))).catch(() => toast(L('Apri prima l\'overlay in OBS.', 'Open the overlay in OBS first.', 'Abre antes el overlay en OBS.')));
       else toast(L('Scegli prima un effetto.', 'Choose an effect first.', 'Elige antes un efecto.'));
     });
+    li.querySelector('.sel-lib').addEventListener('click', () => conErrore(async () => {
+      const scelta = await scegliDallaLibreria({ titolo: L('Scegli cosa far partire', 'Choose what plays', 'Elige qué se lanza') });
+      if (!scelta) return;
+      metti(sel, scelta.ref, '!' + scelta.comando + (scelta.tipo && scelta.tipo !== 'audio' ? ` (${scelta.tipo})` : ''));
+      tipoDi[scelta.comando] = scelta.tipo;
+      aggiornaEditor();
+      salva(L('Effetto impostato ✓', 'Effect set ✓', 'Efecto configurado ✓'));
+    }));
     li.querySelector('.msg-suono').addEventListener('change', () => salva(L('Messaggio salvato ✓', 'Message saved ✓', 'Mensaje guardado ✓')));
     aggiornaEditor();
   });
@@ -11766,6 +11795,16 @@ async function caricaTracking() {
     const v = urlEl.value || '';
     if (v && navigator.clipboard) navigator.clipboard.writeText(v).then(() => toast(L('Link copiato ✓', 'Link copied ✓', 'Enlace copiado ✓'))).catch(() => {});
   };
+  document.querySelectorAll('.mm-lib').forEach((b) => { b.onclick = () => conErrore(async () => {
+    const scelta = await scegliDallaLibreria({ tipi: ['immagine'], titolo: L('Scegli il meme', 'Choose the meme', 'Elige el meme') });
+    if (!scelta) return;
+    const url = await urlPubblicoEffetto(scelta.comando);
+    if (!url) { toast(L('Non trovo il file di quel media.', "I can't find that medium's file.", 'No encuentro el archivo de ese medio.'), 'errore'); return; }
+    const inp = b.parentElement.querySelector('.mm-in');
+    if (inp) { inp.value = url; inp.dispatchEvent(new Event('input', { bubbles: true })); }
+    toast(L('Meme impostato — ricordati di salvare.', 'Meme set — remember to save.', 'Meme configurado — recuerda guardar.'));
+  }); });
+
   const btnSalva = document.getElementById('trk-salva');
   if (btnSalva) btnSalva.onclick = () => conErrore(async () => {
     const mappa = {};
@@ -12040,6 +12079,9 @@ function scegliDallaLibreria({ tipi = ['immagine', 'video', 'audio'], titolo = '
       try {
         const r = await api('/api/streamer/libreria/importa', { method: 'POST', body: { id: it.id } });
         caricaEffetti();
+        const miei = await chiediLibreria({ privati: true }).catch(() => []);
+        const mio = miei.find((x) => x.mio && x.comando === r.comando);
+        if (mio) it.url = mio.url;
         scelto(r.comando);
       } catch (e) {
         toast(L('Non riuscito: ', 'Failed: ', 'No se pudo: ') + e.message, 'errore');
@@ -12092,7 +12134,6 @@ async function caricaEffettoUpload(ev) {
   if (out) out.textContent = '';
 
   if (!file) { toast(L('Scegli un file da caricare.', 'Choose a file to upload.', 'Elige un archivo para subir.'), 'errore'); return; }
-  if (!comando) { toast(L('Scrivi il comando (senza !).', 'Type the command (without !).', 'Escribe el comando (sin !).'), 'errore'); return; }
 
   const suonoInput = document.getElementById('eff-suono');
   const suonoFile = suonoInput?.files[0];
@@ -12118,7 +12159,8 @@ async function caricaEffettoUpload(ev) {
     let dati = null;
     try { dati = await res.json(); } catch {  }
     if (!res.ok) throw new Error(dati?.errore || `errore ${res.status}`);
-    toast(dati?.combo ? L('Combo caricata (media + suono)!', 'Combo uploaded (media + sound)!', '¡Combo subida (media + sonido)!') : L('Effetto caricato e compresso!', 'Effect uploaded and compressed!', '¡Efecto subido y comprimido!'));
+    const nomeComando = dati?.comando ? ' — !' + dati.comando : '';
+    toast((dati?.combo ? L('Combo caricata (media + suono)', 'Combo uploaded (media + sound)', 'Combo subida (media + sonido)') : L('Media caricato nella tua libreria', 'Medium uploaded to your library', 'Medio subido a tu biblioteca')) + nomeComando);
     fileInput.value = '';
     if (suonoInput) suonoInput.value = '';
     document.getElementById('eff-comando').value = '';
@@ -12132,6 +12174,19 @@ async function caricaEffettoUpload(ev) {
     btn.disabled = false;
     btn.textContent = testoOrig;
   }
+}
+
+async function urlPubblicoEffetto(comando) {
+  const d = await api('/api/streamer/effetti').catch(() => ({ effetti: [] }));
+  return (d.effetti || []).find((e) => e.comando === comando)?.url || '';
+}
+
+function metti(sel, valore, etichetta) {
+  if (!sel) return;
+  if (![...sel.options].some((o) => o.value === valore)) {
+    sel.insertAdjacentHTML('beforeend', `<option value="${esc(valore)}">${esc(etichetta || valore)}</option>`);
+  }
+  sel.value = valore;
 }
 
 const SLOT_TITOLO = {
