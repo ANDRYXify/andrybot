@@ -72,6 +72,14 @@ const xyOk = (v) => (v && Number.isFinite(Number(v.x)) && Number.isFinite(Number
 // STILE dell'overlay (alert / chat / widget). Estratti in funzioni riusabili: gli
 // STESSI campi valgono sia per lo stile di CANALE sia per lo stile PER-OVERLAY
 // (Opzione B: ogni overlay può avere il suo aspetto, non solo il layout).
+// Assi dell'identita' dell'overlay: forma, materia, cornice, composizione.
+// Devono stare qui, non solo nel browser: lo stile si salva passando da questa
+// normalizzazione, e un campo che non e' elencato viene buttato via in silenzio.
+const FORME_OVL = ['carta', 'pillola', 'squadrata', 'taglio', 'insegna', 'esagono', 'nastro', 'fumetto'];
+const MATERIE_OVL = ['piatta', 'sfumata', 'vetro', 'carta', 'neon', 'crt', 'griglia'];
+const CORNICI_OVL = ['linea', 'nessuna', 'spessa', 'angoli', 'barra'];
+const COMP_OVL = ['colonna', 'riga', 'riga-inv', 'sovrapposta'];
+
 const normAlertStile = (st) => {
   st = st || {};
   return {
@@ -86,6 +94,10 @@ const normAlertStile = (st) => {
     icona: st.icona !== false,
     font: unoDi(st.font, FONT_OVL, 'sistema'),
     googleFont: String(st.googleFont || '').replace(/[^a-zA-Z0-9 ]/g, '').trim().slice(0, 50),
+    forma: unoDi(st.forma, FORME_OVL, 'carta'),
+    materia: unoDi(st.materia, MATERIE_OVL, 'piatta'),
+    cornice: unoDi(st.cornice, CORNICI_OVL, 'linea'),
+    composizione: unoDi(st.composizione, COMP_OVL, 'colonna'),
   };
 };
 const normChatStile = (st) => {
@@ -103,6 +115,9 @@ const normChatStile = (st) => {
     larghezza: clampInt(st.larghezza, 18, 60, 30),
     animazione: unoDi(st.animazione, ['slide', 'fade', 'nessuna'], 'slide'),
     grassettoUser: st.grassettoUser !== false,
+    forma: unoDi(st.forma, FORME_OVL, 'carta'),
+    materia: unoDi(st.materia, MATERIE_OVL, 'piatta'),
+    cornice: unoDi(st.cornice, CORNICI_OVL, 'nessuna'),
   };
 };
 const normWidgetStile = (st) => {
@@ -115,6 +130,9 @@ const normWidgetStile = (st) => {
     accento: hexOk(st.accento, '#9146ff'),
     bordoRaggio: clampInt(st.bordoRaggio, 0, 30, 12),
     font: unoDi(st.font, FONT_OVL, 'sistema'),
+    forma: unoDi(st.forma, FORME_OVL, 'carta'),
+    materia: unoDi(st.materia, MATERIE_OVL, 'piatta'),
+    cornice: unoDi(st.cornice, CORNICI_OVL, 'nessuna'),
   };
 };
 // Stile PER-OVERLAY completo (tutti i campi opzionali): { alerts, chat, widget }.

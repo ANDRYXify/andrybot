@@ -30,8 +30,8 @@ const DEFAULT_SUONO = { follow: 'campanello', sub: 'tada', cheer: 'moneta', raid
 const DEFAULT_ACC = { follow: '#9146ff', sub: '#ffb020', cheer: '#38d39f', raid: '#ff4d4d' };
 
 // stile alert di default (usato se lo streamer non lo tocca)
-const STILE_ALERT = { animazione: 'slide', dimTesto: 27, sfondo: '#0f0f14', opacita: 88, testo: '#ffffff', bordoRaggio: 18, bordoSpessore: 2, glow: true, icona: true, font: 'sistema' };
-const STILE_CHAT = { dim: 'media', sfondo: '#0f0f14', opacita: 78, testo: '#f2f2f5', username: 'twitch', bordoRaggio: 10, ombra: true, font: 'sistema', larghezza: 30, animazione: 'slide', grassettoUser: true };
+const STILE_ALERT = { animazione: 'slide', dimTesto: 27, sfondo: '#0f0f14', opacita: 88, testo: '#ffffff', bordoRaggio: 18, bordoSpessore: 2, glow: true, icona: true, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'linea', composizione: 'colonna' };
+const STILE_CHAT = { dim: 'media', sfondo: '#0f0f14', opacita: 78, testo: '#f2f2f5', username: 'twitch', bordoRaggio: 10, ombra: true, font: 'sistema', larghezza: 30, animazione: 'slide', grassettoUser: true, forma: 'carta', materia: 'piatta', cornice: 'nessuna' };
 
 const esc = (s) => String(s ?? '');
 function riempi(tpl, vars) {

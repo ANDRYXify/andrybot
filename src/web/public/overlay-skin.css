@@ -18,7 +18,7 @@
   --op: 88;
   --fg: #ffffff;
   --radius: 18px;
-  --border: 2px;
+  --bordo-px: 2px;
   --size: 27px;
   --font: var(--font-sistema);
   position: relative;
@@ -167,6 +167,7 @@
 
 .alert-card, .chat-riga, .ovl-widget {
   position: relative;
+  isolation: isolate;
   --sagoma: none;
   --spessore: 0px;
   --maschera: none;
@@ -175,7 +176,7 @@
 }
 .alert-card::before, .chat-riga::before, .ovl-widget::before,
 .alert-card::after, .chat-riga::after, .ovl-widget::after {
-  content: ''; position: absolute; z-index: 0; pointer-events: none;
+  content: ''; position: absolute; z-index: -1; pointer-events: none;
   border-radius: inherit; clip-path: var(--sagoma);
 }
 .alert-card::before, .chat-riga::before, .ovl-widget::before {
@@ -185,7 +186,6 @@
 .alert-card::after, .chat-riga::after, .ovl-widget::after {
   inset: var(--spessore); background: var(--materia);
 }
-.alert-card > *, .chat-riga > *, .ovl-widget > * { position: relative; z-index: 1; }
 
 .forma-carta { border-radius: var(--radius, 14px); --sagoma: none; }
 .forma-pillola { border-radius: 999px; --sagoma: none; }
@@ -252,10 +252,10 @@
 }
 
 .cornice-nessuna { --spessore: 0px; }
-.cornice-linea { --spessore: var(--border, 2px); }
-.cornice-spessa { --spessore: calc(var(--border, 2px) * 2.6); }
+.cornice-linea { --spessore: var(--bordo-px, 2px); }
+.cornice-spessa { --spessore: calc(var(--bordo-px, 2px) * 2.6); }
 .cornice-angoli {
-  --spessore: var(--border, 2px);
+  --spessore: var(--bordo-px, 2px);
   --maschera:
     linear-gradient(#000, #000) 0 0 / 30% 38% no-repeat,
     linear-gradient(#000, #000) 100% 0 / 30% 38% no-repeat,
@@ -263,9 +263,9 @@
     linear-gradient(#000, #000) 100% 100% / 30% 38% no-repeat;
 }
 .cornice-barra {
-  --spessore: calc(var(--border, 2px) * 3);
-  --maschera: linear-gradient(#000, #000) 0 0 / calc(var(--border, 2px) * 3) 100% no-repeat;
-  padding-left: calc(1.5rem + var(--border, 2px) * 3);
+  --spessore: calc(var(--bordo-px, 2px) * 3);
+  --maschera: linear-gradient(#000, #000) 0 0 / calc(var(--bordo-px, 2px) * 3) 100% no-repeat;
+  padding-left: calc(1.5rem + var(--bordo-px, 2px) * 3);
 }
 .materia-neon.cornice-nessuna { --spessore: 2px; }
 
