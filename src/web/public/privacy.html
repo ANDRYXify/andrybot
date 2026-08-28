@@ -73,7 +73,8 @@
     <section>
       <h2>Quali dati trattiamo</h2>
       <ul>
-        <li><strong>Account Twitch dello streamer</strong> (login, nome visualizzato, user id) e <strong>token di
+        <li><strong>Account delle piattaforme collegate dallo streamer</strong> — Twitch, e se le collega lui
+          anche <strong>Kick</strong> e <strong>YouTube</strong> — (login, nome visualizzato, user id) e <strong>token di
           autorizzazione (OAuth)</strong>: servono per agire col suo account — scrivere in chat, creare clip, gestire
           VIP, moderare, ricevere gli eventi (follow/sub/raid). Restano sul server e <strong>non sono mai esposti al
           browser</strong>.</li>
@@ -85,6 +86,10 @@
           stagni</strong> — mai il contenuto dei messaggi né in quale canale.</li>
         <li><strong>Integrazioni opzionali</strong> attivate dallo streamer: token del suo bot <strong>Telegram</strong>
           + id del gruppo (forniti da lui), e <strong>username TikTok</strong> pubblico per la notifica live.</li>
+        <li><strong>Messaggi ed eventi delle altre piattaforme collegate</strong> (Kick, YouTube): arrivano solo dai
+          canali che lo streamer ha collegato lui, e vengono trattati <strong>esattamente come quelli di Twitch</strong>
+          — stessa conservazione, stessa cancellazione automatica dopo 14 giorni. Nessuna piattaforma nuova amplia
+          quello che conserviamo: amplia soltanto <em>da dove</em> arriva.</li>
         <li><strong>Passkey</strong>: solo la <strong>chiave pubblica</strong>. Nessun dato biometrico lascia mai il tuo
           dispositivo.</li>
         <li><strong>Log tecnici minimi</strong> per funzionamento e sicurezza.</li>
@@ -102,7 +107,9 @@
 
     <section>
       <h2>Con chi e dove</h2>
-      <p>Il bot opera sulla piattaforma <strong>Twitch</strong>. Le integrazioni verso <strong>Telegram</strong> e
+      <p>Il bot opera su <strong>Twitch</strong> e, se lo streamer le collega, su <strong>Kick</strong> e
+        <strong>YouTube</strong>: verso ognuna passano solo i dati necessari a fare quello che lo streamer ha chiesto
+        (leggere la chat del suo canale, rispondere, ricevere gli eventi). Le integrazioni verso <strong>Telegram</strong> e
       <strong>TikTok</strong> avvengono solo se lo streamer le collega. I dati vivono sul <strong>server di ANDRYXify
       (Hetzner, Germania — UE)</strong>, sotto HTTPS.</p>
       <p class="muted">Nessuna vendita di dati, nessun tracciamento pubblicitario, nessuna IA a pagamento di terzi.</p>
