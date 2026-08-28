@@ -1453,3 +1453,19 @@ input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focu
 
 .vita-azioni { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
 .vita-pre { white-space: pre-wrap; word-break: break-word; max-height: 300px; overflow: auto; margin: .3em 0 1.1em; padding: 12px 14px; border-radius: 12px; font-size: .84rem; line-height: 1.55; background: color-mix(in srgb, var(--testo) 5%, transparent); border: 1px solid color-mix(in srgb, var(--testo) 14%, transparent); }
+
+#imp-testo { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .85rem; resize: vertical; }
+.imp-lista { list-style: none; margin: .5rem 0 0; padding: 0; display: grid; gap: .3rem; }
+.imp-riga {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem;
+  padding: .4rem .6rem; border-radius: var(--r-s);
+  background: var(--surface-2); border: 1px solid var(--border);
+}
+.imp-riga code { flex: 0 0 auto; font-weight: 600; }
+.imp-testo { flex: 1 1 200px; min-width: 0; font-size: .85rem; color: var(--testo-2); overflow-wrap: anywhere; }
+.imp-tag {
+  flex: 0 0 auto; font-size: .7rem; font-weight: 600; padding: .1rem .5rem;
+  border-radius: 999px; color: var(--testo-3); background: var(--surface); border: 1px solid var(--border);
+}
+.imp-tag.imp-sovra { color: var(--ambra); background: var(--ambra-soft); border-color: var(--ambra-bordo); }
+.imp-tag.imp-nota { color: var(--acc); background: var(--acc-tint); border-color: var(--acc-bordo); }
