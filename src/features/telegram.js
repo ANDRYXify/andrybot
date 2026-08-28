@@ -59,32 +59,20 @@ export async function validaToken(token) {
   return { ok: true, username: r.result?.username || '', nome: r.result?.first_name || '' };
 }
 
-// --------------------------------------------------------- rilevamento gruppo
-// Legge gli ultimi update del bot e trova la chat di gruppo più recente (il bot
-// riceve un update sia quando viene AGGIUNTO a un gruppo sia quando qualcuno
-// scrive /collega). Così lo streamer non deve cercare a mano il "chat id".
-export async function rilevaGruppo(token) {
-  const r = await tgCall(String(token || '').trim(), 'getUpdates', {
-    params: { timeout: 0, offset: -20, allowed_updates: '["message","my_chat_member","channel_post"]' },
-  });
-  if (!r.ok) return { ok: false, errore: r.errore };
-  const updates = Array.isArray(r.result) ? r.result : [];
-  // dal più recente al più vecchio: vince l'ultima interazione in un gruppo
-  for (let i = updates.length - 1; i >= 0; i--) {
-    const u = updates[i];
-    const chat = u?.message?.chat || u?.my_chat_member?.chat || u?.channel_post?.chat;
-    if (chat && (chat.type === 'group' || chat.type === 'supergroup' || chat.type === 'channel')) {
-      return { ok: true, chatId: String(chat.id), titolo: chat.title || '(gruppo)' };
-    }
-  }
-  // nessun gruppo: forse ha scritto solo in privato al bot
-  for (let i = updates.length - 1; i >= 0; i--) {
-    const chat = updates[i]?.message?.chat;
-    if (chat && chat.type === 'private') {
-      return { ok: true, chatId: String(chat.id), titolo: chat.first_name || chat.username || '(privato)', privato: true };
-    }
-  }
-  return { ok: false, errore: 'nessun gruppo trovato: aggiungi il bot al gruppo e scrivi /collega, poi riprova' };
+// --------------------------------------------------------- scelta del gruppo
+// Fra le chat che il bot ha visto, quale collegare. Regola: vince il GRUPPO (o
+// canale) piu recente; se non ce n'e' nessuno, la chat privata piu recente.
+// Funzione pura: l'elenco arriva da chi sa come procurarselo (il webhook, o
+// getUpdates quando il webhook e spento). Cosi la REGOLA si puo provare senza
+// Telegram, ed e una sola per tutti i pulsanti che collegano qualcosa.
+const GRUPPI = new Set(['group', 'supergroup', 'channel']);
+export function scegliGruppo(destinazioni) {
+  const d = Array.isArray(destinazioni) ? destinazioni.filter((x) => x && x.chatId) : [];
+  // solo il "generale" del gruppo: un topic non e' un gruppo da collegare
+  const senzaTopic = d.filter((x) => !x.threadId);
+  return senzaTopic.find((x) => GRUPPI.has(x.tipo))
+    || senzaTopic.find((x) => x.tipo === 'private')
+    || null;
 }
 
 // --------------------------------------------------------- invio

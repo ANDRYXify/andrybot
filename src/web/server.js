@@ -4458,17 +4458,64 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json({ ok: true, botUsername: v.username });
   }));
 
-  // rileva il gruppo dagli ultimi update (il bot dev'essere già nel gruppo)
+  // COSA HA VISTO IL BOT — una domanda sola, una risposta sola.
+  //
+  // Due fonti che NON possono coesistere: con il webhook acceso Telegram VIETA
+  // getUpdates (risponde «Conflict»), quindi valgono soltanto le chat che il
+  // webhook ha gia registrato; con il webhook spento si puo ancora chiedere a
+  // getUpdates. Lo stato del webhook si chiede a TELEGRAM, non al nostro flag,
+  // perche il flag puo essere disallineato.
+  //
+  // Sta qui una volta sola apposta: la stessa domanda la facevano DUE endpoint,
+  // e «Rileva gruppo» se n'era dimenticato — chiamava getUpdates comunque, e col
+  // bot interattivo acceso (cioe sempre, quando funziona) falliva ogni volta.
+  async function chatViste(login, c) {
+    const viste = new Map();
+    const metti = (d) => viste.set(d.chatId + ':' + (d.threadId || ''), d);
+    for (const v of tgVisti.lista(login)) {
+      metti({ chatId: v.chat_id, titolo: v.titolo, tipo: v.tipo,
+        threadId: v.thread_id || '', threadNome: v.thread_nome || '' });
+    }
+    const wh = await telegram.infoWebhook(c.token).catch(() => null);
+    let webhookAttivo = wh?.ok ? wh.attivo : !!c.interattivo;
+    if (!webhookAttivo) {
+      const r = await telegram.rilevaDestinazioni(c.token);
+      // cintura e bretelle: se Telegram dice comunque «Conflict», il webhook c'e
+      if (!r.ok && /webhook is active/i.test(r.errore || '')) webhookAttivo = true;
+      else if (r.ok) for (const d of r.destinazioni) metti(d);
+    }
+    // il webhook e acceso ma NON punta a noi: i messaggi del bot vanno altrove
+    const nostro = wh?.url ? (wh.url.includes('/tg/') && wh.url.startsWith(config.baseUrl.replace(/\/$/, ''))) : true;
+    return { viste, webhookAttivo, nostro, wh };
+  }
+
+  // Il webhook c'e ma punta altrove, e non abbiamo mai visto niente: dirlo
+  // subito vale piu di mille «/collega» a vuoto.
+  const erroreWebhookAltrove = (wh) => ({
+    errore: `il bot ha un webhook attivo verso un altro indirizzo (${String(wh?.url || '').slice(0, 60)}…), quindi i suoi messaggi non arrivano qui. Spegni e riaccendi «il bot risponde nel gruppo», poi riprova.`,
+  });
+
+  // rileva il gruppo da cio che il bot ha visto (dev'essere gia nel gruppo)
   app.post('/api/streamer/telegram/rileva', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const c = tgConf.get(login);
     if (!c?.token) return res.status(400).json({ errore: 'prima collega il bot con il token' });
-    const r = await telegram.rilevaGruppo(c.token);
-    if (!r.ok) return res.status(400).json({ errore: r.errore });
-    tgConf.set(login, { chatId: r.chatId, chatTitolo: r.titolo });
+
+    const { viste, webhookAttivo, nostro, wh } = await chatViste(login, c);
+    if (webhookAttivo && !nostro && !viste.size) return res.status(400).json(erroreWebhookAltrove(wh));
+
+    const gruppo = telegram.scegliGruppo([...viste.values()]);
+    if (!gruppo) {
+      return res.status(400).json({
+        errore: webhookAttivo
+          ? 'non ho ancora visto nessun gruppo. Scrivi «/collega» DENTRO il gruppo (un comando arriva sempre al bot; un messaggio normale no, se la privacy del bot è accesa), poi riprova.'
+          : 'nessun gruppo trovato: aggiungi il bot al gruppo e scrivi «/collega» lì dentro, poi riprova.',
+      });
+    }
+    tgConf.set(login, { chatId: gruppo.chatId, chatTitolo: gruppo.titolo });
     // saluto di conferma nel gruppo appena collegato (best-effort)
-    telegram.inviaMessaggio(c.token, r.chatId, '✅ Collegato! Vi avviserò qui quando parte la diretta.').catch(() => {});
-    res.json({ ok: true, gruppo: r.titolo, privato: !!r.privato });
+    telegram.inviaMessaggio(c.token, gruppo.chatId, '✅ Collegato! Vi avviserò qui quando parte la diretta.').catch(() => {});
+    res.json({ ok: true, gruppo: gruppo.titolo, privato: gruppo.tipo === 'private' });
   }));
 
   // Gli eventi che si possono instradare. La chiave e quella usata nel filtro
@@ -4519,46 +4566,20 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const c = tgConf.get(login);
     if (!c?.token) return res.status(400).json({ errore: 'prima collega il bot con il token' });
 
-    // Due fonti, unite. Col webhook acceso Telegram VIETA getUpdates: in quel
-    // caso valgono solo le chat che il webhook ha gia visto passare.
-    const viste = new Map();
-    for (const v of tgVisti.lista(login)) {
-      viste.set(v.chat_id + ':' + (v.thread_id || ''), {
-        chatId: v.chat_id, titolo: v.titolo, tipo: v.tipo,
-        threadId: v.thread_id || '', threadNome: v.thread_nome || '',
-      });
-    }
-    // Lo stato del webhook lo chiediamo a TELEGRAM, non al nostro flag: il flag
-    // puo essere disallineato e getUpdates fallirebbe con «Conflict».
-    const wh = await telegram.infoWebhook(c.token).catch(() => null);
-    const webhookAttivo = wh?.ok ? wh.attivo : !!c.interattivo;
-    let notaWebhook = webhookAttivo;
-    if (!webhookAttivo) {
-      const r = await telegram.rilevaDestinazioni(c.token);
-      // cintura e bretelle: se Telegram dice comunque «Conflict», il webhook c'e
-      if (!r.ok && /webhook is active/i.test(r.errore || '')) notaWebhook = true;
-      else if (r.ok) for (const d of r.destinazioni) viste.set(d.chatId + ':' + (d.threadId || ''), d);
-    }
-
-    // Il webhook e acceso ma NON punta a noi: i messaggi del bot vanno altrove e
-    // non li vedremo mai. Dirlo subito vale piu di mille tentativi di «/collega».
-    const nostro = wh?.url ? wh.url.includes('/tg/') && wh.url.startsWith(config.baseUrl.replace(/\/$/, '')) : true;
-    if (webhookAttivo && !nostro && !viste.size) {
-      return res.status(400).json({
-        errore: `il bot ha un webhook attivo verso un altro indirizzo (${(wh.url || '').slice(0, 60)}…), quindi i suoi messaggi non arrivano qui. Spegni e riaccendi «il bot risponde nel gruppo» qui sotto per rimetterlo a posto, poi riprova.`,
-      });
-    }
+    // Stessa domanda, stessa risposta: vedi chatViste() qui sopra.
+    const { viste, webhookAttivo, nostro, wh } = await chatViste(login, c);
+    if (webhookAttivo && !nostro && !viste.size) return res.status(400).json(erroreWebhookAltrove(wh));
 
     if (!viste.size) {
       return res.status(400).json({
-        errore: notaWebhook
+        errore: webhookAttivo
           ? 'non ho ancora visto nessun posto. Scrivi «/collega» DENTRO il gruppo, il canale o il topic che vuoi collegare (un comando arriva sempre al bot; un messaggio normale no, se la privacy del bot è accesa), poi riprova.'
           : 'niente da collegare: aggiungi il bot al gruppo o al canale, scrivi «/collega» lì dentro (nel topic giusto, se usi i topic) e riprova.',
       });
     }
     const gia = new Set(tgDest.lista(login).map((d) => d.chat_id + ':' + (d.thread_id || '')));
     res.json({
-      ok: true, daWebhook: notaWebhook,
+      ok: true, daWebhook: webhookAttivo,
       trovate: [...viste.values()].map((d) => ({ ...d, gia: gia.has(d.chatId + ':' + (d.threadId || '')) })),
     });
   }));
