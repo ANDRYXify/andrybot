@@ -66,7 +66,27 @@ quindi anche nel gancio pre-push: una traccia privata non può nemmeno essere
 spinta per sbaglio. Messo alla prova rimettendo `ROTTA.md` con `git add -f`:
 uscita 1.
 
-**Quello che il cancello non può fare** è cancellare il passato. Quei documenti
-sono stati pubblici, quindi restano recuperabili dalla cronologia dei commit
-finché la cronologia non viene riscritta. Toglierli da adesso in poi è
-necessario, non sufficiente.
+### La cronologia è stata riscritta
+
+Toglierli da adesso in poi era necessario ma non sufficiente: erano nella
+cronologia dal 21 luglio, quindi recuperabili da qualunque commit vecchio. Con
+`git filter-repo` sono stati tolti da **tutti** i commit e il ramo è stato
+riscritto (`--force-with-lease`).
+
+Cosa è stato verificato prima di spingere:
+
+- il clone locale era **superficiale** (113 commit su 612): riscriverlo così
+  avrebbe distrutto 499 commit. Prima `git fetch --unshallow`;
+- copia di sicurezza dell'intero repository in un bundle;
+- dopo la riscrittura: i quattro file non compaiono in **nessun** albero di
+  **nessun** commit; l'albero finale è identico a prima file per file, con gli
+  stessi identici hash di contenuto; 4 commit sono spariti perché toccavano
+  *soltanto* quei documenti;
+- prove e cancelli verdi; e un clone fresco dal remoto non li contiene più.
+
+**Quello che nemmeno la riscrittura può fare.** GitHub tiene gli oggetti non più
+referenziati raggiungibili per SHA finché non li raccoglie: chi conosce l'hash di
+un commit vecchio può ancora arrivarci. Per chiuderla del tutto va chiesto al
+supporto di GitHub di eseguire la garbage collection sul repository. E chi ha
+clonato nell'ultimo mese ha comunque la sua copia: la riscrittura riduce la
+superficie, non riscrive il passato di chi c'era.
