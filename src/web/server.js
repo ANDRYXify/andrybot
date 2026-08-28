@@ -3905,7 +3905,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         const file = `font_${nome}.${est.toLowerCase()}`;
         const destDir = join(effectsRoot, login);
         mkdirSync(destDir, { recursive: true });
-        renameSync(req.file.path, join(destDir, file));
+        const dest = join(destDir, file);
+        try { renameSync(req.file.path, dest); }
+        catch (e) { copyFileSync(req.file.path, dest); await pulisciTemp(req.file.path); }
 
         const st = streamers.get(login);
         const settings = { ...(st?.settings || {}) };
