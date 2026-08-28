@@ -11,7 +11,7 @@
 import { readFileSync } from 'node:fs';
 
 const app = readFileSync('src/web/public/app.js', 'utf8');
-const srv = readFileSync('src/web/server.js', 'utf8');
+const srv = readFileSync('src/web/stile.js', 'utf8');
 
 const err = [];
 
