@@ -73,6 +73,8 @@ test('quello che non va mai fermato non viene fermato', () => {
   assert.equal(classifica('GET', '/'), null);
   assert.equal(classifica('GET', '/u/andryxify'), null, 'la pagina pubblica di uno streamer');
   assert.equal(classifica('POST', '/api/ext/alfa'), null, 'ha già il suo limite');
+  assert.equal(classifica('POST', '/kick/webhook'), null, 'scartarne uno = perdere un messaggio in chat');
+  assert.equal(classifica('POST', '/tg/segretissimo'), null, 'lo stesso per Telegram');
 });
 
 test('login e OAuth stanno nella classe più stretta', () => {

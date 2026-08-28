@@ -69,7 +69,9 @@ export const CLASSI = {
 };
 
 const RE_AUTENTICAZIONE = /^\/(accedi|auth|sblocca|api\/passkey|api\/cambia-canale|mod)(\/|$|\?)/;
-const RE_ESENTE = /^\/(health|stripe\/webhook|api\/ext\/)/;
+// I webhook delle piattaforme non si limitano: scartarne uno significa perdere
+// un messaggio in chat o un evento, e sono gia' protetti dalla loro firma.
+const RE_ESENTE = /^\/(health|stripe\/webhook|kick\/webhook|tg\/|api\/ext\/)/;
 const RE_FLUSSO = /\/stream$/;
 const RE_CARICAMENTO = /^\/api\/(streamer\/(effetti|font|sfondi)|alert\/media)|\/media(\/|$)/;
 const RE_TEMPO_REALE = /^\/api\/tracking\//;

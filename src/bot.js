@@ -36,6 +36,7 @@ import * as quotes from './features/quotes.js';
 import * as model from './ai/model.js';
 import * as brainpy from './ai/brainpy.js';
 import { createMessageHandler } from './features/handler.js';
+import { voceKick } from './kick/voce.js';
 import { ClipEngine } from './features/clips.js';
 import { PenitenzeEngine } from './features/penitenze.js';
 import { AlertsEngine } from './features/alerts.js';
@@ -474,19 +475,40 @@ export class BotManager {
   // Catena di ingresso di ogni messaggio: prima i "guardiani" (antispam, poi il
   // ponte giochi del sito); se uno dei due lo gestisce, il messaggio NON viene
   // elaborato oltre. Altrimenti prosegue col flusso normale.
-  async _gestisciMessaggio(login, msg, onMessage) {
+  // Un messaggio arrivato da un'ALTRA piattaforma entra nello stesso tubo. La
+  // voce con cui si risponde e' quella della piattaforma da cui e' arrivato:
+  // una domanda fatta su Kick non si risponde su Twitch.
+  async messaggioEsterno(msg) {
+    const login = String(msg?.channel || '').toLowerCase();
+    if (!login || !streamers.get(login)) return;
+    const chat = msg.piattaforma === 'kick' ? voceKick(login) : null;
+    if (!chat) return;
+    const onMessage = createMessageHandler({
+      chat, helix: this.helix, brain: this.brain, clips: this.clips, botLogin: login,
+    });
+    await this._gestisciMessaggio(login, msg, onMessage, (t) => chat.say(login, t));
+  }
+
+  async _gestisciMessaggio(login, msg, onMessage, dire = null) {
+    // La voce: di norma la chat Twitch di questo canale, ma un messaggio
+    // arrivato da fuori risponde dalla sua piattaforma.
+    const parla = dire || ((t) => this.say(msg.channel, t));
+    // Le difese qui sotto agiscono via Helix (elimina, timeout): hanno senso
+    // solo su Twitch. Su un'altra piattaforma il messaggio passa al flusso
+    // normale — meglio nessuna moderazione che una moderazione che finge.
+    const suTwitch = !msg.piattaforma || msg.piattaforma === 'twitch';
     // 0) ANTI-BOT: un nome da follow-bot noto che scrive in chat (hate-raid) si
     // ferma subito, prima di ogni altra cosa.
     try {
-      if (await this.antibot?.controllaChat(msg)) return;
+      if (suTwitch && await this.antibot?.controllaChat(msg)) return;
     } catch (e) { log.error(`#${login} anti-bot chat:`, e?.message || e); }
     // 1) ANTISPAM: se è spam lo elimina e stop (il bot non "reagisce" allo spam)
     try {
-      if (await antispam.tryAntispam(this.helix, msg, (t) => this.say(msg.channel, t))) return;
+      if (suTwitch && await antispam.tryAntispam(this.helix, msg, parla)) return;
     } catch (e) { log.error(`#${login} antispam:`, e?.message || e); }
     // 2) GIOCHI DEL SITO: se è un comando gestito dal sito, risponde e stop
     try {
-      if (await gamesbridge.tryGamesBridge(msg, (t) => this.say(msg.channel, t))) return;
+      if (await gamesbridge.tryGamesBridge(msg, parla)) return;
     } catch (e) { log.error(`#${login} giochi:`, e?.message || e); }
     // 3) flusso normale
     this._elaboraMessaggio(login, msg, onMessage);
