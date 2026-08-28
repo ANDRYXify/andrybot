@@ -47,3 +47,34 @@ che sorveglia — per esempio, togliendo l'asse `materia` dalla normalizzazione
 dell'alert il contratto diventa rosso con
 `alert.materia: "piatta" entra ed esce come "undefined"`, che è esattamente il
 difetto vero, riprodotto.
+
+## La salute e il ripristino
+
+Due cose che prima erano finte.
+
+**`/health` diceva `ok: true` e basta.** Diceva «il processo risponde», non «il
+prodotto funziona»: se cadeva la chat di tutti gli streamer restava verde. Ora
+ha tre stati — `sano`, `degradato`, `guasto` — e risponde 503 solo sul guasto,
+perché un monitor che sveglia alle 3 per una chat che si riconnette da sola si
+impara a ignorare. Resta muto sul *perché*: la porta è pubblica, e il motivo
+nomina canali e conteggi. Il dettaglio sta in `/api/admin/salute`.
+
+Il guasto vero (database non scrivibile — che si vede solo **scrivendo**, non
+leggendo) fa uscire il processo, ma solo se **persiste** per tre controlli di
+fila: `docker compose` lo riavvia, e un disco pieno per un attimo non butta giù
+gli overlay di tutti. Stessa logica per un'eccezione non catturata: prima si
+logava e si tirava dritto, cioè si restava *mezzi vivi* — chat connessa,
+database magari a pezzi. Ora si esce puliti.
+
+**Le copie di backup c'erano, il ripristino no.** Un backup che nessuno ha mai
+riaperto è una speranza. Ora:
+
+- ogni copia appena fatta viene **riaperta e controllata** (`integrity_check`,
+  tabelle vitali, quanti streamer dentro): se non è ripristinabile si sa subito,
+  non il giorno del disastro;
+- `node scripts/ripristina.mjs` è la strada scritta — elenca le copie e le
+  prova, controlla quella scelta *prima* di toccare niente, mette da parte il
+  database attuale senza cancellarlo, riapre il risultato e se non torna rimette
+  indietro quello di prima;
+- il collaudo fa il **giro completo**: scrive, copia, distrugge il database,
+  ripristina, e ritrova gli stessi streamer e gli stessi effetti.
