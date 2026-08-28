@@ -56,6 +56,8 @@ import { salute } from '../salute.js';
 import { anteprima as anteprimaImport, moduloDa } from '../features/importacomandi.js';
 import { esporta as esportaDati } from '../features/esporta.js';
 import { montaKick } from '../kick/rotte.js';
+import * as kickApi from '../kick/api.js';
+import * as avvisi from '../features/avvisi.js';
 
 const log = makeLog('web');
 
@@ -1628,6 +1630,69 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     suMessaggio: (msg) => manager.messaggioEsterno(msg),
     suEvento: (ev) => manager.eventoEsterno?.(ev),
   });
+
+  // LE TUE PIATTAFORME — un endpoint solo per tutte.
+  // Non e' un doppione dello stato del bot: quello dice se il BOT lavora, questo
+  // dice DOVE. Una riga per piattaforma, la stessa forma per tutte, cosi' la
+  // dashboard le disegna con un componente solo e aggiungerne una domani non
+  // vuol dire scrivere un terzo blocco diverso dagli altri due.
+  app.get('/api/streamer/piattaforme', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const st = manager.status?.() || {};
+    const fuori = [];
+
+    // Twitch: c'e' sempre, e' la piattaforma di casa.
+    fuori.push({
+      id: 'twitch',
+      nome: 'Twitch',
+      disponibile: true,
+      collegato: true,
+      account: login,
+      attivo: (st.connessi || []).includes(login),
+      daRifare: (st.chatKO || []).includes(login) || !permessiOk(login),
+      azione: '/auth/permessi',
+      note: '',
+    });
+
+    // Kick
+    const kickPronto = !!(config.kickClientId && config.kickClientSecret);
+    const tk = kickPronto ? kickApi.tokenDi(login) : null;
+    let kickEventi = null; let kickErrore = '';
+    if (tk?.accessToken) {
+      const isc = await kickApi.iscrizioni(login);
+      if (isc.ok) kickEventi = Array.isArray(isc.dati) ? isc.dati.length : 0;
+      else kickErrore = isc.errore || '';
+    }
+    fuori.push({
+      id: 'kick',
+      nome: 'Kick',
+      disponibile: kickPronto,
+      collegato: !!tk?.accessToken,
+      account: tk?.userId ? ('id ' + tk.userId) : '',
+      attivo: !!tk?.accessToken && kickEventi > 0,
+      daRifare: !!tk?.accessToken && (kickEventi === 0 || !!kickErrore),
+      azione: '/auth/kick',
+      note: kickErrore,
+    });
+
+    // YouTube: le credenziali possono esserci ma il collegamento non e' ancora
+    // aperto. Meglio dirlo che mostrare un pulsante che non fa niente.
+    fuori.push({
+      id: 'youtube',
+      nome: 'YouTube',
+      disponibile: false,
+      collegato: false,
+      account: '',
+      attivo: false,
+      daRifare: false,
+      azione: '',
+      note: !!(config.youtubeClientId && config.youtubeClientSecret)
+        ? 'credenziali pronte: il collegamento arriva a breve'
+        : 'non configurato su questo server',
+    });
+
+    res.json({ piattaforme: fuori });
+  }));
 
   // ------------------------------------------------------------ API base
 
@@ -4529,9 +4594,12 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
   // Gli eventi che si possono instradare. La chiave e quella usata nel filtro
   // `eventi` delle destinazioni; i nomi servono solo a mostrarli.
+  // Le DIRETTE si ricavano dall'elenco delle piattaforme (features/avvisi.js):
+  // aggiungerne una non deve voler dire ricordarsi di aggiungerla anche qui —
+  // e' esattamente cosi' che una resta indietro. I POST nuovi restano a parte:
+  // sono un'altra cosa, non una diretta.
   const TG_EVENTI = [
-    { k: 'live', it: 'Diretta su Twitch', en: 'Twitch live', es: 'Directo en Twitch' },
-    { k: 'tiktok', it: 'Diretta su TikTok', en: 'TikTok live', es: 'Directo en TikTok' },
+    ...avvisi.eventiDiretta(),
     { k: 'yt', it: 'Nuovo video su YouTube', en: 'New YouTube video', es: 'Nuevo vídeo en YouTube' },
     { k: 'ig', it: 'Nuovo post su Instagram', en: 'New Instagram post', es: 'Nueva publicación en Instagram' },
     { k: 'tt', it: 'Nuovo post su TikTok', en: 'New TikTok post', es: 'Nueva publicación en TikTok' },
