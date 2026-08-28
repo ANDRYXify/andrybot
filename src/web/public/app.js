@@ -685,6 +685,7 @@ function rendiCartePieghevoli(scope, scheda) {
   for (const carta of scope.querySelectorAll('.carta')) {
     if (carta.classList.contains('pieghevole')) continue;
     if (carta.tagName === 'DETAILS') continue;
+    if (carta.classList.contains('gira-telefono')) continue;
     const h2 = carta.querySelector(':scope > h2');
     if (!h2) continue;
 
@@ -1034,6 +1035,37 @@ function montaConfiguratore(root, d, { gia = [], suOk = null } = {}) {
   aggiorna();
 }
 
+function chiediScelta({ titolo = '', testo = '', azioni = [] } = {}) {
+  return new Promise((risolvi) => {
+    const el = document.createElement('div');
+    el.className = 'bv-velo mdl-chiedi';
+    el.innerHTML = `<div class="bv-carta mdl-carta" role="dialog" aria-modal="true">
+      <h2>${esc(titolo)}</h2>
+      ${testo ? `<p class="bv-intro">${esc(testo)}</p>` : ''}
+      <div class="bv-azioni">${azioni.map((a) => `<button type="button" class="btn grande${a.tono ? ' ' + a.tono : ''}" data-mdl="${esc(a.id)}">${esc(a.testo)}</button>`).join('')}</div>
+    </div>`;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('dentro'));
+    const primo = el.querySelector('[data-mdl]');
+    if (primo) primo.focus();
+    let chiuso = false;
+    const via = (v) => {
+      if (chiuso) return; chiuso = true;
+      document.removeEventListener('keydown', tasti, true);
+      el.classList.remove('dentro');
+      setTimeout(() => el.remove(), 240);
+      risolvi(v);
+    };
+    const tasti = (ev) => { if (ev.key === 'Escape') { ev.preventDefault(); via(null); } };
+    document.addEventListener('keydown', tasti, true);
+    el.addEventListener('click', (ev) => {
+      const b = ev.target.closest('[data-mdl]');
+      if (b) return via(b.dataset.mdl);
+      if (ev.target === el) via(null);
+    });
+  });
+}
+
 function chiediTesto({ titolo = '', testo = '', valore = '', ok = 'OK', scelte = null } = {}) {
   return new Promise((risolvi) => {
     const el = document.createElement('div');
@@ -1306,7 +1338,7 @@ function collegaTgDestinazioni() {
 }
 
 let _salvaBarra = null, _salvaSporco = false, _salvaOsservatore = null;
-let _salvaCarta = null, _salvaChiusa = false;
+let _salvaCarta = null, _salvaChiusa = false, _uscitaInCorso = false;
 
 function _bottoniSalva(pan) {
   if (!pan) return [];
@@ -1325,11 +1357,26 @@ function _mostraBarraSalva(mostra) {
   document.body.classList.toggle('con-salva', !!mostra);
 }
 
+function _inVista(b) {
+  const r = b.getBoundingClientRect();
+  if (!r.width || !r.height) return false;
+  const alt = window.innerHeight || document.documentElement.clientHeight;
+  const lar = window.innerWidth || document.documentElement.clientWidth;
+  return r.bottom > 0 && r.top < alt && r.right > 0 && r.left < lar;
+}
+
+let _rilettura = 0;
+function _ripensaBarraSalva() {
+  if (_rilettura) return;
+  _rilettura = requestAnimationFrame(() => { _rilettura = 0; aggiornaBarraSalva(); });
+}
+
 function aggiornaBarraSalva() {
   if (!_salvaBarra || _salvaChiusa) return;
   const pan = document.querySelector('.pannello-scheda.visibile');
   const bottoni = _salvaSporco ? _bottoniSalva(pan) : [];
   if (!bottoni.length) { _mostraBarraSalva(false); return; }
+  if (bottoni.some(_inVista)) { _mostraBarraSalva(false); return; }
   const zona = _salvaBarra.querySelector('.sv-tasti');
   zona.innerHTML = '';
 
@@ -1400,6 +1447,14 @@ function avviaBarraSalva() {
   };
   document.addEventListener('input', sporca, true);
   document.addEventListener('change', sporca, true);
+  window.addEventListener('scroll', _ripensaBarraSalva, { passive: true });
+  window.addEventListener('resize', _ripensaBarraSalva, { passive: true });
+
+  window.addEventListener('beforeunload', (ev) => {
+    if (!_salvaSporco) return;
+    ev.preventDefault();
+    ev.returnValue = '';
+  });
 
   document.addEventListener('click', (ev) => {
     const b = ev.target.closest?.('button[id*="salva"], button[id*="save"]');
@@ -2236,13 +2291,15 @@ const ICO = {
 
 const _bIco = (d) => `<svg class="b-ico" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 
+const SEZ_BANCO = 'alert';
+
 function guidaSchedaHtml(id) {
   const g = GUIDE[id];
   if (!g) return '';
   const serve = Array.isArray(g.serve) ? L(g.serve[0], g.serve[1], g.serve[2]) : g.serve;
   const come = Array.isArray(g.come) ? g.come.map((c) => (Array.isArray(c) ? L(c[0], c[1], c[2]) : c)) : [];
 
-  let aperta = !stretto() && !SOTTO_SCHEDE[id];
+  let aperta = !stretto() && !SOTTO_SCHEDE[id] && id !== SEZ_BANCO;
   try {
     const v = localStorage.getItem('guida:' + id);
     if (v === '0') aperta = false; else if (v === '1') aperta = true;
@@ -2304,12 +2361,6 @@ function tFamiglia(id, def) {
 }
 
 const SOTTO_SCHEDE = {
-  alert: {
-    attributo: 'parte',
-    voci: [
-      ['banco', 'Disposizione'], ['overlay', 'I tuoi overlay'], ['aspetto', 'Aspetto'],
-    ],
-  },
   notifiche: {
     attributo: 'rete',
     voci: [
@@ -4657,39 +4708,13 @@ function pannelloAlert() {
   const posAlertOpts = [['alto-centro', L('In alto al centro', 'Top center', 'Arriba centro')], ['centro', L('Al centro', 'Center', 'Al centro')], ['basso-centro', L('In basso al centro', 'Bottom center', 'Abajo centro')]];
   const userMode = (cst.username && cst.username !== 'twitch') ? 'fisso' : 'twitch';
   return pannello('alert', `
-    <div class="carta" data-parte="overlay">
-      <h2>${_hIco(ICO.monitor)}${L('I miei overlay', 'My overlays', 'Mis overlays')}</h2>
-      <p>${L('Puoi avere', 'You can have', 'Puedes tener')} <strong>${L('più overlay', 'multiple overlays', 'varios overlays')}</strong>, ${L('ognuno col suo', 'each with its own', 'cada uno con su')} <strong>${L('link OBS', 'OBS link', 'enlace OBS')}</strong> ${L('e il suo', 'and its own', 'y su propio')} <strong>${L('layout', 'layout', 'diseño')}</strong>
-      (${L('cosa mostra e dove', 'what it shows and where', 'qué muestra y dónde')}). ${L('Es. un overlay "solo alert" in una scena e uno "solo chat" in un\'altra.', 'E.g. an "alerts only" overlay in one scene and a "chat only" one in another.', 'Ej. un overlay "solo alertas" en una escena y otro "solo chat" en otra.')}</p>
-      <div class="ovl-schede" id="ovl-schede"></div>
-
-      <div class="ovl-consegna">
-        <div class="ovl-consegna-testa">
-          <span class="ovl-occhiello">${L('Link OBS di questo overlay', 'OBS link for this overlay', 'Enlace OBS de este overlay')}</span>
-          <div class="ovl-consegna-az">
-            <button type="button" class="btn mini secondario" id="btn-apri-overlay">${_bIco(ICO.occhio)}${L('Apri', 'Open', 'Abrir')}</button>
-            <button type="button" class="btn mini" id="btn-copia-overlay">${_bIco('<rect width="13" height="13" x="9" y="9" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>')}${L('Copia', 'Copy', 'Copiar')}</button>
-          </div>
-        </div>
-        <input type="text" id="inp-overlay-url" class="ovl-url" readonly value="" placeholder="${L('caricamento…', 'loading…', 'cargando…')}">
-        <ol class="ovl-ricetta">
-          <li>${L('In OBS: <b>Sorgenti → + → Browser</b>', 'In OBS: <b>Sources → + → Browser</b>', 'En OBS: <b>Fuentes → + → Navegador</b>')}</li>
-          <li>${L('Incolla il link e metti <b>1920 × 1080</b>', 'Paste the link and set <b>1920 × 1080</b>', 'Pega el enlace y pon <b>1920 × 1080</b>')}</li>
-          <li>${L('Spunta <b>«Aggiorna browser quando la scena diventa attiva»</b>', 'Tick <b>«Refresh browser when scene becomes active»</b>', 'Marca <b>«Actualizar navegador cuando la escena se active»</b>')}</li>
-        </ol>
-      </div>
-      <label class="campo spazio-sopra">${L('Elementi (fonti) di questo overlay', 'Elements (sources) of this overlay', 'Elementos (fuentes) de este overlay')} <span class="tenue">— ${L('accendi/spegni cosa compare, poi personalizzali con «Modifica»', 'turn on/off what appears, then customize them with «Edit»', 'activa/desactiva qué aparece, luego personalízalos con «Editar»')}</span></label>
-      <div class="ovl-elementi">
-        ${ovlElemento('alert', ICO.megafono, L('Alert eventi', 'Event alerts', 'Alertas de eventos'), 'sez-alert')}
-        ${ovlElemento('chat', ICO.chat, L('Chat a schermo', 'On-screen chat', 'Chat en pantalla'), 'sez-chat')}
-        ${ovlElemento('wf', ICO.cuore, L('Ultimo follower', 'Latest follower', 'Último seguidor'), 'sez-widget')}
-        ${ovlElemento('ws', ICO.medaglia, L('Ultimo sub', 'Latest sub', 'Último sub'), 'sez-widget')}
-        ${ovlElemento('effetti', ICO.effetti, L('Effetti & suoni', 'Effects & sounds', 'Efectos y sonidos'), 'effetti')}
-      </div>
-      <p class="suggerimento">${L('Tienilo per te: chi ha questo link può far comparire cose nel tuo overlay.', 'Keep it to yourself: anyone with this link can make things appear in your overlay.', 'Guárdalo para ti: quien tenga este enlace puede hacer aparecer cosas en tu overlay.')}</p>
+    <div class="carta gira-telefono" data-parte="banco">
+      <span class="gira-ico">${_bIco('<rect x="5" y="2" width="14" height="20" rx="2.4"/><path d="M11 18.5h2"/>')}</span>
+      <h2>${L('Gira il telefono', 'Turn your phone', 'Gira el teléfono')}</h2>
+      <p>${L('Il banco di regia lavora in orizzontale: mettilo di lato e la tela si apre a tutto schermo. Su computer è la stessa cosa, con più spazio.', 'The studio works in landscape: turn your phone sideways and the canvas opens full width. On a computer it is the same, with more room.', 'La mesa de mezclas trabaja en horizontal: pon el teléfono de lado y el lienzo se abre a pantalla completa. En el ordenador es lo mismo, con más espacio.')}</p>
     </div>
 
-    <div class="carta" data-parte="banco">
+    <div class="carta banco-vero" data-parte="banco">
       <h2>${_hIco(ICO.righello)}${L('Anteprima e layout', 'Preview and layout', 'Vista previa y diseño')}</h2>
       <p>${L('Personalizza', 'Customize', 'Personaliza')} <strong>${L('tutto', 'everything', 'todo')}</strong> ${L('ciò che appare a schermo: alert, chat, widget… colori, font, forma, animazioni.', 'that appears on screen: alerts, chat, widgets… colors, fonts, shape, animations.', 'lo que aparece en pantalla: alertas, chat, widgets… colores, fuentes, forma, animaciones.')}
       ${L('Posizioni, "cosa mostra" e l\'', 'Positions, "what to show" and the ', 'Las posiciones, "qué mostrar" y el ')}<strong>${L('aspetto (colori, font, forma, animazioni, CSS)', 'appearance (colors, fonts, shape, animations, CSS)', 'aspecto (colores, fuentes, forma, animaciones, CSS)')}</strong> ${L('valgono per l\'', 'apply to the ', 'valen para el ')}<strong>${L('overlay scelto qui sotto', 'overlay chosen below', 'overlay elegido abajo')}</strong>; ${L('i testi degli alert e i comportamenti restano condivisi.', 'alert texts and behaviors stay shared.', 'los textos de las alertas y los comportamientos quedan compartidos.')}
@@ -4758,8 +4783,41 @@ function pannelloAlert() {
           <input type="range" id="insp-rot" min="-180" max="180" step="1" value="0">
           <span class="ovl-insp-val" id="insp-rot-val">0°</span>
         </div>
+        <button type="button" class="btn secondario mini insp-aspetto" id="insp-aspetto">${_bIco(ICO.effetti)}${L('Colori, font, animazione…', 'Colors, fonts, animation…', 'Colores, fuentes, animación…')}</button>
       </div>
       <p class="suggerimento"><strong>${L('Clicca', 'Click', 'Haz clic en')}</strong> ${L('un elemento per selezionarlo, poi <strong>trascinalo</strong> per spostarlo; usa le maniglie agli angoli o i cursori qui sopra. Scorciatoie: <strong>rotellina</strong> = ridimensiona, <strong>Shift+rotellina</strong> = ruota, <strong>doppio clic</strong> = ripristina. Con «Prova» li vedi nell\'overlay dentro OBS.', 'an element to select it, then <strong>drag</strong> it to move; use the corner handles or the sliders above. Shortcuts: <strong>wheel</strong> = resize, <strong>Shift+wheel</strong> = rotate, <strong>double click</strong> = reset. Use «Test» to see them in the overlay inside OBS.', 'un elemento para seleccionarlo, luego <strong>arrástralo</strong> para moverlo; usa los tiradores de las esquinas o los cursores de arriba. Atajos: <strong>rueda</strong> = redimensiona, <strong>Shift+rueda</strong> = rota, <strong>doble clic</strong> = restablece. Con «Probar» los ves en el overlay dentro de OBS.')}</p>
+    </div>
+
+    <div class="carta" data-parte="overlay">
+      <h2>${_hIco(ICO.monitor)}${L('I miei overlay', 'My overlays', 'Mis overlays')}</h2>
+      <p>${L('Puoi avere', 'You can have', 'Puedes tener')} <strong>${L('più overlay', 'multiple overlays', 'varios overlays')}</strong>, ${L('ognuno col suo', 'each with its own', 'cada uno con su')} <strong>${L('link OBS', 'OBS link', 'enlace OBS')}</strong> ${L('e il suo', 'and its own', 'y su propio')} <strong>${L('layout', 'layout', 'diseño')}</strong>
+      (${L('cosa mostra e dove', 'what it shows and where', 'qué muestra y dónde')}). ${L('Es. un overlay "solo alert" in una scena e uno "solo chat" in un\'altra.', 'E.g. an "alerts only" overlay in one scene and a "chat only" one in another.', 'Ej. un overlay "solo alertas" en una escena y otro "solo chat" en otra.')}</p>
+      <div class="ovl-schede" id="ovl-schede"></div>
+
+      <div class="ovl-consegna">
+        <div class="ovl-consegna-testa">
+          <span class="ovl-occhiello">${L('Link OBS di questo overlay', 'OBS link for this overlay', 'Enlace OBS de este overlay')}</span>
+          <div class="ovl-consegna-az">
+            <button type="button" class="btn mini secondario" id="btn-apri-overlay">${_bIco(ICO.occhio)}${L('Apri', 'Open', 'Abrir')}</button>
+            <button type="button" class="btn mini" id="btn-copia-overlay">${_bIco('<rect width="13" height="13" x="9" y="9" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>')}${L('Copia', 'Copy', 'Copiar')}</button>
+          </div>
+        </div>
+        <input type="text" id="inp-overlay-url" class="ovl-url" readonly value="" placeholder="${L('caricamento…', 'loading…', 'cargando…')}">
+        <ol class="ovl-ricetta">
+          <li>${L('In OBS: <b>Sorgenti → + → Browser</b>', 'In OBS: <b>Sources → + → Browser</b>', 'En OBS: <b>Fuentes → + → Navegador</b>')}</li>
+          <li>${L('Incolla il link e metti <b>1920 × 1080</b>', 'Paste the link and set <b>1920 × 1080</b>', 'Pega el enlace y pon <b>1920 × 1080</b>')}</li>
+          <li>${L('Spunta <b>«Aggiorna browser quando la scena diventa attiva»</b>', 'Tick <b>«Refresh browser when scene becomes active»</b>', 'Marca <b>«Actualizar navegador cuando la escena se active»</b>')}</li>
+        </ol>
+      </div>
+      <label class="campo spazio-sopra">${L('Elementi (fonti) di questo overlay', 'Elements (sources) of this overlay', 'Elementos (fuentes) de este overlay')} <span class="tenue">— ${L('accendi/spegni cosa compare, poi personalizzali con «Modifica»', 'turn on/off what appears, then customize them with «Edit»', 'activa/desactiva qué aparece, luego personalízalos con «Editar»')}</span></label>
+      <div class="ovl-elementi">
+        ${ovlElemento('alert', ICO.megafono, L('Alert eventi', 'Event alerts', 'Alertas de eventos'), 'sez-alert')}
+        ${ovlElemento('chat', ICO.chat, L('Chat a schermo', 'On-screen chat', 'Chat en pantalla'), 'sez-chat')}
+        ${ovlElemento('wf', ICO.cuore, L('Ultimo follower', 'Latest follower', 'Último seguidor'), 'sez-widget')}
+        ${ovlElemento('ws', ICO.medaglia, L('Ultimo sub', 'Latest sub', 'Último sub'), 'sez-widget')}
+        ${ovlElemento('effetti', ICO.effetti, L('Effetti & suoni', 'Effects & sounds', 'Efectos y sonidos'), 'effetti')}
+      </div>
+      <p class="suggerimento">${L('Tienilo per te: chi ha questo link può far comparire cose nel tuo overlay.', 'Keep it to yourself: anyone with this link can make things appear in your overlay.', 'Guárdalo para ti: quien tenga este enlace puede hacer aparecer cosas en tu overlay.')}</p>
     </div>
 
     <details class="carta sez" data-parte="aspetto" id="sez-alert">
@@ -5944,6 +6002,14 @@ function caricaAlert() {
     if (s === 'effetti') { vaiAScheda('effetti'); return; }
     const det = _g(s);
     if (det) { det.open = true; det.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'start' }); }
+  });
+
+  _g('insp-aspetto')?.addEventListener('click', () => {
+    const dove = { alert: 'sez-alert', chat: 'sez-chat', wf: 'sez-widget', ws: 'sez-widget' }[selezione];
+    const det = dove && _g(dove);
+    if (!det) return;
+    det.open = true;
+    det.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'start' });
   });
 
   _g('insp-size')?.addEventListener('input', (e) => {
@@ -14128,7 +14194,34 @@ function aggiornaStatoNav(id) {
       || !!(f && f.parti.includes(b.dataset.scheda))));
 }
 
+async function _chiediPrimaDiUscire() {
+  const pan = document.querySelector('.pannello-scheda.visibile');
+  const bottoni = _bottoniSalva(pan);
+  const r = await chiediScelta({
+    titolo: L('Hai modifiche non salvate', 'You have unsaved changes', 'Tienes cambios sin guardar'),
+    testo: L('Se esci adesso le perdi.', 'If you leave now you lose them.', 'Si sales ahora las pierdes.'),
+    azioni: [
+      { id: 'salva', testo: L('Salva ed esci', 'Save and leave', 'Guardar y salir') },
+      { id: 'ignora', testo: L('Esci senza salvare', 'Leave without saving', 'Salir sin guardar'), tono: 'secondario' },
+      { id: 'resta', testo: L('Resta qui', 'Stay here', 'Quedarme aquí'), tono: 'testo' },
+    ],
+  });
+  if (r === null || r === 'resta') return false;
+  if (r === 'salva' && bottoni[0]) {
+    bottoni[0].click();
+    await new Promise((k) => setTimeout(k, 260));
+  }
+  azzeraBarraSalva();
+  return true;
+}
+
 function vaiAScheda(id) {
+  if (id !== schedaAttiva && _salvaSporco && !_uscitaInCorso) {
+    _uscitaInCorso = true;
+    _chiediPrimaDiUscire().then((si) => { _uscitaInCorso = false; if (si) vaiAScheda(id); },
+      () => { _uscitaInCorso = false; });
+    return;
+  }
   morphDa(null);
   const org = (_morphDa && _morphDa.isConnected && _morphDa.dataset.scheda === id
     && !stessaFamiglia(id, schedaAttiva)) ? _morphDa : null;
