@@ -121,6 +121,14 @@ CREATE TABLE IF NOT EXISTS link_page (       -- la pagina pubblica /u/<login>
   ts INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS dirette_annunciate (  -- l'ultima diretta gia' annunciata, per piattaforma
+  channel TEXT NOT NULL,
+  piattaforma TEXT NOT NULL,     -- twitch | kick | youtube | tiktok
+  diretta_id TEXT NOT NULL,      -- id della diretta secondo quella piattaforma
+  ts INTEGER NOT NULL,
+  PRIMARY KEY (channel, piattaforma)
+);
+
 CREATE TABLE IF NOT EXISTS clips (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   channel TEXT NOT NULL,
@@ -2050,6 +2058,32 @@ export const commands = {
       .run(channel, name.toLowerCase(), response, by, now());
   },
   remove(channel, name) { db.prepare('DELETE FROM commands WHERE channel=? AND name=?').run(channel, name.toLowerCase()); },
+};
+
+// ------------------------------------------------- dirette gia' annunciate
+// A cosa serve: un avviso «e' live» non deve partire due volte per la stessa
+// diretta. Il conteggio e' PER PIATTAFORMA, perche' si puo' essere in diretta
+// su Twitch e su Kick insieme: se il ricordo fosse uno solo, il secondo avviso
+// cancellerebbe il ricordo del primo e la prossima volta si ripeterebbe.
+export const dirette = {
+  gia(channel, piattaforma, direttaId) {
+    const id = String(direttaId || '');
+    if (!id) return false;                        // senza id non si puo' sapere: meglio avvisare
+    const r = db.prepare('SELECT diretta_id FROM dirette_annunciate WHERE channel=? AND piattaforma=?')
+      .get(String(channel).toLowerCase(), String(piattaforma));
+    return r?.diretta_id === id;
+  },
+  segna(channel, piattaforma, direttaId) {
+    const id = String(direttaId || '');
+    if (!id) return;
+    db.prepare(`INSERT INTO dirette_annunciate (channel, piattaforma, diretta_id, ts) VALUES (?,?,?,?)
+      ON CONFLICT(channel, piattaforma) DO UPDATE SET diretta_id=excluded.diretta_id, ts=excluded.ts`)
+      .run(String(channel).toLowerCase(), String(piattaforma), id, now());
+  },
+  dimentica(channel, piattaforma) {
+    db.prepare('DELETE FROM dirette_annunciate WHERE channel=? AND piattaforma=?')
+      .run(String(channel).toLowerCase(), String(piattaforma));
+  },
 };
 
 // ---------------------------------------------------------------- clip

@@ -397,6 +397,11 @@ function _demoGet(via) {
         xy: { alert: { x: 50, y: 50 }, wf: { x: 22, y: 84 }, ws: { x: 78, y: 84 } },
         css: '', stile: null, url: 'https://socialbot.live/o/andryx_demo/schermata-di-pausa' },
     ] },
+    '/api/streamer/piattaforme': { piattaforme: [
+      { id: 'twitch', nome: 'Twitch', disponibile: true, collegato: true, account: 'andryx_demo', attivo: true, daRifare: false, azione: '/auth/permessi', note: '' },
+      { id: 'kick', nome: 'Kick', disponibile: true, collegato: true, account: 'id 448291', attivo: true, daRifare: false, azione: '/auth/kick', note: '' },
+      { id: 'youtube', nome: 'YouTube', disponibile: false, collegato: false, account: '', attivo: false, daRifare: false, azione: '', note: 'credenziali pronte: il collegamento arriva a breve' },
+    ] },
     '/api/streamer/google-fonts': { fonts: ['Inter', 'Roboto', 'Lobster', 'Bree Serif', 'Bangers', 'Poppins', 'Oswald', 'Pacifico', 'Rubik Mono One', 'Press Start 2P', 'Caveat', 'Anton'] },
     '/api/streamer/font': { font: [{ nome: 'il-mio-font', url: '/demo/font.woff2' }] },
     '/api/discord/stato': { configurato: false, attivo: false, messaggio: '', nomeBot: '', avatar: '', anteprima: '' },
@@ -3614,6 +3619,12 @@ function pannelloStato() {
       <p>${L('Il motore veloce del bot che', 'The bot’s fast engine that', 'El motor rápido del bot que')} <strong class="primo-piano">${L('cresce da solo', 'grows on its own', 'crece solo')}</strong>: ${L('risponde all\'istante a ciò che ha già imparato e, quando incontra qualcosa di nuovo, se lo segna e lo impara dal maestro. Più lo alleni (anche via DM su Telegram), più sa fare da sé.', 'answers instantly to what it already learned and, when it meets something new, notes it and learns it from the teacher. The more you train it (also via Telegram DM), the more it can do on its own.', 'responde al instante a lo que ya aprendió y, cuando encuentra algo nuevo, lo anota y lo aprende del maestro. Cuanto más lo entrenas (también por DM en Telegram), más sabe hacer solo.')}</p>
       <div id="rete-panoramica"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
     </div>
+    <div class="carta">
+      <h2>${_hIco(ICO.spina)}${L('Le tue piattaforme', 'Your platforms', 'Tus plataformas')}</h2>
+      <p>${L('Dove il bot lavora per te. Collega quelle che usi: comandi, moduli, punti e memoria funzionano allo stesso modo su tutte, e una risposta torna sempre da dove è arrivata la domanda.', 'Where the bot works for you. Connect the ones you use: commands, modules, points and memory work the same on all of them, and a reply always comes back from where the question came.', 'Donde el bot trabaja para ti. Conecta las que uses: comandos, módulos, puntos y memoria funcionan igual en todas, y una respuesta vuelve siempre desde donde llegó la pregunta.')}</p>
+      <div id="piattaforme-box"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
+    </div>
+
     <div class="carta">
       <h2>${_hIco(ICO.scarica)}${L('I tuoi dati sono tuoi', 'Your data is yours', 'Tus datos son tuyos')}</h2>
       <p>${L('Scarica', 'Download', 'Descarga')} <strong class="primo-piano">${L('tutto quello che è tuo', "everything that's yours", 'todo lo que es tuyo')}</strong> ${L('in un file: comandi, moduli, effetti, punti, ore guardate, citazioni, contatori, pagina pubblica, impostazioni. Un file solo, leggibile, che puoi tenere o portare altrove.', 'in one file: commands, modules, effects, points, watch time, quotes, counters, public page, settings. One readable file you can keep or take elsewhere.', 'en un archivo: comandos, módulos, efectos, puntos, horas vistas, citas, contadores, página pública, ajustes. Un solo archivo legible que puedes guardar o llevarte.')}</p>
@@ -11666,7 +11677,7 @@ async function conErrore(fn) {
 
 function caricaDatiScheda(id) {
   if (schedaBloccata(id)) return;
-  if (id === 'stato') { caricaPasskey(); caricaModeratori(); caricaRetePanoramica(); }
+  if (id === 'stato') { caricaPasskey(); caricaModeratori(); caricaRetePanoramica(); caricaPiattaforme(); }
   if (id === 'avatar') caricaMente3d();
   if (id === 'personalita') caricaGuide();
   if (id === 'conoscenza') caricaConoscenza();
@@ -14620,6 +14631,47 @@ function _durata(sec) {
   if (h) return `${h}h ${m}m`;
   if (m) return `${m}m ${s}s`;
   return `${s}s`;
+}
+
+const PIATT_ICO = { twitch: ICO.tv, kick: ICO.fulmine, youtube: ICO.video };
+
+function rigaPiattaforma(p) {
+  const stato = !p.disponibile
+    ? { cl: '', txt: L('non disponibile', 'not available', 'no disponible') }
+    : !p.collegato ? { cl: '', txt: L('non collegata', 'not connected', 'no conectada') }
+      : p.daRifare ? { cl: BADGE.attenzione, txt: L('da sistemare', 'needs a fix', 'hay que arreglarla') }
+        : p.attivo ? { cl: BADGE.ok, txt: L('attiva', 'active', 'activa') }
+          : { cl: BADGE.ok, txt: L('collegata', 'connected', 'conectada') };
+  const azione = !p.disponibile ? ''
+    : (!p.collegato
+      ? `<a class="btn secondario mini" href="${esc(p.azione)}">${L('Collega', 'Connect', 'Conectar')}</a>`
+      : `${p.daRifare ? `<a class="btn mini" href="${esc(p.azione)}">${L('Sistema', 'Fix', 'Arreglar')}</a>` : ''}
+         ${p.id !== 'twitch' ? `<button type="button" class="btn secondario mini" data-scollega="${esc(p.id)}">${L('Scollega', 'Disconnect', 'Desconectar')}</button>` : ''}`);
+  return `<li class="pf-riga">
+    <span class="pf-ico">${_hIco(PIATT_ICO[p.id] || ICO.spina)}</span>
+    <span class="pf-nome">${esc(p.nome)}${p.account ? ` <span class="tenue">${esc(p.account)}</span>` : ''}</span>
+    <span class="badge ${stato.cl}">${stato.txt}</span>
+    ${p.note ? `<span class="pf-nota">${esc(p.note)}</span>` : ''}
+    <span class="pf-azioni">${azione}</span>
+  </li>`;
+}
+
+async function caricaPiattaforme() {
+  const box = document.getElementById('piattaforme-box');
+  if (!box) return;
+  let d;
+  try { d = await api('/api/streamer/piattaforme'); }
+  catch (e) { box.innerHTML = `<p class="vuoto">${L('Non disponibile ora.', 'Not available now.', 'No disponible ahora.')}</p>`; return; }
+  const lista = Array.isArray(d?.piattaforme) ? d.piattaforme : [];
+  if (!lista.length) { box.innerHTML = `<p class="vuoto">${L('Nessuna piattaforma.', 'No platforms.', 'Ninguna plataforma.')}</p>`; return; }
+  box.innerHTML = `<ul class="pf-lista">${lista.map(rigaPiattaforma).join('')}</ul>`;
+  box.querySelectorAll('[data-scollega]').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
+    const id = b.dataset.scollega;
+    if (!confirm(L(`Scollegare ${id}? Il bot smette di lavorare lì.`, `Disconnect ${id}? The bot stops working there.`, `¿Desconectar ${id}? El bot deja de trabajar ahí.`))) return;
+    await api('/api/streamer/' + id, { method: 'DELETE' });
+    toast(L('Scollegata', 'Disconnected', 'Desconectada'));
+    caricaPiattaforme();
+  })));
 }
 
 async function caricaSalute() {

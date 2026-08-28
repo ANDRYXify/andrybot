@@ -112,6 +112,44 @@ export async function notificaLive(conf, streamer, info) {
   return r;
 }
 
+// AVVISO «È LIVE» PER QUALUNQUE PIATTAFORMA.
+// `d` e' la diretta nella forma comune (vedi features/avvisi.js): Discord non
+// deve sapere se dietro c'e' Twitch, Kick o YouTube. I campi che una piattaforma
+// non fornisce (il gioco, gli spettatori) non diventano uno zero finto: la loro
+// riga semplicemente non compare.
+const COLORI = { twitch: VIOLA, kick: 0x53fc18, youtube: 0xff0000, tiktok: 0x000000 };
+const NOMI = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube', tiktok: 'TikTok' };
+
+export async function notificaDiretta(conf, d) {
+  if (!conf?.webhook) return { ok: false, errore: 'discord non configurato' };
+  if (!d?.login) return { ok: false, errore: 'diretta senza streamer' };
+  const p = String(d.piattaforma || 'twitch');
+  const campi = [];
+  if (d.gioco) campi.push({ name: '🎮 Gioco', value: String(d.gioco).slice(0, 100), inline: true });
+  if (d.spettatori != null) campi.push({ name: '👥 Spettatori', value: String(d.spettatori), inline: true });
+
+  const emb = {
+    title: `🔴 ${d.display || d.login} è in diretta${p === 'twitch' ? '' : ' su ' + (NOMI[p] || p)}!`,
+    url: d.url,
+    description: d.titolo || undefined,
+    color: COLORI[p] ?? VIOLA,
+    ...(campi.length ? { fields: campi } : {}),
+    footer: { text: 'SocialBot • ' + (NOMI[p] || p) },
+  };
+  if (d.miniatura) emb.image = { url: d.miniatura + `?t=${Math.floor(Date.now() / 1000)}` };
+
+  const payload = {
+    content: String(d.testo || '').slice(0, 1800) || undefined,
+    embeds: [emb],
+    allowed_mentions: { parse: ['roles', 'everyone'] },
+  };
+  if (conf.nome_bot) payload.username = String(conf.nome_bot).slice(0, 80);
+  if (conf.avatar && /^https:\/\//.test(conf.avatar)) payload.avatar_url = conf.avatar;
+  const r = await invia(conf.webhook, payload);
+  if (!r.ok) log.warn(`avviso ${p} #${d.login}: ${r.errore}`);
+  return r;
+}
+
 // Messaggio di prova (dalla dashboard).
 export async function prova(conf, streamer) {
   if (!conf?.webhook) return { ok: false, errore: 'discord non configurato' };

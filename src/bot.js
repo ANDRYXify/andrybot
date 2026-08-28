@@ -37,6 +37,8 @@ import * as model from './ai/model.js';
 import * as brainpy from './ai/brainpy.js';
 import { createMessageHandler } from './features/handler.js';
 import { voceKick } from './kick/voce.js';
+import * as avvisi from './features/avvisi.js';
+import { dirette } from './db.js';
 import { ClipEngine } from './features/clips.js';
 import { PenitenzeEngine } from './features/penitenze.js';
 import { AlertsEngine } from './features/alerts.js';
@@ -741,7 +743,7 @@ export class BotManager {
     if (prev === undefined) return;
     const ev = { channel: ch, type: isLive ? 'stream.online' : 'stream.offline', data: data || {} };
     this._dispatchEvent(ev);
-    if (isLive) { this._notificaTelegram(ch); this._notificaDiscord(ch); }
+    if (isLive) this._annunciaTwitch(ch).catch((e) => log.error(`avviso live #${ch}:`, e?.message || e));
     else this._chiudiTelegram(ch);
     this._reagisciAllaDiretta(ch, isLive);   // lei se ne accorge e ti scrive (presente/consapevole)
   }
@@ -768,19 +770,85 @@ export class BotManager {
 
   // Manda la notifica Telegram "è live" nel gruppo dello streamer, se ha
   // configurato e acceso le notifiche. Anti-doppioni sull'id della live.
-  async _notificaTelegram(login) {
+  // ANNUNCIO «È LIVE», una strada sola per tutte le piattaforme.
+  // Chi chiama passa una diretta (piattaforma, titolo, link, id) e non deve
+  // sapere niente di Telegram o Discord; Telegram e Discord non devono sapere
+  // niente di Twitch o Kick. In mezzo c'e' solo questo.
+  async annunciaDiretta(d) {
+    if (!d?.login) return { inviati: 0 };
+    const { login, piattaforma } = d;
+    // Anti-doppioni PER PIATTAFORMA: si puo' essere live su Twitch e su Kick
+    // insieme, e un ricordo solo cancellerebbe l'altro.
+    if (d.id && dirette.gia(login, piattaforma, d.id)) return { inviati: 0, gia: true };
+
+    const s = streamers.get(login);
+    const conNome = { ...d, display: d.display || s?.display || login };
+    let inviati = 0;
+
     try {
       const conf = tgConf.get(login);
-      if (!conf?.attivo || !conf.token) return;
-      const info = await this.helix.getStream(login).catch(() => null);
-      const streamId = String(info?.id || '');
-      if (streamId && streamId === conf.ultima_live) return;   // già avvisato per questa diretta
-      const s = streamers.get(login);
-      const r = await this._diffondiTelegram(login, conf, 'live', login,
-        telegram.costruisciMessaggioLive({ login, display: s?.display || login }, info, conf.messaggio),
-        { pin: true });
-      if (r.inviati && streamId) tgConf.setUltimaLive(login, streamId);
-    } catch (e) { log.error(`notifica Telegram #${login}:`, e?.message || e); }
+      if (conf?.attivo && conf.token) {
+        const testo = avvisi.messaggio(conNome, piattaforma === 'twitch' ? conf.messaggio : '');
+        const r = await this._diffondiTelegram(login, conf, avvisi.eventoDi(piattaforma), login, testo, { pin: true });
+        inviati += r.inviati || 0;
+      }
+    } catch (e) { log.error(`avviso Telegram ${piattaforma} #${login}:`, e?.message || e); }
+
+    try {
+      const conf = dcConf.get(login);
+      if (conf?.attivo && conf.webhook) {
+        const r = await discord.notificaDiretta(conf, conNome);
+        if (r?.ok) inviati++;
+      }
+    } catch (e) { log.error(`avviso Discord ${piattaforma} #${login}:`, e?.message || e); }
+
+    if (inviati && d.id) dirette.segna(login, piattaforma, d.id);
+    return { inviati };
+  }
+
+  // Un evento arrivato da un'altra piattaforma (per ora Kick) entra qui.
+  async eventoEsterno(ev) {
+    if (!ev?.channel || !streamers.get(ev.channel)) return;
+    try {
+      if (ev.tipo === 'live') {
+        const d = avvisi.diretta({ piattaforma: ev.piattaforma, login: ev.channel, titolo: ev.titolo, id: ev.id || ev.titolo || String(Date.now()) });
+        if (d) await this.annunciaDiretta(d);
+        return;
+      }
+      if (ev.tipo === 'fine-live') { dirette.dimentica(ev.channel, ev.piattaforma); return; }
+      // Seguiti e abbonamenti alimentano gli alert a schermo GIA' esistenti:
+      // entrano dalla stessa porta degli eventi Twitch (onEvent), tradotti nel
+      // loro vocabolario. Cosi' un alert configurato una volta vale per tutte
+      // le piattaforme, senza che nessuno debba configurarlo due volte.
+      const comeTwitch = {
+        seguito: 'channel.follow',
+        abbonamento: 'channel.subscribe',
+        regali: 'channel.subscription.gift',
+      };
+      const type = comeTwitch[ev.tipo];
+      if (type) {
+        this.alerts?.onEvent({
+          channel: ev.channel,
+          type,
+          data: { user_name: ev.utente, cumulative_months: ev.mesi, total: ev.quanti },
+        });
+      }
+    } catch (e) { log.error(`evento ${ev.piattaforma} #${ev.channel}:`, e?.message || e); }
+  }
+
+  // Twitch: si prende quello che sa Helix e si passa dalla STESSA strada di
+  // tutte le altre piattaforme. Prima aveva un giro suo, e infatti aggiungerne
+  // una seconda voleva dire riscriverlo.
+  async _annunciaTwitch(login) {
+    const info = await this.helix.getStream(login).catch(() => null);
+    const s = streamers.get(login);
+    const d = avvisi.diretta({
+      piattaforma: 'twitch', login, display: s?.display || login,
+      titolo: info?.title || '', gioco: info?.game_name || '',
+      spettatori: info?.viewer_count ?? null, id: String(info?.id || ''),
+    });
+    if (d) d.miniatura = (info?.thumbnail_url || '').replace('{width}', '1280').replace('{height}', '720');
+    return this.annunciaDiretta(d);
   }
 
   // Manda un avviso a TUTTE le destinazioni ammesse per quell'evento e quello
@@ -862,18 +930,7 @@ export class BotManager {
 
   // Manda la notifica Discord "è live" nel canale dello streamer (via webhook),
   // se ha configurato e acceso le notifiche. Anti-doppioni sull'id della live.
-  async _notificaDiscord(login) {
-    try {
-      const conf = dcConf.get(login);
-      if (!conf?.attivo || !conf.webhook) return;
-      const info = await this.helix.getStream(login).catch(() => null);
-      const streamId = String(info?.id || '');
-      if (streamId && streamId === conf.ultima_live) return;   // già avvisato per questa diretta
-      const s = streamers.get(login);
-      const r = await discord.notificaLive(conf, { login, display: s?.display || login }, info);
-      if (r?.ok) { if (streamId) dcConf.setUltimaLive(login, streamId); log.info(`notifica Discord inviata per #${login}`); }
-    } catch (e) { log.error(`notifica Discord #${login}:`, e?.message || e); }
-  }
+
 
   // Live spenta: se l'avviso era stato fissato, lo elimina dal gruppo (togliendo
   // così anche il "fissato"). Best-effort e idempotente: se non c'è nulla da
