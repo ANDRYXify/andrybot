@@ -79,6 +79,19 @@ perché quei due posti caricano il media da soli:
   server accettava già nella sua whitelist ma che nessun pulsante sapeva
   produrre.
 
+## I tuoi media stanno nella libreria
+
+La pagina si chiamava «Libreria condivisa» e mostrava solo il pubblico degli
+altri: i propri media vivevano in un'altra lista, più in basso, e condividerli
+si poteva solo da lì. Ora è **una** libreria:
+
+- il filtro «Solo i miei» mostra tutto ciò che hai caricato, anche il privato —
+  è un secondo asse, quindi ha un aspetto diverso dai filtri per tipo (chiaro
+  quando è acceso, non una seconda scheda selezionata);
+- ogni carta tua porta l'interruttore **Condividi / Non condividere**, e
+  l'etichetta dice sempre com'è messa (`tuo · condiviso`, `tuo · privato`);
+- il titolo e il testo dicono la verità su cosa c'è dentro e dove lo ritrovi.
+
 ## Il cancello
 
 `node scripts/verifica-libreria.mjs`

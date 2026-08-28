@@ -7931,9 +7931,10 @@ function pannelloEffetti() {
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.libro)}${L('Libreria condivisa', 'Shared library', 'Biblioteca compartida')}</h2>
-      <p>${L('Sfoglia', 'Browse', 'Explora')} <strong class="primo-piano">${L('effetti, gif, video, foto e suoni', 'effects, gifs, videos, photos and sounds', 'efectos, gifs, vídeos, fotos y sonidos')}</strong> ${L('condivisi dagli altri streamer', 'shared by other streamers', 'compartidos por otros streamers')}
-      ${L('e aggiungili alla tua libreria con un click. Quello che aggiungi lo ritrovi', 'and add them to your library with one click. What you add you find', 'y añádelos a tu biblioteca con un clic. Lo que añades lo encuentras')} <strong>${L('ovunque', 'everywhere', 'en todas partes')}</strong>: ${L('overlay, alert, effetti e premi a punti canale.', 'overlay, alerts, effects and channel-point rewards.', 'overlay, alertas, efectos y recompensas de puntos de canal.')}</p>
+      <h2>${_hIco(ICO.libro)}${L('La libreria dei media', 'The media library', 'La biblioteca de medios')}</h2>
+      <p>${L('Un posto solo per', 'One single place for', 'Un solo sitio para')} <strong class="primo-piano">${L('foto, gif, video e suoni', 'photos, gifs, videos and sounds', 'fotos, gifs, vídeos y sonidos')}</strong>: ${L('i', 'your', 'los')} <strong>${L('tuoi', 'own', 'tuyos')}</strong> ${L('e quelli condivisi dagli altri streamer.', 'and those shared by other streamers.', 'y los compartidos por otros streamers.')}
+      ${L('Quello che c\'è qui lo ritrovi', "What's here you find", 'Lo que hay aquí lo encuentras')} <strong>${L('ovunque', 'everywhere', 'en todas partes')}</strong> — ${L('alert, overlay, premi a punti canale, penitenze, meme e grafiche: ogni campo che chiede un media ha il pulsante', 'alerts, overlay, channel-point rewards, forfeits, memes and graphics: every field that asks for a medium has the button', 'alertas, overlay, recompensas de puntos de canal, penitencias, memes y gráficas: cada campo que pide un medio tiene el botón')}
+      «${L('Dalla libreria', 'From the library', 'De la biblioteca')}». ${L('Apri', 'Open', 'Abre')} <strong>${L('Solo i miei', 'Only mine', 'Solo los míos')}</strong> ${L('per condividere i tuoi con un click.', 'to share yours with one click.', 'para compartir los tuyos con un clic.')}</p>
       <div class="lib-filtri">
         <div class="lib-tabs">
           <button type="button" class="btn secondario mini lib-tab attivo" data-tipo="">${L('Tutti', 'All', 'Todos')}</button>
@@ -7941,6 +7942,7 @@ function pannelloEffetti() {
           <button type="button" class="btn secondario mini lib-tab" data-tipo="video">${_bIco(ICO.video)}${L('Video', 'Videos', 'Vídeos')}</button>
           <button type="button" class="btn secondario mini lib-tab" data-tipo="audio">${_bIco(ICO.altoparlante)}${L('Audio', 'Audio', 'Audio')}</button>
         </div>
+        <button type="button" class="btn secondario mini" id="lib-miei">${L('Solo i miei', 'Only mine', 'Solo los míos')}</button>
         <input type="search" id="lib-cerca" placeholder="${L('Cerca per nome…', 'Search by name…', 'Buscar por nombre…')}" maxlength="40">
       </div>
       <div id="lib-griglia" class="lib-griglia"><p class="vuoto">${L('Carico la libreria…', 'Loading the library…', 'Cargando la biblioteca…')}</p></div>
@@ -11387,6 +11389,11 @@ function attivaPiattaforma() {
     document.querySelectorAll('.lib-tab').forEach((x) => x.classList.remove('attivo'));
     b.classList.add('attivo'); _libTipo = b.dataset.tipo || ''; caricaLibreria();
   }));
+  document.getElementById('lib-miei')?.addEventListener('click', (ev) => {
+    _libMiei = !_libMiei;
+    ev.currentTarget.classList.toggle('attivo', _libMiei);
+    caricaLibreria();
+  });
   document.getElementById('lib-cerca')?.addEventListener('input', () => {
     clearTimeout(_libCercaTimer); _libCercaTimer = setTimeout(caricaLibreria, 300);
   });
@@ -11395,7 +11402,9 @@ function attivaPiattaforma() {
     grigliaLib.addEventListener('click', (ev) => {
       const imp = ev.target.closest('.lib-importa');
       const play = ev.target.closest('.lib-play');
+      const cond = ev.target.closest('.lib-cond');
       if (imp) conErrore(() => importaLibreria(imp.dataset.id, imp));
+      else if (cond) conErrore(() => condividiMedia(cond));
       else if (play) { try { const a = new Audio(play.dataset.audio); a.play().catch(() => {}); } catch (e) {  } }
     });
     grigliaLib.addEventListener('mouseover', (ev) => { const v = ev.target.closest('video.lib-media'); if (v) v.play().catch(() => {}); });
@@ -11922,6 +11931,7 @@ async function caricaEffetti() {
 }
 
 let _libTipo = '';
+let _libMiei = false;
 let _libCercaTimer = null;
 
 const LIB_ONDA = '<path d="M3 12h2.2l1.9-6 2.6 12 2.4-9 2 6 1.6-3H21"/>';
@@ -11939,12 +11949,16 @@ function libItemHtml(it, azione) {
   const principale = azione === 'usa'
     ? `<button type="button" class="btn mini lib-usa" data-id="${it.id}">${_bIco(ICO.spunta)}${it.mio ? L('Usa', 'Use', 'Usar') : L('Prendi e usa', 'Take and use', 'Coger y usar')}</button>`
     : (it.mio
-      ? `<span class="lib-mia">${L('già tua', 'already yours', 'ya tuya')}</span>`
+      ? `<button type="button" class="btn secondario mini lib-cond" data-id="${it.id}" data-stato="${it.pubblico ? 1 : 0}" data-nome="${esc(it.nome || '')}">${it.pubblico
+        ? _bIco(ICO.lucchetto) + L('Non condividere', 'Stop sharing', 'Dejar de compartir')
+        : _bIco(ICO.condividi) + L('Condividi', 'Share', 'Compartir')}</button>`
       : `<button type="button" class="btn mini lib-importa" data-id="${it.id}">${_bIco(ICO.piu)}${L('Aggiungi', 'Add', 'Añadir')}</button>`);
   return `<div class="lib-card" data-id="${it.id}" data-tipo="${esc(it.tipo || '')}">
     <div class="lib-media-wrap">${media}${it.combo ? `<span class="lib-combo">${L('con suono', 'with sound', 'con sonido')}</span>` : ''}</div>
     <div class="lib-nome" title="${esc(it.nome)}">${esc(it.nome)}</div>
-    <div class="meta">${it.mio ? `<strong>${L('tuo', 'yours', 'tuyo')}</strong>` : L('di', 'by', 'de') + ' ' + esc(it.autore)}${it.usi ? ' · ' + it.usi + ' ' + L('usi', 'uses', 'usos') : ''}</div>
+    <div class="meta">${it.mio
+      ? `<strong>${L('tuo', 'yours', 'tuyo')}</strong> · ${it.pubblico ? L('condiviso', 'shared', 'compartido') : L('privato', 'private', 'privado')}`
+      : L('di', 'by', 'de') + ' ' + esc(it.autore)}${it.usi ? ' · ' + it.usi + ' ' + L('usi', 'uses', 'usos') : ''}</div>
     <div class="lib-azioni">${audio}${principale}</div>
   </div>`;
 }
@@ -12096,15 +12110,38 @@ async function caricaLibreria() {
   if (!g) return;
   const q = (document.getElementById('lib-cerca')?.value || '').trim();
   try {
-    const items = await chiediLibreria({ tipo: _libTipo, q });
+    let items = await chiediLibreria({ tipo: _libTipo, q, privati: _libMiei });
+    if (_libMiei) items = items.filter((it) => it.mio);
     if (!items.length) {
-      g.innerHTML = `<p class="vuoto">${L('Ancora niente qui. Condividi il primo: carica un effetto in «Effetti & suoni» e spunta “Rendi pubblico” — comparirà qui.', 'Nothing here yet. Share the first one: upload an effect in «Effects & sounds» and tick “Make it public” — it will show here.', 'Aún no hay nada. Comparte el primero: sube un efecto en «Efectos y sonidos» y marca “Hazlo público” — aparecerá aquí.')}</p>`;
+      g.innerHTML = `<p class="vuoto">${_libMiei
+        ? L('Non hai ancora nessun media. Caricane uno qui sotto: da lì lo usi negli alert, nell’overlay e lo condividi con un click.', "You don't have any media yet. Upload one below: from there you use it in alerts, in the overlay, and share it with one click.", 'Aún no tienes ningún medio. Sube uno abajo: desde ahí lo usas en las alertas, en el overlay y lo compartes con un clic.')
+        : L('Ancora niente di condiviso. Il primo puoi essere tu: apri «Solo i miei» e premi Condividi su un tuo media.', 'Nothing shared yet. You can be the first: open «Only mine» and press Share on one of your media.', 'Aún no hay nada compartido. Puedes ser el primero: abre «Solo los míos» y pulsa Compartir en uno de tus medios.')}</p>`;
       return;
     }
     g.innerHTML = items.map((it) => libItemHtml(it, 'aggiungi')).join('');
   } catch (e) {
     g.innerHTML = `<p class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</p>`;
   }
+}
+
+async function condividiMedia(btn) {
+  if (DEMO) { toast(L('In demo non si condivide — accedi per farlo davvero.', "In demo you can't share — log in to do it for real.", 'En la demo no se comparte — inicia sesión para hacerlo de verdad.')); return; }
+  const rendiPubblico = btn.dataset.stato !== '1';
+  let nome = btn.dataset.nome || '';
+  if (rendiPubblico) {
+    nome = ((await chiediTesto({
+      titolo: L('Condividi questo media', 'Share this medium', 'Comparte este medio'),
+      testo: L('Con che nome lo vedranno gli altri streamer nella libreria?', 'What name will other streamers see it with in the library?', '¿Con qué nombre lo verán los otros streamers en la biblioteca?'),
+      valore: nome, ok: L('Condividi', 'Share', 'Compartir'),
+    })) || '').trim();
+    if (!nome) return;
+  }
+  await api('/api/streamer/effetti/' + btn.dataset.id + '/pubblico', { method: 'PATCH', body: { pubblico: rendiPubblico, nome } });
+  toast(rendiPubblico
+    ? L('Condiviso nella libreria', 'Shared in the library', 'Compartido en la biblioteca')
+    : L('Tornato privato', 'Made private again', 'Vuelto a privado'));
+  caricaEffetti();
+  caricaLibreria();
 }
 
 async function importaLibreria(id, btn) {
