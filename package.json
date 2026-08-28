@@ -17,7 +17,7 @@
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "test": "node --test",
-    "cancelli": "node scripts/spoglia-commenti.mjs --verifica && node scripts/verifica-stile.mjs && node scripts/verifica-libreria.mjs",
+    "cancelli": "node scripts/verifica-riservati.mjs && node scripts/spoglia-commenti.mjs --verifica && node scripts/verifica-stile.mjs && node scripts/verifica-libreria.mjs",
     "pulisci-commenti": "node scripts/spoglia-commenti.mjs",
     "ganci": "node scripts/installa-ganci.mjs"
   },

@@ -3635,7 +3635,7 @@ class Coscienza:
         return self.neuromodulatori()
 
     # ============================================ L'APPRAISAL SITUATO (Lazarus, Scherer)
-    # Traduzione fedele degli studi di RAGIONE.md. La chimica di Doya (neuromodulatori) e il
+    # Traduzione fedele degli studi interni. La chimica di Doya (neuromodulatori) e il
     # campo gliale (campo_lento) regolano COME sceglie, ma leggono solo lo stato INTERNO
     # (vigore, auto-sorpresa, energia): sono CIECHI alla situazione. Manca il pezzo che gli
     # studi mettono al centro del ragionare-in-base-al-sentimento: l'APPRAISAL — il giudizio

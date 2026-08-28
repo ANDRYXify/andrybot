@@ -46,3 +46,27 @@ che sono commento per intero**. Se il lexer sbagliasse, la riga resterebbe
 com'è: non può tagliare codice a metà.
 
 Da lanciare prima di ogni deploy, insieme agli altri collaudi.
+
+## Le tracce private non stanno su git
+
+Il repository è **pubblico**. Quattro documenti che dicevano di sé stessi
+«Privato. Solo per noi — non da pubblicare» ci sono stati dentro per settimane:
+`ROTTA.md`, `CERVELLO.md`, `RAGIONE.md`, `anatomia.html`. Non c'era niente che
+lo impedisse, e ricordarselo a mano non è un metodo.
+
+Adesso sono **fuori dal tracciamento** (restano sul disco di chi ci lavora, in
+`.gitignore`) e c'è la regola, per costruzione:
+
+> Un file che **dichiara** di essere privato non può essere tracciato da git.
+
+La dichiarazione sta nel documento stesso, quindi non c'è un secondo elenco da
+tenere allineato: chi scrive una traccia privata la marca come sempre, e
+`scripts/verifica-riservati.mjs` fa il resto. Gira dentro `npm run cancelli`,
+quindi anche nel gancio pre-push: una traccia privata non può nemmeno essere
+spinta per sbaglio. Messo alla prova rimettendo `ROTTA.md` con `git add -f`:
+uscita 1.
+
+**Quello che il cancello non può fare** è cancellare il passato. Quei documenti
+sono stati pubblici, quindi restano recuperabili dalla cronologia dei commit
+finché la cronologia non viene riscritta. Toglierli da adesso in poi è
+necessario, non sufficiente.
