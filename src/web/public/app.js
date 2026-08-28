@@ -2558,9 +2558,11 @@ function aggiornaTestataPagina() {
 
   const gid = gruppoDiScheda(schedaAttiva);
   if (gid) el.style.setProperty('--gc', `var(--g-${gid})`); else el.style.removeProperty('--gc');
+  const h1Prima = el.querySelector('h1');
+  const stessoTitolo = !!h1Prima && h1Prima.textContent.trim() === String(titolo).trim();
   el.innerHTML =
     `${area ? `<div class="pt-occhiello">${esc(area)}</div>` : ''}` +
-    `<h1>${titoloParole(titolo)}</h1>` +
+    `<h1${stessoTitolo ? ' class="fermo"' : ''}>${titoloParole(titolo)}</h1>` +
     `${desc ? `<p>${esc(desc)}</p>` : ''}` +
     barraFamigliaHtml(schedaAttiva) +
     sottoSchedeHtml(schedaAttiva) +
@@ -14525,6 +14527,29 @@ async function _chiediPrimaDiUscire() {
   return true;
 }
 
+function _scambiaScheda(id, sezioni) {
+  morphDa(null);
+  chiudiMenuTop();
+  chiudiMenuMobile();
+  aggiornaStatoNav(id);
+  document.querySelectorAll('.pannello-scheda').forEach((p) =>
+    p.classList.toggle('visibile', p.dataset.scheda === id));
+  const testata = document.getElementById('pagina-testata');
+  if (testata) testata.classList.remove('entra', 'pronta');
+  aggiornaTestataPagina();
+  sezioni.forEach((p) => {
+    rendiCartePieghevoli(p, id);
+    p.classList.remove('scambio');
+    void p.offsetWidth;
+    if (!_menoMoto) p.classList.add('scambio');
+  });
+  applicaSottoSchede(id);
+  caricaDatiScheda(id);
+  azzeraBarraSalva();
+  if (DEMO) aggiornaSpiegazioneDemo();
+  if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: _menoMoto ? 'auto' : 'smooth' });
+}
+
 function vaiAScheda(id) {
   if (id !== schedaAttiva && _salvaSporco && !_uscitaInCorso) {
     _uscitaInCorso = true;
@@ -14543,6 +14568,9 @@ function vaiAScheda(id) {
   try { history.replaceState(null, '', '#' + id); } catch {  }
 
   const sezioni = [...document.querySelectorAll('.pannello-scheda')].filter((p) => p.dataset.scheda === id);
+
+  if (stessaFamiglia(prima, id)) { _scambiaScheda(id, sezioni); return; }
+
   if (org && !_menoMoto) morphDa(org);
   try { document.documentElement.dataset.verso = _versoVerso(prima, id); } catch (e) {  }
   const tr = transizione(() => {

@@ -522,10 +522,13 @@ body.pad-vivo #plancia-lancia { bottom: calc(130px + env(safe-area-inset-bottom,
   --molla-pieno: linear(0,0.0068,0.0253,0.0534,0.0889,0.13,0.1753,0.2234,0.2731,0.3236,0.3741,0.4238,0.4723,0.5191,0.564,0.6067,0.6469,0.6847,0.72,0.7527,0.7828,0.8105,0.8358,0.8587,0.8795,0.8982,0.9149,0.9298,0.9429,0.9545,0.9647,0.9735,0.9811,0.9876,0.9931,0.9977,1.0016,1.0047,1.0073,1.0093,1.0108,1.0119,1.0126,1.0131,1.0133,1.0133,1.0131,1.0128,1.0124,1.0119,1.0113,1.0107,1.01,1.0093,1.0087,1.008,1.0073,1.0067,1.0061,1.0055,1.005,1.0044,1.0039,1.0035,1);
   --molla-scena: linear(0,0.006,0.0226,0.0477,0.0795,0.1164,0.1571,0.2005,0.2456,0.2915,0.3376,0.3833,0.4282,0.4718,0.5139,0.5542,0.5927,0.6291,0.6634,0.6956,0.7256,0.7536,0.7795,0.8034,0.8254,0.8455,0.8639,0.8807,0.8959,0.9096,0.9219,0.933,0.9429,0.9517,0.9596,0.9665,0.9726,0.9779,0.9826,0.9866,0.9901,0.9931,0.9956,0.9978,0.9995,1.001,1.0022,1.0032,1.004,1.0045,1.005,1.0052,1.0054,1.0055,1.0055,1.0054,1.0053,1.0052,1.005,1.0048,1.0045,1.0043,1.004,1.0038,1);
 
-  --t-lieve: 290ms;
-  --t-medio: 414ms;
-  --t-pieno: 621ms;
-  --t-scena: 808ms;
+  --t-lieve: 120ms;
+  --t-medio: 220ms;
+  --t-pieno: 320ms;
+  --t-scena: 420ms;
+  --t-scambio: 150ms;
+  --ease-uscita: cubic-bezier(.4, 0, 1, 1);
+  --ease-entrata: cubic-bezier(.16, .84, .34, 1);
 
   --t-molla-giu: 90ms;
   --t-molla-su: 340ms;
@@ -590,7 +593,7 @@ body.leggero #anime-sfondo::after, body.meno-moto #anime-sfondo::after { animati
   #anime-sfondo::after, .pl-atmo { animation: none !important; }
   .btn::after, .pl-tile::after { display: none; }
   :root { --molla-lieve: ease; --molla-medio: ease; --molla-pieno: ease; --molla-scena: ease;
-          --t-lieve: .01ms; --t-medio: .01ms; --t-pieno: .01ms; --t-scena: .01ms; }
+          --t-lieve: .01ms; --t-medio: .01ms; --t-pieno: .01ms; --t-scena: .01ms; --t-scambio: .01ms; }
 }
 
 body.senza-cursore #an-cursore-ring,
@@ -742,22 +745,27 @@ body.pad-guida.cursore-on, body.pad-guida.cursore-on * { cursor: none !important
   background: currentColor; opacity: .5; vertical-align: baseline;
 }
 
+.pannello-scheda.scambio { animation: sc-entra var(--t-scambio) var(--ease-entrata) both; }
+@keyframes sc-entra { from { opacity: 0; transform: translateY(4px); } }
+
+.pagina-testata h1.fermo .pt-parola i { animation: none; opacity: 1; transform: none; }
+
 ::view-transition-group(contenuto) {
   animation-duration: var(--t-medio);
-  animation-timing-function: var(--molla-medio);
+  animation-timing-function: var(--ease-entrata);
 }
 ::view-transition-old(contenuto),
 ::view-transition-new(contenuto) { object-fit: cover; object-position: top left; }
-::view-transition-old(contenuto) { animation: vt-esce .16s cubic-bezier(.4, 0, 1, 1) both; }
-::view-transition-new(contenuto) { animation: vt-entra var(--t-medio) var(--molla-medio) 40ms both; }
+::view-transition-old(contenuto) { animation: vt-esce 90ms var(--ease-uscita) both; }
+::view-transition-new(contenuto) { animation: vt-entra var(--t-medio) var(--ease-entrata) 30ms both; }
 
-:root[data-verso="avanti"] ::view-transition-old(contenuto) { animation: vt-via-sx .2s cubic-bezier(.4, 0, 1, 1) both; }
-:root[data-verso="avanti"] ::view-transition-new(contenuto) { animation: vt-da-dx var(--t-medio) var(--molla-lieve) 30ms both; }
-:root[data-verso="indietro"] ::view-transition-old(contenuto) { animation: vt-via-dx .2s cubic-bezier(.4, 0, 1, 1) both; }
-:root[data-verso="indietro"] ::view-transition-new(contenuto) { animation: vt-da-sx var(--t-medio) var(--molla-lieve) 30ms both; }
+:root[data-verso="avanti"] ::view-transition-old(contenuto) { animation: vt-via-sx 110ms var(--ease-uscita) both; }
+:root[data-verso="avanti"] ::view-transition-new(contenuto) { animation: vt-da-dx var(--t-medio) var(--ease-entrata) 20ms both; }
+:root[data-verso="indietro"] ::view-transition-old(contenuto) { animation: vt-via-dx 110ms var(--ease-uscita) both; }
+:root[data-verso="indietro"] ::view-transition-new(contenuto) { animation: vt-da-sx var(--t-medio) var(--ease-entrata) 20ms both; }
 ::view-transition-group(testata), ::view-transition-group(marchio), ::view-transition-group(piede) {
   animation-duration: var(--t-medio);
-  animation-timing-function: var(--molla-medio);
+  animation-timing-function: var(--ease-entrata);
 }
 @keyframes vt-esce { to { opacity: 0; transform: translateY(-8px) scale(.994); } }
 @keyframes vt-entra { from { opacity: 0; transform: translateY(16px) scale(.988); } }
