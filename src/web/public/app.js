@@ -4572,8 +4572,37 @@ function opzioniFont(sel) {
   return f.map(([v, n]) => `<option value="${v}"${v === sel ? ' selected' : ''}>${n}</option>`).join('');
 }
 
+let _EFFETTI = [];
+const urlEffetto = (rif) => {
+  const m = /^effetto:(.+)$/i.exec(String(rif || ''));
+  if (!m) return '';
+  const e = _EFFETTI.find((x) => String(x.comando).toLowerCase() === m[1].toLowerCase());
+  return (e && e.url) || '';
+};
+function _gruppoIconeMie() {
+  const img = _EFFETTI.filter((e) => e.tipo === 'immagine');
+  if (!img.length) return '';
+  return `<optgroup label="${esc(L('Le mie', 'Mine', 'Las mías'))}">`
+    + img.map((e) => `<option value="effetto:${esc(e.comando)}">!${esc(e.comando)}</option>`).join('') + '</optgroup>';
+}
+function _rifaiMenuIcone(a) {
+  const base = ICONA_OPTS().map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('');
+  document.querySelectorAll('.al-icona').forEach((sel) => {
+    const k = sel.closest('.alert-blocco[data-alert]')?.dataset.alert;
+    const val = sel.value || (a && k && a[k] ? (a[k].icona || '') : '');
+    sel.innerHTML = base + _gruppoIconeMie();
+    sel.value = val;
+  });
+  document.querySelectorAll('.w-icona').forEach((sel) => {
+    const val = sel.value;
+    sel.innerHTML = base + _gruppoIconeMie();
+    sel.value = val;
+  });
+}
+
 function popolaMediaSuoniAlert(effetti, alertsCfg) {
   const a = alertsCfg || (impostazioni().alerts) || {};
+  if (Array.isArray(effetti)) _EFFETTI = effetti;
   const audio = (effetti || []).filter((e) => e.tipo === 'audio');
   const visivi = (effetti || []).filter((e) => e.tipo === 'immagine' || e.tipo === 'video');
   const gruppoAudio = audio.length ? `<optgroup label="I miei suoni caricati">${audio.map((e) => `<option value="effetto:${esc(e.comando)}">!${esc(e.comando)}</option>`).join('')}</optgroup>` : '';
@@ -4584,7 +4613,11 @@ function popolaMediaSuoniAlert(effetti, alertsCfg) {
     if (selS) { selS.innerHTML = opzioniSuono('') + gruppoAudio; selS.value = c.suono || ''; }
     const selM = b.querySelector('.al-media');
     if (selM) { selM.innerHTML = optMedia; selM.value = c.media || ''; }
+    const selI = b.querySelector('.al-icona');
+    if (selI) selI.value = c.icona != null ? c.icona : selI.value;
   });
+  _rifaiMenuIcone(a);
+  if (typeof aggiornaAnteprima === 'function') aggiornaAnteprima();
 }
 
 const ALERT_TIPI = () => [
@@ -4682,7 +4715,11 @@ function bloccoAlert(t, a) {
         <div><label class="campo">${L('Colore', 'Color', 'Color')}</label><input type="color" class="al-colore" value="${_hx(acc, t.acc)}"></div>
         <div><label class="campo">${L('Volume', 'Volume', 'Volumen')}: <strong><span class="al-vol-v">${vol}</span>%</strong></label><input type="range" class="al-vol" min="0" max="100" value="${vol}"></div>
         <div><label class="campo">Font</label><select class="al-font">${opzioniFont(c.font || '')}</select></div>
-        <div><label class="campo">${L('Icona', 'Icon', 'Icono')}</label><select class="al-icona">${ICONA_OPTS().map(([v, t]) => `<option value="${v}"${v === (c.icona || '') ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></div>
+        <div><label class="campo">${L('Icona', 'Icon', 'Icono')}</label>
+          <select class="al-icona">${ICONA_OPTS().map(([v, t]) => `<option value="${v}"${v === (c.icona || '') ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>
+          <input type="file" class="al-up al-up-icona" accept="image/*" data-slot="icona" hidden>
+          <button type="button" class="btn secondario mini al-btn-up spazio-sopra" data-slot="icona">${_bIco(ICO.carica)}${L('La mia icona…', 'My own icon…', 'Mi icono…')}</button>
+        </div>
         ${soglia}
       </div>
       <div class="al-media-wrap spazio-sopra">
@@ -4724,7 +4761,11 @@ function bloccoWidget(pref, w, titolo, kind) {
         ${cSel(`${pref}-pos`, L('Posizione', 'Position', 'Posición'), POS4_OPTS(), w.posizione)}
         ${cSel(`${pref}-font`, 'Font', FONT_OPTS(), st.font)}
         ${cSel(`${pref}-dim`, L('Dimensione', 'Size', 'Tamaño'), DIM3_OPTS(), st.dim)}
-        <div><label class="campo">${L('Icona', 'Icon', 'Icono')}</label><select class="w-icona" id="${pref}-icona">${ICONA_OPTS().map(([v, t]) => `<option value="${v}"${v === (st.icona == null ? (pref === 'wf' ? 'cuore' : 'stella') : st.icona) ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></div>
+        <div><label class="campo">${L('Icona', 'Icon', 'Icono')}</label>
+          <select class="w-icona" id="${pref}-icona">${ICONA_OPTS().map(([v, t]) => `<option value="${v}"${v === (st.icona == null ? (pref === 'wf' ? 'cuore' : 'stella') : st.icona) ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>
+          <input type="file" class="al-up w-up-icona" accept="image/*" data-slot="icona" data-w="${pref}" hidden>
+          <button type="button" class="btn secondario mini al-btn-up spazio-sopra" data-slot="icona">${_bIco(ICO.carica)}${L('La mia icona…', 'My own icon…', 'Mi icono…')}</button>
+        </div>
       </div>
       <div class="griglia-campi spazio-sopra">
         ${cCol(`${pref}-bg`, L('Sfondo', 'Background', 'Fondo'), st.sfondo)}
@@ -5215,7 +5256,9 @@ function _anteprimaWidget(pref, id, nome) {
   el.className = 'ovl-widget dim-' + (w.dim || 'media') + ' forma-' + formaDi(cst) + ' materia-' + materiaDi(cst) + ' cornice-' + (cst.cornice === 'linea' ? 'nessuna' : corniceDi(cst));
   _setVars(el, { '--bg': w.sfondo, '--op': w.opacita + '%', '--fg': w.testo, '--acc': w.accento, '--radius': w.bordoRaggio + 'px', '--font': FONT_VAR[w.font] });
   const icoW = document.querySelector(`.alert-blocco[data-w="${pref}"] .w-icona`)?.value;
-  el.querySelector('.w-ico').innerHTML = icoW === '' ? '' : (icoSvg(icoW || (pref === 'wf' ? 'cuore' : 'stella')) || AP_ICO_WIDGET[id] || '');
+  const wUrl = urlEffetto(icoW);
+  el.querySelector('.w-ico').innerHTML = icoW === '' ? ''
+    : (wUrl ? `<img src="${esc(wUrl)}" alt="">` : (icoSvg(icoW || (pref === 'wf' ? 'cuore' : 'stella')) || AP_ICO_WIDGET[id] || ''));
   el.querySelector('.w-testo').innerHTML = esc(_v(`${pref}-testo`) || '{nome}').replace(/\{nome\}/g, '<b>' + esc(nome) + '</b>');
 }
 
@@ -5298,7 +5341,9 @@ function aggiornaAnteprima() {
       '--dim-ico': (Number(st.dimIcona) || 46) + 'px', '--peso': String(st.peso || '700'), '--spaz': (Number(st.spaziatura) || 0) + 'px',
       '--ombra-testo': st.ombraTesto === false ? 'none' : '0 2px 10px rgba(0,0,0,.45)' });
     const icoSub = document.querySelector('.alert-blocco[data-alert="sub"] .al-icona')?.value;
-    _g('ap-alert-ico').innerHTML = icoSub === '' ? '' : (icoSvg(icoSub || 'stella') || AP_ICO_ALERT);
+    const suUrl = urlEffetto(icoSub);
+    _g('ap-alert-ico').innerHTML = icoSub === '' ? ''
+      : (suUrl ? `<img src="${esc(suUrl)}" alt="">` : (icoSvg(icoSub || 'stella') || AP_ICO_ALERT));
     _g('ap-alert-testo').innerHTML = _vivo ? ALERT_FINTI()[_vivoAlert][1] : ALERT_FINTI()[0][1];
 
     card.classList.add('dentro');
@@ -6231,9 +6276,9 @@ function caricaAlert() {
     const inp = btn.parentElement.querySelector('.al-up'); if (inp) inp.click();
   }));
   document.querySelectorAll('.al-up').forEach((inp) => inp.addEventListener('change', () => conErrore(async () => {
-    const blocco = inp.closest('.alert-blocco[data-alert]');
     const file = inp.files[0];
-    if (blocco && file) await caricaMediaAlert(blocco.dataset.alert, inp.dataset.slot, file);
+    const chi = inp.dataset.w || inp.closest('.alert-blocco[data-alert]')?.dataset.alert;
+    if (chi && file) await caricaMediaAlert(chi, inp.dataset.slot, file);
     inp.value = '';
   })));
   _g('co-prova')?.addEventListener('click', () => conErrore(async () => {
@@ -11793,7 +11838,7 @@ async function caricaEffettoUpload(ev) {
 
 async function caricaMediaAlert(kind, slot, file) {
   if (DEMO) { toast(L('In demo non si caricano file — accedi per farlo davvero.', "In demo you can't upload files — log in to do it for real.", 'En la demo no se suben archivos — inicia sesión para hacerlo de verdad.')); return; }
-  const blocco = document.querySelector(`.alert-blocco[data-alert="${kind}"]`);
+  const blocco = document.querySelector(`.alert-blocco[data-alert="${kind}"], .alert-blocco[data-w="${kind}"]`);
   const btn = blocco?.querySelector(`.al-btn-up[data-slot="${slot}"]`);
   const esito = btn?.parentElement?.querySelector('.al-up-esito');
   const testoOrig = btn ? btn.textContent : '';
@@ -11810,10 +11855,18 @@ async function caricaMediaAlert(kind, slot, file) {
     if (!res.ok) throw new Error(dati?.errore || `errore ${res.status}`);
 
     const lib = await api('/api/streamer/effetti').catch(() => ({ effetti: [] }));
-    const cfg = impostazioni().alerts || {};
-    cfg[kind] = { ...(cfg[kind] || {}), [slot === 'suono' ? 'suono' : 'media']: dati.ref };
-    popolaMediaSuoniAlert(lib.effetti || [], cfg);
-    if (esito) esito.textContent = '✓ ' + (slot === 'suono' ? L('suono', 'sound', 'sonido') : (dati.tipo || 'media')) + ' ' + L('caricato e assegnato', 'uploaded and assigned', 'subido y asignado');
+    if (slot === 'icona' && (kind === 'wf' || kind === 'ws')) {
+      _EFFETTI = lib.effetti || [];
+      const sel = _g(`${kind}-icona`);
+      _rifaiMenuIcone(impostazioni().alerts || {});
+      if (sel) { sel.value = dati.ref; sel.dispatchEvent(new Event('change', { bubbles: true })); }
+    } else {
+      const cfg = impostazioni().alerts || {};
+      const campo = slot === 'suono' ? 'suono' : (slot === 'icona' ? 'icona' : 'media');
+      cfg[kind] = { ...(cfg[kind] || {}), [campo]: dati.ref };
+      popolaMediaSuoniAlert(lib.effetti || [], cfg);
+    }
+    if (esito) esito.textContent = '✓ ' + (slot === 'suono' ? L('suono', 'sound', 'sonido') : (slot === 'icona' ? L('icona', 'icon', 'icono') : (dati.tipo || 'media'))) + ' ' + L('caricato e assegnato', 'uploaded and assigned', 'subido y asignado');
     toast(L('Caricato e assegnato all\'alert!', 'Uploaded and assigned to the alert!', '¡Subido y asignado a la alerta!'));
   } catch (e) {
     if (esito) esito.textContent = '' + e.message;

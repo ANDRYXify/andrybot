@@ -77,7 +77,11 @@ const xyOk = (v) => (v && Number.isFinite(Number(v.x)) && Number.isFinite(Number
 // normalizzazione, e un campo che non e' elencato viene buttato via in silenzio.
 const ICONE_OVL_K = ['stella', 'cuore', 'fulmine', 'megafono', 'corona', 'fuoco', 'diamante', 'trofeo', 'regalo', 'razzo',
   'scudo', 'cuffie', 'gamepad', 'nota', 'chat', 'campana', 'scintille', 'mano', 'occhio', 'moneta'];
-const icoOk = (x) => (ICONE_OVL_K.includes(String(x)) ? String(x) : '');
+const icoOk = (x) => {
+  const v = String(x || '');
+  if (ICONE_OVL_K.includes(v)) return v;
+  return /^effetto:[a-z0-9_]{1,30}$/i.test(v) ? v.toLowerCase() : '';
+};
 const PESO_OVL = ['400', '700', '800', '900'];
 const MAIUSC_OVL = ['no', 'maiuscolo', 'capo'];
 const USCITA_OVL = ['come', 'slide', 'pop', 'zoom', 'fade', 'flip', 'bounce'];
@@ -3360,6 +3364,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       xy: (e.posx != null && e.posy != null) ? { x: e.posx, y: e.posy, s: e.scala != null ? e.scala : 100, r: e.rot || 0 } : null,
       // libreria condivisa
       pubblico: !!e.pubblico, nome: e.nome || '', combo: !!e.suono_file,
+      url: e.file ? effects.mediaUrl(login, e.file) : '',
     }));
     res.json({ effetti, overlayUrl: effects.overlayUrl(login) });
   }));
@@ -3893,10 +3898,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (!req.file) return res.status(400).json({ errore: 'nessun file caricato' });
 
     const kind = String(req.body?.kind || '').toLowerCase();
-    const slot = String(req.body?.slot || '').toLowerCase();   // 'suono' | 'media'
+    const slot = String(req.body?.slot || '').toLowerCase();   // 'suono' | 'media' | 'icona'
     const errore = async (msg) => { await pulisciTemp(req.file?.path); return res.status(400).json({ errore: msg }); };
-    if (!ALERT_KINDS.includes(kind)) return errore('evento non valido');
-    if (slot !== 'suono' && slot !== 'media') return errore('slot non valido');
+    const perWidget = slot === 'icona' && (kind === 'wf' || kind === 'ws');
+    if (!ALERT_KINDS.includes(kind) && !perWidget) return errore('evento non valido');
+    if (slot !== 'suono' && slot !== 'media' && slot !== 'icona') return errore('slot non valido');
 
     const destDir = join(effectsRoot, login);
     mkdirSync(destDir, { recursive: true });
@@ -3917,6 +3923,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       await pulisciTemp(join(destDir, esito.file));
       return res.status(400).json({ errore: "qui serve un'IMMAGINE o un VIDEO" });
     }
+    if (slot === 'icona' && esito.tipo !== 'immagine') {
+      await pulisciTemp(join(destDir, esito.file));
+      return res.status(400).json({ errore: "per l'icona serve un'IMMAGINE (png, jpg, gif, webp…)" });
+    }
 
     let vecchioFile;
     try {
@@ -3931,12 +3941,22 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     }
     if (vecchioFile && vecchioFile !== esito.file) await pulisciTemp(join(destDir, vecchioFile));
 
-    // assegna al blocco alert e persisti (merge sulle impostazioni correnti)
+    // assegna dove va e persisti (merge sulle impostazioni correnti)
     const s = streamers.get(login);
     const settings = { ...(s?.settings || {}) };
-    const alerts = { ...(settings.alerts || {}) };
-    alerts[kind] = { ...(alerts[kind] || {}), [slot === 'suono' ? 'suono' : 'media']: `effetto:${comando}` };
-    settings.alerts = alerts;
+    if (perWidget) {
+      const quale = kind === 'wf' ? 'ultimoFollower' : 'ultimoSub';
+      const ow = { ...(settings.overlayWidget || {}) };
+      const w = { ...(ow[quale] || {}) };
+      w.stile = { ...(w.stile || {}), icona: `effetto:${comando}` };
+      ow[quale] = w;
+      settings.overlayWidget = ow;
+    } else {
+      const alerts = { ...(settings.alerts || {}) };
+      const campo = slot === 'suono' ? 'suono' : (slot === 'icona' ? 'icona' : 'media');
+      alerts[kind] = { ...(alerts[kind] || {}), [campo]: `effetto:${comando}` };
+      settings.alerts = alerts;
+    }
     streamers.setSettings(login, settings);
 
     res.json({ ok: true, ref: `effetto:${comando}`, comando, tipo: esito.tipo, url: effects.mediaUrl(login, esito.file) });

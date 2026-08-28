@@ -38,7 +38,7 @@
 .alert-card.glow { --ombra-extra: drop-shadow(0 0 14px color-mix(in srgb, var(--acc) 62%, transparent)); }
 .alert-card .alert-ico { width: var(--dim-ico, 46px); height: var(--dim-ico, 46px); margin: 0 auto .35rem; color: var(--acc); }
 .alert-card.senza-ico .alert-ico, .alert-card .alert-ico:empty { display: none; }
-.alert-card .alert-ico svg { width: 100%; height: 100%; }
+.alert-card .alert-ico svg, .alert-card .alert-ico img { width: 100%; height: 100%; object-fit: contain; }
 .alert-card .alert-media { display: block; max-width: 100%; max-height: 42vh; margin: 0 auto .6rem; border-radius: 12px; object-fit: contain; }
 .alert-card .alert-testo {
   font-size: var(--size); font-weight: var(--peso, 700); line-height: 1.15;
@@ -122,7 +122,7 @@
   white-space: nowrap;
 }
 .ovl-widget .w-ico { width: 20px; height: 20px; color: var(--acc); flex: 0 0 auto; }
-.ovl-widget .w-ico svg { width: 100%; height: 100%; }
+.ovl-widget .w-ico svg, .ovl-widget .w-ico img { width: 100%; height: 100%; object-fit: contain; }
 .ovl-widget .w-testo { font-weight: 700; }
 .ovl-widget .w-testo b { color: var(--acc); }
 .ovl-widget.dim-piccola { font-size: .82rem; }

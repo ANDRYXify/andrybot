@@ -520,7 +520,9 @@
           : '<img class="alert-media" src="' + escHtml(ev.mediaUrl) + '">';
       }
       const libro = window.ICONE_OVL;
-      const icoScelta = ev.icona === '' ? '' : (libro && ev.icona ? libro.svg(ev.icona) : (ALERT_ICO[ev.kind] || ALERT_ICO.follow));
+      const icoScelta = ev.icona === '' ? ''
+        : (ev.iconaUrl ? '<img src="' + escHtml(ev.iconaUrl) + '" alt="">'
+          : (libro && ev.icona ? libro.svg(ev.icona) : (ALERT_ICO[ev.kind] || ALERT_ICO.follow)));
       card.innerHTML = mediaHtml + '<div class="alert-ico">' + icoScelta + '</div><div class="alert-testo">' + testoHtml + '</div>';
       alertBox.appendChild(card);
       const vol01 = (ev.volume != null ? ev.volume : 100) / 100;
@@ -663,7 +665,8 @@
       });
       const libroW = window.ICONE_OVL;
       el.querySelector('.w-ico').innerHTML = st.icona === '' ? ''
-        : (libroW && st.icona ? libroW.svg(st.icona) : (WIDGET_ICO[id] || ''));
+        : (cfg.iconaUrl ? '<img src="' + escHtml(cfg.iconaUrl) + '" alt="">'
+          : (libroW && st.icona ? libroW.svg(st.icona) : (WIDGET_ICO[id] || '')));
       const tpl = cfg.testo || '{nome}';
       el.querySelector('.w-testo').innerHTML = escHtml(tpl).replace(/\{nome\}/g, '<b>' + escHtml(valore || '—') + '</b>');
     }

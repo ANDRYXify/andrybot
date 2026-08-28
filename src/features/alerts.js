@@ -114,6 +114,12 @@ export class AlertsEngine {
     } else {
       payload.suono = conf.suono || DEFAULT_SUONO[kind] || '';
     }
+    // ICONA: la chiave di una icona della libreria, oppure un'immagine caricata.
+    payload.icona = conf.icona != null ? String(conf.icona) : undefined;
+    if (String(conf.icona || '').toLowerCase().startsWith('effetto:')) {
+      const ico = this._risolviEffetto(channel, conf.icona);
+      if (ico && ico.tipo === 'immagine') payload.iconaUrl = ico.url;
+    }
     // MEDIA: un'immagine o un video caricato, mostrato insieme all'alert.
     const media = this._risolviEffetto(channel, conf.media);
     if (media && (media.tipo === 'immagine' || media.tipo === 'video')) {
@@ -194,9 +200,19 @@ export class AlertsEngine {
   // stato dei widget persistenti.
   tema(channel) {
     const s = this.cfg(channel) || {};
+    const w = (s.overlayWidget && typeof s.overlayWidget === 'object') ? s.overlayWidget : {};
+    // le icone caricate arrivano all'overlay gia' risolte in indirizzo: la
+    // pagina non sa niente della libreria Effetti, e non deve saperlo
+    const conIcone = {};
+    for (const [k, cfg] of Object.entries(w)) {
+      if (!cfg || typeof cfg !== 'object') { conIcone[k] = cfg; continue; }
+      const rif = cfg.stile && cfg.stile.icona;
+      const ico = String(rif || '').toLowerCase().startsWith('effetto:') ? this._risolviEffetto(channel, rif) : null;
+      conIcone[k] = (ico && ico.tipo === 'immagine') ? { ...cfg, iconaUrl: ico.url } : cfg;
+    }
     return {
       css: String(s.overlayCss || '').slice(0, 8000),
-      widget: (s.overlayWidget && typeof s.overlayWidget === 'object') ? s.overlayWidget : {},
+      widget: conIcone,
       stato: (s.overlayStato && typeof s.overlayStato === 'object') ? s.overlayStato : {},
     };
   }
