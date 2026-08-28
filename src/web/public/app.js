@@ -4597,6 +4597,35 @@ const ALERT_TIPI = () => [
 const FONT_OPTS = () => [['sistema', L('Sistema', 'System', 'Sistema')], ['rotondo', L('Arrotondato', 'Rounded', 'Redondeado')], ['condensato', L('Condensato', 'Condensed', 'Condensada')], ['mono', L('Monospazio', 'Monospace', 'Monoespaciada')], ['serif', L('Serif', 'Serif', 'Serif')], ['manga', L('Manga', 'Manga', 'Manga')]];
 const ANIM_ALERT_OPTS = () => [['slide', L('Scivola', 'Slide', 'Deslizar')], ['pop', L('Pop', 'Pop', 'Pop')], ['zoom', L('Zoom', 'Zoom', 'Zoom')], ['fade', L('Dissolvenza', 'Fade', 'Fundido')], ['flip', L('Ribalta', 'Flip', 'Voltear')], ['bounce', L('Rimbalzo', 'Bounce', 'Rebote')]];
 const ANIM_CHAT_OPTS = () => [['slide', L('Scivola', 'Slide', 'Deslizar')], ['fade', L('Dissolvenza', 'Fade', 'Fundido')], ['nessuna', L('Nessuna', 'None', 'Ninguna')]];
+const FORMA_OPTS = () => [
+  ['carta', L('Carta', 'Card', 'Tarjeta')], ['pillola', L('Pillola', 'Pill', 'Píldora')],
+  ['squadrata', L('Squadrata', 'Square', 'Cuadrada')], ['taglio', L('Angolo tagliato', 'Cut corner', 'Esquina cortada')],
+  ['insegna', L('Insegna', 'Banner', 'Estandarte')], ['esagono', L('Esagono', 'Hexagon', 'Hexágono')],
+  ['nastro', L('Nastro', 'Ribbon', 'Cinta')], ['fumetto', L('Fumetto', 'Speech bubble', 'Bocadillo')],
+];
+const MATERIA_OPTS = () => [
+  ['piatta', L('Tinta piatta', 'Flat', 'Plano')], ['sfumata', L('Sfumata', 'Gradient', 'Degradado')],
+  ['vetro', L('Vetro', 'Glass', 'Vidrio')], ['carta', L('Carta ruvida', 'Paper', 'Papel')],
+  ['neon', L('Neon', 'Neon', 'Neón')], ['crt', L('Schermo CRT', 'CRT screen', 'Pantalla CRT')],
+  ['griglia', L('Griglia', 'Grid', 'Rejilla')],
+];
+const CORNICE_OPTS = () => [
+  ['linea', L('Linea', 'Line', 'Línea')], ['nessuna', L('Nessuna', 'None', 'Ninguna')],
+  ['spessa', L('Spessa', 'Thick', 'Gruesa')], ['angoli', L('Solo gli angoli', 'Corners only', 'Solo esquinas')],
+  ['barra', L('Barra laterale', 'Side bar', 'Barra lateral')],
+];
+const COMP_OPTS = () => [
+  ['colonna', L('In colonna', 'Column', 'En columna')], ['riga', L('In riga', 'Row', 'En fila')],
+  ['riga-inv', L('In riga, al contrario', 'Row, reversed', 'En fila, al revés')],
+  ['sovrapposta', L('Testo sopra l\'immagine', 'Text over the image', 'Texto sobre la imagen')],
+];
+const _val = (opts, v) => (opts.some(([k]) => k === v) ? v : opts[0][0]);
+const formaDi = (st) => _val(FORMA_OPTS(), st && st.forma);
+const materiaDi = (st) => _val(MATERIA_OPTS(), st && st.materia);
+const corniceDi = (st) => _val(CORNICE_OPTS(), st && st.cornice);
+const compDi = (st) => _val(COMP_OPTS(), st && st.composizione);
+const classiIdentita = (st) => `forma-${formaDi(st)} materia-${materiaDi(st)} cornice-${corniceDi(st)}`;
+
 const DIM_OPTS = () => [['piccola', L('Piccola', 'Small', 'Pequeña')], ['media', L('Media', 'Medium', 'Mediana')], ['grande', L('Grande', 'Large', 'Grande')], ['enorme', L('Enorme', 'Huge', 'Enorme')]];
 const DIM3_OPTS = () => [['piccola', L('Piccola', 'Small', 'Pequeña')], ['media', L('Media', 'Medium', 'Mediana')], ['grande', L('Grande', 'Large', 'Grande')]];
 const POS4_OPTS = () => [['alto-sinistra', L('In alto a sx', 'Top left', 'Arriba izq.')], ['alto-destra', L('In alto a dx', 'Top right', 'Arriba der.')], ['basso-sinistra', L('In basso a sx', 'Bottom left', 'Abajo izq.')], ['basso-destra', L('In basso a dx', 'Bottom right', 'Abajo der.')]];
@@ -4609,16 +4638,25 @@ const cChk = (id, label, on) => `<label class="riga-check"><input type="checkbox
 
 const TEMPLATE_BUILTIN = [
 
-  { nome: 'Viola classico', dati: { al: { animazione: 'slide', sfondo: '#12101c', opacita: 90, testo: '#ffffff', bordoRaggio: 18, bordoSpessore: 2, glow: true, font: 'sistema', dimTesto: 27 }, ch: { sfondo: '#12101c', opacita: 80, testo: '#efeaff', bordoRaggio: 12, font: 'sistema', dim: 'media' }, acc: '#9146ff' } },
+  { nome: 'Viola classico', dati: { al: { animazione: 'slide', sfondo: '#12101c', opacita: 90, testo: '#ffffff', bordoRaggio: 18, bordoSpessore: 2, glow: true, font: 'sistema', dimTesto: 27, forma: 'carta', materia: 'sfumata', cornice: 'linea', composizione: 'colonna' }, ch: { sfondo: '#12101c', opacita: 80, testo: '#efeaff', bordoRaggio: 12, font: 'sistema', dim: 'media', forma: 'carta', materia: 'sfumata', cornice: 'nessuna' }, acc: '#9146ff' } },
 
-  { nome: 'Neon', dati: { al: { animazione: 'pop', sfondo: '#04010a', opacita: 62, testo: '#eafffb', bordoRaggio: 8, bordoSpessore: 2, glow: true, font: 'mono', dimTesto: 29 }, ch: { sfondo: '#04010a', opacita: 55, testo: '#d6fff7', bordoRaggio: 6, font: 'mono', dim: 'media' }, acc: '#00e5ff' } },
+  { nome: 'Neon', dati: { al: { animazione: 'pop', sfondo: '#04010a', opacita: 62, testo: '#eafffb', bordoRaggio: 8, bordoSpessore: 2, glow: true, font: 'mono', dimTesto: 29, forma: 'insegna', materia: 'neon', cornice: 'nessuna', composizione: 'riga' }, ch: { sfondo: '#04010a', opacita: 55, testo: '#d6fff7', bordoRaggio: 6, font: 'mono', dim: 'media', forma: 'taglio', materia: 'neon', cornice: 'nessuna' }, acc: '#00e5ff' } },
 
-  { nome: 'Minimal chiaro', dati: { al: { animazione: 'fade', sfondo: '#f7f7fa', opacita: 95, testo: '#15171c', bordoRaggio: 16, bordoSpessore: 0, glow: false, font: 'sistema', dimTesto: 24 }, ch: { sfondo: '#ffffff', opacita: 90, testo: '#22242b', bordoRaggio: 12, font: 'sistema', dim: 'piccola' }, acc: '#2b2d36' } },
+  { nome: 'Minimal chiaro', dati: { al: { animazione: 'fade', sfondo: '#f7f7fa', opacita: 95, testo: '#15171c', bordoRaggio: 16, bordoSpessore: 0, glow: false, font: 'sistema', dimTesto: 24, forma: 'squadrata', materia: 'piatta', cornice: 'barra', composizione: 'riga' }, ch: { sfondo: '#ffffff', opacita: 90, testo: '#22242b', bordoRaggio: 12, font: 'sistema', dim: 'piccola', forma: 'squadrata', materia: 'piatta', cornice: 'barra' }, acc: '#2b2d36' } },
 
-  { nome: 'Retro arcade', dati: { al: { animazione: 'bounce', sfondo: '#0a0a14', opacita: 96, testo: '#ffe600', bordoRaggio: 2, bordoSpessore: 4, glow: true, font: 'mono', dimTesto: 28 }, ch: { sfondo: '#0a0a14', opacita: 90, testo: '#ffe600', bordoRaggio: 2, font: 'mono', dim: 'media' }, acc: '#ff2e88' } },
+  { nome: 'Retro arcade', dati: { al: { animazione: 'bounce', sfondo: '#0a0a14', opacita: 96, testo: '#ffe600', bordoRaggio: 2, bordoSpessore: 4, glow: true, font: 'mono', dimTesto: 28, forma: 'squadrata', materia: 'crt', cornice: 'spessa', composizione: 'colonna' }, ch: { sfondo: '#0a0a14', opacita: 90, testo: '#ffe600', bordoRaggio: 2, font: 'mono', dim: 'media', forma: 'squadrata', materia: 'crt', cornice: 'linea' }, acc: '#ff2e88' } },
 
-  { nome: 'Manga', dati: { al: { animazione: 'zoom', sfondo: '#ffffff', opacita: 98, testo: '#0b0b0b', bordoRaggio: 6, bordoSpessore: 4, glow: false, font: 'manga', dimTesto: 30 }, ch: { sfondo: '#0b0b0b', opacita: 88, testo: '#ffffff', bordoRaggio: 6, font: 'manga', dim: 'media' }, acc: '#e60012' } },
+  { nome: 'Manga', dati: { al: { animazione: 'zoom', sfondo: '#ffffff', opacita: 98, testo: '#0b0b0b', bordoRaggio: 6, bordoSpessore: 4, glow: false, font: 'manga', dimTesto: 30, forma: 'fumetto', materia: 'carta', cornice: 'linea', composizione: 'sovrapposta' }, ch: { sfondo: '#0b0b0b', opacita: 88, testo: '#ffffff', bordoRaggio: 6, font: 'manga', dim: 'media', forma: 'fumetto', materia: 'carta', cornice: 'linea' }, acc: '#e60012' } },
+
+  { nome: 'Vetro', dati: { al: { animazione: 'fade', sfondo: '#1a2030', opacita: 70, testo: '#f4f8ff', bordoRaggio: 22, bordoSpessore: 1, glow: false, font: 'sistema', dimTesto: 26, forma: 'pillola', materia: 'vetro', cornice: 'linea', composizione: 'riga' }, ch: { sfondo: '#1a2030', opacita: 60, testo: '#eef4ff', bordoRaggio: 18, font: 'sistema', dim: 'media', forma: 'pillola', materia: 'vetro', cornice: 'nessuna' }, acc: '#7fd4ff' } },
+
+  { nome: 'Terminale', dati: { al: { animazione: 'slide', sfondo: '#06120c', opacita: 94, testo: '#a8ffb0', bordoRaggio: 0, bordoSpessore: 2, glow: false, font: 'mono', dimTesto: 24, forma: 'taglio', materia: 'griglia', cornice: 'angoli', composizione: 'riga' }, ch: { sfondo: '#06120c', opacita: 88, testo: '#a8ffb0', bordoRaggio: 0, font: 'mono', dim: 'piccola', forma: 'squadrata', materia: 'griglia', cornice: 'angoli' }, acc: '#35ff7a' } },
+
+  { nome: 'Nastro', dati: { al: { animazione: 'slide', sfondo: '#241206', opacita: 93, testo: '#fff4e6', bordoRaggio: 0, bordoSpessore: 0, glow: false, font: 'sistema', dimTesto: 27, forma: 'nastro', materia: 'sfumata', cornice: 'barra', composizione: 'riga' }, ch: { sfondo: '#241206', opacita: 85, testo: '#fff4e6', bordoRaggio: 0, font: 'sistema', dim: 'media', forma: 'nastro', materia: 'sfumata', cornice: 'barra' }, acc: '#ff8a2b' } },
+
+  { nome: 'Esagoni', dati: { al: { animazione: 'zoom', sfondo: '#0d1117', opacita: 92, testo: '#e6edf3', bordoRaggio: 0, bordoSpessore: 2, glow: true, font: 'sistema', dimTesto: 26, forma: 'esagono', materia: 'griglia', cornice: 'linea', composizione: 'colonna' }, ch: { sfondo: '#0d1117', opacita: 84, testo: '#e6edf3', bordoRaggio: 0, font: 'sistema', dim: 'media', forma: 'taglio', materia: 'griglia', cornice: 'linea' }, acc: '#58a6ff' } },
 ];
+
 
 function bloccoAlert(t, a) {
   const c = a[t.key] || {};
@@ -4830,6 +4868,12 @@ function pannelloAlert() {
       </div>
       <h4 class="spazio-sopra">${L('Aspetto', 'Appearance', 'Aspecto')} <span class="tenue">— ${L('vale per tutti gli alert', 'applies to all alerts', 'vale para todas las alertas')}</span></h4>
       <div class="griglia-campi spazio-sopra">
+        ${cSel('al-st-forma', L('Forma', 'Shape', 'Forma'), FORMA_OPTS(), formaDi(st))}
+        ${cSel('al-st-materia', L('Materia', 'Surface', 'Materia'), MATERIA_OPTS(), materiaDi(st))}
+        ${cSel('al-st-cornice', L('Cornice', 'Frame', 'Marco'), CORNICE_OPTS(), corniceDi(st))}
+        ${cSel('al-st-comp', L('Composizione', 'Layout', 'Composición'), COMP_OPTS(), compDi(st))}
+      </div>
+      <div class="griglia-campi spazio-sopra">
         ${cSel('al-st-anim', L('Animazione', 'Animation', 'Animación'), ANIM_ALERT_OPTS(), st.animazione)}
         ${cSel('al-st-font', 'Font', FONT_OPTS(), st.font)}
         ${cRng('al-st-dim', L('Testo', 'Text', 'Texto'), 14, 56, st.dimTesto, 'px')}
@@ -4889,6 +4933,9 @@ function pannelloAlert() {
         ${cRng('co-st-op', L('Opacità', 'Opacity', 'Opacidad'), 0, 100, cst.opacita, '%')}
         ${cCol('co-st-fg', L('Testo', 'Text', 'Texto'), cst.testo)}
         ${cRng('co-st-radius', L('Angoli', 'Corners', 'Esquinas'), 0, 30, cst.bordoRaggio, 'px')}
+        ${cSel('co-st-forma', L('Forma', 'Shape', 'Forma'), FORMA_OPTS(), formaDi(cst))}
+        ${cSel('co-st-materia', L('Materia', 'Surface', 'Materia'), MATERIA_OPTS(), materiaDi(cst))}
+        ${cSel('co-st-cornice', L('Cornice', 'Frame', 'Marco'), CORNICE_OPTS(), corniceDi(cst))}
       </div>
       <div class="griglia-campi spazio-sopra">
         ${cSel('co-st-user', L('Colore nomi', 'Name color', 'Color de nombres'), [['twitch', L('Colore di Twitch', 'Twitch color', 'Color de Twitch')], ['fisso', L('Colore fisso', 'Fixed color', 'Color fijo')]], userMode)}
@@ -4985,6 +5032,8 @@ function _leggiAlertStile() {
     dimTesto: Number(_v('al-st-dim')) || 27, sfondo: _v('al-st-bg'), opacita: Number(_v('al-st-op')),
     testo: _v('al-st-fg'), bordoRaggio: Number(_v('al-st-radius')), bordoSpessore: Number(_v('al-st-border')),
     glow: !!_g('al-st-glow')?.checked, icona: !!_g('al-st-icon')?.checked,
+    forma: _v('al-st-forma') || 'carta', materia: _v('al-st-materia') || 'piatta',
+    cornice: _v('al-st-cornice') || 'linea', composizione: _v('al-st-comp') || 'colonna',
   };
 }
 function _leggiChatStile() {
@@ -4993,6 +5042,7 @@ function _leggiChatStile() {
     dim: _v('co-st-dim') || 'media', font: _v('co-st-font') || 'sistema', googleFont: (_v('co-st-gfont') || '').trim(), animazione: _v('co-st-anim') || 'slide',
     larghezza: Number(_v('co-st-larg')), sfondo: _v('co-st-bg'), opacita: Number(_v('co-st-op')), testo: _v('co-st-fg'),
     bordoRaggio: Number(_v('co-st-radius')), username: mode === 'fisso' ? (_v('co-st-usercol') || '#9146ff') : 'twitch',
+    forma: _v('co-st-forma') || 'carta', materia: _v('co-st-materia') || 'piatta', cornice: _v('co-st-cornice') || 'nessuna',
     ombra: !!_g('co-st-ombra')?.checked, grassettoUser: !!_g('co-st-bold')?.checked,
   };
 }
@@ -5069,8 +5119,10 @@ function _applicaStileOverlay(ov) {
   _imposta('al-st-bg', al.sfondo); _imposta('al-st-op', al.opacita); _imposta('al-st-fg', al.testo);
   _imposta('al-st-radius', al.bordoRaggio); _imposta('al-st-border', al.bordoSpessore);
   _imposta('al-st-glow', al.glow !== false); _imposta('al-st-icon', al.icona !== false);
+  _imposta('al-st-forma', al.forma); _imposta('al-st-materia', al.materia); _imposta('al-st-cornice', al.cornice); _imposta('al-st-comp', al.composizione);
   _imposta('co-st-dim', ch.dim); _imposta('co-st-font', ch.font); _imposta('co-st-gfont', ch.googleFont || ''); _imposta('co-st-anim', ch.animazione); _imposta('co-st-larg', ch.larghezza);
   _imposta('co-st-bg', ch.sfondo); _imposta('co-st-op', ch.opacita); _imposta('co-st-fg', ch.testo); _imposta('co-st-radius', ch.bordoRaggio);
+  _imposta('co-st-forma', ch.forma); _imposta('co-st-materia', ch.materia); _imposta('co-st-cornice', ch.cornice);
   const modo = (ch.username && ch.username !== 'twitch') ? 'fisso' : 'twitch';
   _imposta('co-st-user', modo); if (modo === 'fisso') _imposta('co-st-usercol', ch.username);
   _imposta('co-st-ombra', ch.ombra !== false); _imposta('co-st-bold', ch.grassettoUser !== false);
@@ -5124,7 +5176,8 @@ function _anteprimaWidget(pref, id, nome) {
   box.style.display = '';
   const w = _leggiWidget(pref).stile;
   const el = _g(`ap-${pref}-el`);
-  el.className = 'ovl-widget dim-' + (w.dim || 'media');
+  const cst = _leggiChatStile();
+  el.className = 'ovl-widget dim-' + (w.dim || 'media') + ' forma-' + formaDi(cst) + ' materia-' + materiaDi(cst) + ' cornice-' + (cst.cornice === 'linea' ? 'nessuna' : corniceDi(cst));
   _setVars(el, { '--bg': w.sfondo, '--op': w.opacita + '%', '--fg': w.testo, '--acc': w.accento, '--radius': w.bordoRaggio + 'px', '--font': FONT_VAR[w.font] });
   el.querySelector('.w-ico').innerHTML = AP_ICO_WIDGET[id] || '';
   el.querySelector('.w-testo').innerHTML = esc(_v(`${pref}-testo`) || '{nome}').replace(/\{nome\}/g, '<b>' + esc(nome) + '</b>');
@@ -5135,7 +5188,8 @@ function aggiornaAnteprima() {
   const acc = document.querySelector('.alert-blocco[data-alert="sub"] .al-colore')?.value || '#ffb020';
   const card = _g('ap-alert');
   if (card) {
-    card.className = 'alert-card anim-' + st.animazione + (st.glow ? ' glow' : '') + (st.icona ? '' : ' senza-ico');
+    card.className = 'ap-el alert-card anim-' + st.animazione + (st.glow ? ' glow' : '') + (st.icona ? '' : ' senza-ico')
+      + ' ' + classiIdentita(st) + ' comp-' + compDi(st) + (selezione === 'alert' ? ' sel' : '');
     _setVars(card, { '--acc': acc, '--bg': st.sfondo, '--op': st.opacita + '%', '--fg': st.testo, '--radius': st.bordoRaggio + 'px', '--border': st.bordoSpessore + 'px', '--size': st.dimTesto + 'px', '--font': fontStile(st) });
     _g('ap-alert-ico').innerHTML = AP_ICO_ALERT;
     _g('ap-alert-testo').innerHTML = L('<b>MarioRossi</b> si è abbonato!', '<b>MarioRossi</b> subscribed!', '¡<b>MarioRossi</b> se ha suscrito!');
@@ -5149,7 +5203,7 @@ function aggiornaAnteprima() {
     apChat.className = 'ap-el ap-chat' + (/destra/.test(chatPos) ? ' destra' : '') + (selezione === 'chat' ? ' sel' : '');
     apChat.innerHTML = [['lucaplays', '#ff4d4d', L('ciao a tutti!', 'hi everyone!', '¡hola a todos!')], ['giada_ttv', '#48b0ff', L('che bella live', 'great stream', 'qué buen directo')]].map(([u, col, t]) => {
       const cu = cst.username === 'twitch' ? col : cst.username;
-      return `<div class="chat-riga dim-${cst.dim}${cst.ombra ? ' ombra' : ''}${cst.grassettoUser ? ' user-bold' : ''} dentro" style="--bg:${cst.sfondo};--op:${cst.opacita}%;--fg:${cst.testo};--radius:${cst.bordoRaggio}px;--font:${fontStile(cst)}"><span class="chat-user" style="color:${cu}">${esc(u)}</span> ${esc(t)}</div>`;
+      return `<div class="chat-riga dim-${cst.dim}${cst.ombra ? ' ombra' : ''}${cst.grassettoUser ? ' user-bold' : ''} ${classiIdentita(cst)} dentro" style="--bg:${cst.sfondo};--op:${cst.opacita}%;--fg:${cst.testo};--acc:${cu};--radius:${cst.bordoRaggio}px;--font:${fontStile(cst)}"><span class="chat-user" style="color:${cu}">${esc(u)}</span> ${esc(t)}</div>`;
     }).join('');
     _iniettaManiglie('chat');
   }
@@ -5736,6 +5790,7 @@ function applicaTemplate(d) {
     _imposta('al-st-bg', al.sfondo); _imposta('al-st-op', al.opacita); _imposta('al-st-fg', al.testo);
     _imposta('al-st-radius', al.bordoRaggio); _imposta('al-st-border', al.bordoSpessore);
     _imposta('al-st-glow', al.glow); _imposta('al-st-icon', al.icona !== false);
+    _imposta('al-st-forma', al.forma); _imposta('al-st-materia', al.materia); _imposta('al-st-cornice', al.cornice); _imposta('al-st-comp', al.composizione);
     _imposta('co-st-dim', ch.dim); _imposta('co-st-font', ch.font); _imposta('co-st-gfont', ch.googleFont); _imposta('co-st-bg', ch.sfondo);
     _imposta('co-st-op', ch.opacita); _imposta('co-st-fg', ch.testo); _imposta('co-st-radius', ch.bordoRaggio);
     if (acc) document.querySelectorAll('.alert-blocco[data-alert] .al-colore').forEach((c) => { c.value = acc; });
@@ -5751,6 +5806,7 @@ function _riempiConfig(d) {
   _imposta('al-st-bg', ast.sfondo); _imposta('al-st-op', ast.opacita); _imposta('al-st-fg', ast.testo);
   _imposta('al-st-radius', ast.bordoRaggio); _imposta('al-st-border', ast.bordoSpessore);
   _imposta('al-st-glow', ast.glow); _imposta('al-st-icon', ast.icona !== false);
+  _imposta('al-st-forma', ast.forma); _imposta('al-st-materia', ast.materia); _imposta('al-st-cornice', ast.cornice); _imposta('al-st-comp', ast.composizione);
   document.querySelectorAll('.alert-blocco[data-alert]').forEach((b) => {
     const c = a[b.dataset.alert] || {};
     _impostaEl(b.querySelector('.al-attivo'), c.attivo); _impostaEl(b.querySelector('.al-testo'), c.testo);
@@ -14345,6 +14401,7 @@ window.SB_APP = {
   get schedaAttiva() { return schedaAttiva; },
   get menoMoto() { return _menoMoto; },
   vai(id) { try { return vaiAScheda(id); } catch (e) { location.hash = '#' + id; } },
+  applicaPreset(i) { const t = TEMPLATE_BUILTIN[i]; if (t) applicaTemplate(t.dati); },
   tScheda, tGruppo, L, esc,
   icona(id) { return (typeof ICONA !== 'undefined' && ICONA[id]) || ''; },
   desc(id) { try { const d = DESC[id]; return d ? L(d[0], d[1], d[2]) : ''; } catch (e) { return ''; } },
