@@ -759,6 +759,21 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   const tmpDir = join(config.dataDir, 'tmp');
   mkdirSync(tmpDir, { recursive: true });
 
+  // Ogni media caricato entra nella libreria con una PROPRIA identita': il comando.
+  // Da una base (nome file, nome nella libreria, comando d'origine) si conia un
+  // comando libero nel canale, così un caricamento non ne cancella mai un altro.
+  // `tieni` = comando gia' assegnato a questo campo: se la base coincide, si
+  // riusa (ricaricare lo stesso file lo sostituisce, non ne accumula copie).
+  function comandoLibero(login, base, tieni = '') {
+    const b = normComando(base) || 'media';
+    if (tieni && normComando(tieni) === b) return b;
+    let c = b, n = 2;
+    while (effectsDb.get(login, c)) { c = normComando(b + '_' + n) || (b + String(n)); n++; if (n > 99) break; }
+    return c;
+  }
+  // Base di partenza ricavata dal nome del file caricato (senza estensione).
+  const baseDaFile = (nomeFile) => normComando(String(nomeFile || '').replace(/\.[^.]+$/, ''));
+
   // Studio Web: motore delle dirette dal browser (ffmpeg → RTMP Twitch).
   const studio = new StudioEngine();
   const chiudiStudio = () => { try { studio.stopAll(); } catch { /* niente */ } };
@@ -3609,7 +3624,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     }
     if (!fileMedia) { await puliziaTutto(); return res.status(400).json({ errore: 'nessun file caricato' }); }
 
-    const comando = normComando(req.body?.comando || '');
+    // Il comando e' facoltativo: serve solo a chi vuole lanciare il media dalla
+    // chat. Chi carica una foto/un video per CONDIVIDERLO o per usarlo in un
+    // alert non deve inventarsi un trigger — lo si conia dal nome del file.
+    const comando = normComando(req.body?.comando || '')
+      || comandoLibero(login, baseDaFile(fileMedia.originalname) || 'media');
     const tier = String(req.body?.tier || 'tutti');
     const cooldown = Math.round(Number(req.body?.cooldown));
     const volume = Math.round(Number(req.body?.volume));
@@ -3619,7 +3638,6 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
     // validazione: se qualcosa non va, si puliscono i temp e si risponde 400
     const errore = async (msg) => { await puliziaTutto(); return res.status(400).json({ errore: msg }); };
-    if (!comando) return errore('comando non valido: usa lettere, numeri o "_"');
     if (!TIER_VALIDI.includes(tier)) return errore('permesso (chi può usarlo) non valido');
     if (!Number.isFinite(cooldown) || cooldown < 0 || cooldown > 3600) return errore('cooldown non valido (0..3600 s)');
     if (!Number.isFinite(volume) || volume < 0 || volume > 100) return errore('volume non valido (0..100)');
@@ -3683,7 +3701,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     // pulizia dei vecchi file su sostituzione
     if (esistente?.file && esistente.file !== esito.file) await pulisciTemp(join(destDir, esistente.file));
 
-    res.json({ ok: true, pubblico, combo: !!esitoSuono });
+    res.json({ ok: true, comando, pubblico, combo: !!esitoSuono, tipo: esito.tipo, ref: `effetto:${comando}` });
   }
 
   // eliminazione di un effetto (+ del suo file dal disco)
@@ -3740,6 +3758,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       id: e.id, nome: e.nome || e.comando, tipo: e.tipo,
       autore: e.autore || e.channel, combo: !!e.suono_file, usi: e.usi || 0,
       mio: e.channel === login, pubblico: !!e.pubblico,
+      comando: e.channel === login ? e.comando : '',
       url: `/api/streamer/libreria/media/${e.id}`,
       suonoUrl: e.suono_file ? `/api/streamer/libreria/media/${e.id}/audio` : null,
     }));
@@ -3977,7 +3996,15 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
     const destDir = join(effectsRoot, login);
     mkdirSync(destDir, { recursive: true });
-    const comando = `alert_${kind}_${slot}`;   // deterministico → sostituisce il precedente
+    // Il file caricato entra nella libreria con la sua identita' (dal nome del
+    // file), non in uno slot fisso: cosi' resta riusabile e condivisibile, e un
+    // caricamento non cancella il precedente. Ricaricare lo STESSO nome sostituisce.
+    const sImp = streamers.get(login)?.settings || {};
+    const refAttuale = perWidget
+      ? String(((sImp.overlayWidget || {})[kind === 'wf' ? 'ultimoFollower' : 'ultimoSub'] || {}).stile?.icona || '')
+      : String(((sImp.alerts || {})[kind] || {})[slot === 'suono' ? 'suono' : (slot === 'icona' ? 'icona' : 'media')] || '');
+    const tieni = /^effetto:(.+)$/i.exec(refAttuale)?.[1] || '';
+    const comando = comandoLibero(login, baseDaFile(req.file.originalname) || `${kind}_${slot}`, tieni);
 
     let esito;
     try {
