@@ -1438,7 +1438,7 @@ function avviaBarraSalva() {
     if (!t || !t.closest) return;
     if (!t.closest('.pannello-scheda.visibile')) return;
     if (!/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
-    if (t.closest('#tg-destinazioni, .ovl-schede, .ovl-barra, .ovl-livelli, .ovl-inspector, .cerca-guscio')) return;
+    if (t.closest('#tg-destinazioni, .ovl-testa-banco, .ovl-barra, .ovl-livelli, .ovl-inspector, .cerca-guscio')) return;
     _salvaCarta = t.closest('.carta') || null;
     if (_salvaSporco) return;
     _salvaSporco = true;
@@ -2599,7 +2599,6 @@ function vistaPiattaforma() {
     ${pannelloMemoria()}
     ${pannelloAvatar()}
     ${pannelloModuli()}
-    ${pannelloContatori()}
     ${pannelloRegole()}
     ${pannelloScudo()}
     ${pannelloGiochi()}
@@ -4404,7 +4403,7 @@ function pannelloPenitenze() {
       <label class="campo spazio-sopra" for="pen-effetto">${L('Suono/effetto quando scatta la penitenza (facoltativo)', 'Sound/effect when the forfeit triggers (optional)', 'Sonido/efecto cuando salta la penitencia (opcional)')}</label>
       <div class="riga-flessibile">
         <select id="pen-effetto" class="campo-largo"><option value="">${L('— niente —', '— none —', '— nada —')}</option></select>
-        <button type="button" class="btn secondario mini" id="pen-effetto-prova" title="${L('Prova', 'Test', 'Probar')}">${_bIco('<path d="m6 3 14 9-14 9Z"/>')}</button>
+        <button type="button" class="btn secondario mini ico-sola" id="pen-effetto-prova" title="${L('Prova', 'Test', 'Probar')}" aria-label="${esc(L('Prova', 'Test', 'Probar'))}">${_bIco('<path d="m6 3 14 9-14 9Z"/>')}</button>
       </div>
       <p class="suggerimento">${L('Scegli un suono pronto o un tuo effetto (audio/immagine/video). Ne carichi altri dalla scheda «Effetti & suoni».', 'Pick a ready-made sound or one of your effects (audio/image/video). Upload more from the «Effects & sounds» tab.', 'Elige un sonido listo o uno de tus efectos (audio/imagen/vídeo). Sube más desde la pestaña «Efectos y sonidos».')}</p>
       <p class="spazio-sopra"><button class="btn" id="pen-salva">${L('Salva', 'Save', 'Guardar')}</button></p>
@@ -4721,9 +4720,20 @@ function pannelloAlert() {
       ${L('L\'', 'The ', 'La ')}<strong>${L('anteprima qui sotto è dal vivo', 'preview below is live', 'vista previa de abajo es en vivo')}</strong>.</p>
       <div class="riga-flessibile ovl-testa-banco">
         <label class="ovl-quale" for="ovl-quale">${L('Overlay', 'Overlay', 'Overlay')}</label>
-        <select id="ovl-quale" class="campo-largo"></select>
-        <button class="btn secondario" id="ovl-nuovo-da" type="button">${L('Nuovo…', 'New…', 'Nuevo…')}</button>
-        <button class="btn secondario" id="ovl-copia-link" type="button">${L('Copia link OBS', 'Copy OBS link', 'Copiar enlace OBS')}</button>
+        <select id="ovl-quale"></select>
+        <span class="ovl-link">
+          <span class="ovl-link-eti">${L('link OBS', 'OBS link', 'enlace OBS')}</span>
+          <input type="password" id="inp-overlay-url" class="ovl-url" readonly autocomplete="off" tabindex="-1" aria-label="${esc(L('Link OBS di questo overlay (nascosto)', 'OBS link for this overlay (hidden)', 'Enlace OBS de este overlay (oculto)'))}" value="">
+          <button type="button" class="ovl-tasto ico-sola" id="btn-copia-overlay" title="${esc(L('Copia il link OBS', 'Copy the OBS link', 'Copiar el enlace OBS'))}" aria-label="${esc(L('Copia il link OBS', 'Copy the OBS link', 'Copiar el enlace OBS'))}">${_bIco('<rect width="13" height="13" x="9" y="9" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>')}</button>
+          <button type="button" class="ovl-tasto ico-sola" id="btn-apri-overlay" title="${esc(L('Apri l\'overlay in una scheda', 'Open the overlay in a tab', 'Abrir el overlay en una pestaña'))}" aria-label="${esc(L('Apri l\'overlay in una scheda', 'Open the overlay in a tab', 'Abrir el overlay en una pestaña'))}">${_bIco(ICO.occhio)}</button>
+        </span>
+        <span class="ovl-testa-az">
+          <button class="btn secondario mini" id="ovl-nuovo-da" type="button">${L('Nuovo…', 'New…', 'Nuevo…')}</button>
+          <button class="btn secondario mini" id="ov-rinomina" type="button">${L('Rinomina', 'Rename', 'Renombrar')}</button>
+          <button class="btn secondario mini" id="ov-duplica" type="button">${L('Duplica', 'Duplicate', 'Duplicar')}</button>
+          <button class="btn secondario mini ovl-elimina" id="ov-elimina" type="button">${L('Elimina', 'Delete', 'Eliminar')}</button>
+        </span>
+        <button type="button" class="ovl-tasto ico-sola" id="ovl-aiuto" title="${esc(L('Come funziona', 'How it works', 'Cómo funciona'))}" aria-label="${esc(L('Come funziona', 'How it works', 'Cómo funciona'))}">${_bIco('<circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.2 3.2c-.5.2-.8.7-.8 1.3v.4"/><path d="M12 17.6h.01"/>')}</button>
         <button class="btn" id="ovl-salva-tutto">${L('Salva overlay', 'Save overlay', 'Guardar overlay')}</button>
       </div>
       <div class="ovl-barra spazio-sopra">
@@ -4789,26 +4799,13 @@ function pannelloAlert() {
     </div>
 
     <div class="carta" data-parte="overlay">
-      <h2>${_hIco(ICO.monitor)}${L('I miei overlay', 'My overlays', 'Mis overlays')}</h2>
-      <p>${L('Puoi avere', 'You can have', 'Puedes tener')} <strong>${L('più overlay', 'multiple overlays', 'varios overlays')}</strong>, ${L('ognuno col suo', 'each with its own', 'cada uno con su')} <strong>${L('link OBS', 'OBS link', 'enlace OBS')}</strong> ${L('e il suo', 'and its own', 'y su propio')} <strong>${L('layout', 'layout', 'diseño')}</strong>
-      (${L('cosa mostra e dove', 'what it shows and where', 'qué muestra y dónde')}). ${L('Es. un overlay "solo alert" in una scena e uno "solo chat" in un\'altra.', 'E.g. an "alerts only" overlay in one scene and a "chat only" one in another.', 'Ej. un overlay "solo alertas" en una escena y otro "solo chat" en otra.')}</p>
-      <div class="ovl-schede" id="ovl-schede"></div>
-
-      <div class="ovl-consegna">
-        <div class="ovl-consegna-testa">
-          <span class="ovl-occhiello">${L('Link OBS di questo overlay', 'OBS link for this overlay', 'Enlace OBS de este overlay')}</span>
-          <div class="ovl-consegna-az">
-            <button type="button" class="btn mini secondario" id="btn-apri-overlay">${_bIco(ICO.occhio)}${L('Apri', 'Open', 'Abrir')}</button>
-            <button type="button" class="btn mini" id="btn-copia-overlay">${_bIco('<rect width="13" height="13" x="9" y="9" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>')}${L('Copia', 'Copy', 'Copiar')}</button>
-          </div>
-        </div>
-        <input type="text" id="inp-overlay-url" class="ovl-url" readonly value="" placeholder="${L('caricamento…', 'loading…', 'cargando…')}">
+      <h2>${_hIco(ICO.monitor)}${L('Metterlo in OBS', 'Put it in OBS', 'Ponerlo en OBS')}</h2>
+      <p>${L('Ogni overlay che scegli qui sopra ha il', 'Each overlay you pick above has its own', 'Cada overlay que eliges arriba tiene su')} <strong>${L('suo link OBS', 'OBS link', 'propio enlace OBS')}</strong> ${L('e il suo layout: es. un overlay "solo alert" in una scena e uno "solo chat" in un\'altra.', 'and its own layout: e.g. an "alerts only" overlay in one scene and a "chat only" one in another.', 'y su propio diseño: p. ej. un overlay "solo alertas" en una escena y otro "solo chat" en otra.')}</p>
         <ol class="ovl-ricetta">
           <li>${L('In OBS: <b>Sorgenti → + → Browser</b>', 'In OBS: <b>Sources → + → Browser</b>', 'En OBS: <b>Fuentes → + → Navegador</b>')}</li>
           <li>${L('Incolla il link e metti <b>1920 × 1080</b>', 'Paste the link and set <b>1920 × 1080</b>', 'Pega el enlace y pon <b>1920 × 1080</b>')}</li>
           <li>${L('Spunta <b>«Aggiorna browser quando la scena diventa attiva»</b>', 'Tick <b>«Refresh browser when scene becomes active»</b>', 'Marca <b>«Actualizar navegador cuando la escena se active»</b>')}</li>
         </ol>
-      </div>
       <label class="campo spazio-sopra">${L('Elementi (fonti) di questo overlay', 'Elements (sources) of this overlay', 'Elementos (fuentes) de este overlay')} <span class="tenue">— ${L('accendi/spegni cosa compare, poi personalizzali con «Modifica»', 'turn on/off what appears, then customize them with «Edit»', 'activa/desactiva qué aparece, luego personalízalos con «Editar»')}</span></label>
       <div class="ovl-elementi">
         ${ovlElemento('alert', ICO.megafono, L('Alert eventi', 'Event alerts', 'Alertas de eventos'), 'sez-alert')}
@@ -5795,35 +5792,7 @@ const OVL_LIV = () => [
   { k: 'ws', n: L('Sub', 'Sub', 'Sub') },
 ];
 
-function _mappaOverlay(o) {
-  const punti = OVL_LIV().filter((l) => o.mostra?.[l.k] !== false).map((l) => {
-    const xy = (o.xy && o.xy[l.k]) || null;
-    const x = xy && Number.isFinite(+xy.x) ? +xy.x : ({ alert: 50, chat: 16, wf: 86, ws: 86 })[l.k];
-    const y = xy && Number.isFinite(+xy.y) ? +xy.y : ({ alert: 16, chat: 82, wf: 82, ws: 66 })[l.k];
-    return `<i class="om-p om-${l.k}" style="left:${Math.max(4, Math.min(96, x))}%;top:${Math.max(6, Math.min(94, y))}%" title="${esc(l.n)}"></i>`;
-  }).join('');
-  return `<span class="ovl-mappa" aria-hidden="true">${punti}</span>`;
-}
-
 function _rigeneraSelOverlay() {
-  const box = _g('ovl-schede'); if (!box) return;
-  const carte = overlays.map((o) => {
-    const on = o.id === overlaySel;
-    const acceso = OVL_LIV().filter((l) => o.mostra?.[l.k] !== false).length + (o.mostra?.effetti !== false ? 1 : 0);
-    return `<button type="button" class="ovl-scheda${on ? ' on' : ''}" data-ovl="${esc(o.id)}">
-      ${_mappaOverlay(o)}
-      <span class="ovl-scheda-nome">${esc(o.nome)}</span>
-      <span class="ovl-scheda-nota">${acceso} ${acceso === 1 ? L('livello acceso', 'layer on', 'capa activa') : L('livelli accesi', 'layers on', 'capas activas')}</span>
-    </button>`;
-  }).join('');
-  const piu = overlays.length < 12
-    ? `<button type="button" class="ovl-scheda ovl-nuovo" id="ov-nuovo">${_hIco(ICO.piu)}<span class="ovl-scheda-nome">${L('Nuovo overlay', 'New overlay', 'Nuevo overlay')}</span></button>`
-    : '';
-  box.innerHTML = carte + piu + `<div class="ovl-azioni">
-    <button type="button" class="btn mini secondario" id="ov-rinomina">${L('Rinomina', 'Rename', 'Renombrar')}</button>
-    <button type="button" class="btn mini secondario" id="ov-duplica">${L('Duplica', 'Duplicate', 'Duplicar')}</button>
-    <button type="button" class="btn mini secondario" id="ov-elimina" style="color:var(--rosso)">${L('Elimina', 'Delete', 'Eliminar')}</button>
-  </div>`;
   _rigeneraQuale();
 }
 
@@ -5958,17 +5927,18 @@ function caricaAlert() {
   collegaEditorOvl();
   _applicaZoom(1);
   setTimeout(() => _ricorda(), 400);
-  _g('ovl-schede')?.addEventListener('click', (e) => {
-    if (e.target.closest('#ov-nuovo')) return conErrore(() => nuovoOverlayDaPreset());
-    if (e.target.closest('#ov-rinomina')) return conErrore(() => rinominaOverlay());
-    if (e.target.closest('#ov-duplica')) return conErrore(() => duplicaOverlay());
-    if (e.target.closest('#ov-elimina')) return conErrore(() => eliminaOverlay());
-    const c = e.target.closest('[data-ovl]');
-    if (c) scegliOverlay(c.dataset.ovl);
-  });
   _g('ovl-quale')?.addEventListener('change', (e) => scegliOverlay(e.target.value));
   _g('ovl-nuovo-da')?.addEventListener('click', () => conErrore(() => nuovoOverlayDaPreset()));
-  _g('ovl-copia-link')?.addEventListener('click', () => copiaTesto(_g('inp-overlay-url')?.value || '', L('Link OBS copiato ✓', 'OBS link copied ✓', 'Enlace OBS copiado ✓')));
+  _g('ov-rinomina')?.addEventListener('click', () => conErrore(() => rinominaOverlay()));
+  _g('ov-duplica')?.addEventListener('click', () => conErrore(() => duplicaOverlay()));
+  _g('ov-elimina')?.addEventListener('click', () => conErrore(() => eliminaOverlay()));
+  _g('ovl-aiuto')?.addEventListener('click', () => {
+    const apri = !document.body.classList.contains('banco-guida');
+    document.body.classList.toggle('banco-guida', apri);
+    const g = document.querySelector('.pagina-testata .guida-scheda');
+    if (g) { g.open = apri; if (apri) g.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'nearest' }); }
+    requestAnimationFrame(() => requestAnimationFrame(misuraSopraBanco));
+  });
   _g('scheda-alert')?.addEventListener('click', (e) => {
     if (e.target.closest('.oe-mod, .oe-sw, input, label')) return;
     const r = e.target.closest('[data-mira]');
@@ -8166,7 +8136,8 @@ function pannelloModuli() {
       <p>${L('Per far dire o fare qualcosa ad SocialBot', 'To make SocialBot say or do something', 'Para que SocialBot diga o haga algo')} <strong class="primo-piano">${L('da un tuo servizio esterno', 'from an external service of yours', 'desde un servicio externo tuyo')}</strong>
       ${L('(il bot custom che già hai): chiama l\'URL qui sotto con la tua chiave.', '(the custom bot you already have): call the URL below with your key.', '(el bot personalizado que ya tienes): llama a la URL de abajo con tu clave.')}</p>
       <div id="connettori-moduli"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
-    </div>`);
+    </div>
+    ${carteContatori()}`);
 }
 
 function modelloPronto(nome) {
@@ -9255,8 +9226,8 @@ function lpAnteprima() {
   }, 260);
 }
 
-function pannelloContatori() {
-  return pannello('moduli', `
+function carteContatori() {
+  return `
     <div class="carta">
       <h2>${_hIco(ICO.moduli)}${L('Contatori', 'Counters', 'Contadores')} <span class="tenue">(!morti, !tentativi…)</span></h2>
       <p>${L('Crea contatori (morti, tentativi, parole…). Tu e i moderatori li gestite in chat:', 'Create counters (deaths, attempts, words…). You and your mods manage them in chat:', 'Crea contadores (muertes, intentos, palabras…). Tú y tus moderadores los gestionáis en el chat:')}
@@ -9294,7 +9265,7 @@ function pannelloContatori() {
       <label class="campo spazio-sopra" for="cont-parola">${L('Parola automatica', 'Auto word', 'Palabra automática')} <span class="suggerimento">(${L('facolt.', 'optional', 'opcional')})</span></label>
       <input type="text" id="cont-parola" maxlength="40" placeholder="${esc(L('es. «lol» → +1 ogni volta che appare in chat', 'e.g. «lol» → +1 each time it appears in chat', 'ej. «lol» → +1 cada vez que aparece en el chat'))}">
       <p class="spazio-sopra"><button class="btn" id="cont-crea">${L('Crea contatore', 'Create counter', 'Crear contador')}</button></p>
-    </div>`);
+    </div>`;
 }
 
 async function caricaContatori() {

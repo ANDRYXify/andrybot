@@ -284,3 +284,77 @@ via d'uscita era la cosa più vistosa dello schermo.
 
 Adesso `.btn.testo` esiste davvero: trasparente, testo tenue, e si accende
 appena al passaggio del mouse.
+
+## La barra in cima è «I miei overlay»
+
+Le miniature degli overlay — un rettangolo con dei puntini a mostrare dove stanno
+le cose — erano un secondo elenco della stessa lista che il menu in cima già
+dava, e occupavano una fascia di pagina per dire meno di quanto dicano i nomi.
+Sono sparite. Restano i **nomi**, nel menu, e accanto le quattro cose che si
+fanno a un overlay intero: **Nuovo… · Rinomina · Duplica · Elimina**.
+
+### Il link OBS sta nascosto
+
+Il link è una **chiave**: chi ce l'ha può far comparire cose nel tuo overlay. Un
+campo che lo mostrava in chiaro, largo quanto la carta, era un rischio ogni
+volta che si condivideva lo schermo o si apriva la dashboard in diretta.
+
+Adesso è un campo `password` in sola lettura: si vede che c'è, non si legge, e
+il tasto accanto **lo copia lo stesso**. Un secondo tasto lo apre in una scheda.
+La sicurezza non toglie l'uso.
+
+## Ancora più tela
+
+Tre tagli, tutti alla cornice e nessuno ai comandi:
+
+| | prima | adesso |
+|---|---|---|
+| testata di sezione | 112px | 27px |
+| guida sopra il banco | 49px | 0 (a richiesta) |
+| barre e piede del banco | 140px | 122px |
+| **la tela** | 797×448 | **925×520** |
+
+La **guida** non sta più aperta sopra l'area di lavoro: c'è un **?** nella barra
+che la apre e la richiude. Mentre lavori quei pixel sono tela; quando ti serve
+la spiegazione, la spiegazione c'è. È la stessa idea dei pannelli galleggianti:
+niente occupa spazio in permanenza per un uso occasionale.
+
+Sommando tutto il percorso, dalla disposizione a colonne di partenza: la tela è
+passata da **509×286 a 925×520** — tre volte e un terzo la superficie.
+
+## Le icone erano tutte spostate a sinistra
+
+Il direttore ha notato che le icone dei riquadri sembravano decentrate. Misurate
+tutte e 65 dentro il loro `viewBox`, il disegno era a posto: gli scarti massimi
+erano mezza unità su ventiquattro. Il difetto era altrove.
+
+`.h-ico` e `.b-ico` portano un `margin-right` — serve a staccare l'icona dal
+testo che le segue in un titolo o in un pulsante. Ma il margine **segue l'icona
+anche dove testo non ce n'è**: in un riquadro che centra il suo contenuto, mezzo
+margine di troppo a destra sposta tutto a sinistra. Erano **3,55px su un
+riquadro da 38** nelle carte della vetrina, e 2,8px nei tasti del banco, nei
+livelli, nell'occhio, nelle destinazioni Telegram.
+
+Il difetto era già noto a metà: c'erano **cinque regole sparse** che rimettevano
+`margin: 0` in cinque contesti diversi, una per ogni volta che qualcuno se n'era
+accorto. Ogni nuovo riquadro nasceva sbagliato finché qualcuno non aggiungeva la
+sesta. Adesso l'elenco è **uno solo**, e c'è la classe `.ico-sola` per chi ne
+crea un altro.
+
+Il collaudo che lo tiene: si scorre l'intera applicazione — vetrina più 24
+sezioni — si cercano i contenitori che hanno dentro **soltanto** un'icona, e si
+misura lo scarto fra il centro dell'icona e il centro del contenitore. Prima:
+sei fuori centro. Adesso: zero.
+
+## Contatori: una sezione che era due
+
+`pannelloContatori()` emetteva `pannello('moduli', …)`, lo stesso identificatore
+di `pannelloModuli()`: due `<section id="scheda-moduli">` nello stesso documento.
+
+Funzionava per caso — entrambe prendevano la classe `visibile` insieme, quindi
+si vedevano tutte e due — ma **tutto ciò che cerca la sezione per id o con
+`querySelector` ne trovava solo la prima**: la barra di salvataggio non vedeva
+il pulsante dei contatori, e la comparsa non animava le sue carte.
+
+I contatori sono carte della sezione Comandi, non una seconda sezione: adesso
+`carteContatori()` restituisce le carte e `pannelloModuli()` le include.
