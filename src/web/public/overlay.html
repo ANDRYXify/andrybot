@@ -451,7 +451,19 @@
       }
       return "'" + n + "', var(--font-sistema)";
     }
-    const fontDi = (st) => (st && st.googleFont ? caricaFontGoogle(st.googleFont) : (FONT[(st || {}).font] || null));
+    const _mieiFont = new Set();
+    function montaFontMio(nome, url) {
+      if (!nome || !url || _mieiFont.has(nome)) return;
+      _mieiFont.add(nome);
+      const st = document.createElement('style');
+      st.textContent = '@font-face{font-family:"' + nome + '";src:url("' + url + '");font-display:swap}';
+      document.head.appendChild(st);
+    }
+    const fontDi = (st) => {
+      const f = String((st || {}).font || '');
+      if (f.startsWith('mio:')) return '"' + f.slice(4) + '", var(--font-sistema)';
+      return st && st.googleFont ? caricaFontGoogle(st.googleFont) : (FONT[f] || null);
+    };
 
     function applicaVars(el, vars) { for (const k in vars) { if (vars[k] != null && vars[k] !== '') el.style.setProperty(k, String(vars[k])); } }
 
@@ -735,6 +747,7 @@
       MIO.xy = (t && t.xy) ? t.xy : {};
 
       MIO.stile = { alert: (t && t.alertStile) || null, chat: (t && t.chatStile) || null };
+      for (const f of (t.fontPersonali || [])) montaFontMio(f.nome, f.url);
       try { document.getElementById('css-utente').textContent = String(t.css || '').slice(0, 8000); } catch (e) {  }
       const w = t.widget || {};
       MIO.widget = w;

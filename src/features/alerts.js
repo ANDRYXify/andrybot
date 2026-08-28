@@ -210,8 +210,13 @@ export class AlertsEngine {
       const ico = String(rif || '').toLowerCase().startsWith('effetto:') ? this._risolviEffetto(channel, rif) : null;
       conIcone[k] = (ico && ico.tipo === 'immagine') ? { ...cfg, iconaUrl: ico.url } : cfg;
     }
+    const fontMiei = (Array.isArray(s.fontPersonali) ? s.fontPersonali : [])
+      .filter((f) => f && f.nome && f.file)
+      .map((f) => ({ nome: f.nome, url: this.effects?.mediaUrl ? this.effects.mediaUrl(channel, f.file) : '' }))
+      .filter((f) => f.url);
     return {
       css: String(s.overlayCss || '').slice(0, 8000),
+      fontPersonali: fontMiei,
       widget: conIcone,
       stato: (s.overlayStato && typeof s.overlayStato === 'object') ? s.overlayStato : {},
     };

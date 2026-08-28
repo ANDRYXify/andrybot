@@ -343,6 +343,8 @@ function _demoGet(via) {
         xy: { alert: { x: 50, y: 50 }, wf: { x: 22, y: 84 }, ws: { x: 78, y: 84 } },
         css: '', stile: null, url: 'https://socialbot.live/o/andryx_demo/schermata-di-pausa' },
     ] },
+    '/api/streamer/google-fonts': { fonts: ['Inter', 'Roboto', 'Lobster', 'Bree Serif', 'Bangers', 'Poppins', 'Oswald', 'Pacifico', 'Rubik Mono One', 'Press Start 2P', 'Caveat', 'Anton'] },
+    '/api/streamer/font': { font: [{ nome: 'il-mio-font', url: '/demo/font.woff2' }] },
     '/api/discord/stato': { configurato: false, attivo: false, messaggio: '', nomeBot: '', avatar: '', anteprima: '' },
     '/api/abbonamento/piani': { attivo: false,
       free: { id: 'free', nome: 'Essenziale', prezzoTesto: 'Gratis', sommario: 'Gratis, basta registrarsi.' },
@@ -607,7 +609,20 @@ function morphDa(el) {
 function transizione(fn) {
   const drawer = window.matchMedia && window.matchMedia('(max-width: 1200px)').matches;
   if (_menoMoto || drawer || !document.startViewTransition) { fn(); return { finished: Promise.resolve() }; }
-  return document.startViewTransition(fn);
+  const tr = document.startViewTransition(fn);
+  try { tr.finished.finally(() => { delete document.documentElement.dataset.verso; }); } catch (e) {  }
+  return tr;
+}
+
+function _ordineSchede() {
+  return [...document.querySelectorAll('.pannello-scheda')].map((p) => p.dataset.scheda);
+}
+
+function _versoVerso(da, a) {
+  const o = _ordineSchede();
+  const i = o.indexOf(da), j = o.indexOf(a);
+  if (i < 0 || j < 0 || i === j) return 'avanti';
+  return j > i ? 'avanti' : 'indietro';
 }
 
 let _rivObs = null;
@@ -4568,8 +4583,8 @@ function opzioniSuono(sel) {
 }
 
 function opzioniFont(sel) {
-  const f = [['', '— come lo stile —'], ['sistema', 'Sistema'], ['rotondo', 'Rotondo'], ['condensato', 'Condensato'], ['mono', 'Mono'], ['serif', 'Serif'], ['manga', 'Manga']];
-  return f.map(([v, n]) => `<option value="${v}"${v === sel ? ' selected' : ''}>${n}</option>`).join('');
+  const f = [['', L('— come lo stile —', '— same as the style —', '— como el estilo —')]].concat(FONT_OPTS());
+  return f.map(([v, n]) => `<option value="${esc(v)}"${v === sel ? ' selected' : ''}>${esc(n)}</option>`).join('');
 }
 
 let _EFFETTI = [];
@@ -4627,7 +4642,8 @@ const ALERT_TIPI = () => [
   { key: 'raid', nome: L('Raid', 'Raid', 'Raid'), ph: L('{user} è arrivato in raid con {viewers} spettatori!', '{user} raided with {viewers} viewers!', '¡{user} ha llegado en raid con {viewers} espectadores!'), vars: '{user}, {viewers}', acc: '#ff4d4d', soglia: { campo: 'minViewers', label: L('Spettatori minimi', 'Minimum viewers', 'Espectadores mínimos') } },
 ];
 
-const FONT_OPTS = () => [['sistema', L('Sistema', 'System', 'Sistema')], ['rotondo', L('Arrotondato', 'Rounded', 'Redondeado')], ['condensato', L('Condensato', 'Condensed', 'Condensada')], ['mono', L('Monospazio', 'Monospace', 'Monoespaciada')], ['serif', L('Serif', 'Serif', 'Serif')], ['manga', L('Manga', 'Manga', 'Manga')]];
+const FONT_BASE = () => [['sistema', L('Sistema', 'System', 'Sistema')], ['rotondo', L('Arrotondato', 'Rounded', 'Redondeado')], ['condensato', L('Condensato', 'Condensed', 'Condensada')], ['mono', L('Monospazio', 'Monospace', 'Monoespaciada')], ['serif', L('Serif', 'Serif', 'Serif')], ['manga', L('Manga', 'Manga', 'Manga')]];
+const FONT_OPTS = () => FONT_BASE().concat(FONT_MIEI.map((f) => ['mio:' + f.nome, f.nome]));
 const ANIM_ALERT_OPTS = () => [['slide', L('Scivola', 'Slide', 'Deslizar')], ['pop', L('Pop', 'Pop', 'Pop')], ['zoom', L('Zoom', 'Zoom', 'Zoom')], ['fade', L('Dissolvenza', 'Fade', 'Fundido')], ['flip', L('Ribalta', 'Flip', 'Voltear')], ['bounce', L('Rimbalzo', 'Bounce', 'Rebote')]];
 const ANIM_CHAT_OPTS = () => [['slide', L('Scivola', 'Slide', 'Deslizar')], ['fade', L('Dissolvenza', 'Fade', 'Fundido')], ['nessuna', L('Nessuna', 'None', 'Ninguna')]];
 const FORMA_OPTS = () => [
@@ -4696,7 +4712,6 @@ const TEMPLATE_BUILTIN = [
 
   { nome: 'Esagoni', dati: { al: { animazione: 'zoom', sfondo: '#0d1117', opacita: 92, testo: '#e6edf3', bordoRaggio: 0, bordoSpessore: 2, glow: true, font: 'sistema', dimTesto: 26, forma: 'esagono', materia: 'griglia', cornice: 'linea', composizione: 'colonna' }, ch: { sfondo: '#0d1117', opacita: 84, testo: '#e6edf3', bordoRaggio: 0, font: 'sistema', dim: 'media', forma: 'taglio', materia: 'griglia', cornice: 'linea' }, acc: '#58a6ff' } },
 ];
-
 
 function bloccoAlert(t, a) {
   const c = a[t.key] || {};
@@ -4934,6 +4949,12 @@ function pannelloAlert() {
         ${cRng('al-st-spaz', L('Spaziatura', 'Letter spacing', 'Espaciado'), -2, 12, Number(st.spaziatura) || 0, 'px')}
         ${cRng('al-st-dimico', L('Icona', 'Icon', 'Icono'), 0, 120, Number(st.dimIcona) || 46, 'px')}
       </div>
+      <div class="riga-flessibile spazio-sopra">
+        <input type="file" id="font-mio-file" accept=".woff2,.woff,.ttf,.otf,font/*" hidden>
+        <button type="button" class="btn secondario mini" id="font-mio-carica">${_bIco(ICO.carica)}${L('Carica un font tuo', 'Upload your own font', 'Sube tu fuente')}</button>
+        <span class="tenue" id="font-mio-esito"></span>
+      </div>
+      <div id="font-miei-elenco" class="font-miei"></div>
       <label class="campo spazio-sopra">Font <span class="tenue">— ${L('scegli un font Google dall\'elenco con anteprima (vince sul menu qui sopra)', 'pick a Google font from the list with preview (overrides the menu above)', 'elige una fuente Google de la lista con vista previa (gana sobre el menú de arriba)')}</span></label>
       <div class="riga-flessibile">
         <input type="text" id="al-st-gfont" class="campo-largo gfont" placeholder="${L('— nessun font Google (uso il menu) —', '— no Google font (using the menu) —', '— sin fuente Google (uso el menú) —')}" value="${esc(st.googleFont || '')}">
@@ -5047,23 +5068,86 @@ function fontGoogleDash(nome) {
   return "'" + n + "', var(--font-sistema)";
 }
 
-const fontStile = (st) => (st && st.googleFont ? fontGoogleDash(st.googleFont) : FONT_VAR[(st || {}).font]);
+let FONT_MIEI = [];
+const _montatiMiei = new Set();
+function montaFontMio(nome, url) {
+  if (!nome || !url || _montatiMiei.has(nome)) return;
+  _montatiMiei.add(nome);
+  const st = document.createElement('style');
+  st.textContent = `@font-face{font-family:"${nome}";src:url("${url}");font-display:swap}`;
+  document.head.appendChild(st);
+}
+function fontMioVar(nome) { return `"${nome}", var(--font-sistema)`; }
+const fontStile = (st) => {
+  const f = String((st || {}).font || '');
+  if (f.startsWith('mio:')) return fontMioVar(f.slice(4));
+  return st && st.googleFont ? fontGoogleDash(st.googleFont) : FONT_VAR[f];
+};
 
 let FONTS_GOOGLE = null;
+function _rendiFontMiei() {
+  const box = _g('font-miei-elenco');
+  for (const f of FONT_MIEI) montaFontMio(f.nome, f.url);
+  if (!box) return;
+  box.innerHTML = FONT_MIEI.length
+    ? FONT_MIEI.map((f) => `<span class="font-mio" style="font-family:${fontMioVar(f.nome)}">${esc(f.nome)}`
+      + `<button type="button" class="font-mio-x" data-font-via="${esc(f.nome)}" title="${esc(L('Togli', 'Remove', 'Quitar'))}" aria-label="${esc(L('Togli', 'Remove', 'Quitar'))}">✕</button></span>`).join('')
+    : '';
+  for (const sel of document.querySelectorAll('#al-st-font, #co-st-font, [id$="-font"], .al-font')) {
+    const v = sel.value;
+    if (sel.classList.contains('al-font')) sel.innerHTML = opzioniFont(v);
+    else sel.innerHTML = FONT_OPTS().map(([k, t]) => `<option value="${esc(k)}">${esc(t)}</option>`).join('');
+    sel.value = v;
+  }
+}
+
+async function caricaFontMio(file) {
+  if (DEMO) { toast(L('In demo non si caricano file — accedi per farlo davvero.', "In demo you can't upload files — log in to do it for real.", 'En la demo no se suben archivos — inicia sesión para hacerlo de verdad.')); return; }
+  const esito = _g('font-mio-esito');
+  const btn = _g('font-mio-carica');
+  if (btn) btn.disabled = true;
+  if (esito) esito.textContent = L('Carico…', 'Uploading…', 'Subiendo…');
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    const res = await fetch('/api/streamer/font', { method: 'POST', body: fd });
+    let d = null; try { d = await res.json(); } catch {  }
+    if (!res.ok) throw new Error(d?.errore || `errore ${res.status}`);
+    FONT_MIEI = FONT_MIEI.filter((f) => f.nome !== d.nome).concat([{ nome: d.nome, url: d.url }]);
+    _rendiFontMiei();
+    if (esito) esito.textContent = '✓ ' + d.nome;
+    toast(L('Font caricato ✓', 'Font uploaded ✓', 'Fuente subida ✓'));
+  } catch (e) {
+    if (esito) esito.textContent = '' + e.message;
+    toast(L('Caricamento fallito: ', 'Upload failed: ', 'Subida fallida: ') + e.message, 'errore');
+  } finally { if (btn) btn.disabled = false; }
+}
+
 async function montaFontBrowser(box, targetId) {
-  box.innerHTML = '<input type="text" class="fb-cerca" placeholder="Filtra per nome (facoltativo)…"><div class="fb-lista"><p class="tenue">Carico i font…</p></div>';
+  box.innerHTML = `<input type="text" class="fb-cerca" placeholder="${esc(L('Filtra per nome…', 'Filter by name…', 'Filtrar por nombre…'))}">`
+    + `<div class="fb-lista"><p class="tenue">${L('Carico i font…', 'Loading fonts…', 'Cargando fuentes…')}</p></div>`;
   if (!FONTS_GOOGLE) { try { const r = await api('/api/streamer/google-fonts'); FONTS_GOOGLE = r.fonts || []; } catch { FONTS_GOOGLE = []; } }
   const lista = box.querySelector('.fb-lista');
+  const prova = L('Ciao 123', 'Hello 123', 'Hola 123');
   lista.innerHTML = FONTS_GOOGLE.length
-    ? FONTS_GOOGLE.map((f) => `<button type="button" class="fb-riga" data-font="${esc(f)}">${esc(f)}</button>`).join('')
-    : '<p class="tenue">Elenco non disponibile ora: puoi scrivere il nome del font a mano.</p>';
+    ? FONTS_GOOGLE.map((f) => `<button type="button" class="fb-riga" data-font="${esc(f)}">`
+      + `<span class="fb-prova">${esc(prova)}</span><span class="fb-nome">${esc(f)}</span></button>`).join('')
+    : `<p class="tenue">${L('Elenco non disponibile ora: puoi scrivere il nome del font a mano.', 'List unavailable right now: you can type the font name by hand.', 'Lista no disponible ahora: puedes escribir el nombre a mano.')}</p>`;
   if (typeof IntersectionObserver !== 'undefined') {
     const io = new IntersectionObserver((ents) => ents.forEach((e) => {
-      if (e.isIntersecting) { e.target.style.fontFamily = fontGoogleDash(e.target.dataset.font); io.unobserve(e.target); }
+      if (!e.isIntersecting) return;
+      const ff = fontGoogleDash(e.target.dataset.font);
+      const p = e.target.querySelector('.fb-prova');
+      if (p) p.style.fontFamily = ff; else e.target.style.fontFamily = ff;
+      try { document.fonts.load('1.35rem ' + ff.split(',')[0]).then(() => e.target.classList.add('pronto')); } catch (_) {  }
+      io.unobserve(e.target);
     }), { root: lista, rootMargin: '250px' });
     lista.querySelectorAll('.fb-riga').forEach((r) => io.observe(r));
   } else {
-    lista.querySelectorAll('.fb-riga').forEach((r) => { r.style.fontFamily = fontGoogleDash(r.dataset.font); });
+    lista.querySelectorAll('.fb-riga').forEach((r) => {
+      const p = r.querySelector('.fb-prova');
+      (p || r).style.fontFamily = fontGoogleDash(r.dataset.font);
+    });
   }
   box.querySelector('.fb-cerca').addEventListener('input', (e) => {
     const q = e.target.value.trim().toLowerCase();
@@ -6151,6 +6235,11 @@ function caricaAlert() {
     wf: imp.overlayWidget.ultimoFollower.xy || null, ws: imp.overlayWidget.ultimoSub.xy || null };
   ['ap-alert', 'ap-chat', 'ap-wf', 'ap-ws'].forEach((id) => rendiTrascinabile(_g(id), id.replace('ap-', '')));
 
+  api('/api/streamer/font').then((d) => {
+    FONT_MIEI = (d && Array.isArray(d.font)) ? d.font : [];
+    _rendiFontMiei();
+  }).catch(() => {  });
+
   caricaOverlays();
   collegaEditorOvl();
   _applicaZoom(1);
@@ -6267,6 +6356,22 @@ function caricaAlert() {
     const inp = _g(btn.dataset.target); if (inp) { inp.value = ''; inp.dispatchEvent(new Event('input', { bubbles: true })); }
   }));
   _g('css-salva')?.addEventListener('click', () => conErrore(() => salvaCss()));
+
+  _g('font-mio-carica')?.addEventListener('click', () => _g('font-mio-file')?.click());
+  _g('font-mio-file')?.addEventListener('change', (e) => conErrore(async () => {
+    const f = e.target.files[0];
+    if (f) await caricaFontMio(f);
+    e.target.value = '';
+  }));
+  _g('font-miei-elenco')?.addEventListener('click', (e) => conErrore(async () => {
+    const b = e.target.closest('[data-font-via]'); if (!b) return;
+    const nome = b.dataset.fontVia;
+    if (!confirm(L(`Togliere il font «${nome}»?`, `Remove the font «${nome}»?`, `¿Quitar la fuente «${nome}»?`))) return;
+    await api('/api/streamer/font/' + encodeURIComponent(nome), { method: 'DELETE' });
+    FONT_MIEI = FONT_MIEI.filter((x) => x.nome !== nome);
+    _rendiFontMiei();
+    toast(L('Font tolto.', 'Font removed.', 'Fuente quitada.'));
+  }));
 
   document.querySelectorAll('.al-prova').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
     await salvaAlert(true); await api('/api/alert/prova', { method: 'POST', body: { kind: b.dataset.kind } }); toast(L('Inviato all\'overlay', 'Sent to the overlay', 'Enviado al overlay'));
@@ -14432,13 +14537,16 @@ function vaiAScheda(id) {
     && !stessaFamiglia(id, schedaAttiva)) ? _morphDa : null;
   _morphDa = null;
   if (id === schedaAttiva) { chiudiMenuTop(); chiudiMenuMobile(); return; }
+  const prima = schedaAttiva;
   schedaAttiva = id;
 
   try { history.replaceState(null, '', '#' + id); } catch {  }
 
   const sezioni = [...document.querySelectorAll('.pannello-scheda')].filter((p) => p.dataset.scheda === id);
   if (org && !_menoMoto) morphDa(org);
+  try { document.documentElement.dataset.verso = _versoVerso(prima, id); } catch (e) {  }
   const tr = transizione(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' });
     morphDa(null);
     chiudiMenuTop();
     chiudiMenuMobile();
@@ -14456,7 +14564,7 @@ function vaiAScheda(id) {
   caricaDatiScheda(id);
   azzeraBarraSalva();
   if (DEMO) aggiornaSpiegazioneDemo();
-  window.scrollTo({ top: 0, behavior: _menoMoto ? 'auto' : 'smooth' });
+  if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: _menoMoto ? 'auto' : 'smooth' });
 }
 
 function initGuscio() {

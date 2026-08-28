@@ -746,20 +746,25 @@ body.pad-guida.cursore-on, body.pad-guida.cursore-on * { cursor: none !important
   animation-duration: var(--t-medio);
   animation-timing-function: var(--molla-medio);
 }
-::view-transition-old(contenuto) {
-  animation: vt-esce .12s cubic-bezier(.4, 0, 1, 1) both;
-  object-fit: cover; object-position: top left;
-}
-::view-transition-new(contenuto) {
-  animation: vt-entra var(--t-medio) var(--molla-medio) 60ms both;
-  object-fit: cover; object-position: top left;
-}
+::view-transition-old(contenuto),
+::view-transition-new(contenuto) { object-fit: cover; object-position: top left; }
+::view-transition-old(contenuto) { animation: vt-esce .16s cubic-bezier(.4, 0, 1, 1) both; }
+::view-transition-new(contenuto) { animation: vt-entra var(--t-medio) var(--molla-medio) 40ms both; }
+
+:root[data-verso="avanti"] ::view-transition-old(contenuto) { animation: vt-via-sx .2s cubic-bezier(.4, 0, 1, 1) both; }
+:root[data-verso="avanti"] ::view-transition-new(contenuto) { animation: vt-da-dx var(--t-medio) var(--molla-lieve) 30ms both; }
+:root[data-verso="indietro"] ::view-transition-old(contenuto) { animation: vt-via-dx .2s cubic-bezier(.4, 0, 1, 1) both; }
+:root[data-verso="indietro"] ::view-transition-new(contenuto) { animation: vt-da-sx var(--t-medio) var(--molla-lieve) 30ms both; }
 ::view-transition-group(testata), ::view-transition-group(marchio), ::view-transition-group(piede) {
   animation-duration: var(--t-medio);
   animation-timing-function: var(--molla-medio);
 }
 @keyframes vt-esce { to { opacity: 0; transform: translateY(-8px) scale(.994); } }
 @keyframes vt-entra { from { opacity: 0; transform: translateY(16px) scale(.988); } }
+@keyframes vt-via-sx { to { opacity: 0; transform: translateX(-4%); } }
+@keyframes vt-da-dx { from { opacity: 0; transform: translateX(5%); } }
+@keyframes vt-via-dx { to { opacity: 0; transform: translateX(4%); } }
+@keyframes vt-da-sx { from { opacity: 0; transform: translateX(-5%); } }
 
 .toast { animation: toast-entra var(--t-medio) var(--molla-medio) both; }
 .toast.esce { animation: toast-esce .34s var(--an-vel) both; }
@@ -1192,7 +1197,8 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
 .ovl-aspetto input[type="range"] { width: 100%; }
 .ovl-aspetto .alert-blocco { border: 0; padding: 0; background: none; }
 .ovl-aspetto .riga-flessibile { gap: 6px; }
-.ovl-aspetto .font-browser { max-height: 190px; }
+.ovl-aspetto .font-browser { max-height: none; padding: .5rem; }
+.ovl-aspetto .fb-lista { max-height: 230px; grid-template-columns: 1fr; }
 .ovl-aspetto .al-btn-up { width: 100%; margin-top: 5px; justify-content: center; }
 .ap-stage .alert-ico img, .ap-stage .w-ico img { width: 100%; height: 100%; object-fit: contain; }
 
