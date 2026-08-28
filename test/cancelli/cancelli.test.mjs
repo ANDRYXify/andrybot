@@ -4,6 +4,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { lanciaScript } from '../aiuto.mjs';
 
+test('niente che si dichiari privato finisce su git', async () => {
+  const { codice, uscita } = await lanciaScript('scripts/verifica-riservati.mjs');
+  assert.equal(codice, 0, uscita);
+});
+
 test('nessun commento nei file che arrivano al browser', async () => {
   const { codice, uscita } = await lanciaScript('scripts/spoglia-commenti.mjs', ['--verifica']);
   assert.equal(codice, 0, uscita);

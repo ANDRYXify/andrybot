@@ -10,3 +10,11 @@ __pycache__/
 *.pyc
 # chiavi SSH generate dagli script
 server/pc/chiavi/
+
+# tracce private: NON vanno su GitHub (il repository e' pubblico).
+# Restano sul disco di chi ci lavora, fuori da git. Il cancello
+# scripts/verifica-riservati.mjs impedisce che ne rientri una per sbaglio.
+docs/ROTTA.md
+docs/CERVELLO.md
+docs/RAGIONE.md
+docs/anatomia.html
