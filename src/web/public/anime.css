@@ -682,7 +682,6 @@ body.pad-guida.cursore-on, body.pad-guida.cursore-on * { cursor: none !important
   .vol-lista { gap: 14px; }
 }
 
-
 .btn, button.btn, a.btn, .grp-btn, .modello-pronto,
 .pl-tile, .cerca-voce, .chip-domanda, .menu-voce, .drawer-voce {
   transition: transform var(--t-molla-su) var(--molla-medio), opacity .2s ease,
@@ -1091,26 +1090,27 @@ body.leggero .vivo::after, body.meno-moto .vivo::after { animation: none; opacit
 
 .ovl-scena { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 10px; margin-top: 10px; align-items: start; }
 
-/* Nel banco la testata si fa da parte: il titolo su una riga, niente
-   sottotitolo e niente «apri tutto / riduci tutto» (con una carta sola non
-   significano niente). Prima l'intestazione occupava 688px e all'area di lavoro
-   ne restavano 262. */
-body.banco-on .pagina-testata { margin-bottom: .6rem; }
+body.banco-on .contenuto {
+  max-width: none;
+  padding-left: clamp(.8rem, 1.4vw, 1.4rem);
+  padding-right: clamp(.8rem, 1.4vw, 1.4rem);
+  padding-bottom: .8rem;
+}
+body.banco-on .pagina-testata {
+  display: grid; grid-template-columns: auto 1fr;
+  align-items: center; column-gap: 1.1rem; row-gap: .35rem;
+  margin-bottom: .45rem;
+}
 body.banco-on .pagina-testata > p,
+body.banco-on .pagina-testata > .pt-occhiello,
 body.banco-on .pagina-testata > .carte-ctrl { display: none; }
+body.banco-on .pagina-testata > h1 { grid-column: 1; margin: 0; }
+body.banco-on .pagina-testata > .fam-barra { grid-column: 2; justify-self: start; margin: 0; }
+body.banco-on .pagina-testata > .guida-scheda { grid-column: 1 / -1; }
 body.banco-on .pagina-testata h1 { font-size: clamp(1.3rem, 1.1rem + .8vw, 1.55rem); }
 body.banco-on .pagina-testata > .guida-scheda { margin-top: .7rem; }
 body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; overflow: auto; }
 
-/* ── IL BANCO ────────────────────────────────────────────────────────────────
-   L'editor smette di essere una pagina che scorre e diventa un'area di lavoro
-   alta quanto lo schermo. La misura che ha motivato tutto: la tela cominciava a
-   1543px e i comandi che la modificano a 2564, su una finestra alta 950. Fra i
-   due c'erano mille pixel: era aritmeticamente impossibile vedere quello che
-   stavi cambiando mentre lo cambiavi.
-
-   La regola da cui discende il resto: il banco non scorre MAI. Se un pannello
-   ha piu' roba di quanta ne entra, scorre quel pannello — non la pagina. */
 .carta.ovl-banco {
   display: flex; flex-direction: column;
   height: calc(100svh - var(--banco-sopra, 132px));
@@ -1118,18 +1118,12 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
   padding: 0; overflow: hidden;
   margin-bottom: 0;
 }
-/* Le carte sono pieghevoli: il contenuto vive dentro .carta-corpo >
-   .carta-corpo-in, non come figlio diretto. Sono loro a dover diventare
-   contenitori a piena altezza, altrimenti la griglia sotto non ha spazio in cui
-   distendersi. */
 .carta.ovl-banco > .carta-corpo,
 .carta.ovl-banco > .carta-corpo > .carta-corpo-in {
   display: flex; flex-direction: column;
   flex: 1 1 auto; min-height: 0;
   margin: 0; padding: 0; overflow: hidden;
 }
-/* Nel banco l'area di lavoro e' il contenuto: le spiegazioni stanno nella
-   guida della sezione, non addosso alla tela. */
 .carta.ovl-banco h2,
 .carta.ovl-banco .carta-corpo-in > p,
 .carta.ovl-banco .carta-corpo-in > label.campo { display: none; }
@@ -1141,39 +1135,79 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
 }
 .carta.ovl-banco .carta-corpo-in > .riga-flessibile { gap: 8px; flex-wrap: wrap; }
 
+.ovl-testa-banco { align-items: center; }
+.ovl-testa-banco > .ovl-quale {
+  flex: none; margin: 0;
+  font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--testo-3);
+}
+.ovl-testa-banco > #ovl-quale {
+  flex: 1 1 180px; width: auto; min-width: 140px; max-width: 340px; margin: 0;
+}
+.ovl-testa-banco > #ovl-salva-tutto { margin-left: auto; }
+@media (max-width: 620px) {
+  .ovl-testa-banco > #ovl-quale { flex-basis: 100%; max-width: none; }
+  .ovl-testa-banco > #ovl-salva-tutto { margin-left: 0; }
+}
+
 .carta.ovl-banco .ovl-scena {
   flex: 1 1 auto; min-height: 0; margin: 0;
-  grid-template-columns: 190px minmax(0, 1fr) 268px;
-  gap: 0; align-items: stretch;
-}
-.carta.ovl-banco .ovl-livelli {
-  order: 1; border: 0; border-right: 1px solid var(--border);
-  border-radius: 0; overflow-y: auto; align-content: start;
+  display: block; position: relative;
+  background: var(--surface-2);
+  overflow: hidden;
 }
 .carta.ovl-banco .ovl-tela {
-  order: 2; display: grid; place-items: center;
-  padding: 14px; background: var(--surface-2);
-  overflow: auto;
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  padding: 18px; overflow: auto;
 }
+
+.carta.ovl-banco .ovl-livelli,
 .carta.ovl-banco .ovl-inspector {
-  order: 3; margin: 0; border: 0; border-left: 1px solid var(--border);
-  border-radius: 0; overflow-y: auto; background: var(--surface);
+  position: absolute; z-index: 4; margin: 0;
+  width: var(--pw, 208px); max-height: calc(100% - 24px);
+  border: 1px solid var(--border-2); border-radius: 12px;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  backdrop-filter: blur(14px) saturate(1.25);
+  -webkit-backdrop-filter: blur(14px) saturate(1.25);
+  box-shadow: var(--om-l);
+  overflow: hidden auto; padding: 0;
 }
-/* L'ispettore c'e' sempre, anche senza selezione: un pannello che appare e
-   scompare fa ballare la tela a ogni clic. Quando non c'e' niente di
-   selezionato dice cosa fare. */
-/* L'ispettore c'e' sempre: quando non c'e' selezione mostra solo il suo
-   messaggio, cosi la colonna non resta un rettangolo bianco senza spiegazione. */
+.carta.ovl-banco .ovl-livelli { left: 12px; top: 12px; --pw: 238px; }
+.carta.ovl-banco .ovl-inspector { right: 12px; top: 12px; --pw: 246px; }
+.carta.ovl-banco .ovl-livelli.mosso,
+.carta.ovl-banco .ovl-inspector.mosso { right: auto; }
+
+.pan-testa {
+  position: sticky; top: 0; z-index: 2;
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 8px 7px 10px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  border-bottom: 1px solid var(--border);
+  cursor: grab; user-select: none; touch-action: none;
+  font-size: .74rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--testo-3);
+}
+.pan-testa:active { cursor: grabbing; }
+.pan-tasto {
+  margin-left: auto; width: 26px; height: 26px; flex: none;
+  display: inline-grid; place-items: center;
+  border: 1px solid var(--border); border-radius: 7px;
+  background: var(--surface-2); color: var(--testo-3);
+  cursor: pointer; padding: 0;
+}
+.pan-tasto:hover { color: var(--testo); border-color: var(--border-2); }
+.pan-corpo { padding: 8px; }
+.arrotolato .pan-corpo { display: none; }
+.arrotolato { max-height: none !important; }
+
 .carta.ovl-banco .ovl-inspector[hidden] { display: block; }
-.carta.ovl-banco .ovl-inspector[hidden] > *:not(.ovl-vuoto) { display: none; }
-.carta.ovl-banco .ovl-inspector:not([hidden]) > .ovl-vuoto { display: none; }
+.carta.ovl-banco .ovl-inspector[hidden] .pan-corpo > *:not(.ovl-vuoto) { display: none; }
+.carta.ovl-banco .ovl-inspector:not([hidden]) .pan-corpo > .ovl-vuoto { display: none; }
 .carta.ovl-banco .ovl-vuoto {
   padding: 1.1rem .9rem; color: var(--testo-3); font-size: .86rem; line-height: 1.5;
 }
 
-/* La riga in fondo: le coordinate esatte della selezione. E' questa che rende
-   l'editor preciso — trascinare va bene per la posizione approssimativa, ma per
-   allineare due cose serve un numero scritto. */
 .ovl-piede {
   flex: none; display: flex; align-items: center; gap: 14px;
   padding: 7px 12px; border-top: 1px solid var(--border);
@@ -1183,30 +1217,33 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
 .ovl-piede b { color: var(--testo-2); font-weight: 600; }
 .ovl-piede .ovl-piede-dx { margin-left: auto; }
 
-@media (max-width: 1100px) {
-  .carta.ovl-banco .ovl-scena { grid-template-columns: 154px minmax(0, 1fr) 216px; }
-}
-@media (max-width: 860px) {
-  /* Sotto questa larghezza tre colonne non ci stanno: la tela sopra, e sotto
-     livelli e proprieta' affiancati. La tela resta comunque sempre in vista. */
+@media (max-width: 760px) {
   .carta.ovl-banco { height: auto; overflow: visible; }
   .carta.ovl-banco > .carta-corpo,
   .carta.ovl-banco > .carta-corpo > .carta-corpo-in { overflow: visible; }
-  .carta.ovl-banco .ovl-scena { grid-template-columns: 1fr 1fr; }
-  .carta.ovl-banco .ovl-tela { order: 1; grid-column: 1 / -1; border-bottom: 1px solid var(--border); }
-  .carta.ovl-banco .ovl-livelli { order: 2; border-right: 1px solid var(--border); }
-  .carta.ovl-banco .ovl-inspector { order: 3; }
+  .carta.ovl-banco .ovl-scena { display: flex; flex-direction: column; align-items: stretch; overflow: visible; }
+  .carta.ovl-banco .ovl-tela { position: relative; inset: auto; padding: 10px; order: 0; }
+  .carta.ovl-banco .ovl-livelli { order: 1; }
+  .carta.ovl-banco .ovl-inspector { order: 2; }
+  .carta.ovl-banco .ovl-livelli,
+  .carta.ovl-banco .ovl-inspector {
+    position: relative; left: auto !important; top: auto !important; right: auto !important;
+    width: auto; max-height: none; backdrop-filter: none; -webkit-backdrop-filter: none;
+    border-radius: 0; border-left: 0; border-right: 0; box-shadow: none;
+  }
+  .pan-testa { cursor: default; }
 }
 .ovl-tela { --ovl-zoom: 1; overflow: auto; }
-.ovl-tela #ovl-preview { width: calc(100% * var(--ovl-zoom)); min-width: calc(100% * var(--ovl-zoom)); margin: 0; }
+.ovl-tela #ovl-preview { width: calc(100% * var(--ovl-zoom)); min-width: 0; max-width: none; margin: 0; }
+
+@media (min-width: 761px) {
+  .carta.ovl-banco .ovl-tela { container-type: size; place-content: safe center; }
+  .carta.ovl-banco .ovl-tela #ovl-preview { width: calc(min(100cqw, 100cqh * 16 / 9) * var(--ovl-zoom)); }
+}
 
 .ovl-livelli {
   border: 1px solid var(--border); border-radius: var(--r-m); background: var(--surface-2);
   padding: 7px; display: grid; gap: 3px; align-content: start;
-}
-.ovl-livelli-tit {
-  margin: 0 0 2px; padding: .2rem .35rem; font-size: .62rem; font-weight: 600;
-  letter-spacing: .18em; text-transform: uppercase; color: var(--testo-3);
 }
 .ovl-liv {
   display: flex; align-items: center; gap: .5rem; width: 100%; text-align: left;
@@ -1259,7 +1296,6 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
 @media (max-width: 900px) {
   .ovl-scena { grid-template-columns: minmax(0, 1fr); }
   .ovl-livelli { display: flex; flex-wrap: wrap; gap: 4px; }
-  .ovl-livelli-tit { flex: 1 1 100%; }
   .ovl-liv { width: auto; flex: 1 1 150px; }
   .ovl-gruppo.ovl-zoom { margin-left: 0; }
 }
@@ -1329,8 +1365,6 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
 .sv-tasti .sv-annulla { padding: 0 .7rem; color: var(--testo-2); }
 .sv-tasti .sv-annulla:hover { color: var(--testo); }
 
-/* La X. Almeno 28px per lato: sotto i 24 sarebbe fuori norma (WCAG 2.5.8) e
-   soprattutto difficile da centrare col pollice, che e' dove serve di piu'. */
 .sv-chiudi {
   flex: none; width: 28px; height: 28px; margin-left: 2px;
   display: inline-grid; place-items: center;
@@ -1341,9 +1375,6 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
 }
 .sv-chiudi:hover { color: var(--testo); border-color: var(--border-2); background: var(--surface-3); }
 
-/* La barra galleggia sopra il contenuto: senza questo spazio copriva l'ultima
-   carta della pagina, e proprio i comandi che stavi per usare. La classe veniva
-   gia' messa dal codice ma non esisteva nessuna regola che la usasse. */
 body.con-salva { padding-bottom: 92px; }
 @media (max-width: 720px) {
   body.con-salva { padding-bottom: 116px; }
@@ -1351,10 +1382,6 @@ body.con-salva { padding-bottom: 92px; }
 }
 @media (max-width: 720px) {
   body.con-nav .sv-barra { bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
-  /* Su schermo stretto la barra sta su due righe, quindi il tondo da 999px non
-     va piu' bene. E l'ordine conta: prima riga testo + X, seconda i tasti a
-     piena larghezza. Lasciata al flusso naturale la X andava a capo da sola,
-     staccata, sopra il campo che stava sotto la barra. */
   .sv-barra { padding: .6rem .7rem; gap: 8px; border-radius: 18px; width: calc(100vw - 24px); }
   .sv-testo { font-size: .8rem; order: 1; white-space: normal; }
   .sv-chiudi { order: 2; margin-left: auto; }
