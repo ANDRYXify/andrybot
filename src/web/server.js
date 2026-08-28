@@ -54,6 +54,7 @@ import * as brainpy from '../ai/brainpy.js';
 import { redeemPass } from './gate.js';
 import { salute } from '../salute.js';
 import { anteprima as anteprimaImport, moduloDa } from '../features/importacomandi.js';
+import { esporta as esportaDati } from '../features/esporta.js';
 
 const log = makeLog('web');
 
@@ -5510,6 +5511,23 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const ok = await modules.eseguiPerApi(login, req.body || {}, (t) => manager.say(login, t));
     if (!ok) return res.status(400).json({ errore: 'azione non riconosciuta' });
     res.json({ ok: true });
+  }));
+
+  // PORTARSI VIA I PROPRI DATI. Non è cortesia: su un prodotto a pagamento in
+  // Europa è un diritto (portabilità), ed è comunque la cosa giusta — chi ha
+  // costruito duecento comandi e una pagina pubblica deve poter uscire dalla
+  // porta con la sua roba in mano. Solo il PROPRIETARIO del canale: un
+  // moderatore gestisce, non possiede.
+  app.get('/api/streamer/esporta', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    let dati;
+    try { dati = esportaDati(login); }
+    catch (e) { return res.status(500).json({ errore: e?.message || 'esportazione non riuscita' }); }
+    const nome = `socialbot-${login}-${new Date().toISOString().slice(0, 10)}.json`;
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${nome}"`);
+    res.setHeader('Cache-Control', 'no-store');
+    res.send(JSON.stringify(dati, null, 2));
   }));
 
   // ------------------------------------------------------------ API admin

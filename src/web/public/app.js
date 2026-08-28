@@ -2350,6 +2350,7 @@ const ICO = {
   immagine: '<rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
   video: '<path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/>',
   carica: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/>',
+  scarica: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 11l5 5 5-5"/><path d="M12 16V4"/>',
   globo: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18Z"/>',
 
   occhio: '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
@@ -3613,6 +3614,13 @@ function pannelloStato() {
       <p>${L('Il motore veloce del bot che', 'The bot’s fast engine that', 'El motor rápido del bot que')} <strong class="primo-piano">${L('cresce da solo', 'grows on its own', 'crece solo')}</strong>: ${L('risponde all\'istante a ciò che ha già imparato e, quando incontra qualcosa di nuovo, se lo segna e lo impara dal maestro. Più lo alleni (anche via DM su Telegram), più sa fare da sé.', 'answers instantly to what it already learned and, when it meets something new, notes it and learns it from the teacher. The more you train it (also via Telegram DM), the more it can do on its own.', 'responde al instante a lo que ya aprendió y, cuando encuentra algo nuevo, lo anota y lo aprende del maestro. Cuanto más lo entrenas (también por DM en Telegram), más sabe hacer solo.')}</p>
       <div id="rete-panoramica"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
     </div>
+    <div class="carta">
+      <h2>${_hIco(ICO.scarica)}${L('I tuoi dati sono tuoi', 'Your data is yours', 'Tus datos son tuyos')}</h2>
+      <p>${L('Scarica', 'Download', 'Descarga')} <strong class="primo-piano">${L('tutto quello che è tuo', "everything that's yours", 'todo lo que es tuyo')}</strong> ${L('in un file: comandi, moduli, effetti, punti, ore guardate, citazioni, contatori, pagina pubblica, impostazioni. Un file solo, leggibile, che puoi tenere o portare altrove.', 'in one file: commands, modules, effects, points, watch time, quotes, counters, public page, settings. One readable file you can keep or take elsewhere.', 'en un archivo: comandos, módulos, efectos, puntos, horas vistas, citas, contadores, página pública, ajustes. Un solo archivo legible que puedes guardar o llevarte.')}</p>
+      <p class="suggerimento">${L('Non contiene le chiavi di accesso ai tuoi account, né i messaggi scritti da altre persone: quelli sono loro, non tuoi.', "It contains no access keys to your accounts, and no messages written by other people: those are theirs, not yours.", 'No contiene las claves de acceso a tus cuentas ni los mensajes escritos por otras personas: esos son suyos, no tuyos.')}</p>
+      <p class="spazio-sopra"><button class="btn secondario" id="btn-esporta">${_bIco(ICO.scarica)}${L('Scarica i miei dati', 'Download my data', 'Descargar mis datos')}</button></p>
+    </div>
+
     <div class="carta">
       <h2>${_hIco(ICO.telefono)}${L('Installa l\'app', 'Install the app', 'Instala la app')}</h2>
       <p>${L('Installa la dashboard', 'Install the dashboard', 'Instala el panel')} <strong class="primo-piano">${L('come app', 'as an app', 'como app')}</strong> ${L('sul telefono o sul PC: la apri a schermo intero come un\'app vera, senza doverla cercare nel browser.', 'on your phone or PC: open it full-screen like a real app, no need to look for it in the browser.', 'en el móvil o el PC: la abres a pantalla completa como una app de verdad, sin buscarla en el navegador.')}</p>
@@ -11923,6 +11931,23 @@ async function caricaTracking() {
     if (inp) { inp.value = url; inp.dispatchEvent(new Event('input', { bubbles: true })); }
     toast(L('Meme impostato — ricordati di salvare.', 'Meme set — remember to save.', 'Meme configurado — recuerda guardar.'));
   }); });
+
+  document.getElementById('btn-esporta')?.addEventListener('click', () => conErrore(async () => {
+    if (DEMO) { toast(L('In demo non si scarica — accedi per farlo davvero.', "In demo there's no download — log in to do it for real.", 'En la demo no se descarga — inicia sesión para hacerlo de verdad.')); return; }
+    const b = document.getElementById('btn-esporta');
+    b.disabled = true;
+    try {
+      const r = await fetch('/api/streamer/esporta');
+      if (!r.ok) throw new Error('errore ' + r.status);
+      const blob = await r.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `socialbot-${stato.user.login}-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      toast(L('Scaricato ✓', 'Downloaded ✓', 'Descargado ✓'));
+    } finally { b.disabled = false; }
+  }));
 
   const btnSalva = document.getElementById('trk-salva');
   if (btnSalva) btnSalva.onclick = () => conErrore(async () => {
