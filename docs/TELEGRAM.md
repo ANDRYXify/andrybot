@@ -129,3 +129,43 @@ iscritto gratis, cliente pagante, membro in grazia, disabilitato, in attesa, sen
 gia consumata, se stesso. Passano solo i confermati e quello a mano; togliendo la conferma a uno
 esce da solo al giro dopo e rientra quando la riprende, mentre l'amico aggiunto a mano non viene
 mai sfiorato.
+
+## «Conflict: can't use getUpdates while webhook is active»
+
+Il difetto e la sua radice, perché è una classe intera e non un caso.
+
+Telegram ha **due modi** di consegnare i messaggi a un bot, e sono esclusivi: o
+il bot li chiede lui (`getUpdates`), o Telegram li spinge a un indirizzo
+(webhook). Con il webhook acceso, `getUpdates` non risponde: dice `Conflict`.
+
+Il bot interattivo — quello che legge e risponde nel gruppo, e la chat privata —
+funziona **a webhook**. Quindi il webhook è acceso ogni volta che le cose vanno
+bene. Il pulsante **«Rileva gruppo»**, però, chiamava `getUpdates` senza
+guardare: falliva sempre, proprio quando il resto funzionava.
+
+Il gemello «rileva destinazioni» il controllo ce l'aveva. **Lo stesso fatto
+scritto in due posti, e uno se n'era dimenticato**: è così che nascono questi
+difetti, non per distrazione di un momento.
+
+### Come è stato chiuso
+
+- Una funzione sola risponde a «cosa ha visto il bot» (`chatViste`): legge le
+  chat che il **webhook** ha registrato, e interroga `getUpdates` **soltanto**
+  se il webhook è spento. Lo stato lo chiede a Telegram, non al nostro flag, che
+  può essere disallineato.
+- `rilevaGruppo` — la seconda porta su `getUpdates`, quella che si era
+  dimenticata — **non esiste più**. Una porta sola non si può dimenticare.
+- La regola di *quale* chat collegare è una funzione pura (`scegliGruppo`):
+  vince il gruppo più recente, la chat privata è il ripiego, un topic non è un
+  gruppo. Si prova senza Telegram, e vale per ogni pulsante che collega qualcosa.
+- Il collaudo lo tiene fermo: conta che la porta su `getUpdates` sia **una**, e
+  che il controllo del webhook venga **prima** della chiamata. Messo alla prova
+  togliendo il controllo: rosso.
+
+### Se lo rivedi
+
+Vuol dire che qualcosa parla con `getUpdates` senza passare da `chatViste`.
+Il collaudo dovrebbe averlo già fermato; se è successo lo stesso, il messaggio
+in dashboard ti dice cosa fare: scrivere `/collega` **dentro** il gruppo (un
+comando arriva sempre al bot, un messaggio normale no se la privacy del bot è
+accesa) e riprovare — così il webhook lo registra e il rilevamento lo trova.
