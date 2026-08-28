@@ -2371,7 +2371,7 @@ export const sfondi = {
 
 // ---------------------------------------------------------------- moduli (automazioni)
 
-const MAX_MODULI = 100;   // tetto di moduli per canale
+export const MAX_MODULI = 100;   // tetto di moduli per canale
 
 // Deserializza una riga della tabella modules nel modello completo del modulo.
 function rowToModule(r) {

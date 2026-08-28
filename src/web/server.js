@@ -17,7 +17,7 @@ import { dirname, join, basename } from 'node:path';
 import { config, SCOPES, missingConfig } from '../config.js';
 import * as filigrana from '../watermark.js';   // filigrana di proprietà (Andrea Taliento / ANDRYXify)
 import { makeLog } from '../logger.js';
-import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, friends, sfondi as sfondiDb } from '../db.js';
+import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb } from '../db.js';
 import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO } from '../db.js';
 import { renderLinkPage, renderInformativa } from '../features/linkpagina.js';
@@ -53,6 +53,7 @@ import * as persona from '../ai/persona.js';
 import * as brainpy from '../ai/brainpy.js';
 import { redeemPass } from './gate.js';
 import { salute } from '../salute.js';
+import { anteprima as anteprimaImport, moduloDa } from '../features/importacomandi.js';
 
 const log = makeLog('web');
 
@@ -4103,6 +4104,44 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     try { id = modulesDb.save(login, req.body); }
     catch (e) { return res.status(400).json({ errore: e?.message || 'salvataggio non riuscito' }); }
     res.json({ ok: true, id });
+  }));
+
+  // IMPORTARE i comandi da un altro bot. Due passi separati apposta: prima
+  // l'anteprima (che non tocca niente e dice esattamente cosa succederebbe),
+  // poi l'applicazione di ciò che lo streamer ha visto. Non si scrive mai nulla
+  // che non sia stato mostrato prima.
+  app.post('/api/streamer/comandi/importa', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const testo = String(req.body?.testo || '').slice(0, 400_000);
+    if (!testo.trim()) return res.status(400).json({ errore: 'non c\'è niente da importare' });
+
+    const gia = modulesDb.list(login) || [];
+    const posti = Math.max(0, MAX_MODULI - gia.length);
+    const vista = anteprimaImport(testo, { esistenti: gia, posti });
+    if (!vista.formato) {
+      return res.status(400).json({ errore: 'non riconosco questo formato: incolla l\'export del tuo bot, un CSV, o un elenco «!comando risposta»' });
+    }
+    if (!req.body?.applica) return res.json({ ok: true, anteprima: vista });
+
+    // Applicazione: solo i buoni, più quelli da rivedere se lo streamer lo ha
+    // chiesto sapendo cosa sono.
+    const daFare = [...vista.buoni, ...(req.body?.includiDaRivedere ? vista.daRivedere : [])]
+      .filter((c) => !c.uguale);
+    const perNome = new Map(gia.filter((m) => m?.trigger?.tipo === 'comando')
+      .map((m) => [String(m.trigger.comando || '').toLowerCase(), m.id]));
+
+    let importati = 0, aggiornati = 0, senzaPosto = 0;
+    const falliti = [];
+    for (const c of daFare) {
+      const idEsistente = perNome.get(c.nome);
+      if (!idEsistente && importati >= posti) { senzaPosto++; continue; }
+      try {
+        const m = moduloDa(c);
+        if (idEsistente) { modulesDb.save(login, { ...m, id: idEsistente }); aggiornati++; }
+        else { modulesDb.save(login, m); importati++; }
+      } catch (e) { falliti.push({ nome: c.nome, errore: e?.message || 'non riuscito' }); }
+    }
+    res.json({ ok: true, importati, aggiornati, senzaPosto, falliti, anteprima: vista });
   }));
 
   // PRESET "un clic": crea un comando pronto per cambiare CATEGORIA o TITOLO su Twitch,

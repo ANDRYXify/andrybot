@@ -290,6 +290,33 @@ function _demoLibreria(percorso) {
   return { items };
 }
 
+const IMPORT_DEMO_TESTO = `{"commands":[
+  {"name":"!discord","message":"Entra nel Discord: discord.gg/andryx"},
+  {"name":"!ciao","message":"Ciao $(user), benvenuto!"},
+  {"name":"!morti","message":"Oggi sono morto $(count) volte"},
+  {"name":"!so","message":"Andate a seguire $(touser)!"},
+  {"name":"!meteo","message":"$(urlfetch https://api.meteo.example/$(query))"}
+]}`;
+
+function _demoImport(corpo) {
+  const v = {
+    formato: 'json', totale: 5, troncato: false, posti: 97,
+    buoni: [
+      { nome: 'discord', risposta: 'Entra nel Discord: discord.gg/andryx', originale: 'Entra nel Discord: discord.gg/andryx', attivo: true, sovrascrive: false, uguale: false, avvisi: [] },
+      { nome: 'ciao', risposta: 'Ciao $user, benvenuto!', originale: 'Ciao $(user), benvenuto!', attivo: true, sovrascrive: false, uguale: false, avvisi: [] },
+      { nome: 'morti', risposta: 'Oggi sono morto $count(morti) volte', originale: 'Oggi sono morto $(count) volte', attivo: true, sovrascrive: false, uguale: false, avvisi: [] },
+      { nome: 'so', risposta: 'Andate a seguire $touser!', originale: 'Andate a seguire $(touser)!', attivo: true, sovrascrive: true, uguale: false, avvisi: [] },
+    ],
+    daRivedere: [
+      { nome: 'meteo', risposta: '$(urlfetch https://api.meteo.example/$args)', originale: '$(urlfetch https://api.meteo.example/$(query))', attivo: true, sovrascrive: false, uguale: false,
+        avvisi: [{ tipo: 'non-tradotto', pezzo: '$(urlfetch …)', cosa: L('una chiamata a un indirizzo esterno', 'a call to an external address', 'una llamada a una dirección externa'), dove: L('le azioni «webhook» dei Moduli', 'the Modules «webhook» actions', 'las acciones «webhook» de los Módulos') }] },
+    ],
+    scartati: [],
+  };
+  if (corpo?.applica) return { ok: true, importati: 3, aggiornati: 1, senzaPosto: 0, falliti: [], anteprima: v };
+  return { ok: true, anteprima: v };
+}
+
 function apiDemo(percorso, opzioni = {}) {
   const metodo = (opzioni.method || 'GET').toUpperCase();
   const via = percorso.split('?')[0];
@@ -321,6 +348,7 @@ function apiDemo(percorso, opzioni = {}) {
     { testo: 'ti porterò in un brodificio', autore: 'andryxify', data: '2024-06-17' },
   ] });
   if (via === '/api/streamer/citazioni/importa') return Promise.resolve({ ok: true, aggiunte: 2, saltate: 0 });
+  if (via === '/api/streamer/comandi/importa') return Promise.resolve(_demoImport(opzioni.body));
   if (via === '/api/streamer/libreria/importa') {
     const it = LIB_DEMO.find((x) => x.id === Number(opzioni.body?.id));
     return Promise.resolve({ ok: true, comando: normComandoWeb(it?.nome || 'media') });
@@ -8535,6 +8563,20 @@ function pannelloModuli() {
     </div>
 
     <div class="carta">
+      <h2>${_hIco(ICO.pacco)}${L('Porta qui i comandi che hai già', 'Bring over the commands you already have', 'Trae los comandos que ya tienes')}</h2>
+      <p>${L('Vieni da', 'Coming from', 'Vienes de')} <strong>Nightbot</strong>, <strong>StreamElements</strong>, <strong>Fossabot</strong> ${L('o altro? Incolla qui quello che riesci a copiare:', 'or elsewhere? Paste whatever you can copy:', 'u otro? Pega aquí lo que puedas copiar:')}
+      ${L("l'export del tuo bot, un CSV, o un semplice elenco", 'your bot export, a CSV, or a plain list', 'la exportación de tu bot, un CSV o una simple lista')} <code>!comando risposta</code>.
+      ${L('Le variabili vengono tradotte', 'Variables are translated', 'Las variables se traducen')} (<code>$(user)</code> → <code>$user</code>) ${L('e prima di scrivere qualsiasi cosa ti mostro esattamente cosa succede.', 'and before writing anything I show you exactly what happens.', 'y antes de escribir nada te muestro exactamente qué pasa.')}</p>
+      <textarea id="imp-testo" class="campo-largo" rows="6" spellcheck="false" placeholder="${L('Incolla qui…', 'Paste here…', 'Pega aquí…')}"></textarea>
+      <p class="spazio-sopra">
+        <button class="btn secondario" id="imp-vedi">${_bIco(ICO.occhio)}${L('Guarda cosa succede', 'See what happens', 'Mira qué pasa')}</button>
+        <label class="btn secondario" for="imp-file">${_bIco(ICO.carica)}${L('Apri un file', 'Open a file', 'Abre un archivo')}</label>
+        <input type="file" id="imp-file" accept=".json,.csv,.txt,text/plain,application/json" hidden>
+      </p>
+      <div id="imp-esito"></div>
+    </div>
+
+    <div class="carta">
       <h2>${_hIco(ICO.lista)}${L('I tuoi moduli', 'Your modules', 'Tus módulos')}</h2>
       <ul id="lista-moduli" class="lista-moduli"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
     </div>
@@ -11216,6 +11258,72 @@ function attivaPiattaforma() {
     document.getElementById('qc-risposta').value = '';
     toast(L('Comando !', 'Command !', 'Comando !') + comando + L(' creato', ' created', ' creado'));
     caricaModuli();
+  }));
+
+  let _impVista = null;
+
+  const impRiga = (c) => `<li class="imp-riga">
+    <code>!${esc(c.nome)}</code>
+    <span class="imp-testo">${esc(c.risposta)}</span>
+    ${c.sovrascrive ? `<span class="imp-tag imp-sovra">${L('sostituisce quello che hai', 'replaces what you have', 'sustituye el que tienes')}</span>` : ''}
+    ${c.uguale ? `<span class="imp-tag">${L('identico: lo salto', 'identical: skipping', 'idéntico: lo salto')}</span>` : ''}
+    ${(c.avvisi || []).map((a) => `<span class="imp-tag imp-nota">${esc(a.cosa)}${a.dove ? ' — ' + L('qui si fa con', 'here you do it with', 'aquí se hace con') + ' ' + esc(a.dove) : ''}</span>`).join('')}
+  </li>`;
+
+  function mostraAnteprimaImport(v) {
+    _impVista = v;
+    const box = document.getElementById('imp-esito');
+    if (!box) return;
+    const entrano = v.buoni.filter((c) => !c.uguale).length;
+    const identici = v.buoni.filter((c) => c.uguale).length;
+    box.innerHTML = `
+      <div class="riquadro-info spazio-sopra">
+        <strong>${L('Ho letto', 'I read', 'He leído')} ${v.totale} ${L('comandi', 'commands', 'comandos')}</strong>${v.troncato ? ` — ${L('mostro i primi', 'showing the first', 'muestro los primeros')} ${v.buoni.length + v.daRivedere.length}` : ''}. ${entrano} ${L('entrano', 'come in', 'entran')}${identici ? `, ${identici} ${L('già identici', 'already identical', 'ya idénticos')}` : ''}${v.daRivedere.length ? `, ${v.daRivedere.length} ${L('da rivedere', 'to review', 'a revisar')}` : ''}${v.scartati.length ? `, ${v.scartati.length} ${L('scartati', 'discarded', 'descartados')}` : ''}.
+        ${v.posti !== Infinity && entrano > v.posti ? `<br><strong>${L('Hai posto per', 'You have room for', 'Tienes sitio para')} ${v.posti}</strong>: ${L('il resto non entrerà.', "the rest won't fit.", 'el resto no entrará.')}` : ''}
+      </div>
+      ${v.buoni.length ? `<h4 class="spazio-sopra">${L('Entrano così', 'They come in like this', 'Entran así')}</h4><ul class="imp-lista">${v.buoni.map(impRiga).join('')}</ul>` : ''}
+      ${v.daRivedere.length ? `<h4 class="spazio-sopra">${L('Da rivedere', 'To review', 'A revisar')}</h4>
+        <p class="suggerimento">${L('Usano cose che il bot di prima sapeva fare e qui si fanno in un altro modo. Se li importi così com’è, in chat esce il testo grezzo.', 'They use things the old bot could do that work differently here. If you import them as they are, chat will show the raw text.', 'Usan cosas que el bot anterior hacía y aquí se hacen de otra forma. Si los importas tal cual, en el chat saldrá el texto en crudo.')}</p>
+        <ul class="imp-lista">${v.daRivedere.map(impRiga).join('')}</ul>
+        <label class="riga-check"><input type="checkbox" id="imp-anche-rivedere"> ${L('Importali lo stesso: li sistemo io dopo', "Import them anyway: I'll fix them later", 'Impórtalos igual: los arreglo yo luego')}</label>` : ''}
+      ${v.scartati.length ? `<details class="spazio-sopra"><summary>${L('Scartati', 'Discarded', 'Descartados')} (${v.scartati.length})</summary>
+        <ul class="imp-lista">${v.scartati.map((x) => `<li class="imp-riga"><code>${esc(x.nome)}</code><span class="imp-tag">${esc(x.perche)}</span></li>`).join('')}</ul></details>` : ''}
+      ${(v.buoni.length || v.daRivedere.length) ? `<p class="spazio-sopra"><button class="btn" id="imp-applica">${_bIco(ICO.spunta)}${L('Importa', 'Import', 'Importar')}</button></p>` : ''}`;
+
+    document.getElementById('imp-applica')?.addEventListener('click', () => conErrore(async () => {
+      const b = document.getElementById('imp-applica');
+      b.disabled = true; b.textContent = L('Importo…', 'Importing…', 'Importando…');
+      const r = await api('/api/streamer/comandi/importa', { method: 'POST', body: {
+        testo: document.getElementById('imp-testo').value,
+        applica: true,
+        includiDaRivedere: !!document.getElementById('imp-anche-rivedere')?.checked,
+      } });
+      const pezzi = [];
+      if (r.importati) pezzi.push(r.importati + ' ' + L('nuovi', 'new', 'nuevos'));
+      if (r.aggiornati) pezzi.push(r.aggiornati + ' ' + L('aggiornati', 'updated', 'actualizados'));
+      toast(pezzi.length ? L('Fatti: ', 'Done: ', 'Hechos: ') + pezzi.join(', ') : L('Niente da fare: era già tutto qui.', 'Nothing to do: it was all here already.', 'Nada que hacer: ya estaba todo aquí.'));
+      if (r.senzaPosto) toast(r.senzaPosto + ' ' + L('non sono entrati: hai finito i posti.', "didn't fit: you're out of room.", 'no entraron: te has quedado sin sitio.'), 'errore');
+      document.getElementById('imp-esito').innerHTML = '';
+      document.getElementById('imp-testo').value = '';
+      caricaModuli();
+    }));
+  }
+
+  document.getElementById('imp-vedi')?.addEventListener('click', () => conErrore(async () => {
+    const campo = document.getElementById('imp-testo');
+    if (DEMO && !(campo.value || '').trim()) campo.value = IMPORT_DEMO_TESTO;
+    const testo = (campo?.value || '').trim();
+    if (!testo) { toast(L('Incolla prima qualcosa.', 'Paste something first.', 'Pega algo antes.'), 'errore'); return; }
+    const r = await api('/api/streamer/comandi/importa', { method: 'POST', body: { testo } });
+    mostraAnteprimaImport(r.anteprima);
+  }));
+
+  document.getElementById('imp-file')?.addEventListener('change', (ev) => conErrore(async () => {
+    const f = ev.target.files[0]; ev.target.value = '';
+    if (!f) return;
+    if (f.size > 400_000) { toast(L('File troppo grande (max 400 KB).', 'File too big (max 400 KB).', 'Archivo demasiado grande (máx. 400 KB).'), 'errore'); return; }
+    document.getElementById('imp-testo').value = await f.text();
+    document.getElementById('imp-vedi').click();
   }));
 
   const presetComando = (tipo, etichetta) => conErrore(async () => {
