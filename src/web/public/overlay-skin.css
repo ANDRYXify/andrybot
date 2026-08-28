@@ -1,3 +1,5 @@
+/* © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live */
+/* Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live */
 
 
 :root {
@@ -20,9 +22,6 @@
   --size: 27px;
   --font: var(--font-sistema);
   position: relative;
-  /* la tela virtuale e' 1920 di larghezza: le misure vanno in rapporto a
-     quella, non alla finestra del browser. Con vw un alert cambiava proporzioni
-     a seconda di quanto era larga la pagina della dashboard. */
   min-width: 320px; max-width: 74%;
   background: color-mix(in srgb, var(--bg) var(--op), transparent);
   border: var(--border) solid var(--acc);
@@ -125,26 +124,9 @@
   position: absolute; top: 0; left: 0;
   width: 1920px; height: 1080px; transform-origin: top left;
 }
-/* Un elemento in posizione assoluta senza larghezza dichiarata la ricava dallo
-   spazio che resta fra il suo bordo sinistro e il bordo destro del contenitore.
-   Portato all'estrema destra (left: 100%) quello spazio e' ZERO, quindi si
-   comprime al minimo possibile: la chat passava da 53 a 9 pixel di larghezza e
-   da 18 a 177 di altezza, con il testo che andava a capo una lettera per riga.
-   Il translate successivo la riportava dentro, ma ormai era schiacciata.
 
-   Con max-content la larghezza dipende dal contenuto e non da dove si trova,
-   che e' l'unica cosa sensata per un elemento che si puo' spostare ovunque. */
 .ap-stage .ap-el { position: absolute; width: max-content; max-width: 100%; }
 
-/* Nell'editor il transform NON si anima, e la ragione merita due righe.
-   Le animazioni di entrata degli alert (slide, pop, zoom, flip) dichiarano una
-   transizione sul transform — giusto: e' cosi che entrano in scena in OBS. Ma
-   il posizionamento usa lo STESSO transform. Risultato: trascinando un elemento
-   nell'editor, quello inseguiva il puntatore con quattro decimi di ritardo, e
-   con «pop» — la cui curva rimbalza — girava intorno al punto invece di
-   fermarcisi. Il comportamento del trascinamento dipendeva da quale animazione
-   avevi scelto per gli alert, che non ha alcun senso.
-   Qui si posiziona; le animazioni si guardano col pulsante di prova. */
 #ovl-preview .ap-el { transition-property: opacity; }
 .ap-stage .ap-chat { display: flex; flex-direction: column; gap: 6px; }
 .ap-stage .ap-chat.destra { align-items: flex-end; }

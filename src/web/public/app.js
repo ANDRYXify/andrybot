@@ -267,10 +267,19 @@ function statoDemo() {
   };
 }
 
+const _demoScritture = {};
+
 function apiDemo(percorso, opzioni = {}) {
   const metodo = (opzioni.method || 'GET').toUpperCase();
   const via = percorso.split('?')[0];
   if (metodo === 'GET') return Promise.resolve(_demoGet(via));
+
+  if (via === '/api/streamer/impostazioni' && Array.isArray(opzioni.body?.overlays)) {
+    const vecchi = (_demoScritture.overlays || _demoGet('/api/streamer/overlays').overlays || []);
+    _demoScritture.overlays = opzioni.body.overlays.map((o) => ({
+      ...o, url: vecchi.find((v) => v.id === o.id)?.url || 'https://socialbot.live/o/andryx_demo/' + o.id,
+    }));
+  }
 
   if (via === '/api/me') return Promise.resolve(statoDemo());
   if (via === '/api/moderatori') return Promise.resolve({ invito: 'https://socialbot.live/mod?token=demo' });
@@ -295,6 +304,7 @@ function apiDemo(percorso, opzioni = {}) {
 }
 
 function _demoGet(via) {
+  if (via === '/api/streamer/overlays' && _demoScritture.overlays) return { overlays: _demoScritture.overlays };
   const F = {
     '/api/me': statoDemo(),
     '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://socialbot.live/tiktok/callback' },
@@ -610,10 +620,6 @@ function _osservatore() {
   return _rivObs;
 }
 
-// In due tempi. `preparaCarte` mette le carte allo stato iniziale, invisibili,
-// senza avviare niente: serve perche' lo SCATTO che il browser prende del nuovo
-// stato le catturi gia' invisibili, e il contenitore si apra vuoto.
-// `rivelaCarte` avvia davvero, e va chiamata a transizione finita.
 function preparaCarte(scope = document) {
   if (_menoMoto) return;
   for (const c of scope.querySelectorAll('.carta')) {
@@ -622,9 +628,6 @@ function preparaCarte(scope = document) {
   }
 }
 
-// Fa ripartire la comparsa. La classe si toglie, si forza il ricalcolo e si
-// rimette: senza quel passaggio il browser non vede un cambiamento e alla
-// seconda visita della stessa sezione le animazioni non ripartirebbero.
 function avviaComparsa(sezioni) {
   const t = document.getElementById('pagina-testata');
   if (t) {
@@ -636,9 +639,6 @@ function avviaComparsa(sezioni) {
   (sezioni || []).forEach((p) => rivelaCarte(p));
 }
 
-// Arma la comparsa: da qui in poi la testata sta nascosta finche' non parte.
-// Va chiamata solo da chi la fara' partire davvero, e con una rete di sicurezza
-// che la scopre comunque se qualcosa andasse storto per strada.
 function armaComparsa() {
   const t = document.getElementById('pagina-testata');
   if (!t || _menoMoto) return;
@@ -660,9 +660,6 @@ function rivelaCarte(scope = document) {
     const r = c.getBoundingClientRect();
     const visibile = r.top < window.innerHeight * 0.92;
 
-    // Le carte continuano la scala della testata (occhiello 0, titolo 40,
-    // sottotitolo 120, guida 180): la prima carta parte da li, non da zero.
-    // Chi entra dopo, scorrendo, non ha ritardo: aspetterebbe due volte.
     c.style.setProperty('--rev-delay', visibile ? 230 + Math.min(inVista++, 5) * 55 + 'ms' : '0ms');
     obs.observe(c);
   }
@@ -1037,14 +1034,17 @@ function montaConfiguratore(root, d, { gia = [], suOk = null } = {}) {
   aggiorna();
 }
 
-function chiediTesto({ titolo = '', testo = '', valore = '', ok = 'OK' } = {}) {
+function chiediTesto({ titolo = '', testo = '', valore = '', ok = 'OK', scelte = null } = {}) {
   return new Promise((risolvi) => {
     const el = document.createElement('div');
     el.className = 'bv-velo mdl-chiedi';
+    const bloccoScelte = scelte ? `<label class="campo spazio-sopra" for="mdl-scelta">${esc(scelte.etichetta || '')}</label>
+      <select class="campo-largo mdl-scelta" id="mdl-scelta">${scelte.opzioni.map(([v, t]) => `<option value="${esc(v)}"${v === scelte.valore ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>` : '';
     el.innerHTML = `<div class="bv-carta mdl-carta" role="dialog" aria-modal="true">
       <h2>${esc(titolo)}</h2>
       ${testo ? `<p class="bv-intro">${esc(testo)}</p>` : ''}
       <input type="text" class="campo-largo mdl-campo" value="${esc(valore)}" maxlength="40" autocomplete="off">
+      ${bloccoScelte}
       <div class="bv-azioni">
         <button type="button" class="btn grande" data-mdl="ok">${esc(ok)}</button>
         <button type="button" class="btn grande secondario" data-mdl="no">${L('Annulla', 'Cancel', 'Cancelar')}</button>
@@ -1053,7 +1053,9 @@ function chiediTesto({ titolo = '', testo = '', valore = '', ok = 'OK' } = {}) {
     document.body.appendChild(el);
     requestAnimationFrame(() => el.classList.add('dentro'));
     const campo = el.querySelector('.mdl-campo');
+    const menu = el.querySelector('.mdl-scelta');
     campo.focus(); campo.select();
+    const esito = () => (scelte ? { nome: campo.value, scelta: menu ? menu.value : null } : campo.value);
     let chiuso = false;
     const via = (v) => {
       if (chiuso) return; chiuso = true;
@@ -1064,12 +1066,12 @@ function chiediTesto({ titolo = '', testo = '', valore = '', ok = 'OK' } = {}) {
     };
     const tasti = (ev) => {
       if (ev.key === 'Escape') { ev.preventDefault(); via(null); }
-      else if (ev.key === 'Enter' && ev.target === campo) { ev.preventDefault(); via(campo.value); }
+      else if (ev.key === 'Enter' && ev.target === campo) { ev.preventDefault(); via(esito()); }
     };
     document.addEventListener('keydown', tasti, true);
     el.addEventListener('click', (ev) => {
       const b = ev.target.closest('[data-mdl]');
-      if (b) return via(b.dataset.mdl === 'ok' ? campo.value : null);
+      if (b) return via(b.dataset.mdl === 'ok' ? esito() : null);
       if (ev.target === el) via(null);
     });
   });
@@ -1310,8 +1312,6 @@ function _bottoniSalva(pan) {
   if (!pan) return [];
   const buono = (b) => !b.disabled && b.offsetParent !== null && !/modello|template|cred/i.test(b.id);
   const sel = 'button[id*="salva"], button[id*="save"]';
-  // Se so dove stavi scrivendo, il salvataggio di quella carta viene per primo
-  // ed e' l'unico che offro: gli altri riguardano roba che non hai toccato.
   if (_salvaCarta && _salvaCarta.isConnected) {
     const suoi = [..._salvaCarta.querySelectorAll(sel)].filter(buono);
     if (suoi.length) return suoi.slice(0, 2);
@@ -1333,8 +1333,6 @@ function aggiornaBarraSalva() {
   const zona = _salvaBarra.querySelector('.sv-tasti');
   zona.innerHTML = '';
 
-  // Scarta: ricarica la sezione dai dati salvati, cosi le modifiche non salvate
-  // spariscono per davvero invece di restare in giro con l'avviso nascosto.
   const annulla = document.createElement('button');
   annulla.type = 'button';
   annulla.className = 'btn testo sv-annulla';
@@ -1375,16 +1373,12 @@ function avviaBarraSalva() {
     + '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
   document.body.appendChild(_salvaBarra);
 
-  // Chiudere non salva e non scarta: mette via l'avviso. Le modifiche restano
-  // dove sono, e la barra ritorna alla prossima che fai. Senza questa uscita
-  // l'unico modo di liberarsi della barra era salvare.
   _salvaBarra.addEventListener('click', (ev) => {
     if (!ev.target.closest('[data-sv-chiudi]')) return;
     _salvaChiusa = true;
     _mostraBarraSalva(false);
   });
 
-  // Esc fa la stessa cosa della X, che e' quello che chiunque prova per primo.
   document.addEventListener('keydown', (ev) => {
     if (ev.key !== 'Escape' || !_salvaSporco || _salvaChiusa) return;
     if (!_salvaBarra.classList.contains('dentro')) return;
@@ -1398,9 +1392,6 @@ function avviaBarraSalva() {
     if (!t.closest('.pannello-scheda.visibile')) return;
     if (!/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
     if (t.closest('#tg-destinazioni, .ovl-schede, .ovl-barra, .ovl-livelli, .ovl-inspector, .cerca-guscio')) return;
-    // Ricorda in quale carta si stava scrivendo: il pulsante giusto e' quello
-    // di QUELLA carta. Prima la barra proponeva tutti i salvataggi del pannello
-    // — «Salva», «Salva punti», «Salva manche» — e sceglierne uno era un indovinello.
     _salvaCarta = t.closest('.carta') || null;
     if (_salvaSporco) return;
     _salvaSporco = true;
@@ -1848,20 +1839,6 @@ function vistaDisabilitato() {
     </div>`;
 }
 
-// FAMIGLIE. Sezioni che condividono una voce di menu e si mostrano con delle
-// schede dentro la pagina, invece di occupare una riga di menu ciascuna.
-//
-// Il motivo viene da una misura: delle 24 sezioni, otto stavano sotto una
-// schermata — troppo poco per meritare una voce propria — mentre quattro
-// superavano le quattro schermate. Il difetto era lo squilibrio, non il numero.
-// Quindi si accorpano le piccole che hanno lo stesso scopo, e le grandi restano
-// dove sono.
-//
-// Gli id delle sezioni NON cambiano. Ci sono trenta riferimenti nella sola
-// ricerca, più i collegamenti interni, l'ancora nell'indirizzo e i comandi
-// vocali: cambiarli avrebbe rotto tutto quanto per una questione di menu.
-// `vaiAScheda('memoria')` continua a funzionare esattamente come prima, e apre
-// la famiglia giusta con la sua scheda accesa.
 const FAMIGLIE = [
   { id: 'bot', nome: 'Il bot', parti: ['personalita', 'conoscenza', 'memoria'] },
   { id: 'comandi', nome: 'Comandi', parti: ['moduli', 'ascolto'] },
@@ -2265,9 +2242,6 @@ function guidaSchedaHtml(id) {
   const serve = Array.isArray(g.serve) ? L(g.serve[0], g.serve[1], g.serve[2]) : g.serve;
   const come = Array.isArray(g.come) ? g.come.map((c) => (Array.isArray(c) ? L(c[0], c[1], c[2]) : c)) : [];
 
-  // Nel banco degli overlay la guida parte chiusa: e' un'area di lavoro, e
-  // duecentocinquanta pixel di istruzioni sopra la tela sono duecentocinquanta
-  // pixel in meno di tela. Resta la scelta dello streamer se l'ha espressa.
   let aperta = !stretto() && !SOTTO_SCHEDE[id];
   try {
     const v = localStorage.getItem('guida:' + id);
@@ -2305,9 +2279,6 @@ function miniGuida({ titolo, serve = '', passi = [], note = [], aperta = false }
 }
 
 function infoScheda(id) {
-  // In una famiglia il titolone e' quello della famiglia: le sue parti si
-  // scelgono con le schede sotto, e non ha senso che il titolo salti a ogni
-  // scheda quando la pagina e' la stessa.
   const f = famigliaDi(id);
   if (f) {
     const g = elencoGruppi().find((x) => x.schede.some(([sid]) => f.parti.includes(sid)));
@@ -2332,19 +2303,7 @@ function tFamiglia(id, def) {
   return e ? L(e[0], e[1], e[2]) : def;
 }
 
-// SOTTO-SCHEDE. Le famiglie accorpano sezioni diverse; queste dividono UNA
-// sezione troppo grande. Non cambiano pagina: filtrano le carte.
-//
-// Nasce da una misura: Notifiche social pesava 7,6 schermate con 106 campi, e
-// chi voleva configurare TikTok doveva scorrere in mezzo a tutto Telegram per
-// arrivarci. Di quei 106 campi, 66 stanno in un elenco solo — le destinazioni
-// Telegram — che e' giusto sia lungo, essendo un elenco. Il difetto era averlo
-// nella stessa pagina di cose che non c'entrano.
 const SOTTO_SCHEDE = {
-  // Il banco degli overlay: la tela occupa la pagina da sola, perche' e' il
-  // punto dell'esercizio. Prima cominciava a 1543px, in fondo a una pagina che
-  // conteneva anche gli overlay, il link OBS e le carte dell'aspetto: per
-  // arrivare a vederla bisognava scorrere una schermata e mezza.
   alert: {
     attributo: 'parte',
     voci: [
@@ -2380,9 +2339,6 @@ function sottoSchedeHtml(scheda) {
   return `<div class="fam-barra" role="tablist">${voci}</div>`;
 }
 
-// Mostra solo le carte della sotto-scheda scelta. Le altre restano nel
-// documento ma nascoste: non vanno ricostruite, e quello che ci hai scritto
-// dentro resta dov'e' se torni indietro.
 function applicaSottoSchede(scheda) {
   const cfg = SOTTO_SCHEDE[scheda];
   if (!cfg) return;
@@ -2412,9 +2368,6 @@ document.addEventListener('click', (ev) => {
   requestAnimationFrame(misuraSopraBanco);
 });
 
-// Le schede di una famiglia, sotto il titolo. Portano `data-scheda`, quindi
-// funzionano con la navigazione che c'e' gia': non serve un secondo modo di
-// cambiare pagina che possa divergere dal primo.
 function barraFamigliaHtml(id) {
   const f = famigliaDi(id);
   if (!f || f.parti.length < 2) return '';
@@ -2427,7 +2380,6 @@ function barraFamigliaHtml(id) {
   return `<div class="fam-barra" role="tablist" aria-label="${esc(tFamiglia(f.id, f.nome))}">${voci}</div>`;
 }
 
-// Il nome originale di una scheda, quello che aveva quando era una voce di menu.
 const NOMI_SCHEDA = {
   personalita: 'Personalità', conoscenza: 'Conoscenza', memoria: 'Memoria',
   moduli: 'Comandi', ascolto: 'Comandi vocali',
@@ -2440,8 +2392,6 @@ const _nomeSchedaGrezzo = (id) => NOMI_SCHEDA[id] || id;
 
 const CHEVRON = '<svg class="lat-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
 
-// Il gruppo di una scheda: se la scheda fa parte di una famiglia, e' il gruppo
-// della voce di menu che rappresenta quella famiglia.
 function gruppoDiScheda(id) {
   const diretto = elencoGruppi().find((x) => x.schede.some(([sid]) => sid === id));
   if (diretto) return diretto.id;
@@ -4706,9 +4656,6 @@ function pannelloAlert() {
   const wf = p.overlayWidget.ultimoFollower, ws = p.overlayWidget.ultimoSub;
   const posAlertOpts = [['alto-centro', L('In alto al centro', 'Top center', 'Arriba centro')], ['centro', L('Al centro', 'Center', 'Al centro')], ['basso-centro', L('In basso al centro', 'Bottom center', 'Abajo centro')]];
   const userMode = (cst.username && cst.username !== 'twitch') ? 'fisso' : 'twitch';
-  const lblPronti = L('Pronti', 'Ready-made', 'Listos'), lblMiei = L('I miei', 'Mine', 'Los míos');
-  const opzTpl = `<optgroup label="${lblPronti}">${TEMPLATE_BUILTIN.map((t, i) => `<option value="b${i}">${esc(t.nome)}</option>`).join('')}</optgroup>`
-    + (p.overlayTemplates.length ? `<optgroup label="${lblMiei}">${p.overlayTemplates.map((t, i) => `<option value="u${i}">${esc(t.nome)}</option>`).join('')}</optgroup>` : '');
   return pannello('alert', `
     <div class="carta" data-parte="overlay">
       <h2>${_hIco(ICO.monitor)}${L('I miei overlay', 'My overlays', 'Mis overlays')}</h2>
@@ -4745,16 +4692,14 @@ function pannelloAlert() {
     <div class="carta" data-parte="banco">
       <h2>${_hIco(ICO.righello)}${L('Anteprima e layout', 'Preview and layout', 'Vista previa y diseño')}</h2>
       <p>${L('Personalizza', 'Customize', 'Personaliza')} <strong>${L('tutto', 'everything', 'todo')}</strong> ${L('ciò che appare a schermo: alert, chat, widget… colori, font, forma, animazioni.', 'that appears on screen: alerts, chat, widgets… colors, fonts, shape, animations.', 'lo que aparece en pantalla: alertas, chat, widgets… colores, fuentes, forma, animaciones.')}
-      ${L('Posizioni, "cosa mostra" e l\'', 'Positions, "what to show" and the ', 'Las posiciones, "qué mostrar" y el ')}<strong>${L('aspetto (colori, font, forma, animazioni, CSS)', 'appearance (colors, fonts, shape, animations, CSS)', 'aspecto (colores, fuentes, forma, animaciones, CSS)')}</strong> ${L('valgono per l\'', 'apply to the ', 'valen para el ')}<strong>${L('overlay selezionato qui sopra', 'overlay selected above', 'overlay seleccionado arriba')}</strong>; ${L('i testi degli alert e i comportamenti restano condivisi.', 'alert texts and behaviors stay shared.', 'los textos de las alertas y los comportamientos quedan compartidos.')}
+      ${L('Posizioni, "cosa mostra" e l\'', 'Positions, "what to show" and the ', 'Las posiciones, "qué mostrar" y el ')}<strong>${L('aspetto (colori, font, forma, animazioni, CSS)', 'appearance (colors, fonts, shape, animations, CSS)', 'aspecto (colores, fuentes, forma, animaciones, CSS)')}</strong> ${L('valgono per l\'', 'apply to the ', 'valen para el ')}<strong>${L('overlay scelto qui sotto', 'overlay chosen below', 'overlay elegido abajo')}</strong>; ${L('i testi degli alert e i comportamenti restano condivisi.', 'alert texts and behaviors stay shared.', 'los textos de las alertas y los comportamientos quedan compartidos.')}
       ${L('L\'', 'The ', 'La ')}<strong>${L('anteprima qui sotto è dal vivo', 'preview below is live', 'vista previa de abajo es en vivo')}</strong>.</p>
-      <p class="spazio-sopra"><button class="btn grande" id="ovl-salva-tutto">${L('Salva overlay', 'Save overlay', 'Guardar overlay')}</button>
-        <span class="suggerimento">${L('Salva tutto in un colpo: alert, chat, widget e il layout dell\'overlay selezionato.', 'Save everything at once: alerts, chat, widgets and the selected overlay\'s layout.', 'Guarda todo de una vez: alertas, chat, widgets y el diseño del overlay seleccionado.')}</span></p>
-      <label class="campo spazio-sopra" for="ovl-tpl">${L('Parti da un modello pronto', 'Start from a ready-made template', 'Empieza con una plantilla lista')} <span class="tenue">— ${L('«Applica» riempie i controlli con quel look; poi premi «Salva overlay»', '«Apply» fills the controls with that look; then press «Save overlay»', '«Aplicar» rellena los controles con ese aspecto; luego pulsa «Guardar overlay»')}</span></label>
-      <div class="riga-flessibile">
-        <select id="ovl-tpl" class="campo-largo">${opzTpl}</select>
-        <button class="btn secondario" id="ovl-tpl-applica">${L('Applica al momento', 'Apply now', 'Aplicar ahora')}</button>
-        <button class="btn secondario" id="ovl-tpl-salva">${L('Salva come mio modello…', 'Save as my template…', 'Guardar como mi plantilla…')}</button>
-        <button class="btn secondario" id="ovl-tpl-elimina">${L('Elimina', 'Delete', 'Eliminar')}</button>
+      <div class="riga-flessibile ovl-testa-banco">
+        <label class="ovl-quale" for="ovl-quale">${L('Overlay', 'Overlay', 'Overlay')}</label>
+        <select id="ovl-quale" class="campo-largo"></select>
+        <button class="btn secondario" id="ovl-nuovo-da" type="button">${L('Nuovo…', 'New…', 'Nuevo…')}</button>
+        <button class="btn secondario" id="ovl-copia-link" type="button">${L('Copia link OBS', 'Copy OBS link', 'Copiar enlace OBS')}</button>
+        <button class="btn" id="ovl-salva-tutto">${L('Salva overlay', 'Save overlay', 'Guardar overlay')}</button>
       </div>
       <div class="ovl-barra spazio-sopra">
         <div class="ovl-gruppo">
@@ -5220,12 +5165,6 @@ function aggiornaInspector() {
   fissa('insp-x', _arr(st.x)); fissa('insp-y', _arr(st.y)); fissa('insp-s', st.s); fissa('insp-r', st.r);
 }
 
-// ── IL BANCO ───────────────────────────────────────────────────────────────
-// L'editor degli overlay diventa un'area di lavoro alta quanto lo schermo
-// invece di una pagina che scorre. Il pezzo grosso e' CSS; qui si fanno le due
-// cose che il CSS non puo': portare l'ispettore dentro la scena (nel documento
-// stava dopo, quindi non poteva essere una colonna) e tenere aggiornata la riga
-// delle coordinate in fondo.
 function montaBanco() {
   const carta = document.querySelector('#ovl-tela')?.closest('.carta');
   if (!carta) return;
@@ -5235,13 +5174,16 @@ function montaBanco() {
   const insp = _g('ovl-inspector');
   if (scena && insp && insp.parentElement !== scena) scena.appendChild(insp);
 
+  vestiPannello(_g('ovl-livelli'), 'livelli', L('Livelli', 'Layers', 'Capas'));
+  vestiPannello(insp, 'proprieta', L('Proprietà', 'Properties', 'Propiedades'));
+
   if (!insp.querySelector('.ovl-vuoto')) {
     const v = document.createElement('p');
     v.className = 'ovl-vuoto';
-    v.textContent = L('Scegli un elemento a sinistra o sulla tela per modificarlo.',
-      'Pick an element on the left or on the canvas to edit it.',
-      'Elige un elemento a la izquierda o en el lienzo para editarlo.');
-    insp.appendChild(v);
+    v.textContent = L('Scegli un elemento sulla tela o nei livelli per modificarlo.',
+      'Pick an element on the canvas or in the layers to edit it.',
+      'Elige un elemento en el lienzo o en las capas para editarlo.');
+    (insp.querySelector(':scope > .pan-corpo') || insp).appendChild(v);
   }
 
   if (!carta.querySelector('.ovl-piede')) {
@@ -5251,25 +5193,98 @@ function montaBanco() {
     carta.appendChild(piede);
   }
   document.body.classList.add('banco-on');
-  // due giri: il primo assesta il layout, il secondo misura sul risultato
   requestAnimationFrame(() => requestAnimationFrame(misuraSopraBanco));
   aggiornaPiedeBanco();
 }
 
-// Il banco vale solo per la sua sezione: uscendo, la pagina torna normale.
+function vestiPannello(el, chiave, titolo) {
+  if (!el || el.querySelector(':scope > .pan-testa')) return;
+  const corpo = document.createElement('div');
+  corpo.className = 'pan-corpo';
+  while (el.firstChild) corpo.appendChild(el.firstChild);
+
+  const testa = document.createElement('div');
+  testa.className = 'pan-testa';
+  testa.innerHTML = `<span>${esc(titolo)}</span>`
+    + `<button type="button" class="pan-tasto" data-pan-arrotola aria-expanded="true" `
+    + `aria-label="${esc(L('Arrotola', 'Collapse', 'Plegar'))}" title="${esc(L('Arrotola', 'Collapse', 'Plegar'))}">`
+    + '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>';
+  el.appendChild(testa);
+  el.appendChild(corpo);
+  el.dataset.pan = chiave;
+  ripristinaPannello(el, chiave);
+  trascinaPannello(el, testa, chiave);
+}
+
+function ripristinaPannello(el, chiave) {
+  let p = null;
+  try { p = JSON.parse(localStorage.getItem('banco:' + chiave) || 'null'); } catch {  }
+  if (!p) return;
+  if (typeof p.x === 'number' && typeof p.y === 'number') {
+    el.classList.add('mosso');
+    el.style.left = p.x + 'px';
+    el.style.top = p.y + 'px';
+  }
+  if (p.chiuso) el.classList.add('arrotolato');
+}
+
+function salvaPannello(el, chiave) {
+  const p = { chiuso: el.classList.contains('arrotolato') };
+  if (el.classList.contains('mosso')) { p.x = parseFloat(el.style.left) || 0; p.y = parseFloat(el.style.top) || 0; }
+  try { localStorage.setItem('banco:' + chiave, JSON.stringify(p)); } catch {  }
+}
+
+function trascinaPannello(el, testa, chiave) {
+  let attivo = null;
+  testa.addEventListener('pointerdown', (ev) => {
+    if (ev.target.closest('[data-pan-arrotola]')) return;
+    if (ev.button !== 0) return;
+    const scena = el.parentElement;
+    if (!scena || getComputedStyle(el).position !== 'absolute') return;
+    const r = el.getBoundingClientRect(), rs = scena.getBoundingClientRect();
+    attivo = { dx: ev.clientX - r.left, dy: ev.clientY - r.top, rs, w: r.width, h: r.height };
+    el.classList.add('mosso');
+    el.style.left = (r.left - rs.left) + 'px';
+    el.style.top = (r.top - rs.top) + 'px';
+    try { testa.setPointerCapture(ev.pointerId); } catch {  }
+    ev.preventDefault();
+  });
+  testa.addEventListener('pointermove', (ev) => {
+    if (!attivo) return;
+    const entro = (v, hi) => Math.max(4, Math.min(Math.max(4, hi), v));
+    const x = entro(ev.clientX - attivo.rs.left - attivo.dx, attivo.rs.width - attivo.w - 4);
+    const y = entro(ev.clientY - attivo.rs.top - attivo.dy, attivo.rs.height - attivo.h - 4);
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+  });
+  const fine = () => { if (!attivo) return; attivo = null; salvaPannello(el, chiave); };
+  testa.addEventListener('pointerup', fine);
+  testa.addEventListener('pointercancel', fine);
+
+  testa.addEventListener('dblclick', () => {
+    el.classList.remove('mosso');
+    el.style.left = ''; el.style.top = '';
+    try { localStorage.removeItem('banco:' + chiave); } catch {  }
+    salvaPannello(el, chiave);
+  });
+}
+
+document.addEventListener('click', (ev) => {
+  const b = ev.target.closest?.('[data-pan-arrotola]');
+  if (!b) return;
+  const pan = b.closest('[data-pan]');
+  if (!pan) return;
+  const chiuso = pan.classList.toggle('arrotolato');
+  b.setAttribute('aria-expanded', chiuso ? 'false' : 'true');
+  salvaPannello(pan, pan.dataset.pan);
+});
+
 function smontaBanco() {
   document.body.classList.remove('banco-on');
   document.documentElement.style.removeProperty('--banco-sopra');
   if (_osservaTestata) { try { _osservaTestata.disconnect(); } catch (e) {  } _osservaTestata = null; }
 }
 
-// Quanto spazio occupa quello che sta sopra il banco: serve al CSS per sapere
-// quanto e' alto il banco senza far scorrere la pagina.
-//
-// La misura va presa quando il layout e' fermo. Presa troppo presto dava 26px
-// invece di 688, e il banco veniva alto quanto tutto lo schermo: sforava in
-// basso di seicento pixel. Ora si rimisura anche quando la testata cambia
-// altezza — apri la guida e lo spazio si aggiorna da solo.
 let _osservaTestata = null;
 function misuraSopraBanco() {
   const carta = document.querySelector('.carta.ovl-banco');
@@ -5312,10 +5327,12 @@ const OVL_LIVELLI = () => [
   { k: 'ws', ico: ICO.medaglia, n: L('Ultimo sub', 'Latest sub', 'Último sub') },
 ];
 
+const _corpoPan = (el) => (el ? (el.querySelector(':scope > .pan-corpo') || el) : null);
+
 function _rendiLivelli() {
-  const box = _g('ovl-livelli');
+  const box = _corpoPan(_g('ovl-livelli'));
   if (!box) return;
-  box.innerHTML = `<p class="ovl-livelli-tit">${L('Livelli', 'Layers', 'Capas')}</p>` + OVL_LIVELLI().map((l) => {
+  box.innerHTML = OVL_LIVELLI().map((l) => {
     const acceso = mostraChk(l.k);
     const spento = acceso && !_elementoAcceso(l.k);
     const st = posXY[l.k];
@@ -5399,7 +5416,7 @@ function collegaEditorOvl() {
     const mod = e.ctrlKey || e.metaKey;
     if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); return e.shiftKey ? ripetiOvl() : annullaOvl(); }
     if (mod && e.key.toLowerCase() === 'y') { e.preventDefault(); return ripetiOvl(); }
-    if (e.key === 'Escape') { deseleziona(); return; }
+    if (e.key === 'Escape') { if (!_inTrascinamento) deseleziona(); return; }
     if (!selezione) return;
     const passi = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
     if (passi) { e.preventDefault(); return _spostaTasti(selezione, passi[0], passi[1], e.shiftKey); }
@@ -5583,6 +5600,7 @@ function allineaOvl(dove) {
   _salvaPos(selezione);
 }
 
+let _inTrascinamento = false;
 function rendiTrascinabile(el, chiave) {
   if (!el) return;
   el.style.cursor = 'grab';
@@ -5613,13 +5631,27 @@ function rendiTrascinabile(el, chiave) {
       _mostraGuide(guide);
       aggiornaInspector();
     };
-    const up = () => {
+    const partenza = { x: st.x, y: st.y };
+    _inTrascinamento = true;
+    const chiudi = () => {
+      _inTrascinamento = false;
       el.style.cursor = 'grab';
       el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up);
-      _mostraGuide([]); _ricorda(); _salvaPos(chiave);
+      document.removeEventListener('keydown', fuga, true);
+      _mostraGuide([]);
+    };
+    const up = () => { chiudi(); _ricorda(); _salvaPos(chiave); };
+    const fuga = (ev) => {
+      if (ev.key !== 'Escape') return;
+      ev.preventDefault(); ev.stopImmediatePropagation();
+      st.x = partenza.x; st.y = partenza.y;
+      _posElemento(el, st); aggiornaInspector();
+      try { el.releasePointerCapture(e.pointerId); } catch (_) {  }
+      chiudi(); _salvaPos(chiave);
     };
     el.addEventListener('pointermove', move);
     el.addEventListener('pointerup', up);
+    document.addEventListener('keydown', fuga, true);
   });
   el.addEventListener('wheel', (e) => {
     e.preventDefault();
@@ -5690,35 +5722,6 @@ function _riempiConfig(d) {
   if (d.overlayCss != null) _imposta('ovl-css', d.overlayCss);
 }
 
-async function salvaComeTemplate() {
-  const nome = (prompt(L('Nome del template:', 'Template name:', 'Nombre de la plantilla:')) || '').trim();
-  if (!nome) return;
-  const dati = { alerts: _raccogliAlerts(), chatOverlay: _raccogliChat(), overlayWidget: _raccogliWidget(), overlayCss: _v('ovl-css') || '' };
-  const templates = (impostazioni().overlayTemplates || []).filter((t) => t.nome !== nome).concat([{ nome, dati }]).slice(-16);
-  await salvaImpostazioni({ overlayTemplates: templates }, L('Template salvato ✓', 'Template saved ✓', 'Plantilla guardada ✓'));
-  _rigeneraTemplateSelect(templates, nome);
-}
-
-async function eliminaTemplate() {
-  const v = _v('ovl-tpl') || '';
-  if (v[0] !== 'u') { toast(L('Puoi eliminare solo i template salvati da te.', 'You can only delete templates you saved.', 'Solo puedes eliminar plantillas que hayas guardado.')); return; }
-  const templates = (impostazioni().overlayTemplates || []).slice();
-  const i = Number(v.slice(1));
-  if (!templates[i]) return;
-  if (!confirm(L(`Eliminare il template "${templates[i].nome}"?`, `Delete the template "${templates[i].nome}"?`, `¿Eliminar la plantilla "${templates[i].nome}"?`))) return;
-  templates.splice(i, 1);
-  await salvaImpostazioni({ overlayTemplates: templates }, L('Template eliminato.', 'Template deleted.', 'Plantilla eliminada.'));
-  _rigeneraTemplateSelect(templates);
-}
-
-function _rigeneraTemplateSelect(templates, selNome) {
-  const sel = _g('ovl-tpl');
-  if (!sel) return;
-  const pronti = TEMPLATE_BUILTIN.map((t, i) => `<option value="b${i}">${esc(t.nome)}</option>`).join('');
-  const miei = templates.map((t, i) => `<option value="u${i}"${t.nome === selNome ? ' selected' : ''}>${esc(t.nome)}</option>`).join('');
-  sel.innerHTML = `<optgroup label="${L('Pronti', 'Ready-made', 'Listos')}">${pronti}</optgroup>` + (templates.length ? `<optgroup label="${L('I miei', 'Mine', 'Los míos')}">${miei}</optgroup>` : '');
-}
-
 async function caricaOverlays() {
   try { const d = await api('/api/streamer/overlays'); overlays = Array.isArray(d.overlays) ? d.overlays : []; }
   catch { overlays = []; }
@@ -5763,6 +5766,20 @@ function _rigeneraSelOverlay() {
     <button type="button" class="btn mini secondario" id="ov-duplica">${L('Duplica', 'Duplicate', 'Duplicar')}</button>
     <button type="button" class="btn mini secondario" id="ov-elimina" style="color:var(--rosso)">${L('Elimina', 'Delete', 'Eliminar')}</button>
   </div>`;
+  _rigeneraQuale();
+}
+
+function _rigeneraQuale() {
+  const sel = _g('ovl-quale'); if (!sel) return;
+  sel.innerHTML = overlays.map((o) => `<option value="${esc(o.id)}"${o.id === overlaySel ? ' selected' : ''}>${esc(o.nome)}</option>`).join('');
+  sel.value = overlaySel;
+}
+
+function scegliOverlay(id) {
+  if (!id || id === overlaySel || !overlays.find((o) => o.id === id)) return;
+  overlaySel = id;
+  _rigeneraSelOverlay();
+  caricaOverlaySel();
 }
 
 function caricaOverlaySel() {
@@ -5788,24 +5805,44 @@ async function salvaLayoutOverlay(silenzioso) {
   ov.mostra = { alert: mostraChk('alert'), chat: mostraChk('chat'), wf: mostraChk('wf'), ws: mostraChk('ws'), effetti: mostraChk('effetti') };
   await salvaImpostazioni({ overlays: _overlaysPayload() }, silenzioso ? null : L('Overlay salvato ✓', 'Overlay saved ✓', 'Overlay guardado ✓'));
 }
-async function nuovoOverlay() {
+async function nuovoOverlayDaPreset() {
   if (overlays.length >= 12) { toast(L('Massimo 12 overlay.', 'Maximum 12 overlays.', 'Máximo 12 overlays.')); return; }
-  const nome = (await chiediTesto({
+  const corr = overlays.find((o) => o.id === overlaySel);
+  const opzioni = [['corrente', L('Come quello che sto modificando', 'Same as the one I am editing', 'Como el que estoy editando')]]
+    .concat(TEMPLATE_BUILTIN.map((t, k) => ['b' + k, t.nome]));
+  const r = await chiediTesto({
     titolo: L('Nuovo overlay', 'New overlay', 'Nuevo overlay'),
     testo: L('Ogni overlay ha un link OBS suo: uno per scena, se vuoi.', 'Each overlay has its own OBS link: one per scene, if you like.', 'Cada overlay tiene su propio enlace OBS: uno por escena, si quieres.'),
-    valore: L('Overlay 2', 'Overlay 2', 'Overlay 2'), ok: L('Crea', 'Create', 'Crear'),
-  }) || '').trim();
+    valore: L('Overlay', 'Overlay', 'Overlay') + ' ' + (overlays.length + 1),
+    ok: L('Crea', 'Create', 'Crear'),
+    scelte: { etichetta: L('Parti da', 'Start from', 'Empezar desde'), opzioni, valore: 'corrente' },
+  });
+  const nome = ((r && r.nome) || '').trim();
   if (!nome) return;
+  const preset = r.scelta && r.scelta[0] === 'b' ? TEMPLATE_BUILTIN[Number(r.scelta.slice(1))] : null;
   const id = 'ov' + Math.random().toString(36).slice(2, 8);
-
-  const corr = overlays.find((o) => o.id === overlaySel);
-  const seedStile = corr && corr.stile ? JSON.parse(JSON.stringify(corr.stile)) : null;
-  overlays.push({ id, nome, mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true }, xy: {}, css: (corr && corr.css) || '', stile: seedStile });
+  overlays.push({
+    id, nome,
+    mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true },
+    xy: {},
+    css: preset ? '' : ((corr && corr.css) || ''),
+    stile: preset ? _stileDaPreset(preset) : (corr && corr.stile ? JSON.parse(JSON.stringify(corr.stile)) : null),
+  });
   overlaySel = id;
   await salvaImpostazioni({ overlays: _overlaysPayload() }, null);
   await caricaOverlays();
+  if (!overlays.find((o) => o.id === id)) { toast(L('Overlay non salvato: riprova.', 'Overlay not saved: try again.', 'Overlay no guardado: inténtalo de nuevo.'), 'errore'); return; }
   toast(L('Overlay creato ✓', 'Overlay created ✓', 'Overlay creado ✓'));
 }
+
+function _stileDaPreset(t) {
+  const d = t && t.dati ? t.dati : {};
+  if (d.alerts || d.chatOverlay || d.overlayWidget) {
+    return { alerts: d.alerts?.stile || null, chat: d.chatOverlay?.stile || null, widget: d.overlayWidget || null };
+  }
+  return { alerts: d.al ? { ...d.al } : null, chat: d.ch ? { ...d.ch } : null, widget: null };
+}
+
 async function duplicaOverlay() {
   if (overlays.length >= 12) { toast(L('Massimo 12 overlay.', 'Maximum 12 overlays.', 'Máximo 12 overlays.')); return; }
   const ov = overlays.find((o) => o.id === overlaySel); if (!ov) return;
@@ -5864,13 +5901,16 @@ function caricaAlert() {
   _applicaZoom(1);
   setTimeout(() => _ricorda(), 400);
   _g('ovl-schede')?.addEventListener('click', (e) => {
-    if (e.target.closest('#ov-nuovo')) return conErrore(() => nuovoOverlay());
+    if (e.target.closest('#ov-nuovo')) return conErrore(() => nuovoOverlayDaPreset());
     if (e.target.closest('#ov-rinomina')) return conErrore(() => rinominaOverlay());
     if (e.target.closest('#ov-duplica')) return conErrore(() => duplicaOverlay());
     if (e.target.closest('#ov-elimina')) return conErrore(() => eliminaOverlay());
     const c = e.target.closest('[data-ovl]');
-    if (c && c.dataset.ovl !== overlaySel) { overlaySel = c.dataset.ovl; _rigeneraSelOverlay(); caricaOverlaySel(); }
+    if (c) scegliOverlay(c.dataset.ovl);
   });
+  _g('ovl-quale')?.addEventListener('change', (e) => scegliOverlay(e.target.value));
+  _g('ovl-nuovo-da')?.addEventListener('click', () => conErrore(() => nuovoOverlayDaPreset()));
+  _g('ovl-copia-link')?.addEventListener('click', () => copiaTesto(_g('inp-overlay-url')?.value || '', L('Link OBS copiato ✓', 'OBS link copied ✓', 'Enlace OBS copiado ✓')));
   _g('scheda-alert')?.addEventListener('click', (e) => {
     if (e.target.closest('.oe-mod, .oe-sw, input, label')) return;
     const r = e.target.closest('[data-mira]');
@@ -5986,14 +6026,6 @@ function caricaAlert() {
     await salvaWidget(true); await api('/api/alert/prova', { method: 'POST', body: { kind: b.dataset.kind } }); toast(L('Inviato all\'overlay', 'Sent to the overlay', 'Enviado al overlay'));
   })));
 
-  _g('ovl-tpl-applica')?.addEventListener('click', () => {
-    const v = _v('ovl-tpl') || '';
-    const lista = v[0] === 'b' ? TEMPLATE_BUILTIN : (impostazioni().overlayTemplates || []);
-    const t = lista[Number(v.slice(1))];
-    if (t) { applicaTemplate(t.dati); toast(L('Template applicato — ricordati di salvare le sezioni.', 'Template applied — remember to save the sections.', 'Plantilla aplicada — recuerda guardar las secciones.')); }
-  });
-  _g('ovl-tpl-salva')?.addEventListener('click', () => conErrore(() => salvaComeTemplate()));
-  _g('ovl-tpl-elimina')?.addEventListener('click', () => conErrore(() => eliminaTemplate()));
 }
 
 function pannelloRegia() {
@@ -6178,18 +6210,14 @@ function pannelloStudio() {
         ],
       })}
 
-      <!-- scene: come le "scene" di OBS, si cambia al volo -->
       <div class="studio-scene" id="studio-scene"></div>
-      <!-- preset: salva/richiama un intero set di scene con un nome -->
       <div class="studio-preset" id="studio-preset"></div>
-      <!-- controlli layout (contenitore separato: renderStudioPreset sovrascrive #studio-preset) -->
       <div class="studio-layout-ctrl">
         <button type="button" class="btn secondario mini" id="studio-libero-btn" data-libero="toggle" title="${L('Sposta liberamente i pannelli (e il palco) dove vuoi', 'Freely move the panels (and the stage) wherever you want', 'Mueve libremente los paneles (y el escenario) donde quieras')}">${_bIco(ICO.sposta || ICO.righello || ICO.piu)}${L('Layout libero', 'Free layout', 'Diseño libre')}</button>
         <button type="button" class="btn secondario mini" data-libero="reset" title="${L('Rimetti i pannelli in ordine', 'Reset panels to the default order', 'Restablecer paneles')}">${L('Reimposta layout', 'Reset layout', 'Restablecer diseño')}</button>
       </div>
 
       <div class="studio-griglia" id="studio-griglia">
-        <!-- palco: canvas pulito + livello UI (selezione/trascinamento) sopra -->
         <div class="studio-palco-wrap">
           <span class="studio-palco-drag" title="${L('Trascina il palco', 'Drag the stage', 'Arrastra el escenario')}">⠿ ${L('palco', 'stage', 'escenario')}</span>
           <div class="studio-palco" id="studio-palco">
@@ -6206,7 +6234,6 @@ function pannelloStudio() {
           </div>
         </div>
 
-        <!-- colonna di destra: ingressi/qualità/overlay, aggiungi fonti, elenco, proprietà, mixer, chat -->
         <aside class="studio-side">
           <div class="studio-box studio-io">
             <div class="studio-box-tit">${_bIco(ICO.sliders)}${L('Ingressi & qualità', 'Inputs & quality', 'Entradas y calidad')}</div>
@@ -10407,8 +10434,6 @@ function attivaPiattaforma() {
     } }, 'Manche salvate');
   }));
 
-  // Ogni tipo di gioco dice quale pannello gli serve: un posto solo, cosi
-  // aggiungerne uno non vuol dire ricordarsi di tre `if` sparsi.
   const PANNELLO_GIOCO = { trivia: 'gioco-trivia', parola: 'gioco-parola', anagramma: 'gioco-parola', sequenza: 'gioco-sequenza', domanda: 'gioco-domanda' };
   function mostraPannelloGioco(tipo) {
     const voluto = PANNELLO_GIOCO[tipo] || 'gioco-trivia';
