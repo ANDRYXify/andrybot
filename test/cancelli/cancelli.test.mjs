@@ -4,6 +4,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { lanciaScript } from '../aiuto.mjs';
 
+test('package.json e il lock dicono la stessa cosa', async () => {
+  const { codice, uscita } = await lanciaScript('scripts/verifica-dipendenze.mjs');
+  assert.equal(codice, 0, uscita);
+});
+
 test('niente che si dichiari privato finisce su git', async () => {
   const { codice, uscita } = await lanciaScript('scripts/verifica-riservati.mjs');
   assert.equal(codice, 0, uscita);

@@ -17,17 +17,15 @@
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "test": "node --test",
-    "cancelli": "node scripts/verifica-riservati.mjs && node scripts/spoglia-commenti.mjs --verifica && node scripts/verifica-stile.mjs && node scripts/verifica-libreria.mjs",
+    "cancelli": "node scripts/verifica-dipendenze.mjs && node scripts/verifica-riservati.mjs && node scripts/spoglia-commenti.mjs --verifica && node scripts/verifica-stile.mjs && node scripts/verifica-libreria.mjs",
     "pulisci-commenti": "node scripts/spoglia-commenti.mjs",
-    "ganci": "node scripts/installa-ganci.mjs"
+    "ganci": "node scripts/installa-ganci.mjs",
+    "aggiorna": "bash server/aggiorna.sh"
   },
   "dependencies": {
     "better-sqlite3": "^12.0.0",
     "cookie-session": "^2.1.0",
     "express": "^4.21.0",
     "multer": "^2.2.0"
-  },
-  "optionalDependencies": {
-    "node-llama-cpp": "^3.0.0"
   }
 }
