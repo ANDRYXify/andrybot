@@ -157,6 +157,56 @@ avrebbe preso proprio il difetto che l'aveva ispirato**. Quindi i colori dei
 badge hanno un vocabolario solo (`const BADGE`), e il cancello controlla quello.
 Messo alla prova rimettendo `ambra`: rosso, uscita 1.
 
+## Tre reti, tre momenti diversi
+
+Non sono ridondanti: rispondono a tre domande diverse, e la più importante è la
+seconda.
+
+| dove | quando | a cosa serve |
+|---|---|---|
+| gancio **pre-push** (`.githooks/`) | prima che il codice esca dalla tua macchina | non spedire roba rotta |
+| **`server/aggiorna.sh`** | prima che il codice diventi live | non far diventare live roba rotta |
+| GitHub Actions | dopo, su una macchina pulita | un secondo parere, su due versioni di Node |
+
+Il secondo è quello che conta davvero, ed era **l'unico che non c'era**: prima
+l'aggiornamento del server era `git pull` più `docker compose up -d --build`,
+senza che niente provasse niente. Un commit rotto diventava il sito.
+
+### `server/aggiorna.sh`
+
+L'ordine conta: si prova **prima** di toccare quello che gira, così un
+aggiornamento che fallisce lascia le cose come stavano invece che a metà.
+
+1. rifiuta di partire con la copia di lavoro sporca;
+2. dice cosa sta per arrivare, e **si ferma** se la cronologia diverge (dopo una
+   riscrittura, invece di fondere alla cieca);
+3. copia di sicurezza del database dal container, con la strada già provata
+   (quella che la riapre per controllarla);
+4. `npm ci` + `npm test` + cancelli — **se è rosso il container non viene
+   sfiorato** e il sito resta su con la versione di prima;
+5. solo allora ricostruisce, e interroga `/health` finché non torna sano;
+   altrimenti stampa il comando esatto per tornare indietro.
+
+`--prova` fa tutto tranne toccare il container. `--salta-prove` esiste per le
+emergenze vere.
+
+Il `npm ci` non è un dettaglio: è ciò che dà a questo cancello la proprietà che
+il gancio locale non ha — un'installazione **pulita, dal lockfile**, come su una
+macchina che non ha mai visto il progetto.
+
+### Cosa ha trovato alla prima esecuzione
+
+Un difetto vero: `package-lock.json` non era in pari con `package.json`.
+`node-llama-cpp` era stato messo fra le dipendenze opzionali e mai installato,
+quindi mai entrato nel lock — e da lì **`npm ci` falliva su ogni macchina
+pulita**: il server, il collaudo, tutto. Invisibile a chi sviluppa (chi ha già
+`node_modules` non lancia mai `npm ci`), fatale a chi installa. Il pacchetto non
+era usato da nessuna riga — l'LLM vive nel cervello Python — ed è stato tolto.
+
+Il cancello che chiude la classe è `scripts/verifica-dipendenze.mjs`: confronta
+i due file in un millisecondo, quindi può stare anche nel gancio pre-push, dove
+`npm ci` (che ci mette secondi e scarica) non starebbe mai.
+
 ## La rete non deve dipendere da GitHub
 
 Le prove girano anche **prima di ogni push**, sulla macchina di chi pubblica:
