@@ -4619,6 +4619,13 @@ const COMP_OPTS = () => [
   ['riga-inv', L('In riga, al contrario', 'Row, reversed', 'En fila, al revés')],
   ['sovrapposta', L('Testo sopra l\'immagine', 'Text over the image', 'Texto sobre la imagen')],
 ];
+const ICONE = () => (window.ICONE_OVL ? window.ICONE_OVL.chiavi : []);
+const ICONA_OPTS = () => [['', L('— nessuna —', '— none —', '— ninguna —')]]
+  .concat(ICONE().map((k) => [k, window.ICONE_OVL.nome(k, LINGUA)]));
+const icoSvg = (k) => (window.ICONE_OVL ? window.ICONE_OVL.svg(k) : '');
+const PESO_OPTS = () => [['700', L('Normale', 'Normal', 'Normal')], ['400', L('Leggero', 'Light', 'Ligero')], ['800', L('Grassetto', 'Bold', 'Negrita')], ['900', L('Nero', 'Black', 'Negro')]];
+const MAIUSC_OPTS = () => [['no', L('Come scritto', 'As typed', 'Como se escribe')], ['maiuscolo', L('TUTTO MAIUSCOLO', 'ALL CAPS', 'TODO MAYÚSCULAS')], ['capo', L('Iniziali Maiuscole', 'Title Case', 'Iniciales Mayúsculas')]];
+
 const _val = (opts, v) => (opts.some(([k]) => k === v) ? v : opts[0][0]);
 const formaDi = (st) => _val(FORMA_OPTS(), st && st.forma);
 const materiaDi = (st) => _val(MATERIA_OPTS(), st && st.materia);
@@ -4675,6 +4682,7 @@ function bloccoAlert(t, a) {
         <div><label class="campo">${L('Colore', 'Color', 'Color')}</label><input type="color" class="al-colore" value="${_hx(acc, t.acc)}"></div>
         <div><label class="campo">${L('Volume', 'Volume', 'Volumen')}: <strong><span class="al-vol-v">${vol}</span>%</strong></label><input type="range" class="al-vol" min="0" max="100" value="${vol}"></div>
         <div><label class="campo">Font</label><select class="al-font">${opzioniFont(c.font || '')}</select></div>
+        <div><label class="campo">${L('Icona', 'Icon', 'Icono')}</label><select class="al-icona">${ICONA_OPTS().map(([v, t]) => `<option value="${v}"${v === (c.icona || '') ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></div>
         ${soglia}
       </div>
       <div class="al-media-wrap spazio-sopra">
@@ -4716,6 +4724,7 @@ function bloccoWidget(pref, w, titolo, kind) {
         ${cSel(`${pref}-pos`, L('Posizione', 'Position', 'Posición'), POS4_OPTS(), w.posizione)}
         ${cSel(`${pref}-font`, 'Font', FONT_OPTS(), st.font)}
         ${cSel(`${pref}-dim`, L('Dimensione', 'Size', 'Tamaño'), DIM3_OPTS(), st.dim)}
+        <div><label class="campo">${L('Icona', 'Icon', 'Icono')}</label><select class="w-icona" id="${pref}-icona">${ICONA_OPTS().map(([v, t]) => `<option value="${v}"${v === (st.icona == null ? (pref === 'wf' ? 'cuore' : 'stella') : st.icona) ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></div>
       </div>
       <div class="griglia-campi spazio-sopra">
         ${cCol(`${pref}-bg`, L('Sfondo', 'Background', 'Fondo'), st.sfondo)}
@@ -4875,9 +4884,14 @@ function pannelloAlert() {
         ${cSel('al-st-comp', L('Composizione', 'Layout', 'Composición'), COMP_OPTS(), compDi(st))}
       </div>
       <div class="griglia-campi spazio-sopra">
-        ${cSel('al-st-anim', L('Animazione', 'Animation', 'Animación'), ANIM_ALERT_OPTS(), st.animazione)}
+        ${cSel('al-st-anim', L('Entrata', 'Entrance', 'Entrada'), ANIM_ALERT_OPTS(), st.animazione)}
+        ${cSel('al-st-uscita', L('Uscita', 'Exit', 'Salida'), [['come', L('Come l\'entrata', 'Same as entrance', 'Como la entrada')]].concat(ANIM_ALERT_OPTS()), st.uscita || 'come')}
         ${cSel('al-st-font', 'Font', FONT_OPTS(), st.font)}
         ${cRng('al-st-dim', L('Testo', 'Text', 'Texto'), 14, 56, st.dimTesto, 'px')}
+        ${cSel('al-st-peso', L('Peso', 'Weight', 'Peso'), PESO_OPTS(), String(st.peso || '700'))}
+        ${cSel('al-st-maiusc', L('Lettere', 'Letters', 'Letras'), MAIUSC_OPTS(), st.maiuscolo || 'no')}
+        ${cRng('al-st-spaz', L('Spaziatura', 'Letter spacing', 'Espaciado'), -2, 12, Number(st.spaziatura) || 0, 'px')}
+        ${cRng('al-st-dimico', L('Icona', 'Icon', 'Icono'), 0, 120, Number(st.dimIcona) || 46, 'px')}
       </div>
       <label class="campo spazio-sopra">Font <span class="tenue">— ${L('scegli un font Google dall\'elenco con anteprima (vince sul menu qui sopra)', 'pick a Google font from the list with preview (overrides the menu above)', 'elige una fuente Google de la lista con vista previa (gana sobre el menú de arriba)')}</span></label>
       <div class="riga-flessibile">
@@ -4896,6 +4910,8 @@ function pannelloAlert() {
       <div class="riga-flessibile spazio-sopra">
         ${cChk('al-st-glow', L('Bagliore', 'Glow', 'Resplandor'), st.glow)}
         ${cChk('al-st-icon', L('Mostra icona', 'Show icon', 'Mostrar icono'), st.icona)}
+        ${cChk('al-st-ombratxt', L('Ombra del testo', 'Text shadow', 'Sombra del texto'), st.ombraTesto !== false)}
+        ${cChk('al-st-evid', L('Nome a colori', 'Colored name', 'Nombre a color'), st.evidenziaNome !== false)}
       </div>
       </div>
       <p class="suggerimento">${L('Colori, forma, materia e cornice si cambiano', 'Colors, shape, surface and frame are changed', 'Colores, forma, materia y marco se cambian')} <strong>${L('sulla tela qui sopra', 'on the canvas above', 'en el lienzo de arriba')}</strong>: ${L('scegli l\'elemento e li trovi nel pannello «Proprietà», mentre lo guardi.', 'pick the element and you find them in the «Properties» panel, while looking at it.', 'elige el elemento y los encuentras en el panel «Propiedades», mientras lo miras.')}</p>
@@ -4940,6 +4956,9 @@ function pannelloAlert() {
         ${cSel('co-st-forma', L('Forma', 'Shape', 'Forma'), FORMA_OPTS(), formaDi(cst))}
         ${cSel('co-st-materia', L('Materia', 'Surface', 'Materia'), MATERIA_OPTS(), materiaDi(cst))}
         ${cSel('co-st-cornice', L('Cornice', 'Frame', 'Marco'), CORNICE_OPTS(), cst.cornice || 'nessuna')}
+        ${cSel('co-st-peso', L('Peso', 'Weight', 'Peso'), PESO_OPTS(), String(cst.peso || '700'))}
+        ${cSel('co-st-maiusc', L('Lettere', 'Letters', 'Letras'), MAIUSC_OPTS(), cst.maiuscolo || 'no')}
+        ${cRng('co-st-spaz', L('Spaziatura', 'Letter spacing', 'Espaciado'), -2, 8, Number(cst.spaziatura) || 0, 'px')}
       </div>
       <div class="griglia-campi spazio-sopra">
         ${cSel('co-st-user', L('Colore nomi', 'Name color', 'Color de nombres'), [['twitch', L('Colore di Twitch', 'Twitch color', 'Color de Twitch')], ['fisso', L('Colore fisso', 'Fixed color', 'Color fijo')]], userMode)}
@@ -4948,6 +4967,7 @@ function pannelloAlert() {
       <div class="riga-flessibile spazio-sopra">
         ${cChk('co-st-ombra', L('Ombra', 'Shadow', 'Sombra'), cst.ombra)}
         ${cChk('co-st-bold', L('Nome in grassetto', 'Bold name', 'Nombre en negrita'), cst.grassettoUser)}
+        ${cChk('co-st-ombratxt', L('Ombra del testo', 'Text shadow', 'Sombra del texto'), cst.ombraTesto === true)}
       </div>
       </div>
       <p class="suggerimento">${L('Colori, forma, materia e cornice si cambiano', 'Colors, shape, surface and frame are changed', 'Colores, forma, materia y marco se cambian')} <strong>${L('sulla tela qui sopra', 'on the canvas above', 'en el lienzo de arriba')}</strong>: ${L('scegli l\'elemento e li trovi nel pannello «Proprietà», mentre lo guardi.', 'pick the element and you find them in the «Properties» panel, while looking at it.', 'elige el elemento y los encuentras en el panel «Propiedades», mientras lo miras.')}</p>
@@ -5035,6 +5055,13 @@ function _leggiAlertStile() {
     glow: !!_g('al-st-glow')?.checked, icona: !!_g('al-st-icon')?.checked,
     forma: _v('al-st-forma') || 'carta', materia: _v('al-st-materia') || 'piatta',
     cornice: _v('al-st-cornice') || 'linea', composizione: _v('al-st-comp') || 'colonna',
+    dimIcona: Number(_v('al-st-dimico')) || 46,
+    uscita: _v('al-st-uscita') || 'come',
+    peso: _v('al-st-peso') || '700',
+    spaziatura: Number(_v('al-st-spaz')) || 0,
+    maiuscolo: _v('al-st-maiusc') || 'no',
+    ombraTesto: !!_g('al-st-ombratxt')?.checked,
+    evidenziaNome: !!_g('al-st-evid')?.checked,
   };
 }
 function _leggiChatStile() {
@@ -5044,6 +5071,8 @@ function _leggiChatStile() {
     larghezza: Number(_v('co-st-larg')), sfondo: _v('co-st-bg'), opacita: Number(_v('co-st-op')), testo: _v('co-st-fg'),
     bordoRaggio: Number(_v('co-st-radius')), username: mode === 'fisso' ? (_v('co-st-usercol') || '#9146ff') : 'twitch',
     forma: _v('co-st-forma') || 'carta', materia: _v('co-st-materia') || 'piatta', cornice: _v('co-st-cornice') || 'nessuna',
+    peso: _v('co-st-peso') || '700', spaziatura: Number(_v('co-st-spaz')) || 0,
+    maiuscolo: _v('co-st-maiusc') || 'no', ombraTesto: !!_g('co-st-ombratxt')?.checked,
     ombra: !!_g('co-st-ombra')?.checked, grassettoUser: !!_g('co-st-bold')?.checked,
   };
 }
@@ -5053,7 +5082,8 @@ function _leggiWidget(pref) {
     attivo: !!_g(`${pref}-attivo`)?.checked, posizione: _v(`${pref}-pos`) || 'basso-destra', xy: chXy,
     testo: (_v(`${pref}-testo`) || '').trim(),
     stile: { dim: _v(`${pref}-dim`) || 'media', font: _v(`${pref}-font`) || 'sistema', sfondo: _v(`${pref}-bg`),
-      opacita: Number(_v(`${pref}-op`)), testo: _v(`${pref}-fg`), accento: _v(`${pref}-acc`), bordoRaggio: Number(_v(`${pref}-radius`)) },
+      opacita: Number(_v(`${pref}-op`)), testo: _v(`${pref}-fg`), accento: _v(`${pref}-acc`), bordoRaggio: Number(_v(`${pref}-radius`)),
+      icona: _v(`${pref}-icona`) == null ? (pref === 'wf' ? 'cuore' : 'stella') : _v(`${pref}-icona`) },
   };
 }
 
@@ -5070,6 +5100,7 @@ function _raccogliAlerts() {
       font: b.querySelector('.al-font')?.value || '',
       accento: b.querySelector('.al-colore')?.value || '#9146ff',
       volume: Number(b.querySelector('.al-vol')?.value) || 0,
+      icona: b.querySelector('.al-icona')?.value || '',
     };
     if (soglia) blocchi[k][k === 'cheer' ? 'minBits' : 'minViewers'] = Number(soglia.value) || 0;
   });
@@ -5121,9 +5152,11 @@ function _applicaStileOverlay(ov) {
   _imposta('al-st-radius', al.bordoRaggio); _imposta('al-st-border', al.bordoSpessore);
   _imposta('al-st-glow', al.glow !== false); _imposta('al-st-icon', al.icona !== false);
   _imposta('al-st-forma', al.forma); _imposta('al-st-materia', al.materia); _imposta('al-st-cornice', al.cornice); _imposta('al-st-comp', al.composizione);
+  _imposta('al-st-dimico', al.dimIcona); _imposta('al-st-uscita', al.uscita); _imposta('al-st-peso', al.peso == null ? '700' : String(al.peso)); _imposta('al-st-spaz', al.spaziatura); _imposta('al-st-maiusc', al.maiuscolo); _imposta('al-st-ombratxt', al.ombraTesto !== false); _imposta('al-st-evid', al.evidenziaNome !== false);
   _imposta('co-st-dim', ch.dim); _imposta('co-st-font', ch.font); _imposta('co-st-gfont', ch.googleFont || ''); _imposta('co-st-anim', ch.animazione); _imposta('co-st-larg', ch.larghezza);
   _imposta('co-st-bg', ch.sfondo); _imposta('co-st-op', ch.opacita); _imposta('co-st-fg', ch.testo); _imposta('co-st-radius', ch.bordoRaggio);
   _imposta('co-st-forma', ch.forma); _imposta('co-st-materia', ch.materia); _imposta('co-st-cornice', ch.cornice);
+  _imposta('co-st-peso', ch.peso == null ? '700' : String(ch.peso)); _imposta('co-st-spaz', ch.spaziatura); _imposta('co-st-maiusc', ch.maiuscolo); _imposta('co-st-ombratxt', ch.ombraTesto === true);
   const modo = (ch.username && ch.username !== 'twitch') ? 'fisso' : 'twitch';
   _imposta('co-st-user', modo); if (modo === 'fisso') _imposta('co-st-usercol', ch.username);
   _imposta('co-st-ombra', ch.ombra !== false); _imposta('co-st-bold', ch.grassettoUser !== false);
@@ -5132,6 +5165,7 @@ function _applicaStileOverlay(ov) {
     _imposta(`${pref}-attivo`, wc.attivo); _imposta(`${pref}-pos`, wc.posizione); _imposta(`${pref}-testo`, wc.testo);
     _imposta(`${pref}-font`, ws.font); _imposta(`${pref}-dim`, ws.dim); _imposta(`${pref}-bg`, ws.sfondo);
     _imposta(`${pref}-op`, ws.opacita); _imposta(`${pref}-fg`, ws.testo); _imposta(`${pref}-acc`, ws.accento); _imposta(`${pref}-radius`, ws.bordoRaggio);
+    _imposta(`${pref}-icona`, ws.icona == null ? (pref === 'wf' ? 'cuore' : 'stella') : ws.icona);
   });
   _imposta('ovl-css', css);
   document.querySelectorAll('#scheda-alert input[type="range"]').forEach((r) => { const s = _g(r.id + '-v'); if (s) s.textContent = r.value; });
@@ -5180,7 +5214,8 @@ function _anteprimaWidget(pref, id, nome) {
   const cst = _leggiChatStile();
   el.className = 'ovl-widget dim-' + (w.dim || 'media') + ' forma-' + formaDi(cst) + ' materia-' + materiaDi(cst) + ' cornice-' + (cst.cornice === 'linea' ? 'nessuna' : corniceDi(cst));
   _setVars(el, { '--bg': w.sfondo, '--op': w.opacita + '%', '--fg': w.testo, '--acc': w.accento, '--radius': w.bordoRaggio + 'px', '--font': FONT_VAR[w.font] });
-  el.querySelector('.w-ico').innerHTML = AP_ICO_WIDGET[id] || '';
+  const icoW = document.querySelector(`.alert-blocco[data-w="${pref}"] .w-icona`)?.value;
+  el.querySelector('.w-ico').innerHTML = icoW === '' ? '' : (icoSvg(icoW || (pref === 'wf' ? 'cuore' : 'stella')) || AP_ICO_WIDGET[id] || '');
   el.querySelector('.w-testo').innerHTML = esc(_v(`${pref}-testo`) || '{nome}').replace(/\{nome\}/g, '<b>' + esc(nome) + '</b>');
 }
 
@@ -5257,9 +5292,13 @@ function aggiornaAnteprima() {
   const card = _g('ap-alert');
   if (card) {
     card.className = 'ap-el alert-card anim-' + st.animazione + (st.glow ? ' glow' : '') + (st.icona ? '' : ' senza-ico')
+      + (st.evidenziaNome === false ? ' senza-evid' : '') + ' maiusc-' + (st.maiuscolo || 'no')
       + ' ' + classiIdentita(st) + ' comp-' + compDi(st) + (selezione === 'alert' ? ' sel' : '');
-    _setVars(card, { '--acc': acc, '--bg': st.sfondo, '--op': st.opacita + '%', '--fg': st.testo, '--radius': st.bordoRaggio + 'px', '--bordo-px': st.bordoSpessore + 'px', '--size': st.dimTesto + 'px', '--font': fontStile(st) });
-    _g('ap-alert-ico').innerHTML = AP_ICO_ALERT;
+    _setVars(card, { '--acc': acc, '--bg': st.sfondo, '--op': st.opacita + '%', '--fg': st.testo, '--radius': st.bordoRaggio + 'px', '--bordo-px': st.bordoSpessore + 'px', '--size': st.dimTesto + 'px', '--font': fontStile(st),
+      '--dim-ico': (Number(st.dimIcona) || 46) + 'px', '--peso': String(st.peso || '700'), '--spaz': (Number(st.spaziatura) || 0) + 'px',
+      '--ombra-testo': st.ombraTesto === false ? 'none' : '0 2px 10px rgba(0,0,0,.45)' });
+    const icoSub = document.querySelector('.alert-blocco[data-alert="sub"] .al-icona')?.value;
+    _g('ap-alert-ico').innerHTML = icoSub === '' ? '' : (icoSvg(icoSub || 'stella') || AP_ICO_ALERT);
     _g('ap-alert-testo').innerHTML = _vivo ? ALERT_FINTI()[_vivoAlert][1] : ALERT_FINTI()[0][1];
 
     card.classList.add('dentro');
@@ -5271,7 +5310,7 @@ function aggiornaAnteprima() {
     apChat.className = 'ap-el ap-chat' + (/destra/.test(chatPos) ? ' destra' : '') + (selezione === 'chat' ? ' sel' : '');
     apChat.innerHTML = _messaggiFinti().map(([u, col, t]) => {
       const cu = cst.username === 'twitch' ? col : cst.username;
-      return `<div class="chat-riga dim-${cst.dim}${cst.ombra ? ' ombra' : ''}${cst.grassettoUser ? ' user-bold' : ''} ${classiIdentita(cst)} dentro" style="--bg:${cst.sfondo};--op:${cst.opacita}%;--fg:${cst.testo};--acc:${cu};--radius:${cst.bordoRaggio}px;--font:${fontStile(cst)}"><span class="chat-user" style="color:${cu}">${esc(u)}</span> ${esc(t)}</div>`;
+      return `<div class="chat-riga dim-${cst.dim}${cst.ombra ? ' ombra' : ''}${cst.grassettoUser ? ' user-bold' : ''} maiusc-${cst.maiuscolo || 'no'} ${classiIdentita(cst)} dentro" style="--bg:${cst.sfondo};--op:${cst.opacita}%;--fg:${cst.testo};--acc:${cu};--radius:${cst.bordoRaggio}px;--font:${fontStile(cst)};--peso:${cst.peso || '700'};--spaz:${Number(cst.spaziatura) || 0}px;--ombra-testo:${cst.ombraTesto ? '0 2px 8px rgba(0,0,0,.6)' : 'none'}"><span class="chat-user" style="color:${cu}">${esc(u)}</span> ${esc(t)}</div>`;
     }).join('');
     _iniettaManiglie('chat');
   }
@@ -5876,6 +5915,7 @@ function applicaTemplate(d) {
     _imposta('al-st-radius', al.bordoRaggio); _imposta('al-st-border', al.bordoSpessore);
     _imposta('al-st-glow', al.glow); _imposta('al-st-icon', al.icona !== false);
     _imposta('al-st-forma', al.forma); _imposta('al-st-materia', al.materia); _imposta('al-st-cornice', al.cornice); _imposta('al-st-comp', al.composizione);
+    _imposta('al-st-dimico', al.dimIcona); _imposta('al-st-uscita', al.uscita); _imposta('al-st-peso', al.peso == null ? '700' : String(al.peso)); _imposta('al-st-spaz', al.spaziatura); _imposta('al-st-maiusc', al.maiuscolo); _imposta('al-st-ombratxt', al.ombraTesto !== false); _imposta('al-st-evid', al.evidenziaNome !== false);
     _imposta('co-st-dim', ch.dim); _imposta('co-st-font', ch.font); _imposta('co-st-gfont', ch.googleFont); _imposta('co-st-bg', ch.sfondo);
     _imposta('co-st-op', ch.opacita); _imposta('co-st-fg', ch.testo); _imposta('co-st-radius', ch.bordoRaggio);
     if (acc) document.querySelectorAll('.alert-blocco[data-alert] .al-colore').forEach((c) => { c.value = acc; });
@@ -5892,6 +5932,7 @@ function _riempiConfig(d) {
   _imposta('al-st-radius', ast.bordoRaggio); _imposta('al-st-border', ast.bordoSpessore);
   _imposta('al-st-glow', ast.glow); _imposta('al-st-icon', ast.icona !== false);
   _imposta('al-st-forma', ast.forma); _imposta('al-st-materia', ast.materia); _imposta('al-st-cornice', ast.cornice); _imposta('al-st-comp', ast.composizione);
+  _imposta('al-st-dimico', ast.dimIcona); _imposta('al-st-uscita', ast.uscita); _imposta('al-st-peso', ast.peso == null ? '700' : String(ast.peso)); _imposta('al-st-spaz', ast.spaziatura); _imposta('al-st-maiusc', ast.maiuscolo); _imposta('al-st-ombratxt', ast.ombraTesto !== false); _imposta('al-st-evid', ast.evidenziaNome !== false);
   document.querySelectorAll('.alert-blocco[data-alert]').forEach((b) => {
     const c = a[b.dataset.alert] || {};
     _impostaEl(b.querySelector('.al-attivo'), c.attivo); _impostaEl(b.querySelector('.al-testo'), c.testo);
@@ -5914,6 +5955,7 @@ function _riempiConfig(d) {
     _imposta(`${pref}-attivo`, wc.attivo); _imposta(`${pref}-pos`, wc.posizione); _imposta(`${pref}-testo`, wc.testo);
     _imposta(`${pref}-font`, ws.font); _imposta(`${pref}-dim`, ws.dim); _imposta(`${pref}-bg`, ws.sfondo);
     _imposta(`${pref}-op`, ws.opacita); _imposta(`${pref}-fg`, ws.testo); _imposta(`${pref}-acc`, ws.accento); _imposta(`${pref}-radius`, ws.bordoRaggio);
+    _imposta(`${pref}-icona`, ws.icona == null ? (pref === 'wf' ? 'cuore' : 'stella') : ws.icona);
   });
   if (d.overlayCss != null) _imposta('ovl-css', d.overlayCss);
 }

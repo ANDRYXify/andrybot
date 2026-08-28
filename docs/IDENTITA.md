@@ -263,3 +263,48 @@ uso**: una chat ferma su due righe non dice se il blocco cresce sopra la webcam.
 Vive solo nello studio: il motore sta in `app.js`, che l'overlay di OBS non
 carica. Il collaudo lo verifica aprendo davvero la pagina dell'overlay e
 controllando che di quel motore non ci sia traccia.
+
+## «Rendiamo tutto personalizzabile, anche quella stellina»
+
+La stellina sull'alert era **una costante nel codice**: quattro SVG scelti dal
+tipo di evento, senza modo di toccarli. Cercando cos'altro fosse così, è venuta
+fuori una lista.
+
+### La libreria di icone
+
+Venti icone, scritte **una volta sola** in `presets.js` — il file che *sia* la
+dashboard *sia* la pagina dell'overlay già caricano. Non due copie che possono
+divergere: la stessa.
+
+Si scelgono **per evento**: follow con la mano che saluta, sub con la corona,
+bits con la moneta, raid con il razzo. E «— nessuna —» toglie l'icona del
+tutto. Lo stesso menu vale per i due widget.
+
+### Le altre cose che erano costanti
+
+| era fisso | adesso |
+|---|---|
+| icona dell'alert (4 SVG per tipo) | 20 icone a scelta, o nessuna, per evento |
+| dimensione dell'icona: 46px | da 0 a 120px |
+| icona dei widget: cuore e stella | le stesse 20 |
+| peso del testo: 800 | leggero · normale · grassetto · nero |
+| spaziatura fra le lettere: 0 | da −2 a +12px |
+| maiuscole: come scritto | come scritto · TUTTO MAIUSCOLO · Iniziali |
+| ombra del testo: sempre accesa | si può togliere |
+| il nome colorato d'accento: sempre | si può spegnere |
+| animazione d'uscita = quella d'entrata | si sceglie a parte |
+
+L'ultima merita una riga: l'alert entrava con l'animazione scelta e usciva
+**rifacendola al contrario**, perché l'uscita era «togliere la classe che
+l'aveva fatto entrare». Adesso l'uscita è una scelta sua — si può entrare
+rimbalzando e uscire in dissolvenza.
+
+E il testo della chat ha gli stessi comandi di peso, spaziatura, maiuscole e
+ombra: quello che vale per un elemento vale per gli altri, se ha senso.
+
+### Il cancello ha fatto il suo lavoro subito
+
+I campi nuovi sono otto per l'alert e quattro per la chat. Aggiunti al browser,
+`verifica-stile` ha detto `alert browser 22 · server 14` finché non sono stati
+messi anche di là. Il difetto che era costato un giro intero adesso si vede in
+un secondo, prima di toccare il browser.
