@@ -260,10 +260,6 @@ body.vetrina em, body.vetrina .vt-corsivo {
 .vt-tit em { color: var(--acc); }
 .vt-testo { margin: .85rem 0 0; font-size: 1rem; line-height: 1.6; color: var(--testo-2); }
 
-/* Con `grid` e auto-fit il numero di colonne dipende solo dallo spazio, non da
-   quanti elementi ci sono: sei carte in quattro colonne fanno 4+2, con due buchi
-   larghi mezzo schermo. Qui invece la riga incompleta si centra, e vale per
-   qualunque numero di elementi invece che per il numero di oggi. */
 .vt-griglia { display: flex; flex-wrap: wrap; justify-content: center; align-items: stretch; gap: 14px; }
 .vt-griglia > * { flex: 1 1 clamp(258px, 30%, 340px); min-width: 0; }
 .vt-carta {
