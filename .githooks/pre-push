@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Il collaudo prima di spingere. Vive QUI, nel repository, perché la rete non
+# deve dipendere da un servizio esterno: se GitHub Actions è spento, in coda o
+# bloccato da una politica, le prove devono girare lo stesso — sulla macchina di
+# chi sta per pubblicare, che è il momento in cui servono davvero.
+#
+# Si installa con:  npm run ganci
+# Si salta una volta sola (emergenza vera):  git push --no-verify
+set -e
+
+if [ "${SALTA_COLLAUDO:-}" = "1" ]; then
+  echo "collaudo saltato (SALTA_COLLAUDO=1)"
+  exit 0
+fi
+
+cd "$(git rev-parse --show-toplevel)"
+
+echo "→ prove"
+npm test --silent || { echo; echo "PROVE ROSSE: non spingo. Sistema, oppure 'git push --no-verify' se sai cosa stai facendo."; exit 1; }
+
+echo "→ cancelli"
+npm run --silent cancelli || { echo; echo "CANCELLI ROSSI: non spingo."; exit 1; }
+
+echo "collaudo verde ✓"
