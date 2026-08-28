@@ -18,6 +18,9 @@ const log = makeLog('7tv');
 
 const GQL = 'https://7tv.io/v3/gql';
 const REST = 'https://7tv.io/v3';
+// Le emote NUOVE non si creano piu' da GraphQL: 7TV ha tolto createEmote dallo
+// schema v3 e non l'ha rimesso in v4. La porta di oggi e' REST v4.
+const REST4 = 'https://7tv.io/v4';
 const CDN = 'https://cdn.7tv.app';
 const TIMEOUT_MS = 8000;
 const MAX_BYTES = 8 * 1024 * 1024;
@@ -226,45 +229,59 @@ export function rinomina(helix, login, emoteId, nome) {
 }
 
 // ───────────────────────────────────────────────── carica una NUOVA emote su 7TV
-// L'upload v3 è una GraphQL multipart-request (spec graphql-multipart-request):
-// la mutation createEmote(file: Upload!, data: EmoteInput!) con il file come
-// variabile. Il vecchio POST grezzo a /v3/emotes con header X-Emote-Data era la
-// via v2 deprecata: 7TV accettava la richiesta ma l'immagine restava VUOTA. I
-// metadati {name,tags,flags} sono identici, cambia solo il trasporto.
+// 7TV ha spostato la creazione delle emote FUORI da GraphQL: `createEmote` non
+// esiste piu' nello schema v3 (`Unknown field "createEmote" on type "Mutation"`)
+// e non e' mai stata rimessa in v4, dove EmoteMutation espone solo emote(id) e
+// emotes(ids) — cioe' modifiche a emote che esistono gia'.
+//
+// La porta di oggi e' REST: POST /v4/emotes, multipart, due parti —
+//   metadata : JSON { name, tags, flags }
+//   file     : i byte dell'immagine
+// L'ordine conta poco, la parte `metadata` si': senza, 7TV risponde
+// 400 "missing metadata" prima ancora di guardare chi sei.
+//
+// Le operazioni sul SET (aggiungi/togli/rinomina) restano su GraphQL v3, che
+// quelle le ha ancora: percio' qui cambia solo la creazione.
 // Ritorna { ok, id, nome } | { ok:false, motivo, scaduto }.
 export async function caricaEmote(login, bytes, nome, tags = []) {
   const t = seventvTokens.get(login);
   if (!t?.token) return { ok: false, motivo: 'collega prima il tuo account 7TV' };
   const n = String(nome || '').trim().replace(/\s+/g, '');
   if (n.length < 2) return { ok: false, motivo: 'nome troppo corto (min 2 caratteri)' };
-  const data = { name: n.slice(0, 100), tags: (tags || []).slice(0, 6), flags: 0 };
-  const query = 'mutation CreateEmote($file: Upload!, $data: EmoteInput!) { createEmote(file: $file, data: $data) { id } }';
+  const meta = { name: n.slice(0, 100), tags: (tags || []).slice(0, 6), flags: 0 };
   const fd = new FormData();
-  fd.append('operations', JSON.stringify({ query, variables: { file: null, data } }));
-  fd.append('map', JSON.stringify({ 0: ['variables.file'] }));
-  fd.append('0', new Blob([bytes], { type: 'image/webp' }), `${n}.webp`);
+  fd.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
+  fd.append('file', new Blob([bytes], { type: 'image/webp' }), `${n}.webp`);
   const ac = new AbortController();
   const to = setTimeout(() => ac.abort(), 20000);
   try {
     // NIENTE Content-Type manuale: lo imposta FormData col boundary multipart.
-    const r = await fetch(GQL, {
+    const r = await fetch(`${REST4}/emotes`, {
       method: 'POST',
       signal: ac.signal,
-      headers: { Authorization: 'Bearer ' + t.token, 'User-Agent': 'SocialBot/1.0' },
+      headers: { Authorization: 'Bearer ' + t.token, Accept: 'application/json', 'User-Agent': 'SocialBot/1.0' },
       body: fd,
     });
-    const j = await r.json().catch(() => null);
-    if (j?.errors?.length) {
-      const m = j.errors[0]?.message || 'errore 7TV';
-      const scaduto = r.status === 401 || r.status === 403 || /auth|token|unauthor|forbidden|login/i.test(m);
-      return { ok: false, motivo: m, scaduto };
-    }
+    const testo = await r.text().catch(() => '');
+    let j = null; try { j = JSON.parse(testo); } catch { }
     if (!r.ok) {
-      const scaduto = r.status === 401 || r.status === 403;
-      return { ok: false, motivo: j?.error?.message || j?.error || ('HTTP ' + r.status), scaduto };
+      const m = j?.error || j?.message || j?.errors?.[0]?.message || testo.slice(0, 140) || ('HTTP ' + r.status);
+      const scaduto = r.status === 401 || r.status === 403 || /not logged in|auth|token|unauthor|forbidden/i.test(String(m));
+      return { ok: false, motivo: String(m), scaduto };
     }
-    const id = j?.data?.createEmote?.id || '';
-    return { ok: true, id: ID_RE.test(String(id)) ? String(id) : '', nome: n };
+    const id = idNuovaEmote(j);
+    if (!id) return { ok: false, motivo: 'caricata, ma 7TV non ha restituito l\'id' };
+    return { ok: true, id, nome: n };
   } catch (e) { log.warn('caricaEmote:', e?.message || e); return { ok: false, motivo: 'irraggiungibile' }; }
   finally { clearTimeout(to); }
+}
+
+// L'id della nuova emote nella risposta REST: 7TV lo ha messo in punti diversi
+// nel tempo (nudo, sotto data, sotto emote). Li guardiamo tutti invece di
+// scommettere su uno solo: se cambia ancora, il caricamento non si rompe.
+function idNuovaEmote(j) {
+  for (const v of [j?.id, j?.emote_id, j?.data?.id, j?.emote?.id, j?.data?.emote?.id]) {
+    if (ID_RE.test(String(v || ''))) return String(v);
+  }
+  return '';
 }
