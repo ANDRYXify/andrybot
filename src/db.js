@@ -2433,6 +2433,25 @@ function rowToModule(r) {
   };
 }
 
+// Le CONDIZIONI di un modulo, ripulite prima di finire nel database. Non e'
+// pignoleria: qui dentro passa quello che manda il browser, e un elenco di
+// piattaforme inventate renderebbe un comando muto senza che si capisca
+// perche'. Assente o vuoto = tutte le piattaforme, che e' come si comportano
+// tutti i moduli creati finora.
+export const PIATTAFORME_MODULO = ['twitch', 'kick', 'youtube'];
+function normCondizioni(c) {
+  const out = { ...(c && typeof c === 'object' ? c : {}) };
+  if (out.piattaforme !== undefined) {
+    const scelte = (Array.isArray(out.piattaforme) ? out.piattaforme : [])
+      .map((x) => String(x).toLowerCase())
+      .filter((x) => PIATTAFORME_MODULO.includes(x));
+    // tutte scelte = come non aver scelto: si tiene la forma piu' semplice
+    if (!scelte.length || scelte.length === PIATTAFORME_MODULO.length) delete out.piattaforme;
+    else out.piattaforme = [...new Set(scelte)];
+  }
+  return out;
+}
+
 export const modules = {
   list(channel) {
     return db.prepare('SELECT * FROM modules WHERE channel=? ORDER BY id').all(channel).map(rowToModule);
@@ -2446,7 +2465,7 @@ export const modules = {
     const nome = String(m?.nome || '').slice(0, 80);
     const config = JSON.stringify({
       trigger: m?.trigger || {},
-      condizioni: m?.condizioni || {},
+      condizioni: normCondizioni(m?.condizioni),
       azioni: Array.isArray(m?.azioni) ? m.azioni : [],
       telegram: m?.telegram === true,
     });

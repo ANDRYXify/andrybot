@@ -536,6 +536,15 @@ export class ModulesEngine {
       if (livello < richiesto) return false;
     }
 
+    // SU QUALI PIATTAFORME. Assente o vuoto = TUTTE: e' cosi' che si comportano
+    // i moduli creati prima che le piattaforme fossero piu' d'una, ed e' anche
+    // quello che uno si aspetta da un comando nuovo. Un elenco che non contiene
+    // la piattaforma da cui arriva il messaggio ferma il modulo qui.
+    if (Array.isArray(c.piattaforme) && c.piattaforme.length) {
+      const da = ctx.piattaforma || 'twitch';
+      if (!c.piattaforme.includes(da)) return false;
+    }
+
     // probabilità
     if (c.probabilita != null && Number(c.probabilita) < 100) {
       const p = Math.max(0, Math.min(100, Number(c.probabilita) || 0));
@@ -990,6 +999,10 @@ export class ModulesEngine {
     const nome = msg.display || msg.user || '';
     return {
       channel,
+      // Da dove arriva. Serve alla condizione «su quali piattaforme»: un
+      // messaggio senza piattaforma e' Twitch, perche' Twitch c'era prima di
+      // tutte e i moduli vecchi non hanno questo campo.
+      piattaforma: msg.piattaforma || 'twitch',
       user: nome,                   // nome visualizzato (per $user/$touser)
       userLogin: msg.user || '',    // login (per moderazione/timeout)
       userId: msg.userId || (msg.tags && msg.tags['user-id']) || '', // id numerico (per $followage)
