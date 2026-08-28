@@ -483,18 +483,26 @@ export class BotManager {
   async messaggioEsterno(msg) {
     const login = String(msg?.channel || '').toLowerCase();
     if (!login || !streamers.get(login)) return;
-    const chat = msg.piattaforma === 'kick' ? voceKick(login) : null;
-    if (!chat) return;
+    if (!msg.piattaforma || msg.piattaforma === 'twitch') return;   // Twitch ha la sua strada
+    const parla = this.vocePer(msg);
     const onMessage = createMessageHandler({
-      chat, helix: this.helix, brain: this.brain, clips: this.clips, botLogin: login,
+      chat: { say: (_c, t) => parla(t) }, helix: this.helix, brain: this.brain, clips: this.clips, botLogin: login,
     });
-    await this._gestisciMessaggio(login, msg, onMessage, (t) => chat.say(login, t));
+    await this._gestisciMessaggio(login, msg, onMessage, parla);
+  }
+
+  // LA VOCE DI UN MESSAGGIO. Sta scritta in UN posto solo, e non si ricava a
+  // ogni chiamata: quindici punti del tubo rispondono a un messaggio, e
+  // ricavarla in ognuno vuol dire quindici occasioni di sbagliare — infatti la
+  // prima volta ne ho sbagliate quattordici, e un !comando scritto su Kick
+  // veniva risposto su TWITCH. Peggio del silenzio.
+  vocePer(msg) {
+    if (msg?.piattaforma === 'kick') { const v = voceKick(msg.channel); return (t) => v.say(msg.channel, t); }
+    return (t) => this.say(msg.channel, t);
   }
 
   async _gestisciMessaggio(login, msg, onMessage, dire = null) {
-    // La voce: di norma la chat Twitch di questo canale, ma un messaggio
-    // arrivato da fuori risponde dalla sua piattaforma.
-    const parla = dire || ((t) => this.say(msg.channel, t));
+    const parla = dire || this.vocePer(msg);
     // Le difese qui sotto agiscono via Helix (elimina, timeout): hanno senso
     // solo su Twitch. Su un'altra piattaforma il messaggio passa al flusso
     // normale — meglio nessuna moderazione che una moderazione che finge.
@@ -513,11 +521,11 @@ export class BotManager {
       if (await gamesbridge.tryGamesBridge(msg, parla)) return;
     } catch (e) { log.error(`#${login} giochi:`, e?.message || e); }
     // 3) flusso normale
-    this._elaboraMessaggio(login, msg, onMessage);
+    this._elaboraMessaggio(login, msg, onMessage, parla);
   }
 
   // Elaborazione normale di un messaggio (chiamata solo se non gestito prima).
-  _elaboraMessaggio(login, msg, onMessage) {
+  _elaboraMessaggio(login, msg, onMessage, parla = this.vocePer(msg)) {
     onMessage(msg).catch(e => log.error(`#${login} gestione messaggio:`, e?.message || e));
     if (!msg.isSelf) this.clips.onActivity(msg);   // rilevatore "hype" per le clip automatiche (chat)
     try { this.alerts?.onChat(login, msg); } catch (e) { log.debug(`#${login} chat overlay:`, e?.message || e); }
@@ -529,45 +537,45 @@ export class BotManager {
     // (solo un'affinità, mai contenuti né in quale canale).
     if (!msg.isSelf) { try { persona.interagisci(msg.user); } catch { /* niente */ } }
     // minigiochi: monete passive + comandi (!dado, !slot, !trivia, ...)
-    try { games.accredita(msg); games.tryGame(msg, (t) => this.say(msg.channel, t)); }
+    try { games.accredita(msg); games.tryGame(msg, parla); }
     catch (e) { log.error(`#${login} giochi:`, e?.message || e); }
     // giveaway / sorteggi (!giveaway, !join, !estrai) — segue l'add-on Giochi
-    try { giveaway.tryGiveaway(msg, (t) => this.say(msg.channel, t)); }
+    try { giveaway.tryGiveaway(msg, parla); }
     catch (e) { log.error(`#${login} giveaway:`, e?.message || e); }
     // ore guardate / fedeltà (!ore, !classificaore)
-    try { watchtime.tryComando(msg, (t) => this.say(msg.channel, t)); }
+    try { watchtime.tryComando(msg, parla); }
     catch (e) { log.error(`#${login} ore:`, e?.message || e); }
     // comandi base pronti (!so/!shoutout, !followage, !uptime): opt-out e mai
     // sopra ai comandi/Moduli creati dallo streamer (quelli vincono).
-    comandibase.tryComando(this.helix, msg, (t) => this.say(msg.channel, t))
+    comandibase.tryComando(this.helix, msg, parla)
       .catch((e) => log.error(`#${login} comandi base:`, e?.message || e));
     // minigiochi webcam (!mima/!nonridere/!reaction/!battaglia, !sfida): avviano
     // i giochi nell'overlay tracking. Deterministico; solo se il tracking è acceso.
-    try { trackinggiochi.tryComando(this.effects, msg, (t) => this.say(msg.channel, t)); }
+    try { trackinggiochi.tryComando(this.effects, msg, parla); }
     catch (e) { log.error(`#${login} giochi tracking:`, e?.message || e); }
     // gestione comandi dalla chat (!comando aggiungi/…): opt-in, solo se accesa
-    try { comandichat.tryComando(msg, (t) => this.say(msg.channel, t)); }
+    try { comandichat.tryComando(msg, parla); }
     catch (e) { log.error(`#${login} comandi-chat:`, e?.message || e); }
     // comandi VIP (mod/streamer): !vip @nome [durata], !unvip, !viplista
-    vip.tryVipCommand(this.helix, msg, (t) => this.say(msg.channel, t)).catch((e) => log.error(`#${login} vip:`, e?.message || e));
+    vip.tryVipCommand(this.helix, msg, parla).catch((e) => log.error(`#${login} vip:`, e?.message || e));
     // sondaggi & predizioni Twitch (mod/streamer) — add-on Effetti & Punti canale
-    sondaggi.trySondaggio(this.helix, msg, (t) => this.say(msg.channel, t)).catch((e) => log.error(`#${login} sondaggi:`, e?.message || e));
+    sondaggi.trySondaggio(this.helix, msg, parla).catch((e) => log.error(`#${login} sondaggi:`, e?.message || e));
     // richieste musicali via Spotify (!sr, !song) — add-on Richieste Musicali
-    songrequest.trySongRequest(msg, (t) => this.say(msg.channel, t)).catch((e) => log.error(`#${login} songrequest:`, e?.message || e));
+    songrequest.trySongRequest(msg, parla).catch((e) => log.error(`#${login} songrequest:`, e?.message || e));
     // citazioni (!cita) — lo shoutout (!so) lo gestisce comandibase qui sopra
-    try { quotes.tryQuoteCommand(msg, (t) => this.say(msg.channel, t)); } catch (e) { log.error(`#${login} citazioni:`, e?.message || e); }
+    try { quotes.tryQuoteCommand(msg, parla); } catch (e) { log.error(`#${login} citazioni:`, e?.message || e); }
     // contatori (!morti, !tentativi, !parole…): comando chat + auto-conteggio parole.
     // L'emit aggiorna il widget sullo STESSO overlay OBS (feed SSE di alert/effetti).
     try {
       const emitCont = (p) => this.effects?.emit?.(login, p);
-      contatori.tryComando(msg, (t) => this.say(msg.channel, t), emitCont);
+      contatori.tryComando(msg, parla, emitCont);
       contatori.perParola(msg, emitCont);
     } catch (e) { log.debug(`#${login} contatori:`, e?.message || e); }
     // effetti & suoni: un comando come !airhorn accende l'overlay OBS.
-    try { this.effects?.tryTrigger(msg, (t) => this.say(msg.channel, t)); }
+    try { this.effects?.tryTrigger(msg, parla); }
     catch (e) { log.error(`#${login} effetti:`, e?.message || e); }
     // moduli: automazioni dello streamer (comando/parola/primo messaggio).
-    try { this.modules?.onMessage(msg, (t) => this.say(msg.channel, t)); }
+    try { this.modules?.onMessage(msg, parla); }
     catch (e) { log.error(`#${login} moduli:`, e?.message || e); }
     // plugin operatore (opzionali): alimentiamo l'event-bus.
     try { this.bus?.emit('message', msg); } catch (e) { log.debug('bus message:', e?.message || e); }
