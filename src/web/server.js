@@ -75,6 +75,13 @@ const xyOk = (v) => (v && Number.isFinite(Number(v.x)) && Number.isFinite(Number
 // Assi dell'identita' dell'overlay: forma, materia, cornice, composizione.
 // Devono stare qui, non solo nel browser: lo stile si salva passando da questa
 // normalizzazione, e un campo che non e' elencato viene buttato via in silenzio.
+const ICONE_OVL_K = ['stella', 'cuore', 'fulmine', 'megafono', 'corona', 'fuoco', 'diamante', 'trofeo', 'regalo', 'razzo',
+  'scudo', 'cuffie', 'gamepad', 'nota', 'chat', 'campana', 'scintille', 'mano', 'occhio', 'moneta'];
+const icoOk = (x) => (ICONE_OVL_K.includes(String(x)) ? String(x) : '');
+const PESO_OVL = ['400', '700', '800', '900'];
+const MAIUSC_OVL = ['no', 'maiuscolo', 'capo'];
+const USCITA_OVL = ['come', 'slide', 'pop', 'zoom', 'fade', 'flip', 'bounce'];
+
 const FORME_OVL = ['carta', 'pillola', 'squadrata', 'taglio', 'insegna', 'esagono', 'nastro', 'fumetto'];
 const MATERIE_OVL = ['piatta', 'sfumata', 'vetro', 'carta', 'neon', 'crt', 'griglia'];
 const CORNICI_OVL = ['linea', 'nessuna', 'spessa', 'angoli', 'barra'];
@@ -98,6 +105,13 @@ const normAlertStile = (st) => {
     materia: unoDi(st.materia, MATERIE_OVL, 'piatta'),
     cornice: unoDi(st.cornice, CORNICI_OVL, 'linea'),
     composizione: unoDi(st.composizione, COMP_OVL, 'colonna'),
+    dimIcona: clampInt(st.dimIcona, 0, 120, 46),
+    uscita: unoDi(st.uscita, USCITA_OVL, 'come'),
+    peso: unoDi(String(st.peso), PESO_OVL, '700'),
+    spaziatura: clampInt(st.spaziatura, -2, 12, 0),
+    maiuscolo: unoDi(st.maiuscolo, MAIUSC_OVL, 'no'),
+    ombraTesto: st.ombraTesto !== false,
+    evidenziaNome: st.evidenziaNome !== false,
   };
 };
 const normChatStile = (st) => {
@@ -118,6 +132,10 @@ const normChatStile = (st) => {
     forma: unoDi(st.forma, FORME_OVL, 'carta'),
     materia: unoDi(st.materia, MATERIE_OVL, 'piatta'),
     cornice: unoDi(st.cornice, CORNICI_OVL, 'nessuna'),
+    peso: unoDi(String(st.peso), PESO_OVL, '700'),
+    spaziatura: clampInt(st.spaziatura, -2, 8, 0),
+    maiuscolo: unoDi(st.maiuscolo, MAIUSC_OVL, 'no'),
+    ombraTesto: st.ombraTesto === true,
   };
 };
 const normWidgetStile = (st) => {
@@ -133,6 +151,8 @@ const normWidgetStile = (st) => {
     forma: unoDi(st.forma, FORME_OVL, 'carta'),
     materia: unoDi(st.materia, MATERIE_OVL, 'piatta'),
     cornice: unoDi(st.cornice, CORNICI_OVL, 'nessuna'),
+    icona: st.icona === '' ? '' : (icoOk(st.icona) || 'stella'),
+    dimIcona: clampInt(st.dimIcona, 0, 80, 20),
   };
 };
 // Stile PER-OVERLAY completo (tutti i campi opzionali): { alerts, chat, widget }.
@@ -2775,6 +2795,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
           font: unoDi(e.font, FONT_OVL, ''),   // '' = usa il font condiviso dello stile
           volume: clampInt(e.volume, 0, 100, 100),
           accento: hexOk(e.accento || e.colore, '#9146ff'),
+          icona: e.icona === '' ? '' : icoOk(e.icona),
         };
       };
       const st = p.stile || {};

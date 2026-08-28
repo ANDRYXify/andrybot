@@ -499,12 +499,17 @@
       posizionaContenitore(alertBox, MIO.xy.alert || ev.xy, ev.posizione || 'alto-centro');
       const card = document.createElement('div');
       card.className = 'alert-card anim-' + (st.animazione || 'slide') + (st.glow ? ' glow' : '') + (st.icona === false ? ' senza-ico' : '')
+        + (st.evidenziaNome === false ? ' senza-evid' : '') + ' maiusc-' + (st.maiuscolo || 'no')
         + ' ' + classiIdentita(st) + ' ' + classeComp(st);
       applicaVars(card, {
         '--acc': ev.colore, '--bg': st.sfondo, '--op': st.opacita != null ? st.opacita + '%' : null,
         '--fg': st.testo, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null,
         '--bordo-px': st.bordoSpessore != null ? st.bordoSpessore + 'px' : null,
         '--size': st.dimTesto != null ? st.dimTesto + 'px' : null, '--font': fontDi(st) || null,
+        '--dim-ico': (st.dimIcona != null ? st.dimIcona : 46) + 'px',
+        '--peso': String(st.peso || '700'),
+        '--spaz': (Number(st.spaziatura) || 0) + 'px',
+        '--ombra-testo': st.ombraTesto === false ? 'none' : '0 2px 10px rgba(0,0,0,.45)',
       });
       const testoHtml = escHtml(ev.testo || '').replace(/^(\S+)/, '<b>$1</b>');
 
@@ -514,7 +519,9 @@
           ? '<video class="alert-media" src="' + escHtml(ev.mediaUrl) + '" autoplay playsinline></video>'
           : '<img class="alert-media" src="' + escHtml(ev.mediaUrl) + '">';
       }
-      card.innerHTML = mediaHtml + '<div class="alert-ico">' + (ALERT_ICO[ev.kind] || ALERT_ICO.follow) + '</div><div class="alert-testo">' + testoHtml + '</div>';
+      const libro = window.ICONE_OVL;
+      const icoScelta = ev.icona === '' ? '' : (libro && ev.icona ? libro.svg(ev.icona) : (ALERT_ICO[ev.kind] || ALERT_ICO.follow));
+      card.innerHTML = mediaHtml + '<div class="alert-ico">' + icoScelta + '</div><div class="alert-testo">' + testoHtml + '</div>';
       alertBox.appendChild(card);
       const vol01 = (ev.volume != null ? ev.volume : 100) / 100;
       const vid = card.querySelector('video.alert-media'); if (vid) { try { vid.volume = vol01; } catch (e) {  } }
@@ -591,7 +598,9 @@
       const destra = !ev.xy && /destra/.test(ev.posizione || '');
       const riga = document.createElement('div');
       riga.className = 'chat-riga dim-' + (st.dim || 'media') + ' anim-' + (st.animazione || 'slide') + (st.ombra !== false ? ' ombra' : '') + (st.grassettoUser !== false ? ' user-bold' : '')
-        + ' ' + classiIdentita(st, 'nessuna');
+        + ' maiusc-' + (st.maiuscolo || 'no') + ' ' + classiIdentita(st, 'nessuna');
+      applicaVars(riga, { '--peso': String(st.peso || '700'), '--spaz': (Number(st.spaziatura) || 0) + 'px',
+        '--ombra-testo': st.ombraTesto === true ? '0 2px 8px rgba(0,0,0,.6)' : 'none' });
       applicaVars(riga, {
         '--bg': st.sfondo, '--op': st.opacita != null ? st.opacita + '%' : null,
         '--fg': st.testo, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null, '--font': fontDi(st) || null,
@@ -647,11 +656,14 @@
       } else { el.style.position = ''; el.style.left = ''; el.style.top = ''; el.style.transform = ''; }
       const st = cfg.stile || {};
       el.className = 'ovl-widget dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');
+      applicaVars(el, { '--dim-ico': (st.dimIcona != null ? st.dimIcona : 20) + 'px' });
       applicaVars(el, {
         '--bg': st.sfondo, '--op': st.opacita != null ? st.opacita + '%' : null, '--fg': st.testo,
         '--acc': st.accento, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null, '--font': fontDi(st) || null,
       });
-      el.querySelector('.w-ico').innerHTML = WIDGET_ICO[id] || '';
+      const libroW = window.ICONE_OVL;
+      el.querySelector('.w-ico').innerHTML = st.icona === '' ? ''
+        : (libroW && st.icona ? libroW.svg(st.icona) : (WIDGET_ICO[id] || ''));
       const tpl = cfg.testo || '{nome}';
       el.querySelector('.w-testo').innerHTML = escHtml(tpl).replace(/\{nome\}/g, '<b>' + escHtml(valore || '—') + '</b>');
     }
