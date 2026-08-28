@@ -193,3 +193,31 @@ sito: quello nessun accorgimento tecnico lo sostituisce.
 - [IndexNow: chi lo supporta nel 2026](https://pressonify.ai/blog/indexnow-instant-indexing-press-releases-2026)
 - [Indicizzazione di un sito nuovo](https://www.trysight.ai/blog/website-not-getting-indexed-fast)
 - [AI Overviews e sistemi di ranking](https://www.seoinc.com/seo-blog/ai-seo/)
+
+## Kick nelle parole chiave (e YouTube no, per ora)
+
+Con l'arrivo di Kick le stringhe SEO parlano di **due** piattaforme:
+`bot per Twitch e Kick in italiano`, in tutte e tre le lingue, in `title`,
+`description`, Open Graph, Twitter Card, JSON-LD e nel testo della pagina.
+
+Due scelte, dette qui perché non si perdano.
+
+**La frase chiave non è stata sostituita, è stata allargata.** Il sito si
+posiziona su «bot per Twitch in italiano»: quella sequenza di parole resta
+dentro la nuova, come sottostringa. Riscriverla da zero avrebbe buttato via il
+posizionamento guadagnato.
+
+**YouTube non compare.** Le credenziali ci sono, ma il collegamento non è ancora
+aperto: promettere in un `title` una cosa che l'utente poi non trova è
+pubblicità falsa, e per il posizionamento è anche peggio (si arriva, non si
+trova, si esce — e quel rimbalzo Google lo conta). Ci entrerà il giorno in cui
+funziona.
+
+### Il cancello c'era già
+
+Le stringhe vivono in **due** posti che devono combaciare: `index.html` (la
+versione italiana) e `META_LINGUA` in `server.js` (che ci costruisce sopra le
+altre lingue). Se non combaciano, `gusciaDi` **lancia all'avvio** con il testo
+che non trova. Quindi non si può cambiarne una e dimenticare l'altra: il server
+non parte. È la stessa idea dei cancelli del collaudo, ma scritta prima — e
+questa volta ha fatto il suo lavoro senza che dovessimo aggiungere niente.
