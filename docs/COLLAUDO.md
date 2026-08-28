@@ -30,7 +30,7 @@ degli altri.
 | `unita/identita` | Un media caricato non ne cancella mai un altro; ogni comando coniato è valido e non esce dalla cartella. |
 | `unita/antispam` | Soprattutto il **falso positivo**: i messaggi normali devono passare. |
 | `unita/moderazione` | Le parole vietate, e le conseguenze note della scelta «sottostringa». |
-| `cancelli/*` | I tre cancelli statici, che ora girano da soli. |
+| `cancelli/*` | I cancelli statici (`npm run cancelli`), che ora girano da soli. |
 
 ## Come si aggiunge una prova
 
@@ -206,6 +206,32 @@ era usato da nessuna riga — l'LLM vive nel cervello Python — ed è stato tol
 Il cancello che chiude la classe è `scripts/verifica-dipendenze.mjs`: confronta
 i due file in un millisecondo, quindi può stare anche nel gancio pre-push, dove
 `npm ci` (che ci mette secondi e scarica) non starebbe mai.
+
+## Nessuna pagina è un vicolo cieco
+
+Un moderatore che cambia canale e sceglie il **proprio** — quello dove il bot
+non c'è — finiva sulla pagina «Richiedi SocialBot» e lì restava: nessun modo di
+tornare dove stava, se non rifare il giro dall'esterno. Non è un caso limite: è
+il percorso normale di chi ha sbagliato voce nel menù.
+
+Il difetto non era di quella pagina sola. Le viste che **sostituiscono** il
+cruscotto sono tre — richiesta, in attesa, disabilitato — e tutte e tre
+capitavano anche a chi non le aveva cercate, e tutte e tre erano senza uscita.
+Ora l'uscita è una sola funzione, `rigaUscita()`, che ognuna monta: se esiste un
+altro canale porta lì, se non esiste non lascia una riga vuota ma una frase che
+spiega dove si è finiti.
+
+Il secondo difetto era più insidioso, perché il pulsante *si vedeva*: l'aggancio
+del clic stava dentro una funzione che gira **prima** che `render()` scriva
+`app.innerHTML`, quindi non trovava niente da agganciare. Un pulsante finto è
+peggio di un pulsante assente. La difesa è strutturale: il clic si raccoglie su
+`document`, delegato, così regge ogni ridisegno.
+
+`scripts/verifica-uscite.mjs` tiene ferme le due cose. L'elenco delle viste non
+è scritto nel cancello: **si ricava da `render()`**, quindi una quarta vista
+senza cruscotto sarebbe coperta il giorno che nasce. Provato rosso su entrambi i
+difetti veri — togliendo `rigaUscita()` da una vista, e riportando l'aggancio
+del clic sull'elemento invece che su `document`.
 
 ## La rete non deve dipendere da GitHub
 

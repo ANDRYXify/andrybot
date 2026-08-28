@@ -1938,33 +1938,51 @@ async function caricaPiani() {
   });
 }
 
+function altroCanale() {
+  return (stato.mieiCanali || []).find((c) => c.canale !== stato.user.login) || null;
+}
+
+function rigaUscita(azione = '') {
+  const a = altroCanale();
+  const torna = a
+    ? `<button type="button" class="btn grande secondario" data-torna-canale="${esc(a.canale)}">${_bIco(ICO.indietro)}${L('Torna su', 'Back to', 'Volver a')} @${esc(a.display || a.canale)}</button>`
+    : '';
+  if (!azione && !torna) return '';
+  return `<p class="spazio-sopra riga-flessibile">${azione}${torna}</p>`;
+}
+
 function vistaRichiesta() {
+  const a = altroCanale();
   return `
     <div class="carta evidenziata">
-      <h2>${_hIco(ICO.rocket)}Porta SocialBot nel tuo canale</h2>
-      <p>Chiedi l'abilitazione: andryxify riceverà la tua richiesta e, una volta approvata,
-      potrai configurare il tuo bot da qui.</p>
-      <p class="spazio-sopra">
-        <button class="btn grande" id="btn-richiesta">Richiedi SocialBot</button>
-      </p>
+      <h2>${_hIco(ICO.rocket)}${L('SocialBot non è su questo canale', 'SocialBot is not on this channel', 'SocialBot no está en este canal')}</h2>
+      <p>${L('Stai guardando', 'You are looking at', 'Estás viendo')} <strong>@${esc(stato.user.display || stato.user.login)}</strong>,
+      ${L('che non ha ancora SocialBot.', "which doesn't have SocialBot yet.", 'que aún no tiene SocialBot.')}</p>
+      <p class="spazio-sopra"><strong>${L('Se è il tuo canale e fai streaming', "If it's your channel and you stream", 'Si es tu canal y haces streaming')}</strong>:
+      ${L('chiedi l\'abilitazione. andryxify riceverà la richiesta e, una volta approvata, configurerai il bot da qui.', 'ask to be enabled. andryxify will get your request and, once approved, you\'ll set the bot up from here.', 'pide la habilitación. andryxify recibirá tu solicitud y, una vez aprobada, configurarás el bot desde aquí.')}</p>
+      ${a
+        ? `<p class="suggerimento"><strong>${L('Se ci sei finito per sbaglio', 'If you got here by mistake', 'Si has llegado aquí por error')}</strong>:
+            ${L('capita cambiando canale. Torna dove stavi con il pulsante qui sotto — non hai chiesto niente e non è cambiato niente.', 'it happens when switching channels. Go back where you were with the button below — you asked for nothing and nothing changed.', 'pasa al cambiar de canal. Vuelve donde estabas con el botón de abajo — no has pedido nada y no ha cambiado nada.')}</p>`
+        : `<p class="suggerimento">${L('Se non fai streaming, qui non c\'è niente per te: questa pagina serve agli streamer che vogliono il bot nel loro canale.', "If you don't stream, there's nothing for you here: this page is for streamers who want the bot on their channel.", 'Si no haces streaming, aquí no hay nada para ti: esta página es para streamers que quieren el bot en su canal.')}</p>`}
+      ${rigaUscita(`<button class="btn grande" id="btn-richiesta">${L('Richiedi SocialBot', 'Request SocialBot', 'Solicitar SocialBot')}</button>`)}
     </div>`;
 }
 
 function vistaPending() {
   return `
     <div class="carta">
-      <h2>${_hIco(ICO.attesa)}Richiesta inviata!</h2>
-      <p>andryxify deve approvarti. Torna qui più tardi: quando sarai abilitato
-      troverai la tua dashboard completa.</p>
+      <h2>${_hIco(ICO.attesa)}${L('Richiesta inviata!', 'Request sent!', '¡Solicitud enviada!')}</h2>
+      <p>${L('andryxify deve approvarti. Torna qui più tardi: quando sarai abilitato troverai la tua dashboard completa.', 'andryxify has to approve you. Come back later: once you are enabled you will find your full dashboard here.', 'andryxify tiene que aprobarte. Vuelve más tarde: cuando estés habilitado encontrarás aquí tu panel completo.')}</p>
+      ${rigaUscita()}
     </div>`;
 }
 
 function vistaDisabilitato() {
   return `
     <div class="carta">
-      <h2>${_hIco(ICO.sonno)}Accesso disabilitato</h2>
-      <p>Il tuo accesso ad SocialBot è al momento disabilitato da andryxify.
-      Se pensi sia un errore, contattalo.</p>
+      <h2>${_hIco(ICO.sonno)}${L('Accesso disabilitato', 'Access disabled', 'Acceso desactivado')}</h2>
+      <p>${L('Il tuo accesso a SocialBot è al momento disabilitato da andryxify. Se pensi sia un errore, contattalo.', 'Your access to SocialBot is currently disabled by andryxify. If you think this is a mistake, get in touch with him.', 'Tu acceso a SocialBot está desactivado por andryxify. Si crees que es un error, ponte en contacto con él.')}</p>
+      ${rigaUscita()}
     </div>`;
 }
 
@@ -2345,6 +2363,7 @@ const ICO = {
   onda: '<path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/>',
   segnaposto: '<path d="M20 10c0 4.4-8 12-8 12s-8-7.6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
   freccia: '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+  indietro: '<path d="M19 12H5"/><path d="m12 19-7-7 7-7"/>',
   aggiorna: '<path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/>',
   stop: '<rect x="6" y="6" width="12" height="12" rx="2"/>',
   piu: '<path d="M12 5v14"/><path d="M5 12h14"/>',
@@ -14871,6 +14890,15 @@ async function caricaTabellaAdmin() {
 }
 
 document.addEventListener('click', (ev) => {
+  const torna = ev.target.closest?.('[data-torna-canale]');
+  if (torna) {
+    conErrore(async () => {
+      await api('/api/cambia-canale', { method: 'POST', body: { channel: torna.dataset.tornaCanale } });
+      stato = await api('/api/me');
+      render();
+    });
+    return;
+  }
   if (ev.target.id === 'btn-richiesta') {
     conErrore(async () => {
       await api('/api/richiesta', { method: 'POST', body: {} });
