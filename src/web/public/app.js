@@ -4705,7 +4705,7 @@ function bloccoAlert(t, a) {
 function bloccoWidget(pref, w, titolo, kind) {
   const st = w.stile || {};
   return `
-    <div class="alert-blocco" data-w="${pref}">
+    <div class="alert-blocco asp-blocco" data-w="${pref}" data-asp="${pref}">
       <div class="riga-interruttore">
         <label class="interruttore"><input type="checkbox" id="${pref}-attivo" ${w.attivo ? 'checked' : ''}><span class="levetta"></span></label>
         <strong>${titolo}</strong>
@@ -4733,7 +4733,7 @@ function ovlElemento(k, ico, nome, sez) {
   return `<div class="ovl-elem"${mirabile ? ` data-mira="${k}"` : ''}>
     <span class="oe-ico">${_bIco(ico)}</span>
     <span class="oe-nome">${esc(nome)}</span>
-    <button type="button" class="oe-mod" data-apri-sez="${sez}">${L('Modifica', 'Edit', 'Editar')}</button>
+    <button type="button" class="oe-mod" ${sez ? `data-apri-sez="${sez}"` : `data-scegli="${k}"`}>${L('Modifica', 'Edit', 'Editar')}</button>
     <label class="interruttore oe-sw" title="${L('Mostra', 'Show', 'Mostrar')} «${esc(nome)}» ${L('in questo overlay', 'in this overlay', 'en este overlay')}"><input type="checkbox" id="mostra-${k}" checked><span class="levetta"></span></label>
   </div>`;
 }
@@ -4791,6 +4791,7 @@ function pannelloAlert() {
         <div class="ovl-gruppo">
           <label class="ovl-spunta"><input type="checkbox" id="ovl-griglia" checked><span>${L('Griglia', 'Grid', 'Rejilla')}</span></label>
           <label class="ovl-spunta"><input type="checkbox" id="ovl-sicura"><span>${L('Zone sicure', 'Safe areas', 'Zonas seguras')}</span></label>
+          <label class="ovl-spunta ovl-vivo-sp"><input type="checkbox" id="ovl-vivo"><span>${L('Dal vivo', 'Live', 'En vivo')}</span></label>
         </div>
         <div class="ovl-gruppo ovl-zoom">
           <button type="button" class="ovl-tasto" id="ovl-zoom-meno" title="${L('Rimpicciolisci', 'Zoom out', 'Alejar')}">${_bIco('<circle cx="11" cy="11" r="7"/><path d="M8 11h6M21 21l-4.3-4.3"/>')}</button>
@@ -4831,7 +4832,6 @@ function pannelloAlert() {
           <input type="range" id="insp-rot" min="-180" max="180" step="1" value="0">
           <span class="ovl-insp-val" id="insp-rot-val">0°</span>
         </div>
-        <button type="button" class="btn secondario mini insp-aspetto" id="insp-aspetto">${_bIco(ICO.effetti)}${L('Colori, font, animazione…', 'Colors, fonts, animation…', 'Colores, fuentes, animación…')}</button>
       </div>
       <p class="suggerimento"><strong>${L('Clicca', 'Click', 'Haz clic en')}</strong> ${L('un elemento per selezionarlo, poi <strong>trascinalo</strong> per spostarlo; usa le maniglie agli angoli o i cursori qui sopra. Scorciatoie: <strong>rotellina</strong> = ridimensiona, <strong>Shift+rotellina</strong> = ruota, <strong>doppio clic</strong> = ripristina. Con «Prova» li vedi nell\'overlay dentro OBS.', 'an element to select it, then <strong>drag</strong> it to move; use the corner handles or the sliders above. Shortcuts: <strong>wheel</strong> = resize, <strong>Shift+wheel</strong> = rotate, <strong>double click</strong> = reset. Use «Test» to see them in the overlay inside OBS.', 'un elemento para seleccionarlo, luego <strong>arrástralo</strong> para moverlo; usa los tiradores de las esquinas o los cursores de arriba. Atajos: <strong>rueda</strong> = redimensiona, <strong>Shift+rueda</strong> = rota, <strong>doble clic</strong> = restablece. Con «Probar» los ves en el overlay dentro de OBS.')}</p>
     </div>
@@ -4848,8 +4848,8 @@ function pannelloAlert() {
       <div class="ovl-elementi">
         ${ovlElemento('alert', ICO.megafono, L('Alert eventi', 'Event alerts', 'Alertas de eventos'), 'sez-alert')}
         ${ovlElemento('chat', ICO.chat, L('Chat a schermo', 'On-screen chat', 'Chat en pantalla'), 'sez-chat')}
-        ${ovlElemento('wf', ICO.cuore, L('Ultimo follower', 'Latest follower', 'Último seguidor'), 'sez-widget')}
-        ${ovlElemento('ws', ICO.medaglia, L('Ultimo sub', 'Latest sub', 'Último sub'), 'sez-widget')}
+        ${ovlElemento('wf', ICO.cuore, L('Ultimo follower', 'Latest follower', 'Último seguidor'), '')}
+        ${ovlElemento('ws', ICO.medaglia, L('Ultimo sub', 'Latest sub', 'Último sub'), '')}
         ${ovlElemento('effetti', ICO.effetti, L('Effetti & suoni', 'Effects & sounds', 'Efectos y sonidos'), 'effetti')}
       </div>
       <p class="suggerimento">${L('Tienilo per te: chi ha questo link può far comparire cose nel tuo overlay.', 'Keep it to yourself: anyone with this link can make things appear in your overlay.', 'Guárdalo para ti: quien tenga este enlace puede hacer aparecer cosas en tu overlay.')}</p>
@@ -4866,6 +4866,7 @@ function pannelloAlert() {
         ${cSel('al-pos', L('Posizione', 'Position', 'Posición'), posAlertOpts, a.posizione)}
         <div><label class="campo" for="al-durata">${L('Durata (secondi)', 'Duration (seconds)', 'Duración (segundos)')}</label><input type="number" id="al-durata" min="2" max="20" value="${Math.round((Number(a.durata) || 6000) / 1000)}"></div>
       </div>
+      <div class="asp-blocco" data-asp="alert">
       <h4 class="spazio-sopra">${L('Aspetto', 'Appearance', 'Aspecto')} <span class="tenue">— ${L('vale per tutti gli alert', 'applies to all alerts', 'vale para todas las alertas')}</span></h4>
       <div class="griglia-campi spazio-sopra">
         ${cSel('al-st-forma', L('Forma', 'Shape', 'Forma'), FORMA_OPTS(), formaDi(st))}
@@ -4896,6 +4897,8 @@ function pannelloAlert() {
         ${cChk('al-st-glow', L('Bagliore', 'Glow', 'Resplandor'), st.glow)}
         ${cChk('al-st-icon', L('Mostra icona', 'Show icon', 'Mostrar icono'), st.icona)}
       </div>
+      </div>
+      <p class="suggerimento">${L('Colori, forma, materia e cornice si cambiano', 'Colors, shape, surface and frame are changed', 'Colores, forma, materia y marco se cambian')} <strong>${L('sulla tela qui sopra', 'on the canvas above', 'en el lienzo de arriba')}</strong>: ${L('scegli l\'elemento e li trovi nel pannello «Proprietà», mentre lo guardi.', 'pick the element and you find them in the «Properties» panel, while looking at it.', 'elige el elemento y los encuentras en el panel «Propiedades», mientras lo miras.')}</p>
       <div class="alert-griglia spazio-sopra">
         ${ALERT_TIPI().map((t) => bloccoAlert(t, a)).join('')}
       </div>
@@ -4914,6 +4917,7 @@ function pannelloAlert() {
         <div><label class="campo" for="co-max">${L('Messaggi visibili', 'Visible messages', 'Mensajes visibles')}</label><input type="number" id="co-max" min="1" max="20" value="${Number(co.max) || 8}"></div>
         <div><label class="campo" for="co-fade">${L('Spariscono dopo (s, 0=restano)', 'Disappear after (s, 0=stay)', 'Desaparecen tras (s, 0=quedan)')}</label><input type="number" id="co-fade" min="0" max="120" value="${Number(co.fadeSec) || 0}"></div>
       </div>
+      <div class="asp-blocco" data-asp="chat">
       <h4 class="spazio-sopra">${L('Aspetto', 'Appearance', 'Aspecto')}</h4>
       <div class="griglia-campi spazio-sopra">
         ${cSel('co-st-dim', L('Dimensione', 'Size', 'Tamaño'), DIM_OPTS(), cst.dim)}
@@ -4935,7 +4939,7 @@ function pannelloAlert() {
         ${cRng('co-st-radius', L('Angoli', 'Corners', 'Esquinas'), 0, 30, cst.bordoRaggio, 'px')}
         ${cSel('co-st-forma', L('Forma', 'Shape', 'Forma'), FORMA_OPTS(), formaDi(cst))}
         ${cSel('co-st-materia', L('Materia', 'Surface', 'Materia'), MATERIA_OPTS(), materiaDi(cst))}
-        ${cSel('co-st-cornice', L('Cornice', 'Frame', 'Marco'), CORNICE_OPTS(), corniceDi(cst))}
+        ${cSel('co-st-cornice', L('Cornice', 'Frame', 'Marco'), CORNICE_OPTS(), cst.cornice || 'nessuna')}
       </div>
       <div class="griglia-campi spazio-sopra">
         ${cSel('co-st-user', L('Colore nomi', 'Name color', 'Color de nombres'), [['twitch', L('Colore di Twitch', 'Twitch color', 'Color de Twitch')], ['fisso', L('Colore fisso', 'Fixed color', 'Color fijo')]], userMode)}
@@ -4945,21 +4949,18 @@ function pannelloAlert() {
         ${cChk('co-st-ombra', L('Ombra', 'Shadow', 'Sombra'), cst.ombra)}
         ${cChk('co-st-bold', L('Nome in grassetto', 'Bold name', 'Nombre en negrita'), cst.grassettoUser)}
       </div>
+      </div>
+      <p class="suggerimento">${L('Colori, forma, materia e cornice si cambiano', 'Colors, shape, surface and frame are changed', 'Colores, forma, materia y marco se cambian')} <strong>${L('sulla tela qui sopra', 'on the canvas above', 'en el lienzo de arriba')}</strong>: ${L('scegli l\'elemento e li trovi nel pannello «Proprietà», mentre lo guardi.', 'pick the element and you find them in the «Properties» panel, while looking at it.', 'elige el elemento y los encuentras en el panel «Propiedades», mientras lo miras.')}</p>
       <p class="spazio-sopra">
         <button class="btn" id="co-salva">${L('Salva chat', 'Save chat', 'Guardar chat')}</button>
         <button class="btn secondario" id="co-prova">${_bIco('<path d="m6 3 14 9-14 9Z"/>')}${L('Prova', 'Test', 'Probar')}</button>
       </p>
     </details>
 
-    <details class="carta sez" data-parte="aspetto" id="sez-widget">
-      <summary><h3>${_hIco(ICO.medaglia)}${L('Widget: ultimo follower / ultimo sub', 'Widgets: latest follower / latest sub', 'Widgets: último seguidor / último sub')}</h3></summary>
-      <p>${L('Etichette', 'Labels', 'Etiquetas')} <strong>${L('sempre a schermo', 'always on screen', 'siempre en pantalla')}</strong> ${L('che si aggiornano da sole quando arriva un nuovo follower o sub.', 'that update themselves when a new follower or sub arrives.', 'que se actualizan solas cuando llega un nuevo seguidor o sub.')}</p>
-      <div class="alert-griglia spazio-sopra">
-        ${bloccoWidget('wf', wf, L('Ultimo follower', 'Latest follower', 'Último seguidor'), 'ultimoFollower')}
-        ${bloccoWidget('ws', ws, L('Ultimo sub', 'Latest sub', 'Último sub'), 'ultimoSub')}
-      </div>
-      <p class="spazio-sopra"><button class="btn" id="wid-salva">${L('Salva widget', 'Save widgets', 'Guardar widgets')}</button></p>
-    </details>
+    <div class="asp-serbatoio" hidden>
+      ${bloccoWidget('wf', wf, L('Ultimo follower', 'Latest follower', 'Último seguidor'), 'ultimoFollower')}
+      ${bloccoWidget('ws', ws, L('Ultimo sub', 'Latest sub', 'Último sub'), 'ultimoSub')}
+    </div>
 
     <details class="carta sez" data-parte="aspetto">
       <summary><h3>${_hIco(ICO.moduli)}${L('CSS avanzato', 'Advanced CSS', 'CSS avanzado')} <span class="tenue">— ${L('libertà totale', 'total freedom', 'libertad total')}</span></h3></summary>
@@ -5183,6 +5184,73 @@ function _anteprimaWidget(pref, id, nome) {
   el.querySelector('.w-testo').innerHTML = esc(_v(`${pref}-testo`) || '{nome}').replace(/\{nome\}/g, '<b>' + esc(nome) + '</b>');
 }
 
+const CHAT_FINTA = () => [
+  ['lucaplays', '#ff4d4d', L('ciao a tutti!', 'hi everyone!', '¡hola a todos!')],
+  ['giada_ttv', '#48b0ff', L('che bella live', 'great stream', 'qué buen directo')],
+  ['marco99', '#3fd97f', L('primo!', 'first!', '¡primero!')],
+  ['sara_gg', '#ffb020', L('ma come hai fatto', 'how did you do that', 'cómo lo has hecho')],
+  ['il_dado', '#c084fc', L('sto morendo dal ridere', 'I am dying laughing', 'me muero de risa')],
+  ['nova_ttv', '#22d3ee', L('buonasera capo', 'evening boss', 'buenas noches jefe')],
+  ['pixel_mat', '#f472b6', L('questa la clippo', 'clipping this', 'esto lo clipeo')],
+  ['ely', '#94a3b8', L('ci sono anch io', 'I am here too', 'yo también estoy')],
+];
+const ALERT_FINTI = () => [
+  ['sub', L('<b>MarioRossi</b> si è abbonato!', '<b>MarioRossi</b> subscribed!', '¡<b>MarioRossi</b> se ha suscrito!')],
+  ['follow', L('<b>sara_gg</b> ti segue!', '<b>sara_gg</b> followed!', '¡<b>sara_gg</b> te sigue!')],
+  ['bits', L('<b>il_dado</b> ha lanciato 500 bits', '<b>il_dado</b> cheered 500 bits', '<b>il_dado</b> ha lanzado 500 bits')],
+  ['raid', L('<b>nova_ttv</b> arriva con 42 persone', '<b>nova_ttv</b> raids with 42 people', '<b>nova_ttv</b> llega con 42 personas')],
+];
+let _vivo = false, _vivoTimer = [], _vivoChat = null, _vivoAlert = 0, _vivoNomi = 0;
+
+function _messaggiFinti() {
+  const max = Math.max(1, Math.min(20, Number(_v('co-max')) || 8));
+  if (!_vivo || !_vivoChat) return CHAT_FINTA().slice(0, 2);
+  return _vivoChat.slice(-max);
+}
+
+function avviaVita() {
+  fermaVita();
+  _vivo = true;
+  document.body.classList.add('banco-vivo');
+  const tutti = CHAT_FINTA();
+  _vivoChat = tutti.slice(0, 2);
+  const nuovoMessaggio = () => {
+    if (!_vivo) return;
+    _vivoChat = _vivoChat.concat([tutti[Math.floor(Math.random() * tutti.length)]]).slice(-20);
+    aggiornaAnteprima();
+    _vivoTimer.push(setTimeout(nuovoMessaggio, 1800 + Math.random() * 2600));
+  };
+  _vivoTimer.push(setTimeout(nuovoMessaggio, 1400));
+
+  const nuovoAlert = () => {
+    if (!_vivo) return;
+    _vivoAlert = (_vivoAlert + 1) % ALERT_FINTI().length;
+    const card = _g('ap-alert');
+    if (card && !_menoMoto) { card.classList.remove('dentro'); void card.offsetWidth; }
+    aggiornaAnteprima();
+    if (card) requestAnimationFrame(() => card.classList.add('dentro'));
+    _vivoTimer.push(setTimeout(nuovoAlert, 7000));
+  };
+  _vivoTimer.push(setTimeout(nuovoAlert, 3200));
+
+  const nuoviNomi = () => {
+    if (!_vivo) return;
+    _vivoNomi = (_vivoNomi + 1) % CHAT_FINTA().length;
+    aggiornaAnteprima();
+    _vivoTimer.push(setTimeout(nuoviNomi, 9000));
+  };
+  _vivoTimer.push(setTimeout(nuoviNomi, 9000));
+}
+
+function fermaVita() {
+  _vivo = false;
+  _vivoChat = null;
+  document.body.classList.remove('banco-vivo');
+  for (const t of _vivoTimer) clearTimeout(t);
+  _vivoTimer = [];
+  if (_g('ap-alert')) aggiornaAnteprima();
+}
+
 function aggiornaAnteprima() {
   const st = _leggiAlertStile();
   const acc = document.querySelector('.alert-blocco[data-alert="sub"] .al-colore')?.value || '#ffb020';
@@ -5190,9 +5258,9 @@ function aggiornaAnteprima() {
   if (card) {
     card.className = 'ap-el alert-card anim-' + st.animazione + (st.glow ? ' glow' : '') + (st.icona ? '' : ' senza-ico')
       + ' ' + classiIdentita(st) + ' comp-' + compDi(st) + (selezione === 'alert' ? ' sel' : '');
-    _setVars(card, { '--acc': acc, '--bg': st.sfondo, '--op': st.opacita + '%', '--fg': st.testo, '--radius': st.bordoRaggio + 'px', '--border': st.bordoSpessore + 'px', '--size': st.dimTesto + 'px', '--font': fontStile(st) });
+    _setVars(card, { '--acc': acc, '--bg': st.sfondo, '--op': st.opacita + '%', '--fg': st.testo, '--radius': st.bordoRaggio + 'px', '--bordo-px': st.bordoSpessore + 'px', '--size': st.dimTesto + 'px', '--font': fontStile(st) });
     _g('ap-alert-ico').innerHTML = AP_ICO_ALERT;
-    _g('ap-alert-testo').innerHTML = L('<b>MarioRossi</b> si è abbonato!', '<b>MarioRossi</b> subscribed!', '¡<b>MarioRossi</b> se ha suscrito!');
+    _g('ap-alert-testo').innerHTML = _vivo ? ALERT_FINTI()[_vivoAlert][1] : ALERT_FINTI()[0][1];
 
     card.classList.add('dentro');
   }
@@ -5201,14 +5269,17 @@ function aggiornaAnteprima() {
   const apChat = _g('ap-chat');
   if (apChat) {
     apChat.className = 'ap-el ap-chat' + (/destra/.test(chatPos) ? ' destra' : '') + (selezione === 'chat' ? ' sel' : '');
-    apChat.innerHTML = [['lucaplays', '#ff4d4d', L('ciao a tutti!', 'hi everyone!', '¡hola a todos!')], ['giada_ttv', '#48b0ff', L('che bella live', 'great stream', 'qué buen directo')]].map(([u, col, t]) => {
+    apChat.innerHTML = _messaggiFinti().map(([u, col, t]) => {
       const cu = cst.username === 'twitch' ? col : cst.username;
       return `<div class="chat-riga dim-${cst.dim}${cst.ombra ? ' ombra' : ''}${cst.grassettoUser ? ' user-bold' : ''} ${classiIdentita(cst)} dentro" style="--bg:${cst.sfondo};--op:${cst.opacita}%;--fg:${cst.testo};--acc:${cu};--radius:${cst.bordoRaggio}px;--font:${fontStile(cst)}"><span class="chat-user" style="color:${cu}">${esc(u)}</span> ${esc(t)}</div>`;
     }).join('');
     _iniettaManiglie('chat');
   }
-  _anteprimaWidget('wf', 'ultimoFollower', 'MarioRossi');
-  _anteprimaWidget('ws', 'ultimoSub', 'GiadaTTV');
+  const nomi = CHAT_FINTA();
+  const nf = _vivo ? nomi[_vivoNomi % nomi.length][0] : 'MarioRossi';
+  const ns = _vivo ? nomi[(_vivoNomi + 3) % nomi.length][0] : 'GiadaTTV';
+  _anteprimaWidget('wf', 'ultimoFollower', nf);
+  _anteprimaWidget('ws', 'ultimoSub', ns);
 
   _posElemento(_g('ap-alert'), posXY.alert || _defPos('alert'));
   _posElemento(_g('ap-chat'), posXY.chat || _defPos('chat'));
@@ -5263,6 +5334,7 @@ function aggiornaInspector() {
   _rendiLivelli();
   aggiornaPiedeBanco();
   if (!box) return;
+  for (const b of box.querySelectorAll('.asp-blocco')) b.hidden = b.dataset.asp !== selezione;
   if (!selezione) { box.hidden = true; return; }
   box.hidden = false;
   const st = _statoXY(selezione);
@@ -5285,6 +5357,18 @@ function montaBanco() {
 
   vestiPannello(_g('ovl-livelli'), 'livelli', L('Livelli', 'Layers', 'Capas'));
   vestiPannello(insp, 'proprieta', L('Proprietà', 'Properties', 'Propiedades'));
+
+  const corpoInsp = insp.querySelector(':scope > .pan-corpo') || insp;
+  let casa = insp.querySelector('#ovl-aspetto');
+  if (!casa) {
+    casa = document.createElement('div');
+    casa.id = 'ovl-aspetto';
+    casa.className = 'ovl-aspetto';
+    corpoInsp.appendChild(casa);
+  }
+  for (const b of document.querySelectorAll('.asp-blocco')) {
+    if (b.parentElement !== casa) casa.appendChild(b);
+  }
 
   if (!insp.querySelector('.ovl-vuoto')) {
     const v = document.createElement('p');
@@ -5389,6 +5473,7 @@ document.addEventListener('click', (ev) => {
 });
 
 function smontaBanco() {
+  fermaVita();
   document.body.classList.remove('banco-on');
   document.documentElement.style.removeProperty('--banco-sopra');
   if (_osservaTestata) { try { _osservaTestata.disconnect(); } catch (e) {  } _osservaTestata = null; }
@@ -5988,6 +6073,7 @@ function caricaAlert() {
   _g('ov-rinomina')?.addEventListener('click', () => conErrore(() => rinominaOverlay()));
   _g('ov-duplica')?.addEventListener('click', () => conErrore(() => duplicaOverlay()));
   _g('ov-elimina')?.addEventListener('click', () => conErrore(() => eliminaOverlay()));
+  _g('ovl-vivo')?.addEventListener('change', (e) => { if (e.target.checked) avviaVita(); else fermaVita(); });
   _g('ovl-aiuto')?.addEventListener('click', () => {
     const apri = !document.body.classList.contains('banco-guida');
     document.body.classList.toggle('banco-guida', apri);
@@ -6023,19 +6109,17 @@ function caricaAlert() {
   });
 
   scheda?.addEventListener('click', (e) => {
+    const sc = e.target.closest('[data-scegli]');
+    if (sc) {
+      seleziona(sc.dataset.scegli);
+      _g('ovl-preview')?.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'center' });
+      return;
+    }
     const b = e.target.closest('[data-apri-sez]'); if (!b) return;
     const s = b.dataset.apriSez;
     if (s === 'effetti') { vaiAScheda('effetti'); return; }
     const det = _g(s);
     if (det) { det.open = true; det.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'start' }); }
-  });
-
-  _g('insp-aspetto')?.addEventListener('click', () => {
-    const dove = { alert: 'sez-alert', chat: 'sez-chat', wf: 'sez-widget', ws: 'sez-widget' }[selezione];
-    const det = dove && _g(dove);
-    if (!det) return;
-    det.open = true;
-    det.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'start' });
   });
 
   _g('insp-size')?.addEventListener('input', (e) => {
@@ -6077,7 +6161,6 @@ function caricaAlert() {
 
   _g('al-salva')?.addEventListener('click', () => conErrore(() => salvaAlert()));
   _g('co-salva')?.addEventListener('click', () => conErrore(() => salvaChatOverlay()));
-  _g('wid-salva')?.addEventListener('click', () => conErrore(() => salvaWidget()));
   _g('ovl-salva-tutto')?.addEventListener('click', () => conErrore(() => salvaTuttoOverlay()));
 
   ['al-st-gfont', 'co-st-gfont'].forEach((id) => {

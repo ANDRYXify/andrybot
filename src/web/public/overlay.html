@@ -503,7 +503,7 @@
       applicaVars(card, {
         '--acc': ev.colore, '--bg': st.sfondo, '--op': st.opacita != null ? st.opacita + '%' : null,
         '--fg': st.testo, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null,
-        '--border': st.bordoSpessore != null ? st.bordoSpessore + 'px' : null,
+        '--bordo-px': st.bordoSpessore != null ? st.bordoSpessore + 'px' : null,
         '--size': st.dimTesto != null ? st.dimTesto + 'px' : null, '--font': fontDi(st) || null,
       });
       const testoHtml = escHtml(ev.testo || '').replace(/^(\S+)/, '<b>$1</b>');

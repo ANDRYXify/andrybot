@@ -1139,7 +1139,7 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
   overflow: hidden auto; padding: 0;
 }
 .carta.ovl-banco .ovl-livelli { left: 12px; top: 12px; --pw: 238px; }
-.carta.ovl-banco .ovl-inspector { right: 12px; top: 12px; --pw: 246px; }
+.carta.ovl-banco .ovl-inspector { right: 12px; top: 12px; --pw: 336px; }
 .carta.ovl-banco .ovl-livelli.mosso,
 .carta.ovl-banco .ovl-inspector.mosso { right: auto; }
 
@@ -1182,7 +1182,17 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
 .ovl-piede b { color: var(--testo-2); font-weight: 600; }
 .ovl-piede .ovl-piede-dx { margin-left: auto; }
 
-.insp-aspetto { width: 100%; margin-top: 8px; justify-content: center; }
+.ovl-aspetto { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px; }
+.ovl-aspetto:empty, .ovl-aspetto:not(:has(.asp-blocco:not([hidden]))) { display: none; }
+.ovl-aspetto .asp-blocco > h4:first-child { margin-top: 0; }
+.ovl-aspetto .griglia-campi { grid-template-columns: 1fr 1fr; gap: 7px; }
+.ovl-aspetto .griglia-campi > div { min-width: 0; }
+.ovl-aspetto .campo { font-size: .68rem; }
+.ovl-aspetto select, .ovl-aspetto input[type="text"], .ovl-aspetto input[type="number"] { font-size: .8rem; padding: .32rem .4rem; }
+.ovl-aspetto input[type="range"] { width: 100%; }
+.ovl-aspetto .alert-blocco { border: 0; padding: 0; background: none; }
+.ovl-aspetto .riga-flessibile { gap: 6px; }
+.ovl-aspetto .font-browser { max-height: 190px; }
 
 .gira-telefono { display: none; text-align: center; align-items: center; }
 .gira-telefono .gira-ico {

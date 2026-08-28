@@ -197,3 +197,69 @@ sbagliate:
 Il gate ha anche detto «la superficie non è dipinta» su mezza tabella quando il
 riempimento è passato a `::after`: guardava ancora lo sfondo dell'elemento, che
 adesso è trasparente per costruzione. Corretta la misura, non il prodotto.
+
+## Il difetto che ha reso inutile tutto quanto
+
+> «L'overlay non sembra salvarsi, in nessun modo, e poi non cambia il tema,
+> colori, niente, solo la forma cambia.»
+
+Il server **ricostruisce lo stile campo per campo**: prende l'oggetto che
+arriva, ne estrae i campi che conosce e restituisce un oggetto nuovo. Un campo
+che non è in quell'elenco **viene buttato via in silenzio** — nessun errore,
+nessun log, il salvataggio «riesce» e la modifica sparisce al primo
+ricaricamento.
+
+I quattro assi nuovi non erano in quell'elenco. Li ho aggiunti al browser senza
+verificare che il server li accettasse: è un difetto mio, e i collaudi non lo
+hanno visto perché **giravano tutti dentro il browser**.
+
+`scripts/verifica-stile.mjs` è il cancello che chiude la classe intera: legge
+dai sorgenti i campi che il browser scrive e i campi che il server conserva, e
+li mette a confronto. Confronta anche gli elenchi dei valori ammessi, e che
+ogni valore abbia una regola nel foglio di stile servito. Provato a togliere un
+campo dal server: il cancello lo dice.
+
+```
+alert  browser 15 campi · server 15 campi  ✓
+chat   browser 15 campi · server 15 campi  ✓
+```
+
+## Due nomi uguali per due cose diverse
+
+Nell'anteprima le righe di chat uscivano come **barre colorate senza testo**.
+
+Due difetti sovrapposti:
+
+1. Gli strati `::before`/`::after` stavano **davanti** al testo. Nell'alert non
+   si vedeva, perché lì il contenuto è tutto dentro dei `<div>`; nella chat il
+   messaggio è un **nodo di testo nudo**, che non si può sollevare con
+   `z-index`. Risolto mandando gli strati dietro (`z-index: -1`) e facendo
+   dell'elemento un contesto di impilamento (`isolation: isolate`): così il
+   contenuto sta sopra **per costruzione**, qualunque cosa sia.
+
+2. `--border` nello skin dell'overlay era uno **spessore**; nella dashboard è un
+   **colore**. Nell'overlay vero non si vedeva — quel nome lì non esiste. Ma
+   l'anteprima vive dentro la dashboard, e la chat, che non lo imposta, si
+   ritrovava `--spessore: #e5ded1`. Rinominato in `--bordo-px`: un nome che dice
+   cosa contiene e che non può collidere con i colori del tema.
+
+## L'anteprima si guarda mentre si lavora
+
+Due cambiamenti, una ragione sola: **non si modifica quello che non si vede.**
+
+**I comandi dell'aspetto sono nel pannello.** Stavano nelle carte sotto la tela:
+per cambiare un colore bisognava scorrere finché la tela usciva dallo schermo, e
+poi si modificava alla cieca. Adesso `montaBanco()` li **sposta fisicamente**
+dentro il pannello «Proprietà» — non copie, gli stessi nodi — e l'ispettore
+mostra il blocco dell'elemento selezionato. Le carte sotto tengono quello che un
+elemento **dice e fa** (i testi degli alert, i suoni, le posizioni); il pannello
+tiene come **appare**.
+
+**L'anteprima dal vivo.** Un interruttore «Dal vivo» nella barra fa arrivare
+messaggi in chat ogni due secondi, fa partire un alert diverso ogni sette, e
+cambia i nomi nei widget. Serve a capire dove mettere le cose **vedendole in
+uso**: una chat ferma su due righe non dice se il blocco cresce sopra la webcam.
+
+Vive solo nello studio: il motore sta in `app.js`, che l'overlay di OBS non
+carica. Il collaudo lo verifica aprendo davvero la pagina dell'overlay e
+controllando che di quel motore non ci sia traccia.
