@@ -1193,6 +1193,8 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
 .ovl-aspetto .alert-blocco { border: 0; padding: 0; background: none; }
 .ovl-aspetto .riga-flessibile { gap: 6px; }
 .ovl-aspetto .font-browser { max-height: 190px; }
+.ovl-aspetto .al-btn-up { width: 100%; margin-top: 5px; justify-content: center; }
+.ap-stage .alert-ico img, .ap-stage .w-ico img { width: 100%; height: 100%; object-fit: contain; }
 
 .gira-telefono { display: none; text-align: center; align-items: center; }
 .gira-telefono .gira-ico {
