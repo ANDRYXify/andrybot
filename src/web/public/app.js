@@ -269,9 +269,31 @@ function statoDemo() {
 
 const _demoScritture = {};
 
+const LIB_DEMO = [
+  { id: 101, nome: 'Applausi', tipo: 'audio', autore: 'andryx_demo', combo: false, usi: 42, mio: true, pubblico: true, comando: 'applausi', url: '', suonoUrl: '' },
+  { id: 102, nome: 'Coriandoli', tipo: 'video', autore: 'andryx_demo', combo: true, usi: 18, mio: true, pubblico: false, comando: 'coriandoli', url: '', poster: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgOTAiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzA4OTFiMiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzE2YTM0YSIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxNjAiIGhlaWdodD0iOTAiIGZpbGw9InVybCgjZykiLz48dGV4dCB4PSI4MCIgeT0iNTIiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iI2ZmZmZmZmNjIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5WSURFTzwvdGV4dD48L3N2Zz4=', suonoUrl: '' },
+  { id: 103, nome: 'Gatto sorpreso', tipo: 'immagine', autore: 'lucaplays', combo: false, usi: 210, mio: false, pubblico: true, comando: '', url: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgOTAiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzdjM2FlZCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzI1NjNlYiIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxNjAiIGhlaWdodD0iOTAiIGZpbGw9InVybCgjZykiLz48dGV4dCB4PSI4MCIgeT0iNTIiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iI2ZmZmZmZmNjIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5HSUY8L3RleHQ+PC9zdmc+', suonoUrl: '' },
+  { id: 104, nome: 'Fuochi d\u2019artificio', tipo: 'video', autore: 'giada_ttv', combo: true, usi: 88, mio: false, pubblico: true, comando: '', url: '', poster: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgOTAiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzA4OTFiMiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzE2YTM0YSIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxNjAiIGhlaWdodD0iOTAiIGZpbGw9InVybCgjZykiLz48dGV4dCB4PSI4MCIgeT0iNTIiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iI2ZmZmZmZmNjIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5WSURFTzwvdGV4dD48L3N2Zz4=', suonoUrl: '' },
+  { id: 105, nome: 'Tamburi', tipo: 'audio', autore: 'marco99', combo: false, usi: 64, mio: false, pubblico: true, comando: '', url: '', suonoUrl: '' },
+  { id: 106, nome: 'Cartello \u00abattimo\u00bb', tipo: 'immagine', autore: 'lucaplays', combo: false, usi: 31, mio: false, pubblico: true, comando: '', url: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgOTAiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2Y5NzMxNiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2RiMjc3NyIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxNjAiIGhlaWdodD0iOTAiIGZpbGw9InVybCgjZykiLz48dGV4dCB4PSI4MCIgeT0iNTIiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iI2ZmZmZmZmNjIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5GT1RPPC90ZXh0Pjwvc3ZnPg==', suonoUrl: '' },
+];
+
+function _demoLibreria(percorso) {
+  const q = new URLSearchParams((percorso.split('?')[1] || ''));
+  const tipo = q.get('tipo') || '';
+  const testo = (q.get('q') || '').trim().toLowerCase();
+  const miei = q.get('miei') === '1';
+  const privati = q.get('privati') === '1';
+  let items = LIB_DEMO.filter((it) => (miei || !it.mio) && (privati || it.pubblico || !it.mio));
+  if (tipo) items = items.filter((it) => it.tipo === tipo);
+  if (testo) items = items.filter((it) => (it.nome + ' ' + it.comando).toLowerCase().includes(testo));
+  return { items };
+}
+
 function apiDemo(percorso, opzioni = {}) {
   const metodo = (opzioni.method || 'GET').toUpperCase();
   const via = percorso.split('?')[0];
+  if (metodo === 'GET' && via === '/api/streamer/libreria') return Promise.resolve(_demoLibreria(percorso));
   if (metodo === 'GET') return Promise.resolve(_demoGet(via));
 
   if (via === '/api/streamer/impostazioni' && Array.isArray(opzioni.body?.overlays)) {
@@ -299,6 +321,10 @@ function apiDemo(percorso, opzioni = {}) {
     { testo: 'ti porterò in un brodificio', autore: 'andryxify', data: '2024-06-17' },
   ] });
   if (via === '/api/streamer/citazioni/importa') return Promise.resolve({ ok: true, aggiunte: 2, saltate: 0 });
+  if (via === '/api/streamer/libreria/importa') {
+    const it = LIB_DEMO.find((x) => x.id === Number(opzioni.body?.id));
+    return Promise.resolve({ ok: true, comando: normComandoWeb(it?.nome || 'media') });
+  }
   if (via.endsWith('/prova')) { toast(L('In demo non invio davvero in chat', 'In demo mode I don\'t really send to chat', 'En demo no envío de verdad al chat')); return Promise.resolve({ ok: true }); }
   return Promise.resolve({ ok: true, demo: true });
 }
@@ -2289,6 +2315,7 @@ const ICO = {
   aggiorna: '<path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/>',
   stop: '<rect x="6" y="6" width="12" height="12" rx="2"/>',
   piu: '<path d="M12 5v14"/><path d="M5 12h14"/>',
+  spunta: '<path d="m4 12.6 5.4 5.4L20 7"/>',
   condividi: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/>',
   lucchetto: '<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/>',
   altoparlante: '<path d="M11 4.7 6.6 8.4H3v7.2h3.6L11 19.3z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>',
@@ -4735,7 +4762,10 @@ function bloccoAlert(t, a) {
         <div><label class="campo">${L('Icona', 'Icon', 'Icono')}</label>
           <select class="al-icona">${ICONA_OPTS().map(([v, t]) => `<option value="${v}"${v === (c.icona || '') ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>
           <input type="file" class="al-up al-up-icona" accept="image/*" data-slot="icona" hidden>
-          <button type="button" class="btn secondario mini al-btn-up spazio-sopra" data-slot="icona">${_bIco(ICO.carica)}${L('La mia icona…', 'My own icon…', 'Mi icono…')}</button>
+          <div class="al-carica spazio-sopra">
+            <button type="button" class="btn secondario mini al-btn-up" data-slot="icona">${_bIco(ICO.carica)}${L('La mia icona…', 'My own icon…', 'Mi icono…')}</button>
+            <button type="button" class="btn secondario mini al-btn-lib" data-slot="icona">${_bIco(ICO.libro)}${L('Dalla libreria', 'From the library', 'De la biblioteca')}</button>
+          </div>
         </div>
         ${soglia}
       </div>
@@ -4746,6 +4776,7 @@ function bloccoAlert(t, a) {
           <div class="al-carica">
             <input type="file" class="al-up al-up-suono" accept="audio/*" data-slot="suono" hidden>
             <button type="button" class="btn secondario mini al-btn-up" data-slot="suono">${_bIco(ICO.carica)}${L('Carica un suono tuo', 'Upload your own sound', 'Sube un sonido tuyo')}</button>
+            <button type="button" class="btn secondario mini al-btn-lib" data-slot="suono">${_bIco(ICO.libro)}${L('Dalla libreria', 'From the library', 'De la biblioteca')}</button>
             <span class="al-up-esito tenue"></span>
           </div>
         </div>
@@ -4755,6 +4786,7 @@ function bloccoAlert(t, a) {
           <div class="al-carica">
             <input type="file" class="al-up al-up-media" accept="image/*,video/*" data-slot="media" hidden>
             <button type="button" class="btn secondario mini al-btn-up" data-slot="media">${_bIco(ICO.carica)}${L('Carica immagine/video tuo', 'Upload your own image/video', 'Sube tu imagen/vídeo')}</button>
+            <button type="button" class="btn secondario mini al-btn-lib" data-slot="media">${_bIco(ICO.libro)}${L('Dalla libreria', 'From the library', 'De la biblioteca')}</button>
             <span class="al-up-esito tenue"></span>
           </div>
         </div>
@@ -4781,7 +4813,10 @@ function bloccoWidget(pref, w, titolo, kind) {
         <div><label class="campo">${L('Icona', 'Icon', 'Icono')}</label>
           <select class="w-icona" id="${pref}-icona">${ICONA_OPTS().map(([v, t]) => `<option value="${v}"${v === (st.icona == null ? (pref === 'wf' ? 'cuore' : 'stella') : st.icona) ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>
           <input type="file" class="al-up w-up-icona" accept="image/*" data-slot="icona" data-w="${pref}" hidden>
-          <button type="button" class="btn secondario mini al-btn-up spazio-sopra" data-slot="icona">${_bIco(ICO.carica)}${L('La mia icona…', 'My own icon…', 'Mi icono…')}</button>
+          <div class="al-carica spazio-sopra">
+            <button type="button" class="btn secondario mini al-btn-up" data-slot="icona">${_bIco(ICO.carica)}${L('La mia icona…', 'My own icon…', 'Mi icono…')}</button>
+            <button type="button" class="btn secondario mini al-btn-lib" data-slot="icona">${_bIco(ICO.libro)}${L('Dalla libreria', 'From the library', 'De la biblioteca')}</button>
+          </div>
         </div>
       </div>
       <div class="griglia-campi spazio-sopra">
@@ -6380,8 +6415,19 @@ function caricaAlert() {
   })));
 
   document.querySelectorAll('.al-btn-up').forEach((btn) => btn.addEventListener('click', () => {
-    const inp = btn.parentElement.querySelector('.al-up'); if (inp) inp.click();
+    const blocco = btn.closest('.alert-blocco');
+    const inp = blocco?.querySelector(`.al-up[data-slot="${btn.dataset.slot}"]`);
+    if (inp) inp.click();
   }));
+  document.querySelectorAll('.al-btn-lib').forEach((btn) => btn.addEventListener('click', () => conErrore(async () => {
+    const blocco = btn.closest('.alert-blocco');
+    const chi = blocco?.dataset.w || blocco?.dataset.alert;
+    const slot = btn.dataset.slot;
+    if (!chi || !slot) return;
+    const tipi = slot === 'suono' ? ['audio'] : (slot === 'icona' ? ['immagine'] : ['immagine', 'video']);
+    const scelta = await scegliDallaLibreria({ tipi, titolo: SLOT_TITOLO[slot]() });
+    if (scelta) await assegnaMediaAlert(chi, slot, scelta.ref);
+  })));
   document.querySelectorAll('.al-up').forEach((inp) => inp.addEventListener('change', () => conErrore(async () => {
     const file = inp.files[0];
     const chi = inp.dataset.w || inp.closest('.alert-blocco[data-alert]')?.dataset.alert;
@@ -11839,22 +11885,168 @@ async function caricaEffetti() {
 let _libTipo = '';
 let _libCercaTimer = null;
 
-function libItemHtml(it) {
-  let media;
-  if (it.tipo === 'immagine') media = `<img class="lib-media" src="${esc(it.url)}" loading="lazy" alt="">`;
+const LIB_ONDA = '<path d="M3 12h2.2l1.9-6 2.6 12 2.4-9 2 6 1.6-3H21"/>';
 
-  else if (it.tipo === 'video') media = `<video class="lib-media" src="${esc(it.url)}#t=0.1" muted playsinline loop autoplay preload="metadata"></video>`;
-  else media = '<div class="lib-media lib-audio"></div>';
+function libMediaHtml(it) {
+  if (it.tipo === 'immagine') return `<img class="lib-media" src="${esc(it.url)}" loading="lazy" alt="">`;
+  if (it.tipo === 'video') return `<video class="lib-media" src="${esc(it.url)}#t=0.1"${it.poster ? ` poster="${esc(it.poster)}"` : ''} muted playsinline loop preload="metadata"></video>`;
+  return `<div class="lib-media lib-audio"><svg viewBox="0 0 24 24" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${LIB_ONDA}</svg></div>`;
+}
+
+function libItemHtml(it, azione) {
+  const media = libMediaHtml(it);
   const audio = (it.tipo === 'audio' || it.combo)
-    ? `<button type="button" class="btn secondario mini lib-play" data-audio="${esc(it.suonoUrl || it.url)}" title="${L('Ascolta', 'Listen', 'Escuchar')}">${_bIco('<path d="m6 3 14 9-14 9Z"/>')}</button>` : '';
-  return `<div class="lib-card" data-id="${it.id}">
-    <div class="lib-media-wrap">${media}${it.combo ? '<span class="lib-combo">combo</span>' : ''}</div>
+    ? `<button type="button" class="btn secondario mini lib-play ico-sola" data-audio="${esc(it.suonoUrl || it.url)}" title="${L('Ascolta', 'Listen', 'Escuchar')}" aria-label="${L('Ascolta', 'Listen', 'Escuchar')}">${_bIco('<path d="m6 3 14 9-14 9Z"/>')}</button>` : '';
+  const principale = azione === 'usa'
+    ? `<button type="button" class="btn mini lib-usa" data-id="${it.id}">${_bIco(ICO.spunta)}${it.mio ? L('Usa', 'Use', 'Usar') : L('Prendi e usa', 'Take and use', 'Coger y usar')}</button>`
+    : (it.mio
+      ? `<span class="lib-mia">${L('già tua', 'already yours', 'ya tuya')}</span>`
+      : `<button type="button" class="btn mini lib-importa" data-id="${it.id}">${_bIco(ICO.piu)}${L('Aggiungi', 'Add', 'Añadir')}</button>`);
+  return `<div class="lib-card" data-id="${it.id}" data-tipo="${esc(it.tipo || '')}">
+    <div class="lib-media-wrap">${media}${it.combo ? `<span class="lib-combo">${L('con suono', 'with sound', 'con sonido')}</span>` : ''}</div>
     <div class="lib-nome" title="${esc(it.nome)}">${esc(it.nome)}</div>
     <div class="meta">${it.mio ? `<strong>${L('tuo', 'yours', 'tuyo')}</strong>` : L('di', 'by', 'de') + ' ' + esc(it.autore)}${it.usi ? ' · ' + it.usi + ' ' + L('usi', 'uses', 'usos') : ''}</div>
-    <div class="lib-azioni">${audio}${it.mio
-      ? `<span class="lib-mia">${L('già tua', 'already yours', 'ya tuya')}</span>`
-      : `<button type="button" class="btn mini lib-importa" data-id="${it.id}">${_bIco(ICO.piu)}${L('Aggiungi', 'Add', 'Añadir')}</button>`}</div>
+    <div class="lib-azioni">${audio}${principale}</div>
   </div>`;
+}
+
+async function chiediLibreria({ tipo = '', q = '', miei = true, privati = false } = {}) {
+  const p = new URLSearchParams({ tipo, q });
+  if (miei) p.set('miei', '1');
+  if (privati) p.set('privati', '1');
+  const d = await api('/api/streamer/libreria?' + p.toString());
+  return Array.isArray(d?.items) ? d.items : [];
+}
+
+const normComandoWeb = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24) || 'media';
+
+const LIB_TIPI = {
+  immagine: () => [ICO.immagine, L('Immagini', 'Images', 'Imágenes')],
+  video: () => [ICO.video, L('Video', 'Videos', 'Vídeos')],
+  audio: () => [ICO.altoparlante, L('Audio', 'Audio', 'Audio')],
+};
+const LIB_ACCEPT = { immagine: 'image/*', video: 'video/*', audio: 'audio/*' };
+
+async function caricaNellaLibreria(file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('tier', 'mod');
+  fd.append('cooldown', '0');
+  fd.append('volume', '100');
+  fd.append('durata', '5000');
+  fd.append('pubblico', '0');
+  const res = await fetch('/api/streamer/effetti', { method: 'POST', body: fd });
+  let d = null;
+  try { d = await res.json(); } catch { /**/ }
+  if (!res.ok) throw new Error(d?.errore || `errore ${res.status}`);
+  return d;
+}
+
+function scegliDallaLibreria({ tipi = ['immagine', 'video', 'audio'], titolo = '', testo = '' } = {}) {
+  return new Promise((risolvi) => {
+    const ammessi = tipi.filter((t) => LIB_TIPI[t]);
+    const unSolo = ammessi.length === 1;
+    let tipo = unSolo ? ammessi[0] : '';
+    const el = document.createElement('div');
+    el.className = 'bv-velo mdl-chiedi lib-velo';
+    const tabs = unSolo ? '' : `<div class="lib-tabs">
+      <button type="button" class="btn secondario mini lsc-tab attivo" data-tipo="">${L('Tutti', 'All', 'Todos')}</button>
+      ${ammessi.map((t) => { const [d, n] = LIB_TIPI[t](); return `<button type="button" class="btn secondario mini lsc-tab" data-tipo="${t}">${_bIco(d)}${n}</button>`; }).join('')}
+    </div>`;
+    el.innerHTML = `<div class="bv-carta mdl-carta lib-carta" role="dialog" aria-modal="true">
+      <h2>${esc(titolo || L('Scegli un media', 'Choose a medium', 'Elige un medio'))}</h2>
+      <p class="bv-intro">${esc(testo || L('I tuoi media e quelli condivisi dagli altri streamer. Quello che prendi diventa tuo e lo ritrovi ovunque.', 'Your media and those shared by other streamers. What you take becomes yours and you find it everywhere.', 'Tus medios y los compartidos por otros streamers. Lo que coges pasa a ser tuyo y lo encuentras en todas partes.'))}</p>
+      <div class="lib-filtri">
+        ${tabs}
+        <input type="search" class="lsc-cerca" placeholder="${L('Cerca per nome…', 'Search by name…', 'Buscar por nombre…')}" maxlength="40">
+        <input type="file" class="lsc-file" accept="${ammessi.map((t) => LIB_ACCEPT[t]).join(',')}" hidden>
+        <button type="button" class="btn secondario mini lsc-carica">${_bIco(ICO.carica)}${L('Dal mio computer', 'From my computer', 'Desde mi ordenador')}</button>
+      </div>
+      <div class="lib-griglia lsc-griglia"><p class="vuoto">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+      <div class="bv-azioni"><button type="button" class="btn grande secondario lsc-chiudi">${L('Annulla', 'Cancel', 'Cancelar')}</button></div>
+    </div>`;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('dentro'));
+
+    const griglia = el.querySelector('.lsc-griglia');
+    const cerca = el.querySelector('.lsc-cerca');
+    let chiuso = false;
+    let timer = null;
+    const via = (v) => {
+      if (chiuso) return; chiuso = true;
+      document.removeEventListener('keydown', tasti, true);
+      clearTimeout(timer);
+      el.classList.remove('dentro');
+      setTimeout(() => el.remove(), 240);
+      risolvi(v);
+    };
+    const tasti = (ev) => { if (ev.key === 'Escape') { ev.preventDefault(); via(null); } };
+    document.addEventListener('keydown', tasti, true);
+
+    const vuoto = (msg) => { griglia.innerHTML = `<p class="vuoto">${msg}</p>`; };
+    let mostrati = [];
+    async function rinfresca() {
+      try {
+        let items = await chiediLibreria({ tipo, q: (cerca.value || '').trim(), privati: true });
+        if (!tipo) items = items.filter((it) => ammessi.includes(it.tipo));
+        mostrati = items;
+        if (!items.length) {
+          vuoto(L('Niente qui. Carica un file dal tuo computer con il pulsante qui sopra.', 'Nothing here. Upload a file from your computer with the button above.', 'Nada aquí. Sube un archivo desde tu ordenador con el botón de arriba.'));
+          return;
+        }
+        griglia.innerHTML = items.map((it) => libItemHtml(it, 'usa')).join('');
+      } catch (e) {
+        vuoto(L('Non riesco a leggere la libreria: ', "I can't read the library: ", 'No puedo leer la biblioteca: ') + esc(e.message));
+      }
+    }
+    rinfresca();
+
+    cerca.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(rinfresca, 300); });
+    el.querySelectorAll('.lsc-tab').forEach((b) => b.addEventListener('click', () => {
+      el.querySelectorAll('.lsc-tab').forEach((x) => x.classList.remove('attivo'));
+      b.classList.add('attivo'); tipo = b.dataset.tipo || ''; rinfresca();
+    }));
+    el.querySelector('.lsc-chiudi').addEventListener('click', () => via(null));
+    el.addEventListener('click', (ev) => { if (ev.target === el) via(null); });
+
+    const inpFile = el.querySelector('.lsc-file');
+    el.querySelector('.lsc-carica').addEventListener('click', () => inpFile.click());
+    inpFile.addEventListener('change', () => conErrore(async () => {
+      const f = inpFile.files[0]; inpFile.value = '';
+      if (!f) return;
+      if (DEMO) { toast(L('In demo non si caricano file — accedi per farlo davvero.', "In demo you can't upload files — log in to do it for real.", 'En la demo no se suben archivos — inicia sesión para hacerlo de verdad.')); return; }
+      vuoto(L('Comprimo e carico…', 'Compressing and uploading…', 'Comprimiendo y subiendo…'));
+      const d = await caricaNellaLibreria(f);
+      if (d?.tipo && ammessi.length && !ammessi.includes(d.tipo)) {
+        toast(L('Qui non ci va questo tipo di file.', "That kind of file doesn't go here.", 'Aquí no va ese tipo de archivo.'), 'errore');
+        rinfresca(); return;
+      }
+      caricaEffetti();
+      via({ ref: `effetto:${d.comando}`, comando: d.comando, tipo: d.tipo || '', nome: d.comando, url: '' });
+    }));
+
+    griglia.addEventListener('click', async (ev) => {
+      const play = ev.target.closest('.lib-play');
+      if (play) { try { const a = new Audio(play.dataset.audio); a.play().catch(() => {}); } catch (e) { /**/ } return; }
+      const b = ev.target.closest('.lib-usa');
+      if (!b || b.disabled) return;
+      const it = mostrati.find((x) => x.id === Number(b.dataset.id));
+      if (!it) { rinfresca(); return; }
+      const scelto = (comando) => via({ ref: `effetto:${comando}`, comando, tipo: it.tipo, nome: it.nome, url: it.url });
+      if (it.mio && it.comando) return scelto(it.comando);
+      if (DEMO) return scelto(normComandoWeb(it.nome));
+      const testo = b.textContent;
+      b.disabled = true; b.textContent = L('Prendo…', 'Taking…', 'Cogiendo…');
+      try {
+        const r = await api('/api/streamer/libreria/importa', { method: 'POST', body: { id: it.id } });
+        caricaEffetti();
+        scelto(r.comando);
+      } catch (e) {
+        toast(L('Non riuscito: ', 'Failed: ', 'No se pudo: ') + e.message, 'errore');
+        b.disabled = false; b.textContent = testo;
+      }
+    });
+  });
 }
 
 async function caricaLibreria() {
@@ -11862,13 +12054,12 @@ async function caricaLibreria() {
   if (!g) return;
   const q = (document.getElementById('lib-cerca')?.value || '').trim();
   try {
-
-    const d = await api(`/api/streamer/libreria?tipo=${encodeURIComponent(_libTipo)}&q=${encodeURIComponent(q)}&miei=1`);
-    if (!d.items.length) {
+    const items = await chiediLibreria({ tipo: _libTipo, q });
+    if (!items.length) {
       g.innerHTML = `<p class="vuoto">${L('Ancora niente qui. Condividi il primo: carica un effetto in «Effetti & suoni» e spunta “Rendi pubblico” — comparirà qui.', 'Nothing here yet. Share the first one: upload an effect in «Effects & sounds» and tick “Make it public” — it will show here.', 'Aún no hay nada. Comparte el primero: sube un efecto en «Efectos y sonidos» y marca “Hazlo público” — aparecerá aquí.')}</p>`;
       return;
     }
-    g.innerHTML = d.items.map(libItemHtml).join('');
+    g.innerHTML = items.map((it) => libItemHtml(it, 'aggiungi')).join('');
   } catch (e) {
     g.innerHTML = `<p class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</p>`;
   }
@@ -11943,6 +12134,29 @@ async function caricaEffettoUpload(ev) {
   }
 }
 
+const SLOT_TITOLO = {
+  suono: () => L('Scegli un suono', 'Choose a sound', 'Elige un sonido'),
+  icona: () => L("Scegli un'icona", 'Choose an icon', 'Elige un icono'),
+  media: () => L("Scegli un'immagine o un video", 'Choose an image or a video', 'Elige una imagen o un vídeo'),
+};
+
+async function assegnaMediaAlert(kind, slot, ref) {
+  const lib = await api('/api/streamer/effetti').catch(() => ({ effetti: [] }));
+  if (slot === 'icona' && (kind === 'wf' || kind === 'ws')) {
+    _EFFETTI = lib.effetti || [];
+    _rifaiMenuIcone(impostazioni().alerts || {});
+    const sel = _g(`${kind}-icona`);
+    if (sel) { sel.value = ref; sel.dispatchEvent(new Event('change', { bubbles: true })); }
+    await salvaWidget(true);
+    return;
+  }
+  const cfg = impostazioni().alerts || {};
+  const campo = slot === 'suono' ? 'suono' : (slot === 'icona' ? 'icona' : 'media');
+  cfg[kind] = { ...(cfg[kind] || {}), [campo]: ref };
+  popolaMediaSuoniAlert(lib.effetti || [], cfg);
+  await salvaAlert(true);
+}
+
 async function caricaMediaAlert(kind, slot, file) {
   if (DEMO) { toast(L('In demo non si caricano file — accedi per farlo davvero.', "In demo you can't upload files — log in to do it for real.", 'En la demo no se suben archivos — inicia sesión para hacerlo de verdad.')); return; }
   const blocco = document.querySelector(`.alert-blocco[data-alert="${kind}"], .alert-blocco[data-w="${kind}"]`);
@@ -11961,18 +12175,7 @@ async function caricaMediaAlert(kind, slot, file) {
     let dati = null; try { dati = await res.json(); } catch {  }
     if (!res.ok) throw new Error(dati?.errore || `errore ${res.status}`);
 
-    const lib = await api('/api/streamer/effetti').catch(() => ({ effetti: [] }));
-    if (slot === 'icona' && (kind === 'wf' || kind === 'ws')) {
-      _EFFETTI = lib.effetti || [];
-      const sel = _g(`${kind}-icona`);
-      _rifaiMenuIcone(impostazioni().alerts || {});
-      if (sel) { sel.value = dati.ref; sel.dispatchEvent(new Event('change', { bubbles: true })); }
-    } else {
-      const cfg = impostazioni().alerts || {};
-      const campo = slot === 'suono' ? 'suono' : (slot === 'icona' ? 'icona' : 'media');
-      cfg[kind] = { ...(cfg[kind] || {}), [campo]: dati.ref };
-      popolaMediaSuoniAlert(lib.effetti || [], cfg);
-    }
+    await assegnaMediaAlert(kind, slot, dati.ref);
     if (esito) esito.textContent = '✓ ' + (slot === 'suono' ? L('suono', 'sound', 'sonido') : (slot === 'icona' ? L('icona', 'icon', 'icono') : (dati.tipo || 'media'))) + ' ' + L('caricato e assegnato', 'uploaded and assigned', 'subido y asignado');
     toast(L('Caricato e assegnato all\'alert!', 'Uploaded and assigned to the alert!', '¡Subido y asignado a la alerta!'));
   } catch (e) {
