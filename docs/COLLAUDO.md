@@ -102,7 +102,7 @@ collaudo lo verifica con un caso vero — trecento letture e centoventi
 salvataggi in un minuto, cioè uno streamer che lavora di gusto nello studio, non
 devono mai incontrare l'argine.
 
-Due difetti trovati scrivendo le prove, tutti e due veri:
+Tre difetti trovati mettendolo alla prova, tutti veri:
 
 - cancellare o pubblicare un effetto finiva nella classe dei **caricamenti**:
   chi ne ripuliva trenta sbatteva contro il muro. Ora «caricamento» è chi porta
@@ -112,6 +112,13 @@ Due difetti trovati scrivendo le prove, tutti e due veri:
   `X-Forwarded-For` — che lo scrive il client. Chiunque poteva intestare i
   propri colpi a un indirizzo inventato, o a quello di un altro. Ora si usa
   `req.ip`, che Express calcola contando gli hop di proxy fidati.
+- e il peggiore, trovato ripercorrendo le rotte a limite già scritto: il
+  rilevatore della webcam manda gli effetti a **~12 al secondo**, cioè 720 al
+  minuto, contro un limite di 180. L'argine avrebbe **spento gli effetti da
+  gesti a tutti gli streamer** — un argine che rompe il prodotto è un difetto,
+  non una difesa. Quelle rotte (già protette dalla chiave dell'overlay) hanno
+  ora una classe «tempo reale» con un tetto largo sopra il ritmo reale, che
+  resta comunque un tetto: una pagina impazzita non fonde il server.
 
 ## L'osservatorio
 

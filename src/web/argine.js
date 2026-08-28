@@ -60,18 +60,26 @@ export const CLASSI = {
   caricamento: { max: 20, finestraMs: 60_000 },
   scrittura: { max: 180, finestraMs: 60_000 },
   lettura: { max: 600, finestraMs: 60_000 },
+  // TEMPO REALE: il rilevatore della webcam manda gli effetti a ~12 al secondo,
+  // cioè 720 al minuto. Con il limite della scrittura si sarebbero spenti gli
+  // effetti da gesti a tutti — un argine che rompe il prodotto è un difetto,
+  // non una difesa. Queste rotte sono già protette dalla chiave dell'overlay:
+  // qui serve solo un tetto perché una pagina impazzita non fonda il server.
+  tempoReale: { max: 1800, finestraMs: 60_000 },
 };
 
 const RE_AUTENTICAZIONE = /^\/(accedi|auth|sblocca|api\/passkey|api\/cambia-canale|mod)(\/|$|\?)/;
 const RE_ESENTE = /^\/(health|stripe\/webhook|api\/ext\/)/;
 const RE_FLUSSO = /\/stream$/;
 const RE_CARICAMENTO = /^\/api\/(streamer\/(effetti|font|sfondi)|alert\/media)|\/media(\/|$)/;
+const RE_TEMPO_REALE = /^\/api\/tracking\//;
 
 // A che classe appartiene questa richiesta? null = non si limita.
 export function classifica(metodo, percorso, multipart = false) {
   const m = String(metodo || 'GET').toUpperCase();
   const p = String(percorso || '/');
   if (RE_ESENTE.test(p) || RE_FLUSSO.test(p)) return null;
+  if (RE_TEMPO_REALE.test(p)) return 'tempoReale';
   if (RE_AUTENTICAZIONE.test(p)) return 'autenticazione';
   if (!p.startsWith('/api/')) return null;                 // pagine e statici: li serve il proxy
   if (m === 'GET' || m === 'HEAD') return 'lettura';

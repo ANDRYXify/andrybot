@@ -99,6 +99,27 @@ test('leggere costa meno che scrivere', () => {
   assert.ok(CLASSI.lettura.max > CLASSI.scrittura.max);
 });
 
+test('gli effetti dalla webcam non vengono spenti dall’argine', () => {
+  // Il rilevatore manda ~12 al secondo: 720 al minuto. Col limite della
+  // scrittura si sarebbero spenti i gesti a tutti.
+  assert.equal(classifica('POST', '/api/tracking/alfa/fx'), 'tempoReale');
+  assert.equal(classifica('POST', '/api/tracking/alfa/stato'), 'tempoReale');
+  assert.equal(classifica('POST', '/api/tracking/alfa/gesture'), 'tempoReale');
+  assert.equal(classifica('GET', '/api/tracking/alfa/opzioni'), 'tempoReale');
+  assert.ok(CLASSI.tempoReale.max >= 720 * 1.5, `il tetto (${CLASSI.tempoReale.max}) deve stare largo sopra i 720/min reali`);
+
+  const o = orologio();
+  const a = creaArgine({ ...CLASSI.tempoReale, ora: o.ora });
+  for (let i = 0; i < 720; i++) assert.equal(a.permetti('i:1.2.3.4').ok, true, `frame ${i}`);
+});
+
+test('ma un tetto c’è: una pagina impazzita non fonde il server', () => {
+  const o = orologio();
+  const a = creaArgine({ ...CLASSI.tempoReale, ora: o.ora });
+  for (let i = 0; i < CLASSI.tempoReale.max; i++) a.permetti('i:1.2.3.4');
+  assert.equal(a.permetti('i:1.2.3.4').ok, false);
+});
+
 test('i limiti sono larghi: fermano l’abuso, non l’uso', () => {
   // uno streamer che lavora di gusto nello studio: molte letture e parecchi
   // salvataggi in un minuto. Non deve mai incontrare l'argine.
