@@ -166,9 +166,12 @@ if (decadi.unref) decadi.unref();
 const SOGLIA_CASTIGO = 12;
 const CASTIGO = 8 * 60000;
 
+// Chi sta bussando. Si usa req.ip, che Express calcola contando gli hop di
+// proxy fidati ('trust proxy'): prendere il PRIMO valore di X-Forwarded-For a
+// mano è sbagliato, perché quel valore lo scrive il client — chiunque poteva
+// intestare i propri colpi a un indirizzo inventato, o a quello di un altro.
 function chi(req) {
-  const avanti = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
-  return avanti || req.ip || req.socket?.remoteAddress || '?';
+  return req.ip || req.socket?.remoteAddress || '?';
 }
 
 function segna(ip) {
