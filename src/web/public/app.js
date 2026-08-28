@@ -2359,6 +2359,8 @@ const ICO = {
   testo: '<path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2"/><path d="M9 20h6"/><path d="M12 4v16"/>',
 };
 
+const BADGE = { ok: 'verde', attenzione: 'giallo', male: 'rosso', accento: 'viola' };
+
 const _bIco = (d) => `<svg class="b-ico" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 
 const SEZ_BANCO = 'alert';
@@ -14603,9 +14605,14 @@ async function caricaSalute() {
   catch (e) { box.innerHTML = `<p class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</p>`; return; }
   const mb = (n) => (n / 1048576).toFixed(0) + ' MB';
   const ko = (d.chatKO || []).length;
+  const err = d.errori || null;
+  const caldi = (err?.aree || []).filter((a) => a.recenti > 0).slice(0, 6);
+  const quando = (ts) => { const m = Math.round((Date.now() - ts) / 60000); return m < 1 ? L('ora', 'now', 'ahora') : (m < 60 ? m + ' min fa' : Math.round(m / 60) + ' h fa'); };
+  const statoBadge = { sano: BADGE.ok, degradato: BADGE.attenzione, guasto: BADGE.male }[d.stato] || '';
   box.innerHTML = `
     <p>
-      ${d.running ? `<span class="badge verde"><i class="vivo"></i>${L('in esecuzione', 'running', 'en ejecución')}</span>` : `<span class="badge rosso"><i class="spento"></i>${L('fermo', 'stopped', 'detenido')}</span>`}
+      <span class="badge ${statoBadge}">${esc(d.stato || '?')}</span>
+      &nbsp; ${d.running ? `<span class="badge verde"><i class="vivo"></i>${L('in esecuzione', 'running', 'en ejecución')}</span>` : `<span class="badge rosso"><i class="spento"></i>${L('fermo', 'stopped', 'detenido')}</span>`}
       &nbsp; <span class="badge">${L('acceso da', 'up for', 'activo desde hace')} ${_durata(d.uptime)}</span>
       &nbsp; <span class="badge viola">${d.streamers} ${L('streamer', 'streamers', 'streamers')}</span>
     </p>
@@ -14614,11 +14621,21 @@ async function caricaSalute() {
       ${ko ? `&nbsp; <span class="badge rosso">${ko} ${L('scollegati (token)', 'disconnected (token)', 'desconectados (token)')}: ${(d.chatKO || []).map((c) => '#' + esc(c)).join(', ')}</span>` : ''}
       ${d.ascoltando ? `&nbsp; <span class="badge">${d.ascoltando} ${L('in ascolto live', 'live listening', 'escuchando en directo')}</span>` : ''}
     </p>
+    ${(d.motivi || []).length ? `<ul class="salute-motivi spazio-sopra">${d.motivi.map((m) => `<li>${esc(m)}</li>`).join('')}</ul>` : ''}
+    ${caldi.length ? `<div class="spazio-sopra">
+      <p class="suggerimento"><strong>${L('Errori nell’ultima ora', 'Errors in the last hour', 'Errores en la última hora')}</strong> — ${err.totaleRecenti} ${L('in tutto', 'in total', 'en total')}</p>
+      <ul class="salute-errori">${caldi.map((a) => `<li>
+        <code>${esc(a.area)}</code>
+        <span class="badge ${a.recenti >= 5 ? BADGE.male : BADGE.attenzione}">${a.recenti}</span>
+        <span class="se-testo">${esc(a.ultimoTesto)}</span>
+        <span class="se-quando">${quando(a.ultimo)}</span>
+      </li>`).join('')}</ul></div>` : `<p class="suggerimento spazio-sopra">${L('Nessun errore nell’ultima ora.', 'No errors in the last hour.', 'Ningún error en la última hora.')}</p>`}
     <p class="suggerimento spazio-sopra">
+      ${d.overlayCollegati ? `${L('Overlay collegati', 'Connected overlays', 'Overlays conectados')}: <strong>${d.overlayCollegati.totale}</strong> ${L('su', 'across', 'en')} ${d.overlayCollegati.canali} ${L('canali', 'channels', 'canales')} &nbsp;·&nbsp; ` : ''}
       ${L('Database', 'Database', 'Base de datos')}: <strong>${mb(d.dbBytes)}</strong> &nbsp;·&nbsp;
       ${L('Memoria', 'Memory', 'Memoria')}: <strong>${mb(d.rss)}</strong> &nbsp;·&nbsp;
       Node <strong>${esc(d.node || '')}</strong> &nbsp;·&nbsp;
-      ${L('Backup', 'Backup', 'Copia')}: <strong>${d.backup?.conteggio || 0}</strong> ${L('copie', 'copies', 'copias')}
+      ${L('Backup', 'Backup', 'Copia')}: <strong>${d.backup?.conteggio || 0}</strong> ${L('copie', 'copies', 'copias')}${d.backup?.prova ? (d.backup.prova.ok ? ` <span class="badge verde">${L('riapribile', 'restorable', 'restaurable')}</span>` : ` <span class="badge rosso">${L('NON riapribile', 'NOT restorable', 'NO restaurable')}</span>`) : ''}
     </p>
     <p class="spazio-sopra"><button class="btn secondario mini" id="btn-salute-agg">${_bIco(ICO.grafico)}${L('Aggiorna', 'Refresh', 'Actualizar')}</button></p>`;
   document.getElementById('btn-salute-agg')?.addEventListener('click', () => caricaSalute());

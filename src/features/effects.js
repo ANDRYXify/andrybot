@@ -37,6 +37,14 @@ export class EffectsEngine {
   }
 
   // Rimuove una connessione SSE (chiamata alla chiusura della richiesta).
+  // Quanti overlay sono collegati adesso, in tutto e per canale. Serve a una
+  // domanda che prima non aveva risposta: un alert è partito verso NESSUNO?
+  quantiClient() {
+    let totale = 0, canali = 0;
+    for (const [, set] of this._clients) { if (set.size) { canali++; totale += set.size; } }
+    return { totale, canali };
+  }
+
   removeClient(channel, res) {
     const ch = norm(channel);
     const set = this._clients.get(ch);

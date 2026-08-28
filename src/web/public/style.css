@@ -1469,3 +1469,14 @@ input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focu
 }
 .imp-tag.imp-sovra { color: var(--ambra); background: var(--ambra-soft); border-color: var(--ambra-bordo); }
 .imp-tag.imp-nota { color: var(--acc); background: var(--acc-tint); border-color: var(--acc-bordo); }
+
+.salute-motivi { margin: 0; padding-left: 1.1rem; font-size: .85rem; color: var(--ambra); }
+.salute-errori { list-style: none; margin: .4rem 0 0; padding: 0; display: grid; gap: .3rem; }
+.salute-errori li {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem;
+  padding: .35rem .6rem; border-radius: var(--r-s);
+  background: var(--surface-2); border: 1px solid var(--border); font-size: .82rem;
+}
+.salute-errori code { flex: 0 0 auto; font-weight: 600; }
+.se-testo { flex: 1 1 220px; min-width: 0; color: var(--testo-2); overflow-wrap: anywhere; }
+.se-quando { flex: 0 0 auto; color: var(--testo-3); font-variant-numeric: tabular-nums; }

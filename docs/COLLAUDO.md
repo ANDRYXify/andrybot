@@ -112,3 +112,40 @@ Due difetti trovati scrivendo le prove, tutti e due veri:
   `X-Forwarded-For` — che lo scrive il client. Chiunque poteva intestare i
   propri colpi a un indirizzo inventato, o a quello di un altro. Ora si usa
   `req.ip`, che Express calcola contando gli hop di proxy fidati.
+
+## L'osservatorio
+
+Il registro era `console.log` con un timestamp: buono per leggere una riga,
+inutile per rispondere alla domanda che conta su un prodotto in abbonamento —
+**cosa sta fallendo, da quando, e quanto spesso?** Senza quella risposta un
+difetto non diventa una segnalazione: diventa uno streamer che smette di pagare
+senza dire niente.
+
+Il gancio sta **dentro il logger**, quindi nessun modulo deve ricordarsi di
+annotare: tutte e quarantanove le aree del bot hanno già la loro etichetta, e
+ogni `log.error` finisce nel registro con quella. Il pannello dell'operatore
+mostra le aree che stanno sbagliando *nell'ultima ora* (non quelle che
+sbagliavano ieri e oggi tacciono), con quante volte e l'ultimo messaggio per
+intero.
+
+Quello che l'osservatorio **non** fa è indovinare di quale streamer si tratti.
+Un messaggio d'errore spesso contiene un canale, ma dedurlo con
+un'espressione regolare vuol dire attribuire a volte il guasto alla persona
+sbagliata — peggio che non attribuirlo. Il canale si sa dove il codice lo sa: le
+chat da ricollegare, che il bot già traccia per nome.
+
+Nello stesso pannello ora si vedono anche gli **overlay collegati** (una domanda
+che prima non aveva risposta: un alert è partito verso nessuno?) e se l'ultima
+copia di backup **si riapre**.
+
+## I modificatori di classe
+
+Un modificatore scritto a mano che nel CSS non esiste non dà nessun errore: il
+pezzo si disegna, solo grigio. È come si era persa la differenza fra un badge
+«degradato» e uno «sano» — scritto `ambra`, mentre la regola si chiama `giallo`.
+
+Il cancello ora li conta. La prima versione però vedeva solo le classi scritte
+per intero nell'attributo, non quelle che arrivano da una mappa: **non
+avrebbe preso proprio il difetto che l'aveva ispirato**. Quindi i colori dei
+badge hanno un vocabolario solo (`const BADGE`), e il cancello controlla quello.
+Messo alla prova rimettendo `ambra`: rosso, uscita 1.

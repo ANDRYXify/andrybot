@@ -17,6 +17,7 @@
 import { db } from './db.js';
 import { missingConfig } from './config.js';
 import { statoBackup } from './backup.js';
+import { osservatorio } from './osservatorio.js';
 
 let _rifiuti = 0;
 export function contaRifiuto() { _rifiuti++; }
@@ -59,7 +60,7 @@ function statoChat(manager) {
 }
 
 // Il quadro completo. `manager` è facoltativo: senza, la parte chat resta ignota.
-export function salute({ manager, forza = false } = {}) {
+export function salute({ manager, forza = false, effects = null } = {}) {
   const scrittura = dbScrivibile(forza);
   const mancanti = missingConfig();
   const chat = statoChat(manager);
@@ -84,6 +85,10 @@ export function salute({ manager, forza = false } = {}) {
     motivi.push('ultimo backup ' + Math.round(oreBackup) + 'h fa');
   }
   if (bck?.attivo && bck.conteggio === 0 && process.uptime() > 3600) motivi.push('nessun backup presente');
+  // Aree che stanno sbagliando ADESSO e ripetutamente. Un errore isolato di
+  // tre giorni fa non è un degrado; venti nell'ultima ora sì.
+  const soffrono = (() => { try { return osservatorio.inSofferenza(); } catch { return []; } })();
+  for (const a of soffrono.slice(0, 3)) motivi.push(`${a.area}: ${a.recenti} errori nell'ultima ora`);
 
   const stato = !scrittura.ok ? 'guasto' : (motivi.length ? 'degradato' : 'sano');
   return {
@@ -98,6 +103,8 @@ export function salute({ manager, forza = false } = {}) {
       chat,
       backup: bck ? { attivo: bck.attivo, quanti: bck.conteggio, oreDaUltimo: oreBackup == null ? null : Math.round(oreBackup * 10) / 10, ogniOre: bck.ogniOre } : null,
       rifiutiNonGestiti: _rifiuti,
+      errori: (() => { try { return osservatorio.riepilogo(); } catch { return null; } })(),
+      overlayCollegati: (() => { try { return effects?.quantiClient?.() ?? null; } catch { return null; } })(),
       memoriaMB: Math.round(process.memoryUsage().rss / 1048576),
       nodo: process.version,
     },

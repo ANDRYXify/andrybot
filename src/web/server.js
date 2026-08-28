@@ -1627,7 +1627,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // aperta. Il dettaglio sta in /api/admin/salute. 503 solo se è guasto: un
   // degrado (una chat che si riconnette da sola) non deve svegliare nessuno.
   app.get('/health', (req, res) => {
-    const s = salute({ manager });
+    const s = salute({ manager, effects });
     res.status(s.ok ? 200 : 503).json({ ok: s.ok, stato: s.stato, uptime: s.uptime });
   });
 
@@ -5537,12 +5537,14 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     let dbBytes = 0;
     try { dbBytes = statSync(join(config.dataDir, 'andrybot.db')).size; } catch { /* niente */ }
     const mem = process.memoryUsage();
-    const sal = salute({ manager });
+    const sal = salute({ manager, effects });
     res.json({
       stato: sal.stato,
       motivi: sal.motivi,
       dbScrivibile: sal.dettaglio.db.scrivibile,
       rifiutiNonGestiti: sal.dettaglio.rifiutiNonGestiti,
+      errori: sal.dettaglio.errori,
+      overlayCollegati: sal.dettaglio.overlayCollegati,
       uptime: Math.floor(process.uptime()),
       running: !!st.running,
       canali: st.channels?.length || 0,
