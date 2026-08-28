@@ -11692,7 +11692,7 @@ function caricaDatiScheda(id) {
   if (id === 'studio') caricaStudio();
   if (id === 'effetti') { caricaEffetti(); caricaPremi(); caricaSuoniPremi(); caricaLibreria(); caricaTracking(); }
   if (id === 'emote') caricaEmote7TV();
-  if (id === 'moduli') { caricaModuli(); caricaContatori(); }
+  if (id === 'moduli') { caricaPiattaforme(); caricaModuli(); caricaContatori(); }
   if (id === 'memoria') caricaStatistiche();
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); }
   if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaDiscord(); caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaFeed(); caricaFeed(); }
@@ -12850,6 +12850,7 @@ function apriEditor(modulo) {
             <input type="number" id="mod-probabilita" min="0" max="100" value="${typeof c.probabilita === 'number' ? c.probabilita : 100}">
           </div>
         </div>
+        ${_piattaformeModulo(c)}
         <div class="riga-check"><input type="checkbox" id="mod-solo-live" ${c.soloLive ? 'checked' : ''}><label for="mod-solo-live">Solo se sono in live</label></div>
         <div class="riga-check"><input type="checkbox" id="mod-solo-offline" ${c.soloOffline ? 'checked' : ''}><label for="mod-solo-offline">Solo se sono offline</label></div>
       </details>
@@ -13140,6 +13141,8 @@ function leggiForm() {
     soloLive: !!g('mod-solo-live')?.checked,
     soloOffline: !!g('mod-solo-offline')?.checked,
   };
+  const scelte = [...document.querySelectorAll('.mod-piatt-c')].filter((x) => x.checked).map((x) => x.value);
+  if (scelte.length && scelte.length < _piattaformeAttive.length) condizioni.piattaforme = scelte;
   const azioni = [...document.querySelectorAll('#lista-azioni .azione-riga')].map(leggiAzioneRiga);
   return {
     id: moduloInModifica?.id ?? null,
@@ -14656,13 +14659,27 @@ function rigaPiattaforma(p) {
   </li>`;
 }
 
+let _piattaformeAttive = [];
+
+function _piattaformeModulo(c) {
+  if (_piattaformeAttive.length < 2) return '';
+  const scelte = Array.isArray(c?.piattaforme) && c.piattaforme.length ? c.piattaforme : null;
+  return `<div class="spazio-sopra">
+    <label class="campo">${L('Su quali piattaforme', 'On which platforms', 'En qué plataformas')}
+      <span class="tenue">— ${L('nessuna spuntata = su tutte', 'none ticked = on all of them', 'ninguna marcada = en todas')}</span></label>
+    <div class="mod-piatt">${_piattaformeAttive.map((p) => `
+      <label class="riga-check"><input type="checkbox" class="mod-piatt-c" value="${esc(p.id)}"${scelte && scelte.includes(p.id) ? ' checked' : ''}> ${esc(p.nome)}</label>`).join('')}</div>
+  </div>`;
+}
+
 async function caricaPiattaforme() {
   const box = document.getElementById('piattaforme-box');
-  if (!box) return;
   let d;
   try { d = await api('/api/streamer/piattaforme'); }
-  catch (e) { box.innerHTML = `<p class="vuoto">${L('Non disponibile ora.', 'Not available now.', 'No disponible ahora.')}</p>`; return; }
+  catch (e) { if (box) box.innerHTML = `<p class="vuoto">${L('Non disponibile ora.', 'Not available now.', 'No disponible ahora.')}</p>`; return; }
   const lista = Array.isArray(d?.piattaforme) ? d.piattaforme : [];
+  _piattaformeAttive = lista.filter((p) => p.collegato);
+  if (!box) return;                       // le servivano solo all'editor dei moduli
   if (!lista.length) { box.innerHTML = `<p class="vuoto">${L('Nessuna piattaforma.', 'No platforms.', 'Ninguna plataforma.')}</p>`; return; }
   box.innerHTML = `<ul class="pf-lista">${lista.map(rigaPiattaforma).join('')}</ul>`;
   box.querySelectorAll('[data-scollega]').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
