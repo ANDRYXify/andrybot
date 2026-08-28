@@ -55,6 +55,7 @@ import { redeemPass } from './gate.js';
 import { salute } from '../salute.js';
 import { anteprima as anteprimaImport, moduloDa } from '../features/importacomandi.js';
 import { esporta as esportaDati } from '../features/esporta.js';
+import { montaKick } from '../kick/rotte.js';
 
 const log = makeLog('web');
 
@@ -1618,6 +1619,14 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   app.get('/auth/logout', (req, res) => {
     req.session = null;
     res.redirect('/entra');            // uscendo si torna "fuori" (404 finché non si rientra col pass)
+  });
+
+  // KICK: collegamento dello streamer, e webhook degli eventi. Le rotte vivono
+  // in src/kick/rotte.js — un file solo, che si legge tutto in un colpo.
+  montaKick(app, {
+    requireLogin, currentUser, wrap,
+    suMessaggio: (msg) => manager.messaggioEsterno(msg),
+    suEvento: (ev) => manager.eventoEsterno?.(ev),
   });
 
   // ------------------------------------------------------------ API base

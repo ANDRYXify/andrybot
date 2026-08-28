@@ -72,6 +72,17 @@ export const config = {
   baseUrl: env('BASE_URL', 'http://localhost:8090').replace(/\/$/, ''),
   sessionSecret: sessionSecret(),
 
+  // kick — app registrata su kick.com/settings/developer.
+  // Il redirect va messo IDENTICO anche nel portale di Kick.
+  kickClientId: env('KICK_CLIENT_ID'),
+  kickClientSecret: env('KICK_CLIENT_SECRET'),
+  kickRedirect: env('KICK_REDIRECT_URI') || (env('BASE_URL', 'http://localhost:8090').replace(/\/$/, '') + '/auth/kick/callback'),
+
+  // youtube — progetto Google Cloud dedicato, credenziali OAuth 2.0 "app web".
+  youtubeClientId: env('YOUTUBE_CLIENT_ID'),
+  youtubeClientSecret: env('YOUTUBE_CLIENT_SECRET'),
+  youtubeRedirect: env('YOUTUBE_REDIRECT_URI') || (env('BASE_URL', 'http://localhost:8090').replace(/\/$/, '') + '/auth/youtube/callback'),
+
   // twitch
   twitchClientId: env('TWITCH_CLIENT_ID'),
   twitchClientSecret: env('TWITCH_CLIENT_SECRET'),

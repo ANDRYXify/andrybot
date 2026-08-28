@@ -763,6 +763,17 @@ export const tokens = {
       scopes: r.scopes ? r.scopes.split(' ') : [], expiresAt: r.expires_at };
   },
   delete(kind, login) { db.prepare('DELETE FROM tokens WHERE kind=? AND login=?').run(kind, login.toLowerCase()); },
+  // Chi è, da noi, l'utente con QUESTO id sulla piattaforma. Serve ai webhook:
+  // l'evento dice «broadcaster 12345», e noi dobbiamo sapere di chi è il canale.
+  loginPerUserId(kind, userId) {
+    const u = String(userId || '');
+    if (!u) return '';
+    return db.prepare('SELECT login FROM tokens WHERE kind=? AND user_id=? LIMIT 1').get(kind, u)?.login || '';
+  },
+  // Tutti i collegati a una piattaforma (per iscrizioni e manutenzione).
+  logins(kind) {
+    return db.prepare('SELECT login FROM tokens WHERE kind=? ORDER BY login').all(kind).map((r) => r.login);
+  },
 };
 
 // Migrazione una-tantum: cifra a riposo i token ancora in chiaro. Idempotente
