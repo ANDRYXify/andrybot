@@ -156,3 +156,22 @@ per intero nell'attributo, non quelle che arrivano da una mappa: **non
 avrebbe preso proprio il difetto che l'aveva ispirato**. Quindi i colori dei
 badge hanno un vocabolario solo (`const BADGE`), e il cancello controlla quello.
 Messo alla prova rimettendo `ambra`: rosso, uscita 1.
+
+## La rete non deve dipendere da GitHub
+
+Le prove girano anche **prima di ogni push**, sulla macchina di chi pubblica:
+
+```
+npm run ganci        # una volta sola, installa il gancio
+```
+
+Da lì `git push` esegue prima `npm test` e i cancelli, e **si rifiuta di
+spingere** se qualcosa è rosso (`git push --no-verify` lo salta, per le
+emergenze vere). Il gancio vive in `.githooks/`, dentro il repository: chiunque
+lavori sul progetto se lo installa con un comando.
+
+Perché così e non solo su GitHub: la CI è un servizio, e un servizio può essere
+spento, in coda, o bloccato da una politica dell'account — è successo subito,
+alla prima esecuzione. Il valore non è «GitHub esegue le prove»: è «le prove
+girano prima che il codice esca». Il gancio dà quella garanzia senza dipendere
+da nessuno; Actions resta la conferma, non l'unica rete.
