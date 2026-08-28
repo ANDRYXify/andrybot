@@ -51,6 +51,7 @@ import { pretrain } from '../ai/pretrain.js';
 import * as persona from '../ai/persona.js';
 import * as brainpy from '../ai/brainpy.js';
 import { redeemPass } from './gate.js';
+import { salute } from '../salute.js';
 
 const log = makeLog('web');
 
@@ -1605,9 +1606,15 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
   // ------------------------------------------------------------ API base
 
-  // Pubblico, per i monitor di uptime esterni: solo ok + da quanti secondi è su.
-  // Niente dati sensibili (nomi canali, conteggi): resta blindato.
-  app.get('/health', (req, res) => res.json({ ok: true, uptime: Math.floor(process.uptime()) }));
+  // Pubblico, per i monitor di uptime esterni e per il controllo di salute di
+  // Docker. Dice la verità su TRE stati (sano / degradato / guasto) ma non dice
+  // MAI perché: il motivo può nominare canali e conteggi, e questa porta è
+  // aperta. Il dettaglio sta in /api/admin/salute. 503 solo se è guasto: un
+  // degrado (una chat che si riconnette da sola) non deve svegliare nessuno.
+  app.get('/health', (req, res) => {
+    const s = salute({ manager });
+    res.status(s.ok ? 200 : 503).json({ ok: s.ok, stato: s.stato, uptime: s.uptime });
+  });
 
   // stato complessivo per la single-page
   app.get('/api/me', wrap(async (req, res) => {
@@ -5477,7 +5484,12 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     let dbBytes = 0;
     try { dbBytes = statSync(join(config.dataDir, 'andrybot.db')).size; } catch { /* niente */ }
     const mem = process.memoryUsage();
+    const sal = salute({ manager });
     res.json({
+      stato: sal.stato,
+      motivi: sal.motivi,
+      dbScrivibile: sal.dettaglio.db.scrivibile,
+      rifiutiNonGestiti: sal.dettaglio.rifiutiNonGestiti,
       uptime: Math.floor(process.uptime()),
       running: !!st.running,
       canali: st.channels?.length || 0,

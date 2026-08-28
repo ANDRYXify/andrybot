@@ -12,6 +12,7 @@ import { ModulesEngine } from './features/modules.js';
 import { PluginBus, caricaPlugin } from './features/plugins.js';
 import { startWeb } from './web/server.js';
 import { startApprovalSync } from './web/gate.js';
+import { contaRifiuto, avviaVigilanza } from './salute.js';
 
 const missing = missingConfig();
 if (missing.length) {
@@ -50,6 +51,10 @@ setInterval(() => effects.ping(), 15_000).unref();
 // allineamento periodico con andryxify.it: revoca chi non è più abilitato
 startApprovalSync({ manager });
 
+// vigilanza: se il database smette di essere scrivibile e non torna, il
+// processo se ne va e il supervisore ne fa ripartire uno sano.
+avviaVigilanza({ manager, log });
+
 // il bot parte solo a configurazione completa
 if (!missing.length) {
   manager.start()
@@ -67,5 +72,23 @@ for (const sig of ['SIGINT', 'SIGTERM']) {
     setTimeout(() => process.exit(0), 3000).unref();
   });
 }
-process.on('unhandledRejection', e => log.error('unhandledRejection:', e?.message || e));
-process.on('uncaughtException', e => log.error('uncaughtException:', e?.message || e));
+// Una promessa rifiutata e non gestita è un difetto, non una catastrofe: si
+// annota e si conta (il conteggio si vede in /api/admin/salute), ma il processo
+// tira dritto — farlo morire per ogni fetch andato storto lo renderebbe fragile.
+process.on('unhandledRejection', (e) => { contaRifiuto(); log.error('unhandledRejection:', e?.stack || e?.message || e); });
+
+// Un'eccezione non catturata è un'altra cosa: da lì in poi lo stato del processo
+// è indefinito per definizione. Prima si logava e si tirava dritto — cioè si
+// restava MEZZO VIVI: chat connessa, magari il database a pezzi, e nessuno che
+// se ne accorge. Meglio morire in modo pulito: il supervisore (docker compose,
+// restart: unless-stopped) fa ripartire un processo sano.
+let _giaMorendo = false;
+process.on('uncaughtException', (e) => {
+  log.error('uncaughtException:', e?.stack || e?.message || e);
+  if (_giaMorendo) return;
+  _giaMorendo = true;
+  log.error('stato del processo non piu\' affidabile: esco, il supervisore mi riavvia');
+  const fine = () => process.exit(1);
+  try { manager.stop().finally(fine); } catch { fine(); }
+  setTimeout(fine, 2000).unref();
+});
