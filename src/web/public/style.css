@@ -725,7 +725,8 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 
 .lib-filtri { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin: .4rem 0 .8rem; }
 .lib-tabs { display: flex; flex-wrap: wrap; gap: .4rem; }
-.lib-tab.attivo { background: var(--viola, #9146ff); color: #fff; border-color: transparent; }
+#lib-miei { margin-left: .1rem; }
+#lib-miei.attivo { background: var(--acc-tint); color: var(--acc); border-color: var(--acc-bordo); }
 #lib-cerca { flex: 1 1 180px; min-width: 140px; }
 .lib-griglia { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .8rem; }
 .lib-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-m); padding: .55rem; display: flex; flex-direction: column; gap: .35rem; }
