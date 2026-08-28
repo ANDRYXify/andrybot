@@ -22,6 +22,7 @@ import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, pass
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO } from '../db.js';
 import { renderLinkPage, renderInformativa } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
+import { montaArgine } from './argine.js';
 import { GUIDE, paginaGuida, paginaIndice, urlGuide } from './guide.js';
 import { AntiBot } from '../features/antibot.js';
 import { statoListaBot, registro as registroAntibot, segnalazioniAperte, risolviSegnalazione, sintesiRegistro, registra as registraAntibot, nomeBot, valutaAccount, assetto as assettoAntibot, sogliaRaffica, codaBan } from '../features/antibot.js';
@@ -168,6 +169,19 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // e prima di ogni altra regola. Chi bussa a porte che qui non esistono trova
   // melassa e uno stivale, non un errore secco che gli dice "prova la prossima".
   montaEsche(app);
+
+  // ARGINE: un limite di frequenza per tutta la superficie, subito dopo le esche
+  // e prima di ogni rotta — così una rotta nuova nasce già protetta invece di
+  // doversi ricordare di proteggerla. L'identità è la sessione quando c'è:
+  // dietro una rete mobile mezza città condivide un indirizzo, e punire
+  // l'indirizzo punirebbe loro.
+  const argine = montaArgine(app, {
+    chiaveDi: (req) => {
+      const u = req.session?.user?.login;
+      return u ? 'u:' + u : 'i:' + (req.ip || req.socket?.remoteAddress || '?');
+    },
+    suRifiuto: (classe, req) => log.warn(`argine: troppe richieste (${classe}) su ${req.method} ${req.path}`),
+  });
 
   // Ripristino UNA-TANTUM del pre-addestramento. Il vecchio pretrain scaricava
   // l'HTML della SPA e aveva seminato in TUTTI i canali la descrizione/social

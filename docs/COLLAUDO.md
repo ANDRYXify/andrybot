@@ -78,3 +78,37 @@ riaperto è una speranza. Ora:
   indietro quello di prima;
 - il collaudo fa il **giro completo**: scrive, copia, distrugge il database,
   ripristina, e ritrova gli stessi streamer e gli stessi effetti.
+
+## L'argine
+
+Un limite di frequenza c'era su **un** endpoint (l'API esterna). Login, OAuth,
+passkey, caricamenti, ogni `/api/streamer/*`: niente. Su un prodotto
+multi-inquilino a pagamento è insieme una porta all'abuso e una voce di costo —
+ogni file caricato passa da compressione, cioè processore e disco.
+
+Ora è **uno solo**, montato prima di ogni rotta: una rotta nuova nasce già
+protetta invece di doversi ricordare di proteggerla. Quattro classi per costo
+reale — autenticazione (la più stretta), caricamento, scrittura, lettura — e
+l'identità è la **sessione** quando c'è: dietro una rete mobile mezza città
+condivide un indirizzo, e punire l'indirizzo punirebbe loro.
+
+Non si limita mai ciò che non va mai fermato: `/health` (lo interroga il
+controllo di salute di Docker), `/stripe/webhook` (scartarne uno significa
+perdere un pagamento, ed è già protetto dalla firma), gli SSE (un overlay resta
+collegato per ore: è *una* richiesta, non un flusso) e i file statici.
+
+I numeri sono larghi di proposito: devono fermare l'abuso, non l'uso. Il
+collaudo lo verifica con un caso vero — trecento letture e centoventi
+salvataggi in un minuto, cioè uno streamer che lavora di gusto nello studio, non
+devono mai incontrare l'argine.
+
+Due difetti trovati scrivendo le prove, tutti e due veri:
+
+- cancellare o pubblicare un effetto finiva nella classe dei **caricamenti**:
+  chi ne ripuliva trenta sbatteva contro il muro. Ora «caricamento» è chi porta
+  davvero su un file (lo dice il tipo `multipart`), non chi tocca un percorso
+  che *somiglia* a un caricamento;
+- le esche contavano chi bussa prendendo a mano il primo valore di
+  `X-Forwarded-For` — che lo scrive il client. Chiunque poteva intestare i
+  propri colpi a un indirizzo inventato, o a quello di un altro. Ora si usa
+  `req.ip`, che Express calcola contando gli hop di proxy fidati.
