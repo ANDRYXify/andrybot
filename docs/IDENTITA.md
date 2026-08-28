@@ -308,3 +308,48 @@ I campi nuovi sono otto per l'alert e quattro per la chat. Aggiunti al browser,
 `verifica-stile` ha detto `alert browser 22 · server 14` finché non sono stati
 messi anche di là. Il difetto che era costato un giro intero adesso si vede in
 un secondo, prima di toccare il browser.
+
+## I font: rotti, ciechi, e senza i tuoi
+
+Tre difetti in una cosa sola.
+
+**Rotto.** Il selettore usciva dal suo riquadro e si dipingeva sopra i campi
+sotto. Colpa mia: avevo dato al contenitore `max-height: 190px` lasciandogli
+`overflow: visible`, mentre la lista dentro ne chiedeva 320. Il contenitore non
+deve avere un tetto: ce l'ha **la lista**, ed è lei che scorre.
+
+**Cieco.** Mostrava solo i nomi — «non vedo che font è cosa». Il codice *provava*
+a scrivere ogni nome nel proprio carattere, ma un nome scritto nel suo font resta
+una parola sola, e a volte una parola non basta per riconoscere una lettera. Ora
+ogni riga ha due righe: un **campione** grande nel font, e sotto il **nome** in
+carattere di sistema, che si legge sempre.
+
+**Senza i tuoi.** Un font caricato dallo streamer non esisteva.
+
+### Come funziona un font tuo
+
+Si carica un `.woff2`, `.woff`, `.ttf` o `.otf` (max 3MB, fino a otto). Il nome
+viene ricavato dal file e ridotto a una chiave; il valore che finisce nelle
+impostazioni è `mio:<chiave>`, con la stessa idea della convenzione
+`effetto:<comando>` delle icone: **un prefisso dice da dove viene**, e chi legge
+sa cosa fare.
+
+Le regole `@font-face` le monta chi disegna: la dashboard per l'anteprima, la
+pagina dell'overlay per la diretta — con gli indirizzi che il tema le manda già
+risolti, perché l'overlay non sa niente di dove stanno i file.
+
+## Il cambio di sezione era un salto
+
+Il cambio c'era, ma faceva due cose scoordinate: il contenuto sfumava sul posto
+in 120 millisecondi, e **subito dopo** la pagina scorreva verso l'alto per conto
+suo. Due movimenti che non si parlano si leggono come uno strappo.
+
+Adesso è uno scorrimento solo, e ha una **direzione che vuol dire qualcosa**:
+verso una sezione più in basso nell'elenco, la vecchia esce a sinistra e la
+nuova entra da destra; tornando indietro, il contrario. La direzione si ricava
+dall'ordine reale delle sezioni nel documento, non da una tabella da tenere
+aggiornata a mano.
+
+E lo scorrimento a inizio pagina avviene **dentro** il cambio, non dopo: fa parte
+dello stesso movimento invece di essere un secondo movimento che gli corre
+dietro.

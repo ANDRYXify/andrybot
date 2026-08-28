@@ -60,6 +60,12 @@ const SUONI_PRESET = new Set(['campanello', 'campana', 'acqua', 'moneta', 'tambu
   'trombetta', 'errore', 'tada', 'pop', 'whoosh', 'applausi', 'laser', 'salita']);
 // Font disponibili per l'overlay (deve combaciare con overlay-skin.css/overlay.html).
 const FONT_OVL = ['sistema', 'rotondo', 'condensato', 'mono', 'serif', 'manga'];
+const MIO_FONT = /^mio:[a-z0-9_-]{1,32}$/;
+const fontOvlOk = (x, def) => {
+  const v = String(x || '');
+  if (FONT_OVL.includes(v)) return v;
+  return MIO_FONT.test(v) ? v : def;
+};
 // helper di validazione riusati dal "gestionale overlay"
 const clampInt = (v, lo, hi, def) => { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : def; };
 const hexOk = (v, def) => (/^#[0-9a-fA-F]{6}$/.test(String(v)) ? String(v) : def);
@@ -103,7 +109,7 @@ const normAlertStile = (st) => {
     bordoSpessore: clampInt(st.bordoSpessore, 0, 10, 2),
     glow: st.glow !== false,
     icona: st.icona !== false,
-    font: unoDi(st.font, FONT_OVL, 'sistema'),
+    font: fontOvlOk(st.font, 'sistema'),
     googleFont: String(st.googleFont || '').replace(/[^a-zA-Z0-9 ]/g, '').trim().slice(0, 50),
     forma: unoDi(st.forma, FORME_OVL, 'carta'),
     materia: unoDi(st.materia, MATERIE_OVL, 'piatta'),
@@ -128,7 +134,7 @@ const normChatStile = (st) => {
     username: (st.username === 'twitch' || /^#[0-9a-fA-F]{6}$/.test(String(st.username))) ? st.username : 'twitch',
     bordoRaggio: clampInt(st.bordoRaggio, 0, 30, 10),
     ombra: st.ombra !== false,
-    font: unoDi(st.font, FONT_OVL, 'sistema'),
+    font: fontOvlOk(st.font, 'sistema'),
     googleFont: String(st.googleFont || '').replace(/[^a-zA-Z0-9 ]/g, '').trim().slice(0, 50),
     larghezza: clampInt(st.larghezza, 18, 60, 30),
     animazione: unoDi(st.animazione, ['slide', 'fade', 'nessuna'], 'slide'),
@@ -151,7 +157,7 @@ const normWidgetStile = (st) => {
     testo: hexOk(st.testo, '#ffffff'),
     accento: hexOk(st.accento, '#9146ff'),
     bordoRaggio: clampInt(st.bordoRaggio, 0, 30, 12),
-    font: unoDi(st.font, FONT_OVL, 'sistema'),
+    font: fontOvlOk(st.font, 'sistema'),
     forma: unoDi(st.forma, FORME_OVL, 'carta'),
     materia: unoDi(st.materia, MATERIE_OVL, 'piatta'),
     cornice: unoDi(st.cornice, CORNICI_OVL, 'nessuna'),
@@ -2796,7 +2802,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
           testo: String(e.testo || '').slice(0, 200),
           suono: suonoOk(e.suono),
           media: refEffetto(e.media),
-          font: unoDi(e.font, FONT_OVL, ''),   // '' = usa il font condiviso dello stile
+          font: fontOvlOk(e.font, ''),   // '' = usa il font condiviso dello stile
           volume: clampInt(e.volume, 0, 100, 100),
           accento: hexOk(e.accento || e.colore, '#9146ff'),
           icona: e.icona === '' ? '' : icoOk(e.icona),
@@ -2835,6 +2841,13 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     }
     // CSS avanzato dell'overlay (libertà totale sul proprio overlay)
     if (b.overlayCss !== undefined) out.overlayCss = String(b.overlayCss || '').slice(0, 8000);
+    if (b.fontPersonali !== undefined) {
+      const arr = Array.isArray(b.fontPersonali) ? b.fontPersonali : [];
+      out.fontPersonali = arr.slice(0, 8)
+        .map((f) => ({ nome: String(f?.nome || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 32),
+          file: String(f?.file || '').replace(/[^A-Za-z0-9._-]/g, '').slice(0, 120) }))
+        .filter((f) => f.nome && f.file);
+    }
     // PIÙ OVERLAY: lista di layout, ognuno col suo id/nome/visibilità/posizioni/css.
     if (b.overlays !== undefined) {
       const arr = Array.isArray(b.overlays) ? b.overlays : [];
@@ -3874,6 +3887,62 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // precedente, così non restano effetti orfani a ogni cambio. Suono e media sono
   // due slot indipendenti → possono partire INSIEME (es. GIF + suono).
   const ALERT_KINDS = ['follow', 'sub', 'cheer', 'raid'];
+  // ---- FONT dello streamer: carica un file e usalo nell'overlay ----
+  app.post('/api/streamer/font', requireLogin, (req, res) => {
+    if (!esigiFunzione(req, res, 'effetti', 'I font personalizzati')) return;
+    upload.single('file')(req, res, async (err) => {
+      if (err) return res.status(400).json({ errore: err.code === 'LIMIT_FILE_SIZE' ? 'file troppo grande' : 'caricamento non riuscito' });
+      try {
+        const login = currentUser(req).login;
+        if (streamers.get(login)?.status !== 'approved') { await pulisciTemp(req.file?.path); return res.status(403).json({ errore: 'non sei ancora abilitato' }); }
+        if (!req.file) return res.status(400).json({ errore: 'nessun file caricato' });
+        const est = (/\.(woff2|woff|ttf|otf)$/i.exec(req.file.originalname || '') || [])[1];
+        if (!est) { await pulisciTemp(req.file.path); return res.status(400).json({ errore: 'serve un font .woff2, .woff, .ttf o .otf' }); }
+        if (req.file.size > 3 * 1024 * 1024) { await pulisciTemp(req.file.path); return res.status(400).json({ errore: 'font troppo grande (max 3MB)' }); }
+
+        const grezzo = String(req.body?.nome || req.file.originalname || '').replace(/\.[^.]+$/, '');
+        const nome = grezzo.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 32) || 'font';
+        const file = `font_${nome}.${est.toLowerCase()}`;
+        const destDir = join(effectsRoot, login);
+        mkdirSync(destDir, { recursive: true });
+        renameSync(req.file.path, join(destDir, file));
+
+        const st = streamers.get(login);
+        const settings = { ...(st?.settings || {}) };
+        const lista = (Array.isArray(settings.fontPersonali) ? settings.fontPersonali : []).filter((f) => f.nome !== nome);
+        if (lista.length >= 8) return res.status(400).json({ errore: 'massimo 8 font (togline uno)' });
+        settings.fontPersonali = lista.concat([{ nome, file }]);
+        streamers.setSettings(login, settings);
+        res.json({ ok: true, nome, file, url: effects.mediaUrl(login, file) });
+      } catch (e) {
+        await pulisciTemp(req.file?.path);
+        log.error('POST /api/streamer/font →', e?.message || e);
+        if (!res.headersSent) res.status(500).json({ errore: e?.message || 'errore interno' });
+      }
+    });
+  });
+
+  app.get('/api/streamer/font', requireLogin, (req, res) => {
+    const login = currentUser(req).login;
+    const lista = streamers.get(login)?.settings?.fontPersonali;
+    res.json({ font: (Array.isArray(lista) ? lista : [])
+      .filter((f) => f && f.nome && f.file)
+      .map((f) => ({ nome: f.nome, url: effects.mediaUrl(login, f.file) })) });
+  });
+
+  app.delete('/api/streamer/font/:nome', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const nome = String(req.params.nome || '').toLowerCase();
+    const st = streamers.get(login);
+    const settings = { ...(st?.settings || {}) };
+    const lista = Array.isArray(settings.fontPersonali) ? settings.fontPersonali : [];
+    const via = lista.find((f) => f.nome === nome);
+    settings.fontPersonali = lista.filter((f) => f.nome !== nome);
+    streamers.setSettings(login, settings);
+    if (via) await pulisciTemp(join(effectsRoot, login, via.file));
+    res.json({ ok: true });
+  }));
+
   app.post('/api/streamer/alerts/media', requireLogin, (req, res) => {
     if (!esigiFunzione(req, res, 'effetti', 'Gli alert personalizzati')) return;
     upload.single('file')(req, res, (err) => {
