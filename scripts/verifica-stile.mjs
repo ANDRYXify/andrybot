@@ -74,5 +74,52 @@ for (const [nome, reApp] of assi) {
   if (senza.length) err.push(`${nome}: senza regola CSS ${senza.join(', ')}`);
 }
 
+
+// ---- I MODIFICATORI DI CLASSE ESISTONO DAVVERO? --------------------------
+// Un modificatore scritto a mano che nel CSS non c'è non dà nessun errore: il
+// pezzo si disegna, solo grigio. È come si è persa la differenza fra un badge
+// «degradato» e uno «sano» — scritto `ambra`, mentre la regola si chiama
+// `giallo`. Qui si contano, invece di accorgersene per caso in uno screenshot.
+{
+  const css = readFileSync('src/web/public/style.css', 'utf8') + readFileSync('src/web/public/anime.css', 'utf8');
+  const app = readFileSync('src/web/public/app.js', 'utf8');
+  const FAMIGLIE = ['badge', 'btn', 'tag'];
+  const mancanti = [];
+  for (const fam of FAMIGLIE) {
+    const definiti = new Set();
+    for (const m of css.matchAll(new RegExp(`\\.${fam}\\.([a-z][a-z0-9-]*)`, 'g'))) definiti.add(m[1]);
+    if (!definiti.size) continue;
+    const usati = new Set();
+    for (const m of app.matchAll(new RegExp(`class="${fam} ([a-z][a-z0-9-]*)`, 'g'))) usati.add(m[1]);
+    // valori scritti dentro un ternario o una mappa: `'verde'`, `'rosso'`…
+    for (const m of app.matchAll(new RegExp(`class="${fam} \\$\\{([^}]*)\\}`, 'g'))) {
+      for (const q of m[1].matchAll(/'([a-z][a-z0-9-]*)'/g)) usati.add(q[1]);
+    }
+    // Una classe vale come definita se esiste NEL CSS, in qualunque forma:
+    // può essere un modificatore (.btn.mini) o una utilità autonoma
+    // (.spazio-sopra). Cercare solo la prima forma segnalava le seconde come
+    // mancanti — un difetto della misura, non del prodotto.
+    // I colori che arrivano da una mappa non si vedono nell'attributo: per
+    // questo il vocabolario ha UN nome solo (const BADGE) e si controlla lui.
+    if (fam === 'badge') {
+      const voc = /const BADGE = \{([^}]*)\}/.exec(app);
+      if (!voc) mancanti.push('badge: manca il vocabolario `const BADGE`');
+      else for (const q of voc[1].matchAll(/'([a-z][a-z0-9-]*)'/g)) usati.add(q[1]);
+    }
+    for (const u of usati) {
+      if (definiti.has(u)) continue;
+      if (new RegExp(`\\.${u}\\b`).test(css)) continue;
+      mancanti.push(`${fam}.${u}`);
+    }
+    console.log(`${fam.padEnd(6)} ${definiti.size} modificatori definiti · ${usati.size} usati  ${mancanti.length ? '' : '✓'}`);
+  }
+  if (mancanti.length) {
+    console.error('\nUsati ma non definiti nel CSS (si disegnano senza colore, in silenzio):');
+    for (const m of mancanti) console.error('  · ' + m);
+    err.push('modificatori di classe usati ma non definiti: ' + mancanti.join(', '));
+  }
+}
+
+
 console.log(err.length ? '\n' + err.map((e) => '- ' + e).join('\n') : '\nBrowser e server sono d\'accordo. ✓');
 process.exit(err.length ? 1 : 0);
