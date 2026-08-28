@@ -472,6 +472,24 @@
 
     function alert(ev) { if (!mostra('alert')) return; codaAlert.push(ev); mostraAlertProssimo(); }
 
+    const _AX = {
+      forma: ['carta', 'pillola', 'squadrata', 'taglio', 'insegna', 'esagono', 'nastro', 'fumetto'],
+      materia: ['piatta', 'sfumata', 'vetro', 'carta', 'neon', 'crt', 'griglia'],
+      cornice: ['linea', 'nessuna', 'spessa', 'angoli', 'barra'],
+      comp: ['colonna', 'riga', 'riga-inv', 'sovrapposta'],
+    };
+    function classiIdentita(st, corniceDef) {
+      const p = (k, v, d) => 'forma' === k || 'materia' === k || 'cornice' === k
+        ? k + '-' + (_AX[k].indexOf(v) >= 0 ? v : d) : '';
+      st = st || {};
+      return [p('forma', st.forma, 'carta'), p('materia', st.materia, 'piatta'),
+        p('cornice', st.cornice, corniceDef || 'linea')].join(' ');
+    }
+    function classeComp(st) {
+      const v = (st || {}).composizione;
+      return 'comp-' + (_AX.comp.indexOf(v) >= 0 ? v : 'colonna');
+    }
+
     function mostraAlertProssimo() {
       if (alertOccupato || !codaAlert.length) return;
       alertOccupato = true;
@@ -480,7 +498,8 @@
       const st = MIO.stile.alert || ev.stile || {};
       posizionaContenitore(alertBox, MIO.xy.alert || ev.xy, ev.posizione || 'alto-centro');
       const card = document.createElement('div');
-      card.className = 'alert-card anim-' + (st.animazione || 'slide') + (st.glow ? ' glow' : '') + (st.icona === false ? ' senza-ico' : '');
+      card.className = 'alert-card anim-' + (st.animazione || 'slide') + (st.glow ? ' glow' : '') + (st.icona === false ? ' senza-ico' : '')
+        + ' ' + classiIdentita(st) + ' ' + classeComp(st);
       applicaVars(card, {
         '--acc': ev.colore, '--bg': st.sfondo, '--op': st.opacita != null ? st.opacita + '%' : null,
         '--fg': st.testo, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null,
@@ -571,7 +590,8 @@
       if (st.larghezza) chatBox.style.maxWidth = st.larghezza + 'vw';
       const destra = !ev.xy && /destra/.test(ev.posizione || '');
       const riga = document.createElement('div');
-      riga.className = 'chat-riga dim-' + (st.dim || 'media') + ' anim-' + (st.animazione || 'slide') + (st.ombra !== false ? ' ombra' : '') + (st.grassettoUser !== false ? ' user-bold' : '');
+      riga.className = 'chat-riga dim-' + (st.dim || 'media') + ' anim-' + (st.animazione || 'slide') + (st.ombra !== false ? ' ombra' : '') + (st.grassettoUser !== false ? ' user-bold' : '')
+        + ' ' + classiIdentita(st, 'nessuna');
       applicaVars(riga, {
         '--bg': st.sfondo, '--op': st.opacita != null ? st.opacita + '%' : null,
         '--fg': st.testo, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null, '--font': fontDi(st) || null,
@@ -626,7 +646,7 @@
         el.style.transform = 'translate(' + (-xyEff.x) + '%,' + (-xyEff.y) + '%) scale(' + s + ') rotate(' + r + 'deg)';
       } else { el.style.position = ''; el.style.left = ''; el.style.top = ''; el.style.transform = ''; }
       const st = cfg.stile || {};
-      el.className = 'ovl-widget dim-' + (st.dim || 'media');
+      el.className = 'ovl-widget dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');
       applicaVars(el, {
         '--bg': st.sfondo, '--op': st.opacita != null ? st.opacita + '%' : null, '--fg': st.testo,
         '--acc': st.accento, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null, '--font': fontDi(st) || null,

@@ -24,15 +24,18 @@
   position: relative;
   min-width: 320px; max-width: 74%;
   background: color-mix(in srgb, var(--bg) var(--op), transparent);
-  border: var(--border) solid var(--acc);
+  border: 0;
   border-radius: var(--radius);
   padding: 1.05rem 1.5rem;
   text-align: center;
   color: var(--fg);
   font-family: var(--font);
-  box-shadow: 0 16px 50px rgba(0, 0, 0, .5);
+  box-shadow: none;
+  --ombra-fuori: drop-shadow(0 12px 28px rgba(0, 0, 0, .48));
+  --ombra-extra: ;
+  filter: var(--ombra-fuori) var(--ombra-extra);
 }
-.alert-card.glow { box-shadow: 0 16px 50px rgba(0, 0, 0, .5), 0 0 34px color-mix(in srgb, var(--acc) 55%, transparent); }
+.alert-card.glow { --ombra-extra: drop-shadow(0 0 14px color-mix(in srgb, var(--acc) 62%, transparent)); }
 .alert-card .alert-ico { width: 46px; height: 46px; margin: 0 auto .35rem; color: var(--acc); }
 .alert-card .alert-ico svg { width: 100%; height: 100%; }
 .alert-card.senza-ico .alert-ico { display: none; }
@@ -69,7 +72,7 @@
   line-height: 1.3;
   word-break: break-word;
 }
-.chat-riga.ombra { box-shadow: 0 4px 16px rgba(0, 0, 0, .4); }
+.chat-riga.ombra { filter: drop-shadow(0 3px 10px rgba(0, 0, 0, .45)); }
 .chat-riga .chat-user { margin-right: .35rem; }
 .chat-riga.user-bold .chat-user { font-weight: 800; }
 
@@ -161,3 +164,127 @@
 .ovl-insp-riga { display: grid; grid-template-columns: 92px 1fr 52px; align-items: center; gap: .6rem; }
 .ovl-insp-riga input[type="range"] { width: 100%; }
 .ovl-insp-val { text-align: right; font-variant-numeric: tabular-nums; opacity: .85; }
+
+.alert-card, .chat-riga, .ovl-widget {
+  position: relative;
+  --sagoma: none;
+  --spessore: 0px;
+  --maschera: none;
+  --materia: color-mix(in srgb, var(--bg) var(--op, 88%), transparent);
+  background: transparent;
+}
+.alert-card::before, .chat-riga::before, .ovl-widget::before,
+.alert-card::after, .chat-riga::after, .ovl-widget::after {
+  content: ''; position: absolute; z-index: 0; pointer-events: none;
+  border-radius: inherit; clip-path: var(--sagoma);
+}
+.alert-card::before, .chat-riga::before, .ovl-widget::before {
+  inset: 0; background: var(--acc);
+  -webkit-mask: var(--maschera); mask: var(--maschera);
+}
+.alert-card::after, .chat-riga::after, .ovl-widget::after {
+  inset: var(--spessore); background: var(--materia);
+}
+.alert-card > *, .chat-riga > *, .ovl-widget > * { position: relative; z-index: 1; }
+
+.forma-carta { border-radius: var(--radius, 14px); --sagoma: none; }
+.forma-pillola { border-radius: 999px; --sagoma: none; }
+.forma-squadrata { border-radius: 0; --sagoma: none; }
+.forma-taglio {
+  border-radius: 0;
+  --sagoma: polygon(var(--tg, 18px) 0, 100% 0, 100% calc(100% - var(--tg, 18px)), calc(100% - var(--tg, 18px)) 100%, 0 100%, 0 var(--tg, 18px));
+}
+.forma-insegna {
+  border-radius: 0;
+  --sagoma: polygon(var(--tg, 18px) 0, calc(100% - var(--tg, 18px)) 0, 100% 50%, calc(100% - var(--tg, 18px)) 100%, var(--tg, 18px) 100%, 0 50%);
+  padding-left: calc(var(--tg, 18px) + 1rem); padding-right: calc(var(--tg, 18px) + 1rem);
+}
+.forma-esagono {
+  border-radius: 0;
+  --tg: 26px;
+  --sagoma: polygon(var(--tg) 0, calc(100% - var(--tg)) 0, 100% 50%, calc(100% - var(--tg)) 100%, var(--tg) 100%, 0 50%);
+  padding-left: calc(var(--tg) + 1rem); padding-right: calc(var(--tg) + 1rem);
+}
+.forma-nastro {
+  border-radius: 0;
+  --sagoma: polygon(0 0, 100% 0, calc(100% - var(--tg, 26px)) 100%, 0 100%);
+  padding-right: calc(var(--tg, 26px) + 1rem);
+}
+.forma-fumetto {
+  border-radius: 0;
+  --coda: 16px;
+  --sagoma: polygon(0 0, 100% 0, 100% calc(100% - var(--coda)), 54px calc(100% - var(--coda)), 30px 100%, 30px calc(100% - var(--coda)), 0 calc(100% - var(--coda)));
+  padding-bottom: calc(1.05rem + var(--coda));
+}
+
+.materia-piatta { --materia: color-mix(in srgb, var(--bg) var(--op, 88%), transparent); }
+.materia-sfumata {
+  --materia: linear-gradient(150deg,
+    color-mix(in srgb, var(--acc) 30%, color-mix(in srgb, var(--bg) var(--op, 88%), transparent)) 0%,
+    color-mix(in srgb, var(--bg) var(--op, 88%), transparent) 64%);
+}
+.materia-vetro { --materia: color-mix(in srgb, var(--bg) calc(var(--op, 88%) * .55), transparent); }
+.materia-vetro::after { backdrop-filter: blur(14px) saturate(1.5); -webkit-backdrop-filter: blur(14px) saturate(1.5); }
+.materia-carta {
+  --materia:
+    repeating-linear-gradient(0deg, rgba(0,0,0,.055) 0 2px, transparent 2px 5px),
+    repeating-linear-gradient(90deg, rgba(0,0,0,.045) 0 2px, transparent 2px 5px),
+    color-mix(in srgb, var(--bg) var(--op, 88%), transparent);
+}
+.materia-neon {
+  --materia: color-mix(in srgb, #05040a calc(var(--op, 88%) * .92), transparent);
+  --ombra-extra: drop-shadow(0 0 6px color-mix(in srgb, var(--acc) 85%, transparent))
+                 drop-shadow(0 0 18px color-mix(in srgb, var(--acc) 55%, transparent));
+  --spessore: 2px;
+}
+.materia-neon::after { box-shadow: inset 0 0 22px color-mix(in srgb, var(--acc) 34%, transparent); }
+.materia-crt {
+  --materia:
+    repeating-linear-gradient(0deg, rgba(0,0,0,.34) 0 1px, transparent 1px 3px),
+    color-mix(in srgb, var(--bg) var(--op, 88%), transparent);
+  text-shadow: .6px 0 0 rgba(255, 0, 60, .5), -.6px 0 0 rgba(0, 190, 255, .5);
+}
+.materia-griglia {
+  --materia:
+    linear-gradient(color-mix(in srgb, var(--acc) 30%, transparent) 1px, transparent 1px) 0 0 / 100% 18px,
+    linear-gradient(90deg, color-mix(in srgb, var(--acc) 30%, transparent) 1px, transparent 1px) 0 0 / 18px 100%,
+    color-mix(in srgb, var(--bg) var(--op, 88%), transparent);
+}
+
+.cornice-nessuna { --spessore: 0px; }
+.cornice-linea { --spessore: var(--border, 2px); }
+.cornice-spessa { --spessore: calc(var(--border, 2px) * 2.6); }
+.cornice-angoli {
+  --spessore: var(--border, 2px);
+  --maschera:
+    linear-gradient(#000, #000) 0 0 / 30% 38% no-repeat,
+    linear-gradient(#000, #000) 100% 0 / 30% 38% no-repeat,
+    linear-gradient(#000, #000) 0 100% / 30% 38% no-repeat,
+    linear-gradient(#000, #000) 100% 100% / 30% 38% no-repeat;
+}
+.cornice-barra {
+  --spessore: calc(var(--border, 2px) * 3);
+  --maschera: linear-gradient(#000, #000) 0 0 / calc(var(--border, 2px) * 3) 100% no-repeat;
+  padding-left: calc(1.5rem + var(--border, 2px) * 3);
+}
+.materia-neon.cornice-nessuna { --spessore: 2px; }
+
+.alert-card.comp-colonna { display: block; text-align: center; }
+.alert-card.comp-riga, .alert-card.comp-riga-inv {
+  display: flex; align-items: center; gap: .9rem; text-align: left;
+}
+.alert-card.comp-riga-inv { flex-direction: row-reverse; text-align: right; }
+.alert-card.comp-riga .alert-media,
+.alert-card.comp-riga-inv .alert-media { margin: 0; flex: 0 0 auto; max-width: 38%; max-height: 26vh; }
+.alert-card.comp-riga .alert-ico,
+.alert-card.comp-riga-inv .alert-ico { margin: 0; flex: 0 0 auto; }
+.alert-card.comp-riga .alert-testo,
+.alert-card.comp-riga-inv .alert-testo { flex: 1 1 auto; min-width: 0; }
+.alert-card.comp-sovrapposta { display: grid; place-items: center; }
+.alert-card.comp-sovrapposta > *:not(::before):not(::after) { grid-area: 1 / 1; }
+.alert-card.comp-sovrapposta .alert-media { margin: 0; width: 100%; }
+.alert-card.comp-sovrapposta .alert-ico { align-self: start; justify-self: end; margin: 0; opacity: .9; }
+.alert-card.comp-sovrapposta .alert-testo {
+  z-index: 2; padding: .4rem .7rem; border-radius: 8px;
+  background: color-mix(in srgb, var(--bg) 60%, transparent);
+}
