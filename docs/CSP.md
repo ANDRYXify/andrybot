@@ -63,9 +63,74 @@ che nessun `respondWith` possa risolvere in `undefined`.
 
 Provato rosso su entrambi i difetti veri.
 
-## Quello che resta da fare
+## Via `'unsafe-inline'` da `script-src`
 
-`script-src` contiene ancora `'unsafe-inline'`, che serve solo per tre script
-scritti dentro `index.html` (tema, splash, banner dei cookie). Portandoli in un
-file esterno, `'unsafe-inline'` si può togliere — è la prima voce del giro sulla
-sicurezza.
+`'unsafe-inline'` è il permesso che rende una CSP quasi inutile contro l'XSS:
+se un pezzo di HTML iniettato può portarsi dietro il suo `<script>`, la lista
+delle origini fidate non protegge da niente. Era lì per un motivo pratico —
+alcune pagine avevano script scritti dentro l'HTML — quindi la via non era
+allentare la regola ma togliere il motivo.
+
+Ora **nessuna pagina servita ha uno `<script>` scritto dentro l'HTML**: gli undici
+blocchi inline sono diventati file (`tema.js`, `splash.js`, `cookie.js`,
+`mod.js`, `sblocca.js`, `overlay-app.js`, `tgapp.js`, `tracking-detector-conf.js`,
+`tracking-detector.js`, `tracking-play.js`, `voce.js`). E non c'è più nessun
+attributo `on…=""`, nemmeno nel markup che `app.js` genera a runtime: l'unico
+(`onerror` sull'avatar Twitch) è diventato un ascoltatore delegato in cattura,
+perché l'evento `error` non risale.
+
+Due dettagli si sarebbero rotti in silenzio, e sono stati misurati sul banco
+prima di toccare la CSP:
+
+- **`tema.js` non ha `defer`.** Deve girare *prima* del primo disegno, altrimenti
+  la pagina lampeggia chiara e poi diventa scura. Uno script esterno bloccante in
+  `<head>` fa esattamente quello che faceva l'inline.
+- **Le regole di prefetch inline sono soggette a `script-src`.** Con
+  `script-src 'self'` Chrome le rifiuta — *«Refused to apply inline speculation
+  rules»*, riprodotto. Esiste un permesso apposta, `'inline-speculation-rules'`,
+  che abilita **solo** quei blocchi e nient'altro: è l'unico inline rimasto.
+
+I percorsi dei nuovi file sono **assoluti** (`/tema.js`, non `tema.js`): pagine
+come l'overlay sono servite su un percorso (`/overlay/<login>`) diverso da dove
+sta il file, e un percorso relativo cercherebbe `/overlay/overlay-app.js`.
+
+`style-src` tiene ancora `'unsafe-inline'`: l'app scrive stili al volo
+(posizioni degli elementi, colori scelti dallo streamer). Lì il rischio è di
+un'altra natura — non esegue codice — e toglierlo è un lavoro a sé.
+
+Le tre CSP sono state applicate **davvero** alle pagine vere sul banco, che ora
+legge le politiche dal `Caddyfile` invece di averne una copia sua: dashboard,
+vetrina, accesso moderatori, sblocca, overlay, Mini App, voce e tracking — zero
+violazioni, zero errori JavaScript.
+
+## `security.txt`
+
+`/.well-known/security.txt` (RFC 9116) dice a chi scrivere se si trova un buco.
+È una **rotta esplicita**, non `express.static`: quello ignora di proposito i
+file che iniziano con un punto, e allargare la regola per una cartella
+esporrebbe anche tutte le altre. Il file vive in `public/well-known/` (senza
+punto), la porta pubblica ha il punto come vuole lo standard.
+
+Lo standard pretende un campo `Expires`, ed è una trappola di manutenzione: un
+`security.txt` scaduto vale meno di nessuno. Per questo il cancello controlla che
+la data **non sia passata** e che stia entro l'anno.
+
+> Da fare a mano: l'indirizzo `security@socialbot.live` va creato (basta un
+> alias). Un contatto che non riceve è peggio di nessun contatto.
+
+## Il cancello
+
+`scripts/verifica-csp.mjs` legge le politiche dal `Caddyfile` e tiene ferme
+cinque cose: nessun `script-src` con `'unsafe-inline'` o `'unsafe-eval'`;
+`object-src 'none'`, `base-uri 'self'` e `frame-ancestors` in tutte; nessuno
+`<script>` eseguibile dentro l'HTML (ammessi solo JSON-LD e le regole di
+prefetch); nessun attributo `on…=` in nessun file servito, HTML o JS; e il
+`security.txt` presente, con contatto e scadenza valida.
+
+Il verso è quello giusto: se rientra uno script inline, **smette di funzionare** e
+il cancello diventa rosso. La risposta non è riallargare la CSP, è portare lo
+script in un file.
+
+Provato rosso su quattro difetti veri: `'unsafe-inline'` rimesso nella CSP, uno
+`<script>` rimesso in `index.html`, un `onerror` rimesso nel markup generato, e
+un `security.txt` scaduto.

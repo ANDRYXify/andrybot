@@ -1,0 +1,11 @@
+# © 2024–2026 Andrea Taliento (ANDRYXify) — socialbot.live
+# Come segnalare un problema di sicurezza. Formato: RFC 9116.
+
+Contact: mailto:security@socialbot.live
+Expires: 2027-08-29T00:00:00.000Z
+Preferred-Languages: it, en, es
+Canonical: https://socialbot.live/.well-known/security.txt
+Policy: https://socialbot.live/privacy
+
+# Se ci scrivi per una vulnerabilità: descrivi come riprodurla e dacci il tempo
+# di sistemarla prima di renderla pubblica. Ti rispondiamo.
