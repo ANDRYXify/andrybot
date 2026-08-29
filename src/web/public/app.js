@@ -9058,7 +9058,7 @@ async function caricaPaginaLink(ridisegna = false) {
           </select>
           <div id="lp-avatar-tw" class="lp-avatar-tw" ${LP.testa.avatar ? 'hidden' : ''}>
             ${d.avatarTwitch
-              ? `<img src="${esc(d.url)}/avatar" alt="" width="44" height="44" loading="lazy" onerror="this.style.display='none'">
+              ? `<img src="${esc(d.url)}/avatar" alt="" width="44" height="44" loading="lazy" data-via-se-rotta>
                  <span class="suggerimento">${L('Questa è la tua foto di Twitch: la prendiamo da soli e si aggiorna quando la cambi là.', 'This is your Twitch picture: we fetch it for you and it updates when you change it there.', 'Esta es tu foto de Twitch: la traemos nosotros y se actualiza cuando la cambias allí.')}</span>`
               : `<span class="suggerimento">${L('Non riusciamo a leggere la tua foto da Twitch in questo momento: riproviamo da soli, oppure scegli “Un\'immagine mia”.', 'We can\'t read your Twitch picture right now: we\'ll retry by ourselves, or pick “My own image”.', 'Ahora no podemos leer tu foto de Twitch: lo reintentamos solos, o elige “Una imagen mía”.')}</span>`}
           </div>
@@ -14914,6 +14914,11 @@ async function caricaTabellaAdmin() {
     tbody.innerHTML = `<tr><td colspan="6" class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</td></tr>`;
   }
 }
+
+document.addEventListener('error', (ev) => {
+  const el = ev.target;
+  if (el?.tagName === 'IMG' && el.hasAttribute?.('data-via-se-rotta')) el.style.display = 'none';
+}, true);
 
 document.addEventListener('click', (ev) => {
   const torna = ev.target.closest?.('[data-torna-canale]');

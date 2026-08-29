@@ -7,18 +7,7 @@
   <meta name="theme-color" content="#0c0c11" media="(prefers-color-scheme: dark)">
 
   
-  <script>
-    (function () {
-      try {
-        var t = localStorage.getItem('tema') || 'auto';
-        var scuro = t === 'dark' || (t === 'auto' &&
-          window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-        document.documentElement.setAttribute('data-theme', scuro ? 'dark' : 'light');
-      } catch (e) {
-        document.documentElement.setAttribute('data-theme', 'light');
-      }
-    })();
-</script>
+  <script src="/tema.js"></script>
 
   <title>SocialBot — bot per Twitch e Kick in italiano | socialbot.live</title>
   <meta name="description" content="Il bot per Twitch e Kick in italiano che scrive in chat col TUO account: comandi, moderazione con scudo anti-bot, overlay per OBS, clip e avvisi live. Gratis, con demo.">
@@ -234,23 +223,7 @@
     <div class="sp-box"><span class="sp-ring"></span><img class="sp-logo" src="/icons/icon-192.png" alt="" width="84" height="84"></div>
     <div class="sp-nome">SocialBot<small>caricamento…</small></div>
   </div>
-  <script>
-    (function () {
-      var s = document.getElementById('splash'); if (!s) return;
-      var fatto = false;
-      function via() { if (fatto) return; fatto = true; s.classList.add('via'); setTimeout(function () { if (s.parentNode) s.parentNode.removeChild(s); }, 550); }
-      window.SB_SPLASH_OFF = via;
-
-      try {
-        var app = document.getElementById('app');
-        if (app && window.MutationObserver) {
-          var mo = new MutationObserver(function () { mo.disconnect(); via(); });
-          mo.observe(app, { childList: true });
-        }
-      } catch (e) {  }
-      setTimeout(via, 7000);
-    })();
-</script>
+  <script src="/splash.js" defer></script>
 
   
   <div id="toast-box" aria-live="polite"></div>
@@ -358,19 +331,7 @@
       Nessun tracciamento, nessuna pubblicità. <a href="/privacy">Dettagli</a></p>
     <button type="button" id="cookie-ok" class="btn">Ho capito</button>
   </div>
-  <script>
-    (function () {
-      try {
-        if (localStorage.getItem('cookie-ok') === '1') return;
-        var b = document.getElementById('cookie-banner'); if (!b) return;
-        b.hidden = false;
-        document.getElementById('cookie-ok').addEventListener('click', function () {
-          try { localStorage.setItem('cookie-ok', '1'); } catch (e) {  }
-          b.hidden = true;
-        });
-      } catch (e) {  }
-    })();
-</script>
+  <script src="/cookie.js" defer></script>
 
   <link rel="stylesheet" href="overlay-skin.css">
   <script src="presets.js" defer></script>

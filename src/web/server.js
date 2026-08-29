@@ -987,6 +987,17 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.redirect('/');
   }));
 
+  // security.txt (RFC 9116): dove scrivere se trovi un buco. Rotta esplicita e
+  // non express.static, perche' quello ignora di proposito i file che iniziano
+  // con un punto — e allargare quella regola per una cartella esporrebbe anche
+  // tutte le altre. Il file vive in public/well-known/ (senza punto), la porta
+  // pubblica ha il punto come vuole lo standard.
+  app.get('/.well-known/security.txt', (req, res) => {
+    res.type('text/plain; charset=utf-8');
+    res.set('Cache-Control', 'public, max-age=86400');
+    res.sendFile(join(publicDir, 'well-known', 'security.txt'));
+  });
+
   // Pagina "Sblocca con passkey": ingresso alternativo per chi ha registrato
   // una passkey (così può rientrare, o aprire l'app installata, senza pass del
   // sito). Se si è già loggati, si va dritti alla dashboard.
