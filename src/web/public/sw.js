@@ -22,6 +22,8 @@ self.addEventListener('fetch', (ev) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
 
+  if (url.origin !== self.location.origin) return;
+
   if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/auth/') || url.pathname.startsWith('/overlay/')) return;
 
   if (SHELL.includes(url.pathname)) {
@@ -29,5 +31,5 @@ self.addEventListener('fetch', (ev) => {
     return;
   }
 
-  ev.respondWith(fetch(req).catch(() => caches.match(req)));
+  ev.respondWith(fetch(req).catch(async () => (await caches.match(req)) || Response.error()));
 });
