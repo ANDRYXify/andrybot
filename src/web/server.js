@@ -3163,6 +3163,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         attivo: !!p.attivo,
         periodo: ['settimana', 'mese'].includes(p.periodo) ? p.periodo : 'settimana',
         quanti: Math.min(5, Math.max(1, Math.round(Number(p.quanti)) || 1)),
+        // acceso salvo richiesta contraria: darlo a chi ce l'ha gia' per sempre
+        // gli metterebbe addosso una scadenza che prima non aveva.
+        saltaPerenni: p.saltaPerenni !== false,
       };
     }
 
@@ -4452,6 +4455,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const login = currentUser(req).login;
     res.json({
       monete: points.top(login, 10),
+      staff: points.top(login, 10, 'staff'),
       vip: vips.list(login).map((v) => ({ user: v.user, display: v.display, until: v.until, motivo: v.motivo })),
     });
   }));

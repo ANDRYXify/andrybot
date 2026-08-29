@@ -261,7 +261,7 @@ export class BotManager {
         const periodoMs = (mese ? 30 : 7) * 24 * 60 * 60_000;
         if (Date.now() - (Number(s.settings.premioVipUltimo) || 0) < periodoMs) continue;
         const durata = vip.parseDurata(mese ? 'mese' : 'settimana');
-        await vip.premiaTopMonete(this.helix, login, Math.min(5, Math.max(1, Number(p.quanti) || 1)), durata, (t) => this.say(login, t));
+        await vip.premiaTopMonete(this.helix, login, Math.min(5, Math.max(1, Number(p.quanti) || 1)), durata, (t) => this.say(login, t), { saltaPerenni: p.saltaPerenni !== false });
         streamers.setSettings(login, { ...s.settings, premioVipUltimo: Date.now() });
       }
     } catch (e) { log.error('premi VIP:', e?.message || e); }
