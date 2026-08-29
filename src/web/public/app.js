@@ -1411,18 +1411,28 @@ function collegaTgDestinazioni() {
   });
 }
 
-let _salvaBarra = null, _salvaSporco = false, _salvaOsservatore = null;
-let _salvaCarta = null, _salvaChiusa = false, _uscitaInCorso = false;
+const SEL_SALVA = 'button[id*="salva"], button[id*="save"], [data-salva]';
 
-function _bottoniSalva(pan) {
-  if (!pan) return [];
-  const buono = (b) => !b.disabled && b.offsetParent !== null && !/modello|template|cred/i.test(b.id);
-  const sel = 'button[id*="salva"], button[id*="save"]';
-  if (_salvaCarta && _salvaCarta.isConnected) {
-    const suoi = [..._salvaCarta.querySelectorAll(sel)].filter(buono);
-    if (suoi.length) return suoi.slice(0, 2);
+let _salvaBarra = null, _salvaSporco = false, _salvaOsservatore = null;
+let _salvaRegione = null, _salvaChiusa = false, _uscitaInCorso = false;
+
+function _salvaBuono(b) {
+  return !b.disabled && b.offsetParent !== null && !/modello|template|cred/i.test(b.id);
+}
+
+function _regioneSalva(el) {
+  for (let c = el.closest('.carta'); c; c = c.parentElement?.closest('.carta')) {
+    if ([...c.querySelectorAll(SEL_SALVA)].some(_salvaBuono)) return c;
   }
-  return [...pan.querySelectorAll(sel)].filter(buono).slice(0, 3);
+  const pan = el.closest('.pannello-scheda.visibile');
+  if (!pan) return null;
+  return [...pan.querySelectorAll(SEL_SALVA)].filter(_salvaBuono).length === 1 ? pan : null;
+}
+
+function _bottoniSalva() {
+  const r = _salvaRegione;
+  if (!r || !r.isConnected || !r.closest('.pannello-scheda.visibile')) return [];
+  return [...r.querySelectorAll(SEL_SALVA)].filter(_salvaBuono).slice(0, 2);
 }
 
 function _mostraBarraSalva(mostra) {
@@ -1447,8 +1457,7 @@ function _ripensaBarraSalva() {
 
 function aggiornaBarraSalva() {
   if (!_salvaBarra || _salvaChiusa) return;
-  const pan = document.querySelector('.pannello-scheda.visibile');
-  const bottoni = _salvaSporco ? _bottoniSalva(pan) : [];
+  const bottoni = _salvaSporco ? _bottoniSalva() : [];
   if (!bottoni.length) { _mostraBarraSalva(false); return; }
   if (bottoni.some(_inVista)) { _mostraBarraSalva(false); return; }
   const zona = _salvaBarra.querySelector('.sv-tasti');
@@ -1459,9 +1468,7 @@ function aggiornaBarraSalva() {
   annulla.className = 'btn testo sv-annulla';
   annulla.textContent = L('Annulla', 'Discard', 'Descartar');
   annulla.addEventListener('click', () => {
-    _salvaSporco = false;
-    _salvaCarta = null;
-    _mostraBarraSalva(false);
+    azzeraBarraSalva();
     try { caricaDatiScheda(schedaAttiva); } catch (e) {  }
     toast(L('Modifiche annullate', 'Changes discarded', 'Cambios descartados'));
   });
@@ -1474,9 +1481,7 @@ function aggiornaBarraSalva() {
     proxy.textContent = (b.textContent || L('Salva', 'Save', 'Guardar')).trim().slice(0, 34);
     proxy.addEventListener('click', () => {
       b.click();
-      _salvaSporco = false;
-      _salvaCarta = null;
-      _mostraBarraSalva(false);
+      azzeraBarraSalva();
     });
     zona.appendChild(proxy);
   }
@@ -1513,7 +1518,9 @@ function avviaBarraSalva() {
     if (!t.closest('.pannello-scheda.visibile')) return;
     if (!/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
     if (t.closest('#tg-destinazioni, .ovl-testa-banco, .ovl-barra, .ovl-livelli, .ovl-inspector, .cerca-guscio')) return;
-    _salvaCarta = t.closest('.carta') || null;
+    const reg = _regioneSalva(t);
+    if (!reg) return;
+    _salvaRegione = reg;
     if (_salvaSporco) return;
     _salvaSporco = true;
     _salvaChiusa = false;
@@ -1531,17 +1538,17 @@ function avviaBarraSalva() {
   });
 
   document.addEventListener('click', (ev) => {
-    const b = ev.target.closest?.('button[id*="salva"], button[id*="save"]');
+    const b = ev.target.closest?.(SEL_SALVA);
     if (!b || b.closest('.sv-barra')) return;
-    _salvaSporco = false;
-    _mostraBarraSalva(false);
+    if (_salvaRegione && _salvaRegione.isConnected && !_salvaRegione.contains(b)) return;
+    azzeraBarraSalva();
   }, true);
 }
 
 function azzeraBarraSalva() {
   _salvaSporco = false;
   _salvaChiusa = false;
-  _salvaCarta = null;
+  _salvaRegione = null;
   _mostraBarraSalva(false);
 }
 
@@ -11661,7 +11668,7 @@ function gestisciClicEditor(ev) {
     if (cont) cont.innerHTML = '';
     return;
   }
-  if (ev.target.closest('[data-salva-modulo]')) {
+  if (ev.target.closest('[data-salva="modulo"]')) {
     ev.preventDefault();
     conErrore(async () => {
       const id = await salvaModuloCorrente();
@@ -12881,7 +12888,7 @@ function apriEditor(modulo) {
       </div>
 
       <p class="spazio-sopra">
-        <button class="btn" data-salva-modulo>Salva</button>
+        <button class="btn" data-salva="modulo">Salva</button>
         <button class="btn secondario" data-prova-editor>Prova</button>
         <button class="btn secondario" data-annulla-editor>Annulla</button>
       </p>
@@ -15049,8 +15056,7 @@ function aggiornaStatoNav(id) {
 }
 
 async function _chiediPrimaDiUscire() {
-  const pan = document.querySelector('.pannello-scheda.visibile');
-  const bottoni = _bottoniSalva(pan);
+  const bottoni = _bottoniSalva();
   const r = await chiediScelta({
     titolo: L('Hai modifiche non salvate', 'You have unsaved changes', 'Tienes cambios sin guardar'),
     testo: L('Se esci adesso le perdi.', 'If you leave now you lose them.', 'Si sales ahora las pierdes.'),
