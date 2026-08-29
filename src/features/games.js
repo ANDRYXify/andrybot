@@ -3,7 +3,7 @@
 //
 // Comandi: !dado [NdM] · !moneta · !8ball <domanda> · !slot · !roulette <p> <scelta>
 //          · !pesca · !duello @tizio · !furto @tizio · !regala @tizio N
-//          · !trivia · !classifica · !monete · !giochi
+//          · !trivia · !classifica [mod|tutti] · !monete · !giochi
 import { points, streamers, giochi } from '../db.js';
 import { config } from '../config.js';
 import { makeLog } from '../logger.js';
@@ -114,6 +114,11 @@ const fermiDa = new Map();        // canale → Map(utente → giri)
 // I ruoli non costano una chiamata: ogni messaggio in chat porta con se' i
 // distintivi di chi scrive, quindi basta ricordarli. Chi non ha mai parlato
 // resta senza moltiplicatore, che e' il comportamento prudente.
+//
+// `mod` non serve ai moltiplicatori ma alle DUE CLASSIFICHE: dice in quale
+// delle due gareggia chi guadagna. Viene passato al magazzino delle monete
+// solo quando lo sappiamo davvero — di chi non ha mai parlato non sappiamo
+// niente, e in quel caso non tocchiamo il ruolo gia' registrato.
 const ruoliVisti = new Map();     // canale → Map(utente → { sub, vip })
 
 function segnaAttivita(channel, utente, msg) {
@@ -125,9 +130,16 @@ function segnaAttivita(channel, utente, msg) {
   if (msg) {
     let r = ruoliVisti.get(ch);
     if (!r) { r = new Map(); ruoliVisti.set(ch, r); }
-    r.set(u, { sub: !!msg.isSub, vip: !!msg.isVip });
+    r.set(u, { sub: !!msg.isSub, vip: !!msg.isVip, mod: !!(msg.isMod || msg.isBroadcaster) });
     if (r.size > 5000) { let n = 0; for (const k of r.keys()) { r.delete(k); if (++n >= 2000) break; } }
   }
+}
+
+// Da cosa sappiamo di una persona alla gara in cui corre. `undefined` (non
+// `''`) quando non lo sappiamo: e' la differenza fra "e' pubblico" e "non lo so".
+export function ruoloDa(r) {
+  if (!r || r.mod === undefined) return null;
+  return r.mod ? 'staff' : '';
 }
 
 export function ruoliDi(channel) {
@@ -162,7 +174,7 @@ export function giroMonete(channel, presenti, { ruoli = null, live = true } = {}
     fermi.set(u, giri);
     const r = ruoli[u] || {};
     const q = quotaGiro({ attivo, giriFermo: giri, sub: !!r.sub, vip: !!r.vip }, cfg);
-    if (q > 0) { points.add(ch, u, q); esito.accreditati++; esito.monete += q; }
+    if (q > 0) { points.add(ch, u, q, ruoloDa(ruoli[u])); esito.accreditati++; esito.monete += q; }
   }
   // chi non c'e' piu' non deve restare in memoria a crescere all'infinito
   const presenti2 = new Set((presenti || []).map((x) => String(x).toLowerCase()));
@@ -171,6 +183,24 @@ export function giroMonete(channel, presenti, { ruoli = null, live = true } = {}
   return esito;
 }
 const medaglia = (i) => ['🥇', '🥈', '🥉'][i] || `${i + 1}°`;
+
+// Le due gare, dette a parole. `!classifica` da sola e' quella del pubblico:
+// e' la gara che riguarda chi guarda. `!classifica mod` e `!classificamod`
+// mostrano lo staff, `!classifica tutti` la vecchia vista unica.
+const ETICHETTA_GARA = { pubblico: '🏆 Classifica', staff: '🛡️ Classifica staff', tutti: '🏆 Classifica generale' };
+const PAROLE_GARA = {
+  staff: ['mod', 'mods', 'moderatori', 'staff'],
+  tutti: ['tutti', 'tutto', 'generale', 'insieme', 'all'],
+};
+function gara(parola) {
+  const p = String(parola || '').toLowerCase().replace(/^@/, '');
+  for (const [k, parole] of Object.entries(PAROLE_GARA)) if (parole.includes(p)) return k;
+  return 'pubblico';
+}
+function vuotaPer(quale, moneta) {
+  if (quale === 'staff') return `Nessuno dello staff ha ancora ${moneta}. 🛡️`;
+  return `Nessuno ha ancora ${moneta}: chattate e giocate! 🎮`;
+}
 
 // Riempie i segnaposto di un modello. Nasce da un difetto vero: un esito del
 // duello conteneva {a} due volte e la sostituzione ne cambiava una sola, quindi
@@ -226,7 +256,7 @@ export function accredita(msg) {
     const k = msg.channel + '|' + u;
     if (Date.now() - (ultimoAccredito.get(k) || 0) < c.ogniSecondi * 1000) return;
     ultimoAccredito.set(k, Date.now());
-    points.add(msg.channel, u, c.perMessaggio);
+    points.add(msg.channel, u, c.perMessaggio, msg.isMod || msg.isBroadcaster ? 'staff' : '');
   } catch { /* niente */ }
 }
 
@@ -484,7 +514,7 @@ export function tryGame(msg, say) {
 
     switch (cmd) {
       case 'giochi':
-        say('🎮 Giochi: !dado, !moneta, !8ball, !slot, !roulette, !pesca, !duello @nome, !furto @nome, !regala @nome N, !trivia, !classifica, !monete');
+        say('🎮 Giochi: !dado, !moneta, !8ball, !slot, !roulette, !pesca, !duello @nome, !furto @nome, !regala @nome N, !trivia, !classifica (o !classifica mod), !monete');
         return true;
 
       case 'dado':
@@ -522,11 +552,15 @@ export function tryGame(msg, say) {
       }
 
       case 'classifica':
-      case 'top': {
-        const top = points.top(channel, cfgPunti(channel).topN);
-        if (!top.length) { say(`Nessuno ha ancora ${moneta()}: chattate e giocate! 🎮`); return true; }
+      case 'top':
+      case 'classificamod':
+      case 'classificastaff':
+      case 'topmod': {
+        const quale = /mod|staff/.test(cmd) ? 'staff' : gara(args[0]);
+        const top = points.top(channel, cfgPunti(channel).topN, quale);
+        if (!top.length) { say(vuotaPer(quale, moneta())); return true; }
         const riga = top.map((r, i) => `${medaglia(i)} ${r.user} (${r.monete})`).join('  ');
-        say(`🏆 Classifica ${moneta()}: ${riga}`);
+        say(`${ETICHETTA_GARA[quale]} ${moneta()}: ${riga}`);
         return true;
       }
 

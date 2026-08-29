@@ -519,6 +519,7 @@ aggiungiColonna('effects', 'nome', "TEXT NOT NULL DEFAULT ''");         // titol
 aggiungiColonna('effects', 'autore', "TEXT NOT NULL DEFAULT ''");       // login del creatore originale (attribuzione)
 aggiungiColonna('effects', 'usi', 'INTEGER NOT NULL DEFAULT 0');        // quante volte è stato importato
 aggiungiColonna('effects', 'suono_file', "TEXT NOT NULL DEFAULT ''");   // COMBO: audio abbinato a un'immagine/video
+aggiungiColonna('points', 'ruolo', "TEXT NOT NULL DEFAULT ''");  // '' = pubblico · 'staff' = mod/streamer
 aggiungiColonna('telegram', 'pin_live', "INTEGER NOT NULL DEFAULT 1");
 aggiungiColonna('telegram', 'msg_id', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('telegram', 'msg_id_tk', "TEXT NOT NULL DEFAULT ''");
@@ -672,21 +673,38 @@ export const friends = {
 };
 
 // ---------------------------------------------------------------- monete (minigiochi)
+// Le due gare. Non sono due economie: le monete si guadagnano allo stesso modo
+// per tutti. E' il CONFRONTO a essere diverso — un moderatore e' in chat ogni
+// sera per mestiere, quindi in una classifica mista sta in cima sempre e la
+// classifica smette di dire qualcosa a chi guarda.
+// 'tutti' resta disponibile per chi vuole la vecchia vista unica.
+export const CLASSIFICHE = ['pubblico', 'staff', 'tutti'];
+const FILTRO_CLASSIFICA = { pubblico: " AND ruolo=''", staff: " AND ruolo='staff'", tutti: '' };
+
 export const points = {
   get(channel, user) {
     const r = db.prepare('SELECT monete FROM points WHERE channel=? AND user=?').get(channel, String(user).toLowerCase());
     return r ? r.monete : 0;
   },
   // aggiunge (o toglie, con delta negativo) monete; non scende sotto 0. Ritorna il nuovo saldo.
-  add(channel, user, delta) {
+  // `ruolo` va passato SOLO quando lo si conosce davvero ('' o 'staff'): null
+  // lascia intatto quello gia' registrato, cosi' un accredito che non sa nulla
+  // del ruolo non declassa nessuno.
+  add(channel, user, delta, ruolo = null) {
     const u = String(user).toLowerCase();
-    db.prepare(`INSERT INTO points (channel, user, monete, ts) VALUES (?,?,MAX(0,?),?)
-      ON CONFLICT(channel, user) DO UPDATE SET monete = MAX(0, points.monete + ?), ts=?`)
-      .run(channel, u, delta, now(), delta, now());
+    const r = ruolo === null || ruolo === undefined ? null : (ruolo === 'staff' ? 'staff' : '');
+    db.prepare(`INSERT INTO points (channel, user, monete, ruolo, ts) VALUES (?,?,MAX(0,?),COALESCE(?,''),?)
+      ON CONFLICT(channel, user) DO UPDATE SET monete = MAX(0, points.monete + ?), ruolo = COALESCE(?, points.ruolo), ts=?`)
+      .run(channel, u, delta, r, now(), delta, r, now());
     return this.get(channel, u);
   },
-  top(channel, n = 5) {
-    return db.prepare("SELECT user, monete FROM points WHERE channel=? AND user NOT LIKE '[%' ORDER BY monete DESC LIMIT ?").all(channel, n);
+  ruoloDi(channel, user) {
+    const r = db.prepare('SELECT ruolo FROM points WHERE channel=? AND user=?').get(channel, String(user).toLowerCase());
+    return r ? (r.ruolo || '') : '';
+  },
+  top(channel, n = 5, chi = 'pubblico') {
+    const filtro = FILTRO_CLASSIFICA[chi] ?? FILTRO_CLASSIFICA.pubblico;
+    return db.prepare(`SELECT user, monete, ruolo FROM points WHERE channel=? AND user NOT LIKE '[%'${filtro} ORDER BY monete DESC LIMIT ?`).all(channel, n);
   },
 };
 

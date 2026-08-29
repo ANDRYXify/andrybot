@@ -7,6 +7,7 @@ import { makeLog } from '../logger.js';
 const log = makeLog('vip');
 
 const GIORNO = 24 * 3600_000;
+const SEMPRE = { ms: 0, txt: 'sempre' };
 
 // --------------------------------------------------------- durata dal parlato/testo
 export function parseDurata(testo) {
@@ -102,10 +103,16 @@ export async function togliVip(helix, channel, nome, say) {
 }
 
 // assegnazione diretta per login esatto (usata dai premi automatici)
+//
+// Un VIP SENZA scadenza non si accorcia mai. Scrivergli sopra `until` lo
+// trasformerebbe in un VIP a tempo, e una settimana dopo controllaScadenze
+// glielo toglierebbe: un premio che revoca cio' che premia.
 export async function assegnaVipLogin(helix, channel, login, durata, motivo = 'premio', say) {
   try {
     const u = await helix.getUserByLogin(login).catch(() => null);
     if (!u?.id) return { ok: false };
+    const gia = vips.get(channel, login);
+    if (gia && !gia.until && durata.ms > 0) return { ok: false, perenne: true, display: gia.display || login };
     const r = await helix.addVip(channel, u.id);
     if (!r.ok) return { ok: false, motivo: r.motivo };
     const until = durata.ms > 0 ? Date.now() + durata.ms : 0;
@@ -152,15 +159,61 @@ export async function controllaScadenze(helix) {
   } catch (e) { log.error('controllaScadenze:', e?.message || e); }
 }
 
-// premio periodico: dà il VIP al/ai top per monete
-export async function premiaTopMonete(helix, channel, quanti, durata, say) {
+// Chi ha gia' il premio PER SEMPRE. Due sorgenti, perche' un VIP perenne puo'
+// venire da noi (riga senza scadenza) o dallo streamer, che lo ha dato a mano
+// su Twitch e di cui non sappiamo niente: quello lo chiediamo a Twitch.
+// Non e' la stessa cosa di un VIP a tempo ancora in corso — quello il premio
+// lo prolunga, ed e' giusto cosi'.
+export async function giaPerSempre(helix, channel) {
+  const perenni = new Set();
+  const nostri = new Map();
+  for (const v of vips.list(channel)) {
+    nostri.set(v.user, v);
+    if (!v.until) perenni.add(v.user);
+  }
   try {
-    const top = points.top(channel, quanti);
-    const vincitori = [];
-    for (const t of top) {
-      const r = await assegnaVipLogin(helix, channel, t.user, durata, 'premio');
-      if (r.ok) vincitori.push(r.display || t.user);
+    for (const v of await helix.getVips(channel)) {
+      const u = String(v.user_login || '').toLowerCase();
+      if (u && !nostri.has(u)) perenni.add(u);   // VIP del canale, non nostro: per noi e' per sempre
     }
+  } catch (e) { log.debug('giaPerSempre:', e?.message || e); }
+  return perenni;
+}
+
+// Premio periodico: il VIP a chi ha piu' monete.
+//
+// Tre regole, e ognuna nasce da un fatto, non da un gusto:
+//
+//  · pesca dalla classifica del PUBBLICO. Twitch rifiuta di dare il VIP a un
+//    moderatore ("non posso, forse e' mod o sei tu"): mettendo lo staff fra i
+//    candidati il premio si bruciava contro un rifiuto certo.
+//  · SALTA chi ce l'ha gia' per sempre (a meno che non lo si voglia lo stesso):
+//    dargli il VIP non aggiunge niente a lui e toglie il posto a chi verrebbe
+//    dopo — e, peggio, gli metterebbe una scadenza addosso.
+//  · SCORRE: se qualcuno viene saltato o rifiutato, il posto va al successivo.
+//    I posti promessi sono `quanti`, e `quanti` devono essere assegnati finche'
+//    c'e' gente in classifica.
+export async function premiaTopMonete(helix, channel, quanti, durata, say, opzioni = {}) {
+  try {
+    const saltaPerenni = opzioni.saltaPerenni !== false;
+    const posti = Math.max(1, Number(quanti) || 1);
+    // profondita': serve gente in piu' da cui pescare quando si scorre.
+    const candidati = points.top(channel, posti * 4 + 10, 'pubblico');
+    // L'elenco serve in ogni caso, non solo quando si salta: l'interruttore
+    // decide se uno puo' VINCERE un posto, non se ci sia permesso rovinargli
+    // quello che ha. Un VIP per sempre non prende mai una scadenza.
+    const perenni = await giaPerSempre(helix, channel);
+    const vincitori = [];
+    const saltati = [];
+    for (const t of candidati) {
+      if (vincitori.length >= posti) break;
+      const perenne = perenni.has(t.user);
+      if (perenne && saltaPerenni) { saltati.push(t.user); continue; }
+      const r = await assegnaVipLogin(helix, channel, t.user, perenne ? SEMPRE : durata, 'premio');
+      if (r.ok) vincitori.push(r.display || t.user);
+      else if (r.perenne) saltati.push(t.user);
+    }
+    if (saltati.length) log.info(`premio VIP #${channel}: saltati (ce l'hanno gia' per sempre) ${saltati.join(', ')}`);
     if (vincitori.length) say?.(`🏆 Premio ${durata.txt}: VIP a ${vincitori.join(', ')} — i più affezionati! 💜`);
     return vincitori;
   } catch (e) { log.error('premiaTopMonete:', e?.message || e); return []; }

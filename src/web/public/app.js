@@ -104,7 +104,7 @@ function impostazioni() {
     nomeMonete: (typeof s.nomeMonete === 'string' && s.nomeMonete.trim()) || 'monete',
     punti: { perMessaggio: 2, ogniSecondi: 60, trivia: 25, duello: 15, slotCosto: 10, slotVinci: 200, slotCoppia: 20, topN: 5, perPresenza: 5, perAttivita: 5, moltSub: 1.5, moltVip: 1.25, lurkPasso: 0.15, lurkMinimo: 0.35, soloLive: true, ...(s.punti && typeof s.punti === 'object' ? s.punti : {}) },
     manche: { attivo: false, minMin: 15, maxMin: 45, soloLive: false, ...(s.manche && typeof s.manche === 'object' ? s.manche : {}) },
-    premioVip: (s.premioVip && typeof s.premioVip === 'object') ? s.premioVip : { attivo: false, periodo: 'settimana', quanti: 1 },
+    premioVip: (s.premioVip && typeof s.premioVip === 'object') ? { saltaPerenni: true, ...s.premioVip } : { attivo: false, periodo: 'settimana', quanti: 1, saltaPerenni: true },
     antispam: (s.antispam && typeof s.antispam === 'object') ? s.antispam : {},
     antibot: (s.antibot && typeof s.antibot === 'object') ? s.antibot : {},
     comandiChat: (s.comandiChat && typeof s.comandiChat === 'object') ? s.comandiChat : { attivo: false },
@@ -244,7 +244,7 @@ function statoDemo() {
         cambioCategoria: { attivo: true, trigger: 'categoria', annuncia: true },
         cambioTitolo: { attivo: false, trigger: 'titolo', annuncia: true },
         imparaVoce: { attivo: false },
-        premioVip: { attivo: true, periodo: 'settimana', quanti: 2 },
+        premioVip: { attivo: true, periodo: 'settimana', quanti: 2, saltaPerenni: true },
         manche: { attivo: true, minMin: 20, maxMin: 60, soloLive: false },
         paroleVietate: ['spoiler', 'link-truffa'],
         frasi: ['Benvenuto nel canale!', 'Ricordati di seguire per non perderti le live!'],
@@ -470,6 +470,9 @@ function _demoGet(via) {
       monete: [
         { user: 'lucaplays', monete: 4820 }, { user: 'giada_ttv', monete: 3910 },
         { user: 'marco99', monete: 2740 }, { user: 'sara_gg', monete: 1980 }, { user: 'il_nonno', monete: 1450 },
+      ],
+      staff: [
+        { user: 'andryx_demo', monete: 9310 }, { user: 'mod_teo', monete: 6120 },
       ],
       vip: [
         { user: 'lucaplays', display: 'lucaplays', until: null, motivo: 'top chatter del mese' },
@@ -10035,7 +10038,8 @@ function pannelloGiochi() {
         <li><div class="testo-voce"><span class="domanda">!duello @${L('nome', 'name', 'nombre')}</span> <span class="risposta">${L('sfida un altro utente', 'challenge another user', 'reta a otro usuario')}</span></div></li>
         <li><div class="testo-voce"><span class="domanda">!trivia</span> <span class="risposta">${L('domanda a sorpresa, il primo che risponde vince', 'surprise question, first to answer wins', 'pregunta sorpresa, el primero que responde gana')}</span></div></li>
         <li><div class="testo-voce"><span class="domanda">!monete</span> <span class="risposta">${L('quante monete hai', 'how many coins you have', 'cuántas monedas tienes')}</span></div></li>
-        <li><div class="testo-voce"><span class="domanda">!classifica</span> <span class="risposta">${L('i più ricchi del canale', 'the richest in the channel', 'los más ricos del canal')}</span></div></li>
+        <li><div class="testo-voce"><span class="domanda">!classifica</span> <span class="risposta">${L('i più ricchi fra chi guarda', 'the richest among viewers', 'los más ricos entre quienes miran')}</span></div></li>
+        <li><div class="testo-voce"><span class="domanda">!classifica mod</span> <span class="risposta">${L('la stessa gara, per moderatori e streamer (!classifica tutti li unisce)', 'the same race, for mods and streamer (!classifica tutti merges them)', 'la misma carrera, para mods y streamer (!classifica tutti los une)')}</span></div></li>
         <li><div class="testo-voce"><span class="domanda">!giochi</span> <span class="risposta">${L('elenco dei giochi', 'list of games', 'lista de juegos')}</span></div></li>
       </ul>
     </div>
@@ -10056,12 +10060,19 @@ function pannelloGiochi() {
         <span class="suggerimento">${L('ai primi', 'to the top', 'a los primeros')}</span>
         <input type="number" id="num-premio-quanti" min="1" max="5" value="${Number(s.premioVip.quanti) || 1}">
       </div>
+      <div class="riga-check">
+        <input type="checkbox" id="chk-premio-salta" ${s.premioVip.saltaPerenni !== false ? 'checked' : ''}>
+        <label for="chk-premio-salta">${L('Salta chi ha già il VIP per sempre (il premio scorre al successivo)', 'Skip people who already have VIP forever (the reward slides to the next)', 'Salta a quien ya tiene VIP para siempre (el premio pasa al siguiente)')}</label>
+      </div>
+      <p class="suggerimento">${L('Il premio pesca dalla classifica del pubblico: Twitch non permette di dare il VIP a un moderatore, quindi lo staff non entra fra i candidati.', 'The reward draws from the public leaderboard: Twitch does not allow giving VIP to a moderator, so staff are not among the candidates.', 'El premio se elige de la clasificación del público: Twitch no permite dar VIP a un moderador, así que el staff no entra entre los candidatos.')}</p>
       <p class="suggerimento">${L('Il bot dà il VIP (per la stessa durata) ai top', 'The bot gives VIP (for the same duration) to the top', 'El bot da el VIP (por la misma duración) a los mejores')} ${esc(s.nomeMonete)}. ${L('Puoi anche darlo', 'You can also give it', 'También puedes darlo')}
       <strong class="primo-piano">${L('a voce', 'by voice', 'por voz')}</strong> ${L('(Comandi a voce → "vip a nome", default 1 settimana; di\' "mese" per un mese)', '(Voice commands → "vip to name", default 1 week; say "month" for a month)', '(Comandos por voz → "vip a nombre", por defecto 1 semana; di "mes" para un mes)')}
       ${L('o in chat con', 'or in chat with', 'o en el chat con')} <code>!vip @${L('nome', 'name', 'nombre')}</code>.</p>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-premio">${L('Salva premio', 'Save reward', 'Guardar premio')}</button></p>
-      <h3>${L('Classifica', 'Leaderboard', 'Clasificación')} ${esc(s.nomeMonete)}</h3>
+      <h3>${L('Classifica del pubblico', 'Public leaderboard', 'Clasificación del público')}</h3>
       <ul class="lista-voci" id="lista-classifica"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+      <h3>${L('Classifica dello staff', 'Staff leaderboard', 'Clasificación del staff')}</h3>
+      <ul class="lista-voci" id="lista-classifica-staff"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
       <h3>${L('VIP a tempo attivi', 'Active timed VIPs', 'VIP temporales activos')}</h3>
       <ul class="lista-voci" id="lista-vip"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
     </div>
@@ -11088,6 +11099,7 @@ function attivaPiattaforma() {
         attivo: document.getElementById('chk-premiovip').checked,
         periodo: document.getElementById('sel-premio-periodo').value === 'mese' ? 'mese' : 'settimana',
         quanti,
+        saltaPerenni: document.getElementById('chk-premio-salta').checked,
       },
     }, 'Premio VIP salvato');
   }));
@@ -11869,23 +11881,30 @@ async function caricaGiochi() {
 
 async function caricaClassifica() {
   const ulCl = document.getElementById('lista-classifica');
+  const ulStaff = document.getElementById('lista-classifica-staff');
   const ulVip = document.getElementById('lista-vip');
-  if (!ulCl && !ulVip) return;
+  if (!ulCl && !ulStaff && !ulVip) return;
   const nome = esc(impostazioni().nomeMonete || 'monete');
+  const gara = (ul, righe, vuoto) => {
+    if (!ul) return;
+    ul.innerHTML = righe.length
+      ? righe.map((m, i) => `
+        <li>
+          <div class="testo-voce">
+            <span class="domanda">${medaglia(i)} ${esc(m.user)}</span>
+            <span class="risposta">${Number(m.monete).toLocaleString('it-IT')} ${nome}</span>
+          </div>
+        </li>`).join('')
+      : `<li class="vuoto">${vuoto}</li>`;
+  };
   try {
     const d = await api('/api/streamer/classifica');
-    if (ulCl) {
-      const monete = d.monete || [];
-      ulCl.innerHTML = monete.length
-        ? monete.map((m, i) => `
-          <li>
-            <div class="testo-voce">
-              <span class="domanda">${medaglia(i)} ${esc(m.user)}</span>
-              <span class="risposta">${Number(m.monete).toLocaleString('it-IT')} ${nome}</span>
-            </div>
-          </li>`).join('')
-        : `<li class="vuoto">Ancora nessuno ha ${nome}: si guadagnano chiacchierando e giocando!</li>`;
-    }
+    gara(ulCl, d.monete || [], L(`Ancora nessuno ha ${nome}: si guadagnano chiacchierando e giocando!`,
+      `Nobody has ${nome} yet: they are earned by chatting and playing!`,
+      `Todavía nadie tiene ${nome}: se ganan charlando y jugando.`));
+    gara(ulStaff, d.staff || [], L('Nessun moderatore ha ancora monete qui. Compaiono appena scrivono in chat.',
+      'No moderator has coins here yet. They show up as soon as they write in chat.',
+      'Ningún moderador tiene monedas aquí todavía. Aparecen en cuanto escriben en el chat.'));
     if (ulVip) {
       const vip = d.vip || [];
       ulVip.innerHTML = vip.length
