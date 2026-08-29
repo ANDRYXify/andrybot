@@ -88,3 +88,53 @@ marcare le sue carte con un attributo e aggiungere una voce.
   si veda nessuna carta di un'altra rete, e che la scelta si ricordi.
 - `t_testata.mjs`: che arrivando **direttamente** su una sezione la testata sia
   visibile — il difetto che avevo introdotto con la comparsa orchestrata.
+
+## La barra «hai modifiche non salvate»
+
+Le sezioni lunghe hanno un problema semplice: modifichi un campo in cima e il
+pulsante che salva è tre schermate più giù. La barra serve a questo, e solo a
+questo — **indicare il pulsante di salvataggio che in quel momento non vedi**.
+
+Detto così, la regola viene da sé: la barra deve essere legata a **un**
+pulsante, quello della zona che stai modificando. Non a «un salva qualsiasi
+nella pagina».
+
+Per due volte non lo è stata, e si è visto.
+
+**Indicava il salva di un'altra carta.** Chi modificava un comando — l'editor
+dei comandi non ha un pulsante con «salva» nell'id — si vedeva offrire il salva
+di «Comodità in chat». Premerlo salvava una cosa che nessuno aveva toccato e
+lasciava il comando non salvato: il difetto peggiore possibile per un pulsante,
+perché fa qualcosa e sembra aver fatto quello che chiedevi.
+
+**Non si spegneva quando salvavi davvero.** Riconosceva un salvataggio dal
+nome del pulsante (`id` contenente «salva»/«save»), e il salva dell'editor
+comandi è marcato con un attributo. Salvavi, e la barra restava lì a dirti di no
+— l'unico modo di zittirla era premere il *suo* pulsante, cioè quello sbagliato.
+
+### La regione
+
+Ora c'è un solo concetto: la **regione di salvataggio** di un campo è la carta
+più vicina che ha un salvataggio proprio. Se nessuna carta ce l'ha, il pannello
+— ma soltanto se lì il salva è uno solo: con due o più non sappiamo quale sia il
+tuo, e **tacere è meglio che indicare quello sbagliato**.
+
+La regione decide entrambe le cose, che prima erano decise separatamente:
+
+- quale pulsante mostra la barra;
+- quale clic la spegne (un salva fuori dalla tua regione non ti riguarda).
+
+E ne segue una proprietà che vale la pena dire per esteso: **un campo che non
+appartiene a nessuna regione non accende l'avviso.** Le schede fatte di moduli
+d'azione — sondaggi, giveaway, emote, conoscenza — non hanno un salvataggio da
+indicare, e infatti ora stanno zitte, invece di far comparire una barra che
+punta altrove. Prima era il contrario, ed è il motivo per cui «usciva sempre».
+
+Il modo di dire «questo comanda un salvataggio» è **uno solo**, `SEL_SALVA`:
+un id che contiene salva/save, oppure la marca `data-salva`. Un salva che non
+rientra in nessuna delle due non viene riconosciuto — e allora la barra non
+compare affatto, che è il modo giusto di sbagliare.
+
+`scripts/verifica-barra-salva.mjs` tiene ferme queste regole, ed è stato visto
+rosso su tutti e tre i difetti veri: il ripiego sul pannello, lo spegnimento
+cieco alla regione, e la marca ad attributo non riconosciuta.
