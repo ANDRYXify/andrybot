@@ -77,6 +77,33 @@ mandarla, perché l'evento può tornare prima della risposta — e la consuma qu
 torna. Consumarla, e non tenerla, fa sì che uno spettatore che ripete la stessa
 frase più tardi venga trattato come chiunque altro.
 
+### Quando non arriva niente: il diario
+
+Un webhook che non funziona non ha niente da guardare. Il collegamento dice
+«collegato», la chat va avanti, il bot tace — e da fuori quattro cause diverse
+hanno la stessa faccia:
+
+1. non c'è nessuna **iscrizione** agli eventi;
+2. l'iscrizione c'è ma **Kick non bussa** (webhook spento nell'app, o punta altrove);
+3. Kick bussa ma l'evento viene **rifiutato** (firma, orologio, corpo);
+4. l'evento arriva ma **non si attribuisce** a un canale nostro.
+
+`kick/diario.js` tiene il minimo che le distingue: quando è arrivato l'ultimo
+evento buono e di che tipo, quando è stato rifiutato l'ultimo e perché, e a quale
+canale. Niente contenuti dei messaggi: tipo, canale e motivo. La riga di Kick nel
+pannello dice **quale delle quattro**, e quando serve mostra «Riprova gli
+eventi» — che rifà l'iscrizione senza dover scollegare e rifare tutto il giro
+OAuth (dopo un periodo in cui il webhook rispondeva 404, Kick smette di provarci).
+
+### La firma si verifica sui byte, comunque siano etichettati
+
+Il lettore JSON del server prende una sola etichetta (`application/json`). Se il
+corpo arrivasse con un'altra, `req.rawBody` resterebbe vuoto e la firma — che si
+calcola **sui byte** — non tornerebbe mai più: un difetto muto per una virgola in
+un'intestazione. Ora la rotta prende i byte da sé con `express.raw({ type: () =>
+true })`, e il collaudo firma davvero e bussa con tre etichette diverse (provato
+rosso togliendo la lettura grezza).
+
 ### Cosa deve fare l'operatore, una volta sola
 
 Le credenziali Kick sono dell'app, non dello streamer. Su

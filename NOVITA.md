@@ -5,6 +5,7 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-02
 
+- Se Kick non manda niente, il pannello dice quale delle quattro cause è — e c'è un tasto per rifare l'iscrizione agli eventi senza ricollegare l'account.
 - Ci si registra anche con Kick: se trasmetti solo lì non ti serve un account Twitch, e le parti che senza Twitch non funzionerebbero il pannello te le dice spente invece di fingere.
 - Il bot funziona davvero su Kick: gli eventi che Kick ci mandava venivano rifiutati dal sito, quindi il collegamento riusciva e poi non arrivava niente.
 - Su Kick il bot non si ascolta più da solo: le sue risposte non contano come messaggi della chat.

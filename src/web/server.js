@@ -63,6 +63,7 @@ import { anteprima as anteprimaImport, moduloDa } from '../features/importacoman
 import { esporta as esportaDati } from '../features/esporta.js';
 import { montaKick } from '../kick/rotte.js';
 import * as kickApi from '../kick/api.js';
+import * as kickDiario from '../kick/diario.js';
 import * as avvisi from '../features/avvisi.js';
 
 const log = makeLog('web');
@@ -1740,10 +1741,25 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       if (isc.ok) kickEventi = Array.isArray(isc.dati) ? isc.dati.length : 0;
       else kickErrore = isc.errore || '';
     }
-    // Se gli eventi non arrivano, la causa quasi sempre e' una sola e sta fuori
-    // di qui: nell'app Kick il webhook non e' acceso, o punta altrove. Dirlo con
-    // l'indirizzo giusto vale piu' di "da sistemare".
+    // PERCHE' non arriva niente. Le cause hanno tutte la stessa faccia da fuori
+    // — il bot tace — ma sono diverse, e il diario degli eventi le distingue:
+    // nessuna iscrizione, iscrizione viva ma Kick non bussa (webhook spento o
+    // che punta altrove), Kick bussa ma la firma non torna, o tutto a posto.
+    // Dire quale delle quattro vale piu' di dieci "da sistemare".
     const kickWebhook = config.baseUrl.replace(/\/$/, '') + '/kick/webhook';
+    const kd = kickDiario.stato(login);
+    const daQuando = (t) => {
+      const m = Math.round((Date.now() - t) / 60000);
+      return m < 1 ? 'meno di un minuto fa' : (m < 60 ? `${m} minuti fa` : `${Math.round(m / 60)} ore fa`);
+    };
+    const perche = () => {
+      if (!tk?.accessToken) return '';
+      if (kickErrore) return kickErrore;
+      if (kd.ultimo) return `ultimo evento ${daQuando(kd.ultimo.quando)}${kd.ultimo.tipo ? ' (' + kd.ultimo.tipo + ')' : ''}`;
+      if (kickEventi === 0) return 'non risulti iscritto agli eventi: premi «Riprova gli eventi»';
+      if (kd.ultimoRifiuto) return `Kick bussa ma l'evento viene rifiutato: ${kd.ultimoRifiuto.motivo}`;
+      return `Kick non ha ancora bussato: nell'app Kick il webhook deve essere acceso e puntare a ${kickWebhook}`;
+    };
     fuori.push({
       id: 'kick',
       nome: 'Kick',
@@ -1753,8 +1769,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       attivo: !!tk?.accessToken && kickEventi > 0,
       daRifare: !!tk?.accessToken && (kickEventi === 0 || !!kickErrore),
       azione: '/auth/kick',
-      note: kickErrore || (tk?.accessToken && kickEventi === 0
-        ? `nessun evento: nell'app Kick il webhook deve essere acceso e puntare a ${kickWebhook}` : ''),
+      note: perche(),
+      // il pulsante per rifare l'iscrizione: serve solo quando non arriva niente
+      rifaiEventi: !!tk?.accessToken && !kd.ultimo,
     });
 
     // YouTube: le credenziali possono esserci ma il collegamento non e' ancora

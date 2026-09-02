@@ -15053,7 +15053,8 @@ function rigaPiattaforma(p) {
   const azione = !p.disponibile ? ''
     : (!p.collegato
       ? `<a class="btn secondario mini" href="${esc(p.azione)}">${L('Collega', 'Connect', 'Conectar')}</a>`
-      : `${p.daRifare ? `<a class="btn mini" href="${esc(p.azione)}">${L('Sistema', 'Fix', 'Arreglar')}</a>` : ''}
+      : `${p.rifaiEventi ? `<button type="button" class="btn mini" data-kick-eventi>${L('Riprova gli eventi', 'Retry events', 'Reintentar eventos')}</button>` : ''}
+         ${p.daRifare && !p.rifaiEventi ? `<a class="btn mini" href="${esc(p.azione)}">${L('Sistema', 'Fix', 'Arreglar')}</a>` : ''}
          ${p.id !== 'twitch' ? `<button type="button" class="btn secondario mini" data-scollega="${esc(p.id)}">${L('Scollega', 'Disconnect', 'Desconectar')}</button>` : ''}`);
   return `<li class="pf-riga">
     <span class="pf-ico">${_hIco(PIATT_ICO[p.id] || ICO.spina)}</span>
@@ -15087,6 +15088,13 @@ async function caricaPiattaforme() {
   if (!box) return;                       // le servivano solo all'editor dei moduli
   if (!lista.length) { box.innerHTML = `<p class="vuoto">${L('Nessuna piattaforma.', 'No platforms.', 'Ninguna plataforma.')}</p>`; return; }
   box.innerHTML = `<ul class="pf-lista">${lista.map(rigaPiattaforma).join('')}</ul>`;
+  box.querySelectorAll('[data-kick-eventi]').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
+    const r = await api('/api/streamer/kick/eventi', { method: 'POST', body: {} });
+    toast(r?.eventi
+      ? L(`Iscritto a ${r.eventi} eventi. Scrivi qualcosa nella tua chat Kick e ricarica.`, `Subscribed to ${r.eventi} events. Write something in your Kick chat and reload.`, `Suscrito a ${r.eventi} eventos. Escribe algo en tu chat de Kick y recarga.`)
+      : L('Iscrizione rifatta.', 'Subscription redone.', 'Suscripción rehecha.'));
+    caricaPiattaforme();
+  })));
   box.querySelectorAll('[data-scollega]').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
     const id = b.dataset.scollega;
     if (!confirm(L(`Scollegare ${id}? Il bot smette di lavorare lì.`, `Disconnect ${id}? The bot stops working there.`, `¿Desconectar ${id}? El bot deja de trabajar ahí.`))) return;
