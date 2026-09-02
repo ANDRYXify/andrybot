@@ -200,6 +200,7 @@ async function caricaStato() {
   }
   render();
   window.SB_SPLASH_OFF?.();
+  caricaNovita();
 
   if (new URLSearchParams(location.search).get('promo') === '1') {
 
@@ -2714,6 +2715,36 @@ function provaInCorso() {
   return { tier: a.tier || 'base', tutto, fine, giorni };
 }
 
+const NOVITA_VISTE = 'sb-novita-viste';
+
+function novitaViste() {
+  try { return localStorage.getItem(NOVITA_VISTE) || ''; } catch (e) { return ''; }
+}
+
+async function caricaNovita() {
+  if (DEMO || !stato?.user) return;
+  let d;
+  try { d = await api('/api/novita'); } catch (e) { return; }
+  if (!d?.ultima || d.ultima === novitaViste() || !d.gruppi?.length) return;
+  stato.novita = d;
+  render();
+}
+
+function cardNovitaHtml() {
+  const n = stato?.novita;
+  if (!n?.gruppi?.length) return '';
+  const g = n.gruppi[0];
+  const mostrate = g.voci.slice(0, 4);
+  const altre = g.voci.length - mostrate.length;
+  return `<div class="carta evidenziata carta-novita">
+    <h2>${_hIco(ICO.megafono)}${L('Novità', 'What’s new', 'Novedades')}</h2>
+    <ul>${mostrate.map((v) => `<li>${esc(v)}</li>`).join('')}</ul>
+    ${altre > 0 ? `<p class="suggerimento">${L(`E altre ${altre}.`, `And ${altre} more.`, `Y ${altre} más.`)}</p>` : ''}
+    <p class="spazio-sopra"><a class="btn secondario mini" href="/novita" target="_blank" rel="noopener">${L('Vedi tutte', 'See them all', 'Verlas todas')}</a>
+    <button class="btn secondario mini" data-novita-viste="${esc(n.ultima)}">${L('Nascondi', 'Hide', 'Ocultar')}</button></p>
+  </div>`;
+}
+
 function bannerProvaHtml() {
   const p = provaInCorso();
   if (!p) return '';
@@ -3620,7 +3651,7 @@ function pannelloStato() {
     </div>`;
 
   return pannello('stato', `
-    ${bannerProvaHtml()}${bannerMod}${cardChatKO}${cardPermessi}${cardScope}
+    ${cardNovitaHtml()}${bannerProvaHtml()}${bannerMod}${cardChatKO}${cardPermessi}${cardScope}
     <div class="carta">
       <h2>${L('Il tuo bot', 'Your bot', 'Tu bot')}</h2>
       <div class="riga-interruttore spazio-sopra">
@@ -15223,6 +15254,13 @@ document.addEventListener('click', (ev) => {
       stato = await api('/api/me');
       render();
     });
+    return;
+  }
+  const viste = ev.target.closest?.('[data-novita-viste]');
+  if (viste) {
+    try { localStorage.setItem(NOVITA_VISTE, viste.dataset.novitaViste); } catch (e) {  }
+    if (stato) delete stato.novita;
+    render();
     return;
   }
   if (ev.target.id === 'btn-richiesta') {

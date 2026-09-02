@@ -312,11 +312,15 @@ html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--testo);font:16px/1.7 Archivo,system-ui,-apple-system,'Segoe UI',sans-serif;font-synthesis-weight:none}
 .g-testata{border-bottom:1px solid var(--border);background:var(--surface)}
 .g-testata div{max-width:760px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-.g-marchio{font-weight:800;letter-spacing:-.02em;color:var(--testo);text-decoration:none;font-size:1.05rem}
-.g-marchio span{color:var(--acc)}
+.g-marchio{display:flex;align-items:center;text-decoration:none}
+.g-marchio img{display:block;height:30px;width:auto}
 .g-testata nav{margin-left:auto;display:flex;gap:16px;font-size:.9rem}
 .g-testata nav a{color:var(--testo-2);text-decoration:none}
 .g-testata nav a:hover{color:var(--acc)}
+.g-novita{margin:26px 0}
+.g-novita h2{font-size:1.05rem;color:var(--testo-2);font-weight:600;margin:0 0 10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.g-novita ul{margin:0;padding-left:20px}
+.g-novita li{margin:7px 0}
 main{max-width:760px;margin:0 auto;padding:34px 20px 60px}
 .g-briciole{font-size:.84rem;color:var(--testo-3);margin:0 0 18px}
 .g-briciole a{color:var(--testo-3)}
@@ -362,8 +366,8 @@ ol.g-passi b{display:block;color:var(--testo);margin-bottom:3px}
 
 function testata(attiva) {
   return `<header class="g-testata"><div>
-<a class="g-marchio" href="/">Social<span>Bot</span></a>
-<nav><a href="/guide"${attiva === 'indice' ? ' aria-current="page"' : ''}>Guide</a><a href="/">Il bot</a></nav>
+<a class="g-marchio" href="/"><img src="/icons/logo-barra.png?v=5" alt="SocialBot" width="80" height="30"></a>
+<nav><a href="/guide"${attiva === 'indice' ? ' aria-current="page"' : ''}>Guide</a><a href="/novita"${attiva === 'novita' ? ' aria-current="page"' : ''}>Novità</a><a href="/">Il bot</a></nav>
 </div></header>`;
 }
 
@@ -481,6 +485,35 @@ ${altreHtml(g.slug)}
   return scheletro({ titolo: g.titolo, desc: g.desc, url, corpo, ld: datiStrutturati(g) });
 }
 
+export function paginaNovita(gruppi) {
+  const url = `${SITO}/novita`;
+  const ultima = gruppi[0]?.data || new Date().toISOString().slice(0, 10);
+  const ld = `<script type="application/ld+json">${JSON.stringify({
+    '@context': 'https://schema.org', '@type': 'WebPage',
+    name: 'Novità di SocialBot', url, inLanguage: 'it-IT', dateModified: ultima,
+    description: 'Cosa è cambiato nel bot, in ordine di tempo.',
+    publisher: { '@type': 'Organization', name: 'SocialBot', url: SITO },
+  })}</script>`;
+  const corpo = `${testata('novita')}
+<main><p class="g-briciole"><a href="/">SocialBot</a> › Novità</p>
+<h1>Novità</h1>
+<p>Cosa è cambiato nel bot, in ordine di tempo. Una riga per cosa: se non si vede da fuori, qui non c'è.</p>
+${gruppi.map((g) => `<section class="g-novita"><h2>${esc(dataItaliana(g.data))}</h2><ul>${
+    g.voci.map((v) => `<li>${testo(v)}</li>`).join('')}</ul></section>`).join('')}
+</main>${piede()}`;
+  return scheletro({
+    titolo: 'Novità di SocialBot: cosa è cambiato | SocialBot',
+    desc: 'Le novità del bot per Twitch e Kick, in ordine di tempo: comandi, giochi a punti, overlay, moderazione e correzioni.',
+    url, corpo, ld,
+  });
+}
+
+function dataItaliana(iso) {
+  const [a, m, g] = iso.split('-').map(Number);
+  return new Date(Date.UTC(a, m - 1, g)).toLocaleDateString('it-IT',
+    { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+}
+
 export function paginaIndice() {
   const url = `${SITO}/guide`;
   const ld = `<script type="application/ld+json">${JSON.stringify({
@@ -498,9 +531,10 @@ export function paginaIndice() {
 }
 
 // Le voci per la sitemap: una sola fonte, così una guida nuova ci finisce da sé.
-export function urlGuide() {
+export function urlGuide(novita = []) {
   return [
     { loc: `${SITO}/guide`, lastmod: GUIDE.map((g) => g.aggiornata).sort().pop(), freq: 'weekly', prio: '0.8' },
     ...GUIDE.map((g) => ({ loc: `${SITO}/guide/${g.slug}`, lastmod: g.aggiornata, freq: 'monthly', prio: '0.7' })),
+    ...(novita.length ? [{ loc: `${SITO}/novita`, lastmod: novita[0].data, freq: 'weekly', prio: '0.6' }] : []),
   ];
 }

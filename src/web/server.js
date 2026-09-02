@@ -23,7 +23,8 @@ import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPA
 import { renderLinkPage, renderInformativa } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
 import { montaArgine } from './argine.js';
-import { GUIDE, paginaGuida, paginaIndice, urlGuide } from './guide.js';
+import { GUIDE, paginaGuida, paginaIndice, paginaNovita, urlGuide } from './guide.js';
+import * as novita from './novita.js';
 import { AntiBot } from '../features/antibot.js';
 import { statoListaBot, registro as registroAntibot, segnalazioniAperte, risolviSegnalazione, sintesiRegistro, registra as registraAntibot, nomeBot, valutaAccount, assetto as assettoAntibot, sogliaRaffica, codaBan } from '../features/antibot.js';
 import { statoBackup, backupOra } from '../backup.js';
@@ -360,6 +361,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   }
 
   const publicDir = join(dirname(fileURLToPath(import.meta.url)), 'public');
+  const NOVITA_MD = join(dirname(fileURLToPath(import.meta.url)), '../../NOVITA.md');
 
   // ---- CANCELLO: senza sessione valida, socialbot.live non esiste ----
   // Chi non arriva da andryxify.it non trova nulla da esplorare: tutto risponde
@@ -1287,7 +1289,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       .concat([`    <xhtml:link rel="alternate" hreflang="x-default" href="${escXml(LINGUE_URL.it)}"/>`])
       .join('\n');
     const voci = Object.values(LINGUE_URL).map((u) => ({ u, p: '1.0', f: 'weekly', alt: true }));
-    for (const g of urlGuide()) voci.push({ u: g.loc, p: g.prio, f: g.freq, m: g.lastmod });
+    for (const g of urlGuide(novita.leggi(NOVITA_MD))) voci.push({ u: g.loc, p: g.prio, f: g.freq, m: g.lastmod });
     voci.push({ u: `${b}/privacy`, p: '0.3', f: 'yearly' });
     voci.push({ u: `${b}/termini`, p: '0.3', f: 'yearly' });
     try {
@@ -1382,6 +1384,25 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.set('Cache-Control', 'public, max-age=0, s-maxage=3600');
     res.send(GUIDA_HTML.get('#indice'));
   });
+  // Le novità: stessa forma delle guide (contenuto pubblico, indicizzabile) ma
+  // la fonte è NOVITA.md, scritto nello stesso commit della cosa che racconta.
+  let novitaHtml = { quando: null, corpo: '' };
+  app.get('/novita', (req, res) => {
+    const gruppi = novita.leggi(NOVITA_MD);
+    const quando = novita.ultima(gruppi) + ':' + gruppi.length;
+    if (novitaHtml.quando !== quando) novitaHtml = { quando, corpo: paginaNovita(gruppi) };
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.set('Cache-Control', 'public, max-age=0, s-maxage=600');
+    res.send(novitaHtml.corpo);
+  });
+
+  // Quello che il pannello mostra in cima: le ultime, e la data dell'ultima.
+  app.get('/api/novita', (req, res) => {
+    const gruppi = novita.leggi(NOVITA_MD);
+    res.set('Cache-Control', 'public, max-age=0, s-maxage=600');
+    res.json({ ultima: novita.ultima(gruppi), gruppi: gruppi.slice(0, 3) });
+  });
+
   app.get('/guide/:slug', (req, res, next) => {
     const slug = String(req.params.slug || '').toLowerCase();
     if (!/^[a-z0-9-]{2,80}$/.test(slug)) return next();

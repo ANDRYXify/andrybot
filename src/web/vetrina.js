@@ -57,7 +57,8 @@ const ROTTE = new Set([
   '/tgapp', '/api/tgapp/auth',                // Telegram Mini App: initData firmato dal bot token
   '/api/tgapp/oidc/start', '/telegram/oidc/callback',
   '/api/me',                                  // senza sessione risponde soltanto "nessun utente"
-  '/guide',                                   // guide: contenuto pubblico, indicizzabile
+  '/guide', '/novita',                        // guide e novità: contenuto pubblico, indicizzabile
+  '/api/novita',                              // le stesse novità, per la scheda in cima al pannello
   '/api/streamer-verify',                     // API JSON della link-page (proxy verso Vercel)
 ]);
 
