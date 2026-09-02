@@ -38,6 +38,10 @@ function riempi(tpl, vars) {
   return esc(tpl).replace(/\{(\w+)\}/g, (_, k) => (vars[k] != null ? String(vars[k]) : '')).slice(0, 200);
 }
 
+// Quale evento fa crescere quale obiettivo. Un evento che non compare qui non
+// ne fa crescere nessuno: e' l'elenco, non un caso particolare nel codice.
+const GOAL_DI = { follow: 'follower', sub: 'sub', cheer: 'bit' };
+
 export class AlertsEngine {
   constructor({ effects } = {}) {
     this.effects = effects || null;
@@ -69,6 +73,8 @@ export class AlertsEngine {
       // widget persistenti: si aggiornano a prescindere dall'alert
       if (kind === 'follow') this._aggiornaWidget(channel, 'ultimoFollower', vars.user);
       if (kind === 'sub') this._aggiornaWidget(channel, 'ultimoSub', vars.user);
+      // l'obiettivo conta gli eventi veri, non una stima: passano tutti di qui
+      this._contaGoal(channel, kind, kind === 'cheer' ? Number(vars.bits) || 0 : 1);
       // alert
       const a = s?.alerts;
       if (!a || a.attivo === false) return;
@@ -78,6 +84,39 @@ export class AlertsEngine {
       if (kind === 'raid' && Number(vars.viewers) < (Number(conf.minViewers) || 0)) return;
       this._spara(channel, a, kind, conf, vars);
     } catch (e) { log.debug('onEvent:', e?.message || e); }
+  }
+
+  // L'OBIETTIVO. Conta gli eventi che lo riguardano e li rende disponibili
+  // all'overlay. Il conto sta nelle impostazioni del canale, quindi sopravvive a
+  // un riavvio: un obiettivo che si azzera da solo la notte non e' un obiettivo.
+  _contaGoal(channel, kind, quanti = 1) {
+    try {
+      const g = GOAL_DI[kind];
+      if (!g || quanti <= 0) return;
+      const s = streamers.get(channel);
+      const cfg = s?.settings?.overlayGoal;
+      if (!cfg || cfg.attivo === false || cfg.tipo !== g) return;
+      const stato = { ...(s.settings?.overlayStato || {}) };
+      const conti = { follower: 0, sub: 0, bit: 0, ...(stato.goal || {}) };
+      conti[g] = (Number(conti[g]) || 0) + quanti;
+      stato.goal = conti;
+      streamers.setSettings(channel, { ...s.settings, overlayStato: stato });
+      this.effects?.emit?.(channel, { tipo: 'goal', cfg, valore: conti[g] });
+    } catch (e) { log.debug('goal:', e?.message || e); }
+  }
+
+  // Riporta l'obiettivo a zero: e' un'azione dello streamer, non del tempo.
+  azzeraGoal(channel) {
+    try {
+      const s = streamers.get(channel);
+      if (!s) return 0;
+      const stato = { ...(s.settings?.overlayStato || {}) };
+      stato.goal = { follower: 0, sub: 0, bit: 0 };
+      streamers.setSettings(channel, { ...s.settings, overlayStato: stato });
+      const cfg = s.settings?.overlayGoal || {};
+      this.effects?.emit?.(channel, { tipo: 'goal', cfg, valore: 0 });
+      return 0;
+    } catch (e) { return 0; }
   }
 
   // Risolve "effetto:<comando>" in { url, tipo } usando la libreria Effetti &
@@ -218,6 +257,7 @@ export class AlertsEngine {
       css: String(s.overlayCss || '').slice(0, 8000),
       fontPersonali: fontMiei,
       widget: conIcone,
+      goal: (s.overlayGoal && typeof s.overlayGoal === 'object') ? s.overlayGoal : null,
       stato: (s.overlayStato && typeof s.overlayStato === 'object') ? s.overlayStato : {},
     };
   }

@@ -112,6 +112,8 @@ function impostazioni() {
     watchtime: (s.watchtime && typeof s.watchtime === 'object') ? s.watchtime : { attivo: true },
     comandiBase: (s.comandiBase && typeof s.comandiBase === 'object') ? s.comandiBase : { attivo: true },
     tracking: (s.tracking && typeof s.tracking === 'object') ? s.tracking : { attivo: true, giochi: true, mappa: {} },
+    overlayGoal: { attivo: false, tipo: 'follower', obiettivo: 100, titolo: '', ...(s.overlayGoal && typeof s.overlayGoal === 'object' ? s.overlayGoal : {}) },
+    overlayStato: (s.overlayStato && typeof s.overlayStato === 'object') ? s.overlayStato : {},
     grafiche: (s.grafiche && typeof s.grafiche === 'object') ? s.grafiche : null,
     tiktok: (s.tiktok && typeof s.tiktok === 'object') ? s.tiktok : { username: '', attivo: false, annunciaChat: false, messaggio: '', postAttivo: false, postAnnunciaChat: false, postMessaggio: '' },
     youtube: (s.youtube && typeof s.youtube === 'object') ? s.youtube : { canale: '', attivo: false, annunciaChat: false, messaggio: '' },
@@ -5547,8 +5549,17 @@ function bloccoWidget(pref, w, titolo, kind) {
     </div>`;
 }
 
+function mostraGoalOra() {
+  const el = document.getElementById('goal-ora');
+  if (!el) return;
+  const p = impostazioni();
+  const conti = p.overlayStato.goal || {};
+  const ora = Number(conti[p.overlayGoal.tipo]) || 0;
+  el.textContent = ora + ' / ' + (Number(p.overlayGoal.obiettivo) || 100);
+}
+
 function ovlElemento(k, ico, nome, sez) {
-  const mirabile = ['alert', 'chat', 'wf', 'ws'].includes(k);
+  const mirabile = ['alert', 'chat', 'wf', 'ws', 'goal'].includes(k);
   return `<div class="ovl-elem"${mirabile ? ` data-mira="${k}"` : ''}>
     <span class="oe-ico">${_bIco(ico)}</span>
     <span class="oe-nome">${esc(nome)}</span>
@@ -5561,6 +5572,7 @@ function pannelloAlert() {
   const p = impostazioni();
   const a = p.alerts, st = a.stile, co = p.chatOverlay, cst = co.stile;
   const wf = p.overlayWidget.ultimoFollower, ws = p.overlayWidget.ultimoSub;
+  const go = p.overlayGoal;
   const posAlertOpts = [['alto-centro', L('In alto al centro', 'Top center', 'Arriba centro')], ['centro', L('Al centro', 'Center', 'Al centro')], ['basso-centro', L('In basso al centro', 'Bottom center', 'Abajo centro')]];
   const userMode = (cst.username && cst.username !== 'twitch') ? 'fisso' : 'twitch';
   return pannello('alert', `
@@ -5669,11 +5681,37 @@ function pannelloAlert() {
         ${ovlElemento('chat', ICO.chat, L('Chat a schermo', 'On-screen chat', 'Chat en pantalla'), 'sez-chat')}
         ${ovlElemento('wf', ICO.cuore, L('Ultimo follower', 'Latest follower', 'Último seguidor'), '')}
         ${ovlElemento('ws', ICO.medaglia, L('Ultimo sub', 'Latest sub', 'Último sub'), '')}
+        ${ovlElemento('goal', ICO.trofeo, L('Obiettivo', 'Goal', 'Objetivo'), 'sez-goal')}
+        ${ovlElemento('cont', ICO.grafico, L('Contatori', 'Counters', 'Contadores'), '')}
         ${ovlElemento('effetti', ICO.effetti, L('Effetti & suoni', 'Effects & sounds', 'Efectos y sonidos'), 'effetti')}
       </div>
       <p class="suggerimento">${L('Tienilo per te: chi ha questo link può far comparire cose nel tuo overlay.', 'Keep it to yourself: anyone with this link can make things appear in your overlay.', 'Guárdalo para ti: quien tenga este enlace puede hacer aparecer cosas en tu overlay.')}</p>
     </div>
 
+    <details class="carta sez" data-parte="aspetto" id="sez-goal">
+      <summary><h3>${_hIco(ICO.trofeo)}${L('Obiettivo', 'Goal', 'Objetivo')}</h3></summary>
+      <p>${L('Una barra che si riempie da sola mentre arrivano follower, sub o bit. Il conto è quello vero: lo tiene il bot contando gli eventi, e resta al suo posto anche se riavvii tutto.', 'A bar that fills by itself as followers, subs or bits come in. The count is the real one: the bot keeps it by counting events, and it survives a restart.', 'Una barra que se llena sola mientras llegan followers, subs o bits. La cuenta es la real: la lleva el bot contando eventos, y sobrevive a un reinicio.')}</p>
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore"><input type="checkbox" id="goal-attivo" ${go.attivo ? 'checked' : ''}><span class="levetta"></span></label>
+        <span class="etichetta-stato">${L('Mostra l’obiettivo', 'Show the goal', 'Mostrar el objetivo')}</span>
+      </div>
+      <div class="riga-flessibile spazio-sopra">
+        <label class="campo-num">${L('Conta', 'Count', 'Cuenta')}
+          <select id="goal-tipo">
+            <option value="follower"${go.tipo === 'follower' ? ' selected' : ''}>${L('follower', 'followers', 'followers')}</option>
+            <option value="sub"${go.tipo === 'sub' ? ' selected' : ''}>${L('abbonati', 'subs', 'subs')}</option>
+            <option value="bit"${go.tipo === 'bit' ? ' selected' : ''}>${L('bit', 'bits', 'bits')}</option>
+          </select></label>
+        <label class="campo-num">${L('Traguardo', 'Target', 'Meta')}<input type="number" id="goal-obiettivo" min="1" max="1000000" value="${Number(go.obiettivo) || 100}"></label>
+      </div>
+      <label class="campo spazio-sopra" for="goal-titolo">${L('Titolo (facoltativo)', 'Title (optional)', 'Título (opcional)')}</label>
+      <input type="text" id="goal-titolo" maxlength="60" value="${esc(go.titolo || '')}" placeholder="${L('es. 100 follower e cambio sfondo', 'e.g. 100 followers and I change the background', 'p. ej. 100 followers y cambio el fondo')}">
+      <p class="suggerimento spazio-sopra">${L('A che punto sei:', 'Where you are:', 'Por dónde vas:')} <strong id="goal-ora">—</strong></p>
+      <p class="spazio-sopra">
+        <button class="btn" id="btn-salva-goal">${L('Salva', 'Save', 'Guardar')}</button>
+        <button class="btn secondario" id="btn-azzera-goal">${L('Riparti da zero', 'Start over', 'Empezar de cero')}</button>
+      </p>
+    </details>
     <details class="carta sez" data-parte="aspetto" id="sez-alert">
       <summary><h3>${_hIco(ICO.megafono)}${L('Alert eventi', 'Event alerts', 'Alertas de eventos')}</h3></summary>
       <p>${L('Un cartello animato con suono quando arriva un follow, un sub, dei bit o un raid.', 'An animated banner with sound when a follow, sub, bits or a raid comes in.', 'Un cartel animado con sonido cuando llega un follow, un sub, bits o un raid.')}</p>
@@ -11764,6 +11802,24 @@ function attivaPiattaforma() {
   }));
 
   document.getElementById('btn-salva-gcmd')?.addEventListener('click', salvaGiochiComandi);
+
+  document.getElementById('btn-salva-goal')?.addEventListener('click', () => conErrore(async () => {
+    await salvaImpostazioni({ overlayGoal: {
+      attivo: document.getElementById('goal-attivo').checked,
+      tipo: document.getElementById('goal-tipo').value,
+      obiettivo: Number(document.getElementById('goal-obiettivo').value),
+      titolo: document.getElementById('goal-titolo').value.trim(),
+    } }, L('Obiettivo salvato', 'Goal saved', 'Objetivo guardado'));
+    mostraGoalOra();
+  }));
+
+  document.getElementById('btn-azzera-goal')?.addEventListener('click', () => conErrore(async () => {
+    if (!confirm(L('Far ripartire l\'obiettivo da zero?', 'Start the goal over from zero?', '¿Empezar el objetivo de cero?'))) return;
+    await api('/api/streamer/goal/azzera', { method: 'POST', body: {} });
+    stato = await api('/api/me');
+    mostraGoalOra();
+    toast(L('Obiettivo azzerato.', 'Goal reset.', 'Objetivo puesto a cero.'));
+  }));
   document.getElementById('btn-salva-gcmd-2')?.addEventListener('click', salvaGiochiComandi);
 
   document.getElementById('btn-salva-promo')?.addEventListener('click', () => conErrore(async () => {
@@ -12601,7 +12657,7 @@ function caricaDatiScheda(id) {
   if (id === 'sondaggi') caricaSondaggi();
   if (id === 'giveaway') caricaGiveaway();
   if (id === 'penitenze') caricaPenitenze();
-  if (id === 'alert') { caricaAlert(); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); }); }
+  if (id === 'alert') { caricaAlert(); mostraGoalOra(); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); }); }
   else smontaBanco();
   if (id === 'regia') caricaRegia();
   if (id === 'studio') caricaStudio();

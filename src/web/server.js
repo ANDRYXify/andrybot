@@ -82,7 +82,7 @@ import {
 // di canale (alerts/chatOverlay/overlayWidget). Retro-compatibile: se non c'è
 // una lista `overlays`, ne ricaviamo uno solo ("principale") con tutto visibile
 // e le posizioni attuali → chi ha già l'overlay lo vede identico.
-const _mostraDefault = () => ({ alert: true, chat: true, wf: true, ws: true, effetti: true });
+const _mostraDefault = () => ({ alert: true, chat: true, wf: true, ws: true, effetti: true, cont: true, goal: true });
 function overlaysDi(settings) {
   const s = settings || {};
   if (Array.isArray(s.overlays) && s.overlays.length) return s.overlays;
@@ -852,6 +852,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       // WIDGET (config + stile): per-overlay se presente, altrimenti di canale.
       // Lo STATO (nome ultimo follower/sub) resta di canale: è un dato, non stile.
       widget: st.widget || base.widget,
+      goal: base.goal,
       stato: base.stato,
       mostra: ov.mostra || _mostraDefault(),
       xy: ov.xy || {},
@@ -2933,6 +2934,17 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       };
     }
     // WIDGET persistenti dell'overlay (ultimo follower / ultimo sub)
+    // L'OBIETTIVO. Un tipo fra tre, un traguardo, un titolo. Il conto non si
+    // scrive da qui: lo tiene il motore contando gli eventi veri.
+    if (b.overlayGoal !== undefined) {
+      const g = b.overlayGoal || {};
+      out.overlayGoal = {
+        attivo: !!g.attivo,
+        tipo: ['follower', 'sub', 'bit'].includes(g.tipo) ? g.tipo : 'follower',
+        obiettivo: Math.min(1000000, Math.max(1, Math.round(Number(g.obiettivo)) || 100)),
+        titolo: String(g.titolo || '').slice(0, 60),
+      };
+    }
     if (b.overlayWidget !== undefined) {
       out.overlayWidget = normOverlayWidgetCfg(b.overlayWidget || {});
     }
@@ -3308,7 +3320,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     // OVERLAY IN TEMPO REALE: se è cambiato qualcosa che l'overlay mostra
     // (CSS, widget, chat, alert, temi, stato), spingiamo SUBITO il nuovo tema
     // via SSE così la fonte OBS si aggiorna da sola, senza bisogno di refresh.
-    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays'].some((k) => k in out)) {
+    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays', 'overlayGoal'].some((k) => k in out)) {
       // segnale di RICARICA: ogni overlay ricarica il PROPRIO tema (per ?o=id),
       // così più overlay diversi si aggiornano ciascuno col suo layout.
       try { effects.emit(user.login, { tipo: 'tema' }); }
@@ -3484,6 +3496,14 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
   // solo il link dell'overlay per la diretta (lo usa l'Overlay Studio, senza scaricare
   // tutta la lista effetti).
+  // Riportare l'obiettivo a zero e' un'azione dello streamer, non del tempo: un
+  // obiettivo che si azzera da solo la notte non e' un obiettivo.
+  app.post('/api/streamer/goal/azzera', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    manager.alerts?.azzeraGoal?.(login);
+    res.json({ ok: true });
+  }));
+
   app.get('/api/streamer/overlay-url', requireLogin, wrap(async (req, res) => {
     res.json({ overlayUrl: effects.overlayUrl(currentUser(req).login) });
   }));
