@@ -112,6 +112,18 @@ Vale la stessa aritmetica di sempre: espansione, poi un intero fra 0 e un
 milione. Un `$arg1` che non è un numero (`!scommetti pippo`) vale zero — il
 comando passa senza addebitare — e un `-500` non regala monete.
 
+## Aggiustare le monete a mano
+
+Dal pannello, sotto la classifica: nome e quante monete (con il meno si
+tolgono). Serve per riparare un errore — un gioco andato storto, un premio non
+arrivato.
+
+Sta **solo al proprietario**, e non per gerarchia: la ricetta «Dai monete» fa la
+stessa cosa in chat, la possono usare i moderatori, e soprattutto **si vede**
+mentre accade. Questa è silenziosa. Le due strade non sono ridondanti: sono la
+stessa azione con due livelli di visibilità, e chi può fare la cosa silenziosa è
+chi risponde del canale.
+
 ## Le ricette
 
 Un motore senza ricette è una pagina bianca. Le sei nuove usano il meccanismo

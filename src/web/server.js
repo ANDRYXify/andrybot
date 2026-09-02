@@ -4497,6 +4497,22 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     });
   }));
 
+  // Aggiustare le monete di una persona a mano. Serve per riparare un errore
+  // (un gioco andato storto, un premio non arrivato) e non e' la stessa cosa
+  // del comando !dai in chat: quello lo puo' usare un moderatore ed e' VISIBILE
+  // a tutti mentre accade. Questo e' silenzioso, quindi resta al proprietario.
+  app.post('/api/streamer/punti', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const utente = String(req.body?.utente || '').trim().replace(/^@/, '').toLowerCase();
+    if (!/^[a-z0-9_]{2,30}$/.test(utente)) return res.status(400).json({ errore: 'Nome utente non valido.' });
+    const delta = Math.round(Number(req.body?.delta));
+    if (!Number.isFinite(delta) || delta === 0) return res.status(400).json({ errore: 'Scrivi quante monete dare (o togliere, con il meno).' });
+    const q = Math.max(-1_000_000, Math.min(1_000_000, delta));
+    const saldo = points.add(login, utente, q);
+    log.info(`#${login}: monete aggiustate a mano — ${utente} ${q > 0 ? '+' : ''}${q} → ${saldo}`);
+    res.json({ ok: true, utente, saldo });
+  }));
+
   // ---------------------------------------------------------- GIOCHI personalizzati
   app.get('/api/streamer/giochi', requireLogin, wrap(async (req, res) => {
     res.json(giochiDb.list(currentUser(req).login));
