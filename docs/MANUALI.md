@@ -170,3 +170,9 @@ I manuali sono nove, uno per **area** del prodotto più i due approfondimenti
 (giochi, moduli). Un manuale d'area copre più schede: è la forma giusta perché
 le schede di un'area si usano insieme, e nove pagine dense valgono più di
 ventiquattro paginette che si ripetono.
+
+Due schede restano **fuori di proposito**, ed è scritto nel cancello perché un
+buco silenzioso e un'esclusione decisa si somigliano troppo: `admin` (non è del
+prodotto) e `studio`, andare in diretta dal browser — finché resta com'è, una
+pagina pubblica che la spiega prometterebbe una cosa che non vogliamo
+promettere.

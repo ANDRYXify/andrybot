@@ -98,8 +98,15 @@ copre('giochi', 'ricette a punti', ricette);
 // L'elenco vero delle schede non si scrive: sono i pannelli che app.js disegna.
 // Se domani ne nasce uno, questo cancello diventa rosso finche' qualcuno non lo
 // spiega da qualche parte.
+// Due schede restano fuori DI PROPOSITO, ed e' scritto qui perche' un buco
+// silenzioso e un'esclusione decisa si somigliano troppo:
+//   · 'admin'  non e' del prodotto, e' nostra;
+//   · 'studio' (andare in diretta dal browser) non si documenta per scelta del
+//              direttore: finche' resta cosi', una pagina pubblica che la
+//              spiega prometterebbe una cosa che non vogliamo promettere.
+const FUORI = new Set(['admin', 'studio']);
 const schede = [...new Set([...app.matchAll(/pannello\('([a-z0-9-]+)'/g)].map((m) => m[1]))]
-  .filter((s) => s !== 'admin');
+  .filter((s) => !FUORI.has(s));
 const aiuti = aiutiPerScheda();
 const scoperte = schede.filter((s) => !aiuti[s]);
 dice(scoperte.length === 0, `ogni scheda ha una guida o un manuale: ${schede.length - scoperte.length} su ${schede.length}`, scoperte.join(', '));
