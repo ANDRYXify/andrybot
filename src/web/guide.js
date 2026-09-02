@@ -319,11 +319,11 @@ const TOKEN = ['bg', 'surface', 'surface-2', 'border', 'border-2',
   'testo', 'testo-2', 'testo-3', 'acc', 'acc-soft', 'acc-bordo'];
 
 function tavolozza() {
-  const via = join(dirname(fileURLToPath(import.meta.url)), 'public/anime.css');
+  const via = join(dirname(fileURLToPath(import.meta.url)), 'public/tema.css');
   const css = readFileSync(via, 'utf8');
   const blocco = (selettore) => {
     const i = css.indexOf(selettore);
-    if (i < 0) throw new Error(`guide: non trovo ${selettore} in anime.css`);
+    if (i < 0) throw new Error(`guide: non trovo ${selettore} in tema.css`);
     const a = css.indexOf('{', i);
     return css.slice(a + 1, css.indexOf('}', a));
   };

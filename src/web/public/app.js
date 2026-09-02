@@ -1794,7 +1794,7 @@ function renderHero() {
         </nav>
         <div class="vt-strumenti">${selettoreLingua()}</div>
       </header>
-      <span class="vt-occhiello"><i class="vivo"></i>${L('SocialBot · il bot di andryxify.it', 'SocialBot · the bot by andryxify.it', 'SocialBot · el bot de andryxify.it')}</span>
+      <span class="vt-occhiello"><i class="vivo"></i>${L('Per Twitch e Kick · di andryxify.it', 'For Twitch and Kick · by andryxify.it', 'Para Twitch y Kick · de andryxify.it')}</span>
       <h1 class="vt-titolo">${L('Il bot per Twitch che parla', 'The Twitch bot that speaks', 'El bot de Twitch que habla')} <em>${L('con la tua voce', 'with your own voice', 'con tu propia voz')}</em></h1>
       <p class="vt-sub">${L('Vive nella tua chat e scrive <strong>con il tuo account</strong> — niente bot anonimi. Comandi su misura, <strong>scudo anti-bot</strong>, overlay per la diretta, clip, musica e <strong>notifiche live</strong>.', 'It lives in your chat and writes <strong>with your own account</strong> — no anonymous bots. Custom commands, an <strong>anti-bot shield</strong>, stream overlay, clips, music and <strong>live alerts</strong>.', 'Vive en tu chat y escribe <strong>con tu cuenta</strong> — nada de bots anónimos. Comandos a medida, <strong>escudo anti-bot</strong>, overlay para el directo, clips, música y <strong>avisos en directo</strong>.')}</p>
       <div class="vt-azioni">
