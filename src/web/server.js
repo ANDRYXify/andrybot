@@ -46,6 +46,7 @@ import * as instagram from '../features/instagram.js';
 import * as emotes from '../features/emotes.js';
 import * as seventv from '../features/seventv.js';
 import * as ruoli from '../features/ruoli.js';
+import * as personalizzati from '../features/personalizzati.js';
 import * as tgapp from '../features/tgapp.js';
 import * as badges from '../features/badges.js';
 import * as quotesImport from '../features/quotesimport.js';
