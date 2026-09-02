@@ -128,3 +128,35 @@ Due dettagli che sembrano piccoli e non lo sono:
 - [Streamlabs — Loyalty Points](https://streamlabs.com/content-hub/post/cloudbot-101-loyalty-points)
 - [StreamElements — Loyalty System](https://support.streamelements.com/hc/en-us/articles/10474478470290-Loyalty-System-Overview)
 - [Frictions and flows in Twitch's platform economy](https://www.tandfonline.com/doi/full/10.1080/1369118X.2024.2331766)
+
+## Un posto solo per fare un gioco
+
+Erano **due riquadri che facevano la stessa cosa**: «I tuoi giochi» per le manche
+e «Inventa un gioco tuo» per quelli a comando — e il secondo, per finire il
+lavoro, ti spostava nella scheda *Comandi*. Tre elenchi e due schede per una cosa
+sola.
+
+La domanda che li distingue davvero è una: **chi lo lancia?**
+
+| | che gioco è | da cosa parti |
+|---|---|---|
+| **Ci pensa il bot** | una manche a sorpresa | quiz, parola veloce, anagramma, sequenza, una domanda tua |
+| **Lo scrive uno spettatore** | un comando che costa e paga | sei ricette a punti già scritte |
+
+Quella domanda è il primo passo del creatore, e il resto si adatta. L'elenco in
+fondo è **uno**, e mostra tutti e due i tipi.
+
+### L'editor non si duplica: si sposta
+
+Il secondo caso è un Modulo a tutti gli effetti, e sarebbe stato sbagliato
+riscriverne una copia «per i giochi». `apriEditor(modulo, dove)` accetta lo
+spazio in cui disegnarsi, e tutti passano da `slotEditor()` invece di andare a
+prendersi `#editor-modulo` a mano. Un editor solo, due case.
+
+### Le $ dei giochi
+
+Nell'editor dei giochi le parole magiche offerte sono quelle che a un gioco
+servono — monete, caso, numeri, chi scrive — invece di tutte e quaranta. Non è
+un secondo elenco: si ricavano dai **gruppi della legenda** (`GRUPPI_GIOCO`)
+filtrando quelle che esistono davvero, quindi non possono sfasarsi. Le altre
+restano a un clic.

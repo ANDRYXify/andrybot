@@ -1462,3 +1462,21 @@ body.con-salva { padding-bottom: 92px; }
   min-width: 0; overflow-wrap: anywhere;
 }
 .drawer-aiuto .drawer-voce { text-decoration: none; }
+
+.gioco-rami { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; margin: .9rem 0 .2rem; }
+.gioco-ramo {
+  display: grid; gap: 4px; text-align: left; padding: .85rem 1rem; cursor: pointer;
+  border: 1.5px solid var(--border-2); border-radius: var(--r-m); background: var(--surface);
+  color: inherit; font: inherit; transition: border-color .18s ease, background .18s ease, transform .18s ease;
+}
+.gioco-ramo strong { font-size: .96rem; }
+.gioco-ramo span { font-size: .84rem; color: var(--testo-2); }
+.gioco-ramo:hover { border-color: var(--acc-bordo); transform: translateY(-2px); }
+.gioco-ramo.on { border-color: var(--acc); background: var(--acc-soft); }
+.gioco-ramo.on strong { color: var(--acc); }
+.gioco-ramo-corpo { margin-top: .9rem; padding-top: .9rem; border-top: 1px solid var(--border); }
+.gioco-ramo-corpo[hidden] { display: none; }
+#var-giochi .legenda-var { margin-top: .6rem; }
+
+.chip-var.chip-altre { font-weight: 600; opacity: .8; }
+.chip-vars-altre[hidden] { display: none; }
