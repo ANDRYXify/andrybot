@@ -364,21 +364,50 @@ function _demoGet(via) {
   const F = {
     '/api/me': statoDemo(),
     '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://socialbot.live/tiktok/callback' },
-    '/api/streamer/giochi-comandi': { comandi: [
-      { id: 'giochi', titolo: 'Elenco dei giochi', cosa: 'Elenca in chat i giochi accesi.', costa: false, attesa: 0, spegnibile: false, acceso: true, nomi: ['giochi'], rinominato: false, chi: 'tutti' },
-      { id: 'dado', titolo: 'Dado', cosa: 'Tira un dado. Con !dado 2d20 ne tira altri.', costa: false, attesa: 3, spegnibile: true, acceso: true, nomi: ['dado', 'roll'], rinominato: false, chi: 'tutti' },
-      { id: 'moneta', titolo: 'Testa o croce', cosa: 'Lancia una moneta.', costa: false, attesa: 3, spegnibile: true, acceso: true, nomi: ['moneta', 'coin'], rinominato: false, chi: 'tutti' },
-      { id: '8ball', titolo: 'Palla magica', cosa: 'Risponde a una domanda. Serve la domanda.', costa: false, attesa: 3, spegnibile: true, acceso: true, nomi: ['8ball', 'palla8'], rinominato: false, chi: 'tutti' },
-      { id: 'monete', titolo: 'Il mio saldo', cosa: 'Dice quante monete ha chi lo scrive.', costa: false, attesa: 0, spegnibile: true, acceso: true, nomi: ['monete', 'punti', 'bilancio'], rinominato: false, chi: 'tutti' },
-      { id: 'classifica', titolo: 'Classifica', cosa: 'I primi del pubblico. Con «mod» la gara dello staff.', costa: false, attesa: 0, spegnibile: true, acceso: true, nomi: ['classifica', 'top'], rinominato: false, chi: 'tutti' },
-      { id: 'slot', titolo: 'Slot machine', cosa: 'Gioca alla slot: costa monete, il tris paga.', costa: true, attesa: 5, spegnibile: true, acceso: true, nomi: ['macchinetta'], rinominato: true, chi: 'tutti' },
-      { id: 'duello', titolo: 'Duello', cosa: 'Sfida un\'altra persona in chat.', costa: true, attesa: 0, spegnibile: true, acceso: true, nomi: ['duello', 'duel'], rinominato: false, chi: 'sub' },
-      { id: 'trivia', titolo: 'Trivia', cosa: 'Domanda a sorpresa: il primo che risponde vince.', costa: false, attesa: 0, spegnibile: true, acceso: true, nomi: ['trivia', 'quiz'], rinominato: false, chi: 'tutti' },
-      { id: 'manche', titolo: 'Manche al volo', cosa: 'Lancia subito una manche.', costa: false, attesa: 0, spegnibile: true, acceso: true, nomi: ['manche', 'gioca'], rinominato: false, chi: 'mod' },
-      { id: 'pesca', titolo: 'Pesca', cosa: 'Getta la lenza: si pesca qualcosa, o niente.', costa: true, attesa: 0, spegnibile: true, acceso: true, nomi: ['pesca', 'fish'], rinominato: false, chi: 'tutti' },
-      { id: 'roulette', titolo: 'Roulette', cosa: 'Punta le monete su rosso o nero.', costa: true, attesa: 0, spegnibile: true, acceso: true, nomi: ['roulette', 'rul'], rinominato: false, chi: 'tutti' },
-      { id: 'furto', titolo: 'Furto', cosa: 'Prova a rubare monete a un\'altra persona.', costa: true, attesa: 0, spegnibile: true, acceso: false, nomi: ['furto', 'rapina'], rinominato: false, chi: 'tutti' },
-      { id: 'regala', titolo: 'Regala monete', cosa: 'Passa monete tue a qualcun altro.', costa: true, attesa: 0, spegnibile: true, acceso: true, nomi: ['regala', 'dona'], rinominato: false, chi: 'tutti' },
+    '/api/streamer/comandi-pronti': { comandi: [
+      { id: "giochi", modulo: "giochi", moduloNome: "Giochi in chat", moduloAcceso: true, titolo: "Elenco dei giochi", cosa: "Elenca in chat i giochi accesi, quelli di chat e quelli con la webcam.", costa: false, attesa: 0, spegnibile: false, rinominabile: true, acceso: true, vivo: true, nomi: ["giochi"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
+      { id: "dado", modulo: "giochi", moduloNome: "Giochi in chat", moduloAcceso: true, titolo: "Dado", cosa: "Tira un dado. Con !dado 2d20 ne tira altri.", costa: false, attesa: 3, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["dado", "roll"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
+      { id: "moneta", modulo: "giochi", moduloNome: "Giochi in chat", moduloAcceso: true, titolo: "Testa o croce", cosa: "Lancia una moneta.", costa: false, attesa: 3, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["moneta", "coin"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
+      { id: "8ball", modulo: "giochi", moduloNome: "Giochi in chat", moduloAcceso: true, titolo: "Palla magica", cosa: "Risponde a una domanda. Serve la domanda.", costa: false, attesa: 3, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["8ball", "palla8"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
+      { id: "monete", modulo: "giochi", moduloNome: "Giochi in chat", moduloAcceso: true, titolo: "Il mio saldo", cosa: "Dice quante monete ha chi lo scrive.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["monete", "punti", "bilancio"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
+      { id: "classifica", modulo: "giochi", moduloNome: "Giochi in chat", moduloAcceso: true, titolo: "Classifica", cosa: "I primi del pubblico. Con «mod» la gara dello staff, con «tutti» le due insieme.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["classifica", "top", "classificamod", "classificastaff", "topmod"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
+      { id: "slot", modulo: "giochi", moduloNome: "Giochi in chat", moduloAcceso: true, titolo: "Slot machine", cosa: "Gioca alla slot: costa monete, il tris paga.", costa: true, attesa: 5, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["macchinetta"], rinominato: true, chi: "tutti", chiMinimo: "tutti" },
+      { id: "duello", modulo: "giochi", moduloNome: "Giochi in chat", moduloAcceso: true, titolo: "Duello", cosa: "Sfida un'altra persona in chat.", costa: true, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["duello", "duel"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
+      { id: "trivia", modulo: "giochi", moduloNome: "Giochi in chat", moduloAcceso: true, titolo: "Trivia", cosa: "Domanda a sorpresa: il primo che risponde vince.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["trivia", "quiz"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
+      { id: "manche", modulo: "giochi", moduloNome: "Giochi in chat", moduloAcceso: true, titolo: "Manche al volo", cosa: "Lancia subito una manche invece di aspettare quella automatica.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["manche", "gioca"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
+      { id: "pesca", modulo: "giochi", moduloNome: "Giochi in chat", moduloAcceso: true, titolo: "Pesca", cosa: "Getta la lenza: si pesca qualcosa, o niente.", costa: true, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["pesca", "fish"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
+      { id: "roulette", modulo: "giochi", moduloNome: "Giochi in chat", moduloAcceso: true, titolo: "Roulette", cosa: "Punta le monete su rosso o nero.", costa: true, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["roulette", "rul"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
+      { id: "furto", modulo: "giochi", moduloNome: "Giochi in chat", moduloAcceso: true, titolo: "Furto", cosa: "Prova a rubare monete a un'altra persona. Puo' andare male.", costa: true, attesa: 0, spegnibile: true, rinominabile: true, acceso: false, vivo: false, nomi: ["furto", "rapina"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
+      { id: "regala", modulo: "giochi", moduloNome: "Giochi in chat", moduloAcceso: true, titolo: "Regala monete", cosa: "Passa monete tue a qualcun altro.", costa: true, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["regala", "dona"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
+      { id: "mima", modulo: "webcam", moduloNome: "Giochi con la webcam", moduloAcceso: true, titolo: "Mima", cosa: "Avvia il gioco della mimica nell'overlay della webcam.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["mima", "mimo"], rinominato: false, chi: "mod", chiMinimo: "mod" },
+      { id: "nonridere", modulo: "webcam", moduloNome: "Giochi con la webcam", moduloAcceso: true, titolo: "Non ridere", cosa: "Avvia la sfida «non ridere» nell'overlay della webcam.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["nonridere", "nonrido"], rinominato: false, chi: "mod", chiMinimo: "mod" },
+      { id: "reaction", modulo: "webcam", moduloNome: "Giochi con la webcam", moduloAcceso: true, titolo: "Reaction rush", cosa: "Avvia la prova di reazione nell'overlay della webcam.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["reaction", "reactionrush", "rush"], rinominato: false, chi: "mod", chiMinimo: "mod" },
+      { id: "battaglia", modulo: "webcam", moduloNome: "Giochi con la webcam", moduloAcceso: true, titolo: "Battaglia con la chat", cosa: "Avvia la battaglia: la chat sfida con i gesti.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["battaglia", "battle"], rinominato: false, chi: "mod", chiMinimo: "mod" },
+      { id: "sfida", modulo: "webcam", moduloNome: "Giochi con la webcam", moduloAcceso: true, titolo: "Sfida un gesto", cosa: "Durante la battaglia, manda un gesto da imitare.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["sfida"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
+      { id: "puzzle", modulo: "puzzle", moduloNome: "Puzzle con le mani", moduloAcceso: true, titolo: "Puzzle con le mani", cosa: "Avvia il puzzle nell'overlay della webcam.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["puzzle"], rinominato: false, chi: "mod", chiMinimo: "mod" },
+      { id: "puzzlestop", modulo: "puzzle", moduloNome: "Puzzle con le mani", moduloAcceso: true, titolo: "Ferma il puzzle", cosa: "Ferma il puzzle in corso.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["puzzlestop"], rinominato: false, chi: "mod", chiMinimo: "mod" },
+      { id: "giveaway", modulo: "sorteggi", moduloNome: "Sorteggi", moduloAcceso: true, titolo: "Apri un sorteggio", cosa: "Apre il sorteggio e annuncia il premio.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["giveaway", "sorteggio", "gw"], rinominato: false, chi: "mod", chiMinimo: "mod" },
+      { id: "join", modulo: "sorteggi", moduloNome: "Sorteggi", moduloAcceso: true, titolo: "Entra nel sorteggio", cosa: "Entra nel sorteggio aperto. La parola d'ingresso si sceglie all'apertura.", costa: false, attesa: 0, spegnibile: true, rinominabile: false, acceso: true, vivo: true, nomi: ["join", "partecipa", "entra"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
+      { id: "biglietti", modulo: "sorteggi", moduloNome: "Sorteggi", moduloAcceso: true, titolo: "Regala biglietti", cosa: "Da' biglietti in piu' a una persona.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["biglietti", "ticket", "tickets"], rinominato: false, chi: "mod", chiMinimo: "mod" },
+      { id: "estrai", modulo: "sorteggi", moduloNome: "Sorteggi", moduloAcceso: true, titolo: "Estrai", cosa: "Estrae un vincitore. Con un numero ne estrae piu' d'uno.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["estrai", "draw", "vincitore"], rinominato: false, chi: "mod", chiMinimo: "mod" },
+      { id: "ore", modulo: "ore", moduloNome: "Ore guardate", moduloAcceso: true, titolo: "Ore guardate", cosa: "Dice da quanto tempo guarda chi lo scrive.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["ore", "oreguardate", "tempo", "watchtime"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
+      { id: "classificaore", modulo: "ore", moduloNome: "Ore guardate", moduloAcceso: true, titolo: "Classifica delle ore", cosa: "Chi ha guardato di piu'.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["classificaore", "classificatempo", "oretop", "topore"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
+      { id: "so", modulo: "base", moduloNome: "Comandi pronti", moduloAcceso: true, titolo: "Shoutout", cosa: "Fa lo shoutout a un altro canale.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["so", "shoutout"], rinominato: false, chi: "mod", chiMinimo: "mod" },
+      { id: "followage", modulo: "base", moduloNome: "Comandi pronti", moduloAcceso: true, titolo: "Da quanto segui", cosa: "Dice da quanto tempo una persona segue il canale.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["followage", "daquanto"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
+      { id: "uptime", modulo: "base", moduloNome: "Comandi pronti", moduloAcceso: true, titolo: "Da quanto sei in diretta", cosa: "Dice da quanto e' cominciata la diretta.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["uptime"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
+      { id: "bot", modulo: "base", moduloNome: "Comandi pronti", moduloAcceso: true, titolo: "Parla col bot", cosa: "Chiama il bot e gli fa una domanda.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["bot", "socialbot", "ia", "ai"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
+      { id: "comando", modulo: "chat", moduloNome: "Gestione dei comandi dalla chat", moduloAcceso: false, titolo: "Gestisci i comandi", cosa: "Aggiunge, cambia e toglie comandi senza aprire il pannello.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: false, nomi: ["comando", "cmd", "comandi", "command", "commands"], rinominato: false, chi: "mod", chiMinimo: "mod" },
+      { id: "addcom", modulo: "chat", moduloNome: "Gestione dei comandi dalla chat", moduloAcceso: false, titolo: "Aggiungi un comando", cosa: "Scorciatoia per aggiungere un comando.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: false, nomi: ["addcom"], rinominato: false, chi: "mod", chiMinimo: "mod" },
+      { id: "delcom", modulo: "chat", moduloNome: "Gestione dei comandi dalla chat", moduloAcceso: false, titolo: "Togli un comando", cosa: "Scorciatoia per togliere un comando.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: false, nomi: ["delcom"], rinominato: false, chi: "mod", chiMinimo: "mod" },
+      { id: "editcom", modulo: "chat", moduloNome: "Gestione dei comandi dalla chat", moduloAcceso: false, titolo: "Cambia un comando", cosa: "Scorciatoia per cambiare la risposta di un comando.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: false, nomi: ["editcom"], rinominato: false, chi: "mod", chiMinimo: "mod" },
+      { id: "vip", modulo: "vip", moduloNome: "VIP", moduloAcceso: true, titolo: "Da' il VIP", cosa: "Da' il VIP a una persona, per una settimana o per un mese.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["vip"], rinominato: false, chi: "mod", chiMinimo: "mod" },
+      { id: "unvip", modulo: "vip", moduloNome: "VIP", moduloAcceso: true, titolo: "Togli il VIP", cosa: "Toglie il VIP a una persona.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["unvip"], rinominato: false, chi: "mod", chiMinimo: "mod" },
+      { id: "viplista", modulo: "vip", moduloNome: "VIP", moduloAcceso: true, titolo: "Chi ha il VIP", cosa: "Elenca chi ha il VIP e fino a quando.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["viplista", "viplist"], rinominato: false, chi: "mod", chiMinimo: "mod" },
+      { id: "sondaggio", modulo: "sondaggi", moduloNome: "Sondaggi e predizioni", moduloAcceso: true, titolo: "Sondaggio", cosa: "Apre un sondaggio di Twitch. Con «chiudi» lo chiude.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["sondaggio", "poll"], rinominato: false, chi: "mod", chiMinimo: "mod" },
+      { id: "predizione", modulo: "sondaggi", moduloNome: "Sondaggi e predizioni", moduloAcceso: true, titolo: "Predizione", cosa: "Apre una predizione. Con «vince» la risolve, con «annulla» rimborsa.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["predizione", "prediction", "pronostico"], rinominato: false, chi: "mod", chiMinimo: "mod" },
+      { id: "sr", modulo: "musica", moduloNome: "Richieste musicali", moduloAcceso: true, titolo: "Richiedi una canzone", cosa: "Mette un brano nella coda di Spotify.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["sr", "songrequest", "richiedi", "canzone"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
+      { id: "song", modulo: "musica", moduloNome: "Richieste musicali", moduloAcceso: true, titolo: "Cosa sta suonando", cosa: "Dice il brano in riproduzione.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["song", "brano", "np", "nowplaying"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
+      { id: "ag", modulo: "sito", moduloNome: "Giochi del sito", moduloAcceso: false, titolo: "Giochi del sito", cosa: "Manda il comando ai giochi di andryxify.it.", costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: false, nomi: ["ag", "agentify"], rinominato: false, chi: "tutti", chiMinimo: "tutti" }
     ], livelli: ['tutti', 'sub', 'vip', 'mod'] },
     '/api/streamer/telegram/destinazioni': {
       io: 'andryx_demo',
@@ -8994,7 +9023,14 @@ function pannelloModuli() {
       ${L('(il bot custom che già hai): chiama l\'URL qui sotto con la tua chiave.', '(the custom bot you already have): call the URL below with your key.', '(el bot personalizado que ya tienes): llama a la URL de abajo con tu clave.')}</p>
       <div id="connettori-moduli"><p class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</p></div>
     </div>
-    ${carteContatori()}`);
+    ${carteContatori()}    <div class="carta">
+      <h2>${_hIco(ICO.chat)}${L('Comandi pronti', 'Built-in commands', 'Comandos de serie')}</h2>
+      <p>${L('Quelli che il bot porta già con sé. Ognuno si spegne, si rinomina e si può riservare — come i tuoi.', 'The ones the bot already brings with it. Each one can be switched off, renamed and reserved — like yours.', 'Los que el bot ya trae consigo. Cada uno se apaga, se renombra y se puede reservar — como los tuyos.')}</p>
+      <p class="suggerimento">${L('Un comando tuo con lo stesso nome vince sempre su quello pronto.', 'A command of yours with the same name always wins over the built-in one.', 'Un comando tuyo con el mismo nombre siempre gana al de serie.')}</p>
+      <ul class="gc-lista" id="lista-cmd-pronti"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-gcmd-2">${L('Salva i comandi', 'Save the commands', 'Guardar los comandos')}</button></p>
+    </div>
+`);
 }
 
 function modelloPronto(nome) {
@@ -10339,7 +10375,10 @@ function _gcRiga(g) {
   const spegni = g.spegnibile
     ? `<label class="interruttore mini"><input type="checkbox" data-gc-on ${g.acceso ? 'checked' : ''}><span class="levetta"></span></label>`
     : '<span class="gc-fisso" title="' + esc(L('sempre acceso', 'always on', 'siempre encendido')) + '">•</span>';
-  return `<li class="gc-riga${g.acceso ? '' : ' gc-off'}" data-gc="${esc(g.id)}">
+  const rinomina = g.rinominabile
+    ? `<span class="gc-input"><i>!</i><input type="text" data-gc-nome value="${esc(g.rinominato ? g.nomi[0] : '')}" placeholder="${esc(g.id)}" maxlength="20"></span>`
+    : `<span class="gc-input gc-fermo">${esc(L('non si rinomina', 'cannot be renamed', 'no se renombra'))}</span>`;
+  return `<li class="gc-riga${g.acceso ? '' : ' gc-off'}${g.moduloAcceso ? '' : ' gc-muto'}" data-gc="${esc(g.id)}">
     ${spegni}
     <div class="gc-corpo">
       <div class="gc-testa"><strong>${esc(g.titolo)}</strong>${g.costa ? `<span class="gc-costa">${esc(L('costa monete', 'costs coins', 'cuesta monedas'))}</span>` : ''}</div>
@@ -10347,8 +10386,7 @@ function _gcRiga(g) {
       <div class="gc-nomi">${nomi}${g.attesa ? `<span class="gc-attesa">${g.attesa}s</span>` : ''}</div>
     </div>
     <div class="gc-regole">
-      <label class="gc-campo"><span>${esc(L('nome tuo', 'your name', 'tu nombre'))}</span>
-        <span class="gc-input"><i>!</i><input type="text" data-gc-nome value="${esc(g.rinominato ? g.nomi[0] : '')}" placeholder="${esc(g.id)}" maxlength="20"></span></label>
+      <label class="gc-campo"><span>${esc(L('nome tuo', 'your name', 'tu nombre'))}</span>${rinomina}</label>
       <label class="gc-campo"><span>${esc(L('chi può', 'who can', 'quién puede'))}</span>
         <select data-gc-chi>${livelli}</select></label>
     </div>
@@ -10356,26 +10394,44 @@ function _gcRiga(g) {
 }
 
 async function caricaGiochiComandi() {
-  const ul = document.getElementById('lista-gcmd');
-  if (!ul) return;
-  try {
-    const d = await api('/api/streamer/giochi-comandi');
-    const righe = d.comandi || [];
-    ul.innerHTML = righe.length ? righe.map(_gcRiga).join('')
+  const liste = [...document.querySelectorAll('.gc-lista')];
+  if (!liste.length) return;
+  let d;
+  try { d = await api('/api/streamer/comandi-pronti'); }
+  catch (e) { liste.forEach((ul) => { ul.innerHTML = `<li class="vuoto">${esc(e.message)}</li>`; }); return; }
+  const tutti = d.comandi || [];
+  for (const ul of liste) {
+    const filtro = (ul.dataset.moduli || '').split(',').filter(Boolean);
+    const righe = filtro.length ? tutti.filter((r) => filtro.includes(r.modulo)) : tutti;
+    ul.innerHTML = righe.length ? _gcGruppi(righe)
       : `<li class="vuoto">${L('Nessun comando.', 'No commands.', 'Ningún comando.')}</li>`;
     ul.querySelectorAll('[data-gc-on]').forEach((c) => c.addEventListener('change', () => {
       c.closest('.gc-riga')?.classList.toggle('gc-off', !c.checked);
     }));
-  } catch (e) {
-    ul.innerHTML = `<li class="vuoto">${esc(e.message)}</li>`;
   }
 }
 
+function _gcGruppi(righe) {
+  const ordine = [];
+  const per = new Map();
+  for (const r of righe) {
+    if (!per.has(r.modulo)) { per.set(r.modulo, []); ordine.push(r.modulo); }
+    per.get(r.modulo).push(r);
+  }
+  return ordine.map((m) => {
+    const gruppo = per.get(m);
+    const spento = !gruppo[0].moduloAcceso;
+    return `<li class="gc-famiglia${spento ? ' gc-fam-off' : ''}"><span>${esc(gruppo[0].moduloNome)}</span>${
+      spento ? `<em>${L('famiglia spenta: questi comandi non rispondono', 'family off: these commands do not answer', 'familia apagada: estos comandos no responden')}</em>` : ''}</li>`
+      + gruppo.map(_gcRiga).join('');
+  }).join('');
+}
+
 async function salvaGiochiComandi() {
-  const ul = document.getElementById('lista-gcmd');
-  if (!ul) return;
+  const righe = [...document.querySelectorAll('.gc-lista .gc-riga')];
+  if (!righe.length) return;
   const comandi = {};
-  ul.querySelectorAll('.gc-riga').forEach((li) => {
+  righe.forEach((li) => {
     const id = li.dataset.gc;
     const on = li.querySelector('[data-gc-on]');
     const nome = li.querySelector('[data-gc-nome]')?.value.trim().toLowerCase().replace(/[^a-z0-9]/g, '') || '';
@@ -10387,8 +10443,7 @@ async function salvaGiochiComandi() {
     if (Object.keys(riga).length) comandi[id] = riga;
   });
   try {
-    const d = await api('/api/streamer/giochi-comandi', { method: 'POST', body: { comandi } });
-    if (d.comandi) document.getElementById('lista-gcmd').innerHTML = d.comandi.map(_gcRiga).join('');
+    await api('/api/streamer/comandi-pronti', { method: 'POST', body: { comandi } });
     caricaGiochiComandi();
     toast(L('Comandi salvati ✓', 'Commands saved ✓', 'Comandos guardados ✓'));
   } catch (e) {
@@ -10420,7 +10475,7 @@ function pannelloGiochi() {
       <h2>${_hIco(ICO.chat)}${L('Comandi dei giochi', 'Game commands', 'Comandos de los juegos')}</h2>
       <p>${L('Questi sono i comandi che rispondono in chat. Ognuno si spegne, si rinomina e si può riservare a una parte del pubblico.', 'These are the commands that answer in chat. Each one can be switched off, renamed and reserved for part of your audience.', 'Estos son los comandos que responden en el chat. Cada uno se apaga, se renombra y se puede reservar a una parte del público.')}</p>
       <p class="suggerimento">${L('Se dai un nome tuo, i nomi di serie smettono di rispondere: un gioco ha un nome, e lo scegli tu.', 'If you set your own name, the built-in names stop answering: a game has one name, and you pick it.', 'Si le pones un nombre tuyo, los nombres de serie dejan de responder: un juego tiene un nombre, y lo eliges tú.')}</p>
-      <ul class="gc-lista" id="lista-gcmd"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+      <ul class="gc-lista" id="lista-gcmd" data-moduli="giochi,webcam,puzzle,sorteggi,sito"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-gcmd">${L('Salva i comandi', 'Save the commands', 'Guardar los comandos')}</button></p>
     </div>
     <div class="carta">
@@ -11452,6 +11507,7 @@ function attivaPiattaforma() {
   }));
 
   document.getElementById('btn-salva-gcmd')?.addEventListener('click', salvaGiochiComandi);
+  document.getElementById('btn-salva-gcmd-2')?.addEventListener('click', salvaGiochiComandi);
 
   document.getElementById('btn-salva-promo')?.addEventListener('click', () => conErrore(async () => {
     await salvaImpostazioni({ promoSocial: document.getElementById('chk-promo').checked }, 'Promo salvata');
@@ -12275,7 +12331,7 @@ function caricaDatiScheda(id) {
   if (id === 'studio') caricaStudio();
   if (id === 'effetti') { caricaEffetti(); caricaPremi(); caricaSuoniPremi(); caricaLibreria(); caricaTracking(); }
   if (id === 'emote') caricaEmote7TV();
-  if (id === 'moduli') { caricaPiattaforme(); caricaModuli(); caricaContatori(); }
+  if (id === 'moduli') { caricaPiattaforme(); caricaModuli(); caricaContatori(); caricaGiochiComandi(); }
   if (id === 'memoria') caricaStatistiche();
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); caricaGiochiMiei(); caricaGiochiComandi(); }
   if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaDiscord(); caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaFeed(); caricaFeed(); }
