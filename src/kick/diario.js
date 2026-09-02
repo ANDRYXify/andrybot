@@ -19,6 +19,7 @@ let arrivi = 0;
 let rifiuti = 0;
 let ultimo = null;          // { quando, tipo, canale }
 let ultimoRifiuto = null;   // { quando, motivo }
+let ultimoInvio = null;     // { quando, ok, motivo, canale }
 const perCanale = new Map();  // canale → { quando, tipo }
 
 export function segnaArrivo({ tipo, canale }) {
@@ -37,6 +38,14 @@ export function segnaRifiuto(motivo) {
   ultimoRifiuto = { quando: Date.now(), motivo: String(motivo || '').slice(0, 200) };
 }
 
+// L'altra meta' del giro: quello che il bot prova a DIRE. Un evento puo'
+// arrivare benissimo e la risposta non partire lo stesso — permesso mancante,
+// token da rifare, Kick che rifiuta. Da fuori si vede la stessa cosa (il bot
+// tace), quindi va distinta anche questa.
+export function segnaInvio({ canale, ok, motivo = '' }) {
+  ultimoInvio = { quando: Date.now(), ok: !!ok, motivo: String(motivo || '').slice(0, 200), canale: String(canale || '') };
+}
+
 // Lo stato per la dashboard. `canale` restringe l'ultimo evento a quel canale.
 export function stato(canale = '') {
   const mio = canale ? perCanale.get(String(canale).toLowerCase()) || null : null;
@@ -45,9 +54,10 @@ export function stato(canale = '') {
     rifiuti,
     ultimo: canale ? mio : ultimo,
     ultimoRifiuto,
+    ultimoInvio: (!canale || ultimoInvio?.canale === String(canale).toLowerCase()) ? ultimoInvio : null,
   };
 }
 
 export function _azzera() {
-  arrivi = 0; rifiuti = 0; ultimo = null; ultimoRifiuto = null; perCanale.clear();
+  arrivi = 0; rifiuti = 0; ultimo = null; ultimoRifiuto = null; ultimoInvio = null; perCanale.clear();
 }
