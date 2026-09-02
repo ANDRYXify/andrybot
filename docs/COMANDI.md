@@ -85,6 +85,36 @@ cosa sono un modo garantito di sfasarsi.
 - **Un livello inventato, o un comando che non esiste**: la normalizzazione
   tiene solo quello che il registro conosce.
 
+## Aggiungere un comando (la ricetta)
+
+Il punto di tutto questo è che costi poco farlo. Serve **una riga** in
+`features/comandi-registro.js`:
+
+```js
+{ id: 'ruota', modulo: 'giochi', nomi: ['ruota', 'wheel'],
+  titolo: ['Ruota della fortuna', 'Wheel of fortune', 'Rueda de la fortuna'],
+  cosa: ['Gira la ruota: costa monete e paga a caso.',
+         'Spin the wheel: it costs coins and pays at random.',
+         'Gira la rueda: cuesta monedas y paga al azar.'],
+  costa: true, attesa: 10 }
+```
+
+Quel che non scrivi prende il valore normale (`chi: 'tutti'`, spegnibile,
+rinominabile, senza costo, senza attesa). Poi:
+
+1. un blocco nel gestore della famiglia che conosca `'ruota'`;
+2. `node scripts/verifica-comandi.mjs`, che ti dice cosa manca.
+
+Non c'è altro: pannello, `!giochi`, manuale e demo lo trovano da soli.
+
+## Le tre lingue
+
+`titolo` e `cosa` sono terne `[italiano, inglese, spagnolo]`, la stessa forma
+che il resto del prodotto usa già. Il pannello accetta anche una stringa sola
+(la mostra com'è) — si può scrivere una riga di fretta in una lingua e finirla
+dopo — ma il cancello resta **rosso** finché le tre non ci sono, così «dopo» non
+diventa mai.
+
 ## Il cancello
 
 ```

@@ -48,6 +48,21 @@ dice(scontri.length === 0, `nessuna parola rivendicata due volte: ${COMANDI.flat
 const livelliStrani = COMANDI.filter((c) => c.chi && !LIVELLI.includes(c.chi)).map((c) => c.id);
 dice(livelliStrani.length === 0, 'ogni livello di serie e\' uno di quelli previsti', livelliStrani.join(', '));
 
+// ---- ogni riga parla tutte e tre le lingue --------------------------------
+// Il pannello e' trilingue: una riga scritta in italiano soltanto lascia una
+// cucitura visibile in inglese e spagnolo. Scriverla in una lingua sola resta
+// possibile (il pannello la mostra com'e'), ma qui diventa rosso: cosi' una
+// riga nuova costa tre stringhe accanto, non una caccia al tesoro dopo.
+const LINGUE = 3;
+const terna = (v) => Array.isArray(v) && v.length === LINGUE && v.every((x) => typeof x === 'string' && x.trim());
+const mute = [];
+for (const c of COMANDI) {
+  if (!terna(c.titolo)) mute.push(`${c.id}.titolo`);
+  if (!terna(c.cosa)) mute.push(`${c.id}.cosa`);
+}
+for (const [k, m] of Object.entries(MODULI)) if (!terna(m.nome)) mute.push(`famiglia ${k}`);
+dice(mute.length === 0, `ogni riga parla italiano, inglese e spagnolo: ${COMANDI.length} comandi e ${Object.keys(MODULI).length} famiglie`, mute.join(', '));
+
 // ---- la demo mostra lo stesso prodotto ------------------------------------
 const app = leggi('src/web/public/app.js');
 const i = app.indexOf("'/api/streamer/comandi-pronti': { comandi: [");
