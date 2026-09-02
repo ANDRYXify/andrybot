@@ -56,6 +56,7 @@ import { pretrain } from '../ai/pretrain.js';
 import * as persona from '../ai/persona.js';
 import * as brainpy from '../ai/brainpy.js';
 import { redeemPass } from './gate.js';
+import { eLoginNostro, loginKick, piattaformaDi } from '../identita.js';
 import { creaGuscio } from './vetrina.js';
 import { salute } from '../salute.js';
 import { anteprima as anteprimaImport, moduloDa } from '../features/importacomandi.js';
@@ -296,6 +297,27 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     return !!String(login || '').toLowerCase();
   }
 
+  // PRIMO ACCESSO: nasce il canale col pacchetto ESSENZIALE (gratuito), e a chi
+  // non ha mai avuto il bot capita, a caso, qualche giorno con tutto acceso.
+  // Sta qui e non dentro il flusso di Twitch perche' adesso le porte sono due:
+  // scritto due volte, il giorno che cambia una regola cambierebbe per meta'
+  // delle persone. Ritorna true se la prova gratuita e' stata assegnata.
+  function primoAccesso(login, display) {
+    if (streamers.get(login)) return false;
+    let promoVinta = false;
+    if (!subscriptions.get(login) && config.promo.probabilita > 0 && Math.random() < config.promo.probabilita) {
+      // Base + TUTTI i pacchetti: e l'equivalente odierno del vecchio "Pro",
+      // che non esiste piu nel catalogo. Regalare un tier fuori catalogo
+      // mostrava alla persona un piano che non avrebbe potuto rinnovare.
+      subscriptions.set(login, { tier: 'base', pacchetti: abbonamenti.ADDON_IDS, status: 'trialing', periodEnd: Date.now() + config.promo.giorni * 86400000 });
+      promoVinta = true;
+      log.info(`promo: prova gratuita completa a @${login} (${config.promo.giorni}g)`);
+    }
+    try { streamers.upsertApproved(login, display); seedStreamer(login); sync(); }
+    catch (e) { log.warn('primo accesso, seed streamer:', e?.message || e); }
+    return promoVinta;
+  }
+
   // Piano di una persona: abbonamento attivo → il suo tier; membro community
   // verificato → 'community' (tutto); altrimenti 'free' = ESSENZIALE gratuito.
   function tierDi(login) {
@@ -401,6 +423,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // e chi no lo sa il server a costo zero (e in sessione), quindi lo scrive nel
   // primo HTML e la larghezza e giusta gia al primo disegno.
   const gusciaHtml = readFileSync(join(publicDir, 'index.html'), 'utf8');
+  const PORTA_KICK = '<a class="btn grande secondario porta-kick" href="/accedi/kick">Entra con Kick</a>';
+  if (!gusciaHtml.includes(PORTA_KICK)) throw new Error('guscio: non trovo la porta di Kick in index.html');
 
   // LINGUE INDICIZZABILI. index.html dichiara tre alternative hreflang
   // (it/en/es) ma serviva SEMPRE l'italiano, con `<html lang="it">` e un
@@ -449,6 +473,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       if (!h.includes(da)) throw new Error(`guscio ${codice}: non trovo in index.html → ${da.slice(0, 90)}`);
       h = h.replace(da, a);
     };
+    // La porta di Kick esiste solo se questo server ha un'app Kick: un pulsante
+    // che porta a un 503 e' peggio di un pulsante che non c'e'.
+    if (!config.kickClientId || !config.kickClientSecret) {
+      h = h.split(PORTA_KICK).join('');
+    }
     cambia('<html lang="it">', `<html lang="${m.html}">`);
     cambia(`<title>${base.titolo}</title>`, `<title>${m.titolo}</title>`);
     cambia(`<meta name="description" content="${base.desc}">`, `<meta name="description" content="${m.desc}">`);
@@ -1074,7 +1103,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   app.get('/u/:user/img/:file', (req, res) => {
     const login = String(req.params.user || '').toLowerCase();
     const file = String(req.params.file || '');
-    if (!/^[a-z0-9_]{1,30}$/.test(login) || !/^lp_[a-z0-9_]+\.(png|jpg|webp|gif)$/i.test(file)) return notFound(res);
+    if (!eLoginNostro(login) || !/^lp_[a-z0-9_]+\.(png|jpg|webp|gif)$/i.test(file)) return notFound(res);
     res.sendFile(join(effectsRoot, login, file), { maxAge: '7d' }, (err) => { if (err) notFound(res); });
   });
 
@@ -1085,7 +1114,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   const _avatarCache = new Map();          // login → { buf, tipo, ts }
   app.get('/u/:user/avatar', wrap(async (req, res) => {
     const login = String(req.params.user || '').toLowerCase();
-    if (!/^[a-z0-9_]{1,30}$/.test(login)) return notFound(res);
+    if (!eLoginNostro(login)) return notFound(res);
     const c = _avatarCache.get(login);
     if (c && Date.now() - c.ts < 3600000) {
       res.set('Content-Type', c.tipo); res.set('Cache-Control', 'public, max-age=3600');
@@ -1499,19 +1528,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       // sua chat col pacchetto ESSENZIALE (gratuito). Prima però tento la PROMO
       // "settimana gratis": a chi non ha MAI avuto il bot capita, a caso, qualche
       // giorno di Pro. È un trial temporaneo (non "community"): scade da sé.
-      let promoVinta = false;
-      if (!streamers.get(login)) {
-        if (!subscriptions.get(login) && config.promo.probabilita > 0 && Math.random() < config.promo.probabilita) {
-          // Base + TUTTI i pacchetti: e l'equivalente odierno del vecchio "Pro",
-          // che non esiste piu nel catalogo. Regalare un tier fuori catalogo
-          // mostrava alla persona un piano che non avrebbe potuto rinnovare.
-          subscriptions.set(login, { tier: 'base', pacchetti: abbonamenti.ADDON_IDS, status: 'trialing', periodEnd: Date.now() + config.promo.giorni * 86400000 });
-          promoVinta = true;
-          log.info(`promo: prova gratuita completa a @${login} (${config.promo.giorni}g)`);
-        }
-        try { streamers.upsertApproved(login, disp); seedStreamer(login); sync(); }
-        catch (e) { log.warn('primo accesso, seed streamer:', e?.message || e); }
-      }
+      const promoVinta = primoAccesso(login, disp);
       // foto profilo: la aggiorno a ogni accesso (su Twitch l'indirizzo cambia
       // quando la persona cambia foto). Non blocca il login: se Twitch non
       // risponde si riprova alla prossima visita della pagina /u.
@@ -1661,6 +1678,34 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     requireLogin, currentUser, wrap,
     suMessaggio: (msg) => manager.messaggioEsterno(msg),
     suEvento: (ev) => manager.eventoEsterno?.(ev),
+
+    // ENTRARE CON KICK. Le rotte di Kick sanno fare l'OAuth; chi sia la persona
+    // e che canale gli tocca lo decide qui, dove vivono identita' e sessione.
+    //
+    // Il canale si chiama `kick.<nome>`: un login Twitch non puo' contenere un
+    // punto, quindi il canale Kick di «pippo» e quello Twitch di «pippo» non
+    // possono essere la stessa riga. Non e' un controllo, e' una forma.
+    async registra(req, { userId, nome, token }) {
+      // Chi torna si riconosce dall'id di Kick, non dal nome: su Kick il nome si
+      // puo' cambiare, e chi lo cambia deve ritrovare il suo canale.
+      let login = kickApi.loginPerKickId(userId);
+      const display = String(nome || '').trim() || ('kick:' + userId);
+
+      if (!login) {
+        login = loginKick(nome) || ('kick.k' + String(userId).replace(/[^0-9]/g, ''));
+        // Nome gia' preso da un ALTRO account Kick (succede solo dopo un cambio
+        // nome): si tiene il suo, e a questo si aggiunge l'id — che e' unico.
+        if (streamers.get(login)) login = login + '_' + String(userId).replace(/[^0-9]/g, '');
+      }
+
+      const promoVinta = primoAccesso(login, display);
+      kickApi.salvaToken(login, token, userId);
+
+      const contesti = contestiPer(login);
+      if (!contesti.length) return { login, errore: 'canale non disponibile' };
+      req.session.user = sessionePer(login, display, contestoDefault(contesti));
+      return { login, dove: promoVinta ? '/?promo=1' : '/?benvenuto=1' };
+    },
   });
 
   // LE TUE PIATTAFORME — un endpoint solo per tutte.
@@ -1759,6 +1804,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       // chi sta gestendo ora + TUTTI i canali gestibili dall'identità, con ruolo
       // (proprio canale da proprietario + canali moderati) → alimenta lo switcher.
       gestisce: { canale: user.login, streamer: user.display || user.login },
+      // Su quale piattaforma vive il canale che si sta gestendo. Non e' una
+      // preferenza: e' quello che decide se una funzione ha senso o no (le clip,
+      // la categoria, lo scudo anti-bot esistono solo su Twitch).
+      piattaforma: piattaformaDi(user.login),
       mieiCanali: contestiPer(ident),
       missing: missingConfig(),
       status: manager.status(),

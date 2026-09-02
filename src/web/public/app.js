@@ -2192,6 +2192,26 @@ const NOME_ADDON = {
   squadra: ['Squadra', 'Squadra', 'Squadra'],
 };
 
+const SOLO_TWITCH = ['regia', 'regole', 'emote'];
+
+function soloTwitch(id) {
+  return stato?.piattaforma === 'kick' && SOLO_TWITCH.includes(id);
+}
+
+function schedaNonUsabile(id) {
+  return soloTwitch(id) || schedaBloccata(id);
+}
+
+function paginaSoloTwitch(id) {
+  const nomeScheda = tScheda(id, id);
+  return `<div class="carta blocco-carta">
+    <div class="blocco-testa">${_bIco(ICO.tv)}<h2>${esc(nomeScheda)}</h2>
+      <span class="badge">${L('Solo su Twitch', 'Twitch only', 'Solo en Twitch')}</span></div>
+    <p class="blocco-cosa">${L('Questa parte parla con Twitch, e il tuo canale è su Kick: qui non avrebbe niente con cui lavorare. Preferiamo dirtelo che mostrarti dei pulsanti che non fanno niente.', 'This part talks to Twitch, and your channel is on Kick: here it would have nothing to work with. We’d rather tell you than show you buttons that do nothing.', 'Esta parte habla con Twitch y tu canal está en Kick: aquí no tendría con qué trabajar. Preferimos decírtelo antes que mostrarte botones que no hacen nada.')}</p>
+    <p class="suggerimento">${L('Se trasmetti anche su Twitch, collega quell’account: il canale diventa uno solo e questa scheda si accende.', 'If you also stream on Twitch, connect that account: the channel becomes one and this tab lights up.', 'Si también emites en Twitch, conecta esa cuenta: el canal pasa a ser uno solo y esta pestaña se enciende.')}</p>
+  </div>`;
+}
+
 function schedaBloccata(id) {
   if (DEMO || stato?.isAdmin || !stato?.funzioni) return false;
   const funz = SCHEDA_FUNZ[id];
@@ -2605,7 +2625,7 @@ function navTopHtml() {
         <button class="grp-btn" data-scheda="${id}"><span class="grp-dot"></span>${esc(tGruppo(g.id, g.nome))}</button></div>`;
     }
     const voci = g.schede.map(([id, nome]) =>
-      `<button class="menu-voce${id === schedaAttiva ? ' on' : ''}${schedaBloccata(id) ? ' bloccata' : ''}" data-scheda="${id}">${ICONA[id] || ''}<span>${esc(tScheda(id, nome))}</span>${schedaBloccata(id) ? '<span class="voce-lock" aria-hidden="true">🔒</span>' : ''}</button>`).join('');
+      `<button class="menu-voce${id === schedaAttiva ? ' on' : ''}${schedaNonUsabile(id) ? ' bloccata' : ''}" data-scheda="${id}">${ICONA[id] || ''}<span>${esc(tScheda(id, nome))}</span>${schedaNonUsabile(id) ? '<span class="voce-lock" aria-hidden="true">🔒</span>' : ''}</button>`).join('');
     return `<div class="grp${attivo}" data-grp="${g.id}" style="${col}">
       <button class="grp-btn" data-menu="${g.id}" aria-expanded="false"><span class="grp-dot"></span>${esc(tGruppo(g.id, g.nome))}${CHEVRON}</button>
       <div class="grp-menu">${voci}</div></div>`;
@@ -2670,7 +2690,7 @@ function osservaTitolo() {
 function navDrawerHtml() {
   return elencoGruppi().map((g) => {
     const voci = g.schede.map(([id, nome]) =>
-      `<button class="drawer-voce${id === schedaAttiva ? ' on' : ''}${schedaBloccata(id) ? ' bloccata' : ''}" data-scheda="${id}">${ICONA[id] || ''}<span>${esc(tScheda(id, nome))}</span>${schedaBloccata(id) ? '<span class="voce-lock" aria-hidden="true">🔒</span>' : ''}</button>`).join('');
+      `<button class="drawer-voce${id === schedaAttiva ? ' on' : ''}${schedaNonUsabile(id) ? ' bloccata' : ''}" data-scheda="${id}">${ICONA[id] || ''}<span>${esc(tScheda(id, nome))}</span>${schedaNonUsabile(id) ? '<span class="voce-lock" aria-hidden="true">🔒</span>' : ''}</button>`).join('');
     return `<div class="drawer-grp" style="--gc:var(--g-${g.id})"><div class="drawer-grp-tit">${esc(tGruppo(g.id, g.nome))}</div>${voci}</div>`;
   }).join('');
 }
@@ -2745,6 +2765,16 @@ function cardNovitaHtml() {
   </div>`;
 }
 
+function cardKickHtml() {
+  if (stato?.piattaforma !== 'kick') return '';
+  return `<div class="carta">
+    <h2>${_hIco(ICO.fulmine)}${L('Il tuo canale è su Kick', 'Your channel is on Kick', 'Tu canal está en Kick')}</h2>
+    <p>${L('Il bot legge la tua chat di Kick e risponde lì. Funzionano i comandi, i moduli, i giochi e le monete, gli avvisi di follow e abbonamento, l’overlay della diretta e le notifiche social.', 'The bot reads your Kick chat and answers there. Commands, modules, games and coins, follow and subscription alerts, the stream overlay and social notifications all work.', 'El bot lee tu chat de Kick y responde ahí. Funcionan los comandos, los módulos, los juegos y las monedas, los avisos de follow y suscripción, el overlay del directo y las notificaciones sociales.')}</p>
+    <p class="suggerimento spazio-sopra">${L('Restano fuori le cose che sono di Twitch: la moderazione automatica, le clip, il cambio di categoria e titolo, i VIP, i punti canale e le emote 7TV. E le monete su Kick arrivano dai messaggi: l’elenco di chi sta guardando in silenzio Kick non lo dà.', 'What stays out is what belongs to Twitch: automatic moderation, clips, category and title changes, VIPs, channel points and 7TV emotes. And on Kick coins come from messages: Kick doesn’t give the list of silent viewers.', 'Queda fuera lo que es de Twitch: la moderación automática, los clips, el cambio de categoría y título, los VIP, los puntos de canal y los emotes 7TV. Y en Kick las monedas llegan de los mensajes: Kick no da la lista de quien mira en silencio.')}</p>
+    <p class="suggerimento">${L('Se trasmetti anche su Twitch, collega quell’account dalla scheda Stato: il canale resta uno solo e si accende tutto.', 'If you also stream on Twitch, connect that account from the Status tab: the channel stays one and everything lights up.', 'Si también emites en Twitch, conecta esa cuenta desde la pestaña Estado: el canal sigue siendo uno y se enciende todo.')}</p>
+  </div>`;
+}
+
 function bannerProvaHtml() {
   const p = provaInCorso();
   if (!p) return '';
@@ -2795,7 +2825,8 @@ function vistaPiattaforma() {
 }
 
 function pannello(id, contenuto) {
-  const dentro = schedaBloccata(id) ? paginaBloccata(id) : contenuto;
+  const dentro = soloTwitch(id) ? paginaSoloTwitch(id)
+    : (schedaBloccata(id) ? paginaBloccata(id) : contenuto);
   return `<section class="pannello-scheda${id === schedaAttiva ? ' visibile' : ''}" id="scheda-${id}" data-scheda="${id}">${dentro}</section>`;
 }
 
@@ -3651,7 +3682,7 @@ function pannelloStato() {
     </div>`;
 
   return pannello('stato', `
-    ${cardNovitaHtml()}${bannerProvaHtml()}${bannerMod}${cardChatKO}${cardPermessi}${cardScope}
+    ${cardNovitaHtml()}${cardKickHtml()}${bannerProvaHtml()}${bannerMod}${cardChatKO}${cardPermessi}${cardScope}
     <div class="carta">
       <h2>${L('Il tuo bot', 'Your bot', 'Tu bot')}</h2>
       <div class="riga-interruttore spazio-sopra">

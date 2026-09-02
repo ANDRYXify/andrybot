@@ -25,23 +25,44 @@ const log = makeLog('kick');
 // Quanto vale un giro di autorizzazione: oltre, il tentativo è scaduto.
 const GIRO_MS = 10 * 60 * 1000;
 
-export function montaKick(app, { requireLogin, currentUser, wrap, suMessaggio, suEvento }) {
+export function montaKick(app, { requireLogin, currentUser, wrap, suMessaggio, suEvento, registra }) {
   // --- 1. si parte -----------------------------------------------------
-  app.get('/auth/kick', requireLogin, (req, res) => {
+  // Due porte, lo stesso giro. `/auth/kick` e' lo streamer che gia' e' dentro e
+  // collega il suo Kick al canale che ha; `/accedi/kick` e' chi su Twitch non
+  // c'e' proprio e entra da qui. Cambia solo cosa si fa al ritorno, quindi il
+  // giro OAuth e' scritto una volta sola.
+  const parti = (req, res, { registrazione }) => {
     if (!auth.configurato()) return res.status(503).send('Kick non è configurato su questo server.');
     const { verifier, challenge } = auth.creaPkce();
     const state = crypto.randomBytes(16).toString('hex');
-    req.session.kick = { verifier, state, nato: Date.now() };
+    req.session.kick = { verifier, state, nato: Date.now(), registrazione };
     res.redirect(auth.urlAutorizzazione({ challenge, state, conModerazione: req.query.mod === '1' }));
+  };
+
+  app.get('/auth/kick', requireLogin, (req, res) => parti(req, res, { registrazione: false }));
+
+  // Entrare con Kick: chi trasmette solo li' non ha un account Twitch da usare,
+  // e chiedergliene uno per usare il bot sarebbe chiedergli di iscriversi a un
+  // servizio che non gli serve. La stessa autorizzazione dice chi e' E da' al
+  // bot il permesso di parlare: un giro solo invece di due.
+  app.get('/accedi/kick', (req, res) => {
+    if (typeof registra !== 'function') return res.redirect('/');
+    if (currentUser(req)) return res.redirect('/');       // gia' dentro: si collega da /auth/kick
+    parti(req, res, { registrazione: true });
   });
 
   // --- 2. si torna -----------------------------------------------------
-  app.get('/auth/kick/callback', requireLogin, wrap(async (req, res) => {
-    const login = currentUser(req).login;
+  // Niente `requireLogin` qui: in registrazione la sessione NON c'e' ancora, e
+  // cio' che lega questa risposta alla nostra richiesta e' lo `state` del giro,
+  // non il cookie. Chi arriva senza un giro in corso non passa comunque.
+  app.get('/auth/kick/callback', wrap(async (req, res) => {
     const giro = req.session.kick || null;
     req.session.kick = null;                        // usa-e-getta, sempre
+    const registrazione = !!giro?.registrazione;
+    const login = registrazione ? '' : (currentUser(req)?.login || '');
 
-    const male = (m) => res.redirect('/?kick=' + encodeURIComponent(m));
+    const male = (m) => res.redirect((registrazione ? '/?accesso=' : '/?kick=') + encodeURIComponent(m));
+    if (!registrazione && !login) return male('devi entrare prima di collegare Kick');
     if (req.query.error) return male(String(req.query.error).slice(0, 80));
     if (!giro?.verifier) return male('giro scaduto, riprova');
     if (Date.now() - giro.nato > GIRO_MS) return male('giro scaduto, riprova');
@@ -54,7 +75,27 @@ export function montaKick(app, { requireLogin, currentUser, wrap, suMessaggio, s
 
     let token;
     try { token = await auth.scambiaCodice(req.query.code, giro.verifier); }
-    catch (e) { log.error(`@${login}: scambio codice Kick fallito — ${e?.message || e}`); return male('Kick ha rifiutato il collegamento'); }
+    catch (e) { log.error(`${login || 'registrazione'}: scambio codice Kick fallito — ${e?.message || e}`); return male('Kick ha rifiutato il collegamento'); }
+
+    // REGISTRAZIONE: prima si chiede a Kick chi e', poi nasce (o si ritrova) il
+    // canale. Si chiede col token in mano perche' un canale sotto cui cercarlo
+    // non c'e' ancora.
+    if (registrazione) {
+      const io = await api.chiSono(token.accessToken);
+      if (!io.ok || !io.userId) {
+        log.error(`registrazione Kick: Kick non dice chi sono — ${io.errore || 'nessun id'}`);
+        return male('Kick non ha detto chi sei: riprova');
+      }
+      let esito;
+      try { esito = await registra(req, { userId: io.userId, nome: io.nome, token }); }
+      catch (e) { log.error('registrazione Kick fallita:', e?.message || e); return male('non sono riuscito a crearti il canale'); }
+      if (!esito?.login) return male(esito?.errore || 'non sono riuscito a crearti il canale');
+
+      const isc = await api.iscrivi(esito.login);
+      if (!isc.ok) log.error(`@${esito.login}: iscrizione agli eventi Kick fallita — ${isc.errore}`);
+      log.info(`@${esito.login}: entrato con Kick (@${io.nome || '?'}, id ${io.userId})`);
+      return res.redirect(esito.dove || '/');
+    }
 
     api.salvaToken(login, token);
 
