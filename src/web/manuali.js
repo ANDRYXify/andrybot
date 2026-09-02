@@ -10,12 +10,13 @@
 // I numeri qui dentro non sono decorativi: sono quelli del motore. Se cambiano
 // li', qui devono cambiare — e il cancello verifica-manuali.mjs controlla che
 // non manchi niente di quello che il motore sa fare.
-import { paginaDoc, paginaManuali } from './guide.js';
+import { GUIDE, paginaDoc, paginaManuali } from './guide.js';
 
 const OGGI = '2026-09-02';
 
 const GIOCHI = {
   slug: 'giochi',
+  schede: ['giochi'],
   titolo: 'Manuale dei giochi e delle monete | SocialBot',
   h1: 'Manuale dei giochi e delle monete',
   desc: 'Come si guadagnano le monete del canale, cosa fa ogni comando di gioco, quanto costa e quanto paga, e come inventarsi un gioco proprio.',
@@ -203,6 +204,7 @@ const GIOCHI = {
 
 const MODULI = {
   slug: 'moduli',
+  schede: ['moduli'],
   titolo: 'Manuale dei moduli: automazioni della chat | SocialBot',
   h1: 'Manuale dei moduli',
   desc: 'Quando succede qualcosa, se valgono certe condizioni, allora il bot fa. Inneschi, condizioni, azioni e variabili dei moduli di SocialBot, uno per uno.',
@@ -438,6 +440,23 @@ const MODULI = {
 };
 
 export const MANUALI = [GIOCHI, MODULI];
+
+// A QUALE SCHEDA DEL PANNELLO SERVE OGNI PAGINA.
+//
+// Non e' un elenco a parte: ogni guida e ogni manuale dichiara le schede a cui
+// serve, accanto al proprio contenuto. Chi scrive una pagina nuova sa a chi
+// serve — meglio di chiunque la legga sei mesi dopo — e il pannello la trova da
+// se'. Il manuale vince sulla guida: chi e' gia' dentro il prodotto vuole il
+// riferimento, non l'introduzione.
+export function aiutiPerScheda() {
+  const out = {};
+  const metti = (pagine, base, tipo) => {
+    for (const p of pagine) for (const s of p.schede || []) out[s] = { titolo: p.h1, via: `${base}/${p.slug}`, tipo };
+  };
+  metti(GUIDE, '/guide', 'guida');
+  metti(MANUALI, '/manuale', 'manuale');
+  return out;
+}
 
 export function paginaManuale(slug) {
   const m = MANUALI.find((x) => x.slug === slug);

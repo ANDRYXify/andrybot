@@ -25,7 +25,7 @@ import { montaEsche, riepilogoEsche } from './esche.js';
 import { montaArgine } from './argine.js';
 import { GUIDE, paginaGuida, paginaIndice, paginaNovita, urlGuide } from './guide.js';
 import * as novita from './novita.js';
-import { paginaManuale, paginaIndiceManuali, urlManuali } from './manuali.js';
+import { paginaManuale, paginaIndiceManuali, urlManuali, aiutiPerScheda } from './manuali.js';
 import { AntiBot } from '../features/antibot.js';
 import { statoListaBot, registro as registroAntibot, segnalazioniAperte, risolviSegnalazione, sintesiRegistro, registra as registraAntibot, nomeBot, valutaAccount, assetto as assettoAntibot, sogliaRaffica, codaBan } from '../features/antibot.js';
 import { statoBackup, backupOra } from '../backup.js';
@@ -1417,6 +1417,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   });
   // I manuali: materiale di consultazione per chi il bot ce l'ha già. Pubblici
   // come le guide — chi valuta il bot deve poter vedere prima cosa sa fare.
+  const AIUTI = aiutiPerScheda();
   const MANUALE_HTML = new Map();
   app.get('/manuale', (req, res) => {
     if (!MANUALE_HTML.has('#indice')) MANUALE_HTML.set('#indice', paginaIndiceManuali());
@@ -1842,6 +1843,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       // preferenza: e' quello che decide se una funzione ha senso o no (le clip,
       // la categoria, lo scudo anti-bot esistono solo su Twitch).
       piattaforma: piattaformaDi(user.login),
+      // Per ogni scheda del pannello, la pagina che la spiega (se c'è): la
+      // dichiara la pagina stessa, accanto al proprio contenuto.
+      aiuti: AIUTI,
       mieiCanali: contestiPer(ident),
       missing: missingConfig(),
       status: manager.status(),

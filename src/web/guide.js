@@ -84,6 +84,7 @@ export const GUIDE = [
 
   {
     slug: 'come-mettere-un-bot-su-twitch',
+    schede: ['stato'],
     titolo: 'Come mettere un bot su Twitch: guida passo per passo',
     h1: 'Come mettere un bot su Twitch',
     desc: 'Collegare un bot al tuo canale Twitch richiede cinque minuti. Ecco i passaggi, i permessi da concedere e cosa fare se in chat non compare nulla.',
@@ -130,6 +131,7 @@ export const GUIDE = [
 
   {
     slug: 'follow-bot-e-hate-raid',
+    schede: ['regole'],
     titolo: 'Follow-bot e hate-raid su Twitch: come difendersi',
     h1: 'Follow-bot e hate-raid: come difendere il canale',
     desc: 'Come si riconosce un attacco da una clip andata bene, e quali difese funzionano: Shield Mode, chat ai soli follower e le soglie che nessuno sa dove mettere.',
@@ -192,6 +194,7 @@ export const GUIDE = [
 
   {
     slug: 'comandi-chat-twitch',
+    schede: ['moduli'],
     titolo: 'Comandi per la chat di Twitch: quelli nativi e quelli da bot',
     h1: 'Comandi per la chat di Twitch',
     desc: 'I comandi nativi di Twitch per streamer e moderatori, e come creare comandi personalizzati con un bot: variabili, permessi, contatori e gli errori da evitare.',
@@ -250,6 +253,7 @@ export const GUIDE = [
 
   {
     slug: 'overlay-obs-per-twitch',
+    schede: ['alert', 'effetti'],
     titolo: 'Overlay per OBS su Twitch: alert, chat a schermo e widget',
     h1: 'Overlay per OBS: come si mettono e cosa serve davvero',
     desc: 'Alert, chat a schermo e widget in OBS con una sorgente browser: come si aggiungono, cosa serve davvero e cosa appesantisce e basta lo stream.',
