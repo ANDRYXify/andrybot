@@ -227,6 +227,9 @@ body.leggero .cerca-voce, body.leggero .cerca-sugg .chip-domanda, body.leggero .
   animation: gr-entra .22s var(--an-vel) both;
 }
 .switch-canale-menu[hidden] { display: none; }
+.aiuto-btn { width: 30px; padding: 0; font-weight: 700; }
+.aiuto-menu .sc-voce { text-decoration: none; }
+.aiuto-menu .sc-testo { white-space: normal; }
 .sc-voce {
   display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%;
   text-align: left; padding: 9px 11px; border: none; background: transparent; border-radius: 8px;

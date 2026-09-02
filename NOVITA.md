@@ -5,6 +5,8 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-02
 
+- Nella barra c'è un «?» che porta a guide, manuali e novità — e in cima quella della scheda che stai guardando.
+- L'avviso della guida impara: dove sei già entrato e uscito senza fare niente arriva prima, e se gli dici due volte «non serve» sta zitto per un mese.
 - Quando si vede che sei in difficoltà — fermo, un errore appena uscito, la rotella su e giù, o ci torni per la terza volta — il bot ti dice che per quella scheda c'è una guida. Si zittisce per sempre con un clic.
 - E se è una guida, si apre sul punto che dice cosa fare in SocialBot: non su una spiegazione generica.
 - Privacy, termini, invito ai moderatori e sblocco hanno lo stesso aspetto del resto del sito e seguono il tema che hai scelto: erano rimaste scure e viola.

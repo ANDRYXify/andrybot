@@ -111,6 +111,42 @@ test('una striscia tolta da fuori non blocca quelle dopo', () => {
   assert.match(corpo, /isConnected/, 'un riferimento appeso non vale come striscia viva');
 });
 
+// Il popup impara, ma ogni regola resta un se-allora su quello che il browser ha
+// visto — niente statistica, niente profilo, e niente che esca dal dispositivo.
+test('impara dalle uscite a vuoto, e si fa più svelto dove serve', () => {
+  assert.match(APP, /const AIUTO_FERMO_UNA_USCITA_MS = 8_000;/, 'una uscita a vuoto: arriva prima');
+  assert.match(APP, /const AIUTO_FERMO_DUE_USCITE_MS = 3_000;/, 'due: quasi subito');
+  assert.match(APP, /function aiutoUscendo\(/, 'e sa riconoscere «entrato e uscito senza fare nulla»');
+  for (const uscita of ['pagehide', 'visibilitychange']) {
+    assert.ok(APP.includes(uscita), `guarda anche ${uscita}`);
+  }
+});
+
+test('e smette di insistere con chi non lo vuole', () => {
+  assert.match(APP, /const AIUTO_RIFIUTI_BASTA = 2;/, 'due «non serve» e tace ovunque');
+  assert.match(APP, /const AIUTO_ZITTO_MS = 30 \* 24 \* 60 \* 60_000;/, 'per trenta giorni');
+  assert.match(APP, /const AIUTO_PER_SESSIONE = 2;/, 'e mai più di due volte per sessione');
+  assert.match(APP, /const AIUTO_SA_FARE = 2;/, 'e non lo propone a chi lì sa già fare');
+});
+
+test('la memoria resta nel browser: niente esce di lì', () => {
+  const i = APP.indexOf('function aiutoScrivi(');
+  const corpo = APP.slice(i, i + 400);
+  assert.match(corpo, /localStorage\.setItem/, 'si scrive solo in locale');
+  assert.doesNotMatch(corpo, /fetch|api\(/, 'e non si manda da nessuna parte');
+});
+
+test('da dentro il pannello si arriva a guide e manuali', () => {
+  assert.match(APP, /function menuAiutoHtml\(\)/, 'c’è un menu di aiuto');
+  for (const via of ['/guide', '/manuale', '/novita']) {
+    assert.ok(APP.includes(`['${via}',`), `porta a ${via}`);
+  }
+  const i = APP.indexOf('const aiuto = menuAiutoHtml();');
+  const corpo = APP.slice(i, i + 800);
+  assert.match(corpo, /areaUtente\.innerHTML[^\n]*\$\{aiuto\}/, 'nella barra in alto');
+  assert.match(corpo, /areaMob\.innerHTML[^\n]*\$\{aiuto\}/, 'e nel cassetto, per il telefono');
+});
+
 test('il pannello sa chiedere l’aiuto della scheda che stai guardando', () => {
   assert.match(APP, /stato\?\.aiuti\?\.\[id\]/, 'legge la mappa che arriva dal server');
   assert.match(APP, /aiuto-banner/, 'e la mostra con la stessa forma della striscia dei cookie');

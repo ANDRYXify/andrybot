@@ -855,6 +855,22 @@ function barraCarteHtml() {
   </div>`;
 }
 
+function menuAiutoHtml() {
+  const voci = [
+    ['/guide', L('Guide', 'Guides', 'Guías')],
+    ['/manuale', L('Manuali', 'Manuals', 'Manuales')],
+    ['/novita', L('Novità', 'What’s new', 'Novedades')],
+  ];
+  const qui = aiutoDi(schedaAttiva);
+  return `<div class="switch-canale-box aiuto-box">
+    <button type="button" class="btn secondario mini aiuto-btn" aria-haspopup="menu" aria-expanded="false" title="${L('Guide e manuali', 'Guides and manuals', 'Guías y manuales')}">?</button>
+    <div class="switch-canale-menu aiuto-menu" role="menu" hidden>
+      ${qui ? `<a class="sc-voce" role="menuitem" href="${esc(qui.via)}" target="_blank" rel="noopener"><span class="sc-testo">${L('Per questa scheda', 'For this tab', 'Para esta pestaña')}: <strong>${esc(qui.titolo)}</strong></span></a>` : ''}
+      ${voci.map(([via, nome]) => `<a class="sc-voce" role="menuitem" href="${esc(via)}" target="_blank" rel="noopener"><span class="sc-testo">${esc(nome)}</span></a>`).join('')}
+    </div>
+  </div>`;
+}
+
 function renderAreaUtente() {
   const areaMob = document.getElementById('area-utente-mob');
   if (!stato.user) { if (areaUtente) areaUtente.innerHTML = ''; if (areaMob) areaMob.innerHTML = ''; return; }
@@ -884,10 +900,22 @@ function renderAreaUtente() {
   const tema = toggleTemaHtml();
 
   const audio = toggleSuonoHtml('mini');
-  if (areaUtente) areaUtente.innerHTML = `${selettoreLingua('mini')}${audio}${tema}${centro}${esci}`;
+  const aiuto = menuAiutoHtml();
+  if (areaUtente) areaUtente.innerHTML = `${selettoreLingua('mini')}${audio}${tema}${aiuto}${centro}${esci}`;
 
-  if (areaMob) areaMob.innerHTML = `<span class="chip-utente">${L('ciao', 'hi', 'hola')}, <strong>${ident}</strong></span>${centro}<div class="drawer-controlli">${selettoreLingua()}${toggleSuonoHtml()}${tema}</div>${esci}`;
+  if (areaMob) areaMob.innerHTML = `<span class="chip-utente">${L('ciao', 'hi', 'hola')}, <strong>${ident}</strong></span>${centro}<div class="drawer-controlli">${selettoreLingua()}${toggleSuonoHtml()}${tema}${aiuto}</div>${esci}`;
   applicaTema();
+
+  document.querySelectorAll('.aiuto-btn').forEach((btn) =>
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const menu = btn.parentElement.querySelector('.aiuto-menu');
+      const apri = menu.hidden;
+      document.querySelectorAll('.aiuto-menu').forEach((m) => { m.hidden = true; });
+      document.querySelectorAll('.aiuto-btn').forEach((b) => b.setAttribute('aria-expanded', 'false'));
+      menu.hidden = !apri;
+      btn.setAttribute('aria-expanded', String(apri));
+    }));
 
   document.querySelectorAll('.switch-canale-btn').forEach((btn) =>
     btn.addEventListener('click', (e) => {
@@ -2748,15 +2776,63 @@ function provaInCorso() {
 }
 
 const AIUTO_FERMO_MS = 20_000;
+const AIUTO_FERMO_UNA_USCITA_MS = 8_000;
+const AIUTO_FERMO_DUE_USCITE_MS = 3_000;
 const AIUTO_RITORNI = 3;
 const AIUTO_FINESTRA_MS = 5 * 60_000;
 const AIUTO_INVERSIONI = 6;
+const AIUTO_GIRO = 4;
+const AIUTO_GIRO_MS = 60_000;
+const AIUTO_SA_FARE = 2;
+const AIUTO_RIFIUTI_BASTA = 2;
+const AIUTO_ZITTO_MS = 30 * 24 * 60 * 60_000;
+const AIUTO_PER_SESSIONE = 2;
+const AIUTO_DISTANZA_MS = 60_000;
+const AIUTO_MEMORIA = 'sb-aiuto';
+
 let _aiutoOrologio = null;
 let _aiutoStriscia = null;
 let _aiutoSchedaPrima = null;
 let _aiutoRitorni = new Map();
 let _aiutoVerso = 0;
 let _aiutoInversioni = 0;
+let _aiutoFattoQui = false;
+let _aiutoCambi = [];
+let _aiutoInSessione = 0;
+let _aiutoUltimaVolta = 0;
+
+function aiutoMemoria() {
+  try {
+    const m = JSON.parse(localStorage.getItem(AIUTO_MEMORIA) || '{}');
+    return (m && typeof m === 'object') ? { schede: {}, rifiuti: 0, zittoFino: 0, ...m } : { schede: {}, rifiuti: 0, zittoFino: 0 };
+  } catch (e) { return { schede: {}, rifiuti: 0, zittoFino: 0 }; }
+}
+
+function aiutoScrivi(cambia) {
+  try {
+    const m = aiutoMemoria();
+    cambia(m);
+    localStorage.setItem(AIUTO_MEMORIA, JSON.stringify(m));
+  } catch (e) {  }
+}
+
+function aiutoSegna(id, campo, quanto = 1) {
+  aiutoScrivi((m) => {
+    m.schede[id] = { uscite: 0, mostrato: 0, aperto: 0, fatto: 0, ...(m.schede[id] || {}) };
+    m.schede[id][campo] += quanto;
+  });
+}
+
+function aiutoSuQuesta(id) {
+  return { uscite: 0, mostrato: 0, aperto: 0, fatto: 0, ...(aiutoMemoria().schede[id] || {}) };
+}
+
+function aiutoAttesa(id) {
+  const q = aiutoSuQuesta(id);
+  if (q.uscite >= 2) return AIUTO_FERMO_DUE_USCITE_MS;
+  if (q.uscite >= 1) return AIUTO_FERMO_UNA_USCITA_MS;
+  return AIUTO_FERMO_MS;
+}
 
 function aiutoDi(id) {
   const a = stato?.aiuti?.[id];
@@ -2764,13 +2840,26 @@ function aiutoDi(id) {
 }
 
 function aiutoChiuso(id) {
-  try { return localStorage.getItem('sb-aiuto-' + id) === '1'; } catch (e) { return false; }
+  try {
+    if (localStorage.getItem('sb-aiuto-' + id) === '1') return true;
+  } catch (e) {  }
+  const m = aiutoMemoria();
+  if (m.zittoFino && Date.now() < m.zittoFino) return true;
+  return aiutoSuQuesta(id).fatto >= AIUTO_SA_FARE;
 }
 
 function togliAiuto(perSempre, id = schedaAttiva) {
   if (perSempre) { try { localStorage.setItem('sb-aiuto-' + id, '1'); } catch (e) {  } }
   _aiutoStriscia?.remove();
   _aiutoStriscia = null;
+}
+
+function aiutoRifiutato(id) {
+  togliAiuto(true, id);
+  aiutoScrivi((m) => {
+    m.rifiuti = (m.rifiuti || 0) + 1;
+    if (m.rifiuti >= AIUTO_RIFIUTI_BASTA) m.zittoFino = Date.now() + AIUTO_ZITTO_MS;
+  });
 }
 
 function aiutoDopoErrore() {
@@ -2798,8 +2887,17 @@ function mostraAiuto() {
   document.body.appendChild(el);
   _aiutoStriscia = el;
   const id = schedaAttiva;
-  el.querySelector('[data-aiuto-apri]').addEventListener('click', () => togliAiuto(true, id));
-  el.querySelector('[data-aiuto-no]').addEventListener('click', () => togliAiuto(true, id));
+  _aiutoInSessione++;
+  _aiutoUltimaVolta = Date.now();
+  aiutoSegna(id, 'mostrato');
+  el.querySelector('[data-aiuto-apri]').addEventListener('click', () => { aiutoSegna(id, 'aperto'); togliAiuto(true, id); });
+  el.querySelector('[data-aiuto-no]').addEventListener('click', () => aiutoRifiutato(id));
+}
+
+function aiutoUscendo(id) {
+  if (!id || _aiutoFattoQui || DEMO || !stato?.user) return;
+  if (!aiutoDi(id)) return;
+  aiutoSegna(id, 'uscite');
 }
 
 function segnaRitorno(id) {
@@ -2811,30 +2909,48 @@ function segnaRitorno(id) {
 }
 
 function aiutoPossibile() {
-  return !DEMO && !!stato?.user && !!aiutoDi(schedaAttiva) && !aiutoChiuso(schedaAttiva);
+  if (DEMO || !stato?.user) return false;
+  if (!aiutoDi(schedaAttiva) || aiutoChiuso(schedaAttiva)) return false;
+  if (_aiutoInSessione >= AIUTO_PER_SESSIONE) return false;
+  if (_aiutoUltimaVolta && Date.now() - _aiutoUltimaVolta < AIUTO_DISTANZA_MS) return false;
+  return true;
 }
 
 function riavviaAiuto() {
   clearTimeout(_aiutoOrologio);
   togliAiuto(false);
   if (schedaAttiva !== _aiutoSchedaPrima) {
+    if (_aiutoSchedaPrima !== null) aiutoUscendo(_aiutoSchedaPrima);
     _aiutoSchedaPrima = schedaAttiva;
+    _aiutoFattoQui = false;
     _aiutoInversioni = 0;
     _aiutoVerso = 0;
+    const ora = Date.now();
+    _aiutoCambi = _aiutoCambi.filter((t) => ora - t < AIUTO_GIRO_MS).concat(ora);
     if (aiutoPossibile() && segnaRitorno(schedaAttiva) >= AIUTO_RITORNI) { mostraAiuto(); return; }
+    if (aiutoPossibile() && _aiutoCambi.length >= AIUTO_GIRO) { _aiutoCambi = []; mostraAiuto(); return; }
   }
   if (!aiutoPossibile()) return;
-  _aiutoOrologio = setTimeout(mostraAiuto, AIUTO_FERMO_MS);
+  _aiutoOrologio = setTimeout(mostraAiuto, aiutoAttesa(schedaAttiva));
 }
 
 for (const evento of ['pointerdown', 'keydown', 'touchstart']) {
   document.addEventListener(evento, (ev) => {
     if (_aiutoStriscia && _aiutoStriscia.contains(ev.target)) return;
+    if (ev.target?.closest?.('#app')) {
+      if (!_aiutoFattoQui) { _aiutoFattoQui = true; aiutoSegna(schedaAttiva, 'fatto'); }
+      _aiutoCambi = [];
+    }
     _aiutoInversioni = 0;
     _aiutoVerso = 0;
     riavviaAiuto();
   }, { passive: true });
 }
+
+for (const uscita of ['pagehide', 'blur']) {
+  window.addEventListener(uscita, () => aiutoUscendo(schedaAttiva));
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) aiutoUscendo(schedaAttiva); });
 
 document.addEventListener('wheel', (ev) => {
   if (_aiutoStriscia && _aiutoStriscia.contains(ev.target)) return;
@@ -15734,6 +15850,11 @@ function initGuscio() {
   });
 
   document.addEventListener('click', (ev) => { if (!ev.target.closest('.grp')) chiudiMenuTop(); });
+  document.addEventListener('click', (ev) => {
+    if (ev.target.closest('.aiuto-box')) return;
+    document.querySelectorAll('.aiuto-menu').forEach((m) => { m.hidden = true; });
+    document.querySelectorAll('.aiuto-btn').forEach((b) => b.setAttribute('aria-expanded', 'false'));
+  });
   document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { chiudiMenuTop(); chiudiMenuMobile(); } });
 
   document.getElementById('apri-menu')?.addEventListener('click', () => {
