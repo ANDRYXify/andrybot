@@ -522,6 +522,7 @@ function connetti() {
     else if (dati.tipo === 'alert') alert(dati);
     else if (dati.tipo === 'chat') chat(dati);
     else if (dati.tipo === 'widget') { if (mostra(dati.id === 'ultimoSub' ? 'ws' : 'wf')) widget(dati.id, (MIO.widget && MIO.widget[dati.id]) || dati.cfg, dati.valore); }
+    else if (dati.tipo === 'goal') { MIO.goal = { ...(MIO.goal || {}), ...(dati.cfg || {}) }; goal(MIO.goal, dati.valore); }
     else if (dati.tipo === 'tema') caricaTema();
     else if (dati.tipo === 'testo') { if (mostra('effetti')) mostraTesto(dati); }
     else if (dati.tipo === 'contatore') contatore(dati);
@@ -538,8 +539,8 @@ function fontStackCont(f) {
 function contatore(d) {
   const id = 'cont-' + String(d.comando || '').replace(/[^a-z0-9_]/gi, '').slice(0, 30);
   let el = document.getElementById(id);
-  if (!d.mostra) { if (el) el.remove(); return; }
-  if (!el) { el = document.createElement('div'); el.id = id; el.className = 'contatore-widget'; document.body.appendChild(el); }
+  if (!d.mostra || !mostra('cont')) { if (el) el.remove(); return; }
+  if (!el) { el = document.createElement('div'); el.id = id; el.className = 'contatore-widget ovl-widget forma-carta materia-piatta cornice-nessuna'; document.body.appendChild(el); }
   el.textContent = String(d.testo || '');
   const x = isFinite(Number(d.x)) ? Number(d.x) : 6, y = isFinite(Number(d.y)) ? Number(d.y) : 84;
   el.style.left = x + '%';
@@ -548,11 +549,47 @@ function contatore(d) {
   const tx = x <= 33 ? '0' : (x >= 67 ? '-100%' : '-50%');
   const ty = y <= 33 ? '0' : (y >= 67 ? '-100%' : '-50%');
   el.style.transform = 'translate(' + tx + ',' + ty + ')';
+  el.style.setProperty('--fg', d.colore || '#ffffff');
+  if (d.sfondo) el.style.setProperty('--bg', d.sfondo);
   el.style.color = d.colore || '#ffffff';
-  el.style.background = d.sfondo || 'transparent';
   el.style.fontSize = (Math.max(8, Math.min(200, Number(d.dim) || 40))) + 'px';
   el.style.fontWeight = d.grassetto ? '800' : '500';
   el.style.fontFamily = fontStackCont(d.font);
+}
+
+const GOAL_ETICHETTA = { follower: 'follower', sub: 'sub', bit: 'bit' };
+let goalEl = null;
+
+function goal(cfg, valore) {
+  cfg = cfg || {};
+  if (!cfg.attivo || !mostra('goal')) { if (goalEl) { goalEl.remove(); goalEl = null; } return; }
+  if (!goalEl) {
+    goalEl = document.createElement('div');
+    goalEl.className = 'ovl-widget ovl-goal';
+    goalEl.innerHTML = '<div class="g-testa"><span class="g-tit"></span><span class="g-num"></span></div>'
+      + '<div class="g-barra"><i></i></div>';
+    (wboxes[cfg.posizione] || wboxes['alto-sinistra'] || document.body).appendChild(goalEl);
+  }
+  const xy = MIO.xy.goal;
+  if (xy && xy.x != null) {
+    const sc = (Number(xy.s) || 100) / 100, r = Number(xy.r) || 0;
+    goalEl.style.position = 'fixed'; goalEl.style.left = xy.x + '%'; goalEl.style.top = xy.y + '%';
+    goalEl.style.transform = 'translate(' + (-xy.x) + '%,' + (-xy.y) + '%) scale(' + sc + ') rotate(' + r + 'deg)';
+  }
+  const st = cfg.stile || {};
+  goalEl.className = 'ovl-widget ovl-goal dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');
+  applicaVars(goalEl, {
+    '--bg': st.sfondo, '--op': st.opacita != null ? st.opacita + '%' : null, '--fg': st.testo,
+    '--acc': st.accento, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null, '--font': fontDi(st) || null,
+  });
+  const meta = Math.max(1, Number(cfg.obiettivo) || 100);
+  const ora = Math.max(0, Number(valore) || 0);
+  const quota = Math.min(100, Math.round((ora / meta) * 100));
+  const eti = GOAL_ETICHETTA[cfg.tipo] || '';
+  goalEl.querySelector('.g-tit').textContent = cfg.titolo || eti;
+  goalEl.querySelector('.g-num').textContent = ora + ' / ' + meta;
+  goalEl.querySelector('.g-barra i').style.width = quota + '%';
+  goalEl.classList.toggle('pieno', ora >= meta);
 }
 
 function applicaTema(t) {
@@ -568,6 +605,8 @@ function applicaTema(t) {
 
   widget('ultimoFollower', mostra('wf') ? w.ultimoFollower : { attivo: false }, stato.ultimoFollower);
   widget('ultimoSub', mostra('ws') ? w.ultimoSub : { attivo: false }, stato.ultimoSub);
+  MIO.goal = t.goal || null;
+  goal(MIO.goal, (stato.goal || {})[(MIO.goal || {}).tipo]);
 }
 
 async function caricaTema() {

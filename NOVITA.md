@@ -5,6 +5,10 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-02
 
+- Nell'overlay c'è l'obiettivo: una barra che si riempie da sola mentre arrivano follower, sub o bit, col conto vero e un tasto per ripartire da zero.
+- I contatori sono diventati un elemento dell'overlay come gli altri: si spengono dall'elenco e prendono la veste della scena, senza perdere i colori che gli hai dato tu.
+- Gli sfondi dell'overlay c'erano ma non si vedevano: alert, chat e widget uscivano trasparenti, quindi scritte bianche appoggiate sul gioco. Ora si vedono.
+- L'overlay non è più viola Twitch di serie.
 - La prima volta che entri in una scheda, il bot te la fa vedere passo passo: a cosa serve, cosa c'è dentro con la luce puntata sopra, e dove leggere di più.
 - Il giro si vede una volta sola e si rifà quando vuoi dal «?». Se stai già facendo qualcosa non parte.
 - I comandi pronti sono tradotti: nome e spiegazione escono in italiano, inglese e spagnolo come il resto del pannello.

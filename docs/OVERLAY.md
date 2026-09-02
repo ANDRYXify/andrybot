@@ -81,3 +81,49 @@ verifica che un evento sconosciuto non tocchi la pagina, e **misura** il
 ritardo del secondo effetto con 60 messaggi di chat in mezzo (soglia: 3
 secondi). Sul codice vecchio il test fallisce con 9 357 ms; su quello corretto
 passa con 2 012 ms.
+
+## Tutto quello che compare è un elemento della scena
+
+Prima non era così. Alert, chat e i due widget erano **elementi** — si
+accendevano, si spostavano, si vestivano dallo stesso posto — mentre i
+**contatori** vivevano per conto loro (posizione e colori propri, nessun
+interruttore nell'elenco) e l'**obiettivo** non esisteva. Due sistemi per mettere
+roba sulla stessa tela.
+
+Ora gli elementi sono sette: `alert`, `chat`, `wf`, `ws`, `goal`, `cont`,
+`effetti`. L'elenco del pannello e il `_mostraDefault()` del server devono dire
+le stesse cose, e un test lo verifica: se ne nasce uno e lo si dimentica da una
+parte, diventa rosso.
+
+I contatori mantengono i loro colori e la loro posizione quando li imposti a
+mano — quel che scrive il singolo contatore vince sempre — ma senza impostazioni
+prendono la veste della scena, e si spengono tutti insieme dall'elenco.
+
+## L'obiettivo
+
+Una barra che si riempie mentre arrivano follower, sub o bit.
+
+- **Il conto è quello vero**: lo tiene il motore contando gli eventi che già gli
+  passano davanti (`GOAL_DI` dice quale evento fa crescere quale obiettivo — un
+  elenco, non un caso particolare nel codice). Un cheer da 500 bit vale 500, non
+  1.
+- **Sopravvive a un riavvio**, perché sta nelle impostazioni del canale. Un
+  obiettivo che si azzera da solo la notte non è un obiettivo.
+- **Si riparte da zero solo se lo chiedi**, con un pulsante.
+
+## Il difetto che rendeva l'overlay «meh»
+
+`--op: 85`. Senza il `%`.
+
+`background: color-mix(in srgb, var(--bg) var(--op), transparent)` con un'opacità
+**senza unità** è una dichiarazione invalida: l'elemento resta trasparente. E il
+valore c'era in tre punti — alert, chat e widget — quindi **fuori dalla scatola
+l'overlay non aveva sfondi**: scritte bianche appoggiate sul gioco, senza
+nessuna pastiglia dietro.
+
+La riga scritta dal pannello ci metteva il `%` (`opacita + '%'`), quindi chi
+aveva toccato l'impostazione non vedeva il problema e chi non l'aveva toccata
+sì. Un test ora rifiuta qualsiasi `--op` senza unità nella pelle dell'overlay.
+
+Insieme è sparito il **viola di Twitch** che l'overlay usava come accento di
+serie (e la pastiglia degli effetti): l'accento di serie adesso è il nostro.

@@ -324,6 +324,7 @@ export const GUIDE = [
       ] },
       { h2: DENTRO, p: [
         'L\'overlay si prepara nella scheda <strong>Overlay Studio</strong> e si vede subito mentre lo cambi: non serve ricaricare OBS a ogni ritocco.',
+      'Gli elementi che puoi mettere sono sette: alert degli eventi, chat a schermo, ultimo follower, ultimo sub, <strong>obiettivo</strong> (una barra che si riempie da sola mentre arrivano follower, sub o bit), <strong>contatori</strong> (morti, tentativi, quello che vuoi) ed effetti. Ognuno si accende, si sposta e si veste dallo stesso posto.',
       ], passi: [
         { t: 'Copia il link e mettilo in OBS. ', d: 'Sorgente <em>Browser</em>, incolli il link, 1920×1080. È l\'unica cosa che si fa dentro OBS.' },
         { t: 'Componi quello che si vede. ', d: 'Alert di follow, sub, bit e raid — con immagini, video, suoni e green screen — chat a schermo, widget ed emote 7TV. Posizione, dimensione e rotazione si trascinano.' },
