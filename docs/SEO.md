@@ -281,3 +281,28 @@ finisce da sé, non c'è un secondo elenco da tenere allineato.
 
 Sono anche collegate fra loro e dal piede della vetrina: senza collegamenti
 interni una pagina esiste ma non la trova nessuno.
+
+## L'anteprima dei link
+
+Quando si incolla un link in una chat, l'app va a leggere la pagina e mostra una
+cartolina. Se la pagina non dice niente, l'app **si arrangia**: prende quello che
+ha in cache per quel dominio, e può tirare fuori una cartolina di anni prima —
+con il marchio vecchio e il dominio vecchio.
+
+Cinque pagine pubbliche non avevano **una sola riga** di metadati: privacy,
+termini, invito ai moderatori, sblocco con passkey e mini app di Telegram.
+Proprio quelle che si incollano più spesso: privacy e termini sono gli indirizzi
+che si danno a Twitch e a Kick quando si registra l'app, e l'invito ai moderatori
+si manda in chat. Ora hanno titolo, descrizione, canonical, Open Graph e Twitter
+Card, e puntano alla cartolina buona.
+
+Le pagine di **servizio** (mod, sblocca, tgapp) sono `noindex, follow`: servono a
+fare una cosa, non sono contenuto, e nei motori farebbero concorrenza alla home
+con due righe di testo. Privacy e termini restano indicizzabili: sono documenti
+che la gente e le piattaforme cercano davvero.
+
+La regola non è un elenco. Una pagina è **condivisibile** se il server la
+dichiara pubblica *e* ha una rotta stabile sua: le pagine dell'overlay in OBS non
+ce l'hanno — si aprono solo con la chiave — e restano fuori da sole, senza doverle
+nominare. `test/contratto/anteprime.test.mjs` ricava l'elenco così e pretende la
+cartolina completa, con l'immagine che esiste davvero.
