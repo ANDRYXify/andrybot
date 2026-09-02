@@ -5,6 +5,8 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-02
 
+- Il bot funziona davvero su Kick: gli eventi che Kick ci mandava venivano rifiutati dal sito, quindi il collegamento riusciva e poi non arrivava niente.
+- Su Kick il bot non si ascolta più da solo: le sue risposte non contano come messaggi della chat.
 - Il menu laterale si chiude cliccando fuori, non solo con la X: su schermi larghi restava aperto.
 - Ci sono due manuali, uno per i giochi e uno per i moduli: cosa fa ogni comando, quanto costa, quanto paga, e cosa vuol dire ogni variabile. Li apri dalle schede Giochi e Comandi.
 - C'è una pagina Novità, e in cima al pannello trovi quello che è cambiato da quando non guardavi: se aggiungiamo qualcosa, adesso lo sai.

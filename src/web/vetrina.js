@@ -40,19 +40,42 @@ import { join, extname, normalize } from 'node:path';
 // (le icone anche ai crawler e al manifest, le librerie agli overlay).
 export const CARTELLE = ['/icons/', '/vendor/'];
 
+// GLI INGRESSI CHE ARRIVANO DA FUORI: nessuna sessione, e nessun limite di
+// traffico. Sono i webhook delle piattaforme e le sonde: chi bussa non ha e non
+// puo' avere un cookie, e si autentica con la propria firma o la propria chiave.
+//
+// Stanno qui, in un posto solo, perche' due elenchi diversi dicevano la stessa
+// cosa e non erano d'accordo: l'argine sapeva gia' che /kick/webhook e' un
+// webhook di piattaforma («scartarne uno significa perdere un messaggio»), il
+// cancello no — e rispondeva 404 a Kick. Collegare l'account riusciva, e poi
+// non arrivava niente: nessun messaggio, nessun follow, nessun evento.
+//
+// Una voce che finisce con `/` copre tutto quello che sta sotto.
+export const INGRESSI_ESTERNI = [
+  '/health',              // la sonda di Caddy e di Docker
+  '/stripe/webhook',      // Stripe: firma verificata
+  '/kick/webhook',        // Kick: firma RSA verificata prima di guardare il corpo
+  '/tg/',                 // Telegram: il segreto sta nel percorso
+  '/api/ext/',            // ingresso esterno dello streamer: chiave API del canale
+];
+
+export function eIngressoEsterno(via) {
+  const p = String(via || '');
+  return INGRESSI_ESTERNI.some((x) => (x.endsWith('/') ? p.startsWith(x) : p === x));
+}
+
 // Rotte aperte senza sessione. Non sono file: sono ingressi che si proteggono
 // da soli (una firma, una chiave, uno `state` monouso) o che devono essere
 // leggibili da chiunque. I file delle pagine NON stanno qui: li ricava il
 // guscio da chi le serve.
 const ROTTE = new Set([
-  '/health',                                  // sonda di Caddy e di Docker
   '/', '/entra',                              // la vetrina e il pass monouso dal sito madre
   '/sblocca',                                 // rientro con passkey
   '/privacy', '/termini', '/terms',
   '/mod', '/auth/mod', '/auth/callback',      // invito e login dei moderatori delegati
   '/robots.txt', '/sitemap.xml', '/llms.txt', // SEO: i motori devono poterli leggere
   '/.well-known/security.txt',                // RFC 9116: dove scrivere se trovi un buco
-  '/accedi', '/stripe/webhook',               // abbonamenti self-service (webhook a firma verificata)
+  '/accedi',                                  // abbonamenti self-service (login con Twitch)
   '/spotify/callback', '/tiktok/callback',    // ritorni OAuth: si proteggono con lo `state`
   '/tgapp', '/api/tgapp/auth',                // Telegram Mini App: initData firmato dal bot token
   '/api/tgapp/oidc/start', '/telegram/oidc/callback',
@@ -72,8 +95,6 @@ const PREFISSI = [
   '/manuale/',           // i singoli manuali
   '/u/',                 // link-page pubblica dello streamer, servita dal DB
   '/assets/',            // bundle JS/CSS della link-page (proxy verso Vercel)
-  '/api/ext/',           // ingresso esterno: chiave API del canale nell'Authorization
-  '/tg/',                // webhook Telegram: il segreto sta nel percorso
   '/api/passkey/login/', // sblocco con passkey: serve prima di avere una sessione
 ];
 
@@ -146,7 +167,7 @@ export function creaGuscio(publicDir) {
     // il guscio: i file che le pagine pubbliche si portano dietro
     contiene: (via) => pubblici.has(via) || CARTELLE.some((c) => via.startsWith(c)),
     // la domanda del cancello: questa richiesta passa anche senza sessione?
-    aperto: (via) => ROTTE.has(via) || pubblici.has(via)
+    aperto: (via) => ROTTE.has(via) || pubblici.has(via) || eIngressoEsterno(via)
       || CARTELLE.some((c) => via.startsWith(c))
       || PREFISSI.some((c) => via.startsWith(c)),
     elenco: () => [...pubblici].sort(),

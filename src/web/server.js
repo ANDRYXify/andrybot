@@ -1695,6 +1695,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       if (isc.ok) kickEventi = Array.isArray(isc.dati) ? isc.dati.length : 0;
       else kickErrore = isc.errore || '';
     }
+    // Se gli eventi non arrivano, la causa quasi sempre e' una sola e sta fuori
+    // di qui: nell'app Kick il webhook non e' acceso, o punta altrove. Dirlo con
+    // l'indirizzo giusto vale piu' di "da sistemare".
+    const kickWebhook = config.baseUrl.replace(/\/$/, '') + '/kick/webhook';
     fuori.push({
       id: 'kick',
       nome: 'Kick',
@@ -1704,7 +1708,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       attivo: !!tk?.accessToken && kickEventi > 0,
       daRifare: !!tk?.accessToken && (kickEventi === 0 || !!kickErrore),
       azione: '/auth/kick',
-      note: kickErrore,
+      note: kickErrore || (tk?.accessToken && kickEventi === 0
+        ? `nessun evento: nell'app Kick il webhook deve essere acceso e puntare a ${kickWebhook}` : ''),
     });
 
     // YouTube: le credenziali possono esserci ma il collegamento non e' ancora

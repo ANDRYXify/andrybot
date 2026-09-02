@@ -24,6 +24,8 @@
 // Finestra fissa: per ogni chiave si contano le richieste nella finestra
 // corrente. Semplice, prevedibile, senza dipendenze. L'orologio si può
 // iniettare, così il comportamento nel tempo si può provare davvero.
+import { eIngressoEsterno } from './vetrina.js';
+
 export function creaArgine({ finestraMs = 60_000, max = 60, ora = () => Date.now(), tetto = 20_000 } = {}) {
   const conti = new Map();
   return {
@@ -71,7 +73,9 @@ export const CLASSI = {
 const RE_AUTENTICAZIONE = /^\/(accedi|auth|sblocca|api\/passkey|api\/cambia-canale|mod)(\/|$|\?)/;
 // I webhook delle piattaforme non si limitano: scartarne uno significa perdere
 // un messaggio in chat o un evento, e sono gia' protetti dalla loro firma.
-const RE_ESENTE = /^\/(health|stripe\/webhook|kick\/webhook|tg\/|api\/ext\/)/;
+// L'elenco non e' qui: e' lo STESSO che il cancello usa per lasciarli passare
+// senza sessione (vetrina.js). Quando erano due elenchi non erano d'accordo, e
+// Kick riceveva 404 dal cancello mentre qui era gia' esente.
 const RE_FLUSSO = /\/stream$/;
 const RE_CARICAMENTO = /^\/api\/(streamer\/(effetti|font|sfondi)|alert\/media)|\/media(\/|$)/;
 const RE_TEMPO_REALE = /^\/api\/tracking\//;
@@ -80,7 +84,7 @@ const RE_TEMPO_REALE = /^\/api\/tracking\//;
 export function classifica(metodo, percorso, multipart = false) {
   const m = String(metodo || 'GET').toUpperCase();
   const p = String(percorso || '/');
-  if (RE_ESENTE.test(p) || RE_FLUSSO.test(p)) return null;
+  if (eIngressoEsterno(p) || RE_FLUSSO.test(p)) return null;
   if (RE_TEMPO_REALE.test(p)) return 'tempoReale';
   if (RE_AUTENTICAZIONE.test(p)) return 'autenticazione';
   if (!p.startsWith('/api/')) return null;                 // pagine e statici: li serve il proxy
