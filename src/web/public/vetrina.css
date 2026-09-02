@@ -105,11 +105,11 @@ body.vetrina em, body.vetrina .vt-corsivo {
 .vt-btn:hover { border-color: var(--testo-3); color: var(--testo); transform: translateY(-1px); }
 .vt-btn:active { transform: translateY(1px) scale(.986); }
 .vt-btn-primo {
-  border-color: transparent; color: #fff; font-weight: 700;
+  border-color: transparent; color: var(--su-acc); font-weight: 700;
   background: linear-gradient(168deg, var(--acc-600), var(--acc) 58%, var(--acc-600));
   box-shadow: 0 10px 34px -12px var(--acc-tint), inset 0 1px 0 rgba(255, 255, 255, .22);
 }
-.vt-btn-primo:hover { color: #fff; box-shadow: 0 16px 42px -12px var(--acc-tint), inset 0 1px 0 rgba(255, 255, 255, .3); }
+.vt-btn-primo:hover { color: var(--su-acc); box-shadow: 0 16px 42px -12px var(--acc-tint), inset 0 1px 0 rgba(255, 255, 255, .3); }
 .vt-btn-primo::after {
   content: ""; position: absolute; inset: 0; z-index: -1;
   background: linear-gradient(100deg, transparent 38%, rgba(255, 255, 255, .5) 50%, transparent 62%);
@@ -132,41 +132,41 @@ body.vetrina em, body.vetrina .vt-corsivo {
   box-shadow: var(--om-l);
 }
 .vt-schermo {
-  --surface: #141110; --surface-2: #1b1715; --surface-3: #241f1c;
-  --border: #29231f; --border-2: #3a322c;
-  --testo: #f3eee5; --testo-2: #a89d8e; --testo-3: #6f665b;
+  --surface: #141112; --surface-2: #1b1718; --surface-3: #241e21;
+  --border: #292225; --border-2: #3a3135;
+  --testo: #f1edef; --testo-2: #a39d9f; --testo-3: #6b6668;
 
   position: relative; overflow: hidden; border-radius: 12px;
   aspect-ratio: 16 / 9; min-height: 220px;
   background:
-    radial-gradient(70% 90% at 28% 12%, #241a3d, transparent 62%),
-    radial-gradient(60% 80% at 84% 82%, #2a1a18, transparent 66%),
-    linear-gradient(168deg, #12101a, #0a0908);
+    radial-gradient(70% 90% at 28% 12%, #3a1030, transparent 62%),
+    radial-gradient(60% 80% at 84% 82%, #281a20, transparent 66%),
+    linear-gradient(168deg, #190e13, #0a0909);
   border: 1px solid var(--border);
 }
 .vt-gioco {
   position: absolute; inset: -14%;
   background:
-    conic-gradient(from 210deg at 42% 44%, rgba(155, 123, 255, .5), rgba(255, 90, 54, .38), rgba(110, 231, 255, .3), rgba(155, 123, 255, .5));
+    conic-gradient(from 210deg at 42% 44%, rgba(247, 47, 167, .46), rgba(255, 122, 90, .34), rgba(110, 231, 255, .28), rgba(247, 47, 167, .46));
   filter: blur(38px); opacity: .95;
 }
 .vt-schermo::after {
   content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
   background:
     repeating-linear-gradient(0deg, rgba(255, 255, 255, .028) 0 1px, transparent 1px 3px),
-    radial-gradient(120% 92% at 50% 42%, transparent 42%, rgba(6, 5, 5, .82) 100%);
+    radial-gradient(120% 92% at 50% 42%, transparent 42%, rgba(7, 5, 6, .82) 100%);
 }
 .vt-scena-eti {
   position: absolute; z-index: 2; inset: 0; display: grid; place-items: center;
   font-family: Archivo, system-ui, sans-serif; font-size: clamp(.7rem, 1.5vw, .95rem);
   font-weight: 700; letter-spacing: .46em; text-transform: uppercase;
-  color: rgba(243, 238, 229, .13); padding-bottom: 8%;
+  color: rgba(239, 238, 239, .13); padding-bottom: 8%;
 }
 .vt-etichetta {
   position: absolute; z-index: 3; display: inline-flex; align-items: center; gap: .4rem;
   font-family: Archivo, system-ui, sans-serif; font-size: .68rem; font-weight: 700; letter-spacing: .12em;
   text-transform: uppercase; padding: .34rem .7rem; border-radius: 999px;
-  background: rgba(10, 9, 8, .72); border: 1px solid var(--border-2); color: var(--testo);
+  background: rgba(10, 9, 9, .72); border: 1px solid var(--border-2); color: var(--testo);
   backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
 }
 .vt-live { top: 14px; left: 14px; color: #ff6a52; border-color: rgba(255, 106, 82, .4); }
@@ -180,7 +180,7 @@ body.vetrina em, body.vetrina .vt-corsivo {
   position: absolute; z-index: 4; top: 52px; left: 50%; translate: -50% 0;
   display: flex; align-items: center; gap: .6rem;
   padding: .62rem 1rem .62rem .8rem; border-radius: 12px; white-space: nowrap;
-  background: linear-gradient(150deg, rgba(38, 26, 22, .96), rgba(20, 16, 15, .96));
+  background: linear-gradient(150deg, rgba(37, 25, 31, .96), rgba(20, 16, 17, .96));
   border: 1px solid var(--acc-bordo); box-shadow: 0 16px 40px -14px rgba(0, 0, 0, .9);
   font-size: .86rem; color: var(--testo); opacity: 0;
 }
@@ -196,7 +196,7 @@ body.vetrina em, body.vetrina .vt-corsivo {
 .vt-chat li {
   align-self: flex-start; max-width: 100%;
   padding: .3rem .62rem; border-radius: 9px; font-size: .8rem; line-height: 1.35;
-  background: rgba(10, 9, 8, .68); border: 1px solid var(--border);
+  background: rgba(10, 9, 9, .68); border: 1px solid var(--border);
   color: var(--testo-2); opacity: 0;
   backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -204,13 +204,13 @@ body.vetrina em, body.vetrina .vt-corsivo {
 .vt-chat b { font-weight: 700; }
 .vt-chat .n1 { color: #ff7ab6; } .vt-chat .n2 { color: #7ad3ff; }
 .vt-chat .n3 { color: #8de08a; } .vt-chat .n4 { color: var(--vio); }
-.vt-chat li.bot { border-color: var(--acc-bordo); background: rgba(36, 18, 12, .8); color: var(--testo); }
+.vt-chat li.bot { border-color: var(--acc-bordo); background: rgba(34, 17, 25, .8); color: var(--testo); }
 .vt-chat li.bot b { color: var(--acc); }
 
 .vt-cam {
   position: absolute; z-index: 3; right: 14px; bottom: 14px; width: 27%; aspect-ratio: 4 / 3;
   border-radius: 10px; border: 1px solid var(--border-2);
-  background: radial-gradient(70% 70% at 50% 34%, #2b2436, #100e14);
+  background: radial-gradient(70% 70% at 50% 34%, #35212a, #140d10);
   display: grid; place-items: center; font-size: .66rem; letter-spacing: .16em;
   text-transform: uppercase; color: var(--testo-3);
 }
@@ -398,7 +398,7 @@ body.vetrina em, body.vetrina .vt-corsivo {
   border-radius: 6px; border: 1.5px solid var(--testo-3); background: var(--surface-3);
   transition: background .2s var(--molla-lieve), border-color .2s ease;
 }
-.vt-spunta svg { width: 12px; height: 12px; color: #fff; opacity: 0; transform: scale(.5); transition: opacity .18s ease, transform .22s var(--molla-lieve); }
+.vt-spunta svg { width: 12px; height: 12px; color: var(--su-acc); opacity: 0; transform: scale(.5); transition: opacity .18s ease, transform .22s var(--molla-lieve); }
 .vt-extra:has(input:checked) { border-color: var(--acc-bordo); background: var(--acc-soft); }
 .vt-extra:has(input:checked) .vt-spunta { background: var(--acc); border-color: var(--acc); }
 .vt-extra:has(input:checked) .vt-spunta svg { opacity: 1; transform: none; }

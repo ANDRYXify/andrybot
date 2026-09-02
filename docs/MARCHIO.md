@@ -26,9 +26,10 @@ accanto all'altra invece di ragionarci sopra:
 
 Quindi la regola è: **nelle pagine il marchio è trasparente**, e il fondo ce lo
 mette la pagina. Nelle **icone del sistema operativo** no — lì un fondo opaco
-serve per forza, ed è la carta calda `#faf7f1`, la stessa superficie delle
-schede, così l'icona sembra parte dell'app invece di un adesivo appiccicato
-sopra.
+serve per forza, ed è la **superficie del prodotto**, la stessa delle schede,
+così l'icona sembra parte dell'app invece di un adesivo appiccicato sopra. Il
+valore non è scritto qui dentro: `scripts/marchio.mjs` lo legge dalla tavolozza
+(vedi [TAVOLOZZA.md](TAVOLOZZA.md)).
 
 ## Le misure si generano, non si disegnano
 
@@ -88,7 +89,7 @@ sul marchio, non una cosa da decidere di nascosto.
 ## Cosa si è tirato dietro
 
 Il logo vecchio era viola, e il viola era rimasto sparso in giro anche dove il
-prodotto era passato da un pezzo alla carta calda: il `theme_color` del manifest,
+prodotto era passato da un pezzo ad altro: il `theme_color` del manifest,
 il colore della barra del browser in cinque pagine, l'anello dello splash,
 l'anteprima social. Sono stati riportati alla tavolozza vera — non per
 completezza, ma perché una barra viola sopra una pagina color carta è una
@@ -110,8 +111,10 @@ un `drop-shadow` segue la forma delle lettere, quindi su fondo scuro diventa
 un'insegna al neon — che è esattamente come quel disegno vuole leggersi. Sul
 chiaro il bagliore non c'è: su carta sarebbe una sbavatura.
 
-Un accenno dello stesso bagliore, molto più leggero, sta anche sul logo della
-barra in alto quando il tema è scuro.
+Un accenno dello stesso bagliore, molto più leggero, sta su **ogni** immagine
+del marchio quando il tema è scuro — barra, vetrina, pagine di servizio, guide.
+La regola si aggancia all'immagine e non a chi la mostra, perché legandola a una
+classe la vetrina se l'era persa: vedi [TAVOLOZZA.md](TAVOLOZZA.md).
 
 Chi ha chiesto **meno animazioni** (`prefers-reduced-motion`) vede il logo
 fermo, col bagliore statico: l'informazione resta, il movimento no.

@@ -23,9 +23,7 @@
 // guida in più è una voce in più in GUIDE, e da lì si aggiornano da sole la
 // sitemap, l'indice e i collegamenti fra guide. Un fatto scritto in un posto solo.
 
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { dichiarazioni, REGOLA_MARCHIO } from './tavolozza.js';
 
 const SITO = 'https://socialbot.live';
 
@@ -358,30 +356,14 @@ function testo(s) {
 //
 // Queste pagine avevano una copia a mano dei colori, e la copia era rimasta al
 // viola di due marchi fa: si cliccava «Guide» dalla vetrina e si finiva in un
-// altro prodotto. Adesso i valori si leggono da anime.css — la stessa fonte che
-// veste la dashboard — quindi il giorno che il marchio cambia, cambiano anche
-// queste pagine, senza che nessuno debba ricordarsene.
+// altro prodotto. Adesso i valori arrivano da `tavolozza.js`, che li legge da
+// tema.css — la stessa fonte che veste la dashboard — quindi il giorno che il
+// marchio cambia, cambiano anche queste pagine.
 const TOKEN = ['bg', 'surface', 'surface-2', 'border', 'border-2',
-  'testo', 'testo-2', 'testo-3', 'acc', 'acc-soft', 'acc-bordo'];
+  'testo', 'testo-2', 'testo-3', 'acc', 'acc-600', 'su-acc', 'acc-soft', 'acc-bordo'];
 
-function tavolozza() {
-  const via = join(dirname(fileURLToPath(import.meta.url)), 'public/tema.css');
-  const css = readFileSync(via, 'utf8');
-  const blocco = (selettore) => {
-    const i = css.indexOf(selettore);
-    if (i < 0) throw new Error(`guide: non trovo ${selettore} in tema.css`);
-    const a = css.indexOf('{', i);
-    return css.slice(a + 1, css.indexOf('}', a));
-  };
-  const prendi = (b) => TOKEN.map((t) => {
-    const m = b.match(new RegExp(`--${t}:\\s*([^;]+);`));
-    if (!m) throw new Error(`guide: manca --${t} nella tavolozza del sito`);
-    return `--${t}:${m[1].trim()}`;
-  }).join(';');
-  return { chiaro: prendi(blocco(':root {')), scuro: prendi(blocco(':root[data-theme="dark"]')) };
-}
+const TAV = { chiaro: dichiarazioni(TOKEN, 'chiaro'), scuro: dichiarazioni(TOKEN, 'scuro') };
 
-const TAV = tavolozza();
 
 const CSS = `
 :root{color-scheme:light;${TAV.chiaro}}
@@ -394,6 +376,7 @@ body{margin:0;background:var(--bg);color:var(--testo);font:16px/1.7 Archivo,syst
 .g-testata div{max-width:760px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .g-marchio{display:flex;align-items:center;text-decoration:none}
 .g-marchio img{display:block;height:30px;width:auto}
+${REGOLA_MARCHIO}
 .g-testata nav{margin-left:auto;display:flex;gap:16px;font-size:.9rem}
 .g-testata nav a{color:var(--testo-2);text-decoration:none}
 .g-testata nav a:hover{color:var(--acc)}
@@ -447,7 +430,7 @@ ol.g-passi b{display:block;color:var(--testo);margin-bottom:3px}
 .g-altre small{display:block;color:var(--testo-3);font-weight:400}
 .g-invito{margin-top:44px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 24px}
 .g-invito h2{margin-top:0}
-.g-cta{display:inline-block;margin-top:6px;background:var(--acc);color:#fff;text-decoration:none;font-weight:600;padding:.62rem 1.15rem;border-radius:999px}
+.g-cta{display:inline-block;margin-top:6px;background:var(--acc);color:var(--su-acc);text-decoration:none;font-weight:600;padding:.62rem 1.15rem;border-radius:999px}
 .g-piede{border-top:1px solid var(--border);margin-top:50px;background:var(--surface)}
 .g-piede div{max-width:760px;margin:0 auto;padding:20px;font-size:.85rem;color:var(--testo-3);display:flex;gap:16px;flex-wrap:wrap}
 .g-piede a{color:var(--testo-3)}
@@ -460,7 +443,7 @@ ol.g-passi b{display:block;color:var(--testo);margin-bottom:3px}
 
 function testata(attiva) {
   return `<header class="g-testata"><div>
-<a class="g-marchio" href="/"><img src="/icons/logo-barra.png?v=5" alt="SocialBot" width="80" height="30"></a>
+<a class="g-marchio" href="/"><img src="/icons/logo-barra.png?v=6" alt="SocialBot" width="80" height="30"></a>
 <nav><a href="/guide"${attiva === 'indice' ? ' aria-current="page"' : ''}>Guide</a><a href="/manuale"${attiva === 'manuali' ? ' aria-current="page"' : ''}>Manuali</a><a href="/novita"${attiva === 'novita' ? ' aria-current="page"' : ''}>Novità</a><a href="/">Il bot</a></nav>
 </div></header>`;
 }
@@ -569,14 +552,14 @@ function scheletro({ titolo, desc, url, corpo, ld }) {
 <meta property="og:locale" content="it_IT">
 <meta property="og:title" content="${esc(titolo)}"><meta property="og:description" content="${esc(desc)}">
 <meta property="og:url" content="${esc(url)}">
-<meta property="og:image" content="${SITO}/icons/og-guide.png?v=5">
+<meta property="og:image" content="${SITO}/icons/og-guide.png?v=6">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:alt" content="Guide di SocialBot su Twitch, bot e overlay">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(titolo)}">
 <meta name="twitter:description" content="${esc(desc)}">
-<meta name="twitter:image" content="${SITO}/icons/og-guide.png?v=5">
-<link rel="icon" href="/icons/icon-192.png?v=5">
+<meta name="twitter:image" content="${SITO}/icons/og-guide.png?v=6">
+<link rel="icon" href="/icons/icon-192.png?v=6">
 <link rel="stylesheet" href="/font.css">
 <script src="/tema.js"></script>
 <style>${CSS}</style>

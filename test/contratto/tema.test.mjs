@@ -87,9 +87,10 @@ test('e si vestono con i fogli di tutti, seguendo il tema scelto', () => {
 test('e il foglio comune non si scrive i colori a mano', () => {
   const css = leggi('src/web/public/pagina.css');
   const aMano = css.match(/#[0-9a-fA-F]{3,8}/g) || [];
-  // l'unica eccezione: il viola di Twitch sul suo pulsante, e il bianco sul pieno
-  assert.deepEqual([...new Set(aMano)].sort(), ['#7c37e0', '#9146ff', '#fff'],
-    'gli unici colori scritti a mano sono quelli di Twitch e il bianco sul pieno');
+  // l'unica eccezione e' il viola di Twitch sul suo pulsante: e' il colore di
+  // un'altra azienda, non un colore nostro, e non segue il nostro tema.
+  assert.deepEqual([...new Set(aMano)].sort(), ['#7c37e0', '#9146ff'],
+    'l\'unico colore scritto a mano e\' quello di Twitch');
 });
 
 test('la vetrina porta alle guide, ai manuali e alle novità', () => {

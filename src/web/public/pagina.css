@@ -60,7 +60,7 @@ body.centrata { display: grid; place-items: center; }
 .azione {
   width: 100%; margin-top: 22px; padding: 14px 18px; border: 0; cursor: pointer;
   border-radius: 12px; font-size: 1rem; font-weight: 650; font-family: inherit;
-  color: #fff; background: var(--acc); text-decoration: none; display: inline-block;
+  color: var(--su-acc); background: var(--acc); text-decoration: none; display: inline-block;
   transition: background .18s ease;
 }
 .azione:hover { background: var(--acc-600); text-decoration: none; }
