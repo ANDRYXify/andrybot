@@ -17,7 +17,7 @@
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "test": "node --test",
-    "cancelli": "node scripts/verifica-dipendenze.mjs && node scripts/verifica-riservati.mjs && node scripts/spoglia-commenti.mjs --verifica && node scripts/verifica-stile.mjs && node scripts/verifica-libreria.mjs && node scripts/verifica-uscite.mjs && node scripts/verifica-service-worker.mjs && node scripts/verifica-barra-salva.mjs && node scripts/verifica-csp.mjs",
+    "cancelli": "node scripts/verifica-dipendenze.mjs && node scripts/verifica-riservati.mjs && node scripts/spoglia-commenti.mjs --verifica && node scripts/verifica-stile.mjs && node scripts/verifica-libreria.mjs && node scripts/verifica-uscite.mjs && node scripts/verifica-service-worker.mjs && node scripts/verifica-barra-salva.mjs && node scripts/verifica-csp.mjs && node scripts/verifica-moduli.mjs",
     "pulisci-commenti": "node scripts/spoglia-commenti.mjs",
     "ganci": "node scripts/installa-ganci.mjs",
     "aggiorna": "bash server/aggiorna.sh"
