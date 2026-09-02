@@ -57,7 +57,7 @@ const ROTTE = new Set([
   '/tgapp', '/api/tgapp/auth',                // Telegram Mini App: initData firmato dal bot token
   '/api/tgapp/oidc/start', '/telegram/oidc/callback',
   '/api/me',                                  // senza sessione risponde soltanto "nessun utente"
-  '/guide', '/novita',                        // guide e novità: contenuto pubblico, indicizzabile
+  '/guide', '/manuale', '/novita',            // guide, manuali e novità: contenuto pubblico, indicizzabile
   '/api/novita',                              // le stesse novità, per la scheda in cima al pannello
   '/api/streamer-verify',                     // API JSON della link-page (proxy verso Vercel)
 ]);
@@ -69,6 +69,7 @@ const PREFISSI = [
   '/tracking/',          // overlay tracking in OBS: stessa chiave del canale
   '/api/tracking/',      // gesti e voce dell'overlay tracking (chiave overlay)
   '/guide/',             // le singole guide
+  '/manuale/',           // i singoli manuali
   '/u/',                 // link-page pubblica dello streamer, servita dal DB
   '/assets/',            // bundle JS/CSS della link-page (proxy verso Vercel)
   '/api/ext/',           // ingresso esterno: chiave API del canale nell'Authorization

@@ -317,6 +317,20 @@ body{margin:0;background:var(--bg);color:var(--testo);font:16px/1.7 Archivo,syst
 .g-testata nav{margin-left:auto;display:flex;gap:16px;font-size:.9rem}
 .g-testata nav a{color:var(--testo-2);text-decoration:none}
 .g-testata nav a:hover{color:var(--acc)}
+.g-tab{overflow-x:auto;margin:14px 0}
+.g-tab table{border-collapse:collapse;width:100%;font-size:.92rem}
+.g-tab th,.g-tab td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+.g-tab th{color:var(--testo-2);font-weight:600;white-space:nowrap;border-bottom-color:var(--border-2)}
+.g-tab td:first-child{white-space:nowrap;color:var(--testo)}
+.g-esempio{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;overflow-x:auto;font:.88rem/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;margin:14px 0}
+.g-indice{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin:22px 0}
+.g-indice b{display:block;font-size:.82rem;text-transform:uppercase;letter-spacing:.06em;color:var(--testo-3);margin-bottom:8px}
+.g-indice ol{margin:0;padding-left:20px;columns:2;column-gap:26px}
+.g-indice li{margin:3px 0;break-inside:avoid}
+.g-indice a{color:var(--testo-2);text-decoration:none}
+.g-indice a:hover{color:var(--acc)}
+@media(max-width:620px){.g-indice ol{columns:1}}
+h3{font-size:1rem;margin:20px 0 6px}
 .g-novita{margin:26px 0}
 .g-novita h2{font-size:1.05rem;color:var(--testo-2);font-weight:600;margin:0 0 10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
 .g-novita ul{margin:0;padding-left:20px}
@@ -367,7 +381,7 @@ ol.g-passi b{display:block;color:var(--testo);margin-bottom:3px}
 function testata(attiva) {
   return `<header class="g-testata"><div>
 <a class="g-marchio" href="/"><img src="/icons/logo-barra.png?v=5" alt="SocialBot" width="80" height="30"></a>
-<nav><a href="/guide"${attiva === 'indice' ? ' aria-current="page"' : ''}>Guide</a><a href="/novita"${attiva === 'novita' ? ' aria-current="page"' : ''}>Novità</a><a href="/">Il bot</a></nav>
+<nav><a href="/guide"${attiva === 'indice' ? ' aria-current="page"' : ''}>Guide</a><a href="/manuale"${attiva === 'manuali' ? ' aria-current="page"' : ''}>Manuali</a><a href="/novita"${attiva === 'novita' ? ' aria-current="page"' : ''}>Novità</a><a href="/">Il bot</a></nav>
 </div></header>`;
 }
 
@@ -378,15 +392,37 @@ function piede() {
 </div></footer>`;
 }
 
+// L'ancora di una sezione: si ricava dal titolo, così l'indice e i titoli non
+// possono divergere (e un collegamento a una sezione resta valido).
+function ancora(t) {
+  return String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
+}
+
 function corpoHtml(corpo) {
   let h = '';
   for (const b of corpo) {
-    if (b.h2) h += `<h2>${esc(b.h2)}</h2>`;
+    if (b.h2) h += `<h2 id="${ancora(b.h2)}">${esc(b.h2)}</h2>`;
+    if (b.h3) h += `<h3>${esc(b.h3)}</h3>`;
     if (b.p) for (const p of b.p) h += `<p>${testo(p)}</p>`;
     if (b.ul) h += `<ul>${b.ul.map((x) => `<li>${testo(x)}</li>`).join('')}</ul>`;
     if (b.passi) h += `<ol class="g-passi">${b.passi.map((s) => `<li><b>${esc(s.t)}</b>${testo(s.d)}</li>`).join('')}</ol>`;
+    if (b.tabella) {
+      const [testa, ...righe] = b.tabella;
+      h += `<div class="g-tab"><table><thead><tr>${testa.map((c) => `<th>${testo(c)}</th>`).join('')}</tr></thead>`
+        + `<tbody>${righe.map((r) => `<tr>${r.map((c) => `<td>${testo(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+    }
+    if (b.esempio) h += `<pre class="g-esempio">${esc(b.esempio)}</pre>`;
   }
   return h;
+}
+
+// L'indice si ricava dai titoli del corpo: una sezione nuova ci finisce da sé.
+function indiceHtml(corpo) {
+  const voci = corpo.filter((b) => b.h2).map((b) => b.h2);
+  if (voci.length < 4) return '';
+  return `<nav class="g-indice"><b>In questa pagina</b><ol>${voci.map((v) =>
+    `<li><a href="#${ancora(v)}">${esc(v)}</a></li>`).join('')}</ol></nav>`;
 }
 
 function faqHtml(faq) {
@@ -483,6 +519,57 @@ ${faqHtml(g.faq)}
 ${altreHtml(g.slug)}
 </main>${piede()}`;
   return scheletro({ titolo: g.titolo, desc: g.desc, url, corpo, ld: datiStrutturati(g) });
+}
+
+// Il guscio di una pagina di documentazione: la stessa forma delle guide, ma con
+// l'indice ricavato dai titoli. Serve ai manuali, che vivono in manuali.js.
+export function paginaDoc(d) {
+  const url = `${SITO}/manuale/${d.slug}`;
+  const ld = [{
+    '@context': 'https://schema.org', '@type': 'TechArticle',
+    headline: d.h1, name: d.h1, description: d.desc, inLanguage: 'it-IT',
+    datePublished: d.aggiornata, dateModified: d.aggiornata,
+    mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+    author: { '@type': 'Person', name: 'Andrea Taliento' },
+    publisher: { '@type': 'Organization', name: 'SocialBot', url: SITO },
+  }, {
+    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'SocialBot', item: SITO },
+      { '@type': 'ListItem', position: 2, name: 'Manuali', item: `${SITO}/manuale` },
+      { '@type': 'ListItem', position: 3, name: d.h1, item: url },
+    ],
+  }];
+  const corpo = `${testata('manuali')}
+<main><p class="g-briciole"><a href="/">SocialBot</a> › <a href="/manuale">Manuali</a> › ${esc(d.h1)}</p>
+<article><h1>${esc(d.h1)}</h1>
+<p class="g-data">Aggiornato il ${new Date(d.aggiornata).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+${indiceHtml(d.corpo)}
+${corpoHtml(d.corpo)}</article>
+${faqHtml(d.faq)}
+</main>${piede()}`;
+  return scheletro({ titolo: d.titolo, desc: d.desc, url, corpo,
+    ld: ld.map((b) => `<script type="application/ld+json">${JSON.stringify(b)}</script>`).join('') });
+}
+
+// L'indice dei manuali.
+export function paginaManuali(manuali) {
+  const url = `${SITO}/manuale`;
+  const ld = `<script type="application/ld+json">${JSON.stringify({
+    '@context': 'https://schema.org', '@type': 'CollectionPage',
+    name: 'Manuali di SocialBot', url, inLanguage: 'it-IT',
+    hasPart: manuali.map((m) => ({ '@type': 'TechArticle', headline: m.h1, url: `${SITO}/manuale/${m.slug}` })),
+  })}</script>`;
+  const corpo = `${testata('manuali')}
+<main><p class="g-briciole"><a href="/">SocialBot</a> › Manuali</p>
+<h1>Manuali</h1>
+<p>Cosa fa cosa, e come. Non è una presentazione: è il materiale da tenere aperto accanto mentre configuri.</p>
+<ul class="g-elenco">${manuali.map((m) =>
+    `<li><h2><a href="/manuale/${m.slug}">${esc(m.h1)}</a></h2><p>${esc(m.desc)}</p></li>`).join('')}</ul>
+</main>${piede()}`;
+  return scheletro({ titolo: 'Manuali di SocialBot: giochi, monete e moduli | SocialBot',
+    desc: 'I manuali di SocialBot: le monete e i giochi della chat, e i moduli — inneschi, condizioni, azioni e variabili, uno per uno.',
+    url, corpo, ld });
 }
 
 export function paginaNovita(gruppi) {

@@ -8617,6 +8617,7 @@ function pannelloModuli() {
     <div class="carta">
       <h2>${_hIco(ICO.fulmine)}${L('Comando rapido', 'Quick command', 'Comando rápido')}</h2>
       <p>${L('Il modo più veloce: scrivi il', 'The fastest way: type the', 'La forma más rápida: escribe el')} <strong class="primo-piano">${L('nome', 'name', 'nombre')}</strong> ${L('e', 'and', 'y')} <strong class="primo-piano">${L('cosa deve rispondere', 'what it should reply', 'qué debe responder')}</strong>. ${L('Fatto — niente altro da compilare.', 'Done — nothing else to fill in.', 'Listo — nada más que rellenar.')}</p>
+      <p class="suggerimento"><a href="/manuale/moduli" target="_blank" rel="noopener">${L('Manuale dei moduli', 'Modules manual', 'Manual de módulos')}</a> — ${L('inneschi, condizioni, azioni e variabili, uno per uno.', 'triggers, conditions, actions and variables, one by one.', 'disparadores, condiciones, acciones y variables, uno por uno.')}</p>
       <div class="riga-flessibile">
         <span class="prefisso-cmd">!</span>
         <input type="text" id="qc-nome" class="campo-largo" placeholder="social" maxlength="24">
@@ -10056,6 +10057,7 @@ function pannelloGiochi() {
       <h2>${_hIco(ICO.giochi)}${L('Minigiochi', 'Minigames', 'Minijuegos')}</h2>
       <p>${L('Giochi in chat per la tua community, con delle', 'Chat games for your community, with', 'Juegos en el chat para tu comunidad, con')} <strong class="primo-piano">${L('monete', 'coins', 'monedas')}</strong>
       ${L('(punti fedeltà) che si guadagnano chiacchierando.', '(loyalty points) earned by chatting.', '(puntos de fidelidad) que se ganan charlando.')}</p>
+      <p class="suggerimento"><a href="/manuale/giochi" target="_blank" rel="noopener">${L('Manuale dei giochi e delle monete', 'Games and coins manual', 'Manual de juegos y monedas')}</a> — ${L('cosa fa ogni comando, quanto costa e quanto paga.', 'what each command does, what it costs and what it pays.', 'qué hace cada comando, cuánto cuesta y cuánto paga.')}</p>
 
       <div class="riga-check">
         <input type="checkbox" id="chk-giochi" ${s.giochi ? 'checked' : ''}>

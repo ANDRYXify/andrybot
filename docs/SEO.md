@@ -269,3 +269,15 @@ a schermo**. OBS resta nominato in due posti, e sono i due dove serve davvero:
 
 Se un domani si vuole togliere anche quella, si perde un po' di ricerca: è una
 scelta di posizionamento, non un difetto da correggere.
+
+## Le pagine che si sono aggiunte
+
+Oltre alle guide: `/manuale/giochi`, `/manuale/moduli` e il loro indice
+`/manuale` (materiale di consultazione, `TechArticle` nei dati strutturati), e
+`/novita` — contenuto che si aggiorna, con la data dell'ultima giornata come
+`lastmod` nella sitemap. Tutte con la loro voce nella sitemap ricavata dalla
+stessa fonte che le compone (`urlGuide`, `urlManuali`): una pagina nuova ci
+finisce da sé, non c'è un secondo elenco da tenere allineato.
+
+Sono anche collegate fra loro e dal piede della vetrina: senza collegamenti
+interni una pagina esiste ma non la trova nessuno.
