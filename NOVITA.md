@@ -5,6 +5,9 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-02
 
+- I giochi si creano tutti da un posto solo: prima c'erano due riquadri che facevano la stessa cosa e uno ti spostava in un'altra scheda per finire il lavoro.
+- Si sceglie chi lancia il gioco — il bot a sorpresa, o uno spettatore che scrive un comando — e il resto si adatta.
+- Nell'editor dei giochi le parole magiche offerte sono quelle che a un gioco servono: monete, caso, numeri, chi scrive. Le altre restano a un clic.
 - Sul telefono il «?» apre guide, manuali e novità dentro al menu, come righe: prima usciva una tendina più larga del menu e si leggeva mezza parola.
 - Anche il cambio canale sul telefono è diventato un elenco, per lo stesso motivo.
 - Tutto quello che si chiama con un «!» adesso si gestisce: una quarantina di comandi pronti, ognuno da spegnere, rinominare o riservare a sub, VIP e moderatori. Li trovi in Comandi, in fondo.

@@ -10544,7 +10544,19 @@ function pannelloGiochi() {
     </div>
     <div class="carta">
       <h2>${_hIco(ICO.giochi)}${L('I tuoi giochi', 'Your games', 'Tus juegos')}</h2>
-      <p>${L('Crea i tuoi giochi: entrano nel giro delle manche automatiche (mescolati a quelli di default).', 'Create your own games: they join the automatic rounds rotation (mixed with the default ones).', 'Crea tus propios juegos: entran en la rotación de rondas automáticas (mezclados con los de serie).')}</p>
+      <p>${L('Crea un gioco tuo. Ci sono due modi, e la differenza è una sola:', 'Make a game of your own. There are two ways, and the difference is one thing:', 'Crea un juego tuyo. Hay dos maneras, y la diferencia es una sola:')} <strong class="primo-piano">${L('chi lo lancia', 'who starts it', 'quién lo lanza')}</strong>.</p>
+      <div class="gioco-rami">
+        <button type="button" class="gioco-ramo" data-ramo="manche">
+          <strong>${L('Ci pensa il bot', 'The bot does it', 'Lo hace el bot')}</strong>
+          <span>${L('Ogni tanto, a sorpresa, parte una manche e il primo che risponde vince.', 'Now and then, by surprise, a round starts and the first to answer wins.', 'De vez en cuando, por sorpresa, empieza una ronda y el primero que responde gana.')}</span>
+        </button>
+        <button type="button" class="gioco-ramo" data-ramo="comando">
+          <strong>${L('Lo scrive uno spettatore', 'A viewer types it', 'Lo escribe un espectador')}</strong>
+          <span>${L('Un comando che costa monete, tira il dado e paga — o no.', 'A command that costs coins, rolls the dice and pays — or not.', 'Un comando que cuesta monedas, tira el dado y paga — o no.')}</span>
+        </button>
+      </div>
+
+      <div id="gioco-manche" class="gioco-ramo-corpo" hidden>
       <div class="riga-flessibile">
         <select id="gioco-tipo">
           <option value="trivia">${L('Quiz (domande & risposte)', 'Quiz (questions & answers)', 'Quiz (preguntas y respuestas)')}</option>
@@ -10577,23 +10589,21 @@ function pannelloGiochi() {
         <label class="campo-num spazio-sopra">${L('Secondi per rispondere', 'Seconds to answer', 'Segundos para responder')}<input type="number" id="gioco-durata" min="10" max="300" value="45"></label>
       </div>
       <p class="spazio-sopra"><button class="btn" id="btn-crea-gioco">${L('Crea gioco', 'Create game', 'Crear juego')}</button></p>
-      <h3>${L('Giochi creati', 'Created games', 'Juegos creados')}</h3>
-      <ul class="lista-voci" id="lista-giochi"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
-    </div>
-    <div class="carta">
-      <h2>${_hIco(ICO.dado)}${L('Inventa un gioco tuo', 'Invent your own game', 'Inventa tu propio juego')}</h2>
-      <p>${L('Quelli qui sopra sono cinque forme già pronte: tu ci metti le domande, le parole, i simboli. Se invece vuoi una', 'The ones above are five ready-made shapes: you fill in the questions, words, symbols. If instead you want a', 'Los de arriba son cinco formas ya hechas: tú pones las preguntas, las palabras, los símbolos. Si en cambio quieres una')}
-      <strong class="primo-piano">${L('meccanica tutta tua', 'mechanic of your own', 'mecánica totalmente tuya')}</strong>${L(', un gioco è tre cose: un comando che', ', a game is three things: a command that', ', un juego son tres cosas: un comando que')}
-      <strong>${L('costa', 'costs', 'cuesta')}</strong>, ${L('un tiro di dado, e cosa succede se vinci', 'a dice roll, and what happens if you win', 'una tirada de dado, y qué pasa si ganas')} —
-      ${L('o se perdi. Da qui parti già impostato.', 'or if you lose. Start here, already set up.', 'o si pierdes. Empieza aquí, ya configurado.')}</p>
-      <div class="modelli-pronti">
-        ${bottoniRicette('data-ricetta')}
-        <button class="modello-pronto" data-ricetta="">${L('Parti da zero', 'Start from scratch', 'Empieza de cero')}</button>
       </div>
-      <p class="suggerimento">${L('Si aprono in', 'They open in', 'Se abren en')} <strong>${L('Comandi', 'Commands', 'Comandos')}</strong>${L(', dove si costruiscono e si modificano: è lo stesso posto dei tuoi comandi, non un secondo pannello da imparare. Un gioco che ti costruisci', ', where they are built and edited: the same place as your commands, not a second panel to learn. A game you build', ', donde se construyen y se editan: el mismo sitio que tus comandos, no un segundo panel que aprender. Un juego que te construyes')}
-      <strong>${L('vince su quello pronto', 'wins over the ready-made one', 'gana al de serie')}</strong>${L(' con lo stesso nome.', ' with the same name.', ' con el mismo nombre.')}</p>
-      <h3>${L('I giochi che ti sei costruito', 'The games you built', 'Los juegos que te has construido')}</h3>
-      <ul class="lista-voci" id="lista-giochi-miei"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+
+      <div id="gioco-comando" class="gioco-ramo-corpo" hidden>
+        <p class="campo">${L('Da cosa parti', 'What you start from', 'De qué partes')}</p>
+        <div class="modelli-pronti">
+          ${bottoniRicette('data-ricetta')}
+          <button class="modello-pronto" data-ricetta="">${L('Parti da zero', 'Start from scratch', 'Empieza de cero')}</button>
+        </div>
+        <div id="editor-gioco"></div>
+        <p class="suggerimento">${L('Un gioco è tre cose: un comando che <strong>costa</strong>, un tiro di dado, e cosa succede se vinci — o se perdi. Le scritte accettano le', 'A game is three things: a command that <strong>costs</strong>, a dice roll, and what happens if you win — or lose. The texts accept the', 'Un juego son tres cosas: un comando que <strong>cuesta</strong>, una tirada de dado, y qué pasa si ganas — o si pierdes. Los textos aceptan las')} <a href="#" data-apri-var-giochi>${L('parole magiche dei giochi', 'game keywords', 'palabras mágicas de los juegos')}</a>.</p>
+        <div id="var-giochi" hidden></div>
+      </div>
+
+      <h3>${L('I giochi che hai fatto', 'The games you made', 'Los juegos que has hecho')}</h3>
+      <ul class="lista-voci" id="lista-giochi"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
     </div>
     <div class="carta">
       <h2>${_hIco(ICO.trofeo)}${L('Classifica & VIP', 'Leaderboard & VIP', 'Clasificación y VIP')}</h2>
@@ -11668,12 +11678,15 @@ function attivaPiattaforma() {
   }));
 
   document.getElementById('scheda-giochi')?.addEventListener('click', (ev) => {
+    const ramo = ev.target.closest('.gioco-ramo');
+    if (ramo) { ev.preventDefault(); mostraRamoGioco(ramo.dataset.ramo); return; }
+
     const ric = ev.target.closest('[data-ricetta]');
     if (ric) {
       ev.preventDefault();
       const nome = ric.dataset.ricetta;
-      vaiAScheda('moduli');
-      setTimeout(() => apriEditor(nome ? modelloPronto(nome) : null), 60);
+      mostraRamoGioco('comando');
+      apriEditor(nome ? modelloPronto(nome) : null, 'editor-gioco');
       return;
     }
     const apri = ev.target.closest('[data-apri-gioco]');
@@ -11681,8 +11694,17 @@ function attivaPiattaforma() {
       ev.preventDefault();
       const m = (datiModuli?.moduli || []).find((x) => String(x.id) === apri.dataset.apriGioco);
       if (!m) return;
-      vaiAScheda('moduli');
-      setTimeout(() => apriEditor(m), 60);
+      mostraRamoGioco('comando');
+      apriEditor(m, 'editor-gioco');
+      return;
+    }
+    const var_ = ev.target.closest('[data-apri-var-giochi]');
+    if (var_) {
+      ev.preventDefault();
+      const box = document.getElementById('var-giochi');
+      if (!box) return;
+      if (!box.innerHTML) box.innerHTML = legendaGiochiHtml();
+      box.hidden = !box.hidden;
     }
   });
 
@@ -11923,7 +11945,7 @@ function attivaPiattaforma() {
     document.getElementById('qc-nome').value = '';
     document.getElementById('qc-risposta').value = '';
     toast(L('Comando !', 'Command !', 'Comando !') + comando + L(' creato', ' created', ' creado'));
-    caricaModuli();
+    aggiornaListe();
   }));
 
   let _impVista = null;
@@ -11971,7 +11993,7 @@ function attivaPiattaforma() {
       if (r.senzaPosto) toast(r.senzaPosto + ' ' + L('non sono entrati: hai finito i posti.', "didn't fit: you're out of room.", 'no entraron: te has quedado sin sitio.'), 'errore');
       document.getElementById('imp-esito').innerHTML = '';
       document.getElementById('imp-testo').value = '';
-      caricaModuli();
+      aggiornaListe();
     }));
   }
 
@@ -12000,7 +12022,7 @@ function attivaPiattaforma() {
         ? L('!', '!', '!') + r.comando + L(' esiste già ✓', ' already exists ✓', ' ya existe ✓')
         : L('Creato: !', 'Created: !', 'Creado: !') + r.comando + ' ✓';
       toast(r.giaEsiste ? L('Comando già presente', 'Command already there', 'Comando ya presente') : L('Comando !', 'Command !', 'Comando !') + r.comando + L(' creato', ' created', ' creado'));
-      caricaModuli();
+      aggiornaListe();
     } else if (r && r.upgrade) {
       toast(r.errore || L('Limite comandi del piano raggiunto.', 'Plan command limit reached.', 'Límite de comandos del plan alcanzado.'), 'errore');
     } else {
@@ -12200,7 +12222,7 @@ function attivaPiattaforma() {
     if (mod) apriEditor(modelloPronto(mod.dataset.modello));
   });
 
-  const ed = document.getElementById('editor-modulo');
+  const ed = slotEditor();
   if (ed) {
 
     ed.addEventListener('mousedown', (ev) => {
@@ -12240,7 +12262,7 @@ function gestisciClicEditor(ev) {
   const chip = ev.target.closest('[data-inserisci]');
   if (chip) {
     let campo = campoAttivoModulo;
-    const ed = document.getElementById('editor-modulo');
+    const ed = slotEditor();
     if (!campo || !ed?.contains(campo)) {
       campo = chip.closest('.azione-riga')?.querySelector('[data-var-target]') || null;
     }
@@ -12272,6 +12294,13 @@ function gestisciClicEditor(ev) {
     aggiornaRiassunto();
     return;
   }
+  const altre = ev.target.closest('[data-altre-var]');
+  if (altre) {
+    ev.preventDefault();
+    const box = altre.closest('.chip-vars')?.nextElementSibling;
+    if (box?.classList.contains('chip-vars-altre')) box.hidden = !box.hidden;
+    return;
+  }
   const rimF = ev.target.closest('[data-rimuovi-frase]');
   if (rimF) { ev.preventDefault(); rimF.closest('.frase-trigger')?.remove(); aggiornaRiassunto(); return; }
   const su = ev.target.closest('[data-su]');
@@ -12295,7 +12324,7 @@ function gestisciClicEditor(ev) {
   if (ev.target.closest('[data-annulla-editor]')) {
     ev.preventDefault();
     moduloInModifica = null;
-    const cont = document.getElementById('editor-modulo');
+    const cont = slotEditor();
     if (cont) cont.innerHTML = '';
     return;
   }
@@ -12306,9 +12335,9 @@ function gestisciClicEditor(ev) {
       if (id == null) return;
       toast(L('Modulo salvato', 'Module saved', 'Módulo guardado'));
       moduloInModifica = null;
-      const cont = document.getElementById('editor-modulo');
+      const cont = slotEditor();
       if (cont) cont.innerHTML = '';
-      caricaModuli();
+      aggiornaListe();
     });
     return;
   }
@@ -12319,7 +12348,7 @@ function gestisciClicEditor(ev) {
       if (id == null) return;
       await api('/api/streamer/moduli/' + encodeURIComponent(id) + '/prova', { method: 'POST', body: {} });
       toast(L('Salvato e provato: guarda chat/overlay', 'Saved and tested: check chat/overlay', 'Guardado y probado: mira chat/overlay'));
-      caricaModuli();
+      aggiornaListe();
     });
   }
 }
@@ -12351,7 +12380,7 @@ function caricaDatiScheda(id) {
   if (id === 'emote') caricaEmote7TV();
   if (id === 'moduli') { caricaPiattaforme(); caricaModuli(); caricaContatori(); caricaGiochiComandi(); }
   if (id === 'memoria') caricaStatistiche();
-  if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); caricaGiochiMiei(); caricaGiochiComandi(); }
+  if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); caricaGiochiComandi(); }
   if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaDiscord(); caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaFeed(); caricaFeed(); }
   if (id === 'pagina') caricaPaginaLink();
   if (id === 'grafiche') initGrafiche();
@@ -12464,39 +12493,66 @@ async function caricaClip() {
 async function caricaGiochi() {
   const ul = document.getElementById('lista-giochi');
   if (!ul) return;
-  try {
-    const giochi = await api('/api/streamer/giochi');
-    const et = { trivia: 'trivia', parola: 'parola' };
-    ul.innerHTML = giochi.length
-      ? giochi.map((g) => {
-          const dett = g.tipo === 'trivia' ? `${(g.config.domande || []).length} domande` : `${(g.config.parole || []).length} parole`;
-          return `<li>
-            <div class="testo-voce">
-              <div class="domanda">${esc(g.nome || '(senza nome)')} <span class="badge viola">${et[g.tipo] || g.tipo}</span></div>
-              <div class="meta">${dett}${g.attivo ? '' : ' · <span class="badge">in pausa</span>'}</div>
-            </div>
-            <div class="azioni-voce">
-              <button class="btn secondario mini" data-gioco-toggle="${g.id}" data-attivo="${g.attivo ? 1 : 0}">${g.attivo ? 'Pausa' : 'Riattiva'}</button>
-              <button class="btn pericolo mini" data-gioco-elimina="${g.id}">Elimina</button>
-            </div>
-          </li>`;
-        }).join('')
-      : '<li class="vuoto">Nessun gioco tuo ancora: creane uno qui sopra! Quelli di serie (quiz, reflex, numero, anagramma, sequenza) funzionano comunque.</li>';
-    ul.onclick = (ev) => {
-      const tog = ev.target.closest('[data-gioco-toggle]');
-      const del = ev.target.closest('[data-gioco-elimina]');
-      if (tog) conErrore(async () => {
-        await api('/api/streamer/giochi/' + tog.dataset.giocoToggle + '/toggle', { method: 'POST', body: { attivo: tog.dataset.attivo !== '1' } });
-        caricaGiochi();
-      });
-      else if (del) conErrore(async () => {
-        if (!confirm(L('Eliminare questo gioco?', 'Delete this game?', '¿Eliminar este juego?'))) return;
-        await api('/api/streamer/giochi/' + del.dataset.giocoElimina, { method: 'DELETE' });
-        toast(L('Gioco eliminato.', 'Game deleted.', 'Juego eliminado.')); caricaGiochi();
-      });
-    };
-  } catch (e) { ul.innerHTML = `<li class="vuoto">Errore: ${esc(e.message)}</li>`; }
+  const [manche, moduli] = await Promise.all([
+    api('/api/streamer/giochi').catch(() => []),
+    api('/api/streamer/moduli').catch(() => null),
+  ]);
+  if (moduli) datiModuli = moduli;
+  const miei = (datiModuli?.moduli || []).filter(_eGioco);
+
+  const quanti = (g) => {
+    const c = g.config || {};
+    if (g.tipo === 'trivia') return `${(c.domande || []).length} ${L('domande', 'questions', 'preguntas')}`;
+    if (g.tipo === 'sequenza') return `${(c.simboli || []).length} ${L('simboli', 'symbols', 'símbolos')}`;
+    if (g.tipo === 'domanda') return L('una domanda', 'one question', 'una pregunta');
+    return `${(c.parole || []).length} ${L('parole', 'words', 'palabras')}`;
+  };
+  const righeManche = manche.map((g) => `<li>
+      <div class="testo-voce">
+        <div class="domanda">${esc(g.nome || L('(senza nome)', '(unnamed)', '(sin nombre)'))} <span class="badge">${L('a sorpresa', 'by surprise', 'por sorpresa')}</span></div>
+        <div class="meta">${esc(g.tipo)} · ${quanti(g)}${g.attivo ? '' : ` · <span class="badge">${L('in pausa', 'paused', 'en pausa')}</span>`}</div>
+      </div>
+      <div class="azioni-voce">
+        <button class="btn secondario mini" data-gioco-toggle="${g.id}" data-attivo="${g.attivo ? 1 : 0}">${g.attivo ? L('Pausa', 'Pause', 'Pausa') : L('Riattiva', 'Resume', 'Reactivar')}</button>
+        <button class="btn pericolo mini" data-gioco-elimina="${g.id}">${L('Elimina', 'Delete', 'Eliminar')}</button>
+      </div>
+    </li>`);
+  const righeComando = miei.map((m) => `<li>
+      <div class="testo-voce">
+        <div class="domanda">${m.trigger?.comando ? '!' + esc(m.trigger.comando) : esc(m.nome)} <span class="badge">${L('su comando', 'on command', 'por comando')}</span></div>
+        <div class="meta">${esc(riassuntoModulo(m))}</div>
+      </div>
+      <div class="azioni-voce">
+        <button class="btn secondario mini" data-apri-gioco="${m.id}">${L('Modifica', 'Edit', 'Editar')}</button>
+      </div>
+    </li>`);
+  const righe = [...righeComando, ...righeManche];
+  ul.innerHTML = righe.length ? righe.join('')
+    : `<li class="vuoto">${L('Ancora nessuno: scegli qui sopra chi lancia il gioco e crealo. I giochi di serie funzionano comunque.', 'None yet: pick above who starts the game and make it. The built-in games work anyway.', 'Ninguno todavía: elige arriba quién lanza el juego y créalo. Los juegos de serie funcionan igualmente.')}</li>`;
+
+  ul.onclick = (ev) => {
+    const tog = ev.target.closest('[data-gioco-toggle]');
+    const del = ev.target.closest('[data-gioco-elimina]');
+    if (tog) conErrore(async () => {
+      await api('/api/streamer/giochi/' + tog.dataset.giocoToggle + '/toggle', { method: 'POST', body: { attivo: tog.dataset.attivo !== '1' } });
+      caricaGiochi();
+    });
+    else if (del) conErrore(async () => {
+      if (!confirm(L('Eliminare questo gioco?', 'Delete this game?', '¿Eliminar este juego?'))) return;
+      await api('/api/streamer/giochi/' + del.dataset.giocoElimina, { method: 'DELETE' });
+      toast(L('Gioco eliminato.', 'Game deleted.', 'Juego eliminado.')); caricaGiochi();
+    });
+  };
 }
+
+function mostraRamoGioco(ramo) {
+  for (const [id, quale] of [['gioco-manche', 'manche'], ['gioco-comando', 'comando']]) {
+    const el = document.getElementById(id);
+    if (el) el.hidden = quale !== ramo;
+  }
+  document.querySelectorAll('.gioco-ramo').forEach((b) => b.classList.toggle('on', b.dataset.ramo === ramo));
+}
+
 
 function vuotoStaff() {
   const manca = (stato?.scopeMancanti || []).includes('moderation:read');
@@ -13246,6 +13302,29 @@ const VARIABILI = [
   '$colore', '$emoji', '$animale',
 ];
 
+const GRUPPI_GIOCO = ['Le monete del canale', 'Caso, numeri e contatori', 'Chi scrive e cosa dice'];
+const _radiceVar = (v) => String(v).split('(')[0];
+
+function variabiliDeiGiochi() {
+  const buone = new Set();
+  let dentro = false;
+  for (const [tok, it] of LEGENDA_VAR) {
+    if (tok === 'gruppo') { dentro = GRUPPI_GIOCO.includes(it); continue; }
+    if (dentro) buone.add(_radiceVar(tok));
+  }
+  return VARIABILI.filter((v) => buone.has(_radiceVar(v)));
+}
+
+function legendaGiochiHtml() {
+  const righe = [];
+  let dentro = false;
+  for (const [tok, it, en, es] of LEGENDA_VAR) {
+    if (tok === 'gruppo') { dentro = GRUPPI_GIOCO.includes(it); if (dentro) righe.push(`<p class="legenda-gruppo">${esc(L(it, en, es))}</p>`); continue; }
+    if (dentro) righe.push(`<div class="legenda-riga"><code>${esc(tok)}</code><span>${esc(L(it, en, es))}</span></div>`);
+  }
+  return `<div class="legenda-var">${righe.join('')}</div>`;
+}
+
 const LEGENDA_VAR = [
   ['gruppo', 'Chi scrive e cosa dice', 'Who writes and what they say', 'Quién escribe y qué dice'],
   ['$user', 'Chi ha scritto (il suo nome)', 'Who wrote (their name)', 'Quién escribió (su nombre)'],
@@ -13420,22 +13499,7 @@ function _eGioco(m) {
   return tocca(m?.azioni) || tocca(m?.altrimenti) || !!m?.condizioni?.costo || !!m?.condizioni?.minPunti;
 }
 
-async function caricaGiochiMiei() {
-  const ul = document.getElementById('lista-giochi-miei');
-  if (!ul) return;
-  try { datiModuli = await api('/api/streamer/moduli'); }
-  catch (e) { ul.innerHTML = `<li class="vuoto">${esc(e.message)}</li>`; return; }
-  const miei = (datiModuli.moduli || []).filter(_eGioco);
-  ul.innerHTML = miei.length
-    ? miei.map((m) => `<li>
-        <div class="testo-voce">
-          <span class="domanda">${m.trigger?.comando ? '!' + esc(m.trigger.comando) : esc(m.nome)}</span>
-          <span class="risposta">${esc(riassuntoModulo(m))}</span>
-        </div>
-        <button type="button" class="btn secondario mini" data-apri-gioco="${m.id}">${L('Modifica', 'Edit', 'Editar')}</button>
-      </li>`).join('')
-    : `<li class="vuoto">${L('Nessuno ancora: scegli una ricetta qui sopra e diventa tuo.', 'None yet: pick a recipe above and it becomes yours.', 'Ninguno todavía: elige una receta arriba y será tuyo.')}</li>`;
-}
+function aggiornaListe() { caricaModuli(); caricaGiochi(); }
 
 async function caricaModuli() {
   const ul = document.getElementById('lista-moduli');
@@ -13519,14 +13583,18 @@ function disegnaListaModuli() {
         if (!confirm(L('Eliminare questo modulo? Non si torna indietro.', 'Delete this module? There\'s no going back.', '¿Eliminar este módulo? No hay vuelta atrás.'))) return;
         await api('/api/streamer/moduli/' + encodeURIComponent(elimina.dataset.eliminaModulo), { method: 'DELETE' });
         toast(L('Modulo eliminato', 'Module deleted', 'Módulo eliminado'));
-        caricaModuli();
+        aggiornaListe();
       });
     }
   };
 }
 
-function apriEditor(modulo) {
-  const cont = document.getElementById('editor-modulo');
+let _slotEditor = 'editor-modulo';
+const slotEditor = () => document.getElementById(_slotEditor) || document.getElementById('editor-modulo');
+
+function apriEditor(modulo, dove = 'editor-modulo') {
+  _slotEditor = dove;
+  const cont = slotEditor();
   if (!cont) return;
 
   moduloInModifica = modulo ? JSON.parse(JSON.stringify(modulo)) : {
@@ -13738,8 +13806,13 @@ function disegnaAzione(a) {
 function disegnaCampiAzione(a) {
   const tipo = a.tipo || 'messaggio';
   const _dv = _descrizioniVar();
-  const pillole = `<div class="chip-vars">${VARIABILI.map((v) =>
-    `<button type="button" class="chip-var" data-inserisci="${esc(v)}" title="${esc(tooltipVar(v, _dv))}">${esc(v)}</button>`).join('')}</div>${legendaVariabiliHtml()}`;
+  const chip = (v) => `<button type="button" class="chip-var" data-inserisci="${esc(v)}" title="${esc(tooltipVar(v, _dv))}">${esc(v)}</button>`;
+  const perGiochi = _slotEditor === 'editor-gioco';
+  const prime = perGiochi ? variabiliDeiGiochi() : VARIABILI;
+  const altre = perGiochi ? VARIABILI.filter((v) => !prime.includes(v)) : [];
+  const pillole = `<div class="chip-vars">${prime.map(chip).join('')}${
+    altre.length ? `<button type="button" class="chip-var chip-altre" data-altre-var>${L('+ tutte le altre', '+ all the others', '+ todas las demás')}</button>` : ''}</div>${
+    altre.length ? `<div class="chip-vars chip-vars-altre" hidden>${altre.map(chip).join('')}</div>` : ''}${legendaVariabiliHtml()}`;
   switch (tipo) {
     case 'messaggio':
       return `
@@ -13974,7 +14047,7 @@ function leggiAzioneRiga(riga) {
 }
 
 function aggiornaRiassunto() {
-  const el = document.querySelector('#editor-modulo .riassunto-modulo');
+  const el = slotEditor()?.querySelector('.riassunto-modulo');
   if (!el) return;
   const m = leggiForm();
   if (m) el.textContent = riassuntoModulo(m);

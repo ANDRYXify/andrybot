@@ -180,10 +180,18 @@ const GIOCHI = {
       'Chi ha già il VIP <strong>per sempre</strong> viene saltato e il posto scorre al successivo: dargli un premio a scadenza significherebbe togliergli quello che aveva. Si può disattivare, ma è acceso di base.',
     ] },
 
-    { h2: 'Inventare un gioco tuo' },
+    { h2: 'Fare un gioco tuo' },
     { p: [
-      'I giochi pronti sono un punto di partenza, non il confine. Nella scheda <em>Giochi</em> c\'è <strong>«Inventa un gioco tuo»</strong>: da lì costruisci un gioco come costruisci un comando, con un innesco, delle condizioni e delle azioni — è un <a href="/manuale/moduli">Modulo</a> a tutti gli effetti, e può muovere le monete.',
-      'Sei ricette partono già scritte: le apri, cambi i numeri e le parole, ed è tuo.',
+      'I giochi pronti sono un punto di partenza, non il confine. Nella scheda <em>Giochi</em>, in <strong>«I tuoi giochi»</strong>, si fa tutto da un posto solo. La prima domanda è anche l\'unica che conta davvero: <strong>chi lo lancia?</strong>',
+    ] },
+    { tabella: [
+      ['Chi lo lancia', 'Che gioco è', 'Da cosa parti'],
+      ['<strong>Ci pensa il bot</strong>', 'Ogni tanto, a sorpresa, parte una manche e il primo che risponde vince.', 'Cinque forme pronte: quiz, parola veloce, anagramma, sequenza di simboli, una domanda tua.'],
+      ['<strong>Lo scrive uno spettatore</strong>', 'Un comando che costa monete, tira il dado e paga — o no.', 'Sei ricette già scritte: le apri, cambi i numeri e le parole, ed è tuo.'],
+    ] },
+    { p: [
+      'Il secondo caso è un <a href="/manuale/moduli">Modulo</a> a tutti gli effetti — innesco, condizioni, azioni — ma si costruisce <strong>lì dentro</strong>: prima ti spostava in <em>Comandi</em>, e per una cosa sola c\'erano due schede e tre elenchi.',
+      'Nell\'editor dei giochi le <strong>parole magiche</strong> offerte sono quelle che a un gioco servono davvero — le monete, il caso, i numeri, chi scrive — invece di tutte e quaranta. Le altre restano a un clic.',
     ] },
     { tabella: [
       ['Ricetta', 'Cosa fa', 'Cosa cambi di solito'],
@@ -453,7 +461,7 @@ const MODULI = {
   faq: [
     { d: 'Che differenza c\'è fra un comando e un modulo?', r: 'Un comando è un modulo con l\'innesco più semplice. Nel pannello i comandi hanno una schermata più corta perché la maggior parte delle volte basta quella; quando serve di più — condizioni, più azioni, un costo — è lo stesso motore.' },
     { d: 'Un modulo può fare più cose di seguito?', r: 'Sì, fino a otto azioni in fila, e puoi metterci una pausa in mezzo. Se una fallisce le altre continuano, così un servizio esterno spento non porta giù il resto.' },
-    { d: 'Posso usare i moduli per fare un gioco a monete?', r: 'È esattamente quello per cui c\'è l\'azione punti, insieme al costo e alla probabilità. Nella scheda Giochi trovi sei ricette già scritte da cui partire.' },
+    { d: 'Posso usare i moduli per fare un gioco a monete?', r: 'È esattamente quello per cui c\'è l\'azione punti, insieme al costo e alla probabilità. Nella scheda Giochi, in «I tuoi giochi», trovi sei ricette già scritte da cui partire: si aprono e si modificano lì, senza cambiare scheda.' },
     { d: 'I moduli funzionano anche su Kick?', r: 'Sì. Se vuoi, ogni modulo può essere limitato a una piattaforma sola; se non scegli niente vale ovunque.' },
     { d: 'Che succede se scrivo una variabile che non esiste?', r: 'Sparisce dal testo, senza lasciare il suo nome in chat e senza errori. Conviene comunque provare il modulo prima di lasciarlo agli spettatori.' },
   ],
