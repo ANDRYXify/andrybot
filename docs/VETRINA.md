@@ -88,7 +88,39 @@ I nomi e le descrizioni dei piani vivevano solo in italiano: su pagina inglese c
 descrizioni italiane. Ora ogni piano, add-on e pacchetto ha `nome3` e `sommario3` (it/en/es), e
 `pianiPubblici()` li espone. I campi vecchi restano: chi legge `sommario` continua a funzionare.
 
-## Da non dimenticare
+## Il guscio non si elenca: si ricava
 
-`vetrina.css` è nell'**allowlist `VETRINA`** di `server.js`. Senza quella riga il foglio di stile
-non viene servito a chi non è loggato — cioè esattamente a chi la vetrina è destinata.
+Il sito è un labirinto — senza sessione tutto risponde 404 — e per anni l'eccezione è stata un
+elenco scritto a mano in `server.js` (`VETRINA`): i file che chi non è loggato può scaricare.
+
+Un elenco così **non può funzionare**, e infatti ha ceduto due volte. L'ultima il giorno in cui
+gli script in linea sono diventati file veri per togliere `'unsafe-inline'` dalla CSP: dieci file
+nuovi (`cookie.js`, `splash.js`, `tema.js`, `mod.js`, `sblocca.js`, `tgapp.js`, `overlay-app.js`,
+`tracking-play.js`, `tracking-detector.js`, `tracking-detector-conf.js`) sono nati **chiusi**. Il
+sito rispondeva 200 a tutte le pagine e nessun collaudo era rosso, ma:
+
+- la **home** restava sotto il velo di caricamento per sempre (`splash.js` è quello che lo toglie);
+- l'**overlay in OBS** era una pagina bianca (`overlay-app.js`);
+- l'**invito ai moderatori** e lo **sblocco con passkey** non facevano niente;
+- e `/.well-known/security.txt` non era leggibile da nessuno, cioè da chi deve segnalare un buco.
+
+Ora la decisione sta tutta in `src/web/vetrina.js`, in una funzione pura: `aperto(percorso)`.
+
+- Le **pagine** le dichiara chi le serve, nel punto in cui le serve:
+  `res.sendFile(guscio.pagina('privacy.html'))`. Una riga, dove l'informazione è vera.
+- Gli **asset** non si dichiarano affatto: si seguono i riferimenti della pagina — gli `src` e gli
+  `href` dell'HTML, gli `url()` dei CSS, i percorsi scritti dentro gli script (il service worker
+  precarica così, e l'overlay tracking carica i suoi moduli a mano) — finché non si aggiunge più
+  niente. Un file diventa pubblico solo se esiste davvero: le rotte (`/entra`, `/guide/...`) e i
+  domini altrui cadono da soli.
+- Dagli script **non** si seguono le pagine `.html`: una pagina è una rotta con un suo controllo
+  d'accesso, e la decide chi la serve. `voce.html` è nominata dalla dashboard e resta dietro il
+  login, dove deve stare.
+- `/icons/` e `/vendor/` sono aperte per intero: niente di segreto, e servono anche ai crawler.
+
+Il collaudo (`test/contratto/guscio.test.mjs`) legge dai sorgenti quali pagine il server dichiara,
+rilegge cosa chiedono con una lettura **più larga** di quella del modulo (apici singoli, doppi,
+nessun apice) e chiede al cancello se passano. Se un modo di scrivere un `src` sfuggisse al
+modulo, la differenza salterebbe fuori lì.
+
+Quindi: `vetrina.css` non è più «da ricordare». Lo chiede `index.html`, e tanto basta.

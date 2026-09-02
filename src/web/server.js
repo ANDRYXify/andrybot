@@ -54,6 +54,7 @@ import { pretrain } from '../ai/pretrain.js';
 import * as persona from '../ai/persona.js';
 import * as brainpy from '../ai/brainpy.js';
 import { redeemPass } from './gate.js';
+import { creaGuscio } from './vetrina.js';
 import { salute } from '../salute.js';
 import { anteprima as anteprimaImport, moduloDa } from '../features/importacomandi.js';
 import { esporta as esportaDati } from '../features/esporta.js';
@@ -358,45 +359,21 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     log.info('origine blindata: si serve solo il traffico che passa dal nostro edge');
   }
 
+  const publicDir = join(dirname(fileURLToPath(import.meta.url)), 'public');
+
   // ---- CANCELLO: senza sessione valida, socialbot.live non esiste ----
-  // Passano soltanto /health (per Caddy/Docker) e /entra (l'ingresso con il
-  // pass monouso del sito). Tutto il resto — dashboard, file statici, API,
-  // perfino le rotte OAuth — resta invisibile (404) finché non si è entrati
-  // con un pass valido. È il "labirinto": chi non arriva da andryxify.it non
-  // trova nulla da esplorare.
-  // Eccezione per l'overlay della diretta: /overlay/* è pubblico ma si protegge da solo
-  // con la chiave (?key=...), perché OBS lo apre senza sessione/cookie.
-  // Stessa logica per /api/ext/*: l'ingresso esterno si protegge con la chiave
-  // API del canale (Authorization: Bearer ...), non con la sessione.
-  // Pubblici anche: i file "guscio" della PWA (manifest, service worker, icone)
-  // e il flusso di login con passkey (per rientrare senza passare dal sito).
-  // Non rivelano nulla di sensibile: la dashboard vera resta dietro la sessione.
-  const PUBBLICI = new Set(['/health', '/entra', '/sblocca', '/sblocca.html', '/privacy', '/privacy.html',
-    '/termini', '/termini.html', '/terms',
-    '/mod', '/mod.html', '/auth/mod', '/auth/callback', '/manifest.webmanifest', '/sw.js',
-    // SEO: i motori di ricerca devono poter leggere robots e sitemap (nessun dato sensibile)
-    '/robots.txt', '/sitemap.xml', '/llms.txt',
-    // abbonamenti self-service: login con Twitch + webhook Stripe (firma verificata)
-    '/accedi', '/stripe/webhook',
-    // ritorno OAuth di Spotify e TikTok: si proteggono da sé con lo `state` monouso
-    '/spotify/callback', '/tiktok/callback',
-    // Telegram Mini App: la pagina e l'auth via initData (firmato dal bot token)
-    // + il ritorno OIDC di "Accedi con Telegram" (si protegge con lo `state`).
-    '/tgapp', '/tgapp.html', '/api/tgapp/auth', '/api/tgapp/oidc/start', '/telegram/oidc/callback']);
-  // "Vetrina" pubblica: il guscio del sito (pagina + asset) e la demo interattiva
-  // sono visibili anche senza pass, per far conoscere il bot. NON espongono dati
-  // reali: /api/me senza sessione risponde solo "nessun utente" e tutte le API
-  // con i dati dello streamer restano chiuse dietro il pass.
-  const VETRINA = new Set(['/', '/index.html', '/app.js', '/style.css', '/font.css', '/presets.js', '/overlay-skin.css',
-    // asset del guscio referenziati da index.html: senza questi la home dà 404 ai crawler
-    // (SEO: "broken internal JS/CSS") e agli utenti non loggati. Nessun segreto: sono statici.
-    '/graf-gif.js', '/mente3d.js', '/vendor/qrcode.js',
-    // estetica ANIME OP + ricerca predittiva: DEVONO caricarsi sulla vetrina pubblica
-    // (è ciò che rende futuristica la home per i visitatori). Nessun dato sensibile.
-    '/anime.css', '/vetrina.css', '/cinema.js', '/cerca.js', '/plancia.js', '/pilota.js', '/suono.js',
-    // script degli overlay della diretta: pubblici (nessun segreto), servono senza sessione
-    // altrimenti l'overlay tracking resta bloccato su "avvio…" (script non caricati)
-    '/tracking-overlay.js', '/tracking-games.js', '/tracking-fx.js', '/tracking-fx-gl.js', '/tracking-poses.js']);
+  // Chi non arriva da andryxify.it non trova nulla da esplorare: tutto risponde
+  // 404, dashboard e file statici compresi. Cosa fa eccezione — le rotte che si
+  // proteggono da sole e le pagine pubbliche col loro guscio di script e stili —
+  // sta tutto in vetrina.js, una funzione sola che si può interrogare.
+  //
+  // Le pagine si dichiarano nel punto in cui si servono (`guscio.pagina(...)`) e
+  // gli asset si ricavano da quello che chiedono: un elenco scritto a mano ha
+  // già lasciato fuori /tema.js, /splash.js e /cookie.js, e senza splash.js il
+  // velo di caricamento non si toglie — la home restava bianca a chi non è loggato.
+  const guscio = creaGuscio(publicDir);
+  guscio.pagina('index.html');           // la vetrina, servita anche su '/'
+
   app.use((req, res, next) => {
     // Rivalida la sessione a OGNI richiesta (regola: se non paghi e non sei un
     // membro community verificato+abilitato, NON entri). Ricava da zero i contesti
@@ -410,25 +387,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
         && !contestiPer(identitaDi(sessUser)).some((c) => c.canale === sessUser.login)) {
       req.session.user = null;
     }
-    if (currentUser(req) || PUBBLICI.has(req.path)
-        || VETRINA.has(req.path) || req.path === '/api/me'
-        || req.path.startsWith('/api/abbonamento/')   // piani/checkout/portale: auth propria
-        || req.path.startsWith('/overlay/') || req.path.startsWith('/o/')   // overlay della diretta + link "belli"
-        || req.path.startsWith('/tracking/')       // overlay TRACKING in OBS (pagina + stream): protetto dalla chiave
-        || req.path.startsWith('/vendor/')         // librerie vendorizzate (PixiJS): pubbliche, nessun segreto
-        || req.path.startsWith('/api/tracking/')   // gesti/say dell'overlay tracking (chiave overlay; /url resta requireLogin)
-        || req.path === '/guide' || req.path.startsWith('/guide/')  // guide: contenuto pubblico, indicizzabile
-        || req.path.startsWith('/u/')        // link-page pubblica: la serviamo noi dal DB
-        || req.path.startsWith('/assets/')   // bundle JS/CSS della link-page (proxy verso Vercel)
-        || req.path === '/api/streamer-verify'   // API JSON della link-page (proxy verso Vercel)
-        || req.path.startsWith('/api/ext/')
-        || req.path.startsWith('/tg/')       // webhook Telegram: si protegge col segreto nel path
-        || req.path.startsWith('/icons/') || req.path.startsWith('/api/passkey/login/')) return next();
+    if (currentUser(req) || guscio.aperto(req.path)) return next();
     return notFound(res);
   });
-
-  // file statici della dashboard (serviti solo a chi ha superato il cancello)
-  const publicDir = join(dirname(fileURLToPath(import.meta.url)), 'public');
 
   // GUSCIO: `body.vetrina` deciso QUI, non dal JS. Prima lo metteva app.js dopo
   // /api/me, e nel frattempo la pagina aveva gia disegnato la colonna stretta
@@ -679,7 +640,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // ------------------------------------------------------------ OVERLAY per OBS
   // Pubblico (nessuna sessione), ma protetto dalla chiave in ?key=...: OBS lo
   // apre come "Browser Source". La chiave è per canale (streamers.settings).
-  const overlayHtml = join(publicDir, 'overlay.html');
+  const overlayHtml = guscio.pagina('overlay.html');
 
   const chiaveOk = (req) => {
     const login = String(req.params.login || '').toLowerCase();
@@ -696,9 +657,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // ── OVERLAY TRACKING (webcam + libreria Human): filtri/effetti da gesti delle
   // mani ed espressioni del volto. Gira CLIENT-SIDE in OBS (la webcam vive nel
   // Browser Source, il server NON la vede mai). Stessa chiave overlay del canale.
-  const trackingHtml = join(publicDir, 'tracking-overlay.html');
-  const trackingPlayHtml = join(publicDir, 'tracking-play.html');
-  const trackingDetectHtml = join(publicDir, 'tracking-detector.html');
+  const trackingHtml = guscio.pagina('tracking-overlay.html');
+  const trackingPlayHtml = guscio.pagina('tracking-play.html');
+  const trackingDetectHtml = guscio.pagina('tracking-detector.html');
   app.get('/tracking/:login', (req, res) => {
     if (!chiaveOk(req)) return notFound(res);
     // Modalità "split" (facecam nativa, niente perdita/ritardo):
@@ -1005,9 +966,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // Pagina "Sblocca con passkey": ingresso alternativo per chi ha registrato
   // una passkey (così può rientrare, o aprire l'app installata, senza pass del
   // sito). Se si è già loggati, si va dritti alla dashboard.
+  const SBLOCCA_HTML = guscio.pagina('sblocca.html');
   app.get('/sblocca', (req, res) => {
     if (currentUser(req)) return res.redirect('/');
-    res.sendFile(join(publicDir, 'sblocca.html'));
+    res.sendFile(SBLOCCA_HTML);
   });
 
   // Link-page pubblica dello streamer: socialbot.live/u/<login> è il link
@@ -1433,9 +1395,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.send(GUIDA_HTML.get(slug));
   });
 
-  app.get('/privacy', (req, res) => res.sendFile(join(publicDir, 'privacy.html')));
+  const PRIVACY_HTML = guscio.pagina('privacy.html');
+  app.get('/privacy', (req, res) => res.sendFile(PRIVACY_HTML));
   // Termini di servizio (pubblici: richiesti anche dalle app di terzi, es. TikTok)
-  app.get(['/termini', '/terms'], (req, res) => res.sendFile(join(publicDir, 'termini.html')));
+  const TERMINI_HTML = guscio.pagina('termini.html');
+  app.get(['/termini', '/terms'], (req, res) => res.sendFile(TERMINI_HTML));
 
   // ------------------------------------------------------------ MODERATORI (gestori delegati)
   // Lo streamer invita un moderatore con un link; il moderatore accetta facendo
@@ -1444,9 +1408,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   const MOD_INVITE_URL = (token) => `${config.baseUrl.replace(/\/$/, '')}/mod?invito=${token}`;
 
   // Pagina pubblica dell'invito: "accedi con Twitch per gestire il canale".
+  const MOD_HTML = guscio.pagina('mod.html');
   app.get('/mod', (req, res) => {
     if (currentUser(req)) return res.redirect('/');
-    res.sendFile(join(publicDir, 'mod.html'));
+    res.sendFile(MOD_HTML);
   });
 
   // Avvio del login moderatore: OAuth Twitch di sola IDENTITÀ (nessuno scope).
@@ -2406,7 +2371,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   }
 
   // pagina della Mini App (aperta dentro Telegram)
-  app.get('/tgapp', (req, res) => res.sendFile(join(publicDir, 'tgapp.html')));
+  const TGAPP_HTML = guscio.pagina('tgapp.html');
+  app.get('/tgapp', (req, res) => res.sendFile(TGAPP_HTML));
 
   // auth della Mini App: valida initData; se l'utente è collegato apre la sessione,
   // altrimenti conia un codice da inserire nella dashboard per collegarsi.
