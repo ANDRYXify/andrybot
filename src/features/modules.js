@@ -595,7 +595,7 @@ export class ModulesEngine {
     // le due condizioni non si applicano invece di rifiutare a vuoto.
     const autore = loginBuono(ctx.user);
     const minPunti = Math.max(0, Number(c.minPunti) || 0);
-    const costo = Math.max(0, Number(c.costo) || 0);
+    const costo = await this._quantoCosta(c.costo, ctx);
     let saldo = 0;
     if (autore && (minPunti > 0 || costo > 0)) {
       saldo = points.get(ctx.channel, autore);
@@ -637,6 +637,21 @@ export class ModulesEngine {
     }
 
     return { ok: true, motivo: null };
+  }
+
+  // Quanto costa questo modulo, adesso. Un numero fisso resta un numero; una
+  // espressione ($arg1) passa dall'espansione, cosi' "!scommetti 100" e'
+  // possibile. Quello che ne esce e' comunque un intero fra 0 e un milione:
+  // un costo negativo REGALEREBBE monete a ogni uso.
+  async _quantoCosta(grezzo, ctx) {
+    if (grezzo == null || grezzo === '') return 0;
+    let v = grezzo;
+    if (typeof v === 'string' && v.includes('$')) {
+      v = await this.espandi(v, ctx, { noAzioni: true });
+    }
+    const n = Math.round(Number(String(v).replace(',', '.').trim()));
+    if (!Number.isFinite(n)) return 0;
+    return Math.max(0, Math.min(1_000_000, n));
   }
 
   // I cooldown per utente sono tanti quanti gli utenti: quando la mappa cresce
@@ -702,11 +717,17 @@ export class ModulesEngine {
         const n = Math.round(Number(String(grezzo).replace(',', '.').trim()));
         if (!Number.isFinite(n)) return;
         const q = Math.max(-MAX_PUNTI_AZIONE, Math.min(MAX_PUNTI_AZIONE, n));
-        if (azione.op === 'imposta') {
-          points.add(ctx.channel, chi, Math.max(0, q) - points.get(ctx.channel, chi));
-        } else {
-          points.add(ctx.channel, chi, azione.op === 'togli' ? -Math.abs(q) : q);
-        }
+        const prima = points.get(ctx.channel, chi);
+        if (azione.op === 'imposta') points.add(ctx.channel, chi, Math.max(0, q) - prima);
+        else points.add(ctx.channel, chi, azione.op === 'togli' ? -Math.abs(q) : q);
+        // Quanto e' stato mosso DAVVERO (e a chi): senza, un'azione che pesca a
+        // caso non potrebbe raccontarlo, ne' un'altra azione potrebbe usare la
+        // stessa cifra — un furto toglierebbe una somma alla vittima e ne darebbe
+        // un'altra al ladro. "Davvero" e non "richiesto", perche' a chi ha 5
+        // monete non se ne possono togliere 80.
+        ctx._vars = { ...(ctx._vars || {}),
+          mossa: String(Math.abs(points.get(ctx.channel, chi) - prima)),
+          bersaglio: chi };
         return;
       }
       case 'contatore': {
@@ -1099,6 +1120,9 @@ export class ModulesEngine {
       // quanto e' costato questo modulo, e quanto e' rimasto dopo il pagamento
       costo: ev.costo || '',
       saldo: ev.saldo || '',
+      // l'ultima azione "punti": quante monete ha mosso e su chi
+      mossa: ev.mossa || '',
+      bersaglio: ev.bersaglio || '',
     };
 
     // variabili semplici $nome: prima le dinamiche (valore fresco), poi quelle di

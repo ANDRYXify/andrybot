@@ -2509,7 +2509,17 @@ const intero = (v, lo, hi) => {
 
 function normCondizioni(c) {
   const out = { ...(c && typeof c === 'object' ? c : {}) };
-  for (const [campo, lo, hi] of [['costo', 0, 1_000_000], ['minPunti', 0, 1_000_000], ['cooldownUtente', 0, 86_400]]) {
+  // `costo` puo' essere un numero fisso oppure un'espressione ($arg1): senza
+  // questo non si potrebbe scrivere "!scommetti 100", che e' meta' dei giochi a
+  // punti. Resta comunque un solo valore, letto e limitato al momento dell'uso.
+  if (typeof out.costo === 'string' && out.costo.includes('$')) {
+    const t = out.costo.trim().slice(0, 60);
+    if (t) out.costo = t; else delete out.costo;
+  } else if (out.costo !== undefined) {
+    const n = intero(out.costo, 0, 1_000_000);
+    if (n === null || n === 0) delete out.costo; else out.costo = n;
+  }
+  for (const [campo, lo, hi] of [['minPunti', 0, 1_000_000], ['cooldownUtente', 0, 86_400]]) {
     if (out[campo] === undefined || out[campo] === '' || out[campo] === null) { delete out[campo]; continue; }
     const n = intero(out[campo], lo, hi);
     if (n === null || n === 0) delete out[campo]; else out[campo] = n;
