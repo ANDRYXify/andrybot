@@ -77,6 +77,7 @@ const b = await chromium.launch({ executablePath: CHROMIUM,
 // Una pagina per combinazione di lingua e ruolo; le larghezze si scorrono
 // ridimensionando, che e' anche piu' vicino a quello che fa una persona.
 const esiti = [];
+const fuori = [];
 for (const admin of [false, true]) {
   for (const lang of ['it', 'en', 'es']) {
     const p = await b.newPage({ viewport: { width: 1920, height: 800 } });
@@ -89,6 +90,22 @@ for (const admin of [false, true]) {
       const r = await p.evaluate(MISURA);
       esiti.push({ admin, lang, w, ...r,
         ok: !r.errore && !(r.coll || []).length && (r.aperto || r.cassetto || r.giu) });
+
+      // Il cassetto si chiude cliccando fuori? Non e' un dettaglio di comodita':
+      // un menu che copre mezzo schermo e si chiude solo con la X e' una trappola.
+      // E la trappola non stava a una larghezza sola: la barra si ritira per
+      // MISURA (a qualsiasi larghezza), mentre il velo che intercetta il clic
+      // era acceso da una media query a 1280px. Sopra i 1280 il velo non c'era.
+      if (r.cassetto) {
+        await p.click('.apri-menu');
+        await p.waitForTimeout(120);
+        const siApre = await p.evaluate(() => document.body.classList.contains('menu-aperto'));
+        await p.mouse.click(20, 400);              // fuori dal cassetto, che sta a destra
+        await p.waitForTimeout(360);               // il tempo della transizione
+        const siChiude = await p.evaluate(() => !document.body.classList.contains('menu-aperto'));
+        if (!siChiude) await p.evaluate(() => document.body.classList.remove('menu-aperto'));
+        fuori.push({ admin, lang, w, ok: siApre && siChiude, siApre, siChiude });
+      }
     }
     await p.close();
   }
@@ -101,7 +118,14 @@ for (const e of rossi) {
   console.log(`  ✗ ${e.lang} ${String(e.w).padStart(5)}px${e.admin ? ' (admin)' : ''} — ${(e.coll || []).join(', ') || 'nessun modo di raggiungere il menu'}`);
 }
 console.log(`  ${rossi.length ? '✗' : '✓'} ${esiti.length} combinazioni di larghezza, lingua e ruolo`);
-console.log(rossi.length
-  ? `\n${rossi.length} combinazioni si sovrappongono.`
-  : '\nLa barra in alto non si sovrappone mai, e il menu si raggiunge sempre. ✓');
-process.exit(rossi.length ? 1 : 0);
+
+const chiusi = fuori.filter((e) => !e.ok);
+for (const e of chiusi) {
+  console.log(`  ✗ ${e.lang} ${String(e.w).padStart(5)}px${e.admin ? ' (admin)' : ''} — ` +
+    (e.siApre ? 'il cassetto non si chiude cliccando fuori' : 'il cassetto non si apre'));
+}
+console.log(`  ${chiusi.length ? '✗' : '✓'} ${fuori.length} volte il cassetto si apre e si chiude cliccando fuori`);
+console.log(rossi.length || chiusi.length
+  ? `\n${rossi.length} combinazioni si sovrappongono, ${chiusi.length} cassetti restano aperti.`
+  : '\nLa barra non si sovrappone mai, il menu si raggiunge sempre e si chiude cliccando fuori. ✓');
+process.exit(rossi.length || chiusi.length ? 1 : 0);

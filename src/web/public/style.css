@@ -208,7 +208,11 @@ body.menu-aperto .drawer { transform: none; }
 .drawer-utente .chip-utente { white-space: normal; }
 .drawer-utente .btn { width: 100%; text-align: center; }
 
-.backdrop { display: none; }
+.backdrop {
+  position: fixed; inset: 0; z-index: 50; background: rgba(15, 15, 25, .35);
+  opacity: 0; pointer-events: none; transition: opacity .28s;
+}
+body.menu-aperto .backdrop { opacity: 1; pointer-events: auto; }
 
 .pagina-testata { margin-bottom: clamp(1.4rem, 3vw, 2rem); }
 .pagina-testata:empty { display: none; }
@@ -1241,9 +1245,6 @@ body.barra-stretta .apri-menu { display: inline-flex; }
   body.menu-aperto .nav-drawer > *:nth-child(4) { animation-delay: .17s; }
   body.menu-aperto .nav-drawer > *:nth-child(n+5) { animation-delay: .21s; }
   @keyframes voce-in { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: none; } }
-  .backdrop { display: block; position: fixed; inset: 0; z-index: 50; background: rgba(15, 15, 25, .35); opacity: 0; pointer-events: none; transition: opacity .28s; }
-  body.menu-aperto .backdrop { opacity: 1; pointer-events: auto; }
-
   #app { view-transition-name: none; }
 }
 
