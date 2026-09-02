@@ -1793,7 +1793,12 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const user = currentUser(req);
     // Vetrina pubblica: senza sessione niente dati reali, solo "nessun utente"
     // (la single-page mostra la vetrina/landing). Config e canali restano privati.
-    if (!user) { res.json({ user: null }); return; }
+    if (!user) {
+      // Senza sessione niente dati reali. Solo una cosa serve alla vetrina: se
+      // esiste la porta di Kick, perche' il pulsante lo disegna il browser.
+      res.json({ user: null, kickAperto: !!(config.kickClientId && config.kickClientSecret) });
+      return;
+    }
     const ident = identitaDi(user);
     res.json({
       user,
