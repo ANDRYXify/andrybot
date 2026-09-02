@@ -90,7 +90,7 @@ const GIOCHI = {
     ] },
 
     { h2: 'Ogni comando si accende, si rinomina, si riserva' },
-    { p: ['Dalla scheda <em>Giochi</em>, nella carta «Comandi dei giochi», ogni riga è un comando vero: quello che vedi lì è quello che risponde in chat.'] },
+    { p: ['Dalla scheda <em>Giochi</em>, nella carta «Comandi dei giochi», ogni riga è un comando vero: quello che vedi lì è quello che risponde in chat. Vale per <strong>tutti</strong> i comandi pronti del bot, non solo per i giochi — l\'elenco completo sta in <em>Comandi</em>, in fondo.'] },
     { tabella: [
       ['Cosa puoi fare', 'Cosa succede'],
       ['Spegnerlo', 'Il comando smette di esistere: non risponde e sparisce da <code>!giochi</code>. Niente si cancella — monete, classifiche e impostazioni restano.'],
@@ -99,6 +99,9 @@ const GIOCHI = {
     ] },
     { p: ['Due giochi non possono chiamarsi allo stesso modo: il secondo non partirebbe mai e nessuno capirebbe perché. Se ci provi, il pannello rifiuta e ti dice quale nome è già preso.'] },
     { p: ['<code>!giochi</code> non è un elenco scritto a mano da qualche parte: legge la stessa tabella. Se spegni la slot, sparisce anche da lì.'] },
+    { h3: 'La famiglia conta più del singolo' },
+    { p: ['Un comando può essere acceso e restare muto lo stesso, perché la <strong>famiglia</strong> a cui appartiene è spenta. I giochi con la webcam, per esempio, rispondono solo se il tracking è acceso: se non lo è, il pannello te li mostra sbarrati e <code>!giochi</code> non li nomina.'] },
+    { p: ['È il motivo per cui prima <code>!giochi</code> rispondeva <strong>due volte</strong> — i giochi di chat e, subito sotto, quelli con la webcam — anche a chi la webcam non la usa: erano due elenchi scritti a mano che non sapevano l\'uno dell\'altro. Adesso la risposta è una sola e dice quello che risponde davvero.'] },
 
     { h3: 'Slot' },
     { p: ['Paghi il costo (10 di base) e girano tre simboli. Le vincite si scalano tutte dalla «vincita slot» (200 di base):'] },
@@ -414,6 +417,12 @@ const MODULI = {
     { h3: 'Una scommessa' },
     { esempio: 'QUANDO   comando  !scommetti\nSE       costo $arg1 · probabilità 45\nALLORA   dai punti  a chi scrive  +$arg1\nALLORA   scrivi in chat\n         $user punta $costo $monete e vince! Ora ne ha $punti.\nALTRIMENTI  scrivi in chat\n         $user punta $costo $monete e perde tutto. Ne restano $saldo.' },
     { p: ['Nel terzo: il costo è la cifra scritta da chi gioca, si paga sempre, e la vincita raddoppia perché la puntata era già uscita.'] },
+
+    { h2: 'I comandi pronti, e chi vince' },
+    { p: ['Il bot porta con sé una quarantina di comandi già fatti — giochi, sorteggi, ore guardate, shoutout, VIP, sondaggi, musica. In <em>Comandi</em>, in fondo alla scheda, ci sono tutti: ognuno si <strong>spegne</strong>, si <strong>rinomina</strong> e si può <strong>riservare</strong> ad abbonati, VIP o moderatori.'] },
+    { p: ['Rinominare <strong>sostituisce</strong>: se chiami <code>!slot</code> in un altro modo, il nome di serie smette di rispondere. Un comando ha un nome, e lo scegli tu.'] },
+    { p: ['Due comandi non possono chiamarsi allo stesso modo: il secondo non partirebbe mai. Se ci provi, il pannello rifiuta e ti dice quale nome è già preso.'] },
+    { p: ['E la regola di sempre resta: <strong>un comando tuo con lo stesso nome vince su quello pronto</strong>. Non devi spegnere niente per sovrascrivere un comando di serie — basta crearne uno tuo che si chiami così.'] },
 
     { h2: 'Limiti e sicurezza' },
     { ul: [

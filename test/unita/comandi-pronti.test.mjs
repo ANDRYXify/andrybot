@@ -14,18 +14,19 @@ import { cartellaUsaEGetta } from '../aiuto.mjs';
 
 const usaEGetta = cartellaUsaEGetta('andrybot-giochi-');
 const { streamers } = await import('../../src/db.js');
-const T = await import('../../src/features/giochi-tabella.js');
+const T = await import('../../src/features/comandi-registro.js');
+const GIOCHI = T.COMANDI.filter((c) => c.modulo === 'giochi');
 
 const CH = 'canale';
 streamers.request(CH, 'Canale', '1');
 
-function scegli(giochiComandi) {
-  streamers.setSettings(CH, { ...(streamers.get(CH)?.settings || {}), giochiComandi });
+function scegli(comandi) {
+  streamers.setSettings(CH, { ...(streamers.get(CH)?.settings || {}), comandi });
 }
 
 test('di serie risponde ogni nome del motore, e nessuno due volte', () => {
   scegli({});
-  const nomi = T.GIOCHI.flatMap((g) => g.nomi);
+  const nomi = GIOCHI.flatMap((g) => g.nomi);
   assert.equal(nomi.length, new Set(nomi).size, 'nessun nome ripetuto');
   for (const n of nomi) {
     const r = T.risolvi(CH, n);
@@ -38,7 +39,7 @@ test('di serie risponde ogni nome del motore, e nessuno due volte', () => {
 test('spegnere un gioco lo toglie dalla chat, non lo nasconde e basta', () => {
   scegli({ slot: { off: true } });
   assert.equal(T.risolvi(CH, 'slot').spento, true);
-  assert.ok(!T.elencoInChat(CH).includes('!slot'), 'sparisce anche da !giochi');
+  assert.ok(!T.elencoGiochiInChat(CH).includes('!slot'), 'sparisce anche da !giochi');
   const riga = T.elenco(CH).find((g) => g.id === 'slot');
   assert.equal(riga.acceso, false, 'il pannello lo mostra spento, non lo perde');
 });
@@ -47,8 +48,8 @@ test('rinominare SOSTITUISCE: i nomi di serie smettono di rispondere', () => {
   scegli({ slot: { nome: 'macchinetta' } });
   assert.equal(T.risolvi(CH, 'slot'), null, 'il nome di serie non risponde piu\'');
   const r = T.risolvi(CH, 'macchinetta');
-  assert.ok(r && r.gioco.id === 'slot');
-  assert.ok(T.elencoInChat(CH).includes('!macchinetta'));
+  assert.ok(r && r.comando.id === 'slot');
+  assert.ok(T.elencoGiochiInChat(CH).includes('!macchinetta'));
 });
 
 test('un gioco che non si spegne resta acceso anche se glielo si chiede', () => {
@@ -93,55 +94,79 @@ test('quello che arriva dal pannello viene ripulito, non creduto', () => {
 test('il pannello e la chat leggono la stessa cosa', () => {
   scegli({ furto: { off: true }, slot: { nome: 'macchinetta' }, duello: { chi: 'sub' } });
   const righe = T.elenco(CH);
-  assert.equal(righe.length, T.GIOCHI.length);
+  assert.equal(righe.length, T.COMANDI.length);
   assert.equal(righe.find((g) => g.id === 'furto').acceso, false);
   assert.equal(righe.find((g) => g.id === 'slot').nomi[0], 'macchinetta');
   assert.equal(righe.find((g) => g.id === 'slot').rinominato, true);
   assert.equal(righe.find((g) => g.id === 'duello').chi, 'sub');
-  const inChat = T.elencoInChat(CH);
-  for (const g of righe.filter((x) => x.acceso && x.id !== 'giochi')) {
+  const inChat = T.elencoGiochiInChat(CH);
+  for (const g of righe.filter((x) => x.vivo && x.modulo === 'giochi' && x.id !== 'giochi')) {
     assert.ok(inChat.includes('!' + g.nomi[0]), `${g.id} compare in !giochi`);
   }
   assert.ok(!inChat.includes('!furto'), 'quello spento no');
 });
 
-// La prova che conta: non che la tabella dica la cosa giusta, ma che il MOTORE
-// le dia retta. Prima non poteva: il comando era una riga di `switch`.
+// LA PROVA CHE CONTA: il vaglio. I gestori restano scritti sui nomi canonici —
+// e' `preparaComando` che traduce la parola scritta in chat, spegne, riserva. Un
+// posto solo, prima di tutti, cosi' vale anche per le famiglie che verranno.
 const { tryGame } = await import('../../src/features/games.js');
 
-function inChat(testo, extra = {}) {
-  const dette = [];
-  const msg = { channel: CH, user: 'tizio', display: 'Tizio', text: testo, ...extra };
-  const gestito = tryGame(msg, (t) => dette.push(String(t)));
-  return { gestito, dette };
-}
+const messaggio = (testo, extra = {}) => ({ channel: CH, user: 'tizio', display: 'Tizio', text: testo, ...extra });
 
-test('il motore obbedisce alla tabella', () => {
+test('il vaglio traduce, spegne e riserva', () => {
   scegli({});
-  assert.equal(inChat('!dado').gestito, true, 'di serie risponde');
+  assert.equal(T.preparaComando(CH, messaggio('!dado')).testo, '!dado');
+  assert.equal(T.preparaComando(CH, messaggio('!roll 2d20')).testo, '!dado 2d20', 'un alias diventa il nome canonico');
+  assert.equal(T.preparaComando(CH, messaggio('!inventato')), null, 'quel che non e\' nostro passa intatto');
+  assert.equal(T.preparaComando(CH, messaggio('ciao')), null, 'e un messaggio normale pure');
 
   scegli({ dado: { off: true } });
-  assert.equal(inChat('!dado').gestito, false, 'spento: il comando non esiste piu\'');
+  assert.equal(T.preparaComando(CH, messaggio('!dado')).salta, true, 'spento: nessun gestore lo vede');
+  assert.equal(T.preparaComando(CH, messaggio('!roll')).salta, true, 'nemmeno dagli alias');
 
   scegli({ dado: { nome: 'lancia' } });
-  assert.equal(inChat('!dado').gestito, false, 'rinominato: il vecchio nome tace');
-  assert.equal(inChat('!lancia').gestito, true, 'e risponde il nuovo');
+  assert.equal(T.preparaComando(CH, messaggio('!dado')), null, 'rinominato: il vecchio nome non e\' piu\' nostro');
+  assert.equal(T.preparaComando(CH, messaggio('!lancia')).testo, '!dado', 'e il nuovo arriva al gestore com\'era scritto');
 
   scegli({ dado: { chi: 'sub' } });
-  const rifiutato = inChat('!dado');
-  assert.equal(rifiutato.gestito, true, 'riservato: il bot risponde…');
-  assert.match(rifiutato.dette.join(' '), /abbonat/i, '…dicendo a chi e\' riservato');
-  assert.equal(inChat('!dado', { isSub: true }).gestito, true, 'un abbonato passa');
-  assert.equal(inChat('!dado', { isMod: true }).gestito, true, 'un mod passa sempre');
+  const no = T.preparaComando(CH, messaggio('!dado'));
+  assert.equal(no.rifiuta, 'sub');
+  assert.match(no.messaggio, /abbonat/i, 'dice a chi e\' riservato invece di tacere');
+  assert.equal(T.preparaComando(CH, messaggio('!dado', { isSub: true })).testo, '!dado');
+  assert.equal(T.preparaComando(CH, messaggio('!dado', { isMod: true })).testo, '!dado');
 });
 
-test('!giochi elenca quello che risponde davvero, non una lista scritta a mano', () => {
+test('una famiglia spenta zittisce i suoi comandi, senza spegnerli a uno a uno', () => {
+  scegli({});
+  streamers.setSettings(CH, { ...(streamers.get(CH)?.settings || {}), tracking: { attivo: true, giochi: false } });
+  assert.equal(T.preparaComando(CH, messaggio('!mima', { isMod: true })).salta, true);
+  assert.equal(T.preparaComando(CH, messaggio('!dado')).testo, '!dado', 'gli altri restano vivi');
+  const riga = T.elenco(CH).find((c) => c.id === 'mima');
+  assert.equal(riga.acceso, true, 'il suo interruttore e\' ancora su acceso…');
+  assert.equal(riga.vivo, false, '…ma non risponde, e il pannello lo dice');
+  streamers.setSettings(CH, { ...(streamers.get(CH)?.settings || {}), tracking: { attivo: true, giochi: true } });
+});
+
+test('i gestori restano scritti sui nomi canonici', () => {
+  scegli({});
+  const dette = [];
+  assert.equal(tryGame(messaggio('!dado'), (t) => dette.push(String(t))), true);
+  assert.ok(dette.join(' ').includes('tira'), 'e rispondono');
+});
+
+test('!giochi e\' UNA risposta sola, e dice quello che risponde davvero', () => {
   scegli({ furto: { off: true }, slot: { nome: 'macchinetta' } });
-  const { dette } = inChat('!giochi');
-  const riga = dette.join(' ');
+  streamers.setSettings(CH, { ...(streamers.get(CH)?.settings || {}), tracking: { attivo: true, giochi: true } });
+  const riga = T.elencoGiochiInChat(CH);
   assert.ok(riga.includes('!macchinetta'), 'dice il nome vero');
-  assert.ok(!riga.includes('!slot'), 'non dice quello di serie ormai spento');
-  assert.ok(!riga.includes('!furto'), 'non dice un gioco spento');
+  assert.ok(!riga.includes('!slot'), 'non quello di serie ormai sostituito');
+  assert.ok(!riga.includes('!furto'), 'non un gioco spento');
   assert.ok(riga.includes('!pesca') && riga.includes('!roulette') && riga.includes('!regala'),
     'e non dimentica quelli che il pannello non nominava');
+  assert.ok(riga.includes('!mima'), 'con la webcam accesa, ci sono anche quelli');
+
+  streamers.setSettings(CH, { ...(streamers.get(CH)?.settings || {}), tracking: { attivo: true, giochi: false } });
+  const senzaWebcam = T.elencoGiochiInChat(CH);
+  assert.ok(!senzaWebcam.includes('!mima'), 'con la webcam spenta, spariscono');
+  assert.ok(senzaWebcam.includes('!macchinetta'), 'gli altri restano');
 });

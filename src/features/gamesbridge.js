@@ -8,6 +8,7 @@
 // endpoint+secret arrivano DAL SITO al momento dell'ingresso (redeem del pass):
 // nessuna chiave da incollare a mano. L'interruttore "attivo" è nella dashboard.
 import { streamers } from '../db.js';
+import { preparaComando, comandoDi } from './comandi-registro.js';
 import { makeLog } from '../logger.js';
 
 const log = makeLog('giochi');
@@ -18,7 +19,7 @@ const TIMEOUT_MS = 8_000;
 // lo gestisce SocialBot in locale, quindi non serve mandarlo al sito: meno
 // traffico e nessun rischio che un comando locale venga "rubato" dal ponte.
 // Se in futuro il sito aggiunge altri giochi da chat, basta ampliare qui.
-const PREFISSI_GIOCO = /^!(ag|agentify)\b/i;
+const PREFISSI_GIOCO = new RegExp('^!(?:' + comandoDi('ag').nomi.join('|') + ')\\b', 'i');
 const INOLTRA = (testo) => PREFISSI_GIOCO.test(testo);
 
 // Inoltra il messaggio al sito e scrive le risposte. Ritorna true se il sito
@@ -33,8 +34,15 @@ export async function tryGamesBridge(msg, say) {
     if (!msg) return false;
     const cfg = streamers.get(msg.channel)?.settings?.giochiSito;
     if (!cfg?.attivo || !cfg.endpoint || !cfg.secret) return false;
-    const testo = String(msg.text || '').trim();
+    // Anche questo si chiama con un «!», quindi passa dal registro come tutti gli
+    // altri: spento non parte, rinominato risponde al nome nuovo, riservato lo
+    // dice invece di tacere. Il vaglio viene PRIMA del riconoscimento, se no un
+    // rinomino non verrebbe mai riconosciuto.
+    const vaglio = preparaComando(msg.channel, msg);
+    if (vaglio?.rifiuta) { say(vaglio.messaggio); return true; }
+    const testo = vaglio?.testo || String(msg.text || '').trim();
     if (!testo || !INOLTRA(testo)) return false;
+    if (vaglio?.salta) return false;
 
     const ac = new AbortController();
     const to = setTimeout(() => ac.abort(), TIMEOUT_MS);

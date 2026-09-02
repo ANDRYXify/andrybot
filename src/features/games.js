@@ -4,7 +4,7 @@
 // Comandi: !dado [NdM] · !moneta · !8ball <domanda> · !slot · !roulette <p> <scelta>
 //          · !pesca · !duello @tizio · !furto @tizio · !regala @tizio N
 //          · !trivia · !classifica [mod|tutti] · !monete · !giochi
-import { risolvi, puoUsare, elencoInChat } from './giochi-tabella.js';
+import { elencoGiochiInChat } from './comandi-registro.js';
 import { points, streamers, giochi } from '../db.js';
 import { config } from '../config.js';
 import { makeLog } from '../logger.js';
@@ -483,8 +483,6 @@ function pescaPesata(tab) {
 
 // --------------------------------------------------------- comando principale
 // Ritorna true se il messaggio era un comando/azione di gioco (gestito).
-const ETICHETTA_LIVELLO = { sub: 'chi e\' abbonato', vip: 'i VIP', mod: 'i moderatori' };
-
 export function tryGame(msg, say) {
   try {
     // Niente skip su isSelf: lo streamer (che il bot impersona) può giocare/
@@ -514,20 +512,12 @@ export function tryGame(msg, say) {
     const parti = testo.slice(1).split(/\s+/);
     const parola = (parti.shift() || '').toLowerCase();
     const args = parti;
-
-    const scelto = risolvi(channel, parola);
-    if (!scelto) return false;
-    if (scelto.spento) return false;
-    if (!puoUsare(scelto.chi, msg)) {
-      say(`${nome}, !${parola} qui e' riservato a ${ETICHETTA_LIVELLO[scelto.chi]}.`);
-      return true;
-    }
-    const cmd = scelto.gioco.id;
+    const cmd = parola;
 
     switch (cmd) {
       case 'giochi': {
-        const lista = elencoInChat(channel);
-        say(lista ? `🎮 Giochi: ${lista}` : '🎮 Nessun gioco acceso in questo canale.');
+        const lista = elencoGiochiInChat(channel);
+        say(lista || '🎮 Nessun gioco acceso in questo canale.');
         return true;
       }
 

@@ -1437,3 +1437,17 @@ body.con-salva { padding-bottom: 92px; }
   .gc-regole input[type="text"], .gc-regole select { width: 100%; }
   .gc-campo { flex: 1 1 0; min-width: 0; }
 }
+
+.gc-famiglia {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  margin: 10px 2px 2px; font-size: .7rem; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--testo-3);
+}
+.gc-famiglia:first-child { margin-top: 0; }
+.gc-famiglia em {
+  font-style: normal; text-transform: none; letter-spacing: 0; font-weight: 500;
+  font-size: .74rem; color: var(--ambra);
+}
+.gc-riga.gc-muto { border-style: dashed; }
+.gc-riga.gc-muto .gc-nomi code { text-decoration: line-through; opacity: .7; }
+.gc-fermo { font-size: .78rem; color: var(--testo-3); padding: .34rem 0; }

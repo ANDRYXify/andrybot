@@ -35,7 +35,7 @@ export function tryComando(effects, msg, say) {
       // Stesso principio: se il tracking e spento del tutto, chi comanda deve
       // saperlo. Agli altri restiamo in silenzio, per non riempire la chat.
       const c0 = testo.slice(1).split(/\s+/)[0].toLowerCase();
-      if ((msg.isMod || msg.isBroadcaster) && ['puzzle', 'puzzlestop', 'mima', 'nonridere', 'reaction', 'battaglia', 'giochi', 'gioca'].includes(c0)) {
+      if ((msg.isMod || msg.isBroadcaster) && ['puzzle', 'puzzlestop', 'mima', 'nonridere', 'reaction', 'battaglia'].includes(c0)) {
         say('Il tracking webcam e spento: accendilo nel pannello, scheda «Effetti & suoni».');
         return true;
       }
@@ -60,11 +60,6 @@ export function tryComando(effects, msg, say) {
     }
 
     if (trk.giochi === false) return false;   // altri giochi: rispettano il flag giochi
-
-    if (cmd === 'giochi' || cmd === 'gioca') {
-      say('🎮 Giochi webcam: !mima · !nonridere · !reaction · !battaglia — nella Battaglia la chat sfida con !sfida ✌️/👍/✋/☝️/✊');
-      return true;
-    }
 
     // Sfida della chat (per la "Battaglia"): la può mandare CHIUNQUE.
     if (cmd === 'sfida') {

@@ -26,7 +26,7 @@ import { montaArgine } from './argine.js';
 import { GUIDE, paginaGuida, paginaIndice, paginaNovita, urlGuide } from './guide.js';
 import * as novita from './novita.js';
 import { paginaManuale, paginaIndiceManuali, urlManuali, aiutiPerScheda } from './manuali.js';
-import { elenco as elencoGiochi, normalizza as normalizzaGiochi, collisioni as collisioniGiochi, LIVELLI as LIVELLI_GIOCO } from '../features/giochi-tabella.js';
+import { elenco as elencoComandi, normalizza as normalizzaComandi, collisioni as collisioniComandi, LIVELLI as LIVELLI_COMANDO, MODULI as MODULI_COMANDO } from '../features/comandi-registro.js';
 import { AntiBot } from '../features/antibot.js';
 import { statoListaBot, registro as registroAntibot, segnalazioniAperte, risolviSegnalazione, sintesiRegistro, registra as registraAntibot, nomeBot, valutaAccount, assetto as assettoAntibot, sogliaRaffica, codaBan } from '../features/antibot.js';
 import { statoBackup, backupOra } from '../backup.js';
@@ -4621,22 +4621,26 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   }));
 
   // ---------------------------------------------------------- GIOCHI personalizzati
-  // I COMANDI DI GIOCO, come sono configurati QUI. L'elenco non si scrive: e' la
-  // tabella dei giochi letta con le scelte del canale sopra.
-  app.get('/api/streamer/giochi-comandi', requireLogin, wrap(async (req, res) => {
-    res.json({ comandi: elencoGiochi(currentUser(req).login), livelli: LIVELLI_GIOCO });
+  // TUTTO QUELLO CHE SI CHIAMA CON UN «!», come e' configurato QUI. L'elenco non
+  // si scrive: e' il registro dei comandi letto con le scelte del canale sopra.
+  app.get('/api/streamer/comandi-pronti', requireLogin, wrap(async (req, res) => {
+    res.json({
+      comandi: elencoComandi(currentUser(req).login),
+      livelli: LIVELLI_COMANDO,
+      moduli: Object.fromEntries(Object.entries(MODULI_COMANDO).map(([k, v]) => [k, v.nome])),
+    });
   }));
 
-  app.post('/api/streamer/giochi-comandi', requireLogin, wrap(async (req, res) => {
+  app.post('/api/streamer/comandi-pronti', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    const scelte = normalizzaGiochi(req.body?.comandi);
-    const scontri = collisioniGiochi(scelte);
+    const scelte = normalizzaComandi(req.body?.comandi);
+    const scontri = collisioniComandi(scelte);
     if (scontri.length) {
-      return res.status(400).json({ errore: `il nome «${scontri[0].nome}» e' gia' di un altro gioco` });
+      return res.status(400).json({ errore: `il nome «${scontri[0].nome}» e' gia' di un altro comando` });
     }
     const s = streamers.get(login);
-    streamers.setSettings(login, { ...(s?.settings || {}), giochiComandi: scelte });
-    res.json({ ok: true, comandi: elencoGiochi(login) });
+    streamers.setSettings(login, { ...(s?.settings || {}), comandi: scelte });
+    res.json({ ok: true, comandi: elencoComandi(login) });
   }));
 
   app.get('/api/streamer/giochi', requireLogin, wrap(async (req, res) => {

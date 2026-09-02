@@ -15,7 +15,9 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { MANUALI, aiutiPerScheda } from '../src/web/manuali.js';
-import { GIOCHI } from '../src/features/giochi-tabella.js';
+import { COMANDI } from '../src/features/comandi-registro.js';
+
+const GIOCHI = COMANDI.filter((c) => c.modulo === 'giochi');
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '..');
 const leggi = (f) => readFileSync(join(RAD, f), 'utf8');

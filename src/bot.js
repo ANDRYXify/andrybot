@@ -14,6 +14,7 @@ import { EventHub } from './twitch/events.js';
 import { Brain } from './ai/brain.js';
 import * as persona from './ai/persona.js';
 import * as games from './features/games.js';
+import * as registro from './features/comandi-registro.js';
 import * as personalizzati from './features/personalizzati.js';
 import * as giveaway from './features/giveaway.js';
 import * as watchtime from './features/watchtime.js';
@@ -547,33 +548,41 @@ export class BotManager {
     // vedono nemmeno. Un solo vaglio qui in cima, invece di una guardia dentro
     // ogni famiglia — cosi' vale anche per quelle che verranno.
     const suo = personalizzati.suoComando(login, msg.text);
-    if (!suo) {
+    // IL VAGLIO DEI COMANDI PRONTI. Tutto quel che si chiama con un «!» passa di
+    // qui prima dei gestori: la parola scritta diventa il nome canonico (i
+    // rinomini), un comando spento — o di una famiglia spenta — non arriva a
+    // nessuno, e uno riservato risponde dicendo a chi e' riservato invece di
+    // tacere. Un posto solo, cosi' vale anche per le famiglie che verranno.
+    const vaglio = suo ? null : registro.preparaComando(login, msg);
+    if (vaglio?.rifiuta) { parla(vaglio.messaggio); return; }
+    if (!suo && !vaglio?.salta) {
+    const cmdMsg = vaglio?.testo && vaglio.testo !== msg.text ? { ...msg, text: vaglio.testo } : msg;
     // minigiochi: !dado, !slot, !trivia, ...
-    try { games.tryGame(msg, parla); }
+    try { games.tryGame(cmdMsg, parla); }
     catch (e) { log.error(`#${login} giochi:`, e?.message || e); }
     // giveaway / sorteggi (!giveaway, !join, !estrai) — segue l'add-on Giochi
-    try { giveaway.tryGiveaway(msg, parla); }
+    try { giveaway.tryGiveaway(cmdMsg, parla); }
     catch (e) { log.error(`#${login} giveaway:`, e?.message || e); }
     // ore guardate / fedeltà (!ore, !classificaore)
-    try { watchtime.tryComando(msg, parla); }
+    try { watchtime.tryComando(cmdMsg, parla); }
     catch (e) { log.error(`#${login} ore:`, e?.message || e); }
     // comandi base pronti (!so/!shoutout, !followage, !uptime): opt-out e mai
     // sopra ai comandi/Moduli creati dallo streamer (quelli vincono).
-    comandibase.tryComando(this.helix, msg, parla)
+    comandibase.tryComando(this.helix, cmdMsg, parla)
       .catch((e) => log.error(`#${login} comandi base:`, e?.message || e));
     // minigiochi webcam (!mima/!nonridere/!reaction/!battaglia, !sfida): avviano
     // i giochi nell'overlay tracking. Deterministico; solo se il tracking è acceso.
-    try { trackinggiochi.tryComando(this.effects, msg, parla); }
+    try { trackinggiochi.tryComando(this.effects, cmdMsg, parla); }
     catch (e) { log.error(`#${login} giochi tracking:`, e?.message || e); }
     // gestione comandi dalla chat (!comando aggiungi/…): opt-in, solo se accesa
-    try { comandichat.tryComando(msg, parla); }
+    try { comandichat.tryComando(cmdMsg, parla); }
     catch (e) { log.error(`#${login} comandi-chat:`, e?.message || e); }
     // comandi VIP (mod/streamer): !vip @nome [durata], !unvip, !viplista
-    vip.tryVipCommand(this.helix, msg, parla).catch((e) => log.error(`#${login} vip:`, e?.message || e));
+    vip.tryVipCommand(this.helix, cmdMsg, parla).catch((e) => log.error(`#${login} vip:`, e?.message || e));
     // sondaggi & predizioni Twitch (mod/streamer) — add-on Effetti & Punti canale
-    sondaggi.trySondaggio(this.helix, msg, parla).catch((e) => log.error(`#${login} sondaggi:`, e?.message || e));
+    sondaggi.trySondaggio(this.helix, cmdMsg, parla).catch((e) => log.error(`#${login} sondaggi:`, e?.message || e));
     // richieste musicali via Spotify (!sr, !song) — add-on Richieste Musicali
-    songrequest.trySongRequest(msg, parla).catch((e) => log.error(`#${login} songrequest:`, e?.message || e));
+    songrequest.trySongRequest(cmdMsg, parla).catch((e) => log.error(`#${login} songrequest:`, e?.message || e));
     // citazioni (!cita) — lo shoutout (!so) lo gestisce comandibase qui sopra
     try { quotes.tryQuoteCommand(msg, parla); } catch (e) { log.error(`#${login} citazioni:`, e?.message || e); }
     // contatori (!morti, !tentativi, !parole…): comando chat + auto-conteggio parole.
