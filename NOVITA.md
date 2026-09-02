@@ -5,6 +5,7 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-02
 
+- I comandi pronti sono tradotti: nome e spiegazione escono in italiano, inglese e spagnolo come il resto del pannello.
 - I giochi si creano tutti da un posto solo: prima c'erano due riquadri che facevano la stessa cosa e uno ti spostava in un'altra scheda per finire il lavoro.
 - Si sceglie chi lancia il gioco — il bot a sorpresa, o uno spettatore che scrive un comando — e il resto si adatta.
 - Nell'editor dei giochi le parole magiche offerte sono quelle che a un gioco servono: monete, caso, numeri, chi scrive. Le altre restano a un clic.
