@@ -5,6 +5,8 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-02
 
+- Sul telefono il «?» apre guide, manuali e novità dentro al menu, come righe: prima usciva una tendina più larga del menu e si leggeva mezza parola.
+- Anche il cambio canale sul telefono è diventato un elenco, per lo stesso motivo.
 - Tutto quello che si chiama con un «!» adesso si gestisce: una quarantina di comandi pronti, ognuno da spegnere, rinominare o riservare a sub, VIP e moderatori. Li trovi in Comandi, in fondo.
 - «!giochi» risponde una volta sola: prima usciva l'elenco dei giochi di chat e, subito sotto, quello dei giochi con la webcam — anche a chi la webcam non la usa.
 - Un comando di una famiglia spenta non risponde più e il pannello te lo dice, invece di lasciarti indovinare perché tace.

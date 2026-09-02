@@ -1451,3 +1451,14 @@ body.con-salva { padding-bottom: 92px; }
 .gc-riga.gc-muto { border-style: dashed; }
 .gc-riga.gc-muto .gc-nomi code { text-decoration: line-through; opacity: .7; }
 .gc-fermo { font-size: .78rem; color: var(--testo-3); padding: .34rem 0; }
+
+.drawer-aiuto, .drawer-canali { margin-top: .2rem; }
+.drawer-aiuto .drawer-voce, .drawer-canali .drawer-voce {
+  width: 100%; text-align: left; border: none; background: transparent;
+  font: inherit; cursor: pointer; color: inherit;
+  padding-left: calc(.55rem + 18px + .65rem);
+}
+.drawer-aiuto .drawer-voce span, .drawer-canali .drawer-voce span {
+  min-width: 0; overflow-wrap: anywhere;
+}
+.drawer-aiuto .drawer-voce { text-decoration: none; }

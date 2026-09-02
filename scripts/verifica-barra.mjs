@@ -100,11 +100,42 @@ for (const admin of [false, true]) {
         await p.click('.apri-menu');
         await p.waitForTimeout(120);
         const siApre = await p.evaluate(() => document.body.classList.contains('menu-aperto'));
+        // La misura si prende a cassetto FERMO, e «fermo» non e' un'attesa a
+        // occhio: l'animazione ha un rimbalzo, quindi si aspetta finche' la
+        // trasformazione non e' tornata l'identita'. Mentre scivola, il riquadro
+        // del cassetto e quelli dei figli si arrotondano in modo diverso e si
+        // leggono due pixel di troppo che non esistono.
+        await p.waitForFunction(() => {
+          const d = document.querySelector('.drawer');
+          if (!d) return true;
+          const t = getComputedStyle(d).transform;
+          return t === 'none' || /^matrix\(1, 0, 0, 1, 0, 0\)$/.test(t);
+        }, { timeout: 3000 }).catch(() => {});
+        // NIENTE ESCE DAL CASSETTO. Il cassetto scorre (overflow-y: auto), quindi
+        // ritaglia: un menu a tendina aperto li' dentro veniva tagliato, e sul
+        // telefono il «?» apriva una tendina di cui si leggeva mezza parola. La
+        // cura non e' spostarla: e' che dentro un elenco non ci vanno tendine.
+        const sbordano = await p.evaluate(() => {
+          const d = document.querySelector('.drawer');
+          if (!d) return [];
+          const r = d.getBoundingClientRect();
+          const male = [];
+          for (const el of d.querySelectorAll('*')) {
+            const st = getComputedStyle(el);
+            if (st.display === 'none' || st.visibility === 'hidden') continue;
+            const b = el.getBoundingClientRect();
+            if (!b.width || !b.height) continue;
+            if (b.left < r.left - 0.5 || b.right > r.right + 0.5) {
+              male.push((el.className || el.tagName) + '');
+            }
+          }
+          return [...new Set(male)].slice(0, 3);
+        });
         await p.mouse.click(20, 400);              // fuori dal cassetto, che sta a destra
         await p.waitForTimeout(360);               // il tempo della transizione
         const siChiude = await p.evaluate(() => !document.body.classList.contains('menu-aperto'));
         if (!siChiude) await p.evaluate(() => document.body.classList.remove('menu-aperto'));
-        fuori.push({ admin, lang, w, ok: siApre && siChiude, siApre, siChiude });
+        fuori.push({ admin, lang, w, ok: siApre && siChiude && !sbordano.length, siApre, siChiude, sbordano });
       }
     }
     await p.close();
@@ -119,13 +150,18 @@ for (const e of rossi) {
 }
 console.log(`  ${rossi.length ? '✗' : '✓'} ${esiti.length} combinazioni di larghezza, lingua e ruolo`);
 
-const chiusi = fuori.filter((e) => !e.ok);
+const chiusi = fuori.filter((e) => !e.siApre || !e.siChiude);
+const sbordati = fuori.filter((e) => e.sbordano?.length);
 for (const e of chiusi) {
   console.log(`  ✗ ${e.lang} ${String(e.w).padStart(5)}px${e.admin ? ' (admin)' : ''} — ` +
     (e.siApre ? 'il cassetto non si chiude cliccando fuori' : 'il cassetto non si apre'));
 }
 console.log(`  ${chiusi.length ? '✗' : '✓'} ${fuori.length} volte il cassetto si apre e si chiude cliccando fuori`);
-console.log(rossi.length || chiusi.length
-  ? `\n${rossi.length} combinazioni si sovrappongono, ${chiusi.length} cassetti restano aperti.`
-  : '\nLa barra non si sovrappone mai, il menu si raggiunge sempre e si chiude cliccando fuori. ✓');
-process.exit(rossi.length || chiusi.length ? 1 : 0);
+for (const e of sbordati) {
+  console.log(`  ✗ ${e.lang} ${String(e.w).padStart(5)}px${e.admin ? ' (admin)' : ''} — esce dal cassetto e viene tagliato: ${e.sbordano.join(', ')}`);
+}
+console.log(`  ${sbordati.length ? '✗' : '✓'} ${fuori.length} volte niente esce dal cassetto`);
+console.log(rossi.length || chiusi.length || sbordati.length
+  ? `\n${rossi.length} combinazioni si sovrappongono, ${chiusi.length} cassetti restano aperti, ${sbordati.length} tagliano quello che c'e' dentro.`
+  : '\nLa barra non si sovrappone mai, il menu si raggiunge sempre, si chiude cliccando fuori e non taglia niente. ✓');
+process.exit(rossi.length || chiusi.length || sbordati.length ? 1 : 0);

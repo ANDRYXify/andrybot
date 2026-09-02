@@ -900,12 +900,26 @@ function barraCarteHtml() {
   </div>`;
 }
 
-function menuAiutoHtml() {
-  const voci = [
+function vociAiuto() {
+  return [
     ['/guide', L('Guide', 'Guides', 'Guías')],
     ['/manuale', L('Manuali', 'Manuals', 'Manuales')],
     ['/novita', L('Novità', 'What’s new', 'Novedades')],
   ];
+}
+
+function aiutoNelCassetto() {
+  const qui = aiutoDi(schedaAttiva);
+  const riga = (via, testo, forte = '') => `<a class="drawer-voce" href="${esc(via)}" target="_blank" rel="noopener"><span>${testo}${forte ? `: <strong>${esc(forte)}</strong>` : ''}</span></a>`;
+  return `<div class="drawer-grp drawer-aiuto">
+    <p class="drawer-grp-tit">${L('Aiuto', 'Help', 'Ayuda')}</p>
+    ${qui ? riga(qui.via, L('Per questa scheda', 'For this tab', 'Para esta pestaña'), qui.titolo) : ''}
+    ${vociAiuto().map(([via, nome]) => riga(via, esc(nome))).join('')}
+  </div>`;
+}
+
+function menuAiutoHtml() {
+  const voci = vociAiuto();
   const qui = aiutoDi(schedaAttiva);
   return `<div class="switch-canale-box aiuto-box">
     <button type="button" class="btn secondario mini aiuto-btn" aria-haspopup="menu" aria-expanded="false" title="${L('Guide e manuali', 'Guides and manuals', 'Guías y manuales')}">?</button>
@@ -948,7 +962,11 @@ function renderAreaUtente() {
   const aiuto = menuAiutoHtml();
   if (areaUtente) areaUtente.innerHTML = `${selettoreLingua('mini')}${audio}${tema}${aiuto}${centro}${esci}`;
 
-  if (areaMob) areaMob.innerHTML = `<span class="chip-utente">${L('ciao', 'hi', 'hola')}, <strong>${ident}</strong></span>${centro}<div class="drawer-controlli">${selettoreLingua()}${toggleSuonoHtml()}${tema}${aiuto}</div>${esci}`;
+  const canaliMob = canali.length > 1 ? `<div class="drawer-grp drawer-canali">
+    <p class="drawer-grp-tit">${L('Canale', 'Channel', 'Canal')}</p>
+    ${canali.map((c) => `<button type="button" class="drawer-voce${c.canale === attuale ? ' on' : ''}" data-canale="${esc(c.canale)}"><span>${esc(etichetta(c))}</span></button>`).join('')}
+  </div>` : centro;
+  if (areaMob) areaMob.innerHTML = `<span class="chip-utente">${L('ciao', 'hi', 'hola')}, <strong>${ident}</strong></span>${canaliMob}${aiutoNelCassetto()}<div class="drawer-controlli">${selettoreLingua()}${toggleSuonoHtml()}${tema}</div>${esci}`;
   applicaTema();
 
   document.querySelectorAll('.aiuto-btn').forEach((btn) =>
@@ -971,7 +989,7 @@ function renderAreaUtente() {
       document.querySelectorAll('.switch-canale-btn').forEach((b) => b.setAttribute('aria-expanded', 'false'));
       if (chiuso) { menu.removeAttribute('hidden'); btn.setAttribute('aria-expanded', 'true'); }
     }));
-  document.querySelectorAll('.sc-voce').forEach((v) =>
+  document.querySelectorAll('[data-canale]').forEach((v) =>
     v.addEventListener('click', () => conErrore(async () => {
       const canale = v.dataset.canale;
       v.closest('.switch-canale-menu')?.setAttribute('hidden', '');
