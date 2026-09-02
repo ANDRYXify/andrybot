@@ -44,11 +44,13 @@ const LAVORI = [
   { da: 'sbot.png', a: 'icon-192.png', lato: 192, fondo: CARTA, quota: 0.86 },
   { da: 'sbot.png', a: 'icon-512.png', lato: 512, fondo: CARTA, quota: 0.86 },
   { da: 'sbot.png', a: 'icon-maskable-512.png', lato: 512, fondo: CARTA, quota: 0.66 },
-  // Il bollo della barra in alto non e' quadrato: il segno e' largo una volta e
-  // mezza la sua altezza, e in un quadrato da 30px un terzo della larghezza
-  // andrebbe sprecato in aria. Con la forma sua, alla stessa altezza, si legge.
-  { da: 'sbot.png', a: 'marchio-barra.png', larghezza: 141, fondo: CARTA, quota: 0.92 },
+  // Nelle PAGINE il marchio va trasparente: il fondo ce lo mette la pagina.
+  // Non e' una scelta di gusto, e' una misura — su fondo scuro i contorni neri
+  // spariscono ma i pieni magenta portano la forma da soli, mentre una targa di
+  // carta dietro le lettere, in tema scuro, diventa un mattone bianco.
+  { da: 'sbot.png', a: 'marchio-barra.png', larghezza: 141, fondo: null, quota: 1 },
   { da: 'sbot.png', a: 'marchio.png', lato: 512, fondo: null, quota: 1 },
+  { da: 'socialbot.png', a: 'logo-barra.png', larghezza: 252, fondo: null, quota: 1 },
   { da: 'socialbot.png', a: 'logo-esteso.png', larghezza: 1200, fondo: null, quota: 1 },
 ];
 
