@@ -645,9 +645,44 @@ function render() {
 
   if (conPiattaforma) document.querySelectorAll('.pannello-scheda').forEach((p) => rendiCartePieghevoli(p, p.dataset.scheda));
   rivelaCarte();
+  misuraBarraTop();
 
   if (_syRender) requestAnimationFrame(() => { try { window.scrollTo(0, _syRender); } catch {  } });
 }
+
+const CUSCINO_BARRA = 8;
+
+function misuraBarraTop() {
+  const barra = document.querySelector('.barra-top');
+  const nav = barra?.querySelector('.nav-top');
+  if (!barra || !nav) return;
+  const corpo = document.body;
+  const eraStretta = corpo.classList.contains('barra-stretta');
+  if (eraStretta) corpo.classList.remove('barra-stretta');
+
+  const largo = (el) => (el ? el.getBoundingClientRect().width : 0);
+  const numero = (v) => (parseFloat(v) || 0);
+  const stileBarra = getComputedStyle(barra);
+  const stileNav = getComputedStyle(nav);
+  const voci = [...nav.querySelectorAll('.grp')];
+
+  const spazioPerLeVoci = barra.clientWidth
+    - numero(stileBarra.paddingLeft) - numero(stileBarra.paddingRight)
+    - numero(stileBarra.columnGap) * 2
+    - largo(barra.querySelector('.marchio'))
+    - largo(barra.querySelector('.top-strumenti'));
+  const spazioChiedono = voci.reduce((n, v) => n + largo(v), 0)
+    + numero(stileNav.columnGap) * Math.max(0, voci.length - 1);
+
+  const ciSta = !voci.length || spazioChiedono + CUSCINO_BARRA <= spazioPerLeVoci;
+  corpo.classList.toggle('barra-stretta', !ciSta);
+}
+
+let _misuraBarra = 0;
+window.addEventListener('resize', () => {
+  if (_misuraBarra) return;
+  _misuraBarra = requestAnimationFrame(() => { _misuraBarra = 0; misuraBarraTop(); });
+}, { passive: true });
 
 const _menoMoto = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
