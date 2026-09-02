@@ -88,6 +88,51 @@ I nomi e le descrizioni dei piani vivevano solo in italiano: su pagina inglese c
 descrizioni italiane. Ora ogni piano, add-on e pacchetto ha `nome3` e `sommario3` (it/en/es), e
 `pianiPubblici()` li espone. I campi vecchi restano: chi legge `sommario` continua a funzionare.
 
+## Una tavolozza sola
+
+La pagina pubblica aveva una tavolozza **tutta sua**, scura fissa: `body.vetrina`
+ridefiniva l'intera palette — fondo quasi nero, accento arancione, un viola di
+appoggio — e vinceva su quella del sito perché sta su `body`. Risultato: chi
+sceglieva il tema chiaro vedeva comunque una home scura, e appena entrava (o
+apriva una guida) cambiava prodotto.
+
+Le guide, dal canto loro, avevano una **copia a mano** dei colori, rimasta al
+viola di due marchi fa. Tre mondi diversi in tre clic.
+
+Ora il fatto è scritto una volta: i colori stanno in `anime.css` — la stessa
+fonte che veste la dashboard — e
+
+- la **vetrina** non li ridefinisce più: eredita, quindi segue il tema come tutto
+  il resto, compresa la scelta chiaro/scuro della persona (non solo quella del
+  sistema operativo);
+- le **guide, i manuali e le novità** li *leggono* da lì quando compongono la
+  pagina, e caricano `tema.js` — l'unico script di quelle pagine, e non tocca il
+  contenuto — per rispettare la stessa scelta.
+
+Restano nella vetrina solo le cose che sono davvero sue: la composizione, gli
+aloni della scena, le larghezze. E una sola eccezione dichiarata: dentro
+`.vt-schermo` la tavolozza torna scura, perché **uno schermo è uno schermo** —
+una diretta è scura anche su una pagina chiara, come in qualsiasi lettore video.
+Dichiararlo lì una volta tiene leggibili etichette, chat, alert e webcam senza
+che sappiano che tema ha la pagina attorno.
+
+`test/contratto/tema.test.mjs` tiene il patto: la vetrina non dichiara colori del
+sito (rosso provato rimettendoci `--acc`), lo schermo dichiara i suoi, e le guide
+usano davvero i valori di `anime.css`.
+
+## Da dove si arriva alle guide
+
+Guide, manuali e novità stavano **solo nel piede**: esistevano e non le trovava
+nessuno. Ora la vetrina ha una testata vera — marchio a sinistra, *Guide ·
+Manuali · Novità · Demo* al centro, lingua a destra — che su telefono va a capo
+in due righe invece di stringersi.
+
+Un dettaglio che vale la pena raccontare: la classe `.vt-testa` che avevo scelto
+per quella testata **esisteva già** (le testate delle sezioni, con
+`max-width: 46ch`). La barra si è ritrovata larga 384px e andava a capo da sola.
+Non era un difetto di layout: era una collisione di nomi nel foglio di stile, di
+quelle che non danno nessun errore. Si chiama `.vt-barra`.
+
 ## Il guscio non si elenca: si ricava
 
 Il sito è un labirinto — senza sessione tutto risponde 404 — e per anni l'eccezione è stata un

@@ -1784,7 +1784,16 @@ function renderHero() {
     ${msgErrore ? `<div class="carta avviso"><p>${esc(msgErrore)}</p></div>` : ''}
 
     <section class="vt-scena">
-      <div class="vt-strumenti">${selettoreLingua()}</div>
+      <header class="vt-barra">
+        <a class="vt-marchio" href="/" aria-label="SocialBot"><img src="/icons/logo-barra.png?v=5" alt="SocialBot" width="80" height="30"></a>
+        <nav class="vt-mappa" aria-label="${L('Il sito', 'The site', 'El sitio')}">
+          <a href="/guide">${L('Guide', 'Guides', 'Guías')}</a>
+          <a href="/manuale">${L('Manuali', 'Manuals', 'Manuales')}</a>
+          <a href="/novita">${L('Novità', 'What’s new', 'Novedades')}</a>
+          <a href="/?demo=1">${L('Demo', 'Demo', 'Demo')}</a>
+        </nav>
+        <div class="vt-strumenti">${selettoreLingua()}</div>
+      </header>
       <span class="vt-occhiello"><i class="vivo"></i>${L('SocialBot · il bot di andryxify.it', 'SocialBot · the bot by andryxify.it', 'SocialBot · el bot de andryxify.it')}</span>
       <h1 class="vt-titolo">${L('Il bot per Twitch che parla', 'The Twitch bot that speaks', 'El bot de Twitch que habla')} <em>${L('con la tua voce', 'with your own voice', 'con tu propia voz')}</em></h1>
       <p class="vt-sub">${L('Vive nella tua chat e scrive <strong>con il tuo account</strong> — niente bot anonimi. Comandi su misura, <strong>scudo anti-bot</strong>, overlay per la diretta, clip, musica e <strong>notifiche live</strong>.', 'It lives in your chat and writes <strong>with your own account</strong> — no anonymous bots. Custom commands, an <strong>anti-bot shield</strong>, stream overlay, clips, music and <strong>live alerts</strong>.', 'Vive en tu chat y escribe <strong>con tu cuenta</strong> — nada de bots anónimos. Comandos a medida, <strong>escudo anti-bot</strong>, overlay para el directo, clips, música y <strong>avisos en directo</strong>.')}</p>
