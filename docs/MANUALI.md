@@ -149,3 +149,24 @@ E in Chromium, i tre segnali che si possono simulare: dopo un errore compare
 subito, dopo sei cambi di verso con la rotella compare, e alla terza volta che
 torni sulla stessa scheda compare — poi sparisce al primo clic, e dopo «Non
 serve» non torna nemmeno ricaricando.
+
+## Ogni scheda ha il suo aiuto (e il cancello lo pretende)
+
+La copertura era un **elenco scritto a mano** dentro ogni pagina (`schede: [...]`),
+quindi era quel che qualcuno si era ricordato di digitare: **sei schede su
+ventiquattro**. Nelle altre diciotto il «?» in barra non aveva niente da offrire,
+l'avviso non usciva, il popup nemmeno — e chi era in difficoltà lì restava.
+
+La dichiarazione resta dove sta (chi scrive una pagina sa a chi serve meglio di
+chiunque la legga sei mesi dopo), ma adesso **non è più facoltativa**:
+
+- l'elenco vero delle schede non si scrive, si legge da **quali pannelli
+  `app.js` disegna** — la stessa fonte che li crea;
+- `verifica-manuali.mjs` diventa **rosso** se una scheda resta scoperta, e rosso
+  anche se un aiuto è agganciato a una scheda che non esiste più (un pannello
+  rinominato lascerebbe l'aiuto attaccato a un fantasma).
+
+I manuali sono nove, uno per **area** del prodotto più i due approfondimenti
+(giochi, moduli). Un manuale d'area copre più schede: è la forma giusta perché
+le schede di un'area si usano insieme, e nove pagine dense valgono più di
+ventiquattro paginette che si ripetono.

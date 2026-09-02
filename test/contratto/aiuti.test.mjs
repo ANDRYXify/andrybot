@@ -21,9 +21,12 @@ const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const APP = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
 const AIUTI = aiutiPerScheda();
 
-// le schede vere del pannello, lette da dove sono elencate
-const gruppi = APP.slice(APP.indexOf('const GRUPPI = ['), APP.indexOf('function schedaValida'));
-const SCHEDE = [...gruppi.matchAll(/\[\s*'([a-z-]+)',\s*'[^']*'\s*\]/g)].map((m) => m[1]);
+// Le schede vere del pannello sono quelle che il pannello DISEGNA — non quelle
+// elencate nella barra in alto: sotto-schede come «Conoscenza» o «Scudo» si
+// aprono da una scheda madre e nella barra non compaiono. Leggendo la barra si
+// otteneva un elenco piu' corto del vero, e un aiuto legittimo sembrava rotto.
+const SCHEDE = [...new Set([...APP.matchAll(/pannello\('([a-z0-9-]+)'/g)].map((m) => m[1]))]
+  .filter((id) => id !== 'admin');
 
 test('qualche scheda ha la sua pagina', () => {
   assert.ok(SCHEDE.length >= 10, `schede del pannello: ${SCHEDE.length}`);

@@ -14,7 +14,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { MANUALI } from '../src/web/manuali.js';
+import { MANUALI, aiutiPerScheda } from '../src/web/manuali.js';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '..');
 const leggi = (f) => readFileSync(join(RAD, f), 'utf8');
@@ -87,6 +87,28 @@ copre('giochi', 'tipi di manche', manche);
 const bloccoRicette = app.slice(app.indexOf('const RICETTE_PUNTI = ['), app.indexOf('const bottoniRicette'));
 const ricette = [...bloccoRicette.matchAll(/L\('([^']+)'/g)].map((m) => m[1]);
 copre('giochi', 'ricette a punti', ricette);
+
+// ---- OGNI SCHEDA HA IL SUO AIUTO ------------------------------------------
+// Il difetto: la copertura era un elenco scritto a mano dentro ogni pagina
+// (schede: [...]), quindi era quel che qualcuno si era ricordato di digitare.
+// Su ventiquattro schede ne coprivano sei: nelle altre diciotto il «?» in barra
+// non aveva niente da offrire, l'avviso non usciva, il popup nemmeno — e chi
+// era in difficolta' li' restava.
+//
+// L'elenco vero delle schede non si scrive: sono i pannelli che app.js disegna.
+// Se domani ne nasce uno, questo cancello diventa rosso finche' qualcuno non lo
+// spiega da qualche parte.
+const schede = [...new Set([...app.matchAll(/pannello\('([a-z0-9-]+)'/g)].map((m) => m[1]))]
+  .filter((s) => s !== 'admin');
+const aiuti = aiutiPerScheda();
+const scoperte = schede.filter((s) => !aiuti[s]);
+dice(scoperte.length === 0, `ogni scheda ha una guida o un manuale: ${schede.length - scoperte.length} su ${schede.length}`, scoperte.join(', '));
+
+// E il contrario: una pagina non puo' dichiarare di servire una scheda che non
+// esiste piu'. Se un pannello viene rinominato, l'aiuto resterebbe agganciato a
+// un fantasma — presente nell'elenco, invisibile nel prodotto.
+const fantasmi = Object.keys(aiuti).filter((s) => !schede.includes(s));
+dice(fantasmi.length === 0, 'nessun aiuto e\' agganciato a una scheda che non esiste', fantasmi.join(', '));
 
 // ---- i due manuali si citano a vicenda ------------------------------------
 dice(cerca('giochi', '/manuale/moduli'), 'dal manuale dei giochi si arriva a quello dei moduli');

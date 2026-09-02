@@ -439,7 +439,584 @@ const MODULI = {
   ],
 };
 
-export const MANUALI = [GIOCHI, MODULI];
+const BOT = {
+  slug: 'bot',
+  schede: ['personalita', 'conoscenza', 'memoria', 'avatar'],
+  titolo: 'Manuale del bot: personalità, conoscenza e memoria | SocialBot',
+  h1: 'Manuale del bot: personalità, conoscenza e memoria',
+  desc: 'Come si regola il carattere del bot, cosa gli si insegna, cosa impara da solo, cosa si ricorda e come si cancella. Con i valori di base e i limiti veri.',
+  aggiornata: OGGI,
+  corpo: [
+    { p: [
+      'In chat il bot parla <strong>a nome tuo</strong>: non compare un account estraneo, compare il tuo. Per questo il suo carattere non è un dettaglio — è come suoni tu quando non stai guardando la chat.',
+      'Le schede sono quattro e fanno mestieri diversi. <em>Il bot</em> decide <strong>come</strong> parla. <em>Conoscenza</em> decide <strong>cosa</strong> sa. <em>Memoria</em> mostra <strong>cosa si ricorda</strong> e permette di cancellarlo. <em>Avatar 3D</em> fa vedere <strong>come ragiona</strong>.',
+    ] },
+
+    { h2: 'Come parla: tono e quanto interviene' },
+    { p: ['Sta in <em>Il bot</em>. Fra parentesi il valore con cui parti e i limiti che il server accetta.'] },
+    { tabella: [
+      ['Impostazione', 'Di base', 'Limiti', 'Cosa cambia davvero'],
+      ['Tono', 'scherzoso', 'scherzoso · amichevole · serio', 'La forma delle frasi: battute e ironia, caloroso e tranquillo, oppure sobrio e diretto.'],
+      ['Chat autonoma', '5%', '0–50%', 'Quanto si intromette da solo in una conversazione a cui nessuno lo ha chiamato. A 0 parla solo se lo chiami.'],
+      ['Rispondi quando mi nominano', 'acceso', '—', 'Se qualcuno scrive il tuo nome in chat, risponde lui.'],
+      ['Personalità proattiva', 'acceso', '—', 'Ogni tanto si fa vivo di sua iniziativa, anche senza essere nominato.'],
+      ['Adatta la personalità al canale', 'acceso', '—', 'Impara il tuo stile dalla chat e ci si avvicina, senza che tu debba descriverlo.'],
+      ['Risposte intelligenti (IA locale)', 'acceso', '—', 'Il modello che gira sul nostro server: capisce la domanda anche se scritta in un altro modo.'],
+      ['Accesso a internet', 'acceso', '—', 'Se non sa una cosa può cercarla al volo invece di dire «non lo so».'],
+      ['Le tue frasi', 'vuoto', 'una per riga', 'Modi di dire tuoi che entrano nel suo repertorio.'],
+    ] },
+    { p: ['La <strong>chat autonoma</strong> è quella che si sente di più. Sotto il 10% il bot resta un servizio: risponde e tace. Sopra il 25% diventa un presente in chat, e su un canale piccolo può coprire le persone. Il massimo è 50% <em>di proposito</em>: oltre, non sarebbe più la tua chat.'] },
+
+    { h3: 'Le due teste: modello e moduli' },
+    { p: [
+      'Le risposte possono nascere da due parti. L\'<strong>IA locale</strong> è un modello piccolo che gira <strong>sul nostro server</strong> — nessun servizio a pagamento di terzi, nessuna chat mandata fuori — e che si allena su come si parla nel tuo canale: più la chat vive, meglio capisce le domande scritte storte.',
+      'I <strong>moduli</strong> invece sono regole tue, esatte: quando succede questo, dici quello. Non sbagliano mai e non costano niente. La scheda <em>Avatar 3D</em> ti fa vedere quanto pesa l\'una e quanto l\'altro: più cresce la fetta dei moduli, meno dipende dal modello.',
+    ] },
+    { h3: 'Quando cerca su internet' },
+    { p: ['Solo se gli manca la risposta, e solo su fonti gratuite (DuckDuckGo, Wikipedia). Quello che trova lo tratta come <strong>informazione, non come istruzione</strong>: se una pagina contiene un comando travestito da testo, il bot non lo esegue. Si spegne dalla stessa scheda.'] },
+
+    { h2: 'Cosa sa: la conoscenza' },
+    { p: ['Sta in <em>Conoscenza</em>. Una voce è una coppia <strong>domanda → risposta</strong>. La domanda può essere una frase o un elenco di parole chiave separate da <code>/</code>: bastano quelle a far scattare la risposta, anche se in chat la domanda arriva scritta in un altro modo.'] },
+    { esempio: 'Domanda        che pc usi? / setup / configurazione\nRisposta       Gioco su un Ryzen 7 con una 4070, trovi tutto su andryxify.it!' },
+    { p: ['Le voci non arrivano tutte da te. Nell\'elenco «Cosa sa il bot» ognuna porta la sua <strong>origine</strong>, e l\'origine conta perché decide cosa succede quando azzeri.'] },
+    { tabella: [
+      ['Origine', 'Da dove viene', 'La cancella «Azzera»?'],
+      ['dal sito', 'Letta dal tuo profilo su andryxify.it: bio, orari, social.', 'No'],
+      ['tua', 'Scritta a mano da te in questa scheda.', 'No'],
+      ['imparata dalla chat', 'Dedotta osservando le risposte che tu e i mod date in chat.', 'Sì'],
+      ['studiata', 'Quello che si è costruito da sé leggendo e distillando.', 'No'],
+    ] },
+    { h3: 'Il pre-addestramento' },
+    { p: [
+      'Dalla scheda <em>Stato</em> c\'è un tasto che rilegge il tuo profilo pubblico su andryxify.it e ne ricava le voci «dal sito»: <strong>chi sei</strong> (bio o titolo della pagina link), <strong>quando sei in diretta</strong> (programmazione) e <strong>dove ti trovano</strong> (un\'entrata per ogni social).',
+      'Si può rifare quante volte vuoi: riparte pulito, quindi non crea doppioni. Se non hai una pagina pubblica te lo dice invece di inventarsi qualcosa.',
+    ] },
+
+    { h2: 'Cosa si ricorda: la memoria' },
+    { p: ['Sta in <em>Memoria</em>, dietro il tasto «Mostra la memoria» — non si carica da sola perché è la parte più pesante.'] },
+    { tabella: [
+      ['Cosa', 'Quanto ne mostra', 'Cos\'è'],
+      ['Lezioni', 'le ultime 50', 'Regolarità che ha notato nel canale e da cui si regola.'],
+      ['Fatti', 'tutti', 'Cose stabili sul canale: date, nomi, abitudini.'],
+      ['Ricordi sugli utenti', '—', 'Cosa sa delle persone che scrivono spesso. Non si sfoglia dal pannello.'],
+      ['Contesto della diretta', '—', 'Di cosa si sta parlando adesso. Si consuma da solo.'],
+      ['Clip', 'le ultime 20', 'Le clip create in automatico.'],
+    ] },
+    { h3: 'Azzerare: cosa sparisce e cosa resta' },
+    { p: ['Il tasto rosso in fondo cancella <strong>quello che il bot ha dedotto da solo</strong>: lezioni, ricordi sugli utenti, fatti, contesto della diretta e le voci di conoscenza «imparata dalla chat».'] },
+    { p: ['<strong>Restano</strong>: la conoscenza scritta da te, quella presa dal sito, quella studiata, i moduli, i comandi, le monete e le classifiche. Non è un tasto che riporta il canale a zero: è un tasto che gli fa dimenticare le conclusioni sbagliate.'] },
+
+    { h2: 'Le statistiche dei sette giorni' },
+    { p: ['In cima a <em>Memoria</em>, sempre sugli ultimi sette giorni:'] },
+    { ul: [
+      '<strong>Messaggi della chat</strong> — quelli delle persone, i suoi non contano.',
+      '<strong>Messaggi del bot</strong> — quanto ha parlato lui. Il rapporto fra i due dice se la chat autonoma è tarata bene.',
+      '<strong>Top chatter</strong> — le cinque persone che hanno scritto di più.',
+      '<strong>Clip</strong> — quante ne ha create in tutto, non solo nella settimana.',
+    ] },
+
+    { h2: 'L\'avatar 3D' },
+    { p: [
+      'È uno schema navigabile del suo cervello: al centro il nucleo, attorno la logica, e nel suo «manuale su come funzionano le persone» le emozioni con i moduli che ha imparato. Si trascina per ruotare, la rotella fa zoom, un clic su un nodo dice cosa fa quel pezzo.',
+      'Sotto, «Come ragiona» mostra da quale testa nascono le risposte. Non è una decorazione: se la fetta del modello è grande e quella dei moduli piccola, vuol dire che al canale servono più regole tue — ed è la strada per un bot che sbaglia meno.',
+    ] },
+
+    { h2: 'Quando non risponde come vuoi' },
+    { ul: [
+      '<strong>Parla troppo.</strong> Abbassa la chat autonoma prima di spegnere qualcosa: nove volte su dieci è quella.',
+      '<strong>Parla poco.</strong> Controlla che «rispondi quando mi nominano» sia acceso: senza, deve essere chiamato con un comando.',
+      '<strong>Dice una cosa sbagliata su di te.</strong> Cercala in <em>Conoscenza</em>. Se l\'origine è «imparata dalla chat» cancella quella voce; se è «dal sito», la correzione va fatta sul profilo e poi si rifà il pre-addestramento.',
+      '<strong>Non capisce una domanda scritta storta.</strong> Aggiungi parole chiave alla voce, separate da <code>/</code>: sono alternative, non una frase sola.',
+      '<strong>Non suona come te.</strong> Il tono fa metà del lavoro; l\'altra metà sono le tue frasi. Mettine dieci vere e si sente subito.',
+    ] },
+  ],
+  faq: [
+    { d: 'Le chat vengono mandate a un servizio esterno?', r: 'No. Il modello che risponde gira sul nostro server. L\'unica cosa che esce, e solo se lasci acceso l\'accesso a internet, è la ricerca di un dubbio su fonti pubbliche gratuite.' },
+    { d: 'Se spengo l\'IA locale il bot smette di funzionare?', r: 'No: continuano a funzionare comandi, moduli, moderazione, giochi e conoscenza scritta da te. Sparisce la capacità di capire una domanda formulata in modo diverso da come l\'hai scritta.' },
+    { d: 'Il bot impara da solo anche se non faccio niente?', r: 'Sì, se «adatta la personalità al canale» è acceso: osserva come si parla nel tuo canale e ci si avvicina. Tutto quello che deduce sta in Memoria, e da lì si cancella.' },
+    { d: 'Un moderatore può cambiare la personalità?', r: 'Un moderatore può occuparsi di comandi, moduli, effetti, giochi, notifiche, regole e memoria. Le cose da proprietario — permessi e abbonamento — no.' },
+    { d: 'Perché la conoscenza «dal sito» non si cancella con Azzera?', r: 'Perché non è una deduzione del bot: è un dato tuo, che hai scritto sul tuo profilo. Si cambia dove sta, e poi si rifà il pre-addestramento.' },
+  ],
+};
+
+const MODERAZIONE = {
+  slug: 'moderazione',
+  schede: ['regole', 'scudo'],
+  titolo: 'Manuale della moderazione: antispam e scudo anti-bot | SocialBot',
+  h1: 'Manuale della moderazione: antispam e scudo anti-bot',
+  desc: 'Cosa filtra il bot in chat, con quali soglie vere, come cresce il timeout ai recidivi, e come lo scudo para follow-bot e hate-raid senza colpire le persone.',
+  aggiornata: OGGI,
+  corpo: [
+    { p: [
+      'Due mestieri diversi, due schede. <em>Moderazione</em> tiene pulita la chat di tutti i giorni: spam, link, muri di maiuscole, flood. <em>Scudo</em> serve nei dieci minuti in cui il canale è sotto attacco: follow-bot e hate-raid.',
+      'La regola che attraversa tutte e due: <strong>in dubbio si avvisa, non si banna</strong>. Un falso positivo qui vuol dire cacciare una persona vera, e costa più dell\'attacco.',
+    ] },
+
+    { h2: 'Chi non viene mai toccato' },
+    { p: ['Prima di ogni controllo ci sono le esenzioni, e non si possono togliere: <strong>tu, i moderatori e i VIP</strong> non vengono mai filtrati. I VIP sono esenti da tutto <em>per scelta</em>: quel badge lo dai tu a chi ti fidi.'] },
+
+    { h2: 'L\'antispam: cosa guarda' },
+    { p: ['Sta in <em>Moderazione</em>, e si accende con un interruttore solo. Poi si sceglie cosa filtrare, voce per voce. Le soglie sono queste, e sono quelle vere del motore.'] },
+    { tabella: [
+      ['Filtro', 'Di base', 'Quando scatta'],
+      ['Link', 'acceso', 'Chi è sotto il livello che scegli scrive un indirizzo non in lista bianca.'],
+      ['Ripetizioni', 'acceso', 'Lo stesso messaggio ripetuto entro 40 secondi.'],
+      ['Maiuscole', 'acceso', 'Almeno 12 lettere e l\'80% in maiuscolo. Le frasi corte passano.'],
+      ['Menzioni', 'acceso', 'Quattro <code>@nome</code> o più nello stesso messaggio.'],
+      ['Flood', 'acceso', 'Sei messaggi o più in otto secondi.'],
+      ['Simboli', 'spento', 'ASCII-art, «zalgo», muri di caratteri strani.'],
+      ['Messaggio lungo', 'spento', 'Oltre 350 caratteri (regolabile da 50 a 500).'],
+      ['Emoji', 'spento', 'Più di 8 emoji (regolabile da 1 a 50).'],
+    ] },
+    { h3: 'I link e la lista bianca' },
+    { p: [
+      'Il livello di base è <strong>sub</strong>: abbonati, VIP e mod possono mettere link, gli altri no. Si può alzare a solo-mod o abbassare a tutti.',
+      'La <strong>lista bianca</strong> tiene fino a 30 domini che passano sempre, per chiunque. È il posto giusto per il tuo Discord, il tuo sito e i social del canale: senza, il primo che condivide il tuo Discord si prende una cancellazione.',
+    ] },
+    { h3: 'Il timeout cresce da solo' },
+    { p: ['Il primo messaggio filtrato viene solo <strong>cancellato</strong>, senza timeout: la maggior parte delle volte è distrazione, non malafede. Se la persona insiste, la scala sale.'] },
+    { tabella: [
+      ['Volta', '1ª', '2ª', '3ª', '4ª e oltre'],
+      ['Cosa succede', 'solo cancellato', 'solo cancellato', 'timeout 60s', 'timeout 5 min, poi 10 min'],
+    ] },
+    { p: ['Il contatore <strong>si azzera dopo 10 minuti puliti</strong>: chi ha sbagliato ieri riparte da capo oggi. Il timeout crescente si può spegnere: allora il bot cancella e basta, per sempre.'] },
+
+    { h2: 'Lo scudo anti-bot' },
+    { p: ['Sta in <em>Scudo</em>, ed è spento finché non lo accendi (serve il permesso di moderazione di Twitch). Sono cinque difese, messe in ordine di quanto poco rischiano di colpire una persona vera.'] },
+
+    { h3: '1. La raffica di follow' },
+    { p: ['Un attacco follow-bot sono tanti follow in pochi secondi: non serve guardarli uno per uno, basta contarli. Di base <strong>10 follow in 30 secondi</strong> fanno scattare l\'allarme (da 3 a 100 follow, da 5 a 300 secondi).'] },
+    { p: ['Quando scatta, di base la chat va <strong>ai soli follower</strong> e tu vieni avvisato. <strong>Non banna</strong>: un picco di follow può arrivare anche da una clip virale, e bannare cento persone vere sarebbe peggio dell\'attacco. Bannare l\'ondata si può accendere, ma è una scelta tua e sta scritta come tale.'] },
+
+    { h3: '2. I nomi da bot' },
+    { p: ['Una lista di account-bot noti e di forme tipiche dei nomi da follow-bot promozionale, aggiornata da sola. Chi corrisponde viene bannato (o messo in timeout, o solo segnalato: lo scegli tu — se scegli il timeout, di base dura 14 giorni).'] },
+    { p: ['I <strong>bot buoni sono sempre esenti</strong> — Nightbot, StreamElements, Streamlabs, Moobot, Fossabot, Sery_Bot, Sound Alerts e una ventina d\'altri — e puoi aggiungere fino a 200 nomi tuoi da esentare, più altrettanti da considerare bot.'] },
+    { p: ['Sui follow-bot certi, di base, si usa il <strong>blocco</strong> invece del ban: il blocco toglie anche il follow, quindi il numero sporco non ti resta appeso al canale.'] },
+
+    { h3: '3. L\'account sospetto' },
+    { p: ['Spento di base perché costa una domanda a Twitch per ogni follower. Se acceso, dà un punteggio da 0 a 100 guardando l\'età dell\'account (sotto 3 giorni è sospetto), la foto profilo di default, la bio vuota e la forma del nome. Si agisce sopra <strong>70</strong>.'] },
+
+    { h3: '4. Gli account appena creati che scrivono' },
+    { p: ['Twitch ha una modalità «Restricted» che nasconde i messaggi dei sospetti a tutti tranne i mod, ma <strong>non ha un\'API</strong>: nessun bot può accenderla. Questa è l\'equivalente più vicino che si può fare da fuori.'] },
+    { p: ['Spento di base. Se acceso: chi ha l\'account da meno di <strong>24 ore</strong> (da 1 a 720) e non segue, non è sub, VIP o mod, si vede il messaggio <strong>trattenuto</strong> — oppure solo segnalato ai mod, se preferisci lasciarlo passare.'] },
+
+    { h3: '5. L\'assetto automatico' },
+    { p: ['Lo scudo ha tre assetti — <strong>calma</strong>, <strong>sospetto</strong>, <strong>attacco</strong> — e di base si alza e si riabbassa da solo, accendendo anche lo Shield Mode di Twitch quando serve. Non devi essere davanti al computer perché funzioni: è il punto.'] },
+    { p: ['Dentro l\'assetto ci sono due cose in più. Il <strong>coro</strong>: lo stesso messaggio da <strong>4 bocche diverse</strong> (da 3 a 20) in pochi secondi non è una coincidenza, è un raid coordinato. E il <strong>blocco sul nascere</strong>: quando l\'ondata è chiaramente artificiale si agisce in blocco invece che uno alla volta, perché uno alla volta si arriva tardi.'] },
+
+    { h2: 'Come tararlo, in pratica' },
+    { ul: [
+      '<strong>Canale piccolo.</strong> Antispam acceso con i filtri di base, link ai sub, lista bianca col tuo Discord. Scudo acceso con la sola raffica: 10 in 30 secondi è già giusto.',
+      '<strong>Canale che cresce in fretta.</strong> Alza la raffica (20 in 30 secondi) o ti avvisa a ogni clip che gira.',
+      '<strong>Sotto attacco adesso.</strong> Accendi «banna l\'ondata» e gli account appena creati. Sono le due impostazioni aggressive: si accendono per il tempo dell\'attacco e si rispengono dopo.',
+      '<strong>Chat rumorosa ma amichevole.</strong> Spegni maiuscole ed emoji e lascia solo flood, ripetizioni e link: filtrare l\'entusiasmo è il modo più veloce per far sembrare ostile un canale.',
+    ] },
+
+    { h2: 'Quando sembra rotto' },
+    { ul: [
+      '<strong>Non modera nessuno.</strong> Controlla che l\'interruttore dell\'antispam sia acceso e che chi scrive non sia mod o VIP: quelli sono esenti sempre.',
+      '<strong>Cancella cose che non dovrebbe.</strong> Guarda quale filtro: il motivo lo scrive in chat se «avvisa» è acceso. Le maiuscole scattano all\'80%, quindi «AHAHAH SIIIII» conta.',
+      '<strong>Il tuo Discord viene cancellato.</strong> Mettilo in lista bianca: senza, è un link come un altro.',
+      '<strong>Lo scudo non parte.</strong> Serve il permesso di moderazione di Twitch: se manca, si riautorizza dalla scheda Stato.',
+      '<strong>Avvisa troppo.</strong> Non è un guasto: è la raffica tarata bassa per il tuo ritmo di crescita. Alza «quanti follow».',
+    ] },
+  ],
+  faq: [
+    { d: 'Il bot può bannare una persona vera per sbaglio?', r: 'È il rischio che tutta questa parte è costruita per evitare. Le difese sono ordinate dalla più sicura alla più aggressiva, quelle aggressive sono spente di base, e in dubbio il bot avvisa invece di agire. Le esenzioni (tu, mod, VIP, bot buoni) non si possono aggirare.' },
+    { d: 'Serve dare la moderazione al bot?', r: 'No, non come si fa con gli altri bot. SocialBot agisce con i permessi che gli hai dato tu su Twitch, revocabili in qualsiasi momento: non c\'è un account estraneo da promuovere moderatore.' },
+    { d: 'Lo scudo funziona se non sono davanti al PC?', r: 'Sì, ed è il motivo per cui l\'assetto automatico è acceso di base: si alza da solo durante l\'attacco e si riabbassa quando è finito.' },
+    { d: 'Posso far moderare solo durante la diretta?', r: 'L\'antispam lavora sempre, perché una chat sporca a canale spento resta sporca. Se non lo vuoi, si spegne.' },
+    { d: 'Che differenza c\'è fra ban e blocco?', r: 'Il ban impedisce di scrivere; il blocco toglie anche il follow. Sui follow-bot certi il bot usa il blocco, così il conteggio dei follower torna pulito.' },
+  ],
+};
+
+const INTERAZIONE = {
+  slug: 'interazione',
+  schede: ['sondaggi', 'giveaway', 'penitenze'],
+  titolo: 'Manuale di sondaggi, sorteggi e penitenze | SocialBot',
+  h1: 'Manuale di sondaggi, sorteggi e penitenze',
+  desc: 'Le tre cose che si fanno mentre sei in diretta: chiedere alla chat, sorteggiare un premio con probabilità che decidi tu, e le penitenze a punti canale che si contano da sole.',
+  aggiornata: OGGI,
+  corpo: [
+    { p: [
+      'Tre schede che servono <strong>mentre trasmetti</strong>, non prima. Si comandano quasi tutte dalla chat, perché mentre giochi non stai guardando il pannello.',
+      'Hanno un tratto in comune: il bot fa la parte noiosa — contare, pesare, estrarre, ascoltare — e tu fai lo spettacolo.',
+    ] },
+
+    { h2: 'Sondaggi e predizioni' },
+    { p: ['Sono i sondaggi e le predizioni <strong>veri di Twitch</strong>, quelli che compaiono sopra il player, aperti dalla chat senza toccare il pannello. Li può usare chi modera, oltre a te.'] },
+    { tabella: [
+      ['Comando', 'Chi', 'Cosa fa'],
+      ['<code>!sondaggio Domanda | opzione | opzione</code>', 'mod e streamer', 'Apre un sondaggio. Due opzioni o più, separate da <code>|</code>.'],
+      ['<code>!sondaggio chiudi</code>', 'mod e streamer', 'Chiude quello aperto.'],
+      ['<code>!predizione Titolo | esito | esito</code>', 'mod e streamer', 'Apre una predizione: il pubblico punta i punti canale.'],
+      ['<code>!predizione vince &lt;esito&gt;</code>', 'mod e streamer', 'Risolve. Si può indicare l\'esito per nome o per numero.'],
+      ['<code>!predizione annulla</code>', 'mod e streamer', 'Annulla e <strong>rimborsa</strong> i punti a tutti.'],
+    ] },
+    { p: ['Durano <strong>2 minuti</strong> di base. <code>!poll</code>, <code>!prediction</code> e <code>!pronostico</code> funzionano come alias.'] },
+    { p: ['Una predizione va sempre chiusa: se la lasci aperta i punti restano bloccati e il pubblico se ne accorge. Se l\'esito non è più decidibile, <code>annulla</code> è la mossa giusta — rimborsa tutti e nessuno si arrabbia.'] },
+
+    { h2: 'Sorteggi' },
+    { p: ['Uno per canale alla volta, e vive nella diretta: non sopravvive a un riavvio, di proposito. Si comanda dalla chat o dal pannello, indifferentemente.'] },
+    { tabella: [
+      ['Comando', 'Chi', 'Cosa fa'],
+      ['<code>!giveaway &lt;premio&gt;</code>', 'mod e streamer', 'Apre il sorteggio e annuncia il premio.'],
+      ['<code>!join</code>', 'tutti', 'Entra. La parola si può cambiare (fino a 20 caratteri).'],
+      ['<code>!biglietti @nome N</code>', 'mod e streamer', 'Regala biglietti in più a una persona.'],
+      ['<code>!estrai</code>', 'mod e streamer', 'Estrae un vincitore. <code>!estrai 3</code> ne estrae tre, senza ripescare.'],
+    ] },
+    { h3: 'Le probabilità le decidi tu' },
+    { p: ['Ogni partecipante ha dei <strong>biglietti</strong>, e l\'estrazione è pesata: più biglietti, più probabilità — ma <strong>nessuno vince di sicuro</strong>. È la differenza fra premiare chi ti sostiene e regalare il premio al sub più veloce.'] },
+    { tabella: [
+      ['Chi', 'Biglietti di base', 'Limiti'],
+      ['Tutti', '1', '—'],
+      ['Abbonati', '2', 'da 1 a 20'],
+      ['VIP', '2', 'da 1 a 20'],
+      ['Moderatori', '1', 'da 1 a 20'],
+      ['Bonus a mano', '—', 'con <code>!biglietti</code>, quanti vuoi'],
+    ] },
+    { p: ['I moderatori partono da 1 di proposito: di solito gestiscono il sorteggio, non ci partecipano. Si può alzare, se nel tuo canale è normale che giochino anche loro.'] },
+    { p: ['Si può anche aprirlo <strong>solo per abbonati</strong>. In quel caso non è più un sorteggio pesato: è un sorteggio chiuso, e conviene dirlo in chat prima che qualcuno provi a entrare.'] },
+
+    { h2: 'Penitenze a punti canale' },
+    { p: [
+      'Uno spettatore riscatta un premio a punti canale e sceglie una parola. Da quel momento, per il tempo che dura, il bot <strong>ti ascolta</strong> e conta.',
+      'Ci sono due modi. <strong>Vieta</strong>: quella parola non la devi dire, e ogni volta che ti scappa è +1. <strong>Solo</strong>: puoi dire <em>solo</em> quella parola, e ogni frase in cui ne dici un\'altra è +1.',
+    ] },
+    { p: ['Durante il tempo, nell\'overlay compaiono i <strong>«+1» rossi</strong>. Alla fine, se il contatore è sopra zero, parte <strong>una</strong> penitenza — presa dalla tua lista o scelta dal bot — «moltiplicata» per quante volte ci sei cascato. Una penitenza sola, non venti: venti sarebbe una serata rovinata, una è un gioco.'] },
+    { tabella: [
+      ['Cosa', 'Di base', 'Limiti'],
+      ['Durata', '2 minuti', 'da 1 a 15'],
+      ['Su cosa', 'una parola', 'una parola o una lettera'],
+      ['Modo', 'vieta', 'vieta · solo'],
+    ] },
+    { h3: 'Perché non sbaglia (quasi mai)' },
+    { p: ['Il riconoscimento vocale sente male: è normale. La corrispondenza è quindi <strong>tollerante</strong> — una parola capita a metà ma sostanzialmente giusta conta, una parola diversa che ci somiglia per caso no. Senza questa tolleranza il gioco si romperebbe al primo rumore di sottofondo.'] },
+    { p: ['Serve il microfono, quindi vale quello che vale per i comandi a voce: l\'audio resta sul tuo computer, il bot riceve solo la parola riconosciuta.'] },
+
+    { h2: 'Quando qualcosa non parte' },
+    { ul: [
+      '<strong>Il sondaggio non si apre.</strong> Servono i permessi di Twitch per sondaggi e predizioni: si riautorizza dalla scheda Stato. E servono almeno due opzioni separate da <code>|</code>.',
+      '<strong>Nessuno entra nel sorteggio.</strong> Controlla la parola d\'ingresso: se l\'hai cambiata, in chat va scritta quella, non <code>!join</code>.',
+      '<strong>Ho estratto e ha vinto sempre lo stesso.</strong> Guarda i biglietti: con i moltiplicatori alti un gruppo piccolo di sub domina. Portali a 1 e diventa un sorteggio piatto.',
+      '<strong>La penitenza non conta.</strong> Il microfono deve essere concesso al browser e la scheda dei comandi a voce deve stare aperta: è lì che gira l\'ascolto.',
+      '<strong>Conta parole che non ho detto.</strong> Le lettere sono più fragili delle parole: con una lettera sola il riconoscimento sbaglia spesso. Per le penitenze lunghe conviene una parola intera.',
+    ] },
+  ],
+  faq: [
+    { d: 'I sondaggi sono quelli di Twitch o una cosa vostra?', r: 'Quelli di Twitch, veri: compaiono sopra il player come se li avessi aperti tu dalla dashboard. Il bot li apre e li chiude al posto tuo, dalla chat.' },
+    { d: 'Il sorteggio resta se si riavvia qualcosa?', r: 'No, e non è un difetto: un sorteggio appartiene alla diretta in cui lo hai aperto. Se serve una raccolta che dura giorni, si fa con un comando e un contatore.' },
+    { d: 'Posso estrarre più vincitori insieme?', r: 'Sì, con !estrai 3. Non ripesca: tre persone diverse.' },
+    { d: 'Le penitenze funzionano senza punti canale?', r: 'Il modo previsto è il premio a punti canale, perché è quello che dà la spinta al pubblico. La prova dal pannello serve a vedere come appare in overlay.' },
+    { d: 'Il bot mi ascolta sempre?', r: 'No. Ascolta solo mentre una penitenza è in corso o mentre usi i comandi a voce, e l\'audio non esce dal tuo computer: viene trasformato in testo lì e arriva solo la parola.' },
+  ],
+};
+
+const DIRETTA = {
+  slug: 'diretta',
+  schede: ['regia', 'ascolto', 'clip', 'musica', 'studio'],
+  titolo: 'Manuale della diretta: regia, clip, musica, voce e Studio | SocialBot',
+  h1: 'Manuale della diretta: regia, clip, musica, voce e Studio',
+  desc: 'Comandare il canale senza aprire Twitch, far nascere le clip da sole, le richieste musicali, i comandi a voce e come andare in diretta dal browser.',
+  aggiornata: OGGI,
+  corpo: [
+    { p: [
+      'Queste schede servono <strong>mentre trasmetti</strong>. Il filo che le tiene insieme: mentre giochi non puoi guardare il pannello, quindi tutto quello che sta qui o si fa da solo, o si fa a voce, o si fa con un clic.',
+      'Conviene tenere il pannello aperto su un secondo schermo: è pensato per stare lì.',
+    ] },
+
+    { h2: 'Regia: il canale senza aprire Twitch' },
+    { p: ['Titolo, categoria e tag si cambiano da qui e si aggiornano su Twitch subito. <strong>Vale anche da offline</strong>, quindi puoi preparare la diretta prima di accendere.'] },
+    { tabella: [
+      ['Campo', 'Limite', 'Nota'],
+      ['Titolo', '140 caratteri', 'Lo stesso limite di Twitch.'],
+      ['Categoria', '—', 'Si cerca scrivendo: l\'elenco è quello vero di Twitch.'],
+      ['Tag', 'massimo 10', 'Separati da virgola.'],
+    ] },
+    { p: ['Sopra c\'è lo <strong>stato della diretta</strong> (online, spettatori, da quanto), e sotto le <strong>azioni rapide</strong>: marker, clip, annuncio. Il marker è il più sottovalutato: costa un clic e ti risparmia mezz\'ora di scrubbing quando monti il VOD.'] },
+    { p: ['Titolo, categoria, annunci e clip li fa <strong>Twitch</strong> per conto tuo: se un permesso manca, il bot te lo dice invece di fallire in silenzio, e si riautorizza dalla scheda Stato.'] },
+
+    { h2: 'Clip automatiche' },
+    { p: ['Accese di base. Il bot non conta i messaggi: guarda quando la chat <strong>esplode di reazioni</strong>, ride tutta insieme, o quando arrivano sub, bit e raid. E si adatta al ritmo del tuo canale, quindi la stessa sensibilità significa cose diverse su un canale da 10 e su uno da 1000.'] },
+    { tabella: [
+      ['Impostazione', 'Di base', 'Limiti', 'Cosa cambia'],
+      ['Clip automatiche', 'accese', '—', 'Se spente, restano solo quelle fatte a mano.'],
+      ['Sensibilità', '5', '1–10', 'Alta = più clip, anche i momenti tiepidi. Bassa = solo i picchi veri.'],
+    ] },
+    { p: ['Le clip create finiscono in <em>Memoria</em>, dove trovi le ultime venti. Se dopo una serata ne trovi trenta, la sensibilità è troppo alta: due o tre buone valgono più di trenta da scartare.'] },
+
+    { h2: 'Momenti salienti: il bot ascolta la diretta' },
+    { p: ['Sta in <em>Comandi a voce</em>, ed è una cosa diversa dai comandi vocali. Qui è <strong>il server</strong> che ascolta l\'audio della tua diretta e riconosce i momenti forti — quindi funziona anche se il tuo computer è occupato a giocare.'] },
+    { ul: [
+      '<strong>Sensibilità 1–10</strong>: stessa logica delle clip automatiche.',
+      '<strong>Consuma risorse del server</strong>: è limitato a pochi canali in diretta insieme.',
+      '<strong>C\'è un ritardo di 15-30 secondi</strong>, dovuto a come Twitch distribuisce il video. Le clip prendono comunque il momento giusto, perché guardano indietro.',
+    ] },
+
+    { h2: 'Comandi a voce' },
+    { p: ['Questi girano <strong>nel tuo browser</strong>, non sul server: apri la pagina di ascolto, premi Avvia, e quando dici una parola chiave il bot fa quello che hai impostato. <strong>L\'audio non esce dal tuo computer</strong>: viene trasformato in testo lì, e al bot arriva solo la parola.'] },
+    { ul: [
+      'Serve <strong>Chrome o Edge</strong> (Mac o Windows). Tieni la pagina aperta mentre streami.',
+      'I comandi vocali si creano e si modificano in <strong>Comandi</strong>, con l\'innesco «Comando vocale»: è lo stesso motore dei comandi di chat, non un secondo pannello.',
+    ] },
+    { h3: 'Cambiare categoria dicendola' },
+    { p: ['Un caso a parte, perché è quello che serve più spesso. Dici la parola chiave seguita dal gioco — «<strong>categoria</strong> Fortnite» — e il canale cambia categoria su Twitch. Se ti sente male <strong>prova comunque a indovinare</strong> la categoria più somigliante invece di rinunciare.'] },
+    { tabella: [
+      ['Impostazione', 'Di base', 'Limiti'],
+      ['Parola chiave', 'categoria', '30 caratteri — «gioco», «passa a», quel che vuoi'],
+      ['Annuncia il cambio in chat', 'acceso', '—'],
+    ] },
+    { p: ['Serve il permesso <strong>Gestione canale</strong> di Twitch. Se manca, il pannello lo dice e ti riporta qui dopo l\'autorizzazione.'] },
+
+    { h2: 'Richieste musicali' },
+    { p: ['Gli spettatori mettono canzoni nella <strong>tua</strong> coda di Spotify. Serve Spotify <strong>Premium</strong> e l\'app aperta: la coda è quella vera del tuo account, non una playlist nostra.'] },
+    { tabella: [
+      ['Comando', 'Chi', 'Cosa fa'],
+      ['<code>!sr &lt;canzone o artista&gt;</code>', 'secondo come la fai pagare', 'Aggiunge un brano alla coda.'],
+      ['<code>!song</code>', 'tutti', 'Dice cosa sta suonando. <code>!brano</code> è lo stesso.'],
+    ] },
+    { p: ['Se la ricerca trova più brani plausibili, il bot <strong>chiede quale</strong> («intendi 1, 2 o 3?») e aspetta <strong>90 secondi</strong> la risposta. Meglio una domanda che la canzone sbagliata in coda.'] },
+    { p: ['La richiesta si può far pagare in cinque modi: <strong>libera</strong>, solo <strong>abbonati</strong>, con le <strong>monete</strong> del canale, con i <strong>bit</strong> o con i <strong>punti canale</strong>. Su un canale vivace «libera» dura poco: le monete sono il freno più naturale, perché chi chiede ha già dovuto esserci.'] },
+
+    { h2: 'Studio: in diretta dal browser' },
+    { p: ['Andare live <strong>senza OBS</strong>: il browser mette insieme webcam, schermo e overlay, e li manda a Twitch passando dal nostro server. La <strong>stream key resta sul server</strong> — al browser non arriva mai, quindi non può finire in una registrazione o in uno screenshot.'] },
+    { tabella: [
+      ['Qualità', 'Bitrate video', 'Frame al secondo'],
+      ['720p 30fps <em>(di base)</em>', '4.500 kbit/s', '30'],
+      ['1080p 30fps', '6.000 kbit/s', '30'],
+      ['1080p 60fps', '8.000 kbit/s', '60'],
+      ['2K (1440p) 30fps', '9.000 kbit/s', '30'],
+      ['2K (1440p) 60fps', '12.000 kbit/s', '60'],
+    ] },
+    { p: ['Oltre il 1080p Twitch accetta il segnale ma applica i suoi limiti in base al livello dell\'account: la qualità che <em>arriva</em> a chi guarda non dipende solo da cosa scegli qui.'] },
+    { p: ['Lo Studio è comodo per una diretta veloce, da un computer che non è il tuo, o da un portatile. Per una diretta di gioco lunga, OBS resta più leggero: il browser deve comporre e codificare mentre il gioco gira.'] },
+
+    { h2: 'Quando qualcosa non parte' },
+    { ul: [
+      '<strong>Cambio titolo e non cambia.</strong> Manca il permesso Gestione canale: si riautorizza dalla scheda Stato.',
+      '<strong>Non nasce nessuna clip.</strong> Guarda se sei davvero in diretta e se la sensibilità non è a 1. Le clip le crea Twitch: senza il permesso, il bot lo dice in chat.',
+      '<strong>!sr non risponde.</strong> Spotify collegato, Premium attivo, app aperta: servono tutte e tre. Con l\'app chiusa non esiste una coda in cui mettere il brano.',
+      '<strong>La voce non sente.</strong> Il microfono va concesso al browser, la pagina di ascolto deve restare aperta e serve Chrome o Edge.',
+      '<strong>«Categoria» non cambia il gioco.</strong> La parola chiave va detta <em>prima</em> del nome: «categoria Fortnite», non «metti Fortnite».',
+      '<strong>Lo Studio va a scatti.</strong> Scendi di qualità: comporre 1080p60 nel browser mentre giochi chiede molto alla macchina.',
+    ] },
+  ],
+  faq: [
+    { d: 'Serve OBS per usare gli overlay?', r: 'Per gli overlay sì, o un qualunque programma che apra una pagina web come sorgente. Lo Studio è l\'alternativa a OBS per andare in diretta, e gli overlay li compone da sé.' },
+    { d: 'Il bot registra la mia voce?', r: 'No. I comandi a voce diventano testo nel tuo browser e il bot riceve solo la parola. L\'ascolto dei momenti salienti lavora sull\'audio pubblico della diretta, quello che già sentono tutti.' },
+    { d: 'Posso usare le clip automatiche e fare clip a mano?', r: 'Sì, non si escludono. Le azioni rapide della Regia hanno un tasto clip che funziona sempre.' },
+    { d: 'Perché la coda musicale va sul mio Spotify e non su una lista vostra?', r: 'Perché la musica la senti tu e la sentono i tuoi spettatori dallo stesso posto, con i tuoi diritti d\'ascolto. Una lista nostra sarebbe un\'altra riproduzione, con altri problemi.' },
+    { d: 'Se chiudo il pannello si ferma tutto?', r: 'No: regia, clip, musica e moderazione girano sul server. Si fermano solo i comandi a voce, che vivono nel browser.' },
+  ],
+};
+
+const VETRINA = {
+  slug: 'vetrina',
+  schede: ['pagina', 'grafiche', 'notifiche'],
+  titolo: 'Manuale della vetrina: pagina link, grafiche e notifiche social | SocialBot',
+  h1: 'Manuale della vetrina: pagina link, grafiche e notifiche social',
+  desc: 'La pagina pubblica da mettere in bio, le due grafiche pronte da pubblicare e gli avvisi automatici quando vai in diretta o pubblichi qualcosa.',
+  aggiornata: OGGI,
+  corpo: [
+    { p: [
+      'Tre schede che lavorano <strong>fuori dalla diretta</strong>: dove ti trovano, cosa vedono, e come sanno che sei partito.',
+      'Sono la parte che si configura una volta e poi lavora da sola per mesi — motivo per cui vale la pena farla bene subito.',
+    ] },
+
+    { h2: 'La pagina link' },
+    { p: ['Una pagina pubblica all\'indirizzo <code>socialbot.live/u/&lt;tuonome&gt;</code>, da mettere nella bio di Instagram o TikTok. La <strong>foto la prendo dal tuo profilo Twitch</strong>: non devi caricare niente.'] },
+    { p: ['È fatta per stare in una bio, quindi è costruita per una cosa sola: <strong>aprirsi subito su una connessione mobile scadente</strong>. Nessuno script, nessun font remoto, niente da scaricare — funziona anche a JavaScript spento e le anteprime dei social la leggono bene.'] },
+    { h3: 'I blocchi' },
+    { p: ['La pagina si compone a blocchi, che si riordinano trascinandoli.'] },
+    { tabella: [
+      ['Blocco', 'Cosa mette'],
+      ['Link', 'Un pulsante con etichetta e indirizzo. L\'icona giusta la riconosco dall\'indirizzo.'],
+      ['Titolo', 'Una intestazione per separare le sezioni.'],
+      ['Testo', 'Un paragrafo libero.'],
+      ['Separatore', 'Una riga di respiro.'],
+      ['Social', 'La fila di icone dei tuoi profili.'],
+      ['Embed', 'Video e musica: YouTube, Spotify, TikTok.'],
+      ['Immagine', 'Una tua immagine.'],
+      ['La mia diretta', 'Il player: resta lì e dice da sé se sei online o no.'],
+    ] },
+    { p: ['Il blocco «La mia diretta» è quello che cambia di più la pagina: chi arriva dalla bio non deve chiedersi se sei live, lo vede.'] },
+    { h3: 'L\'aspetto' },
+    { ul: [
+      '<strong>Sette temi</strong>: minimal, neon, retro, sunset, glass, brutal, pastello.',
+      '<strong>Sei famiglie di carattere</strong>: di sistema, inter, mono, serif, condensato, tondo.',
+      '<strong>Ventitré icone</strong> a tratto, che prendono il colore del tema.',
+    ] },
+    { p: ['Le icone sono disegni, non emoji, <strong>di proposito</strong>: le emoji cambiano forma su ogni sistema operativo — su Linux diventano grigie e sfocate — e non si possono colorare. Su una pagina che deve sembrare tua sono un difetto, non una scorciatoia.'] },
+    { p: ['C\'è un\'anteprima: salvi e la apri, così vedi la pagina com\'è davvero prima di metterla in bio.'] },
+
+    { h2: 'Le grafiche social' },
+    { p: ['Due grafiche pronte da pubblicare, che si scaricano in PNG: la <strong>programmazione settimanale</strong> e il <strong>«Live ora»</strong>. Le impostazioni restano salvate, quindi la settimana dopo cambi due date e riscarichi.'] },
+    { p: ['I temi sono cinque — notte, neon, tramonto, pastello, minimal — e si personalizza tutto: testi, colori, giorni, orari. L\'anteprima è dal vivo: quello che vedi è il PNG che esce.'] },
+    { p: ['Su telefono l\'anteprima resta appiccicata in alto mentre scorri i controlli, così non devi fare avanti e indietro per vedere l\'effetto di una modifica.'] },
+
+    { h2: 'Le notifiche' },
+    { p: ['Avvisare che sei partito, e avvisare che hai pubblicato. Ogni rete si accende da sola e ha il suo messaggio: puoi lasciare quello di base o scriverne uno tuo.'] },
+    { h3: 'Telegram' },
+    { p: ['Qui il bot è <strong>tuo</strong>: lo crei tu, le chiavi sono tue e restano tue. Tre passi.'] },
+    { ul: [
+      'Su Telegram apri <strong>@BotFather</strong>, scrivi <code>/newbot</code>, segui le istruzioni e copia il <em>token</em>.',
+      'Incolla il token nel pannello e premi <em>Collega</em>.',
+      'Aggiungi il bot al tuo gruppo, scrivici dentro <code>/collega</code>, poi premi <em>Rileva gruppo</em>.',
+    ] },
+    { p: ['Da quel momento, quando vai live il gruppo lo sa. Il terzo passo è quello che si dimentica: senza <code>/collega</code> scritto <em>dentro</em> al gruppo, il bot non sa dove scrivere.'] },
+    { h3: 'TikTok, YouTube, Instagram' },
+    { tabella: [
+      ['Rete', 'Cosa serve', 'Cosa avvisa'],
+      ['TikTok', 'il tuo nome utente', 'quando vai in diretta lì, e quando pubblichi un video'],
+      ['YouTube', 'il canale (<code>@nome</code>)', 'quando esce un video nuovo'],
+      ['Instagram', 'il collegamento del profilo', 'quando esce un post nuovo'],
+    ] },
+    { p: ['Ogni avviso può anche <strong>uscire nella tua chat Twitch</strong>: è la parte che di solito conviene di più, perché chi ti sta già guardando è il pubblico più facile da portare sull\'altra piattaforma.'] },
+
+    { h2: 'Quando qualcosa non si vede' },
+    { ul: [
+      '<strong>La pagina è vuota.</strong> Va <em>pubblicata</em>: finché non lo è, l\'indirizzo risponde ma non mostra niente.',
+      '<strong>La foto non c\'è.</strong> Arriva dal profilo Twitch: se l\'hai appena cambiata lì, ci mette un po\'.',
+      '<strong>L\'icona del link è sbagliata.</strong> Si ricava dall\'indirizzo: se il link passa da un accorciatore, l\'indirizzo vero non si vede e resta l\'icona generica.',
+      '<strong>Telegram non scrive.</strong> Il bot deve essere <em>dentro</em> al gruppo e il <code>/collega</code> va scritto lì, non in privato.',
+      '<strong>L\'avviso live non parte.</strong> Controlla che la rete sia accesa: collegata e accesa sono due cose diverse.',
+      '<strong>La grafica esce sfocata.</strong> Scaricala di nuovo dopo aver chiuso l\'anteprima: il PNG esce alla risoluzione piena, non a quella che vedi a schermo.',
+    ] },
+  ],
+  faq: [
+    { d: 'La pagina link è come Linktree?', r: 'Fa la stessa cosa, ma è servita dal nostro server come pagina già pronta: si apre in un istante anche con poca rete, e il blocco della diretta dice da sé se sei online.' },
+    { d: 'Posso usare un mio dominio?', r: 'L\'indirizzo è <code>socialbot.live/u/&lt;tuonome&gt;</code>. Nella bio si mette quello.' },
+    { d: 'Le chiavi di Telegram le vedete voi?', r: 'Il token serve al server per parlare col tuo bot ed è tuo: puoi revocarlo da BotFather quando vuoi, e da lì il collegamento smette di funzionare.' },
+    { d: 'Perché sulla pagina pubblica non ci sono emoji?', r: 'Perché cambiano forma su ogni sistema e non si possono colorare. Le icone sono disegni monocromatici che seguono il tema.' },
+    { d: 'Le grafiche si aggiornano da sole ogni settimana?', r: 'No: restano salvate, ma il PNG lo scarichi tu quando la programmazione cambia. È una grafica da pubblicare, non un widget.' },
+  ],
+};
+
+const ACCOUNT = {
+  slug: 'account',
+  schede: ['sottoscrizione'],
+  titolo: 'Manuale dell\'abbonamento: piani, extra e moderatori | SocialBot',
+  h1: 'Manuale dell\'abbonamento: piani, extra e moderatori',
+  desc: 'Cosa è gratis per sempre, cosa aggiungono i singoli extra, come si cambia o si disdice, e cosa succede a quello che hai creato.',
+  aggiornata: OGGI,
+  corpo: [
+    { p: [
+      'La regola: <strong>l\'Essenziale è gratis e resta gratis</strong>, senza carta. Il resto si aggiunge <em>uno per uno</em>, quando serve, e si toglie quando non serve più.',
+      'Niente pacchetti che ti fanno pagare sei cose per averne una.',
+    ] },
+
+    { h2: 'Cosa c\'è nell\'Essenziale' },
+    { ul: [
+      'Il bot che scrive in chat <strong>col tuo account</strong>.',
+      '<strong>Comandi e moduli illimitati</strong>, con tutte le azioni.',
+      '<strong>Moderazione</strong> completa e <strong>scudo anti-bot</strong>.',
+      '<strong>Overlay</strong> per la diretta e <strong>contatori</strong> a schermo.',
+      'Personalità, conoscenza, memoria, pagina link e grafiche.',
+    ] },
+    { p: ['Non è una prova a tempo e non chiede una carta: è il piano su cui il prodotto sta in piedi da solo.'] },
+
+    { h2: 'Gli extra' },
+    { p: ['Ogni extra accende una parte precisa. Il prezzo aggiornato sta nella scheda: qui c\'è <strong>cosa fa</strong>, che è la cosa che non cambia.'] },
+    { tabella: [
+      ['Extra', 'Cosa accende', 'Se lo spegni'],
+      ['Base', 'Avvisi di diretta e nuovi post sulle altre reti, e un moderatore.', 'Gli avvisi non partono più; le impostazioni restano.'],
+      ['Giochi & Classifiche', 'Minigiochi, monete, classifiche, premio VIP, sorteggi.', 'I comandi di gioco diventano inerti; monete e classifica restano ferme, non si azzerano.'],
+      ['Effetti & Punti canale', 'Alert ed effetti riscattabili a punti canale, sondaggi e predizioni.', 'Gli effetti restano caricati ma non partono più.'],
+      ['Clip Automatiche', 'I momenti migliori clippati da soli.', 'Le clip già fatte restano; smette di farne di nuove.'],
+      ['Comandi Vocali', 'Guidare il bot parlando, e il cambio categoria a voce.', 'I moduli con innesco vocale restano scritti ma non scattano.'],
+      ['Squadra', 'Fino a dieci moderatori sul pannello.', 'Resta il numero di moderatori dell\'Essenziale.'],
+      ['Richieste Musicali', 'Canzoni in coda su Spotify con <code>!sr</code>.', '<code>!sr</code> non risponde più; Spotify resta collegato.'],
+    ] },
+    { p: ['Il principio è sempre lo stesso: <strong>spegnere un extra non cancella niente di tuo</strong>. Comandi, monete, effetti caricati, classifiche e impostazioni restano dove sono, e riaccendendo l\'extra ritrovi tutto com\'era.'] },
+
+    { h2: 'Cambiare, mettere in pausa, disdire' },
+    { p: ['Il tasto «Gestisci» apre il <strong>portale dei pagamenti</strong>: fatture, carta e disdetta stanno lì. Non serve scriverci: la disdetta è un pulsante.'] },
+    { p: ['Se disdici, l\'abbonamento resta attivo <strong>fino alla fine del periodo già pagato</strong>, poi il canale torna all\'Essenziale. Niente si cancella.'] },
+
+    { h2: 'Moderatori' },
+    { p: ['Un moderatore entra nel pannello con il <strong>suo</strong> account Twitch e può occuparsi di comandi, moduli, effetti, giochi, notifiche, regole e memoria. Non può toccare le cose da proprietario: permessi Twitch, abbonamento, chiave del canale.'] },
+    { p: ['L\'invito è un indirizzo che generi tu dalla scheda: chi lo apre entra, e da quel momento vedi il tuo canale anche dal suo pannello.'] },
+
+    { h2: 'Domande che arrivano quando si guarda il prezzo' },
+    { ul: [
+      '<strong>Il bot smette se non pago?</strong> No. L\'Essenziale non scade.',
+      '<strong>Serve la carta per registrarsi?</strong> No, e nemmeno per usare l\'Essenziale.',
+      '<strong>Posso accendere un extra per un mese solo?</strong> Sì: si accende e si spegne quando vuoi, e quello che hai creato resta.',
+    ] },
+  ],
+  faq: [
+    { d: 'Che succede ai miei comandi se torno all\'Essenziale?', r: 'Restano tutti. Quelli che dipendono da un extra spento non scattano, ma non vengono cancellati: riaccendendo l\'extra ripartono da soli.' },
+    { d: 'Le monete degli spettatori si perdono?', r: 'No. La classifica si ferma dov\'è e riprende da lì.' },
+    { d: 'Un moderatore vede i miei dati di pagamento?', r: 'No. Il portale dei pagamenti e i permessi Twitch sono cose da proprietario.' },
+    { d: 'Posso avere il bot su due canali?', r: 'Ogni canale ha il suo abbonamento, perché ogni canale ha la sua chat, le sue monete e i suoi comandi.' },
+    { d: 'Dove vedo quanto pago davvero?', r: 'Nella scheda Abbonamento in cima, e nel portale dei pagamenti con le fatture.' },
+  ],
+};
+
+const EMOTE = {
+  slug: 'emote',
+  schede: ['emote'],
+  titolo: 'Manuale delle emote 7TV: gestirle dal bot | SocialBot',
+  h1: 'Manuale delle emote 7TV',
+  desc: 'Collegare il proprio account 7TV, aggiungere e togliere emote dal set del canale, rinominarle, e caricare una GIF o un video trasformandolo in emote animata.',
+  aggiornata: OGGI,
+  corpo: [
+    { p: [
+      'Le emote del tuo canale su <strong>7TV</strong> si gestiscono da qui: aggiungerle, toglierle, rinominarle, e perfino crearne di nuove da una GIF o da un video. Senza aprire 7tv.app.',
+      'Le stesse emote compaiono anche nella <strong>chat a schermo</strong> del tuo overlay, quindi chi guarda le vede come le vedi tu.',
+    ] },
+
+    { h2: 'Collegare il tuo account' },
+    { p: [
+      'Il set di emote del canale appartiene <strong>al tuo account 7TV</strong>: solo lui può modificarlo. Per questo serve il tuo <em>token</em>, che si copia da 7tv.app e si incolla qui una volta sola.',
+      'Il token <strong>resta sul server</strong> e non viene mai mandato al browser. Il bot parla solo con gli indirizzi ufficiali di 7TV, non con indirizzi che gli passi tu: non c\'è un modo per fargli chiamare qualcos\'altro.',
+    ] },
+
+    { h2: 'Le tue emote' },
+    { p: ['Il set attivo del canale, come lo vede la chat. Da ogni emote puoi:'] },
+    { ul: [
+      '<strong>Rinominarla</strong> nel tuo canale — l\'alias. L\'emote resta quella dell\'autore, ma da te si scrive come vuoi tu.',
+      '<strong>Toglierla</strong> dal set.',
+    ] },
+    { p: ['Le animate sono segnate con un\'etichetta, così non devi indovinare guardando un fermo immagine.'] },
+
+    { h2: 'Aggiungerne' },
+    { p: ['Tre strade, in ordine di quanto sono comode.'] },
+    { tabella: [
+      ['Come', 'Quando serve', 'Nota'],
+      ['Cerca', 'Vuoi un\'emote che esiste già.', 'Cerca nella directory pubblica di 7TV, si aggiunge con un clic.'],
+      ['Link o ID', 'L\'hai vista in un altro canale.', 'Si incolla l\'indirizzo <code>7tv.app/emotes/…</code>. L\'alias è facoltativo.'],
+      ['Carica un file', 'L\'emote non esiste: la fai tu.', 'Immagine, GIF o video.'],
+    ] },
+    { h3: 'Caricare una GIF o un video' },
+    { p: ['È la parte che di solito costa più fatica altrove, e qui la fa il bot: prendi un file e lo <strong>convertiamo noi</strong> nel formato che 7TV vuole — WebP animato, con la trasparenza dov\'era.'] },
+    { ul: [
+      '<strong>I video diventano emote animate.</strong>',
+      '<strong>Le GIF trasparenti restano trasparenti</strong>: è il dettaglio che di solito si perde convertendo a mano.',
+      'Durata massima circa <strong>6 secondi</strong>, ridimensionata in automatico.',
+      'Il file può pesare fino a <strong>8 MB</strong>.',
+    ] },
+    { p: ['Il <strong>nome</strong> è quello con cui l\'emote nasce su 7TV (senza spazi); l\'<strong>alias</strong> è come si scrive nel tuo canale. Se lasci vuoto l\'alias, vale il nome.'] },
+
+    { h2: 'Quando non funziona' },
+    { ul: [
+      '<strong>Dice che non sei collegato.</strong> Il token di 7TV scade e va rincollato: è normale, non è un guasto.',
+      '<strong>Aggiungo un\'emote e in chat non si vede.</strong> Twitch e 7TV tengono la loro copia per qualche minuto. Si vede prima nell\'overlay che in chat.',
+      '<strong>Il caricamento viene rifiutato.</strong> Quasi sempre è la durata: oltre i sei secondi circa 7TV non la prende. Taglia il video prima.',
+      '<strong>L\'alias non si applica.</strong> Un alias già usato da un\'altra emote del set non si può ripetere: due emote con lo stesso nome in chat sarebbero indistinguibili.',
+      '<strong>Il set è pieno.</strong> Quanti posti hai dipende dal tuo livello su 7TV, non da noi: si libera togliendo un\'emote.',
+    ] },
+  ],
+  faq: [
+    { d: 'Serve un abbonamento a 7TV?', r: 'No per collegare l\'account. Quanti posti ha il tuo set di emote lo decide 7TV in base al tuo livello lì.' },
+    { d: 'Il mio token 7TV è al sicuro?', r: 'Resta sul server, non passa mai dal browser, e il bot lo usa solo verso gli indirizzi ufficiali di 7TV. Da 7tv.app puoi revocarlo quando vuoi.' },
+    { d: 'Se tolgo un\'emote la perdo?', r: 'No: esce dal tuo set, ma resta su 7TV. Si può rimettere.' },
+    { d: 'Posso trasformare una clip in emote?', r: 'Sì: carichi il video e lo convertiamo noi. Sotto i sei secondi circa, altrimenti 7TV la rifiuta.' },
+    { d: 'Le emote si vedono anche nell\'overlay?', r: 'Sì, nella chat a schermo: sono le stesse del canale, lette da 7TV.' },
+  ],
+};
+
+export const MANUALI = [GIOCHI, MODULI, BOT, MODERAZIONE, INTERAZIONE, DIRETTA, VETRINA, ACCOUNT, EMOTE];
 
 // A QUALE SCHEDA DEL PANNELLO SERVE OGNI PAGINA.
 //
