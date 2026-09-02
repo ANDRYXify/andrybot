@@ -54,6 +54,37 @@ dice(file > 10, `file chiesti dalle pagine e dal manifest: ${file}`);
 dice(mancanti.length === 0, 'esistono tutti');
 for (const m of mancanti) dice(false, '  manca ' + m);
 
+// ---- UN TIMBRO SOLO PER LE ICONE -----------------------------------------
+// Il marchio cambia e le pagine chiedono ancora la vecchia icona: il file nuovo
+// e' li', il browser tiene la sua copia e nella linguetta resta il logo di
+// prima. Il timbro (?v=N) e' quello che dice al browser "e' un'altra cosa,
+// riscaricala" — ma vale solo se lo hanno TUTTE le pagine. privacy.html e
+// termini.html erano rimaste senza, e mostravano il logo vecchio.
+//
+// La regola non e' "ricordarsi di aggiornarle": e' che il timbro sia UNO SOLO.
+// Qui si guarda che tutte le pagine e il manifest dicano lo stesso numero.
+const timbri = new Map();      // timbro → chi lo usa
+const RE_ICONE = /(?:src|href)\s*=\s*"(\/icons\/[^"]+)"/g;
+for (const f of readdirSync(PUB).filter((x) => x.endsWith('.html'))) {
+  for (const m of readFileSync(join(PUB, f), 'utf8').matchAll(RE_ICONE)) {
+    const t = (m[1].split('?')[1] || '').match(/v=([^&]+)/)?.[1] || 'nessuno';
+    if (!timbri.has(t)) timbri.set(t, new Set());
+    timbri.get(t).add(`${f} → ${m[1]}`);
+  }
+}
+for (const i of man.icons || []) {
+  const t = (String(i.src).split('?')[1] || '').match(/v=([^&]+)/)?.[1] || 'nessuno';
+  if (!timbri.has(t)) timbri.set(t, new Set());
+  timbri.get(t).add('manifest → ' + i.src);
+}
+dice(timbri.size === 1 && !timbri.has('nessuno'),
+  `le icone hanno un timbro solo: ${[...timbri.keys()].map((t) => 'v=' + t).join(' e ')}`);
+if (timbri.size > 1 || timbri.has('nessuno')) {
+  // si mostrano solo le pecore nere: il timbro buono e' quello della maggioranza
+  const buono = [...timbri.entries()].sort((x, y) => y[1].size - x[1].size)[0][0];
+  for (const [t, chi] of timbri) if (t !== buono) for (const c of chi) dice(false, `  usa v=${t}: ${c}`);
+}
+
 // Il marchio si genera dai disegni: se sparisce la sorgente, nessuno puo' piu'
 // rifare le misure e il giorno che il logo cambia si e' fermi.
 for (const s of ['assets/marchio/sbot.png', 'assets/marchio/socialbot.png']) {
