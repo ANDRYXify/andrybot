@@ -50,3 +50,61 @@ titolo».
 
 Sopra i 720 px non si muove niente: nessuna barra in basso, guida aperta, hamburger e plancia come
 prima. Verificato a 1440 px e a 900 px, zero pageerror.
+
+## La barra in alto: quando si ritira nel cassetto
+
+Su un iPad in orizzontale, con un account amministratore, la barra in alto era
+**rotta**: il logo finiva sotto la prima voce del menu e «Admin» sopra il
+selettore della lingua.
+
+La causa non era una regola sbagliata, era una **domanda sbagliata**. La barra si
+ritirava nel cassetto sotto una larghezza decisa a tavolino — 1280 px — ma
+quanto spazio serve non è un numero fisso:
+
+- un **amministratore** ha una voce in più (7 invece di 6);
+- le etichette **spagnole** sono più lunghe di quelle italiane;
+- e domani un piano diverso, o un ruolo diverso, cambieranno ancora il conto.
+
+Sopra la soglia le voci venivano disegnate anche quando non ci stavano. E
+siccome la barra le **centra**, l'eccedenza traboccava da tutte e due le parti:
+metà sul logo, metà sugli strumenti. Misurato: un amministratore in italiano
+chiede 1377 px, e un iPad Pro in orizzontale ne offre 1366.
+
+Ora la domanda è quella giusta: **ci sta?** `misuraBarraTop()` confronta lo
+spazio che le voci chiedono con quello che rimane davvero fra il logo e gli
+strumenti, e accende `body.barra-stretta` quando non basta. Gira al `render()`
+(le voci cambiano con il ruolo e col piano) e a ogni ridimensionamento.
+
+Due dettagli che sembrano pignoleria e non lo sono:
+
+- **Lo spazio disponibile non è `clientWidth`.** Bisogna togliere il padding
+  della barra e le spaziature fra i suoi tre blocchi — una settantina di pixel.
+  Ignorarli è esattamente l'errore che ho fatto alla prima stesura, e riappariva
+  solo in spagnolo con un account amministratore a 1400 px.
+- **Per misurare bisogna essere aperti.** Se la barra è già ritirata le voci
+  hanno larghezza zero, quindi la classe si toglie, si misura e si rimette nello
+  stesso istante: il browser non disegna mai lo stato intermedio, e non si vede
+  nessun lampeggio.
+
+La media query a 1280 px resta, ma con un compito preciso e più modesto: è il
+fondo per gli schermi piccoli, dove non ci sta mai e vale anche **prima** che il
+codice giri.
+
+### Il collaudo
+
+```
+node scripts/verifica-barra.mjs
+```
+
+Apre un browser vero, si tira su un server statico da solo e prova **84
+combinazioni** — quattordici larghezze da 390 a 2560 px, tre lingue, con e senza
+i poteri da amministratore — controllando che non ci sia una sola sovrapposizione
+fra i riquadri e che il menu resti sempre raggiungibile.
+
+«Raggiungibile» sono tre cose, non una: la barra aperta, l'hamburger, oppure la
+**barra in basso** — sotto i 720 px il menu vive lì, e pretendere l'hamburger
+sarebbe stato un difetto della prova, non del prodotto.
+
+Vive fuori da `npm run cancelli` perché serve un browser, come la sonda 7TV.
+Provato rosso su entrambi i difetti veri: tornando a decidere con un numero fisso
+(14 combinazioni rotte) e ignorando padding e spaziature nella misura (4).

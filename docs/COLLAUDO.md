@@ -233,6 +233,19 @@ senza cruscotto sarebbe coperta il giorno che nasce. Provato rosso su entrambi i
 difetti veri — togliendo `rigaUscita()` da una vista, e riportando l'aggancio
 del clic sull'elemento invece che su `document`.
 
+## I collaudi che hanno bisogno del mondo vero
+
+Due non stanno in `npm run cancelli`, e non per dimenticanza: i cancelli devono
+essere statici e istantanei, mentre questi hanno bisogno di qualcosa che non
+controlliamo.
+
+| | cosa chiede | perché |
+|---|---|---|
+| `scripts/verifica-7tv.mjs` | la rete | 7TV può spostare le sue porte senza dirlo, ed è successo |
+| `scripts/verifica-barra.mjs` | un browser | le sovrapposizioni si vedono solo dopo un vero calcolo di layout |
+
+Si lanciano a mano, e prima di un rilascio che tocca l'una o l'altra cosa.
+
 ## La rete non deve dipendere da GitHub
 
 Le prove girano anche **prima di ogni push**, sulla macchina di chi pubblica:
