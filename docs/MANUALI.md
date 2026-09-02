@@ -59,17 +59,29 @@ tabelle hanno righe tutte della stessa larghezza.
 Le pagine ci sono, sono collegate dal pannello e dalla vetrina — ma chi è dentro
 a configurare non va a cercarle: sta fermo su una scheda a guardarla.
 
-Quindi la proposta arriva da sé. Dopo **quaranta secondi fermi** su una scheda —
-senza un clic, un tasto, una rotella — compare in fondo una striscia, la stessa
-forma di quella dei cookie: «C'è un manuale per questa scheda: *Manuale dei
-giochi e delle monete*», con **Aprilo** e **Non serve**.
+Quindi la proposta arriva da sé, quando **si vede che uno è in difficoltà**.
+Compare in fondo una striscia, la stessa forma di quella dei cookie: «C'è un
+manuale per questa scheda: *Manuale dei giochi e delle monete*», con **Aprilo** e
+**Non serve**.
+
+I segnali sono quattro, e ognuno vale da solo — nessuno è un'inferenza sul
+carattere della persona, sono tutti fatti misurabili:
+
+| Segnale | Quando |
+|---|---|
+| **Fermo** | venti secondi senza un clic, un tasto, una rotella |
+| **Errore** | è appena comparso un messaggio d'errore |
+| **Su e giù** | sei cambi di verso con la rotella senza toccare niente |
+| **Avanti e indietro** | è la terza volta che torni su quella scheda in cinque minuti |
 
 Le regole che la rendono un aiuto e non un fastidio:
 
 - **compare solo se quella scheda ha davvero una pagina.** Niente pagina, niente
   striscia;
-- **al primo movimento sparisce** — se ti stai muovendo non sei fermo — e
-  l'attesa riparte da capo;
+- **al primo clic sparisce** — se stai agendo non sei bloccato — e l'attesa
+  riparte da capo. Scorrere no: è scorrendo su e giù che l'hai chiesta, e
+  portargliela via con la rotellata dopo sarebbe stato assurdo (è successo: la
+  striscia compariva e il movimento successivo la cancellava);
 - **«Non serve» vale per sempre** su quella scheda, e anche aprire la pagina
   conta come risposta;
 - non compare mentre c'è ancora la striscia dei cookie (si coprirebbero), né
@@ -82,8 +94,25 @@ legga sei mesi dopo, e `aiutiPerScheda()` compone la mappa che `/api/me` porta a
 pannello. Dove esiste un manuale vince lui sulla guida: chi è già dentro il
 prodotto vuole il riferimento, non l'introduzione.
 
+## Una guida proposta dal pannello non può essere generica
+
+Una guida spiega il mondo: va bene per chi il bot non ce l'ha. Ma quando è il
+**pannello** a proporla, chi la apre è già dentro — vuole sapere cosa si fa
+*qui*, non cos'è un hate-raid.
+
+Quindi: **una guida che dichiara di servire una scheda deve avere la sezione
+«Come si fa in SocialBot»**, con i passi veri (quale scheda, quale interruttore,
+cosa succede). Non è un consiglio, è una condizione: il collaudo la pretende, e
+il collegamento della striscia **apre la guida su quella sezione** — l'indirizzo
+si ricava dal titolo della sezione, quindi non può puntare al nulla.
+
+Dove esiste un manuale, invece, vince lui: è già tutto «come si fa qui».
+
 `test/contratto/aiuti.test.mjs` controlla che ogni scheda dichiarata esista
-davvero nel pannello e che ogni aiuto punti a una pagina vera — provato rosso
-scrivendo male il nome di una scheda. E in Chromium: compare dopo l'attesa,
-sparisce al primo clic, torna se ti fermi di nuovo, e dopo «Non serve» non torna
-nemmeno ricaricando.
+davvero nel pannello, che ogni aiuto punti a una pagina vera, e che ogni guida
+agganciata a una scheda abbia il suo risvolto con almeno tre passi — provato
+rosso scrivendo male il nome di una scheda, e togliendo la sezione a una guida.
+E in Chromium, i tre segnali che si possono simulare: dopo un errore compare
+subito, dopo sei cambi di verso con la rotella compare, e alla terza volta che
+torni sulla stessa scheda compare — poi sparisce al primo clic, e dopo «Non
+serve» non torna nemmeno ricaricando.

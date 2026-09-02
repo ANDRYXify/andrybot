@@ -32,6 +32,7 @@ function dataIt(ts) {
 }
 
 function toast(msg, tipo = 'ok') {
+  if (tipo === 'errore') { try { aiutoDopoErrore(); } catch (e) {  } }
   const box = document.getElementById('toast-box');
   const el = document.createElement('div');
   el.className = 'toast' + (tipo === 'errore' ? ' errore' : '');
@@ -2746,9 +2747,16 @@ function provaInCorso() {
   return { tier: a.tier || 'base', tutto, fine, giorni };
 }
 
-const AIUTO_FERMO_MS = 40_000;
+const AIUTO_FERMO_MS = 20_000;
+const AIUTO_RITORNI = 3;
+const AIUTO_FINESTRA_MS = 5 * 60_000;
+const AIUTO_INVERSIONI = 6;
 let _aiutoOrologio = null;
 let _aiutoStriscia = null;
+let _aiutoSchedaPrima = null;
+let _aiutoRitorni = new Map();
+let _aiutoVerso = 0;
+let _aiutoInversioni = 0;
 
 function aiutoDi(id) {
   const a = stato?.aiuti?.[id];
@@ -2765,8 +2773,15 @@ function togliAiuto(perSempre, id = schedaAttiva) {
   _aiutoStriscia = null;
 }
 
+function aiutoDopoErrore() {
+  if (typeof aiutoPossibile !== 'function' || !aiutoPossibile()) return;
+  clearTimeout(_aiutoOrologio);
+  _aiutoOrologio = setTimeout(mostraAiuto, 1200);
+}
+
 function mostraAiuto() {
   const a = aiutoDi(schedaAttiva);
+  if (_aiutoStriscia && !_aiutoStriscia.isConnected) _aiutoStriscia = null;
   if (!a || _aiutoStriscia || document.hidden) return;
   const cookie = document.getElementById('cookie-banner');
   if (cookie && !cookie.hidden) return;
@@ -2787,20 +2802,50 @@ function mostraAiuto() {
   el.querySelector('[data-aiuto-no]').addEventListener('click', () => togliAiuto(true, id));
 }
 
+function segnaRitorno(id) {
+  const ora = Date.now();
+  const viste = (_aiutoRitorni.get(id) || []).filter((t) => ora - t < AIUTO_FINESTRA_MS);
+  viste.push(ora);
+  _aiutoRitorni.set(id, viste);
+  return viste.length;
+}
+
+function aiutoPossibile() {
+  return !DEMO && !!stato?.user && !!aiutoDi(schedaAttiva) && !aiutoChiuso(schedaAttiva);
+}
+
 function riavviaAiuto() {
   clearTimeout(_aiutoOrologio);
   togliAiuto(false);
-  if (DEMO || !stato?.user) return;
-  if (!aiutoDi(schedaAttiva) || aiutoChiuso(schedaAttiva)) return;
+  if (schedaAttiva !== _aiutoSchedaPrima) {
+    _aiutoSchedaPrima = schedaAttiva;
+    _aiutoInversioni = 0;
+    _aiutoVerso = 0;
+    if (aiutoPossibile() && segnaRitorno(schedaAttiva) >= AIUTO_RITORNI) { mostraAiuto(); return; }
+  }
+  if (!aiutoPossibile()) return;
   _aiutoOrologio = setTimeout(mostraAiuto, AIUTO_FERMO_MS);
 }
 
-for (const evento of ['pointerdown', 'keydown', 'wheel', 'touchstart']) {
+for (const evento of ['pointerdown', 'keydown', 'touchstart']) {
   document.addEventListener(evento, (ev) => {
     if (_aiutoStriscia && _aiutoStriscia.contains(ev.target)) return;
+    _aiutoInversioni = 0;
+    _aiutoVerso = 0;
     riavviaAiuto();
   }, { passive: true });
 }
+
+document.addEventListener('wheel', (ev) => {
+  if (_aiutoStriscia && _aiutoStriscia.contains(ev.target)) return;
+  const verso = Math.sign(ev.deltaY);
+  if (verso && _aiutoVerso && verso !== _aiutoVerso) _aiutoInversioni++;
+  if (verso) _aiutoVerso = verso;
+  if (_aiutoInversioni >= AIUTO_INVERSIONI && aiutoPossibile()) { _aiutoInversioni = 0; mostraAiuto(); return; }
+  if (_aiutoStriscia) return;
+  riavviaAiuto();
+}, { passive: true });
+
 document.addEventListener('visibilitychange', () => riavviaAiuto());
 
 const NOVITA_VISTE = 'sb-novita-viste';
@@ -15560,6 +15605,7 @@ function _scambiaScheda(id, sezioni) {
   applicaSottoSchede(id);
   caricaDatiScheda(id);
   azzeraBarraSalva();
+  riavviaAiuto();
   if (DEMO) aggiornaSpiegazioneDemo();
   if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: _menoMoto ? 'auto' : 'smooth' });
 }
@@ -15605,6 +15651,7 @@ function vaiAScheda(id) {
   setTimeout(() => morphDa(null), 1600);
   caricaDatiScheda(id);
   azzeraBarraSalva();
+  riavviaAiuto();
   if (DEMO) aggiornaSpiegazioneDemo();
   if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: _menoMoto ? 'auto' : 'smooth' });
 }
