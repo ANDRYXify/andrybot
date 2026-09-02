@@ -53,6 +53,14 @@ function sessionSecret() {
 }
 
 export const config = {
+  // Studio Web (dirette dal browser): SPENTO. Il motore c'e' ed e' completo,
+  // ma la funzione non e' mai stata portata al punto di funzionare davvero per
+  // chi la usa — e finche' e' cosi' non si promette e non si offre. Non basta
+  // nasconderla nel pannello: se non c'e', il server deve rifiutare, altrimenti
+  // resta raggiungibile da chi chiama la rotta a mano.
+  // Per riaccenderla quando sara' vera: STUDIO_WEB=1.
+  studioAttivo: env('STUDIO_WEB') === '1',
+
   // web
   port: parseInt(env('PORT', '8090'), 10),
   // Quanti proxy fidati stanno DAVANTI all'app, per leggere l'IP vero del
@@ -250,7 +258,12 @@ export const SCOPES = {
     'channel:manage:raids',       // Regia: avviare/annullare una raid
     'channel:edit:commercial',    // Regia: lanciare una pubblicità (ad-break)
     'channel:read:ads',           // Regia: leggere la programmazione delle pubblicità
-    'channel:read:stream_key',    // Studio Web: leggere la stream key (per andare live dal browser)
+    // La stream key la si chiede SOLO se lo Studio Web e' acceso: e' la chiave
+    // con cui si trasmette sul canale, e tenerla a disposizione per una funzione
+    // spenta e' chiedere un potere che non si usa. Segue l'interruttore, quindi
+    // il giorno che lo Studio si accende il permesso torna da solo e la
+    // dashboard chiede di ri-concederlo con la strada che c'e' gia'.
+    ...(env('STUDIO_WEB') === '1' ? ['channel:read:stream_key'] : []),
   ],
 };
 

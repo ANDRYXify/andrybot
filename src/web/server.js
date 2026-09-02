@@ -451,7 +451,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       titolo: 'SocialBot — bot per Twitch e Kick in italiano | socialbot.live',
       desc: 'Il bot per Twitch e Kick in italiano che scrive in chat col TUO account: comandi, moderazione con scudo anti-bot, overlay per la diretta, clip e avvisi live. Gratis, con demo.',
       ogTitolo: 'Il bot per Twitch che scrive col tuo account',
-      ogDesc: 'Il bot per Twitch e Kick in italiano che scrive in chat col tuo account: comandi su misura, overlay per la diretta (alert, chat a schermo, widget, emote 7TV, green screen), musica, clip, dirette dal browser e notifiche live.',
+      ogDesc: 'Il bot per Twitch e Kick in italiano che scrive in chat col tuo account: comandi su misura, overlay per la diretta (alert, chat a schermo, widget, emote 7TV, green screen), musica, clip e notifiche live.',
       twTitolo: 'Il bot per Twitch che scrive col tuo account',
       twDesc: 'Il bot per Twitch e Kick in italiano che scrive col tuo account. Overlay per la diretta (alert, chat, widget, 7TV, green screen), comandi, musica, clip, notifiche live.',
     },
@@ -460,7 +460,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       titolo: 'SocialBot — the Twitch and Kick bot that writes with your own account',
       desc: 'The Twitch and Kick bot that writes in chat with YOUR own account: custom commands, moderation with an anti-bot shield, stream overlay, clips and live alerts. Free, with a demo.',
       ogTitolo: 'The Twitch and Kick bot that writes with your own account',
-      ogDesc: 'The Twitch and Kick bot that writes in chat with your own account: custom commands, stream overlay (alerts, on-screen chat, widgets, 7TV emotes, green screen), music, clips, streaming from the browser and live alerts.',
+      ogDesc: 'The Twitch and Kick bot that writes in chat with your own account: custom commands, stream overlay (alerts, on-screen chat, widgets, 7TV emotes, green screen), music, clips and live alerts.',
       twTitolo: 'The Twitch and Kick bot that writes with your own account',
       twDesc: 'The Twitch and Kick bot that writes with your own account. stream overlay (alerts, chat, widgets, 7TV, green screen), commands, music, clips, live alerts.',
     },
@@ -469,7 +469,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       titolo: 'SocialBot — el bot de Twitch y Kick que escribe con tu propia cuenta',
       desc: 'El bot de Twitch y Kick que escribe en el chat con TU cuenta: comandos, moderación con escudo anti-bot, overlay para el directo, clips y avisos en directo. Gratis, con demo.',
       ogTitolo: 'El bot de Twitch y Kick que escribe con tu propia cuenta',
-      ogDesc: 'El bot de Twitch y Kick que escribe en el chat con tu propia cuenta: comandos a medida, overlay para el directo (avisos, chat en pantalla, widgets, emotes 7TV, pantalla verde), música, clips, directos desde el navegador y avisos en directo.',
+      ogDesc: 'El bot de Twitch y Kick que escribe en el chat con tu propia cuenta: comandos a medida, overlay para el directo (avisos, chat en pantalla, widgets, emotes 7TV, pantalla verde), música, clips y avisos en directo.',
       twTitolo: 'El bot de Twitch y Kick que escribe con tu propia cuenta',
       twDesc: 'El bot de Twitch y Kick que escribe con tu propia cuenta. Overlay per la diretta (avisos, chat, widgets, 7TV, pantalla verde), comandos, música, clips, avisos en directo.',
     },
@@ -1382,7 +1382,6 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 - Comandi e automazioni illimitati (quando succede X, fai Y).
 - Moderazione automatica: antispam, filtri su link/maiuscole/ripetizioni, timeout.
 - Overlay per la diretta: alert di follow/sub/bit/raid, chat a schermo, widget, emote 7TV.
-- Studio Web: andare in diretta dal browser senza installare niente, fino al 2K.
 - Contatori a schermo (es. !morti) accesi dalla chat.
 - Clip automatiche nei momenti di hype.
 - Richieste musicali su Spotify con !sr.
@@ -1396,7 +1395,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 ## Prezzi
 - Essenziale: gratuito, basta registrarsi. Comandi illimitati, moderazione,
   overlay per la diretta e contatori.
-- Base: 2,99 euro al mese. Aggiunge lo Studio Web e un moderatore.
+- Base: 2,99 euro al mese. Aggiunge un moderatore.
 - Pacchetti aggiuntivi a scelta (giochi, effetti, notifiche, clip, voce,
   squadra, musica) e bundle scontati.
 - Gratuito e completo per i membri abilitati della community di andryxify.it.
@@ -1759,8 +1758,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       canaleOk: user ? canaleOk(user.login) : false,
       // Regia (Vai live): quali permessi ha concesso per gestire la diretta dal bot
       regia: user ? { broadcast: canaleOk(user.login), raid: raidOk(user.login), commercial: commercialOk(user.login), ads: adsOk(user.login) } : null,
-      // Studio Web: permesso stream key concesso? live in corso dallo studio?
-      studio: user ? { keyOk: studioKeyOk(user.login), live: studio.attiva(user.login) } : null,
+      // Studio Web: acceso? permesso stream key concesso? live in corso?
+      studio: user ? { attivo: config.studioAttivo, keyOk: studioKeyOk(user.login), live: studio.attiva(user.login) } : null,
       telegram: user ? statoTelegram(user.login) : null,
       knowledgeCount: user ? knowledge.count(user.login) : 0,
       preaddestramento: user
@@ -3489,7 +3488,12 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // Sta nel pacchetto Base (l'Essenziale gratuito non lo comprende): trasmettere
   // consuma CPU e banda del server, quindi non può stare nel gratuito.
   const gStudio = gateFeature('studio', 'Lo Studio Web');
-  app.get('/api/studio', requireLogin, gStudio, wrap(async (req, res) => {
+  // Spento finche' non funziona davvero: qui, prima del gate del piano, cosi'
+  // il messaggio dice la verita' ("non e' ancora attivo") invece di mandare
+  // qualcuno a pagare per una cosa che non c'e'.
+  const studioAcceso = (req, res, next) => (config.studioAttivo ? next()
+    : res.status(503).json({ errore: 'Lo Studio Web non è ancora attivo.', inArrivo: true }));
+  app.get('/api/studio', requireLogin, studioAcceso, gStudio, wrap(async (req, res) => {
     const login = currentUser(req).login;
     // elenco qualità disponibili (chiave + etichetta) per il selettore del client
     const qualita = Object.entries(STUDIO_QUALITA).map(([id, q]) => ({ id, etichetta: q.etichetta }));
@@ -3499,7 +3503,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // avvia la diretta: prende la stream key (che resta sul server) e apre ffmpeg.
   // SOLO il proprietario del canale: un moderatore delegato NON può andare live
   // (avvierebbe la diretta con la stream key dello streamer — troppo rischioso).
-  app.post('/api/studio/start', requireOwner, gStudio, wrap(async (req, res) => {
+  app.post('/api/studio/start', requireOwner, studioAcceso, gStudio, wrap(async (req, res) => {
     const login = currentUser(req).login;
     if (streamers.get(login)?.status !== 'approved') return res.status(403).json({ errore: 'non sei ancora abilitato' });
     if (!studioKeyOk(login)) return res.status(403).json({ errore: 'Concedi il permesso "stream key" da /auth/permessi', permesso: true });
@@ -3513,7 +3517,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
   // riceve i pezzi di media (Buffer) dal browser: raw body, un ffmpeg per streamer.
   // express.raw con type:()=>true → qualsiasi content-type finisce in req.body come Buffer.
-  app.post('/api/studio/chunk', requireOwner, gStudio, express.raw({ type: () => true, limit: '30mb' }), (req, res) => {
+  app.post('/api/studio/chunk', requireOwner, studioAcceso, gStudio, express.raw({ type: () => true, limit: '30mb' }), (req, res) => {
     const login = currentUser(req).login;
     if (!studio.attiva(login)) return res.status(409).json({ errore: 'nessuna diretta in corso' });
     if (Buffer.isBuffer(req.body)) studio.write(login, req.body);
@@ -3521,7 +3525,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   });
 
   // ferma la diretta dallo studio (solo il proprietario, come lo start)
-  app.post('/api/studio/stop', requireOwner, gStudio, wrap(async (req, res) => {
+  app.post('/api/studio/stop', requireOwner, studioAcceso, gStudio, wrap(async (req, res) => {
     studio.stop(currentUser(req).login);
     res.json({ ok: true });
   }));

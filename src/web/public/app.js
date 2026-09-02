@@ -1749,8 +1749,8 @@ function vetrinaCapacita() {
       L('Illimitati e già dal piano gratuito: parole, eventi, timer, variabili.', 'Unlimited, free plan included: words, events, timers, variables.', 'Ilimitados, ya en el plan gratis: palabras, eventos, temporizadores, variables.')),
     c(ICO.monitor, L('Overlay per la diretta', 'Overlay for your stream', 'Overlay para el directo'),
       L('Avvisi, chat a schermo, contatori e classifiche: un link e sei in scena.', 'Alerts, on-screen chat, counters and leaderboards: one link and you are on.', 'Avisos, chat en pantalla, contadores y clasificaciones: un enlace y estás en escena.')),
-    c(ICO.tv, L('Diretta dal browser', 'Go live from the browser', 'Directo desde el navegador'),
-      L('Vai in onda dal browser: webcam, schermo e scene, senza installare nulla.', 'Go live from the browser: webcam, screen and scenes, nothing to install.', 'Emite desde el navegador: webcam, pantalla y escenas, sin instalar nada.')),
+    c(ICO.scudo, L('Scudo anti-bot e anti-raid', 'Anti-bot and anti-raid shield', 'Escudo anti-bot y anti-raid'),
+      L('Ferma le raffiche di follow-bot e para le hate-raid, da solo, mentre streammi.', 'Stops follow-bot bursts and blocks hate raids, on its own, while you stream.', 'Frena las oleadas de follow-bots y para las hate-raids, solo, mientras emites.')),
     c(ICO.musica, L('Musica, clip e giochi', 'Music, clips and games', 'Música, clips y juegos'),
       L('Richieste su Spotify, momenti migliori clippati da soli, minigiochi con monete.', 'Spotify requests, best moments clipped automatically, coin minigames.', 'Peticiones en Spotify, mejores momentos clipados solos, minijuegos con monedas.')),
   ].map((h, i) => h.replace('<article class="vt-carta"', `<article class="vt-carta" style="--i:${i}"`)).join('');
@@ -1786,7 +1786,7 @@ function renderHero() {
       <div class="vt-strumenti">${selettoreLingua()}</div>
       <span class="vt-occhiello"><i class="vivo"></i>${L('SocialBot · il bot di andryxify.it', 'SocialBot · the bot by andryxify.it', 'SocialBot · el bot de andryxify.it')}</span>
       <h1 class="vt-titolo">${L('Il bot per Twitch che parla', 'The Twitch bot that speaks', 'El bot de Twitch que habla')} <em>${L('con la tua voce', 'with your own voice', 'con tu propia voz')}</em></h1>
-      <p class="vt-sub">${L('Vive nella tua chat e scrive <strong>con il tuo account</strong> — niente bot anonimi. Comandi su misura, <strong>scudo anti-bot</strong>, overlay per la diretta, clip, musica e persino <strong>dirette dal browser</strong>.', 'It lives in your chat and writes <strong>with your own account</strong> — no anonymous bots. Custom commands, an <strong>anti-bot shield</strong>, stream overlay, clips, music and even <strong>going live from the browser</strong>.', 'Vive en tu chat y escribe <strong>con tu cuenta</strong> — nada de bots anónimos. Comandos a medida, <strong>escudo anti-bot</strong>, overlay para el directo, clips, música e incluso <strong>directos desde el navegador</strong>.')}</p>
+      <p class="vt-sub">${L('Vive nella tua chat e scrive <strong>con il tuo account</strong> — niente bot anonimi. Comandi su misura, <strong>scudo anti-bot</strong>, overlay per la diretta, clip, musica e <strong>notifiche live</strong>.', 'It lives in your chat and writes <strong>with your own account</strong> — no anonymous bots. Custom commands, an <strong>anti-bot shield</strong>, stream overlay, clips, music and <strong>live alerts</strong>.', 'Vive en tu chat y escribe <strong>con tu cuenta</strong> — nada de bots anónimos. Comandos a medida, <strong>escudo anti-bot</strong>, overlay para el directo, clips, música y <strong>avisos en directo</strong>.')}</p>
       <div class="vt-azioni">
         <a class="vt-btn vt-btn-primo" href="/entra?nuovo=1">${L('Registrati con Twitch', 'Sign up with Twitch', 'Regístrate con Twitch')}</a>
         <a class="vt-btn" href="/entra">${L('Accedi', 'Log in', 'Entrar')}</a>
@@ -6739,6 +6739,14 @@ async function salvaRegiaCanale() {
 }
 
 function pannelloStudio() {
+  if (stato?.studio && stato.studio.attivo === false) {
+    return pannello('studio', `
+      <div class="carta evidenziata">
+        <h2>${_hIco(ICO.onda)}${L('Studio Web — in arrivo', 'Web Studio — coming soon', 'Estudio Web — próximamente')}</h2>
+        <p>${L('Andare in diretta dal browser, senza installare niente: scene, webcam, schermo, mixer audio e overlay già dentro.', 'Going live from the browser with nothing to install: scenes, webcam, screen, audio mixer and the overlay already inside.', 'Emitir desde el navegador sin instalar nada: escenas, webcam, pantalla, mezclador de audio y overlay ya dentro.')}</p>
+        <p class="suggerimento">${L('Non è ancora attivo, e finché non lo è preferiamo dirtelo invece di lasciartelo provare. Il resto del bot — comandi, overlay, moderazione, notifiche — funziona come sempre.', 'It is not active yet, and until it is we would rather tell you than let you try it. The rest of the bot — commands, overlay, moderation, alerts — works as always.', 'Todavía no está activo, y hasta que lo esté preferimos decírtelo en vez de dejarte probarlo. El resto del bot — comandos, overlay, moderación, avisos — funciona como siempre.')}</p>
+      </div>`);
+  }
   return pannello('studio', `
     <div class="carta evidenziata" id="studio-permessi-banner" hidden></div>
     <div class="carta studio-carta studio-largo">
