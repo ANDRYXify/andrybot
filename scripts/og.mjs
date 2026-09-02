@@ -37,8 +37,8 @@ body{font-family:Archivo,system-ui,sans-serif;background:#f4f1ea;color:#221f1c;p
 .a3{width:420px;height:420px;right:180px;top:-190px;background:rgba(214,20,140,.10)}
 .griglia{position:absolute;inset:0;background-image:linear-gradient(rgba(34,31,28,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(34,31,28,.05) 1px,transparent 1px);background-size:52px 52px;mask-image:radial-gradient(circle at 30% 20%,#000,transparent 78%)}
 .testa{display:flex;align-items:center;gap:17px;position:relative;z-index:2}
-.logo{height:96px;width:auto;display:block}
-.dominio{font-size:17px;color:#a11060;font-weight:700;letter-spacing:.005em;margin-top:-6px;margin-left:6px}
+.logo{height:104px;width:auto;display:block}
+.firma{margin-left:auto;font-size:20px;color:#8e0f55;font-weight:700;letter-spacing:.01em;white-space:nowrap}
 .occhiello{margin-left:auto;font-size:15px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#8e0f55;border:1px solid rgba(190,20,120,.34);background:rgba(214,20,140,.09);padding:9px 19px;border-radius:999px}
 .mezzo{flex:1;display:flex;flex-direction:column;justify-content:flex-end;position:relative;z-index:2;padding-bottom:38px}
 h1{font-size:${Math.max(titolo.length, (evidenza||'').length) > 30 ? 64 : 74}px;line-height:1.075;letter-spacing:-.036em;font-weight:800;max-width:1050px}
@@ -51,14 +51,14 @@ h1 b{color:#c1136f;font-weight:800}
 </style></head><body>
 <div class="alone a1"></div><div class="alone a3"></div><div class="alone a2"></div><div class="griglia"></div>
 <div class="testa">
-  <div><img class="logo" src="data:image/png;base64,${LOGO}" alt="SocialBot"><div class="dominio">socialbot.live</div></div>
+  <img class="logo" src="data:image/png;base64,${LOGO}" alt="SocialBot">
   <div class="occhiello">${occhiello}</div>
 </div>
 <div class="mezzo">
   <h1>${titolo}${evidenza ? `<br><b>${evidenza}</b>` : ''}</h1>
   <p class="sotto">${sotto}</p>
 </div>
-<div class="piede">${pastiglie.map((p) => `<span class="pastiglia"><i class="spunta"></i>${p}</span>`).join('')}</div>
+<div class="piede">${pastiglie.map((p) => `<span class="pastiglia"><i class="spunta"></i>${p}</span>`).join('')}<span class="firma">socialbot.live</span></div>
 </body></html>`;
 }
 

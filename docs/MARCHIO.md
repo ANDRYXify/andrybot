@@ -12,17 +12,23 @@ Gli originali stanno in `assets/marchio/`, a sfondo trasparente. **Non** in
 dentro devono stare i file *da scaricare*, non quelli *da cui si generano* gli
 altri.
 
-## Perché il fondo è chiaro
+## Il fondo: dipende da chi guarda
 
-Il disegno ha i **contorni neri**. Su fondo scuro spariscono e il segno diventa
-una macchia colorata senza forma. Quindi il fondo dev'essere chiaro — e quello
-giusto ce l'aveva già il prodotto: la sua **carta calda `#faf7f1`**, la stessa
-superficie delle sue schede. Così l'icona sembra parte dell'app invece di un
-adesivo appiccicato sopra.
+Il disegno ha i **contorni neri**, e la prima conclusione — «serve un fondo
+chiaro, sempre» — era **sbagliata**. L'ho scoperto mettendo le tre varianti una
+accanto all'altra invece di ragionarci sopra:
 
-Ne segue una cosa che vale la pena dire: nella barra in alto il segno resta
-**sul suo bollo di carta anche in tema scuro**. Metterlo trasparente sarebbe
-stato più elegante di giorno e illeggibile di notte.
+- su fondo scuro i contorni neri effettivamente spariscono, ma **i pieni magenta
+  portano la forma da soli**: le lettere restano perfettamente leggibili, e anzi
+  guadagnano un'aria da insegna al neon;
+- una **targa di carta** dietro le lettere, in tema scuro, è invece un mattone
+  bianco piantato in mezzo alla barra.
+
+Quindi la regola è: **nelle pagine il marchio è trasparente**, e il fondo ce lo
+mette la pagina. Nelle **icone del sistema operativo** no — lì un fondo opaco
+serve per forza, ed è la carta calda `#faf7f1`, la stessa superficie delle
+schede, così l'icona sembra parte dell'app invece di un adesivo appiccicato
+sopra.
 
 ## Le misure si generano, non si disegnano
 
@@ -40,13 +46,29 @@ icona di due versioni fa là.
 |---|---|
 | `icon-192` · `icon-512` | l'icona normale: il segno sta largo (86%), perché a 32px in una scheda del browser deve leggersi |
 | `icon-maskable-512` | quella che il sistema operativo **ritaglia** a cerchio o a goccia: il segno sta dentro il 66%, così nessun taglio lo tocca |
-| `marchio-barra` | il bollo della barra, **della forma del segno** |
+| `marchio-barra` | il segno per le pagine, **della forma sua** e trasparente |
+| `logo-barra` | il logo esteso per la barra in alto, trasparente |
 | `marchio` · `logo-esteso` | trasparenti, per quando il fondo ce lo mette la pagina |
 
 **`any` e `maskable` sono due file diversi.** Prima il manifest dichiarava
 `"any maskable"` sullo stesso file: sono due esigenze opposte — una vuole il
 segno grande, l'altra lo vuole piccolo e al centro — e dichiararle insieme vuol
 dire sbagliarne per forza una.
+
+## Nella barra: il logo, non il nome scritto
+
+Nella barra in alto c'erano il segno **e** la parola «SocialBot» scritta col
+font dell'interfaccia: due volte la stessa cosa, e la seconda non era nemmeno il
+marchio. Ora c'è il **logo esteso** e basta.
+
+Sta dappertutto, e non per fortuna: il logo esteso è largo 2,65 volte la sua
+altezza, quindi a 30px di altezza occupa **80px** — su un telefono da 390 ne
+restano 310 per il resto. Non serve una soglia, non serve una variante piccola:
+misurato, ci sta sempre.
+
+L'attribuzione «andryxify.it», che stava sotto il nome, è finita **in fondo alla
+pagina** insieme a privacy e termini. È il posto suo: un piè di pagina è
+esattamente dove si dice di chi è un progetto.
 
 ## La forma conta
 
@@ -55,9 +77,8 @@ da 30px buttava via un terzo della larghezza in aria, e a quella misura la
 parola non si leggeva più. Il bollo della barra ha quindi la forma del segno,
 non un quadrato: alla stessa altezza, il disegno è **1,6 volte più grande**.
 
-Lo stesso vale nelle altre pagine (moderatori, sblocca, privacy, termini, Mini
-App) e nello splash — dove l'anello è stato allargato da 124 a 140px, perché il
-segno largo ci passava dentro per un pelo e i suoi angoli toccavano il cerchio.
+Lo stesso vale nelle altre pagine: moderatori, sblocca, privacy, termini, Mini
+App e splash mostrano il segno con la sua forma, senza targa.
 
 Resta un limite onesto: a **16px** un marchio che contiene una parola è una
 macchia. Da 32px in su si legge. Se un giorno servisse anche il francobollo,
