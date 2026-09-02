@@ -29,6 +29,16 @@ import { dirname, join } from 'node:path';
 
 const SITO = 'https://socialbot.live';
 
+// IL RISVOLTO VERSO SOCIALBOT.
+//
+// Una guida che spiega il mondo va bene per chi il bot non ce l'ha. Ma quando e'
+// il PANNELLO a proporla — «per questa scheda c'e' una guida» — chi la apre e'
+// gia' dentro: vuole sapere cosa si fa QUI, non cos'e' un hate-raid. Percio' una
+// guida che dichiara di servire una scheda deve avere questa sezione, e il
+// collegamento ci porta dritto: il titolo sta scritto una volta e serve sia a
+// scriverla sia a puntarla.
+export const DENTRO = 'Come si fa in SocialBot';
+
 export const GUIDE = [
   {
     slug: 'bot-per-twitch-italiano',
@@ -120,6 +130,14 @@ export const GUIDE = [
       { h2: 'Come si toglie un bot', p: [
         'Vai su Twitch in Impostazioni → Connessioni, trova il servizio e revoca l\'accesso. Da quel momento non può più fare niente sul tuo canale, indipendentemente da cosa sia rimasto configurato sul suo sito. Se era moderatore, togli anche quello con <code>/unmod nomedelbot</code>.',
       ] },
+      { h2: DENTRO, p: [
+        'Qui il collegamento è già fatto: sei entrato con Twitch, quindi il bot ha i tuoi permessi e scrive col tuo account. Quello che resta è nella scheda <strong>Stato</strong>.',
+      ], passi: [
+        { t: 'Accendi il bot. ', d: 'L\'interruttore <em>Il tuo bot</em> è quello che lo fa entrare in chat. Spegnendolo resta tutto configurato: smette solo di parlare.' },
+        { t: 'Guarda i permessi. ', d: 'Se ne manca uno — moderazione, clip, VIP, categoria — la scheda te lo dice e ti dà il pulsante per concederlo. Nessun errore silenzioso: o c\'è o te lo scrive.' },
+        { t: 'Scegli quando sta in chat. ', d: 'Sempre, oppure solo mentre sei in diretta. Se trasmetti a orari fissi, «solo in diretta» tiene la chat pulita quando non ci sei.' },
+        { t: 'Poi vai su Comandi. ', d: 'Il primo comando si scrive in due campi: nome e risposta. Da lì in poi c\'è il <a href="/manuale/moduli">manuale dei moduli</a>.' },
+      ] },
     ],
     faq: [
       { d: 'Quanto ci vuole a mettere un bot su Twitch?', r: 'Cinque minuti: accedi con Twitch, autorizzi i permessi, e se il bot usa un account proprio lo rendi moderatore con /mod nomedelbot. Configurare comandi e timer richiede altri dieci minuti.' },
@@ -182,6 +200,14 @@ export const GUIDE = [
         'Lo scudo di SocialBot è costruito su questi principi invece che su una lista di caselle da spuntare. In breve: la soglia si tara da sola sul ritmo abituale del canale, imparato in tempo di pace; quando scatta un attacco alza da solo Shield Mode, chat ai soli follower e chat lenta, e li riabbassa quando è passata, rimettendo a posto solo quello che aveva mosso lui; riconosce il coro dello stesso messaggio da bocche diverse anche quando gli account sono vecchi e i nomi puliti; e banna l\'ondata di follow-bot per intero, compresi quelli arrivati prima dell\'allarme — ma solo dopo aver verificato che sia artificiale, con le misure descritte qui sopra.',
         'La documentazione tecnica completa, con le soglie e i motivi di ogni scelta, è pubblica.',
       ] },
+      { h2: DENTRO, p: [
+        'Lo scudo non si configura a soglie: sta nella scheda <strong>Moderazione</strong> e o è acceso o non lo è.',
+      ], passi: [
+        { t: 'Accendi lo scudo anti-bot. ', d: 'Riconosce i nomi dei follow-bot noti da una lista che si aggiorna da sola, e ferma le raffiche di follow senza che tu debba dire quante al minuto sono troppe.' },
+        { t: 'Metti in attesa gli account appena creati. ', d: 'I loro messaggi li vedete solo tu e i moderatori finché non è tutto in chiaro. È la misura che spegne una hate-raid prima che si veda in chat.' },
+        { t: 'Lascia che avvisi invece di cacciare. ', d: 'Nel dubbio segnala a te e ai mod, non butta fuori: un fan vero che si è appena iscritto non deve pagare per un attacco.' },
+        { t: 'Guarda il registro. ', d: 'Nella stessa scheda trovi cosa ha fermato e perché, e puoi ribaltare una decisione con un clic.' },
+      ] },
     ],
     faq: [
       { d: 'Come faccio a sapere se ho subito un follow-bot?', r: 'Il segnale è un picco improvviso di follow che non corrisponde a nessun evento: nessuna clip virale, nessuna raid, nessun aumento di spettatori. Guardando i nomi si notano spesso schemi ripetuti o riferimenti a siti che vendono follower. Un indizio decisivo è la cadenza: se i follow arrivano a intervalli quasi identici non sono persone.' },
@@ -242,6 +268,14 @@ export const GUIDE = [
       { h2: 'Comandi a voce', p: [
         'Alcuni bot, SocialBot compreso, permettono di pilotare il canale parlando mentre giochi: cambiare titolo e categoria, lanciare un annuncio, fare uno shoutout, aprire un sondaggio. Il vantaggio non è la novità: è che non devi togliere le mani dal gioco per cambiare la categoria quando cambi gioco — cosa che, senza, ci si dimentica quasi sempre di fare.',
       ] },
+      { h2: DENTRO, p: [
+        'I comandi stanno nella scheda <strong>Comandi</strong>, e ci sono due modi a seconda di quanto ti serve.',
+      ], passi: [
+        { t: 'Il modo veloce. ', d: '<em>Comando rapido</em>: scrivi il nome e cosa deve rispondere. Fatto — niente altro da compilare.' },
+        { t: 'Il modo completo. ', d: 'QUANDO succede qualcosa, SE valgono certe condizioni, ALLORA il bot fa: comando, parola, evento, timer, o la tua voce. Tutto spiegato nel <a href="/manuale/moduli">manuale dei moduli</a>.' },
+        { t: 'Le variabili. ', d: 'Nei testi puoi usare chi ha scritto, il nome dopo il comando, l\'uptime, la categoria, le monete, un numero a caso: si scrivono con il dollaro e il pannello te le elenca tutte.' },
+        { t: 'Quello che ti sei costruito vince. ', d: 'Se fai un comando con lo stesso nome di uno pronto, il tuo ha la precedenza. Non devi disattivare niente.' },
+      ] },
     ],
     faq: [
       { d: 'Come si crea un comando personalizzato su Twitch?', r: 'I comandi personalizzati non esistono nativamente su Twitch: servono con un bot. Nel pannello del bot si aggiunge il nome del comando (per esempio !discord), il testo della risposta, chi può usarlo e ogni quanti secondi si può ripetere.' },
@@ -289,6 +323,14 @@ export const GUIDE = [
       ] },
       { h2: 'Trasmettere senza OBS', p: [
         'Vale la pena saperlo: da qualche tempo si può andare in diretta direttamente dal browser, senza installare niente. Non sostituisce OBS per una configurazione seria con più scene e più fonti, ma per una diretta veloce — una chiacchierata, una prova, un rientro al volo da un altro computer — toglie di mezzo tutto il resto.',
+      ] },
+      { h2: DENTRO, p: [
+        'L\'overlay si prepara nella scheda <strong>Overlay Studio</strong> e si vede subito mentre lo cambi: non serve ricaricare OBS a ogni ritocco.',
+      ], passi: [
+        { t: 'Copia il link e mettilo in OBS. ', d: 'Sorgente <em>Browser</em>, incolli il link, 1920×1080. È l\'unica cosa che si fa dentro OBS.' },
+        { t: 'Componi quello che si vede. ', d: 'Alert di follow, sub, bit e raid — con immagini, video, suoni e green screen — chat a schermo, widget ed emote 7TV. Posizione, dimensione e rotazione si trascinano.' },
+        { t: 'Più overlay, più link. ', d: 'Puoi averne più di uno, ognuno col suo link: uno per la scena «gioco», uno per la pausa, uno per il talk.' },
+        { t: 'Gli effetti sono un\'altra scheda. ', d: 'In <strong>Effetti &amp; suoni</strong> costruisci i comandi che fanno partire qualcosa a schermo, e li leghi ai punti canale o alle monete.' },
       ] },
     ],
     faq: [
@@ -432,7 +474,7 @@ function piede() {
 
 // L'ancora di una sezione: si ricava dal titolo, così l'indice e i titoli non
 // possono divergere (e un collegamento a una sezione resta valido).
-function ancora(t) {
+export function ancora(t) {
   return String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
 }

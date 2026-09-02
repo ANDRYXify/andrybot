@@ -10,7 +10,7 @@
 // I numeri qui dentro non sono decorativi: sono quelli del motore. Se cambiano
 // li', qui devono cambiare — e il cancello verifica-manuali.mjs controlla che
 // non manchi niente di quello che il motore sa fare.
-import { GUIDE, paginaDoc, paginaManuali } from './guide.js';
+import { GUIDE, DENTRO, ancora, paginaDoc, paginaManuali } from './guide.js';
 
 const OGGI = '2026-09-02';
 
@@ -450,11 +450,16 @@ export const MANUALI = [GIOCHI, MODULI];
 // riferimento, non l'introduzione.
 export function aiutiPerScheda() {
   const out = {};
-  const metti = (pagine, base, tipo) => {
-    for (const p of pagine) for (const s of p.schede || []) out[s] = { titolo: p.h1, via: `${base}/${p.slug}`, tipo };
-  };
-  metti(GUIDE, '/guide', 'guida');
-  metti(MANUALI, '/manuale', 'manuale');
+  // Una guida si apre sulla sezione che parla del pannello, non dall'inizio:
+  // chi la chiede da dentro vuole sapere cosa si fa QUI. Il pezzo di indirizzo
+  // si ricava dal titolo di quella sezione, quindi non puo' puntare al nulla.
+  const dentro = '#' + ancora(DENTRO);
+  for (const g of GUIDE) {
+    for (const s of g.schede || []) out[s] = { titolo: g.h1, via: `/guide/${g.slug}${dentro}`, tipo: 'guida' };
+  }
+  for (const m of MANUALI) {
+    for (const s of m.schede || []) out[s] = { titolo: m.h1, via: `/manuale/${m.slug}`, tipo: 'manuale' };
+  }
   return out;
 }
 
