@@ -139,3 +139,14 @@ test('un evento di un canale che non è nostro si segna ma non entra nel bot', a
     assert.equal(d.ultimo.canale, '', 'e sa che non l’abbiamo saputo attribuire');
   } finally { await s.chiudi(); }
 });
+
+test('anche la risposta che non parte finisce nel diario', async () => {
+  diario._azzera();
+  const { voceKick } = await import('../../src/kick/voce.js');
+  voceKick('nessuno').say('nessuno', 'una risposta');
+  await new Promise((r) => setTimeout(r, 60));
+  const d = diario.stato('nessuno');
+  assert.ok(d.ultimoInvio, 'il tentativo è segnato');
+  assert.equal(d.ultimoInvio.ok, false);
+  assert.match(d.ultimoInvio.motivo, /collegato|token/i, `motivo: ${d.ultimoInvio.motivo}`);
+});

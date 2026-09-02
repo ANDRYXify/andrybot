@@ -11,6 +11,7 @@
 // scrive in chat.
 import { makeLog } from '../logger.js';
 import { scrivi } from './api.js';
+import { segnaInvio } from './diario.js';
 
 const log = makeLog('kick');
 
@@ -18,8 +19,14 @@ export function voceKick(login) {
   return {
     say(_canale, testo) {
       scrivi(login, testo)
-        .then((r) => { if (!r.ok) log.error(`@${login}: non riesco a scrivere su Kick — ${r.errore}`); })
-        .catch((e) => log.error(`@${login}: invio su Kick fallito — ${e?.message || e}`));
+        .then((r) => {
+          segnaInvio({ canale: login, ok: r.ok, motivo: r.ok ? '' : r.errore });
+          if (!r.ok) log.error(`@${login}: non riesco a scrivere su Kick — ${r.errore}`);
+        })
+        .catch((e) => {
+          segnaInvio({ canale: login, ok: false, motivo: e?.message || String(e) });
+          log.error(`@${login}: invio su Kick fallito — ${e?.message || e}`);
+        });
     },
   };
 }

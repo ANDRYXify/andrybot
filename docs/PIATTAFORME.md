@@ -86,12 +86,15 @@ hanno la stessa faccia:
 1. non c'è nessuna **iscrizione** agli eventi;
 2. l'iscrizione c'è ma **Kick non bussa** (webhook spento nell'app, o punta altrove);
 3. Kick bussa ma l'evento viene **rifiutato** (firma, orologio, corpo);
-4. l'evento arriva ma **non si attribuisce** a un canale nostro.
+4. l'evento arriva ma **non si attribuisce** a un canale nostro;
+5. arriva tutto, ma la **risposta non parte** (permesso mancante, token da rifare,
+   Kick che rifiuta la scrittura).
 
 `kick/diario.js` tiene il minimo che le distingue: quando è arrivato l'ultimo
 evento buono e di che tipo, quando è stato rifiutato l'ultimo e perché, e a quale
-canale. Niente contenuti dei messaggi: tipo, canale e motivo. La riga di Kick nel
-pannello dice **quale delle quattro**, e quando serve mostra «Riprova gli
+canale, e com'è andato l'ultimo tentativo di **scrivere**. Niente contenuti dei
+messaggi: tipo, canale e motivo. La riga di Kick nel pannello dice **quale delle
+cinque**, e quando serve mostra «Riprova gli
 eventi» — che rifà l'iscrizione senza dover scollegare e rifare tutto il giro
 OAuth (dopo un periodo in cui il webhook rispondeva 404, Kick smette di provarci).
 
