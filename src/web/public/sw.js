@@ -3,7 +3,7 @@
 
 
 const CACHE = 'socialbot-v1';
-const SHELL = ['/icons/icon-192.png', '/icons/icon-512.png', '/manifest.webmanifest'];
+const SHELL = ['/icons/icon-192.png', '/icons/icon-512.png', '/icons/marchio-barra.png', '/manifest.webmanifest'];
 
 self.addEventListener('install', (ev) => {
   ev.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

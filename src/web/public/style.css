@@ -112,7 +112,7 @@ body:not(.con-nav) .barra-top { display: none; }
 
 .marchio { display: flex; align-items: center; gap: .5rem; flex: none; color: var(--testo); }
 .marchio:hover { text-decoration: none; }
-.marchio-segno { width: 30px; height: 30px; flex-shrink: 0; border-radius: 8px; object-fit: contain; display: block; }
+.marchio-segno { height: 30px; width: auto; flex-shrink: 0; border-radius: 8px; object-fit: contain; display: block; }
 .marchio-testo { display: flex; flex-direction: column; line-height: 1.12; font-weight: 750; font-size: .98rem; letter-spacing: -.01em; }
 .marchio-testo small { font-weight: 500; font-size: .68rem; color: var(--testo-3); letter-spacing: 0; }
 
