@@ -1791,6 +1791,7 @@ function renderHero() {
       <div class="vt-azioni">
         <a class="vt-btn vt-btn-primo" href="/entra?nuovo=1">${L('Registrati con Twitch', 'Sign up with Twitch', 'Regístrate con Twitch')}</a>
         <a class="vt-btn" href="/entra">${L('Accedi', 'Log in', 'Entrar')}</a>
+        ${stato?.kickAperto ? `<a class="vt-btn" href="/accedi/kick">${L('Registrati con Kick', 'Sign up with Kick', 'Regístrate con Kick')}</a>` : ''}
       </div>
       <p class="vt-sotto">${L('L’<b>Essenziale è gratis per sempre</b> · nessuna carta richiesta · <a href="/?demo=1">guarda la demo</a>', 'The <b>Essenziale plan is free forever</b> · no card needed · <a href="/?demo=1">see the demo</a>', 'El <b>plan Essenziale es gratis para siempre</b> · sin tarjeta · <a href="/?demo=1">mira la demo</a>')}</p>
       ${heroAnteprima()}

@@ -62,7 +62,10 @@ try {
   daSpingere = git('rev-list', `${monte}..HEAD`).split('\n').filter(Boolean);
 } catch { /* nessun ramo a monte: si controlla solo il file */ }
 
-const SCUSA = /novit[àa]\s*:\s*(no|nessuna)\b/i;
+// «Novita': nessuna» vale quanto «Novità: nessuna»: nei messaggi di commit gli
+// accenti si scrivono con l'apostrofo, e una regola che non lo sa boccia chi
+// scrive come si e' sempre scritto qui.
+const SCUSA = /novit[àa]'?\s*:\s*(no|nessuna)\b/i;
 const muti = [];
 for (const sha of daSpingere) {
   const toccati = git('show', '--name-only', '--format=', sha).split('\n').filter(Boolean);
