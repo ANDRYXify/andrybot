@@ -1,0 +1,69 @@
+/* © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live */
+/* Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live */
+
+:root {
+  --bg: #f4f1ea;
+  --surface: #faf7f1;
+  --surface-2: #efeade;
+  --surface-3: #e6e0d2;
+  --border: #e5ded1;
+  --border-2: #d8cfbe;
+
+  --testo: #1b1916;
+  --testo-2: #726c63;
+  --testo-3: #a49d92;
+
+  --acc: #cf4428;
+  --acc-600: #b63a20;
+  --acc-soft: #f7ece6;
+  --acc-tint: rgba(207, 68, 40, .09);
+  --acc-bordo: #ecd6cc;
+
+  --verde: #4b7a54; --verde-soft: #eef3ec; --verde-bordo: #cfdccf;
+  --rosso: #a8382b; --rosso-soft: #f6ebe7; --rosso-bordo: #ebccc5;
+  --ambra: #98691f; --ambra-soft: #f5eedd; --ambra-bordo: #e6d3b3;
+
+  --r-xs: 4px; --r-s: 6px; --r-m: 8px; --r-l: 10px;
+  --om-s: 0 1px 2px rgba(27, 25, 22, .04);
+  --om-m: 0 2px 10px rgba(27, 25, 22, .05);
+  --om-l: 0 10px 30px rgba(27, 25, 22, .08);
+  --ease-back: var(--an-morbido); --molla: .22s var(--an-morbido); --spring: var(--an-morbido);
+  --sheen: rgba(255, 255, 255, .35);
+
+  --g-bot: #8a8378; --g-pubblico: #8a8378; --g-diretta: #8a8378;
+  --g-scena: #8a8378; --g-vetrina: #8a8378; --g-account: #8a8378; --g-admin: var(--acc);
+
+  --an-vel: cubic-bezier(.16, 1, .3, 1);
+  --an-morbido: cubic-bezier(.33, 1, .68, 1);
+  --an-dur: .9s;
+}
+
+:root[data-theme="dark"], :root:not([data-theme="light"]) {
+  --bg: #131110;
+  --surface: #1a1714;
+  --surface-2: #211d18;
+  --surface-3: #2a251f;
+  --border: #2a2620;
+  --border-2: #38322a;
+
+  --testo: #ece7dd;
+  --testo-2: #948d82;
+  --testo-3: #6b655c;
+
+  --acc: #e8543a;
+  --acc-600: #d1462c;
+  --acc-soft: #241812;
+  --acc-tint: rgba(232, 84, 58, .13);
+  --acc-bordo: #3d2b23;
+
+  --verde: #7bae86; --verde-soft: #1a271d; --verde-bordo: #2f4535;
+  --rosso: #e0674f; --rosso-soft: #291813; --rosso-bordo: #47281f;
+  --ambra: #cf9a52; --ambra-soft: #28200f; --ambra-bordo: #453722;
+  --om-s: 0 1px 2px rgba(0, 0, 0, .3);
+  --om-m: 0 2px 10px rgba(0, 0, 0, .35);
+  --om-l: 0 10px 30px rgba(0, 0, 0, .45);
+  --sheen: rgba(255, 255, 255, .05);
+
+  --g-bot: #6f6a60; --g-pubblico: #6f6a60; --g-diretta: #6f6a60;
+  --g-scena: #6f6a60; --g-vetrina: #6f6a60; --g-account: #6f6a60; --g-admin: var(--acc);
+}

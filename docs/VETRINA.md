@@ -116,9 +116,30 @@ una diretta è scura anche su una pagina chiara, come in qualsiasi lettore video
 Dichiararlo lì una volta tiene leggibili etichette, chat, alert e webcam senza
 che sappiano che tema ha la pagina attorno.
 
+I colori adesso stanno in **`tema.css`**, un file che fa una cosa sola: dichiara
+la tavolozza, chiara e scura. Lo caricano la home, le pagine semplici e — letto
+da disco al momento di comporre — le guide. `anime.css` non li dichiara più.
+
+## Anche le pagine semplici
+
+`privacy`, `termini`, l'invito ai moderatori e lo sblocco con passkey avevano
+ognuna **il proprio stile in linea**, scuro fisso, con i colori scritti a mano:
+quattro copie di quasi la stessa cosa, ferme al viola di prima. Ora si appoggiano
+a due fogli: `tema.css` per i colori e **`pagina.css`** per la forma — un
+documento con le sue sezioni, oppure una carta in mezzo allo schermo per le
+pagine che chiedono una cosa sola. E caricano `tema.js`, quindi seguono la
+scelta chiaro/scuro come tutto il resto.
+
+Gli unici colori scritti a mano rimasti in `pagina.css` sono il viola di Twitch
+sul suo pulsante e il bianco sul pieno: sono di Twitch, non nostri.
+
+`tgapp.html` resta fuori di proposito: è la mini app dentro Telegram e usa i
+colori che Telegram le passa (`--tg-theme-*`). Lì la coerenza è con Telegram.
+
 `test/contratto/tema.test.mjs` tiene il patto: la vetrina non dichiara colori del
-sito (rosso provato rimettendoci `--acc`), lo schermo dichiara i suoi, e le guide
-usano davvero i valori di `anime.css`.
+sito (rosso provato rimettendoci `--acc`), lo schermo dichiara i suoi, le guide
+usano davvero i valori di `tema.css`, e le pagine semplici non hanno più uno
+stile tutto loro.
 
 ## Da dove si arriva alle guide
 
@@ -126,6 +147,9 @@ Guide, manuali e novità stavano **solo nel piede**: esistevano e non le trovava
 nessuno. Ora la vetrina ha una testata vera — marchio a sinistra, *Guide ·
 Manuali · Novità · Demo* al centro, lingua a destra — che su telefono va a capo
 in due righe invece di stringersi.
+
+E l'occhiello sopra il titolo non ripete più il nome — che adesso è scritto nel
+logo lì sopra: dice a chi serve il bot («Per Twitch e Kick»).
 
 Un dettaglio che vale la pena raccontare: la classe `.vt-testa` che avevo scelto
 per quella testata **esisteva già** (le testate delle sezioni, con
