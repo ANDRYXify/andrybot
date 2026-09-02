@@ -11614,6 +11614,12 @@ function attivaPiattaforma() {
       } else if (ev.target.matches('[data-azione-tipo]')) {
         const riga = ev.target.closest('.azione-riga');
         if (riga) riga.outerHTML = disegnaAzione({ tipo: ev.target.value });
+      } else if (ev.target.id === 'mod-probabilita') {
+        const blocco = document.getElementById('blocco-altrimenti');
+        if (blocco) blocco.hidden = !(Number(ev.target.value) < 100);
+      } else if (ev.target.matches('[data-campo="a"]')) {
+        const box = ev.target.closest('.azione-riga')?.querySelector('[data-solo-nome]');
+        if (box) box.hidden = ev.target.value !== 'nome';
       }
       aggiornaRiassunto();
     });
@@ -11639,6 +11645,12 @@ function gestisciClicEditor(ev) {
   if (ev.target.closest('[data-aggiungi-azione]')) {
     ev.preventDefault();
     document.getElementById('lista-azioni')?.insertAdjacentHTML('beforeend', disegnaAzione({ tipo: 'messaggio', testo: '' }));
+    aggiornaRiassunto();
+    return;
+  }
+  if (ev.target.closest('[data-aggiungi-altrimenti]')) {
+    ev.preventDefault();
+    document.getElementById('lista-altrimenti')?.insertAdjacentHTML('beforeend', disegnaAzione({ tipo: 'messaggio', testo: '' }));
     aggiornaRiassunto();
     return;
   }
@@ -12588,6 +12600,8 @@ const TRIGGER = [
   ['timer', 'A tempo (timer)'],
   ['manuale', 'Manuale / da un mio servizio'],
 ];
+const nomeMonetaUI = () => (impostazioni()?.nomeMonete || '').trim() || 'monete';
+
 const AZIONI = [
   ['messaggio', 'Scrivi in chat'],
   ['effetto', 'Fai partire un effetto'],
@@ -12602,6 +12616,7 @@ const AZIONI = [
   ['musica', 'Metti una canzone in coda'],
   ['annuncia', 'Annuncio in chat (/announce)'],
   ['shoutout', 'Shoutout (banner)'],
+  ['punti', 'Dai o togli punti'],
 ];
 
 const VARIABILI = [
@@ -12609,6 +12624,8 @@ const VARIABILI = [
   '$user', '$touser', '$target', '$args', '$arg1', '$canale', '$uptime', '$gioco', '$titolo', '$spettatori',
 
   '$followage', '$chattercaso', '$cita', '$data', '$ora', '$giorno',
+
+  '$punti', '$punti(nome)', '$monete', '$posizione', '$top(3)', '$costo', '$saldo',
 
   '$giocotarget', '$titolotarget',
 
@@ -12657,10 +12674,21 @@ const LEGENDA_VAR = [
   ['$titolo(...)', 'Cambia il titolo della diretta (es. $titolo($args))', 'Change the stream title (e.g. $titolo($args))', 'Cambia el título del directo (p. ej. $titolo($args))'],
   ['$categoria(...)', 'Cambia la categoria/gioco (es. $categoria($args))', 'Change the category/game (e.g. $categoria($args))', 'Cambia la categoría/juego (p. ej. $categoria($args))'],
 
+  ['gruppo', 'Le monete del canale', 'Your channel coins', 'Las monedas del canal'],
+  ['$punti', 'Quante monete ha chi scrive', 'How many coins the writer has', 'Cuántas monedas tiene quien escribe'],
+  ['$punti(nome)', 'Quante ne ha un altro (anche $punti($touser))', "How many someone else has (also $punti($touser))", 'Cuántas tiene otra persona (también $punti($touser))'],
+  ['$monete', 'Come hai chiamato la tua moneta', 'What you named your coin', 'Cómo has llamado a tu moneda'],
+  ['$posizione', 'A che posto sta chi scrive in classifica', "The writer's rank in the leaderboard", 'En qué puesto está quien escribe'],
+  ['$top(3)', 'I primi 3 della classifica, già scritti', 'The top 3, already formatted', 'Los 3 primeros, ya formateados'],
+  ['$costo', 'Quanto è costato questo comando', 'What this command cost', 'Cuánto ha costado este comando'],
+  ['$saldo', 'Quante monete restano dopo aver pagato', 'Coins left after paying', 'Monedas que quedan tras pagar'],
+
   ['gruppo', 'Caso, numeri e contatori', 'Chance, numbers and counters', 'Azar, números y contadores'],
   ['$random(1,100)', 'Un numero a caso tra due (anche $random(6))', 'A random number between two (also $random(6))', 'Un número al azar entre dos (también $random(6))'],
   ['$count(nome)', 'Il valore di un contatore (es. $count(morti))', 'A counter’s value (e.g. $count(morti))', 'El valor de un contador (p. ej. $count(morti))'],
   ['$pick(a|b|c)', 'Sceglie a caso una tra le opzioni', 'Picks one option at random', 'Elige al azar una de las opciones'],
+  ['$decimale(1,2)', 'Un numero a caso con due decimali (es. 1,73)', 'A random number with two decimals (e.g. 1.73)', 'Un número al azar con dos decimales (p. ej. 1,73)'],
+  ['$misura(1,50,cm)', 'Un numero a caso con l\'unità che vuoi (es. 23 cm)', 'A random number with the unit you want (e.g. 23 cm)', 'Un número al azar con la unidad que quieras (p. ej. 23 cm)'],
   ['$dado', '1–6 · $moneta testa/croce · $sino sì/no', '1–6 · $moneta heads/tails · $sino yes/no', '1–6 · $moneta cara/cruz · $sino sí/no'],
   ['…', 'e tante altre "a caso": $percentuale, $altezza, $emoji, $animale…', 'and many more "random" ones: $percentuale, $altezza, $emoji, $animale…', 'y muchas más "al azar": $percentuale, $altezza, $emoji, $animale…'],
 ];
@@ -12696,7 +12724,9 @@ function riassuntoModulo(m) {
   const c = riassuntoSe(m.condizioni || {});
   const az = (m.azioni || []).map(riassuntoAzione).filter(Boolean);
   const azTxt = az.length ? az.join(', ') : 'non fa ancora niente';
-  return `QUANDO ${t}${c ? ' · SE ' + c : ''} → ${azTxt}`;
+  const alt = (m.altrimenti || []).map(riassuntoAzione).filter(Boolean);
+  const altTxt = alt.length ? ` · ALTRIMENTI ${alt.join(', ')}` : '';
+  return `QUANDO ${t}${c ? ' · SE ' + c : ''} → ${azTxt}${altTxt}`;
 }
 function riassuntoQuando(t) {
   switch (t.tipo) {
@@ -12737,6 +12767,9 @@ function riassuntoSe(c) {
   const chi = { sub: 'solo i sub', vip: 'solo i VIP', mod: 'solo i mod' }[c.tier];
   if (chi) parti.push(chi);
   if (c.cooldown > 0) parti.push(`max ogni ${c.cooldown}s`);
+  if (c.cooldownUtente > 0) parti.push(`ogni ${c.cooldownUtente}s a testa`);
+  if (c.minPunti > 0) parti.push(`serve almeno ${c.minPunti} ${nomeMonetaUI()}`);
+  if (c.costo > 0) parti.push(`costa ${c.costo} ${nomeMonetaUI()}`);
   if (typeof c.probabilita === 'number' && c.probabilita >= 0 && c.probabilita < 100) parti.push(`${c.probabilita}% delle volte`);
   if (c.soloLive) parti.push('solo in live');
   if (c.soloOffline) parti.push('solo offline');
@@ -12760,6 +12793,13 @@ function riassuntoAzione(a) {
     case 'overlayTesto': return 'mostra un testo sull\'overlay';
     case 'timeout': return `timeout di ${a.secondi || 0}s`;
     case 'musica': return a.brano ? `metti in coda "${a.brano}"` : 'metti una canzone in coda';
+    case 'punti': {
+      const chi = { destinatario: 'a chi è taggato', caso: 'a uno a caso', nome: `a @${a.nome || '?'}` }[a.a] || 'a chi scrive';
+      const q = String(a.quanto ?? '').trim() || '?';
+      if (a.op === 'togli') return `togli ${q} ${nomeMonetaUI()} ${chi}`;
+      if (a.op === 'imposta') return `porta ${chi} a ${q} ${nomeMonetaUI()}`;
+      return `dai ${q} ${nomeMonetaUI()} ${chi}`;
+    }
     case 'annuncia': return 'fai un annuncio in chat';
     case 'shoutout': return a.canale ? `shoutout a @${a.canale}` : 'shoutout (al nome dopo il comando o a chi ti raida)';
     default: return '';
@@ -12903,10 +12943,28 @@ function apriEditor(modulo) {
             <input type="number" id="mod-cooldown" min="0" max="86400" value="${Number(c.cooldown) || 0}">
           </div>
           <div>
+            <label class="campo" for="mod-cooldown-utente">Cooldown per persona (s)</label>
+            <input type="number" id="mod-cooldown-utente" min="0" max="86400" value="${Number(c.cooldownUtente) || 0}">
+          </div>
+          <div>
             <label class="campo" for="mod-probabilita">Probabilità (%)</label>
             <input type="number" id="mod-probabilita" min="0" max="100" value="${typeof c.probabilita === 'number' ? c.probabilita : 100}">
           </div>
         </div>
+        <p class="suggerimento">Il <strong>cooldown</strong> ferma tutti; quello <strong>per persona</strong> ferma solo chi l'ha appena usato — è quello che serve ai giochi.</p>
+        <div class="griglia-campi spazio-sopra">
+          <div>
+            <label class="campo" for="mod-costo">Costa (${esc(nomeMonetaUI())})</label>
+            <input type="number" id="mod-costo" min="0" max="1000000" value="${Number(c.costo) || 0}">
+          </div>
+          <div>
+            <label class="campo" for="mod-min-punti">Serve almeno (senza spenderli)</label>
+            <input type="number" id="mod-min-punti" min="0" max="1000000" value="${Number(c.minPunti) || 0}">
+          </div>
+        </div>
+        <label class="campo" for="mod-costo-messaggio">Cosa dire a chi non ha abbastanza ${esc(nomeMonetaUI())}</label>
+        <input type="text" id="mod-costo-messaggio" data-var-target placeholder="Ti servono $costo $monete, ne hai $punti." value="${esc(c.costoMessaggio || '')}">
+        <p class="suggerimento">Si paga <strong>per giocare, non per vincere</strong>: il costo viene tolto prima del tiro di dado, quindi vale anche quando la probabilità non passa. Se il comando viene rifiutato per un altro motivo (ruolo, cooldown, live) non si paga niente.</p>
         ${_piattaformeModulo(c)}
         <div class="riga-check"><input type="checkbox" id="mod-solo-live" ${c.soloLive ? 'checked' : ''}><label for="mod-solo-live">Solo se sono in live</label></div>
         <div class="riga-check"><input type="checkbox" id="mod-solo-offline" ${c.soloOffline ? 'checked' : ''}><label for="mod-solo-offline">Solo se sono offline</label></div>
@@ -12916,6 +12974,13 @@ function apriEditor(modulo) {
         <div class="etichetta-blocco">Allora</div>
         <div id="lista-azioni">${(m.azioni || []).map(disegnaAzione).join('')}</div>
         <p class="spazio-sopra"><button class="btn secondario mini" data-aggiungi-azione>+ Aggiungi azione</button></p>
+      </div>
+
+      <div class="blocco-allora" id="blocco-altrimenti"${Number(c.probabilita) < 100 ? '' : ' hidden'}>
+        <div class="etichetta-blocco">Altrimenti</div>
+        <p class="suggerimento">Cosa fare quando la <strong>probabilità</strong> non passa: è il ramo del gioco perso. Lascialo vuoto se non serve.</p>
+        <div id="lista-altrimenti">${(m.altrimenti || []).map(disegnaAzione).join('')}</div>
+        <p class="spazio-sopra"><button class="btn secondario mini" data-aggiungi-altrimenti>+ Aggiungi azione</button></p>
       </div>
 
       <p class="spazio-sopra">
@@ -13064,6 +13129,39 @@ function disegnaCampiAzione(a) {
           }).join('')}
         </select>`;
     }
+    case 'punti': {
+      const op = a.op || 'aggiungi';
+      const chi = a.a || 'autore';
+      return `
+        <div class="griglia-campi">
+          <div>
+            <label class="campo">Cosa fare</label>
+            <select data-campo="op">
+              <option value="aggiungi" ${op === 'aggiungi' ? 'selected' : ''}>Dai</option>
+              <option value="togli" ${op === 'togli' ? 'selected' : ''}>Togli</option>
+              <option value="imposta" ${op === 'imposta' ? 'selected' : ''}>Porta esattamente a</option>
+            </select>
+          </div>
+          <div>
+            <label class="campo">Quanti</label>
+            <input type="text" data-campo="quanto" data-var-target placeholder="10 oppure $random(1,50)" value="${esc(a.quanto ?? '')}">
+          </div>
+          <div>
+            <label class="campo">A chi</label>
+            <select data-campo="a">
+              <option value="autore" ${chi === 'autore' ? 'selected' : ''}>Chi ha scritto</option>
+              <option value="destinatario" ${chi === 'destinatario' ? 'selected' : ''}>Chi è taggato dopo il comando</option>
+              <option value="caso" ${chi === 'caso' ? 'selected' : ''}>Uno a caso fra chi è in chat</option>
+              <option value="nome" ${chi === 'nome' ? 'selected' : ''}>Un nome fisso</option>
+            </select>
+          </div>
+          <div${chi === 'nome' ? '' : ' hidden'} data-solo-nome>
+            <label class="campo">Nome utente</label>
+            <input type="text" data-campo="nome" placeholder="tizio" value="${esc(a.nome || '')}">
+          </div>
+        </div>
+        ${pillole}`;
+    }
     case 'contatore':
       return `
         <div class="griglia-campi">
@@ -13194,19 +13292,24 @@ function leggiForm() {
   const condizioni = {
     tier: g('mod-chipuo')?.value || 'tutti',
     cooldown: Number(g('mod-cooldown')?.value) || 0,
+    cooldownUtente: Number(g('mod-cooldown-utente')?.value) || 0,
     probabilita: g('mod-probabilita') ? Number(g('mod-probabilita').value) : 100,
     soloLive: !!g('mod-solo-live')?.checked,
     soloOffline: !!g('mod-solo-offline')?.checked,
+    costo: Number(g('mod-costo')?.value) || 0,
+    minPunti: Number(g('mod-min-punti')?.value) || 0,
+    costoMessaggio: (g('mod-costo-messaggio')?.value || '').trim(),
   };
   const scelte = [...document.querySelectorAll('.mod-piatt-c')].filter((x) => x.checked).map((x) => x.value);
   if (scelte.length && scelte.length < _piattaformeAttive.length) condizioni.piattaforme = scelte;
   const azioni = [...document.querySelectorAll('#lista-azioni .azione-riga')].map(leggiAzioneRiga);
+  const altrimenti = [...document.querySelectorAll('#lista-altrimenti .azione-riga')].map(leggiAzioneRiga);
   return {
     id: moduloInModifica?.id ?? null,
     nome: (g('mod-nome')?.value || '').trim(),
     attivo: moduloInModifica ? moduloInModifica.attivo !== false : true,
     telegram: !!g('mod-telegram')?.checked,
-    trigger, condizioni, azioni,
+    trigger, condizioni, azioni, altrimenti,
   };
 }
 
@@ -13220,6 +13323,11 @@ function leggiAzioneRiga(riga) {
       tipo, nome: (v('nome')?.value || '').trim(),
       op: v('op')?.value || 'incrementa', valore: Number(v('valore')?.value) || 0,
     };
+    case 'punti': {
+      const a2 = v('a')?.value || 'autore';
+      return { tipo, op: v('op')?.value || 'aggiungi', quanto: (v('quanto')?.value || '').trim(),
+        a: a2, ...(a2 === 'nome' ? { nome: (v('nome')?.value || '').trim().replace(/^@/, '') } : {}) };
+    }
     case 'webhook': return { tipo, url: (v('url')?.value || '').trim(), usaRisposta: !!v('usaRisposta')?.checked };
     case 'clip': return { tipo };
     case 'categoria': return { tipo, gioco: (v('gioco')?.value || '').trim(), annuncia: !!v('annuncia')?.checked };

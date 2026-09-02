@@ -106,7 +106,9 @@ const UPLOAD_MAX = 60 * 1024 * 1024;   // 60 MB in ingresso (per clip fino a ~30
 
 // Moduli: tipi di innesco e di azione ammessi (validazione lato API)
 const MOD_TRIGGER = ['comando', 'parola', 'evento', 'timer', 'manuale', 'voce'];
-const MOD_AZIONI = ['messaggio', 'effetto', 'contatore', 'webhook', 'attendi', 'overlayTesto', 'timeout', 'clip', 'categoria', 'titolo', 'musica', 'annuncia', 'shoutout'];
+const MOD_AZIONI = ['messaggio', 'effetto', 'contatore', 'webhook', 'attendi', 'overlayTesto', 'timeout', 'clip', 'categoria', 'titolo', 'musica', 'annuncia', 'shoutout', 'punti'];
+const MOD_PUNTI_OP = ['aggiungi', 'togli', 'imposta'];
+const MOD_PUNTI_A = ['autore', 'destinatario', 'caso', 'nome'];
 const EXT_MAX_MIN = 30;   // ingresso esterno: max richieste al minuto per login
 
 // Comando integrato /compleanno nel gruppo Telegram. Registra/mostra/rimuove la
@@ -4150,8 +4152,25 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const tipo = m.trigger?.tipo;
     if (!MOD_TRIGGER.includes(tipo)) return 'tipo di innesco non valido';
     if (!Array.isArray(m.azioni) || !m.azioni.length) return "serve almeno un'azione";
-    for (const a of m.azioni) {
+    // Il ramo "altrimenti" e' quello del gioco perso: ha senso solo se c'e' un
+    // dado da perdere. Dirlo qui evita un modulo che sembra fare due cose e ne
+    // fa una sola.
+    if (Array.isArray(m.altrimenti) && m.altrimenti.length) {
+      const p = Number(m.condizioni?.probabilita);
+      if (!Number.isFinite(p) || p >= 100) {
+        return 'il blocco "altrimenti" scatta quando la probabilità non passa: imposta una probabilità sotto il 100%';
+      }
+    }
+    for (const a of [...m.azioni, ...(Array.isArray(m.altrimenti) ? m.altrimenti : [])]) {
       if (!a || !MOD_AZIONI.includes(a.tipo)) return 'azione non valida';
+      if (a.tipo === 'punti') {
+        if (!MOD_PUNTI_OP.includes(a.op)) return 'l\'azione "punti" vuole sapere se aggiungere, togliere o impostare';
+        if (a.a !== undefined && !MOD_PUNTI_A.includes(a.a)) return 'destinatario dei punti non valido';
+        if (a.a === 'nome' && !/^[a-zA-Z0-9_]{2,30}$/.test(String(a.nome || ''))) {
+          return 'l\'azione "punti" su un nome fisso vuole un nome utente valido';
+        }
+        if (!String(a.quanto ?? '').trim()) return 'l\'azione "punti" ha bisogno di una quantità (anche una variabile come $random(1,10))';
+      }
       if (a.tipo === 'webhook' && !/^https?:\/\//i.test(String(a.url || ''))) {
         return 'il webhook accetta solo URL http/https';
       }

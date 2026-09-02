@@ -717,6 +717,16 @@ export const points = {
     }));
     return dentro();
   },
+  // A che posto sta uno NELLA SUA gara. 0 = non e' in classifica (nessuna
+  // moneta). Confrontarlo con chi corre in un'altra gara non direbbe niente.
+  posizione(channel, user) {
+    const u = String(user).toLowerCase();
+    const r = db.prepare('SELECT monete, ruolo FROM points WHERE channel=? AND user=?').get(channel, u);
+    if (!r) return 0;
+    const q = db.prepare("SELECT COUNT(*) c FROM points WHERE channel=? AND ruolo=? AND user NOT LIKE '[%' AND monete>?")
+      .get(channel, r.ruolo || '', r.monete);
+    return q.c + 1;
+  },
   top(channel, n = 5, chi = 'pubblico') {
     const filtro = FILTRO_CLASSIFICA[chi] ?? FILTRO_CLASSIFICA.pubblico;
     return db.prepare(`SELECT user, monete, ruolo FROM points WHERE channel=? AND user NOT LIKE '[%'${filtro} ORDER BY monete DESC LIMIT ?`).all(channel, n);
@@ -2463,6 +2473,7 @@ function rowToModule(r) {
     trigger: cfg.trigger || {},
     condizioni: cfg.condizioni || {},
     azioni: Array.isArray(cfg.azioni) ? cfg.azioni : [],
+    altrimenti: Array.isArray(cfg.altrimenti) ? cfg.altrimenti : [],
   };
 }
 
@@ -2472,8 +2483,25 @@ function rowToModule(r) {
 // perche'. Assente o vuoto = tutte le piattaforme, che e' come si comportano
 // tutti i moduli creati finora.
 export const PIATTAFORME_MODULO = ['twitch', 'kick', 'youtube'];
+// Limita i numeri delle condizioni a valori che hanno senso. Non e' pignoleria:
+// un costo negativo REGALEREBBE monete a ogni uso, e un cooldown enorme
+// spegnerebbe un comando senza che si capisca perche'.
+const intero = (v, lo, hi) => {
+  const n = Math.round(Number(v));
+  return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : null;
+};
+
 function normCondizioni(c) {
   const out = { ...(c && typeof c === 'object' ? c : {}) };
+  for (const [campo, lo, hi] of [['costo', 0, 1_000_000], ['minPunti', 0, 1_000_000], ['cooldownUtente', 0, 86_400]]) {
+    if (out[campo] === undefined || out[campo] === '' || out[campo] === null) { delete out[campo]; continue; }
+    const n = intero(out[campo], lo, hi);
+    if (n === null || n === 0) delete out[campo]; else out[campo] = n;
+  }
+  if (out.costoMessaggio !== undefined) {
+    const t = String(out.costoMessaggio).slice(0, 300).trim();
+    if (t) out.costoMessaggio = t; else delete out.costoMessaggio;
+  }
   if (out.piattaforme !== undefined) {
     const scelte = (Array.isArray(out.piattaforme) ? out.piattaforme : [])
       .map((x) => String(x).toLowerCase())
@@ -2496,10 +2524,14 @@ export const modules = {
   // altrimenti INSERT (rispettando il tetto MAX_MODULI). Ritorna l'id.
   save(channel, m) {
     const nome = String(m?.nome || '').slice(0, 80);
+    const altrimenti = Array.isArray(m?.altrimenti) ? m.altrimenti : [];
     const config = JSON.stringify({
       trigger: m?.trigger || {},
       condizioni: normCondizioni(m?.condizioni),
       azioni: Array.isArray(m?.azioni) ? m.azioni : [],
+      // il ramo del "no": assente quando e' vuoto, cosi' i moduli che non lo
+      // usano restano esattamente com'erano
+      ...(altrimenti.length ? { altrimenti } : {}),
       telegram: m?.telegram === true,
     });
     const attivo = m?.attivo === false ? 0 : 1;

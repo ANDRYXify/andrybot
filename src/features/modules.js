@@ -13,7 +13,7 @@ import dns from 'node:dns';
 import net from 'node:net';
 import http from 'node:http';
 import https from 'node:https';
-import { modules as modulesDb, counters, memory, streamers, clips, quotes, watchtime } from '../db.js';
+import { modules as modulesDb, counters, memory, streamers, clips, quotes, watchtime, points } from '../db.js';
 import { risolviCategoria } from './categoria.js';
 import { canaleHa } from './accesso.js';
 import * as spotify from './spotify.js';
@@ -28,6 +28,20 @@ const CACHE_STREAM_MS = 30_000;    // cache dello stato live per canale
 const WEBHOOK_TIMEOUT_MS = 5000;   // timeout della chiamata webhook
 const WEBHOOK_MAX_BYTES = 10 * 1024; // lettura massima della risposta webhook
 const TIMER_TICK_MS = 30_000;      // ogni quanto il timer controlla i moduli
+const MAX_PUNTI_AZIONE = 1_000_000; // tetto su quanto un'azione puo' muovere in una volta
+
+// Un login su cui si possono muovere monete. Esclude i segnaposto di sistema
+// (che iniziano con '[') e qualunque cosa non somigli a un nome utente: un
+// destinatario preso da $touser arriva da chi scrive in chat, quindi va guardato.
+function loginBuono(x) {
+  const u = String(x || '').trim().replace(/^@/, '').toLowerCase();
+  return /^[a-z0-9_]{2,30}$/.test(u) ? u : '';
+}
+
+function nomeMoneta(channel) {
+  const n = streamers.get(channel)?.settings?.nomeMonete;
+  return (n && String(n).trim()) || 'monete';
+}
 
 // Scala dei ruoli (tier): tutti < sub < vip < mod.
 const TIER_SCALA = { tutti: 0, sub: 1, vip: 2, mod: 3 };
@@ -69,6 +83,7 @@ export class ModulesEngine {
     this.helix = helix || null;
     this.manager = null;                 // impostato da start(); serve per say() di default
     this._cooldown = new Map();          // 'channel|id' → epoch ms di fine cooldown
+    this._cooldownUtente = new Map();    // 'channel|id|utente' → idem, ma per persona
     this._streamCache = new Map();       // channel → { stream, ts }
     this._timerLast = new Map();         // 'channel|id' → epoch ms ultima esecuzione timer
     this._timer = null;
@@ -497,17 +512,30 @@ export class ModulesEngine {
   // true se le azioni sono state eseguite (utile a chi vuole sapere se il
   // modulo è davvero scattato, es. eseguiVoce); false se saltato per condizioni.
   async esegui(modulo, ctx, say, opts = {}) {
-    if (!modulo || !Array.isArray(modulo.azioni) || !modulo.azioni.length) return false;
+    if (!modulo) return false;
+    const dire = typeof say === 'function' ? say : ((t) => this._say(ctx.channel, t));
+    let daFare = Array.isArray(modulo.azioni) ? modulo.azioni : [];
+    const altrimenti = Array.isArray(modulo.altrimenti) ? modulo.altrimenti : [];
+    if (!daFare.length && !altrimenti.length) return false;
 
     if (!opts.saltaCondizioni) {
-      let ok = false;
-      try { ok = await this._condizioniOk(modulo, ctx); } catch { ok = false; }
-      if (!ok) return false;
+      let v = { ok: false, motivo: 'errore' };
+      try { v = await this._condizioniOk(modulo, ctx); } catch { v = { ok: false, motivo: 'errore' }; }
+      if (!v.ok) {
+        // La probabilita' e' l'unica condizione che ha un "altrimenti": e' il
+        // ramo del gioco perso. Il costo e' gia' stato pagato prima del dado,
+        // come in una macchinetta vera.
+        if (v.motivo === 'probabilita' && altrimenti.length) daFare = altrimenti;
+        else {
+          const scusa = v.motivo === 'costo' ? modulo.condizioni?.costoMessaggio : '';
+          if (scusa) { const t = await this.espandi(scusa, ctx); if (t) dire(t); }
+          return false;
+        }
+      }
     }
 
-    const dire = typeof say === 'function' ? say : ((t) => this._say(ctx.channel, t));
     let eseguite = 0;
-    for (const azione of modulo.azioni) {
+    for (const azione of daFare) {
       if (eseguite >= MAX_AZIONI) break;
       // su Telegram eseguiamo SOLO le azioni "messaggio" (le altre — effetti,
       // timeout, clip — sono cose di Twitch e non hanno senso in un gruppo).
@@ -523,17 +551,26 @@ export class ModulesEngine {
     return true;
   }
 
-  // Valuta il blocco SE. Ordine: ruolo → probabilità → live/offline → cooldown
-  // (il cooldown si "consuma" solo se stiamo davvero per eseguire).
+  // Valuta il blocco SE. Ritorna { ok, motivo }: il MOTIVO serve perche' non
+  // tutti i "no" sono uguali — la probabilita' ha un ramo alternativo (il gioco
+  // perso) e il costo ha una frase da dire.
+  //
+  // L'ordine non e' estetico. Prima tutto cio' che puo' rifiutare SENZA
+  // consumare niente (ruolo, piattaforma, live, patrimonio minimo, monete
+  // sufficienti), poi cio' che consuma (cooldown, cooldown per utente, il
+  // pagamento) e solo alla fine il dado. Cosi' nessuno paga per un comando che
+  // sarebbe stato rifiutato comunque, e nessuno brucia un cooldown per un
+  // comando che non poteva permettersi.
   async _condizioniOk(modulo, ctx) {
     const c = modulo.condizioni || {};
+    const no = (motivo) => ({ ok: false, motivo });
 
     // ruolo minimo (tier). I contesti di sistema (evento/timer/api/prova) hanno
     // _livello = mod, quindi passano sempre.
     if (c.tier && c.tier !== 'tutti') {
       const richiesto = TIER_SCALA[c.tier] ?? 0;
       const livello = ctx._livello ?? TIER_SCALA.mod;
-      if (livello < richiesto) return false;
+      if (livello < richiesto) return no('tier');
     }
 
     // SU QUALI PIATTAFORME. Assente o vuoto = TUTTE: e' cosi' che si comportano
@@ -542,31 +579,105 @@ export class ModulesEngine {
     // la piattaforma da cui arriva il messaggio ferma il modulo qui.
     if (Array.isArray(c.piattaforme) && c.piattaforme.length) {
       const da = ctx.piattaforma || 'twitch';
-      if (!c.piattaforme.includes(da)) return false;
-    }
-
-    // probabilità
-    if (c.probabilita != null && Number(c.probabilita) < 100) {
-      const p = Math.max(0, Math.min(100, Number(c.probabilita) || 0));
-      if (Math.random() * 100 >= p) return false;
+      if (!c.piattaforme.includes(da)) return no('piattaforma');
     }
 
     // solo se in live / solo se offline
     if (c.soloLive || c.soloOffline) {
       const live = !!(await this._stream(ctx.channel));
-      if (c.soloLive && !live) return false;
-      if (c.soloOffline && live) return false;
+      if (c.soloLive && !live) return no('live');
+      if (c.soloOffline && live) return no('live');
     }
 
-    // cooldown per (channel, modulo.id)
+    // MONETE. Due cose diverse: `minPunti` chiede un patrimonio e non lo tocca
+    // (un comando riservato a chi ha gia' accumulato); `costo` si paga.
+    // Senza un autore vero (timer, evento, API) non c'e' nessuno da addebitare:
+    // le due condizioni non si applicano invece di rifiutare a vuoto.
+    const autore = loginBuono(ctx.user);
+    const minPunti = Math.max(0, Number(c.minPunti) || 0);
+    const costo = Math.max(0, Number(c.costo) || 0);
+    let saldo = 0;
+    if (autore && (minPunti > 0 || costo > 0)) {
+      saldo = points.get(ctx.channel, autore);
+      ctx._vars = { ...(ctx._vars || {}), costo: String(costo), saldo: String(saldo) };
+      if (minPunti > 0 && saldo < minPunti) return no('minPunti');
+      if (costo > 0 && saldo < costo) return no('costo');
+    }
+
+    // cooldown del MODULO, per canale
     if (c.cooldown && Number(c.cooldown) > 0) {
       const chiave = ctx.channel + '|' + modulo.id;
       const ora = Date.now();
-      if (ora < (this._cooldown.get(chiave) || 0)) return false;
+      if (ora < (this._cooldown.get(chiave) || 0)) return no('cooldown');
       this._cooldown.set(chiave, ora + Number(c.cooldown) * 1000);
     }
 
-    return true;
+    // cooldown per UTENTE: senza, un gioco a punti lo si spamma. E' un'altra
+    // cosa dal cooldown del modulo — quello ferma tutti, questo ferma te.
+    if (autore && c.cooldownUtente && Number(c.cooldownUtente) > 0) {
+      const chiave = ctx.channel + '|' + modulo.id + '|' + autore;
+      const ora = Date.now();
+      if (ora < (this._cooldownUtente.get(chiave) || 0)) return no('cooldownUtente');
+      this._cooldownUtente.set(chiave, ora + Number(c.cooldownUtente) * 1000);
+      if (this._cooldownUtente.size > 20000) this._potaCooldownUtente();
+    }
+
+    // IL PAGAMENTO. Qui, e non prima: tutto cio' che poteva rifiutare ha gia'
+    // rifiutato. E qui, e non dopo il dado: in una macchinetta si paga per
+    // giocare, non per vincere — cosi' il ramo "altrimenti" parte gia' pagato.
+    if (autore && costo > 0) {
+      points.add(ctx.channel, autore, -costo);
+      ctx._vars = { ...(ctx._vars || {}), costo: String(costo), saldo: String(Math.max(0, saldo - costo)) };
+    }
+
+    // probabilità: l'ultima, perche' e' l'unica che ha un "altrimenti"
+    if (c.probabilita != null && Number(c.probabilita) < 100) {
+      const p = Math.max(0, Math.min(100, Number(c.probabilita) || 0));
+      if (Math.random() * 100 >= p) return no('probabilita');
+    }
+
+    return { ok: true, motivo: null };
+  }
+
+  // I cooldown per utente sono tanti quanti gli utenti: quando la mappa cresce
+  // troppo si buttano quelli gia' scaduti, che non servono piu' a nessuno.
+  _potaCooldownUtente() {
+    const ora = Date.now();
+    for (const [k, fino] of this._cooldownUtente) if (fino <= ora) this._cooldownUtente.delete(k);
+  }
+
+  // La classifica del pubblico in una riga, come la vuole la chat.
+  _classificaTesto(channel, quanti = 3) {
+    const n = Math.max(1, Math.min(10, Number(quanti) || 3));
+    const righe = points.top(channel, n);
+    if (!righe.length) return '';
+    return righe.map((r, i) => `${i + 1}. ${r.user} (${r.monete})`).join(' · ');
+  }
+
+  // Un nome a caso fra chi ha scritto di recente. Serve sia a $chattercaso sia
+  // all'azione `punti` con destinatario "uno a caso": stessa pesca, un posto solo.
+  _chatterACaso(ctx, { escludiAutore = true } = {}) {
+    try {
+      const recenti = memory.recent(ctx.channel, 80) || [];
+      const io = norm(ctx.display || ctx.user);
+      const nomi = [...new Set(recenti.filter((m) => !m.from_bot && m.user).map((m) => m.user))];
+      const altri = escludiAutore ? nomi.filter((n) => norm(n) !== io && norm(n) !== norm(ctx.user)) : nomi;
+      const pool = altri.length ? altri : nomi;
+      return pool.length ? pool[Math.floor(Math.random() * pool.length)] : '';
+    } catch (e) { log.debug('chatterACaso:', e?.message || e); return ''; }
+  }
+
+  // A chi vanno (o da chi si tolgono) le monete di un'azione `punti`.
+  // 'autore' e' il default perche' e' il caso normale; gli altri servono per i
+  // regali, i furti e le estrazioni. Il nome passa sempre da loginBuono: un
+  // destinatario arriva da quello che uno scrive in chat.
+  _chiPunti(azione, ctx) {
+    switch (azione?.a) {
+      case 'destinatario': return loginBuono((ctx.args && ctx.args[0]) || '');
+      case 'caso': return loginBuono(this._chatterACaso(ctx));
+      case 'nome': return loginBuono(azione.nome);
+      default: return loginBuono(ctx.user);
+    }
   }
 
   // Esegue una singola azione.
@@ -579,6 +690,23 @@ export class ModulesEngine {
       }
       case 'effetto': {
         this.effects?.fire(ctx.channel, azione.comando);
+        return;
+      }
+      case 'punti': {
+        // Muovere la moneta del canale: e' la cosa che mancava perche' un
+        // Modulo potesse essere un gioco. `quanto` passa dall'espansione, quindi
+        // $random(10,50) o $arg1 valgono come premio variabile.
+        const chi = this._chiPunti(azione, ctx);
+        if (!chi) return;
+        const grezzo = await this.espandi(String(azione.quanto ?? ''), ctx, { noAzioni: true });
+        const n = Math.round(Number(String(grezzo).replace(',', '.').trim()));
+        if (!Number.isFinite(n)) return;
+        const q = Math.max(-MAX_PUNTI_AZIONE, Math.min(MAX_PUNTI_AZIONE, n));
+        if (azione.op === 'imposta') {
+          points.add(ctx.channel, chi, Math.max(0, q) - points.get(ctx.channel, chi));
+        } else {
+          points.add(ctx.channel, chi, azione.op === 'togli' ? -Math.abs(q) : q);
+        }
         return;
       }
       case 'contatore': {
@@ -851,6 +979,13 @@ export class ModulesEngine {
 
     // funzioni parametriche (prima delle variabili semplici)
     s = s.replace(/\$count\(([^)]*)\)/g, (_, nome) => String(counters.get(ctx.channel, nome)));
+    // $punti(nome): quante monete ha un altro. Senza parentesi vale per chi scrive.
+    s = s.replace(/\$punti\(([^)]*)\)/g, (_, chi) => {
+      const u = loginBuono(chi === '$touser' || chi === '$target' ? (ctx.args && ctx.args[0]) : chi);
+      return u ? String(points.get(ctx.channel, u)) : '0';
+    });
+    // $top(n): i primi n della classifica del pubblico, gia' formattati.
+    s = s.replace(/\$top\(\s*(\d+)\s*\)/g, (_, n) => this._classificaTesto(ctx.channel, parseInt(n, 10)));
     // $random(a,b) intervallo · $random(n) da 1 a n · $random da solo 0-100
     s = s.replace(/\$random\(\s*(-?\d+)\s*(?:,\s*(-?\d+)\s*)?\)/g, (_, a, b) =>
       String(b != null ? ri(parseInt(a, 10), parseInt(b, 10)) : ri(1, parseInt(a, 10))));
@@ -899,6 +1034,17 @@ export class ModulesEngine {
       animale: () => scegli(['gatto', 'cane', 'panda', 'drago', 'lama', 'bradipo', 'procione', 'capibara', 'pinguino', 'koala', 'volpe', 'riccio']),
     };
 
+    // Anche queste si pagano solo se citate: una lettura in piu' per ogni
+    // messaggio di chat non si giustifica per una variabile che quasi nessuno usa.
+    const chiScrive = loginBuono(ctx.user);
+    const puntiAutore = /\$punti/.test(s) && chiScrive ? String(points.get(ctx.channel, chiScrive)) : '';
+    let posizioneAutore = '';
+    if (/\$posizione/.test(s) && chiScrive) {
+      const p = points.posizione(ctx.channel, chiScrive);
+      posizioneAutore = p ? String(p) : '';   // 0 = non in classifica: meglio vuoto che "0°"
+    }
+    const topTesto = /\$top|\$classifica/.test(s) ? this._classificaTesto(ctx.channel, 3) : '';
+
     const ev = ctx._vars || {};
     const vars = {
       user: ctx.user || '',
@@ -926,6 +1072,14 @@ export class ModulesEngine {
       randomchatter: chatterCaso,
       // una citazione a caso tra quelle salvate (!cita)
       cita: citazione,
+      // ECONOMIA DEL CANALE: saldo di chi scrive, nome della moneta, posizione
+      // in classifica e i primi in cima. Senza queste un Modulo puo' muovere i
+      // punti ma non puo' raccontarlo.
+      punti: puntiAutore,
+      monete: nomeMoneta(ctx.channel),
+      posizione: posizioneAutore,
+      top: topTesto,
+      classifica: topTesto,
       // data/ora locali
       data: dataOggi,
       ora: oraOra,
@@ -942,6 +1096,9 @@ export class ModulesEngine {
       mesi: ev.mesi != null && ev.mesi !== '' ? String(ev.mesi) : '',
       bits: ev.bits != null && ev.bits !== '' ? String(ev.bits) : '',
       premio: ev.premio || '',
+      // quanto e' costato questo modulo, e quanto e' rimasto dopo il pagamento
+      costo: ev.costo || '',
+      saldo: ev.saldo || '',
     };
 
     // variabili semplici $nome: prima le dinamiche (valore fresco), poi quelle di
