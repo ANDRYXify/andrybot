@@ -145,9 +145,11 @@ test('da dentro il pannello si arriva a guide e manuali', () => {
     assert.ok(APP.includes(`['${via}',`), `porta a ${via}`);
   }
   const i = APP.indexOf('const aiuto = menuAiutoHtml();');
-  const corpo = APP.slice(i, i + 800);
-  assert.match(corpo, /areaUtente\.innerHTML[^\n]*\$\{aiuto\}/, 'nella barra in alto');
-  assert.match(corpo, /areaMob\.innerHTML[^\n]*\$\{aiuto\}/, 'e nel cassetto, per il telefono');
+  const corpo = APP.slice(i, i + 1400);
+  assert.match(corpo, /areaUtente\.innerHTML[^\n]*\$\{aiuto\}/, 'nella barra in alto, come tendina');
+  // Nel cassetto NON come tendina: il cassetto scorre, quindi ritaglia, e sul
+  // telefono si leggeva mezza parola. Li' l'aiuto ci sta come elenco di righe.
+  assert.match(corpo, /areaMob\.innerHTML[^\n]*aiutoNelCassetto\(\)/, 'e nel cassetto, come elenco');
 });
 
 test('il pannello sa chiedere l’aiuto della scheda che stai guardando', () => {

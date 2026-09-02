@@ -129,3 +129,24 @@ lingua e ruolo: dove compare l'hamburger, apre il cassetto, clicca fuori e
 pretende che si chiuda. Rimettendo il velo dentro la media query diventa rosso
 in 15 combinazioni — tutte sopra i 1280px, che è esattamente la banda del
 difetto.
+
+## Nel cassetto non ci vanno tendine
+
+Il cassetto scorre (`overflow-y: auto`), quindi **ritaglia**: una tendina aperta
+lì dentro viene tagliata. Succedeva col «?» — si apriva un menu più largo del
+cassetto e sul telefono si leggeva mezza parola: «de», «nuali», «vità» al posto
+di Guide, Manuali, Novità.
+
+La cura non è spostare la tendina di qualche pixel, è che **dentro un elenco non
+ci vanno tendine**: il cassetto è già un elenco, e l'aiuto e il cambio canale ci
+stanno come righe. Stesso contenuto della barra, stessa fonte (`vociAiuto()`),
+nessun secondo posto da tenere allineato.
+
+`scripts/verifica-barra.mjs` lo misura: a cassetto aperto, **nessun elemento
+esce dal riquadro del cassetto**, a ogni larghezza, lingua e ruolo.
+
+E lo misura **a cassetto fermo**: l'animazione ha un rimbalzo, quindi si aspetta
+che la trasformazione sia tornata l'identità invece di contare i millisecondi.
+Mentre scivola, il riquadro del cassetto e quelli dei figli si arrotondano in
+modo diverso e si leggono due pixel di troppo che non esistono — la prima
+versione del controllo segnalava ventiquattro difetti immaginari per questo.
