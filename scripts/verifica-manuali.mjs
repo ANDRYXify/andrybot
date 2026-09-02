@@ -15,6 +15,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { MANUALI, aiutiPerScheda } from '../src/web/manuali.js';
+import { GIOCHI } from '../src/features/giochi-tabella.js';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '..');
 const leggi = (f) => readFileSync(join(RAD, f), 'utf8');
@@ -75,9 +76,18 @@ const variabili = [...bloccoVar.matchAll(/'(\$[^']+)'/g)].map((m) => m[1]);
 copre('moduli', 'variabili offerte', variabili);
 
 // ---- i comandi di gioco ---------------------------------------------------
-const bloccoCmd = giochiJs.slice(giochiJs.indexOf('switch (cmd) {'));
-const comandi = [...new Set([...bloccoCmd.matchAll(/case '([a-z0-9]+)':/g)].map((m) => m[1]))];
+// Non si leggono piu' dal `switch`: i giochi sono una tabella, e la tabella e'
+// la stessa che il motore dispaccia e che il pannello disegna.
+const comandi = GIOCHI.flatMap((g) => g.nomi);
 copre('giochi', 'comandi di gioco', comandi.map((c) => '!' + c));
+
+// E il motore deve sapere cosa fare per ogni riga: una riga senza il suo blocco
+// sarebbe un gioco che il pannello mostra e la chat non conosce.
+const casi = new Set([...giochiJs.slice(giochiJs.indexOf('switch (cmd) {')).matchAll(/case '([a-z0-9]+)':/g)].map((m) => m[1]));
+const senzaMotore = GIOCHI.filter((g) => !casi.has(g.id)).map((g) => g.id);
+dice(senzaMotore.length === 0, `ogni gioco della tabella ha il suo blocco nel motore: ${GIOCHI.length}`, senzaMotore.join(', '));
+const senzaTabella = [...casi].filter((c) => !GIOCHI.some((g) => g.id === c));
+dice(senzaTabella.length === 0, 'nessun blocco del motore resta fuori dalla tabella', senzaTabella.join(', '));
 
 // ---- le manche ------------------------------------------------------------
 const manche = [...giochiJs.matchAll(/nome: '([^']+)',\s*materiale:/g)].map((m) => m[1]);

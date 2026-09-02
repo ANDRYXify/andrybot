@@ -4,6 +4,7 @@
 // Comandi: !dado [NdM] · !moneta · !8ball <domanda> · !slot · !roulette <p> <scelta>
 //          · !pesca · !duello @tizio · !furto @tizio · !regala @tizio N
 //          · !trivia · !classifica [mod|tutti] · !monete · !giochi
+import { risolvi, puoUsare, elencoInChat } from './giochi-tabella.js';
 import { points, streamers, giochi } from '../db.js';
 import { config } from '../config.js';
 import { makeLog } from '../logger.js';
@@ -482,6 +483,8 @@ function pescaPesata(tab) {
 
 // --------------------------------------------------------- comando principale
 // Ritorna true se il messaggio era un comando/azione di gioco (gestito).
+const ETICHETTA_LIVELLO = { sub: 'chi e\' abbonato', vip: 'i VIP', mod: 'i moderatori' };
+
 export function tryGame(msg, say) {
   try {
     // Niente skip su isSelf: lo streamer (che il bot impersona) può giocare/
@@ -509,16 +512,26 @@ export function tryGame(msg, say) {
     const testo = String(msg.text || '').trim();
     if (!testo.startsWith('!')) return false;
     const parti = testo.slice(1).split(/\s+/);
-    const cmd = (parti.shift() || '').toLowerCase();
+    const parola = (parti.shift() || '').toLowerCase();
     const args = parti;
 
-    switch (cmd) {
-      case 'giochi':
-        say('🎮 Giochi: !dado, !moneta, !8ball, !slot, !roulette, !pesca, !duello @nome, !furto @nome, !regala @nome N, !trivia, !classifica (o !classifica mod), !monete');
-        return true;
+    const scelto = risolvi(channel, parola);
+    if (!scelto) return false;
+    if (scelto.spento) return false;
+    if (!puoUsare(scelto.chi, msg)) {
+      say(`${nome}, !${parola} qui e' riservato a ${ETICHETTA_LIVELLO[scelto.chi]}.`);
+      return true;
+    }
+    const cmd = scelto.gioco.id;
 
-      case 'dado':
-      case 'roll': {
+    switch (cmd) {
+      case 'giochi': {
+        const lista = elencoInChat(channel);
+        say(lista ? `🎮 Giochi: ${lista}` : '🎮 Nessun gioco acceso in questo canale.');
+        return true;
+      }
+
+      case 'dado': {
         if (inCooldown(channel + '|dado|' + msg.user, 3000)) return true;
         let n = 1, facce = 6;
         const m = /^(\d{0,2})d(\d{1,3})$/i.exec(args[0] || '');
@@ -529,34 +542,26 @@ export function tryGame(msg, say) {
         return true;
       }
 
-      case 'moneta':
-      case 'coin': {
+      case 'moneta': {
         if (inCooldown(channel + '|coin|' + msg.user, 3000)) return true;
         say(`🪙 ${nome}: è uscito ${Math.random() < 0.5 ? 'TESTA' : 'CROCE'}!`);
         return true;
       }
 
-      case '8ball':
-      case 'palla8': {
+      case '8ball': {
         if (inCooldown(channel + '|8ball|' + msg.user, 3000)) return true;
         if (!args.length) { say(`🎱 Fammi una domanda, ${nome}! (es. !8ball vinco stasera?)`); return true; }
         say(`🎱 ${scegli(OTTO)}`);
         return true;
       }
 
-      case 'monete':
-      case 'punti':
-      case 'bilancio': {
+      case 'monete': {
         say(`💰 ${nome}, hai ${points.get(channel, msg.user)} ${moneta()}.`);
         return true;
       }
 
-      case 'classifica':
-      case 'top':
-      case 'classificamod':
-      case 'classificastaff':
-      case 'topmod': {
-        const quale = /mod|staff/.test(cmd) ? 'staff' : gara(args[0]);
+      case 'classifica': {
+        const quale = /mod|staff/.test(parola) ? 'staff' : gara(args[0]);
         const top = points.top(channel, cfgPunti(channel).topN, quale);
         if (!top.length) { say(vuotaPer(quale, moneta())); return true; }
         const riga = top.map((r, i) => `${medaglia(i)} ${r.user} (${r.monete})`).join('  ');
@@ -580,8 +585,7 @@ export function tryGame(msg, say) {
         return true;
       }
 
-      case 'duello':
-      case 'duel': {
+      case 'duello': {
         const sfidato = (args[0] || '').replace(/^@/, '').toLowerCase();
         if (!sfidato) { say(`⚔️ Sfida qualcuno: !duello @nome`); return true; }
         if (sfidato === msg.user.toLowerCase()) { say(`${nome}, non puoi sfidare te stesso 😄`); return true; }
@@ -598,16 +602,14 @@ export function tryGame(msg, say) {
         return true;
       }
 
-      case 'trivia':
-      case 'quiz': {
+      case 'trivia': {
         if (roundAttivo.has(channel)) { say('🧠 C\'è già una manche in corso, rispondete!'); return true; }
         if (inCooldown(channel + '|trivia', 15000)) return true;
         avviaRound(channel, roundTrivia(channel), say);
         return true;
       }
 
-      case 'manche':
-      case 'gioca': {
+      case 'manche': {
         // avvia una manche a caso al volo (utile per provare / mod)
         if (roundAttivo.has(channel)) { say('🎮 C\'è già una manche in corso!'); return true; }
         if (inCooldown(channel + '|manche', 10000)) return true;
@@ -615,8 +617,7 @@ export function tryGame(msg, say) {
         return true;
       }
 
-      case 'pesca':
-      case 'fish': {
+      case 'pesca': {
         if (inCooldown(channel + '|pesca|' + msg.user, 60000)) { say(`🎣 ${nome}, la canna è ancora in acqua… riprova tra poco.`); return true; }
         const c = pescaPesata(PESCA);
         if (c.v > 0) { points.add(channel, msg.user, c.v); say(`🎣 ${nome} pesca ${c.n} e guadagna ${c.v} ${moneta()}!`); }
@@ -624,8 +625,7 @@ export function tryGame(msg, say) {
         return true;
       }
 
-      case 'roulette':
-      case 'rul': {
+      case 'roulette': {
         if (inCooldown(channel + '|roulette|' + msg.user, 5000)) return true;
         const punta = Math.round(Number(args[0]));
         const scelta = (args[1] || '').toLowerCase();
@@ -648,8 +648,7 @@ export function tryGame(msg, say) {
         return true;
       }
 
-      case 'furto':
-      case 'rapina': {
+      case 'furto': {
         const vittima = (args[0] || '').replace(/^@/, '').toLowerCase();
         if (!vittima) { say(`🦝 Uso: !furto @nome`); return true; }
         if (vittima === msg.user.toLowerCase()) { say(`${nome}, non puoi derubare te stesso 😄`); return true; }
@@ -668,8 +667,7 @@ export function tryGame(msg, say) {
         return true;
       }
 
-      case 'regala':
-      case 'dona': {
+      case 'regala': {
         const dest = (args[0] || '').replace(/^@/, '').toLowerCase();
         const q = Math.round(Number(args[1]));
         if (!dest || !Number.isFinite(q) || q <= 0) { say(`💝 Uso: !regala @nome quantità`); return true; }
