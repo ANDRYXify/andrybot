@@ -94,6 +94,39 @@ legga sei mesi dopo, e `aiutiPerScheda()` compone la mappa che `/api/me` porta a
 pannello. Dove esiste un manuale vince lui sulla guida: chi è già dentro il
 prodotto vuole il riferimento, non l'introduzione.
 
+## Impara, ma resta spiegabile
+
+Il popup si adatta a quello che il browser ha visto — e ogni regola è un
+**se-allora**, non una statistica: si può dire in una riga perché è comparso.
+
+| Cosa è successo | Cosa cambia |
+|---|---|
+| sei **entrato e uscito senza fare niente** da quella scheda | l'attesa lì scende da 20 a **8 secondi** |
+| è successo **due volte** | scende a **3 secondi** |
+| su quella scheda hai già **fatto qualcosa** due volte | lì non compare più: sai dove mettere le mani |
+| hai detto **«non serve» due volte** | tace **ovunque per trenta giorni** |
+| — | mai più di **due volte per sessione**, e mai a meno di un minuto l'una dall'altra |
+
+C'è anche un quinto scenario: **il giro a vuoto** — quattro cambi di scheda in un
+minuto senza aver toccato niente. Chi gira così sta cercando, non lavorando.
+
+Tutta questa memoria vive **nel browser** (`localStorage`), è per scheda e non
+per persona, e non esce dal dispositivo: nessuna utenza, nessun invio, niente da
+aggiungere all'informativa. Il collaudo lo verifica leggendo il codice: dove si
+scrive la memoria non ci sono `fetch`.
+
+## Come ci si arriva da dentro
+
+Le pagine erano collegate dalla **vetrina** — cioè da fuori. Chi è dentro non le
+vedeva. Ora nella barra in alto (e nel cassetto, sul telefono) c'è un **«?»**:
+apre *Guide*, *Manuali*, *Novità*, e in cima la pagina di **questa** scheda,
+quando c'è.
+
+Costa una banda di larghezza: a 1400px la barra ora si ritira sull'hamburger un
+po' prima (misurato: 1366 e 1400 invece del solo 1366). Il menu resta comunque
+raggiungibile — è quello che il cancello della barra pretende — e il prezzo è
+accettabile per non avere l'aiuto nascosto proprio a chi lo usa.
+
 ## Una guida proposta dal pannello non può essere generica
 
 Una guida spiega il mondo: va bene per chi il bot non ce l'ha. Ma quando è il
