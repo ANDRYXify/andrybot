@@ -61,6 +61,28 @@ if (strette.length) {
     'lo fa PRIMA di rispondere, non dopo');
 }
 
+// ---- la rete viene prima, sempre ----------------------------------------
+// Una copia locale che vince sulla rete e' una copia che invecchia e non muore
+// piu'. Il guscio (icone e manifest) era servito "prima dalla cache", e il nome
+// della cache non cambiava mai: dopo il logo nuovo, chi era gia' passato dal
+// sito continuava a vedere il robottino viola nella linguetta e nell'app
+// installata — con il file nuovo li' sul server, e nessun errore da nessuna
+// parte. Gli header dicono gia' `max-age=0` con ETag: la rete costa una
+// revalidation, non un download.
+//
+// Quindi: si parte SEMPRE da fetch(). La copia salvata serve solo quando la
+// rete non c'e', e si aggiorna con quello che la rete ha appena dato.
+{
+  const gestore = sw.slice(sw.indexOf("addEventListener('fetch'"));
+  const corpi = [...gestore.matchAll(/respondWith\(([\s\S]*?)\);\n/g)].map((m) => m[1].trim());
+  dice(corpi.length > 0, `risposte che il worker costruisce: ${corpi.length}`);
+  for (const c of corpi) {
+    dice(c.startsWith('fetch('), 'si parte dalla rete, la copia locale e\' solo il paracadute', c.slice(0, 70));
+  }
+  dice(/caches\.open\([^)]*\)\.then\([^)]*\.put\(/.test(gestore) || /\.put\(req/.test(gestore),
+    'e la copia si aggiorna con quello che la rete ha dato');
+}
+
 // ---- mai rispondere con qualcosa che puo' essere undefined ---------------
 // respondWith(undefined) non e' "lascio fare al browser": e' un errore di rete.
 for (const m of sw.matchAll(/respondWith\(([\s\S]*?)\);\n/g)) {

@@ -116,6 +116,36 @@ barra in alto quando il tema è scuro.
 Chi ha chiesto **meno animazioni** (`prefers-reduced-motion`) vede il logo
 fermo, col bagliore statico: l'informazione resta, il movimento no.
 
+## Perché il logo vecchio restava nella linguetta
+
+Il marchio nuovo era generato, servito e identico sul server — e nella linguetta
+del browser compariva ancora il robottino viola di prima. Non era la cache del
+browser: gli header dicono `max-age=0` con ETag, quindi ogni richiesta viene
+rivalidata. Erano due cose insieme, e nessuna delle due dava un errore.
+
+**1. Il service worker serviva il guscio "prima dalla cache".** `icon-192.png`,
+`icon-512.png`, `marchio-barra.png` e `manifest.webmanifest` erano precaricati
+all'installazione e poi restituiti dalla copia locale senza mai chiedere niente
+alla rete. Il nome della cache (`socialbot-v1`) non cambiava mai e l'`activate`
+cancella solo le cache con un nome diverso: quella copia era **eterna**. Chi era
+già passato dal sito aveva il logo vecchio incastrato dentro, e nemmeno un
+ricaricamento lo toglieva.
+
+Ora c'è una strada sola: si parte **sempre** da `fetch()`, e la copia locale
+serve solo quando la rete non c'è — aggiornandosi con quello che la rete ha
+appena dato. Una copia che può vincere sulla rete è una copia che invecchia e
+non muore più; il costo della rete qui è una rivalidazione, non un download.
+
+**2. `privacy.html` e `termini.html` chiedevano l'icona senza timbro.** Il
+timbro (`?v=5`) è quello che dice al browser «è un'altra cosa, riscaricala», e
+proprio le due pagine rimaste senza finivano nel ramo "prima la cache". Le altre
+pagine avevano `?v=5` e infatti mostravano il logo giusto: per questo sembrava
+casuale, dipendeva da dove si era. `tgapp.html` non aveva alcuna icona.
+
+La regola non è «ricordarsi di aggiornarle tutte»: è che il timbro sia **uno
+solo**. `verifica-risorse.mjs` legge tutte le pagine e il manifest e pretende un
+unico `?v=` — se una resta indietro, indica quale.
+
 ## Il cancello
 
 `scripts/verifica-risorse.mjs` controlla che ogni file chiesto dalle pagine e
@@ -123,3 +153,10 @@ dal manifest **esista davvero**, e che le due sorgenti del marchio siano al loro
 posto. Un `src` sbagliato di una lettera non dà errore da nessuna parte: dà
 un'immagine che non compare, e se ne accorge chi guarda il sito. Provato rosso
 togliendo una lettera a un percorso e togliendo di mezzo una sorgente.
+
+Sul timbro e sul service worker vigilano `verifica-risorse.mjs` (un `?v=` solo
+ovunque, provato rosso togliendolo a `privacy.html`) e
+`verifica-service-worker.mjs` (nessuna risposta può partire dalla cache). E
+`scripts/verifica-sw.mjs` lo mette alla prova in Chromium: alza un server, apre
+la pagina, aspetta il worker, **cambia l'icona sul server** e ricontrolla cosa
+vede il browser. Col worker vecchio dà `VECCHIA` — cioè il difetto, riprodotto.

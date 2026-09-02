@@ -2,7 +2,7 @@
 // Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 
 
-const CACHE = 'socialbot-v1';
+const CACHE = 'socialbot-v2';
 const SHELL = ['/icons/icon-192.png', '/icons/icon-512.png', '/icons/marchio-barra.png', '/manifest.webmanifest'];
 
 self.addEventListener('install', (ev) => {
@@ -26,10 +26,13 @@ self.addEventListener('fetch', (ev) => {
 
   if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/auth/') || url.pathname.startsWith('/overlay/')) return;
 
-  if (SHELL.includes(url.pathname)) {
-    ev.respondWith(caches.match(req).then((hit) => hit || fetch(req)));
-    return;
-  }
+  const nelGuscio = SHELL.includes(url.pathname);
 
-  ev.respondWith(fetch(req).catch(async () => (await caches.match(req)) || Response.error()));
+  ev.respondWith(fetch(req).then((r) => {
+    if (nelGuscio && r.ok) {
+      const copia = r.clone();
+      ev.waitUntil(caches.open(CACHE).then((c) => c.put(req, copia)));
+    }
+    return r;
+  }).catch(async () => (await caches.match(req, { ignoreSearch: true })) || Response.error()));
 });

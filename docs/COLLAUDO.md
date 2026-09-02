@@ -244,6 +244,11 @@ controlliamo.
 | `scripts/verifica-7tv.mjs` | la rete | 7TV può spostare le sue porte senza dirlo, ed è successo |
 | `scripts/verifica-barra.mjs` | un browser | le sovrapposizioni si vedono solo dopo un vero calcolo di layout |
 
+`node scripts/verifica-sw.mjs` — il **service worker** in un browser vero: alza
+un server con i file veri, aspetta che il worker sia attivo, cambia un'icona sul
+server e guarda se il browser vede quella nuova. È la domanda che conta il
+giorno che cambia il logo, e col worker "prima la cache" la risposta era no.
+
 Si lanciano a mano, e prima di un rilascio che tocca l'una o l'altra cosa.
 
 ## La rete non deve dipendere da GitHub
