@@ -1758,7 +1758,14 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       // La risposta che non parte viene prima di tutto: se il bot non riesce a
       // scrivere, che gli eventi arrivino non cambia niente per chi guarda.
       if (kd.ultimoInvio && !kd.ultimoInvio.ok) {
-        return `gli eventi arrivano, ma il bot non riesce a scrivere su Kick: ${kd.ultimoInvio.motivo}`;
+        const i = kd.ultimoInvio;
+        const voce = i.come === 'user' ? 'con il tuo account' : (i.come === 'bot' ? "con l'account del bot" : '');
+        return `gli eventi arrivano, ma il bot non riesce a scrivere su Kick ${voce}: ${i.motivo}`
+          + (i.prossima ? ` — dal prossimo messaggio riprovo ${i.prossima === 'user' ? 'con il tuo account' : "con l'account del bot"}` : '');
+      }
+      if (kd.ultimoInvio?.ok && kd.ultimoInvio.come) {
+        const voce = kd.ultimoInvio.come === 'user' ? 'con il tuo account' : "con l'account del bot";
+        return `tutto a posto: il bot scrive ${voce}, ultimo evento ${kd.ultimo ? daQuando(kd.ultimo.quando) : 'poco fa'}`;
       }
       if (kd.ultimo) return `ultimo evento ${daQuando(kd.ultimo.quando)}${kd.ultimo.tipo ? ' (' + kd.ultimo.tipo + ')' : ''}`;
       if (kickEventi === 0) return 'non risulti iscritto agli eventi: premi «Riprova gli eventi»';

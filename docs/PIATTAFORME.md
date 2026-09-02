@@ -107,6 +107,23 @@ un'intestazione. Ora la rotta prende i byte da sé con `express.raw({ type: () =
 true })`, e il collaudo firma davvero e bussa con tre etichette diverse (provato
 rosso togliendo la lettura grezza).
 
+### Con quale voce scrive il bot
+
+Kick offre due modi per mandare un messaggio: `user` scrive con l'account di chi
+ha autorizzato (e vuole l'id del canale), `bot` scrive con l'identità dell'app.
+
+Partivamo da `bot`, e Kick rispondeva **«Internal server error»**: silenzio
+totale — e per giunta con la voce sbagliata. La promessa del prodotto è che il
+bot scriva **con il tuo account**, niente account anonimi: su Twitch è così da
+sempre, e non c'è ragione perché su Kick sia diverso. Ora si parte da `user`, e
+non è un ripiego: è la stessa cosa che il sito promette in prima pagina.
+
+Se una porta non si apre si passa all'altra **dal messaggio dopo**, non
+riprovando subito lo stesso: una risposta d'errore non vuol dire che il messaggio
+non sia partito, e riprovarlo lo farebbe uscire **due volte** in chat. Si perde
+una risposta, una volta, e da lì in poi si parla dalla porta buona — che resta
+scelta finché funziona. Il pannello dice con quale voce sta scrivendo.
+
 ### Cosa deve fare l'operatore, una volta sola
 
 Le credenziali Kick sono dell'app, non dello streamer. Su

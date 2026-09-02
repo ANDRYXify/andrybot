@@ -5,6 +5,7 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-02
 
+- Su Kick il bot scrive con il tuo account, come su Twitch: prima provava con un account suo e Kick rifiutava, quindi in chat non usciva niente.
 - La pagina pubblica è dello stesso colore del resto del bot e segue il tema che hai scelto, chiaro o scuro: prima era scura e basta, anche se avevi scelto chiaro.
 - Dalla pagina pubblica si arriva a guide, manuali e novità con un clic: prima stavano solo in fondo alla pagina.
 - Quando condividi un link di SocialBot esce l'anteprima giusta: privacy, termini, invito ai moderatori, sblocco e mini app non ne avevano nessuna, e le chat mostravano una cartolina vecchia.
