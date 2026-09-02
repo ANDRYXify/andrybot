@@ -249,6 +249,8 @@ body.menu-aperto .drawer { transform: none; }
 .carta p { color: var(--testo-2); }
 .carta .primo-piano { color: var(--testo); font-weight: 600; }
 .carta.evidenziata { border-color: var(--acc-bordo); box-shadow: 0 0 0 1px var(--acc-tint), var(--om-m); }
+.carta-novita ul { margin: .5rem 0 0; padding-left: 1.15rem; color: var(--testo-2); }
+.carta-novita li { margin: .3rem 0; line-height: 1.55; }
 .carta.avviso { border-color: var(--ambra-bordo); background: var(--ambra-soft); }
 .carta.avviso h2, .carta.avviso p { color: var(--ambra); }
 .carta.avviso-rosso { border-color: var(--rosso-bordo); background: var(--rosso-soft); }
