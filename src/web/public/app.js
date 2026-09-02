@@ -10127,6 +10127,12 @@ function pannelloGiochi() {
       <strong class="primo-piano">${L('a voce', 'by voice', 'por voz')}</strong> ${L('(Comandi a voce → "vip a nome", default 1 settimana; di\' "mese" per un mese)', '(Voice commands → "vip to name", default 1 week; say "month" for a month)', '(Comandos por voz → "vip a nombre", por defecto 1 semana; di "mes" para un mes)')}
       ${L('o in chat con', 'or in chat with', 'o en el chat con')} <code>!vip @${L('nome', 'name', 'nombre')}</code>.</p>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-premio">${L('Salva premio', 'Save reward', 'Guardar premio')}</button></p>
+      ${stato.ruolo === 'moderatore' ? '' : `<div class="riga-flessibile spazio-sopra">
+        <input type="text" id="pt-utente" placeholder="${L('nome utente', 'username', 'nombre de usuario')}" style="max-width:14rem">
+        <input type="number" id="pt-delta" placeholder="${L('es. 100 o -50', 'e.g. 100 or -50', 'p. ej. 100 o -50')}" style="max-width:10rem">
+        <button type="button" class="btn secondario" id="btn-punti-manuale">${L('Aggiusta', 'Adjust', 'Ajustar')} ${esc(s.nomeMonete)}</button>
+      </div>
+      <p class="suggerimento">${L('Per riparare un errore. Con il meno si tolgono. In chat puoi fare lo stesso con un comando (ricetta «Dai monete»), che però lo fa vedere a tutti — e possono usarlo anche i tuoi moderatori.', 'To fix a mistake. Use a minus to remove. In chat you can do the same with a command (the «Give coins» recipe), which everyone sees — and your mods can use it too.', 'Para reparar un error. Con el menos se quitan. En el chat puedes hacer lo mismo con un comando (receta «Dar monedas»), que además lo ve todo el mundo — y también pueden usarlo tus moderadores.')}</p>`}
       <h3>${L('Classifica del pubblico', 'Public leaderboard', 'Clasificación del público')}</h3>
       <ul class="lista-voci" id="lista-classifica"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
       <h3>${L('Classifica dello staff', 'Staff leaderboard', 'Clasificación del staff')}</h3>
@@ -11148,6 +11154,19 @@ function attivaPiattaforma() {
     if (esito) esito.textContent = `${r.aggiunte} importate (${conAutore} con autore, ${conData} con data)` + (r.saltate ? ` · ${r.saltate} doppioni` : '');
     toast(L(`Importate ${r.aggiunte} citazioni con nome e data`, `Imported ${r.aggiunte} quotes with name and date`, `Importadas ${r.aggiunte} citas con nombre y fecha`));
     caricaCitazioni();
+  }));
+
+  document.getElementById('btn-punti-manuale')?.addEventListener('click', () => conErrore(async () => {
+    const utente = (document.getElementById('pt-utente')?.value || '').trim();
+    const delta = Number(document.getElementById('pt-delta')?.value);
+    if (!utente || !Number.isFinite(delta) || delta === 0) {
+      toast(L('Scrivi il nome e quante monete (con il meno per toglierle).', 'Type the name and how many coins (minus to remove).', 'Escribe el nombre y cuántas monedas (con menos para quitarlas).'), 'errore');
+      return;
+    }
+    const r = await api('/api/streamer/punti', { method: 'POST', body: { utente, delta } });
+    toast(`${r.utente}: ${r.saldo} ${impostazioni().nomeMonete || 'monete'}`);
+    document.getElementById('pt-delta').value = '';
+    caricaClassifica();
   }));
 
   document.getElementById('btn-salva-premio')?.addEventListener('click', () => conErrore(async () => {
