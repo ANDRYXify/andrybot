@@ -733,7 +733,7 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
 <meta name="twitter:image" content="${esc(og)}">` : '';
   })()}
 <meta name="twitter:card" content="${(pagina.blocchi || []).some((b) => b?.tipo === 'eroe' && b.img) ? 'summary_large_image' : 'summary'}">
-<link rel="icon" href="/icons/icon-192.png">
+<link rel="icon" href="/icons/icon-192.png?v=5">
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   :root{--testo:${c.testo};--tenue:${c.tenue};--acc:${c.acc};--suacc:${suAcc};--r:${raggio}px;--w:${larghezza}rem;

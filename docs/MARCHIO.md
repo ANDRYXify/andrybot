@@ -146,6 +146,14 @@ La regola non è «ricordarsi di aggiornarle tutte»: è che il timbro sia **uno
 solo**. `verifica-risorse.mjs` legge tutte le pagine e il manifest e pretende un
 unico `?v=` — se una resta indietro, indica quale.
 
+**3. E non tutte le pagine sono file.** Guardando solo i `.html` erano rimaste
+fuori le pagine che il server *compone*: le **guide** chiedevano un
+`/favicon.svg` che non è mai esistito (icona assente, e sono le pagine
+indicizzabili), e la **link-page pubblica** di ogni streamer — quella che vedono
+gli spettatori, `socialbot.live/u/<login>` — chiedeva l'icona senza timbro,
+cioè finiva dritta nel ramo "prima la cache". Ora il cancello legge anche i
+sorgenti che compongono pagine, e l'icona è la stessa ovunque.
+
 ## Il cancello
 
 `scripts/verifica-risorse.mjs` controlla che ogni file chiesto dalle pagine e
