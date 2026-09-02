@@ -70,7 +70,7 @@ const GIOCHI = {
     ] },
 
     { h2: 'I comandi pronti' },
-    { p: ['Funzionano appena i giochi sono accesi, senza configurare niente. <code>!giochi</code> li elenca in chat.'] },
+    { p: ['Funzionano appena i giochi sono accesi, senza configurare niente. <code>!giochi</code> li elenca in chat — e l\'elenco che scrive è quello vero: i giochi accesi, coi nomi che hai scelto tu.'] },
     { tabella: [
       ['Comando', 'Anche', 'Cosa fa', 'Attesa'],
       ['<code>!dado</code>', '<code>!roll</code>', 'Tira un dado. <code>!dado 2d20</code> per tirarne altri.', '3s a testa'],
@@ -88,6 +88,17 @@ const GIOCHI = {
       ['<code>!furto @nome</code>', '<code>!rapina</code>', 'Provi a rubare. Se ti beccano, paghi.', '45s a testa'],
       ['<code>!regala @nome 50</code>', '<code>!dona</code>', 'Passi monete a qualcun altro.', '—'],
     ] },
+
+    { h2: 'Ogni comando si accende, si rinomina, si riserva' },
+    { p: ['Dalla scheda <em>Giochi</em>, nella carta «Comandi dei giochi», ogni riga è un comando vero: quello che vedi lì è quello che risponde in chat.'] },
+    { tabella: [
+      ['Cosa puoi fare', 'Cosa succede'],
+      ['Spegnerlo', 'Il comando smette di esistere: non risponde e sparisce da <code>!giochi</code>. Niente si cancella — monete, classifiche e impostazioni restano.'],
+      ['Dargli un nome tuo', 'Risponde solo al tuo. <strong>I nomi di serie smettono di rispondere</strong>: un gioco ha un nome, e lo scegli tu.'],
+      ['Riservarlo', 'Lo usano solo abbonati, VIP o moderatori. Chi non ci arriva riceve una risposta che glielo dice, invece del silenzio.'],
+    ] },
+    { p: ['Due giochi non possono chiamarsi allo stesso modo: il secondo non partirebbe mai e nessuno capirebbe perché. Se ci provi, il pannello rifiuta e ti dice quale nome è già preso.'] },
+    { p: ['<code>!giochi</code> non è un elenco scritto a mano da qualche parte: legge la stessa tabella. Se spegni la slot, sparisce anche da lì.'] },
 
     { h3: 'Slot' },
     { p: ['Paghi il costo (10 di base) e girano tre simboli. Le vincite si scalano tutte dalla «vincita slot» (200 di base):'] },
@@ -195,7 +206,7 @@ const GIOCHI = {
     ] },
   ],
   faq: [
-    { d: 'Posso spegnere solo un gioco?', r: 'I comandi pronti si accendono e si spengono insieme, dalla scheda Giochi. Per averne uno diverso — o solo alcuni — la strada è crearteli: un comando tuo con lo stesso nome ha la precedenza su quello pronto.' },
+    { d: 'Posso spegnere solo un gioco?', r: 'Sì: nella carta «Comandi dei giochi» ogni riga ha il suo interruttore. Da lì lo puoi anche rinominare o riservare a sub, VIP o moderatori.' },
     { d: 'Le monete si possono togliere a qualcuno?', r: 'Sì, dal pannello puoi aggiustare il saldo di chiunque, in più o in meno, senza passare dalla chat. Serve quando qualcuno bara o quando vuoi premiare a mano.' },
     { d: 'Le monete valgono anche su Kick?', r: 'Sì: la chat è una sola per il bot. Un comando può anche essere limitato a una piattaforma sola, se preferisci.' },
     { d: 'Come si chiama la moneta?', r: 'Come vuoi tu: fino a venti caratteri, dalla scheda Giochi. Il bot userà quel nome ovunque, anche nei messaggi dei giochi pronti.' },

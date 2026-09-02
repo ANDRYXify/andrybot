@@ -1401,3 +1401,39 @@ body.con-salva { padding-bottom: 92px; }
   .fd-az { margin-left: 0; width: 100%; }
   .fd-az .btn { flex: 1 1 auto; }
 }
+
+.gc-lista { list-style: none; margin: .6rem 0 0; padding: 0; display: grid; gap: 8px; }
+.gc-lista .vuoto { color: var(--testo-3); font-size: .88rem; padding: .6rem .2rem; }
+.gc-riga {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: 12px;
+  padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--r-m);
+  background: var(--surface); transition: opacity .18s ease, border-color .18s ease;
+}
+.gc-riga.gc-off { opacity: .55; }
+.gc-riga.gc-off .gc-regole { pointer-events: none; opacity: .6; }
+.gc-fisso { align-self: center; color: var(--testo-3); font-size: 1.4rem; line-height: 1; width: 34px; text-align: center; }
+.gc-corpo { min-width: 0; display: grid; gap: 3px; }
+.gc-testa { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.gc-costa {
+  font-size: .66rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--ambra); background: var(--ambra-soft); border: 1px solid var(--ambra-bordo);
+  border-radius: 999px; padding: 1px 7px;
+}
+.gc-cosa { font-size: .84rem; color: var(--testo-2); }
+.gc-nomi { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+.gc-nomi code { font-size: .76rem; }
+.gc-attesa { font-size: .7rem; color: var(--testo-3); }
+.gc-regole { display: flex; gap: 10px; align-items: flex-end; flex: none; }
+.gc-campo { display: grid; gap: 3px; font-size: .68rem; color: var(--testo-3); text-transform: uppercase; letter-spacing: .06em; }
+.gc-input { display: flex; align-items: center; gap: 4px; }
+.gc-input i { font-style: normal; color: var(--testo-3); font-weight: 700; }
+.gc-regole input[type="text"] { width: 9rem; }
+.gc-regole select { width: 9rem; }
+.gc-regole input, .gc-regole select { font-size: .86rem; padding: .34rem .5rem; }
+
+@media (max-width: 720px) {
+  .gc-riga { grid-template-columns: auto 1fr; }
+  .gc-regole { grid-column: 1 / -1; }
+  .gc-regole input[type="text"], .gc-regole select { width: 100%; }
+  .gc-campo { flex: 1 1 0; min-width: 0; }
+}

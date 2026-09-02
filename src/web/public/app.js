@@ -364,6 +364,22 @@ function _demoGet(via) {
   const F = {
     '/api/me': statoDemo(),
     '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://socialbot.live/tiktok/callback' },
+    '/api/streamer/giochi-comandi': { comandi: [
+      { id: 'giochi', titolo: 'Elenco dei giochi', cosa: 'Elenca in chat i giochi accesi.', costa: false, attesa: 0, spegnibile: false, acceso: true, nomi: ['giochi'], rinominato: false, chi: 'tutti' },
+      { id: 'dado', titolo: 'Dado', cosa: 'Tira un dado. Con !dado 2d20 ne tira altri.', costa: false, attesa: 3, spegnibile: true, acceso: true, nomi: ['dado', 'roll'], rinominato: false, chi: 'tutti' },
+      { id: 'moneta', titolo: 'Testa o croce', cosa: 'Lancia una moneta.', costa: false, attesa: 3, spegnibile: true, acceso: true, nomi: ['moneta', 'coin'], rinominato: false, chi: 'tutti' },
+      { id: '8ball', titolo: 'Palla magica', cosa: 'Risponde a una domanda. Serve la domanda.', costa: false, attesa: 3, spegnibile: true, acceso: true, nomi: ['8ball', 'palla8'], rinominato: false, chi: 'tutti' },
+      { id: 'monete', titolo: 'Il mio saldo', cosa: 'Dice quante monete ha chi lo scrive.', costa: false, attesa: 0, spegnibile: true, acceso: true, nomi: ['monete', 'punti', 'bilancio'], rinominato: false, chi: 'tutti' },
+      { id: 'classifica', titolo: 'Classifica', cosa: 'I primi del pubblico. Con «mod» la gara dello staff.', costa: false, attesa: 0, spegnibile: true, acceso: true, nomi: ['classifica', 'top'], rinominato: false, chi: 'tutti' },
+      { id: 'slot', titolo: 'Slot machine', cosa: 'Gioca alla slot: costa monete, il tris paga.', costa: true, attesa: 5, spegnibile: true, acceso: true, nomi: ['macchinetta'], rinominato: true, chi: 'tutti' },
+      { id: 'duello', titolo: 'Duello', cosa: 'Sfida un\'altra persona in chat.', costa: true, attesa: 0, spegnibile: true, acceso: true, nomi: ['duello', 'duel'], rinominato: false, chi: 'sub' },
+      { id: 'trivia', titolo: 'Trivia', cosa: 'Domanda a sorpresa: il primo che risponde vince.', costa: false, attesa: 0, spegnibile: true, acceso: true, nomi: ['trivia', 'quiz'], rinominato: false, chi: 'tutti' },
+      { id: 'manche', titolo: 'Manche al volo', cosa: 'Lancia subito una manche.', costa: false, attesa: 0, spegnibile: true, acceso: true, nomi: ['manche', 'gioca'], rinominato: false, chi: 'mod' },
+      { id: 'pesca', titolo: 'Pesca', cosa: 'Getta la lenza: si pesca qualcosa, o niente.', costa: true, attesa: 0, spegnibile: true, acceso: true, nomi: ['pesca', 'fish'], rinominato: false, chi: 'tutti' },
+      { id: 'roulette', titolo: 'Roulette', cosa: 'Punta le monete su rosso o nero.', costa: true, attesa: 0, spegnibile: true, acceso: true, nomi: ['roulette', 'rul'], rinominato: false, chi: 'tutti' },
+      { id: 'furto', titolo: 'Furto', cosa: 'Prova a rubare monete a un\'altra persona.', costa: true, attesa: 0, spegnibile: true, acceso: false, nomi: ['furto', 'rapina'], rinominato: false, chi: 'tutti' },
+      { id: 'regala', titolo: 'Regala monete', cosa: 'Passa monete tue a qualcun altro.', costa: true, attesa: 0, spegnibile: true, acceso: true, nomi: ['regala', 'dona'], rinominato: false, chi: 'tutti' },
+    ], livelli: ['tutti', 'sub', 'vip', 'mod'] },
     '/api/streamer/telegram/destinazioni': {
       io: 'andryx_demo',
       webhook: { attivo: true, nostro: true, inAttesa: 0, errore: '' },
@@ -10310,6 +10326,76 @@ async function caricaContatori() {
   });
 }
 
+const GC_LIVELLO = () => [
+  ['tutti', L('tutti', 'everyone', 'todos')],
+  ['sub', L('abbonati', 'subscribers', 'suscriptores')],
+  ['vip', L('VIP', 'VIPs', 'VIP')],
+  ['mod', L('moderatori', 'moderators', 'moderadores')],
+];
+
+function _gcRiga(g) {
+  const nomi = g.nomi.map((n) => `<code>!${esc(n)}</code>`).join(' ');
+  const livelli = GC_LIVELLO().map(([v, t]) => `<option value="${v}"${g.chi === v ? ' selected' : ''}>${esc(t)}</option>`).join('');
+  const spegni = g.spegnibile
+    ? `<label class="interruttore mini"><input type="checkbox" data-gc-on ${g.acceso ? 'checked' : ''}><span class="levetta"></span></label>`
+    : '<span class="gc-fisso" title="' + esc(L('sempre acceso', 'always on', 'siempre encendido')) + '">•</span>';
+  return `<li class="gc-riga${g.acceso ? '' : ' gc-off'}" data-gc="${esc(g.id)}">
+    ${spegni}
+    <div class="gc-corpo">
+      <div class="gc-testa"><strong>${esc(g.titolo)}</strong>${g.costa ? `<span class="gc-costa">${esc(L('costa monete', 'costs coins', 'cuesta monedas'))}</span>` : ''}</div>
+      <div class="gc-cosa">${esc(g.cosa)}</div>
+      <div class="gc-nomi">${nomi}${g.attesa ? `<span class="gc-attesa">${g.attesa}s</span>` : ''}</div>
+    </div>
+    <div class="gc-regole">
+      <label class="gc-campo"><span>${esc(L('nome tuo', 'your name', 'tu nombre'))}</span>
+        <span class="gc-input"><i>!</i><input type="text" data-gc-nome value="${esc(g.rinominato ? g.nomi[0] : '')}" placeholder="${esc(g.id)}" maxlength="20"></span></label>
+      <label class="gc-campo"><span>${esc(L('chi può', 'who can', 'quién puede'))}</span>
+        <select data-gc-chi>${livelli}</select></label>
+    </div>
+  </li>`;
+}
+
+async function caricaGiochiComandi() {
+  const ul = document.getElementById('lista-gcmd');
+  if (!ul) return;
+  try {
+    const d = await api('/api/streamer/giochi-comandi');
+    const righe = d.comandi || [];
+    ul.innerHTML = righe.length ? righe.map(_gcRiga).join('')
+      : `<li class="vuoto">${L('Nessun comando.', 'No commands.', 'Ningún comando.')}</li>`;
+    ul.querySelectorAll('[data-gc-on]').forEach((c) => c.addEventListener('change', () => {
+      c.closest('.gc-riga')?.classList.toggle('gc-off', !c.checked);
+    }));
+  } catch (e) {
+    ul.innerHTML = `<li class="vuoto">${esc(e.message)}</li>`;
+  }
+}
+
+async function salvaGiochiComandi() {
+  const ul = document.getElementById('lista-gcmd');
+  if (!ul) return;
+  const comandi = {};
+  ul.querySelectorAll('.gc-riga').forEach((li) => {
+    const id = li.dataset.gc;
+    const on = li.querySelector('[data-gc-on]');
+    const nome = li.querySelector('[data-gc-nome]')?.value.trim().toLowerCase().replace(/[^a-z0-9]/g, '') || '';
+    const chi = li.querySelector('[data-gc-chi]')?.value || 'tutti';
+    const riga = {};
+    if (on && !on.checked) riga.off = true;
+    if (nome && nome !== id) riga.nome = nome;
+    if (chi !== 'tutti') riga.chi = chi;
+    if (Object.keys(riga).length) comandi[id] = riga;
+  });
+  try {
+    const d = await api('/api/streamer/giochi-comandi', { method: 'POST', body: { comandi } });
+    if (d.comandi) document.getElementById('lista-gcmd').innerHTML = d.comandi.map(_gcRiga).join('');
+    caricaGiochiComandi();
+    toast(L('Comandi salvati ✓', 'Commands saved ✓', 'Comandos guardados ✓'));
+  } catch (e) {
+    toast(e.message, 'errore');
+  }
+}
+
 function pannelloGiochi() {
   const s = impostazioni();
   return pannello('giochi', `
@@ -10327,13 +10413,15 @@ function pannelloGiochi() {
       <label class="campo" for="inp-monete">${L('Come si chiamano le monete', 'What the coins are called', 'Cómo se llaman las monedas')}</label>
       <input type="text" id="inp-monete" maxlength="20" value="${esc(s.nomeMonete)}" placeholder="${L('es. monete, punti, gemme…', 'e.g. coins, points, gems…', 'p. ej. monedas, puntos, gemas…')}">
 
-      <div class="riga-check spazio-sopra">
-        <input type="checkbox" id="chk-promo" ${s.promoSocial ? 'checked' : ''}>
-        <label for="chk-promo">${L('Promo social automatica — ogni tanto condivide da solo i tuoi link', 'Automatic social promo — now and then it shares your links on its own', 'Promo social automática — de vez en cuando comparte solo tus enlaces')}</label>
-      </div>
-      <p class="suggerimento">${L('Nei momenti giusti (chat viva, dopo un raid/sub) il bot ricorda i tuoi social presi dal profilo andryxify.it — con calma, mai spam.', 'At the right moments (lively chat, after a raid/sub) the bot reminds people of your socials taken from your andryxify.it profile — gently, never spam.', 'En los momentos oportunos (chat animado, tras un raid/sub) el bot recuerda tus redes tomadas de tu perfil andryxify.it — con calma, nunca spam.')}</p>
 
       <p class="spazio-sopra"><button class="btn" id="btn-salva-giochi">${L('Salva', 'Save', 'Guardar')}</button></p>
+    </div>
+    <div class="carta">
+      <h2>${_hIco(ICO.chat)}${L('Comandi dei giochi', 'Game commands', 'Comandos de los juegos')}</h2>
+      <p>${L('Questi sono i comandi che rispondono in chat. Ognuno si spegne, si rinomina e si può riservare a una parte del pubblico.', 'These are the commands that answer in chat. Each one can be switched off, renamed and reserved for part of your audience.', 'Estos son los comandos que responden en el chat. Cada uno se apaga, se renombra y se puede reservar a una parte del público.')}</p>
+      <p class="suggerimento">${L('Se dai un nome tuo, i nomi di serie smettono di rispondere: un gioco ha un nome, e lo scegli tu.', 'If you set your own name, the built-in names stop answering: a game has one name, and you pick it.', 'Si le pones un nombre tuyo, los nombres de serie dejan de responder: un juego tiene un nombre, y lo eliges tú.')}</p>
+      <ul class="gc-lista" id="lista-gcmd"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-gcmd">${L('Salva i comandi', 'Save the commands', 'Guardar los comandos')}</button></p>
     </div>
     <div class="carta">
       <h2>${_hIco(ICO.medaglia)}${L('Punti & classifica', 'Points & leaderboard', 'Puntos y clasificación')}</h2>
@@ -10435,21 +10523,6 @@ function pannelloGiochi() {
       <ul class="lista-voci" id="lista-giochi-miei"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
     </div>
     <div class="carta">
-      <h2>${L('Comandi dei giochi', 'Game commands', 'Comandos de los juegos')}</h2>
-      <ul class="lista-voci">
-        <li><div class="testo-voce"><span class="domanda">!dado</span> <span class="risposta">${L('tira un dado (anche !dado 2d20)', 'roll a die (also !dado 2d20)', 'tira un dado (también !dado 2d20)')}</span></div></li>
-        <li><div class="testo-voce"><span class="domanda">!moneta</span> <span class="risposta">${L('testa o croce', 'heads or tails', 'cara o cruz')}</span></div></li>
-        <li><div class="testo-voce"><span class="domanda">!8ball &lt;${L('domanda', 'question', 'pregunta')}&gt;</span> <span class="risposta">${L('la palla magica risponde', 'the magic ball answers', 'la bola mágica responde')}</span></div></li>
-        <li><div class="testo-voce"><span class="domanda">!slot</span> <span class="risposta">${L('slot machine (costa qualche moneta)', 'slot machine (costs a few coins)', 'tragamonedas (cuesta unas monedas)')}</span></div></li>
-        <li><div class="testo-voce"><span class="domanda">!duello @${L('nome', 'name', 'nombre')}</span> <span class="risposta">${L('sfida un altro utente', 'challenge another user', 'reta a otro usuario')}</span></div></li>
-        <li><div class="testo-voce"><span class="domanda">!trivia</span> <span class="risposta">${L('domanda a sorpresa, il primo che risponde vince', 'surprise question, first to answer wins', 'pregunta sorpresa, el primero que responde gana')}</span></div></li>
-        <li><div class="testo-voce"><span class="domanda">!monete</span> <span class="risposta">${L('quante monete hai', 'how many coins you have', 'cuántas monedas tienes')}</span></div></li>
-        <li><div class="testo-voce"><span class="domanda">!classifica</span> <span class="risposta">${L('i più ricchi fra chi guarda', 'the richest among viewers', 'los más ricos entre quienes miran')}</span></div></li>
-        <li><div class="testo-voce"><span class="domanda">!classifica mod</span> <span class="risposta">${L('la stessa gara, per moderatori e streamer (!classifica tutti li unisce)', 'the same race, for mods and streamer (!classifica tutti merges them)', 'la misma carrera, para mods y streamer (!classifica tutti los une)')}</span></div></li>
-        <li><div class="testo-voce"><span class="domanda">!giochi</span> <span class="risposta">${L('elenco dei giochi', 'list of games', 'lista de juegos')}</span></div></li>
-      </ul>
-    </div>
-    <div class="carta">
       <h2>${_hIco(ICO.trofeo)}${L('Classifica & VIP', 'Leaderboard & VIP', 'Clasificación y VIP')}</h2>
       ${stato.vipOk ? '' : `<p class="suggerimento">${L('Per assegnare i VIP serve un permesso in più (aggiunto dopo).', 'Assigning VIPs needs one more permission (added later).', 'Asignar VIP necesita un permiso más (añadido después).')}
         <a class="btn secondario mini" href="/auth/permessi">${L('Concedi i permessi', 'Grant permissions', 'Concede los permisos')}</a></p>`}
@@ -10545,6 +10618,7 @@ function pannelloNotifiche() {
   const ytc = impostazioni().youtube || {};
   const igc = impostazioni().instagram || {};
   const msgDefault = '{nome} è in diretta!\n\n{titolo}\n{gioco}\n\n{link}';
+  const s = impostazioni();
   return pannello('notifiche', `
     <div class="carta" data-rete="telegram" id="box-tglogin" hidden></div>
     <div class="carta" data-rete="telegram">
@@ -10783,7 +10857,17 @@ function pannelloNotifiche() {
         <button class="btn secondario" id="btn-ig-prova">${L('Prova le credenziali', 'Test the credentials', 'Prueba las credenciales')}</button>
         <span id="ig-esito" class="suggerimento"></span>
       </p>
-    </div>`);
+    </div>    <div class="carta">
+      <h2>${_hIco(ICO.megafono)}${L('Promo social in chat', 'Social promo in chat', 'Promo social en el chat')}</h2>
+      <p>${L('Ogni tanto il bot ricorda da solo i tuoi social a chi sta guardando. Non è un timer: sceglie i momenti giusti — chat viva, dopo un raid o un sub — e non insiste.', 'Now and then the bot reminds viewers of your socials on its own. It is not a timer: it picks the right moments — lively chat, after a raid or a sub — and never insists.', 'De vez en cuando el bot recuerda solo tus redes a quien está mirando. No es un temporizador: elige los momentos buenos — chat animado, tras un raid o un sub — y no insiste.')}</p>
+      <div class="riga-check spazio-sopra">
+        <input type="checkbox" id="chk-promo" ${s.promoSocial ? 'checked' : ''}>
+        <label for="chk-promo">${L('Promo social automatica — ogni tanto condivide da solo i tuoi link', 'Automatic social promo — now and then it shares your links on its own', 'Promo social automática — de vez en cuando comparte solo tus enlaces')}</label>
+      </div>
+      <p class="suggerimento">${L('Nei momenti giusti (chat viva, dopo un raid/sub) il bot ricorda i tuoi social presi dal profilo andryxify.it — con calma, mai spam.', 'At the right moments (lively chat, after a raid/sub) the bot reminds people of your socials taken from your andryxify.it profile — gently, never spam.', 'En los momentos oportunos (chat animado, tras un raid/sub) el bot recuerda tus redes tomadas de tu perfil andryxify.it — con calma, nunca spam.')}</p>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-promo">${L('Salva', 'Save', 'Guardar')}</button></p>
+    </div>
+`);
 }
 
 async function caricaStatoListaBot() {
@@ -11364,8 +11448,13 @@ function attivaPiattaforma() {
     await salvaImpostazioni({
       giochi: document.getElementById('chk-giochi').checked,
       nomeMonete: document.getElementById('inp-monete').value.trim(),
-      promoSocial: document.getElementById('chk-promo').checked,
     }, 'Giochi salvati');
+  }));
+
+  document.getElementById('btn-salva-gcmd')?.addEventListener('click', salvaGiochiComandi);
+
+  document.getElementById('btn-salva-promo')?.addEventListener('click', () => conErrore(async () => {
+    await salvaImpostazioni({ promoSocial: document.getElementById('chk-promo').checked }, 'Promo salvata');
   }));
 
   document.getElementById('btn-salva-punti')?.addEventListener('click', () => conErrore(async () => {
@@ -12188,7 +12277,7 @@ function caricaDatiScheda(id) {
   if (id === 'emote') caricaEmote7TV();
   if (id === 'moduli') { caricaPiattaforme(); caricaModuli(); caricaContatori(); }
   if (id === 'memoria') caricaStatistiche();
-  if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); caricaGiochiMiei(); }
+  if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); caricaGiochiMiei(); caricaGiochiComandi(); }
   if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaDiscord(); caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaFeed(); caricaFeed(); }
   if (id === 'pagina') caricaPaginaLink();
   if (id === 'grafiche') initGrafiche();
