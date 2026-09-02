@@ -8647,12 +8647,7 @@ function pannelloModuli() {
         <button class="modello-pronto" data-modello="morti">${L('Contatore morti', 'Death counter', 'Contador de muertes')}</button>
         <button class="modello-pronto" data-modello="voce">${L('Comando vocale: clippa', 'Voice command: clip', 'Comando por voz: clipea')}</button>
         <button class="modello-pronto" data-modello="webhook">${L('Collega il mio bot (webhook)', 'Connect my bot (webhook)', 'Conecta mi bot (webhook)')}</button>
-        <button class="modello-pronto" data-modello="slot">${L('Macchinetta a monete', 'Coin slot machine', 'Máquina de monedas')}</button>
-        <button class="modello-pronto" data-modello="scommessa">${L('Scommessa', 'Bet', 'Apuesta')}</button>
-        <button class="modello-pronto" data-modello="regala">${L('Regala monete', 'Gift coins', 'Regala monedas')}</button>
-        <button class="modello-pronto" data-modello="furto">${L('Furto', 'Heist', 'Robo')}</button>
-        <button class="modello-pronto" data-modello="saldo">${L('Quante monete ho', 'How many coins I have', 'Cuántas monedas tengo')}</button>
-        <button class="modello-pronto" data-modello="daipunti">${L('Dai monete (mod)', 'Give coins (mod)', 'Dar monedas (mod)')}</button>
+        ${bottoniRicette('data-modello')}
       </div>
     </div>
 
@@ -10124,6 +10119,21 @@ function pannelloGiochi() {
       <ul class="lista-voci" id="lista-giochi"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
     </div>
     <div class="carta">
+      <h2>${_hIco(ICO.dado)}${L('Inventa un gioco tuo', 'Invent your own game', 'Inventa tu propio juego')}</h2>
+      <p>${L('Quelli qui sopra sono cinque forme già pronte: tu ci metti le domande, le parole, i simboli. Se invece vuoi una', 'The ones above are five ready-made shapes: you fill in the questions, words, symbols. If instead you want a', 'Los de arriba son cinco formas ya hechas: tú pones las preguntas, las palabras, los símbolos. Si en cambio quieres una')}
+      <strong class="primo-piano">${L('meccanica tutta tua', 'mechanic of your own', 'mecánica totalmente tuya')}</strong>${L(', un gioco è tre cose: un comando che', ', a game is three things: a command that', ', un juego son tres cosas: un comando que')}
+      <strong>${L('costa', 'costs', 'cuesta')}</strong>, ${L('un tiro di dado, e cosa succede se vinci', 'a dice roll, and what happens if you win', 'una tirada de dado, y qué pasa si ganas')} —
+      ${L('o se perdi. Da qui parti già impostato.', 'or if you lose. Start here, already set up.', 'o si pierdes. Empieza aquí, ya configurado.')}</p>
+      <div class="modelli-pronti">
+        ${bottoniRicette('data-ricetta')}
+        <button class="modello-pronto" data-ricetta="">${L('Parti da zero', 'Start from scratch', 'Empieza de cero')}</button>
+      </div>
+      <p class="suggerimento">${L('Si aprono in', 'They open in', 'Se abren en')} <strong>${L('Comandi', 'Commands', 'Comandos')}</strong>${L(', dove si costruiscono e si modificano: è lo stesso posto dei tuoi comandi, non un secondo pannello da imparare. Un gioco che ti costruisci', ', where they are built and edited: the same place as your commands, not a second panel to learn. A game you build', ', donde se construyen y se editan: el mismo sitio que tus comandos, no un segundo panel que aprender. Un juego que te construyes')}
+      <strong>${L('vince su quello pronto', 'wins over the ready-made one', 'gana al de serie')}</strong>${L(' con lo stesso nome.', ' with the same name.', ' con el mismo nombre.')}</p>
+      <h3>${L('I giochi che ti sei costruito', 'The games you built', 'Los juegos que te has construido')}</h3>
+      <ul class="lista-voci" id="lista-giochi-miei"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+    </div>
+    <div class="carta">
       <h2>${L('Comandi dei giochi', 'Game commands', 'Comandos de los juegos')}</h2>
       <ul class="lista-voci">
         <li><div class="testo-voce"><span class="domanda">!dado</span> <span class="risposta">${L('tira un dado (anche !dado 2d20)', 'roll a die (also !dado 2d20)', 'tira un dado (también !dado 2d20)')}</span></div></li>
@@ -11193,6 +11203,25 @@ function attivaPiattaforma() {
     caricaCitazioni();
   }));
 
+  document.getElementById('scheda-giochi')?.addEventListener('click', (ev) => {
+    const ric = ev.target.closest('[data-ricetta]');
+    if (ric) {
+      ev.preventDefault();
+      const nome = ric.dataset.ricetta;
+      vaiAScheda('moduli');
+      setTimeout(() => apriEditor(nome ? modelloPronto(nome) : null), 60);
+      return;
+    }
+    const apri = ev.target.closest('[data-apri-gioco]');
+    if (apri) {
+      ev.preventDefault();
+      const m = (datiModuli?.moduli || []).find((x) => String(x.id) === apri.dataset.apriGioco);
+      if (!m) return;
+      vaiAScheda('moduli');
+      setTimeout(() => apriEditor(m), 60);
+    }
+  });
+
   document.getElementById('btn-punti-manuale')?.addEventListener('click', () => conErrore(async () => {
     const utente = (document.getElementById('pt-utente')?.value || '').trim();
     const delta = Number(document.getElementById('pt-delta')?.value);
@@ -11858,7 +11887,7 @@ function caricaDatiScheda(id) {
   if (id === 'emote') caricaEmote7TV();
   if (id === 'moduli') { caricaPiattaforme(); caricaModuli(); caricaContatori(); }
   if (id === 'memoria') caricaStatistiche();
-  if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); }
+  if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); caricaGiochiMiei(); }
   if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaDiscord(); caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaFeed(); caricaFeed(); }
   if (id === 'pagina') caricaPaginaLink();
   if (id === 'grafiche') initGrafiche();
@@ -12704,6 +12733,17 @@ const TRIGGER = [
 ];
 const nomeMonetaUI = () => (impostazioni()?.nomeMonete || '').trim() || 'monete';
 
+const RICETTE_PUNTI = [
+  ['slot', () => L('Macchinetta a monete', 'Coin slot machine', 'Máquina de monedas')],
+  ['scommessa', () => L('Scommessa', 'Bet', 'Apuesta')],
+  ['furto', () => L('Furto', 'Heist', 'Robo')],
+  ['regala', () => L('Regala monete', 'Gift coins', 'Regala monedas')],
+  ['saldo', () => L('Quante monete ho', 'How many coins I have', 'Cuántas monedas tengo')],
+  ['daipunti', () => L('Dai monete (mod)', 'Give coins (mod)', 'Dar monedas (mod)')],
+];
+const bottoniRicette = (attributo) => RICETTE_PUNTI
+  .map(([id, eti]) => `<button class="modello-pronto" ${attributo}="${id}">${esc(eti())}</button>`).join('');
+
 const AZIONI = [
   ['messaggio', 'Scrivi in chat'],
   ['effetto', 'Fai partire un effetto'],
@@ -12909,6 +12949,28 @@ function riassuntoAzione(a) {
     case 'shoutout': return a.canale ? `shoutout a @${a.canale}` : 'shoutout (al nome dopo il comando o a chi ti raida)';
     default: return '';
   }
+}
+
+function _eGioco(m) {
+  const tocca = (a) => Array.isArray(a) && a.some((x) => x?.tipo === 'punti');
+  return tocca(m?.azioni) || tocca(m?.altrimenti) || !!m?.condizioni?.costo || !!m?.condizioni?.minPunti;
+}
+
+async function caricaGiochiMiei() {
+  const ul = document.getElementById('lista-giochi-miei');
+  if (!ul) return;
+  try { datiModuli = await api('/api/streamer/moduli'); }
+  catch (e) { ul.innerHTML = `<li class="vuoto">${esc(e.message)}</li>`; return; }
+  const miei = (datiModuli.moduli || []).filter(_eGioco);
+  ul.innerHTML = miei.length
+    ? miei.map((m) => `<li>
+        <div class="testo-voce">
+          <span class="domanda">${m.trigger?.comando ? '!' + esc(m.trigger.comando) : esc(m.nome)}</span>
+          <span class="risposta">${esc(riassuntoModulo(m))}</span>
+        </div>
+        <button type="button" class="btn secondario mini" data-apri-gioco="${m.id}">${L('Modifica', 'Edit', 'Editar')}</button>
+      </li>`).join('')
+    : `<li class="vuoto">${L('Nessuno ancora: scegli una ricetta qui sopra e diventa tuo.', 'None yet: pick a recipe above and it becomes yours.', 'Ninguno todavía: elige una receta arriba y será tuyo.')}</li>`;
 }
 
 async function caricaModuli() {
