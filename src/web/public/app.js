@@ -3694,7 +3694,9 @@ function pannelloStato() {
       <h2>${_hIco(ICO.scarica)}${L('I tuoi dati sono tuoi', 'Your data is yours', 'Tus datos son tuyos')}</h2>
       <p>${L('Scarica', 'Download', 'Descarga')} <strong class="primo-piano">${L('tutto quello che è tuo', "everything that's yours", 'todo lo que es tuyo')}</strong> ${L('in un file: comandi, moduli, effetti, punti, ore guardate, citazioni, contatori, pagina pubblica, impostazioni. Un file solo, leggibile, che puoi tenere o portare altrove.', 'in one file: commands, modules, effects, points, watch time, quotes, counters, public page, settings. One readable file you can keep or take elsewhere.', 'en un archivo: comandos, módulos, efectos, puntos, horas vistas, citas, contadores, página pública, ajustes. Un solo archivo legible que puedes guardar o llevarte.')}</p>
       <p class="suggerimento">${L('Non contiene le chiavi di accesso ai tuoi account, né i messaggi scritti da altre persone: quelli sono loro, non tuoi.', "It contains no access keys to your accounts, and no messages written by other people: those are theirs, not yours.", 'No contiene las claves de acceso a tus cuentas ni los mensajes escritos por otras personas: esos son suyos, no tuyos.')}</p>
-      <p class="spazio-sopra"><button class="btn secondario" id="btn-esporta">${_bIco(ICO.scarica)}${L('Scarica i miei dati', 'Download my data', 'Descargar mis datos')}</button></p>
+      ${stato.ruolo === 'moderatore'
+        ? `<p class="suggerimento spazio-sopra">${L('Il file lo scarica il proprietario del canale: i dati sono suoi.', 'The channel owner downloads the file: the data is theirs.', 'El archivo lo descarga el propietario del canal: los datos son suyos.')}</p>`
+        : `<p class="spazio-sopra"><a class="btn secondario" id="btn-esporta" href="/api/streamer/esporta" download>${_bIco(ICO.scarica)}${L('Scarica i miei dati', 'Download my data', 'Descargar mis datos')}</a></p>`}
     </div>
 
     <div class="carta">
@@ -12123,22 +12125,11 @@ async function caricaTracking() {
     toast(L('Meme impostato — ricordati di salvare.', 'Meme set — remember to save.', 'Meme configurado — recuerda guardar.'));
   }); });
 
-  document.getElementById('btn-esporta')?.addEventListener('click', () => conErrore(async () => {
-    if (DEMO) { toast(L('In demo non si scarica — accedi per farlo davvero.', "In demo there's no download — log in to do it for real.", 'En la demo no se descarga — inicia sesión para hacerlo de verdad.')); return; }
-    const b = document.getElementById('btn-esporta');
-    b.disabled = true;
-    try {
-      const r = await fetch('/api/streamer/esporta');
-      if (!r.ok) throw new Error('errore ' + r.status);
-      const blob = await r.blob();
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `socialbot-${stato.user.login}-${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-      toast(L('Scaricato ✓', 'Downloaded ✓', 'Descargado ✓'));
-    } finally { b.disabled = false; }
-  }));
+  document.getElementById('btn-esporta')?.addEventListener('click', (ev) => {
+    if (!DEMO) return;
+    ev.preventDefault();
+    toast(L('In demo non si scarica — accedi per farlo davvero.', "In demo there's no download — log in to do it for real.", 'En la demo no se descarga — inicia sesión para hacerlo de verdad.'));
+  });
 
   const btnSalva = document.getElementById('trk-salva');
   if (btnSalva) btnSalva.onclick = () => conErrore(async () => {

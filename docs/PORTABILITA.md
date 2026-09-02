@@ -49,3 +49,32 @@ lo è. Il collaudo controlla entrambe le cose — che i comandi e gli effetti ci
 siano, che la roba di un altro streamer non compaia, che nessun token esca *in
 nessuna forma* (nemmeno come stringa dentro un altro campo), che i messaggi
 altrui restino fuori, e che un nome di canale ostile non diventi SQL.
+
+## Come esce il file dal browser
+
+Sembra un dettaglio da niente e invece era il difetto: sull'iPhone il pulsante
+**non faceva niente**.
+
+Il file veniva chiesto con `fetch`, trasformato in un blob, appeso a un `<a
+download>` finto e cliccato via codice. È il modo che va su Chrome desktop, ed è
+anche il modo che **iOS Safari ignora** — l'attributo `download` su un URL
+`blob:` non lo onora, e dentro un'app installata a schermo intero il clic
+programmatico non produce nulla. Nessun errore, nessun messaggio: il pulsante
+sembrava rotto perché *era* rotto.
+
+Ora il pulsante è un **link vero**: `<a href="/api/streamer/esporta" download>`.
+Il server manda già `Content-Disposition: attachment`, quindi il download lo fa
+il browser per conto suo — senza JavaScript, quindi senza niente che possa non
+funzionare su una piattaforma invece che su un'altra. Il codice resta solo per
+dire, in demo, che lì non si scarica davvero.
+
+La regola generale, che vale oltre questo bottone: **un file che esiste sul
+server si scarica con un link.** Il blob serve soltanto quando il file lo
+fabbrica il browser e non esiste da nessun'altra parte — le grafiche social, la
+GIF, il video, lo scatto della webcam. Quelli non hanno un URL a cui puntare, e
+lì il blob non è una scelta ma l'unica strada (con lo stesso limite su iOS, che
+resta da affrontare a parte).
+
+E il pulsante ora **non compare ai moderatori**: la rotta è del proprietario, e
+un link che porta a un rifiuto è peggio di un link assente. Al suo posto una riga
+che dice di chi sono i dati.
