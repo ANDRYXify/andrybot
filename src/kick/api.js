@@ -113,20 +113,56 @@ export async function ioSuKick(login, opts) {
   return { ok: true, userId: String(u?.user_id ?? ''), nome: String(u?.name || u?.username || '') };
 }
 
+// CON QUALE VOCE PARLA IL BOT SU KICK.
+//
+// Kick offre due modi: `user` scrive con l'account di chi ha autorizzato (e
+// vuole l'id del canale), `bot` scrive con l'identita' dell'app.
+//
+// Si parte da `user`, e non e' un ripiego: e' la promessa del prodotto. Il bot
+// scrive CON IL TUO ACCOUNT, niente account anonimi — su Twitch e' cosi' da
+// sempre, e non c'e' ragione perche' su Kick sia diverso. Partivamo da `bot`, e
+// Kick rispondeva «Internal server error»: silenzio totale, e per giunta con la
+// voce sbagliata.
+//
+// Se un modo non funziona si passa all'altro dal messaggio DOPO, non
+// riprovando subito lo stesso: una risposta d'errore non vuol dire che il
+// messaggio non sia partito, e riprovarlo lo farebbe uscire due volte in chat.
+// Si perde una risposta, una volta, e da li' in poi si parla dalla porta buona.
+const voce = new Map();          // canale → 'user' | 'bot'
+
+export function vocePreferita(login) {
+  const chi = String(login).toLowerCase();
+  return voce.get(chi) || (tokenDi(chi)?.userId ? 'user' : 'bot');
+}
+
 // Manda un messaggio in chat. Kick taglia a 500 caratteri: lo facciamo noi,
 // così il messaggio arriva accorciato invece di essere rifiutato.
 export const MAX_TESTO = 500;
-export async function scrivi(login, testo, { comeBot = true, broadcasterUserId = '', rispondiA = '', ...opts } = {}) {
+export async function scrivi(login, testo, { rispondiA = '', ...opts } = {}) {
+  const chi = String(login).toLowerCase();
   const t = String(testo ?? '').trim();
   if (!t) return { ok: false, errore: 'messaggio vuoto' };
-  const corpo = { content: t.slice(0, MAX_TESTO), type: comeBot ? 'bot' : 'user' };
-  if (!comeBot && broadcasterUserId) corpo.broadcaster_user_id = Number(broadcasterUserId);
+
+  const come = vocePreferita(chi);
+  const corpo = { content: t.slice(0, MAX_TESTO), type: come };
+  if (come === 'user') corpo.broadcaster_user_id = Number(tokenDi(chi)?.userId || 0);
   if (rispondiA) corpo.reply_to_message_id = String(rispondiA);
   // Si segna PRIMA di mandare: l'evento puo' tornare indietro prima che questa
   // chiamata abbia finito, e a quel punto sarebbe gia' troppo tardi.
-  segna(login, corpo.content);
-  return chiama(login, '/chat', { metodo: 'POST', corpo, ...opts });
+  segna(chi, corpo.content);
+
+  const r = await chiama(chi, '/chat', { metodo: 'POST', corpo, ...opts });
+  if (r.ok) { voce.set(chi, come); return { ...r, come }; }
+  // l'altra porta, dal prossimo messaggio
+  const altra = come === 'user' ? 'bot' : 'user';
+  if (altra === 'user' && !tokenDi(chi)?.userId) return { ...r, come };
+  voce.set(chi, altra);
+  log.warn(`@${chi}: Kick rifiuta di scrivere come "${come}" (${r.errore}); dal prossimo messaggio provo come "${altra}"`);
+  return { ...r, come, prossima: altra };
 }
+
+// Solo per il collaudo.
+export function _azzeraVoce() { voce.clear(); }
 
 // Gli eventi che vogliamo ricevere sul webhook. La chat è il cuore; gli altri
 // alimentano alert e moduli che già esistono.

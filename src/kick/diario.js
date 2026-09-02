@@ -42,8 +42,11 @@ export function segnaRifiuto(motivo) {
 // arrivare benissimo e la risposta non partire lo stesso — permesso mancante,
 // token da rifare, Kick che rifiuta. Da fuori si vede la stessa cosa (il bot
 // tace), quindi va distinta anche questa.
-export function segnaInvio({ canale, ok, motivo = '' }) {
-  ultimoInvio = { quando: Date.now(), ok: !!ok, motivo: String(motivo || '').slice(0, 200), canale: String(canale || '') };
+export function segnaInvio({ canale, ok, motivo = '', come = '', prossima = '' }) {
+  ultimoInvio = {
+    quando: Date.now(), ok: !!ok, motivo: String(motivo || '').slice(0, 200),
+    canale: String(canale || ''), come: String(come || ''), prossima: String(prossima || ''),
+  };
 }
 
 // Lo stato per la dashboard. `canale` restringe l'ultimo evento a quel canale.

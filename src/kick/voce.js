@@ -20,8 +20,8 @@ export function voceKick(login) {
     say(_canale, testo) {
       scrivi(login, testo)
         .then((r) => {
-          segnaInvio({ canale: login, ok: r.ok, motivo: r.ok ? '' : r.errore });
-          if (!r.ok) log.error(`@${login}: non riesco a scrivere su Kick — ${r.errore}`);
+          segnaInvio({ canale: login, ok: r.ok, motivo: r.ok ? '' : r.errore, come: r.come, prossima: r.prossima });
+          if (!r.ok) log.error(`@${login}: non riesco a scrivere su Kick come "${r.come}" — ${r.errore}`);
         })
         .catch((e) => {
           segnaInvio({ canale: login, ok: false, motivo: e?.message || String(e) });
