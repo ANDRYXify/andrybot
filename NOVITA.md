@@ -5,6 +5,8 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-02
 
+- La prima volta che entri in una scheda, il bot te la fa vedere passo passo: a cosa serve, cosa c'è dentro con la luce puntata sopra, e dove leggere di più.
+- Il giro si vede una volta sola e si rifà quando vuoi dal «?». Se stai già facendo qualcosa non parte.
 - I comandi pronti sono tradotti: nome e spiegazione escono in italiano, inglese e spagnolo come il resto del pannello.
 - I giochi si creano tutti da un posto solo: prima c'erano due riquadri che facevano la stessa cosa e uno ti spostava in un'altra scheda per finire il lavoro.
 - Si sceglie chi lancia il gioco — il bot a sorpresa, o uno spettatore che scrive un comando — e il resto si adatta.
