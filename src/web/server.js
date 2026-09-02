@@ -364,7 +364,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // perfino le rotte OAuth — resta invisibile (404) finché non si è entrati
   // con un pass valido. È il "labirinto": chi non arriva da andryxify.it non
   // trova nulla da esplorare.
-  // Eccezione per l'overlay OBS: /overlay/* è pubblico ma si protegge da solo
+  // Eccezione per l'overlay della diretta: /overlay/* è pubblico ma si protegge da solo
   // con la chiave (?key=...), perché OBS lo apre senza sessione/cookie.
   // Stessa logica per /api/ext/*: l'ingresso esterno si protegge con la chiave
   // API del canale (Authorization: Bearer ...), non con la sessione.
@@ -394,7 +394,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // estetica ANIME OP + ricerca predittiva: DEVONO caricarsi sulla vetrina pubblica
     // (è ciò che rende futuristica la home per i visitatori). Nessun dato sensibile.
     '/anime.css', '/vetrina.css', '/cinema.js', '/cerca.js', '/plancia.js', '/pilota.js', '/suono.js',
-    // script degli overlay OBS: pubblici (nessun segreto), servono senza sessione
+    // script degli overlay della diretta: pubblici (nessun segreto), servono senza sessione
     // altrimenti l'overlay tracking resta bloccato su "avvio…" (script non caricati)
     '/tracking-overlay.js', '/tracking-games.js', '/tracking-fx.js', '/tracking-fx-gl.js', '/tracking-poses.js']);
   app.use((req, res, next) => {
@@ -413,7 +413,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (currentUser(req) || PUBBLICI.has(req.path)
         || VETRINA.has(req.path) || req.path === '/api/me'
         || req.path.startsWith('/api/abbonamento/')   // piani/checkout/portale: auth propria
-        || req.path.startsWith('/overlay/') || req.path.startsWith('/o/')   // overlay OBS + link "belli"
+        || req.path.startsWith('/overlay/') || req.path.startsWith('/o/')   // overlay della diretta + link "belli"
         || req.path.startsWith('/tracking/')       // overlay TRACKING in OBS (pagina + stream): protetto dalla chiave
         || req.path.startsWith('/vendor/')         // librerie vendorizzate (PixiJS): pubbliche, nessun segreto
         || req.path.startsWith('/api/tracking/')   // gesti/say dell'overlay tracking (chiave overlay; /url resta requireLogin)
@@ -449,29 +449,29 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     it: {
       html: 'it', ogLocale: 'it_IT', url: 'https://socialbot.live/',
       titolo: 'SocialBot — bot per Twitch e Kick in italiano | socialbot.live',
-      desc: 'Il bot per Twitch e Kick in italiano che scrive in chat col TUO account: comandi, moderazione con scudo anti-bot, overlay per OBS, clip e avvisi live. Gratis, con demo.',
+      desc: 'Il bot per Twitch e Kick in italiano che scrive in chat col TUO account: comandi, moderazione con scudo anti-bot, overlay per la diretta, clip e avvisi live. Gratis, con demo.',
       ogTitolo: 'Il bot per Twitch che scrive col tuo account',
-      ogDesc: 'Il bot per Twitch e Kick in italiano che scrive in chat col tuo account: comandi su misura, overlay per OBS (alert, chat a schermo, widget, emote 7TV, green screen), musica, clip, dirette dal browser senza OBS e notifiche live.',
+      ogDesc: 'Il bot per Twitch e Kick in italiano che scrive in chat col tuo account: comandi su misura, overlay per la diretta (alert, chat a schermo, widget, emote 7TV, green screen), musica, clip, dirette dal browser e notifiche live.',
       twTitolo: 'Il bot per Twitch che scrive col tuo account',
-      twDesc: 'Il bot per Twitch e Kick in italiano che scrive col tuo account. Overlay OBS (alert, chat, widget, 7TV, green screen), comandi, musica, clip, notifiche live.',
+      twDesc: 'Il bot per Twitch e Kick in italiano che scrive col tuo account. Overlay per la diretta (alert, chat, widget, 7TV, green screen), comandi, musica, clip, notifiche live.',
     },
     en: {
       html: 'en', ogLocale: 'en_GB', url: 'https://socialbot.live/?lang=en',
       titolo: 'SocialBot — the Twitch and Kick bot that writes with your own account',
-      desc: 'The Twitch and Kick bot that writes in chat with YOUR own account: custom commands, moderation with an anti-bot shield, OBS overlay, clips and live alerts. Free, with a demo.',
+      desc: 'The Twitch and Kick bot that writes in chat with YOUR own account: custom commands, moderation with an anti-bot shield, stream overlay, clips and live alerts. Free, with a demo.',
       ogTitolo: 'The Twitch and Kick bot that writes with your own account',
-      ogDesc: 'The Twitch and Kick bot that writes in chat with your own account: custom commands, OBS overlay (alerts, on-screen chat, widgets, 7TV emotes, green screen), music, clips, streaming from the browser without OBS and live alerts.',
+      ogDesc: 'The Twitch and Kick bot that writes in chat with your own account: custom commands, stream overlay (alerts, on-screen chat, widgets, 7TV emotes, green screen), music, clips, streaming from the browser and live alerts.',
       twTitolo: 'The Twitch and Kick bot that writes with your own account',
-      twDesc: 'The Twitch and Kick bot that writes with your own account. OBS overlay (alerts, chat, widgets, 7TV, green screen), commands, music, clips, live alerts.',
+      twDesc: 'The Twitch and Kick bot that writes with your own account. stream overlay (alerts, chat, widgets, 7TV, green screen), commands, music, clips, live alerts.',
     },
     es: {
       html: 'es', ogLocale: 'es_ES', url: 'https://socialbot.live/?lang=es',
       titolo: 'SocialBot — el bot de Twitch y Kick que escribe con tu propia cuenta',
-      desc: 'El bot de Twitch y Kick que escribe en el chat con TU cuenta: comandos, moderación con escudo anti-bot, overlay para OBS, clips y avisos en directo. Gratis, con demo.',
+      desc: 'El bot de Twitch y Kick que escribe en el chat con TU cuenta: comandos, moderación con escudo anti-bot, overlay para el directo, clips y avisos en directo. Gratis, con demo.',
       ogTitolo: 'El bot de Twitch y Kick que escribe con tu propia cuenta',
-      ogDesc: 'El bot de Twitch y Kick que escribe en el chat con tu propia cuenta: comandos a medida, overlay para OBS (avisos, chat en pantalla, widgets, emotes 7TV, pantalla verde), música, clips, directos desde el navegador sin OBS y avisos en directo.',
+      ogDesc: 'El bot de Twitch y Kick que escribe en el chat con tu propia cuenta: comandos a medida, overlay para el directo (avisos, chat en pantalla, widgets, emotes 7TV, pantalla verde), música, clips, directos desde el navegador y avisos en directo.',
       twTitolo: 'El bot de Twitch y Kick que escribe con tu propia cuenta',
-      twDesc: 'El bot de Twitch y Kick que escribe con tu propia cuenta. Overlay OBS (avisos, chat, widgets, 7TV, pantalla verde), comandos, música, clips, avisos en directo.',
+      twDesc: 'El bot de Twitch y Kick que escribe con tu propia cuenta. Overlay per la diretta (avisos, chat, widgets, 7TV, pantalla verde), comandos, música, clips, avisos en directo.',
     },
   };
 
@@ -1381,8 +1381,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   scrivere qualsiasi cosa mostra un'anteprima.
 - Comandi e automazioni illimitati (quando succede X, fai Y).
 - Moderazione automatica: antispam, filtri su link/maiuscole/ripetizioni, timeout.
-- Overlay per OBS: alert di follow/sub/bit/raid, chat a schermo, widget, emote 7TV.
-- Studio Web: andare in diretta dal browser senza installare OBS, fino al 2K.
+- Overlay per la diretta: alert di follow/sub/bit/raid, chat a schermo, widget, emote 7TV.
+- Studio Web: andare in diretta dal browser senza installare niente, fino al 2K.
 - Contatori a schermo (es. !morti) accesi dalla chat.
 - Clip automatiche nei momenti di hype.
 - Richieste musicali su Spotify con !sr.
@@ -1395,7 +1395,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
 ## Prezzi
 - Essenziale: gratuito, basta registrarsi. Comandi illimitati, moderazione,
-  overlay per OBS e contatori.
+  overlay per la diretta e contatori.
 - Base: 2,99 euro al mese. Aggiunge lo Studio Web e un moderatore.
 - Pacchetti aggiuntivi a scelta (giochi, effetti, notifiche, clip, voce,
   squadra, musica) e bundle scontati.
@@ -2235,7 +2235,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       valore: b.valore,   // consente di correggere il valore a mano
       overlay: b.overlay, // aspetto/posizione del widget a schermo (config completa)
     });
-    // aggiorna dal vivo il widget sull'overlay OBS (posizione/colore/valore/mostra)
+    // aggiorna dal vivo il widget sull'overlay della diretta (posizione/colore/valore/mostra)
     try { if (c) effects.emit(login, contatori.payloadOverlay(c)); } catch (e) { /* niente */ }
     res.json({ ok: true, contatore: c });
   }));
@@ -3365,7 +3365,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
   // ------------------------------------------------------------ API effetti & suoni
 
-  // elenco effetti + URL dell'overlay OBS (con la chiave del canale)
+  // elenco effetti + URL dell'overlay della diretta (con la chiave del canale)
   app.get('/api/streamer/effetti', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const effetti = effectsDb.list(login).map((e) => ({
@@ -3380,7 +3380,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json({ effetti, overlayUrl: effects.overlayUrl(login) });
   }));
 
-  // solo il link dell'overlay per OBS (lo usa l'Overlay Studio, senza scaricare
+  // solo il link dell'overlay per la diretta (lo usa l'Overlay Studio, senza scaricare
   // tutta la lista effetti).
   app.get('/api/streamer/overlay-url', requireLogin, wrap(async (req, res) => {
     res.json({ overlayUrl: effects.overlayUrl(currentUser(req).login) });

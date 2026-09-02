@@ -67,14 +67,14 @@ const IMMAGINI = {
     occhiello: 'Twitch e Kick',
     titolo: 'Il bot che scrive in chat',
     evidenza: 'col tuo account',
-    sotto: 'Comandi su misura, <strong>overlay per OBS</strong>, clip, musica, notifiche live e uno <strong>scudo anti&#8209;bot</strong> che si alza da solo.',
-    pastiglie: ['Col tuo account', 'Overlay per OBS', 'Anche senza OBS', 'Gratis'],
+    sotto: 'Comandi su misura, <strong>overlay per la diretta</strong>, clip, musica, notifiche live e uno <strong>scudo anti&#8209;bot</strong> che si alza da solo.',
+    pastiglie: ['Col tuo account', 'Overlay ed effetti', 'Dirette dal browser', 'Gratis'],
   }),
   'og-guide.png': pagina({
     occhiello: 'Guide',
     titolo: 'Come si sta',
     evidenza: 'dall\'altra parte',
-    sotto: 'Scegliere un bot, collegarlo, creare comandi, mettere gli overlay in OBS e <strong>difendersi da follow&#8209;bot e hate&#8209;raid</strong>.',
+    sotto: 'Scegliere un bot, collegarlo, creare comandi, mettere gli overlay sulla diretta e <strong>difendersi da follow&#8209;bot e hate&#8209;raid</strong>.',
     pastiglie: ['Guide pratiche', 'Niente giri di parole', 'Aggiornate'],
   }),
 };

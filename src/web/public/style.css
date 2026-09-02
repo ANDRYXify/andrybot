@@ -113,6 +113,10 @@ body:not(.con-nav) .barra-top { display: none; }
 .marchio { display: flex; align-items: center; gap: .5rem; flex: none; color: var(--testo); }
 .marchio:hover { text-decoration: none; }
 .marchio-segno { height: 30px; width: auto; flex-shrink: 0; object-fit: contain; display: block; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .marchio-segno { filter: drop-shadow(0 0 9px rgba(214, 20, 140, .38)); }
+}
+:root[data-theme="dark"] .marchio-segno { filter: drop-shadow(0 0 9px rgba(214, 20, 140, .38)); }
 .marchio-testo { display: flex; flex-direction: column; line-height: 1.12; font-weight: 750; font-size: .98rem; letter-spacing: -.01em; }
 .marchio-testo small { font-weight: 500; font-size: .68rem; color: var(--testo-3); letter-spacing: 0; }
 

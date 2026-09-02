@@ -98,6 +98,24 @@ L'anteprima social (`scripts/og.mjs`) ora prende **il logo vero** invece di un
 robot ridisegnato a mano nel codice: quella era una copia, e una copia resta
 indietro il giorno che l'originale cambia.
 
+## La schermata di caricamento
+
+Girava un **anello** e il logo pulsava dentro: l'animazione era della cornice,
+non del marchio. Ora l'anello non c'è più e si muove **il logo** — respira
+piano, salendo di sette pixel e tornando giù.
+
+Sul **tema scuro** il logo prende un **bagliore** magenta, che pulsa con lo
+stesso respiro. Non è una decorazione presa a caso: il marchio è trasparente e
+un `drop-shadow` segue la forma delle lettere, quindi su fondo scuro diventa
+un'insegna al neon — che è esattamente come quel disegno vuole leggersi. Sul
+chiaro il bagliore non c'è: su carta sarebbe una sbavatura.
+
+Un accenno dello stesso bagliore, molto più leggero, sta anche sul logo della
+barra in alto quando il tema è scuro.
+
+Chi ha chiesto **meno animazioni** (`prefers-reduced-motion`) vede il logo
+fermo, col bagliore statico: l'informazione resta, il movimento no.
+
 ## Il cancello
 
 `scripts/verifica-risorse.mjs` controlla che ogni file chiesto dalle pagine e
