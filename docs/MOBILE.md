@@ -108,3 +108,24 @@ sarebbe stato un difetto della prova, non del prodotto.
 Vive fuori da `npm run cancelli` perché serve un browser, come la sonda 7TV.
 Provato rosso su entrambi i difetti veri: tornando a decidere con un numero fisso
 (14 combinazioni rotte) e ignorando padding e spaziature nella misura (4).
+
+## Il cassetto si chiude cliccando fuori
+
+Un menu che copre mezzo schermo e si chiude solo con la X è una trappola. Il
+velo dietro il cassetto (`.backdrop`) è quello che intercetta il clic fuori —
+c'era, ma **acceso da una media query a 1280px**.
+
+Nel frattempo la barra ha smesso di ritirarsi «sotto una larghezza decisa» ed è
+passata a ritirarsi **quando non ci sta** (`body.barra-stretta`, misurata). Le
+due regole decidevano la stessa cosa — «adesso il menu è un cassetto» — in due
+modi diversi, e sopra i 1280px non erano d'accordo: compariva l'hamburger, si
+apriva il cassetto, e il velo non c'era. Cliccare fuori non faceva niente.
+
+Ora il velo segue **lo stesso stato che apre il cassetto** (`body.menu-aperto`),
+non la larghezza della finestra: una regola sola, e non possono più divergere.
+
+`scripts/verifica-barra.mjs` lo prova in un browser vero a ogni larghezza,
+lingua e ruolo: dove compare l'hamburger, apre il cassetto, clicca fuori e
+pretende che si chiuda. Rimettendo il velo dentro la media query diventa rosso
+in 15 combinazioni — tutte sopra i 1280px, che è esattamente la banda del
+difetto.
