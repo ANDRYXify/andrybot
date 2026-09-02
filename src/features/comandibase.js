@@ -4,23 +4,18 @@
 // spenga) e NON prevalgono MAI su un comando o un Modulo che lo streamer ha
 // creato con lo stesso nome: la SUA versione vince sempre (niente doppioni,
 // niente sorprese). Restano deterministici: mai passano dall'IA.
-import { streamers, commands, modules as modulesDb } from '../db.js';
+import { streamers } from '../db.js';
+import { personalizzato } from './personalizzati.js';
 import { makeLog } from '../logger.js';
 
 const log = makeLog('comandibase');
 
 const attivo = (channel) => streamers.get(channel)?.settings?.comandiBase?.attivo !== false;
 
-// esiste già un comando semplice o un Modulo dello streamer con questo nome?
-// allora NON intercettiamo: la sua versione vince.
-function personalizzato(channel, cmd) {
-  try {
-    if (commands.get(channel, cmd)) return true;
-    const mods = modulesDb.list(channel) || [];
-    return mods.some((m) => m.attivo && m.trigger?.tipo === 'comando'
-      && String(m.trigger.comando || '').toLowerCase().replace(/^!/, '') === cmd);
-  } catch { return false; }
-}
+// «Quello che ti sei costruito vince»: la regola sta in un posto solo
+// (features/personalizzati.js) e vale per tutti i comandi pronti, non solo qui.
+// Il vaglio principale e' in cima alla catena; questo resta perche' i comandi
+// base si possono chiamare anche da fuori.
 
 // durata "umana" da una data ISO a ORA: "2 anni e 3 mesi", "5 mesi", "12 giorni".
 function fmtDurata(fromISO) {

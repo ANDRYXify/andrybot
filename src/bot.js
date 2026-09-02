@@ -14,6 +14,7 @@ import { EventHub } from './twitch/events.js';
 import { Brain } from './ai/brain.js';
 import * as persona from './ai/persona.js';
 import * as games from './features/games.js';
+import * as personalizzati from './features/personalizzati.js';
 import * as giveaway from './features/giveaway.js';
 import * as watchtime from './features/watchtime.js';
 import * as comandibase from './features/comandibase.js';
@@ -538,8 +539,17 @@ export class BotManager {
     // amicizia GLOBALE: chi interagisce diventa piano piano "amico" del bot
     // (solo un'affinità, mai contenuti né in quale canale).
     if (!msg.isSelf) { try { persona.interagisci(msg.user); } catch { /* niente */ } }
-    // minigiochi: monete passive + comandi (!dado, !slot, !trivia, ...)
-    try { games.accredita(msg); games.tryGame(msg, parla); }
+    // L'economia gira sempre: le monete della presenza non sono un comando.
+    try { games.accredita(msg); } catch (e) { log.error(`#${login} monete:`, e?.message || e); }
+
+    // «Quello che ti sei costruito vince»: se questo e' un comando che lo
+    // streamer ha gia' suo (comando semplice o Modulo), i comandi PRONTI non lo
+    // vedono nemmeno. Un solo vaglio qui in cima, invece di una guardia dentro
+    // ogni famiglia — cosi' vale anche per quelle che verranno.
+    const suo = personalizzati.suoComando(login, msg.text);
+    if (!suo) {
+    // minigiochi: !dado, !slot, !trivia, ...
+    try { games.tryGame(msg, parla); }
     catch (e) { log.error(`#${login} giochi:`, e?.message || e); }
     // giveaway / sorteggi (!giveaway, !join, !estrai) — segue l'add-on Giochi
     try { giveaway.tryGiveaway(msg, parla); }
@@ -568,14 +578,17 @@ export class BotManager {
     try { quotes.tryQuoteCommand(msg, parla); } catch (e) { log.error(`#${login} citazioni:`, e?.message || e); }
     // contatori (!morti, !tentativi, !parole…): comando chat + auto-conteggio parole.
     // L'emit aggiorna il widget sullo STESSO overlay OBS (feed SSE di alert/effetti).
-    try {
-      const emitCont = (p) => this.effects?.emit?.(login, p);
-      contatori.tryComando(msg, parla, emitCont);
-      contatori.perParola(msg, emitCont);
-    } catch (e) { log.debug(`#${login} contatori:`, e?.message || e); }
-    // effetti & suoni: un comando come !airhorn accende l'overlay OBS.
+    try { contatori.tryComando(msg, parla, (p) => this.effects?.emit?.(login, p)); }
+    catch (e) { log.debug(`#${login} contatori:`, e?.message || e); }
+    }
+
+    // Il conteggio automatico delle parole non e' un comando: gira sempre.
+    try { contatori.perParola(msg, (p) => this.effects?.emit?.(login, p)); }
+    catch (e) { log.debug(`#${login} conta-parole:`, e?.message || e); }
+    // Gli effetti sono roba SUA, non un comando pronto: restano fuori dal vaglio.
     try { this.effects?.tryTrigger(msg, parla); }
     catch (e) { log.error(`#${login} effetti:`, e?.message || e); }
+
     // moduli: automazioni dello streamer (comando/parola/primo messaggio).
     try { this.modules?.onMessage(msg, parla); }
     catch (e) { log.error(`#${login} moduli:`, e?.message || e); }

@@ -87,6 +87,41 @@ trenta caratteri — non riceve niente. Un costo negativo, che *regalerebbe*
 monete a ogni uso, viene azzerato al salvataggio; i cooldown assurdi si fermano
 a un giorno.
 
+## Chi vince fra il tuo `!slot` e quello pronto
+
+Aprire il motore sull'economia ha fatto emergere un difetto che prima non
+poteva esistere: i comandi **pronti** (i minigiochi, le ore guardate, i
+sorteggi, `!uptime`, `!cita`, i contatori) giravano *prima* del motore dei
+Moduli. Un `!slot` costruito dallo streamer rispondeva quindi **due volte**, e
+toccava la moneta due volte.
+
+La regola giusta esisteva già — «quello che ti sei costruito vince» — ma viveva
+dentro un file solo: i comandi base la rispettavano, i giochi no. Ora è **una
+sola**, in `features/personalizzati.js`, e sta **prima dello smistamento**: se
+il messaggio è un comando che lo streamer ha già suo (comando semplice o Modulo
+attivo, alias compresi), i comandi pronti non lo vedono nemmeno. Vale per quelli
+di oggi e per quelli che verranno, perché è un vaglio solo e non una guardia
+dentro ogni famiglia.
+
+Restano **fuori** dal vaglio due cose, e non per distrazione:
+
+- il **conteggio automatico delle parole** e l'**accredito delle monete di
+  presenza**, che non sono comandi;
+- gli **effetti** (`!airhorn`): sono roba sua, non un comando pronto.
+
+### La copia in memoria non ha una scadenza
+
+Controllare a ogni riga di chat se un comando è «suo» significherebbe leggere il
+database a ogni messaggio. Ma una copia **a scadenza** lascerebbe una finestra —
+salvi un Modulo, e per qualche secondo risponde ancora la versione pronta.
+
+Quindi non c'è una scadenza: c'è un **numero di revisione**, che il database
+alza dentro le uniche funzioni capaci di cambiare i comandi (`commands.set/remove`,
+`modules.save/remove/setAttivo`). Chi tiene la copia confronta quel numero. Vive
+lì, accanto alle mutazioni, così non esiste un punto di aggiornamento che ci si
+possa dimenticare di chiamare — che è precisamente il modo in cui queste cose si
+rompono.
+
 ## Il cancello
 
 Un Modulo attraversa quattro posti: il motore che lo esegue, il server che lo

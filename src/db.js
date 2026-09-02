@@ -2092,6 +2092,21 @@ export const contatori = {
 };
 
 // ---------------------------------------------------------------- comandi custom
+// Quante volte sono cambiati i comandi di un canale. Serve a chi tiene una
+// copia in memoria per non rileggere il database a ogni riga di chat: invece di
+// una scadenza a tempo (che lascia una finestra in cui si risponde ancora alla
+// vecchia maniera) si confronta questo numero. Vive QUI, accanto alle uniche
+// funzioni che possono cambiarli, cosi' non c'e' un punto di aggiornamento da
+// ricordarsi di chiamare.
+const _revComandi = new Map();
+const _cambiati = (channel) => {
+  const ch = String(channel || '').toLowerCase();
+  _revComandi.set(ch, (_revComandi.get(ch) || 0) + 1);
+};
+export function revisioneComandi(channel) {
+  return _revComandi.get(String(channel || '').toLowerCase()) || 0;
+}
+
 export const commands = {
   list(channel) { return db.prepare('SELECT name, response FROM commands WHERE channel=? ORDER BY name').all(channel); },
   get(channel, name) { return db.prepare('SELECT response FROM commands WHERE channel=? AND name=?').get(channel, name.toLowerCase())?.response ?? null; },
@@ -2099,8 +2114,9 @@ export const commands = {
     db.prepare(`INSERT INTO commands (channel, name, response, created_by, ts) VALUES (?,?,?,?,?)
       ON CONFLICT(channel, name) DO UPDATE SET response=excluded.response, created_by=excluded.created_by, ts=excluded.ts`)
       .run(channel, name.toLowerCase(), response, by, now());
+    _cambiati(channel);
   },
-  remove(channel, name) { db.prepare('DELETE FROM commands WHERE channel=? AND name=?').run(channel, name.toLowerCase()); },
+  remove(channel, name) { db.prepare('DELETE FROM commands WHERE channel=? AND name=?').run(channel, name.toLowerCase()); _cambiati(channel); },
 };
 
 // ------------------------------------------------- dirette gia' annunciate
@@ -2540,17 +2556,20 @@ export const modules = {
         db.prepare('SELECT 1 FROM modules WHERE channel=? AND id=?').get(channel, id)) {
       db.prepare('UPDATE modules SET nome=?, attivo=?, config=?, ts=? WHERE channel=? AND id=?')
         .run(nome, attivo, config, now(), channel, id);
+      _cambiati(channel);
       return id;
     }
     const n = db.prepare('SELECT COUNT(*) c FROM modules WHERE channel=?').get(channel).c;
     if (n >= MAX_MODULI) throw new Error(`hai raggiunto il massimo di ${MAX_MODULI} moduli`);
     const info = db.prepare('INSERT INTO modules (channel, nome, attivo, config, ts) VALUES (?,?,?,?,?)')
       .run(channel, nome, attivo, config, now());
+    _cambiati(channel);
     return Number(info.lastInsertRowid);
   },
-  remove(channel, id) { db.prepare('DELETE FROM modules WHERE channel=? AND id=?').run(channel, id); },
+  remove(channel, id) { db.prepare('DELETE FROM modules WHERE channel=? AND id=?').run(channel, id); _cambiati(channel); },
   setAttivo(channel, id, attivo) {
     db.prepare('UPDATE modules SET attivo=? WHERE channel=? AND id=?').run(attivo ? 1 : 0, channel, id);
+    _cambiati(channel);
   },
   // Tutti i moduli ATTIVI di TUTTI i canali (usato dal motore timer). Ogni voce
   // porta con sé il proprio channel.
