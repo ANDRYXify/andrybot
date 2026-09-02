@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#0c0c11" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#faf7f1" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1a1714" media="(prefers-color-scheme: dark)">
 
   
   <script src="/tema.js"></script>
@@ -23,7 +23,7 @@
   <meta property="og:url" content="https://socialbot.live/">
   <meta property="og:title" content="Il bot per Twitch che scrive col tuo account">
   <meta property="og:description" content="Il bot per Twitch e Kick in italiano che scrive in chat col tuo account: comandi su misura, overlay per OBS (alert, chat a schermo, widget, emote 7TV, green screen), musica, clip, dirette dal browser senza OBS e notifiche live.">
-  <meta property="og:image" content="https://socialbot.live/icons/og.png?v=4">
+  <meta property="og:image" content="https://socialbot.live/icons/og.png?v=5">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="SocialBot — il bot per Twitch che scrive in chat col tuo account">
@@ -32,7 +32,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Il bot per Twitch che scrive col tuo account">
   <meta name="twitter:description" content="Il bot per Twitch e Kick in italiano che scrive col tuo account. Overlay OBS (alert, chat, widget, 7TV, green screen), comandi, musica, clip, notifiche live.">
-  <meta name="twitter:image" content="https://socialbot.live/icons/og.png?v=4">
+  <meta name="twitter:image" content="https://socialbot.live/icons/og.png?v=5">
 
   <meta property="og:image:type" content="image/png">
   <meta name="twitter:image:alt" content="SocialBot — il bot per Twitch che scrive in chat col tuo account">
@@ -50,8 +50,8 @@
   <link rel="stylesheet" href="anime.css">
   <link rel="stylesheet" href="vetrina.css">
   <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="apple-touch-icon" href="/icons/icon-192.png">
-  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png?v=5">
+  <link rel="icon" href="/icons/icon-192.png?v=5">
 
   
   <script type="application/ld+json">
@@ -199,16 +199,16 @@
   
   <style>
     #splash { position: fixed; inset: 0; z-index: 99999; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 24px; background: #0c0c11; color: #fff;
+      align-items: center; justify-content: center; gap: 24px; background: #131110; color: #f4f1ea;
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
       transition: opacity .45s ease, visibility .45s ease; }
-    :root[data-theme="light"] #splash { background: #ffffff; color: #0c0c11; }
+    :root[data-theme="light"] #splash { background: #f4f1ea; color: #221f1c; }
     #splash.via { opacity: 0; visibility: hidden; pointer-events: none; }
     #splash .sp-box { position: relative; display: flex; align-items: center; justify-content: center; }
-    #splash .sp-logo { width: 84px; height: 84px; border-radius: 21px; display: block;
-      box-shadow: 0 14px 44px rgba(124,92,255,.4); animation: sp-pulse 1.6s ease-in-out infinite; }
-    #splash .sp-ring { position: absolute; width: 124px; height: 124px; border-radius: 50%;
-      border: 3px solid rgba(124,92,255,.16); border-top-color: #7c5cff; animation: sp-spin .9s linear infinite; }
+    #splash .sp-logo { height: 64px; width: auto; border-radius: 16px; display: block;
+      box-shadow: 0 14px 44px rgba(193,19,111,.34); animation: sp-pulse 1.6s ease-in-out infinite; }
+    #splash .sp-ring { position: absolute; width: 140px; height: 140px; border-radius: 50%;
+      border: 3px solid rgba(193,19,111,.18); border-top-color: #c1136f; animation: sp-spin .9s linear infinite; }
     #splash .sp-nome { font-weight: 800; font-size: 21px; letter-spacing: .3px; text-align: center; }
     #splash .sp-nome small { display: block; font-weight: 500; font-size: 11px; opacity: .55;
       letter-spacing: 2.5px; text-transform: uppercase; margin-top: 5px; }
@@ -220,7 +220,7 @@
 </head>
 <body>
   <div id="splash" role="status" aria-label="Caricamento SocialBot">
-    <div class="sp-box"><span class="sp-ring"></span><img class="sp-logo" src="/icons/icon-192.png" alt="" width="84" height="84"></div>
+    <div class="sp-box"><span class="sp-ring"></span><img class="sp-logo" src="/icons/marchio-barra.png?v=5" alt="" width="100" height="64"></div>
     <div class="sp-nome">SocialBot<small>caricamento…</small></div>
   </div>
   <script src="/splash.js" defer></script>
@@ -232,7 +232,7 @@
     
     <header class="barra-top" id="barra-top">
       <a class="marchio" href="/">
-        <img class="marchio-segno" src="/icons/icon-192.png" alt="SocialBot" width="30" height="30">
+        <img class="marchio-segno" src="/icons/marchio-barra.png?v=5" alt="SocialBot" width="47" height="30">
         <span class="marchio-testo">SocialBot<small>andryxify.it</small></span>
       </a>
       <span class="bt-sezione" id="bt-sezione" aria-hidden="true"></span>
