@@ -8610,6 +8610,12 @@ function pannelloModuli() {
         <button class="modello-pronto" data-modello="morti">${L('Contatore morti', 'Death counter', 'Contador de muertes')}</button>
         <button class="modello-pronto" data-modello="voce">${L('Comando vocale: clippa', 'Voice command: clip', 'Comando por voz: clipea')}</button>
         <button class="modello-pronto" data-modello="webhook">${L('Collega il mio bot (webhook)', 'Connect my bot (webhook)', 'Conecta mi bot (webhook)')}</button>
+        <button class="modello-pronto" data-modello="slot">${L('Macchinetta a monete', 'Coin slot machine', 'Máquina de monedas')}</button>
+        <button class="modello-pronto" data-modello="scommessa">${L('Scommessa', 'Bet', 'Apuesta')}</button>
+        <button class="modello-pronto" data-modello="regala">${L('Regala monete', 'Gift coins', 'Regala monedas')}</button>
+        <button class="modello-pronto" data-modello="furto">${L('Furto', 'Heist', 'Robo')}</button>
+        <button class="modello-pronto" data-modello="saldo">${L('Quante monete ho', 'How many coins I have', 'Cuántas monedas tengo')}</button>
+        <button class="modello-pronto" data-modello="daipunti">${L('Dai monete (mod)', 'Give coins (mod)', 'Dar monedas (mod)')}</button>
       </div>
     </div>
 
@@ -8673,6 +8679,57 @@ function modelloPronto(nome) {
       return { id: null, nome: 'Timer annuncio', attivo: true,
         trigger: { tipo: 'timer', minuti: 15, minMessaggi: 10 }, condizioni: cond(),
         azioni: [{ tipo: 'messaggio', testo: 'Ricordati di seguire il canale!' }] };
+    case 'slot':
+      return { id: null, nome: 'Macchinetta', attivo: true,
+        trigger: { tipo: 'comando', comando: 'slot', alias: [] },
+        condizioni: { ...cond(), costo: 50, probabilita: 25, cooldownUtente: 30,
+          costoMessaggio: 'Ti servono $costo $monete per giocare, $user — ne hai $punti.' },
+        azioni: [
+          { tipo: 'punti', op: 'aggiungi', quanto: '$random(150,400)', a: 'autore' },
+          { tipo: 'messaggio', testo: '🎰 JACKPOT, $user! Ora hai $punti $monete.' },
+        ],
+        altrimenti: [{ tipo: 'messaggio', testo: '🎰 Niente, $user. Ti restano $saldo $monete — ritenta!' }] };
+    case 'scommessa':
+      return { id: null, nome: 'Scommessa', attivo: true,
+        trigger: { tipo: 'comando', comando: 'scommetti', alias: ['punta'] },
+        condizioni: { ...cond(), costo: '$arg1', probabilita: 45, cooldownUtente: 60,
+          costoMessaggio: 'Non hai $arg1 $monete, $user: ne hai $punti. (uso: !scommetti 100)' },
+        azioni: [
+          { tipo: 'punti', op: 'aggiungi', quanto: '$arg1', a: 'autore' },
+          { tipo: 'punti', op: 'aggiungi', quanto: '$arg1', a: 'autore' },
+          { tipo: 'messaggio', testo: '🍀 $user raddoppia! Ora ha $punti $monete.' },
+        ],
+        altrimenti: [{ tipo: 'messaggio', testo: '💸 $user perde la puntata. Restano $saldo $monete.' }] };
+    case 'regala':
+      return { id: null, nome: 'Regala monete', attivo: true,
+        trigger: { tipo: 'comando', comando: 'regala', alias: ['dona'] },
+        condizioni: { ...cond(), costo: '$arg2',
+          costoMessaggio: 'Non hai abbastanza $monete, $user. (uso: !regala @nome 50)' },
+        azioni: [
+          { tipo: 'punti', op: 'aggiungi', quanto: '$arg2', a: 'destinatario' },
+          { tipo: 'messaggio', testo: '🎁 $user regala $arg2 $monete a $touser!' },
+        ] };
+    case 'furto':
+      return { id: null, nome: 'Furto', attivo: true,
+        trigger: { tipo: 'comando', comando: 'furto', alias: ['ruba'] },
+        condizioni: { ...cond(), minPunti: 100, probabilita: 40, cooldownUtente: 300 },
+        azioni: [
+          { tipo: 'punti', op: 'togli', quanto: '$random(20,80)', a: 'caso' },
+          { tipo: 'punti', op: 'aggiungi', quanto: '$mossa', a: 'autore' },
+          { tipo: 'messaggio', testo: '🕵️ Colpo riuscito! $user ruba $mossa $monete a $bersaglio.' },
+        ],
+        altrimenti: [{ tipo: 'messaggio', testo: '🚨 Beccato! $user torna a mani vuote.' }] };
+    case 'saldo':
+      return { id: null, nome: 'Quante monete ho', attivo: true,
+        trigger: { tipo: 'comando', comando: 'monete', alias: ['punti', 'saldo'] }, condizioni: cond(),
+        azioni: [{ tipo: 'messaggio', testo: '💰 $user, hai $punti $monete e sei $posizione° in classifica. Top: $top(3)' }] };
+    case 'daipunti':
+      return { id: null, nome: 'Dai monete (mod)', attivo: true,
+        trigger: { tipo: 'comando', comando: 'dai', alias: [] }, condizioni: { ...cond(), tier: 'mod' },
+        azioni: [
+          { tipo: 'punti', op: 'aggiungi', quanto: '$arg2', a: 'destinatario' },
+          { tipo: 'messaggio', testo: '✨ $touser riceve $arg2 $monete da $user.' },
+        ] };
     case 'social':
       return { id: null, nome: 'Social', attivo: true,
         trigger: { tipo: 'comando', comando: 'social', alias: [] }, condizioni: cond(),
@@ -12625,7 +12682,7 @@ const VARIABILI = [
 
   '$followage', '$chattercaso', '$cita', '$data', '$ora', '$giorno',
 
-  '$punti', '$punti(nome)', '$monete', '$posizione', '$top(3)', '$costo', '$saldo',
+  '$punti', '$punti(nome)', '$monete', '$posizione', '$top(3)', '$costo', '$saldo', '$mossa', '$bersaglio',
 
   '$giocotarget', '$titolotarget',
 
@@ -12681,6 +12738,8 @@ const LEGENDA_VAR = [
   ['$posizione', 'A che posto sta chi scrive in classifica', "The writer's rank in the leaderboard", 'En qué puesto está quien escribe'],
   ['$top(3)', 'I primi 3 della classifica, già scritti', 'The top 3, already formatted', 'Los 3 primeros, ya formateados'],
   ['$costo', 'Quanto è costato questo comando', 'What this command cost', 'Cuánto ha costado este comando'],
+  ['$mossa', 'Quante monete ha mosso l\'ultima azione "punti"', 'How many coins the last "points" action moved', 'Cuántas monedas ha movido la última acción "puntos"'],
+  ['$bersaglio', 'Su chi è finita l\'ultima azione "punti" (utile con "uno a caso")', 'Who the last "points" action hit (useful with "someone at random")', 'A quién ha afectado la última acción "puntos" (útil con "uno al azar")'],
   ['$saldo', 'Quante monete restano dopo aver pagato', 'Coins left after paying', 'Monedas que quedan tras pagar'],
 
   ['gruppo', 'Caso, numeri e contatori', 'Chance, numbers and counters', 'Azar, números y contadores'],
@@ -12769,7 +12828,8 @@ function riassuntoSe(c) {
   if (c.cooldown > 0) parti.push(`max ogni ${c.cooldown}s`);
   if (c.cooldownUtente > 0) parti.push(`ogni ${c.cooldownUtente}s a testa`);
   if (c.minPunti > 0) parti.push(`serve almeno ${c.minPunti} ${nomeMonetaUI()}`);
-  if (c.costo > 0) parti.push(`costa ${c.costo} ${nomeMonetaUI()}`);
+  if (typeof c.costo === 'string' && c.costo.includes('$')) parti.push(`costa ${c.costo} ${nomeMonetaUI()}`);
+  else if (c.costo > 0) parti.push(`costa ${c.costo} ${nomeMonetaUI()}`);
   if (typeof c.probabilita === 'number' && c.probabilita >= 0 && c.probabilita < 100) parti.push(`${c.probabilita}% delle volte`);
   if (c.soloLive) parti.push('solo in live');
   if (c.soloOffline) parti.push('solo offline');
@@ -12955,7 +13015,7 @@ function apriEditor(modulo) {
         <div class="griglia-campi spazio-sopra">
           <div>
             <label class="campo" for="mod-costo">Costa (${esc(nomeMonetaUI())})</label>
-            <input type="number" id="mod-costo" min="0" max="1000000" value="${Number(c.costo) || 0}">
+            <input type="text" id="mod-costo" data-var-target placeholder="100 oppure $arg1" value="${esc(c.costo ?? '')}">
           </div>
           <div>
             <label class="campo" for="mod-min-punti">Serve almeno (senza spenderli)</label>
@@ -13296,7 +13356,7 @@ function leggiForm() {
     probabilita: g('mod-probabilita') ? Number(g('mod-probabilita').value) : 100,
     soloLive: !!g('mod-solo-live')?.checked,
     soloOffline: !!g('mod-solo-offline')?.checked,
-    costo: Number(g('mod-costo')?.value) || 0,
+    costo: (() => { const v = (g('mod-costo')?.value || '').trim(); return v.includes('$') ? v : (Number(v) || 0); })(),
     minPunti: Number(g('mod-min-punti')?.value) || 0,
     costoMessaggio: (g('mod-costo-messaggio')?.value || '').trim(),
   };

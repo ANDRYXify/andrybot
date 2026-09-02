@@ -166,4 +166,52 @@ test('un modulo senza altrimenti resta esattamente com\'era', () => {
   assert.deepEqual(modulesDb.get(CH, id).altrimenti, []);
 });
 
+// Il costo puo' essere un'espressione: senza, "!scommetti 100" non si scrive,
+// ed e' meta' dei giochi a punti.
+test('il costo puo\' venire da quello che uno scrive', async () => {
+  points.add(CH, 'tizio', -1_000_000); points.add(CH, 'tizio', 500);
+  const m = { id: 20, condizioni: { costo: '$arg1' },
+    azioni: [{ tipo: 'punti', op: 'aggiungi', quanto: '$arg1' }, { tipo: 'messaggio', testo: 'ok' }] };
+  assert.equal(await motore.esegui(m, ctx({ args: ['200'] }), () => {}), true);
+  assert.equal(points.get(CH, 'tizio'), 500, 'ha pagato 200 e ne ha ripresi 200');
+
+  assert.equal(await motore.esegui({ ...m, id: 21 }, ctx({ args: ['9999'] }), () => {}), false, 'non se lo puo\' permettere');
+  assert.equal(points.get(CH, 'tizio'), 500);
+});
+
+test('un costo scritto male non e\' un costo', async () => {
+  points.add(CH, 'tizio', -1_000_000); points.add(CH, 'tizio', 500);
+  const m = { id: 22, condizioni: { costo: '$arg1' }, azioni: [{ tipo: 'messaggio', testo: 'ok' }] };
+  assert.equal(await motore.esegui(m, ctx({ args: ['pippo'] }), () => {}), true, 'passa, ma senza addebito');
+  assert.equal(points.get(CH, 'tizio'), 500);
+  assert.equal(await motore.esegui({ ...m, id: 23 }, ctx({ args: ['-500'] }), () => {}), true);
+  assert.equal(points.get(CH, 'tizio'), 500, 'un costo negativo non regala monete');
+});
+
+test('un costo con variabile si salva com\'e\', un numero resta numero', () => {
+  const a = modulesDb.get(CH, modulesDb.save(CH, { nome: 'sc', trigger: { tipo: 'comando', comando: 'sc' },
+    condizioni: { costo: '$arg1' }, azioni: [{ tipo: 'messaggio', testo: 'x' }] }));
+  assert.equal(a.condizioni.costo, '$arg1');
+  const b = modulesDb.get(CH, modulesDb.save(CH, { nome: 'sl', trigger: { tipo: 'comando', comando: 'sl' },
+    condizioni: { costo: '50' }, azioni: [{ tipo: 'messaggio', testo: 'x' }] }));
+  assert.equal(b.condizioni.costo, 50);
+});
+
+// Senza questo, un furto toglierebbe una cifra alla vittima e ne darebbe
+// un'altra al ladro: due $random sono due numeri diversi.
+test('la cifra appena mossa si puo\' riusare, e non e\' quella chiesta ma quella riuscita', async () => {
+  points.add(CH, 'vittima', -1_000_000); points.add(CH, 'vittima', 30);
+  points.add(CH, 'ladro', -1_000_000);
+  const m = { id: 30, azioni: [
+    { tipo: 'punti', op: 'togli', quanto: '80', a: 'nome', nome: 'vittima' },
+    { tipo: 'punti', op: 'aggiungi', quanto: '$mossa', a: 'nome', nome: 'ladro' },
+    { tipo: 'messaggio', testo: '$user ruba $mossa a $bersaglio' },
+  ] };
+  const a = raccogli();
+  await motore.esegui(m, ctx(), a.dire);
+  assert.equal(points.get(CH, 'vittima'), 0);
+  assert.equal(points.get(CH, 'ladro'), 30, 'la vittima ne aveva 30, non 80: si muove quello che c\'e\'');
+  assert.equal(a.dette[0], 'tizio ruba 30 a ladro', '$bersaglio segue l\'ultima azione');
+});
+
 test.after(() => usaEGetta.pulisci());

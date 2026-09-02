@@ -71,6 +71,7 @@ Un modulo che muove le monete e non sa dirlo è mezzo modulo.
 | `$posizione` | a che posto sta chi scrive **nella sua gara** (vuoto se non è in classifica) |
 | `$top(3)` | i primi tre, già formattati |
 | `$costo` · `$saldo` | quanto è costato, e quanto resta dopo aver pagato |
+| `$mossa` · `$bersaglio` | quante monete ha mosso l'ultima azione «punti», e su chi |
 
 Si pagano solo se citate: una lettura in più su ogni messaggio di chat non si
 giustifica per una variabile che quasi nessuno usa.
@@ -86,6 +87,37 @@ scrive in chat, quindi un nome che non è un nome utente — `[bot]`, una frase,
 trenta caratteri — non riceve niente. Un costo negativo, che *regalerebbe*
 monete a ogni uso, viene azzerato al salvataggio; i cooldown assurdi si fermano
 a un giorno.
+
+### `$mossa` non è la cifra chiesta, è quella riuscita
+
+Serve a due cose che senza di lei non si possono fare.
+
+**Riusare la stessa cifra.** Un furto scritto come «togli `$random(20,80)` a uno
+a caso, dai `$random(20,80)` a chi scrive» è sbagliato: sono due tiri diversi, la
+vittima perde 40 e il ladro guadagna 70. Con `$mossa` la seconda azione muove
+esattamente quello che ha mosso la prima.
+
+**Raccontare cosa è successo.** L'azione «a uno a caso» pesca il nome dentro di
+sé: senza `$bersaglio` il messaggio non potrebbe dire chi è stato derubato.
+
+E vale «quella riuscita» perché a chi ha 30 monete non se ne possono togliere 80:
+il messaggio deve dire 30, non 80.
+
+## Il costo può essere un'espressione
+
+`costa 100` è un numero. `costa $arg1` è ciò che uno scrive: senza,
+`!scommetti 100` non si può fare — ed è metà dei giochi a punti.
+
+Vale la stessa aritmetica di sempre: espansione, poi un intero fra 0 e un
+milione. Un `$arg1` che non è un numero (`!scommetti pippo`) vale zero — il
+comando passa senza addebitare — e un `-500` non regala monete.
+
+## Le ricette
+
+Un motore senza ricette è una pagina bianca. Le sei nuove usano il meccanismo
+dei modelli che c'era già, non un secondo sistema: **Macchinetta**,
+**Scommessa**, **Regala monete**, **Furto**, **Quante monete ho**, **Dai monete
+(mod)**. Si aprono nell'editor già compilate, e da lì si cambia tutto.
 
 ## Chi vince fra il tuo `!slot` e quello pronto
 
