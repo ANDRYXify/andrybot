@@ -2,34 +2,9 @@
 /* Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live */
 
 body.vetrina {
-  --bg: #0b0a09;
-  --surface: #141110;
-  --surface-2: #1b1715;
-  --surface-3: #241f1c;
-  --border: #29231f;
-  --border-2: #3a322c;
-  --testo: #f3eee5;
-  --testo-2: #a89d8e;
-  --testo-3: #6f665b;
-  --acc: #ff5a36;
-  --acc-600: #ff744f;
-  --acc-soft: #24120c;
-  --acc-tint: rgba(255, 90, 54, .12);
-  --acc-bordo: #4a251a;
-  --verde: #62d29a; --verde-soft: #10231a; --verde-bordo: #1f4232;
-  --rosso: #ff6a52; --rosso-soft: #2a1310; --rosso-bordo: #4b241d;
-  --ambra: #e0ad52; --ambra-soft: #251c0e; --ambra-bordo: #453520;
-
-  --vio: #9b7bff;
-  --vio-soft: #17122b;
-  --vio-bordo: #2f2557;
-
-  --v-alone-caldo: radial-gradient(46% 48% at 22% 18%, rgba(255, 90, 54, .30), transparent 68%);
-  --v-alone-freddo: radial-gradient(42% 44% at 82% 30%, rgba(155, 123, 255, .26), transparent 70%);
-
-  --om-s: 0 1px 2px rgba(0, 0, 0, .5);
-  --om-m: 0 4px 18px rgba(0, 0, 0, .5);
-  --om-l: 0 24px 70px rgba(0, 0, 0, .65);
+  --vio: var(--g-bot);
+  --v-alone-caldo: radial-gradient(46% 48% at 22% 18%, color-mix(in srgb, var(--acc) 22%, transparent), transparent 68%);
+  --v-alone-freddo: radial-gradient(42% 44% at 82% 30%, color-mix(in srgb, var(--g-vetrina) 20%, transparent), transparent 70%);
 
   background: var(--bg);
   color: var(--testo);
@@ -68,7 +43,26 @@ body.vetrina em, body.vetrina .vt-corsivo {
   filter: blur(28px); opacity: .85; z-index: -1; pointer-events: none;
 }
 
-.vt-strumenti { display: flex; justify-content: center; gap: 10px; margin-bottom: clamp(1.4rem, 4vh, 2.6rem); }
+.vt-barra {
+  width: 100%; align-self: stretch;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: clamp(.6rem, 2vw, 1.4rem);
+  margin-bottom: clamp(1.4rem, 4vh, 2.6rem); flex-wrap: wrap;
+}
+.vt-marchio { display: inline-flex; align-items: center; text-decoration: none; }
+.vt-marchio img { display: block; height: 30px; width: auto; }
+.vt-mappa { display: flex; align-items: center; gap: clamp(.5rem, 1.6vw, 1.3rem); flex-wrap: wrap; justify-content: center; }
+.vt-mappa a {
+  font-family: Archivo, system-ui, sans-serif; font-size: .88rem; font-weight: 600;
+  color: var(--testo-2); text-decoration: none; padding: .3rem .1rem;
+  border-bottom: 2px solid transparent; transition: color .2s ease, border-color .2s ease;
+}
+.vt-mappa a:hover { color: var(--testo); border-bottom-color: var(--acc); }
+.vt-strumenti { display: flex; align-items: center; justify-content: center; gap: 10px; }
+@media (max-width: 720px) {
+  .vt-barra { justify-content: center; gap: .7rem .9rem; }
+  .vt-mappa { order: 3; width: 100%; }
+}
 
 .vt-occhiello {
   display: inline-flex; align-items: center; gap: .5rem; align-self: center;
@@ -111,11 +105,11 @@ body.vetrina em, body.vetrina .vt-corsivo {
 .vt-btn:hover { border-color: var(--testo-3); color: var(--testo); transform: translateY(-1px); }
 .vt-btn:active { transform: translateY(1px) scale(.986); }
 .vt-btn-primo {
-  border-color: transparent; color: #140b07; font-weight: 700;
-  background: linear-gradient(168deg, #ff7a52, var(--acc) 58%, #e8431f);
-  box-shadow: 0 10px 34px -12px rgba(255, 90, 54, .8), inset 0 1px 0 rgba(255, 255, 255, .28);
+  border-color: transparent; color: #fff; font-weight: 700;
+  background: linear-gradient(168deg, var(--acc-600), var(--acc) 58%, var(--acc-600));
+  box-shadow: 0 10px 34px -12px var(--acc-tint), inset 0 1px 0 rgba(255, 255, 255, .22);
 }
-.vt-btn-primo:hover { color: #140b07; box-shadow: 0 16px 42px -12px rgba(255, 90, 54, .9), inset 0 1px 0 rgba(255, 255, 255, .34); }
+.vt-btn-primo:hover { color: #fff; box-shadow: 0 16px 42px -12px var(--acc-tint), inset 0 1px 0 rgba(255, 255, 255, .3); }
 .vt-btn-primo::after {
   content: ""; position: absolute; inset: 0; z-index: -1;
   background: linear-gradient(100deg, transparent 38%, rgba(255, 255, 255, .5) 50%, transparent 62%);
@@ -138,6 +132,10 @@ body.vetrina em, body.vetrina .vt-corsivo {
   box-shadow: var(--om-l);
 }
 .vt-schermo {
+  --surface: #141110; --surface-2: #1b1715; --surface-3: #241f1c;
+  --border: #29231f; --border-2: #3a322c;
+  --testo: #f3eee5; --testo-2: #a89d8e; --testo-3: #6f665b;
+
   position: relative; overflow: hidden; border-radius: 12px;
   aspect-ratio: 16 / 9; min-height: 220px;
   background:
@@ -171,7 +169,7 @@ body.vetrina em, body.vetrina .vt-corsivo {
   background: rgba(10, 9, 8, .72); border: 1px solid var(--border-2); color: var(--testo);
   backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
 }
-.vt-live { top: 14px; left: 14px; color: #ff5f6d; border-color: rgba(255, 95, 109, .4); }
+.vt-live { top: 14px; left: 14px; color: #ff6a52; border-color: rgba(255, 106, 82, .4); }
 .vt-spett { top: 14px; right: 14px; color: var(--testo-2); font-variant-numeric: tabular-nums; }
 
 @property --vt-n { syntax: '<integer>'; inherits: false; initial-value: 1284; }
@@ -302,7 +300,7 @@ body.vetrina em, body.vetrina .vt-corsivo {
   padding: 1.5rem 1.5rem 1.6rem; border-radius: 16px;
   border: 1px solid var(--border); background: linear-gradient(168deg, var(--surface-2), var(--surface));
 }
-.vt-piano.punta { border-color: var(--acc-bordo); box-shadow: 0 0 0 1px var(--acc-tint), 0 30px 70px -40px rgba(255, 90, 54, .6); }
+.vt-piano.punta { border-color: var(--acc-bordo); box-shadow: 0 0 0 1px var(--acc-tint), 0 30px 70px -40px var(--acc-tint); }
 .vt-piano-tag {
   align-self: flex-start; font-family: Archivo, system-ui, sans-serif;
   font-size: .6rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase;
@@ -400,7 +398,7 @@ body.vetrina em, body.vetrina .vt-corsivo {
   border-radius: 6px; border: 1.5px solid var(--testo-3); background: var(--surface-3);
   transition: background .2s var(--molla-lieve), border-color .2s ease;
 }
-.vt-spunta svg { width: 12px; height: 12px; color: #140b07; opacity: 0; transform: scale(.5); transition: opacity .18s ease, transform .22s var(--molla-lieve); }
+.vt-spunta svg { width: 12px; height: 12px; color: #fff; opacity: 0; transform: scale(.5); transition: opacity .18s ease, transform .22s var(--molla-lieve); }
 .vt-extra:has(input:checked) { border-color: var(--acc-bordo); background: var(--acc-soft); }
 .vt-extra:has(input:checked) .vt-spunta { background: var(--acc); border-color: var(--acc); }
 .vt-extra:has(input:checked) .vt-spunta svg { opacity: 1; transform: none; }

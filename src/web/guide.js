@@ -23,6 +23,10 @@
 // guida in più è una voce in più in GUIDE, e da lì si aggiornano da sole la
 // sitemap, l'indice e i collegamenti fra guide. Un fatto scritto in un posto solo.
 
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
 const SITO = 'https://socialbot.live';
 
 export const GUIDE = [
@@ -304,9 +308,39 @@ function testo(s) {
   return String(s);
 }
 
+// LA TAVOLOZZA NON SI RISCRIVE: si prende da dove sta quella del sito.
+//
+// Queste pagine avevano una copia a mano dei colori, e la copia era rimasta al
+// viola di due marchi fa: si cliccava «Guide» dalla vetrina e si finiva in un
+// altro prodotto. Adesso i valori si leggono da anime.css — la stessa fonte che
+// veste la dashboard — quindi il giorno che il marchio cambia, cambiano anche
+// queste pagine, senza che nessuno debba ricordarsene.
+const TOKEN = ['bg', 'surface', 'surface-2', 'border', 'border-2',
+  'testo', 'testo-2', 'testo-3', 'acc', 'acc-soft', 'acc-bordo'];
+
+function tavolozza() {
+  const via = join(dirname(fileURLToPath(import.meta.url)), 'public/anime.css');
+  const css = readFileSync(via, 'utf8');
+  const blocco = (selettore) => {
+    const i = css.indexOf(selettore);
+    if (i < 0) throw new Error(`guide: non trovo ${selettore} in anime.css`);
+    const a = css.indexOf('{', i);
+    return css.slice(a + 1, css.indexOf('}', a));
+  };
+  const prendi = (b) => TOKEN.map((t) => {
+    const m = b.match(new RegExp(`--${t}:\\s*([^;]+);`));
+    if (!m) throw new Error(`guide: manca --${t} nella tavolozza del sito`);
+    return `--${t}:${m[1].trim()}`;
+  }).join(';');
+  return { chiaro: prendi(blocco(':root {')), scuro: prendi(blocco(':root[data-theme="dark"]')) };
+}
+
+const TAV = tavolozza();
+
 const CSS = `
-:root{color-scheme:light;--bg:#fafafa;--surface:#fff;--surface-2:#f4f4f5;--border:#ececee;--border-2:#dedee2;--testo:#18181b;--testo-2:#55555f;--testo-3:#9a9aa4;--acc:#6d3bef;--acc-soft:#f2eefe;--acc-bordo:#ddd2fb}
-@media(prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#0d0d0f;--surface:#151518;--surface-2:#1c1c20;--border:#26262b;--border-2:#34343a;--testo:#f4f4f5;--testo-2:#a8a8b3;--testo-3:#71717a;--acc:#a78bfa;--acc-soft:#1e1730;--acc-bordo:#3b2f66}}
+:root{color-scheme:light;${TAV.chiaro}}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;${TAV.scuro}}}
+:root[data-theme="dark"]{color-scheme:dark;${TAV.scuro}}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--testo);font:16px/1.7 Archivo,system-ui,-apple-system,'Segoe UI',sans-serif;font-synthesis-weight:none}
@@ -498,6 +532,7 @@ function scheletro({ titolo, desc, url, corpo, ld }) {
 <meta name="twitter:image" content="${SITO}/icons/og-guide.png?v=5">
 <link rel="icon" href="/icons/icon-192.png?v=5">
 <link rel="stylesheet" href="/font.css">
+<script src="/tema.js"></script>
 <style>${CSS}</style>
 ${ld}
 </head><body>${corpo}</body></html>`;
