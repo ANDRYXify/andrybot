@@ -694,6 +694,7 @@ function render() {
   rivelaCarte();
   misuraBarraTop();
   riavviaAiuto();
+  riavviaGiro();
 
   if (_syRender) requestAnimationFrame(() => { try { window.scrollTo(0, _syRender); } catch {  } });
 }
@@ -913,6 +914,7 @@ function aiutoNelCassetto() {
   const riga = (via, testo, forte = '') => `<a class="drawer-voce" href="${esc(via)}" target="_blank" rel="noopener"><span>${testo}${forte ? `: <strong>${esc(forte)}</strong>` : ''}</span></a>`;
   return `<div class="drawer-grp drawer-aiuto">
     <p class="drawer-grp-tit">${L('Aiuto', 'Help', 'Ayuda')}</p>
+    <button type="button" class="drawer-voce" data-rifai-giro><span>${L('Rifai il giro di questa scheda', 'Redo this tab’s tour', 'Rehacer el recorrido de esta pestaña')}</span></button>
     ${qui ? riga(qui.via, L('Per questa scheda', 'For this tab', 'Para esta pestaña'), qui.titolo) : ''}
     ${vociAiuto().map(([via, nome]) => riga(via, esc(nome))).join('')}
   </div>`;
@@ -926,6 +928,7 @@ function menuAiutoHtml() {
   return `<div class="switch-canale-box aiuto-box">
     <button type="button" class="btn secondario mini aiuto-btn" aria-haspopup="menu" aria-expanded="false" title="${L('Guide e manuali', 'Guides and manuals', 'Guías y manuales')}">?</button>
     <div class="switch-canale-menu aiuto-menu" role="menu" hidden>
+      <button type="button" class="sc-voce" role="menuitem" data-rifai-giro><span class="sc-testo">${L('Rifai il giro di questa scheda', 'Redo this tab’s tour', 'Rehacer el recorrido de esta pestaña')}</span></button>
       ${qui ? `<a class="sc-voce" role="menuitem" href="${esc(qui.via)}" target="_blank" rel="noopener"><span class="sc-testo">${L('Per questa scheda', 'For this tab', 'Para esta pestaña')}: <strong>${esc(qui.titolo)}</strong></span></a>` : ''}
       ${voci.map(([via, nome]) => `<a class="sc-voce" role="menuitem" href="${esc(via)}" target="_blank" rel="noopener"><span class="sc-testo">${esc(nome)}</span></a>`).join('')}
     </div>
@@ -3005,6 +3008,7 @@ for (const evento of ['pointerdown', 'keydown', 'touchstart']) {
     if (ev.target?.closest?.('#app')) {
       if (!_aiutoFattoQui) { _aiutoFattoQui = true; aiutoSegna(schedaAttiva, 'fatto'); }
       _aiutoCambi = [];
+      clearTimeout(_giroOrologio);
     }
     _aiutoInversioni = 0;
     _aiutoVerso = 0;
@@ -3025,9 +3029,232 @@ document.addEventListener('wheel', (ev) => {
   if (_aiutoInversioni >= AIUTO_INVERSIONI && aiutoPossibile()) { _aiutoInversioni = 0; mostraAiuto(); return; }
   if (_aiutoStriscia) return;
   riavviaAiuto();
+  riavviaGiro();
 }, { passive: true });
 
 document.addEventListener('visibilitychange', () => riavviaAiuto());
+
+const GIRO_MEMORIA = 'sb-giro';
+const GIRO_ATTESA_MS = 1400;
+const GIRO_DISTANZA_MS = 45_000;
+const GIRO_MARGINE = 10;
+
+let _giro = null;
+let _giroOrologio = null;
+let _giroUltimo = 0;
+let _giroSchedaPrima = null;
+
+function giroMemoria() {
+  try {
+    const m = JSON.parse(localStorage.getItem(GIRO_MEMORIA) || '{}');
+    return (m && typeof m === 'object') ? { viste: {}, mai: false, ...m } : { viste: {}, mai: false };
+  } catch (e) { return { viste: {}, mai: false }; }
+}
+
+function giroScrivi(cambia) {
+  try {
+    const m = giroMemoria();
+    cambia(m);
+    localStorage.setItem(GIRO_MEMORIA, JSON.stringify(m));
+  } catch (e) {  }
+}
+
+const giroVisto = (id) => { const m = giroMemoria(); return !!m.mai || !!m.viste[id]; };
+
+function testoCarta(carta) {
+  const su = carta.dataset.giro;
+  if (su) return su;
+  const buone = [...carta.querySelectorAll('p')].filter((x) => !x.closest('details')
+    && !x.querySelector('.badge, .chip-utente, .btn') && x.textContent.trim().length > 30);
+  const p = buone.find((x) => /[.!?]/.test(x.textContent)) || buone[0];
+  const t = (p?.textContent || '').trim().replace(/\s+/g, ' ');
+  return t.length > 190 ? t.slice(0, 187) + '…' : t;
+}
+
+function tappeDi(id) {
+  const tappe = [];
+  const g = GUIDE[id];
+  if (g) {
+    const serve = Array.isArray(g.serve) ? L(g.serve[0], g.serve[1], g.serve[2]) : g.serve;
+    const come = (g.come || []).map((c) => (Array.isArray(c) ? L(c[0], c[1], c[2]) : c));
+    tappe.push({
+      titolo: L('A cosa serve questa scheda', 'What this tab is for', 'Para qué sirve esta pestaña'),
+      testo: serve || '',
+      passi: come,
+      bersaglio: null,
+    });
+  }
+  const pannello = document.getElementById('scheda-' + id);
+  for (const carta of pannello ? pannello.querySelectorAll(':scope > .carta') : []) {
+    if (carta.hidden || !carta.offsetParent) continue;
+    const h2 = carta.querySelector('h2');
+    if (!h2) continue;
+    tappe.push({ titolo: h2.textContent.trim(), testo: testoCarta(carta), bersaglio: carta });
+  }
+  const a = aiutoDi(id);
+  if (a) {
+    tappe.push({
+      titolo: L('Se ti serve di più', 'If you need more', 'Si necesitas más'),
+      testo: a.tipo === 'manuale'
+        ? L('C\'è un manuale per questa scheda, con i numeri veri e i limiti.', 'There is a manual for this tab, with the real numbers and limits.', 'Hay un manual para esta pestaña, con los números reales y los límites.')
+        : L('C\'è una guida per questa scheda, che parte da zero.', 'There is a guide for this tab, starting from scratch.', 'Hay una guía para esta pestaña, que empieza de cero.'),
+      via: a.via,
+      viaTitolo: a.titolo,
+      bersaglio: null,
+    });
+  }
+  return tappe;
+}
+
+function giroPossibile(id) {
+  if (!stato?.user) return false;
+  if (!id || giroVisto(id)) return false;
+  if (_giro || _aiutoStriscia) return false;
+  if (document.hidden) return false;
+  const cookie = document.getElementById('cookie-banner');
+  if (cookie && !cookie.hidden) return false;
+  if (document.getElementById('benvenuto')) return false;
+  if (_giroUltimo && Date.now() - _giroUltimo < GIRO_DISTANZA_MS) return false;
+  return tappeDi(id).length >= 2;
+}
+
+function riavviaGiro() {
+  if (schedaAttiva === _giroSchedaPrima) return;
+  clearTimeout(_giroOrologio);
+  if (_giro && _giro.id !== schedaAttiva) chiudiGiro(false);
+  _giroSchedaPrima = schedaAttiva;
+  const id = schedaAttiva;
+  _giroOrologio = setTimeout(() => { if (schedaAttiva === id && giroPossibile(id)) apriGiro(id); }, GIRO_ATTESA_MS);
+}
+
+function apriGiro(id, forzato = false) {
+  if (_giro) chiudiGiro(false);
+  const tappe = tappeDi(id);
+  if (!tappe.length) {
+    if (forzato) toast(L('Qui non c\'è un giro da fare.', 'There is no tour here.', 'Aquí no hay un recorrido.'));
+    return;
+  }
+  const velo = document.createElement('div');
+  velo.id = 'giro';
+  velo.className = 'giro-velo';
+  velo.innerHTML = '<div class="giro-buco" hidden></div><div class="giro-carta" role="dialog" aria-modal="true" aria-live="polite"></div>';
+  document.body.appendChild(velo);
+  document.body.classList.add('giro-aperto');
+  _giro = { id, tappe, i: 0, velo, forzato };
+  _giroUltimo = Date.now();
+  disegnaTappa();
+  requestAnimationFrame(() => velo.classList.add('dentro'));
+}
+
+function disegnaTappa() {
+  if (!_giro) return;
+  const { tappe, i, velo } = _giro;
+  const t = tappe[i];
+  const carta = velo.querySelector('.giro-carta');
+  const buco = velo.querySelector('.giro-buco');
+  const ultima = i === tappe.length - 1;
+
+  if (t.bersaglio) {
+    t.bersaglio.scrollIntoView({ block: 'center', behavior: _menoMoto ? 'auto' : 'smooth' });
+  }
+  const posiziona = () => {
+    if (!_giro) return;
+    if (!t.bersaglio) { buco.hidden = true; carta.classList.add('al-centro'); return; }
+    const r = t.bersaglio.getBoundingClientRect();
+    buco.hidden = false;
+    carta.classList.remove('al-centro');
+    buco.style.left = (r.left - 6) + 'px';
+    buco.style.top = (r.top - 6) + 'px';
+    buco.style.width = (r.width + 12) + 'px';
+    buco.style.height = (r.height + 12) + 'px';
+    if (window.innerWidth <= 720) return;
+    const h = carta.offsetHeight || 200;
+    const w = carta.offsetWidth || 380;
+    const sotto = r.bottom + GIRO_MARGINE;
+    const sopra = r.top - GIRO_MARGINE - h;
+    if (sotto + h < window.innerHeight) carta.style.top = sotto + 'px';
+    else if (sopra > GIRO_MARGINE) carta.style.top = sopra + 'px';
+    else carta.style.top = (window.innerHeight - h - GIRO_MARGINE) + 'px';
+    const dentroSopra = sotto + h < window.innerHeight || sopra > GIRO_MARGINE;
+    carta.style.left = (dentroSopra
+      ? Math.min(Math.max(GIRO_MARGINE, r.left), window.innerWidth - w - GIRO_MARGINE)
+      : window.innerWidth - w - GIRO_MARGINE) + 'px';
+  };
+
+  carta.innerHTML = `
+    <p class="giro-conta">${i + 1} ${L('di', 'of', 'de')} ${tappe.length}</p>
+    <h3>${esc(t.titolo)}</h3>
+    ${t.testo ? `<p class="giro-testo">${esc(t.testo)}</p>` : ''}
+    ${t.passi?.length ? `<ol class="giro-passi">${t.passi.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}
+    ${t.via ? `<p><a class="btn secondario mini" href="${esc(t.via)}" target="_blank" rel="noopener">${esc(t.viaTitolo || '')}</a></p>` : ''}
+    <div class="giro-azioni">
+      <button type="button" class="btn secondario mini" data-giro="salta">${L('Salta il giro', 'Skip the tour', 'Saltar el recorrido')}</button>
+      <span class="giro-spinta"></span>
+      ${i > 0 ? `<button type="button" class="btn secondario mini" data-giro="indietro">${L('Indietro', 'Back', 'Atrás')}</button>` : ''}
+      <button type="button" class="btn mini" data-giro="avanti">${ultima ? L('Ho capito', 'Got it', 'Entendido') : L('Avanti', 'Next', 'Siguiente')}</button>
+    </div>`;
+  _giro.posiziona = posiziona;
+  requestAnimationFrame(posiziona);
+  carta.querySelector('[data-giro="avanti"]')?.focus({ preventScroll: true });
+}
+
+function muoviGiro(d) {
+  if (!_giro) return;
+  const n = _giro.i + d;
+  if (n < 0) return;
+  if (n >= _giro.tappe.length) { chiudiGiro(true); return; }
+  _giro.i = n;
+  disegnaTappa();
+}
+
+function chiudiGiro(finito) {
+  if (!_giro) return;
+  const { id, velo } = _giro;
+  _giro = null;
+  document.body.classList.remove('giro-aperto');
+  velo.classList.remove('dentro');
+  setTimeout(() => velo.remove(), 220);
+  giroScrivi((m) => { m.viste[id] = finito ? 2 : 1; });
+  if (finito) aiutoSegna(id, 'fatto', AIUTO_SA_FARE);
+}
+
+document.addEventListener('click', (ev) => {
+  if (!_giro) return;
+  const b = ev.target.closest('[data-giro]');
+  if (b) {
+    ev.preventDefault();
+    if (b.dataset.giro === 'avanti') muoviGiro(1);
+    else if (b.dataset.giro === 'indietro') muoviGiro(-1);
+    else chiudiGiro(false);
+    return;
+  }
+  if (ev.target === _giro.velo) chiudiGiro(false);
+});
+
+document.addEventListener('click', (ev) => {
+  const r = ev.target.closest?.('[data-rifai-giro]');
+  if (!r) return;
+  ev.preventDefault();
+  document.querySelectorAll('.aiuto-menu').forEach((m) => { m.hidden = true; });
+  document.body.classList.remove('menu-aperto');
+  setTimeout(() => apriGiro(schedaAttiva, true), 60);
+});
+
+document.addEventListener('keydown', (ev) => {
+  if (!_giro) return;
+  if (ev.key === 'Escape') { ev.preventDefault(); chiudiGiro(false); }
+  else if (ev.key === 'ArrowRight') { ev.preventDefault(); muoviGiro(1); }
+  else if (ev.key === 'ArrowLeft') { ev.preventDefault(); muoviGiro(-1); }
+});
+
+let _giroFotogramma = 0;
+function seguiGiro() {
+  if (!_giro || _giroFotogramma) return;
+  _giroFotogramma = requestAnimationFrame(() => { _giroFotogramma = 0; _giro?.posiziona?.(); });
+}
+window.addEventListener('scroll', seguiGiro, { passive: true, capture: true });
+window.addEventListener('resize', seguiGiro);
+
 
 const NOVITA_VISTE = 'sb-novita-viste';
 
@@ -15960,6 +16187,7 @@ function _scambiaScheda(id, sezioni) {
   caricaDatiScheda(id);
   azzeraBarraSalva();
   riavviaAiuto();
+  riavviaGiro();
   if (DEMO) aggiornaSpiegazioneDemo();
   if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: _menoMoto ? 'auto' : 'smooth' });
 }
@@ -16006,6 +16234,7 @@ function vaiAScheda(id) {
   caricaDatiScheda(id);
   azzeraBarraSalva();
   riavviaAiuto();
+  riavviaGiro();
   if (DEMO) aggiornaSpiegazioneDemo();
   if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: _menoMoto ? 'auto' : 'smooth' });
 }
