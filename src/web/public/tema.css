@@ -2,31 +2,34 @@
 /* Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live */
 
 :root {
-  --bg: #f4f1ea;
-  --surface: #faf7f1;
-  --surface-2: #efeade;
-  --surface-3: #e6e0d2;
-  --border: #e5ded1;
-  --border-2: #d8cfbe;
+  color-scheme: light;
 
-  --testo: #1b1916;
-  --testo-2: #726c63;
-  --testo-3: #a49d92;
+  --bg: #f7eff2;
+  --surface: #fcf5f8;
+  --surface-2: #f4e6ec;
+  --surface-3: #ecdbe2;
+  --border: #e9dae0;
+  --border-2: #decad2;
 
-  --acc: #cf4428;
-  --acc-600: #b63a20;
-  --acc-soft: #f7ece6;
-  --acc-tint: rgba(207, 68, 40, .09);
-  --acc-bordo: #ecd6cc;
+  --testo: #1a1919;
+  --testo-2: #6c6869;
+  --testo-3: #8f8a8c;
 
-  --verde: #4b7a54; --verde-soft: #eef3ec; --verde-bordo: #cfdccf;
+  --acc: #ba007a;
+  --acc-600: #940060;
+  --su-acc: #ffffff;
+  --acc-soft: color-mix(in srgb, var(--acc) 8%, var(--surface));
+  --acc-tint: color-mix(in srgb, var(--acc) 10%, transparent);
+  --acc-bordo: color-mix(in srgb, var(--acc) 26%, var(--border));
+
+  --verde: #497852; --verde-soft: #eef3ec; --verde-bordo: #cfdccf;
   --rosso: #a8382b; --rosso-soft: #f6ebe7; --rosso-bordo: #ebccc5;
-  --ambra: #98691f; --ambra-soft: #f5eedd; --ambra-bordo: #e6d3b3;
+  --ambra: #926317; --ambra-soft: #f5eedd; --ambra-bordo: #e6d3b3;
 
   --r-xs: 4px; --r-s: 6px; --r-m: 8px; --r-l: 10px;
-  --om-s: 0 1px 2px rgba(27, 25, 22, .04);
-  --om-m: 0 2px 10px rgba(27, 25, 22, .05);
-  --om-l: 0 10px 30px rgba(27, 25, 22, .08);
+  --om-s: 0 1px 2px rgba(26, 25, 25, .05);
+  --om-m: 0 2px 10px rgba(26, 25, 25, .06);
+  --om-l: 0 10px 30px rgba(26, 25, 25, .09);
   --ease-back: var(--an-morbido); --molla: .22s var(--an-morbido); --spring: var(--an-morbido);
   --sheen: rgba(255, 255, 255, .35);
 
@@ -39,22 +42,25 @@
 }
 
 :root[data-theme="dark"], :root:not([data-theme="light"]) {
-  --bg: #131110;
-  --surface: #1a1714;
-  --surface-2: #211d18;
-  --surface-3: #2a251f;
-  --border: #2a2620;
-  --border-2: #38322a;
+  color-scheme: dark;
 
-  --testo: #ece7dd;
-  --testo-2: #948d82;
-  --testo-3: #6b655c;
+  --bg: #131112;
+  --surface: #1a1618;
+  --surface-2: #221c1e;
+  --surface-3: #2b2327;
+  --border: #2c2427;
+  --border-2: #3a3034;
 
-  --acc: #e8543a;
-  --acc-600: #d1462c;
-  --acc-soft: #241812;
-  --acc-tint: rgba(232, 84, 58, .13);
-  --acc-bordo: #3d2b23;
+  --testo: #eae6e8;
+  --testo-2: #918c8e;
+  --testo-3: #696566;
+
+  --acc: #f72fa7;
+  --acc-600: #ff61b7;
+  --su-acc: #1e0f18;
+  --acc-soft: color-mix(in srgb, var(--acc) 10%, var(--surface));
+  --acc-tint: color-mix(in srgb, var(--acc) 14%, transparent);
+  --acc-bordo: color-mix(in srgb, var(--acc) 26%, var(--border));
 
   --verde: #7bae86; --verde-soft: #1a271d; --verde-bordo: #2f4535;
   --rosso: #e0674f; --rosso-soft: #291813; --rosso-bordo: #47281f;
@@ -66,4 +72,11 @@
 
   --g-bot: #6f6a60; --g-pubblico: #6f6a60; --g-diretta: #6f6a60;
   --g-scena: #6f6a60; --g-vetrina: #6f6a60; --g-account: #6f6a60; --g-admin: var(--acc);
+}
+
+:root[data-theme="dark"] img[src*="/icons/logo-"],
+:root[data-theme="dark"] img[src*="/icons/marchio"],
+:root:not([data-theme="light"]) img[src*="/icons/logo-"],
+:root:not([data-theme="light"]) img[src*="/icons/marchio"] {
+  filter: drop-shadow(0 0 9px color-mix(in srgb, var(--acc) 38%, transparent));
 }

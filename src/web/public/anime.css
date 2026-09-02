@@ -874,7 +874,7 @@ body.leggero .vivo::after, body.meno-moto .vivo::after { animation: none; opacit
 .ovl-ricetta li::before {
   counter-increment: ovr; content: counter(ovr);
   flex: 0 0 auto; display: grid; place-items: center; width: 17px; height: 17px; margin-top: .1rem;
-  border-radius: 50%; background: var(--acc); color: #fff;
+  border-radius: 50%; background: var(--acc); color: var(--su-acc);
   font-size: .62rem; font-weight: 700; font-variant-numeric: tabular-nums;
 }
 .ovl-ricetta b { color: var(--testo); font-weight: 600; }

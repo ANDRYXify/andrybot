@@ -13,12 +13,13 @@
 //
 // LO SFONDO. Il disegno ha i contorni NERI: su fondo scuro spariscono e il
 // segno diventa una macchia. Quindi il fondo e' chiaro, ed e' la carta calda del
-// prodotto (#faf7f1) — la stessa superficie delle sue schede, cosi' l'icona
+// prodotto — la stessa superficie delle sue schede, cosi' l'icona
 // sembra parte dell'app e non un adesivo appiccicato sopra.
 
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { readFileSync, writeFileSync } from 'node:fs';
+import { tinta } from '../src/web/tavolozza.js';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
 const RAD = join(QUI, '..');
@@ -27,7 +28,7 @@ const FUORI = join(RAD, 'src', 'web', 'public', 'icons');
 const CHROMIUM = process.env.CHROMIUM || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 const PLAYWRIGHT = process.env.PLAYWRIGHT || '/opt/node22/lib/node_modules/playwright/index.mjs';
 
-const CARTA = '#faf7f1';
+const CARTA = tinta('surface');
 
 // Cosa si produce, e perche' ognuno e' diverso dagli altri:
 //

@@ -56,7 +56,7 @@ const chiedi = (via) => pg.evaluate((u) => fetch(u).then((r) => r.text()).catch(
 const prima = await chiedi('/icons/icon-192.png');
 icona = 'NUOVA';
 const dopo = await chiedi('/icons/icon-192.png');
-const timbrata = await chiedi('/icons/icon-192.png?v=5');
+const timbrata = await chiedi('/icons/icon-192.png?v=6');
 await ctx.setOffline(true);
 const senzaRete = await chiedi('/icons/icon-192.png');
 await ctx.setOffline(false);
@@ -66,7 +66,7 @@ srv.close();
 const esiti = [
   [prima === 'VECCHIA', `il worker e' attivo e serve l'icona: ${prima}`],
   [dopo === 'NUOVA', 'cambiata sul server, il browser vede quella NUOVA (la rete vince)'],
-  [timbrata === 'NUOVA', 'anche con il timbro ?v=5'],
+  [timbrata === 'NUOVA', 'anche con il timbro ?v=6'],
   [senzaRete === 'NUOVA', 'senza rete resta un paracadute, ed e\' aggiornato'],
 ];
 for (const [ok, msg] of esiti) console.log((ok ? '  ✓ ' : '  ✗ ') + msg);

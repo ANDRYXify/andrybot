@@ -5,6 +5,10 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-02
 
+- Il sito ha i colori del logo, chiaro e scuro: prima la carta era calda e l'accento arancione, e con un marchio magenta non c'entravano niente.
+- Sul tema scuro il logo ha di nuovo l'alone dietro anche nella pagina pubblica e nelle guide: ce l'aveva solo la barra in alto.
+- L'anteprima che esce quando condividi un link, e l'icona dell'app, sono dei colori nuovi: restavano indietro di un marchio.
+- Le scritte più tenui, il verde e l'ambra adesso si leggono: stavano sotto la soglia di contrasto anche prima del cambio.
 - Nella barra c'è un «?» che porta a guide, manuali e novità — e in cima quella della scheda che stai guardando.
 - L'avviso della guida impara: dove sei già entrato e uscito senza fare niente arriva prima, e se gli dici due volte «non serve» sta zitto per un mese.
 - Quando si vede che sei in difficoltà — fermo, un errore appena uscito, la rotella su e giù, o ci torni per la terza volta — il bot ti dice che per quella scheda c'è una guida. Si zittisce per sempre con un clic.

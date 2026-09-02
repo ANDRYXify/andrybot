@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#faf7f1" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#1a1714" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#fcf5f8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1a1618" media="(prefers-color-scheme: dark)">
 
   
   <script src="/tema.js"></script>
@@ -23,7 +23,7 @@
   <meta property="og:url" content="https://socialbot.live/">
   <meta property="og:title" content="Il bot per Twitch che scrive col tuo account">
   <meta property="og:description" content="Il bot per Twitch e Kick in italiano che scrive in chat col tuo account: comandi su misura, overlay per la diretta (alert, chat a schermo, widget, emote 7TV, green screen), musica, clip e notifiche live.">
-  <meta property="og:image" content="https://socialbot.live/icons/og.png?v=5">
+  <meta property="og:image" content="https://socialbot.live/icons/og.png?v=6">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="SocialBot — il bot per Twitch che scrive in chat col tuo account">
@@ -32,7 +32,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Il bot per Twitch che scrive col tuo account">
   <meta name="twitter:description" content="Il bot per Twitch e Kick in italiano che scrive col tuo account. Overlay per la diretta (alert, chat, widget, 7TV, green screen), comandi, musica, clip, notifiche live.">
-  <meta name="twitter:image" content="https://socialbot.live/icons/og.png?v=5">
+  <meta name="twitter:image" content="https://socialbot.live/icons/og.png?v=6">
 
   <meta property="og:image:type" content="image/png">
   <meta name="twitter:image:alt" content="SocialBot — il bot per Twitch che scrive in chat col tuo account">
@@ -51,8 +51,8 @@
   <link rel="stylesheet" href="anime.css">
   <link rel="stylesheet" href="vetrina.css">
   <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="apple-touch-icon" href="/icons/icon-192.png?v=5">
-  <link rel="icon" href="/icons/icon-192.png?v=5">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png?v=6">
+  <link rel="icon" href="/icons/icon-192.png?v=6">
 
   
   <script type="application/ld+json">
@@ -199,10 +199,10 @@
   
   <style>
     #splash { position: fixed; inset: 0; z-index: 99999; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 24px; background: #131110; color: #f4f1ea;
+      align-items: center; justify-content: center; gap: 24px; background: #131112; color: #eae6e8;
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
       transition: opacity .45s ease, visibility .45s ease; }
-    :root[data-theme="light"] #splash { background: #f4f1ea; color: #221f1c; }
+    :root[data-theme="light"] #splash { background: #f7eff2; color: #1a1919; }
     #splash.via { opacity: 0; visibility: hidden; pointer-events: none; }
     #splash .sp-box { position: relative; display: flex; align-items: center; justify-content: center; }
     #splash .sp-logo { height: 76px; width: auto; display: block;
@@ -215,12 +215,12 @@
       50% { transform: translateY(-7px) scale(1.035); }
     }
     @keyframes sp-bagliore {
-      0%, 100% { filter: drop-shadow(0 0 13px rgba(214,20,140,.42)) drop-shadow(0 0 32px rgba(214,20,140,.16)); }
-      50% { filter: drop-shadow(0 0 21px rgba(214,20,140,.62)) drop-shadow(0 0 52px rgba(214,20,140,.28)); }
+      0%, 100% { filter: drop-shadow(0 0 13px rgba(247,47,167,.42)) drop-shadow(0 0 32px rgba(247,47,167,.16)); }
+      50% { filter: drop-shadow(0 0 21px rgba(247,47,167,.62)) drop-shadow(0 0 52px rgba(247,47,167,.28)); }
     }
     @media (prefers-reduced-motion: reduce) {
       #splash .sp-logo { animation: none;
-        filter: drop-shadow(0 0 16px rgba(214,20,140,.45)) drop-shadow(0 0 38px rgba(214,20,140,.2)); }
+        filter: drop-shadow(0 0 16px rgba(247,47,167,.45)) drop-shadow(0 0 38px rgba(247,47,167,.2)); }
       :root[data-theme="light"] #splash .sp-logo { filter: none; }
     }
   </style>
@@ -228,7 +228,7 @@
 </head>
 <body>
   <div id="splash" role="status" aria-label="Caricamento SocialBot">
-    <div class="sp-box"><img class="sp-logo" src="/icons/logo-barra.png?v=5" alt="SocialBot" width="202" height="76"></div>
+    <div class="sp-box"><img class="sp-logo" src="/icons/logo-barra.png?v=6" alt="SocialBot" width="202" height="76"></div>
     <div class="sp-nome">caricamento…</div>
   </div>
   <script src="/splash.js" defer></script>
@@ -240,7 +240,7 @@
     
     <header class="barra-top" id="barra-top">
       <a class="marchio" href="/">
-        <img class="marchio-segno" src="/icons/logo-barra.png?v=5" alt="SocialBot" width="80" height="30">
+        <img class="marchio-segno" src="/icons/logo-barra.png?v=6" alt="SocialBot" width="80" height="30">
       </a>
       <span class="bt-sezione" id="bt-sezione" aria-hidden="true"></span>
       <nav class="nav-top" id="nav-top" aria-label="Navigazione"></nav>
