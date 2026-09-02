@@ -5,6 +5,7 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-02
 
+- Se resti fermo su una scheda, il bot ti fa presente che per quella c'è una guida o un manuale — una riga in fondo, che sparisce appena ti muovi e che puoi zittire per sempre.
 - Privacy, termini, invito ai moderatori e sblocco hanno lo stesso aspetto del resto del sito e seguono il tema che hai scelto: erano rimaste scure e viola.
 - Su Kick il bot scrive con il tuo account, come su Twitch: prima provava con un account suo e Kick rifiutava, quindi in chat non usciva niente.
 - La pagina pubblica è dello stesso colore del resto del bot e segue il tema che hai scelto, chiaro o scuro: prima era scura e basta, anche se avevi scelto chiaro.

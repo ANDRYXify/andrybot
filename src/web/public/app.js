@@ -647,6 +647,7 @@ function render() {
   if (conPiattaforma) document.querySelectorAll('.pannello-scheda').forEach((p) => rendiCartePieghevoli(p, p.dataset.scheda));
   rivelaCarte();
   misuraBarraTop();
+  riavviaAiuto();
 
   if (_syRender) requestAnimationFrame(() => { try { window.scrollTo(0, _syRender); } catch {  } });
 }
@@ -2744,6 +2745,63 @@ function provaInCorso() {
   const tutto = (a.pacchetti || []).length >= 7;
   return { tier: a.tier || 'base', tutto, fine, giorni };
 }
+
+const AIUTO_FERMO_MS = 40_000;
+let _aiutoOrologio = null;
+let _aiutoStriscia = null;
+
+function aiutoDi(id) {
+  const a = stato?.aiuti?.[id];
+  return (a && a.via && a.titolo) ? a : null;
+}
+
+function aiutoChiuso(id) {
+  try { return localStorage.getItem('sb-aiuto-' + id) === '1'; } catch (e) { return false; }
+}
+
+function togliAiuto(perSempre, id = schedaAttiva) {
+  if (perSempre) { try { localStorage.setItem('sb-aiuto-' + id, '1'); } catch (e) {  } }
+  _aiutoStriscia?.remove();
+  _aiutoStriscia = null;
+}
+
+function mostraAiuto() {
+  const a = aiutoDi(schedaAttiva);
+  if (!a || _aiutoStriscia || document.hidden) return;
+  const cookie = document.getElementById('cookie-banner');
+  if (cookie && !cookie.hidden) return;
+  const quale = a.tipo === 'manuale'
+    ? L('un manuale', 'a manual', 'un manual')
+    : L('una guida', 'a guide', 'una guía');
+  const el = document.createElement('div');
+  el.className = 'cookie-banner aiuto-banner';
+  el.setAttribute('role', 'status');
+  el.innerHTML = `<p>${L(`C'è ${quale} per questa scheda:`, `There's ${quale} for this tab:`, `Hay ${quale} para esta pestaña:`)}
+      <strong>${esc(a.titolo)}</strong></p>
+    <a class="btn" href="${esc(a.via)}" target="_blank" rel="noopener" data-aiuto-apri>${L('Aprilo', 'Open it', 'Ábrelo')}</a>
+    <button type="button" class="btn secondario" data-aiuto-no>${L('Non serve', 'No thanks', 'No hace falta')}</button>`;
+  document.body.appendChild(el);
+  _aiutoStriscia = el;
+  const id = schedaAttiva;
+  el.querySelector('[data-aiuto-apri]').addEventListener('click', () => togliAiuto(true, id));
+  el.querySelector('[data-aiuto-no]').addEventListener('click', () => togliAiuto(true, id));
+}
+
+function riavviaAiuto() {
+  clearTimeout(_aiutoOrologio);
+  togliAiuto(false);
+  if (DEMO || !stato?.user) return;
+  if (!aiutoDi(schedaAttiva) || aiutoChiuso(schedaAttiva)) return;
+  _aiutoOrologio = setTimeout(mostraAiuto, AIUTO_FERMO_MS);
+}
+
+for (const evento of ['pointerdown', 'keydown', 'wheel', 'touchstart']) {
+  document.addEventListener(evento, (ev) => {
+    if (_aiutoStriscia && _aiutoStriscia.contains(ev.target)) return;
+    riavviaAiuto();
+  }, { passive: true });
+}
+document.addEventListener('visibilitychange', () => riavviaAiuto());
 
 const NOVITA_VISTE = 'sb-novita-viste';
 
