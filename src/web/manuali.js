@@ -714,10 +714,10 @@ const INTERAZIONE = {
 
 const DIRETTA = {
   slug: 'diretta',
-  schede: ['regia', 'ascolto', 'clip', 'musica', 'studio'],
-  titolo: 'Manuale della diretta: regia, clip, musica, voce e Studio | SocialBot',
-  h1: 'Manuale della diretta: regia, clip, musica, voce e Studio',
-  desc: 'Comandare il canale senza aprire Twitch, far nascere le clip da sole, le richieste musicali, i comandi a voce e come andare in diretta dal browser.',
+  schede: ['regia', 'ascolto', 'clip', 'musica'],
+  titolo: 'Manuale della diretta: regia, clip, musica e comandi a voce | SocialBot',
+  h1: 'Manuale della diretta: regia, clip, musica e comandi a voce',
+  desc: 'Comandare il canale senza aprire Twitch, far nascere le clip da sole, le richieste musicali e i comandi a voce.',
   aggiornata: OGGI,
   corpo: [
     { p: [
@@ -778,19 +778,6 @@ const DIRETTA = {
     { p: ['Se la ricerca trova più brani plausibili, il bot <strong>chiede quale</strong> («intendi 1, 2 o 3?») e aspetta <strong>90 secondi</strong> la risposta. Meglio una domanda che la canzone sbagliata in coda.'] },
     { p: ['La richiesta si può far pagare in cinque modi: <strong>libera</strong>, solo <strong>abbonati</strong>, con le <strong>monete</strong> del canale, con i <strong>bit</strong> o con i <strong>punti canale</strong>. Su un canale vivace «libera» dura poco: le monete sono il freno più naturale, perché chi chiede ha già dovuto esserci.'] },
 
-    { h2: 'Studio: in diretta dal browser' },
-    { p: ['Andare live <strong>senza OBS</strong>: il browser mette insieme webcam, schermo e overlay, e li manda a Twitch passando dal nostro server. La <strong>stream key resta sul server</strong> — al browser non arriva mai, quindi non può finire in una registrazione o in uno screenshot.'] },
-    { tabella: [
-      ['Qualità', 'Bitrate video', 'Frame al secondo'],
-      ['720p 30fps <em>(di base)</em>', '4.500 kbit/s', '30'],
-      ['1080p 30fps', '6.000 kbit/s', '30'],
-      ['1080p 60fps', '8.000 kbit/s', '60'],
-      ['2K (1440p) 30fps', '9.000 kbit/s', '30'],
-      ['2K (1440p) 60fps', '12.000 kbit/s', '60'],
-    ] },
-    { p: ['Oltre il 1080p Twitch accetta il segnale ma applica i suoi limiti in base al livello dell\'account: la qualità che <em>arriva</em> a chi guarda non dipende solo da cosa scegli qui.'] },
-    { p: ['Lo Studio è comodo per una diretta veloce, da un computer che non è il tuo, o da un portatile. Per una diretta di gioco lunga, OBS resta più leggero: il browser deve comporre e codificare mentre il gioco gira.'] },
-
     { h2: 'Quando qualcosa non parte' },
     { ul: [
       '<strong>Cambio titolo e non cambia.</strong> Manca il permesso Gestione canale: si riautorizza dalla scheda Stato.',
@@ -798,11 +785,10 @@ const DIRETTA = {
       '<strong>!sr non risponde.</strong> Spotify collegato, Premium attivo, app aperta: servono tutte e tre. Con l\'app chiusa non esiste una coda in cui mettere il brano.',
       '<strong>La voce non sente.</strong> Il microfono va concesso al browser, la pagina di ascolto deve restare aperta e serve Chrome o Edge.',
       '<strong>«Categoria» non cambia il gioco.</strong> La parola chiave va detta <em>prima</em> del nome: «categoria Fortnite», non «metti Fortnite».',
-      '<strong>Lo Studio va a scatti.</strong> Scendi di qualità: comporre 1080p60 nel browser mentre giochi chiede molto alla macchina.',
     ] },
   ],
   faq: [
-    { d: 'Serve OBS per usare gli overlay?', r: 'Per gli overlay sì, o un qualunque programma che apra una pagina web come sorgente. Lo Studio è l\'alternativa a OBS per andare in diretta, e gli overlay li compone da sé.' },
+    { d: 'Serve OBS per usare gli overlay?', r: 'Serve OBS o un qualunque programma che sappia aprire una pagina web come sorgente: l\'overlay è una pagina, non un plugin da installare.' },
     { d: 'Il bot registra la mia voce?', r: 'No. I comandi a voce diventano testo nel tuo browser e il bot riceve solo la parola. L\'ascolto dei momenti salienti lavora sull\'audio pubblico della diretta, quello che già sentono tutti.' },
     { d: 'Posso usare le clip automatiche e fare clip a mano?', r: 'Sì, non si escludono. Le azioni rapide della Regia hanno un tasto clip che funziona sempre.' },
     { d: 'Perché la coda musicale va sul mio Spotify e non su una lista vostra?', r: 'Perché la musica la senti tu e la sentono i tuoi spettatori dallo stesso posto, con i tuoi diritti d\'ascolto. Una lista nostra sarebbe un\'altra riproduzione, con altri problemi.' },
