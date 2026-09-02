@@ -18,6 +18,7 @@ import * as auth from './auth.js';
 import * as api from './api.js';
 import { chiavePubblica, verificaFirma } from './firma.js';
 import { daChatMessage, daEvento } from './messaggio.js';
+import { nostro } from './eco.js';
 
 const log = makeLog('kick');
 
@@ -108,7 +109,10 @@ export function montaKick(app, { requireLogin, currentUser, wrap, suMessaggio, s
 
       if (tipo === 'chat.message.sent') {
         const msg = daChatMessage(p, { canale });
-        if (msg && !msg.isSelf) await suMessaggio?.(msg);
+        // L'eco di quello che ha appena detto il bot non e' un messaggio della
+        // chat: su Kick non c'e' un `isSelf`, quindi lo riconosciamo da cio' che
+        // abbiamo mandato noi (vedi eco.js).
+        if (msg && !msg.isSelf && !nostro(canale, msg.text)) await suMessaggio?.(msg);
         return;
       }
       const ev = daEvento(tipo, p, { canale });

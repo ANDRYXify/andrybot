@@ -10,6 +10,7 @@
 import { tokens } from '../db.js';
 import { makeLog } from '../logger.js';
 import { rinnova, daRinnovare } from './auth.js';
+import { segna } from './eco.js';
 
 const log = makeLog('kick');
 const API = 'https://api.kick.com/public/v1';
@@ -96,6 +97,9 @@ export async function scrivi(login, testo, { comeBot = true, broadcasterUserId =
   const corpo = { content: t.slice(0, MAX_TESTO), type: comeBot ? 'bot' : 'user' };
   if (!comeBot && broadcasterUserId) corpo.broadcaster_user_id = Number(broadcasterUserId);
   if (rispondiA) corpo.reply_to_message_id = String(rispondiA);
+  // Si segna PRIMA di mandare: l'evento puo' tornare indietro prima che questa
+  // chiamata abbia finito, e a quel punto sarebbe gia' troppo tardi.
+  segna(login, corpo.content);
   return chiama(login, '/chat', { metodo: 'POST', corpo, ...opts });
 }
 
