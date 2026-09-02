@@ -25,6 +25,7 @@ import { montaEsche, riepilogoEsche } from './esche.js';
 import { montaArgine } from './argine.js';
 import { GUIDE, paginaGuida, paginaIndice, paginaNovita, urlGuide } from './guide.js';
 import * as novita from './novita.js';
+import { paginaManuale, paginaIndiceManuali, urlManuali } from './manuali.js';
 import { AntiBot } from '../features/antibot.js';
 import { statoListaBot, registro as registroAntibot, segnalazioniAperte, risolviSegnalazione, sintesiRegistro, registra as registraAntibot, nomeBot, valutaAccount, assetto as assettoAntibot, sogliaRaffica, codaBan } from '../features/antibot.js';
 import { statoBackup, backupOra } from '../backup.js';
@@ -1289,7 +1290,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       .concat([`    <xhtml:link rel="alternate" hreflang="x-default" href="${escXml(LINGUE_URL.it)}"/>`])
       .join('\n');
     const voci = Object.values(LINGUE_URL).map((u) => ({ u, p: '1.0', f: 'weekly', alt: true }));
-    for (const g of urlGuide(novita.leggi(NOVITA_MD))) voci.push({ u: g.loc, p: g.prio, f: g.freq, m: g.lastmod });
+    for (const g of [...urlGuide(novita.leggi(NOVITA_MD)), ...urlManuali()]) voci.push({ u: g.loc, p: g.prio, f: g.freq, m: g.lastmod });
     voci.push({ u: `${b}/privacy`, p: '0.3', f: 'yearly' });
     voci.push({ u: `${b}/termini`, p: '0.3', f: 'yearly' });
     try {
@@ -1384,6 +1385,28 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.set('Cache-Control', 'public, max-age=0, s-maxage=3600');
     res.send(GUIDA_HTML.get('#indice'));
   });
+  // I manuali: materiale di consultazione per chi il bot ce l'ha già. Pubblici
+  // come le guide — chi valuta il bot deve poter vedere prima cosa sa fare.
+  const MANUALE_HTML = new Map();
+  app.get('/manuale', (req, res) => {
+    if (!MANUALE_HTML.has('#indice')) MANUALE_HTML.set('#indice', paginaIndiceManuali());
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.set('Cache-Control', 'public, max-age=0, s-maxage=3600');
+    res.send(MANUALE_HTML.get('#indice'));
+  });
+  app.get('/manuale/:slug', (req, res, next) => {
+    const slug = String(req.params.slug || '').toLowerCase();
+    if (!/^[a-z0-9-]{2,40}$/.test(slug)) return next();
+    if (!MANUALE_HTML.has(slug)) {
+      const h = paginaManuale(slug);
+      if (!h) return next();
+      MANUALE_HTML.set(slug, h);
+    }
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.set('Cache-Control', 'public, max-age=0, s-maxage=3600');
+    res.send(MANUALE_HTML.get(slug));
+  });
+
   // Le novità: stessa forma delle guide (contenuto pubblico, indicizzabile) ma
   // la fonte è NOVITA.md, scritto nello stesso commit della cosa che racconta.
   let novitaHtml = { quando: null, corpo: '' };
