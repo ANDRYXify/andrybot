@@ -243,6 +243,7 @@ export const SCOPES = {
     'moderator:manage:announcements', // annunci in chat (/announce) dai Moduli
     'moderator:manage:shoutouts',     // shoutout ufficiale (/shoutout) dai Moduli
     'moderator:read:chatters',        // chi è in chat (ore guardate / fedeltà)
+    'moderation:read',                // chi sono i moderatori (per le due classifiche)
     'moderator:manage:chat_settings', // serranda dello scudo: chat ai soli follower / lenta
     'moderator:manage:shield_mode',   // Shield Mode di Twitch, alzata dallo scudo sotto attacco
     'user:manage:blocked_users',      // BLOCCO: l'unica azione che toglie davvero il follow di un bot

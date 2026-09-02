@@ -19,6 +19,42 @@ il pubblico. Da qui due gare:
 Non è un'impostazione: è un fatto su chi compete con chi. Per questo non c'è un
 interruttore da accendere, c'è una parola da aggiungere al comando.
 
+## Chi è staff lo dice Twitch, non «chi ha parlato di recente»
+
+La prima versione ricordava il ruolo **quando uno guadagnava**: il distintivo
+arriva gratis con ogni messaggio in chat, quindi sembrava abbastanza. Non lo era.
+
+Sul canale vero, appena rilasciato, la classifica dello staff era **vuota** e i
+moderatori — seb__98, skeller92, mizu__gamer — stavano in cima a quella del
+pubblico, mentre la pagina diceva *«nessun moderatore ha ancora monete»*. Falso.
+Erano moderatori da sempre; semplicemente non avevano ancora scritto **dopo** il
+rilascio, e il codice sapeva solo quello che aveva visto passare.
+
+Il difetto è di modello, non di dettaglio: **essere moderatore non è un evento,
+è uno stato**, e legarlo a un evento lascia scoperto tutto il passato.
+
+La lista autorevole ce l'ha Twitch (`GET /moderation/moderators`, scope
+`moderation:read`). `features/ruoli.js` la chiede e **riscrive il ruolo di tutte
+le righe già in archivio** — retroattivamente, nei due versi: chi è moderatore
+sale, chi non lo è più torna nel pubblico. Si riallinea quando si apre la
+classifica (con una scadenza di 10 minuti, per non chiedere a ogni pagina) e —
+forzando — prima di assegnare il premio, perché il premio pesca dal pubblico e
+deve sapere chi lo è davvero.
+
+I distintivi in chat restano, e non sono ridondanti: coprono chi scrive **senza
+bisogno di permessi**, quindi funzionano anche per chi non ha ancora
+riautorizzato. Le due sorgenti coprono metà del problema ciascuna.
+
+**«Non lo so» non è «nessun moderatore».** `getModerators` ritorna `null` quando
+non si è potuto chiedere (permesso mancante, Twitch che non risponde) e un array
+quando la risposta è arrivata. Con `null` non si tocca niente: trattare il
+silenzio come «zero moderatori» rimanderebbe tutti nel pubblico, che è
+esattamente il difetto di partenza servito al contrario.
+
+E la pagina lo dice: se il permesso manca, la classifica dello staff non finge
+di essere vuota — spiega che serve un permesso in più e offre il pulsante per
+concederlo.
+
 ## Dove vive il ruolo
 
 Nella tabella `points`, colonna `ruolo` (`''` = pubblico, `'staff'`). Non in

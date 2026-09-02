@@ -702,6 +702,21 @@ export const points = {
     const r = db.prepare('SELECT ruolo FROM points WHERE channel=? AND user=?').get(channel, String(user).toLowerCase());
     return r ? (r.ruolo || '') : '';
   },
+  // Riscrive il ruolo di TUTTE le righe di un canale da un elenco autorevole
+  // (i moderatori secondo Twitch, piu' lo streamer). Retroattivo di proposito:
+  // un moderatore che non scrive da mesi deve stare nella gara giusta lo stesso.
+  // Chi non e' nell'elenco torna pubblico, che e' l'altra meta' della verita'.
+  riallineaRuoli(channel, staff) {
+    const elenco = [...new Set((staff || []).map((u) => String(u).toLowerCase()).filter(Boolean))];
+    const segnaposto = elenco.length ? elenco.map(() => '?').join(',') : "''";
+    const su = db.prepare(`UPDATE points SET ruolo='staff' WHERE channel=? AND ruolo!='staff' AND user IN (${segnaposto})`);
+    const giu = db.prepare(`UPDATE points SET ruolo='' WHERE channel=? AND ruolo='staff' AND user NOT IN (${segnaposto})`);
+    const dentro = db.transaction(() => ({
+      saliti: su.run(channel, ...elenco).changes,
+      scesi: giu.run(channel, ...elenco).changes,
+    }));
+    return dentro();
+  },
   top(channel, n = 5, chi = 'pubblico') {
     const filtro = FILTRO_CLASSIFICA[chi] ?? FILTRO_CLASSIFICA.pubblico;
     return db.prepare(`SELECT user, monete, ruolo FROM points WHERE channel=? AND user NOT LIKE '[%'${filtro} ORDER BY monete DESC LIMIT ?`).all(channel, n);

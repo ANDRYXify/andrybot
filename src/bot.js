@@ -22,6 +22,7 @@ import * as comandichat from './features/comandichat.js';
 import * as sondaggi from './features/sondaggi.js';
 import * as songrequest from './features/songrequest.js';
 import * as vip from './features/vip.js';
+import * as ruoli from './features/ruoli.js';
 import * as telegram from './features/telegram.js';
 import * as discord from './features/discord.js';
 import * as contatori from './features/contatori.js';
@@ -261,6 +262,7 @@ export class BotManager {
         const periodoMs = (mese ? 30 : 7) * 24 * 60 * 60_000;
         if (Date.now() - (Number(s.settings.premioVipUltimo) || 0) < periodoMs) continue;
         const durata = vip.parseDurata(mese ? 'mese' : 'settimana');
+        await ruoli.riallinea(this.helix, login, { forza: true });   // il premio pesca dal pubblico: prima si sa chi lo e'
         await vip.premiaTopMonete(this.helix, login, Math.min(5, Math.max(1, Number(p.quanti) || 1)), durata, (t) => this.say(login, t), { saltaPerenni: p.saltaPerenni !== false });
         streamers.setSettings(login, { ...s.settings, premioVipUltimo: Date.now() });
       }

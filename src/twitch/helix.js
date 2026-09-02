@@ -481,6 +481,33 @@ export class Helix {
     }
   }
 
+  // Elenco MODERATORI del canale → [{ user_id, user_login, user_name }].
+  // Serve lo scope 'moderation:read' sul token del broadcaster. Ritorna null (non
+  // []) quando non si e' potuto chiedere: "nessun moderatore" e "non lo so" sono
+  // risposte diverse, e chi legge deve poterle distinguere prima di riscrivere
+  // qualcosa in base a questo elenco.
+  async getModerators(channelLogin) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return null;
+    const token = await this.auth.getToken('broadcaster', channelLogin);
+    const fuori = [];
+    let cursore = '';
+    try {
+      for (let giro = 0; giro < 10; giro++) {
+        const query = { broadcaster_id: s.user_id, first: 100 };
+        if (cursore) query.after = cursore;
+        const j = await this._request('GET', '/moderation/moderators', { query, token });
+        for (const m of j?.data || []) fuori.push(m);
+        cursore = j?.pagination?.cursor || '';
+        if (!cursore) break;
+      }
+      return fuori;
+    } catch (e) {
+      log.debug('getModerators:', e?.message || e);
+      return null;
+    }
+  }
+
   // Elenco VIP attuali → [{ user_id, user_login, user_name }] o [].
   async getVips(channelLogin) {
     const s = streamers.get(channelLogin);

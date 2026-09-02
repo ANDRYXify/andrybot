@@ -3555,6 +3555,7 @@ function pannelloStato() {
     'moderator:manage:shoutouts': L('shoutout ufficiali', 'official shoutouts', 'shoutouts oficiales'),
     'moderator:manage:announcements': L('annunci in chat', 'chat announcements', 'anuncios en el chat'),
     'moderator:read:chatters': L('ore guardate e fedeltà', 'watch time and loyalty', 'horas vistas y fidelidad'),
+    'moderation:read': L('chi sono i tuoi moderatori (per separare le due classifiche)', 'who your moderators are (to split the two leaderboards)', 'quiénes son tus moderadores (para separar las dos clasificaciones)'),
     'channel:manage:vips': L('gestione VIP', 'VIP management', 'gestión de VIP'),
     'channel:manage:broadcast': L('cambio categoria/titolo', 'category/title change', 'cambio de categoría/título'),
     'channel:manage:polls': L('sondaggi', 'polls', 'encuestas'),
@@ -11879,6 +11880,19 @@ async function caricaGiochi() {
   } catch (e) { ul.innerHTML = `<li class="vuoto">Errore: ${esc(e.message)}</li>`; }
 }
 
+function vuotoStaff() {
+  const manca = (stato?.scopeMancanti || []).includes('moderation:read');
+  if (manca) {
+    return L('Per sapere chi sono i tuoi moderatori serve un permesso in più: finché manca, restano nella classifica del pubblico. ',
+      'To know who your moderators are we need one more permission: until then they stay in the public leaderboard. ',
+      'Para saber quiénes son tus moderadores hace falta un permiso más: hasta entonces se quedan en la clasificación del público. ')
+      + `<a class="btn secondario mini" href="/auth/permessi">${L('Concedi i permessi', 'Grant permissions', 'Concede los permisos')}</a>`;
+  }
+  return L('Nessuno del tuo staff ha monete: è normale, moderi invece di giocare.',
+    'Nobody on your staff has coins: that is normal, you moderate instead of playing.',
+    'Nadie de tu staff tiene monedas: es normal, moderáis en vez de jugar.');
+}
+
 async function caricaClassifica() {
   const ulCl = document.getElementById('lista-classifica');
   const ulStaff = document.getElementById('lista-classifica-staff');
@@ -11902,9 +11916,7 @@ async function caricaClassifica() {
     gara(ulCl, d.monete || [], L(`Ancora nessuno ha ${nome}: si guadagnano chiacchierando e giocando!`,
       `Nobody has ${nome} yet: they are earned by chatting and playing!`,
       `Todavía nadie tiene ${nome}: se ganan charlando y jugando.`));
-    gara(ulStaff, d.staff || [], L('Nessun moderatore ha ancora monete qui. Compaiono appena scrivono in chat.',
-      'No moderator has coins here yet. They show up as soon as they write in chat.',
-      'Ningún moderador tiene monedas aquí todavía. Aparecen en cuanto escriben en el chat.'));
+    gara(ulStaff, d.staff || [], vuotoStaff());
     if (ulVip) {
       const vip = d.vip || [];
       ulVip.innerHTML = vip.length
