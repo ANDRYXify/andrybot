@@ -124,6 +124,28 @@ mentre accade. Questa è silenziosa. Le due strade non sono ridondanti: sono la
 stessa azione con due livelli di visibilità, e chi può fare la cosa silenziosa è
 chi risponde del canale.
 
+## Dove uno li cerca
+
+Il motore c'era, ma nella scheda **Comandi**. Chi voleva inventare un gioco
+andava in **Giochi**, trovava cinque forme già pronte — quiz, parola veloce,
+anagramma, sequenza, domanda — dove si mettono le proprie domande e le proprie
+parole, e concludeva, giustamente, che non si potevano fare giochi propri.
+
+Una capacità che vive dove nessuno la cerca **non esiste**. Per questo la scheda
+Giochi ora ha la carta «Inventa un gioco tuo», che dice in una riga cos'è un
+gioco — *un comando che costa, un tiro di dado, e cosa succede se vinci o se
+perdi* — e porta alle ricette.
+
+Le ricette **aprono l'editor dei Comandi**, non un secondo editor: c'è un posto
+solo in cui si costruisce, e due porte per entrarci. Sotto, l'elenco dei giochi
+che ti sei costruito — che non è una lista nuova da tenere aggiornata, ma i
+Moduli che **toccano la moneta del canale**: un'azione «punti», un costo o un
+patrimonio minimo. Chi ne ha uno lo vede lì e lo apre da lì.
+
+Anche l'elenco delle ricette è **uno solo** (`RICETTE_PUNTI`): le due schede lo
+disegnano, nessuna delle due può dimenticarsene una per strada, e il cancello
+verifica che ogni ricetta offerta abbia davvero il suo modello.
+
 ## Le ricette
 
 Un motore senza ricette è una pagina bianca. Le sei nuove usano il meccanismo

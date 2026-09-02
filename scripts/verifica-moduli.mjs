@@ -72,6 +72,18 @@ for (const [cosa, insieme] of posti) {
   dice(manca.length === 0, `ogni azione ${cosa}`, manca.join(', '));
 }
 
+// ---- 3-bis. ogni ricetta esiste davvero ---------------------------------
+// Le ricette compaiono in due schede (Comandi e Giochi) e devono venire da una
+// lista sola, altrimenti una delle due si dimentica per strada.
+const ricette = [...listaDi(app, 'RICETTE_PUNTI').matchAll(/\['([a-z]+)'/g)].map((m) => m[1]);
+const casiModello = casiDi(corpoDi(app, 'function modelloPronto('));
+dice(ricette.length > 0, `ricette a punti offerte: ${ricette.length}`);
+const senzaModello = ricette.filter((r) => !casiModello.has(r));
+dice(senzaModello.length === 0, 'ogni ricetta ha il suo modello', senzaModello.join(' '));
+const scritteAMano = [...app.matchAll(/data-(?:modello|ricetta)="([a-z]+)"/g)].map((m) => m[1]);
+dice(scritteAMano.length === 0 || scritteAMano.every((r) => casiModello.has(r)),
+  'nessun bottone rimanda a un modello che non c\'e\'', scritteAMano.filter((r) => !casiModello.has(r)).join(' '));
+
 // ---- 4. ogni variabile offerta ha una spiegazione ------------------------
 // La legenda raggruppa sotto "…" la famiglia delle variabili "a caso": quelle
 // si ricavano dal motore, non si elencano qui.
