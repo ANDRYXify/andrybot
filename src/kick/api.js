@@ -80,6 +80,31 @@ async function chiama(login, percorso, { metodo = 'GET', corpo = null, query = n
   }
 }
 
+// CHI HA APPENA AUTORIZZATO, con il token in mano e basta.
+//
+// Serve alla registrazione: in quel momento non esiste ancora un canale nostro
+// sotto cui cercare il token, quindi non si puo' passare dalla strada normale.
+// E' la stessa chiamata, con il token dato invece che ripescato.
+export async function chiSono(accessToken, { fetchImpl = fetch } = {}) {
+  const tok = String(accessToken || '');
+  if (!tok) return { ok: false, errore: 'nessun token' };
+  try {
+    const r = await fetchImpl(API + '/users', {
+      headers: { authorization: 'Bearer ' + tok, accept: 'application/json' },
+    });
+    const testo = await r.text().catch(() => '');
+    let j = null; try { j = testo ? JSON.parse(testo) : null; } catch { /* non JSON */ }
+    if (!r.ok) return { ok: false, stato: r.status, errore: j?.message || testo.slice(0, 200) || ('HTTP ' + r.status) };
+    const dati = j?.data ?? j;
+    const u = Array.isArray(dati) ? dati[0] : dati;
+    const userId = String(u?.user_id ?? '');
+    if (!userId) return { ok: false, errore: 'Kick non ha detto chi sei' };
+    return { ok: true, userId, nome: String(u?.name || u?.username || '') };
+  } catch (e) {
+    return { ok: false, errore: e?.message || String(e) };
+  }
+}
+
 // Chi ha autorizzato: serve a legare il canale Kick allo streamer da noi.
 export async function ioSuKick(login, opts) {
   const r = await chiama(login, '/users', opts);

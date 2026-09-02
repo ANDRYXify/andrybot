@@ -5,6 +5,7 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-02
 
+- Ci si registra anche con Kick: se trasmetti solo lì non ti serve un account Twitch, e le parti che senza Twitch non funzionerebbero il pannello te le dice spente invece di fingere.
 - Il bot funziona davvero su Kick: gli eventi che Kick ci mandava venivano rifiutati dal sito, quindi il collegamento riusciva e poi non arrivava niente.
 - Su Kick il bot non si ascolta più da solo: le sue risposte non contano come messaggi della chat.
 - Il menu laterale si chiude cliccando fuori, non solo con la X: su schermi larghi restava aperto.

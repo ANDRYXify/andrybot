@@ -92,6 +92,41 @@ e nell'ambiente `KICK_CLIENT_ID` e `KICK_CLIENT_SECRET`. Se gli eventi non
 arrivano, il pannello lo dice con l'indirizzo giusto sotto la riga di Kick,
 invece di un generico «da sistemare».
 
+### Entrare con Kick
+
+Chi trasmette **solo** su Kick non ha un account Twitch da usare, e chiedergliene
+uno per usare il bot sarebbe chiedergli di iscriversi a un servizio che non gli
+serve. Dalla vetrina c'è una seconda porta, `/accedi/kick`: la stessa
+autorizzazione dice **chi è** e dà al bot il permesso di **parlare** — un giro
+solo invece di due.
+
+**Il nome del canale è la cosa che regge tutto.** Su Twitch e su Kick esiste lo
+stesso nome, spessissimo di persone diverse: se il canale Kick «pippo» prendesse
+la riga `pippo`, il giorno che il `pippo` di Twitch entra si ritroverebbe il
+canale di un altro — comandi, monete, memoria, tutto. La soluzione non è un
+controllo: è una **forma**. Un login Twitch è fatto solo di lettere, cifre e
+trattini bassi, quindi un canale Kick si chiama **`kick.<nome>`** e non può
+collidere. Non per fortuna: per costruzione (`src/identita.js`).
+
+La stessa forma difende i percorsi su disco (`/u/<login>/img/...`): `..` non è un
+canale, e non lo diventa.
+
+Chi torna si riconosce dall'**id di Kick**, non dal nome: chi cambia nome su Kick
+ritrova il suo canale.
+
+Cosa cambia nel prodotto: niente, tranne le cose che parlano davvero con Twitch.
+Il bot non entra in una chat Twitch senza un token Twitch, quindi il giro delle
+connessioni si esclude da sé; e il pannello **spegne** le schede che su Kick non
+avrebbero con cosa lavorare (moderazione, regia, emote 7TV) dicendo perché,
+invece di mostrare pulsanti che non fanno niente. Le monete su Kick arrivano dai
+messaggi: l'elenco di chi guarda in silenzio Kick non lo dà.
+
+Il collaudo (`test/contratto/kick-accesso.test.mjs`) monta le rotte vere su
+un'app Express e segue il giro con i cookie come farebbe un browser: PKCE con il
+verifier che non passa mai dalla rete, uno `state` estraneo che non entra, un
+ritorno senza giro in corso che non entra, lo stesso codice che non entra due
+volte, e chi è già dentro che non passa dalla porta della registrazione.
+
 ### Cosa NON fa ancora, e perché è detto qui
 
 Antibot e antispam agiscono via Helix (elimina, timeout): hanno senso solo su
