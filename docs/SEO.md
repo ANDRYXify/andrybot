@@ -60,7 +60,7 @@ le lingue da sitemap.
 458 caratteri. Google ne mostra circa 155-160: il resto veniva tagliato, e
 quello che restava leggeva come un elenco di parole chiave. Riscritta a 162,
 164 e 159 caratteri nelle tre lingue, con dentro le parole che contano
-davvero (bot Twitch, chat, moderazione, overlay OBS, avvisi live, gratis).
+davvero (bot Twitch, chat, moderazione, overlay per la diretta, avvisi live, gratis).
 
 ## 4. Core Web Vitals
 
@@ -84,7 +84,7 @@ da prodotti di tutt'altro genere).
 
 Il dominio ha **una sola pagina di contenuto**. Una landing page sola non puo
 posizionarsi su tutte le ricerche che ci interessano — «bot twitch gratis»,
-«overlay OBS alert follow», «come fermare una hate raid», «richieste musicali
+«overlay alert follow», «come fermare una hate raid», «richieste musicali
 Spotify Twitch», «bot twitch italiano» — perche ognuna vuole una pagina che
 parli di quella cosa. Le pagine `/u/<canale>` aggiungono superficie ma parlano
 degli streamer, non del prodotto.
@@ -249,3 +249,23 @@ Cosa è stato aggiunto, in ordine di quanto pesa:
 
 **Quello che non si può fare**: obbligare un assistente a dire la verità. Si può
 solo togliergli ogni scusa per non trovarla, e aspettare la prossima scansione.
+
+## OBS non è più la cornice
+
+Il prodotto si raccontava attorno a OBS: «overlay per OBS», «anche senza OBS»,
+«dirette dal browser senza OBS». Ma il bot si usa **ovunque**, e l'overlay è una
+pagina web: si mette in OBS, in Streamlabs, o in qualunque cosa apra un
+indirizzo. Descriverlo contro OBS lo faceva sembrare l'accessorio di un
+programma, e — peggio — escludeva chi quel programma non lo usa.
+
+Ora la cosa si chiama per quello che è: **overlay per la diretta**, ed **effetti
+a schermo**. OBS resta nominato in due posti, e sono i due dove serve davvero:
+
+1. nelle **istruzioni** del pannello, come esempio fra altri — chi deve incollare
+   un link ha bisogno di sapere dove, e nominare un programma solo escludeva
+   tutti gli altri: «(OBS, Streamlabs, qualunque programma che apra una pagina)»;
+2. una volta fra le **parole chiave**, perché «overlay OBS» è come la gente
+   cerca. Lì non è una promessa, è un indirizzo.
+
+Se un domani si vuole togliere anche quella, si perde un po' di ricerca: è una
+scelta di posizionamento, non un difetto da correggere.
