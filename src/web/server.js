@@ -45,6 +45,7 @@ import * as discord from '../features/discord.js';
 import * as instagram from '../features/instagram.js';
 import * as emotes from '../features/emotes.js';
 import * as seventv from '../features/seventv.js';
+import * as ruoli from '../features/ruoli.js';
 import * as tgapp from '../features/tgapp.js';
 import * as badges from '../features/badges.js';
 import * as quotesImport from '../features/quotesimport.js';
@@ -4464,6 +4465,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // classifica monete + VIP attuali (per la dashboard)
   app.get('/api/streamer/classifica', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
+    // Chi e' staff lo dice Twitch, non "chi ha scritto di recente": senza questo
+    // un moderatore che non parla da settimane resta nella classifica sbagliata.
+    // Best-effort e a scadenza: se non si puo' chiedere, le righe restano come
+    // stanno invece di essere riscritte a caso.
+    await ruoli.riallinea(helix, login);
     res.json({
       monete: points.top(login, 10),
       staff: points.top(login, 10, 'staff'),
