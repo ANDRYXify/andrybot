@@ -68,7 +68,7 @@ const IMMAGINI = {
     titolo: 'Il bot che scrive in chat',
     evidenza: 'col tuo account',
     sotto: 'Comandi su misura, <strong>overlay per la diretta</strong>, clip, musica, notifiche live e uno <strong>scudo anti&#8209;bot</strong> che si alza da solo.',
-    pastiglie: ['Col tuo account', 'Overlay ed effetti', 'Dirette dal browser', 'Gratis'],
+    pastiglie: ['Col tuo account', 'Overlay ed effetti', 'In italiano', 'Gratis'],
   }),
   'og-guide.png': pagina({
     occhiello: 'Guide',

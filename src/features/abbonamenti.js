@@ -27,7 +27,7 @@ const TOLLERANZA_WEBHOOK_S = 300; // 5 min: finestra anti-replay dei webhook Str
 // ── ESSENZIALE: il pacchetto GRATUITO ────────────────────────────────────────
 // Non è una demo: basta registrarsi e il bot funziona davvero nella tua chat —
 // comandi e automazioni illimitati, moderazione e antispam, overlay per OBS e
-// contatori a schermo. Si paga solo per ciò che sta oltre (Studio Web,
+// contatori a schermo. Si paga solo per ciò che sta oltre (moderatori,
 // moderatori, add-on). L'id resta 'free' per compatibilità con i dati salvati.
 export const FREE = {
   id: 'free', nome: 'Essenziale', prezzo: 0, prezzoTesto: 'Gratis', priceEnv: null, icona: '🎈',
