@@ -1055,7 +1055,22 @@ const OVERLAY = {
       ['Contatori', 'I numeri che tu e i mod muovete in chat: morti, tentativi, quello che vuoi.', 'dove li metti tu'],
       ['Effetti & suoni', 'Immagini, video e suoni che partono da un comando o da un premio a punti.', 'al centro'],
     ] },
-    { p: ['Ogni elemento si trascina dove vuoi nella tela dello Studio, con le maniglie agli angoli o coi numeri. Scorciatoie: <strong>rotellina</strong> ridimensiona, <strong>Shift+rotellina</strong> ruota, <strong>doppio clic</strong> rimette a posto.'] },
+    { p: ['Sulla tela dello Studio ci sono <strong>tutti</strong>, obiettivi e contatori compresi: quello che vedi lì è quello che va in onda, nello stesso punto.'] },
+
+    { h2: 'Il banco di regia' },
+    { p: ['A sinistra i <strong>livelli</strong> (l\'elenco di quello che c\'è, con l\'occhio per toglierlo da questo overlay), al centro la <strong>tela</strong> 1920×1080, a destra le <strong>proprietà</strong> di quello che hai scelto: posizione, dimensione, rotazione e tutto il suo aspetto. Le due sponde si arrotolano per dare spazio alla tela, si staccano trascinandole per la testa e si riagganciano con un doppio clic.'] },
+    { tabella: [
+      ['Per fare', 'Come'],
+      ['Spostare', 'Trascina. Si aggancia da solo ai bordi, ai centri e agli altri elementi; <strong>Alt</strong> mentre trascini toglie l\'aggancio.'],
+      ['Spostare al pixel', 'Frecce. Con <strong>Maiusc</strong> vanno dieci volte più in là.'],
+      ['Ridimensionare', 'La maniglia in basso a destra, la <strong>rotellina</strong>, o il numero nelle proprietà.'],
+      ['Ruotare', 'La maniglia col cerchio, <strong>Maiusc+rotellina</strong>, o i gradi nelle proprietà.'],
+      ['Allineare', 'I sei pulsanti in alto: bordi e centri della tela.'],
+      ['Tornare com\'era', '<strong>Ctrl+Z</strong> e <strong>Ctrl+Y</strong>, o le due frecce in alto a sinistra.'],
+      ['Rimettere a posto', '<strong>Doppio clic</strong> sull\'elemento: torna nel suo angolo di serie.'],
+      ['Vedere com\'è dal vivo', 'La spunta <strong>Dal vivo</strong>: alert e chat finti che si susseguono mentre lavori.'],
+    ] },
+    { p: ['Gli angoli della tela sono gli stessi dell\'overlay vero (un dito dai bordi), quindi un elemento «in alto a destra» sta a filo dello schermo anche in OBS. Il salvataggio è automatico: la posizione si scrive appena molli il mouse.'] },
 
     { h2: 'Metterlo in OBS' },
     { ul: [
@@ -1121,6 +1136,7 @@ const OVERLAY = {
     { h2: 'I contatori' },
     { p: ['Sono i numeri che vivono in chat — <code>!morti</code>, <code>!tentativi</code> — e si creano in <em>Comandi</em>. Nell\'overlay sono un elemento come gli altri: si spengono tutti insieme dall\'elenco e prendono la veste della scena.'] },
     { p: ['Se a un contatore dai colore, sfondo o posizione tuoi, <strong>quelli vincono</strong>: la scena veste solo quello che non hai deciso.'] },
+    { p: ['Nello Studio si trascinano come tutto il resto, e la dimensione che leggi in percentuale è la loro altezza vera: <strong>100%</strong> sono i 40 pixel di serie.'] },
 
     { h2: 'Ultimo follower e ultimo sub' },
     { p: ['Due pastiglie che restano a schermo. Il testo è tuo: <code>{nome}</code> viene sostituito col nome. L\'icona si può cambiare, togliere, o sostituire con un\'immagine caricata negli Effetti.'] },

@@ -91,9 +91,25 @@ interruttore nell'elenco) e l'**obiettivo** non esisteva. Due sistemi per metter
 roba sulla stessa tela.
 
 Ora gli elementi sono sette: `alert`, `chat`, `wf`, `ws`, `goal`, `cont`,
-`effetti`. L'elenco del pannello e il `_mostraDefault()` del server devono dire
-le stesse cose, e un test lo verifica: se ne nasce uno e lo si dimentica da una
-parte, diventa rosso.
+`effetti`. Sono scritti **una volta sola** di qua (`ELEM_OVL` in `app.js`) e una
+volta sola di là (`ELEM_OVERLAY` in `server.js`); l'elenco del pannello, i
+valori di serie e la ripulitura di quel che arriva ne discendono tutti. Un test
+confronta i tre insiemi: se ne nasce uno e lo si dimentica da una parte,
+diventa rosso.
+
+### Il difetto che quell'elenco ha scoperto
+
+Chi ripuliva gli overlay in arrivo copiava a mano quattro chiavi su sette:
+
+```js
+mostra: { alert: m.alert !== false, chat: …, wf: …, ws: …, effetti: … },
+```
+
+`goal` e `cont` cadevano per strada. `_mostraDefault()` li dava accesi, quindi
+l'occhio di «Obiettivo» e «Contatori» si poteva spegnere — ma al ricaricamento
+tornava acceso, sempre, e nessun overlay poteva davvero farne a meno. Non era un
+caso raro: era **impossibile** spegnerli. Ora quella riga è
+`ELEM_OVERLAY.reduce(...)` e non può più perdere pezzi.
 
 I contatori mantengono i loro colori e la loro posizione quando li imposti a
 mano — quel che scrive il singolo contatore vince sempre — ma senza impostazioni
@@ -110,6 +126,51 @@ Una barra che si riempie mentre arrivano follower, sub o bit.
 - **Sopravvive a un riavvio**, perché sta nelle impostazioni del canale. Un
   obiettivo che si azzera da solo la notte non è un obiettivo.
 - **Si riparte da zero solo se lo chiedi**, con un pulsante.
+
+## Lo studio mostra la scena intera, e la mostra dov'è davvero
+
+Due difetti diversi, la stessa radice: **la tela diceva una cosa e l'overlay ne
+faceva un'altra**.
+
+**Primo: mancavano dei pezzi.** Sulla tela dello studio c'erano quattro
+elementi su sette. Gli obiettivi — che sono quanti ne vuoi, ognuno col suo posto
+— si potevano piazzare solo scrivendo numeri in un modulo, e i contatori pure. Si
+poteva personalizzare tutto tranne il dove, che è la cosa che si guarda.
+
+La correzione non è «aggiungere gli obiettivi alla tela»: è **derivare la scena
+dall'elenco**. `ELEMENTI()` mette in fila i quattro fissi, poi un elemento per
+ogni obiettivo (`goal:<id>`) e uno per ogni contatore (`cont:<comando>`). Nodi,
+livelli, selezione, frecce, aggancio, annulla/ripeti, ispettore e salvataggio
+leggono tutti da lì: un elemento nuovo domani costa una riga, non nove.
+
+**Secondo: gli angoli erano finti.** Lo studio metteva un elemento «in alto a
+destra» al 87% della larghezza, col suo centro; l'overlay lo mette in una
+scatola d'angolo con `top: 3vh; right: 2vw`, cioè col **bordo** a filo. Per una
+pastiglia stretta la differenza non si vede; per una barra da 15rem sì, e infatti
+l'obiettivo in alto a destra usciva dalla tela. Ora lo studio posa gli angoli
+con lo stesso modello a scatola dell'overlay (`ANCORA`), misura dove l'elemento
+è finito e usa quel centro per le guide. Un test confronta i due numeri: se
+qualcuno cambia il margine da una parte sola, diventa rosso.
+
+**I contatori si ancoravano a terzi.** `x <= 33 → 0`, `x >= 67 → -100%`,
+altrimenti `-50%`: trascinandone uno attraverso il centro **saltava** di mezza
+larghezza. Ora seguono la regola di tutti gli altri
+(`translate(-x%, -y%)`), quindi la tela e l'overlay coincidono e il
+trascinamento è continuo. In cambio hanno guadagnato la rotazione, che gli altri
+elementi avevano già.
+
+## Il banco: due sponde, non due cartelli sopra la tela
+
+I pannelli «Livelli» e «Proprietà» galleggiavano **sopra** la tela, a sinistra e
+a destra. Su 1440px coprivano 574px di 964: il 40% della scena, e per l'appunto
+i due angoli alti, dove stanno gli obiettivi.
+
+Da 1024px in su ora sono due sponde della griglia — `auto | 1fr | auto` — e la
+tela sta nel mezzo, tutta visibile. Arrotolarne una le ridà la larghezza;
+trascinarne una per la maniglia la stacca e la fa tornare a galleggiare (e la
+colonna sparisce, quindi la tela cresce); un doppio clic sulla testa la
+riaggancia. Sotto i 1024px galleggiano come prima: tre colonne in 800px
+lascerebbero alla tela 200px, che è peggio del problema che risolvono.
 
 ## Il difetto che rendeva l'overlay «meh»
 

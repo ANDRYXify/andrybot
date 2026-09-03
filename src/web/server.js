@@ -82,7 +82,8 @@ import {
 // di canale (alerts/chatOverlay/overlayWidget). Retro-compatibile: se non c'è
 // una lista `overlays`, ne ricaviamo uno solo ("principale") con tutto visibile
 // e le posizioni attuali → chi ha già l'overlay lo vede identico.
-const _mostraDefault = () => ({ alert: true, chat: true, wf: true, ws: true, effetti: true, cont: true, goal: true });
+const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'effetti'];
+const _mostraDefault = () => ELEM_OVERLAY.reduce((o, k) => (o[k] = true, o), {});
 function overlaysDi(settings) {
   const s = settings || {};
   if (Array.isArray(s.overlays) && s.overlays.length) return s.overlays;
@@ -2962,7 +2963,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         let id = String(o?.id || `ov${i}`).replace(/[^a-z0-9_-]/gi, '').slice(0, 24) || `ov${i}`;
         return {
           id, nome: String(o?.nome || 'Overlay').trim().slice(0, 40) || 'Overlay',
-          mostra: { alert: m.alert !== false, chat: m.chat !== false, wf: m.wf !== false, ws: m.ws !== false, effetti: m.effetti !== false },
+          mostra: ELEM_OVERLAY.reduce((acc, k) => (acc[k] = m[k] !== false, acc), {}),
           xy: { alert: xyOk(xy.alert), chat: xyOk(xy.chat), wf: xyOk(xy.wf), ws: xyOk(xy.ws) },
           css: String(o?.css || '').slice(0, 8000),
           stile: normOverlayStile(o?.stile),   // Opzione B: aspetto proprio (null → eredita dal canale)

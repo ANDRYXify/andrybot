@@ -269,6 +269,13 @@ function statoDemo() {
           cheer: { attivo: true, testo: '{user} ha lanciato {bits} bit!', suono: 'moneta', colore: '#38d39f', minBits: 100 },
           raid: { attivo: true, testo: '{user} è arrivato in raid con {viewers}!', suono: 'trombetta', colore: '#ff4d4d', minViewers: 2 } },
         chatOverlay: { attivo: false, posizione: 'basso-sinistra', max: 8, fadeSec: 0, dim: 'media' },
+        overlayGoals: [
+          { id: 'g1', attivo: true, tipo: 'follower', obiettivo: 500, titolo: 'Obiettivo follower', posizione: 'alto-sinistra', xy: null,
+            stile: { dim: 'media', sfondo: '#0f0f14', opacita: 85, testo: '#ffffff', accento: '#f72fa7', bordoRaggio: 12, font: 'sistema', forma: 'carta', materia: 'vetro', cornice: 'nessuna' } },
+          { id: 'g2', attivo: true, tipo: 'sub', obiettivo: 50, titolo: 'Nuovi abbonati', posizione: 'alto-destra', xy: null,
+            stile: { dim: 'piccola', sfondo: '#1b1024', opacita: 90, testo: '#ffe9f6', accento: '#ffb020', bordoRaggio: 26, font: 'rotondo', forma: 'pillola', materia: 'sfumata', cornice: 'linea' } },
+        ],
+        overlayStato: { goals: { g1: 318, g2: 41 } },
       },
     },
   };
@@ -369,6 +376,12 @@ function _demoGet(via) {
   const F = {
     '/api/me': statoDemo(),
     '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://socialbot.live/tiktok/callback' },
+    '/api/contatori': { contatori: [
+      { comando: 'morti', etichetta: 'Morti', emoji: '', valore: 7, step: 1, auto_parola: '', reward_id: '',
+        overlayCfg: { mostra: true, x: 4, y: 94, r: 0, colore: '#ffffff', sfondo: 'rgba(0,0,0,0.55)', dim: 40, grassetto: true, font: 'system', formato: '{emoji} {etichetta}: {valore}' } },
+      { comando: 'tentativi', etichetta: 'Tentativi', emoji: '', valore: 23, step: 1, auto_parola: '', reward_id: '',
+        overlayCfg: { mostra: false, x: 50, y: 94, r: 0, colore: '#ffffff', sfondo: 'rgba(0,0,0,0.55)', dim: 40, grassetto: true, font: 'system', formato: '{emoji} {etichetta}: {valore}' } },
+    ] },
     '/api/streamer/comandi-pronti': { comandi: [
       { id: "giochi", modulo: "giochi", moduloNome: ["Giochi in chat", "Chat games", "Juegos en el chat"], moduloAcceso: true, titolo: ["Elenco dei giochi", "Games list", "Lista de juegos"], cosa: ["Elenca in chat i giochi accesi, quelli di chat e quelli con la webcam.", "Lists the games that are on in chat, both chat games and webcam ones.", "Lista en el chat los juegos activos, los de chat y los de webcam."], costa: false, attesa: 0, spegnibile: false, rinominabile: true, acceso: true, vivo: true, nomi: ["giochi"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
       { id: "dado", modulo: "giochi", moduloNome: ["Giochi in chat", "Chat games", "Juegos en el chat"], moduloAcceso: true, titolo: ["Dado", "Dice", "Dado"], cosa: ["Tira un dado. Con !dado 2d20 ne tira altri.", "Rolls a die. With !dado 2d20 it rolls others.", "Tira un dado. Con !dado 2d20 tira otros."], costa: false, attesa: 3, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["dado", "roll"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
@@ -5573,6 +5586,8 @@ function goalBozza() {
   return _goalBozza;
 }
 
+const nomeGoal = (g, i) => String(g.titolo || '').trim() || (L('Obiettivo', 'Goal', 'Objetivo') + ' ' + (i + 1));
+
 function goalNuovo() {
   const usati = new Set(goalBozza().map((g) => g.id));
   let n = 1;
@@ -5588,43 +5603,57 @@ function disegnaGoal() {
   const conti = impostazioni().overlayStato.goals || {};
   const lista = goalBozza();
   const st = (g) => g.stile || {};
-  box.innerHTML = lista.length ? lista.map((g, i) => `<div class="goal-riga" data-goal="${i}">
+  box.innerHTML = lista.length ? lista.map((g, i) => `<div class="goal-riga" data-goal="${i}" data-goal-id="${esc(g.id)}">
     <div class="goal-capo">
       <label class="interruttore mini"><input type="checkbox" data-g="attivo" ${g.attivo !== false ? 'checked' : ''}><span class="levetta"></span></label>
       <input type="text" class="campo-largo" data-g="titolo" maxlength="60" value="${esc(g.titolo || '')}" placeholder="${L('Titolo (facoltativo)', 'Title (optional)', 'Título (opcional)')}">
       <span class="goal-ora">${Number(conti[g.id]) || 0} / ${Number(g.obiettivo) || 100}</span>
+      <button type="button" class="btn secondario mini" data-g-vesti>${L('Aspetto', 'Look', 'Aspecto')}</button>
       <button type="button" class="btn pericolo mini" data-g-via>${L('Togli', 'Remove', 'Quitar')}</button>
     </div>
     <div class="goal-campi">
       <label class="campo-num">${L('Conta', 'Count', 'Cuenta')}<select data-g="tipo">${GOAL_TIPI().map(([v, t]) => `<option value="${v}"${g.tipo === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
       <label class="campo-num">${L('Traguardo', 'Target', 'Meta')}<input type="number" data-g="obiettivo" min="1" max="1000000" value="${Number(g.obiettivo) || 100}"></label>
       <label class="campo-num">${L('Dove', 'Where', 'Dónde')}<select data-g="posizione">${GOAL_ANGOLI().map(([v, t]) => `<option value="${v}"${g.posizione === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
-      <label class="campo-num">${L('Dimensione', 'Size', 'Tamaño')}<select data-g="stile.dim">${[['piccola', L('piccola', 'small', 'pequeña')], ['media', L('media', 'medium', 'media')], ['grande', L('grande', 'large', 'grande')]].map(([v, t]) => `<option value="${v}"${(st(g).dim || 'media') === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
-    </div>
-    <div class="goal-campi">
-      <label class="campo-num">${L('Testo', 'Text', 'Texto')}<input type="color" data-g="stile.testo" value="${esc(st(g).testo || '#ffffff')}"></label>
-      <label class="campo-num">${L('Sfondo', 'Background', 'Fondo')}<input type="color" data-g="stile.sfondo" value="${esc(st(g).sfondo || '#0f0f14')}"></label>
-      <label class="campo-num">${L('Barra', 'Bar', 'Barra')}<input type="color" data-g="stile.accento" value="${esc(st(g).accento || '#f72fa7')}"></label>
-      <label class="campo-num">${L('Opacità', 'Opacity', 'Opacidad')}<input type="number" data-g="stile.opacita" min="0" max="100" value="${st(g).opacita != null ? st(g).opacita : 85}"></label>
-      <label class="campo-num">${L('Angoli', 'Corners', 'Esquinas')}<input type="number" data-g="stile.bordoRaggio" min="0" max="30" value="${st(g).bordoRaggio != null ? st(g).bordoRaggio : 12}"></label>
-      <label class="campo-num">${L('Carattere', 'Font', 'Fuente')}<select data-g="stile.font">${GOAL_FONT.map((v) => `<option value="${v}"${(st(g).font || 'sistema') === v ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
-    </div>
-    <div class="goal-campi">
-      <label class="campo-num">${L('Forma', 'Shape', 'Forma')}<select data-g="stile.forma">${['carta', 'pillola', 'squadrata', 'taglio'].map((v) => `<option value="${v}"${(st(g).forma || 'carta') === v ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
-      <label class="campo-num">${L('Materia', 'Material', 'Material')}<select data-g="stile.materia">${['piatta', 'sfumata', 'vetro', 'neon'].map((v) => `<option value="${v}"${(st(g).materia || 'piatta') === v ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
-      <label class="campo-num">${L('Cornice', 'Frame', 'Marco')}<select data-g="stile.cornice">${['nessuna', 'linea', 'spessa', 'angoli'].map((v) => `<option value="${v}"${(st(g).cornice || 'nessuna') === v ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
       <button type="button" class="btn secondario mini" data-g-azzera>${L('Riparti da zero', 'Start over', 'Empezar de cero')}</button>
     </div>
   </div>`).join('')
     : `<p class="vuoto">${L('Nessun obiettivo. Aggiungine uno: puoi averne quanti ne vuoi.', 'No goals. Add one: you can have as many as you like.', 'Ningún objetivo. Añade uno: puedes tener los que quieras.')}</p>`;
+
+  const vesti = document.getElementById('goal-vesti');
+  if (vesti) {
+    vesti.innerHTML = lista.map((g, i) => `<div class="asp-blocco goal-vesti" data-asp="goal:${esc(g.id)}" data-goal-id="${esc(g.id)}" hidden>
+      <h4>${L('Aspetto', 'Appearance', 'Aspecto')} <span class="tenue">— ${esc(nomeGoal(g, i))}</span></h4>
+      <div class="goal-campi">
+        <label class="campo-num">${L('Dimensione', 'Size', 'Tamaño')}<select data-g="stile.dim">${[['piccola', L('piccola', 'small', 'pequeña')], ['media', L('media', 'medium', 'media')], ['grande', L('grande', 'large', 'grande')]].map(([v, t]) => `<option value="${v}"${(st(g).dim || 'media') === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+        <label class="campo-num">${L('Carattere', 'Font', 'Fuente')}<select data-g="stile.font">${GOAL_FONT.map((v) => `<option value="${v}"${(st(g).font || 'sistema') === v ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
+      </div>
+      <div class="goal-campi">
+        <label class="campo-num">${L('Testo', 'Text', 'Texto')}<input type="color" data-g="stile.testo" value="${esc(st(g).testo || '#ffffff')}"></label>
+        <label class="campo-num">${L('Sfondo', 'Background', 'Fondo')}<input type="color" data-g="stile.sfondo" value="${esc(st(g).sfondo || '#0f0f14')}"></label>
+        <label class="campo-num">${L('Barra', 'Bar', 'Barra')}<input type="color" data-g="stile.accento" value="${esc(st(g).accento || '#f72fa7')}"></label>
+      </div>
+      <div class="goal-campi">
+        <label class="campo-num">${L('Opacità', 'Opacity', 'Opacidad')}<input type="number" data-g="stile.opacita" min="0" max="100" value="${st(g).opacita != null ? st(g).opacita : 85}"></label>
+        <label class="campo-num">${L('Angoli', 'Corners', 'Esquinas')}<input type="number" data-g="stile.bordoRaggio" min="0" max="30" value="${st(g).bordoRaggio != null ? st(g).bordoRaggio : 12}"></label>
+      </div>
+      <div class="goal-campi">
+        <label class="campo-num">${L('Forma', 'Shape', 'Forma')}<select data-g="stile.forma">${['carta', 'pillola', 'squadrata', 'taglio'].map((v) => `<option value="${v}"${(st(g).forma || 'carta') === v ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
+        <label class="campo-num">${L('Materia', 'Material', 'Material')}<select data-g="stile.materia">${['piatta', 'sfumata', 'vetro', 'neon'].map((v) => `<option value="${v}"${(st(g).materia || 'piatta') === v ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
+        <label class="campo-num">${L('Cornice', 'Frame', 'Marco')}<select data-g="stile.cornice">${['nessuna', 'linea', 'spessa', 'angoli'].map((v) => `<option value="${v}"${(st(g).cornice || 'nessuna') === v ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
+      </div>
+    </div>`).join('');
+    if (!document.getElementById('ovl-aspetto')) vesti.querySelectorAll('.goal-vesti').forEach((b) => { b.hidden = false; });
+  }
 }
 
 function leggiGoalDalForm() {
   const lista = goalBozza();
-  document.querySelectorAll('#lista-goal .goal-riga').forEach((riga) => {
-    const g = lista[Number(riga.dataset.goal)];
+  const per = new Map(lista.map((g) => [g.id, g]));
+  document.querySelectorAll('[data-goal-id]').forEach((pezzo) => {
+    const g = per.get(pezzo.dataset.goalId);
     if (!g) return;
-    riga.querySelectorAll('[data-g]').forEach((c) => {
+    pezzo.querySelectorAll('[data-g]').forEach((c) => {
       const via = c.dataset.g.split('.');
       const val = c.type === 'checkbox' ? c.checked : (c.type === 'number' ? Number(c.value) : c.value);
       if (via.length === 2) { g[via[0]] = g[via[0]] || {}; g[via[0]][via[1]] = val; }
@@ -5636,7 +5665,7 @@ function leggiGoalDalForm() {
 
 
 function ovlElemento(k, ico, nome, sez) {
-  const mirabile = ['alert', 'chat', 'wf', 'ws', 'goal'].includes(k);
+  const mirabile = ELEM_SCENA.includes(k);
   return `<div class="ovl-elem"${mirabile ? ` data-mira="${k}"` : ''}>
     <span class="oe-ico">${_bIco(ico)}</span>
     <span class="oe-nome">${esc(nome)}</span>
@@ -5770,6 +5799,7 @@ function pannelloAlert() {
       <summary><h3>${_hIco(ICO.trofeo)}${L('Obiettivi', 'Goals', 'Objetivos')}</h3></summary>
       <p>${L('Barre che si riempiono da sole mentre arrivano follower, sub o bit. Quanti ne vuoi, ognuno col suo traguardo, il suo posto e il suo aspetto. Il conto è quello vero: lo tiene il bot contando gli eventi, e resta al suo posto anche se riavvii tutto.', 'Bars that fill by themselves as followers, subs or bits come in. As many as you like, each with its own target, place and look. The count is the real one: the bot keeps it by counting events, and it survives a restart.', 'Barras que se llenan solas mientras llegan followers, subs o bits. Tantas como quieras, cada una con su meta, su sitio y su aspecto. La cuenta es la real: la lleva el bot contando eventos, y sobrevive a un reinicio.')}</p>
       <div id="lista-goal" class="goal-lista"></div>
+      <div id="goal-vesti" class="goal-lista"></div>
       <p class="spazio-sopra">
         <button class="btn secondario" id="btn-agg-goal">${_bIco(ICO.piu)}${L('Aggiungi obiettivo', 'Add a goal', 'Añadir objetivo')}</button>
         <button class="btn" id="btn-salva-goal">${L('Salva', 'Save', 'Guardar')}</button>
@@ -6018,6 +6048,14 @@ async function montaFontBrowser(box, targetId) {
 }
 
 let posXY = { alert: null, chat: null, wf: null, ws: null };
+let _conta = [];
+const CONT_BASE = 40;
+const FISSI = ['alert', 'chat', 'wf', 'ws'];
+const ELEM_OVL = [...FISSI, 'goal', 'cont', 'effetti'];
+const ELEM_SCENA = ELEM_OVL.filter((k) => k !== 'effetti');
+const _mostraOra = () => ELEM_OVL.reduce((o, k) => (o[k] = mostraChk(k), o), {});
+const _idEl = (k) => 'ap-' + String(k).replace(/[^a-z0-9]/gi, '-');
+const _nodo = (k) => _g(_idEl(k));
 let overlays = [];
 let overlaySel = '';
 const mostraChk = (k) => !!_g('mostra-' + k)?.checked;
@@ -6111,7 +6149,7 @@ async function _salvaOverlayCorrente(msg, ancheLayout) {
     ov.css = _v('ovl-css') || '';
     if (ancheLayout) {
       ov.xy = { alert: posXY.alert, chat: posXY.chat, wf: posXY.wf, ws: posXY.ws };
-      ov.mostra = { alert: mostraChk('alert'), chat: mostraChk('chat'), wf: mostraChk('wf'), ws: mostraChk('ws'), effetti: mostraChk('effetti') };
+      ov.mostra = _mostraOra();
     }
   }
   await salvaImpostazioni({ alerts: alertsCanale, chatOverlay: chatCanale, overlays: _overlaysPayload() }, msg);
@@ -6168,7 +6206,7 @@ function _accendiElemento(k, v) {
   return true;
 }
 function _aggiornaStatoLivelli() {
-  for (const k of ['alert', 'chat', 'wf', 'ws']) {
+  for (const k of ELEM_SCENA) {
     const riga = document.querySelector(`.ovl-elem[data-mira="${k}"]`);
     if (!riga) continue;
     const spento = mostraChk(k) && !_elementoAcceso(k);
@@ -6304,21 +6342,136 @@ function aggiornaAnteprima() {
   _anteprimaWidget('wf', 'ultimoFollower', nf);
   _anteprimaWidget('ws', 'ultimoSub', ns);
 
-  _posElemento(_g('ap-alert'), posXY.alert || _defPos('alert'));
-  _posElemento(_g('ap-chat'), posXY.chat || _defPos('chat'));
-  _posElemento(_g('ap-wf'), posXY.wf || _defPos('wf'));
-  _posElemento(_g('ap-ws'), posXY.ws || _defPos('ws'));
-
-  if (_g('ap-alert')) _g('ap-alert').style.display = mostraChk('alert') ? '' : 'none';
-  if (_g('ap-chat')) _g('ap-chat').style.display = mostraChk('chat') ? '' : 'none';
+  _sincronizzaScena();
+  for (const e of ELEMENTI()) {
+    const nodo = _nodo(e.k);
+    if (!nodo) continue;
+    nodo.style.display = _inOverlay(e.k) ? '' : 'none';
+    const st = _posCorrente(e.k);
+    if (st) _posElemento(nodo, st);
+    else _posAncora(nodo, _angoloDi(e.k), e.k);
+  }
   _aggiornaStatoLivelli();
 }
 
-function _cornerXY(c) { return ({ 'alto-sinistra': { x: 13, y: 15 }, 'alto-destra': { x: 87, y: 15 }, 'basso-sinistra': { x: 13, y: 85 }, 'basso-destra': { x: 87, y: 85 } })[c] || { x: 87, y: 85 }; }
+const GOAL_PAROLA = { follower: 'follower', sub: 'sub', bit: 'bit' };
+
+function _sincronizzaScena() {
+  const stage = _g('ap-stage');
+  if (!stage) return;
+  const vivi = new Set(FISSI.map(_idEl));
+  for (const e of ELEMENTI()) {
+    if (!e.goal && !e.cont) continue;
+    const id = _idEl(e.k);
+    vivi.add(id);
+    let nodo = _g(id);
+    if (!nodo) {
+      nodo = document.createElement('div');
+      nodo.id = id;
+      nodo.className = 'ap-el';
+      nodo.innerHTML = '<div></div>';
+      stage.appendChild(nodo);
+      rendiTrascinabile(nodo, e.k);
+    }
+    if (e.goal) _vestiGoal(nodo.firstElementChild, e.goal);
+    else _vestiCont(nodo.firstElementChild, e.cont);
+    nodo.classList.toggle('sel', selezione === e.k);
+  }
+  for (const n of [...stage.querySelectorAll('.ap-el')]) if (!vivi.has(n.id)) n.remove();
+}
+
+function _vestiGoal(box, g) {
+  if (!box.querySelector('.g-testa')) {
+    box.innerHTML = '<div class="g-testa"><span class="g-tit"></span><span class="g-num"></span></div><div class="g-barra"><i></i></div>';
+  }
+  const st = g.stile || {};
+  box.className = 'ovl-widget ovl-goal dim-' + (st.dim || 'media') + ' ' + classiIdentita(st);
+  _setVars(box, { '--bg': st.sfondo, '--op': (st.opacita != null ? st.opacita : 85) + '%', '--fg': st.testo,
+    '--acc': st.accento, '--radius': (st.bordoRaggio != null ? st.bordoRaggio : 12) + 'px', '--font': fontStile(st) });
+  const meta = Math.max(1, Number(g.obiettivo) || 100);
+  const ora = Math.max(0, Number((impostazioni().overlayStato.goals || {})[g.id]) || 0);
+  box.querySelector('.g-tit').textContent = g.titolo || GOAL_PAROLA[g.tipo] || '';
+  box.querySelector('.g-num').textContent = ora + ' / ' + meta;
+  box.querySelector('.g-barra i').style.width = Math.min(100, Math.round((ora / meta) * 100)) + '%';
+  box.classList.toggle('pieno', ora >= meta);
+}
+
+function testoCont(c) {
+  const o = c.overlayCfg || {};
+  return String(o.formato || '{emoji} {etichetta}: {valore}')
+    .replace(/\{emoji\}/g, c.emoji || '').replace(/\{etichetta\}/g, c.etichetta || c.comando)
+    .replace(/\{valore\}/g, String(c.valore != null ? c.valore : 0))
+    .replace(/\s+/g, ' ').trim();
+}
+
+function _vestiCont(box, c) {
+  const o = c.overlayCfg || {};
+  box.className = 'contatore-widget ovl-widget forma-carta materia-piatta cornice-nessuna';
+  box.textContent = testoCont(c);
+  const st = c._st || _stCont(c);
+  box.style.color = o.colore || '#ffffff';
+  box.style.setProperty('--fg', o.colore || '#ffffff');
+  if (o.sfondo) box.style.setProperty('--bg', o.sfondo);
+  box.style.fontSize = Math.round((CONT_BASE * (Number(st.s) || 100)) / 100) + 'px';
+  box.style.fontWeight = o.grassetto === false ? '500' : '800';
+  box.style.fontFamily = (window.FONT_CONT || {})[o.font] || (window.FONT_CONT || {}).system || 'system-ui, sans-serif';
+}
+
+function _cornerXY(c) { return ({ 'alto-sinistra': { x: 13, y: 15 }, 'alto-destra': { x: 87, y: 15 }, 'basso-sinistra': { x: 13, y: 85 }, 'basso-destra': { x: 87, y: 85 },
+  'alto-centro': { x: 50, y: 16 }, centro: { x: 50, y: 50 }, 'basso-centro': { x: 50, y: 84 } })[c] || { x: 87, y: 85 }; }
+
+const ANCORA = {
+  'alto-sinistra': { left: '2%', top: '3%' },
+  'alto-destra': { right: '2%', top: '3%' },
+  'basso-sinistra': { left: '2%', bottom: '3%' },
+  'basso-destra': { right: '2%', bottom: '3%' },
+  'alto-centro': { left: '50%', top: '8%', cx: true },
+  centro: { left: '50%', top: '50%', cx: true, cy: true },
+  'basso-centro': { left: '50%', bottom: '10%', cx: true },
+};
+
+function _angoloDi(k) {
+  const e = ELEM(k);
+  if (e && e.goal) return e.goal.posizione || 'alto-sinistra';
+  if (e && e.cont) return null;
+  if (k === 'alert') return _v('al-pos') || 'alto-centro';
+  if (k === 'chat') return _v('co-pos') || 'basso-sinistra';
+  return _v(k + '-pos') || 'basso-destra';
+}
+
+const _angCentro = {};
+
+const NOME_ANG = () => ({
+  'alto-sinistra': L('in alto a sinistra', 'top left', 'arriba izquierda'),
+  'alto-destra': L('in alto a destra', 'top right', 'arriba derecha'),
+  'basso-sinistra': L('in basso a sinistra', 'bottom left', 'abajo izquierda'),
+  'basso-destra': L('in basso a destra', 'bottom right', 'abajo derecha'),
+  'alto-centro': L('in alto al centro', 'top center', 'arriba centro'),
+  centro: L('al centro', 'center', 'al centro'),
+  'basso-centro': L('in basso al centro', 'bottom center', 'abajo centro'),
+});
+
+function _posAncora(el, ang, k) {
+  const a = ANCORA[ang] || ANCORA['basso-destra'];
+  el.style.position = 'absolute';
+  el.style.left = a.left || 'auto';
+  el.style.right = a.right || 'auto';
+  el.style.top = a.top || 'auto';
+  el.style.bottom = a.bottom || 'auto';
+  el.style.transform = a.cx || a.cy ? `translate(${a.cx ? '-50%' : '0'},${a.cy ? '-50%' : '0'})` : 'none';
+  el.querySelectorAll('.ap-handle').forEach((h) => { h.style.transform = 'none'; });
+  const canvas = _g('ovl-preview')?.getBoundingClientRect();
+  const r = el.getBoundingClientRect();
+  if (canvas && canvas.width && r.width) {
+    _angCentro[k] = { x: _arr(_pct(r.left + r.width / 2 - canvas.left, canvas.width)),
+      y: _arr(_pct(r.top + r.height / 2 - canvas.top, canvas.height)) };
+  }
+}
+
 function _defPos(k) {
-  if (k === 'alert') return ({ 'alto-centro': { x: 50, y: 16 }, centro: { x: 50, y: 50 }, 'basso-centro': { x: 50, y: 84 } })[_v('al-pos') || 'alto-centro'] || { x: 50, y: 16 };
-  if (k === 'chat') return _cornerXY(_v('co-pos') || 'basso-sinistra');
-  return _cornerXY(_v(`${k}-pos`) || 'basso-destra');
+  const e = ELEM(k);
+  if (e && e.cont) { const o = e.cont.overlayCfg || {}; return { x: Number(o.x) || 4, y: o.y != null ? Number(o.y) : 94 }; }
+  return _angCentro[k] ? { ..._angCentro[k] } : _cornerXY(_angoloDi(k));
 }
 
 function _posElemento(el, xy) {
@@ -6331,25 +6484,60 @@ function _posElemento(el, xy) {
   el.querySelectorAll('.ap-handle').forEach((h) => { h.style.transform = `scale(${1 / sf})`; });
 }
 
-const NOMI_EL = () => ({ alert: L('Alert', 'Alert', 'Alerta'), chat: L('Chat a schermo', 'On-screen chat', 'Chat en pantalla'), wf: L('Widget: ultimo follower', 'Widget: latest follower', 'Widget: último seguidor'), ws: L('Widget: ultimo sub', 'Widget: latest sub', 'Widget: último sub') });
 let selezione = null;
 
 function _statoXY(chiave) {
-  if (!posXY[chiave]) posXY[chiave] = { ..._defPos(chiave) };
-  const st = posXY[chiave];
+  const e = ELEM(chiave);
+  let st;
+  if (e && e.goal) st = (e.goal.xy = e.goal.xy || { ..._defPos(chiave) });
+  else if (e && e.cont) st = (e.cont._st = e.cont._st || _stCont(e.cont));
+  else st = (posXY[chiave] = posXY[chiave] || { ..._defPos(chiave) });
   if (st.s == null) st.s = 100;
   if (st.r == null) st.r = 0;
   return st;
 }
 
+function _stCont(c) {
+  const o = c.overlayCfg || {};
+  return { x: Number(o.x) || 4, y: o.y != null ? Number(o.y) : 94,
+    s: Math.max(20, Math.min(400, Math.round(((Number(o.dim) || CONT_BASE) / CONT_BASE) * 100))), r: Number(o.r) || 0 };
+}
+
+function _azzeraPos(k) {
+  const e = ELEM(k);
+  if (e && e.goal) { e.goal.xy = null; return; }
+  if (e && e.cont) { e.cont._st = null; e.cont.overlayCfg = { ...(e.cont.overlayCfg || {}), x: 4, y: 94, dim: CONT_BASE, r: 0 }; return; }
+  posXY[k] = null;
+}
+
+function _occhio(k) {
+  const e = ELEM(k);
+  if (e && e.goal) {
+    leggiGoalDalForm();
+    e.goal.attivo = e.goal.attivo === false;
+    disegnaGoal(); aggiornaAnteprima(); _ricorda(); _salvaPos(k);
+    return;
+  }
+  if (e && e.cont) {
+    const o = (e.cont.overlayCfg = e.cont.overlayCfg || {});
+    o.mostra = !o.mostra;
+    aggiornaAnteprima(); _ricorda(); _salvaPos(k);
+    return;
+  }
+  const c = _g('mostra-' + k);
+  if (!c) return;
+  c.checked = !c.checked;
+  c.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
 function seleziona(chiave) {
   selezione = chiave;
-  ['alert', 'chat', 'wf', 'ws'].forEach((k) => _g('ap-' + k)?.classList.toggle('sel', k === chiave));
+  _g('ap-stage')?.querySelectorAll('.ap-el').forEach((n) => n.classList.toggle('sel', n.id === _idEl(chiave)));
   aggiornaInspector();
 }
 function deseleziona() {
   selezione = null;
-  ['alert', 'chat', 'wf', 'ws'].forEach((k) => _g('ap-' + k)?.classList.remove('sel'));
+  _g('ap-stage')?.querySelectorAll('.ap-el').forEach((n) => n.classList.remove('sel'));
   aggiornaInspector();
 }
 function aggiornaInspector() {
@@ -6361,7 +6549,7 @@ function aggiornaInspector() {
   if (!selezione) { box.hidden = true; return; }
   box.hidden = false;
   const st = _statoXY(selezione);
-  const nome = _g('insp-nome'); if (nome) nome.textContent = NOMI_EL()[selezione] || selezione;
+  const nome = _g('insp-nome'); if (nome) nome.textContent = _nomeEl(selezione);
   const sz = _g('insp-size'), rt = _g('insp-rot');
   if (sz) { sz.value = st.s; _g('insp-size-val').textContent = st.s + '%'; }
   if (rt) { rt.value = st.r; _g('insp-rot-val').textContent = st.r + '°'; }
@@ -6390,8 +6578,10 @@ function montaBanco() {
     corpoInsp.appendChild(casa);
   }
   for (const b of document.querySelectorAll('.asp-blocco')) {
-    if (b.parentElement !== casa) casa.appendChild(b);
+    if (b.parentElement !== casa && b.parentElement?.id !== 'goal-vesti') casa.appendChild(b);
   }
+  const vesti = _g('goal-vesti');
+  if (vesti && vesti.parentElement !== casa) casa.appendChild(vesti);
 
   if (!insp.querySelector('.ovl-vuoto')) {
     const v = document.createElement('p');
@@ -6410,7 +6600,7 @@ function montaBanco() {
   }
   document.body.classList.add('banco-on');
   requestAnimationFrame(() => requestAnimationFrame(misuraSopraBanco));
-  aggiornaPiedeBanco();
+  aggiornaInspector();
 }
 
 function vestiPannello(el, chiave, titolo) {
@@ -6421,6 +6611,9 @@ function vestiPannello(el, chiave, titolo) {
 
   const testa = document.createElement('div');
   testa.className = 'pan-testa';
+  testa.title = L('Trascina per staccarlo · doppio clic per riagganciarlo',
+    'Drag to detach it · double click to dock it again',
+    'Arrastra para separarlo · doble clic para volver a anclarlo');
   testa.innerHTML = `<span>${esc(titolo)}</span>`
     + `<button type="button" class="pan-tasto" data-pan-arrotola aria-expanded="true" `
     + `aria-label="${esc(L('Arrotola', 'Collapse', 'Plegar'))}" title="${esc(L('Arrotola', 'Collapse', 'Plegar'))}">`
@@ -6456,7 +6649,7 @@ function trascinaPannello(el, testa, chiave) {
     if (ev.target.closest('[data-pan-arrotola]')) return;
     if (ev.button !== 0) return;
     const scena = el.parentElement;
-    if (!scena || getComputedStyle(el).position !== 'absolute') return;
+    if (!scena) return;
     const r = el.getBoundingClientRect(), rs = scena.getBoundingClientRect();
     attivo = { dx: ev.clientX - r.left, dy: ev.clientY - r.top, rs, w: r.width, h: r.height };
     el.classList.add('mosso');
@@ -6523,40 +6716,64 @@ function aggiornaPiedeBanco() {
   const sel = typeof selezione !== 'undefined' ? selezione : null;
   if (!sel) {
     piede.innerHTML = `<span>${esc(L('Niente selezionato', 'Nothing selected', 'Nada seleccionado'))}</span>`
-      + `<span class="ovl-piede-dx">${esc(L('frecce per spostare · Maiusc per dieci volte tanto', 'arrows to move · Shift for ten times as much', 'flechas para mover · Mayús para diez veces más'))}</span>`;
+      + `<span class="ovl-piede-dx">${esc(L('frecce per spostare · Maiusc ×10 · Alt niente aggancio', 'arrows to move · Shift ×10 · Alt no snapping', 'flechas para mover · Mayús ×10 · Alt sin ajuste'))}</span>`;
     return;
   }
   const st = _statoXY(sel);
-  const nome = (NOMI_EL()[sel] || sel);
+  const nome = _nomeEl(sel);
   piede.innerHTML = `<span><b>${esc(nome)}</b></span>`
     + `<span>X <b>${_arr(st.x)}%</b></span><span>Y <b>${_arr(st.y)}%</b></span>`
     + `<span>${esc(L('Dim', 'Size', 'Tam'))} <b>${st.s}%</b></span>`
     + `<span>${esc(L('Rot', 'Rot', 'Rot'))} <b>${st.r}°</b></span>`
-    + `<span class="ovl-piede-dx">${esc(L('frecce per spostare · Maiusc per dieci volte tanto', 'arrows to move · Shift for ten times as much', 'flechas para mover · Mayús para diez veces más'))}</span>`;
+    + `<span class="ovl-piede-dx">${esc(L('frecce per spostare · Maiusc ×10 · Alt niente aggancio', 'arrows to move · Shift ×10 · Alt no snapping', 'flechas para mover · Mayús ×10 · Alt sin ajuste'))}</span>`;
 }
 
 window.addEventListener('resize', () => { misuraSopraBanco(); });
 
-const OVL_LIVELLI = () => [
-  { k: 'alert', ico: ICO.megafono, n: L('Alert eventi', 'Event alerts', 'Alertas de eventos') },
-  { k: 'chat', ico: ICO.chat, n: L('Chat a schermo', 'On-screen chat', 'Chat en pantalla') },
-  { k: 'wf', ico: ICO.cuore, n: L('Ultimo follower', 'Latest follower', 'Último seguidor') },
-  { k: 'ws', ico: ICO.medaglia, n: L('Ultimo sub', 'Latest sub', 'Último sub') },
-];
+const ELEMENTI = () => {
+  const out = [
+    { k: 'alert', ico: ICO.megafono, n: L('Alert eventi', 'Event alerts', 'Alertas de eventos') },
+    { k: 'chat', ico: ICO.chat, n: L('Chat a schermo', 'On-screen chat', 'Chat en pantalla') },
+    { k: 'wf', ico: ICO.cuore, n: L('Ultimo follower', 'Latest follower', 'Último seguidor') },
+    { k: 'ws', ico: ICO.medaglia, n: L('Ultimo sub', 'Latest sub', 'Último sub') },
+  ];
+  goalBozza().forEach((g, i) => out.push({ k: 'goal:' + g.id, ico: ICO.trofeo, n: nomeGoal(g, i), goal: g }));
+  for (const c of _conta) out.push({ k: 'cont:' + c.comando, ico: ICO.grafico, n: c.etichetta || c.comando, cont: c });
+  return out;
+};
+const ELEM = (k) => ELEMENTI().find((e) => e.k === k) || null;
+const _primoDi = (fam) => (ELEM(fam) ? fam : (ELEMENTI().find((e) => e.k.startsWith(fam + ':')) || {}).k || null);
+const _nomeEl = (k) => (ELEM(k) || {}).n || k;
+
+function _inOverlay(k) {
+  const e = ELEM(k);
+  if (!e) return false;
+  if (e.goal) return mostraChk('goal') && e.goal.attivo !== false;
+  if (e.cont) return mostraChk('cont') && !!(e.cont.overlayCfg || {}).mostra;
+  return mostraChk(k);
+}
+
+function _posCorrente(k) {
+  const e = ELEM(k);
+  if (!e) return null;
+  if (e.goal) return e.goal.xy;
+  if (e.cont) return e.cont._st || null;
+  return posXY[k];
+}
 
 const _corpoPan = (el) => (el ? (el.querySelector(':scope > .pan-corpo') || el) : null);
 
 function _rendiLivelli() {
   const box = _corpoPan(_g('ovl-livelli'));
   if (!box) return;
-  box.innerHTML = OVL_LIVELLI().map((l) => {
-    const acceso = mostraChk(l.k);
+  box.innerHTML = ELEMENTI().map((l) => {
+    const acceso = _inOverlay(l.k);
     const spento = acceso && !_elementoAcceso(l.k);
-    const st = posXY[l.k];
+    const st = _posCorrente(l.k);
     return `<button type="button" class="ovl-liv${selezione === l.k ? ' scelto' : ''}${acceso ? '' : ' via'}" data-liv="${l.k}">
       <span class="ovl-liv-ico">${_bIco(l.ico)}</span>
       <span class="ovl-liv-corpo"><strong>${esc(l.n)}</strong><span>${acceso
-        ? (st ? `${Math.round(st.x)}% · ${Math.round(st.y)}%${st.s && st.s !== 100 ? ' · ' + st.s + '%' : ''}` : L('posizione standard', 'default position', 'posición estándar'))
+        ? (st ? `${Math.round(st.x)}% · ${Math.round(st.y)}%${st.s && st.s !== 100 ? ' · ' + st.s + '%' : ''}` : (NOME_ANG()[_angoloDi(l.k)] || L('posizione standard', 'default position', 'posición estándar')))
         : L('non in questo overlay', 'not in this overlay', 'no en este overlay')}</span></span>
       ${spento ? `<span class="ovl-liv-avviso" title="${L('L’elemento è spento del tutto', 'The element is fully off', 'El elemento está apagado del todo')}">!</span>` : ''}
       <span class="ovl-liv-occhio" data-occhio="${l.k}" role="button" tabindex="0"
@@ -6583,17 +6800,13 @@ function collegaEditorOvl() {
     const occ = e.target.closest('[data-occhio]');
     if (occ) {
       e.stopPropagation();
-      const k = occ.dataset.occhio;
-      const c = _g('mostra-' + k);
-      if (!c) return;
-      c.checked = !c.checked;
-      c.dispatchEvent(new Event('change', { bubbles: true }));
+      _occhio(occ.dataset.occhio);
       return;
     }
     const b = e.target.closest('[data-liv]');
     if (!b) return;
     const k = b.dataset.liv;
-    if (!mostraChk(k)) { toast(L('Questo livello non è in questo overlay: accendilo con l’occhio.', 'This layer is not in this overlay: turn it on with the eye.', 'Esta capa no está en este overlay: enciéndela con el ojo.')); return; }
+    if (!_inOverlay(k)) { toast(L('Questo livello non è in questo overlay: accendilo con l’occhio.', 'This layer is not in this overlay: turn it on with the eye.', 'Esta capa no está en este overlay: enciéndela con el ojo.')); return; }
     seleziona(k);
   });
 
@@ -6618,7 +6831,7 @@ function collegaEditorOvl() {
       const v = parseFloat(_g(id).value);
       if (!Number.isFinite(v)) return;
       st[campo] = campo === 'x' || campo === 'y' ? _arr(Math.max(0, Math.min(100, v))) : Math.round(v);
-      _posElemento(_g('ap-' + selezione), st);
+      _posElemento(_nodo(selezione), st);
       _rendiLivelli();
       _ricorda('campo:' + id);
       _salvaPosDebounced(selezione);
@@ -6639,7 +6852,7 @@ function collegaEditorOvl() {
     if (passi) { e.preventDefault(); return _spostaTasti(selezione, passi[0], passi[1], e.shiftKey); }
     if (e.key === 'Delete' || e.key === 'Backspace') {
       e.preventDefault();
-      posXY[selezione] = null; aggiornaAnteprima(); _ricorda(); _salvaPos(selezione);
+      _azzeraPos(selezione); aggiornaAnteprima(); _ricorda(); _salvaPos(selezione);
     }
   });
 }
@@ -6651,7 +6864,7 @@ function _salvaPosDebounced(chiave) {
 }
 
 function _iniettaManiglie(chiave) {
-  const el = _g('ap-' + chiave);
+  const el = _nodo(chiave);
   if (!el || el.querySelector('.ap-handle')) return;
   const hR = document.createElement('div');
   hR.className = 'ap-handle ap-h-scala'; hR.title = L('Trascina per ridimensionare', 'Drag to resize', 'Arrastra para redimensionar'); hR.textContent = '⤡';
@@ -6664,7 +6877,7 @@ function _iniettaManiglie(chiave) {
 
 function _dragManiglia(chiave, e, tipo) {
   e.preventDefault(); e.stopPropagation();
-  const el = _g('ap-' + chiave);
+  const el = _nodo(chiave);
   const rect = el.getBoundingClientRect();
   const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
   const st = _statoXY(chiave);
@@ -6701,7 +6914,13 @@ const _arr = (n) => Math.round(n * 100) / 100;   // due decimali: 0.01% = 0.19px
 let _storia = [], _storiaAvanti = [], _storiaInCorso = false;
 
 function _istantanea() {
-  return JSON.stringify({ xy: posXY, mostra: ['alert', 'chat', 'wf', 'ws', 'effetti'].reduce((o, k) => (o[k] = mostraChk(k), o), {}) });
+  const goals = {}, conti = {};
+  for (const e of ELEMENTI()) {
+    if (e.goal) goals[e.goal.id] = { xy: e.goal.xy, attivo: e.goal.attivo !== false };
+    else if (e.cont) conti[e.cont.comando] = { st: e.cont._st, mostra: !!(e.cont.overlayCfg || {}).mostra };
+  }
+  return JSON.stringify({ xy: posXY, goals, conti,
+    mostra: _mostraOra() });
 }
 let _ultimoRicordo = 0, _ultimaFusione = '';
 function _ricorda(fusione) {
@@ -6725,9 +6944,16 @@ function _applicaIstantanea(foto) {
     const d = JSON.parse(foto);
     posXY = d.xy || {};
     for (const [k, v] of Object.entries(d.mostra || {})) { const c = _g('mostra-' + k); if (c) c.checked = !!v; }
+    for (const e of ELEMENTI()) {
+      if (e.goal) { const v = (d.goals || {})[e.goal.id]; if (v) { e.goal.xy = v.xy; e.goal.attivo = v.attivo; } }
+      else if (e.cont) { const v = (d.conti || {})[e.cont.comando]; if (v) { e.cont._st = v.st; (e.cont.overlayCfg = e.cont.overlayCfg || {}).mostra = v.mostra; } }
+    }
     _storiaInCorso = true;
+    disegnaGoal();
     aggiornaAnteprima();
     salvaLayoutOverlay(true);
+    salvaGoalDaScena();
+    salvaContiDaScena();
     _storiaInCorso = false;
     aggiornaInspector();
   } catch (e) {  }
@@ -6756,9 +6982,10 @@ function _aggancia(chiave, x, y, hw, hh, canvas) {
   const sogliaY = _pct(SNAP_PX, canvas.height);
   const vx = [{ v: 50, c: 1 }, { v: hw, c: 0 }, { v: 100 - hw, c: 0 }, { v: 33.33, c: 0 }, { v: 66.67, c: 0 }];
   const vy = [{ v: 50, c: 1 }, { v: hh, c: 0 }, { v: 100 - hh, c: 0 }, { v: 33.33, c: 0 }, { v: 66.67, c: 0 }];
-  for (const k of ['alert', 'chat', 'wf', 'ws']) {
-    if (k === chiave || !mostraChk(k)) continue;
-    const o = posXY[k] || _defPos(k);
+  for (const e of ELEMENTI()) {
+    const k = e.k;
+    if (k === chiave || !_inOverlay(k)) continue;
+    const o = _posCorrente(k) || _defPos(k);
     if (!o) continue;
     vx.push({ v: o.x, c: 2 });
     vy.push({ v: o.y, c: 2 });
@@ -6791,7 +7018,7 @@ function _spostaTasti(chiave, dx, dy, grande) {
   const p = grande ? 10 : 1;
   st.x = _arr(Math.max(0, Math.min(100, st.x + _pct(dx * p, OVL_W))));
   st.y = _arr(Math.max(0, Math.min(100, st.y + _pct(dy * p, OVL_H))));
-  _posElemento(_g('ap-' + chiave), st);
+  _posElemento(_nodo(chiave), st);
   aggiornaInspector();
   _ricorda('tasti:' + chiave + ':' + (dx ? 'x' : 'y'));
   _salvaPosDebounced(chiave);
@@ -6800,7 +7027,7 @@ function _spostaTasti(chiave, dx, dy, grande) {
 function allineaOvl(dove) {
   if (!selezione) return;
   const st = _statoXY(selezione);
-  const el = _g('ap-' + selezione);
+  const el = _nodo(selezione);
   const canvas = _g('ovl-preview')?.getBoundingClientRect();
   const er = el?.getBoundingClientRect();
   const hw = (er && canvas) ? Math.min(50, _pct(er.width / 2, canvas.width)) : 0;
@@ -6877,12 +7104,45 @@ function rendiTrascinabile(el, chiave) {
     else { st.s = Math.max(30, Math.min(300, (st.s || 100) + (e.deltaY < 0 ? 4 : -4))); }
     seleziona(chiave); _posElemento(el, st); aggiornaInspector(); _ricorda('rotella:' + chiave); _salvaPosDebounced(chiave);
   }, { passive: false });
-  el.addEventListener('dblclick', () => { posXY[chiave] = null; deseleziona(); aggiornaAnteprima(); _ricorda(); _salvaPos(chiave); });
+  el.addEventListener('dblclick', () => { _azzeraPos(chiave); deseleziona(); aggiornaAnteprima(); _ricorda(); _salvaPos(chiave); });
 }
 
-function _salvaPos() {
-
+function _salvaPos(chiave) {
+  const e = ELEM(chiave);
+  if (e && e.goal) return salvaGoalDaScena();
+  if (e && e.cont) return salvaContoDaScena(e.cont);
   return salvaLayoutOverlay(true);
+}
+
+let _timerGoal = null;
+function salvaGoalDaScena() {
+  clearTimeout(_timerGoal);
+  _timerGoal = setTimeout(() => {
+    if (!_g('lista-goal')) return;
+    salvaImpostazioni({ overlayGoals: leggiGoalDalForm() }, null).catch(() => {  });
+  }, 600);
+}
+
+const _timerConto = {};
+function salvaContoDaScena(c) {
+  clearTimeout(_timerConto[c.comando]);
+  _timerConto[c.comando] = setTimeout(() => {
+    const st = c._st || _stCont(c);
+    const o = c.overlayCfg || (c.overlayCfg = {});
+    o.x = _arr(st.x); o.y = _arr(st.y);
+    o.dim = Math.max(8, Math.min(200, Math.round((CONT_BASE * (Number(st.s) || 100)) / 100)));
+    o.r = Number(st.r) || 0;
+    api('/api/contatori', { method: 'POST', body: { comando: c.comando, overlay: o } }).catch(() => {  });
+  }, 600);
+}
+function salvaContiDaScena() { for (const e of ELEMENTI()) if (e.cont) salvaContoDaScena(e.cont); }
+
+async function caricaContaStudio() {
+  let d;
+  try { d = await api('/api/contatori'); } catch { d = null; }
+  _conta = (d && Array.isArray(d.contatori) ? d.contatori : []).map((c) => ({ ...c, _st: null }));
+  for (const c of _conta) c._st = _stCont(c);
+  if (_g('ap-stage')) { aggiornaAnteprima(); aggiornaInspector(); }
 }
 
 const _imposta = (id, val) => { const e = _g(id); if (e && val != null) { if (e.type === 'checkbox') e.checked = !!val; else e.value = val; } };
@@ -6980,7 +7240,7 @@ function caricaOverlaySel() {
   const ov = overlays.find((o) => o.id === overlaySel) || overlays[0];
   if (!ov) return;
   posXY = { alert: ov.xy?.alert || null, chat: ov.xy?.chat || null, wf: ov.xy?.wf || null, ws: ov.xy?.ws || null };
-  ['alert', 'chat', 'wf', 'ws', 'effetti'].forEach((k) => { const c = _g('mostra-' + k); if (c) c.checked = ov.mostra?.[k] !== false; });
+  ELEM_OVL.forEach((k) => { const c = _g('mostra-' + k); if (c) c.checked = ov.mostra?.[k] !== false; });
   const i = _g('inp-overlay-url'); if (i) i.value = ov.url || '';
   _applicaStileOverlay(ov);
   deseleziona();
@@ -6996,7 +7256,7 @@ async function salvaLayoutOverlay(silenzioso) {
   const ov = overlays.find((o) => o.id === overlaySel);
   if (!ov) return;
   ov.xy = { alert: posXY.alert, chat: posXY.chat, wf: posXY.wf, ws: posXY.ws };
-  ov.mostra = { alert: mostraChk('alert'), chat: mostraChk('chat'), wf: mostraChk('wf'), ws: mostraChk('ws'), effetti: mostraChk('effetti') };
+  ov.mostra = _mostraOra();
   await salvaImpostazioni({ overlays: _overlaysPayload() }, silenzioso ? null : L('Overlay salvato ✓', 'Overlay saved ✓', 'Overlay guardado ✓'));
 }
 async function nuovoOverlayDaPreset() {
@@ -7017,7 +7277,7 @@ async function nuovoOverlayDaPreset() {
   const id = 'ov' + Math.random().toString(36).slice(2, 8);
   overlays.push({
     id, nome,
-    mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true },
+    mostra: ELEM_OVL.reduce((o, k) => (o[k] = true, o), {}),
     xy: {},
     css: preset ? '' : ((corr && corr.css) || ''),
     stile: preset ? _stileDaPreset(preset) : (corr && corr.stile ? JSON.parse(JSON.stringify(corr.stile)) : null),
@@ -7088,7 +7348,7 @@ function caricaAlert() {
   const imp = impostazioni();
   posXY = { alert: imp.alerts.xy || null, chat: imp.chatOverlay.xy || null,
     wf: imp.overlayWidget.ultimoFollower.xy || null, ws: imp.overlayWidget.ultimoSub.xy || null };
-  ['ap-alert', 'ap-chat', 'ap-wf', 'ap-ws'].forEach((id) => rendiTrascinabile(_g(id), id.replace('ap-', '')));
+  FISSI.forEach((k) => rendiTrascinabile(_nodo(k), k));
 
   api('/api/streamer/font').then((d) => {
     FONT_MIEI = (d && Array.isArray(d.font)) ? d.font : [];
@@ -7116,8 +7376,10 @@ function caricaAlert() {
     if (e.target.closest('.oe-mod, .oe-sw, input, label')) return;
     const r = e.target.closest('[data-mira]');
     if (!r) return;
-    const k = r.dataset.mira;
-    if (!mostraChk(k)) { toast(L('Questo livello è spento in questo overlay.', 'This layer is off in this overlay.', 'Esta capa está apagada en este overlay.')); return; }
+    const fam = r.dataset.mira;
+    if (!mostraChk(fam)) { toast(L('Questo livello è spento in questo overlay.', 'This layer is off in this overlay.', 'Esta capa está apagada en este overlay.')); return; }
+    const k = _primoDi(fam);
+    if (!k) { toast(L('Non c’è ancora niente da mettere in scena: creane uno qui sotto.', 'Nothing to stage yet: create one below.', 'Todavía no hay nada que poner en escena: crea uno abajo.')); return; }
     seleziona(k);
     _g('ovl-preview')?.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'center' });
   });
@@ -7126,7 +7388,7 @@ function caricaAlert() {
     if (!u) { toast(L('URL non ancora pronto, riprova tra un attimo.', 'URL not ready yet, try again in a moment.', 'URL aún no lista, inténtalo de nuevo en un momento.'), 'errore'); return; }
     window.open(u, '_blank', 'noopener');
   });
-  ['alert', 'chat', 'wf', 'ws', 'effetti'].forEach((k) => _g('mostra-' + k)?.addEventListener('change', (e) => {
+  ELEM_OVL.forEach((k) => _g('mostra-' + k)?.addEventListener('change', (e) => {
     if (e.target.checked && !_elementoAcceso(k)) _accendiElemento(k, true);
     aggiornaAnteprima(); salvaLayoutOverlay(true);
   }));
@@ -7156,16 +7418,16 @@ function caricaAlert() {
   _g('insp-size')?.addEventListener('input', (e) => {
     if (!selezione) return;
     const st = _statoXY(selezione); st.s = Math.max(30, Math.min(300, Number(e.target.value) || 100));
-    _g('insp-size-val').textContent = st.s + '%'; _posElemento(_g('ap-' + selezione), st); _salvaPosDebounced(selezione);
+    _g('insp-size-val').textContent = st.s + '%'; _posElemento(_nodo(selezione), st); _salvaPosDebounced(selezione);
   });
   _g('insp-rot')?.addEventListener('input', (e) => {
     if (!selezione) return;
     const st = _statoXY(selezione); st.r = Math.max(-180, Math.min(180, Number(e.target.value) || 0));
-    _g('insp-rot-val').textContent = st.r + '°'; _posElemento(_g('ap-' + selezione), st); _salvaPosDebounced(selezione);
+    _g('insp-rot-val').textContent = st.r + '°'; _posElemento(_nodo(selezione), st); _salvaPosDebounced(selezione);
   });
   _g('insp-reset')?.addEventListener('click', () => {
     if (!selezione) return;
-    const k = selezione; posXY[k] = null; aggiornaAnteprima(); aggiornaInspector(); _salvaPos(k);
+    const k = selezione; _azzeraPos(k); aggiornaAnteprima(); aggiornaInspector(); _salvaPos(k);
   });
 
   _g('ovl-preview')?.addEventListener('pointerdown', (e) => {
@@ -11870,6 +12132,7 @@ function attivaPiattaforma() {
     await salvaImpostazioni({ overlayGoals: leggiGoalDalForm() }, L('Obiettivi salvati', 'Goals saved', 'Objetivos guardados'));
     _goalBozza = null;
     disegnaGoal();
+    aggiornaAnteprima();
   }));
 
   document.getElementById('btn-agg-goal')?.addEventListener('click', () => {
@@ -11877,16 +12140,37 @@ function attivaPiattaforma() {
     if (_goalBozza.length >= 6) { toast(L('Sei obiettivi sono il massimo.', 'Six goals is the maximum.', 'Seis objetivos es el máximo.'), 'errore'); return; }
     _goalBozza.push(goalNuovo());
     disegnaGoal();
+    aggiornaAnteprima();
+    seleziona('goal:' + _goalBozza[_goalBozza.length - 1].id);
   });
+
+  for (const evento of ['input', 'change']) {
+    document.getElementById('lista-goal')?.addEventListener(evento, () => {
+      leggiGoalDalForm();
+      aggiornaAnteprima();
+      aggiornaInspector();
+      salvaGoalDaScena();
+    });
+  }
 
   document.getElementById('lista-goal')?.addEventListener('click', (ev) => {
     const riga = ev.target.closest('.goal-riga');
     if (!riga) return;
     const i = Number(riga.dataset.goal);
+    if (ev.target.closest('[data-g-vesti]')) {
+      const g = goalBozza()[i];
+      if (!g) return;
+      if (!_g('ovl-aspetto')) { const b = document.querySelector(`.goal-vesti[data-goal-id="${g.id}"]`); if (b) b.hidden = !b.hidden; return; }
+      seleziona('goal:' + g.id);
+      _g('ovl-preview')?.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'center' });
+      return;
+    }
     if (ev.target.closest('[data-g-via]')) {
       leggiGoalDalForm();
       _goalBozza.splice(i, 1);
       disegnaGoal();
+      deseleziona();
+      aggiornaAnteprima();
       return;
     }
     if (ev.target.closest('[data-g-azzera]')) conErrore(async () => {
@@ -12735,7 +13019,7 @@ function caricaDatiScheda(id) {
   if (id === 'sondaggi') caricaSondaggi();
   if (id === 'giveaway') caricaGiveaway();
   if (id === 'penitenze') caricaPenitenze();
-  if (id === 'alert') { caricaAlert(); _goalBozza = null; disegnaGoal(); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); }); }
+  if (id === 'alert') { caricaAlert(); _goalBozza = null; disegnaGoal(); caricaContaStudio(); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); }); }
   else smontaBanco();
   if (id === 'regia') caricaRegia();
   if (id === 'studio') caricaStudio();

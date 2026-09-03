@@ -3,6 +3,15 @@
 Cosa è cambiato nel bot, in ordine di tempo. Una riga per cosa, scritta per chi
 lo usa: se non si vede da fuori, qui non ci va.
 
+## 2026-09-03
+
+- Nello Studio la tela ha tutto: obiettivi e contatori si trascinano come gli alert, con maniglie, frecce, aggancio e annulla. Prima si potevano mettere in posizione solo scrivendo numeri in un modulo.
+- Gli angoli della tela sono quelli veri dell'overlay: un obiettivo «in alto a destra» sta a filo dello schermo, e non usciva più dal riquadro come faceva prima.
+- Livelli e Proprietà non coprono più la tela: sono due sponde ai lati, si arrotolano per far spazio, si staccano trascinandole e si riagganciano con un doppio clic.
+- Scegliendo un obiettivo sulla tela le sue proprietà — colori, carattere, forma, cornice, opacità — si aprono lì accanto, come per ogni altro elemento.
+- Trascinare un contatore non lo fa più saltare a metà schermo, e ora si può anche ruotare.
+- L'occhio di «Obiettivo» e «Contatori» funziona davvero: prima si spegneva e al ricaricamento tornava acceso, quindi non si potevano togliere da un overlay.
+
 ## 2026-09-02
 
 - Gli obiettivi sono quanti ne vuoi, non uno: ognuno col suo traguardo, il suo angolo e il suo aspetto — colori, carattere, forma, cornice, dimensione, opacità.

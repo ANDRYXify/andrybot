@@ -124,6 +124,14 @@
     scintille: ['Scintille', 'Sparkles', 'Destellos'], mano: ['Saluto', 'Wave', 'Saludo'],
     occhio: ['Occhio', 'Eye', 'Ojo'], moneta: ['Moneta', 'Coin', 'Moneda'],
   };
+  window.FONT_CONT = {
+    system: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+    inter: 'Inter, system-ui, sans-serif',
+    spaceGrotesk: '"Space Grotesk", Inter, sans-serif',
+    jetBrainsMono: '"JetBrains Mono", ui-monospace, monospace',
+    fraunces: 'Fraunces, Georgia, serif',
+    bricolage: '"Bricolage Grotesque", Inter, sans-serif',
+  };
   window.ICONE_OVL = {
     chiavi: Object.keys(ICONE),
     svg(k) { return ICONE[k] || ''; },

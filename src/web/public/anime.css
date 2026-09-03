@@ -1074,13 +1074,14 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
 }
 .carta.ovl-banco .ovl-tela {
   position: absolute; inset: 0;
-  display: grid; place-items: center;
+  display: flex; align-items: center; justify-content: center;
   padding: 18px; overflow: auto;
 }
+.carta.ovl-banco .ovl-tela > #ovl-preview { flex: none; }
 
 .carta.ovl-banco .ovl-livelli,
 .carta.ovl-banco .ovl-inspector {
-  position: absolute; z-index: 4; margin: 0;
+  position: absolute; z-index: 6; margin: 0;
   width: var(--pw, 208px); max-height: calc(100% - 24px);
   border: 1px solid var(--border-2); border-radius: 12px;
   background: color-mix(in srgb, var(--surface) 94%, transparent);
@@ -1093,6 +1094,32 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
 .carta.ovl-banco .ovl-inspector { right: 12px; top: 12px; --pw: 336px; }
 .carta.ovl-banco .ovl-livelli.mosso,
 .carta.ovl-banco .ovl-inspector.mosso { right: auto; }
+
+@media (min-width: 1024px) {
+  .carta.ovl-banco .ovl-scena {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-rows: minmax(0, 1fr);
+    align-items: stretch; gap: 0;
+  }
+  .carta.ovl-banco .ovl-tela { position: relative; inset: auto; grid-column: 2; grid-row: 1; min-width: 0; }
+  .carta.ovl-banco .ovl-livelli:not(.mosso),
+  .carta.ovl-banco .ovl-inspector:not(.mosso) {
+    position: relative; z-index: 4; grid-row: 1;
+    left: auto; right: auto; top: auto; max-height: 100%;
+    border: 0; border-radius: 0; box-shadow: none;
+    background: var(--surface);
+    backdrop-filter: none; -webkit-backdrop-filter: none;
+  }
+  .carta.ovl-banco .ovl-livelli:not(.mosso) { grid-column: 1; border-right: 1px solid var(--border-2); }
+  .carta.ovl-banco .ovl-inspector:not(.mosso) { grid-column: 3; border-left: 1px solid var(--border-2); }
+  .carta.ovl-banco .ovl-livelli.arrotolato:not(.mosso),
+  .carta.ovl-banco .ovl-inspector.arrotolato:not(.mosso) { width: auto; }
+}
+@media (min-width: 1024px) and (max-width: 1299px) {
+  .carta.ovl-banco .ovl-livelli:not(.mosso) { --pw: 196px; }
+  .carta.ovl-banco .ovl-inspector:not(.mosso) { --pw: 284px; }
+}
 
 .pan-testa {
   position: sticky; top: 0; z-index: 2;
@@ -1130,8 +1157,11 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
   background: var(--surface); color: var(--testo-3);
   font-size: .78rem; font-variant-numeric: tabular-nums;
 }
+.ovl-piede { padding-right: 3.4rem; }
 .ovl-piede b { color: var(--testo-2); font-weight: 600; }
-.ovl-piede .ovl-piede-dx { margin-left: auto; }
+.ovl-piede > span { flex: none; white-space: nowrap; }
+.ovl-piede .ovl-piede-dx { margin-left: auto; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 900px) { .ovl-piede .ovl-piede-dx { display: none; } }
 
 .ovl-aspetto { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px; }
 .ovl-aspetto:empty, .ovl-aspetto:not(:has(.asp-blocco:not([hidden]))) { display: none; }
@@ -1184,6 +1214,8 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
   .carta.ovl-banco > .carta-corpo,
   .carta.ovl-banco > .carta-corpo > .carta-corpo-in { overflow: visible; }
   .carta.ovl-banco .ovl-scena { display: flex; flex-direction: column; align-items: stretch; overflow: visible; }
+  .carta.ovl-banco .ovl-livelli.arrotolato,
+  .carta.ovl-banco .ovl-inspector.arrotolato { width: auto; }
   .carta.ovl-banco .ovl-tela { position: relative; inset: auto; padding: 10px; order: 0; }
   .carta.ovl-banco .ovl-livelli { order: 1; }
   .carta.ovl-banco .ovl-inspector { order: 2; }
@@ -1528,3 +1560,6 @@ body.giro-aperto { overflow: hidden; }
 .goal-campi { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
 .goal-campi .campo-num { flex: 1 1 8rem; min-width: 7rem; }
 .goal-campi input[type="color"] { width: 100%; height: 2rem; padding: 2px; }
+.goal-vesti { display: grid; gap: 8px; }
+.goal-vesti h4 { margin: 0; }
+#ovl-aspetto > #goal-vesti { display: contents; }
