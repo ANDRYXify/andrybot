@@ -56,6 +56,10 @@ lo usa: se non si vede da fuori, qui non ci va.
 - Dentro e fuori parlano la stessa lingua: pulsanti, menu, pannelli, elenchi e perfino il cursore hanno il contorno d'inchiostro.
 - Le parole in risalto del titolo si colorano da sinistra a destra quando la pagina arriva, come le colorerebbe un disegnatore.
 - I testi piccoli sono più scuri: su carta chiara quelli di prima si leggevano male.
+- Il lettering disegnato è dei titoli, dei comandi e del marchio; il testo che si legge ha un carattere pulito, come in una tavola vera.
+- La schermata di caricamento è una vignetta: linee che convergono sul marchio, retino e il logo che si timbra.
+- Su telefono le ultime righe in fondo alla pagina non finiscono più sotto la barra dei pulsanti.
+- Menu, cassetto, campi e interruttori hanno il contorno d'inchiostro come tutto il resto.
 - Scegliendo un obiettivo sulla tela le sue proprietà — colori, carattere, forma, cornice, opacità — si aprono lì accanto, come per ogni altro elemento.
 - Trascinare un contatore non lo fa più saltare a metà schermo, e ora si può anche ruotare.
 - L'occhio di «Obiettivo» e «Contatori» funziona davvero: prima si spegneva e al ricaricamento tornava acceso, quindi non si potevano togliere da un overlay.

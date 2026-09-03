@@ -21,10 +21,8 @@ body.vetrina .contenuto { max-width: 1180px; padding-inline: clamp(1.1rem, 4vw, 
 body.vetrina .pagina-testata { display: none; }
 body.vetrina #cerca-lancia, body.vetrina #plancia-lancia { display: none !important; }
 
-body.vetrina, body.vetrina .vt-sub, body.vetrina .vt-mappa a, body.vetrina .vt-sotto,
-body.vetrina p, body.vetrina li, body.vetrina label, body.vetrina .vt-btn {
-  font-family: var(--mano);
-}
+body.vetrina { font-family: var(--testo-font); }
+body.vetrina .vt-btn, body.vetrina .vt-mappa a { font-family: var(--mano); }
 body.vetrina h1, body.vetrina h2, body.vetrina h3, body.vetrina .vt-num,
 body.vetrina .vt-titolo, body.vetrina .vt-tit {
   font-family: var(--mano);
