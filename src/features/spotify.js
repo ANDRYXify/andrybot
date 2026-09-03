@@ -167,13 +167,19 @@ export async function aggiungiInCoda(login, uri) {
 // per chi guarda lo schermo.
 export async function oraSuona(login) {
   const r = await apiCall(login, 'GET', '/me/player/currently-playing');
+  // Un 429, un token in rinnovo o la rete che sbatte NON vogliono dire «non c'e'
+  // musica»: vogliono dire che non lo sappiamo. Confonderli spegneva il player
+  // mentre la canzone andava.
+  if (!r.ok && r.status !== 204) return { stato: 'ignoto', suona: false };
   const t = r.dati?.item;
-  if (!t) return { suona: false };
+  if (!t) return { stato: 'niente', suona: false };
   const cover = (t.album?.images || []);
   const piccola = cover.length ? (cover[cover.length - 1].url || cover[0].url) : '';
   const grande = cover.length ? (cover[0].url || '') : '';
+  const suona = r.dati?.is_playing !== false;
   return {
-    suona: r.dati?.is_playing !== false,
+    stato: suona ? 'suona' : 'pausa',
+    suona,
     id: t.id || '',
     nome: t.name,
     artisti: (t.artists || []).map((a) => a.name).join(', '),
@@ -209,8 +215,8 @@ export async function battito(login, idBrano) {
   return fuori;
 }
 
-// Brano in riproduzione → { nome, artisti } o null.
+// Il brano di adesso per !song: anche in pausa e' quello che stai ascoltando.
 export async function inRiproduzione(login) {
   const d = await oraSuona(login);
-  return d.suona || d.nome ? { nome: d.nome, artisti: d.artisti } : null;
+  return (d.stato === 'suona' || d.stato === 'pausa') ? { nome: d.nome, artisti: d.artisti } : null;
 }

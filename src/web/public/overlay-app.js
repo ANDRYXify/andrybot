@@ -597,7 +597,8 @@ function goal(lista, conti) {
 }
 
 const musicaEl = {};
-let musicaVista = { suona: false };
+let musicaVista = { stato: 'ignoto', suona: false };
+let musicaVuoti = 0;
 let musicaLetta = 0;
 let musicaInVolo = false;
 
@@ -618,7 +619,25 @@ function vestiElemento(el, cfg, corniceDef) {
   } else { el.style.position = ''; el.style.left = ''; el.style.top = ''; el.style.transform = ''; }
 }
 
-function togliMusica() { if (musicaEl.n) { musicaEl.n.remove(); musicaEl.n = null; musicaEl.tinta = ''; musicaEl.chi = ''; } }
+function togliMusica() {
+  const el = musicaEl.n;
+  if (!el) return;
+  const cfg = MIO.musica;
+  const via = () => { el.remove(); if (musicaEl.n === el) musicaEl.n = null; musicaEl.uscita = 0; musicaEl.tinta = ''; musicaEl.chi = ''; };
+  if (!cfg || cfg.entrata === 'niente' || fermiIMotori()) return via();
+  if (musicaEl.uscita) return;
+  el.classList.remove('dentro');
+  el.classList.add('esce');
+  musicaEl.uscita = setTimeout(via, 520);
+}
+
+function restaMusica(el) {
+  if (!musicaEl.uscita) return;
+  clearTimeout(musicaEl.uscita);
+  musicaEl.uscita = 0;
+  el.classList.remove('esce');
+  el.classList.add('dentro');
+}
 
 const tinteNote = new Map();
 function tintaDaCopertina(url, poi) {
@@ -680,8 +699,12 @@ function disegnaMusica() {
   const cfg = MIO.musica;
   if (!cfg || !cfg.attivo || !mostra('musica')) return togliMusica();
   const d = musicaVista;
-  const vivo = !!(d && (d.suona || d.nome));
-  if (!vivo && cfg.quandoFermo !== 'resta') return togliMusica();
+  const stato = (d && d.stato) || 'niente';
+  if (stato === 'ignoto') return;
+  if (stato === 'niente' && musicaEl.n && musicaVuoti < 2) return;
+  const fermo = stato !== 'suona';
+  if (fermo && cfg.quandoFermo !== 'resta') return togliMusica();
+  const vivo = stato === 'suona' || stato === 'pausa';
 
   let el = musicaEl.n;
   const nato = !el;
@@ -697,6 +720,7 @@ function disegnaMusica() {
     musicaEl.n = el;
   }
   (wboxes[cfg.posizione] || wboxes['basso-sinistra'] || document.body).appendChild(el);
+  restaMusica(el);
 
   const st = cfg.stile || {};
   el.className = 'ovl-widget ovl-musica dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna')
@@ -704,7 +728,8 @@ function disegnaMusica() {
     + ' cover-' + cfg.cover + ' barra-' + cfg.barra + (cfg.onde ? ' con-onde' : '')
     + ' sfondo-' + cfg.sfondo + ' ritmo-' + cfg.ritmo
     + (vivo && d.suona ? ' suona' : ' in-pausa') + (vivo ? '' : ' fermo')
-    + ' entra-' + cfg.entrata + (cfg.barra !== 'sotto' && cfg.tempi === 'no' ? ' senza-sotto' : '');
+    + ' entra-' + cfg.entrata + (cfg.barra !== 'sotto' && cfg.tempi === 'no' ? ' senza-sotto' : '')
+    + (el.classList.contains('dentro') ? ' dentro' : '');
   vestiElemento(el, cfg, 'nessuna');
   if (nato) requestAnimationFrame(() => el.classList.add('dentro'));
 
@@ -815,7 +840,12 @@ async function chiediMusica() {
   musicaInVolo = true;
   try {
     const r = await fetch('/overlay/' + encodeURIComponent(login) + '/musica' + location.search);
-    if (r.ok) { musicaVista = await r.json(); musicaLetta = Date.now(); }
+    if (r.ok) {
+      const d = await r.json();
+      if (d && d.stato === 'niente') musicaVuoti++; else musicaVuoti = 0;
+      musicaVista = d;
+      musicaLetta = Date.now();
+    }
   } catch (e) { /* niente: alla prossima */ }
   musicaInVolo = false;
   disegnaMusica();
@@ -828,22 +858,33 @@ function disegnaTimer() {
   const fine = Number(MIO.timerFine) || 0;
   const manca = fine - Date.now();
   const finito = manca <= 0;
-  if (!cfg || !cfg.attivo || !mostra('timer') || !fine || (finito && cfg.aFine === 'sparisce')) {
-    if (timerEl.n) { timerEl.n.remove(); timerEl.n = null; }
-    return;
-  }
+  if (!cfg || !cfg.attivo || !mostra('timer') || !fine || (finito && cfg.aFine === 'sparisce')) return togliTimer();
   let el = timerEl.n;
+  const nato = !el;
   if (!el) {
     el = document.createElement('div');
     el.innerHTML = '<span class="t-tit"></span><span class="t-num"></span>';
     timerEl.n = el;
   }
+  if (timerEl.uscita) { clearTimeout(timerEl.uscita); timerEl.uscita = 0; el.classList.remove('esce'); }
   (wboxes[cfg.posizione] || wboxes['alto-destra'] || document.body).appendChild(el);
   el.className = 'ovl-widget ovl-timer dim-' + ((cfg.stile || {}).dim || 'media') + ' ' + classiIdentita(cfg.stile, 'nessuna')
-    + (finito ? ' finito' : '');
+    + (finito ? ' finito' : '') + (el.classList.contains('dentro') ? ' dentro' : '');
   vestiElemento(el, cfg, 'nessuna');
   el.querySelector('.t-tit').textContent = finito ? '' : (cfg.titolo || '');
   el.querySelector('.t-num').textContent = finito ? (cfg.testoFine || '') : oreMinSec(manca);
+  if (nato) requestAnimationFrame(() => el.classList.add('dentro'));
+}
+
+function togliTimer() {
+  const el = timerEl.n;
+  if (!el) return;
+  const via = () => { el.remove(); if (timerEl.n === el) timerEl.n = null; timerEl.uscita = 0; };
+  if (fermiIMotori()) return via();
+  if (timerEl.uscita) return;
+  el.classList.remove('dentro');
+  el.classList.add('esce');
+  timerEl.uscita = setTimeout(via, 520);
 }
 
 function oreMinSec(ms) {
