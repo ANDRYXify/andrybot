@@ -75,6 +75,7 @@ import {
   ICONE_OVL_K, icoOk, PESO_OVL, MAIUSC_OVL, USCITA_OVL,
   FORME_OVL, MATERIE_OVL, CORNICI_OVL, COMP_OVL,
   normAlertStile, normChatStile, normWidgetStile, normOverlayWidgetCfg, normOverlayStile, normGoals, MAX_GOAL,
+  normMusica, normTimer,
 } from './stile.js';
 
 // --- PIÙ OVERLAY: ogni overlay ha un suo LAYOUT (quali elementi mostra e dove)
@@ -82,7 +83,7 @@ import {
 // di canale (alerts/chatOverlay/overlayWidget). Retro-compatibile: se non c'è
 // una lista `overlays`, ne ricaviamo uno solo ("principale") con tutto visibile
 // e le posizioni attuali → chi ha già l'overlay lo vede identico.
-const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'effetti'];
+const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'musica', 'timer', 'effetti'];
 const _mostraDefault = () => ELEM_OVERLAY.reduce((o, k) => (o[k] = true, o), {});
 function overlaysDi(settings) {
   const s = settings || {};
@@ -855,6 +856,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       widget: st.widget || base.widget,
       goals: base.goals,
       conti: base.conti,
+      musica: base.musica,
+      timer: base.timer,
       stato: base.stato,
       mostra: ov.mostra || _mostraDefault(),
       xy: ov.xy || {},
@@ -864,6 +867,27 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       chatStile: st.chat || null,
     });
   });
+
+  // COSA STA SUONANDO, per il player dell'overlay. Spotify non sa spingere:
+  // qualcuno deve chiedere. Chiede l'OVERLAY, non il server a vuoto — cosi'
+  // quando nessuno guarda non partono chiamate. E la risposta e' in cache per
+  // qualche secondo, quindi dieci sorgenti browser aperte valgono comunque una
+  // chiamata sola: e' il numero di spettatori che non deve pesare su Spotify.
+  const musicaCache = new Map();   // login → { ts, dati }
+  const MUSICA_CACHE_MS = 4000;
+  app.get('/overlay/:login/musica', wrap(async (req, res) => {
+    if (!chiaveOk(req)) return notFound(res);
+    const login = String(req.params.login).toLowerCase();
+    const ora = Date.now();
+    const c = musicaCache.get(login);
+    if (c && ora - c.ts < MUSICA_CACHE_MS) return res.json(c.dati);
+    let dati = { suona: false };
+    try { if (spotify.collegato(login)) dati = await spotify.oraSuona(login); }
+    catch { dati = { suona: false }; }
+    musicaCache.set(login, { ts: ora, dati });
+    res.set('Cache-Control', 'no-store');
+    res.json(dati);
+  }));
 
   // Mappa emote 7TV (globali + del canale) per la "chat a schermo": l'overlay la
   // legge al caricamento e la rinfresca ogni tanto, così le emote 7TV compaiono
@@ -2942,6 +2966,12 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (b.overlayGoals !== undefined) {
       out.overlayGoals = normGoals(b.overlayGoals);
     }
+    if (b.overlayMusica !== undefined) {
+      out.overlayMusica = normMusica(b.overlayMusica);
+    }
+    if (b.overlayTimer !== undefined) {
+      out.overlayTimer = normTimer(b.overlayTimer);
+    }
     if (b.overlayWidget !== undefined) {
       out.overlayWidget = normOverlayWidgetCfg(b.overlayWidget || {});
     }
@@ -3317,7 +3347,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     // OVERLAY IN TEMPO REALE: se è cambiato qualcosa che l'overlay mostra
     // (CSS, widget, chat, alert, temi, stato), spingiamo SUBITO il nuovo tema
     // via SSE così la fonte OBS si aggiorna da sola, senza bisogno di refresh.
-    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays', 'overlayGoals'].some((k) => k in out)) {
+    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays', 'overlayGoals', 'overlayMusica', 'overlayTimer'].some((k) => k in out)) {
       // segnale di RICARICA: ogni overlay ricarica il PROPRIO tema (per ?o=id),
       // così più overlay diversi si aggiornano ciascuno col suo layout.
       try { effects.emit(user.login, { tipo: 'tema' }); }
@@ -3495,10 +3525,29 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // tutta la lista effetti).
   // Riportare l'obiettivo a zero e' un'azione dello streamer, non del tempo: un
   // obiettivo che si azzera da solo la notte non e' un obiettivo.
+  // Quanti follower / abbonati ha il canale ADESSO: serve a far partire un
+  // obiettivo da dove sei gia' arrivato. I bit non hanno un totale su Twitch —
+  // esiste solo la classifica di un periodo — e allora si dice, invece di
+  // inventare un numero.
+  app.get('/api/streamer/quanti', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const tipo = String(req.query.tipo || 'follower');
+    if (tipo === 'follower') return res.json({ quanti: await helix.quantiFollower(login) });
+    if (tipo === 'sub') return res.json({ quanti: await helix.quantiSub(login) });
+    res.json({ quanti: null, motivo: 'i bit non hanno un totale su Twitch' });
+  }));
+
   app.post('/api/streamer/goal/azzera', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     manager.alerts?.azzeraGoal?.(login, String(req.body?.id || '').slice(0, 12));
     res.json({ ok: true });
+  }));
+
+  // Fa partire (o ferma, con minuti = 0) il conto alla rovescia di inizio live.
+  app.post('/api/streamer/timer', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const fine = manager.alerts?.impostaTimer?.(login, req.body?.minuti) || 0;
+    res.json({ ok: true, fine });
   }));
 
   app.get('/api/streamer/overlay-url', requireLogin, wrap(async (req, res) => {

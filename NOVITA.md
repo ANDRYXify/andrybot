@@ -5,6 +5,17 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-03
 
+- Nell'overlay c'è il player: quello che stai ascoltando su Spotify, a schermo. Compare quando la musica parte e sparisce quando la fermi.
+- Il player è tuo dalla copertina in giù: quadrata, tonda o un vinile che gira, avanzamento come barra o come anello attorno alla copertina, onde che ballano a tempo.
+- E ancora: lo sfondo può prendere la copertina sfocata, il colore può prenderlo dai colori del disco, il titolo lungo scorre e l'entrata in scena la scegli tu.
+- C'è il conto alla rovescia di inizio diretta: scegli i minuti e parte. Sta nel canale, quindi ricaricare l'overlay o riavviare tutto non lo azzera.
+- Un obiettivo può partire da dove sei già: «1000 follower» invece di «altri 1000». Il tasto «Quanti ne ho adesso» va a chiedere il numero vero a Twitch.
+- Spostare le cose nello Studio non le fa più saltare: prendevi un elemento e scattava sotto il cursore, tanto più lontano quanto più era vicino a un bordo.
+- Un elemento non può più uscire dallo schermo mentre lo trascini.
+- «Allinea a sinistra» adesso lo attacca davvero al bordo.
+- L'occhio di un livello si vede quando è chiuso: prima l'elemento spariva ma l'icona restava un occhio aperto.
+- Il puntino del cursore non sparisce più quando si aggancia a un pulsante: con il cursore nascosto era l'unico modo di sapere dove stavi puntando.
+
 - Nello Studio la tela ha tutto: obiettivi e contatori si trascinano come gli alert, con maniglie, frecce, aggancio e annulla. Prima si potevano mettere in posizione solo scrivendo numeri in un modulo.
 - Gli angoli della tela sono quelli veri dell'overlay: un obiettivo «in alto a destra» sta a filo dello schermo, e non usciva più dal riquadro come faceva prima.
 - Livelli e Proprietà non coprono più la tela: sono due sponde ai lati, si arrotolano per far spazio, si staccano trascinandole e si riagganciano con un doppio clic.

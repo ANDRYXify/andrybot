@@ -151,6 +151,10 @@ export const normGoal = (g, i = 0) => {
     attivo: g.attivo !== false,
     tipo: unoDi(g.tipo, ['follower', 'sub', 'bit'], 'follower'),
     obiettivo: clampInt(g.obiettivo, 1, 1000000, 100),
+    // Da dove parte il conto. Un obiettivo «1000 follower» non e' «altri mille»:
+    // se ne hai gia' 450, la barra deve partire da li'. Il conto vero resta
+    // quello degli eventi; questo e' il gradino sotto.
+    partenza: clampInt(g.partenza, 0, 1000000, 0),
     titolo: String(g.titolo || '').slice(0, 60),
     posizione: unoDi(g.posizione, POS_ANG, 'alto-sinistra'),
     xy: normXY(g.xy),
@@ -171,6 +175,56 @@ export const normGoals = (lista) => {
     fuori.push(n);
   }
   return fuori;
+};
+
+// IL PLAYER. Quello che stai ascoltando, a schermo. E' un elemento della scena
+// come gli altri — stessa veste, stesso angolo, stesso trascinamento — piu' le
+// scelte che sono solo sue: che forma ha la copertina (anche un vinile che
+// gira), dove sta l'avanzamento (una barra sotto o un anello attorno alla
+// copertina), se il titolo lungo scorre, se le onde ballano a tempo, se lo
+// sfondo prende la copertina sfocata, se l'accento se lo prende dai colori
+// dell'artwork, come entra in scena, e cosa fa quando non suona niente.
+export const COVER_MUS = ['quadrata', 'tonda', 'vinile', 'no'];
+export const BARRA_MUS = ['sotto', 'anello', 'no'];
+export const TEMPI_MUS = ['no', 'trascorso', 'restante', 'due'];
+export const ENTRATA_MUS = ['dissolve', 'scivola', 'sale', 'niente'];
+
+export const normMusica = (m) => {
+  m = m || {};
+  return {
+    attivo: m.attivo === true,
+    testo: String(m.testo == null ? '{titolo} — {artista}' : m.testo).slice(0, 80),
+    cover: unoDi(m.cover, COVER_MUS, 'quadrata'),
+    barra: unoDi(m.barra, BARRA_MUS, 'sotto'),
+    tempi: unoDi(m.tempi, TEMPI_MUS, 'no'),
+    onde: m.onde !== false,
+    sfocato: m.sfocato === true,
+    daCopertina: m.daCopertina === true,
+    scorre: m.scorre !== false,
+    entrata: unoDi(m.entrata, ENTRATA_MUS, 'dissolve'),
+    quandoFermo: unoDi(m.quandoFermo, ['sparisce', 'resta'], 'sparisce'),
+    posizione: unoDi(m.posizione, POS_ANG, 'basso-sinistra'),
+    xy: xyOk(m.xy),
+    stile: normWidgetStile(m.stile),
+  };
+};
+
+// IL CONTO ALLA ROVESCIA prima di cominciare. La configurazione sta qui;
+// l'istante in cui scade sta nello STATO del canale (overlayStato.timer.fine),
+// perche' e' un dato che deve sopravvivere a un riavvio: un conto alla rovescia
+// che riparte da solo quando il bot si riavvia non e' un conto alla rovescia.
+export const normTimer = (t) => {
+  t = t || {};
+  return {
+    attivo: t.attivo === true,
+    titolo: String(t.titolo == null ? 'Si comincia tra' : t.titolo).slice(0, 60),
+    testoFine: String(t.testoFine == null ? 'Si comincia!' : t.testoFine).slice(0, 60),
+    aFine: unoDi(t.aFine, ['resta', 'sparisce'], 'resta'),
+    minuti: clampInt(t.minuti, 1, 600, 15),
+    posizione: unoDi(t.posizione, POS_ANG, 'alto-destra'),
+    xy: xyOk(t.xy),
+    stile: normWidgetStile(t.stile),
+  };
 };
 
 // Stile PER-OVERLAY completo (tutti i campi opzionali): { alerts, chat, widget }.

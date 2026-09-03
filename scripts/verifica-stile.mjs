@@ -29,6 +29,8 @@ function chiavi(sorgente, inizio, fine) {
 const coppie = [
   ['alert', chiavi(app, 'function _leggiAlertStile() {', '\n}'), chiavi(srv, 'const normAlertStile = (st) => {', '\n};')],
   ['chat', chiavi(app, 'function _leggiChatStile() {', '\n}'), chiavi(srv, 'const normChatStile = (st) => {', '\n};')],
+  ['musica', chiavi(app, 'function _defMusica() {', '\n}'), chiavi(srv, 'export const normMusica = (m) => {', '\n};')],
+  ['timer', chiavi(app, 'function _defTimer() {', '\n}'), chiavi(srv, 'export const normTimer = (t) => {', '\n};')],
 ];
 
 for (const [nome, cliente, server] of coppie) {
