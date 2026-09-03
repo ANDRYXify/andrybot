@@ -1,14 +1,15 @@
-// IL GIRO GUIDATO NON PUO' PUNTARE AL NULLA.
+// IL GIRO GUIDATO DEVE INSEGNARE, NON DESCRIVERE IL MOBILIO.
 //
-// Un tutorial invecchia peggio di un manuale: indica un bottone che non c'e'
-// piu' e chi lo segue conclude che il prodotto e' rotto. Per questo le tappe
-// NON sono un elenco scritto a parte: si leggono dalla pagina nel momento in cui
-// il giro parte, e le parole vengono da dove gia' stanno — la spiegazione della
-// scheda e i titoli veri delle carte.
+// Prima le tappe si leggevano dalla pagina: una per carta, col titolo della
+// carta e la sua prima frase. Non poteva invecchiare — ma non insegnava
+// niente: raccontava dov'erano le cose, non come si fanno. Era un giro
+// panoramico.
 //
-// Qui si controlla il contratto. Il comportamento vero (parte alla prima
-// visita, si chiude cambiando scheda, la luce segue lo scorrimento) si misura
-// in un browser: vedi docs/GIRO.md.
+// Ora ogni tappa e' un PASSO della ricetta della scheda (GUIDE[id].come) e
+// porta con se' l'ancora del controllo che nomina: il faro si accende li',
+// aprendo quel che e' chiuso. Il prezzo e' che un giro scritto puo'
+// invecchiare, e il contrappeso e' `scripts/verifica-giro.mjs`, che apre ogni
+// scheda in un browser vero e verifica che ogni ancora esista ancora.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -22,26 +23,62 @@ const fn = (nome) => {
   assert.ok(i > 0, `c'è ${nome}`);
   return APP.slice(i, APP.indexOf('\n}', i));
 };
+const GUIDA = (() => {
+  const i = APP.indexOf('const GUIDE = {');
+  return APP.slice(i, APP.indexOf('\n};', i));
+})();
+const schedeGuida = [...GUIDA.matchAll(/^ {2}([a-zA-Z0-9_]+): \{/gm)].map((m) => m[1]);
 
-test('le tappe si leggono dalla pagina, non da un elenco a parte', () => {
+test('ogni tappa è un passo da fare, non una carta da guardare', () => {
   const t = fn('tappeDi');
-  assert.ok(t.includes("document.getElementById('scheda-' + id)"), 'guarda la scheda vera');
-  assert.ok(t.includes("querySelectorAll(':scope > .carta')"), 'e le sue carte');
-  assert.ok(t.includes('carta.offsetParent'), 'saltando quelle non visibili');
-  assert.ok(t.includes("carta.querySelector('h2')"), 'il titolo è quello della carta');
+  assert.ok(t.includes('g.come'), 'le tappe sono i passi della scheda');
+  assert.ok(t.includes("sel: c[3]"), 'ognuno porta con sé il controllo di cui parla');
+  assert.ok(!t.includes(':scope > .carta'), 'e non si fa più il giro delle carte');
+  assert.ok(!APP.includes('function testoCarta'), 'né si pesca la prima frase che capita');
+  assert.ok(t.includes('aiutoDi(id)'), 'l’ultima tappa porta alla guida o al manuale');
 });
 
-test('le parole vengono da dove già stanno', () => {
-  const t = fn('tappeDi');
-  assert.ok(t.includes('GUIDE[id]'), 'la prima tappa è la spiegazione della scheda');
-  assert.ok(t.includes('g.serve') && t.includes('g.come'), 'con la sua ricetta numerata');
-  assert.ok(t.includes('aiutoDi(id)'), 'e l’ultima porta alla guida o al manuale');
+test('il faro apre quello che è chiuso, invece di puntare a un pannello richiuso', () => {
+  const p = fn('_puntaTappa');
+  assert.ok(p.includes("closest('details')") && p.includes('d.open = true'), 'apre i pieghevoli attorno al bersaglio');
+  assert.ok(p.includes('offsetParent') && p.includes('getClientRects'), 'e non punta a ciò che non si vede');
+  const d = fn('_dovePasso');
+  assert.ok(d.includes("querySelector('h2, summary h3, h3')"), 'il titolo della tappa è il posto dove sei');
 });
 
-test('una carta può dire la sua riga, ma non deve', () => {
-  const t = fn('testoCarta');
-  assert.ok(t.includes('carta.dataset.giro'), 'data-giro ha la precedenza');
-  assert.ok(t.includes('querySelectorAll'), 'altrimenti si prende dal testo della carta');
+// Il difetto che questo impedisce: una scheda senza ricetta non aveva un giro
+// da fare, e chi ci entrava per la prima volta restava a guardare.
+test('ogni scheda del pannello ha la sua ricetta', () => {
+  const schede = [...new Set([...APP.matchAll(/pannello\('([a-z0-9-]+)'/g)].map((m) => m[1]))]
+    .filter((s) => s !== 'admin');
+  const senza = schede.filter((s) => !schedeGuida.includes(s));
+  assert.deepEqual(senza, [], 'nessuna scheda del prodotto resta senza passi');
+});
+
+test('ogni passo parla tre lingue e dice a cosa punta', () => {
+  let totali = 0, conAncora = 0, corte = [];
+  for (const scheda of schedeGuida) {
+    const i = GUIDA.indexOf(`  ${scheda}: {`);
+    const c = GUIDA.indexOf('come: [', i);
+    const fine = GUIDA.indexOf(']] }', c);
+    assert.ok(c > 0 && fine > c, `${scheda}: c'è la ricetta`);
+    const dentro = GUIDA.slice(c + 'come: ['.length, fine + 1);
+    const passi = [...dentro.matchAll(/\[((?:[^[\]\\]|\\.)*)\]/g)].map((m) => m[1]);
+    assert.ok(passi.length >= 2, `${scheda}: almeno due passi`);
+    for (const p of passi) {
+      totali++;
+      const pezzi = [...p.matchAll(/'((?:[^'\\]|\\.)*)'/g)].map((m) => m[1]);
+      const lingue = pezzi.slice(0, 3);
+      const ancora = pezzi.length === 4 ? pezzi[3] : null;
+      if (pezzi.length < 3 || pezzi.length > 4) corte.push(`${scheda}: «${pezzi[0] || p}» ha ${pezzi.length} pezzi`);
+      else if (lingue.some((x) => x.startsWith('#'))) corte.push(`${scheda}: «${pezzi[0]}» ha perso una lingua`);
+      else if (ancora !== null && ancora !== '' && !ancora.startsWith('#')) corte.push(`${scheda}: «${pezzi[0]}» ha un'ancora storta`);
+      if (ancora && ancora.startsWith('#')) conAncora++;
+    }
+  }
+  assert.deepEqual(corte, [], 'ogni passo dice la sua in italiano, inglese e spagnolo');
+  assert.ok(totali >= 60, `i passi ci sono tutti: ${totali}`);
+  assert.ok(conAncora >= totali * 0.8, `quasi tutti puntano a un controllo: ${conAncora} su ${totali}`);
 });
 
 test('si vede una volta, e si può rifare', () => {
