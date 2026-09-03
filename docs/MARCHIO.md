@@ -298,6 +298,35 @@ Ci sono volute tre correzioni alla MISURA prima di fidarsi di lei:
 Ora guarda dentro il comando, esclude il colore della scritta, raggruppa largo e
 prende il **fondo peggiore fra quelli che coprono almeno il 4%**.
 
+## Il puntatore: un cursore, non un inseguitore
+
+Il puntatore personalizzato era un motore in `cinema.js`: tre elementi creati a
+mano, un ciclo a ogni fotogramma, e una logica che li faceva «morfare» sopra il
+bottone sotto il mouse. Da qui le due cose che il direttore ha visto insieme —
+**ritardo** («lagga molto») e **incoerenza** («bruttino»): un oggetto che insegue
+il mouse è sempre indietro di qualche fotogramma, per costruzione.
+
+La risposta non è addobbarlo: è che il puntatore torni a essere un **cursore**.
+Un `cursor: url(...)` disegnato è renderizzato dal sistema, quindi sta esattamente
+sotto il dito e non può restare indietro; ed è disegnato per davvero — una
+freccia con il contorno d'inchiostro e la punta magenta, più una versione tonda
+per ciò che si clicca. Sono **165 righe in meno**, non di più.
+
+Il disegno è stato rifatto una volta: alla prima prova il contorno da 2,6 px su
+un'icona da 28 px si mangiava il colore e il cursore era un blob nero. Guardarlo
+ingrandito prima di dichiararlo fatto è costato un minuto.
+
+## Le pagine che nessuno guarda mai
+
+Le guide leggono la tavolozza dalla stessa fonte, quindi la carta l'avevano già
+presa da sola. Mancavano l'inchiostro e la voce: ora l'elenco dei token che si
+portano via include contorno, tratto, angoli, ombra e `--mano`, e i numeri dei
+passi sono pastiglie inchiostrate con la rampa.
+
+L'anteprima dei link (`scripts/og.mjs`) si genera dallo stesso posto: aloni
+sfocati e griglia quadrata erano l'idioma fotografico di prima, ora sono linee
+cinetiche e retino, con il titolo nel lettering e le pastiglie con l'ombra piena.
+
 ## Il cancello
 
 `scripts/verifica-risorse.mjs` controlla che ogni file chiesto dalle pagine e

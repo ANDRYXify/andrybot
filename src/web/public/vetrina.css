@@ -134,7 +134,7 @@ body.vetrina em, body.vetrina .vt-corsivo {
   font-size: 1rem; font-weight: 600; letter-spacing: -.005em; text-decoration: none;
   border: var(--contorno-sp) solid var(--contorno); border-width: var(--tratto-mano);
   background: color-mix(in srgb, var(--surface) 80%, transparent);
-  color: var(--testo); cursor: pointer;
+  color: var(--testo);
   transition: transform .18s var(--molla-lieve), border-color .24s ease, background .24s ease, color .24s ease;
 }
 .vt-btn { box-shadow: var(--ombra-ink); }
