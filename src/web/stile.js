@@ -117,7 +117,7 @@ export const normWidgetStile = (st) => {
     sfondo: hexOk(st.sfondo, '#0f0f14'),
     opacita: clampInt(st.opacita, 0, 100, 85),
     testo: hexOk(st.testo, '#ffffff'),
-    accento: hexOk(st.accento, '#9146ff'),
+    accento: hexOk(st.accento, '#f72fa7'),
     bordoRaggio: clampInt(st.bordoRaggio, 0, 30, 12),
     font: fontOvlOk(st.font, 'sistema'),
     forma: unoDi(st.forma, FORME_OVL, 'carta'),
@@ -127,6 +127,52 @@ export const normWidgetStile = (st) => {
     dimIcona: clampInt(st.dimIcona, 0, 80, 20),
   };
 };
+// GLI OBIETTIVI. Sono una lista, non un campo solo: chi ne vuole tre ne fa tre,
+// e ognuno ha il suo traguardo, il suo titolo, il suo posto e la sua veste —
+// stessa veste degli altri elementi, quindi niente scelte obbligate.
+const POS_ANG = ['alto-sinistra', 'alto-destra', 'basso-sinistra', 'basso-destra'];
+export const MAX_GOAL = 6;
+
+const normXY = (xy) => {
+  if (!xy || typeof xy !== 'object' || xy.x == null) return null;
+  return {
+    x: Math.min(100, Math.max(0, Number(xy.x) || 0)),
+    y: Math.min(100, Math.max(0, Number(xy.y) || 0)),
+    s: clampInt(xy.s, 20, 400, 100),
+    r: clampInt(xy.r, -180, 180, 0),
+  };
+};
+
+export const normGoal = (g, i = 0) => {
+  g = g || {};
+  const id = String(g.id || '').replace(/[^a-z0-9]/gi, '').slice(0, 12) || ('g' + (i + 1));
+  return {
+    id,
+    attivo: g.attivo !== false,
+    tipo: unoDi(g.tipo, ['follower', 'sub', 'bit'], 'follower'),
+    obiettivo: clampInt(g.obiettivo, 1, 1000000, 100),
+    titolo: String(g.titolo || '').slice(0, 60),
+    posizione: unoDi(g.posizione, POS_ANG, 'alto-sinistra'),
+    xy: normXY(g.xy),
+    stile: normWidgetStile(g.stile),
+  };
+};
+
+export const normGoals = (lista) => {
+  const dentro = Array.isArray(lista) ? lista : [];
+  const visti = new Set();
+  const fuori = [];
+  for (const [i, g] of dentro.slice(0, MAX_GOAL).entries()) {
+    const n = normGoal(g, i);
+    // due obiettivi con lo stesso nome interno si sovrascriverebbero il conto
+    let k = 2;
+    while (visti.has(n.id)) n.id = n.id.replace(/\d+$/, '') + (k++);
+    visti.add(n.id);
+    fuori.push(n);
+  }
+  return fuori;
+};
+
 // Stile PER-OVERLAY completo (tutti i campi opzionali): { alerts, chat, widget }.
 // Ritorna null se non c'è nulla di valido → l'overlay eredita lo stile di canale.
 export const normOverlayWidgetCfg = (w) => {

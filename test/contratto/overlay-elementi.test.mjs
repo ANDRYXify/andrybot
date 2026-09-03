@@ -38,13 +38,18 @@ test('anche i contatori si spengono dall’elenco, e si vestono come gli altri',
   assert.ok(corpo.includes("setProperty('--fg'"), 'quel che imposti a mano continua a vincere');
 });
 
-test('l’obiettivo è un elemento come gli altri', () => {
-  const i = OVL.indexOf('function goal(');
+test('gli obiettivi sono elementi come gli altri, e sono quanti ne vuoi', () => {
+  const i = OVL.indexOf('function unGoal(');
   const corpo = OVL.slice(i, OVL.indexOf('\n}', i));
-  assert.ok(corpo.includes("mostra('goal')"), 'si spegne dall’elenco');
-  assert.ok(corpo.includes('MIO.xy.goal'), 'si può spostare come gli altri');
-  assert.ok(corpo.includes('classiIdentita'), 'si veste come gli altri');
-  assert.ok(corpo.includes("Math.min(100"), 'la barra non supera il traguardo');
+  assert.ok(corpo.includes("mostra('goal')"), 'si spengono tutti dall’elenco della scena');
+  assert.ok(corpo.includes('cfg.attivo'), 'e ognuno ha il suo interruttore');
+  assert.ok(corpo.includes('cfg.xy'), 'ognuno si mette dove vuole');
+  assert.ok(corpo.includes('classiIdentita'), 'con la sua veste');
+  assert.ok(corpo.includes('cfg.posizione'), 'o nel suo angolo');
+  assert.ok(corpo.includes('Math.min(100'), 'la barra non supera il traguardo');
+  const g = OVL.slice(OVL.indexOf('function goal('), OVL.indexOf('\n}', OVL.indexOf('function goal(')));
+  assert.ok(g.includes('for (const g of'), 'si disegnano tutti');
+  assert.ok(g.includes('vivi.has(id)'), 'e quello che togli sparisce davvero');
 });
 
 test('un’opacità senza unità spegnerebbe tutti gli sfondi', () => {

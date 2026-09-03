@@ -42,6 +42,27 @@ function riempi(tpl, vars) {
 // ne fa crescere nessuno: e' l'elenco, non un caso particolare nel codice.
 const GOAL_DI = { follow: 'follower', sub: 'sub', cheer: 'bit' };
 
+// Gli obiettivi del canale. Chi aveva l'obiettivo singolo di prima se lo ritrova
+// come primo della lista, col suo conto: nessuno perde niente cambiando forma.
+export function goalDi(settings) {
+  const s = settings || {};
+  if (Array.isArray(s.overlayGoals)) return s.overlayGoals;
+  const vecchio = s.overlayGoal;
+  if (!vecchio || typeof vecchio !== 'object') return [];
+  return [{ id: 'g1', attivo: !!vecchio.attivo, tipo: vecchio.tipo || 'follower',
+    obiettivo: Number(vecchio.obiettivo) || 100, titolo: vecchio.titolo || '',
+    posizione: 'alto-sinistra', xy: null, stile: {} }];
+}
+
+export function contiGoal(settings) {
+  const st = settings?.overlayStato || {};
+  if (st.goals && typeof st.goals === 'object') return st.goals;
+  const vecchio = st.goal;
+  const lista = goalDi(settings);
+  if (!vecchio || !lista.length) return {};
+  return { [lista[0].id]: Number(vecchio[lista[0].tipo]) || 0 };
+}
+
 export class AlertsEngine {
   constructor({ effects } = {}) {
     this.effects = effects || null;
@@ -94,27 +115,30 @@ export class AlertsEngine {
       const g = GOAL_DI[kind];
       if (!g || quanti <= 0) return;
       const s = streamers.get(channel);
-      const cfg = s?.settings?.overlayGoal;
-      if (!cfg || cfg.attivo === false || cfg.tipo !== g) return;
+      const lista = goalDi(s?.settings);
+      const tocca = lista.filter((x) => x.attivo !== false && x.tipo === g);
+      if (!tocca.length) return;
       const stato = { ...(s.settings?.overlayStato || {}) };
-      const conti = { follower: 0, sub: 0, bit: 0, ...(stato.goal || {}) };
-      conti[g] = (Number(conti[g]) || 0) + quanti;
-      stato.goal = conti;
+      const conti = { ...(stato.goals || {}) };
+      for (const x of tocca) conti[x.id] = (Number(conti[x.id]) || 0) + quanti;
+      stato.goals = conti;
       streamers.setSettings(channel, { ...s.settings, overlayStato: stato });
-      this.effects?.emit?.(channel, { tipo: 'goal', cfg, valore: conti[g] });
+      this.effects?.emit?.(channel, { tipo: 'goal', goals: lista, conti });
     } catch (e) { log.debug('goal:', e?.message || e); }
   }
 
-  // Riporta l'obiettivo a zero: e' un'azione dello streamer, non del tempo.
-  azzeraGoal(channel) {
+  // Riporta un obiettivo a zero — o tutti. E' un'azione dello streamer, non del
+  // tempo: un obiettivo che si azzera da solo la notte non e' un obiettivo.
+  azzeraGoal(channel, id = '') {
     try {
       const s = streamers.get(channel);
       if (!s) return 0;
       const stato = { ...(s.settings?.overlayStato || {}) };
-      stato.goal = { follower: 0, sub: 0, bit: 0 };
+      const conti = { ...(stato.goals || {}) };
+      if (id) conti[id] = 0; else for (const k of Object.keys(conti)) conti[k] = 0;
+      stato.goals = conti;
       streamers.setSettings(channel, { ...s.settings, overlayStato: stato });
-      const cfg = s.settings?.overlayGoal || {};
-      this.effects?.emit?.(channel, { tipo: 'goal', cfg, valore: 0 });
+      this.effects?.emit?.(channel, { tipo: 'goal', goals: goalDi(s.settings), conti });
       return 0;
     } catch (e) { return 0; }
   }
@@ -257,7 +281,8 @@ export class AlertsEngine {
       css: String(s.overlayCss || '').slice(0, 8000),
       fontPersonali: fontMiei,
       widget: conIcone,
-      goal: (s.overlayGoal && typeof s.overlayGoal === 'object') ? s.overlayGoal : null,
+      goals: goalDi(s),
+      conti: contiGoal(s),
       stato: (s.overlayStato && typeof s.overlayStato === 'object') ? s.overlayStato : {},
     };
   }

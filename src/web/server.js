@@ -74,7 +74,7 @@ import {
   SUONI_PRESET, FONT_OVL, MIO_FONT, fontOvlOk, clampInt, hexOk, unoDi, xyOk,
   ICONE_OVL_K, icoOk, PESO_OVL, MAIUSC_OVL, USCITA_OVL,
   FORME_OVL, MATERIE_OVL, CORNICI_OVL, COMP_OVL,
-  normAlertStile, normChatStile, normWidgetStile, normOverlayWidgetCfg, normOverlayStile,
+  normAlertStile, normChatStile, normWidgetStile, normOverlayWidgetCfg, normOverlayStile, normGoals, MAX_GOAL,
 } from './stile.js';
 
 // --- PIÙ OVERLAY: ogni overlay ha un suo LAYOUT (quali elementi mostra e dove)
@@ -852,7 +852,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       // WIDGET (config + stile): per-overlay se presente, altrimenti di canale.
       // Lo STATO (nome ultimo follower/sub) resta di canale: è un dato, non stile.
       widget: st.widget || base.widget,
-      goal: base.goal,
+      goals: base.goals,
+      conti: base.conti,
       stato: base.stato,
       mostra: ov.mostra || _mostraDefault(),
       xy: ov.xy || {},
@@ -2934,16 +2935,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       };
     }
     // WIDGET persistenti dell'overlay (ultimo follower / ultimo sub)
-    // L'OBIETTIVO. Un tipo fra tre, un traguardo, un titolo. Il conto non si
-    // scrive da qui: lo tiene il motore contando gli eventi veri.
-    if (b.overlayGoal !== undefined) {
-      const g = b.overlayGoal || {};
-      out.overlayGoal = {
-        attivo: !!g.attivo,
-        tipo: ['follower', 'sub', 'bit'].includes(g.tipo) ? g.tipo : 'follower',
-        obiettivo: Math.min(1000000, Math.max(1, Math.round(Number(g.obiettivo)) || 100)),
-        titolo: String(g.titolo || '').slice(0, 60),
-      };
+    // GLI OBIETTIVI. Una lista: chi ne vuole tre ne fa tre, ognuno col suo
+    // traguardo, il suo posto e la sua veste. Il conto non si scrive da qui: lo
+    // tiene il motore contando gli eventi veri.
+    if (b.overlayGoals !== undefined) {
+      out.overlayGoals = normGoals(b.overlayGoals);
     }
     if (b.overlayWidget !== undefined) {
       out.overlayWidget = normOverlayWidgetCfg(b.overlayWidget || {});
@@ -3320,7 +3316,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     // OVERLAY IN TEMPO REALE: se è cambiato qualcosa che l'overlay mostra
     // (CSS, widget, chat, alert, temi, stato), spingiamo SUBITO il nuovo tema
     // via SSE così la fonte OBS si aggiorna da sola, senza bisogno di refresh.
-    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays', 'overlayGoal'].some((k) => k in out)) {
+    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays', 'overlayGoals'].some((k) => k in out)) {
       // segnale di RICARICA: ogni overlay ricarica il PROPRIO tema (per ?o=id),
       // così più overlay diversi si aggiornano ciascuno col suo layout.
       try { effects.emit(user.login, { tipo: 'tema' }); }
@@ -3500,7 +3496,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // obiettivo che si azzera da solo la notte non e' un obiettivo.
   app.post('/api/streamer/goal/azzera', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    manager.alerts?.azzeraGoal?.(login);
+    manager.alerts?.azzeraGoal?.(login, String(req.body?.id || '').slice(0, 12));
     res.json({ ok: true });
   }));
 
