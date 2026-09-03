@@ -1505,3 +1505,9 @@ input[type="search"], input[type="tel"], input[type="number"], textarea, select 
 .tema-toggle:active, .suono-toggle:active, .lingua-btn:active {
   box-shadow: var(--ombra-ink-timbro); transform: translate(2px, 3px);
 }
+
+body, body * { cursor: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2726%27%20height%3D%2728%27%20viewBox%3D%270%200%2026%2028%27%3E%3Cpath%20d%3D%27M2.6%201.7%20C2.2%201.3%201.4%201.6%201.5%202.3%20L3.7%2022.6%20C3.8%2023.6%205%2023.9%205.6%2023.1%20L10%2017.4%20L13.9%2025.3%20C14.2%2025.9%2014.9%2026.1%2015.5%2025.8%20L18.2%2024.4%20C18.8%2024.1%2019%2023.3%2018.7%2022.7%20L14.9%2015%20L22%2014.2%20C23%2014.1%2023.3%2012.9%2022.6%2012.3%20Z%27%20fill%3D%27%23ff3fb0%27%20stroke%3D%27%23150910%27%20stroke-width%3D%272%27%20stroke-linejoin%3D%27round%27%2F%3E%3Cpath%20d%3D%27M4.4%204.6%20L5.9%2019.4%20L9.5%2014.6%20Z%27%20fill%3D%27%23ffffff%27%20opacity%3D%27.45%27%2F%3E%3C%2Fsvg%3E") 2 1, auto; }
+a, button, .btn, [role="button"], summary, label, select, .grp-btn, .drawer-voce, .menu-voce, .vt-btn {
+  cursor: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2728%27%20height%3D%2728%27%20viewBox%3D%270%200%2028%2028%27%3E%3Ccircle%20cx%3D%2714%27%20cy%3D%2714%27%20r%3D%278.4%27%20fill%3D%27%23ff3fb0%27%20stroke%3D%27%23150910%27%20stroke-width%3D%272.2%27%2F%3E%3Ccircle%20cx%3D%2711.4%27%20cy%3D%2711.4%27%20r%3D%272.4%27%20fill%3D%27%23ffffff%27%20opacity%3D%27.5%27%2F%3E%3Ccircle%20cx%3D%2714%27%20cy%3D%2714%27%20r%3D%272.2%27%20fill%3D%27%23150910%27%2F%3E%3C%2Fsvg%3E") 14 14, pointer;
+}
+input, textarea, [contenteditable="true"] { cursor: text; }

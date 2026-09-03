@@ -20,6 +20,7 @@ const QUI = dirname(fileURLToPath(import.meta.url));
 const PUB = join(QUI, '..', 'src', 'web', 'public');
 
 const FONT = readFileSync(join(PUB, 'vendor', 'font', 'archivo-normal-400-800-latin.woff2')).toString('base64');
+const MANO = readFileSync(join(PUB, 'vendor', 'font', 'shantell-normal-300-800-latin.woff2')).toString('base64');
 
 // Il marchio arriva dal disegno vero, non da un robot ridisegnato a mano qui
 // dentro: quello era una copia, e una copia resta indietro il giorno che
@@ -31,34 +32,33 @@ const LOGO = readFileSync(join(PUB, 'icons', 'logo-esteso.png')).toString('base6
 const C = {
   carta: tinta('bg'), foglio: tinta('surface'), inchiostro: tinta('testo'),
   seconda: tinta('testo-2'), acc: tinta('acc'), acc600: tinta('acc-600'),
+  contorno: tinta('contorno'), vivo: tinta('acc-vivo'), caldo: tinta('acc-caldo'), vino: tinta('acc-vino'),
 };
 const velo = (colore, quota) => `color-mix(in srgb, ${colore} ${quota}%, transparent)`;
 
 function pagina({ occhiello, titolo, evidenza, sotto, pastiglie }) {
   return `<!doctype html><html><head><meta charset="utf-8"><style>
 @font-face{font-family:Archivo;src:url(data:font/woff2;base64,${FONT}) format('woff2');font-weight:100 900;font-display:block}
+@font-face{font-family:Mano;src:url(data:font/woff2;base64,${MANO}) format('woff2');font-weight:300 800;font-display:block}
 *{box-sizing:border-box;margin:0}
 html,body{width:1200px;height:630px}
 body{font-family:Archivo,system-ui,sans-serif;background:${C.carta};color:${C.inchiostro};position:relative;overflow:hidden;padding:58px 62px;display:flex;flex-direction:column}
-.alone{position:absolute;border-radius:50%;filter:blur(90px);pointer-events:none}
-.a1{width:640px;height:640px;left:-190px;top:-260px;background:${velo(C.acc, 16)}}
-.a2{width:560px;height:560px;right:-170px;bottom:-250px;background:${velo(C.acc600, 12)}}
-.a3{width:420px;height:420px;right:180px;top:-190px;background:${velo(C.acc, 10)}}
-.griglia{position:absolute;inset:0;background-image:linear-gradient(${velo(C.inchiostro, 6)} 1px,transparent 1px),linear-gradient(90deg,${velo(C.inchiostro, 6)} 1px,transparent 1px);background-size:52px 52px;mask-image:radial-gradient(circle at 30% 20%,#000,transparent 78%)}
+.cinetiche{position:absolute;inset:-30%;background-image:repeating-conic-gradient(from 0deg at 50% 50%,${C.contorno} 0deg .55deg,transparent .55deg 3.1deg);opacity:.11;mask-image:radial-gradient(closest-side,transparent 18%,#000 56%,transparent 88%)}
+.griglia{position:absolute;inset:0;background-image:radial-gradient(${C.contorno} 1.2px,transparent 1.3px);background-size:7px 7px;opacity:.14;mask-image:radial-gradient(circle at 32% 34%,#000,transparent 80%)}
 .testa{display:flex;align-items:center;gap:17px;position:relative;z-index:2}
 .logo{height:104px;width:auto;display:block}
-.firma{margin-left:auto;font-size:20px;color:${C.acc600};font-weight:700;letter-spacing:.01em;white-space:nowrap}
-.occhiello{margin-left:auto;font-size:15px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:${C.acc600};border:1px solid ${velo(C.acc, 34)};background:${velo(C.acc, 9)};padding:9px 19px;border-radius:999px}
+.firma{margin-left:auto;font-family:Mano,Archivo,sans-serif;font-size:21px;color:${C.acc600};font-weight:800;letter-spacing:.01em;white-space:nowrap}
+.occhiello{margin-left:auto;font-family:Mano,Archivo,sans-serif;font-size:15px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:${C.inchiostro};border:2px solid ${C.contorno};background:${C.foglio};padding:9px 19px;border-radius:16px 10px 14px 11px/11px 14px 10px 16px;box-shadow:4px 4px 0 ${C.contorno}}
 .mezzo{flex:1;display:flex;flex-direction:column;justify-content:flex-end;position:relative;z-index:2;padding-bottom:38px}
-h1{font-size:${Math.max(titolo.length, (evidenza||'').length) > 30 ? 64 : 74}px;line-height:1.075;letter-spacing:-.036em;font-weight:800;max-width:1050px}
-h1 b{color:${C.acc};font-weight:800}
+h1{font-family:Mano,Archivo,sans-serif;font-size:${Math.max(titolo.length, (evidenza||'').length) > 30 ? 60 : 70}px;line-height:1.14;letter-spacing:-.012em;font-weight:800;max-width:1050px}
+h1 b{font-weight:800;background:linear-gradient(100deg,${C.vivo},${C.acc} 42%,${C.caldo} 74%,${C.vino});-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
 .sotto{margin-top:24px;font-size:25px;line-height:1.44;color:${C.seconda};max-width:1000px;font-weight:400;text-wrap:pretty}
 .sotto strong{color:${C.inchiostro};font-weight:700}
 .piede{display:flex;gap:13px;align-items:center;position:relative;z-index:2;flex-wrap:nowrap}
-.pastiglia{font-size:19px;font-weight:600;color:${C.inchiostro};background:${velo(C.foglio, 74)};border:1px solid ${velo(C.inchiostro, 12)};border-radius:12px;padding:11px 19px;display:flex;align-items:center;gap:10px;white-space:nowrap}
+.pastiglia{font-family:Mano,Archivo,sans-serif;font-size:19px;font-weight:600;color:${C.inchiostro};background:${C.foglio};border:2px solid ${C.contorno};border-radius:14px 9px 13px 10px/10px 13px 9px 14px;padding:10px 18px;display:flex;align-items:center;gap:10px;white-space:nowrap;box-shadow:3px 3px 0 ${C.contorno}}
 .spunta{width:9px;height:9px;border-radius:50%;background:${C.acc};flex:none}
 </style></head><body>
-<div class="alone a1"></div><div class="alone a3"></div><div class="alone a2"></div><div class="griglia"></div>
+<div class="cinetiche"></div><div class="griglia"></div>
 <div class="testa">
   <img class="logo" src="data:image/png;base64,${LOGO}" alt="SocialBot">
   <div class="occhiello">${occhiello}</div>

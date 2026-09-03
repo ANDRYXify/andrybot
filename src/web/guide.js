@@ -361,7 +361,10 @@ function testo(s) {
 // tema.css — la stessa fonte che veste la dashboard — quindi il giorno che il
 // marchio cambia, cambiano anche queste pagine.
 const TOKEN = ['bg', 'surface', 'surface-2', 'border', 'border-2',
-  'testo', 'testo-2', 'testo-3', 'acc', 'acc-600', 'su-acc', 'acc-soft', 'acc-bordo'];
+  'testo', 'testo-2', 'testo-3', 'acc', 'acc-600', 'su-acc', 'acc-soft', 'acc-bordo',
+  'mano', 'testo-font', 'contorno', 'contorno-sp', 'tratto-mano', 'ang-mano', 'ang-mano-l',
+  'ombra-ink', 'ombra-ink-alta', 'alone-contorno', 'retino', 'retino-passo', 'retino-forza',
+  'acc-vivo', 'acc-caldo', 'acc-vino', 'rampa'];
 
 const TAV = { chiaro: dichiarazioni(TOKEN, 'chiaro'), scuro: dichiarazioni(TOKEN, 'scuro') };
 
@@ -402,9 +405,9 @@ h3{font-size:1rem;margin:20px 0 6px}
 main{max-width:760px;margin:0 auto;padding:34px 20px 60px}
 .g-briciole{font-size:.84rem;color:var(--testo-3);margin:0 0 18px}
 .g-briciole a{color:var(--testo-3)}
-h1{font-size:clamp(1.75rem,4.4vw,2.5rem);line-height:1.18;letter-spacing:-.025em;margin:0 0 12px;text-wrap:balance}
-h2{font-size:1.32rem;line-height:1.3;letter-spacing:-.015em;margin:38px 0 12px;text-wrap:balance}
-h3{font-size:1.06rem;margin:26px 0 8px}
+h1{font-family:var(--mano);font-size:clamp(1.7rem,4.2vw,2.4rem);line-height:1.22;letter-spacing:-.012em;margin:0 0 12px;text-wrap:balance}
+h2{font-family:var(--mano);font-size:1.3rem;line-height:1.32;letter-spacing:-.008em;margin:38px 0 12px;text-wrap:balance}
+h3{font-family:var(--mano);font-size:1.06rem;margin:26px 0 8px}
 p{margin:0 0 15px;color:var(--testo-2)}
 main>article>p:first-of-type{font-size:1.09rem;color:var(--testo)}
 strong{color:var(--testo);font-weight:700}
@@ -414,7 +417,7 @@ ul,ol{margin:0 0 16px;padding-left:1.3em;color:var(--testo-2)}
 li{margin:0 0 9px}
 ol.g-passi{list-style:none;counter-reset:p;padding:0}
 ol.g-passi li{counter-increment:p;position:relative;padding:0 0 0 44px;margin:0 0 20px}
-ol.g-passi li::before{content:counter(p);position:absolute;left:0;top:1px;width:29px;height:29px;border-radius:50%;background:var(--acc-soft);border:1px solid var(--acc-bordo);color:var(--acc);font-weight:700;font-size:.88rem;display:grid;place-items:center}
+ol.g-passi li::before{content:counter(p);position:absolute;left:0;top:1px;width:30px;height:30px;border-radius:var(--ang-mano);background:var(--rampa);border:var(--contorno-sp) solid var(--contorno);border-width:var(--tratto-mano);box-shadow:var(--ombra-ink);color:var(--su-acc);font-family:var(--mano);font-weight:800;font-size:.9rem;display:grid;place-items:center}
 ol.g-passi b{display:block;color:var(--testo);margin-bottom:3px}
 .g-data{font-size:.84rem;color:var(--testo-3);margin:0 0 26px}
 .g-faq{margin-top:44px;border-top:1px solid var(--border);padding-top:8px}
