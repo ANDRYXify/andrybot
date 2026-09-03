@@ -340,6 +340,25 @@ Comandi, un'altra scheda ancora. Ora hanno il loro blocco come tutti — cosa
 scrivono, colori, carattere, con o senza sfondo — costruito dalla lista che il
 banco già conosce.
 
+I comandi di un elemento sono **raggruppati a fisarmonica**, e i gruppi non si
+scrivono: si derivano da come il markup è già fatto — ogni `h4` apre un gruppo,
+ogni riquadro con un titolo (i quattro eventi dell'alert, i due widget) diventa
+un gruppo suo. Aperto ne resta uno. L'alert richiedeva **dodici schermate** di
+scorrimento; ora ne basta una.
+
+### Un `display` che batteva `[hidden]`
+
+Scegliendo il player compariva **anche** l'aspetto di un obiettivo. La causa non
+era nella logica — il blocco riceveva `hidden` come tutti — ma nel CSS:
+`.goal-vesti { display: grid }` ha la stessa specificità della regola `[hidden]`
+del browser ed è dichiarata dopo, quindi vince. Il blocco era nascosto secondo
+il DOM e visibile sullo schermo.
+
+E il collaudo non l'aveva visto perché guardava `b.hidden`, cioè **l'attributo**,
+non quello che si vede. Ora misura la visibilità reale (`offsetParent`), che è
+la cosa di cui si sta parlando. La regola per costruzione: chi può ricevere
+`hidden` non prende un `display` senza `:not([hidden])`.
+
 Il collaudo verifica la cosa per intero: per **ogni** elemento della scena, che
 scegliendolo si vedano i suoi comandi e nient'altro (non due blocchi, non quello
 di prima, non zero), che sia acceso solo lui sulla tela e nei livelli, che il

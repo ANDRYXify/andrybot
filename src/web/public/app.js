@@ -6023,7 +6023,7 @@ function pannelloAlert() {
         ${cChk('al-st-evid', L('Nome a colori', 'Colored name', 'Nombre a color'), st.evidenziaNome !== false)}
       </div>
       </div>
-      <p class="suggerimento">${L('Colori, forma, materia e cornice si cambiano', 'Colors, shape, surface and frame are changed', 'Colores, forma, materia y marco se cambian')} <strong>${L('sulla tela qui sopra', 'on the canvas above', 'en el lienzo de arriba')}</strong>: ${L('scegli l\'elemento e li trovi nel pannello «Proprietà», mentre lo guardi.', 'pick the element and you find them in the «Properties» panel, while looking at it.', 'elige el elemento y los encuentras en el panel «Propiedades», mientras lo miras.')}</p>
+      <p class="suggerimento solo-giu">${L('Colori, forma, materia e cornice si cambiano', 'Colors, shape, surface and frame are changed', 'Colores, forma, materia y marco se cambian')} <strong>${L('sulla tela qui sopra', 'on the canvas above', 'en el lienzo de arriba')}</strong>: ${L('scegli l\'elemento e li trovi nel pannello «Proprietà», mentre lo guardi.', 'pick the element and you find them in the «Properties» panel, while looking at it.', 'elige el elemento y los encuentras en el panel «Propiedades», mientras lo miras.')}</p>
       <div class="alert-griglia spazio-sopra">
         ${ALERT_TIPI().map((t) => bloccoAlert(t, a)).join('')}
       </div>
@@ -6079,7 +6079,7 @@ function pannelloAlert() {
         ${cChk('co-st-ombratxt', L('Ombra del testo', 'Text shadow', 'Sombra del texto'), cst.ombraTesto === true)}
       </div>
       </div>
-      <p class="suggerimento">${L('Colori, forma, materia e cornice si cambiano', 'Colors, shape, surface and frame are changed', 'Colores, forma, materia y marco se cambian')} <strong>${L('sulla tela qui sopra', 'on the canvas above', 'en el lienzo de arriba')}</strong>: ${L('scegli l\'elemento e li trovi nel pannello «Proprietà», mentre lo guardi.', 'pick the element and you find them in the «Properties» panel, while looking at it.', 'elige el elemento y los encuentras en el panel «Propiedades», mientras lo miras.')}</p>
+      <p class="suggerimento solo-giu">${L('Colori, forma, materia e cornice si cambiano', 'Colors, shape, surface and frame are changed', 'Colores, forma, materia y marco se cambian')} <strong>${L('sulla tela qui sopra', 'on the canvas above', 'en el lienzo de arriba')}</strong>: ${L('scegli l\'elemento e li trovi nel pannello «Proprietà», mentre lo guardi.', 'pick the element and you find them in the «Properties» panel, while looking at it.', 'elige el elemento y los encuentras en el panel «Propiedades», mientras lo miras.')}</p>
       <p class="spazio-sopra">
         <button class="btn" id="co-salva">${L('Salva chat', 'Save chat', 'Guardar chat')}</button>
         <button class="btn secondario" id="co-prova">${_bIco('<path d="m6 3 14 9-14 9Z"/>')}${L('Prova', 'Test', 'Probar')}</button>
@@ -6810,6 +6810,60 @@ const PEZZI_EL = () => [
   ['timer', '#sez-timer'],
 ];
 
+const _apertoGrp = {};
+
+function aFisarmonica(blocco) {
+  if (!blocco || blocco.dataset.grp) return;
+  blocco.dataset.grp = '1';
+  const k = blocco.dataset.asp || '';
+  const figli = [...blocco.children];
+  let gruppo = null;
+  const apri = (det, primo) => {
+    const chiave = k + '|' + det.dataset.grp;
+    det.open = _apertoGrp[k] ? _apertoGrp[k] === det.dataset.grp : primo;
+    det.addEventListener('toggle', () => { if (det.open) _apertoGrp[k] = det.dataset.grp; });
+    return chiave;
+  };
+  const nuovo = (titolo, dopo) => {
+    const det = document.createElement('details');
+    det.className = 'insp-grp';
+    det.dataset.grp = titolo;
+    det.innerHTML = '<summary><span>' + esc(titolo) + '</span></summary><div class="insp-grp-corpo"></div>';
+    blocco.insertBefore(det, dopo);
+    return det;
+  };
+  for (const n of figli) {
+    const h4 = n.tagName === 'H4' ? n : null;
+    const capo = n.classList && n.classList.contains('alert-blocco')
+      ? (n.querySelector('strong')?.textContent || '').trim() : '';
+    if (h4) {
+      gruppo = nuovo(h4.textContent.replace(/\s+/g, ' ').trim(), n);
+      n.remove();
+      continue;
+    }
+    if (capo) {
+      const det = nuovo(capo, n);
+      det.querySelector('.insp-grp-corpo').appendChild(n);
+      gruppo = null;
+      continue;
+    }
+    const dentro = n.querySelectorAll ? [...n.querySelectorAll(':scope > .alert-blocco')] : [];
+    if (dentro.length) {
+      for (const ab of dentro) {
+        const t = (ab.querySelector('strong')?.textContent || '').replace(/\s+/g, ' ').trim();
+        const det = nuovo(t || L('Altro', 'More', 'Más'), n);
+        det.querySelector('.insp-grp-corpo').appendChild(ab);
+      }
+      n.remove();
+      gruppo = null;
+      continue;
+    }
+    if (gruppo) gruppo.querySelector('.insp-grp-corpo').appendChild(n);
+  }
+  const gruppi = [...blocco.querySelectorAll(':scope > .insp-grp')];
+  gruppi.forEach((det, i) => apri(det, i === 0));
+}
+
 function raccogliBlocchi(casa) {
   for (const [k, sez] of PEZZI_EL()) {
     const carta = document.querySelector(sez);
@@ -6834,6 +6888,7 @@ function raccogliBlocchi(casa) {
     }
     carta.hidden = true;
   }
+  for (const b of casa.querySelectorAll('.asp-blocco')) aFisarmonica(b);
 }
 
 function montaBanco() {
