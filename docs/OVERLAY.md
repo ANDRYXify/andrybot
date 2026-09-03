@@ -516,25 +516,18 @@ scala del prodotto, 30…300, la stessa che dichiara `PROP` nello studio. Un tes
 lo dice nei termini di chi lo usa: «la regolazione fine sopravvive al
 salvataggio».
 
-### L'unica famiglia che entrava senza controlli
+### I contatori passano dalla stessa porta degli altri
 
-La config overlay di un contatore arrivava al database così com'era: `overlay:
-b.overlay` e via, `JSON.stringify` nella riga. Tutte le altre famiglie passano da
-un `norm*`; questa no. Il disegno dell'overlay si difende da solo — `x` e `y`
-passano da `isFinite`, `dim` è limitato, il testo va in `textContent` e i colori
-sono assegnati come *valori* CSS, che il browser rifiuta se non lo sono — ma la
-porta d'ingresso non controllava niente, e `formato` non aveva nemmeno una
-lunghezza massima.
+Ogni famiglia di elementi entra da un `norm*` che tiene i valori nei limiti
+dichiarati. I contatori ora fanno lo stesso, con una forma diversa, e la
+differenza è il punto: salvare un contatore è un **merge**, apposta, così che
+`{mostra: true}` da un comando in chat non azzeri posizione e colori. Un
+riempitore di default romperebbe proprio quello. Quindi `puliConta` è un
+**filtro**: pulisce solo le chiavi presenti e lascia assenti quelle assenti. Un
+valore che non è un colore non diventa il bianco di default — semplicemente non
+passa, e resta quello che c'era.
 
-Il rimedio ha una forma diversa dagli altri `norm*`, e la differenza è il punto:
-salvare un contatore è un **merge**, apposta, così che `{mostra: true}` da un
-comando in chat non azzeri posizione e colori. Un riempitore di default
-romperebbe proprio quello. Quindi `puliConta` è un **filtro**: pulisce solo le
-chiavi presenti e lascia assenti quelle assenti. Un valore che non è un colore
-non diventa il bianco di default — semplicemente non passa, e resta quello che
-c'era.
-
-E la posizione di un contatore passa da `clampPct` come tutte le altre, quindi
+La posizione di un contatore passa da `clampPct` come tutte le altre, quindi
 anche lui tiene il pixel.
 
 Un cancello a parte tiene insieme i **tre elenchi** dei caratteri del contatore —
