@@ -162,6 +162,19 @@ test('il player non martella Spotify', () => {
 // Il conto alla rovescia non e' un numero che scorre da qualche parte: e'
 // l'ISTANTE in cui scade. Chi lo mostra fa la sottrazione — cosi' due sorgenti
 // aperte dicono la stessa cosa e un riavvio non lo azzera.
+test('il player balla sul battito vero del brano', () => {
+  const sp = leggi('src/features/spotify.js');
+  assert.ok(/export async function battito\(/.test(sp), 'il battito si chiede a Spotify');
+  assert.ok(/audio-features/.test(sp), 'dall’endpoint delle caratteristiche');
+  const i = OVL.indexOf('function battitoDelBrano(');
+  assert.ok(i > 0, 'e l’overlay lo usa');
+  const corpo = OVL.slice(i, OVL.indexOf('\n}', i));
+  assert.ok(/60 \/ Math\.max/.test(corpo), 'la durata di una battuta viene dai BPM');
+  assert.ok(/battito-fase/.test(corpo) && /% dur/.test(corpo), 'e la fase da dove sei nel brano');
+  const skin = leggi('src/web/public/overlay-skin.css');
+  assert.ok(/animation-delay: var\(--battito-fase/.test(skin), 'il ritardo negativo mette in fase l’animazione');
+});
+
 test('il conto alla rovescia è un istante, non un contatore', () => {
   const al = leggi('src/features/alerts.js');
   const i = al.indexOf('impostaTimer(channel, minuti) {');

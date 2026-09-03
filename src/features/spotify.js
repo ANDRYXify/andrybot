@@ -171,14 +171,42 @@ export async function oraSuona(login) {
   if (!t) return { suona: false };
   const cover = (t.album?.images || []);
   const piccola = cover.length ? (cover[cover.length - 1].url || cover[0].url) : '';
+  const grande = cover.length ? (cover[0].url || '') : '';
   return {
     suona: r.dati?.is_playing !== false,
+    id: t.id || '',
     nome: t.name,
     artisti: (t.artists || []).map((a) => a.name).join(', '),
+    album: t.album?.name || '',
     copertina: piccola,
+    copertinaGrande: grande,
     ms: Math.max(0, Number(r.dati?.progress_ms) || 0),
     durata: Math.max(0, Number(t.duration_ms) || 0),
   };
+}
+
+// Il BATTITO del brano. Serve a far ballare il player a tempo con quello che
+// suona davvero, invece che a una velocita' inventata: il tempo (BPM) e
+// l'energia vengono da Spotify, e la FASE si ricava da dove sei nella canzone.
+// Se Spotify non lo da' (l'endpoint non e' garantito a tutte le app), si torna
+// null e il player balla come prima: mai un errore a schermo per questo.
+const battiti = new Map();
+export async function battito(login, idBrano) {
+  const id = String(idBrano || '');
+  if (!id) return null;
+  const c = battiti.get(id);
+  if (c !== undefined) return c;
+  let fuori = null;
+  try {
+    const r = await apiCall(login, 'GET', '/audio-features/' + encodeURIComponent(id));
+    const d = r.dati;
+    if (d && Number(d.tempo) > 0) {
+      fuori = { bpm: Math.round(Number(d.tempo)), energia: Math.max(0, Math.min(1, Number(d.energy) || 0.5)) };
+    }
+  } catch (e) { fuori = null; }
+  if (battiti.size > 300) battiti.clear();
+  battiti.set(id, fuori);
+  return fuori;
 }
 
 // Brano in riproduzione → { nome, artisti } o null.

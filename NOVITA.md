@@ -7,7 +7,10 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 - Nell'overlay c'è il player: quello che stai ascoltando su Spotify, a schermo. Compare quando la musica parte e sparisce quando la fermi.
 - Il player è tuo dalla copertina in giù: quadrata, tonda o un vinile che gira, avanzamento come barra o come anello attorno alla copertina, onde che ballano a tempo.
-- E ancora: lo sfondo può prendere la copertina sfocata, il colore può prenderlo dai colori del disco, il titolo lungo scorre e l'entrata in scena la scegli tu.
+- E ancora: lo sfondo può prendere la copertina sfocata o i colori del disco che scorrono, il titolo lungo scorre e l'entrata in scena la scegli tu.
+- Il player va a tempo con quello che suona: le onde ballano sul battito vero del brano, e volendo pulsa anche la copertina.
+- La disposizione è tua: copertina a sinistra, a destra, sopra come un poster, o solo la copertina col cerchio che si riempie.
+- Titolo e artista possono stare su due righe, e nei testi si può usare anche il nome dell'album.
 - C'è il conto alla rovescia di inizio diretta: scegli i minuti e parte. Sta nel canale, quindi ricaricare l'overlay o riavviare tutto non lo azzera.
 - Un obiettivo può partire da dove sei già: «1000 follower» invece di «altri 1000». Il tasto «Quanti ne ho adesso» va a chiedere il numero vero a Twitch.
 - Spostare le cose nello Studio non le fa più saltare: prendevi un elemento e scattava sotto il cursore, tanto più lontano quanto più era vicino a un bordo.
