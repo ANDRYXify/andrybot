@@ -542,10 +542,11 @@ function fontStackCont(f) {
 function contatore(d) {
   const id = 'cont-' + String(d.comando || '').replace(/[^a-z0-9_]/gi, '').slice(0, 30);
   let el = document.getElementById(id);
-  if (!d.mostra || !mostra('cont')) { if (el) el.remove(); return; }
+  const cmd = String(d.comando || '').toLowerCase();
+  if (!d.mostra || !mostra('cont') || !mostra('cont:' + cmd)) { if (el) el.remove(); return; }
   if (!el) { el = document.createElement('div'); el.id = id; el.className = 'contatore-widget ovl-widget forma-carta materia-piatta cornice-nessuna'; document.body.appendChild(el); }
   el.textContent = String(d.testo || '');
-  const mio = (MIO.xy || {})['cont:' + String(d.comando || '').toLowerCase()] || null;
+  const mio = (MIO.xy || {})['cont:' + cmd] || null;
   const x = mio ? Number(mio.x) : (isFinite(Number(d.x)) ? Number(d.x) : 6);
   const y = mio ? Number(mio.y) : (isFinite(Number(d.y)) ? Number(d.y) : 84);
   el.style.left = x + '%';
@@ -569,7 +570,7 @@ const goalEl = {};
 function unGoal(cfg, valore) {
   const id = cfg.id;
   let el = goalEl[id];
-  if (!cfg.attivo || !mostra('goal')) { if (el) { el.remove(); delete goalEl[id]; } return; }
+  if (!cfg.attivo || !mostra('goal') || !mostra('goal:' + id)) { if (el) { el.remove(); delete goalEl[id]; } return; }
   if (!el) {
     el = document.createElement('div');
     el.innerHTML = '<div class="g-testa"><span class="g-tit"></span><span class="g-num"></span></div>'

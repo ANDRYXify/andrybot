@@ -6231,7 +6231,14 @@ const CONT_BASE = 40;
 const FISSI = ['alert', 'chat', 'wf', 'ws'];
 const ELEM_OVL = [...FISSI, 'goal', 'cont', 'musica', 'timer', 'effetti'];
 const ELEM_SCENA = ELEM_OVL.filter((k) => k !== 'effetti');
-const _mostraOra = () => ELEM_OVL.reduce((o, k) => (o[k] = mostraChk(k), o), {});
+const _mostraOra = () => {
+  const o = ELEM_OVL.reduce((q, k) => (q[k] = mostraChk(k), q), {});
+  const m = (_ovAttuale() || {}).mostra || {};
+  for (const e of ELEMENTI()) if ((e.goal || e.cont) && m[e.k] === false) o[e.k] = false;
+  return o;
+};
+const _ovMostra = () => { const o = _ovAttuale(); if (!o) return {}; return (o.mostra = o.mostra || {}); };
+const _quiDentro = (k) => _ovMostra()[k] !== false;
 const _idEl = (k) => 'ap-' + String(k).replace(/[^a-z0-9]/gi, '-');
 const _nodo = (k) => _g(_idEl(k));
 let overlays = [];
@@ -6368,6 +6375,10 @@ function _applicaStileOverlay(ov) {
 const ATTIVO_DI = { alert: 'al-attivo', chat: 'co-attivo', wf: 'wf-attivo', ws: 'ws-attivo' };
 
 function _elementoAcceso(k) {
+  const e = ELEM(k);
+  if (e && e.goal) return e.goal.attivo !== false;
+  if (e && e.cont) return !!(e.cont.overlayCfg || {}).mostra;
+  if (e && e.cfg) return !!_cfgEl(k).attivo;
   const id = ATTIVO_DI[k];
   if (!id) return true;
   const c = _g(id);
@@ -6768,24 +6779,10 @@ function _azzeraPos(k) {
 
 function _occhio(k) {
   const e = ELEM(k);
-  if (e && e.goal) {
-    leggiGoalDalForm();
-    e.goal.attivo = e.goal.attivo === false;
-    disegnaGoal(); aggiornaAnteprima(); _ricorda(); _salvaFamiglia(k);
-    return;
-  }
-  if (e && e.cont) {
-    const o = (e.cont.overlayCfg = e.cont.overlayCfg || {});
-    o.mostra = !o.mostra;
-    aggiornaAnteprima(); _ricorda(); _salvaFamiglia(k);
-    return;
-  }
-  if (e && e.cfg) {
-    const c = _cfgEl(k);
-    c.attivo = !c.attivo;
-    const chk = _g(k === 'musica' ? 'mus-attivo' : 'tim-attivo');
-    if (chk) chk.checked = c.attivo;
-    aggiornaAnteprima(); _ricorda(); _salvaFamiglia(k);
+  if (e && (e.goal || e.cont)) {
+    const m = _ovMostra();
+    if (m[k] === false) delete m[k]; else m[k] = false;
+    aggiornaAnteprima(); _rendiLivelli(); _ricorda(); _salvaPos();
     return;
   }
   const c = _g('mostra-' + k);
@@ -7127,9 +7124,8 @@ const _nomeEl = (k) => (ELEM(k) || {}).n || k;
 function _inOverlay(k) {
   const e = ELEM(k);
   if (!e) return false;
-  if (e.goal) return mostraChk('goal') && e.goal.attivo !== false;
-  if (e.cont) return mostraChk('cont') && !!(e.cont.overlayCfg || {}).mostra;
-  if (e.cfg) return mostraChk(k) && !!_cfgEl(k).attivo;
+  if (e.goal) return mostraChk('goal') && _quiDentro(k);
+  if (e.cont) return mostraChk('cont') && _quiDentro(k);
   return mostraChk(k);
 }
 
@@ -7393,9 +7389,11 @@ function _applicaIstantanea(foto) {
   try {
     const d = JSON.parse(foto);
     for (const [k, v] of Object.entries(d.mostra || {})) { const c = _g('mostra-' + k); if (c) c.checked = !!v; }
+    const m = _ovMostra();
     for (const e of ELEMENTI()) {
       if (d.pos && e.k in d.pos) _scriviPos(e.k, d.pos[e.k]);
       if (d.acceso && e.k in d.acceso) _accendiDi(e.k, d.acceso[e.k]);
+      if (d.mostra && (e.goal || e.cont)) { if (d.mostra[e.k] === false) m[e.k] = false; else delete m[e.k]; }
     }
     _storiaInCorso = true;
     disegnaGoal();
