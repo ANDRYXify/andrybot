@@ -27,7 +27,7 @@ const DEFAULT_TESTO = {
   raid: '{user} è arrivato in raid con {viewers} spettatori!',
 };
 const DEFAULT_SUONO = { follow: 'campanello', sub: 'tada', cheer: 'moneta', raid: 'trombetta' };
-const DEFAULT_ACC = { follow: '#9146ff', sub: '#ffb020', cheer: '#38d39f', raid: '#ff4d4d' };
+const DEFAULT_ACC = { follow: '#f72fa7', sub: '#ffb020', cheer: '#38d39f', raid: '#ff4d4d' };
 
 // stile alert di default (usato se lo streamer non lo tocca)
 const STILE_ALERT = { animazione: 'slide', dimTesto: 27, sfondo: '#0f0f14', opacita: 88, testo: '#ffffff', bordoRaggio: 18, bordoSpessore: 2, glow: true, icona: true, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'linea', composizione: 'colonna', dimIcona: 46, uscita: 'come', peso: '700', spaziatura: 0, maiuscolo: 'no', ombraTesto: true, evidenziaNome: true };

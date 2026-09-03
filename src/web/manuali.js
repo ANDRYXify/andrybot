@@ -1030,7 +1030,120 @@ const EMOTE = {
   ],
 };
 
-export const MANUALI = [GIOCHI, MODULI, BOT, MODERAZIONE, INTERAZIONE, DIRETTA, VETRINA, ACCOUNT, EMOTE];
+const OVERLAY = {
+  slug: 'overlay',
+  schede: ['alert', 'effetti'],
+  titolo: 'Manuale dell\'overlay: alert, chat, obiettivo e contatori | SocialBot',
+  h1: 'Manuale dell\'overlay',
+  desc: 'Cosa può comparire sulla diretta, con i valori di base e i limiti veri: alert degli eventi, chat a schermo, obiettivo, contatori, ultimo follower e sub, effetti.',
+  aggiornata: OGGI,
+  corpo: [
+    { p: [
+      'L\'overlay è <strong>una pagina web</strong>. In OBS si mette come sorgente <em>Browser</em>, e da quel momento tutto quello che decidi nel pannello compare sulla diretta senza toccare più niente lì dentro.',
+      'Si compone nella scheda <em>Overlay Studio</em>, e si vede subito mentre lo cambi.',
+    ] },
+
+    { h2: 'I sette elementi' },
+    { p: ['Tutto quello che può comparire è un <strong>elemento della scena</strong>: si accende, si sposta e si veste dallo stesso posto. Non ci sono cose che seguono regole proprie.'] },
+    { tabella: [
+      ['Elemento', 'Cos\'è', 'Dove sta di serie'],
+      ['Alert eventi', 'Un cartello animato con suono quando arriva un follow, un sub, dei bit o un raid.', 'in alto al centro'],
+      ['Chat a schermo', 'I messaggi della chat, con emote e badge.', 'in basso a sinistra'],
+      ['Ultimo follower', 'Una pastiglia col nome di chi ha seguito per ultimo.', 'in basso a destra'],
+      ['Ultimo sub', 'La stessa cosa per l\'ultimo abbonato.', 'in basso a destra'],
+      ['Obiettivo', 'Una barra che si riempie mentre arrivano follower, sub o bit.', 'in alto a sinistra'],
+      ['Contatori', 'I numeri che tu e i mod muovete in chat: morti, tentativi, quello che vuoi.', 'dove li metti tu'],
+      ['Effetti & suoni', 'Immagini, video e suoni che partono da un comando o da un premio a punti.', 'al centro'],
+    ] },
+    { p: ['Ogni elemento si trascina dove vuoi nella tela dello Studio, con le maniglie agli angoli o coi numeri. Scorciatoie: <strong>rotellina</strong> ridimensiona, <strong>Shift+rotellina</strong> ruota, <strong>doppio clic</strong> rimette a posto.'] },
+
+    { h2: 'Metterlo in OBS' },
+    { ul: [
+      '<strong>Sorgenti → + → Browser.</strong>',
+      'Incolla il link e metti <strong>1920 × 1080</strong>.',
+      'Spunta <strong>«Aggiorna browser quando la scena diventa attiva»</strong>.',
+    ] },
+    { p: [
+      'Puoi averne <strong>più d\'uno</strong>: ogni overlay ha il suo link, il suo elenco di elementi e il suo stile. Un overlay «solo alert» in una scena e uno «solo chat» in un\'altra è la ragione per cui esistono.',
+      '<strong>Il link è un segreto.</strong> Chi ce l\'ha può far comparire cose nel tuo overlay: non va in un video, in uno screenshot o in una chat.',
+    ] },
+
+    { h2: 'Alert eventi' },
+    { p: ['Quattro eventi, ognuno con il suo interruttore, il suo testo, il suo suono e il suo colore.'] },
+    { tabella: [
+      ['Evento', 'Testo di serie', 'Suono', 'Parole che puoi usare'],
+      ['Follow', '<code>{user} ha seguito il canale!</code>', 'campanello', '<code>{user}</code>'],
+      ['Sub', '<code>{user} si è abbonato! ({mesi} mesi)</code>', 'tada', '<code>{user}</code> <code>{mesi}</code>'],
+      ['Bit', '<code>{user} ha lanciato {bits} bit!</code>', 'moneta', '<code>{user}</code> <code>{bits}</code>'],
+      ['Raid', '<code>{user} è arrivato in raid con {viewers} spettatori!</code>', 'trombetta', '<code>{user}</code> <code>{viewers}</code>'],
+    ] },
+    { p: ['Bit e raid hanno una <strong>soglia</strong>: sotto quel numero l\'alert non parte. È il modo di non far suonare il campanello per un bit solo.'] },
+    { tabella: [
+      ['Impostazione', 'Di base', 'Limiti'],
+      ['Durata', '6 secondi', '—'],
+      ['Posizione', 'in alto al centro', 'alto · centro · basso, oppure dove lo trascini'],
+      ['Dimensione del testo', '27', '—'],
+      ['Opacità dello sfondo', '88%', '—'],
+      ['Angoli', '18px', '—'],
+      ['Cornice', '2px, accesa', '—'],
+      ['Icona', 'accesa, 46px', '—'],
+      ['Volume', '100%', 'per evento'],
+    ] },
+    { p: ['Lo stile è comune ai quattro (forma, materia, cornice, composizione, animazione), il <strong>colore d\'accento</strong> no: è per evento, così a colpo d\'occhio si riconosce cosa è appena successo.'] },
+
+    { h2: 'Chat a schermo' },
+    { tabella: [
+      ['Impostazione', 'Di base', 'Cosa fa'],
+      ['Righe visibili', '8', 'Quante ne resta a schermo prima che scorrano via.'],
+      ['Dissolvenza', 'spenta', 'Se acceso, ogni riga sparisce dopo i secondi che scegli.'],
+      ['Larghezza', '30%', 'Quanto è larga la colonna.'],
+      ['Opacità', '78%', 'Lo sfondo delle righe.'],
+      ['Colore dei nomi', 'quello di Twitch', 'Oppure uno fisso, se preferisci un look uniforme.'],
+    ] },
+    { p: ['Le emote di Twitch e quelle 7TV del tuo canale compaiono come immagini, e i badge accanto al nome. Le emote 7TV si gestiscono da <em>Emote (7TV)</em>.'] },
+
+    { h2: 'L\'obiettivo' },
+    { p: ['Una barra che si riempie da sola. Scegli <strong>cosa contare</strong> e il <strong>traguardo</strong>; il titolo è facoltativo.'] },
+    { tabella: [
+      ['Cosa', 'Di base', 'Limiti'],
+      ['Conta', 'follower', 'follower · abbonati · bit'],
+      ['Traguardo', '100', 'da 1 a 1.000.000'],
+      ['Titolo', 'vuoto', '60 caratteri'],
+    ] },
+    { p: [
+      '<strong>Il conto è quello vero</strong>: lo tiene il bot contando gli eventi che gli passano davanti. Un cheer da 500 bit vale 500, non 1.',
+      'Sta nelle impostazioni del canale, quindi <strong>sopravvive a un riavvio</strong>: un obiettivo che si azzera da solo la notte non è un obiettivo. A rimetterlo a zero sei tu, col tasto «Riparti da zero».',
+    ] },
+
+    { h2: 'I contatori' },
+    { p: ['Sono i numeri che vivono in chat — <code>!morti</code>, <code>!tentativi</code> — e si creano in <em>Comandi</em>. Nell\'overlay sono un elemento come gli altri: si spengono tutti insieme dall\'elenco e prendono la veste della scena.'] },
+    { p: ['Se a un contatore dai colore, sfondo o posizione tuoi, <strong>quelli vincono</strong>: la scena veste solo quello che non hai deciso.'] },
+
+    { h2: 'Ultimo follower e ultimo sub' },
+    { p: ['Due pastiglie che restano a schermo. Il testo è tuo: <code>{nome}</code> viene sostituito col nome. L\'icona si può cambiare, togliere, o sostituire con un\'immagine caricata negli Effetti.'] },
+
+    { h2: 'Quando non si vede niente' },
+    { ul: [
+      '<strong>La pagina è bianca o vuota in OBS.</strong> Controlla il link: senza la sua chiave l\'indirizzo risponde «non trovato», di proposito.',
+      '<strong>Gli alert non partono.</strong> Servono i permessi di Twitch per follow, sub, bit e raid: si riautorizzano dalla scheda Stato. E l\'interruttore del singolo evento dev\'essere acceso, oltre a quello generale.',
+      '<strong>Parte l\'alert ma non il suono.</strong> In OBS la sorgente Browser deve avere il <strong>«Controlla l\'audio via OBS»</strong>, altrimenti l\'audio esce dal browser e non dalla diretta.',
+      '<strong>Vedo tutto doppio.</strong> Due sorgenti Browser con lo stesso link nella stessa scena: tienine una, o dai a ciascuna il suo overlay con i suoi elementi.',
+      '<strong>La chat non compare.</strong> È spenta di base: si accende dal suo interruttore.',
+      '<strong>L\'obiettivo resta a zero.</strong> Conta da quando l\'hai acceso: gli eventi di prima non tornano indietro.',
+      '<strong>Ho spostato tutto e non mi piace più.</strong> Doppio clic su un elemento lo rimette dov\'era.',
+    ] },
+  ],
+  faq: [
+    { d: 'Serve installare un plugin in OBS?', r: 'No. È una pagina web: basta la sorgente Browser che OBS ha già.' },
+    { d: 'Posso usare overlay diversi in scene diverse?', r: 'Sì, ed è il motivo per cui ognuno ha il suo link: elementi e stile sono suoi. Un «solo alert» sopra il gioco e un «solo chat» nella scena della pausa, per dire.' },
+    { d: 'Se cambio qualcosa devo ricaricare OBS?', r: 'No: quello che cambi arriva subito. Ricaricare serve solo se hai chiuso e riaperto tutto.' },
+    { d: 'Chi ha il link può fare danni?', r: 'Può far comparire cose nel tuo overlay, quindi non va condiviso. Non dà accesso al pannello né al tuo account.' },
+    { d: 'L\'obiettivo conta anche a canale spento?', r: 'Conta gli eventi che arrivano, e i follow arrivano anche da offline. Se non li vuoi, si spegne e si riaccende quando serve.' },
+    { d: 'Posso mettere l\'overlay in Streamlabs o in un altro programma?', r: 'Sì: va bene qualunque programma che sappia aprire una pagina web come sorgente.' },
+  ],
+};
+
+export const MANUALI = [GIOCHI, MODULI, BOT, MODERAZIONE, INTERAZIONE, DIRETTA, VETRINA, ACCOUNT, EMOTE, OVERLAY];
 
 // A QUALE SCHEDA DEL PANNELLO SERVE OGNI PAGINA.
 //
