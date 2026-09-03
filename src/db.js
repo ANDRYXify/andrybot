@@ -2034,7 +2034,7 @@ export const contatori = {
   autoParola(channel) { return this.list(channel).filter((c) => c.auto_parola); },
   // config del widget a schermo, con default sensati
   overlayDi(row) {
-    const def = { mostra: false, x: 4, y: 94, colore: '#ffffff', sfondo: 'rgba(0,0,0,0.55)', dim: 40, grassetto: true, font: 'system', formato: '{emoji} {etichetta}: {valore}', parolaOn: '', parolaOff: '' };
+    const def = { mostra: false, x: 4, y: 94, r: 0, colore: '#ffffff', sfondo: 'rgba(0,0,0,0.55)', dim: 40, grassetto: true, font: 'system', formato: '{emoji} {etichetta}: {valore}', parolaOn: '', parolaOff: '' };
     let o = {}; try { o = row && row.overlay ? JSON.parse(row.overlay) : {}; } catch { o = {}; }
     return { ...def, ...(o && typeof o === 'object' ? o : {}) };
   },
@@ -2044,7 +2044,7 @@ export const contatori = {
     const testo = String(o.formato || '{emoji} {etichetta}: {valore}')
       .replace(/\{emoji\}/g, row.emoji || '').replace(/\{etichetta\}/g, row.etichetta || row.comando).replace(/\{valore\}/g, String(row.valore ?? 0))
       .replace(/\s+/g, ' ').trim();
-    return { tipo: 'contatore', comando: row.comando, mostra: !!o.mostra, testo, x: o.x, y: o.y, colore: o.colore, sfondo: o.sfondo, dim: o.dim, grassetto: !!o.grassetto, font: o.font };
+    return { tipo: 'contatore', comando: row.comando, mostra: !!o.mostra, testo, x: o.x, y: o.y, r: o.r, colore: o.colore, sfondo: o.sfondo, dim: o.dim, grassetto: !!o.grassetto, font: o.font };
   },
   // aggiorna SOLO la config overlay (merge), es. mostra on/off da chat
   patchOverlay(channel, comando, patch) {

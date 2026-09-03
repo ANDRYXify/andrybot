@@ -533,8 +533,8 @@ function connetti() {
 }
 
 function fontStackCont(f) {
-  const m = { system: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif', inter: 'Inter, system-ui, sans-serif', spaceGrotesk: '"Space Grotesk", Inter, sans-serif', jetBrainsMono: '"JetBrains Mono", ui-monospace, monospace', fraunces: 'Fraunces, Georgia, serif', bricolage: '"Bricolage Grotesque", Inter, sans-serif' };
-  return m[f] || m.system;
+  const m = window.FONT_CONT || {};
+  return m[f] || m.system || 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
 }
 function contatore(d) {
   const id = 'cont-' + String(d.comando || '').replace(/[^a-z0-9_]/gi, '').slice(0, 30);
@@ -546,9 +546,8 @@ function contatore(d) {
   el.style.left = x + '%';
   el.style.top = y + '%';
 
-  const tx = x <= 33 ? '0' : (x >= 67 ? '-100%' : '-50%');
-  const ty = y <= 33 ? '0' : (y >= 67 ? '-100%' : '-50%');
-  el.style.transform = 'translate(' + tx + ',' + ty + ')';
+  const r = Number(d.r) || 0;
+  el.style.transform = 'translate(-' + x + '%,-' + y + '%)' + (r ? ' rotate(' + r + 'deg)' : '');
   el.style.setProperty('--fg', d.colore || '#ffffff');
   if (d.sfondo) el.style.setProperty('--bg', d.sfondo);
   el.style.color = d.colore || '#ffffff';
