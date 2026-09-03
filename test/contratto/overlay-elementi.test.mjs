@@ -52,7 +52,11 @@ test('quel che spegni nell’elenco resta spento anche dopo il salvataggio', () 
   const corpo = SRV.slice(i, SRV.indexOf('css:', i));
   const scritte = [...corpo.matchAll(/\bm\.([a-z]+) !== false/g)].map((m) => m[1]);
   assert.deepEqual(scritte, [], 'nessuna chiave scritta a mano: si passa dall’elenco');
-  assert.ok(/ELEM_OVERLAY\.reduce/.test(corpo), 'la lista dei salvati nasce dall’elenco');
+  assert.ok(/_mostraDiOverlay\(m\)/.test(corpo), 'la lista dei salvati la costruisce una funzione sola');
+  const fn = SRV.slice(SRV.indexOf('const _mostraDiOverlay ='), SRV.indexOf('const _xyDiOverlay'));
+  assert.ok(/ELEM_OVERLAY\.reduce/.test(fn), 'e nasce dall’elenco delle famiglie');
+  assert.ok(/CHIAVE_EL\.test\(k\)/.test(fn), 'più le singole voci, con la chiave di sempre');
+  assert.ok(/m\[k\] === false/.test(fn), 'si scrive solo il «no»: quel che non c’è compare');
 });
 
 // Un elemento che l'overlay mostra ma che la scena non conosce non si puo'
@@ -245,7 +249,8 @@ test('la posizione di un elemento appartiene all’overlay in cui la metti', () 
   for (const [chi, chiave] of [['musica', "'musica'"], ['timer', "'timer'"]]) {
     assert.ok(OVL.includes(`vestiElemento(el, cfg, 'nessuna', ${chiave})`), `${chi} passa la sua chiave`);
   }
-  assert.ok(/MIO\.xy \|\| \{\}\)\['cont:' \+ String\(d\.comando/.test(OVL), 'e un contatore la sua');
+  assert.ok(/const cmd = String\(d\.comando \|\| ''\)\.toLowerCase\(\)/.test(OVL), 'un contatore ricava la sua chiave dal comando');
+  assert.ok(/\(MIO\.xy \|\| \{\}\)\['cont:' \+ cmd\]/.test(OVL), 'e con quella chiede la sua posizione');
   // il server deve accettare quelle chiavi, sennò il salvataggio le butta via
   const srv = leggi('src/web/server.js');
   const re = /const CHIAVE_EL = ([^;]+);/.exec(srv);
@@ -257,4 +262,20 @@ test('la posizione di un elemento appartiene all’overlay in cui la metti', () 
   for (const k of ['../fuori', 'goal:', 'roba', '__proto__']) {
     assert.ok(!chiave.test(k), `${k} non passa`);
   }
+});
+
+// L'occhio dei Livelli dice «compare in QUESTO overlay». Per i quattro fissi era
+// gia' cosi'; obiettivi e contatori invece lo toglievano da tutte le scene,
+// quindi una scena «solo obiettivo A» e una «solo obiettivo B» non si potevano
+// avere. L'interruttore dell'elemento — quello nel pannello — resta di canale:
+// due livelli, come per l'alert.
+test('un elemento si toglie da una scena senza toglierlo dalle altre', () => {
+  const occhio = APP.slice(APP.indexOf('function _occhio(k)'), APP.indexOf('\nfunction seleziona('));
+  assert.ok(/_ovMostra\(\)/.test(occhio), 'l’occhio scrive nella scena in cui stai lavorando');
+  assert.ok(!/goal\.attivo|overlayCfg\b/.test(occhio), 'e non tocca più l’interruttore di canale');
+  const dentro = APP.slice(APP.indexOf('function _inOverlay(k)'), APP.indexOf('let _bozzaEl'));
+  assert.ok(/_quiDentro\(k\)/.test(dentro), 'e chi disegna legge la stessa cosa');
+  // in diretta: un obiettivo o un contatore tolto da questa scena non si disegna
+  assert.ok(/mostra\('goal'\) \|\| !mostra\('goal:' \+ id\)/.test(OVL), 'l’overlay salta un obiettivo tolto da questa scena');
+  assert.ok(/mostra\('cont'\) \|\| !mostra\('cont:' \+ cmd\)/.test(OVL), 'e un contatore tolto da questa scena');
 });

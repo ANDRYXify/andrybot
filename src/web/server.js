@@ -93,6 +93,20 @@ const _mostraDefault = () => ELEM_OVERLAY.reduce((o, k) => (o[k] = true, o), {})
 // obiettivi e contatori avevano UNA posizione per tutto il canale: li spostavi
 // in un overlay e si spostavano in tutti.
 const CHIAVE_EL = /^(alert|chat|wf|ws|musica|timer|goal:[a-z0-9_-]{1,24}|cont:[a-z0-9_]{1,30})$/i;
+// Cosa compare in questo overlay: le nove famiglie piu' le singole voci che si
+// possono togliere una a una. Si scrive solo il «no»: quel che non c'e' compare,
+// cosi' un obiettivo nuovo entra acceso ovunque senza dover toccare niente.
+const _mostraDiOverlay = (m) => {
+  const q = ELEM_OVERLAY.reduce((acc, k) => (acc[k] = m[k] !== false, acc), {});
+  if (m && typeof m === 'object') {
+    for (const k of Object.keys(m).slice(0, 120)) {
+      if (q[k] !== undefined || !CHIAVE_EL.test(k)) continue;
+      if (m[k] === false) q[k] = false;
+    }
+  }
+  return q;
+};
+
 const _xyDiOverlay = (xy) => {
   const q = {};
   if (!xy || typeof xy !== 'object') return q;
@@ -3028,7 +3042,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         let id = String(o?.id || `ov${i}`).replace(/[^a-z0-9_-]/gi, '').slice(0, 24) || `ov${i}`;
         return {
           id, nome: String(o?.nome || 'Overlay').trim().slice(0, 40) || 'Overlay',
-          mostra: ELEM_OVERLAY.reduce((acc, k) => (acc[k] = m[k] !== false, acc), {}),
+          mostra: _mostraDiOverlay(m),
           xy: _xyDiOverlay(xy),
           css: String(o?.css || '').slice(0, 8000),
           stile: normOverlayStile(o?.stile),   // Opzione B: aspetto proprio (null → eredita dal canale)

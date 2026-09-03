@@ -407,6 +407,36 @@ const marce = await p.evaluate(async () => {
   return guasti;
 });
 
+// L'occhio dei Livelli dice «compare in QUESTO overlay»: per i quattro fissi era
+// gia' cosi', per obiettivi e contatori toglieva l'elemento da TUTTE le scene.
+// Una sessione di lavoro a meta' non e' una sessione.
+const occhiTrapelati = await p.evaluate(async () => {
+  if (overlays.length < 2) return ['servono due overlay per provarlo'];
+  const [primo, secondo] = [overlays[0].id, overlays[1].id];
+  const fuori = [];
+  const spegnibili = ELEMENTI().filter((e) => e.goal || e.cont).map((e) => e.k);
+  scegliOverlay(primo);
+  await new Promise((r) => setTimeout(r, 350));
+  for (const k of spegnibili) {
+    if (!_inOverlay(k)) { fuori.push(`${k}: parte gia' spento, non posso provarlo`); continue; }
+    _occhio(k);
+    await new Promise((r) => setTimeout(r, 90));
+    if (_inOverlay(k)) fuori.push(`${k}: l’occhio non lo toglie da questo overlay`);
+  }
+  await new Promise((r) => setTimeout(r, 250));
+  scegliOverlay(secondo);
+  await new Promise((r) => setTimeout(r, 450));
+  for (const k of spegnibili) if (!_inOverlay(k)) fuori.push(`${k}: spento nel primo, si è spento anche nel secondo`);
+  scegliOverlay(primo);
+  await new Promise((r) => setTimeout(r, 450));
+  for (const k of spegnibili) {
+    if (_inOverlay(k)) fuori.push(`${k}: nel primo è tornato acceso da solo`);
+    _occhio(k);
+    await new Promise((r) => setTimeout(r, 60));
+  }
+  return fuori;
+});
+
 await b.close();
 srv.close();
 
@@ -435,6 +465,7 @@ verde = dice(manigliePerse.length === 0, 'ogni maniglia è dentro la tela e pren
 verde = dice(trapelati.length === 0, 'ogni overlay ha il suo layout: spostare qui non muove gli altri', trapelati.join(' · ')) && verde;
 verde = dice(storiaMista.length === 0, 'e il suo annulla, che non scavalca gli altri overlay', storiaMista.join(' · ')) && verde;
 verde = dice(marce.length === 0, 'le marce del trascinamento: fine, dritto, niente aggancio, rotella sicura', marce.join(' · ')) && verde;
+verde = dice(occhiTrapelati.length === 0, 'l’occhio toglie l’elemento da questo overlay, non da tutti', occhiTrapelati.join(' · ')) && verde;
 verde = dice(rotture.length === 0, 'nessun errore di pagina', rotture.join(' · ')) && verde;
 
 console.log(verde ? '\ncollaudo verde ✓\n' : '\ncollaudo ROSSO ✗\n');

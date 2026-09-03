@@ -471,6 +471,28 @@ tirava indietro quel che avevi fatto in un'altra. Ora `_storie` tiene un
 indietro/avanti per overlay: cambiare overlay cambia la cronologia, e i due tasti
 si accendono su quella giusta.
 
+### Due livelli, non uno: acceso e «compare qui»
+
+Restava mezza sessione. Un alert aveva sempre avuto **due interruttori**: quello
+del pannello (`al-attivo`, di canale: l'elemento funziona) e l'occhio dei Livelli
+(`ov.mostra.alert`, di questo overlay: qui si vede). Obiettivi e contatori ne
+avevano **uno solo**, di canale, e l'occhio toccava quello — quindi togliere un
+obiettivo da una scena lo toglieva da tutte, e una scena «solo obiettivo A» più
+una «solo obiettivo B» erano impossibili.
+
+Ora `ov.mostra` porta anche le **singole voci**, con la stessa chiave con cui
+`ov.xy` ne porta la posizione: `goal:g1`, `cont:morti`. L'occhio scrive lì per
+tutti allo stesso modo, e l'interruttore del pannello resta di canale.
+
+Si scrive **solo il «no»**: una chiave assente vale acceso. Così un obiettivo
+nuovo compare in tutte le scene senza che nessuno debba accenderlo una per una, e
+chi ha già i suoi overlay non vede cambiare niente.
+
+Effetto collaterale che valeva la pena: l'avviso «!» dei Livelli — «l'elemento è
+spento del tutto» — funzionava solo per i quattro fissi, perché `_elementoAcceso`
+guardava una tabella che conteneva solo loro. Ora guarda l'interruttore di
+ciascuna famiglia, quindi la spia vale per tutti.
+
 ### Una maniglia che non si poteva prendere
 
 La maniglia per ruotare sporge **78 px sopra** l'elemento. Per chi sta in cima
