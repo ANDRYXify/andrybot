@@ -11,6 +11,8 @@ lo usa: se non si vede da fuori, qui non ci va.
 - Scegliendo un obiettivo sulla tela le sue proprietà — colori, carattere, forma, cornice, opacità — si aprono lì accanto, come per ogni altro elemento.
 - Trascinare un contatore non lo fa più saltare a metà schermo, e ora si può anche ruotare.
 - L'occhio di «Obiettivo» e «Contatori» funziona davvero: prima si spegneva e al ricaricamento tornava acceso, quindi non si potevano togliere da un overlay.
+- Il giro guidato insegna invece di raccontare: ogni tappa è un passo da fare, con la luce puntata sul comando che nomina — e se sta dentro una sezione chiusa, la apre.
+- Tre schede che il giro saltava (Avatar 3D, Grafiche social, Scudo anti-bot) adesso ce l'hanno.
 
 ## 2026-09-02
 

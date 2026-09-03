@@ -4,38 +4,55 @@
 # Il giro guidato
 
 La prima volta che entri in una scheda, il bot te la fa vedere: a cosa serve,
-cosa c'è dentro, e dove leggere di più. Passo passo, con la luce puntata sul
-pezzo di cui sta parlando.
+come si fa quello per cui serve, un passo per volta, con la luce puntata sul
+controllo di cui sta parlando.
 
-## Perché non è un elenco di tappe scritto a mano
+## Un giro che insegna, non che descrive il mobilio
 
-Un tutorial invecchia peggio di un manuale. Un manuale sbagliato lo si legge
-storto; un tutorial che indica un bottone che non c'è più fa concludere a chi lo
-segue che **il prodotto è rotto**.
+La prima versione **leggeva le tappe dalla pagina**: una per carta, col titolo
+della carta e la sua prima frase. Non poteva invecchiare — ma non insegnava
+niente. Diceva dove stavano le cose, non come si fanno: un giro panoramico.
 
-Quindi le tappe **non si scrivono**: si leggono dalla pagina nel momento in cui
-il giro parte.
+Ora ogni tappa è un **passo della ricetta della scheda**, e porta con sé
+l'ancora del controllo di cui parla:
+
+```js
+alert: { serve: [it, en, es],
+  come: [[it, en, es, '#ovl-livelli'], [it, en, es, '#ovl-preview'], …] },
+```
 
 | tappa | da dove viene |
 |---|---|
-| **A cosa serve questa scheda** + la ricetta numerata | `GUIDE[scheda]` — la stessa che riempie la cartina «Come funziona», già in tre lingue |
-| **una per carta**, con la luce sopra | le `.carta` visibili della scheda: titolo = il suo `h2`, riga = la sua prima frase |
+| **A cosa serve questa scheda** | `GUIDE[scheda].serve` — la stessa riga che riempie la cartina «Come funziona», già in tre lingue |
+| **un passo per volta**, con la luce sul controllo | `GUIDE[scheda].come` — il quarto elemento di ogni passo è il selettore |
 | **Se ti serve di più** | `stato.aiuti[scheda]`, la guida o il manuale di quella scheda |
 
-Se una carta sparisce, sparisce la sua tappa. Se ne nasce una, la tappa c'è
-senza che nessuno la scriva. Non esiste uno stato in cui il giro punta al nulla.
+Il titolo della tappa non si scrive: è il **posto dove sei** — la testa del
+pannello, l'etichetta del campo, o il titolo della carta che lo contiene. Se il
+controllo sta dentro un pieghevole chiuso, il giro **lo apre**: un tutorial che
+dice «qui sotto c'è…» e non lo mostra è un tutorial a metà.
 
-### La scorciatoia, quando la frase automatica non basta
+## Il prezzo, e il contrappeso
 
-Una carta può dire la sua riga da sé:
+Un giro scritto **può invecchiare**: si sposta un id, si rifà una carta, e il
+faro si accende sul nulla. Chi lo segue non pensa «il tutorial è vecchio»,
+pensa che il prodotto è rotto.
 
-```html
-<div class="carta" data-giro="Qui decidi come parla il bot in chat.">
-```
+Il contrappeso è `scripts/verifica-giro.mjs`: apre **ogni scheda** in un browser
+vero, costruisce le tappe come le costruisce il prodotto e verifica che ogni
+ancora esista e sia visibile. Oggi sono 67 ancore su 24 schede, tutte trovate.
+Gira fuori da `npm run cancelli` (che devono restare statici e istantanei).
 
-È facoltativo — senza, il giro prende la prima frase vera della carta (saltando
-quelle fatte solo di pastiglie e bottoni). Serve solo dove la frase automatica
-esce brutta, e si aggiunge in un attributo, senza toccare il giro.
+E in `test/contratto/giro.test.mjs`: ogni scheda del prodotto ha la sua ricetta,
+ogni passo parla tre lingue, e nessuno può tornare a fare il giro delle carte.
+
+### Una misura sbagliata, per memoria
+
+Il collaudo è nato rosso su 58 ancore su 67 — sembrava che mezza applicazione
+non avesse più i suoi controlli. Non era così: il cambio scheda passa da una
+view transition, che in headless ci mette **fino a un secondo e mezzo**, e
+l'attesa di 900 ms misurava il pannello precedente. Il difetto era nel metro,
+non nella cosa misurata. Ora si aspetta che la scheda sia davvero in pagina.
 
 ## Quando parte
 
@@ -65,6 +82,8 @@ nel vuoto. Cambiando scheda il giro si chiude.
 
 ## Dove sta il codice
 
-`src/web/public/app.js`: `tappeDi`, `apriGiro`, `disegnaTappa`, `muoviGiro`,
+`src/web/public/app.js`: `GUIDE` (le ricette con le ancore), `tappeDi`,
+`_puntaTappa`, `_dovePasso`, `apriGiro`, `disegnaTappa`, `muoviGiro`,
 `chiudiGiro`, `riavviaGiro`. Lo stile in `anime.css` (`.giro-*`).
-Il contratto è fissato in `test/contratto/giro.test.mjs`.
+Il contratto è in `test/contratto/giro.test.mjs`, le ancore in
+`scripts/verifica-giro.mjs`.
