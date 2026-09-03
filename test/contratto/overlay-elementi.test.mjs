@@ -75,11 +75,26 @@ test('sulla tela dello studio c’è ogni cosa che va in onda', () => {
 // mente: gli angoli devono essere gli stessi margini della pagina in onda.
 test('lo studio posa gli angoli dove li posa l’overlay', () => {
   const html = leggi('src/web/public/overlay.html');
-  const box = html.match(/\.wbox\.alto-destra\s*\{([^}]*)\}/)[1];
-  assert.ok(/top:\s*3vh/.test(box) && /right:\s*2vw/.test(box), 'l’overlay usa 3vh/2vw');
   const anc = APP.match(/const ANCORA = \{([\s\S]*?)\n\};/)[1];
-  assert.ok(/'alto-destra':\s*\{ right: '2%', top: '3%' \}/.test(anc), 'e lo studio 3%/2%');
-  assert.ok(/'basso-sinistra':\s*\{ left: '2%', bottom: '3%' \}/.test(anc), 'in tutti e quattro gli angoli');
+  const tab = {};
+  for (const [, nome, x, y] of anc.matchAll(/'?([a-z-]+)'?:\s*\{ x: (-?[\d.]+), y: (-?[\d.]+) \}/g)) tab[nome] = { x: +x, y: +y };
+  assert.equal(Object.keys(tab).length, 7, 'i sette ancoraggi stanno in una tabella sola');
+  for (const ang of ['alto-sinistra', 'alto-destra', 'basso-sinistra', 'basso-destra']) {
+    const box = html.match(new RegExp('\\.wbox\\.' + ang + '\\s*\\{([^}]*)\\}'))[1];
+    const a = tab[ang];
+    assert.ok(a, ang + ' c’è anche nello studio');
+    const oriz = a.x <= 50 ? ['left', a.x] : ['right', 100 - a.x];
+    const vert = a.y <= 50 ? ['top', a.y] : ['bottom', 100 - a.y];
+    assert.ok(new RegExp(oriz[0] + ':\\s*' + oriz[1] + 'vw').test(box), ang + ': ' + oriz[0] + ' uguale nei due');
+    assert.ok(new RegExp(vert[0] + ':\\s*' + vert[1] + 'vh').test(box), ang + ': ' + vert[0] + ' uguale nei due');
+  }
+});
+
+// Lo scarto di un angolo era scritto due volte: in ANCORA come CSS e in
+// _cornerXY come percentuali a mano, che dicevano dieci punti piu' in dentro.
+test('lo scarto di un angolo è scritto una volta sola', () => {
+  assert.ok(/function _cornerXY\(c\) \{ const a = ANCORA\[c\]/.test(APP), '_cornerXY legge ANCORA');
+  assert.ok(!/'alto-sinistra': \{ x: 13/.test(APP), 'e non ha piu’ una tabella sua');
 });
 
 // I contatori si ancoravano "a terzi" (sotto il 33% a sinistra, sopra il 67% a

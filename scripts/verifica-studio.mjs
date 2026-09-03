@@ -192,6 +192,71 @@ const occhio = await p.evaluate(async () => {
   return { cambiata: prima !== dopo, elementoVia: nodo.style.display === 'none', prima, dopo };
 });
 
+// Una proprieta', un valore. Cursore e casella erano due strade diverse per la
+// stessa Dimensione: muovevi il cursore e la casella restava indietro, scrivevi
+// nella casella e il cursore mentiva. Tre numeri sullo schermo, uno vero.
+const doppioni = [];
+for (const [campo, cur, cas] of [['s', 'insp-size', 'insp-s'], ['r', 'insp-rot', 'insp-r']]) {
+  const r = await p.evaluate(async ([c, idCur, idCas]) => {
+    seleziona('goal:g1');
+    await new Promise((r) => setTimeout(r, 140));
+    const dai = async (id, v) => {
+      const e = document.getElementById(id);
+      e.value = String(v); e.dispatchEvent(new Event('input', { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 120));
+      return { cursore: Number(document.getElementById(idCur).value),
+        casella: Number(document.getElementById(idCas).value),
+        vero: Number(_statoXY(selezione)[c]) };
+    };
+    const a = await dai(idCur, c === 's' ? 210 : 90);
+    const b2 = await dai(idCas, c === 's' ? 140 : -30);
+    return { a, b: b2 };
+  }, [campo, cur, cas]);
+  for (const [quando, m] of Object.entries(r)) {
+    if (m.cursore !== m.vero || m.casella !== m.vero) {
+      doppioni.push(`${campo} (${quando === 'a' ? 'dal cursore' : 'dalla casella'}): cursore ${m.cursore}, casella ${m.casella}, vero ${m.vero}`);
+    }
+  }
+}
+
+// L'annulla girava su goal e contatori a mano e si era dimenticato la famiglia
+// del player e del timer: li spostavi e Annulla non li riportava indietro.
+const scordati = [];
+for (const k of await p.evaluate(() => ELEMENTI().map((e) => e.k))) {
+  const r = await p.evaluate(async (kk) => {
+    seleziona(kk);
+    await new Promise((r) => setTimeout(r, 120));
+    const prima = { ..._posDove(kk) };
+    _scriviProp('x', Math.round(prima.x) === 40 ? 60 : 40);
+    await new Promise((r) => setTimeout(r, 120));
+    const mosso = { ..._posDove(kk) };
+    annullaOvl();
+    await new Promise((r) => setTimeout(r, 200));
+    return { prima, mosso, dopo: { ..._posDove(kk) } };
+  }, k);
+  if (Math.round(r.mosso.x) === Math.round(r.prima.x)) scordati.push(`${k}: non si e' mosso`);
+  else if (Math.round(r.dopo.x) !== Math.round(r.prima.x)) scordati.push(`${k}: annulla lo lascia a ${r.dopo.x} invece di ${r.prima.x}`);
+}
+
+// I livelli, l'inspector e il piede devono dire lo stesso posto: prima il
+// livello diceva ancora «in alto a sinistra» mentre l'inspector diceva 2.29%.
+const discordi = await p.evaluate(async () => {
+  const fuori = [];
+  for (const e of ELEMENTI()) {
+    if (!_inOverlay(e.k)) continue;
+    seleziona(e.k);
+    await new Promise((r) => setTimeout(r, 90));
+    const st = _posDove(e.k);
+    const riga = document.querySelector(`.ovl-liv[data-liv="${CSS.escape(e.k)}"] .ovl-liv-corpo span`);
+    const testo = riga ? riga.textContent.trim() : '';
+    const atteso = `${Math.round(st.x)}% · ${Math.round(st.y)}%`;
+    const cas = Number(document.getElementById('insp-x').value);
+    if (!testo.startsWith(atteso)) fuori.push(`${e.k}: livello «${testo}» invece di «${atteso}»`);
+    if (Math.abs(cas - st.x) > 0.02) fuori.push(`${e.k}: casella X ${cas} invece di ${st.x}`);
+  }
+  return fuori;
+});
+
 await b.close();
 srv.close();
 
@@ -213,6 +278,9 @@ verde = dice(dopoScelta.visti === 0 && dopoScelta.sel === 0 && dopoScelta.chiuso
   'e lasciandolo non resta niente acceso', JSON.stringify(dopoScelta)) && verde;
 verde = dice(rimasti === 0, 'nessun comando dimenticato sotto la tela', `${rimasti} campi rimasti giù`) && verde;
 verde = dice(morti.length === 0, `ogni comando arriva alla tela: ${PROVE.length} provati`, morti.join(' · ')) && verde;
+verde = dice(doppioni.length === 0, 'una proprietà ha un valore solo: cursore e casella dicono lo stesso', doppioni.join(' · ')) && verde;
+verde = dice(scordati.length === 0, 'l’annulla riporta indietro qualunque elemento', scordati.join(' · ')) && verde;
+verde = dice(discordi.length === 0, 'livelli, proprietà e piede dicono lo stesso posto', discordi.join(' · ')) && verde;
 verde = dice(rotture.length === 0, 'nessun errore di pagina', rotture.join(' · ')) && verde;
 
 console.log(verde ? '\ncollaudo verde ✓\n' : '\ncollaudo ROSSO ✗\n');

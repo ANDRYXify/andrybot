@@ -318,6 +318,84 @@ centro della tela — via dai bordi, dove il limite entrerebbe in gioco per
 davvero — e controlla che si sia spostato **di quella quantità**. Con Alt
 premuto, così l'aggancio non falsa la misura.
 
+### Un fatto, una risposta: dov'è un elemento
+
+Alla domanda «dove sta questo elemento» il banco sapeva dare **tre risposte
+diverse**, e le dava tutte:
+
+| chi rispondeva | per il player | scarto |
+| --- | --- | --- |
+| `ANCORA`, il CSS che lo disegna davvero | `left: 2%; bottom: 3%` | — |
+| `_defPos`, che misurava il nodo in pagina | `2.88% · 96.54%` | mezzo punto |
+| `_cornerXY`, una tabella scritta a mano | `13% · 85%` | **dieci punti**, 190 px |
+
+La terza serviva solo da ripiego quando la misura non era possibile — cioè
+esattamente quando nessuno se ne accorgeva. E la tela ne portava il segno: metà
+degli elementi era disegnata con `left/top` in percentuale, metà con
+`right/bottom` dal CSS d'angolo, **secondo se qualcuno li avesse già scelti o
+no**. Due modi di disegnare la stessa cosa, decisi dalla cronologia dei clic.
+
+Ora la tabella degli angoli è **una**, e tiene numeri, non CSS:
+`'alto-destra': { x: 98, y: 3 }`. Il CSS lo genera `_posAncora` (`x > 50` →
+`right: 100−x`), il ripiego lo legge `_cornerXY`. Un test controlla che i quattro
+angoli dello studio siano gli stessi `2vw/3vh` dell'overlay in onda, confrontando
+i numeri invece di cercare una stringa.
+
+Sopra ci sono due sole porte, e la differenza fra loro è il punto:
+
+- `_posDove(k)` **legge** — posizione salvata, altrimenti quella d'angolo. Non
+  scrive niente, quindi la possono chiamare i disegnatori (livelli, proprietà,
+  barra sotto la tela).
+- `_statoXY(k)` **prende in mano** — fissa quel che `_posDove` dice e lo
+  restituisce da modificare. La chiamano solo trascinamento, maniglie, frecce,
+  allineamenti, rotella e caselle.
+
+Prima leggere *creava*: bastava scegliere un elemento perché la sua posizione
+venisse fissata. Da lì il difetto che si vedeva a schermo: nei Livelli l'elemento
+appena scelto diceva ancora «in alto a sinistra» mentre le Proprietà accanto
+dicevano già `2.29% · 3.17%` — perché i livelli si ridisegnavano *prima* che la
+posizione venisse fissata. Ora nei Livelli si leggono percentuali sempre, la
+stessa lingua delle Proprietà e della barra sotto la tela; il nome dell'angolo
+resta dov'è utile, nella tendina «Dove».
+
+Misurato dopo il cambio: leggere la posizione di tutti e dieci gli elementi
+costa **0,07 ms**, una mossa di trascinamento **3,83 ms** — dentro il fotogramma.
+
+### Una proprietà, un valore
+
+Dimensione e Rotazione avevano **due comandi ciascuna**: una casella numerica in
+alto e un cursore sotto, con due gestori distinti. Non erano d'accordo su nulla:
+
+- il cursore scriveva il valore vero ma non aggiornava la casella, né i livelli,
+  né la cronologia dell'annulla;
+- la casella scriveva il valore vero ma non muoveva il cursore né la sua
+  etichetta.
+
+Misurato: cursore a 210, poi casella a 140 → sullo schermo **210, «210%» e 140**,
+tre numeri per un valore che era 140.
+
+Ora la proprietà ha una riga sola — etichetta, cursore, casella — e sotto una
+strada sola: `_scriviProp(campo, v)` limita, scrive, posiziona, ridisegna le due
+viste, aggiorna livelli e barra, registra l'annulla e salva. `_mostraProp()` è
+l'unico che scrive nei comandi, e legge da `_posDove`: le viste non si copiano
+fra loro, discendono entrambe dallo stato.
+
+### L'annulla si era dimenticato una famiglia
+
+L'istantanea per l'annulla elencava le famiglie a mano — i quattro fissi, gli
+obiettivi, i contatori — e la famiglia di player e conto alla rovescia non
+c'era. Li spostavi e Annulla li lasciava dov'erano.
+
+Il rimedio non è aggiungerli all'elenco: è non avere un elenco. L'istantanea gira
+su `ELEMENTI()` e per ogni chiave usa `_posCorrente`/`_scriviPos` e
+`_accesoDi`/`_accendiDi` — due coppie lettore/scrittore in cui la famiglia è
+scritta **una volta**. Un elemento nuovo entra nell'annulla senza che nessuno se
+ne ricordi. `_azzeraPos` passa dallo stesso scrittore.
+
+Il cancello prova tutti e dieci gli elementi: sposta, annulla, controlla che sia
+tornato. Rotto di proposito (togliendo la famiglia `cfg` dall'istantanea) dice
+`musica: annulla lo lascia a 40 invece di 10.74`.
+
 ## Un elemento si modifica in un posto solo
 
 I comandi di un elemento stavano in **due posti**: posizione e aspetto nel
