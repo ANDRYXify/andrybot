@@ -49,6 +49,9 @@ lo usa: se non si vede da fuori, qui non ci va.
 - Vale dentro e fuori, in chiaro e in scuro: sul fondo scuro il contorno ha un filo di luce, così si legge come si legge il marchio.
 - L'occhio dei Livelli toglie l'elemento dalla scena in cui stai lavorando, non da tutte: puoi avere una scena con un obiettivo e un'altra con un altro.
 - L'interruttore di un elemento, quello nel suo pannello, resta invece valido ovunque: uno spegne l'elemento, l'altro lo toglie da una scena sola.
+- Il sito è disegnato a mano come il marchio: i titoli hanno il tratto del logo, i riquadri hanno angoli storti come tirati a penna e i pulsanti portano l'ombra piena dell'inchiostro.
+- I pulsanti si timbrano invece di illuminarsi: premendoli scendono sull'ombra come un timbro sulla carta.
+- Il carattere disegnato è ospitato sul nostro server come tutti gli altri, quindi la pagina non chiede niente a nessuno per disegnarsi.
 - Scegliendo un obiettivo sulla tela le sue proprietà — colori, carattere, forma, cornice, opacità — si aprono lì accanto, come per ogni altro elemento.
 - Trascinare un contatore non lo fa più saltare a metà schermo, e ora si può anche ruotare.
 - L'occhio di «Obiettivo» e «Contatori» funziona davvero: prima si spegneva e al ricaricamento tornava acceso, quindi non si potevano togliere da un overlay.
