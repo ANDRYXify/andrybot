@@ -1583,6 +1583,11 @@ body.giro-aperto { overflow: hidden; }
   border: 1px solid var(--border); border-radius: var(--r-m); background: var(--surface);
 }
 .goal-capo { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.goal-voce {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--r-m); background: var(--surface);
+}
+.goal-voce-nome { flex: 1 1 8rem; min-width: 0; font-weight: 700; }
 .goal-capo .campo-largo { flex: 1 1 12rem; min-width: 0; }
 .goal-ora { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--acc); white-space: nowrap; }
 .goal-campi { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }

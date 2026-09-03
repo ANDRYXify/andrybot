@@ -28,6 +28,7 @@ lo usa: se non si vede da fuori, qui non ci va.
 - I comandi di un elemento sono raggruppati a fisarmonica: prima si scorreva per dodici schermate solo per l'alert, ora ne basta una.
 - Il player ha la stazza di un player: la copertina era grande un francobollo perché seguiva la misura delle pastiglie.
 - Scegliendo un elemento non compare più l'aspetto di un altro: una regola di stile teneva a schermo un blocco che era stato nascosto.
+- Anche gli obiettivi si modificano tutti dal pannello: conta, traguardo, partenza e dove stavano ancora nella carta sotto la tela. Nell'elenco resta il nome, il conteggio e i due tasti.
 - Nello Studio la tela ha tutto: obiettivi e contatori si trascinano come gli alert, con maniglie, frecce, aggancio e annulla. Prima si potevano mettere in posizione solo scrivendo numeri in un modulo.
 - Gli angoli della tela sono quelli veri dell'overlay: un obiettivo «in alto a destra» sta a filo dello schermo, e non usciva più dal riquadro come faceva prima.
 - Livelli e Proprietà non coprono più la tela: sono due sponde ai lati, si arrotolano per far spazio, si staccano trascinandole e si riagganciano con un doppio clic.
