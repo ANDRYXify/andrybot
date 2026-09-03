@@ -343,6 +343,70 @@ const storiaMista = await p.evaluate(async () => {
   return fuori;
 });
 
+// LE MARCE. Misurato: la tela e' 1920 px disegnata larga ~847, quindi UN pixel
+// di schermo vale 2,26 px di overlay — col mouse non si poteva essere precisi al
+// pixel, mai. E l'aggancio incollava: chiedendo 2, 5 o 9 px di spostamento
+// l'elemento andava sempre e solo a 9. Ora Ctrl/Cmd va a un quinto, Maiusc tiene
+// dritto su un asse, Alt toglie l'aggancio, e lo zoom arriva a 400%.
+const marce = await p.evaluate(async () => {
+  const tela = document.getElementById('ovl-preview').getBoundingClientRect();
+  const scala = tela.width / OVL_W;
+  const el = _nodo('musica');
+  const guasti = [];
+  const posa = async () => { seleziona('musica'); await new Promise((r) => setTimeout(r, 60)); _scriviProp('x', 37); _scriviProp('y', 63); _scriviProp('s', 100); _scriviProp('r', 0); await new Promise((r) => setTimeout(r, 80)); };
+  const trascina = async (dx, dy, mod) => {
+    const r0 = el.getBoundingClientRect();
+    const gx = r0.left + r0.width / 2, gy = r0.top + r0.height / 2;
+    const prima = _centroTela('musica');
+    el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: gx, clientY: gy, pointerId: 1 }));
+    for (let i = 1; i <= 3; i++) el.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: gx + (dx * i) / 3, clientY: gy + (dy * i) / 3, pointerId: 1, ...mod }));
+    el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1 }));
+    await new Promise((r) => setTimeout(r, 80));
+    const dopo = _centroTela('musica');
+    return { x: (dopo.x - prima.x) * scala, y: (dopo.y - prima.y) * scala };
+  };
+  const vicino = (a, b2, q) => Math.abs(a - b2) <= q;
+
+  await posa(); const n = await trascina(60, -40, { altKey: true });
+  if (!vicino(n.x, 60, 0.5) || !vicino(n.y, -40, 0.5)) guasti.push(`normale: chiesto 60/-40, andato ${n.x.toFixed(1)}/${n.y.toFixed(1)}`);
+  await posa(); const f = await trascina(60, -40, { altKey: true, ctrlKey: true });
+  if (!vicino(f.x, 12, 0.5) || !vicino(f.y, -8, 0.5)) guasti.push(`marcia fine: chiesto un quinto di 60/-40, andato ${f.x.toFixed(1)}/${f.y.toFixed(1)}`);
+  await posa(); const ax = await trascina(60, -12, { altKey: true, shiftKey: true });
+  if (!vicino(ax.y, 0, 0.01) || !vicino(ax.x, 60, 0.5)) guasti.push(`asse: doveva restare dritto, andato ${ax.x.toFixed(1)}/${ax.y.toFixed(1)}`);
+  await posa(); const ay = await trascina(-12, 60, { altKey: true, shiftKey: true });
+  if (!vicino(ay.x, 0, 0.01) || !vicino(ay.y, 60, 0.5)) guasti.push(`asse verticale: andato ${ay.x.toFixed(1)}/${ay.y.toFixed(1)}`);
+
+  // il passo piu' piccolo che si riesce a fare col mouse
+  const passo = async (mod) => {
+    await posa();
+    const r0 = el.getBoundingClientRect();
+    const gx = r0.left + r0.width / 2, gy = r0.top + r0.height / 2;
+    el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: gx, clientY: gy, pointerId: 1 }));
+    const a = _centroTela('musica').x;
+    el.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: gx + 1, clientY: gy, pointerId: 1, altKey: true, ...mod }));
+    const b2 = _centroTela('musica').x;
+    el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1 }));
+    return b2 - a;
+  };
+  const pf = await passo({ ctrlKey: true });
+  if (!(pf < 1)) guasti.push(`in marcia fine un pixel di schermo vale ancora ${pf.toFixed(2)} px di tela`);
+
+  // la rotella nuda non deve toccare niente: scorri la pagina, non ridimensioni
+  await posa();
+  const sPrima = _posDove('musica').s;
+  el.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: -120 }));
+  await new Promise((r) => setTimeout(r, 80));
+  if (_posDove('musica').s !== sPrima) guasti.push('la rotella nuda ridimensiona: scorrere la pagina cambia l’elemento');
+  el.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: -120, altKey: true }));
+  await new Promise((r) => setTimeout(r, 80));
+  if (_posDove('musica').s === sPrima) guasti.push('Alt+rotella non ridimensiona');
+
+  _applicaZoom(9);
+  if (_zoomOvl < 2.27) guasti.push(`lo zoom arriva solo a ${_zoomOvl}: sotto 2.27 non si vede un pixel di overlay`);
+  _applicaZoom(1);
+  return guasti;
+});
+
 await b.close();
 srv.close();
 
@@ -370,6 +434,7 @@ verde = dice(discordi.length === 0, 'livelli, proprietà e piede dicono lo stess
 verde = dice(manigliePerse.length === 0, 'ogni maniglia è dentro la tela e prende il clic', manigliePerse.join(' · ')) && verde;
 verde = dice(trapelati.length === 0, 'ogni overlay ha il suo layout: spostare qui non muove gli altri', trapelati.join(' · ')) && verde;
 verde = dice(storiaMista.length === 0, 'e il suo annulla, che non scavalca gli altri overlay', storiaMista.join(' · ')) && verde;
+verde = dice(marce.length === 0, 'le marce del trascinamento: fine, dritto, niente aggancio, rotella sicura', marce.join(' · ')) && verde;
 verde = dice(rotture.length === 0, 'nessun errore di pagina', rotture.join(' · ')) && verde;
 
 console.log(verde ? '\ncollaudo verde ✓\n' : '\ncollaudo ROSSO ✗\n');

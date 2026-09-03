@@ -5875,7 +5875,7 @@ function pannelloAlert() {
           <label class="ovl-insp-mis"><input type="number" id="insp-r" step="1" min="-180" max="180"><i>°</i></label>
         </div>
       </div>
-      <p class="suggerimento"><strong>${L('Clicca', 'Click', 'Haz clic en')}</strong> ${L('un elemento per selezionarlo, poi <strong>trascinalo</strong> per spostarlo; usa le maniglie agli angoli o i cursori qui sopra. Scorciatoie: <strong>rotellina</strong> = ridimensiona, <strong>Shift+rotellina</strong> = ruota, <strong>doppio clic</strong> = ripristina. Con «Prova» li vedi nell\'overlay, dove l\'hai messo.', 'an element to select it, then <strong>drag</strong> it to move; use the corner handles or the sliders above. Shortcuts: <strong>wheel</strong> = resize, <strong>Shift+wheel</strong> = rotate, <strong>double click</strong> = reset. Use «Test» to see them in the overlay, wherever you put it.', 'un elemento para seleccionarlo, luego <strong>arrástralo</strong> para moverlo; usa los tiradores de las esquinas o los cursores de arriba. Atajos: <strong>rueda</strong> = redimensiona, <strong>Shift+rueda</strong> = rota, <strong>doble clic</strong> = restablece. Con «Probar» los ves en el overlay, donde lo hayas puesto.')}</p>
+      <p class="suggerimento"><strong>${L('Clicca', 'Click', 'Haz clic en')}</strong> ${L('un elemento per selezionarlo, poi <strong>trascinalo</strong>. Tenendo premuto mentre trascini: <strong>Ctrl</strong> (o ⌘) va a passo di un quinto, per il lavoro fine; <strong>Maiusc</strong> lo tiene dritto su un asse; <strong>Alt</strong> toglie l\'aggancio. Le <strong>frecce</strong> spostano di un pixel, con Maiusc di dieci. <strong>Alt+rotellina</strong> ridimensiona, <strong>Maiusc+rotellina</strong> ruota, <strong>doppio clic</strong> ripristina. Con «Prova» li vedi nell\'overlay, dove l\'hai messo.', 'an element to select it, then <strong>drag</strong> it. While dragging, hold: <strong>Ctrl</strong> (or ⌘) to move at one fifth speed, for fine work; <strong>Shift</strong> to keep it straight on one axis; <strong>Alt</strong> to drop snapping. <strong>Arrows</strong> move by one pixel, with Shift by ten. <strong>Alt+wheel</strong> resizes, <strong>Shift+wheel</strong> rotates, <strong>double click</strong> resets. Use «Test» to see them in the overlay, wherever you put it.', 'un elemento para seleccionarlo, luego <strong>arrástralo</strong>. Mientras arrastras, mantén: <strong>Ctrl</strong> (o ⌘) para ir a un quinto de velocidad, para el trabajo fino; <strong>Mayús</strong> para mantenerlo recto en un eje; <strong>Alt</strong> para quitar el ajuste. Las <strong>flechas</strong> mueven un píxel, con Mayús diez. <strong>Alt+rueda</strong> redimensiona, <strong>Mayús+rueda</strong> rota, <strong>doble clic</strong> restablece. Con «Probar» los ves en el overlay, donde lo hayas puesto.')}</p>
     </div>
 
     <div class="carta" data-parte="overlay">
@@ -7093,7 +7093,7 @@ function aggiornaPiedeBanco() {
   const sel = typeof selezione !== 'undefined' ? selezione : null;
   if (!sel) {
     piede.innerHTML = `<span>${esc(L('Niente selezionato', 'Nothing selected', 'Nada seleccionado'))}</span>`
-      + `<span class="ovl-piede-dx">${esc(L('frecce per spostare · Maiusc ×10 · Alt niente aggancio', 'arrows to move · Shift ×10 · Alt no snapping', 'flechas para mover · Mayús ×10 · Alt sin ajuste'))}</span>`;
+      + `<span class="ovl-piede-dx">${esc(L('Ctrl marcia fine · Maiusc dritto · Alt niente aggancio · frecce al pixel', 'Ctrl fine gear · Shift straight · Alt no snapping · arrows by pixel', 'Ctrl marcha fina · Mayús recto · Alt sin ajuste · flechas al píxel'))}</span>`;
     return;
   }
   const st = _posDove(sel);
@@ -7102,7 +7102,7 @@ function aggiornaPiedeBanco() {
     + `<span>X <b>${_arr(st.x)}%</b></span><span>Y <b>${_arr(st.y)}%</b></span>`
     + `<span>${esc(L('Dim', 'Size', 'Tam'))} <b>${st.s}%</b></span>`
     + `<span>${esc(L('Rot', 'Rot', 'Rot'))} <b>${st.r}°</b></span>`
-    + `<span class="ovl-piede-dx">${esc(L('frecce per spostare · Maiusc ×10 · Alt niente aggancio', 'arrows to move · Shift ×10 · Alt no snapping', 'flechas para mover · Mayús ×10 · Alt sin ajuste'))}</span>`;
+    + `<span class="ovl-piede-dx">${esc(L('Ctrl marcia fine · Maiusc dritto · Alt niente aggancio · frecce al pixel', 'Ctrl fine gear · Shift straight · Alt no snapping · arrows by pixel', 'Ctrl marcha fina · Mayús recto · Alt sin ajuste · flechas al píxel'))}</span>`;
 }
 
 window.addEventListener('resize', () => { misuraSopraBanco(); });
@@ -7233,7 +7233,7 @@ function _rendiLivelli() {
 
 let _zoomOvl = 1;
 function _applicaZoom(v) {
-  _zoomOvl = Math.max(0.5, Math.min(2, v));
+  _zoomOvl = Math.max(0.5, Math.min(ZOOM_MAX, v));
   const t = _g('ovl-tela');
   if (t) t.style.setProperty('--ovl-zoom', _zoomOvl);
   const et = _g('ovl-zoom-v');
@@ -7348,7 +7348,9 @@ function scalaAnteprima() {
 }
 
 const OVL_W = 1920, OVL_H = 1080;          // la tela vera dell'overlay, in pixel
-const SNAP_PX = 8;                          // soglia di aggancio, in pixel di schermo
+const SNAP_PX = 6;                          // soglia di aggancio, in pixel di schermo
+const MARCIA_FINE = 0.2;                    // con Ctrl/Cmd il puntatore vale un quinto
+const ZOOM_MAX = 4;
 
 const centroDa = (x, lato, tela) => (x / 100) * (tela - lato) + lato / 2;
 const xDaCentro = (c, lato, tela) => (tela - lato <= 0 ? 50 : ((c - lato / 2) / (tela - lato)) * 100);
@@ -7500,7 +7502,7 @@ let _inTrascinamento = false;
 function rendiTrascinabile(el, chiave) {
   if (!el) return;
   el.style.cursor = 'grab';
-  el.title = 'Clic per selezionare · trascina per spostare · doppio clic per ripristinare';
+  el.title = L('Clic per selezionare · trascina per spostare (Ctrl = fine, Maiusc = dritto, Alt = niente aggancio) · doppio clic per ripristinare', 'Click to select · drag to move (Ctrl = fine, Shift = straight, Alt = no snapping) · double click to reset', 'Clic para seleccionar · arrastra para mover (Ctrl = fino, Mayús = recto, Alt = sin ajuste) · doble clic para restablecer');
   _iniettaManiglie(chiave);
   el.addEventListener('pointerdown', (e) => {
     if (e.button != null && e.button !== 0) return;
@@ -7519,11 +7521,19 @@ function rendiTrascinabile(el, chiave) {
     const presaX = qui.x - c0.x;
     const presaY = qui.y - c0.y;
     const altri = _centriAltrui(chiave);
+    let asse = null;
     const move = (ev) => {
       const p = suTela(ev.clientX, ev.clientY);
-      let cx = p.x - presaX, cy = p.y - presaY;
+      let dx = p.x - qui.x, dy = p.y - qui.y;
+      if (ev.ctrlKey || ev.metaKey) { dx *= MARCIA_FINE; dy *= MARCIA_FINE; }
+      if (ev.shiftKey) {
+        if (!asse) asse = Math.abs(dx) === Math.abs(dy) ? null : (Math.abs(dx) > Math.abs(dy) ? 'x' : 'y');
+        if (asse === 'x') dy = 0; else if (asse === 'y') dx = 0;
+      } else asse = null;
+      let cx = c0.x + dx, cy = c0.y + dy;
       let guide = [];
-      if (!ev.altKey) { const a = _aggancia(altri, cx, cy, w, h, scala); cx = a.cx; cy = a.cy; guide = a.guide; }
+      const fine = ev.ctrlKey || ev.metaKey;
+      if (!ev.altKey && !fine) { const a = _aggancia(altri, cx, cy, w, h, scala); cx = a.cx; cy = a.cy; guide = a.guide; }
       st.x = _arr(_tra(xDaCentro(cx, w, OVL_W), 0, 100));
       st.y = _arr(_tra(xDaCentro(cy, h, OVL_H), 0, 100));
       _posElemento(el, st);
@@ -7553,10 +7563,12 @@ function rendiTrascinabile(el, chiave) {
     document.addEventListener('keydown', fuga, true);
   });
   el.addEventListener('wheel', (e) => {
+    if (!e.altKey && !e.shiftKey) return;
     e.preventDefault();
     const st = _statoXY(chiave);
-    if (e.shiftKey) { let r = (st.r || 0) + (e.deltaY < 0 ? 4 : -4); while (r > 180) r -= 360; while (r < -180) r += 360; st.r = r; }
-    else { st.s = Math.max(30, Math.min(300, (st.s || 100) + (e.deltaY < 0 ? 4 : -4))); }
+    const passo = e.ctrlKey || e.metaKey ? 1 : 4;
+    if (e.shiftKey) { let r = (st.r || 0) + (e.deltaY < 0 ? passo : -passo); while (r > 180) r -= 360; while (r < -180) r += 360; st.r = r; }
+    else { st.s = Math.max(30, Math.min(300, (st.s || 100) + (e.deltaY < 0 ? passo : -passo))); }
     seleziona(chiave); _posElemento(el, st); aggiornaInspector(); _ricorda('rotella:' + chiave); _salvaPosDebounced(chiave);
   }, { passive: false });
   el.addEventListener('dblclick', () => { _azzeraPos(chiave); deseleziona(); aggiornaAnteprima(); _ricorda(); _salvaPos(chiave); });
