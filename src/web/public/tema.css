@@ -18,6 +18,15 @@
   --acc: #ba007a;
   --acc-600: #940060;
   --su-acc: #ffffff;
+
+  --acc-vivo: #d000b8;
+  --acc-caldo: #b00050;
+  --acc-vino: #9a0028;
+  --rampa: linear-gradient(100deg, var(--acc-vivo), var(--acc) 42%, var(--acc-caldo) 74%, var(--acc-vino));
+
+  --contorno: #150910;
+  --contorno-sp: 2px;
+  --alone-contorno: none;
   --acc-soft: color-mix(in srgb, var(--acc) 8%, var(--surface));
   --acc-tint: color-mix(in srgb, var(--acc) 10%, transparent);
   --acc-bordo: color-mix(in srgb, var(--acc) 26%, var(--border));
@@ -26,7 +35,7 @@
   --rosso: #a8382b; --rosso-soft: #f6ebe7; --rosso-bordo: #ebccc5;
   --ambra: #926317; --ambra-soft: #f5eedd; --ambra-bordo: #e6d3b3;
 
-  --r-xs: 4px; --r-s: 6px; --r-m: 8px; --r-l: 10px;
+  --r-xs: 6px; --r-s: 10px; --r-m: 14px; --r-l: 18px;
   --om-s: 0 1px 2px rgba(26, 25, 25, .05);
   --om-m: 0 2px 10px rgba(26, 25, 25, .06);
   --om-l: 0 10px 30px rgba(26, 25, 25, .09);
@@ -57,6 +66,13 @@
 
   --acc: #f72fa7;
   --acc-600: #ff61b7;
+
+  --acc-vivo: #ff5ce0;
+  --acc-caldo: #e6386f;
+  --acc-vino: #c62a4c;
+
+  --contorno: #000000;
+  --alone-contorno: 0 0 0 1px color-mix(in srgb, var(--acc) 34%, transparent);
   --su-acc: #1e0f18;
   --acc-soft: color-mix(in srgb, var(--acc) 10%, var(--surface));
   --acc-tint: color-mix(in srgb, var(--acc) 14%, transparent);

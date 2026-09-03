@@ -571,18 +571,20 @@ body.vetrina .contenuto { max-width: 1040px; }
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center;
-  background: var(--acc); color: var(--su-acc); border: none; border-radius: var(--r-s);
-  padding: .55rem 1.1rem; min-height: 38px;
+  background: var(--acc); color: var(--su-acc);
+  border: var(--contorno-sp) solid var(--contorno); border-radius: var(--r-s);
+  box-shadow: var(--alone-contorno);
+  padding: .5rem 1.05rem; min-height: 38px;
   font-size: .9rem; font-weight: 600; font-family: inherit; cursor: pointer; text-decoration: none;
 
   transform: translate(var(--mx, 0px), var(--my, 0px));
   transition: background var(--molla), transform var(--t-molla-su, .34s) var(--molla-medio, var(--ease)), box-shadow var(--molla);
 }
-.btn:hover { background: var(--acc-600); color: var(--su-acc); box-shadow: 0 8px 20px color-mix(in srgb, var(--acc) 30%, transparent); text-decoration: none; transform: translate(var(--mx, 0px), calc(var(--my, 0px) - 1px)); }
+.btn:hover { background: var(--acc-600); color: var(--su-acc); box-shadow: var(--alone-contorno), 0 8px 20px color-mix(in srgb, var(--acc) 30%, transparent); text-decoration: none; transform: translate(var(--mx, 0px), calc(var(--my, 0px) - 1px)); }
 .btn:disabled { opacity: .5; cursor: wait; box-shadow: none; }
-.btn.grande { padding: .7rem 1.5rem; min-height: 44px; font-size: .98rem; }
-.btn.secondario { background: var(--surface); border: 1px solid var(--border-2); color: var(--testo); }
-.btn.secondario:hover { background: var(--surface-2); color: var(--testo); border-color: var(--testo-3); box-shadow: none; }
+.btn.grande { padding: .65rem 1.45rem; min-height: 44px; font-size: .98rem; }
+.btn.secondario { background: var(--surface); border: var(--contorno-sp) solid var(--contorno); color: var(--testo); box-shadow: none; }
+.btn.secondario:hover { background: var(--surface-2); color: var(--testo); border-color: var(--contorno); box-shadow: none; }
 .btn.pericolo { background: var(--rosso); }
 .btn.pericolo:hover { background: #bb2f39; box-shadow: 0 4px 14px rgba(207, 55, 66, .22); }
 .btn.mini { padding: .3rem .7rem; min-height: 0; font-size: .8rem; border-radius: var(--r-xs); }
@@ -665,6 +667,7 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .riga-interruttore .etichetta-stato { font-weight: 700; font-size: 1.02rem; }
 
 .badge { display: inline-flex; align-items: center; border-radius: 999px; padding: .14rem .6rem; font-size: .76rem; font-weight: 600; border: 1px solid var(--border); background: var(--surface-2); color: var(--testo-2); }
+.badge.viola, .badge.marchio { border: var(--contorno-sp) solid var(--contorno); box-shadow: var(--alone-contorno); }
 .badge.verde  { color: var(--verde); border-color: var(--verde-bordo); background: var(--verde-soft); }
 .badge.rosso  { color: var(--rosso); border-color: var(--rosso-bordo); background: var(--rosso-soft); }
 .badge.viola  { color: var(--acc);   border-color: var(--acc-bordo); background: var(--acc-soft); }

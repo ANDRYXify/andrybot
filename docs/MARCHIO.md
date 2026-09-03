@@ -157,6 +157,46 @@ gli spettatori, `socialbot.live/u/<login>` — chiedeva l'icona senza timbro,
 cioè finiva dritta nel ramo "prima la cache". Ora il cancello legge anche i
 sorgenti che compongono pagine, e l'icona è la stessa ovunque.
 
+## Il tema esce dal marchio, non gli sta accanto
+
+Il segno era coerente con sé stesso e basta: il resto del sito parlava un'altra
+lingua, e il marchio in alto a sinistra sembrava un adesivo incollato su un altro
+prodotto. Prima di ridipingere, la struttura del logo letta **dai pixel**, non a
+occhio:
+
+| cosa dice il segno | misura |
+|---|---|
+| il **contorno nero** attorno a ogni forma | **47,5%** dei pixel opachi — quasi metà del disegno |
+| non un colore ma una **rampa di tinta**, da sinistra a destra | 294° → 348°, cioè magenta della «S» → vino della «t» |
+| saturazione piena, luce media | tutte le fermate fra il 31% e il 42% di luce |
+| tratto disegnato a mano, estremi tondi | niente è dritto, niente è un cerchio perfetto |
+
+Quindi il tema ha preso da lì tre cose, e nient'altro:
+
+**La rampa.** `--acc-vivo` `--acc` `--acc-caldo` `--acc-vino` sono le quattro
+fermate misurate, e `--rampa` le mette in fila con lo stesso verso del logo. Dove
+il prodotto accentava con un magenta piatto — le parole in risalto del titolo, il
+bottone principale — adesso passa la sfumatura. Non è decorazione: è la stessa
+struttura del segno, applicata alla pagina.
+
+**Il contorno.** `--contorno` più `--contorno-sp` sulle superfici che portano il
+colore del prodotto: bottoni, pastiglia dell'occhiello, pastiglie di marca. Non su
+ogni carta — nel logo il nero tiene le *lettere*, non la pagina, e metterlo
+ovunque lo renderebbe rumore invece che firma.
+
+**L'alone, perché il fondo scuro spegne il nero.** È lo stesso problema che il
+marchio aveva già, e la stessa cura: `--alone-contorno` è un filo di accento
+appena fuori dal nero, così il bordo si legge anche sul buio. Chiaro e scuro
+tengono lo stesso disegno invece di essere due prodotti.
+
+E gli angoli passano da 4/6/8/10 a 6/10/14/18, perché il tratto del segno è tondo
+e un angolo secco accanto a lui stona.
+
+Il cancello della tavolozza controlla tutte e tre: che le fermate della rampa e i
+token del contorno esistano nei due temi, che l'alone sia **diverso** fra chiaro e
+scuro (sennò sul buio il bordo sparisce), e che le superfici di marca lo portino
+davvero. È stato provato rosso togliendo il bordo al bottone e spegnendo l'alone.
+
 ## Il cancello
 
 `scripts/verifica-risorse.mjs` controlla che ogni file chiesto dalle pagine e
