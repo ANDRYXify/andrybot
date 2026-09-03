@@ -322,12 +322,13 @@
 .contatore-widget.ovl-widget { display: inline-flex; align-items: center; gap: .5rem; }
 
 .ovl-musica {
-  --cov: 3.4em;
+  --cov: 3.6em;
   box-sizing: border-box;
   position: relative; overflow: hidden;
-  display: inline-flex; align-items: center; gap: .72em;
-  min-width: 15rem; max-width: 30rem;
-  padding: .5em .85em;
+  display: inline-flex; align-items: center; gap: .7em;
+  min-width: 11em; max-width: 21em;
+  padding: .42em .62em;
+  line-height: 1.24;
 }
 .ovl-musica > *:not(.m-sfondo) { position: relative; z-index: 1; }
 .ovl-musica .m-sfondo {
@@ -405,7 +406,7 @@
   border-radius: inherit; transition: width .9s linear;
 }
 .ovl-musica.barra-no .m-barra, .ovl-musica.barra-anello .m-barra { display: none; }
-.ovl-musica .m-tempi { font-size: .74em; opacity: .78; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ovl-musica .m-tempi { font-size: .68em; opacity: .78; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ovl-musica .m-tempi:empty { display: none; }
 .ovl-musica.senza-sotto .m-sotto { display: none; }
 
@@ -457,15 +458,12 @@
 }
 .ovl-musica.verso-colonna {
   flex-direction: column; align-items: stretch; gap: .5em;
-  min-width: 9rem; max-width: 16rem; text-align: center;
+  min-width: 7em; text-align: center;
 }
 .ovl-musica.verso-colonna { --cov: 100%; }
 .ovl-musica.verso-colonna .m-cover { width: 100%; height: auto; aspect-ratio: 1; }
 .ovl-musica.verso-colonna .m-onde { justify-content: center; }
-.ovl-musica.verso-solo-cover {
-  min-width: 0; max-width: none; padding: .45em;
-  --cov: 4.6em;
-}
+.ovl-musica.verso-solo-cover { min-width: 0; max-width: none; padding: .34em; }
 .ovl-musica.verso-solo-cover .m-corpo,
 .ovl-musica.verso-solo-cover .m-onde { display: none; }
 
@@ -496,12 +494,11 @@
 .ovl-timer.dentro { opacity: 1; transform: none; }
 .ovl-timer.esce { opacity: 0; transform: translateY(-10px) scale(.96); transition: opacity .34s ease, transform .4s ease; }
 
-.ovl-musica.dim-piccola { --cov: 2.5em; min-width: 11rem; }
-.ovl-musica.dim-grande { --cov: 3.8em; min-width: 16rem; }
-.ovl-musica.dim-piccola.verso-solo-cover { --cov: 3.4em; min-width: 0; }
-.ovl-musica.dim-grande.verso-solo-cover { --cov: 6em; min-width: 0; }
-.ovl-musica.verso-colonna.dim-piccola { max-width: 12rem; }
-.ovl-musica.verso-colonna.dim-grande { max-width: 20rem; }
+.ovl-musica.dim-piccola { font-size: 1.3rem; }
+.ovl-musica.dim-media { font-size: 1.75rem; }
+.ovl-musica.dim-grande { font-size: 2.4rem; }
+.ovl-musica.verso-solo-cover { --cov: 5em; }
+.ovl-musica.verso-colonna { max-width: 12em; }
 
 .ovl-timer { display: inline-flex; align-items: baseline; gap: .55em; }
 .ovl-timer .t-tit { opacity: .82; font-weight: 700; }

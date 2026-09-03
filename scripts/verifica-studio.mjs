@@ -121,7 +121,7 @@ for (const k of chiavi) {
     seleziona(kk);
     const insp = document.getElementById('ovl-inspector');
     return {
-      visti: [...insp.querySelectorAll('.asp-blocco')].filter((b) => !b.hidden).map((b) => b.dataset.asp),
+      visti: [...insp.querySelectorAll('.asp-blocco')].filter((b) => b.offsetParent !== null || b.getClientRects().length).map((b) => b.dataset.asp),
       sel: [...document.querySelectorAll('#ap-stage .ap-el.sel')].map((e) => e.id),
       liv: [...document.querySelectorAll('.ovl-liv.scelto')].map((e) => e.dataset.liv),
       nome: (document.getElementById('insp-nome') || {}).textContent,
@@ -139,7 +139,7 @@ for (const k of chiavi) {
 const dopoScelta = await p.evaluate(() => {
   deseleziona();
   const insp = document.getElementById('ovl-inspector');
-  return { visti: [...insp.querySelectorAll('.asp-blocco')].filter((b) => !b.hidden).length,
+  return { visti: [...insp.querySelectorAll('.asp-blocco')].filter((b) => b.offsetParent !== null || b.getClientRects().length).length,
     sel: document.querySelectorAll('#ap-stage .ap-el.sel').length, chiuso: insp.hidden };
 });
 
