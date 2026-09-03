@@ -108,6 +108,47 @@ for (const id of elementi) {
   if (Math.abs(ex - dx) > 2 || Math.abs(ey - dy) > 2) storti.push(`${id}: chiesto ${dx},${dy} → fatto ${ex},${ey}`);
 }
 
+// COERENZA DELLA SCELTA. Un elemento si modifica in un posto solo, e quel posto
+// sta accanto alla tela: scegliendolo, il pannello deve mostrare i SUOI comandi
+// e nient'altro — non due blocchi, non quello di prima, non zero. Prima i
+// comandi erano divisi fra il pannello e le carte sotto la tela: per una
+// modifica precisa bisognava scendere, e mentre modificavi non vedevi piu'
+// l'anteprima.
+const chiavi = await p.evaluate(() => ELEMENTI().map((e) => e.k));
+const incoerenti = [];
+for (const k of chiavi) {
+  const r = await p.evaluate((kk) => {
+    seleziona(kk);
+    const insp = document.getElementById('ovl-inspector');
+    return {
+      visti: [...insp.querySelectorAll('.asp-blocco')].filter((b) => !b.hidden).map((b) => b.dataset.asp),
+      sel: [...document.querySelectorAll('#ap-stage .ap-el.sel')].map((e) => e.id),
+      liv: [...document.querySelectorAll('.ovl-liv.scelto')].map((e) => e.dataset.liv),
+      nome: (document.getElementById('insp-nome') || {}).textContent,
+      atteso: _nomeEl(kk), idAtteso: _idEl(kk), inOverlay: _inOverlay(kk), chiuso: insp.hidden,
+    };
+  }, k);
+  const g = [];
+  if (r.visti.length !== 1 || r.visti[0] !== k) g.push(`comandi visibili [${r.visti}]`);
+  if (r.inOverlay && (r.sel.length !== 1 || r.sel[0] !== r.idAtteso)) g.push(`sulla tela [${r.sel}]`);
+  if (r.liv.length !== 1 || r.liv[0] !== k) g.push(`livelli [${r.liv}]`);
+  if (r.nome !== r.atteso) g.push(`titolo «${r.nome}»`);
+  if (r.chiuso) g.push('pannello chiuso');
+  if (g.length) incoerenti.push(k + ': ' + g.join(', '));
+}
+const dopoScelta = await p.evaluate(() => {
+  deseleziona();
+  const insp = document.getElementById('ovl-inspector');
+  return { visti: [...insp.querySelectorAll('.asp-blocco')].filter((b) => !b.hidden).length,
+    sel: document.querySelectorAll('#ap-stage .ap-el.sel').length, chiuso: insp.hidden };
+});
+
+// E niente deve essere rimasto sotto la tela: un campo dimenticato la' e'
+// esattamente il difetto da cui si e' partiti.
+const rimasti = await p.evaluate(() => document.querySelectorAll(
+  '#sez-alert input, #sez-chat input, #sez-musica input, #sez-timer input,'
+  + ' #sez-alert select, #sez-chat select, #sez-musica select, #sez-timer select').length);
+
 // L'occhio di un livello: cliccarlo toglie l'elemento dall'overlay E si vede
 // che l'ha fatto. Prima l'elemento spariva ma l'occhio restava aperto.
 const occhio = await p.evaluate(async () => {
@@ -140,6 +181,10 @@ verde = dice(storti.length === 0,
 verde = dice(provati >= 6, `elementi davvero provati: ${provati}`, 'la scena della demo ne ha troppo pochi scoperti') && verde;
 verde = dice(!!occhio.elementoVia, 'l’occhio toglie davvero l’elemento dalla scena', JSON.stringify(occhio)) && verde;
 verde = dice(!!occhio.cambiata, 'e l’occhio si vede che è chiuso', JSON.stringify(occhio)) && verde;
+verde = dice(incoerenti.length === 0, `scegliendo un elemento si vedono solo i suoi comandi: ${chiavi.length} elementi`, incoerenti.join(' · ')) && verde;
+verde = dice(dopoScelta.visti === 0 && dopoScelta.sel === 0 && dopoScelta.chiuso,
+  'e lasciandolo non resta niente acceso', JSON.stringify(dopoScelta)) && verde;
+verde = dice(rimasti === 0, 'nessun comando dimenticato sotto la tela', `${rimasti} campi rimasti giù`) && verde;
 verde = dice(rotture.length === 0, 'nessun errore di pagina', rotture.join(' · ')) && verde;
 
 console.log(verde ? '\ncollaudo verde ✓\n' : '\ncollaudo ROSSO ✗\n');

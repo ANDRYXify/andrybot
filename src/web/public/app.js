@@ -6803,6 +6803,39 @@ function aggiornaInspector() {
   fissa('insp-x', _arr(st.x)); fissa('insp-y', _arr(st.y)); fissa('insp-s', st.s); fissa('insp-r', st.r);
 }
 
+const PEZZI_EL = () => [
+  ['alert', '#sez-alert'],
+  ['chat', '#sez-chat'],
+  ['musica', '#sez-musica'],
+  ['timer', '#sez-timer'],
+];
+
+function raccogliBlocchi(casa) {
+  for (const [k, sez] of PEZZI_EL()) {
+    const carta = document.querySelector(sez);
+    if (!carta) continue;
+    let blocco = casa.querySelector(`.asp-blocco[data-asp="${k}"]`);
+    if (!blocco) {
+      blocco = document.createElement('div');
+      blocco.className = 'asp-blocco el-blocco';
+      blocco.dataset.asp = k;
+      blocco.hidden = true;
+      casa.appendChild(blocco);
+    }
+    let dove = blocco.firstChild;
+    for (const n of [...carta.children]) {
+      if (n.tagName === 'SUMMARY') continue;
+      if (n.classList.contains('asp-blocco')) {
+        for (const f of [...n.children]) blocco.appendChild(f);
+        n.remove();
+        continue;
+      }
+      blocco.insertBefore(n, dove);
+    }
+    carta.hidden = true;
+  }
+}
+
 function montaBanco() {
   const carta = document.querySelector('#ovl-tela')?.closest('.carta');
   if (!carta) return;
@@ -6828,6 +6861,8 @@ function montaBanco() {
   }
   const vesti = _g('goal-vesti');
   if (vesti && vesti.parentElement !== casa) casa.appendChild(vesti);
+  raccogliBlocchi(casa);
+  disegnaBlocchiConta();
 
   if (!insp.querySelector('.ovl-vuoto')) {
     const v = document.createElement('p');
@@ -7437,11 +7472,69 @@ function salvaContoDaScena(c) {
 }
 function salvaContiDaScena() { for (const e of ELEMENTI()) if (e.cont) salvaContoDaScena(e.cont); }
 
+const FONT_CONT_OPTS = () => [['system', L('Sistema', 'System', 'Sistema')], ['inter', 'Inter'],
+  ['spaceGrotesk', 'Space Grotesk'], ['jetBrainsMono', 'JetBrains Mono'], ['fraunces', 'Fraunces'], ['bricolage', 'Bricolage']];
+
+function disegnaBlocchiConta() {
+  const casa = _g('ovl-aspetto');
+  if (!casa) return;
+  const vivi = new Set(_conta.map((c) => 'cont:' + c.comando));
+  for (const b of casa.querySelectorAll('.asp-blocco[data-asp^="cont:"]')) if (!vivi.has(b.dataset.asp)) b.remove();
+  for (const c of _conta) {
+    const k = 'cont:' + c.comando;
+    let b = casa.querySelector(`.asp-blocco[data-asp="${CSS.escape(k)}"]`);
+    if (!b) {
+      b = document.createElement('div');
+      b.className = 'asp-blocco el-blocco';
+      b.dataset.asp = k;
+      b.dataset.conta = c.comando;
+      b.hidden = true;
+      casa.appendChild(b);
+    }
+    const o = c.overlayCfg || {};
+    const trasp = !o.sfondo || o.sfondo === 'transparent';
+    b.innerHTML = `<div class="riga-interruttore">
+        <label class="interruttore"><input type="checkbox" data-k="mostra" ${o.mostra ? 'checked' : ''}><span class="levetta"></span></label>
+        <span class="etichetta-stato">${L('A schermo', 'On screen', 'En pantalla')}</span>
+      </div>
+      <label class="campo spazio-sopra">${L('Cosa scrive', 'What it writes', 'Qué escribe')} <span class="tenue">{emoji} {etichetta} {valore}</span></label>
+      <input type="text" data-k="formato" maxlength="80" value="${esc(o.formato || '{emoji} {etichetta}: {valore}')}">
+      <div class="goal-campi spazio-sopra">
+        <label class="campo-num">${L('Testo', 'Text', 'Texto')}<input type="color" data-k="colore" value="${esc(/^#/.test(o.colore || '') ? o.colore : '#ffffff')}"></label>
+        <label class="campo-num">${L('Sfondo', 'Background', 'Fondo')}<input type="color" data-k="sfondoTinta" value="${esc(/^#/.test(o.sfondo || '') ? o.sfondo : '#000000')}"></label>
+        <label class="campo-num">${L('Carattere', 'Font', 'Fuente')}<select data-k="font">${FONT_CONT_OPTS().map(([v, t]) => `<option value="${v}"${(o.font || 'system') === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+      </div>
+      <div class="riga-flessibile spazio-sopra">
+        <label class="riga-check"><input type="checkbox" data-k="senzaSfondo" ${trasp ? 'checked' : ''}> ${L('Senza sfondo', 'No background', 'Sin fondo')}</label>
+        <label class="riga-check"><input type="checkbox" data-k="grassetto" ${o.grassetto !== false ? 'checked' : ''}> ${L('Grassetto', 'Bold', 'Negrita')}</label>
+      </div>
+      <p class="suggerimento spazio-sopra">${L('Il valore lo muovi tu e i mod in chat con', 'You and your mods move the value in chat with', 'Tú y los mods movéis el valor en el chat con')} <code>!${esc(c.comando)}+</code> <code>!${esc(c.comando)} reset</code>.</p>`;
+  }
+}
+
+function leggiBloccoConta(k) {
+  const c = (ELEM(k) || {}).cont;
+  const b = _g('ovl-aspetto')?.querySelector(`.asp-blocco[data-asp="${CSS.escape(k)}"]`);
+  if (!c || !b) return;
+  const o = (c.overlayCfg = c.overlayCfg || {});
+  const val = (n) => b.querySelector(`[data-k="${n}"]`);
+  o.mostra = !!val('mostra')?.checked;
+  o.formato = val('formato')?.value || '{emoji} {etichetta}: {valore}';
+  o.colore = val('colore')?.value || '#ffffff';
+  o.font = val('font')?.value || 'system';
+  o.grassetto = !!val('grassetto')?.checked;
+  o.sfondo = val('senzaSfondo')?.checked ? 'transparent' : (val('sfondoTinta')?.value || '#000000');
+  aggiornaAnteprima();
+  _rendiLivelli();
+  salvaContoDaScena(c);
+}
+
 async function caricaContaStudio() {
   let d;
   try { d = await api('/api/contatori'); } catch { d = null; }
   _conta = (d && Array.isArray(d.contatori) ? d.contatori : []).map((c) => ({ ...c, _st: null }));
   for (const c of _conta) c._st = _stCont(c);
+  disegnaBlocchiConta();
   if (_g('ap-stage')) { aggiornaAnteprima(); aggiornaInspector(); }
 }
 
@@ -12454,6 +12547,8 @@ function attivaPiattaforma() {
 
   for (const evento of ['input', 'change']) {
     _g('scheda-alert')?.addEventListener(evento, (ev) => {
+      const cont = ev.target.closest('.asp-blocco[data-conta]');
+      if (cont) { leggiBloccoConta(cont.dataset.asp); return; }
       const box = ev.target.closest('[data-cfg], [data-cfg-di]');
       if (!box) return;
       const k = box.dataset.cfg || box.dataset.cfgDi;
