@@ -257,6 +257,32 @@ const discordi = await p.evaluate(async () => {
   return fuori;
 });
 
+// Le maniglie di un elemento devono essere raggiungibili col mouse. Quella di
+// rotazione sporge 78 px SOPRA l'elemento: per chi sta in cima alla tela (un
+// obiettivo al 3%) finiva 7 px fuori dal riquadro, tagliata. E per l'alert era
+// dentro ma un altro elemento le stava sopra e si prendeva il clic.
+const manigliePerse = await p.evaluate(async () => {
+  const fuori = [];
+  for (const e of ELEMENTI()) {
+    if (!_inOverlay(e.k)) continue;
+    seleziona(e.k);
+    await new Promise((r) => setTimeout(r, 110));
+    const n = _nodo(e.k);
+    const tela = document.getElementById('ovl-preview').getBoundingClientRect();
+    for (const h of n.querySelectorAll('.ap-handle')) {
+      const b = h.getBoundingClientRect();
+      if (!b.width) continue;
+      const cx = b.left + b.width / 2, cy = b.top + b.height / 2;
+      const dentro = cx >= tela.left && cx <= tela.right && cy >= tela.top && cy <= tela.bottom;
+      const sopra = document.elementFromPoint(cx, cy);
+      const suo = sopra === h || (sopra && h.contains(sopra));
+      if (!dentro) fuori.push(`${e.k}/${h.className.replace('ap-handle ', '')}: fuori dalla tela`);
+      else if (!suo) fuori.push(`${e.k}/${h.className.replace('ap-handle ', '')}: il clic lo prende ${sopra ? (sopra.className || sopra.tagName) : 'niente'}`);
+    }
+  }
+  return fuori;
+});
+
 await b.close();
 srv.close();
 
@@ -281,6 +307,7 @@ verde = dice(morti.length === 0, `ogni comando arriva alla tela: ${PROVE.length}
 verde = dice(doppioni.length === 0, 'una proprietà ha un valore solo: cursore e casella dicono lo stesso', doppioni.join(' · ')) && verde;
 verde = dice(scordati.length === 0, 'l’annulla riporta indietro qualunque elemento', scordati.join(' · ')) && verde;
 verde = dice(discordi.length === 0, 'livelli, proprietà e piede dicono lo stesso posto', discordi.join(' · ')) && verde;
+verde = dice(manigliePerse.length === 0, 'ogni maniglia è dentro la tela e prende il clic', manigliePerse.join(' · ')) && verde;
 verde = dice(rotture.length === 0, 'nessun errore di pagina', rotture.join(' · ')) && verde;
 
 console.log(verde ? '\ncollaudo verde ✓\n' : '\ncollaudo ROSSO ✗\n');
