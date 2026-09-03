@@ -6693,6 +6693,13 @@ const NOME_ANG = () => ({
   'basso-centro': L('in basso al centro', 'bottom center', 'abajo centro'),
 });
 
+const RUOTA_SU = 78;
+
+function _maniglieAPosto(el, sf, topVisivo) {
+  el.querySelectorAll('.ap-handle').forEach((h) => { h.style.transform = sf === 1 ? 'none' : `scale(${1 / sf})`; });
+  el.querySelector('.ap-h-ruota')?.classList.toggle('sotto', topVisivo < RUOTA_SU);
+}
+
 function _posAncora(el, ang) {
   const a = ANCORA[ang] || ANCORA['basso-destra'];
   const cx = a.x === 50, cy = a.y === 50;
@@ -6702,7 +6709,8 @@ function _posAncora(el, ang) {
   el.style.top = a.y <= 50 ? a.y + '%' : 'auto';
   el.style.bottom = a.y > 50 ? 100 - a.y + '%' : 'auto';
   el.style.transform = cx || cy ? `translate(${cx ? '-50%' : '0'},${cy ? '-50%' : '0'})` : 'none';
-  el.querySelectorAll('.ap-handle').forEach((h) => { h.style.transform = 'none'; });
+  const h = el.offsetHeight;
+  _maniglieAPosto(el, 1, centroDa(a.y, h, OVL_H) - h / 2);
 }
 
 function _centroTela(k) {
@@ -6733,7 +6741,8 @@ function _posElemento(el, xy) {
   el.style.right = 'auto'; el.style.bottom = 'auto';
   el.style.transform = `translate(${-xy.x}%,${-xy.y}%) scale(${sf}) rotate(${r}deg)`;
 
-  el.querySelectorAll('.ap-handle').forEach((h) => { h.style.transform = `scale(${1 / sf})`; });
+  const h = el.offsetHeight;
+  _maniglieAPosto(el, sf, centroDa(xy.y, h, OVL_H) - (h * sf) / 2);
 }
 
 let selezione = null;

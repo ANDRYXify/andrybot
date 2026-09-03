@@ -396,6 +396,26 @@ Il cancello prova tutti e dieci gli elementi: sposta, annulla, controlla che sia
 tornato. Rotto di proposito (togliendo la famiglia `cfg` dall'istantanea) dice
 `musica: annulla lo lascia a 40 invece di 10.74`.
 
+### Una maniglia che non si poteva prendere
+
+La maniglia per ruotare sporge **78 px sopra** l'elemento. Per chi sta in cima
+alla tela — un obiettivo al 3%, il conto alla rovescia — il suo centro finiva
+**7 px fuori dal riquadro**: tagliata, e con lei la rotazione col mouse. Erano
+tre elementi su dieci nella scena di prova. L'alert aveva il problema gemello:
+la maniglia era dentro, ma un contatore le stava sopra e **si prendeva il clic**,
+perche' `z-index: 5` vale dentro l'elemento, non fra elementi diversi.
+
+Una regola per entrambi: *l'elemento che stai modificando sta in cima alla pila,
+e le sue maniglie stanno dentro la tela.* Da cui `.ap-el.sel { z-index: 20 }` —
+quel che stai editando e' anche quel che risponde al mouse — e la maniglia che
+**passa sotto** quando sopra non c'e' spazio (`.sotto`), scelta dove la posizione
+si applica e non a occhio: `centroDa(y, h, OVL_H) − h·s/2 < 78`. Sotto lo spazio
+c'e' per definizione, visto che l'elemento e' in alto.
+
+Il cancello prova ogni maniglia di ogni elemento: il centro dentro il riquadro, e
+`elementFromPoint` su quel centro deve restituire la maniglia stessa — cioe'
+nessuno gliela copre.
+
 ### Un pixel che non arrivava al database
 
 Lo studio muove le cose col pixel: le frecce spostano di **un pixel di tela**, che
