@@ -9,6 +9,10 @@ lo usa: se non si vede da fuori, qui non ci va.
 - Il player è tuo dalla copertina in giù: quadrata, tonda o un vinile che gira, avanzamento come barra o come anello attorno alla copertina, onde che ballano a tempo.
 - E ancora: lo sfondo può prendere la copertina sfocata o i colori del disco che scorrono, il titolo lungo scorre e l'entrata in scena la scegli tu.
 - Il player va a tempo con quello che suona: le onde ballano sul battito vero del brano, e volendo pulsa anche la copertina.
+- Il player non sparisce più mentre la canzone va: un intoppo di Spotify o il vuoto fra due tracce lo spegnevano per un attimo, e poi rientrava.
+- In pausa invece sparisce davvero, se è quello che hai scelto: prima restava lì.
+- Player e conto alla rovescia se ne vanno con una dissolvenza, non di colpo.
+- Le forme con gli angoli tagliati non lasciano più uno spigolo chiaro: l'ombra seguiva il rettangolo invece della forma.
 - La disposizione è tua: copertina a sinistra, a destra, sopra come un poster, o solo la copertina col cerchio che si riempie.
 - Titolo e artista possono stare su due righe, e nei testi si può usare anche il nome dell'album.
 - C'è il conto alla rovescia di inizio diretta: scegli i minuti e parte. Sta nel canale, quindi ricaricare l'overlay o riavviare tutto non lo azzera.

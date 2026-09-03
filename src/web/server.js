@@ -874,14 +874,16 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // qualche secondo, quindi dieci sorgenti browser aperte valgono comunque una
   // chiamata sola: e' il numero di spettatori che non deve pesare su Spotify.
   const musicaCache = new Map();   // login → { ts, dati }
+  const musicaUltima = new Map();  // login → { ts, dati }  l'ultima lettura CERTA
   const MUSICA_CACHE_MS = 4000;
+  const MUSICA_MEMORIA_MS = 60000;
   app.get('/overlay/:login/musica', wrap(async (req, res) => {
     if (!chiaveOk(req)) return notFound(res);
     const login = String(req.params.login).toLowerCase();
     const ora = Date.now();
     const c = musicaCache.get(login);
     if (c && ora - c.ts < MUSICA_CACHE_MS) return res.json(c.dati);
-    let dati = { suona: false };
+    let dati = { stato: 'niente', suona: false };
     try {
       if (spotify.collegato(login)) {
         dati = await spotify.oraSuona(login);
@@ -890,7 +892,15 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
           if (b) { dati.bpm = b.bpm; dati.energia = b.energia; }
         }
       }
-    } catch { dati = { suona: false }; }
+    } catch { dati = { stato: 'ignoto', suona: false }; }
+    // Quando non lo sappiamo si risponde con l'ultima cosa certa, se e' fresca:
+    // un intoppo di un attimo non deve spegnere un player che sta suonando.
+    if (dati.stato === 'ignoto') {
+      const u = musicaUltima.get(login);
+      if (u && ora - u.ts < MUSICA_MEMORIA_MS) dati = u.dati;
+    } else {
+      musicaUltima.set(login, { ts: ora, dati });
+    }
     musicaCache.set(login, { ts: ora, dati });
     res.set('Cache-Control', 'no-store');
     res.json(dati);

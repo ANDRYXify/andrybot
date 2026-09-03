@@ -185,6 +185,23 @@ test('il conto alla rovescia è un istante, non un contatore', () => {
   assert.ok(!/setInterval|setTimeout/.test(corpo), 'e nessun orologio da tenere acceso sul server');
 });
 
+// Le forme spigolose (angolo tagliato, insegna, esagono, nastro, fumetto) non
+// sono un border-radius: sono un clip-path sugli pseudo-elementi. Un box-shadow
+// sull'elemento non lo sa, e disegna l'ombra di un RETTANGOLO: negli angoli
+// tagliati compariva un triangolo con l'ombra ma senza il widget — su fondo
+// chiaro sembrava un buco bianco. L'ombra deve seguire quello che si dipinge
+// davvero, e drop-shadow lo fa.
+test('l’ombra segue la forma, anche quando la forma ha gli angoli tagliati', () => {
+  const i = SKIN.indexOf('.alert-card, .chat-riga, .ovl-widget {');
+  assert.ok(i > 0, 'c’è il blocco comune delle tre vesti');
+  const comune = SKIN.slice(i, SKIN.indexOf('}', i));
+  assert.ok(/filter: drop-shadow/.test(comune), 'l’ombra è un drop-shadow');
+  const j = SKIN.indexOf('.ovl-widget {');
+  const widget = SKIN.slice(j, SKIN.indexOf('}', j));
+  assert.ok(!/box-shadow:\s*(?!inset)/.test(widget), 'e nessuna ombra rettangolare sul widget');
+  assert.ok(/--sagoma: polygon/.test(SKIN), 'le forme spigolose ci sono davvero');
+});
+
 test('un’opacità senza unità spegnerebbe tutti gli sfondi', () => {
   // Il difetto: --op: 85 (senza %) rende invalido color-mix, e l'elemento resta
   // trasparente. Fuori dalla scatola l'overlay non aveva sfondi: né gli alert,

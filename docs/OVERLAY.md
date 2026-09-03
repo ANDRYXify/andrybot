@@ -206,6 +206,50 @@ pulsa come un pezzo tirato. Se Spotify non dà quel dato — l'endpoint non è
 garantito a tutte le app — si torna alle animazioni di prima: **mai un errore a
 schermo per un dettaglio estetico**.
 
+### Quattro stati, non due
+
+Il player spariva **mentre la canzone andava**. Spotify risponde `204` («niente
+in riproduzione») anche per un attimo fra due tracce, e un `429`, un token in
+rinnovo o la rete che sbatte davano lo stesso identico risultato di «non c'è
+musica»: un intoppo di un secondo spegneva il player, che poi rientrava con
+tanto di animazione d'entrata. Un lampeggio.
+
+E il difetto opposto, che nessuno vedeva: **in pausa il player restava**, perché
+«fermo» voleva dire soltanto «non c'è nessun brano».
+
+Gli stati adesso sono quattro e vogliono dire cose diverse:
+
+| stato | cosa vuol dire | cosa fa il player |
+|---|---|---|
+| `suona` | c'è un brano e va | resta, sempre |
+| `pausa` | c'è un brano, fermo | sparisce o resta, come hai scelto |
+| `niente` | non c'è nessun brano | sparisce o resta, ma **dopo una conferma** |
+| `ignoto` | la lettura non è riuscita | non si decide: si tiene quel che c'è |
+
+Su `ignoto` il server risponde con l'ultima lettura certa se ha meno di un
+minuto, e non la mette in cache; l'overlay, dal canto suo, non tocca niente. Su
+`niente` serve una seconda lettura concorde — il vuoto fra due tracce dura meno
+di così. La tolleranza vale solo per **togliere** un player già a schermo: se non
+c'è ancora, non c'è nessun lampeggio da evitare e si decide subito.
+
+E se ne va con una dissolvenza, la simmetrica dell'entrata che hai scelto —
+sparire di colpo è brutto quanto lampeggiare.
+
+`scripts/verifica-player.mjs` misura quella tabella riga per riga, con un finto
+Spotify che passa da «suona» a un intoppo, al vuoto fra due tracce, alla pausa.
+
+### L'ombra sapeva solo fare rettangoli
+
+Le forme spigolose — angolo tagliato, insegna, esagono, nastro, fumetto — non
+sono un `border-radius`: sono un `clip-path` sugli pseudo-elementi che dipingono
+il fondo. Un `box-shadow` sull'elemento non lo sa, e disegna l'ombra di un
+rettangolo: negli angoli tagliati restava un triangolo con l'ombra ma senza il
+widget, che su fondo chiaro sembrava un buco bianco.
+
+L'ombra ora è un `filter: drop-shadow()` sull'elemento, che segue quello che
+viene **effettivamente dipinto**, sagoma compresa. Un test rifiuta il ritorno di
+qualunque ombra rettangolare sui widget.
+
 ### Il colore preso dalla copertina
 
 Si legge l'artwork su una tela di 24 pixel per lato e si media quello che c'è,

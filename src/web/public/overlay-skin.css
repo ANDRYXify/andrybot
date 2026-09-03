@@ -118,7 +118,6 @@
   padding: .4rem .8rem;
   color: var(--fg);
   font-family: var(--font);
-  box-shadow: 0 6px 22px rgba(0, 0, 0, .4);
   white-space: nowrap;
 }
 .ovl-widget .w-ico { width: 20px; height: 20px; color: var(--acc); flex: 0 0 auto; }
@@ -180,6 +179,7 @@
 .alert-card, .chat-riga, .ovl-widget {
   position: relative;
   isolation: isolate;
+  filter: drop-shadow(0 5px 14px rgba(0, 0, 0, .42));
   --sagoma: none;
   --spessore: 0px;
   --maschera: none;
@@ -480,6 +480,22 @@
 .ovl-musica.entra-scivola.dentro { opacity: 1; transform: translateX(0); }
 .ovl-musica.entra-sale { opacity: 0; transform: translateY(14px); transition: opacity .4s ease, transform .45s cubic-bezier(.2, .9, .25, 1); }
 .ovl-musica.entra-sale.dentro { opacity: 1; transform: translateY(0); }
+.ovl-musica.esce {
+  opacity: 0;
+  transition: opacity .34s ease, transform .46s cubic-bezier(.36, 0, .66, -.28), filter .34s ease;
+  filter: blur(2px);
+  pointer-events: none;
+}
+.ovl-musica.entra-dissolve.esce { transform: scale(.94); }
+.ovl-musica.entra-scivola.esce { transform: translateX(-18px) scale(.96); }
+.ovl-musica.verso-riga-inversa.entra-scivola.esce { transform: translateX(18px) scale(.96); }
+.ovl-musica.entra-sale.esce { transform: translateY(16px) scale(.96); }
+.ovl-musica.esce .m-onde i, .ovl-musica.esce .m-disco { animation-play-state: paused; }
+
+.ovl-timer { opacity: 0; transition: opacity .4s ease, transform .45s cubic-bezier(.2, .9, .25, 1); transform: translateY(-8px); }
+.ovl-timer.dentro { opacity: 1; transform: none; }
+.ovl-timer.esce { opacity: 0; transform: translateY(-10px) scale(.96); transition: opacity .34s ease, transform .4s ease; }
+
 .ovl-musica.dim-piccola { --cov: 2.5em; min-width: 11rem; }
 .ovl-musica.dim-grande { --cov: 3.8em; min-width: 16rem; }
 .ovl-musica.dim-piccola.verso-solo-cover { --cov: 3.4em; min-width: 0; }
@@ -498,4 +514,6 @@
   .ovl-musica .m-disco, .ovl-musica .m-onde i, .ovl-musica.scorre .m-scorri, .ovl-timer.finito .t-num,
   .ovl-musica .m-cover, .ovl-musica.cambia .m-corpo, .ovl-musica.sfondo-colori .m-sfondo { animation: none; }
   .ovl-musica[class*="entra-"] { opacity: 1; transform: none; transition: none; }
+  .ovl-musica.esce, .ovl-timer, .ovl-timer.esce { transition: none; }
+  .ovl-timer { opacity: 1; transform: none; }
 }
