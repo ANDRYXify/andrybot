@@ -396,6 +396,43 @@ Il cancello prova tutti e dieci gli elementi: sposta, annulla, controlla che sia
 tornato. Rotto di proposito (togliendo la famiglia `cfg` dall'istantanea) dice
 `musica: annulla lo lascia a 40 invece di 10.74`.
 
+### Le marce: perché spostare sembrava impreciso
+
+Prima di toccare niente, la misura. L'errore del trascinamento — dove il
+puntatore dice che deve andare l'elemento contro dove va davvero — su **81 casi**
+(nove elementi × tre scale × tre rotazioni): **0,00 px**. Il trascinamento non ha
+mai sbagliato un pixel. L'imprecisione era altrove, ed erano tre cose:
+
+| misurato | numero |
+| --- | --- |
+| tela 1920 px disegnata larga 847 → **un pixel di schermo** | **2,26 px di overlay** |
+| zoom massimo 200% → nel migliore dei casi | 1,13 px di overlay |
+| aggancio: chiedendo 2, 5 o 9 px di spostamento l'elemento andava a | 9 px, sempre |
+
+Cioè: **col mouse non si poteva essere precisi al pixel, mai**, nemmeno a zoom
+pieno; e per i primi 8 px di trascinamento l'elemento restava incollato alla
+linea d'aggancio, quindi muovevi il mouse e non ti seguiva. È quello che si sente
+come «poco accurato»: non un errore, una **risoluzione** e un attrito.
+
+Un attrezzo professionale risolve questo con le marce, e adesso ci sono:
+
+- **Ctrl / ⌘ mentre trascini** — il puntatore vale un quinto. Misurato: da 2,26 a
+  **0,40 px di overlay per pixel di schermo**, cioè sotto il pixel. La marcia fine
+  toglie anche l'aggancio, perché chi lavora fine non vuole essere tirato.
+- **Maiusc mentre trascini** — l'elemento resta dritto sull'asse in cui l'hai
+  avviato. L'asse si decide al primo movimento e non cambia finché tieni premuto.
+- **Alt** — niente aggancio, come prima. Soglia scesa da 8 a 6 px di schermo.
+- **Zoom fino al 400%**, perché sotto il 227% un pixel di overlay non è
+  rappresentabile sullo schermo.
+
+E la **rotellina non ridimensiona più da sola**: scorrevi la pagina col puntatore
+sopra la tela e cambiavi misura all'elemento, in silenzio. Ora la misura vuole
+**Alt+rotellina**, la rotazione **Maiusc+rotellina** (con Ctrl il passo è di uno
+invece di quattro), e una rotellina nuda scorre la pagina come ovunque.
+
+Tutte e sei le affermazioni sono un cancello, e il cancello è stato provato rosso
+disattivando la marcia fine e riaprendo la rotellina.
+
 ### Un overlay è una sessione di lavoro
 
 Il prodotto lo dice da sempre: «ogni overlay ha il suo link e il suo layout, es.
