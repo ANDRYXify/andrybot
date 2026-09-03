@@ -41,7 +41,37 @@ for (const f of tracciati) {
   if (marchio) colpevoli.push({ file: f, riga: (testa.split('\n').find((r) => marchio.test(r)) || '').trim().slice(0, 90) });
 }
 
-console.log(`riservatezza  ${tracciati.length} documenti tracciati controllati  ${colpevoli.length ? '' : '✓'}`);
+// Seconda regola, stesso soggetto: cosa arriva al pubblico. Le Novita' NON sono
+// un documento interno — il sito le serve come pagina e stanno pure nella
+// sitemap. Una riga li' puo' dire cosa il prodotto FA adesso; non deve mai dire
+// quale porta era aperta prima. Chi legge le versioni vecchie di una pagina
+// pubblica non deve trovarci la mappa di dove mancavano i controlli.
+const PORTE_APERTE = [
+  /senza (?:verifiche|controlli|pulizia|validazione|filtri)\b/i,
+  /non (?:era|erano|veniva|venivano) (?:controllat|verificat|validat|puliti|filtrat)/i,
+  /(?:chiunque|bastava|si poteva) (?:poteva |)(?:entrare|accedere|scrivere|leggere|iniettare|aggirare)/i,
+  /\b(?:vulnerabil|falla|exploit|bypass|aggirare (?:il |la |i |le |)(?:controll|verific|blocc))/i,
+  /\b(?:xss|csrf|sql inject|injection|iniezione di)\b/i,
+  /(?:chiave|token|segreto|password)\w* (?:espost|in chiaro|visibil)/i,
+];
+const PUBBLICI = ['NOVITA.md'];
+const spifferi = [];
+for (const f of PUBBLICI) {
+  let righe = [];
+  try { righe = readFileSync(f, 'utf8').split('\n'); } catch { continue; }
+  righe.forEach((r, i) => {
+    const re = PORTE_APERTE.find((x) => x.test(r));
+    if (re) spifferi.push({ file: f, n: i + 1, riga: r.trim().slice(0, 100) });
+  });
+}
+
+console.log(`riservatezza  ${tracciati.length} documenti tracciati controllati · ${PUBBLICI.length} pagina pubblica letta  ${colpevoli.length || spifferi.length ? '' : '✓'}`);
+if (spifferi.length) {
+  console.error('\nQueste righe di una pagina PUBBLICA raccontano dov’era il buco:');
+  for (const c of spifferi) console.error(`  · ${c.file}:${c.n}\n      ${c.riga}`);
+  console.error('\nDi’ cosa il prodotto fa adesso, non cosa non faceva prima.');
+  process.exit(1);
+}
 if (colpevoli.length) {
   console.error('\nQuesti si dichiarano privati ma sono su git (il repository è pubblico):');
   for (const c of colpevoli) console.error(`  · ${c.file}\n      ${c.riga}`);
