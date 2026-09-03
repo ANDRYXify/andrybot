@@ -127,7 +127,7 @@ body.vetrina em, body.vetrina .vt-corsivo {
   margin: clamp(1.5rem, 3.4vh, 2.2rem) 0 0;
 }
 .vt-btn {
-  position: relative; overflow: hidden; isolation: isolate;
+  position: relative; isolation: isolate;
   display: inline-flex; align-items: center; justify-content: center; gap: .55rem;
   min-height: 52px; padding: 0 1.6rem; border-radius: var(--ang-mano-l);
   font-family: Archivo, system-ui, sans-serif;
@@ -151,7 +151,7 @@ body.vetrina em, body.vetrina .vt-corsivo {
   box-shadow: var(--alone-contorno), var(--ombra-ink-alta), inset 0 1px 0 rgba(255, 255, 255, .3);
 }
 .vt-btn-primo::after {
-  content: ""; position: absolute; inset: 0; z-index: -1; opacity: 0;
+  content: ""; position: absolute; inset: 0; z-index: -1; opacity: 0; border-radius: inherit; overflow: hidden;
   background-image: radial-gradient(var(--contorno) 1.1px, transparent 1.2px);
   background-size: var(--retino-passo);
   transition: opacity .2s ease;
@@ -469,7 +469,12 @@ body.vetrina em, body.vetrina .vt-corsivo {
 }
 
 .vt-faq { display: grid; gap: 8px; }
-.vt-faq details { border: 1px solid var(--border); border-radius: 12px; background: var(--surface); overflow: hidden; }
+.vt-faq details {
+  border: var(--contorno-sp) solid var(--contorno); border-width: var(--tratto-mano);
+  border-radius: var(--ang-mano-l); background: var(--surface);
+  box-shadow: var(--ombra-ink);
+}
+.vt-faq summary { font-family: var(--mano); }
 .vt-faq summary {
   list-style: none; cursor: pointer; padding: 1rem 1.15rem; font-weight: 600; font-size: .97rem;
   display: flex; align-items: center; gap: .8rem;

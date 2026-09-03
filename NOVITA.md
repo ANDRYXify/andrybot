@@ -64,6 +64,10 @@ lo usa: se non si vede da fuori, qui non ci va.
 - Anche le guide e l'anteprima dei link sono tavole: carta, linee che convergono, retino e lettering disegnato.
 - Il marchio nella schermata di caricamento è dentro la pagina stessa: non lo si chiede più alla rete, quindi non può mancare.
 - Sopra le cose che si cliccano il puntatore diventa un lampo a quattro punte: cambia forma senza rincorrere il mouse, quindi non resta indietro.
+- Passando sopra un pulsante, attorno a lui si allarga una sagoma d'inchiostro, e la stella del puntatore ci si muove dentro.
+- Il lettering del sito è il pennarello del marchio, non un carattere tondo da fumetto per bambini.
+- Se il sito non riesce a caricarsi resta comunque la sua pagina, vestita come tutto il resto, invece di una schermata spoglia.
+- Anche il carattere «manga» che puoi scegliere per l'overlay ora è un pennarello vero.
 - Scegliendo un obiettivo sulla tela le sue proprietà — colori, carattere, forma, cornice, opacità — si aprono lì accanto, come per ogni altro elemento.
 - Trascinare un contatore non lo fa più saltare a metà schermo, e ora si può anche ruotare.
 - L'occhio di «Obiettivo» e «Contatori» funziona davvero: prima si spegneva e al ricaricamento tornava acceso, quindi non si potevano togliere da un overlay.

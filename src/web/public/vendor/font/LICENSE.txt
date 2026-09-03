@@ -10,8 +10,8 @@ incorporata in un sito web.
   https://fonts.google.com/specimen/Instrument+Serif
 - Zen Kaku Gothic New — Copyright (c) Yoshimichi Ohira
   https://fonts.google.com/specimen/Zen+Kaku+Gothic+New
-- Shantell Sans — Copyright (c) Shantell Martin, Anya Danilova, Lisa Huang
-  https://fonts.google.com/specimen/Shantell+Sans
+- Permanent Marker — Copyright (c) Font Diner
+  https://fonts.google.com/specimen/Permanent+Marker
 
 Testo completo della licenza: https://openfontlicense.org/
 (SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007)
