@@ -5633,29 +5633,37 @@ function disegnaGoal() {
   const conti = impostazioni().overlayStato.goals || {};
   const lista = goalBozza();
   const st = (g) => g.stile || {};
-  box.innerHTML = lista.length ? lista.map((g, i) => `<div class="goal-riga" data-goal="${i}" data-goal-id="${esc(g.id)}">
-    <div class="goal-capo">
-      <label class="interruttore mini"><input type="checkbox" data-g="attivo" ${g.attivo !== false ? 'checked' : ''}><span class="levetta"></span></label>
-      <input type="text" class="campo-largo" data-g="titolo" maxlength="60" value="${esc(g.titolo || '')}" placeholder="${L('Titolo (facoltativo)', 'Title (optional)', 'Título (opcional)')}">
-      <span class="goal-ora">${(Number(g.partenza) || 0) + (Number(conti[g.id]) || 0)} / ${Number(g.obiettivo) || 100}</span>
-      <button type="button" class="btn secondario mini" data-g-vesti>${L('Aspetto', 'Look', 'Aspecto')}</button>
-      <button type="button" class="btn pericolo mini" data-g-via>${L('Togli', 'Remove', 'Quitar')}</button>
-    </div>
-    <div class="goal-campi">
-      <label class="campo-num">${L('Conta', 'Count', 'Cuenta')}<select data-g="tipo">${GOAL_TIPI().map(([v, t]) => `<option value="${v}"${g.tipo === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
-      <label class="campo-num">${L('Traguardo', 'Target', 'Meta')}<input type="number" data-g="obiettivo" min="1" max="1000000" value="${Number(g.obiettivo) || 100}"></label>
-      <label class="campo-num">${L('Parte da', 'Starts at', 'Empieza en')}<input type="number" data-g="partenza" min="0" max="1000000" value="${Number(g.partenza) || 0}"></label>
-      <button type="button" class="btn secondario mini" data-g-adesso>${L('Quanti ne ho adesso', 'How many I have now', 'Cuántos tengo ahora')}</button>
-      <label class="campo-num">${L('Dove', 'Where', 'Dónde')}<select data-g="posizione">${GOAL_ANGOLI().map(([v, t]) => `<option value="${v}"${g.posizione === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
-      <button type="button" class="btn secondario mini" data-g-azzera>${L('Riparti da zero', 'Start over', 'Empezar de cero')}</button>
-    </div>
+  box.innerHTML = lista.length ? lista.map((g, i) => `<div class="goal-voce" data-goal-id="${esc(g.id)}">
+    <label class="interruttore mini"><input type="checkbox" data-g="attivo" ${g.attivo !== false ? 'checked' : ''}><span class="levetta"></span></label>
+    <span class="goal-voce-nome">${esc(nomeGoal(g, i))}</span>
+    <span class="goal-ora">${(Number(g.partenza) || 0) + (Number(conti[g.id]) || 0)} / ${Number(g.obiettivo) || 100}</span>
+    <button type="button" class="btn secondario mini" data-g-vesti>${L('Modifica', 'Edit', 'Editar')}</button>
+    <button type="button" class="btn pericolo mini" data-g-via>${L('Togli', 'Remove', 'Quitar')}</button>
   </div>`).join('')
     : `<p class="vuoto">${L('Nessun obiettivo. Aggiungine uno: puoi averne quanti ne vuoi.', 'No goals. Add one: you can have as many as you like.', 'Ningún objetivo. Añade uno: puedes tener los que quieras.')}</p>`;
 
   const vesti = document.getElementById('goal-vesti');
+  if (vesti && vesti.dataset.pieno === JSON.stringify(lista.map((g) => g.id))) { disegnaVociGoal(); return; }
   if (vesti) {
-    vesti.innerHTML = lista.map((g, i) => `<div class="asp-blocco goal-vesti" data-asp="goal:${esc(g.id)}" data-goal-id="${esc(g.id)}" hidden>
-      <h4>${L('Aspetto', 'Appearance', 'Aspecto')} <span class="tenue">— ${esc(nomeGoal(g, i))}</span></h4>
+    vesti.dataset.pieno = JSON.stringify(lista.map((g) => g.id));
+    vesti.innerHTML = lista.map((g, i) => `<div class="asp-blocco el-blocco goal-vesti" data-asp="goal:${esc(g.id)}" data-goal-id="${esc(g.id)}" hidden>
+      <div class="riga-interruttore">
+        <label class="interruttore"><input type="checkbox" data-g="attivo" ${g.attivo !== false ? 'checked' : ''}><span class="levetta"></span></label>
+        <span class="etichetta-stato">${L('Obiettivo acceso', 'Goal on', 'Objetivo encendido')}</span>
+      </div>
+      <label class="campo">${L('Titolo', 'Title', 'Título')} <span class="tenue">${L('facoltativo', 'optional', 'opcional')}</span></label>
+      <input type="text" data-g="titolo" maxlength="60" value="${esc(g.titolo || '')}" placeholder="${L('Obiettivo', 'Goal', 'Objetivo')} ${i + 1}">
+      <div class="goal-campi">
+        <label class="campo-num">${L('Conta', 'Count', 'Cuenta')}<select data-g="tipo">${GOAL_TIPI().map(([v, t]) => `<option value="${v}"${g.tipo === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+        <label class="campo-num">${L('Traguardo', 'Target', 'Meta')}<input type="number" data-g="obiettivo" min="1" max="1000000" value="${Number(g.obiettivo) || 100}"></label>
+        <label class="campo-num">${L('Parte da', 'Starts at', 'Empieza en')}<input type="number" data-g="partenza" min="0" max="1000000" value="${Number(g.partenza) || 0}"></label>
+        <label class="campo-num">${L('Dove', 'Where', 'Dónde')}<select data-g="posizione">${GOAL_ANGOLI().map(([v, t]) => `<option value="${v}"${g.posizione === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+      </div>
+      <div class="riga-flessibile">
+        <button type="button" class="btn secondario mini" data-g-adesso>${L('Quanti ne ho adesso', 'How many I have now', 'Cuántos tengo ahora')}</button>
+        <button type="button" class="btn secondario mini" data-g-azzera>${L('Riparti da zero', 'Start over', 'Empezar de cero')}</button>
+      </div>
+      <h4>${L('Aspetto', 'Appearance', 'Aspecto')}</h4>
       <div class="goal-campi">
         <label class="campo-num">${L('Dimensione', 'Size', 'Tamaño')}<select data-g="stile.dim">${[['piccola', L('piccola', 'small', 'pequeña')], ['media', L('media', 'medium', 'media')], ['grande', L('grande', 'large', 'grande')]].map(([v, t]) => `<option value="${v}"${(st(g).dim || 'media') === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
         <label class="campo-num">${L('Carattere', 'Font', 'Fuente')}<select data-g="stile.font">${GOAL_FONT.map((v) => `<option value="${v}"${(st(g).font || 'sistema') === v ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
@@ -5670,12 +5678,23 @@ function disegnaGoal() {
         <label class="campo-num">${L('Angoli', 'Corners', 'Esquinas')}<input type="number" data-g="stile.bordoRaggio" min="0" max="30" value="${st(g).bordoRaggio != null ? st(g).bordoRaggio : 12}"></label>
       </div>
       <div class="goal-campi">
-        <label class="campo-num">${L('Forma', 'Shape', 'Forma')}<select data-g="stile.forma">${['carta', 'pillola', 'squadrata', 'taglio'].map((v) => `<option value="${v}"${(st(g).forma || 'carta') === v ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
-        <label class="campo-num">${L('Materia', 'Material', 'Material')}<select data-g="stile.materia">${['piatta', 'sfumata', 'vetro', 'neon'].map((v) => `<option value="${v}"${(st(g).materia || 'piatta') === v ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
-        <label class="campo-num">${L('Cornice', 'Frame', 'Marco')}<select data-g="stile.cornice">${['nessuna', 'linea', 'spessa', 'angoli'].map((v) => `<option value="${v}"${(st(g).cornice || 'nessuna') === v ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
+        <label class="campo-num">${L('Forma', 'Shape', 'Forma')}<select data-g="stile.forma">${FORMA_OPTS().map(([v, t]) => `<option value="${v}"${(st(g).forma || 'carta') === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+        <label class="campo-num">${L('Materia', 'Material', 'Material')}<select data-g="stile.materia">${MATERIA_OPTS().map(([v, t]) => `<option value="${v}"${(st(g).materia || 'piatta') === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+        <label class="campo-num">${L('Cornice', 'Frame', 'Marco')}<select data-g="stile.cornice">${CORNICE_OPTS().map(([v, t]) => `<option value="${v}"${(st(g).cornice || 'nessuna') === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
       </div>
     </div>`).join('');
     if (!document.getElementById('ovl-aspetto')) vesti.querySelectorAll('.goal-vesti').forEach((b) => { b.hidden = false; });
+    else for (const b of vesti.querySelectorAll('.goal-vesti')) aFisarmonica(b);
+  }
+}
+
+function disegnaVociGoal() {
+  const conti = impostazioni().overlayStato.goals || {};
+  for (const [i, g] of goalBozza().entries()) {
+    const v = document.querySelector(`.goal-voce[data-goal-id="${CSS.escape(g.id)}"]`);
+    if (!v) continue;
+    v.querySelector('.goal-voce-nome').textContent = nomeGoal(g, i);
+    v.querySelector('.goal-ora').textContent = ((Number(g.partenza) || 0) + (Number(conti[g.id]) || 0)) + ' / ' + (Number(g.obiettivo) || 100);
   }
 }
 
@@ -12592,10 +12611,12 @@ function attivaPiattaforma() {
   });
 
   for (const evento of ['input', 'change']) {
-    document.getElementById('lista-goal')?.addEventListener(evento, () => {
+    _g('scheda-alert')?.addEventListener(evento, (ev) => {
+      if (!ev.target.closest('[data-goal-id]')) return;
       leggiGoalDalForm();
       aggiornaAnteprima();
-      aggiornaInspector();
+      _rendiLivelli();
+      disegnaVociGoal();
       salvaGoalDaScena();
     });
   }
@@ -12635,10 +12656,11 @@ function attivaPiattaforma() {
     toast(L('Conto alla rovescia fermo.', 'Countdown stopped.', 'Cuenta atrás parada.'));
   }));
 
-  document.getElementById('lista-goal')?.addEventListener('click', (ev) => {
-    const riga = ev.target.closest('.goal-riga');
-    if (!riga) return;
-    const i = Number(riga.dataset.goal);
+  _g('scheda-alert')?.addEventListener('click', (ev) => {
+    const riga = ev.target.closest('[data-goal-id]');
+    if (!riga || !ev.target.closest('[data-g-adesso], [data-g-vesti], [data-g-via], [data-g-azzera]')) return;
+    const i = goalBozza().findIndex((g) => g.id === riga.dataset.goalId);
+    if (i < 0) return;
     if (ev.target.closest('[data-g-adesso]')) {
       leggiGoalDalForm();
       const g = goalBozza()[i];

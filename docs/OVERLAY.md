@@ -335,6 +335,11 @@ per-elemento e lo porta nel blocco di quell'elemento; la carta rimasta vuota si
 nasconde. Sotto la tela restano solo le cose che non sono elementi: il link per
 OBS, gli overlay multipli, il CSS avanzato, i caratteri tuoi.
 
+Gli **obiettivi** erano rimasti a metà: l'aspetto nel pannello, ma conta,
+traguardo, partenza e angolo ancora nella carta sotto. Ora il blocco di un
+obiettivo è completo e nell'elenco sotto resta quello che serve per gestire la
+lista: nome, conteggio, «Modifica», «Togli».
+
 I **contatori** non avevano proprio dei comandi lì: si vestivano dalla scheda
 Comandi, un'altra scheda ancora. Ora hanno il loro blocco come tutti — cosa
 scrivono, colori, carattere, con o senza sfondo — costruito dalla lista che il
@@ -358,6 +363,18 @@ E il collaudo non l'aveva visto perché guardava `b.hidden`, cioè **l'attributo
 non quello che si vede. Ora misura la visibilità reale (`offsetParent`), che è
 la cosa di cui si sta parlando. La regola per costruzione: chi può ricevere
 `hidden` non prende un `display` senza `:not([hidden])`.
+
+### Il difetto che si crea spostando il markup
+
+Spostare un comando in un altro posto **scollega il gestore** che lo ascoltava:
+il campo resta bello e non fa più niente, senza un errore da nessuna parte. È
+successo due volte in questa sessione, e la seconda l'ha trovata il collaudo:
+il listener degli obiettivi era agganciato a `#lista-goal`, e i campi si erano
+spostati nel pannello.
+
+Il collaudo ora tocca un comando per ogni tipo di elemento — player, conto alla
+rovescia, chat, obiettivo, contatore — e verifica che **l'anteprima cambi
+davvero**.
 
 Il collaudo verifica la cosa per intero: per **ogni** elemento della scena, che
 scegliendolo si vedano i suoi comandi e nient'altro (non due blocchi, non quello

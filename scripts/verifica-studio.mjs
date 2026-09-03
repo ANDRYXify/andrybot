@@ -149,6 +149,33 @@ const rimasti = await p.evaluate(() => document.querySelectorAll(
   '#sez-alert input, #sez-chat input, #sez-musica input, #sez-timer input,'
   + ' #sez-alert select, #sez-chat select, #sez-musica select, #sez-timer select').length);
 
+// I COMANDI DEVONO ARRIVARE ALLA TELA. Spostare il markup di un comando in un
+// altro posto scollega il gestore che lo ascoltava: il campo resta bello ma non
+// fa piu' niente, e non c'e' errore da nessuna parte. Qui si tocca un comando
+// per ogni tipo di elemento e si controlla che l'anteprima cambi davvero.
+const PROVE = [
+  ['musica', '[data-c="cover"]', 'vinile', () => document.querySelector('#ap-musica .ovl-musica').className, 'cover-vinile'],
+  ['timer', '[data-c="titolo"]', 'Manca poco', () => document.querySelector('#ap-timer .t-tit').textContent, 'Manca poco'],
+  ['chat', '#co-pos', 'basso-destra', () => document.querySelector('#ap-chat').className, 'destra'],
+  ['goal:g1', '[data-goal-id="g1"] [data-g="obiettivo"]', '900', () => document.querySelector('#ap-goal-g1 .g-num').textContent, '/ 900'],
+  ['cont:morti', '[data-asp="cont:morti"] [data-k="formato"]', 'MORTI = {valore}', () => document.querySelector('#ap-cont-morti .contatore-widget').textContent, 'MORTI'],
+];
+const morti = [];
+for (const [k, sel, val, leggi, atteso] of PROVE) {
+  const r = await p.evaluate(async ([kk, s2, v, fn]) => {
+    seleziona(kk);
+    await new Promise((r) => setTimeout(r, 140));
+    const el = document.querySelector(s2);
+    if (!el) return { errore: 'campo assente' };
+    el.value = v;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 260));
+    try { return { visto: String(eval('(' + fn + ')')()) }; } catch (e) { return { errore: 'anteprima assente' }; }
+  }, [k, sel, val, leggi.toString()]);
+  if (r.errore || !r.visto.includes(atteso)) morti.push(`${k} ${sel}: ${r.errore || r.visto.slice(0, 40)}`);
+}
+
 // L'occhio di un livello: cliccarlo toglie l'elemento dall'overlay E si vede
 // che l'ha fatto. Prima l'elemento spariva ma l'occhio restava aperto.
 const occhio = await p.evaluate(async () => {
@@ -185,6 +212,7 @@ verde = dice(incoerenti.length === 0, `scegliendo un elemento si vedono solo i s
 verde = dice(dopoScelta.visti === 0 && dopoScelta.sel === 0 && dopoScelta.chiuso,
   'e lasciandolo non resta niente acceso', JSON.stringify(dopoScelta)) && verde;
 verde = dice(rimasti === 0, 'nessun comando dimenticato sotto la tela', `${rimasti} campi rimasti giù`) && verde;
+verde = dice(morti.length === 0, `ogni comando arriva alla tela: ${PROVE.length} provati`, morti.join(' · ')) && verde;
 verde = dice(rotture.length === 0, 'nessun errore di pagina', rotture.join(' · ')) && verde;
 
 console.log(verde ? '\ncollaudo verde ✓\n' : '\ncollaudo ROSSO ✗\n');
