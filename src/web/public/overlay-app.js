@@ -522,7 +522,7 @@ function connetti() {
     else if (dati.tipo === 'alert') alert(dati);
     else if (dati.tipo === 'chat') chat(dati);
     else if (dati.tipo === 'widget') { if (mostra(dati.id === 'ultimoSub' ? 'ws' : 'wf')) widget(dati.id, (MIO.widget && MIO.widget[dati.id]) || dati.cfg, dati.valore); }
-    else if (dati.tipo === 'goal') { MIO.goal = { ...(MIO.goal || {}), ...(dati.cfg || {}) }; goal(MIO.goal, dati.valore); }
+    else if (dati.tipo === 'goal') { MIO.goals = Array.isArray(dati.goals) ? dati.goals : MIO.goals; goal(MIO.goals, dati.conti || {}); }
     else if (dati.tipo === 'tema') caricaTema();
     else if (dati.tipo === 'testo') { if (mostra('effetti')) mostraTesto(dati); }
     else if (dati.tipo === 'contatore') contatore(dati);
@@ -558,38 +558,44 @@ function contatore(d) {
 }
 
 const GOAL_ETICHETTA = { follower: 'follower', sub: 'sub', bit: 'bit' };
-let goalEl = null;
 
-function goal(cfg, valore) {
-  cfg = cfg || {};
-  if (!cfg.attivo || !mostra('goal')) { if (goalEl) { goalEl.remove(); goalEl = null; } return; }
-  if (!goalEl) {
-    goalEl = document.createElement('div');
-    goalEl.className = 'ovl-widget ovl-goal';
-    goalEl.innerHTML = '<div class="g-testa"><span class="g-tit"></span><span class="g-num"></span></div>'
+const goalEl = {};
+
+function unGoal(cfg, valore) {
+  const id = cfg.id;
+  let el = goalEl[id];
+  if (!cfg.attivo || !mostra('goal')) { if (el) { el.remove(); delete goalEl[id]; } return; }
+  if (!el) {
+    el = document.createElement('div');
+    el.innerHTML = '<div class="g-testa"><span class="g-tit"></span><span class="g-num"></span></div>'
       + '<div class="g-barra"><i></i></div>';
-    (wboxes[cfg.posizione] || wboxes['alto-sinistra'] || document.body).appendChild(goalEl);
+    goalEl[id] = el;
   }
-  const xy = MIO.xy.goal;
+  (wboxes[cfg.posizione] || wboxes['alto-sinistra'] || document.body).appendChild(el);
+  const st = cfg.stile || {};
+  el.className = 'ovl-widget ovl-goal dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');
+  const xy = cfg.xy;
   if (xy && xy.x != null) {
     const sc = (Number(xy.s) || 100) / 100, r = Number(xy.r) || 0;
-    goalEl.style.position = 'fixed'; goalEl.style.left = xy.x + '%'; goalEl.style.top = xy.y + '%';
-    goalEl.style.transform = 'translate(' + (-xy.x) + '%,' + (-xy.y) + '%) scale(' + sc + ') rotate(' + r + 'deg)';
-  }
-  const st = cfg.stile || {};
-  goalEl.className = 'ovl-widget ovl-goal dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');
-  applicaVars(goalEl, {
+    el.style.position = 'fixed'; el.style.left = xy.x + '%'; el.style.top = xy.y + '%';
+    el.style.transform = 'translate(' + (-xy.x) + '%,' + (-xy.y) + '%) scale(' + sc + ') rotate(' + r + 'deg)';
+  } else { el.style.position = ''; el.style.left = ''; el.style.top = ''; el.style.transform = ''; }
+  applicaVars(el, {
     '--bg': st.sfondo, '--op': st.opacita != null ? st.opacita + '%' : null, '--fg': st.testo,
     '--acc': st.accento, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null, '--font': fontDi(st) || null,
   });
   const meta = Math.max(1, Number(cfg.obiettivo) || 100);
   const ora = Math.max(0, Number(valore) || 0);
-  const quota = Math.min(100, Math.round((ora / meta) * 100));
-  const eti = GOAL_ETICHETTA[cfg.tipo] || '';
-  goalEl.querySelector('.g-tit').textContent = cfg.titolo || eti;
-  goalEl.querySelector('.g-num').textContent = ora + ' / ' + meta;
-  goalEl.querySelector('.g-barra i').style.width = quota + '%';
-  goalEl.classList.toggle('pieno', ora >= meta);
+  el.querySelector('.g-tit').textContent = cfg.titolo || GOAL_ETICHETTA[cfg.tipo] || '';
+  el.querySelector('.g-num').textContent = ora + ' / ' + meta;
+  el.querySelector('.g-barra i').style.width = Math.min(100, Math.round((ora / meta) * 100)) + '%';
+  el.classList.toggle('pieno', ora >= meta);
+}
+
+function goal(lista, conti) {
+  const vivi = new Set();
+  for (const g of (Array.isArray(lista) ? lista : [])) { vivi.add(g.id); unGoal(g, (conti || {})[g.id]); }
+  for (const id of Object.keys(goalEl)) if (!vivi.has(id)) { goalEl[id].remove(); delete goalEl[id]; }
 }
 
 function applicaTema(t) {
@@ -605,8 +611,8 @@ function applicaTema(t) {
 
   widget('ultimoFollower', mostra('wf') ? w.ultimoFollower : { attivo: false }, stato.ultimoFollower);
   widget('ultimoSub', mostra('ws') ? w.ultimoSub : { attivo: false }, stato.ultimoSub);
-  MIO.goal = t.goal || null;
-  goal(MIO.goal, (stato.goal || {})[(MIO.goal || {}).tipo]);
+  MIO.goals = Array.isArray(t.goals) ? t.goals : [];
+  goal(MIO.goals, t.conti || stato.goals || {});
 }
 
 async function caricaTema() {

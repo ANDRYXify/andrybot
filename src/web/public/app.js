@@ -112,7 +112,10 @@ function impostazioni() {
     watchtime: (s.watchtime && typeof s.watchtime === 'object') ? s.watchtime : { attivo: true },
     comandiBase: (s.comandiBase && typeof s.comandiBase === 'object') ? s.comandiBase : { attivo: true },
     tracking: (s.tracking && typeof s.tracking === 'object') ? s.tracking : { attivo: true, giochi: true, mappa: {} },
-    overlayGoal: { attivo: false, tipo: 'follower', obiettivo: 100, titolo: '', ...(s.overlayGoal && typeof s.overlayGoal === 'object' ? s.overlayGoal : {}) },
+    overlayGoals: Array.isArray(s.overlayGoals) ? s.overlayGoals
+      : (s.overlayGoal && typeof s.overlayGoal === 'object'
+        ? [{ id: 'g1', attivo: !!s.overlayGoal.attivo, tipo: s.overlayGoal.tipo || 'follower', obiettivo: Number(s.overlayGoal.obiettivo) || 100, titolo: s.overlayGoal.titolo || '', posizione: 'alto-sinistra', xy: null, stile: {} }]
+        : []),
     overlayStato: (s.overlayStato && typeof s.overlayStato === 'object') ? s.overlayStato : {},
     grafiche: (s.grafiche && typeof s.grafiche === 'object') ? s.grafiche : null,
     tiktok: (s.tiktok && typeof s.tiktok === 'object') ? s.tiktok : { username: '', attivo: false, annunciaChat: false, messaggio: '', postAttivo: false, postAnnunciaChat: false, postMessaggio: '' },
@@ -5549,14 +5552,88 @@ function bloccoWidget(pref, w, titolo, kind) {
     </div>`;
 }
 
-function mostraGoalOra() {
-  const el = document.getElementById('goal-ora');
-  if (!el) return;
-  const p = impostazioni();
-  const conti = p.overlayStato.goal || {};
-  const ora = Number(conti[p.overlayGoal.tipo]) || 0;
-  el.textContent = ora + ' / ' + (Number(p.overlayGoal.obiettivo) || 100);
+const GOAL_FONT = ['sistema', 'rotondo', 'condensato', 'mono', 'serif', 'manga'];
+
+const GOAL_TIPI = () => [
+  ['follower', L('follower', 'followers', 'followers')],
+  ['sub', L('abbonati', 'subs', 'subs')],
+  ['bit', L('bit', 'bits', 'bits')],
+];
+const GOAL_ANGOLI = () => [
+  ['alto-sinistra', L('in alto a sinistra', 'top left', 'arriba izquierda')],
+  ['alto-destra', L('in alto a destra', 'top right', 'arriba derecha')],
+  ['basso-sinistra', L('in basso a sinistra', 'bottom left', 'abajo izquierda')],
+  ['basso-destra', L('in basso a destra', 'bottom right', 'abajo derecha')],
+];
+
+let _goalBozza = null;
+
+function goalBozza() {
+  if (!_goalBozza) _goalBozza = JSON.parse(JSON.stringify(impostazioni().overlayGoals || []));
+  return _goalBozza;
 }
+
+function goalNuovo() {
+  const usati = new Set(goalBozza().map((g) => g.id));
+  let n = 1;
+  while (usati.has('g' + n)) n++;
+  return { id: 'g' + n, attivo: true, tipo: 'follower', obiettivo: 100, titolo: '',
+    posizione: 'alto-sinistra', xy: null,
+    stile: { dim: 'media', sfondo: '#0f0f14', opacita: 85, testo: '#ffffff', accento: '#f72fa7', bordoRaggio: 12, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'nessuna' } };
+}
+
+function disegnaGoal() {
+  const box = document.getElementById('lista-goal');
+  if (!box) return;
+  const conti = impostazioni().overlayStato.goals || {};
+  const lista = goalBozza();
+  const st = (g) => g.stile || {};
+  box.innerHTML = lista.length ? lista.map((g, i) => `<div class="goal-riga" data-goal="${i}">
+    <div class="goal-capo">
+      <label class="interruttore mini"><input type="checkbox" data-g="attivo" ${g.attivo !== false ? 'checked' : ''}><span class="levetta"></span></label>
+      <input type="text" class="campo-largo" data-g="titolo" maxlength="60" value="${esc(g.titolo || '')}" placeholder="${L('Titolo (facoltativo)', 'Title (optional)', 'Título (opcional)')}">
+      <span class="goal-ora">${Number(conti[g.id]) || 0} / ${Number(g.obiettivo) || 100}</span>
+      <button type="button" class="btn pericolo mini" data-g-via>${L('Togli', 'Remove', 'Quitar')}</button>
+    </div>
+    <div class="goal-campi">
+      <label class="campo-num">${L('Conta', 'Count', 'Cuenta')}<select data-g="tipo">${GOAL_TIPI().map(([v, t]) => `<option value="${v}"${g.tipo === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+      <label class="campo-num">${L('Traguardo', 'Target', 'Meta')}<input type="number" data-g="obiettivo" min="1" max="1000000" value="${Number(g.obiettivo) || 100}"></label>
+      <label class="campo-num">${L('Dove', 'Where', 'Dónde')}<select data-g="posizione">${GOAL_ANGOLI().map(([v, t]) => `<option value="${v}"${g.posizione === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+      <label class="campo-num">${L('Dimensione', 'Size', 'Tamaño')}<select data-g="stile.dim">${[['piccola', L('piccola', 'small', 'pequeña')], ['media', L('media', 'medium', 'media')], ['grande', L('grande', 'large', 'grande')]].map(([v, t]) => `<option value="${v}"${(st(g).dim || 'media') === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+    </div>
+    <div class="goal-campi">
+      <label class="campo-num">${L('Testo', 'Text', 'Texto')}<input type="color" data-g="stile.testo" value="${esc(st(g).testo || '#ffffff')}"></label>
+      <label class="campo-num">${L('Sfondo', 'Background', 'Fondo')}<input type="color" data-g="stile.sfondo" value="${esc(st(g).sfondo || '#0f0f14')}"></label>
+      <label class="campo-num">${L('Barra', 'Bar', 'Barra')}<input type="color" data-g="stile.accento" value="${esc(st(g).accento || '#f72fa7')}"></label>
+      <label class="campo-num">${L('Opacità', 'Opacity', 'Opacidad')}<input type="number" data-g="stile.opacita" min="0" max="100" value="${st(g).opacita != null ? st(g).opacita : 85}"></label>
+      <label class="campo-num">${L('Angoli', 'Corners', 'Esquinas')}<input type="number" data-g="stile.bordoRaggio" min="0" max="30" value="${st(g).bordoRaggio != null ? st(g).bordoRaggio : 12}"></label>
+      <label class="campo-num">${L('Carattere', 'Font', 'Fuente')}<select data-g="stile.font">${GOAL_FONT.map((v) => `<option value="${v}"${(st(g).font || 'sistema') === v ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
+    </div>
+    <div class="goal-campi">
+      <label class="campo-num">${L('Forma', 'Shape', 'Forma')}<select data-g="stile.forma">${['carta', 'pillola', 'squadrata', 'taglio'].map((v) => `<option value="${v}"${(st(g).forma || 'carta') === v ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
+      <label class="campo-num">${L('Materia', 'Material', 'Material')}<select data-g="stile.materia">${['piatta', 'sfumata', 'vetro', 'neon'].map((v) => `<option value="${v}"${(st(g).materia || 'piatta') === v ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
+      <label class="campo-num">${L('Cornice', 'Frame', 'Marco')}<select data-g="stile.cornice">${['nessuna', 'linea', 'spessa', 'angoli'].map((v) => `<option value="${v}"${(st(g).cornice || 'nessuna') === v ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
+      <button type="button" class="btn secondario mini" data-g-azzera>${L('Riparti da zero', 'Start over', 'Empezar de cero')}</button>
+    </div>
+  </div>`).join('')
+    : `<p class="vuoto">${L('Nessun obiettivo. Aggiungine uno: puoi averne quanti ne vuoi.', 'No goals. Add one: you can have as many as you like.', 'Ningún objetivo. Añade uno: puedes tener los que quieras.')}</p>`;
+}
+
+function leggiGoalDalForm() {
+  const lista = goalBozza();
+  document.querySelectorAll('#lista-goal .goal-riga').forEach((riga) => {
+    const g = lista[Number(riga.dataset.goal)];
+    if (!g) return;
+    riga.querySelectorAll('[data-g]').forEach((c) => {
+      const via = c.dataset.g.split('.');
+      const val = c.type === 'checkbox' ? c.checked : (c.type === 'number' ? Number(c.value) : c.value);
+      if (via.length === 2) { g[via[0]] = g[via[0]] || {}; g[via[0]][via[1]] = val; }
+      else g[via[0]] = val;
+    });
+  });
+  return lista;
+}
+
 
 function ovlElemento(k, ico, nome, sez) {
   const mirabile = ['alert', 'chat', 'wf', 'ws', 'goal'].includes(k);
@@ -5690,27 +5767,12 @@ function pannelloAlert() {
     </div>
 
     <details class="carta sez" data-parte="aspetto" id="sez-goal">
-      <summary><h3>${_hIco(ICO.trofeo)}${L('Obiettivo', 'Goal', 'Objetivo')}</h3></summary>
-      <p>${L('Una barra che si riempie da sola mentre arrivano follower, sub o bit. Il conto è quello vero: lo tiene il bot contando gli eventi, e resta al suo posto anche se riavvii tutto.', 'A bar that fills by itself as followers, subs or bits come in. The count is the real one: the bot keeps it by counting events, and it survives a restart.', 'Una barra que se llena sola mientras llegan followers, subs o bits. La cuenta es la real: la lleva el bot contando eventos, y sobrevive a un reinicio.')}</p>
-      <div class="riga-interruttore spazio-sopra">
-        <label class="interruttore"><input type="checkbox" id="goal-attivo" ${go.attivo ? 'checked' : ''}><span class="levetta"></span></label>
-        <span class="etichetta-stato">${L('Mostra l’obiettivo', 'Show the goal', 'Mostrar el objetivo')}</span>
-      </div>
-      <div class="riga-flessibile spazio-sopra">
-        <label class="campo-num">${L('Conta', 'Count', 'Cuenta')}
-          <select id="goal-tipo">
-            <option value="follower"${go.tipo === 'follower' ? ' selected' : ''}>${L('follower', 'followers', 'followers')}</option>
-            <option value="sub"${go.tipo === 'sub' ? ' selected' : ''}>${L('abbonati', 'subs', 'subs')}</option>
-            <option value="bit"${go.tipo === 'bit' ? ' selected' : ''}>${L('bit', 'bits', 'bits')}</option>
-          </select></label>
-        <label class="campo-num">${L('Traguardo', 'Target', 'Meta')}<input type="number" id="goal-obiettivo" min="1" max="1000000" value="${Number(go.obiettivo) || 100}"></label>
-      </div>
-      <label class="campo spazio-sopra" for="goal-titolo">${L('Titolo (facoltativo)', 'Title (optional)', 'Título (opcional)')}</label>
-      <input type="text" id="goal-titolo" maxlength="60" value="${esc(go.titolo || '')}" placeholder="${L('es. 100 follower e cambio sfondo', 'e.g. 100 followers and I change the background', 'p. ej. 100 followers y cambio el fondo')}">
-      <p class="suggerimento spazio-sopra">${L('A che punto sei:', 'Where you are:', 'Por dónde vas:')} <strong id="goal-ora">—</strong></p>
+      <summary><h3>${_hIco(ICO.trofeo)}${L('Obiettivi', 'Goals', 'Objetivos')}</h3></summary>
+      <p>${L('Barre che si riempiono da sole mentre arrivano follower, sub o bit. Quanti ne vuoi, ognuno col suo traguardo, il suo posto e il suo aspetto. Il conto è quello vero: lo tiene il bot contando gli eventi, e resta al suo posto anche se riavvii tutto.', 'Bars that fill by themselves as followers, subs or bits come in. As many as you like, each with its own target, place and look. The count is the real one: the bot keeps it by counting events, and it survives a restart.', 'Barras que se llenan solas mientras llegan followers, subs o bits. Tantas como quieras, cada una con su meta, su sitio y su aspecto. La cuenta es la real: la lleva el bot contando eventos, y sobrevive a un reinicio.')}</p>
+      <div id="lista-goal" class="goal-lista"></div>
       <p class="spazio-sopra">
+        <button class="btn secondario" id="btn-agg-goal">${_bIco(ICO.piu)}${L('Aggiungi obiettivo', 'Add a goal', 'Añadir objetivo')}</button>
         <button class="btn" id="btn-salva-goal">${L('Salva', 'Save', 'Guardar')}</button>
-        <button class="btn secondario" id="btn-azzera-goal">${L('Riparti da zero', 'Start over', 'Empezar de cero')}</button>
       </p>
     </details>
     <details class="carta sez" data-parte="aspetto" id="sez-alert">
@@ -11805,22 +11867,37 @@ function attivaPiattaforma() {
   document.getElementById('btn-salva-gcmd')?.addEventListener('click', salvaGiochiComandi);
 
   document.getElementById('btn-salva-goal')?.addEventListener('click', () => conErrore(async () => {
-    await salvaImpostazioni({ overlayGoal: {
-      attivo: document.getElementById('goal-attivo').checked,
-      tipo: document.getElementById('goal-tipo').value,
-      obiettivo: Number(document.getElementById('goal-obiettivo').value),
-      titolo: document.getElementById('goal-titolo').value.trim(),
-    } }, L('Obiettivo salvato', 'Goal saved', 'Objetivo guardado'));
-    mostraGoalOra();
+    await salvaImpostazioni({ overlayGoals: leggiGoalDalForm() }, L('Obiettivi salvati', 'Goals saved', 'Objetivos guardados'));
+    _goalBozza = null;
+    disegnaGoal();
   }));
 
-  document.getElementById('btn-azzera-goal')?.addEventListener('click', () => conErrore(async () => {
-    if (!confirm(L('Far ripartire l\'obiettivo da zero?', 'Start the goal over from zero?', '¿Empezar el objetivo de cero?'))) return;
-    await api('/api/streamer/goal/azzera', { method: 'POST', body: {} });
-    stato = await api('/api/me');
-    mostraGoalOra();
-    toast(L('Obiettivo azzerato.', 'Goal reset.', 'Objetivo puesto a cero.'));
-  }));
+  document.getElementById('btn-agg-goal')?.addEventListener('click', () => {
+    leggiGoalDalForm();
+    if (_goalBozza.length >= 6) { toast(L('Sei obiettivi sono il massimo.', 'Six goals is the maximum.', 'Seis objetivos es el máximo.'), 'errore'); return; }
+    _goalBozza.push(goalNuovo());
+    disegnaGoal();
+  });
+
+  document.getElementById('lista-goal')?.addEventListener('click', (ev) => {
+    const riga = ev.target.closest('.goal-riga');
+    if (!riga) return;
+    const i = Number(riga.dataset.goal);
+    if (ev.target.closest('[data-g-via]')) {
+      leggiGoalDalForm();
+      _goalBozza.splice(i, 1);
+      disegnaGoal();
+      return;
+    }
+    if (ev.target.closest('[data-g-azzera]')) conErrore(async () => {
+      const g = goalBozza()[i];
+      if (!g || !confirm(L('Far ripartire questo obiettivo da zero?', 'Start this goal over from zero?', '¿Empezar este objetivo de cero?'))) return;
+      await api('/api/streamer/goal/azzera', { method: 'POST', body: { id: g.id } });
+      stato = await api('/api/me');
+      disegnaGoal();
+      toast(L('Obiettivo azzerato.', 'Goal reset.', 'Objetivo puesto a cero.'));
+    });
+  });
   document.getElementById('btn-salva-gcmd-2')?.addEventListener('click', salvaGiochiComandi);
 
   document.getElementById('btn-salva-promo')?.addEventListener('click', () => conErrore(async () => {
@@ -12658,7 +12735,7 @@ function caricaDatiScheda(id) {
   if (id === 'sondaggi') caricaSondaggi();
   if (id === 'giveaway') caricaGiveaway();
   if (id === 'penitenze') caricaPenitenze();
-  if (id === 'alert') { caricaAlert(); mostraGoalOra(); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); }); }
+  if (id === 'alert') { caricaAlert(); _goalBozza = null; disegnaGoal(); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); }); }
   else smontaBanco();
   if (id === 'regia') caricaRegia();
   if (id === 'studio') caricaStudio();

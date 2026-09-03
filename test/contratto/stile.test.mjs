@@ -58,7 +58,7 @@ test('i colori accettano un esadecimale e rifiutano il resto', () => {
   assert.equal(S.normAlertStile({ sfondo: '#123abc' }).sfondo, '#123abc');
   assert.equal(S.normAlertStile({ sfondo: 'javascript:alert(1)' }).sfondo, '#0f0f14');
   assert.equal(S.normChatStile({ testo: '#ABCDEF' }).testo, '#ABCDEF');
-  assert.equal(S.normWidgetStile({ accento: 'rosso' }).accento, '#9146ff');
+  assert.equal(S.normWidgetStile({ accento: 'rosso' }).accento, '#f72fa7');
 });
 
 test('i numeri restano dentro i loro estremi', () => {

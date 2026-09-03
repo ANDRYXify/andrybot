@@ -19,66 +19,97 @@ streamers.request(CH, 'Canale', '1');
 const mandati = [];
 const motore = new AlertsEngine({ effects: { emit: (ch, p) => mandati.push(p), hasClients: () => true } });
 
-const impostaGoal = (g) => streamers.setSettings(CH, { ...(streamers.get(CH)?.settings || {}), overlayGoal: g });
-const conti = () => (streamers.get(CH)?.settings?.overlayStato?.goal) || {};
+// Il conto sopravvive a un cambio di configurazione — e' voluto — quindi qui si
+// riparte puliti a ogni prova, se no l'ordine dei test cambierebbe i numeri.
+const impostaGoal = (...g) => streamers.setSettings(CH, { ...(streamers.get(CH)?.settings || {}), overlayGoals: g, overlayStato: {} });
+const conti = () => (streamers.get(CH)?.settings?.overlayStato?.goals) || {};
 const evento = (type, data = {}) => motore.onEvent({ channel: CH, type, data: { user_name: 'tizio', ...data } });
 
-test('senza obiettivo acceso non si conta niente', () => {
-  impostaGoal({ attivo: false, tipo: 'follower', obiettivo: 100 });
+test('senza obiettivi accesi non si conta niente', () => {
+  impostaGoal({ id: 'g1', attivo: false, tipo: 'follower', obiettivo: 100 });
   evento('channel.follow');
   assert.deepEqual(conti(), {});
 });
 
 test('conta solo gli eventi del tipo che hai scelto', () => {
-  impostaGoal({ attivo: true, tipo: 'follower', obiettivo: 100 });
+  impostaGoal({ id: 'g1', attivo: true, tipo: 'follower', obiettivo: 100 });
   evento('channel.follow');
   evento('channel.follow');
   evento('channel.subscribe');
-  assert.equal(conti().follower, 2, 'i follow contano');
-  assert.equal(conti().sub || 0, 0, 'i sub no, non e\' il tipo scelto');
+  assert.equal(conti().g1, 2, 'i follow contano');
+});
+
+test('piu\' obiettivi insieme, ognuno col suo conto', () => {
+  impostaGoal(
+    { id: 'a', attivo: true, tipo: 'follower', obiettivo: 100 },
+    { id: 'b', attivo: true, tipo: 'follower', obiettivo: 500 },
+    { id: 'c', attivo: true, tipo: 'sub', obiettivo: 20 },
+  );
+  evento('channel.follow');
+  evento('channel.subscribe');
+  assert.equal(conti().a, 1, 'due obiettivi sullo stesso evento crescono insieme');
+  assert.equal(conti().b, 1);
+  assert.equal(conti().c, 1, 'e quello dei sub va per conto suo');
+  assert.equal(conti().a, conti().b, 'una scala di traguardi e\' una cosa sensata');
 });
 
 test('i bit contano quanti sono, non uno per volta', () => {
-  impostaGoal({ attivo: true, tipo: 'bit', obiettivo: 5000 });
+  impostaGoal({ id: 'g1', attivo: true, tipo: 'bit', obiettivo: 5000 });
   evento('channel.cheer', { bits: 500 });
   evento('channel.cheer', { bits: 250 });
-  assert.equal(conti().bit, 750, 'un cheer da 500 vale 500');
+  assert.equal(conti().g1, 750, 'un cheer da 500 vale 500');
 });
 
 test('il conto sta nelle impostazioni, quindi resta dopo un riavvio', () => {
-  impostaGoal({ attivo: true, tipo: 'sub', obiettivo: 20 });
+  impostaGoal({ id: 'g1', attivo: true, tipo: 'sub', obiettivo: 20 });
   evento('channel.subscribe');
-  const salvato = streamers.get(CH).settings.overlayStato.goal.sub;
-  assert.equal(salvato, 1, 'e\' scritto dove sopravvive');
+  assert.equal(streamers.get(CH).settings.overlayStato.goals.g1, 1, 'e\' scritto dove sopravvive');
   const altro = new AlertsEngine({ effects: { emit: () => {} } });
   altro.onEvent({ channel: CH, type: 'channel.subscribe', data: { user_name: 'tizio' } });
-  assert.equal(conti().sub, 2, 'un motore nuovo riprende da dov\'era');
+  assert.equal(conti().g1, 2, 'un motore nuovo riprende da dov\'era');
 });
 
 test('l\'overlay lo sa subito', () => {
-  impostaGoal({ attivo: true, tipo: 'follower', obiettivo: 10 });
+  impostaGoal({ id: 'g1', attivo: true, tipo: 'follower', obiettivo: 10 });
   mandati.length = 0;
   evento('channel.follow');
   const g = mandati.find((m) => m.tipo === 'goal');
   assert.ok(g, 'parte un messaggio per l\'overlay');
-  assert.equal(g.valore, conti().follower, 'col numero vero');
-  assert.equal(g.cfg.obiettivo, 10, 'e col traguardo');
+  assert.equal(g.conti.g1, conti().g1, 'coi numeri veri');
+  assert.equal(g.goals[0].obiettivo, 10, 'e con gli obiettivi');
 });
 
-test('si riparte da zero solo se lo chiedi', () => {
-  impostaGoal({ attivo: true, tipo: 'follower', obiettivo: 10 });
+test('si riparte da zero solo se lo chiedi, e uno per volta', () => {
+  impostaGoal(
+    { id: 'a', attivo: true, tipo: 'follower', obiettivo: 10 },
+    { id: 'b', attivo: true, tipo: 'follower', obiettivo: 50 },
+  );
   evento('channel.follow');
-  assert.ok(conti().follower > 0);
+  assert.equal(conti().a, 1);
+  motore.azzeraGoal(CH, 'a');
+  assert.equal(conti().a, 0, 'quello che hai scelto riparte');
+  assert.equal(conti().b, 1, 'gli altri restano dov\'erano');
   motore.azzeraGoal(CH);
-  assert.equal(conti().follower, 0);
-  assert.equal(conti().sub, 0, 'azzera tutti i tipi, non solo quello acceso');
+  assert.equal(conti().b, 0, 'senza nome, azzera tutti');
 });
 
-test('il tema che legge l\'overlay porta obiettivo e conto', () => {
-  impostaGoal({ attivo: true, tipo: 'follower', obiettivo: 42, titolo: 'Dai che ci siamo' });
+test('il tema che legge l\'overlay porta obiettivi e conti', () => {
+  impostaGoal({ id: 'g1', attivo: true, tipo: 'follower', obiettivo: 42, titolo: 'Dai che ci siamo' });
   evento('channel.follow');
   const t = motore.tema(CH);
-  assert.equal(t.goal.obiettivo, 42);
-  assert.equal(t.goal.titolo, 'Dai che ci siamo');
-  assert.equal(t.stato.goal.follower, 1);
+  assert.equal(t.goals[0].obiettivo, 42);
+  assert.equal(t.goals[0].titolo, 'Dai che ci siamo');
+  assert.equal(t.conti.g1, 1);
+});
+
+test('chi aveva l\'obiettivo singolo di prima se lo ritrova, col suo conto', () => {
+  const s = streamers.get(CH)?.settings || {};
+  delete s.overlayGoals;
+  streamers.setSettings(CH, { ...s, overlayGoals: undefined,
+    overlayGoal: { attivo: true, tipo: 'sub', obiettivo: 30, titolo: 'Vecchio' },
+    overlayStato: { goal: { follower: 0, sub: 7, bit: 0 } } });
+  const t = motore.tema(CH);
+  assert.equal(t.goals.length, 1, 'diventa il primo della lista');
+  assert.equal(t.goals[0].obiettivo, 30);
+  assert.equal(t.conti[t.goals[0].id], 7, 'e il conto lo segue');
 });

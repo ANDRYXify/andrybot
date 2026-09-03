@@ -1051,7 +1051,7 @@ const OVERLAY = {
       ['Chat a schermo', 'I messaggi della chat, con emote e badge.', 'in basso a sinistra'],
       ['Ultimo follower', 'Una pastiglia col nome di chi ha seguito per ultimo.', 'in basso a destra'],
       ['Ultimo sub', 'La stessa cosa per l\'ultimo abbonato.', 'in basso a destra'],
-      ['Obiettivo', 'Una barra che si riempie mentre arrivano follower, sub o bit.', 'in alto a sinistra'],
+      ['Obiettivi', 'Barre che si riempiono mentre arrivano follower, sub o bit. Quanti ne vuoi.', 'dove li metti tu'],
       ['Contatori', 'I numeri che tu e i mod muovete in chat: morti, tentativi, quello che vuoi.', 'dove li metti tu'],
       ['Effetti & suoni', 'Immagini, video e suoni che partono da un comando o da un premio a punti.', 'al centro'],
     ] },
@@ -1102,17 +1102,20 @@ const OVERLAY = {
     ] },
     { p: ['Le emote di Twitch e quelle 7TV del tuo canale compaiono come immagini, e i badge accanto al nome. Le emote 7TV si gestiscono da <em>Emote (7TV)</em>.'] },
 
-    { h2: 'L\'obiettivo' },
-    { p: ['Una barra che si riempie da sola. Scegli <strong>cosa contare</strong> e il <strong>traguardo</strong>; il titolo è facoltativo.'] },
+    { h2: 'Gli obiettivi' },
+    { p: ['Barre che si riempiono da sole. <strong>Quanti ne vuoi</strong> (fino a sei), e ognuno è indipendente: il suo traguardo, il suo posto, il suo aspetto. Tre obiettivi in fila che salgono insieme, o uno in ogni angolo con colori diversi: decidi tu.'] },
     { tabella: [
-      ['Cosa', 'Di base', 'Limiti'],
+      ['Per ogni obiettivo', 'Di base', 'Limiti'],
       ['Conta', 'follower', 'follower · abbonati · bit'],
       ['Traguardo', '100', 'da 1 a 1.000.000'],
       ['Titolo', 'vuoto', '60 caratteri'],
+      ['Dove', 'in alto a sinistra', 'i quattro angoli, o dove lo trascini'],
+      ['Aspetto', '—', 'colore del testo, dello sfondo e della barra, opacità, angoli, carattere, forma, materia, cornice, dimensione'],
     ] },
+    { p: ['Due obiettivi che contano la stessa cosa <strong>salgono insieme</strong>: è il modo di fare una scala («100 follower», «500 follower») senza doverla rifare a mano. E ognuno si azzera per conto suo.'] },
     { p: [
       '<strong>Il conto è quello vero</strong>: lo tiene il bot contando gli eventi che gli passano davanti. Un cheer da 500 bit vale 500, non 1.',
-      'Sta nelle impostazioni del canale, quindi <strong>sopravvive a un riavvio</strong>: un obiettivo che si azzera da solo la notte non è un obiettivo. A rimetterlo a zero sei tu, col tasto «Riparti da zero».',
+      'Sta nelle impostazioni del canale, quindi <strong>sopravvive a un riavvio</strong>: un obiettivo che si azzera da solo la notte non è un obiettivo. A rimetterlo a zero sei tu, col tasto «Riparti da zero» del singolo obiettivo.',
     ] },
 
     { h2: 'I contatori' },
