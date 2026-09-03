@@ -52,6 +52,10 @@ lo usa: se non si vede da fuori, qui non ci va.
 - Il sito è disegnato a mano come il marchio: i titoli hanno il tratto del logo, i riquadri hanno angoli storti come tirati a penna e i pulsanti portano l'ombra piena dell'inchiostro.
 - I pulsanti si timbrano invece di illuminarsi: premendoli scendono sull'ombra come un timbro sulla carta.
 - Il carattere disegnato è ospitato sul nostro server come tutti gli altri, quindi la pagina non chiede niente a nessuno per disegnarsi.
+- Il sito è una tavola di manga: il fondo è carta, dietro al titolo ci sono le linee che convergono e sopra passa il retino a puntini.
+- Dentro e fuori parlano la stessa lingua: pulsanti, menu, pannelli, elenchi e perfino il cursore hanno il contorno d'inchiostro.
+- Le parole in risalto del titolo si colorano da sinistra a destra quando la pagina arriva, come le colorerebbe un disegnatore.
+- I testi piccoli sono più scuri: su carta chiara quelli di prima si leggevano male.
 - Scegliendo un obiettivo sulla tela le sue proprietà — colori, carattere, forma, cornice, opacità — si aprono lì accanto, come per ogni altro elemento.
 - Trascinare un contatore non lo fa più saltare a metà schermo, e ora si può anche ruotare.
 - L'occhio di «Obiettivo» e «Contatori» funziona davvero: prima si spegneva e al ricaricamento tornava acceso, quindi non si potevano togliere da un overlay.

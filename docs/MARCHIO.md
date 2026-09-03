@@ -235,6 +235,69 @@ Nel provarlo rosso ho scoperto che la mia prima sonda non mordeva: cercava
 Un cancello che non morde è peggio di nessun cancello, quindi ho corretto la
 misura prima di fidarmi del verde.
 
+## La tavola: carta, retino, linee cinetiche
+
+La mano da sola non bastava — il direttore l'ha detto secco: «non è per nulla
+ancora manga». Aveva ragione, e la differenza è strutturale. Una pagina di manga
+non è «disegnata a mano»: è **carta**, con sopra **retino** e **linee cinetiche**,
+e il colore è l'eccezione, non l'aria.
+
+- **Carta.** Il fondo smette di essere una foschia rosa e diventa carta
+  (`#f2efe8` chiaro, `#0c0b0c` scuro). Il magenta torna a essere quello che è nel
+  marchio: il colore che spicca. Cambiare il fondo ha fatto scattare il cancello
+  della tavolozza su otto copie da allineare e su un contrasto sceso sotto la
+  soglia — che è esattamente il suo mestiere.
+- **Retino** (`--retino`): la trama di puntini, la texture più riconoscibile del
+  mezzo. Era già un token e non era applicata da nessuna parte: valeva zero.
+- **Linee cinetiche** (`--cinetiche`): il fascio che converge sul titolo. Sono un
+  `repeating-conic-gradient` con una maschera radiale che le apre al centro.
+
+Sfondo e texture **non hanno bordi**: coprono `-50vw` per lato e sfumano con una
+maschera radiale. La prima versione le teneva dentro la colonna del contenuto e
+si fermavano di netto in una riga dritta — un rettangolo, non una texture. E
+`overflow: clip` sulla scena, che avevo aggiunto «per sicurezza», le ritagliava
+di nuovo: la sicurezza era il difetto.
+
+## Un effetto non può nascondere il contenuto
+
+La colorazione del titolo — le parole in risalto che si tingono da sinistra a
+destra, come le colorerebbe un disegnatore — era fatta con una **maschera** che
+partiva a larghezza zero. Se l'animazione non parte, il testo resta invisibile
+**per sempre**: «con la tua voce» era sparito dalla pagina.
+
+Da cui la regola: **un effetto può solo aggiungere, mai sottrarre.** Ora la
+colorazione sposta la `background-position` della sfumatura già applicata al
+testo: se l'animazione non parte, il testo c'è comunque, colorato. E il cancello
+del contrasto misura anche le parole in risalto, perché un testo invisibile ha
+contrasto uno.
+
+## Il contrasto si misura sui pixel, non sui token
+
+Il cancello della tavolozza confronta i token a due a due. Non vede cosa succede
+davvero a schermo: un fondo a sfumatura, un velo sopra, un lampo che attraversa
+il bottone. Il direttore ha fotografato un bottone con la scritta illeggibile
+mentre tutti i cancelli erano verdi.
+
+`scripts/verifica-contrasto.mjs` rende la pagina in un browser, ritaglia i
+comandi e misura il rapporto WCAG fra la scritta e i pixel che le stanno dietro,
+in chiaro e scuro, **fermo e col mouse sopra**. Ha trovato subito il difetto
+vero: `.vt-btn:hover` (specificità 0,2,0) sovrascriveva il fondo di
+`.vt-btn-primo` (0,1,0), quindi al passaggio del mouse il bottone perdeva la sua
+rampa e restava una scatola pallida con la scritta bianca sopra. Contrasto
+misurato: **1,3**.
+
+Ci sono volute tre correzioni alla MISURA prima di fidarsi di lei:
+
+1. prendeva il colore **più frequente** del ritaglio — ma su un fondo a sfumatura
+   il più frequente è il bordo, che non sta dietro a nessuna lettera;
+2. contava anche i pixel **delle lettere stesse**, che per definizione non sono il
+   loro fondo, e facevano fallire ogni bottone scritto scuro;
+3. raggruppava i colori troppo fine, così una sfumatura non aveva nessun colore
+   dominante e la misura si arrendeva.
+
+Ora guarda dentro il comando, esclude il colore della scritta, raggruppa largo e
+prende il **fondo peggiore fra quelli che coprono almeno il 4%**.
+
 ## Il cancello
 
 `scripts/verifica-risorse.mjs` controlla che ogni file chiesto dalle pagine e
