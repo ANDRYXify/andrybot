@@ -318,6 +318,34 @@ centro della tela — via dai bordi, dove il limite entrerebbe in gioco per
 davvero — e controlla che si sia spostato **di quella quantità**. Con Alt
 premuto, così l'aggancio non falsa la misura.
 
+## Un elemento si modifica in un posto solo
+
+I comandi di un elemento stavano in **due posti**: posizione e aspetto nel
+pannello accanto alla tela, tutto il resto — quando parte un alert, quante righe
+tiene la chat, che copertina ha il player, di quanti minuti è il conto alla
+rovescia — nelle carte **sotto**. Per una modifica precisa bisognava scendere, e
+mentre modificavi non vedevi più l'anteprima: cambiavi, risalivi, guardavi,
+riscendevi.
+
+Il modello giusto c'era già, ma per due soli elementi: i widget «ultimo
+follower» e «ultimo sub» vivono da sempre interi in un serbatoio nascosto, e
+compaiono nel pannello quando li scegli. Ora **è la regola per tutti**:
+`raccogliBlocchi()` prende, al montaggio del banco, il contenuto di ogni carta
+per-elemento e lo porta nel blocco di quell'elemento; la carta rimasta vuota si
+nasconde. Sotto la tela restano solo le cose che non sono elementi: il link per
+OBS, gli overlay multipli, il CSS avanzato, i caratteri tuoi.
+
+I **contatori** non avevano proprio dei comandi lì: si vestivano dalla scheda
+Comandi, un'altra scheda ancora. Ora hanno il loro blocco come tutti — cosa
+scrivono, colori, carattere, con o senza sfondo — costruito dalla lista che il
+banco già conosce.
+
+Il collaudo verifica la cosa per intero: per **ogni** elemento della scena, che
+scegliendolo si vedano i suoi comandi e nient'altro (non due blocchi, non quello
+di prima, non zero), che sia acceso solo lui sulla tela e nei livelli, che il
+titolo sia il suo; che lasciandolo non resti niente acceso; e che sotto la tela
+non sia rimasto **nessun** campo.
+
 ## Due cose piccole che rendevano il banco scomodo
 
 **L'occhio di un livello non si vedeva cambiare.** Lo cliccavi, l'elemento

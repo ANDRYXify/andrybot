@@ -1098,6 +1098,9 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
 }
 .carta.ovl-banco .ovl-livelli { left: 12px; top: 12px; --pw: 238px; }
 .carta.ovl-banco .ovl-inspector { right: 12px; top: 12px; --pw: 336px; }
+.carta.ovl-banco .el-blocco { display: grid; gap: 10px; }
+.carta.ovl-banco .el-blocco > .griglia-campi { grid-template-columns: 1fr; }
+.carta.ovl-banco .ovl-inspector .alert-blocco { padding: 10px; border: 1px solid var(--border); border-radius: var(--r-m); }
 .carta.ovl-banco .ovl-livelli.mosso,
 .carta.ovl-banco .ovl-inspector.mosso { right: auto; }
 
@@ -1118,7 +1121,7 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
     backdrop-filter: none; -webkit-backdrop-filter: none;
   }
   .carta.ovl-banco .ovl-livelli:not(.mosso) { grid-column: 1; border-right: 1px solid var(--border-2); }
-  .carta.ovl-banco .ovl-inspector:not(.mosso) { grid-column: 3; border-left: 1px solid var(--border-2); }
+  .carta.ovl-banco .ovl-inspector:not(.mosso) { grid-column: 3; border-left: 1px solid var(--border-2); --pw: clamp(320px, 27vw, 460px); }
   .carta.ovl-banco .ovl-livelli.arrotolato:not(.mosso),
   .carta.ovl-banco .ovl-inspector.arrotolato:not(.mosso) { width: auto; }
 }

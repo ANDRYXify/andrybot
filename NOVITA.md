@@ -23,6 +23,8 @@ lo usa: se non si vede da fuori, qui non ci va.
 - L'occhio di un livello si vede quando è chiuso: prima l'elemento spariva ma l'icona restava un occhio aperto.
 - Il puntino del cursore non sparisce più quando si aggancia a un pulsante: con il cursore nascosto era l'unico modo di sapere dove stavi puntando.
 
+- Un elemento dell'overlay si modifica in un posto solo, accanto alla tela: scegli e hai davanti tutto quello che lo riguarda, senza scendere sotto e perdere di vista l'anteprima.
+- Anche i contatori hanno i loro comandi lì: cosa scrivono, colori, carattere, con o senza sfondo.
 - Nello Studio la tela ha tutto: obiettivi e contatori si trascinano come gli alert, con maniglie, frecce, aggancio e annulla. Prima si potevano mettere in posizione solo scrivendo numeri in un modulo.
 - Gli angoli della tela sono quelli veri dell'overlay: un obiettivo «in alto a destra» sta a filo dello schermo, e non usciva più dal riquadro come faceva prima.
 - Livelli e Proprietà non coprono più la tela: sono due sponde ai lati, si arrotolano per far spazio, si staccano trascinandole e si riagganciano con un doppio clic.
