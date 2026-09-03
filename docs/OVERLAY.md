@@ -396,6 +396,57 @@ Il cancello prova tutti e dieci gli elementi: sposta, annulla, controlla che sia
 tornato. Rotto di proposito (togliendo la famiglia `cfg` dall'istantanea) dice
 `musica: annulla lo lascia a 40 invece di 10.74`.
 
+### Un pixel che non arrivava al database
+
+Lo studio muove le cose col pixel: le frecce spostano di **un pixel di tela**, che
+su 1920 è lo 0,05%, e per questo la posizione si salva con **due decimali** — c'è
+scritto nel codice, `0.01% = 0.19px su 1920`.
+
+Solo che a pulire la posizione in arrivo c'erano **due funzioni diverse**, e chi
+scriveva doveva ricordarsi quale toccava a lui:
+
+| | decimali | scala |
+| --- | --- | --- |
+| `normXY`, usata dagli obiettivi | tenuti | 20…400 |
+| `xyOk`, usata da player, conto alla rovescia, alert, chat e widget | **buttati** (`clampInt`) | 30…300 |
+
+Quindi per tutto tranne gli obiettivi la regolazione fine **non arrivava al
+database**: `{ x: 2.29, y: 3.17 }` diventava `{ x: 2, y: 3 }`. Ricaricavi e
+l'elemento era tornato indietro — fino a 9,6 px in orizzontale e 5,4 in
+verticale. Le frecce, che sono lo strumento di precisione del banco, non
+lasciavano traccia: diciannove pressioni potevano valere zero.
+
+Ora la pulizia è **una**, `xyOk`, con `clampPct` per x e y (due decimali) e la
+scala del prodotto, 30…300, la stessa che dichiara `PROP` nello studio. Un test
+lo dice nei termini di chi lo usa: «la regolazione fine sopravvive al
+salvataggio».
+
+### L'unica famiglia che entrava senza controlli
+
+La config overlay di un contatore arrivava al database così com'era: `overlay:
+b.overlay` e via, `JSON.stringify` nella riga. Tutte le altre famiglie passano da
+un `norm*`; questa no. Il disegno dell'overlay si difende da solo — `x` e `y`
+passano da `isFinite`, `dim` è limitato, il testo va in `textContent` e i colori
+sono assegnati come *valori* CSS, che il browser rifiuta se non lo sono — ma la
+porta d'ingresso non controllava niente, e `formato` non aveva nemmeno una
+lunghezza massima.
+
+Il rimedio ha una forma diversa dagli altri `norm*`, e la differenza è il punto:
+salvare un contatore è un **merge**, apposta, così che `{mostra: true}` da un
+comando in chat non azzeri posizione e colori. Un riempitore di default
+romperebbe proprio quello. Quindi `puliConta` è un **filtro**: pulisce solo le
+chiavi presenti e lascia assenti quelle assenti. Un valore che non è un colore
+non diventa il bianco di default — semplicemente non passa, e resta quello che
+c'era.
+
+E la posizione di un contatore passa da `clampPct` come tutte le altre, quindi
+anche lui tiene il pixel.
+
+Un cancello a parte tiene insieme i **tre elenchi** dei caratteri del contatore —
+la chiave in `stile.js` che valida, la famiglia CSS in `presets.js` che disegna,
+l'etichetta in `app.js` che si legge: parti diverse, ma le chiavi devono
+coincidere, sennò si può scegliere un carattere che il server rifiuta.
+
 ## Un elemento si modifica in un posto solo
 
 I comandi di un elemento stavano in **due posti**: posizione e aspetto nel

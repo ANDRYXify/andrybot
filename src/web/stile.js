@@ -27,8 +27,54 @@ export const hexOk = (v, def) => (/^#[0-9a-fA-F]{6}$/.test(String(v)) ? String(v
 export const unoDi = (v, lista, def) => (lista.includes(v) ? v : def);
 // posizione libera (drag): coordinate in % del canvas + dimensione (s = scala %,
 // 30–300) e rotazione (r = gradi, -180…180). null → si usa l'angolo predefinito.
+// x e y tengono due decimali perche' un pixel su 1920 e' 0,05%: arrotondandoli a
+// numeri interi le frecce dello studio, che spostano di un pixel, non
+// sopravvivevano al salvataggio. Questa e' l'unica funzione che pulisce una
+// posizione: valeva sia per gli obiettivi sia per tutto il resto, ed erano due
+// con limiti diversi.
+export const clampPct = (v, lo, hi, def) => {
+  const n = Math.round(Number(v) * 100) / 100;
+  return Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : def;
+};
+// I caratteri del contatore. La chiave sta qui; le famiglie CSS stanno in
+// presets.js e le etichette in app.js, e un cancello controlla che i tre elenchi
+// abbiano le stesse chiavi.
+export const CONT_FONT = ['system', 'inter', 'spaceGrotesk', 'jetBrainsMono', 'fraunces', 'bricolage'];
+
+// Lo sfondo di un contatore puo' essere un colore, una tinta con trasparenza o
+// niente: fuori da questi tre casi si lascia stare quello che c'era.
+const contSfondo = (v) => {
+  const t = String(v).trim();
+  if (t === 'transparent') return t;
+  if (/^#[0-9a-fA-F]{6}$/.test(t)) return t;
+  return /^rgba?\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*(,\s*[\d.]+\s*)?\)$/.test(t) ? t : null;
+};
+
+// La config overlay di un contatore era l'unica che finiva nel database senza
+// passare da nessuna pulizia. Questo e' un FILTRO, non un riempitore: pulisce
+// solo le chiavi che ci sono, perche' il salvataggio e' un merge e un aggiorno
+// parziale (es. {mostra:true} da un comando in chat) non deve azzerare il resto.
+export const puliConta = (o) => {
+  if (!o || typeof o !== 'object') return undefined;
+  const q = {};
+  const c = (k, fn) => { if (k in o) { const v = fn(o[k]); if (v !== null) q[k] = v; } };
+  c('mostra', (v) => !!v);
+  c('grassetto', (v) => !!v);
+  c('x', (v) => clampPct(v, 0, 100, 4));
+  c('y', (v) => clampPct(v, 0, 100, 94));
+  c('r', (v) => clampInt(v, -180, 180, 0));
+  c('dim', (v) => clampInt(v, 8, 200, 40));
+  c('colore', (v) => hexOk(v, '#ffffff'));
+  c('sfondo', contSfondo);
+  c('font', (v) => unoDi(String(v), CONT_FONT, 'system'));
+  c('formato', (v) => String(v).slice(0, 120));
+  c('parolaOn', (v) => String(v).toLowerCase().slice(0, 40));
+  c('parolaOff', (v) => String(v).toLowerCase().slice(0, 40));
+  return q;
+};
+
 export const xyOk = (v) => (v && Number.isFinite(Number(v.x)) && Number.isFinite(Number(v.y)))
-  ? { x: clampInt(v.x, 0, 100, 50), y: clampInt(v.y, 0, 100, 50), s: clampInt(v.s, 30, 300, 100), r: clampInt(v.r, -180, 180, 0) } : null;
+  ? { x: clampPct(v.x, 0, 100, 50), y: clampPct(v.y, 0, 100, 50), s: clampInt(v.s, 30, 300, 100), r: clampInt(v.r, -180, 180, 0) } : null;
 
 // STILE dell'overlay (alert / chat / widget). Estratti in funzioni riusabili: gli
 // STESSI campi valgono sia per lo stile di CANALE sia per lo stile PER-OVERLAY
@@ -133,16 +179,6 @@ export const normWidgetStile = (st) => {
 const POS_ANG = ['alto-sinistra', 'alto-destra', 'basso-sinistra', 'basso-destra'];
 export const MAX_GOAL = 6;
 
-const normXY = (xy) => {
-  if (!xy || typeof xy !== 'object' || xy.x == null) return null;
-  return {
-    x: Math.min(100, Math.max(0, Number(xy.x) || 0)),
-    y: Math.min(100, Math.max(0, Number(xy.y) || 0)),
-    s: clampInt(xy.s, 20, 400, 100),
-    r: clampInt(xy.r, -180, 180, 0),
-  };
-};
-
 export const normGoal = (g, i = 0) => {
   g = g || {};
   const id = String(g.id || '').replace(/[^a-z0-9]/gi, '').slice(0, 12) || ('g' + (i + 1));
@@ -157,7 +193,7 @@ export const normGoal = (g, i = 0) => {
     partenza: clampInt(g.partenza, 0, 1000000, 0),
     titolo: String(g.titolo || '').slice(0, 60),
     posizione: unoDi(g.posizione, POS_ANG, 'alto-sinistra'),
-    xy: normXY(g.xy),
+    xy: xyOk(g.xy),
     stile: normWidgetStile(g.stile),
   };
 };
