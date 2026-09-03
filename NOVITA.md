@@ -62,6 +62,7 @@ lo usa: se non si vede da fuori, qui non ci va.
 - Menu, cassetto, campi e interruttori hanno il contorno d'inchiostro come tutto il resto.
 - Il puntatore è disegnato: una freccia con il contorno d'inchiostro, e non insegue più il mouse, quindi non resta mai indietro.
 - Anche le guide e l'anteprima dei link sono tavole: carta, linee che convergono, retino e lettering disegnato.
+- Se il marchio non arriva durante il caricamento, al suo posto resta il nome scritto bene invece di un riquadro vuoto. Ora il segno viaggia anche fra i file tenuti da parte, così compare pure a rete ballerina.
 - Scegliendo un obiettivo sulla tela le sue proprietà — colori, carattere, forma, cornice, opacità — si aprono lì accanto, come per ogni altro elemento.
 - Trascinare un contatore non lo fa più saltare a metà schermo, e ora si può anche ruotare.
 - L'occhio di «Obiettivo» e «Contatori» funziona davvero: prima si spegneva e al ricaricamento tornava acceso, quindi non si potevano togliere da un overlay.
