@@ -197,6 +197,44 @@ token del contorno esistano nei due temi, che l'alone sia **diverso** fra chiaro
 scuro (sennò sul buio il bordo sparisce), e che le superfici di marca lo portino
 davvero. È stato provato rosso togliendo il bordo al bottone e spegnendo l'alone.
 
+## La mano: il sito è disegnato, non composto
+
+Il tema aveva preso i colori e il contorno, ma i titoli parlavano ancora
+geometrico — e finché il **lettering** non è quello del marchio, il logo resta
+un adesivo su un altro prodotto. Il marchio è disegnato con un pennarello: tratto
+disuguale, estremi tondi, niente dritto e niente cerchi perfetti.
+
+Quindi tre cose, tutte dichiarate una volta in `tema.css`:
+
+- **`--mano`** — la voce disegnata, su titoli e voci di marca. Body e comandi
+  restano nel sans di prima: si legge quello che c'è da leggere, e la mano fa il
+  suo lavoro dove il marchio parla.
+- **`--ang-mano` e `--tratto-mano`** — angoli asimmetrici e spessore di bordo
+  disuguale. Un rettangolo con quattro raggi diversi e il bordo di 2 px su un
+  lato e 2,5 sull'altro *legge* come tirato a mano, e non costa niente.
+- **`--ombra-ink`** — l'ombra piena, senza sfocatura, spostata di 4 px. È la
+  differenza fra un'interfaccia e una vignetta: la sfocatura è fotografica,
+  l'ombra piena è inchiostro. Sul fondo scuro il nero su nero sparirebbe, quindi
+  lì l'ombra prende l'accento, con la stessa logica dell'alone.
+
+Da cui l'interazione: un pulsante **non si illumina, si timbra**. Passandoci
+sopra l'ombra cresce e il pulsante si alza di 2 px; premendolo l'ombra si
+schiaccia a 1 px e il pulsante scende dentro di 3. È il gesto del timbro sulla
+carta, ed è il motivo per cui sembra disegnato anche quando si muove.
+
+**Il carattere sta in casa.** `Shantell Sans` (SIL OFL) è ospitato in
+`vendor/font/` come Archivo e Instrument Serif, per le due ragioni che quella
+cartella dichiara da sempre: il primo disegno della pagina non deve dipendere da
+un server esterno, e l'indirizzo di chi visita non deve finire a un terzo senza
+consenso. Il cancello controlla che `--mano` esista, che il carattere che nomina
+abbia il suo `@font-face`, che **nessun** `src:` punti fuori dal dominio, che la
+licenza lo citi, e che titoli e carte lo usino davvero.
+
+Nel provarlo rosso ho scoperto che la mia prima sonda non mordeva: cercava
+`body.vetrina h1` e trovava la regola dell'`em`, che sta sotto e comincia uguale.
+Un cancello che non morde è peggio di nessun cancello, quindi ho corretto la
+misura prima di fidarmi del verde.
+
 ## Il cancello
 
 `scripts/verifica-risorse.mjs` controlla che ogni file chiesto dalle pagine e

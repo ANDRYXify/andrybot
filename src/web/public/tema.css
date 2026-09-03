@@ -27,6 +27,18 @@
   --contorno: #150910;
   --contorno-sp: 2px;
   --alone-contorno: none;
+
+  --mano: 'Shantell Sans', 'Comic Sans MS', 'Segoe Print', system-ui, sans-serif;
+  --ang-mano: 14px 9px 13px 10px / 10px 13px 9px 14px;
+  --ang-mano-l: 26px 14px 22px 16px / 16px 22px 14px 26px;
+  --tratto-mano: 2px 2.5px 2.5px 2px;
+
+  --ombra-ink: 4px 4px 0 var(--contorno);
+  --ombra-ink-alta: 6px 6px 0 var(--contorno);
+  --ombra-ink-timbro: 1px 1px 0 var(--contorno);
+  --retino: radial-gradient(var(--contorno) 1.1px, transparent 1.2px);
+  --retino-passo: 6px 6px;
+  --retino-forza: .16;
   --acc-soft: color-mix(in srgb, var(--acc) 8%, var(--surface));
   --acc-tint: color-mix(in srgb, var(--acc) 10%, transparent);
   --acc-bordo: color-mix(in srgb, var(--acc) 26%, var(--border));
@@ -73,6 +85,11 @@
 
   --contorno: #000000;
   --alone-contorno: 0 0 0 1px color-mix(in srgb, var(--acc) 34%, transparent);
+  --ombra-ink: 4px 4px 0 color-mix(in srgb, var(--acc) 62%, #000);
+  --ombra-ink-alta: 6px 6px 0 color-mix(in srgb, var(--acc) 72%, #000);
+  --ombra-ink-timbro: 1px 1px 0 color-mix(in srgb, var(--acc) 62%, #000);
+  --retino: radial-gradient(color-mix(in srgb, var(--acc) 80%, #fff) 1.1px, transparent 1.2px);
+  --retino-forza: .2;
   --su-acc: #1e0f18;
   --acc-soft: color-mix(in srgb, var(--acc) 10%, var(--surface));
   --acc-tint: color-mix(in srgb, var(--acc) 14%, transparent);

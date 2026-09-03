@@ -181,8 +181,42 @@ for (const tema of ['chiaro', 'scuro']) {
   if (!em || !em.includes('var(--rampa)')) guai.push('vetrina.css: le parole accentate del titolo non prendono la rampa del marchio');
 }
 
+// LA VOCE DISEGNATA. Il marchio e' lettering a mano: se i titoli parlano
+// geometrico, il logo sembra un adesivo su un altro prodotto. Il carattere si
+// dichiara una volta (--mano) e si ospita in casa come tutti gli altri — il
+// primo disegno della pagina non deve dipendere da un server esterno, e
+// l'indirizzo di chi visita non deve finire a un terzo.
+{
+  for (const t of ['mano', 'ang-mano', 'tratto-mano', 'ombra-ink', 'retino']) {
+    try { tinta(t, 'chiaro'); } catch { guai.push(`manca --${t}`); }
+  }
+  const fcss = readFileSync(join(PUB, 'font.css'), 'utf8');
+  const mano = String(TAVOLOZZA.chiaro.mano || '');
+  const nome = (mano.match(/'([^']+)'/) || [])[1];
+  if (!nome) guai.push('--mano non nomina un carattere');
+  else {
+    if (!fcss.includes(`font-family: '${nome}'`)) guai.push(`${nome} non ha il suo @font-face`);
+    const fuori = [...fcss.matchAll(/src:\s*url\(([^)]+)\)/g)].map((m) => m[1]).filter((u) => /^https?:|^\/\//.test(u));
+    if (fuori.length) guai.push('un carattere arriva da fuori: ' + fuori.join(', '));
+    const lic = readFileSync(join(PUB, 'vendor', 'font', 'LICENSE.txt'), 'utf8');
+    if (!lic.includes(nome)) guai.push(`${nome} non e' citato nella licenza dei caratteri`);
+  }
+  // La regola dei TITOLI, non quella dell'`em` che le sta sotto e che
+  // comincia con lo stesso selettore: cercarla a occhio prendeva quella.
+  const vet = readFileSync(join(PUB, 'vetrina.css'), 'utf8');
+  const iTit = vet.indexOf('body.vetrina .vt-titolo, body.vetrina .vt-tit {');
+  const tit = iTit < 0 ? '' : vet.slice(iTit, vet.indexOf('}', iTit));
+  if (!tit.includes('font-family: var(--mano)')) {
+    guai.push('vetrina.css: i titoli non parlano con la voce del marchio');
+  }
+  const st = readFileSync(join(PUB, 'style.css'), 'utf8');
+  if (!/\.carta h2 \{ font-family: var\(--mano\)/.test(st)) {
+    guai.push('style.css: i titoli delle carte non parlano con la voce del marchio');
+  }
+}
+
 if (guai.length) {
   console.error('Tavolozza incoerente:\n' + guai.map((g) => '  · ' + g).join('\n'));
   process.exit(1);
 }
-console.log(`Tavolozza: una sola fonte, ${TOKEN.size} colori, copie combacianti, contrasti in regola, contorno del marchio al suo posto. ✓`);
+console.log(`Tavolozza: una sola fonte, ${TOKEN.size} colori, copie combacianti, contrasti in regola, contorno e voce del marchio al loro posto. ✓`);

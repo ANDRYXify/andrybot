@@ -21,9 +21,15 @@ body.vetrina .contenuto { max-width: 1180px; padding-inline: clamp(1.1rem, 4vw, 
 body.vetrina .pagina-testata { display: none; }
 body.vetrina #cerca-lancia, body.vetrina #plancia-lancia { display: none !important; }
 
-body.vetrina h1, body.vetrina h2, body.vetrina h3, body.vetrina .vt-num {
-  font-family: Archivo, "Zen Kaku Gothic New", system-ui, sans-serif;
-  font-stretch: 112%;
+body.vetrina h1, body.vetrina h2, body.vetrina h3, body.vetrina .vt-num,
+body.vetrina .vt-titolo, body.vetrina .vt-tit {
+  font-family: var(--mano);
+  font-stretch: normal;
+  letter-spacing: -.01em;
+}
+body.vetrina h1 em, body.vetrina h2 em, body.vetrina h3 em,
+body.vetrina .vt-titolo em, body.vetrina .vt-tit em {
+  font-family: var(--mano); font-style: normal; font-weight: 800;
 }
 body.vetrina em, body.vetrina .vt-corsivo {
   font-family: "Instrument Serif", Georgia, serif;
@@ -66,20 +72,22 @@ body.vetrina em, body.vetrina .vt-corsivo {
 
 .vt-occhiello {
   display: inline-flex; align-items: center; gap: .5rem; align-self: center;
-  font-family: Archivo, system-ui, sans-serif;
+  font-family: var(--mano);
   font-size: .68rem; font-weight: 600; letter-spacing: .3em; text-transform: uppercase;
   color: var(--testo-2);
-  padding: .42rem .95rem .42rem .8rem; border-radius: 999px;
-  border: var(--contorno-sp) solid var(--contorno); background: color-mix(in srgb, var(--surface) 70%, transparent);
-  box-shadow: var(--alone-contorno);
+  padding: .42rem .95rem .42rem .8rem; border-radius: var(--ang-mano-l);
+  border: var(--contorno-sp) solid var(--contorno); border-width: var(--tratto-mano);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  box-shadow: var(--alone-contorno), var(--ombra-ink);
 }
 .vt-occhiello .vivo { color: var(--acc); }
 
 .vt-titolo {
   margin: clamp(1.1rem, 3vh, 1.9rem) 0 0;
   text-align: center; text-wrap: balance;
-  font-size: clamp(2.5rem, 7.4vw, 5.6rem);
-  font-weight: 700; line-height: .98; letter-spacing: -.035em;
+  font-family: var(--mano);
+  font-size: clamp(2.15rem, 6.3vw, 4.7rem);
+  font-weight: 700; line-height: 1.06; letter-spacing: -.012em;
 }
 .vt-titolo em {
   letter-spacing: -.02em;
@@ -101,21 +109,24 @@ body.vetrina em, body.vetrina .vt-corsivo {
 .vt-btn {
   position: relative; overflow: hidden; isolation: isolate;
   display: inline-flex; align-items: center; justify-content: center; gap: .55rem;
-  min-height: 52px; padding: 0 1.6rem; border-radius: var(--r-l);
+  min-height: 52px; padding: 0 1.6rem; border-radius: var(--ang-mano-l);
   font-family: Archivo, system-ui, sans-serif;
   font-size: 1rem; font-weight: 600; letter-spacing: -.005em; text-decoration: none;
-  border: var(--contorno-sp) solid var(--contorno); background: color-mix(in srgb, var(--surface) 80%, transparent);
+  border: var(--contorno-sp) solid var(--contorno); border-width: var(--tratto-mano);
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
   color: var(--testo); cursor: pointer;
   transition: transform .18s var(--molla-lieve), border-color .24s ease, background .24s ease, color .24s ease;
 }
-.vt-btn:hover { border-color: var(--contorno); background: var(--surface); color: var(--testo); transform: translateY(-1px); }
-.vt-btn:active { transform: translateY(1px) scale(.986); }
+.vt-btn { box-shadow: var(--ombra-ink); }
+.vt-btn:hover { border-color: var(--contorno); background: var(--surface); color: var(--testo); transform: translate(-1px, -2px); box-shadow: var(--ombra-ink-alta); }
+.vt-btn:active { transform: translate(2px, 3px); box-shadow: var(--ombra-ink-timbro); }
 .vt-btn-primo {
-  border: var(--contorno-sp) solid var(--contorno); color: var(--su-acc); font-weight: 700;
+  border: var(--contorno-sp) solid var(--contorno); border-width: var(--tratto-mano); color: var(--su-acc); font-weight: 700;
+  font-family: var(--mano);
   background: var(--rampa);
-  box-shadow: var(--alone-contorno), 0 10px 34px -12px var(--acc-tint), inset 0 1px 0 rgba(255, 255, 255, .22);
+  box-shadow: var(--alone-contorno), var(--ombra-ink), inset 0 1px 0 rgba(255, 255, 255, .22);
 }
-.vt-btn-primo:hover { color: var(--su-acc); box-shadow: var(--alone-contorno), 0 16px 42px -12px var(--acc-tint), inset 0 1px 0 rgba(255, 255, 255, .3); }
+.vt-btn-primo:hover { color: var(--su-acc); box-shadow: var(--alone-contorno), var(--ombra-ink-alta), inset 0 1px 0 rgba(255, 255, 255, .3); }
 .vt-btn-primo::after {
   content: ""; position: absolute; inset: 0; z-index: -1;
   background: linear-gradient(100deg, transparent 38%, rgba(255, 255, 255, .5) 50%, transparent 62%);
