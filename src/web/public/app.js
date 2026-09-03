@@ -6226,7 +6226,6 @@ async function montaFontBrowser(box, targetId) {
   });
 }
 
-let posXY = { alert: null, chat: null, wf: null, ws: null };
 let _conta = [];
 const CONT_BASE = 40;
 const FISSI = ['alert', 'chat', 'wf', 'ws'];
@@ -6326,10 +6325,7 @@ async function _salvaOverlayCorrente(msg, ancheLayout) {
   if (ov) {
     ov.stile = { alerts: alertLook, chat: chatLook, widget: _raccogliWidget() };
     ov.css = _v('ovl-css') || '';
-    if (ancheLayout) {
-      ov.xy = { alert: posXY.alert, chat: posXY.chat, wf: posXY.wf, ws: posXY.ws };
-      ov.mostra = _mostraOra();
-    }
+    if (ancheLayout) ov.mostra = _mostraOra();
   }
   await salvaImpostazioni({ alerts: alertsCanale, chatOverlay: chatCanale, overlays: _overlaysPayload() }, msg);
 }
@@ -6750,10 +6746,9 @@ let selezione = null;
 function _statoXY(chiave) {
   const e = ELEM(chiave);
   let st;
-  if (e && e.goal) st = (e.goal.xy = e.goal.xy || _posDove(chiave));
-  else if (e && e.cont) st = (e.cont._st = e.cont._st || _posDove(chiave));
-  else if (e && e.cfg) { const c = _cfgEl(chiave); st = (c.xy = c.xy || _posDove(chiave)); }
-  else st = (posXY[chiave] = posXY[chiave] || _posDove(chiave));
+  const xy = _ovXY();
+  st = (xy[chiave] = xy[chiave] || _posDove(chiave));
+  void e;
   if (st.s == null) st.s = 100;
   if (st.r == null) st.r = 0;
   return st;
@@ -6776,13 +6771,13 @@ function _occhio(k) {
   if (e && e.goal) {
     leggiGoalDalForm();
     e.goal.attivo = e.goal.attivo === false;
-    disegnaGoal(); aggiornaAnteprima(); _ricorda(); _salvaPos(k);
+    disegnaGoal(); aggiornaAnteprima(); _ricorda(); _salvaFamiglia(k);
     return;
   }
   if (e && e.cont) {
     const o = (e.cont.overlayCfg = e.cont.overlayCfg || {});
     o.mostra = !o.mostra;
-    aggiornaAnteprima(); _ricorda(); _salvaPos(k);
+    aggiornaAnteprima(); _ricorda(); _salvaFamiglia(k);
     return;
   }
   if (e && e.cfg) {
@@ -6790,7 +6785,7 @@ function _occhio(k) {
     c.attivo = !c.attivo;
     const chk = _g(k === 'musica' ? 'mus-attivo' : 'tim-attivo');
     if (chk) chk.checked = c.attivo;
-    aggiornaAnteprima(); _ricorda(); _salvaPos(k);
+    aggiornaAnteprima(); _ricorda(); _salvaFamiglia(k);
     return;
   }
   const c = _g('mostra-' + k);
@@ -7168,21 +7163,25 @@ function _cfgEl(k) {
   return _bozzaEl[k];
 }
 
-function _posCorrente(k) {
+let _SEME_FISSO = {};
+
+function _ovAttuale() { return overlays.find((o) => o.id === overlaySel) || overlays[0] || null; }
+function _ovXY() { const o = _ovAttuale(); if (!o) return {}; return (o.xy = o.xy || {}); }
+
+function _semePos(k) {
   const e = ELEM(k);
   if (!e) return null;
-  if (e.goal) return e.goal.xy;
-  if (e.cont) return e.cont._st || null;
+  if (e.goal) return e.goal.xy || null;
+  if (e.cont) return e.cont._st || _stCont(e.cont);
   if (e.cfg) return _cfgEl(k).xy || null;
-  return posXY[k];
+  return _SEME_FISSO[k] || null;
 }
 
+function _posCorrente(k) { return _ovXY()[k] || _semePos(k); }
+
 function _scriviPos(k, st) {
-  const e = ELEM(k);
-  if (e && e.goal) { e.goal.xy = st; return; }
-  if (e && e.cont) { e.cont._st = st; return; }
-  if (e && e.cfg) { _cfgEl(k).xy = st; return; }
-  posXY[k] = st;
+  const xy = _ovXY();
+  if (st) xy[k] = st; else delete xy[k];
 }
 
 function _accesoDi(k) {
@@ -7357,7 +7356,13 @@ const _tra = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const _pct = (px, tot) => (px / tot) * 100;
 const _arr = (n) => Math.round(n * 100) / 100;   // due decimali: 0.01% = 0.19px su 1920
 
-let _storia = [], _storiaAvanti = [], _storiaInCorso = false;
+const _storie = {};
+let _storiaInCorso = false;
+
+function _sessione() {
+  const id = (_ovAttuale() || {}).id || 'principale';
+  return (_storie[id] = _storie[id] || { indietro: [], avanti: [] });
+}
 
 function _istantanea() {
   const pos = {}, acceso = {};
@@ -7367,18 +7372,19 @@ function _istantanea() {
 let _ultimoRicordo = 0, _ultimaFusione = '';
 function _ricorda(fusione) {
   if (_storiaInCorso) return;
+  const ses = _sessione();
   const foto = _istantanea();
-  if (_storia.length && _storia[_storia.length - 1] === foto) return;
+  if (ses.indietro.length && ses.indietro[ses.indietro.length - 1] === foto) return;
   const ora = performance.now();
-  const fondibile = fusione && fusione === _ultimaFusione && ora - _ultimoRicordo < 700 && _storia.length > 1;
-  if (fondibile) _storia[_storia.length - 1] = foto;
+  const fondibile = fusione && fusione === _ultimaFusione && ora - _ultimoRicordo < 700 && ses.indietro.length > 1;
+  if (fondibile) ses.indietro[ses.indietro.length - 1] = foto;
   else {
-    _storia.push(foto);
-    if (_storia.length > 60) _storia.shift();
+    ses.indietro.push(foto);
+    if (ses.indietro.length > 60) ses.indietro.shift();
   }
   _ultimoRicordo = ora;
   _ultimaFusione = fusione || '';
-  _storiaAvanti.length = 0;
+  ses.avanti.length = 0;
   _aggiornaBottoniStoria();
 }
 function _applicaIstantanea(foto) {
@@ -7400,22 +7406,25 @@ function _applicaIstantanea(foto) {
   } catch (e) {  }
 }
 function annullaOvl() {
-  if (_storia.length < 2) return;
-  _storiaAvanti.push(_storia.pop());
-  _applicaIstantanea(_storia[_storia.length - 1]);
+  const ses = _sessione();
+  if (ses.indietro.length < 2) return;
+  ses.avanti.push(ses.indietro.pop());
+  _applicaIstantanea(ses.indietro[ses.indietro.length - 1]);
   _aggiornaBottoniStoria();
 }
 function ripetiOvl() {
-  const f = _storiaAvanti.pop();
+  const ses = _sessione();
+  const f = ses.avanti.pop();
   if (!f) return;
-  _storia.push(f);
+  ses.indietro.push(f);
   _applicaIstantanea(f);
   _aggiornaBottoniStoria();
 }
 function _aggiornaBottoniStoria() {
+  const ses = _sessione();
   const a = _g('ovl-annulla'), r = _g('ovl-ripeti');
-  if (a) a.disabled = _storia.length < 2;
-  if (r) r.disabled = !_storiaAvanti.length;
+  if (a) a.disabled = ses.indietro.length < 2;
+  if (r) r.disabled = !ses.avanti.length;
 }
 
 function _centriAltrui(chiave) {
@@ -7553,7 +7562,9 @@ function rendiTrascinabile(el, chiave) {
   el.addEventListener('dblclick', () => { _azzeraPos(chiave); deseleziona(); aggiornaAnteprima(); _ricorda(); _salvaPos(chiave); });
 }
 
-function _salvaPos(chiave) {
+function _salvaPos() { return salvaLayoutOverlay(true); }
+
+function _salvaFamiglia(chiave) {
   const e = ELEM(chiave);
   if (e && e.goal) return salvaGoalDaScena();
   if (e && e.cont) return salvaContoDaScena(e.cont);
@@ -7584,11 +7595,7 @@ const _timerConto = {};
 function salvaContoDaScena(c) {
   clearTimeout(_timerConto[c.comando]);
   _timerConto[c.comando] = setTimeout(() => {
-    const st = c._st || _stCont(c);
     const o = c.overlayCfg || (c.overlayCfg = {});
-    o.x = _arr(st.x); o.y = _arr(st.y);
-    o.dim = Math.max(8, Math.min(200, Math.round((CONT_BASE * (Number(st.s) || 100)) / 100)));
-    o.r = Number(st.r) || 0;
     api('/api/contatori', { method: 'POST', body: { comando: c.comando, overlay: o } }).catch(() => {  });
   }, 600);
 }
@@ -7754,12 +7761,15 @@ function scegliOverlay(id) {
 function caricaOverlaySel() {
   const ov = overlays.find((o) => o.id === overlaySel) || overlays[0];
   if (!ov) return;
-  posXY = { alert: ov.xy?.alert || null, chat: ov.xy?.chat || null, wf: ov.xy?.wf || null, ws: ov.xy?.ws || null };
+  ov.xy = ov.xy || {};
   ELEM_OVL.forEach((k) => { const c = _g('mostra-' + k); if (c) c.checked = ov.mostra?.[k] !== false; });
   const i = _g('inp-overlay-url'); if (i) i.value = ov.url || '';
   _applicaStileOverlay(ov);
   deseleziona();
   aggiornaAnteprima();
+  const ses = _sessione();
+  if (!ses.indietro.length) ses.indietro.push(_istantanea());
+  _aggiornaBottoniStoria();
 }
 
 function _overlaysPayload() {
@@ -7770,7 +7780,6 @@ function _overlaysPayload() {
 async function salvaLayoutOverlay(silenzioso) {
   const ov = overlays.find((o) => o.id === overlaySel);
   if (!ov) return;
-  ov.xy = { alert: posXY.alert, chat: posXY.chat, wf: posXY.wf, ws: posXY.ws };
   ov.mostra = _mostraOra();
   await salvaImpostazioni({ overlays: _overlaysPayload() }, silenzioso ? null : L('Overlay salvato ✓', 'Overlay saved ✓', 'Overlay guardado ✓'));
 }
@@ -7861,7 +7870,7 @@ function caricaAlert() {
   const scheda = _g('scheda-alert');
 
   const imp = impostazioni();
-  posXY = { alert: imp.alerts.xy || null, chat: imp.chatOverlay.xy || null,
+  _SEME_FISSO = { alert: imp.alerts.xy || null, chat: imp.chatOverlay.xy || null,
     wf: imp.overlayWidget.ultimoFollower.xy || null, ws: imp.overlayWidget.ultimoSub.xy || null };
   FISSI.forEach((k) => rendiTrascinabile(_nodo(k), k));
 

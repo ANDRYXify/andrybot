@@ -283,6 +283,66 @@ const manigliePerse = await p.evaluate(async () => {
   return fuori;
 });
 
+// Un overlay e' una SESSIONE DI LAVORO a se': quel che sposti qui non si muove
+// negli altri. Prima ov.xy teneva solo i quattro fissi, quindi player, conto
+// alla rovescia, obiettivi e contatori avevano una posizione per tutto il
+// canale: li spostavi in un overlay e ti seguivano in tutti.
+const trapelati = await p.evaluate(async () => {
+  if (overlays.length < 2) return ['servono due overlay per provarlo'];
+  const chiavi = ELEMENTI().map((e) => e.k);
+  const [primo, secondo] = [overlays[0].id, overlays[1].id];
+  scegliOverlay(primo);
+  await new Promise((r) => setTimeout(r, 350));
+  const prima = {};
+  for (const k of chiavi) prima[k] = _posDove(k).x;
+  scegliOverlay(secondo);
+  await new Promise((r) => setTimeout(r, 350));
+  const altrove = {};
+  for (const k of chiavi) altrove[k] = _posDove(k).x;
+
+  scegliOverlay(primo);
+  await new Promise((r) => setTimeout(r, 350));
+  for (const k of chiavi) { seleziona(k); await new Promise((r) => setTimeout(r, 50)); _scriviProp('x', 77); }
+  await new Promise((r) => setTimeout(r, 250));
+  scegliOverlay(secondo);
+  await new Promise((r) => setTimeout(r, 450));
+  const fuori = [];
+  for (const k of chiavi) {
+    const ora = _posDove(k).x;
+    if (Math.abs(ora - 77) < 0.5 && Math.abs(altrove[k] - 77) >= 0.5) fuori.push(`${k}: spostato nel primo, si è mosso anche nel secondo`);
+    else if (Math.abs(ora - altrove[k]) > 0.02) fuori.push(`${k}: nel secondo è passato da ${altrove[k]} a ${ora}`);
+  }
+  scegliOverlay(primo);
+  await new Promise((r) => setTimeout(r, 300));
+  for (const k of chiavi) if (Math.abs(_posDove(k).x - 77) > 0.5) fuori.push(`${k}: nel primo non è rimasto dove l'ho messo`);
+  void prima;
+  return fuori;
+});
+
+// E ogni sessione ha il SUO annulla: annullare in un overlay non deve tirare
+// indietro quel che hai fatto in un altro.
+const storiaMista = await p.evaluate(async () => {
+  if (overlays.length < 2) return [];
+  const [primo, secondo] = [overlays[0].id, overlays[1].id];
+  const fuori = [];
+  scegliOverlay(primo);
+  await new Promise((r) => setTimeout(r, 350));
+  seleziona('musica'); await new Promise((r) => setTimeout(r, 80));
+  _scriviProp('x', 11);
+  await new Promise((r) => setTimeout(r, 250));
+  scegliOverlay(secondo);
+  await new Promise((r) => setTimeout(r, 400));
+  seleziona('musica'); await new Promise((r) => setTimeout(r, 80));
+  const eraNelSecondo = _posDove('musica').x;
+  annullaOvl();
+  await new Promise((r) => setTimeout(r, 300));
+  if (Math.abs(_posDove('musica').x - eraNelSecondo) > 0.02) fuori.push('annullando nel secondo si è mosso il secondo, che non avevo toccato');
+  scegliOverlay(primo);
+  await new Promise((r) => setTimeout(r, 400));
+  if (Math.abs(_posDove('musica').x - 11) > 0.5) fuori.push(`annullando nel secondo si è disfatto il primo (${_posDove('musica').x} invece di 11)`);
+  return fuori;
+});
+
 await b.close();
 srv.close();
 
@@ -308,6 +368,8 @@ verde = dice(doppioni.length === 0, 'una proprietà ha un valore solo: cursore e
 verde = dice(scordati.length === 0, 'l’annulla riporta indietro qualunque elemento', scordati.join(' · ')) && verde;
 verde = dice(discordi.length === 0, 'livelli, proprietà e piede dicono lo stesso posto', discordi.join(' · ')) && verde;
 verde = dice(manigliePerse.length === 0, 'ogni maniglia è dentro la tela e prende il clic', manigliePerse.join(' · ')) && verde;
+verde = dice(trapelati.length === 0, 'ogni overlay ha il suo layout: spostare qui non muove gli altri', trapelati.join(' · ')) && verde;
+verde = dice(storiaMista.length === 0, 'e il suo annulla, che non scavalca gli altri overlay', storiaMista.join(' · ')) && verde;
 verde = dice(rotture.length === 0, 'nessun errore di pagina', rotture.join(' · ')) && verde;
 
 console.log(verde ? '\ncollaudo verde ✓\n' : '\ncollaudo ROSSO ✗\n');

@@ -151,5 +151,20 @@ for (const [nome, reApp] of assi) {
   }
 }
 
+// Il corpo di base di un contatore: lo studio lo usa per passare da «scala %» a
+// «pixel» e l'overlay per tornare indietro. Se i due numeri divergono, un
+// contatore ridimensionato nello studio arriva in diretta di un'altra misura.
+{
+  const ovl = readFileSync('src/web/public/overlay-app.js', 'utf8');
+  const db = readFileSync('src/db.js', 'utf8');
+  const num = (t, re) => { const m = re.exec(t); return m ? Number(m[1]) : null; };
+  const a = num(app, /const CONT_BASE = (\d+)/);
+  const b = num(ovl, /const CONT_BASE = (\d+)/);
+  const c = num(db, /mostra: false, x: 4, y: 94, r: 0,[^}]*?dim: (\d+)/);
+  if (a == null || b == null || c == null) err.push('corpo del contatore: non trovo uno dei tre numeri');
+  else if (!(a === b && b === c)) err.push(`corpo del contatore: studio ${a}, overlay ${b}, database ${c}`);
+  else console.log(`corpo contatore: ${a} px in tutti e tre  ✓`);
+}
+
 console.log(err.length ? '\n' + err.map((e) => '- ' + e).join('\n') : '\nBrowser e server sono d\'accordo. ✓');
 process.exit(err.length ? 1 : 0);

@@ -39,6 +39,8 @@ lo usa: se non si vede da fuori, qui non ci va.
 - Quello che imposti su un contatore viene controllato prima di essere salvato: era l'unico elemento che entrava senza verifiche.
 - La maniglia per ruotare si raggiunge sempre: per un elemento in cima alla tela finiva tagliata fuori dal riquadro, e ora passa sotto.
 - L'elemento che stai modificando sta davanti agli altri: prima un vicino gli copriva le maniglie e si prendeva il clic.
+- Ogni overlay è una sessione di lavoro a sé: quello che sposti in uno resta lì. Prima player, conto alla rovescia, obiettivi e contatori avevano una posizione sola per tutto il canale e ti seguivano ovunque.
+- E ogni overlay ha il suo Annulla: annullare in una scena non disfa quello che hai fatto in un'altra.
 - Scegliendo un obiettivo sulla tela le sue proprietà — colori, carattere, forma, cornice, opacità — si aprono lì accanto, come per ogni altro elemento.
 - Trascinare un contatore non lo fa più saltare a metà schermo, e ora si può anche ruotare.
 - L'occhio di «Obiettivo» e «Contatori» funziona davvero: prima si spegneva e al ricaricamento tornava acceso, quindi non si potevano togliere da un overlay.

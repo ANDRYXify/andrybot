@@ -279,15 +279,17 @@ const fontDi = (st) => {
 
 function applicaVars(el, vars) { for (const k in vars) { if (vars[k] != null && vars[k] !== '') el.style.setProperty(k, String(vars[k])); } }
 
+function trasformaXY(xy) {
+  const s = (Number(xy.s) || 100) / 100, r = Number(xy.r) || 0;
+  return 'translate(' + (-xy.x) + '%,' + (-xy.y) + '%) scale(' + s + ') rotate(' + r + 'deg)';
+}
+
 function posizionaContenitore(el, xy, corner) {
   if (xy && xy.x != null) {
     el.className = '';
     el.style.left = xy.x + '%'; el.style.top = xy.y + '%';
     el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.width = 'auto';
-
-    var s = (Number(xy.s) || 100) / 100, r = Number(xy.r) || 0;
-
-    el.style.transform = 'translate(' + (-xy.x) + '%,' + (-xy.y) + '%) scale(' + s + ') rotate(' + r + 'deg)';
+    el.style.transform = trasformaXY(xy);
   } else {
     el.className = corner;
     el.style.left = el.style.top = el.style.right = el.style.bottom = el.style.width = el.style.transform = '';
@@ -531,6 +533,8 @@ function connetti() {
   es.onerror = () => {};
 }
 
+const CONT_BASE = 40;
+
 function fontStackCont(f) {
   const m = window.FONT_CONT || {};
   return m[f] || m.system || 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
@@ -541,16 +545,19 @@ function contatore(d) {
   if (!d.mostra || !mostra('cont')) { if (el) el.remove(); return; }
   if (!el) { el = document.createElement('div'); el.id = id; el.className = 'contatore-widget ovl-widget forma-carta materia-piatta cornice-nessuna'; document.body.appendChild(el); }
   el.textContent = String(d.testo || '');
-  const x = isFinite(Number(d.x)) ? Number(d.x) : 6, y = isFinite(Number(d.y)) ? Number(d.y) : 84;
+  const mio = (MIO.xy || {})['cont:' + String(d.comando || '').toLowerCase()] || null;
+  const x = mio ? Number(mio.x) : (isFinite(Number(d.x)) ? Number(d.x) : 6);
+  const y = mio ? Number(mio.y) : (isFinite(Number(d.y)) ? Number(d.y) : 84);
   el.style.left = x + '%';
   el.style.top = y + '%';
 
-  const r = Number(d.r) || 0;
+  const r = Number(mio ? mio.r : d.r) || 0;
   el.style.transform = 'translate(-' + x + '%,-' + y + '%)' + (r ? ' rotate(' + r + 'deg)' : '');
   el.style.setProperty('--fg', d.colore || '#ffffff');
   if (d.sfondo) el.style.setProperty('--bg', d.sfondo);
   el.style.color = d.colore || '#ffffff';
-  el.style.fontSize = (Math.max(8, Math.min(200, Number(d.dim) || 40))) + 'px';
+  const corpo = mio ? (CONT_BASE * (Number(mio.s) || 100)) / 100 : (Number(d.dim) || CONT_BASE);
+  el.style.fontSize = Math.max(8, Math.min(200, Math.round(corpo))) + 'px';
   el.style.fontWeight = d.grassetto ? '800' : '500';
   el.style.fontFamily = fontStackCont(d.font);
 }
@@ -572,12 +579,7 @@ function unGoal(cfg, valore) {
   (wboxes[cfg.posizione] || wboxes['alto-sinistra'] || document.body).appendChild(el);
   const st = cfg.stile || {};
   el.className = 'ovl-widget ovl-goal dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');
-  const xy = cfg.xy;
-  if (xy && xy.x != null) {
-    const sc = (Number(xy.s) || 100) / 100, r = Number(xy.r) || 0;
-    el.style.position = 'fixed'; el.style.left = xy.x + '%'; el.style.top = xy.y + '%';
-    el.style.transform = 'translate(' + (-xy.x) + '%,' + (-xy.y) + '%) scale(' + sc + ') rotate(' + r + 'deg)';
-  } else { el.style.position = ''; el.style.left = ''; el.style.top = ''; el.style.transform = ''; }
+  posaElemento(el, 'goal:' + id, cfg);
   applicaVars(el, {
     '--bg': st.sfondo, '--op': st.opacita != null ? st.opacita + '%' : null, '--fg': st.testo,
     '--acc': st.accento, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null, '--font': fontDi(st) || null,
@@ -604,19 +606,22 @@ let musicaInVolo = false;
 
 const MUSICA_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>';
 
-function vestiElemento(el, cfg, corniceDef) {
+function posaElemento(el, chiave, cfg) {
+  const xy = (MIO.xy && MIO.xy[chiave]) || (cfg && cfg.xy);
+  if (xy && xy.x != null) {
+    el.style.position = 'fixed'; el.style.left = xy.x + '%'; el.style.top = xy.y + '%';
+    el.style.transform = trasformaXY(xy);
+  } else { el.style.position = ''; el.style.left = ''; el.style.top = ''; el.style.transform = ''; }
+}
+
+function vestiElemento(el, cfg, corniceDef, chiave) {
   const st = cfg.stile || {};
   applicaVars(el, {
     '--bg': st.sfondo, '--op': st.opacita != null ? st.opacita + '%' : null, '--fg': st.testo,
     '--acc': st.accento, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null,
     '--font': fontDi(st) || null, '--dim-ico': (st.dimIcona != null ? st.dimIcona : 20) + 'px',
   });
-  const xy = cfg.xy;
-  if (xy && xy.x != null) {
-    const sc = (Number(xy.s) || 100) / 100, r = Number(xy.r) || 0;
-    el.style.position = 'fixed'; el.style.left = xy.x + '%'; el.style.top = xy.y + '%';
-    el.style.transform = 'translate(' + (-xy.x) + '%,' + (-xy.y) + '%) scale(' + sc + ') rotate(' + r + 'deg)';
-  } else { el.style.position = ''; el.style.left = ''; el.style.top = ''; el.style.transform = ''; }
+  posaElemento(el, chiave, cfg);
 }
 
 function togliMusica() {
@@ -730,7 +735,7 @@ function disegnaMusica() {
     + (vivo && d.suona ? ' suona' : ' in-pausa') + (vivo ? '' : ' fermo')
     + ' entra-' + cfg.entrata + (cfg.barra !== 'sotto' && cfg.tempi === 'no' ? ' senza-sotto' : '')
     + (el.classList.contains('dentro') ? ' dentro' : '');
-  vestiElemento(el, cfg, 'nessuna');
+  vestiElemento(el, cfg, 'nessuna', 'musica');
   if (nato) requestAnimationFrame(() => el.classList.add('dentro'));
 
   const disco = el.querySelector('.m-disco');
@@ -870,7 +875,7 @@ function disegnaTimer() {
   (wboxes[cfg.posizione] || wboxes['alto-destra'] || document.body).appendChild(el);
   el.className = 'ovl-widget ovl-timer dim-' + ((cfg.stile || {}).dim || 'media') + ' ' + classiIdentita(cfg.stile, 'nessuna')
     + (finito ? ' finito' : '') + (el.classList.contains('dentro') ? ' dentro' : '');
-  vestiElemento(el, cfg, 'nessuna');
+  vestiElemento(el, cfg, 'nessuna', 'timer');
   el.querySelector('.t-tit').textContent = finito ? '' : (cfg.titolo || '');
   el.querySelector('.t-num').textContent = finito ? (cfg.testoFine || '') : oreMinSec(manca);
   if (nato) requestAnimationFrame(() => el.classList.add('dentro'));

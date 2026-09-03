@@ -396,6 +396,44 @@ Il cancello prova tutti e dieci gli elementi: sposta, annulla, controlla che sia
 tornato. Rotto di proposito (togliendo la famiglia `cfg` dall'istantanea) dice
 `musica: annulla lo lascia a 40 invece di 10.74`.
 
+### Un overlay è una sessione di lavoro
+
+Il prodotto lo dice da sempre: «ogni overlay ha il suo link e il suo layout, es.
+un overlay "solo alert" in una scena e uno "solo chat" in un'altra». Ma il
+layout era per metà:
+
+| | per overlay | di canale |
+| --- | --- | --- |
+| `ov.mostra` — cosa compare | tutti e nove gli elementi | — |
+| `ov.xy` — **dove sta** | alert, chat, wf, ws | obiettivi, contatori, player, conto alla rovescia |
+
+Quindi il player stava dove l'avevi lasciato **l'ultima volta**, in qualunque
+overlay lo guardassi. Misurato mettendo ogni elemento al 77% nel primo overlay e
+rileggendolo nel secondo: i quattro fissi restavano ai loro posti, gli altri sei
+erano tutti al 77%.
+
+La causa era una copia: `posXY` era un duplicato a quattro chiavi di `ov.xy`,
+copiato al cambio di overlay e ricopiato al salvataggio. Quattro chiavi scritte a
+mano, e nessuno le ha aggiornate quando gli elementi sono diventati dieci.
+
+Ora `ov.xy` **è** il negozio, indicizzato con la stessa chiave con cui `ov.mostra`
+accende l'elemento — `alert`, `musica`, `goal:g1`, `cont:morti`. La copia non
+c'è più: `_posCorrente` e `_scriviPos` parlano con l'overlay in cui stai
+lavorando, quindi un elemento nuovo eredita la posizione per overlay senza che
+nessuno se ne ricordi. La posizione di canale resta come **punto di partenza**
+per un overlay che non ha ancora messo quell'elemento da nessuna parte — così
+chi ha già i suoi overlay non se li vede saltare.
+
+In diretta la regola è la stessa e la applica una funzione sola, `posaElemento`:
+`MIO.xy[chiave] || cfg.xy`. Era già l'idioma per alert e chat
+(`MIO.xy.alert || ev.xy`); ora vale per tutti. E la formula che posa un elemento,
+che era scritta in **tre** punti, adesso è una: `trasformaXY`.
+
+**E l'annulla è per sessione.** Con una cronologia sola, annullare in una scena
+tirava indietro quel che avevi fatto in un'altra. Ora `_storie` tiene un
+indietro/avanti per overlay: cambiare overlay cambia la cronologia, e i due tasti
+si accendono su quella giusta.
+
 ### Una maniglia che non si poteva prendere
 
 La maniglia per ruotare sporge **78 px sopra** l'elemento. Per chi sta in cima
