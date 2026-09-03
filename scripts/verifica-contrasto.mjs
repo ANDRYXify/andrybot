@@ -1,0 +1,142 @@
+// Cancello del CONTRASTO VERO, misurato sui pixel.
+//
+// Il cancello della tavolozza confronta i token a due a due: --testo su --bg e
+// via. Non vede quello che succede DAVVERO a schermo — un fondo a sfumatura, un
+// velo sopra, un lampo che attraversa il bottone al passaggio del mouse. Un
+// bottone con la scritta illeggibile passava indenne, perche' i due token che lo
+// compongono, presi da soli, erano in regola.
+//
+// Qui si rende la pagina in un browser vero, si ritagliano i comandi e si misura
+// il contrasto fra il colore della SCRITTA e quello dei pixel che le stanno
+// dietro — anche mentre il mouse ci passa sopra, che e' il momento in cui il
+// difetto si era visto.
+//
+// Uso: node scripts/verifica-contrasto.mjs   (esce 1 se qualcosa non si legge)
+
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const RAD = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+const PUB = path.join(RAD, 'src/web/public');
+const CHROMIUM = process.env.CHROMIUM || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+const PLAYWRIGHT = process.env.PLAYWRIGHT || '/opt/node22/lib/node_modules/playwright/index.mjs';
+
+let chromium;
+try { ({ chromium } = await import(PLAYWRIGHT)); }
+catch { console.log('Playwright non c\'e\' su questa macchina: collaudo saltato.'); process.exit(0); }
+
+const TIPI = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png',
+  '.webmanifest': 'application/manifest+json', '.json': 'application/json', '.woff2': 'font/woff2' };
+
+const srv = http.createServer((req, res) => {
+  const q = decodeURIComponent(req.url.split('?')[0]);
+  if (q.startsWith('/api/')) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end('{}'); }
+  const f = path.join(PUB, q === '/' ? 'index.html' : q);
+  if (!f.startsWith(PUB) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) {
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    return res.end(fs.readFileSync(path.join(PUB, 'index.html')));
+  }
+  res.writeHead(200, { 'content-type': TIPI[path.extname(f)] || 'application/octet-stream' });
+  res.end(fs.readFileSync(f));
+});
+await new Promise((ok) => srv.listen(0, '127.0.0.1', ok));
+const PORTA = srv.address().port;
+
+// WCAG: luminanza relativa e rapporto di contrasto.
+const lum = ([r, g, b]) => {
+  const c = [r, g, b].map((v) => { const x = v / 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; });
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+};
+const rapporto = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return Math.round(((x + 0.05) / (y + 0.05)) * 100) / 100; };
+
+// I comandi che DEVONO leggersi, e la soglia: 4.5 per il testo normale, 3 per
+// quello grande (WCAG AA). Il fondo si misura sui pixel, la scritta dal colore
+// dichiarato: e' la scritta a dover vincere sul suo fondo, comunque sia fatto.
+const PROVE = [
+  ['.vt-btn-primo', 4.5], ['.vt-btn:not(.vt-btn-primo)', 4.5],
+  ['.vt-occhiello', 4.5], ['.vt-sub', 4.5], ['.vt-sotto', 4.5],
+  ['.vt-titolo', 3], ['.vt-titolo em', 3],
+];
+
+const b = await chromium.launch({ executablePath: CHROMIUM,
+  args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox', '--disable-dev-shm-usage'] });
+
+const guai = [];
+let misurati = 0;
+for (const tema of ['light', 'dark']) {
+  const p = await b.newPage({ viewport: { width: 1440, height: 940 }, colorScheme: tema });
+  await p.goto(`http://127.0.0.1:${PORTA}/?lang=it`, { waitUntil: 'domcontentloaded' });
+  await p.waitForTimeout(2600);
+  await p.evaluate(() => { document.getElementById('cookie-banner')?.remove(); document.getElementById('splash')?.remove(); });
+  await p.waitForTimeout(400);
+
+  for (const [sel, soglia] of PROVE) {
+    const el = await p.$(sel);
+    if (!el) { guai.push(`${tema} ${sel}: non c'e'`); continue; }
+    for (const sopra of [false, true]) {
+      if (sopra) { await el.hover(); await p.waitForTimeout(450); }
+      const testo = await el.evaluate((n) => {
+        const cs = getComputedStyle(n);
+        const f = cs.webkitTextFillColor || cs.color;
+        return /transparent|rgba\(0, 0, 0, 0\)/.test(f) ? cs.color : f;
+      });
+      const rgb = (testo.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
+      // Si guarda DENTRO: fuori c'e' il bordo, che su un fondo a sfumatura e'
+      // l'unico colore piatto e vincerebbe come «piu' frequente» pur non stando
+      // dietro a nessuna lettera. E la scatola si rimisura ADESSO, perche' col
+      // mouse sopra l'elemento si sposta.
+      const box = await el.boundingBox();
+      if (!box || box.width < 16 || box.height < 12) { guai.push(`${tema} ${sel}: troppo piccolo`); continue; }
+      const orlo = Math.min(7, Math.floor(Math.min(box.width, box.height) / 4));
+      const png = await p.screenshot({ clip: { x: box.x + orlo, y: box.y + orlo,
+        width: Math.max(4, box.width - orlo * 2), height: Math.max(4, box.height - orlo * 2) } });
+      const pixel = await p.evaluate(async (dati) => {
+        const img = new Image();
+        img.src = 'data:image/png;base64,' + dati;
+        await img.decode();
+        const c = document.createElement('canvas');
+        c.width = img.width; c.height = img.height;
+        c.getContext('2d').drawImage(img, 0, 0);
+        return Array.from(c.getContext('2d').getImageData(0, 0, img.width, img.height).data);
+      }, png.toString('base64'));
+      const conta = new Map();
+      let totale = 0;
+      for (let k = 0; k < pixel.length; k += 4) {
+        if (pixel[k + 3] < 200) continue;
+        const key = `${pixel[k] >> 4},${pixel[k + 1] >> 4},${pixel[k + 2] >> 4}`;
+        conta.set(key, (conta.get(key) || 0) + 1);
+        totale++;
+      }
+      if (!totale) { guai.push(`${tema} ${sel}: ritaglio vuoto`); continue; }
+      // Il fondo peggiore: fra i colori che coprono almeno il 4% dell'area
+      // interna, quello che si avvicina di piu' alla scritta, escluso il colore
+      // della scritta stessa.
+      let peggio = null;
+      for (const [key, n] of conta) {
+        if (n / totale < 0.04) continue;
+        const col = key.split(',').map((v) => Number(v) * 16 + 8);
+        const r = rapporto(rgb, col);
+        // Quel che ha il colore della scritta E' la scritta: per definizione non
+        // e' il suo fondo, e contarlo faceva fallire ogni bottone scritto scuro.
+        if (r < 1.6) continue;
+        if (peggio == null || r < peggio.r) peggio = { r, col, quota: n / totale };
+      }
+      if (!peggio) { guai.push(`${tema} ${sel}: nessun fondo dominante`); continue; }
+      misurati++;
+      if (process.env.DEBUG) console.log('  dbg', tema, sel, sopra ? 'hover' : 'fermo', 'testo', testo, 'fondo', peggio.col.join(','), `(${Math.round(peggio.quota * 100)}%)`, '->', peggio.r);
+      if (peggio.r < soglia) guai.push(`${tema} ${sel}${sopra ? ' (col mouse sopra)' : ''}: ${peggio.r}, serve ${soglia}`);
+    }
+  }
+  await p.close();
+}
+await b.close();
+srv.close();
+
+const dice = (ok, testo, extra = '') => { console.log(`  ${ok ? '✓' : '✗'} ${testo}${!ok && extra ? ` — ${extra}` : ''}`); return ok; };
+console.log('\nQuel che c\'e\' scritto si legge davvero.\n');
+const verde = dice(guai.length === 0, `contrasti misurati sui pixel: ${misurati} (chiaro e scuro, fermo e col mouse sopra)`, guai.join(' · '));
+console.log(verde ? '\ncollaudo verde ✓\n' : '\ncollaudo ROSSO ✗\n');
+process.exit(verde ? 0 : 1);

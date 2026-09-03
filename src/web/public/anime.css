@@ -129,31 +129,34 @@ body.cerca-aperta { overflow: hidden; }
 
 #an-cursore-dot, #an-cursore-ring, #an-cursore-bar { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999; will-change: transform; }
 #an-cursore-dot {
-  width: 4px; height: 4px; border-radius: 50%; background: var(--acc);
+  width: 5px; height: 5px; border-radius: 60% 40% 55% 45%; background: var(--contorno);
+  box-shadow: 0 0 0 1.5px var(--acc);
   transition: opacity .18s ease, width .18s ease, height .18s ease, box-shadow .18s ease;
 }
 #an-cursore-ring {
-  width: 32px; height: 32px; border-radius: 16px;
+  width: 32px; height: 32px; border-radius: var(--ang-mano);
   contain: layout style size; will-change: transform, width, height;
   transition: background .2s ease, box-shadow .2s ease, opacity .18s ease;
 }
 #an-cursore-ring::before {
-  content: ""; position: absolute; inset: 0; border-radius: inherit; border: 1px solid var(--testo-2);
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  border: 2px solid var(--contorno); border-width: var(--tratto-mano);
   transition: opacity .2s ease, border-color .28s ease;
 }
 #an-cursore-ring.morph {
-  background: color-mix(in srgb, var(--acc) 12%, transparent);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--acc) 40%, transparent);
+  background: transparent;
+  box-shadow: var(--ombra-ink-timbro);
 }
-#an-cursore-ring.morph::before { opacity: 0; }
+#an-cursore-ring.morph::before { opacity: 1; border-color: var(--contorno); }
 
 #an-cursore-bar { width: 2px; height: 22px; margin: -11px 0 0 -1px; border-radius: 2px; background: var(--acc); opacity: 0; transition: opacity .15s ease; }
 body.modo-testo #an-cursore-bar { opacity: 1; }
 body.modo-testo #an-cursore-ring, body.modo-testo #an-cursore-dot { opacity: 0; }
 body.morfando #an-cursore-dot {
-  width: 6px; height: 6px; margin: -1px 0 0 -1px;
-  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--su-acc, #fff) 85%, transparent), 0 1px 3px rgba(0, 0, 0, .45);
+  width: 7px; height: 7px; margin: -1px 0 0 -1px;
+  box-shadow: 0 0 0 2px var(--acc), 0 0 0 3.5px var(--contorno);
 }
+#an-cursore-bar { background: var(--contorno); box-shadow: 1px 1px 0 var(--acc); border-radius: 3px 1px 2px 1px; }
 body.fuori-pagina #an-cursore-ring, body.fuori-pagina #an-cursore-dot, body.fuori-pagina #an-cursore-bar { opacity: 0; }
 
 body.cursore-on, body.cursore-on * { cursor: none !important; }

@@ -21,6 +21,10 @@ body.vetrina .contenuto { max-width: 1180px; padding-inline: clamp(1.1rem, 4vw, 
 body.vetrina .pagina-testata { display: none; }
 body.vetrina #cerca-lancia, body.vetrina #plancia-lancia { display: none !important; }
 
+body.vetrina, body.vetrina .vt-sub, body.vetrina .vt-mappa a, body.vetrina .vt-sotto,
+body.vetrina p, body.vetrina li, body.vetrina label, body.vetrina .vt-btn {
+  font-family: var(--mano);
+}
 body.vetrina h1, body.vetrina h2, body.vetrina h3, body.vetrina .vt-num,
 body.vetrina .vt-titolo, body.vetrina .vt-tit {
   font-family: var(--mano);
@@ -44,9 +48,18 @@ body.vetrina em, body.vetrina .vt-corsivo {
   padding: clamp(2.4rem, 7vh, 5rem) 0 clamp(2rem, 5vh, 3.4rem);
 }
 .vt-scena::before {
-  content: ""; position: absolute; inset: -30% -20% -10%;
-  background: var(--v-alone-caldo), var(--v-alone-freddo);
-  filter: blur(28px); opacity: .85; z-index: -1; pointer-events: none;
+  content: ""; position: absolute; inset: -34% -50vw -12%;
+  background-image: var(--cinetiche);
+  opacity: var(--cinetiche-forza); z-index: -2; pointer-events: none;
+  -webkit-mask-image: radial-gradient(closest-side, transparent 24%, #000 62%, transparent 92%);
+  mask-image: radial-gradient(closest-side, transparent 24%, #000 62%, transparent 92%);
+}
+.vt-scena::after {
+  content: ""; position: absolute; inset: -18% -50vw; z-index: -1; pointer-events: none;
+  background-image: var(--retino); background-size: var(--retino-passo);
+  opacity: calc(var(--retino-forza) * .55);
+  -webkit-mask-image: radial-gradient(70% 58% at 50% 34%, #000 12%, transparent 76%);
+  mask-image: radial-gradient(70% 58% at 50% 34%, #000 12%, transparent 76%);
 }
 
 .vt-barra {
@@ -93,6 +106,15 @@ body.vetrina em, body.vetrina .vt-corsivo {
   letter-spacing: -.02em;
   background: var(--rampa); -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent; color: var(--acc);
+  background-size: 220% 100%; background-position: 100% 0;
+  animation: vt-colora .8s .3s var(--an-vel) both;
+}
+@keyframes vt-colora {
+  from { background-position: 100% 0; }
+  to { background-position: 0 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vt-titolo em { animation: none; background-position: 0 0; }
 }
 @supports not (background-clip: text) { .vt-titolo em { -webkit-text-fill-color: currentColor; color: var(--acc); } }
 
@@ -126,14 +148,17 @@ body.vetrina em, body.vetrina .vt-corsivo {
   background: var(--rampa);
   box-shadow: var(--alone-contorno), var(--ombra-ink), inset 0 1px 0 rgba(255, 255, 255, .22);
 }
-.vt-btn-primo:hover { color: var(--su-acc); box-shadow: var(--alone-contorno), var(--ombra-ink-alta), inset 0 1px 0 rgba(255, 255, 255, .3); }
-.vt-btn-primo::after {
-  content: ""; position: absolute; inset: 0; z-index: -1;
-  background: linear-gradient(100deg, transparent 38%, rgba(255, 255, 255, .5) 50%, transparent 62%);
-  transform: translateX(-140%);
+.vt-btn-primo:hover {
+  color: var(--su-acc); background: var(--rampa);
+  box-shadow: var(--alone-contorno), var(--ombra-ink-alta), inset 0 1px 0 rgba(255, 255, 255, .3);
 }
-.vt-btn-primo:hover::after { animation: vt-luce 1.05s var(--an-vel); }
-@keyframes vt-luce { to { transform: translateX(140%); } }
+.vt-btn-primo::after {
+  content: ""; position: absolute; inset: 0; z-index: -1; opacity: 0;
+  background-image: radial-gradient(var(--contorno) 1.1px, transparent 1.2px);
+  background-size: var(--retino-passo);
+  transition: opacity .2s ease;
+}
+.vt-btn-primo:hover::after { opacity: .26; }
 
 .vt-sotto {
   margin: 1rem 0 0; text-align: center; font-size: .86rem; color: var(--testo-3);

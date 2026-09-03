@@ -4,16 +4,16 @@
 :root {
   color-scheme: light;
 
-  --bg: #f7eff2;
-  --surface: #fcf5f8;
-  --surface-2: #f4e6ec;
-  --surface-3: #ecdbe2;
-  --border: #e9dae0;
-  --border-2: #decad2;
+  --bg: #f2efe8;
+  --surface: #fdfbf6;
+  --surface-2: #f0ebe1;
+  --surface-3: #e5dfd2;
+  --border: #ddd6c8;
+  --border-2: #c9c1b1;
 
   --testo: #1a1919;
-  --testo-2: #6c6869;
-  --testo-3: #8f8a8c;
+  --testo-2: #5c5852;
+  --testo-3: #5f5a54;
 
   --acc: #ba007a;
   --acc-600: #940060;
@@ -39,6 +39,8 @@
   --retino: radial-gradient(var(--contorno) 1.1px, transparent 1.2px);
   --retino-passo: 6px 6px;
   --retino-forza: .16;
+  --cinetiche: repeating-conic-gradient(from 0deg at 50% 50%, var(--contorno) 0deg .55deg, transparent .55deg 3.1deg);
+  --cinetiche-forza: .1;
   --acc-soft: color-mix(in srgb, var(--acc) 8%, var(--surface));
   --acc-tint: color-mix(in srgb, var(--acc) 10%, transparent);
   --acc-bordo: color-mix(in srgb, var(--acc) 26%, var(--border));
@@ -65,23 +67,23 @@
 :root[data-theme="dark"], :root:not([data-theme="light"]) {
   color-scheme: dark;
 
-  --bg: #131112;
-  --surface: #1a1618;
-  --surface-2: #221c1e;
-  --surface-3: #2b2327;
-  --border: #2c2427;
-  --border-2: #3a3034;
+  --bg: #0c0b0c;
+  --surface: #151315;
+  --surface-2: #1d1a1d;
+  --surface-3: #262227;
+  --border: #2a262b;
+  --border-2: #3a343c;
 
   --testo: #eae6e8;
-  --testo-2: #918c8e;
-  --testo-3: #696566;
+  --testo-2: #a19b9d;
+  --testo-3: #8d8789;
 
   --acc: #f72fa7;
   --acc-600: #ff61b7;
 
   --acc-vivo: #ff5ce0;
-  --acc-caldo: #e6386f;
-  --acc-vino: #c62a4c;
+  --acc-caldo: #ef4b84;
+  --acc-vino: #e04a72;
 
   --contorno: #000000;
   --alone-contorno: 0 0 0 1px color-mix(in srgb, var(--acc) 34%, transparent);
@@ -90,6 +92,8 @@
   --ombra-ink-timbro: 1px 1px 0 color-mix(in srgb, var(--acc) 62%, #000);
   --retino: radial-gradient(color-mix(in srgb, var(--acc) 80%, #fff) 1.1px, transparent 1.2px);
   --retino-forza: .2;
+  --cinetiche: repeating-conic-gradient(from 0deg at 50% 50%, color-mix(in srgb, var(--acc) 70%, #fff) 0deg .55deg, transparent .55deg 3.1deg);
+  --cinetiche-forza: .14;
   --su-acc: #1e0f18;
   --acc-soft: color-mix(in srgb, var(--acc) 10%, var(--surface));
   --acc-tint: color-mix(in srgb, var(--acc) 14%, transparent);
