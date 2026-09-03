@@ -70,7 +70,8 @@ body.vetrina em, body.vetrina .vt-corsivo {
   font-size: .68rem; font-weight: 600; letter-spacing: .3em; text-transform: uppercase;
   color: var(--testo-2);
   padding: .42rem .95rem .42rem .8rem; border-radius: 999px;
-  border: 1px solid var(--border-2); background: color-mix(in srgb, var(--surface) 70%, transparent);
+  border: var(--contorno-sp) solid var(--contorno); background: color-mix(in srgb, var(--surface) 70%, transparent);
+  box-shadow: var(--alone-contorno);
 }
 .vt-occhiello .vivo { color: var(--acc); }
 
@@ -80,7 +81,12 @@ body.vetrina em, body.vetrina .vt-corsivo {
   font-size: clamp(2.5rem, 7.4vw, 5.6rem);
   font-weight: 700; line-height: .98; letter-spacing: -.035em;
 }
-.vt-titolo em { color: var(--acc); letter-spacing: -.02em; }
+.vt-titolo em {
+  letter-spacing: -.02em;
+  background: var(--rampa); -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: var(--acc);
+}
+@supports not (background-clip: text) { .vt-titolo em { -webkit-text-fill-color: currentColor; color: var(--acc); } }
 
 .vt-sub {
   margin: clamp(1rem, 2.4vh, 1.5rem) auto 0; max-width: 62ch; text-align: center;
@@ -95,21 +101,21 @@ body.vetrina em, body.vetrina .vt-corsivo {
 .vt-btn {
   position: relative; overflow: hidden; isolation: isolate;
   display: inline-flex; align-items: center; justify-content: center; gap: .55rem;
-  min-height: 52px; padding: 0 1.6rem; border-radius: 12px;
+  min-height: 52px; padding: 0 1.6rem; border-radius: var(--r-l);
   font-family: Archivo, system-ui, sans-serif;
   font-size: 1rem; font-weight: 600; letter-spacing: -.005em; text-decoration: none;
-  border: 1px solid var(--border-2); background: color-mix(in srgb, var(--surface) 80%, transparent);
+  border: var(--contorno-sp) solid var(--contorno); background: color-mix(in srgb, var(--surface) 80%, transparent);
   color: var(--testo); cursor: pointer;
   transition: transform .18s var(--molla-lieve), border-color .24s ease, background .24s ease, color .24s ease;
 }
-.vt-btn:hover { border-color: var(--testo-3); color: var(--testo); transform: translateY(-1px); }
+.vt-btn:hover { border-color: var(--contorno); background: var(--surface); color: var(--testo); transform: translateY(-1px); }
 .vt-btn:active { transform: translateY(1px) scale(.986); }
 .vt-btn-primo {
-  border-color: transparent; color: var(--su-acc); font-weight: 700;
-  background: linear-gradient(168deg, var(--acc-600), var(--acc) 58%, var(--acc-600));
-  box-shadow: 0 10px 34px -12px var(--acc-tint), inset 0 1px 0 rgba(255, 255, 255, .22);
+  border: var(--contorno-sp) solid var(--contorno); color: var(--su-acc); font-weight: 700;
+  background: var(--rampa);
+  box-shadow: var(--alone-contorno), 0 10px 34px -12px var(--acc-tint), inset 0 1px 0 rgba(255, 255, 255, .22);
 }
-.vt-btn-primo:hover { color: var(--su-acc); box-shadow: 0 16px 42px -12px var(--acc-tint), inset 0 1px 0 rgba(255, 255, 255, .3); }
+.vt-btn-primo:hover { color: var(--su-acc); box-shadow: var(--alone-contorno), 0 16px 42px -12px var(--acc-tint), inset 0 1px 0 rgba(255, 255, 255, .3); }
 .vt-btn-primo::after {
   content: ""; position: absolute; inset: 0; z-index: -1;
   background: linear-gradient(100deg, transparent 38%, rgba(255, 255, 255, .5) 50%, transparent 62%);

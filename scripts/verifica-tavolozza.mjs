@@ -144,8 +144,45 @@ for (const tema of ['chiaro', 'scuro']) {
   }
 }
 
+// IL CONTORNO. Nel marchio il nero e' quasi meta' del disegno: e' quello che
+// tiene insieme ogni forma, e senza di lui il segno non e' piu' quel segno. Le
+// superfici che portano il colore del prodotto lo fanno come lui — e siccome su
+// fondo scuro un contorno nero si spegne, come si spegne il marchio, l'alone
+// deve esserci in entrambi i temi.
+{
+  const RICHIESTI = ['acc-vivo', 'acc-caldo', 'acc-vino', 'rampa', 'contorno', 'contorno-sp', 'alone-contorno'];
+  for (const tema of ['chiaro', 'scuro']) {
+    for (const t of RICHIESTI) {
+      try { tinta(t, tema); } catch { guai.push(`${tema}: manca --${t}`); }
+    }
+  }
+  if (TAVOLOZZA.scuro['alone-contorno'] === TAVOLOZZA.chiaro['alone-contorno']) {
+    guai.push('sul fondo scuro il contorno nero si spegne: serve l’alone, come per il marchio');
+  }
+  const PORTANO = [
+    ['style.css', '.btn'],
+    ['vetrina.css', '.vt-btn'],
+    ['vetrina.css', '.vt-btn-primo'],
+    ['vetrina.css', '.vt-occhiello'],
+  ];
+  // La regola va cercata a INIZIO RIGA: `.btn` compare anche dentro selettori
+  // piu' lunghi (`.top-strumenti .btn`) e si finiva a misurare quelli.
+  const regola = (css, sel) => {
+    const i = css.search(new RegExp('^' + sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\{', 'm'));
+    return i < 0 ? null : css.slice(i, css.indexOf('}', i));
+  };
+  for (const [file, sel] of PORTANO) {
+    const css = readFileSync(join(PUB, file), 'utf8');
+    const corpo = regola(css, sel);
+    if (corpo == null) { guai.push(`${file}: non trovo ${sel}`); continue; }
+    if (!corpo.includes('var(--contorno)')) guai.push(`${file} ${sel} non porta il contorno del marchio`);
+  }
+  const em = regola(readFileSync(join(PUB, 'vetrina.css'), 'utf8'), '.vt-titolo em');
+  if (!em || !em.includes('var(--rampa)')) guai.push('vetrina.css: le parole accentate del titolo non prendono la rampa del marchio');
+}
+
 if (guai.length) {
   console.error('Tavolozza incoerente:\n' + guai.map((g) => '  · ' + g).join('\n'));
   process.exit(1);
 }
-console.log(`Tavolozza: una sola fonte, ${TOKEN.size} colori, copie combacianti, contrasti in regola. ✓`);
+console.log(`Tavolozza: una sola fonte, ${TOKEN.size} colori, copie combacianti, contrasti in regola, contorno del marchio al suo posto. ✓`);
