@@ -123,5 +123,33 @@ for (const [nome, reApp] of assi) {
 }
 
 
+// I caratteri del contatore sono elencati in TRE posti, ognuno con la sua parte:
+// la chiave in stile.js (che valida), la famiglia CSS in presets.js (che
+// disegna), l'etichetta in app.js (che si legge). Le parti sono diverse ma le
+// CHIAVI devono essere le stesse, sennò si può scegliere un carattere che il
+// server rifiuta, o validarne uno che il browser non sa disegnare.
+{
+  const presets = readFileSync('src/web/public/presets.js', 'utf8');
+  const chiavi = (t, re) => {
+    const m = re.exec(t);
+    return m ? new Set([...m[1].matchAll(/'?([A-Za-z][A-Za-z0-9]*)'?\s*:/g)].map((q) => q[1])) : null;
+  };
+  const daStile = /export const CONT_FONT = \[([^\]]*)\]/.exec(srv);
+  const inStile = daStile ? new Set([...daStile[1].matchAll(/'([A-Za-z][A-Za-z0-9]*)'/g)].map((q) => q[1])) : null;
+  const inPresets = chiavi(presets, /window\.FONT_CONT = \{([\s\S]*?)\n {2}\};/);
+  const daApp = /const FONT_CONT_OPTS = \(\) => \[([\s\S]*?)\];/.exec(app);
+  const inApp = daApp ? new Set([...daApp[1].matchAll(/\['([A-Za-z][A-Za-z0-9]*)'/g)].map((q) => q[1])) : null;
+  if (!inStile || !inPresets || !inApp) err.push('caratteri del contatore: non trovo uno dei tre elenchi');
+  else {
+    const fuori = [];
+    for (const [nome, ins] of [['presets.js', inPresets], ['app.js', inApp]]) {
+      for (const k of ins) if (!inStile.has(k)) fuori.push(`${k} sta in ${nome} ma il server lo rifiuta`);
+      for (const k of inStile) if (!ins.has(k)) fuori.push(`${k} lo accetta il server ma non c'è in ${nome}`);
+    }
+    console.log(`font contatore: ${inStile.size} chiavi in tre elenchi  ${fuori.length ? '' : '✓'}`);
+    if (fuori.length) err.push('caratteri del contatore: ' + fuori.join(', '));
+  }
+}
+
 console.log(err.length ? '\n' + err.map((e) => '- ' + e).join('\n') : '\nBrowser e server sono d\'accordo. ✓');
 process.exit(err.length ? 1 : 0);

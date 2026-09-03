@@ -35,6 +35,8 @@ lo usa: se non si vede da fuori, qui non ci va.
 - Dimensione e Rotazione hanno un comando solo, cursore e casella insieme: erano due comandi separati che si contraddicevano, e sullo schermo si leggevano tre numeri diversi per lo stesso valore.
 - Annulla riporta indietro anche il player e il conto alla rovescia: li spostavi e Annulla li lasciava dov'erano.
 - Nei Livelli ogni elemento dice dov'è in percentuale, come le Proprietà e la barra sotto la tela: prima un elemento appena scelto diceva «in alto a sinistra» mentre le Proprietà dicevano già 2%.
+- La regolazione fine sopravvive al salvataggio: le frecce dello Studio spostano di un pixel, ma il salvataggio arrotondava a percentuali intere e ricaricando l'elemento tornava indietro, fino a dieci pixel.
+- Quello che imposti su un contatore viene controllato prima di essere salvato: era l'unico elemento che entrava senza verifiche.
 - Scegliendo un obiettivo sulla tela le sue proprietà — colori, carattere, forma, cornice, opacità — si aprono lì accanto, come per ogni altro elemento.
 - Trascinare un contatore non lo fa più saltare a metà schermo, e ora si può anche ruotare.
 - L'occhio di «Obiettivo» e «Contatori» funziona davvero: prima si spegneva e al ricaricamento tornava acceso, quindi non si potevano togliere da un overlay.

@@ -71,7 +71,7 @@ const log = makeLog('web');
 
 const SETTE_GIORNI_MS = 7 * 24 * 60 * 60 * 1000;
 import {
-  SUONI_PRESET, FONT_OVL, MIO_FONT, fontOvlOk, clampInt, hexOk, unoDi, xyOk,
+  SUONI_PRESET, FONT_OVL, MIO_FONT, fontOvlOk, clampInt, hexOk, unoDi, xyOk, puliConta,
   ICONE_OVL_K, icoOk, PESO_OVL, MAIUSC_OVL, USCITA_OVL,
   FORME_OVL, MATERIE_OVL, CORNICI_OVL, COMP_OVL,
   normAlertStile, normChatStile, normWidgetStile, normOverlayWidgetCfg, normOverlayStile, normGoals, MAX_GOAL,
@@ -2378,7 +2378,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       etichetta: b.etichetta, emoji: b.emoji, step: b.step,
       autoParola: b.autoParola,
       valore: b.valore,   // consente di correggere il valore a mano
-      overlay: b.overlay, // aspetto/posizione del widget a schermo (config completa)
+      overlay: puliConta(b.overlay), // aspetto/posizione del widget a schermo
     });
     // aggiorna dal vivo il widget sull'overlay della diretta (posizione/colore/valore/mostra)
     try { if (c) effects.emit(login, contatori.payloadOverlay(c)); } catch (e) { /* niente */ }
