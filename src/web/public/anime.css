@@ -24,16 +24,10 @@ p, li { line-height: 1.72; }
   border-color: var(--border-2); background: color-mix(in srgb, var(--testo) 3%, transparent);
 }
 
-.btn:not(.secondario):not(.testo) {
-  background: var(--testo); color: var(--bg); border: 1px solid var(--testo);
-  box-shadow: none; border-radius: 8px; font-weight: 500;
-}
-.btn:not(.secondario):not(.testo):hover { opacity: .82; transform: none; }
-.btn.secondario { background: transparent; border: 1px solid var(--border-2); color: var(--testo); box-shadow: none; border-radius: 8px; }
-.btn.secondario:hover { border-color: var(--testo); color: var(--testo); }
+.btn:not(.secondario):not(.testo):hover { opacity: .9; }
 .btn.testo {
-  background: transparent; border: 1px solid transparent; color: var(--testo-2);
-  box-shadow: none; border-radius: 8px; font-weight: 500;
+  background: transparent; border-color: transparent; color: var(--testo-2);
+  box-shadow: none; font-weight: 600;
 }
 .btn.testo:hover { background: color-mix(in srgb, var(--testo) 7%, transparent); color: var(--testo); box-shadow: none; transform: none; }
 a:hover { color: var(--acc); }
@@ -765,6 +759,7 @@ body.leggero .vivo::after, body.meno-moto .vivo::after { animation: none; opacit
   .bg-voce.on .bg-eti { font-weight: 700; }
 
   body.con-nav .contenuto { padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
+  body.con-nav .pie { padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
   body.con-nav .apri-menu { display: none; }
   body.con-nav #cerca-lancia {
     bottom: calc(74px + env(safe-area-inset-bottom, 0px));
