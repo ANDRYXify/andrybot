@@ -160,9 +160,29 @@ export async function aggiungiInCoda(login, uri) {
   return { ok: r.ok, status: r.status };   // 404 = nessun dispositivo Spotify attivo
 }
 
-// Brano in riproduzione → { nome, artisti } o null.
-export async function inRiproduzione(login) {
+// Quello che sta suonando, per intero: serve al player dell'overlay, che oltre
+// al titolo vuole la copertina e a che punto e'. Ritorna sempre un oggetto —
+// { suona: false } quando non c'e' niente in riproduzione — cosi' chi lo usa
+// non deve distinguere «non collegato» da «musica ferma»: sono la stessa cosa
+// per chi guarda lo schermo.
+export async function oraSuona(login) {
   const r = await apiCall(login, 'GET', '/me/player/currently-playing');
   const t = r.dati?.item;
-  return t ? { nome: t.name, artisti: (t.artists || []).map((a) => a.name).join(', ') } : null;
+  if (!t) return { suona: false };
+  const cover = (t.album?.images || []);
+  const piccola = cover.length ? (cover[cover.length - 1].url || cover[0].url) : '';
+  return {
+    suona: r.dati?.is_playing !== false,
+    nome: t.name,
+    artisti: (t.artists || []).map((a) => a.name).join(', '),
+    copertina: piccola,
+    ms: Math.max(0, Number(r.dati?.progress_ms) || 0),
+    durata: Math.max(0, Number(t.duration_ms) || 0),
+  };
+}
+
+// Brano in riproduzione → { nome, artisti } o null.
+export async function inRiproduzione(login) {
+  const d = await oraSuona(login);
+  return d.suona || d.nome ? { nome: d.nome, artisti: d.artisti } : null;
 }

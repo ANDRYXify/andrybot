@@ -114,6 +114,64 @@ test('gli obiettivi sono elementi come gli altri, e sono quanti ne vuoi', () => 
   assert.ok(g.includes('vivi.has(id)'), 'e quello che togli sparisce davvero');
 });
 
+// Un obiettivo «1000 follower» non e' «altri mille»: se ne hai gia' 450 la
+// barra deve partire da li'. Il conto degli eventi resta quello vero; la
+// partenza e' il gradino sotto, e si prende da Twitch con un tasto.
+test('un obiettivo può partire da dove sei già arrivato', () => {
+  const st = leggi('src/web/stile.js');
+  const g = st.slice(st.indexOf('export const normGoal'), st.indexOf('export const normGoals'));
+  assert.ok(/partenza: clampInt\(g\.partenza/.test(g), 'la partenza si salva con l’obiettivo');
+  const u = OVL.slice(OVL.indexOf('function unGoal('), OVL.indexOf('\n}', OVL.indexOf('function unGoal(')));
+  assert.ok(/cfg\.partenza/.test(u), 'e l’overlay la somma a quel che ha contato');
+  assert.ok(/quantiFollower/.test(leggi('src/twitch/helix.js')), 'il numero vero si chiede a Twitch');
+  assert.ok(/data-g-adesso/.test(APP), 'e c’è il tasto per prenderlo');
+});
+
+// Il player e il conto alla rovescia sono elementi della scena come gli altri:
+// se entrano dalla porta di servizio, si portano dietro un secondo modo di
+// mettere roba a schermo — che e' il difetto da cui siamo partiti.
+test('player e conto alla rovescia entrano dalla stessa porta degli altri', () => {
+  const cliente = listaDi(APP, 'ELEM_OVL');
+  for (const k of ['musica', 'timer']) assert.ok(cliente.includes(k), `${k} è nell’elenco`);
+  const i = APP.indexOf('const ELEMENTI = () =>');
+  const corpo = APP.slice(i, APP.indexOf('\nconst ELEM = ', i));
+  assert.ok(/k: 'musica'/.test(corpo) && /k: 'timer'/.test(corpo), 'e nella scena dello studio');
+  const m = OVL.slice(OVL.indexOf('function disegnaMusica('), OVL.indexOf('\n}', OVL.indexOf('function disegnaMusica(')));
+  assert.ok(/mostra\('musica'\)/.test(m), 'il player segue l’interruttore della scena');
+  assert.ok(/classiIdentita/.test(m), 'e porta la veste degli altri');
+  const t = OVL.slice(OVL.indexOf('function disegnaTimer('), OVL.indexOf('\n}', OVL.indexOf('function disegnaTimer(')));
+  assert.ok(/mostra\('timer'\)/.test(t) && /classiIdentita/.test(t), 'idem il conto alla rovescia');
+});
+
+// Spotify non sa spingere: qualcuno deve chiedere. Se a chiedere fosse il
+// server a vuoto, dieci streamer con l'overlay chiuso farebbero comunque
+// traffico; e senza cache, dieci sorgenti browser aperte varrebbero dieci
+// chiamate. Chiede l'overlay, e la risposta e' in cache.
+test('il player non martella Spotify', () => {
+  const srv = leggi('src/web/server.js');
+  const i = srv.indexOf("app.get('/overlay/:login/musica'");
+  assert.ok(i > 0, 'l’endpoint c’è');
+  const corpo = srv.slice(i, srv.indexOf('}));', i));
+  assert.ok(/if \(c && ora - c\.ts < /.test(corpo), 'che risponde dalla cache prima di chiamare Spotify');
+  assert.ok(/chiaveOk\(req\)/.test(corpo), 'e protetto dalla chiave dell’overlay');
+  const m = OVL.slice(OVL.indexOf('setInterval(() => {'), OVL.indexOf('function applicaTema'));
+  assert.ok(/mostra\('musica'\)/.test(m) && /if \(!vivo\) return;/.test(m),
+    'e chi non ha il player in scena non chiede niente');
+});
+
+// Il conto alla rovescia non e' un numero che scorre da qualche parte: e'
+// l'ISTANTE in cui scade. Chi lo mostra fa la sottrazione — cosi' due sorgenti
+// aperte dicono la stessa cosa e un riavvio non lo azzera.
+test('il conto alla rovescia è un istante, non un contatore', () => {
+  const al = leggi('src/features/alerts.js');
+  const i = al.indexOf('impostaTimer(channel, minuti) {');
+  assert.ok(i > 0, 'c’è impostaTimer');
+  const corpo = al.slice(i, al.indexOf('\n  }', i));
+  assert.ok(/Date\.now\(\) \+ m \* 60000/.test(corpo), 'si scrive quando scade');
+  assert.ok(/overlayStato/.test(corpo), 'nello stato del canale, quindi sopravvive a un riavvio');
+  assert.ok(!/setInterval|setTimeout/.test(corpo), 'e nessun orologio da tenere acceso sul server');
+});
+
 test('un’opacità senza unità spegnerebbe tutti gli sfondi', () => {
   // Il difetto: --op: 85 (senza %) rende invalido color-mix, e l'elemento resta
   // trasparente. Fuori dalla scatola l'overlay non aveva sfondi: né gli alert,

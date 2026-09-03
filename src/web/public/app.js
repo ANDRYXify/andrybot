@@ -117,6 +117,8 @@ function impostazioni() {
         ? [{ id: 'g1', attivo: !!s.overlayGoal.attivo, tipo: s.overlayGoal.tipo || 'follower', obiettivo: Number(s.overlayGoal.obiettivo) || 100, titolo: s.overlayGoal.titolo || '', posizione: 'alto-sinistra', xy: null, stile: {} }]
         : []),
     overlayStato: (s.overlayStato && typeof s.overlayStato === 'object') ? s.overlayStato : {},
+    overlayMusica: (s.overlayMusica && typeof s.overlayMusica === 'object') ? s.overlayMusica : {},
+    overlayTimer: (s.overlayTimer && typeof s.overlayTimer === 'object') ? s.overlayTimer : {},
     grafiche: (s.grafiche && typeof s.grafiche === 'object') ? s.grafiche : null,
     tiktok: (s.tiktok && typeof s.tiktok === 'object') ? s.tiktok : { username: '', attivo: false, annunciaChat: false, messaggio: '', postAttivo: false, postAnnunciaChat: false, postMessaggio: '' },
     youtube: (s.youtube && typeof s.youtube === 'object') ? s.youtube : { canale: '', attivo: false, annunciaChat: false, messaggio: '' },
@@ -276,6 +278,13 @@ function statoDemo() {
             stile: { dim: 'piccola', sfondo: '#1b1024', opacita: 90, testo: '#ffe9f6', accento: '#ffb020', bordoRaggio: 26, font: 'rotondo', forma: 'pillola', materia: 'sfumata', cornice: 'linea' } },
         ],
         overlayStato: { goals: { g1: 318, g2: 41 } },
+        overlayMusica: { attivo: true, testo: '{titolo} — {artista}', cover: 'vinile', barra: 'anello', tempi: 'trascorso',
+          onde: true, sfocato: true, daCopertina: false, scorre: true, entrata: 'scivola', quandoFermo: 'sparisce',
+          posizione: 'basso-sinistra', xy: null,
+          stile: { dim: 'media', sfondo: '#12101a', opacita: 88, testo: '#ffffff', accento: '#38d39f', bordoRaggio: 16, font: 'rotondo', forma: 'carta', materia: 'vetro', cornice: 'nessuna' } },
+        overlayTimer: { attivo: true, titolo: 'Si comincia tra', testoFine: 'Si comincia!', aFine: 'resta', minuti: 15,
+          posizione: 'alto-destra', xy: null,
+          stile: { dim: 'grande', sfondo: '#0f0f14', opacita: 85, testo: '#ffffff', accento: '#f72fa7', bordoRaggio: 14, font: 'condensato', forma: 'pillola', materia: 'sfumata', cornice: 'nessuna' } },
       },
     },
   };
@@ -378,7 +387,7 @@ function _demoGet(via) {
     '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://socialbot.live/tiktok/callback' },
     '/api/contatori': { contatori: [
       { comando: 'morti', etichetta: 'Morti', emoji: '', valore: 7, step: 1, auto_parola: '', reward_id: '',
-        overlayCfg: { mostra: true, x: 4, y: 94, r: 0, colore: '#ffffff', sfondo: 'rgba(0,0,0,0.55)', dim: 40, grassetto: true, font: 'system', formato: '{emoji} {etichetta}: {valore}' } },
+        overlayCfg: { mostra: true, x: 50, y: 8, r: 0, colore: '#ffffff', sfondo: 'rgba(0,0,0,0.55)', dim: 40, grassetto: true, font: 'system', formato: '{emoji} {etichetta}: {valore}' } },
       { comando: 'tentativi', etichetta: 'Tentativi', emoji: '', valore: 23, step: 1, auto_parola: '', reward_id: '',
         overlayCfg: { mostra: false, x: 50, y: 94, r: 0, colore: '#ffffff', sfondo: 'rgba(0,0,0,0.55)', dim: 40, grassetto: true, font: 'system', formato: '{emoji} {etichetta}: {valore}' } },
     ] },
@@ -2510,6 +2519,7 @@ const _icoGuida = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" s
 
 const _hIco = (d) => `<svg class="h-ico" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const ICO = {
+  orologio: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/>',
   musica: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
   sliders: '<line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="6" y1="14" y2="14"/><line x1="10" x2="14" y1="8" y2="8"/><line x1="18" x2="22" y1="16" y2="16"/>',
   sondaggi: '<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
@@ -3292,7 +3302,6 @@ function seguiGiro() {
 }
 window.addEventListener('scroll', seguiGiro, { passive: true, capture: true });
 window.addEventListener('resize', seguiGiro);
-
 
 const NOVITA_VISTE = 'sb-novita-viste';
 
@@ -5627,13 +5636,15 @@ function disegnaGoal() {
     <div class="goal-capo">
       <label class="interruttore mini"><input type="checkbox" data-g="attivo" ${g.attivo !== false ? 'checked' : ''}><span class="levetta"></span></label>
       <input type="text" class="campo-largo" data-g="titolo" maxlength="60" value="${esc(g.titolo || '')}" placeholder="${L('Titolo (facoltativo)', 'Title (optional)', 'Título (opcional)')}">
-      <span class="goal-ora">${Number(conti[g.id]) || 0} / ${Number(g.obiettivo) || 100}</span>
+      <span class="goal-ora">${(Number(g.partenza) || 0) + (Number(conti[g.id]) || 0)} / ${Number(g.obiettivo) || 100}</span>
       <button type="button" class="btn secondario mini" data-g-vesti>${L('Aspetto', 'Look', 'Aspecto')}</button>
       <button type="button" class="btn pericolo mini" data-g-via>${L('Togli', 'Remove', 'Quitar')}</button>
     </div>
     <div class="goal-campi">
       <label class="campo-num">${L('Conta', 'Count', 'Cuenta')}<select data-g="tipo">${GOAL_TIPI().map(([v, t]) => `<option value="${v}"${g.tipo === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
       <label class="campo-num">${L('Traguardo', 'Target', 'Meta')}<input type="number" data-g="obiettivo" min="1" max="1000000" value="${Number(g.obiettivo) || 100}"></label>
+      <label class="campo-num">${L('Parte da', 'Starts at', 'Empieza en')}<input type="number" data-g="partenza" min="0" max="1000000" value="${Number(g.partenza) || 0}"></label>
+      <button type="button" class="btn secondario mini" data-g-adesso>${L('Quanti ne ho adesso', 'How many I have now', 'Cuántos tengo ahora')}</button>
       <label class="campo-num">${L('Dove', 'Where', 'Dónde')}<select data-g="posizione">${GOAL_ANGOLI().map(([v, t]) => `<option value="${v}"${g.posizione === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
       <button type="button" class="btn secondario mini" data-g-azzera>${L('Riparti da zero', 'Start over', 'Empezar de cero')}</button>
     </div>
@@ -5683,6 +5694,62 @@ function leggiGoalDalForm() {
   return lista;
 }
 
+function _segnaTimer(fine) {
+  if (stato?.streamer) {
+    const s = stato.streamer.settings || (stato.streamer.settings = {});
+    s.overlayStato = { ...(s.overlayStato || {}), timer: { fine } };
+  }
+  const e = _g('tim-stato');
+  if (e) e.textContent = fine ? L('in corso', 'running', 'en marcha') : '';
+  aggiornaAnteprima();
+}
+
+const _pezziCfg = (k) => [...document.querySelectorAll(`[data-cfg="${k}"], [data-cfg-di="${k}"]`)];
+
+function riempiCfgForm(k) {
+  const c = _cfgEl(k);
+  for (const box of _pezziCfg(k)) {
+    for (const el of box.querySelectorAll('[data-c]')) {
+      const via = el.dataset.c.split('.');
+      const v = via.length === 2 ? (c[via[0]] || {})[via[1]] : c[via[0]];
+      if (v === undefined || v === null) continue;
+      if (el.type === 'checkbox') el.checked = !!v; else el.value = v;
+    }
+  }
+}
+
+function leggiCfgDalForm(k) {
+  const c = _cfgEl(k);
+  for (const box of _pezziCfg(k)) {
+    for (const el of box.querySelectorAll('[data-c]')) {
+      const via = el.dataset.c.split('.');
+      const v = el.type === 'checkbox' ? el.checked : (el.type === 'number' ? Number(el.value) : el.value);
+      if (via.length === 2) { c[via[0]] = c[via[0]] || {}; c[via[0]][via[1]] = v; }
+      else c[via[0]] = v;
+    }
+  }
+  return c;
+}
+
+function _vesteCampi() {
+  const op = (lista, campo) => `<select data-c="stile.${campo}">${lista.map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select>`;
+  return `<div class="goal-campi">
+      <label class="campo-num">${L('Dimensione', 'Size', 'Tamaño')}${op(DIM3_OPTS(), 'dim')}</label>
+      <label class="campo-num">${L('Carattere', 'Font', 'Fuente')}<select data-c="stile.font">${GOAL_FONT.map((v) => `<option value="${v}">${v}</option>`).join('')}</select></label>
+      <label class="campo-num">${L('Forma', 'Shape', 'Forma')}${op(FORMA_OPTS(), 'forma')}</label>
+    </div>
+    <div class="goal-campi">
+      <label class="campo-num">${L('Testo', 'Text', 'Texto')}<input type="color" data-c="stile.testo"></label>
+      <label class="campo-num">${L('Sfondo', 'Background', 'Fondo')}<input type="color" data-c="stile.sfondo"></label>
+      <label class="campo-num">${L('Accento', 'Accent', 'Acento')}<input type="color" data-c="stile.accento"></label>
+      <label class="campo-num">${L('Opacità', 'Opacity', 'Opacidad')}<input type="number" data-c="stile.opacita" min="0" max="100"></label>
+      <label class="campo-num">${L('Angoli', 'Corners', 'Esquinas')}<input type="number" data-c="stile.bordoRaggio" min="0" max="30"></label>
+    </div>
+    <div class="goal-campi">
+      <label class="campo-num">${L('Materia', 'Material', 'Material')}${op(MATERIA_OPTS(), 'materia')}</label>
+      <label class="campo-num">${L('Cornice', 'Frame', 'Marco')}${op(CORNICE_OPTS(), 'cornice')}</label>
+    </div>`;
+}
 
 function ovlElemento(k, ico, nome, sez) {
   const mirabile = ELEM_SCENA.includes(k);
@@ -5810,14 +5877,81 @@ function pannelloAlert() {
         ${ovlElemento('ws', ICO.medaglia, L('Ultimo sub', 'Latest sub', 'Último sub'), '')}
         ${ovlElemento('goal', ICO.trofeo, L('Obiettivo', 'Goal', 'Objetivo'), 'sez-goal')}
         ${ovlElemento('cont', ICO.grafico, L('Contatori', 'Counters', 'Contadores'), '')}
+        ${ovlElemento('musica', ICO.musica, L('Player musica', 'Music player', 'Reproductor de música'), 'sez-musica')}
+        ${ovlElemento('timer', ICO.orologio, L('Conto alla rovescia', 'Countdown', 'Cuenta atrás'), 'sez-timer')}
         ${ovlElemento('effetti', ICO.effetti, L('Effetti & suoni', 'Effects & sounds', 'Efectos y sonidos'), 'effetti')}
       </div>
       <p class="suggerimento">${L('Tienilo per te: chi ha questo link può far comparire cose nel tuo overlay.', 'Keep it to yourself: anyone with this link can make things appear in your overlay.', 'Guárdalo para ti: quien tenga este enlace puede hacer aparecer cosas en tu overlay.')}</p>
     </div>
 
+    <details class="carta sez" data-parte="aspetto" id="sez-musica">
+      <summary><h3>${_hIco(ICO.musica)}${L('Player musica', 'Music player', 'Reproductor de música')}</h3></summary>
+      <p>${L('Quello che stai ascoltando, a schermo. Compare quando la musica parte e sparisce quando la fermi. Legge da Spotify: si collega nella scheda «Richieste musicali».', 'What you are listening to, on screen. It shows up when the music starts and goes away when you stop it. It reads from Spotify: connect it in the «Music requests» tab.', 'Lo que estás escuchando, en pantalla. Aparece cuando arranca la música y desaparece cuando la paras. Lee de Spotify: se conecta en la pestaña «Peticiones musicales».')}</p>
+      <div data-cfg="musica">
+        <div class="riga-interruttore spazio-sopra">
+          <label class="interruttore"><input type="checkbox" data-c="attivo" id="mus-attivo"><span class="levetta"></span></label>
+          <span class="etichetta-stato">${L('Player musica', 'Music player', 'Reproductor de música')}</span>
+        </div>
+        <div class="griglia-campi spazio-sopra">
+          <div><label class="campo">${L('Cosa scrive', 'What it writes', 'Qué escribe')} <span class="tenue">${L('usa {titolo} e {artista}', 'use {titolo} and {artista}', 'usa {titolo} y {artista}')}</span></label>
+            <input type="text" data-c="testo" maxlength="80"></div>
+          <div><label class="campo">${L('Dove', 'Where', 'Dónde')}</label>
+            <select data-c="posizione">${POS4_OPTS().map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></div>
+        </div>
+        <div class="goal-campi spazio-sopra">
+          <label class="campo-num">${L('Copertina', 'Cover art', 'Portada')}<select data-c="cover">${[['quadrata', L('quadrata', 'square', 'cuadrada')], ['tonda', L('tonda', 'round', 'redonda')], ['vinile', L('vinile che gira', 'spinning vinyl', 'vinilo que gira')], ['no', L('niente', 'none', 'ninguna')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+          <label class="campo-num">${L('Avanzamento', 'Progress', 'Progreso')}<select data-c="barra">${[['sotto', L('barra sotto', 'bar below', 'barra abajo')], ['anello', L('anello sulla copertina', 'ring on the cover', 'anillo en la portada')], ['no', L('niente', 'none', 'ninguno')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+          <label class="campo-num">${L('Tempi', 'Times', 'Tiempos')}<select data-c="tempi">${[['no', L('niente', 'none', 'ninguno')], ['trascorso', L('trascorso', 'elapsed', 'transcurrido')], ['restante', L('quanto manca', 'remaining', 'lo que falta')], ['due', L('tutti e due', 'both', 'los dos')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+          <label class="campo-num">${L('Entrata', 'Entrance', 'Entrada')}<select data-c="entrata">${[['dissolve', L('dissolvenza', 'fade', 'fundido')], ['scivola', L('scivola da lato', 'slide in', 'desliza')], ['sale', L('sale dal basso', 'rise up', 'sube')], ['niente', L('secca', 'none', 'seca')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+          <label class="campo-num">${L('Se non suona', 'When nothing plays', 'Si no suena')}<select data-c="quandoFermo">${[['sparisce', L('sparisce', 'goes away', 'desaparece')], ['resta', L('resta a schermo', 'stays on screen', 'se queda')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+        </div>
+        <div class="riga-flessibile spazio-sopra">
+          <label class="riga-check"><input type="checkbox" data-c="onde"> ${L('Onde che ballano', 'Dancing bars', 'Ondas que bailan')}</label>
+          <label class="riga-check"><input type="checkbox" data-c="scorre"> ${L('Il titolo lungo scorre', 'Long titles scroll', 'Los títulos largos se desplazan')}</label>
+          <label class="riga-check"><input type="checkbox" data-c="sfocato"> ${L('Sfondo dalla copertina', 'Background from the cover', 'Fondo de la portada')}</label>
+          <label class="riga-check"><input type="checkbox" data-c="daCopertina"> ${L('Colore preso dalla copertina', 'Color taken from the cover', 'Color tomado de la portada')}</label>
+        </div>
+        <div class="asp-blocco" data-asp="musica" data-cfg-di="musica">
+          <h4 class="spazio-sopra">${L('Aspetto', 'Appearance', 'Aspecto')}</h4>
+          ${_vesteCampi()}
+        </div>
+      </div>
+      <p class="spazio-sopra"><button class="btn" data-salva-cfg="musica">${L('Salva', 'Save', 'Guardar')}</button></p>
+    </details>
+
+    <details class="carta sez" data-parte="aspetto" id="sez-timer">
+      <summary><h3>${_hIco(ICO.orologio)}${L('Conto alla rovescia', 'Countdown', 'Cuenta atrás')}</h3></summary>
+      <p>${L('Quanto manca all\'inizio. Scegli i minuti e parte: il conto sta nel canale, quindi anche se ricarichi l\'overlay o riavvii tutto continua da dove era.', 'How long until you start. Pick the minutes and off it goes: the countdown lives in the channel, so even if you reload the overlay or restart everything it carries on.', 'Cuánto falta para empezar. Elige los minutos y arranca: la cuenta vive en el canal, así que aunque recargues el overlay o reinicies todo sigue donde estaba.')}</p>
+      <div data-cfg="timer">
+        <div class="riga-interruttore spazio-sopra">
+          <label class="interruttore"><input type="checkbox" data-c="attivo" id="tim-attivo"><span class="levetta"></span></label>
+          <span class="etichetta-stato">${L('Conto alla rovescia', 'Countdown', 'Cuenta atrás')}</span>
+        </div>
+        <div class="griglia-campi spazio-sopra">
+          <div><label class="campo">${L('Titolo', 'Title', 'Título')}</label><input type="text" data-c="titolo" maxlength="60"></div>
+          <div><label class="campo">${L('Quando arriva a zero scrive', 'When it hits zero it writes', 'Cuando llega a cero escribe')}</label><input type="text" data-c="testoFine" maxlength="60"></div>
+        </div>
+        <div class="goal-campi spazio-sopra">
+          <label class="campo-num">${L('Dove', 'Where', 'Dónde')}<select data-c="posizione">${POS4_OPTS().map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+          <label class="campo-num">${L('A zero', 'At zero', 'En cero')}<select data-c="aFine">${[['resta', L('resta a schermo', 'stays on screen', 'se queda')], ['sparisce', L('sparisce', 'goes away', 'desaparece')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+          <label class="campo-num">${L('Minuti', 'Minutes', 'Minutos')}<input type="number" data-c="minuti" min="1" max="600"></label>
+        </div>
+        <p class="spazio-sopra">
+          <button class="btn" id="tim-parti">${L('Fai partire', 'Start it', 'Ponlo en marcha')}</button>
+          <button class="btn secondario" id="tim-ferma">${L('Ferma', 'Stop', 'Para')}</button>
+          <span class="tenue" id="tim-stato"></span>
+        </p>
+        <div class="asp-blocco" data-asp="timer" data-cfg-di="timer">
+          <h4 class="spazio-sopra">${L('Aspetto', 'Appearance', 'Aspecto')}</h4>
+          ${_vesteCampi()}
+        </div>
+      </div>
+      <p class="spazio-sopra"><button class="btn" data-salva-cfg="timer">${L('Salva', 'Save', 'Guardar')}</button></p>
+    </details>
+
     <details class="carta sez" data-parte="aspetto" id="sez-goal">
       <summary><h3>${_hIco(ICO.trofeo)}${L('Obiettivi', 'Goals', 'Objetivos')}</h3></summary>
-      <p>${L('Barre che si riempiono da sole mentre arrivano follower, sub o bit. Quanti ne vuoi, ognuno col suo traguardo, il suo posto e il suo aspetto. Il conto è quello vero: lo tiene il bot contando gli eventi, e resta al suo posto anche se riavvii tutto.', 'Bars that fill by themselves as followers, subs or bits come in. As many as you like, each with its own target, place and look. The count is the real one: the bot keeps it by counting events, and it survives a restart.', 'Barras que se llenan solas mientras llegan followers, subs o bits. Tantas como quieras, cada una con su meta, su sitio y su aspecto. La cuenta es la real: la lleva el bot contando eventos, y sobrevive a un reinicio.')}</p>
+      <p>${L('Barre che si riempiono da sole mentre arrivano follower, sub o bit. Quanti ne vuoi, ognuno col suo traguardo, il suo posto e il suo aspetto. Un obiettivo può essere «altri 100» oppure «1000 in tutto»: con «Quanti ne ho adesso» parte dal numero che hai già.', 'Bars that fill by themselves as followers, subs or bits come in. As many as you like, each with its own target, place and look. A goal can be «100 more» or «1000 in total»: with «How many I have now» it starts from the number you already have.', 'Barras que se llenan solas mientras llegan followers, subs o bits. Tantas como quieras, cada una con su meta, su sitio y su aspecto. Un objetivo puede ser «100 más» o «1000 en total»: con «Cuántos tengo ahora» empieza desde el número que ya tienes.')}</p>
       <div id="lista-goal" class="goal-lista"></div>
       <div id="goal-vesti" class="goal-lista"></div>
       <p class="spazio-sopra">
@@ -6071,7 +6205,7 @@ let posXY = { alert: null, chat: null, wf: null, ws: null };
 let _conta = [];
 const CONT_BASE = 40;
 const FISSI = ['alert', 'chat', 'wf', 'ws'];
-const ELEM_OVL = [...FISSI, 'goal', 'cont', 'effetti'];
+const ELEM_OVL = [...FISSI, 'goal', 'cont', 'musica', 'timer', 'effetti'];
 const ELEM_SCENA = ELEM_OVL.filter((k) => k !== 'effetti');
 const _mostraOra = () => ELEM_OVL.reduce((o, k) => (o[k] = mostraChk(k), o), {});
 const _idEl = (k) => 'ap-' + String(k).replace(/[^a-z0-9]/gi, '-');
@@ -6381,7 +6515,7 @@ function _sincronizzaScena() {
   if (!stage) return;
   const vivi = new Set(FISSI.map(_idEl));
   for (const e of ELEMENTI()) {
-    if (!e.goal && !e.cont) continue;
+    if (!e.goal && !e.cont && !e.cfg) continue;
     const id = _idEl(e.k);
     vivi.add(id);
     let nodo = _g(id);
@@ -6394,7 +6528,9 @@ function _sincronizzaScena() {
       rendiTrascinabile(nodo, e.k);
     }
     if (e.goal) _vestiGoal(nodo.firstElementChild, e.goal);
-    else _vestiCont(nodo.firstElementChild, e.cont);
+    else if (e.cont) _vestiCont(nodo.firstElementChild, e.cont);
+    else if (e.k === 'musica') _vestiMusica(nodo.firstElementChild, _cfgEl('musica'));
+    else _vestiTimer(nodo.firstElementChild, _cfgEl('timer'));
     nodo.classList.toggle('sel', selezione === e.k);
   }
   for (const n of [...stage.querySelectorAll('.ap-el')]) if (!vivi.has(n.id)) n.remove();
@@ -6409,11 +6545,65 @@ function _vestiGoal(box, g) {
   _setVars(box, { '--bg': st.sfondo, '--op': (st.opacita != null ? st.opacita : 85) + '%', '--fg': st.testo,
     '--acc': st.accento, '--radius': (st.bordoRaggio != null ? st.bordoRaggio : 12) + 'px', '--font': fontStile(st) });
   const meta = Math.max(1, Number(g.obiettivo) || 100);
-  const ora = Math.max(0, Number((impostazioni().overlayStato.goals || {})[g.id]) || 0);
+  const ora = Math.max(0, (Number(g.partenza) || 0) + (Number((impostazioni().overlayStato.goals || {})[g.id]) || 0));
   box.querySelector('.g-tit').textContent = g.titolo || GOAL_PAROLA[g.tipo] || '';
   box.querySelector('.g-num').textContent = ora + ' / ' + meta;
   box.querySelector('.g-barra i').style.width = Math.min(100, Math.round((ora / meta) * 100)) + '%';
   box.classList.toggle('pieno', ora >= meta);
+}
+
+const BRANO_FINTO = () => ({
+  nome: L('Il brano che stai ascoltando', 'The track you are listening to', 'El tema que estás escuchando'),
+  artisti: L('Artista', 'Artist', 'Artista'), q: 0.42,
+});
+
+function _vestiMusica(box, cfg) {
+  if (!box.querySelector('.m-corpo')) {
+    box.innerHTML = '<span class="m-sfondo"></span>'
+      + '<span class="m-cover"><span class="m-anello"><svg viewBox="0 0 40 40"><circle class="m-an-via" cx="20" cy="20" r="18"/>'
+      + '<circle class="m-an-ora" cx="20" cy="20" r="18"/></svg></span><span class="m-disco"></span></span>'
+      + '<span class="m-corpo"><span class="m-riga"><span class="m-scorri"></span></span>'
+      + '<span class="m-sotto"><span class="m-barra"><i></i></span><span class="m-tempi"></span></span></span>'
+      + '<span class="m-onde"><i></i><i></i><i></i><i></i></span>';
+  }
+  const st = cfg.stile || {};
+  const d = BRANO_FINTO();
+  box.className = 'ovl-widget ovl-musica dentro dim-' + (st.dim || 'media') + ' ' + classiIdentita(st)
+    + ' cover-' + (cfg.cover || 'quadrata') + ' barra-' + (cfg.barra || 'sotto')
+    + (cfg.onde !== false ? ' con-onde' : '') + (cfg.sfocato ? ' sfocato' : '') + ' suona'
+    + ((cfg.barra || 'sotto') !== 'sotto' && (cfg.tempi || 'no') === 'no' ? ' senza-sotto' : '');
+  _setVars(box, { '--bg': st.sfondo, '--op': (st.opacita != null ? st.opacita : 85) + '%', '--fg': st.testo,
+    '--acc': st.accento, '--radius': (st.bordoRaggio != null ? st.bordoRaggio : 12) + 'px', '--font': fontStile(st) });
+  box.querySelector('.m-scorri').innerHTML = esc(cfg.testo || '{titolo} — {artista}')
+    .replace(/\{titolo\}/g, '<b>' + esc(d.nome) + '</b>').replace(/\{artista\}/g, esc(d.artisti));
+  const giro = 2 * Math.PI * 18;
+  const an = box.querySelector('.m-an-ora');
+  an.style.strokeDasharray = giro; an.style.strokeDashoffset = giro * (1 - d.q);
+  box.querySelector('.m-barra i').style.width = (d.q * 100) + '%';
+  const t = cfg.tempi || 'no';
+  box.querySelector('.m-tempi').textContent = t === 'no' ? ''
+    : t === 'trascorso' ? '1:24' : t === 'restante' ? '-1:56' : '1:24 / 3:20';
+}
+
+function _vestiTimer(box, cfg) {
+  if (!box.querySelector('.t-num')) box.innerHTML = '<span class="t-tit"></span><span class="t-num"></span>';
+  const st = cfg.stile || {};
+  const fine = Number(impostazioni().overlayStato?.timer?.fine) || 0;
+  const manca = fine - Date.now();
+  const finito = fine > 0 && manca <= 0;
+  box.className = 'ovl-widget ovl-timer dim-' + (st.dim || 'media') + ' ' + classiIdentita(st) + (finito ? ' finito' : '');
+  _setVars(box, { '--bg': st.sfondo, '--op': (st.opacita != null ? st.opacita : 85) + '%', '--fg': st.testo,
+    '--acc': st.accento, '--radius': (st.bordoRaggio != null ? st.bordoRaggio : 12) + 'px', '--font': fontStile(st) });
+  box.querySelector('.t-tit').textContent = finito ? '' : (cfg.titolo || '');
+  box.querySelector('.t-num').textContent = finito ? (cfg.testoFine || '')
+    : _orologioGiu(fine > 0 ? manca : (Number(cfg.minuti) || 15) * 60000);
+}
+
+function _orologioGiu(ms) {
+  const t = Math.max(0, Math.ceil(ms / 1000));
+  const o = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), sec = t % 60;
+  const dd = (n) => (n < 10 ? '0' : '') + n;
+  return (o ? o + ':' + dd(m) : String(m)) + ':' + dd(sec);
 }
 
 function testoCont(c) {
@@ -6454,12 +6644,11 @@ function _angoloDi(k) {
   const e = ELEM(k);
   if (e && e.goal) return e.goal.posizione || 'alto-sinistra';
   if (e && e.cont) return null;
+  if (e && e.cfg) return _cfgEl(k).posizione || (k === 'timer' ? 'alto-destra' : 'basso-sinistra');
   if (k === 'alert') return _v('al-pos') || 'alto-centro';
   if (k === 'chat') return _v('co-pos') || 'basso-sinistra';
   return _v(k + '-pos') || 'basso-destra';
 }
-
-const _angCentro = {};
 
 const NOME_ANG = () => ({
   'alto-sinistra': L('in alto a sinistra', 'top left', 'arriba izquierda'),
@@ -6480,18 +6669,27 @@ function _posAncora(el, ang, k) {
   el.style.bottom = a.bottom || 'auto';
   el.style.transform = a.cx || a.cy ? `translate(${a.cx ? '-50%' : '0'},${a.cy ? '-50%' : '0'})` : 'none';
   el.querySelectorAll('.ap-handle').forEach((h) => { h.style.transform = 'none'; });
+}
+
+function _centroTela(k) {
+  const st = _posCorrente(k);
+  const el = _nodo(k);
+  if (st && el) return { x: centroDa(st.x, el.offsetWidth, OVL_W), y: centroDa(st.y, el.offsetHeight, OVL_H) };
   const canvas = _g('ovl-preview')?.getBoundingClientRect();
-  const r = el.getBoundingClientRect();
-  if (canvas && canvas.width && r.width) {
-    _angCentro[k] = { x: _arr(_pct(r.left + r.width / 2 - canvas.left, canvas.width)),
-      y: _arr(_pct(r.top + r.height / 2 - canvas.top, canvas.height)) };
-  }
+  const r = el ? el.getBoundingClientRect() : null;
+  if (!canvas || !canvas.width || !r || !r.width) return null;
+  const scala = canvas.width / OVL_W;
+  return { x: (r.left + r.width / 2 - canvas.left) / scala, y: (r.top + r.height / 2 - canvas.top) / scala };
 }
 
 function _defPos(k) {
   const e = ELEM(k);
   if (e && e.cont) { const o = e.cont.overlayCfg || {}; return { x: Number(o.x) || 4, y: o.y != null ? Number(o.y) : 94 }; }
-  return _angCentro[k] ? { ..._angCentro[k] } : _cornerXY(_angoloDi(k));
+  const el = _nodo(k);
+  const c = _centroTela(k);
+  if (!c || !el) return _cornerXY(_angoloDi(k));
+  return { x: _arr(_tra(xDaCentro(c.x, el.offsetWidth, OVL_W), 0, 100)),
+    y: _arr(_tra(xDaCentro(c.y, el.offsetHeight, OVL_H), 0, 100)) };
 }
 
 function _posElemento(el, xy) {
@@ -6511,6 +6709,7 @@ function _statoXY(chiave) {
   let st;
   if (e && e.goal) st = (e.goal.xy = e.goal.xy || { ..._defPos(chiave) });
   else if (e && e.cont) st = (e.cont._st = e.cont._st || _stCont(e.cont));
+  else if (e && e.cfg) { const c = _cfgEl(chiave); st = (c.xy = c.xy || { ..._defPos(chiave) }); }
   else st = (posXY[chiave] = posXY[chiave] || { ..._defPos(chiave) });
   if (st.s == null) st.s = 100;
   if (st.r == null) st.r = 0;
@@ -6527,6 +6726,7 @@ function _azzeraPos(k) {
   const e = ELEM(k);
   if (e && e.goal) { e.goal.xy = null; return; }
   if (e && e.cont) { e.cont._st = null; e.cont.overlayCfg = { ...(e.cont.overlayCfg || {}), x: 4, y: 94, dim: CONT_BASE, r: 0 }; return; }
+  if (e && e.cfg) { _cfgEl(k).xy = null; return; }
   posXY[k] = null;
 }
 
@@ -6544,10 +6744,19 @@ function _occhio(k) {
     aggiornaAnteprima(); _ricorda(); _salvaPos(k);
     return;
   }
+  if (e && e.cfg) {
+    const c = _cfgEl(k);
+    c.attivo = !c.attivo;
+    const chk = _g(k === 'musica' ? 'mus-attivo' : 'tim-attivo');
+    if (chk) chk.checked = c.attivo;
+    aggiornaAnteprima(); _ricorda(); _salvaPos(k);
+    return;
+  }
   const c = _g('mostra-' + k);
   if (!c) return;
   c.checked = !c.checked;
   c.dispatchEvent(new Event('change', { bubbles: true }));
+  _rendiLivelli();
 }
 
 function seleziona(chiave) {
@@ -6759,6 +6968,8 @@ const ELEMENTI = () => {
   ];
   goalBozza().forEach((g, i) => out.push({ k: 'goal:' + g.id, ico: ICO.trofeo, n: nomeGoal(g, i), goal: g }));
   for (const c of _conta) out.push({ k: 'cont:' + c.comando, ico: ICO.grafico, n: c.etichetta || c.comando, cont: c });
+  out.push({ k: 'musica', ico: ICO.musica, n: L('Player musica', 'Music player', 'Reproductor de música'), cfg: 'overlayMusica' });
+  out.push({ k: 'timer', ico: ICO.orologio, n: L('Conto alla rovescia', 'Countdown', 'Cuenta atrás'), cfg: 'overlayTimer' });
   return out;
 };
 const ELEM = (k) => ELEMENTI().find((e) => e.k === k) || null;
@@ -6770,7 +6981,37 @@ function _inOverlay(k) {
   if (!e) return false;
   if (e.goal) return mostraChk('goal') && e.goal.attivo !== false;
   if (e.cont) return mostraChk('cont') && !!(e.cont.overlayCfg || {}).mostra;
+  if (e.cfg) return mostraChk(k) && !!_cfgEl(k).attivo;
   return mostraChk(k);
+}
+
+let _bozzaEl = {};
+
+const VESTE_DEF = () => ({ dim: 'media', sfondo: '#0f0f14', opacita: 85, testo: '#ffffff',
+  accento: '#f72fa7', bordoRaggio: 12, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'nessuna' });
+
+function _defMusica() {
+  return { attivo: false, testo: '{titolo} — {artista}', cover: 'quadrata', barra: 'sotto', tempi: 'no',
+    onde: true, sfocato: false, daCopertina: false, scorre: true, entrata: 'dissolve',
+    quandoFermo: 'sparisce', posizione: 'basso-sinistra', xy: null, stile: VESTE_DEF() };
+}
+
+function _defTimer() {
+  return { attivo: false, titolo: 'Si comincia tra', testoFine: 'Si comincia!', aFine: 'resta',
+    minuti: 15, posizione: 'alto-destra', xy: null, stile: VESTE_DEF() };
+}
+
+const _DEF_EL = { musica: _defMusica, timer: _defTimer };
+
+function _cfgEl(k) {
+  const e = ELEM(k);
+  if (!e || !e.cfg) return {};
+  if (!_bozzaEl[k]) {
+    const base = _DEF_EL[k] ? _DEF_EL[k]() : {};
+    const su = JSON.parse(JSON.stringify(impostazioni()[e.cfg] || {}));
+    _bozzaEl[k] = { ...base, ...su, stile: { ...base.stile, ...(su.stile || {}) } };
+  }
+  return _bozzaEl[k];
 }
 
 function _posCorrente(k) {
@@ -6778,6 +7019,7 @@ function _posCorrente(k) {
   if (!e) return null;
   if (e.goal) return e.goal.xy;
   if (e.cont) return e.cont._st || null;
+  if (e.cfg) return _cfgEl(k).xy || null;
   return posXY[k];
 }
 
@@ -6928,6 +7170,10 @@ function scalaAnteprima() {
 
 const OVL_W = 1920, OVL_H = 1080;          // la tela vera dell'overlay, in pixel
 const SNAP_PX = 8;                          // soglia di aggancio, in pixel di schermo
+
+const centroDa = (x, lato, tela) => (x / 100) * (tela - lato) + lato / 2;
+const xDaCentro = (c, lato, tela) => (tela - lato <= 0 ? 50 : ((c - lato / 2) / (tela - lato)) * 100);
+const _tra = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const _pct = (px, tot) => (px / tot) * 100;
 const _arr = (n) => Math.round(n * 100) / 100;   // due decimali: 0.01% = 0.19px su 1920
 
@@ -6997,27 +7243,31 @@ function _aggiornaBottoniStoria() {
   if (r) r.disabled = !_storiaAvanti.length;
 }
 
-function _aggancia(chiave, x, y, hw, hh, canvas) {
-  const soglia = _pct(SNAP_PX, canvas.width);
-  const sogliaY = _pct(SNAP_PX, canvas.height);
-  const vx = [{ v: 50, c: 1 }, { v: hw, c: 0 }, { v: 100 - hw, c: 0 }, { v: 33.33, c: 0 }, { v: 66.67, c: 0 }];
-  const vy = [{ v: 50, c: 1 }, { v: hh, c: 0 }, { v: 100 - hh, c: 0 }, { v: 33.33, c: 0 }, { v: 66.67, c: 0 }];
+function _centriAltrui(chiave) {
+  const fuori = [];
   for (const e of ELEMENTI()) {
-    const k = e.k;
-    if (k === chiave || !_inOverlay(k)) continue;
-    const o = _posCorrente(k) || _defPos(k);
-    if (!o) continue;
-    vx.push({ v: o.x, c: 2 });
-    vy.push({ v: o.y, c: 2 });
+    if (e.k === chiave || !_inOverlay(e.k)) continue;
+    const c = _centroTela(e.k);
+    if (c) fuori.push(c);
   }
-  let gx = null, gy = null;
-  let mx = soglia, my = sogliaY;
-  for (const t of vx) if (Math.abs(x - t.v) < mx) { mx = Math.abs(x - t.v); gx = t; }
-  for (const t of vy) if (Math.abs(y - t.v) < my) { my = Math.abs(y - t.v); gy = t; }
+  return fuori;
+}
+
+function _aggancia(altri, cx, cy, w, h, scala) {
+  const soglia = SNAP_PX / scala;
+  const vx = [{ v: OVL_W / 2, c: 1 }, { v: w / 2, c: 0 }, { v: OVL_W - w / 2, c: 0 },
+    { v: OVL_W / 3, c: 0 }, { v: (OVL_W * 2) / 3, c: 0 }];
+  const vy = [{ v: OVL_H / 2, c: 1 }, { v: h / 2, c: 0 }, { v: OVL_H - h / 2, c: 0 },
+    { v: OVL_H / 3, c: 0 }, { v: (OVL_H * 2) / 3, c: 0 }];
+  for (const o of altri) { vx.push({ v: o.x, c: 2 }); vy.push({ v: o.y, c: 2 }); }
+  let gx = null, gy = null, mx = soglia, my = soglia;
+  for (const t of vx) if (Math.abs(cx - t.v) < mx) { mx = Math.abs(cx - t.v); gx = t; }
+  for (const t of vy) if (Math.abs(cy - t.v) < my) { my = Math.abs(cy - t.v); gy = t; }
   return {
-    x: gx ? gx.v : x,
-    y: gy ? gy.v : y,
-    guide: [gx && { asse: 'x', v: gx.v, c: gx.c }, gy && { asse: 'y', v: gy.v, c: gy.c }].filter(Boolean),
+    cx: gx ? gx.v : cx,
+    cy: gy ? gy.v : cy,
+    guide: [gx && { asse: 'x', v: (gx.v / OVL_W) * 100, c: gx.c },
+      gy && { asse: 'y', v: (gy.v / OVL_H) * 100, c: gy.c }].filter(Boolean),
   };
 }
 
@@ -7035,10 +7285,12 @@ function _mostraGuide(guide) {
 
 function _spostaTasti(chiave, dx, dy, grande) {
   const st = _statoXY(chiave);
+  const el = _nodo(chiave);
   const p = grande ? 10 : 1;
-  st.x = _arr(Math.max(0, Math.min(100, st.x + _pct(dx * p, OVL_W))));
-  st.y = _arr(Math.max(0, Math.min(100, st.y + _pct(dy * p, OVL_H))));
-  _posElemento(_nodo(chiave), st);
+  const w = el ? el.offsetWidth : 0, h = el ? el.offsetHeight : 0;
+  st.x = _arr(_tra(xDaCentro(centroDa(st.x, w, OVL_W) + dx * p, w, OVL_W), 0, 100));
+  st.y = _arr(_tra(xDaCentro(centroDa(st.y, h, OVL_H) + dy * p, h, OVL_H), 0, 100));
+  _posElemento(el, st);
   aggiornaInspector();
   _ricorda('tasti:' + chiave + ':' + (dx ? 'x' : 'y'));
   _salvaPosDebounced(chiave);
@@ -7048,13 +7300,9 @@ function allineaOvl(dove) {
   if (!selezione) return;
   const st = _statoXY(selezione);
   const el = _nodo(selezione);
-  const canvas = _g('ovl-preview')?.getBoundingClientRect();
-  const er = el?.getBoundingClientRect();
-  const hw = (er && canvas) ? Math.min(50, _pct(er.width / 2, canvas.width)) : 0;
-  const hh = (er && canvas) ? Math.min(50, _pct(er.height / 2, canvas.height)) : 0;
   const m = {
-    sx: () => { st.x = _arr(hw); }, cx: () => { st.x = 50; }, dx: () => { st.x = _arr(100 - hw); },
-    su: () => { st.y = _arr(hh); }, cy: () => { st.y = 50; }, giu: () => { st.y = _arr(100 - hh); },
+    sx: () => { st.x = 0; }, cx: () => { st.x = 50; }, dx: () => { st.x = 100; },
+    su: () => { st.y = 0; }, cy: () => { st.y = 50; }, giu: () => { st.y = 100; },
   };
   if (!m[dove]) return;
   m[dove]();
@@ -7076,21 +7324,24 @@ function rendiTrascinabile(el, chiave) {
     e.preventDefault();
     seleziona(chiave);
     const canvas = _g('ovl-preview').getBoundingClientRect();
+    const scala = canvas.width / OVL_W;
     try { el.setPointerCapture(e.pointerId); } catch (_) {  }
     el.style.cursor = 'grabbing';
     const st = _statoXY(chiave);
-    const er0 = el.getBoundingClientRect();
-    const hw = Math.min(50, _pct(er0.width / 2, canvas.width));
-    const hh = Math.min(50, _pct(er0.height / 2, canvas.height));
-    const scartoX = _pct(e.clientX - (er0.left + er0.width / 2), canvas.width);
-    const scartoY = _pct(e.clientY - (er0.top + er0.height / 2), canvas.height);
+    const w = el.offsetWidth, h = el.offsetHeight;
+    const suTela = (cx, cy) => ({ x: (cx - canvas.left) / scala, y: (cy - canvas.top) / scala });
+    const qui = suTela(e.clientX, e.clientY);
+    const c0 = _centroTela(chiave) || { x: centroDa(st.x, w, OVL_W), y: centroDa(st.y, h, OVL_H) };
+    const presaX = qui.x - c0.x;
+    const presaY = qui.y - c0.y;
+    const altri = _centriAltrui(chiave);
     const move = (ev) => {
-      let x = _pct(ev.clientX - canvas.left, canvas.width) - scartoX;
-      let y = _pct(ev.clientY - canvas.top, canvas.height) - scartoY;
+      const p = suTela(ev.clientX, ev.clientY);
+      let cx = p.x - presaX, cy = p.y - presaY;
       let guide = [];
-      if (!ev.altKey) { const a = _aggancia(chiave, x, y, hw, hh, canvas); x = a.x; y = a.y; guide = a.guide; }
-      st.x = _arr(Math.max(hw, Math.min(100 - hw, x)));
-      st.y = _arr(Math.max(hh, Math.min(100 - hh, y)));
+      if (!ev.altKey) { const a = _aggancia(altri, cx, cy, w, h, scala); cx = a.cx; cy = a.cy; guide = a.guide; }
+      st.x = _arr(_tra(xDaCentro(cx, w, OVL_W), 0, 100));
+      st.y = _arr(_tra(xDaCentro(cy, h, OVL_H), 0, 100));
       _posElemento(el, st);
       _mostraGuide(guide);
       aggiornaInspector();
@@ -7131,7 +7382,18 @@ function _salvaPos(chiave) {
   const e = ELEM(chiave);
   if (e && e.goal) return salvaGoalDaScena();
   if (e && e.cont) return salvaContoDaScena(e.cont);
+  if (e && e.cfg) return salvaCfgElemento(chiave);
   return salvaLayoutOverlay(true);
+}
+
+const _timerCfg = {};
+function salvaCfgElemento(k) {
+  const e = ELEM(k);
+  if (!e || !e.cfg) return;
+  clearTimeout(_timerCfg[k]);
+  _timerCfg[k] = setTimeout(() => {
+    salvaImpostazioni({ [e.cfg]: _cfgEl(k) }, null).catch(() => {  });
+  }, 600);
 }
 
 let _timerGoal = null;
@@ -11098,7 +11360,6 @@ function pannelloGiochi() {
       <label class="campo" for="inp-monete">${L('Come si chiamano le monete', 'What the coins are called', 'Cómo se llaman las monedas')}</label>
       <input type="text" id="inp-monete" maxlength="20" value="${esc(s.nomeMonete)}" placeholder="${L('es. monete, punti, gemme…', 'e.g. coins, points, gems…', 'p. ej. monedas, puntos, gemas…')}">
 
-
       <p class="spazio-sopra"><button class="btn" id="btn-salva-giochi">${L('Salva', 'Save', 'Guardar')}</button></p>
     </div>
     <div class="carta">
@@ -12173,10 +12434,63 @@ function attivaPiattaforma() {
     });
   }
 
+  for (const evento of ['input', 'change']) {
+    _g('scheda-alert')?.addEventListener(evento, (ev) => {
+      const box = ev.target.closest('[data-cfg], [data-cfg-di]');
+      if (!box) return;
+      const k = box.dataset.cfg || box.dataset.cfgDi;
+      leggiCfgDalForm(k);
+      aggiornaAnteprima();
+      aggiornaInspector();
+      salvaCfgElemento(k);
+    });
+  }
+
+  _g('scheda-alert')?.addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-salva-cfg]');
+    if (!b) return;
+    const k = b.dataset.salvaCfg;
+    const e = ELEM(k);
+    conErrore(() => salvaImpostazioni({ [e.cfg]: leggiCfgDalForm(k) },
+      L('Salvato ✓', 'Saved ✓', 'Guardado ✓')));
+  });
+
+  _g('tim-parti')?.addEventListener('click', () => conErrore(async () => {
+    const min = Math.max(1, Math.min(600, Number(_g('tim-minuti')?.value || _cfgEl('timer').minuti) || 15));
+    const r = await api('/api/streamer/timer', { method: 'POST', body: { minuti: min } });
+    _segnaTimer(r?.fine || 0);
+    toast(L('Conto alla rovescia partito ✓', 'Countdown started ✓', 'Cuenta atrás en marcha ✓'));
+  }));
+  _g('tim-ferma')?.addEventListener('click', () => conErrore(async () => {
+    await api('/api/streamer/timer', { method: 'POST', body: { minuti: 0 } });
+    _segnaTimer(0);
+    toast(L('Conto alla rovescia fermo.', 'Countdown stopped.', 'Cuenta atrás parada.'));
+  }));
+
   document.getElementById('lista-goal')?.addEventListener('click', (ev) => {
     const riga = ev.target.closest('.goal-riga');
     if (!riga) return;
     const i = Number(riga.dataset.goal);
+    if (ev.target.closest('[data-g-adesso]')) {
+      leggiGoalDalForm();
+      const g = goalBozza()[i];
+      if (!g) return;
+      conErrore(async () => {
+        const r = await api('/api/streamer/quanti?tipo=' + encodeURIComponent(g.tipo === 'sub' ? 'sub' : g.tipo === 'bit' ? 'bit' : 'follower'));
+        if (r?.quanti == null) {
+          toast(g.tipo === 'bit'
+            ? L('I bit non hanno un totale su Twitch: scrivi tu da quanti parti.', 'Bits have no total on Twitch: type where you start from.', 'Los bits no tienen un total en Twitch: escribe tú desde cuántos empiezas.')
+            : L('Non riesco a leggerlo da Twitch: controlla i permessi e riprova.', 'I cannot read it from Twitch: check the permissions and try again.', 'No puedo leerlo de Twitch: revisa los permisos e inténtalo de nuevo.'), 'errore');
+          return;
+        }
+        g.partenza = Math.max(0, Math.min(1000000, Number(r.quanti) || 0));
+        if (g.obiettivo <= g.partenza) g.obiettivo = Math.min(1000000, g.partenza + 100);
+        disegnaGoal();
+        aggiornaAnteprima();
+        toast(L('Parte da', 'Starts at', 'Empieza en') + ' ' + g.partenza + ' ✓');
+      });
+      return;
+    }
     if (ev.target.closest('[data-g-vesti]')) {
       const g = goalBozza()[i];
       if (!g) return;
@@ -13039,7 +13353,8 @@ function caricaDatiScheda(id) {
   if (id === 'sondaggi') caricaSondaggi();
   if (id === 'giveaway') caricaGiveaway();
   if (id === 'penitenze') caricaPenitenze();
-  if (id === 'alert') { caricaAlert(); _goalBozza = null; disegnaGoal(); caricaContaStudio(); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); }); }
+  if (id === 'alert') { caricaAlert(); _goalBozza = null; _bozzaEl = {}; disegnaGoal(); caricaContaStudio();
+    riempiCfgForm('musica'); riempiCfgForm('timer'); _segnaTimer(Number(impostazioni().overlayStato?.timer?.fine) || 0); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); }); }
   else smontaBanco();
   if (id === 'regia') caricaRegia();
   if (id === 'studio') caricaStudio();
@@ -13219,7 +13534,6 @@ function mostraRamoGioco(ramo) {
   }
   document.querySelectorAll('.gioco-ramo').forEach((b) => b.classList.toggle('on', b.dataset.ramo === ramo));
 }
-
 
 function vuotoStaff() {
   const manca = (stato?.scopeMancanti || []).includes('moderation:read');

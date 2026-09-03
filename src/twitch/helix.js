@@ -571,6 +571,30 @@ export class Helix {
     } catch (e) { log.debug('getRecentFollowers:', e?.message || e); return []; }
   }
 
+  // Quanti seguono il canale, adesso. Serve a far partire un obiettivo da dove
+  // sei gia' arrivato invece che da zero. null = non si sa (permesso mancante).
+  async quantiFollower(channelLogin) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return null;
+    try {
+      const token = await this.auth.getToken('broadcaster', channelLogin);
+      const j = await this._request('GET', '/channels/followers', { query: { broadcaster_id: s.user_id, first: 1 }, token });
+      return Number.isFinite(Number(j?.total)) ? Number(j.total) : null;
+    } catch (e) { log.debug('quantiFollower:', e?.message || e); return null; }
+  }
+
+  // Quanti sono abbonati, adesso (e quanti punti valgono, che e' il numero che
+  // Twitch usa per i traguardi). Richiede lo scope channel:read:subscriptions.
+  async quantiSub(channelLogin) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return null;
+    try {
+      const token = await this.auth.getToken('broadcaster', channelLogin);
+      const j = await this._request('GET', '/subscriptions', { query: { broadcaster_id: s.user_id, first: 1 }, token });
+      return Number.isFinite(Number(j?.total)) ? Number(j.total) : null;
+    } catch (e) { log.debug('quantiSub:', e?.message || e); return null; }
+  }
+
   // Utenti in blocco per id (fino a 100). Basta il token applicazione.
   // [{ id, login, display_name, created_at, profile_image_url, description }].
   async getUsersByIds(ids) {

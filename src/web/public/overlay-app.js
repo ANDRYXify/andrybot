@@ -1,7 +1,6 @@
 // © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
 // Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 
-
 'use strict';
 
 const parti = location.pathname.split('/').filter(Boolean);
@@ -584,7 +583,7 @@ function unGoal(cfg, valore) {
     '--acc': st.accento, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null, '--font': fontDi(st) || null,
   });
   const meta = Math.max(1, Number(cfg.obiettivo) || 100);
-  const ora = Math.max(0, Number(valore) || 0);
+  const ora = Math.max(0, (Number(cfg.partenza) || 0) + (Number(valore) || 0));
   el.querySelector('.g-tit').textContent = cfg.titolo || GOAL_ETICHETTA[cfg.tipo] || '';
   el.querySelector('.g-num').textContent = ora + ' / ' + meta;
   el.querySelector('.g-barra i').style.width = Math.min(100, Math.round((ora / meta) * 100)) + '%';
@@ -596,6 +595,221 @@ function goal(lista, conti) {
   for (const g of (Array.isArray(lista) ? lista : [])) { vivi.add(g.id); unGoal(g, (conti || {})[g.id]); }
   for (const id of Object.keys(goalEl)) if (!vivi.has(id)) { goalEl[id].remove(); delete goalEl[id]; }
 }
+
+const musicaEl = {};
+let musicaVista = { suona: false };
+let musicaLetta = 0;
+let musicaInVolo = false;
+
+const MUSICA_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>';
+
+function vestiElemento(el, cfg, corniceDef) {
+  const st = cfg.stile || {};
+  applicaVars(el, {
+    '--bg': st.sfondo, '--op': st.opacita != null ? st.opacita + '%' : null, '--fg': st.testo,
+    '--acc': st.accento, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null,
+    '--font': fontDi(st) || null, '--dim-ico': (st.dimIcona != null ? st.dimIcona : 20) + 'px',
+  });
+  const xy = cfg.xy;
+  if (xy && xy.x != null) {
+    const sc = (Number(xy.s) || 100) / 100, r = Number(xy.r) || 0;
+    el.style.position = 'fixed'; el.style.left = xy.x + '%'; el.style.top = xy.y + '%';
+    el.style.transform = 'translate(' + (-xy.x) + '%,' + (-xy.y) + '%) scale(' + sc + ') rotate(' + r + 'deg)';
+  } else { el.style.position = ''; el.style.left = ''; el.style.top = ''; el.style.transform = ''; }
+}
+
+function togliMusica() { if (musicaEl.n) { musicaEl.n.remove(); musicaEl.n = null; musicaEl.tinta = ''; musicaEl.chi = ''; } }
+
+function tintaDaCopertina(url, poi) {
+  if (!url || musicaEl.tinta === url) return;
+  musicaEl.tinta = url;
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    try {
+      const n = 24;
+      const c = document.createElement('canvas');
+      c.width = n; c.height = n;
+      const x = c.getContext('2d', { willReadFrequently: true });
+      x.drawImage(img, 0, 0, n, n);
+      const d = x.getImageData(0, 0, n, n).data;
+      const spicchi = new Array(12).fill(null).map(() => ({ q: 0, r: 0, g: 0, b: 0, peso: 0 }));
+      for (let k = 0; k < d.length; k += 4) {
+        const r = d[k], g = d[k + 1], b = d[k + 2];
+        const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+        if (mx < 40 || mn > 225 || mx - mn < 22) continue;
+        const t = tonalita(r, g, b);
+        const sp = spicchi[Math.min(11, Math.floor(t / 30))];
+        const peso = (mx - mn) / 255;
+        sp.q++; sp.peso += peso; sp.r += r * peso; sp.g += g * peso; sp.b += b * peso;
+      }
+      let vinto = null;
+      for (const sp of spicchi) if (sp.peso > 0 && (!vinto || sp.peso > vinto.peso)) vinto = sp;
+      if (!vinto) return;
+      poi(vivace(vinto.r / vinto.peso, vinto.g / vinto.peso, vinto.b / vinto.peso));
+    } catch (e) {  }
+  };
+  img.src = url;
+}
+
+function tonalita(r, g, b) {
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+  if (!d) return 0;
+  const R = r / 255, G = g / 255, B = b / 255, D = d / 255;
+  let h = mx === r ? ((G - B) / D) % 6 : mx === g ? (B - R) / D + 2 : (R - G) / D + 4;
+  h *= 60;
+  return h < 0 ? h + 360 : h;
+}
+
+function vivace(r, g, b) {
+  const mx = Math.max(r, g, b) / 255, mn = Math.min(r, g, b) / 255;
+  const l = (mx + mn) / 2, d = mx - mn;
+  const h = tonalita(r, g, b);
+  const sat = Math.min(1, (d ? d / (1 - Math.abs(2 * l - 1)) : 0) * 1.35 + 0.28);
+  const luce = Math.min(0.7, Math.max(0.5, l));
+  return 'hsl(' + Math.round(h) + ' ' + Math.round(sat * 100) + '% ' + Math.round(luce * 100) + '%)';
+}
+
+function disegnaMusica() {
+  const cfg = MIO.musica;
+  if (!cfg || !cfg.attivo || !mostra('musica')) return togliMusica();
+  const d = musicaVista;
+  const vivo = !!(d && (d.suona || d.nome));
+  if (!vivo && cfg.quandoFermo !== 'resta') return togliMusica();
+
+  let el = musicaEl.n;
+  const nuovo = !el;
+  if (!el) {
+    el = document.createElement('div');
+    el.innerHTML = '<span class="m-sfondo"></span>'
+      + '<span class="m-cover"><span class="m-anello"><svg viewBox="0 0 40 40"><circle class="m-an-via" cx="20" cy="20" r="18"/>'
+      + '<circle class="m-an-ora" cx="20" cy="20" r="18"/></svg></span><span class="m-disco"></span></span>'
+      + '<span class="m-corpo"><span class="m-riga"><span class="m-scorri"></span></span>'
+      + '<span class="m-sotto"><span class="m-barra"><i></i></span><span class="m-tempi"></span></span></span>'
+      + '<span class="m-onde"><i></i><i></i><i></i><i></i></span>';
+    musicaEl.n = el;
+  }
+  (wboxes[cfg.posizione] || wboxes['basso-sinistra'] || document.body).appendChild(el);
+
+  const st = cfg.stile || {};
+  el.className = 'ovl-widget ovl-musica dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna')
+    + ' cover-' + cfg.cover + ' barra-' + cfg.barra + (cfg.onde ? ' con-onde' : '')
+    + (cfg.sfocato ? ' sfocato' : '') + (vivo && d.suona ? ' suona' : ' in-pausa') + (vivo ? '' : ' fermo')
+    + ' entra-' + cfg.entrata + (cfg.barra !== 'sotto' && cfg.tempi === 'no' ? ' senza-sotto' : '');
+  vestiElemento(el, cfg, 'nessuna');
+  if (nuovo) requestAnimationFrame(() => el.classList.add('dentro'));
+
+  const disco = el.querySelector('.m-disco');
+  const sfondo = el.querySelector('.m-sfondo');
+  if (cfg.cover !== 'no' && d.copertina) disco.style.backgroundImage = 'url("' + d.copertina.replace(/"/g, '') + '")';
+  else disco.style.backgroundImage = '';
+  if (cfg.sfocato && d.copertina) sfondo.style.backgroundImage = 'url("' + d.copertina.replace(/"/g, '') + '")';
+  else sfondo.style.backgroundImage = '';
+
+  if (cfg.daCopertina && d.copertina) tintaDaCopertina(d.copertina, (c) => { if (musicaEl.n) musicaEl.n.style.setProperty('--acc', c); });
+  else el.style.setProperty('--acc', st.accento || '#f72fa7');
+
+  const tpl = cfg.testo || '{titolo} — {artista}';
+  const riga = el.querySelector('.m-scorri');
+  riga.innerHTML = escHtml(tpl)
+    .replace(/\{titolo\}/g, '<b>' + escHtml(vivo ? (d.nome || '') : '—') + '</b>')
+    .replace(/\{artista\}/g, escHtml(vivo ? (d.artisti || '') : ''));
+
+  const chi = (d.nome || '') + '|' + (d.artisti || '');
+  if (chi !== musicaEl.chi) {
+    musicaEl.chi = chi;
+    el.classList.remove('scorre');
+    if (cfg.scorre && !fermiIMotori()) requestAnimationFrame(() => {
+      const c = el.querySelector('.m-riga');
+      const troppo = riga.scrollWidth - c.clientWidth;
+      if (troppo > 4) {
+        el.style.setProperty('--m-fuori', troppo + 'px');
+        el.style.setProperty('--m-durata', Math.max(6, troppo / 26) + 's');
+        el.classList.add('scorre');
+      }
+    });
+  }
+  avanzaBarra();
+}
+
+const fermiIMotori = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function avanzaBarra() {
+  const el = musicaEl.n;
+  if (!el) return;
+  const d = musicaVista;
+  const cfg = MIO.musica || {};
+  const passato = (d && d.suona) ? (Date.now() - musicaLetta) : 0;
+  const ms = d && d.durata ? Math.min(d.durata, (Number(d.ms) || 0) + passato) : 0;
+  const q = d && d.durata ? Math.max(0, Math.min(1, ms / d.durata)) : 0;
+
+  const i = el.querySelector('.m-barra i');
+  if (i) i.style.width = (q * 100) + '%';
+  const an = el.querySelector('.m-an-ora');
+  if (an) { const giro = 2 * Math.PI * 18; an.style.strokeDasharray = giro; an.style.strokeDashoffset = giro * (1 - q); }
+
+  const t = el.querySelector('.m-tempi');
+  if (t) t.textContent = !d || !d.durata || cfg.tempi === 'no' ? ''
+    : cfg.tempi === 'trascorso' ? orologio(ms)
+      : cfg.tempi === 'restante' ? '-' + orologio(d.durata - ms)
+        : orologio(ms) + ' / ' + orologio(d.durata);
+}
+
+function orologio(ms) {
+  const t = Math.max(0, Math.floor(ms / 1000));
+  return Math.floor(t / 60) + ':' + (t % 60 < 10 ? '0' : '') + (t % 60);
+}
+
+async function chiediMusica() {
+  if (musicaInVolo) return;
+  musicaInVolo = true;
+  try {
+    const r = await fetch('/overlay/' + encodeURIComponent(login) + '/musica' + location.search);
+    if (r.ok) { musicaVista = await r.json(); musicaLetta = Date.now(); }
+  } catch (e) { /* niente: alla prossima */ }
+  musicaInVolo = false;
+  disegnaMusica();
+}
+
+const timerEl = {};
+
+function disegnaTimer() {
+  const cfg = MIO.timer;
+  const fine = Number(MIO.timerFine) || 0;
+  const manca = fine - Date.now();
+  const finito = manca <= 0;
+  if (!cfg || !cfg.attivo || !mostra('timer') || !fine || (finito && cfg.aFine === 'sparisce')) {
+    if (timerEl.n) { timerEl.n.remove(); timerEl.n = null; }
+    return;
+  }
+  let el = timerEl.n;
+  if (!el) {
+    el = document.createElement('div');
+    el.innerHTML = '<span class="t-tit"></span><span class="t-num"></span>';
+    timerEl.n = el;
+  }
+  (wboxes[cfg.posizione] || wboxes['alto-destra'] || document.body).appendChild(el);
+  el.className = 'ovl-widget ovl-timer dim-' + ((cfg.stile || {}).dim || 'media') + ' ' + classiIdentita(cfg.stile, 'nessuna')
+    + (finito ? ' finito' : '');
+  vestiElemento(el, cfg, 'nessuna');
+  el.querySelector('.t-tit').textContent = finito ? '' : (cfg.titolo || '');
+  el.querySelector('.t-num').textContent = finito ? (cfg.testoFine || '') : oreMinSec(manca);
+}
+
+function oreMinSec(ms) {
+  const t = Math.max(0, Math.ceil(ms / 1000));
+  const o = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60;
+  const dd = (n) => (n < 10 ? '0' : '') + n;
+  return (o ? o + ':' + dd(m) : String(m)) + ':' + dd(s);
+}
+
+setInterval(() => {
+  if (MIO.timer && MIO.timer.attivo && mostra('timer')) disegnaTimer();
+  const vivo = MIO.musica && MIO.musica.attivo && mostra('musica');
+  if (!vivo) return;
+  avanzaBarra();
+  if (Date.now() - musicaLetta > 5000) chiediMusica();
+}, 1000);
 
 function applicaTema(t) {
   MIO.mostra = (t && t.mostra) ? t.mostra : MIO.mostra;
@@ -612,6 +826,12 @@ function applicaTema(t) {
   widget('ultimoSub', mostra('ws') ? w.ultimoSub : { attivo: false }, stato.ultimoSub);
   MIO.goals = Array.isArray(t.goals) ? t.goals : [];
   goal(MIO.goals, t.conti || stato.goals || {});
+
+  MIO.musica = t.musica || null;
+  MIO.timer = t.timer || null;
+  MIO.timerFine = Number(stato.timer && stato.timer.fine) || 0;
+  disegnaTimer();
+  if (MIO.musica && MIO.musica.attivo && mostra('musica')) chiediMusica(); else togliMusica();
 }
 
 async function caricaTema() {

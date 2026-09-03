@@ -127,6 +127,25 @@ export class AlertsEngine {
     } catch (e) { log.debug('goal:', e?.message || e); }
   }
 
+  // IL CONTO ALLA ROVESCIA. Non si tiene un contatore che scorre: si scrive
+  // l'ISTANTE in cui scade, e chi lo mostra fa la sottrazione. Cosi' non c'e'
+  // niente che possa andare fuori sincrono — ne' fra il server e l'overlay, ne'
+  // fra due sorgenti aperte — e un riavvio del bot non lo azzera.
+  // minuti = 0 lo spegne.
+  impostaTimer(channel, minuti) {
+    try {
+      const s = streamers.get(channel);
+      if (!s) return 0;
+      const m = Math.max(0, Math.min(600, Math.round(Number(minuti) || 0)));
+      const fine = m > 0 ? Date.now() + m * 60000 : 0;
+      const stato = { ...(s.settings?.overlayStato || {}) };
+      stato.timer = { fine };
+      streamers.setSettings(channel, { ...s.settings, overlayStato: stato });
+      this.effects?.emit?.(channel, { tipo: 'timer', fine });
+      return fine;
+    } catch (e) { log.debug('timer:', e?.message || e); return 0; }
+  }
+
   // Riporta un obiettivo a zero — o tutti. E' un'azione dello streamer, non del
   // tempo: un obiettivo che si azzera da solo la notte non e' un obiettivo.
   azzeraGoal(channel, id = '') {
@@ -283,6 +302,8 @@ export class AlertsEngine {
       widget: conIcone,
       goals: goalDi(s),
       conti: contiGoal(s),
+      musica: (s.overlayMusica && typeof s.overlayMusica === 'object') ? s.overlayMusica : null,
+      timer: (s.overlayTimer && typeof s.overlayTimer === 'object') ? s.overlayTimer : null,
       stato: (s.overlayStato && typeof s.overlayStato === 'object') ? s.overlayStato : {},
     };
   }

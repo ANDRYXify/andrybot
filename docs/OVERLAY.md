@@ -172,6 +172,97 @@ colonna sparisce, quindi la tela cresce); un doppio clic sulla testa la
 riaggancia. Sotto i 1024px galleggiano come prima: tre colonne in 800px
 lascerebbero alla tela 200px, che è peggio del problema che risolvono.
 
+## Il player e il conto alla rovescia
+
+Due elementi che, a differenza di tutti gli altri, **cambiano da soli** mentre
+nessuno tocca niente: la canzone avanza, i minuti scendono. Il tempo lo contano
+nell'overlay, non sul server: il server dice *cosa* suona e *a che punto era*, e
+*quando* il conto scade — il resto è una sottrazione. Così due sorgenti browser
+aperte mostrano la stessa cosa senza mettersi d'accordo, e nessuna resta
+indietro se un evento si perde per strada.
+
+### Chi chiede a Spotify
+
+Spotify non sa spingere: qualcuno deve chiedere. Chiede **l'overlay**
+(`GET /overlay/:login/musica`, protetto dalla chiave), non il server a vuoto —
+così quando nessuno guarda non parte una sola chiamata. E la risposta sta in
+cache quattro secondi, quindi dieci sorgenti browser aperte valgono comunque una
+chiamata sola: il numero di spettatori non deve pesare su Spotify.
+
+Fra una lettura e l'altra la barra **avanza da sola**: il server ha detto a che
+millisecondo era e quando l'ha detto. Senza, scatterebbe ogni cinque secondi.
+
+### Il colore preso dalla copertina
+
+Si legge l'artwork su una tela di 24 pixel per lato e si media quello che c'è,
+scartando i pixel spenti — il nero delle bande e il bianco dei bordi non sono il
+colore del disco — poi si alza la saturazione, perché una media tende sempre al
+grigio. Se l'immagine non si lascia leggere, l'accento resta quello scelto a
+mano: mai un player senza colore.
+
+### Il conto alla rovescia è un istante
+
+Non si tiene un contatore che scorre: si scrive **quando scade**
+(`overlayStato.timer.fine`). Non c'è niente che possa andare fuori sincrono, e
+un riavvio del bot non lo azzera — un conto alla rovescia che riparte da solo
+quando il bot si riavvia non è un conto alla rovescia.
+
+## Un obiettivo può partire da dove sei
+
+«1000 follower» non è «altri mille». Se ne hai già 450, la barra deve partire da
+lì. Ogni obiettivo ha quindi una **partenza**: il conto degli eventi resta quello
+vero (lo tiene il bot), la partenza è il gradino sotto, e il tasto «Quanti ne ho
+adesso» va a chiederlo a Twitch (`/channels/followers` e `/subscriptions`, che
+danno il `total`).
+
+I **bit** non hanno un totale su Twitch — esiste solo la classifica di un
+periodo — e allora il pannello lo dice, invece di inventare un numero: la
+partenza la scrivi tu.
+
+## Spostare le cose: cosa vuol dire davvero quella x
+
+La x che si salva **non è il centro** dell'elemento: è la sua posizione lungo la
+corsa disponibile. 0 = a filo a sinistra, 100 = a filo a destra, 50 = centrato.
+È la regola che l'overlay applica da sempre (`left: x%` con `translate(-x%)`),
+solo che non era scritta da nessuna parte: si deduceva a mente ogni volta.
+
+Chi trascinava la trattava come se fosse il centro. L'errore è
+`larghezza × (x − 50%)`: zero al centro, mezza larghezza ai bordi. Toccavi un
+elemento vicino a un bordo e **saltava sotto il cursore** — misurato: 22 e 27
+pixel su elementi normali, e cresce con la larghezza.
+
+Ora la regola è due funzioni, `centroDa` e `xDaCentro`, e ci passano tutti:
+trascinamento, frecce, allineamenti, aggancio, guide. Da cui, gratis:
+
+- il limite diventa `0…100`, e **nessun elemento può uscire dallo schermo**;
+- «allinea a sinistra» è `x = 0`, non `x = mezza larghezza`;
+- l'aggancio ragiona sui centri in pixel di tela — quello che l'occhio confronta.
+
+E si era portato dietro un secondo difetto: la posizione di un elemento posato
+in un angolo veniva **misurata una volta e conservata**. Quella misura poteva
+essere stata presa mentre la scheda non era ancora in pagina — e allora valeva
+zero, e al primo trascinamento l'elemento partiva da un posto inventato. Ora non
+si conserva più niente: si misura quando serve.
+
+Il contrappeso è `scripts/verifica-studio.mjs`: prende ogni elemento della scena
+in un punto qualunque (non al centro), lo trascina di una quantità nota verso il
+centro della tela — via dai bordi, dove il limite entrerebbe in gioco per
+davvero — e controlla che si sia spostato **di quella quantità**. Con Alt
+premuto, così l'aggancio non falsa la misura.
+
+## Due cose piccole che rendevano il banco scomodo
+
+**L'occhio di un livello non si vedeva cambiare.** Lo cliccavi, l'elemento
+spariva dalla tela, ma l'icona restava un occhio aperto: l'unico modo di sapere
+cosa avevi fatto era guardare la tela. Il pannello dei livelli si ridisegnava
+solo passando dall'ispettore, e l'occhio non ci passa.
+
+**Il puntino del cursore spariva quando l'anello si agganciava.** Con il cursore
+di sistema nascosto, era l'unico modo di sapere dove si stava puntando: senza,
+centrare un bersaglio piccolo — l'occhio di un livello è 22 pixel — diventava un
+indovinello. Ora il puntino resta, e quando l'anello si aggancia si fa un po'
+più grande con un alone, perché è lui il riferimento.
+
 ## Il difetto che rendeva l'overlay «meh»
 
 `--op: 85`. Senza il `%`.
