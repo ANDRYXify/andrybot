@@ -882,8 +882,15 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const c = musicaCache.get(login);
     if (c && ora - c.ts < MUSICA_CACHE_MS) return res.json(c.dati);
     let dati = { suona: false };
-    try { if (spotify.collegato(login)) dati = await spotify.oraSuona(login); }
-    catch { dati = { suona: false }; }
+    try {
+      if (spotify.collegato(login)) {
+        dati = await spotify.oraSuona(login);
+        if (dati.id) {
+          const b = await spotify.battito(login, dati.id);
+          if (b) { dati.bpm = b.bpm; dati.energia = b.energia; }
+        }
+      }
+    } catch { dati = { suona: false }; }
     musicaCache.set(login, { ts: ora, dati });
     res.set('Cache-Control', 'no-store');
     res.json(dati);

@@ -192,6 +192,20 @@ chiamata sola: il numero di spettatori non deve pesare su Spotify.
 Fra una lettura e l'altra la barra **avanza da sola**: il server ha detto a che
 millisecondo era e quando l'ha detto. Senza, scatterebbe ogni cinque secondi.
 
+### Va a tempo davvero
+
+Le onde di un player qualunque ballano a una velocità decisa a tavolino. Le
+nostre ballano sul **battito vero** del brano: Spotify dice quanti battiti al
+minuto ha (`/audio-features`), e la **fase** si ricava da dove sei nella
+canzone — un `animation-delay` negativo lungo quanto il resto della divisione
+fra il tempo trascorso e la durata di una battuta. Senza quella fase sarebbero a
+tempo per caso.
+
+L'energia del brano modula quanto è ampio il battito, così un pezzo calmo non
+pulsa come un pezzo tirato. Se Spotify non dà quel dato — l'endpoint non è
+garantito a tutte le app — si torna alle animazioni di prima: **mai un errore a
+schermo per un dettaglio estetico**.
+
 ### Il colore preso dalla copertina
 
 Si legge l'artwork su una tela di 24 pixel per lato e si media quello che c'è,
@@ -199,6 +213,16 @@ scartando i pixel spenti — il nero delle bande e il bianco dei bordi non sono 
 colore del disco — poi si alza la saturazione, perché una media tende sempre al
 grigio. Se l'immagine non si lascia leggere, l'accento resta quello scelto a
 mano: mai un player senza colore.
+
+Il primo tentativo **mediava tutti i pixel**, e sbagliava per costruzione: la
+media di viola e arancio è magenta, cioè un colore che nel disco non c'è. Ora è
+un **istogramma di tonalità a dodici spicchi**: vince lo spicchio con più
+colore, e si media solo dentro quello. Il secondo spicchio serve allo sfondo a
+gradiente, che scorre piano fra i due colori del disco.
+
+E le tinte si **ricordano per copertina**: al primo giro il calcolo si applicava
+una volta sola e qualsiasi ridisegno la perdeva, riportando l'accento al colore
+fisso.
 
 ### Il conto alla rovescia è un istante
 

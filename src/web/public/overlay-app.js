@@ -620,8 +620,12 @@ function vestiElemento(el, cfg, corniceDef) {
 
 function togliMusica() { if (musicaEl.n) { musicaEl.n.remove(); musicaEl.n = null; musicaEl.tinta = ''; musicaEl.chi = ''; } }
 
+const tinteNote = new Map();
 function tintaDaCopertina(url, poi) {
-  if (!url || musicaEl.tinta === url) return;
+  if (!url) return;
+  const gia = tinteNote.get(url);
+  if (gia) return poi(gia[0], gia[1]);
+  if (musicaEl.tinta === url) return;
   musicaEl.tinta = url;
   const img = new Image();
   img.crossOrigin = 'anonymous';
@@ -633,20 +637,22 @@ function tintaDaCopertina(url, poi) {
       const x = c.getContext('2d', { willReadFrequently: true });
       x.drawImage(img, 0, 0, n, n);
       const d = x.getImageData(0, 0, n, n).data;
-      const spicchi = new Array(12).fill(null).map(() => ({ q: 0, r: 0, g: 0, b: 0, peso: 0 }));
+      const spicchi = new Array(12).fill(null).map(() => ({ r: 0, g: 0, b: 0, peso: 0 }));
       for (let k = 0; k < d.length; k += 4) {
         const r = d[k], g = d[k + 1], b = d[k + 2];
         const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
         if (mx < 40 || mn > 225 || mx - mn < 22) continue;
-        const t = tonalita(r, g, b);
-        const sp = spicchi[Math.min(11, Math.floor(t / 30))];
+        const sp = spicchi[Math.min(11, Math.floor(tonalita(r, g, b) / 30))];
         const peso = (mx - mn) / 255;
-        sp.q++; sp.peso += peso; sp.r += r * peso; sp.g += g * peso; sp.b += b * peso;
+        sp.peso += peso; sp.r += r * peso; sp.g += g * peso; sp.b += b * peso;
       }
-      let vinto = null;
-      for (const sp of spicchi) if (sp.peso > 0 && (!vinto || sp.peso > vinto.peso)) vinto = sp;
-      if (!vinto) return;
-      poi(vivace(vinto.r / vinto.peso, vinto.g / vinto.peso, vinto.b / vinto.peso));
+      const forti = spicchi.filter((sp) => sp.peso > 0).sort((a, b) => b.peso - a.peso);
+      if (!forti.length) return;
+      const tinta = (sp) => vivace(sp.r / sp.peso, sp.g / sp.peso, sp.b / sp.peso);
+      const uno = tinta(forti[0]), due = forti[1] ? tinta(forti[1]) : uno;
+      if (tinteNote.size > 200) tinteNote.clear();
+      tinteNote.set(url, [uno, due]);
+      poi(uno, due);
     } catch (e) {  }
   };
   img.src = url;
@@ -678,13 +684,14 @@ function disegnaMusica() {
   if (!vivo && cfg.quandoFermo !== 'resta') return togliMusica();
 
   let el = musicaEl.n;
-  const nuovo = !el;
+  const nato = !el;
   if (!el) {
     el = document.createElement('div');
     el.innerHTML = '<span class="m-sfondo"></span>'
       + '<span class="m-cover"><span class="m-anello"><svg viewBox="0 0 40 40"><circle class="m-an-via" cx="20" cy="20" r="18"/>'
       + '<circle class="m-an-ora" cx="20" cy="20" r="18"/></svg></span><span class="m-disco"></span></span>'
       + '<span class="m-corpo"><span class="m-riga"><span class="m-scorri"></span></span>'
+      + '<span class="m-riga m-riga2"><span class="m-scorri2"></span></span>'
       + '<span class="m-sotto"><span class="m-barra"><i></i></span><span class="m-tempi"></span></span></span>'
       + '<span class="m-onde"><i></i><i></i><i></i><i></i></span>';
     musicaEl.n = el;
@@ -693,43 +700,86 @@ function disegnaMusica() {
 
   const st = cfg.stile || {};
   el.className = 'ovl-widget ovl-musica dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna')
+    + ' verso-' + cfg.verso + ' righe-' + cfg.righe
     + ' cover-' + cfg.cover + ' barra-' + cfg.barra + (cfg.onde ? ' con-onde' : '')
-    + (cfg.sfocato ? ' sfocato' : '') + (vivo && d.suona ? ' suona' : ' in-pausa') + (vivo ? '' : ' fermo')
+    + ' sfondo-' + cfg.sfondo + ' ritmo-' + cfg.ritmo
+    + (vivo && d.suona ? ' suona' : ' in-pausa') + (vivo ? '' : ' fermo')
     + ' entra-' + cfg.entrata + (cfg.barra !== 'sotto' && cfg.tempi === 'no' ? ' senza-sotto' : '');
   vestiElemento(el, cfg, 'nessuna');
-  if (nuovo) requestAnimationFrame(() => el.classList.add('dentro'));
+  if (nato) requestAnimationFrame(() => el.classList.add('dentro'));
 
   const disco = el.querySelector('.m-disco');
   const sfondo = el.querySelector('.m-sfondo');
-  if (cfg.cover !== 'no' && d.copertina) disco.style.backgroundImage = 'url("' + d.copertina.replace(/"/g, '') + '")';
+  const foto = d.copertinaGrande || d.copertina;
+  if (cfg.cover !== 'no' && foto) disco.style.backgroundImage = 'url("' + foto.replace(/"/g, '') + '")';
   else disco.style.backgroundImage = '';
-  if (cfg.sfocato && d.copertina) sfondo.style.backgroundImage = 'url("' + d.copertina.replace(/"/g, '') + '")';
+  if (cfg.sfondo === 'copertina' && foto) sfondo.style.backgroundImage = 'url("' + foto.replace(/"/g, '') + '")';
   else sfondo.style.backgroundImage = '';
 
-  if (cfg.daCopertina && d.copertina) tintaDaCopertina(d.copertina, (c) => { if (musicaEl.n) musicaEl.n.style.setProperty('--acc', c); });
-  else el.style.setProperty('--acc', st.accento || '#f72fa7');
+  if ((cfg.daCopertina || cfg.sfondo === 'colori') && d.copertina) {
+    tintaDaCopertina(d.copertina, (uno, due) => {
+      if (!musicaEl.n) return;
+      if (cfg.daCopertina) musicaEl.n.style.setProperty('--acc', uno);
+      musicaEl.n.style.setProperty('--acc2', due);
+    });
+  } else {
+    el.style.setProperty('--acc', st.accento || '#f72fa7');
+    el.style.setProperty('--acc2', st.accento || '#f72fa7');
+  }
 
-  const tpl = cfg.testo || '{titolo} — {artista}';
-  const riga = el.querySelector('.m-scorri');
-  riga.innerHTML = escHtml(tpl)
-    .replace(/\{titolo\}/g, '<b>' + escHtml(vivo ? (d.nome || '') : '—') + '</b>')
-    .replace(/\{artista\}/g, escHtml(vivo ? (d.artisti || '') : ''));
+  const scrivi = (dove, tpl) => {
+    dove.innerHTML = escHtml(tpl || '')
+      .replace(/\{titolo\}/g, '<b>' + escHtml(vivo ? (d.nome || '') : '—') + '</b>')
+      .replace(/\{artista\}/g, escHtml(vivo ? (d.artisti || '') : ''))
+      .replace(/\{album\}/g, escHtml(vivo ? (d.album || '') : ''));
+  };
+  scrivi(el.querySelector('.m-scorri'), cfg.testo || '{titolo} — {artista}');
+  scrivi(el.querySelector('.m-scorri2'), cfg.testo2 || '{artista}');
+
+  battitoDelBrano(el, cfg, d);
 
   const chi = (d.nome || '') + '|' + (d.artisti || '');
   if (chi !== musicaEl.chi) {
+    const primo = musicaEl.chi === undefined || musicaEl.chi === '';
     musicaEl.chi = chi;
-    el.classList.remove('scorre');
-    if (cfg.scorre && !fermiIMotori()) requestAnimationFrame(() => {
-      const c = el.querySelector('.m-riga');
-      const troppo = riga.scrollWidth - c.clientWidth;
-      if (troppo > 4) {
-        el.style.setProperty('--m-fuori', troppo + 'px');
-        el.style.setProperty('--m-durata', Math.max(6, troppo / 26) + 's');
-        el.classList.add('scorre');
-      }
-    });
+    if (cfg.cambio && !primo && !fermiIMotori()) {
+      el.classList.remove('cambia'); void el.offsetWidth; el.classList.add('cambia');
+    }
+    misuraScorrimento(el, cfg);
   }
   avanzaBarra();
+}
+
+function battitoDelBrano(el, cfg, d) {
+  if (cfg.ritmo === 'no' || !d || !d.bpm || !d.suona) {
+    el.style.removeProperty('--battito');
+    el.style.removeProperty('--battito-fase');
+    el.style.removeProperty('--battito-forza');
+    return;
+  }
+  const dur = 60 / Math.max(40, Math.min(220, d.bpm));
+  const passato = ((Number(d.ms) || 0) + (Date.now() - musicaLetta)) / 1000;
+  el.style.setProperty('--battito', dur.toFixed(4) + 's');
+  el.style.setProperty('--battito-fase', '-' + (passato % dur).toFixed(4) + 's');
+  el.style.setProperty('--battito-forza', String(0.6 + (Number(d.energia) || 0.5) * 0.8));
+}
+
+function misuraScorrimento(el, cfg) {
+  el.classList.remove('scorre');
+  if (!cfg.scorre || fermiIMotori()) return;
+  requestAnimationFrame(() => {
+    if (!musicaEl.n) return;
+    let fuori = 0;
+    for (const r of el.querySelectorAll('.m-riga')) {
+      const dentro = r.firstElementChild;
+      if (dentro) fuori = Math.max(fuori, dentro.scrollWidth - r.clientWidth);
+    }
+    if (fuori > 4) {
+      el.style.setProperty('--m-fuori', fuori + 'px');
+      el.style.setProperty('--m-durata', Math.max(6, fuori / 26) + 's');
+      el.classList.add('scorre');
+    }
+  });
 }
 
 const fermiIMotori = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;

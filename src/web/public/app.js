@@ -278,8 +278,9 @@ function statoDemo() {
             stile: { dim: 'piccola', sfondo: '#1b1024', opacita: 90, testo: '#ffe9f6', accento: '#ffb020', bordoRaggio: 26, font: 'rotondo', forma: 'pillola', materia: 'sfumata', cornice: 'linea' } },
         ],
         overlayStato: { goals: { g1: 318, g2: 41 } },
-        overlayMusica: { attivo: true, testo: '{titolo} — {artista}', cover: 'vinile', barra: 'anello', tempi: 'trascorso',
-          onde: true, sfocato: true, daCopertina: false, scorre: true, entrata: 'scivola', quandoFermo: 'sparisce',
+        overlayMusica: { attivo: true, verso: 'riga', righe: 'due', testo: '{titolo}', testo2: '{artista}',
+          cover: 'vinile', barra: 'anello', tempi: 'trascorso', onde: true, ritmo: 'tutto', sfondo: 'colori',
+          daCopertina: false, scorre: true, entrata: 'scivola', cambio: true, quandoFermo: 'sparisce',
           posizione: 'basso-sinistra', xy: null,
           stile: { dim: 'media', sfondo: '#12101a', opacita: 88, testo: '#ffffff', accento: '#38d39f', bordoRaggio: 16, font: 'rotondo', forma: 'carta', materia: 'vetro', cornice: 'nessuna' } },
         overlayTimer: { attivo: true, titolo: 'Si comincia tra', testoFine: 'Si comincia!', aFine: 'resta', minuti: 15,
@@ -5892,11 +5893,16 @@ function pannelloAlert() {
           <label class="interruttore"><input type="checkbox" data-c="attivo" id="mus-attivo"><span class="levetta"></span></label>
           <span class="etichetta-stato">${L('Player musica', 'Music player', 'Reproductor de música')}</span>
         </div>
+        <div class="goal-campi spazio-sopra">
+          <label class="campo-num">${L('Disposizione', 'Layout', 'Disposición')}<select data-c="verso">${[['riga', L('copertina a sinistra', 'cover on the left', 'portada a la izquierda')], ['riga-inversa', L('copertina a destra', 'cover on the right', 'portada a la derecha')], ['colonna', L('copertina sopra (poster)', 'cover on top (poster)', 'portada arriba (póster)')], ['solo-cover', L('solo la copertina', 'cover only', 'solo la portada')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+          <label class="campo-num">${L('Righe', 'Lines', 'Líneas')}<select data-c="righe">${[['una', L('una riga', 'one line', 'una línea')], ['due', L('due: titolo e artista', 'two: title and artist', 'dos: título y artista')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+          <label class="campo-num">${L('Dove', 'Where', 'Dónde')}<select data-c="posizione">${POS4_OPTS().map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+        </div>
         <div class="griglia-campi spazio-sopra">
-          <div><label class="campo">${L('Cosa scrive', 'What it writes', 'Qué escribe')} <span class="tenue">${L('usa {titolo} e {artista}', 'use {titolo} and {artista}', 'usa {titolo} y {artista}')}</span></label>
+          <div><label class="campo">${L('Prima riga', 'First line', 'Primera línea')} <span class="tenue">${L('usa {titolo}, {artista}, {album}', 'use {titolo}, {artista}, {album}', 'usa {titolo}, {artista}, {album}')}</span></label>
             <input type="text" data-c="testo" maxlength="80"></div>
-          <div><label class="campo">${L('Dove', 'Where', 'Dónde')}</label>
-            <select data-c="posizione">${POS4_OPTS().map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></div>
+          <div><label class="campo">${L('Seconda riga', 'Second line', 'Segunda línea')} <span class="tenue">${L('solo con «due righe»', 'only with «two lines»', 'solo con «dos líneas»')}</span></label>
+            <input type="text" data-c="testo2" maxlength="80"></div>
         </div>
         <div class="goal-campi spazio-sopra">
           <label class="campo-num">${L('Copertina', 'Cover art', 'Portada')}<select data-c="cover">${[['quadrata', L('quadrata', 'square', 'cuadrada')], ['tonda', L('tonda', 'round', 'redonda')], ['vinile', L('vinile che gira', 'spinning vinyl', 'vinilo que gira')], ['no', L('niente', 'none', 'ninguna')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
@@ -5904,12 +5910,14 @@ function pannelloAlert() {
           <label class="campo-num">${L('Tempi', 'Times', 'Tiempos')}<select data-c="tempi">${[['no', L('niente', 'none', 'ninguno')], ['trascorso', L('trascorso', 'elapsed', 'transcurrido')], ['restante', L('quanto manca', 'remaining', 'lo que falta')], ['due', L('tutti e due', 'both', 'los dos')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Entrata', 'Entrance', 'Entrada')}<select data-c="entrata">${[['dissolve', L('dissolvenza', 'fade', 'fundido')], ['scivola', L('scivola da lato', 'slide in', 'desliza')], ['sale', L('sale dal basso', 'rise up', 'sube')], ['niente', L('secca', 'none', 'seca')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Se non suona', 'When nothing plays', 'Si no suena')}<select data-c="quandoFermo">${[['sparisce', L('sparisce', 'goes away', 'desaparece')], ['resta', L('resta a schermo', 'stays on screen', 'se queda')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+          <label class="campo-num">${L('Va a tempo', 'Beats along', 'Va al ritmo')}<select data-c="ritmo">${[['onde', L('le onde, sul battito vero', 'the bars, on the real beat', 'las ondas, al ritmo real')], ['tutto', L('anche la copertina pulsa', 'the cover pulses too', 'la portada también late')], ['no', L('niente ritmo', 'no rhythm', 'sin ritmo')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+          <label class="campo-num">${L('Sfondo', 'Background', 'Fondo')}<select data-c="sfondo">${[['no', L('niente', 'none', 'ninguno')], ['copertina', L('la copertina sfocata', 'the blurred cover', 'la portada difuminada')], ['colori', L('i colori del disco, che scorrono', 'the record colors, drifting', 'los colores del disco, en movimiento')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
         </div>
         <div class="riga-flessibile spazio-sopra">
           <label class="riga-check"><input type="checkbox" data-c="onde"> ${L('Onde che ballano', 'Dancing bars', 'Ondas que bailan')}</label>
           <label class="riga-check"><input type="checkbox" data-c="scorre"> ${L('Il titolo lungo scorre', 'Long titles scroll', 'Los títulos largos se desplazan')}</label>
-          <label class="riga-check"><input type="checkbox" data-c="sfocato"> ${L('Sfondo dalla copertina', 'Background from the cover', 'Fondo de la portada')}</label>
           <label class="riga-check"><input type="checkbox" data-c="daCopertina"> ${L('Colore preso dalla copertina', 'Color taken from the cover', 'Color tomado de la portada')}</label>
+          <label class="riga-check"><input type="checkbox" data-c="cambio"> ${L('Si rianima a ogni brano', 'Replays its entrance on every track', 'Se reanima en cada tema')}</label>
         </div>
         <div class="asp-blocco" data-asp="musica" data-cfg-di="musica">
           <h4 class="spazio-sopra">${L('Aspetto', 'Appearance', 'Aspecto')}</h4>
@@ -6554,7 +6562,8 @@ function _vestiGoal(box, g) {
 
 const BRANO_FINTO = () => ({
   nome: L('Il brano che stai ascoltando', 'The track you are listening to', 'El tema que estás escuchando'),
-  artisti: L('Artista', 'Artist', 'Artista'), q: 0.42,
+  artisti: L('Artista', 'Artist', 'Artista'),
+  album: L('Album', 'Album', 'Álbum'), q: 0.42,
 });
 
 function _vestiMusica(box, cfg) {
@@ -6563,19 +6572,27 @@ function _vestiMusica(box, cfg) {
       + '<span class="m-cover"><span class="m-anello"><svg viewBox="0 0 40 40"><circle class="m-an-via" cx="20" cy="20" r="18"/>'
       + '<circle class="m-an-ora" cx="20" cy="20" r="18"/></svg></span><span class="m-disco"></span></span>'
       + '<span class="m-corpo"><span class="m-riga"><span class="m-scorri"></span></span>'
+      + '<span class="m-riga m-riga2"><span class="m-scorri2"></span></span>'
       + '<span class="m-sotto"><span class="m-barra"><i></i></span><span class="m-tempi"></span></span></span>'
       + '<span class="m-onde"><i></i><i></i><i></i><i></i></span>';
   }
   const st = cfg.stile || {};
   const d = BRANO_FINTO();
   box.className = 'ovl-widget ovl-musica dentro dim-' + (st.dim || 'media') + ' ' + classiIdentita(st)
+    + ' verso-' + (cfg.verso || 'riga') + ' righe-' + (cfg.righe || 'una')
     + ' cover-' + (cfg.cover || 'quadrata') + ' barra-' + (cfg.barra || 'sotto')
-    + (cfg.onde !== false ? ' con-onde' : '') + (cfg.sfocato ? ' sfocato' : '') + ' suona'
+    + (cfg.onde !== false ? ' con-onde' : '') + ' sfondo-' + (cfg.sfondo || 'no')
+    + ' ritmo-' + (cfg.ritmo || 'onde') + ' suona'
     + ((cfg.barra || 'sotto') !== 'sotto' && (cfg.tempi || 'no') === 'no' ? ' senza-sotto' : '');
   _setVars(box, { '--bg': st.sfondo, '--op': (st.opacita != null ? st.opacita : 85) + '%', '--fg': st.testo,
-    '--acc': st.accento, '--radius': (st.bordoRaggio != null ? st.bordoRaggio : 12) + 'px', '--font': fontStile(st) });
-  box.querySelector('.m-scorri').innerHTML = esc(cfg.testo || '{titolo} — {artista}')
-    .replace(/\{titolo\}/g, '<b>' + esc(d.nome) + '</b>').replace(/\{artista\}/g, esc(d.artisti));
+    '--acc': st.accento, '--acc2': st.accento, '--radius': (st.bordoRaggio != null ? st.bordoRaggio : 12) + 'px', '--font': fontStile(st) });
+  const dipingi = (sel, tpl) => {
+    const n = box.querySelector(sel);
+    if (n) n.innerHTML = esc(tpl || '').replace(/\{titolo\}/g, '<b>' + esc(d.nome) + '</b>')
+      .replace(/\{artista\}/g, esc(d.artisti)).replace(/\{album\}/g, esc(d.album));
+  };
+  dipingi('.m-scorri', cfg.testo || '{titolo} — {artista}');
+  dipingi('.m-scorri2', cfg.testo2 || '{artista}');
   const giro = 2 * Math.PI * 18;
   const an = box.querySelector('.m-an-ora');
   an.style.strokeDasharray = giro; an.style.strokeDashoffset = giro * (1 - d.q);
@@ -6991,8 +7008,9 @@ const VESTE_DEF = () => ({ dim: 'media', sfondo: '#0f0f14', opacita: 85, testo: 
   accento: '#f72fa7', bordoRaggio: 12, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'nessuna' });
 
 function _defMusica() {
-  return { attivo: false, testo: '{titolo} — {artista}', cover: 'quadrata', barra: 'sotto', tempi: 'no',
-    onde: true, sfocato: false, daCopertina: false, scorre: true, entrata: 'dissolve',
+  return { attivo: false, verso: 'riga', righe: 'una', testo: '{titolo} — {artista}', testo2: '{artista}',
+    cover: 'quadrata', barra: 'sotto', tempi: 'no', onde: true, ritmo: 'onde', sfondo: 'no',
+    daCopertina: false, scorre: true, entrata: 'dissolve', cambio: true,
     quandoFermo: 'sparisce', posizione: 'basso-sinistra', xy: null, stile: VESTE_DEF() };
 }
 

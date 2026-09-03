@@ -188,20 +188,29 @@ export const COVER_MUS = ['quadrata', 'tonda', 'vinile', 'no'];
 export const BARRA_MUS = ['sotto', 'anello', 'no'];
 export const TEMPI_MUS = ['no', 'trascorso', 'restante', 'due'];
 export const ENTRATA_MUS = ['dissolve', 'scivola', 'sale', 'niente'];
+export const VERSO_MUS = ['riga', 'riga-inversa', 'colonna', 'solo-cover'];
+export const RIGHE_MUS = ['una', 'due'];
+export const RITMO_MUS = ['no', 'onde', 'tutto'];
+export const SFONDO_MUS = ['no', 'copertina', 'colori'];
 
 export const normMusica = (m) => {
   m = m || {};
   return {
     attivo: m.attivo === true,
+    verso: unoDi(m.verso, VERSO_MUS, 'riga'),
+    righe: unoDi(m.righe, RIGHE_MUS, 'una'),
     testo: String(m.testo == null ? '{titolo} — {artista}' : m.testo).slice(0, 80),
+    testo2: String(m.testo2 == null ? '{artista}' : m.testo2).slice(0, 80),
     cover: unoDi(m.cover, COVER_MUS, 'quadrata'),
     barra: unoDi(m.barra, BARRA_MUS, 'sotto'),
     tempi: unoDi(m.tempi, TEMPI_MUS, 'no'),
     onde: m.onde !== false,
-    sfocato: m.sfocato === true,
+    ritmo: unoDi(m.ritmo, RITMO_MUS, 'onde'),
+    sfondo: unoDi(m.sfondo, SFONDO_MUS, 'no'),
     daCopertina: m.daCopertina === true,
     scorre: m.scorre !== false,
     entrata: unoDi(m.entrata, ENTRATA_MUS, 'dissolve'),
+    cambio: m.cambio !== false,
     quandoFermo: unoDi(m.quandoFermo, ['sparisce', 'resta'], 'sparisce'),
     posizione: unoDi(m.posizione, POS_ANG, 'basso-sinistra'),
     xy: xyOk(m.xy),
