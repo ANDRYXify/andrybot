@@ -143,7 +143,7 @@ function impostazioni() {
         xy: (a.xy && typeof a.xy === 'object') ? a.xy : null,
         durata: typeof a.durata === 'number' ? a.durata : 6000,
         stile: { animazione: 'slide', dimTesto: 27, sfondo: '#0f0f14', opacita: 88, testo: '#ffffff', bordoRaggio: 18, bordoSpessore: 2, glow: true, icona: true, font: 'sistema', ...(a.stile && typeof a.stile === 'object' ? a.stile : {}) },
-        follow: ev(a.follow, { suono: 'campanello', colore: '#9146ff' }),
+        follow: ev(a.follow, { suono: 'campanello', colore: '#f72fa7' }),
         sub: ev(a.sub, { suono: 'tada', colore: '#ffb020' }),
         cheer: ev(a.cheer, { suono: 'moneta', colore: '#38d39f' }),
         raid: ev(a.raid, { suono: 'trombetta', colore: '#ff4d4d' }),
@@ -164,7 +164,7 @@ function impostazioni() {
     overlayWidget: (() => {
       const w = (s.overlayWidget && typeof s.overlayWidget === 'object') ? s.overlayWidget : {};
       const wd = (x, testoDef) => ({ attivo: false, posizione: 'basso-destra', testo: testoDef, xy: (x?.xy && typeof x.xy === 'object') ? x.xy : null,
-        stile: { dim: 'media', sfondo: '#0f0f14', opacita: 85, testo: '#ffffff', accento: '#9146ff', bordoRaggio: 12, font: 'sistema', ...(x?.stile && typeof x.stile === 'object' ? x.stile : {}) },
+        stile: { dim: 'media', sfondo: '#0f0f14', opacita: 85, testo: '#ffffff', accento: '#f72fa7', bordoRaggio: 12, font: 'sistema', ...(x?.stile && typeof x.stile === 'object' ? x.stile : {}) },
         ...(x && typeof x === 'object' ? { attivo: !!x.attivo, posizione: x.posizione || 'basso-destra', testo: x.testo || testoDef } : {}) });
       return { ultimoFollower: wd(w.ultimoFollower, 'Ultimo follower: {nome}'), ultimoSub: wd(w.ultimoSub, 'Ultimo sub: {nome}') };
     })(),
@@ -261,7 +261,7 @@ function statoDemo() {
           durataMin: 2, penitenzeModo: 'lista', penitenze: ['10 flessioni', 'canta la sigla', 'parla in inglese per 1 minuto'],
           effetto: 'airhorn', fuzzy: 80, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } },
         alerts: { attivo: true, posizione: 'alto-centro', durata: 6000,
-          follow: { attivo: true, testo: '{user} ha seguito il canale!', suono: 'campanello', colore: '#9146ff' },
+          follow: { attivo: true, testo: '{user} ha seguito il canale!', suono: 'campanello', colore: '#f72fa7' },
           sub: { attivo: true, testo: '{user} si è abbonato! ({mesi} mesi)', suono: 'tada', colore: '#ffb020' },
           cheer: { attivo: true, testo: '{user} ha lanciato {bits} bit!', suono: 'moneta', colore: '#38d39f', minBits: 100 },
           raid: { attivo: true, testo: '{user} è arrivato in raid con {viewers}!', suono: 'trombetta', colore: '#ff4d4d', minViewers: 2 } },
@@ -5384,7 +5384,7 @@ function popolaMediaSuoniAlert(effetti, alertsCfg) {
 }
 
 const ALERT_TIPI = () => [
-  { key: 'follow', nome: L('Nuovo follower', 'New follower', 'Nuevo seguidor'), ph: L('{user} ha seguito il canale!', '{user} followed the channel!', '¡{user} ha seguido el canal!'), vars: '{user}', acc: '#9146ff' },
+  { key: 'follow', nome: L('Nuovo follower', 'New follower', 'Nuevo seguidor'), ph: L('{user} ha seguito il canale!', '{user} followed the channel!', '¡{user} ha seguido el canal!'), vars: '{user}', acc: '#f72fa7' },
   { key: 'sub', nome: L('Abbonamento', 'Subscription', 'Suscripción'), ph: L('{user} si è abbonato! ({mesi} mesi)', '{user} subscribed! ({mesi} months)', '¡{user} se ha suscrito! ({mesi} meses)'), vars: '{user}, {mesi}', acc: '#ffb020' },
   { key: 'cheer', nome: L('Bit (cheer)', 'Bits (cheer)', 'Bits (cheer)'), ph: L('{user} ha lanciato {bits} bit!', '{user} sent {bits} bits!', '¡{user} ha enviado {bits} bits!'), vars: '{user}, {bits}', acc: '#38d39f', soglia: { campo: 'minBits', label: L('Bit minimi', 'Minimum bits', 'Bits mínimos') } },
   { key: 'raid', nome: L('Raid', 'Raid', 'Raid'), ph: L('{user} è arrivato in raid con {viewers} spettatori!', '{user} raided with {viewers} viewers!', '¡{user} ha llegado en raid con {viewers} espectadores!'), vars: '{user}, {viewers}', acc: '#ff4d4d', soglia: { campo: 'minViewers', label: L('Spettatori minimi', 'Minimum viewers', 'Espectadores mínimos') } },
@@ -5669,6 +5669,7 @@ function pannelloAlert() {
 
     <div class="carta" data-parte="overlay">
       <h2>${_hIco(ICO.monitor)}${L('Metterlo nella diretta', 'Put it in your stream', 'Ponerlo en el directo')}</h2>
+      <p class="suggerimento"><a href="/manuale/overlay" target="_blank" rel="noopener">${L('Manuale dell’overlay', 'Overlay manual', 'Manual del overlay')}</a> — ${L('i sette elementi, i valori di base e cosa fare quando non si vede niente.', 'the seven elements, the default values and what to do when nothing shows.', 'los siete elementos, los valores de base y qué hacer cuando no se ve nada.')}</p>
       <p>${L('Ogni overlay che scegli qui sopra ha il', 'Each overlay you pick above has its own', 'Cada overlay que eliges arriba tiene su')} <strong>${L('suo link', 'own link', 'propio enlace')}</strong> ${L('e il suo layout: es. un overlay "solo alert" in una scena e uno "solo chat" in un\'altra.', 'and its own layout: e.g. an "alerts only" overlay in one scene and a "chat only" one in another.', 'y su propio diseño: p. ej. un overlay "solo alertas" en una escena y otro "solo chat" en otra.')}</p>
         <ol class="ovl-ricetta">
           <li>${L('Nel tuo programma di diretta (OBS, Streamlabs…): <b>Sorgenti → + → Browser</b>', 'In your streaming software (OBS, Streamlabs…): <b>Sources → + → Browser</b>', 'En tu programa de directo (OBS, Streamlabs…): <b>Fuentes → + → Navegador</b>')}</li>
@@ -5816,7 +5817,7 @@ function pannelloAlert() {
       </div>
       <div class="griglia-campi spazio-sopra">
         ${cSel('co-st-user', L('Colore nomi', 'Name color', 'Color de nombres'), [['twitch', L('Colore di Twitch', 'Twitch color', 'Color de Twitch')], ['fisso', L('Colore fisso', 'Fixed color', 'Color fijo')]], userMode)}
-        ${cCol('co-st-usercol', L('Colore nomi (se fisso)', 'Name color (if fixed)', 'Color de nombres (si fijo)'), userMode === 'fisso' ? cst.username : '#9146ff')}
+        ${cCol('co-st-usercol', L('Colore nomi (se fisso)', 'Name color (if fixed)', 'Color de nombres (si fijo)'), userMode === 'fisso' ? cst.username : '#f72fa7')}
       </div>
       <div class="riga-flessibile spazio-sopra">
         ${cChk('co-st-ombra', L('Ombra', 'Shadow', 'Sombra'), cst.ombra)}
@@ -6015,7 +6016,7 @@ function _raccogliAlerts() {
       suono: b.querySelector('.al-suono')?.value || '',
       media: b.querySelector('.al-media')?.value || '',
       font: b.querySelector('.al-font')?.value || '',
-      accento: b.querySelector('.al-colore')?.value || '#9146ff',
+      accento: b.querySelector('.al-colore')?.value || '#f72fa7',
       volume: Number(b.querySelector('.al-vol')?.value) || 0,
       icona: b.querySelector('.al-icona')?.value || '',
     };
