@@ -5863,18 +5863,16 @@ function pannelloAlert() {
         <div class="ovl-insp-num">
           <label>X <input type="number" id="insp-x" step="0.1" min="0" max="100"><i>%</i></label>
           <label>Y <input type="number" id="insp-y" step="0.1" min="0" max="100"><i>%</i></label>
-          <label>${L('Dim', 'Size', 'Tam')} <input type="number" id="insp-s" step="1" min="30" max="300"><i>%</i></label>
-          <label>${L('Rot', 'Rot', 'Rot')} <input type="number" id="insp-r" step="1" min="-180" max="180"><i>°</i></label>
         </div>
-        <div class="ovl-insp-riga">
+        <div class="ovl-insp-cur">
           <label for="insp-size">${L('Dimensione', 'Size', 'Tamaño')}</label>
           <input type="range" id="insp-size" min="30" max="300" step="1" value="100">
-          <span class="ovl-insp-val" id="insp-size-val">100%</span>
+          <label class="ovl-insp-mis"><input type="number" id="insp-s" step="1" min="30" max="300"><i>%</i></label>
         </div>
-        <div class="ovl-insp-riga">
+        <div class="ovl-insp-cur">
           <label for="insp-rot">${L('Rotazione', 'Rotation', 'Rotación')}</label>
           <input type="range" id="insp-rot" min="-180" max="180" step="1" value="0">
-          <span class="ovl-insp-val" id="insp-rot-val">0°</span>
+          <label class="ovl-insp-mis"><input type="number" id="insp-r" step="1" min="-180" max="180"><i>°</i></label>
         </div>
       </div>
       <p class="suggerimento"><strong>${L('Clicca', 'Click', 'Haz clic en')}</strong> ${L('un elemento per selezionarlo, poi <strong>trascinalo</strong> per spostarlo; usa le maniglie agli angoli o i cursori qui sopra. Scorciatoie: <strong>rotellina</strong> = ridimensiona, <strong>Shift+rotellina</strong> = ruota, <strong>doppio clic</strong> = ripristina. Con «Prova» li vedi nell\'overlay, dove l\'hai messo.', 'an element to select it, then <strong>drag</strong> it to move; use the corner handles or the sliders above. Shortcuts: <strong>wheel</strong> = resize, <strong>Shift+wheel</strong> = rotate, <strong>double click</strong> = reset. Use «Test» to see them in the overlay, wherever you put it.', 'un elemento para seleccionarlo, luego <strong>arrástralo</strong> para moverlo; usa los tiradores de las esquinas o los cursores de arriba. Atajos: <strong>rueda</strong> = redimensiona, <strong>Shift+rueda</strong> = rota, <strong>doble clic</strong> = restablece. Con «Probar» los ves en el overlay, donde lo hayas puesto.')}</p>
@@ -6530,7 +6528,7 @@ function aggiornaAnteprima() {
     nodo.style.display = _inOverlay(e.k) ? '' : 'none';
     const st = _posCorrente(e.k);
     if (st) _posElemento(nodo, st);
-    else _posAncora(nodo, _angoloDi(e.k), e.k);
+    else _posAncora(nodo, _angoloDi(e.k));
   }
   _aggiornaStatoLivelli();
 }
@@ -6663,18 +6661,17 @@ function _vestiCont(box, c) {
   box.style.fontFamily = (window.FONT_CONT || {})[o.font] || (window.FONT_CONT || {}).system || 'system-ui, sans-serif';
 }
 
-function _cornerXY(c) { return ({ 'alto-sinistra': { x: 13, y: 15 }, 'alto-destra': { x: 87, y: 15 }, 'basso-sinistra': { x: 13, y: 85 }, 'basso-destra': { x: 87, y: 85 },
-  'alto-centro': { x: 50, y: 16 }, centro: { x: 50, y: 50 }, 'basso-centro': { x: 50, y: 84 } })[c] || { x: 87, y: 85 }; }
-
 const ANCORA = {
-  'alto-sinistra': { left: '2%', top: '3%' },
-  'alto-destra': { right: '2%', top: '3%' },
-  'basso-sinistra': { left: '2%', bottom: '3%' },
-  'basso-destra': { right: '2%', bottom: '3%' },
-  'alto-centro': { left: '50%', top: '8%', cx: true },
-  centro: { left: '50%', top: '50%', cx: true, cy: true },
-  'basso-centro': { left: '50%', bottom: '10%', cx: true },
+  'alto-sinistra': { x: 2, y: 3 },
+  'alto-destra': { x: 98, y: 3 },
+  'basso-sinistra': { x: 2, y: 97 },
+  'basso-destra': { x: 98, y: 97 },
+  'alto-centro': { x: 50, y: 8 },
+  centro: { x: 50, y: 50 },
+  'basso-centro': { x: 50, y: 90 },
 };
+
+function _cornerXY(c) { const a = ANCORA[c] || ANCORA['basso-destra']; return { x: a.x, y: a.y }; }
 
 function _angoloDi(k) {
   const e = ELEM(k);
@@ -6696,14 +6693,15 @@ const NOME_ANG = () => ({
   'basso-centro': L('in basso al centro', 'bottom center', 'abajo centro'),
 });
 
-function _posAncora(el, ang, k) {
+function _posAncora(el, ang) {
   const a = ANCORA[ang] || ANCORA['basso-destra'];
+  const cx = a.x === 50, cy = a.y === 50;
   el.style.position = 'absolute';
-  el.style.left = a.left || 'auto';
-  el.style.right = a.right || 'auto';
-  el.style.top = a.top || 'auto';
-  el.style.bottom = a.bottom || 'auto';
-  el.style.transform = a.cx || a.cy ? `translate(${a.cx ? '-50%' : '0'},${a.cy ? '-50%' : '0'})` : 'none';
+  el.style.left = a.x <= 50 ? a.x + '%' : 'auto';
+  el.style.right = a.x > 50 ? 100 - a.x + '%' : 'auto';
+  el.style.top = a.y <= 50 ? a.y + '%' : 'auto';
+  el.style.bottom = a.y > 50 ? 100 - a.y + '%' : 'auto';
+  el.style.transform = cx || cy ? `translate(${cx ? '-50%' : '0'},${cy ? '-50%' : '0'})` : 'none';
   el.querySelectorAll('.ap-handle').forEach((h) => { h.style.transform = 'none'; });
 }
 
@@ -6720,7 +6718,7 @@ function _centroTela(k) {
 
 function _defPos(k) {
   const e = ELEM(k);
-  if (e && e.cont) { const o = e.cont.overlayCfg || {}; return { x: Number(o.x) || 4, y: o.y != null ? Number(o.y) : 94 }; }
+  if (e && e.cont) return _stCont(e.cont);
   const el = _nodo(k);
   const c = _centroTela(k);
   if (!c || !el) return _cornerXY(_angoloDi(k));
@@ -6743,10 +6741,10 @@ let selezione = null;
 function _statoXY(chiave) {
   const e = ELEM(chiave);
   let st;
-  if (e && e.goal) st = (e.goal.xy = e.goal.xy || { ..._defPos(chiave) });
-  else if (e && e.cont) st = (e.cont._st = e.cont._st || _stCont(e.cont));
-  else if (e && e.cfg) { const c = _cfgEl(chiave); st = (c.xy = c.xy || { ..._defPos(chiave) }); }
-  else st = (posXY[chiave] = posXY[chiave] || { ..._defPos(chiave) });
+  if (e && e.goal) st = (e.goal.xy = e.goal.xy || _posDove(chiave));
+  else if (e && e.cont) st = (e.cont._st = e.cont._st || _posDove(chiave));
+  else if (e && e.cfg) { const c = _cfgEl(chiave); st = (c.xy = c.xy || _posDove(chiave)); }
+  else st = (posXY[chiave] = posXY[chiave] || _posDove(chiave));
   if (st.s == null) st.s = 100;
   if (st.r == null) st.r = 0;
   return st;
@@ -6760,10 +6758,8 @@ function _stCont(c) {
 
 function _azzeraPos(k) {
   const e = ELEM(k);
-  if (e && e.goal) { e.goal.xy = null; return; }
-  if (e && e.cont) { e.cont._st = null; e.cont.overlayCfg = { ...(e.cont.overlayCfg || {}), x: 4, y: 94, dim: CONT_BASE, r: 0 }; return; }
-  if (e && e.cfg) { _cfgEl(k).xy = null; return; }
-  posXY[k] = null;
+  if (e && e.cont) e.cont.overlayCfg = { ...(e.cont.overlayCfg || {}), x: 4, y: 94, dim: CONT_BASE, r: 0 };
+  _scriviPos(k, null);
 }
 
 function _occhio(k) {
@@ -6813,13 +6809,35 @@ function aggiornaInspector() {
   for (const b of box.querySelectorAll('.asp-blocco')) b.hidden = b.dataset.asp !== selezione;
   if (!selezione) { box.hidden = true; return; }
   box.hidden = false;
-  const st = _statoXY(selezione);
   const nome = _g('insp-nome'); if (nome) nome.textContent = _nomeEl(selezione);
-  const sz = _g('insp-size'), rt = _g('insp-rot');
-  if (sz) { sz.value = st.s; _g('insp-size-val').textContent = st.s + '%'; }
-  if (rt) { rt.value = st.r; _g('insp-rot-val').textContent = st.r + '°'; }
-  const fissa = (id, v) => { const e = _g(id); if (e && document.activeElement !== e) e.value = v; };
-  fissa('insp-x', _arr(st.x)); fissa('insp-y', _arr(st.y)); fissa('insp-s', st.s); fissa('insp-r', st.r);
+  _mostraProp();
+}
+
+const PROP = { x: [0, 100], y: [0, 100], s: [30, 300], r: [-180, 180] };
+const VISTE_PROP = { x: ['insp-x'], y: ['insp-y'], s: ['insp-s', 'insp-size'], r: ['insp-r', 'insp-rot'] };
+
+function _mostraProp() {
+  if (!selezione) return;
+  const st = _posDove(selezione);
+  for (const [campo, viste] of Object.entries(VISTE_PROP)) {
+    for (const id of viste) {
+      const e = _g(id);
+      if (e && document.activeElement !== e) e.value = campo === 'x' || campo === 'y' ? _arr(st[campo]) : st[campo];
+    }
+  }
+}
+
+function _scriviProp(campo, v) {
+  if (!selezione || !Number.isFinite(v)) return;
+  const [lo, hi] = PROP[campo];
+  const st = _statoXY(selezione);
+  st[campo] = campo === 'x' || campo === 'y' ? _arr(_tra(v, lo, hi)) : Math.round(_tra(v, lo, hi));
+  _posElemento(_nodo(selezione), st);
+  _mostraProp();
+  _rendiLivelli();
+  aggiornaPiedeBanco();
+  _ricorda('prop:' + campo);
+  _salvaPosDebounced(selezione);
 }
 
 const PEZZI_EL = () => [
@@ -7074,7 +7092,7 @@ function aggiornaPiedeBanco() {
       + `<span class="ovl-piede-dx">${esc(L('frecce per spostare · Maiusc ×10 · Alt niente aggancio', 'arrows to move · Shift ×10 · Alt no snapping', 'flechas para mover · Mayús ×10 · Alt sin ajuste'))}</span>`;
     return;
   }
-  const st = _statoXY(sel);
+  const st = _posDove(sel);
   const nome = _nomeEl(sel);
   piede.innerHTML = `<span><b>${esc(nome)}</b></span>`
     + `<span>X <b>${_arr(st.x)}%</b></span><span>Y <b>${_arr(st.y)}%</b></span>`
@@ -7150,6 +7168,40 @@ function _posCorrente(k) {
   return posXY[k];
 }
 
+function _scriviPos(k, st) {
+  const e = ELEM(k);
+  if (e && e.goal) { e.goal.xy = st; return; }
+  if (e && e.cont) { e.cont._st = st; return; }
+  if (e && e.cfg) { _cfgEl(k).xy = st; return; }
+  posXY[k] = st;
+}
+
+function _accesoDi(k) {
+  const e = ELEM(k);
+  if (e && e.goal) return e.goal.attivo !== false;
+  if (e && e.cont) return !!(e.cont.overlayCfg || {}).mostra;
+  if (e && e.cfg) return !!_cfgEl(k).attivo;
+  return _elementoAcceso(k);
+}
+
+function _accendiDi(k, v) {
+  const e = ELEM(k);
+  if (e && e.goal) { e.goal.attivo = !!v; return; }
+  if (e && e.cont) { (e.cont.overlayCfg = e.cont.overlayCfg || {}).mostra = !!v; return; }
+  if (e && e.cfg) {
+    _cfgEl(k).attivo = !!v;
+    const chk = _g(k === 'musica' ? 'mus-attivo' : 'tim-attivo');
+    if (chk) chk.checked = !!v;
+    return;
+  }
+  _accendiElemento(k, v);
+}
+
+function _posDove(k) {
+  const st = _posCorrente(k) || _defPos(k) || _cornerXY(_angoloDi(k));
+  return { x: _arr(st.x), y: _arr(st.y), s: st.s == null ? 100 : st.s, r: st.r == null ? 0 : st.r };
+}
+
 const _corpoPan = (el) => (el ? (el.querySelector(':scope > .pan-corpo') || el) : null);
 
 function _rendiLivelli() {
@@ -7158,11 +7210,11 @@ function _rendiLivelli() {
   box.innerHTML = ELEMENTI().map((l) => {
     const acceso = _inOverlay(l.k);
     const spento = acceso && !_elementoAcceso(l.k);
-    const st = _posCorrente(l.k);
+    const st = _posDove(l.k);
     return `<button type="button" class="ovl-liv${selezione === l.k ? ' scelto' : ''}${acceso ? '' : ' via'}" data-liv="${l.k}">
       <span class="ovl-liv-ico">${_bIco(l.ico)}</span>
       <span class="ovl-liv-corpo"><strong>${esc(l.n)}</strong><span>${acceso
-        ? (st ? `${Math.round(st.x)}% · ${Math.round(st.y)}%${st.s && st.s !== 100 ? ' · ' + st.s + '%' : ''}` : (NOME_ANG()[_angoloDi(l.k)] || L('posizione standard', 'default position', 'posición estándar')))
+        ? `${Math.round(st.x)}% · ${Math.round(st.y)}%${st.s !== 100 ? ' · ' + st.s + '%' : ''}`
         : L('non in questo overlay', 'not in this overlay', 'no en este overlay')}</span></span>
       ${spento ? `<span class="ovl-liv-avviso" title="${L('L’elemento è spento del tutto', 'The element is fully off', 'El elemento está apagado del todo')}">!</span>` : ''}
       <span class="ovl-liv-occhio" data-occhio="${l.k}" role="button" tabindex="0"
@@ -7213,19 +7265,11 @@ function collegaEditorOvl() {
   _g('ovl-zoom-piu')?.addEventListener('click', () => _applicaZoom(_zoomOvl + 0.25));
   _g('ovl-zoom-fit')?.addEventListener('click', () => _applicaZoom(1));
 
-  for (const [id, campo] of [['insp-x', 'x'], ['insp-y', 'y'], ['insp-s', 's'], ['insp-r', 'r']]) {
-    _g(id)?.addEventListener('input', () => {
-      if (!selezione) return;
-      const st = _statoXY(selezione);
-      const v = parseFloat(_g(id).value);
-      if (!Number.isFinite(v)) return;
-      st[campo] = campo === 'x' || campo === 'y' ? _arr(Math.max(0, Math.min(100, v))) : Math.round(v);
-      _posElemento(_nodo(selezione), st);
-      _rendiLivelli();
-      _ricorda('campo:' + id);
-      _salvaPosDebounced(selezione);
-    });
-    _g(id)?.addEventListener('change', () => _ricorda());
+  for (const [campo, viste] of Object.entries(VISTE_PROP)) {
+    for (const id of viste) {
+      _g(id)?.addEventListener('input', () => _scriviProp(campo, parseFloat(_g(id).value)));
+      _g(id)?.addEventListener('change', () => _ricorda());
+    }
   }
 
   document.addEventListener('keydown', (e) => {
@@ -7307,13 +7351,9 @@ const _arr = (n) => Math.round(n * 100) / 100;   // due decimali: 0.01% = 0.19px
 let _storia = [], _storiaAvanti = [], _storiaInCorso = false;
 
 function _istantanea() {
-  const goals = {}, conti = {};
-  for (const e of ELEMENTI()) {
-    if (e.goal) goals[e.goal.id] = { xy: e.goal.xy, attivo: e.goal.attivo !== false };
-    else if (e.cont) conti[e.cont.comando] = { st: e.cont._st, mostra: !!(e.cont.overlayCfg || {}).mostra };
-  }
-  return JSON.stringify({ xy: posXY, goals, conti,
-    mostra: _mostraOra() });
+  const pos = {}, acceso = {};
+  for (const e of ELEMENTI()) { pos[e.k] = _posCorrente(e.k) || null; acceso[e.k] = _accesoDi(e.k); }
+  return JSON.stringify({ pos, acceso, mostra: _mostraOra() });
 }
 let _ultimoRicordo = 0, _ultimaFusione = '';
 function _ricorda(fusione) {
@@ -7335,11 +7375,10 @@ function _ricorda(fusione) {
 function _applicaIstantanea(foto) {
   try {
     const d = JSON.parse(foto);
-    posXY = d.xy || {};
     for (const [k, v] of Object.entries(d.mostra || {})) { const c = _g('mostra-' + k); if (c) c.checked = !!v; }
     for (const e of ELEMENTI()) {
-      if (e.goal) { const v = (d.goals || {})[e.goal.id]; if (v) { e.goal.xy = v.xy; e.goal.attivo = v.attivo; } }
-      else if (e.cont) { const v = (d.conti || {})[e.cont.comando]; if (v) { e.cont._st = v.st; (e.cont.overlayCfg = e.cont.overlayCfg || {}).mostra = v.mostra; } }
+      if (d.pos && e.k in d.pos) _scriviPos(e.k, d.pos[e.k]);
+      if (d.acceso && e.k in d.acceso) _accendiDi(e.k, d.acceso[e.k]);
     }
     _storiaInCorso = true;
     disegnaGoal();
@@ -7882,16 +7921,6 @@ function caricaAlert() {
     if (det) { det.open = true; det.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'start' }); }
   });
 
-  _g('insp-size')?.addEventListener('input', (e) => {
-    if (!selezione) return;
-    const st = _statoXY(selezione); st.s = Math.max(30, Math.min(300, Number(e.target.value) || 100));
-    _g('insp-size-val').textContent = st.s + '%'; _posElemento(_nodo(selezione), st); _salvaPosDebounced(selezione);
-  });
-  _g('insp-rot')?.addEventListener('input', (e) => {
-    if (!selezione) return;
-    const st = _statoXY(selezione); st.r = Math.max(-180, Math.min(180, Number(e.target.value) || 0));
-    _g('insp-rot-val').textContent = st.r + '°'; _posElemento(_nodo(selezione), st); _salvaPosDebounced(selezione);
-  });
   _g('insp-reset')?.addEventListener('click', () => {
     if (!selezione) return;
     const k = selezione; _azzeraPos(k); aggiornaAnteprima(); aggiornaInspector(); _salvaPos(k);
