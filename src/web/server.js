@@ -85,6 +85,24 @@ import {
 // e le posizioni attuali → chi ha già l'overlay lo vede identico.
 const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'musica', 'timer', 'effetti'];
 const _mostraDefault = () => ELEM_OVERLAY.reduce((o, k) => (o[k] = true, o), {});
+
+// Un overlay E' un layout: tiene la posizione di OGNI cosa che ci puo' comparire,
+// con la stessa chiave con cui `mostra` la accende. I quattro fissi hanno la
+// chiave secca; obiettivi e contatori, che sono tanti, la portano con l'id.
+// Prima qui c'erano solo i quattro fissi, quindi player, conto alla rovescia,
+// obiettivi e contatori avevano UNA posizione per tutto il canale: li spostavi
+// in un overlay e si spostavano in tutti.
+const CHIAVE_EL = /^(alert|chat|wf|ws|musica|timer|goal:[a-z0-9_-]{1,24}|cont:[a-z0-9_]{1,30})$/i;
+const _xyDiOverlay = (xy) => {
+  const q = {};
+  if (!xy || typeof xy !== 'object') return q;
+  for (const k of Object.keys(xy).slice(0, 60)) {
+    if (!CHIAVE_EL.test(k)) continue;
+    const v = xyOk(xy[k]);
+    if (v) q[k] = v;
+  }
+  return q;
+};
 function overlaysDi(settings) {
   const s = settings || {};
   if (Array.isArray(s.overlays) && s.overlays.length) return s.overlays;
@@ -3011,7 +3029,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         return {
           id, nome: String(o?.nome || 'Overlay').trim().slice(0, 40) || 'Overlay',
           mostra: ELEM_OVERLAY.reduce((acc, k) => (acc[k] = m[k] !== false, acc), {}),
-          xy: { alert: xyOk(xy.alert), chat: xyOk(xy.chat), wf: xyOk(xy.wf), ws: xyOk(xy.ws) },
+          xy: _xyDiOverlay(xy),
           css: String(o?.css || '').slice(0, 8000),
           stile: normOverlayStile(o?.stile),   // Opzione B: aspetto proprio (null → eredita dal canale)
         };

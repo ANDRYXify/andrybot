@@ -120,7 +120,7 @@ test('gli obiettivi sono elementi come gli altri, e sono quanti ne vuoi', () => 
   const corpo = OVL.slice(i, OVL.indexOf('\n}', i));
   assert.ok(corpo.includes("mostra('goal')"), 'si spengono tutti dall’elenco della scena');
   assert.ok(corpo.includes('cfg.attivo'), 'e ognuno ha il suo interruttore');
-  assert.ok(corpo.includes('cfg.xy'), 'ognuno si mette dove vuole');
+  assert.ok(/posaElemento\(el, 'goal:' \+ id, cfg\)/.test(corpo), 'ognuno si mette dove vuole, con la sua chiave');
   assert.ok(corpo.includes('classiIdentita'), 'con la sua veste');
   assert.ok(corpo.includes('cfg.posizione'), 'o nel suo angolo');
   assert.ok(corpo.includes('Math.min(100'), 'la barra non supera il traguardo');
@@ -229,4 +229,32 @@ test('un’opacità senza unità spegnerebbe tutti gli sfondi', () => {
 test('l’overlay non veste i colori di un’altra azienda', () => {
   assert.ok(!/#9146ff|145,\s*70,\s*255/i.test(SKIN), 'niente viola di Twitch nella pelle');
   assert.ok(!/#9146ff|145,\s*70,\s*255/i.test(leggi('src/web/public/overlay.html')), 'né nella pagina');
+});
+
+// Un overlay E' un layout: ogni cosa che ci compare ha la SUA posizione qui, e
+// non quella di un altro overlay. Prima ov.xy teneva solo i quattro fissi,
+// quindi player, conto alla rovescia, obiettivi e contatori avevano una
+// posizione sola per tutto il canale: li spostavi in un overlay e ti seguivano.
+test('la posizione di un elemento appartiene all’overlay in cui la metti', () => {
+  const posa = OVL.slice(OVL.indexOf('function posaElemento('), OVL.indexOf('\n}', OVL.indexOf('function posaElemento(')));
+  assert.ok(/MIO\.xy\[chiave\]/.test(posa), 'la posizione di questo overlay viene prima');
+  assert.ok(/\|\| \(cfg && cfg\.xy\)/.test(posa), 'e quella di canale resta il punto di partenza');
+  // una funzione sola posa tutto: prima le stesse sei righe erano scritte due volte
+  assert.equal((OVL.match(/'translate\(' \+ \(-xy\.x\)/g) || []).length, 1,
+    'la formula che posa un elemento è scritta una volta sola');
+  for (const [chi, chiave] of [['musica', "'musica'"], ['timer', "'timer'"]]) {
+    assert.ok(OVL.includes(`vestiElemento(el, cfg, 'nessuna', ${chiave})`), `${chi} passa la sua chiave`);
+  }
+  assert.ok(/MIO\.xy \|\| \{\}\)\['cont:' \+ String\(d\.comando/.test(OVL), 'e un contatore la sua');
+  // il server deve accettare quelle chiavi, sennò il salvataggio le butta via
+  const srv = leggi('src/web/server.js');
+  const re = /const CHIAVE_EL = ([^;]+);/.exec(srv);
+  assert.ok(re, 'il server sa che forma ha la chiave di un elemento');
+  const chiave = new RegExp(re[1].trim().replace(/^\/|\/i$/g, ''), 'i');
+  for (const k of ['alert', 'chat', 'wf', 'ws', 'musica', 'timer', 'goal:g1', 'cont:morti']) {
+    assert.ok(chiave.test(k), `${k} passa il salvataggio`);
+  }
+  for (const k of ['../fuori', 'goal:', 'roba', '__proto__']) {
+    assert.ok(!chiave.test(k), `${k} non passa`);
+  }
 });
