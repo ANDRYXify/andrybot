@@ -127,7 +127,8 @@ test('gli obiettivi sono elementi come gli altri, e sono quanti ne vuoi', () => 
   assert.ok(/posaElemento\(el, 'goal:' \+ id, cfg\)/.test(corpo), 'ognuno si mette dove vuole, con la sua chiave');
   assert.ok(corpo.includes('classiIdentita'), 'con la sua veste');
   assert.ok(corpo.includes('cfg.posizione'), 'o nel suo angolo');
-  assert.ok(corpo.includes('Math.min(100'), 'la barra non supera il traguardo');
+  assert.ok(/Math\.min\(1,\s*\(ora \/ meta\)/.test(corpo), 'la barra non supera il traguardo');
+  assert.ok(corpo.includes("setProperty('--q'"), 'e si riempie con una scala, non con la larghezza');
   const g = OVL.slice(OVL.indexOf('function goal('), OVL.indexOf('\n}', OVL.indexOf('function goal(')));
   assert.ok(g.includes('for (const g of'), 'si disegnano tutti');
   assert.ok(g.includes('vivi.has(id)'), 'e quello che togli sparisce davvero');
