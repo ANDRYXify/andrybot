@@ -62,6 +62,26 @@ Lo stesso punteggio decide anche la scorciatoia: se una voce c'entra molto
 (≥ 0.5) il bot la usa come risposta e la riformula. Se contiene un link esce
 identica.
 
+## La sua pagina link, letta viva
+
+Su `/u/<login>` lo streamer ha già scritto quello che il bot dovrebbe sapere:
+titolo e sottotitolo, i blocchi di testo, i link e i social con la loro
+etichetta, i conti alla rovescia — e i blocchi **FAQ**, che sono già domande e
+risposte fatte da lui.
+
+Prima il bot ne vedeva solo i link, e li vedeva come li aveva trovati il
+pre-addestramento: una fotografia vecchia di settimane, mentre la pagina lui la
+cambia di continuo.
+
+Ora `_vociDallaPagina` la legge **al momento della risposta** e ne ricava voci
+di conoscenza che entrano nella stessa graduatoria delle altre. Non sono
+salvate da nessuna parte: sono una lettura, non una copia. Percio' non hanno un
+id, nella dashboard si vedono ma non si cancellano (si cambia la pagina), e il
+pre-addestramento non le duplica piu' nel database — copiarle voleva dire avere
+due verità, e quella copiata invecchiava dal giorno dopo.
+
+Una pagina spenta non parla: se non è pubblica, il bot non la usa.
+
 ## Il quaderno
 
 È il file del bot: quello che gli è stato insegnato a **fare** (non a sapere).

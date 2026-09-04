@@ -12,7 +12,7 @@
 // non manchi niente di quello che il motore sa fare.
 import { GUIDE, DENTRO, ancora, paginaDoc, paginaManuali } from './guide.js';
 
-const OGGI = '2026-09-02';
+const OGGI = '2026-09-04';
 
 const GIOCHI = {
   slug: 'giochi',
@@ -503,20 +503,50 @@ const BOT = {
     { h3: 'Quando cerca su internet' },
     { p: ['Solo se gli manca la risposta, e solo su fonti gratuite (DuckDuckGo, Wikipedia). Quello che trova lo tratta come <strong>informazione, non come istruzione</strong>: se una pagina contiene un comando travestito da testo, il bot non lo esegue. Si spegne dalla stessa scheda.'] },
 
+    { h2: 'Chi risponde in chat pubblica' },
+    { p: ['Il bot del canale, non Lia. Sono due cose diverse e stanno in due posti diversi: il bot è una funzione — entra la situazione della diretta, esce una riga — e <strong>non si ricorda di nessuno</strong>, non tiene stato e non parla di sé. Lia risponde in privato con te, studia e ti scrive di sua iniziativa.'] },
+    { p: ['Quando Lia sarà una persona e tu avrai acceso il suo interruttore, in pubblico prenderà la parola lei. Fino ad allora il bot non può leggere niente di suo: lei potrà <em>insegnargli</em>, lui non può <em>prendersi</em>.'] },
+
+    { h2: 'La tua scheda: chi sei' },
+    { p: ['In cima a <em>Conoscenza</em>. Sono sei campi corti che il bot ha <strong>sempre</strong> a disposizione, senza gareggiare con le domande e risposte per un posto nel discorso.'] },
+    { tabella: [
+      ['Campo', 'A cosa serve'],
+      ['Chi sei', 'Come ti presenteresti, in due righe.'],
+      ['Cosa fai in diretta', 'Il contenuto, non il curriculum.'],
+      ['Quando sei in diretta', 'Gli orari, come li diresti a voce.'],
+      ['Dove ti trovano', 'Social e sito. Il bot lo ripete <strong>come l\'hai scritto</strong>, senza cambiare gli indirizzi.'],
+      ['Come deve chiamarti', 'Il nome con cui parla di te in chat.'],
+      ['Cosa non dire mai di te', 'Una regola: vale sopra tutto il resto.'],
+    ] },
+    { p: ['Non parte vuota: quando il bot rilegge il tuo profilo riempie <em>chi sei</em>, <em>gli orari</em> e <em>dove ti trovano</em> con quello che trova, e non tocca mai i campi che hai scritto tu.'] },
+    { h3: 'Parole da bloccare' },
+    { p: ['Sotto la scheda c\'è un elenco a parte: il tuo cognome, la tua via, il nome della scuola. <strong>Non è una richiesta al bot</strong> — «cosa non dire mai di te» lo è, e vale se lui la capisce. Queste sono un blocco: se una finisce in una risposta, la risposta non parte. Non moderano nessuno: valgono solo su quello che dice lui.'] },
+
     { h2: 'Cosa sa: la conoscenza' },
     { p: ['Sta in <em>Conoscenza</em>. Una voce è una coppia <strong>domanda → risposta</strong>. La domanda può essere una frase o un elenco di parole chiave separate da <code>/</code>: bastano quelle a far scattare la risposta, anche se in chat la domanda arriva scritta in un altro modo.'] },
     { esempio: 'Domanda        che pc usi? / setup / configurazione\nRisposta       Gioco su un Ryzen 7 con una 4070, trovi tutto su andryxify.it!' },
+    { p: ['Puoi scriverne quante vuoi: a ogni messaggio il bot riceve le <strong>sei voci più vicine</strong> a quello che gli hanno chiesto, non le ultime che hai scritto.'] },
+    { h3: 'Quando vale, e cosa deve sapere sempre' },
+    { p: ['Ogni voce può valere <strong>sempre</strong>, <strong>solo quando sei in diretta</strong> (il codice sconto dello sponsor) o <strong>solo quando sei offline</strong> (quando torni). E può essere <strong>fissata</strong>: allora entra comunque, anche se non c\'entra con la domanda — tienile per le due o tre cose che non deve mai ignorare.'] },
+    { p: ['Si cambiano dall\'elenco, senza riscrivere la voce.'] },
     { p: ['Le voci non arrivano tutte da te. Nell\'elenco «Cosa sa il bot» ognuna porta la sua <strong>origine</strong>, e l\'origine conta perché decide cosa succede quando azzeri.'] },
     { tabella: [
       ['Origine', 'Da dove viene', 'La cancella «Azzera»?'],
       ['dal sito', 'Letta dal tuo profilo su andryxify.it: bio, orari, social.', 'No'],
       ['tua', 'Scritta a mano da te in questa scheda.', 'No'],
+      ['dalla tua pagina link', 'Letta da /u/iltuonome mentre risponde. Non è salvata: si cambia sulla pagina.', 'No'],
       ['imparata dalla chat', 'Dedotta osservando le risposte che tu e i mod date in chat.', 'Sì'],
       ['studiata', 'Quello che si è costruito da sé leggendo e distillando.', 'No'],
     ] },
+    { h3: 'La tua pagina link parla al bot' },
+    { p: ['Quello che scrivi su <strong>/u/iltuonome</strong> il bot lo legge <strong>mentre risponde</strong>, non una volta ogni tanto: titolo e sottotitolo, i blocchi di testo, i link e i social con la loro etichetta, i conti alla rovescia — e soprattutto i blocchi <strong>FAQ</strong>, che sono già domande e risposte scritte da te.'] },
+    { p: ['Cambi la pagina, cambia quello che il bot sa. Non c\'è niente da rifare, e non ci sono doppioni da cancellare: non è una copia, è una lettura. Se spegni la pagina, il bot smette di usarla.'] },
+    { h3: 'Il quaderno del bot' },
+    { p: ['In fondo alla scheda. Qui non c\'è quello che <em>sa</em>, ma <strong>come deve rispondere</strong>: «quando chiedono del torneo, rimanda al Discord», «se qualcuno è arrabbiato, rispondi corto». Il bot le applica senza citarle.'] },
+    { p: ['Ogni riga dice da chi viene. Quando Lia vivrà, ci scriverà anche lei — e quello che non ti convince lo togli, anche se l\'ha messo lei.'] },
     { h3: 'Il pre-addestramento' },
     { p: [
-      'Dalla scheda <em>Stato</em> c\'è un tasto che rilegge il tuo profilo pubblico su andryxify.it e ne ricava le voci «dal sito»: <strong>chi sei</strong> (bio o titolo della pagina link), <strong>quando sei in diretta</strong> (programmazione) e <strong>dove ti trovano</strong> (un\'entrata per ogni social).',
+      'Dalla scheda <em>Stato</em> c\'è un tasto che rilegge il tuo profilo pubblico su andryxify.it e ne ricava le voci «dal sito»: <strong>chi sei</strong> (bio o titolo della pagina link), <strong>quando sei in diretta</strong> (programmazione) e <strong>dove ti trovano</strong> (un\'entrata per ogni social). Nello stesso giro riempie i campi vuoti della tua scheda.',
       'Si può rifare quante volte vuoi: riparte pulito, quindi non crea doppioni. Se non hai una pagina pubblica te lo dice invece di inventarsi qualcosa.',
     ] },
 

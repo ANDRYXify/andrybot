@@ -153,7 +153,10 @@ test('ogni risposta esce da un punto solo, e lì il controllo c’è', async () 
 
   b._rispostaGrezza = async () => 'Stasera si gioca alle 21';
   const passa = await b.chatReply({ channel: CANALE, streamer: { settings: { maiDire: ['Taliento'] } } });
-  assert.equal(passa, 'Stasera si gioca alle 21');
+  // non uguaglianza secca: passando di qui l'anima ogni tanto ci attacca una
+  // firma («✨», un tormentone). È voluto, e una prova che lo ignora è una prova
+  // che passa quasi sempre — cioè la peggiore specie.
+  assert.match(passa || '', /^Stasera si gioca alle 21/);
 });
 
 // ---------------------------------------------------------------------------
@@ -184,4 +187,54 @@ test('quello che ha scritto lui non si tocca: si riempiono solo i vuoti', () => 
   assert.equal(scheda.orari, 'ogni sera');
   assert.equal(scheda.evita, 'il cognome');
   assert.deepEqual(messi, ['orari'], 'deve dire quali ha riempito, per non far credere di aver riscritto tutto');
+});
+
+// ---------------------------------------------------------------------------
+// LA SUA PAGINA LINK, LETTA VIVA.
+//
+// Su /u/<login> lo streamer ha già scritto chi è, i suoi indirizzi e — nei
+// blocchi FAQ — domande e risposte fatte da lui. Prima il bot ne vedeva solo i
+// link, e li vedeva come li aveva trovati il pre-addestramento: una fotografia
+// vecchia di settimane, mentre la pagina lui la cambia di continuo.
+
+const { linkPage } = await import('../../src/db.js');
+
+test('la pagina link diventa conoscenza, FAQ comprese', () => {
+  linkPage.salva(CANALE, {
+    headline: 'Andry', tagline: 'gioco e costruisco',
+    blocchi: [
+      { tipo: 'faq', voci: [{ d: 'Quanto dura la live?', r: 'Tre ore scarse, poi crollo' }] },
+      { tipo: 'link', label: 'Twitch', url: 'https://twitch.tv/andryxify', sotto: 'la diretta' },
+      { tipo: 'titolo', testo: 'Il mio pc' },
+      { tipo: 'testo', testo: 'Ryzen 7 e una 4070' },
+      { tipo: 'separatore' },
+    ],
+  });
+  const b = new Brain({});
+  const voci = b._vociDallaPagina(CANALE);
+  const trova = (d) => voci.find((v) => v.domanda.includes(d));
+  assert.equal(trova('Quanto dura la live?').risposta, 'Tre ore scarse, poi crollo');
+  assert.match(trova('Twitch').risposta, /twitch\.tv\/andryxify/);
+  assert.equal(trova('Il mio pc').risposta, 'Ryzen 7 e una 4070');
+  assert.match(trova('chi è').risposta, /Andry — gioco e costruisco/);
+  assert.ok(voci.every((v) => v.id === null && v.fonte === 'pagina'),
+    'non sono righe del database: non si cancellano dalla dashboard, si cambiano sulla pagina');
+});
+
+test('quello che c’è sulla pagina risponde in chat, e senza ripassare da niente', () => {
+  const b = new Brain({});
+  scrivi([{ domanda: 'tutt’altro argomento', risposta: 'niente a che vedere' }]);
+  live(false);
+  assert.match(b._cercaConoscenza(CANALE, 'quanto dura la live di solito?') || '', /Tre ore scarse/);
+
+  linkPage.salva(CANALE, { headline: 'Andry', blocchi: [{ tipo: 'faq', voci: [{ d: 'Quanto dura la live?', r: 'Due ore, non di più' }] }] });
+  b._paginaCache.delete(CANALE);
+  assert.match(b._cercaConoscenza(CANALE, 'quanto dura la live di solito?') || '',
+    /Due ore/, 'cambiata la pagina, cambia quello che il bot sa');
+});
+
+test('una pagina spenta non parla', () => {
+  linkPage.salva(CANALE, { headline: 'Andry', attiva: false, blocchi: [{ tipo: 'faq', voci: [{ d: 'Domanda', r: 'Risposta' }] }] });
+  const b = new Brain({});
+  assert.deepEqual(b._vociDallaPagina(CANALE), []);
 });

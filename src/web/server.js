@@ -3518,7 +3518,12 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
   // conoscenza del bot
   app.get('/api/streamer/knowledge', requireLogin, wrap(async (req, res) => {
-    res.json(knowledge.list(currentUser(req).login));
+    const login = currentUser(req).login;
+    // Insieme a quello che è scritto nel database c'è quello che il bot legge
+    // dalla pagina link ADESSO. Non è salvato da nessuna parte (per questo non
+    // ha un id e non si può cancellare da qui: si cambia sulla pagina), ma
+    // l'elenco si chiama «cosa sa il bot» e deve dire la verità.
+    res.json([...knowledge.list(login), ...(manager.brain?._vociDallaPagina?.(login) || [])]);
   }));
 
   app.post('/api/streamer/knowledge', requireLogin, wrap(async (req, res) => {

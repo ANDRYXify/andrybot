@@ -188,28 +188,18 @@ export async function pretrain(login, helix) {
       dettagli.push(`pagina profilo letta (${nSocial} social)`);
     }
 
-    // ---- (a2) i link della SUA pagina /u/<login>, dal NOSTRO DB -----------
-    // La pagina link è di SocialBot, quindi i link li leggiamo in casa: così il
-    // bot sa rispondere "dove ti trovo" anche se sul sito non c'è nulla.
+    // ---- (a2) la SUA pagina /u/<login> ----------------------------------
+    // I contenuti della pagina NON si copiano più qui: il bot la legge viva a
+    // ogni risposta (src/ai/brain.js, _vociDallaPagina). Copiarli voleva dire
+    // avere due verità, e quella scritta qui invecchiava dal giorno dopo.
+    // Alla scheda serve solo l'indirizzo, se la pagina esiste ed è accesa.
     try {
       const mia = linkPage.get(canale);
-      let nLink = 0;
-      for (const l of (mia?.links || [])) {
-        const u = String(l?.url || '').trim();
-        const label = String(l?.label || '').trim();
-        if (!label || !/^https?:\/\//i.test(u)) continue;
-        aggiungi(`link ${label} di ${canale} / ${label}`, `${label}: ${u}`);
-        if (++nLink >= 12) break;   // niente muri di link
-      }
-      if (nLink) {
-        aggiungi(
-          `tutti i link di ${canale} / dove ti trovo / i tuoi social / linktree`,
-          `Trovi tutti i miei link qui: ${config.baseUrl}/u/${canale}`,
-        );
+      if (mia && mia.attiva !== false) {
         grezzo.paginaLink = `${config.baseUrl}/u/${canale}`;
-        dettagli.push(`${nLink} link dalla tua pagina /u/${canale}`);
+        dettagli.push('pagina link presente (la legge viva, non la copia)');
       }
-    } catch (e) { dettagli.push('pagina link non leggibile'); }
+    } catch { dettagli.push('pagina link non leggibile'); }
 
     // ---- (b) profilo Twitch ---------------------------------------------
     try {

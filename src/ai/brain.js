@@ -3,7 +3,7 @@
 // personalità fatta di pool di template in tre toni. Ricorda sempre:
 // il bot parla CON L'ACCOUNT DELLO STREAMER, quindi in prima persona.
 import { makeLog } from '../logger.js';
-import { db, memory, knowledge, voceStreamer, guide, streamers, diario, schedaPulita } from '../db.js';
+import { db, memory, knowledge, voceStreamer, guide, streamers, diario, schedaPulita, linkPage } from '../db.js';
 import * as internet from '../features/web.js';
 import { checkRisposta } from '../features/moderation.js';
 import * as learn from './learn.js';
@@ -392,6 +392,7 @@ export class Brain {
     this._ultimaRisposta = new Map();   // canale → ts ultima risposta del cervello
     this._ultimoEvento = new Map();     // 'canale|tipo' → ts ultimo annuncio
     this._stileCache = new Map();       // canale → { ts, frasi } (voce dello streamer)
+    this._paginaCache = new Map();      // canale → { ts, voci } (la sua pagina link, letta viva)
     this._lastDistill = new Map();      // canale → ts ultima distillazione (allenamento)
     this._conversazione = new Map();    // canale → { user, ts }: con chi sto parlando (per il follow-up)
   }
@@ -1126,6 +1127,66 @@ export class Brain {
     return comuni / paroleVoce.size + Math.min(0.25, bonus);
   }
 
+  // LA SUA PAGINA LINK come conoscenza VIVA.
+  //
+  // Su /u/<login> lo streamer ha gia' scritto quello che il bot dovrebbe sapere:
+  // chi e', i suoi indirizzi, e — nei blocchi FAQ — domande e risposte fatte da
+  // lui apposta. Prima il bot ne vedeva solo i link, e li vedeva come li aveva
+  // trovati il pre-addestramento: una fotografia vecchia di settimane, mentre la
+  // pagina lui la cambia di continuo.
+  //
+  // Qui le voci si costruiscono al momento e non si scrivono da nessuna parte:
+  // sono una LETTURA della pagina, non una copia. Cambia la pagina, cambia
+  // quello che il bot sa, senza dover ripassare da niente.
+  _vociDallaPagina(channel) {
+    const c = this._paginaCache.get(channel);
+    if (c && Date.now() - c.ts < 60_000) return c.voci;
+    const voci = [];
+    try {
+      const p = linkPage.get(channel);
+      if (!p || p.attiva === false) { this._paginaCache.set(channel, { ts: Date.now(), voci }); return voci; }
+      const pulisci = (t) => String(t || '').replace(/\s+/g, ' ').trim();
+      const metti = (domanda, risposta) => {
+        const d = pulisci(domanda).slice(0, 300);
+        const r = pulisci(risposta).slice(0, 300);
+        if (d.length >= 2 && r.length >= 2 && voci.length < 24) {
+          voci.push({ id: null, domanda: d, risposta: r, fonte: 'pagina', quando: 'sempre', fissata: false, ts: p.ts || 0 });
+        }
+      };
+      const CHI = 'chi è / descrizione / di cosa parla / parlami di te / bio';
+      if (pulisci(p.headline) || pulisci(p.tagline)) {
+        metti(CHI, [pulisci(p.headline), pulisci(p.tagline)].filter(Boolean).join(' — '));
+      }
+      let titoloAperto = '';
+      for (const b of p.blocchi || []) {
+        if (b.tipo === 'titolo') { titoloAperto = pulisci(b.testo); continue; }
+        if (b.tipo === 'testo') { metti(titoloAperto || CHI, b.testo); titoloAperto = ''; continue; }
+        if (b.tipo === 'eroe') { metti(CHI, [pulisci(b.titolo), pulisci(b.sotto)].filter(Boolean).join(' — ')); continue; }
+        // le FAQ sono domande e risposte scritte da lui: entrano come sono
+        if (b.tipo === 'faq') { for (const v of b.voci || []) metti(v?.d, v?.r); continue; }
+        if (b.tipo === 'link' && b.url) {
+          const et = pulisci(b.label) || 'link';
+          metti(`${et} / link ${et} / dove trovo ${et}`, [`${et}: ${b.url}`, pulisci(b.sotto)].filter(Boolean).join(' — '));
+          continue;
+        }
+        if (b.tipo === 'social') {
+          for (const v of b.voci || []) {
+            const et = pulisci(v?.icona) || 'social';
+            if (v?.url) metti(`${et} / link ${et} / dove trovo ${et}`, `${et}: ${v.url}`);
+          }
+          continue;
+        }
+        if (b.tipo === 'griglia') { for (const v of b.voci || []) metti(v?.titolo, [pulisci(v?.testo), v?.url].filter(Boolean).join(' — ')); continue; }
+        if (b.tipo === 'conto' && b.quando) {
+          const t = pulisci(b.titolo) || 'il conto alla rovescia';
+          metti(`quando ${t} / data di ${t} / ${t}`, `${t}: ${String(b.quando).replace('T', ' alle ')}`);
+        }
+      }
+    } catch (e) { log.debug('pagina link:', e?.message || e); }
+    this._paginaCache.set(channel, { ts: Date.now(), voci });
+    return voci;
+  }
+
   // LE VOCI IN ORDINE DI IMPORTANZA per questo momento. Un unico posto in cui si
   // decide quale conoscenza conta: prima si sono decise due volte (per punteggio
   // nella scorciatoia, per DATA nel prompt) e le due decisioni erano diverse —
@@ -1138,7 +1199,7 @@ export class Brain {
     const live = !!memory.streamContext(channel);
     const paroleUtente = new Set(learn.normalizza(testo || ''));
     const scelte = [];
-    for (const voce of knowledge.list(channel)) {
+    for (const voce of [...knowledge.list(channel), ...this._vociDallaPagina(channel)]) {
       if (voce.fonte === 'chat') continue;
       const quando = voce.quando || 'sempre';
       if ((quando === 'live' && !live) || (quando === 'offline' && live)) continue;

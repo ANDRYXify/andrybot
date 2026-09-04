@@ -58,6 +58,13 @@ const ROTTURE = [
   ['src/web/public/app.js', "getElementById('txt-mai')", "getElementById('txt-mai-vecchio')", 'il campo viene rinominato solo da una parte'],
   ['src/ai/pretrain.js', 'const { scheda, messi } = uniScheda(', 'const { scheda, messi } = ((a, b) => ({ scheda: a || {}, messi: [] }))(', 'la scheda torna a nascere vuota per tutti'],
   ['src/ai/pretrain.js', 'if (gia[campo]) continue;', 'if (false) continue;', 'il precompilamento riscrive quello che ha scritto lui'],
+  ['src/web/manuali.js', "{ h3: 'Il quaderno del bot' },", "{ h3: 'Una cosa qualunque' },", 'il manuale smette di spiegare il quaderno'],
+  ['src/web/manuali.js', "{ h3: 'La tua pagina link parla al bot' },", '', 'il manuale non dice piu\' che legge la pagina link'],
+  ['src/web/public/app.js', "'#sc-chi']", "'#sc-chi-che-non-esiste']", 'la guida della scheda indica un campo che non c\'e\''],
+  ['src/ai/brain.js', ', ...this._vociDallaPagina(channel)]', ']', 'il bot smette di leggere la pagina link'],
+  ['src/ai/brain.js', '_vociDallaPagina(channel) {', '_vociDallaPaginaVecchia(channel) {', 'la lettura della pagina cambia nome e nessuno se ne accorge'],
+  ['src/ai/brain.js', 'if (!p || p.attiva === false)', 'if (!p)', 'il bot legge anche una pagina spenta'],
+  ['src/web/server.js', '_vociDallaPagina?.(login)', '_vociDallaPaginaX?.(login)', 'l\'elenco «cosa sa il bot» nasconde quello che usa'],
 ];
 
 if (process.argv.includes('--selftest')) {
@@ -229,6 +236,48 @@ dice(/uniScheda\(st\.settings\?\.scheda, schedaDalProfilo\(grezzo\)\)/.test(pret
   'e la salva davvero, dentro il pre-addestramento', 'la calcola e non la scrive, oppure non la calcola');
 dice(/if \(gia\[campo\]\) continue;/.test(pretrainjs),
   'riempie solo i vuoti', 'riscriverebbe quello che ha scritto lo streamer');
+
+// --- 8b. la pagina link arriva davvero ----------------------------------
+// Non basta che la funzione esista: dev'essere nella lista da cui si sceglie
+// cosa dire, sennò e' codice che non serve a nessuno.
+dice(/_vociDallaPagina\(channel\) \{/.test(brainjs), 'il bot sa leggere la pagina link', 'la funzione non c\'e\' piu\'');
+dice(/knowledge\.list\(channel\), \.\.\.this\._vociDallaPagina\(channel\)\]/.test(brainjs),
+  'la pagina link entra nella conoscenza da cui il bot sceglie',
+  'la funzione c\'e\' ma nessuno la chiama: quello che scrive sulla pagina non arriva');
+dice(/_vociDallaPagina\?\.\(login\)/.test(serverjs),
+  'e si vede nell\'elenco «cosa sa il bot»',
+  'il bot le usa e la dashboard non le mostra: l\'elenco direbbe una cosa falsa');
+dice(/if \(!p \|\| p\.attiva === false\)/.test(brainjs),
+  'una pagina spenta non parla', 'il bot leggerebbe una pagina che il pubblico non vede');
+
+// --- 9. il manuale dice quello che il bot sa fare -----------------------
+// Un manuale invecchia in silenzio: si aggiunge una cosa e la pagina che
+// dovrebbe spiegarla resta quella di prima. Chi la legge conclude che quella
+// cosa non esiste, ed e' peggio che non avere il manuale, perche' ci ha creduto.
+// Qui ogni riga e' una coppia: se il CODICE ha la cosa, il MANUALE deve dirla.
+const manualejs = leggi('src/web/manuali.js');
+const COPPIE = [
+  [() => CAMPI.length > 0, 'La tua scheda', 'la scheda dello streamer'],
+  [() => /aggiungiColonna\('knowledge', 'fissata'/.test(dbjs), 'fissata', 'le voci fissate'],
+  [() => /aggiungiColonna\('knowledge', 'quando'/.test(dbjs), 'solo quando sei in diretta', 'il «quando» delle voci'],
+  [() => /app\.get\('\/api\/streamer\/quaderno'/.test(serverjs), 'quaderno del bot', 'il quaderno'],
+  [() => /_vociDallaPagina\(channel\) \{/.test(brainjs), 'pagina link parla al bot', 'la pagina link letta viva'],
+  [() => /export function checkRisposta\(/.test(modjs), 'Parole da bloccare', 'le parole da bloccare'],
+  [() => /via: 'bot'/.test(brainjs), 'Chi risponde in chat pubblica', 'chi risponde in pubblico'],
+];
+for (const [ceNelCodice, frase, cosa] of COPPIE) {
+  if (!ceNelCodice()) continue;
+  dice(manualejs.includes(frase), `il manuale spiega ${cosa}`,
+    `c'e' nel prodotto e non nel manuale: chi legge conclude che non esiste`);
+}
+
+// La guida dentro la scheda indica dei campi col dito: devono esistere.
+const aiuto = /conoscenza: \{ serve:[\s\S]*?\n    come: \[[\s\S]*?\]\] \},/.exec(appjs)?.[0] || '';
+const indicati = [...aiuto.matchAll(/'#([\w-]+)'/g)].map((m) => m[1]);
+const persi = indicati.filter((id) => !appjs.includes(`id="${id}"`));
+dice(indicati.length > 0 && !persi.length,
+  `la guida della scheda indica ${indicati.length} campi, e ci sono tutti`,
+  persi.length ? `indica campi che non esistono: ${persi.join(', ')}` : 'non indica niente: misura sbagliata');
 
 // --- esito --------------------------------------------------------------
 const rossi = esiti.filter((e) => !e.ok);
