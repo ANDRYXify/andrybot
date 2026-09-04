@@ -115,6 +115,24 @@ for (const s of ['assets/marchio/sbot.png', 'assets/marchio/socialbot.png']) {
   dice(existsSync(join(RAD, s)), `la sorgente del marchio c'e': ${s}`);
 }
 
+// L'anteprima dei link si GENERA (scripts/og.mjs), e il generatore legge dei
+// file: font, logo. Quando uno di quei file cambia nome o sparisce — e' successo
+// col font a mano, sostituito e cancellato — il generatore smette di girare, ma
+// l'immagine vecchia resta li' a mostrare un sito che non esiste piu'. E
+// nessuno se ne accorge, perche' l'anteprima la guardano gli altri.
+{
+  const og = readFileSync(join(RAD, 'scripts/og.mjs'), 'utf8');
+  // solo i percorsi scritti per intero fra apici: quelli costruiti con una
+  // variabile sono nomi in uscita, non file che devono gia' esistere
+  const letti = [...og.matchAll(/join\(PUB,\s*([^)]+)\)/g)]
+    .map((m) => m[1].split(',').map((x) => x.trim()))
+    .filter((parti) => parti.every((x) => /^'[^']+'$/.test(x)))
+    .map((parti) => parti.map((x) => x.slice(1, -1)).join('/'));
+  const persi = letti.filter((v) => !existsSync(join(PUB, v)));
+  dice(letti.length >= 2, `file che servono all'anteprima dei link: ${letti.length}`);
+  dice(persi.length === 0, 'ci sono tutti, quindi l\'anteprima si puo\' rifare', persi.join(', '));
+}
+
 const rossi = esiti.filter((e) => !e.ok);
 for (const e of esiti) console.log((e.ok ? '  ✓ ' : '  ✗ ') + e.msg + (e.extra && !e.ok ? `  → ${e.extra}` : ''));
 console.log(rossi.length ? `\n${rossi.length} cose non tornano.` : '\nOgni file che le pagine chiedono esiste. ✓');

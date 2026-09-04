@@ -447,7 +447,7 @@ ol.g-passi b{display:block;color:var(--testo);margin-bottom:3px}
 
 function testata(attiva) {
   return `<header class="g-testata"><div>
-<a class="g-marchio" href="/"><img src="/icons/logo-barra.png?v=6" alt="SocialBot" width="80" height="30"></a>
+<a class="g-marchio" href="/"><img src="/icons/logo-barra.png?v=7" alt="SocialBot" width="80" height="30"></a>
 <nav><a href="/guide"${attiva === 'indice' ? ' aria-current="page"' : ''}>Guide</a><a href="/manuale"${attiva === 'manuali' ? ' aria-current="page"' : ''}>Manuali</a><a href="/novita"${attiva === 'novita' ? ' aria-current="page"' : ''}>Novità</a><a href="/">Il bot</a></nav>
 </div></header>`;
 }
@@ -556,14 +556,14 @@ function scheletro({ titolo, desc, url, corpo, ld }) {
 <meta property="og:locale" content="it_IT">
 <meta property="og:title" content="${esc(titolo)}"><meta property="og:description" content="${esc(desc)}">
 <meta property="og:url" content="${esc(url)}">
-<meta property="og:image" content="${SITO}/icons/og-guide.png?v=6">
+<meta property="og:image" content="${SITO}/icons/og-guide.png?v=7">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:alt" content="Guide di SocialBot su Twitch, bot e overlay">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(titolo)}">
 <meta name="twitter:description" content="${esc(desc)}">
-<meta name="twitter:image" content="${SITO}/icons/og-guide.png?v=6">
-<link rel="icon" href="/icons/icon-192.png?v=6">
+<meta name="twitter:image" content="${SITO}/icons/og-guide.png?v=7">
+<link rel="icon" href="/icons/icon-192.png?v=7">
 <link rel="stylesheet" href="/font.css">
 <script src="/tema.js"></script>
 <style>${CSS}</style>
