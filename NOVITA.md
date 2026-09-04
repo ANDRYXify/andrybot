@@ -5,6 +5,12 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-04
 
+- I riquadri «ultimo follower» e «ultimo sub» prendono la veste come tutto il resto: prima quei bottoni non facevano niente e le due etichette restavano com'erano mentre l'overlay cambiava tema.
+- E «a tutto l'overlay» adesso li prende davvero tutti: prima saltava quei due, il conto alla rovescia e i contatori.
+- Ai due riquadri puoi scegliere forma, materia e cornice, come agli altri pezzi.
+- L'anteprima dei due riquadri mostra quello che va davvero in onda: prima ne disegnava uno e in diretta ne arrivava un altro.
+- L'alone dell'alert e quello della materia neon si accendono: c'erano da sempre e non si erano mai visti.
+- Con la veste manga l'ombra è netta invece che sfocata, come un secondo segno d'inchiostro.
 - Il sito era irraggiungibile: la configurazione del guardiano d'ingresso non era valida e lui, per questo, non si avviava. Rimessa a posto e verificata col programma vero prima di spingerla.
 - Un elemento con la Dimensione cambiata arriva davvero al bordo dello schermo: rimpicciolito si piantava prima e sembrava bloccato lì, ingrandito usciva dalla tela.
 - E segue il dito com'è giusto mentre lo trascini, a qualunque Dimensione.

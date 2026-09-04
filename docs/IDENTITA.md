@@ -353,3 +353,94 @@ aggiornata a mano.
 E lo scorrimento a inizio pagina avviene **dentro** il cambio, non dopo: fa parte
 dello stesso movimento invece di essere un secondo movimento che gli corre
 dietro.
+
+---
+
+# Le vesti: che una veste ARRIVI, non che venga chiamata
+
+## Il difetto
+
+Nel pannello di ogni pezzo dell'overlay c'è una fila di vesti pronte, più un
+bottone «a tutto l'overlay». Per due pezzi — **ultimo follower** e **ultimo
+sub** — quei bottoni non facevano niente. Non davano errore, non scrivevano in
+console, non lasciavano traccia: si cliccava e non succedeva nulla.
+
+Il motivo. Chi applicava una veste smistava con una catena di `if` sul nome del
+blocco, e finiva con un ramo «tutti gli altri» che cercava campi con l'attributo
+`data-c="stile.*"`. I due widget hanno i campi con un altro nome (`wf-bg`,
+`ws-fg`…): il ramo generico non ne trovava nemmeno uno, non trovava niente da
+fare, e usciva. Un ramo che non trova niente **non si lamenta da solo**.
+
+Il risultato si vedeva solo guardando l'overlay finito: tutto in tema tranne due
+etichette rimaste come prima. E lo stesso capitava al conto alla rovescia e ai
+contatori.
+
+## La regola
+
+> **Chi veste dice quanti campi ha toccato. Zero è un difetto.**
+
+Tutte le funzioni che vestono (`vestiParte`, `vestiCfg`, `vestiGoal`,
+`_vesteInBlocco`, `_vestiChiavi`) restituiscono il numero di campi cambiati;
+`applicaVeste` restituisce il totale e, se è zero, lo dice. Non è contabilità:
+è l'unico modo perché un bottone muto smetta di essere silenzioso.
+
+## Le vesti che non si scrivono: si ricavano
+
+Le vesti pronte (`TEMPLATE_BUILTIN`) hanno quattro fette: `al` (alert), `ch`
+(chat), `go` (obiettivi), `mu` (musica), più `acc` (l'accento). Aggiungerne una
+quinta per i widget e una sesta per i contatori avrebbe voluto dire scrivere lo
+stesso fatto in nove posti, uno per veste — e la prossima veste sarebbe nata
+mezza. Quindi non si scrivono, si **ricavano**:
+
+| pezzo | da dove | perché |
+|---|---|---|
+| ultimo follower / ultimo sub | fetta `ch` + `acc` | sono etichette che restano in scena, come le righe di chat: stessa natura, stesso vocabolario di stile. L'alert è la cosa grossa che passa e se ne va. |
+| contatori | fetta `go`, solo i colori | hanno un vocabolario tutto loro (un colore, uno sfondo, un carattere) e non conoscono né forma né materia: si disegnano come una riga di testo. La veste porta ciò che ha senso portare e non finge il resto. |
+
+Conseguenza voluta: **una veste nuova copre da sola anche loro.** Non esiste il
+caso «ne hanno aggiunta una e si sono scordati i widget».
+
+## Anteprima e diretta guardano lo stesso dato
+
+L'anteprima nel banco costruiva forma, materia e cornice dei due widget
+**dallo stile della chat** (e per giunta spegneva la cornice quando la chat
+diceva «linea»), mentre la pagina in diretta le prende dallo stile del widget.
+Due fonti diverse per la stessa cosa: nessuna manopola poteva farle combaciare,
+perché non guardavano lo stesso dato. Ora entrambe fanno
+`classiIdentita(stileDelWidget, 'nessuna')`.
+
+## L'ombra ha un padrone solo
+
+`filter` era scritto **due volte** sugli stessi elementi: nel blocco dell'alert
+e, più in basso, nel blocco comune alle tre vesti. Stessa forza, e in CSS a
+parità di forza vince chi sta più in basso. Quindi:
+
+- `--ombra-extra` non arrivava mai a destinazione;
+- l'alone dell'alert (`.alert-card.glow`) **non si è mai acceso**;
+- e nemmeno quello della materia neon.
+
+Il codice che li accendeva era lì, giusto, e semplicemente non veniva letto da
+nessuno. È la stessa forma del difetto delle vesti: una cosa scritta due volte,
+di cui una viene spenta in silenzio.
+
+Ora `filter` si scrive **una volta sola** e si compone da variabili
+(`--ombra-fuori`, `--ombra-extra`): chi vuole un'ombra diversa cambia la
+variabile, non il filtro. Il contratto in `test/contratto/overlay-elementi.test.mjs`
+controlla che di quella riga ce ne sia esattamente una.
+
+### Su carta l'ombra non sfoca
+
+La materia «carta» (quella della veste manga) porta la sua ombra: netta e
+spostata, come quando si stampa due volte con un filo di scarto. La sfocatura
+appartiene alla fotografia, non all'inchiostro — un alone gaussiano sotto un
+fumetto è la cosa che più di ogni altra fa sembrare il disegno un rendering.
+
+## Come si verifica
+
+`node scripts/verifica-veste.mjs` (dentro `npm run collaudi`). Apre un browser
+vero, prende ogni blocco, gli mette addosso una veste, poi un'altra molto
+diversa, e **misura** se i suoi campi sono cambiati. Un blocco che non cambia
+non è vestito, comunque sia scritto il codice. Poi legge il filtro *calcolato*
+dal browser e controlla che l'alone si componga e che la carta non sfochi.
+
+Provato rosso togliendo la voce dei widget: `wf` e `ws` risultano subito fermi.
