@@ -50,11 +50,14 @@ a:hover { color: var(--acc); }
   right: calc(18px + env(safe-area-inset-right, 0px));
   bottom: calc(18px + env(safe-area-inset-bottom, 0px));
   left: auto; top: auto;
-  width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--border-2); cursor: pointer;
-  background: var(--surface); color: var(--testo); box-shadow: 0 6px 22px rgba(0,0,0,.10);
-  transition: transform .3s var(--an-morbido), border-color .3s ease;
+  width: 48px; height: 48px; border-radius: 50%; cursor: pointer;
+  border: var(--tratto-2) solid var(--contorno);
+  background: var(--surface); color: var(--testo);
+  box-shadow: var(--alone-contorno), var(--ombra-ink);
+  transition: transform .3s var(--an-morbido), box-shadow var(--molla);
 }
-#cerca-lancia:hover { transform: translateY(-2px); border-color: var(--testo); }
+#cerca-lancia:hover { transform: translateY(-2px); box-shadow: var(--alone-contorno), var(--ombra-ink-alta); }
+#cerca-lancia:active { transform: translate(2px, 3px); box-shadow: var(--alone-contorno), var(--ombra-ink-timbro); }
 #cerca-lancia svg { display: block; margin: 0 auto; }
 #cerca-overlay {
   position: fixed; inset: 0; z-index: 200; display: none; align-items: flex-start; justify-content: center;
@@ -730,9 +733,8 @@ body.leggero .vivo::after, body.meno-moto .vivo::after { animation: none; opacit
   body.con-nav .barra-giu {
     display: grid; grid-template-columns: repeat(5, 1fr);
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 49;
-    background: color-mix(in srgb, var(--surface) 92%, transparent);
-    backdrop-filter: blur(18px) saturate(1.35); -webkit-backdrop-filter: blur(18px) saturate(1.35);
-    border-top: 1px solid var(--border);
+    background: var(--surface);
+    border-top: var(--tratto-2) solid var(--contorno);
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   .bg-voce {
@@ -746,10 +748,16 @@ body.leggero .vivo::after, body.meno-moto .vivo::after { animation: none; opacit
     display: grid; place-items: center; width: 46px; height: 26px; border-radius: 999px;
     background: transparent; transition: background .22s var(--molla-lieve);
   }
-  .bg-ico .lat-svg { width: 19px; height: 19px; stroke-width: 1.8; }
+  .bg-ico .lat-svg { width: 19px; height: 19px; stroke-width: 2.2; }
   .bg-eti { font-size: .625rem; font-weight: 600; letter-spacing: .01em; line-height: 1; }
   .bg-voce.on { color: var(--acc); }
-  .bg-voce.on .bg-ico { background: var(--acc-tint); }
+  .bg-voce.on .bg-ico {
+    background: var(--acc); color: var(--su-acc);
+    border: var(--tratto-1) solid var(--contorno);
+    border-radius: var(--ang-mano);
+    box-shadow: var(--ombra-ink-timbro);
+  }
+  .bg-voce.on .bg-ico .lat-svg { color: inherit; }
   .bg-voce.on .bg-eti { font-weight: 700; }
 
   body.con-nav .contenuto { padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
@@ -1653,7 +1661,7 @@ input[type="color"]:hover { box-shadow: var(--alone-contorno), var(--ombra-ink-t
 }
 
 .chip-var, .modello-pronto, .ovl-liv, .ovl-elem .oe-mod, .mix-mute, .oe-nota,
-.gioco-ramo, .pan-tasto, .lp-tab, .lp-vista-b, .studio-scena, .lp-ipick, .ovl-elem {
+.gioco-ramo, .pan-tasto, .lp-tab, .lp-vista-b, .studio-scena, .lp-ipick, .ovl-elem, .lp-bmini {
   border-color: var(--contorno);
   border-width: var(--tratto-mano);
   border-style: solid;
@@ -1695,13 +1703,13 @@ input[type="color"]:hover { box-shadow: var(--alone-contorno), var(--ombra-ink-t
 
 .carta > h2, details.carta.sez > summary > h3 {
   display: inline-block;
-  margin-left: calc(-1 * clamp(1.15rem, 2.6vw, 1.6rem));
-  margin-top: calc(-1 * clamp(1.15rem, 2.6vw, 1.6rem));
+  margin-left: calc(-1 * (clamp(1.15rem, 2.6vw, 1.6rem) + var(--orlo-3)));
+  margin-top: calc(-1 * (clamp(1.15rem, 2.6vw, 1.6rem) + var(--orlo-3)));
   margin-bottom: .85rem;
-  padding: .3em .75em .34em clamp(1.15rem, 2.6vw, 1.6rem);
+  padding: .28em .8em .3em calc(clamp(1.15rem, 2.6vw, 1.6rem) + var(--orlo-3));
   background: var(--didascalia-fondo);
   color: var(--didascalia-testo);
-  border-radius: 0;
+  border-radius: var(--ang-mano-l) 0 0 0;
   font-size: 1.02rem; letter-spacing: .01em;
 }
 .carta > h2 .b-ico, .carta > h2 svg,
@@ -1717,8 +1725,9 @@ details.carta.sez > summary > h3 .b-ico, details.carta.sez > summary > h3 svg { 
 .carta.pieghevole > h2:hover .carta-chevron { opacity: 1; background: color-mix(in srgb, var(--didascalia-testo) 16%, transparent); }
 
 details.carta.sez > summary { padding-top: 0; align-items: flex-start; }
-details.carta.sez > summary > h3 { margin-top: 0; margin-bottom: 0; border-top-left-radius: 3px; }
-details.carta.sez > summary::after { margin-top: .62rem; }
+details.carta.sez > summary > h3 { margin-top: calc(-1 * var(--orlo-3)); margin-bottom: 0; }
+details.carta.sez > summary::after { align-self: center; margin-top: 0; }
+details.carta.sez[open] > summary { border-bottom: 0; margin-bottom: .45rem; }
 details.carta.sez > summary::after,
 .cap-area > summary::after,
 .guida-scheda > summary::after,

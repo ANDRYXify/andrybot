@@ -80,7 +80,13 @@ for (const id of schede) {
     const piatti = [];
     const pari = [];
     const spenti = [];
-    const dist = (a, b2) => Math.hypot(a[0] - b2[0], a[1] - b2[1], a[2] - b2[2]);
+    // Un contorno si vede o non si vede, e la distanza fra due colori RGB non lo
+    // dice: #070206 su #1a141a ne dista abbastanza da passare, e sullo schermo
+    // e' invisibile. Quello che conta e' il CONTRASTO, che e' come lo vede
+    // l'occhio: sotto 1.6 il bordo non c'e', comunque sia scritto.
+    const lum = (v) => { const f = v.map((x) => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; });
+      return 0.2126 * f[0] + 0.7152 * f[1] + 0.0722 * f[2]; };
+    const contrasto = (a, b2) => { const A = lum(a), B = lum(b2); return (Math.max(A, B) + 0.05) / (Math.min(A, B) + 0.05); };
     const opaco = (c) => { const m = /rgba?\([^)]*?,\s*([\d.]+)\s*\)/.exec(c); return !m || Number(m[1]) > 0.5; };
     let n = 0;
     for (const el of sez.querySelectorAll(SEL)) {
@@ -97,8 +103,8 @@ for (const id of schede) {
       if (!conBordo && !conTimbro) { piatti.push(firma); continue; }
 
       const cb = rgb(s.borderTopColor), cs = rgb(s.backgroundColor);
-      if (bw >= 0.9 && cb && cs && opaco(s.backgroundColor) && dist(cb, cs) < 26) {
-        spenti.push(firma + ' (' + s.borderTopColor + ')');
+      if (bw >= 0.9 && cb && cs && opaco(s.backgroundColor) && contrasto(cb, cs) < 1.6) {
+        spenti.push(firma + ' (' + s.borderTopColor + ' su ' + s.backgroundColor + ')');
       }
 
       // la gerarchia: dentro una carta, il dettaglio non puo' avere il tratto
@@ -131,7 +137,7 @@ const ordG = Object.entries(gerarchia).sort((a, b2) => b2[1] - a[1]);
 verde = dice(ordG.length === 0, 'contorni esterni piu\' grossi dei dettagli interni',
   ordG.slice(0, 5).map(([f, n]) => `${f} ×${n}`).join(' · ')) && verde;
 const ordS = Object.entries(spenti).sort((a, b2) => b2[1] - a[1]);
-verde = dice(ordS.length === 0, 'nessun contorno del colore del proprio riempimento',
+verde = dice(ordS.length === 0, 'nessun contorno invisibile sul proprio sfondo',
   ordS.slice(0, 8).map(([f, n]) => `${f} ×${n}`).join(' · ')) && verde;
 verde = dice(rotture.length === 0, 'nessun errore di pagina', rotture.slice(0, 2).join(' · ')) && verde;
 

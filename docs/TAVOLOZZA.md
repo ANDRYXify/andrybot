@@ -241,3 +241,52 @@ serve trovarla: si chiude dal lato giusto. Ora la freccetta **dichiara tutto il
 suo bordo** (`border: 0` e poi i due lati che vuole), così nessuna regola può
 aggiungergliene altri. Vale per tutte e cinque le freccette del prodotto, che
 misuravano tutte lo stesso rombo.
+
+---
+
+## Al buio l'inchiostro è bianco
+
+> «Riusciamo a rendere coerente tutto con il tema? Anche navbar, ricerca, le
+> varie icone.»
+
+Misurato prima di rispondere: nel tema scuro il contorno di una carta aveva
+contrasto **1,14** contro lo sfondo della carta stessa. Nel chiaro è **18,83**.
+1,14 vuol dire *invisibile*: al buio non si vedeva nessun contorno, e quello che
+restava era solo l'alone rosa. Il disegno a mano, al buio, semplicemente non
+c'era.
+
+E il tema **era incoerente con sé stesso**: lo stesso concetto di «inchiostro»
+era già **bianco** per il tratto delle scritte (`--orlo-scritta: #f4ecf1`) e per
+le etichette delle carte (`--didascalia-fondo: #f1e9ee`), e **nero** per i bordi
+e le ombre a timbro. Due risposte diverse alla stessa domanda.
+
+La regola, ovvia una volta detta: **su carta nera si disegna in bianco.** Il
+tema scuro ora ha `--contorno: #f4ecf1`, e `--orlo-scritta` e
+`--didascalia-fondo` tornano a derivare da lui invece di essere due eccezioni
+scritte a mano. Bordi, ombre a timbro, retino: tutto diventa linea chiara su
+fondo scuro, come nel chiaro è linea scura su crema. Contrasto: **15,63**.
+
+### Il cancello guardava la cosa sbagliata
+
+`verifica-inchiostro.mjs` chiedeva «il bordo è di un colore scuro?». Con quella
+domanda un bordo `#070206` su uno sfondo `#1a141a` passa: è scuro davvero. E la
+prima versione del controllo che ho aggiunto oggi misurava la **distanza RGB**
+fra bordo e sfondo — 33, sopra la soglia, quindi verde. Ma l'occhio non misura
+distanze RGB.
+
+Ora la domanda è **il contrasto**, che è come lo vede chi guarda: sotto 1,6 il
+bordo non c'è, comunque sia scritto.
+
+## La barra in basso, la lente, le icone
+
+Tre pezzi erano rimasti nel linguaggio di prima, e si vedeva:
+
+| pezzo | com'era | com'è |
+|---|---|---|
+| la lente | bordo 1px beige slavato, ombra sfocata `0 6px 22px` | contorno d'inchiostro e timbro, come il pulsante gemello accanto che ce l'aveva già |
+| la barra in basso | orlo da 1px grigio, vetro sfocato | orlo disegnato, e **opaca**: la sfocatura appartiene alla fotografia, e i browser che non la applicano lasciavano leggere il testo attraverso la barra |
+| la voce scelta | una pillola di tinta tenue | un oggetto: contorno che dice *cos'è*, riempimento che dice *in che stato è* |
+| le icone | tratto 1,8 | tratto 2,2, quello del disegno |
+
+Che la lente fosse rimasta indietro e il suo gemello no è la firma della deriva:
+due copie della stessa idea, una aggiornata e una no.

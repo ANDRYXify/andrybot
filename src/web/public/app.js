@@ -11074,6 +11074,17 @@ function lpLeggiBlocco(t) {
   if (campo === 'piattaforma') lpRenderBlocchi();
 }
 
+const ICO_BLOCCO = { link: 'link', social: 'cuore', titolo: 'stella', testo: 'mail', immagine: 'video',
+  embed: 'video', diretta: 'twitch', eroe: 'stella', griglia: 'gioco', scritta: 'musica',
+  numeri: 'soldi', faq: 'mail', conto: 'calendario', separatore: 'link' };
+
+function nomeBlocco(b, NOMI) {
+  const suo = (b.label || b.testo || b.titolo || b.d || '').toString().trim().replace(/\s+/g, ' ');
+  return suo || (NOMI[b.tipo] || b.tipo);
+}
+
+let _lpAperto = null;
+
 function lpRenderBlocchi() {
   const cont = document.getElementById('lp-blocchi'); if (!cont) return;
   const d = LP.d || {};
@@ -11226,17 +11237,17 @@ function lpRenderBlocchi() {
     } else {
       campi = `<p class="suggerimento">${L('Una linea che separa le sezioni.', 'A line that separates sections.', 'Una línea que separa las secciones.')}</p>`;
     }
-    return `<div class="lp-blocco" data-i="${i}">
-      <div class="lp-btesta" draggable="true" title="${esc(L('Trascina per spostarlo', 'Drag to move it', 'Arrastra para moverlo'))}">
+    return `<details class="lp-blocco" data-i="${i}">
+      <summary class="lp-btesta" draggable="true" title="${esc(L('Trascina per spostarlo', 'Drag to move it', 'Arrastra para moverlo'))}">
         <span class="lp-presa" aria-hidden="true"></span>
-        <strong>${esc(NOMI[b.tipo] || b.tipo)}</strong>
+        <span class="lp-bico">${lpIco(ICO_BLOCCO[b.tipo] || 'link', 16)}</span>
+        <strong>${esc(nomeBlocco(b, NOMI))}</strong>
+        ${nomeBlocco(b, NOMI) === (NOMI[b.tipo] || b.tipo) ? '' : `<span class="lp-btipo">${esc(NOMI[b.tipo] || b.tipo)}</span>`}
         <span class="lp-bazioni">
-          <button type="button" class="btn secondario mini" data-lpb="${i}" data-lpop="su" title="${L('Su', 'Up', 'Subir')}">${_lpSu}</button>
-          <button type="button" class="btn secondario mini" data-lpb="${i}" data-lpop="giu" title="${L('Giù', 'Down', 'Bajar')}">${_lpGiu}</button>
-          <button type="button" class="btn secondario mini" data-lpb="${i}" data-lpop="dup" title="${L('Duplica', 'Duplicate', 'Duplicar')}">${_lpDup}</button>
-          <button type="button" class="btn secondario mini" data-lpb="${i}" data-lpop="via" title="${L('Togli', 'Remove', 'Quitar')}">${_lpVia}</button>
+          <button type="button" class="lp-bmini" data-lpb="${i}" data-lpop="su" title="${L('Su', 'Up', 'Subir')}" aria-label="${L('Su', 'Up', 'Subir')}">${_lpSu}</button>
+          <button type="button" class="lp-bmini" data-lpb="${i}" data-lpop="giu" title="${L('Giù', 'Down', 'Bajar')}" aria-label="${L('Giù', 'Down', 'Bajar')}">${_lpGiu}</button>
         </span>
-      </div>
+      </summary>
       ${campi}
       <div class="lp-bpiede">
         <label>${L('Largo', 'Width', 'Ancho')}
@@ -11260,9 +11271,30 @@ function lpRenderBlocchi() {
     ['destra', L('da destra', 'from the right', 'desde la derecha')], ['ruota', L('ruotando', 'rotating', 'girando')]]
     .map(([k, n]) => `<option value="${k}"${(b.entrata || 'auto') === k ? ' selected' : ''}>${esc(n)}</option>`).join('')}
           </select></label>
+        <span class="lp-bfine">
+          <button type="button" class="btn secondario mini" data-lpb="${i}" data-lpop="dup">${_lpDup}${L('Duplica', 'Duplicate', 'Duplicar')}</button>
+          <button type="button" class="btn secondario mini" data-lpb="${i}" data-lpop="via">${_lpVia}${L('Togli', 'Remove', 'Quitar')}</button>
+        </span>
       </div>
-    </div>`;
+    </details>`;
   }).join('') || `<p class="suggerimento">${L('Nessun contenuto: aggiungi il primo pezzo qui sotto.', 'No content yet: add the first piece below.', 'Sin contenido: añade la primera pieza abajo.')}</p>`;
+
+  {
+    const j = _lpAperto ? LP.blocchi.indexOf(_lpAperto) : -1;
+    const el = j >= 0 ? cont.querySelector(`.lp-blocco[data-i="${j}"]`) : null;
+    if (el) el.open = true; else _lpAperto = null;
+  }
+
+  cont.addEventListener('toggle', (ev) => {
+    const d = ev.target;
+    if (!d.classList?.contains('lp-blocco')) return;
+    if (!d.open) { if (LP.blocchi[Number(d.dataset.i)] === _lpAperto) _lpAperto = null; return; }
+    _lpAperto = LP.blocchi[Number(d.dataset.i)];
+    for (const a of cont.querySelectorAll('.lp-blocco[open]')) if (a !== d) a.open = false;
+  }, true);
+  cont.addEventListener('click', (ev) => {
+    if (ev.target.closest('.lp-btesta') && ev.target.closest('button')) ev.preventDefault();
+  }, true);
 
   let preso = -1;
   cont.ondragstart = (ev) => {
@@ -11346,6 +11378,8 @@ function lpAnteprimaCliccabile(f) {
     ev.stopPropagation();
     const bl = document.querySelector(`#lp-blocchi .lp-blocco[data-i="${w.dataset.b}"]`);
     if (!bl) return;
+    for (const a of document.querySelectorAll('#lp-blocchi .lp-blocco[open]')) if (a !== bl) a.open = false;
+    bl.open = true;
     bl.scrollIntoView({ block: 'center', behavior: 'smooth' });
     document.querySelectorAll('.lp-blocco.acceso').forEach((e) => e.classList.remove('acceso'));
     bl.classList.add('acceso');
