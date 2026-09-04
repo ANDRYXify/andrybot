@@ -1733,9 +1733,9 @@ input[type="file"]::file-selector-button {
 }
 
 .vt-titolo, .pl-eroe-nome, .pagina-testata h1, .sezione-titolo, .an-titolo {
-  -webkit-text-stroke: .05em var(--orlo-scritta);
+  -webkit-text-stroke: clamp(.9px, .028em, 1.7px) var(--orlo-scritta);
   paint-order: stroke fill;
   paint-order: stroke fill markers;
 }
-.vt-titolo { color: var(--acc-vino); }
+.vt-titolo { color: var(--titolo-pieno); }
 .vt-titolo em, .vt-titolo b { color: var(--acc-vivo); -webkit-text-stroke: inherit; }
