@@ -1715,6 +1715,7 @@ export const memory = {
 // pagina come la immagina invece di riempire cinque campi fissi.
 export const TEMPLATE_LINKPAGE = ['minimal', 'neon', 'retro', 'sunset', 'glass', 'brutal', 'pastello',
   'cyber', 'vapor', 'oro', 'oceano', 'foresta', 'ghiaccio', 'lava', 'bubblegum'];
+export const PESI_LINKPAGE = ['leggero', 'medio', 'marcato'];
 export const FONT_LINKPAGE = ['system', 'inter', 'mono', 'serif', 'condensato', 'tondo', 'manga'];
 export const ICONE_LINKPAGE = ['link', 'twitch', 'youtube', 'instagram', 'tiktok', 'discord', 'spotify',
   'x', 'telegram', 'kick', 'github', 'reddit', 'threads', 'facebook', 'whatsapp', 'twitter',
@@ -1877,6 +1878,8 @@ export const linkPage = {
         'retino', 'concentrazione'], 'nessuno'),
       testo: hex(t.testo), accent: hex(t.accent), card: hex(t.card), bordo: hex(t.bordo),
       font: scelta(t.font, FONT_LINKPAGE, 'system'),
+      corpo: num(t.corpo, 80, 130, 100),
+      peso: scelta(t.peso, PESI_LINKPAGE, 'marcato'),
       raggio: num(t.raggio, 0, 999, 14),
       stileBtn: scelta(t.stileBtn, ['pieno', 'contorno', 'vetro', 'inchiostro'], 'pieno'),
       ombra: t.ombra !== false,

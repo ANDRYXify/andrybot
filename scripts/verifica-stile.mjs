@@ -21,11 +21,15 @@ function chiavi(sorgente, inizio, fine) {
   if (i < 0) return null;
   const j = sorgente.indexOf(fine, i);
   let blocco = sorgente.slice(i, j < 0 ? i + 4000 : j);
-  // via le stringhe: dentro ci sono due punti e apostrofi che non sono chiavi
+  // PRIMA i commenti, POI le stringhe, e non il contrario: un commento in
+  // italiano contiene apostrofi («l'ombra»), e chi toglie le stringhe per primo
+  // scambia quell'apostrofo per l'inizio di una stringa e si mangia tutto il
+  // resto del blocco. Succedeva davvero: da «ombra» in giu' il cancello non
+  // vedeva piu' una sola chiave, e taceva. Si tolgono solo i commenti che
+  // COMINCIANO una riga, cosi' un `//` dentro un indirizzo resta al suo posto.
+  blocco = blocco.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^[ \t]*\/\/[^\n]*$/gm, ' ');
+  // e via le stringhe: dentro ci sono due punti e apostrofi che non sono chiavi
   blocco = blocco.replace(/'(?:\\.|[^'\\])*'/g, "''").replace(/"(?:\\.|[^"\\])*"/g, '""');
-  // e via i commenti: una chiave preceduta da una riga di spiegazione non e'
-  // «sparita», e un cancello che la vede sparire misura se stesso, non il codice
-  blocco = blocco.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/[^\n]*/g, ' ');
   return [...new Set([...blocco.matchAll(/[{,]\s*([a-zA-Z][\w]*)\s*:/g)].map((m) => m[1]))];
 }
 
@@ -107,6 +111,27 @@ for (const [nome, reApp, reSrv] of assi) {
       if (fuori.length) err.push(`${nome}: si possono scegliere ma in diretta non si disegnano: ${fuori.join(', ')}`);
       if (inPiu.length) err.push(`${nome}: in diretta si disegnano ma nessuno puo' sceglierli: ${inPiu.join(', ')}`);
     }
+  }
+}
+
+// LA PAGINA LINK. Le sue manopole si dichiarano da sole con `data-lpk="X"`, e
+// il server ricostruisce il tema campo per campo: una manopola con un nome che
+// il server non conosce viene salvata, accettata, e buttata via in silenzio —
+// la modifica sparisce alla prima ricarica e non lascia traccia da nessuna
+// parte. Al contrario, un campo del tema senza manopola e' una cosa che il
+// prodotto sa fare e che nessuno puo' scegliere.
+{
+  const db = readFileSync('src/db.js', 'utf8');
+  const manopole = [...new Set([...app.matchAll(/data-lpk="([a-zA-Z0-9]+)"/g)].map((m) => m[1]))];
+  const server = chiavi(db, '    const tema = {\n', '\n    };');
+  if (!manopole.length || !server) err.push('pagina link: non trovo le manopole o il tema del server');
+  else {
+    const buttate = manopole.filter((k) => !server.includes(k));
+    const senzaManopola = server.filter((k) => !manopole.includes(k) && k !== 'ombra');
+    console.log(`link   ${manopole.length} manopole · ${server.length} campi nel server` +
+      (buttate.length ? `  ✗ buttate via: ${buttate.join(', ')}` : '  ✓')
+      + (senzaManopola.length ? `  · senza manopola: ${senzaManopola.join(', ')}` : ''));
+    if (buttate.length) err.push(`pagina link: il server butta via ${buttate.join(', ')}`);
   }
 }
 

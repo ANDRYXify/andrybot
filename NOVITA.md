@@ -5,6 +5,10 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-04
 
+- La pagina link: l'aspetto non è più una colonna sola da ventidue voci, ma sei schede — Temi, Impianto, Scrittura, Colori, Bottoni, Modi — con i campi affiancati.
+- E l'anteprima della pagina link è passata a sinistra, con i comandi a destra: si legge come il banco dell'overlay.
+- Puoi cambiare la grandezza del testo della pagina link (80–130%) e il suo spessore: leggero, medio o marcato. Prima era grassetto e basta.
+- Il puntatore disegnato adesso resta scelto: lo salvavi e alla ricarica tornava indietro da solo.
 - Il titolo della home usa gli stessi due colori del resto della pagina: le parole nel colore del testo, quelle in risalto nel rosa del marchio. Prima aveva un rosa tutto suo che al buio restava scuro come il fondo.
 - I bottoni scelti e quelli rossi hanno di nuovo il loro contorno: il bordo era dello stesso colore del riempimento, quindi spariva dentro, e restava solo l'ombra su due lati — sembravano ritagliati male.
 - I riquadri «ultimo follower» e «ultimo sub» prendono la veste come tutto il resto: prima quei bottoni non facevano niente e le due etichette restavano com'erano mentre l'overlay cambiava tema.

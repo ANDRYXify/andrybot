@@ -1656,6 +1656,10 @@ input[type="color"]:hover { box-shadow: var(--alone-contorno), var(--ombra-ink-t
   border-radius: var(--ang-mano);
   box-shadow: var(--alone-contorno);
 }
+.lp-tabs, .lp-vista {
+  border: 0; background: transparent; padding: 0; border-radius: 0;
+  overflow: visible; gap: .4rem;
+}
 .chip-var:hover, .modello-pronto:hover, .ovl-liv:hover, .ovl-elem .oe-mod:hover,
 .mix-mute:hover, .oe-nota:hover, .gioco-ramo:hover, .pan-tasto:hover,
 .lp-tab:hover, .lp-vista-b:hover, .studio-scena:hover, .lp-ipick:hover {
