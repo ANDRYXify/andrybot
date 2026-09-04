@@ -10677,137 +10677,175 @@ async function caricaPaginaLink(ridisegna = false) {
         </div>
 
         <div class="lp-pane" data-pane="aspetto" hidden>
-        <details class="carta sez" open>
-          <summary><h3>${L('Aspetto', 'Look', 'Aspecto')}</h3></summary>
-          <label class="campo">${L('Temi pronti', 'Ready-made themes', 'Temas listos')}</label>
-          ${temiProntiHtml(LP.tema._pronto)}
-          <p class="suggerimento">${L('Un colpo solo: colori, sfondo, carattere, forma dei bottoni, animazione e disposizione. Poi cambi quello che vuoi qui sotto.', 'One click: colours, background, font, button shape, animation and layout. Then change whatever you like below.', 'De una vez: colores, fondo, tipografía, forma de los botones, animación y disposición. Luego cambias lo que quieras abajo.')}</p>
+        <div class="lp-tabs lp-tabs-min" role="tablist">
+          <button type="button" class="lp-tab sel" data-lptab="asp-temi">${L('Temi', 'Themes', 'Temas')}</button>
+          <button type="button" class="lp-tab" data-lptab="asp-impianto">${L('Impianto', 'Layout', 'Estructura')}</button>
+          <button type="button" class="lp-tab" data-lptab="asp-scrittura">${L('Scrittura', 'Type', 'Tipografía')}</button>
+          <button type="button" class="lp-tab" data-lptab="asp-colori">${L('Colori', 'Colours', 'Colores')}</button>
+          <button type="button" class="lp-tab" data-lptab="asp-bottoni">${L('Bottoni', 'Buttons', 'Botones')}</button>
+          <button type="button" class="lp-tab" data-lptab="asp-modi">${L('Modi', 'Behaviour', 'Modos')}</button>
+        </div>
 
-          <label class="campo spazio-sopra" for="lp-disp">${L('Come sono disposti i contenuti', 'How content is laid out', 'Cómo se disponen los contenidos')}</label>
-          <select id="lp-disp" data-lpk="disposizione">
-            <option value="colonna">${L('Colonna — la classica lista', 'Column — the classic list', 'Columna — la lista clásica')}</option>
-            <option value="rivista">${L('Rivista — affiancati, come una griglia', 'Magazine — side by side, like a grid', 'Revista — en paralelo, como una rejilla')}</option>
-            <option value="sezioni">${L('Sezioni — pagina lunga da scorrere', 'Sections — a long page to scroll', 'Secciones — página larga para desplazar')}</option>
-          </select>
-          <p class="suggerimento">${L('“Sezioni” dà respiro e titoli grandi: i contenuti si scoprono scorrendo, come su un sito vero. “Rivista” affianca i link su due o tre colonne; video, musica e pagine restano larghi perché stretti diventano illeggibili.', '“Sections” gives room and big headings: content is discovered by scrolling, like on a real site. “Magazine” puts links on two or three columns; video, music and pages stay wide because they become unreadable when squeezed.', '“Secciones” da aire y títulos grandes: el contenido se descubre desplazando. “Revista” pone los enlaces en dos o tres columnas; vídeo, música y páginas siguen anchos porque estrechos se vuelven ilegibles.')}</p>
-
-          <label class="campo spazio-sopra" for="lp-mov">${L('Movimento', 'Motion', 'Movimiento')}</label>
-          <select id="lp-mov" data-lpk="movimento">
-            <option value="nessuno">${L('Fermo — nessuna animazione', 'Still — no animation', 'Quieto — sin animación')}</option>
-            <option value="dolce">${L('Dolce — i contenuti compaiono mentre scorri', 'Gentle — content appears as you scroll', 'Suave — el contenido aparece al desplazar')}</option>
-            <option value="cinema">${L('Cinema — parallasse, titoli parola per parola, immagini che si avvicinano', 'Cinematic — parallax, word-by-word titles, images pulling in', 'Cine — paralaje, títulos palabra por palabra, imágenes que se acercan')}</option>
-            <option value="crawl">${L('Star Wars — l’intestazione arriva in prospettiva (poi i contenuti scorrono)', 'Star Wars — the header flies in with perspective (then content scrolls in)', 'Star Wars — el encabezado llega en perspectiva (luego el contenido aparece)')}</option>
-          </select>
-          <p class="suggerimento">${L('Tutto in CSS, nessuno script: la pagina resta leggera. Chi ha attivato “riduci animazioni” nel sistema non ne vede nessuna.', 'All CSS, no scripts: the page stays light. Anyone with “reduce motion” on sees none of it.', 'Todo en CSS, sin scripts: la página sigue ligera. Quien tiene “reducir movimiento” no ve ninguna.')}</p>
-
-          <label class="campo spazio-sopra" for="lp-stile">${L('Stile di partenza', 'Starting style', 'Estilo de partida')}</label>
-          <select id="lp-stile" data-lpt="template">${opts(d.templates || [], LP.testa.template, NOMI_STILE)}</select>
-          <p class="suggerimento">${L('Dà i colori di base. Qui sotto puoi cambiare tutto.', 'It sets the base colours. Below you can change everything.', 'Da los colores base. Abajo puedes cambiarlo todo.')}</p>
-
-          <label class="campo spazio-sopra" for="lp-font">${L('Carattere', 'Font', 'Tipografía')}</label>
-          <select id="lp-font" data-lpk="font">${opts(d.fonts || [], LP.tema.font, NOMI_FONT)}</select>
-
-          <label class="campo spazio-sopra" for="lp-sfondoTipo">${L('Sfondo', 'Background', 'Fondo')}</label>
-          <select id="lp-sfondoTipo" data-lpk="sfondoTipo">
-            <option value="tinta">${L('Tinta unita', 'Solid colour', 'Color plano')}</option>
-            <option value="gradiente">${L('Sfumatura fra due colori', 'Gradient between two colours', 'Degradado entre dos colores')}</option>
-            <option value="immagine">${L('Immagine', 'Image', 'Imagen')}</option>
-          </select>
-          <div class="griglia-campi spazio-sopra">
-            <div><label class="campo">${L('Colore sfondo', 'Background colour', 'Color de fondo')}</label><input type="color" data-lpk="bg" value="${esc(LP.tema.bg || '#0b0813')}"></div>
-            <div id="lp-bg2-box"><label class="campo">${L('Secondo colore', 'Second colour', 'Segundo color')}</label><input type="color" data-lpk="bg2" value="${esc(LP.tema.bg2 || '#241046')}"></div>
+        <div class="lp-pane" data-pane="asp-temi">
+          <div class="carta">
+            ${temiProntiHtml(LP.tema._pronto)}
+            <p class="suggerimento">${L('Un colpo solo: colori, sfondo, carattere, forma dei bottoni, animazione e disposizione. Poi cambi quello che vuoi nelle altre schede.', 'One click: colours, background, font, button shape, animation and layout. Then change whatever you like in the other tabs.', 'De una vez: colores, fondo, tipografía, forma de los botones, animación y disposición. Luego cambias lo que quieras en las otras pestañas.')}</p>
           </div>
-          <div id="lp-grad-box">
-            <label class="campo spazio-sopra">${L('Direzione della sfumatura', 'Gradient direction', 'Dirección del degradado')} <span class="tenue" id="lp-ang-v">${Number(LP.tema.angolo) || 160}°</span></label>
-            <input type="range" data-lpk="angolo" min="0" max="360" value="${Number(LP.tema.angolo) || 160}">
-          </div>
-          <div id="lp-sfimg-box">
-            <label class="campo spazio-sopra">${L('Indirizzo dell\'immagine di sfondo', 'Background image address', 'Dirección de la imagen de fondo')}</label>
-            <input type="url" data-lpk="sfondoUrl" maxlength="${d.limiti.url}" value="${esc(LP.tema.sfondoUrl || '')}" placeholder="https://…">
-          </div>
-          <label class="campo spazio-sopra" for="lp-effetto">${L('Effetto sopra lo sfondo', 'Effect over the background', 'Efecto sobre el fondo')}</label>
-          <select id="lp-effetto" data-lpk="effetto">
-            <option value="nessuno">${L('Nessuno', 'None', 'Ninguno')}</option>
-            <option value="aurora">${L('Aurora (aloni sfocati)', 'Aurora (blurred glow)', 'Aurora (halos difusos)')}</option>
-            <option value="maglia">${L('Griglia', 'Grid', 'Rejilla')}</option>
-            <option value="grana">${L('Grana', 'Grain', 'Grano')}</option>
-            <option value="bolle">${L('Bolle di colore', 'Colour bubbles', 'Burbujas de color')}</option>
-            <option value="stelle">${L('Stelle (si muovono piano)', 'Stars (drifting)', 'Estrellas (a la deriva)')}</option>
-            <option value="onde">${L('Onde (respirano in fondo)', 'Waves (breathing at the bottom)', 'Olas (respiran abajo)')}</option>
-            <option value="griglia">${L('Griglia in prospettiva (anni ’80)', 'Perspective grid (80s)', 'Rejilla en perspectiva (años 80)')}</option>
-            <option value="synthwave">${L('Synthwave (sole + griglia che scorre)', 'Synthwave (sun + flowing grid)', 'Synthwave (sol + rejilla en movimiento)')}</option>
-            <option value="neonpulse">${L('Neon che pulsa', 'Pulsing neon', 'Neón que late')}</option>
-            <option value="particelle">${L('Particelle che salgono', 'Rising particles', 'Partículas que suben')}</option>
-            <option value="matrix">${L('Pioggia digitale (Matrix)', 'Digital rain (Matrix)', 'Lluvia digital (Matrix)')}</option>
-            <option value="nebulosa">${L('Nebulosa (aloni che si muovono)', 'Nebula (drifting glow)', 'Nebulosa (halos en movimiento)')}</option>
-            <option value="scanline">${L('Scanline (vecchio schermo TV)', 'Scanlines (old CRT screen)', 'Scanlines (pantalla CRT antigua)')}</option>
-            <option value="raggi">${L('Raggi di luce che ruotano', 'Rotating light rays', 'Rayos de luz giratorios')}</option>
-          </select>
+        </div>
 
-          <div class="griglia-campi spazio-sopra">
-            <div><label class="campo">${L('Colore testo', 'Text colour', 'Color del texto')}</label><input type="color" data-lpk="testo" value="${esc(LP.tema.testo || '#f4f2ff')}"></div>
-            <div><label class="campo">${L('Colore evidenza', 'Accent colour', 'Color de acento')}</label><input type="color" data-lpk="accent" value="${esc(LP.tema.accent || '#a568ff')}"></div>
+        <div class="lp-pane" data-pane="asp-impianto" hidden>
+          <div class="carta">
+            <div class="griglia-campi">
+              <div><label class="campo" for="lp-disp">${L('Disposizione', 'Layout', 'Disposición')}</label>
+                <select id="lp-disp" data-lpk="disposizione">
+                  <option value="colonna">${L('Colonna — la classica lista', 'Column — the classic list', 'Columna — la lista clásica')}</option>
+                  <option value="rivista">${L('Rivista — affiancati, come una griglia', 'Magazine — side by side, like a grid', 'Revista — en paralelo, como una rejilla')}</option>
+                  <option value="sezioni">${L('Sezioni — pagina lunga da scorrere', 'Sections — a long page to scroll', 'Secciones — página larga para desplazar')}</option>
+                </select></div>
+              <div><label class="campo" for="lp-mov">${L('Movimento', 'Motion', 'Movimiento')}</label>
+                <select id="lp-mov" data-lpk="movimento">
+                  <option value="nessuno">${L('Fermo — nessuna animazione', 'Still — no animation', 'Quieto — sin animación')}</option>
+                  <option value="dolce">${L('Dolce — i contenuti compaiono mentre scorri', 'Gentle — content appears as you scroll', 'Suave — el contenido aparece al desplazar')}</option>
+                  <option value="cinema">${L('Cinema — parallasse, titoli parola per parola', 'Cinematic — parallax, word-by-word titles', 'Cine — paralaje, títulos palabra por palabra')}</option>
+                  <option value="crawl">${L('Star Wars — l’intestazione arriva in prospettiva', 'Star Wars — the header flies in with perspective', 'Star Wars — el encabezado llega en perspectiva')}</option>
+                </select></div>
+              <div><label class="campo" for="lp-stile">${L('Stile di partenza', 'Starting style', 'Estilo de partida')}</label>
+                <select id="lp-stile" data-lpt="template">${opts(d.templates || [], LP.testa.template, NOMI_STILE)}</select></div>
+              <div><label class="campo" for="lp-allinea">${L('Allineamento', 'Alignment', 'Alineación')}</label>
+                <select id="lp-allinea" data-lpk="allinea">
+                  <option value="centro">${L('Al centro', 'Centred', 'Centrado')}</option>
+                  <option value="sinistra">${L('A sinistra', 'Left', 'A la izquierda')}</option>
+                </select></div>
+            </div>
+            <label class="campo spazio-sopra">${L('Larghezza della colonna', 'Column width', 'Ancho de la columna')} <span class="tenue" data-lpv="larghezza" data-suf="rem">${Number(LP.tema.larghezza) || 30}rem</span></label>
+            <input type="range" data-lpk="larghezza" min="20" max="46" value="${Number(LP.tema.larghezza) || 30}">
+            <p class="suggerimento">${L('“Sezioni” dà respiro e titoli grandi. “Rivista” affianca i link su due o tre colonne; video, musica e pagine restano larghi perché stretti diventano illeggibili. Il movimento è tutto in CSS: chi ha “riduci animazioni” nel sistema non ne vede nessuna.', '“Sections” gives room and big headings. “Magazine” puts links on two or three columns; video, music and pages stay wide because they become unreadable when squeezed. Motion is all CSS: anyone with “reduce motion” on sees none of it.', '“Secciones” da aire y títulos grandes. “Revista” pone los enlaces en dos o tres columnas; vídeo, música y páginas siguen anchos. El movimiento es todo CSS: quien tiene “reducir movimiento” no ve ninguna.')}</p>
           </div>
-          <div class="griglia-campi spazio-sopra">
-            <div><label class="campo">${L('Colore bottoni', 'Button colour', 'Color de botones')}</label><input type="color" data-lpk="card" value="${esc(LP.tema.card || '#141220')}"></div>
-            <div><label class="campo">${L('Colore bordi', 'Border colour', 'Color de bordes')}</label><input type="color" data-lpk="bordo" value="${esc(LP.tema.bordo || '#2c2440')}"></div>
+        </div>
+
+        <div class="lp-pane" data-pane="asp-scrittura" hidden>
+          <div class="carta">
+            <div class="griglia-campi">
+              <div><label class="campo" for="lp-font">${L('Carattere', 'Font', 'Tipografía')}</label>
+                <select id="lp-font" data-lpk="font">${opts(d.fonts || [], LP.tema.font, NOMI_FONT)}</select></div>
+              <div><label class="campo" for="lp-peso">${L('Spessore', 'Weight', 'Grosor')}</label>
+                <select id="lp-peso" data-lpk="peso">
+                  <option value="leggero">${L('Leggero', 'Light', 'Ligero')}</option>
+                  <option value="medio">${L('Medio', 'Medium', 'Medio')}</option>
+                  <option value="marcato">${L('Marcato', 'Bold', 'Marcado')}</option>
+                </select></div>
+            </div>
+            <label class="campo spazio-sopra">${L('Grandezza del testo', 'Text size', 'Tamaño del texto')} <span class="tenue" data-lpv="corpo" data-suf="%">${Number(LP.tema.corpo) || 100}%</span></label>
+            <input type="range" data-lpk="corpo" min="80" max="130" value="${Number(LP.tema.corpo) || 100}">
+            <p class="suggerimento">${L('La grandezza vale per tutta la pagina insieme, così le proporzioni restano quelle. Lo spessore muove tutti i pesi in blocco — titoli, etichette, sottotitoli — e li tiene in scala fra loro: è la stessa pagina più leggera, non una pagina diversa.', 'Size applies to the whole page at once, so the proportions stay put. Weight moves every level together — headings, labels, sublabels — keeping them in scale: it is the same page, lighter, not a different page.', 'El tamaño vale para toda la página a la vez, así las proporciones no cambian. El grosor mueve todos los pesos juntos y los mantiene en escala: es la misma página más ligera, no otra página.')}</p>
           </div>
+        </div>
 
-          <label class="campo spazio-sopra" for="lp-stileBtn">${L('Stile dei bottoni', 'Button style', 'Estilo de los botones')}</label>
-          <select id="lp-stileBtn" data-lpk="stileBtn">
-            <option value="pieno">${L('Pieni', 'Filled', 'Rellenos')}</option>
-            <option value="contorno">${L('Solo contorno', 'Outline only', 'Solo contorno')}</option>
-            <option value="vetro">${L('Vetro (sfocato)', 'Glass (blurred)', 'Cristal (difuso)')}</option>
-          </select>
-          <label class="campo spazio-sopra">${L('Angoli dei bottoni', 'Button corners', 'Esquinas de los botones')} <span class="tenue" id="lp-rag-v">${Number(LP.tema.raggio) ?? 14}px</span></label>
-          <input type="range" data-lpk="raggio" min="0" max="999" value="${Number(LP.tema.raggio) ?? 14}">
-          <p class="suggerimento">${L('0 = spigoli vivi · 999 = pillola. Non vale per video e musica: lì un arrotondamento esagerato mangerebbe l\'immagine.', '0 = sharp corners · 999 = pill. Not applied to video and music: there an extreme radius would eat the picture.', '0 = esquinas rectas · 999 = píldora. No se aplica a vídeo y música: ahí un redondeo extremo se comería la imagen.')}</p>
-
-          <label class="campo spazio-sopra">${L('Larghezza della colonna', 'Column width', 'Ancho de la columna')} <span class="tenue" id="lp-lar-v">${Number(LP.tema.larghezza) || 30}rem</span></label>
-          <input type="range" data-lpk="larghezza" min="20" max="46" value="${Number(LP.tema.larghezza) || 30}">
-
-          <label class="campo spazio-sopra" for="lp-allinea">${L('Allineamento', 'Alignment', 'Alineación')}</label>
-          <select id="lp-allinea" data-lpk="allinea">
-            <option value="centro">${L('Al centro', 'Centred', 'Centrado')}</option>
-            <option value="sinistra">${L('A sinistra', 'Left', 'A la izquierda')}</option>
-          </select>
-          <label class="campo spazio-sopra" for="lp-avatarForma">${L('Forma dell\'immagine profilo', 'Profile picture shape', 'Forma de la imagen de perfil')}</label>
-          <select id="lp-avatarForma" data-lpk="avatarForma">
-            <option value="cerchio">${L('Cerchio', 'Circle', 'Círculo')}</option>
-            <option value="quadrato">${L('Quadrato stondato', 'Rounded square', 'Cuadrado redondeado')}</option>
-            <option value="nessuno">${L('Non mostrarla', 'Don’t show it', 'No mostrarla')}</option>
-          </select>
-          <label class="campo spazio-sopra" for="lp-anim">${L('Animazione d\'ingresso', 'Entrance animation', 'Animación de entrada')}</label>
-          <select id="lp-anim" data-lpk="anim">
-            <option value="nessuna">${L('Nessuna', 'None', 'Ninguna')}</option>
-            <option value="fade">${L('Dissolvenza', 'Fade', 'Fundido')}</option>
-            <option value="rise">${L('Dal basso', 'From below', 'Desde abajo')}</option>
-            <option value="pop">${L('Pop', 'Pop', 'Pop')}</option>
-          </select>
-          <label class="campo spazio-sopra" for="lp-cursore">${L('Puntatore del mouse', 'Mouse pointer', 'Puntero del ratón')}</label>
-          <select id="lp-cursore" data-lpk="cursore">
-            <option value="sistema">${L('Quello di sistema', 'The system one', 'El del sistema')}</option>
-            <option value="disegnato">${L('Disegnato, coi colori del tema', 'Drawn, in the theme colours', 'Dibujado, con los colores del tema')}</option>
-          </select>
-          <p class="suggerimento">${L('Su telefono e tablet non cambia niente: lì un puntatore non c\u2019è.', 'Nothing changes on phones and tablets: there is no pointer there.', 'En móviles y tabletas no cambia nada: allí no hay puntero.')}</p>
-          <label class="campo spazio-sopra" for="lp-consenso">${L('Video, musica e pagine di altri siti', 'Video, music and pages from other sites', 'Vídeo, música y páginas de otros sitios')}</label>
-          <select id="lp-consenso" data-lpk="consenso">
-            <option value="sempre">${L('Caricali subito (consigliato)', 'Load them right away (recommended)', 'Cárgalos enseguida (recomendado)')}</option>
-            <option value="chiedi">${L('Caricali solo se il visitatore lo chiede', 'Load them only if the visitor asks', 'Cárgalos solo si el visitante lo pide')}</option>
-          </select>
-          <p class="suggerimento">${L('“Subito” è come funziona un sito normale: si apre e c\'è tutto. “Solo se lo chiede” mette al loro posto un cartello con un bottone: verso quei siti non parte niente finché non lo premi, ma sfogliare la pagina diventa più noioso. In tutti e due i casi <strong>la tua pagina non usa cookie</strong>: quelli eventuali sono di YouTube, Spotify o Twitch, e l\'informativa in fondo alla pagina lo spiega — cambia da sé a seconda di cosa scegli qui.', '“Right away” is how a normal site works: it opens and everything is there. “Only if asked” puts a card with a button in their place: nothing goes out to those sites until you press it, but browsing gets duller. Either way <strong>your page uses no cookies</strong>: any cookies belong to YouTube, Spotify or Twitch, and the privacy notice at the bottom explains it.', '“Enseguida” es como funciona un sitio normal. “Solo si lo pide” pone en su lugar una tarjeta con un botón: hacia esos sitios no sale nada hasta pulsarlo, pero navegar se vuelve más aburrido. En ambos casos <strong>tu página no usa cookies</strong>: los que haya son de YouTube, Spotify o Twitch, y el aviso al pie lo explica.')}</p>
-
-          <label class="campo spazio-sopra" for="lp-ombra">${L('Ombra dei bottoni', 'Button shadow', 'Sombra de los botones')}</label>
-          <select id="lp-ombra" data-lpk="ombraTipo">
-            <option value="nessuna">${L('Nessuna', 'None', 'Ninguna')}</option>
-            <option value="morbida">${L('Morbida (sfumata sotto)', 'Soft (blurred underneath)', 'Suave (difusa debajo)')}</option>
-            <option value="dura">${L('Dura (blocco di colore spostato)', 'Hard (solid offset block)', 'Dura (bloque de color desplazado)')}</option>
-          </select>
-          <div id="lp-ombra-col" ${(LP.tema.ombraTipo || 'morbida') === 'dura' ? '' : 'hidden'}>
-            <label class="campo spazio-sopra">${L('Colore dell\'ombra dura', 'Hard shadow colour', 'Color de la sombra dura')}</label>
-            <input type="color" data-lpk="ombraColore" value="${esc(LP.tema.ombraColore || '#000000')}">
+        <div class="lp-pane" data-pane="asp-colori" hidden>
+          <div class="carta">
+            <div class="griglia-campi">
+              <div><label class="campo" for="lp-sfondoTipo">${L('Sfondo', 'Background', 'Fondo')}</label>
+                <select id="lp-sfondoTipo" data-lpk="sfondoTipo">
+                  <option value="tinta">${L('Tinta unita', 'Solid colour', 'Color plano')}</option>
+                  <option value="gradiente">${L('Sfumatura fra due colori', 'Gradient between two colours', 'Degradado entre dos colores')}</option>
+                  <option value="immagine">${L('Immagine', 'Image', 'Imagen')}</option>
+                </select></div>
+              <div><label class="campo">${L('Colore sfondo', 'Background colour', 'Color de fondo')}</label><input type="color" data-lpk="bg" value="${esc(LP.tema.bg || '#0b0813')}"></div>
+              <div id="lp-bg2-box"><label class="campo">${L('Secondo colore', 'Second colour', 'Segundo color')}</label><input type="color" data-lpk="bg2" value="${esc(LP.tema.bg2 || '#241046')}"></div>
+            </div>
+            <div id="lp-grad-box">
+              <label class="campo spazio-sopra">${L('Direzione della sfumatura', 'Gradient direction', 'Dirección del degradado')} <span class="tenue" data-lpv="angolo" data-suf="°">${Number(LP.tema.angolo) || 160}°</span></label>
+              <input type="range" data-lpk="angolo" min="0" max="360" value="${Number(LP.tema.angolo) || 160}">
+            </div>
+            <div id="lp-sfimg-box">
+              <label class="campo spazio-sopra">${L('Indirizzo dell\'immagine di sfondo', 'Background image address', 'Dirección de la imagen de fondo')}</label>
+              <input type="url" data-lpk="sfondoUrl" maxlength="${d.limiti.url}" value="${esc(LP.tema.sfondoUrl || '')}" placeholder="https://…">
+            </div>
+            <label class="campo spazio-sopra" for="lp-effetto">${L('Effetto sopra lo sfondo', 'Effect over the background', 'Efecto sobre el fondo')}</label>
+            <select id="lp-effetto" data-lpk="effetto">
+              <option value="nessuno">${L('Nessuno', 'None', 'Ninguno')}</option>
+              <option value="aurora">${L('Aurora (aloni sfocati)', 'Aurora (blurred glow)', 'Aurora (halos difusos)')}</option>
+              <option value="maglia">${L('Griglia', 'Grid', 'Rejilla')}</option>
+              <option value="grana">${L('Grana', 'Grain', 'Grano')}</option>
+              <option value="bolle">${L('Bolle di colore', 'Colour bubbles', 'Burbujas de color')}</option>
+              <option value="stelle">${L('Stelle (si muovono piano)', 'Stars (drifting)', 'Estrellas (a la deriva)')}</option>
+              <option value="onde">${L('Onde (respirano in fondo)', 'Waves (breathing at the bottom)', 'Olas (respiran abajo)')}</option>
+              <option value="griglia">${L('Griglia in prospettiva (anni ’80)', 'Perspective grid (80s)', 'Rejilla en perspectiva (años 80)')}</option>
+              <option value="synthwave">${L('Synthwave (sole + griglia che scorre)', 'Synthwave (sun + flowing grid)', 'Synthwave (sol + rejilla en movimiento)')}</option>
+              <option value="neonpulse">${L('Neon che pulsa', 'Pulsing neon', 'Neón que late')}</option>
+              <option value="particelle">${L('Particelle che salgono', 'Rising particles', 'Partículas que suben')}</option>
+              <option value="matrix">${L('Pioggia digitale (Matrix)', 'Digital rain (Matrix)', 'Lluvia digital (Matrix)')}</option>
+              <option value="nebulosa">${L('Nebulosa (aloni che si muovono)', 'Nebula (drifting glow)', 'Nebulosa (halos en movimiento)')}</option>
+              <option value="scanline">${L('Scanline (vecchio schermo TV)', 'Scanlines (old CRT screen)', 'Scanlines (pantalla CRT antigua)')}</option>
+              <option value="raggi">${L('Raggi di luce che ruotano', 'Rotating light rays', 'Rayos de luz giratorios')}</option>
+              <option value="retino">${L('Retino stampato (mezzatinta)', 'Printed halftone', 'Trama impresa (semitono)')}</option>
+              <option value="concentrazione">${L('Linee di concentrazione', 'Speed lines', 'Líneas de concentración')}</option>
+            </select>
+            <div class="griglia-campi spazio-sopra">
+              <div><label class="campo">${L('Colore testo', 'Text colour', 'Color del texto')}</label><input type="color" data-lpk="testo" value="${esc(LP.tema.testo || '#f4f2ff')}"></div>
+              <div><label class="campo">${L('Colore evidenza', 'Accent colour', 'Color de acento')}</label><input type="color" data-lpk="accent" value="${esc(LP.tema.accent || '#a568ff')}"></div>
+              <div><label class="campo">${L('Colore bottoni', 'Button colour', 'Color de botones')}</label><input type="color" data-lpk="card" value="${esc(LP.tema.card || '#141220')}"></div>
+              <div><label class="campo">${L('Colore bordi', 'Border colour', 'Color de bordes')}</label><input type="color" data-lpk="bordo" value="${esc(LP.tema.bordo || '#2c2440')}"></div>
+            </div>
           </div>
-        </details>
+        </div>
+
+        <div class="lp-pane" data-pane="asp-bottoni" hidden>
+          <div class="carta">
+            <div class="griglia-campi">
+              <div><label class="campo" for="lp-stileBtn">${L('Stile dei bottoni', 'Button style', 'Estilo de los botones')}</label>
+                <select id="lp-stileBtn" data-lpk="stileBtn">
+                  <option value="pieno">${L('Pieni', 'Filled', 'Rellenos')}</option>
+                  <option value="contorno">${L('Solo contorno', 'Outline only', 'Solo contorno')}</option>
+                  <option value="vetro">${L('Vetro (sfocato)', 'Glass (blurred)', 'Cristal (difuso)')}</option>
+                  <option value="inchiostro">${L('Inchiostro (contorno e timbro)', 'Ink (outline and stamp)', 'Tinta (contorno y sello)')}</option>
+                </select></div>
+              <div><label class="campo" for="lp-ombra">${L('Ombra dei bottoni', 'Button shadow', 'Sombra de los botones')}</label>
+                <select id="lp-ombra" data-lpk="ombraTipo">
+                  <option value="nessuna">${L('Nessuna', 'None', 'Ninguna')}</option>
+                  <option value="morbida">${L('Morbida (sfumata sotto)', 'Soft (blurred underneath)', 'Suave (difusa debajo)')}</option>
+                  <option value="dura">${L('Dura (blocco di colore spostato)', 'Hard (solid offset block)', 'Dura (bloque de color desplazado)')}</option>
+                </select></div>
+              <div id="lp-ombra-col" ${(LP.tema.ombraTipo || 'morbida') === 'dura' ? '' : 'hidden'}>
+                <label class="campo">${L('Colore dell\'ombra dura', 'Hard shadow colour', 'Color de la sombra dura')}</label>
+                <input type="color" data-lpk="ombraColore" value="${esc(LP.tema.ombraColore || '#000000')}"></div>
+              <div><label class="campo" for="lp-avatarForma">${L('Immagine profilo', 'Profile picture', 'Imagen de perfil')}</label>
+                <select id="lp-avatarForma" data-lpk="avatarForma">
+                  <option value="cerchio">${L('Cerchio', 'Circle', 'Círculo')}</option>
+                  <option value="quadrato">${L('Quadrato stondato', 'Rounded square', 'Cuadrado redondeado')}</option>
+                  <option value="nessuno">${L('Non mostrarla', 'Don’t show it', 'No mostrarla')}</option>
+                </select></div>
+            </div>
+            <label class="campo spazio-sopra">${L('Angoli dei bottoni', 'Button corners', 'Esquinas de los botones')} <span class="tenue" data-lpv="raggio" data-suf="px">${Number(LP.tema.raggio) ?? 14}px</span></label>
+            <input type="range" data-lpk="raggio" min="0" max="999" value="${Number(LP.tema.raggio) ?? 14}">
+            <p class="suggerimento">${L('0 = spigoli vivi · 999 = pillola. Non vale per video e musica: lì un arrotondamento esagerato mangerebbe l\'immagine.', '0 = sharp corners · 999 = pill. Not applied to video and music: there an extreme radius would eat the picture.', '0 = esquinas rectas · 999 = píldora. No se aplica a vídeo y música: ahí un redondeo extremo se comería la imagen.')}</p>
+          </div>
+        </div>
+
+        <div class="lp-pane" data-pane="asp-modi" hidden>
+          <div class="carta">
+            <div class="griglia-campi">
+              <div><label class="campo" for="lp-anim">${L('Animazione d\'ingresso', 'Entrance animation', 'Animación de entrada')}</label>
+                <select id="lp-anim" data-lpk="anim">
+                  <option value="nessuna">${L('Nessuna', 'None', 'Ninguna')}</option>
+                  <option value="fade">${L('Dissolvenza', 'Fade', 'Fundido')}</option>
+                  <option value="rise">${L('Dal basso', 'From below', 'Desde abajo')}</option>
+                  <option value="pop">${L('Pop', 'Pop', 'Pop')}</option>
+                </select></div>
+              <div><label class="campo" for="lp-cursore">${L('Puntatore del mouse', 'Mouse pointer', 'Puntero del ratón')}</label>
+                <select id="lp-cursore" data-lpk="cursore">
+                  <option value="sistema">${L('Quello di sistema', 'The system one', 'El del sistema')}</option>
+                  <option value="disegnato">${L('Disegnato, coi colori del tema', 'Drawn, in the theme colours', 'Dibujado, con los colores del tema')}</option>
+                </select></div>
+            </div>
+            <label class="campo spazio-sopra" for="lp-consenso">${L('Video, musica e pagine di altri siti', 'Video, music and pages from other sites', 'Vídeo, música y páginas de otros sitios')}</label>
+            <select id="lp-consenso" data-lpk="consenso">
+              <option value="sempre">${L('Caricali subito (consigliato)', 'Load them right away (recommended)', 'Cárgalos enseguida (recomendado)')}</option>
+              <option value="chiedi">${L('Caricali solo se il visitatore lo chiede', 'Load them only if the visitor asks', 'Cárgalos solo si el visitante lo pide')}</option>
+            </select>
+            <p class="suggerimento">${L('Sul telefono il puntatore non c’è, quindi lì non cambia niente. Per i contenuti di altri siti: “Subito” è come funziona un sito normale; “Solo se lo chiede” mette al loro posto un cartello con un bottone, e verso quei siti non parte niente finché non lo premi. In tutti e due i casi <strong>la tua pagina non usa cookie</strong>: quelli eventuali sono di YouTube, Spotify o Twitch, e l\'informativa in fondo lo spiega — cambia da sé a seconda di cosa scegli qui.', 'There is no pointer on phones, so nothing changes there. For content from other sites: “Right away” is how a normal site works; “Only if asked” puts a card with a button in their place, and nothing goes out to those sites until you press it. Either way <strong>your page uses no cookies</strong>: any cookies belong to YouTube, Spotify or Twitch, and the notice at the bottom explains it.', 'En el móvil no hay puntero, así que ahí no cambia nada. Para el contenido de otros sitios: “Enseguida” es como funciona un sitio normal; “Solo si lo pide” pone en su lugar una tarjeta con un botón. En ambos casos <strong>tu página no usa cookies</strong>: los que haya son de YouTube, Spotify o Twitch, y el aviso al pie lo explica.')}</p>
+          </div>
+        </div>
         </div>
       </div>
 
@@ -10828,9 +10866,10 @@ async function caricaPaginaLink(ridisegna = false) {
       </div>
     </div>`;
 
-  for (const k of ['sfondoTipo', 'effetto', 'stileBtn', 'allinea', 'avatarForma', 'anim', 'font', 'disposizione', 'movimento', 'ombraTipo', 'consenso']) {
-    const el = box.querySelector(`[data-lpk="${k}"]`);
-    if (el && LP.tema[k] !== undefined) el.value = LP.tema[k];
+  for (const el of box.querySelectorAll('[data-lpk]')) {
+    const v = LP.tema[el.dataset.lpk];
+    if (v === undefined || v === null) continue;
+    if (el.type === 'checkbox') el.checked = !!v; else el.value = v;
   }
   lpMostraCampiSfondo();
   lpRenderBlocchi();
@@ -10841,9 +10880,8 @@ async function caricaPaginaLink(ridisegna = false) {
     const k = t.dataset.lpk, tt = t.dataset.lpt;
     if (k) {
       LP.tema[k] = t.type === 'checkbox' ? t.checked : (t.type === 'range' ? Number(t.value) : t.value);
-      if (k === 'angolo') box.querySelector('#lp-ang-v').textContent = t.value + '°';
-      if (k === 'raggio') box.querySelector('#lp-rag-v').textContent = t.value + 'px';
-      if (k === 'larghezza') box.querySelector('#lp-lar-v').textContent = t.value + 'rem';
+      const eti = box.querySelector(`[data-lpv="${k}"]`);
+      if (eti) eti.textContent = t.value + (eti.dataset.suf || '');
       if (k === 'sfondoTipo') lpMostraCampiSfondo();
       if (k === 'ombraTipo') { const cc = box.querySelector('#lp-ombra-col'); if (cc) cc.hidden = t.value !== 'dura'; }
 
@@ -10900,8 +10938,10 @@ async function caricaPaginaLink(ridisegna = false) {
   box.addEventListener('click', (ev) => {
     const t = ev.target.closest('[data-lptab]'); if (!t) return;
     const quale = t.dataset.lptab;
-    box.querySelectorAll('.lp-tab').forEach((b) => b.classList.toggle('sel', b === t));
-    box.querySelectorAll('.lp-pane').forEach((p) => { p.hidden = p.dataset.pane !== quale; });
+    const fila = t.closest('.lp-tabs');
+    const casa = fila.parentElement;
+    fila.querySelectorAll('.lp-tab').forEach((b) => b.classList.toggle('sel', b === t));
+    casa.querySelectorAll(':scope > .lp-pane').forEach((p) => { p.hidden = p.dataset.pane !== quale; });
   });
 
   box.addEventListener('click', (ev) => {

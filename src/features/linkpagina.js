@@ -85,6 +85,25 @@ const PILE = {
 
 // La sola pila che porta un file. Le pagine link non caricano caratteri dal
 // web: e' una scelta di velocita', e vale ancora per tutte tranne questa.
+// QUANTO E' GROSSO IL TRATTO DELLA SCRITTURA.
+//
+// I pesi erano diciotto numeri sparsi nel foglio di stile: 800 qui, 700 la',
+// 650 piu' in giu'. Con quelli, «vorrei meno grassetto» non e' una scelta, e'
+// diciotto modifiche a mano — e la diciannovesima nasce sbagliata.
+//
+// Quindi i numeri diventano QUATTRO RUOLI: forte (i titoloni), medio (le
+// etichette e i bottoni), normale (il testo dei bottoni lunghi) e tenue (i
+// sottotitoli). Una manopola sola li muove tutti insieme, e restano in scala
+// fra loro: e' la stessa pagina piu' leggera, non una pagina diversa.
+//
+// «marcato» ripete ESATTAMENTE i numeri di prima, e per questo e' il valore di
+// partenza: nessuna pagina gia' pubblicata cambia aspetto da sola.
+const PESI = {
+  leggero: { f: 600, m: 500, n: 450, t: 350 },
+  medio: { f: 700, m: 600, n: 520, t: 400 },
+  marcato: { f: 800, m: 700, n: 600, t: 450 },
+};
+
 const facciaFont = (nome) => (nome !== 'manga' ? '' : `
   @font-face{font-family:'Permanent Marker';font-style:normal;font-weight:400;font-display:swap;
     src:url(/vendor/font/permanentmarker-normal-400-latin.woff2) format('woff2');
@@ -767,6 +786,8 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   // "Nessuna" vuol dire NESSUNA: prima cadeva sull'iniziale del nome, cioè
   // esattamente il cerchio con la lettera che si voleva togliere.
   const mostraAvatar = t.avatarForma !== 'nessuno' && pagina.avatar !== 'no';
+  const pesi = PESI[t.peso] || PESI.marcato;
+  const scalaCorpo = Number(t.corpo) || 100;
   const imgCustom = pagina.avatar === 'no' ? '' : urlSicuro(pagina.avatar);
   const imgAvatar = imgCustom || (avatar && login ? `${baseUrl || ''}/u/${encodeURIComponent(login)}/avatar` : '');
 
@@ -797,8 +818,9 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
 <style>${facciaFont(t.font)}${cursoreCss(t, c)}
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   :root{--testo:${c.testo};--tenue:${c.tenue};--acc:${c.acc};--suacc:${suAcc};--r:${raggio}px;--w:${larghezza}rem;
-    --fd:${font.d};--ft:${font.t}}
-  html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;overflow-x:hidden}
+    --fd:${font.d};--ft:${font.t};
+    --pf:${pesi.f};--pm:${pesi.m};--pn:${pesi.n};--pt:${pesi.t}}
+  html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;overflow-x:hidden;font-size:${scalaCorpo}%}
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
   ::selection{background:var(--acc);color:var(--suacc)}
   /* la barra di scorrimento intonata al tema, non quella grigia di sistema */
@@ -821,7 +843,7 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
      fanno la differenza fra "un'immagine tonda" e un profilo curato */
   .avatar{width:5.5rem;height:5.5rem;border-radius:${t.avatarForma === 'quadrato' ? 'calc(var(--r) * .9)' : '50%'};
     object-fit:cover;display:grid;place-items:center;position:relative;
-    font-size:2.2rem;font-weight:700;color:var(--acc);background:${c.card};
+    font-size:2.2rem;font-weight:var(--pm);color:var(--acc);background:${c.card};
     border:2px solid transparent;
     background-image:linear-gradient(${c.card},${c.card}),conic-gradient(from 0deg,${c.acc},${c.bordo},${c.acc});
     background-origin:border-box;background-clip:padding-box,border-box;
@@ -834,12 +856,12 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
      cosa pesa uguale, non spicca niente. Qui il salto fra un livello e l'altro
      è netto, e i titoli usano il carattere da titolo, non quello del testo. */
   h1,.tit,.eroe-t,.num-n,.marq-in span,.conto-n{font-family:var(--fd)}
-  h1{font-size:clamp(2rem,9vw,3.1rem);font-weight:800;letter-spacing:-.04em;line-height:1;
+  h1{font-size:clamp(2rem,9vw,3.1rem);font-weight:var(--pf);letter-spacing:-.04em;line-height:1;
     margin-top:1rem;text-wrap:balance}
   .tag{color:var(--tenue);font-size:1.02rem;line-height:1.45;max-width:30rem;margin-top:.5rem;text-wrap:pretty}
   .lista{width:100%;display:flex;flex-direction:column;gap:.6rem;margin-top:1.5rem;text-align:left}
   .voce{display:flex;align-items:center;gap:.75rem;padding:.9rem 1.05rem;border-radius:var(--r);
-    ${stileBtn};${ombra};color:var(--testo);text-decoration:none;font-weight:600;font-size:1rem;
+    ${stileBtn};${ombra};color:var(--testo);text-decoration:none;font-weight:var(--pn);font-size:1rem;
     transition:transform .18s cubic-bezier(.34,1.56,.64,1),border-color .18s ease,filter .18s ease}
   .voce:hover,.voce:focus-visible{transform:translateY(-2px);border-color:var(--acc);filter:brightness(1.04);
     box-shadow:0 1px 2px rgba(0,0,0,.10),0 14px 30px -12px ${c.acc}66}
@@ -865,14 +887,14 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   .ico{flex:0 0 auto;display:inline-flex;color:var(--acc)}
   .ico svg{color:var(--bc,currentColor)}
   .tx{flex:1;min-width:0;display:flex;flex-direction:column}
-  .et{font-size:1.02rem;font-weight:650;letter-spacing:-.011em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .so{font-size:.82rem;font-weight:450;color:var(--tenue);margin-top:.1rem;
+  .et{font-size:1.02rem;font-weight:calc(var(--pm) - 50);letter-spacing:-.011em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .so{font-size:.82rem;font-weight:var(--pt);color:var(--tenue);margin-top:.1rem;
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .fre{flex:0 0 auto;color:var(--acc);font-size:1.3rem;line-height:1;transition:transform .18s ease}
   .voce:hover .fre{transform:translateX(3px)}
   /* l'etichetta di sezione: piccola, spaziata, con una lineetta del colore
      principale davanti — si legge come "qui comincia un'altra cosa" */
-  .tit{width:100%;font-size:.74rem;font-weight:700;letter-spacing:.13em;text-transform:uppercase;
+  .tit{width:100%;font-size:.74rem;font-weight:var(--pm);letter-spacing:.13em;text-transform:uppercase;
     color:var(--tenue);margin-top:1.8rem;text-align:${aSinistra ? 'left' : 'center'}}
   /* in linea, NON flex: dentro il titolo le parole sono già degli span (servono
      per farle entrare una alla volta) e in un contenitore flex diventerebbero
@@ -898,10 +920,10 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   /* il cartello al posto del contenuto di terzi, finché non lo si chiede */
   .chiedi{width:100%;height:100%;min-height:9rem;display:flex;flex-direction:column;align-items:center;
     justify-content:center;gap:.45rem;padding:1.2rem;text-align:center;background:${c.card}}
-  .chiedi-t{font-family:var(--fd);font-weight:700;font-size:1.05rem}
+  .chiedi-t{font-family:var(--fd);font-weight:var(--pm);font-size:1.05rem}
   .chiedi-p{font-size:.82rem;color:var(--tenue);max-width:24rem;line-height:1.5}
   .chiedi-b{margin-top:.25rem;padding:.6rem 1.1rem;border:0;border-radius:var(--r);background:var(--acc);
-    color:#fff;font:inherit;font-weight:700;font-size:.9rem;cursor:pointer;
+    color:#fff;font:inherit;font-weight:var(--pm);font-size:.9rem;cursor:pointer;
     transition:transform .18s cubic-bezier(.34,1.56,.64,1)}
   .chiedi-b:hover{transform:translateY(-2px)}
   /* la fascia del consenso: una volta sola, poi la scelta resta memorizzata */
@@ -912,7 +934,7 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   .fascia b{color:var(--testo)}
   .fascia-b{max-width:44rem;margin:.6rem auto 0;display:flex;flex-wrap:wrap;align-items:center;gap:.5rem}
   .fascia-b button{padding:.55rem 1rem;border:0;border-radius:var(--r);background:var(--acc);color:var(--suacc);
-    font:inherit;font-weight:700;font-size:.85rem;cursor:pointer}
+    font:inherit;font-weight:var(--pm);font-size:.85rem;cursor:pointer}
   .fascia-b button.due{background:transparent;color:var(--testo);border:1px solid ${c.bordo}}
   /* il link ai dettagli sta DENTRO la frase che spiega, non in fondo alla riga
      dei bottoni: li' aveva un margin-left automatico, e quando la riga andava a capo
@@ -995,14 +1017,14 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   /* niente gap ma padding: così metà contenitore è esattamente due copie e il
      giro si chiude senza scatti */
   .marq-in{display:flex;width:max-content;animation:marq var(--sp,22s) linear infinite}
-  .marq-in span{white-space:nowrap;padding-right:2.5rem;font-size:clamp(1.7rem,7vw,3.6rem);font-weight:800;
+  .marq-in span{white-space:nowrap;padding-right:2.5rem;font-size:clamp(1.7rem,7vw,3.6rem);font-weight:var(--pf);
     letter-spacing:-.03em;line-height:1.1;color:var(--acc)}
   @keyframes marq{to{transform:translateX(-50%)}}
   .marq:hover .marq-in{animation-play-state:paused}
-  .eroe-t{font-size:clamp(1.6rem,6vw,2.6rem);font-weight:800;letter-spacing:-.03em;line-height:1.05;text-wrap:balance}
+  .eroe-t{font-size:clamp(1.6rem,6vw,2.6rem);font-weight:var(--pf);letter-spacing:-.03em;line-height:1.05;text-wrap:balance}
   .eroe-s{color:var(--tenue);font-size:1rem;text-wrap:pretty}
   .eroe-b{margin-top:.6rem;padding:.7rem 1.3rem;border-radius:var(--r);background:var(--acc);color:var(--suacc);
-    text-decoration:none;font-weight:700;transition:transform .18s cubic-bezier(.34,1.56,.64,1)}
+    text-decoration:none;font-weight:var(--pm);transition:transform .18s cubic-bezier(.34,1.56,.64,1)}
   .eroe-b:hover{transform:translateY(-2px)}
   /* ── griglia di tessere: contenuti da guardare, non righe da leggere ── */
   .griglia{width:100%;margin-top:1rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(8.5rem,1fr));gap:.6rem}
@@ -1012,19 +1034,19 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   a.tessera:hover{transform:translateY(-3px);border-color:var(--acc)}
   .tessera img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block}
   .tess-tx{display:flex;flex-direction:column;gap:.1rem;padding:.6rem .7rem;text-align:left}
-  .tess-t{font-weight:700;font-size:.9rem;line-height:1.2}
+  .tess-t{font-weight:var(--pm);font-size:.9rem;line-height:1.2}
   .tess-s{font-size:.78rem;color:var(--tenue)}
   /* numeri in fila: follower, anni di dirette, ore in diretta… */
   .numeri{width:100%;margin-top:1.2rem;display:flex;flex-wrap:wrap;gap:.6rem;
     justify-content:${aSinistra ? 'flex-start' : 'center'}}
   .num{flex:1 1 7rem;min-width:6rem;padding:.9rem .6rem;border-radius:var(--r);${stileBtn};text-align:center;
     display:flex;flex-direction:column;gap:.15rem}
-  .num-n{font-size:clamp(1.4rem,5vw,2.1rem);font-weight:800;letter-spacing:-.03em;color:var(--acc);line-height:1}
+  .num-n{font-size:clamp(1.4rem,5vw,2.1rem);font-weight:var(--pf);letter-spacing:-.03em;color:var(--acc);line-height:1}
   .num-e{font-size:.76rem;color:var(--tenue);text-transform:uppercase;letter-spacing:.06em}
   /* domande frequenti: si aprono da sole, nessuno script */
   .faq{width:100%;margin-top:1rem;display:flex;flex-direction:column;gap:.45rem}
   .faq-v{border-radius:var(--r);${stileBtn};overflow:hidden}
-  .faq-v summary{cursor:pointer;padding:.85rem 1rem;font-weight:600;list-style:none;display:flex;align-items:center;gap:.5rem}
+  .faq-v summary{cursor:pointer;padding:.85rem 1rem;font-weight:var(--pn);list-style:none;display:flex;align-items:center;gap:.5rem}
   .faq-v summary::-webkit-details-marker{display:none}
   .faq-v summary::after{content:'';margin-left:auto;width:.5rem;height:.5rem;flex:0 0 auto;
     border-right:2px solid var(--acc);border-bottom:2px solid var(--acc);transform:rotate(45deg);
@@ -1035,11 +1057,11 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   .conto{width:100%;margin-top:1.2rem;padding:1.1rem 1rem;border-radius:var(--r);${stileBtn};text-align:center;
     display:flex;flex-direction:column;gap:.3rem}
   .conto-t{font-size:.76rem;text-transform:uppercase;letter-spacing:.08em;color:var(--tenue)}
-  .conto-n{font-size:clamp(1.3rem,5vw,2rem);font-weight:800;letter-spacing:-.02em;color:var(--acc);
+  .conto-n{font-size:clamp(1.3rem,5vw,2rem);font-weight:var(--pf);letter-spacing:-.02em;color:var(--acc);
     font-variant-numeric:tabular-nums}
   .spazio{width:100%;height:1.6rem}
   .badge2{align-self:${aSinistra ? 'flex-start' : 'center'};margin-top:1rem;padding:.3rem .8rem;border-radius:999px;
-    background:var(--acc);color:var(--suacc);font-size:.8rem;font-weight:700;letter-spacing:.02em}
+    background:var(--acc);color:var(--suacc);font-size:.8rem;font-weight:var(--pm);letter-spacing:.02em}
   .bozza{opacity:.5;border-style:dashed!important;cursor:default}
   .segna{width:100%;margin-top:1rem;padding:1.4rem;border-radius:var(--r);border:1px dashed var(--tenue);
     color:var(--tenue);font-size:.85rem;text-align:center;opacity:.7}
@@ -1064,7 +1086,7 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   .telo{max-width:min(54rem,100%)}
   .lista{gap:2.4rem;margin-top:3rem}
   .tit{font-size:clamp(1.8rem,6vw,3.2rem);text-transform:none;letter-spacing:-.035em;color:var(--testo);
-    font-weight:800;line-height:1.05;margin-top:3.5rem;text-wrap:balance}
+    font-weight:var(--pf);line-height:1.05;margin-top:3.5rem;text-wrap:balance}
   .par{font-size:clamp(1.05rem,2.4vw,1.25rem);margin-top:1.2rem;max-width:36rem;line-height:1.6}
   .voce{padding:1.35rem 1.5rem;font-size:1.1rem}
   .et{font-size:1.1rem}
