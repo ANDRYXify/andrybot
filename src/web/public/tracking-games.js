@@ -64,7 +64,7 @@
 
         if (g === bersaglio.id) { colpito += dt; if (colpito >= 280) { punti++; prossimo(); } }
         else colpito = 0;
-        if (rimasto <= 0) { const rec = salvaRecord('mima', punti); vaiFine('MIMA', punti, rec ? '🏆 nuovo record!' : 'record: ' + record('mima')); return; }
+        if (rimasto <= 0) { const rec = salvaRecord('mima', punti); vaiFine('MIMA', punti, rec ? 'nuovo record!' : 'record: ' + record('mima')); return; }
 
         testo(ctx, 'MIMA IL GESTO', W / 2, H * 0.12, Math.round(H * 0.05), '#fff');
         testo(ctx, bersaglio.emoji, W / 2, H * 0.42, Math.round(H * 0.26), '#fff');
@@ -84,10 +84,10 @@
       nome: 'Reaction',
       tick({ g, dt, ctx, W, H }) {
         const rimasto = tFine - nowMs();
-        if (rimasto <= 0) { const rec = salvaRecord('reaction', punti); vaiFine('REACTION RUSH', punti, rec ? '🏆 nuovo record!' : 'record: ' + record('reaction')); return; }
+        if (rimasto <= 0) { const rec = salvaRecord('reaction', punti); vaiFine('REACTION RUSH', punti, rec ? 'nuovo record!' : 'record: ' + record('reaction')); return; }
         if (g === bersaglio.id) { colpito += dt; if (colpito >= 220) { punti++; bersaglio = pick(bersaglio.id); colpito = 0; } }
         else colpito = 0;
-        testo(ctx, '⚡ REACTION RUSH', W / 2, H * 0.12, Math.round(H * 0.05), '#fff');
+        testo(ctx, 'REACTION RUSH', W / 2, H * 0.12, Math.round(H * 0.05), '#fff');
         testo(ctx, bersaglio.emoji, W / 2, H * 0.44, Math.round(H * 0.24), '#fff');
 
         const bw = W * 0.6, bx = W * 0.2, by = H * 0.66;
@@ -100,7 +100,7 @@
 
   function giocoNonRidere() {
     const t0 = nowMs(); let ridendo = 0; let miglior = record('nonridere');
-    const battute = ['tieni duro 😤', 'non ci pensare…', 'seri seri', 'resisti!', 'quasi quasi ridi 👀'];
+    const battute = ['tieni duro', 'non ci pensare…', 'seri seri', 'resisti!', 'quasi quasi ridi'];
     return {
       nome: 'Non ridere',
       tick({ emo, dt, ctx, W, H }) {
@@ -108,7 +108,7 @@
         const felice = emo === 'happy' || emo === 'surprise';
         if (felice) { ridendo += dt; if (ridendo >= 400) { const v = Math.round(secondi * 10) / 10; salvaRecord('nonridere', v); vaiFine('HAI RISO! 😂', v, 'record: ' + miglior + 's'); return; } }
         else ridendo = Math.max(0, ridendo - dt * 1.5);
-        testo(ctx, '😐  NON RIDERE', W / 2, H * 0.16, Math.round(H * 0.07), felice ? '#f87171' : '#fff');
+        testo(ctx, 'NON RIDERE', W / 2, H * 0.16, Math.round(H * 0.07), felice ? '#f87171' : '#fff');
         testo(ctx, secondi.toFixed(1) + 's', W / 2, H * 0.44, Math.round(H * 0.18), '#fff');
         testo(ctx, battute[Math.floor(secondi / 3) % battute.length], W / 2, H * 0.66, Math.round(H * 0.05), '#c4b5fd');
         anello(ctx, W / 2, H * 0.44, Math.round(H * 0.16), ridendo / 400, '#f87171');
@@ -133,7 +133,7 @@
           else colpito = 0;
           if (sfida && sfida.tScad - nowMs() <= 0) { puntiChat++; try { T.annuncia && T.annuncia('😈 @' + sfida.user + ' ti frega! Tu ' + puntiTu + ' – Chat ' + puntiChat); } catch {  } sfida = null; }
         }
-        testo(ctx, '⚔️ TU ' + puntiTu + '  –  ' + puntiChat + ' CHAT', W / 2, H * 0.14, Math.round(H * 0.06), '#fff');
+        testo(ctx, 'TU ' + puntiTu + '  –  ' + puntiChat + ' CHAT', W / 2, H * 0.14, Math.round(H * 0.06), '#fff');
         if (sfida) {
           const b = byId(sfida.gesto);
           testo(ctx, '@' + sfida.user + ' ti sfida:', W / 2, H * 0.34, Math.round(H * 0.048), '#c4b5fd');
@@ -247,11 +247,11 @@
         }
 
         if (valido) { ctx.save(); ctx.beginPath(); ctx.arc(px, py, giu ? 11 : 16, 0, 7); ctx.fillStyle = giu ? 'rgba(52,211,153,.9)' : 'rgba(255,255,255,.5)'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.stroke(); ctx.restore(); }
-        else testo(ctx, '🖐️ muovi la mano e pizzica (pollice+indice)', W / 2, oy + side + H * 0.06, Math.round(H * 0.04), '#c4b5fd');
+        else testo(ctx, 'muovi la mano e pizzica (pollice+indice)', W / 2, oy + side + H * 0.06, Math.round(H * 0.04), '#c4b5fd');
         const fatti = pezzi.filter(inCella).length;
-        testo(ctx, '🧩 PUZZLE  ' + fatti + '/' + (N * N), W / 2, Math.max(H * 0.06, oy - H * 0.04), Math.round(H * 0.05), '#fff');
+        testo(ctx, 'PUZZLE  ' + fatti + '/' + (N * N), W / 2, Math.max(H * 0.06, oy - H * 0.04), Math.round(H * 0.05), '#fff');
         if (!vinto && fatti === N * N) { vinto = true; tVinto = nowMs(); try { T.annuncia && T.annuncia('🧩 Puzzle completato in ' + Math.round((nowMs() - started) / 1000) + 's! 🎉'); } catch {  } }
-        if (vinto) { testo(ctx, '🎉 COMPLETATO!', W / 2, H * 0.5, Math.round(H * 0.09), '#34d399'); if (nowMs() - tVinto > 3500) { modo = 'idle'; G = null; } }
+        if (vinto) { testo(ctx, 'COMPLETATO!', W / 2, H * 0.5, Math.round(H * 0.09), '#34d399'); if (nowMs() - tVinto > 3500) { modo = 'idle'; G = null; } }
       },
     };
   }
@@ -276,7 +276,7 @@
   function disegnaMenu(ctx, g, W, H) {
     const voci = VOCI.filter((v) => ATTIVO(v.id));
     pannello(ctx, W * 0.14, H * 0.14, W * 0.72, H * 0.72, 26);
-    testo(ctx, '🎮 SCEGLI COL GESTO', W / 2, H * 0.24, Math.round(H * 0.055), '#fff');
+    testo(ctx, 'SCEGLI COL GESTO', W / 2, H * 0.24, Math.round(H * 0.055), '#fff');
     voci.forEach((v, i) => {
       const y = H * (0.38 + i * 0.15);
       const on = g === v.g;

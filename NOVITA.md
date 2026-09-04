@@ -59,6 +59,8 @@ lo usa: se non si vede da fuori, qui non ci va.
 - Chi visita la tua pagina può cambiare idea sui contenuti di altri siti: prima la scelta era per sempre e il riquadro non tornava più. Ora nel piede c'è «Contenuti di altri siti» che lo riapre.
 - E se dice di no dopo aver detto di sì, il no vale davvero: la pagina si ricarica, così da quei siti non parte più niente.
 - Sulla pagina link online non funzionava niente di quello che si clicca: il riquadro del consenso non compariva, «Carica il contenuto» non rispondeva, il conto alla rovescia stava fermo. Ora funziona.
+- Nell'interfaccia non ci sono più emoji di sistema: dove dicevano qualcosa — «bloccato», «animato», «in attesa» — ora c'è il segno disegnato, con lo stesso tratto del resto.
+- Le emoji che il bot scrive in chat restano dov'erano: quella è la sua voce.
 
 ## 2026-09-03
 
