@@ -11,6 +11,13 @@
 // oppure un'ombra a timbro (uno scarto senza sfocatura)? Se no, sei rimasto
 // indietro.
 //
+// E si controlla anche la GERARCHIA, che nel disegno a inchiostro non e' un
+// vezzo: contorni esterni spessi, dettagli interni sottili. Se il riquadro e il
+// pulsante che ci sta dentro hanno lo stesso tratto, non c'e' profondita' e la
+// pagina si appiattisce — e' esattamente il difetto che si vedeva prima. Quindi:
+// il tratto di una carta deve essere PIU' GROSSO di quello dei controlli che
+// contiene.
+//
 // Restano fuori di proposito: le caselle di spunta e i cursori, che sono
 // controlli del sistema operativo, e i contenitori (etichette, riassunti dei
 // blocchi a fisarmonica) che vivono dentro una carta gia' disegnata.
@@ -68,13 +75,14 @@ if (SELFTEST) {
 
 const schede = await p.evaluate(() => [...document.querySelectorAll('.pannello-scheda')].map((s) => s.dataset.scheda));
 const conto = {};
+const gerarchia = {};
 let visti = 0, sezioni = 0;
 for (const id of schede) {
   try { await p.evaluate((x) => window.SB_APP.vai(x), id); await p.waitForTimeout(300); } catch { continue; }
   sezioni++;
   const fuori = await p.evaluate(() => {
     const sez = document.querySelector('.pannello-scheda.visibile');
-    if (!sez) return { piatti: [], visti: 0 };
+    if (!sez) return { piatti: [], pari: [], visti: 0 };
     const rgb = (c) => { const m = /(\d+),\s*(\d+),\s*(\d+)/.exec(c); return m ? [+m[1], +m[2], +m[3]] : null; };
     const scuro = (c) => { const v = rgb(c); return v && (v[0] + v[1] + v[2]) / 3 < 96; };
     const SEL = 'button, .btn, input[type="text"], input[type="password"], input[type="email"],'
@@ -82,6 +90,7 @@ for (const id of schede) {
       + ' input[type="color"], select, textarea, .carta, .badge, .chip, .pillola, .scheda-tab,'
       + ' .levetta, .goal-riga, .ovl-elem';
     const piatti = [];
+    const pari = [];
     let n = 0;
     for (const el of sez.querySelectorAll(SEL)) {
       const r = el.getBoundingClientRect();
@@ -90,16 +99,25 @@ for (const id of schede) {
       if (s.visibility === 'hidden' || s.display === 'none') continue;
       n++;
       const bw = parseFloat(s.borderTopWidth) || 0;
-      const conBordo = bw >= 1.6 && scuro(s.borderTopColor);
+      const conBordo = bw >= 0.9 && scuro(s.borderTopColor);
       const conTimbro = /(-?\d+(?:\.\d+)?)px\s+(-?\d+(?:\.\d+)?)px\s+0px/.test(s.boxShadow || '');
-      if (conBordo || conTimbro) continue;
-      piatti.push(el.tagName.toLowerCase() + (el.className && typeof el.className === 'string'
-        ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : ''));
+      const firma = el.tagName.toLowerCase() + (el.className && typeof el.className === 'string'
+        ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : '');
+      if (!conBordo && !conTimbro) { piatti.push(firma); continue; }
+
+      // la gerarchia: dentro una carta, il dettaglio non puo' avere il tratto
+      // della carta che lo contiene
+      if (!conBordo || el.classList.contains('carta')) continue;
+      const carta = el.parentElement && el.parentElement.closest('.carta');
+      if (!carta) continue;
+      const bc = parseFloat(getComputedStyle(carta).borderTopWidth) || 0;
+      if (bc >= 0.9 && bw >= bc) pari.push(`${firma} ${bw}px dentro una carta da ${bc}px`);
     }
-    return { piatti, visti: n };
+    return { piatti, pari, visti: n };
   });
   visti += fuori.visti;
   for (const f of fuori.piatti) { conto[f] = (conto[f] || 0) + 1; }
+  for (const f of fuori.pari) { gerarchia[f] = (gerarchia[f] || 0) + 1; }
 }
 await b.close();
 srv.close();
@@ -112,6 +130,9 @@ console.log('\nOgni cosa che è un oggetto ha il suo contorno.\n');
 let verde = true;
 verde = dice(piatti === 0, `controlli guardati: ${visti} in ${sezioni} schede`,
   ord.slice(0, 8).map(([f, n]) => `${f} ×${n}`).join(' · ')) && verde;
+const ordG = Object.entries(gerarchia).sort((a, b2) => b2[1] - a[1]);
+verde = dice(ordG.length === 0, 'contorni esterni piu\' grossi dei dettagli interni',
+  ordG.slice(0, 5).map(([f, n]) => `${f} ×${n}`).join(' · ')) && verde;
 verde = dice(rotture.length === 0, 'nessun errore di pagina', rotture.slice(0, 2).join(' · ')) && verde;
 
 if (SELFTEST) {
