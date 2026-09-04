@@ -111,3 +111,77 @@ test('le frasi scritte a mano sono le prime dello stile', () => {
   assert.equal(stile[0], 'GG raga, si vola!',
     'sono l’unica parte dello stile che ha SCELTO: vengono prima di quello che ha detto per caso');
 });
+
+// ---------------------------------------------------------------------------
+// LE PAROLE CHE NON DEVONO USCIRE.
+//
+// «Cosa non dire mai di te» è una richiesta al modello: vale se il modello la
+// capisce. Le parole da bloccare sono un'altra cosa — il cognome, la via, il
+// nome della scuola — e lì non si può sperare: o non escono mai, o sono uscite.
+// Il controllo sta nell'unico punto da cui passa tutto quello che il bot dice.
+
+const { checkMessage, checkRisposta } = await import('../../src/features/moderation.js');
+const { schedaDalProfilo, uniScheda } = await import('../../src/ai/pretrain.js');
+
+test('una parola da non far uscire blocca la risposta, anche scritta diversa', () => {
+  const imp = { maiDire: ['Taliento', 'via Mazzini'] };
+  assert.equal(checkRisposta('Il mio cognome è Taliento', imp).ok, false);
+  assert.equal(checkRisposta('sono TALIENTO, piacere', imp).ok, false);
+  assert.equal(checkRisposta('abito in Via Mazzìni da anni', imp).ok, false,
+    'accenti e maiuscole non devono servire ad aggirarla');
+  assert.equal(checkRisposta('Ciao, come va oggi?', imp).ok, true);
+});
+
+test('il motivo del blocco non contiene la parola: finisce nei log', () => {
+  const esito = checkRisposta('sono Taliento', { maiDire: ['Taliento'] });
+  assert.equal(esito.ok, false);
+  assert.ok(!/taliento/i.test(esito.reason), `il motivo la ripete: «${esito.reason}»`);
+});
+
+test('quelle parole non moderano nessuno: valgono solo su quello che dice il bot', () => {
+  const imp = { maiDire: ['Taliento'] };
+  assert.equal(checkMessage('ciao Taliento!', imp).ok, true,
+    'un utente che scrive il cognome dello streamer non ha fatto niente di male');
+  assert.equal(checkRisposta('ciao Taliento!', imp).ok, false);
+});
+
+test('ogni risposta esce da un punto solo, e lì il controllo c’è', async () => {
+  const b = new Brain({});
+  b._rispostaGrezza = async () => 'Mi chiamo Andrea Taliento';
+  const bloccata = await b.chatReply({ channel: CANALE, streamer: { settings: { maiDire: ['Taliento'] } } });
+  assert.equal(bloccata, null, 'passa da chatReply: se non passasse da _finalizza, uscirebbe');
+
+  b._rispostaGrezza = async () => 'Stasera si gioca alle 21';
+  const passa = await b.chatReply({ channel: CANALE, streamer: { settings: { maiDire: ['Taliento'] } } });
+  assert.equal(passa, 'Stasera si gioca alle 21');
+});
+
+// ---------------------------------------------------------------------------
+// LA SCHEDA PRECOMPILATA. Senza, nasce vuota per tutti e non arriva mai al bot:
+// i dati per riempirne tre campi il pre-addestramento li scarica già.
+
+test('la scheda si riempie da quello che il bot ha già letto del profilo', () => {
+  assert.deepEqual(
+    schedaDalProfilo({ bio: '  Andrea,   gioco da sempre ', programmazione: 'ogni sera dalle 21', paginaLink: 'https://socialbot.live/u/x' }),
+    { chi: 'Andrea, gioco da sempre', orari: 'ogni sera dalle 21', dove: 'https://socialbot.live/u/x' });
+});
+
+test('senza pagina link restano i social, e solo quelli veri', () => {
+  const r = schedaDalProfilo({ socials: { instagram: 'https://instagram.com/x', tiktok: 'https://tiktok.com/@x', rotto: 'non-un-url' } });
+  assert.equal(r.dove, 'https://instagram.com/x · https://tiktok.com/@x');
+});
+
+test('se manca la bio del sito si ripiega su quella di Twitch', () => {
+  assert.equal(schedaDalProfilo({ bioTwitch: 'Gioco e rido' }).chi, 'Gioco e rido');
+  assert.equal(schedaDalProfilo({ bio: 'quella del sito', bioTwitch: 'quella di Twitch' }).chi, 'quella del sito');
+});
+
+test('quello che ha scritto lui non si tocca: si riempiono solo i vuoti', () => {
+  const { scheda, messi } = uniScheda(
+    { chi: 'quello che ho scritto io', evita: 'il cognome' },
+    { chi: 'quello del sito', orari: 'ogni sera' });
+  assert.equal(scheda.chi, 'quello che ho scritto io');
+  assert.equal(scheda.orari, 'ogni sera');
+  assert.equal(scheda.evita, 'il cognome');
+  assert.deepEqual(messi, ['orari'], 'deve dire quali ha riempito, per non far credere di aver riscritto tutto');
+});

@@ -15,7 +15,7 @@
 // pagina pubblica: in quel caso non seminiamo NULLA dal sito.
 import { config } from '../config.js';
 import { makeLog } from '../logger.js';
-import { knowledge, memory, linkPage } from '../db.js';
+import { knowledge, memory, linkPage, streamers, schedaPulita } from '../db.js';
 
 const log = makeLog('pretrain');
 
@@ -69,6 +69,49 @@ function accorcia(testo, max = 400) {
   return t.slice(0, taglio > max * 0.6 ? taglio : max).trim() + '…';
 }
 
+// ----------------------------------------------------- la scheda dello streamer
+
+// Tre dei sei campi della scheda si ricavano da quello che stiamo gia'
+// scaricando: bio, programmazione, social. Gli altri tre (cosa fa in diretta,
+// come chiamarlo, cosa non dire di lui) li puo' scrivere solo lui.
+//
+// Perche' vale la pena: senza questo la scheda nasce vuota per tutti, e una
+// scheda vuota non arriva mai al bot. I dati ce li abbiamo gia' in mano.
+export function schedaDalProfilo({ bio, programmazione, socials, paginaLink, bioTwitch } = {}) {
+  const fuori = {};
+  const chi = String(bio || '').trim() || String(bioTwitch || '').trim();
+  if (chi) fuori.chi = accorcia(chi, 240);
+  if (String(programmazione || '').trim()) fuori.orari = accorcia(programmazione, 160);
+
+  // «Dove ti trovano»: se ha una pagina link, quella li' contiene tutto ed e' un
+  // indirizzo solo. Sennò i social, al massimo tre — piu' di cosi' non e' una
+  // risposta, e' un elenco.
+  if (String(paginaLink || '').trim()) {
+    fuori.dove = String(paginaLink).trim().slice(0, 240);
+  } else {
+    const url = Object.values(socials || {})
+      .map((u) => String(u || '').trim())
+      .filter((u) => /^https?:\/\//i.test(u))
+      .slice(0, 3);
+    if (url.length) fuori.dove = url.join(' · ').slice(0, 240);
+  }
+  return fuori;
+}
+
+// Riempie i VUOTI. Quello che ha scritto lui non si tocca mai: e' sua, la
+// scheda — noi la prepariamo, non la correggiamo.
+export function uniScheda(esistente, precompilata) {
+  const gia = schedaPulita(esistente);
+  const nuova = { ...gia };
+  const messi = [];
+  for (const [campo, valore] of Object.entries(schedaPulita(precompilata))) {
+    if (gia[campo]) continue;
+    nuova[campo] = valore;
+    messi.push(campo);
+  }
+  return { scheda: nuova, messi };
+}
+
 // --------------------------------------------------------------- pretrain
 
 // Pre-addestra il bot per uno streamer. Rieseguibile in ogni momento:
@@ -78,6 +121,8 @@ export async function pretrain(login, helix) {
   const canale = String(login || '').toLowerCase().trim();
   let voci = 0;
   const dettagli = [];
+  // materiale per la SCHEDA, raccolto strada facendo dalle stesse letture
+  const grezzo = {};
 
   try {
     if (!canale) return { ok: false, voci: 0, dettaglio: 'login mancante' };
@@ -108,6 +153,9 @@ export async function pretrain(login, helix) {
       // descrizione / bio: la bio della vetrina, oppure headline+tagline della link-page
       const descrizione = String(p.bio || '').trim()
         || [lp.headline, lp.tagline].map((x) => String(x || '').trim()).filter(Boolean).join(' — ');
+      grezzo.bio = descrizione;
+      grezzo.programmazione = p.programmazione;
+      grezzo.socials = p.socials;
       if (descrizione) {
         aggiungi(
           `descrizione di ${canale} / chi è ${canale} / di cosa parla il canale / che contenuti fai / parlami di te / bio`,
@@ -158,6 +206,7 @@ export async function pretrain(login, helix) {
           `tutti i link di ${canale} / dove ti trovo / i tuoi social / linktree`,
           `Trovi tutti i miei link qui: ${config.baseUrl}/u/${canale}`,
         );
+        grezzo.paginaLink = `${config.baseUrl}/u/${canale}`;
         dettagli.push(`${nLink} link dalla tua pagina /u/${canale}`);
       }
     } catch (e) { dettagli.push('pagina link non leggibile'); }
@@ -171,6 +220,7 @@ export async function pretrain(login, helix) {
             `chi è ${canale} su twitch / bio twitch / descrizione twitch`,
             accorcia(utente.description.trim(), 400),
           );
+          grezzo.bioTwitch = utente.description.trim();
         }
         try {
           const info = await helix.getChannelInfo(utente.id);
@@ -188,7 +238,22 @@ export async function pretrain(login, helix) {
       log.warn(`pretrain ${canale}: helix:`, e?.message || e);
     }
 
-    // ---- (c) traccia dell'esito -----------------------------------------
+    // ---- (c) la SCHEDA, precompilata coi VUOTI --------------------------
+    // Quello che ha scritto lui resta com'è: qui si riempie solo quello che non
+    // c'è. Senza questo passaggio la scheda nasce vuota per tutti, e una scheda
+    // vuota al bot non dice niente.
+    try {
+      const st = streamers.get(canale);
+      if (st) {
+        const { scheda, messi } = uniScheda(st.settings?.scheda, schedaDalProfilo(grezzo));
+        if (messi.length) {
+          streamers.setSettings(canale, { ...(st.settings || {}), scheda });
+          dettagli.push(`scheda: riempiti ${messi.join(', ')}`);
+        }
+      }
+    } catch (e) { dettagli.push('scheda non aggiornata'); }
+
+    // ---- (d) traccia dell'esito -----------------------------------------
     const dettaglio = `${voci} voci create — ${dettagli.join('; ')}`;
     memory.setFact(canale, 'preaddestramento_ts', String(Date.now()));
     memory.setFact(canale, 'preaddestramento_esito', accorcia(dettaglio, 300));

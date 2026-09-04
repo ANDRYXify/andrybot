@@ -157,7 +157,10 @@ dice(/via === 'bot' \? '\/bot' : '\/chat'/.test(brainpy),
 const chiamate = (corpo) => [...(corpo || '').matchAll(/brainpy\.rispondi\(\{[\s\S]*?\n\s*\}\)/g)].map((x) => x[0]);
 
 const brain = senzaCommentiJs(leggi('src/ai/brain.js'));
-const PUBBLICI = ['chatReply'];
+// chatReply e' un imbuto di una riga: le chiamate al cervello vivono nel corpo
+// grezzo. Il cancello guarda dove sono davvero, e se un giorno non le trova lo
+// dice invece di dare verde.
+const PUBBLICI = ['_rispostaGrezza'];
 const PRIVATI = ['rispostaDiretta', '_studia', 'messaggioProattivo'];
 // UNA sola domanda per punto, e comprende la portata: "tutte le chiamate passano
 // dal bot" con zero chiamate trovate sarebbe verde per il motivo sbagliato.
