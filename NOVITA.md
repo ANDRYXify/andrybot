@@ -61,6 +61,8 @@ lo usa: se non si vede da fuori, qui non ci va.
 - Sulla pagina link online non funzionava niente di quello che si clicca: il riquadro del consenso non compariva, «Carica il contenuto» non rispondeva, il conto alla rovescia stava fermo. Ora funziona.
 - Nell'interfaccia non ci sono più emoji di sistema: dove dicevano qualcosa — «bloccato», «animato», «in attesa» — ora c'è il segno disegnato, con lo stesso tratto del resto.
 - Le emoji che il bot scrive in chat restano dov'erano: quella è la sua voce.
+- Gli obiettivi si impostano in un posto solo: il traguardo vale per tutti i tuoi overlay, e non lo devi rifare scena per scena. Dove sta e come si vede lo decidi ancora sull'overlay che stai componendo.
+- La barra di un obiettivo non torna più indietro: se arrivavano follower mentre il numero vero era ancora quello di poco prima, il totale a schermo calava. Ora no.
 
 ## 2026-09-03
 
