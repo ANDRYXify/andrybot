@@ -156,16 +156,31 @@ iniettato **esegue**; senza, il browser lo rifiuta.
 con il `Caddyfile`, pezzo per pezzo della CSP. Sta fuori da `npm run cancelli`
 perché esce in rete.
 
-Quando segnala una differenza, il Caddyfile va ricaricato **sul server**. E qui
-c'è la trappola: `docker compose up -d caddy` **non basta**. Compose ricrea un
-container solo se cambia la *configurazione del servizio*, e un file *montato*
-che cambia non è una modifica del servizio: risponde «up-to-date» e non fa nulla.
-Ci sono cascato, e il collaudo continuava giustamente a dire rosso.
+Quando segnala una differenza, il Caddyfile va portato dentro l'edge — e qui c'è
+una trappola che ha resistito a due tentativi, quindi vale la pena scriverla per
+bene.
 
-Il comando che rilegge davvero il file montato è:
+Il `Caddyfile` è montato come **singolo file**, e un bind-mount di file punta
+all'**inode**, non al percorso. `git pull` non modifica il file sul posto: ne
+scrive uno nuovo e lo rinomina sopra. Inode nuovo. Il container continua a vedere
+**quello vecchio**, e continuerà a vederlo per sempre.
 
-    docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
+Da cui, tutti e tre i tentativi ovvi falliscono, e falliscono *in silenzio*:
 
-Se l'API di amministrazione di Caddy è spenta e `reload` non passa, il ripiego è
-`docker compose restart caddy`. Poi si rigira `verifica-edge.mjs` finché non dice
-«edge allineato».
+| comando | cosa succede |
+|---|---|
+| `caddy reload --config /etc/caddy/Caddyfile` | **riesce**, stampa «adapted config to JSON»… e rilegge il file vecchio |
+| `docker compose restart caddy` | stesso container, stesso mount, stesso inode |
+| `docker compose up -d caddy` | «up-to-date»: la configurazione del *servizio* non è cambiata |
+
+Il controllo che lo dimostra in una riga — se risponde `0`, è questo:
+
+    docker compose exec caddy grep -c inline-speculation-rules /etc/caddy/Caddyfile
+
+E la cura, l'unica cosa che rilegge il *percorso* invece dell'inode:
+
+    docker compose up -d --force-recreate caddy
+
+Poi si rigira `verifica-edge.mjs` finché non dice «edge allineato». Ed è proprio
+per questa classe di illusioni che il collaudo esiste: chiede al **sito vero**,
+non al file.

@@ -1278,9 +1278,15 @@ body::before {
     radial-gradient(46% 46% at -8% 106%, var(--acc-tint), transparent 62%);
   opacity: .85;
 }
+body::after {
+  content: ""; position: fixed; inset: 0; z-index: -2; pointer-events: none;
+  background-image: var(--tono-10);
+  background-size: var(--tono-passo);
+  opacity: .05;
+}
 
 .carta { transition: border-color var(--molla), box-shadow .32s var(--ease), background var(--molla); }
-.carta:hover { border-color: var(--border-2); box-shadow: var(--om-m); }
+.carta:hover { border-color: var(--contorno); box-shadow: var(--alone-contorno), var(--ombra-ink-alta); }
 .carta.evidenziata:hover { box-shadow: 0 0 0 1px var(--acc-tint), var(--om-l); }
 .carta.avviso:hover, .demo-spiega:hover { box-shadow: var(--om-s); }
 

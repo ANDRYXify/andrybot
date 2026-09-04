@@ -69,13 +69,18 @@ for (const [n, s] of righe) console.log(`  ${s === 'uguale' ? '✓' : '✗'} ${n
 if (guai.length) {
   console.log('\nDifferenze:');
   for (const g of guai) console.log('  - ' + g);
-  console.log('\nIl Caddyfile e\' MONTATO nel container dell\'edge. Attenzione: «docker compose\n' +
-    'up -d caddy» NON basta — ricrea il container solo se cambia la configurazione del\n' +
-    'servizio, e un file montato che cambia non conta: risponde «up-to-date» e non fa\n' +
-    'niente. Il comando che rilegge davvero il file e\':\n\n' +
-    '    docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile\n\n' +
-    'Se l\'API di amministrazione di Caddy e\' spenta e «reload» non passa:\n\n' +
-    '    docker compose restart caddy\n\n' +
+  console.log('\nIl Caddyfile e\' montato nel container dell\'edge come SINGOLO FILE, e un mount\n' +
+    'di file punta all\'inode, non al percorso. «git pull» non modifica il file sul\n' +
+    'posto: ne scrive uno nuovo e lo rinomina sopra, quindi cambia inode — e il\n' +
+    'container continua a vedere quello VECCHIO. Per sempre. Ne consegue che:\n\n' +
+    '  - «caddy reload» riesce e non cambia niente (rilegge il file vecchio);\n' +
+    '  - «docker compose restart caddy» nemmeno (stesso container, stesso mount);\n' +
+    '  - «docker compose up -d caddy» dice «up-to-date» e non fa nulla, perche\'\n' +
+    '    la configurazione del SERVIZIO non e\' cambiata.\n\n' +
+    'Si controlla cosi\', e se risponde 0 e\' proprio questo:\n\n' +
+    '    docker compose exec caddy grep -c inline-speculation-rules /etc/caddy/Caddyfile\n\n' +
+    'E si cura ricreando il container, che e\' l\'unica cosa che rilegge il percorso:\n\n' +
+    '    docker compose up -d --force-recreate caddy\n\n' +
     'Poi rigira questo collaudo: deve dire «edge allineato».\n');
   console.log('edge NON allineato ✗\n');
   process.exit(1);
