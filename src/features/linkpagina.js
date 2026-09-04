@@ -704,7 +704,7 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
       const sp = { lenta: 34, media: 22, veloce: 13 }[b.velocita] || 22;
       // quattro copie e uno spostamento del 50%: il giro si chiude senza salti
       const uno = `<span>${esc(b.testo)}</span>`;
-      return `<div class="marq" ${ritardo} style="--sp:${sp}s"><div class="marq-in">${uno.repeat(4)}</div></div>`;
+      return `<div class="marq" ${ritardo.replace('"', `"--sp:${sp}s;`)}><div class="marq-in">${uno.repeat(4)}</div></div>`;
     }
     if (b.tipo === 'griglia') {
       const tessere = (b.voci || []).map((v) => {
@@ -847,7 +847,7 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
     --fd:${fontTit.d};--ft:${font.t};
     --pf:${pesi.f};--pm:${pesi.m};--pn:${pesi.n};--pt:${pesi.t};
     --ih:${(Number(t.interlinea) || 150) / 100};
-    --sp:calc(.6rem * ${(Number(t.spaziatura) || 100) / 100});
+    --aria:calc(.6rem * ${(Number(t.spaziatura) || 100) / 100});
     --btxt:${t.testoBtn || 'var(--testo)'}${bordoSp ? `;--bw:${bordoSp}` : ''}}
   html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;overflow-x:hidden;font-size:${scalaCorpo}%}
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
@@ -888,7 +888,7 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   h1{font-size:clamp(2rem,9vw,3.1rem);font-weight:var(--pf);letter-spacing:-.04em;line-height:1;
     margin-top:1rem;text-wrap:balance}
   .tag{color:var(--tenue);font-size:1.02rem;line-height:1.45;max-width:30rem;margin-top:.5rem;text-wrap:pretty}
-  .lista{width:100%;display:flex;flex-direction:column;gap:var(--sp);margin-top:1.5rem;text-align:left}
+  .lista{width:100%;display:flex;flex-direction:column;gap:var(--aria);margin-top:1.5rem;text-align:left}
   .voce{display:flex;align-items:center;gap:.75rem;padding:.9rem 1.05rem;border-radius:var(--r);
     ${stileBtn};${ombra};color:var(--btxt);text-decoration:none;font-weight:var(--pn);font-size:1rem;
     transition:transform .18s cubic-bezier(.34,1.56,.64,1),border-color .18s ease,filter .18s ease}
@@ -985,11 +985,11 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   /* Blocchi affiancati su una riga da DODICI colonne. Ogni blocco prende
      esattamente le colonne della sua frazione: un terzo resta un terzo anche se
      è da solo, e le colonne che avanzano restano libere. */
-  .fila{display:grid;grid-template-columns:repeat(12,1fr);gap:var(--sp);width:100%;margin-top:1rem;align-items:start}
+  .fila{display:grid;grid-template-columns:repeat(12,1fr);gap:var(--aria);width:100%;margin-top:1rem;align-items:start}
   /* Una SEZIONE: un gruppo di blocchi che stanno insieme e si allineano
      insieme. Non aggiunge spazio fra i contenuti — quello lo fa la riga
      divisoria — cambia solo da che parte stanno. */
-  .sez{width:100%;display:flex;flex-direction:column;gap:var(--sp)}
+  .sez{width:100%;display:flex;flex-direction:column;gap:var(--aria)}
   .sez.a-sinistra{align-items:flex-start;text-align:left}
   .sez.a-centro{align-items:center;text-align:center}
   .sez.a-destra{align-items:flex-end;text-align:right}
@@ -1031,7 +1031,7 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
      con lo sfondo della pagina: sennò si vedrebbe la copertina attraverso i
      buchi fra un blocco e l'altro. Di qui il contenitore .dopo. */
   .eroe.fissa{position:sticky;top:0;z-index:0;margin-top:0;border-radius:0;border-left:0;border-right:0}
-  .dopo{width:100%;display:flex;flex-direction:column;gap:var(--sp);position:relative;z-index:1;
+  .dopo{width:100%;display:flex;flex-direction:column;gap:var(--aria);position:relative;z-index:1;
     ${sfondo};padding:1.4rem clamp(.8rem,3vw,1.4rem) 1.5rem;margin-top:1.5rem;
     border-radius:1.6rem 1.6rem 0 0;box-shadow:0 -20px 45px rgba(0,0,0,.28)}
   /* velo scuro solo se c'è una foto: serve a leggere il testo sopra l'immagine */
