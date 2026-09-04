@@ -16,6 +16,7 @@
 // Uso: node scripts/verifica-novita.mjs   (esce 1 se qualcosa non torna)
 
 import { execFileSync } from 'node:child_process';
+import { EMOJI } from './_emoji.mjs';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -44,7 +45,7 @@ dice(new Set(date).size === date.length, 'una giornata compare una volta sola');
 // chiamata di funzione, il gergo del mestiere.
 const GERGO = /\b(refactor|commit|endpoint|middleware|regex|boolean|null|undefined|npm|repository|deploy)\b/i;
 const CODICE = /(^|[\s(])(src\/|scripts\/|test\/)|[\w-]+\.(js|mjs|css|json|md)\b|\w+\(\)/;
-const EMOJI = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/u;
+
 const lunghe = voci.filter((v) => v.length > 220);
 const tecniche = voci.filter((v) => GERGO.test(v) || CODICE.test(v));
 const conEmoji = voci.filter((v) => EMOJI.test(v));
