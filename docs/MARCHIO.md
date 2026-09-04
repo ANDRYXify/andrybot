@@ -396,3 +396,47 @@ che ospita interazioni misurate al pixel.** Lo scatto lo dà il tempo — `steps
 
 Trovata per bisezione sui file, non a intuito: tre file indietro, verde; uno
 avanti, rosso.
+
+
+---
+
+## Il tratto arriva ovunque, e si conta
+
+«Disegnato» non si giudica a campione. Una dashboard ha centinaia di controlli,
+e basta che **una famiglia** resti col bordo da un pixel perché tutto il resto
+sembri una decorazione appiccicata sopra. Quella famiglia non la trovi guardando
+gli screenshot: la trovi contando.
+
+Contata, la prima volta: **378 elementi in 35 famiglie** senza contorno né ombra
+a timbro. Le più pesanti non erano quelle che si notano — erano gli
+**interruttori** (90, e sono la firma dell'interfaccia), i **campi** (24), i
+**cartellini** colorati (36) e un centinaio di pulsantini che non passano da
+`.btn`: `.chip-var`, `.modello-pronto`, `.ovl-liv`, `.oe-mod`, `.mix-mute`,
+`.lp-tab`, `.lp-ipick`, `.studio-scena`…
+
+### Le due regole che hanno chiuso il conto
+
+1. **L'inchiostro disegna i bordi, non il testo.** È l'errore che aveva reso
+   illeggibile la Plancia in tema scuro: `--contorno` in scuro è nero, quindi un
+   testo di quel colore sparisce nel fondo. Il colore del testo resta `--testo`;
+   il contorno si stacca dal fondo scuro con `--alone-contorno`, l'alone di
+   accento che il tema prevede già per questo.
+2. **Il colore sta nel riempimento, il nero nel contorno.** I cartellini
+   verde/rosso/giallo/viola tenevano ognuno il proprio bordo pallido: adesso il
+   colore resta nello sfondo e nel testo, e il bordo è inchiostro per tutti. Una
+   regola sola invece di quattro.
+
+### Il cancello
+
+`node scripts/verifica-inchiostro.mjs` apre tutte le schede, guarda i controlli
+**visibili** — 1047 in 24 schede — e chiede a ognuno se ha un contorno spesso e
+scuro **oppure** un'ombra a timbro (uno scarto senza sfocatura). Zero piatti, o è
+rosso.
+
+Restano fuori di proposito le caselle di spunta e i cursori (sono controlli del
+sistema operativo) e i contenitori che vivono dentro una carta già disegnata —
+etichette, riassunti dei blocchi a fisarmonica: quelli il contorno ce l'hanno
+dalla carta.
+
+`--selftest` toglie il contorno ai cartellini e pretende che il cancello se ne
+accorga: ne vede 36.

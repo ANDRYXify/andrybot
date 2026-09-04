@@ -1592,3 +1592,85 @@ body.giro-aperto { overflow: hidden; }
 .goal-vesti:not([hidden]) { display: grid; gap: 8px; }
 .goal-vesti h4 { margin: 0; }
 #ovl-aspetto > #goal-vesti:not([hidden]) { display: contents; }
+
+.levetta {
+  border: var(--contorno-sp) solid var(--contorno);
+  box-shadow: var(--alone-contorno), var(--ombra-ink-timbro);
+  transition: background var(--molla), box-shadow var(--lampo) var(--su-due);
+}
+.levetta::before {
+  height: 19px; width: 19px; left: 2px; top: 2px;
+  background: var(--surface);
+  border: var(--contorno-sp) solid var(--contorno);
+  box-shadow: none;
+  transition: transform var(--colpo) var(--su-due);
+}
+.interruttore input:checked + .levetta { background: var(--acc); border-color: var(--contorno); }
+.interruttore input:checked + .levetta::before { transform: translateX(19px); }
+.interruttore input:focus-visible + .levetta { outline: var(--contorno-sp) solid var(--acc); outline-offset: 3px; }
+.interruttore.mini { width: 38px; height: 23px; }
+.interruttore.mini .levetta::before { height: 15px; width: 15px; }
+.interruttore.mini input:checked + .levetta::before { transform: translateX(15px); }
+
+input[type="text"], input[type="password"], input[type="email"], input[type="url"],
+input[type="search"], input[type="tel"], input[type="number"], textarea, select {
+  border-color: var(--contorno);
+  border-width: var(--tratto-mano);
+  border-radius: var(--ang-mano);
+  box-shadow: var(--alone-contorno);
+  transition: border-color var(--molla), box-shadow var(--lampo) var(--su-due);
+}
+input[type="text"]:hover, input[type="password"]:hover, input[type="email"]:hover,
+input[type="url"]:hover, input[type="search"]:hover, input[type="tel"]:hover,
+input[type="number"]:hover, textarea:hover, select:hover {
+  border-color: var(--contorno);
+  box-shadow: var(--alone-contorno), var(--ombra-ink-timbro);
+}
+input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focus,
+input[type="url"]:focus, input[type="search"]:focus, input[type="tel"]:focus,
+input[type="number"]:focus, textarea:focus, select:focus {
+  border-color: var(--acc);
+  box-shadow: var(--alone-contorno), var(--ombra-ink);
+}
+
+input[type="color"] {
+  border-color: var(--contorno);
+  border-width: var(--tratto-mano);
+  border-radius: var(--ang-mano);
+  box-shadow: var(--alone-contorno);
+}
+input[type="color"]:hover { box-shadow: var(--alone-contorno), var(--ombra-ink-timbro); }
+
+.badge, .badge.verde, .badge.rosso, .badge.viola, .badge.giallo, .badge.marchio {
+  border-color: var(--contorno);
+  border-width: var(--tratto-mano);
+  border-radius: var(--ang-mano);
+  box-shadow: var(--alone-contorno);
+}
+
+.chip-var, .modello-pronto, .ovl-liv, .ovl-elem .oe-mod, .mix-mute, .oe-nota,
+.gioco-ramo, .pan-tasto, .lp-tab, .lp-vista-b, .studio-scena, .lp-ipick, .ovl-elem {
+  border-color: var(--contorno);
+  border-width: var(--tratto-mano);
+  border-style: solid;
+  border-radius: var(--ang-mano);
+  box-shadow: var(--alone-contorno);
+}
+.chip-var:hover, .modello-pronto:hover, .ovl-liv:hover, .ovl-elem .oe-mod:hover,
+.mix-mute:hover, .oe-nota:hover, .gioco-ramo:hover, .pan-tasto:hover,
+.lp-tab:hover, .lp-vista-b:hover, .studio-scena:hover, .lp-ipick:hover {
+  border-color: var(--contorno);
+  box-shadow: var(--alone-contorno), var(--ombra-ink-timbro);
+  transform: translate(-1px, -1px);
+}
+.chip-var:active, .modello-pronto:active, .ovl-liv:active, .ovl-elem .oe-mod:active,
+.mix-mute:active, .oe-nota:active, .gioco-ramo:active, .pan-tasto:active,
+.lp-tab:active, .lp-vista-b:active, .studio-scena:active, .lp-ipick:active {
+  box-shadow: var(--alone-contorno);
+  transform: translate(1px, 1px);
+}
+.lp-tab.sel, .lp-vista-b.sel, .studio-scena.attiva, .ovl-liv.scelto, .lp-ipick.sel {
+  background: var(--acc); color: var(--su-acc); border-color: var(--contorno);
+  box-shadow: var(--alone-contorno), var(--ombra-ink-timbro);
+}
+.lp-ipick.sel svg, .ovl-liv.scelto svg, .studio-scena.attiva svg { color: inherit; }
