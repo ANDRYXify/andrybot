@@ -713,9 +713,7 @@ body.pad-guida, body.pad-guida * { cursor: none !important; }
 @keyframes vt-via-dx { to { opacity: 0; transform: translateX(4%); } }
 @keyframes vt-da-sx { from { opacity: 0; transform: translateX(-5%); } }
 
-.toast { animation: toast-entra var(--t-medio) var(--molla-medio) both; }
 .toast.esce { animation: toast-esce .34s var(--an-vel) both; }
-@keyframes toast-entra { from { opacity: 0; transform: translate3d(18px, 8px, 0) scale(.96); } }
 @keyframes toast-esce { to { opacity: 0; transform: translate3d(26px, 0, 0) scale(.97); } }
 
 body.leggero #an-campo, body.meno-moto #an-campo { opacity: .18; transform: none; will-change: auto; }
@@ -1733,3 +1731,11 @@ input[type="file"]::file-selector-button {
   border-radius: var(--ang-mano);
   box-shadow: var(--ombra-ink-timbro);
 }
+
+.vt-titolo, .pl-eroe-nome, .pagina-testata h1, .sezione-titolo, .an-titolo {
+  -webkit-text-stroke: .05em var(--orlo-scritta);
+  paint-order: stroke fill;
+  paint-order: stroke fill markers;
+}
+.vt-titolo { color: var(--acc-vino); }
+.vt-titolo em, .vt-titolo b { color: var(--acc-vivo); -webkit-text-stroke: inherit; }

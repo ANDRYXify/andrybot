@@ -20,7 +20,8 @@ accanto all'altra invece di ragionarci sopra:
 
 - su fondo scuro i contorni neri effettivamente spariscono, ma **i pieni magenta
   portano la forma da soli**: le lettere restano perfettamente leggibili, e anzi
-  guadagnano un'aria da insegna al neon;
+  guadagnano un'aria da insegna al neon — questo però valeva finché il fondo era
+  **piatto**, e oggi non lo è più (vedi «Il fondo si è riempito», più sotto);
 - una **targa di carta** dietro le lettere, in tema scuro, è invece un mattone
   bianco piantato in mezzo alla barra.
 
@@ -111,10 +112,32 @@ un `drop-shadow` segue la forma delle lettere, quindi su fondo scuro diventa
 un'insegna al neon — che è esattamente come quel disegno vuole leggersi. Sul
 chiaro il bagliore non c'è: su carta sarebbe una sbavatura.
 
-Un accenno dello stesso bagliore, molto più leggero, sta su **ogni** immagine
-del marchio quando il tema è scuro — barra, vetrina, pagine di servizio, guide.
+## Il fondo si è riempito
+
+La conclusione «i pieni magenta bastano» era misurata su un fondo scuro
+**piatto**. Da quando il tema porta il retino e le linee di concentrazione, il
+fondo dietro il marchio è un tessuto: bande diagonali più chiare che passano
+proprio sotto le lettere. Un tratto sottile di «Social» ci si perde dentro — non
+per contrasto insufficiente in astratto, ma perché **il bordo non stacca da un
+fondo che cambia colore ogni pochi pixel**.
+
+La cura non è alzare il bagliore: un bagliore magenta su bande magenta aggiunge
+luce esattamente dove il fondo è già chiaro. La cura è quella che userebbe chi
+disegna — il **bianchetto** (白抜き, *shiro-nuki*): quando l'inchiostro nero
+finisce su un fondo nero, gli si lascia attorno un filo di carta. Quindi su tema
+scuro ogni immagine del marchio prende **quattro `drop-shadow` da un pixel**, uno
+per lato, nel tono `--orlo-scritta` — lo **stesso** con cui in scuro si contorna
+il lettering del titolo. Un valore solo, non due che poi vanno alla deriva.
+
 La regola si aggancia all'immagine e non a chi la mostra, perché legandola a una
-classe la vetrina se l'era persa: vedi [TAVOLOZZA.md](TAVOLOZZA.md).
+classe la vetrina se l'era persa: vedi [TAVOLOZZA.md](TAVOLOZZA.md). E siccome
+le **guide** non caricano `tema.css` ma si portano via la regola copiandola,
+c'è un contratto che rifiuta una regola che nomini un colore che la guida non
+dichiara — altrimenti il filtro non vale più nulla e il marchio torna a
+spegnersi, in silenzio.
+
+Il **bagliore** resta dov'è ancora giusto: sulla schermata di caricamento, dove
+il marchio è grande, centrato e da solo su un fondo pulito.
 
 Chi ha chiesto **meno animazioni** (`prefers-reduced-motion`) vede il logo
 fermo, col bagliore statico: l'informazione resta, il movimento no.

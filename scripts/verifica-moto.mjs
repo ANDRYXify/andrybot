@@ -59,7 +59,25 @@ for (const nome of FOGLI) {
   }
 }
 
-// 3) chi chiede meno movimento lo ottiene
+// 3) un nome, un movimento solo.
+//
+// Due fogli che dichiarano gli stessi `@keyframes` non litigano: vince in
+// silenzio l'ultimo caricato, e l'altro sparisce senza che nessuno se ne
+// accorga. E' un difetto senza sintomi — la pagina non si rompe, si muove
+// semplicemente in un modo che nessuno ha scelto — e quindi va colto qui.
+const casa = new Map();
+for (const nome of FOGLI) {
+  for (const m of readFileSync(join(PUB, nome), 'utf8').matchAll(/@keyframes\s+([\w-]+)/g)) {
+    if (!casa.has(m[1])) casa.set(m[1], []);
+    casa.get(m[1]).push(nome);
+  }
+}
+const doppioni = [...casa].filter(([, dove]) => dove.length > 1);
+for (const [chi, dove] of doppioni) {
+  guai.push(`«${chi}» e' dichiarato in ${dove.join(' e in ')}: vince l'ultimo e l'altro non si vede mai`);
+}
+
+// 4) chi chiede meno movimento lo ottiene
 const conAnim = [];
 for (const nome of FOGLI) {
   const css = readFileSync(join(PUB, nome), 'utf8');
@@ -76,6 +94,7 @@ const dice = (ok, testo, extra = '') => { console.log(`  ${ok ? '✓' : '✗'} $
 console.log('\nIl movimento sta sulla scheda video, non sulla disposizione.\n');
 let verde = true;
 verde = dice(guai.length === 0, `transizioni lette: ${transizioni} · gruppi di fotogrammi: ${fotogrammi}`, guai.slice(0, 6).join(' · ')) && verde;
+verde = dice(doppioni.length === 0, `un nome, un movimento solo: ${casa.size} gruppi di fotogrammi`) && verde;
 verde = dice(conAnim.every((f) => f.spegne), `chi chiede meno movimento lo ottiene: ${conAnim.length} fogli`) && verde;
 if (guai.length > 6) console.error(`  …e altri ${guai.length - 6}`);
 console.log(verde ? '\ncancello verde ✓\n' : '\ncancello ROSSO ✗\n');

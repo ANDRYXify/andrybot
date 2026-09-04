@@ -39,6 +39,7 @@
   --tono-carta: radial-gradient(color-mix(in srgb, var(--contorno) 15%, transparent) 1.05px, transparent 1.1px);
   --didascalia-fondo: var(--contorno);
   --didascalia-testo: #f7f3ec;
+  --orlo-scritta: var(--contorno);
   --tono-10: radial-gradient(var(--contorno) 1.05px, transparent 1.1px);
   --tono-20: radial-gradient(var(--contorno) 1.5px, transparent 1.55px);
   --tono-40: radial-gradient(var(--contorno) 2.14px, transparent 2.2px);
@@ -126,6 +127,7 @@
   --tono-carta: radial-gradient(color-mix(in srgb, #ffd9ec 14%, transparent) 1.05px, transparent 1.1px);
   --didascalia-fondo: #f1e9ee;
   --didascalia-testo: #12080e;
+  --orlo-scritta: #f4ecf1;
   --ombra-ink: 3px 3px 0 var(--contorno);
   --ombra-ink-alta: 5px 5px 0 var(--contorno);
   --ombra-ink-timbro: 1px 1px 0 var(--contorno);
@@ -154,5 +156,6 @@
 :root[data-theme="dark"] img[src*="/icons/marchio"],
 :root:not([data-theme="light"]) img[src*="/icons/logo-"],
 :root:not([data-theme="light"]) img[src*="/icons/marchio"] {
-  filter: drop-shadow(0 0 9px color-mix(in srgb, var(--acc) 38%, transparent));
+  filter: drop-shadow(1px 0 0 var(--orlo-scritta)) drop-shadow(-1px 0 0 var(--orlo-scritta))
+          drop-shadow(0 1px 0 var(--orlo-scritta)) drop-shadow(0 -1px 0 var(--orlo-scritta));
 }

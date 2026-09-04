@@ -364,7 +364,7 @@ const TOKEN = ['bg', 'surface', 'surface-2', 'border', 'border-2',
   'testo', 'testo-2', 'testo-3', 'acc', 'acc-600', 'su-acc', 'acc-soft', 'acc-bordo',
   'mano', 'testo-font', 'contorno', 'contorno-sp', 'tratto-mano', 'ang-mano', 'ang-mano-l',
   'ombra-ink', 'ombra-ink-alta', 'alone-contorno', 'retino', 'retino-passo', 'retino-forza',
-  'acc-vivo', 'acc-caldo', 'acc-vino', 'rampa'];
+  'acc-vivo', 'acc-caldo', 'acc-vino', 'rampa', 'orlo-scritta'];
 
 const TAV = { chiaro: dichiarazioni(TOKEN, 'chiaro'), scuro: dichiarazioni(TOKEN, 'scuro') };
 
