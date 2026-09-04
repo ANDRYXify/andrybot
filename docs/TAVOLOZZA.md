@@ -410,3 +410,30 @@ Visto rosso rimettendo il `1px` sul riquadro incorporato.
 
 (Una `border-top` da sola non è una cornice: è una riga divisoria, e resta un
 capello per scelta.)
+
+---
+
+## Gli spicchi vuoti attorno a un contenuto incorporato
+
+Il player di Spotify, il video di YouTube, qualunque riquadro di un altro sito ha
+i **suoi** angoli arrotondati. Il nostro riquadro ha i suoi. Fra le due curve
+resta uno spicchio, e con lo sfondo **trasparente** lì si vedeva la pagina:
+quattro spicchi di carta chiara attorno a un player magenta.
+
+Non è un difetto di colore, è **geometria**: succede con qualunque contenuto e
+con qualunque tema. Misurato: `.emb` aveva `background-color: rgba(0,0,0,0)`.
+
+Ora `.emb` ha sempre un fondo — di partenza il colore delle carte del tema — e
+per il caso in cui il contenuto abbia un colore tutto suo (una copertina che
+tinge il player) c'è una manopola per blocco: **«Colore dietro al riquadro»**.
+Ci si mette il colore che si vede dentro al contenuto e gli spicchi spariscono.
+
+Il colore viaggia come `--emb-bg` **dentro l'unico attributo `style`** del
+riquadro — non come un secondo attributo, che il browser butterebbe via in
+silenzio (è già successo, vedi la scritta scorrevole).
+
+### Come si verifica
+
+Il contratto controlla che `.emb` dichiari un fondo, che di partenza sia il
+colore delle carte, che il colore scelto arrivi come `--emb-bg`, e che
+l'attributo `style` resti uno solo.

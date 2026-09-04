@@ -184,3 +184,27 @@ test('nessuna cornice della pagina si scrive lo spessore da sola', async () => {
   assert.deepEqual(aMano, [], `cornici con lo spessore scritto a mano: ${aMano.join(', ')}`);
   assert.ok(/--bw:\s*3px/.test(stile), 'e lo spessore della pagina e’ davvero quello dei bottoni scelti');
 });
+
+// ── IL RIQUADRO INCORPORATO NON PUÒ ESSERE TRASPARENTE ──────────────────────
+//
+// Il contenuto di un altro sito ha i SUOI angoli arrotondati, e il nostro
+// riquadro ha i suoi: fra le due curve resta uno spicchio. Con lo sfondo
+// trasparente lì si vedeva la pagina — quattro spicchi di carta chiara attorno a
+// un player magenta. Non è un difetto di colore: è geometria, e succede con
+// qualunque contenuto.
+test('il riquadro incorporato ha sempre un fondo, e lo puoi scegliere', async () => {
+  const { renderLinkPage } = await import('../../src/features/linkpagina.js');
+  const rendi = (b) => renderLinkPage(
+    { attiva: true, titolo: 'P', tema: { card: '#ffffff' }, blocchi: [b] },
+    { login: 'x', display: 'X', avatar: '', baseUrl: 'http://x' },
+  );
+  const html = rendi({ tipo: 'embed', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' });
+  const regola = /\.emb\{[^}]*\}/.exec(html)[0];
+  assert.ok(/background:/.test(regola), 'senza fondo si vede la pagina negli spicchi');
+  assert.ok(/var\(--emb-bg,#ffffff\)/.test(regola), 'e di partenza e’ il colore delle carte del tema');
+
+  const scelto = rendi({ tipo: 'embed', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', sfondo: '#8e1a6e' });
+  const div = /<div class="emb[^>]*>/.exec(scelto)[0];
+  assert.ok(div.includes('--emb-bg:#8e1a6e'), 'il colore scelto non arriva al riquadro');
+  assert.equal((div.match(/\sstyle=/g) || []).length, 1, 'un attributo style solo');
+});

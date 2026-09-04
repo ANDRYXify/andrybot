@@ -1989,7 +1989,7 @@ export const linkPage = {
         // e l'unico modo per non lasciare mai spazio vuoto sotto.
         out.push({ tipo, url: urlOk(b.url), risolto: urlOk(b.risolto),
           formato: scelta(b.formato, FORMATI_EMBED, 'auto'), altezza: num(b.altezza, 0, 1200, 0),
-          titolo: str(b.titolo, L.label) });
+          sfondo: hex(b.sfondo), titolo: str(b.titolo, L.label) });
       } else if (tipo === 'diretta') {
         // il nome del canale, non un indirizzo: il player lo costruiamo noi.
         // Vuoto = il canale di chi possiede la pagina.

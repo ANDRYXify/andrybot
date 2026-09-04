@@ -661,9 +661,11 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
       }
       const forma = b.formato && b.formato !== 'auto' ? b.formato : e.formato;
       // altezza scelta a mano: vince su tutto, comprese le proporzioni
-      const alt = Number(b.altezza) > 0
-        ? `data-fisso="1" style="height:${Math.min(1200, Math.round(b.altezza))}px;aspect-ratio:auto;--d:${Math.min(n - 1, 12) * 45}ms"`
-        : ritardo;
+      const dich = [];
+      if (Number(b.altezza) > 0) dich.push(`height:${Math.min(1200, Math.round(b.altezza))}px`, 'aspect-ratio:auto');
+      if (b.sfondo) dich.push(`--emb-bg:${b.sfondo}`);
+      dich.push(`--d:${Math.min(n - 1, 12) * 45}ms`);
+      const alt = `${Number(b.altezza) > 0 ? 'data-fisso="1" ' : ''}style="${dich.join(';')}"`;
       return `${b.titolo ? `<h2 class="tit" ${ritardo}>${esc(b.titolo)}</h2>` : ''}
         <div class="emb f-${esc(forma)}" ${alt}>${riquadro({ src: e.src, titolo: b.titolo || 'contenuto incorporato', chiedi })}</div>`;
     }
@@ -945,7 +947,7 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   a.tessera:hover img{transform:scale(1.06)}
   a.tessera:active{transform:translateY(-1px) scale(.99)}
   .img{width:100%;border-radius:var(--r);margin-top:1rem;display:block;height:auto}
-  .emb{width:100%;margin-top:1rem;border-radius:${raggioEmb}px;overflow:hidden;border:var(--bw) solid ${c.bordo};aspect-ratio:16/9;${ombra}}
+  .emb{width:100%;margin-top:1rem;border-radius:${raggioEmb}px;overflow:hidden;border:var(--bw) solid ${c.bordo};aspect-ratio:16/9;background:var(--emb-bg,${c.card});${ombra}}
   .emb iframe{width:100%;height:100%;border:0;display:block}
   /* il cartello al posto del contenuto di terzi, finché non lo si chiede */
   .chiedi{width:100%;height:100%;min-height:9rem;display:flex;flex-direction:column;align-items:center;
