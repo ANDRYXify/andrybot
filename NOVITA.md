@@ -5,6 +5,7 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-04
 
+- Il sito era irraggiungibile: la configurazione del guardiano d'ingresso non era valida e lui, per questo, non si avviava. Rimessa a posto e verificata col programma vero prima di spingerla.
 - Un elemento con la Dimensione cambiata arriva davvero al bordo dello schermo: rimpicciolito si piantava prima e sembrava bloccato lì, ingrandito usciva dalla tela.
 - E segue il dito com'è giusto mentre lo trascini, a qualunque Dimensione.
 - Le immagini e i video dei comandi finiscono in diretta dove li hai messi nell'anteprima, anche quando li rimpicciolisci.
