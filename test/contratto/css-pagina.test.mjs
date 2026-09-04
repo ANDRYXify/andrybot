@@ -95,7 +95,7 @@ test('i valori di partenza ripetono la pagina di prima', async () => {
   assert.ok(html.includes('font-size:100%'), 'la grandezza di partenza non e’ 100%');
   assert.ok(html.includes('--ih:1.5'), 'l’interlinea di partenza non e’ 1.5');
   assert.ok(html.includes('--aria:calc(.6rem * 1)'), 'la spaziatura di partenza non e’ quella di prima');
-  assert.ok(!html.includes('--bw:'), 'lo spessore del bordo non deve essere imposto se non lo scegli');
+  assert.ok(html.includes('--bw:1px'), 'lo spessore di partenza non e’ quello dei bottoni pieni di prima');
 });
 
 // ── DUE NOMI UGUALI PER DUE COSE DIVERSE ────────────────────────────────────
@@ -156,4 +156,31 @@ test('la velocità della scritta arriva davvero nella pagina', async () => {
   assert.equal(tempo(rendi('lenta')), '34');
   assert.equal(tempo(rendi('media')), '22');
   assert.equal(tempo(rendi('veloce')), '13');
+});
+
+// ── OGNI CORNICE DELLA PAGINA PARLA LA STESSA LINGUA ────────────────────────
+//
+// Chi sceglie i bottoni «inchiostro» chiede un tratto da 3px e un timbro. Il
+// riquadro di un video, la copertina e i bottoni dell'informativa avevano invece
+// un bordo scritto a mano, `1px`, che non cambiava mai: su una pagina a
+// inchiostro erano tre rettangoli sottili in mezzo a oggetti disegnati.
+//
+// La regola: lo spessore lo decide la pagina, una volta, in `--bw`. Chi disegna
+// una cornice lo prende da lì. Un numero scritto a mano nel foglio di stile è
+// una cornice che non seguirà mai il tema.
+test('nessuna cornice della pagina si scrive lo spessore da sola', async () => {
+  const { renderLinkPage } = await import('../../src/features/linkpagina.js');
+  const html = renderLinkPage(
+    { attiva: true, titolo: 'P', tema: { stileBtn: 'inchiostro', ombraTipo: 'dura', bordo: '#150910' },
+      blocchi: [{ tipo: 'embed', url: 'https://open.spotify.com/episode/1' },
+        { tipo: 'eroe', titolo: 'C' }, { tipo: 'link', label: 'A', url: 'https://a.example' }] },
+    { login: 'x', display: 'X', avatar: '', baseUrl: 'http://x' },
+  );
+  const stile = html.slice(html.indexOf('<style>'), html.indexOf('</style>'));
+  // una cornice e' un `border:` su tutti i lati col colore dei bordi del tema;
+  // `border-top` da solo e' una riga divisoria, ed e' un'altra cosa
+  const aMano = [...stile.matchAll(/border:\s*([^;{}]*?)\s+solid\s+#150910/gi)]
+    .map((m) => m[1].trim()).filter((sp) => !/var\(--bw[,)]/.test(sp));
+  assert.deepEqual(aMano, [], `cornici con lo spessore scritto a mano: ${aMano.join(', ')}`);
+  assert.ok(/--bw:\s*3px/.test(stile), 'e lo spessore della pagina e’ davvero quello dei bottoni scelti');
 });

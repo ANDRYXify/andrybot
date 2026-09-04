@@ -568,13 +568,13 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
 
   // stile dei bottoni
   const STILI = {
-    pieno: `background:${c.card};border:var(--bw,1px) solid ${c.bordo}`,
-    contorno: `background:transparent;border:var(--bw,2px) solid ${c.bordo}`,
-    vetro: `background:${c.card};border:var(--bw,1px) solid ${c.bordo};backdrop-filter:blur(12px)`,
+    pieno: `background:${c.card};border:var(--bw) solid ${c.bordo}`,
+    contorno: `background:transparent;border:var(--bw) solid ${c.bordo}`,
+    vetro: `background:${c.card};border:var(--bw) solid ${c.bordo};backdrop-filter:blur(12px)`,
     // A CHINA: il pieno di carta dentro un contorno spesso. Il 2px del
     // "contorno" su fondo trasparente, su una pagina chiara, legge come un
     // rettangolo vuoto — non come una vignetta disegnata.
-    inchiostro: `background:${c.card};border:var(--bw,3px) solid ${c.bordo}`,
+    inchiostro: `background:${c.card};border:var(--bw) solid ${c.bordo}`,
   };
   const stileBtn = STILI[t.stileBtn] || STILI.pieno;
   // Ombra a DUE strati: una stretta che stacca il bordo dal fondo e una larga e
@@ -807,7 +807,8 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   const pesi = PESI[t.peso] || PESI.marcato;
   const scalaCorpo = Number(t.corpo) || 100;
   const fontTit = PILE[t.fontTitoli] || font;
-  const bordoSp = Number(t.bordoSp) > 0 ? `${Number(t.bordoSp)}px` : '';
+  const BW_DEF = { pieno: 1, contorno: 2, vetro: 1, inchiostro: 3 };
+  const bordoSp = `${Number(t.bordoSp) > 0 ? Number(t.bordoSp) : (BW_DEF[t.stileBtn] || 1)}px`;
   const MAIUSC = {
     titoli: 'h1,.eroe-t,.sez-t,.marq-in span{text-transform:uppercase}',
     bottoni: '.et,.tess-t{text-transform:uppercase}',
@@ -848,7 +849,7 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
     --pf:${pesi.f};--pm:${pesi.m};--pn:${pesi.n};--pt:${pesi.t};
     --ih:${(Number(t.interlinea) || 150) / 100};
     --aria:calc(.6rem * ${(Number(t.spaziatura) || 100) / 100});
-    --btxt:${t.testoBtn || 'var(--testo)'}${bordoSp ? `;--bw:${bordoSp}` : ''}}
+    --btxt:${t.testoBtn || 'var(--testo)'};--bw:${bordoSp}}
   html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;overflow-x:hidden;font-size:${scalaCorpo}%}
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
   ::selection{background:var(--acc);color:var(--suacc)}
@@ -944,14 +945,14 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   a.tessera:hover img{transform:scale(1.06)}
   a.tessera:active{transform:translateY(-1px) scale(.99)}
   .img{width:100%;border-radius:var(--r);margin-top:1rem;display:block;height:auto}
-  .emb{width:100%;margin-top:1rem;border-radius:${raggioEmb}px;overflow:hidden;border:1px solid ${c.bordo};aspect-ratio:16/9}
+  .emb{width:100%;margin-top:1rem;border-radius:${raggioEmb}px;overflow:hidden;border:var(--bw) solid ${c.bordo};aspect-ratio:16/9;${ombra}}
   .emb iframe{width:100%;height:100%;border:0;display:block}
   /* il cartello al posto del contenuto di terzi, finché non lo si chiede */
   .chiedi{width:100%;height:100%;min-height:9rem;display:flex;flex-direction:column;align-items:center;
     justify-content:center;gap:.45rem;padding:1.2rem;text-align:center;background:${c.card}}
   .chiedi-t{font-family:var(--fd);font-weight:var(--pm);font-size:1.05rem}
   .chiedi-p{font-size:.82rem;color:var(--tenue);max-width:24rem;line-height:1.5}
-  .chiedi-b{margin-top:.25rem;padding:.6rem 1.1rem;border:0;border-radius:var(--r);background:var(--acc);
+  .chiedi-b{margin-top:.25rem;padding:.6rem 1.1rem;border:var(--bw) solid ${c.bordo};${ombra};border-radius:var(--r);background:var(--acc);
     color:#fff;font:inherit;font-weight:var(--pm);font-size:.9rem;cursor:pointer;
     transition:transform .18s cubic-bezier(.34,1.56,.64,1)}
   .chiedi-b:hover{transform:translateY(-2px)}
@@ -962,9 +963,9 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   .fascia p{max-width:44rem;margin:0 auto;font-size:.84rem;line-height:1.5;color:var(--tenue);text-align:left}
   .fascia b{color:var(--testo)}
   .fascia-b{max-width:44rem;margin:.6rem auto 0;display:flex;flex-wrap:wrap;align-items:center;gap:.5rem}
-  .fascia-b button{padding:.55rem 1rem;border:0;border-radius:var(--r);background:var(--acc);color:var(--suacc);
+  .fascia-b button{padding:.55rem 1rem;border:var(--bw) solid ${c.bordo};border-radius:var(--r);background:var(--acc);color:var(--suacc);
     font:inherit;font-weight:var(--pm);font-size:.85rem;cursor:pointer}
-  .fascia-b button.due{background:transparent;color:var(--testo);border:1px solid ${c.bordo}}
+  .fascia-b button.due{background:transparent;color:var(--testo);border:var(--bw) solid ${c.bordo}}
   /* il link ai dettagli sta DENTRO la frase che spiega, non in fondo alla riga
      dei bottoni: li' aveva un margin-left automatico, e quando la riga andava a capo
      su schermo stretto restava da solo schiacciato nell'angolo in basso a
@@ -1018,7 +1019,7 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   /* ── copertina: l'apertura della pagina, non un bottone ── */
   .eroe{position:relative;width:100%;margin-top:1rem;border-radius:var(--r);overflow:hidden;
     display:grid;place-items:${aSinistra ? 'center start' : 'center'};padding:clamp(1.4rem,5vw,2.6rem);
-    min-height:16rem;border:1px solid ${c.bordo};background-color:${c.card};
+    min-height:16rem;border:var(--bw) solid ${c.bordo};background-color:${c.card};${ombra};
     background-image:linear-gradient(135deg,${c.acc}33,${c.bg2})}
   /* la foto sta in uno strato suo: così può muoversi in parallasse senza
      trascinarsi dietro il testo */

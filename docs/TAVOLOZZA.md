@@ -380,3 +380,33 @@ rimettendo i difetti:
 
 - i nomi in `:root` e quelli scritti sui pezzi non si incrociano;
 - nessun elemento esce con due attributi `style`.
+
+---
+
+## Le cornici della pagina link parlavano lingue diverse
+
+Chi sceglie i bottoni «inchiostro» chiede un tratto da 3 px e un timbro. Ma tre
+cose avevano il bordo **scritto a mano, `1px`**, che non cambiava mai:
+
+- il riquadro di un **video, di una musica o di una pagina** incorporata;
+- la **copertina**;
+- i bottoni dell'**informativa** (uno addirittura senza bordo).
+
+Su una pagina a inchiostro erano rettangoli sottili in mezzo a oggetti disegnati:
+è esattamente quello che si vedeva attorno al player di Spotify.
+
+**Lo spessore lo decide la pagina, una volta.** `--bw` esiste sempre — vale
+quello che hai scelto, o quello dello stile dei bottoni (pieno 1, contorno 2,
+inchiostro 3) — e chi disegna una cornice lo prende da lì, insieme all'ombra.
+Prima `--bw` compariva **solo** se lo sceglievi, e ogni stile si portava dietro il
+proprio ripiego scritto due volte: quattro copie dello stesso numero.
+
+### Come si verifica
+
+`test/contratto/css-pagina.test.mjs` cerca nel foglio servito ogni `border:` su
+tutti i lati col colore dei bordi del tema, e pretende che lo spessore venga da
+`var(--bw)`. Un numero scritto a mano è una cornice che non seguirà mai il tema.
+Visto rosso rimettendo il `1px` sul riquadro incorporato.
+
+(Una `border-top` da sola non è una cornice: è una riga divisoria, e resta un
+capello per scelta.)
