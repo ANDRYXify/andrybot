@@ -204,7 +204,7 @@ async function caricaStato() {
 
   if (stato?.streamer?.status === 'approved') {
     const hInit = decodeURIComponent((location.hash || '').replace(/^#/, ''));
-    if (hInit && schedaValida(hInit) && !schedaBloccata(hInit) && (hInit !== 'admin' || stato?.isAdmin)) schedaAttiva = hInit;
+    if (hInit && schedaValida(hInit) && !schedaBloccata(hInit) && (!SOLO_ADMIN.has(hInit) || stato?.isAdmin)) schedaAttiva = hInit;
   }
   render();
   window.SB_SPLASH_OFF?.();
@@ -2181,7 +2181,6 @@ const stessaFamiglia = (a, b) => { const fa = famigliaDi(a); return !!fa && fa =
 const GRUPPI = [
   { id: 'bot', nome: 'Il tuo bot', schede: [
     ['personalita', 'Il bot'],
-    ['avatar', 'Avatar 3D'],
   ] },
   { id: 'pubblico', nome: 'Chat e pubblico', schede: [
     ['moduli', 'Comandi'],
@@ -2207,11 +2206,15 @@ const GRUPPI = [
   ] },
 ];
 
-const GRUPPO_ADMIN = { id: 'admin', nome: 'Admin', schede: [['admin', 'Admin']] };
+const GRUPPO_ADMIN = { id: 'admin', nome: 'Admin', schede: [
+  ['admin', 'Admin'],
+  ['avatar', 'Avatar 3D'],
+] };
+const SOLO_ADMIN = new Set(GRUPPO_ADMIN.schede.map(([id]) => id));
 
 function schedaValida(id) {
   if (!id) return false;
-  if (id === 'admin') return true;
+  if (SOLO_ADMIN.has(id)) return true;
   if (FAMIGLIE.some((f) => f.parti.includes(id))) return true;
   return GRUPPI.some((g) => g.schede.some(([sid]) => sid === id));
 }
@@ -15868,7 +15871,7 @@ async function caricaMente3d() {
   _menteLegenda(dark);
   _menteDettaglio(null);
   let d;
-  try { d = await api('/api/streamer/mente'); }
+  try { d = await api('/api/admin/mente3d'); }
   catch { const box = document.getElementById('mente3d-dettaglio'); if (box) box.innerHTML = `<p class="vuoto">${L('Non disponibile ora.', 'Not available now.', 'No disponible ahora.')}</p>`; return; }
   try { _menteCruscotto(d); } catch {  }
   try {
