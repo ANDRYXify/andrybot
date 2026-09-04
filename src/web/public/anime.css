@@ -672,10 +672,10 @@ body.pad-guida, body.pad-guida * { cursor: none !important; }
 }
 
 .btn.pericolo:not(.secondario):not(.testo) {
-  background: var(--rosso); border-color: var(--rosso); color: #fff;
+  background: var(--rosso); color: #fff;
 }
 .btn.pericolo:not(.secondario):not(.testo):hover {
-  background: var(--rosso); border-color: var(--rosso); color: #fff; opacity: .86;
+  background: var(--rosso); color: #fff; opacity: .86;
 }
 
 .spento {

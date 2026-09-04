@@ -63,6 +63,7 @@ if (SELFTEST) {
 const schede = await p.evaluate(() => [...document.querySelectorAll('.pannello-scheda')].map((s) => s.dataset.scheda));
 const conto = {};
 const gerarchia = {};
+const spenti = {};
 let visti = 0, sezioni = 0;
 for (const id of schede) {
   try { await p.evaluate((x) => window.SB_APP.vai(x), id); await p.waitForTimeout(300); } catch { continue; }
@@ -78,6 +79,9 @@ for (const id of schede) {
       + ' .levetta, .goal-riga, .ovl-elem';
     const piatti = [];
     const pari = [];
+    const spenti = [];
+    const dist = (a, b2) => Math.hypot(a[0] - b2[0], a[1] - b2[1], a[2] - b2[2]);
+    const opaco = (c) => { const m = /rgba?\([^)]*?,\s*([\d.]+)\s*\)/.exec(c); return !m || Number(m[1]) > 0.5; };
     let n = 0;
     for (const el of sez.querySelectorAll(SEL)) {
       const r = el.getBoundingClientRect();
@@ -92,6 +96,11 @@ for (const id of schede) {
         ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : '');
       if (!conBordo && !conTimbro) { piatti.push(firma); continue; }
 
+      const cb = rgb(s.borderTopColor), cs = rgb(s.backgroundColor);
+      if (bw >= 0.9 && cb && cs && opaco(s.backgroundColor) && dist(cb, cs) < 26) {
+        spenti.push(firma + ' (' + s.borderTopColor + ')');
+      }
+
       // la gerarchia: dentro una carta, il dettaglio non puo' avere il tratto
       // della carta che lo contiene
       if (!conBordo || el.classList.contains('carta')) continue;
@@ -100,11 +109,12 @@ for (const id of schede) {
       const bc = parseFloat(getComputedStyle(carta).borderTopWidth) || 0;
       if (bc >= 0.9 && bw >= bc) pari.push(`${firma} ${bw}px dentro una carta da ${bc}px`);
     }
-    return { piatti, pari, visti: n };
+    return { piatti, pari, spenti, visti: n };
   });
   visti += fuori.visti;
   for (const f of fuori.piatti) { conto[f] = (conto[f] || 0) + 1; }
   for (const f of fuori.pari) { gerarchia[f] = (gerarchia[f] || 0) + 1; }
+  for (const f of fuori.spenti) { spenti[f] = (spenti[f] || 0) + 1; }
 }
 await b.close();
 chiudiSito();
@@ -120,6 +130,9 @@ verde = dice(piatti === 0, `controlli guardati: ${visti} in ${sezioni} schede`,
 const ordG = Object.entries(gerarchia).sort((a, b2) => b2[1] - a[1]);
 verde = dice(ordG.length === 0, 'contorni esterni piu\' grossi dei dettagli interni',
   ordG.slice(0, 5).map(([f, n]) => `${f} ×${n}`).join(' · ')) && verde;
+const ordS = Object.entries(spenti).sort((a, b2) => b2[1] - a[1]);
+verde = dice(ordS.length === 0, 'nessun contorno del colore del proprio riempimento',
+  ordS.slice(0, 8).map(([f, n]) => `${f} ×${n}`).join(' · ')) && verde;
 verde = dice(rotture.length === 0, 'nessun errore di pagina', rotture.slice(0, 2).join(' · ')) && verde;
 
 if (SELFTEST) {
