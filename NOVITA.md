@@ -11,6 +11,12 @@ lo usa: se non si vede da fuori, qui non ci va.
 - Il player non si strizza più a seconda di dove lo metti: posato al centro o a destra si stringeva, e il titolo finiva tagliato. Ora è largo quanto gli serve, ovunque lo porti.
 - Il player è cresciuto: le misure partono da dove prima finivano, e c'è la misura «enorme».
 - «Enorme» c'è per tutti i widget, non solo per la chat: player, obiettivi, ultimo follower, ultimo sub, contatori.
+- Il player ha i temi, e un tema prende la forma dell'oggetto vero. Cassetta: titolo e artista sull'etichetta, sotto la finestrella con le due bobine che girano.
+- Vinile: il disco esce dalla busta e gira, con i solchi e l'etichetta al centro.
+- Terminale: mono, prompt e cursore che lampeggia. Manga: retino, contorno d'inchiostro e il titolo in lettering.
+- E ha il corpo: **slim** se lo vuoi sottile, **cicciotto** se lo vuoi generoso. È un asse a parte dalla dimensione: uno cambia le proporzioni, l'altro la scala.
+- Le onde ballano quanto è carico il brano: una ballata si muove piano, un pezzo tirato spinge. Lo dice Spotify, non lo inventiamo noi.
+- Un titolo lungo non allarga più il player a mezzo schermo: la colonna del testo ha il suo tetto e il titolo scorre, come deve.
 
 ## 2026-09-03
 

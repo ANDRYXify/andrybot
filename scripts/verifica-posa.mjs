@@ -173,7 +173,7 @@ const attesa = (v, lato, tela) => (v / 100) * (tela - lato) + lato / 2;
 
 // ---------------------------------------------------------------- overlay vero
 {
-  const p = await b.newPage({ viewport: { width: OVL_W / 2, height: OVL_H / 2 }, deviceScaleFactor: 1 });
+  const p = await b.newPage({ viewport: { width: OVL_W, height: OVL_H }, deviceScaleFactor: 1 });
   p.on('pageerror', (e) => guai.push('overlay: errore di pagina — ' + e.message));
   await p.goto(`http://127.0.0.1:${PORTA}/overlay.html?t=collaudo`, { waitUntil: 'domcontentloaded' });
   await p.waitForFunction(() => typeof window.trasformaXY === 'function', null, { timeout: 20000 });
@@ -223,6 +223,36 @@ const attesa = (v, lato, tela) => (v / 100) * (tela - lato) + lato / 2;
       el.remove();
       return fuori;
     });
+    // E un titolo lungo non deve allargare il player a dismisura: per quello
+    // c'e' lo scorrimento. Il tetto sta sulla colonna del testo, non sulla
+    // scheda, cosi' vale a ogni Dimensione.
+    const lungo = await p.evaluate(() => {
+      const el = document.createElement('div');
+      el.className = 'ovl-widget ovl-musica dim-media dentro verso-riga righe-due cover-quadrata'
+        + ' barra-sotto con-onde sfondo-no ritmo-onde suona forma-carta materia-piatta cornice-nessuna'
+        + ' corpo-normale tema-nessuno';
+      const titolo = 'Un titolo davvero interminabile che nessuno vorrebbe mai leggere tutto d\'un fiato';
+      el.innerHTML = '<span class="m-sfondo"></span><span class="m-velo"></span>'
+        + '<span class="m-cover"><span class="m-disco"></span></span>'
+        + '<span class="m-corpo"><span class="m-riga"><span class="m-scorri"><b>' + titolo + '</b></span></span>'
+        + '<span class="m-riga m-riga2"><span class="m-scorri2">Artista</span></span>'
+        + '<span class="m-sotto"><span class="m-barra"><i></i></span><span class="m-tempi">2:33 / 3:43</span></span></span>'
+        + '<span class="m-onde"><i></i><i></i><i></i><i></i></span>';
+      document.body.appendChild(el);
+      posaElemento(el, 'sonda-posa', { xy: { x: 50, y: 50, s: 100, r: 0 } });
+      const riga = el.querySelector('.m-riga');
+      const fuori = { larg: el.getBoundingClientRect().width, tela: window.innerWidth,
+        scorre: riga.firstElementChild.scrollWidth - riga.clientWidth };
+      el.remove();
+      return fuori;
+    });
+    if (lungo.larg > lungo.tela * 0.45) {
+      guai.push(`overlay: un titolo lungo allarga il player a ${lungo.larg.toFixed(0)}px, cioe' il ${Math.round(lungo.larg / lungo.tela * 100)}% della tela`);
+    }
+    if (lungo.scorre <= 4) {
+      guai.push('overlay: un titolo lungo non esce dalla riga, quindi non scorrerebbe mai');
+    }
+
     const base = larghezze[0].larg;
     for (const l of larghezze) {
       if (Math.abs(l.larg - base) > 1) {

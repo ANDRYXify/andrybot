@@ -719,7 +719,7 @@ function disegnaMusica() {
   const nato = !el;
   if (!el) {
     el = document.createElement('div');
-    el.innerHTML = '<span class="m-sfondo"></span>'
+    el.innerHTML = '<span class="m-sfondo"></span><span class="m-velo"></span>'
       + '<span class="m-cover"><span class="m-anello"><svg viewBox="0 0 40 40"><circle class="m-an-via" cx="20" cy="20" r="18"/>'
       + '<circle class="m-an-ora" cx="20" cy="20" r="18"/></svg></span><span class="m-disco"></span></span>'
       + '<span class="m-corpo"><span class="m-riga"><span class="m-scorri"></span></span>'
@@ -736,6 +736,7 @@ function disegnaMusica() {
     + ' verso-' + cfg.verso + ' righe-' + cfg.righe
     + ' cover-' + cfg.cover + ' barra-' + cfg.barra + (cfg.onde ? ' con-onde' : '')
     + ' sfondo-' + cfg.sfondo + ' ritmo-' + cfg.ritmo
+    + ' corpo-' + (cfg.corpo || 'normale') + ' tema-' + (cfg.tema || 'nessuno')
     + (vivo && d.suona ? ' suona' : ' in-pausa') + (vivo ? '' : ' fermo')
     + ' entra-' + cfg.entrata + (cfg.barra !== 'sotto' && cfg.tempi === 'no' ? ' senza-sotto' : '')
     + (el.classList.contains('dentro') ? ' dentro' : '');
@@ -786,7 +787,13 @@ function disegnaMusica() {
   avanzaBarra();
 }
 
+const energiaDi = (d) => {
+  const e = Number(d && d.energia);
+  return e >= 0 && e <= 1 ? e : 0.5;
+};
+
 function battitoDelBrano(el, cfg, d) {
+  el.style.setProperty('--energia', energiaDi(d).toFixed(3));
   if (cfg.ritmo === 'no' || !d || !d.bpm || !d.suona) {
     el.style.removeProperty('--battito');
     el.style.removeProperty('--battito-fase');
@@ -797,7 +804,7 @@ function battitoDelBrano(el, cfg, d) {
   const passato = ((Number(d.ms) || 0) + (Date.now() - musicaLetta)) / 1000;
   el.style.setProperty('--battito', dur.toFixed(4) + 's');
   el.style.setProperty('--battito-fase', '-' + (passato % dur).toFixed(4) + 's');
-  el.style.setProperty('--battito-forza', String(0.6 + (Number(d.energia) || 0.5) * 0.8));
+  el.style.setProperty('--battito-forza', String(0.6 + energiaDi(d) * 0.8));
 }
 
 function misuraScorrimento(el, cfg) {
