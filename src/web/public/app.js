@@ -5477,7 +5477,6 @@ const compDi = (st) => _val(COMP_OPTS(), st && st.composizione);
 const classiIdentita = (st) => `forma-${formaDi(st)} materia-${materiaDi(st)} cornice-${corniceDi(st)}`;
 
 const DIM_OPTS = () => [['piccola', L('Piccola', 'Small', 'Pequeña')], ['media', L('Media', 'Medium', 'Mediana')], ['grande', L('Grande', 'Large', 'Grande')], ['enorme', L('Enorme', 'Huge', 'Enorme')]];
-const DIM3_OPTS = () => [['piccola', L('Piccola', 'Small', 'Pequeña')], ['media', L('Media', 'Medium', 'Mediana')], ['grande', L('Grande', 'Large', 'Grande')]];
 const POS4_OPTS = () => [['alto-sinistra', L('In alto a sx', 'Top left', 'Arriba izq.')], ['alto-destra', L('In alto a dx', 'Top right', 'Arriba der.')], ['basso-sinistra', L('In basso a sx', 'Bottom left', 'Abajo izq.')], ['basso-destra', L('In basso a dx', 'Bottom right', 'Abajo der.')]];
 
 const _hx = (v, d) => (/^#[0-9a-fA-F]{6}$/.test(v || '') ? v : d);
@@ -5574,7 +5573,7 @@ function bloccoWidget(pref, w, titolo, kind) {
       <div class="griglia-campi spazio-sopra">
         ${cSel(`${pref}-pos`, L('Posizione', 'Position', 'Posición'), POS4_OPTS(), w.posizione)}
         ${cSel(`${pref}-font`, 'Font', FONT_OPTS(), st.font)}
-        ${cSel(`${pref}-dim`, L('Dimensione', 'Size', 'Tamaño'), DIM3_OPTS(), st.dim)}
+        ${cSel(`${pref}-dim`, L('Dimensione', 'Size', 'Tamaño'), DIM_OPTS(), st.dim)}
         <div><label class="campo">${L('Icona', 'Icon', 'Icono')}</label>
           <select class="w-icona" id="${pref}-icona">${ICONA_OPTS().map(([v, t]) => `<option value="${v}"${v === (st.icona == null ? (pref === 'wf' ? 'cuore' : 'stella') : st.icona) ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>
           <input type="file" class="al-up w-up-icona" accept="image/*" data-slot="icona" data-w="${pref}" hidden>
@@ -5665,7 +5664,7 @@ function disegnaGoal() {
       </div>
       <h4>${L('Aspetto', 'Appearance', 'Aspecto')}</h4>
       <div class="goal-campi">
-        <label class="campo-num">${L('Dimensione', 'Size', 'Tamaño')}<select data-g="stile.dim">${[['piccola', L('piccola', 'small', 'pequeña')], ['media', L('media', 'medium', 'media')], ['grande', L('grande', 'large', 'grande')]].map(([v, t]) => `<option value="${v}"${(st(g).dim || 'media') === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+        <label class="campo-num">${L('Dimensione', 'Size', 'Tamaño')}<select data-g="stile.dim">${DIM_OPTS().map(([v, t]) => `<option value="${v}"${(st(g).dim || 'media') === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
         <label class="campo-num">${L('Carattere', 'Font', 'Fuente')}<select data-g="stile.font">${GOAL_FONT.map((v) => `<option value="${v}"${(st(g).font || 'sistema') === v ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
       </div>
       <div class="goal-campi">
@@ -5754,7 +5753,7 @@ function leggiCfgDalForm(k) {
 function _vesteCampi() {
   const op = (lista, campo) => `<select data-c="stile.${campo}">${lista.map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select>`;
   return `<div class="goal-campi">
-      <label class="campo-num">${L('Dimensione', 'Size', 'Tamaño')}${op(DIM3_OPTS(), 'dim')}</label>
+      <label class="campo-num">${L('Dimensione', 'Size', 'Tamaño')}${op(DIM_OPTS(), 'dim')}</label>
       <label class="campo-num">${L('Carattere', 'Font', 'Fuente')}<select data-c="stile.font">${GOAL_FONT.map((v) => `<option value="${v}">${v}</option>`).join('')}</select></label>
       <label class="campo-num">${L('Forma', 'Shape', 'Forma')}${op(FORMA_OPTS(), 'forma')}</label>
     </div>

@@ -8,6 +8,9 @@ lo usa: se non si vede da fuori, qui non ci va.
 - Un elemento con la Dimensione cambiata arriva davvero al bordo dello schermo: rimpicciolito si piantava prima e sembrava bloccato lì, ingrandito usciva dalla tela.
 - E segue il dito com'è giusto mentre lo trascini, a qualunque Dimensione.
 - Le immagini e i video dei comandi finiscono in diretta dove li hai messi nell'anteprima, anche quando li rimpicciolisci.
+- Il player non si strizza più a seconda di dove lo metti: posato al centro o a destra si stringeva, e il titolo finiva tagliato. Ora è largo quanto gli serve, ovunque lo porti.
+- Il player è cresciuto: le misure partono da dove prima finivano, e c'è la misura «enorme».
+- «Enorme» c'è per tutti i widget, non solo per la chat: player, obiettivi, ultimo follower, ultimo sub, contatori.
 
 ## 2026-09-03
 

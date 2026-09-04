@@ -199,6 +199,38 @@ const attesa = (v, lato, tela) => (v / 100) * (tela - lato) + lato / 2;
     return fuori;
   }, { DIMENSIONI, vecchia: SELFTEST });
 
+  // Spostare una cosa non deve RIDIMENSIONARLA. Posato con left:x% e senza
+  // right, un elemento largo quanto il suo contenuto si restringe a quel che
+  // avanza fino al bordo: piu' lo porti a destra e piu' si stringe, finche' il
+  // titolo si taglia. Nel banco non succedeva (la tela da' width: max-content),
+  // quindi anteprima e diretta impaginavano diverso.
+  if (!SELFTEST) {
+    const larghezze = await p.evaluate(() => {
+      const el = document.createElement('div');
+      el.className = 'ovl-widget ovl-musica dim-media dentro verso-riga righe-due cover-quadrata'
+        + ' barra-sotto con-onde sfondo-no ritmo-onde suona forma-carta materia-piatta cornice-nessuna';
+      el.innerHTML = '<span class="m-sfondo"></span><span class="m-cover"><span class="m-disco"></span></span>'
+        + '<span class="m-corpo"><span class="m-riga"><span class="m-scorri"><b>Un titolo lungo il giusto</b></span></span>'
+        + '<span class="m-riga m-riga2"><span class="m-scorri2">Nome dell\'artista</span></span>'
+        + '<span class="m-sotto"><span class="m-barra"><i></i></span><span class="m-tempi">2:33 / 3:43</span></span></span>'
+        + '<span class="m-onde"><i></i><i></i><i></i><i></i></span>';
+      document.body.appendChild(el);
+      const fuori = [];
+      for (const x of [5, 50, 90, 98]) {
+        posaElemento(el, 'sonda-posa', { xy: { x, y: 50, s: 100, r: 0 } });
+        fuori.push({ x, larg: el.getBoundingClientRect().width });
+      }
+      el.remove();
+      return fuori;
+    });
+    const base = larghezze[0].larg;
+    for (const l of larghezze) {
+      if (Math.abs(l.larg - base) > 1) {
+        guai.push(`overlay: spostato a x=${l.x} il player si restringe a ${l.larg.toFixed(1)}px invece di restare ${base.toFixed(1)}px`);
+      }
+    }
+  }
+
   for (const m of misure) {
     const cx = m.sx + m.w / 2, cy = m.su + m.h / 2;
     const ax = attesa(m.v, m.w, m.tw), ay = attesa(m.v, m.h, m.th);

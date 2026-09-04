@@ -103,7 +103,7 @@ export const COMP_OVL = ['colonna', 'riga', 'riga-inv', 'sovrapposta'];
 export const ANIM_ALERT = ['slide', 'pop', 'zoom', 'fade', 'flip', 'bounce'];
 export const ANIM_CHAT = ['slide', 'fade', 'nessuna'];
 export const DIM_CHAT = ['piccola', 'media', 'grande', 'enorme'];
-export const DIM_WIDGET = ['piccola', 'media', 'grande'];
+export const DIM_WIDGET = ['piccola', 'media', 'grande', 'enorme'];
 
 export const normAlertStile = (st) => {
   st = st || {};
