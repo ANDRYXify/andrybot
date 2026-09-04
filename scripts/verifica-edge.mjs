@@ -69,9 +69,14 @@ for (const [n, s] of righe) console.log(`  ${s === 'uguale' ? '✓' : '✗'} ${n
 if (guai.length) {
   console.log('\nDifferenze:');
   for (const g of guai) console.log('  - ' + g);
-  console.log('\nIl Caddyfile e\' montato nel container dell\'edge: dopo averlo cambiato serve\n' +
-    'ricaricare Caddy sul server (docker compose up -d caddy, oppure\n' +
-    'docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile).\n');
+  console.log('\nIl Caddyfile e\' MONTATO nel container dell\'edge. Attenzione: «docker compose\n' +
+    'up -d caddy» NON basta — ricrea il container solo se cambia la configurazione del\n' +
+    'servizio, e un file montato che cambia non conta: risponde «up-to-date» e non fa\n' +
+    'niente. Il comando che rilegge davvero il file e\':\n\n' +
+    '    docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile\n\n' +
+    'Se l\'API di amministrazione di Caddy e\' spenta e «reload» non passa:\n\n' +
+    '    docker compose restart caddy\n\n' +
+    'Poi rigira questo collaudo: deve dire «edge allineato».\n');
   console.log('edge NON allineato ✗\n');
   process.exit(1);
 }
