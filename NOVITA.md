@@ -28,6 +28,8 @@ lo usa: se non si vede da fuori, qui non ci va.
 - Il tratto ha una gerarchia: la vignetta è più spessa del comando, il comando più del dettaglio. È così che si legge la profondità.
 - I pulsanti sono a tinta piatta, senza sfumature: in una tavola il colore è pieno o non c'è.
 - Quando arrivi con la tastiera su un comando si vede subito dove sei: cornice d'accento netta, senza niente che copra quello che hai intorno.
+- Il tema scuro non è più bianco e nero: il fondo tira al prugna e la carta al rosa, come i colori del logo. Anche di notte è la stessa pagina stampata.
+- Il titolo di una scheda è una targhetta nell'angolo, con la freccetta dentro: si legge come la didascalia di una vignetta.
 
 ## 2026-09-03
 

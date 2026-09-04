@@ -101,18 +101,18 @@
 :root[data-theme="dark"], :root:not([data-theme="light"]) {
   color-scheme: dark;
 
-  --bg: #0c0b0c;
-  --surface: #151315;
-  --surface-2-tinta: #1d1a1d;
-  --surface-3-tinta: #262227;
+  --bg: #0f0a0e;
+  --surface: #1a141a;
+  --surface-2-tinta: #231b22;
+  --surface-3-tinta: #2d232c;
   --surface-2: var(--tono-carta) 0 0 / var(--tono-passo), var(--surface-2-tinta);
   --surface-3: var(--tono-carta) 0 0 / var(--tono-passo), var(--surface-3-tinta);
-  --border: #2a262b;
-  --border-2: #3a343c;
+  --border: #362a34;
+  --border-2: #4a3a46;
 
-  --testo: #eae6e8;
-  --testo-2: #a19b9d;
-  --testo-3: #8d8789;
+  --testo: #f1e9ee;
+  --testo-2: #b0a2aa;
+  --testo-3: #9c8c96;
 
   --acc: #f72fa7;
   --acc-600: #ff61b7;
@@ -121,14 +121,14 @@
   --acc-caldo: #ef4b84;
   --acc-vino: #e04a72;
 
-  --contorno: #000000;
+  --contorno: #070206;
   --alone-contorno: 0 0 0 1px color-mix(in srgb, var(--acc) 34%, transparent);
-  --tono-carta: radial-gradient(color-mix(in srgb, #ffffff 13%, transparent) 1.05px, transparent 1.1px);
-  --didascalia-fondo: #ece7e9;
-  --didascalia-testo: #0c0b0c;
-  --ombra-ink: 3px 3px 0 #000;
-  --ombra-ink-alta: 5px 5px 0 #000;
-  --ombra-ink-timbro: 1px 1px 0 #000;
+  --tono-carta: radial-gradient(color-mix(in srgb, #ffd9ec 14%, transparent) 1.05px, transparent 1.1px);
+  --didascalia-fondo: #f1e9ee;
+  --didascalia-testo: #12080e;
+  --ombra-ink: 3px 3px 0 var(--contorno);
+  --ombra-ink-alta: 5px 5px 0 var(--contorno);
+  --ombra-ink-timbro: 1px 1px 0 var(--contorno);
   --retino: radial-gradient(color-mix(in srgb, var(--acc) 80%, #fff) 1.1px, transparent 1.2px);
   --retino-forza: .2;
   --cinetiche: repeating-conic-gradient(from 0deg at 50% 50%, color-mix(in srgb, var(--acc) 70%, #fff) 0deg .55deg, transparent .55deg 3.1deg);
