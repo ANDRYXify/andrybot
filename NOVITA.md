@@ -30,6 +30,7 @@ lo usa: se non si vede da fuori, qui non ci va.
 - Quando arrivi con la tastiera su un comando si vede subito dove sei: cornice d'accento netta, senza niente che copra quello che hai intorno.
 - Il tema scuro non è più bianco e nero: il fondo tira al prugna e la carta al rosa, come i colori del logo. Anche di notte è la stessa pagina stampata.
 - Il titolo di una scheda è una targhetta nell'angolo, con la freccetta dentro: si legge come la didascalia di una vignetta.
+- Il sito scarica il 16% in meno: quello che arriva al browser è compresso.
 
 ## 2026-09-03
 
