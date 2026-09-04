@@ -24,6 +24,7 @@ import { renderLinkPage, renderInformativa } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
 import { creaMinifica } from './minifica.js';
 import { inserisciVetrina } from './vetrina-vista.js';
+import { pagina404, LINGUE_SERVIZIO } from './pagine-servizio.js';
 import { montaArgine } from './argine.js';
 import { GUIDE, paginaGuida, paginaIndice, paginaNovita, urlGuide } from './guide.js';
 import * as novita from './novita.js';
@@ -397,7 +398,25 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   const limiteTier = (req, chiave) => abbonamenti.limite(funzioniReq(req), chiave);
 
   // risposta "il sito non esiste": nessun indizio, nessun brand, nessun corpo utile
-  const notFound = (res) => res.status(404).type('text/plain').send('Not Found');
+  // IL 404. Resta un LABIRINTO: dice la stessa identica cosa per un indirizzo
+  // che non esiste e per uno che esiste ma non si puo' vedere senza sessione.
+  // Nessun «accedi per vedere»: sarebbe un oracolo, e servirebbe a mappare il
+  // sito tastando il bordo.
+  //
+  // La FORMA invece segue quel che e' stato chiesto: a un browser che vuole una
+  // pagina si manda una pagina, a chi chiedeva uno script o un'immagine si
+  // manda la riga di prima. Mandare HTML a un <script src> non aiuta nessuno.
+  const P404 = Object.fromEntries(LINGUE_SERVIZIO.map((l) => [l, pagina404(l)]));
+  const notFound = (res) => {
+    const req = res.req;
+    const vuolePagina = String(req?.headers?.accept || '').includes('text/html');
+    if (!vuolePagina) return res.status(404).type('text/plain').send('Not Found');
+    const chiesta = String(req?.query?.lang || '').toLowerCase();
+    const dal = String(req?.headers?.['accept-language'] || '').slice(0, 2).toLowerCase();
+    const l = LINGUE_SERVIZIO.includes(chiesta) ? chiesta : (LINGUE_SERVIZIO.includes(dal) ? dal : 'it');
+    res.set('Cache-Control', 'no-store');
+    return res.status(404).type('text/html; charset=utf-8').send(P404[l]);
+  };
 
   // ── BLINDA L'ORIGINE ────────────────────────────────────────────────────────
   // Se c'è un NOSTRO edge davanti (su questo o su un altro server, ovunque nel

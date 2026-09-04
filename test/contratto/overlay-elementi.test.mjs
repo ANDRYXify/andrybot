@@ -355,3 +355,35 @@ test('il traguardo si configura una volta sola, non dentro la scena', () => {
   assert.ok(!/class="[^"]*asp-blocco[^"]*"[^>]*>\s*<label class="campo">\$\{L\('Titolo'/.test(d),
     'la meta non deve stare dentro un blocco d’aspetto');
 });
+
+// LA BARRA SI RIEMPIE ALLO STESSO MODO nell'anteprima e sulla diretta.
+//
+// Sono due disegnatori diversi — `_vestiGoal` nel pannello, `unGoal`
+// nell'overlay — e per un pezzo hanno riempito la barra in due modi: uno
+// scriveva `style.width`, l'altro la variabile `--q`. Il foglio di stile pero'
+// legge SOLO `--q` (`transform: scaleX(var(--q,0))`), e la larghezza e' gia'
+// 100%: nell'anteprima la barra restava vuota anche a 662 su 1000, col numero
+// giusto scritto a fianco. Difetto della stessa famiglia di sempre — la stessa
+// cosa scritta in due posti, e uno va alla deriva.
+test('la barra dell’obiettivo si riempie allo stesso modo di qua e di là', () => {
+  const css = leggi('src/web/public/overlay-skin.css');
+  assert.ok(/\.ovl-goal \.g-barra i[^}]*scaleX\(var\(--q/s.test(css),
+    'il foglio di stile riempie la barra con --q');
+  for (const [dove, testo] of [['il pannello', APP], ['l’overlay', OVL]]) {
+    const f = testo.slice(testo.indexOf(dove === 'il pannello' ? 'function _vestiGoal(' : 'function unGoal('));
+    const corpo = f.slice(0, f.indexOf('\n}'));
+    assert.ok(/setProperty\('--q'/.test(corpo), `${dove} non riempie la barra con --q`);
+    assert.ok(!/g-barra i'\)\.style\.width/.test(corpo),
+      `${dove} scrive una larghezza che il foglio di stile non guarda`);
+  }
+});
+
+// La scheda di un obiettivo non si chiude sotto le dita.
+// Spuntare «parti da quanti ne ho adesso» fa ridisegnare la lista: senza
+// ricordarsi quali erano aperte, la scheda si richiudeva e sembrava di essere
+// stati buttati fuori.
+test('la scheda aperta di un obiettivo resta aperta quando la lista si ridisegna', () => {
+  const d = APP.slice(APP.indexOf('function disegnaGoal('), APP.indexOf('function disegnaVociGoal('));
+  assert.ok(/goal-voce-guscio\[open\]/.test(d), 'non si ricorda quali schede erano aperte');
+  assert.ok(/aperte\.has\(d\.dataset\.goalId\)/.test(d), 'e non le riapre dopo aver ridisegnato');
+});

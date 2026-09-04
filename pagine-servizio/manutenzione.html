@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Torniamo subito</title>
+<meta name="robots" content="noindex, nofollow">
+
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{color-scheme:light;--bg:#f2efe8;--surface:#fdfbf6;--surface-2-tinta:#f0ebe1;--border:#ddd6c8;--testo:#1a1919;--testo-2:#5c5852;--testo-3:#5f5a54;--acc:#ba007a;--su-acc:#ffffff;--mano:'Permanent Marker', 'Trebuchet MS', system-ui, sans-serif;--testo-font:Archivo, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;--contorno:#150910;--tratto-mano:var(--tratto-2);--ang-mano:5px 3px 4px 3px / 3px 5px 3px 4px;--ombra-ink:4px 4px 0 var(--contorno);--alone-contorno:none;--orlo-scritta:var(--contorno);--titolo-pieno:#b80858;--retino:radial-gradient(var(--contorno) 1.1px, transparent 1.2px);--retino-passo:6px 6px}
+  @media(prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#0f0a0e;--surface:#1a141a;--surface-2-tinta:#231b22;--border:#362a34;--testo:#f1e9ee;--testo-2:#b0a2aa;--testo-3:#9c8c96;--acc:#f72fa7;--su-acc:#1e0f18;--mano:'Permanent Marker', 'Trebuchet MS', system-ui, sans-serif;--testo-font:Archivo, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;--contorno:#070206;--tratto-mano:var(--tratto-2);--ang-mano:5px 3px 4px 3px / 3px 5px 3px 4px;--ombra-ink:3px 3px 0 var(--contorno);--alone-contorno:0 0 0 1px color-mix(in srgb, var(--acc) 34%, transparent);--orlo-scritta:#f4ecf1;--titolo-pieno:#b80858;--retino:radial-gradient(color-mix(in srgb, var(--acc) 80%, #fff) 1.1px, transparent 1.2px);--retino-passo:6px 6px}}
+  html{-webkit-text-size-adjust:100%}
+  body{min-height:100dvh;display:grid;place-items:center;padding:2rem 1.25rem;
+    background:var(--bg);color:var(--testo);
+    font:16px/1.6 var(--testo-font,system-ui),system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.5;
+    background-image:var(--retino);background-size:var(--retino-passo)}
+  .foglio{position:relative;width:100%;max-width:34rem;text-align:center;
+    background:var(--surface);border:var(--tratto-mano) solid var(--contorno);
+    border-radius:var(--ang-mano);box-shadow:var(--alone-contorno),var(--ombra-ink);
+    padding:clamp(1.6rem,5vw,2.6rem)}
+  h1{font-family:var(--mano),system-ui,sans-serif;line-height:1.02;
+    font-size:clamp(2.2rem,9vw,3.4rem);color:var(--titolo-pieno,var(--acc));
+    -webkit-text-stroke:clamp(.9px,.028em,1.7px) var(--orlo-scritta);
+    paint-order:stroke fill;margin-bottom:.5rem}
+  p{color:var(--testo-2);margin:0 auto;max-width:30rem}
+  p+p{margin-top:.7rem}
+  .vie{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center;margin-top:1.5rem}
+  .vie a{display:inline-block;padding:.62rem 1.1rem;text-decoration:none;font-weight:600;
+    color:var(--testo);background:var(--surface-2-tinta);
+    border:var(--tratto-mano) solid var(--contorno);border-radius:var(--ang-mano);
+    box-shadow:var(--ombra-ink)}
+  .vie a.primo{background:var(--acc);color:var(--su-acc)}
+  .vie a:active{transform:translate(2px,3px);box-shadow:none}
+  .nota{margin-top:1.4rem;font-size:.84rem;color:var(--testo-3)}</style>
+</head>
+<body>
+<main class="foglio">
+  <h1>Torniamo subito</h1>
+  <p>Sto facendo un aggiornamento. Ci vuole qualche minuto: la pagina non è rotta, è solo un momento di pausa.</p>
+  <div class="vie"><a class="primo" href="/">Riprova</a></div>
+  <p class="nota" lang="en">An update is going out. It takes a few minutes: the page is not broken, it is just a short pause.</p>
+  <p class="nota" lang="es">Estoy haciendo una actualización. Tarda unos minutos: la página no está rota, es solo una pausa.</p>
+</main>
+</body>
+</html>
