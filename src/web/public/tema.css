@@ -33,6 +33,7 @@
   --tratto-1: 1px 1.5px 1.5px 1px;
   --tratto-2: 2px 2.5px 2.5px 2px;
   --tratto-3: 3px 3.5px 3.5px 3px;
+  --orlo-3: 3px;
   --tratto-4: 4.5px 5px 5px 4.5px;
 
   --tono-passo: 6px 6px;
@@ -122,12 +123,12 @@
   --acc-caldo: #ef4b84;
   --acc-vino: #e04a72;
 
-  --contorno: #070206;
+  --contorno: #f4ecf1;
   --alone-contorno: 0 0 0 1px color-mix(in srgb, var(--acc) 34%, transparent);
   --tono-carta: radial-gradient(color-mix(in srgb, #ffd9ec 14%, transparent) 1.05px, transparent 1.1px);
-  --didascalia-fondo: #f1e9ee;
+  --didascalia-fondo: var(--contorno);
   --didascalia-testo: #12080e;
-  --orlo-scritta: #f4ecf1;
+  --orlo-scritta: var(--contorno);
   --ombra-ink: 3px 3px 0 var(--contorno);
   --ombra-ink-alta: 5px 5px 0 var(--contorno);
   --ombra-ink-timbro: 1px 1px 0 var(--contorno);

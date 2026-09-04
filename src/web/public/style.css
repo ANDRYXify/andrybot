@@ -999,8 +999,15 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 
 .lp-tessera-ed { border: 1px dashed var(--border); border-radius: var(--r-m); padding: .55rem .6rem; margin-top: .5rem; }
 
-.lp-blocco { border: 1px solid var(--border); border-radius: var(--r-m); background: var(--surface-2); padding: .7rem .8rem; margin-bottom: .5rem; }
-.lp-btesta { display: flex; align-items: center; gap: .5rem; margin-bottom: .5rem; cursor: grab; }
+.lp-blocco { border: 1px solid var(--border); border-radius: var(--r-m); background: var(--surface-2); padding: .55rem .7rem; margin-bottom: .4rem; }
+.lp-blocco:not([open]) { padding-bottom: .55rem; }
+.lp-blocco > summary::-webkit-details-marker { display: none; }
+.lp-btesta { display: flex; align-items: center; gap: .5rem; cursor: grab; list-style: none; }
+.lp-blocco[open] > .lp-btesta { margin-bottom: .55rem; }
+.lp-btesta::before { content: ''; flex: 0 0 auto; width: .4rem; height: .4rem; margin-right: .15rem;
+  border: 0; border-right: 2px solid var(--testo-2); border-bottom: 2px solid var(--testo-2);
+  transform: rotate(-45deg); transition: transform .18s ease; }
+.lp-blocco[open] > .lp-btesta::before { transform: rotate(45deg); }
 .lp-btesta:active { cursor: grabbing; }
 
 .lp-presa { flex: 0 0 auto; width: .7rem; height: .9rem; opacity: .5;
@@ -1008,8 +1015,17 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
   background-size: .35rem .3rem; }
 .lp-blocco.preso { opacity: .45; }
 .lp-blocco.sopra { border-color: var(--acc); box-shadow: 0 -3px 0 -1px var(--acc); }
-.lp-btesta strong { font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; color: var(--testo-3); }
-.lp-bazioni { margin-left: auto; display: inline-flex; gap: .25rem; }
+.lp-btesta strong { font-size: .84rem; color: var(--testo); font-weight: 700; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lp-blocco .lp-bico { flex: 0 0 auto; width: 1rem; height: 1rem; color: var(--testo-3); }
+.lp-bazioni { margin-left: .35rem; display: inline-flex; gap: .1rem; }
+.lp-btipo { margin-left: auto; flex: 0 0 auto; font-size: .72rem; color: var(--testo-3); white-space: nowrap; }
+.lp-bmini { border: 1px solid var(--border-2); background: var(--surface); color: var(--testo-2); cursor: pointer;
+  width: 1.6rem; height: 1.6rem; border-radius: var(--r-s); display: inline-flex;
+  align-items: center; justify-content: center; padding: 0; }
+.lp-bmini:hover { background: var(--surface-2); color: var(--testo); }
+.lp-bmini svg { width: .85rem; height: .85rem; display: block; }
+.lp-bfine { display: inline-flex; gap: .35rem; margin-left: auto; }
 .lp-riga2 { display: flex; align-items: center; gap: .45rem; }
 .lp-riga2 input { flex: 1; min-width: 0; }
 .lp-bico svg, .lp-ipick svg { color: var(--bc, currentColor); }
