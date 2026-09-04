@@ -90,3 +90,76 @@ un commit vecchio può ancora arrivarci. Per chiuderla del tutto va chiesto al
 supporto di GitHub di eseguire la garbage collection sul repository. E chi ha
 clonato nell'ultimo mese ha comunque la sua copia: la riscrittura riduce la
 superficie, non riscrive il passato di chi c'era.
+
+---
+
+# Le porte: chi può bussare, e a cosa
+
+## La domanda giusta
+
+«Con F12 vedo un sacco di chiamate» non è un problema di sicurezza: quelle sono
+le chiamate che fa **il tuo** browser, con la **tua** sessione, e nessun sito al
+mondo può nasconderle a chi le sta facendo. Nascondere i nomi non
+proteggerebbe nulla — sarebbe solo un lucchetto disegnato.
+
+La domanda che conta è un'altra: **se bussa qualcun altro, gli si apre?**
+
+## Come è messa oggi, misurata
+
+`node scripts/verifica-porte.mjs` legge tutte le rotte del server e chi le
+guarda:
+
+| guardiano | rotte |
+|---|---|
+| `requireOwner` (solo il proprietario del canale) | 55 |
+| `requireLogin` (sessione) | 132 |
+| `requireAdmin` | 44 |
+| `chiaveOk` (chiave dell'overlay: il link è il segreto) | 14 |
+| `currentUser` (legge la sessione: senza, non c'è niente da leggere) | 5 |
+| `verificaWebhook` (firma di Stripe) | 1 |
+| `chiaveUguale` (chiave dell'estensione, confronto a tempo costante) | 1 |
+| **pubbliche dichiarate** | **31** |
+
+Le 31 pubbliche sono elencate **una per una nel cancello, col motivo**: pagine
+che chiunque deve poter leggere (guide, manuale, privacy, novità, listino), le
+pagine link degli streamer, i ritorni dei login esterni, e i due passaggi della
+passkey — che il login non può chiedere di essere già loggati.
+
+## La parte che vale: una porta nuova nasce rossa
+
+Il cancello non fotografa lo stato, lo **impone**:
+
+1. ogni rotta deve avere un guardiano, **oppure** stare nell'elenco delle
+   pubbliche con scritto perché;
+2. l'elenco non può marcire: una voce che non corrisponde più a nessuna rotta è
+   rossa uguale;
+3. tutto ciò che sta sotto `/api/admin` vuole `requireAdmin`, non basta essere
+   entrati.
+
+Quindi non serve *ricordarsi* di proteggere una rotta nuova: se te ne dimentichi,
+il cancello diventa rosso prima del push. `--selftest` lo dimostra aggiungendo
+una rotta aperta finta.
+
+# Il lucchetto è sulla porta? (l'edge)
+
+Gli header di sicurezza — CSP, HSTS, anti-frame, Permissions-Policy — non li
+mette l'applicazione: li mette **Caddy**, e il `Caddyfile` è un file *montato*
+nel suo container. Non si aggiorna quando si aggiorna il bot.
+
+Da lì un modo elegante di illudersi: irrobustisci la politica nel repo, la vedi
+scritta, e intanto in rete gira ancora quella vecchia. **È successo davvero**:
+`script-src` aveva perso `'unsafe-inline'` nel repo e ce l'aveva ancora in
+produzione. La differenza non è cosmetica — con `'unsafe-inline'` uno `<script>`
+iniettato **esegue**; senza, il browser lo rifiuta.
+
+`node scripts/verifica-edge.mjs` chiede gli header al sito vero e li confronta
+con il `Caddyfile`, pezzo per pezzo della CSP. Sta fuori da `npm run cancelli`
+perché esce in rete.
+
+Quando segnala una differenza, il Caddyfile va ricaricato **sul server**:
+
+    docker compose up -d caddy
+    # oppure, senza fermare nulla:
+    docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
+
+e poi si rigira `verifica-edge.mjs` finché non dice «edge allineato».
