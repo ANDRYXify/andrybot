@@ -947,7 +947,7 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   a.tessera:hover img{transform:scale(1.06)}
   a.tessera:active{transform:translateY(-1px) scale(.99)}
   .img{width:100%;border-radius:var(--r);margin-top:1rem;display:block;height:auto}
-  .emb{width:100%;margin-top:1rem;border-radius:${raggioEmb}px;overflow:hidden;border:var(--bw) solid ${c.bordo};aspect-ratio:16/9;background:var(--emb-bg,${c.card});${ombra}}
+  .emb{width:100%;margin-top:1rem;border-radius:${raggioEmb}px;overflow:hidden;border:var(--bw) solid ${c.bordo};aspect-ratio:16/9;background:var(--emb-bg,${c.bordo});${ombra}}
   .emb iframe{width:100%;height:100%;border:0;display:block}
   /* il cartello al posto del contenuto di terzi, finché non lo si chiede */
   .chiedi{width:100%;height:100%;min-height:9rem;display:flex;flex-direction:column;align-items:center;

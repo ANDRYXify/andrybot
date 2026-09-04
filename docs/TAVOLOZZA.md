@@ -423,10 +423,18 @@ quattro spicchi di carta chiara attorno a un player magenta.
 Non è un difetto di colore, è **geometria**: succede con qualunque contenuto e
 con qualunque tema. Misurato: `.emb` aveva `background-color: rgba(0,0,0,0)`.
 
-Ora `.emb` ha sempre un fondo — di partenza il colore delle carte del tema — e
-per il caso in cui il contenuto abbia un colore tutto suo (una copertina che
-tinge il player) c'è una manopola per blocco: **«Colore dietro al riquadro»**.
-Ci si mette il colore che si vede dentro al contenuto e gli spicchi spariscono.
+Ora `.emb` ha sempre un fondo, e **di partenza è il colore del bordo**. La prima
+volta avevo scelto il colore delle carte: su una pagina chiara vuol dire bianco,
+cioè quasi la pagina — gli spicchi restavano spicchi, solo di un altro colore.
+Misurato sulla pagina vera e guardato da vicino: si vedeva ancora il cuneo.
+
+Col colore del bordo invece quel che resta scoperto **legge come cornice**: la
+cornice sembra un po' più spessa negli angoli, seguendo la curva del contenuto.
+Funziona con qualunque contenuto e qualunque colore, senza che chi fa la pagina
+debba fare niente.
+
+E per chi vuole che spariscano del tutto c'è la manopola per blocco, **«Colore
+dietro al riquadro»**: ci si mette il colore che si vede dentro al contenuto.
 
 Il colore viaggia come `--emb-bg` **dentro l'unico attributo `style`** del
 riquadro — non come un secondo attributo, che il browser butterebbe via in
