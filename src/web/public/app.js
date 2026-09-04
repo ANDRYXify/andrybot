@@ -10684,6 +10684,7 @@ async function caricaPaginaLink(ridisegna = false) {
           <button type="button" class="lp-tab" data-lptab="asp-colori">${L('Colori', 'Colours', 'Colores')}</button>
           <button type="button" class="lp-tab" data-lptab="asp-bottoni">${L('Bottoni', 'Buttons', 'Botones')}</button>
           <button type="button" class="lp-tab" data-lptab="asp-modi">${L('Modi', 'Behaviour', 'Modos')}</button>
+          <button type="button" class="lp-tab" data-lptab="asp-css">CSS</button>
         </div>
 
         <div class="lp-pane" data-pane="asp-temi">
@@ -10719,6 +10720,8 @@ async function caricaPaginaLink(ridisegna = false) {
             </div>
             <label class="campo spazio-sopra">${L('Larghezza della colonna', 'Column width', 'Ancho de la columna')} <span class="tenue" data-lpv="larghezza" data-suf="rem">${Number(LP.tema.larghezza) || 30}rem</span></label>
             <input type="range" data-lpk="larghezza" min="20" max="46" value="${Number(LP.tema.larghezza) || 30}">
+            <label class="campo spazio-sopra">${L('Aria fra un pezzo e l\'altro', 'Space between items', 'Aire entre piezas')} <span class="tenue" data-lpv="spaziatura" data-suf="%">${Number(LP.tema.spaziatura) || 100}%</span></label>
+            <input type="range" data-lpk="spaziatura" min="40" max="220" value="${Number(LP.tema.spaziatura) || 100}">
             <p class="suggerimento">${L('“Sezioni” dà respiro e titoli grandi. “Rivista” affianca i link su due o tre colonne; video, musica e pagine restano larghi perché stretti diventano illeggibili. Il movimento è tutto in CSS: chi ha “riduci animazioni” nel sistema non ne vede nessuna.', '“Sections” gives room and big headings. “Magazine” puts links on two or three columns; video, music and pages stay wide because they become unreadable when squeezed. Motion is all CSS: anyone with “reduce motion” on sees none of it.', '“Secciones” da aire y títulos grandes. “Revista” pone los enlaces en dos o tres columnas; vídeo, música y páginas siguen anchos. El movimiento es todo CSS: quien tiene “reducir movimiento” no ve ninguna.')}</p>
           </div>
         </div>
@@ -10734,7 +10737,21 @@ async function caricaPaginaLink(ridisegna = false) {
                   <option value="medio">${L('Medio', 'Medium', 'Medio')}</option>
                   <option value="marcato">${L('Marcato', 'Bold', 'Marcado')}</option>
                 </select></div>
+              <div><label class="campo" for="lp-fonttit">${L('Carattere dei titoli', 'Headings font', 'Tipografía de títulos')}</label>
+                <select id="lp-fonttit" data-lpk="fontTitoli">
+                  <option value="">${L('Come il testo', 'Same as the text', 'Como el texto')}</option>
+                  ${opts(d.fonts || [], '', NOMI_FONT)}
+                </select></div>
+              <div><label class="campo" for="lp-maiusc">${L('Maiuscolo', 'Uppercase', 'Mayúsculas')}</label>
+                <select id="lp-maiusc" data-lpk="maiuscolo">
+                  <option value="no">${L('Come l\'hai scritto', 'As you typed it', 'Como lo escribiste')}</option>
+                  <option value="titoli">${L('Solo i titoli', 'Headings only', 'Solo los títulos')}</option>
+                  <option value="bottoni">${L('Solo i bottoni', 'Buttons only', 'Solo los botones')}</option>
+                  <option value="tutto">${L('Tutta la pagina', 'The whole page', 'Toda la página')}</option>
+                </select></div>
             </div>
+            <label class="campo spazio-sopra">${L('Interlinea', 'Line height', 'Interlineado')} <span class="tenue" data-lpv="interlinea" data-suf="%">${Number(LP.tema.interlinea) || 150}%</span></label>
+            <input type="range" data-lpk="interlinea" min="120" max="200" value="${Number(LP.tema.interlinea) || 150}">
             <label class="campo spazio-sopra">${L('Grandezza del testo', 'Text size', 'Tamaño del texto')} <span class="tenue" data-lpv="corpo" data-suf="%">${Number(LP.tema.corpo) || 100}%</span></label>
             <input type="range" data-lpk="corpo" min="80" max="130" value="${Number(LP.tema.corpo) || 100}">
             <p class="suggerimento">${L('La grandezza vale per tutta la pagina insieme, così le proporzioni restano quelle. Lo spessore muove tutti i pesi in blocco — titoli, etichette, sottotitoli — e li tiene in scala fra loro: è la stessa pagina più leggera, non una pagina diversa.', 'Size applies to the whole page at once, so the proportions stay put. Weight moves every level together — headings, labels, sublabels — keeping them in scale: it is the same page, lighter, not a different page.', 'El tamaño vale para toda la página a la vez, así las proporciones no cambian. El grosor mueve todos los pesos juntos y los mantiene en escala: es la misma página más ligera, no otra página.')}</p>
@@ -10786,6 +10803,7 @@ async function caricaPaginaLink(ridisegna = false) {
               <div><label class="campo">${L('Colore evidenza', 'Accent colour', 'Color de acento')}</label><input type="color" data-lpk="accent" value="${esc(LP.tema.accent || '#a568ff')}"></div>
               <div><label class="campo">${L('Colore bottoni', 'Button colour', 'Color de botones')}</label><input type="color" data-lpk="card" value="${esc(LP.tema.card || '#141220')}"></div>
               <div><label class="campo">${L('Colore bordi', 'Border colour', 'Color de bordes')}</label><input type="color" data-lpk="bordo" value="${esc(LP.tema.bordo || '#2c2440')}"></div>
+              <div><label class="campo">${L('Testo dei bottoni', 'Button text', 'Texto de los botones')}</label><input type="color" data-lpk="testoBtn" value="${esc(LP.tema.testoBtn || LP.tema.testo || '#f4f2ff')}"></div>
             </div>
           </div>
         </div>
@@ -10818,6 +10836,9 @@ async function caricaPaginaLink(ridisegna = false) {
             </div>
             <label class="campo spazio-sopra">${L('Angoli dei bottoni', 'Button corners', 'Esquinas de los botones')} <span class="tenue" data-lpv="raggio" data-suf="px">${Number(LP.tema.raggio) ?? 14}px</span></label>
             <input type="range" data-lpk="raggio" min="0" max="999" value="${Number(LP.tema.raggio) ?? 14}">
+            <label class="campo spazio-sopra">${L('Spessore del bordo', 'Border width', 'Grosor del borde')} <span class="tenue" data-lpv="bordoSp" data-suf="px">${Number(LP.tema.bordoSp) || 0}px</span></label>
+            <input type="range" data-lpk="bordoSp" min="0" max="8" value="${Number(LP.tema.bordoSp) || 0}">
+            <p class="suggerimento">${L('Spessore a 0 = quello che decide lo stile scelto qui sopra (pieno 1, contorno 2, inchiostro 3).', 'Width at 0 = whatever the style above decides (filled 1, outline 2, ink 3).', 'Grosor 0 = lo que decide el estilo de arriba (relleno 1, contorno 2, tinta 3).')}</p>
             <p class="suggerimento">${L('0 = spigoli vivi · 999 = pillola. Non vale per video e musica: lì un arrotondamento esagerato mangerebbe l\'immagine.', '0 = sharp corners · 999 = pill. Not applied to video and music: there an extreme radius would eat the picture.', '0 = esquinas rectas · 999 = píldora. No se aplica a vídeo y música: ahí un redondeo extremo se comería la imagen.')}</p>
           </div>
         </div>
@@ -10844,6 +10865,15 @@ async function caricaPaginaLink(ridisegna = false) {
               <option value="chiedi">${L('Caricali solo se il visitatore lo chiede', 'Load them only if the visitor asks', 'Cárgalos solo si el visitante lo pide')}</option>
             </select>
             <p class="suggerimento">${L('Sul telefono il puntatore non c’è, quindi lì non cambia niente. Per i contenuti di altri siti: “Subito” è come funziona un sito normale; “Solo se lo chiede” mette al loro posto un cartello con un bottone, e verso quei siti non parte niente finché non lo premi. In tutti e due i casi <strong>la tua pagina non usa cookie</strong>: quelli eventuali sono di YouTube, Spotify o Twitch, e l\'informativa in fondo lo spiega — cambia da sé a seconda di cosa scegli qui.', 'There is no pointer on phones, so nothing changes there. For content from other sites: “Right away” is how a normal site works; “Only if asked” puts a card with a button in their place, and nothing goes out to those sites until you press it. Either way <strong>your page uses no cookies</strong>: any cookies belong to YouTube, Spotify or Twitch, and the notice at the bottom explains it.', 'En el móvil no hay puntero, así que ahí no cambia nada. Para el contenido de otros sitios: “Enseguida” es como funciona un sitio normal; “Solo si lo pide” pone en su lugar una tarjeta con un botón. En ambos casos <strong>tu página no usa cookies</strong>: los que haya son de YouTube, Spotify o Twitch, y el aviso al pie lo explica.')}</p>
+          </div>
+        </div>
+
+        <div class="lp-pane" data-pane="asp-css" hidden>
+          <div class="carta">
+            <label class="campo" for="lp-css">${L('CSS tuo', 'Your own CSS', 'Tu CSS')}</label>
+            <textarea id="lp-css" data-lpk="css" rows="12" spellcheck="false" class="lp-css" maxlength="8000" placeholder=".voce{ letter-spacing:.06em }&#10;h1{ text-shadow:3px 3px 0 var(--acc) }"></textarea>
+            <p class="suggerimento">${L('Questa è la via senza fondo: qualunque cosa non trovi nelle altre schede, qui la puoi scrivere. Arriva per ultima, quindi vince su tutto il resto. Hai i colori del tema come <code>var(--acc)</code>, <code>var(--testo)</code>, <code>var(--tenue)</code>, <code>var(--r)</code> per gli angoli e <code>var(--w)</code> per la larghezza. Le classi principali: <code>.voce</code> un bottone, <code>.et</code> la sua etichetta, <code>.tit</code> un titolo di sezione, <code>.par</code> un testo, <code>.telo</code> tutta la colonna.', 'This is the way with no bottom: anything you cannot find in the other tabs, you can write here. It comes last, so it wins over everything else. You have the theme colours as <code>var(--acc)</code>, <code>var(--testo)</code>, <code>var(--tenue)</code>, <code>var(--r)</code> for corners and <code>var(--w)</code> for width. The main classes: <code>.voce</code> a button, <code>.et</code> its label, <code>.tit</code> a section heading, <code>.par</code> a text, <code>.telo</code> the whole column.', 'Esta es la vía sin fondo: lo que no encuentres en las otras pestañas, aquí lo puedes escribir. Llega la última, así que gana sobre todo lo demás. Tienes los colores del tema como <code>var(--acc)</code>, <code>var(--testo)</code>, <code>var(--tenue)</code>, <code>var(--r)</code> para las esquinas y <code>var(--w)</code> para el ancho. Las clases principales: <code>.voce</code> un botón, <code>.et</code> su etiqueta, <code>.tit</code> un título, <code>.par</code> un texto, <code>.telo</code> toda la columna.')}</p>
+            <p class="suggerimento">${L('Due cose non passano, e non per capriccio: <strong>@import</strong> (tira dentro un foglio di un altro sito, che può tirarne altri: una catena che non si vede) e tutto ciò che smette di essere stile e diventa esecuzione. La tua pagina la aprono degli sconosciuti.', 'Two things do not get through, and not out of caprice: <strong>@import</strong> (it pulls in a whole stylesheet from another site, which can pull in more: a chain you cannot see) and anything that stops being style and becomes execution. Strangers open your page.', 'Dos cosas no pasan, y no por capricho: <strong>@import</strong> (trae una hoja entera de otro sitio, que puede traer más: una cadena que no se ve) y todo lo que deja de ser estilo y pasa a ser ejecución. Tu página la abren desconocidos.')}</p>
           </div>
         </div>
         </div>
