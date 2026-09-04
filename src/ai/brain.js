@@ -3,7 +3,7 @@
 // personalità fatta di pool di template in tre toni. Ricorda sempre:
 // il bot parla CON L'ACCOUNT DELLO STREAMER, quindi in prima persona.
 import { makeLog } from '../logger.js';
-import { db, memory, knowledge, voceStreamer, guide, streamers, diario } from '../db.js';
+import { db, memory, knowledge, voceStreamer, guide, streamers, diario, schedaPulita } from '../db.js';
 import * as internet from '../features/web.js';
 import { checkMessage } from '../features/moderation.js';
 import * as learn from './learn.js';
@@ -459,9 +459,13 @@ export class Brain {
         if (s.length < minLen || viste.has(k) || frasi.length >= 8) return;
         viste.add(k); frasi.push(s);
       };
-      // 1) la VOCE PARLATA in diretta (materiale di stile migliore: è la sua voce vera)
+      // 1) LE FRASI CHE HA SCRITTO LUI («le tue frasi / battute», in Personalità).
+      // Vengono prima di tutto perché sono l'unica parte dello stile che ha
+      // SCELTO: le altre due sono roba detta per caso, e per caso somiglia a lui.
+      try { for (const f of (streamers.get(channel)?.settings?.frasi || [])) aggiungi(f, 6); } catch { /* niente */ }
+      // 2) la VOCE PARLATA in diretta (materiale di stile migliore: è la sua voce vera)
       try { for (const v of voceStreamer.recent(channel, 8)) aggiungi(v, 12); } catch { /* niente */ }
-      // 2) completa con i suoi messaggi SCRITTI in chat
+      // 3) completa con i suoi messaggi SCRITTI in chat
       const righe = db.prepare(
         `SELECT text FROM messages
            WHERE channel=? AND user=? AND from_bot=0
@@ -545,9 +549,7 @@ export class Brain {
     try {
       if (!channel || !testo) return null;
       const t = TONI.includes(tono) ? tono : 'scherzoso';
-      const conoscenza = knowledge.list(channel)
-        .filter((k) => k.fonte !== 'chat').slice(0, 6)
-        .map((k) => `${k.domanda}: ${k.risposta}`);
+      const conoscenza = this._conoscenzaPertinente(channel, testo);
       // se è un dubbio e ha internet, cerca online e le passa il riferimento:
       // così può rispondere DA SÉ invece di dire "non lo so".
       const web = await this._cercaWeb(channel, testo);
@@ -782,8 +784,7 @@ export class Brain {
         ];
         spunto = temi[Math.floor(Math.random() * temi.length)];
       }
-      const conoscenza = knowledge.list(channel).filter((k) => k.fonte !== 'chat').slice(0, 6)
-        .map((k) => `${k.domanda}: ${k.risposta}`);
+      const conoscenza = this._conoscenzaPertinente(channel, '');   // nessun messaggio a cui agganciarsi: fissate + recenti
       const r = await brainpy.rispondi({
         canale: channel, login: channel, nome: nome || 'tu',
         testo: '(scrivigli tu per primo, di tua iniziativa)',
@@ -993,6 +994,10 @@ export class Brain {
           });
         }
         if (voce) return this._finalizza(channel, voce.risposta, streamer);
+        // niente voce apposita: c'è il campo «dove ti trovano» della scheda, ed è
+        // fatto per questo. Esce ALLA LETTERA — dentro ci sono gli indirizzi.
+        const dove = this._scheda(channel).dove;
+        if (dove) return this._finalizza(channel, dove, streamer);
       }
 
       // ---- b. CONOSCENZA (semantica + lessicale) ----------------------
@@ -1016,6 +1021,7 @@ export class Brain {
             via: 'bot', canale: streamer.display || channel, canaleId: channel,
             login: user, nome, testo: text, tono,
             conoscenza: [daConoscenza],   // UNA cosa sola: qui deve dire questa, non divagare
+            scheda: this._scheda(channel),
             stile: this._stileStreamer(channel),
             storia: this._storiaRecente(channel, text),
             situazione: this._situazione(channel),
@@ -1036,14 +1042,12 @@ export class Brain {
       // spento ritorna null e il bot resta zitto. I COMANDI non passano mai di
       // qui → restano sempre istantanei. Passa comunque da _finalizza (mod+anti-eco).
       if (iaOn) {
-        const conoscenza = knowledge.list(channel)
-          .filter((k) => k.fonte !== 'chat')
-          .slice(0, 6)
-          .map((k) => `${k.domanda}: ${k.risposta}`);
+        const conoscenza = this._conoscenzaPertinente(channel, text);
         const risposta = await brainpy.rispondi({
           via: 'bot',   // la chat pubblica è del BOT, non di Lei (docs/BOT-E-LIA.md)
           canale: streamer.display || channel, canaleId: channel,
           login: user, nome, testo: text, tono, conoscenza,
+          scheda: this._scheda(channel),   // chi è lo streamer, deciso da lui (docs/CONOSCENZA.md)
           stile: this._stileStreamer(channel),   // la voce vera dello streamer (esempi di stile)
           storia: this._storiaRecente(channel, text),   // il discorso in corso in chat (memoria a breve termine)
           situazione: this._situazione(channel),   // com'è la diretta adesso (gioco/live/uptime)
@@ -1067,6 +1071,7 @@ export class Brain {
                 via: 'bot',
                 canale: streamer.display || channel, canaleId: channel,
                 login: user, nome, testo: text, tono, web,
+                scheda: this._scheda(channel),
                 storia: this._storiaRecente(channel, text),
                 situazione: this._situazione(channel),
                 lineeGuida: guide.applicabili(channel, { piattaforma: 'twitch', privato: false, sonoIo: false }),
@@ -1093,33 +1098,68 @@ export class Brain {
   // Cerca nella knowledge la voce che meglio combacia con il testo.
   // Punteggio: parole in comune / parole della voce, con bonus per i
   // match "pesanti" (parole lunghe, più distintive).
-  _cercaConoscenza(channel, testo) {
-    const paroleUtente = new Set(learn.normalizza(testo));
-    if (!paroleUtente.size) return null;
-
-    let migliore = null;
-    let migliorPunteggio = 0;
-    for (const voce of knowledge.list(channel)) {
-      // niente risposte "imparate dalla chat" (sono messaggi veri degli utenti:
-      // ripeterli è sgradevole). Solo conoscenza curata: profilo del sito / dashboard.
-      if (voce.fonte === 'chat') continue;
-      const paroleVoce = new Set(learn.normalizza(voce.domanda));
-      if (!paroleVoce.size) continue;
-
-      let comuni = 0;
-      let bonus = 0;
-      for (const w of paroleVoce) {
-        if (!paroleUtente.has(w)) continue;
-        comuni++;
-        if (w.length >= 5) bonus += 0.05;   // le parole lunghe pesano di più
-      }
-      const minime = paroleVoce.size <= 2 ? 1 : 2;   // le voci corte si accontentano di 1 parola
-      if (comuni < minime) continue;
-
-      const punteggio = comuni / paroleVoce.size + Math.min(0.25, bonus);
-      if (punteggio > migliorPunteggio) { migliorPunteggio = punteggio; migliore = voce; }
+  // Quanto una voce c'entra con quello che è stato scritto: parole in comune
+  // diviso parole della voce, con un bonus alle parole lunghe (più distintive).
+  // Le voci corte si accontentano di una parola sola, le lunghe ne vogliono due:
+  // sennò «pc» aggancerebbe qualunque frase in cui compare.
+  _punteggioVoce(voce, paroleUtente) {
+    if (!paroleUtente.size) return 0;
+    const paroleVoce = new Set(learn.normalizza(voce.domanda));
+    if (!paroleVoce.size) return 0;
+    let comuni = 0;
+    let bonus = 0;
+    for (const w of paroleVoce) {
+      if (!paroleUtente.has(w)) continue;
+      comuni++;
+      if (w.length >= 5) bonus += 0.05;
     }
-    return migliorPunteggio >= 0.5 ? migliore.risposta : null;
+    const minime = paroleVoce.size <= 2 ? 1 : 2;
+    if (comuni < minime) return 0;
+    return comuni / paroleVoce.size + Math.min(0.25, bonus);
+  }
+
+  // LE VOCI IN ORDINE DI IMPORTANZA per questo momento. Un unico posto in cui si
+  // decide quale conoscenza conta: prima si sono decise due volte (per punteggio
+  // nella scorciatoia, per DATA nel prompt) e le due decisioni erano diverse —
+  // con più di sei voci, al cervello arrivava sempre e solo la roba appena
+  // scritta, senza nessun sintomo che qualcosa non andasse.
+  // Fuori: le imparate dalla chat (sono messaggi veri di altre persone) e quelle
+  // fuori tempo (`quando`). Prime: le fissate. Poi il punteggio; a parità, le più
+  // recenti (l'elenco arriva già in quell'ordine e l'ordinamento è stabile).
+  _vociConoscenza(channel, testo) {
+    const live = !!memory.streamContext(channel);
+    const paroleUtente = new Set(learn.normalizza(testo || ''));
+    const scelte = [];
+    for (const voce of knowledge.list(channel)) {
+      if (voce.fonte === 'chat') continue;
+      const quando = voce.quando || 'sempre';
+      if ((quando === 'live' && !live) || (quando === 'offline' && live)) continue;
+      scelte.push({ voce, p: this._punteggioVoce(voce, paroleUtente), fissata: !!voce.fissata });
+    }
+    return scelte.sort((a, b) => (b.fissata - a.fissata) || (b.p - a.p));
+  }
+
+  // Le righe di conoscenza da mettere nel prompt, già in ordine di importanza.
+  _conoscenzaPertinente(channel, testo, quante = 6) {
+    try {
+      return this._vociConoscenza(channel, testo).slice(0, quante)
+        .map(({ voce }) => `${voce.domanda}: ${voce.risposta}`);
+    } catch (e) { log.debug('conoscenza:', e?.message || e); return []; }
+  }
+
+  // LA SCHEDA: chi è lo streamer, detto da lui. Sempre nel prompt, in un blocco
+  // suo — non gareggia con le domande e risposte per un posto.
+  _scheda(channel) {
+    try { return schedaPulita(streamers.get(channel)?.settings?.scheda); } catch { return {}; }
+  }
+
+  // LA SCORCIATOIA: c'è una voce che c'entra COSÌ tanto da essere già la
+  // risposta? Guarda il punteggio vero, non il fatto che sia fissata: una voce
+  // messa in cima a mano non è per questo la risposta a qualunque domanda.
+  _cercaConoscenza(channel, testo) {
+    const migliore = this._vociConoscenza(channel, testo).reduce(
+      (a, b) => (b.p > (a?.p ?? 0) ? b : a), null);
+    return migliore && migliore.p >= 0.5 ? migliore.voce.risposta : null;
   }
 
   // Normalizza per confronti "è la stessa frase?": minuscolo, senza

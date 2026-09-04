@@ -30,6 +30,8 @@ const TIMEOUT_CHAT = Number(process.env.BRAIN_TIMEOUT_MS || '15000') || 15000;
 // Il perché per esteso: docs/BOT-E-LIA.md.
 //
 // `stile` = alcune frasi vere dello streamer (la sua voce), per farlo suonare come lui.
+// `scheda` = chi è lo streamer, deciso da lui (docs/CONOSCENZA.md): sta sempre nel
+//   prompt, in un blocco suo, e non gareggia con la conoscenza per un posto.
 // `canaleId` = il login del canale (`canale` può essere il nome visualizzato): serve
 //   al bot per trovare il proprio quaderno di quel canale.
 // `compito` = non è una chiacchierata ma un lavoretto ("inventa una penitenza"):
@@ -37,7 +39,7 @@ const TIMEOUT_CHAT = Number(process.env.BRAIN_TIMEOUT_MS || '15000') || 15000;
 // `timeoutMs` = quanto attendere (i DM possono attendere di più: su CPU un 3B è
 //   lento e una risposta tardiva è meglio di nessuna risposta).
 // `modo` = 'live' | 'allenamento' | 'proattivo' | 'studio' (solo per la via di lei).
-export async function rispondi({ canale, canaleId, login, nome, testo, tono, conoscenza, stile, storia, situazione, timeoutMs, modo, nomeBot, spunto, lineeGuida, web, via, compito } = {}) {
+export async function rispondi({ canale, canaleId, login, nome, testo, tono, conoscenza, scheda, stile, storia, situazione, timeoutMs, modo, nomeBot, spunto, lineeGuida, web, via, compito } = {}) {
   if (!canale || !login || !testo) return null;
   const rotta = via === 'bot' ? '/bot' : '/chat';
   const attesa = timeoutMs || TIMEOUT_CHAT;
@@ -52,7 +54,7 @@ export async function rispondi({ canale, canaleId, login, nome, testo, tono, con
       // margine fisso non basterebbe — con attese corte (4s) lo mangerebbe tutto.
       body: JSON.stringify({
         canale, canale_id: canaleId || String(canale).toLowerCase(), login, nome, testo, tono,
-        conoscenza, stile, storia, situazione, modo, nome_bot: nomeBot, spunto,
+        conoscenza, scheda, stile, storia, situazione, modo, nome_bot: nomeBot, spunto,
         linee_guida: lineeGuida, web, compito: compito || undefined,
         timeout_s: Math.max(2, Math.floor((attesa * 0.8) / 1000)),
       }),

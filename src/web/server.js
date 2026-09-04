@@ -17,7 +17,7 @@ import { dirname, join, basename } from 'node:path';
 import { config, SCOPES, missingConfig } from '../config.js';
 import * as filigrana from '../watermark.js';   // filigrana di proprietà (Andrea Taliento / ANDRYXify)
 import { makeLog } from '../logger.js';
-import { db, tokens, streamers, memory, clips, knowledge, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb } from '../db.js';
+import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb } from '../db.js';
 import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO } from '../db.js';
 import { renderLinkPage, renderInformativa } from '../features/linkpagina.js';
@@ -3006,6 +3006,15 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       if (!['sempre', 'live', 'manuale'].includes(b.modalita)) return res.status(400).json({ errore: 'modalità non valida' });
       out.modalita = b.modalita;
     }
+    // LA SCHEDA dello streamer: chi è, deciso da lui. Passa dal pulitore
+    // condiviso (src/db.js) — è lo stesso che legge il cervello, così non
+    // possono esistere due idee diverse di quali campi esistono.
+    if (b.scheda !== undefined) {
+      if (typeof b.scheda !== 'object' || b.scheda === null || Array.isArray(b.scheda)) {
+        return res.status(400).json({ errore: 'scheda non valida' });
+      }
+      out.scheda = schedaPulita(b.scheda);
+    }
     if (b.frasi !== undefined) {
       if (!Array.isArray(b.frasi)) return res.status(400).json({ errore: 'frasi deve essere una lista' });
       out.frasi = b.frasi
@@ -3507,7 +3516,24 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (!domanda || !risposta) {
       return res.status(400).json({ errore: 'domanda e risposta sono obbligatorie' });
     }
-    knowledge.add(currentUser(req).login, { domanda, risposta, fonte: 'manuale' });
+    const quando = QUANDO_CONOSCENZA.includes(req.body?.quando) ? req.body.quando : 'sempre';
+    knowledge.add(currentUser(req).login, { domanda, risposta, fonte: 'manuale', quando, fissata: !!req.body?.fissata });
+    res.json({ ok: true });
+  }));
+
+  // l'AMBITO di una voce (quando vale, se è fissata) senza doverla riscrivere
+  app.patch('/api/streamer/knowledge/:id', requireLogin, wrap(async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) return res.status(400).json({ errore: 'id non valido' });
+    const b = req.body || {};
+    if (b.quando !== undefined && !QUANDO_CONOSCENZA.includes(b.quando)) {
+      return res.status(400).json({ errore: 'quando non valido' });
+    }
+    const ok = knowledge.setAmbito(currentUser(req).login, id, {
+      quando: b.quando,
+      fissata: b.fissata === undefined ? undefined : !!b.fissata,
+    });
+    if (!ok) return res.status(404).json({ errore: 'voce sconosciuta' });
     res.json({ ok: true });
   }));
 
@@ -3516,6 +3542,34 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (!Number.isFinite(id)) return res.status(400).json({ errore: 'id non valido' });
     knowledge.remove(currentUser(req).login, id);
     res.json({ ok: true });
+  }));
+
+  // IL QUADERNO DEL BOT: quello che gli è stato insegnato a FARE (non a sapere).
+  // Ci scrive lo streamer e — quando vivrà — anche Lia; l'elenco dice da chi
+  // viene ogni riga, così una che non convince si può togliere anche se l'ha
+  // messa lei. Il verso unico è spiegato in docs/BOT-E-LIA.md.
+  app.get('/api/streamer/quaderno', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const r = await brainpy.quaderno({ canale: login });
+    res.json({ voci: r?.voci || [], quaderno: r?.quaderno || null, disponibile: !!r });
+  }));
+
+  app.post('/api/streamer/quaderno', requireLogin, wrap(async (req, res) => {
+    const testo = String(req.body?.testo || '').trim();
+    if (testo.length < 12) return res.status(400).json({ errore: 'scrivi almeno una frase intera' });
+    // «ovunque» è una scelta dell'owner del sito, non di uno streamer: dalla
+    // dashboard si insegna al proprio canale e basta.
+    const r = await brainpy.quaderno({ op: 'scrivi', testo, canale: currentUser(req).login, da: 'streamer' });
+    if (!r) return res.status(503).json({ errore: 'il cervello non risponde adesso' });
+    res.json({ ok: !!r.ok, quaderno: r.quaderno || null });
+  }));
+
+  app.delete('/api/streamer/quaderno', requireLogin, wrap(async (req, res) => {
+    const testo = String(req.query?.testo || '').trim();
+    if (!testo) return res.status(400).json({ errore: 'quale riga?' });
+    const r = await brainpy.quaderno({ op: 'dimentica', testo, canale: currentUser(req).login });
+    if (!r) return res.status(503).json({ errore: 'il cervello non risponde adesso' });
+    res.json({ ok: !!r.ok, tolte: r.tolte || 0 });
   }));
 
   // pre-addestramento SINCRONO: il bottone in dashboard mostra il risultato

@@ -125,6 +125,7 @@ function impostazioni() {
     instagram: (s.instagram && typeof s.instagram === 'object') ? s.instagram : { userId: '', attivo: false, annunciaChat: false, messaggio: '' },
     giochiSito: (s.giochiSito && typeof s.giochiSito === 'object') ? s.giochiSito : { attivo: false, collegato: false },
     frasi: Array.isArray(s.frasi) ? s.frasi : [],
+    scheda: (s.scheda && typeof s.scheda === 'object') ? s.scheda : {},
     clipAuto: s.clipAuto !== false,
     clipAutoSoglia: typeof s.clipAutoSoglia === 'number' ? s.clipAutoSoglia : 25,
     clipAutoSensibilita: typeof s.clipAutoSensibilita === 'number' ? s.clipAutoSensibilita
@@ -257,6 +258,9 @@ function statoDemo() {
         manche: { attivo: true, minMin: 20, maxMin: 60, soloLive: false },
         paroleVietate: ['spoiler', 'link-truffa'],
         frasi: ['Benvenuto nel canale!', 'Ricordati di seguire per non perderti le live!'],
+        scheda: { chi: 'Andrea, 27 anni, gioco da quando ne avevo otto', faccio: 'gare su Fortnite e ogni tanto costruisco cose assurde',
+          orari: 'quasi ogni sera dalle 21, il sabato no', dove: 'andryxify.it e instagram.com/andryxify',
+          chiamami: 'Andry', evita: 'dove abito e il mio cognome' },
         tiktok: { username: 'andryxify', attivo: true, annunciaChat: true, messaggio: '', postAttivo: true, postAnnunciaChat: false, postMessaggio: '' },
         youtube: { canale: '@andryxify', apiKeySet: true, attivo: true, annunciaChat: false, messaggio: '' },
         instagram: { userId: '17841400000000000', tokenSet: true, attivo: true, annunciaChat: false, messaggio: '' },
@@ -532,10 +536,19 @@ function _demoGet(via) {
       ],
     },
     '/api/streamer/knowledge': [
-      { id: 1, domanda: 'Che PC usi?', risposta: 'Ryzen 7 + RTX 4070, trovi tutto su andryxify.it', fonte: 'manuale', ts: '2026-05-02T18:00:00Z' },
-      { id: 2, domanda: 'Da dove streammi?', risposta: 'Da Genova, quasi ogni sera verso le 21', fonte: 'auto', ts: '2026-05-01T20:00:00Z' },
-      { id: 3, domanda: 'Come ti seguo ovunque?', risposta: 'Tutti i miei link li trovi su andryxify.it/u/andryx', fonte: 'chat', ts: '2026-05-05T22:10:00Z' },
+      { id: 1, domanda: 'Che PC usi?', risposta: 'Ryzen 7 + RTX 4070, trovi tutto su andryxify.it', fonte: 'manuale', quando: 'sempre', fissata: true, ts: '2026-05-02T18:00:00Z' },
+      { id: 2, domanda: 'Da dove streammi?', risposta: 'Da Genova, quasi ogni sera verso le 21', fonte: 'auto', quando: 'sempre', fissata: false, ts: '2026-05-01T20:00:00Z' },
+      { id: 3, domanda: 'Codice sconto sponsor', risposta: 'Usa il codice ORA10 finché siamo in diretta', fonte: 'manuale', quando: 'live', fissata: false, ts: '2026-05-04T21:00:00Z' },
+      { id: 4, domanda: 'Come ti seguo ovunque?', risposta: 'Tutti i miei link li trovi su andryxify.it/u/andryx', fonte: 'chat', quando: 'sempre', fissata: false, ts: '2026-05-05T22:10:00Z' },
     ],
+    '/api/streamer/quaderno': {
+      voci: [
+        { t: 'Quando chiedono del torneo, rimandali al Discord del canale.', da: 'streamer', canale: 'andryx_demo', quando: 1780000000 },
+        { t: 'Se qualcuno arriva arrabbiato, non fare il simpatico: rispondi corto e passa oltre.', da: 'lia', canale: '', quando: 1779000000 },
+      ],
+      quaderno: { voci: 2, canali: 1, da: { streamer: 1, lia: 1 } },
+      disponibile: true,
+    },
     '/api/streamer/citazioni': [
       { n: 1, text: 'Tu, molto molto bravo', autore: 'UnicornoFacinoroso', data: '2024-06-09' },
       { n: 2, text: 'io solo perchè mi andava di uscire', autore: 'chiara_3008', data: '2024-06-10' },
@@ -4284,20 +4297,72 @@ async function caricaGuide() {
 }
 
 function pannelloConoscenza() {
+  const sc = impostazioni().scheda || {};
+  const v = (k) => esc(String(sc[k] || ''));
   return pannello('conoscenza', `
+    <div class="carta">
+      <h2>${_hIco(ICO.persona)}${L('La tua scheda', 'Your profile card', 'Tu ficha')}</h2>
+      <p>${L('Chi sei, con parole tue. Il bot le ha', 'Who you are, in your own words. The bot has them', 'Quién eres, con tus palabras. El bot las tiene')} <strong class="primo-piano">${L('sempre a disposizione', 'always available', 'siempre disponibles')}</strong>${L(', insieme alle domande e risposte qui sotto. Lascia vuoto quello che non vuoi far dire.', ', together with the questions and answers below. Leave blank what you don\'t want said.', ', junto con las preguntas y respuestas de abajo. Deja en blanco lo que no quieras que diga.')}</p>
+
+      <label class="campo" for="sc-chi">${L('Chi sei', 'Who you are', 'Quién eres')}</label>
+      <input type="text" id="sc-chi" maxlength="240" value="${v('chi')}" placeholder="${L('es. Andrea, 27 anni, gioco da quando ne avevo otto', 'e.g. Andrea, 27, playing since I was eight', 'p. ej. Andrea, 27 años, juego desde los ocho')}">
+
+      <label class="campo" for="sc-faccio">${L('Cosa fai in diretta', 'What you do live', 'Qué haces en directo')}</label>
+      <input type="text" id="sc-faccio" maxlength="240" value="${v('faccio')}" placeholder="${L('es. gare su Fortnite e ogni tanto costruisco cose assurde', 'e.g. Fortnite tournaments and the odd absurd build', 'p. ej. torneos de Fortnite y de vez en cuando construyo cosas absurdas')}">
+
+      <label class="campo" for="sc-orari">${L('Quando sei in diretta', 'When you stream', 'Cuándo estás en directo')}</label>
+      <input type="text" id="sc-orari" maxlength="160" value="${v('orari')}" placeholder="${L('es. quasi ogni sera dalle 21, il sabato no', 'e.g. most evenings from 9pm, not on Saturdays', 'p. ej. casi todas las noches desde las 21, los sábados no')}">
+
+      <label class="campo" for="sc-dove">${L('Dove ti trovano', 'Where to find you', 'Dónde encontrarte')}</label>
+      <input type="text" id="sc-dove" maxlength="240" value="${v('dove')}" placeholder="${L('es. instagram.com/iltuonome e il sito', 'e.g. instagram.com/yourname and the site', 'p. ej. instagram.com/tunombre y la web')}">
+      <p class="suggerimento">${L('Il bot lo ripete', 'The bot repeats it', 'El bot lo repite')} <strong>${L('come l\'hai scritto', 'exactly as you wrote it', 'tal como lo escribiste')}</strong>${L(', senza cambiare gli indirizzi.', ', without changing the addresses.', ', sin cambiar las direcciones.')}</p>
+
+      <label class="campo" for="sc-chiamami">${L('Come deve chiamarti', 'What it should call you', 'Cómo debe llamarte')}</label>
+      <input type="text" id="sc-chiamami" maxlength="40" value="${v('chiamami')}" placeholder="${L('es. Andry', 'e.g. Andry', 'p. ej. Andry')}">
+
+      <label class="campo" for="sc-evita">${L('Cosa non dire mai di te', 'What it must never say about you', 'Qué no debe decir nunca de ti')}</label>
+      <input type="text" id="sc-evita" maxlength="240" value="${v('evita')}" placeholder="${L('es. dove abito, il mio cognome, la mia età vera', 'e.g. where I live, my surname, my real age', 'p. ej. dónde vivo, mi apellido, mi edad real')}">
+      <p class="suggerimento">${L('Il bot lo tratta come una', 'The bot treats it as a', 'El bot lo trata como una')} <strong>${L('regola', 'rule', 'regla')}</strong>${L(': vale sopra tutto il resto.', ': it comes before everything else.', ': está por encima de todo lo demás.')}</p>
+
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-scheda">${L('Salva la scheda', 'Save the card', 'Guardar la ficha')}</button></p>
+    </div>
+
     <div class="carta">
       <h2>${_hIco(ICO.scrivi)}${L('Insegnagli qualcosa', 'Teach it something', 'Enséñale algo')}</h2>
       <p>${L('Domanda (o parole chiave) e risposta: quando in chat spunta l\'argomento, il bot saprà cosa dire.', 'Question (or keywords) and answer: when the topic comes up in chat, the bot knows what to say.', 'Pregunta (o palabras clave) y respuesta: cuando el tema aparece en el chat, el bot sabrá qué decir.')}</p>
       <label class="campo" for="inp-domanda">${L('Domanda / parole chiave', 'Question / keywords', 'Pregunta / palabras clave')}</label>
       <input type="text" id="inp-domanda" placeholder="${L('es. che pc usi? / setup / configurazione', 'e.g. what PC do you use? / setup / config', 'p. ej. ¿qué PC usas? / setup / configuración')}">
       <label class="campo" for="inp-risposta">${L('Risposta', 'Answer', 'Respuesta')}</label>
-      <input type="text" id="inp-risposta" placeholder="${L('es. Gioco su un Ryzen 7 con una 4070, trovi tutto su andryxify.it!', 'e.g. I play on a Ryzen 7 with a 4070, find it all on andryxify.it!', 'p. ej. ¡Juego con un Ryzen 7 y una 4070, lo tienes todo en andryxify.it!')}">
-      <p class="spazio-sopra"><button class="btn" id="btn-aggiungi-conoscenza">${L('Aggiungi', 'Add', 'Añadir')}</button></p>
+      <input type="text" id="inp-risposta" placeholder="${L('es. Gioco su un Ryzen 7 con una 4070, trovi tutto sul sito!', 'e.g. I play on a Ryzen 7 with a 4070, it\'s all on the site!', 'p. ej. ¡Juego con un Ryzen 7 y una 4070, está todo en la web!')}">
+      <div class="riga-flessibile spazio-sopra">
+        <select id="sel-cono-quando" title="${L('Quando vale', 'When it applies', 'Cuándo vale')}">
+          <option value="sempre">${L('vale sempre', 'always applies', 'vale siempre')}</option>
+          <option value="live">${L('solo quando sei in diretta', 'only while you are live', 'solo cuando estás en directo')}</option>
+          <option value="offline">${L('solo quando sei offline', 'only while you are offline', 'solo cuando estás offline')}</option>
+        </select>
+        <label class="riga-check" for="chk-cono-fissata" style="margin:0">
+          <input type="checkbox" id="chk-cono-fissata">
+          <span>${L('fissata', 'pinned', 'fijada')}</span>
+        </label>
+        <button class="btn" id="btn-aggiungi-conoscenza">${L('Aggiungi', 'Add', 'Añadir')}</button>
+      </div>
+      <p class="suggerimento">${L('Il bot usa le', 'The bot uses the', 'El bot usa las')} <strong>${L('sei voci più vicine alla domanda', 'six entries closest to the question', 'seis entradas más cercanas a la pregunta')}</strong>${L(', quindi puoi scriverne quante vuoi. Le voci', ', so you can write as many as you like. Entries marked', ', así que puedes escribir todas las que quieras. Las entradas')} <strong>${L('fissate', 'pinned', 'fijadas')}</strong> ${L('ci sono sempre: tienile per le cose più importanti.', 'are always included: keep them for the most important things.', 'están siempre: guárdalas para lo más importante.')}</p>
     </div>
+
     <div class="carta">
       <h2>${_hIco(ICO.cervello)}${L('Cosa sa il bot', 'What the bot knows', 'Lo que sabe el bot')}</h2>
       <p>${L('dal sito', 'from the site', 'de la web')} &nbsp;·&nbsp; ${L('tua', 'yours', 'tuya')} &nbsp;·&nbsp; ${L('imparata dalla chat', 'learned from chat', 'aprendida del chat')}</p>
       <ul class="lista-voci" id="lista-conoscenza"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.libro)}${L('Il quaderno del bot', 'The bot\'s notebook', 'El cuaderno del bot')}</h2>
+      <p>${L('Qui scrivi', 'Here you write', 'Aquí escribes')} <strong class="primo-piano">${L('come deve rispondere', 'how it should reply', 'cómo debe responder')}</strong>, ${L('non cosa sa. Per esempio: «quando chiedono del torneo, rimanda al Discord», oppure «se qualcuno è arrabbiato, rispondi corto». Il bot le applica senza citarle.', 'not what it knows. For example: “when they ask about the tournament, point them to Discord”, or “if someone is angry, keep it short”. The bot applies them without quoting them.', 'no lo que sabe. Por ejemplo: «cuando pregunten por el torneo, remite al Discord», o «si alguien está enfadado, responde corto». El bot las aplica sin citarlas.')}</p>
+      <div class="riga-flessibile spazio-sopra">
+        <input type="text" class="cresce" id="inp-quaderno" maxlength="220" placeholder="${L('es. quando chiedono il torneo, rimanda al Discord', 'e.g. when they ask about the tournament, point them to Discord', 'p. ej. cuando pregunten por el torneo, remite al Discord')}">
+        <button class="btn" id="btn-quaderno-add">${L('Insegna', 'Teach', 'Enseñar')}</button>
+      </div>
+      <ul class="lista-voci" id="lista-quaderno"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
     </div>`);
 }
 
@@ -13509,11 +13574,34 @@ function attivaPiattaforma() {
     const domanda = document.getElementById('inp-domanda').value.trim();
     const risposta = document.getElementById('inp-risposta').value.trim();
     if (!domanda || !risposta) { toast(L('Compila domanda e risposta.', 'Fill in question and answer.', 'Completa pregunta y respuesta.'), 'errore'); return; }
-    await api('/api/streamer/knowledge', { method: 'POST', body: { domanda, risposta } });
+    await api('/api/streamer/knowledge', { method: 'POST', body: {
+      domanda, risposta,
+      quando: document.getElementById('sel-cono-quando')?.value || 'sempre',
+      fissata: !!document.getElementById('chk-cono-fissata')?.checked,
+    } });
     document.getElementById('inp-domanda').value = '';
     document.getElementById('inp-risposta').value = '';
+    const f = document.getElementById('chk-cono-fissata'); if (f) f.checked = false;
     toast(L('Il bot ha imparato qualcosa di nuovo', 'The bot learned something new', 'El bot ha aprendido algo nuevo'));
     caricaConoscenza();
+  }));
+
+  document.getElementById('btn-salva-scheda')?.addEventListener('click', () => conErrore(async () => {
+    const campo = (k) => document.getElementById('sc-' + k)?.value.trim() || '';
+    const scheda = { chi: campo('chi'), faccio: campo('faccio'), orari: campo('orari'), dove: campo('dove'), chiamami: campo('chiamami'), evita: campo('evita') };
+    await api('/api/streamer/impostazioni', { method: 'POST', body: { scheda } });
+    if (stato?.streamer?.settings) stato.streamer.settings.scheda = scheda;
+    toast(L('Scheda salvata: il bot sa chi sei', 'Card saved: the bot knows who you are', 'Ficha guardada: el bot sabe quién eres'));
+  }));
+
+  document.getElementById('btn-quaderno-add')?.addEventListener('click', () => conErrore(async () => {
+    const inp = document.getElementById('inp-quaderno');
+    const testo = inp?.value.trim() || '';
+    if (testo.length < 12) { toast(L('Scrivi una frase intera.', 'Write a whole sentence.', 'Escribe una frase entera.'), 'errore'); return; }
+    await api('/api/streamer/quaderno', { method: 'POST', body: { testo } });
+    inp.value = '';
+    toast(L('Insegnato.', 'Taught.', 'Enseñado.'));
+    caricaQuaderno();
   }));
 
   document.getElementById('btn-copia-overlay')?.addEventListener('click', async () => {
@@ -13755,7 +13843,7 @@ function caricaDatiScheda(id) {
   if (id === 'stato') { caricaPasskey(); caricaModeratori(); caricaRetePanoramica(); caricaPiattaforme(); }
   if (id === 'avatar') caricaMente3d();
   if (id === 'personalita') caricaGuide();
-  if (id === 'conoscenza') caricaConoscenza();
+  if (id === 'conoscenza') { caricaConoscenza(); caricaQuaderno(); }
   if (id === 'clip') caricaClip();
   if (id === 'musica') caricaSpotify();
   if (id === 'sondaggi') caricaSondaggi();
@@ -13836,19 +13924,46 @@ async function caricaConoscenza() {
   if (!ul) return;
   try {
     const voci = await api('/api/streamer/knowledge');
-    if (!voci.length) { ul.innerHTML = '<li class="vuoto">Il bot non sa ancora niente: insegnagli qualcosa qui sopra!</li>'; return; }
-    const badge = { auto: 'dal sito', manuale: 'tua', chat: 'dalla chat' };
+    if (!voci.length) { ul.innerHTML = `<li class="vuoto">${L('Il bot non sa ancora niente: insegnagli qualcosa qui sopra!', 'The bot doesn\'t know anything yet: teach it something above!', '¡El bot aún no sabe nada: enséñale algo aquí arriba!')}</li>`; return; }
+    const badge = { auto: L('dal sito', 'from the site', 'de la web'), manuale: L('tua', 'yours', 'tuya'), chat: L('dalla chat', 'from chat', 'del chat') };
+    const QUANDO = {
+      sempre: L('sempre', 'always', 'siempre'),
+      live: L('solo in diretta', 'only when live', 'solo en directo'),
+      offline: L('solo offline', 'only offline', 'solo offline'),
+    };
     ul.innerHTML = voci.map((v) => `
       <li>
         <div class="testo-voce">
-          <div class="domanda">${esc(v.domanda)}</div>
+          <div class="domanda">${v.fissata ? '<span class="badge">' + L('fissata', 'pinned', 'fijada') + '</span> ' : ''}${esc(v.domanda)}</div>
           <div class="risposta">${esc(v.risposta)}</div>
-          <div class="meta"><span class="badge">${badge[v.fonte] || esc(v.fonte)}</span> · ${esc(dataIt(v.ts))}</div>
+          <div class="meta"><span class="badge">${esc(badge[v.fonte] || v.fonte)}</span> · ${esc(QUANDO[v.quando] || QUANDO.sempre)} · ${esc(dataIt(v.ts))}</div>
         </div>
-        <button class="btn secondario mini" data-elimina="${v.id}">Elimina</button>
+        <div class="riga-flessibile">
+          <select data-quando="${v.id}" title="${L('Quando vale', 'When it applies', 'Cuándo vale')}">
+            ${Object.entries(QUANDO).map(([k, t]) => `<option value="${k}"${(v.quando || 'sempre') === k ? ' selected' : ''}>${esc(t)}</option>`).join('')}
+          </select>
+          <button class="btn secondario mini" data-fissa="${v.id}" data-on="${v.fissata ? '1' : '0'}">${v.fissata ? L('Libera', 'Unpin', 'Soltar') : L('Fissa', 'Pin', 'Fijar')}</button>
+          <button class="btn secondario mini" data-elimina="${v.id}">${L('Elimina', 'Delete', 'Eliminar')}</button>
+        </div>
       </li>`).join('');
 
+    ul.onchange = (ev) => {
+      const sel = ev.target.closest('[data-quando]');
+      if (!sel) return;
+      conErrore(async () => {
+        await api('/api/streamer/knowledge/' + sel.dataset.quando, { method: 'PATCH', body: { quando: sel.value } });
+        caricaConoscenza();
+      });
+    };
     ul.onclick = (ev) => {
+      const fissa = ev.target.closest('[data-fissa]');
+      if (fissa) {
+        conErrore(async () => {
+          await api('/api/streamer/knowledge/' + fissa.dataset.fissa, { method: 'PATCH', body: { fissata: fissa.dataset.on !== '1' } });
+          caricaConoscenza();
+        });
+        return;
+      }
       const btn = ev.target.closest('[data-elimina]');
       if (!btn) return;
       conErrore(async () => {
@@ -13860,6 +13975,43 @@ async function caricaConoscenza() {
   } catch (e) {
     ul.innerHTML = `<li class="vuoto">Errore: ${esc(e.message)}</li>`;
   }
+}
+
+async function caricaQuaderno() {
+  const ul = document.getElementById('lista-quaderno');
+  if (!ul) return;
+  let d;
+  try { d = await api('/api/streamer/quaderno'); } catch {
+    ul.innerHTML = `<li class="vuoto">${L('Il cervello non risponde adesso.', 'The brain is not answering right now.', 'El cerebro no responde ahora.')}</li>`;
+    return;
+  }
+  const voci = d?.voci || [];
+  if (!voci.length) {
+    ul.innerHTML = `<li class="vuoto">${L('Niente ancora. Scrivigli qui sopra come vuoi che risponda.', 'Nothing yet. Write above how you want it to reply.', 'Nada aún. Escribe arriba cómo quieres que responda.')}</li>`;
+    return;
+  }
+  const DA = {
+    streamer: L('tua', 'yours', 'tuya'),
+    owner: L('dal sito', 'from the site', 'de la web'),
+    lia: L('te l\'ha insegnata Lia', 'taught by Lia', 'se la enseñó Lia'),
+  };
+  ul.innerHTML = voci.map((v) => `
+    <li>
+      <div class="testo-voce">
+        <div class="domanda">${esc(v.t)}</div>
+        <div class="meta"><span class="badge">${esc(DA[v.da] || v.da)}</span>${v.canale ? '' : ' · ' + L('vale ovunque', 'applies everywhere', 'vale en todas partes')}</div>
+      </div>
+      ${v.canale ? `<button class="btn secondario mini" data-scorda="${esc(v.t)}">${L('Togli', 'Remove', 'Quitar')}</button>` : ''}
+    </li>`).join('');
+  ul.onclick = (ev) => {
+    const btn = ev.target.closest('[data-scorda]');
+    if (!btn) return;
+    conErrore(async () => {
+      await api('/api/streamer/quaderno?testo=' + encodeURIComponent(btn.dataset.scorda), { method: 'DELETE' });
+      toast(L('Tolta dal quaderno.', 'Removed from the notebook.', 'Quitada del cuaderno.'));
+      caricaQuaderno();
+    });
+  };
 }
 
 async function caricaClip() {
