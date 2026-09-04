@@ -6723,7 +6723,7 @@ function _posAncora(el, ang) {
 function _centroTela(k) {
   const st = _posCorrente(k);
   const el = _nodo(k);
-  if (st && el) return { x: centroDa(st.x, el.offsetWidth, OVL_W), y: centroDa(st.y, el.offsetHeight, OVL_H) };
+  if (st && el) { const l = _lati(el, st); return { x: centroDa(st.x, l.w, OVL_W), y: centroDa(st.y, l.h, OVL_H) }; }
   const canvas = _g('ovl-preview')?.getBoundingClientRect();
   const r = el ? el.getBoundingClientRect() : null;
   if (!canvas || !canvas.width || !r || !r.width) return null;
@@ -6743,13 +6743,13 @@ function _defPos(k) {
 
 function _posElemento(el, xy) {
   if (!el || !xy) return;
-  const sf = (Number(xy.s) || 100) / 100, r = Number(xy.r) || 0;
+  const sf = _fatt(xy), r = Number(xy.r) || 0;
   el.style.position = 'absolute'; el.style.left = xy.x + '%'; el.style.top = xy.y + '%';
   el.style.right = 'auto'; el.style.bottom = 'auto';
-  el.style.transform = `translate(${-xy.x}%,${-xy.y}%) scale(${sf}) rotate(${r}deg)`;
+  el.style.transform = `translate(${_tiraXY(xy.x, sf)}%,${_tiraXY(xy.y, sf)}%) scale(${sf}) rotate(${r}deg)`;
 
-  const h = el.offsetHeight;
-  _maniglieAPosto(el, sf, centroDa(xy.y, h, OVL_H) - (h * sf) / 2);
+  const h = el.offsetHeight * sf;
+  _maniglieAPosto(el, sf, centroDa(xy.y, h, OVL_H) - h / 2);
 }
 
 let selezione = null;
@@ -7353,6 +7353,9 @@ const xDaCentro = (c, lato, tela) => (tela - lato <= 0 ? 50 : ((c - lato / 2) / 
 const _tra = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const _pct = (px, tot) => (px / tot) * 100;
 const _arr = (n) => Math.round(n * 100) / 100;   // due decimali: 0.01% = 0.19px su 1920
+const _fatt = (xy) => (Number(xy && xy.s) || 100) / 100;
+const _tiraXY = (v, f) => _arr(50 * (f - 1) - v * f);
+const _lati = (el, xy) => { const f = _fatt(xy); return { w: (el ? el.offsetWidth : 0) * f, h: (el ? el.offsetHeight : 0) * f }; };
 
 const _storie = {};
 let _storiaInCorso = false;
@@ -7471,7 +7474,7 @@ function _spostaTasti(chiave, dx, dy, grande) {
   const st = _statoXY(chiave);
   const el = _nodo(chiave);
   const p = grande ? 10 : 1;
-  const w = el ? el.offsetWidth : 0, h = el ? el.offsetHeight : 0;
+  const { w, h } = _lati(el, st);
   st.x = _arr(_tra(xDaCentro(centroDa(st.x, w, OVL_W) + dx * p, w, OVL_W), 0, 100));
   st.y = _arr(_tra(xDaCentro(centroDa(st.y, h, OVL_H) + dy * p, h, OVL_H), 0, 100));
   _posElemento(el, st);
@@ -7512,7 +7515,7 @@ function rendiTrascinabile(el, chiave) {
     try { el.setPointerCapture(e.pointerId); } catch (_) {  }
     el.style.cursor = 'grabbing';
     const st = _statoXY(chiave);
-    const w = el.offsetWidth, h = el.offsetHeight;
+    const { w, h } = _lati(el, st);
     const suTela = (cx, cy) => ({ x: (cx - canvas.left) / scala, y: (cy - canvas.top) / scala });
     const qui = suTela(e.clientX, e.clientY);
     const c0 = _centroTela(chiave) || { x: centroDa(st.x, w, OVL_W), y: centroDa(st.y, h, OVL_H) };
@@ -9745,15 +9748,20 @@ function _premioEditorPos(box, comando, tipo, st, salva) {
     </div>` : ''}`;
   const el = box.querySelector('.pp-el');
   const stage = box.querySelector('.pp-stage');
-  const posEl = () => { el.style.left = st.xy.x + '%'; el.style.top = st.xy.y + '%'; el.style.transform = `translate(-50%,-50%) scale(${(st.xy.s || 100) / 100}) rotate(${st.xy.r || 0}deg)`; };
+  const posEl = () => {
+    const f = _fatt(st.xy);
+    el.style.left = st.xy.x + '%'; el.style.top = st.xy.y + '%';
+    el.style.transform = `translate(${_tiraXY(st.xy.x, f)}%,${_tiraXY(st.xy.y, f)}%) scale(${f}) rotate(${st.xy.r || 0}deg)`;
+  };
   posEl();
   el.addEventListener('pointerdown', (e) => {
     e.preventDefault();
     const rect = stage.getBoundingClientRect();
     try { el.setPointerCapture(e.pointerId); } catch (_) {  }
     const move = (ev) => {
-      st.xy.x = Math.round(Math.max(0, Math.min(100, ((ev.clientX - rect.left) / rect.width) * 100)));
-      st.xy.y = Math.round(Math.max(0, Math.min(100, ((ev.clientY - rect.top) / rect.height) * 100)));
+      const l = _lati(el, st.xy);
+      st.xy.x = Math.round(_tra(xDaCentro(ev.clientX - rect.left, l.w, rect.width), 0, 100));
+      st.xy.y = Math.round(_tra(xDaCentro(ev.clientY - rect.top, l.h, rect.height), 0, 100));
       posEl();
     };
     const up = () => { el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); salva(); };

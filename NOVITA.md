@@ -3,6 +3,12 @@
 Cosa è cambiato nel bot, in ordine di tempo. Una riga per cosa, scritta per chi
 lo usa: se non si vede da fuori, qui non ci va.
 
+## 2026-09-04
+
+- Un elemento con la Dimensione cambiata arriva davvero al bordo dello schermo: rimpicciolito si piantava prima e sembrava bloccato lì, ingrandito usciva dalla tela.
+- E segue il dito com'è giusto mentre lo trascini, a qualunque Dimensione.
+- Le immagini e i video dei comandi finiscono in diretta dove li hai messi nell'anteprima, anche quando li rimpicciolisci.
+
 ## 2026-09-03
 
 - Nell'overlay c'è il player: quello che stai ascoltando su Spotify, a schermo. Compare quando la musica parte e sparisce quando la fermi.

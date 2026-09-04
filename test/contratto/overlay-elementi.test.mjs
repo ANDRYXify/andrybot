@@ -245,8 +245,34 @@ test('la posizione di un elemento appartiene all’overlay in cui la metti', () 
   assert.ok(/MIO\.xy\[chiave\]/.test(posa), 'la posizione di questo overlay viene prima');
   assert.ok(/\|\| \(cfg && cfg\.xy\)/.test(posa), 'e quella di canale resta il punto di partenza');
   // una funzione sola posa tutto: prima le stesse sei righe erano scritte due volte
-  assert.equal((OVL.match(/'translate\(' \+ \(-xy\.x\)/g) || []).length, 1,
+  assert.equal((OVL.match(/'translate\(' \+ tiraXY\(/g) || []).length, 1,
     'la formula che posa un elemento è scritta una volta sola');
+  assert.equal((OVL.match(/const tiraXY = /g) || []).length, 1,
+    'e la corsa la calcola una funzione sola');
+
+  // x e y non sono il centro: sono la posizione lungo la CORSA, e la corsa e'
+  // quel che avanza della tela una volta tolto il lato VISIBILE, cioe' dopo la
+  // Dimensione. Qui non si riconosce una stringa: si prende la funzione dal
+  // file, la si esegue e si controlla dove finisce il bordo. Con la formula
+  // vecchia (che ignorava la Dimensione) un elemento rimpicciolito non
+  // arrivava al bordo e uno ingrandito lo scavalcava.
+  const tiraOvl = new Function(/const tiraXY = [^;]+;/.exec(OVL)[0] + ' return tiraXY;')();
+  const tiraApp = new Function('const _arr = (n) => Math.round(n * 100) / 100;'
+    + /const _tiraXY = [^;]+;/.exec(APP)[0] + ' return _tiraXY;')();
+  for (const tela of [1920, 1080]) {
+    for (const lato of [140, 823, 1451]) {
+      for (const f of [0.3, 0.6, 1, 1.75, 3]) {
+        for (const v of [0, 25, 50, 100]) {
+          const bordo = (v / 100) * tela + (tiraOvl(v, f) * lato) / 100 + (lato - lato * f) / 2;
+          const atteso = (v / 100) * (tela - lato * f);
+          assert.ok(Math.abs(bordo - atteso) < 0.5,
+            `overlay: lato ${lato} al ${f * 100}% con x=${v} finisce a ${bordo.toFixed(1)} invece che a ${atteso.toFixed(1)}`);
+          assert.ok(Math.abs(tiraApp(v, f) / 100 - tiraOvl(v, f) / 100) < 0.02,
+            `banco e overlay dicono la stessa cosa (x=${v}, ${f * 100}%)`);
+        }
+      }
+    }
+  }
   for (const [chi, chiave] of [['musica', "'musica'"], ['timer', "'timer'"]]) {
     assert.ok(OVL.includes(`vestiElemento(el, cfg, 'nessuna', ${chiave})`), `${chi} passa la sua chiave`);
   }
