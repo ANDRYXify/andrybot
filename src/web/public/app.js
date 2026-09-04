@@ -10491,7 +10491,7 @@ function lpIntroHtml(d) {
       <strong>${esc((d.url || '').replace(/^https?:\/\//, '') || 'socialbot.live/u/…')}</strong></p>
       ${miniGuida({
     titolo: L('Tutorial: come si costruisce', 'Tutorial: how to build it', 'Tutorial: cómo se construye'),
-    aperta: true,
+    aperta: false,
     passi: [
       L('In <strong>Contenuti</strong> aggiungi i pezzi che vuoi: una <strong>copertina</strong> con foto grande, link, titoli, testi, una riga di social, una <strong>griglia di tessere</strong>, video, musica, pagine intere o la tua <strong>diretta</strong>. Li riordini con le frecce.', 'In <strong>Content</strong> add the pieces you want: a <strong>cover</strong> with a big photo, links, headings, text, a row of socials, a <strong>card grid</strong>, video, music, whole pages or your <strong>live stream</strong>. Reorder them with the arrows.', 'En <strong>Contenido</strong> añade las piezas que quieras: una <strong>portada</strong> con foto grande, enlaces, títulos, textos, una fila de redes, una <strong>rejilla de fichas</strong>, vídeo, música, páginas enteras o tu <strong>directo</strong>. Los reordenas con las flechas.'),
       L('In <strong>Aspetto</strong> parti da un <strong>tema pronto</strong> (cambia tutto in un colpo) e poi sistema quello che vuoi: colori, sfondo, carattere, forma dei bottoni, animazione e disposizione.', 'In <strong>Look</strong> start from a <strong>ready-made theme</strong> (it changes everything at once) and then tweak what you like: colours, background, font, button shape, animation and layout.', 'En <strong>Aspecto</strong> parte de un <strong>tema listo</strong> (cambia todo de una vez) y luego ajusta lo que quieras: colores, fondo, tipografía, forma de los botones, animación y disposición.'),
@@ -10624,12 +10624,11 @@ async function caricaPaginaLink(ridisegna = false) {
           <a href="${esc(d.url)}" target="_blank" rel="noopener"><strong>${esc((d.url || '').replace(/^https?:\/\//, ''))}</strong></a></p>`
       : `<p class="lp-stato off">${_bIco(ICO.avviso)}${L('Non ancora pubblicata: compila e salva.', 'Not published yet: fill it in and save.', 'Aún no publicada: rellénala y guarda.')}</p>`}
         ${lpVisiteHtml(d.visite)}
-        ${lpIntroHtml(d)}
-        <div class="lp-tabs" role="tablist">
+        <div class="lp-tabs" data-gruppo="testa" role="tablist">
           <button type="button" class="lp-tab sel" data-lptab="contenuti">${L('Contenuti', 'Content', 'Contenido')}</button>
           <button type="button" class="lp-tab" data-lptab="aspetto">${L('Aspetto', 'Look', 'Aspecto')}</button>
         </div>
-        <div class="lp-pane" data-pane="contenuti">
+        <div class="lp-pane" data-gruppo="testa" data-pane="contenuti">
         <details class="carta sez" open>
           <summary><h3>${L('Intestazione', 'Header', 'Encabezado')}</h3></summary>
           <label class="campo" for="lp-headline">${L('Titolo', 'Headline', 'Título')}</label>
@@ -10676,8 +10675,8 @@ async function caricaPaginaLink(ridisegna = false) {
         </details>
         </div>
 
-        <div class="lp-pane" data-pane="aspetto" hidden>
-        <div class="lp-tabs lp-tabs-min" role="tablist">
+        <div class="lp-pane" data-gruppo="testa" data-pane="aspetto" hidden>
+        <div class="lp-tabs lp-tabs-min" data-gruppo="aspetto" role="tablist">
           <button type="button" class="lp-tab sel" data-lptab="asp-temi">${L('Temi', 'Themes', 'Temas')}</button>
           <button type="button" class="lp-tab" data-lptab="asp-impianto">${L('Impianto', 'Layout', 'Estructura')}</button>
           <button type="button" class="lp-tab" data-lptab="asp-scrittura">${L('Scrittura', 'Type', 'Tipografía')}</button>
@@ -10687,14 +10686,39 @@ async function caricaPaginaLink(ridisegna = false) {
           <button type="button" class="lp-tab" data-lptab="asp-css">CSS</button>
         </div>
 
-        <div class="lp-pane" data-pane="asp-temi">
+        </div>
+        ${lpIntroHtml(d)}
+      </div>
+
+      <div class="lp-anteprima">
+        <div class="lp-ant-tit">${L('Anteprima dal vivo', 'Live preview', 'Vista previa en directo')}
+          <span class="lp-vista">
+            <button type="button" class="lp-vista-b sel" data-lpvista="telefono">${L('Telefono', 'Phone', 'Móvil')}</button>
+            <button type="button" class="lp-vista-b" data-lpvista="schermo">${L('Schermo', 'Desktop', 'Pantalla')}</button>
+          </span>
+        </div>
+        <div class="lp-telefono" id="lp-cornice"><iframe id="lp-iframe" title="anteprima"></iframe></div>
+        <div class="lp-azioni">
+          <button class="btn" id="lp-salva">${L('Salva e pubblica', 'Save and publish', 'Guardar y publicar')}</button>
+          <a class="btn secondario" id="lp-apri" href="${esc(d.url || '#')}" target="_blank" rel="noopener">${_bIco(ICO.occhio)}${L('Apri', 'Open', 'Abrir')}</a>
+          ${d.pubblicata ? `<button type="button" class="btn secondario" id="lp-spegni">${L('Togli dal web', 'Take offline', 'Quitar de la web')}</button>` : ''}
+          <span id="lp-esito" class="suggerimento"></span>
+        </div>
+      </div>
+
+      <div class="lp-ispettore" id="lp-ispettore">
+        <div class="lp-pane" data-gruppo="testa" data-pane="contenuti">
+          <div id="lp-campi"></div>
+        </div>
+        <div class="lp-pane" data-gruppo="testa" data-pane="aspetto" hidden>
+        <div class="lp-pane" data-gruppo="aspetto" data-pane="asp-temi">
           <div class="carta">
             ${temiProntiHtml(LP.tema._pronto)}
             <p class="suggerimento">${L('Un colpo solo: colori, sfondo, carattere, forma dei bottoni, animazione e disposizione. Poi cambi quello che vuoi nelle altre schede.', 'One click: colours, background, font, button shape, animation and layout. Then change whatever you like in the other tabs.', 'De una vez: colores, fondo, tipografía, forma de los botones, animación y disposición. Luego cambias lo que quieras en las otras pestañas.')}</p>
           </div>
         </div>
 
-        <div class="lp-pane" data-pane="asp-impianto" hidden>
+        <div class="lp-pane" data-gruppo="aspetto" data-pane="asp-impianto" hidden>
           <div class="carta">
             <div class="griglia-campi">
               <div><label class="campo" for="lp-disp">${L('Disposizione', 'Layout', 'Disposición')}</label>
@@ -10726,7 +10750,7 @@ async function caricaPaginaLink(ridisegna = false) {
           </div>
         </div>
 
-        <div class="lp-pane" data-pane="asp-scrittura" hidden>
+        <div class="lp-pane" data-gruppo="aspetto" data-pane="asp-scrittura" hidden>
           <div class="carta">
             <div class="griglia-campi">
               <div><label class="campo" for="lp-font">${L('Carattere', 'Font', 'Tipografía')}</label>
@@ -10758,7 +10782,7 @@ async function caricaPaginaLink(ridisegna = false) {
           </div>
         </div>
 
-        <div class="lp-pane" data-pane="asp-colori" hidden>
+        <div class="lp-pane" data-gruppo="aspetto" data-pane="asp-colori" hidden>
           <div class="carta">
             <div class="griglia-campi">
               <div><label class="campo" for="lp-sfondoTipo">${L('Sfondo', 'Background', 'Fondo')}</label>
@@ -10808,7 +10832,7 @@ async function caricaPaginaLink(ridisegna = false) {
           </div>
         </div>
 
-        <div class="lp-pane" data-pane="asp-bottoni" hidden>
+        <div class="lp-pane" data-gruppo="aspetto" data-pane="asp-bottoni" hidden>
           <div class="carta">
             <div class="griglia-campi">
               <div><label class="campo" for="lp-stileBtn">${L('Stile dei bottoni', 'Button style', 'Estilo de los botones')}</label>
@@ -10843,7 +10867,7 @@ async function caricaPaginaLink(ridisegna = false) {
           </div>
         </div>
 
-        <div class="lp-pane" data-pane="asp-modi" hidden>
+        <div class="lp-pane" data-gruppo="aspetto" data-pane="asp-modi" hidden>
           <div class="carta">
             <div class="griglia-campi">
               <div><label class="campo" for="lp-anim">${L('Animazione d\'ingresso', 'Entrance animation', 'Animación de entrada')}</label>
@@ -10868,7 +10892,7 @@ async function caricaPaginaLink(ridisegna = false) {
           </div>
         </div>
 
-        <div class="lp-pane" data-pane="asp-css" hidden>
+        <div class="lp-pane" data-gruppo="aspetto" data-pane="asp-css" hidden>
           <div class="carta">
             <label class="campo" for="lp-css">${L('CSS tuo', 'Your own CSS', 'Tu CSS')}</label>
             <textarea id="lp-css" data-lpk="css" rows="12" spellcheck="false" class="lp-css" maxlength="8000" placeholder=".voce{ letter-spacing:.06em }&#10;h1{ text-shadow:3px 3px 0 var(--acc) }"></textarea>
@@ -10876,22 +10900,6 @@ async function caricaPaginaLink(ridisegna = false) {
             <p class="suggerimento">${L('Due cose non passano, e non per capriccio: <strong>@import</strong> (tira dentro un foglio di un altro sito, che può tirarne altri: una catena che non si vede) e tutto ciò che smette di essere stile e diventa esecuzione. La tua pagina la aprono degli sconosciuti.', 'Two things do not get through, and not out of caprice: <strong>@import</strong> (it pulls in a whole stylesheet from another site, which can pull in more: a chain you cannot see) and anything that stops being style and becomes execution. Strangers open your page.', 'Dos cosas no pasan, y no por capricho: <strong>@import</strong> (trae una hoja entera de otro sitio, que puede traer más: una cadena que no se ve) y todo lo que deja de ser estilo y pasa a ser ejecución. Tu página la abren desconocidos.')}</p>
           </div>
         </div>
-        </div>
-      </div>
-
-      <div class="lp-anteprima">
-        <div class="lp-ant-tit">${L('Anteprima dal vivo', 'Live preview', 'Vista previa en directo')}
-          <span class="lp-vista">
-            <button type="button" class="lp-vista-b sel" data-lpvista="telefono">${L('Telefono', 'Phone', 'Móvil')}</button>
-            <button type="button" class="lp-vista-b" data-lpvista="schermo">${L('Schermo', 'Desktop', 'Pantalla')}</button>
-          </span>
-        </div>
-        <div class="lp-telefono" id="lp-cornice"><iframe id="lp-iframe" title="anteprima"></iframe></div>
-        <div class="lp-azioni">
-          <button class="btn" id="lp-salva">${L('Salva e pubblica', 'Save and publish', 'Guardar y publicar')}</button>
-          <a class="btn secondario" id="lp-apri" href="${esc(d.url || '#')}" target="_blank" rel="noopener">${_bIco(ICO.occhio)}${L('Apri', 'Open', 'Abrir')}</a>
-          ${d.pubblicata ? `<button type="button" class="btn secondario" id="lp-spegni">${L('Togli dal web', 'Take offline', 'Quitar de la web')}</button>` : ''}
-          <span id="lp-esito" class="suggerimento"></span>
         </div>
       </div>
     </div>`;
@@ -10969,9 +10977,9 @@ async function caricaPaginaLink(ridisegna = false) {
     const t = ev.target.closest('[data-lptab]'); if (!t) return;
     const quale = t.dataset.lptab;
     const fila = t.closest('.lp-tabs');
-    const casa = fila.parentElement;
+    const gruppo = fila.dataset.gruppo;
     fila.querySelectorAll('.lp-tab').forEach((b) => b.classList.toggle('sel', b === t));
-    casa.querySelectorAll(':scope > .lp-pane').forEach((p) => { p.hidden = p.dataset.pane !== quale; });
+    for (const p of box.querySelectorAll(`.lp-pane[data-gruppo="${gruppo}"]`)) p.hidden = p.dataset.pane !== quale;
   });
 
   box.addEventListener('click', (ev) => {
@@ -11074,6 +11082,16 @@ function lpLeggiBlocco(t) {
   if (campo === 'piattaforma') lpRenderBlocchi();
 }
 
+const NOMI_BLOCCO = () => ({ link: L('Link', 'Link', 'Enlace'), social: L('Riga di social', 'Social row', 'Fila de redes'),
+    titolo: L('Titolo di sezione', 'Section heading', 'Título de sección'), testo: L('Testo', 'Text', 'Texto'),
+    immagine: L('Immagine', 'Image', 'Imagen'), embed: L('Video, musica o pagina', 'Video, music or page', 'Vídeo, música o página'),
+    diretta: L('La mia diretta', 'My live stream', 'Mi directo'),
+    eroe: L('Copertina', 'Cover', 'Portada'), griglia: L('Griglia di tessere', 'Card grid', 'Rejilla de fichas'),
+    scritta: L('Scritta che scorre', 'Scrolling text', 'Texto que se desplaza'),
+    numeri: L('Numeri', 'Numbers', 'Números'), faq: L('Domande frequenti', 'FAQ', 'Preguntas frecuentes'),
+    conto: L('Conto alla rovescia', 'Countdown', 'Cuenta atrás'),
+    separatore: L('Riga divisoria', 'Divider', 'Separador') });
+
 const ICO_BLOCCO = { link: 'link', social: 'cuore', titolo: 'stella', testo: 'mail', immagine: 'video',
   embed: 'video', diretta: 'twitch', eroe: 'stella', griglia: 'gioco', scritta: 'musica',
   numeri: 'soldi', faq: 'mail', conto: 'calendario', separatore: 'link' };
@@ -11084,23 +11102,35 @@ function nomeBlocco(b, NOMI) {
 }
 
 let _lpAperto = null;
+let _lpCampi = [];
+
+function lpRenderCampi() {
+  const casa = document.getElementById('lp-campi');
+  if (!casa) return;
+  const j = _lpAperto ? LP.blocchi.indexOf(_lpAperto) : -1;
+  document.querySelectorAll('#lp-blocchi .lp-blocco').forEach((e) => e.classList.toggle('sel', Number(e.dataset.i) === j));
+  if (j < 0 || !_lpCampi[j]) {
+    casa.innerHTML = `<p class="suggerimento lp-vuoto">${L('Scegli un pezzo qui a fianco — o cliccalo nell\'anteprima — e qui compaiono i suoi comandi.', 'Pick a piece on the side — or click it in the preview — and its controls show up here.', 'Elige una pieza al lado — o haz clic en ella en la vista previa — y aquí aparecen sus mandos.')}</p>`;
+    return;
+  }
+  const b = LP.blocchi[j];
+  casa.innerHTML = `<div class="lp-isp-tit"><span class="lp-bico">${lpIco(ICO_BLOCCO[b.tipo] || 'link', 16)}</span><strong>${esc(nomeBlocco(b, NOMI_BLOCCO()))}</strong></div>${_lpCampi[j]}`;
+}
+
+function lpScegliBlocco(b) {
+  _lpAperto = b || null;
+  lpRenderCampi();
+}
 
 function lpRenderBlocchi() {
   const cont = document.getElementById('lp-blocchi'); if (!cont) return;
   const d = LP.d || {};
-  const NOMI = { link: L('Link', 'Link', 'Enlace'), social: L('Riga di social', 'Social row', 'Fila de redes'),
-    titolo: L('Titolo di sezione', 'Section heading', 'Título de sección'), testo: L('Testo', 'Text', 'Texto'),
-    immagine: L('Immagine', 'Image', 'Imagen'), embed: L('Video, musica o pagina', 'Video, music or page', 'Vídeo, música o página'),
-    diretta: L('La mia diretta', 'My live stream', 'Mi directo'),
-    eroe: L('Copertina', 'Cover', 'Portada'), griglia: L('Griglia di tessere', 'Card grid', 'Rejilla de fichas'),
-    scritta: L('Scritta che scorre', 'Scrolling text', 'Texto que se desplaza'),
-    numeri: L('Numeri', 'Numbers', 'Números'), faq: L('Domande frequenti', 'FAQ', 'Preguntas frecuentes'),
-    conto: L('Conto alla rovescia', 'Countdown', 'Cuenta atrás'),
-    separatore: L('Riga divisoria', 'Divider', 'Separador') };
+  const NOMI = NOMI_BLOCCO();
 
   const grigliaIcone = (i, sel) => `<div class="lp-icone">` + (d.icone || []).map((k) =>
     `<button type="button" class="lp-ipick${k === sel ? ' sel' : ''}" data-lpico="${esc(k)}" data-lpb="${i}" title="${esc(k)}">${lpIco(k, 17)}</button>`).join('') + `</div>`;
 
+  _lpCampi = [];
   cont.innerHTML = LP.blocchi.map((b, i) => {
     let campi = '';
     if (b.tipo === 'link') {
@@ -11237,18 +11267,7 @@ function lpRenderBlocchi() {
     } else {
       campi = `<p class="suggerimento">${L('Una linea che separa le sezioni.', 'A line that separates sections.', 'Una línea que separa las secciones.')}</p>`;
     }
-    return `<details class="lp-blocco" data-i="${i}">
-      <summary class="lp-btesta" draggable="true" title="${esc(L('Trascina per spostarlo', 'Drag to move it', 'Arrastra para moverlo'))}">
-        <span class="lp-presa" aria-hidden="true"></span>
-        <span class="lp-bico">${lpIco(ICO_BLOCCO[b.tipo] || 'link', 16)}</span>
-        <strong>${esc(nomeBlocco(b, NOMI))}</strong>
-        ${nomeBlocco(b, NOMI) === (NOMI[b.tipo] || b.tipo) ? '' : `<span class="lp-btipo">${esc(NOMI[b.tipo] || b.tipo)}</span>`}
-        <span class="lp-bazioni">
-          <button type="button" class="lp-bmini" data-lpb="${i}" data-lpop="su" title="${L('Su', 'Up', 'Subir')}" aria-label="${L('Su', 'Up', 'Subir')}">${_lpSu}</button>
-          <button type="button" class="lp-bmini" data-lpb="${i}" data-lpop="giu" title="${L('Giù', 'Down', 'Bajar')}" aria-label="${L('Giù', 'Down', 'Bajar')}">${_lpGiu}</button>
-        </span>
-      </summary>
-      ${campi}
+    _lpCampi[i] = `${campi}
       <div class="lp-bpiede">
         <label>${L('Largo', 'Width', 'Ancho')}
           <select data-lpb="${i}" data-lpf="larghezza">
@@ -11275,26 +11294,29 @@ function lpRenderBlocchi() {
           <button type="button" class="btn secondario mini" data-lpb="${i}" data-lpop="dup">${_lpDup}${L('Duplica', 'Duplicate', 'Duplicar')}</button>
           <button type="button" class="btn secondario mini" data-lpb="${i}" data-lpop="via">${_lpVia}${L('Togli', 'Remove', 'Quitar')}</button>
         </span>
+      </div>`;
+    return `<div class="lp-blocco" data-i="${i}">
+      <div class="lp-btesta" draggable="true" title="${esc(L('Trascina per spostarlo', 'Drag to move it', 'Arrastra para moverlo'))}">
+        <span class="lp-presa" aria-hidden="true"></span>
+        <span class="lp-bico">${lpIco(ICO_BLOCCO[b.tipo] || 'link', 16)}</span>
+        <strong>${esc(nomeBlocco(b, NOMI))}</strong>
+        ${nomeBlocco(b, NOMI) === (NOMI[b.tipo] || b.tipo) ? '' : `<span class="lp-btipo">${esc(NOMI[b.tipo] || b.tipo)}</span>`}
+        <span class="lp-bazioni">
+          <button type="button" class="lp-bmini" data-lpb="${i}" data-lpop="su" title="${L('Su', 'Up', 'Subir')}" aria-label="${L('Su', 'Up', 'Subir')}">${_lpSu}</button>
+          <button type="button" class="lp-bmini" data-lpb="${i}" data-lpop="giu" title="${L('Giù', 'Down', 'Bajar')}" aria-label="${L('Giù', 'Down', 'Bajar')}">${_lpGiu}</button>
+        </span>
+
       </div>
-    </details>`;
+    </div>`;
   }).join('') || `<p class="suggerimento">${L('Nessun contenuto: aggiungi il primo pezzo qui sotto.', 'No content yet: add the first piece below.', 'Sin contenido: añade la primera pieza abajo.')}</p>`;
 
-  {
-    const j = _lpAperto ? LP.blocchi.indexOf(_lpAperto) : -1;
-    const el = j >= 0 ? cont.querySelector(`.lp-blocco[data-i="${j}"]`) : null;
-    if (el) el.open = true; else _lpAperto = null;
-  }
+  lpRenderCampi();
 
-  cont.addEventListener('toggle', (ev) => {
-    const d = ev.target;
-    if (!d.classList?.contains('lp-blocco')) return;
-    if (!d.open) { if (LP.blocchi[Number(d.dataset.i)] === _lpAperto) _lpAperto = null; return; }
-    _lpAperto = LP.blocchi[Number(d.dataset.i)];
-    for (const a of cont.querySelectorAll('.lp-blocco[open]')) if (a !== d) a.open = false;
-  }, true);
   cont.addEventListener('click', (ev) => {
-    if (ev.target.closest('.lp-btesta') && ev.target.closest('button')) ev.preventDefault();
-  }, true);
+    if (ev.target.closest('button')) return;
+    const r = ev.target.closest('.lp-blocco');
+    if (r) lpScegliBlocco(LP.blocchi[Number(r.dataset.i)]);
+  });
 
   let preso = -1;
   cont.ondragstart = (ev) => {
@@ -11327,7 +11349,8 @@ function lpRenderBlocchi() {
     cont.querySelectorAll('.preso,.sopra').forEach((e) => e.classList.remove('preso', 'sopra'));
   };
 
-  cont.onclick = (ev) => {
+  const casaLp = document.getElementById('lp-box') || cont;
+  casaLp.onclick = (ev) => {
     const op = ev.target.closest('[data-lpop]');
     if (op) {
       const i = Number(op.dataset.lpb);
@@ -11378,12 +11401,9 @@ function lpAnteprimaCliccabile(f) {
     ev.stopPropagation();
     const bl = document.querySelector(`#lp-blocchi .lp-blocco[data-i="${w.dataset.b}"]`);
     if (!bl) return;
-    for (const a of document.querySelectorAll('#lp-blocchi .lp-blocco[open]')) if (a !== bl) a.open = false;
-    bl.open = true;
-    bl.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    document.querySelectorAll('.lp-blocco.acceso').forEach((e) => e.classList.remove('acceso'));
-    bl.classList.add('acceso');
-    bl.querySelector('input,textarea,select')?.focus({ preventScroll: true });
+    lpScegliBlocco(LP.blocchi[Number(bl.dataset.i)]);
+    bl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    document.getElementById('lp-campi')?.querySelector('input,textarea,select')?.focus({ preventScroll: true });
   }, true);
 
   doc.addEventListener('mouseover', (ev) => {

@@ -290,3 +290,54 @@ Tre pezzi erano rimasti nel linguaggio di prima, e si vedeva:
 
 Che la lente fosse rimasta indietro e il suo gemello no è la firma della deriva:
 due copie della stessa idea, una aggiornata e una no.
+
+---
+
+## L'editor della pagina link: tre zone, come il banco dell'overlay
+
+> «Non sarebbe meglio metterlo come l'editor dell'overlay, un po' a sinistra un
+> po' a destra, e spalmarlo in modo comodo?»
+
+Sì, ed era proprio quello il problema. Fino a ieri **lista dei pezzi, campi del
+pezzo e pannello Aspetto si contendevano la stessa colonna da 25rem**, mentre
+l'anteprima ne sprecava 1080 per mostrare un telefono largo 370. L'imbalance era
+la scomodità.
+
+Ora sono tre zone, e sono le stesse del banco dell'overlay:
+
+| dove | cosa c'è |
+|---|---|
+| sinistra (21rem) | **cosa c'è nella pagina**: una riga per pezzo, e le due schede Contenuti / Aspetto |
+| centro | l'**anteprima** dal vivo |
+| destra (26rem) | i **comandi del pezzo scelto**, o il gruppo dell'Aspetto scelto |
+
+A schermo medio (1101–1379px) diventano due colonne — lista e comandi impilati a
+sinistra, anteprima a destra. Sotto i 1100 una sola, nell'ordine in cui si lavora:
+lista, comandi, anteprima. Provato a 390, 900, 1280 e 1600: mai uno scorrimento
+orizzontale.
+
+### Cosa è servito perché si potesse fare
+
+1. **Le linguette non riconoscono più i pannelli dalla parentela.** Prima una fila
+   spegneva «i pannelli che mi stanno accanto»: con i pannelli spostati in
+   un'altra colonna non avrebbe più trovato niente. Ora ogni fila e ogni pannello
+   dichiarano il proprio `data-gruppo`, e la fila spegne il suo gruppo ovunque sia.
+2. **I campi sono usciti dalle righe.** Erano dentro il pezzo (prima tutti aperti,
+   poi a cassetto); ora la riga è solo una riga e i campi si disegnano
+   nell'ispettore. È questo che rende la lista scorribile a colpo d'occhio.
+3. **Chi ascolta i comandi sta sopra tutte e due le colonne.** Era agganciato alla
+   lista: con i campi a destra, da lì non avrebbe risposto più niente.
+4. **Il tutorial parte chiuso e sta in fondo.** Aperto occupava mezza colonna di
+   sinistra e la lista dei pezzi non si vedeva nemmeno. Si legge una volta.
+
+### Come si verifica
+
+`node scripts/verifica-pagina-link.mjs` prova in un browser vero le quattro
+promesse: che nelle righe **non ci sia nessun campo** (se ci tornassero,
+tornerebbe il muro), che scegliere un pezzo porti i suoi comandi a destra col suo
+nome sopra, che se ne scelga uno alla volta, e che il pezzo scelto **segua sé
+stesso** quando lo sposti o lo duplichi — non la sua posizione.
+
+Quell'ultima l'ha trovata rotta il collaudo, non io: leggevo l'indice dal DOM
+vecchio contro l'elenco già aggiornato, e dopo uno spostamento restava scelto
+chi aveva preso il suo posto.
