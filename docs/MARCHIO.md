@@ -341,3 +341,58 @@ ovunque, provato rosso togliendolo a `privacy.html`) e
 `scripts/verifica-sw.mjs` lo mette alla prova in Chromium: alza un server, apre
 la pagina, aspetta il worker, **cambia l'icona sul server** e ricontrolla cosa
 vede il browser. Col worker vecchio dà `VECCHIA` — cioè il difetto, riprodotto.
+
+## Il movimento: come si muove uno shonen
+
+Ricerca prima del codice. Il movimento dell'animazione giapponese non è
+«fluido»: è fatto di quattro cose precise, e tre si traducono in CSS.
+
+- **On twos.** Un disegno tenuto per due fotogrammi: 12 immagini al secondo
+  invece di 24. Il moto risulta **a scatti**, e meno intermedi leggono come **più
+  veloce** — è nato per risparmiare, è diventato la firma del mezzo. In CSS è
+  `steps()` come funzione di tempo: `--su-due` e `--su-tre`.
+- **Impact frame.** Uno o tre fotogrammi monocromi ad altissimo contrasto
+  **che interrompono** il flusso. Non è movimento, è uno shock: il cervello lo
+  legge come un colpo. In CSS è un lampo brevissimo sull'elemento colpito.
+- **Smear frame.** La posa allungata che colma due posizioni lontane e tiene
+  insieme il moto. In CSS è uno `scale` lungo la direzione del moto — **mai su un
+  contenitore**, vedi sotto.
+- **Shūchūsen.** Le linee: radiali per il fuoco e l'impatto, orizzontali per la
+  corsa. Erano già nella tavola.
+
+### La regola tecnica che la ricerca ha imposto
+
+Si animano **solo `transform` e `opacity`**, che il browser affida alla scheda
+video. Muovere larghezza, altezza o `inset` costringe a rifare i conti della
+disposizione a ogni fotogramma: è esattamente ciò che si sente come «lagga».
+
+Il cancello `verifica-moto.mjs` legge le transizioni e i fotogrammi chiave dei
+fogli serviti e rifiuta chi muove la disposizione. È nato rosso su **sette** casi,
+e solo uno era mio:
+
+| dove | cosa muoveva | quanto spesso |
+| --- | --- | --- |
+| la sagoma sui pulsanti | `inset` | a ogni passaggio del mouse |
+| il misuratore del volume | `width` | **60 volte al secondo** |
+| la barra dell'obiettivo, quella del brano | `width` | in diretta, dentro OBS |
+| l'equalizzatore del player | `height` | in continuo, a tempo di musica |
+| la lente del giro guidato | `all` | a ogni passo |
+| il vecchio cursore inseguitore | `width`, `height` | codice morto, 33 righe |
+
+Tutte passate a `transform`: le barre si riempiono con `scaleX(var(--q))` e
+`transform-origin: left`, l'equalizzatore con `scaleY` ancorato in basso.
+
+### Lo scale che ha rotto il trascinamento
+
+L'entrata delle carte l'avevo fatta con uno smear: `translateY` più
+`scale(.985, 1.04)`. Il collaudo dello Studio è diventato rosso —
+`chiesto -40,25 → fatto -35,23`, il 12% in meno.
+
+La causa: la tela dello Studio **sta dentro una carta**. Un antenato scalato
+distorce le coordinate di tutto ciò che contiene, quindi ogni pixel misurato
+dentro la tela era falsato. Regola, ora scritta: **niente scala su un contenitore
+che ospita interazioni misurate al pixel.** Lo scatto lo dà il tempo — `steps()`
+— non la scala.
+
+Trovata per bisezione sui file, non a intuito: tre file indietro, verde; uno
+avanti, rosso.

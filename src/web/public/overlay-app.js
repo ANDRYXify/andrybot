@@ -589,7 +589,7 @@ function unGoal(cfg, valore) {
   const ora = Math.max(0, (Number(cfg.partenza) || 0) + (Number(valore) || 0));
   el.querySelector('.g-tit').textContent = cfg.titolo || GOAL_ETICHETTA[cfg.tipo] || '';
   el.querySelector('.g-num').textContent = ora + ' / ' + meta;
-  el.querySelector('.g-barra i').style.width = Math.min(100, Math.round((ora / meta) * 100)) + '%';
+  el.querySelector('.g-barra i').style.setProperty('--q', Math.min(1, (ora / meta) || 0).toFixed(4));
   el.classList.toggle('pieno', ora >= meta);
 }
 
@@ -825,7 +825,7 @@ function avanzaBarra() {
   const q = d && d.durata ? Math.max(0, Math.min(1, ms / d.durata)) : 0;
 
   const i = el.querySelector('.m-barra i');
-  if (i) i.style.width = (q * 100) + '%';
+  if (i) i.style.setProperty('--q', Math.max(0, Math.min(1, q)).toFixed(4));
   const an = el.querySelector('.m-an-ora');
   if (an) { const giro = 2 * Math.PI * 18; an.style.strokeDasharray = giro; an.style.strokeDashoffset = giro * (1 - q); }
 

@@ -313,9 +313,10 @@
   background: color-mix(in srgb, var(--fg) 16%, transparent);
 }
 .ovl-goal .g-barra i {
-  display: block; height: 100%; width: 0; border-radius: inherit;
+  display: block; height: 100%; width: 100%; border-radius: inherit;
+  transform-origin: left center; transform: scaleX(var(--q, 0));
   background: linear-gradient(90deg, color-mix(in srgb, var(--acc) 70%, #fff), var(--acc));
-  transition: width .5s cubic-bezier(.2, .8, .2, 1);
+  transition: transform .5s cubic-bezier(.2, .8, .2, 1);
 }
 .ovl-goal.pieno .g-barra i { background: var(--acc); animation: goal-pieno 1.6s ease-in-out infinite; }
 @keyframes goal-pieno { 0%, 100% { filter: none; } 50% { filter: brightness(1.35); } }
@@ -404,9 +405,10 @@
   overflow: hidden;
 }
 .ovl-musica .m-barra i {
-  display: block; height: 100%; width: 0;
+  display: block; height: 100%; width: 100%;
+  transform-origin: left center; transform: scaleX(var(--q, 0));
   background: linear-gradient(90deg, color-mix(in srgb, var(--acc) 65%, #fff) 0%, var(--acc) 100%);
-  border-radius: inherit; transition: width .9s linear;
+  border-radius: inherit; transition: transform .9s linear;
 }
 .ovl-musica.barra-no .m-barra, .ovl-musica.barra-anello .m-barra { display: none; }
 .ovl-musica .m-tempi { font-size: .68em; opacity: .78; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -416,7 +418,7 @@
 .ovl-musica .m-onde { display: none; flex: none; align-items: flex-end; gap: .13em; height: 1.1em; }
 .ovl-musica.con-onde .m-onde { display: inline-flex; }
 .ovl-musica .m-onde i {
-  width: .16em; height: 35%; border-radius: 999px; background: var(--acc);
+  width: .16em; height: 100%; transform-origin: center bottom; transform: scaleY(.35); border-radius: 999px; background: var(--acc);
   animation: mus-onda .9s ease-in-out infinite alternate;
   animation-play-state: paused; opacity: .9;
 }
@@ -424,7 +426,7 @@
 .ovl-musica .m-onde i:nth-child(3) { animation-duration: 1.05s; }
 .ovl-musica .m-onde i:nth-child(4) { animation-duration: .78s; }
 .ovl-musica.suona .m-onde i { animation-play-state: running; }
-@keyframes mus-onda { from { height: 22%; } to { height: 100%; } }
+@keyframes mus-onda { from { transform: scaleY(.22); } to { transform: scaleY(1); } }
 
 .ovl-musica[style*="--battito"].ritmo-onde .m-onde i,
 .ovl-musica[style*="--battito"].ritmo-tutto .m-onde i {

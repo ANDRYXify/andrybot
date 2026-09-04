@@ -68,6 +68,10 @@ lo usa: se non si vede da fuori, qui non ci va.
 - Il lettering del sito è il pennarello del marchio, non un carattere tondo da fumetto per bambini.
 - Se il sito non riesce a caricarsi resta comunque la sua pagina, vestita come tutto il resto, invece di una schermata spoglia.
 - Anche il carattere «manga» che puoi scegliere per l'overlay ora è un pennarello vero.
+- Le cose arrivano a scatti invece di scivolare, come i disegni tenuti due fotogrammi nell'animazione giapponese: si sente più veloce.
+- Gli avvisi entrano di slancio e quelli di errore danno una scrollata, così non passano inosservati.
+- Barre di avanzamento, equalizzatore e misuratore del volume si muovono senza far ricalcolare la pagina: il movimento è più fluido, soprattutto sull'overlay in diretta.
+- Il puntatore disegnato ora vale ovunque: prima su alcune intestazioni e barre di sezione tornava quello di sistema.
 - Scegliendo un obiettivo sulla tela le sue proprietà — colori, carattere, forma, cornice, opacità — si aprono lì accanto, come per ogni altro elemento.
 - Trascinare un contatore non lo fa più saltare a metà schermo, e ora si può anche ruotare.
 - L'occhio di «Obiettivo» e «Contatori» funziona davvero: prima si spegneva e al ricaricamento tornava acceso, quindi non si potevano togliere da un overlay.
