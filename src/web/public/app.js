@@ -1149,7 +1149,6 @@ function toggleTemaHtml(extra) {
   return `<button type="button" class="tema-toggle${extra ? ' ' + extra : ''}" data-tema-toggle>${sole}${luna}</button>`;
 }
 
-
 let _pianiCache = null;
 async function pianiDati() {
   if (_pianiCache) return _pianiCache;
@@ -1848,7 +1847,6 @@ function mostraBenvenuto() {
   el.querySelector('[data-bv="via"]')?.focus();
 }
 
-
 function renderHero() {
   const errore = new URLSearchParams(location.search).get('errore');
   const msgErrore = {
@@ -1863,7 +1861,6 @@ function renderHero() {
     a.innerHTML = `<p>${esc(msgErrore)}</p>`;
     app.prepend(a);
   }
-
 
   rivelaCarte();
   caricaPiani();
@@ -2314,8 +2311,6 @@ const GUIDE = {
   scudo: { serve: ['Vedere cosa ha fermato l\'anti-bot e decidere tu sui casi dubbi, invece di scoprirlo dopo.', 'See what the anti-bot stopped and decide the doubtful cases yourself, instead of finding out later.', 'Ver qué ha parado el anti-bot y decidir tú los casos dudosos, en vez de enterarte después.'],
     come: [['In cima c\'è lo stato: se lo scudo è acceso e cosa sta sorvegliando.', 'At the top there is the status: whether the shield is on and what it is watching.', 'Arriba está el estado: si el escudo está encendido y qué está vigilando.', '#scudo-stato'], ['«Da rivedere» sono i casi incerti: guardi il profilo e decidi tu, uno per uno.', '«To review» are the uncertain cases: you look at the profile and decide, one by one.', '«Por revisar» son los casos inciertos: miras el perfil y decides tú, uno a uno.', '#scudo-segnalazioni'], ['La pulizia dei follower passa in rassegna chi ti segue già e ti dice chi puzza di bot.', 'The follower cleanup goes through who already follows you and tells you who smells like a bot.', 'La limpieza de seguidores repasa quién ya te sigue y te dice quién huele a bot.', '#scudo-scan-btn']] },
 };
-
-
 
 const _icoGuida = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1.3.5 2.6 1.5 3.5.8.8 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>';
 
@@ -5406,6 +5401,11 @@ function bloccoWidget(pref, w, titolo, kind) {
         ${cCol(`${pref}-acc`, L('Nome', 'Name', 'Nombre'), st.accento)}
         ${cRng(`${pref}-radius`, L('Angoli', 'Corners', 'Esquinas'), 0, 30, st.bordoRaggio, 'px')}
       </div>
+      <div class="griglia-campi spazio-sopra">
+        ${cSel(`${pref}-forma`, L('Forma', 'Shape', 'Forma'), FORMA_OPTS(), st.forma)}
+        ${cSel(`${pref}-materia`, L('Materia', 'Material', 'Material'), MATERIA_OPTS(), st.materia)}
+        ${cSel(`${pref}-cornice`, L('Cornice', 'Frame', 'Marco'), CORNICE_OPTS(), st.cornice)}
+      </div>
       <p class="spazio-sopra"><button type="button" class="btn secondario mini w-prova" data-kind="${kind}">${_bIco('<path d="m6 3 14 9-14 9Z"/>')}${L('Prova', 'Test', 'Probar')}</button></p>
     </div>`;
 }
@@ -5633,26 +5633,63 @@ function mettiVesti(scope) {
 }
 
 function _vesteInBlocco(b, val) {
+  let tocchi = 0;
   for (const [k, v] of Object.entries(val || {})) {
     if (v === undefined) continue;
-    _vesti([...b.querySelectorAll(`[data-c="stile.${k}"], [data-g="stile.${k}"]`)], v);
+    tocchi += _vesti([...b.querySelectorAll(`[data-c="stile.${k}"], [data-g="stile.${k}"]`)], v);
   }
+  return tocchi;
+}
+
+function vesteWidget(t) {
+  const c = t.dati.ch || {};
+  return { font: c.font, dim: c.dim, sfondo: c.sfondo, opacita: c.opacita, testo: c.testo,
+    bordoRaggio: c.bordoRaggio, forma: c.forma, materia: c.materia, cornice: c.cornice,
+    accento: t.dati.acc };
+}
+
+function vesteConta(t) {
+  const g = t.dati.go || {};
+  return { colore: g.testo, sfondoTinta: g.sfondo, senzaSfondo: false };
+}
+function _vestiChiavi(b, val) {
+  let tocchi = 0;
+  for (const [k, v] of Object.entries(val || {})) {
+    if (v === undefined) continue;
+    tocchi += _vesti([...b.querySelectorAll(`[data-k="${k}"]`)], v);
+  }
+  return tocchi;
+}
+
+const VESTE_MODI = {
+  alert: (t) => vestiParte('al', t.dati.al),
+  chat: (t) => vestiParte('co', t.dati.ch),
+  musica: (t) => vestiCfg('musica', t.dati.mu),
+  wf: (t) => vestiParte('wf', vesteWidget(t)),
+  ws: (t) => vestiParte('ws', vesteWidget(t)),
+};
+
+function _modoVeste(asp) {
+  if (VESTE_MODI[asp]) return VESTE_MODI[asp];
+  if (asp.startsWith('cont:')) return (t, b) => _vestiChiavi(b, vesteConta(t));
+  return (t, b) => _vesteInBlocco(b, t.dati.go);
 }
 
 function applicaVeste(b, i) {
   const t = TEMPLATE_BUILTIN[Number(i)];
-  if (!t || !b) return;
+  if (!t || !b) return 0;
   const asp = String(b.dataset.asp || '');
-  if (asp === 'alert') vestiParte('al', t.dati.al);
-  else if (asp === 'chat') vestiParte('co', t.dati.ch);
-  else if (asp === 'musica') vestiCfg('musica', t.dati.mu);
-  else _vesteInBlocco(b, t.dati.go);
+  const tocchi = _modoVeste(asp)(t, b) || 0;
   b.querySelectorAll('.veste-b').forEach((x) => x.classList.toggle('on', Number(x.dataset.veste) === Number(i)));
   aggiornaAnteprima();
+  if (!tocchi) console.warn('veste senza effetto su «' + asp + '»');
+  return tocchi;
 }
 
 function applicaVesteOvunque(i) {
-  for (const b of document.querySelectorAll('.asp-blocco')) applicaVeste(b, i);
+  let tocchi = 0;
+  for (const b of document.querySelectorAll('.asp-blocco')) tocchi += applicaVeste(b, i);
+  return tocchi;
 }
 
 document.addEventListener('click', (e) => {
@@ -6176,6 +6213,7 @@ function _leggiWidget(pref) {
     testo: (_v(`${pref}-testo`) || '').trim(),
     stile: { dim: _v(`${pref}-dim`) || 'media', font: _v(`${pref}-font`) || 'sistema', sfondo: _v(`${pref}-bg`),
       opacita: Number(_v(`${pref}-op`)), testo: _v(`${pref}-fg`), accento: _v(`${pref}-acc`), bordoRaggio: Number(_v(`${pref}-radius`)),
+      forma: _v(`${pref}-forma`) || 'carta', materia: _v(`${pref}-materia`) || 'piatta', cornice: _v(`${pref}-cornice`) || 'nessuna',
       icona: _v(`${pref}-icona`) == null ? (pref === 'wf' ? 'cuore' : 'stella') : _v(`${pref}-icona`) },
   };
 }
@@ -6231,6 +6269,18 @@ async function salvaChatOverlay(silenzioso) { await _salvaOverlayCorrente(silenz
 async function salvaWidget(silenzioso) { await _salvaOverlayCorrente(silenzioso ? null : L('Widget salvati ✓', 'Widgets saved ✓', 'Widgets guardados ✓'), false); }
 async function salvaCss(silenzioso) { await _salvaOverlayCorrente(silenzioso ? null : L('CSS salvato ✓', 'CSS saved ✓', 'CSS guardado ✓'), false); }
 
+function _riempiWidget(wcfg) {
+  [['wf', (wcfg || {}).ultimoFollower], ['ws', (wcfg || {}).ultimoSub]].forEach(([pref, wc]) => {
+    if (!wc) return; const st = wc.stile || {};
+    _imposta(`${pref}-attivo`, wc.attivo); _imposta(`${pref}-pos`, wc.posizione); _imposta(`${pref}-testo`, wc.testo);
+    _imposta(`${pref}-font`, st.font); _imposta(`${pref}-dim`, st.dim); _imposta(`${pref}-bg`, st.sfondo);
+    _imposta(`${pref}-op`, st.opacita); _imposta(`${pref}-fg`, st.testo); _imposta(`${pref}-acc`, st.accento);
+    _imposta(`${pref}-radius`, st.bordoRaggio);
+    _imposta(`${pref}-forma`, st.forma); _imposta(`${pref}-materia`, st.materia); _imposta(`${pref}-cornice`, st.cornice);
+    _imposta(`${pref}-icona`, st.icona == null ? (pref === 'wf' ? 'cuore' : 'stella') : st.icona);
+  });
+}
+
 function _applicaStileOverlay(ov) {
   const imp = impostazioni();
   const al = (ov && ov.stile && ov.stile.alerts) || imp.alerts.stile || {};
@@ -6250,13 +6300,7 @@ function _applicaStileOverlay(ov) {
   const modo = (ch.username && ch.username !== 'twitch') ? 'fisso' : 'twitch';
   _imposta('co-st-user', modo); if (modo === 'fisso') _imposta('co-st-usercol', ch.username);
   _imposta('co-st-ombra', ch.ombra !== false); _imposta('co-st-bold', ch.grassettoUser !== false);
-  [['wf', wcfg.ultimoFollower], ['ws', wcfg.ultimoSub]].forEach(([pref, wc]) => {
-    if (!wc) return; const ws = wc.stile || {};
-    _imposta(`${pref}-attivo`, wc.attivo); _imposta(`${pref}-pos`, wc.posizione); _imposta(`${pref}-testo`, wc.testo);
-    _imposta(`${pref}-font`, ws.font); _imposta(`${pref}-dim`, ws.dim); _imposta(`${pref}-bg`, ws.sfondo);
-    _imposta(`${pref}-op`, ws.opacita); _imposta(`${pref}-fg`, ws.testo); _imposta(`${pref}-acc`, ws.accento); _imposta(`${pref}-radius`, ws.bordoRaggio);
-    _imposta(`${pref}-icona`, ws.icona == null ? (pref === 'wf' ? 'cuore' : 'stella') : ws.icona);
-  });
+  _riempiWidget(wcfg);
   _imposta('ovl-css', css);
   document.querySelectorAll('#scheda-alert input[type="range"]').forEach((r) => { const s = _g(r.id + '-v'); if (s) s.textContent = r.value; });
   aggiornaAnteprima();
@@ -6305,8 +6349,7 @@ function _anteprimaWidget(pref, id, nome) {
   box.style.display = '';
   const w = _leggiWidget(pref).stile;
   const el = _g(`ap-${pref}-el`);
-  const cst = _leggiChatStile();
-  el.className = 'ovl-widget dim-' + (w.dim || 'media') + ' forma-' + formaDi(cst) + ' materia-' + materiaDi(cst) + ' cornice-' + (cst.cornice === 'linea' ? 'nessuna' : corniceDi(cst));
+  el.className = 'ovl-widget dim-' + (w.dim || 'media') + ' ' + classiIdentita(w, 'nessuna');
   _setVars(el, { '--bg': w.sfondo, '--op': w.opacita + '%', '--fg': w.testo, '--acc': w.accento, '--radius': w.bordoRaggio + 'px', '--font': FONT_VAR[w.font] });
   const icoW = document.querySelector(`.alert-blocco[data-w="${pref}"] .w-icona`)?.value;
   const wUrl = urlEffetto(icoW);
@@ -7594,7 +7637,7 @@ async function caricaContaStudio() {
   if (_g('ap-stage')) { aggiornaAnteprima(); aggiornaInspector(); }
 }
 
-const _imposta = (id, val) => { const e = _g(id); if (e && val != null) { if (e.type === 'checkbox') e.checked = !!val; else e.value = val; } };
+const _imposta = (id, val) => { const e = _g(id); if (e && val != null) { if (e.type === 'checkbox') e.checked = !!val; else e.value = val; return 1; } return 0; };
 const _impostaEl = (e, val) => { if (e && val != null) { if (e.type === 'checkbox') e.checked = !!val; else e.value = val; } };
 
 const _SUF_ST = {
@@ -7602,13 +7645,17 @@ const _SUF_ST = {
   opacita: 'op', bordoSpessore: 'border', dimIcona: 'dimico', composizione: 'comp',
   spaziatura: 'spaz', maiuscolo: 'maiusc', ombraTesto: 'ombratxt', evidenziaNome: 'evid',
   googleFont: 'gfont', icona: 'icon', larghezza: 'larg', grassettoUser: 'bold', username: 'user',
+  accento: 'acc',
 };
 function vestiParte(pref, valori) {
-  if (!valori) return;
+  if (!valori) return 0;
+  let tocchi = 0;
   for (const [k, v] of Object.entries(valori)) {
     if (v === undefined) continue;
-    _imposta(`${pref}-st-${_SUF_ST[k] || k}`, k === 'peso' ? String(v) : v);
+    const suf = _SUF_ST[k] || k, val = k === 'peso' ? String(v) : v;
+    tocchi += _imposta(`${pref}-st-${suf}`, val) || _imposta(`${pref}-${suf}`, val);
   }
+  return tocchi;
 }
 function _vesti(nodi, v) {
   nodi.forEach((el) => {
@@ -7616,22 +7663,27 @@ function _vesti(nodi, v) {
     el.dispatchEvent(new Event('change', { bubbles: true }));
     el.dispatchEvent(new Event('input', { bubbles: true }));
   });
+  return nodi.length;
 }
 function vestiCfg(blocco, valori) {
-  if (!valori) return;
+  if (!valori) return 0;
+  let tocchi = 0;
   for (const zona of _pezziCfg(blocco)) {
     for (const [k, v] of Object.entries(valori)) {
       if (v === undefined) continue;
-      _vesti([...zona.querySelectorAll(`[data-c="${k}"]`)], v);
+      tocchi += _vesti([...zona.querySelectorAll(`[data-c="${k}"]`)], v);
     }
   }
+  return tocchi;
 }
 function vestiGoal(valori) {
-  if (!valori) return;
+  if (!valori) return 0;
+  let tocchi = 0;
   for (const [k, v] of Object.entries(valori)) {
     if (v === undefined) continue;
-    _vesti([...document.querySelectorAll(`[data-g="stile.${k}"]`)], v);
+    tocchi += _vesti([...document.querySelectorAll(`[data-g="stile.${k}"]`)], v);
   }
+  return tocchi;
 }
 
 function applicaTemplate(d) {
@@ -7669,17 +7721,12 @@ function _riempiConfig(d) {
   _imposta('co-attivo', ch.attivo); _imposta('co-pos', ch.posizione); _imposta('co-max', ch.max); _imposta('co-fade', ch.fadeSec);
   _imposta('co-st-dim', cst.dim); _imposta('co-st-font', cst.font); _imposta('co-st-gfont', cst.googleFont); _imposta('co-st-anim', cst.animazione); _imposta('co-st-larg', cst.larghezza);
   _imposta('co-st-bg', cst.sfondo); _imposta('co-st-op', cst.opacita); _imposta('co-st-fg', cst.testo); _imposta('co-st-radius', cst.bordoRaggio);
+  _imposta('co-st-forma', cst.forma); _imposta('co-st-materia', cst.materia); _imposta('co-st-cornice', cst.cornice);
   const modo = (cst.username && cst.username !== 'twitch') ? 'fisso' : 'twitch';
   _imposta('co-st-user', modo); if (modo === 'fisso') _imposta('co-st-usercol', cst.username);
   _imposta('co-st-ombra', cst.ombra !== false); _imposta('co-st-bold', cst.grassettoUser !== false);
   const w = d.overlayWidget || {};
-  [['wf', w.ultimoFollower], ['ws', w.ultimoSub]].forEach(([pref, wc]) => {
-    if (!wc) return; const ws = wc.stile || {};
-    _imposta(`${pref}-attivo`, wc.attivo); _imposta(`${pref}-pos`, wc.posizione); _imposta(`${pref}-testo`, wc.testo);
-    _imposta(`${pref}-font`, ws.font); _imposta(`${pref}-dim`, ws.dim); _imposta(`${pref}-bg`, ws.sfondo);
-    _imposta(`${pref}-op`, ws.opacita); _imposta(`${pref}-fg`, ws.testo); _imposta(`${pref}-acc`, ws.accento); _imposta(`${pref}-radius`, ws.bordoRaggio);
-    _imposta(`${pref}-icona`, ws.icona == null ? (pref === 'wf' ? 'cuore' : 'stella') : ws.icona);
-  });
+  _riempiWidget(w);
   if (d.overlayCss != null) _imposta('ovl-css', d.overlayCss);
 }
 

@@ -34,6 +34,16 @@ const coppie = [
   ['chat', chiavi(app, 'function _leggiChatStile() {', '\n}'), chiavi(srv, 'const normChatStile = (st) => {', '\n};')],
   ['musica', chiavi(app, 'function _defMusica() {', '\n}'), chiavi(srv, 'export const normMusica = (m) => {', '\n};')],
   ['timer', chiavi(app, 'function _defTimer() {', '\n}'), chiavi(srv, 'export const normTimer = (t) => {', '\n};')],
+  // I due widget mancavano da questo confronto, ed e' esattamente li' che si e'
+  // aperto il buco: il server accettava gia' forma/materia/cornice, il browser
+  // non li leggeva nemmeno, e nessuno lo diceva. Il loro stile sta in due
+  // blocchi del server (l'involucro e lo stile vero), quindi si guardano
+  // entrambi: la domanda e' «il browser scrive qualcosa che il server butta?».
+  ['widget', chiavi(app, 'function _leggiWidget(pref) {', '\n}'), (() => {
+    const a = chiavi(srv, '  const wid = (x, testoDef) => {', '\n  };');
+    const b = chiavi(srv, 'export const normWidgetStile = (st) => {', '\n};');
+    return a && b ? [...a, ...b] : null;
+  })()],
 ];
 
 for (const [nome, cliente, server] of coppie) {
@@ -71,6 +81,33 @@ for (const [nome, reApp, reSrv] of assi) {
     ? `  ✗ solo nel browser: ${soloApp.join(', ') || '—'} · solo nel server: ${soloSrv.join(', ') || '—'}` : '  ✓'));
   if (soloApp.length) err.push(`${nome}: il browser offre ${soloApp.join(', ')} che il server rifiuta`);
   if (soloSrv.length) err.push(`${nome}: il server ammette ${soloSrv.join(', ')} che il browser non offre`);
+}
+
+// C'E' UN TERZO ELENCO, ed e' quello che conta di piu': `_AX` in overlay-app.js
+// e' cio' che la pagina in diretta accetta di disegnare. Un valore che sta nel
+// browser e nel server ma non li' non da' nessun errore: l'overlay lo scarta in
+// silenzio e disegna il valore di ripiego, cioe' il pezzo va in onda con un
+// aspetto che nessuno ha scelto. Finora questo cancello guardava due sorgenti
+// su tre, e la terza era proprio quella che il pubblico vede.
+{
+  const ovl = readFileSync('src/web/public/overlay-app.js', 'utf8');
+  const blocco = /const _AX = \{([\s\S]*?)\n\};/.exec(ovl);
+  if (!blocco) err.push('_AX: non trovo l\'elenco di overlay-app.js');
+  else {
+    for (const [nome, reApp] of assi) {
+      const a = valori(app, reApp, true);
+      if (!a) continue;
+      const m = new RegExp(nome + ": \\[([^\\]]*)\\]").exec(blocco[1]);
+      if (!m) continue;   // non tutti gli assi passano di qui (musica, corpo…)
+      const viva = [...m[1].matchAll(/'([a-z-]+)'/g)].map((x) => x[1]);
+      const fuori = a.filter((v) => !viva.includes(v));
+      const inPiu = viva.filter((v) => !a.includes(v));
+      console.log(`${nome.padEnd(6)} ${viva.length} valori anche in diretta` +
+        (fuori.length || inPiu.length ? `  ✗ non disegnati: ${fuori.join(', ') || '—'} · di troppo: ${inPiu.join(', ') || '—'}` : '  ✓'));
+      if (fuori.length) err.push(`${nome}: si possono scegliere ma in diretta non si disegnano: ${fuori.join(', ')}`);
+      if (inPiu.length) err.push(`${nome}: in diretta si disegnano ma nessuno puo' sceglierli: ${inPiu.join(', ')}`);
+    }
+  }
 }
 
 // e il foglio di stile servito deve avere una regola per ognuno

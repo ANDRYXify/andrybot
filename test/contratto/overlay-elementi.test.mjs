@@ -235,11 +235,38 @@ test('l’ombra segue la forma, anche quando la forma ha gli angoli tagliati', (
   const i = SKIN.indexOf('.alert-card, .chat-riga, .ovl-widget {');
   assert.ok(i > 0, 'c’è il blocco comune delle tre vesti');
   const comune = SKIN.slice(i, SKIN.indexOf('}', i));
-  assert.ok(/filter: drop-shadow/.test(comune), 'l’ombra è un drop-shadow');
+  assert.ok(/(^|[;{\s])filter\s*:/.test(comune), 'è lì che si decide il filtro');
+  // L'ombra si compone da variabili, quindi la domanda non è più «c'è scritto
+  // drop-shadow in questa riga» ma «tutto ciò che finisce nel filtro è un
+  // drop-shadow»: un box-shadow disegnerebbe comunque il rettangolo.
+  const ombre = [...SKIN.matchAll(/--ombra-(?:fuori|extra):([^;]*);/g)].map((m) => m[1].trim());
+  assert.ok(ombre.length >= 3, 'le ombre passano dalle variabili');
+  for (const v of ombre) {
+    assert.ok(v === '' || /^drop-shadow\(/.test(v), `un'ombra che non segue la forma: ${v}`);
+  }
   const j = SKIN.indexOf('.ovl-widget {');
   const widget = SKIN.slice(j, SKIN.indexOf('}', j));
   assert.ok(!/box-shadow:\s*(?!inset)/.test(widget), 'e nessuna ombra rettangolare sul widget');
   assert.ok(/--sagoma: polygon/.test(SKIN), 'le forme spigolose ci sono davvero');
+});
+
+// `filter` su questi tre elementi si scrive UNA volta sola. Quando erano due
+// regole — quella dell'alert e quella comune — a parità di forza vinceva la più
+// in basso, e la variabile `--ombra-extra` finiva in un filtro che nessuno
+// leggeva più: l'alone dell'alert e quello del neon non si sono mai accesi.
+// Il codice che li accendeva era lì, giusto, e semplicemente inerte.
+test('il filtro delle tre vesti ha un padrone solo', () => {
+  const padroni = [];
+  for (const pezzo of SKIN.split('}')) {
+    const i = pezzo.lastIndexOf('{');
+    if (i < 0) continue;
+    const sel = pezzo.slice(0, i), corpo = pezzo.slice(i + 1);
+    if (!/(^|[;{\s])filter\s*:/.test(corpo)) continue;
+    const nudi = sel.split(',').map((x) => x.trim().replace(/\s+/g, ' '))
+      .filter((x) => /^\.(alert-card|chat-riga|ovl-widget)$/.test(x));
+    if (nudi.length) padroni.push(nudi.join(', '));
+  }
+  assert.equal(padroni.length, 1, `chi scrive «filter» su alert/chat/widget: ${padroni.join(' | ') || 'nessuno'}`);
 });
 
 test('un’opacità senza unità spegnerebbe tutti gli sfondi', () => {
