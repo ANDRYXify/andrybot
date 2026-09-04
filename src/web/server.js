@@ -870,11 +870,57 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.redirect(`/overlay/${encodeURIComponent(login)}?key=${encodeURIComponent(key)}&o=${encodeURIComponent(ov.id)}`);
   });
 
+  // «Parti da quanti ne ho»: la partenza di un obiettivo non deve essere una
+  // fotografia che invecchia. Con daVivo acceso il server la riallinea al numero
+  // vero di Twitch, e siccome quel che si mostra e' sempre «partenza + eventi
+  // contati», la riallinea TOGLIENDO gli eventi gia' contati: cosi' il totale a
+  // schermo e' il numero vero, e fra un riallineamento e l'altro la barra
+  // continua a muoversi sugli eventi che arrivano. Una formula sola, nessun ramo
+  // in piu' nell'overlay.
+  //
+  // La lettura da Twitch sta in cache: un overlay che si ricarica dieci volte
+  // non fa dieci chiamate.
+  const VIVO_CACHE_MS = 90 * 1000;
+  const vivoCache = new Map();
+  async function quantiVivi(login, tipo) {
+    const k = login + '|' + tipo;
+    const c = vivoCache.get(k);
+    if (c && Date.now() - c.ts < VIVO_CACHE_MS) return c.quanti;
+    let quanti = null;
+    try {
+      if (tipo === 'follower') quanti = await helix.quantiFollower(login);
+      else if (tipo === 'sub') quanti = await helix.quantiSub(login);
+    } catch { quanti = null; }
+    if (quanti != null) vivoCache.set(k, { ts: Date.now(), quanti });
+    return quanti;
+  }
+  async function rinfrescaGoalVivi(login) {
+    try {
+      const s = streamers.get(login);
+      const lista = Array.isArray(s?.settings?.overlayGoals) ? s.settings.overlayGoals : null;
+      if (!lista || !lista.some((g) => g && g.daVivo === true)) return;
+      const conti = (s.settings.overlayStato || {}).goals || {};
+      let cambiato = false;
+      const fuori = [];
+      for (const g of lista) {
+        if (!g || g.daVivo !== true || g.tipo === 'bit') { fuori.push(g); continue; }
+        const vivo = await quantiVivi(login, g.tipo === 'sub' ? 'sub' : 'follower');
+        if (vivo == null) { fuori.push(g); continue; }
+        const partenza = Math.max(0, Math.min(1000000, vivo - (Number(conti[g.id]) || 0)));
+        if (partenza === (Number(g.partenza) || 0)) { fuori.push(g); continue; }
+        fuori.push({ ...g, partenza });
+        cambiato = true;
+      }
+      if (cambiato) streamers.setSettings(login, { ...s.settings, overlayGoals: fuori });
+    } catch (e) { log.debug('goal dal vivo:', e?.message || e); }
+  }
+
   // tema dell'overlay (CSS avanzato + widget persistenti + loro stato): l'overlay
   // lo legge una volta al caricamento. Pubblico ma protetto dalla chiave.
-  app.get('/overlay/:login/tema', (req, res) => {
+  app.get('/overlay/:login/tema', wrap(async (req, res) => {
     if (!chiaveOk(req)) return notFound(res);
     const login = String(req.params.login).toLowerCase();
+    await rinfrescaGoalVivi(login);
     const base = manager.alerts?.tema(login) || { css: '', widget: {}, stato: {} };
     // Overlay richiesto (?o=id): ha il SUO layout (cosa mostra + dove) e, con
     // l'Opzione B, il SUO stile completo. Ciò che non ha, lo eredita dal canale.
@@ -898,7 +944,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       alertStile: st.alerts || null,
       chatStile: st.chat || null,
     });
-  });
+  }));
 
   // COSA STA SUONANDO, per il player dell'overlay. Spotify non sa spingere:
   // qualcuno deve chiedere. Chiede l'OVERLAY, non il server a vuoto — cosi'

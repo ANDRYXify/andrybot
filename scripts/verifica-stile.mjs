@@ -23,6 +23,9 @@ function chiavi(sorgente, inizio, fine) {
   let blocco = sorgente.slice(i, j < 0 ? i + 4000 : j);
   // via le stringhe: dentro ci sono due punti e apostrofi che non sono chiavi
   blocco = blocco.replace(/'(?:\\.|[^'\\])*'/g, "''").replace(/"(?:\\.|[^"\\])*"/g, '""');
+  // e via i commenti: una chiave preceduta da una riga di spiegazione non e'
+  // «sparita», e un cancello che la vede sparire misura se stesso, non il codice
+  blocco = blocco.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/[^\n]*/g, ' ');
   return [...new Set([...blocco.matchAll(/[{,]\s*([a-zA-Z][\w]*)\s*:/g)].map((m) => m[1]))];
 }
 
