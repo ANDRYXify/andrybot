@@ -5,6 +5,11 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-04
 
+- In chat pubblica ora risponde il bot del canale, non più la mente di Lia: sta sul pezzo, non si ricorda di nessuno e non parla di sé.
+- Le risposte salvate non escono più sempre con le stesse parole: il bot le dice a modo suo, in situazione. Se dentro c'è un link, esce intatta com'è scritta.
+- Il bot ha un suo quaderno: quello che gli insegni vale in tutti i canali o solo nel tuo, e lo applica senza citarlo.
+- Lia potrà insegnargli, ma solo quando vivrà: fino ad allora il quaderno lo scrivi tu. E lui non può leggere niente di lei, in nessun caso.
+- Quando il bot non sa rispondere, la domanda (senza nome, senza contatti, senza link) diventa una cosa da studiare per Lia.
 - Attorno a un video o a una musica incorporata non si vedono più gli spicchi vuoti negli angoli: li riempie il colore del bordo, così sembrano cornice.
 - E puoi scegliere il colore dietro al riquadro, per intonarlo a quello che si vede dentro al contenuto.
 - I riquadri di video, musica e pagine incorporate, la copertina e i bottoni dell'informativa hanno lo stesso bordo e la stessa ombra del resto della pagina: prima avevano un filo sottile che non cambiava mai col tema.

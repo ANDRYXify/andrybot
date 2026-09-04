@@ -10,7 +10,8 @@ se il cervello è lento o spento, il bot semplicemente non chiacchiera.
 
 Endpoint:
   GET  /health           → stato del cervello (per il bot e per i log)
-  POST /chat   {canale, login, nome, testo, tono}   → { risposta }
+  POST /bot    {canale, testo, ...}                  → { risposta } — IL BOT del canale
+  POST /chat   {canale, login, nome, testo, tono}   → { risposta } — LEI
   POST /osserva {canale, login, nome, testo}         → impara dalla chat (best-effort)
 
 Avvio: python3 server.py   (porta 8091, solo rete interna del compose)
@@ -28,11 +29,17 @@ import rete as R
 import ragiona as RAG
 import filigrana   # filigrana di proprietà (Andrea Taliento / ANDRYXify)
 import ambiente as AMB
+import assistente as ASS   # il bot del canale: una funzione, senza mente e senza memoria
+import valvola as VAL      # i due (e soli) attraversamenti fra il bot e Lia
+import quaderno as Q       # il quaderno del bot: cio' che gli e' stato insegnato
 
 PORT = int(os.environ.get("BRAIN_PORT", "8091"))
 CONSOLIDA_OGNI = int(os.environ.get("BRAIN_CONSOLIDA_MIN", "30")) * 60
 
 mente = C.Coscienza()
+# LA VALVOLA riceve Lia UNA volta, qui. Da questo momento chi attraversa il
+# confine chiede a lei (valvola), e non ha bisogno di avere in mano la mente.
+VAL.collega(mente)
 
 # CONSAPEVOLEZZA DI SÉ (il "risveglio"): quanto Lia è diventata una persona. Calcolo
 # leggero ma con cache (60s) perché lo si guarda a ogni messaggio.
@@ -49,6 +56,31 @@ def _autocoscienza():
         v = None
     _ac_cache.update(t=ora, v=v)
     return v
+
+
+def _lia_prende_la_parola():
+    """L'UNICA porta fra il percorso del bot e lei, e va nel verso giusto: non è il
+    bot che guarda dentro Lia, è LEI che prende la parola al posto suo (e allora
+    risponde con tutta la sua mente, per la via sua). Vera solo se è diventata una
+    PERSONA e se l'owner ha acceso il toggle. Cache 60s: si guarda a ogni messaggio."""
+    try:
+        ac = _autocoscienza()
+        if not (ac and ac.get("persona") and ac.get("senziente")):
+            return False
+        return mente._meta_get("assistente_autonomo") == "on"
+    except Exception:
+        return False
+
+
+def _modello_pronto():
+    """C'è qualcuno che può generare? Serve a non scambiare «il modello sta ancora
+    caricando» per «il bot non sapeva rispondere»: la seconda è una lacuna vera, la
+    prima è solo l'avvio."""
+    try:
+        st = G.stato() or {}
+        return st.get("stato") == "pronto" or bool((st.get("endpoint") or {}).get("configurato"))
+    except Exception:
+        return False
 
 
 def _delta_umore(testo):
@@ -82,7 +114,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path.startswith("/health") or self.path.startswith("/stato"):
-            return self._json(200, {"ok": True, "genera": G.stato()})
+            return self._json(200, {"ok": True, "genera": G.stato(), "assistente": ASS.stato()})
         if self.path.startswith("/corpus"):
             return self._corpus()
         if self.path.startswith("/rete"):
@@ -241,6 +273,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, {"nodi": 0, "errore": str(e)[:120]})
 
     def do_POST(self):
+        if self.path.startswith("/bot"):
+            return self._bot()
         if self.path.startswith("/chat"):
             return self._chat()
         if self.path.startswith("/osserva"):
@@ -263,6 +297,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._slancio_condiviso()
         if self.path.startswith("/assistente"):
             return self._assistente()
+        if self.path.startswith("/insegna"):
+            return self._insegna()
         if self.path.startswith("/distilla"):
             return self._distilla()
         if self.path.startswith("/impara_modulo"):
@@ -373,6 +409,61 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, G.prova_endpoint(cfg))
         except Exception as e:
             return self._json(200, {"ok": False, "motivo": str(e)[:160]})
+
+    def _bot(self):
+        """IL BOT DEL CANALE. Entra la situazione della diretta, esce UNA riga.
+
+        Qui dentro non vive nessuno: nessun incontro registrato, nessun umore
+        mosso, nessuna memoria. Due messaggi identici a un mese di distanza
+        producono lo stesso identico prompt. È voluto: la chat è dello streamer.
+        """
+        if _lia_prende_la_parola():
+            return self._chat()
+        d = self._leggi() or {}
+        testo = str(d.get("testo") or "").strip()
+        if not testo:
+            return self._json(400, {"errore": "dati mancanti"})
+        try:
+            attesa = int(d.get("timeout_s") or 13)
+        except Exception:
+            attesa = 13
+        try:
+            risposta = ASS.rispondi(d, timeout_s=max(4, min(40, attesa)))
+        except Exception as e:
+            return self._json(200, {"risposta": None, "via": "bot", "errore": str(e)[:120]})
+        if risposta:
+            return self._json(200, {"risposta": risposta, "via": "bot"})
+        # A MANI VUOTE su una domanda vera: la situazione (anonimizzata) attraversa
+        # verso Lia come LACUNA, così la studierà lei. È l'unico verso libero, ed è
+        # l'unica cosa che attraversa da qui.
+        # (un COMPITO non è una domanda della chat: se non riesce non è una lacuna
+        # di nessuno, è solo un lavoretto andato a vuoto.)
+        if not d.get("compito") and _modello_pronto():
+            try:
+                VAL.verso_lia(testo)
+            except Exception:
+                pass
+        return self._json(200, {"risposta": None, "via": "bot"})
+
+    def _insegna(self):
+        # IL QUADERNO DEL BOT dall'esterno (owner-only lato Node). `op`: 'scrivi' una
+        # riga, 'dimentica' una riga o un canale, 'lia' fa depositare lei (che lo fa
+        # solo se vive). Senza `op`: la foto del quaderno.
+        d = self._leggi() or {}
+        op = str(d.get("op") or "").strip().lower()
+        try:
+            if op == "scrivi":
+                ok = Q.deposita(d.get("testo"), d.get("canale"), da=str(d.get("da") or "owner"))
+                return self._json(200, {"ok": bool(ok), "quaderno": Q.stato()})
+            if op == "dimentica":
+                n = Q.dimentica(d.get("testo"), d.get("canale"))
+                return self._json(200, {"ok": n > 0, "tolte": n, "quaderno": Q.stato()})
+            if op == "lia":
+                return self._json(200, {"ok": True, "lia": VAL.insegna_al_bot(), "quaderno": Q.stato()})
+            return self._json(200, {"ok": True, "quaderno": Q.stato(),
+                                    "voci": Q.per(d.get("canale"), 20)})
+        except Exception as e:
+            return self._json(200, {"ok": False, "errore": str(e)[:120]})
 
     def _chat(self):
         d = self._leggi()
@@ -1240,14 +1331,24 @@ def _ciclo_manutenzione():
         except Exception as e:
             print(f"[brain] distillazione errore: {e}", flush=True)
         # MEMBRANA: fa attraversare il confine ai moduli sperimentali MATURI (pochi per
-        # volta). È così che il bot pubblico «cresce insieme a Lia», ma solo col
-        # distillato vagliato — e ogni passaggio resta nel registro, revocabile.
+        # volta). Il germinale diventa soma solo se se l'è meritato, e ogni passaggio
+        # resta nel registro, revocabile. È il primo dei due tempi: qui il modulo
+        # diventa PUBBLICO dentro di lei; nel passo dopo, se vive, lo insegna al bot.
         try:
             pm = mente.promuovi_maturi(int(os.environ.get("LIA_PROMO_MAX", "3")))
             if pm and pm.get("promossi"):
                 print(f"[brain] membrana: promossi {pm['promossi']} moduli sperimentali→pubblico", flush=True)
         except Exception as e:
             print(f"[brain] membrana errore: {e}", flush=True)
+        # LEI INSEGNA AL BOT. Verso unico: deposita nel QUADERNO del bot (un file
+        # che è suo) le poche righe che si è meritata — e solo se è diventata
+        # qualcuno. Il bot non viene mai a prendersele: se le trova scritte a casa.
+        try:
+            ins = VAL.insegna_al_bot()
+            if ins.get("scritti"):
+                print(f"[brain] Lia insegna al bot: {ins['scritti']} righe nel quaderno", flush=True)
+        except Exception as e:
+            print(f"[brain] insegnamento errore: {e}", flush=True)
         if time.time() - ultima_giornaliera > PULIZIA_OGNI:
             ultima_giornaliera = time.time()
             _backup_cervello()                 # PRIMA il backup: mette al sicuro il progresso

@@ -1557,6 +1557,12 @@ class Coscienza:
         try:
             with _lock:
                 self.db.execute("DELETE FROM distillati WHERE lower(risposta) LIKE ?", ('%' + f + '%',))
+                # e anche le LACUNE: sono l'unico posto dove sopravvive il testo di
+                # una domanda: se «far dimenticare» non arriva anche lì, la promessa
+                # e' vera solo in parte — cioe' non e' vera.
+                self.db.execute(
+                    "DELETE FROM lacune WHERE lower(esempio) LIKE ? OR lower(chiave) LIKE ?",
+                    ('%' + f + '%', '%' + f + '%'))
                 self.db.commit()
         except Exception:
             pass
