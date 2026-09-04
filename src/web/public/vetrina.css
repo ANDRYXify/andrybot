@@ -143,20 +143,20 @@ body.vetrina em, body.vetrina .vt-corsivo {
 .vt-btn-primo {
   border: var(--contorno-sp) solid var(--contorno); border-width: var(--tratto-mano); color: var(--su-acc); font-weight: 700;
   font-family: var(--mano);
-  background: var(--rampa);
-  box-shadow: var(--alone-contorno), var(--ombra-ink), inset 0 1px 0 rgba(255, 255, 255, .22);
+  background: var(--acc);
+  box-shadow: var(--alone-contorno), var(--ombra-ink);
 }
 .vt-btn-primo:hover {
-  color: var(--su-acc); background: var(--rampa);
-  box-shadow: var(--alone-contorno), var(--ombra-ink-alta), inset 0 1px 0 rgba(255, 255, 255, .3);
+  color: var(--su-acc); background: var(--acc);
+  box-shadow: var(--alone-contorno), var(--ombra-ink-alta);
 }
 .vt-btn-primo::after {
   content: ""; position: absolute; inset: 0; z-index: -1; opacity: 0; border-radius: inherit; overflow: hidden;
-  background-image: radial-gradient(var(--contorno) 1.1px, transparent 1.2px);
-  background-size: var(--retino-passo);
+  background-image: var(--tono-carta);
+  background-size: var(--tono-passo);
   transition: opacity .2s ease;
 }
-.vt-btn-primo:hover::after { opacity: .26; }
+.vt-btn-primo:hover::after { opacity: .7; }
 
 .vt-sotto {
   margin: 1rem 0 0; text-align: center; font-size: .86rem; color: var(--testo-3);

@@ -27,7 +27,7 @@ lo usa: se non si vede da fuori, qui non ci va.
 - Il grigio pieno è sparito: le superfici secondarie sono a retino, come il mezzotono stampato.
 - Il tratto ha una gerarchia: la vignetta è più spessa del comando, il comando più del dettaglio. È così che si legge la profondità.
 - I pulsanti sono a tinta piatta, senza sfumature: in una tavola il colore è pieno o non c'è.
-- Quando arrivi con la tastiera su un comando partono le linee di concentrazione attorno, come quando una vignetta dice «guarda qui».
+- Quando arrivi con la tastiera su un comando si vede subito dove sei: cornice d'accento netta, senza niente che copra quello che hai intorno.
 
 ## 2026-09-03
 
