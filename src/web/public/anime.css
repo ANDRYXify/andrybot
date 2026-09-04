@@ -1552,8 +1552,10 @@ body.giro-aperto { overflow: hidden; }
 .giro-velo:has(.giro-buco[hidden]) { background: rgba(10, 8, 10, .62); }
 .giro-carta {
   position: fixed; width: min(380px, calc(100vw - 24px)); max-height: 70vh; overflow: auto;
-  background: var(--surface); border: 1px solid var(--border-2); border-radius: var(--r-l);
-  box-shadow: var(--om-l); padding: 1rem 1.1rem; display: grid; gap: .5rem;
+  background: var(--surface);
+  border: var(--contorno-sp) solid var(--contorno); border-width: var(--tratto-4);
+  border-radius: var(--ang-mano-l);
+  box-shadow: var(--alone-contorno), var(--ombra-ink-alta); padding: 1rem 1.1rem; display: grid; gap: .5rem;
   animation: gr-entra .24s var(--an-vel) both;
 }
 .giro-carta.al-centro { top: 50%; left: 50%; transform: translate(-50%, -50%); }
@@ -1674,3 +1676,14 @@ input[type="color"]:hover { box-shadow: var(--alone-contorno), var(--ombra-ink-t
   box-shadow: var(--alone-contorno), var(--ombra-ink-timbro);
 }
 .lp-ipick.sel svg, .ovl-liv.scelto svg, .studio-scena.attiva svg { color: inherit; }
+
+.carta { border-width: var(--tratto-3); }
+.carta .carta, details.carta.sez .carta, .asp-blocco .carta { border-width: var(--tratto-2); }
+.toast, .cookie-banner, .aiuto-banner { border-width: var(--tratto-4); }
+
+.badge, .badge.verde, .badge.rosso, .badge.viola, .badge.giallo, .badge.marchio,
+.chip-var, .pillola, .pl-guida .pl-cop > span, .lp-ipick {
+  border-width: var(--tratto-1);
+}
+
+.pannello-scheda .carta:hover { box-shadow: var(--alone-contorno), var(--ombra-ink-alta); }
