@@ -25,6 +25,11 @@ RUN npm install --omit=dev
 COPY src ./src
 # Script di utilità (es. stripe-fetch-prices.mjs), eseguibili dentro il container
 COPY scripts ./scripts
+# I file che il server LEGGE a runtime da fuori src/. Senza, non si rompe niente
+# in modo rumoroso: la pagina esce vuota e nessuno se ne accorge. E' successo con
+# le novità — pagina vuota, API vuota e la voce sparita dalla sitemap, tutti e
+# tre per lo stesso file mancante. Il cancello verifica-immagine.mjs li elenca.
+COPY NOVITA.md ./
 
 ENV NODE_ENV=production
 CMD ["node", "src/index.js"]

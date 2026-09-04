@@ -32,6 +32,7 @@ lo usa: se non si vede da fuori, qui non ci va.
 - Il titolo di una scheda è una targhetta nell'angolo, con la freccetta dentro: si legge come la didascalia di una vignetta.
 - Il sito scarica il 16% in meno: quello che arriva al browser è compresso.
 - L'anteprima che compare quando incolli un link di SocialBot è ridisegnata come il sito: lettering, retino e targhetta d'inchiostro.
+- La pagina delle novità torna a mostrare le novità: era vuota, e con lei l'elenco nel pannello.
 
 ## 2026-09-03
 
