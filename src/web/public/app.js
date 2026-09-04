@@ -542,6 +542,8 @@ function _demoGet(via) {
       { id: 2, domanda: 'Da dove streammi?', risposta: 'Da Genova, quasi ogni sera verso le 21', fonte: 'auto', quando: 'sempre', fissata: false, ts: '2026-05-01T20:00:00Z' },
       { id: 3, domanda: 'Codice sconto sponsor', risposta: 'Usa il codice ORA10 finché siamo in diretta', fonte: 'manuale', quando: 'live', fissata: false, ts: '2026-05-04T21:00:00Z' },
       { id: 4, domanda: 'Come ti seguo ovunque?', risposta: 'Tutti i miei link li trovi su andryxify.it/u/andryx', fonte: 'chat', quando: 'sempre', fissata: false, ts: '2026-05-05T22:10:00Z' },
+      { id: null, domanda: 'Quanto dura di solito la live?', risposta: 'Tre ore scarse, poi crollo', fonte: 'pagina', quando: 'sempre', fissata: false },
+      { id: null, domanda: 'Twitch / link Twitch / dove trovo Twitch', risposta: 'Twitch: https://twitch.tv/andryxify', fonte: 'pagina', quando: 'sempre', fissata: false },
     ],
     '/api/streamer/quaderno': {
       voci: [
@@ -2281,8 +2283,13 @@ const GUIDE = {
     come: [['Accendi l’interruttore del bot.', 'Flip the bot’s switch.', 'Activa el interruptor del bot.', '#toggle-bot'], ['Controlla il badge “in chat”: verde = sei online.', 'Check the “in chat” badge: green = you’re online.', 'Mira la insignia “en el chat”: verde = estás en línea.', '#etichetta-bot'], ['Se manca un permesso, riautorizza con un clic.', 'If a permission is missing, re-authorize with one click.', 'Si falta un permiso, reautoriza con un clic.', '#piattaforme-box']] },
   personalita: { serve: ['Dare al bot il tono e il carattere con cui parla in chat.', 'Give the bot the tone and character it speaks with in chat.', 'Darle al bot el tono y el carácter con que habla en el chat.'],
     come: [['Scegli tono e “spontaneità” (quanto interviene da solo).', 'Pick tone and “spontaneity” (how often it chimes in).', 'Elige el tono y la “espontaneidad” (cuánto interviene solo).', '#sel-tono'], ['Aggiungi regole che rispetterà SEMPRE.', 'Add rules it will ALWAYS follow.', 'Añade reglas que respetará SIEMPRE.', '#inp-guida'], ['Salva: il nuovo stile parte subito.', 'Save: the new style takes effect right away.', 'Guarda: el nuevo estilo se aplica al instante.', '#btn-salva-personalita']] },
-  conoscenza: { serve: ['Insegnare al bot cosa dire su di te (social, orari, PC, regole…).', 'Teach the bot what to say about you (socials, schedule, PC, rules…).', 'Enseñarle al bot qué decir sobre ti (redes, horarios, PC, reglas…).'],
-    come: [['Aggiungi una voce: domanda → risposta.', 'Add an entry: question → answer.', 'Añade una entrada: pregunta → respuesta.', '#inp-domanda'], ['In chat richiami la risposta con un !comando o una parola chiave.', 'In chat you trigger the answer with a !command or a keyword.', 'En el chat activas la respuesta con un !comando o una palabra clave.', '#lista-conoscenza']] },
+  conoscenza: { serve: ['Decidere cosa il bot sa di te e come deve rispondere.', 'Decide what the bot knows about you and how it should reply.', 'Decidir qué sabe el bot de ti y cómo debe responder.'],
+    come: [
+      ['Compila la tua scheda: chi sei, gli orari, dove ti trovano, cosa non deve dire di te.', 'Fill in your card: who you are, your schedule, where to find you, what it must not say about you.', 'Rellena tu ficha: quién eres, tus horarios, dónde encontrarte, qué no debe decir de ti.', '#sc-chi'],
+      ['Aggiungi le voci: domanda → risposta. Il bot usa le sei più vicine a quello che gli chiedono.', 'Add entries: question → answer. The bot uses the six closest to what it is asked.', 'Añade entradas: pregunta → respuesta. El bot usa las seis más cercanas a lo que le preguntan.', '#inp-domanda'],
+      ['Una voce può valere solo in diretta o solo offline, e può essere fissata: allora c’è sempre.', 'An entry can apply only while live or only offline, and can be pinned: then it is always there.', 'Una entrada puede valer solo en directo o solo offline, y puede fijarse: entonces está siempre.', '#lista-conoscenza'],
+      ['Nel quaderno scrivi come deve rispondere, non cosa sa.', 'In the notebook you write how it should reply, not what it knows.', 'En el cuaderno escribes cómo debe responder, no lo que sabe.', '#inp-quaderno'],
+      ['Quello che c’è sulla tua pagina link — FAQ comprese — lo legge da sé, sempre aggiornato.', 'What is on your link page — FAQs included — it reads by itself, always up to date.', 'Lo que hay en tu página de enlaces — FAQ incluidas — lo lee solo, siempre al día.', '#lista-conoscenza']] },
   moduli: { serve: ['Creare i comandi di chat: comandi/automazioni (QUANDO succede X, ALLORA fai Y) e i contatori (morti, tentativi, parole…) che tu e i mod gestite in chat.', 'Create your chat commands: commands/automations (WHEN X happens, THEN do Y) and counters (deaths, attempts, words…) that you and your mods manage in chat.', 'Crea tus comandos de chat: comandos/automatizaciones (CUANDO pasa X, ENTONCES haz Y) y los contadores (muertes, intentos, palabras…) que tú y los mods gestionáis en el chat.'],
     come: [['Il modo più corto: dai un nome al comando e scrivi la risposta. È già fatto.', 'The shortest way: name the command and write the answer. That is it.', 'La forma más corta: pon nombre al comando y escribe la respuesta. Ya está.', '#qc-nome'], ['Per qualcosa di più c’è il modulo: QUANDO succede X (un !comando, una parola, un evento, un timer) ALLORA fai Y — anche più cose insieme.', 'For something more there is the module: WHEN X happens (a !command, a word, an event, a timer) THEN do Y — several things at once, too.', 'Para algo más está el módulo: CUANDO pasa X (un !comando, una palabra, un evento, un temporizador) ENTONCES haz Y — varias cosas a la vez, también.', '#lista-moduli'], ['I contatori sono numeri che tu e i mod muovete in chat — !morti, !tentativi — e che puoi mostrare nell’overlay.', 'Counters are numbers you and your mods move in chat — !deaths, !attempts — and that you can show in the overlay.', 'Los contadores son números que tú y los mods movéis en el chat — !muertes, !intentos — y que puedes mostrar en el overlay.', '#cont-comando']] },
   memoria: { serve: ['Vedere cosa si ricorda il bot e come sta andando il canale: statistiche, utenti più attivi e cose imparate.', 'See what the bot remembers and how the channel is doing: stats, most active viewers and things it learned.', 'Ver qué recuerda el bot y cómo va el canal: estadísticas, usuarios más activos y cosas aprendidas.'],
@@ -13932,7 +13939,7 @@ async function caricaConoscenza() {
   try {
     const voci = await api('/api/streamer/knowledge');
     if (!voci.length) { ul.innerHTML = `<li class="vuoto">${L('Il bot non sa ancora niente: insegnagli qualcosa qui sopra!', 'The bot doesn\'t know anything yet: teach it something above!', '¡El bot aún no sabe nada: enséñale algo aquí arriba!')}</li>`; return; }
-    const badge = { auto: L('dal sito', 'from the site', 'de la web'), manuale: L('tua', 'yours', 'tuya'), chat: L('dalla chat', 'from chat', 'del chat') };
+    const badge = { auto: L('dal sito', 'from the site', 'de la web'), manuale: L('tua', 'yours', 'tuya'), chat: L('dalla chat', 'from chat', 'del chat'), pagina: L('dalla tua pagina link', 'from your link page', 'de tu página de enlaces') };
     const QUANDO = {
       sempre: L('sempre', 'always', 'siempre'),
       live: L('solo in diretta', 'only when live', 'solo en directo'),
@@ -13943,15 +13950,15 @@ async function caricaConoscenza() {
         <div class="testo-voce">
           <div class="domanda">${v.fissata ? '<span class="badge">' + L('fissata', 'pinned', 'fijada') + '</span> ' : ''}${esc(v.domanda)}</div>
           <div class="risposta">${esc(v.risposta)}</div>
-          <div class="meta"><span class="badge">${esc(badge[v.fonte] || v.fonte)}</span> · ${esc(QUANDO[v.quando] || QUANDO.sempre)} · ${esc(dataIt(v.ts))}</div>
+          <div class="meta"><span class="badge">${esc(badge[v.fonte] || v.fonte)}</span> · ${esc(QUANDO[v.quando] || QUANDO.sempre)}${v.id ? ' · ' + esc(dataIt(v.ts)) : ''}</div>
         </div>
-        <div class="riga-flessibile">
+        ${v.id ? `<div class="riga-flessibile">
           <select data-quando="${v.id}" title="${L('Quando vale', 'When it applies', 'Cuándo vale')}">
             ${Object.entries(QUANDO).map(([k, t]) => `<option value="${k}"${(v.quando || 'sempre') === k ? ' selected' : ''}>${esc(t)}</option>`).join('')}
           </select>
           <button class="btn secondario mini" data-fissa="${v.id}" data-on="${v.fissata ? '1' : '0'}">${v.fissata ? L('Libera', 'Unpin', 'Soltar') : L('Fissa', 'Pin', 'Fijar')}</button>
           <button class="btn secondario mini" data-elimina="${v.id}">${L('Elimina', 'Delete', 'Eliminar')}</button>
-        </div>
+        </div>` : `<span class="suggerimento">${L('si cambia sulla pagina', 'change it on the page', 'se cambia en la página')}</span>`}
       </li>`).join('');
 
     ul.onchange = (ev) => {

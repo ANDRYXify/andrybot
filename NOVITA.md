@@ -5,6 +5,10 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-04
 
+- Il bot legge la tua pagina link mentre risponde: titoli, testi, link, social, conti alla rovescia e soprattutto le FAQ che ci hai scritto tu.
+- Cambi la pagina e cambia subito quello che sa, senza rifare niente. Se la spegni, smette di usarla.
+- Nell'elenco «cosa sa il bot» ora compaiono anche quelle voci, marcate «dalla tua pagina link»: si cambiano sulla pagina, non da lì.
+- Il manuale del bot e la guida della scheda Conoscenza sono aggiornati: scheda, quando, fissate, quaderno, parole da bloccare e pagina link.
 - I contorni non vengono più tagliati: dentro le schede ogni bottone aveva l'ombra rasata sui quattro lati, e nelle colonne che scorrono il bordo spariva di lato.
 - Sul tema chiaro tornano le ombre piene che mancavano: una riga di stile sbagliata le spegneva tutte, mentre sul tema scuro si sono sempre viste.
 - Nella scheda puoi elencare le parole che il bot non deve mai scrivere (il cognome, la via, il nome della scuola): se una finisce in una risposta, il bot non la manda.
