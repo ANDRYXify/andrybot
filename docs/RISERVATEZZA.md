@@ -156,10 +156,16 @@ iniettato **esegue**; senza, il browser lo rifiuta.
 con il `Caddyfile`, pezzo per pezzo della CSP. Sta fuori da `npm run cancelli`
 perché esce in rete.
 
-Quando segnala una differenza, il Caddyfile va ricaricato **sul server**:
+Quando segnala una differenza, il Caddyfile va ricaricato **sul server**. E qui
+c'è la trappola: `docker compose up -d caddy` **non basta**. Compose ricrea un
+container solo se cambia la *configurazione del servizio*, e un file *montato*
+che cambia non è una modifica del servizio: risponde «up-to-date» e non fa nulla.
+Ci sono cascato, e il collaudo continuava giustamente a dire rosso.
 
-    docker compose up -d caddy
-    # oppure, senza fermare nulla:
+Il comando che rilegge davvero il file montato è:
+
     docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
 
-e poi si rigira `verifica-edge.mjs` finché non dice «edge allineato».
+Se l'API di amministrazione di Caddy è spenta e `reload` non passa, il ripiego è
+`docker compose restart caddy`. Poi si rigira `verifica-edge.mjs` finché non dice
+«edge allineato».
