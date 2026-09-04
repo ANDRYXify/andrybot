@@ -3536,7 +3536,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // MENTE: i dati per il GRAFO 3D del cervello — i moduli del "manuale umano"
   // (globale, con testi e contatori) + un riassunto della piccola rete del canale.
   // Sola lettura: nessun segreto, è la mente condivisa di Lia resa navigabile.
-  app.get('/api/streamer/mente', requireLogin, wrap(async (req, res) => {
+  app.get('/api/admin/mente3d', requireAdmin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const moduli = await brainpy.moduli(true).catch(() => null) || [];
     const links = await brainpy.linkModuli().catch(() => []) || [];
