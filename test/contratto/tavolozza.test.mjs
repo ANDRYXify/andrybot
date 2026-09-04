@@ -56,7 +56,22 @@ test('l\'alone segue il marchio, non una classe: vale per tutti e quattro i segn
       `l'alone non prende ${segno}`,
     );
   }
-  assert.ok(REGOLA_MARCHIO.includes('var(--acc)'), 'l\'alone è del colore del marchio');
+  // Il segno ha i contorni neri: sul fondo scuro non serve un bagliore al neon,
+  // serve il contorno che manca. Glielo ridà il tono con cui si contorna anche
+  // il lettering — lo stesso, non un secondo valore che poi va alla deriva.
+  assert.ok(REGOLA_MARCHIO.includes('var(--orlo-scritta)'), 'l\'alone ridisegna il contorno');
+});
+
+test('la regola dell\'alone non usa colori che la pagina di destinazione non ha', () => {
+  // Le guide non caricano tema.css: si portano via la regola. Se la regola
+  // nomina un colore che le guide non dichiarano, il filtro non vale piu' nulla
+  // e il marchio torna a spegnersi — in silenzio, che e' il modo peggiore.
+  const guida = paginaGuida(GUIDE[0].slug);
+  const usati = [...REGOLA_MARCHIO.matchAll(/var\(\s*--([a-z0-9-]+)/g)].map((m) => m[1]);
+  assert.ok(usati.length, 'la regola dell\'alone non nomina nessun colore');
+  for (const t of usati) {
+    assert.ok(guida.includes(`--${t}:`), `la guida non dichiara --${t}, che l'alone usa`);
+  }
 });
 
 test('ogni pagina che mostra il marchio gli mette l\'alone', () => {

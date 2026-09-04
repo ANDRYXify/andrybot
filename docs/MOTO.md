@@ -105,3 +105,62 @@ puro, nessun ridisegno.
 Tutto si spegne insieme, in tre modi: `prefers-reduced-motion: reduce`, la classe `leggero`
 (dispositivo debole o `saveData`, commutabile da `SB_LEGGERO.imposta`), e `pointer: fine`
 mancante (su tocco il cursore custom non nasce proprio).
+
+## La cadenza: perché il sito si muove «a scatti»
+
+Nel manga non esistono intermedi. Il movimento è di due tipi soltanto: i **segni**
+dentro una vignetta ferma (le linee di concentrazione, le linee di velocità) e il
+**taglio** fra una vignetta e l'altra. L'anime che ne discende non ha mai cercato
+di imitare Disney: è **animazione limitata**, girata *su tre* — otto disegni al
+secondo invece di ventiquattro. È la scelta che ha reso riconoscibile un intero
+linguaggio, non un ripiego che si vede.
+
+Il sito la scrive in due token, in `tema.css`:
+
+| token | cos'è | dove va |
+| --- | --- | --- |
+| `--su-tre` | `steps(3, jump-none)` | cose piccole e brevi: un lampo, un'ombra che si sposta |
+| `--su-due` | `steps(5, jump-none)` | comparse: carte, eroe, righe che entrano |
+
+**La regola che discrimina** — senza la quale «tutto a scatti» diventa
+semplicemente un sito rotto:
+
+- ciò che **compare** è un disegno nuovo → a scatti;
+- ciò che **si muove sotto il dito** (il cassetto, un cursore, lo scorrimento) →
+  scivola, sempre;
+- la **sfocatura non esiste**. È fotografia: l'inchiostro o c'è o non c'è. Una
+  comparsa che parte da `blur(10px)` non è una comparsa disegnata, è una messa a
+  fuoco.
+
+## Un nome, un movimento solo
+
+Due fogli che dichiarano gli stessi `@keyframes` non danno errore: vince in
+silenzio l'ultimo caricato. Non è teoria, era lo stato del sito:
+
+| nome | dichiarato in | chi vinceva | cosa spariva |
+| --- | --- | --- | --- |
+| `vt-entra` | `anime.css` e `vetrina.css` | `vetrina.css` | il cambio scheda si portava dietro `blur(10px)`, che nessuno gli aveva mai chiesto |
+| `toast-entra` | `style.css` e `anime.css` | `anime.css` | l'ingresso *shōnen* dell'avviso — scritto, mai visto una volta |
+
+Difetto senza sintomi: la pagina non si rompe, si muove in un modo che nessuno ha
+scelto. Per questo il controllo non sta nell'occhio ma in
+`scripts/verifica-moto.mjs`, che rifiuta un nome di fotogrammi dichiarato due
+volte e dice in quali file.
+
+## Il vocabolario, e chi lo parla davvero
+
+Un hook CSS che nessuno aggancia è peso morto spedito a ogni visitatore. Restano
+solo i movimenti con un momento vero:
+
+| movimento | il momento |
+| --- | --- |
+| `shonen-entra` | l'eroe della vetrina che arriva, a scaglioni in ordine di lettura; l'avviso che entra |
+| `shonen-scossa` | l'avviso di **errore**: sbagliare si distingue dal riuscire anche da come si muove, non solo dal colore |
+| `ink-tremolio` | il marchio, che trema sotto il puntatore come una cosa disegnata a mano |
+| `vt-appare` | le sezioni della vetrina che entrano nella vista |
+| `vt-colora` | la rampa che riempie d'inchiostro le lettere del titolo |
+
+Sono usciti `ink-colora`, `ink-colpo`, `shonen-colpo` e `shonen-lampo`: nessuno li
+agganciava, e `ink-colora` per com'era scritto non avrebbe potuto funzionare —
+dipingeva dietro l'elemento (`z-index: -1`), quindi lo sfondo dell'elemento stesso
+lo copriva sempre.

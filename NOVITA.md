@@ -34,6 +34,12 @@ lo usa: se non si vede da fuori, qui non ci va.
 - L'anteprima che compare quando incolli un link di SocialBot è ridisegnata come il sito: lettering, retino e targhetta d'inchiostro.
 - La pagina delle novità torna a mostrare le novità: era vuota, e con lei l'elenco nel pannello.
 - L'avatar 3D e la mappa di come ragiona il bot stanno nell'area di amministrazione.
+- I titoli grandi sono contornati come le lettere del logo: pieno colorato dentro, tratto nero attorno.
+- La vetrina si apre a scaglioni, un pezzo alla volta, con lo scatto dell'animazione giapponese invece della dissolvenza sfocata.
+- Anche il cambio di sezione ha perso la sfocatura: adesso è uno stacco netto, come si passa da una vignetta all'altra.
+- L'avviso di errore arriva con la sua scossa: si capisce che qualcosa è andato storto anche solo da come si muove.
+- Il marchio in alto trema un attimo quando ci passi sopra, come una cosa disegnata a mano.
+- E di notte si legge: il contorno nero spariva nel fondo scuro, ora ha il filo di carta attorno come nelle tavole stampate.
 
 ## 2026-09-03
 

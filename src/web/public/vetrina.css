@@ -105,7 +105,7 @@ body.vetrina em, body.vetrina .vt-corsivo {
   background: var(--rampa); -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent; color: var(--acc);
   background-size: 220% 100%; background-position: 100% 0;
-  animation: vt-colora .8s .3s var(--an-vel) both;
+  animation: vt-colora .8s .3s var(--su-due) both;
 }
 @keyframes vt-colora {
   from { background-position: 100% 0; }
@@ -501,20 +501,34 @@ body.vetrina em, body.vetrina .vt-corsivo {
 .vt-fine .vt-testo { margin-inline: auto; max-width: 52ch; }
 
 @media not (prefers-reduced-motion: reduce) {
+  body.vetrina .vt-scena .vt-occhiello,
+  body.vetrina .vt-scena .vt-titolo,
+  body.vetrina .vt-scena .vt-sub,
+  body.vetrina .vt-scena .vt-azioni > *,
+  body.vetrina .vt-scena .vt-sotto {
+    animation: shonen-entra var(--colpo) var(--su-due) both;
+    animation-delay: var(--posa, 0ms);
+  }
+  body.vetrina .vt-scena .vt-titolo { --posa: 70ms; }
+  body.vetrina .vt-scena .vt-sub { --posa: 140ms; }
+  body.vetrina .vt-scena .vt-azioni > * { --posa: 210ms; }
+  body.vetrina .vt-scena .vt-azioni > * + * { --posa: 270ms; }
+  body.vetrina .vt-scena .vt-sotto { --posa: 330ms; }
+
   @supports (animation-timeline: view()) {
     body.vetrina .vt-rivela {
-      animation: vt-entra linear both;
+      animation: vt-appare var(--su-due) both;
       animation-timeline: view();
       animation-range: entry 4% cover 32%;
     }
-    @keyframes vt-entra {
-      from { opacity: 0; transform: translate3d(0, 30px, 0) scale(.988); filter: blur(10px); }
-      to { opacity: 1; transform: none; filter: blur(0); }
+    @keyframes vt-appare {
+      from { opacity: 0; transform: translate3d(0, 30px, 0) scale(.988); }
+      to { opacity: 1; transform: none; }
     }
     body.vetrina .vt-griglia > *,
     body.vetrina .vt-passi > *,
     body.vetrina .vt-store > * {
-      animation: vt-entra linear both;
+      animation: vt-appare var(--su-due) both;
       animation-timeline: view();
       animation-range: entry calc(2% + var(--i, 0) * 5%) cover calc(30% + var(--i, 0) * 5%);
     }
@@ -525,10 +539,10 @@ body.vetrina em, body.vetrina .vt-corsivo {
       transform-origin: 50% 0;
     }
     @keyframes vt-allontana {
-      to { opacity: .18; transform: translate3d(0, -28px, 0) scale(.94); filter: blur(3px); }
+      to { opacity: .18; transform: translate3d(0, -28px, 0) scale(.94); }
     }
-    body.vetrina .vt-tit em, body.vetrina .vt-titolo em {
-      animation: vt-accende linear both;
+    body.vetrina .vt-tit em {
+      animation: vt-accende var(--su-due) both;
       animation-timeline: view();
       animation-range: entry 10% cover 38%;
     }

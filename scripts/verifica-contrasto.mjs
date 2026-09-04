@@ -52,6 +52,18 @@ const lum = ([r, g, b]) => {
 };
 const rapporto = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return Math.round(((x + 0.05) / (y + 0.05)) * 100) / 100; };
 
+// Legge un colore CSS. Un colore trasparente non e' «nero»: non e' un colore
+// affatto, ed e' il caso di una scritta dipinta con una sfumatura ritagliata
+// sulle lettere (background-clip: text), dove il riempimento dichiarato e'
+// trasparente perche' il colore lo mette lo sfondo. Leggerlo come nero faceva
+// scambiare per «lettering» ogni fondo scuro della pagina.
+const tinta = (s) => {
+  const v = (String(s).match(/[\d.]+/g) || []).map(Number);
+  if (v.length < 3) return null;
+  if (v.length >= 4 && v[3] < 0.5) return null;
+  return v.slice(0, 3);
+};
+
 // I comandi che DEVONO leggersi, e la soglia: 4.5 per il testo normale, 3 per
 // quello grande (WCAG AA). Il fondo si misura sui pixel, la scritta dal colore
 // dichiarato: e' la scritta a dover vincere sul suo fondo, comunque sia fatto.
@@ -78,21 +90,59 @@ for (const tema of ['light', 'dark']) {
     if (!el) { guai.push(`${tema} ${sel}: non c'e'`); continue; }
     for (const sopra of [false, true]) {
       if (sopra) { await el.hover(); await p.waitForTimeout(450); }
+      // Una scritta CONTORNATA (come il marchio: riempimento colorato dentro un
+      // contorno d'inchiostro) si legge grazie al CONTORNO, non al riempimento.
+      // Misurare il riempimento contro il suo stesso contorno risponde a una
+      // domanda che non interessa a nessuno — e si vedeva: scurendo il
+      // riempimento il valore PEGGIORAVA, che e' il contrario di come funziona
+      // la leggibilita'. Quindi quando c'e' un contorno, la scritta e' quello.
       const testo = await el.evaluate((n) => {
         const cs = getComputedStyle(n);
+        const sp = parseFloat(cs.webkitTextStrokeWidth) || 0;
+        if (sp >= 0.5 && cs.webkitTextStrokeColor && !/transparent|rgba\(0, 0, 0, 0\)/.test(cs.webkitTextStrokeColor)) {
+          return cs.webkitTextStrokeColor;
+        }
         const f = cs.webkitTextFillColor || cs.color;
         return /transparent|rgba\(0, 0, 0, 0\)/.test(f) ? cs.color : f;
       });
-      const rgb = (testo.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
+      const rgb = tinta(testo);
+      if (!rgb) { guai.push(`${tema} ${sel}: scritta senza colore`); continue; }
+      // I colori che APPARTENGONO al lettering non sono il suo fondo: il proprio
+      // riempimento, e quello delle lettere che gli stanno attorno (un <em>
+      // dentro un titolo contornato ha accanto le lettere del titolo, che sono
+      // un'altra parte della stessa scritta, non lo sfondo su cui deve staccare).
+      const riempiStr = await el.evaluate((n) => {
+        const fuori = [];
+        for (let e = n; e && e !== document.body; e = e.parentElement) {
+          const cs = getComputedStyle(e);
+          if ((parseFloat(cs.webkitTextStrokeWidth) || 0) >= 0.5) fuori.push(cs.webkitTextFillColor || cs.color);
+        }
+        return fuori;
+      });
+      const riempi = riempiStr.map(tinta).filter(Boolean);
+      const contornata = await el.evaluate((n) => (parseFloat(getComputedStyle(n).webkitTextStrokeWidth) || 0) >= 0.5);
       // Si guarda DENTRO: fuori c'e' il bordo, che su un fondo a sfumatura e'
       // l'unico colore piatto e vincerebbe come «piu' frequente» pur non stando
       // dietro a nessuna lettera. E la scatola si rimisura ADESSO, perche' col
       // mouse sopra l'elemento si sposta.
       const box = await el.boundingBox();
       if (!box || box.width < 16 || box.height < 12) { guai.push(`${tema} ${sel}: troppo piccolo`); continue; }
-      const orlo = Math.min(7, Math.floor(Math.min(box.width, box.height) / 4));
-      const png = await p.screenshot({ clip: { x: box.x + orlo, y: box.y + orlo,
-        width: Math.max(4, box.width - orlo * 2), height: Math.max(4, box.height - orlo * 2) } });
+      // Di norma si guarda DENTRO la scatola. Ma una scritta CONTORNATA riempie
+      // quasi tutta la sua scatola di lettere: dentro non resta abbastanza fondo
+      // da misurare, e il ritaglio interno restituisce «nessun fondo dominante».
+      // Per quelle si guarda un po' PIU' LARGO della scatola, perche' e' proprio
+      // contro quel che le sta attorno che il contorno deve staccare.
+      let clip;
+      if (contornata) {
+        const m = Math.max(6, Math.round(Math.min(box.width, box.height) * 0.3));
+        clip = { x: Math.max(0, box.x - m), y: Math.max(0, box.y - m),
+          width: box.width + m * 2, height: box.height + m * 2 };
+      } else {
+        const orlo = Math.min(7, Math.floor(Math.min(box.width, box.height) / 4));
+        clip = { x: box.x + orlo, y: box.y + orlo,
+          width: Math.max(4, box.width - orlo * 2), height: Math.max(4, box.height - orlo * 2) };
+      }
+      const png = await p.screenshot({ clip });
       const pixel = await p.evaluate(async (dati) => {
         const img = new Image();
         img.src = 'data:image/png;base64,' + dati;
@@ -122,9 +172,15 @@ for (const tema of ['light', 'dark']) {
         // Quel che ha il colore della scritta E' la scritta: per definizione non
         // e' il suo fondo, e contarlo faceva fallire ogni bottone scritto scuro.
         if (r < 1.6) continue;
+        // e nemmeno i riempimenti del lettering sono il suo fondo
+        if (riempi.some((f) => rapporto(f, col) < 1.6)) continue;
         if (peggio == null || r < peggio.r) peggio = { r, col, quota: n / totale };
       }
-      if (!peggio) { guai.push(`${tema} ${sel}: nessun fondo dominante`); continue; }
+      // Se non resta NESSUN candidato, non e' la misura ad essere andata a
+      // vuoto: vuol dire che tutto quel che circonda la scritta ha il colore
+      // della scritta. Cioe' la scritta non stacca da niente — che e' il
+      // difetto stesso, e va detto con parole sue.
+      if (!peggio) { guai.push(`${tema} ${sel}: non stacca da nulla, attorno e' tutto del suo colore`); continue; }
       misurati++;
       if (process.env.DEBUG) console.log('  dbg', tema, sel, sopra ? 'hover' : 'fermo', 'testo', testo, 'fondo', peggio.col.join(','), `(${Math.round(peggio.quota * 100)}%)`, '->', peggio.r);
       if (peggio.r < soglia) guai.push(`${tema} ${sel}${sopra ? ' (col mouse sopra)' : ''}: ${peggio.r}, serve ${soglia}`);

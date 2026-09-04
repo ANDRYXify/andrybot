@@ -1463,44 +1463,14 @@ input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focu
   opacity: var(--retino-forza); border-radius: inherit;
 }
 
-@keyframes ink-china {
-  from { clip-path: inset(0 100% 0 0); }
-  to { clip-path: inset(0 0 0 0); }
-}
-@keyframes ink-linea {
-  from { opacity: 0; transform: scale(.985); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-.ink-colora { position: relative; isolation: isolate; animation: ink-linea .18s var(--an-vel) both; }
-.ink-colora::before {
-  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit;
-  background: var(--rampa);
-  animation: ink-china .5s .16s var(--an-vel) both;
-}
-.ink-colora::after {
-  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit;
-  background-image: radial-gradient(var(--contorno) 1.1px, transparent 1.2px);
-  background-size: var(--retino-passo); opacity: .22;
-  animation: ink-china .5s .3s var(--an-vel) both;
-}
-
-@keyframes ink-colpo {
-  0% { transform: scale(.86) rotate(-1.6deg); opacity: 0; }
-  62% { transform: scale(1.035) rotate(.5deg); opacity: 1; }
-  100% { transform: scale(1) rotate(0); opacity: 1; }
-}
-.ink-colpo { animation: ink-colpo .34s var(--an-vel) both; }
-
 @keyframes ink-tremolio {
   0%, 100% { transform: rotate(-.35deg); }
   50% { transform: rotate(.35deg); }
 }
-.ink-vivo:hover { animation: ink-tremolio .42s ease-in-out 2; }
+.marchio:hover .marchio-segno, .ink-vivo:hover { animation: ink-tremolio .42s ease-in-out 2; }
 
 @media (prefers-reduced-motion: reduce) {
-  .ink-colpo, .ink-colora, .ink-colora::before, .ink-colora::after { animation: none; }
-  .ink-vivo:hover { animation: none; }
+  .marchio:hover .marchio-segno, .ink-vivo:hover { animation: none; }
 }
 
 .apri-menu, .chiudi-drawer, .chip-utente, .menu, .drawer, .badge.marchio,
@@ -1559,11 +1529,6 @@ summary:hover::after, .grp-btn:hover::after, .drawer-voce:hover::after,
 a:active::after, button:active::after, .btn:active::after, [role="button"]:active::after,
 summary:active::after, .vt-btn:active::before { transform: scale(1.13); opacity: .5; }
 
-@keyframes shonen-lampo {
-  0% { opacity: 0; }
-  30% { opacity: 1; }
-  100% { opacity: 0; }
-}
 @keyframes shonen-entra {
   0% { opacity: 0; transform: translateY(14px) scale(.9, 1.06); }
   55% { opacity: 1; transform: translateY(-4px) scale(1.04, .97); }
@@ -1578,19 +1543,10 @@ summary:active::after, .vt-btn:active::before { transform: scale(1.13); opacity:
 }
 
 .shonen-entra { animation: shonen-entra var(--colpo) var(--su-due) both; }
-.shonen-scossa { animation: shonen-scossa .22s var(--su-tre); }
-
-.shonen-colpo { position: relative; }
-.shonen-colpo::before {
-  content: ""; position: absolute; inset: -10px; z-index: 4; pointer-events: none;
-  background: var(--contorno); mix-blend-mode: difference; border-radius: var(--ang-mano);
-  opacity: 0;
-}
-.shonen-colpo.batte::before { animation: shonen-lampo var(--lampo) var(--su-tre); }
 
 @media (prefers-reduced-motion: reduce) {
   a::after, button::after, .btn::after, [role="button"]::after, summary::after,
   .grp-btn::after, .drawer-voce::after, .menu-voce::after, .vt-btn::before { transition: none; }
-  .shonen-entra, .shonen-scossa, .shonen-colpo.batte::before { animation: none; }
+  .shonen-entra { animation: none; }
 }
 
