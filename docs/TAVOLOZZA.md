@@ -101,3 +101,45 @@ Nel passarlo sono venute fuori quattro scritte che stavano sotto soglia da prima
 del cambio — testo tenue a 2.39, verde e ambra sui loro fondi — e sono state
 portate al minimo con lo stesso metodo: giù di luminosità quel tanto che basta,
 tinta e croma invariate.
+
+---
+
+## Il contorno è sempre inchiostro. Il riempimento dice lo stato.
+
+Nel disegno a mano il **contorno è ciò che definisce l'oggetto**: dice *che
+cosa* è. Il riempimento dice *in che stato* è — scelto, pericoloso, spento. Sono
+due lavori diversi, e uno stato non può cancellare un contorno.
+
+Era successo in tre posti:
+
+| dove | cosa faceva |
+|---|---|
+| `.btn.mini.attivo` | `border-color: var(--acc)` sopra `background: var(--acc)` |
+| `.btn.pericolo` | `border-color: var(--rosso)` sopra `background: var(--rosso)` |
+| `#lib-miei.attivo` | contorno di accento invece che d'inchiostro |
+
+Il risultato non è «un bordo di un altro colore»: è **nessun bordo**. Il
+contorno sparisce dentro il proprio riempimento e resta solo l'ombra a timbro,
+che sta a destra e in basso — così il bottone sembra avere il contorno
+**tagliato** su due lati, mentre tutti i suoi vicini ce l'hanno intero. È
+esattamente ciò che si vedeva sul pulsante «Tutti» della libreria dei media.
+
+Nove di questi erano i bottoni rossi, e nessuno se n'era mai accorto: un bottone
+rosso pieno «sembra giusto» finché non lo metti accanto a uno che il contorno ce
+l'ha.
+
+### Come si verifica
+
+`node scripts/verifica-inchiostro.mjs` (dentro `npm run collaudi`) ora chiede
+anche questo: per ogni controllo visibile, se ha un bordo e uno sfondo opaco, il
+colore del bordo non può coincidere col colore dello sfondo. Guarda **1045
+controlli in 24 schede**: una famiglia rimasta indietro non la trovi guardando
+gli screenshot, la trovi contando.
+
+### Quello che invece NON era rotto
+
+Si era ipotizzato che il tema si sovrapponesse a sé stesso anche con le ombre —
+il timbro di un oggetto che finisce addosso al vicino. Misurato: su **309**
+oggetti con ombra a timbro gli urti sono **16**, e quasi tutti da 1px, cioè
+arrotondamenti. Non c'era niente da sistemare lì, e allargare tutte le distanze
+avrebbe peggiorato una cosa che funzionava.
