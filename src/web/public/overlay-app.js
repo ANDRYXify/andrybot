@@ -46,14 +46,17 @@ function volume01(ev) {
   return Math.min(1, Math.max(0, v / 100));
 }
 
+const tiraXY = (v, f) => Math.round((50 * (f - 1) - v * f) * 100) / 100;
+
 function posizionaEffetto(el, pos) {
   if (!pos || pos.x == null) return;
   el.classList.add('libero');
   el.style.left = pos.x + '%'; el.style.top = pos.y + '%';
 
-  el.style.setProperty('--fx-ax', (-pos.x) + '%');
-  el.style.setProperty('--fx-ay', (-pos.y) + '%');
-  el.style.setProperty('--fx-s', (Number(pos.s) || 100) / 100);
+  const f = (Number(pos.s) || 100) / 100;
+  el.style.setProperty('--fx-ax', tiraXY(pos.x, f) + '%');
+  el.style.setProperty('--fx-ay', tiraXY(pos.y, f) + '%');
+  el.style.setProperty('--fx-s', f);
   el.style.setProperty('--fx-r', (Number(pos.r) || 0) + 'deg');
 }
 
@@ -281,7 +284,7 @@ function applicaVars(el, vars) { for (const k in vars) { if (vars[k] != null && 
 
 function trasformaXY(xy) {
   const s = (Number(xy.s) || 100) / 100, r = Number(xy.r) || 0;
-  return 'translate(' + (-xy.x) + '%,' + (-xy.y) + '%) scale(' + s + ') rotate(' + r + 'deg)';
+  return 'translate(' + tiraXY(xy.x, s) + '%,' + tiraXY(xy.y, s) + '%) scale(' + s + ') rotate(' + r + 'deg)';
 }
 
 function posizionaContenitore(el, xy, corner) {
@@ -478,9 +481,8 @@ function widget(id, cfg, valore) {
 
   const xyEff = MIO.xy[id === 'ultimoSub' ? 'ws' : 'wf'] || cfg.xy;
   if (xyEff && xyEff.x != null) {
-    const s = (Number(xyEff.s) || 100) / 100, r = Number(xyEff.r) || 0;
     el.style.position = 'fixed'; el.style.left = xyEff.x + '%'; el.style.top = xyEff.y + '%';
-    el.style.transform = 'translate(' + (-xyEff.x) + '%,' + (-xyEff.y) + '%) scale(' + s + ') rotate(' + r + 'deg)';
+    el.style.transform = trasformaXY(xyEff);
   } else { el.style.position = ''; el.style.left = ''; el.style.top = ''; el.style.transform = ''; }
   const st = cfg.stile || {};
   el.className = 'ovl-widget dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');
@@ -753,7 +755,9 @@ function disegnaMusica() {
       if (cfg.daCopertina) musicaEl.n.style.setProperty('--acc', uno);
       musicaEl.n.style.setProperty('--acc2', due);
     });
+    el.classList.toggle('tinta-viva', !!cfg.daCopertina);
   } else {
+    el.classList.remove('tinta-viva');
     el.style.setProperty('--acc', st.accento || '#f72fa7');
     el.style.setProperty('--acc2', st.accento || '#f72fa7');
   }

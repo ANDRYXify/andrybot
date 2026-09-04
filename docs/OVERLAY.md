@@ -318,6 +318,56 @@ centro della tela — via dai bordi, dove il limite entrerebbe in gioco per
 davvero — e controlla che si sia spostato **di quella quantità**. Con Alt
 premuto, così l'aggancio non falsa la misura.
 
+### La corsa si misura su quello che si vede
+
+La regola diceva «corsa = tela − lato». Restava da dire **quale lato**: quello
+del riquadro di impaginazione, o quello che si vede dopo la Dimensione? Erano la
+stessa cosa solo al 100%, e nessuno dei due file lo aveva mai deciso — usavano
+entrambi il riquadro di impaginazione.
+
+Misurato sulla tela vera, 1920×1080:
+
+| Dimensione | `x = 0` → bordo sinistro | `x = 100` → bordo destro |
+|---|---|---|
+| 100% | 0 ✓ | 1920 ✓ |
+| 200% | −412 (esce dalla tela) | 2332 (esce dalla tela) |
+| 60% | +165 (**non ci arriva**) | 1756 (**non ci arriva**) |
+
+Il secondo caso è quello che si vede lavorando: rimpicciolisci il player, lo
+spingi verso il bordo, e quello **si pianta** — mentre l'inspector segna già 0.
+Sembra un muro, ed è solo una corsa misurata sul riquadro sbagliato.
+
+Il lato giusto è quello visibile, `w · f` con `f = Dimensione/100`: un elemento
+al 60% occupa meno spazio, quindi ha **più** strada da fare. Da lì la posa si
+ricava, non si cerca. Con `left: x%` e `transform: translate(t%) scale(f)` — le
+percentuali di `translate` si risolvono sul riquadro di impaginazione e sono
+immuni allo `scale` della stessa lista — imporre che il centro visibile cada su
+`x/100 · (T − w·f) + w·f/2` dà
+
+    t = 50·(f − 1) − x·f
+
+che per `f = 1` torna esattamente il `−x` di prima: **dove era giusto non
+cambia niente**, cambia solo il caso rotto. Ed è pura CSS, quindi si riaggiusta
+da sé quando il titolo di una canzone allarga il player.
+
+La stessa riga vale nel banco (`_tiraXY`) e nell'overlay vero (`tiraXY`), e la
+corsa la calcola un solo posto per file (`_lati`, che è `offsetWidth · f`).
+Ne beneficiano anche gli effetti `!comando`: l'editor li posava per centro e
+l'overlay per corsa, quindi un'immagine rimpicciolita finiva in diretta in un
+punto diverso da quello scelto. Ora parlano la stessa lingua.
+
+Due contrappesi:
+
+- `test/contratto/overlay-elementi.test.mjs` **esegue** le due funzioni prese
+  dai file e verifica dove finisce il bordo, per ogni lato, Dimensione e x. Non
+  riconosce una stringa: fa il conto.
+- `scripts/verifica-posa.mjs` apre un browser vero e **misura i pixel resi**:
+  ogni elemento della scena, a cinque Dimensioni, deve stare a filo dei bordi
+  agli estremi e al centro in mezzo — nel banco e nella pagina dell'overlay. E
+  trascinando con una Dimensione diversa da 100 l'elemento deve spostarsi
+  esattamente di quanto lo sposti. Con la formula vecchia il cancello vede 176
+  pose storte: `node scripts/verifica-posa.mjs --selftest`.
+
 ### Un fatto, una risposta: dov'è un elemento
 
 Alla domanda «dove sta questo elemento» il banco sapeva dare **tre risposte
