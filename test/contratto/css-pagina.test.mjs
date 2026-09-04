@@ -195,13 +195,13 @@ test('nessuna cornice della pagina si scrive lo spessore da sola', async () => {
 test('il riquadro incorporato ha sempre un fondo, e lo puoi scegliere', async () => {
   const { renderLinkPage } = await import('../../src/features/linkpagina.js');
   const rendi = (b) => renderLinkPage(
-    { attiva: true, titolo: 'P', tema: { card: '#ffffff' }, blocchi: [b] },
+    { attiva: true, titolo: 'P', tema: { bordo: '#150910' }, blocchi: [b] },
     { login: 'x', display: 'X', avatar: '', baseUrl: 'http://x' },
   );
   const html = rendi({ tipo: 'embed', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' });
   const regola = /\.emb\{[^}]*\}/.exec(html)[0];
   assert.ok(/background:/.test(regola), 'senza fondo si vede la pagina negli spicchi');
-  assert.ok(/var\(--emb-bg,#ffffff\)/.test(regola), 'e di partenza e’ il colore delle carte del tema');
+  assert.ok(/var\(--emb-bg,#150910\)/.test(regola), 'e di partenza e’ il colore del bordo: cosi’ sembra cornice, non un buco');
 
   const scelto = rendi({ tipo: 'embed', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', sfondo: '#8e1a6e' });
   const div = /<div class="emb[^>]*>/.exec(scelto)[0];
