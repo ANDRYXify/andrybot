@@ -5,6 +5,8 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-04
 
+- Attorno a un video o a una musica incorporata non si vedono più quattro spicchi di pagina negli angoli: il riquadro ha un fondo.
+- E puoi scegliere il colore dietro al riquadro, per intonarlo a quello che si vede dentro al contenuto.
 - I riquadri di video, musica e pagine incorporate, la copertina e i bottoni dell'informativa hanno lo stesso bordo e la stessa ombra del resto della pagina: prima avevano un filo sottile che non cambiava mai col tema.
 - La scritta che scorre è tornata a scorrere: si era fermata perché due cose diverse avevano lo stesso nome dentro al foglio di stile.
 - E la sua velocità funziona per la prima volta: «lenta», «media» e «veloce» non arrivavano mai alla pagina, andavano tutte alla stessa andatura.

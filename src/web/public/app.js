@@ -11191,6 +11191,12 @@ function lpRenderBlocchi() {
         <label class="campo spazio-sopra">${L('Altezza del riquadro', 'Box height', 'Altura del recuadro')}
           <span class="tenue" data-lpalt-v="${i}">${Number(b.altezza) > 0 ? Number(b.altezza) + 'px' : L('automatica', 'automatic', 'automática')}</span></label>
         <input type="range" data-lpb="${i}" data-lpf="altezza" min="0" max="900" step="10" value="${Number(b.altezza) || 0}">
+        <div class="griglia-campi spazio-sopra">
+          <div><label class="campo">${L('Colore dietro al riquadro', 'Colour behind the frame', 'Color detrás del marco')}</label>
+            <input type="color" data-lpb="${i}" data-lpf="sfondo" value="${esc(b.sfondo || LP.tema.card || '#ffffff')}"></div>
+        </div>
+        <p class="suggerimento">${L('Il contenuto di un altro sito ha i suoi angoli arrotondati, e fra i suoi e quelli del riquadro si vedeva la pagina. Qui metti il colore che si vede nel contenuto e gli angoli spariscono. Vuoto = il colore dei bottoni del tema.', 'Content from another site has its own rounded corners, and between theirs and the frame\'s you could see the page through. Put here the colour you see inside the content and the corners disappear. Empty = the theme\'s button colour.', 'El contenido de otro sitio tiene sus esquinas redondeadas, y entre las suyas y las del marco se veía la página. Pon aquí el color que se ve dentro del contenido y las esquinas desaparecen. Vacío = el color de los botones del tema.')}
+          ${b.sfondo ? `<button type="button" class="btn secondario mini" data-lpvia-emb="${i}">${L('Rimetti come il tema', 'Back to theme', 'Como el tema')}</button>` : ''}</p>
         <p class="suggerimento">${L('A zero decide il sito. Le piattaforme non ci dicono quanto è alto il loro contenuto — è un pezzo di un altro sito, non lo possiamo misurare — quindi se sotto ti avanza spazio vuoto, o il contenuto è tagliato, aggiustalo qui a occhio guardando l\'anteprima.', 'At zero the site decides. Platforms don\'t tell us how tall their content is — it\'s a piece of another site, we can\'t measure it — so if you see empty space below, or the content is cut, set it here by eye while watching the preview.', 'En cero decide el sitio. Las plataformas no nos dicen la altura de su contenido — es un trozo de otro sitio, no podemos medirlo — así que si te sobra espacio abajo, o el contenido queda cortado, ajústalo aquí a ojo mirando la vista previa.')}</p>
         <p class="suggerimento">${L('Incolla l\'indirizzo normale, al resto ci penso io. Va bene sia un singolo contenuto sia una PAGINA intera: canale YouTube, profilo TikTok, pagina Facebook, artista Spotify, profilo SoundCloud, canale Twitch o Kick. Oppure un video, uno short, un post o un reel di Instagram, un brano, un album, una playlist, un podcast, una clip. Riconosco anche Apple Music, Deezer e Vimeo.', 'Paste the normal address, I handle the rest. A single item or a whole PAGE both work: YouTube channel, TikTok profile, Facebook page, Spotify artist, SoundCloud profile, Twitch or Kick channel. Or a video, a short, an Instagram post or reel, a track, an album, a playlist, a podcast, a clip. I also recognise Apple Music, Deezer and Vimeo.', 'Pega la dirección normal, del resto me encargo yo. Vale tanto un contenido suelto como una PÁGINA entera: canal de YouTube, perfil de TikTok, página de Facebook, artista de Spotify, perfil de SoundCloud, canal de Twitch o Kick. O un vídeo, un short, una publicación o un reel de Instagram, una canción, un álbum, una lista, un podcast, un clip. También reconozco Apple Music, Deezer y Vimeo.')}</p>
         <p class="suggerimento">${L('Due limiti che non dipendono da noi: il profilo Instagram e la timeline di X non si possono incorporare (le due piattaforme non lo permettono). Di Instagram puoi mettere un post o un reel.', 'Two limits that are not ours: Instagram profiles and X timelines cannot be embedded (those platforms don\'t allow it). From Instagram you can embed a post or a reel.', 'Dos límites que no dependen de nosotros: el perfil de Instagram y la línea de X no se pueden incorporar (esas plataformas no lo permiten). De Instagram puedes poner una publicación o un reel.')}</p>`;
@@ -11359,6 +11365,12 @@ function lpRenderBlocchi() {
       else if (op.dataset.lpop === 'su' && i > 0) LP.blocchi.splice(i - 1, 0, LP.blocchi.splice(i, 1)[0]);
       else if (op.dataset.lpop === 'giu' && i < LP.blocchi.length - 1) LP.blocchi.splice(i + 1, 0, LP.blocchi.splice(i, 1)[0]);
       lpRenderBlocchi(); lpAnteprima(); return;
+    }
+    const ve = ev.target.closest('[data-lpvia-emb]');
+    if (ve) {
+      const b2 = LP.blocchi[Number(ve.dataset.lpviaEmb)];
+      if (b2) { delete b2.sfondo; lpRenderBlocchi(); lpAnteprima(); }
+      return;
     }
     const ip = ev.target.closest('[data-lpico]');
     if (ip) {
