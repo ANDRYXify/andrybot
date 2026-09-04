@@ -5,7 +5,7 @@
 import { makeLog } from '../logger.js';
 import { db, memory, knowledge, voceStreamer, guide, streamers, diario, schedaPulita } from '../db.js';
 import * as internet from '../features/web.js';
-import { checkMessage } from '../features/moderation.js';
+import { checkRisposta } from '../features/moderation.js';
 import * as learn from './learn.js';
 import * as model from './model.js';
 import * as persona from './persona.js';
@@ -912,7 +912,11 @@ export class Brain {
 
   // Pipeline procedurale: intenti → conoscenza → cortesie → onestà → spontaneità.
   // La prima tappa che produce qualcosa vince; meglio null di una risposta scarsa.
-  async chatReply({ channel, user, display, text, streamer, botLogin } = {}) {
+  // Il testo GREZZO della risposta, o null. Non lo manda in chat nessuno: esce
+  // da qui e passa per forza da _finalizza, che e' il solo punto in cui una
+  // risposta diventa una cosa detta. Chi aggiunge un ramo qui dentro non puo'
+  // dimenticarsi il controllo: non ha modo di saltarlo.
+  async _rispostaGrezza({ channel, user, display, text, streamer, botLogin } = {}) {
     try {
       if (!channel || !text || !streamer) return null;
       const settings = streamer.settings || {};
@@ -936,22 +940,20 @@ export class Brain {
       // che gioco / a cosa giochi
       if (/che gioco|che game|a cosa (stai )?gioc|a che (gioco|game)|cosa stai giocando|che stai giocando/.test(lower)) {
         const ctx = memory.streamContext(channel);
-        if (ctx) return this._finalizza(channel, compila(scegli(LIVE_CONTESTO), { ...variabili, ctx }), streamer);
+        if (ctx) return compila(scegli(LIVE_CONTESTO), { ...variabili, ctx });
         try {
           const stream = await this.helix?.getStream?.(channel);
           if (stream) {
-            return this._finalizza(channel, compila(scegli(LIVE_ORA), {
+            return compila(scegli(LIVE_ORA), {
               ...variabili,
               gioco: stream.game_name || 'qualcosa di bello',
               titolo: stream.title || 'live di oggi',
               spettatori: stream.viewer_count ?? 0,
-            }), streamer);
+            });
           }
         } catch { /* helix giù: si ripiega sull'offline */ }
         const recente = memory.facts(channel).find((f) => f.key === 'gioco_recente')?.value;
-        return this._finalizza(channel,
-          recente ? compila(scegli(OFFLINE_GIOCO), { ...variabili, gioco: recente }) : scegli(OFFLINE),
-          streamer);
+        return recente ? compila(scegli(OFFLINE_GIOCO), { ...variabili, gioco: recente }) : scegli(OFFLINE);
       }
 
       // da quanto siamo live / uptime
@@ -960,11 +962,11 @@ export class Brain {
           const stream = await this.helix?.getStream?.(channel);
           if (stream?.started_at) {
             const minuti = Math.max(0, Math.floor((Date.now() - new Date(stream.started_at).getTime()) / 60_000));
-            return this._finalizza(channel, compila(scegli(UPTIME_LIVE), {
+            return compila(scegli(UPTIME_LIVE), {
               ...variabili, ore: Math.floor(minuti / 60), minuti: minuti % 60,
-            }), streamer);
+            });
           }
-          return this._finalizza(channel, scegli(OFFLINE), streamer);
+          return scegli(OFFLINE);
         } catch { return null; }
       }
 
@@ -973,9 +975,7 @@ export class Brain {
         let url = null;
         try { url = await this.actions?.createClip?.(channel, 'richiesta in chat da ' + nome); }
         catch (e) { log.error(`clip #${channel}:`, e?.message || e); }
-        return this._finalizza(channel,
-          url ? compila(scegli(CLIP_OK), { ...variabili, url }) : scegli(CLIP_NO),
-          streamer);
+        return url ? compila(scegli(CLIP_OK), { ...variabili, url }) : scegli(CLIP_NO);
       }
 
       // social e link: prima si cerca nella knowledge, se non c'è si prosegue
@@ -993,11 +993,11 @@ export class Brain {
             return PAROLE_SOCIAL.some((p) => d.includes(p)) || d.includes('link') || d.includes('trovo');
           });
         }
-        if (voce) return this._finalizza(channel, voce.risposta, streamer);
+        if (voce) return voce.risposta;
         // niente voce apposita: c'è il campo «dove ti trovano» della scheda, ed è
         // fatto per questo. Esce ALLA LETTERA — dentro ci sono gli indirizzi.
         const dove = this._scheda(channel).dove;
-        if (dove) return this._finalizza(channel, dove, streamer);
+        if (dove) return dove;
       }
 
       // ---- b. CONOSCENZA (semantica + lessicale) ----------------------
@@ -1028,12 +1028,12 @@ export class Brain {
             lineeGuida: guide.applicabili(channel, { piattaforma: 'twitch', privato: false, sonoIo: false }),
             timeoutMs: 9000,
           });
-          if (detta) return this._finalizza(channel, detta, streamer);
+          if (detta) return detta;
         }
         // rete di sicurezza (modello spento/lento, o c'è un link): la risposta
         // scritta, con un cenno al nome così almeno non è sempre identica.
         const prefisso = Math.random() < 0.7 ? '' : nome + ' ';
-        return this._finalizza(channel, prefisso + daConoscenza, streamer);
+        return prefisso + daConoscenza;
       }
 
       // ---- c. IL CERVELLO PARLA (contestuale, parole sue) -------------
@@ -1053,7 +1053,7 @@ export class Brain {
           situazione: this._situazione(channel),   // com'è la diretta adesso (gioco/live/uptime)
           lineeGuida: guide.applicabili(channel, { piattaforma: 'twitch', privato: false, sonoIo: false }),   // regole valide in chat pubblica
         });
-        if (risposta) return this._finalizza(channel, risposta, streamer);
+        if (risposta) return risposta;
       }
 
       // ---- d. FALLBACK quando il modello non è pronto/è lento ----------
@@ -1077,16 +1077,16 @@ export class Brain {
                 lineeGuida: guide.applicabili(channel, { piattaforma: 'twitch', privato: false, sonoIo: false }),
                 stile: this._stileStreamer(channel), timeoutMs: 12000,
               });
-              if (r) return this._finalizza(channel, r, streamer);
+              if (r) return r;
             }
           }
-          return this._finalizza(channel, compila(scegli(NON_LO_SO), variabili), streamer);
+          return compila(scegli(NON_LO_SO), variabili);
         }
         // mi hanno chiamato senza una domanda: rispondo comunque con un cenno
         // (mai ignorare chi mi nomina), scegliendo tra saluto ed "eccomi".
         const salutato = /(^|[^a-z])(ciao|ehi|hey|buongiorno|buonasera|buond[iì]|salve|weil[aà]|hola)([^a-z]|$)/.test(lower);
         const pool = (salutato ? SALUTI : ECCOMI)[tono] || ECCOMI.scherzoso;
-        return this._finalizza(channel, compila(scegli(pool), variabili), streamer);
+        return compila(scegli(pool), variabili);
       }
       return null;
     } catch (e) {
@@ -1094,6 +1094,14 @@ export class Brain {
       return null;
     }
   }
+
+  // L'UNICA uscita del bot verso la chat pubblica. Una riga sola apposta: e' la
+  // struttura che garantisce che ogni risposta passi dai controlli, non la buona
+  // memoria di chi scrive il ramo nuovo.
+  async chatReply(dati = {}) {
+    return this._finalizza(dati.channel, await this._rispostaGrezza(dati), dati.streamer);
+  }
+
 
   // Cerca nella knowledge la voce che meglio combacia con il testo.
   // Punteggio: parole in comune / parole della voce, con bonus per i
@@ -1222,9 +1230,13 @@ export class Brain {
     testo = persona.colora(testo);   // tocco leggero dell'anima (umore/energia)
     if (testo.length > MAX_RISPOSTA) testo = testo.slice(0, MAX_RISPOSTA - 1).trimEnd() + '…';
 
-    const esito = checkMessage(testo, streamer?.settings || {});
+    // Qui passa TUTTO quello che il bot dice in chat: la conoscenza, la risposta
+    // del cervello, le reti di sicurezza. E' il punto giusto per l'ultimo
+    // controllo, ed e' piu' severo di quello sui messaggi degli utenti: blocca
+    // anche le parole che lo streamer ha detto di non far mai uscire.
+    const esito = checkRisposta(testo, streamer?.settings || {});
     if (!esito.ok) {
-      log.warn(`#${channel} risposta bloccata dalla moderazione (${esito.reason})`);
+      log.warn(`#${channel} risposta bloccata (${esito.reason})`);
       return null;
     }
     // mai fare l'eco di un messaggio di un utente

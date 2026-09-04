@@ -29,7 +29,7 @@
 //      node scripts/verifica-conoscenza.mjs --selftest  (rompe e pretende il rosso)
 
 import { readFileSync, writeFileSync } from 'node:fs';
-import { senzaCommentiJs } from './_codice.mjs';
+import { senzaCommentiJs, corpoJs } from './_codice.mjs';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -50,6 +50,14 @@ const ROTTURE = [
   ['src/ai/brain.js', "if ((quando === 'live' && !live) || (quando === 'offline' && live)) continue;", '', 'il «quando» smette di filtrare'],
   ['src/ai/brain.js', "streamers.get(channel)?.settings?.frasi", "[]/*", 'le frasi scritte a mano non arrivano piu\' allo stile'],
   ['src/web/public/app.js', "{ caricaConoscenza(); caricaQuaderno(); }", '{ caricaConoscenza(); }', 'il quaderno non si carica piu\' aprendo la scheda'],
+  ['src/ai/brain.js', 'const esito = checkRisposta(testo,', 'const esito = checkMessage(testo,', 'le parole da bloccare smettono di essere controllate'],
+  ['src/ai/brain.js', 'return this._finalizza(dati.channel, await this._rispostaGrezza(dati), dati.streamer);', 'return this._rispostaGrezza(dati);', 'una risposta puo\' uscire senza passare dai controlli'],
+  ['src/features/handler.js', 'const esito = checkMessage(text, streamer.settings);', 'const esito = checkRisposta(text, streamer.settings);', 'le parole dello streamer si mettono a moderare gli utenti'],
+  ['src/web/server.js', 'out.maiDire = b.maiDire', 'out.maiDireX = b.maiDire', 'le parole da bloccare non si salvano piu\''],
+  ['src/web/public/app.js', 'body: { scheda, maiDire }', 'body: { scheda }', 'le parole da bloccare non partono dalla dashboard'],
+  ['src/web/public/app.js', "getElementById('txt-mai')", "getElementById('txt-mai-vecchio')", 'il campo viene rinominato solo da una parte'],
+  ['src/ai/pretrain.js', 'const { scheda, messi } = uniScheda(', 'const { scheda, messi } = ((a, b) => ({ scheda: a || {}, messi: [] }))(', 'la scheda torna a nascere vuota per tutti'],
+  ['src/ai/pretrain.js', 'if (gia[campo]) continue;', 'if (false) continue;', 'il precompilamento riscrive quello che ha scritto lui'],
 ];
 
 if (process.argv.includes('--selftest')) {
@@ -176,6 +184,51 @@ for (const [verbo, rotta] of [['get', 'quaderno'], ['post', 'quaderno'], ['delet
 }
 dice(/caricaQuaderno\(\);/.test(appjs) && /id === 'conoscenza'\) \{ caricaConoscenza\(\); caricaQuaderno\(\); \}/.test(appjs),
   'il quaderno si carica aprendo la scheda', 'la lista resterebbe su «Caricamento…» per sempre');
+
+// --- 7. le parole che non devono uscire ---------------------------------
+// «Cosa non dire mai di te» e' una richiesta al modello. Queste no: o non escono
+// mai, o sono uscite. Percio' il controllo dev'essere in un punto da cui passa
+// TUTTO quello che il bot dice, e quel punto dev'essere l'unica uscita.
+const modjs = senzaCommentiJs(leggi('src/features/moderation.js'));
+const handlerjs = senzaCommentiJs(leggi('src/features/handler.js'));
+dice(/export function checkRisposta\(/.test(modjs),
+  'esiste un controllo apposta per le parole del bot', 'manca checkRisposta');
+dice(/const esito = checkRisposta\(testo/.test(brainjs),
+  'le risposte del bot passano dal controllo severo', '_finalizza usa ancora quello dei messaggi degli utenti');
+dice(/checkMessage\(text, streamer\.settings\)/.test(handlerjs) && !/checkRisposta/.test(handlerjs),
+  'gli utenti restano moderati solo dalle parole vietate del canale',
+  'le parole dello streamer moderano anche chi scrive in chat: non e\' quello che servono');
+const corpoChatReply = corpoJs(brainjs, 'chatReply') || '';
+dice(/_finalizza\(dati\.channel, await this\._rispostaGrezza\(dati\), dati\.streamer\)/.test(corpoChatReply)
+  && corpoChatReply.split('return').length === 2,
+  'la chat pubblica ha una sola uscita, e passa dai controlli',
+  'chatReply non e\' piu\' l\'unico imbuto: un ramo puo\' saltare i controlli');
+dice(!/_finalizza/.test(corpoJs(brainjs, '_rispostaGrezza') || 'x_finalizza'),
+  'il testo grezzo non si finalizza da solo', 'dentro _rispostaGrezza c\'e\' ancora _finalizza: due strade per uscire');
+dice(/out\.maiDire = b\.maiDire/.test(serverjs), 'le parole da bloccare si salvano', 'l\'API non le accetta');
+dice(salva.includes("getElementById('txt-mai')") && /body: \{ scheda, maiDire \}/.test(salva),
+  'si scrivono nella dashboard e partono col resto della scheda',
+  'il salvataggio non le legge, o non le mette nel corpo della richiesta');
+// stessa regola di sempre: un campo letto da una parte e scritto dall'altra.
+// Ogni id che il salvataggio va a leggere deve esistere davvero nel modulo.
+const letti = [...salva.matchAll(/getElementById\('([^']+)'\)/g)].map((m) => m[1]);
+const fantasmi = letti.filter((id) => !appjs.includes(`id="${id}"`));
+dice(letti.length > 0 && !fantasmi.length,
+  `il salvataggio della scheda legge ${letti.length} campi, e ci sono tutti`,
+  fantasmi.length ? `legge campi che non esistono: ${fantasmi.join(', ')}` : 'non legge niente: misura sbagliata');
+const motivo = /return \{ ok: false, reason: '([^']*)' \};\s*\n\s*\}\s*\n\s*return \{ ok: true \};\s*\n\}/.exec(modjs);
+dice(!!motivo && !/\$\{|parola:/.test(motivo[1]),
+  'il motivo del blocco non ripete la parola', 'la parola segreta finirebbe nei log');
+
+// --- 8. la scheda non nasce vuota --------------------------------------
+const pretrainjs = senzaCommentiJs(leggi('src/ai/pretrain.js'));
+dice(/export function schedaDalProfilo\(/.test(pretrainjs) && /export function uniScheda\(/.test(pretrainjs),
+  'il pre-addestramento sa ricavare la scheda da quello che legge', 'mancano le funzioni');
+dice(/uniScheda\(st\.settings\?\.scheda, schedaDalProfilo\(grezzo\)\)/.test(pretrainjs)
+  && /streamers\.setSettings\(canale, \{ \.\.\.\(st\.settings \|\| \{\}\), scheda \}\)/.test(pretrainjs),
+  'e la salva davvero, dentro il pre-addestramento', 'la calcola e non la scrive, oppure non la calcola');
+dice(/if \(gia\[campo\]\) continue;/.test(pretrainjs),
+  'riempie solo i vuoti', 'riscriverebbe quello che ha scritto lo streamer');
 
 // --- esito --------------------------------------------------------------
 const rossi = esiti.filter((e) => !e.ok);

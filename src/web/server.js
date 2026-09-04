@@ -3183,6 +3183,17 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (b.imparaVoce !== undefined) {
       out.imparaVoce = { attivo: !!(b.imparaVoce || {}).attivo };
     }
+    // Le parole che il BOT non deve mai scrivere (il cognome, la città, il nome
+    // della scuola). Non moderano nessuno: bloccano solo le sue risposte, quindi
+    // non stanno con paroleVietate. Si conserva la forma scritta — il confronto
+    // ignora maiuscole e accenti da sé.
+    if (b.maiDire !== undefined) {
+      if (!Array.isArray(b.maiDire)) return res.status(400).json({ errore: 'maiDire deve essere una lista' });
+      out.maiDire = b.maiDire
+        .map((p) => String(p).replace(/\s+/g, ' ').trim().slice(0, 60))
+        .filter((p) => p.length >= 2)
+        .slice(0, 40);
+    }
     if (b.paroleVietate !== undefined) {
       if (!Array.isArray(b.paroleVietate)) return res.status(400).json({ errore: 'paroleVietate deve essere una lista' });
       out.paroleVietate = b.paroleVietate

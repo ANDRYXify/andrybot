@@ -131,6 +131,7 @@ function impostazioni() {
     clipAutoSensibilita: typeof s.clipAutoSensibilita === 'number' ? s.clipAutoSensibilita
       : (typeof s.clipAutoSoglia === 'number' ? Math.min(10, Math.max(1, Math.round(11 - s.clipAutoSoglia / 5))) : 5),
     paroleVietate: Array.isArray(s.paroleVietate) ? s.paroleVietate : [],
+    maiDire: Array.isArray(s.maiDire) ? s.maiDire : [],
     ascoltoLive: s.ascoltoLive === true,
     ascoltoSensibilita: typeof s.ascoltoSensibilita === 'number' ? s.ascoltoSensibilita : 5,
     cambioCategoria: { attivo: false, trigger: 'categoria', annuncia: true, ...(s.cambioCategoria && typeof s.cambioCategoria === 'object' ? s.cambioCategoria : {}) },
@@ -257,6 +258,7 @@ function statoDemo() {
         premioVip: { attivo: true, periodo: 'settimana', quanti: 2, saltaPerenni: true },
         manche: { attivo: true, minMin: 20, maxMin: 60, soloLive: false },
         paroleVietate: ['spoiler', 'link-truffa'],
+        maiDire: ['Taliento', 'via Mazzini'],
         frasi: ['Benvenuto nel canale!', 'Ricordati di seguire per non perderti le live!'],
         scheda: { chi: 'Andrea, 27 anni, gioco da quando ne avevo otto', faccio: 'gare su Fortnite e ogni tanto costruisco cose assurde',
           orari: 'quasi ogni sera dalle 21, il sabato no', dove: 'andryxify.it e instagram.com/andryxify',
@@ -4322,7 +4324,11 @@ function pannelloConoscenza() {
 
       <label class="campo" for="sc-evita">${L('Cosa non dire mai di te', 'What it must never say about you', 'Qué no debe decir nunca de ti')}</label>
       <input type="text" id="sc-evita" maxlength="240" value="${v('evita')}" placeholder="${L('es. dove abito, il mio cognome, la mia età vera', 'e.g. where I live, my surname, my real age', 'p. ej. dónde vivo, mi apellido, mi edad real')}">
-      <p class="suggerimento">${L('Il bot lo tratta come una', 'The bot treats it as a', 'El bot lo trata como una')} <strong>${L('regola', 'rule', 'regla')}</strong>${L(': vale sopra tutto il resto.', ': it comes before everything else.', ': está por encima de todo lo demás.')}</p>
+      <p class="suggerimento">${L('Il bot lo tratta come una', 'The bot treats it as a', 'El bot lo trata como una')} <strong>${L('regola', 'rule', 'regla')}</strong>${L(': vale sopra tutto il resto. È una richiesta al bot, quindi vale se lui la capisce.', ': it comes before everything else. It is a request to the bot, so it works if the bot understands it.', ': está por encima de todo lo demás. Es una petición al bot, así que vale si él la entiende.')}</p>
+
+      <label class="campo" for="txt-mai">${L('Parole da bloccare', 'Words to block', 'Palabras a bloquear')}</label>
+      <textarea id="txt-mai" placeholder="${L('una per riga: il tuo cognome, la tua via, il nome della scuola', 'one per line: your surname, your street, your school', 'una por línea: tu apellido, tu calle, el nombre de la escuela')}">${esc(impostazioni().maiDire.join('\n'))}</textarea>
+      <p class="suggerimento">${L('Questo non è una richiesta: se una di queste parole finisce in una risposta, il bot', 'This is not a request: if one of these words ends up in a reply, the bot', 'Esto no es una petición: si una de estas palabras acaba en una respuesta, el bot')} <strong class="primo-piano">${L('non la manda', 'does not send it', 'no la envía')}</strong>${L('. Non moderano nessuno: valgono solo su quello che dice lui.', '. They moderate nobody: they only apply to what it says.', '. No moderan a nadie: solo valen para lo que dice él.')}</p>
 
       <p class="spazio-sopra"><button class="btn" id="btn-salva-scheda">${L('Salva la scheda', 'Save the card', 'Guardar la ficha')}</button></p>
     </div>
@@ -12754,7 +12760,7 @@ function attivaPiattaforma() {
         ? (esito.esito || esito.messaggio || `voci: ${esito.voci ?? esito.count ?? '?'}`)
         : String(esito);
       out.textContent = 'Fatto! ' + riassunto;
-      toast(L('Profilo riletto, conoscenza aggiornata', 'Profile re-read, knowledge updated', 'Perfil releído, conocimiento actualizado'));
+      toast(L('Profilo riletto: conoscenza aggiornata e scheda riempita dove era vuota', 'Profile re-read: knowledge updated and card filled where empty', 'Perfil releído: conocimiento actualizado y ficha rellenada donde estaba vacía'));
 
       stato = await api('/api/me');
       render();
@@ -13589,8 +13595,9 @@ function attivaPiattaforma() {
   document.getElementById('btn-salva-scheda')?.addEventListener('click', () => conErrore(async () => {
     const campo = (k) => document.getElementById('sc-' + k)?.value.trim() || '';
     const scheda = { chi: campo('chi'), faccio: campo('faccio'), orari: campo('orari'), dove: campo('dove'), chiamami: campo('chiamami'), evita: campo('evita') };
-    await api('/api/streamer/impostazioni', { method: 'POST', body: { scheda } });
-    if (stato?.streamer?.settings) stato.streamer.settings.scheda = scheda;
+    const maiDire = (document.getElementById('txt-mai')?.value || '').split('\n').map((x) => x.trim()).filter((x) => x.length >= 2).slice(0, 40);
+    await api('/api/streamer/impostazioni', { method: 'POST', body: { scheda, maiDire } });
+    if (stato?.streamer?.settings) Object.assign(stato.streamer.settings, { scheda, maiDire });
     toast(L('Scheda salvata: il bot sa chi sei', 'Card saved: the bot knows who you are', 'Ficha guardada: el bot sabe quién eres'));
   }));
 
