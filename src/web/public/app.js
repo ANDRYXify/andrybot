@@ -5285,12 +5285,12 @@ const icoSvg = (k) => (window.ICONE_OVL ? window.ICONE_OVL.svg(k) : '');
 const PESO_OPTS = () => [['700', L('Normale', 'Normal', 'Normal')], ['400', L('Leggero', 'Light', 'Ligero')], ['800', L('Grassetto', 'Bold', 'Negrita')], ['900', L('Nero', 'Black', 'Negro')]];
 const MAIUSC_OPTS = () => [['no', L('Come scritto', 'As typed', 'Como se escribe')], ['maiuscolo', L('TUTTO MAIUSCOLO', 'ALL CAPS', 'TODO MAYÚSCULAS')], ['capo', L('Iniziali Maiuscole', 'Title Case', 'Iniciales Mayúsculas')]];
 
-const _val = (opts, v) => (opts.some(([k]) => k === v) ? v : opts[0][0]);
+const _val = (opts, v, def) => (opts.some(([k]) => k === v) ? v : (def || opts[0][0]));
 const formaDi = (st) => _val(FORMA_OPTS(), st && st.forma);
 const materiaDi = (st) => _val(MATERIA_OPTS(), st && st.materia);
-const corniceDi = (st) => _val(CORNICE_OPTS(), st && st.cornice);
+const corniceDi = (st, def) => _val(CORNICE_OPTS(), st && st.cornice, def);
 const compDi = (st) => _val(COMP_OPTS(), st && st.composizione);
-const classiIdentita = (st) => `forma-${formaDi(st)} materia-${materiaDi(st)} cornice-${corniceDi(st)}`;
+const classiIdentita = (st, corniceDef) => `forma-${formaDi(st)} materia-${materiaDi(st)} cornice-${corniceDi(st, corniceDef)}`;
 
 const DIM_OPTS = () => [['piccola', L('Piccola', 'Small', 'Pequeña')], ['media', L('Media', 'Medium', 'Mediana')], ['grande', L('Grande', 'Large', 'Grande')], ['enorme', L('Enorme', 'Huge', 'Enorme')]];
 const POS4_OPTS = () => [['alto-sinistra', L('In alto a sx', 'Top left', 'Arriba izq.')], ['alto-destra', L('In alto a dx', 'Top right', 'Arriba der.')], ['basso-sinistra', L('In basso a sx', 'Bottom left', 'Abajo izq.')], ['basso-destra', L('In basso a dx', 'Bottom right', 'Abajo der.')]];
@@ -5445,6 +5445,7 @@ function goalNuovo() {
 function disegnaGoal() {
   const box = document.getElementById('lista-goal');
   if (!box) return;
+  const aperte = new Set([...box.querySelectorAll('.goal-voce-guscio[open]')].map((d) => d.dataset.goalId));
   const conti = impostazioni().overlayStato.goals || {};
   const lista = goalBozza();
   const st = (g) => g.stile || {};
@@ -5477,6 +5478,10 @@ function disegnaGoal() {
     </div>
   </details>`).join('')
     : `<p class="vuoto">${L('Nessun obiettivo. Aggiungine uno: puoi averne quanti ne vuoi.', 'No goals. Add one: you can have as many as you like.', 'Ningún objetivo. Añade uno: puedes tener los que quieras.')}</p>`;
+
+  for (const d of box.querySelectorAll('.goal-voce-guscio')) {
+    if (aperte.has(d.dataset.goalId)) d.open = true;
+  }
 
   const vesti = document.getElementById('goal-vesti');
   if (vesti && vesti.dataset.pieno === JSON.stringify(lista.map((g) => g.id))) { disegnaVociGoal(); return; }
@@ -5808,14 +5813,14 @@ function pannelloAlert() {
           <label class="campo-num">${L('Tempi', 'Times', 'Tiempos')}<select data-c="tempi">${[['no', L('niente', 'none', 'ninguno')], ['trascorso', L('trascorso', 'elapsed', 'transcurrido')], ['restante', L('quanto manca', 'remaining', 'lo que falta')], ['due', L('tutti e due', 'both', 'los dos')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Entrata', 'Entrance', 'Entrada')}<select data-c="entrata">${[['dissolve', L('dissolvenza', 'fade', 'fundido')], ['scivola', L('scivola da lato', 'slide in', 'desliza')], ['sale', L('sale dal basso', 'rise up', 'sube')], ['niente', L('secca', 'none', 'seca')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Se è in pausa', 'When paused', 'Si está en pausa')}<select data-c="quandoFermo">${[['sparisce', L('sparisce', 'goes away', 'desaparece')], ['resta', L('resta a schermo', 'stays on screen', 'se queda')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
-          <label class="campo-num">${L('Va a tempo', 'Beats along', 'Va al ritmo')}<select data-c="ritmo">${[['onde', L('le onde', 'the bars', 'las ondas')], ['tutto', L('onde e copertina', 'bars and cover', 'ondas y portada')], ['no', L('niente', 'nothing', 'nada')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+          <label class="campo-num">${L('Cosa balla a tempo', 'What beats along', 'Qué baila al ritmo')}<select data-c="ritmo">${[['onde', L('le onde', 'the bars', 'las ondas')], ['tutto', L('onde e copertina', 'bars and cover', 'ondas y portada')], ['no', L('niente si muove a tempo', 'nothing moves to the beat', 'nada se mueve al ritmo')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Sfondo', 'Background', 'Fondo')}<select data-c="sfondo">${[['no', L('niente', 'none', 'ninguno')], ['copertina', L('copertina sfocata', 'blurred cover', 'portada difuminada')], ['colori', L('colori del disco', 'record colors', 'colores del disco')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Corpo', 'Body', 'Cuerpo')}<select data-c="corpo">${CORPO_OPTS().map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Tema', 'Theme', 'Tema')}<select data-c="tema">${TEMA_OPTS().map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Larghezza del testo', 'Text width', 'Ancho del texto')} <span class="tenue">${L('0 = come il corpo', '0 = follow the body', '0 = como el cuerpo')}</span><input type="number" data-c="larghezza" min="0" max="30"></label>
         </div>
         <div class="riga-flessibile spazio-sopra">
-          <label class="riga-check"><input type="checkbox" data-c="onde"> ${L('Onde che ballano', 'Dancing bars', 'Ondas que bailan')}</label>
+          <label class="riga-check"><input type="checkbox" data-c="onde"> ${L('Mostra le onde', 'Show the bars', 'Mostrar las ondas')}</label>
           <label class="riga-check"><input type="checkbox" data-c="scorre"> ${L('Il titolo lungo scorre', 'Long titles scroll', 'Los títulos largos se desplazan')}</label>
           <label class="riga-check"><input type="checkbox" data-c="daCopertina"> ${L('Colore preso dalla copertina', 'Color taken from the cover', 'Color tomado de la portada')}</label>
           <label class="riga-check"><input type="checkbox" data-c="cambio"> ${L('Si rianima a ogni brano', 'Replays its entrance on every track', 'Se reanima en cada tema')}</label>
@@ -6403,7 +6408,7 @@ function aggiornaAnteprima() {
     apChat.className = 'ap-el ap-chat' + (/destra/.test(chatPos) ? ' destra' : '') + (selezione === 'chat' ? ' sel' : '');
     apChat.innerHTML = _messaggiFinti().map(([u, col, t]) => {
       const cu = cst.username === 'twitch' ? col : cst.username;
-      return `<div class="chat-riga dim-${cst.dim}${cst.ombra ? ' ombra' : ''}${cst.grassettoUser ? ' user-bold' : ''} maiusc-${cst.maiuscolo || 'no'} ${classiIdentita(cst)} dentro" style="--bg:${cst.sfondo};--op:${cst.opacita}%;--fg:${cst.testo};--acc:${cu};--radius:${cst.bordoRaggio}px;--font:${fontStile(cst)};--peso:${cst.peso || '700'};--spaz:${Number(cst.spaziatura) || 0}px;--ombra-testo:${cst.ombraTesto ? '0 2px 8px rgba(0,0,0,.6)' : 'none'}"><span class="chat-user" style="color:${cu}">${esc(u)}</span> ${esc(t)}</div>`;
+      return `<div class="chat-riga dim-${cst.dim}${cst.ombra ? ' ombra' : ''}${cst.grassettoUser ? ' user-bold' : ''} maiusc-${cst.maiuscolo || 'no'} ${classiIdentita(cst, 'nessuna')} dentro" style="--bg:${cst.sfondo};--op:${cst.opacita}%;--fg:${cst.testo};--acc:${cu};--radius:${cst.bordoRaggio}px;--font:${fontStile(cst)};--peso:${cst.peso || '700'};--spaz:${Number(cst.spaziatura) || 0}px;--ombra-testo:${cst.ombraTesto ? '0 2px 8px rgba(0,0,0,.6)' : 'none'}"><span class="chat-user" style="color:${cu}">${esc(u)}</span> ${esc(t)}</div>`;
     }).join('');
     _iniettaManiglie('chat');
   }
@@ -6458,14 +6463,14 @@ function _vestiGoal(box, g) {
     box.innerHTML = '<div class="g-testa"><span class="g-tit"></span><span class="g-num"></span></div><div class="g-barra"><i></i></div>';
   }
   const st = g.stile || {};
-  box.className = 'ovl-widget ovl-goal dim-' + (st.dim || 'media') + ' ' + classiIdentita(st);
+  box.className = 'ovl-widget ovl-goal dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');
   _setVars(box, { '--bg': st.sfondo, '--op': (st.opacita != null ? st.opacita : 85) + '%', '--fg': st.testo,
     '--acc': st.accento, '--radius': (st.bordoRaggio != null ? st.bordoRaggio : 12) + 'px', '--font': fontStile(st) });
   const meta = Math.max(1, Number(g.obiettivo) || 100);
   const ora = Math.max(0, (Number(g.partenza) || 0) + (Number((impostazioni().overlayStato.goals || {})[g.id]) || 0));
   box.querySelector('.g-tit').textContent = g.titolo || GOAL_PAROLA[g.tipo] || '';
   box.querySelector('.g-num').textContent = ora + ' / ' + meta;
-  box.querySelector('.g-barra i').style.width = Math.min(100, Math.round((ora / meta) * 100)) + '%';
+  box.querySelector('.g-barra i').style.setProperty('--q', Math.min(1, (ora / meta) || 0).toFixed(4));
   box.classList.toggle('pieno', ora >= meta);
 }
 
@@ -6474,6 +6479,24 @@ const BRANO_FINTO = () => ({
   artisti: L('Artista', 'Artist', 'Artista'),
   album: L('Album', 'Album', 'Álbum'), q: 0.42, energia: 0.68,
 });
+
+function misuraScorrimentoAnteprima(box, cfg) {
+  box.classList.remove('scorre');
+  if (cfg.scorre === false || _menoMoto) return;
+  requestAnimationFrame(() => {
+    if (!box.isConnected) return;
+    let fuori = 0;
+    for (const r of box.querySelectorAll('.m-riga')) {
+      const dentro = r.firstElementChild;
+      if (dentro) fuori = Math.max(fuori, dentro.scrollWidth - r.clientWidth);
+    }
+    if (fuori > 4) {
+      box.style.setProperty('--m-fuori', fuori + 'px');
+      box.style.setProperty('--m-durata', Math.max(6, fuori / 26) + 's');
+      box.classList.add('scorre');
+    }
+  });
+}
 
 function _vestiMusica(box, cfg) {
   if (!box.querySelector('.m-corpo')) {
@@ -6487,7 +6510,7 @@ function _vestiMusica(box, cfg) {
   }
   const st = cfg.stile || {};
   const d = BRANO_FINTO();
-  box.className = 'ovl-widget ovl-musica dentro dim-' + (st.dim || 'media') + ' ' + classiIdentita(st)
+  box.className = 'ovl-widget ovl-musica dentro dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna')
     + ' verso-' + (cfg.verso || 'riga') + ' righe-' + (cfg.righe || 'una')
     + ' cover-' + (cfg.cover || 'quadrata') + ' barra-' + (cfg.barra || 'sotto')
     + (cfg.onde !== false ? ' con-onde' : '') + ' sfondo-' + (cfg.sfondo || 'no')
@@ -6512,6 +6535,7 @@ function _vestiMusica(box, cfg) {
   const t = cfg.tempi || 'no';
   box.querySelector('.m-tempi').textContent = t === 'no' ? ''
     : t === 'trascorso' ? '1:24' : t === 'restante' ? '-1:56' : '1:24 / 3:20';
+  misuraScorrimentoAnteprima(box, cfg);
 }
 
 function _vestiTimer(box, cfg) {
@@ -6520,7 +6544,7 @@ function _vestiTimer(box, cfg) {
   const fine = Number(impostazioni().overlayStato?.timer?.fine) || 0;
   const manca = fine - Date.now();
   const finito = fine > 0 && manca <= 0;
-  box.className = 'ovl-widget ovl-timer dim-' + (st.dim || 'media') + ' ' + classiIdentita(st) + (finito ? ' finito' : '');
+  box.className = 'ovl-widget ovl-timer dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna') + (finito ? ' finito' : '');
   _setVars(box, { '--bg': st.sfondo, '--op': (st.opacita != null ? st.opacita : 85) + '%', '--fg': st.testo,
     '--acc': st.accento, '--radius': (st.bordoRaggio != null ? st.bordoRaggio : 12) + 'px', '--font': fontStile(st) });
   box.querySelector('.t-tit').textContent = finito ? '' : (cfg.titolo || '');

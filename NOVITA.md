@@ -63,6 +63,11 @@ lo usa: se non si vede da fuori, qui non ci va.
 - Le emoji che il bot scrive in chat restano dov'erano: quella è la sua voce.
 - Gli obiettivi si impostano in un posto solo: il traguardo vale per tutti i tuoi overlay, e non lo devi rifare scena per scena. Dove sta e come si vede lo decidi ancora sull'overlay che stai componendo.
 - La barra di un obiettivo non torna più indietro: se arrivavano follower mentre il numero vero era ancora quello di poco prima, il totale a schermo calava. Ora no.
+- Nell'anteprima dello Studio la barra di un obiettivo era vuota anche a 662 su 1000: adesso si riempie davvero.
+- E l'anteprima non ti mostra più un overlay diverso da quello che va in onda: la cornice degli elementi era disegnata in un modo qui e in un altro in diretta.
+- Il titolo lungo del player scorre anche nell'anteprima, invece di restare tagliato.
+- Spuntare «parti da quanti ne ho adesso» non ti butta più fuori dalla scheda che stavi modificando.
+- I comandi delle onde del player dicono cosa fanno: uno le mostra o le nasconde, l'altro decide cosa balla a tempo.
 
 ## 2026-09-03
 

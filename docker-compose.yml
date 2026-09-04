@@ -165,6 +165,11 @@ services:
       - "443:443/udp"  # HTTP/3 (QUIC)
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Le pagine di servizio: quella di manutenzione la mostra Caddy quando il
+      # bot non risponde. E' una CARTELLA e non un file singolo di proposito —
+      # un montaggio di file segue l'inode, e dopo un `git pull` che riscrive il
+      # file il container continuerebbe a servire quello vecchio.
+      - ./pagine-servizio:/srv/servizio:ro
       - caddy_data:/data       # qui Caddy conserva i certificati
       - caddy_config:/config
     # Caddy è la porta d'ingresso: regge l'urto di TUTTE le connessioni da

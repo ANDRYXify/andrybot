@@ -108,6 +108,30 @@ socialbot.live {
 		reverse_proxy bot:8090 {
 			header_up X-Edge-Key {env.EDGE_KEY}
 		}
+
+		# QUANDO IL BOT NON RISPONDE (aggiornamento in corso, riavvio, crash) il
+		# proxy restituisce 502/503/504 e Caddy mostrerebbe la sua pagina nuda.
+		# Qui al suo posto va la nostra, che spiega in tre lingue che si tratta
+		# di una pausa e non di un guasto.
+		#
+		# La pagina la serve l'EDGE e non il bot, per la ragione ovvia che il bot
+		# e' proprio cio' che in quel momento e' giu'. Per lo stesso motivo e'
+		# autoportante: nessun foglio di stile, nessun carattere, nessuno script
+		# da fuori — chi li servirebbe e' spento.
+		#
+		# 503 e non 502: dice «torno», e i motori di ricerca non declassano.
+		# Retry-After da' un tempo onesto invece di far martellare.
+		handle_errors {
+			@giu expression {err.status_code} in [502, 503, 504]
+			handle @giu {
+				header Retry-After "120"
+				header Cache-Control "no-store"
+				rewrite * /manutenzione.html
+				file_server {
+					root /srv/servizio
+				}
+			}
+		}
 	}
 
 	# --- Voce (Whisper) e tracking (Human): ML sul dispositivo ------------
@@ -126,6 +150,30 @@ socialbot.live {
 		}
 		reverse_proxy bot:8090 {
 			header_up X-Edge-Key {env.EDGE_KEY}
+		}
+
+		# QUANDO IL BOT NON RISPONDE (aggiornamento in corso, riavvio, crash) il
+		# proxy restituisce 502/503/504 e Caddy mostrerebbe la sua pagina nuda.
+		# Qui al suo posto va la nostra, che spiega in tre lingue che si tratta
+		# di una pausa e non di un guasto.
+		#
+		# La pagina la serve l'EDGE e non il bot, per la ragione ovvia che il bot
+		# e' proprio cio' che in quel momento e' giu'. Per lo stesso motivo e'
+		# autoportante: nessun foglio di stile, nessun carattere, nessuno script
+		# da fuori — chi li servirebbe e' spento.
+		#
+		# 503 e non 502: dice «torno», e i motori di ricerca non declassano.
+		# Retry-After da' un tempo onesto invece di far martellare.
+		handle_errors {
+			@giu expression {err.status_code} in [502, 503, 504]
+			handle @giu {
+				header Retry-After "120"
+				header Cache-Control "no-store"
+				rewrite * /manutenzione.html
+				file_server {
+					root /srv/servizio
+				}
+			}
 		}
 	}
 
@@ -158,6 +206,30 @@ socialbot.live {
 		}
 		reverse_proxy bot:8090 {
 			header_up X-Edge-Key {env.EDGE_KEY}
+		}
+
+		# QUANDO IL BOT NON RISPONDE (aggiornamento in corso, riavvio, crash) il
+		# proxy restituisce 502/503/504 e Caddy mostrerebbe la sua pagina nuda.
+		# Qui al suo posto va la nostra, che spiega in tre lingue che si tratta
+		# di una pausa e non di un guasto.
+		#
+		# La pagina la serve l'EDGE e non il bot, per la ragione ovvia che il bot
+		# e' proprio cio' che in quel momento e' giu'. Per lo stesso motivo e'
+		# autoportante: nessun foglio di stile, nessun carattere, nessuno script
+		# da fuori — chi li servirebbe e' spento.
+		#
+		# 503 e non 502: dice «torno», e i motori di ricerca non declassano.
+		# Retry-After da' un tempo onesto invece di far martellare.
+		handle_errors {
+			@giu expression {err.status_code} in [502, 503, 504]
+			handle @giu {
+				header Retry-After "120"
+				header Cache-Control "no-store"
+				rewrite * /manutenzione.html
+				file_server {
+					root /srv/servizio
+				}
+			}
 		}
 	}
 }
