@@ -56,6 +56,8 @@ lo usa: se non si vede da fuori, qui non ci va.
 - Nel riquadro che chiede il consenso, «Dettagli» finiva da solo schiacciato nell'angolo in basso a destra e sembrava caduto fuori: ora sta dentro la frase che spiega, e i due pulsanti si dividono la riga.
 - Il tema Manga adesso è disegnato davvero: retino stampato sulla carta, contorni spessi coi pieni dentro, e di notte le linee di concentrazione che convergono sul tuo nome.
 - Puoi accendere un puntatore del mouse disegnato coi colori del tuo tema: una penna, e una stella su quello che si può premere. Su telefono non cambia niente.
+- Chi visita la tua pagina può cambiare idea sui contenuti di altri siti: prima la scelta era per sempre e il riquadro non tornava più. Ora nel piede c'è «Contenuti di altri siti» che lo riapre.
+- E se dice di no dopo aver detto di sì, il no vale davvero: la pagina si ricarica, così da quei siti non parte più niente.
 
 ## 2026-09-03
 

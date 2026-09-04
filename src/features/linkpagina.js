@@ -919,6 +919,8 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
      su schermo stretto restava da solo schiacciato nell'angolo in basso a
      destra — sembrava caduto fuori dal riquadro. */
   .fascia p a{color:var(--acc);text-decoration:underline;text-underline-offset:2px}
+  .come-link{background:none;border:0;padding:0;font:inherit;color:inherit;
+    text-decoration:underline;text-underline-offset:2px;cursor:pointer}
   .fascia-b button{flex:1 1 12rem}
   /* proporzioni per tipo di contenuto: un brano non è un video, e uno short
      nemmeno. Con un 16/9 forzato restava mezzo riquadro vuoto. */
@@ -1149,7 +1151,8 @@ ${!anteprima && mov !== 'nessuno' ? `<script>${SCRIPT_SCROLLREVEAL}</script>` : 
     ${pagina.tagline ? `<p class="tag">${esc(pagina.tagline)}</p>` : ''}
     ${corpo ? `<nav class="lista">${corpo}</nav>` : `<p class="vuoto">Questa pagina non ha ancora contenuti.</p>`}
     <p class="piede">Pagina creata con <a href="${esc(baseUrl)}/" target="_blank" rel="noopener">SocialBot</a>
-      · <a href="/u/${esc(login)}/privacy">Privacy</a></p>
+      · <a href="/u/${esc(login)}/privacy">Privacy</a>${banner && corpo.includes('chiedi-b')
+        ? ` · <button type="button" id="ri-consenso" class="come-link">Contenuti di altri siti</button>` : ''}</p>
   </main>
 ${banner && corpo.includes('chiedi-b') ? `
   <aside class="fascia" id="fascia" hidden>
@@ -1207,11 +1210,25 @@ addEventListener('click', function (e) {
   try { mem = localStorage.getItem('sb-consenso'); } catch (e) { /* niente memoria */ }
   function tutti() { var b = document.querySelectorAll('.chiedi-b'); for (var i = 0; i < b.length; i++) b[i].click(); }
   function ricorda(v) { try { localStorage.setItem('sb-consenso', v); } catch (e) { /* pazienza */ } }
-  if (mem === 'si') { tutti(); return; }             /* gia detto di si: si carica e basta */
-  if (mem === 'no') return;                          /* gia detto di no: restano i cartelli */
+  var caricati = false;
+  /* I tasti si agganciano SUBITO, prima delle uscite qui sotto: chi aveva gia
+     scelto non vedeva il banner, e quindi i suoi tasti restavano senza risposta
+     — riaprirlo dal piede non avrebbe fatto niente. */
+  document.getElementById('fascia-si').onclick = function () { ricorda('si'); f.hidden = true; caricati = true; tutti(); };
+  document.getElementById('fascia-no').onclick = function () {
+    ricorda('no'); f.hidden = true;
+    /* se erano gia stati caricati, dire di no deve valere davvero: si ricarica
+       la pagina, cosi da quei siti non parte piu niente */
+    if (caricati) location.reload();
+  };
+  /* Tornare sui propri passi. Prima la scelta era per sempre: detto si o detto
+     no, il banner non ricompariva mai piu e non c'era nessun modo di cambiare
+     idea. Ritirare un consenso dev'essere facile quanto darlo. */
+  var ri = document.getElementById('ri-consenso');
+  if (ri) ri.onclick = function () { f.hidden = false; };
+  if (mem === 'si') { caricati = true; tutti(); return; }
+  if (mem === 'no') return;
   f.hidden = false;
-  document.getElementById('fascia-si').onclick = function () { ricorda('si'); f.hidden = true; tutti(); };
-  document.getElementById('fascia-no').onclick = function () { ricorda('no'); f.hidden = true; };
 })();
 </script>` : ''}
 ${corpo.includes('<iframe') || corpo.includes('chiedi-b') ? `<script>
