@@ -127,6 +127,7 @@
 .ovl-widget.dim-piccola { font-size: .82rem; }
 .ovl-widget.dim-media   { font-size: 1rem; }
 .ovl-widget.dim-grande  { font-size: 1.25rem; }
+.ovl-widget.dim-enorme  { font-size: 1.6rem; }
 
 .ovl-anteprima {
   position: relative; overflow: hidden; width: 100%;
@@ -322,16 +323,17 @@
 @keyframes goal-pieno { 0%, 100% { filter: none; } 50% { filter: brightness(1.35); } }
 .ovl-goal.dim-piccola { font-size: .85rem; min-width: 12rem; }
 .ovl-goal.dim-grande { font-size: 1.25rem; min-width: 19rem; }
+.ovl-goal.dim-enorme { font-size: 1.6rem; min-width: 24rem; }
 
 .contatore-widget.ovl-widget { display: inline-flex; align-items: center; gap: .5rem; }
 
 .ovl-musica {
-  --cov: 3.6em;
+  --cov: 4.5em;
   box-sizing: border-box;
   position: relative; overflow: hidden;
-  display: inline-flex; align-items: center; gap: .7em;
-  min-width: 11em; max-width: 21em;
-  padding: .42em .62em;
+  display: inline-flex; align-items: center; gap: .78em;
+  min-width: 12em; max-width: 27em;
+  padding: .5em .74em;
   line-height: 1.24;
 }
 .ovl-musica > *:not(.m-sfondo) { position: relative; z-index: 1; }
@@ -340,13 +342,22 @@
   background-size: cover; background-position: center;
   filter: blur(16px) saturate(1.5); opacity: 0; transition: opacity .5s ease;
 }
-.ovl-musica.sfondo-copertina .m-sfondo { opacity: .34; }
 .ovl-musica.sfondo-colori .m-sfondo {
-  opacity: .5; filter: none;
+  opacity: .82; filter: none;
   background: linear-gradient(120deg, var(--acc) 0%, var(--acc2, var(--acc)) 55%, var(--acc) 100%);
   background-size: 260% 260%;
   animation: mus-colori 14s ease-in-out infinite alternate;
 }
+.ovl-musica.sfondo-colori::after, .ovl-musica.sfondo-copertina::after {
+  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background: linear-gradient(90deg, rgba(0, 0, 0, .58), rgba(0, 0, 0, .3) 62%, rgba(0, 0, 0, .52));
+}
+.ovl-musica.sfondo-copertina .m-sfondo { opacity: .62; filter: blur(14px) saturate(1.6); }
+.ovl-musica.tinta-viva {
+  box-shadow: inset 0 0 0 .06em color-mix(in srgb, var(--acc) 62%, transparent),
+              0 .12em .5em color-mix(in srgb, var(--acc) 34%, transparent);
+}
+.ovl-musica.tinta-viva .m-tit { color: #fff; text-shadow: 0 .04em .18em rgba(0, 0, 0, .55); }
 @keyframes mus-colori { from { background-position: 0% 50%; } to { background-position: 100% 50%; } }
 
 .ovl-musica .m-cover {
@@ -499,9 +510,10 @@
 .ovl-timer.dentro { opacity: 1; transform: none; }
 .ovl-timer.esce { opacity: 0; transform: translateY(-10px) scale(.96); transition: opacity .34s ease, transform .4s ease; }
 
-.ovl-musica.dim-piccola { font-size: 1.3rem; }
-.ovl-musica.dim-media { font-size: 1.75rem; }
-.ovl-musica.dim-grande { font-size: 2.4rem; }
+.ovl-musica.dim-piccola { font-size: 1.5rem; }
+.ovl-musica.dim-media { font-size: 2.1rem; }
+.ovl-musica.dim-grande { font-size: 2.9rem; }
+.ovl-musica.dim-enorme { font-size: 3.7rem; }
 .ovl-musica.verso-solo-cover { --cov: 5em; }
 .ovl-musica.verso-colonna { max-width: 12em; }
 

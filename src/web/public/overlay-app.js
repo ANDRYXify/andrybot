@@ -291,7 +291,7 @@ function posizionaContenitore(el, xy, corner) {
   if (xy && xy.x != null) {
     el.className = '';
     el.style.left = xy.x + '%'; el.style.top = xy.y + '%';
-    el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.width = 'auto';
+    el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.width = 'max-content';
     el.style.transform = trasformaXY(xy);
   } else {
     el.className = corner;
@@ -479,11 +479,7 @@ function widget(id, cfg, valore) {
   }
   (wboxes[ang] || wboxes['basso-destra']).appendChild(el);
 
-  const xyEff = MIO.xy[id === 'ultimoSub' ? 'ws' : 'wf'] || cfg.xy;
-  if (xyEff && xyEff.x != null) {
-    el.style.position = 'fixed'; el.style.left = xyEff.x + '%'; el.style.top = xyEff.y + '%';
-    el.style.transform = trasformaXY(xyEff);
-  } else { el.style.position = ''; el.style.left = ''; el.style.top = ''; el.style.transform = ''; }
+  posaElemento(el, id === 'ultimoSub' ? 'ws' : 'wf', cfg);
   const st = cfg.stile || {};
   el.className = 'ovl-widget dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');
   applicaVars(el, { '--dim-ico': (st.dimIcona != null ? st.dimIcona : 20) + 'px' });
@@ -613,8 +609,13 @@ function posaElemento(el, chiave, cfg) {
   const xy = (MIO.xy && MIO.xy[chiave]) || (cfg && cfg.xy);
   if (xy && xy.x != null) {
     el.style.position = 'fixed'; el.style.left = xy.x + '%'; el.style.top = xy.y + '%';
+    el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.width = 'max-content';
     el.style.transform = trasformaXY(xy);
-  } else { el.style.position = ''; el.style.left = ''; el.style.top = ''; el.style.transform = ''; }
+  } else {
+    el.style.position = ''; el.style.left = ''; el.style.top = '';
+    el.style.right = ''; el.style.bottom = ''; el.style.width = '';
+    el.style.transform = '';
+  }
 }
 
 function vestiElemento(el, cfg, corniceDef, chiave) {
