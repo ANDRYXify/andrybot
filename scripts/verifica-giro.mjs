@@ -13,8 +13,7 @@
 //
 // Uso: node scripts/verifica-giro.mjs   (esce 1 se un faro punta al vuoto)
 
-import http from 'node:http';
-import fs from 'node:fs';
+import { apriSito } from './_sito.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -35,19 +34,7 @@ catch {
   process.exit(0);
 }
 
-const srv = http.createServer((req, res) => {
-  const p = decodeURIComponent(req.url.split('?')[0]);
-  if (p.startsWith('/api/')) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end('{}'); }
-  const f = path.join(PUB, p === '/' ? 'index.html' : p);
-  if (!f.startsWith(PUB) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) {
-    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-    return res.end(fs.readFileSync(path.join(PUB, 'index.html')));
-  }
-  res.writeHead(200, { 'content-type': TIPI[path.extname(f)] || 'application/octet-stream' });
-  res.end(fs.readFileSync(f));
-});
-await new Promise((ok) => srv.listen(0, '127.0.0.1', ok));
-const PORTA = srv.address().port;
+const { porta: PORTA, chiudi: chiudiSito } = await apriSito();
 
 const b = await chromium.launch({ executablePath: CHROMIUM,
   args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox', '--disable-dev-shm-usage'] });
@@ -95,7 +82,7 @@ for (const id of schede) {
 }
 
 await b.close();
-srv.close();
+chiudiSito();
 
 const dice = (ok, testo, extra = '') => {
   console.log(`  ${ok ? '✓' : '✗'} ${testo}${!ok && extra ? ` — ${extra}` : ''}`);

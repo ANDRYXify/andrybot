@@ -23,6 +23,7 @@ import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPA
 import { renderLinkPage, renderInformativa } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
 import { creaMinifica } from './minifica.js';
+import { inserisciVetrina } from './vetrina-vista.js';
 import { montaArgine } from './argine.js';
 import { GUIDE, paginaGuida, paginaIndice, paginaNovita, urlGuide } from './guide.js';
 import * as novita from './novita.js';
@@ -460,8 +461,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // e chi no lo sa il server a costo zero (e in sessione), quindi lo scrive nel
   // primo HTML e la larghezza e giusta gia al primo disegno.
   const gusciaHtml = readFileSync(join(publicDir, 'index.html'), 'utf8');
-  const PORTA_KICK = '<a class="btn grande secondario porta-kick" href="/accedi/kick">Entra con Kick</a>';
-  if (!gusciaHtml.includes(PORTA_KICK)) throw new Error('guscio: non trovo la porta di Kick in index.html');
+  const conKick = !!(config.kickClientId && config.kickClientSecret);
 
   // LINGUE INDICIZZABILI. index.html dichiara tre alternative hreflang
   // (it/en/es) ma serviva SEMPRE l'italiano, con `<html lang="it">` e un
@@ -510,11 +510,13 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       if (!h.includes(da)) throw new Error(`guscio ${codice}: non trovo in index.html → ${da.slice(0, 90)}`);
       h = h.replace(da, a);
     };
+    // La vetrina: la disegna il server, qui, nella lingua del guscio. Prima
+    // index.html ne conteneva una versione scritta a mano (solo italiana) che
+    // app.js buttava via ridisegnandone un'altra: due pagine diverse sullo
+    // stesso indirizzo. Vedi src/web/vetrina-vista.js.
     // La porta di Kick esiste solo se questo server ha un'app Kick: un pulsante
     // che porta a un 503 e' peggio di un pulsante che non c'e'.
-    if (!config.kickClientId || !config.kickClientSecret) {
-      h = h.split(PORTA_KICK).join('');
-    }
+    h = inserisciVetrina(h, codice, { kick: conKick });
     cambia('<html lang="it">', `<html lang="${m.html}">`);
     cambia(`<title>${base.titolo}</title>`, `<title>${m.titolo}</title>`);
     cambia(`<meta name="description" content="${base.desc}">`, `<meta name="description" content="${m.desc}">`);

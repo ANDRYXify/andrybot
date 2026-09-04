@@ -13,8 +13,7 @@
 //
 // Uso: node scripts/verifica-contrasto.mjs   (esce 1 se qualcosa non si legge)
 
-import http from 'node:http';
-import fs from 'node:fs';
+import { apriSito } from './_sito.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -31,19 +30,7 @@ const TIPI = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; cha
   '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png',
   '.webmanifest': 'application/manifest+json', '.json': 'application/json', '.woff2': 'font/woff2' };
 
-const srv = http.createServer((req, res) => {
-  const q = decodeURIComponent(req.url.split('?')[0]);
-  if (q.startsWith('/api/')) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end('{}'); }
-  const f = path.join(PUB, q === '/' ? 'index.html' : q);
-  if (!f.startsWith(PUB) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) {
-    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-    return res.end(fs.readFileSync(path.join(PUB, 'index.html')));
-  }
-  res.writeHead(200, { 'content-type': TIPI[path.extname(f)] || 'application/octet-stream' });
-  res.end(fs.readFileSync(f));
-});
-await new Promise((ok) => srv.listen(0, '127.0.0.1', ok));
-const PORTA = srv.address().port;
+const { porta: PORTA, chiudi: chiudiSito } = await apriSito();
 
 // WCAG: luminanza relativa e rapporto di contrasto.
 const lum = ([r, g, b]) => {
@@ -189,7 +176,7 @@ for (const tema of ['light', 'dark']) {
   await p.close();
 }
 await b.close();
-srv.close();
+chiudiSito();
 
 const dice = (ok, testo, extra = '') => { console.log(`  ${ok ? '✓' : '✗'} ${testo}${!ok && extra ? ` — ${extra}` : ''}`); return ok; };
 console.log('\nQuel che c\'e\' scritto si legge davvero.\n');

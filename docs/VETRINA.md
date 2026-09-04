@@ -2,6 +2,66 @@
 
 I file del sito non hanno commenti: quello che spiegherebbero sta qui.
 
+## Una vetrina sola (prima erano due, e diverse)
+
+Sullo stesso indirizzo convivevano **due pagine**, non due copie della stessa:
+
+| | dove stava | lingue | testo |
+|---|---|---|---|
+| il blocco per i motori | scritto a mano dentro `index.html` | **solo italiano** | 4357 caratteri, quattro sezioni sue |
+| la vetrina vera | disegnata da `app.js` | it / en / es | la demo, i piani, i pacchetti |
+
+E `app.innerHTML = …` **buttava via la prima**. Quindi il crawler indicizzava un
+testo che nessun visitatore leggeva mai, e la persona ne leggeva un altro. Lo
+scarto fra le due si misurava anche in CLS: **0,195**, cioè letteralmente lo
+scambio di una pagina con l'altra a metà caricamento.
+
+Adesso la pagina è **una**, e la disegna il server:
+
+- il markup vive in `src/web/vetrina-vista.js`, funzione **pura** di lingua e
+  poco altro — nessun DOM, nessuna richiesta, nessuna data — così i quattro
+  gusci precalcolati all'avvio (`gusciaDi` in `server.js`) se la portano dentro
+  senza rifare niente a ogni richiesta;
+- il file sta in `src/web/` e **non** in `public/`: al browser arriva la vetrina
+  già disegnata, il generatore gli sarebbe peso morto;
+- `app.js` non la ridisegna più: aggancia i comportamenti su quello che trova, e
+  aggiunge solo l'avviso d'errore, che dipende dall'indirizzo di chi guarda e
+  quindi non può stare in un guscio precalcolato.
+
+**Le lingue sono diventate link.** Erano pulsanti che ridisegnavano la pagina in
+JS: un motore non li può premere, e chi cambiava lingua restava sullo stesso
+indirizzo. Ora sono `<a>` verso `/`, `/?lang=en`, `/?lang=es` — esattamente i tre
+indirizzi che sitemap e `hreflang` dichiarano da sempre. E `app.js`, da sloggato,
+prende la lingua **dal documento servito**: quello che vedi è quello che è, senza
+che una preferenza salvata scriva gli avvisi in un'altra lingua.
+
+### Misurato
+
+| | prima | dopo |
+|---|---|---|
+| testo indicizzabile senza JS | 4357 car., **una** lingua, altra pagina | 3953 car., **tre** lingue, la pagina vera |
+| scarto di layout (CLS) | 0,195 | **0** |
+| errori di pagina | 0 | 0 |
+
+### Perché non può tornare a essere due
+
+- `test/contratto/vetrina.test.mjs`: `index.html` deve avere solo il segnaposto,
+  `app.js` non deve contenere markup della vetrina, ogni lingua deve avere lo
+  stesso numero di sezioni e un solo `h1`, e le copie che il modulo si porta
+  dietro (icone e nomi dei pacchetti — `app.js` è uno script classico e non può
+  importare) devono essere identiche a quelle di `app.js`.
+- `scripts/verifica-vetrina.mjs`: in un browser vero, senza JS la pagina c'è già;
+  con JS ha **lo stesso** titolo e le stesse sezioni, e lo scarto di layout resta
+  sotto 0,1. Provato rosso facendo riscrivere `#app` ad `app.js`.
+- L'ancoraggio (`<div id="app"></div>`) e l'inserimento stanno in **una**
+  funzione, `inserisciVetrina`, usata dal server e dai collaudi: se manca,
+  il server non parte, invece di servire una home col buco.
+- I collaudi col browser avevano **nove** copie del loro servertto locale, che
+  servivano `index.html` grezzo: dopo questo cambio mostravano una pagina vuota
+  al posto della vetrina, ed è così che il cancello del contrasto è diventato
+  rosso. Adesso c'è `scripts/_sito.mjs`, e la home la compone con la stessa
+  funzione del server.
+
 ## Il mondo: due stanze, una porta
 
 **Fuori (`body.vetrina`) è sempre scuro.** I token del tema vengono ridefiniti su `body.vetrina`,

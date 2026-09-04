@@ -42,6 +42,9 @@ lo usa: se non si vede da fuori, qui non ci va.
 - E di notte si legge: il contorno nero spariva nel fondo scuro, ora ha il filo di carta attorno come nelle tavole stampate.
 - Le linee di concentrazione dietro il titolo si sono calmate: erano un fondale che copriva tutto, adesso convergono sul titolo e gli lasciano aria attorno.
 - Il titolo grande ha il pieno del marchio, lo stesso della «b» di bot, dentro il contorno: prima era una parete di colore piatto e su telefono le lettere si gonfiavano fino a chiudersi.
+- La home non si ricompone più sotto gli occhi mentre carica: arriva già fatta, e non balla più.
+- Ed è la stessa per tutti: prima chi cercava su Google trovava una pagina scritta a parte, solo in italiano, diversa da quella che poi si apriva davvero.
+- Le tre lingue sono diventate indirizzi veri: cambiando lingua l'indirizzo cambia con te, e lo puoi salvare o mandare a qualcuno.
 
 ## 2026-09-03
 
