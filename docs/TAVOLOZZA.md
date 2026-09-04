@@ -143,3 +143,101 @@ il timbro di un oggetto che finisce addosso al vicino. Misurato: su **309**
 oggetti con ombra a timbro gli urti sono **16**, e quasi tutti da 1px, cioè
 arrotondamenti. Non c'era niente da sistemare lì, e allargare tutte le distanze
 avrebbe peggiorato una cosa che funzionava.
+
+---
+
+## La pagina link: personalizzabile fino in fondo
+
+> «Deve essere al massimo personalizzabile, dalla a alla z, anzi, dalla a al
+> numero infinito.»
+
+Un elenco di manopole non è mai infinito: sotto c'è sempre la cosa che chi la
+usa vuole spostare di due pixel. Quindi ci sono **due strati**.
+
+### Strato 1 — le manopole, e come non sono nate a mano
+
+| gruppo | cosa si sceglie |
+|---|---|
+| Impianto | disposizione, movimento, stile di partenza, allineamento, larghezza, **aria fra i pezzi** |
+| Scrittura | carattere, **carattere dei titoli**, **spessore**, **grandezza**, **interlinea**, **maiuscolo** |
+| Colori | tipo di sfondo, due colori, direzione, immagine, effetto, testo, evidenza, bottoni, bordi, **testo dei bottoni** |
+| Bottoni | stile, ombra + colore, forma del profilo, angoli, **spessore del bordo** |
+| Modi | animazione d'ingresso, puntatore, contenuti di altri siti |
+
+I pesi del carattere erano **diciotto numeri sparsi** nel foglio di stile. Con
+quelli, «vorrei meno grassetto» non è una scelta: sono diciotto modifiche a
+mano, e la diciannovesima nasce sbagliata. Sono diventati **quattro ruoli** —
+forte, medio, normale, tenue — e una manopola li muove insieme tenendoli in
+scala. `marcato` ripete esattamente i numeri di prima: **nessuna pagina già
+pubblicata cambia da sola** (c'è un contratto che lo verifica).
+
+Stessa forma per l'aria fra i pezzi (percentuale del `.6rem` di prima),
+l'interlinea (percentuale dell'1.5 di prima) e lo spessore del bordo (0 = quello
+che decide lo stile scelto). **Il valore di partenza ripete sempre com'era.**
+
+### Strato 2 — il CSS tuo, che non ha fondo
+
+Una scheda con un riquadro di CSS, che arriva **per ultimo** nel foglio: se
+arrivasse prima non vincerebbe su niente e la manopola sarebbe una bugia.
+
+Ma la pagina link è **pubblica** — la aprono sconosciuti — e qui non vale la
+regola dell'overlay, che è la pagina privata dello streamer dentro OBS e può
+permettersi tutto. Non passano:
+
+- `@import`, che tira dentro un foglio di un altro sito, che può tirarne altri;
+- `javascript:` ed `expression(`, che smettono di essere stile;
+- `</style`, la porta per uscire dal tag e scrivere HTML.
+
+`url()` verso https **resta ammesso**, di proposito: la pagina mostra già
+immagini di altri siti (la foto profilo, le copertine, lo sfondo). Vietarlo qui
+e permetterlo là sarebbe una regola che non protegge niente.
+
+#### La parte che una prova ingenua non vede
+
+Un filtro che **toglie** deve arrivare a un **punto fermo**. `</sty</stylele>`
+non contiene `</style`, ma togliendo quello che sta in mezzo i due monconi si
+ricompongono e ne esce uno intero. Vale uguale per `@im@import;port` e per
+`javajavascript:script:`. Quindi si ripassa finché non cambia più niente; ogni
+passata accorcia, quindi il giro finisce, e chi non si ferma in venti passate
+non è il CSS di nessuno e si butta via intero.
+
+Il contratto in `test/contratto/css-pagina.test.mjs` prova **tutti e tre** i casi
+a strati, ed è stato visto rosso con la versione a passata singola.
+
+### Come si verifica che nessuna manopola sia finta
+
+`node scripts/verifica-stile.mjs` confronta le manopole (`data-lpk="X"`) con i
+campi che il server ricostruisce: una manopola con un nome che il server non
+conosce viene salvata, accettata e **buttata via in silenzio**, e la modifica
+sparisce alla prima ricarica senza lasciare traccia. Oggi: 32 manopole, 33 campi.
+
+---
+
+## Due difetti che si vedevano e che nessuno aveva misurato
+
+### Il titolo di una sezione stava mezzo fuori e mezzo dentro
+
+Il titolo di una carta è un'etichetta nera appiccicata al suo angolo in alto a
+sinistra: ci arriva con due margini negativi che annullano il padding della
+carta. Funziona per `.carta > h2`, dove quel padding c'è.
+
+Per `details.carta.sez` **non c'era**: `details.carta.sez { padding-top: 0 }`, e
+il tema toglie anche quello del `summary`. Il margine negativo non annullava
+niente e strappava l'etichetta **22,6 px sopra il bordo della carta** —
+misurati. Da lì l'impressione, giusta, di un titolo mezzo dentro e mezzo fuori.
+
+Ora l'etichetta sta a **+3 px da sinistra e +3 px dall'alto**: esattamente sul
+filo interno del bordo da 3 px, uguale sui due lati.
+
+### La freccetta era un rombo
+
+La freccetta che apre e chiude una sezione si disegna con **due soli lati** di un
+quadratino ruotato di 45°: destro e inferiore, e ne esce una punta. Misurata,
+aveva **quattro** lati da 2 px — i due della punta color accento, gli altri due
+color inchiostro — cioè un rombo chiuso.
+
+Non sono riuscito a trovare la regola che le aggiungeva quei due lati, e non
+serve trovarla: si chiude dal lato giusto. Ora la freccetta **dichiara tutto il
+suo bordo** (`border: 0` e poi i due lati che vuole), così nessuna regola può
+aggiungergliene altri. Vale per tutte e cinque le freccette del prodotto, che
+misuravano tutte lo stesso rombo.

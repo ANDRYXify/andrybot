@@ -1098,7 +1098,8 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .riga-check { display: inline-flex; align-items: center; gap: .4rem; font-size: .9rem; margin-right: 1.2rem; cursor: pointer; }
 .riga-check input { width: 16px; height: 16px; }
 
-#ovl-css { min-height: 130px; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: .85rem; white-space: pre; }
+#ovl-css, .lp-css { min-height: 130px; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: .85rem; white-space: pre; }
+.lp-css { width: 100%; resize: vertical; }
 
 input[type="color"] { width: 100%; min-height: 38px; padding: 2px; border: 1px solid var(--border); border-radius: var(--r-s); background: var(--surface); cursor: pointer; }
 

@@ -85,6 +85,8 @@ const PILE = {
 
 // La sola pila che porta un file. Le pagine link non caricano caratteri dal
 // web: e' una scelta di velocita', e vale ancora per tutte tranne questa.
+import { cssPaginaSicuro } from '../db.js';
+
 // QUANTO E' GROSSO IL TRATTO DELLA SCRITTURA.
 //
 // I pesi erano diciotto numeri sparsi nel foglio di stile: 800 qui, 700 la',
@@ -550,13 +552,13 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
 
   // stile dei bottoni
   const STILI = {
-    pieno: `background:${c.card};border:1px solid ${c.bordo}`,
-    contorno: `background:transparent;border:2px solid ${c.bordo}`,
-    vetro: `background:${c.card};border:1px solid ${c.bordo};backdrop-filter:blur(12px)`,
+    pieno: `background:${c.card};border:var(--bw,1px) solid ${c.bordo}`,
+    contorno: `background:transparent;border:var(--bw,2px) solid ${c.bordo}`,
+    vetro: `background:${c.card};border:var(--bw,1px) solid ${c.bordo};backdrop-filter:blur(12px)`,
     // A CHINA: il pieno di carta dentro un contorno spesso. Il 2px del
     // "contorno" su fondo trasparente, su una pagina chiara, legge come un
     // rettangolo vuoto — non come una vignetta disegnata.
-    inchiostro: `background:${c.card};border:3px solid ${c.bordo}`,
+    inchiostro: `background:${c.card};border:var(--bw,3px) solid ${c.bordo}`,
   };
   const stileBtn = STILI[t.stileBtn] || STILI.pieno;
   // Ombra a DUE strati: una stretta che stacca il bordo dal fondo e una larga e
@@ -788,6 +790,14 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   const mostraAvatar = t.avatarForma !== 'nessuno' && pagina.avatar !== 'no';
   const pesi = PESI[t.peso] || PESI.marcato;
   const scalaCorpo = Number(t.corpo) || 100;
+  const fontTit = PILE[t.fontTitoli] || font;
+  const bordoSp = Number(t.bordoSp) > 0 ? `${Number(t.bordoSp)}px` : '';
+  const MAIUSC = {
+    titoli: 'h1,.eroe-t,.sez-t,.marq-in span{text-transform:uppercase}',
+    bottoni: '.et,.tess-t{text-transform:uppercase}',
+    tutto: 'body{text-transform:uppercase}',
+  };
+  const maiusc = MAIUSC[t.maiuscolo] || '';
   const imgCustom = pagina.avatar === 'no' ? '' : urlSicuro(pagina.avatar);
   const imgAvatar = imgCustom || (avatar && login ? `${baseUrl || ''}/u/${encodeURIComponent(login)}/avatar` : '');
 
@@ -818,8 +828,11 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
 <style>${facciaFont(t.font)}${cursoreCss(t, c)}
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   :root{--testo:${c.testo};--tenue:${c.tenue};--acc:${c.acc};--suacc:${suAcc};--r:${raggio}px;--w:${larghezza}rem;
-    --fd:${font.d};--ft:${font.t};
-    --pf:${pesi.f};--pm:${pesi.m};--pn:${pesi.n};--pt:${pesi.t}}
+    --fd:${fontTit.d};--ft:${font.t};
+    --pf:${pesi.f};--pm:${pesi.m};--pn:${pesi.n};--pt:${pesi.t};
+    --ih:${(Number(t.interlinea) || 150) / 100};
+    --sp:calc(.6rem * ${(Number(t.spaziatura) || 100) / 100});
+    --btxt:${t.testoBtn || 'var(--testo)'}${bordoSp ? `;--bw:${bordoSp}` : ''}}
   html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;overflow-x:hidden;font-size:${scalaCorpo}%}
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
   ::selection{background:var(--acc);color:var(--suacc)}
@@ -835,7 +848,7 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
        contenuto non finisce più sotto di esse */
     padding:calc(clamp(1.5rem,6vw,3rem) + env(safe-area-inset-top)) calc(1.25rem + env(safe-area-inset-right))
             calc(2.5rem + env(safe-area-inset-bottom)) calc(1.25rem + env(safe-area-inset-left));
-    line-height:1.5;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+    line-height:var(--ih);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
   ${effetto}
   .telo{position:relative;z-index:1;width:100%;max-width:var(--w);display:flex;flex-direction:column;
     align-items:${aSinistra ? 'flex-start' : 'center'};text-align:${aSinistra ? 'left' : 'center'};gap:.3rem}
@@ -859,9 +872,9 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   h1{font-size:clamp(2rem,9vw,3.1rem);font-weight:var(--pf);letter-spacing:-.04em;line-height:1;
     margin-top:1rem;text-wrap:balance}
   .tag{color:var(--tenue);font-size:1.02rem;line-height:1.45;max-width:30rem;margin-top:.5rem;text-wrap:pretty}
-  .lista{width:100%;display:flex;flex-direction:column;gap:.6rem;margin-top:1.5rem;text-align:left}
+  .lista{width:100%;display:flex;flex-direction:column;gap:var(--sp);margin-top:1.5rem;text-align:left}
   .voce{display:flex;align-items:center;gap:.75rem;padding:.9rem 1.05rem;border-radius:var(--r);
-    ${stileBtn};${ombra};color:var(--testo);text-decoration:none;font-weight:var(--pn);font-size:1rem;
+    ${stileBtn};${ombra};color:var(--btxt);text-decoration:none;font-weight:var(--pn);font-size:1rem;
     transition:transform .18s cubic-bezier(.34,1.56,.64,1),border-color .18s ease,filter .18s ease}
   .voce:hover,.voce:focus-visible{transform:translateY(-2px);border-color:var(--acc);filter:brightness(1.04);
     box-shadow:0 1px 2px rgba(0,0,0,.10),0 14px 30px -12px ${c.acc}66}
@@ -956,11 +969,11 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   /* Blocchi affiancati su una riga da DODICI colonne. Ogni blocco prende
      esattamente le colonne della sua frazione: un terzo resta un terzo anche se
      è da solo, e le colonne che avanzano restano libere. */
-  .fila{display:grid;grid-template-columns:repeat(12,1fr);gap:.6rem;width:100%;margin-top:1rem;align-items:start}
+  .fila{display:grid;grid-template-columns:repeat(12,1fr);gap:var(--sp);width:100%;margin-top:1rem;align-items:start}
   /* Una SEZIONE: un gruppo di blocchi che stanno insieme e si allineano
      insieme. Non aggiunge spazio fra i contenuti — quello lo fa la riga
      divisoria — cambia solo da che parte stanno. */
-  .sez{width:100%;display:flex;flex-direction:column;gap:.6rem}
+  .sez{width:100%;display:flex;flex-direction:column;gap:var(--sp)}
   .sez.a-sinistra{align-items:flex-start;text-align:left}
   .sez.a-centro{align-items:center;text-align:center}
   .sez.a-destra{align-items:flex-end;text-align:right}
@@ -1002,7 +1015,7 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
      con lo sfondo della pagina: sennò si vedrebbe la copertina attraverso i
      buchi fra un blocco e l'altro. Di qui il contenitore .dopo. */
   .eroe.fissa{position:sticky;top:0;z-index:0;margin-top:0;border-radius:0;border-left:0;border-right:0}
-  .dopo{width:100%;display:flex;flex-direction:column;gap:.6rem;position:relative;z-index:1;
+  .dopo{width:100%;display:flex;flex-direction:column;gap:var(--sp);position:relative;z-index:1;
     ${sfondo};padding:1.4rem clamp(.8rem,3vw,1.4rem) 1.5rem;margin-top:1.5rem;
     border-radius:1.6rem 1.6rem 0 0;box-shadow:0 -20px 45px rgba(0,0,0,.28)}
   /* velo scuro solo se c'è una foto: serve a leggere il testo sopra l'immagine */
@@ -1159,6 +1172,8 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   /* solo in anteprima: si vede che ogni pezzo si può cliccare per aprirne i comandi */
   .sel-b:hover > *{outline:2px dashed var(--acc);outline-offset:4px;cursor:pointer}
   .sel-b.tocca > *{outline:2px solid var(--acc);outline-offset:4px}` : ''}
+  ${maiusc}
+  ${cssPaginaSicuro(t.css)}
 </style>
 
 </head>

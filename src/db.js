@@ -1716,6 +1716,44 @@ export const memory = {
 export const TEMPLATE_LINKPAGE = ['minimal', 'neon', 'retro', 'sunset', 'glass', 'brutal', 'pastello',
   'cyber', 'vapor', 'oro', 'oceano', 'foresta', 'ghiaccio', 'lava', 'bubblegum'];
 export const PESI_LINKPAGE = ['leggero', 'medio', 'marcato'];
+
+// IL CSS LIBERO DELLA PAGINA LINK.
+//
+// Serve perche' nessun elenco di manopole sara' mai abbastanza: sotto c'e'
+// sempre una cosa che chi la usa vuole spostare di due pixel. Questa e' la via
+// d'uscita, e non ha fondo.
+//
+// Ma la pagina link e' PUBBLICA — la aprono sconosciuti — e per questo qui non
+// vale la regola dell'overlay, che invece e' la pagina privata dello streamer
+// dentro OBS e puo' permettersi tutto. Si toglie quello che smette di essere
+// stile e diventa altro:
+//   @import        tira dentro un foglio intero di un altro sito, e quel foglio
+//                  puo' tirarne altri: una catena che non si vede e non finisce
+//   javascript:    esecuzione travestita da valore
+//   expression(    la stessa cosa, con il nome vecchio
+//   </style        la porta per uscire dal tag e scrivere HTML
+//
+// `url()` verso https resta ammesso di proposito: la pagina mostra gia'
+// immagini di altri siti (la foto profilo, le copertine, lo sfondo). Vietarlo
+// qui e permetterlo la' sarebbe una regola che non protegge niente e in cambio
+// confonde chi la incontra.
+//
+// E si ripassa FINO A CHE NON CAMBIA PIU' NIENTE. Una passata sola non basta e
+// non e' un dettaglio: `</sty</stylele>` non contiene `</style`, ma togliendo
+// quello che c'e' in mezzo i due monconi si ricompongono ed esce `</style>`
+// bello intero. Vale uguale per `@im@import;port` e per `javajavascript:script:`.
+// Ogni passata accorcia, quindi il giro finisce; se dopo venti non si e' fermato
+// non e' CSS di nessuno, e si butta via tutto.
+const VIA_DAL_CSS = [/@import[^;{}]*[;{}]?/gi, /javascript\s*:/gi, /expression\s*\(/gi, /<\s*\/\s*style/gi];
+export const cssPaginaSicuro = (s) => {
+  let out = String(s || '').slice(0, 8000);
+  for (let giro = 0; giro < 20; giro++) {
+    const prima = out;
+    for (const re of VIA_DAL_CSS) out = out.replace(re, '');
+    if (out === prima) return out;
+  }
+  return '';
+};
 export const FONT_LINKPAGE = ['system', 'inter', 'mono', 'serif', 'condensato', 'tondo', 'manga'];
 export const ICONE_LINKPAGE = ['link', 'twitch', 'youtube', 'instagram', 'tiktok', 'discord', 'spotify',
   'x', 'telegram', 'kick', 'github', 'reddit', 'threads', 'facebook', 'whatsapp', 'twitter',
@@ -1878,8 +1916,15 @@ export const linkPage = {
         'retino', 'concentrazione'], 'nessuno'),
       testo: hex(t.testo), accent: hex(t.accent), card: hex(t.card), bordo: hex(t.bordo),
       font: scelta(t.font, FONT_LINKPAGE, 'system'),
+      fontTitoli: scelta(t.fontTitoli, FONT_LINKPAGE, ''),
       corpo: num(t.corpo, 80, 130, 100),
       peso: scelta(t.peso, PESI_LINKPAGE, 'marcato'),
+      interlinea: num(t.interlinea, 120, 200, 150),
+      spaziatura: num(t.spaziatura, 40, 220, 100),
+      maiuscolo: scelta(t.maiuscolo, ['no', 'titoli', 'bottoni', 'tutto'], 'no'),
+      testoBtn: hex(t.testoBtn),
+      bordoSp: num(t.bordoSp, 0, 8, 0),
+      css: cssPaginaSicuro(t.css),
       raggio: num(t.raggio, 0, 999, 14),
       stileBtn: scelta(t.stileBtn, ['pieno', 'contorno', 'vetro', 'inchiostro'], 'pieno'),
       ombra: t.ombra !== false,

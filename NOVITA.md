@@ -5,6 +5,10 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-04
 
+- La pagina link ora si allarga su tutto lo schermo come il banco dell'overlay: prima restava dentro una colonna da mille pixel e l'anteprima era piccola.
+- I titoli delle sezioni non sporgono più sopra la carta, e la freccetta che le apre è tornata una punta invece di un rombo.
+- La pagina link ha molte più cose da cambiare: carattere dei titoli separato, maiuscolo, interlinea, aria fra i pezzi, colore del testo dei bottoni e spessore del bordo.
+- E c'è una scheda «CSS» dove scrivere il tuo: arriva per ultimo, quindi vince su tutto il resto.
 - La pagina link: l'aspetto non è più una colonna sola da ventidue voci, ma sei schede — Temi, Impianto, Scrittura, Colori, Bottoni, Modi — con i campi affiancati.
 - E l'anteprima della pagina link è passata a sinistra, con i comandi a destra: si legge come il banco dell'overlay.
 - Puoi cambiare la grandezza del testo della pagina link (80–130%) e il suo spessore: leggero, medio o marcato. Prima era grassetto e basta.
