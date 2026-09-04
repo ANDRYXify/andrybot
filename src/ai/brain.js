@@ -1003,8 +1003,30 @@ export class Brain {
       if (iaOn) { const bk = model.bestKnowledge(channel, text); if (bk) daConoscenza = bk.risposta; }
       if (!daConoscenza) daConoscenza = this._cercaConoscenza(channel, text);
       if (daConoscenza) {
-        const r = Math.random();
-        const prefisso = r < 0.6 ? '' : r < 0.85 ? nome + ' ' : 'Se parli di questo: ';
+        // IL FATTO È GIUSTO, LA FRASE NO. La risposta salvata è vera, ma detta
+        // sempre con le stesse parole si sente che è un disco: la facciamo DIRE
+        // al bot, che la mette in situazione e nel tono del canale. Se non ce la
+        // fa, esce quella scritta — non si perde un'informazione buona per un
+        // vezzo di stile.
+        // ECCEZIONE FERMA: se dentro c'è un LINK esce com'è, senza passare da
+        // nessuna parte. Un indirizzo riscritto è un indirizzo sbagliato.
+        const haLink = /(https?:\/\/|www\.|\b[a-z0-9-]+\.(?:it|com|net|org|tv|gg|live|me|io|dev|app)\b)/i.test(daConoscenza);
+        if (iaOn && !haLink) {
+          const detta = await brainpy.rispondi({
+            via: 'bot', canale: streamer.display || channel, canaleId: channel,
+            login: user, nome, testo: text, tono,
+            conoscenza: [daConoscenza],   // UNA cosa sola: qui deve dire questa, non divagare
+            stile: this._stileStreamer(channel),
+            storia: this._storiaRecente(channel, text),
+            situazione: this._situazione(channel),
+            lineeGuida: guide.applicabili(channel, { piattaforma: 'twitch', privato: false, sonoIo: false }),
+            timeoutMs: 9000,
+          });
+          if (detta) return this._finalizza(channel, detta, streamer);
+        }
+        // rete di sicurezza (modello spento/lento, o c'è un link): la risposta
+        // scritta, con un cenno al nome così almeno non è sempre identica.
+        const prefisso = Math.random() < 0.7 ? '' : nome + ' ';
         return this._finalizza(channel, prefisso + daConoscenza, streamer);
       }
 
@@ -1019,10 +1041,12 @@ export class Brain {
           .slice(0, 6)
           .map((k) => `${k.domanda}: ${k.risposta}`);
         const risposta = await brainpy.rispondi({
-          canale: streamer.display || channel, login: user, nome, testo: text, tono, conoscenza,
+          via: 'bot',   // la chat pubblica è del BOT, non di Lei (docs/BOT-E-LIA.md)
+          canale: streamer.display || channel, canaleId: channel,
+          login: user, nome, testo: text, tono, conoscenza,
           stile: this._stileStreamer(channel),   // la voce vera dello streamer (esempi di stile)
           storia: this._storiaRecente(channel, text),   // il discorso in corso in chat (memoria a breve termine)
-          situazione: this._situazione(channel),   // com'è la diretta adesso (gioco/live/uptime) — coscienza del momento
+          situazione: this._situazione(channel),   // com'è la diretta adesso (gioco/live/uptime)
           lineeGuida: guide.applicabili(channel, { piattaforma: 'twitch', privato: false, sonoIo: false }),   // regole valide in chat pubblica
         });
         if (risposta) return this._finalizza(channel, risposta, streamer);
@@ -1040,8 +1064,11 @@ export class Brain {
             const web = await this._cercaWeb(channel, text);
             if (web) {
               const r = await brainpy.rispondi({
-                canale: streamer.display || channel, login: user, nome, testo: text, tono, web,
+                via: 'bot',
+                canale: streamer.display || channel, canaleId: channel,
+                login: user, nome, testo: text, tono, web,
                 storia: this._storiaRecente(channel, text),
+                situazione: this._situazione(channel),
                 lineeGuida: guide.applicabili(channel, { piattaforma: 'twitch', privato: false, sonoIo: false }),
                 stile: this._stileStreamer(channel), timeoutMs: 12000,
               });

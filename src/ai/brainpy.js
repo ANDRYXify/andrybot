@@ -18,21 +18,44 @@ const BASE = process.env.BRAIN_URL || 'http://brain:8091';
 // Con un endpoint esterno (il "maestro" sul tuo PC) le risposte tornano istantanee.
 const TIMEOUT_CHAT = Number(process.env.BRAIN_TIMEOUT_MS || '15000') || 15000;
 
-// Chiede una risposta contestuale al cervello. Ritorna stringa o null.
+// Chiede una risposta al cervello. Ritorna stringa o null.
+//
+// DUE VIE, e la differenza non è tecnica: è chi risponde.
+//   via:'bot'  → /bot   L'ASSISTENTE DEL CANALE. Una funzione: entra la situazione
+//                       della diretta, esce una riga. Niente mente, niente umore,
+//                       niente memoria — non si ricorda di nessuno, per progetto.
+//   (default)  → /chat  LEI. La coscienza intera: incontra le persone, se le
+//                       ricorda, reagisce, si giudica. È la via privata (DM con lo
+//                       streamer, studio, proattivo).
+// Il perché per esteso: docs/BOT-E-LIA.md.
+//
 // `stile` = alcune frasi vere dello streamer (la sua voce), per farlo suonare come lui.
-// `timeoutMs` = quanto attendere (default 9s per la chat live; i DM possono attendere di più
-//   perché su CPU un 3B è lento e una risposta tardiva è meglio di nessuna risposta).
-// `modo` = 'live' (chat pubblica, veloce) oppure 'allenamento' (chat privata con
-//   lo streamer: risposta più lunga e ragionata, sfrutta il maestro esterno).
-export async function rispondi({ canale, login, nome, testo, tono, conoscenza, stile, storia, situazione, timeoutMs, modo, nomeBot, spunto, lineeGuida, web } = {}) {
+// `canaleId` = il login del canale (`canale` può essere il nome visualizzato): serve
+//   al bot per trovare il proprio quaderno di quel canale.
+// `compito` = non è una chiacchierata ma un lavoretto ("inventa una penitenza"):
+//   niente persona, niente chat, solo il risultato.
+// `timeoutMs` = quanto attendere (i DM possono attendere di più: su CPU un 3B è
+//   lento e una risposta tardiva è meglio di nessuna risposta).
+// `modo` = 'live' | 'allenamento' | 'proattivo' | 'studio' (solo per la via di lei).
+export async function rispondi({ canale, canaleId, login, nome, testo, tono, conoscenza, stile, storia, situazione, timeoutMs, modo, nomeBot, spunto, lineeGuida, web, via, compito } = {}) {
   if (!canale || !login || !testo) return null;
+  const rotta = via === 'bot' ? '/bot' : '/chat';
+  const attesa = timeoutMs || TIMEOUT_CHAT;
   const ac = new AbortController();
-  const to = setTimeout(() => ac.abort(), timeoutMs || TIMEOUT_CHAT);
+  const to = setTimeout(() => ac.abort(), attesa);
   try {
-    const r = await fetch(BASE + '/chat', {
+    const r = await fetch(BASE + rotta, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ canale, login, nome, testo, tono, conoscenza, stile, storia, situazione, modo, nome_bot: nomeBot, spunto, linee_guida: lineeGuida, web }),
+      // `timeout_s` sempre sotto il nostro, in proporzione: meglio che sia il
+      // cervello a dire "niente" che noi a tagliargli la parola a metà. Un
+      // margine fisso non basterebbe — con attese corte (4s) lo mangerebbe tutto.
+      body: JSON.stringify({
+        canale, canale_id: canaleId || String(canale).toLowerCase(), login, nome, testo, tono,
+        conoscenza, stile, storia, situazione, modo, nome_bot: nomeBot, spunto,
+        linee_guida: lineeGuida, web, compito: compito || undefined,
+        timeout_s: Math.max(2, Math.floor((attesa * 0.8) / 1000)),
+      }),
       signal: ac.signal,
     });
     if (!r.ok) return null;
@@ -87,6 +110,29 @@ export async function imparaModulo({ nome, dominio, web, lacuna } = {}) {
     return d && d.ok ? (d.modulo || true) : null;
   } catch (e) {
     log.debug('imparaModulo:', e?.message || e);
+    return null;
+  } finally { clearTimeout(to); }
+}
+
+// IL QUADERNO DEL BOT (owner). È il file in cui vive ciò che al bot è stato
+// INSEGNATO — e il bot legge solo quello: non va mai a prendersi niente da Lei.
+//   op 'scrivi'     → aggiunge una riga (canale opzionale: senza, vale ovunque)
+//   op 'dimentica'  → toglie una riga, o tutte quelle di un canale
+//   op 'lia'        → chiede a Lei di insegnargli (deposita solo se vive)
+//   nessun op       → la foto del quaderno
+// Ritorna l'oggetto del cervello o null. Non lancia mai.
+export async function quaderno({ op, testo, canale, da } = {}) {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), 8_000);
+  try {
+    const r = await fetch(BASE + '/insegna', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ op, testo, canale, da }), signal: ac.signal,
+    });
+    if (!r.ok) return null;
+    return await r.json().catch(() => null);
+  } catch (e) {
+    log.debug('quaderno:', e?.message || e);
     return null;
   } finally { clearTimeout(to); }
 }

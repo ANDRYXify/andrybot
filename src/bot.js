@@ -101,7 +101,8 @@ export class BotManager {
       ia: async (ch) => {
         const s = streamers.get(ch);
         const r = await brainpy.rispondi({
-          canale: ch, login: ch, nome: 'sistema', modo: 'diretta', timeoutMs: 4000,
+          via: 'bot', compito: true,   // un lavoretto: nessuna chat, nessuna persona
+          canale: ch, canaleId: ch, login: ch, nome: 'sistema', timeoutMs: 4000,
           tono: s?.settings?.tono || 'scherzoso',
           testo: 'Inventa UNA penitenza breve, giocosa e innocua per uno streamer che ha perso una sfida (max 8 parole). Rispondi SOLO con la penitenza, senza virgolette.',
         }).catch(() => null);
