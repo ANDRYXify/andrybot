@@ -23,6 +23,9 @@ lo usa: se non si vede da fuori, qui non ci va.
 - E quando scorri fra le sezioni partono le linee di concentrazione dalla scheda che stai guardando, come in una vignetta.
 - Il tratto disegnato adesso arriva ovunque: interruttori, campi, cartellini e tutti i pulsantini hanno il contorno d'inchiostro e gli angoli tirati a mano.
 - Gli interruttori sono disegnati anche loro: contorno, pallina con il suo bordo, e lo scatto a scatti invece che scivolato.
+- Le schede sono vignette: angoli quadri, contorno spesso e il titolo in una fascia d'inchiostro in alto, come la didascalia di una tavola.
+- Il grigio pieno è sparito: le superfici secondarie sono a retino, come il mezzotono stampato.
+- Il tratto ha una gerarchia: la vignetta è più spessa del comando, il comando più del dettaglio. È così che si legge la profondità.
 
 ## 2026-09-03
 

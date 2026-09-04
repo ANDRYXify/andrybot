@@ -1678,7 +1678,6 @@ input[type="color"]:hover { box-shadow: var(--alone-contorno), var(--ombra-ink-t
 .lp-ipick.sel svg, .ovl-liv.scelto svg, .studio-scena.attiva svg { color: inherit; }
 
 .carta { border-width: var(--tratto-3); }
-.carta .carta, details.carta.sez .carta, .asp-blocco .carta { border-width: var(--tratto-2); }
 .toast, .cookie-banner, .aiuto-banner { border-width: var(--tratto-4); }
 
 .badge, .badge.verde, .badge.rosso, .badge.viola, .badge.giallo, .badge.marchio,
@@ -1687,3 +1686,35 @@ input[type="color"]:hover { box-shadow: var(--alone-contorno), var(--ombra-ink-t
 }
 
 .pannello-scheda .carta:hover { box-shadow: var(--alone-contorno), var(--ombra-ink-alta); }
+
+.carta > h2, details.carta.sez > summary > h3 {
+  display: inline-block;
+  margin-left: calc(-1 * clamp(1.15rem, 2.6vw, 1.6rem));
+  margin-top: calc(-1 * clamp(1.15rem, 2.6vw, 1.6rem));
+  margin-bottom: .85rem;
+  padding: .3em .75em .34em clamp(1.15rem, 2.6vw, 1.6rem);
+  background: var(--didascalia-fondo);
+  color: var(--didascalia-testo);
+  border-radius: 0;
+  font-size: 1.02rem; letter-spacing: .01em;
+}
+.carta > h2 .b-ico, .carta > h2 svg,
+details.carta.sez > summary > h3 .b-ico, details.carta.sez > summary > h3 svg { color: currentColor; }
+.carta > h2:only-child { margin-bottom: 0; }
+
+.carta.pieghevole > h2 {
+  margin-right: calc(-1 * clamp(1.15rem, 2.6vw, 1.6rem));
+  padding-right: clamp(1.15rem, 2.6vw, 1.6rem);
+}
+.carta.pieghevole > h2 .carta-chevron {
+  border-width: var(--tratto-1); border-color: currentColor; color: var(--didascalia-testo);
+  background: transparent; width: 1.35rem; height: 1.35rem;
+}
+.carta.pieghevole > h2:hover .carta-chevron {
+  color: var(--didascalia-testo); border-color: currentColor;
+  background: color-mix(in srgb, var(--didascalia-testo) 18%, transparent);
+}
+
+details.carta.sez > summary { padding-top: 0; align-items: flex-start; }
+details.carta.sez > summary > h3 { margin-bottom: 0; }
+details.carta.sez > summary::after { margin-top: .55rem; }
