@@ -1871,11 +1871,14 @@ export const linkPage = {
       sfondoTipo: scelta(t.sfondoTipo, ['tinta', 'gradiente', 'immagine'], 'tinta'),
       bg: hex(t.bg), bg2: hex(t.bg2), angolo: num(t.angolo, 0, 360, 160), sfondoUrl: urlOk(t.sfondoUrl),
       effetto: scelta(t.effetto, ['nessuno', 'aurora', 'maglia', 'grana', 'bolle', 'stelle', 'onde', 'griglia',
-        'synthwave', 'neonpulse', 'particelle', 'matrix', 'nebulosa', 'scanline', 'raggi'], 'nessuno'),
+        'synthwave', 'neonpulse', 'particelle', 'matrix', 'nebulosa', 'scanline', 'raggi',
+        // il retino stampato e le linee di concentrazione: due segni del disegno
+        // a china, non due effetti di luce come quelli qui sopra
+        'retino', 'concentrazione'], 'nessuno'),
       testo: hex(t.testo), accent: hex(t.accent), card: hex(t.card), bordo: hex(t.bordo),
       font: scelta(t.font, FONT_LINKPAGE, 'system'),
       raggio: num(t.raggio, 0, 999, 14),
-      stileBtn: scelta(t.stileBtn, ['pieno', 'contorno', 'vetro'], 'pieno'),
+      stileBtn: scelta(t.stileBtn, ['pieno', 'contorno', 'vetro', 'inchiostro'], 'pieno'),
       ombra: t.ombra !== false,
       // "dura" = l'ombra piena e spostata, senza sfocatura: è la firma dei
       // bottoni delle pagine link (Linktree la chiama hard shadow).
@@ -1891,6 +1894,9 @@ export const linkPage = {
       avatarForma: scelta(t.avatarForma, ['cerchio', 'quadrato', 'nessuno'], 'cerchio'),
       larghezza: num(t.larghezza, 20, 46, 30),
       allinea: scelta(t.allinea, ['centro', 'sinistra'], 'centro'),
+      // Il puntatore disegnato. Spento di norma: una pagina gia' pubblicata non
+      // deve cambiare sotto il dito di nessuno perche' e' uscita una novita'.
+      cursore: scelta(t.cursore, ['sistema', 'disegnato'], 'sistema'),
       disposizione: scelta(t.disposizione, DISPOSIZIONI, 'colonna'),
       movimento: scelta(t.movimento, MOVIMENTI, 'dolce'),
     };
