@@ -19,6 +19,8 @@ lo usa: se non si vede da fuori, qui non ci va.
 - Un titolo lungo non allarga più il player a mezzo schermo: la colonna del testo ha il suo tetto e il titolo scorre, come deve.
 - E quel tetto lo scegli tu: «Larghezza del testo» dice quanto può allargarsi prima che il titolo si metta a scorrere. A zero decide il corpo.
 - «Parti da quanti ne ho adesso» adesso è una spunta che resta, non un tasto da premere ogni volta. Il numero lo tengo allineato io a quello vero di Twitch.
+- La Plancia è disegnata come il resto del sito: contorno d'inchiostro, angoli tirati a mano, nomi in lettering.
+- E quando scorri fra le sezioni partono le linee di concentrazione dalla scheda che stai guardando, come in una vignetta.
 
 ## 2026-09-03
 
