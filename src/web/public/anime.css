@@ -215,15 +215,16 @@ body.leggero .cerca-voce, body.leggero .cerca-sugg .chip-domanda, body.leggero .
   position: fixed; z-index: 70;
   right: calc(18px + env(safe-area-inset-right, 0px));
   bottom: calc(78px + env(safe-area-inset-bottom, 0px));
-  min-width: 48px; height: 48px; padding: 0 13px; border-radius: 999px;
-  border: 1px solid var(--border-2); cursor: pointer;
-  background: var(--surface); color: var(--testo); box-shadow: 0 6px 22px rgba(0,0,0,.10);
+  min-width: 48px; height: 48px; padding: 0 14px; border-radius: 999px;
+  border: var(--contorno-sp) solid var(--contorno); cursor: pointer;
+  background: var(--surface); color: var(--testo); box-shadow: var(--alone-contorno), var(--ombra-ink);
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  transition: transform .3s var(--an-morbido), border-color .3s ease, color .3s ease, background .3s ease;
+  transition: transform var(--colpo) var(--scatto), box-shadow var(--colpo) var(--scatto), background .3s ease, color .3s ease;
 }
-#plancia-lancia:hover { transform: translateY(-2px); border-color: var(--acc); color: var(--acc); }
-#plancia-lancia.modo-on { border-color: var(--acc); color: var(--acc); background: color-mix(in srgb, var(--acc) 8%, var(--surface)); }
-.pl-lancia-txt { font-size: .82rem; font-weight: 500; letter-spacing: .02em; }
+#plancia-lancia:hover { transform: translate(-2px, -3px); box-shadow: var(--alone-contorno), var(--ombra-ink-alta); }
+#plancia-lancia:active { transform: translate(2px, 2px); box-shadow: var(--alone-contorno), var(--ombra-ink-timbro); }
+#plancia-lancia.modo-on { background: var(--acc); color: var(--su-acc); }
+.pl-lancia-txt { font-family: var(--mano); font-size: .84rem; font-weight: 400; letter-spacing: .01em; }
 body.plancia-on { overflow: hidden; }
 
 #plancia-overlay {
@@ -236,31 +237,49 @@ body.plancia-on { overflow: hidden; }
 body.pad-vivo #plancia-overlay { padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px)); }
 body.pad-vivo .pl-guida { display: none; }
 .pl-atmo {
-  position: absolute; inset: -20%; pointer-events: none; z-index: 0;
+  position: absolute; inset: 0; pointer-events: none; z-index: 0;
   background:
-    radial-gradient(46% 52% at var(--pl-x, 30%) 26%, color-mix(in srgb, var(--acc) 26%, transparent), transparent 70%),
-    radial-gradient(60% 60% at calc(var(--pl-x, 30%) + 22%) 84%, color-mix(in srgb, var(--acc) 12%, transparent), transparent 72%);
-  filter: blur(30px); opacity: .55;
-  transition: background-position 1s var(--an-vel), opacity .6s ease;
+    repeating-conic-gradient(from 0deg at var(--pl-x, 30%) 78%,
+      color-mix(in srgb, var(--acc) 78%, var(--contorno)) 0deg .9deg, transparent .9deg 7deg),
+    radial-gradient(62% 66% at var(--pl-x, 30%) 78%, color-mix(in srgb, var(--acc) 22%, transparent), transparent 74%);
+  -webkit-mask-image: radial-gradient(70% 68% at var(--pl-x, 30%) 78%, transparent 0 14%, #000 34%, transparent 78%);
+  mask-image: radial-gradient(70% 68% at var(--pl-x, 30%) 78%, transparent 0 14%, #000 34%, transparent 78%);
+  opacity: .5;
+  transition: opacity .6s ease;
 }
 .pl-top, .pl-eroe, .pl-guida { position: relative; z-index: 2; padding-left: clamp(20px, 5vw, 76px); padding-right: clamp(20px, 5vw, 76px); }
 .pl-top { display: flex; align-items: center; justify-content: space-between; flex: 0 0 auto; }
 .pl-top-azioni { display: inline-flex; align-items: center; gap: 10px; }
 .pl-marchio { display: inline-flex; align-items: center; gap: 10px; color: var(--testo-2); }
-.pl-marchio b { font-weight: 500; letter-spacing: .04em; text-transform: uppercase; font-size: .78rem; }
+.pl-marchio { color: var(--testo-2); }
+.pl-marchio b { font-family: var(--mano); font-weight: 400; letter-spacing: .06em; text-transform: uppercase; font-size: .82rem; }
 .pl-suono {
-  width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; cursor: pointer;
-  border: 1px solid var(--border-2); background: transparent; color: var(--testo-3);
-  transition: color .25s ease, border-color .25s ease;
+  width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; cursor: pointer;
+  border: var(--contorno-sp) solid var(--contorno); background: var(--surface); color: var(--testo);
+  box-shadow: var(--alone-contorno), var(--ombra-ink-timbro);
+  transition: transform var(--lampo) var(--su-due), box-shadow var(--lampo) var(--su-due), background .25s ease, color .25s ease;
 }
-.pl-suono:hover { color: var(--testo); }
-.pl-suono.on { color: var(--acc); border-color: var(--acc-bordo); }
+.pl-suono:hover { transform: translate(-1px, -1px); box-shadow: var(--alone-contorno), var(--ombra-ink); }
+.pl-suono.on { background: var(--acc); color: var(--su-acc); }
 
 .pl-eroe { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; min-height: 0; padding-top: 10px; padding-bottom: 10px; max-width: 900px; overflow: hidden; }
 @keyframes pl-eroe-entra { from { opacity: 0; transform: translateX(var(--pl-dx, 0)); } to { opacity: 1; transform: none; } }
 .pl-eroe.pl-mosso { animation: pl-eroe-entra .26s cubic-bezier(.22,.9,.28,1) both; }
-.pl-eroe-grp { text-transform: uppercase; letter-spacing: .3em; font-size: .7rem; font-weight: 600; color: var(--acc); margin-bottom: .6rem; }
-.pl-eroe-nome { font-family: "Zen Kaku Gothic New", sans-serif; font-weight: 500; font-size: clamp(2.4rem, 6.4vw, 5rem); line-height: 1; letter-spacing: -.028em; color: var(--testo); }
+.pl-eroe-grp {
+  align-self: flex-start;
+  font-family: var(--mano); text-transform: uppercase; letter-spacing: .16em;
+  font-size: .74rem; font-weight: 400; color: var(--su-acc);
+  background: var(--acc); padding: .16em .6em .2em; border-radius: var(--ang-mano);
+  border: var(--contorno-sp) solid var(--contorno);
+  box-shadow: var(--alone-contorno), var(--ombra-ink-timbro);
+  margin-bottom: .75rem;
+}
+.pl-eroe-nome {
+  font-family: var(--mano); font-weight: 400;
+  font-size: clamp(2.4rem, 6.6vw, 5.2rem); line-height: 1.02; letter-spacing: -.01em;
+  color: var(--testo);
+  text-shadow: 3px 3px 0 var(--acc);
+}
 .pl-eroe-desc { color: var(--testo-2); font-size: clamp(1rem, 1.5vw, 1.24rem); line-height: 1.5; margin-top: .9rem; max-width: 62ch; }
 .pl-eroe-hint { margin-top: 1.1rem; font-size: .82rem; color: var(--testo-3); }
 
@@ -268,30 +287,48 @@ body.pad-vivo .pl-guida { display: none; }
 .pl-rail { display: flex; align-items: flex-end; gap: 18px; will-change: transform; transition: transform .26s cubic-bezier(.22,.9,.28,1); touch-action: pan-y; }
 .pl-tile {
   flex: 0 0 auto; width: clamp(122px, 12.5vw, 158px); height: clamp(122px, 12.5vw, 158px);
-  border-radius: 18px; border: 1px solid var(--border-2); background: var(--surface); color: var(--testo);
+  border-radius: var(--ang-mano-l); border: var(--contorno-sp) solid var(--contorno);
+  background: var(--surface); color: var(--testo);
   cursor: pointer; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between;
-  padding: 16px; position: relative; box-shadow: var(--om-s); opacity: .58;
+  padding: 16px; position: relative; box-shadow: var(--alone-contorno), var(--ombra-ink-timbro); opacity: .74;
   transform-origin: center bottom;
-  transition: transform .2s cubic-bezier(.22,.9,.28,1), opacity .18s ease, border-color .2s ease, box-shadow .22s ease, background .18s ease;
+  transition: transform var(--colpo) var(--su-due), opacity .18s ease, box-shadow var(--colpo) var(--su-due), background .18s ease;
 }
-.pl-sep { flex: 0 0 auto; align-self: stretch; width: 1px; margin: 0 16px; background: linear-gradient(180deg, transparent, var(--border-2) 26%, var(--border-2) 74%, transparent); }
+.pl-tile::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: var(--retino); background-size: var(--retino-passo);
+  opacity: 0; transition: opacity .2s ease;
+}
+.pl-sep {
+  flex: 0 0 auto; align-self: stretch; width: var(--contorno-sp); margin: 0 18px; border-radius: 2px;
+  background: linear-gradient(180deg, transparent, var(--contorno) 22%, var(--contorno) 78%, transparent);
+  opacity: .5;
+}
 .pl-tile-ico { color: var(--testo-2); transition: color .38s ease; }
+.pl-tile-ico .lat-svg, .pl-tile-lock svg { color: inherit; }
 .pl-tile-ico svg { width: 27px; height: 27px; }
-.pl-tile-nome { font-weight: 500; font-size: .93rem; line-height: 1.2; text-align: left; }
+.pl-tile-nome { font-family: var(--mano); font-weight: 400; font-size: .95rem; line-height: 1.2; text-align: left; }
 .pl-tile-lock { position: absolute; top: 13px; right: 13px; color: var(--testo-3); display: inline-flex; }
-.pl-tile:hover:not(.fuoco) { opacity: .92; border-color: var(--testo-3); }
-.pl-tile:hover:not(.fuoco) .pl-tile-ico { color: var(--testo); }
+.pl-tile:hover:not(.fuoco) { opacity: .94; transform: translate(-1px, -2px); box-shadow: var(--alone-contorno), var(--ombra-ink); }
 .pl-tile.fuoco {
-  opacity: 1; transform: scale(1.3) translateY(-4px); z-index: 3;
-  border-color: var(--acc); background: color-mix(in srgb, var(--acc) 9%, var(--surface));
-  box-shadow: 0 22px 50px -16px var(--acc), var(--om-m);
+  opacity: 1; transform: scale(1.3) translate(-2px, -6px); z-index: 3;
+  background: var(--acc); color: var(--su-acc);
+  box-shadow: var(--alone-contorno), var(--ombra-ink-alta);
 }
-.pl-tile.fuoco .pl-tile-ico { color: var(--acc); }
+.pl-tile.fuoco::after { opacity: calc(var(--retino-forza) * 1.6); }
+.pl-tile.fuoco .pl-tile-ico { color: var(--su-acc); }
+.pl-tile.fuoco .pl-tile-lock { color: var(--su-acc); }
 .pl-tile.bloccata { filter: grayscale(.35); }
 
 .pl-guida { flex: 0 0 auto; display: flex; align-items: center; gap: 6px 18px; flex-wrap: wrap; color: var(--testo-3); font-size: .76rem; padding-top: 18px; }
 .pl-guida .pl-cop { display: inline-flex; align-items: center; gap: 5px; font-weight: 400; }
-.pl-guida .pl-cop > span { display: inline-grid; place-items: center; min-width: 24px; height: 21px; padding: 0 6px; border: 1px solid var(--border-2); border-radius: 6px; color: var(--testo-2); font-weight: 600; font-size: .7rem; }
+.pl-guida .pl-cop > span {
+  display: inline-grid; place-items: center; min-width: 24px; height: 22px; padding: 0 6px;
+  border: var(--contorno-sp) solid var(--contorno); border-radius: var(--ang-mano);
+  background: var(--surface); color: var(--testo);
+  box-shadow: var(--alone-contorno), var(--ombra-ink-timbro);
+  font-family: var(--mano); font-weight: 400; font-size: .7rem;
+}
 body.leggero .pl-atmo, body.meno-moto .pl-atmo { filter: none; opacity: .3; }
 body.meno-moto .pl-rail, body.meno-moto .pl-tile { transition: none; }
 @media (max-width: 720px) {
