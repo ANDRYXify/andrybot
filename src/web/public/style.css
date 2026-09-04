@@ -1593,3 +1593,4 @@ summary:active::after, .vt-btn:active::before { transform: scale(1.13); opacity:
   .grp-btn::after, .drawer-voce::after, .menu-voce::after, .vt-btn::before { transition: none; }
   .shonen-entra, .shonen-scossa, .shonen-colpo.batte::before { animation: none; }
 }
+
