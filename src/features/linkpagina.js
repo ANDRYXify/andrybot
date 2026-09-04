@@ -73,7 +73,22 @@ const PILE = {
     d: '"SF Pro Rounded", ui-rounded, "Varela Round", "Trebuchet MS", "Segoe UI", system-ui, sans-serif',
     t: '"SF Pro Rounded", ui-rounded, "Trebuchet MS", "Segoe UI", system-ui, sans-serif',
   },
+  // Titoli a pennarello, testo normale sotto: la voce del marchio. E' l'unica
+  // pila che ha bisogno di una FACCIA vera, quindi la faccia si manda solo a
+  // chi ha scelto questo tema — le altre pagine link non pagano 29 KB per un
+  // carattere che non usano. Vedi `facciaFont`.
+  manga: {
+    d: '"Permanent Marker", "Trebuchet MS", "Segoe UI", system-ui, sans-serif',
+    t: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
 };
+
+// La sola pila che porta un file. Le pagine link non caricano caratteri dal
+// web: e' una scelta di velocita', e vale ancora per tutte tranne questa.
+const facciaFont = (nome) => (nome !== 'manga' ? '' : `
+  @font-face{font-family:'Permanent Marker';font-style:normal;font-weight:400;font-display:swap;
+    src:url(/vendor/font/permanentmarker-normal-400-latin.woff2) format('woff2');
+    unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2212,U+FEFF,U+FFFD}`);
 
 // ── Icone: sagome PIENE, non contorni ──────────────────────────────────────
 // Prima erano tracciati sottili a 1.8px: a 20 pixel diventavano scarabocchi
@@ -497,6 +512,11 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
     // niente sfocatura: un blocco di colore spostato, che si vede e basta
     dura: `box-shadow:4px 4px 0 0 ${colOmbra}`,
   }[tipoOmbra];
+  // L'avatar aveva l'alone scritto a mano — un bagliore d'accento sfocato — e
+  // ignorava la scelta del tema: su una pagina a inchiostro stonava, perche' la
+  // sfocatura e' fotografia. Chi sceglie l'ombra DURA se la ritrova anche qui;
+  // per gli altri non cambia niente.
+  const aloneAvatar = tipoOmbra === 'dura' ? `4px 4px 0 0 ${colOmbra}` : `0 6px 22px -8px ${c.acc}80`;
   const ANIM = {
     fade: '@keyframes ent{from{opacity:0}to{opacity:1}}',
     rise: '@keyframes ent{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}',
@@ -734,7 +754,7 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   })()}
 <meta name="twitter:card" content="${(pagina.blocchi || []).some((b) => b?.tipo === 'eroe' && b.img) ? 'summary_large_image' : 'summary'}">
 <link rel="icon" href="/icons/icon-192.png?v=7">
-<style>
+<style>${facciaFont(t.font)}
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   :root{--testo:${c.testo};--tenue:${c.tenue};--acc:${c.acc};--suacc:${suAcc};--r:${raggio}px;--w:${larghezza}rem;
     --fd:${font.d};--ft:${font.t}}
@@ -765,10 +785,10 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
     border:2px solid transparent;
     background-image:linear-gradient(${c.card},${c.card}),conic-gradient(from 0deg,${c.acc},${c.bordo},${c.acc});
     background-origin:border-box;background-clip:padding-box,border-box;
-    box-shadow:0 6px 22px -8px ${c.acc}80}
+    box-shadow:${aloneAvatar}}
   /* sulla FOTO il trucco del bordo sfumato non si può usare (l'immagine ci sta
      sopra): lì l'anello lo fa un'ombra piena */
-  img.avatar{background-image:none;border:0;box-shadow:0 0 0 2px ${c.acc},0 6px 22px -8px ${c.acc}80}
+  img.avatar{background-image:none;border:0;box-shadow:0 0 0 2px ${c.acc},${aloneAvatar}}
   /* SCALA TIPOGRAFICA. Prima era tutto vicino: il titolo appena più grande del
      sottotitolo, il sottotitolo appena più grande delle etichette. Quando ogni
      cosa pesa uguale, non spicca niente. Qui il salto fra un livello e l'altro
@@ -1197,7 +1217,7 @@ export function renderInformativa({ login, display, baseUrl, pagina, contatto })
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Privacy · ${esc(nome)}</title>
 <meta name="robots" content="noindex, follow">
-<style>
+<style>${facciaFont(t.font)}
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   :root{--acc:${c.acc};--fd:${font.d};--ft:${font.t}}
   body{min-height:100dvh;background:${c.bg};color:${c.testo};font-family:var(--ft);line-height:1.65;

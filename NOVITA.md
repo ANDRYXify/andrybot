@@ -49,6 +49,10 @@ lo usa: se non si vede da fuori, qui non ci va.
 - «A tutto l'overlay» le applica in un colpo a tutti gli elementi, invece di rifare le stesse undici scelte per alert, chat e ogni widget.
 - E adesso una veste veste davvero tutto: prima sceglievi Manga e la chat restava a metà, gli obiettivi e il player non se ne accorgevano nemmeno.
 - Il player segue la veste: «Nastro» lo fa diventare una cassetta, «Terminale» un terminale, «Manga» il manga.
+- Il manga adesso c'è dappertutto: overlay, pagina link (in chiaro e di notte) e grafiche social.
+- La pagina link in manga è carta e inchiostro davvero: contorni neri, ombra piena spostata, titoli a pennarello.
+- Il carattere a pennarello lo scarica solo chi sceglie quel tema: le altre pagine link restano leggere come prima.
+- E l'avatar segue il tema: prima aveva un alone sfumato suo che stonava su una pagina disegnata.
 
 ## 2026-09-03
 

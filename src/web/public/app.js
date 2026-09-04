@@ -3207,6 +3207,8 @@ const GR_TEMI = {
   tramonto: { nome: 'Tramonto', bg: ['#2a0e2e', '#7a1f3d'], testo: '#fff5f0', tenue: '#ffd0c4', acc: '#ff7a59', riga: 'rgba(255,255,255,.08)' },
   pastello: { nome: 'Pastello', bg: ['#f4f0ff', '#e6f0ff'], testo: '#241b3d', tenue: '#6b6a86', acc: '#7c5cff', riga: 'rgba(60,40,120,.08)' },
   minimal:  { nome: 'Minimal',  bg: ['#111113', '#111113'], testo: '#ffffff', tenue: '#a8a8b3', acc: '#ffffff', riga: 'rgba(255,255,255,.10)' },
+  manga:    { nome: 'Manga',    bg: ['#f7f4ef', '#efe9e0'], testo: '#0b0b0b', tenue: '#57534e', acc: '#b80858', riga: 'rgba(11,11,11,.12)' },
+  manganotte: { nome: 'Manga di notte', bg: ['#0f0a0e', '#231b22'], testo: '#f1e9ee', tenue: '#b0a2aa', acc: '#f72fa7', riga: 'rgba(244,236,241,.10)' },
 
   aurora:    { nome: 'Aurora ✨',  bg: ['#07132a', '#0b2a3f'], testo: '#eaf6ff', tenue: '#a9cbe0', acc: '#38bdf8', riga: 'rgba(56,189,248,.10)', anima: 'aurora' },
   particelle:{ nome: 'Particelle ✨', bg: ['#0d0b1a', '#1b1436'], testo: '#ffffff', tenue: '#c3bde0', acc: '#a855f7', riga: 'rgba(168,85,247,.10)', anima: 'particelle' },
@@ -10447,6 +10449,16 @@ const TEMI_PRONTI = [
   { id: 'shock', nome: 'Rosa shocking', base: 'minimal',
     tema: _tema({ sfondoTipo: 'gradiente', bg: '#ffffff', bg2: '#ffe6f0', angolo: 200, testo: '#170410',
       accent: '#ed1566', font: 'condensato', raggio: 8, larghezza: 42, disposizione: 'rivista' }) },
+  { id: 'manga', nome: 'Manga', base: 'minimal',
+    tema: _tema({ bg: '#f7f4ef', bg2: '#efe9e0', testo: '#0b0b0b', accent: '#b80858',
+      card: '#ffffff', bordo: '#0b0b0b', font: 'manga', raggio: 3, stileBtn: 'contorno',
+      ombraTipo: 'dura', ombraColore: '#0b0b0b', effetto: 'grana', anim: 'pop',
+      avatarForma: 'quadrato', allinea: 'centro' }) },
+  { id: 'manganotte', nome: 'Manga di notte', base: 'neon',
+    tema: _tema({ bg: '#0f0a0e', bg2: '#1a141a', testo: '#f1e9ee', accent: '#f72fa7',
+      card: '#231b22', bordo: '#f4ecf1', font: 'manga', raggio: 3, stileBtn: 'contorno',
+      ombraTipo: 'dura', ombraColore: '#f4ecf1', effetto: 'grana', anim: 'pop',
+      avatarForma: 'quadrato', allinea: 'centro' }) },
   { id: 'mezzanotte', nome: 'Mezzanotte', base: 'glass',
     tema: _tema({ sfondoTipo: 'gradiente', bg: '#060b18', bg2: '#0e1e42', accent: '#5b8cff', effetto: 'maglia', raggio: 12 }) },
   { id: 'arcade', nome: 'Arcade', base: 'brutal',
@@ -10519,7 +10531,7 @@ async function caricaPaginaLink(ridisegna = false) {
 
   const NOMI_STILE = { minimal: 'Minimal', neon: 'Neon', retro: 'Retro', sunset: 'Sunset', glass: 'Glass', brutal: 'Brutal', pastello: 'Pastello',
     cyber: 'Cyberpunk', vapor: 'Vaporwave', oro: L('Oro', 'Gold', 'Oro'), oceano: L('Oceano', 'Ocean', 'Océano'), foresta: L('Foresta', 'Forest', 'Bosque'), ghiaccio: L('Ghiaccio', 'Ice', 'Hielo'), lava: 'Lava', bubblegum: 'Bubblegum' };
-  const NOMI_FONT = { system: L('Sistema', 'System', 'Sistema'), inter: 'Inter', mono: L('Monospaziato', 'Monospaced', 'Monoespaciado'), serif: L('Con grazie', 'Serif', 'Con serifa'), condensato: L('Condensato', 'Condensed', 'Condensada'), tondo: L('Tondo', 'Rounded', 'Redonda') };
+  const NOMI_FONT = { system: L('Sistema', 'System', 'Sistema'), inter: 'Inter', mono: L('Monospaziato', 'Monospaced', 'Monoespaciado'), serif: L('Con grazie', 'Serif', 'Con serifa'), condensato: L('Condensato', 'Condensed', 'Condensada'), tondo: L('Tondo', 'Rounded', 'Redonda'), manga: L('Manga — a pennarello', 'Manga — marker', 'Manga — a rotulador') };
   const opts = (lista, sel, nomi) => lista.map((k) => `<option value="${esc(k)}"${k === sel ? ' selected' : ''}>${esc((nomi && nomi[k]) || k)}</option>`).join('');
 
   box.innerHTML = `

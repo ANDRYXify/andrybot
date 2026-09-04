@@ -15,6 +15,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { FONT_LINKPAGE } from '../../src/db.js';
 import {
   FORME_OVL, MATERIE_OVL, CORNICI_OVL, COMP_OVL, FONT_OVL, PESO_OVL, MAIUSC_OVL,
   ANIM_ALERT, ANIM_CHAT, DIM_CHAT, DIM_WIDGET, USCITA_OVL,
@@ -88,4 +89,97 @@ test('c\'è la veste manga, e veste anche il player', () => {
   assert.equal(manga.dati.ch.font, 'manga');
   assert.equal(manga.dati.go.font, 'manga');
   assert.equal(manga.dati.mu.tema, 'manga');
+});
+
+
+// ── I temi della PAGINA LINK ──────────────────────────────────────────────
+// Stesso difetto possibile, stessa cura: un valore che non esiste non rompe
+// niente, semplicemente non veste.
+
+const TEMI_LINK = (() => {
+  const i = APP.indexOf('const TEMI_PRONTI = [');
+  assert.ok(i >= 0, 'non trovo i temi della pagina link');
+  const j = APP.indexOf('\n];', i);
+  const testo = APP.slice(i + 'const TEMI_PRONTI = '.length, j + 2);
+  const t = APP.slice(APP.indexOf('const _tema = ('), APP.indexOf('const TEMI_PRONTI'));
+  // eslint-disable-next-line no-new-func
+  return new Function(`${t} return ${testo}`)();
+})();
+
+const AMMESSI_LINK = {
+  sfondoTipo: ['tinta', 'gradiente', 'immagine'],
+  effetto: ['nessuno', 'aurora', 'maglia', 'grana', 'bolle', 'stelle', 'onde', 'griglia',
+    'synthwave', 'neonpulse', 'particelle', 'matrix', 'nebulosa', 'scanline', 'raggi'],
+  font: FONT_LINKPAGE,
+  stileBtn: ['pieno', 'contorno', 'vetro'],
+  ombraTipo: ['nessuna', 'morbida', 'dura'],
+  anim: ['nessuna', 'fade', 'rise', 'pop'],
+  avatarForma: ['cerchio', 'quadrato', 'nessuno'],
+  allinea: ['centro', 'sinistra'],
+};
+
+test('ogni valore dei temi della pagina link è un valore che esiste', () => {
+  assert.ok(TEMI_LINK.length >= 12, `temi trovati: ${TEMI_LINK.length}`);
+  const visti = new Set();
+  for (const t of TEMI_LINK) {
+    assert.ok(t.id && t.nome, 'un tema senza id o nome');
+    assert.ok(!visti.has(t.id), `due temi con lo stesso id: ${t.id}`);
+    visti.add(t.id);
+    for (const [campo, val] of Object.entries(t.tema)) {
+      if (AMMESSI_LINK[campo]) {
+        assert.ok(AMMESSI_LINK[campo].includes(val),
+          `«${t.nome}» → ${campo} = «${val}», che non è fra: ${AMMESSI_LINK[campo].join(', ')}`);
+      }
+      if (/^(bg|bg2|testo|accent|card|bordo|ombraColore)$/.test(campo) && val) {
+        assert.match(String(val), /^(#[0-9a-fA-F]{6}|rgba?\([\d.,\s]+\))$/, `«${t.nome}» → ${campo} non è un colore`);
+      }
+    }
+  }
+});
+
+test('anche la pagina link ha il manga, e il suo carattere si carica solo lì', () => {
+  const manga = TEMI_LINK.filter((t) => /manga/i.test(t.nome));
+  assert.ok(manga.length >= 1, 'la pagina link non ha un tema manga');
+  for (const m of manga) {
+    assert.equal(m.tema.font, 'manga');
+    assert.equal(m.tema.ombraTipo, 'dura', `«${m.nome}»: senza ombra dura non è inchiostro`);
+    assert.equal(m.tema.stileBtn, 'contorno', `«${m.nome}»: i bottoni devono essere contornati`);
+  }
+  const LINK = readFileSync(join(RAD, 'src/features/linkpagina.js'), 'utf8');
+  assert.ok(LINK.includes('const facciaFont ='), 'la faccia del carattere non è condizionata');
+  assert.ok(/facciaFont = \(nome\) => \(nome !== 'manga'/.test(LINK),
+    'la faccia deve arrivare SOLO a chi ha scelto il manga: le altre pagine link non caricano caratteri dal web');
+});
+
+
+// ── I temi delle GRAFICHE SOCIAL ──────────────────────────────────────────
+
+const TEMI_GRAF = (() => {
+  const i = APP.indexOf('const GR_TEMI = {');
+  assert.ok(i >= 0, 'non trovo i temi delle grafiche');
+  const j = APP.indexOf('\n};', i);
+  // eslint-disable-next-line no-new-func
+  return new Function(`return ${APP.slice(i + 'const GR_TEMI = '.length, j + 2)}`)();
+})();
+
+test('ogni tema delle grafiche ha i colori che serve disegnare', () => {
+  const col = /^(#[0-9a-fA-F]{6}|rgba?\([\d.,\s]+\))$/;
+  for (const [id, t] of Object.entries(TEMI_GRAF)) {
+    assert.ok(t.nome, `${id}: senza nome`);
+    assert.ok(Array.isArray(t.bg) && t.bg.length === 2, `${id}: lo sfondo sono due colori`);
+    for (const c of t.bg) assert.match(c, col, `${id}: sfondo non è un colore`);
+    for (const k of ['testo', 'tenue', 'acc', 'riga']) {
+      assert.match(String(t[k]), col, `${id}.${k} non è un colore`);
+    }
+  }
+});
+
+test('anche le grafiche social hanno il manga', () => {
+  const manga = Object.entries(TEMI_GRAF).filter(([, t]) => /manga/i.test(t.nome));
+  assert.ok(manga.length >= 1, 'le grafiche social non hanno un tema manga');
+  // Carta chiara con inchiostro scuro: e' il verso giusto, e fra undici temi
+  // quasi tutti scuri e' anche l'unico che stacca.
+  const [, chiaro] = manga.find(([id]) => id === 'manga');
+  assert.equal(chiaro.testo.toLowerCase(), '#0b0b0b');
+  assert.ok(chiaro.bg.every((c) => parseInt(c.slice(1, 3), 16) > 200), 'il manga chiaro va su carta');
 });

@@ -1715,7 +1715,7 @@ export const memory = {
 // pagina come la immagina invece di riempire cinque campi fissi.
 export const TEMPLATE_LINKPAGE = ['minimal', 'neon', 'retro', 'sunset', 'glass', 'brutal', 'pastello',
   'cyber', 'vapor', 'oro', 'oceano', 'foresta', 'ghiaccio', 'lava', 'bubblegum'];
-export const FONT_LINKPAGE = ['system', 'inter', 'mono', 'serif', 'condensato', 'tondo'];
+export const FONT_LINKPAGE = ['system', 'inter', 'mono', 'serif', 'condensato', 'tondo', 'manga'];
 export const ICONE_LINKPAGE = ['link', 'twitch', 'youtube', 'instagram', 'tiktok', 'discord', 'spotify',
   'x', 'telegram', 'kick', 'github', 'reddit', 'threads', 'facebook', 'whatsapp', 'twitter',
   'cuore', 'stella', 'regalo', 'carrello', 'calendario', 'mail', 'musica', 'video', 'scarica', 'gioco', 'caffe', 'soldi'];
