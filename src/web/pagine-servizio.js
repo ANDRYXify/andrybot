@@ -26,7 +26,7 @@ import { dichiarazioni } from './tavolozza.js';
 
 const TOKEN = ['bg', 'surface', 'surface-2-tinta', 'border', 'testo', 'testo-2', 'testo-3',
   'acc', 'su-acc', 'mano', 'testo-font', 'contorno', 'tratto-mano', 'ang-mano',
-  'ombra-ink', 'alone-contorno', 'orlo-scritta', 'titolo-pieno', 'retino', 'retino-passo'];
+  'ombra-ink', 'alone-contorno', 'retino', 'retino-passo'];
 
 const esc = (s) => String(s ?? '')
   .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
@@ -54,9 +54,7 @@ const VESTITO = `
     border-radius:var(--ang-mano);box-shadow:var(--alone-contorno),var(--ombra-ink);
     padding:clamp(1.6rem,5vw,2.6rem)}
   h1{font-family:var(--mano),system-ui,sans-serif;line-height:1.02;
-    font-size:clamp(2.2rem,9vw,3.4rem);color:var(--titolo-pieno,var(--acc));
-    -webkit-text-stroke:clamp(.9px,.028em,1.7px) var(--orlo-scritta);
-    paint-order:stroke fill;margin-bottom:.5rem}
+    font-size:clamp(2.2rem,9vw,3.4rem);color:var(--testo);margin-bottom:.5rem}
   p{color:var(--testo-2);margin:0 auto;max-width:30rem}
   p+p{margin-top:.7rem}
   .vie{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center;margin-top:1.5rem}
