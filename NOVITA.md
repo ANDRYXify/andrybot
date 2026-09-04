@@ -5,6 +5,7 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-04
 
+- Le pagine link pubblicate non portano più i commenti del nostro codice: chi apriva gli strumenti del browser su una pagina qualsiasi ne trovava trentasette.
 - La pagina link ora si allarga su tutto lo schermo come il banco dell'overlay: prima restava dentro una colonna da mille pixel e l'anteprima era piccola.
 - I titoli delle sezioni non sporgono più sopra la carta, e la freccetta che le apre è tornata una punta invece di un rombo.
 - La pagina link ha molte più cose da cambiare: carattere dei titoli separato, maiuscolo, interlinea, aria fra i pezzi, colore del testo dei bottoni e spessore del bordo.

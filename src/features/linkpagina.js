@@ -87,6 +87,22 @@ const PILE = {
 // web: e' una scelta di velocita', e vale ancora per tutte tranne questa.
 import { cssPaginaSicuro } from '../db.js';
 
+// I COMMENTI NON ESCONO DA QUI.
+//
+// La regola vale per tutto cio' che si legge con F12, e una pagina link e' un
+// documento servito come un altro: le spiegazioni scritte dentro il foglio di
+// stile qui sopra arrivavano al browser tali e quali, trentasette per ogni
+// pagina pubblicata. Il cancello dei commenti non le vedeva perche' guarda i
+// FILE sotto src/web/public, e questa pagina non e' un file: si compone.
+//
+// Quindi si toglie all'uscita, e si toglie SOLO dentro <style>: il resto della
+// pagina e' roba scritta da chi la usa, e una barra e un asterisco nel titolo di
+// un link sono due caratteri, non un commento.
+const senzaCommentiCss = (html) => html.replace(
+  /<style>([\s\S]*?)<\/style>/g,
+  (_, css) => `<style>${css.replace(/\/\*[\s\S]*?\*\//g, '')}</style>`,
+);
+
 // QUANTO E' GROSSO IL TRATTO DELLA SCRITTURA.
 //
 // I pesi erano diciotto numeri sparsi nel foglio di stile: 800 qui, 700 la',
@@ -801,7 +817,7 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   const imgCustom = pagina.avatar === 'no' ? '' : urlSicuro(pagina.avatar);
   const imgAvatar = imgCustom || (avatar && login ? `${baseUrl || ''}/u/${encodeURIComponent(login)}/avatar` : '');
 
-  return `<!DOCTYPE html>
+  return senzaCommentiCss(`<!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="utf-8">
@@ -1207,7 +1223,7 @@ ${corpo.includes('chiedi-b') ? `` : ''}
 ${corpo.includes('<iframe') || corpo.includes('chiedi-b') ? `` : ''}
 ${fxScript}
 </body>
-</html>`;
+</html>`);
 }
 
 // ── Informativa privacy della pagina pubblica ───────────────────────────────
@@ -1224,7 +1240,7 @@ export function renderInformativa({ login, display, baseUrl, pagina, contatto })
   const chiede = t.consenso === 'chiedi';
   const nome = display || login;
   const p = (s) => `<p>${s}</p>`;
-  return `<!DOCTYPE html>
+  return senzaCommentiCss(`<!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="utf-8">
@@ -1280,5 +1296,5 @@ export function renderInformativa({ login, display, baseUrl, pagina, contatto })
     <p class="data">SocialBot · ${esc(baseUrl || '')}</p>
   </main>
 </body>
-</html>`;
+</html>`);
 }

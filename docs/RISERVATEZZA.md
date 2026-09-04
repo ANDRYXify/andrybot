@@ -254,3 +254,33 @@ Due contrappesi:
 - `SB_MINI=1 node scripts/verifica-studio.mjs` serve il banco di regia
   **minificato** e lo collauda: è la prova che accorciare i nomi non rompe
   l'applicazione. Senza, si collauderebbe un codice che nessuno riceve.
+
+---
+
+## I commenti: le pagine che non sono file
+
+La regola è: **tutto ciò che si legge con F12 o scaricando i file del sito non
+deve contenere commenti.** Il cancello che la fa rispettare
+(`scripts/spoglia-commenti.mjs`) guardava i **file** sotto `src/web/public`.
+
+Ma il sito serve anche pagine che nessun file contiene: la **pagina link** di
+ogni streamer, la sua informativa, il 404, la manutenzione. Si compongono al
+momento, e le spiegazioni scritte dentro ai loro fogli di stile arrivavano al
+browser tali e quali. **Trentasette per ogni pagina link pubblicata**, misurate.
+Il cancello non le ha mai viste: cercava fra i file, e quelle pagine non sono
+file.
+
+Due cose sono cambiate.
+
+1. **Si toglie all'uscita.** La pagina link e la sua informativa passano da una
+   funzione che elimina i commenti CSS, e solo dentro `<style>`: il resto della
+   pagina è roba scritta da chi la usa, e una barra con un asterisco nel titolo
+   di un link sono due caratteri, non un commento. Così il sorgente resta
+   spiegato e i byte serviti restano muti — non c'è da ricordarsi niente.
+
+2. **Il cancello guarda cosa ESCE.** Oltre ai file, ora compone le quattro
+   pagine servite e conta i commenti nell'HTML prodotto. È l'unica domanda che
+   conta: *cosa legge chi apre F12.* Se non riesce nemmeno a comporle, lo dice e
+   diventa rosso invece di tacere.
+
+Provato: spegnendo il ripulitore il cancello vede subito le 37 righe.

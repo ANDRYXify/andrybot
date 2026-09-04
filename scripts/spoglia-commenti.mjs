@@ -144,7 +144,38 @@ for (const nome of readdirSync(CARTELLA).sort()) {
   if (!s.includes('ANDRYX-IP') && nome !== 'index.html') console.log(`  ⚠ senza filigrana: ${nome}`);
 }
 
+// LE PAGINE CHE NON SONO FILE.
+//
+// Fin qui si sono guardati i FILE sotto src/web/public. Ma il sito serve anche
+// pagine che nessun file contiene: la pagina link di ognuno, la sua informativa,
+// il 404, la manutenzione — si compongono al momento, e le spiegazioni scritte
+// dentro ai loro fogli di stile arrivavano al browser tali e quali. La pagina
+// link ne portava TRENTASETTE, ognuna, e questo cancello non le ha mai viste
+// perche' cercava fra i file e quelle pagine non sono file.
+//
+// Qui si guarda cio' che ESCE. E' l'unica domanda che conta: cosa legge chi
+// apre F12.
 if (verifica) {
+  const composte = [];
+  try {
+    const { renderLinkPage, renderInformativa } = await import('../src/features/linkpagina.js');
+    const { pagina404, paginaManutenzione } = await import('../src/web/pagine-servizio.js');
+    const finta = { attiva: true, titolo: 'P', blocchi: [{ tipo: 'link', label: 'A', url: 'https://a.example' }], tema: {} };
+    const dove = { login: 'x', display: 'X', avatar: '', baseUrl: 'http://x' };
+    composte.push(['pagina link', renderLinkPage(finta, dove)]);
+    composte.push(['informativa della pagina link', renderInformativa(finta, dove)]);
+    composte.push(['404', pagina404('it')]);
+    composte.push(['manutenzione', paginaManutenzione()]);
+  } catch (e) {
+    console.log(`  ⚠ non riesco a comporre le pagine servite: ${e.message}`);
+    trovati++;
+  }
+  for (const [nome, html] of composte) {
+    for (const c of html.match(/\/\*[\s\S]*?\*\//g) || []) {
+      trovati++;
+      console.log(`${nome} (composta): ${c.replace(/\s+/g, ' ').trim().slice(0, 110)}`);
+    }
+  }
   console.log(trovati ? `\n${trovati} righe di commento da togliere.` : 'Nessun commento nei file serviti. ✓');
   process.exit(trovati ? 1 : 0);
 }
