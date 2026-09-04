@@ -281,7 +281,7 @@ function statoDemo() {
         overlayMusica: { attivo: true, verso: 'riga', righe: 'due', testo: '{titolo}', testo2: '{artista}',
           cover: 'vinile', barra: 'anello', tempi: 'trascorso', onde: true, ritmo: 'tutto', sfondo: 'colori',
           daCopertina: false, scorre: true, entrata: 'scivola', cambio: true, quandoFermo: 'sparisce',
-          posizione: 'basso-sinistra', xy: null,
+          corpo: 'normale', tema: 'nessuno', posizione: 'basso-sinistra', xy: null,
           stile: { dim: 'media', sfondo: '#12101a', opacita: 88, testo: '#ffffff', accento: '#38d39f', bordoRaggio: 16, font: 'rotondo', forma: 'carta', materia: 'vetro', cornice: 'nessuna' } },
         overlayTimer: { attivo: true, titolo: 'Si comincia tra', testoFine: 'Si comincia!', aFine: 'resta', minuti: 15,
           posizione: 'alto-destra', xy: null,
@@ -5440,6 +5440,15 @@ const FONT_BASE = () => [['sistema', L('Sistema', 'System', 'Sistema')], ['roton
 const FONT_OPTS = () => FONT_BASE().concat(FONT_MIEI.map((f) => ['mio:' + f.nome, f.nome]));
 const ANIM_ALERT_OPTS = () => [['slide', L('Scivola', 'Slide', 'Deslizar')], ['pop', L('Pop', 'Pop', 'Pop')], ['zoom', L('Zoom', 'Zoom', 'Zoom')], ['fade', L('Dissolvenza', 'Fade', 'Fundido')], ['flip', L('Ribalta', 'Flip', 'Voltear')], ['bounce', L('Rimbalzo', 'Bounce', 'Rebote')]];
 const ANIM_CHAT_OPTS = () => [['slide', L('Scivola', 'Slide', 'Deslizar')], ['fade', L('Dissolvenza', 'Fade', 'Fundido')], ['nessuna', L('Nessuna', 'None', 'Ninguna')]];
+const CORPO_OPTS = () => [
+  ['slim', L('Slim', 'Slim', 'Slim')], ['normale', L('Normale', 'Regular', 'Normal')],
+  ['cicciotto', L('Cicciotto', 'Chunky', 'Gordito')],
+];
+const TEMA_OPTS = () => [
+  ['nessuno', L('Nessuno', 'None', 'Ninguno')], ['vinile', L('Vinile', 'Vinyl', 'Vinilo')],
+  ['cassetta', L('Cassetta', 'Cassette', 'Casete')], ['terminale', L('Terminale', 'Terminal', 'Terminal')],
+  ['manga', L('Manga', 'Manga', 'Manga')],
+];
 const FORMA_OPTS = () => [
   ['carta', L('Carta', 'Card', 'Tarjeta')], ['pillola', L('Pillola', 'Pill', 'Píldora')],
   ['squadrata', L('Squadrata', 'Square', 'Cuadrada')], ['taglio', L('Angolo tagliato', 'Cut corner', 'Esquina cortada')],
@@ -5928,6 +5937,8 @@ function pannelloAlert() {
           <label class="campo-num">${L('Se è in pausa', 'When paused', 'Si está en pausa')}<select data-c="quandoFermo">${[['sparisce', L('sparisce', 'goes away', 'desaparece')], ['resta', L('resta a schermo', 'stays on screen', 'se queda')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Va a tempo', 'Beats along', 'Va al ritmo')}<select data-c="ritmo">${[['onde', L('le onde', 'the bars', 'las ondas')], ['tutto', L('onde e copertina', 'bars and cover', 'ondas y portada')], ['no', L('niente', 'nothing', 'nada')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Sfondo', 'Background', 'Fondo')}<select data-c="sfondo">${[['no', L('niente', 'none', 'ninguno')], ['copertina', L('copertina sfocata', 'blurred cover', 'portada difuminada')], ['colori', L('colori del disco', 'record colors', 'colores del disco')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+          <label class="campo-num">${L('Corpo', 'Body', 'Cuerpo')}<select data-c="corpo">${CORPO_OPTS().map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+          <label class="campo-num">${L('Tema', 'Theme', 'Tema')}<select data-c="tema">${TEMA_OPTS().map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
         </div>
         <div class="riga-flessibile spazio-sopra">
           <label class="riga-check"><input type="checkbox" data-c="onde"> ${L('Onde che ballano', 'Dancing bars', 'Ondas que bailan')}</label>
@@ -6586,12 +6597,12 @@ function _vestiGoal(box, g) {
 const BRANO_FINTO = () => ({
   nome: L('Il brano che stai ascoltando', 'The track you are listening to', 'El tema que estás escuchando'),
   artisti: L('Artista', 'Artist', 'Artista'),
-  album: L('Album', 'Album', 'Álbum'), q: 0.42,
+  album: L('Album', 'Album', 'Álbum'), q: 0.42, energia: 0.68,
 });
 
 function _vestiMusica(box, cfg) {
   if (!box.querySelector('.m-corpo')) {
-    box.innerHTML = '<span class="m-sfondo"></span>'
+    box.innerHTML = '<span class="m-sfondo"></span><span class="m-velo"></span>'
       + '<span class="m-cover"><span class="m-anello"><svg viewBox="0 0 40 40"><circle class="m-an-via" cx="20" cy="20" r="18"/>'
       + '<circle class="m-an-ora" cx="20" cy="20" r="18"/></svg></span><span class="m-disco"></span></span>'
       + '<span class="m-corpo"><span class="m-riga"><span class="m-scorri"></span></span>'
@@ -6606,9 +6617,11 @@ function _vestiMusica(box, cfg) {
     + ' cover-' + (cfg.cover || 'quadrata') + ' barra-' + (cfg.barra || 'sotto')
     + (cfg.onde !== false ? ' con-onde' : '') + ' sfondo-' + (cfg.sfondo || 'no')
     + ' ritmo-' + (cfg.ritmo || 'onde') + ' suona'
+    + ' corpo-' + (cfg.corpo || 'normale') + ' tema-' + (cfg.tema || 'nessuno')
     + ((cfg.barra || 'sotto') !== 'sotto' && (cfg.tempi || 'no') === 'no' ? ' senza-sotto' : '');
   _setVars(box, { '--bg': st.sfondo, '--op': (st.opacita != null ? st.opacita : 85) + '%', '--fg': st.testo,
-    '--acc': st.accento, '--acc2': st.accento, '--radius': (st.bordoRaggio != null ? st.bordoRaggio : 12) + 'px', '--font': fontStile(st) });
+    '--acc': st.accento, '--acc2': st.accento, '--radius': (st.bordoRaggio != null ? st.bordoRaggio : 12) + 'px',
+    '--font': fontStile(st), '--energia': String(d.energia) });
   const dipingi = (sel, tpl) => {
     const n = box.querySelector(sel);
     if (n) n.innerHTML = esc(tpl || '').replace(/\{titolo\}/g, '<b>' + esc(d.nome) + '</b>')
@@ -7137,6 +7150,7 @@ function _defMusica() {
   return { attivo: false, verso: 'riga', righe: 'una', testo: '{titolo} — {artista}', testo2: '{artista}',
     cover: 'quadrata', barra: 'sotto', tempi: 'no', onde: true, ritmo: 'onde', sfondo: 'no',
     daCopertina: false, scorre: true, entrata: 'dissolve', cambio: true,
+    corpo: 'normale', tema: 'nessuno',
     quandoFermo: 'sparisce', posizione: 'basso-sinistra', xy: null, stile: VESTE_DEF() };
 }
 

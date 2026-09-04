@@ -55,6 +55,8 @@ const assi = [
   ['materia', /const MATERIA_OPTS = \(\) => \[([\s\S]*?)\n\];/, /const MATERIE_OVL = \[([^\]]*)\]/],
   ['cornice', /const CORNICE_OPTS = \(\) => \[([\s\S]*?)\n\];/, /const CORNICI_OVL = \[([^\]]*)\]/],
   ['comp', /const COMP_OPTS = \(\) => \[([\s\S]*?)\n\];/, /const COMP_OVL = \[([^\]]*)\]/],
+  ['corpo', /const CORPO_OPTS = \(\) => \[([\s\S]*?)\n\];/, /const CORPO_MUS = \[([^\]]*)\]/],
+  ['tema', /const TEMA_OPTS = \(\) => \[([\s\S]*?)\n\];/, /const TEMA_MUS = \[([^\]]*)\]/],
 ];
 for (const [nome, reApp, reSrv] of assi) {
   const a = valori(app, reApp, true);

@@ -228,6 +228,8 @@ export const VERSO_MUS = ['riga', 'riga-inversa', 'colonna', 'solo-cover'];
 export const RIGHE_MUS = ['una', 'due'];
 export const RITMO_MUS = ['no', 'onde', 'tutto'];
 export const SFONDO_MUS = ['no', 'copertina', 'colori'];
+export const CORPO_MUS = ['slim', 'normale', 'cicciotto'];
+export const TEMA_MUS = ['nessuno', 'vinile', 'cassetta', 'terminale', 'manga'];
 
 export const normMusica = (m) => {
   m = m || {};
@@ -243,6 +245,8 @@ export const normMusica = (m) => {
     onde: m.onde !== false,
     ritmo: unoDi(m.ritmo, RITMO_MUS, 'onde'),
     sfondo: unoDi(m.sfondo, SFONDO_MUS, 'no'),
+    corpo: unoDi(m.corpo, CORPO_MUS, 'normale'),
+    tema: unoDi(m.tema, TEMA_MUS, 'nessuno'),
     daCopertina: m.daCopertina === true,
     scorre: m.scorre !== false,
     entrata: unoDi(m.entrata, ENTRATA_MUS, 'dissolve'),
