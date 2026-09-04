@@ -40,7 +40,6 @@
   --didascalia-fondo: var(--contorno);
   --didascalia-testo: #f7f3ec;
   --orlo-scritta: var(--contorno);
-  --titolo-pieno: #b80858;
   --tono-10: radial-gradient(var(--contorno) 1.05px, transparent 1.1px);
   --tono-20: radial-gradient(var(--contorno) 1.5px, transparent 1.55px);
   --tono-40: radial-gradient(var(--contorno) 2.14px, transparent 2.2px);
