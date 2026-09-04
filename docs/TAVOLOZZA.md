@@ -481,3 +481,25 @@ invalida, e il browser la butta via intera. Trentatré regole scritte come
 `var(--alone-contorno), var(--ombra-…)` non producevano nessuna ombra sul tema
 chiaro — mentre sul tema scuro, dove l'alone ha un valore vero, funzionavano.
 Il valore giusto per "nessun alone" è `0 0 0 0 transparent`.
+
+## Chi non ha ancora il tema
+
+Il tema a inchiostro si applica per **elenchi di selettori** scritti a mano
+(anime.css, style.css). Un pezzo nuovo non lo prende finché qualcuno non lo
+aggiunge a quegli elenchi: è la solita cosa scritta in due posti, e uno resta
+indietro in silenzio.
+
+Come si misura: si contano le **scatole** (tre o più lati con bordo) e si guarda
+il colore del bordo. Se è vicino a `--contorno` è a inchiostro; se è il grigio
+`--border` è rimasta indietro. La misura conta le scatole, non i separatori: una
+riga sola è un separatore, e lì il grigio va benissimo.
+
+Dopo l'ultimo giro: 1341 scatole a inchiostro, 62 ancora fuori. La ricerca —
+che era interamente col disegno di prima, bordo sottile e ombra sfocata da
+80px — è a inchiostro al 100%.
+
+**L'ordine dei file conta.** Il tema si applica in `anime.css`, che il browser
+carica dopo `style.css`: una regola scritta in style.css sopra la definizione
+base del componente non vince, perché a parità di specificità l'ultima scritta
+ha ragione. È già successo: il primo tentativo non cambiò niente e sembrava che
+il selettore fosse sbagliato.

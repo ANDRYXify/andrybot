@@ -5,6 +5,8 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-04
 
+- La ricerca ha il tema del sito: contorno pieno, filtri a pastiglia e le voci che si sollevano. Prima era rimasta col disegno di prima.
+- Anche gli elenchi, le schede della libreria, i blocchi della pagina link, i contatori e le spunte hanno il contorno giusto.
 - Il bot legge la tua pagina link mentre risponde: titoli, testi, link, social, conti alla rovescia e soprattutto le FAQ che ci hai scritto tu.
 - Cambi la pagina e cambia subito quello che sa, senza rifare niente. Se la spegni, smette di usarla.
 - Nell'elenco «cosa sa il bot» ora compaiono anche quelle voci, marcate «dalla tua pagina link»: si cambiano sulla pagina, non da lì.
