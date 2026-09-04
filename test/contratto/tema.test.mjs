@@ -12,6 +12,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { vetrinaHtml } from '../../src/web/vetrina-vista.js';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const leggi = (f) => readFileSync(join(RAD, f), 'utf8');
@@ -94,10 +95,10 @@ test('e il foglio comune non si scrive i colori a mano', () => {
 });
 
 test('la vetrina porta alle guide, ai manuali e alle novità', () => {
-  const app = leggi('src/web/public/app.js');
-  const i = app.indexOf('vt-mappa');
-  const blocco = app.slice(i, i + 700);
+  // Si prova quel che ESCE, non dove sta scritto: cosi' spostare la vetrina di
+  // file non fa finta che il collegamento sia sparito.
+  const h = vetrinaHtml('it');
   for (const via of ['/guide', '/manuale', '/novita', '/?demo=1']) {
-    assert.ok(blocco.includes(`href="${via}"`), `dalla vetrina si arriva a ${via}`);
+    assert.ok(h.includes(`href="${via}"`), `dalla vetrina si arriva a ${via}`);
   }
 });

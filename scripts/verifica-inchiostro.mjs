@@ -25,8 +25,7 @@
 // Uso: node scripts/verifica-inchiostro.mjs
 //      node scripts/verifica-inchiostro.mjs --selftest   (deve diventare rosso)
 
-import http from 'node:http';
-import fs from 'node:fs';
+import { apriSito } from './_sito.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -44,19 +43,7 @@ let chromium;
 try { ({ chromium } = await import(PLAYWRIGHT)); }
 catch { console.log('Playwright non c\'e\' su questa macchina: collaudo saltato.'); process.exit(0); }
 
-const srv = http.createServer((req, res) => {
-  const p = decodeURIComponent(req.url.split('?')[0]);
-  if (p.startsWith('/api/')) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end('{}'); }
-  const f = path.join(PUB, p === '/' ? 'index.html' : p);
-  if (!f.startsWith(PUB) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) {
-    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-    return res.end(fs.readFileSync(path.join(PUB, 'index.html')));
-  }
-  res.writeHead(200, { 'content-type': TIPI[path.extname(f)] || 'application/octet-stream' });
-  res.end(fs.readFileSync(f));
-});
-await new Promise((ok) => srv.listen(0, '127.0.0.1', ok));
-const PORTA = srv.address().port;
+const { porta: PORTA, chiudi: chiudiSito } = await apriSito();
 
 const b = await chromium.launch({ executablePath: CHROMIUM,
   args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox', '--disable-dev-shm-usage'] });
@@ -120,7 +107,7 @@ for (const id of schede) {
   for (const f of fuori.pari) { gerarchia[f] = (gerarchia[f] || 0) + 1; }
 }
 await b.close();
-srv.close();
+chiudiSito();
 
 const ord = Object.entries(conto).sort((a, b2) => b2[1] - a[1]);
 const piatti = ord.reduce((a, x) => a + x[1], 0);

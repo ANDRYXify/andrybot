@@ -17,6 +17,7 @@ import { join } from 'node:path';
 
 import { TAVOLOZZA, tinta, dichiarazioni, REGOLA_MARCHIO } from '../../src/web/tavolozza.js';
 import { paginaGuida, GUIDE } from '../../src/web/guide.js';
+import { vetrinaHtml } from '../../src/web/vetrina-vista.js';
 
 const RAD = process.cwd();
 const leggi = (via) => readFileSync(join(RAD, via), 'utf8');
@@ -82,7 +83,7 @@ test('ogni pagina che mostra il marchio gli mette l\'alone', () => {
     assert.ok(h.includes('tema.css'), `${f} mostra il marchio ma non carica tema.css`);
   }
   // la vetrina è disegnata da app.js dentro index.html: stesso foglio, stesso alone
-  assert.ok(SEGNI.some((s) => leggi(`${PUB}/app.js`).includes(`/icons/${s}`)));
+  assert.ok(SEGNI.some((s) => vetrinaHtml('it').includes(`/icons/${s}`)));
   // le guide non caricano tema.css: si portano via la regola invece di riscriverla
   const guida = paginaGuida(GUIDE[0].slug);
   assert.ok(SEGNI.some((s) => guida.includes(`/icons/${s}`)), 'la guida mostra il marchio');

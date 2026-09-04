@@ -16,8 +16,7 @@
 //
 // Uso: node scripts/verifica-barra.mjs   (esce 1 se qualcosa si sovrappone)
 
-import http from 'node:http';
-import fs from 'node:fs';
+import { apriSito } from './_sito.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -38,19 +37,7 @@ catch {
   process.exit(0);
 }
 
-const srv = http.createServer((req, res) => {
-  const p = decodeURIComponent(req.url.split('?')[0]);
-  if (p.startsWith('/api/')) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end('{}'); }
-  const f = path.join(PUB, p === '/' ? 'index.html' : p);
-  if (!f.startsWith(PUB) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) {
-    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-    return res.end(fs.readFileSync(path.join(PUB, 'index.html')));
-  }
-  res.writeHead(200, { 'content-type': TIPI[path.extname(f)] || 'application/octet-stream' });
-  res.end(fs.readFileSync(f));
-});
-await new Promise((ok) => srv.listen(0, '127.0.0.1', ok));
-const PORTA = srv.address().port;
+const { porta: PORTA, chiudi: chiudiSito } = await apriSito();
 
 const MISURA = `(() => {
   const barra = document.querySelector('.barra-top');
@@ -142,7 +129,7 @@ for (const admin of [false, true]) {
   }
 }
 await b.close();
-srv.close();
+chiudiSito();
 
 const rossi = esiti.filter((e) => !e.ok);
 for (const e of rossi) {
