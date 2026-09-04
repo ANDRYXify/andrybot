@@ -67,7 +67,16 @@ for (const i of man.icons || []) {
 // fuori — e infatti le guide chiedevano un /favicon.svg che non e' mai
 // esistito, e la link-page l'icona senza timbro.
 const timbri = new Map();      // timbro → chi lo usa
-const RE_ICONE = /(?:src|href|content)\s*=\s*"[^"]*?(\/(?:icons\/|favicon)[^"]*)"/g;
+// Non solo gli ATTRIBUTI. Il timbro mancava proprio dove questo regex non
+// guardava: nei dati strutturati di index.html («"logo": ".../icon-512.png"»,
+// che e' l'indirizzo da cui Google prende il marchio, e senza timbro non ha
+// nessun motivo di riscaricarlo) e nell'elenco che il service worker tiene per
+// l'offline. Nessuno dei due e' un src=, quindi passavano invisibili mentre il
+// cancello diceva verde. Adesso si guarda OGNI indirizzo di un'icona, comunque
+// sia scritto: fra virgolette in un JSON, in un array, in un attributo.
+// Solo i FILE: `/icons/` da solo e' la cartella aperta, non un'immagine da
+// riscaricare, e timbrare una cartella non vuol dire niente.
+const RE_ICONE = /["'`(](?:https?:\/\/[^"'`\s)]*?)?(\/(?:icons\/|favicon)[^"'`\s)]*\.(?:png|svg|ico|webp|jpg)(?:\?[^"'`\s)]*)?)["'`)]/g;
 const paginate = [
   ...readdirSync(PUB).filter((x) => x.endsWith('.html')).map((f) => [f, join(PUB, f)]),
   ...sorgentiJs(join(RAD, 'src')),

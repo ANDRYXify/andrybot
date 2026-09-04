@@ -68,6 +68,7 @@ lo usa: se non si vede da fuori, qui non ci va.
 - Il titolo lungo del player scorre anche nell'anteprima, invece di restare tagliato.
 - Spuntare «parti da quanti ne ho adesso» non ti butta più fuori dalla scheda che stavi modificando.
 - I comandi delle onde del player dicono cosa fanno: uno le mostra o le nasconde, l'altro decide cosa balla a tempo.
+- Google mostrava ancora il logo vecchio: l'indirizzo da cui lo prende non cambiava mai, quindi non aveva motivo di riscaricarlo. Adesso cambia.
 
 ## 2026-09-03
 
