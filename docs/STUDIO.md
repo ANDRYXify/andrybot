@@ -58,3 +58,52 @@ chiesto, ma è legato all'interruttore e non tolto a mano.
 
 Provato rosso su tre difetti veri: una rotta lasciata fuori dall'interruttore,
 l'interruttore messo dopo il gate del piano, e la promessa rientrata in vetrina.
+
+## La veste: il predefinito sopra, le modifiche sotto
+
+Le nove vesti esistevano già, **Manga compresa**, ma si potevano scegliere in un
+momento solo: quando si creava un overlay nuovo, nella tendina «Parti da». Dopo,
+per cambiare aspetto restavano le manopole a una a una:
+
+| elemento | manopole |
+|---|---|
+| alert | 23 |
+| chat | 19 |
+| ogni widget / obiettivo | 12 |
+
+E **undici** di quelle sono le stesse ripetute per ogni elemento — forma,
+materia, cornice, font, peso, spaziatura, lettere, sfondo, opacità, testo,
+angoli. Era questa la sensazione di «scomodo e ridondante»: non c'era modo di
+dire *fammelo manga*, restava da rifarlo a mano tre volte.
+
+Adesso ogni blocco d'aspetto (`.asp-blocco`) si apre con la **riga della veste**:
+le nove vesti come pastiglie, più «a tutto l'overlay» che estende la scelta a
+ogni elemento in un colpo. La riga la mette una funzione sola, `mettiVesti()`,
+su **tutti** i blocchi — presenti e futuri: un blocco nuovo la eredita senza che
+nessuno debba ricordarsene.
+
+### Le vesti erano incomplete, e nessuno lo vedeva
+
+Le vesti dichiaravano forma, materia e cornice anche per la chat, ma chi le
+applicava (`applicaTemplate`) scriveva a mano venti righe di `_imposta(...)` e
+per la chat ne copriva **sette**: dimensione, font, google font, sfondo,
+opacità, testo, angoli. Forma, materia, cornice, peso, spaziatura e lettere le
+saltava. Difetto senza sintomi: sceglievi «Manga» e la chat restava a metà.
+
+Ora l'applicazione passa da una **tabella** campo → id (`_SUF_ST`), non da un
+elenco scritto a mano: quello che la veste dichiara viene applicato per
+costruzione, e aggiungere un campo a una veste non richiede di ricordarsi anche
+di scrivere la riga che lo applica.
+
+E le vesti sono state completate: oltre ad alert e chat vestono **gli obiettivi**
+e **il player**. Il player ha un asse suo — l'oggetto che imita, vinile /
+cassetta / terminale / manga — e la veste adesso lo sceglie invece di lasciarlo
+scollegato: «Nastro» è una cassetta, «Terminale» un terminale, «Manga» il manga.
+
+### Il contratto
+
+`test/contratto/vesti.test.mjs` prova che **ogni valore scritto in una veste è
+un valore che esiste**, confrontandolo con gli elenchi veri di `stile.js`. Un
+refuso come `forma: 'fumeto'` non rompe niente e non veste: è il modo peggiore
+di sbagliare, perché non lo dice nessuno. Provato rosso togliendo una lettera.
+

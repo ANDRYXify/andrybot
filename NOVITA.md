@@ -45,6 +45,10 @@ lo usa: se non si vede da fuori, qui non ci va.
 - La home non si ricompone più sotto gli occhi mentre carica: arriva già fatta, e non balla più.
 - Ed è la stessa per tutti: prima chi cercava su Google trovava una pagina scritta a parte, solo in italiano, diversa da quella che poi si apriva davvero.
 - Le tre lingue sono diventate indirizzi veri: cambiando lingua l'indirizzo cambia con te, e lo puoi salvare o mandare a qualcuno.
+- Nell'Overlay Studio la veste si sceglie sempre, non solo quando crei un overlay: in cima a ogni barra ci sono le nove vesti, e sotto cambi quello che vuoi.
+- «A tutto l'overlay» le applica in un colpo a tutti gli elementi, invece di rifare le stesse undici scelte per alert, chat e ogni widget.
+- E adesso una veste veste davvero tutto: prima sceglievi Manga e la chat restava a metà, gli obiettivi e il player non se ne accorgevano nemmeno.
+- Il player segue la veste: «Nastro» lo fa diventare una cassetta, «Terminale» un terminale, «Manga» il manga.
 
 ## 2026-09-03
 

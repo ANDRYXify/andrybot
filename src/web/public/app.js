@@ -705,6 +705,7 @@ function render() {
   if (stato.isAdmin && !conPiattaforma) html += `<hr class="separatore">${vistaAdminContenuto()}`;
 
   app.innerHTML = html;
+  mettiVesti();
 
   document.body.classList.toggle('con-nav', conPiattaforma);
   if (navTop) navTop.innerHTML = conPiattaforma ? navTopHtml() : '';
@@ -5296,23 +5297,23 @@ const cChk = (id, label, on) => `<label class="riga-check"><input type="checkbox
 
 const TEMPLATE_BUILTIN = [
 
-  { nome: 'Viola classico', dati: { al: { animazione: 'slide', sfondo: '#12101c', opacita: 90, testo: '#ffffff', bordoRaggio: 18, bordoSpessore: 2, glow: true, font: 'sistema', dimTesto: 27, forma: 'carta', materia: 'sfumata', cornice: 'linea', composizione: 'colonna' }, ch: { sfondo: '#12101c', opacita: 80, testo: '#efeaff', bordoRaggio: 12, font: 'sistema', dim: 'media', forma: 'carta', materia: 'sfumata', cornice: 'nessuna' }, acc: '#9146ff' } },
+  { nome: 'Viola classico', dati: { al: { animazione: 'slide', sfondo: '#12101c', opacita: 90, testo: '#ffffff', bordoRaggio: 18, bordoSpessore: 2, glow: true, font: 'sistema', dimTesto: 27, forma: 'carta', materia: 'sfumata', cornice: 'linea', composizione: 'colonna' }, ch: { sfondo: '#12101c', opacita: 80, testo: '#efeaff', bordoRaggio: 12, font: 'sistema', dim: 'media', forma: 'carta', materia: 'sfumata', cornice: 'nessuna' }, go: { dim: 'media', font: 'sistema', forma: 'carta', materia: 'sfumata', cornice: 'nessuna', sfondo: '#12101c', testo: '#ffffff', accento: '#9146ff', bordoRaggio: 14, opacita: 88 }, mu: { tema: 'nessuno', sfondo: 'copertina', corpo: 'normale', entrata: 'dissolve' }, acc: '#9146ff' } },
 
-  { nome: 'Neon', dati: { al: { animazione: 'pop', sfondo: '#04010a', opacita: 62, testo: '#eafffb', bordoRaggio: 8, bordoSpessore: 2, glow: true, font: 'mono', dimTesto: 29, forma: 'insegna', materia: 'neon', cornice: 'nessuna', composizione: 'riga' }, ch: { sfondo: '#04010a', opacita: 55, testo: '#d6fff7', bordoRaggio: 6, font: 'mono', dim: 'media', forma: 'taglio', materia: 'neon', cornice: 'nessuna' }, acc: '#00e5ff' } },
+  { nome: 'Neon', dati: { al: { animazione: 'pop', sfondo: '#04010a', opacita: 62, testo: '#eafffb', bordoRaggio: 8, bordoSpessore: 2, glow: true, font: 'mono', dimTesto: 29, forma: 'insegna', materia: 'neon', cornice: 'nessuna', composizione: 'riga' }, ch: { sfondo: '#04010a', opacita: 55, testo: '#d6fff7', bordoRaggio: 6, font: 'mono', dim: 'media', forma: 'taglio', materia: 'neon', cornice: 'nessuna' }, go: { dim: 'media', font: 'mono', forma: 'taglio', materia: 'neon', cornice: 'nessuna', sfondo: '#04010a', testo: '#eafffb', accento: '#00e5ff', bordoRaggio: 6, opacita: 70 }, mu: { tema: 'nessuno', sfondo: 'colori', corpo: 'slim', entrata: 'scivola' }, acc: '#00e5ff' } },
 
-  { nome: 'Minimal chiaro', dati: { al: { animazione: 'fade', sfondo: '#f7f7fa', opacita: 95, testo: '#15171c', bordoRaggio: 16, bordoSpessore: 0, glow: false, font: 'sistema', dimTesto: 24, forma: 'squadrata', materia: 'piatta', cornice: 'barra', composizione: 'riga' }, ch: { sfondo: '#ffffff', opacita: 90, testo: '#22242b', bordoRaggio: 12, font: 'sistema', dim: 'piccola', forma: 'squadrata', materia: 'piatta', cornice: 'barra' }, acc: '#2b2d36' } },
+  { nome: 'Minimal chiaro', dati: { al: { animazione: 'fade', sfondo: '#f7f7fa', opacita: 95, testo: '#15171c', bordoRaggio: 16, bordoSpessore: 0, glow: false, font: 'sistema', dimTesto: 24, forma: 'squadrata', materia: 'piatta', cornice: 'barra', composizione: 'riga' }, ch: { sfondo: '#ffffff', opacita: 90, testo: '#22242b', bordoRaggio: 12, font: 'sistema', dim: 'piccola', forma: 'squadrata', materia: 'piatta', cornice: 'barra' }, go: { dim: 'piccola', font: 'sistema', forma: 'squadrata', materia: 'piatta', cornice: 'barra', sfondo: '#ffffff', testo: '#22242b', accento: '#2b2d36', bordoRaggio: 10, opacita: 94 }, mu: { tema: 'nessuno', sfondo: 'no', corpo: 'slim', entrata: 'dissolve' }, acc: '#2b2d36' } },
 
-  { nome: 'Retro arcade', dati: { al: { animazione: 'bounce', sfondo: '#0a0a14', opacita: 96, testo: '#ffe600', bordoRaggio: 2, bordoSpessore: 4, glow: true, font: 'mono', dimTesto: 28, forma: 'squadrata', materia: 'crt', cornice: 'spessa', composizione: 'colonna' }, ch: { sfondo: '#0a0a14', opacita: 90, testo: '#ffe600', bordoRaggio: 2, font: 'mono', dim: 'media', forma: 'squadrata', materia: 'crt', cornice: 'linea' }, acc: '#ff2e88' } },
+  { nome: 'Retro arcade', dati: { al: { animazione: 'bounce', sfondo: '#0a0a14', opacita: 96, testo: '#ffe600', bordoRaggio: 2, bordoSpessore: 4, glow: true, font: 'mono', dimTesto: 28, forma: 'squadrata', materia: 'crt', cornice: 'spessa', composizione: 'colonna' }, ch: { sfondo: '#0a0a14', opacita: 90, testo: '#ffe600', bordoRaggio: 2, font: 'mono', dim: 'media', forma: 'squadrata', materia: 'crt', cornice: 'linea' }, go: { dim: 'media', font: 'mono', forma: 'squadrata', materia: 'crt', cornice: 'spessa', sfondo: '#0a0a14', testo: '#ffe600', accento: '#ff2e88', bordoRaggio: 2, opacita: 94 }, mu: { tema: 'terminale', sfondo: 'no', corpo: 'normale', entrata: 'sale' }, acc: '#ff2e88' } },
 
-  { nome: 'Manga', dati: { al: { animazione: 'zoom', sfondo: '#ffffff', opacita: 98, testo: '#0b0b0b', bordoRaggio: 6, bordoSpessore: 4, glow: false, font: 'manga', dimTesto: 30, forma: 'fumetto', materia: 'carta', cornice: 'linea', composizione: 'sovrapposta' }, ch: { sfondo: '#0b0b0b', opacita: 88, testo: '#ffffff', bordoRaggio: 6, font: 'manga', dim: 'media', forma: 'fumetto', materia: 'carta', cornice: 'linea' }, acc: '#e60012' } },
+  { nome: 'Manga', dati: { al: { animazione: 'zoom', sfondo: '#ffffff', opacita: 98, testo: '#0b0b0b', bordoRaggio: 6, bordoSpessore: 4, glow: false, font: 'manga', dimTesto: 30, forma: 'fumetto', materia: 'carta', cornice: 'linea', composizione: 'sovrapposta' }, ch: { sfondo: '#0b0b0b', opacita: 88, testo: '#ffffff', bordoRaggio: 6, font: 'manga', dim: 'media', forma: 'fumetto', materia: 'carta', cornice: 'linea' }, go: { dim: 'media', font: 'manga', forma: 'fumetto', materia: 'carta', cornice: 'linea', sfondo: '#ffffff', testo: '#0b0b0b', accento: '#e60012', bordoRaggio: 6, opacita: 98 }, mu: { tema: 'manga', sfondo: 'no', corpo: 'normale', entrata: 'sale' }, acc: '#e60012' } },
 
-  { nome: 'Vetro', dati: { al: { animazione: 'fade', sfondo: '#1a2030', opacita: 70, testo: '#f4f8ff', bordoRaggio: 22, bordoSpessore: 1, glow: false, font: 'sistema', dimTesto: 26, forma: 'pillola', materia: 'vetro', cornice: 'linea', composizione: 'riga' }, ch: { sfondo: '#1a2030', opacita: 60, testo: '#eef4ff', bordoRaggio: 18, font: 'sistema', dim: 'media', forma: 'pillola', materia: 'vetro', cornice: 'nessuna' }, acc: '#7fd4ff' } },
+  { nome: 'Vetro', dati: { al: { animazione: 'fade', sfondo: '#1a2030', opacita: 70, testo: '#f4f8ff', bordoRaggio: 22, bordoSpessore: 1, glow: false, font: 'sistema', dimTesto: 26, forma: 'pillola', materia: 'vetro', cornice: 'linea', composizione: 'riga' }, ch: { sfondo: '#1a2030', opacita: 60, testo: '#eef4ff', bordoRaggio: 18, font: 'sistema', dim: 'media', forma: 'pillola', materia: 'vetro', cornice: 'nessuna' }, go: { dim: 'media', font: 'sistema', forma: 'pillola', materia: 'vetro', cornice: 'nessuna', sfondo: '#1a2030', testo: '#eef4ff', accento: '#7fd4ff', bordoRaggio: 20, opacita: 66 }, mu: { tema: 'vinile', sfondo: 'copertina', corpo: 'normale', entrata: 'dissolve' }, acc: '#7fd4ff' } },
 
-  { nome: 'Terminale', dati: { al: { animazione: 'slide', sfondo: '#06120c', opacita: 94, testo: '#a8ffb0', bordoRaggio: 0, bordoSpessore: 2, glow: false, font: 'mono', dimTesto: 24, forma: 'taglio', materia: 'griglia', cornice: 'angoli', composizione: 'riga' }, ch: { sfondo: '#06120c', opacita: 88, testo: '#a8ffb0', bordoRaggio: 0, font: 'mono', dim: 'piccola', forma: 'squadrata', materia: 'griglia', cornice: 'angoli' }, acc: '#35ff7a' } },
+  { nome: 'Terminale', dati: { al: { animazione: 'slide', sfondo: '#06120c', opacita: 94, testo: '#a8ffb0', bordoRaggio: 0, bordoSpessore: 2, glow: false, font: 'mono', dimTesto: 24, forma: 'taglio', materia: 'griglia', cornice: 'angoli', composizione: 'riga' }, ch: { sfondo: '#06120c', opacita: 88, testo: '#a8ffb0', bordoRaggio: 0, font: 'mono', dim: 'piccola', forma: 'squadrata', materia: 'griglia', cornice: 'angoli' }, go: { dim: 'piccola', font: 'mono', forma: 'squadrata', materia: 'griglia', cornice: 'angoli', sfondo: '#06120c', testo: '#a8ffb0', accento: '#35ff7a', bordoRaggio: 0, opacita: 90 }, mu: { tema: 'terminale', sfondo: 'no', corpo: 'slim', entrata: 'niente' }, acc: '#35ff7a' } },
 
-  { nome: 'Nastro', dati: { al: { animazione: 'slide', sfondo: '#241206', opacita: 93, testo: '#fff4e6', bordoRaggio: 0, bordoSpessore: 0, glow: false, font: 'sistema', dimTesto: 27, forma: 'nastro', materia: 'sfumata', cornice: 'barra', composizione: 'riga' }, ch: { sfondo: '#241206', opacita: 85, testo: '#fff4e6', bordoRaggio: 0, font: 'sistema', dim: 'media', forma: 'nastro', materia: 'sfumata', cornice: 'barra' }, acc: '#ff8a2b' } },
+  { nome: 'Nastro', dati: { al: { animazione: 'slide', sfondo: '#241206', opacita: 93, testo: '#fff4e6', bordoRaggio: 0, bordoSpessore: 0, glow: false, font: 'sistema', dimTesto: 27, forma: 'nastro', materia: 'sfumata', cornice: 'barra', composizione: 'riga' }, ch: { sfondo: '#241206', opacita: 85, testo: '#fff4e6', bordoRaggio: 0, font: 'sistema', dim: 'media', forma: 'nastro', materia: 'sfumata', cornice: 'barra' }, go: { dim: 'media', font: 'sistema', forma: 'nastro', materia: 'sfumata', cornice: 'barra', sfondo: '#241206', testo: '#fff4e6', accento: '#ff8a2b', bordoRaggio: 0, opacita: 90 }, mu: { tema: 'cassetta', sfondo: 'copertina', corpo: 'cicciotto', entrata: 'scivola' }, acc: '#ff8a2b' } },
 
-  { nome: 'Esagoni', dati: { al: { animazione: 'zoom', sfondo: '#0d1117', opacita: 92, testo: '#e6edf3', bordoRaggio: 0, bordoSpessore: 2, glow: true, font: 'sistema', dimTesto: 26, forma: 'esagono', materia: 'griglia', cornice: 'linea', composizione: 'colonna' }, ch: { sfondo: '#0d1117', opacita: 84, testo: '#e6edf3', bordoRaggio: 0, font: 'sistema', dim: 'media', forma: 'taglio', materia: 'griglia', cornice: 'linea' }, acc: '#58a6ff' } },
+  { nome: 'Esagoni', dati: { al: { animazione: 'zoom', sfondo: '#0d1117', opacita: 92, testo: '#e6edf3', bordoRaggio: 0, bordoSpessore: 2, glow: true, font: 'sistema', dimTesto: 26, forma: 'esagono', materia: 'griglia', cornice: 'linea', composizione: 'colonna' }, ch: { sfondo: '#0d1117', opacita: 84, testo: '#e6edf3', bordoRaggio: 0, font: 'sistema', dim: 'media', forma: 'taglio', materia: 'griglia', cornice: 'linea' }, go: { dim: 'media', font: 'sistema', forma: 'esagono', materia: 'griglia', cornice: 'linea', sfondo: '#0d1117', testo: '#e6edf3', accento: '#58a6ff', bordoRaggio: 0, opacita: 88 }, mu: { tema: 'vinile', sfondo: 'colori', corpo: 'normale', entrata: 'sale' }, acc: '#58a6ff' } },
 ];
 
 function bloccoAlert(t, a) {
@@ -5594,6 +5595,61 @@ function ovlElemento(k, ico, nome, sez) {
     <label class="interruttore oe-sw" title="${L('Mostra', 'Show', 'Mostrar')} «${esc(nome)}» ${L('in questo overlay', 'in this overlay', 'en este overlay')}"><input type="checkbox" id="mostra-${k}" checked><span class="levetta"></span></label>
   </div>`;
 }
+
+function vesteRiga(asp) {
+  const chip = TEMPLATE_BUILTIN.map((t, i) =>
+    `<button type="button" class="veste-b" data-veste="${i}" title="${esc(t.nome)}">${esc(t.nome)}</button>`).join('');
+  return `<div class="veste-riga" data-veste-di="${esc(asp || '')}">
+    <div class="veste-testa">
+      <span class="veste-eti">${L('Veste', 'Look', 'Aspecto')}</span>
+      <button type="button" class="btn secondario mini veste-tutto" data-veste-tutto>${L('a tutto l\u2019overlay', 'to the whole overlay', 'a todo el overlay')}</button>
+    </div>
+    <div class="veste-chip">${chip}</div>
+    <p class="veste-nota">${L('Scegli una veste, poi cambia sotto quello che vuoi.', 'Pick a look, then change anything below.', 'Elige un aspecto y cambia abajo lo que quieras.')}</p>
+  </div>`;
+}
+
+function mettiVesti(scope) {
+  for (const b of (scope || document).querySelectorAll('.asp-blocco')) {
+    if (b.querySelector(':scope > .veste-riga')) continue;
+    b.insertAdjacentHTML('afterbegin', vesteRiga(b.dataset.asp));
+  }
+}
+
+function _vesteInBlocco(b, val) {
+  for (const [k, v] of Object.entries(val || {})) {
+    if (v === undefined) continue;
+    _vesti([...b.querySelectorAll(`[data-c="stile.${k}"], [data-g="stile.${k}"]`)], v);
+  }
+}
+
+function applicaVeste(b, i) {
+  const t = TEMPLATE_BUILTIN[Number(i)];
+  if (!t || !b) return;
+  const asp = String(b.dataset.asp || '');
+  if (asp === 'alert') vestiParte('al', t.dati.al);
+  else if (asp === 'chat') vestiParte('co', t.dati.ch);
+  else if (asp === 'musica') vestiCfg('musica', t.dati.mu);
+  else _vesteInBlocco(b, t.dati.go);
+  b.querySelectorAll('.veste-b').forEach((x) => x.classList.toggle('on', Number(x.dataset.veste) === Number(i)));
+  aggiornaAnteprima();
+}
+
+function applicaVesteOvunque(i) {
+  for (const b of document.querySelectorAll('.asp-blocco')) applicaVeste(b, i);
+}
+
+document.addEventListener('click', (e) => {
+  const b = e.target.closest && e.target.closest('[data-veste]');
+  if (b) { e.preventDefault(); applicaVeste(b.closest('.asp-blocco'), b.dataset.veste); return; }
+  const tutto = e.target.closest && e.target.closest('[data-veste-tutto]');
+  if (tutto) {
+    e.preventDefault();
+    const scelta = tutto.closest('.asp-blocco')?.querySelector('.veste-b.on');
+    if (scelta) applicaVesteOvunque(scelta.dataset.veste);
+    else toast(L('Scegli prima una veste qui sopra.', 'Pick a look above first.', 'Elige antes un aspecto aquí arriba.'));
+  }
+});
 
 function pannelloAlert() {
   const p = impostazioni();
@@ -6627,6 +6683,7 @@ function aggiornaInspector() {
   _rendiLivelli();
   aggiornaPiedeBanco();
   if (!box) return;
+  mettiVesti(box);
   for (const b of box.querySelectorAll('.asp-blocco')) b.hidden = b.dataset.asp !== selezione;
   if (!selezione) { box.hidden = true; return; }
   box.hidden = false;
@@ -7504,21 +7561,51 @@ async function caricaContaStudio() {
 const _imposta = (id, val) => { const e = _g(id); if (e && val != null) { if (e.type === 'checkbox') e.checked = !!val; else e.value = val; } };
 const _impostaEl = (e, val) => { if (e && val != null) { if (e.type === 'checkbox') e.checked = !!val; else e.value = val; } };
 
+const _SUF_ST = {
+  animazione: 'anim', bordoRaggio: 'radius', dimTesto: 'dim', sfondo: 'bg', testo: 'fg',
+  opacita: 'op', bordoSpessore: 'border', dimIcona: 'dimico', composizione: 'comp',
+  spaziatura: 'spaz', maiuscolo: 'maiusc', ombraTesto: 'ombratxt', evidenziaNome: 'evid',
+  googleFont: 'gfont', icona: 'icon', larghezza: 'larg', grassettoUser: 'bold', username: 'user',
+};
+function vestiParte(pref, valori) {
+  if (!valori) return;
+  for (const [k, v] of Object.entries(valori)) {
+    if (v === undefined) continue;
+    _imposta(`${pref}-st-${_SUF_ST[k] || k}`, k === 'peso' ? String(v) : v);
+  }
+}
+function _vesti(nodi, v) {
+  nodi.forEach((el) => {
+    if (el.type === 'checkbox') el.checked = !!v; else el.value = v;
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+}
+function vestiCfg(blocco, valori) {
+  if (!valori) return;
+  for (const zona of _pezziCfg(blocco)) {
+    for (const [k, v] of Object.entries(valori)) {
+      if (v === undefined) continue;
+      _vesti([...zona.querySelectorAll(`[data-c="${k}"]`)], v);
+    }
+  }
+}
+function vestiGoal(valori) {
+  if (!valori) return;
+  for (const [k, v] of Object.entries(valori)) {
+    if (v === undefined) continue;
+    _vesti([...document.querySelectorAll(`[data-g="stile.${k}"]`)], v);
+  }
+}
+
 function applicaTemplate(d) {
   if (!d) return;
   if (d.alerts || d.chatOverlay || d.overlayWidget || d.overlayCss != null) {
     _riempiConfig(d);
   } else {
-    const al = d.al || {}, ch = d.ch || {}, acc = d.acc;
-    _imposta('al-st-anim', al.animazione); _imposta('al-st-font', al.font); _imposta('al-st-gfont', al.googleFont); _imposta('al-st-dim', al.dimTesto);
-    _imposta('al-st-bg', al.sfondo); _imposta('al-st-op', al.opacita); _imposta('al-st-fg', al.testo);
-    _imposta('al-st-radius', al.bordoRaggio); _imposta('al-st-border', al.bordoSpessore);
-    _imposta('al-st-glow', al.glow); _imposta('al-st-icon', al.icona !== false);
-    _imposta('al-st-forma', al.forma); _imposta('al-st-materia', al.materia); _imposta('al-st-cornice', al.cornice); _imposta('al-st-comp', al.composizione);
-    _imposta('al-st-dimico', al.dimIcona); _imposta('al-st-uscita', al.uscita); _imposta('al-st-peso', al.peso == null ? '700' : String(al.peso)); _imposta('al-st-spaz', al.spaziatura); _imposta('al-st-maiusc', al.maiuscolo); _imposta('al-st-ombratxt', al.ombraTesto !== false); _imposta('al-st-evid', al.evidenziaNome !== false);
-    _imposta('co-st-dim', ch.dim); _imposta('co-st-font', ch.font); _imposta('co-st-gfont', ch.googleFont); _imposta('co-st-bg', ch.sfondo);
-    _imposta('co-st-op', ch.opacita); _imposta('co-st-fg', ch.testo); _imposta('co-st-radius', ch.bordoRaggio);
-    if (acc) document.querySelectorAll('.alert-blocco[data-alert] .al-colore').forEach((c) => { c.value = acc; });
+    vestiParte('al', d.al); vestiParte('co', d.ch);
+    vestiGoal(d.go); vestiCfg('musica', d.mu); vestiCfg('timer', d.ti);
+    if (d.acc) document.querySelectorAll('.alert-blocco[data-alert] .al-colore').forEach((c) => { c.value = d.acc; });
   }
   document.querySelectorAll('#scheda-alert input[type="range"]').forEach((r) => { const s = _g(r.id + '-v'); if (s) s.textContent = r.value; });
   aggiornaAnteprima();
