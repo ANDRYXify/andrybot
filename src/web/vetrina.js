@@ -165,6 +165,17 @@ export function creaGuscio(publicDir) {
       esplora('/' + nome, file);
       return file;
     },
+    // Un file che si porta dietro una pagina COSTRUITA dal server, e che quindi
+    // non sta in `public/` e non puo' dichiararsi da sola: la pagina link. Vale
+    // la stessa regola delle pagine — lo dichiara chi la serve, nel punto in cui
+    // l'informazione e' vera — e da li' si seguono i suoi riferimenti come per
+    // tutte le altre.
+    risorsa(nome) {
+      const file = join(publicDir, nome);
+      pubblici.add('/' + nome);
+      esplora('/' + nome, file);
+      return '/' + nome;
+    },
     // il guscio: i file che le pagine pubbliche si portano dietro
     contiene: (via) => pubblici.has(via) || CARTELLE.some((c) => via.startsWith(c)),
     // la domanda del cancello: questa richiesta passa anche senza sessione?
