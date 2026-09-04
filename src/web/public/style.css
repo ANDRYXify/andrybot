@@ -285,7 +285,7 @@ body.menu-aperto .backdrop { opacity: 1; pointer-events: auto; }
               opacity var(--dur-elem) var(--ease), margin-top var(--dur-elem) var(--ease-quint);
   margin-top: .45rem; opacity: 1;
 }
-.carta-corpo > .carta-corpo-in { min-height: 0; overflow: hidden; }
+.carta-corpo > .carta-corpo-in { min-height: 0; overflow: clip; overflow-clip-margin: var(--posto-inchiostro); }
 .carta.pieghevole.chiusa > .carta-corpo { grid-template-rows: 0fr; opacity: 0; margin-top: 0; }
 
 .carta-riassunto { display: none; font-size: .84rem; color: var(--testo-3); margin-top: .3rem; }
@@ -973,7 +973,9 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
   .lp-comandi { grid-area: sx; }
   .lp-ispettore { grid-area: isp; }
   .lp-anteprima { grid-area: prev; height: 100%; }
-  .lp-comandi, .lp-ispettore { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-right: .6rem; gap: .8rem; }
+  .lp-comandi, .lp-ispettore { min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+    padding: var(--posto-inchiostro) .6rem var(--posto-inchiostro) var(--posto-inchiostro);
+    margin-left: calc(-1 * var(--posto-inchiostro)); gap: .8rem; }
   .lp-telefono { flex: 1 1 auto; min-height: 0; }
   .lp-telefono iframe { height: 100%; }
 }
@@ -1587,7 +1589,6 @@ summary:active::after, .vt-btn:active::before { transform: scale(1.13); opacity:
   .grp-btn::after, .drawer-voce::after, .menu-voce::after, .vt-btn::before { transition: none; }
   .shonen-entra { animation: none; }
 }
-
 
 .solo-lettori{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
   clip-path:inset(50%);white-space:nowrap;border:0}

@@ -445,3 +445,39 @@ silenzio (è già successo, vedi la scritta scorrevole).
 Il contratto controlla che `.emb` dichiari un fondo, che di partenza sia il
 colore delle carte, che il colore scelto arrivi come `--emb-bg`, e che
 l'attributo `style` resti uno solo.
+
+## Il posto dell'inchiostro
+
+Il tema disegna a inchiostro: ogni cosa ha un contorno pieno e un'ombra dura, e
+al passaggio del mouse si solleva di un paio di pixel. Tutto questo sta **fuori**
+dalla scatola dell'elemento. `--posto-inchiostro` (8px) dice quanto sporge.
+
+**Chi ritaglia deve lasciare quel posto.** Vale per l'`overflow: hidden` messo
+per far funzionare una fisarmonica e per le colonne che scorrono: sono difetti
+che nascono da due file diversi, nessuno dei due sbagliato da solo, e si vedono
+solo guardando (un bordo che comincia da qualche parte e finisce nel nulla).
+
+- Contenitori che ritagliano e basta: `overflow: clip` con
+  `overflow-clip-margin: var(--posto-inchiostro)`. Continua a tenere dentro il
+  contenuto e lascia passare il contorno. Attenzione: il margine vale **solo**
+  con `clip`; con `hidden` la proprietà resta scritta e non fa niente.
+- Contenitori che scorrono: `clip` non si può, e il posto glielo si fa col
+  padding. Un bordo non è contenuto che si raggiunge scorrendo — o si vede, o è
+  perso.
+- Le anteprime che rappresentano uno **schermo** (overlay, telefono della pagina
+  link) ritagliano apposta: lì una cosa spinta oltre il bordo sarà tagliata
+  anche in diretta.
+
+Lo controlla `node scripts/verifica-contorni.mjs`, che gira ogni scheda della
+dashboard, ci passa sopra col mouse e misura quanto inchiostro resta fuori. La
+prima volta erano 117 elementi. Con `--selftest` rimette il ritaglio com'era e
+pretende di ritrovarli.
+
+### Un valore che non si vede non è l'assenza di valore
+
+`--alone-contorno` valeva `none` sul tema chiaro. Ma `none` non è ammesso
+**dentro** una lista di ombre: `box-shadow: none, 1px 1px 0 …` è una regola
+invalida, e il browser la butta via intera. Trentatré regole scritte come
+`var(--alone-contorno), var(--ombra-…)` non producevano nessuna ombra sul tema
+chiaro — mentre sul tema scuro, dove l'alone ha un valore vero, funzionavano.
+Il valore giusto per "nessun alone" è `0 0 0 0 transparent`.

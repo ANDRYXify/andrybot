@@ -5,6 +5,8 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-04
 
+- I contorni non vengono più tagliati: dentro le schede ogni bottone aveva l'ombra rasata sui quattro lati, e nelle colonne che scorrono il bordo spariva di lato.
+- Sul tema chiaro tornano le ombre piene che mancavano: una riga di stile sbagliata le spegneva tutte, mentre sul tema scuro si sono sempre viste.
 - Nella scheda puoi elencare le parole che il bot non deve mai scrivere (il cognome, la via, il nome della scuola): se una finisce in una risposta, il bot non la manda.
 - La scheda non parte più vuota: quando il bot rilegge il tuo profilo riempie chi sei, gli orari e dove ti trovano, senza toccare quello che hai scritto tu.
 - Nella scheda Conoscenza puoi compilare la tua scheda: chi sei, cosa fai in diretta, gli orari, dove ti trovano, come deve chiamarti e cosa non deve dire di te.
