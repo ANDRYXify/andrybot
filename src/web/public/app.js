@@ -5448,31 +5448,21 @@ function disegnaGoal() {
   const conti = impostazioni().overlayStato.goals || {};
   const lista = goalBozza();
   const st = (g) => g.stile || {};
-  box.innerHTML = lista.length ? lista.map((g, i) => `<div class="goal-voce" data-goal-id="${esc(g.id)}">
-    <label class="interruttore mini"><input type="checkbox" data-g="attivo" ${g.attivo !== false ? 'checked' : ''}><span class="levetta"></span></label>
-    <span class="goal-voce-nome">${esc(nomeGoal(g, i))}</span>
-    <span class="goal-ora">${(Number(g.partenza) || 0) + (Number(conti[g.id]) || 0)} / ${Number(g.obiettivo) || 100}</span>
-    <button type="button" class="btn secondario mini" data-g-vesti>${L('Modifica', 'Edit', 'Editar')}</button>
-    <button type="button" class="btn pericolo mini" data-g-via>${L('Togli', 'Remove', 'Quitar')}</button>
-  </div>`).join('')
-    : `<p class="vuoto">${L('Nessun obiettivo. Aggiungine uno: puoi averne quanti ne vuoi.', 'No goals. Add one: you can have as many as you like.', 'Ningún objetivo. Añade uno: puedes tener los que quieras.')}</p>`;
-
-  const vesti = document.getElementById('goal-vesti');
-  if (vesti && vesti.dataset.pieno === JSON.stringify(lista.map((g) => g.id))) { disegnaVociGoal(); return; }
-  if (vesti) {
-    vesti.dataset.pieno = JSON.stringify(lista.map((g) => g.id));
-    vesti.innerHTML = lista.map((g, i) => `<div class="asp-blocco el-blocco goal-vesti" data-asp="goal:${esc(g.id)}" data-goal-id="${esc(g.id)}" hidden>
-      <div class="riga-interruttore">
-        <label class="interruttore"><input type="checkbox" data-g="attivo" ${g.attivo !== false ? 'checked' : ''}><span class="levetta"></span></label>
-        <span class="etichetta-stato">${L('Obiettivo acceso', 'Goal on', 'Objetivo encendido')}</span>
-      </div>
+  box.innerHTML = lista.length ? lista.map((g, i) => `<details class="goal-voce-guscio" data-goal-id="${esc(g.id)}">
+    <summary class="goal-voce">
+      <label class="interruttore mini"><input type="checkbox" data-g="attivo" ${g.attivo !== false ? 'checked' : ''}><span class="levetta"></span></label>
+      <span class="goal-voce-nome">${esc(nomeGoal(g, i))}</span>
+      <span class="goal-ora">${(Number(g.partenza) || 0) + (Number(conti[g.id]) || 0)} / ${Number(g.obiettivo) || 100}</span>
+      <span class="btn secondario mini" data-g-vesti>${L('Dov\u2019è', 'Where', 'Dónde')}</span>
+      <span class="btn pericolo mini" data-g-via>${L('Togli', 'Remove', 'Quitar')}</span>
+    </summary>
+    <div class="goal-meta">
       <label class="campo">${L('Titolo', 'Title', 'Título')} <span class="tenue">${L('facoltativo', 'optional', 'opcional')}</span></label>
       <input type="text" data-g="titolo" maxlength="60" value="${esc(g.titolo || '')}" placeholder="${L('Obiettivo', 'Goal', 'Objetivo')} ${i + 1}">
       <div class="goal-campi">
         <label class="campo-num">${L('Conta', 'Count', 'Cuenta')}<select data-g="tipo">${GOAL_TIPI().map(([v, t]) => `<option value="${v}"${g.tipo === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
         <label class="campo-num">${L('Traguardo', 'Target', 'Meta')}<input type="number" data-g="obiettivo" min="1" max="1000000" value="${Number(g.obiettivo) || 100}"></label>
         <label class="campo-num">${L('Parte da', 'Starts at', 'Empieza en')}<input type="number" data-g="partenza" min="0" max="1000000" value="${Number(g.partenza) || 0}"${g.daVivo && g.tipo !== 'bit' ? ' disabled' : ''}></label>
-        <label class="campo-num">${L('Dove', 'Where', 'Dónde')}<select data-g="posizione">${GOAL_ANGOLI().map(([v, t]) => `<option value="${v}"${g.posizione === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
       </div>
       <label class="riga-check">
         <input type="checkbox" data-g="daVivo" ${g.daVivo ? 'checked' : ''} ${g.tipo === 'bit' ? 'disabled' : ''}>
@@ -5483,6 +5473,19 @@ function disegnaGoal() {
       </label>
       <div class="riga-flessibile">
         <button type="button" class="btn secondario mini" data-g-azzera>${L('Riparti da zero', 'Start over', 'Empezar de cero')}</button>
+      </div>
+    </div>
+  </details>`).join('')
+    : `<p class="vuoto">${L('Nessun obiettivo. Aggiungine uno: puoi averne quanti ne vuoi.', 'No goals. Add one: you can have as many as you like.', 'Ningún objetivo. Añade uno: puedes tener los que quieras.')}</p>`;
+
+  const vesti = document.getElementById('goal-vesti');
+  if (vesti && vesti.dataset.pieno === JSON.stringify(lista.map((g) => g.id))) { disegnaVociGoal(); return; }
+  if (vesti) {
+    vesti.dataset.pieno = JSON.stringify(lista.map((g) => g.id));
+    vesti.innerHTML = lista.map((g, i) => `<div class="asp-blocco el-blocco goal-vesti" data-asp="goal:${esc(g.id)}" data-goal-id="${esc(g.id)}" hidden>
+      <p class="suggerimento">${L('Qui decidi come appare <strong>in questa scena</strong>. Il traguardo invece è uno solo e vale per tutti gli overlay: si cambia sopra, in «Gli obiettivi».', 'Here you decide how it looks <strong>in this scene</strong>. The target is a single one and applies to every overlay: change it above, in «Your goals».', 'Aquí decides cómo se ve <strong>en esta escena</strong>. La meta es una sola y vale para todos los overlays: se cambia arriba, en «Tus objetivos».')}</p>
+      <div class="goal-campi">
+        <label class="campo-num">${L('Dove', 'Where', 'Dónde')}<select data-g="posizione">${GOAL_ANGOLI().map(([v, t]) => `<option value="${v}"${g.posizione === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
       </div>
       <h4>${L('Aspetto', 'Appearance', 'Aspecto')}</h4>
       <div class="goal-campi">
@@ -5512,9 +5515,11 @@ function disegnaGoal() {
 function disegnaVociGoal() {
   const conti = impostazioni().overlayStato.goals || {};
   for (const [i, g] of goalBozza().entries()) {
-    const v = document.querySelector(`.goal-voce[data-goal-id="${CSS.escape(g.id)}"]`);
+    const v = document.querySelector(`.goal-voce-guscio[data-goal-id="${CSS.escape(g.id)}"]`);
     if (!v) continue;
-    v.querySelector('.goal-voce-nome').textContent = nomeGoal(g, i);
+    const nome = v.querySelector('.goal-voce-nome');
+    if (!nome) continue;
+    nome.textContent = nomeGoal(g, i);
     v.querySelector('.goal-ora').textContent = ((Number(g.partenza) || 0) + (Number(conti[g.id]) || 0)) + ' / ' + (Number(g.obiettivo) || 100);
   }
 }
@@ -5854,8 +5859,9 @@ function pannelloAlert() {
     </details>
 
     <details class="carta sez" data-parte="aspetto" id="sez-goal">
-      <summary><h3>${_hIco(ICO.trofeo)}${L('Obiettivi', 'Goals', 'Objetivos')}</h3></summary>
-      <p>${L('Barre che si riempiono da sole mentre arrivano follower, sub o bit. Quanti ne vuoi, ognuno col suo traguardo, il suo posto e il suo aspetto. Un obiettivo può essere «altri 100» oppure «1000 in tutto»: con «Quanti ne ho adesso» parte dal numero che hai già.', 'Bars that fill by themselves as followers, subs or bits come in. As many as you like, each with its own target, place and look. A goal can be «100 more» or «1000 in total»: with «How many I have now» it starts from the number you already have.', 'Barras que se llenan solas mientras llegan followers, subs o bits. Tantas como quieras, cada una con su meta, su sitio y su aspecto. Un objetivo puede ser «100 más» o «1000 en total»: con «Cuántos tengo ahora» empieza desde el número que ya tienes.')}</p>
+      <summary><h3>${_hIco(ICO.trofeo)}${L('Gli obiettivi', 'Your goals', 'Tus objetivos')}</h3></summary>
+      <p>${L('Barre che si riempiono da sole mentre arrivano follower, sub o bit. Un obiettivo può essere «altri 100» oppure «1000 in tutto»: con «Quanti ne ho adesso» parte dal numero che hai già.', 'Bars that fill by themselves as followers, subs or bits come in. A goal can be «100 more» or «1000 in total»: with «How many I have now» it starts from the number you already have.', 'Barras que se llenan solas mientras llegan followers, subs o bits. Un objetivo puede ser «100 más» o «1000 en total»: con «Cuántos tengo ahora» empieza desde el número que ya tienes.')}</p>
+      <p class="suggerimento">${L('Il traguardo è <strong>uno solo e vale per tutti i tuoi overlay</strong>: un obiettivo non cambia da una scena all\u2019altra. Quello che cambia da scena a scena è <strong>dove sta e come si vede</strong>, e lo scegli nello Studio, sull\u2019overlay che stai componendo.', 'The target is <strong>one and applies to all your overlays</strong>: a goal does not change from one scene to another. What does change per scene is <strong>where it sits and how it looks</strong>, and you pick that in the Studio, on the overlay you are composing.', 'La meta es <strong>una sola y vale para todos tus overlays</strong>: un objetivo no cambia de una escena a otra. Lo que cambia por escena es <strong>dónde está y cómo se ve</strong>, y eso lo eliges en el Studio, en el overlay que estás componiendo.')}</p>
       <div id="lista-goal" class="goal-lista"></div>
       <div id="goal-vesti" class="goal-lista"></div>
       <p class="spazio-sopra">
@@ -12655,6 +12661,7 @@ function attivaPiattaforma() {
   _g('scheda-alert')?.addEventListener('click', (ev) => {
     const riga = ev.target.closest('[data-goal-id]');
     if (!riga || !ev.target.closest('input[data-g="daVivo"], [data-g-vesti], [data-g-via], [data-g-azzera]')) return;
+    if (ev.target.closest('summary')) ev.preventDefault();
     const i = goalBozza().findIndex((g) => g.id === riga.dataset.goalId);
     if (i < 0) return;
     const spunta = ev.target.closest('input[data-g="daVivo"]');

@@ -887,19 +887,33 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   //
   // La lettura da Twitch sta in cache: un overlay che si ricarica dieci volte
   // non fa dieci chiamate.
+  //
+  // La cache pero' e' anche una trappola, ed e' costata una barra che TORNAVA
+  // INDIETRO. Il numero vero sta in cache 90 secondi; gli eventi contati sono
+  // sempre freschi. La formula «partenza = vivo - eventi» sottraeva quindi un
+  // numero di ADESSO da uno di un minuto e mezzo fa: arrivavano tre follower,
+  // l'overlay si ricaricava, e il totale a schermo calava di tre. Dal vivo si
+  // legge come «l'obiettivo ha perso follower».
+  //
+  // La cura non e' un limite che nasconde il sintomo: e' fotografare il
+  // CONTEGGIO insieme alla lettura. Cosi' la sottrazione usa due numeri dello
+  // stesso istante, e gli eventi arrivati dopo continuano a sommarsi sopra —
+  // che e' esattamente quello che la barra deve fare.
   const VIVO_CACHE_MS = 90 * 1000;
   const vivoCache = new Map();
-  async function quantiVivi(login, tipo) {
+  async function quantiVivi(login, tipo, contiOra) {
     const k = login + '|' + tipo;
     const c = vivoCache.get(k);
-    if (c && Date.now() - c.ts < VIVO_CACHE_MS) return c.quanti;
+    if (c && Date.now() - c.ts < VIVO_CACHE_MS) return c;
     let quanti = null;
     try {
       if (tipo === 'follower') quanti = await helix.quantiFollower(login);
       else if (tipo === 'sub') quanti = await helix.quantiSub(login);
     } catch { quanti = null; }
-    if (quanti != null) vivoCache.set(k, { ts: Date.now(), quanti });
-    return quanti;
+    if (quanti == null) return null;
+    const voce = { ts: Date.now(), quanti, allora: Number(contiOra) || 0 };
+    vivoCache.set(k, voce);
+    return voce;
   }
   async function rinfrescaGoalVivi(login) {
     try {
@@ -911,9 +925,12 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       const fuori = [];
       for (const g of lista) {
         if (!g || g.daVivo !== true || g.tipo === 'bit') { fuori.push(g); continue; }
-        const vivo = await quantiVivi(login, g.tipo === 'sub' ? 'sub' : 'follower');
-        if (vivo == null) { fuori.push(g); continue; }
-        const partenza = Math.max(0, Math.min(1000000, vivo - (Number(conti[g.id]) || 0)));
+        const letto = await quantiVivi(login, g.tipo === 'sub' ? 'sub' : 'follower', conti[g.id]);
+        if (!letto || letto.quanti == null) { fuori.push(g); continue; }
+        // `allora` e' il conteggio com'era quando quel numero e' stato letto:
+        // sottrarre quello, e non il conteggio di adesso, e' cio' che impedisce
+        // alla barra di tornare indietro.
+        const partenza = Math.max(0, Math.min(1000000, letto.quanti - letto.allora));
         if (partenza === (Number(g.partenza) || 0)) { fuori.push(g); continue; }
         fuori.push({ ...g, partenza });
         cambiato = true;

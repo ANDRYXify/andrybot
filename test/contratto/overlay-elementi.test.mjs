@@ -156,7 +156,14 @@ test('un obiettivo può partire da dove sei già arrivato', () => {
   const srv = leggi('src/web/server.js');
   const r = srv.slice(srv.indexOf('async function rinfrescaGoalVivi'), srv.indexOf('\n  }', srv.indexOf('async function rinfrescaGoalVivi')));
   assert.ok(r.length > 100, 'il server sa riallineare la partenza');
-  assert.ok(/vivo - \(Number\(conti\[g\.id\]\) \|\| 0\)/.test(r), 'togliendo gli eventi già contati, sennò conterebbe due volte');
+  assert.ok(/quanti - letto\.allora/.test(r), 'togliendo gli eventi già contati, sennò conterebbe due volte');
+  // E togliendo quelli di QUANDO la lettura fu presa, non quelli di adesso: il
+  // numero vero sta in cache, gli eventi no. Mescolare i due istanti faceva
+  // TORNARE INDIETRO la barra di tanti quanti erano arrivati nel frattempo.
+  assert.ok(/allora: Number\(contiOra\)/.test(srv),
+    'la lettura si porta dietro il conteggio del suo istante');
+  assert.ok(!/quanti - \(Number\(conti\[g\.id\]\)/.test(r),
+    'non si sottrae il conteggio di adesso da una lettura vecchia');
   assert.ok(/await rinfrescaGoalVivi\(login\)/.test(srv), 'e lo fa quando l’overlay chiede il suo tema');
 });
 
@@ -318,4 +325,33 @@ test('un elemento si toglie da una scena senza toglierlo dalle altre', () => {
   // in diretta: un obiettivo o un contatore tolto da questa scena non si disegna
   assert.ok(/mostra\('goal'\) \|\| !mostra\('goal:' \+ id\)/.test(OVL), 'l’overlay salta un obiettivo tolto da questa scena');
   assert.ok(/mostra\('cont'\) \|\| !mostra\('cont:' \+ cmd\)/.test(OVL), 'e un contatore tolto da questa scena');
+});
+
+// LA META E LA MESSA IN SCENA sono due cose, e non stanno nello stesso posto.
+//
+// Il traguardo di un obiettivo e' UNO e vale per tutti gli overlay: sta in
+// `settings.overlayGoals`, non dentro un overlay. Ma il pannello lo faceva
+// modificare da dentro il blocco che lo Studio SPOSTA nel riquadro «Proprieta'»
+// del singolo overlay — cioe' in un posto che dice «questo elemento, in questa
+// scena». Cambiavi il traguardo credendo di toccare una scena, e le toccavi
+// tutte. Il dato era gia' giusto; era sbagliato il posto.
+test('il traguardo si configura una volta sola, non dentro la scena', () => {
+  const d = APP.slice(APP.indexOf('function disegnaGoal('), APP.indexOf('function disegnaVociGoal('));
+  const meta = d.slice(d.indexOf('class="goal-meta"'), d.indexOf('</details>'));
+  const scena = d.slice(d.indexOf('class="asp-blocco el-blocco goal-vesti"'));
+
+  // La meta: cosa insegui. Sta nella sezione, non in un blocco d'aspetto.
+  for (const campo of ['tipo', 'obiettivo', 'partenza', 'daVivo', 'titolo']) {
+    assert.ok(meta.includes(`data-g="${campo}"`), `«${campo}» è la meta: va nella sezione degli obiettivi`);
+    assert.ok(!scena.includes(`data-g="${campo}"`), `«${campo}» non va nel blocco della singola scena`);
+  }
+  // La messa in scena: dove sta e come si vede. Quella si', per overlay.
+  assert.ok(scena.includes('data-g="posizione"'), 'il «dove» resta per scena');
+  assert.ok(scena.includes('data-g="stile.forma"'), 'e l’aspetto pure');
+  assert.ok(!meta.includes('data-g="stile.'), 'l’aspetto non va nella meta');
+
+  // E il blocco della meta non dev’essere un `.asp-blocco`, se no lo Studio se
+  // lo porta via nel riquadro del singolo overlay e siamo daccapo.
+  assert.ok(!/class="[^"]*asp-blocco[^"]*"[^>]*>\s*<label class="campo">\$\{L\('Titolo'/.test(d),
+    'la meta non deve stare dentro un blocco d’aspetto');
 });
