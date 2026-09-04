@@ -341,3 +341,42 @@ stesso** quando lo sposti o lo duplichi — non la sua posizione.
 Quell'ultima l'ha trovata rotta il collaudo, non io: leggevo l'indice dal DOM
 vecchio contro l'elenco già aggiornato, e dopo uno spostamento restava scelto
 chi aveva preso il suo posto.
+
+---
+
+## Due nomi uguali per due cose diverse
+
+La scritta scorrevole ha sempre usato `--sp` per la sua **velocità**. Aggiungendo
+la manopola dell'aria fra i pezzi ho chiamato `--sp` anche quella, e l'ho messa
+in `:root`. Da lì in giù `animation: marq var(--sp, 22s)` si è ritrovato una
+**lunghezza** dove voleva un tempo: dichiarazione invalida, animazione buttata
+via, **scritta ferma**. Nessun errore, da nessuna parte.
+
+La regola: i nomi che stanno in `:root` e quelli che i pezzi si scrivono addosso
+sono due spazi di nomi diversi e **devono restare disgiunti**. La mia variabile
+si chiama `--aria`.
+
+### E sotto ce n'era un altro, più vecchio
+
+Il `<div>` della scritta usciva così:
+
+```html
+<div class="marq" style="--d:45ms" style="--sp:22s">
+```
+
+**Due attributi `style`.** Il browser tiene il primo e butta il secondo, in
+silenzio. Quindi la velocità scelta — «lenta», «media», «veloce» — non è **mai**
+arrivata alla pagina: scorrevano tutte a 22s, il valore di ripiego. Nessuno se
+n'era accorto perché quel ripiego era sensato.
+
+Ora i due valori stanno in un attributo solo, e la velocità funziona per la
+prima volta. Misurato in un browser: `animation-name: marq`, durata **13s** con
+«veloce», e in 900 ms la scritta si è spostata di 40 px.
+
+### Come si verifica
+
+Due contratti in `test/contratto/css-pagina.test.mjs`, tutti e due visti rossi
+rimettendo i difetti:
+
+- i nomi in `:root` e quelli scritti sui pezzi non si incrociano;
+- nessun elemento esce con due attributi `style`.

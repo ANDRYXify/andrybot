@@ -94,6 +94,66 @@ test('i valori di partenza ripetono la pagina di prima', async () => {
     'i pesi di partenza non sono quelli di prima');
   assert.ok(html.includes('font-size:100%'), 'la grandezza di partenza non e’ 100%');
   assert.ok(html.includes('--ih:1.5'), 'l’interlinea di partenza non e’ 1.5');
-  assert.ok(html.includes('--sp:calc(.6rem * 1)'), 'la spaziatura di partenza non e’ quella di prima');
+  assert.ok(html.includes('--aria:calc(.6rem * 1)'), 'la spaziatura di partenza non e’ quella di prima');
   assert.ok(!html.includes('--bw:'), 'lo spessore del bordo non deve essere imposto se non lo scegli');
+});
+
+// ── DUE NOMI UGUALI PER DUE COSE DIVERSE ────────────────────────────────────
+//
+// La scritta scorrevole ha sempre usato `--sp` per la sua VELOCITÀ. Aggiungendo
+// una manopola per l'aria fra i pezzi ho chiamato `--sp` anche quella, e l'ho
+// messa in `:root`. Da lì in giù `animation: marq var(--sp, 22s)` si è ritrovato
+// una LUNGHEZZA dove voleva un tempo: dichiarazione invalida, animazione buttata
+// via, scritta ferma. Nessun errore da nessuna parte.
+//
+// La regola: i nomi che stanno in `:root` e quelli che i pezzi si scrivono
+// addosso non possono incrociarsi. Sono due spazi di nomi diversi e devono
+// restare disgiunti.
+const nomiVar = (t) => [...t.matchAll(/(--[a-z0-9-]+)\s*:/gi)].map((m) => m[1]);
+
+test('i nomi delle variabili del tema non si incrociano con quelli dei pezzi', async () => {
+  const { renderLinkPage } = await import('../../src/features/linkpagina.js');
+  const html = renderLinkPage(
+    { attiva: true, titolo: 'P', tema: {},
+      blocchi: [{ tipo: 'scritta', testo: 'CIAO', velocita: 'veloce' },
+        { tipo: 'link', label: 'A', url: 'https://a.example' }] },
+    { login: 'x', display: 'X', avatar: '', baseUrl: 'http://x' },
+  );
+  const radice = html.slice(html.indexOf(':root{'), html.indexOf('}', html.indexOf(':root{')));
+  const inRadice = new Set(nomiVar(radice));
+  const suiPezzi = new Set([...html.matchAll(/style="([^"]*)"/g)].flatMap((m) => nomiVar(m[1])));
+  const scontro = [...suiPezzi].filter((v) => inRadice.has(v));
+  assert.deepEqual(scontro, [], `stesso nome per due cose diverse: ${scontro.join(', ')}`);
+  assert.ok(inRadice.size > 5 && suiPezzi.size > 0, 'sto guardando davvero le variabili');
+});
+
+// Un elemento con DUE attributi `style` non è mezzo giusto: il browser tiene il
+// primo e butta il secondo, in silenzio. È così che la velocità scelta per la
+// scritta («lenta», «media», «veloce») non è mai arrivata alla pagina.
+test('nessun pezzo esce con due attributi style', async () => {
+  const { renderLinkPage } = await import('../../src/features/linkpagina.js');
+  const html = renderLinkPage(
+    { attiva: true, titolo: 'P', tema: {},
+      blocchi: [{ tipo: 'scritta', testo: 'CIAO', velocita: 'lenta' },
+        { tipo: 'link', label: 'A', url: 'https://a.example' },
+        { tipo: 'titolo', testo: 'T' }, { tipo: 'separatore' }] },
+    { login: 'x', display: 'X', avatar: '', baseUrl: 'http://x' },
+  );
+  const doppi = [...html.matchAll(/<[a-z][^>]*>/gi)]
+    .map((m) => m[0]).filter((t) => (t.match(/\sstyle=/g) || []).length > 1);
+  assert.deepEqual(doppi.map((t) => t.slice(0, 70)), [], 'un elemento ha due style: il secondo sparisce');
+});
+
+// E la velocità scelta deve ARRIVARE: e' il difetto di cui sopra, visto dal
+// lato di chi la usa.
+test('la velocità della scritta arriva davvero nella pagina', async () => {
+  const { renderLinkPage } = await import('../../src/features/linkpagina.js');
+  const rendi = (velocita) => renderLinkPage(
+    { attiva: true, titolo: 'P', tema: {}, blocchi: [{ tipo: 'scritta', testo: 'CIAO', velocita }] },
+    { login: 'x', display: 'X', avatar: '', baseUrl: 'http://x' },
+  );
+  const tempo = (h) => (/--sp:(\d+)s/.exec(/<div class="marq"[^>]*>/.exec(h)?.[0] || '') || [])[1];
+  assert.equal(tempo(rendi('lenta')), '34');
+  assert.equal(tempo(rendi('media')), '22');
+  assert.equal(tempo(rendi('veloce')), '13');
 });
