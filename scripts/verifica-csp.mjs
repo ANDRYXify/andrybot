@@ -71,8 +71,7 @@ const TIPI_NON_ESEGUITI = ['application/ld+json', 'speculationrules', 'importmap
 let conSpeculation = false;
 const html = readdirSync(PUB).filter((f) => f.endsWith('.html'));
 dice(html.length > 0, `pagine controllate: ${html.length}`);
-const senzaInline = (f) => {
-  const s = readFileSync(join(PUB, f), 'utf8');
+const senzaInlineIn = (s) => {
   const inline = [...s.matchAll(/<script([^>]*)>/g)]
     .map((m) => m[1])
     .filter((attr) => !/\bsrc\s*=/.test(attr))
@@ -83,7 +82,45 @@ const senzaInline = (f) => {
     });
   return inline.length === 0;
 };
+const senzaInline = (f) => senzaInlineIn(readFileSync(join(PUB, f), 'utf8'));
 perOgnuno(html, senzaInline, (n) => `niente <script> scritto dentro la pagina (${n} pagine)`);
+
+// ---- 3bis. e nemmeno nelle pagine COSTRUITE dal server -------------------
+// Qui il cancello era cieco, e non per poco: la pagina link si porta dietro
+// tutto il suo comportamento — il consenso ai contenuti di altri siti, il tasto
+// che li carica, il conto alla rovescia — e per anni li ha scritti DENTRO
+// l'HTML. Dal vivo l'edge li rifiutava tutti: niente riquadro del consenso, e
+// nessun tasto che rispondesse. In locale non si vedeva, perche' il banco di
+// prova non manda nessuna CSP. Una pagina non e' meno servita perche' nasce da
+// una funzione invece che da un file.
+const costruite = await (async () => {
+  const fuori = [];
+  const { renderLinkPage, renderInformativa } = await import('../src/features/linkpagina.js');
+  const pag = {
+    attiva: true, titolo: 'Collaudo', tema: { consenso: 'sempre', effetto: 'matrix', anim: 'rise' },
+    blocchi: [
+      { tipo: 'link', label: 'Twitch', url: 'https://twitch.tv/x', icona: 'twitch' },
+      { tipo: 'embed', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+      { tipo: 'conto', testo: 'Fra poco', quando: '2030-01-01T00:00' },
+    ],
+  };
+  const chi = { login: 'x', display: 'X', avatar: '', baseUrl: 'http://x' };
+  fuori.push(['pagina link', renderLinkPage(pag, chi)]);
+  fuori.push(['informativa della pagina link', renderInformativa({ ...chi, pagina: pag, contatto: '' })]);
+  try {
+    const { paginaGuida, GUIDE } = await import('../src/web/guide.js');
+    fuori.push(['una guida', paginaGuida(GUIDE[0].slug)]);
+  } catch (e) { /* le guide non si compongono qui: non e' questo il cancello */ }
+  try {
+    const { inserisciVetrina } = await import('../src/web/vetrina-vista.js');
+    fuori.push(['la vetrina dentro il guscio',
+      inserisciVetrina(readFileSync(join(PUB, 'index.html'), 'utf8'), 'it', { kick: true })]);
+  } catch (e) { /* idem */ }
+  return fuori;
+})();
+perOgnuno(costruite.map(([n]) => n),
+  (n) => senzaInlineIn(costruite.find(([x]) => x === n)[1]),
+  (n) => `niente <script> nemmeno nelle pagine costruite dal server (${n})`);
 
 // ---- 4. e nemmeno un attributo on-qualcosa (anche nel markup generato) ----
 // Il markup che app.js scrive a runtime conta quanto quello dei file .html:

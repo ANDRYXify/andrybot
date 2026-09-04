@@ -435,6 +435,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // già lasciato fuori /tema.js, /splash.js e /cookie.js, e senza splash.js il
   // velo di caricamento non si toglie — la home restava bianca a chi non è loggato.
   const guscio = creaGuscio(publicDir);
+  guscio.risorsa('pagina-link.js');
   guscio.pagina('index.html');           // la vetrina, servita anche su '/'
 
   app.use((req, res, next) => {

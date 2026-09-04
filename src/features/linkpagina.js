@@ -527,7 +527,7 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   // script autosufficienti, iniettati solo se scelti. Rispettano "riduci
   // animazioni" (disegnano un fotogramma fermo e si spengono).
   const fxCanvas = t.effetto === 'matrix' ? '<canvas class="lp-fx-canvas" aria-hidden="true"></canvas>' : '';
-  const fxScript = t.effetto === 'matrix' ? `<script>${SCRIPT_MATRIX}</script>` : '';
+  const fxScript = '';
 
   // stile dei bottoni
   const STILI = {
@@ -1138,7 +1138,7 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   .sel-b:hover > *{outline:2px dashed var(--acc);outline-offset:4px;cursor:pointer}
   .sel-b.tocca > *{outline:2px solid var(--acc);outline-offset:4px}` : ''}
 </style>
-${!anteprima && mov !== 'nessuno' ? `<script>${SCRIPT_SCROLLREVEAL}</script>` : ''}
+
 </head>
 <body>
   ${fxCanvas}
@@ -1154,6 +1154,7 @@ ${!anteprima && mov !== 'nessuno' ? `<script>${SCRIPT_SCROLLREVEAL}</script>` : 
       · <a href="/u/${esc(login)}/privacy">Privacy</a>${banner && corpo.includes('chiedi-b')
         ? ` · <button type="button" id="ri-consenso" class="come-link">Contenuti di altri siti</button>` : ''}</p>
   </main>
+<script src="/pagina-link.js?v=7" defer></script>
 ${banner && corpo.includes('chiedi-b') ? `
   <aside class="fascia" id="fascia" hidden>
     <p><b>Video e musica di altri siti.</b> Questa pagina non usa cookie, ma i riquadri di YouTube, Spotify,
@@ -1164,95 +1165,9 @@ ${banner && corpo.includes('chiedi-b') ? `
       <button type="button" id="fascia-no" class="due">Solo l'essenziale</button>
     </div>
   </aside>` : ''}
-${corpo.includes('class="conto"') ? `<script>
-/* Conto alla rovescia. La data e scritta senza fuso orario di proposito: il
-   fuso lo mette il browser di chi guarda, che e l'unico a sapere il suo. */
-(function () {
-  var c = document.querySelectorAll('.conto');
-  function pezzo(n, s) { return n + s; }
-  function giro() {
-    for (var i = 0; i < c.length; i++) {
-      var t = new Date(c[i].getAttribute('data-quando')).getTime();
-      var n = c[i].querySelector('.conto-n');
-      if (!t || !n) continue;
-      var d = t - Date.now();
-      if (d <= 0) { n.textContent = c[i].getAttribute('data-finito') || 'ora!'; continue; }
-      var s = Math.floor(d / 1000), g = Math.floor(s / 86400), o = Math.floor(s % 86400 / 3600),
-          m = Math.floor(s % 3600 / 60), q = s % 60;
-      n.textContent = (g ? pezzo(g, 'g ') : '') + pezzo(o, 'h ') + pezzo(m, 'm ') + pezzo(q, 's');
-    }
-  }
-  giro(); setInterval(giro, 1000);
-})();
-</script>` : ''}
-${corpo.includes('chiedi-b') ? `<script>
-/* Carica il contenuto di un altro sito SOLO quando il visitatore lo chiede.
-   Finché non clicca, di quel sito non parte una richiesta: nessun cookie, e
-   quindi nessun banner da mostrare. È la strada onesta — il banner che chiede
-   il consenso DOPO aver già caricato tutto non serve a niente. */
-addEventListener('click', function (e) {
-  var b = e.target.closest ? e.target.closest('.chiedi-b') : null;
-  if (!b) return;
-  var f = document.createElement('iframe');
-  f.src = b.getAttribute('data-src');
-  f.title = b.getAttribute('data-t') || '';
-  f.loading = 'lazy'; f.allowFullscreen = true;
-  f.referrerPolicy = 'strict-origin-when-cross-origin';
-  f.setAttribute('allow', 'autoplay; fullscreen; encrypted-media; picture-in-picture; clipboard-write');
-  f.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation allow-popups allow-popups-to-escape-sandbox allow-forms');
-  var box = b.closest('.chiedi');
-  box.parentNode.replaceChild(f, box);
-});
-(function () {
-  var f = document.getElementById('fascia');
-  if (!f) return;                                   /* modalita "chiedi": nessun banner */
-  var mem = null;
-  try { mem = localStorage.getItem('sb-consenso'); } catch (e) { /* niente memoria */ }
-  function tutti() { var b = document.querySelectorAll('.chiedi-b'); for (var i = 0; i < b.length; i++) b[i].click(); }
-  function ricorda(v) { try { localStorage.setItem('sb-consenso', v); } catch (e) { /* pazienza */ } }
-  var caricati = false;
-  /* I tasti si agganciano SUBITO, prima delle uscite qui sotto: chi aveva gia
-     scelto non vedeva il banner, e quindi i suoi tasti restavano senza risposta
-     — riaprirlo dal piede non avrebbe fatto niente. */
-  document.getElementById('fascia-si').onclick = function () { ricorda('si'); f.hidden = true; caricati = true; tutti(); };
-  document.getElementById('fascia-no').onclick = function () {
-    ricorda('no'); f.hidden = true;
-    /* se erano gia stati caricati, dire di no deve valere davvero: si ricarica
-       la pagina, cosi da quei siti non parte piu niente */
-    if (caricati) location.reload();
-  };
-  /* Tornare sui propri passi. Prima la scelta era per sempre: detto si o detto
-     no, il banner non ricompariva mai piu e non c'era nessun modo di cambiare
-     idea. Ritirare un consenso dev'essere facile quanto darlo. */
-  var ri = document.getElementById('ri-consenso');
-  if (ri) ri.onclick = function () { f.hidden = false; };
-  if (mem === 'si') { caricati = true; tutti(); return; }
-  if (mem === 'no') return;
-  f.hidden = false;
-})();
-</script>` : ''}
-${corpo.includes('<iframe') || corpo.includes('chiedi-b') ? `<script>
-/* L'altro script: TikTok e Instagram
-   dicono da soli quanto sono alti, con un messaggio al genitore. Senza, il
-   riquadro resta dell'altezza che abbiamo indovinato noi e sotto avanza il
-   vuoto. Chi non lo manda (Spotify, Twitch) resta com'e: per quelli c'e il
-   cursore dell'altezza. Nessuna libreria, nessuna richiesta, 15 righe. */
-addEventListener('message', function (e) {
-  if (['https://www.tiktok.com', 'https://www.instagram.com'].indexOf(e.origin) < 0) return;
-  var d = e.data;
-  if (typeof d === 'string') { try { d = JSON.parse(d); } catch (x) { return; } }
-  if (!d || typeof d !== 'object') return;
-  var h = parseInt(d.height || (d.details && d.details.height) || 0, 10);
-  if (!(h > 120 && h < 2000)) return;
-  var f = document.querySelectorAll('.emb iframe');
-  for (var i = 0; i < f.length; i++) {
-    var box = f[i].parentNode;
-    if (f[i].contentWindow === e.source && !box.getAttribute('data-fisso')) {
-      box.style.height = h + 'px'; box.style.aspectRatio = 'auto';
-    }
-  }
-});
-</script>` : ''}
+${corpo.includes('class="conto"') ? `` : ''}
+${corpo.includes('chiedi-b') ? `` : ''}
+${corpo.includes('<iframe') || corpo.includes('chiedi-b') ? `` : ''}
 ${fxScript}
 </body>
 </html>`;

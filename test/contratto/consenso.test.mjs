@@ -11,7 +11,16 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import { renderLinkPage } from '../../src/features/linkpagina.js';
+
+// Il comportamento della pagina link NON sta piu' dentro l'HTML: sta in un file
+// servito. Non e' un dettaglio di forma — l'edge rifiuta gli script scritti
+// dentro la pagina, e per anni li ha rifiutati tutti in silenzio.
+const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
+const COMPORTAMENTO = readFileSync(join(RAD, 'src/web/public/pagina-link.js'), 'utf8');
 
 const pagina = (extra = {}) => ({
   attiva: true, titolo: 'Prova', tema: { consenso: 'sempre' },
@@ -31,8 +40,7 @@ test('chi ha già scelto trova nel piede il modo di tornarci', () => {
 });
 
 test('i tasti del riquadro rispondono anche a chi aveva già scelto', () => {
-  const h = rendi(pagina());
-  const js = h.slice(h.indexOf("var f = document.getElementById('fascia')"));
+  const js = COMPORTAMENTO.slice(COMPORTAMENTO.indexOf("var f = document.getElementById('fascia')"));
   const agganci = js.indexOf("getElementById('fascia-si').onclick");
   const uscita = js.indexOf("if (mem === 'si')");
   assert.ok(agganci >= 0 && uscita >= 0, 'non trovo né gli agganci né le uscite');
@@ -41,8 +49,7 @@ test('i tasti del riquadro rispondono anche a chi aveva già scelto', () => {
 });
 
 test('dire di no dopo aver detto di sì vale davvero', () => {
-  const h = rendi(pagina());
-  assert.ok(/if \(caricati\) location\.reload\(\)/.test(h),
+  assert.ok(/if \(caricati\) location\.reload\(\)/.test(COMPORTAMENTO),
     'se i contenuti erano già stati caricati, il «no» deve ricaricare la pagina, non fingere');
 });
 
@@ -56,4 +63,16 @@ test('in modalità «chiedi» la domanda la fa ogni riquadro, non una fascia sol
   const h = rendi(pagina({ tema: { consenso: 'chiedi' } }));
   assert.ok(!h.includes('id="fascia"'), 'in modalità «chiedi» non ci va nessuna fascia');
   assert.ok(h.includes('chiedi-b'), 'ma ogni riquadro deve chiedere per conto suo');
+});
+
+
+test('il comportamento della pagina link arriva da un file, non da dentro la pagina', () => {
+  // L'edge dichiara `script-src 'self'` senza 'unsafe-inline': uno <script>
+  // scritto dentro la pagina viene RIFIUTATO dal browser, e con lui se ne va
+  // tutto — il consenso, il tasto che carica i contenuti, il conto alla
+  // rovescia. Non si vedeva in locale perche' il banco non manda nessuna CSP.
+  const h = rendi(pagina());
+  assert.ok(!/<script(?![^>]*\bsrc=)/.test(h), 'e tornato uno script scritto dentro la pagina link');
+  assert.ok(h.includes('src="/pagina-link.js'), 'la pagina non chiama il file del suo comportamento');
+  assert.ok(h.includes('src="/pagina-link.js'), 'il percorso dev\'essere assoluto: la pagina sta su /u/<nome>');
 });
