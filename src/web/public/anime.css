@@ -1719,22 +1719,11 @@ details.carta.sez > summary { padding-top: 0; align-items: flex-start; }
 details.carta.sez > summary > h3 { margin-bottom: 0; }
 details.carta.sez > summary::after { margin-top: .55rem; }
 
-a:focus-visible::before, button:focus-visible::before, .btn:focus-visible::before,
-[role="button"]:focus-visible::before, summary:focus-visible::before,
-select:focus-visible::before, .grp-btn:focus-visible::before,
-.drawer-voce:focus-visible::before, .menu-voce:focus-visible::before {
-  content: ""; position: absolute; inset: -30px; z-index: 0; pointer-events: none;
-  background: var(--fuoco-linee);
-  -webkit-mask-image: radial-gradient(closest-side, transparent 0 52%, #000 66%, transparent 84%);
-  mask-image: radial-gradient(closest-side, transparent 0 52%, #000 66%, transparent 84%);
-  opacity: .34;
-  animation: fuoco-arriva .16s var(--su-tre) both;
+a:focus-visible, button:focus-visible, .btn:focus-visible, [role="button"]:focus-visible,
+summary:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible,
+.grp-btn:focus-visible, .drawer-voce:focus-visible, .menu-voce:focus-visible {
+  outline: var(--tratto-2) solid var(--acc);
+  outline-offset: 3px;
 }
-@keyframes fuoco-arriva { from { opacity: 0; transform: scale(.86); } to { opacity: .34; transform: scale(1); } }
 
-@media (prefers-reduced-motion: reduce) {
-  a:focus-visible::before, button:focus-visible::before, .btn:focus-visible::before,
-  [role="button"]:focus-visible::before, summary:focus-visible::before,
-  select:focus-visible::before, .grp-btn:focus-visible::before,
-  .drawer-voce:focus-visible::before, .menu-voce:focus-visible::before { animation: none; }
 }
