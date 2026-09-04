@@ -5,6 +5,9 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-04
 
+- L'editor della pagina link è a tre zone come il banco dell'overlay: i pezzi a sinistra, l'anteprima al centro, i comandi del pezzo scelto a destra.
+- Scegli un pezzo (o cliccalo nell'anteprima) e i suoi comandi compaiono a destra, con scritto sopra di quale pezzo sono.
+- Il tutorial della pagina link parte chiuso e sta in fondo: aperto si mangiava mezza colonna e la lista dei pezzi non si vedeva.
 - I pezzi della pagina link non sono più tutti spalancati insieme: una riga per pezzo, che si apre una alla volta e resta aperta anche se lo sposti o lo duplichi.
 - Nel tema scuro il contorno disegnato si vede: era nero su nero, quindi non c'era, e restavano solo gli aloni rosa.
 - La barra in basso, la lente della ricerca e le icone parlano la stessa lingua del resto: contorno disegnato e ombra a timbro.

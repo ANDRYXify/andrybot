@@ -927,8 +927,13 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .lp-icone.piccole .lp-ipick { width: 1.65rem; height: 1.65rem; }
 .lp-prev { max-width: 100%; max-height: 8rem; border-radius: var(--r-s); border: 1px solid var(--border); display: block; margin-bottom: .4rem; }
 
-.lp-editor { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; gap: 1.1rem; align-items: start; }
+.lp-editor { display: grid; grid-template-columns: 1fr; gap: 1.1rem; align-items: start; }
 .lp-comandi { min-width: 0; display: flex; flex-direction: column; gap: .6rem; }
+.lp-ispettore { min-width: 0; display: flex; flex-direction: column; gap: .6rem; }
+.lp-isp-tit { display: flex; align-items: center; gap: .45rem; padding-bottom: .5rem; margin-bottom: .7rem; border-bottom: 1px solid var(--border); }
+.lp-isp-tit strong { font-size: .95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lp-vuoto { padding: 1.4rem .2rem; }
+.lp-blocco.sel { border-color: var(--acc); }
 
 .lp-tabs { display: inline-flex; gap: .3rem; padding: .3rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-2); align-self: flex-start; }
 .lp-tab { border: 0; background: transparent; color: var(--testo-3); font: inherit; font-weight: 700; font-size: .88rem; padding: .45rem 1.1rem; border-radius: 999px; cursor: pointer; transition: background var(--molla, .18s), color var(--molla, .18s); }
@@ -960,16 +965,26 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .lp-blocco.acceso { border-color: var(--acc); box-shadow: 0 0 0 2px var(--acc-soft); }
 @media (min-width: 1101px) {
 
-  .lp-editor { grid-template-columns: minmax(0, 1fr) 25rem; align-items: stretch;
+  .lp-editor { align-items: stretch;
+    grid-template-columns: 24rem minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas: "sx prev" "isp prev";
     height: calc(100dvh - var(--top-h) - 8rem); min-height: 32rem; }
-  .lp-anteprima { order: 1; }
-  .lp-comandi { order: 2; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-right: .6rem; gap: .8rem; }
-  .lp-anteprima { height: 100%; }
+  .lp-comandi { grid-area: sx; }
+  .lp-ispettore { grid-area: isp; }
+  .lp-anteprima { grid-area: prev; height: 100%; }
+  .lp-comandi, .lp-ispettore { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-right: .6rem; gap: .8rem; }
   .lp-telefono { flex: 1 1 auto; min-height: 0; }
   .lp-telefono iframe { height: 100%; }
 }
+@media (min-width: 1380px) {
+  .lp-editor { grid-template-columns: 21rem minmax(0, 1fr) 26rem;
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-areas: "sx prev isp"; }
+}
 @media (max-width: 1100px) {
   .lp-editor { grid-template-columns: 1fr; }
+  .lp-comandi { order: 1; } .lp-ispettore { order: 2; } .lp-anteprima { order: 3; }
   .lp-telefono iframe { height: 26rem; }
 }
 
