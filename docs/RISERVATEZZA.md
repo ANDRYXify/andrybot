@@ -184,3 +184,73 @@ E la cura, l'unica cosa che rilegge il *percorso* invece dell'inode:
 Poi si rigira `verifica-edge.mjs` finché non dice «edge allineato». Ed è proprio
 per questa classe di illusioni che il collaudo esiste: chiede al **sito vero**,
 non al file.
+
+---
+
+# «Si può rendere illeggibile tutto?»
+
+## La risposta onesta: no, e conviene sapere perché
+
+Il browser **è** la macchina di chi guarda. Per disegnare la pagina deve avere
+HTML, CSS e JS in chiaro: qualunque chiave gli dài, gliela dài. Non esiste uno
+schema in cui il browser legge e la persona che tiene quel browser no. Il flusso
+in transito è già illeggibile — lo fa TLS, ed è attivo con HSTS — ma all'arrivo
+torna in chiaro per forza.
+
+Le tecniche che promettono il contrario sono teatro, e vanno riconosciute:
+
+| tecnica | come si aggira |
+|---|---|
+| bloccare F12 / tasto destro | `view-source:`, `curl`, DevTools già aperte |
+| trappole `debugger` | «Deactivate breakpoints», o un breakpoint su riga vuota |
+| shadow DOM chiuso | si legge lo stesso nel pannello Elements |
+| disegnare tutto su canvas/WebGL | estraibile comunque, e distrugge accessibilità, SEO, traduzione, selezione |
+
+E una in particolare **costerebbe sicurezza vera**: cifrare il JS con un
+decifratore in JS richiede `eval`, quindi rimettere `unsafe-eval` nella CSP —
+disfacendo esattamente l'irrobustimento descritto sopra. Si pagherebbe una
+protezione reale per comprare una protezione finta.
+
+## Cosa c'è davvero, misurato
+
+Sui file serviti, cercati uno per uno:
+
+| cercato | trovato |
+|---|---|
+| indirizzi interni (`bot:8090`, `brain:…`, `localhost`) | 0 |
+| chiavi, `EDGE_KEY`, header dell'edge | 0 |
+| nomi dei guardiani (`requireAdmin`, `chiaveOk`…) | 0 |
+| percorsi API nominati | 186, di cui 29 di amministrazione |
+
+Quei 186 sono inevitabili — sono le chiamate che l'app fa — e non insegnano ad
+aggirare niente: dicono *dove bussare*, e a ogni porta c'è il guardiano.
+
+## Cosa si può fare, e si è fatto: alzare il costo
+
+Non si può impedire la lettura; si può togliere la mappa. Quel che il browser
+scarica esce **minificato e coi nomi interni accorciati**: `salvaGoalDaScena()`
+diventa `a()`. Insieme alla regola «niente commenti nei file serviti», chi vuole
+capire come è fatto il pannello deve rileggerselo invece di trovarselo spiegato.
+
+Tre scelte di costruzione, e il perché:
+
+1. **Si minifica al momento di servire** (`src/web/minifica.js`), non in un passo
+   di build. Così non nasce una cartella `dist` che va fuori sincrono con i
+   sorgenti, non cambia come si consegna il sito, e non c'è un secondo posto
+   dove guardare quando qualcosa non torna. `SB_SORGENTI=1` lo spegne.
+2. **I nomi di primo livello restano.** `app.js` e compagni sono script
+   *classici*: le loro funzioni di primo livello sono globali della pagina, e un
+   file chiama quelle di un altro. Accorciarle romperebbe tutto — si accorcia
+   quel che sta dentro le funzioni, che è la quasi totalità del codice.
+3. **Se un file non si minifica, si serve il sorgente.** Un sito che funziona e
+   si legge è meglio di un sito illeggibile e rotto.
+
+Due contrappesi:
+
+- `node scripts/verifica-minificazione.mjs` (nei cancelli): ogni file servito
+  deve passare la minificazione, la filigrana deve sopravvivere, e i nomi che i
+  file si scambiano devono restare. Oggi: 26 file su 26, 16% in meno da
+  scaricare. `--selftest` lo prova rosso.
+- `SB_MINI=1 node scripts/verifica-studio.mjs` serve il banco di regia
+  **minificato** e lo collauda: è la prova che accorciare i nomi non rompe
+  l'applicazione. Senza, si collauderebbe un codice che nessuno riceve.

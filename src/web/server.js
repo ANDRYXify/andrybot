@@ -22,6 +22,7 @@ import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, pass
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO } from '../db.js';
 import { renderLinkPage, renderInformativa } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
+import { creaMinifica } from './minifica.js';
 import { montaArgine } from './argine.js';
 import { GUIDE, paginaGuida, paginaIndice, paginaNovita, urlGuide } from './guide.js';
 import * as novita from './novita.js';
@@ -543,6 +544,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   };
   app.get(['/', '/index.html'], serviGuscio);
 
+  // Prima dello statico: i .js escono minificati e coi nomi interni accorciati.
+  // Vedi src/web/minifica.js — e SB_SORGENTI=1 lo spegne.
+  app.use(creaMinifica(publicDir));
   app.use(express.static(publicDir));
 
   function requireLogin(req, res, next) {
