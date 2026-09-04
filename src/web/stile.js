@@ -191,6 +191,10 @@ export const normGoal = (g, i = 0) => {
     // se ne hai gia' 450, la barra deve partire da li'. Il conto vero resta
     // quello degli eventi; questo e' il gradino sotto.
     partenza: clampInt(g.partenza, 0, 1000000, 0),
+    // Con questo acceso la partenza non e' una fotografia che invecchia: il
+    // server la riallinea al numero vero di Twitch, e il conto degli eventi
+    // continua a muovere la barra fra un riallineamento e l'altro.
+    daVivo: g.daVivo === true,
     titolo: String(g.titolo || '').slice(0, 60),
     posizione: unoDi(g.posizione, POS_ANG, 'alto-sinistra'),
     xy: xyOk(g.xy),
@@ -246,6 +250,10 @@ export const normMusica = (m) => {
     ritmo: unoDi(m.ritmo, RITMO_MUS, 'onde'),
     sfondo: unoDi(m.sfondo, SFONDO_MUS, 'no'),
     corpo: unoDi(m.corpo, CORPO_MUS, 'normale'),
+    // Quanto si allarga la colonna del testo prima che il titolo cominci a
+    // scorrere. In «em», quindi vale uguale a ogni Dimensione. 0 = decide il
+    // corpo (slim stretto, cicciotto largo).
+    larghezza: clampInt(m.larghezza, 0, 30, 0),
     tema: unoDi(m.tema, TEMA_MUS, 'nessuno'),
     daCopertina: m.daCopertina === true,
     scorre: m.scorre !== false,

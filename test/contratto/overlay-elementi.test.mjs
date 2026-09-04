@@ -136,15 +136,28 @@ test('gli obiettivi sono elementi come gli altri, e sono quanti ne vuoi', () => 
 
 // Un obiettivo «1000 follower» non e' «altri mille»: se ne hai gia' 450 la
 // barra deve partire da li'. Il conto degli eventi resta quello vero; la
-// partenza e' il gradino sotto, e si prende da Twitch con un tasto.
+// partenza e' il gradino sotto.
+//
+// E non e' un tasto da premere una volta: un tasto lascia una FOTOGRAFIA, che
+// il giorno dopo e' gia' vecchia. E' una spunta che resta, e il server tiene la
+// partenza allineata al numero vero — togliendo gli eventi gia' contati, cosi'
+// «partenza + contati» resta il numero vero e l'overlay non cambia formula.
 test('un obiettivo può partire da dove sei già arrivato', () => {
   const st = leggi('src/web/stile.js');
   const g = st.slice(st.indexOf('export const normGoal'), st.indexOf('export const normGoals'));
   assert.ok(/partenza: clampInt\(g\.partenza/.test(g), 'la partenza si salva con l’obiettivo');
+  assert.ok(/daVivo: g\.daVivo === true/.test(g), 'e la spunta si salva con lui: non vive nella sessione');
   const u = OVL.slice(OVL.indexOf('function unGoal('), OVL.indexOf('\n}', OVL.indexOf('function unGoal(')));
   assert.ok(/cfg\.partenza/.test(u), 'e l’overlay la somma a quel che ha contato');
+  assert.ok(!/daVivo/.test(u), 'l’overlay non deve nemmeno sapere che la spunta esiste');
   assert.ok(/quantiFollower/.test(leggi('src/twitch/helix.js')), 'il numero vero si chiede a Twitch');
-  assert.ok(/data-g-adesso/.test(APP), 'e c’è il tasto per prenderlo');
+  assert.ok(/type="checkbox" data-g="daVivo"/.test(APP), 'nel pannello è una spunta, non un tasto');
+  assert.ok(!/data-g-adesso/.test(APP), 'e il vecchio tasto una-tantum non c’è più');
+  const srv = leggi('src/web/server.js');
+  const r = srv.slice(srv.indexOf('async function rinfrescaGoalVivi'), srv.indexOf('\n  }', srv.indexOf('async function rinfrescaGoalVivi')));
+  assert.ok(r.length > 100, 'il server sa riallineare la partenza');
+  assert.ok(/vivo - \(Number\(conti\[g\.id\]\) \|\| 0\)/.test(r), 'togliendo gli eventi già contati, sennò conterebbe due volte');
+  assert.ok(/await rinfrescaGoalVivi\(login\)/.test(srv), 'e lo fa quando l’overlay chiede il suo tema');
 });
 
 // Il player e il conto alla rovescia sono elementi della scena come gli altri:

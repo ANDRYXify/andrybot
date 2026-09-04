@@ -281,7 +281,7 @@ function statoDemo() {
         overlayMusica: { attivo: true, verso: 'riga', righe: 'due', testo: '{titolo}', testo2: '{artista}',
           cover: 'vinile', barra: 'anello', tempi: 'trascorso', onde: true, ritmo: 'tutto', sfondo: 'colori',
           daCopertina: false, scorre: true, entrata: 'scivola', cambio: true, quandoFermo: 'sparisce',
-          corpo: 'normale', tema: 'nessuno', posizione: 'basso-sinistra', xy: null,
+          corpo: 'normale', tema: 'nessuno', larghezza: 0, posizione: 'basso-sinistra', xy: null,
           stile: { dim: 'media', sfondo: '#12101a', opacita: 88, testo: '#ffffff', accento: '#38d39f', bordoRaggio: 16, font: 'rotondo', forma: 'carta', materia: 'vetro', cornice: 'nessuna' } },
         overlayTimer: { attivo: true, titolo: 'Si comincia tra', testoFine: 'Si comincia!', aFine: 'resta', minuti: 15,
           posizione: 'alto-destra', xy: null,
@@ -5664,11 +5664,17 @@ function disegnaGoal() {
       <div class="goal-campi">
         <label class="campo-num">${L('Conta', 'Count', 'Cuenta')}<select data-g="tipo">${GOAL_TIPI().map(([v, t]) => `<option value="${v}"${g.tipo === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
         <label class="campo-num">${L('Traguardo', 'Target', 'Meta')}<input type="number" data-g="obiettivo" min="1" max="1000000" value="${Number(g.obiettivo) || 100}"></label>
-        <label class="campo-num">${L('Parte da', 'Starts at', 'Empieza en')}<input type="number" data-g="partenza" min="0" max="1000000" value="${Number(g.partenza) || 0}"></label>
+        <label class="campo-num">${L('Parte da', 'Starts at', 'Empieza en')}<input type="number" data-g="partenza" min="0" max="1000000" value="${Number(g.partenza) || 0}"${g.daVivo && g.tipo !== 'bit' ? ' disabled' : ''}></label>
         <label class="campo-num">${L('Dove', 'Where', 'Dónde')}<select data-g="posizione">${GOAL_ANGOLI().map(([v, t]) => `<option value="${v}"${g.posizione === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
       </div>
+      <label class="riga-check">
+        <input type="checkbox" data-g="daVivo" ${g.daVivo ? 'checked' : ''} ${g.tipo === 'bit' ? 'disabled' : ''}>
+        ${L('Parti da quanti ne ho adesso', 'Start from how many I have now', 'Empieza desde cuántos tengo ahora')}
+        <span class="tenue">— ${g.tipo === 'bit'
+          ? L('i bit non hanno un totale su Twitch: la partenza la scrivi tu', 'bits have no total on Twitch: you type the starting number', 'los bits no tienen un total en Twitch: la salida la escribes tú')
+          : L('il numero lo tengo allineato io a quello vero, non resta fermo a una fotografia', 'I keep the number lined up with the real one, it does not stay stuck on a snapshot', 'mantengo el número alineado con el real, no se queda en una foto')}</span>
+      </label>
       <div class="riga-flessibile">
-        <button type="button" class="btn secondario mini" data-g-adesso>${L('Quanti ne ho adesso', 'How many I have now', 'Cuántos tengo ahora')}</button>
         <button type="button" class="btn secondario mini" data-g-azzera>${L('Riparti da zero', 'Start over', 'Empezar de cero')}</button>
       </div>
       <h4>${L('Aspetto', 'Appearance', 'Aspecto')}</h4>
@@ -5939,6 +5945,7 @@ function pannelloAlert() {
           <label class="campo-num">${L('Sfondo', 'Background', 'Fondo')}<select data-c="sfondo">${[['no', L('niente', 'none', 'ninguno')], ['copertina', L('copertina sfocata', 'blurred cover', 'portada difuminada')], ['colori', L('colori del disco', 'record colors', 'colores del disco')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Corpo', 'Body', 'Cuerpo')}<select data-c="corpo">${CORPO_OPTS().map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Tema', 'Theme', 'Tema')}<select data-c="tema">${TEMA_OPTS().map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+          <label class="campo-num">${L('Larghezza del testo', 'Text width', 'Ancho del texto')} <span class="tenue">${L('0 = come il corpo', '0 = follow the body', '0 = como el cuerpo')}</span><input type="number" data-c="larghezza" min="0" max="30"></label>
         </div>
         <div class="riga-flessibile spazio-sopra">
           <label class="riga-check"><input type="checkbox" data-c="onde"> ${L('Onde che ballano', 'Dancing bars', 'Ondas que bailan')}</label>
@@ -6621,7 +6628,8 @@ function _vestiMusica(box, cfg) {
     + ((cfg.barra || 'sotto') !== 'sotto' && (cfg.tempi || 'no') === 'no' ? ' senza-sotto' : '');
   _setVars(box, { '--bg': st.sfondo, '--op': (st.opacita != null ? st.opacita : 85) + '%', '--fg': st.testo,
     '--acc': st.accento, '--acc2': st.accento, '--radius': (st.bordoRaggio != null ? st.bordoRaggio : 12) + 'px',
-    '--font': fontStile(st), '--energia': String(d.energia) });
+    '--font': fontStile(st), '--energia': String(d.energia),
+    '--m-testo': Number(cfg.larghezza) > 0 ? Number(cfg.larghezza) + 'em' : null });
   const dipingi = (sel, tpl) => {
     const n = box.querySelector(sel);
     if (n) n.innerHTML = esc(tpl || '').replace(/\{titolo\}/g, '<b>' + esc(d.nome) + '</b>')
@@ -7150,7 +7158,7 @@ function _defMusica() {
   return { attivo: false, verso: 'riga', righe: 'una', testo: '{titolo} — {artista}', testo2: '{artista}',
     cover: 'quadrata', barra: 'sotto', tempi: 'no', onde: true, ritmo: 'onde', sfondo: 'no',
     daCopertina: false, scorre: true, entrata: 'dissolve', cambio: true,
-    corpo: 'normale', tema: 'nessuno',
+    corpo: 'normale', tema: 'nessuno', larghezza: 0,
     quandoFermo: 'sparisce', posizione: 'basso-sinistra', xy: null, stile: VESTE_DEF() };
 }
 
@@ -12736,26 +12744,34 @@ function attivaPiattaforma() {
 
   _g('scheda-alert')?.addEventListener('click', (ev) => {
     const riga = ev.target.closest('[data-goal-id]');
-    if (!riga || !ev.target.closest('[data-g-adesso], [data-g-vesti], [data-g-via], [data-g-azzera]')) return;
+    if (!riga || !ev.target.closest('input[data-g="daVivo"], [data-g-vesti], [data-g-via], [data-g-azzera]')) return;
     const i = goalBozza().findIndex((g) => g.id === riga.dataset.goalId);
     if (i < 0) return;
-    if (ev.target.closest('[data-g-adesso]')) {
+    const spunta = ev.target.closest('input[data-g="daVivo"]');
+    if (spunta) {
       leggiGoalDalForm();
       const g = goalBozza()[i];
       if (!g) return;
+      g.daVivo = spunta.checked;
+      if (!g.daVivo || g.tipo === 'bit') { disegnaGoal(); aggiornaAnteprima(); salvaGoalDaScena(); return; }
       conErrore(async () => {
         const r = await api('/api/streamer/quanti?tipo=' + encodeURIComponent(g.tipo === 'sub' ? 'sub' : g.tipo === 'bit' ? 'bit' : 'follower'));
         if (r?.quanti == null) {
           toast(g.tipo === 'bit'
             ? L('I bit non hanno un totale su Twitch: scrivi tu da quanti parti.', 'Bits have no total on Twitch: type where you start from.', 'Los bits no tienen un total en Twitch: escribe tú desde cuántos empiezas.')
             : L('Non riesco a leggerlo da Twitch: controlla i permessi e riprova.', 'I cannot read it from Twitch: check the permissions and try again.', 'No puedo leerlo de Twitch: revisa los permisos e inténtalo de nuevo.'), 'errore');
+          g.daVivo = false;
+          disegnaGoal();
+          salvaGoalDaScena();
           return;
         }
-        g.partenza = Math.max(0, Math.min(1000000, Number(r.quanti) || 0));
+        const conto = Number((impostazioni().overlayStato?.goals || {})[g.id]) || 0;
+        g.partenza = Math.max(0, Math.min(1000000, (Number(r.quanti) || 0) - conto));
         if (g.obiettivo <= g.partenza) g.obiettivo = Math.min(1000000, g.partenza + 100);
         disegnaGoal();
         aggiornaAnteprima();
-        toast(L('Parte da', 'Starts at', 'Empieza en') + ' ' + g.partenza + ' ✓');
+        salvaGoalDaScena();
+        toast(L('Parte da', 'Starts at', 'Empieza en') + ' ' + (g.partenza + conto) + ' ✓');
       });
       return;
     }

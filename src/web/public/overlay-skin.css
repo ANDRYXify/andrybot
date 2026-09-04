@@ -407,7 +407,7 @@
 .ovl-musica.verso-solo-cover .m-anello circle { stroke-width: 4.2; }
 .ovl-musica .m-an-ora { stroke: var(--acc); transition: stroke-dashoffset .9s linear; filter: drop-shadow(0 0 3px color-mix(in srgb, var(--acc) 55%, transparent)); }
 
-.ovl-musica .m-corpo { min-width: 0; max-width: 13em; display: grid; gap: .28em; flex: 1 1 auto; overflow: hidden; }
+.ovl-musica .m-corpo { min-width: 0; max-width: var(--m-testo, 13em); display: grid; gap: .28em; flex: 1 1 auto; overflow: hidden; }
 .ovl-musica .m-riga { display: block; overflow: hidden; white-space: nowrap; }
 .ovl-musica.scorre .m-riga {
   -webkit-mask-image: linear-gradient(90deg, #000 78%, transparent 100%);
@@ -527,7 +527,8 @@
 .ovl-musica.corpo-slim {
   --cov: 3.1em; gap: .55em; padding: .26em .55em; line-height: 1.14;
 }
-.ovl-musica.corpo-slim .m-corpo { gap: .08em; max-width: 11em; }
+.ovl-musica.corpo-slim { --m-testo: 11em; }
+.ovl-musica.corpo-slim .m-corpo { gap: .08em; }
 .ovl-musica.corpo-slim .m-barra { height: .17em; }
 .ovl-musica.corpo-slim .m-onde { height: .85em; gap: .1em; }
 .ovl-musica.corpo-slim .m-onde i { width: .13em; }
@@ -535,7 +536,8 @@
 .ovl-musica.corpo-cicciotto {
   --cov: 5.9em; gap: 1.05em; padding: .82em 1.08em; line-height: 1.34;
 }
-.ovl-musica.corpo-cicciotto .m-corpo { gap: .42em; max-width: 15em; }
+.ovl-musica.corpo-cicciotto { --m-testo: 15em; }
+.ovl-musica.corpo-cicciotto .m-corpo { gap: .42em; }
 .ovl-musica.corpo-cicciotto .m-barra { height: .34em; }
 .ovl-musica.corpo-cicciotto .m-onde { height: 1.6em; gap: .2em; }
 .ovl-musica.corpo-cicciotto .m-onde i { width: .24em; }

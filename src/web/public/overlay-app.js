@@ -741,6 +741,8 @@ function disegnaMusica() {
     + ' entra-' + cfg.entrata + (cfg.barra !== 'sotto' && cfg.tempi === 'no' ? ' senza-sotto' : '')
     + (el.classList.contains('dentro') ? ' dentro' : '');
   vestiElemento(el, cfg, 'nessuna', 'musica');
+  if (Number(cfg.larghezza) > 0) el.style.setProperty('--m-testo', Number(cfg.larghezza) + 'em');
+  else el.style.removeProperty('--m-testo');
   if (nato) requestAnimationFrame(() => el.classList.add('dentro'));
 
   const disco = el.querySelector('.m-disco');
