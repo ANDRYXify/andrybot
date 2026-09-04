@@ -28,7 +28,8 @@
 
   --contorno: #150910;
   --contorno-sp: 2px;
-  --alone-contorno: none;
+  --posto-inchiostro: 8px;
+  --alone-contorno: 0 0 0 0 transparent;
 
   --tratto-1: 1px 1.5px 1.5px 1px;
   --tratto-2: 2px 2.5px 2.5px 2px;
