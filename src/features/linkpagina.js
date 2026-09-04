@@ -90,6 +90,30 @@ const facciaFont = (nome) => (nome !== 'manga' ? '' : `
     src:url(/vendor/font/permanentmarker-normal-400-latin.woff2) format('woff2');
     unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2212,U+FEFF,U+FFFD}`);
 
+// IL PUNTATORE DISEGNATO.
+//
+// Non e' una tabella «un cursore per tema»: quella andrebbe tenuta allineata a
+// mano, e il tema numero dodici resterebbe senza. Qui il puntatore si RICAVA dai
+// colori del tema — pieno d'accento, contorno del bordo — quindi ogni tema, anche
+// uno che non esiste ancora, ne ha uno intonato per costruzione.
+//
+// Due forme, come si fa: una penna per il normale (la punta e' il punto attivo,
+// in alto a sinistra) e una stella per quello che si puo' premere. Su schermo
+// tattile non si disegna niente: li' un puntatore non c'e' proprio, e imporne uno
+// vorrebbe dire far scaricare due immagini per nulla.
+const cursoreCss = (t, c) => {
+  if (t.cursore !== 'disegnato') return '';
+  const u = (svg) => `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+  const penna = `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="28" viewBox="0 0 26 28"><path d="M2.6 1.7C2.2 1.3 1.4 1.6 1.5 2.3L3.7 22.6C3.8 23.6 5 23.9 5.6 23.1L10 17.4L13.9 25.3C14.2 25.9 14.9 26.1 15.5 25.8L18.2 24.4C18.8 24.1 19 23.3 18.7 22.7L14.9 15L22 14.2C23 14.1 23.3 12.9 22.6 12.3Z" fill="${c.acc}" stroke="${c.bordo}" stroke-width="2" stroke-linejoin="round"/></svg>`;
+  const stella = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><path d="M15 2.4C15.3 1.5 16.6 1.5 16.9 2.4L19 10.7C19.1 11.2 19.5 11.6 20 11.7L28.4 13.8C29.3 14.1 29.3 15.4 28.4 15.7L20 17.8C19.5 17.9 19.1 18.3 19 18.8L16.9 27.1C16.6 28 15.3 28 15 27.1L12.9 18.8C12.8 18.3 12.4 17.9 11.9 17.8L3.5 15.7C2.6 15.4 2.6 14.1 3.5 13.8L11.9 11.7C12.4 11.6 12.8 11.2 12.9 10.7Z" fill="${c.acc}" stroke="${c.bordo}" stroke-width="2.1" stroke-linejoin="round"/></svg>`;
+  return `
+  @media (pointer:fine){
+    body,body *{cursor:${u(penna)} 2 1,auto}
+    a,a *,button,button *,summary,label,[role="button"],[role="button"] *{cursor:${u(stella)} 16 15,pointer}
+    input,textarea,[contenteditable="true"]{cursor:text}
+  }`;
+};
+
 // ── Icone: sagome PIENE, non contorni ──────────────────────────────────────
 // Prima erano tracciati sottili a 1.8px: a 20 pixel diventavano scarabocchi
 // illeggibili. Le sagome piene si riconoscono a colpo d'occhio, e ogni brand
@@ -431,6 +455,18 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
     maglia: `body::before{content:'';position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(${c.bordo} 1px,transparent 1px),linear-gradient(90deg,${c.bordo} 1px,transparent 1px);background-size:44px 44px;opacity:.35;mask-image:radial-gradient(ellipse 70% 60% at 50% 30%,#000 30%,transparent 100%)}`,
     grana: `body::before{content:'';position:fixed;inset:0;pointer-events:none;opacity:.05;background-image:repeating-conic-gradient(${c.testo} 0% 0.0001%,transparent 0% 0.0002%);background-size:3px 3px}`,
     bolle: `body::before{content:'';position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle 180px at 15% 20%,${c.acc}2e,transparent 60%),radial-gradient(circle 220px at 85% 70%,${c.acc}24,transparent 60%),radial-gradient(circle 140px at 60% 15%,${c.acc}1f,transparent 60%)}`,
+    // RETINO: il mezzotono stampato. Non e' la grana della pellicola qui sopra —
+    // quella e' rumore fine e casuale, questo e' una griglia REGOLARE di punti,
+    // che e' come si riempiono le ombre in una tavola a china.
+    retino: `body::before{content:'';position:fixed;inset:0;pointer-events:none;opacity:.20;
+      background-image:radial-gradient(${c.testo} 1.1px,transparent 1.2px);background-size:6px 6px}`,
+    // LINEE DI CONCENTRAZIONE: convergono sul soggetto e gli lasciano aria
+    // attorno. Il varco al centro non e' un vezzo: senza, le linee passano sopra
+    // la faccia di chi guardi, ed e' esattamente quello che in una tavola non si fa.
+    concentrazione: `body::before{content:'';position:fixed;inset:-30% -50vw;pointer-events:none;opacity:.12;
+      background-image:repeating-conic-gradient(from 0deg at 50% 20%,${c.testo} 0deg .5deg,transparent .5deg 3deg);
+      -webkit-mask-image:radial-gradient(closest-side,transparent 36%,#000 78%,transparent 96%);
+      mask-image:radial-gradient(closest-side,transparent 36%,#000 78%,transparent 96%)}`,
     // Un cielo di puntini che respira: tre strati di stelle di grandezza diversa
     // che si spostano piano. Sta tutto in due gradienti ripetuti, nessuna immagine.
     stelle: `body::before{content:'';position:fixed;inset:-10%;pointer-events:none;opacity:.55;
@@ -498,6 +534,10 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
     pieno: `background:${c.card};border:1px solid ${c.bordo}`,
     contorno: `background:transparent;border:2px solid ${c.bordo}`,
     vetro: `background:${c.card};border:1px solid ${c.bordo};backdrop-filter:blur(12px)`,
+    // A CHINA: il pieno di carta dentro un contorno spesso. Il 2px del
+    // "contorno" su fondo trasparente, su una pagina chiara, legge come un
+    // rettangolo vuoto — non come una vignetta disegnata.
+    inchiostro: `background:${c.card};border:3px solid ${c.bordo}`,
   };
   const stileBtn = STILI[t.stileBtn] || STILI.pieno;
   // Ombra a DUE strati: una stretta che stacca il bordo dal fondo e una larga e
@@ -754,7 +794,7 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   })()}
 <meta name="twitter:card" content="${(pagina.blocchi || []).some((b) => b?.tipo === 'eroe' && b.img) ? 'summary_large_image' : 'summary'}">
 <link rel="icon" href="/icons/icon-192.png?v=7">
-<style>${facciaFont(t.font)}
+<style>${facciaFont(t.font)}${cursoreCss(t, c)}
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   :root{--testo:${c.testo};--tenue:${c.tenue};--acc:${c.acc};--suacc:${suAcc};--r:${raggio}px;--w:${larghezza}rem;
     --fd:${font.d};--ft:${font.t}}
@@ -874,7 +914,12 @@ ${/* per l'anteprima nelle chat vale molto di più la copertina della foto profi
   .fascia-b button{padding:.55rem 1rem;border:0;border-radius:var(--r);background:var(--acc);color:var(--suacc);
     font:inherit;font-weight:700;font-size:.85rem;cursor:pointer}
   .fascia-b button.due{background:transparent;color:var(--testo);border:1px solid ${c.bordo}}
-  .fascia-b a{margin-left:auto;font-size:.8rem;color:var(--tenue)}
+  /* il link ai dettagli sta DENTRO la frase che spiega, non in fondo alla riga
+     dei bottoni: li' aveva un margin-left automatico, e quando la riga andava a capo
+     su schermo stretto restava da solo schiacciato nell'angolo in basso a
+     destra — sembrava caduto fuori dal riquadro. */
+  .fascia p a{color:var(--acc);text-decoration:underline;text-underline-offset:2px}
+  .fascia-b button{flex:1 1 12rem}
   /* proporzioni per tipo di contenuto: un brano non è un video, e uno short
      nemmeno. Con un 16/9 forzato restava mezzo riquadro vuoto. */
   .emb.f-video{aspect-ratio:16/9}
@@ -1109,11 +1154,11 @@ ${!anteprima && mov !== 'nessuno' ? `<script>${SCRIPT_SCROLLREVEAL}</script>` : 
 ${banner && corpo.includes('chiedi-b') ? `
   <aside class="fascia" id="fascia" hidden>
     <p><b>Video e musica di altri siti.</b> Questa pagina non usa cookie, ma i riquadri di YouTube, Spotify,
-      Twitch e simili sono pezzi dei loro siti e possono usarne di propri. Li carichiamo solo se dici di sì.</p>
+      Twitch e simili sono pezzi dei loro siti e possono usarne di propri. Li carichiamo solo se dici di sì —
+      <a href="/u/${esc(login)}/privacy">i dettagli sono qui</a>.</p>
     <div class="fascia-b">
       <button type="button" id="fascia-si">Va bene, carica tutto</button>
       <button type="button" id="fascia-no" class="due">Solo l'essenziale</button>
-      <a href="/u/${esc(login)}/privacy">Dettagli</a>
     </div>
   </aside>` : ''}
 ${corpo.includes('class="conto"') ? `<script>

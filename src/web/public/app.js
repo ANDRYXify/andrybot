@@ -10424,7 +10424,8 @@ const LP = { d: null, blocchi: [], tema: {}, testa: {} };
 
 const _tema = (o) => ({ sfondoTipo: 'tinta', bg: '', bg2: '', angolo: 160, sfondoUrl: '', effetto: 'nessuno',
   testo: '', accent: '', card: '', bordo: '', font: 'system', raggio: 14, stileBtn: 'pieno', ombra: true,
-  anim: 'rise', avatarForma: 'cerchio', larghezza: 30, allinea: 'centro', disposizione: 'colonna', ...o });
+  anim: 'rise', avatarForma: 'cerchio', larghezza: 30, allinea: 'centro', disposizione: 'colonna',
+  cursore: 'sistema', ...o });
 const TEMI_PRONTI = [
   { id: 'neon', nome: 'Notte al neon', base: 'neon',
     tema: _tema({ sfondoTipo: 'gradiente', angolo: 165, effetto: 'aurora', stileBtn: 'vetro', raggio: 18 }) },
@@ -10451,14 +10452,14 @@ const TEMI_PRONTI = [
       accent: '#ed1566', font: 'condensato', raggio: 8, larghezza: 42, disposizione: 'rivista' }) },
   { id: 'manga', nome: 'Manga', base: 'minimal',
     tema: _tema({ bg: '#f7f4ef', bg2: '#efe9e0', testo: '#0b0b0b', accent: '#b80858',
-      card: '#ffffff', bordo: '#0b0b0b', font: 'manga', raggio: 3, stileBtn: 'contorno',
-      ombraTipo: 'dura', ombraColore: '#0b0b0b', effetto: 'grana', anim: 'pop',
-      avatarForma: 'quadrato', allinea: 'centro' }) },
+      card: '#ffffff', bordo: '#0b0b0b', font: 'manga', raggio: 3, stileBtn: 'inchiostro',
+      ombraTipo: 'dura', ombraColore: '#0b0b0b', effetto: 'retino', anim: 'pop',
+      avatarForma: 'quadrato', allinea: 'centro', cursore: 'disegnato' }) },
   { id: 'manganotte', nome: 'Manga di notte', base: 'neon',
     tema: _tema({ bg: '#0f0a0e', bg2: '#1a141a', testo: '#f1e9ee', accent: '#f72fa7',
-      card: '#231b22', bordo: '#f4ecf1', font: 'manga', raggio: 3, stileBtn: 'contorno',
-      ombraTipo: 'dura', ombraColore: '#f4ecf1', effetto: 'grana', anim: 'pop',
-      avatarForma: 'quadrato', allinea: 'centro' }) },
+      card: '#231b22', bordo: '#f4ecf1', font: 'manga', raggio: 3, stileBtn: 'inchiostro',
+      ombraTipo: 'dura', ombraColore: '#f4ecf1', effetto: 'concentrazione', anim: 'pop',
+      avatarForma: 'quadrato', allinea: 'centro', cursore: 'disegnato' }) },
   { id: 'mezzanotte', nome: 'Mezzanotte', base: 'glass',
     tema: _tema({ sfondoTipo: 'gradiente', bg: '#060b18', bg2: '#0e1e42', accent: '#5b8cff', effetto: 'maglia', raggio: 12 }) },
   { id: 'arcade', nome: 'Arcade', base: 'brutal',
@@ -10702,6 +10703,12 @@ async function caricaPaginaLink(ridisegna = false) {
             <option value="rise">${L('Dal basso', 'From below', 'Desde abajo')}</option>
             <option value="pop">${L('Pop', 'Pop', 'Pop')}</option>
           </select>
+          <label class="campo spazio-sopra" for="lp-cursore">${L('Puntatore del mouse', 'Mouse pointer', 'Puntero del ratón')}</label>
+          <select id="lp-cursore" data-lpk="cursore">
+            <option value="sistema">${L('Quello di sistema', 'The system one', 'El del sistema')}</option>
+            <option value="disegnato">${L('Disegnato, coi colori del tema', 'Drawn, in the theme colours', 'Dibujado, con los colores del tema')}</option>
+          </select>
+          <p class="suggerimento">${L('Su telefono e tablet non cambia niente: lì un puntatore non c\u2019è.', 'Nothing changes on phones and tablets: there is no pointer there.', 'En móviles y tabletas no cambia nada: allí no hay puntero.')}</p>
           <label class="campo spazio-sopra" for="lp-consenso">${L('Video, musica e pagine di altri siti', 'Video, music and pages from other sites', 'Vídeo, música y páginas de otros sitios')}</label>
           <select id="lp-consenso" data-lpk="consenso">
             <option value="sempre">${L('Caricali subito (consigliato)', 'Load them right away (recommended)', 'Cárgalos enseguida (recomendado)')}</option>

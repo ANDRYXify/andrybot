@@ -109,9 +109,11 @@ const TEMI_LINK = (() => {
 const AMMESSI_LINK = {
   sfondoTipo: ['tinta', 'gradiente', 'immagine'],
   effetto: ['nessuno', 'aurora', 'maglia', 'grana', 'bolle', 'stelle', 'onde', 'griglia',
-    'synthwave', 'neonpulse', 'particelle', 'matrix', 'nebulosa', 'scanline', 'raggi'],
+    'synthwave', 'neonpulse', 'particelle', 'matrix', 'nebulosa', 'scanline', 'raggi',
+    'retino', 'concentrazione'],
   font: FONT_LINKPAGE,
-  stileBtn: ['pieno', 'contorno', 'vetro'],
+  stileBtn: ['pieno', 'contorno', 'vetro', 'inchiostro'],
+  cursore: ['sistema', 'disegnato'],
   ombraTipo: ['nessuna', 'morbida', 'dura'],
   anim: ['nessuna', 'fade', 'rise', 'pop'],
   avatarForma: ['cerchio', 'quadrato', 'nessuno'],
@@ -143,7 +145,9 @@ test('anche la pagina link ha il manga, e il suo carattere si carica solo lì', 
   for (const m of manga) {
     assert.equal(m.tema.font, 'manga');
     assert.equal(m.tema.ombraTipo, 'dura', `«${m.nome}»: senza ombra dura non è inchiostro`);
-    assert.equal(m.tema.stileBtn, 'contorno', `«${m.nome}»: i bottoni devono essere contornati`);
+    assert.equal(m.tema.stileBtn, 'inchiostro', `«${m.nome}»: i bottoni devono essere a china`);
+    assert.ok(['retino', 'concentrazione'].includes(m.tema.effetto),
+      `«${m.nome}»: senza retino o linee di concentrazione la pagina resta carta vuota`);
   }
   const LINK = readFileSync(join(RAD, 'src/features/linkpagina.js'), 'utf8');
   assert.ok(LINK.includes('const facciaFont ='), 'la faccia del carattere non è condizionata');
@@ -182,4 +186,24 @@ test('anche le grafiche social hanno il manga', () => {
   const [, chiaro] = manga.find(([id]) => id === 'manga');
   assert.equal(chiaro.testo.toLowerCase(), '#0b0b0b');
   assert.ok(chiaro.bg.every((c) => parseInt(c.slice(1, 3), 16) > 200), 'il manga chiaro va su carta');
+});
+
+
+test('ogni asse nuovo del tema esiste anche dove viene validato e dove viene disegnato', () => {
+  // Un asse aggiunto solo ai temi, e non all'elenco che il server accetta, viene
+  // scartato in silenzio al salvataggio: il tema si sceglie e non succede niente.
+  const DB = readFileSync(join(RAD, 'src/db.js'), 'utf8');
+  const LINK = readFileSync(join(RAD, 'src/features/linkpagina.js'), 'utf8');
+  for (const v of ['retino', 'concentrazione']) {
+    assert.ok(DB.includes(`'${v}'`), `db.js non accetta l'effetto «${v}»`);
+    assert.ok(new RegExp(`^\\s*${v}:`, 'm').test(LINK), `linkpagina.js non sa disegnare «${v}»`);
+  }
+  assert.ok(DB.includes("'inchiostro'"), 'db.js non accetta lo stile «inchiostro»');
+  assert.ok(/^\s*inchiostro:/m.test(LINK), 'linkpagina.js non sa disegnare lo stile «inchiostro»');
+  assert.ok(DB.includes("cursore: scelta("), 'db.js non valida l\'asse del cursore');
+  assert.ok(LINK.includes('const cursoreCss ='), 'linkpagina.js non disegna il cursore');
+  assert.ok(/cursore !== 'disegnato'\) return ''/.test(LINK),
+    'il cursore disegnato dev\'essere spento se il tema non lo chiede');
+  assert.ok(LINK.includes('@media (pointer:fine)'),
+    'il cursore non deve nemmeno esistere dove un puntatore non c\'e\'');
 });
