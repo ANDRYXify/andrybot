@@ -26,6 +26,8 @@ lo usa: se non si vede da fuori, qui non ci va.
 - Le schede sono vignette: angoli quadri, contorno spesso e il titolo in una fascia d'inchiostro in alto, come la didascalia di una tavola.
 - Il grigio pieno è sparito: le superfici secondarie sono a retino, come il mezzotono stampato.
 - Il tratto ha una gerarchia: la vignetta è più spessa del comando, il comando più del dettaglio. È così che si legge la profondità.
+- I pulsanti sono a tinta piatta, senza sfumature: in una tavola il colore è pieno o non c'è.
+- Quando arrivi con la tastiera su un comando partono le linee di concentrazione attorno, come quando una vignetta dice «guarda qui».
 
 ## 2026-09-03
 

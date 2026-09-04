@@ -74,7 +74,8 @@ body:not(.con-nav) .barra-top { display: none; }
   padding: 0 clamp(.9rem, 2.4vw, 1.6rem);
   background: color-mix(in srgb, var(--surface) 88%, transparent);
   backdrop-filter: blur(14px) saturate(1.3); -webkit-backdrop-filter: blur(14px) saturate(1.3);
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--contorno-sp) solid var(--contorno);
+  border-bottom-width: var(--tratto-3);
 }
 
 .marchio { display: flex; align-items: center; gap: .5rem; flex: none; color: var(--testo); }
@@ -615,8 +616,8 @@ body.vetrina .contenuto { max-width: 1040px; }
 .btn.secondario { background: var(--surface); border: var(--contorno-sp) solid var(--contorno); color: var(--testo); box-shadow: var(--ombra-ink); }
 .btn.secondario:hover { background: var(--surface-2); color: var(--testo); border-color: var(--contorno); box-shadow: var(--ombra-ink-alta); }
 .btn.pericolo { background: var(--rosso); }
-.btn.pericolo:hover { background: #bb2f39; box-shadow: 0 4px 14px rgba(207, 55, 66, .22); }
-.btn.mini { padding: .3rem .7rem; min-height: 0; font-size: .8rem; border-radius: var(--r-xs); }
+.btn.pericolo:hover { background: #bb2f39; box-shadow: var(--alone-contorno), var(--ombra-ink-alta); }
+.btn.mini { padding: .3rem .7rem; min-height: 0; font-size: .8rem; border-radius: var(--ang-mano); }
 
 :focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; border-radius: 4px; }
 
@@ -1291,11 +1292,11 @@ body::after {
 .carta.avviso:hover, .demo-spiega:hover { box-shadow: var(--om-s); }
 
 .btn:not(.secondario):not(.pericolo):not(.testo) {
-  background: linear-gradient(180deg, var(--acc), var(--acc-600));
-  box-shadow: 0 1px 2px rgba(0, 0, 0, .10), 0 8px 18px -8px color-mix(in srgb, var(--acc) 50%, transparent);
+  background: var(--acc);
+  box-shadow: var(--alone-contorno), var(--ombra-ink);
 }
 .btn:not(.secondario):not(.pericolo):not(.testo):hover {
-  box-shadow: 0 2px 5px rgba(0, 0, 0, .12), 0 14px 30px -8px color-mix(in srgb, var(--acc) 62%, transparent);
+  box-shadow: var(--alone-contorno), var(--ombra-ink-alta);
 }
 
 .lista-voci li, .modulo, .azione-riga { position: relative; }
