@@ -332,8 +332,8 @@ body.vetrina .contenuto { max-width: 1040px; }
 .vetrina-hero::before {
   content: ""; position: absolute; z-index: -1; inset: -26% -50vw -8%;
   background-image: var(--cinetiche); opacity: var(--cinetiche-forza);
-  -webkit-mask-image: radial-gradient(closest-side, transparent 20%, #000 58%, transparent 88%);
-  mask-image: radial-gradient(closest-side, transparent 20%, #000 58%, transparent 88%);
+  -webkit-mask-image: radial-gradient(closest-side, transparent 38%, #000 76%, transparent 95%);
+  mask-image: radial-gradient(closest-side, transparent 38%, #000 76%, transparent 95%);
 }
 .vetrina-hero::after {
   content: ""; position: absolute; z-index: -1; inset: -14% -50vw 0;

@@ -49,8 +49,8 @@ body.vetrina em, body.vetrina .vt-corsivo {
   content: ""; position: absolute; inset: -34% -50vw -12%;
   background-image: var(--cinetiche);
   opacity: var(--cinetiche-forza); z-index: -2; pointer-events: none;
-  -webkit-mask-image: radial-gradient(closest-side, transparent 24%, #000 62%, transparent 92%);
-  mask-image: radial-gradient(closest-side, transparent 24%, #000 62%, transparent 92%);
+  -webkit-mask-image: radial-gradient(closest-side, transparent 40%, #000 78%, transparent 96%);
+  mask-image: radial-gradient(closest-side, transparent 40%, #000 78%, transparent 96%);
 }
 .vt-scena::after {
   content: ""; position: absolute; inset: -18% -50vw; z-index: -1; pointer-events: none;

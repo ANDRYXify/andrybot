@@ -40,6 +40,7 @@
   --didascalia-fondo: var(--contorno);
   --didascalia-testo: #f7f3ec;
   --orlo-scritta: var(--contorno);
+  --titolo-pieno: #b80858;
   --tono-10: radial-gradient(var(--contorno) 1.05px, transparent 1.1px);
   --tono-20: radial-gradient(var(--contorno) 1.5px, transparent 1.55px);
   --tono-40: radial-gradient(var(--contorno) 2.14px, transparent 2.2px);
@@ -75,7 +76,7 @@
   --retino-passo: 6px 6px;
   --retino-forza: .16;
   --cinetiche: repeating-conic-gradient(from 0deg at 50% 50%, var(--contorno) 0deg .55deg, transparent .55deg 3.1deg);
-  --cinetiche-forza: .1;
+  --cinetiche-forza: .05;
   --acc-soft: color-mix(in srgb, var(--acc) 8%, var(--surface));
   --acc-tint: color-mix(in srgb, var(--acc) 10%, transparent);
   --acc-bordo: color-mix(in srgb, var(--acc) 26%, var(--border));
@@ -134,7 +135,7 @@
   --retino: radial-gradient(color-mix(in srgb, var(--acc) 80%, #fff) 1.1px, transparent 1.2px);
   --retino-forza: .2;
   --cinetiche: repeating-conic-gradient(from 0deg at 50% 50%, color-mix(in srgb, var(--acc) 70%, #fff) 0deg .55deg, transparent .55deg 3.1deg);
-  --cinetiche-forza: .14;
+  --cinetiche-forza: .055;
   --su-acc: #1e0f18;
   --acc-soft: color-mix(in srgb, var(--acc) 10%, var(--surface));
   --acc-tint: color-mix(in srgb, var(--acc) 14%, transparent);

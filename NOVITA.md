@@ -40,6 +40,8 @@ lo usa: se non si vede da fuori, qui non ci va.
 - L'avviso di errore arriva con la sua scossa: si capisce che qualcosa è andato storto anche solo da come si muove.
 - Il marchio in alto trema un attimo quando ci passi sopra, come una cosa disegnata a mano.
 - E di notte si legge: il contorno nero spariva nel fondo scuro, ora ha il filo di carta attorno come nelle tavole stampate.
+- Le linee di concentrazione dietro il titolo si sono calmate: erano un fondale che copriva tutto, adesso convergono sul titolo e gli lasciano aria attorno.
+- Il titolo grande ha il pieno del marchio, lo stesso della «b» di bot, dentro il contorno: prima era una parete di colore piatto e su telefono le lettere si gonfiavano fino a chiudersi.
 
 ## 2026-09-03
 
