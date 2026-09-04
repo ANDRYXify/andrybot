@@ -461,7 +461,7 @@ class Handler(BaseHTTPRequestHandler):
             if op == "lia":
                 return self._json(200, {"ok": True, "lia": VAL.insegna_al_bot(), "quaderno": Q.stato()})
             return self._json(200, {"ok": True, "quaderno": Q.stato(),
-                                    "voci": Q.per(d.get("canale"), 20)})
+                                    "voci": Q.elenco(d.get("canale"), 50)})
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})
 

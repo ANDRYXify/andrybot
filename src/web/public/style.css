@@ -1250,6 +1250,8 @@ details.blocco-se[open] > summary { margin-bottom: .3rem; }
 pre.blocco-codice { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-s); padding: .75rem .8rem; margin-top: .3rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .82rem; color: var(--testo-2); overflow-x: auto; white-space: pre; }
 
 .riga-flessibile { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; }
+.riga-flessibile > select { width: auto; flex: 0 1 auto; min-width: 7rem; }
+.riga-flessibile > .cresce { width: auto; flex: 1 1 12rem; min-width: 9rem; }
 .spazio-sopra { margin-top: 1rem; }
 .separatore { border: none; border-top: 1px solid var(--border); margin: 1.1rem 0; }
 .lista-passi { margin: .4rem 0 .2rem 1.35rem; color: var(--testo-2); font-size: .9rem; }

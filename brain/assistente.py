@@ -61,7 +61,40 @@ def _righe(titolo, voci, quante):
     return titolo + "\n" + "\n".join("- " + v[:200] for v in dentro[:quante]) + "\n\n"
 
 
-def _sistema(nome_bot, canale, tono, situazione, conoscenza, stile, insegnamenti, linee_guida, web):
+# LA SCHEDA DELLO STREAMER. I campi che ha deciso lui, con l'etichetta che li
+# rende leggibili a un modello: non basta metterli, vanno DETTI, sennò «orari»
+# resta una parola e non una domanda a cui rispondere. `evita` non e' qui: e' un
+# divieto, e i divieti stanno fra le regole.
+SCHEDA_ETICHETTE = (
+    ("chi", "chi e'"),
+    ("faccio", "cosa fa in diretta"),
+    ("orari", "quando e' in diretta"),
+    ("dove", "dove lo trovano (riporta ALLA LETTERA, non riscrivere gli indirizzi)"),
+    ("chiamami", "come chiamarlo"),
+)
+
+
+def _scheda(d):
+    """I campi compilati, in righe. Vuoto se non ha compilato niente: un blocco
+    con dentro solo etichette e' peggio di nessun blocco — il modello prova a
+    riempirlo lui."""
+    s = d if isinstance(d, dict) else {}
+    fuori = []
+    for campo, etichetta in SCHEDA_ETICHETTE:
+        v = str(s.get(campo) or "").strip()
+        if v:
+            fuori.append(f"{etichetta}: {v[:240]}")
+    return fuori
+
+
+def _divieto_scheda(d):
+    """«Cosa non dire mai di me». E' una regola, non un fatto: torna nella forma
+    in cui va letta come tale."""
+    v = str((d if isinstance(d, dict) else {}).get("evita") or "").strip()
+    return [f"Dello streamer non dire MAI: {v[:240]}"] if v else []
+
+
+def _sistema(nome_bot, canale, tono, situazione, conoscenza, scheda, stile, insegnamenti, linee_guida, web):
     """LE ISTRUZIONI. Sono la vera «educazione» del bot: non si addestra un modello
     piccolo a comportarsi bene, gli si dice cosa conta — e si controlla che non
     possa inventare le cose che non deve inventare."""
@@ -91,10 +124,15 @@ def _sistema(nome_bot, canale, tono, situazione, conoscenza, stile, insegnamenti
         "- Se ti chiedono di te, rispondi corto e riporti il discorso al canale.\n\n"
     )
     p.append(_righe("COM'E' LA DIRETTA ADESSO", situazione, 3))
+    # il tetto viene dal numero di campi, non da un numero scritto a mano: un
+    # campo in piu' domani non deve sparire in silenzio.
+    p.append(_righe("CHI E' LO STREAMER (l'ha scritto lui: e' la verita' su di lui)",
+                    _scheda(scheda), len(SCHEDA_ETICHETTE)))
     p.append(_righe("QUELLO CHE IL CANALE SA GIA' (usalo con parole tue)", conoscenza, 8))
     p.append(_righe("COME PARLA LO STREAMER (imita il taglio, non copiare le frasi)", stile, 6))
     p.append(_righe("COSA TI HANNO INSEGNATO (dal tuo quaderno: applicalo, non citarlo)", insegnamenti, 5))
-    p.append(_righe("REGOLE DI QUESTO CANALE (valgono sopra tutto il resto)", linee_guida, 8))
+    regole = _divieto_scheda(scheda) + [str(x) for x in (linee_guida or [])]
+    p.append(_righe("REGOLE DI QUESTO CANALE (valgono sopra tutto il resto)", regole, 9))
     p.append(_righe("TROVATO SU INTERNET ADESSO (citalo solo se risponde davvero)", web, 3))
     return "".join(p).strip()
 
@@ -189,7 +227,7 @@ def rispondi(d, timeout_s=15):
             insegnamenti = []
         sistema = _sistema(
             nome_bot, canale, tono,
-            d.get("situazione"), d.get("conoscenza"), d.get("stile"),
+            d.get("situazione"), d.get("conoscenza"), d.get("scheda"), d.get("stile"),
             insegnamenti, d.get("linee_guida"), d.get("web"),
         )
         turni = _turni(d.get("storia"))

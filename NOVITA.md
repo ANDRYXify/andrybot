@@ -5,11 +5,16 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-04
 
-- In chat pubblica ora risponde il bot del canale, non più la mente di Lia: sta sul pezzo, non si ricorda di nessuno e non parla di sé.
-- Le risposte salvate non escono più sempre con le stesse parole: il bot le dice a modo suo, in situazione. Se dentro c'è un link, esce intatta com'è scritta.
-- Il bot ha un suo quaderno: quello che gli insegni vale in tutti i canali o solo nel tuo, e lo applica senza citarlo.
-- Lia potrà insegnargli, ma solo quando vivrà: fino ad allora il quaderno lo scrivi tu. E lui non può leggere niente di lei, in nessun caso.
-- Quando il bot non sa rispondere, la domanda (senza nome, senza contatti, senza link) diventa una cosa da studiare per Lia.
+- Nella scheda Conoscenza puoi compilare la tua scheda: chi sei, cosa fai in diretta, gli orari, dove ti trovano, come deve chiamarti e cosa non deve dire di te.
+- Il bot sceglie le voci di conoscenza più vicine alla domanda, non le ultime che hai scritto. Puoi scriverne quante vuoi.
+- Ogni voce può valere sempre, solo quando sei in diretta o solo quando sei offline. Puoi anche fissarla, così il bot ce l'ha davanti in ogni caso.
+- Le frasi che scrivi in Personalità ora arrivano al bot come esempio del tuo modo di parlare. Prima restavano lì.
+- Nel quaderno del bot scrivi come deve rispondere, e vedi anche quello che gli ha insegnato Lia.
+- Nella dashboard i menù a tendina restano in riga con i bottoni accanto, invece di andare a capo da soli.
+- In chat pubblica risponde il bot del canale al posto di Lia. Non si ricorda degli utenti e non parla di sé.
+- Le risposte salvate non escono più sempre uguali: il bot le riformula. Se contengono un link restano identiche.
+- Lia potrà insegnare al bot solo quando vivrà. Fino ad allora il quaderno lo scrivi tu, e il bot non può leggere niente di lei.
+- Quando il bot non sa rispondere, la domanda resta da studiare per Lia: senza nome, senza contatti e senza link.
 - Attorno a un video o a una musica incorporata non si vedono più gli spicchi vuoti negli angoli: li riempie il colore del bordo, così sembrano cornice.
 - E puoi scegliere il colore dietro al riquadro, per intonarlo a quello che si vede dentro al contenuto.
 - I riquadri di video, musica e pagine incorporate, la copertina e i bottoni dell'informativa hanno lo stesso bordo e la stessa ombra del resto della pagina: prima avevano un filo sottile che non cambiava mai col tema.

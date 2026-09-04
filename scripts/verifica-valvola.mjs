@@ -30,6 +30,7 @@
 //        rosso non e' un cancello, e' una decorazione)
 
 import { readFileSync, writeFileSync } from 'node:fs';
+import { senzaCommentiJs, codicePython, corpoJs, corpoPython } from './_codice.mjs';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -85,35 +86,10 @@ if (process.argv.includes('--selftest')) {
   process.exit(cieche ? 1 : 0);
 }
 
-const esiti = [];
-const dice = (ok, msg, extra = '') => esiti.push({ ok, msg, extra });
-
-// --- il codice, senza le prose -----------------------------------------
-// Un commento che dice "la mente di Lia" non e' un accesso alla mente di Lia.
-// Misurare la parola nel testo invece che nel codice e' il modo classico di
-// avere un cancello rosso su una cosa giusta (e poi di disattivarlo).
-function codicePython(src) {
-  let out = '';
-  for (let i = 0; i < src.length; i++) {
-    const c = src[i];
-    if (c === '#') { while (i < src.length && src[i] !== '\n') i++; out += '\n'; continue; }
-    if (c === '"' || c === "'") {
-      const tre = src.slice(i, i + 3);
-      const fine = (tre === '"""' || tre === "'''") ? tre : c;
-      i += fine.length;
-      while (i < src.length) {
-        if (src[i] === '\\') { i += 2; continue; }
-        if (src.slice(i, i + fine.length) === fine) { i += fine.length - 1; break; }
-        i++;
-      }
-      out += ' " ';
-      continue;
-    }
-    out += c;
-  }
-  return out;
-}
-
+// Le prose non contano: si legge il CODICE, coi commenti (e in Python anche le
+// stringhe) tolti prima. Gli attrezzi stanno in scripts/_codice.mjs, insieme a
+// quelli del cancello della conoscenza: uno strumento che MISURA sta in un posto
+// solo, sennò le due copie divergono e una comincia a mentire.
 function importazioni(codice) {
   const nomi = new Set();
   for (const m of codice.matchAll(/^\s*import\s+([\w.]+)/gm)) nomi.add(m[1].split('.')[0]);
@@ -121,22 +97,9 @@ function importazioni(codice) {
   return nomi;
 }
 
-// il corpo di una funzione/metodo Python: dalla riga `def nome(` fino alla prima
-// riga successiva rientrata meno o uguale al `def`.
-function corpoPython(src, nome) {
-  const rx = new RegExp(`^([ \\t]*)def ${nome}\\(`, 'm');
-  const m = rx.exec(src);
-  if (!m) return null;
-  const rientro = m[1].length;
-  const righe = src.slice(m.index).split('\n');
-  const dentro = [righe[0]];
-  for (let i = 1; i < righe.length; i++) {
-    const r = righe[i];
-    if (r.trim() && (r.length - r.trimStart().length) <= rientro) break;
-    dentro.push(r);
-  }
-  return dentro.join('\n');
-}
+const esiti = [];
+const dice = (ok, msg, extra = '') => esiti.push({ ok, msg, extra });
+
 
 // --- 1-2. i moduli del bot non hanno la strada per arrivare a lei -------
 const VIETATI = {
@@ -185,75 +148,12 @@ const corpoManutenzione = corpoPython(server, '_ciclo_manutenzione') || '';
 dice(/\binsegna_al_bot\b/.test(codicePython(corpoManutenzione)),
   'e\' Lei che insegna, sul suo ciclo', 'insegna_al_bot non e\' chiamata dal ciclo di manutenzione');
 
-// --- 5. lato Node: le due vie ------------------------------------------
-// Anche qui: si legge il CODICE. Una riga COMMENTATA `// via: 'bot',` contiene
-// ancora le parole `via: 'bot'`, e un cancello che cerca le parole la vede e da'
-// verde mentre la chat pubblica e' appena tornata da Lei. Percio' i commenti si
-// tolgono prima — ma le stringhe NO: e' dentro una stringa che c'e' 'bot'.
-function senzaCommentiJs(src) {
-  let out = '';
-  for (let i = 0; i < src.length; i++) {
-    const c = src[i];
-    if (c === '"' || c === "'" || c === '`') {
-      const fine = c;
-      out += c; i++;
-      while (i < src.length) {
-        if (src[i] === '\\') { out += src.slice(i, i + 2); i += 2; continue; }
-        out += src[i];
-        if (src[i] === fine) break;
-        i++;
-      }
-      continue;
-    }
-    if (c === '/' && src[i + 1] === '/') { while (i < src.length && src[i] !== '\n') i++; out += '\n'; continue; }
-    if (c === '/' && src[i + 1] === '*') { i += 2; while (i < src.length && !(src[i] === '*' && src[i + 1] === '/')) i++; i++; continue; }
-    if (c === '/') {
-      // una barra sola: e' l'inizio di una espressione regolare? (se lo e', dentro
-      // ci puo' stare un `//` che non e' un commento — vedi /https?:\/\//)
-      const prima = out.replace(/\s+$/, '').slice(-1);
-      if (prima === '' || '(,=:[!&|?{};+-*%~^'.includes(prima)) {
-        out += c; i++;
-        while (i < src.length) {
-          if (src[i] === '\\') { out += src.slice(i, i + 2); i += 2; continue; }
-          if (src[i] === '[') { while (i < src.length && src[i] !== ']') { out += src[i]; i++; } }
-          out += src[i];
-          if (src[i] === '/') break;
-          i++;
-        }
-        continue;
-      }
-    }
-    out += c;
-  }
-  return out;
-}
+
 const brainpy = senzaCommentiJs(leggi('src/ai/brainpy.js'));
 dice(/via === 'bot' \? '\/bot' : '\/chat'/.test(brainpy),
   "brainpy manda via:'bot' a /bot e tutto il resto a /chat", 'la scelta della rotta non c\'e\' o e\' diversa');
 
-// Il corpo di un metodo JS. La prima graffa dopo il nome NON e' il corpo: e' il
-// parametro destrutturato — `async chatReply({ channel, ... }) {`. Prendere quella
-// da' un "corpo" di cinque parole in cui non c'e' nessuna chiamata, e il cancello
-// diventa verde per assenza di materia. Quindi: si chiude prima la parentesi
-// tonda della firma, e solo dopo si apre il corpo.
-function corpoJs(src, nome) {
-  const m = new RegExp(`\\n  (?:async )?${nome}\\(`).exec(src);
-  if (!m) return null;
-  let i = src.indexOf('(', m.index);
-  let tonde = 0;
-  for (; i < src.length; i++) {
-    if (src[i] === '(') tonde++;
-    else if (src[i] === ')') { tonde--; if (!tonde) { i++; break; } }
-  }
-  i = src.indexOf('{', i);
-  if (i < 0) return null;
-  let liv = 0;
-  for (let j = i; j < src.length; j++) {
-    if (src[j] === '{') liv++;
-    else if (src[j] === '}') { liv--; if (!liv) return src.slice(i, j + 1); }
-  }
-  return null;
-}
+
 const chiamate = (corpo) => [...(corpo || '').matchAll(/brainpy\.rispondi\(\{[\s\S]*?\n\s*\}\)/g)].map((x) => x[0]);
 
 const brain = senzaCommentiJs(leggi('src/ai/brain.js'));

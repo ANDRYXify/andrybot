@@ -537,6 +537,12 @@ aggiungiColonna('quotes', 'data', "TEXT NOT NULL DEFAULT ''");     // data della
 // linee guida: ambito (dove valgono + con chi) — regole contestuali di "lia"
 aggiungiColonna('linee_guida', 'dove', "TEXT NOT NULL DEFAULT 'ovunque'");     // ovunque | twitch | tg | tg-privato
 aggiungiColonna('linee_guida', 'con_chi', "TEXT NOT NULL DEFAULT 'tutti'");    // tutti | solo-me | tranne-me
+// conoscenza: l'AMBITO di una voce. `quando` la lega al momento della diretta (il
+// codice sconto vale finché sei live, l'orario della prossima serve quando sei
+// offline); `sempre` la FISSA, cioè entra nel prompt anche se non c'entra con la
+// domanda — è il posto per le due o tre cose che il bot non deve mai non sapere.
+aggiungiColonna('knowledge', 'quando', "TEXT NOT NULL DEFAULT 'sempre'");   // sempre | live | offline
+aggiungiColonna('knowledge', 'fissata', 'INTEGER NOT NULL DEFAULT 0');      // 1 = entra comunque
 // abbonamenti modulari: pacchetti add-on à la carte attivi (CSV di id)
 aggiungiColonna('subscriptions', 'pacchetti', "TEXT NOT NULL DEFAULT ''");
 // Spotify per-streamer: credenziali dell'app dello streamer (Client ID/Secret)
@@ -2211,16 +2217,63 @@ export const clips = {
 };
 
 // ---------------------------------------------------------------- conoscenza
+// -------------------------------------------------- la SCHEDA dello streamer
+// Chi è, detto da lui. Non è conoscenza fra le altre: è il fondo su cui tutto il
+// resto si appoggia, e per questo sta SEMPRE nel prompt in un blocco suo, senza
+// gareggiare con le domande e risposte per un posto.
+//
+// Un campo per domanda vera, con un tetto stretto: due righe che il bot legge
+// davvero valgono più di una biografia che gli riempie il contesto. `dove` è
+// l'unico che va riportato alla lettera — dentro ci sono gli indirizzi.
+export const SCHEDA_CAMPI = {
+  chi: 240,
+  faccio: 240,
+  orari: 160,
+  dove: 240,
+  chiamami: 40,
+  evita: 240,
+};
+
+export function schedaPulita(grezza) {
+  const out = {};
+  for (const [campo, max] of Object.entries(SCHEDA_CAMPI)) {
+    const v = String((grezza || {})[campo] ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
+    if (v) out[campo] = v;
+  }
+  return out;
+}
+
+export const QUANDO_CONOSCENZA = ['sempre', 'live', 'offline'];
+
 export const knowledge = {
-  add(channel, { domanda, risposta, fonte = 'manuale' }) {
-    db.prepare('INSERT INTO knowledge (channel, domanda, risposta, fonte, ts) VALUES (?,?,?,?,?)')
-      .run(channel, String(domanda).slice(0, 300), String(risposta).slice(0, 450), fonte, now());
+  add(channel, { domanda, risposta, fonte = 'manuale', quando = 'sempre', fissata = false }) {
+    const q = QUANDO_CONOSCENZA.includes(quando) ? quando : 'sempre';
+    db.prepare('INSERT INTO knowledge (channel, domanda, risposta, fonte, quando, fissata, ts) VALUES (?,?,?,?,?,?,?)')
+      .run(channel, String(domanda).slice(0, 300), String(risposta).slice(0, 450), fonte, q, fissata ? 1 : 0, now());
     // massimo 500 voci per canale: si scartano le più vecchie non manuali, poi le più vecchie
     db.prepare(`DELETE FROM knowledge WHERE channel=? AND id NOT IN (
       SELECT id FROM knowledge WHERE channel=? ORDER BY (fonte='manuale') DESC, ts DESC LIMIT 500)`)
       .run(channel, channel);
   },
-  list(channel) { return db.prepare('SELECT * FROM knowledge WHERE channel=? ORDER BY ts DESC').all(channel); },
+  list(channel) {
+    // `ts` è in millisecondi: due voci aggiunte nello stesso istante hanno la
+    // stessa data, e ordinare solo per data lascerebbe decidere al caso quale
+    // viene prima. L'id spareggia, e "più recente" resta una cosa sola.
+    return db.prepare('SELECT * FROM knowledge WHERE channel=? ORDER BY ts DESC, id DESC').all(channel)
+      .map((r) => ({ ...r, fissata: !!r.fissata, quando: r.quando || 'sempre' }));
+  },
+  // Cambia l'AMBITO di una voce senza riscriverla: capita di sbagliare il
+  // «quando», non la risposta — e riscrivere tutto per correggere un menù è il
+  // modo di non correggerlo mai.
+  setAmbito(channel, id, { quando, fissata } = {}) {
+    const r = db.prepare('SELECT id FROM knowledge WHERE channel=? AND id=?').get(channel, Number(id) || 0);
+    if (!r) return false;
+    if (quando !== undefined && QUANDO_CONOSCENZA.includes(quando)) {
+      db.prepare('UPDATE knowledge SET quando=? WHERE id=?').run(quando, r.id);
+    }
+    if (fissata !== undefined) db.prepare('UPDATE knowledge SET fissata=? WHERE id=?').run(fissata ? 1 : 0, r.id);
+    return true;
+  },
   remove(channel, id) { db.prepare('DELETE FROM knowledge WHERE channel=? AND id=?').run(channel, id); },
   clearBySource(channel, fonte) { db.prepare('DELETE FROM knowledge WHERE channel=? AND fonte=?').run(channel, fonte); },
   count(channel) { return db.prepare('SELECT COUNT(*) c FROM knowledge WHERE channel=?').get(channel).c; },

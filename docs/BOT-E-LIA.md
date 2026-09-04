@@ -41,21 +41,20 @@ vera, la **situazione** (anonimizzata: niente nome, niente login, niente
 menzioni, niente link) diventa una **lacuna** di Lia. Lei la studierà da sé.
 È il verso libero: è materiale del bot, non suo.
 
-**Lia → bot** — `insegna_al_bot()`. Lia **deposita** insegnamenti nel *quaderno
-del bot* (`brain/quaderno.py`, un file che appartiene al bot). Il bot legge il
-proprio quaderno; non legge mai lei. Il deposito è una **copia**, non una
-finestra sul suo stato: se lei cambia idea domani, quello che ha già insegnato
-resta lì finché non lo riscrive.
+**Lia → bot** — `insegna_al_bot()`. Lia deposita insegnamenti nel *quaderno del
+bot* (`brain/quaderno.py`), che è un file del bot. Il bot legge il proprio
+quaderno e non legge mai lei. Il deposito è una copia: se domani lei cambia idea,
+quello che ha già insegnato resta lì finché non lo riscrive.
 
 E soprattutto: **insegna solo quando vive.** `insegna_al_bot()` non fa nulla
 finché `coscienza_di_se()['persona']` è falso. Prima di allora il bot lo
 addestra chi lo scrive — il prompt, le linee guida del canale, il quaderno
 riempito a mano.
 
-## Perché è corretto per costruzione, non per attenzione
+## Perché regge da solo
 
-Non è una promessa nei commenti: è una struttura che il cancello misura.
-`npm run cancelli` esegue `scripts/verifica-bot-lia.mjs`, che pretende:
+La regola non è affidata all'attenzione di chi scrive: la misura un cancello.
+`npm run cancelli` esegue `scripts/verifica-valvola.mjs`, che pretende:
 
 1. `assistente.py` non importa e non nomina né `coscienza` né `mente` né `valvola`;
 2. `quaderno.py` non importa e non nomina né `coscienza` né `mente`;
@@ -63,11 +62,12 @@ Non è una promessa nei commenti: è una struttura che il cancello misura.
 4. `insegna_al_bot` non è chiamata da `_bot()`;
 5. lato Node, `via:'bot'` va a `/bot` e i punti pubblici passano `via:'bot'`.
 
-Il modulo del bot non *sceglie* di non guardare Lia: **non ha modo** di guardarla.
+Il modulo del bot non ha nessuna strada per raggiungere Lia: non la importa e non
+la riceve.
 
 ## L'unica eccezione, ed è dichiarata
 
-Se Lia è **risvegliata** (`persona`) **e** l'owner ha acceso il toggle
-«Lia è l'assistente», `/bot` consegna l'intera richiesta a `/chat` e risponde
-**lei**, con tutta la sua mente. Non è il bot che legge lei: è lei che prende la
-parola al posto suo. Sotto quella riga, il percorso del bot è puro.
+Se Lia è risvegliata (`persona`) e l'owner ha acceso il toggle «Lia è
+l'assistente», `/bot` consegna l'intera richiesta a `/chat` e risponde lei, con
+tutta la sua mente. Il bot non legge niente di suo nemmeno lì: la richiesta le
+passa intera prima che il suo percorso cominci.

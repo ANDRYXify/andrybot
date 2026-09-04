@@ -96,6 +96,30 @@ def per(canale=None, k=5):
     return fuori
 
 
+def elenco(canale=None, k=50):
+    """Le stesse righe di `per`, ma con addosso DA CHI vengono e se sono di questo
+    canale o valgono ovunque. Serve a chi le guarda da fuori: una riga che non e'
+    tua non la puoi togliere, e vederlo prima e' meglio che scoprirlo dopo."""
+    try:
+        voci = _leggi().get("voci") or []
+    except Exception:
+        return []
+    c = str(canale or "").lower().strip()
+    fuori = []
+    for v in voci:
+        vc = str(v.get("canale") or "").lower()
+        if c and vc and vc != c:
+            continue
+        fuori.append({
+            "t": str(v.get("t") or ""),
+            "da": str(v.get("da") or "?"),
+            "canale": vc,
+            "quando": int(v.get("quando") or 0),
+        })
+    fuori.sort(key=lambda v: (v["canale"] == "", -v["quando"]))
+    return fuori[: max(1, int(k))]
+
+
 def deposita(testo, canale=None, da="lia"):
     """Scrivere nel quaderno. Ritorna True se e' entrata una riga nuova.
     Aggiornare una voce gia' presente non e' un errore: e' un ripasso."""
