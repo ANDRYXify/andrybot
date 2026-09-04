@@ -339,7 +339,7 @@
       for (let k = 0; k < 3; k++) { const rr = ((tnow * 0.5 + k / 3) % 1) * R; ctx.strokeStyle = `rgba(150,200,255,${0.28 * inten * (1 - rr / R)})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(W / 2, H / 2, rr, 0, 7); ctx.stroke(); }
       ctx.save(); ctx.globalAlpha = inten; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.font = `800 ${Math.round(H * 0.055)}px system-ui, sans-serif`; ctx.lineWidth = Math.round(H * 0.008); ctx.strokeStyle = 'rgba(0,0,0,.55)';
-      ctx.strokeText('⏳ TEMPO FERMO', W / 2, H * 0.9); ctx.fillStyle = 'rgba(210,235,255,.95)'; ctx.fillText('⏳ TEMPO FERMO', W / 2, H * 0.9); ctx.restore();
+      ctx.strokeText('TEMPO FERMO', W / 2, H * 0.9); ctx.fillStyle = 'rgba(210,235,255,.95)'; ctx.fillText('TEMPO FERMO', W / 2, H * 0.9); ctx.restore();
     }
 
     if (mirino) {
@@ -368,7 +368,7 @@
       ctx.fillStyle = '#fff'; ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 2;
       const pad = 6 * e; ctx.fillRect(rx - pad, ry - pad, rw + pad * 2, rh + pad * 3.2);
       if (s.thumb) { try { ctx.drawImage(s.thumb, rx, ry, rw, rh); } catch {  } }
-      else { ctx.fillStyle = 'rgba(20,26,45,.9)'; ctx.fillRect(rx, ry, rw, rh); ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.font = `${Math.round(rh * 0.5)}px system-ui`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('📷', rx + rw / 2, ry + rh / 2); }
+      else { ctx.fillStyle = 'rgba(20,26,45,.9)'; ctx.fillRect(rx, ry, rw, rh); }
       ctx.strokeRect(rx - pad, ry - pad, rw + pad * 2, rh + pad * 3.2);
       ctx.restore();
     }
