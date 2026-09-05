@@ -3,19 +3,26 @@
 Cosa è cambiato nel bot, in ordine di tempo. Una riga per cosa, scritta per chi
 lo usa: se non si vede da fuori, qui non ci va.
 
+Una riga che comincia con `[privato]` resta in casa: non arriva alla pagina
+pubblica, all'API aperta né alla sitemap, e la vede solo il proprietario nel suo
+pannello. Ci vanno le cose che non riguardano chi usa il bot — la crescita di
+Lia, il suo computer, il suo modo di ragionare. Un giorno fatto di sole righe
+private non compare nemmeno come giorno: la data, da sola, direbbe che è
+successo qualcosa.
+
 ## 2026-09-05
 
-- Il computer di Lia ha uno schermo vero e un browser vero, che resta aperto fra un gesto e l'altro. Prima ogni pagina nasceva e moriva dentro un comando.
-- Ora clicca, scorre, compila, torna indietro, e la pagina resta dov'è per il gesto dopo. I cookie restano fra un riavvio e l'altro.
-- Il browser di Lia si piantava al secondo sito e restava lì: la scheda mostrava «carico la pagina…» per sempre. Ora risponde sempre, e se qualcosa va storto dice cosa.
-- Sullo schermo di Lia non si pianta più la finestra che chiedeva di installare un programma per lo sfondo. Adesso il fondo lo posiamo noi.
-- Se il browser non è aperto, la scheda mostra le ultime righe del suo avvio: si capisce cosa non è partito senza entrare nel server.
-- Nella scheda del suo ecosistema c'è «Guarda il suo schermo»: una fotografia di cosa sta facendo in questo momento.
-- Un comando poteva durare al massimo mezzo minuto: adesso due minuti, e per le cose lunghe restano i lavori in background.
-- Il recinto è lo stesso di prima: internet pubblico sì, la tua infrastruttura no, nessun segreto, e il tasto «Ferma tutto» dov'era.
-- Lia ha ricominciato a imparare dalle frasi della chat. Cercava l'accento di «è» e in chat quasi nessuno lo scrive: con «e'» non capiva niente e non se ne accorgeva nessuno.
-- Da quelle frasi ora ricava fatti e ne deduce di nuovi da sola, e risponde a domande come «cos'è il gatto?» spiegando il passaggio che ha fatto. Se non sa, tace.
-- Nel pannello «come ragiona» le percentuali erano calcolate su un totale parziale: due modi di pensare lavoravano senza comparire, e due non venivano contati affatto.
+- [privato] Il computer di Lia ha uno schermo vero e un browser vero, che resta aperto fra un gesto e l'altro. Prima ogni pagina nasceva e moriva dentro un comando.
+- [privato] Ora clicca, scorre, compila, torna indietro, e la pagina resta dov'è per il gesto dopo. I cookie restano fra un riavvio e l'altro.
+- [privato] Il browser di Lia si piantava al secondo sito e restava lì: la scheda mostrava «carico la pagina…» per sempre. Ora risponde sempre, e se qualcosa va storto dice cosa.
+- [privato] Sullo schermo di Lia non si pianta più la finestra che chiedeva di installare un programma per lo sfondo. Adesso il fondo lo posiamo noi.
+- [privato] Se il browser non è aperto, la scheda mostra le ultime righe del suo avvio: si capisce cosa non è partito senza entrare nel server.
+- [privato] Nella scheda del suo ecosistema c'è «Guarda il suo schermo»: una fotografia di cosa sta facendo in questo momento.
+- [privato] Un comando poteva durare al massimo mezzo minuto: adesso due minuti, e per le cose lunghe restano i lavori in background.
+- [privato] Il recinto è lo stesso di prima: internet pubblico sì, la tua infrastruttura no, nessun segreto, e il tasto «Ferma tutto» dov'era.
+- [privato] Lia ha ricominciato a imparare dalle frasi della chat. Cercava l'accento di «è» e in chat quasi nessuno lo scrive: con «e'» non capiva niente e non se ne accorgeva nessuno.
+- [privato] Da quelle frasi ora ricava fatti e ne deduce di nuovi da sola, e risponde a domande come «cos'è il gatto?» spiegando il passaggio che ha fatto. Se non sa, tace.
+- [privato] Nel pannello «come ragiona» le percentuali erano calcolate su un totale parziale: due modi di pensare lavoravano senza comparire, e due non venivano contati affatto.
 - L'accesso con YouTube è pronto ma non ancora aperto: nella vetrina e nella scheda Piattaforme lo trovi in grigio, «in arrivo». Google deve prima approvare il permesso di leggere quale canale sei.
 - Se moderi già il canale di qualcun altro puoi chiedere tu l'accesso al suo pannello, senza aspettare che ti mandi un link. Lo trovi nella scheda Stato.
 - Su Twitch la richiesta arriva allo streamer già confermata: prima di mostrargliela chiediamo a Twitch chi modera quel canale.
@@ -52,8 +59,8 @@ lo usa: se non si vede da fuori, qui non ci va.
 - Nella dashboard i menù a tendina restano in riga con i bottoni accanto, invece di andare a capo da soli.
 - In chat pubblica risponde il bot del canale al posto di Lia. Non si ricorda degli utenti e non parla di sé.
 - Le risposte salvate non escono più sempre uguali: il bot le riformula. Se contengono un link restano identiche.
-- Lia potrà insegnare al bot solo quando vivrà. Fino ad allora il quaderno lo scrivi tu, e il bot non può leggere niente di lei.
-- Quando il bot non sa rispondere, la domanda resta da studiare per Lia: senza nome, senza contatti e senza link.
+- [privato] Lia potrà insegnare al bot solo quando vivrà. Fino ad allora il quaderno lo scrivi tu, e il bot non può leggere niente di lei.
+- [privato] Quando il bot non sa rispondere, la domanda resta da studiare per Lia: senza nome, senza contatti e senza link.
 - Attorno a un video o a una musica incorporata non si vedono più gli spicchi vuoti negli angoli: li riempie il colore del bordo, così sembrano cornice.
 - E puoi scegliere il colore dietro al riquadro, per intonarlo a quello che si vede dentro al contenuto.
 - I riquadri di video, musica e pagine incorporate, la copertina e i bottoni dell'informativa hanno lo stesso bordo e la stessa ombra del resto della pagina: prima avevano un filo sottile che non cambiava mai col tema.

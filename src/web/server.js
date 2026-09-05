@@ -1514,7 +1514,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       .concat([`    <xhtml:link rel="alternate" hreflang="x-default" href="${escXml(LINGUE_URL.it)}"/>`])
       .join('\n');
     const voci = Object.values(LINGUE_URL).map((u) => ({ u, p: '1.0', f: 'weekly', alt: true }));
-    for (const g of [...urlGuide(novita.leggi(NOVITA_MD)), ...urlManuali()]) voci.push({ u: g.loc, p: g.prio, f: g.freq, m: g.lastmod });
+    for (const g of [...urlGuide(novita.pubbliche(novita.leggi(NOVITA_MD))), ...urlManuali()]) voci.push({ u: g.loc, p: g.prio, f: g.freq, m: g.lastmod });
     voci.push({ u: `${b}/privacy`, p: '0.3', f: 'yearly' });
     voci.push({ u: `${b}/termini`, p: '0.3', f: 'yearly' });
     try {
@@ -1634,9 +1634,13 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
   // Le novità: stessa forma delle guide (contenuto pubblico, indicizzabile) ma
   // la fonte è NOVITA.md, scritto nello stesso commit della cosa che racconta.
+  //
+  // Le voci marcate `[privato]` non passano MAI di qui. Non le filtriamo caso per
+  // caso: `pubbliche()` e' l'unica forma che queste due porte conoscono, e una
+  // voce privata non ce la si puo' far dare nemmeno sbagliando.
   let novitaHtml = { quando: null, corpo: '' };
   app.get('/novita', (req, res) => {
-    const gruppi = novita.leggi(NOVITA_MD);
+    const gruppi = novita.pubbliche(novita.leggi(NOVITA_MD));
     const quando = novita.ultima(gruppi) + ':' + gruppi.length;
     if (novitaHtml.quando !== quando) novitaHtml = { quando, corpo: paginaNovita(gruppi) };
     res.set('Content-Type', 'text/html; charset=utf-8');
@@ -1645,9 +1649,20 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   });
 
   // Quello che il pannello mostra in cima: le ultime, e la data dell'ultima.
+  // Risposta uguale per tutti, quindi si puo' tenere in una cache condivisa.
   app.get('/api/novita', (req, res) => {
-    const gruppi = novita.leggi(NOVITA_MD);
+    const gruppi = novita.pubbliche(novita.leggi(NOVITA_MD));
     res.set('Cache-Control', 'public, max-age=0, s-maxage=600');
+    res.json({ ultima: novita.ultima(gruppi), gruppi: gruppi.slice(0, 3) });
+  });
+
+  // LE NOVITÀ COMPLETE, per chi ha il diritto di vederle. Sta dietro una porta
+  // sua e non dentro quella pubblica con un «se sei admin»: quella risposta
+  // finisce in una cache CONDIVISA, e una riga privata servita per sbaglio a
+  // tutti non si riprende piu' indietro. Qui la cache non c'e'.
+  app.get('/api/admin/novita', requireAdmin, (req, res) => {
+    const gruppi = novita.tutte(novita.leggi(NOVITA_MD));
+    res.set('Cache-Control', 'private, no-store');
     res.json({ ultima: novita.ultima(gruppi), gruppi: gruppi.slice(0, 3) });
   });
 

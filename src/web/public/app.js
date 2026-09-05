@@ -3171,7 +3171,7 @@ function novitaViste() {
 async function caricaNovita() {
   if (DEMO || !stato?.user) return;
   let d;
-  try { d = await api('/api/novita'); } catch (e) { return; }
+  try { d = await api(stato.isAdmin ? '/api/admin/novita' : '/api/novita'); } catch (e) { return; }
   if (!d?.ultima || d.ultima === novitaViste() || !d.gruppi?.length) return;
   stato.novita = d;
   render();
@@ -3181,11 +3181,12 @@ function cardNovitaHtml() {
   const n = stato?.novita;
   if (!n?.gruppi?.length) return '';
   const g = n.gruppi[0];
-  const mostrate = g.voci.slice(0, 4);
-  const altre = g.voci.length - mostrate.length;
+  const voci = g.voci.map((v) => (typeof v === 'string' ? { testo: v, privata: false } : v));
+  const mostrate = voci.slice(0, 4);
+  const altre = voci.length - mostrate.length;
   return `<div class="carta evidenziata carta-novita">
     <h2>${_hIco(ICO.megafono)}${L('Novità', 'What’s new', 'Novedades')}</h2>
-    <ul>${mostrate.map((v) => `<li>${esc(v)}</li>`).join('')}</ul>
+    <ul>${mostrate.map((v) => `<li>${v.privata ? `<span class="badge">${L('solo tu', 'only you', 'solo tú')}</span> ` : ''}${esc(v.testo)}</li>`).join('')}</ul>
     ${altre > 0 ? `<p class="suggerimento">${L(`E altre ${altre}.`, `And ${altre} more.`, `Y ${altre} más.`)}</p>` : ''}
     <p class="spazio-sopra"><a class="btn secondario mini" href="/novita" target="_blank" rel="noopener">${L('Vedi tutte', 'See them all', 'Verlas todas')}</a>
     <button class="btn secondario mini" data-novita-viste="${esc(n.ultima)}">${L('Nascondi', 'Hide', 'Ocultar')}</button></p>

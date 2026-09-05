@@ -20,15 +20,38 @@ import { EMOJI } from './_emoji.mjs';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { analizza } from '../src/web/novita.js';
+import { analizza, pubbliche } from '../src/web/novita.js';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '..');
 const esiti = [];
 const dice = (ok, msg, extra = '') => esiti.push({ ok, msg, extra });
 
 const gruppi = analizza(readFileSync(join(RAD, 'NOVITA.md'), 'utf8'));
-const voci = gruppi.flatMap((g) => g.voci);
+// Le voci sono OGGETTI ({testo, privata}), non stringhe: chi controlla la forma
+// deve guardare il testo. Prendendo l'oggetto, ogni misura qui sotto tornerebbe
+// verde su niente — che e' peggio di un cancello rosso.
+const voci = gruppi.flatMap((g) => g.voci).map((v) => v.testo);
 dice(gruppi.length > 0 && voci.length > 0, `giornate raccontate: ${gruppi.length} · righe: ${voci.length}`);
+dice(voci.every((v) => typeof v === 'string'), 'le righe si leggono come testo',
+  'la forma delle voci e\' cambiata: i controlli qui sotto non misurano piu\' niente');
+
+// ---- quello che e' privato non esce di casa ------------------------------
+// Non tutto quello che cambia riguarda chi usa il bot: la crescita di Lia e il suo
+// computer sono cose del direttore. Si marcano `[privato]`, e da li' in poi la
+// pagina pubblica, l'API aperta e la sitemap non devono vederle. Qui non si legge
+// il codice: si prende la forma PUBBLICA vera e ci si cerca dentro cio' che
+// doveva restare fuori.
+const private_ = gruppi.flatMap((g) => g.voci).filter((v) => v.privata).map((v) => v.testo);
+const fuori = JSON.stringify(pubbliche(gruppi));
+const trapelate = private_.filter((t) => fuori.includes(t));
+dice(!trapelate.length, `righe private: ${private_.length}, e nessuna esce di casa`,
+  trapelate.length ? `finita in pubblico: ${trapelate[0].slice(0, 70)}` : '');
+// e un giorno fatto di sole righe private non deve nemmeno comparire come giorno
+const giorniSoloPrivati = gruppi.filter((g) => g.voci.every((v) => v.privata)).map((g) => g.data);
+const pubbliciData = new Set(pubbliche(gruppi).map((g) => g.data));
+dice(!giorniSoloPrivati.some((d) => pubbliciData.has(d)),
+  'un giorno fatto solo di cose tue non compare nemmeno come giorno',
+  giorniSoloPrivati.filter((d) => pubbliciData.has(d)).join(', '));
 
 // ---- le date: vere, in ordine, non nel futuro -----------------------------
 const oggi = new Date().toISOString().slice(0, 10);

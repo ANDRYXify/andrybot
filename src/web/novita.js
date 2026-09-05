@@ -21,15 +21,44 @@ import { readFileSync, statSync } from 'node:fs';
 const GIORNO = /^##\s+(\d{4}-\d{2}-\d{2})\s*$/;
 const VOCE = /^[-*]\s+(.+?)\s*$/;
 
+// LE NOVITÀ PRIVATE. Non tutto quello che cambia riguarda chi usa il bot: la
+// crescita di Lia, il suo computer, il suo modo di ragionare sono cose del
+// direttore, non della vetrina. Si marcano cosi':
+//
+//     - [privato] Il suo browser adesso resta aperto fra un gesto e l'altro.
+//
+// e da li' in poi non escono piu' di casa. La strada pubblica non le FILTRA:
+// non le vede proprio — `pubbliche()` e' l'unica forma che arriva alla pagina,
+// all'API aperta e alla sitemap, e chi la usa non ha modo di farsi dare una
+// voce privata nemmeno sbagliando.
+const PRIVATA = /^\[privat[oa]\]\s*/i;
+
 export function analizza(testo) {
   const gruppi = [];
   for (const riga of String(testo).split('\n')) {
     const g = riga.match(GIORNO);
     if (g) { gruppi.push({ data: g[1], voci: [] }); continue; }
     const v = riga.match(VOCE);
-    if (v && gruppi.length) gruppi[gruppi.length - 1].voci.push(v[1]);
+    if (v && gruppi.length) {
+      const privata = PRIVATA.test(v[1]);
+      gruppi[gruppi.length - 1].voci.push({ testo: v[1].replace(PRIVATA, ''), privata });
+    }
   }
   return gruppi.filter((g) => g.voci.length);
+}
+
+// Quello che può uscire di casa: le voci pubbliche, come stringhe, e senza i
+// giorni che restano vuoti perché parlavano solo di lei.
+export function pubbliche(gruppi) {
+  return gruppi
+    .map((g) => ({ data: g.data, voci: g.voci.filter((v) => !v.privata).map((v) => v.testo) }))
+    .filter((g) => g.voci.length);
+}
+
+// Tutto, per chi ha il diritto di vederlo. Le voci restano oggetti, così chi le
+// mostra può dire quali sono solo sue.
+export function tutte(gruppi) {
+  return gruppi.map((g) => ({ data: g.data, voci: g.voci.map((v) => ({ ...v })) }));
 }
 
 // La data come la direbbe una persona: «2 settembre 2026».
