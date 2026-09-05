@@ -3,7 +3,7 @@
 // è completa, il bot vero e proprio (chat, eventi, IA, clip).
 import { config, missingConfig } from './config.js';
 import { log } from './logger.js';
-import { migraTokenCifratura } from './db.js';   // inizializza lo schema
+import { migraTokenCifratura, migraSegreti } from './db.js';   // inizializza lo schema
 import { TwitchAuth } from './twitch/auth.js';
 import { Helix } from './twitch/helix.js';
 import { BotManager } from './bot.js';
@@ -23,6 +23,7 @@ if (missing.length) {
 // Cifra a riposo i token ancora in chiaro (una-tantum, idempotente): un DB/backup
 // rubato senza il segreto del server non serve a nulla.
 try { const n = migraTokenCifratura(); if (n) log.info(`sicurezza: cifrati a riposo i token di ${n} account`); } catch (e) { log.warn('cifratura token:', e?.message || e); }
+try { const n = migraSegreti(); if (n) log.info(`sicurezza: ${n} segreti portati nella busta di adesso`); } catch (e) { log.warn('busta dei segreti:', e?.message || e); }
 
 const auth = new TwitchAuth();
 const helix = new Helix({ auth });

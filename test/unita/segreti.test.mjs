@@ -56,3 +56,56 @@ test('il vuoto resta vuoto, e niente lancia mai', () => {
   }
   assert.equal(decifra(cifra(0)), '0', 'uno zero è un valore, non un vuoto');
 });
+
+// ---------------------------------------------------------------------------
+// LA BUSTA v2: una chiave per ogni valore, chiusa a sua volta, e legata al posto
+// in cui abita. Il modello per esteso è in docs/SEGRETI.md.
+
+const { anello, anelloCorrente, impronta, combacia, eImpronta } = await import('../../src/segreti.js');
+
+const DOVE = { tabella: 'telegram', colonna: 'token', riga: 'andryx' };
+
+test('due segreti identici non condividono la chiave', () => {
+  // Se la chiave fosse una sola per tutti, il lavoro di forzarne una varrebbe
+  // per tutte. Non possiamo vedere le chiavi: guardiamo che la parte avvolta —
+  // che è la chiave chiusa — sia diversa ogni volta.
+  const a = cifra('stesso-identico-token', DOVE).split(':')[3];
+  const b = cifra('stesso-identico-token', DOVE).split(':')[3];
+  assert.notEqual(a, b);
+});
+
+test('una busta spostata di riga non si apre', () => {
+  const c = cifra('token-di-andryx', DOVE);
+  assert.equal(decifra(c, DOVE), 'token-di-andryx');
+  assert.equal(decifra(c, { ...DOVE, riga: 'qualcunaltro' }), '',
+    'copiarsi il segreto di un altro nella propria riga non deve funzionare');
+  assert.equal(decifra(c, { ...DOVE, colonna: 'webhook_secret' }), '');
+});
+
+test('la busta dichiara il suo anello, e il vecchio formato resta leggibile', () => {
+  assert.equal(anello(cifra('x', DOVE)), anelloCorrente);
+  assert.equal(anello('enc:1:aaa:bbb:ccc'), 0, 'il formato vecchio non ha anello');
+  assert.equal(anello('non cifrato'), 0);
+});
+
+test('un pezzo di busta manomesso non decifra e non lancia', () => {
+  const c = cifra('token-vero', DOVE);
+  const p = c.split(':');
+  for (const i of [3, 4, 5, 6]) {
+    const rotto = [...p];
+    rotto[i] = Buffer.from('manomesso-' + i).toString('base64url');
+    assert.equal(decifra(rotto.join(':'), DOVE), '', 'pezzo ' + i);
+  }
+});
+
+test('di una chiave API si conserva l’impronta, non la chiave', () => {
+  const chiave = 'abcdefghijklmnopqrstuvwxyz123456';
+  const imp = impronta(chiave, 'andryx');
+  assert.ok(eImpronta(imp));
+  assert.ok(!imp.includes(chiave), 'la chiave non deve comparire nell’impronta');
+  assert.ok(combacia(chiave, imp, 'andryx'));
+  assert.ok(!combacia(chiave + 'x', imp, 'andryx'));
+  assert.ok(!combacia(chiave, imp, 'un-altro-canale'),
+    'la stessa chiave su un altro canale non deve combaciare');
+  assert.ok(!combacia(chiave, ''), 'senza impronta salvata non si entra');
+});

@@ -5,7 +5,7 @@ import Database from 'better-sqlite3';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { config } from './config.js';
-import { cifra, decifra, eCifrato } from './segreti.js';
+import { cifra, decifra, eCifrato, anello, anelloCorrente } from './segreti.js';
 
 mkdirSync(config.dataDir, { recursive: true });
 export const db = new Database(join(config.dataDir, 'andrybot.db'));
@@ -797,6 +797,31 @@ export const anima = {
   },
 };
 
+// ------------------------------------------------------- i campi segreti
+//
+// Ogni segreto entra ed esce dalla BUSTA (src/segreti.js): chiave propria per
+// ogni valore, chiusa a sua volta con la maestra, e legata al posto in cui
+// abita — tabella, colonna, riga. Una busta spostata da una riga all'altra non
+// si apre, quindi chi riesce a scrivere nel database non puo' copiarsi addosso
+// il segreto di un altro. Il modello per esteso: docs/SEGRETI.md.
+//
+// Sta qui e non nei singoli accessori perche' il posto va costruito dove si sa
+// qual e' la riga, e perche' scritto una volta non puo' divergere.
+const _dove = (tabella, colonna, riga) => ({ tabella, colonna, riga: String(riga == null ? '' : riga).toLowerCase() });
+
+function chiudiSegreti(tabella, riga, dati, campi) {
+  const out = { ...dati };
+  for (const c of campi) if (out[c] != null) out[c] = cifra(String(out[c]), _dove(tabella, c, riga));
+  return out;
+}
+
+function apriSegreti(tabella, riga, r, campi) {
+  if (!r) return r;
+  const out = { ...r };
+  for (const c of campi) if (out[c]) out[c] = decifra(out[c], _dove(tabella, c, riga));
+  return out;
+}
+
 // ---------------------------------------------------------------- token
 export const tokens = {
   save(kind, login, t) {
@@ -804,19 +829,26 @@ export const tokens = {
       VALUES (?,?,?,?,?,?,?,?)
       ON CONFLICT(kind, login) DO UPDATE SET user_id=excluded.user_id, access_token=excluded.access_token,
         refresh_token=excluded.refresh_token, scopes=excluded.scopes, expires_at=excluded.expires_at, updated_at=excluded.updated_at`)
-      .run(kind, login.toLowerCase(), t.userId || '', cifra(t.accessToken), cifra(t.refreshToken || ''), (t.scopes || []).join(' '), t.expiresAt || 0, now());
+      .run(kind, login.toLowerCase(), t.userId || '',
+        cifra(t.accessToken, _dove('tokens', 'access_token', kind + '/' + login)),
+        cifra(t.refreshToken || '', _dove('tokens', 'refresh_token', kind + '/' + login)),
+        (t.scopes || []).join(' '), t.expiresAt || 0, now());
   },
   get(kind, login) {
     const r = db.prepare('SELECT * FROM tokens WHERE kind=? AND login=?').get(kind, login.toLowerCase());
     if (!r) return null;
-    return { userId: r.user_id, accessToken: decifra(r.access_token), refreshToken: decifra(r.refresh_token),
+    return { userId: r.user_id,
+      accessToken: decifra(r.access_token, _dove('tokens', 'access_token', kind + '/' + login)),
+      refreshToken: decifra(r.refresh_token, _dove('tokens', 'refresh_token', kind + '/' + login)),
       scopes: r.scopes ? r.scopes.split(' ') : [], expiresAt: r.expires_at };
   },
   // il token del bot è unico: il primo (e unico) con kind='bot'
   getBot() {
     const r = db.prepare("SELECT * FROM tokens WHERE kind='bot' ORDER BY updated_at DESC LIMIT 1").get();
     if (!r) return null;
-    return { login: r.login, userId: r.user_id, accessToken: decifra(r.access_token), refreshToken: decifra(r.refresh_token),
+    return { login: r.login, userId: r.user_id,
+      accessToken: decifra(r.access_token, _dove('tokens', 'access_token', 'bot/' + r.login)),
+      refreshToken: decifra(r.refresh_token, _dove('tokens', 'refresh_token', 'bot/' + r.login)),
       scopes: r.scopes ? r.scopes.split(' ') : [], expiresAt: r.expires_at };
   },
   delete(kind, login) { db.prepare('DELETE FROM tokens WHERE kind=? AND login=?').run(kind, login.toLowerCase()); },
@@ -832,6 +864,66 @@ export const tokens = {
     return db.prepare('SELECT login FROM tokens WHERE kind=? ORDER BY login').all(kind).map((r) => r.login);
   },
 };
+
+// I segreti che devono stare nella busta, tabella per tabella. È anche l'elenco
+// che il cancello (scripts/verifica-segreti.mjs) confronta con lo schema: una
+// colonna nuova che sa di segreto e non è qui dentro non passa.
+export const CAMPI_SEGRETI = {
+  tokens: ['access_token', 'refresh_token'],
+  telegram: ['token'],
+  spotify_tokens: ['access', 'refresh', 'client_secret'],
+  tiktok_tokens: ['access', 'refresh'],
+  seventv_tokens: ['token'],
+};
+
+// Come si chiama la riga, tabella per tabella. Serve alla busta: è il «dove
+// abita», e senza non si potrebbe né chiudere né riaprire.
+const RIGA_SEGRETI = {
+  tokens: (r) => r.kind + '/' + r.login,
+  telegram: (r) => r.channel,
+  spotify_tokens: (r) => r.login,
+  tiktok_tokens: (r) => r.login,
+  seventv_tokens: (r) => r.login,
+};
+const CHIAVE_SEGRETI = {
+  tokens: ['kind', 'login'],
+  telegram: ['channel'],
+  spotify_tokens: ['login'],
+  tiktok_tokens: ['login'],
+  seventv_tokens: ['login'],
+};
+
+// Porta nella busta di ADESSO tutto quello che è rimasto indietro: il chiaro di
+// prima, e le buste di un anello precedente. Idempotente, e non lancia mai —
+// un avvio che cade per colpa di una migrazione della cifratura sarebbe il modo
+// più elegante di spegnere il servizio. Ritorna quante righe ha riscritto.
+export function migraSegreti() {
+  let n = 0;
+  for (const [tabella, campi] of Object.entries(CAMPI_SEGRETI)) {
+    try {
+      const chiave = CHIAVE_SEGRETI[tabella];
+      const nomeRiga = RIGA_SEGRETI[tabella];
+      const righe = db.prepare(`SELECT ${[...chiave, ...campi].join(', ')} FROM ${tabella}`).all();
+      const upd = db.prepare(`UPDATE ${tabella} SET ${campi.map((c) => c + '=?').join(', ')} `
+        + `WHERE ${chiave.map((c) => c + '=?').join(' AND ')}`);
+      for (const r of righe) {
+        const riga = nomeRiga(r);
+        let daFare = false;
+        const nuovi = campi.map((c) => {
+          const v = r[c] || '';
+          if (!v) return v;
+          if (anello(v) === anelloCorrente) return v;      // già nella busta di adesso
+          daFare = true;
+          return cifra(decifra(v, _dove(tabella, c, riga)), _dove(tabella, c, riga));
+        });
+        if (!daFare) continue;
+        upd.run(...nuovi, ...chiave.map((c) => r[c]));
+        n++;
+      }
+    } catch { /* una tabella che non c'è ancora non è un errore */ }
+  }
+  return n;
+}
 
 // Migrazione una-tantum: cifra a riposo i token ancora in chiaro. Idempotente
 // (salta quelli già cifrati). Gira all'avvio, come le altre migrazioni del DB.
@@ -1019,10 +1111,13 @@ export const subscriptions = {
 // aggiungere brani alla coda del broadcaster: nessun dato personale oltre ai token.
 export const spotifyTokens = {
   get(login) {
-    return db.prepare('SELECT * FROM spotify_tokens WHERE login=?').get(String(login).toLowerCase()) || null;
+    const l = String(login).toLowerCase();
+    const r = db.prepare('SELECT * FROM spotify_tokens WHERE login=?').get(l) || null;
+    return apriSegreti('spotify_tokens', l, r, ['access', 'refresh', 'client_secret']);
   },
   set(login, { access = '', refresh = '', scadenza = 0 } = {}) {
     const l = String(login).toLowerCase();
+    ({ access, refresh } = chiudiSegreti('spotify_tokens', l, { access, refresh }, ['access', 'refresh']));
     db.prepare(`INSERT INTO spotify_tokens (login, access, refresh, scadenza, updated_at)
       VALUES (?,?,?,?,?)
       ON CONFLICT(login) DO UPDATE SET
@@ -1036,6 +1131,7 @@ export const spotifyTokens = {
   // Cambiare app invalida i token OAuth esistenti: li azzeriamo (serve ri-collegare).
   setConfig(login, { clientId = '', clientSecret = '' } = {}) {
     const l = String(login).toLowerCase();
+    clientSecret = cifra(String(clientSecret || ''), _dove('spotify_tokens', 'client_secret', l));
     db.prepare(`INSERT INTO spotify_tokens (login, client_id, client_secret, access, refresh, scadenza, updated_at)
       VALUES (?,?,?,'','',0,?)
       ON CONFLICT(login) DO UPDATE SET
@@ -1057,10 +1153,13 @@ export const spotifyTokens = {
 // dell'operatore): qui salviamo solo i token del singolo canale collegato.
 export const tiktokTokens = {
   get(login) {
-    return db.prepare('SELECT * FROM tiktok_tokens WHERE login=?').get(String(login).toLowerCase()) || null;
+    const l = String(login).toLowerCase();
+    const r = db.prepare('SELECT * FROM tiktok_tokens WHERE login=?').get(l) || null;
+    return apriSegreti('tiktok_tokens', l, r, ['access', 'refresh']);
   },
   set(login, { access = '', refresh = '', scadenza = 0, refreshScadenza = 0, openId, username } = {}) {
     const l = String(login).toLowerCase();
+    ({ access, refresh } = chiudiSegreti('tiktok_tokens', l, { access, refresh }, ['access', 'refresh']));
     const cur = this.get(l) || {};
     db.prepare(`INSERT INTO tiktok_tokens (login, access, refresh, scadenza, refresh_scadenza, open_id, username, updated_at)
       VALUES (?,?,?,?,?,?,?,?)
@@ -1086,7 +1185,9 @@ export const tiktokTokens = {
 // così possiamo aggiornare solo il set_id senza reincollare il token.
 export const seventvTokens = {
   get(login) {
-    return db.prepare('SELECT * FROM seventv_tokens WHERE login=?').get(String(login).toLowerCase()) || null;
+    const l = String(login).toLowerCase();
+    const r = db.prepare('SELECT * FROM seventv_tokens WHERE login=?').get(l) || null;
+    return apriSegreti('seventv_tokens', l, r, ['token']);
   },
   set(login, { token, userId, username, setId } = {}) {
     const l = String(login).toLowerCase();
@@ -1100,7 +1201,7 @@ export const seventvTokens = {
         set_id=CASE WHEN excluded.set_id!='' THEN excluded.set_id ELSE seventv_tokens.set_id END,
         updated_at=excluded.updated_at`)
       .run(l,
-        token !== undefined ? String(token || '') : (cur.token || ''),
+        cifra(token !== undefined ? String(token || '') : (cur.token || ''), _dove('seventv_tokens', 'token', l)),
         userId !== undefined ? String(userId || '') : (cur.user_id || ''),
         username !== undefined ? String(username || '') : (cur.username || ''),
         setId !== undefined ? String(setId || '') : (cur.set_id || ''), now());
@@ -1521,13 +1622,15 @@ export const tgAmici = {
 
 export const tgConf = {
   get(channel) {
-    return db.prepare('SELECT * FROM telegram WHERE channel=?').get(String(channel).toLowerCase()) || null;
+    const c = String(channel).toLowerCase();
+    const r = db.prepare('SELECT * FROM telegram WHERE channel=?').get(c) || null;
+    return apriSegreti('telegram', c, r, ['token']);
   },
   set(channel, campi = {}) {
     const c = String(channel).toLowerCase();
     const cur = this.get(c) || { token: '', chat_id: '', chat_titolo: '', bot_username: '', attivo: 0, messaggio: '', ultima_live: '', pin_live: 1, msg_id: '', msg_id_tk: '' };
     const v = {
-      token: campi.token !== undefined ? String(campi.token) : cur.token,
+      token: cifra(campi.token !== undefined ? String(campi.token) : String(cur.token || ''), _dove('telegram', 'token', c)),
       chat_id: campi.chatId !== undefined ? String(campi.chatId) : cur.chat_id,
       community_live: campi.communityLive !== undefined ? (campi.communityLive ? 1 : 0) : (cur.community_live || 0),
       chat_titolo: campi.chatTitolo !== undefined ? String(campi.chatTitolo) : cur.chat_titolo,
@@ -1588,12 +1691,14 @@ export const tgConf = {
   getBySecret(secret) {
     const s = String(secret || '');
     if (!s) return null;
-    return db.prepare('SELECT * FROM telegram WHERE webhook_secret=? AND interattivo=1').get(s) || null;
+    const r = db.prepare('SELECT * FROM telegram WHERE webhook_secret=? AND interattivo=1').get(s) || null;
+    return apriSegreti('telegram', r?.channel, r, ['token']);
   },
   // tutti i canali con la modalità interattiva accesa e un token: servono per
   // ri-registrare il webhook all'avvio (es. dopo un cambio di dominio/baseUrl).
   listInterattivi() {
-    return db.prepare("SELECT * FROM telegram WHERE interattivo=1 AND token<>'' AND webhook_secret<>''").all();
+    return db.prepare("SELECT * FROM telegram WHERE interattivo=1 AND token<>'' AND webhook_secret<>''").all()
+      .map((r) => apriSegreti('telegram', r.channel, r, ['token']));
   },
   remove(channel) { db.prepare('DELETE FROM telegram WHERE channel=?').run(String(channel).toLowerCase()); },
 };
