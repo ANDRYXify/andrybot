@@ -33,7 +33,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # gestore di finestre, x11vnc + noVNC il vetro da cui lo si guarda dal vivo. Tutte porte
 # interne alla rete del guardiano: niente di questo si affaccia su internet.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      xvfb x11-utils fluxbox x11vnc novnc websockify scrot \
+      xvfb x11-utils x11-xserver-utils fluxbox x11vnc novnc websockify scrot \
       fonts-liberation fonts-dejavu-core fonts-noto-color-emoji \
     && rm -rf /var/lib/apt/lists/*
 

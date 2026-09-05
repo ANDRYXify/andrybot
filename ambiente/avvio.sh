@@ -38,6 +38,18 @@ if command -v Xvfb >/dev/null 2>&1; then
     command -v xdpyinfo >/dev/null 2>&1 && xdpyinfo -display "$SCHERMO" >/dev/null 2>&1 && break
     sleep 0.3
   done
+  # LO SFONDO, prima di fluxbox. Senza, fluxbox chiama `fbsetbg`, non trova nessun
+  # programma per posare uno sfondo e pianta in mezzo allo schermo una finestra
+  # modale che chiede di installare Eterm — ogni singolo avvio. Non e' un dettaglio
+  # estetico: e' una finestra che prende il fuoco davanti a tutto il resto.
+  # Gli si dice noi con cosa dipingere il fondo, e la domanda non nasce.
+  if command -v xsetroot >/dev/null 2>&1; then
+    xsetroot -solid "${SFONDO:-#101418}" 2>/dev/null || true
+    mkdir -p "$HOME/.fluxbox"
+    if ! grep -q '^session.screen0.rootCommand:' "$HOME/.fluxbox/init" 2>/dev/null; then
+      echo "session.screen0.rootCommand: xsetroot -solid ${SFONDO:-#101418}" >> "$HOME/.fluxbox/init"
+    fi
+  fi
   command -v fluxbox >/dev/null 2>&1 && avvia fluxbox fluxbox
   # guardarlo dal vivo: x11vnc parla VNC, websockify lo traduce per il browser
   command -v x11vnc >/dev/null 2>&1 && \

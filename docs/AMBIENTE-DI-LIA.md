@@ -104,6 +104,31 @@ pretende che con dieci richieste insieme un thread solo abbia toccato il
 browser, che nessuna resti appesa, e che una lenta riceva un errore invece del
 silenzio.
 
+## Quando non funziona, deve dire perché
+
+Nella scheda del suo ecosistema:
+
+- la riga **schermo** dice la risoluzione e se il browser è «con la finestra» o
+  «cieco»;
+- se il browser si è impuntato, un riquadro dice **su quale gesto** e **con quale
+  errore**;
+- se il browser non è aperto, si apre un pieghevole con le ultime righe del suo
+  avvio (browser, Xvfb, fluxbox) — senza entrare nel server.
+
+Nota su una parola: **aperto** vuol dire che il browser è davvero aperto, non che
+il suo processo risponde. Sono due cose diverse, e confonderle direbbe «tutto a
+posto» mentre sullo schermo non c'è nessuna finestra.
+
+### Lo sfondo, e la finestra che chiedeva Eterm
+
+Fluxbox, all'avvio, prova a posare uno sfondo con `fbsetbg`. Se non trova nessun
+programma capace di farlo, pianta in mezzo allo schermo una finestra modale che
+consiglia di installare Eterm — a ogni avvio. Non è un dettaglio estetico: è una
+finestra che prende il fuoco davanti a tutto il resto.
+
+Gli si dice noi con cosa dipingere il fondo (`xsetroot`, un colore pieno) e la
+domanda non nasce.
+
 ## Il confine, che non è cambiato
 
 Tutto quello che c'era prima resta esattamente com'era. Questa non è una porta

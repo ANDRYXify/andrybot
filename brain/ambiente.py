@@ -770,6 +770,19 @@ def progetti():
     return prog[:40]
 
 
+def log_browser(righe=25):
+    """Le ultime righe di quello che hanno detto il browser e lo schermo mentre si
+    accendevano. È la differenza fra «non funziona» e «non funziona PERCHÉ», e serve
+    a poterlo leggere dal cruscotto invece che entrando nel server."""
+    if not disponibile():
+        return ""
+    n = max(1, min(80, int(righe or 25)))
+    r = esegui("for f in browser xvfb fluxbox; do "
+               f"[ -s ~/.eco/$f.log ] && {{ echo \"--- $f\"; tail -n {n} ~/.eco/$f.log; }}; "
+               "done 2>/dev/null", timeout=12)
+    return ((r.get("output") or "").strip())[:4000] if r.get("ok") else ""
+
+
 def _stato_browser(risposta):
     """Cosa dice di sé il browser: se è acceso, se ha la finestra, e cosa è andato
     storto l'ultima volta. Se la riga non è leggibile si torna a mani vuote — non si
@@ -783,15 +796,6 @@ def _stato_browser(risposta):
     return {"acceso": bool(d.get("acceso")), "finestra": d.get("finestra"),
             "ultimo": str(d.get("ultimo") or "")[:40], "errore": str(d.get("errore") or "")[:200],
             "in_coda": d.get("in_coda")}
-
-
-def _vivo(risposta):
-    """Il browser ha risposto «sto bene»? Legge il suo /health senza pretendere che
-    sia arrivato intero: quella riga passa da una shell e può essere troncata."""
-    try:
-        return bool(json.loads(str(risposta or "")).get("ok"))
-    except Exception:
-        return '"ok"' in str(risposta or "") and "true" in str(risposta or "")
 
 
 def stato_ecosistema():
@@ -825,13 +829,20 @@ def stato_ecosistema():
             chiave = m.group(1); val[chiave] = ""
         elif chiave and not val.get(chiave):
             val[chiave] = riga.strip()[:60]
+    # ACCESO vuol dire che il browser è APERTO, non che il suo processo risponde:
+    # sono due cose diverse, e confonderle direbbe «tutto a posto» mentre sullo
+    # schermo non c'è nessuna finestra.
+    st = _stato_browser(val.get("APERTO", ""))
+    acceso = bool(st.get("acceso"))
     return {
         "attivo": True,
         "python": val.get("PY", ""), "node": val.get("NODE", ""),
         "browser": ("" if val.get("CHROME", "no") == "no" else val.get("CHROME", "")),
-        # se il browser è ACCESO in questo momento, e su quale schermo vive
-        "browser_vivo": _vivo(val.get("APERTO", "")),
-        "browser_stato": _stato_browser(val.get("APERTO", "")),
+        "browser_vivo": acceso,
+        "browser_stato": st,
+        # Il log SOLO quando il browser non è aperto: se lavora non serve a nessuno,
+        # e sarebbe rumore a ogni caricamento del cruscotto.
+        "browser_log": ("" if acceso else log_browser()),
         "schermo": val.get("SCHERMO", ""),
         "mamba": ("" if val.get("MAMBA", "no") == "no" else val.get("MAMBA", "")),
         "spazio": val.get("DISK", ""),

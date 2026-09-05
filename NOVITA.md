@@ -8,6 +8,8 @@ lo usa: se non si vede da fuori, qui non ci va.
 - Il computer di Lia ha uno schermo vero e un browser vero, che resta aperto fra un gesto e l'altro. Prima ogni pagina nasceva e moriva dentro un comando.
 - Ora clicca, scorre, compila, torna indietro, e la pagina resta dov'è per il gesto dopo. I cookie restano fra un riavvio e l'altro.
 - Il browser di Lia si piantava al secondo sito e restava lì: la scheda mostrava «carico la pagina…» per sempre. Ora risponde sempre, e se qualcosa va storto dice cosa.
+- Sullo schermo di Lia non si pianta più la finestra che chiedeva di installare un programma per lo sfondo. Adesso il fondo lo posiamo noi.
+- Se il browser non è aperto, la scheda mostra le ultime righe del suo avvio: si capisce cosa non è partito senza entrare nel server.
 - Nella scheda del suo ecosistema c'è «Guarda il suo schermo»: una fotografia di cosa sta facendo in questo momento.
 - Un comando poteva durare al massimo mezzo minuto: adesso due minuti, e per le cose lunghe restano i lavori in background.
 - Il recinto è lo stesso di prima: internet pubblico sì, la tua infrastruttura no, nessun segreto, e il tasto «Ferma tutto» dov'era.
