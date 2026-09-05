@@ -1,45 +1,165 @@
-// Cifratura a riposo dei segreti (token) nel DB. Scopo: un DB/backup rubato deve
-// essere INUTILE senza il segreto del server. La chiave si deriva da
-// config.sessionSecret (che vive nell'ambiente/.env, MAI dentro il DB) con HKDF e
-// un "info" distinto, così non coincide con la chiave che firma le sessioni.
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 //
-// AES-256-GCM (autenticato). Formato: "enc:1:<iv>:<tag>:<ciphertext>" in base64url.
-// Retrocompatibile: un valore SENZA il prefisso è in chiaro (pre-migrazione) e
-// viene restituito così com'è. Una decifratura fallita (chiave sbagliata/valore
-// corrotto) NON lancia: torna stringa vuota → il token è trattato come mancante e
-// il chiamante rifà login/refresh. Mai un crash per colpa della cifratura.
+// I SEGRETI A RIPOSO. Il criterio, e il perche' di ogni pezzo, stanno in
+// docs/SEGRETI.md. Qui c'e' il meccanismo.
+//
+// Un database o un backup rubato dev'essere INUTILE senza il segreto del
+// server. E se una chiave trapela, deve valere per UNA COSA SOLA.
+//
+// LA BUSTA (formato v2)
+//   enc:2:<kid>:<chiave-avvolta>:<iv>:<tag>:<testo>
+//
+// Ogni valore ha una chiave sua, casuale, usata per quel valore e per
+// nient'altro. Quella chiave non si conserva in chiaro: e' chiusa in una
+// seconda busta con la chiave maestra. Due giri, uno dentro l'altro — e la
+// maestra non tocca mai il testo del segreto. Rompere una busta non apre le
+// altre: e' il motivo per cui la chiave e' per valore e non per tutti.
+//
+// DOVE ABITA
+//   La busta e' legata al suo posto (tabella, colonna, riga) come dato
+//   autenticato. Una busta spostata da una riga all'altra non si apre. Senza
+//   questo, chi puo' scrivere nel database si copia il token di un altro nella
+//   propria riga e diventa lui, senza rompere nessuna cifratura.
+//
+// L'ANELLO
+//   Le chiavi maestre hanno un numero (`kid`) e si ricavano dal segreto del
+//   server piu' quel numero. La piu' recente cifra; le precedenti aprono solo
+//   quello che avevano chiuso. Ruotare = alzare il numero.
+//
+// COSA NON FA
+//   Non lancia mai. Una decifratura fallita torna stringa vuota: il chiamante
+//   la tratta come «segreto mancante» e rifa' login/refresh. Un bot che cade
+//   per colpa della cifratura sarebbe un modo elegante di spegnere il servizio.
 import crypto from 'node:crypto';
 import { config } from './config.js';
 
 const SEGRETO = String(config.sessionSecret || '');
 const ATTIVA = SEGRETO.length >= 16;
-const CHIAVE = ATTIVA
-  ? Buffer.from(crypto.hkdfSync('sha256', Buffer.from(SEGRETO, 'utf8'), Buffer.alloc(0), Buffer.from('andrybot:token-at-rest:v1'), 32))
-  : null;
-const PREF = 'enc:1:';
 
-export function eCifrato(v) { return typeof v === 'string' && v.startsWith(PREF); }
+// Il numero dell'anello con cui si CIFRA adesso. Le chiavi precedenti restano
+// buone in lettura. Si alza da .env quando si vuole voltare pagina.
+const KID = Math.max(1, Math.min(999, parseInt(process.env.SEGRETI_KID || '1', 10) || 1));
 
-export function cifra(testo) {
-  const s = String(testo == null ? '' : testo);
-  if (!s || !ATTIVA || eCifrato(s)) return s;
-  const iv = crypto.randomBytes(12);
-  const c = crypto.createCipheriv('aes-256-gcm', CHIAVE, iv);
-  const ct = Buffer.concat([c.update(s, 'utf8'), c.final()]);
-  return PREF + iv.toString('base64url') + ':' + c.getAuthTag().toString('base64url') + ':' + ct.toString('base64url');
+const PREF1 = 'enc:1:';
+const PREF2 = 'enc:2:';
+
+// Le maestre si ricavano, non si conservano: una per numero d'anello. `info`
+// diverso da quello che firma le sessioni, cosi' le due chiavi non coincidono
+// mai nemmeno per sbaglio.
+const _maestre = new Map();
+function maestra(kid) {
+  if (!ATTIVA) return null;
+  if (!_maestre.has(kid)) {
+    _maestre.set(kid, Buffer.from(crypto.hkdfSync(
+      'sha256', Buffer.from(SEGRETO, 'utf8'), Buffer.alloc(0),
+      Buffer.from('andrybot:segreti:maestra:v2:' + kid), 32)));
+  }
+  return _maestre.get(kid);
 }
 
-export function decifra(v) {
+// La chiave del formato vecchio, che serve ancora ad aprire quello che c'e' gia'.
+const CHIAVE_V1 = ATTIVA
+  ? Buffer.from(crypto.hkdfSync('sha256', Buffer.from(SEGRETO, 'utf8'), Buffer.alloc(0), Buffer.from('andrybot:token-at-rest:v1'), 32))
+  : null;
+
+export function eCifrato(v) {
+  return typeof v === 'string' && (v.startsWith(PREF2) || v.startsWith(PREF1));
+}
+
+// Il posto in cui la busta abita, in una forma stabile. Se cambia il posto,
+// cambia il conto: la busta non si apre.
+function posto(dove) {
+  if (!dove) return 'senza-posto';
+  if (typeof dove === 'string') return dove;
+  return [dove.tabella || '', dove.colonna || '', dove.riga == null ? '' : String(dove.riga)].join('|');
+}
+
+export function cifra(testo, dove) {
+  const s = String(testo == null ? '' : testo);
+  if (!s || !ATTIVA || eCifrato(s)) return s;
+  const chiave = crypto.randomBytes(32);              // la chiave DI QUESTO valore
+  const iv = crypto.randomBytes(12);
+  const c = crypto.createCipheriv('aes-256-gcm', chiave, iv);
+  c.setAAD(Buffer.from(posto(dove), 'utf8'));
+  const ct = Buffer.concat([c.update(s, 'utf8'), c.final()]);
+
+  // la chiave del valore, chiusa a sua volta
+  const ivk = crypto.randomBytes(12);
+  const w = crypto.createCipheriv('aes-256-gcm', maestra(KID), ivk);
+  w.setAAD(Buffer.from('chiave|' + posto(dove), 'utf8'));
+  const wrapped = Buffer.concat([ivk, w.update(chiave), w.final(), w.getAuthTag()]);
+
+  return PREF2 + KID + ':' + wrapped.toString('base64url') + ':'
+    + iv.toString('base64url') + ':' + c.getAuthTag().toString('base64url') + ':'
+    + ct.toString('base64url');
+}
+
+function apriV1(s) {
+  try {
+    const p = s.split(':');
+    const d = crypto.createDecipheriv('aes-256-gcm', CHIAVE_V1, Buffer.from(p[2], 'base64url'));
+    d.setAuthTag(Buffer.from(p[3], 'base64url'));
+    return Buffer.concat([d.update(Buffer.from(p[4], 'base64url')), d.final()]).toString('utf8');
+  } catch { return ''; }
+}
+
+export function decifra(v, dove) {
   const s = String(v == null ? '' : v);
   if (!eCifrato(s)) return s;
   if (!ATTIVA) return '';
+  if (s.startsWith(PREF1)) return apriV1(s);
   try {
     const p = s.split(':');
-    const iv = Buffer.from(p[2], 'base64url');
-    const tag = Buffer.from(p[3], 'base64url');
-    const ct = Buffer.from(p[4], 'base64url');
-    const d = crypto.createDecipheriv('aes-256-gcm', CHIAVE, iv);
-    d.setAuthTag(tag);
-    return Buffer.concat([d.update(ct), d.final()]).toString('utf8');
-  } catch (e) { return ''; }
+    const kid = parseInt(p[2], 10);
+    const m = maestra(kid);
+    if (!m) return '';
+    const wrapped = Buffer.from(p[3], 'base64url');
+    const ivk = wrapped.subarray(0, 12);
+    const tagk = wrapped.subarray(wrapped.length - 16);
+    const ck = wrapped.subarray(12, wrapped.length - 16);
+    const dw = crypto.createDecipheriv('aes-256-gcm', m, ivk);
+    dw.setAAD(Buffer.from('chiave|' + posto(dove), 'utf8'));
+    dw.setAuthTag(tagk);
+    const chiave = Buffer.concat([dw.update(ck), dw.final()]);
+
+    const d = crypto.createDecipheriv('aes-256-gcm', chiave, Buffer.from(p[4], 'base64url'));
+    d.setAAD(Buffer.from(posto(dove), 'utf8'));
+    d.setAuthTag(Buffer.from(p[5], 'base64url'));
+    return Buffer.concat([d.update(Buffer.from(p[6], 'base64url')), d.final()]).toString('utf8');
+  } catch { return ''; }
+}
+
+// Il numero d'anello di una busta, o 0 se non e' una busta v2. Serve a chi
+// riavvolge: si riscrivono solo quelle rimaste indietro.
+export function anello(v) {
+  const s = String(v == null ? '' : v);
+  if (!s.startsWith(PREF2)) return 0;
+  const n = parseInt(s.split(':')[2], 10);
+  return Number.isFinite(n) ? n : 0;
+}
+
+export const anelloCorrente = KID;
+
+// --------------------------------------------------------------- impronte
+//
+// Di una chiave API non si conserva la chiave: si conserva l'impronta. Chi ruba
+// il database trova impronte, e con quelle non entra. Il confronto e' a tempo
+// costante: sennò si indovina una lettera per volta guardando quanto ci mette.
+
+export function impronta(valore, sale = '') {
+  const s = String(valore == null ? '' : valore);
+  if (!s) return '';
+  return 'imp:1:' + crypto.createHash('sha256')
+    .update(String(sale) + '|' + s + '|' + SEGRETO).digest('base64url');
+}
+
+export function eImpronta(v) { return typeof v === 'string' && v.startsWith('imp:1:'); }
+
+export function combacia(valore, attesa, sale = '') {
+  if (!attesa) return false;
+  const a = Buffer.from(impronta(valore, sale));
+  const b = Buffer.from(String(attesa));
+  if (a.length !== b.length) return false;
+  try { return crypto.timingSafeEqual(a, b); } catch { return false; }
 }
