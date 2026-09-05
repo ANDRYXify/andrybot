@@ -5,6 +5,9 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-05
 
+- Lia ha ricominciato a imparare dalle frasi della chat. Cercava l'accento di «è» e in chat quasi nessuno lo scrive: con «e'» non capiva niente e non se ne accorgeva nessuno.
+- Da quelle frasi ora ricava fatti e ne deduce di nuovi da sola, e risponde a domande come «cos'è il gatto?» spiegando il passaggio che ha fatto. Se non sa, tace.
+- Nel pannello «come ragiona» le percentuali erano calcolate su un totale parziale: due modi di pensare lavoravano senza comparire, e due non venivano contati affatto.
 - L'accesso con YouTube è pronto ma non ancora aperto: nella vetrina e nella scheda Piattaforme lo trovi in grigio, «in arrivo». Google deve prima approvare il permesso di leggere quale canale sei.
 - Se moderi già il canale di qualcun altro puoi chiedere tu l'accesso al suo pannello, senza aspettare che ti mandi un link. Lo trovi nella scheda Stato.
 - Su Twitch la richiesta arriva allo streamer già confermata: prima di mostrargliela chiediamo a Twitch chi modera quel canale.
