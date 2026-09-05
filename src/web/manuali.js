@@ -978,8 +978,14 @@ const ACCOUNT = {
     { p: ['Se disdici, l\'abbonamento resta attivo <strong>fino alla fine del periodo già pagato</strong>, poi il canale torna all\'Essenziale. Niente si cancella.'] },
 
     { h2: 'Moderatori' },
-    { p: ['Un moderatore entra nel pannello con il <strong>suo</strong> account Twitch e può occuparsi di comandi, moduli, effetti, giochi, notifiche, regole e memoria. Non può toccare le cose da proprietario: permessi Twitch, abbonamento, chiave del canale.'] },
-    { p: ['L\'invito è un indirizzo che generi tu dalla scheda: chi lo apre entra, e da quel momento vedi il tuo canale anche dal suo pannello.'] },
+    { p: ['Un moderatore entra nel pannello con il <strong>suo</strong> account — Twitch o Kick — e può occuparsi di comandi, moduli, effetti, giochi, notifiche, regole e memoria. Non può toccare le cose da proprietario: permessi, abbonamento, chiave del canale.'] },
+    { p: ['Le strade per farlo entrare sono <strong>due</strong>, e vanno nei due versi opposti.'] },
+    { ul: [
+      '<strong>L\'invito</strong>: scegli la piattaforma, scrivi il suo nome e nasce un indirizzo. Chi lo apre entra, e da quel momento vedi il tuo canale anche dal suo pannello.',
+      '<strong>La richiesta</strong>: chi ti modera già sul canale può chiedere lui l\'accesso, senza aspettare il tuo link. La trovi nella scheda, e decidi tu.',
+    ] },
+    { p: ['Su Twitch la richiesta arriva <strong>già confermata</strong>: prima di mostrartela chiediamo a Twitch chi modera il tuo canale, e se quella persona non c\'è la richiesta non parte nemmeno. Su Kick e YouTube la conferma automatica non è possibile — l\'elenco dei moderatori non è pubblico — quindi la richiesta ti arriva marcata «da controllare tu», e il nome lo guardi con i tuoi occhi.'] },
+    { p: ['Una richiesta in attesa <strong>non è un moderatore</strong>: non vede niente, non tocca niente e non occupa un posto del tuo piano finché non le dici di sì. Se dici di no, quella persona non può richiederti di nuovo per un mese.'] },
 
     { h2: 'Domande che arrivano quando si guarda il prezzo' },
     { ul: [
@@ -992,6 +998,8 @@ const ACCOUNT = {
     { d: 'Che succede ai miei comandi se torno all\'Essenziale?', r: 'Restano tutti. Quelli che dipendono da un extra spento non scattano, ma non vengono cancellati: riaccendendo l\'extra ripartono da soli.' },
     { d: 'Le monete degli spettatori si perdono?', r: 'No. La classifica si ferma dov\'è e riprende da lì.' },
     { d: 'Un moderatore vede i miei dati di pagamento?', r: 'No. Il portale dei pagamenti e i permessi Twitch sono cose da proprietario.' },
+    { d: 'Uno sconosciuto può chiedermi di moderare il mio canale?', r: 'Su Twitch no: prima di farti arrivare la richiesta chiediamo a Twitch chi modera il tuo canale, e chi non c\'è viene fermato lì. Su Kick la richiesta può arrivare da chiunque, perché Kick non pubblica quell\'elenco: per questo te la mostriamo marcata «da controllare tu», e finché non dici di sì quella persona non vede niente. Ognuno può avere al massimo tre richieste in attesa in tutto.' },
+    { d: 'Moderavo già un canale: devo aspettare che mi mandi il link?', r: 'No. Nella scheda Stato scrivi il nome del canale che moderi e mandi la richiesta. Se il canale è su Twitch la conferma è automatica, e allo streamer arriva già verificata.' },
     { d: 'Posso avere il bot su due canali?', r: 'Ogni canale ha il suo abbonamento, perché ogni canale ha la sua chat, le sue monete e i suoi comandi.' },
     { d: 'Dove vedo quanto pago davvero?', r: 'Nella scheda Abbonamento in cima, e nel portale dei pagamenti con le fatture.' },
   ],

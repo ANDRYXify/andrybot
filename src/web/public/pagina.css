@@ -73,9 +73,18 @@ body.centrata { display: grid; place-items: center; }
 @media (hover: hover) {
 .azione.twitch:hover { background: #7c37e0; }
 }
+.azione.kick { background: #53fc18; color: #0b0f0a; }
+@media (hover: hover) {
+.azione.kick:hover { background: #46d914; }
+}
+.azione.youtube { background: #ff0033; }
+@media (hover: hover) {
+.azione.youtube:hover { background: #d9002b; }
+}
 
 .msg { margin-top: 14px; font-size: .9rem; min-height: 1.2em; }
 .msg.err { color: var(--rosso); }
 .msg.ok { color: var(--verde); }
 
 a.piccolo { color: var(--testo-3); font-size: .84rem; display: inline-block; margin-top: 16px; }
+p.piccolo { color: var(--testo-3); font-size: .84rem; margin-top: 14px; }

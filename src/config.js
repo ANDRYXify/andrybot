@@ -87,6 +87,15 @@ export const config = {
   kickRedirect: env('KICK_REDIRECT_URI') || (env('BASE_URL', 'http://localhost:8090').replace(/\/$/, '') + '/auth/kick/callback'),
 
   // youtube — progetto Google Cloud dedicato, credenziali OAuth 2.0 "app web".
+  //
+  // La LEVETTA sta qui e non in tre posti: finché è spenta la porta non si apre,
+  // il pulsante nella vetrina resta grigio e la scheda Piattaforme dice «in
+  // arrivo». Le credenziali possono esserci benissimo — servono per provare —
+  // senza che nessuno di fuori possa entrare. Il motivo per cui è spenta: uno
+  // scope sensibile di Google va in verifica prima di valere per tutti, e finché
+  // non vale per tutti un pulsante che funziona per tre persone è un pulsante
+  // rotto per tutte le altre.
+  youtubeAperto: env('YOUTUBE_APERTO') === '1',
   youtubeClientId: env('YOUTUBE_CLIENT_ID'),
   youtubeClientSecret: env('YOUTUBE_CLIENT_SECRET'),
   youtubeRedirect: env('YOUTUBE_REDIRECT_URI') || (env('BASE_URL', 'http://localhost:8090').replace(/\/$/, '') + '/auth/youtube/callback'),

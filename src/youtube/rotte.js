@@ -23,7 +23,7 @@ const log = makeLog('youtube');
 export function montaYoutube(app, { requireLogin, currentUser, wrap, registra }) {
   // --- 1. si parte -----------------------------------------------------
   const parti = (req, res, { registrazione }) => {
-    if (!auth.configurato()) return res.status(503).send('YouTube non è configurato su questo server.');
+    if (!auth.aperto()) return res.status(503).send('L’accesso con YouTube non è ancora aperto.');
     const { challenge, state } = giro.apri(req, 'youtube', { registrazione });
     res.redirect(auth.urlAutorizzazione({ challenge, state }));
   };
@@ -79,7 +79,7 @@ export function montaYoutube(app, { requireLogin, currentUser, wrap, registra })
   // --- stato e scollegamento (per la dashboard) ------------------------
   app.get('/api/streamer/youtube', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    if (!auth.configurato()) return res.json({ disponibile: false });
+    if (!auth.aperto()) return res.json({ disponibile: false, inArrivo: true });
     const t = api.tokenDi(login);
     if (!t?.accessToken) return res.json({ disponibile: true, collegato: false });
     res.json({

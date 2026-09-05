@@ -637,7 +637,13 @@ function _demoGet(via) {
         { id: 'p3', title: 'Airhorn', cost: 200, richiedeTesto: false },
       ],
     },
-    '/api/moderatori': [ { login: 'lucaplays', display: 'lucaplays', stato: 'attivo' } ],
+    '/api/moderatori': [ { id: 1, login: 'lucaplays', display: 'lucaplays', status: 'attivo', piattaforma: 'twitch', nome: 'lucaplays' } ],
+    '/api/moderatori/richieste': { richieste: [
+      { id: 2, login: 'serachat', display: 'SeraChat', status: 'richiesto', piattaforma: 'twitch', nome: 'serachat', chiesto: Date.now() - 3600000, nota: 'sono la mod della sera', verificata: true },
+    ] },
+    '/api/richieste-moderatore': { max: 3, piattaforme: [], richieste: [
+      { canale: 'kick.marta', piattaforma: 'kick', nome: 'marta', stato: 'richiesto', chiesto: Date.now() - 86400000, deciso: 0, verificata: false, nota: '' },
+    ] },
     '/api/passkey': [ { id: 'demo', nome: 'iPhone di Andryx', quando: '2026-04-10' } ],
   };
   return F[via] !== undefined ? F[via] : {};
@@ -4230,16 +4236,43 @@ function pannelloStato() {
     <div class="carta">
       <h2>${_hIco(ICO.utenti)}${L('Moderatori', 'Moderators', 'Moderadores')}</h2>
       <p>${L('Fai aiutare qualcuno di cui ti fidi a gestire il bot. Gli mandi un', 'Let someone you trust help run the bot. You send them an', 'Deja que alguien de confianza te ayude con el bot. Le mandas un')} <strong class="primo-piano">${L('link d\'invito', 'invite link', 'enlace de invitación')}</strong>: ${L('accede con Twitch (così sappiamo che è davvero lui) e può occuparsi di tutto,', 'they sign in with Twitch (so we know it’s really them) and can handle everything,', 'entra con Twitch (así sabemos que es él de verdad) y puede ocuparse de todo,')} <strong class="primo-piano">${L('tranne', 'except', 'excepto')}</strong> ${L('le cose da proprietario — permessi Twitch e questo elenco.', 'owner-only things — Twitch permissions and this list.', 'lo de propietario — permisos de Twitch y esta lista.')}</p>
-      <label class="campo" for="inp-mod-login">${L('Username Twitch del moderatore', 'Moderator’s Twitch username', 'Usuario de Twitch del moderador')}</label>
+      <label class="campo" for="sel-mod-piattaforma">${L('Dove sta il moderatore', 'Where the moderator is', 'Dónde está el moderador')}</label>
       <div class="riga-flessibile">
+        <select id="sel-mod-piattaforma">
+          <option value="twitch">Twitch</option>
+          <option value="kick">Kick</option>
+          <option value="youtube">YouTube</option>
+        </select>
         <span class="suggerimento">@</span>
-        <input type="text" id="inp-mod-login" placeholder="${L('nomeutente', 'username', 'usuario')}" autocomplete="off">
+        <input type="text" id="inp-mod-login" class="cresce" placeholder="${L('nomeutente', 'username', 'usuario')}" autocomplete="off">
         <button class="btn" id="btn-invita-mod">${L('Crea invito', 'Create invite', 'Crear invitación')}</button>
       </div>
       <div id="invito-creato"></div>
+      <h3>${L('Chi ha chiesto di aiutarti', 'Who asked to help you', 'Quién ha pedido ayudarte')}</h3>
+      <p class="suggerimento">${L('Chi ti modera già sul canale può chiedere l’accesso da sé, senza aspettare il tuo link. Su Twitch la richiesta arriva già confermata: l’abbiamo chiesto a Twitch.', 'People who already moderate your channel can ask for access themselves, without waiting for your link. On Twitch the request arrives already confirmed: we asked Twitch.', 'Quien ya te modera puede pedir acceso por su cuenta, sin esperar tu enlace. En Twitch la solicitud llega ya confirmada: se lo hemos preguntado a Twitch.')}</p>
+      <ul class="lista-voci" id="lista-richieste-mod"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
       <h3>${L('I tuoi moderatori', 'Your moderators', 'Tus moderadores')}</h3>
       <ul class="lista-voci" id="lista-moderatori"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
-    </div>` : ''}`);
+    </div>` : ''}
+    <div class="carta">
+      <h2>${_hIco(ICO.utenti)}${L('Moderi il canale di qualcun altro?', 'Do you moderate someone else’s channel?', '¿Moderas el canal de otra persona?')}</h2>
+      <p>${L('Se moderi un canale che usa già SocialBot, puoi chiedere tu l’accesso alla sua dashboard invece di aspettare che ti mandi un link. Decide sempre chi ha il canale.', 'If you moderate a channel that already uses SocialBot, you can ask for access to its dashboard instead of waiting for a link. The channel owner always decides.', 'Si moderas un canal que ya usa SocialBot, puedes pedir tú el acceso a su panel en vez de esperar un enlace. Siempre decide quien tiene el canal.')}</p>
+      <label class="campo" for="sel-chiedi-piattaforma">${L('Il canale che moderi', 'The channel you moderate', 'El canal que moderas')}</label>
+      <div class="riga-flessibile">
+        <select id="sel-chiedi-piattaforma">
+          <option value="twitch">Twitch</option>
+          <option value="kick">Kick</option>
+          <option value="youtube">YouTube</option>
+        </select>
+        <span class="suggerimento">@</span>
+        <input type="text" id="inp-chiedi-canale" class="cresce" placeholder="${L('nomecanale', 'channelname', 'nombrecanal')}" autocomplete="off">
+      </div>
+      <label class="campo" for="inp-chiedi-nota">${L('Due righe per farti riconoscere (facoltative)', 'A line or two so they recognise you (optional)', 'Dos líneas para que te reconozca (opcional)')}</label>
+      <input type="text" id="inp-chiedi-nota" maxlength="300" placeholder="${L('sono il mod della sera', 'I’m the evening mod', 'soy el mod de la tarde')}" autocomplete="off">
+      <p class="spazio-sopra"><button class="btn" id="btn-chiedi-mod">${L('Manda la richiesta', 'Send the request', 'Enviar la solicitud')}</button></p>
+      <h3>${L('Le tue richieste', 'Your requests', 'Tus solicitudes')}</h3>
+      <ul class="lista-voci" id="lista-mie-richieste"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
+    </div>`);
 }
 
 function pannelloPersonalita() {
@@ -12770,13 +12803,28 @@ function attivaPiattaforma() {
   }));
 
   document.getElementById('btn-invita-mod')?.addEventListener('click', () => conErrore(async () => {
-    const login = (document.getElementById('inp-mod-login').value || '').trim().replace(/^@/, '');
-    if (!login) { toast(L('Scrivi l’username Twitch del moderatore.', 'Type the moderator\'s Twitch username.', 'Escribe el nombre de usuario de Twitch del moderador.'), 'errore'); return; }
-    const r = await api('/api/moderatori', { method: 'POST', body: { login } });
+    const nome = (document.getElementById('inp-mod-login').value || '').trim().replace(/^@/, '');
+    const piattaforma = document.getElementById('sel-mod-piattaforma')?.value || 'twitch';
+    if (!nome) { toast(L('Scrivi il nome utente del moderatore.', 'Type the moderator\'s username.', 'Escribe el nombre de usuario del moderador.'), 'errore'); return; }
+    const r = await api('/api/moderatori', { method: 'POST', body: { piattaforma, nome } });
     document.getElementById('inp-mod-login').value = '';
     mostraInvito(r.invito);
     toast(L('Invito creato: copia il link e mandaglielo', 'Invite created: copy the link and send it to them', 'Invitación creada: copia el enlace y envíaselo'));
     caricaModeratori();
+  }));
+
+  document.getElementById('btn-chiedi-mod')?.addEventListener('click', () => conErrore(async () => {
+    const nome = (document.getElementById('inp-chiedi-canale').value || '').trim().replace(/^@/, '');
+    const piattaforma = document.getElementById('sel-chiedi-piattaforma')?.value || 'twitch';
+    const nota = (document.getElementById('inp-chiedi-nota').value || '').trim();
+    if (!nome) { toast(L('Scrivi il nome del canale che moderi.', 'Type the name of the channel you moderate.', 'Escribe el nombre del canal que moderas.'), 'errore'); return; }
+    const r = await api('/api/richieste-moderatore', { method: 'POST', body: { piattaforma, nome, nota } });
+    document.getElementById('inp-chiedi-canale').value = '';
+    document.getElementById('inp-chiedi-nota').value = '';
+    toast(r.verificata
+      ? L('Richiesta mandata, già confermata da Twitch.', 'Request sent, already confirmed by Twitch.', 'Solicitud enviada, ya confirmada por Twitch.')
+      : L('Richiesta mandata. Ora decide chi ha il canale.', 'Request sent. Now the channel owner decides.', 'Solicitud enviada. Ahora decide quien tiene el canal.'));
+    caricaMieRichieste();
   }));
 
   document.getElementById('btn-crea-passkey')?.addEventListener('click', (ev) => conErrore(async () => {
@@ -13888,7 +13936,7 @@ async function conErrore(fn) {
 
 function caricaDatiScheda(id) {
   if (schedaBloccata(id)) return;
-  if (id === 'stato') { caricaPasskey(); caricaModeratori(); caricaRetePanoramica(); caricaPiattaforme(); }
+  if (id === 'stato') { caricaPasskey(); caricaModeratori(); caricaRichiesteMod(); caricaMieRichieste(); caricaRetePanoramica(); caricaPiattaforme(); }
   if (id === 'avatar') caricaMente3d();
   if (id === 'personalita') caricaGuide();
   if (id === 'conoscenza') { caricaConoscenza(); caricaQuaderno(); }
@@ -17423,6 +17471,84 @@ function mostraInvito(invito) {
       <button class="btn" id="btn-copia-invito">${L('Copia', 'Copy', 'Copiar')}</button>
     </div>`;
   document.getElementById('btn-copia-invito')?.addEventListener('click', () => copiaTesto(invito.url, L('Link d’invito copiato', 'Invite link copied', 'Enlace de invitación copiado')));
+}
+
+const NOME_PIATTAFORMA = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube' };
+
+async function caricaRichiesteMod() {
+  const ul = document.getElementById('lista-richieste-mod');
+  if (!ul) return;
+  try {
+    const r = await api('/api/moderatori/richieste');
+    const lista = r?.richieste || [];
+    if (!lista.length) { ul.innerHTML = `<li class="vuoto">${L('Nessuna richiesta in attesa', 'No pending requests', 'Ninguna solicitud pendiente')}</li>`; return; }
+    ul.innerHTML = lista.map((m) => {
+      const segno = m.verificata
+        ? `<span class="badge verde">${L('confermato da Twitch', 'confirmed by Twitch', 'confirmado por Twitch')}</span>`
+        : `<span class="badge giallo">${L('da controllare tu', 'you should check', 'compruébalo tú')}</span>`;
+      const dove = NOME_PIATTAFORMA[m.piattaforma] || m.piattaforma;
+      return `<li>
+        <div class="testo-voce">
+          <span class="domanda">${esc(m.display || m.nome)} ${segno}</span>
+          <span class="meta">${esc(dove)} · @${esc(m.nome)} · ${L('ha chiesto', 'asked', 'ha pedido')} ${esc(dataIt(m.chiesto))}</span>
+          ${m.nota ? `<span class="meta">«${esc(m.nota)}»</span>` : ''}
+        </div>
+        <div class="azioni-voce">
+          <button class="btn mini" data-mod-si="${m.id}">${L('Accetta', 'Accept', 'Aceptar')}</button>
+          <button class="btn secondario mini" data-mod-no="${m.id}">${L('Rifiuta', 'Decline', 'Rechazar')}</button>
+        </div>
+      </li>`;
+    }).join('');
+    ul.onclick = (ev) => {
+      const b = ev.target.closest('[data-mod-si],[data-mod-no]');
+      if (!b) return;
+      if (b.dataset.modSi) return conErrore(async () => {
+        await api('/api/moderatori/' + b.dataset.modSi + '/accetta', { method: 'POST', body: {} });
+        toast(L('Adesso può gestire il bot con te.', 'They can now run the bot with you.', 'Ahora puede gestionar el bot contigo.'));
+        caricaRichiesteMod(); caricaModeratori();
+      });
+      if (b.dataset.modNo) return conErrore(async () => {
+        if (!confirm(L('Rifiutare questa richiesta?', 'Decline this request?', '¿Rechazar esta solicitud?'))) return;
+        await api('/api/moderatori/' + b.dataset.modNo + '/rifiuta', { method: 'POST', body: {} });
+        toast(L('Fatto.', 'Done.', 'Hecho.')); caricaRichiesteMod();
+      });
+    };
+  } catch (e) { ul.innerHTML = `<li class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</li>`; }
+}
+
+async function caricaMieRichieste() {
+  const ul = document.getElementById('lista-mie-richieste');
+  if (!ul) return;
+  try {
+    const r = await api('/api/richieste-moderatore');
+    const lista = r?.richieste || [];
+    if (!lista.length) { ul.innerHTML = `<li class="vuoto">${L('Non hai chiesto nessun canale', 'You haven’t asked for any channel', 'No has pedido ningún canal')}</li>`; return; }
+    ul.innerHTML = lista.map((m) => {
+      const inAttesa = m.stato === 'richiesto';
+      const stato = inAttesa
+        ? `<span class="badge giallo">${L('in attesa', 'waiting', 'en espera')}</span>`
+        : `<span class="badge">${L('ha risposto di no', 'they said no', 'ha dicho que no')}</span>`;
+      const dove = NOME_PIATTAFORMA[m.piattaforma] || m.piattaforma;
+      const meta = inAttesa
+        ? L('chiesto ', 'asked ', 'pedido ') + esc(dataIt(m.chiesto)) + (m.verificata ? ' · ' + L('confermato da Twitch', 'confirmed by Twitch', 'confirmado por Twitch') : '')
+        : L('puoi richiedere fra qualche settimana', 'you can ask again in a few weeks', 'puedes pedirlo dentro de unas semanas');
+      return `<li>
+        <div class="testo-voce">
+          <span class="domanda">${esc(dove)} · @${esc(m.nome)} ${stato}</span>
+          <span class="meta">${meta}</span>
+        </div>
+        <div class="azioni-voce">${inAttesa ? `<button class="btn secondario mini" data-ritira="${esc(m.canale)}">${L('Ritira', 'Withdraw', 'Retirar')}</button>` : ''}</div>
+      </li>`;
+    }).join('');
+    ul.onclick = (ev) => {
+      const b = ev.target.closest('[data-ritira]');
+      if (!b) return;
+      conErrore(async () => {
+        await api('/api/richieste-moderatore/' + encodeURIComponent(b.dataset.ritira), { method: 'DELETE' });
+        toast(L('Richiesta ritirata.', 'Request withdrawn.', 'Solicitud retirada.')); caricaMieRichieste();
+      });
+    };
+  } catch (e) { ul.innerHTML = `<li class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</li>`; }
 }
 
 async function caricaModeratori() {

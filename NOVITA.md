@@ -5,8 +5,12 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-05
 
-- Puoi entrare con YouTube. Colleghi il canale e hai dashboard, pagina link e overlay; in chat, su YouTube, il bot non parla ancora e la scheda Piattaforme te lo dice.
-- Se hai già un account puoi collegare YouTube dalla scheda Piattaforme, accanto a Twitch e Kick.
+- L'accesso con YouTube è pronto ma non ancora aperto: nella vetrina e nella scheda Piattaforme lo trovi in grigio, «in arrivo». Google deve prima approvare il permesso di leggere quale canale sei.
+- Se moderi già il canale di qualcun altro puoi chiedere tu l'accesso al suo pannello, senza aspettare che ti mandi un link. Lo trovi nella scheda Stato.
+- Su Twitch la richiesta arriva allo streamer già confermata: prima di mostrargliela chiediamo a Twitch chi modera quel canale.
+- Chi ha il canale vede le richieste in attesa nella scheda Stato e risponde con un tasto. Finché non dice di sì, chi ha chiesto non vede niente e non occupa un posto del piano.
+- L'invito a un moderatore ora si manda anche a chi sta su Kick: scegli la piattaforma e scrivi il nome.
+- E chi è stato invitato entra dalla sua piattaforma, non per forza da Twitch.
 
 ## 2026-09-04
 
