@@ -41,6 +41,8 @@ const ROTTURE = [
     'l\'immagine parte senza accendere schermo e browser'],
   ['ambiente/avvio.sh', 'avvia browser python3 /opt/browser.py', '# niente browser',
     'l\'avvio non accende il browser'],
+  ['ambiente/Dockerfile', 'FROM python:3.12-slim-bookworm', 'FROM python:3.12-slim',
+    'la base torna a seguire il vento e il build si rompera\' da solo'],
 ];
 
 if (process.argv.includes('--selftest')) {
@@ -123,7 +125,19 @@ dice(cercati.length > 0, `programmi che le sonde vanno a cercare: ${new Set(cerc
 dice(!mancanti.length, 'tutto cio\' che le sonde cercano esiste nell\'immagine',
   `cercati e mai installati: ${mancanti.join(', ')} — il cruscotto direbbe «non c\'e\'» a vuoto`);
 
-// --- 4. l'avvio ------------------------------------------------------------
+// --- 4. la base non deve cambiare sotto i piedi ----------------------------
+// `playwright install --with-deps` installa le librerie di sistema del browser con
+// un elenco che dipende dalla VERSIONE DI DEBIAN. Con una base non pinnata
+// (`python:3.12-slim`) quella versione cambia quando cambia a monte, e un giorno il
+// build muore su pacchetti che non esistono piu' — senza che nessuno qui abbia
+// toccato niente. Se ci si fa vestire da Playwright, la base si inchioda.
+const conDeps = /playwright install .*--with-deps/.test(dockerfile);
+const base = (dockerfile.match(/^FROM\s+(\S+)/m) || [])[1] || '';
+const pinnata = /-(bookworm|bullseye|trixie|noble|jammy|focal)\b/.test(base);
+dice(!conDeps || pinnata, `la base dell'immagine è inchiodata a una Debian precisa (${base || '?'})`,
+  'con --with-deps e una base che segue il vento, il build si romperà da solo quando Debian cambia');
+
+// --- 5. l'avvio ------------------------------------------------------------
 dice(/CMD\s*\[\s*"\/opt\/avvio\.sh"\s*\]/.test(dockerfile),
   'l\'immagine parte dall\'avvio (schermo, browser, esecutore)',
   'parte da qualcos\'altro: schermo e browser non si accendono');

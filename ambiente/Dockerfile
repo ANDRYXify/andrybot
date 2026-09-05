@@ -8,7 +8,14 @@
 # INSTALLARSI QUALSIASI COSA — senza toccare il sistema (root in sola lettura a runtime) e
 # senza mai uscire dal recinto (docker-compose.yml → dietro il `guardiano`, che le lascia
 # internet vero ma le sbarra la TUA infrastruttura; niente segreti, niente host, niente produzione).
-FROM python:3.12-slim
+# La versione di Debian e' PINNATA, e non e' pignoleria. `python:3.12-slim` segue la
+# Debian del momento, e oggi e' trixie: Playwright 1.49.1 non la conosce, quindi per le
+# librerie di sistema ripiega su un elenco vecchio dove `ttf-unifont` e
+# `ttf-ubuntu-font-family` esistevano ancora. Su trixie quei pacchetti non ci sono piu' e
+# `--with-deps` muore con «has no installation candidate». Non e' un difetto nostro: e' una
+# base che cambia sotto i piedi. Bookworm e' la Debian che questa versione di Playwright
+# sa vestire. Chi cambia una delle due deve cambiare l'altra — stanno insieme.
+FROM python:3.12-slim-bookworm
 
 ENV DEBIAN_FRONTEND=noninteractive
 

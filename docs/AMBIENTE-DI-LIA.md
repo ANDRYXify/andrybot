@@ -100,3 +100,18 @@ ambiente senza finestre.
 
 Regolabili da `.env`: `AMBIENTE_MEM`, `AMBIENTE_CPUS`, `AMBIENTE_TIMEOUT_MAX`,
 `SCHERMO_LARG`, `SCHERMO_ALT`.
+
+## Perché la versione di Debian è inchiodata
+
+`playwright install --with-deps` installa le librerie di sistema del browser con un
+elenco che **dipende dalla versione di Debian**. Con una base che segue il vento
+(`python:3.12-slim`) quella versione cambia quando cambia a monte: oggi è trixie,
+Playwright 1.49 non la conosce, ripiega su un elenco vecchio e chiede
+`ttf-unifont` e `ttf-ubuntu-font-family` — pacchetti che su trixie non esistono
+più. Il build muore con «has no installation candidate», senza che nessuno qui
+abbia toccato niente.
+
+Perciò la base è `python:3.12-slim-bookworm`, e la versione di Playwright e la
+Debian **stanno insieme**: chi cambia una deve cambiare l'altra.
+`scripts/verifica-ambiente.mjs` lo tiene fermo — se l'immagine si fa vestire da
+Playwright, la base dev'essere inchiodata a un nome preciso.
