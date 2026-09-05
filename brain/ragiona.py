@@ -29,6 +29,7 @@ import json
 import time
 import operator
 import threading
+import accenti
 
 DATA_DIR = os.environ.get("DATA_DIR", "/app/data")
 RAGIONA_DIR = os.path.join(DATA_DIR, "ragiona")
@@ -37,6 +38,16 @@ MAX_TRIPLE = 4000
 _lock = threading.RLock()
 _cache = {}
 _ARTICOLI = r"(?:il|lo|la|i|gli|le|un|uno|una|l'|dei|degli|delle|della|del)\s+"
+
+
+def _t(x):
+    """IL TESTO COME LO LEGGE LEI. In chat «è» si scrive «e'», e le regole qui sotto
+    cercano l'accento: senza questo passaggio non trovano niente e non danno nessun
+    errore — semplicemente non imparano. Passa di qui OGNI testo che entra, sia una
+    frase da cui imparare sia una domanda a cui rispondere: se ci passasse solo una
+    delle due, Lei imparerebbe «il gatto è un animale» e poi non riconoscerebbe «il
+    gatto e' un animale?». Vedi brain/accenti.py."""
+    return accenti.accenta(str(x or ""))
 
 
 def _now():
@@ -76,7 +87,7 @@ _PAT = [
 
 
 def estrai(testo):
-    t = re.sub(r"\s+", " ", str(testo or "").strip())
+    t = re.sub(r"\s+", " ", _t(testo).strip())
     if not t or "?" in t or len(t) > 160:
         return []
     # una frase alla volta: prendi la prima proposizione sensata
@@ -220,8 +231,11 @@ def inferisci(canale, max_nuovi=200):
 
 
 # ───────────────────────────────────── deduzione (risposta + perché)
-_Q_CHI = re.compile(r"^\s*(?:chi|cosa|cos'|che cos'?a?)\s+(?:è|sono)\s+(?:" + _ARTICOLI + r")?(.+?)\s*\??$", re.I)
-_Q_DOVE = re.compile(r"^\s*dov\w*\s+(?:si\s+trov\w+|è|sta)\s+(?:" + _ARTICOLI + r")?(.+?)\s*\??$", re.I)
+# L'ELISIONE fa da separatore quanto lo spazio: «cos'è» e «dov'è» si scrivono
+# attaccate, e con un `\s+` la domanda non veniva riconosciuta — la risposta c'era
+# ma non la si andava a prendere.
+_Q_CHI = re.compile(r"^\s*(?:chi|cosa|cos'|che\s+cos'?a?)\s*(?:è|sono)\s+(?:" + _ARTICOLI + r")?(.+?)\s*\??$", re.I)
+_Q_DOVE = re.compile(r"^\s*dov\w*'?\s*(?:si\s+trov\w+|è|sta)\s+(?:" + _ARTICOLI + r")?(.+?)\s*\??$", re.I)
 _Q_NOME = re.compile(r"^\s*come\s+si\s+chiam\w+\s+(?:" + _ARTICOLI + r")?(.+?)\s*\??$", re.I)
 _Q_HA = re.compile(r"^\s*(?:cosa|che\s+cosa)\s+(?:ha|hanno)\s+(?:" + _ARTICOLI + r")?(.+?)\s*\??$", re.I)
 _Q_SINO = re.compile(r"^\s*(?:" + _ARTICOLI + r")?(.+?)\s+è\s+(?:" + _ARTICOLI + r")?(.+?)\s*\?\s*$", re.I)
@@ -235,7 +249,7 @@ def _cerca(triple, s, r):
 def deduci(canale, domanda):
     """Prova a rispondere RAGIONANDO sui fatti. Ritorna {risposta, catena, sicura}
     oppure None se non lo può dedurre. Non inventa mai."""
-    d = re.sub(r"\s+", " ", str(domanda or "").strip())
+    d = re.sub(r"\s+", " ", _t(domanda).strip())
     if not d:
         return None
     with _lock:
@@ -244,7 +258,11 @@ def deduci(canale, domanda):
         if not triple:
             return None
 
-        m = _Q_SINO.match(d)      # "X è Y?" → sì/no con motivo
+        # "X è Y?" → sì/no con motivo. Se non sa rispondere NON si ferma qui: questa
+        # forma combacia anche con «chi è Marco?» (soggetto «chi», oggetto «Marco»),
+        # e fermandosi si mangiava tutte le domande con chi/cosa/dove che finiscono
+        # con un punto interrogativo. La risposta c'era: non la si andava a prendere.
+        m = _Q_SINO.match(d)
         if m:
             s, o = _n(m.group(1)), _n(m.group(2))
             for (val, perche) in _cerca(triple, s, "è"):
@@ -253,7 +271,6 @@ def deduci(canale, domanda):
             for (val, _p) in _cerca(triple, s, "non-è"):
                 if val == o:
                     return {"risposta": f"No, {s} non è {o}.", "catena": f"{s} non è {o}", "sicura": True}
-            return None
 
         for (pat, rel, verbo) in ((_Q_DOVE, "si-trova", "si trova a"), (_Q_NOME, "si-chiama", "si chiama"),
                                   (_Q_CHI, "è", "è"), (_Q_HA, "ha", "ha")):
@@ -406,7 +423,7 @@ def confronta(canale, a, b):
 def ragiona_causale(canale, domanda):
     """Dispatcher: riconosce «cosa succede se / perché / X o Y» e risponde dal grafo causale.
     Ritorna {risposta, catena, sicura, via} o None (se non è una di queste, o se non sa)."""
-    d = str(domanda or "").strip()
+    d = _t(domanda).strip()
     if not d:
         return None
     try:
@@ -527,7 +544,7 @@ def proporzione(canale, a, b, c):
 def ragiona_analogia(canale, domanda):
     """Dispatcher analogico: «X sta a Y come Z» → proporzione; «X è come Y» → verifica;
     «a cosa somiglia X / com'è X» → somiglianza. Ritorna {..., via} o None."""
-    d = str(domanda or "").strip()
+    d = _t(domanda).strip()
     if not d:
         return None
     try:
@@ -636,7 +653,7 @@ def calcola(domanda):
     """Risponde CALCOLANDO (non ricordando) quando la domanda è aritmetica, anche se scritta
     a PAROLE nella sua lingua («17 per 23»). Ritorna {risposta, catena, sicura} o None.
     Deterministico, senza modello, senza eval."""
-    d = _normalizza_operatori(str(domanda or ""))
+    d = _normalizza_operatori(_t(domanda))
     m = _RE_PERC.search(d)
     if m:
         try:

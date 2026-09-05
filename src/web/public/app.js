@@ -16178,10 +16178,17 @@ function _menteCruscotto(d) {
     ['moduli', L('Ragionamento a moduli', 'Module reasoning', 'Razonamiento por módulos'), '#1f9e4f'],
     ['riflesso', L('Riflesso (modulo)', 'Reflex (module)', 'Reflejo (módulo)'), '#2fb98a'],
     ['ecologia', L('Ecologia (assestamento)', 'Ecology (settling)', 'Ecología (asentamiento)'), '#2f8f6b'],
+    ['analogia', L('Analogia (struttura)', 'Analogy (structure)', 'Analogía (estructura)'), '#8f7bd6'],
+    ['strumento', L('Strumento (se lo costruisce)', 'Tool (builds its own)', 'Herramienta (se la construye)'), '#4f9e8f'],
+    ['esecuzione', L('Esecuzione (usa lo strumento)', 'Execution (uses the tool)', 'Ejecución (usa la herramienta)'), '#3f8f7f'],
+    ['scudo', L('Scudo (dirottamento respinto)', 'Shield (hijack deflected)', 'Escudo (secuestro rechazado)'), '#9a9a9a'],
     ['modello', L('Modello (genera)', 'Model (generate)', 'Modelo (genera)'), '#e0913a'],
   ];
-  const tot = ordine.reduce((s, [k]) => s + (Number(vie[k]) || 0), 0);
-  const senzaMod = ordine.filter(([k]) => k !== 'modello').reduce((s, [k]) => s + (Number(vie[k]) || 0), 0);
+  for (const k of Object.keys(vie)) {
+    if (!ordine.some(([x]) => x === k)) ordine.push([k, k, '#9a9a9a']);
+  }
+  const tot = Object.values(vie).reduce((s, n) => s + (Number(n) || 0), 0);
+  const senzaMod = tot - (Number(vie.modello) || 0);
   const perc = (n) => (tot ? Math.round(n * 100 / tot) : 0);
   const barre = ordine.map(([k, lab, col]) => {
     const n = Number(vie[k]) || 0;

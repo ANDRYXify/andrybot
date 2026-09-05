@@ -26,6 +26,7 @@ import plasma      # la plasticità (Karmiloff-Smith/Piaget): si auto-plasma il 
 import volere      # il volere proprio: desidera, giudica, corregge e si regola da sé (non dipende dal Compagno)
 import sqlite3
 import threading
+import accenti
 
 DATA_DIR = os.environ.get("DATA_DIR", "/app/data")
 DB_PATH = os.path.join(DATA_DIR, "coscienza.db")
@@ -234,6 +235,13 @@ def _dominio_da_testo(testo):
 
 # Auto-presentazioni ('mi chiamo…'): non devono stare negli esempi dei moduli, o il
 # bot le ripete rivendicando un nome/dettaglio che non è suo.
+# LE VIE del ragionamento che il cruscotto sa contare. Deve contenerle TUTTE quelle
+# che genera.py assegna: una che manca sparisce in silenzio, e quel modo di pensare
+# nel cruscotto sembra non lavorare mai.
+VIE_CONTATE = ("deduzione", "memoria", "moduli", "modello", "riflesso", "strumento",
+               "calcolo", "costruzione", "temporale", "ecologia", "introspezione",
+               "causale", "analogia", "scudo", "esecuzione")
+
 _RE_AUTOPRES_MOD = re.compile(r"(?i)\b(mi chiamo|il mio nome (?:è|e')|mi presento|chiamami|puoi chiamarmi)\b")
 
 
@@ -999,9 +1007,11 @@ class Coscienza:
     def conta_via(self, via):
         """Registra che una risposta è nata da questa "via" del ragionamento."""
         via = str(via or "").strip().lower()
-        if via not in ("deduzione", "memoria", "moduli", "modello", "riflesso", "strumento",
-                       "calcolo", "costruzione", "temporale", "ecologia", "introspezione", "causale",
-                       "analogia"):
+        # Ogni via che genera.py sa produrre deve poter essere contata. Una che manca
+        # qui non da' nessun errore: sparisce, e nel cruscotto quel modo di pensare
+        # sembra non lavorare mai. Il cancello scripts/verifica-accenti.mjs confronta
+        # questa lista con le vie che genera.py assegna davvero.
+        if via not in VIE_CONTATE:
             return
         try:
             with _lock:
@@ -4189,7 +4199,7 @@ class Coscienza:
         """Risponde a una domanda SU DI SÉ costruendola dal suo stato reale (valori, fuoco,
         cicatrici, clima, energia). Ritorna {risposta, via} o None se non è una domanda di sé
         o non riesce a costruire. Prima persona, voce sua, breve. Deterministico, modello-spento."""
-        d = str(domanda or "")
+        d = accenti.accenta(str(domanda or ""))
         if not d.strip():
             return None
         fuoco = None

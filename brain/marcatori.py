@@ -27,6 +27,7 @@ import re
 import json
 import time
 import threading
+import accenti
 
 _DIR = os.environ.get("MARCATORI_DIR", os.path.join(os.path.dirname(__file__), "data", "marcatori"))
 _lock = threading.RLock()
@@ -51,8 +52,11 @@ _RE_SALUTO = re.compile(r"(?i)^\s*(?:ciao|ehi|hey|salve|buongiorno|buonasera|gra
 
 def _categoria(testo):
     """La CLASSE della situazione (Damasio ragiona su classi, non su istanze). Grezza apposta,
-    così i marcatori generalizzano. Nessun contenuto utente crudo esce da qui."""
-    t = str(testo or "")
+    così i marcatori generalizzano. Nessun contenuto utente crudo esce da qui.
+    Il testo si legge con gli accenti rimessi a posto: «perche\'» e «perché» sono la
+    stessa situazione, e classificarli in due classi diverse spezzerebbe in due la
+    memoria di ciò che in situazioni così ha funzionato."""
+    t = accenti.accenta(str(testo or ""))
     if _RE_SALUTO.search(t):
         return "saluto"
     if _RE_ARIT.search(t):
