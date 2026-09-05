@@ -829,10 +829,14 @@ function _osservatore() {
 
 function preparaCarte(scope = document) {
   if (_menoMoto) return;
+  const obs = _osservatore();
   for (const c of scope.querySelectorAll('.carta')) {
     c.classList.remove('dentro');
     c.classList.add('rivela');
+    obs.observe(c);
   }
+  _reteDiSicurezza();
+  _guardaLeCarteNuove();
 }
 
 function avviaComparsa(sezioni) {
@@ -856,6 +860,34 @@ function armaComparsa() {
   }, 1400);
 }
 
+let _reteCarteTimer = null;
+function _reteDiSicurezza() {
+  clearTimeout(_reteCarteTimer);
+  _reteCarteTimer = setTimeout(() => {
+    for (const c of document.querySelectorAll('.carta.rivela:not(.dentro)')) c.classList.add('dentro');
+  }, 2200);
+}
+
+let _guardiaCarte = null;
+function _guardaLeCarteNuove() {
+  if (_guardiaCarte || typeof MutationObserver === 'undefined') return;
+  _guardiaCarte = new MutationObserver((mosse) => {
+    let nuove = false;
+    for (const m of mosse) {
+      for (const n of m.addedNodes) {
+        if (n.nodeType !== 1) continue;
+        if (n.classList?.contains('carta') || n.querySelector?.('.carta')) { nuove = true; break; }
+      }
+      if (nuove) break;
+    }
+    if (!nuove) return;
+    const obs = _osservatore();
+    for (const c of document.querySelectorAll('.carta.rivela:not(.dentro)')) obs.observe(c);
+    _reteDiSicurezza();
+  });
+  _guardiaCarte.observe(document.body, { childList: true, subtree: true });
+}
+
 function rivelaCarte(scope = document) {
   const carte = [...scope.querySelectorAll('.carta')];
   if (_menoMoto) { carte.forEach((c) => c.classList.add('rivela', 'dentro')); return; }
@@ -870,6 +902,8 @@ function rivelaCarte(scope = document) {
     c.style.setProperty('--rev-delay', visibile ? 230 + Math.min(inVista++, 5) * 55 + 'ms' : '0ms');
     obs.observe(c);
   }
+  _reteDiSicurezza();
+  _guardaLeCarteNuove();
 }
 
 const _icoChevron = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';

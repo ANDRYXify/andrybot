@@ -541,3 +541,22 @@ stare **su più righe**, e riscriverne solo l'ultima lascia le prime penzolare
 davanti a un `@media`. Per il browser è un selettore invalido, quindi butta via
 l'intera regola — e sembra che abbia funzionato, perché l'effetto sparisce
 davvero. Il prelude va sostituito tutto.
+
+## Una scheda spenta non «manca»: lascia un buco
+
+Le schede entrano scorrendo: partono a `opacity: 0` e si accendono quando
+compaiono nello schermo. Ma la scatola c'è comunque, alta quanto il contenuto —
+quindi una scheda che non si accende lascia al suo posto un buco bianco alto
+quanto lei. Su un telefono, dove le schede sono in colonna e alte, si scorre per
+due schermate di niente.
+
+Poteva succedere in due modi, nessuno dei due visibile provando il sito:
+`preparaCarte` le spegneva **senza armare l'osservatore** (contava che
+`avviaComparsa` arrivasse dopo, cosa che dipende da una transizione che può non
+finire), e una scheda **creata dopo** quel giro — un elenco che arriva dalla
+rete — non veniva mai osservata da nessuno.
+
+La cura non è ricordarsi di accenderle, è che non possano restare spente:
+chi le prepara arma anche l'osservatore, una rete di sicurezza le accende
+comunque dopo 2,2s, e una guardia (`MutationObserver`) si accorge di quelle nate
+dopo. Lo controlla `node scripts/verifica-comparsa.mjs`.

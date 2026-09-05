@@ -5,6 +5,7 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-04
 
+- Niente più schermate vuote scorrendo una scheda: alcune carte restavano spente e lasciavano al loro posto un buco alto quanto loro.
 - Sul telefono il contorno non resta più acceso sull'ultimo tasto premuto: gli effetti del passaggio del mouse ora valgono solo dove un mouse c'è davvero.
 - Su telefono le schede Notifiche, Moduli e Avvisi non escono più dallo schermo: il testo si tagliava a metà frase e la pagina scivolava di lato.
 - La ricerca ha il tema del sito: contorno pieno, filtri a pastiglia e le voci che si sollevano. Prima era rimasta col disegno di prima.
