@@ -521,3 +521,23 @@ La cura è dire quella minima a voce: `min-width: 0` accanto a `min-height: 0`.
 Lo controlla `node scripts/verifica-larghezza.mjs`, che a 390px gira ogni scheda
 e pretende che la pagina non scorra di lato — e quando scorre dice **chi**
 sfonda, cioè il primo elemento più largo dello spazio che il padre gli dà.
+
+## Sul telefono non esiste «passarci sopra»
+
+Esiste il tocco. Ma dopo un tocco il browser lascia l'elemento in `:hover`
+finché non se ne tocca un altro, e nessuno ci esce mai davvero. Con un tema che
+al passaggio del mouse alza la cosa di un pixel e le mette un timbro sotto, il
+risultato è **un contorno che resta acceso sull'ultimo tasto premuto**. Sembra
+un difetto, e lo è: sul portatile invece è tutto corretto, quindi non si vede
+provando il sito.
+
+Regola: ogni regola con `:hover` sta dentro `@media (hover: hover)`. Lo controlla
+`node scripts/verifica-tocco.mjs`, che legge il CSS con un piccolo analizzatore
+invece che a espressioni regolari — serve sapere se una regola sta *dentro* un
+`@media`, e questo una ricerca per testo non lo sa.
+
+Una trappola trovata scrivendo la trasformazione: una lista di selettori può
+stare **su più righe**, e riscriverne solo l'ultima lascia le prime penzolare
+davanti a un `@media`. Per il browser è un selettore invalido, quindi butta via
+l'intera regola — e sembra che abbia funzionato, perché l'effetto sparisce
+davvero. Il prelude va sostituito tutto.

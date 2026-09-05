@@ -143,7 +143,9 @@
 .ap-stage .ap-chat.destra { align-items: flex-end; }
 
 .ap-stage .ap-el { cursor: grab; }
+@media (hover: hover) {
 .ap-stage .ap-el:hover { outline: 2px solid color-mix(in srgb, var(--acc) 35%, transparent); outline-offset: 6px; }
+}
 .ap-stage .ap-el.sel  { outline: 3px dashed var(--acc); outline-offset: 6px; z-index: 20; }
 
 .ap-stage .ap-handle {
@@ -169,7 +171,9 @@
 .ovl-insp-testa { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
 .ovl-insp-nome { font-weight: 800; }
 .ovl-insp-reset { border: 0; background: color-mix(in srgb, var(--acc) 18%, transparent); color: inherit; border-radius: 8px; padding: .3rem .7rem; cursor: pointer; font-weight: 700; }
+@media (hover: hover) {
 .ovl-insp-reset:hover { background: color-mix(in srgb, var(--acc) 32%, transparent); }
+}
 .ovl-insp-cur { display: grid; grid-template-columns: 92px 1fr auto; align-items: center; gap: .6rem; }
 .ovl-insp-cur input[type="range"] { width: 100%; min-width: 0; }
 .ovl-insp-mis { display: inline-flex; align-items: center; gap: .2rem; }
