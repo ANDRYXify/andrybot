@@ -560,3 +560,19 @@ La cura non è ricordarsi di accenderle, è che non possano restare spente:
 chi le prepara arma anche l'osservatore, una rete di sicurezza le accende
 comunque dopo 2,2s, e una guardia (`MutationObserver`) si accorge di quelle nate
 dopo. Lo controlla `node scripts/verifica-comparsa.mjs`.
+
+## Due trappole di impaginazione, sempre le stesse
+
+**Il titolo appeso all'angolo vale solo se sta nell'angolo.** Il titolo di una
+scheda è una linguetta tirata sull'angolo in alto a sinistra, con margini
+negativi grandi quanto il padding della scheda. Se davanti al titolo c'è
+qualcos'altro — un'icona, un'immagine — quel margine negativo lo tira **sopra**
+a quella cosa e la taglia. La condizione fa parte del selettore:
+`.carta > h2:first-child`. Un titolo che non è il primo figlio prende la stessa
+etichetta nera senza i margini negativi.
+
+**In un contenitore flex il testo nudo diventa un pezzo a sé.** `<li>testo
+<b>grassetto</b></li>` dentro un `display: flex` non è una frase: sono due
+elementi affiancati, e il grassetto finisce in una colonna sua mentre il testo
+va a capo nella propria. Se il contenuto è una frase, il contenitore non deve
+essere flex: il numerino si mette con `position: absolute` e un `padding-left`.
