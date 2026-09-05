@@ -432,11 +432,18 @@ export async function ecosistema() {
   finally { clearTimeout(to); }
 }
 
-// AZIONE sull'ecosistema (owner/admin-only): {op, ...}. op ∈ installa | naviga | crea | scrivi |
-// esegui | lavoro | ferma. Timeout generoso (gli avvii lanciano lavori in background). Esito o null.
+// AZIONE sull'ecosistema (owner/admin-only): {op, ...}. Esito o null.
+//
+// L'attesa è l'ULTIMA della catena, e dev'essere la più lunga: il browser si dà
+// una scadenza per il gesto, l'esecutore aspetta più di lui, il cervello più
+// dell'esecutore, noi più di tutti. Con venti secondi — com'era — mollavamo per
+// primi: la pagina si caricava, la risposta arrivava a nessuno, e nella scheda
+// restava «carico la pagina…» all'infinito.
+const ECO_ATTESA_MS = 90_000;
+
 export async function ecosistemaAzione(payload) {
   const ac = new AbortController();
-  const to = setTimeout(() => ac.abort(), 20000);
+  const to = setTimeout(() => ac.abort(), ECO_ATTESA_MS);
   try {
     const r = await fetch(BASE + '/ecosistema', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
