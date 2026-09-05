@@ -18,11 +18,11 @@
 //   4. il bot va fermato prima (`docker compose stop bot`): lo script lo dice e
 //      chiede conferma, perché scrivere sotto un processo che legge è il modo
 //      migliore per rompere tutto e due.
-import { existsSync, copyFileSync, renameSync, rmSync, statSync } from 'node:fs';
+import { existsSync, copyFileSync, renameSync, rmSync, statSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, basename } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 
-const { provaCopia, elencoCopie, cartellaCopie } = await import('../src/backup.js');
+const { provaCopia, elencoCopie, cartellaCopie, ripristinaCopia } = await import('../src/backup.js');
 const { config } = await import('../src/config.js');
 
 const DB = join(config.dataDir, 'andrybot.db');
@@ -92,7 +92,10 @@ async function main() {
   for (const f of scarti) { try { if (existsSync(f)) rmSync(f); } catch { /* niente */ } }
 
   try {
-    copyFileSync(scelta.percorso, DB);
+    // Le copie sono cifrate (docs/SEGRETI.md): il giro che le riapre sta in
+    // src/backup.js, cosi' e' lo stesso che le prove collaudano.
+    const r = ripristinaCopia(scelta.percorso, DB);
+    if (!r.ok) throw new Error(r.errore);
     const dopo = provaCopia(DB);
     if (!dopo.ok) throw new Error('il database ripristinato non si riapre: ' + dopo.errore);
     console.log(`\nFatto. ${basename(DB)} ripristinato da ${scelta.file} — ${dopo.streamer} streamer, ${mb(statSync(DB).size)}.`);

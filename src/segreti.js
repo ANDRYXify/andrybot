@@ -163,3 +163,53 @@ export function combacia(valore, attesa, sale = '') {
   if (a.length !== b.length) return false;
   try { return crypto.timingSafeEqual(a, b); } catch { return false; }
 }
+
+// ------------------------------------------------------------------ file
+//
+// La stessa busta, applicata a dei byte invece che a una stringa: serve ai
+// backup. Un backup e' una copia del database, quindi vale il database — e
+// finora era in chiaro. Formato binario, per non gonfiare il file di un terzo
+// passando da base64:
+//   "SBK1" | kid (2 byte) | chiave avvolta (60) | iv (12) | tag (16) | testo
+const MAGIA = Buffer.from('SBK1', 'ascii');
+
+export function cifraBytes(buf, dove) {
+  if (!ATTIVA) return null;
+  const chiave = crypto.randomBytes(32);
+  const iv = crypto.randomBytes(12);
+  const c = crypto.createCipheriv('aes-256-gcm', chiave, iv);
+  c.setAAD(Buffer.from(posto(dove), 'utf8'));
+  const ct = Buffer.concat([c.update(buf), c.final()]);
+
+  const ivk = crypto.randomBytes(12);
+  const w = crypto.createCipheriv('aes-256-gcm', maestra(KID), ivk);
+  w.setAAD(Buffer.from('chiave|' + posto(dove), 'utf8'));
+  const wrapped = Buffer.concat([ivk, w.update(chiave), w.final(), w.getAuthTag()]);   // 12+32+16 = 60
+
+  const testa = Buffer.alloc(2);
+  testa.writeUInt16BE(KID);
+  return Buffer.concat([MAGIA, testa, wrapped, iv, c.getAuthTag(), ct]);
+}
+
+export function eBytesCifrati(buf) {
+  return Buffer.isBuffer(buf) && buf.length > MAGIA.length && buf.subarray(0, 4).equals(MAGIA);
+}
+
+export function decifraBytes(buf, dove) {
+  if (!ATTIVA || !eBytesCifrati(buf)) return null;
+  try {
+    const kid = buf.readUInt16BE(4);
+    const m = maestra(kid);
+    if (!m) return null;
+    const wrapped = buf.subarray(6, 66);
+    const dw = crypto.createDecipheriv('aes-256-gcm', m, wrapped.subarray(0, 12));
+    dw.setAAD(Buffer.from('chiave|' + posto(dove), 'utf8'));
+    dw.setAuthTag(wrapped.subarray(44, 60));
+    const chiave = Buffer.concat([dw.update(wrapped.subarray(12, 44)), dw.final()]);
+
+    const d = crypto.createDecipheriv('aes-256-gcm', chiave, buf.subarray(66, 78));
+    d.setAAD(Buffer.from(posto(dove), 'utf8'));
+    d.setAuthTag(buf.subarray(78, 94));
+    return Buffer.concat([d.update(buf.subarray(94)), d.final()]);
+  } catch { return null; }
+}

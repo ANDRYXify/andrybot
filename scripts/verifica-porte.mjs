@@ -30,6 +30,7 @@ const GUARDIANI = [
   'requireAdmin', 'requireLogin', 'requireMod', 'requireOwner',
   'chiaveOk',        // chiave dell'overlay: il link e' il segreto
   'chiaveUguale',    // chiave dell'estensione, confronto a tempo costante
+  'apiKeyValida',    // chiave dell'estensione: dell'impronta salvata, a tempo costante
   'verificaWebhook', // firma di Stripe
   'currentUser',     // legge la sessione: senza, non c'e' niente da leggere
   'soloProprietario',

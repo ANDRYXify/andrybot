@@ -59,6 +59,7 @@ import * as quotesImport from '../features/quotesimport.js';
 import { pretrain } from '../ai/pretrain.js';
 import * as persona from '../ai/persona.js';
 import * as brainpy from '../ai/brainpy.js';
+import { impronta, combacia } from '../segreti.js';
 import { redeemPass } from './gate.js';
 import { eLoginNostro, loginKick, piattaformaDi } from '../identita.js';
 import { creaGuscio } from './vetrina.js';
@@ -4512,19 +4513,35 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
   // ------------------------------------------------------------ API MODULI (automazioni)
 
-  // Legge la chiave API in ingresso del canale (o null se non c'è).
-  const leggiApiKey = (login) => streamers.get(login)?.settings?.apiKey || null;
+  // LA CHIAVE API NON SI CONSERVA: si conserva la sua impronta (docs/SEGRETI.md).
+  // Chi ruba il database trova impronte, e con quelle non entra. La conseguenza
+  // e' voluta: la chiave si vede UNA VOLTA SOLA, quando nasce. Chi la perde ne fa
+  // un'altra — non si ripesca, ed e' il punto.
+  const haApiKey = (login) => {
+    const st = streamers.get(login)?.settings || {};
+    return !!(st.apiKeyImp || st.apiKey);
+  };
 
-  // Genera (e salva, mergiando le impostazioni) una nuova chiave API del canale.
+  // Vera se la chiave fornita e' quella del canale. Regge anche le chiavi
+  // vecchie, ancora in chiaro, finche' non vengono rigenerate: stesso confronto
+  // a tempo costante, cosi' non si indovina una lettera per volta.
+  const apiKeyValida = (login, fornita) => {
+    const st = streamers.get(login)?.settings || {};
+    if (st.apiKeyImp) return combacia(fornita, st.apiKeyImp, login);
+    if (st.apiKey) return chiaveUguale(fornita, st.apiKey);
+    return false;
+  };
+
+  // Conia una chiave nuova: torna la chiave (da mostrare adesso), salva solo
+  // l'impronta, e cancella l'eventuale chiave in chiaro di prima.
   const generaApiKey = (login) => {
     const key = crypto.randomBytes(24).toString('base64url');
     const s = streamers.get(login);
-    streamers.setSettings(login, { ...(s?.settings || {}), apiKey: key });
+    const settings = { ...(s?.settings || {}), apiKeyImp: impronta(key, login) };
+    delete settings.apiKey;
+    streamers.setSettings(login, settings);
     return key;
   };
-
-  // Ritorna la chiave esistente o ne crea una se manca.
-  const apiKeyOrCrea = (login) => leggiApiKey(login) || generaApiKey(login);
 
   // Validazione di un modulo in arrivo dalla dashboard. Ritorna un messaggio
   // d'errore (stringa) o null se è valido.
@@ -4578,12 +4595,14 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const effettiDisponibili = effectsDb.list(login).filter((e) => e.attivo).map((e) => e.comando);
     // La chiave API controlla il canale: la vede/crea SOLO il proprietario, mai
     // un moderatore (che altrimenti la userebbe per comandare il canale anche
-    // dopo essere stato tolto). apiKeyOrCrea la conierebbe: non farlo per i mod.
+    // dopo essere stato tolto).
     const owner = isOwner(req);
     res.json({
       moduli: modulesDb.list(login),
       effettiDisponibili,
-      apiKey: owner ? apiKeyOrCrea(login) : undefined,
+      // la chiave NON si rimanda: di lei resta solo l'impronta. Qui si dice se
+      // c'e', e basta; il valore lo si vede una volta, quando nasce.
+      apiKeySet: owner ? haApiKey(login) : undefined,
       apiUrl: owner ? `${config.baseUrl}/api/ext/${login}` : undefined,
     });
   }));
@@ -6041,11 +6060,10 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
   app.post('/api/ext/:login', wrap(async (req, res) => {
     const login = String(req.params.login || '').toLowerCase();
-    const attesa = leggiApiKey(login);
     const fornita = (req.get('authorization') || '').replace(/^Bearer\s+/i, '').trim()
       || String(req.query.key || '');
     // nessuna chiave configurata o chiave errata → 404 (nessun indizio)
-    if (!attesa || !chiaveUguale(fornita, attesa)) return notFound(res);
+    if (!apiKeyValida(login, fornita)) return notFound(res);
     if (!extRateOk(login)) return res.status(429).json({ errore: 'troppe richieste' });
     // azione 'clip': crea una clip a comando (usata dalla voce lato PC via companion)
     const azione = String(req.body?.azione || '').toLowerCase().trim();

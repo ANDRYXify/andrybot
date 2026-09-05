@@ -28,8 +28,9 @@ E tre difetti di struttura, sotto:
 1. **Una chiave sola, per sempre.** Tutto derivava da `SESSION_SECRET` con un
    solo passaggio. Un segreto trapelato apriva ogni riga di ogni tabella, di
    ieri e di domani. Non c'era modo di ruotare senza buttare via tutto.
-2. **La chiave API si confrontava con `===`.** Il tempo di confronto dipende da
-   quante lettere combaciano: si indovina una lettera per volta.
+2. **La chiave API stava in chiaro.** Il confronto era già a tempo costante — su
+   quello non c'era niente da correggere — ma la chiave si conservava per intero
+   nelle impostazioni del canale, e il database rubato la consegnava funzionante.
 3. **I backup erano copie del database.** Il backup rubato vale il database
    rubato.
 
@@ -72,7 +73,7 @@ Una passata riavvolge le buste vecchie sulla chiave nuova quando le incontra.
 
 Di una chiave API si conserva **l'impronta** (SHA-256 con un sale per canale),
 non la chiave. Chi ruba il database trova impronte: non ci si entra. Il confronto
-è a tempo costante, quindi non si indovina una lettera per volta.
+resta a tempo costante, come già era.
 
 Conseguenza voluta: la chiave si vede **una volta sola**, quando nasce. Se si
 perde, se ne fa un'altra — non si può ripescare, e questo è il punto.

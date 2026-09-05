@@ -5,6 +5,8 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-04
 
+- La chiave API del canale non si conserva più: ne resta solo un'impronta. Si vede una volta sola, quando la generi — nemmeno noi possiamo rileggerla.
+- I backup del database sono cifrati: una copia che esce di casa è rumore senza il segreto del server.
 - I segreti dei collegamenti (bot Telegram, Spotify, TikTok, 7TV) non stanno più in chiaro nel database: ognuno ha la sua chiave, e quella chiave è a sua volta chiusa a chiave.
 - Ogni segreto è legato al suo posto: preso da un account e messo su un altro non si apre più.
 - Nell'Overlay Studio il titolo «Gira il telefono» non copre più l'icona sopra di sé.
