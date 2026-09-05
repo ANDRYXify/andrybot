@@ -59,6 +59,51 @@ il lavoro in background, che non ha tetto.
 desktop intero, non della sola pagina. Un ambiente che non si può guardare è un
 ambiente di cui bisogna fidarsi sulla parola.
 
+## Il browser ha un padrone solo
+
+Questa è la cosa che tiene in piedi tutto il resto, e la prima volta l'ho
+sbagliata.
+
+L'API sincrona di Playwright è **legata al thread che l'ha creata**: gli oggetti
+nascono dentro un dispatcher suo, e usarli da un altro thread non dà un errore —
+si pianta, e resta piantato. Un server HTTP a thread (uno nuovo per ogni
+richiesta) è la ricetta esatta per quel guaio: il primo gesto costruisce il
+browser nel thread A e funziona, il secondo arriva sul thread B e muore in
+silenzio. Da fuori si vede «sta caricando», per sempre.
+
+Perciò il browser vive in **un thread solo** — il lavoratore — che se lo
+costruisce, lo usa e lo chiude. Chi risponde alle richieste HTTP non lo tocca
+mai: mette un gesto in coda e aspetta, con una scadenza. Se il gesto sfora, chi
+ha chiesto riceve un errore che **dice** cos'è successo, e il browser viene
+rifatto da capo al gesto dopo: una pagina rimasta a metà non deve avvelenare i
+gesti successivi.
+
+Il browser si accende **all'avvio**, non al primo gesto: altrimenti quel gesto
+pagherebbe mezzo minuto di attesa e da fuori sembrerebbe rotto.
+
+## Le attese crescono verso l'esterno
+
+Un gesto attraversa quattro attese in fila. Devono crescere andando verso
+l'esterno, **sempre**:
+
+| chi aspetta | quanto |
+|---|---|
+| il browser, per un gesto | 35s |
+| l'esecutore, che aspetta il browser | 60s |
+| il cervello, che aspetta l'esecutore | 75s |
+| il sito, che aspetta il cervello | 90s |
+
+Se una di quelle più esterne è più corta di una interna, chi sta fuori molla per
+primo: la pagina si carica, la risposta arriva a nessuno, e nella scheda resta
+una rotellina che gira. È esattamente quello che succedeva con venti secondi sul
+sito e centocinquanta sotto.
+
+`scripts/verifica-ambiente.mjs` non si limita a leggere il codice: fa **girare**
+il meccanismo (coda, padrone unico, scadenze) sostituendo il solo gesto, e
+pretende che con dieci richieste insieme un thread solo abbia toccato il
+browser, che nessuna resti appesa, e che una lenta riceva un errore invece del
+silenzio.
+
 ## Il confine, che non è cambiato
 
 Tutto quello che c'era prima resta esattamente com'era. Questa non è una porta

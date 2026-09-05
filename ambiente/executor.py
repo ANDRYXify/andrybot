@@ -30,6 +30,11 @@ TIMEOUT_MAX = int(os.environ.get("AMBIENTE_TIMEOUT_MAX", "120"))
 # Il browser vero: vive accanto, sullo stesso container, e ascolta solo su
 # 127.0.0.1. Da fuori ci si arriva solo passando di qui — cioè con la chiave.
 BROWSER_URL = "http://127.0.0.1:" + os.environ.get("BROWSER_PORT", "8100")
+# Quanto aspettiamo un gesto del browser. DEVE essere più della scadenza che il
+# browser si dà per un gesto (BROWSER_GESTO_S): se ci stancassimo prima di lui
+# diremmo «non risponde» a un gesto che stava per riuscire, e la sua risposta
+# arriverebbe a chi non l'aspetta più.
+BROWSER_ATTESA = float(os.environ.get("BROWSER_ATTESA_S", "60"))
 # caratteri di output restituiti (oltre → troncato). Ampio, così Lia può LEGGERE per
 # intero la sua mente (~/mente) mentre cresce, non solo un pezzetto. Rete interna,
 # nessun segreto: una risposta grande non è un rischio.
@@ -101,7 +106,7 @@ class H(BaseHTTPRequestHandler):
                 corpo = self.rfile.read(n) or b"{}"
                 req = urllib.request.Request(BROWSER_URL + "/azione", data=corpo, method="POST",
                                              headers={"Content-Type": "application/json"})
-                with urllib.request.urlopen(req, timeout=TIMEOUT_MAX) as r:
+                with urllib.request.urlopen(req, timeout=BROWSER_ATTESA) as r:
                     return self._json(200, json.loads(r.read() or b"{}"))
             except Exception as e:
                 return self._json(200, {"ok": False, "errore": "browser: " + str(e)[:200]})

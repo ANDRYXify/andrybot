@@ -21,6 +21,9 @@ KEY = os.environ.get("AMBIENTE_KEY", "").strip()
 
 _stato = {"ok": None, "quando": 0}
 _TTL = 30   # secondi di cache dello stato "disponibile"
+# Quanto aspettiamo un gesto del browser. Più dell'esecutore, che aspetta più del
+# browser: le attese vanno crescendo verso l'esterno, sempre.
+BROWSER_ATTESA = float(os.environ.get("BROWSER_ATTESA_BRAIN_S", "75"))
 
 
 def configurato():
@@ -671,10 +674,11 @@ def browser(azione="leggi", **campi):
         req = urllib.request.Request(
             URL + "/browser", data=corpo, method="POST",
             headers={"Content-Type": "application/json", "X-Ambiente-Key": KEY})
-        # Chi sta fuori aspetta PIÙ di chi sta dentro: l'esecutore lascia al gesto
-        # fino al suo tetto, e se noi ci stancassimo prima riceveremmo «non risponde»
-        # per un gesto che stava riuscendo.
-        with urllib.request.urlopen(req, timeout=150) as r:
+        # Chi sta fuori aspetta PIÙ di chi sta dentro: il browser si dà una scadenza
+        # per il gesto, l'esecutore aspetta più di lui, noi più dell'esecutore, e il
+        # sito più di noi. Al contrario, chi sta fuori direbbe «non risponde» a un
+        # gesto che stava riuscendo — e la risposta arriverebbe a nessuno.
+        with urllib.request.urlopen(req, timeout=BROWSER_ATTESA) as r:
             return json.loads(r.read() or b"{}")
     except Exception as e:
         return {"ok": False, "errore": str(e)[:200]}
@@ -766,6 +770,21 @@ def progetti():
     return prog[:40]
 
 
+def _stato_browser(risposta):
+    """Cosa dice di sé il browser: se è acceso, se ha la finestra, e cosa è andato
+    storto l'ultima volta. Se la riga non è leggibile si torna a mani vuote — non si
+    inventa uno stato."""
+    try:
+        d = json.loads(str(risposta or ""))
+    except Exception:
+        return {}
+    if not isinstance(d, dict):
+        return {}
+    return {"acceso": bool(d.get("acceso")), "finestra": d.get("finestra"),
+            "ultimo": str(d.get("ultimo") or "")[:40], "errore": str(d.get("errore") or "")[:200],
+            "in_coda": d.get("in_coda")}
+
+
 def _vivo(risposta):
     """Il browser ha risposto «sto bene»? Legge il suo /health senza pretendere che
     sia arrivato intero: quella riga passa da una shell e può essere troncata."""
@@ -787,7 +806,9 @@ def stato_ecosistema():
         # ridotto della distribuzione, che non c'è più. Si chiede al browser vero se è
         # vivo — altrimenti il cruscotto direbbe «nessun browser» mentre lei naviga.
         "echo '<<CHROME>>'; (python3 -c \"import playwright,sys;print('playwright '+playwright.__version__)\" 2>/dev/null || echo no) | head -1; "
-        "echo '<<APERTO>>'; (curl -s -m 3 http://127.0.0.1:${BROWSER_PORT:-8100}/health 2>/dev/null || echo no) | head -1; "
+        # Non solo «è vivo?», ma anche «com'è andata l'ultima volta»: quando qualcosa
+        # non funziona, un cruscotto che dice PERCHÉ vale dieci rotelline che girano.
+        "echo '<<APERTO>>'; (curl -s -m 3 http://127.0.0.1:${BROWSER_PORT:-8100}/stato 2>/dev/null || echo no) | head -1; "
         "echo '<<SCHERMO>>'; (xdpyinfo 2>/dev/null | awk '/dimensions/{print $2}' || true) | head -1; "
         "echo '<<MAMBA>>'; (micromamba --version 2>/dev/null || echo no) | head -1; "
         "echo '<<DISK>>'; du -sh ~ 2>/dev/null | awk '{print $1}'; "
@@ -810,6 +831,7 @@ def stato_ecosistema():
         "browser": ("" if val.get("CHROME", "no") == "no" else val.get("CHROME", "")),
         # se il browser è ACCESO in questo momento, e su quale schermo vive
         "browser_vivo": _vivo(val.get("APERTO", "")),
+        "browser_stato": _stato_browser(val.get("APERTO", "")),
         "schermo": val.get("SCHERMO", ""),
         "mamba": ("" if val.get("MAMBA", "no") == "no" else val.get("MAMBA", "")),
         "spazio": val.get("DISK", ""),

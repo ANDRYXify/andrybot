@@ -43,6 +43,13 @@ const ROTTURE = [
     'l\'avvio non accende il browser'],
   ['ambiente/Dockerfile', 'FROM python:3.12-slim-bookworm', 'FROM python:3.12-slim',
     'la base torna a seguire il vento e il build si rompera\' da solo'],
+  ['src/ai/brainpy.js', 'const ECO_ATTESA_MS = 90_000;', 'const ECO_ATTESA_MS = 20_000;',
+    'il sito molla prima di chi sta sotto: rotellina per sempre'],
+  ['ambiente/browser.py', 'threading.Thread(target=_lavoratore, name="browser", daemon=True).start()',
+    '# nessun lavoratore',
+    'il browser resta senza padrone: nessun gesto viene mai eseguito'],
+  ['ambiente/browser.py', 'return esito.get(timeout=limite)', 'return esito.get()',
+    'un gesto puo\' aspettare per sempre'],
 ];
 
 if (process.argv.includes('--selftest')) {
@@ -71,6 +78,63 @@ if (process.argv.includes('--selftest')) {
 
 const esiti = [];
 const dice = (ok, msg, extra = '') => esiti.push({ ok, msg, extra });
+
+// Il meccanismo del browser non si legge: si FA GIRARE. Playwright qui non serve —
+// si sostituisce il solo gesto e restano quelli veri la coda, il padrone unico e le
+// scadenze, che sono le tre cose che possono piantare tutto.
+const PROVA = `
+import sys, threading, time, importlib.util, json
+spec = importlib.util.spec_from_file_location("br", "ambiente/browser.py")
+br = importlib.util.module_from_spec(spec); spec.loader.exec_module(br)
+fatti = []
+def finto(d):
+    az = d.get("azione")
+    fatti.append((az, threading.current_thread().name))
+    if az == "lento": time.sleep(3)
+    if az == "esplode": raise RuntimeError("boom")
+    return {"ok": True, "azione": az}
+br._azione = finto
+br._avvia = lambda: "pagina"
+br.GESTO_S = 1.0
+br.LANCIO_S = 0.0
+br._diario["acceso"] = True
+threading.Thread(target=br._lavoratore, daemon=True).start()
+time.sleep(0.2)
+e = {}
+e["normale"] = 1 if br._chiedi({"azione": "apri"}).get("ok") else 0
+r = br._chiedi({"azione": "esplode"})
+e["esplode"] = 1 if (not r.get("ok") and "boom" in str(r.get("errore"))) else 0
+e["rifa_dopo_errore"] = 1 if br._rifare.is_set() else 0
+br._rifare.clear()
+r = br._chiedi({"azione": "lento"})
+e["scade"] = 1 if r.get("scaduto") else 0
+time.sleep(3.2)
+e["rifa_dopo_ritardo"] = 1 if br._rifare.is_set() else 0
+esitiT = []
+th = [threading.Thread(target=lambda i=i: esitiT.append(br._chiedi({"azione": "g%d" % i}))) for i in range(10)]
+[t.start() for t in th]; [t.join() for t in th]
+e["nessuno_appeso"] = 1 if len(esitiT) == 10 else 0
+e["thread"] = len({t for _, t in fatti})
+print(json.dumps(e))
+`;
+
+let mis = null;
+try {
+  const out = execFileSync('python3', ['-c', PROVA], { cwd: RAD, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
+  mis = JSON.parse(out.trim().split('\n').filter((r) => r.startsWith('{')).pop());
+} catch (e) {
+  dice(false, 'il meccanismo del browser si e\' potuto far girare', String(e?.message || e).slice(0, 200));
+}
+if (mis) {
+  dice(mis.thread === 1, `un thread SOLO tocca il browser, anche con dieci gesti insieme (${mis.thread})`,
+    'piu\' thread sull\'API sincrona di Playwright: si pianta senza dare errore');
+  dice(mis.nessuno_appeso === 1, 'nessun gesto resta appeso', 'qualcuno non ha mai ricevuto risposta');
+  dice(mis.scade === 1, 'un gesto troppo lento riceve un errore, non il silenzio', 'aspetta per sempre');
+  dice(mis.normale === 1 && mis.esplode === 1, 'un gesto riesce, e uno che fallisce dice perche\'', 'il giro base non funziona');
+  dice(mis.rifa_dopo_errore === 1 && mis.rifa_dopo_ritardo === 1,
+    'dopo un errore o un ritardo il browser si rifa\' da capo',
+    'una pagina rimasta a meta\' avvelena i gesti dopo');
+}
 
 const cervello = leggi('brain/server.py');
 const sito = senzaCommentiJs(leggi('src/web/server.js'));
@@ -125,7 +189,53 @@ dice(cercati.length > 0, `programmi che le sonde vanno a cercare: ${new Set(cerc
 dice(!mancanti.length, 'tutto cio\' che le sonde cercano esiste nell\'immagine',
   `cercati e mai installati: ${mancanti.join(', ')} — il cruscotto direbbe «non c\'e\'» a vuoto`);
 
-// --- 4. la base non deve cambiare sotto i piedi ----------------------------
+// --- 3b. il browser ha un padrone solo ------------------------------------
+// L'API sincrona di Playwright e' legata AL THREAD CHE L'HA CREATA: usarla da un
+// altro thread non da' errore, si pianta. Con un server HTTP a thread (uno nuovo per
+// richiesta) il primo gesto funziona e il secondo muore in silenzio — da fuori si
+// vede «sta caricando», per sempre. Quindi: un thread solo possiede il browser, e
+// chi risponde alle richieste non lo tocca mai.
+dice(/threading\.Thread\(target=_lavoratore/.test(browser),
+  'il browser ha un thread suo che lo possiede',
+  'senza lavoratore nessun gesto viene eseguito, o peggio: lo esegue un thread a caso');
+const manoHttp = browser.slice(browser.indexOf('class H('));
+dice(!/_azione\(/.test(manoHttp),
+  'chi risponde alle richieste non tocca mai il browser (passa dalla coda)',
+  'il gestore HTTP chiama il browser da un thread suo: si piantera\'');
+dice(/esito\.get\(timeout=/.test(browser),
+  'nessun gesto puo\' aspettare per sempre',
+  'un\'attesa senza scadenza e\' la rotellina che gira all\'infinito');
+
+// --- 4. le attese crescono verso l'esterno --------------------------------
+// Un gesto sul browser attraversa quattro attese in fila: il browser si da' una
+// scadenza, l'esecutore aspetta lui, il cervello aspetta l'esecutore, il sito
+// aspetta il cervello. Se una di quelle piu' esterne e' PIU' CORTA di una interna,
+// chi sta fuori molla per primo: la pagina si carica, la risposta arriva a nessuno,
+// e nella scheda resta una rotellina che gira per sempre. E' esattamente cio' che e'
+// successo con venti secondi sul sito e centocinquanta sotto.
+// I trattini bassi che in JavaScript rendono leggibile un numero (90_000) per
+// parseFloat sono la fine del numero: senza toglierli, novantamila diventa novanta.
+const numero = (testo, ago) => {
+  const m = testo.match(ago);
+  return m ? parseFloat(m[1].replace(/_/g, '')) : NaN;
+};
+const catena = [
+  ['il browser (un gesto)', numero(browser, /BROWSER_GESTO_S", "(\d+)/)],
+  ['l\'esecutore', numero(esecutore, /BROWSER_ATTESA_S", "(\d+)/)],
+  ['il cervello', numero(ponte, /BROWSER_ATTESA_BRAIN_S", "(\d+)/)],
+  ['il sito', numero(leggi('src/ai/brainpy.js'), /ECO_ATTESA_MS = ([\d_]+)/) / 1000],
+];
+const lette = catena.filter(([, n]) => Number.isFinite(n));
+dice(lette.length === catena.length, `le attese della catena si leggono tutte (${lette.length} su ${catena.length})`,
+  `non trovo: ${catena.filter(([, n]) => !Number.isFinite(n)).map(([c]) => c).join(', ')}`);
+const fuoriPosto = [];
+for (let i = 1; i < lette.length; i++) {
+  if (!(lette[i][1] > lette[i - 1][1])) fuoriPosto.push(`${lette[i][0]} (${lette[i][1]}s) non aspetta più di ${lette[i - 1][0]} (${lette[i - 1][1]}s)`);
+}
+dice(!fuoriPosto.length, `ogni attesa è più lunga di quella che avvolge (${lette.map(([, n]) => n + 's').join(' < ')})`,
+  fuoriPosto.join(' · '));
+
+// --- 5. la base non deve cambiare sotto i piedi ----------------------------
 // `playwright install --with-deps` installa le librerie di sistema del browser con
 // un elenco che dipende dalla VERSIONE DI DEBIAN. Con una base non pinnata
 // (`python:3.12-slim`) quella versione cambia quando cambia a monte, e un giorno il

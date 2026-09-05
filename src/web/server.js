@@ -6614,7 +6614,9 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const consentite = ['installa', 'naviga', 'browser', 'schermo', 'crea', 'scrivi', 'esegui', 'lavoro', 'desiderio', 'autonomo', 'ferma'];
     if (!consentite.includes(op)) { res.json({ ok: false, motivo: 'op sconosciuta' }); return; }
     const r = await brainpy.ecosistemaAzione(b).catch(() => null);
-    res.json(r || { ok: false });
+    // Un `null` qui vuol dire che il cervello non ha risposto in tempo. Dirlo: senza,
+    // la scheda mostrava «niente» e non si capiva se fosse lento o rotto.
+    res.json(r || { ok: false, errore: 'il cervello non ha risposto in tempo' });
   }));
   // ── Cervello autonomo: distilla ORA le risposte in moduli. Solo andryxify.
   app.post('/api/admin/distilla', requireAdmin, wrap(async (req, res) => {
