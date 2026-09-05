@@ -118,7 +118,8 @@ services:
     pids_limit: 64
 
   # ── AMBIENTE di Lia: il suo "computer" personale, SANDBOXATO ──────────────
-  # Un mondo tutto suo dove ha mano libera (shell, Python, file, rete in uscita),
+  # Un mondo tutto suo dove ha mano libera (uno SCHERMO vero con un browser vero che
+  # resta aperto fra un gesto e l'altro, shell, Python, file, rete in uscita),
   # ma murato dal resto: sta SOLO sulla rete `sandbox` (non vede bot/Caddy né i
   # loro dati/token/pagamenti), non riceve NESSUN segreto (solo la sua chiave),
   # gira come utente non privilegiato con root in sola lettura, senza capability,
@@ -131,6 +132,16 @@ services:
     environment:
       - AMBIENTE_KEY=${AMBIENTE_KEY:-}
       - AMBIENTE_PORT=8099
+      # Quanto può durare un comando in primo piano. Era mezzo minuto, ed era il vero
+      # guinzaglio: in trenta secondi non ci sta una navigazione vera. Per ciò che dura
+      # di più resta il lavoro in background, che non ha tetto.
+      - AMBIENTE_TIMEOUT_MAX=${AMBIENTE_TIMEOUT_MAX:-120}
+      # Lo SCHERMO su cui vive il suo browser. Le porte del vetro da cui lo si guarda
+      # (5900 VNC, 6080 noVNC) e quella del browser (8100) restano dentro la rete del
+      # guardiano: nessuna di queste si affaccia su internet.
+      - DISPLAY=:99
+      - SCHERMO_LARG=${SCHERMO_LARG:-1440}
+      - SCHERMO_ALT=${SCHERMO_ALT:-900}
     # LA RETE È QUELLA DEL GUARDIANO: tutto il traffico di Lia passa dal firewall d'uscita
     # (internet pubblico sì, la tua infra no). Perciò niente `networks`/`expose` propri: la
     # porta 8099 vive nella rete del guardiano, dove il cervello la raggiunge.
@@ -142,14 +153,18 @@ services:
     cap_drop:
       - ALL                         # nessuna capability: root qui non serve e non c'è
     # RISORSE LIMITATE MA LIBERTÀ: le diamo respiro vero per ragionare (scrivere ed
-    # eseguire programmi, un browser headless), restando sotto un tetto che NON può
-    # soffocare il server (16 GB totali). Regolabili via env se serve stringere/allargare.
-    mem_limit: ${AMBIENTE_MEM:-3g}  # respiro per il ragionamento, mai affamare il server
-    cpus: "${AMBIENTE_CPUS:-1.5}"   # un po' più di CPU per calcolare/eseguire davvero
+    # eseguire programmi, tenere aperto un browser CON la finestra su uno schermo vero),
+    # restando sotto un tetto che NON può soffocare il server (16 GB totali). Regolabili
+    # via env se serve stringere o allargare.
+    mem_limit: ${AMBIENTE_MEM:-4g}  # schermo + browser aperto + il suo lavoro
+    cpus: "${AMBIENTE_CPUS:-2}"     # un browser vero disegna davvero: gli serve CPU
     pids_limit: 512                 # abbastanza per programmi veri, non per una fork-bomb
     tmpfs:
-      - /tmp:size=256m,mode=1777    # spazio temporaneo volatile (più ampio per il lavoro)
-    shm_size: "512m"                # memoria condivisa per Chromium (il browser vero)
+      # Qui ci vivono anche il socket dello schermo (/tmp/.X11-unix) e i temporanei di
+      # Chromium: con la root in sola lettura, /tmp è l'unico posto dove il sistema può
+      # scrivere, e stretto sarebbe un browser che si chiude da solo a metà pagina.
+      - /tmp:size=512m,mode=1777
+    shm_size: "1g"                  # un Chromium con finestra usa più memoria condivisa di uno cieco
     volumes:
       - lia_home:/home/lia          # la sua "casa" persistente (i suoi file, progetti, install)
 

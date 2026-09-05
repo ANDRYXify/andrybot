@@ -6611,7 +6611,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   app.post('/api/admin/ecosistema', requireAdmin, wrap(async (req, res) => {
     const b = req.body || {};
     const op = String(b.op || '').trim();
-    const consentite = ['installa', 'naviga', 'crea', 'scrivi', 'esegui', 'lavoro', 'desiderio', 'autonomo', 'ferma'];
+    const consentite = ['installa', 'naviga', 'browser', 'schermo', 'crea', 'scrivi', 'esegui', 'lavoro', 'desiderio', 'autonomo', 'ferma'];
     if (!consentite.includes(op)) { res.json({ ok: false, motivo: 'op sconosciuta' }); return; }
     const r = await brainpy.ecosistemaAzione(b).catch(() => null);
     res.json(r || { ok: false });

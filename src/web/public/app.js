@@ -16511,7 +16511,8 @@ async function caricaEcosistema() {
     <h3>${_hIco(ICO.mondo)}${L('Il suo ecosistema reale', 'Her real ecosystem', 'Su ecosistema real')}</h3>
     <p class="suggerimento">${L('Il suo «computer» dentro il recinto — dietro il <strong>guardiano</strong> (internet pubblico sì, la tua infra no). Può installarsi, navigare, creare e costruire <strong>da sola</strong>, dentro un tetto automatico.', 'Her «computer» inside the fence — behind the <strong>guardian</strong> (public internet yes, your infra no). She can install, browse, create and build <strong>on her own</strong>, within an automatic ceiling.', 'Su «ordenador» dentro del recinto — tras el <strong>guardián</strong>. Puede instalar, navegar, crear y construir <strong>sola</strong>, dentro de un techo automático.')}</p>
     <div class="eco-versioni">
-      ${riga('Python', e.python)}${riga('Node', e.node)}${riga(L('Browser', 'Browser', 'Navegador'), e.browser || '—')}
+      ${riga('Python', e.python)}${riga('Node', e.node)}${riga(L('Browser', 'Browser', 'Navegador'), (e.browser || '—') + (e.browser_vivo ? ' · ' + L('aperto', 'open', 'abierto') : ''))}
+      ${riga(L('schermo', 'screen', 'pantalla'), e.schermo || '—')}
       ${riga('micromamba', e.mamba || '—')}${riga(L('spazio', 'disk', 'espacio'), e.spazio)}${riga(L('progetti', 'projects', 'proyectos'), e.progetti)}${riga(L('lavori attivi', 'active jobs', 'trabajos activos'), e.lavori)}
     </div>
     ${bud.attivo ? `<div class="riquadro-info" style="margin:8px 0">${L('Tetto automatico del lavoro autonomo', 'Automatic ceiling for autonomous work', 'Techo automático del trabajo autónomo')}: <strong>${L('10% della memoria libera', '10% of free memory', '10% de la memoria libre')}</strong> — ${L('RAM', 'RAM', 'RAM')} <strong>${esc(bud.mem_umano || '—')}</strong>, ${L('disco per install', 'disk for installs', 'disco para instalar')} <strong>${esc(bud.disco_umano || '—')}</strong>. ${L('Si regola da sé; se il disco è tirato, non installa.', 'Self-adjusting; if disk is tight, no installs.', 'Se ajusta solo; si el disco está justo, no instala.')}</div>` : ''}
@@ -16530,8 +16531,10 @@ async function caricaEcosistema() {
     <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0">
       <input id="eco-url" class="campo" placeholder="https://…" style="flex:1 1 200px">
       <button class="btn secondario mini" id="eco-naviga">${L('Naviga (leggi)', 'Browse (read)', 'Navegar (leer)')}</button>
+      <button class="btn secondario mini" id="eco-schermo">${L('Guarda il suo schermo', 'Look at her screen', 'Mira su pantalla')}</button>
       <button class="btn secondario mini" id="eco-ferma" style="margin-left:auto;color:var(--rosso)">${L('Ferma tutto', 'Stop all', 'Parar todo')}</button>
     </div>
+    <div id="eco-vetro" hidden style="margin-top:8px"></div>
     ${prog.length ? `<p class="tenue" style="margin-top:6px">${L('Progetti', 'Projects', 'Proyectos')}: ${prog.map((p) => `<code>${esc(p.nome)}</code>`).join(' · ')}</p>` : ''}
     <pre id="eco-esito" class="vita-pre" style="display:none;margin-top:8px"></pre>`;
   const esito = card.querySelector('#eco-esito');
@@ -16559,6 +16562,23 @@ async function caricaEcosistema() {
     mostra(L('carico la pagina…', 'loading page…', 'cargando página…'));
     const r = await api('/api/admin/ecosistema', { method: 'POST', body: { op: 'naviga', url, azione: 'leggi' } }).catch(() => null);
     mostra((r && r.testo) || (r && (r.errore || r.motivo)) || L('niente', 'nothing', 'nada'));
+  });
+  card.querySelector('#eco-schermo')?.addEventListener('click', async () => {
+    const vetro = card.querySelector('#eco-vetro');
+    if (!vetro) return;
+    vetro.hidden = false;
+    vetro.textContent = L('guardo…', 'looking…', 'mirando…');
+    const r = await api('/api/admin/ecosistema', { method: 'POST', body: { op: 'schermo' } }).catch(() => null);
+    if (r && r.png_b64) {
+      const img = document.createElement('img');
+      img.src = 'data:image/png;base64,' + r.png_b64;
+      img.alt = L('lo schermo di Lia', 'Lia’s screen', 'la pantalla de Lia');
+      img.style.cssText = 'max-width:100%;border-radius:var(--r-s);border:1px solid var(--contorno)';
+      vetro.textContent = '';
+      vetro.appendChild(img);
+      return;
+    }
+    vetro.textContent = (r && (r.errore || r.motivo)) || L('nessuno schermo da guardare', 'no screen to look at', 'ninguna pantalla que mirar');
   });
   card.querySelector('#eco-ferma')?.addEventListener('click', async () => {
     if (!confirm(L('Fermare tutti i lavori che ha in corso? (non cancella nulla)', 'Stop all her running jobs? (deletes nothing)', '¿Parar todos sus trabajos en curso? (no borra nada)'))) return;
