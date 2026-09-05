@@ -285,7 +285,7 @@ body.menu-aperto .backdrop { opacity: 1; pointer-events: auto; }
               opacity var(--dur-elem) var(--ease), margin-top var(--dur-elem) var(--ease-quint);
   margin-top: .45rem; opacity: 1;
 }
-.carta-corpo > .carta-corpo-in { min-height: 0; overflow: clip; overflow-clip-margin: var(--posto-inchiostro); }
+.carta-corpo > .carta-corpo-in { min-height: 0; min-width: 0; overflow: clip; overflow-clip-margin: var(--posto-inchiostro); }
 .carta.pieghevole.chiusa > .carta-corpo { grid-template-rows: 0fr; opacity: 0; margin-top: 0; }
 
 .carta-riassunto { display: none; font-size: .84rem; color: var(--testo-3); margin-top: .3rem; }

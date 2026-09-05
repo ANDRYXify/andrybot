@@ -503,3 +503,21 @@ carica dopo `style.css`: una regola scritta in style.css sopra la definizione
 base del componente non vince, perché a parità di specificità l'ultima scritta
 ha ragione. È già successo: il primo tentativo non cambiò niente e sembrava che
 il selettore fosse sbagliato.
+
+## `hidden` e `clip` non sono la stessa cosa
+
+`overflow: hidden` rende una scatola un **contenitore che scorre**, e la
+dimensione minima automatica di un contenitore che scorre è **zero**. Era quel
+dettaglio — non dichiarato da nessuna parte, ereditato per effetto collaterale —
+a impedire che un indirizzo lungo o una riga che non va a capo allargassero una
+scheda oltre lo schermo.
+
+`overflow: clip` ritaglia ma **non** è un contenitore che scorre. Cambiando
+l'uno con l'altro per far passare l'inchiostro, la minima automatica è tornata a
+dipendere dal contenuto: su un telefono tre schede uscivano dallo schermo di
+212px, e su un portatile non si vedeva niente.
+
+La cura è dire quella minima a voce: `min-width: 0` accanto a `min-height: 0`.
+Lo controlla `node scripts/verifica-larghezza.mjs`, che a 390px gira ogni scheda
+e pretende che la pagina non scorra di lato — e quando scorre dice **chi**
+sfonda, cioè il primo elemento più largo dello spazio che il padre gli dà.
