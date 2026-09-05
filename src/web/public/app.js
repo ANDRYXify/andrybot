@@ -15671,8 +15671,11 @@ function disegnaConnettori() {
   const box = document.getElementById('connettori-moduli');
   if (!box) return;
   const apiKey = datiModuli?.apiKey || null;
+  const ceUna = apiKey || datiModuli?.apiKeySet;
   const apiUrl = datiModuli?.apiUrl || '';
-  const chiaveMostrata = apiKey ? (apiKeyVisibile ? apiKey : '••••••••••••••••') : 'nessuna chiave';
+  const chiaveMostrata = apiKey
+    ? (apiKeyVisibile ? apiKey : '••••••••••••••••')
+    : (ceUna ? L('c\u2019è, ma non si può rivedere', 'set, but cannot be shown again', 'existe, pero no se puede volver a ver') : L('nessuna chiave', 'no key', 'sin clave'));
 
   const esempio = `curl -X POST ${apiUrl || 'https://socialbot.live/api/ext/<login>'} \\
   -H "Authorization: Bearer LA_TUA_CHIAVE" \\
@@ -15683,11 +15686,11 @@ function disegnaConnettori() {
     <label class="campo">Chiave API in ingresso</label>
     <div class="riga-flessibile">
       <input type="text" class="campo-largo" readonly value="${esc(chiaveMostrata)}">
-      ${apiKey ? `<button class="btn secondario mini" data-apikey="mostra">${apiKeyVisibile ? 'Nascondi' : 'Mostra'}</button>` : ''}
-      ${apiKey ? '<button class="btn secondario mini" data-apikey="copia">Copia</button>' : ''}
-      <button class="btn secondario mini" data-apikey="rigenera">${apiKey ? 'Rigenera' : 'Genera chiave'}</button>
+      ${apiKey ? `<button class="btn secondario mini" data-apikey="mostra">${apiKeyVisibile ? L('Nascondi', 'Hide', 'Ocultar') : L('Mostra', 'Show', 'Mostrar')}</button>` : ''}
+      ${apiKey ? `<button class="btn secondario mini" data-apikey="copia">${L('Copia', 'Copy', 'Copiar')}</button>` : ''}
+      <button class="btn secondario mini" data-apikey="rigenera">${ceUna ? L('Rigenera', 'Regenerate', 'Regenerar') : L('Genera chiave', 'Generate key', 'Generar clave')}</button>
     </div>
-    <p class="suggerimento">Tienila segreta: chi ha questa chiave può far parlare o agire il tuo bot.</p>
+    <p class="suggerimento">${L('Tienila segreta: chi ha questa chiave può far parlare o agire il tuo bot. Di lei conserviamo solo un\u2019impronta, quindi', 'Keep it secret: whoever has this key can make your bot speak or act. We only keep a fingerprint of it, so', 'Guárdala en secreto: quien la tenga puede hacer hablar o actuar a tu bot. De ella solo guardamos una huella, así que')} <strong>${L('si vede una volta sola', 'it is shown only once', 'se ve una sola vez')}</strong>${L(': se la perdi ne generi un\u2019altra. Nemmeno noi possiamo rileggerla, e se ci rubassero il database non ci sarebbe niente da rubare.', ': if you lose it you generate another. Not even we can read it back, and a stolen database would hold nothing to steal.', ': si la pierdes, generas otra. Ni nosotros podemos releerla, y una base de datos robada no tendría nada que robar.')}</p>
 
     <label class="campo">URL a cui inviare le richieste</label>
     <div class="riga-flessibile">
@@ -15711,10 +15714,10 @@ function disegnaConnettori() {
       copiaTesto(datiModuli?.apiUrl || '', 'URL copiato');
     } else if (azione === 'rigenera') {
       conErrore(async () => {
-        const nuova = !!datiModuli?.apiKey;
+        const nuova = !!(datiModuli?.apiKey || datiModuli?.apiKeySet);
         if (nuova && !confirm(L('Rigenerare la chiave? Quella vecchia smetterà subito di funzionare.', 'Regenerate the key? The old one will stop working immediately.', '¿Regenerar la clave? La antigua dejará de funcionar de inmediato.'))) return;
         const res = await api('/api/streamer/apikey', { method: 'POST', body: {} });
-        if (datiModuli) datiModuli.apiKey = res.apiKey;
+        if (datiModuli) { datiModuli.apiKey = res.apiKey; datiModuli.apiKeySet = true; }
         apiKeyVisibile = true;
         disegnaConnettori();
         toast(nuova ? 'Nuova chiave generata' : 'Chiave creata');

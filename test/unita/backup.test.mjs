@@ -10,7 +10,7 @@ import { cartellaUsaEGetta } from '../aiuto.mjs';
 
 const casa = cartellaUsaEGetta('backup-');
 const { db, streamers, effects } = await import('../../src/db.js');
-const { backupOra, provaCopia, elencoCopie, cartellaCopie } = await import('../../src/backup.js');
+const { backupOra, provaCopia, elencoCopie, cartellaCopie, ripristinaCopia } = await import('../../src/backup.js');
 test.after(() => casa.pulisci());
 
 const DB = join(casa.dir, 'andrybot.db');
@@ -69,9 +69,13 @@ test('il giro completo: si perde tutto e si ritrova tutto', async () => {
   for (const s of ['-wal', '-shm']) { try { if (existsSync(DB + s)) rmSync(DB + s); } catch { /* */ } }
   assert.equal(provaCopia(DB).ok, false, 'il database rovinato non si apre più');
 
-  // ripristino: la stessa sequenza dello script (controlla, copia, ricontrolla)
+  // ripristino: la stessa sequenza dello script, e la stessa funzione — perché
+  // un giro provato che non è quello che gira il giorno del disastro non prova
+  // niente. La copia è cifrata: ripristinarla vuol dire anche riaprirla.
   assert.equal(provaCopia(copia.percorso).ok, true, 'la copia si controlla PRIMA di scrivere');
-  copyFileSync(copia.percorso, DB);
+  const r = ripristinaCopia(copia.percorso, DB);
+  assert.equal(r.ok, true, 'la copia si riapre: ' + r.errore);
+  assert.equal(r.cifrata, true, 'e sul disco stava cifrata');
   const dopo = provaCopia(DB);
   assert.equal(dopo.ok, true, 'e si ricontrolla DOPO: ' + dopo.errore);
 
