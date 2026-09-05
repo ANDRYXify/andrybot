@@ -3,6 +3,11 @@
 Cosa è cambiato nel bot, in ordine di tempo. Una riga per cosa, scritta per chi
 lo usa: se non si vede da fuori, qui non ci va.
 
+## 2026-09-05
+
+- Puoi entrare con YouTube. Colleghi il canale e hai dashboard, pagina link e overlay; in chat, su YouTube, il bot non parla ancora e la scheda Piattaforme te lo dice.
+- Se hai già un account puoi collegare YouTube dalla scheda Piattaforme, accanto a Twitch e Kick.
+
 ## 2026-09-04
 
 - La chiave API del canale non si conserva più: ne resta solo un'impronta. Si vede una volta sola, quando la generi — nemmeno noi possiamo rileggerla.

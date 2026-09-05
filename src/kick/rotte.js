@@ -11,10 +11,10 @@
 //      salva cifrato, si chiede a Kick chi è, e ci si iscrive ai suoi eventi;
 //   3. da lì in poi Kick spinge tutto su /kick/webhook, che verifica la FIRMA
 //      prima di credere a qualunque cosa.
-import crypto from 'node:crypto';
 import express from 'express';
 import { makeLog } from '../logger.js';
 import { config } from '../config.js';
+import * as giro from '../giro.js';
 import * as auth from './auth.js';
 import * as api from './api.js';
 import { chiavePubblica, verificaFirma } from './firma.js';
@@ -24,9 +24,6 @@ import * as diario from './diario.js';
 
 const log = makeLog('kick');
 
-// Quanto vale un giro di autorizzazione: oltre, il tentativo è scaduto.
-const GIRO_MS = 10 * 60 * 1000;
-
 export function montaKick(app, { requireLogin, currentUser, wrap, suMessaggio, suEvento, registra }) {
   // --- 1. si parte -----------------------------------------------------
   // Due porte, lo stesso giro. `/auth/kick` e' lo streamer che gia' e' dentro e
@@ -35,9 +32,7 @@ export function montaKick(app, { requireLogin, currentUser, wrap, suMessaggio, s
   // giro OAuth e' scritto una volta sola.
   const parti = (req, res, { registrazione }) => {
     if (!auth.configurato()) return res.status(503).send('Kick non è configurato su questo server.');
-    const { verifier, challenge } = auth.creaPkce();
-    const state = crypto.randomBytes(16).toString('hex');
-    req.session.kick = { verifier, state, nato: Date.now(), registrazione };
+    const { challenge, state } = giro.apri(req, 'kick', { registrazione });
     res.redirect(auth.urlAutorizzazione({ challenge, state, conModerazione: req.query.mod === '1' }));
   };
 
@@ -58,25 +53,16 @@ export function montaKick(app, { requireLogin, currentUser, wrap, suMessaggio, s
   // cio' che lega questa risposta alla nostra richiesta e' lo `state` del giro,
   // non il cookie. Chi arriva senza un giro in corso non passa comunque.
   app.get('/auth/kick/callback', wrap(async (req, res) => {
-    const giro = req.session.kick || null;
-    req.session.kick = null;                        // usa-e-getta, sempre
-    const registrazione = !!giro?.registrazione;
+    const esito = giro.chiudi(req, 'kick', req.query, { chi: 'Kick' });
+    const registrazione = !!esito.giro?.registrazione;
     const login = registrazione ? '' : (currentUser(req)?.login || '');
 
     const male = (m) => res.redirect((registrazione ? '/?accesso=' : '/?kick=') + encodeURIComponent(m));
     if (!registrazione && !login) return male('devi entrare prima di collegare Kick');
-    if (req.query.error) return male(String(req.query.error).slice(0, 80));
-    if (!giro?.verifier) return male('giro scaduto, riprova');
-    if (Date.now() - giro.nato > GIRO_MS) return male('giro scaduto, riprova');
-    // Lo state confrontato in tempo costante: è l'unica cosa che lega questa
-    // risposta alla NOSTRA richiesta.
-    const a = Buffer.from(String(req.query.state || ''));
-    const b = Buffer.from(String(giro.state || ''));
-    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return male('richiesta non riconosciuta');
-    if (!req.query.code) return male('Kick non ha dato il codice');
+    if (!esito.ok) return male(esito.errore);
 
     let token;
-    try { token = await auth.scambiaCodice(req.query.code, giro.verifier); }
+    try { token = await auth.scambiaCodice(esito.codice, esito.giro.verifier); }
     catch (e) { log.error(`${login || 'registrazione'}: scambio codice Kick fallito — ${e?.message || e}`); return male('Kick ha rifiutato il collegamento'); }
 
     // REGISTRAZIONE: prima si chiede a Kick chi e', poi nasce (o si ritrova) il

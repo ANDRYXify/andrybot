@@ -61,7 +61,7 @@ import * as persona from '../ai/persona.js';
 import * as brainpy from '../ai/brainpy.js';
 import { impronta, combacia } from '../segreti.js';
 import { redeemPass } from './gate.js';
-import { eLoginNostro, loginKick, piattaformaDi } from '../identita.js';
+import { eLoginNostro, loginKick, loginYoutube, piattaformaDi } from '../identita.js';
 import { creaGuscio } from './vetrina.js';
 import { salute } from '../salute.js';
 import { anteprima as anteprimaImport, moduloDa } from '../features/importacomandi.js';
@@ -69,6 +69,8 @@ import { esporta as esportaDati } from '../features/esporta.js';
 import { montaKick } from '../kick/rotte.js';
 import * as kickApi from '../kick/api.js';
 import * as kickDiario from '../kick/diario.js';
+import { montaYoutube } from '../youtube/rotte.js';
+import * as ytApi from '../youtube/api.js';
 import * as avvisi from '../features/avvisi.js';
 
 const log = makeLog('web');
@@ -483,6 +485,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // primo HTML e la larghezza e giusta gia al primo disegno.
   const gusciaHtml = readFileSync(join(publicDir, 'index.html'), 'utf8');
   const conKick = !!(config.kickClientId && config.kickClientSecret);
+  const conYoutube = !!(config.youtubeClientId && config.youtubeClientSecret);
 
   // LINGUE INDICIZZABILI. index.html dichiara tre alternative hreflang
   // (it/en/es) ma serviva SEMPRE l'italiano, con `<html lang="it">` e un
@@ -535,9 +538,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // index.html ne conteneva una versione scritta a mano (solo italiana) che
     // app.js buttava via ridisegnandone un'altra: due pagine diverse sullo
     // stesso indirizzo. Vedi src/web/vetrina-vista.js.
-    // La porta di Kick esiste solo se questo server ha un'app Kick: un pulsante
-    // che porta a un 503 e' peggio di un pulsante che non c'e'.
-    h = inserisciVetrina(h, codice, { kick: conKick });
+    // Le porte di Kick e YouTube esistono solo se questo server ha le
+    // credenziali: un pulsante che porta a un 503 e' peggio di un pulsante che
+    // non c'e'.
+    h = inserisciVetrina(h, codice, { kick: conKick, youtube: conYoutube });
     cambia('<html lang="it">', `<html lang="${m.html}">`);
     cambia(`<title>${base.titolo}</title>`, `<title>${m.titolo}</title>`);
     cambia(`<meta name="description" content="${base.desc}">`, `<meta name="description" content="${m.desc}">`);
@@ -1877,6 +1881,38 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     },
   });
 
+  // YOUTUBE: entrare e collegare. Stesso giro di Kick, stessa divisione del
+  // lavoro — le rotte sanno fare l'OAuth, qui si decide chi è la persona.
+  //
+  // Il canale si chiama `yt.<maniglia>`: la maniglia (@nomecanale) è ciò che su
+  // YouTube identifica un canale in modo leggibile, mentre il TITOLO si cambia
+  // a piacere e può contenere qualunque cosa. Se non c'è si ripiega sul titolo,
+  // e in ultimo sull'id — che c'è sempre.
+  montaYoutube(app, {
+    requireLogin, currentUser, wrap,
+    async registra(req, { canaleId, nome, maniglia, token }) {
+      // Chi torna si riconosce dall'id del canale, non dal nome: su YouTube il
+      // nome e la maniglia si cambiano, l'id no.
+      let login = ytApi.loginPerCanaleId(canaleId);
+      const display = String(nome || maniglia || '').trim() || ('youtube:' + canaleId);
+
+      if (!login) {
+        login = loginYoutube(maniglia) || loginYoutube(nome) || ('yt.c' + String(canaleId).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 24));
+        // Nome già preso da un ALTRO canale YouTube (succede dopo un cambio di
+        // maniglia): si tiene il suo, e a questo si aggiunge un pezzo dell'id.
+        if (streamers.get(login)) login = (login + String(canaleId).replace(/[^a-z0-9]/gi, '').toLowerCase()).slice(0, 30);
+      }
+
+      const promoVinta = primoAccesso(login, display);
+      ytApi.salvaToken(login, token, canaleId);
+
+      const contesti = contestiPer(login);
+      if (!contesti.length) return { login, errore: 'canale non disponibile' };
+      req.session.user = sessionePer(login, display, contestoDefault(contesti));
+      return { login, dove: promoVinta ? '/?promo=1' : '/?benvenuto=1' };
+    },
+  });
+
   // LE TUE PIATTAFORME — un endpoint solo per tutte.
   // Non e' un doppione dello stato del bot: quello dice se il BOT lavora, questo
   // dice DOVE. Una riga per piattaforma, la stessa forma per tutte, cosi' la
@@ -1954,20 +1990,23 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       rifaiEventi: !!tk?.accessToken && !kd.ultimo,
     });
 
-    // YouTube: le credenziali possono esserci ma il collegamento non e' ancora
-    // aperto. Meglio dirlo che mostrare un pulsante che non fa niente.
+    // YouTube. `attivo` resta falso apposta: il collegamento c'è, il bot in chat
+    // no — e la nota lo dice invece di lasciarlo scoprire dal silenzio.
+    const ytPronto = !!(config.youtubeClientId && config.youtubeClientSecret);
+    const ty = ytPronto ? ytApi.tokenDi(login) : null;
     fuori.push({
       id: 'youtube',
       nome: 'YouTube',
-      disponibile: false,
-      collegato: false,
-      account: '',
+      disponibile: ytPronto,
+      collegato: !!ty?.accessToken,
+      account: ty?.userId ? ('canale ' + ty.userId) : '',
       attivo: false,
       daRifare: false,
-      azione: '',
-      note: !!(config.youtubeClientId && config.youtubeClientSecret)
-        ? 'credenziali pronte: il collegamento arriva a breve'
-        : 'non configurato su questo server',
+      azione: '/auth/youtube',
+      note: !ytPronto ? 'non configurato su questo server'
+        : (ty?.accessToken
+          ? 'canale collegato: dashboard, link page e overlay. In chat il bot non parla ancora'
+          : 'collega il canale per usare dashboard, link page e overlay'),
     });
 
     res.json({ piattaforme: fuori });
@@ -1993,7 +2032,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (!user) {
       // Senza sessione niente dati reali. Solo una cosa serve alla vetrina: se
       // esiste la porta di Kick, perche' il pulsante lo disegna il browser.
-      res.json({ user: null, kickAperto: !!(config.kickClientId && config.kickClientSecret) });
+      res.json({
+        user: null,
+        kickAperto: !!(config.kickClientId && config.kickClientSecret),
+        youtubeAperto: !!(config.youtubeClientId && config.youtubeClientSecret),
+      });
       return;
     }
     const ident = identitaDi(user);
