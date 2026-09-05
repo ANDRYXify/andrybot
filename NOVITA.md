@@ -12,6 +12,9 @@ successo qualcosa.
 
 ## 2026-09-05
 
+- Nel lettore musica, «niente si muove a tempo» adesso ferma davvero le onde. Prima cambiava solo la loro velocità e continuavano a ballare.
+- Il titolo lungo scorre sempre, non più a volte sì e a volte no: si rimisura quando arriva il carattere, quando arriva la copertina e quando cambi la dimensione.
+
 - [privato] Il computer di Lia ha uno schermo vero e un browser vero, che resta aperto fra un gesto e l'altro. Prima ogni pagina nasceva e moriva dentro un comando.
 - [privato] Ora clicca, scorre, compila, torna indietro, e la pagina resta dov'è per il gesto dopo. I cookie restano fra un riavvio e l'altro.
 - [privato] Il browser di Lia si piantava al secondo sito e restava lì: la scheda mostrava «carico la pagina…» per sempre. Ora risponde sempre, e se qualcosa va storto dice cosa.
