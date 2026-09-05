@@ -344,6 +344,13 @@ class Handler(BaseHTTPRequestHandler):
                 r = AMB.installa(d.get("pacchetto", ""), d.get("gestore", "pip"))
             elif op == "naviga":
                 r = AMB.naviga(d.get("url", ""), d.get("azione", "leggi"))
+            elif op == "browser":
+                # UN GESTO sul browser aperto: clicca, scrivi, scorri, torna indietro.
+                # I campi passano com'e' — quali servano lo decide il gesto (vedi GESTI).
+                r = AMB.browser(d.get("azione", "leggi"),
+                                **{k: v for k, v in d.items() if k not in ("op", "azione")})
+            elif op == "schermo":
+                r = AMB.schermo()
             elif op == "crea":
                 r = AMB.crea_progetto(d.get("nome", ""), d.get("tipo", "libero"), d.get("contenuto", ""))
             elif op == "scrivi":
@@ -359,7 +366,7 @@ class Handler(BaseHTTPRequestHandler):
             elif op == "ferma":
                 r = AMB.ferma_tutto()
             else:
-                r = {"ok": False, "motivo": "op sconosciuta (installa/naviga/crea/scrivi/esegui/lavoro/desiderio/autonomo/ferma)"}
+                r = {"ok": False, "motivo": "op sconosciuta (installa/naviga/browser/schermo/crea/scrivi/esegui/lavoro/desiderio/autonomo/ferma)"}
             return self._json(200, r if isinstance(r, dict) else {"ok": True, "r": r})
         except Exception as e:
             return self._json(200, {"ok": False, "errore": str(e)[:120]})

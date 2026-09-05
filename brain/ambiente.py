@@ -637,29 +637,78 @@ def _nome_pulito_lib(testo):
     return t.strip()[:120]
 
 
-def naviga(url, azione="leggi"):
-    """NAVIGA il web (Chromium vero). azione='leggi' → il testo/DOM della pagina (sincrono);
-    'schermata' → una PNG in ~/progetti/scatti/ (in background); 'pdf' → un PDF lì. URL http(s)
-    only. Il guardiano fa passare solo internet pubblico. Ritorna il risultato / il job."""
-    u = str(url or "").strip()
-    if not (u.startswith("http://") or u.startswith("https://")) or len(u) > 400 or "'" in u or " " in u:
-        return {"ok": False, "errore": "url non valido (solo http/https pubblico)"}
-    if not disponibile():
-        return {"ok": False, "errore": "ecosistema spento"}
+# ─────────────────────────── IL BROWSER: uno vero, che resta aperto ────────────
+# Prima navigava così: `chromium --headless --dump-dom | sed 's/<[^>]*>//g' | head -c 6000`.
+# Un colpo solo, senza schermo, senza memoria: ogni pagina nasceva e moriva dentro
+# un comando. Non poteva cliccare, non poteva scorrere, non restava loggata da
+# nessuna parte, non poteva seguire un percorso di due passi — e le pagine fatte in
+# JavaScript le vedeva vuote, perché prendeva il DOM prima che il sito si disegnasse.
+#
+# Adesso dentro la sandbox c'è un browser VERO, con la finestra su uno schermo vero,
+# che vive fra un gesto e l'altro: la pagina resta dov'è, e il gesto dopo riparte da lì.
+
+# I gesti che sa fare. È anche l'elenco che difende la porta: un'azione che non è
+# qui non arriva nemmeno al browser.
+GESTI = ("apri", "leggi", "html", "clicca", "scrivi", "premi", "scorri",
+         "indietro", "avanti", "schermata", "immagine", "pdf", "link", "dove", "chiudi")
+
+
+def browser(azione="leggi", **campi):
+    """Un GESTO sul browser di Lia. Ritorna quel che il browser risponde, o l'errore.
+    Non solleva mai. I campi dipendono dal gesto: apri(url), clicca(cosa),
+    scrivi(dove, testo, invio), scorri(pixel), schermata(nome)."""
     az = str(azione or "leggi").strip().lower()
-    flags = "${CHROMIUM_FLAGS:---headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage}"
-    if az == "leggi":
-        r = esegui(f"timeout 28 chromium {flags} --dump-dom '{u}' 2>/dev/null | "
-                   "sed -e 's/<[^>]*>/ /g' | tr -s ' \\n' ' \\n' | head -c 6000", timeout=30)
-        testo = (r.get("output") or "") if r.get("ok") else ""
-        return {"ok": bool(testo), "testo": testo}
-    if az in ("schermata", "pdf"):
-        est = "png" if az == "schermata" else "pdf"
-        flag = "--screenshot" if az == "schermata" else "--print-to-pdf"
-        out = f"~/progetti/scatti/scatto_$(date +%s).{est}"
-        cmd = f"mkdir -p ~/progetti/scatti && timeout 40 chromium {flags} {flag}={out} '{u}'"
-        return avvia_lavoro(cmd, etichetta=f"browser_{az}")
-    return {"ok": False, "errore": "azione: leggi/schermata/pdf"}
+    if az not in GESTI:
+        return {"ok": False, "errore": "gesto sconosciuto: " + az}
+    if not KEY:
+        return {"ok": False, "errore": "ambiente non configurato"}
+    if az == "apri":
+        u = str(campi.get("url") or "").strip()
+        if not (u.startswith("http://") or u.startswith("https://")) or len(u) > 2000:
+            return {"ok": False, "errore": "url non valido (solo http/https pubblico)"}
+    try:
+        corpo = json.dumps({"azione": az, **campi}).encode("utf-8")
+        req = urllib.request.Request(
+            URL + "/browser", data=corpo, method="POST",
+            headers={"Content-Type": "application/json", "X-Ambiente-Key": KEY})
+        # Chi sta fuori aspetta PIÙ di chi sta dentro: l'esecutore lascia al gesto
+        # fino al suo tetto, e se noi ci stancassimo prima riceveremmo «non risponde»
+        # per un gesto che stava riuscendo.
+        with urllib.request.urlopen(req, timeout=150) as r:
+            return json.loads(r.read() or b"{}")
+    except Exception as e:
+        return {"ok": False, "errore": str(e)[:200]}
+
+
+def schermo():
+    """UNA FOTOGRAFIA DEL SUO SCHERMO — il desktop intero, non la sola pagina.
+    Un ambiente che non si può guardare è un ambiente di cui bisogna fidarsi sulla
+    parola. Ritorna {ok, png_b64}."""
+    if not KEY:
+        return {"ok": False, "errore": "ambiente non configurato"}
+    try:
+        req = urllib.request.Request(URL + "/schermo", method="GET",
+                                     headers={"X-Ambiente-Key": KEY})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return json.loads(r.read() or b"{}")
+    except Exception as e:
+        return {"ok": False, "errore": str(e)[:200]}
+
+
+def naviga(url, azione="leggi", **campi):
+    """NAVIGA il web. Resta il verbo di prima — `naviga(url)` legge una pagina — ma
+    ora legge quello che si VEDE davvero (pagina disegnata, JavaScript compreso), e
+    da qui in poi la pagina RESTA aperta: i gesti successivi (`browser('clicca', ...)`)
+    continuano da lì invece di ricominciare da capo."""
+    az = str(azione or "leggi").strip().lower()
+    if az in ("leggi", "apri"):
+        return browser("apri", url=url, **campi)
+    if az in ("schermata", "pdf", "immagine", "link", "html"):
+        r = browser("apri", url=url)
+        if not r.get("ok"):
+            return r
+        return browser(az, **campi)
+    return {"ok": False, "errore": "azione: leggi/schermata/immagine/pdf/link/html"}
 
 
 def crea_progetto(nome, tipo="libero", contenuto=""):
@@ -717,6 +766,15 @@ def progetti():
     return prog[:40]
 
 
+def _vivo(risposta):
+    """Il browser ha risposto «sto bene»? Legge il suo /health senza pretendere che
+    sia arrivato intero: quella riga passa da una shell e può essere troncata."""
+    try:
+        return bool(json.loads(str(risposta or "")).get("ok"))
+    except Exception:
+        return '"ok"' in str(risposta or "") and "true" in str(risposta or "")
+
+
 def stato_ecosistema():
     """Foto dell'ecosistema per il cruscotto: strumenti presenti, spazio, n. progetti, lavori
     attivi. Deterministico, sola lettura. Ritorna un dict (spento → {attivo:False})."""
@@ -725,7 +783,12 @@ def stato_ecosistema():
     cmd = (
         "echo '<<PY>>'; python3 --version 2>&1 | head -1; "
         "echo '<<NODE>>'; node --version 2>&1 | head -1; "
-        "echo '<<CHROME>>'; (chromium --version 2>/dev/null || echo no) | head -1; "
+        # Il browser NON si cerca più con `chromium --version`: quello era il browser
+        # ridotto della distribuzione, che non c'è più. Si chiede al browser vero se è
+        # vivo — altrimenti il cruscotto direbbe «nessun browser» mentre lei naviga.
+        "echo '<<CHROME>>'; (python3 -c \"import playwright,sys;print('playwright '+playwright.__version__)\" 2>/dev/null || echo no) | head -1; "
+        "echo '<<APERTO>>'; (curl -s -m 3 http://127.0.0.1:${BROWSER_PORT:-8100}/health 2>/dev/null || echo no) | head -1; "
+        "echo '<<SCHERMO>>'; (xdpyinfo 2>/dev/null | awk '/dimensions/{print $2}' || true) | head -1; "
         "echo '<<MAMBA>>'; (micromamba --version 2>/dev/null || echo no) | head -1; "
         "echo '<<DISK>>'; du -sh ~ 2>/dev/null | awk '{print $1}'; "
         "echo '<<PROG>>'; ls -1 ~/progetti 2>/dev/null | grep -v '^GUIDA.md$' | wc -l; "
@@ -745,6 +808,9 @@ def stato_ecosistema():
         "attivo": True,
         "python": val.get("PY", ""), "node": val.get("NODE", ""),
         "browser": ("" if val.get("CHROME", "no") == "no" else val.get("CHROME", "")),
+        # se il browser è ACCESO in questo momento, e su quale schermo vive
+        "browser_vivo": _vivo(val.get("APERTO", "")),
+        "schermo": val.get("SCHERMO", ""),
         "mamba": ("" if val.get("MAMBA", "no") == "no" else val.get("MAMBA", "")),
         "spazio": val.get("DISK", ""),
         "progetti": _intero(val.get("PROG")), "lavori": _intero(val.get("JOB")),

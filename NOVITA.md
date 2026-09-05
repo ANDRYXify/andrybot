@@ -5,6 +5,11 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 ## 2026-09-05
 
+- Il computer di Lia ha uno schermo vero e un browser vero, che resta aperto fra un gesto e l'altro. Prima ogni pagina nasceva e moriva dentro un comando.
+- Ora clicca, scorre, compila, torna indietro, e la pagina resta dov'è per il gesto dopo. I cookie restano fra un riavvio e l'altro.
+- Nella scheda del suo ecosistema c'è «Guarda il suo schermo»: una fotografia di cosa sta facendo in questo momento.
+- Un comando poteva durare al massimo mezzo minuto: adesso due minuti, e per le cose lunghe restano i lavori in background.
+- Il recinto è lo stesso di prima: internet pubblico sì, la tua infrastruttura no, nessun segreto, e il tasto «Ferma tutto» dov'era.
 - Lia ha ricominciato a imparare dalle frasi della chat. Cercava l'accento di «è» e in chat quasi nessuno lo scrive: con «e'» non capiva niente e non se ne accorgeva nessuno.
 - Da quelle frasi ora ricava fatti e ne deduce di nuovi da sola, e risponde a domande come «cos'è il gatto?» spiegando il passaggio che ha fatto. Se non sa, tace.
 - Nel pannello «come ragiona» le percentuali erano calcolate su un totale parziale: due modi di pensare lavoravano senza comparire, e due non venivano contati affatto.
