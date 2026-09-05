@@ -1,15 +1,11 @@
 // AUTENTICAZIONE KICK (OAuth 2.1 con PKCE), senza librerie esterne.
 //
-// Differenza con Twitch che conta davvero: Kick richiede PKCE. Al momento di
-// mandare l'utente da Kick si genera un segreto usa-e-getta (il «verifier»), si
-// manda a Kick solo la sua impronta (il «challenge»), e al ritorno si mostra il
-// segreto per intero. Così un codice di autorizzazione intercettato non serve a
-// niente senza il verifier, che non è mai passato dalla rete.
-//
-// Il verifier vive nella SESSIONE di chi sta autorizzando, non in una mappa sul
-// server: è suo, dura il tempo di un giro, e se ne va con lui.
-import crypto from 'node:crypto';
+// Differenza con Twitch che conta davvero: Kick richiede PKCE. Il giro — segreto
+// usa-e-getta, `state`, scadenza — è lo stesso per tutte le porte esterne e vive
+// in `src/giro.js`. Qui c'è solo ciò che è di Kick: gli indirizzi, gli scope e
+// la forma dei suoi token.
 import { config } from '../config.js';
+import { creaPkce } from '../giro.js';
 
 export const ID_BASE = 'https://id.kick.com/oauth';
 
@@ -29,12 +25,7 @@ export function configurato() {
   return !!(config.kickClientId && config.kickClientSecret);
 }
 
-// PKCE: verifier casuale, challenge = base64url(sha256(verifier)).
-export function creaPkce() {
-  const verifier = crypto.randomBytes(48).toString('base64url');   // 64 caratteri
-  const challenge = crypto.createHash('sha256').update(verifier).digest('base64url');
-  return { verifier, challenge };
-}
+export { creaPkce };
 
 // Dove mandare lo streamer per autorizzare.
 export function urlAutorizzazione({ challenge, state, conModerazione = false }) {
