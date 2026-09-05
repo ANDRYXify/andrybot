@@ -41,6 +41,13 @@ export function configurato() {
   return !!(config.youtubeClientId && config.youtubeClientSecret);
 }
 
+// La porta è APERTA solo se le credenziali ci sono E la levetta è alzata.
+// Chiunque apra una porta passa di qui: così «in arrivo» è una cosa sola,
+// decisa in un posto solo, e non tre posti che possono dire tre cose diverse.
+export function aperto() {
+  return configurato() && !!config.youtubeAperto;
+}
+
 export { creaPkce };
 
 export function urlAutorizzazione({ challenge, state }) {

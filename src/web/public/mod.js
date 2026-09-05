@@ -26,4 +26,14 @@
     m.className = 'msg err';
     m.textContent = testi[errore] || ('Non riuscito: ' + errore);
   }
+
+  fetch('/api/me', { credentials: 'same-origin' })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      var altre = false;
+      if (d && d.kickAperto) { document.getElementById('btn-kick').hidden = false; altre = true; }
+      if (d && d.youtubeAperto) { document.getElementById('btn-youtube').hidden = false; altre = true; }
+      if (altre) document.getElementById('altre-porte').hidden = false;
+    })
+    .catch(function () {});
 })();

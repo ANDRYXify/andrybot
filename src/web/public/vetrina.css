@@ -435,6 +435,7 @@ body.vetrina em, body.vetrina .vt-corsivo {
 .vt-comp .vt-testo { margin-top: 0; font-size: .9rem; }
 .vt-conto-nota { font-size: .84rem; color: var(--testo-3); }
 .vt-btn:disabled { opacity: .45; pointer-events: none; }
+.vt-btn-spento { opacity: .45; pointer-events: none; cursor: default; }
 .vt-comp { border: 1px solid var(--border); border-radius: 16px; background: var(--surface); padding: 1.4rem 1.4rem 1.5rem; }
 .vt-comp-griglia { display: flex; flex-wrap: wrap; justify-content: center; align-items: stretch; gap: 9px; margin: 1rem 0 0; }
 .vt-comp-griglia > * { flex: 1 1 clamp(300px, 31%, 420px); min-width: 0; }

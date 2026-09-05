@@ -543,6 +543,14 @@ aggiungiColonna('linee_guida', 'con_chi', "TEXT NOT NULL DEFAULT 'tutti'");    /
 // domanda — è il posto per le due o tre cose che il bot non deve mai non sapere.
 aggiungiColonna('knowledge', 'quando', "TEXT NOT NULL DEFAULT 'sempre'");   // sempre | live | offline
 aggiungiColonna('knowledge', 'fissata', 'INTEGER NOT NULL DEFAULT 0');      // 1 = entra comunque
+// moderatori: la porta si apre da due lati. Oltre all'invito dello streamer
+// esiste la RICHIESTA di chi modera già il canale sulla piattaforma. Una
+// richiesta non è un moderatore: è una domanda in attesa di risposta, e finché
+// non ha risposta non occupa nessun posto e non dà nessun accesso.
+aggiungiColonna('managers', 'chiesto_at', 'INTEGER NOT NULL DEFAULT 0');    // quando è arrivata la richiesta
+aggiungiColonna('managers', 'deciso_at', 'INTEGER NOT NULL DEFAULT 0');     // quando lo streamer ha risposto
+aggiungiColonna('managers', 'nota', "TEXT NOT NULL DEFAULT ''");            // due righe di chi chiede
+aggiungiColonna('managers', 'verificata', 'INTEGER NOT NULL DEFAULT 0');    // 1 = la piattaforma conferma che modera davvero
 // abbonamenti modulari: pacchetti add-on à la carte attivi (CSV di id)
 aggiungiColonna('subscriptions', 'pacchetti', "TEXT NOT NULL DEFAULT ''");
 // Spotify per-streamer: credenziali dell'app dello streamer (Client ID/Secret)
@@ -1335,8 +1343,13 @@ export const managers = {
   byId(channel, id) {
     return db.prepare('SELECT * FROM managers WHERE channel=? AND id=?').get(String(channel).toLowerCase(), id) || null;
   },
+  // I moderatori del canale: chi c'è (attivo) e chi è stato chiamato (invitato).
+  // Le richieste non stanno qui: sono domande, non moderatori, e mescolarle
+  // all'elenco vorrebbe dire mostrare come staff qualcuno a cui non si è ancora
+  // detto sì. Si leggono con `richiesteByChannel`.
   listByChannel(channel) {
-    return db.prepare('SELECT * FROM managers WHERE channel=? ORDER BY status DESC, created_at').all(String(channel).toLowerCase());
+    return db.prepare("SELECT * FROM managers WHERE channel=? AND status IN ('attivo','invitato') ORDER BY status DESC, created_at")
+      .all(String(channel).toLowerCase());
   },
   // canali che questo login gestisce ATTIVAMENTE (per lo switcher / login mod)
   attiviByLogin(login) {
@@ -1365,6 +1378,86 @@ export const managers = {
       .run(now(), String(channel).toLowerCase(), String(login).toLowerCase());
   },
   remove(channel, id) { db.prepare('DELETE FROM managers WHERE channel=? AND id=?').run(String(channel).toLowerCase(), id); },
+
+  // --- la porta che si apre dall'altro lato: le richieste ------------------
+  //
+  // Un moderatore può chiedere lui l'accesso, invece di aspettare il link. La
+  // richiesta NON è un moderatore: non dà accesso, non compare nei contesti (che
+  // guardano solo `attivo`) e non occupa un posto del piano. È una domanda.
+  //
+  // `verificata` dice se la piattaforma ha confermato che quella persona modera
+  // davvero quel canale. È un fatto, non una speranza: dove non si può chiedere,
+  // resta 0 e lo streamer decide guardando il nome.
+
+  // I posti del piano: attivi e invitati. Una richiesta in attesa non occupa
+  // niente — se contasse, tre sconosciuti potrebbero riempire il piano di uno
+  // streamer senza che lui abbia detto sì a nessuno.
+  contaPosti(channel) { return this.listByChannel(channel).length; },
+
+  // Quanto si aspetta prima di poter richiedere un canale che ha già detto no.
+  ATTESA_DOPO_RIFIUTO: 30 * 86400000,
+
+  // Si può chiedere? Ritorna il motivo per cui NON si può, oppure ''.
+  perchePuoiNo(channel, login, ora = now()) {
+    const m = this.get(channel, login);
+    if (!m) return '';
+    if (m.status === 'attivo') return 'gestisci già questo canale';
+    if (m.status === 'invitato') return 'hai già un invito per questo canale: aprilo dal link che ti ha mandato';
+    if (m.status === 'richiesto') return 'la tua richiesta è già in attesa';
+    if (m.status === 'rifiutato') {
+      const quando = m.deciso_at + this.ATTESA_DOPO_RIFIUTO;
+      if (ora < quando) return 'questo canale ha già risposto di no: puoi richiedere più avanti';
+    }
+    return '';
+  },
+
+  // La riga di chi è già dentro (attivo) o già chiamato (invitato) NON viene
+  // toccata: una richiesta non può retrocedere un accesso che c'è già. Sta nella
+  // scrittura e non in un controllo prima, perché un controllo lo si può
+  // dimenticare in una strada nuova — questo no.
+  chiedi(channel, login, { display = '', nota = '', verificata = false } = {}) {
+    const ch = String(channel).toLowerCase(), l = String(login).toLowerCase();
+    db.prepare(`INSERT INTO managers (channel, login, display, role, status, invite_token, invite_expires, invited_by, created_at, chiesto_at, nota, verificata)
+      VALUES (?,?,?,'moderatore','richiesto','',0,'',?,?,?,?)
+      ON CONFLICT(channel, login) DO UPDATE SET
+        display=CASE WHEN excluded.display!='' THEN excluded.display ELSE managers.display END,
+        status='richiesto', chiesto_at=excluded.chiesto_at, deciso_at=0,
+        nota=excluded.nota, verificata=excluded.verificata
+        WHERE managers.status NOT IN ('attivo','invitato')`)
+      .run(ch, l, display, now(), now(), String(nota).slice(0, 300), verificata ? 1 : 0);
+    return this.get(ch, l);
+  },
+
+  richiesteByChannel(channel) {
+    return db.prepare("SELECT * FROM managers WHERE channel=? AND status='richiesto' ORDER BY chiesto_at")
+      .all(String(channel).toLowerCase());
+  },
+
+  // Le richieste di una persona, in qualunque stato siano finite: chi ha chiesto
+  // deve poter vedere anche il no, altrimenti aspetta per sempre una risposta
+  // che è già arrivata.
+  richiesteByLogin(login) {
+    return db.prepare("SELECT * FROM managers WHERE login=? AND status IN ('richiesto','rifiutato') ORDER BY chiesto_at DESC")
+      .all(String(login).toLowerCase());
+  },
+
+  contaRichiesteDi(login) {
+    return db.prepare("SELECT COUNT(*) n FROM managers WHERE login=? AND status='richiesto'")
+      .get(String(login).toLowerCase()).n;
+  },
+
+  rifiuta(channel, id) {
+    db.prepare("UPDATE managers SET status='rifiutato', deciso_at=?, invite_token='', invite_expires=0 WHERE channel=? AND id=? AND status='richiesto'")
+      .run(now(), String(channel).toLowerCase(), id);
+    return this.byId(channel, id);
+  },
+
+  // Ritirare la propria richiesta: sparisce e basta. Chi ritira non ha ricevuto
+  // un no, quindi non deve aspettare trenta giorni per riprovare.
+  ritira(channel, login) {
+    db.prepare("DELETE FROM managers WHERE channel=? AND login=? AND status='richiesto'")
+      .run(String(channel).toLowerCase(), String(login).toLowerCase());
+  },
 };
 
 // ---------------------------------------------------------------- notifiche Telegram

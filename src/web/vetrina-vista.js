@@ -197,14 +197,16 @@ function corpo(L, l, kick, youtube) {
         </nav>
         <div class="vt-strumenti">${selettoreLingua(l, L)}</div>
       </header>
-      <span class="vt-occhiello"><i class="vivo"></i>${L('Per Twitch, Kick e YouTube · di andryxify.it', 'For Twitch, Kick and YouTube · by andryxify.it', 'Para Twitch, Kick y YouTube · de andryxify.it')}</span>
+      <span class="vt-occhiello"><i class="vivo"></i>${L('Per Twitch e Kick · di andryxify.it', 'For Twitch and Kick · by andryxify.it', 'Para Twitch y Kick · de andryxify.it')}</span>
       <h1 class="vt-titolo">${L('Il bot per Twitch che parla', 'The Twitch bot that speaks', 'El bot de Twitch que habla')} <em>${L('con la tua voce', 'with your own voice', 'con tu propia voz')}</em></h1>
       <p class="vt-sub">${L('Vive nella tua chat e scrive <strong>con il tuo account</strong> — niente bot anonimi. Comandi su misura, <strong>scudo anti-bot</strong>, overlay per la diretta, clip, musica e <strong>notifiche live</strong>.', 'It lives in your chat and writes <strong>with your own account</strong> — no anonymous bots. Custom commands, an <strong>anti-bot shield</strong>, stream overlay, clips, music and <strong>live alerts</strong>.', 'Vive en tu chat y escribe <strong>con tu cuenta</strong> — nada de bots anónimos. Comandos a medida, <strong>escudo anti-bot</strong>, overlay para el directo, clips, música y <strong>avisos en directo</strong>.')}</p>
       <div class="vt-azioni">
         <a class="vt-btn vt-btn-primo" href="/entra?nuovo=1">${L('Registrati con Twitch', 'Sign up with Twitch', 'Regístrate con Twitch')}</a>
         <a class="vt-btn" href="/entra">${L('Accedi', 'Log in', 'Entrar')}</a>
         ${kick ? `<a class="vt-btn" href="/accedi/kick">${L('Registrati con Kick', 'Sign up with Kick', 'Regístrate con Kick')}</a>` : ''}
-        ${youtube ? `<a class="vt-btn" href="/accedi/youtube">${L('Registrati con YouTube', 'Sign up with YouTube', 'Regístrate con YouTube')}</a>` : ''}
+        ${youtube
+          ? `<a class="vt-btn" href="/accedi/youtube">${L('Registrati con YouTube', 'Sign up with YouTube', 'Regístrate con YouTube')}</a>`
+          : `<span class="vt-btn vt-btn-spento" aria-disabled="true">${L('YouTube · in arrivo', 'YouTube · coming soon', 'YouTube · muy pronto')}</span>`}
       </div>
       <p class="vt-sotto">${L('L’<b>Essenziale è gratis per sempre</b> · nessuna carta richiesta · <a href="/?demo=1">guarda la demo</a>', 'The <b>Essenziale plan is free forever</b> · no card needed · <a href="/?demo=1">see the demo</a>', 'El <b>plan Essenziale es gratis para siempre</b> · sin tarjeta · <a href="/?demo=1">mira la demo</a>')}</p>
       ${heroAnteprima(L)}

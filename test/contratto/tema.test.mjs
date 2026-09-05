@@ -88,10 +88,17 @@ test('e si vestono con i fogli di tutti, seguendo il tema scelto', () => {
 test('e il foglio comune non si scrive i colori a mano', () => {
   const css = leggi('src/web/public/pagina.css');
   const aMano = css.match(/#[0-9a-fA-F]{3,8}/g) || [];
-  // l'unica eccezione e' il viola di Twitch sul suo pulsante: e' il colore di
-  // un'altra azienda, non un colore nostro, e non segue il nostro tema.
-  assert.deepEqual([...new Set(aMano)].sort(), ['#7c37e0', '#9146ff'],
-    'l\'unico colore scritto a mano e\' quello di Twitch');
+  // Le uniche eccezioni sono i colori dei MARCHI ALTRUI sui pulsanti di accesso:
+  // il viola di Twitch, il verde di Kick, il rosso di YouTube. Non sono colori
+  // nostri e non seguono il nostro tema — se li seguissero, il pulsante «Accedi
+  // con Kick» sarebbe del colore del sito e nessuno lo riconoscerebbe. Ogni
+  // altro colore scritto a mano qui è un colore nostro finito fuori dalla
+  // tavolozza, e va rimesso dentro.
+  // (#0b0f0a è il quasi-nero con cui Kick scrive sul suo verde: su quel verde
+  // il bianco non si legge, e il testo del pulsante deve leggersi.)
+  const MARCHI = ['#0b0f0a', '#46d914', '#53fc18', '#7c37e0', '#9146ff', '#d9002b', '#ff0033'];
+  assert.deepEqual([...new Set(aMano)].sort(), MARCHI,
+    'gli unici colori scritti a mano sono quelli dei marchi altrui');
 });
 
 test('la vetrina porta alle guide, ai manuali e alle novità', () => {

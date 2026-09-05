@@ -61,7 +61,8 @@ import * as persona from '../ai/persona.js';
 import * as brainpy from '../ai/brainpy.js';
 import { impronta, combacia } from '../segreti.js';
 import { redeemPass } from './gate.js';
-import { eLoginNostro, loginKick, loginYoutube, piattaformaDi } from '../identita.js';
+import { eLoginNostro, loginKick, loginYoutube, loginSu, nomeSu, piattaformaDi, PIATTAFORME } from '../identita.js';
+import { provaModerazione, verificabile } from '../moderatori/prova.js';
 import { creaGuscio } from './vetrina.js';
 import { salute } from '../salute.js';
 import { anteprima as anteprimaImport, moduloDa } from '../features/importacomandi.js';
@@ -339,6 +340,28 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     return !!String(login || '').toLowerCase();
   }
 
+  // GLI INVITI CHE ASPETTANO QUESTA PERSONA.
+  //
+  // Chi è stato invitato a moderare non deve per forza usare il link: basta che
+  // entri, da qualunque porta. Sta qui, in una funzione sola, perché le porte
+  // adesso sono quattro (Twitch self-service, login moderatore, Kick, YouTube) e
+  // scritto quattro volte sarebbe giusto in tre e dimenticato nella quarta — e
+  // chi entra dalla quarta resterebbe chiuso fuori dal canale che gli hanno
+  // affidato, senza capire perché.
+  //
+  // Ritorna il primo canale abbinato, che è quello su cui conviene atterrare.
+  function abbinaInviti(login, display) {
+    let primo = null;
+    for (const inv of managers.pendentiByLogin(login)) {
+      try {
+        managers.attiva(inv.channel, login, display || '');
+        if (!primo) primo = inv.channel;
+        log.info(`invito moderatore abbinato al login: @${login} → #${inv.channel}`);
+      } catch (e) { log.debug('auto-abbina invito:', e?.message || e); }
+    }
+    return primo;
+  }
+
   // PRIMO ACCESSO: nasce il canale col pacchetto ESSENZIALE (gratuito), e a chi
   // non ha mai avuto il bot capita, a caso, qualche giorno con tutto acceso.
   // Sta qui e non dentro il flusso di Twitch perche' adesso le porte sono due:
@@ -485,7 +508,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // primo HTML e la larghezza e giusta gia al primo disegno.
   const gusciaHtml = readFileSync(join(publicDir, 'index.html'), 'utf8');
   const conKick = !!(config.kickClientId && config.kickClientSecret);
-  const conYoutube = !!(config.youtubeClientId && config.youtubeClientSecret);
+  const conYoutube = !!(config.youtubeClientId && config.youtubeClientSecret) && !!config.youtubeAperto;
 
   // LINGUE INDICIZZABILI. index.html dichiara tre alternative hreflang
   // (it/en/es) ma serviva SEMPRE l'italiano, con `<html lang="it">` e un
@@ -1685,13 +1708,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       if (!v?.login) return res.redirect('/?errore=validazione');
       const login = String(v.login).toLowerCase();
       const disp = v.display || login;
-      // ABBINA gli inviti a moderatore ancora pendenti per questo login: chi è
-      // stato invitato a moderare non deve per forza usare il link — basta il
-      // login con Twitch. Così un moderatore non resta chiuso fuori dal canale.
-      for (const inv of managers.pendentiByLogin(login)) {
-        try { managers.attiva(inv.channel, login, disp); log.info(`invito moderatore abbinato al login: @${login} → #${inv.channel}`); }
-        catch (e) { log.debug('auto-abbina invito:', e?.message || e); }
-      }
+      abbinaInviti(login, disp);
       // il founder/admin: assicura il record (approved+community) così non resta
       // mai chiuso fuori e la dashboard ha tutto pronto anche dopo un reset.
       if (config.adminLogins.includes(login)) {
@@ -1744,10 +1761,8 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         preferito = inv.channel;                               // atterra sul canale dell'invito
       }
       // anche senza link: abbina eventuali inviti pendenti a questo login.
-      for (const inv of managers.pendentiByLogin(modLogin)) {
-        try { managers.attiva(inv.channel, modLogin, disp); if (!preferito) preferito = inv.channel; }
-        catch (e) { log.debug('auto-abbina invito (mod):', e?.message || e); }
-      }
+      const abbinato = abbinaInviti(modLogin, disp);
+      if (!preferito) preferito = abbinato;
       // accesso unificato: l'identità dà accesso al proprio canale (se streamer
       // approvato) e a tutti i canali moderati; poi si cambia con lo switcher.
       const contesti = contestiPer(modLogin);
@@ -1785,22 +1800,78 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   });
 
   // Elenco/invito/rimozione dei moderatori del proprio canale (solo proprietario).
+  // La forma con cui un moderatore esce da qui, una sola per tutti gli stati:
+  // così l'elenco e le richieste si disegnano con lo stesso pezzo di pagina.
+  const vestiModeratore = (m) => ({
+    id: m.id, login: m.login, display: m.display || m.login, status: m.status,
+    piattaforma: piattaformaDi(m.login), nome: nomeSu(m.login),
+    last_seen: m.last_seen, created_at: m.created_at,
+    chiesto: m.chiesto_at || 0, nota: m.nota || '', verificata: !!m.verificata,
+    invito: m.status === 'invitato' ? { url: MOD_INVITE_URL(m.invite_token), scade: m.invite_expires } : null,
+  });
+
   app.get('/api/moderatori', requireOwner, wrap(async (req, res) => {
     const ch = currentUser(req).login;
-    res.json(managers.listByChannel(ch).map((m) => ({
-      id: m.id, login: m.login, display: m.display || m.login, status: m.status,
-      last_seen: m.last_seen, created_at: m.created_at,
-      invito: m.status === 'invitato' ? { url: MOD_INVITE_URL(m.invite_token), scade: m.invite_expires } : null,
-    })));
+    // L'elenco resta un array, com'era: chi lo legge non deve cambiare niente.
+    // Le richieste NON stanno qui dentro come campo in coda all'array — un array
+    // con una proprietà attaccata perde quella proprietà appena diventa JSON, e
+    // il campo sarebbe scritto qui e mai letto da nessuna parte. Hanno una porta
+    // loro, appena sotto.
+    res.json(managers.listByChannel(ch).map(vestiModeratore));
   }));
+
+  // Le richieste in attesa, da sole: la dashboard le mostra in cima alla scheda
+  // e ha bisogno di poterle rileggere senza ricaricare tutto l'elenco.
+  app.get('/api/moderatori/richieste', requireOwner, wrap(async (req, res) => {
+    res.json({ richieste: managers.richiesteByChannel(currentUser(req).login).map(vestiModeratore) });
+  }));
+
+  // Accettare una richiesta: da qui in poi quella persona è un moderatore, e
+  // occupa un posto del piano. Il posto si controlla ADESSO, non quando la
+  // richiesta è arrivata: fra le due cose lo streamer può aver cambiato piano o
+  // riempito i posti con altri.
+  app.post('/api/moderatori/:id/accetta', requireOwner, wrap(async (req, res) => {
+    const ch = currentUser(req).login;
+    const m = managers.byId(ch, parseInt(req.params.id, 10) || 0);
+    if (!m || m.status !== 'richiesto') return res.status(404).json({ errore: 'richiesta sconosciuta' });
+    const maxMod = limiteTier(req, 'moderatori');
+    if (managers.contaPosti(ch) >= maxMod) {
+      return res.status(400).json({ errore: maxMod === 0 ? 'Il tuo piano non include i moderatori.' : 'hai raggiunto il massimo di moderatori del tuo piano.' });
+    }
+    managers.attiva(ch, m.login, m.display || '');
+    log.info(`@${ch}: accettata la richiesta di @${m.login}`);
+    res.json({ ok: true, moderatore: vestiModeratore(managers.get(ch, m.login)) });
+  }));
+
+  app.post('/api/moderatori/:id/rifiuta', requireOwner, wrap(async (req, res) => {
+    const ch = currentUser(req).login;
+    const m = managers.byId(ch, parseInt(req.params.id, 10) || 0);
+    if (!m || m.status !== 'richiesto') return res.status(404).json({ errore: 'richiesta sconosciuta' });
+    managers.rifiuta(ch, m.id);
+    res.json({ ok: true });
+  }));
+
+  // Da nome + piattaforma al canale nostro. `login` da solo resta valido e vuol
+  // dire Twitch: era l'unica piattaforma quando la scheda è nata, e i pannelli
+  // vecchi continuano a funzionare senza modifiche.
+  const chiInvitare = (corpo) => {
+    const grezzo = String(corpo?.nome ?? corpo?.login ?? '').toLowerCase().trim().replace(/^@/, '');
+    const piattaforma = String(corpo?.piattaforma || 'twitch').toLowerCase();
+    if (!PIATTAFORME.some((p) => p.id === piattaforma)) return { errore: 'piattaforma sconosciuta' };
+    if (!/^[a-z0-9_]{3,25}$/.test(grezzo)) return { errore: 'nome utente non valido' };
+    const login = loginSu(piattaforma, grezzo);
+    if (!login || !eLoginNostro(login)) return { errore: 'nome utente non valido' };
+    return { login };
+  };
 
   app.post('/api/moderatori', requireOwner, wrap(async (req, res) => {
     const ch = currentUser(req).login;
-    const login = String(req.body?.login || '').toLowerCase().trim().replace(/^@/, '');
-    if (!/^[a-z0-9_]{3,25}$/.test(login)) return res.status(400).json({ errore: 'username Twitch non valido' });
+    const chi = chiInvitare(req.body);
+    if (chi.errore) return res.status(400).json({ errore: chi.errore });
+    const login = chi.login;
     if (login === ch) return res.status(400).json({ errore: 'sei già il proprietario del canale' });
     const maxMod = limiteTier(req, 'moderatori');   // limite moderatori del piano
-    if (!managers.get(ch, login) && managers.listByChannel(ch).length >= maxMod) {
+    if (!managers.get(ch, login) && managers.contaPosti(ch) >= maxMod) {
       return res.status(400).json({ errore: maxMod === 0 ? 'Il tuo piano non include i moderatori.' : 'hai raggiunto il massimo di moderatori del tuo piano.' });
     }
     const token = crypto.randomBytes(32).toString('base64url');
@@ -1821,6 +1892,82 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
   app.delete('/api/moderatori/:id', requireOwner, wrap(async (req, res) => {
     managers.remove(currentUser(req).login, parseInt(req.params.id, 10) || 0);
+    res.json({ ok: true });
+  }));
+
+  // ---------------------------------------------------------- LE RICHIESTE
+  // La stessa porta, dall'altro lato. Finora l'unico modo di diventare
+  // moderatore era che lo streamer si ricordasse di invitarti: chi già moderava
+  // il canale doveva chiederglielo a voce e sperare. Adesso può chiedere da qui.
+  //
+  // Ciò che rende questa porta una porta e non una casella per chiunque è la
+  // PROVA: dove la piattaforma sa rispondere (Twitch), si chiede a lei se quella
+  // persona modera davvero quel canale — e si chiede col token dello streamer,
+  // che il permesso ce l'ha già. Dove non sa rispondere (Kick, YouTube) la
+  // richiesta arriva marcata «non verificata», e decide lo streamer.
+
+  // Quante richieste in attesa può avere una persona. Non è un numero contro gli
+  // abusi soltanto: è anche il segno che chiedere a venti canali insieme non è
+  // il modo in cui questa cosa va usata.
+  const MAX_RICHIESTE = 3;
+
+  app.get('/api/richieste-moderatore', requireLogin, wrap(async (req, res) => {
+    const ident = identitaDi(currentUser(req));
+    res.json({
+      max: MAX_RICHIESTE,
+      // le piattaforme su cui si può chiedere, e se la conferma è possibile
+      piattaforme: PIATTAFORME.map((p) => ({ id: p.id, verificabile: verificabile(loginSu(p.id, 'x'), ident) })),
+      richieste: managers.richiesteByLogin(ident).map((m) => ({
+        canale: m.channel, piattaforma: piattaformaDi(m.channel), nome: nomeSu(m.channel),
+        stato: m.status, chiesto: m.chiesto_at || 0, deciso: m.deciso_at || 0,
+        verificata: !!m.verificata, nota: m.nota || '',
+      })),
+    });
+  }));
+
+  app.post('/api/richieste-moderatore', requireLogin, wrap(async (req, res) => {
+    const u = currentUser(req);
+    const ident = identitaDi(u);
+    const chi = chiInvitare(req.body);          // stessa forma dell'invito: nome + piattaforma
+    if (chi.errore) return res.status(400).json({ errore: chi.errore });
+    const canale = chi.login;
+
+    if (canale === ident) return res.status(400).json({ errore: 'quello sei tu' });
+    // Il canale deve esistere da noi E avere il bot acceso: chiedere di moderare
+    // un canale che non usa SocialBot non porta da nessuna parte, e dire
+    // «richiesta inviata» a chi aspetterà per sempre è peggio di dire di no.
+    if (!streamers.get(canale) || !haAccesso(canale)) {
+      return res.status(404).json({ errore: 'questo canale non usa SocialBot' });
+    }
+    const no = managers.perchePuoiNo(canale, ident);
+    if (no) return res.status(400).json({ errore: no });
+    if (managers.contaRichiesteDi(ident) >= MAX_RICHIESTE) {
+      return res.status(400).json({ errore: `hai già ${MAX_RICHIESTE} richieste in attesa: aspetta una risposta` });
+    }
+
+    const prova = await provaModerazione(canale, ident, { helix });
+    // Twitch ha risposto, e ha detto di no: quella persona non modera quel
+    // canale. Qui non si passa — è l'unico caso in cui sappiamo con certezza che
+    // la richiesta non ha fondamento.
+    if (prova.negata) return res.status(403).json({ errore: prova.motivo });
+
+    const nota = String(req.body?.nota || '').trim().slice(0, 300);
+    managers.chiedi(canale, ident, {
+      display: u.identitaDisplay || u.display || '',
+      nota,
+      verificata: prova.verificata,
+    });
+    log.info(`richiesta moderatore: @${ident} → #${canale} (${prova.verificata ? 'confermata da Twitch' : 'non verificata'})`);
+    res.json({ ok: true, verificata: prova.verificata, motivo: prova.motivo });
+  }));
+
+  // Ritirare la propria richiesta. Chi ritira non ha ricevuto un no, quindi non
+  // deve aspettare per riprovare.
+  app.delete('/api/richieste-moderatore/:canale', requireLogin, wrap(async (req, res) => {
+    const ident = identitaDi(currentUser(req));
+    const canale = String(req.params.canale || '').toLowerCase();
+    if (!eLoginNostro(canale)) return res.status(400).json({ errore: 'canale non valido' });
+    managers.ritira(canale, ident);
     res.json({ ok: true });
   }));
 
@@ -1873,10 +2020,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
       const promoVinta = primoAccesso(login, display);
       kickApi.salvaToken(login, token, userId);
+      const invitato = abbinaInviti(login, display);
 
       const contesti = contestiPer(login);
       if (!contesti.length) return { login, errore: 'canale non disponibile' };
-      req.session.user = sessionePer(login, display, contestoDefault(contesti));
+      req.session.user = sessionePer(login, display, contestoDefault(contesti, invitato));
       return { login, dove: promoVinta ? '/?promo=1' : '/?benvenuto=1' };
     },
   });
@@ -1905,10 +2053,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
       const promoVinta = primoAccesso(login, display);
       ytApi.salvaToken(login, token, canaleId);
+      const invitato = abbinaInviti(login, display);
 
       const contesti = contestiPer(login);
       if (!contesti.length) return { login, errore: 'canale non disponibile' };
-      req.session.user = sessionePer(login, display, contestoDefault(contesti));
+      req.session.user = sessionePer(login, display, contestoDefault(contesti, invitato));
       return { login, dove: promoVinta ? '/?promo=1' : '/?benvenuto=1' };
     },
   });
@@ -1992,18 +2141,19 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
 
     // YouTube. `attivo` resta falso apposta: il collegamento c'è, il bot in chat
     // no — e la nota lo dice invece di lasciarlo scoprire dal silenzio.
-    const ytPronto = !!(config.youtubeClientId && config.youtubeClientSecret);
-    const ty = ytPronto ? ytApi.tokenDi(login) : null;
+    const ytAperto = !!(config.youtubeClientId && config.youtubeClientSecret) && !!config.youtubeAperto;
+    const ty = ytAperto ? ytApi.tokenDi(login) : null;
     fuori.push({
       id: 'youtube',
       nome: 'YouTube',
-      disponibile: ytPronto,
+      disponibile: ytAperto,
+      inArrivo: !ytAperto,
       collegato: !!ty?.accessToken,
       account: ty?.userId ? ('canale ' + ty.userId) : '',
       attivo: false,
       daRifare: false,
-      azione: '/auth/youtube',
-      note: !ytPronto ? 'non configurato su questo server'
+      azione: ytAperto ? '/auth/youtube' : '',
+      note: !ytAperto ? 'in arrivo'
         : (ty?.accessToken
           ? 'canale collegato: dashboard, link page e overlay. In chat il bot non parla ancora'
           : 'collega il canale per usare dashboard, link page e overlay'),
@@ -2035,7 +2185,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       res.json({
         user: null,
         kickAperto: !!(config.kickClientId && config.kickClientSecret),
-        youtubeAperto: !!(config.youtubeClientId && config.youtubeClientSecret),
+        youtubeAperto: !!(config.youtubeClientId && config.youtubeClientSecret) && !!config.youtubeAperto,
       });
       return;
     }

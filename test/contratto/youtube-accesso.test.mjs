@@ -14,6 +14,7 @@ import express from 'express';
 import cookieSession from 'cookie-session';
 import { cartellaUsaEGetta } from '../aiuto.mjs';
 
+process.env.YOUTUBE_APERTO = '1';          // la levetta: senza, la porta non si apre
 process.env.YOUTUBE_CLIENT_ID = 'app-di-prova';
 process.env.YOUTUBE_CLIENT_SECRET = 'segreto-di-prova';
 process.env.YOUTUBE_REDIRECT_URI = 'https://esempio.test/auth/youtube/callback';
@@ -155,4 +156,20 @@ test('chi è già dentro non passa dalla porta della registrazione', async () =>
     const r = await fetch('http://127.0.0.1:' + srv.address().port + '/accedi/youtube', { redirect: 'manual' });
     assert.equal(r.headers.get('location'), '/', 'lo rimanda a casa: il suo canale ce l’ha già');
   } finally { await new Promise((r) => srv.close(r)); }
+});
+
+test('con la levetta abbassata la porta non si apre', async () => {
+  // La stessa porta, con le stesse credenziali: cambia solo la levetta. Finché
+  // è giù nessuno entra, nemmeno chi conosce l'indirizzo — «in arrivo» non è una
+  // scritta sulla vetrina, è una porta chiusa.
+  const { config } = await import('../../src/config.js');
+  const prima = config.youtubeAperto;
+  config.youtubeAperto = false;
+  const s = await servi();
+  try {
+    const r = await fetch(s.base + '/accedi/youtube', { redirect: 'manual' });
+    assert.equal(r.status, 503);
+    const c = await fetch(s.base + '/auth/youtube', { redirect: 'manual' });
+    assert.equal(c.status, 503);
+  } finally { config.youtubeAperto = prima; await s.chiudi(); }
 });
