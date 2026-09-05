@@ -448,7 +448,7 @@
 .ovl-musica .m-onde i:nth-child(2) { animation-duration: .62s; }
 .ovl-musica .m-onde i:nth-child(3) { animation-duration: 1.05s; }
 .ovl-musica .m-onde i:nth-child(4) { animation-duration: .78s; }
-.ovl-musica.suona .m-onde i { animation-play-state: running; }
+.ovl-musica.suona:not(.ritmo-no) .m-onde i { animation-play-state: running; }
 @keyframes mus-onda { from { transform: scaleY(calc(.16 + .14 * var(--energia, .5))); } to { transform: scaleY(calc(.5 + .5 * var(--energia, .5))); } }
 
 .ovl-musica[style*="--battito"].ritmo-onde .m-onde i,
@@ -457,9 +457,9 @@
   animation-delay: var(--battito-fase, 0s);
   animation-timing-function: cubic-bezier(.2, .8, .3, 1);
 }
-.ovl-musica[style*="--battito"] .m-onde i:nth-child(2) { animation-duration: calc(var(--battito) * 2); }
-.ovl-musica[style*="--battito"] .m-onde i:nth-child(3) { animation-duration: calc(var(--battito) / 2); }
-.ovl-musica[style*="--battito"] .m-onde i:nth-child(4) { animation-duration: calc(var(--battito) * 1.5); }
+.ovl-musica[style*="--battito"]:not(.ritmo-no) .m-onde i:nth-child(2) { animation-duration: calc(var(--battito) * 2); }
+.ovl-musica[style*="--battito"]:not(.ritmo-no) .m-onde i:nth-child(3) { animation-duration: calc(var(--battito) / 2); }
+.ovl-musica[style*="--battito"]:not(.ritmo-no) .m-onde i:nth-child(4) { animation-duration: calc(var(--battito) * 1.5); }
 .ovl-musica.ritmo-tutto.suona .m-cover {
   animation: mus-batte var(--battito, .5s) ease-out infinite;
   animation-delay: var(--battito-fase, 0s);

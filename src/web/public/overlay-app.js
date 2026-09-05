@@ -784,8 +784,8 @@ function disegnaMusica() {
     if (cfg.cambio && !primo && !fermiIMotori()) {
       el.classList.remove('cambia'); void el.offsetWidth; el.classList.add('cambia');
     }
-    misuraScorrimento(el, cfg);
   }
+  misuraScorrimento(el, cfg);
   avanzaBarra();
 }
 
@@ -809,22 +809,56 @@ function battitoDelBrano(el, cfg, d) {
   el.style.setProperty('--battito-forza', String(0.6 + energiaDi(d) * 0.8));
 }
 
+const _scorri = { osserva: null, fra: 0, fuori: -1, el: null };
+
+function quantoEsce(el) {
+  let fuori = 0;
+  for (const r of el.querySelectorAll('.m-riga')) {
+    const dentro = r.firstElementChild;
+    if (dentro) fuori = Math.max(fuori, Math.ceil(dentro.scrollWidth - r.clientWidth));
+  }
+  return fuori;
+}
+
+function applicaScorrimento(el, cfg) {
+  if (!el.isConnected || musicaEl.n !== el) return;
+  if (!cfg.scorre || fermiIMotori()) {
+    if (_scorri.fuori !== 0) { el.classList.remove('scorre'); el.style.removeProperty('--m-fuori'); _scorri.fuori = 0; }
+    return;
+  }
+  const prima = el.classList.contains('scorre');
+  if (prima) el.classList.remove('scorre');
+  const fuori = quantoEsce(el);
+  if (fuori === _scorri.fuori) { if (prima) el.classList.add('scorre'); return; }
+  _scorri.fuori = fuori;
+  if (fuori > 4) {
+    el.style.setProperty('--m-fuori', fuori + 'px');
+    el.style.setProperty('--m-durata', Math.max(6, fuori / 26) + 's');
+    el.classList.add('scorre');
+  } else {
+    el.style.removeProperty('--m-fuori');
+  }
+}
+
 function misuraScorrimento(el, cfg) {
-  el.classList.remove('scorre');
-  if (!cfg.scorre || fermiIMotori()) return;
-  requestAnimationFrame(() => {
-    if (!musicaEl.n) return;
-    let fuori = 0;
-    for (const r of el.querySelectorAll('.m-riga')) {
-      const dentro = r.firstElementChild;
-      if (dentro) fuori = Math.max(fuori, dentro.scrollWidth - r.clientWidth);
-    }
-    if (fuori > 4) {
-      el.style.setProperty('--m-fuori', fuori + 'px');
-      el.style.setProperty('--m-durata', Math.max(6, fuori / 26) + 's');
-      el.classList.add('scorre');
-    }
-  });
+  const rifai = () => applicaScorrimento(el, cfg);
+  const frena = () => { clearTimeout(_scorri.fra); _scorri.fra = setTimeout(rifai, 90); };
+
+  if (_scorri.el !== el) { _scorri.el = el; _scorri.fuori = -1; }
+  requestAnimationFrame(rifai);
+
+  if (document.fonts && document.fonts.status !== 'loaded') {
+    document.fonts.ready.then(() => { _scorri.fuori = -1; rifai(); }).catch(() => {});
+  }
+  for (const img of el.querySelectorAll('img')) {
+    if (!img.complete) img.addEventListener('load', frena, { once: true });
+  }
+  if (window.ResizeObserver) {
+    if (_scorri.osserva) _scorri.osserva.disconnect();
+    const ro = new ResizeObserver(frena);
+    for (const r of el.querySelectorAll('.m-riga')) { ro.observe(r); if (r.firstElementChild) ro.observe(r.firstElementChild); }
+    _scorri.osserva = ro;
+  }
 }
 
 const fermiIMotori = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;

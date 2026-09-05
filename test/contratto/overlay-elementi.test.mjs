@@ -414,3 +414,48 @@ test('la scheda aperta di un obiettivo resta aperta quando la lista si ridisegna
   assert.ok(/goal-voce-guscio\[open\]/.test(d), 'non si ricorda quali schede erano aperte');
   assert.ok(/aperte\.has\(d\.dataset\.goalId\)/.test(d), 'e non le riapre dopo aver ridisegnato');
 });
+
+// ── IL LETTORE MUSICA: due cose che «a volte funzionavano» ─────────────────
+
+test('«niente si muove a tempo» ferma davvero le onde', () => {
+  // Prima il ritmo decideva solo la VELOCITÀ delle onde, non se si muovessero:
+  // scegliendo «niente» restavano lì a ballare col loro tempo di default. Chi
+  // legge l'etichetta si aspetta che niente si muova, ed è quello che deve
+  // succedere.
+  const avvii = [...SKIN.matchAll(/([^\n{}]*\{[^}]*animation-play-state:\s*running[^}]*\})/g)]
+    .map((m) => m[1]);
+  assert.ok(avvii.length, 'qualcuno accende l’animazione delle onde');
+  for (const regola of avvii) {
+    if (!regola.includes('m-onde')) continue;
+    assert.match(regola, /:not\(\.ritmo-no\)/,
+      `questa regola fa ballare le onde anche con «niente si muove a tempo»: ${regola.slice(0, 90)}`);
+  }
+  // e la copertina pulsa SOLO quando è stato chiesto «onde e copertina»
+  for (const m of SKIN.matchAll(/([^\n{}]*)\{[^}]*animation:\s*mus-batte[^}]*\}/g)) {
+    assert.match(m[1], /\.ritmo-tutto/, `la copertina pulsa fuori da «onde e copertina»: ${m[1].trim()}`);
+  }
+});
+
+test('lo scorrimento del titolo si rimisura quando cambia ciò che l’ha misurato', () => {
+  // Misurare una volta sola, subito dopo il disegno, è il motivo per cui «a volte
+  // scorre e a volte no»: se il carattere arriva dopo, il testo è largo diverso;
+  // se la copertina arriva dopo, lo spazio è diverso; se la scatola cambia misura
+  // (lo slider della dimensione, OBS che riscala), è diverso ancora. Nessuna di
+  // queste cose rimisurava niente.
+  const corpo = OVL.slice(OVL.indexOf('function misuraScorrimento('));
+  const fine = corpo.indexOf('\n}\n');
+  const f = corpo.slice(0, fine);
+  assert.match(f, /document\.fonts/, 'rimisura quando i caratteri sono pronti');
+  assert.match(f, /ResizeObserver/, 'rimisura quando la scatola cambia misura');
+  assert.match(f, /querySelectorAll\('img'\)/, 'rimisura quando la copertina è arrivata');
+});
+
+test('e si rimisura anche se cambia solo com’è scritto, non il brano', () => {
+  // Stava dentro «se è cambiato il brano»: cambiando il testo della riga, il
+  // carattere o la dimensione, la misura restava quella di prima — cioè sbagliata.
+  const dentroIf = OVL.slice(OVL.indexOf('if (chi !== musicaEl.chi) {'));
+  const blocco = dentroIf.slice(0, dentroIf.indexOf('\n  }\n'));
+  assert.ok(!blocco.includes('misuraScorrimento'),
+    'la misura non deve dipendere dal cambio di brano: cambia anche il resto');
+  assert.match(OVL, /\n  misuraScorrimento\(el, cfg\);/, 'si misura a ogni disegno del lettore');
+});
