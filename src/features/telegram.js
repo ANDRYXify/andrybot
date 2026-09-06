@@ -19,14 +19,19 @@ export const MESSAGGIO_DEFAULT =
   '🔴 <b>{nome}</b> è in diretta!\n\n{titolo}\n🎮 {gioco}\n\n👉 {link}';
 
 // --------------------------------------------------------- chiamata all'API
-async function tgCall(token, metodo, { params = {}, post = false } = {}) {
+async function tgCall(token, metodo, { params = {}, post = false, modulo = null, attesa = 0 } = {}) {
   if (!token) return { ok: false, errore: 'token mancante' };
   const url = `${API}/bot${token}/${metodo}`;
   const ctrl = new AbortController();
-  const to = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  const to = setTimeout(() => ctrl.abort(), attesa || TIMEOUT_MS);
   try {
     let res;
-    if (post) {
+    // Un'immagine non entra in un JSON: si manda a moduli. Passa comunque da
+    // qui — timeout, errori e lettura della risposta sono gli stessi per tutti,
+    // e una seconda strada che li rifà è una seconda strada che li sbaglia.
+    if (modulo) {
+      res = await fetch(url, { method: 'POST', body: modulo, signal: ctrl.signal });
+    } else if (post) {
       res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -90,14 +95,62 @@ export async function inviaMessaggio(token, chatId, testo, { anteprima = true, t
   return tgCall(token, 'sendMessage', { post: true, params });
 }
 
+// Manda una FOTO con la sua didascalia. È la carta della diretta: si vede grande
+// nel gruppo, invece dell'anteprima del link che disegna la piattaforma ed è
+// uguale per tutti.
+//
+// Telegram tiene le didascalie sotto i 1024 caratteri. Un messaggio più lungo
+// NON si taglia: il testo è HTML, e tagliarlo a metà di un tag manderebbe una
+// cosa che Telegram rifiuta. Chi chiama lo sa e manda il testo a parte.
+export const DIDASCALIA_MAX = 1024;
+
+export async function inviaFoto(token, chatId, png, didascalia = '', { threadId = '' } = {}) {
+  if (!png || !png.length) return { ok: false, errore: 'nessuna immagine' };
+  const modulo = new FormData();
+  modulo.append('chat_id', String(chatId));
+  modulo.append('photo', new Blob([png], { type: 'image/png' }), 'live.png');
+  if (didascalia) {
+    modulo.append('caption', String(didascalia));
+    modulo.append('parse_mode', 'HTML');
+  }
+  const t = String(threadId || '').trim();
+  if (t) modulo.append('message_thread_id', t);
+  // Un'immagine parte più lenta di una riga di testo: il tempo di prima la
+  // taglierebbe a metà del caricamento.
+  return tgCall(token, 'sendPhoto', { modulo, attesa: 30000 });
+}
+
 // Manda lo STESSO testo a piu destinazioni (gruppo, canale, topic). Sequenziale
 // di proposito: Telegram limita la frequenza, e una destinazione che fallisce
 // non deve impedire alle altre di ricevere. Ritorna un esito per destinazione.
-export async function diffondi(token, destinazioni, testo, { anteprima = true } = {}) {
+export async function diffondi(token, destinazioni, testo, { anteprima = true, foto = null } = {}) {
+  // Con la CARTA della diretta il messaggio diventa la didascalia di una foto.
+  // Una didascalia però sta sotto i 1024 caratteri, e il testo è HTML: tagliarlo
+  // a metà di un tag manderebbe una cosa che Telegram rifiuta. Quindi o ci sta
+  // tutto, o la foto va da sola e il testo la segue — mai un testo mutilato.
+  const conFoto = !!(foto && foto.length);
+  const didascalia = conFoto && String(testo || '').length <= DIDASCALIA_MAX ? testo : '';
   const out = [];
   for (const d of (destinazioni || [])) {
-    const r = await inviaMessaggio(token, d.chat_id, testo, { anteprima, threadId: d.thread_id })
-      .catch((e) => ({ ok: false, errore: e?.message || String(e) }));
+    let r;
+    if (conFoto) {
+      r = await inviaFoto(token, d.chat_id, foto, didascalia, { threadId: d.thread_id })
+        .catch((e) => ({ ok: false, errore: e?.message || String(e) }));
+      // La foto è arrivata ma il testo non ci stava dentro: adesso lo si manda.
+      if (r.ok && !didascalia && testo) {
+        await inviaMessaggio(token, d.chat_id, testo, { anteprima: false, threadId: d.thread_id }).catch(() => {});
+      }
+      // Se la foto non parte, l'annuncio non si perde: si manda come si è
+      // sempre fatto. Un guasto della grafica non deve spegnere l'avviso.
+      if (!r.ok) {
+        log.warn(`telegram: carta non inviata a ${d.titolo || d.chat_id} (${r.errore}) — mando il testo`);
+        r = await inviaMessaggio(token, d.chat_id, testo, { anteprima, threadId: d.thread_id })
+          .catch((e) => ({ ok: false, errore: e?.message || String(e) }));
+      }
+    } else {
+      r = await inviaMessaggio(token, d.chat_id, testo, { anteprima, threadId: d.thread_id })
+        .catch((e) => ({ ok: false, errore: e?.message || String(e) }));
+    }
     if (!r.ok) log.warn(`telegram → ${d.titolo || d.chat_id}${d.thread_nome ? ' / ' + d.thread_nome : ''}: ${r.errore}`);
     out.push({ dest: d, ...r });
   }

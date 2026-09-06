@@ -33,6 +33,8 @@ import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { makeLog } from '../logger.js';
+import { carteLive, streamers } from '../db.js';
+import { piattaformaDi, nomeSu } from '../identita.js';
 
 const log = makeLog('carta');
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -136,6 +138,111 @@ export const NOMI_TEMI = Object.keys(TEMI);
 // Il tema giusto per una piattaforma, quando lo streamer non ha scelto.
 export function temaPerPiattaforma(p) {
   return TEMI[p] ? p : 'twitch';
+}
+
+// ── la validazione ─────────────────────────────────────────────────────────
+//
+// La carta arriva dall'EDITOR, cioè dalla rete, cioè da fuori. Ogni valore va a
+// finire dentro un disegno: un colore diventa un attributo, un numero diventa
+// una coordinata. Non si controlla «se sembra strano»: si accetta SOLO la forma
+// giusta e si ricade sul valore buono. Quello che non è un colore non entra, e
+// non c'è una strada in cui possa entrare.
+
+const NOMI_CARATTERI = CARATTERI.map(([n]) => n);
+const COLORE = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
+
+const colore = (v, difetto) => (COLORE.test(String(v || '')) ? String(v) : difetto);
+const numero = (v, min, max, difetto) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.max(min, Math.min(max, Math.round(n))) : difetto;
+};
+const unoDi = (v, elenco, difetto) => (elenco.includes(v) ? v : difetto);
+const frase = (v, max, difetto = '') => {
+  const t = String(v ?? '').replace(/[\r\n\t]/g, ' ').trim();
+  return t ? t.slice(0, max) : difetto;
+};
+
+export function normElemento(e, W, H) {
+  const tipo = unoDi(e?.tipo, TIPI, 'testo');
+  const base = {
+    id: frase(e?.id, 24) || tipo,
+    tipo,
+    spento: e?.spento === true,
+    x: numero(e?.x, -W, W * 2, 0),
+    y: numero(e?.y, -H, H * 2, 0),
+  };
+  if (tipo === 'avatar') {
+    return { ...base,
+      d: numero(e?.d, 40, Math.max(W, H), 240),
+      forma: unoDi(e?.forma, FORME_AVATAR, 'tondo'),
+      bordo: colore(e?.bordo, '#FFFFFF'),
+      spessore: numero(e?.spessore, 0, 40, 0),
+      aureola: e?.aureola === true };
+  }
+  if (tipo === 'targhetta') {
+    return { ...base,
+      testo: frase(e?.testo, 40, 'LIVE'),
+      sfondo: colore(e?.sfondo, '#9146FF'),
+      colore: colore(e?.colore, '#FFFFFF'),
+      carattere: unoDi(e?.carattere, NOMI_CARATTERI, 'Archivo Black'),
+      corpo: numero(e?.corpo, 10, 200, 26),
+      punto: e?.punto === true,
+      tagliata: e?.tagliata === true };
+  }
+  if (tipo === 'riga') {
+    return { ...base,
+      larghezza: numero(e?.larghezza, 1, W * 2, 4),
+      altezza: numero(e?.altezza, 1, H * 2, 4),
+      colore: colore(e?.colore, '#FFFFFF') };
+  }
+  if (tipo === 'striscia') {
+    return { ...base,
+      larghezza: numero(e?.larghezza, 2, W, 40),
+      inclinazione: numero(e?.inclinazione, -80, 80, 0),
+      colore: colore(e?.colore, '#53FC18') };
+  }
+  return { ...base,
+    testo: frase(e?.testo, 160, '{nome}'),
+    carattere: unoDi(e?.carattere, NOMI_CARATTERI, 'Archivo'),
+    corpo: numero(e?.corpo, 8, 240, 28),
+    colore: colore(e?.colore, '#FFFFFF'),
+    max: numero(e?.max, 4, 200, 40),
+    spaziatura: numero(e?.spaziatura, -10, 40, 0),
+    maiuscolo: e?.maiuscolo === true };
+}
+
+// Quanti elementi può avere una carta. Non è un numero contro gli abusi: è che
+// oltre, l'immagine diventa illeggibile e la si disegna per niente.
+export const MAX_ELEMENTI = 24;
+
+export function normCarta(c) {
+  const W = numero(c?.larghezza, 400, 2000, MISURA.larghezza);
+  const H = numero(c?.altezza, 200, 1400, MISURA.altezza);
+  const f = c?.fondo || {};
+  const elenco = Array.isArray(c?.elementi) ? c.elementi.slice(0, MAX_ELEMENTI) : [];
+  return {
+    nome: frase(c?.nome, 60, 'La mia carta'),
+    larghezza: W,
+    altezza: H,
+    fondo: {
+      tipo: unoDi(f.tipo, FONDI, 'alone'),
+      tinta: colore(f.tinta, '#0F0A1B'),
+      alone: colore(f.alone, '#A970FF'),
+      alone2: colore(f.alone2, '#772CE8'),
+      cx: numero(f.cx, 0, 100, 18),
+      cy: numero(f.cy, 0, 100, 34),
+      r: numero(f.r, 5, 200, 70),
+    },
+    elementi: elenco.map((e) => normElemento(e, W, H)),
+  };
+}
+
+// La carta che va usata per questo canale: quella sua se ce l'ha, sennò il tema
+// della sua piattaforma. Una funzione sola, così chi disegna e chi mostra
+// l'anteprima non possono mai guardare due carte diverse.
+export function cartaDi({ dati, piattaforma } = {}) {
+  if (dati && Array.isArray(dati.elementi) && dati.elementi.length) return normCarta(dati);
+  return TEMI[temaPerPiattaforma(piattaforma)];
 }
 
 // ── il disegno ─────────────────────────────────────────────────────────────
@@ -290,4 +397,56 @@ export async function avatarDataUri(url, { fetchImpl = fetch } = {}) {
     if (b.length > 3_000_000) return '';
     return `data:${tipo};base64,${b.toString('base64')}`;
   } catch { return ''; }
+}
+
+// ── la carta di QUESTA diretta ─────────────────────────────────────────────
+//
+// Mettere insieme i pezzi (la carta scelta, i dati della diretta, la faccia) sta
+// in un posto solo: la usano l'annuncio vero e l'anteprima nell'editor, e due
+// copie vorrebbero dire un'anteprima che mostra una cosa diversa da quella che
+// parte — il difetto peggiore per un editor.
+export async function datiDiretta(login, info = {}, { conAvatar = true } = {}) {
+  const l = String(login || '').toLowerCase();
+  const s = streamers.get(l) || {};
+  const piattaforma = piattaformaDi(l);
+  const nome = nomeSu(l);
+  const indirizzo = piattaforma === 'kick' ? `https://kick.com/${nome}`
+    : piattaforma === 'youtube' ? `https://youtube.com/@${nome}`
+      : `https://twitch.tv/${nome}`;
+  return {
+    nome: s.display || nome,
+    titolo: String(info.title || info.titolo || ''),
+    gioco: String(info.game_name || info.gioco || ''),
+    login: nome,
+    link: indirizzo,
+    spettatori: String(info.viewer_count ?? info.spettatori ?? 0),
+    piattaforma,
+    avatar: conAvatar && s.avatar ? await avatarDataUri(s.avatar) : '',
+  };
+}
+
+// Il PNG da mandare, o null se non si deve (spenta, o mancano i caratteri).
+//
+// Due canali, e non è un cavillo: `login` è chi possiede il gruppo — sua la
+// levetta e suo il disegno — mentre `chi` è chi sta andando in diretta, e da lui
+// vengono nome, faccia e titolo. Quando un canale annuncia le dirette degli
+// amici, la grafica resta la sua e cambia il contenuto: è quello che uno si
+// aspetta guardando il gruppo.
+//
+// `forza` serve all'anteprima: lì la si vuole vedere anche da spenta.
+export async function pngPerDiretta(login, info = {}, { forza = false, chi = null } = {}) {
+  const c = carteLive.get(login);
+  if (!forza && !c?.attiva) return null;
+  if (!disegnabile()) {
+    log.warn('carta non disegnata: mancano i caratteri in assets/font');
+    return null;
+  }
+  const diChi = String(chi || login).toLowerCase();
+  const carta = cartaDi({ dati: c?.dati, piattaforma: piattaformaDi(diChi) });
+  try {
+    return await pngCarta(carta, await datiDiretta(diChi, info));
+  } catch (e) {
+    log.warn(`carta di #${diChi}: ${e?.message || e}`);
+    return null;
+  }
 }

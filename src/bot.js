@@ -26,6 +26,7 @@ import * as songrequest from './features/songrequest.js';
 import * as vip from './features/vip.js';
 import * as ruoli from './features/ruoli.js';
 import * as telegram from './features/telegram.js';
+import * as cartaLive from './features/cartalive.js';
 import * as discord from './features/discord.js';
 import * as contatori from './features/contatori.js';
 import * as antispam from './features/antispam.js';
@@ -822,7 +823,7 @@ export class BotManager {
       const conf = tgConf.get(login);
       if (conf?.attivo && conf.token) {
         const testo = avvisi.messaggio(conNome, piattaforma === 'twitch' ? conf.messaggio : '');
-        const r = await this._diffondiTelegram(login, conf, avvisi.eventoDi(piattaforma), login, testo, { pin: true });
+        const r = await this._diffondiTelegram(login, conf, avvisi.eventoDi(piattaforma), login, testo, { pin: true, info: d });
         inviati += r.inviati || 0;
       }
     } catch (e) { log.error(`avviso Telegram ${piattaforma} #${login}:`, e?.message || e); }
@@ -887,11 +888,17 @@ export class BotManager {
   // Manda un avviso a TUTTE le destinazioni ammesse per quell'evento e quello
   // streamer (gruppo, canale, topic). Ogni destinazione ricorda il proprio
   // message_id, così a live finita si chiude quella giusta in ognuna.
-  async _diffondiTelegram(login, conf, evento, streamerLogin, testo, { pin = false, chi = null } = {}) {
+  async _diffondiTelegram(login, conf, evento, streamerLogin, testo, { pin = false, chi = null, info = null } = {}) {
     tgDest.migra(login, conf);                       // il vecchio gruppo unico diventa la prima destinazione
     const dest = tgDest.perEvento(login, evento, streamerLogin);
     if (!dest.length) return { inviati: 0 };
-    const esiti = await telegram.diffondi(conf.token, dest, testo, { anteprima: true });
+    // LA CARTA: solo per l'annuncio della diretta. Un «è finita» o un nuovo
+    // video non vogliono una locandina, e mandarla lo stesso vorrebbe dire una
+    // figura grande per una notizia piccola.
+    const foto = avvisi.eUnaDiretta(evento)
+      ? await cartaLive.pngPerDiretta(login, info || {}, { chi: streamerLogin }).catch(() => null)
+      : null;
+    const esiti = await telegram.diffondi(conf.token, dest, testo, { anteprima: true, foto });
     let inviati = 0;
     for (const e of esiti) {
       if (!e.ok) continue;
@@ -939,7 +946,7 @@ export class BotManager {
           if (streamId === a.ultima_live) continue;      // già annunciata
           const testo = telegram.costruisciMessaggioLive(
             { login: a.login, display: a.display || a.login }, info, a.messaggio || conf.messaggio);
-          const r = await this._diffondiTelegram(ch, conf, 'live', a.login, testo, { pin: true, chi: a.login });
+          const r = await this._diffondiTelegram(ch, conf, 'live', a.login, testo, { pin: true, chi: a.login, info });
           if (r.inviati) tgAmici.setUltimaLive(ch, a.login, streamId);
         }
       } catch (e) { log.debug(`amici Telegram #${ch}:`, e?.message || e); }
