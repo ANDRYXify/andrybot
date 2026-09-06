@@ -477,7 +477,7 @@ function widget(id, cfg, valore) {
     el.innerHTML = '<span class="w-ico"></span><span class="w-testo"></span>';
     widgetEl[id] = el;
   }
-  (wboxes[ang] || wboxes['basso-destra']).appendChild(el);
+  posa(wboxes[ang] || wboxes['basso-destra'], el);
 
   posaElemento(el, id === 'ultimoSub' ? 'ws' : 'wf', cfg);
   const st = cfg.stile || {};
@@ -575,7 +575,7 @@ function unGoal(cfg, valore) {
       + '<div class="g-barra"><i></i></div>';
     goalEl[id] = el;
   }
-  (wboxes[cfg.posizione] || wboxes['alto-sinistra'] || document.body).appendChild(el);
+  posa(wboxes[cfg.posizione] || wboxes['alto-sinistra'] || document.body, el);
   const st = cfg.stile || {};
   el.className = 'ovl-widget ovl-goal dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');
   posaElemento(el, 'goal:' + id, cfg);
@@ -595,6 +595,10 @@ function goal(lista, conti) {
   const vivi = new Set();
   for (const g of (Array.isArray(lista) ? lista : [])) { vivi.add(g.id); unGoal(g, (conti || {})[g.id]); }
   for (const id of Object.keys(goalEl)) if (!vivi.has(id)) { goalEl[id].remove(); delete goalEl[id]; }
+}
+
+function posa(box, el) {
+  if (box && el.parentNode !== box) box.appendChild(el);
 }
 
 const musicaEl = {};
@@ -728,7 +732,7 @@ function disegnaMusica() {
       + '<span class="m-onde"><i></i><i></i><i></i><i></i></span>';
     musicaEl.n = el;
   }
-  (wboxes[cfg.posizione] || wboxes['basso-sinistra'] || document.body).appendChild(el);
+  posa(wboxes[cfg.posizione] || wboxes['basso-sinistra'] || document.body, el);
   restaMusica(el);
 
   const st = cfg.stile || {};
@@ -921,7 +925,7 @@ function disegnaTimer() {
     timerEl.n = el;
   }
   if (timerEl.uscita) { clearTimeout(timerEl.uscita); timerEl.uscita = 0; el.classList.remove('esce'); }
-  (wboxes[cfg.posizione] || wboxes['alto-destra'] || document.body).appendChild(el);
+  posa(wboxes[cfg.posizione] || wboxes['alto-destra'] || document.body, el);
   el.className = 'ovl-widget ovl-timer dim-' + ((cfg.stile || {}).dim || 'media') + ' ' + classiIdentita(cfg.stile, 'nessuna')
     + (finito ? ' finito' : '') + (el.classList.contains('dentro') ? ' dentro' : '');
   vestiElemento(el, cfg, 'nessuna', 'timer');

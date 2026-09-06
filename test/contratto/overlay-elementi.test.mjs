@@ -479,3 +479,27 @@ test('e si rimisura anche se cambia solo com’è scritto, non il brano', () => 
     'la misura non deve dipendere dal cambio di brano: cambia anche il resto');
   assert.match(OVL, /\n  misuraScorrimento\(el, cfg\);/, 'si misura a ogni disegno del lettore');
 });
+
+test('un elemento che resta a schermo non viene ri-appeso a ogni disegno', () => {
+  // Ri-appendere un nodo che è GIÀ dove deve stare non è un'operazione a vuoto:
+  // il DOM lo toglie e lo rimette, e togliere un elemento dal documento ANNULLA
+  // le sue animazioni. Al rimetterlo ripartono da zero. Da fuori si vede il
+  // vinile che gira e «a una certa si blocca e ricomincia» — a ogni lettura del
+  // brano, cioè continuamente. Misurato in un browser vero: dopo il ri-append
+  // l'animazione era a 0 invece che a 1517ms nel suo giro.
+  //
+  // Vale per tutti e quattro i pezzi che restano a schermo (contatori,
+  // obiettivo, musica, timer), non solo per il disco: le onde e il titolo che
+  // scorre ripartivano allo stesso modo.
+  const riAppesi = [...OVL.matchAll(/^\s*\(?wboxes\[[^\n]*\.appendChild\(/gm)];
+  assert.equal(riAppesi.length, 0,
+    `questi rimettono a posto un elemento che c'è già, e gli azzerano le animazioni: ${riAppesi.map((m) => m[0].trim()).join(' · ')}`);
+
+  const posa = OVL.slice(OVL.indexOf('function posa('));
+  assert.match(posa.slice(0, 200), /parentNode !== box/,
+    'si posa solo se non è già dov’è: senza il confronto, la posa è un ri-append travestito');
+
+  // e tutti e quattro ci passano
+  const quanti = (OVL.match(/\n\s*posa\(wboxes\[/g) || []).length;
+  assert.equal(quanti, 4, `i pezzi che restano a schermo sono quattro, e devono passare tutti dalla posa (${quanti})`);
+});
