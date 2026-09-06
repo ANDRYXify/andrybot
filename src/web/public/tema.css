@@ -47,7 +47,7 @@
   --tono-40: radial-gradient(var(--contorno) 2.14px, transparent 2.2px);
   --tono-60: radial-gradient(var(--contorno) 2.62px, transparent 2.7px);
 
-  --fuoco-linee: repeating-conic-gradient(from 0deg at 50% 50%, var(--contorno) 0deg .9deg, transparent .9deg 7deg);
+  --fuoco-linee: repeating-conic-gradient(from 0deg at 50% 50%, var(--contorno) 0deg .52deg, transparent .52deg 4.6deg);
   --corsa-linee: repeating-linear-gradient(90deg, var(--contorno) 0 1.2px, transparent 1.2px 7px);
   --gocce-linee: repeating-linear-gradient(90deg, var(--contorno) 0 2px, transparent 2px 12px);
   --raggi-linee: repeating-conic-gradient(from 0deg at 50% 118%, var(--contorno) 0deg 1.1deg, transparent 1.1deg 9deg);

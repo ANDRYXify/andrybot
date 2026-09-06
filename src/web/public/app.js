@@ -813,6 +813,39 @@ function morphDa(el) {
   } else if (app) app.style.viewTransitionName = '';
 }
 
+let _lampo = null;
+let _lampoVia = 0;
+let _versoVia = 0;
+let _lampoQuando = 0;
+const LAMPO_PAUSA = 420;
+
+function _duraImpatto() {
+  const v = getComputedStyle(document.documentElement).getPropertyValue('--t-impatto');
+  const n = parseFloat(v) || 0;
+  return /ms\s*$/.test(v.trim()) || !/s\s*$/.test(v.trim()) ? n : n * 1000;
+}
+
+function battiScena() {
+  if (_menoMoto || document.body.classList.contains('leggero')
+    || document.body.classList.contains('meno-moto')) return 0;
+  const ora = Date.now();
+  if (ora - _lampoQuando < LAMPO_PAUSA) return 0;
+  _lampoQuando = ora;
+  if (!_lampo || !_lampo.isConnected) {
+    _lampo = document.createElement('div');
+    _lampo.className = 'lampo-scena';
+    _lampo.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(_lampo);
+  }
+  _lampo.classList.remove('batte');
+  void _lampo.offsetWidth;
+  _lampo.classList.add('batte');
+  clearTimeout(_lampoVia);
+  const dura = _duraImpatto();
+  _lampoVia = setTimeout(() => { if (_lampo) _lampo.classList.remove('batte'); }, dura + 240);
+  return dura;
+}
+
 function transizione(fn) {
   const drawer = window.matchMedia && window.matchMedia('(max-width: 1200px)').matches;
   if (_menoMoto || drawer || !document.startViewTransition) { fn(); return { finished: Promise.resolve() }; }
@@ -17805,6 +17838,7 @@ function _scambiaScheda(id, sezioni) {
   sezioni.forEach((p) => {
     rendiCartePieghevoli(p, id);
     p.classList.remove('scambio');
+    [...p.children].forEach((c, i) => { c.style.setProperty('--i', Math.min(i, 6)); });
     void p.offsetWidth;
     if (!_menoMoto) p.classList.add('scambio');
   });
@@ -17836,10 +17870,22 @@ function vaiAScheda(id) {
 
   const sezioni = [...document.querySelectorAll('.pannello-scheda')].filter((p) => p.dataset.scheda === id);
 
-  if (stessaFamiglia(prima, id)) { _scambiaScheda(id, sezioni); return; }
+  if (stessaFamiglia(prima, id)) {
+    try { document.documentElement.dataset.verso = _versoVerso(prima, id); } catch (e) {  }
+    _scambiaScheda(id, sezioni);
+    clearTimeout(_versoVia);
+    _versoVia = setTimeout(() => { delete document.documentElement.dataset.verso; }, 900);
+    return;
+  }
 
   if (org && !_menoMoto) morphDa(org);
   try { document.documentElement.dataset.verso = _versoVerso(prima, id); } catch (e) {  }
+  const attesa = battiScena();
+  if (attesa > 0) { setTimeout(() => _cambiaScena(id, sezioni), attesa); return; }
+  _cambiaScena(id, sezioni);
+}
+
+function _cambiaScena(id, sezioni) {
   const tr = transizione(() => {
     window.scrollTo({ top: 0, behavior: 'auto' });
     morphDa(null);
