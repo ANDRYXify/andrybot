@@ -180,6 +180,38 @@ const LEVETTE = `(() => {
 })()`;
 const sondaLevette = (radice) => LEVETTE.replace('RADICE', JSON.stringify(radice));
 
+// LE FRECCETTE DEI RIQUADRI CHE SI APRONO.
+//
+// Sul sito l'alone del contorno vive su `::after` di TUTTO cio' che si preme,
+// summary compreso. Chi disegna la freccetta sullo stesso `::after` non se ne
+// accorge: non e' un errore, e' l'ultima regola che vince. La freccia sparisce
+// (l'alone la porta a opacita' zero) oppure resta lei e sparisce l'alone.
+// Nessuno dei due casi da' un errore, e leggendo il CSS sembrano tutti a posto.
+// Quindi si CHIEDE AL BROWSER: quella freccia, adesso, si vede?
+const FRECCE = `(() => {
+  const num = (v) => parseFloat(v) || 0;
+  const nome = (e) => (e.tagName.toLowerCase() + (String(e.className || '').trim()
+    ? '.' + String(e.className).split(/\\s+/).filter(Boolean).slice(0, 2).join('.') : '')).slice(0, 44);
+  const mute = [];
+  for (const d of document.querySelectorAll(RADICE + ' details')) {
+    const s = d.querySelector(':scope > summary');
+    if (!s || !s.offsetWidth) continue;
+    if (getComputedStyle(s).listStyleType !== 'none' && !getComputedStyle(s, '::-webkit-details-marker').display) continue;
+    const segni = ['::before', '::after'].map((q) => {
+      const c = getComputedStyle(s, q);
+      const bordi = num(c.borderRightWidth) + num(c.borderBottomWidth) + num(c.borderTopWidth) + num(c.borderLeftWidth);
+      const glifo = c.content !== 'none' && c.content !== '""' && c.content !== 'normal';
+      return { q, segno: c.content !== 'none' && (bordi > 0 || glifo), opac: num(c.opacity),
+        largo: Math.max(num(c.width), glifo ? 6 : 0) };
+    });
+    const viva = segni.find((x) => x.segno && x.opac >= .5 && x.largo >= 3);
+    if (!viva) mute.push({ chi: nome(d), perche: segni.filter((x) => x.segno)
+      .map((x) => x.q + ' opacita ' + x.opac + ', largo ' + Math.round(x.largo) + 'px').join(' · ') || 'nessun segno' });
+  }
+  return mute;
+})()`;
+const sondaFrecce = (radice) => FRECCE.replace('RADICE', JSON.stringify(radice));
+
 const { porta: PORTA, chiudi: chiudiSito } = await apriSito();
 const b = await chromium.launch({ executablePath: CHROMIUM,
   args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox', '--disable-dev-shm-usage'] });
@@ -200,6 +232,9 @@ if (SELFTEST) {
   // La levetta com'era: la pallina cresciuta del bordo, con le posizioni di
   // quando il bordo non c'era.
   await p.addStyleTag({ content: '.levetta::before { box-sizing: content-box !important; height: 19px !important; width: 19px !important; top: 2px !important; }' });
+  // E la freccetta com'era: disegnata sullo stesso ::after dell'alone, che la
+  // spegne. Nel CSS si legge una freccia; a schermo non c'e'.
+  await p.addStyleTag({ content: '.guida-scheda > summary::before, .mini-guida > summary::before, .legenda-var > summary::before { opacity: 0 !important; }' });
   await p.addStyleTag({ content: '.pannello-scheda .carta { margin-bottom: 0 !important; }'
     + '.carta:hover, .carta:focus-within, .btn:hover, .btn:focus-visible { z-index: auto !important; }' });
 }
@@ -207,6 +242,7 @@ if (SELFTEST) {
 const rasati = [];
 const scoperti = [];
 const storte = [];
+const mute = [];
 const schede = await p.evaluate(() => [...document.querySelectorAll('.pannello-scheda')].map((s) => s.dataset.scheda));
 let visitate = 0;
 let passate = 0;
@@ -221,6 +257,14 @@ for (const id of schede) {
     await p.evaluate((v) => { for (const x of document.querySelectorAll('.pannello-scheda.visibile .interruttore input')) x.checked = v; }, acceso);
     for (const x of await p.evaluate(new Function('return ' + sondaLevette('.pannello-scheda.visibile')))) {
       if (!storte.some((y) => y.chi === x.chi && y.perche === x.perche)) storte.push({ dove: id, ...x });
+    }
+  }
+
+  // e le freccette dei riquadri che si aprono: aperti e chiusi
+  for (const aperto of [false, true]) {
+    await p.evaluate((v) => { for (const d of document.querySelectorAll('.pannello-scheda.visibile details')) d.open = v; }, aperto);
+    for (const x of await p.evaluate(new Function('return ' + sondaFrecce('.pannello-scheda.visibile')))) {
+      if (!mute.some((y) => y.chi === x.chi && y.perche === x.perche)) mute.push({ dove: id, ...x });
     }
   }
 
@@ -259,6 +303,12 @@ if (storte.length) {
 } else {
   console.log('  ✓ il pallino delle levette sta in mezzo, e dentro');
 }
+if (mute.length) {
+  console.log(`  ✗ ${mute.length} riquadri che si aprono senza una freccia che si veda`);
+  for (const x of mute.slice(0, 6)) console.log(`      ${x.chi} — ${x.perche}  (${x.dove})`);
+} else {
+  console.log('  ✓ ogni riquadro che si apre mostra la sua freccia');
+}
 if (scoperti.length) {
   console.log(`  ✗ ${scoperti.length} cose col mouse sopra hanno l'ombra coperta da un vicino che viene dopo`);
   for (const x of scoperti.slice(0, 6)) console.log(`      ${x.chi}  ←  ci passa sopra ${x.da}  (${x.dove})`);
@@ -266,9 +316,9 @@ if (scoperti.length) {
   console.log('  ✓ cio\' che si solleva col mouse si solleva anche nell\'ordine di disegno');
 }
 console.log(`\n${visitate} schede guardate, ${passate} passaggi col mouse.`);
-if (rasati.length || scoperti.length || storte.length) {
+if (rasati.length || scoperti.length || storte.length || mute.length) {
   console.log(`${rasati.length} contorni rasati: un bordo che comincia e finisce nel nulla.`);
 } else {
   console.log('Nessun contorno rasato: l\'inchiostro sta tutto dentro. ✓');
 }
-process.exit(rasati.length ? 1 : 0);
+process.exit(rasati.length || mute.length ? 1 : 0);

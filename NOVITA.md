@@ -17,6 +17,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-06
 
+- Le guide «Come funziona», le legende e i riquadri richiudibili hanno lo stesso aspetto degli altri: carta, contorno a inchiostro e titolo scritto a mano.
+- Otto riquadri che si aprono non mostravano nessuna freccia: sembravano testo normale. Ora ce l'hanno tutti.
+
 - Sulle nuvolette corte la coda non sbanda più sull'angolo: resta attaccata al fondo, anche quando la bolla è larga quanto una parola.
 - E non supera più mezza bolla di lunghezza. Prima su una parola sola arrivava a due terzi e sembrava appesa a un filo.
 - Le sezioni ancora vuote non sono più un buco bianco: sono un riquadro col retino, che dice cosa ci comparirà.

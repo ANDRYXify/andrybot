@@ -1837,20 +1837,9 @@ details.carta.sez > summary > h3 .b-ico, details.carta.sez > summary > h3 svg { 
 
 details.carta.sez > summary { padding-top: 0; align-items: flex-start; }
 details.carta.sez > summary > h3 { margin-top: calc(-1 * var(--orlo-3)); margin-bottom: 0; }
-details.carta.sez > summary::after { align-self: center; margin-top: 0; }
+details.carta.sez > summary::before { align-self: center; margin-top: 0; }
 details.carta.sez[open] > summary { border-bottom: 0; margin-bottom: .45rem; }
-details.carta.sez > summary::after,
-.cap-area > summary::after,
-.guida-scheda > summary::after,
-.mini-guida > summary::after,
-.legenda-var > summary::after {
-  border: 0;
-  border-right: 2px solid currentColor;
-  border-bottom: 2px solid currentColor;
-  border-radius: 0;
-  box-shadow: none;
-}
-details.carta.sez > summary::after, .cap-area > summary::after { color: var(--acc); }
+
 
 a:focus-visible, button:focus-visible, .btn:focus-visible, [role="button"]:focus-visible,
 summary:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible,
