@@ -15,8 +15,15 @@
 //
 // Misurato su 17 emoji e 22 segni tipografici: nessuna mancata, nessun falso.
 
-export const EMOJI = /\p{Emoji_Presentation}|\p{Extended_Pictographic}️/u;
-export const EMOJI_G = /\p{Emoji_Presentation}|\p{Extended_Pictographic}️/gu;
+// La definizione sta in UN posto solo, e quel posto e' il motore che disegna le
+// locandine (`src/features/carta-disegno.js`): li' serve nel browser, e quel
+// file non puo' importare niente. Quindi e' lui la fonte, e qui la si prende.
+// Due copie della stessa domanda vorrebbe dire che un giorno un cancello dice
+// «emoji» e l'altro no, sullo stesso carattere.
+import { EMOJI_G as SORGENTE } from '../src/features/carta-disegno.js';
+
+export const EMOJI = new RegExp(SORGENTE.source, 'u');
+export const EMOJI_G = new RegExp(SORGENTE.source, 'gu');
 
 // I pittogrammi trovati in un testo, senza doppioni e in ordine di apparizione.
 export const emojiIn = (testo) => [...new Set(String(testo).match(EMOJI_G) || [])];

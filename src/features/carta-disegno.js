@@ -54,7 +54,31 @@ export const FONDI = ['tinta', 'alone', 'sfumatura'];
 // I segnaposto che si possono scrivere dentro un testo.
 export const SEGNAPOSTO = ['nome', 'titolo', 'gioco', 'login', 'link', 'spettatori', 'piattaforma'];
 
-const esc = (s) => String(s ?? '').replace(/[<>&"']/g, (c) => (
+// LE EMOJI NON SI DISEGNANO, SI TOLGONO.
+//
+// Il rasterizzatore ha i caratteri che gli diamo noi — Anton, Archivo — e
+// nessuno di quelli sa disegnare un pittogramma: al loro posto esce il
+// quadratino vuoto. Un titolo di Twitch ne e' pieno, e la locandina usciva con
+// «▨▨Blind Run | ▨▨ !social».
+//
+// Si tolgono QUI, nel disegno, e non in chi prepara i dati: cosi' l'anteprima
+// dell'editor e il PNG che parte fanno la stessa cosa. Se lo facesse solo il
+// server, l'editor mostrerebbe un'emoji che poi nella locandina non c'e' — e
+// un'anteprima che mente e' il difetto peggiore per un editor.
+//
+// Va anche nella direzione giusta: nelle grafiche del sito le emoji non ci
+// vanno, perche' il disegno e' a china e un'emoji la disegna qualcun altro.
+//
+// Un'emoji non e' «un carattere di quel blocco Unicode»: e' un carattere che il
+// sistema disegna A COLORI invece che come lettera, e Unicode lo dice con
+// `Emoji_Presentation`. Il secondo pezzo prende i pittogrammi che sarebbero
+// testo ma che il selettore U+FE0F promuove — il caso del triangolo d'avviso.
+export const EMOJI_G = /\p{Emoji_Presentation}|\p{Extended_Pictographic}\uFE0F/gu;
+
+const senzaEmoji = (s) => String(s ?? '').replace(EMOJI_G, '')
+  .replace(/[\u200D\uFE0F\uFE0E]/g, '').replace(/\s{2,}/g, ' ').trim();
+
+const esc = (s) => senzaEmoji(s).replace(/[<>&"']/g, (c) => (
   { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[c]));
 
 // Il testo non si può misurare senza un motore di caratteri, quindi si taglia a
