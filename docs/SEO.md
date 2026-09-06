@@ -366,3 +366,20 @@ cerca da fuori.
 
 Sitemap, indice delle guide e collegamenti fra guide si sono aggiornati da soli:
 una guida è una voce in `GUIDE`, e quel fatto sta scritto in un posto solo.
+
+
+## E il tema, che era rimasto indietro
+
+Le guide hanno un foglio di stile loro — dentro la pagina, tre chilobyte, una
+richiesta in meno — ed era rimasto al tema di prima: bordi da un pixel, angoli
+tondi da quattordici, riquadri piatti. Titoli e numeri dei passi erano già
+inchiostrati, il resto no.
+
+Adesso parlano la stessa lingua del pannello, e con gli **stessi token**, non con
+copie: carta col retino sotto (mai sopra al testo), contorno d'inchiostro con
+angoli disuguali e ombra piena sulle vignette dell'indice, l'indice interno come
+**didascalia** (barra a sinistra e angolo piegato), la freccia d'inchiostro sulle
+domande al posto del più e del meno, e il pulsante che si abbassa quando lo premi.
+
+Il cancello dei bordi ora guarda anche `src/web/guide.js`: era fuori dal suo
+raggio, ed è la stessa lezione di sempre — la regola era giusta, il campione no.
