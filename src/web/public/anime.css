@@ -67,7 +67,7 @@ a:hover { color: var(--acc); }
   transition: transform .3s var(--an-morbido), box-shadow var(--molla);
 }
 @media (hover: hover) {
-#cerca-lancia:hover { transform: translateY(-2px); box-shadow: var(--alone-contorno), var(--ombra-ink-alta); }
+#cerca-lancia:hover { transform: translateY(-2px); box-shadow: var(--alone-contorno), var(--ombra-ink-alta); position: relative; z-index: 3; }
 }
 #cerca-lancia:active { transform: translate(2px, 3px); box-shadow: var(--alone-contorno), var(--ombra-ink-timbro); }
 #cerca-lancia svg { display: block; margin: 0 auto; }
@@ -274,7 +274,7 @@ body.leggero .cerca-voce, body.leggero .cerca-sugg .chip-domanda, body.leggero .
   transition: transform var(--colpo) var(--scatto), box-shadow var(--colpo) var(--scatto), background .3s ease, color .3s ease;
 }
 @media (hover: hover) {
-#plancia-lancia:hover { transform: translate(-2px, -3px); box-shadow: var(--alone-contorno), var(--ombra-ink-alta); }
+#plancia-lancia:hover { transform: translate(-2px, -3px); box-shadow: var(--alone-contorno), var(--ombra-ink-alta); position: relative; z-index: 3; }
 }
 #plancia-lancia:active { transform: translate(2px, 2px); box-shadow: var(--alone-contorno), var(--ombra-ink-timbro); }
 #plancia-lancia.modo-on { background: var(--acc); color: var(--su-acc); }
@@ -1806,7 +1806,7 @@ input[type="color"]:hover { box-shadow: var(--alone-contorno), var(--ombra-ink-t
 }
 
 @media (hover: hover) {
-.pannello-scheda .carta:hover { box-shadow: var(--alone-contorno), var(--ombra-ink-alta); }
+.pannello-scheda .carta:hover { box-shadow: var(--alone-contorno), var(--ombra-ink-alta); position: relative; z-index: 2; }
 }
 
 .carta > h2:first-child, details.carta.sez > summary > h3 {
