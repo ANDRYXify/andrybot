@@ -17,6 +17,10 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-06
 
+- Le nuvolette compaiono dove sei col cursore, non al centro della cosa che stai puntando. Sulla tela dell'editor finivano lontanissime.
+- E sono palloncini veri: forma tonda, becco che punta dove guardi. Prima erano rettangoli con gli angoli smussati.
+- Passando sopra alle vesti dell'overlay adesso c'è scritto com'è fatta ognuna, invece del nome che si legge già sul tasto.
+
 - Le nuvolette col cursore sopra adesso sono di tre tipi: fumetto normale per un comando, squadrato e rosso per le cose che fanno danni, nuvola di pensiero per spiegare un valore o una parola.
 - Ce ne sono ventidue in più, sui comandi il cui nome non dice cosa succede: «Studia ora», «Crea clip», «Avvia raid», «Rileva gruppo», «Togli dal web» e altri.
 

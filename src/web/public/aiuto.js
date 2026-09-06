@@ -5,11 +5,16 @@
   const RITARDO = 340;
   const GRAZIA = 90;
   const STACCO = 14;
-  const BECCO = 20;
+  const BECCO = 36;
+  const GRANDE_L = 170;
+  const GRANDE_A = 80;
 
   let bolla = null;
   let acceso = null;
   let attesa = 0;
+  let px = 0;
+  let py = 0;
+  let colDito = false;
   let uscita = 0;
   let seq = 0;
 
@@ -59,16 +64,21 @@
     const m = b.getBoundingClientRect();
     const larg = document.documentElement.clientWidth;
     const alt = document.documentElement.clientHeight;
-    let x = r.left + r.width / 2 - m.width / 2;
+    const seguiX = !colDito && r.width > GRANDE_L && px >= r.left && px <= r.right;
+    const seguiY = !colDito && r.height > GRANDE_A && py >= r.top && py <= r.bottom;
+    const ancoraX = seguiX ? px : r.left + r.width / 2;
+    const cima = seguiY ? py : r.top;
+    const fondo = seguiY ? py : r.bottom;
+    let x = ancoraX - m.width / 2;
     x = Math.max(10, Math.min(x, larg - m.width - 14));
-    let y = r.top - m.height - STACCO;
+    let y = cima - m.height - STACCO;
     let sopra = true;
-    if (y < 10) { y = r.bottom + STACCO; sopra = false; }
+    if (y < 10) { y = fondo + STACCO; sopra = false; }
     if (y + m.height > alt - 14) y = Math.max(10, alt - m.height - 14);
     b.style.left = Math.round(x) + 'px';
     b.style.top = Math.round(y) + 'px';
     b.classList.toggle('sotto', !sopra);
-    const punta = r.left + r.width / 2 - x;
+    const punta = ancoraX - x;
     b.style.setProperty('--becco', Math.round(Math.max(BECCO, Math.min(punta, m.width - BECCO))) + 'px');
   }
 
@@ -103,8 +113,15 @@
     attesa = setTimeout(() => { if (el.isConnected) mostra(el); }, RITARDO);
   }
 
+  document.addEventListener('pointermove', (ev) => {
+    if (tocco(ev)) return;
+    px = ev.clientX; py = ev.clientY;
+  }, true);
+
   document.addEventListener('pointerover', (ev) => {
     if (tocco(ev)) return;
+    px = ev.clientX; py = ev.clientY;
+    colDito = false;
     const el = bersaglio(ev.target);
     if (!el) { if (acceso && !uscita) uscita = setTimeout(spegni, GRAZIA); return; }
     if (el === acceso) { clearTimeout(uscita); uscita = 0; return; }
@@ -126,6 +143,7 @@
     const el = bersaglio(ev.target);
     if (!el) return;
     spegni();
+    colDito = true;
     mostra(el);
   });
 
