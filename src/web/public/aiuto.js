@@ -4,7 +4,8 @@
 (function () {
   const RITARDO = 340;
   const GRAZIA = 90;
-  const STACCO = 10;
+  const STACCO = 14;
+  const BECCO = 20;
 
   let bolla = null;
   let acceso = null;
@@ -51,14 +52,16 @@
     const larg = document.documentElement.clientWidth;
     const alt = document.documentElement.clientHeight;
     let x = r.left + r.width / 2 - m.width / 2;
-    x = Math.max(8, Math.min(x, larg - m.width - 8));
+    x = Math.max(10, Math.min(x, larg - m.width - 14));
     let y = r.top - m.height - STACCO;
     let sopra = true;
-    if (y < 8) { y = r.bottom + STACCO; sopra = false; }
-    if (y + m.height > alt - 8) y = Math.max(8, alt - m.height - 8);
+    if (y < 10) { y = r.bottom + STACCO; sopra = false; }
+    if (y + m.height > alt - 14) y = Math.max(10, alt - m.height - 14);
     b.style.left = Math.round(x) + 'px';
     b.style.top = Math.round(y) + 'px';
     b.classList.toggle('sotto', !sopra);
+    const punta = r.left + r.width / 2 - x;
+    b.style.setProperty('--becco', Math.round(Math.max(BECCO, Math.min(punta, m.width - BECCO))) + 'px');
   }
 
   function mostra(el) {
