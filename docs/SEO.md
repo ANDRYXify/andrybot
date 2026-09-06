@@ -345,3 +345,24 @@ una via privata al prefetch e ci si scorda di `robots.txt`, diventa rossa.
   non le ha ancora messe in indice. Su un sito giovane è normale e non è un
   errore di configurazione; si risolve con link interni e col tempo, non con una
   riga di codice.
+
+
+## Le due guide che mancavano
+
+Il sito prometteva nel titolo «bot per Twitch **e Kick**», e nelle guide la
+parola *Kick* compariva **zero volte**: chi cercava «bot Kick italiano» non aveva
+dove atterrare. E «bot moderazione Twitch» aveva solo `/manuale/moderazione` —
+ma un manuale è documentazione per chi è già dentro, non una porta per chi
+cerca da fuori.
+
+- `/guide/bot-per-kick-italiano` — cosa c'è davvero su Kick e perché è diverso.
+  Il fatto che spiega tutto il resto: su Twitch il bot si collega alla chat e
+  ascolta, su Kick è Kick che manda i messaggi a un **webhook**. Da lì discende
+  che un bot locale non basta più e che su Kick trovi quasi solo servizi in cloud.
+- `/guide/bot-moderazione-twitch` — cosa fa già Twitch da solo (AutoMod, chat
+  solo follower, termini bloccati) e cosa aggiunge un bot. Con l'errore che fanno
+  tutti: stringere troppo dopo una brutta serata. I falsi positivi non si vedono,
+  perché chi viene zittito per sbaglio non protesta — se ne va.
+
+Sitemap, indice delle guide e collegamenti fra guide si sono aggiornati da soli:
+una guida è una voce in `GUIDE`, e quel fatto sta scritto in un posto solo.

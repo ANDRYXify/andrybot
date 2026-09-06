@@ -339,6 +339,117 @@ export const GUIDE = [
       { d: 'Gli overlay rallentano lo stream?', r: 'Ognuno è una pagina web che gira mentre codifichi video, quindi sì, un po\'. Su un PC al limite conviene tenere solo quelli che si usano davvero e spuntare l\'opzione che spegne la sorgente quando non è visibile.' },
     ],
   },
+
+  {
+    slug: 'bot-per-kick-italiano',
+    schede: ['stato'],
+    titolo: 'Bot per Kick in italiano: cosa c\'è e cosa cambia da Twitch | SocialBot',
+    h1: 'Bot per Kick: cosa c\'è, e cosa cambia da Twitch',
+    desc: 'Su Kick l\'API ufficiale c\'è, ma funziona in modo diverso da quella di Twitch — e si vede. Quali bot ci sono davvero, cosa sanno fare e cosa no.',
+    aggiornata: '2026-09-06',
+    tipo: 'articolo',
+    corpo: [
+      { p: [
+        'Se arrivi da Twitch e cerchi il tuo bot su Kick, la prima cosa che noti è che non c\'è. Nightbot su Kick non esiste. StreamElements sì, ma non è lo stesso prodotto. Non è pigrizia di chi li fa: è che Kick, tecnicamente, funziona in un altro modo.',
+        'Vale la pena capire quale, perché spiega quasi tutte le differenze che troverai.',
+      ] },
+      { h2: 'L\'API ufficiale c\'è', p: [
+        'Kick ha una API pubblica documentata e un accesso con OAuth: si autorizza un\'applicazione dal proprio account, si concedono permessi precisi, e li si può revocare. Da lì si legge il canale, si scrive in chat, si ricevono gli eventi e — con un permesso a parte — si modera.',
+        'Quindi la domanda «i bot su Kick sono sicuri?» ha la stessa risposta che su Twitch: dipende da cosa chiedono. Un servizio che ti chiede la password di Kick dentro il suo sito non sta usando l\'API ufficiale, e va chiuso.',
+      ] },
+      { h2: 'La differenza che si sente: i messaggi arrivano al contrario', p: [
+        'Su Twitch un bot si collega alla chat e resta in ascolto: è il bot che va a prendersi i messaggi. Su Kick la strada ufficiale è rovesciata — è Kick che li manda, con un <strong>webhook</strong>: il bot deve avere un indirizzo pubblico raggiungibile da internet, dichiararlo nell\'account sviluppatore, e chiedere il permesso di iscriversi agli eventi.',
+        'Da qui discendono quasi tutte le differenze pratiche. Un bot che gira sul tuo computer su Twitch funziona; su Kick, con la strada ufficiale, non basta più, perché il tuo computer non ha un indirizzo pubblico. Per questo su Kick trovi quasi solo servizi in cloud.',
+        'E per questo un bot su Kick va sempre collegato dal sito del servizio: non c\'è un equivalente del «rendilo moderatore e sei a posto».',
+      ] },
+      { h2: 'Quali bot ci sono davvero', ul: [
+        '<strong>Nightbot</strong>: non c\'è. Non è annunciato.',
+        '<strong>StreamElements</strong>: c\'è, con comandi e alert. La parte di moderazione è più magra di quella su Twitch. Se ti aspetti la parità, resterai deluso.',
+        '<strong>Fossabot</strong>: supporta Kick, e la sua forza — la moderazione — si porta dietro.',
+        '<strong>Botrix</strong> e <strong>Botisimo</strong>: nati o cresciuti su Kick, sono la cosa più vicina a un Nightbot per quella piattaforma.',
+        '<strong>SocialBot</strong>: scrive con il tuo account, come su Twitch.',
+      ] },
+      { h2: 'Cosa non aspettarti', p: [
+        'La parità con Twitch, oggi, non c\'è per nessuno. Twitch ha quindici anni di API e un ecosistema che ci si è appoggiato sopra; l\'API pubblica di Kick è recente, e alcune cose che su Twitch dai per scontate lì non ci sono ancora o funzionano in modo diverso.',
+        'La conseguenza pratica: se stai su tutte e due, tieni le aspettative sul minimo comune. Comandi, timer e avvisi funzionano bene ovunque. Le difese automatiche più fini, no — e non perché il bot sia peggiore, ma perché la piattaforma espone meno.',
+      ] },
+      { h2: 'Se stai su Twitch e Kick insieme', p: [
+        'Il caso più comune è trasmettere su entrambe, o spostarsi. Due consigli che valgono a prescindere dal bot che scegli.',
+      ], ul: [
+        '<strong>Tieni i comandi in un posto solo.</strong> Due elenchi separati divergono in una settimana, e poi non sai più quale è quello buono.',
+        '<strong>Non dare per scontato che la moderazione si comporti uguale.</strong> Prova un messaggio che dovrebbe essere bloccato, su entrambe, prima di fidarti.',
+      ] },
+      { h2: DENTRO, p: [
+        'Kick si collega dalla scheda <a href="/pannello#stato">Stato</a>, con lo stesso pulsante di Twitch.',
+      ], passi: [
+        { t: 'Apri la scheda Stato e premi «Registrati con Kick»', d: 'Ti porta su Kick, non su un modulo dove scrivi la password qui. Se un servizio ti chiede la password di Kick dentro il suo sito, chiudi la pagina.' },
+        { t: 'Leggi i quattro permessi di base', d: 'Sapere chi ha autorizzato, leggere titolo e stato della diretta, scrivere in chat, ricevere gli eventi. Sono il minimo perché il bot funzioni: con meno, ammutolisce.' },
+        { t: 'Decidi se vuoi anche la moderazione', d: 'Bannare e cancellare messaggi sono <strong>due permessi a parte</strong>, chiesti solo se accendi la moderazione. Se non ti serve, il bot non li ha proprio — e lo puoi verificare tu dalle connessioni del tuo account Kick, invece di fidarti.' },
+        { t: 'Controlla che gli eventi arrivino', d: 'Dopo il collegamento la scheda dice se l\'iscrizione agli eventi è riuscita. Da Kick riceviamo i messaggi di chat, i follow, gli abbonamenti (nuovi, rinnovi e regalati) e il cambio di stato della diretta.' },
+        { t: 'Usa il bot come su Twitch', d: 'Comandi, avvisi e <a href="/guide/overlay-obs-per-twitch">overlay</a> funzionano allo stesso modo: quello che cambia è sotto, non nel pannello.' },
+      ] },
+    ],
+    faq: [
+      { d: 'Nightbot funziona su Kick?', r: 'No. Nightbot non è disponibile su Kick e non è stato annunciato. Su Kick trovi StreamElements, Fossabot, Botrix, Botisimo e SocialBot.' },
+      { d: 'Perché su Kick ci sono meno bot che su Twitch?', r: 'Perché la strada ufficiale per ricevere i messaggi è a webhook: il bot deve avere un indirizzo pubblico raggiungibile da internet. Questo esclude quasi tutti i bot che girano sul computer dello streamer e lascia il campo ai servizi in cloud.' },
+      { d: 'Un bot su Kick può bannare e mettere in timeout?', r: 'Sì, ma serve un permesso di moderazione concesso a parte, oltre a quelli di base. Se non lo concedi, il bot può scrivere e leggere ma non moderare.' },
+      { d: 'Posso usare lo stesso bot su Twitch e Kick?', r: 'Sì, alcuni servizi coprono entrambe. Tieni conto che le funzioni non sono identiche: la moderazione automatica su Kick è in genere più semplice, perché la piattaforma espone meno.' },
+      { d: 'Devo rendere il bot moderatore anche su Kick?', r: 'Dipende dal bot. Quelli che scrivono con un account proprio in genere sì. Un bot che agisce con il tuo account no, perché usa i permessi che gli hai concesso tu.' },
+    ],
+  },
+
+  {
+    slug: 'bot-moderazione-twitch',
+    schede: ['regole'],
+    titolo: 'Bot per moderare la chat di Twitch: cosa fa davvero | SocialBot',
+    h1: 'Bot per moderare la chat di Twitch',
+    desc: 'Twitch ha già AutoMod, chat solo follower e parole vietate. Cosa aggiunge davvero un bot, cosa conviene lasciare a Twitch, e come non cacciare le persone vere.',
+    aggiornata: '2026-09-06',
+    tipo: 'articolo',
+    corpo: [
+      { p: [
+        'Prima di cercare un bot per moderare, vale la pena sapere cosa fa già Twitch da solo: parecchio. AutoMod filtra il linguaggio per categorie e livelli, puoi mettere una lista di termini bloccati, la chat solo per follower con un\'attesa minima, la modalità lenta, la chat solo per abbonati, e il blocco dei link.',
+        'Se non hai acceso queste, accendile prima: sono gratis, non richiedono permessi a nessuno e coprono la maggior parte del rumore.',
+        'Un bot serve per quello che rimane. Ed è meno di quello che pensi, ma è la parte che fa più male.',
+      ] },
+      { h2: 'Cosa aggiunge un bot, in concreto', ul: [
+        '<strong>Regole che Twitch non ha</strong>: lo stesso messaggio ripetuto, i muri di TUTTO MAIUSCOLO, le raffiche di menzioni, il flood, i muri di simboli, i messaggi lunghissimi, le raffiche di emoji.',
+        '<strong>Permessi per ruolo</strong>: i link li possono postare tutti, solo gli abbonati, solo i VIP, solo i mod. Twitch è più binario.',
+        '<strong>Punizioni crescenti</strong>: il primo messaggio si cancella, al terzo scatta un timeout, e il timeout si allunga a chi insiste. Twitch non lo fa da solo.',
+        '<strong>Difesa dai follow-bot e dagli hate-raid</strong>: è la cosa per cui un bot serve davvero, e ha una <a href="/guide/follow-bot-e-hate-raid">guida sua</a>.',
+      ] },
+      { h2: 'Cosa conviene lasciare a Twitch', p: [
+        'AutoMod. È integrato, è addestrato sul linguaggio di Twitch e non consuma un permesso in più. Un bot che rifà AutoMod peggio non ti serve.',
+        'Anche la chat solo per follower conviene lasciarla a Twitch: è istantanea e non dipende da nessun servizio esterno che potrebbe essere giù proprio mentre serve.',
+      ] },
+      { h2: 'L\'errore che fanno tutti: stringere troppo', p: [
+        'La tentazione, dopo una brutta serata, è accendere tutto al massimo. È l\'errore più comune e il più costoso, perché i falsi positivi non li vedi: chi viene zittito per sbaglio non scrive «ehi, mi hai zittito». Se ne va e basta.',
+        'La regola che funziona è al contrario: <strong>parti largo e stringi solo dove ti hanno fatto male</strong>. Se la tua chat non ha mai avuto un problema di link, non bloccare i link.',
+        'E una cosa da tenere ferma sempre: moderatori e streamer non devono mai essere toccati dalle regole automatiche. Se un giorno un mod viene messo in timeout dal bot, quella è una regola scritta male, non un caso.',
+      ] },
+      { h2: 'Un bot può bannare per sbaglio?', p: [
+        'Sì, e succede. Per questo la differenza fra un bot serio e uno approssimativo non sta in quante regole ha, ma in cosa fa <em>quando è in dubbio</em>. La scelta giusta, nel dubbio, è avvisare e non punire: un falso positivo caccia un fan vero, e costa più dell\'attacco che volevi fermare.',
+        'Quando valuti un bot per la moderazione, guarda proprio questo: cosa fa da solo, e cosa fa quando non è sicuro.',
+      ] },
+      { h2: DENTRO, p: [
+        'La moderazione sta nella scheda <a href="/pannello#regole">Moderazione</a>, e si accende un pezzo per volta.',
+      ], passi: [
+        { t: 'Accendi solo la regola che ti serve', d: 'Link (scegliendo chi può postarli: tutti, abbonati, VIP, mod), ripetizioni, maiuscole, menzioni, flood, simboli, messaggi troppo lunghi, raffiche di emoji. Ognuno è un interruttore suo, perché ogni chat ha il suo problema — accenderli tutti insieme è l\'errore di cui sopra.' },
+        { t: 'Scrivi le parole vietate, una per riga', d: 'Il bot non le dirà mai e richiama chi le usa. Tienile poche e precise: un elenco lungo colpisce parole innocenti dentro altre parole.' },
+        { t: 'Lascia acceso il timeout crescente', d: 'Prima si cancella, poi si zittisce per poco, poi per di più. Streamer e moderatori sono <strong>sempre</strong> esenti: non è una casella che puoi sbagliare, è una regola del codice.' },
+        { t: 'Accendi lo scudo nella scheda Scudo', d: 'Tre difese in ordine di prudenza: la raffica di follow — che di suo <em>avvisa</em> e non banna, perché un picco può venire anche da una clip virale — i nomi di bot noti (quelli buoni come Nightbot e StreamElements sono sempre esenti), e, solo se lo chiedi, il controllo degli account appena creati.' },
+        { t: 'Provala prima che serva', d: 'Scrivi tu un messaggio che dovrebbe essere bloccato e guarda cosa succede. Una difesa non provata è una difesa che scopri rotta nel momento peggiore.' },
+      ] },
+    ],
+    faq: [
+      { d: 'Serve un bot se ho già AutoMod?', r: 'Per il linguaggio, no: AutoMod fa bene il suo lavoro ed è integrato. Un bot serve per quello che AutoMod non copre — copypasta, flood, raffiche di menzioni, permessi sui link per ruolo, timeout crescenti — e soprattutto per la difesa dai follow-bot e dagli hate-raid.' },
+      { d: 'Un bot di moderazione può mettere in timeout al posto mio?', r: 'Sì, se gli concedi il permesso di moderazione. Senza quel permesso può leggere e scrivere ma non punire. È un permesso che puoi revocare in qualsiasi momento dalle impostazioni di Twitch.' },
+      { d: 'Il bot può zittire un moderatore per sbaglio?', r: 'Non dovrebbe mai: streamer e moderatori vanno esentati dalle regole automatiche per costruzione. Se succede, è una regola scritta male.' },
+      { d: 'Meglio accendere tutte le regole subito?', r: 'No. I falsi positivi non si vedono, perché chi viene zittito per sbaglio non protesta: se ne va. Conviene partire larghi e stringere solo dove hai avuto un problema vero.' },
+      { d: 'La moderazione automatica funziona anche su Kick?', r: 'In parte. Kick espone meno della API di Twitch, quindi le difese più fini sono più semplici. I controlli sui messaggi funzionano; alcune protezioni legate ai follow no.' },
+    ],
+  },
+
 ];
 
 const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
