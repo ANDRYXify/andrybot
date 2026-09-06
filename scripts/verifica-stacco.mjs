@@ -94,6 +94,28 @@ const restato = await p.evaluate(() => {
     opac: l ? +getComputedStyle(l).opacity : 0 };
 });
 
+// I DUE INTERRUTTORI NON SONO LO STESSO INTERRUTTORE.
+//  · «leggero» si accende DA SOLO su un dispositivo che dichiara poca memoria,
+//    pochi core o una rete lenta, e serve al CARICO. Un'opacita' che cambia su
+//    un elemento solo non pesa niente: lo stacco deve restare.
+//  · «meno movimento» lo chiede la persona, e vale per il MOVIMENTO: li' il
+//    lampo non deve partire.
+// Erano legati allo stesso freno, e su un portatile qualunque lo stacco spariva
+// senza che nessuno lo sapesse.
+const interruttori = {};
+for (const [classe, atteso] of [['leggero', true], ['meno-moto', false]]) {
+  await p.evaluate((c) => { document.body.classList.add(c); }, classe);
+  await p.evaluate((x) => window.SB_APP.vai(x), schede[0]);
+  await p.waitForTimeout(RESPIRO);
+  await p.evaluate(() => { window.__stacchi = { lampo: 0, scambio: 0 }; });
+  const meta = schede.find((s) => s !== schede[0]);
+  await p.evaluate((x) => window.SB_APP.vai(x), meta);
+  await p.waitForTimeout(260);
+  interruttori[classe] = { visto: (await p.evaluate(() => window.__stacchi)).lampo > 0, atteso };
+  await p.evaluate((c) => { document.body.classList.remove(c); }, classe);
+  await p.waitForTimeout(RESPIRO);
+}
+
 // la durata dell'impatto, e la pausa minima fra due lampi
 const tempi = await p.evaluate(() => {
   const v = getComputedStyle(document.documentElement).getPropertyValue('--t-impatto').trim();
@@ -120,6 +142,10 @@ dice(!restato.acceso && restato.opac < 0.02, 'il lampo non resta a schermo', `op
 dice(restato.presenti <= 1, 'non se ne accumula uno per ogni cambio', `${restato.presenti} veli in pagina`);
 dice(tempi.impatto > 0 && tempi.impatto <= 120, 'l\'impatto dura due fotogrammi, non mezzo secondo', `${tempi.impatto}ms`);
 dice(pausa >= 340, 'fra due lampi passa abbastanza: non si arriva a tre al secondo', `pausa ${pausa}ms`);
+dice(interruttori.leggero.visto === true,
+  'la modalita\' leggera non spegne lo stacco: serve al carico, non al movimento');
+dice(interruttori['meno-moto'].visto === false,
+  'chi ha chiesto meno movimento non vede il lampo');
 
 const rossi = esiti.filter((x) => !x).length;
 if (SELFTEST) {

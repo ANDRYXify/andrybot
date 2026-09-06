@@ -826,8 +826,7 @@ function _duraImpatto() {
 }
 
 function battiScena() {
-  if (_menoMoto || document.body.classList.contains('leggero')
-    || document.body.classList.contains('meno-moto')) return 0;
+  if (_menoMoto || document.body.classList.contains('meno-moto')) return 0;
   const ora = Date.now();
   if (ora - _lampoQuando < LAMPO_PAUSA) return 0;
   _lampoQuando = ora;
@@ -17881,7 +17880,7 @@ function vaiAScheda(id) {
   if (org && !_menoMoto) morphDa(org);
   try { document.documentElement.dataset.verso = _versoVerso(prima, id); } catch (e) {  }
   const attesa = battiScena();
-  if (attesa > 0) { setTimeout(() => _cambiaScena(id, sezioni), attesa); return; }
+  if (attesa > 0) { setTimeout(() => _cambiaScena(id, sezioni), Math.round(attesa * 0.38)); return; }
   _cambiaScena(id, sezioni);
 }
 

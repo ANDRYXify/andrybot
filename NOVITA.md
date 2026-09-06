@@ -17,9 +17,10 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-06
 
-- Cambiare sezione ora è uno stacco da fumetto: un lampo di linee che convergono, poi la pagina nuova entra dal lato da cui sei arrivato.
+- Cambiare sezione ora è uno stacco da fumetto: la pagina sbianca in un lampo di linee che convergono, e quando si dirada la sezione nuova è già lì.
 - Muoversi dentro la stessa sezione è più corto: niente lampo, i riquadri rientrano uno dopo l'altro nell'ordine in cui si leggono.
-- Il lampo resta acceso due fotogrammi e non si ripete a raffica, così non dà fastidio a chi è sensibile alle luci. Chi ha chiesto meno movimento non lo vede affatto.
+- Il lampo non si ripete a raffica, così non dà fastidio a chi è sensibile alle luci. Chi ha chiesto meno movimento non lo vede affatto.
+- Su un computer poco potente lo stacco non spariva più: la modalità leggera serve al carico, non al movimento.
 
 - La pagina «non c'è niente qui» e quella di manutenzione sono diventate una vignetta, col numero 404 nell'angolo come in un fumetto.
 - Nove riquadri del sito non avevano il contorno: la lente della ricerca, i campi per scegliere un file e altri. Ora ce l'hanno.
