@@ -17,6 +17,10 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-06
 
+- Le nuvolette seguono il cursore mentre lo muovi, e la coda è disegnata: curva, come nei fumetti, e punta alla cosa di cui parla anche quando la bolla è finita di lato.
+- Compaiono con un piccolo scatto e se ne vanno da sole dopo il tempo che serve per leggerle. Non si spengono più da sole dopo mezzo secondo.
+- Il testo dentro è centrato e le righe sono bilanciate, come nei balloon veri.
+
 - Le nuvolette compaiono dove sei col cursore, non al centro della cosa che stai puntando. Sulla tela dell'editor finivano lontanissime.
 - E sono palloncini veri: forma tonda, becco che punta dove guardi. Prima erano rettangoli con gli angoli smussati.
 - Passando sopra alle vesti dell'overlay adesso c'è scritto com'è fatta ognuna, invece del nome che si legge già sul tasto.
