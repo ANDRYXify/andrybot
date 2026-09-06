@@ -822,8 +822,8 @@ export class BotManager {
     try {
       const conf = tgConf.get(login);
       if (conf?.attivo && conf.token) {
-        const testo = avvisi.messaggio(conNome, piattaforma === 'twitch' ? conf.messaggio : '');
-        const r = await this._diffondiTelegram(login, conf, avvisi.eventoDi(piattaforma), login, testo, { pin: true, info: d });
+        const componi = (conLocandina) => avvisi.messaggio(conNome, piattaforma === 'twitch' ? conf.messaggio : '', { conLocandina });
+        const r = await this._diffondiTelegram(login, conf, avvisi.eventoDi(piattaforma), login, componi, { pin: true, info: d });
         inviati += r.inviati || 0;
       }
     } catch (e) { log.error(`avviso Telegram ${piattaforma} #${login}:`, e?.message || e); }
@@ -888,14 +888,18 @@ export class BotManager {
   // Manda un avviso a TUTTE le destinazioni ammesse per quell'evento e quello
   // streamer (gruppo, canale, topic). Ogni destinazione ricorda il proprio
   // message_id, così a live finita si chiude quella giusta in ognuna.
-  async _diffondiTelegram(login, conf, evento, streamerLogin, testo, { pin = false, chi = null, info = null } = {}) {
+  async _diffondiTelegram(login, conf, evento, streamerLogin, componiTesto, { pin = false, chi = null, info = null } = {}) {
     tgDest.migra(login, conf);                       // il vecchio gruppo unico diventa la prima destinazione
     const dest = tgDest.perEvento(login, evento, streamerLogin);
     if (!dest.length) return { inviati: 0 };
     // LA CARTA. La decisione «va allegata?» sta in cartalive.js, e la fa anche
     // la prova dal pannello: due decisioni separate vorrebbero dire una prova
     // che prova qualcosa di diverso da quello che parte davvero.
-    const foto = await cartaLive.fotoPerEvento(login, evento, { chi: streamerLogin, info });
+    const foto = await cartaLive.fotoPerEvento(login, evento, { chi: streamerLogin, info, helix: this.helix });
+    // Il testo si compone DOPO aver saputo se la locandina parte: con l'immagine
+    // dice meno, perche' titolo e gioco sono gia' disegnati dentro. Comporlo
+    // prima vorrebbe dire mandare due volte la stessa cosa.
+    const testo = typeof componiTesto === 'function' ? componiTesto(!!foto) : componiTesto;
     const esiti = await telegram.diffondi(conf.token, dest, testo, { anteprima: true, foto });
     let inviati = 0;
     for (const e of esiti) {
@@ -942,9 +946,17 @@ export class BotManager {
             continue;
           }
           if (streamId === a.ultima_live) continue;      // già annunciata
-          const testo = telegram.costruisciMessaggioLive(
-            { login: a.login, display: a.display || a.login }, info, a.messaggio || conf.messaggio);
-          const r = await this._diffondiTelegram(ch, conf, 'live', a.login, testo, { pin: true, chi: a.login, info });
+          // La diretta di un amico passa dalla STESSA strada di quella di casa:
+          // stesso oggetto, stesso compositore, stessa locandina. Prima aveva un
+          // compositore suo, e infatti il testo corto per la locandina sarebbe
+          // arrivato solo da una parte.
+          const sua = avvisi.diretta({
+            piattaforma: 'twitch', login: a.login, display: a.display || a.login,
+            titolo: info?.title || '', gioco: info?.game_name || '',
+            spettatori: info?.viewer_count ?? null, id: streamId,
+          });
+          const componi = (conLocandina) => avvisi.messaggio(sua, a.messaggio || conf.messaggio, { conLocandina });
+          const r = await this._diffondiTelegram(ch, conf, avvisi.eventoDi('twitch'), a.login, componi, { pin: true, chi: a.login, info });
           if (r.inviati) tgAmici.setUltimaLive(ch, a.login, streamId);
         }
       } catch (e) { log.debug(`amici Telegram #${ch}:`, e?.message || e); }

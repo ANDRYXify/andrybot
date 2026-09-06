@@ -1732,6 +1732,85 @@ summary:active::after, .vt-btn:active::before { transform: scale(1.13); opacity:
 .goal-meta { padding: .2rem .7rem .8rem; border-top: 1px solid var(--border); }
 .goal-meta > .goal-campi { margin-top: .5rem; }
 
+body.ce-aperto { overflow: hidden; }
+.ce-velo {
+  position: fixed; inset: 0; z-index: 9500;
+  display: flex; flex-direction: column;
+  background: var(--bg); color: var(--testo);
+}
+.ce-testa {
+  display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+  padding: .7rem clamp(.7rem, 2vw, 1.1rem);
+  border-bottom: var(--contorno-sp) solid var(--contorno); border-bottom-width: var(--tratto-mano);
+  background: var(--surface);
+}
+.ce-testa > strong { font-family: var(--mano); font-size: 1.05rem; }
+.ce-spinta { flex: 1 1 auto; }
+.ce-banco {
+  flex: 1 1 auto; min-height: 0;
+  display: grid; grid-template-columns: 250px minmax(0, 1fr) 330px; gap: 0;
+}
+.ce-lato {
+  min-height: 0; overflow: clip auto; overflow-clip-margin: var(--posto-inchiostro);
+  padding: .8rem; background: var(--surface); display: flex; flex-direction: column; gap: .5rem;
+}
+.ce-livelli { border-right: var(--contorno-sp) solid var(--contorno); border-right-width: var(--tratto-mano); }
+.ce-ispettore { border-left: var(--contorno-sp) solid var(--contorno); border-left-width: var(--tratto-mano); }
+.ce-lato h3 { font-family: var(--mano); font-size: .95rem; margin: 0 0 .2rem; }
+.ce-elenco { display: flex; flex-direction: column; gap: .28rem; }
+.ce-voce {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto; align-items: center; gap: .4rem;
+  padding: .34rem .42rem; border: 1px solid var(--border); border-radius: var(--r-s);
+  background: var(--surface-2); cursor: pointer;
+}
+.ce-voce.scelta { border-color: var(--contorno); border-width: var(--tratto-mano); background: var(--acc-tint); }
+.ce-voce.spenta .ce-voce-nome, .ce-voce.spenta .ce-voce-tipo { opacity: .45; text-decoration: line-through; }
+.ce-voce-nome { font-size: .85rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ce-voce-tipo { font-size: .68rem; color: var(--testo-3); }
+.ce-occhio, .ce-mini {
+  width: 22px; height: 22px; padding: 0; line-height: 1; font-size: .78rem;
+  border: 1px solid var(--border); border-radius: 6px; background: var(--surface);
+  color: var(--testo-2); cursor: pointer;
+}
+.ce-occhio::before { content: "\25CF"; }
+.ce-voce.spenta .ce-occhio::before { content: "\25CB"; }
+.ce-mini:disabled { opacity: .3; cursor: default; }
+.ce-aggiungi { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .5rem; }
+.ce-tela {
+  min-height: 0; display: flex; align-items: center; justify-content: center;
+  padding: 24px; background: var(--surface-2);
+  background-image: radial-gradient(var(--border) 1px, transparent 1px); background-size: 16px 16px;
+  overflow: auto;
+}
+.ce-foglio { position: relative; box-shadow: var(--ombra-ink-alta); }
+.ce-disegno { line-height: 0; touch-action: none; cursor: grab; }
+.ce-disegno svg { display: block; }
+.ce-disegno g[data-el] { cursor: grab; }
+.ce-cornice {
+  position: absolute; pointer-events: none;
+  outline: 2px dashed var(--acc); outline-offset: 2px;
+}
+.ce-colore { display: flex; gap: .4rem; align-items: center; }
+.ce-colore input[type=color] { width: 42px; height: 32px; padding: 2px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); cursor: pointer; }
+.ce-colore input[type=text] { flex: 1 1 auto; min-width: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .8rem; }
+.ce-numero { display: flex; gap: .5rem; align-items: center; }
+.ce-numero input[type=range] { flex: 1 1 auto; min-width: 0; }
+.ce-numero input[type=number] { width: 72px; flex: none; }
+.ce-segna {
+  font: inherit; font-size: .72rem; padding: .1rem .34rem; cursor: pointer;
+  border: 1px solid var(--border); border-radius: 5px; background: var(--surface-2); color: var(--testo-2);
+}
+@media (hover: hover) {
+  .ce-segna:hover { border-color: var(--contorno); color: var(--testo); }
+}
+@media (max-width: 1000px) {
+  .ce-banco { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(160px, 1fr) auto; }
+  .ce-lato { max-height: 34vh; border: 0; border-top: var(--contorno-sp) solid var(--contorno); border-top-width: var(--tratto-mano); }
+  .ce-livelli { order: 2; }
+  .ce-tela { order: 1; }
+  .ce-ispettore { order: 3; }
+}
+
 .cl-tela {
   border: var(--contorno-sp) solid var(--contorno); border-width: var(--tratto-mano);
   border-radius: var(--ang-mano); box-shadow: var(--ombra-ink);

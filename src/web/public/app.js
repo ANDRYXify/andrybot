@@ -1430,6 +1430,7 @@ function disegnaCartaLive() {
     <p class="riga-flessibile spazio-sopra">
       ${bottoni}
       ${d.mia ? `<button type="button" class="btn secondario" id="btn-carta-standard">${L('Torna a uno standard', 'Back to a standard one', 'Volver a uno estándar')}</button>` : ''}
+      <button type="button" class="btn" id="btn-carta-editor" ${d.disegnabile ? '' : 'disabled'}>${L('Apri l\'editor', 'Open the editor', 'Abrir el editor')}</button>
     </p>
     <p class="suggerimento">${sceltoNessuno
       ? L('Stai usando il tema della tua piattaforma.', 'You are using your platform\'s theme.', 'Estás usando el tema de tu plataforma.')
@@ -1469,6 +1470,19 @@ function collegaCartaLive() {
     if (t) {
       const tema = (_cartaLive?.vocabolario?.temi || []).find((x) => x.id === t.dataset.tema);
       if (tema) await _cartaSalva({ carta: tema.carta });
+      return;
+    }
+    if (e.target.closest('#btn-carta-editor')) {
+      const bottone = e.target.closest('#btn-carta-editor');
+      bottone.disabled = true;
+      try {
+        const mod = await import('/carta-editor.js');
+        mod.apri(_cartaLive, {
+          salva: async (carta) => { _cartaLive = await api('/api/streamer/telegram/carta', { method: 'PUT', body: { carta } }); toast(L('Locandina salvata', 'Poster saved', 'Cartel guardado')); },
+          aggiorna: () => disegnaCartaLive(),
+        });
+      } catch (err) { toast(err.message || L('Non riesco ad aprire l\'editor', 'I cannot open the editor', 'No puedo abrir el editor'), 'errore'); }
+      bottone.disabled = false;
       return;
     }
     if (e.target.closest('#btn-carta-standard')) {

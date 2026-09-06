@@ -13,13 +13,16 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { DIDASCALIA_MAX, diffondi } from '../../src/features/telegram.js';
-import { EVENTI_LIVE, eUnaDiretta, CHIAVI, eventoDi } from '../../src/features/avvisi.js';
+import { EVENTI_LIVE, eUnaDiretta, CHIAVI, eventoDi, PIATTAFORME, diretta, messaggio } from '../../src/features/avvisi.js';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const leggi = (f) => readFileSync(join(RAD, f), 'utf8');
 
 const DEST = [{ chat_id: '-100', titolo: 'gruppo' }];
 const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
+
+// Quello che si legge davvero: senza i tag, che si vedono solo nel codice.
+const letto = (t) => String(t).replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
 
 // Telegram finto: registra le chiamate e risponde come gli si dice.
 function telegramFinto({ fotoOk = true } = {}) {
@@ -133,4 +136,83 @@ test('la grafica si accende da sé solo se lo streamer l’ha accesa', async () 
   const { pngPerDiretta } = await import('../../src/features/cartalive.js');
   const png = await pngPerDiretta('nessuno-che-esiste', {});
   assert.equal(png, null, 'senza la levetta accesa non si disegna niente');
+});
+
+test('con la locandina il testo non ripete l’immagine', () => {
+  // La locandina disegna nome, titolo, gioco e indirizzo. Scriverli anche sotto
+  // vuol dire mandare due volte la stessa cosa, e un messaggio alto il doppio.
+  // Restano le due cose che l'immagine non sa fare: dire CHI nella notifica del
+  // telefono (che dell'immagine non vede niente) e dare qualcosa da premere.
+  for (const p of CHIAVI) {
+    const d = diretta({ piattaforma: p, login: 'tizio', display: 'Tizio',
+      titolo: 'Un titolo lunghissimo che si vede benissimo', gioco: 'Una Categoria', spettatori: 42, id: '1' });
+    const lungo = messaggio(d);
+    const corto = messaggio(d, '', { conLocandina: true });
+    // Si conta quello che si LEGGE, non i segni del codice: `<a href="...">`
+    // allunga la stringa e accorcia il messaggio. Contare i caratteri grezzi
+    // misurava la cosa sbagliata, e infatti diceva che TikTok si allungava.
+    assert.ok(letto(corto).length <= letto(lungo).length, `${p}: col disegno il messaggio si allunga`);
+    assert.ok(!corto.includes('Un titolo lunghissimo'), `${p}: il titolo è già nell’immagine`);
+    assert.ok(!corto.includes('Una Categoria'), `${p}: la categoria è già nell’immagine`);
+    assert.ok(corto.includes('Tizio'), `${p}: senza il nome la notifica del telefono non dice chi è`);
+    assert.ok(corto.includes(d.url), `${p}: senza link non c’è niente da premere: una foto non è cliccabile`);
+    assert.ok(!corto.includes('\n'), `${p}: una riga sola, sennò non è più corto di prima`);
+  }
+});
+
+test('ogni piattaforma ha il suo testo corto: nessuna resta indietro', () => {
+  for (const p of CHIAVI) {
+    assert.ok(PIATTAFORME[p].conLocandina, `${p}: manca il testo per quando parte la locandina`);
+  }
+});
+
+test('il testo scritto dallo streamer vince comunque', () => {
+  // La forma corta è il testo DI CASA. Se qualcuno ha scritto il suo, quello
+  // resta: accendere la locandina non deve cancellargli il messaggio.
+  const d = diretta({ piattaforma: 'twitch', login: 'tizio', display: 'Tizio', titolo: 'T', id: '1' });
+  assert.equal(messaggio(d, 'Ciao {nome}', { conLocandina: true }), 'Ciao Tizio');
+});
+
+test('la locandina vale anche per le dirette degli amici', () => {
+  // Un canale che annuncia gli amici deve annunciarli come annuncia se stesso:
+  // stessa strada, stesso disegno, stesso testo corto. Con un compositore suo,
+  // gli amici sarebbero rimasti col messaggio lungo e senza immagine — e
+  // nessuno se ne accorge, perché il messaggio arriva lo stesso.
+  const bot = leggi('src/bot.js');
+  const amici = bot.slice(bot.indexOf('for (const a of tgAmici.daGuardare('));
+  const corpo = amici.slice(0, 2200);
+  assert.match(corpo, /_diffondiTelegram\(/, 'passa dalla strada comune');
+  assert.match(corpo, /chi: a\.login/, 'e la locandina prende i dati di CHI è live, non del padrone del gruppo');
+  assert.match(corpo, /avvisi\.messaggio\(/, 'e il testo lo compone la stessa funzione');
+  assert.doesNotMatch(corpo, /costruisciMessaggioLive/, 'un compositore suo lascerebbe gli amici col testo lungo');
+  assert.doesNotMatch(corpo, /_diffondiTelegram\(ch, conf, 'live'/, 'l’evento non si scrive a mano');
+});
+
+test('tutte e due le prove mandano quello che partirà davvero', () => {
+  // Ce ne sono DUE: quella del gruppo e quella per singola destinazione. La
+  // seconda era rimasta indietro — mandava con inviaMessaggio, cioè senza
+  // locandina — e il difetto non si vedeva perché il messaggio arrivava.
+  const rotte = leggi('src/web/server.js');
+  const prove = [...rotte.matchAll(/app\.post\('\/api\/streamer\/telegram\/[^']*prova'/g)];
+  assert.ok(prove.length >= 2, `le prove trovate sono ${prove.length}`);
+  for (const m of prove) {
+    const corpo = rotte.slice(m.index, m.index + 1600);
+    const fine = corpo.indexOf('}));');
+    const solo = corpo.slice(0, fine > 0 ? fine : 1600);
+    assert.match(solo, /cartaLive\.fotoPerEvento\(/, 'questa prova non decide la locandina con la funzione unica');
+    assert.match(solo, /telegram\.diffondi\(/, 'questa prova non spedisce come l’annuncio vero');
+    assert.doesNotMatch(solo, /telegram\.inviaMessaggio\(/, 'mandarla con inviaMessaggio salta la foto');
+  }
+});
+
+test('il titolo si trova anche a canale spento', async () => {
+  // Alla prova il canale è quasi sempre spento: «la diretta in corso» non
+  // esiste e la locandina usciva col titolo vuoto, come rotta. Il titolo però
+  // c'è, un passo più in là: quello del CANALE, che resta scritto.
+  const cl = leggi('src/features/cartalive.js');
+  const f = cl.slice(cl.indexOf('async function completaInfo'));
+  const corpo = f.slice(0, f.indexOf('\n}') + 2);
+  assert.match(corpo, /getStream/, 'prima prova la diretta in corso');
+  assert.match(corpo, /getChannelInfo/, 'e se è spento chiede il titolo del canale');
+  assert.match(leggi('src/bot.js'), /helix: this\.helix/, 'l’annuncio vero passa helix, sennò non può chiedere niente');
 });

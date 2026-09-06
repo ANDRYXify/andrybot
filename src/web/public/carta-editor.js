@@ -1,7 +1,7 @@
 // © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
 // Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 
-import { svgCarta, normCarta, normElemento } from '/js/carta-disegno.js';
+import { svgCarta, normCarta, normElemento, CARATTERI } from '/js/carta-disegno.js';
 
 const L = (it, en, es) => (document.documentElement.lang === 'en' ? en : document.documentElement.lang === 'es' ? es : it);
 const esc = (s) => String(s ?? '').replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[c]));
@@ -61,6 +61,20 @@ const NOME_TIPO = {
   riga: ['Riga', 'Bar', 'Barra'],
   striscia: ['Striscia', 'Stripe', 'Franja'],
 };
+
+const ALIAS = new Map(CARATTERI.map(([nome]) => [nome, 'carta-' + nome.toLowerCase().replace(/\s+/g, '-')]));
+const conAlias = (svg) => svg.replace(/font-family="([^"]*)"/g, (tutto, f) => (ALIAS.has(f) ? `font-family="${ALIAS.get(f)}"` : tutto));
+
+let _fontChiesti = null;
+function caratteri() {
+  if (_fontChiesti) return _fontChiesti;
+  const stile = document.createElement('style');
+  stile.textContent = CARATTERI.map(([nome, file]) =>
+    `@font-face{font-family:"${ALIAS.get(nome)}";src:url("/font/${file}") format("truetype");font-weight:400;font-style:normal;font-display:block}`).join('');
+  document.head.appendChild(stile);
+  _fontChiesti = Promise.all(CARATTERI.map(([nome]) => document.fonts.load(`32px "${ALIAS.get(nome)}"`))).catch(() => null);
+  return _fontChiesti;
+}
 
 const AGGANCIO = 6;
 const PASSI_MAX = 60;
@@ -161,7 +175,7 @@ export function apri(stato, { salva, aggiorna } = {}) {
   }
 
   function disegnaTela() {
-    disegno.innerHTML = svgCarta(carta, dati);
+    disegno.innerHTML = conAlias(svgCarta(carta, dati));
     misura();
     riquadro();
   }
@@ -419,5 +433,6 @@ export function apri(stato, { salva, aggiorna } = {}) {
   window.addEventListener('resize', suMisura);
   tutto();
   requestAnimationFrame(suMisura);
+  caratteri().then(() => { disegnaTela(); });
   return { chiudi };
 }
