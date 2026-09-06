@@ -40,14 +40,14 @@ function codaVerso(bx, by, largo, lungo, giro, verso) {
 
 const vp = (p) => `${arr(p[0])} ${arr(p[1])}`;
 
-export function guscio({ larghezza, altezza, tipo = 'tondo', becco = 0.5, giro = 0, coda = true, sotto = false, raggio = 46 }) {
+export function guscio({ larghezza, altezza, tipo = 'tondo', becco = 0.5, giro = 0, coda = true, sotto = false, raggio = 46, lungo: lungoDetto = 0, largo: largoDetto = 0 }) {
   const M = MARGINE;
   const w = Math.max(20, larghezza), h = Math.max(16, altezza);
   const x = M, y = M;
   const verso = sotto ? -1 : 1;
   const bordo = sotto ? y : y + h;
-  const lungo = Math.max(20, Math.min(h * 0.62, CODA_LUNGA));
-  const largo = Math.max(18, Math.min(w * 0.2, lungo * CODA_LARGA));
+  const lungo = lungoDetto || Math.max(20, Math.min(h * 0.62, CODA_LUNGA));
+  const largo = largoDetto || Math.max(16, Math.min(w * 0.34, lungo * CODA_LARGA));
 
   if (tipo === 'grido') {
     const punti = stella(x, y, w, h, 13, 0.8);
@@ -73,7 +73,7 @@ export function guscio({ larghezza, altezza, tipo = 'tondo', becco = 0.5, giro =
     : `${prima} ${dopo}`;
   if (!coda || tipo === 'pensiero') return sotto ? `${prima} ${dopo}` : corpo;
 
-  const R = Math.max(4, Math.min(raggio, h / 2, w / 2));
+  const R = Math.max(4, Math.min(raggio, h * 0.58, w / 2));
   const sporge = largo * Math.max(SBIECO, 1 - SBIECO) + 3;
   const bx = x + Math.max(R + sporge, Math.min(becco * w, w - R - sporge));
   const t = codaVerso(bx, bordo, largo, lungo, giro, verso);

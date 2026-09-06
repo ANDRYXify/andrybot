@@ -1856,6 +1856,28 @@ body.ce-aperto { overflow: hidden; }
 .cl-tela img { display: block; width: 100%; height: auto; }
 .btn.cl-tema.scelto { background: var(--acc); color: var(--su-acc); border-color: var(--contorno); }
 
+.carta .carta-corpo-in > p:first-child,
+.carta > p.didascalia {
+  position: relative;
+  margin: 0 0 .9rem;
+  padding: .62rem .9rem .66rem 1.05rem;
+  background: var(--surface-2);
+  border: 1px solid var(--contorno);
+  border-left-width: 5px;
+  border-radius: 2px 4px 3px 5px / 4px 2px 5px 3px;
+  color: var(--testo-2);
+  font-size: .9rem; line-height: 1.55;
+}
+.carta .carta-corpo-in > p:first-child::after,
+.carta > p.didascalia::after {
+  content: ""; position: absolute; right: -1px; top: -1px;
+  border: 8px solid transparent;
+  border-top-color: var(--contorno); border-right-color: var(--contorno);
+}
+.carta .carta-corpo-in > p:first-child strong,
+.carta > p.didascalia strong { color: var(--testo); }
+.carta.evidenziata .carta-corpo-in > p:first-child { background: var(--acc-tint); }
+
 .aiuto-bolla {
   position: fixed; z-index: 9000; left: 0; top: 0;
   max-width: min(322px, 80vw); padding: .82rem 1.25rem .86rem;
