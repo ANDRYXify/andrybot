@@ -350,6 +350,13 @@ CREATE TABLE IF NOT EXISTS passkeys (     -- passkey (WebAuthn) per rientrare se
 );
 CREATE INDEX IF NOT EXISTS idx_passkeys_login ON passkeys(login);
 
+CREATE TABLE IF NOT EXISTS carte_live (  -- la grafica con cui si annuncia «sono live»
+  channel TEXT PRIMARY KEY,
+  attiva INTEGER NOT NULL DEFAULT 0,
+  dati TEXT NOT NULL DEFAULT '',          -- la carta intera, come la scrive l'editor
+  ts INTEGER NOT NULL DEFAULT 0
+);
+
 CREATE TABLE IF NOT EXISTS managers (     -- moderatori che possono gestire la dashboard di uno streamer
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   channel TEXT NOT NULL,                   -- canale (streamer proprietario) minuscolo
@@ -1711,6 +1718,31 @@ export const tgAmici = {
   daGuardare(channel) {
     return this.attivi(channel);
   },
+};
+
+// LA CARTA DELLA DIRETTA. Ha un posto suo e non una colonna dentro la riga di
+// Telegram: la stessa immagine servirà a Discord e a chiunque altro annunci la
+// diretta, e una grafica che vive dentro la configurazione di UN canale di
+// annuncio è una grafica che il secondo canale dovrà copiarsi.
+export const carteLive = {
+  get(channel) {
+    const r = db.prepare('SELECT * FROM carte_live WHERE channel=?').get(String(channel).toLowerCase());
+    if (!r) return null;
+    let dati = null;
+    try { dati = r.dati ? JSON.parse(r.dati) : null; } catch { dati = null; }
+    return { attiva: !!r.attiva, dati, ts: r.ts };
+  },
+  set(channel, { attiva, dati }) {
+    const c = String(channel).toLowerCase();
+    const cur = this.get(c);
+    const a = attiva !== undefined ? (attiva ? 1 : 0) : (cur?.attiva ? 1 : 0);
+    const d = dati !== undefined ? JSON.stringify(dati || null) : (cur?.dati ? JSON.stringify(cur.dati) : '');
+    db.prepare(`INSERT INTO carte_live (channel, attiva, dati, ts) VALUES (?,?,?,?)
+      ON CONFLICT(channel) DO UPDATE SET attiva=excluded.attiva, dati=excluded.dati, ts=excluded.ts`)
+      .run(c, a, d, now());
+    return this.get(c);
+  },
+  cancella(channel) { db.prepare('DELETE FROM carte_live WHERE channel=?').run(String(channel).toLowerCase()); },
 };
 
 export const tgConf = {

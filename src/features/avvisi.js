@@ -49,6 +49,14 @@ export const PIATTAFORME = {
 export const CHIAVI = Object.keys(PIATTAFORME);
 export const eventoDi = (piattaforma) => PIATTAFORME[piattaforma]?.evento || '';
 
+// GLI EVENTI CHE VOGLIONO DIRE «sto andando in diretta». Si ricavano da qui e
+// non si riscrivono altrove: le chiavi sono storiche e diverse fra loro
+// ('live' per Twitch, 'kick', 'ytlive', 'tiktok'), quindi chi controlla
+// `evento === 'live'` copre Twitch e lascia fuori tutte le altre — senza dare
+// nessun errore, semplicemente non facendo la cosa.
+export const EVENTI_LIVE = new Set(CHIAVI.map((p) => PIATTAFORME[p].evento).filter(Boolean));
+export const eUnaDiretta = (evento) => EVENTI_LIVE.has(String(evento || ''));
+
 const escHtml = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 // La forma di una diretta. Tutto facoltativo tranne piattaforma e login: una

@@ -15,6 +15,13 @@ streamer *usa*, si riscrive senza nominarla: la funzione resta documentata e il
 nome resta in casa. Non è una cosa da ricordarsi:
 `scripts/verifica-novita.mjs` boccia una riga pubblica che la nomina.
 
+## 2026-09-06
+
+- Quando parte la diretta, l'annuncio su Telegram porta con sé una locandina: il tuo nome, il titolo della diretta, il gioco e la tua immagine, su una grafica diversa per Twitch e per Kick.
+- Vale per tutte le piattaforme collegate, non solo per Twitch.
+- Se il messaggio è corto diventa la didascalia della foto; se è lungo parte prima la foto e subito dopo il testo intero, che non viene mai tagliato a metà.
+- Se la locandina non si disegna o Telegram la rifiuta, l'annuncio parte lo stesso come prima: chi ti aspetta viene avvisato comunque.
+
 ## 2026-09-05
 
 - I suggerimenti che compaiono passando il cursore sopra un comando adesso li disegna il sito, col suo tema. Prima erano la scatoletta grigia del browser, che non si può cambiare.
