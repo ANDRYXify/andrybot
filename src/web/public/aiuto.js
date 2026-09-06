@@ -9,6 +9,7 @@
   const SOPRA_CURSORE = 18;
   const SOTTO_CURSORE = 20;
   const GIRO_MAX = 34;
+  const QUOTA_CODA = 0.55;
   const LETTURA_BASE = 1400;
   const LETTURA_PAROLA = 300;
   const LETTURA_MAX = 9000;
@@ -37,7 +38,7 @@
     return el.matches(TOCCABILE) ? 'nota' : 'dritta';
   }
 
-  const CODA_D = 'M -5.6 -3 C -4.8 4.4, -3 6.6, 1.4 15.6 C 1.2 7.6, 3.4 3.4, 5.6 -3';
+  const CODA_D = 'M -9.6 -2 C -8 8.4, -4.6 13, 0.4 25.6 C 1.4 12.6, 4.6 8, 8.4 -2';
 
   function nasce() {
     if (bolla) return bolla;
@@ -49,8 +50,8 @@
     corpo.className = 'aiuto-testo';
     coda = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     coda.setAttribute('class', 'aiuto-coda');
-    coda.setAttribute('viewBox', '-11 0 22 16');
-    coda.setAttribute('preserveAspectRatio', 'xMidYMin meet');
+    coda.setAttribute('viewBox', '-11 0 22 26');
+    coda.setAttribute('preserveAspectRatio', 'none');
     coda.setAttribute('aria-hidden', 'true');
     const via = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     via.setAttribute('d', CODA_D);
@@ -58,7 +59,7 @@
     coda.appendChild(via);
     const gruppo = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     gruppo.setAttribute('class', 'aiuto-pensieri');
-    for (const [cx, cy, r] of [[-0.4, 5.2, 3.3], [1.6, 12.8, 2]]) {
+    for (const [cx, cy, r] of [[-1.4, 5.4, 3.6], [0.6, 13.6, 2.4], [2.4, 21, 1.5]]) {
       const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       c.setAttribute('cx', cx); c.setAttribute('cy', cy); c.setAttribute('r', r);
       gruppo.appendChild(c);
@@ -98,35 +99,40 @@
     const m = { width: b.offsetWidth, height: b.offsetHeight };
     const larg = document.documentElement.clientWidth;
     const alt = document.documentElement.clientHeight;
-    const dentro = (v, a, b2) => Math.max(a, Math.min(v, b2));
+    const dentro = (v, a, z) => Math.max(a, Math.min(v, z));
     const segue = !colDito;
-    const ancoraX = segue ? dentro(px, r.left + 4, r.right - 4) : r.left + r.width / 2;
-    const ancoraY = segue ? dentro(py, r.top + 2, r.bottom - 2) : r.top;
-    const cima = segue ? ancoraY - SOPRA_CURSORE : r.top;
-    const fondo = segue ? ancoraY + SOTTO_CURSORE : r.bottom;
+    const ancoraX = segue ? dentro(px, r.left + 8, r.right - 8) : r.left + r.width / 2;
+    const stacco = dentro(Math.round(m.width * 0.26), 62, 104);
+    const codaH = Math.round(stacco * QUOTA_CODA);
+
     const orlo = Math.max(BECCO, m.width * 0.26);
     const aDestra = ancoraX < larg * 0.62;
     let x = segue
       ? (aDestra ? ancoraX - orlo : ancoraX - m.width + orlo)
       : ancoraX - m.width / 2;
     x = Math.max(10, Math.min(x, larg - m.width - 14));
-    let y = cima - m.height - STACCO;
+
     let sopra = true;
-    if (y < 10) { y = fondo + STACCO; sopra = false; }
+    let y = r.top - stacco - m.height;
+    if (y < 10) { y = r.bottom + stacco; sopra = false; }
     if (y + m.height > alt - 14) y = Math.max(10, alt - m.height - 14);
+
     b.style.left = Math.round(x) + 'px';
     b.style.top = Math.round(y) + 'px';
     b.classList.toggle('sotto', !sopra);
-    const attacco = Math.round(Math.max(orlo, Math.min(ancoraX - x, m.width - orlo)));
+
+    const attacco = Math.round(dentro(ancoraX - x, orlo, m.width - orlo));
     b.style.setProperty('--becco', attacco + 'px');
+    b.style.setProperty('--coda-l', Math.round(dentro(codaH * 0.86, 26, 52)) + 'px');
+    b.style.setProperty('--coda-h', codaH + 'px');
+
     const bx = x + attacco;
     const by = sopra ? y + m.height : y;
     const dx = ancoraX - bx;
-    const dy = (segue ? ancoraY : (sopra ? r.top : r.bottom)) - by;
+    const dy = (sopra ? r.top : r.bottom) - by;
     let giro = (sopra ? Math.atan2(-dx, dy) : Math.atan2(dx, -dy)) * 180 / Math.PI;
     if (!Number.isFinite(giro)) giro = 0;
-    b.style.setProperty('--giro', Math.max(-GIRO_MAX, Math.min(GIRO_MAX, giro)).toFixed(1) + 'deg');
-    b.style.setProperty('--larga', (0.6 + Math.min(0.5, Math.abs(giro) / 120)).toFixed(2));
+    b.style.setProperty('--giro', dentro(giro, -GIRO_MAX, GIRO_MAX).toFixed(1) + 'deg');
   }
 
   function quantoDura(t) {

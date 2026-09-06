@@ -30,17 +30,21 @@ test('il tipo si ricava da quello che si punta, non da un\u2019etichetta scritta
     'il tipo non deve dipendere da un attributo che qualcuno si deve ricordare di mettere');
 });
 
-test('ognuna delle tre ha una forma sua, non solo un colore', () => {
-  for (const tipo of ['attenzione', 'dritta']) {
-    assert.ok(CSS.includes(`.aiuto-bolla.${tipo}`), `manca la forma «${tipo}»`);
-    const i = CSS.indexOf(`.aiuto-bolla.${tipo} {`);
-    const blocco = CSS.slice(i, CSS.indexOf('}', i));
-    assert.match(blocco, /border-radius/, `«${tipo}» cambia solo colore: la forma è la cosa che si riconosce`);
-  }
-  // e la coda cambia con la forma: nel pensiero sono pallini, non un cuneo
+test('ognuna delle tre ha la forma che le assegna il fumetto', () => {
+  // Le forme non sono di fantasia: nel lettering il tondo è la voce normale, il
+  // bordo a zig-zag è un grido, e il pensiero è una nuvola con una scia di
+  // bollicine che va verso chi pensa (Blambot, «Comic Book Grammar & Tradition»).
+  const i = CSS.indexOf('.aiuto-bolla.attenzione {');
+  const grido = CSS.slice(i, CSS.indexOf('.aiuto-bolla.dritta {', i));
+  assert.match(grido, /clip-path: polygon\(/, 'il grido non ha il bordo a zig-zag');
+  assert.ok((grido.match(/%/g) || []).length > 40, 'lo zig-zag ha troppe poche punte per leggersi come un grido');
+  assert.match(CSS, /\.aiuto-bolla\.dritta \{[^}]*border-radius/, 'il pensiero non ha una forma sua');
+  // e la coda cambia con la forma: nel pensiero è una SCIA, non un cuneo
   assert.match(CSS, /\.aiuto-bolla\.dritta \.aiuto-cuneo \{[^}]*display: none/,
     'la nuvola di pensiero tiene il cuneo: allora non è una nuvola di pensiero');
-  assert.match(CSS, /\.aiuto-bolla\.dritta \.aiuto-pensieri \{[^}]*display: block/, 'e non mostra i pallini');
+  assert.match(CSS, /\.aiuto-bolla\.dritta \.aiuto-pensieri \{[^}]*display: block/, 'e non mostra le bollicine');
+  const bolle = (JS.match(/\[-?[\d.]+, [\d.]+, [\d.]+\]/g) || []).length;
+  assert.ok(bolle >= 3, `le bollicine del pensiero sono ${bolle}: una scia ne vuole almeno tre`);
 });
 
 test('la coda è disegnata, non incollata coi bordi', () => {
@@ -52,6 +56,12 @@ test('la coda è disegnata, non incollata coi bordi', () => {
   // e punta al bersaglio: l'angolo lo calcola chi posiziona la bolla
   assert.match(JS, /--giro/, 'la coda non riceve nessun angolo');
   assert.match(JS, /Math\.atan2/, 'l’angolo non si calcola: la coda punterebbe sempre in giù');
+  // E LA REGOLA CHE MI MANCAVA: la coda si ferma a metà strada, non tocca chi
+  // parla. Toccandolo gli finisce sopra — e con un tasto vuol dire coprirne il
+  // testo. «A tail should terminate at roughly 50-60% of the distance between
+  // the balloon and the character's head» (Blambot).
+  assert.match(JS, /QUOTA_CODA = 0\.5[0-9]?/, 'la coda arriva fino al bersaglio invece di fermarsi a metà');
+  assert.match(JS, /codaH = Math\.round\(stacco \* QUOTA_CODA\)/, 'la lunghezza della coda non dipende dalla distanza');
 });
 
 test('la bolla si spegne quando serve, e non quando capita', () => {
