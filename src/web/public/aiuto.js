@@ -4,9 +4,9 @@
 (function () {
   const RITARDO = 340;
   const GRAZIA = 90;
-  const STACCO = 14;
+  const STACCO = 16;
   const BECCO = 36;
-  const SOPRA_CURSORE = 6;
+  const SOPRA_CURSORE = 18;
   const SOTTO_CURSORE = 20;
   const GIRO_MAX = 62;
   const LETTURA_BASE = 1400;
@@ -22,7 +22,6 @@
   let px = 0;
   let py = 0;
   let colDito = false;
-  let inCorsa = 0;
   let vita = 0;
   let dovEra = 0;
   let uscita = 0;
@@ -38,7 +37,7 @@
     return el.matches(TOCCABILE) ? 'nota' : 'dritta';
   }
 
-  const CODA_D = 'M -9 -3 C -7.6 4.2, -4.4 6.6, 1.6 15.4 C 1.4 8, 4.8 3.6, 8.8 -3';
+  const CODA_D = 'M -5.6 -3 C -4.8 4.4, -3 6.6, 1.4 15.6 C 1.2 7.6, 3.4 3.4, 5.6 -3';
 
   function nasce() {
     if (bolla) return bolla;
@@ -51,6 +50,7 @@
     coda = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     coda.setAttribute('class', 'aiuto-coda');
     coda.setAttribute('viewBox', '-11 0 22 16');
+    coda.setAttribute('preserveAspectRatio', 'xMidYMin meet');
     coda.setAttribute('aria-hidden', 'true');
     const via = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     via.setAttribute('d', CODA_D);
@@ -66,6 +66,9 @@
     coda.appendChild(gruppo);
     bolla.append(corpo, coda);
     document.body.appendChild(bolla);
+    if (typeof ResizeObserver === 'function') {
+      new ResizeObserver(() => { if (acceso) posa(acceso); }).observe(bolla);
+    }
     return bolla;
   }
 
@@ -92,14 +95,19 @@
   function posa(el) {
     const b = nasce();
     const r = el.getBoundingClientRect();
-    const m = b.getBoundingClientRect();
+    const m = { width: b.offsetWidth, height: b.offsetHeight };
     const larg = document.documentElement.clientWidth;
     const alt = document.documentElement.clientHeight;
+    const dentro = (v, a, b2) => Math.max(a, Math.min(v, b2));
     const segue = !colDito;
-    const ancoraX = segue ? px : r.left + r.width / 2;
-    const cima = segue ? py - SOPRA_CURSORE : r.top;
-    const fondo = segue ? py + SOTTO_CURSORE : r.bottom;
-    let x = ancoraX - m.width / 2;
+    const ancoraX = segue ? dentro(px, r.left + 4, r.right - 4) : r.left + r.width / 2;
+    const ancoraY = segue ? dentro(py, r.top + 2, r.bottom - 2) : r.top;
+    const cima = segue ? ancoraY - SOPRA_CURSORE : r.top;
+    const fondo = segue ? ancoraY + SOTTO_CURSORE : r.bottom;
+    const aDestra = ancoraX < larg * 0.62;
+    let x = segue
+      ? (aDestra ? ancoraX - BECCO : ancoraX - m.width + BECCO)
+      : ancoraX - m.width / 2;
     x = Math.max(10, Math.min(x, larg - m.width - 14));
     let y = cima - m.height - STACCO;
     let sopra = true;
@@ -113,7 +121,7 @@
     const bx = x + attacco;
     const by = sopra ? y + m.height : y;
     const dx = ancoraX - bx;
-    const dy = (segue ? py : (sopra ? r.top : r.bottom)) - by;
+    const dy = (segue ? ancoraY : (sopra ? r.top : r.bottom)) - by;
     let giro = (sopra ? Math.atan2(-dx, dy) : Math.atan2(dx, -dy)) * 180 / Math.PI;
     if (!Number.isFinite(giro)) giro = 0;
     b.style.setProperty('--giro', Math.max(-GIRO_MAX, Math.min(GIRO_MAX, giro)).toFixed(1) + 'deg');
@@ -145,7 +153,6 @@
   }
 
   function spegni() {
-    if (inCorsa) { cancelAnimationFrame(inCorsa); inCorsa = 0; }
     clearTimeout(vita); vita = 0;
     clearTimeout(attesa); attesa = 0;
     clearTimeout(uscita); uscita = 0;
@@ -175,8 +182,6 @@
   document.addEventListener('pointermove', (ev) => {
     if (tocco(ev)) return;
     px = ev.clientX; py = ev.clientY;
-    if (!acceso || colDito || inCorsa) return;
-    inCorsa = requestAnimationFrame(() => { inCorsa = 0; if (acceso) posa(acceso); });
   }, true);
 
   document.addEventListener('pointerover', (ev) => {
