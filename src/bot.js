@@ -892,12 +892,10 @@ export class BotManager {
     tgDest.migra(login, conf);                       // il vecchio gruppo unico diventa la prima destinazione
     const dest = tgDest.perEvento(login, evento, streamerLogin);
     if (!dest.length) return { inviati: 0 };
-    // LA CARTA: solo per l'annuncio della diretta. Un «è finita» o un nuovo
-    // video non vogliono una locandina, e mandarla lo stesso vorrebbe dire una
-    // figura grande per una notizia piccola.
-    const foto = avvisi.eUnaDiretta(evento)
-      ? await cartaLive.pngPerDiretta(login, info || {}, { chi: streamerLogin }).catch(() => null)
-      : null;
+    // LA CARTA. La decisione «va allegata?» sta in cartalive.js, e la fa anche
+    // la prova dal pannello: due decisioni separate vorrebbero dire una prova
+    // che prova qualcosa di diverso da quello che parte davvero.
+    const foto = await cartaLive.fotoPerEvento(login, evento, { chi: streamerLogin, info });
     const esiti = await telegram.diffondi(conf.token, dest, testo, { anteprima: true, foto });
     let inviati = 0;
     for (const e of esiti) {

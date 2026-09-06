@@ -5660,9 +5660,18 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     const info = await helix.getStream(login).catch(() => null);
     const s = streamers.get(login);
     const testo = telegram.costruisciMessaggioLive({ login, display: s?.display || login }, info, c.messaggio);
-    const r = await telegram.inviaMessaggio(c.token, c.chat_id, '🧪 <i>Anteprima notifica</i>\n\n' + testo);
+    // La prova passa dalla STESSA strada dell'annuncio vero — stessa funzione
+    // che decide la locandina, stessa funzione che spedisce. Mandarla con
+    // `inviaMessaggio` era piu' corto e voleva dire provare una cosa diversa da
+    // quella che parte: la prova arrivava senza immagine e la diretta con, o il
+    // contrario, e nessuno dei due sintomi si vede finche' non e' tardi.
+    const evento = avvisi.eventoDi(piattaformaDi(login)) || avvisi.eventoDi('twitch');
+    const foto = await cartaLive.fotoPerEvento(login, evento, { info: info || {} });
+    const esiti = await telegram.diffondi(c.token, [{ id: 0, chat_id: c.chat_id, titolo: 'gruppo' }],
+      '🧪 <i>Anteprima notifica</i>\n\n' + testo, { anteprima: true, foto });
+    const r = esiti[0] || { ok: false, errore: 'nessuna destinazione' };
     if (!r.ok) return res.status(400).json({ errore: r.errore });
-    res.json({ ok: true });
+    res.json({ ok: true, conFoto: !!foto });
   }));
 
   // scollega tutto (rimuove token e gruppo). Se il webhook era attivo, lo spegne.

@@ -13404,8 +13404,10 @@ function attivaPiattaforma() {
   }));
 
   document.getElementById('btn-tg-prova')?.addEventListener('click', () => conErrore(async () => {
-    await api('/api/streamer/telegram/prova', { method: 'POST', body: {} });
-    toast(L('Messaggio di prova inviato nel gruppo', 'Test message sent to the group', 'Mensaje de prueba enviado al grupo'));
+    const r = await api('/api/streamer/telegram/prova', { method: 'POST', body: {} });
+    toast(r?.conFoto
+      ? L('Prova inviata nel gruppo, con la locandina', 'Test sent to the group, with the poster', 'Prueba enviada al grupo, con el cartel')
+      : L('Messaggio di prova inviato nel gruppo', 'Test message sent to the group', 'Mensaje de prueba enviado al grupo'));
   }));
 
   document.getElementById('btn-tg-scollega')?.addEventListener('click', () => conErrore(async () => {

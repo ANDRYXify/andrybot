@@ -17,6 +17,10 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-06
 
+- «Manda una prova» adesso manda esattamente quello che partirà davvero: se hai acceso la locandina, la prova arriva con la locandina, e te lo dice.
+- La locandina ora si disegna anche in produzione: i caratteri non finivano nel programma pubblicato.
+- I due tasti tondi in basso a destra non tremolano più quando ci passi sopra col cursore.
+
 - Nelle notifiche Telegram c'è un riquadro per la locandina: la accendi, scegli fra la grafica di Twitch e quella di Kick, e vedi l'anteprima.
 - L'anteprima è l'immagine vera, disegnata dal server: quello che vedi è quello che arriva nel gruppo.
 
