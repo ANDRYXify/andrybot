@@ -17,6 +17,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-06
 
+- Due guide nuove: una su Kick, che spiega cosa cambia rispetto a Twitch e perché, e una su come moderare la chat senza cacciare le persone vere.
+
 - Il link corto dell'overlay e la tela del tracking non finiscono più fra le pagine che Google visita: non sono pagine, girano dentro OBS.
 
 - La barra dell'Overlay Studio ha le nuvolette: cosa cambia fra un overlay e l'altro, perché il link è nascosto, e cosa succede davvero a OBS se rinomini o elimini.
