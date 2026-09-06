@@ -47,6 +47,11 @@ E due regole che ho sbagliato prima di andarle a leggere:
 - **La coda non tocca chi parla.** «A tail should terminate at roughly 50-60% of
   the distance between the balloon and the character's head». Arrivandoci sopra,
   su un tasto, gli copre il testo.
+- **E non è più lunga di mezza bolla.** La regola scritta parla solo di distanza,
+  e da sola su una nuvoletta di una parola dava una coda lunga due terzi del
+  corpo: la bolla sembrava appesa a un filo. `misuraCoda(stacco, altezza)` prende
+  il minore fra il 55% della distanza e il 50% dell'altezza, e sta nel motore
+  perché la proporzione è della forma, non di chi la posa.
 - **Il corpo è più largo che alto**, con l'aria attorno al testo pari a circa una
   riga, e l'interlinea larga perché il lettering è tutto maiuscolo.
 
