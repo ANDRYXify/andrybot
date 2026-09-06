@@ -22,15 +22,32 @@
 // vedere», nessun «pagina privata»: sarebbe un oracolo, e trasformerebbe il
 // 404 in uno strumento per mappare il sito.
 
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { dichiarazioni } from './tavolozza.js';
 
 const TOKEN = ['bg', 'surface', 'surface-2-tinta', 'border', 'testo', 'testo-2', 'testo-3',
   'acc', 'su-acc', 'mano', 'testo-font', 'contorno', 'tratto-mano', 'ang-mano',
-  'ombra-ink', 'alone-contorno', 'retino', 'retino-passo'];
+  'ombra-ink', 'ombra-ink-alta', 'alone-contorno', 'retino', 'retino-passo',
+  'tono-carta', 'tono-passo'];
 
 const esc = (s) => String(s ?? '')
   .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
   .replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+
+// Il lettering della manutenzione viaggia DENTRO la pagina. Chi servirebbe il
+// file e' spento: un link al carattere darebbe un ripiego di sistema, e la
+// pagina di cortesia si presenterebbe vestita da un'altra. Trenta kilobyte,
+// una volta sola, per non sembrare un altro prodotto nel momento peggiore.
+const MANO_INLINE = (() => {
+  const via = join(dirname(fileURLToPath(import.meta.url)), 'public', 'vendor', 'font',
+    'permanentmarker-normal-400-latin.woff2');
+  const b64 = readFileSync(via).toString('base64');
+  return `@font-face{font-family:'Permanent Marker';font-style:normal;font-weight:400;`
+    + `font-display:swap;src:url(data:font/woff2;base64,${b64}) format('woff2')}`;
+})();
 
 const CHIARO = dichiarazioni(TOKEN, 'chiaro');
 const SCURO = dichiarazioni(TOKEN, 'scuro');
@@ -43,28 +60,49 @@ const VESTITO = `
   :root{color-scheme:light;${CHIARO}}
   @media(prefers-color-scheme:dark){:root{color-scheme:dark;${SCURO}}}
   html{-webkit-text-size-adjust:100%}
-  body{min-height:100dvh;display:grid;place-items:center;padding:2rem 1.25rem;
-    background:var(--bg);color:var(--testo);
+  body{position:relative;isolation:isolate;min-height:100dvh;display:grid;place-items:center;
+    padding:clamp(1.4rem,5vw,3rem);background:var(--bg);color:var(--testo);
     font:16px/1.6 var(--testo-font,system-ui),system-ui,sans-serif;
     -webkit-font-smoothing:antialiased}
-  body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.5;
+  body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.5;
     background-image:var(--retino);background-size:var(--retino-passo)}
-  .foglio{position:relative;width:100%;max-width:34rem;text-align:center;
-    background:var(--surface);border:var(--tratto-mano) solid var(--contorno);
-    border-radius:var(--ang-mano);box-shadow:var(--alone-contorno),var(--ombra-ink);
-    padding:clamp(1.6rem,5vw,2.6rem)}
+  .tavola{position:relative;z-index:1;width:100%;max-width:36rem}
+  .vignetta{position:relative;display:grid;gap:clamp(1.2rem,4vw,1.9rem);justify-items:center;
+    padding:clamp(1.3rem,4vw,1.9rem) clamp(1.5rem,5vw,2.4rem) clamp(2.4rem,6vw,3.2rem);
+    background:var(--tono-carta) 0 0 / var(--tono-passo),var(--surface);
+    border:2px solid var(--contorno);border-width:var(--tratto-mano);
+    border-radius:7px 4px 6px 5px / 5px 7px 4px 6px;
+    box-shadow:var(--alone-contorno),var(--ombra-ink-alta);
+    text-align:center}
+  .dida{justify-self:start;max-width:26rem;
+    padding:.5rem .85rem .55rem 1rem;text-align:left;position:relative;
+    background:var(--surface-2-tinta);color:var(--testo-2);
+    border:1px solid var(--contorno);border-left-width:5px;
+    border-radius:2px 4px 3px 5px / 4px 2px 5px 3px;
+    font-size:.86rem;line-height:1.5}
+  .dida::after{content:"";position:absolute;right:-1px;top:-1px;border:8px solid transparent;
+    border-top-color:var(--contorno);border-right-color:var(--contorno)}
+  .numero{position:absolute;right:-.4rem;bottom:-.85rem;
+    padding:.14rem .62rem .2rem;background:var(--contorno);color:var(--bg);
+    border-radius:3px 5px 3px 4px / 4px 3px 5px 3px;
+    font-family:var(--mano),system-ui,sans-serif;font-size:1.05rem;letter-spacing:.04em}
   h1{font-family:var(--mano),system-ui,sans-serif;line-height:1.02;
-    font-size:clamp(2.2rem,9vw,3.4rem);color:var(--testo);margin-bottom:.5rem}
-  p{color:var(--testo-2);margin:0 auto;max-width:30rem}
-  p+p{margin-top:.7rem}
-  .vie{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center;margin-top:1.5rem}
+    font-size:clamp(2.3rem,9.5vw,3.6rem);color:var(--testo);
+    text-wrap:balance;margin:0 auto;max-width:14ch}
+  .vignetta p.dida{color:var(--testo-2);margin:0}
+  .vie{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center;margin-top:1.9rem}
   .vie a{display:inline-block;padding:.62rem 1.1rem;text-decoration:none;font-weight:600;
     color:var(--testo);background:var(--surface-2-tinta);
-    border:var(--tratto-mano) solid var(--contorno);border-radius:var(--ang-mano);
-    box-shadow:var(--ombra-ink)}
+    border:2px solid var(--contorno);border-width:var(--tratto-mano);
+    border-radius:var(--ang-mano);box-shadow:var(--ombra-ink)}
   .vie a.primo{background:var(--acc);color:var(--su-acc)}
   .vie a:active{transform:translate(2px,3px);box-shadow:none}
-  .nota{margin-top:1.4rem;font-size:.84rem;color:var(--testo-3)}`;
+  .dida.coda{justify-self:start;font-size:.8rem;padding:.42rem .8rem .46rem .95rem;max-width:30rem}
+  .dida.coda span+span{display:inline-block;margin-top:.3rem}
+  .nota{margin-top:1.1rem;font-size:.84rem;color:var(--testo-2);text-align:center}
+  .nota+.nota{margin-top:.3rem}
+  h1{margin-bottom:clamp(.4rem,2vw,1rem)}
+  @media (max-width:30rem){.dida{justify-self:stretch;max-width:none}}`;
 
 const guscio = (lang, titolo, corpo, robots = 'noindex, follow', conIcona = true) => `<!doctype html>
 <html lang="${lang}">
@@ -73,11 +111,11 @@ const guscio = (lang, titolo, corpo, robots = 'noindex, follow', conIcona = true
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(titolo)}</title>
 <meta name="robots" content="${robots}">
-${conIcona ? '<link rel="icon" href="/icons/icon-192.png?v=7">' : ''}
-<style>${VESTITO}</style>
+${conIcona ? '<link rel="icon" href="/icons/icon-192.png?v=7">\n<link rel="stylesheet" href="/font.css">' : ''}
+<style>${conIcona ? '' : MANO_INLINE}${VESTITO}</style>
 </head>
 <body>
-<main class="foglio">
+<main class="tavola">
 ${corpo}
 </main>
 </body>
@@ -103,13 +141,16 @@ export function pagina404(lingua = 'it') {
   const l = LINGUE_SERVIZIO.includes(lingua) ? lingua : 'it';
   const t = T404[l];
   const via = l === 'it' ? '/' : `/?lang=${l}`;
-  return guscio(l, t.tit, `  <h1>${esc(t.h1)}</h1>
-  <p>${esc(t.p1)}</p>
+  return guscio(l, t.tit, `  <div class="vignetta">
+    <p class="dida">${esc(t.p1)}</p>
+    <h1>${esc(t.h1)}</h1>
+    <p class="dida coda">${esc(t.nota)}</p>
+    <span class="numero">404</span>
+  </div>
   <div class="vie">
     <a class="primo" href="${via}">${esc(t.casa)}</a>
     <a href="/guide">${esc(t.guide)}</a>
-  </div>
-  <p class="nota">${esc(t.nota)}</p>`);
+  </div>`);
 }
 
 // ── MANUTENZIONE ─────────────────────────────────────────────────────────────
@@ -125,9 +166,10 @@ const TM = [
 
 export function paginaManutenzione() {
   const [it, en, es] = TM;
-  return guscio('it', it[1], `  <h1>${esc(it[1])}</h1>
-  <p>${esc(it[2])}</p>
-  <div class="vie"><a class="primo" href="/">${esc(it[3])}</a></div>
-  <p class="nota" lang="en">${esc(en[2])}</p>
-  <p class="nota" lang="es">${esc(es[2])}</p>`, 'noindex, nofollow', false);
+  return guscio('it', it[1], `  <div class="vignetta">
+    <p class="dida">${esc(it[2])}</p>
+    <h1>${esc(it[1])}</h1>
+    <p class="dida coda"><span lang="en">${esc(en[2])}</span><br><span lang="es">${esc(es[2])}</span></p>
+  </div>
+  <div class="vie"><a class="primo" href="/">${esc(it[3])}</a></div>`, 'noindex, nofollow', false);
 }

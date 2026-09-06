@@ -60,6 +60,22 @@ export const REGOLA_MARCHIO = (() => {
   return css.slice(i, css.indexOf('}', i) + 1);
 })();
 
+// Un token puo' essere scritto in funzione di un altro (`--tratto-mano:
+// var(--tratto-2)`). Chi chiede il primo e non sa del secondo si porta via una
+// dichiarazione che punta nel vuoto: la regola non e' invalida, il browser la
+// scarta e basta. Era successo alle pagine di servizio, che chiedevano
+// `--tratto-mano` per il bordo: il bordo non c'era, e non c'era nessun errore.
+// Quindi le dipendenze si seguono da sole, fin dove arrivano.
 export function dichiarazioni(nomi, tema = 'chiaro') {
-  return nomi.map((n) => `--${n}:${tinta(n, tema)}`).join(';');
+  const presi = [];
+  const visti = new Set();
+  const prendi = (n) => {
+    if (visti.has(n)) return;
+    visti.add(n);
+    const v = tinta(n, tema);
+    for (const m of v.matchAll(/var\(\s*--([a-z0-9-]+)/g)) prendi(m[1]);
+    presi.push(`--${n}:${v}`);
+  };
+  for (const n of nomi) prendi(n);
+  return presi.join(';');
 }

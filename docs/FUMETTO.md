@@ -105,3 +105,47 @@ Il difetto non si vede leggendo il codice, quindi lo misura il browser:
 `scripts/verifica-contorni.mjs` apre e chiude ogni `details` del pannello e
 chiede se quella freccia, adesso, si vede — opacità e larghezza vere. Se non si
 vede, il cancello è rosso.
+
+## Il 404 e la manutenzione sono una vignetta
+
+Le due pagine che si vedono quando qualcosa non c'è erano un foglio col titolo
+in mezzo. Adesso sono **una vignetta**: la pagina attorno è il margine fra le
+vignette (carta e retino), il riquadro ha il contorno d'inchiostro con gli
+angoli disuguali e l'ombra, e chi racconta parla da **didascalie** — una in alto
+a sinistra, una in basso. Nessuna delle due ha la coda: non le sta dicendo
+nessuno, sono la voce narrante.
+
+Il numero della vignetta è **404**. Non è una decorazione: i fumetti numerano le
+pagine, e il codice HTTP è già un numero. Sta nell'angolo in basso a destra, a
+cavallo del bordo, come sta un numero di pagina.
+
+Il retino era un velo `fixed` disegnato **sopra** al contenuto: i puntini
+passavano attraverso il testo, e le righe piccole in fondo erano quasi
+illeggibili. Nella stampa il retino sta sotto l'inchiostro, e adesso anche qui.
+
+La manutenzione si porta il **lettering dentro la pagina**, in base64. È l'unica
+che può: la serve l'edge quando il bot è spento, e chi servirebbe il file del
+carattere è proprio la cosa che non risponde. Trenta kilobyte una volta sola,
+per non presentarsi vestita da un altro prodotto nel momento peggiore. Il 404 no:
+lo serve il bot, che è in piedi, e se lo prende con un link.
+
+## Due bordi che non esistevano
+
+`--tratto-mano` vale `2px 2.5px 2.5px 2px`: quattro larghezze, perché il bordo
+del sito non è uguale sui quattro lati. La scorciatoia
+`border: <larghezza> <stile> <colore>` ne accetta **una sola**: con quattro la
+dichiarazione è invalida e il browser la butta via intera. Niente bordo, nessun
+errore, nessun avviso in console. Ce n'erano nove in giro — le pagine di
+servizio, il tasto della lente, i campi file, le righe della veste — e nessuna
+aveva il contorno. La forma giusta è in due tempi:
+`border: 2px solid …; border-width: var(--tratto-mano)`.
+
+L'altro: `dichiarazioni()` copiava il testo del token così com'era, e un token
+può essere scritto in funzione di un altro. Chi chiedeva `--tratto-mano` senza
+sapere di `--tratto-2` si portava via una regola che punta nel vuoto. Adesso le
+dipendenze si seguono da sole.
+
+`node --test test/unita/inchiostro-css.test.mjs` tiene fermi tutti e due, e
+l'elenco dei token con più larghezze lo ricava dalla tavolozza invece di
+elencarlo: la prima volta che l'ho scritto a mano mi ero scordato `--tratto-1`,
+che era proprio quello con più bordi morti.
