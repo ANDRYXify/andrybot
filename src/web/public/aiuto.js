@@ -8,7 +8,7 @@
   const BECCO = 36;
   const SOPRA_CURSORE = 18;
   const SOTTO_CURSORE = 20;
-  const GIRO_MAX = 62;
+  const GIRO_MAX = 34;
   const LETTURA_BASE = 1400;
   const LETTURA_PAROLA = 300;
   const LETTURA_MAX = 9000;
@@ -104,9 +104,10 @@
     const ancoraY = segue ? dentro(py, r.top + 2, r.bottom - 2) : r.top;
     const cima = segue ? ancoraY - SOPRA_CURSORE : r.top;
     const fondo = segue ? ancoraY + SOTTO_CURSORE : r.bottom;
+    const orlo = Math.max(BECCO, m.width * 0.26);
     const aDestra = ancoraX < larg * 0.62;
     let x = segue
-      ? (aDestra ? ancoraX - BECCO : ancoraX - m.width + BECCO)
+      ? (aDestra ? ancoraX - orlo : ancoraX - m.width + orlo)
       : ancoraX - m.width / 2;
     x = Math.max(10, Math.min(x, larg - m.width - 14));
     let y = cima - m.height - STACCO;
@@ -116,7 +117,7 @@
     b.style.left = Math.round(x) + 'px';
     b.style.top = Math.round(y) + 'px';
     b.classList.toggle('sotto', !sopra);
-    const attacco = Math.round(Math.max(BECCO, Math.min(ancoraX - x, m.width - BECCO)));
+    const attacco = Math.round(Math.max(orlo, Math.min(ancoraX - x, m.width - orlo)));
     b.style.setProperty('--becco', attacco + 'px');
     const bx = x + attacco;
     const by = sopra ? y + m.height : y;
