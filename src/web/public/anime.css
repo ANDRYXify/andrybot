@@ -531,6 +531,7 @@ body.pad-vivo #plancia-lancia { bottom: calc(130px + env(safe-area-inset-bottom,
   --t-scena: 420ms;
   --t-scambio: 150ms;
   --t-impatto: 118ms;
+  --t-uscita: 96ms;
   --sfalso: 26ms;
   --ease-uscita: cubic-bezier(.4, 0, 1, 1);
   --ease-entrata: cubic-bezier(.16, .84, .34, 1);
@@ -602,9 +603,11 @@ body.leggero #anime-sfondo::after, body.meno-moto #anime-sfondo::after { animati
 @media (prefers-reduced-motion: reduce) {
   #anime-sfondo::after, .pl-atmo { animation: none !important; }
   .lampo-scena { display: none !important; }
+  .pannello-scheda.esce { animation: none !important; }
+  .pannello-scheda.scena .carta.rivela { --rev-x: 0px; }
   .btn::after, .pl-tile::after { display: none; }
   :root { --molla-lieve: ease; --molla-medio: ease; --molla-pieno: ease; --molla-scena: ease;
-          --t-lieve: .01ms; --t-medio: .01ms; --t-pieno: .01ms; --t-scena: .01ms; --t-scambio: .01ms; --t-impatto: .01ms; --sfalso: 0ms; }
+          --t-lieve: .01ms; --t-medio: .01ms; --t-pieno: .01ms; --t-scena: .01ms; --t-scambio: .01ms; --t-impatto: .01ms; --t-uscita: .01ms; --sfalso: 0ms; }
 }
 
 body.senza-cursore, body.senza-cursore * { cursor: default !important; }
@@ -755,6 +758,18 @@ body.pad-guida, body.pad-guida * { cursor: none !important; }
   width: 7px; height: 7px; margin-right: .45em; border-radius: 50%;
   background: currentColor; opacity: .5; vertical-align: baseline;
 }
+
+.pannello-scheda.esce { animation: pn-esce var(--t-uscita) var(--su-tre) both; }
+:root[data-verso="avanti"] .pannello-scheda.esce { animation-name: pn-via-sx; }
+:root[data-verso="indietro"] .pannello-scheda.esce { animation-name: pn-via-dx; }
+@keyframes pn-esce { to { opacity: 0; transform: translateY(-18px); } }
+@keyframes pn-via-sx { to { opacity: 0; transform: translateX(-7%); } }
+@keyframes pn-via-dx { to { opacity: 0; transform: translateX(7%); } }
+
+.pannello-scheda.scena .carta.rivela { transform: translate(var(--rev-x, 0px), 18px); }
+:root[data-verso="avanti"] .pannello-scheda.scena .carta.rivela { --rev-x: 32px; }
+:root[data-verso="indietro"] .pannello-scheda.scena .carta.rivela { --rev-x: -32px; }
+.pannello-scheda.scena .carta.rivela.dentro { transform: none; }
 
 .lampo-scena {
   position: fixed; inset: 0; z-index: 9500; pointer-events: none;

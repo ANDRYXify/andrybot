@@ -183,6 +183,29 @@ Il sito ne usa due, e la scelta la fa il codice, non l'occhio: la decide
 | fra **sottosezioni** della stessa famiglia | **da azione ad azione** — stessa scena, la macchina non si sposta | nessun lampo. I blocchi rientrano sfalsati di `--sfalso` nell'ordine di lettura, nel verso del movimento, a scatti (`--su-due`) |
 | fra **sezioni** diverse | **da scena a scena** — luogo nuovo | **fotogramma d'impatto**, poi la vignetta nuova entra a scatti dal verso giusto |
 
+### I tre tempi
+
+Lo stacco fra scene ha **tre tempi**, come in un fumetto: la vignetta vecchia
+esce, arriva l'impatto, la nuova entra. Prima ne aveva uno solo — il lampo — e
+si vedeva «un guizzo, poi la pagina»: staccato, senza niente sotto.
+
+1. **Uscita** (`--t-uscita`, 96 ms): il pannello vecchio scivola via nel verso
+   del movimento, a scatti.
+2. **Impatto** (`--t-impatto`, 118 ms): le linee di concentrazione. Al 38% —
+   il picco — il contenuto cambia sotto: il lampo *copre* il taglio.
+3. **Entrata**: le schede rientrano dal lato da cui sei arrivato mentre il lampo
+   si dirada, sfalsate in ordine di lettura.
+
+Per farlo, il cambio di sezione **non usa più la view transition**: lo strato
+delle view transition il browser lo dipinge sopra a tutto, quindi appena partiva
+il lampo spariva di colpo invece di dissolversi sulla pagina che arriva. I due
+non possono convivere, e fra i due conta l'impatto.
+
+La view transition resta dove serve davvero: quando apri una scheda che si
+*trasforma* nella pagina. Li' non c'e' impatto, perche' non e' uno stacco — e'
+uno zoom dentro la stessa vignetta, che nella grammatica di McCloud e' un
+passaggio da soggetto a soggetto.
+
 ### Il fotogramma d'impatto
 
 Le linee sono **di concentrazione** (集中線, *shūchūsen*): raggi che convergono

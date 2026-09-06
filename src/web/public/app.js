@@ -816,6 +816,7 @@ function morphDa(el) {
 let _lampo = null;
 let _lampoVia = 0;
 let _versoVia = 0;
+let _uscitaVia = 0;
 let _lampoQuando = 0;
 const LAMPO_PAUSA = 420;
 
@@ -17877,15 +17878,28 @@ function vaiAScheda(id) {
     return;
   }
 
-  if (org && !_menoMoto) morphDa(org);
   try { document.documentElement.dataset.verso = _versoVerso(prima, id); } catch (e) {  }
-  const attesa = battiScena();
-  if (attesa > 0) { setTimeout(() => _cambiaScena(id, sezioni), Math.round(attesa * 0.38)); return; }
-  _cambiaScena(id, sezioni);
+
+  if (org && !_menoMoto) { morphDa(org); _cambiaScena(id, sezioni, true); return; }
+  if (_menoMoto) { _cambiaScena(id, sezioni, true); return; }
+
+  for (const p of document.querySelectorAll('.pannello-scheda.visibile')) p.classList.add('esce');
+  clearTimeout(_uscitaVia);
+  _uscitaVia = setTimeout(() => {
+    const attesa = battiScena();
+    if (attesa > 0) setTimeout(() => _cambiaScena(id, sezioni, false), Math.round(attesa * 0.38));
+    else _cambiaScena(id, sezioni, false);
+  }, _duraUscita());
 }
 
-function _cambiaScena(id, sezioni) {
-  const tr = transizione(() => {
+function _duraUscita() {
+  const v = getComputedStyle(document.documentElement).getPropertyValue('--t-uscita').trim();
+  const n = parseFloat(v) || 0;
+  return /ms$/.test(v) ? n : n * 1000;
+}
+
+function _cambiaScena(id, sezioni, conVelo) {
+  const corpo = () => {
     window.scrollTo({ top: 0, behavior: 'auto' });
     morphDa(null);
     chiudiMenuTop();
@@ -17897,9 +17911,22 @@ function _cambiaScena(id, sezioni) {
     armaComparsa();
     sezioni.forEach((p) => { rendiCartePieghevoli(p, id); preparaCarte(p); });
     applicaSottoSchede(id);
-  });
+  };
   const finita = () => { morphDa(null); avviaComparsa(sezioni); };
-  try { tr.finished.then(finita, finita); } catch { finita(); }
+  if (conVelo) {
+    const tr = transizione(corpo);
+    try { tr.finished.then(finita, finita); } catch { finita(); }
+  } else {
+    for (const p of document.querySelectorAll('.pannello-scheda.esce')) p.classList.remove('esce');
+    corpo();
+    sezioni.forEach((p) => p.classList.add('scena'));
+    finita();
+    clearTimeout(_versoVia);
+    _versoVia = setTimeout(() => {
+      delete document.documentElement.dataset.verso;
+      for (const p of document.querySelectorAll('.pannello-scheda.scena')) p.classList.remove('scena');
+    }, 1400);
+  }
   setTimeout(() => morphDa(null), 1600);
   caricaDatiScheda(id);
   azzeraBarraSalva();

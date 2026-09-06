@@ -62,10 +62,25 @@ const RESPIRO = Math.max(480, pausa + 200);
 // misura niente. Un osservatore sulle classi registra il passaggio comunque,
 // qualunque sia il momento in cui lo si legge.
 await p.evaluate(() => {
-  window.__stacchi = { lampo: 0, scambio: 0 };
+  window.__stacchi = { lampo: 0, scambio: 0, esce: 0, scena: 0, esceMuove: 0, scenaMuove: 0 };
   const guarda = () => {
     if (document.querySelector('.lampo-scena.batte')) window.__stacchi.lampo++;
     if (document.querySelector('.pannello-scheda.scambio')) window.__stacchi.scambio++;
+    // non basta la classe: si chiede l'ANIMAZIONE che ne esce davvero. Il
+    // blocco era finito dentro @media (prefers-reduced-motion) e la classe
+    // c'era lo stesso, senza muovere niente.
+    const u = document.querySelector('.pannello-scheda.esce');
+    if (u) {
+      window.__stacchi.esce++;
+      const n = getComputedStyle(u).animationName;
+      if (n && n !== 'none') window.__stacchi.esceMuove++;
+    }
+    const s = document.querySelector('.pannello-scheda.scena .carta.rivela');
+    if (s) {
+      window.__stacchi.scena++;
+      const x = parseFloat(getComputedStyle(s).getPropertyValue('--rev-x')) || 0;
+      if (Math.abs(x) > 4) window.__stacchi.scenaMuove++;
+    }
   };
   new MutationObserver(guarda).observe(document.documentElement,
     { attributes: true, subtree: true, childList: true, attributeFilter: ['class'] });
@@ -76,11 +91,12 @@ const passaggi = [];
 for (let i = 1; i < schede.length; i++) {
   await p.evaluate((x) => window.SB_APP.vai(x), schede[i - 1]);
   await p.waitForTimeout(RESPIRO);
-  await p.evaluate(() => { window.__stacchi = { lampo: 0, scambio: 0 }; });
+  await p.evaluate(() => { window.__stacchi = { lampo: 0, scambio: 0, esce: 0, scena: 0, esceMuove: 0, scenaMuove: 0 }; });
   await p.evaluate((x) => window.SB_APP.vai(x), schede[i]);
-  await p.waitForTimeout(260);
+  await p.waitForTimeout(360);
   const conto = await p.evaluate(() => window.__stacchi);
-  const esito = { lampo: conto.lampo > 0, scambio: conto.scambio > 0 };
+  const esito = { lampo: conto.lampo > 0, scambio: conto.scambio > 0,
+    esce: conto.esceMuove > 0, scena: conto.scenaMuove > 0 };
   await p.waitForTimeout(RESPIRO);
   passaggi.push({ da: schede[i - 1], a: schede[i], ...esito });
 }
@@ -107,7 +123,7 @@ for (const [classe, atteso] of [['leggero', true], ['meno-moto', false]]) {
   await p.evaluate((c) => { document.body.classList.add(c); }, classe);
   await p.evaluate((x) => window.SB_APP.vai(x), schede[0]);
   await p.waitForTimeout(RESPIRO);
-  await p.evaluate(() => { window.__stacchi = { lampo: 0, scambio: 0 }; });
+  await p.evaluate(() => { window.__stacchi = { lampo: 0, scambio: 0, esce: 0, scena: 0, esceMuove: 0, scenaMuove: 0 }; });
   const meta = schede.find((s) => s !== schede[0]);
   await p.evaluate((x) => window.SB_APP.vai(x), meta);
   await p.waitForTimeout(260);
@@ -142,6 +158,12 @@ dice(!restato.acceso && restato.opac < 0.02, 'il lampo non resta a schermo', `op
 dice(restato.presenti <= 1, 'non se ne accumula uno per ogni cambio', `${restato.presenti} veli in pagina`);
 dice(tempi.impatto > 0 && tempi.impatto <= 120, 'l\'impatto dura due fotogrammi, non mezzo secondo', `${tempi.impatto}ms`);
 dice(pausa >= 340, 'fra due lampi passa abbastanza: non si arriva a tre al secondo', `pausa ${pausa}ms`);
+const senzaUscita = scene.filter((x) => !x.esce);
+const senzaEntrata = scene.filter((x) => !x.scena);
+dice(!senzaUscita.length, 'la pagina vecchia esce davvero prima dell\'impatto (animazione, non solo classe)',
+  senzaUscita.slice(0, 4).map((x) => `${x.da}→${x.a}`).join(' · '));
+dice(!senzaEntrata.length, 'e quella nuova entra davvero dal verso giusto mentre il lampo si dirada',
+  senzaEntrata.slice(0, 4).map((x) => `${x.da}→${x.a}`).join(' · '));
 dice(interruttori.leggero.visto === true,
   'la modalita\' leggera non spegne lo stacco: serve al carico, non al movimento');
 dice(interruttori['meno-moto'].visto === false,
