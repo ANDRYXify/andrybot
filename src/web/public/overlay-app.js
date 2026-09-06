@@ -734,7 +734,7 @@ function disegnaMusica() {
   const st = cfg.stile || {};
   el.className = 'ovl-widget ovl-musica dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna')
     + ' verso-' + cfg.verso + ' righe-' + cfg.righe
-    + ' cover-' + cfg.cover + ' barra-' + cfg.barra + (cfg.onde ? ' con-onde' : '')
+    + ' cover-' + cfg.cover + ' barra-' + cfg.barra + (cfg.ritmo !== 'no' ? ' con-onde' : '')
     + ' sfondo-' + cfg.sfondo + ' ritmo-' + cfg.ritmo
     + ' corpo-' + (cfg.corpo || 'normale') + ' tema-' + (cfg.tema || 'nessuno')
     + (vivo && d.suona ? ' suona' : ' in-pausa') + (vivo ? '' : ' fermo')

@@ -5996,18 +5996,18 @@ function pannelloAlert() {
           <label class="campo-num">${L('Tempi', 'Times', 'Tiempos')}<select data-c="tempi">${[['no', L('niente', 'none', 'ninguno')], ['trascorso', L('trascorso', 'elapsed', 'transcurrido')], ['restante', L('quanto manca', 'remaining', 'lo que falta')], ['due', L('tutti e due', 'both', 'los dos')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Entrata', 'Entrance', 'Entrada')}<select data-c="entrata">${[['dissolve', L('dissolvenza', 'fade', 'fundido')], ['scivola', L('scivola da lato', 'slide in', 'desliza')], ['sale', L('sale dal basso', 'rise up', 'sube')], ['niente', L('secca', 'none', 'seca')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Se è in pausa', 'When paused', 'Si está en pausa')}<select data-c="quandoFermo">${[['sparisce', L('sparisce', 'goes away', 'desaparece')], ['resta', L('resta a schermo', 'stays on screen', 'se queda')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
-          <label class="campo-num">${L('Cosa balla a tempo', 'What beats along', 'Qué baila al ritmo')}<select data-c="ritmo">${[['onde', L('le onde', 'the bars', 'las ondas')], ['tutto', L('onde e copertina', 'bars and cover', 'ondas y portada')], ['no', L('niente si muove a tempo', 'nothing moves to the beat', 'nada se mueve al ritmo')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+          <label class="campo-num">${L('Le onde', 'The bars', 'Las ondas')}<select data-c="ritmo">${[['onde', L('onde che ballano', 'bars that dance', 'ondas que bailan')], ['tutto', L('onde e copertina che pulsa', 'bars and pulsing cover', 'ondas y portada que late')], ['no', L('niente onde', 'no bars', 'sin ondas')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Sfondo', 'Background', 'Fondo')}<select data-c="sfondo">${[['no', L('niente', 'none', 'ninguno')], ['copertina', L('copertina sfocata', 'blurred cover', 'portada difuminada')], ['colori', L('colori del disco', 'record colors', 'colores del disco')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Corpo', 'Body', 'Cuerpo')}<select data-c="corpo">${CORPO_OPTS().map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Tema', 'Theme', 'Tema')}<select data-c="tema">${TEMA_OPTS().map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
           <label class="campo-num">${L('Larghezza del testo', 'Text width', 'Ancho del texto')} <span class="tenue">${L('0 = come il corpo', '0 = follow the body', '0 = como el cuerpo')}</span><input type="number" data-c="larghezza" min="0" max="30"></label>
         </div>
         <div class="riga-flessibile spazio-sopra">
-          <label class="riga-check"><input type="checkbox" data-c="onde"> ${L('Mostra le onde', 'Show the bars', 'Mostrar las ondas')}</label>
           <label class="riga-check"><input type="checkbox" data-c="scorre"> ${L('Il titolo lungo scorre', 'Long titles scroll', 'Los títulos largos se desplazan')}</label>
           <label class="riga-check"><input type="checkbox" data-c="daCopertina"> ${L('Colore preso dalla copertina', 'Color taken from the cover', 'Color tomado de la portada')}</label>
           <label class="riga-check"><input type="checkbox" data-c="cambio"> ${L('Si rianima a ogni brano', 'Replays its entrance on every track', 'Se reanima en cada tema')}</label>
         </div>
+        <p class="suggerimento spazio-sopra">${L('La copertina pulsa solo se Spotify ci dice il tempo del brano: quando non lo dice, resta ferma invece di pulsare a una velocità che non c’entra niente. Le onde ballano comunque.', 'The cover only pulses when Spotify tells us the track’s tempo: when it doesn’t, it stays still instead of pulsing at a speed unrelated to the song. The bars dance anyway.', 'La portada solo late si Spotify nos dice el tempo del tema: cuando no lo dice, se queda quieta en vez de latir a una velocidad que no tiene que ver. Las ondas bailan igual.')}</p>
         <div class="asp-blocco" data-asp="musica" data-cfg-di="musica">
           <h4 class="spazio-sopra">${L('Aspetto', 'Appearance', 'Aspecto')}</h4>
           ${_vesteCampi()}
@@ -6702,7 +6702,7 @@ function _vestiMusica(box, cfg) {
   box.className = 'ovl-widget ovl-musica dentro dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna')
     + ' verso-' + (cfg.verso || 'riga') + ' righe-' + (cfg.righe || 'una')
     + ' cover-' + (cfg.cover || 'quadrata') + ' barra-' + (cfg.barra || 'sotto')
-    + (cfg.onde !== false ? ' con-onde' : '') + ' sfondo-' + (cfg.sfondo || 'no')
+    + ((cfg.ritmo || 'onde') !== 'no' ? ' con-onde' : '') + ' sfondo-' + (cfg.sfondo || 'no')
     + ' ritmo-' + (cfg.ritmo || 'onde') + ' suona'
     + ' corpo-' + (cfg.corpo || 'normale') + ' tema-' + (cfg.tema || 'nessuno')
     + ((cfg.barra || 'sotto') !== 'sotto' && (cfg.tempi || 'no') === 'no' ? ' senza-sotto' : '');

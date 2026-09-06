@@ -12,7 +12,8 @@ successo qualcosa.
 
 ## 2026-09-05
 
-- Nel lettore musica, «niente si muove a tempo» adesso ferma davvero le onde. Prima cambiava solo la loro velocità e continuavano a ballare.
+- Nel lettore musica «niente onde» adesso le toglie davvero, invece di lasciarle lì ferme. Le due impostazioni che si sovrapponevano sono diventate una sola.
+- La copertina pulsa solo quando Spotify ci dice il tempo del brano. Quando non lo dice resta ferma, invece di pulsare a una velocità che non c'entrava niente con la canzone.
 - Il titolo lungo scorre sempre, non più a volte sì e a volte no: si rimisura quando arriva il carattere, quando arriva la copertina e quando cambi la dimensione.
 
 - [privato] Il computer di Lia ha uno schermo vero e un browser vero, che resta aperto fra un gesto e l'altro. Prima ogni pagina nasceva e moriva dentro un comando.

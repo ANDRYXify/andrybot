@@ -460,15 +460,15 @@
 .ovl-musica[style*="--battito"]:not(.ritmo-no) .m-onde i:nth-child(2) { animation-duration: calc(var(--battito) * 2); }
 .ovl-musica[style*="--battito"]:not(.ritmo-no) .m-onde i:nth-child(3) { animation-duration: calc(var(--battito) / 2); }
 .ovl-musica[style*="--battito"]:not(.ritmo-no) .m-onde i:nth-child(4) { animation-duration: calc(var(--battito) * 1.5); }
-.ovl-musica.ritmo-tutto.suona .m-cover {
-  animation: mus-batte var(--battito, .5s) ease-out infinite;
+.ovl-musica[style*="--battito"].ritmo-tutto.suona .m-cover {
+  animation: mus-batte var(--battito) ease-out infinite;
   animation-delay: var(--battito-fase, 0s);
 }
 @keyframes mus-batte {
   0% { transform: scale(calc(1 + .045 * var(--battito-forza, 1))); }
   60%, 100% { transform: scale(1); }
 }
-.ovl-musica.ritmo-tutto.suona .m-disco {
+.ovl-musica[style*="--battito"].ritmo-tutto.suona .m-disco {
   --disco-alone: 0 0 calc(10px * var(--battito-forza, 1)) color-mix(in srgb, var(--acc) 45%, transparent);
 }
 
@@ -656,8 +656,8 @@
   filter: contrast(1.22) saturate(.9);
   --disco-orlo: inset 0 0 0 .06em rgba(20, 9, 15, .9);
 }
-.ovl-musica.tema-manga.ritmo-tutto.suona .m-velo {
-  animation: mus-tono var(--battito, .5s) ease-out infinite;
+.ovl-musica[style*="--battito"].tema-manga.ritmo-tutto.suona .m-velo {
+  animation: mus-tono var(--battito) ease-out infinite;
   animation-delay: var(--battito-fase, 0s);
 }
 @keyframes mus-tono { 0% { opacity: calc(1 - .55 * var(--battito-forza, 1)); } 55%, 100% { opacity: 1; } }
