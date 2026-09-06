@@ -17,7 +17,7 @@ import { dirname, join, basename } from 'node:path';
 import { config, SCOPES, missingConfig } from '../config.js';
 import * as filigrana from '../watermark.js';   // filigrana di proprietà (Andrea Taliento / ANDRYXify)
 import { makeLog } from '../logger.js';
-import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb } from '../db.js';
+import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive } from '../db.js';
 import { points, vips, tgConf, tgDest, tgAmici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, compleanni, membri, subscriptions, giochi as giochiDb, guide, pointAlerts, tgLogin, contatori } from '../db.js';
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO } from '../db.js';
 import { renderLinkPage, renderInformativa } from '../features/linkpagina.js';
@@ -43,6 +43,7 @@ import { StudioEngine, QUALITA as STUDIO_QUALITA } from '../features/studio.js';
 import { seedStreamer } from '../features/seed.js';
 import * as vip from '../features/vip.js';
 import * as telegram from '../features/telegram.js';
+import * as cartaLive from '../features/cartalive.js';
 import * as feedmod from '../features/feed.js';
 import * as categoria from '../features/categoria.js';
 import * as compleanniFeat from '../features/compleanni.js';
@@ -598,6 +599,33 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // Vedi src/web/minifica.js — e SB_SORGENTI=1 lo spegne.
   app.use(creaMinifica(publicDir));
   app.use(express.static(publicDir));
+
+  // IL DISEGNO DELLA CARTA, SERVITO AL BROWSER.
+  //
+  // L'editor deve disegnare l'anteprima con LA STESSA funzione che disegna
+  // l'immagine che parte, sennò le due cose divergono in silenzio. Quindi il
+  // browser riceve `src/features/carta-disegno.js` — quel file, non una copia
+  // che qualcuno dovrà ricordarsi di riallineare.
+  //
+  // Esce spogliato dei commenti: quel file ne ha, e le spiegazioni non devono
+  // arrivare a chi apre F12. Si spoglia una volta all'avvio, non a ogni
+  // richiesta.
+  const DISEGNO_JS = cartaLive.disegnoPerIlBrowser();
+  app.get('/js/carta-disegno.js', (req, res) => {
+    if (!DISEGNO_JS) return notFound(res);
+    res.set('Content-Type', 'application/javascript; charset=utf-8')
+      .set('Cache-Control', 'public, max-age=3600').send(DISEGNO_JS);
+  });
+
+  // E i caratteri, gli STESSI file che carica il rasterizzatore. Un carattere
+  // diverso fra anteprima e immagine vera sposterebbe ogni testo di qualche
+  // pixel, e nessuno capirebbe perché.
+  const CARATTERI_AMMESSI = new Set(cartaLive.CARATTERI.map(([, file]) => file));
+  app.get('/font/:file', (req, res) => {
+    const f = String(req.params.file || '');
+    if (!CARATTERI_AMMESSI.has(f)) return notFound(res);
+    res.sendFile(join(cartaLive.CARTELLA_CARATTERI, f), { maxAge: '30d' }, (err) => { if (err) notFound(res); });
+  });
 
   function requireLogin(req, res, next) {
     if (!currentUser(req)) return res.status(401).json({ errore: 'non autenticato' });
@@ -5214,6 +5242,96 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // Da qui in poi TUTTE le rotte Telegram (scrittura) richiedono il pacchetto
   // "notifiche": un solo guard invece di ripeterlo su ogni endpoint.
   app.use('/api/streamer/telegram', requireLogin, gateFeature('notifiche', 'Le notifiche live'));
+
+  // ------------------------------------------------------------ LA CARTA DELLA DIRETTA
+  //
+  // Sta sotto `/telegram/` di proposito: cosi' il recinto del pacchetto
+  // "notifiche" registrato qui sopra vale anche per lei, senza un secondo
+  // controllo da ricordarsi di scrivere.
+  //
+  // Il vocabolario (tipi, forme, caratteri, segnaposto, temi) esce da QUI e non
+  // sta scritto nell'editor. Il giorno che si aggiunge un tipo, l'editor lo sa
+  // senza toccarlo; e soprattutto non puo' offrire una scelta che il server poi
+  // scarta in silenzio.
+  const vocabolarioCarta = () => ({
+    tipi: cartaLive.TIPI,
+    forme: cartaLive.FORME_AVATAR,
+    fondi: cartaLive.FONDI,
+    segnaposto: cartaLive.SEGNAPOSTO,
+    caratteri: cartaLive.CARATTERI.map(([nome]) => nome),
+    misura: cartaLive.MISURA,
+    massimo: cartaLive.MAX_ELEMENTI,
+    temi: cartaLive.NOMI_TEMI.map((id) => ({ id, nome: cartaLive.TEMI[id].nome, carta: cartaLive.TEMI[id] })),
+  });
+
+  // Cosa scrivere dentro alla carta mentre la si compone. Sono i dati VERI del
+  // canale: titolo e categoria di adesso, il nome e la faccia. Inventare un
+  // titolo d'esempio farebbe posizionare il testo su una lunghezza che non e'
+  // la sua, e alla prima diretta uscirebbe storto.
+  async function infoPerCarta(login) {
+    const s = streamers.get(login);
+    try {
+      const st = await helix.getStream(login);
+      if (st) return { title: st.title, game_name: st.game_name, viewer_count: st.viewer_count };
+    } catch { /* offline */ }
+    try {
+      const ci = s?.user_id ? await helix.getChannelInfo(s.user_id) : null;
+      if (ci) return { title: ci.title || '', game_name: ci.game_name || '' };
+    } catch { /* niente */ }
+    return {};
+  }
+
+  async function rispostaCarta(login) {
+    const c = carteLive.get(login);
+    const mia = !!(c?.dati && Array.isArray(c.dati.elementi) && c.dati.elementi.length);
+    const piattaforma = piattaformaDi(login);
+    return {
+      attiva: !!c?.attiva,
+      mia,
+      tema: cartaLive.temaPerPiattaforma(piattaforma),
+      carta: cartaLive.cartaDi({ dati: c?.dati, piattaforma }),
+      dati: await cartaLive.datiDiretta(login, await infoPerCarta(login)),
+      disegnabile: cartaLive.disegnabile(),
+      vocabolario: vocabolarioCarta(),
+    };
+  }
+
+  app.get('/api/streamer/telegram/carta', requireLogin, wrap(async (req, res) => {
+    res.json(await rispostaCarta(currentUser(req).login));
+  }));
+
+  // Si salva quello che il server ha NORMALIZZATO, e si rimanda indietro
+  // quello: l'editor adotta la carta ripulita invece di tenersi la sua. Cosi'
+  // non puo' esistere il caso "sullo schermo un valore, nel database un altro".
+  app.put('/api/streamer/telegram/carta', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const corpo = req.body || {};
+    const cambio = {};
+    if (corpo.attiva !== undefined) cambio.attiva = corpo.attiva === true || corpo.attiva === 'true';
+    if (corpo.carta !== undefined) cambio.dati = corpo.carta ? cartaLive.normCarta(corpo.carta) : null;
+    if (!Object.keys(cambio).length) return res.status(400).json({ errore: 'niente da cambiare' });
+    carteLive.set(login, cambio);
+    res.json(await rispostaCarta(login));
+  }));
+
+  // Torna al tema della piattaforma. La levetta resta com'e': spegnere l'invio
+  // e buttare via il disegno sono due decisioni diverse.
+  app.delete('/api/streamer/telegram/carta', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    carteLive.set(login, { dati: null });
+    res.json(await rispostaCarta(login));
+  }));
+
+  // L'immagine VERA, quella che partirebbe adesso. L'anteprima nell'editor la
+  // disegna il browser con lo stesso modulo del server, ed e' giusto cosi' per
+  // la reattivita'; questa e' la prova del nove, e passa dal rasterizzatore.
+  app.get('/api/streamer/telegram/carta.png', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const png = await cartaLive.pngPerDiretta(login, await infoPerCarta(login), { forza: true });
+    if (!png) return res.status(503).json({ errore: 'non riesco a disegnarla' });
+    res.set('Content-Type', 'image/png').set('Cache-Control', 'private, no-store').send(png);
+  }));
+
 
   // salva il token: lo validiamo con getMe e memorizziamo lo @username del bot
   app.post('/api/streamer/telegram/token', requireLogin, wrap(async (req, res) => {
