@@ -83,3 +83,25 @@ voce narrante, e nei fumetti quella sta in un riquadro.
 
 `node --test test/unita/nuvolette.test.mjs` tiene fermo che corpo e coda restino
 un pezzo solo, in ogni posizione della coda e in tutte e due le direzioni.
+
+## I riquadri che si aprono, e la freccia che spariva
+
+Le guide, le legende e i riquadri richiudibili erano quattro componenti con
+quattro copie delle stesse regole: bordo sottile, angoli tondi, fondo tinto di
+accento. Erano rimasti al tema di prima, e ognuno era rimasto indietro a modo
+suo. Adesso sono un solo device — la **didascalia**: carta pulita, contorno
+d'inchiostro, la barra spessa a sinistra, il titolo in lettering a mano. Chi
+racconta sta in un riquadro; è la stessa regola dei toast e della prima riga
+delle schede.
+
+La freccia sta su `::before`, e non è un dettaglio. Su questo sito `::after` di
+tutto ciò che si preme — `summary` compreso — è **l'alone del contorno** che
+compare col mouse sopra. Disegnare la freccia sullo stesso `::after` non dà
+errore: vince l'ultima regola del foglio, e sparisce l'alone oppure sparisce la
+freccia. Era successo a otto riquadri: nel CSS si leggeva una freccia, a schermo
+non c'era niente.
+
+Il difetto non si vede leggendo il codice, quindi lo misura il browser:
+`scripts/verifica-contorni.mjs` apre e chiude ogni `details` del pannello e
+chiede se quella freccia, adesso, si vede — opacità e larghezza vere. Se non si
+vede, il cancello è rosso.
