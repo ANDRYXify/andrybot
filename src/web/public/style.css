@@ -1835,11 +1835,11 @@ body.ce-aperto { overflow: hidden; }
 .aiuto-bolla {
   --coda: 15px; --coda-sp: 3px; --larga: .6; --giro: 0deg;
   position: fixed; z-index: 9000; left: 0; top: 0;
-  max-width: min(300px, 82vw); padding: .7rem 1.45rem .74rem;
-  background: var(--surface); color: var(--testo);
+  max-width: min(268px, 78vw); padding: .62rem 1.3rem .66rem;
+  background: color-mix(in srgb, var(--surface) 88%, transparent); color: var(--testo);
   border: var(--coda-sp) solid var(--contorno);
   border-radius: 50% 50% 27px 29px / 62% 66% 27px 29px;
-  filter: drop-shadow(2px 3px 0 var(--contorno));
+  filter: drop-shadow(2px 3px 0 color-mix(in srgb, var(--contorno) 70%, transparent));
   font-family: var(--mano); font-size: .88rem; line-height: 1.46; font-weight: 400;
   letter-spacing: .012em;
   text-align: center; text-wrap: balance; white-space: normal; overflow-wrap: anywhere;
@@ -1850,21 +1850,21 @@ body.ce-aperto { overflow: hidden; }
 }
 .aiuto-testo { display: block; }
 .aiuto-coda {
-  position: absolute; left: var(--becco, 50%); bottom: calc(-1 * var(--coda) * 1.8);
-  width: calc(var(--coda) * 2.2); height: calc(var(--coda) * 1.8);
+  position: absolute; left: var(--becco, 50%); bottom: calc(-1 * var(--coda) * 1.5);
+  width: calc(var(--coda) * 2.05); height: calc(var(--coda) * 1.5);
   overflow: visible; pointer-events: none;
   transform: translateX(-50%) rotate(var(--giro));
   transform-origin: 50% 0;
 }
 .aiuto-coda path, .aiuto-coda circle {
-  fill: var(--surface);
+  fill: color-mix(in srgb, var(--surface) 88%, transparent);
   stroke: var(--contorno); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round;
   paint-order: stroke fill;
 }
 .aiuto-pensieri { display: none; }
 .aiuto-bolla.sotto { transform-origin: var(--becco, 50%) 0; }
 .aiuto-bolla.sotto .aiuto-coda {
-  bottom: auto; top: calc(-1 * var(--coda) * 1.8);
+  bottom: auto; top: calc(-1 * var(--coda) * 1.5);
   transform: translateX(-50%) rotate(var(--giro));
   transform-origin: 50% 100%;
 }
@@ -1892,7 +1892,7 @@ body.ce-aperto { overflow: hidden; }
 
 .aiuto-bolla.dritta .aiuto-cuneo { display: none; }
 .aiuto-bolla.dritta .aiuto-pensieri { display: block; }
-.aiuto-bolla.dritta .aiuto-coda { height: calc(var(--coda) * 1.5); }
+.aiuto-bolla.dritta .aiuto-coda { height: calc(var(--coda) * 1.3); }
 .aiuto-bolla.dritta {
   border-radius: 54% 46% 52% 48% / 66% 70% 62% 64%;
   padding: .72rem 1.55rem .78rem;

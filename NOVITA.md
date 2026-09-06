@@ -17,6 +17,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-06
 
+- Le nuvolette non compaiono più spostate per poi rimettersi a posto al primo movimento del mouse, e non rallentano più il sito.
+- Stanno un po' più in alto e di lato, col becco che punta dentro al tasto, e si vede attraverso: non coprono più quello che stai leggendo.
+
 - Le nuvolette seguono il cursore mentre lo muovi, e la coda è disegnata: curva, come nei fumetti, e punta alla cosa di cui parla anche quando la bolla è finita di lato.
 - Compaiono con un piccolo scatto e se ne vanno da sole dopo il tempo che serve per leggerle. Non si spengono più da sole dopo mezzo secondo.
 - Il testo dentro è centrato e le righe sono bilanciate, come nei balloon veri.
