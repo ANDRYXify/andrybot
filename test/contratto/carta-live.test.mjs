@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import {
   TEMI, NOMI_TEMI, MISURA, SEGNAPOSTO, CARATTERI,
-  svgCarta, resaCarta, disegnabile, temaPerPiattaforma, avatarDataUri,
+  svgCarta, resaCarta, disegnabile, temaPerPiattaforma, avatarDataUri, normCarta,
 } from '../../src/features/cartalive.js';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -143,4 +143,24 @@ test('la carta è fatta di dati: nessun disegno scritto a mano nel codice', () =
       assert.ok(!JSON.stringify(e).includes('<'), `${nome}/${e.id}: nessun pezzo di disegno dentro i dati`);
     }
   }
+});
+
+test('un tema scelto resta quel tema anche dopo il giro dal database', () => {
+  // Il difetto che questo impedisce non dà nessun errore: scegli «Twitch», la
+  // carta va nel database passando dalla ripulitura, e al ricarico il confronto
+  // col tema GREZZO non torna più — il pannello dice «stai usando la tua
+  // grafica» e il tasto che avevi appena premuto si spegne da solo.
+  for (const nome of NOMI_TEMI) {
+    const salvata = JSON.parse(JSON.stringify(normCarta(TEMI[nome])));
+    assert.deepEqual(normCarta(salvata), salvata, `${nome}: ripulirla due volte dà due carte diverse`);
+    const quale = NOMI_TEMI.find((t) => JSON.stringify(normCarta(TEMI[t])) === JSON.stringify(normCarta(salvata)));
+    assert.equal(quale, nome, `${nome}: dopo il salvataggio non si riconosce più come tema standard`);
+  }
+});
+
+test('due temi diversi non si confondono fra loro', () => {
+  // Se la ripulitura appiattisse le differenze, ogni tema si riconoscerebbe come
+  // il primo dell'elenco, e il pannello mostrerebbe sempre lo stesso scelto.
+  const impronte = new Set(NOMI_TEMI.map((t) => JSON.stringify(normCarta(TEMI[t]))));
+  assert.equal(impronte.size, NOMI_TEMI.length, 'due temi standard danno la stessa carta ripulita');
 });

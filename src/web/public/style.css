@@ -1732,6 +1732,15 @@ summary:active::after, .vt-btn:active::before { transform: scale(1.13); opacity:
 .goal-meta { padding: .2rem .7rem .8rem; border-top: 1px solid var(--border); }
 .goal-meta > .goal-campi { margin-top: .5rem; }
 
+.cl-tela {
+  border: var(--contorno-sp) solid var(--contorno); border-width: var(--tratto-mano);
+  border-radius: var(--ang-mano); box-shadow: var(--ombra-ink);
+  background: var(--surface-2); overflow: clip; overflow-clip-margin: var(--posto-inchiostro);
+  line-height: 0; max-width: 620px;
+}
+.cl-tela img { display: block; width: 100%; height: auto; }
+.btn.cl-tema.scelto { background: var(--acc); color: var(--su-acc); border-color: var(--contorno); }
+
 .aiuto-bolla {
   --coda: 12px; --coda-sp: 3px;
   position: fixed; z-index: 9000; left: 0; top: 0;

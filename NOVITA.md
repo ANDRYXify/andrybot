@@ -17,6 +17,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-06
 
+- Nelle notifiche Telegram c'è un riquadro per la locandina: la accendi, scegli fra la grafica di Twitch e quella di Kick, e vedi l'anteprima.
+- L'anteprima è l'immagine vera, disegnata dal server: quello che vedi è quello che arriva nel gruppo.
+
 - I suggerimenti che compaiono passando il cursore adesso sono fumetti: contorno spesso, coda che punta alla cosa di cui parlano, scritti a pennarello come il resto del sito.
 - Un tasto su cui tieni il cursore si disegna sopra a quello che ha intorno. Prima poteva capitare che il riquadro accanto gli passasse sopra l'ombra e sembrasse tagliato.
 

@@ -5281,15 +5281,26 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     return {};
   }
 
+  // Quale dei temi standard e' quello che si sta usando. Lo dice il server e non
+  // il client: qui la carta passa dalla normalizzazione, e un confronto fatto di
+  // la' — fra la carta ripulita e il tema grezzo — direbbe «e' una tua» un
+  // istante dopo che hai scelto un tema. Un tasto che si spegne da solo.
+  function temaUguale(carta) {
+    const suo = JSON.stringify(cartaLive.normCarta(carta));
+    return cartaLive.NOMI_TEMI.find((t) => JSON.stringify(cartaLive.normCarta(cartaLive.TEMI[t])) === suo) || null;
+  }
+
   async function rispostaCarta(login) {
     const c = carteLive.get(login);
     const mia = !!(c?.dati && Array.isArray(c.dati.elementi) && c.dati.elementi.length);
     const piattaforma = piattaformaDi(login);
+    const carta = cartaLive.cartaDi({ dati: c?.dati, piattaforma });
     return {
       attiva: !!c?.attiva,
       mia,
       tema: cartaLive.temaPerPiattaforma(piattaforma),
-      carta: cartaLive.cartaDi({ dati: c?.dati, piattaforma }),
+      temaAttivo: temaUguale(carta),
+      carta,
       dati: await cartaLive.datiDiretta(login, await infoPerCarta(login)),
       disegnabile: cartaLive.disegnabile(),
       vocabolario: vocabolarioCarta(),
