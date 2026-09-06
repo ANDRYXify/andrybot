@@ -17,6 +17,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-05
 
+- I suggerimenti che compaiono passando il cursore sopra un comando adesso li disegna il sito, col suo tema. Prima erano la scatoletta grigia del browser, che non si può cambiare.
+- E compaiono anche arrivandoci col tasto di tabulazione: chi naviga da tastiera prima non li vedeva mai.
+
 - Il vinile che gira sull'overlay non si blocca più per ricominciare il giro da capo. Succedeva a ogni lettura del brano, e valeva anche per le onde e per il titolo che scorre.
 
 - Nel lettore musica «niente onde» adesso le toglie davvero, invece di lasciarle lì ferme. Le due impostazioni che si sovrapponevano sono diventate una sola.
