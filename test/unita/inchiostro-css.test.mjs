@@ -27,6 +27,7 @@ const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const FOGLI = [
   ...readdirSync(join(RAD, 'src/web/public')).filter((f) => f.endsWith('.css')).map((f) => 'src/web/public/' + f),
   'src/web/pagine-servizio.js',
+  'src/web/guide.js',
   'src/web/public/index.html',
 ];
 
