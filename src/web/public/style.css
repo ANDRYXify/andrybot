@@ -726,12 +726,24 @@ input[type="file"]::file-selector-button { background: var(--acc); color: var(--
 input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 }
 
-.interruttore { position: relative; display: inline-block; width: 46px; height: 27px; flex-shrink: 0; }
+.interruttore {
+  --lev-l: 46px; --lev-a: 27px; --lev-b: 1px; --lev-gioco: 2px;
+  --lev-dentro-l: calc(var(--lev-l) - 2 * var(--lev-b));
+  --lev-dentro-a: calc(var(--lev-a) - 2 * var(--lev-b));
+  --lev-pallina: calc(var(--lev-dentro-a) - 2 * var(--lev-gioco));
+  --lev-corsa: calc(var(--lev-dentro-l) - 2 * var(--lev-gioco) - var(--lev-pallina));
+  position: relative; display: inline-block; width: var(--lev-l); height: var(--lev-a); flex-shrink: 0;
+}
 .interruttore input { opacity: 0; width: 0; height: 0; }
-.levetta { position: absolute; inset: 0; background: var(--surface-3); border: 1px solid var(--border-2); border-radius: 999px; cursor: pointer; transition: background var(--molla), border-color var(--molla); }
-.levetta::before { content: ""; position: absolute; height: 19px; width: 19px; left: 3px; top: 3px; background: #fff; border-radius: 50%; box-shadow: var(--om-s); transition: transform .28s var(--spring); }
+.levetta { position: absolute; inset: 0; background: var(--surface-3); border: var(--lev-b) solid var(--border-2); border-radius: 999px; cursor: pointer; transition: background var(--molla), border-color var(--molla); }
+.levetta::before {
+  content: ""; position: absolute; box-sizing: border-box;
+  height: var(--lev-pallina); width: var(--lev-pallina);
+  left: var(--lev-gioco); top: var(--lev-gioco);
+  background: #fff; border-radius: 50%; box-shadow: var(--om-s); transition: transform .28s var(--spring);
+}
 .interruttore input:checked + .levetta { background: var(--acc); border-color: var(--acc); }
-.interruttore input:checked + .levetta::before { transform: translateX(19px); }
+.interruttore input:checked + .levetta::before { transform: translateX(var(--lev-corsa)); }
 .interruttore input:focus-visible + .levetta { outline: 2px solid var(--acc); outline-offset: 2px; }
 .riga-interruttore { display: flex; align-items: center; gap: .85rem; }
 .riga-interruttore .etichetta-stato { font-weight: 700; font-size: 1.02rem; }

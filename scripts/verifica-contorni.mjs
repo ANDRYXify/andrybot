@@ -41,6 +41,14 @@
 // a dedurlo dai selettori non funziona — `.btn:hover{z-index:3}` copre anche
 // `.btn.secondario`, e un confronto fra stringhe non lo sa.
 //
+// E c'e' un terzo modo, piu' piccolo e piu' visibile di tutti: una parte che
+// esce dalla sua scatola perche' i suoi numeri non tornano piu'. E' successo
+// alle levette: il tema ha aggiunto un bordo alla pallina, e la pallina misura
+// in `content-box` — quindi e' cresciuta di quattro pixel mentre le posizioni
+// erano rimaste quelle di prima. Risultato: pallina storta, che sbordava sotto e
+// a destra. Adesso le misure si RICAVANO dalla pista, e qui si controlla che il
+// conto torni davvero, spenta e accesa.
+//
 // Uso: node scripts/verifica-contorni.mjs
 //      node scripts/verifica-contorni.mjs --selftest   (deve diventare rosso)
 
@@ -149,6 +157,29 @@ const sonda = (radice) => CACCIA
 
 const sondaCoperti = (radice) => COPERTI.replace('RADICE', JSON.stringify(radice));
 
+const LEVETTE = `(() => {
+  const num = (v) => parseFloat(v) || 0;
+  const fuori = [];
+  for (const i of document.querySelectorAll(RADICE + ' .interruttore')) {
+    const lev = i.querySelector('.levetta');
+    if (!lev || !lev.offsetWidth) continue;
+    const s = getComputedStyle(lev), pre = getComputedStyle(lev, '::before');
+    const r = lev.getBoundingClientRect();
+    const dw = r.width - num(s.borderLeftWidth) - num(s.borderRightWidth);
+    const dh = r.height - num(s.borderTopWidth) - num(s.borderBottomWidth);
+    const bordo = pre.boxSizing === 'border-box' ? 0 : num(pre.borderLeftWidth) * 2;
+    const tw = num(pre.width) + bordo, th = num(pre.height) + bordo;
+    const tras = pre.transform === 'none' ? 0 : num((pre.transform.match(/matrix\\([^)]*\\)/) || [''])[0].split(',')[4]);
+    const su = num(pre.top), sotto = dh - su - th;
+    const sx = num(pre.left) + tras, dx = dw - sx - tw;
+    const nome = (i.className || 'interruttore') + (i.querySelector('input')?.checked ? ' accesa' : ' spenta');
+    if (Math.abs(su - sotto) > 0.6) fuori.push({ chi: nome, perche: \`storta: \${su} sopra, \${sotto} sotto\` });
+    else if (Math.min(su, sotto, sx, dx) < -0.1) fuori.push({ chi: nome, perche: \`esce dalla pista (su \${su} sotto \${sotto} sx \${sx} dx \${dx})\` });
+  }
+  return fuori;
+})()`;
+const sondaLevette = (radice) => LEVETTE.replace('RADICE', JSON.stringify(radice));
+
 const { porta: PORTA, chiudi: chiudiSito } = await apriSito();
 const b = await chromium.launch({ executablePath: CHROMIUM,
   args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox', '--disable-dev-shm-usage'] });
@@ -166,12 +197,16 @@ if (SELFTEST) {
   // succede niente — fra una scheda e l'altra c'e' piu' aria di quanta ne
   // sporga l'inchiostro — e un controllo che non si vede mai rosso non e' un
   // controllo.
+  // La levetta com'era: la pallina cresciuta del bordo, con le posizioni di
+  // quando il bordo non c'era.
+  await p.addStyleTag({ content: '.levetta::before { box-sizing: content-box !important; height: 19px !important; width: 19px !important; top: 2px !important; }' });
   await p.addStyleTag({ content: '.pannello-scheda .carta { margin-bottom: 0 !important; }'
     + '.carta:hover, .carta:focus-within, .btn:hover, .btn:focus-visible { z-index: auto !important; }' });
 }
 
 const rasati = [];
 const scoperti = [];
+const storte = [];
 const schede = await p.evaluate(() => [...document.querySelectorAll('.pannello-scheda')].map((s) => s.dataset.scheda));
 let visitate = 0;
 let passate = 0;
@@ -180,6 +215,14 @@ for (const id of schede) {
   await p.waitForTimeout(160);
   visitate++;
   rasati.push(...(await p.evaluate(new Function('return ' + sonda('.pannello-scheda.visibile')))).map((x) => ({ dove: id, ...x })));
+
+  // le levette, spente e accese: il conto dev'essere simmetrico in tutti e due i modi
+  for (const acceso of [false, true]) {
+    await p.evaluate((v) => { for (const x of document.querySelectorAll('.pannello-scheda.visibile .interruttore input')) x.checked = v; }, acceso);
+    for (const x of await p.evaluate(new Function('return ' + sondaLevette('.pannello-scheda.visibile')))) {
+      if (!storte.some((y) => y.chi === x.chi && y.perche === x.perche)) storte.push({ dove: id, ...x });
+    }
+  }
 
   // col mouse sopra: e' li' che le cose si sollevano fuori dalla loro scatola
   const cliccabili = await p.$$('.pannello-scheda.visibile button, .pannello-scheda.visibile a.btn, .pannello-scheda.visibile [role="tab"]');
@@ -210,6 +253,12 @@ for (const r of rasati) {
 for (const [k, v] of [...per].sort((a, b) => b[1].n - a[1].n).slice(0, 15)) {
   console.log(`  ✗ ${v.n}×  ${k}  — fino a ${v.px}px, in ${[...v.dove].slice(0, 4).join(', ')}`);
 }
+if (storte.length) {
+  console.log(`  ✗ ${storte.length} levette col pallino storto o fuori dalla pista`);
+  for (const x of storte.slice(0, 5)) console.log(`      ${x.chi} — ${x.perche}  (${x.dove})`);
+} else {
+  console.log('  ✓ il pallino delle levette sta in mezzo, e dentro');
+}
 if (scoperti.length) {
   console.log(`  ✗ ${scoperti.length} cose col mouse sopra hanno l'ombra coperta da un vicino che viene dopo`);
   for (const x of scoperti.slice(0, 6)) console.log(`      ${x.chi}  ←  ci passa sopra ${x.da}  (${x.dove})`);
@@ -217,7 +266,7 @@ if (scoperti.length) {
   console.log('  ✓ cio\' che si solleva col mouse si solleva anche nell\'ordine di disegno');
 }
 console.log(`\n${visitate} schede guardate, ${passate} passaggi col mouse.`);
-if (rasati.length || scoperti.length) {
+if (rasati.length || scoperti.length || storte.length) {
   console.log(`${rasati.length} contorni rasati: un bordo che comincia e finisce nel nulla.`);
 } else {
   console.log('Nessun contorno rasato: l\'inchiostro sta tutto dentro. ✓');
