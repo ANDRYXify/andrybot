@@ -5,6 +5,11 @@ export const CODA_LUNGA = 54;
 export const SBIECO = 0.74;
 export const CODA_LARGA = 0.82;
 export const MARGINE = Math.ceil(CODA_LUNGA * (1 + CODA_LARGA / 2)) + 6;
+export const QUOTA_CODA = 0.55;
+export const CODA_SU_BOLLA = 0.5;
+
+export const misuraCoda = (stacco, altezza) =>
+  Math.round(Math.min(stacco * QUOTA_CODA, altezza * CODA_SU_BOLLA));
 
 const arr = (n) => Math.round(n * 100) / 100;
 
@@ -67,14 +72,17 @@ export function guscio({ larghezza, altezza, tipo = 'tondo', becco = 0.5, giro =
     return 'M ' + fuori.map(vp).join(' L ') + ' Z';
   }
 
-  const { prima, dopo } = corpoTondo(x, y, w, h, raggio);
+  const sporgeStima = Math.max(16, Math.min(w * 0.34, lungo * CODA_LARGA)) * Math.max(SBIECO, 1 - SBIECO) + 3;
+  const raggioSicuro = Math.max(4, Math.min(raggio, h * 0.58, w / 2, (w - sporgeStima * 2) / 2));
+  const { prima, dopo } = corpoTondo(x, y, w, h, raggioSicuro);
   const corpo = sotto
     ? `M ${arr(x + w)} ${arr(y + h)} H ${arr(x)} V ${arr(y)} H ${arr(x + w)} Z`
     : `${prima} ${dopo}`;
   if (!coda || tipo === 'pensiero') return sotto ? `${prima} ${dopo}` : corpo;
 
-  const R = Math.max(4, Math.min(raggio, h * 0.58, w / 2));
-  const sporge = largo * Math.max(SBIECO, 1 - SBIECO) + 3;
+  const sporge0 = largo * Math.max(SBIECO, 1 - SBIECO) + 3;
+  const R = raggioSicuro;
+  const sporge = Math.min(sporge0, Math.max(0, (w - 2 * R) / 2));
   const bx = x + Math.max(R + sporge, Math.min(becco * w, w - R - sporge));
   const t = codaVerso(bx, bordo, largo, lungo, giro, verso);
   const dritta = sotto

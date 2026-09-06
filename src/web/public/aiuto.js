@@ -1,7 +1,7 @@
 // © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
 // Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 
-import { guscio, bollicine, MARGINE } from '/fumetto.js';
+import { guscio, bollicine, misuraCoda, MARGINE } from '/fumetto.js';
 
 (function () {
   const RITARDO = 340;
@@ -11,7 +11,6 @@ import { guscio, bollicine, MARGINE } from '/fumetto.js';
   const SOPRA_CURSORE = 18;
   const SOTTO_CURSORE = 20;
   const GIRO_MAX = 26;
-  const QUOTA_CODA = 0.55;
   const LETTURA_BASE = 1400;
   const LETTURA_PAROLA = 300;
   const LETTURA_MAX = 9000;
@@ -121,8 +120,8 @@ import { guscio, bollicine, MARGINE } from '/fumetto.js';
     const dentro = (v, a, z) => Math.max(a, Math.min(v, z));
     const segue = !colDito;
     const ancoraX = segue ? dentro(px, r.left + 8, r.right - 8) : r.left + r.width / 2;
-    const stacco = dentro(Math.round(m.width * 0.26), 62, 104);
-    const codaH = Math.round(stacco * QUOTA_CODA);
+    const stacco = dentro(Math.round(Math.max(m.height * 0.82, m.width * 0.16)), 34, 92);
+    const codaH = misuraCoda(stacco, m.height);
 
     const orlo = Math.max(BECCO, m.width * 0.26);
     const aDestra = ancoraX < larg * 0.62;

@@ -18,12 +18,13 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { guscio, bollicine, MARGINE, CODA_LUNGA, CODA_LARGA } from '../../src/web/public/fumetto.js';
+import { guscio, bollicine, misuraCoda, MARGINE, CODA_LUNGA, CODA_LARGA } from '../../src/web/public/fumetto.js';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const leggi = (f) => readFileSync(join(RAD, f), 'utf8');
 const JS = leggi('src/web/public/aiuto.js');
 const CSS = leggi('src/web/public/style.css');
+const MOTORE = leggi('src/web/public/fumetto.js');
 
 const MISURA = { larghezza: 300, altezza: 100 };
 const pezzi = (d) => (d.match(/M/g) || []).length;
@@ -88,6 +89,59 @@ test('la bolla sotto ha la coda in alto, e resta un pezzo solo', () => {
   assert.match(d, /Q /, 'sotto la coda sparisce');
 });
 
+// Le misure vere che una nuvoletta assume: una parola sola, due parole, una
+// frase. Provare solo la grande è come non provare: il difetto delle piccole
+// esiste PROPRIO perche' sono piccole, e non si vede mai su una larga.
+const MISURE = [
+  { larghezza: 63, altezza: 49, lungo: 34, che: 'una parola' },
+  { larghezza: 122, altezza: 49, lungo: 34, che: 'due parole' },
+  { larghezza: 322, altezza: 71, lungo: 46, che: 'una frase' },
+  { larghezza: 44, altezza: 44, lungo: 24, che: 'la piu\' piccola possibile' },
+];
+
+test('la coda rispetta due proporzioni, non una', () => {
+  // 1. Sulla DISTANZA: «a tail should terminate at roughly 50-60% of the
+  //    distance between the balloon and the character's head» (Blambot). Punta
+  //    verso, non tocca.
+  // 2. Sulla BOLLA: una coda più lunga del corpo si vede che è sbagliata. Sulle
+  //    nuvolette di una parola la prima regola da sola dava una coda lunga
+  //    quanto due terzi della bolla.
+  const dentro = (v, a2, z) => Math.max(a2, Math.min(v, z));
+  for (const [w, h] of [[63, 49], [122, 49], [322, 71], [280, 120], [44, 44]]) {
+    const stacco = dentro(Math.round(Math.max(h * 0.82, w * 0.16)), 34, 92);
+    const coda = misuraCoda(stacco, h);
+    const suDistanza = coda / stacco;
+    const suBolla = coda / h;
+    assert.ok(suDistanza >= 0.45 && suDistanza <= 0.62,
+      `${w}x${h}: la coda copre il ${(suDistanza * 100).toFixed(0)}% della distanza, fuori dal 50-60%`);
+    assert.ok(suBolla <= 0.55, `${w}x${h}: la coda è il ${(suBolla * 100).toFixed(0)}% dell'altezza della bolla: troppo`);
+  }
+  // e la regola sta in UN posto solo: chi posa la bolla la chiede al motore
+  assert.match(JS, /misuraCoda\(stacco, m\.height\)/,
+    'la nuvoletta non chiede la coda al motore: il numero vive in due posti e uno prima o poi cambia da solo');
+});
+
+test('anche sulle bolle piccole la coda resta attaccata al fondo', () => {
+  // Il difetto: su una bolla stretta il bordo tondo si mangia quasi tutto il
+  // fondo — su 63px ne restavano SETTE piatti per una base di ventuno. Il
+  // vincolo diventava impossibile, e la coda finiva fuori, appesa allo spigolo.
+  // Non si vedeva sulla bolla larga, che è l'unica su cui provavo.
+  for (const m of MISURE) {
+    for (const becco of [0, 0.5, 1]) {
+      const d = guscio({ ...m, becco, giro: 0 });
+      const entra = Number((d.slice(0, d.indexOf(' Q ')).match(/H (-?[\d.]+)\s*$/) || [])[1]);
+      const q = [...d.matchAll(/Q [-\d.]+ [-\d.]+ ([-\d.]+) ([-\d.]+)/g)];
+      const esce = Number(q[q.length - 1][1]);
+      for (const [nome, v] of [['entra', entra], ['esce', esce]]) {
+        assert.ok(Number.isFinite(v), `${m.che}, becco ${becco}: non trovo dove la coda ${nome} nel bordo`);
+        assert.ok(v >= MARGINE && v <= MARGINE + m.larghezza,
+          `${m.che}, becco ${becco}: la coda ${nome} a x=${v}, fuori dalla bolla (${MARGINE}…${MARGINE + m.larghezza})`);
+      }
+      assert.ok(entra > esce, `${m.che}, becco ${becco}: il bordo torna indietro sulla bocca`);
+    }
+  }
+});
+
 test('la coda è lunga quanto lo spazio che le si lascia', () => {
   // Il difetto: il motore si calcolava la lunghezza per conto suo, e chi
   // posiziona la bolla ne calcolava un'altra per lo stacco dal bersaglio. Due
@@ -145,7 +199,7 @@ test('la bolla si spegne quando serve, e non quando capita', () => {
   assert.match(JS, /elementFromPoint/, 'lo deduce invece di chiederlo al browser');
   assert.match(JS, /Math\.abs\(window\.scrollY - dovEra\) > SCORRE_MIN/, 'basta un pixel di assestamento per spegnerla');
   assert.match(JS, /function quantoDura\(t\)/, 'la bolla non se ne va mai da sola');
-  assert.match(JS, /QUOTA_CODA = 0\.5[0-9]?/, 'la coda arriva fino al bersaglio invece di fermarsi a metà');
+  assert.match(MOTORE, /QUOTA_CODA = 0\.5[0-9]?/, 'la coda arriva fino al bersaglio invece di fermarsi a metà');
 });
 
 test('il disegno non lo schiaccia il foglio di stile del sito', () => {
