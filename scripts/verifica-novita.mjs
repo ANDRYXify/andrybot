@@ -53,6 +53,35 @@ dice(!giorniSoloPrivati.some((d) => pubbliciData.has(d)),
   'un giorno fatto solo di cose tue non compare nemmeno come giorno',
   giorniSoloPrivati.filter((d) => pubbliciData.has(d)).join(', '));
 
+// ---- quello che e' di LEI non si racconta in giro -------------------------
+//
+// Regola del direttore: le cose INTERNE di Lia — il suo computer, il suo schermo,
+// il suo browser, come ragiona, come cresce — non sono cose da condividere. Non
+// e' una questione di segretezza: e' che non riguardano chi usa il bot, e la
+// pagina delle novita' e' pubblica e indicizzata.
+//
+// Il difetto da impedire non e' «una riga sbagliata»: e' che qualcuno (io) se ne
+// dimentichi. Marcare a mano funziona finche' uno si ricorda, e prima o poi non
+// si ricorda — e quella riga non produce nessun errore: esce, e basta. Quindi
+// qui una riga PUBBLICA che la nomina, o che parla delle sue cose, e' rossa
+// finche' non e' marcata `[privato]` o dichiarata qui sotto col suo motivo.
+const LEI = /\bLia\b/;
+const COSE_SUE = /\b(sandbox|coscienza|autocoscienza|il suo (?:computer|schermo|browser|ecosistema|cervello|profilo)|come ragiona|si addestra|le sue (?:vie|lezioni))\b/i;
+
+// Le eccezioni, ognuna col suo motivo. Una riga entra qui solo se descrive una
+// cosa che lo STREAMER usa: nasconderla nasconderebbe una funzione.
+const AMMESSE = [
+  // (nessuna, per ora: le righe che descrivevano funzioni sono state riscritte
+  // senza nominarla, cosi' la funzione resta documentata e il nome resta in casa)
+];
+
+const pubblicheVoci = pubbliche(gruppi).flatMap((g) => g.voci);
+const scappate = pubblicheVoci.filter((v) => (LEI.test(v) || COSE_SUE.test(v))
+  && !AMMESSE.some(([pezzo]) => v.includes(pezzo)));
+dice(!scappate.length, `nessuna cosa sua fra le ${pubblicheVoci.length} righe pubbliche`,
+  scappate.length ? `da marcare [privato] o da riscrivere: «${scappate[0].slice(0, 90)}»` : '');
+dice(AMMESSE.every(([pezzo, perche]) => pezzo && perche), 'ogni eccezione porta il suo motivo');
+
 // ---- le date: vere, in ordine, non nel futuro -----------------------------
 const oggi = new Date().toISOString().slice(0, 10);
 const date = gruppi.map((g) => g.data);

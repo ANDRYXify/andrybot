@@ -5,10 +5,15 @@ lo usa: se non si vede da fuori, qui non ci va.
 
 Una riga che comincia con `[privato]` resta in casa: non arriva alla pagina
 pubblica, all'API aperta né alla sitemap, e la vede solo il proprietario nel suo
-pannello. Ci vanno le cose che non riguardano chi usa il bot — la crescita di
-Lia, il suo computer, il suo modo di ragionare. Un giorno fatto di sole righe
-private non compare nemmeno come giorno: la data, da sola, direbbe che è
-successo qualcosa.
+pannello. Un giorno fatto di sole righe private non compare nemmeno come giorno:
+la data, da sola, direbbe che è successo qualcosa.
+
+Ci vanno **tutte le cose interne di Lia** — il suo computer, il suo schermo, il
+suo browser, come ragiona, come cresce. Non riguardano chi usa il bot, e questa
+pagina è pubblica e indicizzata. Se una riga descrive invece una funzione che lo
+streamer *usa*, si riscrive senza nominarla: la funzione resta documentata e il
+nome resta in casa. Non è una cosa da ricordarsi:
+`scripts/verifica-novita.mjs` boccia una riga pubblica che la nomina.
 
 ## 2026-09-05
 
@@ -59,9 +64,9 @@ successo qualcosa.
 - Il bot sceglie le voci di conoscenza più vicine alla domanda, non le ultime che hai scritto. Puoi scriverne quante vuoi.
 - Ogni voce può valere sempre, solo quando sei in diretta o solo quando sei offline. Puoi anche fissarla, così il bot ce l'ha davanti in ogni caso.
 - Le frasi che scrivi in Personalità ora arrivano al bot come esempio del tuo modo di parlare. Prima restavano lì.
-- Nel quaderno del bot scrivi come deve rispondere, e vedi anche quello che gli ha insegnato Lia.
+- Nel quaderno del bot scrivi come deve rispondere, e vedi anche quello che gli è già stato insegnato.
 - Nella dashboard i menù a tendina restano in riga con i bottoni accanto, invece di andare a capo da soli.
-- In chat pubblica risponde il bot del canale al posto di Lia. Non si ricorda degli utenti e non parla di sé.
+- In chat pubblica risponde il bot del tuo canale: non si ricorda degli utenti e non parla di sé.
 - Le risposte salvate non escono più sempre uguali: il bot le riformula. Se contengono un link restano identiche.
 - [privato] Lia potrà insegnare al bot solo quando vivrà. Fino ad allora il quaderno lo scrivi tu, e il bot non può leggere niente di lei.
 - [privato] Quando il bot non sa rispondere, la domanda resta da studiare per Lia: senza nome, senza contatti e senza link.
@@ -123,7 +128,7 @@ successo qualcosa.
 - Il sito scarica il 16% in meno: quello che arriva al browser è compresso.
 - L'anteprima che compare quando incolli un link di SocialBot è ridisegnata come il sito: lettering, retino e targhetta d'inchiostro.
 - La pagina delle novità torna a mostrare le novità: era vuota, e con lei l'elenco nel pannello.
-- L'avatar 3D e la mappa di come ragiona il bot stanno nell'area di amministrazione.
+- [privato] L'avatar 3D e la mappa di come ragiona il bot stanno nell'area di amministrazione.
 - I titoli grandi sono contornati come le lettere del logo: pieno colorato dentro, tratto nero attorno.
 - La vetrina si apre a scaglioni, un pezzo alla volta, con lo scatto dell'animazione giapponese invece della dissolvenza sfocata.
 - Anche il cambio di sezione ha perso la sfocatura: adesso è uno stacco netto, come si passa da una vignetta all'altra.
