@@ -17,6 +17,11 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-06
 
+- La locandina è accesa di suo: se non l'hai mai toccata, parte con il prossimo annuncio. Se l'hai spenta resta spenta, anche salvando un disegno.
+- Una diretta su Kick riceve la grafica di Kick e una su Twitch quella di Twitch, anche quando lo stesso canale trasmette su tutte e due. Prima poteva arrivare quella sbagliata.
+- L'indirizzo scritto in fondo alla locandina è quello della piattaforma giusta.
+- Se la tua immagine del profilo non si scarica in fretta, la locandina parte lo stesso invece di far aspettare l'annuncio.
+
 - C'è l'editor della locandina: sposti i pezzi trascinandoli, ne aggiungi, cambi caratteri e colori, e vedi il risultato mentre lo fai. Annulla e rifai con Ctrl+Z.
 - Quando parte la locandina il messaggio si accorcia: titolo e categoria sono già disegnati dentro, sotto restano il tuo nome e il link.
 - La locandina arriva anche per gli streamer che hai aggiunto alle notifiche: la grafica resta la tua, dentro ci sono il loro nome, il loro titolo e la loro faccia.

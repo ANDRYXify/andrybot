@@ -26,7 +26,7 @@ import { dirname, join } from 'node:path';
 import { makeLog } from '../logger.js';
 import { carteLive, streamers } from '../db.js';
 import { piattaformaDi, nomeSu } from '../identita.js';
-import { eUnaDiretta } from './avvisi.js';
+import { eUnaDiretta, piattaformaDiEvento } from './avvisi.js';
 import { CARATTERI, MISURA, cartaDi, svgCarta } from './carta-disegno.js';
 import { CARTELLA_CARATTERI } from './carta-servita.js';
 
@@ -74,17 +74,34 @@ export async function pngCarta(carta, dati = {}) {
 
 // L'avatar come data URI, pronto da infilare nella carta. Ritorna '' se non si
 // può prendere: la carta esce lo stesso, con la forma piena al posto della foto.
-export async function avatarDataUri(url, { fetchImpl = fetch } = {}) {
+// Quanto si aspetta la faccia, e per quanto ce la si tiene.
+//
+// La scadenza non e' prudenza generica: questa chiamata sta sulla strada
+// dell'ANNUNCIO. Senza, un CDN che non risponde non da' errore — resta appeso,
+// e con lui resta appeso l'avviso «sono in diretta», che e' l'unica cosa che
+// doveva partire in fretta. Scaduta la prova, la carta esce con la forma piena
+// al posto della foto: meno bella, ma parte.
+export const AVATAR_ATTESA_MS = 4000;
+const AVATAR_RICORDO_MS = 10 * 60 * 1000;
+const _facce = new Map();
+
+export async function avatarDataUri(url, { fetchImpl = fetch, ora = Date.now() } = {}) {
   const u = String(url || '');
   if (!/^https:\/\//.test(u)) return '';
+  const visto = _facce.get(u);
+  if (visto && ora - visto.quando < AVATAR_RICORDO_MS) return visto.dato;
   try {
-    const r = await fetchImpl(u, { redirect: 'follow' });
+    const taglia = AbortSignal.timeout ? AbortSignal.timeout(AVATAR_ATTESA_MS) : undefined;
+    const r = await fetchImpl(u, { redirect: 'follow', signal: taglia });
     if (!r.ok) return '';
     const tipo = String(r.headers.get('content-type') || '').split(';')[0].trim();
     if (!/^image\/(png|jpeg|webp|gif)$/.test(tipo)) return '';
     const b = Buffer.from(await r.arrayBuffer());
     if (b.length > 3_000_000) return '';
-    return `data:${tipo};base64,${b.toString('base64')}`;
+    const dato = `data:${tipo};base64,${b.toString('base64')}`;
+    _facce.set(u, { dato, quando: ora });
+    if (_facce.size > 200) _facce.delete(_facce.keys().next().value);
+    return dato;
   } catch { return ''; }
 }
 
@@ -94,10 +111,14 @@ export async function avatarDataUri(url, { fetchImpl = fetch } = {}) {
 // in un posto solo: la usano l'annuncio vero e l'anteprima nell'editor, e due
 // copie vorrebbero dire un'anteprima che mostra una cosa diversa da quella che
 // parte — il difetto peggiore per un editor.
-export async function datiDiretta(login, info = {}, { conAvatar = true } = {}) {
+export async function datiDiretta(login, info = {}, { conAvatar = true, piattaforma: dettaFuori = '' } = {}) {
   const l = String(login || '').toLowerCase();
   const s = streamers.get(l) || {};
-  const piattaforma = piattaformaDi(l);
+  // La piattaforma la dice CHI CHIAMA quando la sa, e la sa sempre chi annuncia
+  // una diretta. Ricavarla dal login funziona solo per gli account di casa: un
+  // canale Kick arriva col suo nome e basta, e il login risponderebbe «Twitch»
+  // — indirizzo sbagliato e grafica sbagliata, senza nessun errore.
+  const piattaforma = dettaFuori || piattaformaDi(l);
   const nome = nomeSu(l);
   const indirizzo = piattaforma === 'kick' ? `https://kick.com/${nome}`
     : piattaforma === 'youtube' ? `https://youtube.com/@${nome}`
@@ -123,7 +144,7 @@ export async function datiDiretta(login, info = {}, { conAvatar = true } = {}) {
 // aspetta guardando il gruppo.
 //
 // `forza` serve all'anteprima: lì la si vuole vedere anche da spenta.
-export async function pngPerDiretta(login, info = {}, { forza = false, chi = null } = {}) {
+export async function pngPerDiretta(login, info = {}, { forza = false, chi = null, piattaforma = '' } = {}) {
   const c = carteLive.get(login);
   if (!forza && !c?.attiva) return null;
   if (!disegnabile()) {
@@ -131,9 +152,10 @@ export async function pngPerDiretta(login, info = {}, { forza = false, chi = nul
     return null;
   }
   const diChi = String(chi || login).toLowerCase();
-  const carta = cartaDi({ dati: c?.dati, piattaforma: piattaformaDi(diChi) });
+  const dove = piattaforma || piattaformaDi(diChi);
+  const carta = cartaDi({ dati: c?.dati, piattaforma: dove });
   try {
-    return await pngCarta(carta, await datiDiretta(diChi, info));
+    return await pngCarta(carta, await datiDiretta(diChi, info, { piattaforma: dove }));
   } catch (e) {
     log.warn(`carta di #${diChi}: ${e?.message || e}`);
     return null;
@@ -153,7 +175,8 @@ export async function pngPerDiretta(login, info = {}, { forza = false, chi = nul
 export async function fotoPerEvento(login, evento, { chi = null, info = null, helix = null } = {}) {
   if (!eUnaDiretta(evento)) return null;
   const diChi = String(chi || login).toLowerCase();
-  return pngPerDiretta(login, await completaInfo(diChi, info, helix), { chi: diChi }).catch(() => null);
+  return pngPerDiretta(login, await completaInfo(diChi, info, helix),
+    { chi: diChi, piattaforma: piattaformaDiEvento(evento) }).catch(() => null);
 }
 
 // COSA SO DI QUESTA DIRETTA — e il buco che questa funzione tappa.

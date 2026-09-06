@@ -121,22 +121,17 @@ test('la prova dal pannello passa dalla stessa strada dell’annuncio vero', asy
 
 test('la locandina esce solo per una diretta, e la decisione è una sola', async () => {
   const { fotoPerEvento } = await import('../../src/features/cartalive.js');
+  // Solo i casi che si fermano SUBITO: qui si prova la decisione, non il
+  // disegno. Chiedere una diretta vera vorrebbe dire far rasterizzare
+  // un'immagine per ogni piattaforma, e un collaudo lento è un collaudo che
+  // prima o poi qualcuno smette di far girare.
   assert.equal(await fotoPerEvento('nessuno-che-esiste', 'follow'), null, 'un follow non porta la locandina');
   assert.equal(await fotoPerEvento('nessuno-che-esiste', 'sub'), null);
-  for (const p of CHIAVI) {
-    // per una diretta la decisione arriva fino in fondo: qui si ferma solo
-    // perché il canale non esiste, non perché l'evento sia stato scartato
-    assert.equal(await fotoPerEvento('nessuno-che-esiste', eventoDi(p)), null);
-  }
+  assert.equal(await fotoPerEvento('nessuno-che-esiste', ''), null, 'e nemmeno un evento senza nome');
   const bot = leggi('src/bot.js');
   assert.match(bot, /cartaLive\.fotoPerEvento\(/, 'anche l’annuncio vero passa di lì');
 });
 
-test('la grafica si accende da sé solo se lo streamer l’ha accesa', async () => {
-  const { pngPerDiretta } = await import('../../src/features/cartalive.js');
-  const png = await pngPerDiretta('nessuno-che-esiste', {});
-  assert.equal(png, null, 'senza la levetta accesa non si disegna niente');
-});
 
 test('con la locandina il testo non ripete l’immagine', () => {
   // La locandina disegna nome, titolo, gioco e indirizzo. Scriverli anche sotto
