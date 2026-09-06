@@ -17,6 +17,11 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-06
 
+- C'è l'editor della locandina: sposti i pezzi trascinandoli, ne aggiungi, cambi caratteri e colori, e vedi il risultato mentre lo fai. Annulla e rifai con Ctrl+Z.
+- Quando parte la locandina il messaggio si accorcia: titolo e categoria sono già disegnati dentro, sotto restano il tuo nome e il link.
+- La locandina arriva anche per gli streamer che hai aggiunto alle notifiche: la grafica resta la tua, dentro ci sono il loro nome, il loro titolo e la loro faccia.
+- Il titolo e la categoria compaiono anche a canale spento: si prendono da quelli del canale, invece di restare vuoti.
+
 - «Manda una prova» adesso manda esattamente quello che partirà davvero: se hai acceso la locandina, la prova arriva con la locandina, e te lo dice.
 - La locandina ora si disegna anche in produzione: i caratteri non finivano nel programma pubblicato.
 - I due tasti tondi in basso a destra non tremolano più quando ci passi sopra col cursore.

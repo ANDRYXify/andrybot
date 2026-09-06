@@ -620,10 +620,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // E i caratteri, gli STESSI file che carica il rasterizzatore. Un carattere
   // diverso fra anteprima e immagine vera sposterebbe ogni testo di qualche
   // pixel, e nessuno capirebbe perché.
-  const CARATTERI_AMMESSI = new Set(cartaLive.CARATTERI.map(([, file]) => file));
   app.get('/font/:file', (req, res) => {
     const f = String(req.params.file || '');
-    if (!CARATTERI_AMMESSI.has(f)) return notFound(res);
+    if (!cartaLive.CARATTERI_AMMESSI.has(f)) return notFound(res);
     res.sendFile(join(cartaLive.CARTELLA_CARATTERI, f), { maxAge: '30d' }, (err) => { if (err) notFound(res); });
   });
 
@@ -5529,10 +5528,19 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (!c?.token || !d) return res.status(400).json({ errore: 'destinazione non trovata' });
     const info = await helix.getStream(login).catch(() => null);
     const s = streamers.get(login);
-    const testo = telegram.costruisciMessaggioLive({ login, display: s?.display || login }, info, c.messaggio);
-    const r = await telegram.inviaMessaggio(c.token, d.chat_id, '🧪 <i>Anteprima notifica</i>\n\n' + testo, { threadId: d.thread_id });
+    const dir = avvisi.diretta({
+      piattaforma: piattaformaDi(login) || 'twitch', login, display: s?.display || login,
+      titolo: info?.title || '', gioco: info?.game_name || '',
+      spettatori: info?.viewer_count ?? null, id: String(info?.id || 'prova'),
+    });
+    const evento = avvisi.eventoDi(piattaformaDi(login)) || avvisi.eventoDi('twitch');
+    const foto = await cartaLive.fotoPerEvento(login, evento, { info: info || {}, helix });
+    const testo = avvisi.messaggio(dir, c.messaggio, { conLocandina: !!foto });
+    const esiti = await telegram.diffondi(c.token, [{ id: d.id, chat_id: d.chat_id, thread_id: d.thread_id, titolo: d.titolo || '' }],
+      '🧪 <i>Anteprima notifica</i>\n\n' + testo, { anteprima: true, foto });
+    const r = esiti[0] || { ok: false, errore: 'nessuna destinazione' };
     if (!r.ok) return res.status(400).json({ errore: r.errore });
-    res.json({ ok: true });
+    res.json({ ok: true, conFoto: !!foto });
   }));
 
   // ── SORGENTI (feed) dei post: Instagram e qualunque altra cosa ────────────
@@ -5659,14 +5667,19 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     if (!c?.token || !c.chat_id) return res.status(400).json({ errore: 'configura bot e gruppo prima' });
     const info = await helix.getStream(login).catch(() => null);
     const s = streamers.get(login);
-    const testo = telegram.costruisciMessaggioLive({ login, display: s?.display || login }, info, c.messaggio);
+    const dir = avvisi.diretta({
+      piattaforma: piattaformaDi(login) || 'twitch', login, display: s?.display || login,
+      titolo: info?.title || '', gioco: info?.game_name || '',
+      spettatori: info?.viewer_count ?? null, id: String(info?.id || 'prova'),
+    });
     // La prova passa dalla STESSA strada dell'annuncio vero — stessa funzione
     // che decide la locandina, stessa funzione che spedisce. Mandarla con
     // `inviaMessaggio` era piu' corto e voleva dire provare una cosa diversa da
     // quella che parte: la prova arrivava senza immagine e la diretta con, o il
     // contrario, e nessuno dei due sintomi si vede finche' non e' tardi.
     const evento = avvisi.eventoDi(piattaformaDi(login)) || avvisi.eventoDi('twitch');
-    const foto = await cartaLive.fotoPerEvento(login, evento, { info: info || {} });
+    const foto = await cartaLive.fotoPerEvento(login, evento, { info: info || {}, helix });
+    const testo = avvisi.messaggio(dir, c.messaggio, { conLocandina: !!foto });
     const esiti = await telegram.diffondi(c.token, [{ id: 0, chat_id: c.chat_id, titolo: 'gruppo' }],
       '🧪 <i>Anteprima notifica</i>\n\n' + testo, { anteprima: true, foto });
     const r = esiti[0] || { ok: false, errore: 'nessuna destinazione' };

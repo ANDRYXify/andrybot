@@ -40,6 +40,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { righeCommento } from '../src/spoglia.js';
+import { CARATTERI } from '../src/features/carta-disegno.js';
 import { disegnoPerIlBrowser } from '../src/features/cartalive.js';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -190,9 +191,26 @@ try {
     `non sono TTF: ${nonTtf.join(', ')}`);
 
   // e il server li serve al browser, quegli stessi file
-  dice(/app\.get\('\/font\/:file'/.test(rotte) && /CARATTERI\.map\(\(\[, file\]\) => file\)/.test(rotte),
+  const servita = leggi('src/features/carta-servita.js');
+  dice(/app\.get\('\/font\/:file'/.test(rotte) && /CARATTERI_AMMESSI\.has\(/.test(rotte)
+    && /CARATTERI\.map\(\(\[, file\]\) => file\)/.test(servita),
     'e il browser riceve gli stessi file del rasterizzatore',
     'l\'editor userebbe un carattere di sistema: ogni testo sarebbe largo diverso');
+  // e l'editor NON si riscrive i nomi dei file: li chiede all'elenco
+  const editor = leggi('src/web/public/carta-editor.js');
+  dice(/CARATTERI\.map\(/.test(editor) && !/\.ttf/.test(editor.replace(/\/font\/\$\{file\}/g, '')),
+    'e l\'editor dichiara i caratteri dall\'elenco vero, senza riscriversi i nomi dei file',
+    'i nomi dei file sono scritti a mano nell\'editor: il giorno che ne cambia uno, l\'anteprima resta muta');
+  // I nomi delle famiglie della carta esistono GIA' nel sito: font.css dichiara
+  // un suo «Archivo», che e' un altro file. Dichiarare la stessa famiglia
+  // significa che il browser puo' scegliere quella del sito, e l'anteprima
+  // disegna con un carattere diverso da quello del rasterizzatore — largo
+  // diverso, senza nessun errore. Percio' nell'editor i caratteri della carta
+  // hanno un nome privato, e il disegno viene riscritto su quello.
+  const suoi = CARATTERI.map(([n]) => n).filter((n) => new RegExp(`font-family:"\\$\\{?["']?${n}`).test(editor));
+  dice(/const ALIAS = new Map\(CARATTERI/.test(editor) && /conAlias\(svgCarta\(/.test(editor) && !suoi.length,
+    'e i caratteri della carta hanno un nome loro: quello del sito non li puo\' rimpiazzare',
+    `l'editor dichiara le famiglie col nome pubblico (${suoi.join(', ') || 'e non riscrive il disegno'})`);
   dice(/app\.get\('\/js\/carta-disegno\.js'/.test(rotte) && /cartaLive\.disegnoPerIlBrowser\(\)/.test(rotte),
     'e la rotta manda quello che questo cancello ha appena guardato, non altro',
     'la rotta si compone il modulo per conto suo: potrebbe mandare una cosa diversa da quella verificata');

@@ -20,7 +20,7 @@
 //
 // Tutte e due danno lo stesso sintomo — nessun errore — e si vedono solo
 // guardando l'immagine. Il collaudo infatti la GUARDA: conta i pixel accesi.
-import { readFileSync, existsSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { makeLog } from '../logger.js';
@@ -28,34 +28,15 @@ import { carteLive, streamers } from '../db.js';
 import { piattaformaDi, nomeSu } from '../identita.js';
 import { eUnaDiretta } from './avvisi.js';
 import { CARATTERI, MISURA, cartaDi, svgCarta } from './carta-disegno.js';
-import { spoglia } from '../spoglia.js';
+import { CARTELLA_CARATTERI } from './carta-servita.js';
 
 // Quello che serve anche a chi importa da qui: una porta sola.
 export * from './carta-disegno.js';
+export * from './carta-servita.js';
 
 const log = makeLog('carta');
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
-const FONT_DIR = join(RAD, 'assets/font');
-export const CARTELLA_CARATTERI = FONT_DIR;
-
-// ── quello che riceve il browser ───────────────────────────────────────────
-//
-// L'editor disegna l'anteprima con la STESSA funzione che disegna l'immagine
-// che parte. Perché possa, il browser deve ricevere `carta-disegno.js` — quel
-// file, non una copia da riallineare a mano.
-//
-// Esce senza commenti: quel file ne ha, e le spiegazioni non devono arrivare a
-// chi apre F12. Lo spoglio sta QUI e non nella rotta perché non deve esserci un
-// posto in cui qualcuno possa dimenticarselo: chi serve il modulo e chi lo
-// verifica chiamano questa funzione, e non c'è una seconda strada.
-let _servito = null;
-export function disegnoPerIlBrowser() {
-  if (_servito === null) {
-    try { _servito = spoglia(readFileSync(join(RAD, 'src/features/carta-disegno.js'), 'utf8'), 'js'); } catch { _servito = ''; }
-  }
-  return _servito;
-}
-
+const FONT_DIR = CARTELLA_CARATTERI;
 
 // ── la rasterizzazione ─────────────────────────────────────────────────────
 
@@ -169,7 +150,36 @@ export async function pngPerDiretta(login, info = {}, { forza = false, chi = nul
 //
 // Qui la decisione è una: la locandina esce SOLO per una diretta — un «è
 // finita» o un nuovo video non la vogliono — e solo se lo streamer l'ha accesa.
-export async function fotoPerEvento(login, evento, { chi = null, info = null } = {}) {
+export async function fotoPerEvento(login, evento, { chi = null, info = null, helix = null } = {}) {
   if (!eUnaDiretta(evento)) return null;
-  return pngPerDiretta(login, info || {}, { chi: chi || login }).catch(() => null);
+  const diChi = String(chi || login).toLowerCase();
+  return pngPerDiretta(login, await completaInfo(diChi, info, helix), { chi: diChi }).catch(() => null);
+}
+
+// COSA SO DI QUESTA DIRETTA — e il buco che questa funzione tappa.
+//
+// La locandina scrive titolo e categoria. Chi la chiede però non sempre li ha:
+//   · alla PROVA dal pannello il canale è quasi sempre spento, e «la diretta in
+//     corso» non esiste: la locandina usciva col titolo vuoto e sembrava rotta;
+//   · all'annuncio VERO, Twitch dice «è partita» prima che l'API abbia il
+//     titolo, e ogni tanto tocca lo stesso vuoto.
+//
+// In tutti e due i casi la risposta c'è, solo un passo più in là: il titolo e
+// la categoria del CANALE, che restano scritti anche a diretta spenta. Si
+// chiedono qui, una volta, per tutti — sennò ogni chiamante si ricorda del caso
+// che ha in mente e dimentica l'altro.
+async function completaInfo(login, info, helix) {
+  const pieno = (x) => x && (x.title || x.titolo);
+  if (pieno(info)) return info;
+  if (!helix) return info || {};
+  try {
+    const st = await helix.getStream(login);
+    if (pieno(st)) return { ...info, ...st };
+  } catch { /* spento */ }
+  try {
+    const s = streamers.get(login);
+    const ci = s?.user_id ? await helix.getChannelInfo(s.user_id) : null;
+    if (ci) return { ...info, title: ci.title || '', game_name: ci.game_name || '' };
+  } catch { /* niente */ }
+  return info || {};
 }

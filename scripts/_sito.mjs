@@ -15,6 +15,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { inserisciVetrina } from '../src/web/vetrina-vista.js';
+import { disegnoPerIlBrowser, CARATTERI_AMMESSI, CARTELLA_CARATTERI } from '../src/features/carta-servita.js';
 
 const RAD = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const PUB = path.join(RAD, 'src/web/public');
@@ -44,6 +45,20 @@ export async function apriSito({ api = () => ({}), kick = true } = {}) {
     if (q.startsWith('/api/')) {
       res.writeHead(200, { 'content-type': 'application/json' });
       return res.end(JSON.stringify(api(q, via) ?? {}));
+    }
+    // Le due cose che il server vero serve da fuori `public/`. Senza, il sito
+    // dei collaudi risponderebbe con la HOME al posto di un modulo — e
+    // l'editor, che quel modulo lo importa, non partirebbe: un collaudo che
+    // fallisce per colpa del banco di prova, non del prodotto.
+    if (q === '/js/carta-disegno.js') {
+      res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8' });
+      return res.end(disegnoPerIlBrowser());
+    }
+    if (q.startsWith('/font/')) {
+      const nome = q.slice(6);
+      if (!CARATTERI_AMMESSI.has(nome)) { res.writeHead(404); return res.end(); }
+      res.writeHead(200, { 'content-type': 'font/ttf' });
+      return res.end(fs.readFileSync(path.join(CARTELLA_CARATTERI, nome)));
     }
     const f = path.join(PUB, q === '/' ? 'index.html' : q);
     const home = q === '/' || q === '/index.html'

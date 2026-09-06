@@ -22,6 +22,7 @@ export const PIATTAFORME = {
     evento: 'live',                       // chiave storica: NON si tocca
     url: (login) => `https://twitch.tv/${login}`,
     predefinito: '🔴 <b>{nome}</b> è in diretta!\n\n<b>{titolo}</b>\n🎮 {gioco}\n\n👉 {link}',
+    conLocandina: '🔴 <b>{nome}</b> è in diretta · <a href="{link}">guarda ora</a>',
   },
   kick: {
     etichetta: ['Diretta su Kick', 'Kick live', 'Directo en Kick'],
@@ -29,6 +30,7 @@ export const PIATTAFORME = {
     evento: 'kick',
     url: (login) => `https://kick.com/${login}`,
     predefinito: '🟢 <b>{nome}</b> è in diretta su <b>Kick</b>!\n\n<b>{titolo}</b>\n\n👉 {link}',
+    conLocandina: '🟢 <b>{nome}</b> è in diretta su Kick · <a href="{link}">guarda ora</a>',
   },
   youtube: {
     etichetta: ['Diretta su YouTube', 'YouTube live', 'Directo en YouTube'],
@@ -36,6 +38,7 @@ export const PIATTAFORME = {
     evento: 'ytlive',
     url: (login, d) => d?.url || `https://youtube.com/@${login}/live`,
     predefinito: '🔴 <b>{nome}</b> è in diretta su <b>YouTube</b>!\n\n<b>{titolo}</b>\n\n👉 {link}',
+    conLocandina: '🔴 <b>{nome}</b> è in diretta su YouTube · <a href="{link}">guarda ora</a>',
   },
   tiktok: {
     etichetta: ['Diretta su TikTok', 'TikTok live', 'Directo en TikTok'],
@@ -43,6 +46,7 @@ export const PIATTAFORME = {
     evento: 'tiktok',                     // chiave storica: NON si tocca
     url: (login, d) => d?.url || `https://www.tiktok.com/@${login}/live`,
     predefinito: '🎵 <b>{nome}</b> è in diretta su <b>TikTok</b>!\n\n👉 {link}',
+    conLocandina: '🎵 <b>{nome}</b> è in diretta su TikTok · <a href="{link}">guarda ora</a>',
   },
 };
 
@@ -80,7 +84,14 @@ export function diretta({ piattaforma, login, display = '', titolo = '', gioco =
 // Il testo. `template` è quello personalizzato dallo streamer (vuoto = quello
 // della piattaforma). Un segnaposto senza dato sparisce insieme alla sua riga:
 // «🎮 » da solo è peggio che niente.
-export function messaggio(d, template = '') {
+//
+// `conLocandina` cambia il testo di casa, non quello scritto dallo streamer.
+// Quando parte anche l'immagine, il titolo e il gioco sono GIA' disegnati
+// dentro: ripeterli sotto vuol dire mandare due volte la stessa cosa e un
+// messaggio alto il doppio. Resta quello che l'immagine non può fare — il nome
+// nella notifica del telefono, che dell'immagine non vede niente, e un link su
+// cui si possa premere, perché una foto non è cliccabile.
+export function messaggio(d, template = '', { conLocandina = false } = {}) {
   if (!d) return '';
   const p = PIATTAFORME[d.piattaforma];
   const valori = {
@@ -92,7 +103,8 @@ export function messaggio(d, template = '') {
     login: escHtml(d.login),
     piattaforma: p.nome,
   };
-  const t = (template && String(template).trim()) || p.predefinito;
+  const t = (template && String(template).trim())
+    || (conLocandina && p.conLocandina) || p.predefinito;
   const steso = t.replace(/\{(nome|titolo|gioco|spettatori|link|login|piattaforma)\}/g, (_, k) => valori[k] ?? '');
   // via le righe rimaste vuote (o con solo un'emoji e uno spazio)
   return steso.split('\n')
