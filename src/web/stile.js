@@ -246,8 +246,22 @@ export const normMusica = (m) => {
     cover: unoDi(m.cover, COVER_MUS, 'quadrata'),
     barra: unoDi(m.barra, BARRA_MUS, 'sotto'),
     tempi: unoDi(m.tempi, TEMPI_MUS, 'no'),
-    onde: m.onde !== false,
-    ritmo: unoDi(m.ritmo, RITMO_MUS, 'onde'),
+    // LE ONDE: una domanda sola, con tre risposte oneste.
+    //
+    // Prima erano due controlli sovrapposti: una spunta «mostra le onde» e un
+    // «cosa balla a tempo» il cui «niente» le lasciava lì, ferme. Un
+    // equalizzatore che non si muove non è spento: è finto, e occupa posto per
+    // fingere. Adesso il ritmo dice tutto: `no` vuol dire che le onde non ci
+    // sono.
+    //
+    // `onde` resta nella configurazione perché la leggono i disegni, ma non è
+    // più una scelta a parte: è una CONSEGUENZA del ritmo, quindi i due non
+    // possono più dire cose diverse. E chi aveva tolto le onde con la vecchia
+    // spunta se le ritrova tolte: la sua scelta vince sul ritmo salvato.
+    ...(() => {
+      const r = m.onde === false ? 'no' : unoDi(m.ritmo, RITMO_MUS, 'onde');
+      return { onde: r !== 'no', ritmo: r };
+    })(),
     sfondo: unoDi(m.sfondo, SFONDO_MUS, 'no'),
     corpo: unoDi(m.corpo, CORPO_MUS, 'normale'),
     // Quanto si allarga la colonna del testo prima che il titolo cominci a

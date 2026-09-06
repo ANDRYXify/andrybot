@@ -417,20 +417,40 @@ test('la scheda aperta di un obiettivo resta aperta quando la lista si ridisegna
 
 // ── IL LETTORE MUSICA: due cose che «a volte funzionavano» ─────────────────
 
-test('«niente si muove a tempo» ferma davvero le onde', () => {
-  // Prima il ritmo decideva solo la VELOCITÀ delle onde, non se si muovessero:
-  // scegliendo «niente» restavano lì a ballare col loro tempo di default. Chi
-  // legge l'etichetta si aspetta che niente si muova, ed è quello che deve
-  // succedere.
-  const avvii = [...SKIN.matchAll(/([^\n{}]*\{[^}]*animation-play-state:\s*running[^}]*\})/g)]
-    .map((m) => m[1]);
-  assert.ok(avvii.length, 'qualcuno accende l’animazione delle onde');
-  for (const regola of avvii) {
-    if (!regola.includes('m-onde')) continue;
-    assert.match(regola, /:not\(\.ritmo-no\)/,
-      `questa regola fa ballare le onde anche con «niente si muove a tempo»: ${regola.slice(0, 90)}`);
+test('«niente onde» le toglie, non le lascia lì spente', () => {
+  // Prima erano due controlli sovrapposti, e il «niente» del ritmo lasciava le
+  // onde a schermo — ferme. Un equalizzatore che non si muove non è spento: è
+  // finto, e occupa posto per fingere. Ora la domanda è una sola e «no» vuol
+  // dire che non ci sono.
+  for (const F of [APP, OVL]) {
+    const m = F.match(/con-onde/g);
+    assert.ok(m, 'qualcuno decide se le onde ci sono');
   }
-  // e la copertina pulsa SOLO quando è stato chiesto «onde e copertina»
+  assert.ok(!/cfg\.onde\b/.test(APP) && !/cfg\.onde\b/.test(OVL),
+    'le onde non si decidono più da un campo suo: sono una conseguenza del ritmo');
+  for (const F of [APP, OVL]) {
+    assert.match(F, /ritmo[^\n]*!==\s*'no'[^\n]*con-onde|con-onde[^\n]*ritmo/,
+      'chi disegna guarda il ritmo per sapere se le onde ci sono');
+  }
+  // e nessun controllo doppio: la spunta «mostra le onde» non esiste più
+  assert.ok(!APP.includes('data-c="onde"'),
+    'due controlli per la stessa cosa possono dire cose diverse, e prima le dicevano');
+});
+
+test('la copertina pulsa solo se il battito lo sappiamo davvero', () => {
+  // Con un valore di ripiego (mezzo secondo fisso) pulsava anche senza sapere il
+  // tempo del brano: da fuori non si vede «manca il dato», si vede una copertina
+  // che va a caso — che è peggio di una copertina ferma.
+  const conBattito = [...SKIN.matchAll(/([^\n{}]*)\{([^}]*var\(--battito[^}]*)\}/g)];
+  assert.ok(conBattito.length, 'qualcosa usa il battito');
+  for (const [, selettore, corpo] of conBattito) {
+    if (!/animation/.test(corpo)) continue;
+    assert.match(selettore, /\[style\*="--battito"\]/,
+      `questa cosa si muove anche senza sapere il battito: ${selettore.trim().slice(0, 80)}`);
+  }
+  assert.ok(!/var\(--battito,\s*[^)]/.test(SKIN),
+    'nessun valore di ripiego per il battito: senza il dato vero non si finge');
+  // e resta legata a «onde e copertina», non accesa sempre
   for (const m of SKIN.matchAll(/([^\n{}]*)\{[^}]*animation:\s*mus-batte[^}]*\}/g)) {
     assert.match(m[1], /\.ritmo-tutto/, `la copertina pulsa fuori da «onde e copertina»: ${m[1].trim()}`);
   }
