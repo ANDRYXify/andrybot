@@ -109,3 +109,39 @@ test('la vetrina porta alle guide, ai manuali e alle novità', () => {
     assert.ok(h.includes(`href="${via}"`), `dalla vetrina si arriva a ${via}`);
   }
 });
+
+// ── I SUGGERIMENTI AL PASSAGGIO DEL CURSORE ────────────────────────────────
+// Erano il `title` del browser: quella scatoletta non la disegna il sito, la
+// disegna il sistema operativo — e non è stilabile in nessun modo. Su un sito
+// con un tema suo, in mezzo a tutto il resto, si vedeva che veniva da fuori.
+
+test('i suggerimenti li disegna il sito, non il sistema operativo', () => {
+  const js = leggi('src/web/public/aiuto.js');
+  const html = leggi('src/web/public/index.html');
+  const css = leggi('src/web/public/style.css');
+
+  assert.match(html, /<script src="aiuto\.js"/, 'la bolla è caricata dove le persone passano il cursore');
+  assert.match(js, /removeAttribute\('title'\)/,
+    'il `title` va TOLTO: lasciandolo, il browser disegna la sua scatoletta sopra la nostra');
+  assert.match(js, /data-aiuto/, 'e il testo si conserva altrove, o il suggerimento sparisce');
+
+  const bolla = css.slice(css.indexOf('.aiuto-bolla {'), css.indexOf('.aiuto-bolla.vista'));
+  assert.ok(bolla, 'la bolla ha il suo stile');
+  // Si cerca la DICHIARAZIONE, non la riga: due dichiarazioni possono stare
+  // sulla stessa riga, e cercare per riga direbbe di no a un CSS giusto.
+  for (const [prop, atteso] of [['background', '--surface'], ['color', '--testo'], ['border', '--contorno']]) {
+    const m = bolla.match(new RegExp('(?:^|[;{\\s])' + prop + ':\\s*([^;]+)'));
+    assert.ok(m, `la bolla dichiara ${prop}`);
+    assert.ok(m[1].includes('var(' + atteso), `la bolla prende ${prop} dal tema (${atteso}), non da un colore scritto a mano: ${m[1].trim()}`);
+  }
+});
+
+test('e si vedono anche con la tastiera, cosa che il browser non faceva', () => {
+  // Il `title` del browser compare SOLO col cursore. Chi naviga con il tasto di
+  // tabulazione non lo vedeva mai: l'aiuto c'era e non arrivava a chi serviva.
+  const js = leggi('src/web/public/aiuto.js');
+  assert.match(js, /'focusin'/, 'compare anche arrivandoci col tasto di tabulazione');
+  assert.match(js, /aria-describedby/, 'e chi legge lo schermo sa che quella bolla descrive quel comando');
+  assert.match(js, /pointerType === 'touch'/,
+    'sul telefono no: un suggerimento al passaggio del dito è un suggerimento che non se ne va più');
+});

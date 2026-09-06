@@ -1728,3 +1728,22 @@ summary:active::after, .vt-btn:active::before { transform: scale(1.13); opacity:
 .goal-voce-guscio > summary::-webkit-details-marker { display: none; }
 .goal-meta { padding: .2rem .7rem .8rem; border-top: 1px solid var(--border); }
 .goal-meta > .goal-campi { margin-top: .5rem; }
+
+.aiuto-bolla {
+  position: fixed; z-index: 9000; left: 0; top: 0;
+  max-width: min(340px, 86vw); padding: .48rem .66rem;
+  background: var(--surface); color: var(--testo);
+  border: var(--contorno-sp) solid var(--contorno); border-radius: var(--r-s);
+  box-shadow: var(--ombra-ink-timbro);
+  font-size: .82rem; line-height: 1.42; font-weight: 500;
+  text-align: left; white-space: normal; overflow-wrap: anywhere;
+  pointer-events: none;
+  opacity: 0; transform: translateY(3px);
+  transition: opacity .12s ease, transform .12s ease;
+}
+.aiuto-bolla.vista { opacity: 1; transform: none; }
+.aiuto-bolla.sotto { transform: translateY(-3px); }
+.aiuto-bolla.sotto.vista { transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .aiuto-bolla { transition: none; transform: none; }
+}
