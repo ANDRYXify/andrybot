@@ -190,15 +190,24 @@ al centro. Non è la scelta comoda, è quella giusta — nel manga le linee
 **radiali** servono al momento drammatico e alla messa a fuoco, le **parallele**
 al movimento laterale. Fra due sezioni c'è uno stacco, non uno scorrimento.
 
-Dura `--t-impatto`, cioè **66 ms**: due fotogrammi. È un vincolo, non un gusto.
+Dura `--t-impatto`, cioè **118 ms**: due-tre fotogrammi. È un vincolo, non un gusto.
 Nel *sakuga* l'impact frame è un singolo disegno inserito nell'istante dell'urto:
 se resta troppo, l'illusione dello scoppio si rompe e si vedono i disegni
 singoli. Mezzo secondo di linee non è un impatto, è un velo.
 
-Il lampo parte **prima** della transizione, non insieme. Non è una scelta di
-ritmo: lo strato delle *view transition* il browser lo dipinge sopra a tutto, e
-un velo normale, durante, sarebbe invisibile. Così invece la sequenza è quella
-giusta comunque — l'urto sulla scena vecchia, poi la scena nuova.
+Il lampo **copre lo stacco**: parte, e al suo picco (38%) il contenuto cambia
+sotto. Quando si dirada, la scena nuova è già lì. La prima versione faceva il
+contrario — lampo, poi cambio — e si vedeva «un guizzo, poi niente, poi la
+pagina»: cioè niente. Nell'anime il fotogramma d'impatto serve proprio a
+nascondere il salto, non ad annunciarlo.
+
+Il lampo parte comunque **fuori** dalla transizione, non dentro: lo strato delle
+*view transition* il browser lo dipinge sopra a tutto, e un velo normale, durante,
+sarebbe invisibile.
+
+Il fondo del lampo è la **carta** (`--bg`), non il bianco né il nero. Così a
+schermo pieno lo sbalzo di luminanza è quasi nullo — la pagina va da carta a
+carta — e le linee possono stare piene senza diventare uno stroboscopio.
 
 ### Il limite che non è estetico
 
@@ -210,13 +219,20 @@ fra le schede ci si arriva senza sforzo. Quindi: opacità di picco **0.5** e non
 minima di **420 ms** fra due lampi — al massimo 2.4 al secondo. Se arrivi prima,
 lo stacco c'è lo stesso, senza l'impatto.
 
-Si spegne dove si spegne tutto: `prefers-reduced-motion`, `leggero`, `meno-moto`.
+Si spegne con `prefers-reduced-motion` e con «meno movimento», **non** con la
+modalità «leggera». Sono due interruttori diversi e li avevo legati insieme:
+«leggero» si accende da solo su un dispositivo che dichiara poca memoria, pochi
+core o una rete lenta, e serve al **carico** — un'opacità che cambia su un
+elemento solo non pesa niente. «Meno movimento» lo chiede la persona e vale per
+il **movimento**. Erano allo stesso freno, e su una macchina modesta lo stacco
+spariva senza che nessuno lo sapesse.
 
 `node scripts/verifica-stacco.mjs` gira **tutti** i passaggi fra schede vicine e
 per ognuno chiede al browser quale dei due stacchi è partito — dal codice non si
 vede, perché `stessaFamiglia()` non si legge da fuori. Controlla anche che il
-lampo non resti a schermo, che non se ne accumuli uno per cambio, che duri due
-fotogrammi e che la pausa fra due basti.
+lampo non resti a schermo, che non se ne accumuli uno per cambio, che duri pochi
+fotogrammi, che la pausa fra due basti, e che i due interruttori restino
+separati — con «leggero» lo stacco c'è, con «meno movimento» no.
 
 Fonti: [McCloud, i sei passaggi](https://understandingcomics177.wordpress.com/about/1-2/2-2/) ·
 [linee d'azione nel manga](https://jerwoodvisualarts.org/blog/how-to-draw-manga-action-lines/) ·
