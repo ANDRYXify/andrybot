@@ -4294,7 +4294,7 @@ function pannelloStato() {
       <p class="suggerimento">${L('Non contiene le chiavi di accesso ai tuoi account, né i messaggi scritti da altre persone: quelli sono loro, non tuoi.', "It contains no access keys to your accounts, and no messages written by other people: those are theirs, not yours.", 'No contiene las claves de acceso a tus cuentas ni los mensajes escritos por otras personas: esos son suyos, no tuyos.')}</p>
       ${stato.ruolo === 'moderatore'
         ? `<p class="suggerimento spazio-sopra">${L('Il file lo scarica il proprietario del canale: i dati sono suoi.', 'The channel owner downloads the file: the data is theirs.', 'El archivo lo descarga el propietario del canal: los datos son suyos.')}</p>`
-        : `<p class="spazio-sopra"><a class="btn secondario" id="btn-esporta" href="/api/streamer/esporta" download>${_bIco(ICO.scarica)}${L('Scarica i miei dati', 'Download my data', 'Descargar mis datos')}</a></p>`}
+        : `<p class="spazio-sopra"><a class="btn secondario" id="btn-esporta" href="/api/streamer/esporta" download title="${esc(L('Un file solo con tutto quello che è tuo: profilo, impostazioni, memoria. Non contiene le chiavi di accesso ai tuoi account', 'A single file with everything that is yours: profile, settings, memory. It does not contain your account keys', 'Un solo archivo con todo lo tuyo: perfil, ajustes, memoria. No contiene las claves de tus cuentas'))}">${_bIco(ICO.scarica)}${L('Scarica i miei dati', 'Download my data', 'Descargar mis datos')}</a></p>`}
     </div>
 
     <div class="carta">
@@ -4330,7 +4330,7 @@ function pannelloStato() {
       <p>${L('Crea una', 'Create a', 'Crea una')} <strong class="primo-piano">passkey</strong> ${L('(impronta, volto o PIN): così rientri al volo, in modo sicuro,', '(fingerprint, face or PIN): so you get back in fast and securely,', '(huella, rostro o PIN): así vuelves a entrar al vuelo y de forma segura,')} <strong class="primo-piano">${L('senza ripassare ogni volta dal sito', 'without going through the site every time', 'sin pasar cada vez por la web')}</strong>.
       ${proprietario ? '' : L('Vale per il tuo account: ti riporta ai canali che gestisci.', 'It’s tied to your account: it brings you back to the channels you manage.', 'Vale para tu cuenta: te lleva a los canales que gestionas.')}</p>
       <p class="spazio-sopra">
-        <button class="btn" id="btn-crea-passkey">${L('Crea una passkey', 'Create a passkey', 'Crea una passkey')}</button>
+        <button class="btn" id="btn-crea-passkey" title="${esc(L("Entri con l'impronta o il volto, senza password e senza codici: la chiave resta sul tuo dispositivo", 'Sign in with your fingerprint or face, no password and no codes: the key stays on your device', 'Entra con tu huella o tu cara, sin contraseña ni códigos: la llave se queda en tu dispositivo'))}">${L('Crea una passkey', 'Create a passkey', 'Crea una passkey')}</button>
       </p>
       <h3>${L('Le tue passkey', 'Your passkeys', 'Tus passkeys')}</h3>
       <ul class="lista-voci" id="lista-passkey"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
@@ -4348,7 +4348,7 @@ function pannelloStato() {
         </select>
         <span class="suggerimento">@</span>
         <input type="text" id="inp-mod-login" class="cresce" placeholder="${L('nomeutente', 'username', 'usuario')}" autocomplete="off">
-        <button class="btn" id="btn-invita-mod">${L('Crea invito', 'Create invite', 'Crear invitación')}</button>
+        <button class="btn" id="btn-invita-mod" title="${esc(L('Crea un link da dare a chi vuoi: chi lo apre entra come moderatore di questo canale', 'Creates a link to hand out: whoever opens it joins as a moderator of this channel', 'Crea un enlace para dar a quien quieras: quien lo abra entra como moderador de este canal'))}">${L('Crea invito', 'Create invite', 'Crear invitación')}</button>
       </div>
       <div id="invito-creato"></div>
       <h3>${L('Chi ha chiesto di aiutarti', 'Who asked to help you', 'Quién ha pedido ayudarte')}</h3>
@@ -6012,7 +6012,7 @@ function pannelloAlert() {
           <button type="button" class="ovl-tasto" id="ovl-zoom-meno" title="${L('Rimpicciolisci', 'Zoom out', 'Alejar')}">${_bIco('<circle cx="11" cy="11" r="7"/><path d="M8 11h6M21 21l-4.3-4.3"/>')}</button>
           <span class="ovl-zoom-v" id="ovl-zoom-v">100%</span>
           <button type="button" class="ovl-tasto" id="ovl-zoom-piu" title="${L('Ingrandisci', 'Zoom in', 'Acercar')}">${_bIco('<circle cx="11" cy="11" r="7"/><path d="M8 11h6M11 8v6M21 21l-4.3-4.3"/>')}</button>
-          <button type="button" class="ovl-tasto testo" id="ovl-zoom-fit">${L('Adatta', 'Fit', 'Ajustar')}</button>
+          <button type="button" class="ovl-tasto testo" id="ovl-zoom-fit" title="${esc(L('Riporta lo zoom a far stare tutta la scena nello schermo', 'Brings the zoom back so the whole scene fits the screen', 'Devuelve el zoom para que toda la escena quepa en la pantalla'))}">${L('Adatta', 'Fit', 'Ajustar')}</button>
         </div>
       </div>
       <div class="ovl-scena">
@@ -6288,7 +6288,7 @@ function pannelloAlert() {
       <p>${L('Per chi vuole spingersi oltre: CSS applicato al tuo overlay. Le classi principali sono', 'For those who want to go further: CSS applied to your overlay. The main classes are', 'Para quien quiere ir más allá: CSS aplicado a tu overlay. Las clases principales son')}
       <code>.alert-card</code>, <code>.chat-riga</code>, <code>.ovl-widget</code>, <code>.pen-card</code>.</p>
       <textarea id="ovl-css" spellcheck="false" placeholder=".alert-card { letter-spacing: 1px; }">${esc(p.overlayCss || '')}</textarea>
-      <p class="spazio-sopra"><button class="btn" id="css-salva">${L('Salva CSS', 'Save CSS', 'Guardar CSS')}</button></p>
+      <p class="spazio-sopra"><button class="btn" id="css-salva" title="${esc(L("Aggiunge il tuo foglio di stile all'overlay. Serve a chi vuole cambiare cose che i menu non toccano", 'Adds your stylesheet to the overlay. For when you want to change things the menus do not reach', 'Añade tu hoja de estilo al overlay. Para cambiar cosas que los menús no tocan'))}">${L('Salva CSS', 'Save CSS', 'Guardar CSS')}</button></p>
     </details>`);
 }
 
@@ -8315,16 +8315,16 @@ function pannelloRegia() {
       <label class="campo spazio-sopra" for="regia-tags">${L('Tag', 'Tags', 'Etiquetas')} <span class="tenue">— ${L('separati da virgola, max 10', 'comma-separated, max 10', 'separadas por comas, máx. 10')}</span></label>
       <input type="text" id="regia-tags" class="campo-largo" placeholder="${L('italiano, chill, ranked', 'english, chill, ranked', 'español, chill, ranked')}">
 
-      <p class="spazio-sopra"><button type="button" class="btn" id="regia-salva-canale">${L('Salva info canale', 'Save channel info', 'Guardar info del canal')}</button></p>
+      <p class="spazio-sopra"><button type="button" class="btn" id="regia-salva-canale" title="${esc(L('Cambia titolo e categoria della diretta adesso, senza aprire Twitch', 'Changes the live title and category right now, without opening Twitch', 'Cambia el título y la categoría del directo ahora, sin abrir Twitch'))}">${L('Salva info canale', 'Save channel info', 'Guardar info del canal')}</button></p>
     </div>
 
     <div class="carta">
       <h2>${_hIco(ICO.fulmine)}${L('Azioni rapide', 'Quick actions', 'Acciones rápidas')}</h2>
       <div class="regia-azioni">
-        <button type="button" class="btn secondario" id="regia-clip">${_bIco(ICO.clip)}${L('Crea clip', 'Create clip', 'Crear clip')}</button>
+        <button type="button" class="btn secondario" id="regia-clip" title="${esc(L("Salva gli ultimi trenta secondi di diretta come clip su Twitch, senza aprire nient'altro", 'Saves the last thirty seconds of the live as a Twitch clip, without opening anything else', 'Guarda los últimos treinta segundos del directo como clip en Twitch, sin abrir nada más'))}">${_bIco(ICO.clip)}${L('Crea clip', 'Create clip', 'Crear clip')}</button>
         <div class="regia-riga">
           <input type="text" id="regia-marker-desc" placeholder="${L('Nota del marker (facoltativa)', 'Marker note (optional)', 'Nota del marcador (opcional)')}" maxlength="140">
-          <button type="button" class="btn secondario" id="regia-marker">${_bIco(ICO.segnaposto)}Marker</button>
+          <button type="button" class="btn secondario" id="regia-marker" title="${esc(L('Mette un segno in questo punto della registrazione, per ritrovarlo quando monti', 'Puts a marker at this point of the recording, to find it again when you edit', 'Pone una marca en este punto de la grabación, para encontrarla al montar'))}">${_bIco(ICO.segnaposto)}Marker</button>
         </div>
         <div class="regia-riga" id="regia-ad-box">
           <select id="regia-ad-durata">
@@ -8332,11 +8332,11 @@ function pannelloRegia() {
             <option value="90">90s</option><option value="120">120s</option>
             <option value="150">150s</option><option value="180">180s</option>
           </select>
-          <button type="button" class="btn secondario" id="regia-ad">${_bIco(ICO.tv)}${L('Manda pubblicità', 'Run an ad', 'Lanzar anuncio')}</button>
+          <button type="button" class="btn secondario" id="regia-ad" title="${esc(L('Fa partire subito la pubblicità per la durata scelta qui accanto', 'Starts the ad break right now, for the length chosen next to it', 'Lanza la publicidad ahora mismo, con la duración elegida al lado'))}">${_bIco(ICO.tv)}${L('Manda pubblicità', 'Run an ad', 'Lanzar anuncio')}</button>
         </div>
         <div class="regia-riga" id="regia-raid-box">
           <input type="text" id="regia-raid-canale" placeholder="${L('canale da raidare', 'channel to raid', 'canal a raidear')}" maxlength="30">
-          <button type="button" class="btn secondario" id="regia-raid">${_bIco(ICO.freccia)}${L('Avvia raid', 'Start raid', 'Iniciar raid')}</button>
+          <button type="button" class="btn secondario" id="regia-raid" title="${esc(L('Manda i tuoi spettatori sul canale scelto e chiude la tua diretta', 'Sends your viewers to the chosen channel and ends your live', 'Envía a tus espectadores al canal elegido y termina tu directo'))}">${_bIco(ICO.freccia)}${L('Avvia raid', 'Start raid', 'Iniciar raid')}</button>
           <button type="button" class="btn secondario mini" id="regia-raid-annulla">${L('Annulla', 'Cancel', 'Cancelar')}</button>
         </div>
       </div>
@@ -8552,7 +8552,7 @@ function pannelloStudio() {
       </div>
 
       <div class="studio-vai spazio-sopra">
-        <button type="button" class="btn grande" id="studio-live">${_bIco(ICO.onda)}${L('VAI LIVE', 'GO LIVE', 'EMITIR')}</button>
+        <button type="button" class="btn grande" id="studio-live" title="${esc(L('Manda in diretta quello che vedi qui sopra. Da qui in poi ti guarda il pubblico', 'Sends what you see above out live. From here on, the audience is watching', 'Pone en directo lo que ves arriba. A partir de aquí te ve el público'))}">${_bIco(ICO.onda)}${L('VAI LIVE', 'GO LIVE', 'EMITIR')}</button>
         <button type="button" class="btn secondario" id="studio-ferma" hidden>${_bIco(ICO.stop)}${L('Ferma diretta', 'Stop stream', 'Detener directo')}</button>
         <span id="studio-stato" class="suggerimento"></span>
       </div>
@@ -10110,7 +10110,7 @@ function pannello7TV() {
         <span class="prefisso-cmd">:</span>
         <input type="text" id="svtv-nome" class="campo-largo" placeholder="${L('nome dell\'emote (senza spazi)', 'emote name (no spaces)', 'nombre de la emote (sin espacios)')}" maxlength="60">
         <input type="text" id="svtv-alias-up" placeholder="${L('alias nel canale (facoltativo)', 'alias in your channel (optional)', 'alias en tu canal (opcional)')}" maxlength="60" style="max-width:210px">
-        <button class="btn" id="svtv-carica-btn">${L('Carica su 7TV', 'Upload to 7TV', 'Subir a 7TV')}</button>
+        <button class="btn" id="svtv-carica-btn" title="${esc(L('Manda questa emote su 7TV, nella tua raccolta. Su 7TV la vede solo chi ha la loro estensione', 'Uploads this emote to 7TV, into your set. On 7TV only people with their extension see it', 'Sube este emote a 7TV, a tu colección. En 7TV solo lo ven quienes tienen su extensión'))}">${L('Carica su 7TV', 'Upload to 7TV', 'Subir a 7TV')}</button>
       </div>
       <p class="suggerimento" id="svtv-carica-esito">${L('I video diventano emote animate; le GIF trasparenti restano trasparenti. Durata max ~6s, ridimensionata in automatico. L\'alias è il nome con cui appare nel tuo canale (se vuoto, usa il nome dell\'emote).', 'Videos become animated emotes; transparent GIFs stay transparent. Max ~6s, auto-resized. The alias is the name it shows under in your channel (if empty, it uses the emote name).', 'Los vídeos se vuelven emotes animadas; los GIF transparentes siguen transparentes. Máx. ~6s, con redimensionado automático. El alias es el nombre con el que aparece en tu canal (si está vacío, usa el nombre de la emote).')}</p>
     </div>`);
@@ -10947,9 +10947,9 @@ async function caricaPaginaLink(ridisegna = false) {
         </div>
         <div class="lp-telefono" id="lp-cornice"><iframe id="lp-iframe" title="anteprima"></iframe></div>
         <div class="lp-azioni">
-          <button class="btn" id="lp-salva">${L('Salva e pubblica', 'Save and publish', 'Guardar y publicar')}</button>
+          <button class="btn" id="lp-salva" title="${esc(L('Salva le modifiche e le mette subito online: da questo momento chi apre il link vede questa', 'Saves your changes and puts them online right away: from now on this is what visitors see', 'Guarda los cambios y los publica al momento: desde ahora quien abra el enlace ve esto'))}">${L('Salva e pubblica', 'Save and publish', 'Guardar y publicar')}</button>
           <a class="btn secondario" id="lp-apri" href="${esc(d.url || '#')}" target="_blank" rel="noopener">${_bIco(ICO.occhio)}${L('Apri', 'Open', 'Abrir')}</a>
-          ${d.pubblicata ? `<button type="button" class="btn secondario" id="lp-spegni">${L('Togli dal web', 'Take offline', 'Quitar de la web')}</button>` : ''}
+          ${d.pubblicata ? `<button type="button" class="btn secondario" id="lp-spegni" title="${esc(L('La pagina resta salvata ma nessuno la può più aprire. Puoi rimetterla quando vuoi', 'The page stays saved but nobody can open it any more. You can put it back whenever you want', 'La página se guarda pero ya nadie puede abrirla. Puedes reactivarla cuando quieras'))}">${L('Togli dal web', 'Take offline', 'Quitar de la web')}</button>` : ''}
           <span id="lp-esito" class="suggerimento"></span>
         </div>
       </div>
@@ -12197,10 +12197,10 @@ function pannelloGiochi() {
         <textarea id="txt-import-citazioni" rows="6" placeholder="&quot;Tu, molto molto bravo&quot;&#10;UnicornoFacinoroso | 06.09.2024&#10;&quot;io solo perchè mi andava di uscire&quot;&#10;@chiara_3008 | 06.10.2024"></textarea>
         <div class="riga-flessibile">
           <input type="text" id="inp-import-url" placeholder="${L('…oppure incolla un link (per altre fonti)', '…or paste a link (for other sources)', '…o pega un enlace (para otras fuentes)')}">
-          <button class="btn secondario" id="btn-estrai-citazioni">${L('Estrai dal link', 'Extract from link', 'Extraer del enlace')}</button>
+          <button class="btn secondario" id="btn-estrai-citazioni" title="${esc(L('Legge la pagina che hai incollato e ne tira fuori le frasi, invece di farti copiare a mano', 'Reads the page you pasted and pulls the lines out of it, instead of you copying by hand', 'Lee la página que pegaste y saca las frases, en vez de copiarlas a mano'))}">${L('Estrai dal link', 'Extract from link', 'Extraer del enlace')}</button>
         </div>
         <p class="spazio-sopra">
-          <button class="btn" id="btn-importa-citazioni">${L('Riconosci e importa', 'Recognize and import', 'Reconocer e importar')}</button>
+          <button class="btn" id="btn-importa-citazioni" title="${esc(L("Guarda cosa hai incollato, capisce da solo com'è fatto e lo aggiunge alla lista", 'Looks at what you pasted, works out its shape on its own and adds it to the list', 'Mira lo que pegaste, entiende solo cómo está hecho y lo añade a la lista'))}">${L('Riconosci e importa', 'Recognize and import', 'Reconocer e importar')}</button>
           <span id="import-cita-esito" class="suggerimento"></span>
         </p>
         <p id="import-cita-avviso" class="nota-lettura" hidden></p>
@@ -12240,7 +12240,7 @@ function pannelloNotifiche() {
 
       ${tg.configurato ? `
       <div class="riga-flessibile spazio-sopra">
-        <button class="btn secondario" id="btn-tg-rileva">${L('Rileva gruppo', 'Detect group', 'Detectar grupo')}</button>
+        <button class="btn secondario" id="btn-tg-rileva" title="${esc(L("Cerca il gruppo in cui hai scritto /collega e lo aggancia. Il bot dev'esserci dentro", 'Finds the group where you typed /collega and links it. The bot must be in it', 'Busca el grupo donde escribiste /collega y lo enlaza. El bot tiene que estar dentro'))}">${L('Rileva gruppo', 'Detect group', 'Detectar grupo')}</button>
         <span class="suggerimento">${tg.gruppoOk
           ? `${L('Gruppo collegato:', 'Group connected:', 'Grupo conectado:')} <strong class="primo-piano">${esc(tg.gruppo || '(gruppo)')}</strong> ✓`
           : L('Nessun gruppo ancora collegato.', 'No group connected yet.', 'Aún no hay grupo conectado.')}</span>
@@ -12267,7 +12267,7 @@ function pannelloNotifiche() {
 
       <p class="spazio-sopra">
         <button class="btn" id="btn-tg-salva">${L('Salva', 'Save', 'Guardar')}</button>
-        <button class="btn secondario" id="btn-tg-prova" ${tg.gruppoOk ? '' : 'disabled'}>${L('Manda una prova', 'Send a test', 'Envía una prueba')}</button>
+        <button class="btn secondario" id="btn-tg-prova" ${tg.gruppoOk ? '' : 'disabled'} title="${esc(L('Manda nel gruppo lo stesso messaggio che partirà davvero quando vai in diretta, locandina compresa', 'Sends to the group the very message that will go out when you go live, poster included', 'Envía al grupo el mismo mensaje que saldrá de verdad cuando estés en directo, cartel incluido'))}">${L('Manda una prova', 'Send a test', 'Envía una prueba')}</button>
         <button class="btn pericolo mini" id="btn-tg-scollega">${L('Scollega', 'Disconnect', 'Desconectar')}</button>
       </p>
       ` : ''}
@@ -12503,7 +12503,7 @@ function pannelloScudo() {
     <div class="carta">
       <h2>${L('Pulizia follower', 'Follower cleanup', 'Limpieza de seguidores')}</h2>
       <p class="suggerimento">${L('Controlla i follower più recenti contro la lista bot e le euristiche. Non banna nulla da solo: ti mostra i sospetti e decidi tu.', 'Checks your most recent followers against the bot list and heuristics. It bans nothing on its own: it shows suspects and you decide.', 'Comprueba tus seguidores más recientes contra la lista de bots y las heurísticas. No banea nada solo: te muestra sospechosos y decides tú.')}</p>
-      <p><button type="button" class="btn secondario" id="scudo-scan-btn">${L('Scansiona i follower recenti', 'Scan recent followers', 'Escanear seguidores recientes')}</button></p>
+      <p><button type="button" class="btn secondario" id="scudo-scan-btn" title="${esc(L('Ricontrolla i follower arrivati di recente e segnala quelli che sembrano finti. Non banna nessuno da solo', 'Re-checks recent followers and flags the ones that look fake. It bans nobody on its own', 'Revisa los seguidores recientes y señala los que parecen falsos. No banea a nadie por su cuenta'))}">${L('Scansiona i follower recenti', 'Scan recent followers', 'Escanear seguidores recientes')}</button></p>
       <div id="scudo-scan-esito"></div>
     </div>
     <div class="carta">
@@ -12866,11 +12866,11 @@ function pannelloMemoria() {
     <div class="carta">
       <h2>${_hIco(ICO.cervello)}${L('La memoria del bot', 'The bot’s memory', 'La memoria del bot')}</h2>
       <p>${L('Le "lezioni" che ha imparato osservando la tua chat e i fatti stabili che ricorda sul canale.', 'The “lessons” it learned watching your chat and the stable facts it remembers about the channel.', 'Las «lecciones» que aprendió observando tu chat y los datos estables que recuerda sobre el canal.')}</p>
-      <p class="spazio-sopra"><button class="btn secondario" id="btn-carica-memoria">${L('Mostra la memoria', 'Show the memory', 'Mostrar la memoria')}</button></p>
+      <p class="spazio-sopra"><button class="btn secondario" id="btn-carica-memoria" title="${esc(L("Mostra cosa il bot si ricorda di te e da dove l'ha preso", 'Shows what the bot remembers about you and where it got it from', 'Muestra qué recuerda el bot de ti y de dónde lo sacó'))}">${L('Mostra la memoria', 'Show the memory', 'Mostrar la memoria')}</button></p>
       <div id="contenitore-memoria"></div>
       <hr class="separatore">
       <p><strong class="primo-piano">${L('Zona pericolosa.', 'Danger zone.', 'Zona peligrosa.')}</strong> ${L('Azzera lezioni, ricordi sugli utenti, fatti e conoscenza imparata dalla chat. La conoscenza dal sito e quella scritta da te restano.', 'Wipes lessons, user memories, facts and knowledge learned from chat. Knowledge from the site and what you wrote stays.', 'Borra lecciones, recuerdos de usuarios, datos y conocimiento aprendido del chat. El conocimiento de la web y el escrito por ti se mantiene.')}</p>
-      <p class="spazio-sopra"><button class="btn pericolo" id="btn-reset">${L('Azzera ciò che ha imparato', 'Wipe what it learned', 'Borra lo que ha aprendido')}</button></p>
+      <p class="spazio-sopra"><button class="btn pericolo" id="btn-reset" title="${esc(L('Butta via tutto quello che il bot ha imparato di te e riparte da zero. Le impostazioni restano', 'Throws away everything the bot learned about you and starts over. Your settings stay', 'Tira todo lo que el bot aprendió de ti y empieza de cero. Los ajustes se quedan'))}">${L('Azzera ciò che ha imparato', 'Wipe what it learned', 'Borra lo que ha aprendido')}</button></p>
     </div>`);
 }
 
@@ -15986,7 +15986,7 @@ async function aggiornaRetePanoramica(box, primo) {
     ${nonSo.length
       ? `<p class="suggerimento spazio-sopra">${L('Ultime cose che', 'Latest things it', 'Últimas cosas que')} <strong>${L('non sapeva', "didn't know", 'no sabía')}</strong> (${L('le imparerà col tempo', 'it will learn them over time', 'las aprenderá con el tiempo')}): ${nonSo.map((t) => `«${esc(t)}»`).join(' · ')}</p>`
       : `<p class="suggerimento spazio-sopra">${L('Nessuna lacuna recente: sta rispondendo bene.', 'No recent gaps: it\'s answering well.', 'Sin lagunas recientes: está respondiendo bien.')}</p>`}
-    <p class="spazio-sopra"><button class="btn secondario mini" id="btn-forgia">${_bIco(ICO.libro)}${L('Studia ora', 'Study now', 'Estudiar ahora')}</button>
+    <p class="spazio-sopra"><button class="btn secondario mini" id="btn-forgia" title="${esc(L('Rilegge adesso le tue clip e i tuoi messaggi per aggiornare quello che il bot sa di te, invece di aspettare il giro automatico', 'Re-reads your clips and messages now to update what the bot knows about you, instead of waiting for the automatic round', 'Vuelve a leer tus clips y mensajes ahora para actualizar lo que el bot sabe de ti, en vez de esperar la ronda automática'))}">${_bIco(ICO.libro)}${L('Studia ora', 'Study now', 'Estudiar ahora')}</button>
       &nbsp;<a class="suggerimento" href="/api/streamer/corpus" download>${_bIco(ICO.pacco)}${L('Scarica il dataset della sua mente', 'Download its mind\'s dataset', 'Descarga el dataset de su mente')}</a></p>
     <p class="suggerimento">${L('«Studia ora»: cerca da sé le sue lacune online, ci ragiona su e le distilla nel suo motore.', '«Study now»: it looks up its own gaps online, reasons over them and distills them into its engine.', '«Estudiar ahora»: busca por sí mismo sus lagunas en línea, razona sobre ellas y las destila en su motor.')}
     ${L('Il «dataset» è la sua mente: su un Mac Apple Silicon lo trasformi in un vero modello tutto suo con', 'The «dataset» is its mind: on an Apple Silicon Mac you turn it into a real model of its own with', 'El «dataset» es su mente: en un Mac Apple Silicon lo conviertes en un modelo propio de verdad con')}
