@@ -53,6 +53,12 @@ export const PIATTAFORME = {
 export const CHIAVI = Object.keys(PIATTAFORME);
 export const eventoDi = (piattaforma) => PIATTAFORME[piattaforma]?.evento || '';
 
+// E il contrario. Serve perché la piattaforma di una diretta NON si può ricavare
+// dal login: un canale Kick arriva col suo nome e basta, senza niente che dica
+// «Kick», e chiederlo al login risponderebbe «Twitch». L'evento invece lo dice
+// sempre, perché nasce dalla diretta.
+export const piattaformaDiEvento = (evento) => CHIAVI.find((k) => PIATTAFORME[k].evento === evento) || '';
+
 // GLI EVENTI CHE VOGLIONO DIRE «sto andando in diretta». Si ricavano da qui e
 // non si riscrivono altrove: le chiavi sono storiche e diverse fra loro
 // ('live' per Twitch, 'kick', 'ytlive', 'tiktok'), quindi chi controlla

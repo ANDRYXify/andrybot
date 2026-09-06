@@ -1724,18 +1724,28 @@ export const tgAmici = {
 // Telegram: la stessa immagine servirà a Discord e a chiunque altro annunci la
 // diretta, e una grafica che vive dentro la configurazione di UN canale di
 // annuncio è una grafica che il secondo canale dovrà copiarsi.
+// La locandina è ACCESA finché nessuno dice il contrario. Non è una preferenza
+// nascosta: è che una riga in questa tabella nasce solo quando qualcuno tocca la
+// levetta o salva un disegno, e prima di allora «non ho deciso» e «no» sono due
+// cose diverse. Trattarle uguali vorrebbe dire che la grafica esiste ma non la
+// vede nessuno finché non la scopre nel pannello.
+//
+// Il valore sta scritto QUI e in nessun altro posto: il DEFAULT della colonna
+// non viene mai letto, perché `set` passa sempre un valore esplicito.
+export const ACCESA_SENZA_RISPOSTA = true;
+
 export const carteLive = {
   get(channel) {
     const r = db.prepare('SELECT * FROM carte_live WHERE channel=?').get(String(channel).toLowerCase());
-    if (!r) return null;
+    if (!r) return { attiva: ACCESA_SENZA_RISPOSTA, dati: null, ts: 0, mai: true };
     let dati = null;
     try { dati = r.dati ? JSON.parse(r.dati) : null; } catch { dati = null; }
-    return { attiva: !!r.attiva, dati, ts: r.ts };
+    return { attiva: !!r.attiva, dati, ts: r.ts, mai: false };
   },
   set(channel, { attiva, dati }) {
     const c = String(channel).toLowerCase();
     const cur = this.get(c);
-    const a = attiva !== undefined ? (attiva ? 1 : 0) : (cur?.attiva ? 1 : 0);
+    const a = attiva !== undefined ? (attiva ? 1 : 0) : (cur.attiva ? 1 : 0);
     const d = dati !== undefined ? JSON.stringify(dati || null) : (cur?.dati ? JSON.stringify(cur.dati) : '');
     db.prepare(`INSERT INTO carte_live (channel, attiva, dati, ts) VALUES (?,?,?,?)
       ON CONFLICT(channel) DO UPDATE SET attiva=excluded.attiva, dati=excluded.dati, ts=excluded.ts`)

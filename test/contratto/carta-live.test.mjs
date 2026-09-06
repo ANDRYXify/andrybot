@@ -11,7 +11,7 @@
 // cambia — e questo si vede.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import {
@@ -163,4 +163,74 @@ test('due temi diversi non si confondono fra loro', () => {
   // il primo dell'elenco, e il pannello mostrerebbe sempre lo stesso scelto.
   const impronte = new Set(NOMI_TEMI.map((t) => JSON.stringify(normCarta(TEMI[t]))));
   assert.equal(impronte.size, NOMI_TEMI.length, 'due temi standard danno la stessa carta ripulita');
+});
+
+test('la grafica segue la piattaforma della DIRETTA, non quella del login', async () => {
+  // Il difetto vero, e si vedeva solo guardando l'immagine arrivata: un canale
+  // Kick entra col suo nome e basta — niente nel login dice «Kick» — quindi
+  // chiedere la piattaforma al login rispondeva «Twitch», e a una diretta su
+  // Kick arrivava la grafica viola. Nessun errore da nessuna parte.
+  const { piattaformaDiEvento, CHIAVI, PIATTAFORME } = await import('../../src/features/avvisi.js');
+  for (const p of CHIAVI) {
+    assert.equal(piattaformaDiEvento(PIATTAFORME[p].evento), p, `${p}: l’evento non riporta alla sua piattaforma`);
+  }
+  assert.equal(piattaformaDiEvento('follow'), '', 'un evento che non è una diretta non ha piattaforma');
+
+  // e chi disegna deve usare QUELLA, non il login
+  const cl = readFileSync(join(RAD, 'src/features/cartalive.js'), 'utf8');
+  const f = cl.slice(cl.indexOf('export async function fotoPerEvento'));
+  assert.match(f.slice(0, 600), /piattaformaDiEvento\(evento\)/,
+    'la piattaforma si ricava dall’evento: dal login sarebbe sbagliata per Kick');
+  const png = cl.slice(cl.indexOf('export async function pngPerDiretta'));
+  assert.match(png.slice(0, 900), /piattaforma \|\| piattaformaDi\(diChi\)/,
+    'chi la sa la dice, e il login resta solo come ultima spiaggia');
+});
+
+test('l’indirizzo scritto sulla carta è quello della piattaforma giusta', () => {
+  // Stesso difetto, altro sintomo: la riga in fondo diceva «twitch.tv/nome»
+  // sotto una grafica Kick.
+  const carte = { twitch: 'twitch.tv/', kick: 'kick.com/', youtube: 'youtube.com/@' };
+  const cl = readFileSync(join(RAD, 'src/features/cartalive.js'), 'utf8');
+  const d = cl.slice(cl.indexOf('export async function datiDiretta'));
+  const corpo = d.slice(0, d.indexOf('\n}') + 2);
+  assert.match(corpo, /dettaFuori \|\| piattaformaDi\(l\)/, 'anche l’indirizzo segue la piattaforma detta da chi chiama');
+  for (const [, pezzo] of Object.entries(carte)) {
+    assert.ok(corpo.includes(pezzo), `manca l’indirizzo di ${pezzo}`);
+  }
+});
+
+test('la faccia ha una scadenza: un CDN appeso non tiene appeso l’annuncio', async () => {
+  // Questa chiamata sta sulla strada dell'annuncio. Senza scadenza, un server
+  // che non risponde non dà errore: resta lì, e con lui resta lì l'avviso «sono
+  // in diretta» — l'unica cosa che doveva partire in fretta.
+  const { AVATAR_ATTESA_MS } = await import('../../src/features/cartalive.js');
+  assert.ok(AVATAR_ATTESA_MS > 0 && AVATAR_ATTESA_MS <= 10_000, `l’attesa è ${AVATAR_ATTESA_MS}ms`);
+
+  let firmato = false;
+  const fetchImpl = async (u, opt) => {
+    firmato = !!opt?.signal;
+    return { ok: true, headers: { get: () => 'image/png' }, arrayBuffer: async () => new Uint8Array([9, 9, 9]).buffer };
+  };
+  await avatarDataUri('https://esempio.it/con-scadenza.png', { fetchImpl });
+  assert.equal(firmato, true, 'la richiesta parte senza qualcosa che la interrompa');
+});
+
+test('la stessa faccia non si riscarica a ogni disegno', async () => {
+  // Anteprima, prova e annuncio disegnano la stessa carta a distanza di secondi.
+  // Riscaricare ogni volta la stessa immagine è tempo speso su una cosa che non
+  // è cambiata, proprio mentre serve andare veloci.
+  let quante = 0;
+  const fetchImpl = async () => {
+    quante += 1;
+    return { ok: true, headers: { get: () => 'image/png' }, arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer };
+  };
+  const u = 'https://esempio.it/ricordata-' + process.pid + '.png';
+  const a = await avatarDataUri(u, { fetchImpl });
+  const b = await avatarDataUri(u, { fetchImpl });
+  assert.equal(a, b);
+  assert.equal(quante, 1, `scaricata ${quante} volte invece di una`);
+
+  // ma non per sempre: passato il tempo, si torna a chiedere
+  await avatarDataUri(u, { fetchImpl, ora: Date.now() + 60 * 60 * 1000 });
+  assert.equal(quante, 2, 'il ricordo non scade mai: una faccia cambiata non si vedrebbe più');
 });
