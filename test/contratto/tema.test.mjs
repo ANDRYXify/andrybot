@@ -120,17 +120,20 @@ test('i suggerimenti li disegna il sito, non il sistema operativo', () => {
   const html = leggi('src/web/public/index.html');
   const css = leggi('src/web/public/style.css');
 
-  assert.match(html, /<script src="aiuto\.js"/, 'la bolla è caricata dove le persone passano il cursore');
+  assert.match(html, /<script type="module" src="aiuto\.js"/, 'la bolla è caricata dove le persone passano il cursore');
   assert.match(js, /removeAttribute\('title'\)/,
     'il `title` va TOLTO: lasciandolo, il browser disegna la sua scatoletta sopra la nostra');
   assert.match(js, /data-aiuto/, 'e il testo si conserva altrove, o il suggerimento sparisce');
 
-  const bolla = css.slice(css.indexOf('.aiuto-bolla {'), css.indexOf('.aiuto-bolla.vista'));
-  assert.ok(bolla, 'la bolla ha il suo stile');
+  // Il colore del testo sta sulla bolla; fondo e contorno stanno sulla FORMA,
+  // perché adesso il balloon è disegnato — corpo e coda in un tracciato solo.
+  const bolla = css.slice(css.indexOf('.aiuto-bolla {'), css.indexOf('.aiuto-guscio'));
+  const forma = css.slice(css.indexOf('.aiuto-forma {'), css.indexOf('.aiuto-ombra'));
+  assert.ok(bolla && forma, 'la bolla ha il suo stile');
   // Si cerca la DICHIARAZIONE, non la riga: due dichiarazioni possono stare
   // sulla stessa riga, e cercare per riga direbbe di no a un CSS giusto.
-  for (const [prop, atteso] of [['background', '--surface'], ['color', '--testo'], ['border', '--contorno']]) {
-    const m = bolla.match(new RegExp('(?:^|[;{\\s])' + prop + ':\\s*([^;]+)'));
+  for (const [dove, prop, atteso] of [[bolla, 'color', '--testo'], [forma, 'fill', '--surface'], [forma, 'stroke', '--contorno']]) {
+    const m = dove.match(new RegExp('(?:^|[;{\\s])' + prop + ':\\s*([^;]+)'));
     assert.ok(m, `la bolla dichiara ${prop}`);
     assert.ok(m[1].includes('var(' + atteso), `la bolla prende ${prop} dal tema (${atteso}), non da un colore scritto a mano: ${m[1].trim()}`);
   }
