@@ -530,7 +530,6 @@ body.pad-vivo #plancia-lancia { bottom: calc(130px + env(safe-area-inset-bottom,
   --t-pieno: 320ms;
   --t-scena: 420ms;
   --t-scambio: 150ms;
-  --t-impatto: 118ms;
   --t-uscita: 96ms;
   --sfalso: 26ms;
   --ease-uscita: cubic-bezier(.4, 0, 1, 1);
@@ -602,12 +601,11 @@ body.pad-vivo #plancia-lancia { bottom: calc(130px + env(safe-area-inset-bottom,
 body.leggero #anime-sfondo::after, body.meno-moto #anime-sfondo::after { animation: none; opacity: .3; }
 @media (prefers-reduced-motion: reduce) {
   #anime-sfondo::after, .pl-atmo { animation: none !important; }
-  .lampo-scena { display: none !important; }
   .pannello-scheda.esce { animation: none !important; }
   .pannello-scheda.scena .carta.rivela { --rev-x: 0px; }
   .btn::after, .pl-tile::after { display: none; }
   :root { --molla-lieve: ease; --molla-medio: ease; --molla-pieno: ease; --molla-scena: ease;
-          --t-lieve: .01ms; --t-medio: .01ms; --t-pieno: .01ms; --t-scena: .01ms; --t-scambio: .01ms; --t-impatto: .01ms; --t-uscita: .01ms; --sfalso: 0ms; }
+          --t-lieve: .01ms; --t-medio: .01ms; --t-pieno: .01ms; --t-scena: .01ms; --t-scambio: .01ms; --t-uscita: .01ms; --sfalso: 0ms; }
 }
 
 body.senza-cursore, body.senza-cursore * { cursor: default !important; }
@@ -770,18 +768,8 @@ body.pad-guida, body.pad-guida * { cursor: none !important; }
 :root[data-verso="avanti"] .pannello-scheda.scena .carta.rivela { --rev-x: 32px; }
 :root[data-verso="indietro"] .pannello-scheda.scena .carta.rivela { --rev-x: -32px; }
 .pannello-scheda.scena .carta.rivela.dentro { transform: none; }
-
-.lampo-scena {
-  position: fixed; inset: 0; z-index: 9500; pointer-events: none;
-  background: var(--fuoco-linee), var(--bg);
-  opacity: 0; will-change: opacity, transform;
-}
-.lampo-scena.batte { animation: lampo-impatto var(--t-impatto) var(--su-tre) both; }
-@keyframes lampo-impatto {
-  0% { opacity: 0; transform: scale(1.28); }
-  38% { opacity: .94; transform: scale(1); }
-  100% { opacity: 0; transform: scale(.84); }
-}
+body.meno-moto .pannello-scheda.esce { animation: none !important; }
+body.meno-moto .pannello-scheda.scena .carta.rivela { --rev-x: 0px !important; }
 
 .pannello-scheda.scambio > * { animation: sc-entra var(--t-scambio) var(--su-due) both;
   animation-delay: calc(var(--i, 0) * var(--sfalso)); }
@@ -822,7 +810,6 @@ body.pad-guida, body.pad-guida * { cursor: none !important; }
 
 body.leggero #an-campo, body.meno-moto #an-campo { opacity: .18; transform: none; will-change: auto; }
 body.leggero .vivo::after, body.meno-moto .vivo::after { animation: none; opacity: 0; }
-body.meno-moto .lampo-scena { display: none; }
 @media (prefers-reduced-motion: reduce) {
   #an-campo { transform: none; will-change: auto; }
   .vivo::after { animation: none; opacity: 0; }
