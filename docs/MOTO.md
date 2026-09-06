@@ -164,3 +164,60 @@ Sono usciti `ink-colora`, `ink-colpo`, `shonen-colpo` e `shonen-lampo`: nessuno 
 agganciava, e `ink-colora` per com'era scritto non avrebbe potuto funzionare —
 dipingeva dietro l'elemento (`z-index: -1`), quindi lo sfondo dell'elemento stesso
 lo copriva sempre.
+
+## Lo stacco fra due vignette
+
+Cambiare scheda non è un movimento: è un **passaggio fra due vignette**. E i
+passaggi non sono tutti uguali. Scott McCloud, in *Understanding Comics*, li
+classifica in sei tipi e ne conta l'uso: **da momento a momento**, **da azione
+ad azione**, **da soggetto a soggetto**, **da scena a scena**, **da aspetto ad
+aspetto**, **non sequitur**. Nel fumetto occidentale domina il passaggio da
+azione ad azione; il manga si appoggia molto di più anche sugli altri, quelli
+corti e densi.
+
+Il sito ne usa due, e la scelta la fa il codice, non l'occhio: la decide
+`stessaFamiglia()`.
+
+| spostamento | passaggio | cosa succede |
+| --- | --- | --- |
+| fra **sottosezioni** della stessa famiglia | **da azione ad azione** — stessa scena, la macchina non si sposta | nessun lampo. I blocchi rientrano sfalsati di `--sfalso` nell'ordine di lettura, nel verso del movimento, a scatti (`--su-due`) |
+| fra **sezioni** diverse | **da scena a scena** — luogo nuovo | **fotogramma d'impatto**, poi la vignetta nuova entra a scatti dal verso giusto |
+
+### Il fotogramma d'impatto
+
+Le linee sono **di concentrazione** (集中線, *shūchūsen*): raggi che convergono
+al centro. Non è la scelta comoda, è quella giusta — nel manga le linee
+**radiali** servono al momento drammatico e alla messa a fuoco, le **parallele**
+al movimento laterale. Fra due sezioni c'è uno stacco, non uno scorrimento.
+
+Dura `--t-impatto`, cioè **66 ms**: due fotogrammi. È un vincolo, non un gusto.
+Nel *sakuga* l'impact frame è un singolo disegno inserito nell'istante dell'urto:
+se resta troppo, l'illusione dello scoppio si rompe e si vedono i disegni
+singoli. Mezzo secondo di linee non è un impatto, è un velo.
+
+Il lampo parte **prima** della transizione, non insieme. Non è una scelta di
+ritmo: lo strato delle *view transition* il browser lo dipinge sopra a tutto, e
+un velo normale, durante, sarebbe invisibile. Così invece la sequenza è quella
+giusta comunque — l'urto sulla scena vecchia, poi la scena nuova.
+
+### Il limite che non è estetico
+
+Un lampo a tutto schermo ripetuto più di **tre volte al secondo** è la soglia
+oltre cui le [WCAG 2.3.1](https://www.w3.org/WAI/WCAG22/Understanding/three-flashes-or-below-threshold.html)
+considerano il contenuto a rischio per chi è fotosensibile, e cliccando veloce
+fra le schede ci si arriva senza sforzo. Quindi: opacità di picco **0.5** e non
+1 (il contenuto resta leggibile sotto, come in una vignetta vera), e una pausa
+minima di **420 ms** fra due lampi — al massimo 2.4 al secondo. Se arrivi prima,
+lo stacco c'è lo stesso, senza l'impatto.
+
+Si spegne dove si spegne tutto: `prefers-reduced-motion`, `leggero`, `meno-moto`.
+
+`node scripts/verifica-stacco.mjs` gira **tutti** i passaggi fra schede vicine e
+per ognuno chiede al browser quale dei due stacchi è partito — dal codice non si
+vede, perché `stessaFamiglia()` non si legge da fuori. Controlla anche che il
+lampo non resti a schermo, che non se ne accumuli uno per cambio, che duri due
+fotogrammi e che la pausa fra due basti.
+
+Fonti: [McCloud, i sei passaggi](https://understandingcomics177.wordpress.com/about/1-2/2-2/) ·
+[linee d'azione nel manga](https://jerwoodvisualarts.org/blog/how-to-draw-manga-action-lines/) ·
+[impact frames](https://blog.sakugabooru.com/glossary/impact-frames/).
