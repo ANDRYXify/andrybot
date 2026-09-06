@@ -443,6 +443,15 @@ function _demoGet(via) {
       { id: "song", modulo: "musica", moduloNome: ["Richieste musicali", "Music requests", "Peticiones musicales"], moduloAcceso: true, titolo: ["Cosa sta suonando", "What's playing", "Qué está sonando"], cosa: ["Dice il brano in riproduzione.", "Says the track that is playing.", "Dice el tema que está sonando."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["song", "brano", "np", "nowplaying"], rinominato: false, chi: "tutti", chiMinimo: "tutti" },
       { id: "ag", modulo: "sito", moduloNome: ["Giochi del sito", "Site games", "Juegos del sitio"], moduloAcceso: false, titolo: ["Giochi del sito", "Site games", "Juegos del sitio"], cosa: ["Manda il comando ai giochi di andryxify.it.", "Sends the command to the andryxify.it games.", "Manda el comando a los juegos de andryxify.it."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: false, nomi: ["ag", "agentify"], rinominato: false, chi: "tutti", chiMinimo: "tutti" }
     ], livelli: ['tutti', 'sub', 'vip', 'mod'] },
+    '/api/streamer/telegram/carta': {
+      attiva: true, mia: false, tema: 'twitch', temaAttivo: 'twitch', disegnabile: true,
+      carta: { nome: 'Twitch — notte viola', larghezza: 1200, altezza: 500, fondo: {}, elementi: [] },
+      dati: { nome: 'ANDRYXify', titolo: 'Si costruisce il bot, dal vivo', gioco: 'Software and Game Dev', login: 'andryx_demo', avatar: '' },
+      vocabolario: { tipi: ['testo', 'targhetta', 'avatar', 'riga', 'striscia'], forme: ['tondo', 'tagliato', 'quadro'],
+        fondi: ['tinta', 'alone', 'sfumatura'], segnaposto: ['nome', 'titolo', 'gioco', 'login', 'link', 'spettatori', 'piattaforma'],
+        caratteri: ['Anton', 'Archivo Black', 'Archivo'], misura: { larghezza: 1200, altezza: 500 }, massimo: 24,
+        temi: [{ id: 'twitch', nome: 'Twitch — notte viola', carta: {} }, { id: 'kick', nome: 'Kick — taglio verde', carta: {} }] },
+    },
     '/api/streamer/telegram/destinazioni': {
       io: 'andryx_demo',
       webhook: { attivo: true, nostro: true, inAttesa: 0, errore: '' },
@@ -1392,6 +1401,85 @@ let _tgDati = null;
 const TG_ICO_TIPO = (t) => (t === 'channel'
   ? '<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>'
   : '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>');
+
+
+let _cartaLive = null;
+
+function _cartaAnteprimaUrl() {
+  return `/api/streamer/telegram/carta.png?v=${Date.now()}`;
+}
+
+function disegnaCartaLive() {
+  const box = document.getElementById('box-carta-live');
+  if (!box) return;
+  const d = _cartaLive;
+  if (!d) { box.hidden = true; return; }
+  box.hidden = false;
+  const temi = (d.vocabolario?.temi || []);
+  const sceltoNessuno = !d.mia;
+  const bottoni = temi.map((t) => `<button type="button" class="btn secondario cl-tema${d.temaAttivo === t.id ? ' scelto' : ''}" data-tema="${esc(t.id)}">${esc(t.nome)}</button>`).join('');
+  box.innerHTML = `
+    <h2>${_hIco(ICO.immagine || ICO.megafono)}${L('La locandina della diretta', 'The live poster', 'El cartel del directo')}</h2>
+    <p>${L('Quando parte la diretta, l\'avviso porta con sé un\'immagine: il tuo nome, il titolo, il gioco e la tua faccia.', 'When the live starts, the alert carries an image: your name, the title, the game and your face.', 'Cuando empieza el directo, el aviso lleva una imagen: tu nombre, el título, el juego y tu cara.')}</p>
+    ${d.disegnabile ? '' : `<p class="avviso-riga">${L('Adesso non riesco a disegnarla: mancano i caratteri sul server.', 'I can\'t draw it right now: fonts are missing on the server.', 'Ahora no puedo dibujarla: faltan las tipografías en el servidor.')}</p>`}
+    <div class="riga-check spazio-sopra">
+      <input type="checkbox" id="chk-carta-attiva" ${d.attiva ? 'checked' : ''} ${d.disegnabile ? '' : 'disabled'}>
+      <label for="chk-carta-attiva">${L('Manda la locandina insieme all\'avviso', 'Send the poster along with the alert', 'Envía el cartel junto con el aviso')}</label>
+    </div>
+    <div class="cl-tela spazio-sopra"><img id="cl-ant" alt="${L('Anteprima della locandina', 'Poster preview', 'Vista previa del cartel')}" src="${_cartaAnteprimaUrl()}"></div>
+    <p class="riga-flessibile spazio-sopra">
+      ${bottoni}
+      ${d.mia ? `<button type="button" class="btn secondario" id="btn-carta-standard">${L('Torna a uno standard', 'Back to a standard one', 'Volver a uno estándar')}</button>` : ''}
+    </p>
+    <p class="suggerimento">${sceltoNessuno
+      ? L('Stai usando il tema della tua piattaforma.', 'You are using your platform\'s theme.', 'Estás usando el tema de tu plataforma.')
+      : d.temaAttivo ? L('Stai usando un tema standard.', 'You are using a standard theme.', 'Estás usando un tema estándar.')
+        : L('Stai usando la tua grafica.', 'You are using your own design.', 'Estás usando tu propio diseño.')}
+      ${L('L\'anteprima è l\'immagine vera, disegnata dal server.', 'The preview is the real image, drawn by the server.', 'La vista previa es la imagen real, dibujada por el servidor.')}</p>`;
+
+  const img = box.querySelector('#cl-ant');
+  const tela = box.querySelector('.cl-tela');
+  if (img && tela) { img.onerror = () => { tela.hidden = true; }; img.onload = () => { tela.hidden = false; }; }
+}
+
+async function caricaCartaLive() {
+  const box = document.getElementById('box-carta-live');
+  if (!box) return;
+  try { _cartaLive = await api('/api/streamer/telegram/carta'); } catch { _cartaLive = null; }
+  disegnaCartaLive();
+}
+
+async function _cartaSalva(cambio) {
+  try {
+    _cartaLive = await api('/api/streamer/telegram/carta', { method: 'PUT', body: cambio });
+    disegnaCartaLive();
+    toast(L('Fatto', 'Done', 'Hecho'));
+  } catch (e) { toast(e.message || L('Non è andata', 'It did not work', 'No funcionó'), 'errore'); }
+}
+
+function collegaCartaLive() {
+  const box = document.getElementById('box-carta-live');
+  if (!box || box.dataset.collegato) return;
+  box.dataset.collegato = '1';
+  box.addEventListener('change', (e) => {
+    if (e.target.id === 'chk-carta-attiva') _cartaSalva({ attiva: e.target.checked });
+  });
+  box.addEventListener('click', async (e) => {
+    const t = e.target.closest('.cl-tema');
+    if (t) {
+      const tema = (_cartaLive?.vocabolario?.temi || []).find((x) => x.id === t.dataset.tema);
+      if (tema) await _cartaSalva({ carta: tema.carta });
+      return;
+    }
+    if (e.target.closest('#btn-carta-standard')) {
+      try {
+        _cartaLive = await api('/api/streamer/telegram/carta', { method: 'DELETE' });
+        disegnaCartaLive();
+      } catch (err) { toast(err.message, 'errore'); }
+      return;
+    }
+  });
+}
 
 async function caricaTgDestinazioni() {
   const box = document.getElementById('tg-destinazioni');
@@ -12171,6 +12259,8 @@ function pannelloNotifiche() {
       ` : ''}
     </div>
 
+    ${tg.configurato ? '<div class="carta" data-rete="telegram" id="box-carta-live" hidden></div>' : ''}
+
     ${tg.configurato ? `
     <div class="carta" data-rete="telegram">
       <h2>${_hIco(ICO.bot)}${L('Bot interattivo su Telegram', 'Interactive bot on Telegram', 'Bot interactivo en Telegram')}</h2>
@@ -13956,7 +14046,7 @@ function caricaDatiScheda(id) {
   if (id === 'moduli') { caricaPiattaforme(); caricaModuli(); caricaContatori(); caricaGiochiComandi(); }
   if (id === 'memoria') caricaStatistiche();
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaGiochi(); caricaGiochiComandi(); }
-  if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaDiscord(); caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaFeed(); caricaFeed(); }
+  if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaDiscord(); caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaFeed(); caricaFeed(); collegaCartaLive(); caricaCartaLive(); }
   if (id === 'pagina') caricaPaginaLink();
   if (id === 'grafiche') initGrafiche();
   if (id === 'regole') caricaStatoListaBot();
