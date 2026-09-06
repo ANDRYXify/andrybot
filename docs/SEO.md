@@ -306,3 +306,42 @@ dichiara pubblica *e* ha una rotta stabile sua: le pagine dell'overlay in OBS no
 ce l'hanno — si aprono solo con la chiave — e restano fuori da sole, senza doverle
 nominare. `test/contratto/anteprime.test.mjs` ricava l'elenco così e pretende la
 cartolina completa, con l'immagine che esiste davvero.
+
+## Le vie private, e il 404 che Google si è preso da solo
+
+Search Console segnalava `socialbot.live/esci*` come **Non trovata (404)**. Con
+l'asterisco: non è un refuso di Google, è una **stringa-pattern** delle regole di
+prefetch dentro `index.html`, letta come se fosse un indirizzo.
+
+Quelle regole dicono al browser dove non andare da solo — uscita, accesso,
+overlay, API. `robots.txt` dice la stessa cosa a un crawler. Sono la stessa
+lista per due lettori diversi, e stavano scritte in due posti che non si
+parlavano: da `robots.txt` mancavano `/esci`, `/logout`, `/o/` (il link corto
+dell'overlay) e `/tracking/`.
+
+Le ultime due contano più del 404. `/o/` e `/tracking/` non sono pagine: sono
+superfici che girano dentro OBS. Indicizzarle non serve a nessuno e allarga per
+niente quel che di questo sito sta scritto in giro.
+
+L'invariante non ha bisogno di un terzo elenco da tenere aggiornato: **tutto
+quello che togliamo al prefetch è roba dove un crawler non deve andare.**
+`test/unita/vie-private.test.mjs` confronta i due elenchi; se domani si aggiunge
+una via privata al prefetch e ci si scorda di `robots.txt`, diventa rossa.
+
+## Quel che invece non è un difetto
+
+- **Pagina con reindirizzamento** (`www.socialbot.live/…`, `http://…`): sono le
+  varianti non canoniche che reindirizzano all'indirizzo buono. È il
+  comportamento giusto, e Google le elenca proprio perché le ha viste
+  reindirizzare.
+- **Pagina alternativa con tag canonical appropriato** (`/?demo=1`): la demo
+  dichiara come canonica la home. Anche questo è il comportamento giusto.
+- **Soft 404 su `/?lang=en` e `/?lang=es`**: l'ultima scansione è del 31 luglio.
+  Oggi quelle pagine rispondono 200 con `<html lang>` giusto, titolo e
+  descrizione loro, canonica su se stesse e `hreflang` completo con `x-default`.
+  Non c'è niente da correggere nel codice: va premuto **Convalida correzione**
+  in Search Console.
+- **Rilevata, ma attualmente non indicizzata** (8 pagine): Google le ha trovate e
+  non le ha ancora messe in indice. Su un sito giovane è normale e non è un
+  errore di configurazione; si risolve con link interni e col tempo, non con una
+  riga di codice.
