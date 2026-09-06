@@ -95,9 +95,38 @@ test('la carta esce per OGNI piattaforma, non solo per Twitch', () => {
   assert.ok(EVENTI_LIVE.size >= 4, `le dirette conosciute sono ${EVENTI_LIVE.size}`);
 
   // e chi decide se mandare la carta deve usare QUESTO elenco, non una stringa
-  const bot = leggi('src/bot.js');
-  assert.match(bot, /eUnaDiretta\(evento\)/,
+  const deciso = leggi('src/features/cartalive.js');
+  const f = deciso.slice(deciso.indexOf('export async function fotoPerEvento'));
+  assert.match(f.slice(0, f.indexOf('\n}')), /eUnaDiretta\(evento\)/,
     'la decisione passa dall’elenco unico: scritta a mano, coprirebbe una piattaforma sola');
+});
+
+test('la prova dal pannello passa dalla stessa strada dell’annuncio vero', async () => {
+  // Il difetto: la prova è un'altra rotta, e se decide per conto suo se
+  // allegare la locandina prova qualcosa che non è quello che parte. Premi
+  // «manda una prova», arriva il testo, sei contento, e alla diretta arriva
+  // un'immagine che non hai mai visto — o il contrario. Nessuno dei due
+  // sintomi si vede finché non è tardi.
+  const rotte = leggi('src/web/server.js');
+  const prova = rotte.slice(rotte.indexOf("app.post('/api/streamer/telegram/prova'"));
+  const corpo = prova.slice(0, prova.indexOf('}));') + 4);
+  assert.match(corpo, /cartaLive\.fotoPerEvento\(/, 'la prova decide la locandina con la funzione unica');
+  assert.match(corpo, /telegram\.diffondi\(/, 'e la spedisce con la stessa funzione dell’annuncio');
+  assert.doesNotMatch(corpo, /telegram\.inviaMessaggio\(/,
+    'mandarla con inviaMessaggio salterebbe la foto: la prova non proverebbe la cosa vera');
+});
+
+test('la locandina esce solo per una diretta, e la decisione è una sola', async () => {
+  const { fotoPerEvento } = await import('../../src/features/cartalive.js');
+  assert.equal(await fotoPerEvento('nessuno-che-esiste', 'follow'), null, 'un follow non porta la locandina');
+  assert.equal(await fotoPerEvento('nessuno-che-esiste', 'sub'), null);
+  for (const p of CHIAVI) {
+    // per una diretta la decisione arriva fino in fondo: qui si ferma solo
+    // perché il canale non esiste, non perché l'evento sia stato scartato
+    assert.equal(await fotoPerEvento('nessuno-che-esiste', eventoDi(p)), null);
+  }
+  const bot = leggi('src/bot.js');
+  assert.match(bot, /cartaLive\.fotoPerEvento\(/, 'anche l’annuncio vero passa di lì');
 });
 
 test('la grafica si accende da sé solo se lo streamer l’ha accesa', async () => {

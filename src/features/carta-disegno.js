@@ -331,11 +331,20 @@ export function svgCarta(carta, dati = {}) {
   for (const e of (carta?.elementi || [])) {
     if (!e || e.spento) continue;
     n += 1;
-    if (e.tipo === 'avatar') pezzi.push(avatarSvg(e, dati, n));
-    else if (e.tipo === 'testo') pezzi.push(testoSvg(e, dati));
-    else if (e.tipo === 'targhetta') pezzi.push(targhettaSvg(e, dati));
-    else if (e.tipo === 'riga') pezzi.push(rigaSvg(e));
-    else if (e.tipo === 'striscia') pezzi.push(strisciaSvg(e, W, H));
+    let dentro = '';
+    if (e.tipo === 'avatar') dentro = avatarSvg(e, dati, n);
+    else if (e.tipo === 'testo') dentro = testoSvg(e, dati);
+    else if (e.tipo === 'targhetta') dentro = targhettaSvg(e, dati);
+    else if (e.tipo === 'riga') dentro = rigaSvg(e);
+    else if (e.tipo === 'striscia') dentro = strisciaSvg(e, W, H);
+    if (!dentro) continue;
+    // Ogni elemento esce dentro al suo gruppo, con il suo nome addosso. Non
+    // cambia un pixel — un <g> non disegna niente — ma è quello che permette
+    // all'editor di CHIEDERE all'SVG dove sta una cosa e cosa c'è sotto al dito,
+    // invece di rifarsi i conti per conto suo. Rifarli sarebbe la stessa
+    // geometria scritta due volte: il giorno che una delle due cambia, si
+    // seleziona un elemento e se ne sposta un altro.
+    pezzi.push(`<g data-el="${esc(e.id || e.tipo)}">${dentro}</g>`);
   }
   return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"`
     + ` width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`

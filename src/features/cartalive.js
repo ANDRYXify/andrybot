@@ -26,6 +26,7 @@ import { dirname, join } from 'node:path';
 import { makeLog } from '../logger.js';
 import { carteLive, streamers } from '../db.js';
 import { piattaformaDi, nomeSu } from '../identita.js';
+import { eUnaDiretta } from './avvisi.js';
 import { CARATTERI, MISURA, cartaDi, svgCarta } from './carta-disegno.js';
 import { spoglia } from '../spoglia.js';
 
@@ -156,4 +157,19 @@ export async function pngPerDiretta(login, info = {}, { forza = false, chi = nul
     log.warn(`carta di #${diChi}: ${e?.message || e}`);
     return null;
   }
+}
+
+// LA FOTO CHE ACCOMPAGNA UN EVENTO, decisa in un posto solo.
+//
+// Perché non due volte. Chi manda l'annuncio vero e chi manda la PROVA dal
+// pannello sono due strade diverse, e se ognuna decide per conto suo se
+// allegare la locandina, la prova finisce per provare qualcosa che non è quello
+// che parte: premi «manda una prova», arriva il testo, sei contento, e alla
+// diretta arriva un'immagine che non hai mai visto. O il contrario.
+//
+// Qui la decisione è una: la locandina esce SOLO per una diretta — un «è
+// finita» o un nuovo video non la vogliono — e solo se lo streamer l'ha accesa.
+export async function fotoPerEvento(login, evento, { chi = null, info = null } = {}) {
+  if (!eUnaDiretta(evento)) return null;
+  return pngPerDiretta(login, info || {}, { chi: chi || login }).catch(() => null);
 }

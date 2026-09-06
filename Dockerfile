@@ -30,6 +30,10 @@ COPY scripts ./scripts
 # le novità — pagina vuota, API vuota e la voce sparita dalla sitemap, tutti e
 # tre per lo stesso file mancante. Il cancello verifica-immagine.mjs li elenca.
 COPY NOVITA.md ./
+# I caratteri della locandina. Senza, il server non la disegna e lo dice — ma
+# lo dice solo a chi apre il pannello: da fuori sembra semplicemente che la
+# grafica non ci sia.
+COPY assets ./assets
 
 ENV NODE_ENV=production
 CMD ["node", "src/index.js"]

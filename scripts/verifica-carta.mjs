@@ -56,6 +56,9 @@ const ROTTURE = [
   [ROTTE, 'tipi: cartaLive.TIPI,', "tipi: ['testo', 'targhetta'],", "la rotta si scrive il vocabolario per conto suo"],
   [ROTTE, "app.get('/js/carta-disegno.js'", "app.get('/js/carta-disegno-vecchio.js'", 'il browser non riceve piu\' il disegno del server'],
   ['src/features/cartalive.js', "_servito = spoglia(readFileSync(", "_servito = (readFileSync(", 'il disegno arriva al browser coi suoi commenti'],
+  ['src/web/server.js', 'const foto = await cartaLive.fotoPerEvento(login, evento, { info: info || {} });',
+    'const foto = await cartaLive.pngPerDiretta(login, info || {}, { forza: true });',
+    'la prova decide la locandina per conto suo, e prova una cosa diversa da quella che parte'],
   ['src/features/cartalive.js', "_servito = spoglia(readFileSync(join(RAD, 'src/features/carta-disegno.js'), 'utf8'), 'js');",
     "_servito = spoglia(readFileSync(join(RAD, 'src/features/carta-disegno.js'), 'utf8'), 'js').replace(/\\s+/g, ' ');",
     'qualcuno rimpicciolisce il modulo prima di mandarlo, e il disegno cambia'],
@@ -156,6 +159,27 @@ try {
   });
   dice(!muti.length, `ogni tipo che l'editor puo' aggiungere disegna qualcosa (${vero.TIPI.length} tipi)`,
     `questi si possono aggiungere e non si vedono: ${muti.join(', ')}`);
+
+  // 3-bis. chi manda l'annuncio e chi manda la prova decidono insieme.
+  //
+  // Il difetto: la prova dal pannello e' un'altra strada, e se decide per conto
+  // suo se allegare la locandina, prova qualcosa che non e' quello che parte.
+  // Premi «manda una prova», arriva il testo, sei contento, e alla diretta
+  // arriva un'immagine che non hai mai visto. Nessuno dei due sintomi si vede.
+  const bot = leggi('src/bot.js');
+  for (const [file, testo] of [['src/bot.js', bot], ['src/web/server.js', rotte]]) {
+    dice(/cartaLive\.fotoPerEvento\(/.test(testo),
+      `${file}: la locandina la decide la funzione unica`,
+      'qui la decisione e\' scritta a mano: prova e annuncio possono divergere');
+    // Chiamare chi disegna direttamente e' legittimo in un caso solo:
+    // l'anteprima, che la vuole vedere anche da spenta e lo dice con `forza`.
+    const dirette = [...testo.matchAll(/cartaLive\.pngPerDiretta\(/g)]
+      .map((m) => testo.slice(m.index, m.index + 200))
+      .filter((c) => !/forza:\s*true/.test(c));
+    dice(!dirette.length,
+      `${file}: e non scavalca quella funzione per disegnarsela da se'`,
+      `${dirette.length} chiamate dirette a chi disegna, che saltano la decisione`);
+  }
 
   // 4. i caratteri: ci sono, e sono TTF.
   const dentro = existsSync(join(RAD, 'assets/font')) ? readdirSync(join(RAD, 'assets/font')) : [];
