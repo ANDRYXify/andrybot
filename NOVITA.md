@@ -17,8 +17,12 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-06
 
-- Le nuvolette adesso seguono le regole vere del lettering a fumetti: la coda si ferma a metà strada e non copre più il tasto, il messaggio d'errore ha il bordo a zig-zag come un grido, e la nuvoletta che spiega un valore ha la scia di bollicine del pensiero.
-- Gli avvisi che compaiono in basso sono didascalie, con la barra d'inchiostro e l'angolo piegato: chi parla ha la bolla, chi racconta ha il riquadro.
+- Le nuvolette sono disegnate: corpo e coda sono una forma sola, quindi non si vede più la linea che tagliava la coda a metà.
+- La coda si piega verso quello che sta spiegando e si ferma prima di arrivarci, come nei fumetti veri.
+
+- La coda delle nuvolette si ferma a metà strada e non copre più il tasto che sta spiegando.
+- Il messaggio d'errore ha il bordo a zig-zag di un grido, e la nuvoletta che spiega un valore ha la scia di bollicine del pensiero.
+- Gli avvisi che compaiono in basso sono didascalie, con la barra d'inchiostro e l'angolo piegato. Chi parla ha la bolla, chi racconta ha il riquadro.
 
 - Le nuvolette respirano: più larghe che alte, con l'aria attorno al testo e le righe più distanziate. Prima erano piccole e strette e si leggevano male.
 

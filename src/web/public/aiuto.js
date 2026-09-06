@@ -1,6 +1,8 @@
 // © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
 // Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 
+import { guscio, bollicine, MARGINE } from '/fumetto.js';
+
 (function () {
   const RITARDO = 340;
   const GRAZIA = 90;
@@ -8,7 +10,7 @@
   const BECCO = 36;
   const SOPRA_CURSORE = 18;
   const SOTTO_CURSORE = 20;
-  const GIRO_MAX = 34;
+  const GIRO_MAX = 26;
   const QUOTA_CODA = 0.55;
   const LETTURA_BASE = 1400;
   const LETTURA_PAROLA = 300;
@@ -17,7 +19,10 @@
 
   let bolla = null;
   let corpo = null;
-  let coda = null;
+  let guscioSvg = null;
+  let forma = null;
+  let ombra = null;
+  let pensieri = null;
   let acceso = null;
   let attesa = 0;
   let px = 0;
@@ -38,39 +43,53 @@
     return el.matches(TOCCABILE) ? 'nota' : 'dritta';
   }
 
-  const CODA_D = 'M -9.6 -2 C -8 8.4, -4.6 13, 0.4 25.6 C 1.4 12.6, 4.6 8, 8.4 -2';
-
   function nasce() {
     if (bolla) return bolla;
     bolla = document.createElement('div');
     bolla.className = 'aiuto-bolla';
     bolla.setAttribute('role', 'tooltip');
     bolla.hidden = true;
+    guscioSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    guscioSvg.setAttribute('class', 'aiuto-guscio');
+    guscioSvg.setAttribute('aria-hidden', 'true');
+    ombra = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    ombra.setAttribute('class', 'aiuto-ombra');
+    forma = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    forma.setAttribute('class', 'aiuto-forma');
+    pensieri = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    pensieri.setAttribute('class', 'aiuto-pensieri');
+    guscioSvg.append(ombra, forma, pensieri);
     corpo = document.createElement('span');
     corpo.className = 'aiuto-testo';
-    coda = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    coda.setAttribute('class', 'aiuto-coda');
-    coda.setAttribute('viewBox', '-11 0 22 26');
-    coda.setAttribute('preserveAspectRatio', 'none');
-    coda.setAttribute('aria-hidden', 'true');
-    const via = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    via.setAttribute('d', CODA_D);
-    via.setAttribute('class', 'aiuto-cuneo');
-    coda.appendChild(via);
-    const gruppo = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    gruppo.setAttribute('class', 'aiuto-pensieri');
-    for (const [cx, cy, r] of [[-1.4, 5.4, 3.6], [0.6, 13.6, 2.4], [2.4, 21, 1.5]]) {
-      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      c.setAttribute('cx', cx); c.setAttribute('cy', cy); c.setAttribute('r', r);
-      gruppo.appendChild(c);
-    }
-    coda.appendChild(gruppo);
-    bolla.append(corpo, coda);
+    bolla.append(guscioSvg, corpo);
     document.body.appendChild(bolla);
     if (typeof ResizeObserver === 'function') {
       new ResizeObserver(() => { if (acceso) posa(acceso); }).observe(bolla);
     }
     return bolla;
+  }
+
+  function disegna(w, h, tipo, becco, giro, sotto) {
+    const L = w + MARGINE * 2;
+    const A = h + MARGINE * 2;
+    guscioSvg.setAttribute('viewBox', `0 0 ${L} ${A}`);
+    guscioSvg.setAttribute('width', L);
+    guscioSvg.setAttribute('height', A);
+    guscioSvg.style.left = -MARGINE + 'px';
+    guscioSvg.style.top = -MARGINE + 'px';
+    guscioSvg.style.width = L + 'px';
+    guscioSvg.style.height = A + 'px';
+    const d = guscio({ larghezza: w, altezza: h, tipo, becco, giro, sotto });
+    forma.setAttribute('d', d);
+    ombra.setAttribute('d', d);
+    while (pensieri.firstChild) pensieri.removeChild(pensieri.firstChild);
+    if (tipo === 'pensiero') {
+      for (const c of bollicine({ larghezza: w, altezza: h, becco, giro, sotto })) {
+        const o = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        o.setAttribute('cx', c.cx); o.setAttribute('cy', c.cy); o.setAttribute('r', c.r);
+        pensieri.appendChild(o);
+      }
+    }
   }
 
   function testoDi(el) {
@@ -122,9 +141,6 @@
     b.classList.toggle('sotto', !sopra);
 
     const attacco = Math.round(dentro(ancoraX - x, orlo, m.width - orlo));
-    b.style.setProperty('--becco', attacco + 'px');
-    b.style.setProperty('--coda-l', Math.round(dentro(codaH * 0.86, 26, 52)) + 'px');
-    b.style.setProperty('--coda-h', codaH + 'px');
 
     const bx = x + attacco;
     const by = sopra ? y + m.height : y;
@@ -132,7 +148,9 @@
     const dy = (sopra ? r.top : r.bottom) - by;
     let giro = (sopra ? Math.atan2(-dx, dy) : Math.atan2(dx, -dy)) * 180 / Math.PI;
     if (!Number.isFinite(giro)) giro = 0;
-    b.style.setProperty('--giro', dentro(giro, -GIRO_MAX, GIRO_MAX).toFixed(1) + 'deg');
+    const g = dentro(giro, -GIRO_MAX, GIRO_MAX);
+    const tipo = b.classList.contains('attenzione') ? 'grido' : b.classList.contains('dritta') ? 'pensiero' : 'tondo';
+    disegna(m.width, m.height, tipo, attacco / m.width, g, !sopra);
   }
 
   function quantoDura(t) {
