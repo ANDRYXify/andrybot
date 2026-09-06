@@ -491,9 +491,7 @@ body.pad-vivo #plancia-lancia { bottom: calc(130px + env(safe-area-inset-bottom,
 
   .riga-check { margin: .95rem 0; gap: .7rem; min-height: 40px; align-items: center; }
   .riga-check label { padding: .3rem 0; line-height: 1.4; }
-  .interruttore { width: 54px; height: 32px; }
-  .levetta::before { height: 24px; width: 24px; left: 4px; top: 4px; }
-  .interruttore input:checked + .levetta::before { transform: translateX(22px); }
+  .interruttore { --lev-l: 54px; --lev-a: 32px; }
 
   .menu-voce, .drawer-voce { min-height: 46px; }
   summary { min-height: 42px; display: flex; align-items: center; }
@@ -1709,24 +1707,21 @@ body.giro-aperto { overflow: hidden; }
 .goal-vesti h4 { margin: 0; }
 #ovl-aspetto > #goal-vesti:not([hidden]) { display: contents; }
 
+.interruttore { --lev-b: var(--contorno-sp); }
 .levetta {
-  border: var(--contorno-sp) solid var(--contorno);
+  border: var(--lev-b) solid var(--contorno);
   box-shadow: var(--alone-contorno), var(--ombra-ink-timbro);
   transition: background var(--molla), box-shadow var(--lampo) var(--su-due);
 }
 .levetta::before {
-  height: 19px; width: 19px; left: 2px; top: 2px;
   background: var(--surface);
-  border: var(--contorno-sp) solid var(--contorno);
+  border: var(--lev-b) solid var(--contorno);
   box-shadow: none;
   transition: transform var(--colpo) var(--su-due);
 }
 .interruttore input:checked + .levetta { background: var(--acc); border-color: var(--contorno); }
-.interruttore input:checked + .levetta::before { transform: translateX(19px); }
 .interruttore input:focus-visible + .levetta { outline: var(--contorno-sp) solid var(--acc); outline-offset: 3px; }
-.interruttore.mini { width: 38px; height: 23px; }
-.interruttore.mini .levetta::before { height: 15px; width: 15px; }
-.interruttore.mini input:checked + .levetta::before { transform: translateX(15px); }
+.interruttore.mini { --lev-l: 38px; --lev-a: 23px; }
 
 input[type="text"], input[type="password"], input[type="email"], input[type="url"],
 input[type="search"], input[type="tel"], input[type="number"], textarea, select {
