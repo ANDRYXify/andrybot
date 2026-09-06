@@ -17,6 +17,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-06
 
+- La riga che apre ogni scheda adesso è una didascalia: un riquadro con la barra d'inchiostro e l'angolo piegato, come nei fumetti. Chi parla ha la bolla, chi racconta ha il riquadro.
+- Le nuvolette corte non sono più grandi come quelle lunghe: la coda si accorcia insieme alla bolla.
+
 - Le nuvolette sono disegnate: corpo e coda sono una forma sola, quindi non si vede più la linea che tagliava la coda a metà.
 - La coda si piega verso quello che sta spiegando e si ferma prima di arrivarci, come nei fumetti veri.
 

@@ -69,7 +69,7 @@ import { guscio, bollicine, MARGINE } from '/fumetto.js';
     return bolla;
   }
 
-  function disegna(w, h, tipo, becco, giro, sotto) {
+  function disegna(w, h, tipo, becco, giro, sotto, lungo) {
     const L = w + MARGINE * 2;
     const A = h + MARGINE * 2;
     guscioSvg.setAttribute('viewBox', `0 0 ${L} ${A}`);
@@ -79,7 +79,7 @@ import { guscio, bollicine, MARGINE } from '/fumetto.js';
     guscioSvg.style.top = -MARGINE + 'px';
     guscioSvg.style.width = L + 'px';
     guscioSvg.style.height = A + 'px';
-    const d = guscio({ larghezza: w, altezza: h, tipo, becco, giro, sotto });
+    const d = guscio({ larghezza: w, altezza: h, tipo, becco, giro, sotto, lungo });
     forma.setAttribute('d', d);
     ombra.setAttribute('d', d);
     while (pensieri.firstChild) pensieri.removeChild(pensieri.firstChild);
@@ -150,7 +150,7 @@ import { guscio, bollicine, MARGINE } from '/fumetto.js';
     if (!Number.isFinite(giro)) giro = 0;
     const g = dentro(giro, -GIRO_MAX, GIRO_MAX);
     const tipo = b.classList.contains('attenzione') ? 'grido' : b.classList.contains('dritta') ? 'pensiero' : 'tondo';
-    disegna(m.width, m.height, tipo, attacco / m.width, g, !sopra);
+    disegna(m.width, m.height, tipo, attacco / m.width, g, !sopra, codaH);
   }
 
   function quantoDura(t) {

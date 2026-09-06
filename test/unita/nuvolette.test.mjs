@@ -88,6 +88,23 @@ test('la bolla sotto ha la coda in alto, e resta un pezzo solo', () => {
   assert.match(d, /Q /, 'sotto la coda sparisce');
 });
 
+test('la coda è lunga quanto lo spazio che le si lascia', () => {
+  // Il difetto: il motore si calcolava la lunghezza per conto suo, e chi
+  // posiziona la bolla ne calcolava un'altra per lo stacco dal bersaglio. Due
+  // numeri per lo stesso fatto — e su una bolla piccola la coda usciva enorme,
+  // o cortissima, senza che niente si lamentasse.
+  for (const lungo of [24, 40, 54]) {
+    const d = guscio({ ...MISURA, becco: 0.5, giro: 0, lungo });
+    const q = [...d.matchAll(/Q [-\d.]+ [-\d.]+ ([-\d.]+) ([-\d.]+)/g)];
+    const puntaY = Math.max(...q.map((m) => Number(m[2])));
+    const atteso = MARGINE + MISURA.altezza + lungo;
+    assert.ok(Math.abs(puntaY - atteso) < 1.5,
+      `chiesta una coda di ${lungo}: la punta arriva a ${puntaY} invece che a ${atteso}`);
+  }
+  assert.match(JS, /guscio\(\{[^}]*lungo\b/, 'chi posiziona la bolla non dice al motore quanto dev’essere lunga la coda');
+  assert.match(JS, /disegna\(m\.width, m\.height,[^)]*codaH\)/, 'il disegno non riceve la lunghezza che lo stacco ha lasciato');
+});
+
 test('le tre forme sono quelle che il fumetto assegna', () => {
   const grido = guscio({ ...MISURA, tipo: 'grido', coda: false });
   const punte = (grido.match(/L /g) || []).length;
