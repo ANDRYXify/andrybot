@@ -15,6 +15,14 @@
 
   const tocco = (ev) => ev && ev.pointerType === 'touch';
 
+  const TOCCABILE = 'a[href],button,input,select,textarea,summary,label,[role="button"],[role="tab"],[role="switch"],[tabindex]:not([tabindex="-1"])';
+  const PERICOLO = '.pericolo,.btn.pericolo,[data-pericolo]';
+
+  function tipoDi(el) {
+    if (el.matches(PERICOLO) || el.closest(PERICOLO)) return 'attenzione';
+    return el.matches(TOCCABILE) ? 'nota' : 'dritta';
+  }
+
   function nasce() {
     if (bolla) return bolla;
     bolla = document.createElement('div');
@@ -69,6 +77,7 @@
     if (!testo) return;
     const b = nasce();
     b.textContent = testo;
+    b.className = 'aiuto-bolla ' + tipoDi(el);
     b.hidden = false;
     if (!b.id) b.id = 'aiuto-bolla';
     seq += 1;
