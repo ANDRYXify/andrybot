@@ -813,38 +813,8 @@ function morphDa(el) {
   } else if (app) app.style.viewTransitionName = '';
 }
 
-let _lampo = null;
-let _lampoVia = 0;
 let _versoVia = 0;
 let _uscitaVia = 0;
-let _lampoQuando = 0;
-const LAMPO_PAUSA = 420;
-
-function _duraImpatto() {
-  const v = getComputedStyle(document.documentElement).getPropertyValue('--t-impatto');
-  const n = parseFloat(v) || 0;
-  return /ms\s*$/.test(v.trim()) || !/s\s*$/.test(v.trim()) ? n : n * 1000;
-}
-
-function battiScena() {
-  if (_menoMoto || document.body.classList.contains('meno-moto')) return 0;
-  const ora = Date.now();
-  if (ora - _lampoQuando < LAMPO_PAUSA) return 0;
-  _lampoQuando = ora;
-  if (!_lampo || !_lampo.isConnected) {
-    _lampo = document.createElement('div');
-    _lampo.className = 'lampo-scena';
-    _lampo.setAttribute('aria-hidden', 'true');
-    document.body.appendChild(_lampo);
-  }
-  _lampo.classList.remove('batte');
-  void _lampo.offsetWidth;
-  _lampo.classList.add('batte');
-  clearTimeout(_lampoVia);
-  const dura = _duraImpatto();
-  _lampoVia = setTimeout(() => { if (_lampo) _lampo.classList.remove('batte'); }, dura + 240);
-  return dura;
-}
 
 function transizione(fn) {
   const drawer = window.matchMedia && window.matchMedia('(max-width: 1200px)').matches;
@@ -17885,11 +17855,7 @@ function vaiAScheda(id) {
 
   for (const p of document.querySelectorAll('.pannello-scheda.visibile')) p.classList.add('esce');
   clearTimeout(_uscitaVia);
-  _uscitaVia = setTimeout(() => {
-    const attesa = battiScena();
-    if (attesa > 0) setTimeout(() => _cambiaScena(id, sezioni, false), Math.round(attesa * 0.38));
-    else _cambiaScena(id, sezioni, false);
-  }, _duraUscita());
+  _uscitaVia = setTimeout(() => _cambiaScena(id, sezioni, false), _duraUscita());
 }
 
 function _duraUscita() {

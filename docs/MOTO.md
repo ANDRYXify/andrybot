@@ -185,70 +185,33 @@ Il sito ne usa due, e la scelta la fa il codice, non l'occhio: la decide
 
 ### I tre tempi
 
-Lo stacco fra scene ha **tre tempi**, come in un fumetto: la vignetta vecchia
-esce, arriva l'impatto, la nuova entra. Prima ne aveva uno solo — il lampo — e
-si vedeva «un guizzo, poi la pagina»: staccato, senza niente sotto.
+Lo stacco fra scene ha **due tempi**: la vignetta vecchia esce, la nuova entra
+dal lato da cui sei arrivato.
 
 1. **Uscita** (`--t-uscita`, 96 ms): il pannello vecchio scivola via nel verso
    del movimento, a scatti.
-2. **Impatto** (`--t-impatto`, 118 ms): le linee di concentrazione. Al 38% —
-   il picco — il contenuto cambia sotto: il lampo *copre* il taglio.
-3. **Entrata**: le schede rientrano dal lato da cui sei arrivato mentre il lampo
-   si dirada, sfalsate in ordine di lettura.
+2. **Entrata**: le schede rientrano dal lato da cui sei arrivato, sfalsate di
+   `--sfalso` in ordine di lettura.
 
-Per farlo, il cambio di sezione **non usa più la view transition**: lo strato
-delle view transition il browser lo dipinge sopra a tutto, quindi appena partiva
-il lampo spariva di colpo invece di dissolversi sulla pagina che arriva. I due
-non possono convivere, e fra i due conta l'impatto.
+Il cambio di sezione **non usa la view transition**: lo strato delle view
+transition il browser lo dipinge sopra a tutto, e quel che si vuole controllare
+qui è come le vignette entrano ed escono, non una dissolvenza di sistema.
 
 La view transition resta dove serve davvero: quando apri una scheda che si
 *trasforma* nella pagina. Li' non c'e' impatto, perche' non e' uno stacco — e'
 uno zoom dentro la stessa vignetta, che nella grammatica di McCloud e' un
 passaggio da soggetto a soggetto.
 
-### Il fotogramma d'impatto
+### Il fotogramma d'impatto, e perché non c'è più
 
-Le linee sono **di concentrazione** (集中線, *shūchūsen*): raggi che convergono
-al centro. Non è la scelta comoda, è quella giusta — nel manga le linee
-**radiali** servono al momento drammatico e alla messa a fuoco, le **parallele**
-al movimento laterale. Fra due sezioni c'è uno stacco, non uno scorrimento.
+C'è stato, ed era corretto sulla carta: le linee di concentrazione (集中線,
+*shūchūsen*) per due-tre fotogrammi, con la durata che il *sakuga* impone. A
+schermo era brutto. Un lampo a tutto campo su un pannello pieno di testo non è
+una vignetta: è un disturbo, e nessuna regola di grammatica lo salva.
 
-Dura `--t-impatto`, cioè **118 ms**: due-tre fotogrammi. È un vincolo, non un gusto.
-Nel *sakuga* l'impact frame è un singolo disegno inserito nell'istante dell'urto:
-se resta troppo, l'illusione dello scoppio si rompe e si vedono i disegni
-singoli. Mezzo secondo di linee non è un impatto, è un velo.
-
-Il lampo **copre lo stacco**: parte, e al suo picco (38%) il contenuto cambia
-sotto. Quando si dirada, la scena nuova è già lì. La prima versione faceva il
-contrario — lampo, poi cambio — e si vedeva «un guizzo, poi niente, poi la
-pagina»: cioè niente. Nell'anime il fotogramma d'impatto serve proprio a
-nascondere il salto, non ad annunciarlo.
-
-Il lampo parte comunque **fuori** dalla transizione, non dentro: lo strato delle
-*view transition* il browser lo dipinge sopra a tutto, e un velo normale, durante,
-sarebbe invisibile.
-
-Il fondo del lampo è la **carta** (`--bg`), non il bianco né il nero. Così a
-schermo pieno lo sbalzo di luminanza è quasi nullo — la pagina va da carta a
-carta — e le linee possono stare piene senza diventare uno stroboscopio.
-
-### Il limite che non è estetico
-
-Un lampo a tutto schermo ripetuto più di **tre volte al secondo** è la soglia
-oltre cui le [WCAG 2.3.1](https://www.w3.org/WAI/WCAG22/Understanding/three-flashes-or-below-threshold.html)
-considerano il contenuto a rischio per chi è fotosensibile, e cliccando veloce
-fra le schede ci si arriva senza sforzo. Quindi: opacità di picco **0.5** e non
-1 (il contenuto resta leggibile sotto, come in una vignetta vera), e una pausa
-minima di **420 ms** fra due lampi — al massimo 2.4 al secondo. Se arrivi prima,
-lo stacco c'è lo stesso, senza l'impatto.
-
-Si spegne con `prefers-reduced-motion` e con «meno movimento», **non** con la
-modalità «leggera». Sono due interruttori diversi e li avevo legati insieme:
-«leggero» si accende da solo su un dispositivo che dichiara poca memoria, pochi
-core o una rete lenta, e serve al **carico** — un'opacità che cambia su un
-elemento solo non pesa niente. «Meno movimento» lo chiede la persona e vale per
-il **movimento**. Erano allo stesso freno, e su una macchina modesta lo stacco
-spariva senza che nessuno lo sapesse.
+Resta la lezione, non il codice: il segno giusto per un mezzo non si deduce, si
+guarda. Se serve un'enfasi, il posto è un evento raro — la prima connessione del
+bot, l'andare in diretta — non ogni clic su una scheda.
 
 `node scripts/verifica-stacco.mjs` gira **tutti** i passaggi fra schede vicine e
 per ognuno chiede al browser quale dei due stacchi è partito — dal codice non si

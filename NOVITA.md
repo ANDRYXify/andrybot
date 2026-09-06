@@ -25,9 +25,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 - La barra dell'Overlay Studio ha le nuvolette: cosa cambia fra un overlay e l'altro, perché il link è nascosto, e cosa succede davvero a OBS se rinomini o elimini.
 
-- Cambiare sezione ora è uno stacco da fumetto in tre tempi: la pagina vecchia esce, il lampo di linee copre il taglio, e la nuova entra dal lato da cui sei arrivato.
+- Cambiare sezione è uno stacco pulito: la pagina vecchia esce, la nuova entra dal lato da cui sei arrivato.
 - Muoversi dentro la stessa sezione è più corto: niente lampo, i riquadri rientrano uno dopo l'altro nell'ordine in cui si leggono.
-- Il lampo non si ripete a raffica, così non dà fastidio a chi è sensibile alle luci. Chi ha chiesto meno movimento non lo vede affatto.
 - Su un computer poco potente lo stacco non spariva più: la modalità leggera serve al carico, non al movimento.
 
 - La pagina «non c'è niente qui» e quella di manutenzione sono diventate una vignetta, col numero 404 nell'angolo come in un fumetto.
