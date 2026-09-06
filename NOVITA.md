@@ -17,6 +17,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-06
 
+- La barra dell'Overlay Studio ha le nuvolette: cosa cambia fra un overlay e l'altro, perché il link è nascosto, e cosa succede davvero a OBS se rinomini o elimini.
+
 - Cambiare sezione ora è uno stacco da fumetto: la pagina sbianca in un lampo di linee che convergono, e quando si dirada la sezione nuova è già lì.
 - Muoversi dentro la stessa sezione è più corto: niente lampo, i riquadri rientrano uno dopo l'altro nell'ordine in cui si leggono.
 - Il lampo non si ripete a raffica, così non dà fastidio a chi è sensibile alle luci. Chi ha chiesto meno movimento non lo vede affatto.
