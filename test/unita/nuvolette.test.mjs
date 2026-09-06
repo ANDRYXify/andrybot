@@ -37,9 +37,35 @@ test('ognuna delle tre ha una forma sua, non solo un colore', () => {
     const blocco = CSS.slice(i, CSS.indexOf('}', i));
     assert.match(blocco, /border-radius/, `«${tipo}» cambia solo colore: la forma è la cosa che si riconosce`);
   }
-  // e la coda cambia con la forma: nel pensiero sono pallini, non un triangolo
-  assert.match(CSS, /\.aiuto-bolla\.dritta::before[\s\S]{0,220}border-radius: 50%/,
-    'la nuvola di pensiero ha la coda a triangolo: allora non è una nuvola di pensiero');
+  // e la coda cambia con la forma: nel pensiero sono pallini, non un cuneo
+  assert.match(CSS, /\.aiuto-bolla\.dritta \.aiuto-cuneo \{[^}]*display: none/,
+    'la nuvola di pensiero tiene il cuneo: allora non è una nuvola di pensiero');
+  assert.match(CSS, /\.aiuto-bolla\.dritta \.aiuto-pensieri \{[^}]*display: block/, 'e non mostra i pallini');
+});
+
+test('la coda è disegnata, non incollata coi bordi', () => {
+  // Un triangolo fatto di bordi CSS non si può curvare, e ruotandolo si stacca
+  // dalla bolla: si vede, ed è la ragione per cui la coda è un disegno vero.
+  assert.match(JS, /createElementNS\('http:\/\/www\.w3\.org\/2000\/svg', 'path'\)/, 'la coda non è disegnata');
+  assert.match(JS, /const CODA_D = 'M /, 'manca la forma della coda');
+  assert.doesNotMatch(CSS, /\.aiuto-bolla::(before|after)/, 'sono rimasti i triangoli di bordi');
+  // e punta al bersaglio: l'angolo lo calcola chi posiziona la bolla
+  assert.match(JS, /--giro/, 'la coda non riceve nessun angolo');
+  assert.match(JS, /Math\.atan2/, 'l’angolo non si calcola: la coda punterebbe sempre in giù');
+});
+
+test('la bolla si spegne quando serve, e non quando capita', () => {
+  // Tre modi di spegnersi per sbaglio, tutti visti dal vivo: la pagina che si
+  // assesta di un pixel dopo uno scorrimento, un elemento che passa sotto al
+  // cursore, e il puntatore che entra in un figlio del bersaglio. In tutti e tre
+  // la bolla spariva dopo mezzo secondo e sembrava rotta.
+  assert.match(JS, /function ancoraSopra\(\)/, 'niente controlla se il puntatore è ancora lì');
+  assert.match(JS, /elementFromPoint/, 'lo deduce invece di chiederlo al browser');
+  assert.match(JS, /Math\.abs\(window\.scrollY - dovEra\) > SCORRE_MIN/,
+    'basta un pixel di assestamento per spegnerla');
+  // e si spegne DA SOLA dopo il tempo di lettura
+  assert.match(JS, /function quantoDura\(t\)/, 'la bolla non se ne va mai da sola');
+  assert.match(JS, /LETTURA_PAROLA/, 'la durata non dipende da quanto c’è da leggere');
 });
 
 test('le tre forme restano leggibili anche a chi tocca lo schermo', () => {

@@ -6,15 +6,25 @@
   const GRAZIA = 90;
   const STACCO = 14;
   const BECCO = 36;
-  const GRANDE_L = 170;
-  const GRANDE_A = 80;
+  const SOPRA_CURSORE = 6;
+  const SOTTO_CURSORE = 20;
+  const GIRO_MAX = 62;
+  const LETTURA_BASE = 1400;
+  const LETTURA_PAROLA = 300;
+  const LETTURA_MAX = 9000;
+  const SCORRE_MIN = 8;
 
   let bolla = null;
+  let corpo = null;
+  let coda = null;
   let acceso = null;
   let attesa = 0;
   let px = 0;
   let py = 0;
   let colDito = false;
+  let inCorsa = 0;
+  let vita = 0;
+  let dovEra = 0;
   let uscita = 0;
   let seq = 0;
 
@@ -28,12 +38,33 @@
     return el.matches(TOCCABILE) ? 'nota' : 'dritta';
   }
 
+  const CODA_D = 'M -9 -3 C -7.6 4.2, -4.4 6.6, 1.6 15.4 C 1.4 8, 4.8 3.6, 8.8 -3';
+
   function nasce() {
     if (bolla) return bolla;
     bolla = document.createElement('div');
     bolla.className = 'aiuto-bolla';
     bolla.setAttribute('role', 'tooltip');
     bolla.hidden = true;
+    corpo = document.createElement('span');
+    corpo.className = 'aiuto-testo';
+    coda = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    coda.setAttribute('class', 'aiuto-coda');
+    coda.setAttribute('viewBox', '-11 0 22 16');
+    coda.setAttribute('aria-hidden', 'true');
+    const via = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    via.setAttribute('d', CODA_D);
+    via.setAttribute('class', 'aiuto-cuneo');
+    coda.appendChild(via);
+    const gruppo = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    gruppo.setAttribute('class', 'aiuto-pensieri');
+    for (const [cx, cy, r] of [[-0.4, 5.2, 3.3], [1.6, 12.8, 2]]) {
+      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      c.setAttribute('cx', cx); c.setAttribute('cy', cy); c.setAttribute('r', r);
+      gruppo.appendChild(c);
+    }
+    coda.appendChild(gruppo);
+    bolla.append(corpo, coda);
     document.body.appendChild(bolla);
     return bolla;
   }
@@ -64,11 +95,10 @@
     const m = b.getBoundingClientRect();
     const larg = document.documentElement.clientWidth;
     const alt = document.documentElement.clientHeight;
-    const seguiX = !colDito && r.width > GRANDE_L && px >= r.left && px <= r.right;
-    const seguiY = !colDito && r.height > GRANDE_A && py >= r.top && py <= r.bottom;
-    const ancoraX = seguiX ? px : r.left + r.width / 2;
-    const cima = seguiY ? py : r.top;
-    const fondo = seguiY ? py : r.bottom;
+    const segue = !colDito;
+    const ancoraX = segue ? px : r.left + r.width / 2;
+    const cima = segue ? py - SOPRA_CURSORE : r.top;
+    const fondo = segue ? py + SOTTO_CURSORE : r.bottom;
     let x = ancoraX - m.width / 2;
     x = Math.max(10, Math.min(x, larg - m.width - 14));
     let y = cima - m.height - STACCO;
@@ -78,15 +108,28 @@
     b.style.left = Math.round(x) + 'px';
     b.style.top = Math.round(y) + 'px';
     b.classList.toggle('sotto', !sopra);
-    const punta = ancoraX - x;
-    b.style.setProperty('--becco', Math.round(Math.max(BECCO, Math.min(punta, m.width - BECCO))) + 'px');
+    const attacco = Math.round(Math.max(BECCO, Math.min(ancoraX - x, m.width - BECCO)));
+    b.style.setProperty('--becco', attacco + 'px');
+    const bx = x + attacco;
+    const by = sopra ? y + m.height : y;
+    const dx = ancoraX - bx;
+    const dy = (segue ? py : (sopra ? r.top : r.bottom)) - by;
+    let giro = (sopra ? Math.atan2(-dx, dy) : Math.atan2(dx, -dy)) * 180 / Math.PI;
+    if (!Number.isFinite(giro)) giro = 0;
+    b.style.setProperty('--giro', Math.max(-GIRO_MAX, Math.min(GIRO_MAX, giro)).toFixed(1) + 'deg');
+    b.style.setProperty('--larga', (0.6 + Math.min(0.5, Math.abs(giro) / 120)).toFixed(2));
+  }
+
+  function quantoDura(t) {
+    const parole = t.split(/\s+/).filter(Boolean).length;
+    return Math.min(LETTURA_MAX, LETTURA_BASE + parole * LETTURA_PAROLA);
   }
 
   function mostra(el) {
     const testo = testoDi(el);
     if (!testo) return;
     const b = nasce();
-    b.textContent = testo;
+    nasce(); corpo.textContent = testo;
     b.className = 'aiuto-bolla ' + tipoDi(el);
     b.hidden = false;
     if (!b.id) b.id = 'aiuto-bolla';
@@ -94,17 +137,33 @@
     const mio = seq;
     el.setAttribute('aria-describedby', b.id);
     acceso = el;
+    dovEra = window.scrollY;
     posa(el);
+    clearTimeout(vita);
+    vita = setTimeout(() => { if (seq === mio) spegni(); }, quantoDura(testo));
     requestAnimationFrame(() => { if (seq === mio) { posa(el); b.classList.add('vista'); } });
   }
 
   function spegni() {
+    if (inCorsa) { cancelAnimationFrame(inCorsa); inCorsa = 0; }
+    clearTimeout(vita); vita = 0;
     clearTimeout(attesa); attesa = 0;
     clearTimeout(uscita); uscita = 0;
     seq += 1;
     if (acceso) acceso.removeAttribute('aria-describedby');
     acceso = null;
     if (bolla) { bolla.classList.remove('vista'); bolla.hidden = true; }
+  }
+
+  function ancoraSopra() {
+    if (!acceso) return false;
+    const sotto = document.elementFromPoint(px, py);
+    return !!sotto && (sotto === acceso || acceso.contains(sotto) || sotto.contains(acceso));
+  }
+
+  function forseSpegni() {
+    if (ancoraSopra()) { uscita = 0; return; }
+    spegni();
   }
 
   function chiedi(el) {
@@ -116,6 +175,8 @@
   document.addEventListener('pointermove', (ev) => {
     if (tocco(ev)) return;
     px = ev.clientX; py = ev.clientY;
+    if (!acceso || colDito || inCorsa) return;
+    inCorsa = requestAnimationFrame(() => { inCorsa = 0; if (acceso) posa(acceso); });
   }, true);
 
   document.addEventListener('pointerover', (ev) => {
@@ -123,7 +184,7 @@
     px = ev.clientX; py = ev.clientY;
     colDito = false;
     const el = bersaglio(ev.target);
-    if (!el) { if (acceso && !uscita) uscita = setTimeout(spegni, GRAZIA); return; }
+    if (!el) { if (acceso && !uscita) uscita = setTimeout(forseSpegni, GRAZIA); return; }
     if (el === acceso) { clearTimeout(uscita); uscita = 0; return; }
     spegni();
     chiedi(el);
@@ -136,7 +197,7 @@
     if (dove && acceso && (acceso === dove || acceso.contains(dove))) return;
     clearTimeout(attesa); attesa = 0;
     clearTimeout(uscita);
-    uscita = setTimeout(spegni, GRAZIA);
+    uscita = setTimeout(forseSpegni, GRAZIA);
   }, true);
 
   document.addEventListener('focusin', (ev) => {
@@ -149,7 +210,10 @@
 
   document.addEventListener('focusout', spegni);
   document.addEventListener('pointerdown', spegni, true);
-  window.addEventListener('scroll', spegni, true);
+  window.addEventListener('scroll', () => {
+    if (!acceso && !attesa) return;
+    if (Math.abs(window.scrollY - dovEra) > SCORRE_MIN) spegni();
+  }, true);
   window.addEventListener('resize', spegni);
   window.addEventListener('blur', spegni);
   document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') spegni(); });
