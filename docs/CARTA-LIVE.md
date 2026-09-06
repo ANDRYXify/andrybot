@@ -167,3 +167,37 @@ del disegno resti puro, che quello servito al browser disegni identico al
 server, che il vocabolario esca dagli elenchi veri, che i caratteri ci siano e
 siano TTF, che l'editor non si riscriva i nomi dei file né le famiglie, e che
 nessuno scavalchi `fotoPerEvento`.
+
+
+## La faccia di chi non è registrato qui
+
+L'avatar veniva da `streamers.get(login)`, cioè dalla tabella di chi ha un
+account su SocialBot. Ma la locandina vale anche per i canali che una streamer
+**aggiunge alle sue notifiche**: quelli in tabella non ci sono, e usciva un
+cerchio nero — che sembra un difetto della grafica, e invece è un dato che non
+c'è.
+
+Se manca, si chiede alla piattaforma: `helix.getUserByLogin(login)` dà
+`profile_image_url`. Una volta sola per login, ricordata sei ore: un annuncio non
+deve costare una chiamata in più ogni volta che qualcuno va in diretta. Su Kick
+oggi non c'è una via per chiedere la faccia di un canale non collegato, quindi lì
+resta vuota — e non lancia.
+
+## Le emote diventavano quadratini
+
+Il rasterizzatore ha i caratteri che gli diamo noi (Anton, Archivo), e nessuno
+sa disegnare un pittogramma: al suo posto esce il quadratino vuoto. Un titolo di
+Twitch ne è pieno, e usciva «▨▨Blind Run | ▨▨ !social».
+
+Si tolgono **nel disegno**, non in chi prepara i dati. Se lo facesse solo il
+server, l'editor mostrerebbe un'emoji che nella locandina poi non c'è — e
+un'anteprima che mente è il difetto peggiore per un editor. Va anche nella
+direzione giusta: nelle grafiche del sito le emoji non ci vanno, perché il
+disegno è a china e un'emoji la disegna qualcun altro.
+
+Cos'è un'emoji ha **una risposta sola** in tutto il progetto, e sta nel motore
+che disegna, perché è l'unico posto che deve funzionare anche nel browser (e
+quindi non può importare niente). I cancelli la prendono da lì. Non è «un
+carattere di quel blocco Unicode»: è un carattere che il sistema disegna a
+colori — `Emoji_Presentation` — più i pittogrammi che U+FE0F promuove. Le spunte
+✓ ✗ e le stelline ★ ✦ sono segni tipografici e restano.

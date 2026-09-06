@@ -111,7 +111,33 @@ export async function avatarDataUri(url, { fetchImpl = fetch, ora = Date.now() }
 // in un posto solo: la usano l'annuncio vero e l'anteprima nell'editor, e due
 // copie vorrebbero dire un'anteprima che mostra una cosa diversa da quella che
 // parte — il difetto peggiore per un editor.
-export async function datiDiretta(login, info = {}, { conAvatar = true, piattaforma: dettaFuori = '' } = {}) {
+// LA FACCIA DI CHI NON E' REGISTRATO QUI.
+//
+// L'avatar veniva da `streamers.get(login)`, cioe' dalla tabella di chi ha un
+// account su SocialBot. Ma la locandina vale anche per i canali che una
+// streamer AGGIUNGE alle sue notifiche: quelli in tabella non ci sono, e la
+// faccia usciva vuota — un cerchio nero, che sembra un difetto della grafica e
+// invece e' un dato che non c'e'.
+//
+// Se manca, si chiede alla piattaforma. Una volta sola per login: un annuncio
+// non deve costare una chiamata in piu' ogni volta che qualcuno va in diretta.
+const AVATAR_CERCATO_MS = 6 * 60 * 60 * 1000;
+const _cercati = new Map();
+
+async function faccia(login, s, helix, piattaforma, ora = Date.now()) {
+  if (s?.avatar) return s.avatar;
+  if (piattaforma !== 'twitch' || !helix?.getUserByLogin) return '';
+  const visto = _cercati.get(login);
+  if (visto && ora - visto.quando < AVATAR_CERCATO_MS) return visto.url;
+  let url = '';
+  try { url = String((await helix.getUserByLogin(login))?.profile_image_url || ''); }
+  catch { url = ''; }
+  _cercati.set(login, { url, quando: ora });
+  if (_cercati.size > 300) _cercati.delete(_cercati.keys().next().value);
+  return url;
+}
+
+export async function datiDiretta(login, info = {}, { conAvatar = true, piattaforma: dettaFuori = '', helix = null } = {}) {
   const l = String(login || '').toLowerCase();
   const s = streamers.get(l) || {};
   // La piattaforma la dice CHI CHIAMA quando la sa, e la sa sempre chi annuncia
@@ -131,7 +157,7 @@ export async function datiDiretta(login, info = {}, { conAvatar = true, piattafo
     link: indirizzo,
     spettatori: String(info.viewer_count ?? info.spettatori ?? 0),
     piattaforma,
-    avatar: conAvatar && s.avatar ? await avatarDataUri(s.avatar) : '',
+    avatar: conAvatar ? await avatarDataUri(await faccia(l, s, helix, piattaforma)) : '',
   };
 }
 
@@ -144,7 +170,7 @@ export async function datiDiretta(login, info = {}, { conAvatar = true, piattafo
 // aspetta guardando il gruppo.
 //
 // `forza` serve all'anteprima: lì la si vuole vedere anche da spenta.
-export async function pngPerDiretta(login, info = {}, { forza = false, chi = null, piattaforma = '' } = {}) {
+export async function pngPerDiretta(login, info = {}, { forza = false, chi = null, piattaforma = '', helix = null } = {}) {
   const c = carteLive.get(login);
   if (!forza && !c?.attiva) return null;
   if (!disegnabile()) {
@@ -155,7 +181,7 @@ export async function pngPerDiretta(login, info = {}, { forza = false, chi = nul
   const dove = piattaforma || piattaformaDi(diChi);
   const carta = cartaDi({ dati: c?.dati, piattaforma: dove });
   try {
-    return await pngCarta(carta, await datiDiretta(diChi, info, { piattaforma: dove }));
+    return await pngCarta(carta, await datiDiretta(diChi, info, { piattaforma: dove, helix }));
   } catch (e) {
     log.warn(`carta di #${diChi}: ${e?.message || e}`);
     return null;
@@ -176,7 +202,7 @@ export async function fotoPerEvento(login, evento, { chi = null, info = null, he
   if (!eUnaDiretta(evento)) return null;
   const diChi = String(chi || login).toLowerCase();
   return pngPerDiretta(login, await completaInfo(diChi, info, helix),
-    { chi: diChi, piattaforma: piattaformaDiEvento(evento) }).catch(() => null);
+    { chi: diChi, piattaforma: piattaformaDiEvento(evento), helix }).catch(() => null);
 }
 
 // COSA SO DI QUESTA DIRETTA — e il buco che questa funzione tappa.
