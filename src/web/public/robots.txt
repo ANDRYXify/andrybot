@@ -11,6 +11,10 @@ Disallow: /entra
 Disallow: /accedi
 Disallow: /sblocca
 Disallow: /mod
+Disallow: /esci
+Disallow: /logout
+Disallow: /o/
+Disallow: /tracking/
 Allow: /
 
 Sitemap: https://socialbot.live/sitemap.xml
