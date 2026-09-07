@@ -140,7 +140,7 @@ export const GUIDE = [
     faq: [
       { d: 'Quanto ci vuole a mettere un bot su Twitch?', r: 'Cinque minuti: accedi con Twitch, autorizzi i permessi, e se il bot usa un account proprio lo rendi moderatore con /mod nomedelbot. Configurare comandi e timer richiede altri dieci minuti.' },
       { d: 'Devo creare un secondo account Twitch per il bot?', r: 'Di solito no: i bot in cloud usano un proprio account condiviso, oppure agiscono con il tuo. Un secondo account serve solo se vuoi far girare un bot self-hosted con un\'identità dedicata.' },
-      { d: 'Il bot funziona anche quando sono offline?', r: 'Sì, la chat di Twitch resta aperta anche a canale spento e il bot continua a rispondere ai comandi. Molti bot permettono di limitare i timer al solo periodo in diretta, ed è consigliabile farlo.' },
+      { d: 'Il bot funziona anche quando sono offline?', r: 'Sì, la chat di Twitch resta aperta anche a canale spento e il bot continua a rispondere ai comandi. I messaggi a tempo invece è meglio tenerli in diretta: su SocialBot un modulo a tempo parla solo mentre trasmetti, a meno che tu non gli dica il contrario.' },
       { d: 'Perché il bot non risponde ai comandi?', r: 'Le tre cause più comuni: non è moderatore del canale (se scrive con un account suo), i permessi sono scaduti perché hai cambiato password su Twitch, oppure il comando è salvato con un prefisso diverso da quello che stai scrivendo.' },
     ],
   },

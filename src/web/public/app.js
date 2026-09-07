@@ -15187,6 +15187,7 @@ function riassuntoQuando(t) {
     case 'timer': {
       let s = `ogni ${t.minuti || 0} min`;
       if (t.minMessaggi) s += ` e almeno ${t.minMessaggi} messaggi`;
+      s += t.ancheOffline ? ', anche a canale spento' : ', solo in diretta';
       return s;
     }
     case 'manuale': return 'lo attivi tu (Prova o servizio esterno)';
@@ -15517,7 +15518,12 @@ function disegnaCampiQuando(t) {
             <input type="number" id="mod-min-messaggi" min="0" max="1000" value="${Number(t.minMessaggi) || 0}">
           </div>
         </div>
-        <p class="suggerimento">Metti 0 messaggi per farlo partire comunque a tempo.</p>`;
+        <p class="suggerimento">Metti 0 messaggi per farlo partire comunque a tempo.</p>
+        <label class="riga-check spazio-sopra">
+          <input type="checkbox" id="mod-timer-offline"${t.ancheOffline ? ' checked' : ''}>
+          Falla parlare anche a canale spento
+        </label>
+        <p class="suggerimento">Di norma un modulo a tempo parla solo mentre sei in diretta: fuori dalla diretta la chat è vuota.</p>`;
     case 'manuale':
       return `<p class="suggerimento spazio-sopra">Nessun campo: questo modulo si attiva dal bottone "Prova" o dai
         Connettori avanzati (API in ingresso) qui sotto.</p>`;
@@ -15736,6 +15742,7 @@ function leggiForm() {
   } else if (tipoT === 'timer') {
     trigger.minuti = Number(g('mod-minuti')?.value) || 0;
     trigger.minMessaggi = Number(g('mod-min-messaggi')?.value) || 0;
+    trigger.ancheOffline = !!g('mod-timer-offline')?.checked;
   }
   const condizioni = {
     tier: g('mod-chipuo')?.value || 'tutti',

@@ -526,6 +526,11 @@ aggiungiColonna('effects', 'nome', "TEXT NOT NULL DEFAULT ''");         // titol
 aggiungiColonna('effects', 'autore', "TEXT NOT NULL DEFAULT ''");       // login del creatore originale (attribuzione)
 aggiungiColonna('effects', 'usi', 'INTEGER NOT NULL DEFAULT 0');        // quante volte è stato importato
 aggiungiColonna('effects', 'suono_file', "TEXT NOT NULL DEFAULT ''");   // COMBO: audio abbinato a un'immagine/video
+// Quando un modulo a tempo ha parlato l'ultima volta. Stava in memoria, e la
+// memoria muore col processo: al riavvio ogni timer risultava "mai partito" e
+// partivano tutti insieme, a ogni deploy. Zero vuol dire mai visto: il motore
+// non lo fa parlare, segna l'ora e gli fa aspettare un giro intero.
+aggiungiColonna('modules', 'timer_last', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('points', 'ruolo', "TEXT NOT NULL DEFAULT ''");  // '' = pubblico · 'staff' = mod/streamer
 aggiungiColonna('telegram', 'pin_live', "INTEGER NOT NULL DEFAULT 1");
 aggiungiColonna('telegram', 'msg_id', "TEXT NOT NULL DEFAULT ''");
@@ -2837,6 +2842,7 @@ function rowToModule(r) {
     condizioni: cfg.condizioni || {},
     azioni: Array.isArray(cfg.azioni) ? cfg.azioni : [],
     altrimenti: Array.isArray(cfg.altrimenti) ? cfg.altrimenti : [],
+    timerLast: Number(r.timer_last) || 0,
   };
 }
 
@@ -2924,6 +2930,13 @@ export const modules = {
     return Number(info.lastInsertRowid);
   },
   remove(channel, id) { db.prepare('DELETE FROM modules WHERE channel=? AND id=?').run(channel, id); _cambiati(channel); },
+  // L'ora dell'ultimo giro di un modulo a tempo. Non tocca la revisione dei
+  // comandi: qui non cambia niente di cio' che il bot risponde, e si scrive
+  // ogni volta che un timer parte.
+  segnaTimer(channel, id, quando) {
+    db.prepare('UPDATE modules SET timer_last=? WHERE channel=? AND id=?')
+      .run(Math.floor(Number(quando) || 0), channel, Number(id));
+  },
   setAttivo(channel, id, attivo) {
     db.prepare('UPDATE modules SET attivo=? WHERE channel=? AND id=?').run(attivo ? 1 : 0, channel, id);
     _cambiati(channel);

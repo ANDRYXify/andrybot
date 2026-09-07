@@ -28,6 +28,8 @@ const CACHE_STREAM_MS = 30_000;    // cache dello stato live per canale
 const WEBHOOK_TIMEOUT_MS = 5000;   // timeout della chiamata webhook
 const WEBHOOK_MAX_BYTES = 10 * 1024; // lettura massima della risposta webhook
 const TIMER_TICK_MS = 30_000;      // ogni quanto il timer controlla i moduli
+const PAUSA_FRA_TIMER_MS = 7_000;  // respiro fra due timer scaduti nello stesso giro
+const MAX_CODA_TIMER = 50;         // tetto alla fila d'attesa dei timer
 const MAX_PUNTI_AZIONE = 1_000_000; // tetto su quanto un'azione puo' muovere in una volta
 
 // Un login su cui si possono muovere monete. Esclude i segnaposto di sistema
@@ -78,14 +80,18 @@ function livelloUtente(msg) {
 }
 
 export class ModulesEngine {
-  constructor({ effects, helix } = {}) {
+  constructor({ effects, helix, pausaTimerMs } = {}) {
     this.effects = effects || null;
     this.helix = helix || null;
     this.manager = null;                 // impostato da start(); serve per say() di default
     this._cooldown = new Map();          // 'channel|id' → epoch ms di fine cooldown
     this._cooldownUtente = new Map();    // 'channel|id|utente' → idem, ma per persona
     this._streamCache = new Map();       // channel → { stream, ts }
-    this._timerLast = new Map();         // 'channel|id' → epoch ms ultima esecuzione timer
+    this.pausaTimerMs = Number.isFinite(pausaTimerMs) ? pausaTimerMs : PAUSA_FRA_TIMER_MS;
+    this._coda = [];                     // timer scaduti in attesa del loro turno
+    this._inCoda = new Set();            // 'channel|id' già in fila: non ci rientra
+    this._drenando = false;              // la fila si svuota da un posto solo
+    this._drenaggio = Promise.resolve(); // l'ultimo svuotamento avviato, per chi vuole aspettarlo
     this._timer = null;
   }
 
@@ -426,12 +432,18 @@ export class ModulesEngine {
 
   stop() {
     if (this._timer) { clearInterval(this._timer); this._timer = null; }
+    this._coda.length = 0;
+    this._inCoda.clear();
   }
 
+  // Un giro di orologio. Raccoglie i moduli a tempo scaduti e li mette in fila:
+  // qui non si esegue niente, si decide solo CHI deve parlare e in che ordine.
   async _tickTimer() {
     const attivi = new Set(streamers.active().map((s) => norm(s.login)));
     if (!attivi.size) return;
     const ora = Date.now();
+    const liveDi = new Map();                             // un solo controllo per canale, per giro
+    const scaduti = [];
 
     for (const modulo of modulesDb.all()) {
       const tr = modulo.trigger || {};
@@ -440,23 +452,64 @@ export class ModulesEngine {
       if (!attivi.has(channel)) continue;                 // solo canali con bot acceso
 
       const minuti = Math.max(1, Math.floor(Number(tr.minuti) || 0));
-      if (!minuti) continue;
       const chiave = channel + '|' + modulo.id;
-      const last = this._timerLast.get(chiave) || 0;
+      if (this._inCoda.has(chiave)) continue;             // già in fila: aspetta il suo turno
+
+      // Zero = mai visto. Non è "scaduto da sempre": è un modulo appena creato,
+      // o un database che non teneva ancora il conto. Si segna l'ora e si parte
+      // dal giro dopo — se no, un timer nuovo parlerebbe subito e tutti quanti
+      // parlerebbero insieme al primo avvio.
+      const last = Number(modulo.timerLast) || 0;
+      if (!last) { modulesDb.segnaTimer(channel, modulo.id, ora); continue; }
       if (ora - last < minuti * 60_000) continue;         // non è ancora ora
 
       // se richiesto, servono almeno N messaggi nuovi (umani) nella finestra
       const minMsg = Math.floor(Number(tr.minMessaggi) || 0);
       if (minMsg > 0) {
-        const da = last || (ora - minuti * 60_000);
-        const nuovi = memory.messagesSince(channel, da).filter((m) => !m.from_bot).length;
+        const nuovi = memory.messagesSince(channel, last).filter((m) => !m.from_bot).length;
         if (nuovi < minMsg) continue;
       }
 
-      this._timerLast.set(chiave, ora);
-      const ctx = this._ctxTimer(channel);
-      this.esegui(modulo, ctx, (t) => this._say(channel, t))
-        .catch((e) => log.debug('timer esegui:', e?.message || e));
+      // Un annuncio periodico si fa quando in chat c'è qualcuno. "Bot acceso"
+      // non vuol dire "in diretta": senza questo controllo il promemoria del
+      // follow parlava a una stanza vuota tutta la notte. Chi vuole davvero il
+      // canale spento lo dice, col suo interruttore o con «solo se offline».
+      if (!tr.ancheOffline && !modulo.condizioni?.soloOffline) {
+        if (!liveDi.has(channel)) liveDi.set(channel, !!(await this._stream(channel)));
+        if (!liveDi.get(channel)) continue;
+      }
+
+      scaduti.push({ chiave, channel, modulo, last });
+    }
+
+    if (!scaduti.length) return;
+    scaduti.sort((a, b) => a.last - b.last);              // prima chi aspetta da più tempo
+    for (const s of scaduti) {
+      if (this._coda.length >= MAX_CODA_TIMER) break;
+      modulesDb.segnaTimer(s.channel, s.modulo.id, ora);  // l'appuntamento è ORA, anche se parla fra poco
+      this._inCoda.add(s.chiave);
+      this._coda.push(s);
+    }
+    this._drenaggio = this._svuotaCoda().catch((e) => log.debug('coda timer:', e?.message || e));
+  }
+
+  // La fila si svuota uno alla volta, con un respiro in mezzo. Cinque moduli da
+  // trenta minuti creati lo stesso pomeriggio scadono nello stesso minuto per
+  // sempre: senza fila sarebbero cinque righe di seguito, in un colpo.
+  async _svuotaCoda() {
+    if (this._drenando) return;
+    this._drenando = true;
+    try {
+      while (this._coda.length) {
+        const { chiave, channel, modulo } = this._coda.shift();
+        this._inCoda.delete(chiave);
+        try {
+          await this.esegui(modulo, this._ctxTimer(channel), (x) => this._say(channel, x));
+        } catch (e) { log.debug('timer esegui:', e?.message || e); }
+        if (this._coda.length && this.pausaTimerMs > 0) await sleep(this.pausaTimerMs);
+      }
+    } finally {
+      this._drenando = false;
     }
   }
 
