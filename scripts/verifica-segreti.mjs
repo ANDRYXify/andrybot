@@ -38,6 +38,7 @@ const SUONA = /(^|_)(token|secret|password|passwd|apikey|api_key|access|refresh|
 // la busta non regge. Il motivo va scritto: senza, e' una svista travestita.
 const AMMESSE = {
   'facts.key': 'non e\' una chiave crittografica: e\' il NOME del fatto in un archivio chiave-valore.',
+  'stato_vivo.chiave': 'come facts.key: e\' il nome del pezzo di stato (giveaway, penitenza, serranda, ritmo), non un segreto. Dentro `dato` ci finiscono nomi di spettatori, che stanno gia\' in chiaro in points e watchtime: stessa categoria, stesso trattamento.',
   'tiktok_tokens.refresh_scadenza': 'e\' una data (quando scade il refresh), non un segreto: un numero non si cifra per nascondere niente.',
   'telegram.webhook_secret': 'lo si cerca per valore a ogni update in arrivo (WHERE webhook_secret=?): una busta con testo cifrato diverso ogni volta non si potrebbe cercare. E\' un segreto da 32 byte casuali, vive solo nel percorso del webhook, e cambiarlo costa una ri-registrazione.',
   'managers.invite_token': 'lo si cerca per valore quando l\'invito viene accettato, e va rimostrato all\'owner finche\' e\' in sospeso. Scade da solo (invite_expires) e sparisce all\'accettazione.',
