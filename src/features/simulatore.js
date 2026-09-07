@@ -53,11 +53,27 @@ function macchina({ quanti, passoMs, jitter = 0, da = 0, nome = 'zzq', r }) {
   return { eventi, verita };
 }
 
-function persone({ quanti, mediaMs, da = 0, nome = 'fan', r }) {
+// I NOMI DELLE PERSONE DEVONO SEMBRARE NOMI DI PERSONE. Chiamarle tutte
+// «fan0, fan1, fan2» le rende un gruppo esattamente come i bot, e allora
+// qualunque riconoscimento di gruppi le prenderebbe — misurando il generatore
+// invece dello scudo. È lo stesso errore del raid «uno ogni tre», e va rifatto
+// ogni volta che si aggiunge un segnale nuovo: lo scenario deve essere vario
+// dove la realtà è varia.
+const NOMI = ['marco', 'giulia', 'ilgiova', 'sarettaa', 'andre', 'kekko', 'valee', 'teo', 'fra', 'lucrezia',
+  'dade', 'chiaretta', 'gio', 'stefy', 'niko', 'ele', 'pierpa', 'robi', 'martu', 'ale'];
+const CODE = ['', '_tv', '88', '_ita', '1994', 'xx', '_gaming', '01', 'zz', '_yt', '7', '_official'];
+
+function nomePersona(r, i) {
+  const a = NOMI[Math.floor(r() * NOMI.length)];
+  const b = CODE[Math.floor(r() * CODE.length)];
+  return `${a}${b}${r() < 0.4 ? Math.floor(r() * 9000) : ''}${i}`;
+}
+
+function persone({ quanti, mediaMs, da = 0, r }) {
   const eventi = [], verita = {};
   let t = da;
   for (let i = 0; i < quanti; i++) {
-    const login = `${nome}${i}`;
+    const login = nomePersona(r, i);
     eventi.push({ tipo: 'follow', ts: Math.round(t), login, userId: 'p' + login });
     verita[login] = 'persona';
     t += esponenziale(r, mediaMs);
@@ -79,9 +95,9 @@ function unisci(...pezzi) {
 // dimenticato.
 export const ATTESE = {
   'ondata-veloce': { precisione: 100, richiamo: 100, vede: true },
-  'ondata-lenta': { precisione: 100, richiamo: 0, vede: false, nota: 'il gocciolamento alza il sospetto ma non fa agire: manca il pezzo' },
+  'ondata-lenta': { precisione: 100, richiamo: 100, vede: true },
   'clip-virale': { precisione: 100, richiamo: 100, vede: null },
-  'ondata-mista': { precisione: 83, richiamo: 100, vede: true, nota: 'le persone in mezzo all\'ondata si salvano solo in parte: serve il riconoscimento dei gruppi' },
+  'ondata-mista': { precisione: 100, richiamo: 100, vede: true },
   'coro': { precisione: 100, richiamo: 92, vede: true },
   'chat-viva': { precisione: 100, richiamo: 100, vede: null },
   'raid-vero': { precisione: 100, richiamo: 100, vede: null },
@@ -132,7 +148,7 @@ export const SCENARI = {
   },
   'raid-vero': () => {
     const r = dado(17);
-    const p = persone({ quanti: 300, mediaMs: 60, nome: 'raider', r });
+    const p = persone({ quanti: 300, mediaMs: 60, r });
     // Chi scrive lo decide il caso, non «uno ogni tre». Prendendone uno esatto
     // ogni tre, gli intervalli fra i messaggi diventano la somma di tre attese
     // e quindi molto più regolari di come sono davvero: lo scenario si

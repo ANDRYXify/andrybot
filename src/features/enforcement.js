@@ -83,7 +83,11 @@ export class Esecutore {
     this._gira = false;
     this._pausaFino = 0;
     this._falliti = [];
-    this._conti = { chiesti: 0, fatti: 0, falliti: 0, aVuoto: 0, doppioni: 0 };
+    // DECISI e CHIESTI sono due momenti diversi: il primo è quando lo scudo ha
+    // deciso, il secondo quando la coda ci è arrivata. Fra i due c'è il rate
+    // limit di Twitch, che può essere minuti. Chi guarda deve poter distinguere
+    // «non l'ha visto» da «non ha ancora fatto in tempo».
+    this._conti = { decisi: 0, chiesti: 0, fatti: 0, falliti: 0, aVuoto: 0, doppioni: 0 };
   }
 
   // Due numeri diversi, due nomi diversi. `inSospeso` è quanto c'è ancora da
@@ -111,6 +115,7 @@ export class Esecutore {
       return Promise.resolve({ ok: true, doppione: true });
     }
     this._inCoda.set(chiave, Date.now());
+    this._conti.decisi++;
     return new Promise((risolvi) => {
       this._coda.push({ v, risolvi, tentativi: 0 });
       this._coda.sort((a, b) => (URGENZA[a.v.azione] ?? 9) - (URGENZA[b.v.azione] ?? 9) || a.v.ts - b.v.ts);

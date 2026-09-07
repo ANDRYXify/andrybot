@@ -31,6 +31,7 @@ import { punteggio as punteggia, inCentesimi, nomeGenerato, canaliInsieme, segna
 import * as rete from './rete.js';
 import { Esecutore, verdetto, AZIONI, daFare } from './enforcement.js';
 import * as inc from './incidenti.js';
+import { daToccare, dominante, appartiene } from './gruppi.js';
 import { config } from '../config.js';
 
 const log = makeLog('antibot');
@@ -377,6 +378,14 @@ export function assetto(channel) {
 // un attacco, l'attacco insegnerebbe al canale che quella è la normalità.
 const ritmi = new Map();                 // channel → { medio, visti, ultimo }
 const RITMO_MIN_STORIA = 30;             // sotto questo si usa il valore dichiarato
+// E NON BASTA IL NUMERO: serve che quei trenta follow siano stati raccolti in
+// un tempo lungo. Trenta follow in due minuti non sono «il ritmo abituale del
+// canale», sono un episodio — e se l'episodio è un gocciolamento di bot, il
+// canale impara che quella è la sua normalità e la soglia si alza fino a
+// coprire l'attacco. Misurato sullo scenario dell'onda lenta: la soglia
+// passava da quaranta a settecentocinquanta, e centocinquanta follow finti
+// passavano indisturbati. Il ritmo si impara in pace E con calma.
+const RITMO_MIN_ORE = 6;
 
 // Il ritmo e' una cosa IMPARATA, e ci vogliono trenta follow per impararla.
 // In memoria non ci arrivava mai: fra una pubblicazione e l'altra un canale
@@ -396,14 +405,15 @@ function ritmiPronti() {
   try {
     for (const r of statoVivo.tutti(CHIAVE_RITMO, RITMO_VECCHIO_MS)) {
       const medio = Number(r.dato?.medio) || 0;
-      if (medio > 0) ritmi.set(norm(r.channel), { medio, visti: Number(r.dato?.visti) || 0, ultimo: 0, salvato: 0 });
+      if (medio > 0) ritmi.set(norm(r.channel), { medio, visti: Number(r.dato?.visti) || 0, ultimo: 0, salvato: 0, da: Number(r.dato?.da) || 0 });
     }
   } catch (e) {  }
 }
 
 function segnaRitmo(channel, ora) {
   ritmiPronti();
-  const r = ritmi.get(channel) || { medio: 0, visti: 0, ultimo: 0, salvato: 0 };
+  const r = ritmi.get(channel) || { medio: 0, visti: 0, ultimo: 0, salvato: 0, da: ora };
+  if (!r.da) r.da = ora;
   if (r.ultimo) {
     const dt = Math.min(600000, ora - r.ultimo);
     r.medio = r.medio ? r.medio * 0.88 + dt * 0.12 : dt;
@@ -413,18 +423,18 @@ function segnaRitmo(channel, ora) {
   ritmi.set(channel, r);
   if (r.medio && ora - (r.salvato || 0) > SALVA_RITMO_MS) {
     r.salvato = ora;
-    try { statoVivo.scrivi(channel, CHIAVE_RITMO, { medio: r.medio, visti: r.visti }); } catch (e) {  }
+    try { statoVivo.scrivi(channel, CHIAVE_RITMO, { medio: r.medio, visti: r.visti, da: r.da }); } catch (e) {  }
   }
   return r;
 }
 
 // Quanti follow, in questa finestra, sono davvero anomali per QUESTO canale.
-export function sogliaRaffica(channel, cfg = {}) {
+export function sogliaRaffica(channel, cfg = {}, ora) {
   const base = Math.max(3, Number(cfg.rafficaQuanti ?? 10));
   const w = Number(cfg.rafficaSecondi ?? 30) * 1000;
   ritmiPronti();
   const r = ritmi.get(norm(channel));
-  if (!r || r.visti < RITMO_MIN_STORIA || !r.medio) return base;
+  if (!r || r.visti < RITMO_MIN_STORIA || !r.medio || !ritmoMaturo(r, ora)) return base;
   const normale = w / r.medio;                       // follow attesi nella finestra
   return Math.max(base, Math.ceil(normale * 4));
 }
@@ -437,14 +447,21 @@ export function sogliaRaffica(channel, cfg = {}) {
 const LUNGA_MS = 10 * 60 * 1000;
 const finestreLunghe = new Map();        // channel → [ts, …]
 
-function segnaLunga(channel, ora) {
-  const arr = (finestreLunghe.get(channel) || []).filter((t) => ora - t < LUNGA_MS);
-  arr.push(ora);
+// Il ritmo vale se e' stato imparato con calma: tanti follow, ma anche tanto
+// tempo. Sennò e' la fotografia di un momento, non l'abitudine di un canale.
+// Si misura sul tempo DEGLI EVENTI, come tutto il resto: l'orologio di adesso e
+// l'istante in cui è cominciato l'apprendimento devono essere la stessa scala,
+// sennò il confronto non vuol dire niente.
+const ritmoMaturo = (r, ora) => !!r?.da && ((Number.isFinite(ora) ? ora : Date.now()) - r.da) >= RITMO_MIN_ORE * 3600000;
+
+function segnaLunga(channel, ora, userId = '', login = '') {
+  const arr = (finestreLunghe.get(channel) || []).filter((v) => ora - v.ts < LUNGA_MS);
+  arr.push({ ts: ora, userId, login });
   finestreLunghe.set(channel, arr);
   const r = ritmi.get(channel);
-  const attesi = (r && r.visti >= RITMO_MIN_STORIA && r.medio) ? LUNGA_MS / r.medio : 0;
+  const attesi = (r && r.visti >= RITMO_MIN_STORIA && r.medio && ritmoMaturo(r, ora)) ? LUNGA_MS / r.medio : 0;
   const soglia = Math.max(40, Math.ceil(attesi * 5));
-  return { quanti: arr.length, onda: arr.length >= soglia, soglia };
+  return { quanti: arr.length, onda: arr.length >= soglia, soglia, voci: arr };
 }
 
 // ── Il coro ─────────────────────────────────────────────────────────────────
@@ -794,8 +811,22 @@ export class AntiBot {
   async _blocca(channel, voci, motivo, cfg) {
     const ch = norm(channel);
     const esenti = (cfg.esenti || []).map(norm);
-    const verdetti = voci
-      .filter((v) => v.userId && norm(v.login) && !BUONI.has(norm(v.login)) && !esenti.includes(norm(v.login)))
+    const puliti = voci.filter((v) => v.userId && norm(v.login) && !BUONI.has(norm(v.login)) && !esenti.includes(norm(v.login)));
+
+    // CHI È ARRIVATO INSIEME, E CHI C'ERA PER CASO. Il giudizio sulla cadenza
+    // vale sull'insieme e non dice niente sul singolo: dentro la finestra ci
+    // sono anche le persone capitate in mezzo, e prima ci finivano tutte.
+    // Se i nomi mostrano una fabbrica sola, si tocca quella e basta.
+    const { voci: bersagli, gruppo, risparmiati } = daToccare(puliti);
+    if (gruppo) { const a = assetti.get(ch); if (a) a.gruppo = gruppo; }
+    if (gruppo && risparmiati) {
+      log.info(`#${ch} gruppo riconosciuto: ${gruppo.motivo} — ${risparmiati} lasciati stare`);
+      try {
+        inc.racconta(ch, `gruppo riconosciuto: ${gruppo.motivo}; ${risparmiati} account fuori dal gruppo non toccati`);
+        for (const v of puliti) if (!gruppo.dentro.has(norm(v.login))) inc.coinvolto(ch, v.login, inc.GIUDIZI.SOSPETTO);
+      } catch (e) {  }
+    }
+    const verdetti = bersagli
       .map((v) => verdetto({
         canale: ch, login: v.login, userId: v.userId,
         // Sui follow il blocco, non il ban: e' l'unica azione che toglie il
@@ -887,10 +918,10 @@ export class AntiBot {
     if (!eraAttacco) segnaRitmo(channel, ora);      // la normalità si impara in pace, non sotto attacco
     const wMs = Number(cfg.rafficaSecondi ?? 30) * 1000;
     const arr = segnaOndata(channel, ora, userId, login, wMs);
-    const lunga = segnaLunga(channel, ora);
+    const lunga = segnaLunga(channel, ora, userId, login);
 
     if (cfg.raffica) {
-      const soglia = sogliaRaffica(channel, cfg);
+      const soglia = sogliaRaffica(channel, cfg, ora);
       if (arr.length >= soglia && !eraAttacco) {
         const g = ondataArtificiale(arr, cfg);
         const motivo = `${arr.length} follow in ${cfg.rafficaSecondi}s (per questo canale la soglia è ${soglia}) · ${g.motivo}`;
@@ -906,8 +937,24 @@ export class AntiBot {
           await this._blocca(channel, arr.map((v) => ({ ...v, motivo: 'ondata follow-bot' })), g.motivo, cfg);
         }
       } else if (lunga.onda && assetto(channel).livello === ASSETTO.CALMA) {
-        await this._alza(channel, ASSETTO.SOSPETTO,
-          `${lunga.quanti} follow in dieci minuti (soglia ${lunga.soglia}): onda lenta`, cfg);
+        // IL GOCCIOLAMENTO. Un follow ogni quattro secondi per dieci minuti non
+        // ha nessuna cadenza da macchina — è troppo lento — e finora alzava solo
+        // il sospetto, cioè non faceva niente: centocinquanta follow finti
+        // passavano indisturbati. Ma se i nomi vengono tutti dalla stessa
+        // fabbrica, la fabbrica c'è lo stesso, e si vede senza guardare l'orologio.
+        const g = dominante(lunga.voci);
+        if (g) {
+          await this._alza(channel, ASSETTO.ATTACCO,
+            `${lunga.quanti} follow in dieci minuti · ${g.motivo}`, cfg);
+          const a2 = assetti.get(channel);
+          if (a2) { a2.artificiale = true; a2.motivoArt = g.motivo; }
+          if (cfg.bloccoSulNascere !== false) {
+            await this._blocca(channel, lunga.voci.map((v) => ({ ...v, motivo: 'ondata lenta: ' + g.motivo })), g.motivo, cfg);
+          }
+        } else {
+          await this._alza(channel, ASSETTO.SOSPETTO,
+            `${lunga.quanti} follow in dieci minuti (soglia ${lunga.soglia}): onda lenta`, cfg);
+        }
       }
     }
 
@@ -932,6 +979,13 @@ export class AntiBot {
         // togliere il follow a dei fan veri — e in quel frattempo ne passano
         // altri. Sono quelli che hanno fatto scattare l'allarme: lasciarli fuori
         // vorrebbe dire ripulire tutto tranne l'inizio dell'attacco.
+        // Uno per volta non si raggruppa niente, ma si può chiedere se somiglia
+        // a quelli di prima: chi non viene dalla stessa fabbrica resta fuori,
+        // ed è segnato come sospetto invece che tolto.
+        if (prima === true && a.gruppo && !appartiene(login, a.gruppo)) {
+          try { inc.coinvolto(channel, login, inc.GIUDIZI.SOSPETTO); } catch (e) {  }
+          return;
+        }
         const voci = prima === true
           ? [{ ts: ora, userId, login, motivo: 'follow durante ondata artificiale' }]
           : arr.map((v) => ({ ...v, motivo: 'ondata follow-bot' }));

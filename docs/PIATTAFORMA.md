@@ -37,6 +37,7 @@ colonna «c'è» è stata verificata nel codice.
 | **Coda dei falliti** persistente, e la ripresa | `enforcement.js` |
 | **Incident engine**: un attacco come oggetto, con timeline e coinvolti giudicati | `incidenti.js` |
 | **Simulatore** con scenari deterministici, precisione, richiamo e tempo di rilevamento | `simulatore.js` |
+| **Riconoscimento dei gruppi**: si tocca la fabbrica, non chi passava di lì | `gruppi.js` |
 | **Raid legittimo correlato**: sotto raid il coro si giudica sulla cadenza | `antibot.js` |
 | Dashboard, `/health`, prove automatiche (700+), cancelli | vari |
 
@@ -45,7 +46,6 @@ colonna «c'è» è stata verificata nel codice.
 | pezzo | perché pesa |
 |---|---|
 | **Analisi dei messaggi** | la firma confronta l'uguaglianza. Mancano zero-width, homoglyph, punycode, e la **similarità** (quasi-duplicati) |
-| **Cluster detection** | il segnale più forte contro le botnet, e non c'è per niente |
 | **Sei stati** invece di tre | oggi calma/sospetto/attacco: manca la gradualità in mezzo |
 | **Reputazione locale con decadimento** | la rete è fra canali; manca la storia del singolo account, e il fatto che un errore di anni fa deve pesare meno |
 | **Dashboard investigativa dei follower** e bonifica post-attacco | c'è la pulizia per nomi noti, non l'indagine per intervallo, cluster e incidente |
@@ -137,9 +137,14 @@ esteso, coi conti: `docs/SIMULATORE.md`.
 Similarità invece della sola uguaglianza (SimHash o Jaccard su token). Domini
 mai visti prima.
 
-**E · I cluster.** Raggruppare per finestra di creazione, finestra di follow,
-somiglianza dei nomi, impronta dei messaggi. Un account può stare in più
-cluster. È il segnale più forte contro le botnet.
+**D · I gruppi. — FATTA**
+
+Chi è arrivato insieme si riconosce dalla forma del nome, che è gratis. Con un
+gruppo riconosciuto si tocca solo quello: le persone capitate in mezzo restano
+fuori. Senza gruppo non si finge di saperlo. Ha chiuso i due scenari incompleti
+— ondata mista dall'83% al 100% di precisione, ondata lenta dallo 0% al 100% di
+richiamo — e ha fatto emergere che il canale imparava il proprio ritmo
+dall'attacco stesso. Per esteso: `docs/GRUPPI.md`.
 
 **F · Gli stati.** Sei livelli invece di tre, con le modalità Prudente,
 Bilanciata, Aggressiva. E il raid legittimo correlato allo spike.

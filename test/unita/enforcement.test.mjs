@@ -28,6 +28,17 @@ const v = (o) => E.verdetto({ canale: 'tizio', login: 'bot1', userId: 'u1', azio
 
 // ─────────────────────────────────────────── a vuoto
 
+test('decisi ed eseguiti sono due numeri diversi', () => {
+  // Fra i due c'è il rate limit di Twitch, che può essere minuti: chi guarda
+  // deve poter distinguere «non l'ha visto» da «non ha ancora fatto in tempo».
+  const { e } = banco();
+  const molti = Array.from({ length: 5 }, (_, i) => v({ login: 'b' + i, userId: 'u' + i, azione: E.AZIONI.BLOCCA }));
+  molti.forEach((x) => e.esegui(x));
+  const s = e.stato();
+  assert.equal(s.decisi, 5, 'decisi subito');
+  assert.ok(s.chiesti < 5, `chiesti ${s.chiesti}: la coda va al suo passo`);
+});
+
 test('a vuoto si decide tutto e non si tocca nessuno', async () => {
   const { f, e } = banco();
   const r = await e.esegui(v({ aVuoto: true }));
