@@ -36,18 +36,18 @@ colonna «c'è» è stata verificata nel codice.
 | **Idempotenza**: lo stesso evento due volte non produce due azioni | `enforcement.js` |
 | **Coda dei falliti** persistente, e la ripresa | `enforcement.js` |
 | **Incident engine**: un attacco come oggetto, con timeline e coinvolti giudicati | `incidenti.js` |
+| **Simulatore** con scenari deterministici, precisione, richiamo e tempo di rilevamento | `simulatore.js` |
+| **Raid legittimo correlato**: sotto raid il coro si giudica sulla cadenza | `antibot.js` |
 | Dashboard, `/health`, prove automatiche (700+), cancelli | vari |
 
 ### Manca, ed è la parte che conta
 
 | pezzo | perché pesa |
 |---|---|
-| **Simulatore e replay** | senza, ogni soglia si tara a naso: non si misurano precision, recall né tempo di rilevamento |
 | **Analisi dei messaggi** | la firma confronta l'uguaglianza. Mancano zero-width, homoglyph, punycode, e la **similarità** (quasi-duplicati) |
 | **Cluster detection** | il segnale più forte contro le botnet, e non c'è per niente |
 | **Sei stati** invece di tre | oggi calma/sospetto/attacco: manca la gradualità in mezzo |
 | **Reputazione locale con decadimento** | la rete è fra canali; manca la storia del singolo account, e il fatto che un errore di anni fa deve pesare meno |
-| **Raid legittimo correlato** | oggi il raid si avvisa soltanto; non abbassa la sensibilità né si aggancia allo spike |
 | **Dashboard investigativa dei follower** e bonifica post-attacco | c'è la pulizia per nomi noti, non l'indagine per intervallo, cluster e incidente |
 
 ## Sul linguaggio
@@ -121,11 +121,17 @@ giudizio — e chi è arrivato durante l'attacco senza nessun segnale contro res
 scritto come *legittimo*, perché è quello che non si dovrà toccare quando si
 ripulisce. Per esteso: `docs/INCIDENTI.md`.
 
-**C · Il simulatore.** Scenari riproducibili (cinquecento follow in dieci
-secondi, raid vero da duemila, spam coordinato, Unicode, attacco lento, falso
-positivo) e il replay di un incidente registrato. Con dentro le metriche:
-precision, recall, tempo di rilevamento. Viene **prima** delle prossime tre
-fasi, perché senza si tara a naso.
+**C · Il simulatore. — FATTA**
+
+Sette scenari deterministici con la verità dentro, e tre numeri: precisione,
+richiamo, quanto ci ha messo. Rilevare ed eseguire sono misurati separati — il
+tetto di sei al secondo è di Twitch, non un difetto dello scudo. Ogni scenario
+porta l'attesa da cui si riparte, così una regressione si vede il giorno che
+succede.
+
+Appena acceso ha trovato **cinque difetti veri**, nessuno dei quali si vedeva da
+fuori — compresi novanta falsi positivi su trecento in un raid legittimo. Per
+esteso, coi conti: `docs/SIMULATORE.md`.
 
 **D · I messaggi.** Normalizzazione Unicode, zero-width, homoglyph, punycode.
 Similarità invece della sola uguaglianza (SimHash o Jaccard su token). Domini
