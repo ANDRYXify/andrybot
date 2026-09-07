@@ -51,6 +51,7 @@ import { PenitenzeEngine } from './features/penitenze.js';
 import { AlertsEngine } from './features/alerts.js';
 import { AntiBot, caricaListaBotDaDisco, aggiornaListaBot, caricaRegistroDaDisco, salvaRegistro } from './features/antibot.js';
 import { censisci } from './features/punteggio.js';
+import { carica as caricaRete } from './features/rete.js';
 import { scheduleReflection } from './ai/reflection.js';
 import { StreamWatcher } from './stream/watcher.js';
 import { LiveListener } from './stream/listener.js';
@@ -148,6 +149,7 @@ export class BotManager {
     // rallentare l'avvio) e la si rinfresca ogni 12 ore.
     caricaListaBotDaDisco().catch(() => {});
     caricaRegistroDaDisco().catch(() => {});
+    caricaRete().catch(() => {});     // chi i canali hanno gia' riconosciuto insieme
     setTimeout(() => aggiornaListaBot().catch(() => {}), 30_000);
     this._listaBotTimer = setInterval(() => aggiornaListaBot().catch(() => {}), 12 * 60 * 60_000);
     // Ore guardate: ogni 5 minuti, per ogni canale LIVE, accredito il tempo a chi

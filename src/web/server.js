@@ -32,6 +32,7 @@ import { paginaManuale, paginaIndiceManuali, urlManuali, aiutiPerScheda } from '
 import { elenco as elencoComandi, normalizza as normalizzaComandi, collisioni as collisioniComandi, LIVELLI as LIVELLI_COMANDO, MODULI as MODULI_COMANDO } from '../features/comandi-registro.js';
 import { AntiBot, erroriScudo } from '../features/antibot.js';
 import { statoCensimento } from '../features/punteggio.js';
+import { stato as statoRete, elenco as elencoRete, dimentica as dimenticaRete } from '../features/rete.js';
 import { statoListaBot, registro as registroAntibot, segnalazioniAperte, risolviSegnalazione, sintesiRegistro, registra as registraAntibot, nomeBot, valutaAccount, assetto as assettoAntibot, sogliaRaffica, codaBan } from '../features/antibot.js';
 import { statoBackup, backupOra } from '../backup.js';
 import { risolviCanaleId } from '../features/youtube.js';
@@ -2327,6 +2328,19 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
   // La pulizia della lista follower ha bisogno solo di Helix e della lista dei
   // bot noti (che è del modulo, condivisa): non serve l'istanza del bot vivo.
   const _scudo = new AntiBot({ helix });
+  // La lista che i canali hanno costruito insieme. Solo i confermati, e mai i
+  // canali che li hanno segnalati: quelli non escono dal modulo.
+  app.get('/api/antibot/rete', requireOwner, (req, res) => {
+    res.json({ stato: statoRete(), nomi: elencoRete({ limite: 300 }) });
+  });
+
+  // Se abbiamo sbagliato, si deve poter disfare adesso e non fra novanta giorni.
+  app.post('/api/antibot/rete/dimentica', requireOwner, (req, res) => {
+    const login = String(req.body?.login || '').toLowerCase().trim();
+    if (!login) return res.status(400).json({ errore: 'manca il nome' });
+    res.json({ ok: dimenticaRete(login), stato: statoRete() });
+  });
+
   app.get('/api/antibot/console', requireOwner, (req, res) => {
     const login = currentUser(req).login.toLowerCase();
     const cfg = _abCfg(login);
@@ -2347,6 +2361,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         pulizia: _pulizie.get(login) || null,
         presenze: cfg.presenze !== false,
         censimento: statoCensimento(),
+        rete: statoRete(),
         // Quanto sbaglia lo scudo, contato sui suoi stessi giudizi: chi era
         // stato segnato come «probabile macchina» e poi ha parlato in chat era
         // una persona. Serve a tarare le soglie su un numero invece che a naso.
