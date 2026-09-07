@@ -47,6 +47,8 @@ const DECISO = [
   ['features/antibot.js', 'cori', 'volatile', 'messaggi uguali in pochi secondi'],
   ['features/antibot.js', 'ondate', 'volatile', 'ondata in corso, misurata su una finestra corta'],
   ['features/enforcement.js', '_inCoda', 'volatile', 'quali azioni sono gia\' in fila adesso: serve a non farne due, e dopo un riavvio la fila non c\'e\' piu\''],
+  ['features/incidenti.js', 'tutti', 'volatile', 'gli attacchi gia\' successi: stanno su disco a parte e si riprendono all\'avvio'],
+  ['features/incidenti.js', 'apertiPerCanale', 'volatile', 'quale attacco e\' in corso adesso: al riavvio non ce n\'e\' nessuno in corso, ed e\' giusto cosi\''],
   ['features/rete.js', 'nomi', 'volatile', 'la lista che i canali hanno costruito insieme: sta su disco a parte e si riprende all\'avvio'],
   ['features/rete.js', 'quote', 'volatile', 'quanto un canale ha gia\' aggiunto oggi: un tetto giornaliero che riparte, e va bene'],
   ['features/punteggio.js', 'visti', 'volatile', 'chi e\' in chat e in quanti canali: si ricostruisce da solo al primo giro, cioe\' in cinque minuti'],

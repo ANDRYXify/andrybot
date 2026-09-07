@@ -17,6 +17,10 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-07
 
+- Ogni attacco al tuo canale diventa una scheda unica invece di trecento righe di registro: quando e cominciato, quanto e durato, quanto forte e andato, chi c'era, cosa ha fatto il bot e quanto ha funzionato.
+- Un attacco che riprende dopo pochi minuti resta lo stesso attacco, cosi il conto dei danni non si spezza in dieci pezzi.
+- Nella scheda chi e arrivato durante l'attacco e diviso fra bot certi, sospetti e persone vere: serve per non fare pulizia alla cieca dopo.
+- Se il bot si riavvia mentre un attacco e in corso, la scheda si chiude e resta, invece di restare aperta per sempre.
 - Nello Scudo anti-bot c'e la sola osservazione: lo scudo lavora e scrive nel registro cosa avrebbe fatto, ma non banna, non blocca e non cancella. Serve per vedere come si comporta prima di lasciarlo agire.
 - Un'azione che non riesce, perche Twitch non risponde o manca un permesso, non si perde piu: resta in sospeso e la puoi far riprovare dalla console.
 - Nel registro dello scudo ora c'e anche cosa ha risposto Twitch, non solo se e andata. Prima «fallito» non diceva perche.

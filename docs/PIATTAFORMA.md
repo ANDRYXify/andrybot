@@ -35,13 +35,13 @@ colonna «c'è» è stata verificata nel codice.
 | **Sola osservazione**: decide tutto, non tocca nessuno | `enforcement.js` |
 | **Idempotenza**: lo stesso evento due volte non produce due azioni | `enforcement.js` |
 | **Coda dei falliti** persistente, e la ripresa | `enforcement.js` |
+| **Incident engine**: un attacco come oggetto, con timeline e coinvolti giudicati | `incidenti.js` |
 | Dashboard, `/health`, prove automatiche (700+), cancelli | vari |
 
 ### Manca, ed è la parte che conta
 
 | pezzo | perché pesa |
 |---|---|
-| **Incident engine** | c'è un registro di righe, non un attacco come oggetto con inizio, picco, fine, coinvolti e azioni |
 | **Simulatore e replay** | senza, ogni soglia si tara a naso: non si misurano precision, recall né tempo di rilevamento |
 | **Analisi dei messaggi** | la firma confronta l'uguaglianza. Mancano zero-width, homoglyph, punycode, e la **similarità** (quasi-duplicati) |
 | **Cluster detection** | il segnale più forte contro le botnet, e non c'è per niente |
@@ -112,9 +112,14 @@ stesso nome per due numeri diversi — quante azioni aspettano di essere riprese
 quante sono andate male in tutto — così uno dei due spariva e la console
 mostrava il numero sbagliato senza che si vedesse.
 
-**B · Gli incidenti.** Un attacco diventa un oggetto: inizio, picco, fine,
-account coinvolti divisi per giudizio, azioni fatte, timeline. Riapribile se
-l'attacco riprende.
+**B · Gli incidenti. — FATTA**
+
+Un attacco è un oggetto: si apre quando l'assetto sale, si chiude quando si
+torna in pace, si **riapre** se riprende entro un quarto d'ora. Le azioni si
+contano, gli eventi salienti si raccontano in timeline. I coinvolti hanno un
+giudizio — e chi è arrivato durante l'attacco senza nessun segnale contro resta
+scritto come *legittimo*, perché è quello che non si dovrà toccare quando si
+ripulisce. Per esteso: `docs/INCIDENTI.md`.
 
 **C · Il simulatore.** Scenari riproducibili (cinquecento follow in dieci
 secondi, raid vero da duemila, spam coordinato, Unicode, attacco lento, falso
