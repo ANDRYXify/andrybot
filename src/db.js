@@ -515,10 +515,23 @@ function _colonneTelegram() {
 }
 _colonneTelegram();
 
+// Guarda-e-poi-agisci, e fra il guardare e l'agire ci sta un altro processo.
+// Il collaudo apre lo stesso database da piu' processi in parallelo: due
+// guardano, tutti e due non vedono la colonna, tutti e due la aggiungono, e il
+// secondo muore con «duplicate column name». Non e' un caso di laboratorio —
+// e' successo davvero su CI, e il guasto e' arrivato travestito da tutt'altro
+// (un cancello che non riusciva piu' a comporre le pagine servite).
+//
+// Il contratto di questa funzione non e' «esegui l'ALTER»: e' «dopo di me la
+// colonna c'e'». Se ce l'ha messa qualcun altro un istante fa, il contratto e'
+// comunque rispettato. Qualunque ALTRO errore invece esce.
 function aggiungiColonna(tabella, colonna, definizione) {
   const cols = db.prepare(`PRAGMA table_info(${tabella})`).all();
-  if (!cols.some((c) => c.name === colonna)) {
+  if (cols.some((c) => c.name === colonna)) return;
+  try {
     db.exec(`ALTER TABLE ${tabella} ADD COLUMN ${colonna} ${definizione}`);
+  } catch (e) {
+    if (!/duplicate column name/i.test(e?.message || '')) throw e;
   }
 }
 aggiungiColonna('point_alerts', 'suono', "TEXT NOT NULL DEFAULT ''");   // suono PRESET sul riscatto (id preset)
