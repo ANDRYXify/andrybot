@@ -4306,7 +4306,7 @@ function pannelloStato() {
       <p class="suggerimento">${L('Non si annulla e non c\'è un cestino. Se vuoi tenerti qualcosa, scarica prima i tuoi dati qui sopra.', 'It cannot be undone and there is no bin. If you want to keep something, download your data above first.', 'No se puede deshacer y no hay papelera. Si quieres conservar algo, descarga antes tus datos.')}</p>
       ${stato.ruolo === 'moderatore'
         ? `<p class="suggerimento spazio-sopra">${L('Solo il proprietario del canale può cancellare: i dati sono suoi.', 'Only the channel owner can delete: the data is theirs.', 'Solo el propietario del canal puede borrar: los datos son suyos.')}</p>`
-        : `<details class="spazio-sopra" id="det-cancella">
+        : `<details class="spazio-sopra zona-pericolo" id="det-cancella">
             <summary>${L('Voglio cancellare tutto', 'I want to delete everything', 'Quiero borrarlo todo')}</summary>
             <div id="resti-box" class="riquadro-info spazio-sopra"><span class="vuoto">${L('Guardo cosa c\'è…', 'Checking what is there…', 'Miro qué hay…')}</span></div>
             <label class="campo spazio-sopra" for="inp-cancella">${L('Scrivi il nome del tuo canale per confermare', 'Type your channel name to confirm', 'Escribe el nombre de tu canal para confirmar')}</label>
@@ -17317,6 +17317,8 @@ function rigaPiattaforma(p) {
       ? `<a class="btn secondario mini" href="${esc(p.azione)}">${L('Collega', 'Connect', 'Conectar')}</a>`
       : `${p.rifaiEventi ? `<button type="button" class="btn mini" data-kick-eventi>${L('Riprova gli eventi', 'Retry events', 'Reintentar eventos')}</button>` : ''}
          ${p.daRifare && !p.rifaiEventi ? `<a class="btn mini" href="${esc(p.azione)}">${L('Sistema', 'Fix', 'Arreglar')}</a>` : ''}
+         ${p.chatDisponibile ? `<label class="interruttore mini" title="${esc(L('Il bot legge e risponde nella chat delle tue dirette YouTube', 'The bot reads and answers in your YouTube live chat', 'El bot lee y responde en el chat de tus directos de YouTube'))}">
+            <input type="checkbox" data-yt-chat${p.chatAccesa ? ' checked' : ''} aria-label="${esc(L('Chat delle dirette YouTube', 'YouTube live chat', 'Chat de los directos de YouTube'))}"><span class="levetta"></span></label>` : ''}
          ${p.id !== 'twitch' ? `<button type="button" class="btn secondario mini" data-scollega="${esc(p.id)}">${L('Scollega', 'Disconnect', 'Desconectar')}</button>` : ''}`);
   return `<li class="pf-riga">
     <span class="pf-ico">${_hIco(PIATT_ICO[p.id] || ICO.spina)}</span>
@@ -17340,6 +17342,51 @@ function _piattaformeModulo(c) {
   </div>`;
 }
 
+
+const COSE_MIE = () => ({
+  messages: L('messaggi della chat ricordati', 'remembered chat messages', 'mensajes del chat recordados'),
+  user_memories: L('ricordi sulle persone', 'memories about people', 'recuerdos sobre las personas'),
+  knowledge: L('cose che il bot sa', 'things the bot knows', 'cosas que el bot sabe'),
+  diario: L('pagine di diario', 'diary pages', 'páginas de diario'),
+  quotes: L('citazioni', 'quotes', 'citas'),
+  voce_streamer: L('trascrizioni della tua voce', 'transcripts of your voice', 'transcripciones de tu voz'),
+  commands: L('comandi', 'commands', 'comandos'),
+  modules: L('moduli', 'modules', 'módulos'),
+  effects: L('effetti e suoni', 'effects and sounds', 'efectos y sonidos'),
+  points: L('portafogli di monete', 'coin wallets', 'carteras de monedas'),
+  watchtime: L('ore guardate', 'watch time', 'horas vistas'),
+  contatori: L('contatori', 'counters', 'contadores'),
+  giochi: L('giochi', 'games', 'juegos'),
+  clips: L('clip', 'clips', 'clips'),
+  vips: L('VIP dati dal bot', 'VIPs given by the bot', 'VIP dados por el bot'),
+  point_alerts: L('premi a punti canale', 'channel point rewards', 'recompensas de puntos'),
+  compleanni: L('compleanni', 'birthdays', 'cumpleaños'),
+  sfondi: L('sfondi', 'backgrounds', 'fondos'),
+  link_page: L('pagina link', 'link page', 'página de enlaces'),
+  carte_live: L('locandine della diretta', 'live cards', 'carteles del directo'),
+  managers: L('moderatori della dashboard', 'dashboard moderators', 'moderadores del panel'),
+  passkeys: L('passkey', 'passkeys', 'passkeys'),
+  tokens: L('collegamenti ai tuoi account', 'connections to your accounts', 'conexiones con tus cuentas'),
+});
+
+function _quante(n, uno, tanti) { return n === 1 ? uno : tanti; }
+
+function riassuntoResti(r) {
+  const nomi = COSE_MIE();
+  const righe = Object.entries(r?.righe || {});
+  const tot = righe.reduce((s, x) => s + x[1], 0);
+  const cartelle = (r?.cartelle || []).length;
+  if (!tot && !cartelle) return null;
+  const dette = righe.filter((x) => nomi[x[0]]).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  const restanti = tot - dette.reduce((s, x) => s + x[1], 0);
+  const pezzi = dette.map((x) => `<strong>${x[1]}</strong> ${esc(nomi[x[0]])}`);
+  if (restanti > 0) pezzi.push(L('e il resto delle tue impostazioni', 'and the rest of your settings', 'y el resto de tus ajustes'));
+  const file = cartelle
+    ? ' ' + L('Più i file che hai caricato.', 'Plus the files you uploaded.', 'Más los archivos que has subido.')
+    : '';
+  return pezzi.join(', ') + '.' + file;
+}
+
 function collegaCancella() {
   const det = document.getElementById('det-cancella');
   if (!det || det.dataset.pronto) return;
@@ -17354,11 +17401,9 @@ function collegaCancella() {
     det.dataset.visto = '1';
     conErrore(async () => {
       const r = await api('/api/streamer/resti');
-      const righe = Object.entries(r?.righe || {}).sort((a, b) => b[1] - a[1]);
-      const tot = righe.reduce((s, x) => s + x[1], 0);
-      const cartelle = (r?.cartelle || []).length;
-      box.innerHTML = tot || cartelle
-        ? `<strong>${tot}</strong> ${L('righe in', 'rows in', 'filas en')} <strong>${righe.length}</strong> ${L('tabelle', 'tables', 'tablas')}${cartelle ? ', ' + cartelle + ' ' + L('cartelle di file', 'file folders', 'carpetas de archivos') : ''}. <span class="tenue">${righe.slice(0, 6).map((x) => esc(x[0]) + ' (' + x[1] + ')').join(', ')}</span>`
+      const detto = riassuntoResti(r);
+      box.innerHTML = detto
+        ? `${L('Adesso qui c\'è:', 'Right now there is:', 'Ahora mismo hay:')} ${detto}`
         : L('Non c\'è ancora niente da cancellare.', 'There is nothing to delete yet.', 'Todavía no hay nada que borrar.');
     });
   });
@@ -17367,8 +17412,7 @@ function collegaCancella() {
   btn.addEventListener('click', () => conErrore(async () => {
     btn.disabled = true;
     const r = await api('/api/streamer/cancella', { method: 'POST', body: { conferma: inp.value.trim() } });
-    const n = Object.values(r?.righe || {}).reduce((s, x) => s + x, 0);
-    alert(L('Cancellato: ' + n + ' righe. Ora esci.', 'Deleted: ' + n + ' rows. Signing out.', 'Borrado: ' + n + ' filas. Ahora sales.'));
+    alert(L('Fatto: non è rimasto niente di tuo. Adesso esci.', 'Done: nothing of yours is left. Signing out now.', 'Hecho: no queda nada tuyo. Ahora sales.'));
     location.href = '/entra';
   }));
 }
@@ -17383,6 +17427,13 @@ async function caricaPiattaforme() {
   if (!box) return;                       // le servivano solo all'editor dei moduli
   if (!lista.length) { box.innerHTML = `<p class="vuoto">${L('Nessuna piattaforma.', 'No platforms.', 'Ninguna plataforma.')}</p>`; return; }
   box.innerHTML = `<ul class="pf-lista">${lista.map(rigaPiattaforma).join('')}</ul>`;
+  box.querySelectorAll('[data-yt-chat]').forEach((c) => c.addEventListener('change', () => conErrore(async () => {
+    const r = await api('/api/streamer/youtube/chat', { method: 'POST', body: { acceso: c.checked } });
+    toast(r?.acceso
+      ? L('Chat YouTube accesa', 'YouTube chat on', 'Chat de YouTube encendido')
+      : L('Chat YouTube spenta', 'YouTube chat off', 'Chat de YouTube apagado'));
+    caricaPiattaforme();
+  })));
   box.querySelectorAll('[data-kick-eventi]').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
     const r = await api('/api/streamer/kick/eventi', { method: 'POST', body: {} });
     toast(r?.eventi

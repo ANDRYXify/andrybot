@@ -1957,3 +1957,15 @@ body.ce-aperto { overflow: hidden; }
 }
 
 
+
+.zona-pericolo {
+  border: var(--contorno-sp) solid var(--contorno);
+  border-left: 6px solid var(--rosso);
+  border-radius: 3px 5px 4px 6px / 5px 3px 6px 4px;
+  background: var(--rosso-soft);
+  box-shadow: var(--alone-contorno), var(--ombra-ink-timbro);
+  padding: .75rem 1rem .95rem;
+}
+.zona-pericolo > summary { color: var(--rosso); font-weight: 600; }
+.zona-pericolo[open] > summary { margin-bottom: .3rem; }
+.zona-pericolo .riquadro-info { background: var(--surface); }

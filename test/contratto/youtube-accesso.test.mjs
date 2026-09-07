@@ -83,8 +83,12 @@ test('si parte verso Google con PKCE, uno state e il permesso di rinnovare', asy
     assert.equal(dove.searchParams.get('access_type'), 'offline');
     assert.equal(dove.searchParams.get('prompt'), 'consent');
     assert.match(dove.searchParams.get('scope') || '', /youtube\.readonly/);
-    // non chiediamo di scrivere in chat: quella funzione non c'è ancora
-    assert.doesNotMatch(dove.searchParams.get('scope') || '', /force-ssl/);
+    // Leggere la chat della propria diretta e parlarci: prima non lo chiedevamo,
+    // perché la chat su YouTube non c'era e chiedere il permesso di parlare per
+    // usarlo forse domani è chiedere un potere che non si usa. Adesso la chat
+    // c'è, quindi il permesso si chiede — e chi aveva collegato prima ricollega,
+    // perché Google non aggiunge permessi a un token già dato.
+    assert.match(dove.searchParams.get('scope') || '', /force-ssl/);
     // il verifier non passa MAI dalla rete
     assert.equal(dove.searchParams.get('code_verifier'), null);
   } finally { await s.chiudi(); }

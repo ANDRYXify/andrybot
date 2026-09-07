@@ -28,13 +28,19 @@ export const REVOCA = 'https://oauth2.googleapis.com/revoke';
 // l'account Google e il canale non sono la stessa cosa, e un account può averne
 // più d'uno. Senza questo sapremmo solo che è entrato «qualcuno di Google».
 //
-// Non chiediamo `youtube.force-ssl` (scrivere in chat, moderare): il bot in chat
-// su YouTube non c'è ancora, e chiedere oggi il permesso di parlare per usarlo
-// forse domani è chiedere un potere che non si usa. Il giorno che la chat ci
-// sarà, il permesso si chiederà allora — con la stessa strada.
+// `youtube.force-ssl` serve a LEGGERE la chat della propria diretta e a
+// PARLARCI. Prima non lo chiedevamo, ed era la scelta giusta: il bot in chat su
+// YouTube non c'era, e chiedere il permesso di parlare per usarlo forse domani è
+// chiedere un potere che non si usa. Adesso la chat c'è, quindi il permesso si
+// chiede — che è quello che c'era scritto qui di fare.
+//
+// Chi aveva collegato YouTube PRIMA ha un token senza questo permesso: continua
+// a funzionare per tutto il resto, e la chat gli dirà di ricollegare. Google non
+// aggiunge permessi a un token già dato: si passa di nuovo dalla porta.
 export const SCOPE = [
   'openid',
   'https://www.googleapis.com/auth/youtube.readonly',
+  'https://www.googleapis.com/auth/youtube.force-ssl',
 ];
 
 export function configurato() {
