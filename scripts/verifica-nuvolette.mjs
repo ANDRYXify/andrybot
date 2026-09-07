@@ -22,6 +22,23 @@
 // La copertura si CONTA e si stampa, ma non e' un cancello: «quante nuvolette
 // ci sono» non e' una domanda con una risposta giusta.
 //
+// Poi ci sono i CAMPI da riempire, e li' il problema e' lo stesso visto da un
+// altro lato. Un campo prende il nome dalla sua etichetta, ma solo se le due
+// cose sono legate davvero: <label for="..."> oppure il campo dentro la label.
+// Un'etichetta messa li' accanto si legge con gli occhi e sparisce per tutto il
+// resto — chi usa un lettore di schermo sente «casella di testo, vuoto».
+// Molti campi nascono da generatori (una riga per premio, una per membro, una
+// per contatore), quindi il nome va costruito li' dentro, non aggiunto a mano
+// uno per uno. Anche qui il conto va fatto sul reso, non sul sorgente: quali
+// campi esistono dipende dai dati.
+//
+// Quello che si vede adesso non c'entra. Meta' del pannello sta dietro a un
+// pieghevole chiuso, a un pannello che compare quando scegli un elemento, a un
+// blocco che si apre con un interruttore: roba che si raggiunge, non roba che
+// non esiste. Quindi il cancello guarda TUTTI i campi della scheda, aperti o no.
+// Fuori restano solo quelli nascosti da se' per sempre — i selettori di file
+// dietro a un bottone, che il nome ce l'hanno sul bottone.
+//
 // Uso: node scripts/verifica-nuvolette.mjs
 //      node scripts/verifica-nuvolette.mjs --selftest   (deve diventare rosso)
 
@@ -41,12 +58,10 @@ const CACCIA = `(() => {
     ? '.' + String(e.className).split(/\\s+/).filter(Boolean).slice(0, 2).join('.') : '')).slice(0, 40);
   const muti = [];
   const doppie = [];
-  let controlli = 0, connuvoletta = 0;
+  const senzaNome = [];
+  let controlli = 0, connuvoletta = 0, campi = 0;
   for (const e of document.querySelectorAll('.pannello-scheda.visibile button, .pannello-scheda.visibile a.btn, .pannello-scheda.visibile [role="button"], .pannello-scheda.visibile [role="tab"]')) {
-    const s = getComputedStyle(e);
-    if (s.display === 'none' || s.visibility === 'hidden') continue;
-    const r = e.getBoundingClientRect();
-    if (r.width < 4 || r.height < 4) continue;
+    if (e.hidden || e.style.display === 'none') continue;
     controlli += 1;
     const aiuto = pulito(e.getAttribute('data-aiuto') || e.getAttribute('title'));
     if (aiuto) connuvoletta += 1;
@@ -55,8 +70,34 @@ const CACCIA = `(() => {
     if (!scritto && !etichetta && !aiuto) muti.push({ chi: nome(e), id: e.id || '' });
     if (aiuto && scritto && aiuto.toLowerCase() === scritto.toLowerCase()) doppie.push({ chi: nome(e), testo: aiuto.slice(0, 40) });
   }
-  return { muti, doppie, controlli, connuvoletta };
+  for (const e of document.querySelectorAll('.pannello-scheda.visibile input, .pannello-scheda.visibile select, .pannello-scheda.visibile textarea')) {
+    if (e.type === 'hidden' || e.hidden || e.style.display === 'none') continue;
+    campi += 1;
+    const legata = e.id && document.querySelector('label[for="' + CSS.escape(e.id) + '"]');
+    if (legata || e.closest('label')) continue;
+    if (pulito(e.getAttribute('aria-label')) || e.getAttribute('aria-labelledby') || pulito(e.getAttribute('title'))) continue;
+    const vicina = e.previousElementSibling;
+    senzaNome.push({ chi: nome(e), id: e.id || '',
+      accanto: (vicina && /^(label|span|strong)$/i.test(vicina.tagName) ? pulito(vicina.textContent).slice(0, 28) : ''),
+      posto: pulito(e.placeholder).slice(0, 28) });
+  }
+  return { muti, doppie, senzaNome, controlli, connuvoletta, campi };
 })()`;
+
+const quanti = () => document.querySelectorAll('.pannello-scheda.visibile button, .pannello-scheda.visibile a.btn, .pannello-scheda.visibile [role="button"], .pannello-scheda.visibile [role="tab"], .pannello-scheda.visibile input, .pannello-scheda.visibile select, .pannello-scheda.visibile textarea').length;
+
+// Aspetta che la scheda smetta di crescere: due letture uguali di fila, o si
+// arriva al tetto. Senza questo il cancello conta una scheda diversa ogni volta.
+const posata = async (p, giri = 16, passo = 180) => {
+  let prima = -1;
+  for (let i = 0; i < giri; i += 1) {
+    await p.waitForTimeout(passo);
+    const ora = await p.evaluate(quanti);
+    if (ora === prima && ora > 0) return true;
+    prima = ora;
+  }
+  return false;
+};
 
 const { porta: PORTA, chiudi: chiudiSito } = await apriSito();
 const b = await chromium.launch({ executablePath: CHROMIUM,
@@ -66,7 +107,8 @@ await p.goto(`http://127.0.0.1:${PORTA}/?demo=1&lang=it`, { waitUntil: 'domconte
 await p.waitForFunction(() => window.SB_APP, null, { timeout: 20000 });
 await p.addStyleTag({ content: '.giro-velo,.giro-fumetto,#cookie-banner{display:none!important}' });
 if (SELFTEST) {
-  // Un tasto di sola icona senza nome: com'erano prima che se ne parlasse.
+  // Un tasto di sola icona senza nome, e un campo con l'etichetta solo accanto:
+  // le due forme che il cancello deve vedere.
   await p.evaluate(() => {
     const dove = document.querySelector('.pannello-scheda.visibile') || document.body;
     const t = document.createElement('button');
@@ -74,28 +116,36 @@ if (SELFTEST) {
     t.innerHTML = '<svg width="16" height="16"><circle cx="8" cy="8" r="6"/></svg>';
     dove.prepend(t);
     window.__provaMuta = t;
+    const c = document.createElement('div');
+    c.innerHTML = '<label class="campo">Prova</label><input type="text" class="prova-campo-muto">';
+    dove.prepend(c);
+    window.__provaCampo = c;
   });
 }
 
 const muti = [];
 const doppie = [];
-let controlli = 0, connuvoletta = 0;
+const senzaNome = [];
+let controlli = 0, connuvoletta = 0, campi = 0;
 const schede = await p.evaluate(() => [...document.querySelectorAll('.pannello-scheda')].map((s) => s.dataset.scheda));
 let visitate = 0;
+const irrequiete = [];
 for (const id of schede) {
   try { await p.evaluate((x) => window.SB_APP.vai(x), id); } catch { continue; }
-  await p.waitForTimeout(150);
+  if (!await posata(p)) irrequiete.push(id);
   visitate += 1;
   if (SELFTEST) {
     await p.evaluate(() => {
       const dove = document.querySelector('.pannello-scheda.visibile');
       if (dove && window.__provaMuta && !dove.contains(window.__provaMuta)) dove.prepend(window.__provaMuta);
+      if (dove && window.__provaCampo && !dove.contains(window.__provaCampo)) dove.prepend(window.__provaCampo);
     });
   }
   const r = await p.evaluate(new Function('return ' + CACCIA));
-  controlli += r.controlli; connuvoletta += r.connuvoletta;
+  controlli += r.controlli; connuvoletta += r.connuvoletta; campi += r.campi;
   for (const x of r.muti) if (!muti.some((y) => y.chi === x.chi && y.id === x.id)) muti.push({ dove: id, ...x });
   for (const x of r.doppie) if (!doppie.some((y) => y.chi === x.chi && y.testo === x.testo)) doppie.push({ dove: id, ...x });
+  for (const x of r.senzaNome) if (!senzaNome.some((y) => y.chi === x.chi && y.id === x.id && y.accanto === x.accanto && y.posto === x.posto)) senzaNome.push({ dove: id, ...x });
 }
 
 await b.close();
@@ -104,18 +154,23 @@ await chiudiSito();
 const esiti = [];
 const dice = (ok, msg, extra = '') => { esiti.push(ok); console.log(`  ${ok ? '✓' : '✗'} ${msg}${!ok && extra ? `  → ${extra}` : ''}`); };
 
-console.log(`\n${visitate} schede, ${controlli} controlli guardati.\n`);
+console.log(`\n${visitate} schede, ${controlli} controlli e ${campi} campi guardati.\n`);
 dice(!muti.length, 'ogni controllo ha un nome: nessuno e\' solo un\'icona muta',
   muti.slice(0, 6).map((x) => `${x.chi}${x.id ? '#' + x.id : ''} (${x.dove})`).join(' · '));
 dice(!doppie.length, 'e nessuna nuvoletta ripete l\'etichetta che ha accanto',
   doppie.slice(0, 5).map((x) => `${x.chi}: «${x.testo}» (${x.dove})`).join(' · '));
+dice(!irrequiete.length, 'ogni scheda si e\' fermata prima di essere contata',
+  irrequiete.join(' · '));
+dice(!senzaNome.length, 'ogni campo da riempire e\' legato al suo nome, non solo vicino',
+  senzaNome.slice(0, 6).map((x) => `${x.chi}${x.id ? '#' + x.id : ''}${x.accanto ? ' accanto a «' + x.accanto + '»' : ''}${x.posto ? ' posto «' + x.posto + '»' : ''} (${x.dove})`).join(' · '));
 console.log(`  · nuvolette: ${connuvoletta} su ${controlli} controlli`);
 
 const rossi = esiti.filter((x) => !x).length;
 if (SELFTEST) {
-  if (rossi) { console.log('\nAutoprova: un tasto di sola icona senza nome si vede. ✓\n'); process.exit(0); }
-  console.log('\nAutoprova FALLITA: il cancello non vede un tasto senza nome.\n');
+  const attesi = ['ogni controllo', 'ogni campo'];
+  if (rossi >= attesi.length) { console.log('\nAutoprova: il tasto muto e il campo scollegato si vedono tutti e due. ✓\n'); process.exit(0); }
+  console.log(`\nAutoprova FALLITA: rossi ${rossi}, ne servono ${attesi.length}.\n`);
   process.exit(1);
 }
-console.log(rossi ? '\ncancello ROSSO ✗\n' : '\nOgni cosa che si puo\' premere si sa come si chiama. ✓\n');
+console.log(rossi ? '\ncancello ROSSO ✗\n' : '\nOgni cosa che si puo\' premere o riempire si sa come si chiama. ✓\n');
 process.exit(rossi ? 1 : 0);
