@@ -28,6 +28,7 @@ import { join } from 'node:path';
 import { makeLog } from '../logger.js';
 import { streamers, statoVivo, memory } from '../db.js';
 import { punteggio as punteggia, inCentesimi, nomeGenerato, canaliInsieme, segnaGiudizio, erroriDi, GIUDIZI_CHIAVE, SOGLIA_SEGNALA } from './punteggio.js';
+import * as rete from './rete.js';
 import { config } from '../config.js';
 
 const log = makeLog('antibot');
@@ -172,6 +173,7 @@ export function valutaAccount(u, cfg = {}, extra = {}) {
     nomePattern: nomeBot(login, cfg) && !listaEsterna.has(login),
     nomeGenerato: nomeGenerato(login),
     canaliInsieme: extra.canaliInsieme ?? canaliInsieme(login),
+    reteCanali: extra.reteCanali ?? rete.quantiLoSegnalano(login),
     maiScritto: !!extra.maiScritto,
     nonSegue: !!extra.nonSegue,
     ondataIngressi: !!extra.ondataIngressi,
@@ -747,6 +749,9 @@ export class AntiBot {
           continue;
         }
         registra(ch, { login: v.login, userId: v.userId, azione, motivo: v.motivo || 'ondata follow-bot', esito: r?.ok ? 'fatto' : 'fallito' });
+        // Entra nella rete solo quello che questo canale ha MISURATO e su cui ha
+        // AGITO davvero. Un blocco fallito non e' un fatto, e' un tentativo.
+        if (r?.ok) { try { rete.segnala(ch, v.login, 'ondata'); } catch (e) {  } }
         await new Promise((r2) => setTimeout(r2, Math.round(1000 / CODA_AL_SEC)));
       }
     } finally {
@@ -912,6 +917,7 @@ export class AntiBot {
       }
       const del = await this.helix?.deleteMessage?.(channel, msg.id).then(() => true).catch(() => false);
       registra(channel, { login, userId: msg.userId, azione: 'coro', motivo, esito: del ? 'fatto' : 'fallito' });
+      try { rete.segnala(channel, login, 'coro'); } catch (e) {  }
       return true;
     }
 

@@ -17,6 +17,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-07
 
+- I canali che usano il bot ora si scambiano quello che scoprono: un account bloccato durante un'ondata su un canale diventa noto anche agli altri. La lista cresce da sola con gli streamer che arrivano.
+- Serve pero che tre canali diversi lo riconoscano ciascuno per conto suo, e solo per cose misurate sul momento, mai per il tipo di profilo. Un canale solo non fa una verita.
+- Un nome nella lista comune scade da solo dopo tre mesi e si puo togliere subito, cosi un errore non resta li per sempre.
 - Lo scudo sa riconoscere anche i bot che guardano e basta: un account che sta in molti canali nello stesso momento e non scrive mai in nessuno viene segnalato. Non viene toccato, decidi tu.
 - Il giudizio su un account non somma piu tre volte la stessa cosa. Prima un nuovo spettatore senza foto ne bio prendeva lo stesso punteggio di un follow-bot vero.
 - E per togliere il follow a qualcuno adesso serve sempre un fatto che una persona non puo produrre: il nome riconosciuto o la presenza in molti canali. Il resto fa solo segnalare.

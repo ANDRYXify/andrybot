@@ -106,6 +106,38 @@ export function famigliaPresenza(canaliInsieme = 0) {
   return { punti: 0, motivi: [] };
 }
 
+// ── E · LA RETE ─────────────────────────────────────────────────────────────
+// Famiglia FORTE. Altri canali serviti dal bot hanno riconosciuto questo
+// account, ognuno per conto suo, misurando: un blocco durante un'ondata
+// artificiale, o un coro. Non e' un'opinione che gira, e' lo stesso fatto visto
+// da posti diversi.
+//
+// Sotto le tre conferme non vale niente, ed e' voluto: un canale solo puo'
+// sbagliare o essere in mano a qualcuno in malafede. Le regole per esteso
+// stanno in rete.js, che e' l'unico posto che decide chi entra.
+// Due scalini, e dicono due cose diverse. TRE conferme CONFERMANO: sommate a
+// qualunque altro indizio bastano, da sole no. SEI conferme indipendenti sono
+// una prova piu' solida di quella su cui un singolo canale agisce in tempo
+// reale — sei posti che hanno misurato un'ondata o un coro con dentro quel
+// nome — e allora bastano da sole. Sennò la rete servirebbe solo a far
+// guardare, e metterla in comune non avrebbe cambiato niente.
+const TETTO_RETE = 7;
+// Oltre questo numero di conferme il punteggio non sale piu': e' il punto in cui
+// la rete ha detto tutto quello che sa. Lo esportiamo perche' rete.js deve
+// sapere fin dove serve tenere l'elenco dei canali che hanno segnalato — la
+// stessa soglia scritta in due posti diversi e' la strada piu' corta perche' una
+// delle due cominci a mentire.
+export const RETE_CONFERME_PIENE = 6;
+const SCALINI_RETE = [[RETE_CONFERME_PIENE, 7], [3, 4]];
+
+export function famigliaRete(canaliCheLoSegnalano = 0) {
+  const k = Math.max(0, Number(canaliCheLoSegnalano) || 0);
+  for (const [quanti, punti] of SCALINI_RETE) {
+    if (k >= quanti) return { punti: Math.min(TETTO_RETE, punti), motivi: [`riconosciuto da ${k} altri canali`] };
+  }
+  return { punti: 0, motivi: [] };
+}
+
 // ── D · IL COMPORTAMENTO ────────────────────────────────────────────────────
 // Tetto 3. Da solo non condanna nessuno: «guarda e non scrive» è la
 // definizione della maggior parte del pubblico.
@@ -131,14 +163,15 @@ export const SOGLIA_SEGNALA = 5;
 //
 // E se domani qualcuno alza un tetto, la soglia si alza da sola con lui.
 export const SOGLIA_AGISCI = TETTO_PROFILO + TETTO_COMPORTAMENTO + 1;
-export const MASSIMO = TETTO_PROFILO + TETTO_NOME + TETTO_PRESENZA + TETTO_COMPORTAMENTO;
+export const MASSIMO = TETTO_PROFILO + TETTO_NOME + TETTO_PRESENZA + TETTO_COMPORTAMENTO + TETTO_RETE;
 
 export function punteggio(dati = {}) {
   const a = famigliaProfilo(dati.utente);
   const b = famigliaNome(dati);
   const c = famigliaPresenza(dati.canaliInsieme);
   const d = famigliaComportamento(dati);
-  const punti = a.punti + b.punti + c.punti + d.punti;
+  const e = famigliaRete(dati.reteCanali);
+  const punti = a.punti + b.punti + c.punti + d.punti + e.punti;
   // Una famiglia forte non e' «qualche punto in piu'»: e' la condizione per
   // poter toccare qualcuno. Senza, il punteggio serve solo a far guardare.
   //
@@ -146,12 +179,12 @@ export function punteggio(dati = {}) {
   // e' un'euristica sulla forma delle lettere, non un fatto. Fra le persone
   // vere ci sono nomi strani, e un nome strano non deve poter far agire nessuno
   // nemmeno quando si somma a un account nuovo che guarda e non scrive.
-  const forte = !!(dati.nomeNoto || dati.nomePattern) || c.punti > 0;
+  const forte = !!(dati.nomeNoto || dati.nomePattern) || c.punti > 0 || e.punti > 0;
   return {
     punti,
     forte,
-    famiglie: { profilo: a.punti, nome: b.punti, presenza: c.punti, comportamento: d.punti },
-    motivi: [...b.motivi, ...c.motivi, ...a.motivi, ...d.motivi],
+    famiglie: { profilo: a.punti, nome: b.punti, presenza: c.punti, comportamento: d.punti, rete: e.punti },
+    motivi: [...e.motivi, ...b.motivi, ...c.motivi, ...a.motivi, ...d.motivi],
     segnala: punti >= SOGLIA_SEGNALA,
     agisci: punti >= SOGLIA_AGISCI && forte,
   };
