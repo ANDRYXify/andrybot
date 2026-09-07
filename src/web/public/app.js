@@ -18027,6 +18027,8 @@ caricaStato();
 window.SB_APP = {
   get gruppi() { return GRUPPI; },
   get gruppoAdmin() { return GRUPPO_ADMIN; },
+  get famiglie() { return FAMIGLIE; },
+  nomeScheda(id) { try { return tScheda(id, _nomeSchedaGrezzo(id)); } catch (e) { return id; } },
   get isAdmin() { return !!(typeof stato !== 'undefined' && stato && stato.isAdmin); },
   get schedaAttiva() { return schedaAttiva; },
   get menoMoto() { return _menoMoto; },
