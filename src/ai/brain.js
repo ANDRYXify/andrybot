@@ -917,7 +917,7 @@ export class Brain {
   // da qui e passa per forza da _finalizza, che e' il solo punto in cui una
   // risposta diventa una cosa detta. Chi aggiunge un ramo qui dentro non puo'
   // dimenticarsi il controllo: non ha modo di saltarlo.
-  async _rispostaGrezza({ channel, user, display, text, streamer, botLogin } = {}) {
+  async _rispostaGrezza({ channel, user, display, text, streamer, botLogin, ruolo = null } = {}) {
     try {
       if (!channel || !text || !streamer) return null;
       const settings = streamer.settings || {};
@@ -1020,7 +1020,7 @@ export class Brain {
         if (iaOn && !haLink) {
           const detta = await brainpy.rispondi({
             via: 'bot', canale: streamer.display || channel, canaleId: channel,
-            login: user, nome, testo: text, tono,
+            login: user, nome, testo: text, tono, ruolo,
             conoscenza: [daConoscenza],   // UNA cosa sola: qui deve dire questa, non divagare
             scheda: this._scheda(channel),
             stile: this._stileStreamer(channel),
@@ -1048,6 +1048,7 @@ export class Brain {
           via: 'bot',   // la chat pubblica è del BOT, non di Lei (docs/BOT-E-LIA.md)
           canale: streamer.display || channel, canaleId: channel,
           login: user, nome, testo: text, tono, conoscenza,
+          ruolo,   // i distintivi di CHI ha scritto, per il modo (docs/MODO.md)
           scheda: this._scheda(channel),   // chi è lo streamer, deciso da lui (docs/CONOSCENZA.md)
           stile: this._stileStreamer(channel),   // la voce vera dello streamer (esempi di stile)
           storia: this._storiaRecente(channel, text),   // il discorso in corso in chat (memoria a breve termine)
@@ -1071,7 +1072,7 @@ export class Brain {
               const r = await brainpy.rispondi({
                 via: 'bot',
                 canale: streamer.display || channel, canaleId: channel,
-                login: user, nome, testo: text, tono, web,
+                login: user, nome, testo: text, tono, web, ruolo,
                 scheda: this._scheda(channel),
                 storia: this._storiaRecente(channel, text),
                 situazione: this._situazione(channel),
@@ -1101,6 +1102,59 @@ export class Brain {
   // memoria di chi scrive il ramo nuovo.
   async chatReply(dati = {}) {
     return this._finalizza(dati.channel, await this._rispostaGrezza(dati), dati.streamer);
+  }
+
+  // ------------------------------------------------------------ iniziativa
+
+  // IL BOT PARLA PER PRIMO, e sa di cosa.
+  //
+  // Il difetto: la riga d'iniziativa usciva da un elenco di nove frasi scritte
+  // a mano e pescate a caso. Cadeva dentro un discorso che non c'entrava, era
+  // sempre la stessa, e andava bene in qualunque chat del mondo — cioe' in
+  // nessuna. Chi guardava vedeva un bot che «scrive a caso».
+  //
+  // Non e' un problema di quante frasi ci sono nell'elenco: e' che una frase
+  // scelta PRIMA di guardare la chat non puo' c'entrare con la chat. Quindi non
+  // si sceglie prima: si guarda cosa si stanno dicendo adesso e si dice una cosa
+  // su quello. Il materiale c'era gia' tutto (le ultime righe, la diretta, la
+  // scheda, la voce dello streamer): mancava solo il permesso di partire.
+  //
+  // Passa dagli stessi controlli di una risposta normale (_finalizza): stessa
+  // moderazione, niente eco di un utente, e soprattutto niente ripetizioni di
+  // se stesso. E se non ha niente da dire, non dice niente — che era il punto.
+  async iniziativa(channel) {
+    try {
+      const streamer = streamers.get(channel);
+      if (!streamer) return null;
+      const settings = streamer.settings || {};
+      if (settings.iaLocale === false) return null;
+      // ha appena parlato con qualcuno: non ci si intromette anche da soli
+      if (Date.now() - (this._ultimaRisposta.get(channel) || 0) < COOLDOWN_RISPOSTA) return null;
+      // il discorso a cui agganciarsi: l'ultima riga vera della chat. Senza,
+      // non c'e' niente su cui dire qualcosa, e si tace.
+      const righe = (memory.recentMessages(channel, 14) || [])
+        .filter((r) => !r.from_bot && r.text && !String(r.text).startsWith('!'));
+      const ultima = righe[righe.length - 1];
+      if (!ultima) return null;
+      const tono = TONI.includes(settings.tono) ? settings.tono : 'scherzoso';
+      const grezza = await brainpy.rispondi({
+        via: 'bot',   // anche quando parte lui, in chat pubblica parla il BOT (docs/BOT-E-LIA.md)
+        iniziativa: true,
+        canale: streamer.display || channel, canaleId: channel,
+        login: String(ultima.user || 'chat'), nome: String(ultima.display || ultima.user || 'qualcuno'),
+        testo: String(ultima.text).slice(0, 300), tono,
+        conoscenza: this._conoscenzaPertinente(channel, ultima.text),
+        scheda: this._scheda(channel),
+        stile: this._stileStreamer(channel),
+        storia: this._storiaRecente(channel, ultima.text),
+        situazione: this._situazione(channel),
+        lineeGuida: guide.applicabili(channel, { piattaforma: 'twitch', privato: false, sonoIo: false }),
+      });
+      return this._finalizza(channel, grezza, streamer);
+    } catch (e) {
+      log.error(`iniziativa #${channel}:`, e?.message || e);
+      return null;
+    }
   }
 
 

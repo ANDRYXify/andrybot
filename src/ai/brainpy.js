@@ -36,10 +36,15 @@ const TIMEOUT_CHAT = Number(process.env.BRAIN_TIMEOUT_MS || '15000') || 15000;
 //   al bot per trovare il proprio quaderno di quel canale.
 // `compito` = non è una chiacchierata ma un lavoretto ("inventa una penitenza"):
 //   niente persona, niente chat, solo il risultato.
+// `iniziativa` = non gli ha chiesto niente nessuno: parte lui, agganciandosi a
+//   quello che si sta dicendo in chat adesso. Solo per la via del bot.
+// `ruolo` = i distintivi di chi ha scritto, come si vedono in QUESTO messaggio
+//   ({mod, sub, vip, primo}). Serve al MODO, non al contenuto; non è memoria di
+//   nessuno, è un fatto del turno (docs/MODO.md).
 // `timeoutMs` = quanto attendere (i DM possono attendere di più: su CPU un 3B è
 //   lento e una risposta tardiva è meglio di nessuna risposta).
 // `modo` = 'live' | 'allenamento' | 'proattivo' | 'studio' (solo per la via di lei).
-export async function rispondi({ canale, canaleId, login, nome, testo, tono, conoscenza, scheda, stile, storia, situazione, timeoutMs, modo, nomeBot, spunto, lineeGuida, web, via, compito } = {}) {
+export async function rispondi({ canale, canaleId, login, nome, testo, tono, conoscenza, scheda, stile, storia, situazione, timeoutMs, modo, nomeBot, spunto, lineeGuida, web, via, compito, ruolo, iniziativa } = {}) {
   if (!canale || !login || !testo) return null;
   const rotta = via === 'bot' ? '/bot' : '/chat';
   const attesa = timeoutMs || TIMEOUT_CHAT;
@@ -55,7 +60,7 @@ export async function rispondi({ canale, canaleId, login, nome, testo, tono, con
       body: JSON.stringify({
         canale, canale_id: canaleId || String(canale).toLowerCase(), login, nome, testo, tono,
         conoscenza, scheda, stile, storia, situazione, modo, nome_bot: nomeBot, spunto,
-        linee_guida: lineeGuida, web, compito: compito || undefined,
+        linee_guida: lineeGuida, web, compito: compito || undefined, ruolo: ruolo || undefined, iniziativa: iniziativa || undefined,
         timeout_s: Math.max(2, Math.floor((attesa * 0.8) / 1000)),
       }),
       signal: ac.signal,

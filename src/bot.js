@@ -236,7 +236,7 @@ export class BotManager {
   }
 
   // manda un messaggio nel canale attraverso l'unità giusta
-  say(channel, text) { this.units.get(channel)?.chat.say(channel, text); }
+  say(channel, text, opzioni) { this.units.get(channel)?.chat.say(channel, text, opzioni); }
 
   // Battito dell'anima: l'umore "respira" (torna piano alla calma) e, se lo
   // streamer lascia la proattività accesa, ogni tanto il bot dice qualcosa di
@@ -252,12 +252,15 @@ export class BotManager {
         if (auto <= 0) continue;                                // autonomia a zero = zitto
         if ((memory.messageRate?.(login) || 0) < 1) continue;   // chat ferma: non parlare da solo
         if (Math.random() < auto * 0.4) {
-          // alterna: a volte una promo social (se accesa e c'è un link imparato),
-          // a volte una battuta dell'anima — così è vario e utile, mai ripetitivo.
-          let t = null;
-          if (s.settings?.promoSocial !== false && Math.random() < 0.45) t = games.promoSociale(login);
-          if (!t) t = persona.proattiva();
-          if (t) this.say(login, t);
+          // a volte una promo social (se accesa e c'è un link imparato), sennò
+          // una cosa sua — DETTA SUL MOMENTO guardando cosa si sta dicendo in
+          // chat, non pescata da un elenco di frasi buone per qualunque chat.
+          const promo = (s.settings?.promoSocial !== false && Math.random() < 0.45)
+            ? games.promoSociale(login) : null;
+          if (promo) { this.say(login, promo); continue; }
+          this.brain?.iniziativa?.(login)
+            .then((t) => { if (t) this.say(login, t); })
+            .catch((e) => log.debug(`#${login} iniziativa:`, e?.message || e));
         }
       }
     } catch (e) { log.error('battito anima:', e?.message || e); }
@@ -521,7 +524,7 @@ export class BotManager {
     if (!msg.piattaforma || msg.piattaforma === 'twitch') return;   // Twitch ha la sua strada
     const parla = this.vocePer(msg);
     const onMessage = createMessageHandler({
-      chat: { say: (_c, t) => parla(t) }, helix: this.helix, brain: this.brain, clips: this.clips, botLogin: login,
+      chat: { say: (_c, t, o) => parla(t, o) }, helix: this.helix, brain: this.brain, clips: this.clips, botLogin: login,
     });
     await this._gestisciMessaggio(login, msg, onMessage, parla);
   }
@@ -532,12 +535,12 @@ export class BotManager {
   // prima volta ne ho sbagliate quattordici, e un !comando scritto su Kick
   // veniva risposto su TWITCH. Peggio del silenzio.
   vocePer(msg) {
-    if (msg?.piattaforma === 'kick') { const v = voceKick(msg.channel); return (t) => v.say(msg.channel, t); }
+    if (msg?.piattaforma === 'kick') { const v = voceKick(msg.channel); return (t, o) => v.say(msg.channel, t, o); }
     if (msg?.piattaforma === 'youtube') {
       const v = voceYoutube(msg.channel, { chatDiAdesso: (l) => this.chatYT.chatDi(l) });
-      return (t) => v.say(msg.channel, t);
+      return (t, o) => v.say(msg.channel, t, o);
     }
-    return (t) => this.say(msg.channel, t);
+    return (t, o) => this.say(msg.channel, t, o);
   }
 
   async _gestisciMessaggio(login, msg, onMessage, dire = null) {

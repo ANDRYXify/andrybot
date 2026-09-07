@@ -16,6 +16,60 @@ import { checkMessage } from './moderation.js';
 
 const COOLDOWN_MODERAZIONE = 30_000; // avviso moderazione: max uno ogni 30s per canale
 
+// IL RITMO DELLA STANZA.
+//
+// Una risposta che compare all'istante non la scrive nessuno: il percorso
+// veloce del cervello risponde in pochi millisecondi, e si vede. Quindi la
+// portiamo a un tempo «da persona che legge e scrive». Ma quel tempo non
+// dipende solo da quanto è lunga la frase: dipende da quanto corre la chat.
+// In una chat a sessanta messaggi al minuto, tre secondi sono venti messaggi
+// dopo — la risposta arriva quando il discorso è già altrove, e sembra fuori
+// posto anche se è giusta. In una chat ferma, invece, non c'è nessuna fretta e
+// rispondere in mezzo secondo è un lampo.
+//
+// `ritmo` = messaggi al minuto degli ultimi trenta secondi. Il fattore scende
+// con continuità e si ferma agli estremi: niente scalini, niente attese
+// assurde con una chat impazzita.
+const ATTESA_MIN = 700;          // il tempo minimo per leggere e battere una riga corta
+const ATTESA_MAX = 2800;         // oltre non si aspetta: la chat non tiene il filo così a lungo
+const PER_CARATTERE = 26;        // quanto costa un carattere, in millisecondi
+const STANZA_LENTA = 1.35;       // chat ferma: si prende il suo tempo
+const STANZA_VELOCE = 0.55;      // chat che corre: risponde prima che il filo si perda
+const RITMO_PIENO = 57;          // messaggi al minuto oltre i quali è «che corre»
+
+// Quanto aspettare prima di dire una cosa. Funzione pura: si prova da sola.
+// `caso` (0..1) è il pizzico di variabilità — due risposte uguali non escono
+// mai a distanza identica.
+export function attesaUmana(lunghezza, ritmo = 0, caso = 0.5) {
+  const base = Math.min(ATTESA_MAX, ATTESA_MIN + Math.max(0, Number(lunghezza) || 0) * PER_CARATTERE);
+  const r = Math.max(0, Number(ritmo) || 0);
+  const passo = (STANZA_LENTA - STANZA_VELOCE) / RITMO_PIENO;
+  const stanza = Math.max(STANZA_VELOCE, STANZA_LENTA - r * passo);
+  const c = Math.min(1, Math.max(0, Number(caso) || 0));
+  return Math.round(base * stanza * (0.85 + c * 0.3));
+}
+
+// CHI HA SCRITTO, per come si vede in QUESTO messaggio.
+//
+// In una chat non sono tutti uguali e chi risponde lo vede: i distintivi stanno
+// lì, accanto al nome. Non cambia COSA si risponde — non ci sono favori — ma
+// cambia il modo: a chi arriva per la prima volta non si dà per scontato che
+// sappia le cose del canale.
+//
+// E si ferma qui, a quello che sta NEL MESSAGGIO. L'affinità che il bot ha con
+// una persona non entra: sarebbe memoria di qualcuno, e il bot del canale non
+// ricorda nessuno (docs/BOT-E-LIA.md). I distintivi invece non sono un ricordo,
+// sono un fatto di questo turno.
+function ruoloDi(msg) {
+  const r = {
+    mod: !!msg.isMod,
+    sub: !!msg.isSub,
+    vip: !!msg.isVip,
+    primo: !!msg.isFirst,
+  };
+  return (r.mod || r.sub || r.vip || r.primo) ? r : null;
+}
+
 export function createMessageHandler({ chat, brain, botLogin }) {
   const ultimoAvvisoMod = new Map(); // canale → ts dell'ultimo richiamo di moderazione
 
@@ -74,18 +128,16 @@ export function createMessageHandler({ chat, brain, botLogin }) {
     // f. per tutto il resto decide il cervello: se e cosa rispondere
     if (brain.shouldReply({ channel, botLogin, user, text, streamer, isSelf })) {
       const t0 = Date.now();
-      const risposta = await brain.chatReply({ channel, user, display, text, streamer, botLogin });
+      const risposta = await brain.chatReply({ channel, user, display, text, streamer, botLogin, ruolo: ruoloDi(msg) });
       if (risposta) {
-        // RITMO UMANO: una risposta non deve comparire in modo robotico-istantaneo
-        // (il percorso veloce del cervello risponde in pochi ms). La portiamo a un
-        // minimo "da persona che legge e scrive" — proporzionale alla lunghezza, con
-        // un pizzico di variabilità — MA senza aggiungere attesa se il cervello ci ha
-        // già messo del suo (così non si sacrifica la reattività quando genera davvero).
+        // Il tempo giusto lo decide attesaUmana (lunghezza + ritmo della chat).
+        // Quello che il cervello ci ha già messo del suo si sconta: se ha
+        // pensato davvero, non si aspetta due volte.
         const trascorso = Date.now() - t0;
-        const target = Math.min(2800, 700 + risposta.length * 26) * (0.85 + Math.random() * 0.3);
-        const attesa = Math.max(0, Math.round(target) - trascorso);
+        const ritmo = memory.messageRate?.(channel) || 0;
+        const attesa = Math.max(0, attesaUmana(risposta.length, ritmo, Math.random()) - trascorso);
         if (attesa > 0) await new Promise((r) => setTimeout(r, attesa));
-        chat.say(channel, risposta);
+        chat.say(channel, risposta, { rispondiA: msg.id });
         // apre la finestra di follow-up: se questa persona ribatte a breve, il bot
         // continua il filo (cooldown ridotto) invece di rispondere una volta sola.
         brain.segnaConversazione?.(channel, user);
