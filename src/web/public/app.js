@@ -1601,7 +1601,7 @@ async function caricaTgDestinazioni() {
         : `<span class="tg-amico${a.attivo ? '' : ' spenta'}">${esc(a.display || a.login)}<button type="button" data-amico-togli="${a.id}" aria-label="${L('Togli', 'Remove', 'Quitar')}">×</button></span>`).join('')}
     </div>
     <div class="riga-flessibile spazio-sopra">
-      <input type="text" id="tg-amico-nome" class="campo-largo" placeholder="${L('nome canale Twitch (es. pincopallo)', 'Twitch channel name (e.g. pincopallo)', 'nombre del canal de Twitch')}" maxlength="25">
+      <input aria-label="${esc(L('nome canale Twitch (es. pincopallo)', 'Twitch channel name (e.g. pincopallo)', 'nombre del canal de Twitch'))}" type="text" id="tg-amico-nome" class="campo-largo" placeholder="${L('nome canale Twitch (es. pincopallo)', 'Twitch channel name (e.g. pincopallo)', 'nombre del canal de Twitch')}" maxlength="25">
       <button type="button" class="btn secondario" id="tg-amico-add">${L('Aggiungi', 'Add', 'Añadir')}</button>
     </div>`;
 }
@@ -1903,10 +1903,10 @@ async function caricaFeed() {
     <div class="fd-elenco">${carte || `<p class="vuoto">${L('Nessuna sorgente ancora.', 'No source yet.', 'Ninguna fuente todavía.')}</p>`}</div>
     <div class="fd-nuova">
       <div class="riga-flessibile">
-        <select id="fd-evento" class="campo">
+        <select aria-label="${esc(L('Evento che fa partire l\'avviso', 'Event that triggers the notice', 'Evento que dispara el aviso'))}" id="fd-evento" class="campo">
           ${(d.eventi || []).map((e) => `<option value="${e.k}">${esc(L(e.it, e.en, e.es))}</option>`).join('')}
         </select>
-        <input type="text" id="fd-url" class="campo-largo" placeholder="https://… (RSS, Atom o JSON)" maxlength="500">
+        <input aria-label="https://… (RSS, Atom o JSON)" type="text" id="fd-url" class="campo-largo" placeholder="https://… (RSS, Atom o JSON)" maxlength="500">
         <button type="button" class="btn secondario" id="fd-aggiungi">${L('Aggiungi', 'Add', 'Añadir')}</button>
       </div>
       <p class="suggerimento">${L('Per Instagram servono ponti di terzi, che non controlliamo e possono smettere di funzionare: i più usati sono <code>rsshub.app/picuki/profile/TUONOME</code> e una <a href="https://rss-bridge.github.io/rss-bridge/" target="_blank" rel="noopener">RSS-Bridge</a> tua. Se un giorno smette, lo vedi qui scritto invece di restare in silenzio.', 'Instagram needs third-party bridges we don’t control and which can stop working: the common ones are <code>rsshub.app/picuki/profile/YOURNAME</code> and your own <a href="https://rss-bridge.github.io/rss-bridge/" target="_blank" rel="noopener">RSS-Bridge</a>. If one day it stops, you’ll read it here instead of hearing silence.', 'Para Instagram hacen falta puentes de terceros que no controlamos y que pueden dejar de funcionar: los más usados son <code>rsshub.app/picuki/profile/TUNOMBRE</code> y tu propio <a href="https://rss-bridge.github.io/rss-bridge/" target="_blank" rel="noopener">RSS-Bridge</a>. Si un día deja de ir, lo lees aquí en vez de oír silencio.')}</p>
@@ -3473,8 +3473,8 @@ function pannelloGrafiche() {
   const righeProg = c.giorni.map((r, i) => `
     <div class="gr-riga-giorno" data-gr-i="${i}">
       <span class="gr-gg">${r.g}</span>
-      <input type="time" class="gr-ora" value="${esc(r.ora)}" ${r.off ? 'disabled' : ''}>
-      <input type="text" class="gr-att" maxlength="34" placeholder="${L('gioco / attività', 'game / activity', 'juego / actividad')}" value="${esc(r.att)}" ${r.off ? 'disabled' : ''}>
+      <input type="time" class="gr-ora" aria-label="${esc(L('Ora di', 'Time on', 'Hora de'))} ${esc(r.g)}" value="${esc(r.ora)}" ${r.off ? 'disabled' : ''}>
+      <input type="text" class="gr-att" maxlength="34" aria-label="${esc(L('Attività di', 'Activity on', 'Actividad de'))} ${esc(r.g)}" placeholder="${L('gioco / attività', 'game / activity', 'juego / actividad')}" value="${esc(r.att)}" ${r.off ? 'disabled' : ''}>
       <label class="gr-off"><input type="checkbox" class="gr-riposo" ${r.off ? 'checked' : ''}> ${L('riposo', 'off', 'descanso')}</label>
     </div>`).join('');
   return pannello('grafiche', `
@@ -3551,7 +3551,7 @@ function pannelloGrafiche() {
           </div>
           <div class="riga-flessibile spazio-sopra">
             <label class="campo" style="margin:0 8px 0 0">${L('…oppure logo immagine', '…or image logo', '…o logo imagen')}</label>
-            <input type="file" id="gr-logo-file" accept="image/*">
+            <input aria-label="${esc(L('Logo da caricare', 'Logo to upload', 'Logo a subir'))}" type="file" id="gr-logo-file" accept="image/*">
             ${c.logoImg ? `<img src="${esc(c.logoImg)}" alt="" class="gr-logo-prev"> <a href="#" id="gr-logo-togli" class="suggerimento">${L('togli', 'remove', 'quitar')}</a>` : ''}
           </div>
 
@@ -4350,7 +4350,7 @@ function pannelloStato() {
           <option value="youtube">YouTube</option>
         </select>
         <span class="suggerimento">@</span>
-        <input type="text" id="inp-mod-login" class="cresce" placeholder="${L('nomeutente', 'username', 'usuario')}" autocomplete="off">
+        <input type="text" id="inp-mod-login" class="cresce" aria-label="${esc(L('Nome utente del moderatore da aggiungere', 'Username of the moderator to add', 'Nombre de usuario del moderador a añadir'))}" placeholder="${L('nomeutente', 'username', 'usuario')}" autocomplete="off">
         <button class="btn" id="btn-invita-mod" title="${esc(L('Crea un link da dare a chi vuoi: chi lo apre entra come moderatore di questo canale', 'Creates a link to hand out: whoever opens it joins as a moderator of this channel', 'Crea un enlace para dar a quien quieras: quien lo abra entra como moderador de este canal'))}">${L('Crea invito', 'Create invite', 'Crear invitación')}</button>
       </div>
       <div id="invito-creato"></div>
@@ -4371,7 +4371,7 @@ function pannelloStato() {
           <option value="youtube">YouTube</option>
         </select>
         <span class="suggerimento">@</span>
-        <input type="text" id="inp-chiedi-canale" class="cresce" placeholder="${L('nomecanale', 'channelname', 'nombrecanal')}" autocomplete="off">
+        <input aria-label="${esc(L('nomecanale', 'channelname', 'nombrecanal'))}" type="text" id="inp-chiedi-canale" class="cresce" placeholder="${L('nomecanale', 'channelname', 'nombrecanal')}" autocomplete="off">
       </div>
       <label class="campo" for="inp-chiedi-nota">${L('Due righe per farti riconoscere (facoltative)', 'A line or two so they recognise you (optional)', 'Dos líneas para que te reconozca (opcional)')}</label>
       <input type="text" id="inp-chiedi-nota" maxlength="300" placeholder="${L('sono il mod della sera', 'I’m the evening mod', 'soy el mod de la tarde')}" autocomplete="off">
@@ -4443,12 +4443,12 @@ function pannelloPersonalita() {
       <label class="campo" for="inp-guida">${L('Nuova linea guida', 'New guideline', 'Nueva directriz')}</label>
       <input type="text" id="inp-guida" placeholder="${L('es. non parlare di politica', 'e.g. don’t talk politics', 'p. ej. no hables de política')}" maxlength="300">
       <div class="riga-flessibile spazio-sopra">
-        <select id="sel-guida-conchi" title="${L('Con chi', 'With whom', 'Con quién')}">
+        <select aria-label="${esc(L('Con chi il bot usa la guida', 'Who the bot uses the guide with', 'Con quien el bot usa la guia'))}" id="sel-guida-conchi" title="${L('Con chi', 'With whom', 'Con quién')}">
           <option value="tutti">${L('con tutti', 'with everyone', 'con todos')}</option>
           <option value="solo-me">${L('solo con me', 'only with me', 'solo conmigo')}</option>
           <option value="tranne-me">${L('con tutti tranne me', 'with everyone but me', 'con todos menos yo')}</option>
         </select>
-        <select id="sel-guida-dove" title="${L('Dove', 'Where', 'Dónde')}">
+        <select aria-label="${esc(L('Dove il bot usa la guida', 'Where the bot uses the guide', 'Donde el bot usa la guia'))}" id="sel-guida-dove" title="${L('Dove', 'Where', 'Dónde')}">
           <option value="ovunque">${L('ovunque', 'anywhere', 'en cualquier sitio')}</option>
           <option value="twitch">${L('in chat Twitch', 'in Twitch chat', 'en el chat de Twitch')}</option>
           <option value="tg">${L('su Telegram', 'on Telegram', 'en Telegram')}</option>
@@ -4521,7 +4521,7 @@ function pannelloConoscenza() {
       <label class="campo" for="inp-risposta">${L('Risposta', 'Answer', 'Respuesta')}</label>
       <input type="text" id="inp-risposta" placeholder="${L('es. Gioco su un Ryzen 7 con una 4070, trovi tutto sul sito!', 'e.g. I play on a Ryzen 7 with a 4070, it\'s all on the site!', 'p. ej. ¡Juego con un Ryzen 7 y una 4070, está todo en la web!')}">
       <div class="riga-flessibile spazio-sopra">
-        <select id="sel-cono-quando" title="${L('Quando vale', 'When it applies', 'Cuándo vale')}">
+        <select aria-label="${esc(L('Quando il bot usa la conoscenza', 'When the bot uses knowledge', 'Cuando el bot usa el conocimiento'))}" id="sel-cono-quando" title="${L('Quando vale', 'When it applies', 'Cuándo vale')}">
           <option value="sempre">${L('vale sempre', 'always applies', 'vale siempre')}</option>
           <option value="live">${L('solo quando sei in diretta', 'only while you are live', 'solo cuando estás en directo')}</option>
           <option value="offline">${L('solo quando sei offline', 'only while you are offline', 'solo cuando estás offline')}</option>
@@ -4545,7 +4545,7 @@ function pannelloConoscenza() {
       <h2>${_hIco(ICO.libro)}${L('Il quaderno del bot', 'The bot\'s notebook', 'El cuaderno del bot')}</h2>
       <p>${L('Qui scrivi', 'Here you write', 'Aquí escribes')} <strong class="primo-piano">${L('come deve rispondere', 'how it should reply', 'cómo debe responder')}</strong>, ${L('non cosa sa. Per esempio: «quando chiedono del torneo, rimanda al Discord», oppure «se qualcuno è arrabbiato, rispondi corto». Il bot le applica senza citarle.', 'not what it knows. For example: “when they ask about the tournament, point them to Discord”, or “if someone is angry, keep it short”. The bot applies them without quoting them.', 'no lo que sabe. Por ejemplo: «cuando pregunten por el torneo, remite al Discord», o «si alguien está enfadado, responde corto». El bot las aplica sin citarlas.')}</p>
       <div class="riga-flessibile spazio-sopra">
-        <input type="text" class="cresce" id="inp-quaderno" maxlength="220" placeholder="${L('es. quando chiedono il torneo, rimanda al Discord', 'e.g. when they ask about the tournament, point them to Discord', 'p. ej. cuando pregunten por el torneo, remite al Discord')}">
+        <input aria-label="${esc(L('es. quando chiedono il torneo, rimanda al Discord', 'e.g. when they ask about the tournament, point them to Discord', 'p. ej. cuando pregunten por el torneo, remite al Discord'))}" type="text" class="cresce" id="inp-quaderno" maxlength="220" placeholder="${L('es. quando chiedono il torneo, rimanda al Discord', 'e.g. when they ask about the tournament, point them to Discord', 'p. ej. cuando pregunten por el torneo, remite al Discord')}">
         <button class="btn" id="btn-quaderno-add">${L('Insegna', 'Teach', 'Enseñar')}</button>
       </div>
       <ul class="lista-voci" id="lista-quaderno"><li class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</li></ul>
@@ -4732,11 +4732,11 @@ function formCredenzialiSpotify(redirect) {
     </details>
     <div class="griglia-campi spazio-sopra">
       <div>
-        <label class="campo">Client ID</label>
+        <label class="campo" for="spotify-cid">Client ID</label>
         <input type="text" id="spotify-cid" placeholder="${L('es. 4a1b…', 'e.g. 4a1b…', 'p. ej. 4a1b…')}" autocomplete="off">
       </div>
       <div>
-        <label class="campo">Client Secret</label>
+        <label class="campo" for="spotify-csec">Client Secret</label>
         <input type="password" id="spotify-csec" placeholder="${L('incolla il secret', 'paste the secret', 'pega el secret')}" autocomplete="off">
       </div>
     </div>
@@ -4795,8 +4795,8 @@ async function caricaPremiMusica() {
     <details class="spazio-sopra"${eleggibili.length ? '' : ' open'}>
       <summary>${eleggibili.length ? L('Oppure crea un premio pronto all\'uso', 'Or create a ready-to-use reward', 'O crea una recompensa lista para usar') : L('Crea un premio pronto all\'uso', 'Create a ready-to-use reward', 'Crea una recompensa lista para usar')}</summary>
       <div class="griglia-campi spazio-sopra">
-        <div><label class="campo">${L('Nome', 'Name', 'Nombre')}</label><input type="text" id="musica-nuovo-nome" value="${L('Richiesta musicale', 'Music request', 'Petición musical')}"></div>
-        <div><label class="campo">${L('Costo (punti canale)', 'Cost (channel points)', 'Coste (puntos de canal)')}</label><input type="number" id="musica-nuovo-costo" min="1" value="500"></div>
+        <div><label class="campo" for="musica-nuovo-nome">${L('Nome', 'Name', 'Nombre')}</label><input type="text" id="musica-nuovo-nome" value="${L('Richiesta musicale', 'Music request', 'Petición musical')}"></div>
+        <div><label class="campo" for="musica-nuovo-costo">${L('Costo (punti canale)', 'Cost (channel points)', 'Coste (puntos de canal)')}</label><input type="number" id="musica-nuovo-costo" min="1" value="500"></div>
       </div>
       <button class="btn secondario spazio-sopra" id="musica-crea-premio">${L('Crea il premio su Twitch', 'Create the reward on Twitch', 'Crea la recompensa en Twitch')}</button>
       <p class="suggerimento">${L('Lo creo io con la "richiesta di testo" già attiva e lo seleziono qui.', 'I create it with "require text" already on and select it here.', 'La creo con "requerir texto" ya activado y la selecciono aquí.')}</p>
@@ -5035,34 +5035,34 @@ function collegaSalvaCred() {
 }
 
 function pannelloSondaggi() {
-  const campo = (cls, ph) => `<input type="text" class="${cls}" placeholder="${ph}">`;
+  const campo = (cls, ph) => `<input type="text" class="${cls}" aria-label="${esc(ph)}" placeholder="${ph}">`;
   return pannello('sondaggi', `
     <div class="carta">
       <h2>${_hIco(ICO.sondaggi)}${L('Sondaggi', 'Polls', 'Encuestas')}</h2>
       <p>${L('Lancia un sondaggio Twitch: gli spettatori votano dall\'app, il risultato appare sul canale.', 'Launch a Twitch poll: viewers vote from the app, the result shows on the channel.', 'Lanza una encuesta de Twitch: los espectadores votan desde la app, el resultado aparece en el canal.')}</p>
       <div id="sondaggio-attivo"></div>
-      <label class="campo">${L('Domanda', 'Question', 'Pregunta')}</label>
+      <label class="campo" for="poll-titolo">${L('Domanda', 'Question', 'Pregunta')}</label>
       <input type="text" id="poll-titolo" placeholder="${L('es. Che gioco stasera?', 'e.g. Which game tonight?', 'p. ej. ¿Qué juego esta noche?')}">
       <label class="campo spazio-sopra">${L('Opzioni (min 2, max 5)', 'Options (min 2, max 5)', 'Opciones (mín. 2, máx. 5)')}</label>
       <div class="griglia-campi">
         ${campo('poll-opt', L('Opzione 1', 'Option 1', 'Opción 1'))}${campo('poll-opt', L('Opzione 2', 'Option 2', 'Opción 2'))}${campo('poll-opt', L('Opzione 3 (facolt.)', 'Option 3 (opt.)', 'Opción 3 (opc.)'))}${campo('poll-opt', L('Opzione 4 (facolt.)', 'Option 4 (opt.)', 'Opción 4 (opc.)'))}
       </div>
       <label class="campo spazio-sopra">${L('Durata (secondi)', 'Duration (seconds)', 'Duración (segundos)')}</label>
-      <input type="number" id="poll-durata" min="15" max="1800" value="120">
+      <input aria-label="${esc(L('Durata del sondaggio in secondi', 'Poll duration in seconds', 'Duracion de la encuesta en segundos'))}" type="number" id="poll-durata" min="15" max="1800" value="120">
       <button class="btn spazio-sopra" id="poll-crea">${L('Lancia sondaggio', 'Launch poll', 'Lanzar encuesta')}</button>
     </div>
     <div class="carta">
       <h2>${_hIco(ICO.predizioni)}${L('Predizioni', 'Predictions', 'Predicciones')}</h2>
       <p>${L('Gli spettatori scommettono i punti canale sull\'esito. Decidi tu chi vince a fine gioco.', 'Viewers bet channel points on the outcome. You decide who wins at the end.', 'Los espectadores apuestan puntos de canal al resultado. Tú decides quién gana al final.')}</p>
       <div id="predizione-attiva"></div>
-      <label class="campo">${L('Titolo', 'Title', 'Título')}</label>
+      <label class="campo" for="pred-titolo">${L('Titolo', 'Title', 'Título')}</label>
       <input type="text" id="pred-titolo" placeholder="${L('es. Vinco questa partita?', 'e.g. Will I win this match?', 'p. ej. ¿Gano esta partida?')}">
       <label class="campo spazio-sopra">${L('Esiti (min 2, max 10)', 'Outcomes (min 2, max 10)', 'Resultados (mín. 2, máx. 10)')}</label>
       <div class="griglia-campi">
         ${campo('pred-esito', L('Esito 1 (es. Sì)', 'Outcome 1 (e.g. Yes)', 'Resultado 1 (p. ej. Sí)'))}${campo('pred-esito', L('Esito 2 (es. No)', 'Outcome 2 (e.g. No)', 'Resultado 2 (p. ej. No)'))}${campo('pred-esito', L('Esito 3 (facolt.)', 'Outcome 3 (opt.)', 'Resultado 3 (opc.)'))}${campo('pred-esito', L('Esito 4 (facolt.)', 'Outcome 4 (opt.)', 'Resultado 4 (opc.)'))}
       </div>
       <label class="campo spazio-sopra">${L('Finestra puntate (secondi)', 'Betting window (seconds)', 'Ventana de apuestas (segundos)')}</label>
-      <input type="number" id="pred-finestra" min="30" max="1800" value="120">
+      <input aria-label="${esc(L('Finestra delle puntate in secondi', 'Betting window in seconds', 'Ventana de apuestas en segundos'))}" type="number" id="pred-finestra" min="30" max="1800" value="120">
       <button class="btn spazio-sopra" id="pred-crea">${L('Apri predizione', 'Open prediction', 'Abrir predicción')}</button>
     </div>`);
 }
@@ -5124,7 +5124,7 @@ function pannelloGiveaway() {
       <p>${L('Apri un\'estrazione a premi: la community entra con <code>!join</code> in chat e tu estrai il vincitore da qui. Puoi dare <strong>più possibilità</strong> a sub e VIP e regalare biglietti extra con <code>!biglietti @nome</code>.', 'Open a prize giveaway: the community joins with <code>!join</code> in chat and you draw the winner from here. You can give <strong>better odds</strong> to subs and VIPs and grant extra tickets with <code>!biglietti @name</code>.', 'Abre un sorteo de premios: la comunidad entra con <code>!join</code> en el chat y tú sacas al ganador desde aquí. Puedes dar <strong>más posibilidades</strong> a subs y VIPs y regalar boletos extra con <code>!biglietti @nombre</code>.')}</p>
       <div id="giveaway-stato" class="spazio-sopra"><p>${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
       <div id="giveaway-apri">
-        <label class="campo">${L('Premio in palio', 'Prize', 'Premio en juego')}</label>
+        <label class="campo" for="gw-premio">${L('Premio in palio', 'Prize', 'Premio en juego')}</label>
         <input type="text" id="gw-premio" placeholder="${L('es. una gift card, un gioco Steam…', 'e.g. a gift card, a Steam game…', 'p. ej. una gift card, un juego de Steam…')}">
         <div class="griglia-campi spazio-sopra">
           <div>
@@ -5144,7 +5144,7 @@ function pannelloGiveaway() {
         </div>
         <p class="suggerimento">${L('«2» = doppie possibilità di vincere. «1» = come tutti. Nessuno è mai sicuro di vincere: l\'estrazione è casuale ma pesata.', '«2» = double chance to win. «1» = same as everyone. No one is ever guaranteed to win: the draw is random but weighted.', '«2» = doble posibilidad de ganar. «1» = como todos. Nadie tiene la victoria asegurada: el sorteo es aleatorio pero ponderado.')}</p>
         <div class="riga-check spazio-sopra">
-          <input type="checkbox" id="gw-sub">
+          <input aria-label="${esc(L('Solo abbonati', 'Subscribers only', 'Solo suscriptores'))}" type="checkbox" id="gw-sub">
           <label>${L('Riservato agli abbonati (sub)', 'Subscribers only (subs)', 'Solo para suscriptores (subs)')}</label>
         </div>
         <button class="btn spazio-sopra" id="gw-apri">${L('Apri il giveaway', 'Open the giveaway', 'Abrir el sorteo')}</button>
@@ -5385,7 +5385,7 @@ async function caricaPenitenze() {
 
   const eleggibili = (d.tutti || []).filter((r) => r.richiedeTesto);
   const esclusi = (d.tutti || []).length - eleggibili.length;
-  const montaPicker = (box, { campo, hiddenId, attuale, nomeDefault }) => {
+  const montaPicker = (box, { campo, hiddenId, attuale, nomeDefault, titolo }) => {
     const inp = document.getElementById(hiddenId);
     const cur = (inp?.value || attuale || '').trim();
     const selId = `${hiddenId}-sel`, creaId = `${hiddenId}-crea`, nomeId = `${hiddenId}-nome`, costoId = `${hiddenId}-costo`;
@@ -5393,8 +5393,8 @@ async function caricaPenitenze() {
       <details class="spazio-sopra"${eleggibili.length ? '' : ' open'}>
         <summary>${eleggibili.length ? L('Oppure crea un premio pronto all\'uso', 'Or create a ready-to-use reward', 'O crea una recompensa lista para usar') : L('Crea un premio pronto all\'uso', 'Create a ready-to-use reward', 'Crea una recompensa lista para usar')}</summary>
         <div class="griglia-campi spazio-sopra">
-          <div><label class="campo">${L('Nome', 'Name', 'Nombre')}</label><input type="text" id="${nomeId}" value="${esc(nomeDefault)}"></div>
-          <div><label class="campo">${L('Costo (punti canale)', 'Cost (channel points)', 'Coste (puntos de canal)')}</label><input type="number" id="${costoId}" min="1" value="500"></div>
+          <div><label class="campo" for="${nomeId}">${L('Nome', 'Name', 'Nombre')}</label><input type="text" id="${nomeId}" value="${esc(nomeDefault)}"></div>
+          <div><label class="campo" for="${costoId}">${L('Costo (punti canale)', 'Cost (channel points)', 'Coste (puntos de canal)')}</label><input type="number" id="${costoId}" min="1" value="500"></div>
         </div>
         <button class="btn secondario spazio-sopra" id="${creaId}">${L('Crea il premio su Twitch', 'Create the reward on Twitch', 'Crea la recompensa en Twitch')}</button>
       </details>`;
@@ -5403,7 +5403,7 @@ async function caricaPenitenze() {
     } else {
       const nessuno = `<option value=""${cur ? '' : ' selected'}>${L('— nessuno —', '— none —', '— ninguno —')}</option>`;
       box.innerHTML = `
-        <select id="${selId}">
+        <select id="${selId}" aria-label="${esc(L('Premio per', 'Reward for', 'Recompensa para') + ' ' + titolo)}">
           ${nessuno}${eleggibili.map((r) => `<option value="${esc(r.title)}"${r.title === cur ? ' selected' : ''}>${esc(r.title)} — ${r.cost} ${L('punti', 'points', 'puntos')}</option>`).join('')}
         </select>${formCrea}`;
       const sel = document.getElementById(selId);
@@ -5419,8 +5419,8 @@ async function caricaPenitenze() {
       if (r?.reward) { if (inp) inp.value = r.reward.title; toast(L('Premio creato su Twitch!', 'Reward created on Twitch!', '¡Recompensa creada en Twitch!')); caricaPenitenze(); }
     }));
   };
-  montaPicker(boxV, { campo: 'premioVieta', hiddenId: 'pen-premio-vieta', attuale: d.premioVieta, nomeDefault: L('Vietami una parola', 'Ban me a word', 'Prohíbeme una palabra') });
-  montaPicker(boxS, { campo: 'premioSolo', hiddenId: 'pen-premio-solo', attuale: d.premioSolo, nomeDefault: L('Dì solo questa parola', 'Say only this word', 'Di solo esta palabra') });
+  montaPicker(boxV, { campo: 'premioVieta', hiddenId: 'pen-premio-vieta', attuale: d.premioVieta, titolo: L('Vieta la parola', 'Ban the word', 'Prohíbe la palabra'), nomeDefault: L('Vietami una parola', 'Ban me a word', 'Prohíbeme una palabra') });
+  montaPicker(boxS, { campo: 'premioSolo', hiddenId: 'pen-premio-solo', attuale: d.premioSolo, titolo: L('Usa solo la parola', 'Use only the word', 'Usa solo la palabra'), nomeDefault: L('Dì solo questa parola', 'Say only this word', 'Di solo esta palabra') });
 }
 
 function opzioniSuono(sel) {
@@ -5572,7 +5572,7 @@ function bloccoAlert(t, a) {
   const c = a[t.key] || {};
   const acc = c.accento || c.colore || t.acc;
   const vol = c.volume != null ? c.volume : 100;
-  const soglia = t.soglia ? `<div><label class="campo">${t.soglia.label}</label><input type="number" class="al-soglia" min="0" value="${Number(c[t.soglia.campo]) || 0}"></div>` : '';
+  const soglia = t.soglia ? `<div><label class="campo">${t.soglia.label}</label><input aria-label="${esc(t.soglia.label)}" type="number" class="al-soglia" min="0" value="${Number(c[t.soglia.campo]) || 0}"></div>` : '';
   return `
     <div class="alert-blocco" data-alert="${t.key}">
       <div class="riga-interruttore">
@@ -5580,13 +5580,13 @@ function bloccoAlert(t, a) {
         <strong>${t.nome}</strong>
       </div>
       <label class="campo spazio-sopra">${L('Testo', 'Text', 'Texto')} <span class="tenue">— ${L('segnaposto', 'placeholders', 'marcadores')}: ${esc(t.vars)}</span></label>
-      <input type="text" class="al-testo campo-largo" maxlength="200" placeholder="${esc(t.ph)}" value="${esc(c.testo || '')}">
+      <input type="text" class="al-testo campo-largo" aria-label="${esc(L('Testo di', 'Text of', 'Texto de') + ' ' + t.nome)}" maxlength="200" placeholder="${esc(t.ph)}" value="${esc(c.testo || '')}">
       <div class="griglia-campi spazio-sopra">
-        <div><label class="campo">${L('Colore', 'Color', 'Color')}</label><input type="color" class="al-colore" value="${_hx(acc, t.acc)}"></div>
-        <div><label class="campo">${L('Volume', 'Volume', 'Volumen')}: <strong><span class="al-vol-v">${vol}</span>%</strong></label><input type="range" class="al-vol" min="0" max="100" value="${vol}"></div>
-        <div><label class="campo">Font</label><select class="al-font">${opzioniFont(c.font || '')}</select></div>
+        <div><label class="campo">${L('Colore', 'Color', 'Color')}</label><input aria-label="${esc(L('Colore', 'Color', 'Color'))}" type="color" class="al-colore" value="${_hx(acc, t.acc)}"></div>
+        <div><label class="campo">${L('Volume', 'Volume', 'Volumen')}: <strong><span class="al-vol-v">${vol}</span>%</strong></label><input type="range" class="al-vol" aria-label="${esc(L('Volume di', 'Volume of', 'Volumen de') + ' ' + t.nome)}" min="0" max="100" value="${vol}"></div>
+        <div><label class="campo">Font</label><select aria-label="Font" class="al-font">${opzioniFont(c.font || '')}</select></div>
         <div><label class="campo">${L('Icona', 'Icon', 'Icono')}</label>
-          <select class="al-icona">${ICONA_OPTS().map(([v, t]) => `<option value="${v}"${v === (c.icona || '') ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>
+          <select aria-label="${esc(L('Icona', 'Icon', 'Icono'))}" class="al-icona">${ICONA_OPTS().map(([v, t]) => `<option value="${v}"${v === (c.icona || '') ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>
           <input type="file" class="al-up al-up-icona" accept="image/*" data-slot="icona" hidden>
           <div class="al-carica spazio-sopra">
             <button type="button" class="btn secondario mini al-btn-up" data-slot="icona">${_bIco(ICO.carica)}${L('La mia icona…', 'My own icon…', 'Mi icono…')}</button>
@@ -5598,7 +5598,7 @@ function bloccoAlert(t, a) {
       <div class="al-media-wrap spazio-sopra">
         <div class="al-slot">
           <label class="campo">${_bIco(ICO.altoparlante)}${L('Suono', 'Sound', 'Sonido')}</label>
-          <select class="al-suono">${opzioniSuono(c.suono || '')}</select>
+          <select class="al-suono" aria-label="${esc(L('Suono di', 'Sound of', 'Sonido de') + ' ' + t.nome)}">${opzioniSuono(c.suono || '')}</select>
           <div class="al-carica">
             <input type="file" class="al-up al-up-suono" accept="audio/*" data-slot="suono" hidden>
             <button type="button" class="btn secondario mini al-btn-up" data-slot="suono">${_bIco(ICO.carica)}${L('Carica un suono tuo', 'Upload your own sound', 'Sube un sonido tuyo')}</button>
@@ -5608,7 +5608,7 @@ function bloccoAlert(t, a) {
         </div>
         <div class="al-slot">
           <label class="campo">${_bIco(ICO.immagine)}${L('Immagine o video', 'Image or video', 'Imagen o vídeo')}</label>
-          <select class="al-media"><option value="">${L('— niente —', '— none —', '— nada —')}</option></select>
+          <select class="al-media" aria-label="${esc(L('Immagine o video di', 'Image or video of', 'Imagen o vídeo de') + ' ' + t.nome)}"><option value="">${L('— niente —', '— none —', '— nada —')}</option></select>
           <div class="al-carica">
             <input type="file" class="al-up al-up-media" accept="image/*,video/*" data-slot="media" hidden>
             <button type="button" class="btn secondario mini al-btn-up" data-slot="media">${_bIco(ICO.carica)}${L('Carica immagine/video tuo', 'Upload your own image/video', 'Sube tu imagen/vídeo')}</button>
@@ -5636,7 +5636,7 @@ function bloccoWidget(pref, w, titolo, kind) {
         ${cSel(`${pref}-pos`, L('Posizione', 'Position', 'Posición'), POS4_OPTS(), w.posizione)}
         ${cSel(`${pref}-font`, 'Font', FONT_OPTS(), st.font)}
         ${cSel(`${pref}-dim`, L('Dimensione', 'Size', 'Tamaño'), DIM_OPTS(), st.dim)}
-        <div><label class="campo">${L('Icona', 'Icon', 'Icono')}</label>
+        <div><label class="campo" for="${pref}-icona">${L('Icona', 'Icon', 'Icono')}</label>
           <select class="w-icona" id="${pref}-icona">${ICONA_OPTS().map(([v, t]) => `<option value="${v}"${v === (st.icona == null ? (pref === 'wf' ? 'cuore' : 'stella') : st.icona) ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>
           <input type="file" class="al-up w-up-icona" accept="image/*" data-slot="icona" data-w="${pref}" hidden>
           <div class="al-carica spazio-sopra">
@@ -5710,7 +5710,7 @@ function disegnaGoal() {
     </summary>
     <div class="goal-meta">
       <label class="campo">${L('Titolo', 'Title', 'Título')} <span class="tenue">${L('facoltativo', 'optional', 'opcional')}</span></label>
-      <input type="text" data-g="titolo" maxlength="60" value="${esc(g.titolo || '')}" placeholder="${L('Obiettivo', 'Goal', 'Objetivo')} ${i + 1}">
+      <input type="text" data-g="titolo" maxlength="60" aria-label="${esc(L('Titolo dell\'obiettivo', 'Goal title', 'Título del objetivo') + ' ' + (i + 1))}" value="${esc(g.titolo || '')}" placeholder="${L('Obiettivo', 'Goal', 'Objetivo')} ${i + 1}">
       <div class="goal-campi">
         <label class="campo-num">${L('Conta', 'Count', 'Cuenta')}<select data-g="tipo">${GOAL_TIPI().map(([v, t]) => `<option value="${v}"${g.tipo === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
         <label class="campo-num">${L('Traguardo', 'Target', 'Meta')}<input type="number" data-g="obiettivo" min="1" max="1000000" value="${Number(g.obiettivo) || 100}"></label>
@@ -6091,9 +6091,9 @@ function pannelloAlert() {
         </div>
         <div class="griglia-campi spazio-sopra">
           <div><label class="campo">${L('Prima riga', 'First line', 'Primera línea')} <span class="tenue">${L('usa {titolo}, {artista}, {album}', 'use {titolo}, {artista}, {album}', 'usa {titolo}, {artista}, {album}')}</span></label>
-            <input type="text" data-c="testo" maxlength="80"></div>
+            <input type="text" data-c="testo" aria-label="${esc(L('Prima riga', 'First line', 'Primera línea'))}" maxlength="80"></div>
           <div><label class="campo">${L('Seconda riga', 'Second line', 'Segunda línea')} <span class="tenue">${L('solo con «due righe»', 'only with «two lines»', 'solo con «dos líneas»')}</span></label>
-            <input type="text" data-c="testo2" maxlength="80"></div>
+            <input type="text" data-c="testo2" aria-label="${esc(L('Seconda riga', 'Second line', 'Segunda línea'))}" maxlength="80"></div>
         </div>
         <div class="goal-campi spazio-sopra">
           <label class="campo-num">${L('Copertina', 'Cover art', 'Portada')}<select data-c="cover">${[['quadrata', L('quadrata', 'square', 'cuadrada')], ['tonda', L('tonda', 'round', 'redonda')], ['vinile', L('vinile che gira', 'spinning vinyl', 'vinilo que gira')], ['no', L('niente', 'none', 'ninguna')]].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
@@ -6130,8 +6130,8 @@ function pannelloAlert() {
           <span class="etichetta-stato">${L('Conto alla rovescia', 'Countdown', 'Cuenta atrás')}</span>
         </div>
         <div class="griglia-campi spazio-sopra">
-          <div><label class="campo">${L('Titolo', 'Title', 'Título')}</label><input type="text" data-c="titolo" maxlength="60"></div>
-          <div><label class="campo">${L('Quando arriva a zero scrive', 'When it hits zero it writes', 'Cuando llega a cero escribe')}</label><input type="text" data-c="testoFine" maxlength="60"></div>
+          <div><label class="campo">${L('Titolo', 'Title', 'Título')}</label><input aria-label="${esc(L('Titolo', 'Title', 'Título'))}" type="text" data-c="titolo" maxlength="60"></div>
+          <div><label class="campo">${L('Quando arriva a zero scrive', 'When it hits zero it writes', 'Cuando llega a cero escribe')}</label><input aria-label="${esc(L('Quando arriva a zero scrive', 'When it hits zero it writes', 'Cuando llega a cero escribe'))}" type="text" data-c="testoFine" maxlength="60"></div>
         </div>
         <div class="goal-campi spazio-sopra">
           <label class="campo-num">${L('Dove', 'Where', 'Dónde')}<select data-c="posizione">${POS4_OPTS().map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
@@ -6197,7 +6197,7 @@ function pannelloAlert() {
         <span class="tenue" id="font-mio-esito"></span>
       </div>
       <div id="font-miei-elenco" class="font-miei"></div>
-      <label class="campo spazio-sopra">Font <span class="tenue">— ${L('scegli un font Google dall\'elenco con anteprima (vince sul menu qui sopra)', 'pick a Google font from the list with preview (overrides the menu above)', 'elige una fuente Google de la lista con vista previa (gana sobre el menú de arriba)')}</span></label>
+      <label class="campo spazio-sopra" for="al-st-gfont">Font <span class="tenue">— ${L('scegli un font Google dall\'elenco con anteprima (vince sul menu qui sopra)', 'pick a Google font from the list with preview (overrides the menu above)', 'elige una fuente Google de la lista con vista previa (gana sobre el menú de arriba)')}</span></label>
       <div class="riga-flessibile">
         <input type="text" id="al-st-gfont" class="campo-largo gfont" placeholder="${L('— nessun font Google (uso il menu) —', '— no Google font (using the menu) —', '— sin fuente Google (uso el menú) —')}" value="${esc(st.googleFont || '')}">
         <button type="button" class="btn secondario sfoglia-font" data-target="al-st-gfont" data-box="fb-al">${_bIco(ICO.libro)}${L('Sfoglia i font', 'Browse fonts', 'Explorar fuentes')}</button>
@@ -6245,7 +6245,7 @@ function pannelloAlert() {
         ${cSel('co-st-anim', L('Animazione', 'Animation', 'Animación'), ANIM_CHAT_OPTS(), cst.animazione)}
         ${cRng('co-st-larg', L('Larghezza', 'Width', 'Ancho'), 18, 60, cst.larghezza, 'vw')}
       </div>
-      <label class="campo spazio-sopra">Font <span class="tenue">— ${L('font Google dall\'elenco con anteprima (opzionale, vince sul menu)', 'Google font from the list with preview (optional, overrides the menu)', 'fuente Google de la lista con vista previa (opcional, gana sobre el menú)')}</span></label>
+      <label class="campo spazio-sopra" for="co-st-gfont">Font <span class="tenue">— ${L('font Google dall\'elenco con anteprima (opzionale, vince sul menu)', 'Google font from the list with preview (optional, overrides the menu)', 'fuente Google de la lista con vista previa (opcional, gana sobre el menú)')}</span></label>
       <div class="riga-flessibile">
         <input type="text" id="co-st-gfont" class="campo-largo gfont" placeholder="${L('— nessun font Google —', '— no Google font —', '— sin fuente Google —')}" value="${esc(cst.googleFont || '')}">
         <button type="button" class="btn secondario sfoglia-font" data-target="co-st-gfont" data-box="fb-co">${_bIco(ICO.libro)}${L('Sfoglia i font', 'Browse fonts', 'Explorar fuentes')}</button>
@@ -6290,7 +6290,7 @@ function pannelloAlert() {
       <summary><h3>${_hIco(ICO.moduli)}${L('CSS avanzato', 'Advanced CSS', 'CSS avanzado')} <span class="tenue">— ${L('libertà totale', 'total freedom', 'libertad total')}</span></h3></summary>
       <p>${L('Per chi vuole spingersi oltre: CSS applicato al tuo overlay. Le classi principali sono', 'For those who want to go further: CSS applied to your overlay. The main classes are', 'Para quien quiere ir más allá: CSS aplicado a tu overlay. Las clases principales son')}
       <code>.alert-card</code>, <code>.chat-riga</code>, <code>.ovl-widget</code>, <code>.pen-card</code>.</p>
-      <textarea id="ovl-css" spellcheck="false" placeholder=".alert-card { letter-spacing: 1px; }">${esc(p.overlayCss || '')}</textarea>
+      <textarea aria-label=".alert-card { letter-spacing: 1px; }" id="ovl-css" spellcheck="false" placeholder=".alert-card { letter-spacing: 1px; }">${esc(p.overlayCss || '')}</textarea>
       <p class="spazio-sopra"><button class="btn" id="css-salva" title="${esc(L("Aggiunge il tuo foglio di stile all'overlay. Serve a chi vuole cambiare cose che i menu non toccano", 'Adds your stylesheet to the overlay. For when you want to change things the menus do not reach', 'Añade tu hoja de estilo al overlay. Para cambiar cosas que los menús no tocan'))}">${L('Salva CSS', 'Save CSS', 'Guardar CSS')}</button></p>
     </details>`);
 }
@@ -7848,7 +7848,7 @@ function disegnaBlocchiConta() {
         <span class="etichetta-stato">${L('A schermo', 'On screen', 'En pantalla')}</span>
       </div>
       <label class="campo spazio-sopra">${L('Cosa scrive', 'What it writes', 'Qué escribe')} <span class="tenue">{emoji} {etichetta} {valore}</span></label>
-      <input type="text" data-k="formato" maxlength="80" value="${esc(o.formato || '{emoji} {etichetta}: {valore}')}">
+      <input type="text" data-k="formato" aria-label="${esc(L('Cosa scrive', 'What it writes', 'Qué escribe'))}" maxlength="80" value="${esc(o.formato || '{emoji} {etichetta}: {valore}')}">
       <div class="goal-campi spazio-sopra">
         <label class="campo-num">${L('Testo', 'Text', 'Texto')}<input type="color" data-k="colore" value="${esc(/^#/.test(o.colore || '') ? o.colore : '#ffffff')}"></label>
         <label class="campo-num">${L('Sfondo', 'Background', 'Fondo')}<input type="color" data-k="sfondoTinta" value="${esc(/^#/.test(o.sfondo || '') ? o.sfondo : '#000000')}"></label>
@@ -8311,7 +8311,7 @@ function pannelloRegia() {
       <label class="campo spazio-sopra">${L('Categoria / gioco', 'Category / game', 'Categoría / juego')}</label>
       <div class="regia-gioco-cur">${L('Ora:', 'Now:', 'Ahora:')} <strong id="regia-gioco-sel">—</strong></div>
       <div class="regia-gioco">
-        <input type="text" id="regia-gioco-cerca" placeholder="${L('Cerca un gioco/categoria…', 'Search a game/category…', 'Busca un juego/categoría…')}" autocomplete="off">
+        <input aria-label="${esc(L('Cerca un gioco/categoria…', 'Search a game/category…', 'Busca un juego/categoría…'))}" type="text" id="regia-gioco-cerca" placeholder="${L('Cerca un gioco/categoria…', 'Search a game/category…', 'Busca un juego/categoría…')}" autocomplete="off">
         <div id="regia-gioco-lista" class="regia-gioco-lista" hidden></div>
       </div>
 
@@ -8326,11 +8326,11 @@ function pannelloRegia() {
       <div class="regia-azioni">
         <button type="button" class="btn secondario" id="regia-clip" title="${esc(L("Salva gli ultimi trenta secondi di diretta come clip su Twitch, senza aprire nient'altro", 'Saves the last thirty seconds of the live as a Twitch clip, without opening anything else', 'Guarda los últimos treinta segundos del directo como clip en Twitch, sin abrir nada más'))}">${_bIco(ICO.clip)}${L('Crea clip', 'Create clip', 'Crear clip')}</button>
         <div class="regia-riga">
-          <input type="text" id="regia-marker-desc" placeholder="${L('Nota del marker (facoltativa)', 'Marker note (optional)', 'Nota del marcador (opcional)')}" maxlength="140">
+          <input aria-label="${esc(L('Nota del marker (facoltativa)', 'Marker note (optional)', 'Nota del marcador (opcional)'))}" type="text" id="regia-marker-desc" placeholder="${L('Nota del marker (facoltativa)', 'Marker note (optional)', 'Nota del marcador (opcional)')}" maxlength="140">
           <button type="button" class="btn secondario" id="regia-marker" title="${esc(L('Mette un segno in questo punto della registrazione, per ritrovarlo quando monti', 'Puts a marker at this point of the recording, to find it again when you edit', 'Pone una marca en este punto de la grabación, para encontrarla al montar'))}">${_bIco(ICO.segnaposto)}Marker</button>
         </div>
         <div class="regia-riga" id="regia-ad-box">
-          <select id="regia-ad-durata">
+          <select aria-label="${esc(L('Durata della pubblicita\'', 'Ad duration', 'Duracion del anuncio'))}" id="regia-ad-durata">
             <option value="30">30s</option><option value="60" selected>60s</option>
             <option value="90">90s</option><option value="120">120s</option>
             <option value="150">150s</option><option value="180">180s</option>
@@ -8338,7 +8338,7 @@ function pannelloRegia() {
           <button type="button" class="btn secondario" id="regia-ad" title="${esc(L('Fa partire subito la pubblicità per la durata scelta qui accanto', 'Starts the ad break right now, for the length chosen next to it', 'Lanza la publicidad ahora mismo, con la duración elegida al lado'))}">${_bIco(ICO.tv)}${L('Manda pubblicità', 'Run an ad', 'Lanzar anuncio')}</button>
         </div>
         <div class="regia-riga" id="regia-raid-box">
-          <input type="text" id="regia-raid-canale" placeholder="${L('canale da raidare', 'channel to raid', 'canal a raidear')}" maxlength="30">
+          <input aria-label="${esc(L('canale da raidare', 'channel to raid', 'canal a raidear'))}" type="text" id="regia-raid-canale" placeholder="${L('canale da raidare', 'channel to raid', 'canal a raidear')}" maxlength="30">
           <button type="button" class="btn secondario" id="regia-raid" title="${esc(L('Manda i tuoi spettatori sul canale scelto e chiude la tua diretta', 'Sends your viewers to the chosen channel and ends your live', 'Envía a tus espectadores al canal elegido y termina tu directo'))}">${_bIco(ICO.freccia)}${L('Avvia raid', 'Start raid', 'Iniciar raid')}</button>
           <button type="button" class="btn secondario mini" id="regia-raid-annulla">${L('Annulla', 'Cancel', 'Cancelar')}</button>
         </div>
@@ -9426,7 +9426,7 @@ function renderStudioPreset() {
   const el = document.getElementById('studio-preset'); if (!el) return;
   const list = studioLeggiPreset(), vuoto = !list.length;
   el.innerHTML = `<span class="studio-mini-tit">${L('Preset di layout', 'Layout presets', 'Presets de diseño')}</span>
-    <select class="chip-utente" id="studio-preset-sel"${vuoto ? ' disabled' : ''}>${vuoto ? `<option>${L('— nessuno salvato —', '— none saved —', '— ninguno guardado —')}</option>` : list.map((p, i) => `<option value="${i}">${esc(p.nome)}</option>`).join('')}</select>
+    <select aria-label="${esc(L('Preset di layout', 'Layout preset', 'Preajuste de diseno'))}" class="chip-utente" id="studio-preset-sel"${vuoto ? ' disabled' : ''}>${vuoto ? `<option>${L('— nessuno salvato —', '— none saved —', '— ninguno guardado —')}</option>` : list.map((p, i) => `<option value="${i}">${esc(p.nome)}</option>`).join('')}</select>
     <button type="button" class="btn secondario mini" data-preset="applica"${vuoto ? ' disabled' : ''}>${L('Applica', 'Apply', 'Aplicar')}</button>
     <button type="button" class="btn secondario mini" data-preset="salva">${L('Salva com\'è…', 'Save as is…', 'Guardar tal cual…')}</button>
     <button type="button" class="btn secondario mini" data-preset="elimina"${vuoto ? ' disabled' : ''}>${L('Elimina', 'Delete', 'Eliminar')}</button>`;
@@ -9530,7 +9530,7 @@ function renderStudioMixer() {
       <div class="mix-testa"><span>${nome}</span>${extra || ''}</div>
       <div class="mix-riga">
         <button type="button" class="mix-mute${cfg.mute ? ' on' : ''}" data-mute="${id}"${on ? '' : ' disabled'} title="${cfg.mute ? L('Riattiva', 'Unmute', 'Reactivar') : L('Muto', 'Mute', 'Silenciar')}">${_bIco(cfg.mute ? ICO.muto : ICO.altoparlante)}</button>
-        <input type="range" min="0" max="100" value="${cfg.vol}" data-vol="${id}"${on ? '' : ' disabled'}>
+        <input type="range" min="0" max="100" value="${cfg.vol}" data-vol="${id}" aria-label="${esc(L('Volume', 'Volume', 'Volumen') + ' — ' + nome)}"${on ? '' : ' disabled'}>
         <span class="mix-val">${cfg.vol}</span>
       </div>
       <div class="mix-vu"><span class="mix-vu-barra" data-vu="${id}"></span></div>
@@ -9669,8 +9669,8 @@ function pannelloEffetti() {
   const righeTrk = TRK_GESTI.map(([g, et]) => `
     <div class="trk-riga">
       <span class="trk-et">${et}</span>
-      <input type="text" class="trk-eff" list="trk-eff-list" data-g="${g}" maxlength="40" placeholder="${L('comando effetto (es. airhorn)', 'effect command (e.g. airhorn)', 'comando de efecto (p. ej. airhorn)')}" value="${esc(mappa[g] || '')}">
-      <input type="text" class="trk-chat" data-g="${g}" maxlength="120" placeholder="${L('scrivi in chat (es. una emote)', 'write in chat (e.g. an emote)', 'escribe en el chat (p. ej. una emote)')}" value="${esc(mappaChat[g] || '')}">
+      <input type="text" class="trk-eff" list="trk-eff-list" data-g="${g}" maxlength="40" aria-label="${esc(L('Comando effetto per', 'Effect command for', 'Comando de efecto para'))} ${esc(et)}" placeholder="${L('comando effetto (es. airhorn)', 'effect command (e.g. airhorn)', 'comando de efecto (p. ej. airhorn)')}" value="${esc(mappa[g] || '')}">
+      <input type="text" class="trk-chat" data-g="${g}" maxlength="120" aria-label="${esc(L('Messaggio in chat per', 'Chat message for', 'Mensaje en el chat para'))} ${esc(et)}" placeholder="${L('scrivi in chat (es. una emote)', 'write in chat (e.g. an emote)', 'escribe en el chat (p. ej. una emote)')}" value="${esc(mappaChat[g] || '')}">
     </div>`).join('');
 
   const mm = (trk.mappaMeme && typeof trk.mappaMeme === 'object') ? trk.mappaMeme : {};
@@ -9678,7 +9678,7 @@ function pannelloEffetti() {
   const memeLbl = { happy: L('Risata', 'Laugh', 'Risa'), surprise: L('Sorpresa', 'Surprise', 'Sorpresa'), angry: L('Rabbia', 'Anger', 'Enfado'), sad: L('Tristezza', 'Sadness', 'Tristeza'), fear: L('Paura', 'Fear', 'Miedo'), disgust: L('Disgusto', 'Disgust', 'Asco') };
   const righeMeme = MEME_EMO.map(([e, def]) => `
     <div class="trk-riga"><span class="trk-et">${def} ${memeLbl[e]}</span>
-      <input type="text" class="mm-in" data-e="${e}" maxlength="300" placeholder="${L('emoji o URL immagine/GIF', 'emoji or image/GIF URL', 'emoji o URL imagen/GIF')}" value="${esc(mm[e] || def)}">
+      <input type="text" class="mm-in" data-e="${e}" maxlength="300" aria-label="${esc(L('Immagine o emoji per', 'Image or emoji for', 'Imagen o emoji para'))} ${esc(memeLbl[e])}" placeholder="${L('emoji o URL immagine/GIF', 'emoji or image/GIF URL', 'emoji o URL imagen/GIF')}" value="${esc(mm[e] || def)}">
       <button type="button" class="btn secondario mini mm-lib ico-sola" title="${L('Dalla libreria', 'From the library', 'De la biblioteca')}" aria-label="${L('Dalla libreria', 'From the library', 'De la biblioteca')}">${_bIco(ICO.libro)}</button>
     </div>`).join('');
   return pannello('effetti', `
@@ -9693,26 +9693,26 @@ function pannelloEffetti() {
       <p class="suggerimento">${L('La tua webcam resta la sorgente NATIVA in OBS (qualità e latenza intatte). Servono due link:', 'Your webcam stays the NATIVE source in OBS (quality and latency intact). Two links needed:', 'Tu webcam sigue siendo la fuente NATIVA en OBS (calidad y latencia intactas). Hacen falta dos enlaces:')}</p>
       <label class="campo spazio-sopra">${L('1) Rilevatore — apri in Chrome e tieni la scheda aperta (legge i gesti dalla webcam)', '1) Detector — open in Chrome and keep the tab open (reads gestures from the webcam)', '1) Detector — ábrelo en Chrome y deja la pestaña abierta (lee los gestos de la webcam)')}</label>
       <div class="riga-flessibile">
-        <input type="text" id="trk-url-detect" class="campo-largo" readonly value="${L('caricamento…', 'loading…', 'cargando…')}">
+        <input aria-label="${esc(L('Link della tela che legge i gesti', 'Link of the canvas that reads gestures', 'Enlace del lienzo que lee los gestos'))}" type="text" id="trk-url-detect" class="campo-largo" readonly value="${L('caricamento…', 'loading…', 'cargando…')}">
         <button class="btn secondario" data-trk-copy="trk-url-detect">${_bIco(ICO.pacco)}${L('Copia', 'Copy', 'Copiar')}</button>
       </div>
       <label class="campo spazio-sopra">${L('2) Overlay giochi — in OBS come Origine browser TRASPARENTE, sopra la tua webcam', '2) Games overlay — in OBS as a TRANSPARENT Browser Source, on top of your webcam', '2) Overlay de juegos — en OBS como Fuente de navegador TRANSPARENTE, encima de tu webcam')}</label>
       <div class="riga-flessibile">
-        <input type="text" id="trk-url-play" class="campo-largo" readonly value="${L('caricamento…', 'loading…', 'cargando…')}">
+        <input aria-label="${esc(L('Link della tela dei giochi', 'Link of the games canvas', 'Enlace del lienzo de juegos'))}" type="text" id="trk-url-play" class="campo-largo" readonly value="${L('caricamento…', 'loading…', 'cargando…')}">
         <button class="btn secondario" data-trk-copy="trk-url-play">${_bIco(ICO.pacco)}${L('Copia', 'Copy', 'Copiar')}</button>
       </div>
       <p class="suggerimento">${L('Il rilevatore (Chrome) NON serve mostrarlo: può stare in secondo piano. L\'overlay giochi in OBS non usa la webcam, quindi niente conflitti e niente ritardo. I gesti/giochi compaiono sopra la tua facecam.', 'The detector (Chrome) doesn\'t need to be shown: it can stay in the background. The OBS games overlay doesn\'t use the webcam, so no conflicts and no delay. Gestures/games appear over your facecam.', 'El detector (Chrome) no hace falta mostrarlo: puede estar en segundo plano. El overlay de juegos en OBS no usa la webcam, así que sin conflictos ni retardo. Los gestos/juegos aparecen sobre tu facecam.')}</p>
       <details class="spazio-sopra">
         <summary>${L('Modo tutto-in-uno (solo se la tua OBS dà la webcam alla fonte browser)', 'All-in-one mode (only if your OBS gives the camera to the browser source)', 'Modo todo-en-uno (solo si tu OBS da la cámara a la fuente de navegador)')}</summary>
         <div class="riga-flessibile spazio-sopra">
-          <input type="text" id="trk-url" class="campo-largo" readonly value="${L('caricamento…', 'loading…', 'cargando…')}">
+          <input aria-label="${esc(L('Link della tela degli effetti', 'Link of the effects canvas', 'Enlace del lienzo de efectos'))}" type="text" id="trk-url" class="campo-largo" readonly value="${L('caricamento…', 'loading…', 'cargando…')}">
           <button class="btn secondario" id="trk-copia">${_bIco(ICO.pacco)}${L('Copia', 'Copy', 'Copiar')}</button>
         </div>
         <p class="suggerimento">${L('Un solo link che mostra webcam + effetti. Funziona solo se la fonte browser di OBS può accedere alla fotocamera (spesso la NEGA). Se resta nera, usa il setup consigliato qui sopra.', 'A single link showing webcam + effects. Works only if the OBS browser source can access the camera (it often DENIES it). If it stays black, use the recommended setup above.', 'Un solo enlace que muestra webcam + efectos. Funciona solo si la fuente de navegador de OBS puede acceder a la cámara (a menudo la DENIEGA). Si queda en negro, usa el setup recomendado de arriba.')}</p>
       </details>
       <label class="campo spazio-sopra">${L('Webcam da usare', 'Webcam to use', 'Webcam a usar')} <span class="tenue">— ${L('scegli quale, se ne hai più d\'una', 'pick which one if you have several', 'elige cuál, si tienes varias')}</span></label>
       <div class="riga-flessibile">
-        <select id="trk-cam" class="campo-largo"><option value="">${L('Webcam predefinita del sistema', 'System default webcam', 'Webcam predeterminada del sistema')}</option></select>
+        <select aria-label="${esc(L('Webcam da usare', 'Webcam to use', 'Webcam a usar'))}" id="trk-cam" class="campo-largo"><option value="">${L('Webcam predefinita del sistema', 'System default webcam', 'Webcam predeterminada del sistema')}</option></select>
         <button type="button" class="btn secondario" id="trk-cam-rileva">${L('Rileva webcam', 'Detect webcams', 'Detectar webcams')}</button>
       </div>
       <p class="suggerimento">${L('Premi «Rileva webcam» e consenti la fotocamera per vedere i nomi, scegli la tua e premi «Salva mappatura». Il nome vale anche nell\'overlay in OBS.', 'Press «Detect webcams» and allow the camera to see the names, pick yours and press «Save mapping». The name works in the stream overlay too.', 'Pulsa «Detectar webcams» y permite la cámara para ver los nombres, elige la tuya y pulsa «Guardar mapeo». El nombre vale también en el overlay del directo.')}</p>
@@ -9782,7 +9782,7 @@ function pannelloEffetti() {
           <button type="button" class="btn secondario mini lib-tab" data-tipo="audio">${_bIco(ICO.altoparlante)}${L('Audio', 'Audio', 'Audio')}</button>
         </div>
         <button type="button" class="btn secondario mini" id="lib-miei">${L('Solo i miei', 'Only mine', 'Solo los míos')}</button>
-        <input type="search" id="lib-cerca" placeholder="${L('Cerca per nome…', 'Search by name…', 'Buscar por nombre…')}" maxlength="40">
+        <input aria-label="${esc(L('Cerca per nome…', 'Search by name…', 'Buscar por nombre…'))}" type="search" id="lib-cerca" placeholder="${L('Cerca per nome…', 'Search by name…', 'Buscar por nombre…')}" maxlength="40">
       </div>
       <div id="lib-griglia" class="lib-griglia"><p class="vuoto">${L('Carico la libreria…', 'Loading the library…', 'Cargando la biblioteca…')}</p></div>
     </div>
@@ -9911,12 +9911,12 @@ async function caricaSuoniPremi() {
       <div class="riga-premio-suono">
         <span class="nome-premio"><strong>${esc(r.title)}</strong> <span class="suggerimento">${r.cost || 0} ${L('punti', 'points', 'puntos')}</span></span>
         <span class="controlli-suono">
-          <select class="sel-effetto">${opzScelta(selVal)}</select>
+          <select class="sel-effetto" aria-label="${esc(L('Effetto per', 'Effect for', 'Efecto para') + ' ' + r.title)}">${opzScelta(selVal)}</select>
           <button type="button" class="btn secondario mini sel-lib ico-sola" title="${L('Dalla libreria', 'From the library', 'De la biblioteca')}" aria-label="${L('Dalla libreria', 'From the library', 'De la biblioteca')}">${_bIco(ICO.libro)}</button>
           <button type="button" class="btn secondario mini prova-suono ico-sola" title="${L('Prova', 'Test', 'Probar')}" aria-label="${L('Prova', 'Test', 'Probar')}">${svgPlay}</button>
         </span>
       </div>
-      <input type="text" class="campo-largo msg-suono spazio-sopra" maxlength="300" placeholder="${L('Messaggio in chat (facoltativo, {user} = chi riscatta)', 'Chat message (optional, {user} = who redeems)', 'Mensaje en el chat (opcional, {user} = quien canjea)')}" value="${esc(m.testo || '')}">
+      <input type="text" class="campo-largo msg-suono spazio-sopra" maxlength="300" aria-label="${esc(L('Messaggio in chat per', 'Chat message for', 'Mensaje en el chat para') + ' ' + r.title)}" placeholder="${L('Messaggio in chat (facoltativo, {user} = chi riscatta)', 'Chat message (optional, {user} = who redeems)', 'Mensaje en el chat (opcional, {user} = quien canjea)')}" value="${esc(m.testo || '')}">
       <div class="premio-posizione" hidden></div>
     </li>`;
   }).join('')}</ul>`;
@@ -9985,7 +9985,7 @@ function _premioEditorPos(box, comando, tipo, st, salva) {
     ${isVideo ? `
     <div class="riga-check spazio-sopra"><input type="checkbox" class="pp-chroma" ${st.chroma?.attivo ? 'checked' : ''}><label>Green screen <span class="tenue">— ${L('togli lo sfondo di un colore dal video', 'remove a color background from the video', 'quita el fondo de un color del vídeo')}</span></label></div>
     <div class="pp-chroma-box griglia-campi" ${st.chroma?.attivo ? '' : 'hidden'}>
-      <div><label class="campo">${L('Colore da togliere', 'Color to remove', 'Color a quitar')}</label><input type="color" class="pp-chroma-col" value="${esc(st.chroma?.colore || '#00ff00')}"></div>
+      <div><label class="campo">${L('Colore da togliere', 'Color to remove', 'Color a quitar')}</label><input aria-label="${esc(L('Colore da togliere', 'Color to remove', 'Color a quitar'))}" type="color" class="pp-chroma-col" value="${esc(st.chroma?.colore || '#00ff00')}"></div>
       <div><label class="campo">${L('Sensibilità', 'Sensitivity', 'Sensibilidad')}: <strong class="pp-chroma-s-v">${st.chroma?.soglia || 140}</strong></label><input type="range" class="pp-chroma-s" min="40" max="260" value="${st.chroma?.soglia || 140}"></div>
     </div>` : ''}`;
   const el = box.querySelector('.pp-el');
@@ -10092,14 +10092,14 @@ function pannello7TV() {
       <h2>${_hIco(ICO.piu)}${L('Aggiungi emote', 'Add emotes', 'Añadir emotes')}</h2>
       <p>${L('Cerca nella directory pubblica 7TV e aggiungi con un clic. Oppure incolla il link (o l\'ID) di un\'emote 7TV.', 'Search the public 7TV directory and add with one click. Or paste the link (or ID) of a 7TV emote.', 'Busca en el directorio público de 7TV y añade con un clic. O pega el enlace (o el ID) de una emote 7TV.')}</p>
       <div class="riga-flessibile">
-        <input type="search" id="svtv-cerca" class="campo-largo" placeholder="${L('Cerca un\'emote…', 'Search an emote…', 'Busca una emote…')}" maxlength="60">
+        <input aria-label="${esc(L('Cerca un\'emote…', 'Search an emote…', 'Busca una emote…'))}" type="search" id="svtv-cerca" class="campo-largo" placeholder="${L('Cerca un\'emote…', 'Search an emote…', 'Busca una emote…')}" maxlength="60">
         <button class="btn secondario" id="svtv-cerca-btn">${L('Cerca', 'Search', 'Buscar')}</button>
       </div>
       <div id="svtv-risultati" class="svtv-griglia spazio-sopra"></div>
       <label class="campo spazio-sopra" for="svtv-link">${L('…oppure aggiungi da link / ID', '…or add by link / ID', '…o añade por enlace / ID')}</label>
       <div class="riga-flessibile">
         <input type="text" id="svtv-link" class="campo-largo" placeholder="https://7tv.app/emotes/…" maxlength="200">
-        <input type="text" id="svtv-alias" placeholder="${L('alias (facoltativo)', 'alias (optional)', 'alias (opcional)')}" maxlength="40" style="max-width:180px">
+        <input aria-label="${esc(L('alias (facoltativo)', 'alias (optional)', 'alias (opcional)'))}" type="text" id="svtv-alias" placeholder="${L('alias (facoltativo)', 'alias (optional)', 'alias (opcional)')}" maxlength="40" style="max-width:180px">
         <button class="btn secondario" id="svtv-link-btn">${L('Aggiungi', 'Add', 'Añadir')}</button>
       </div>
     </div>
@@ -10111,8 +10111,8 @@ function pannello7TV() {
       <input type="file" id="svtv-file" accept="image/*,video/*">
       <div class="riga-flessibile spazio-sopra">
         <span class="prefisso-cmd">:</span>
-        <input type="text" id="svtv-nome" class="campo-largo" placeholder="${L('nome dell\'emote (senza spazi)', 'emote name (no spaces)', 'nombre de la emote (sin espacios)')}" maxlength="60">
-        <input type="text" id="svtv-alias-up" placeholder="${L('alias nel canale (facoltativo)', 'alias in your channel (optional)', 'alias en tu canal (opcional)')}" maxlength="60" style="max-width:210px">
+        <input aria-label="${esc(L('nome dell\'emote (senza spazi)', 'emote name (no spaces)', 'nombre de la emote (sin espacios)'))}" type="text" id="svtv-nome" class="campo-largo" placeholder="${L('nome dell\'emote (senza spazi)', 'emote name (no spaces)', 'nombre de la emote (sin espacios)')}" maxlength="60">
+        <input aria-label="${esc(L('alias nel canale (facoltativo)', 'alias in your channel (optional)', 'alias en tu canal (opcional)'))}" type="text" id="svtv-alias-up" placeholder="${L('alias nel canale (facoltativo)', 'alias in your channel (optional)', 'alias en tu canal (opcional)')}" maxlength="60" style="max-width:210px">
         <button class="btn" id="svtv-carica-btn" title="${esc(L('Manda questa emote su 7TV, nella tua raccolta. Su 7TV la vede solo chi ha la loro estensione', 'Uploads this emote to 7TV, into your set. On 7TV only people with their extension see it', 'Sube este emote a 7TV, a tu colección. En 7TV solo lo ven quienes tienen su extensión'))}">${L('Carica su 7TV', 'Upload to 7TV', 'Subir a 7TV')}</button>
       </div>
       <p class="suggerimento" id="svtv-carica-esito">${L('I video diventano emote animate; le GIF trasparenti restano trasparenti. Durata max ~6s, ridimensionata in automatico. L\'alias è il nome con cui appare nel tuo canale (se vuoto, usa il nome dell\'emote).', 'Videos become animated emotes; transparent GIFs stay transparent. Max ~6s, auto-resized. The alias is the name it shows under in your channel (if empty, it uses the emote name).', 'Los vídeos se vuelven emotes animadas; los GIF transparentes siguen transparentes. Máx. ~6s, con redimensionado automático. El alias es el nombre con el que aparece en tu canal (si está vacío, usa el nombre de la emote).')}</p>
@@ -10309,7 +10309,7 @@ function pannelloModuli() {
       <p class="suggerimento"><a href="/manuale/moduli" target="_blank" rel="noopener">${L('Manuale dei moduli', 'Modules manual', 'Manual de módulos')}</a> — ${L('inneschi, condizioni, azioni e variabili, uno per uno.', 'triggers, conditions, actions and variables, one by one.', 'disparadores, condiciones, acciones y variables, uno por uno.')}</p>
       <div class="riga-flessibile">
         <span class="prefisso-cmd">!</span>
-        <input type="text" id="qc-nome" class="campo-largo" placeholder="social" maxlength="24">
+        <input aria-label="social" type="text" id="qc-nome" class="campo-largo" placeholder="social" maxlength="24">
       </div>
       <label class="campo" for="qc-risposta">${L('Risposta', 'Reply', 'Respuesta')}</label>
       <textarea id="qc-risposta" placeholder="${L('es. I miei social li trovi su socialbot.live/u/$canale', 'e.g. Find my socials at socialbot.live/u/$canale', 'p. ej. Mis redes están en socialbot.live/u/$canale')}"></textarea>
@@ -10385,7 +10385,7 @@ function pannelloModuli() {
       <p>${L('Vieni da', 'Coming from', 'Vienes de')} <strong>Nightbot</strong>, <strong>StreamElements</strong>, <strong>Fossabot</strong> ${L('o altro? Incolla qui quello che riesci a copiare:', 'or elsewhere? Paste whatever you can copy:', 'u otro? Pega aquí lo que puedas copiar:')}
       ${L("l'export del tuo bot, un CSV, o un semplice elenco", 'your bot export, a CSV, or a plain list', 'la exportación de tu bot, un CSV o una simple lista')} <code>!comando risposta</code>.
       ${L('Le variabili vengono tradotte', 'Variables are translated', 'Las variables se traducen')} (<code>$(user)</code> → <code>$user</code>) ${L('e prima di scrivere qualsiasi cosa ti mostro esattamente cosa succede.', 'and before writing anything I show you exactly what happens.', 'y antes de escribir nada te muestro exactamente qué pasa.')}</p>
-      <textarea id="imp-testo" class="campo-largo" rows="6" spellcheck="false" placeholder="${L('Incolla qui…', 'Paste here…', 'Pega aquí…')}"></textarea>
+      <textarea aria-label="${esc(L('Incolla qui…', 'Paste here…', 'Pega aquí…'))}" id="imp-testo" class="campo-largo" rows="6" spellcheck="false" placeholder="${L('Incolla qui…', 'Paste here…', 'Pega aquí…')}"></textarea>
       <p class="spazio-sopra">
         <button class="btn secondario" id="imp-vedi">${_bIco(ICO.occhio)}${L('Guarda cosa succede', 'See what happens', 'Mira qué pasa')}</button>
         <label class="btn secondario" for="imp-file">${_bIco(ICO.carica)}${L('Apri un file', 'Open a file', 'Abre un archivo')}</label>
@@ -10835,7 +10835,7 @@ function temiProntiHtml(sel) {
     const b = _BASI[t.base] || _BASI.minimal;
     const bg = t.tema.bg || b.bg, bg2 = t.tema.bg2 || b.bg2, acc = t.tema.accent || b.acc;
     const sfondo = t.tema.sfondoTipo === 'gradiente' ? `linear-gradient(${t.tema.angolo}deg,${bg},${bg2})` : bg;
-    return `<button type="button" class="lp-tema${t.id === sel ? ' sel' : ''}" data-lptema="${esc(t.id)}" title="${esc(t.nome)}">
+    return `<button type="button" class="lp-tema${t.id === sel ? ' sel' : ''}" data-lptema="${esc(t.id)}">
       <span class="lp-tema-sw" style="background:${esc(sfondo)};border-radius:${Math.min(t.tema.raggio, 14)}px">
         <span style="background:${esc(acc)};border-radius:${Math.min(t.tema.raggio, 9)}px"></span>
         <span style="background:${esc(t.tema.card || 'rgba(128,128,128,.35)')};border-radius:${Math.min(t.tema.raggio, 9)}px"></span>
@@ -10844,6 +10844,10 @@ function temiProntiHtml(sel) {
     </button>`;
   }).join('') + `</div>`;
 }
+
+const lpRng = (k, eti, min, max, val, suf = '') => `
+            <label class="campo spazio-sopra">${eti} <span class="tenue" data-lpv="${k}" data-suf="${suf}">${val}${suf}</span></label>
+            <input type="range" data-lpk="${k}" aria-label="${esc(eti)}" min="${min}" max="${max}" value="${val}">`;
 
 async function caricaPaginaLink(ridisegna = false) {
   const box = document.getElementById('lp-box'); if (!box) return;
@@ -10900,7 +10904,7 @@ async function caricaPaginaLink(ridisegna = false) {
           </div>
           <div id="lp-avatar-box" ${LP.testa.avatar && LP.testa.avatar !== 'no' ? '' : 'hidden'}>
             <p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpup="avatar">${_bIco(ICO.carica)}${L('Carica una foto', 'Upload a photo', 'Subir una foto')}</button></p>
-            <input type="url" id="lp-avatar-url" data-lpt="avatarUrl" class="spazio-sopra" maxlength="${d.limiti.url}" value="${esc(LP.testa.avatar && LP.testa.avatar !== 'no' ? LP.testa.avatar : '')}" placeholder="${esc(L('…oppure incolla un indirizzo', '…or paste an address', '…o pega una dirección'))}">
+            <input type="url" id="lp-avatar-url" aria-label="${esc(L('Indirizzo della foto', 'Photo address', 'Dirección de la foto'))}" data-lpt="avatarUrl" class="spazio-sopra" maxlength="${d.limiti.url}" value="${esc(LP.testa.avatar && LP.testa.avatar !== 'no' ? LP.testa.avatar : '')}" placeholder="${esc(L('…oppure incolla un indirizzo', '…or paste an address', '…o pega una dirección'))}">
           </div>
         </details>
 
@@ -10993,10 +10997,8 @@ async function caricaPaginaLink(ridisegna = false) {
                   <option value="sinistra">${L('A sinistra', 'Left', 'A la izquierda')}</option>
                 </select></div>
             </div>
-            <label class="campo spazio-sopra">${L('Larghezza della colonna', 'Column width', 'Ancho de la columna')} <span class="tenue" data-lpv="larghezza" data-suf="rem">${Number(LP.tema.larghezza) || 30}rem</span></label>
-            <input type="range" data-lpk="larghezza" min="20" max="46" value="${Number(LP.tema.larghezza) || 30}">
-            <label class="campo spazio-sopra">${L('Aria fra un pezzo e l\'altro', 'Space between items', 'Aire entre piezas')} <span class="tenue" data-lpv="spaziatura" data-suf="%">${Number(LP.tema.spaziatura) || 100}%</span></label>
-            <input type="range" data-lpk="spaziatura" min="40" max="220" value="${Number(LP.tema.spaziatura) || 100}">
+            ${lpRng('larghezza', L('Larghezza della colonna', 'Column width', 'Ancho de la columna'), 20, 46, Number(LP.tema.larghezza) || 30, 'rem')}
+            ${lpRng('spaziatura', L('Aria fra un pezzo e l\'altro', 'Space between items', 'Aire entre piezas'), 40, 220, Number(LP.tema.spaziatura) || 100, '%')}
             <p class="suggerimento">${L('“Sezioni” dà respiro e titoli grandi. “Rivista” affianca i link su due o tre colonne; video, musica e pagine restano larghi perché stretti diventano illeggibili. Il movimento è tutto in CSS: chi ha “riduci animazioni” nel sistema non ne vede nessuna.', '“Sections” gives room and big headings. “Magazine” puts links on two or three columns; video, music and pages stay wide because they become unreadable when squeezed. Motion is all CSS: anyone with “reduce motion” on sees none of it.', '“Secciones” da aire y títulos grandes. “Revista” pone los enlaces en dos o tres columnas; vídeo, música y páginas siguen anchos. El movimiento es todo CSS: quien tiene “reducir movimiento” no ve ninguna.')}</p>
           </div>
         </div>
@@ -11025,10 +11027,8 @@ async function caricaPaginaLink(ridisegna = false) {
                   <option value="tutto">${L('Tutta la pagina', 'The whole page', 'Toda la página')}</option>
                 </select></div>
             </div>
-            <label class="campo spazio-sopra">${L('Interlinea', 'Line height', 'Interlineado')} <span class="tenue" data-lpv="interlinea" data-suf="%">${Number(LP.tema.interlinea) || 150}%</span></label>
-            <input type="range" data-lpk="interlinea" min="120" max="200" value="${Number(LP.tema.interlinea) || 150}">
-            <label class="campo spazio-sopra">${L('Grandezza del testo', 'Text size', 'Tamaño del texto')} <span class="tenue" data-lpv="corpo" data-suf="%">${Number(LP.tema.corpo) || 100}%</span></label>
-            <input type="range" data-lpk="corpo" min="80" max="130" value="${Number(LP.tema.corpo) || 100}">
+            ${lpRng('interlinea', L('Interlinea', 'Line height', 'Interlineado'), 120, 200, Number(LP.tema.interlinea) || 150, '%')}
+            ${lpRng('corpo', L('Grandezza del testo', 'Text size', 'Tamaño del texto'), 80, 130, Number(LP.tema.corpo) || 100, '%')}
             <p class="suggerimento">${L('La grandezza vale per tutta la pagina insieme, così le proporzioni restano quelle. Lo spessore muove tutti i pesi in blocco — titoli, etichette, sottotitoli — e li tiene in scala fra loro: è la stessa pagina più leggera, non una pagina diversa.', 'Size applies to the whole page at once, so the proportions stay put. Weight moves every level together — headings, labels, sublabels — keeping them in scale: it is the same page, lighter, not a different page.', 'El tamaño vale para toda la página a la vez, así las proporciones no cambian. El grosor mueve todos los pesos juntos y los mantiene en escala: es la misma página más ligera, no otra página.')}</p>
           </div>
         </div>
@@ -11042,16 +11042,15 @@ async function caricaPaginaLink(ridisegna = false) {
                   <option value="gradiente">${L('Sfumatura fra due colori', 'Gradient between two colours', 'Degradado entre dos colores')}</option>
                   <option value="immagine">${L('Immagine', 'Image', 'Imagen')}</option>
                 </select></div>
-              <div><label class="campo">${L('Colore sfondo', 'Background colour', 'Color de fondo')}</label><input type="color" data-lpk="bg" value="${esc(LP.tema.bg || '#0b0813')}"></div>
-              <div id="lp-bg2-box"><label class="campo">${L('Secondo colore', 'Second colour', 'Segundo color')}</label><input type="color" data-lpk="bg2" value="${esc(LP.tema.bg2 || '#241046')}"></div>
+              <div><label class="campo">${L('Colore sfondo', 'Background colour', 'Color de fondo')}</label><input aria-label="${esc(L('Colore sfondo', 'Background colour', 'Color de fondo'))}" type="color" data-lpk="bg" value="${esc(LP.tema.bg || '#0b0813')}"></div>
+              <div id="lp-bg2-box"><label class="campo">${L('Secondo colore', 'Second colour', 'Segundo color')}</label><input aria-label="${esc(L('Secondo colore', 'Second colour', 'Segundo color'))}" type="color" data-lpk="bg2" value="${esc(LP.tema.bg2 || '#241046')}"></div>
             </div>
             <div id="lp-grad-box">
-              <label class="campo spazio-sopra">${L('Direzione della sfumatura', 'Gradient direction', 'Dirección del degradado')} <span class="tenue" data-lpv="angolo" data-suf="°">${Number(LP.tema.angolo) || 160}°</span></label>
-              <input type="range" data-lpk="angolo" min="0" max="360" value="${Number(LP.tema.angolo) || 160}">
+              ${lpRng('angolo', L('Direzione della sfumatura', 'Gradient direction', 'Dirección del degradado'), 0, 360, Number(LP.tema.angolo) || 160, '°')}
             </div>
             <div id="lp-sfimg-box">
               <label class="campo spazio-sopra">${L('Indirizzo dell\'immagine di sfondo', 'Background image address', 'Dirección de la imagen de fondo')}</label>
-              <input type="url" data-lpk="sfondoUrl" maxlength="${d.limiti.url}" value="${esc(LP.tema.sfondoUrl || '')}" placeholder="https://…">
+              <input type="url" data-lpk="sfondoUrl" aria-label="${esc(L('Indirizzo dell\'immagine di sfondo', 'Background image address', 'Dirección de la imagen de fondo'))}" maxlength="${d.limiti.url}" value="${esc(LP.tema.sfondoUrl || '')}" placeholder="https://…">
             </div>
             <label class="campo spazio-sopra" for="lp-effetto">${L('Effetto sopra lo sfondo', 'Effect over the background', 'Efecto sobre el fondo')}</label>
             <select id="lp-effetto" data-lpk="effetto">
@@ -11074,11 +11073,11 @@ async function caricaPaginaLink(ridisegna = false) {
               <option value="concentrazione">${L('Linee di concentrazione', 'Speed lines', 'Líneas de concentración')}</option>
             </select>
             <div class="griglia-campi spazio-sopra">
-              <div><label class="campo">${L('Colore testo', 'Text colour', 'Color del texto')}</label><input type="color" data-lpk="testo" value="${esc(LP.tema.testo || '#f4f2ff')}"></div>
-              <div><label class="campo">${L('Colore evidenza', 'Accent colour', 'Color de acento')}</label><input type="color" data-lpk="accent" value="${esc(LP.tema.accent || '#a568ff')}"></div>
-              <div><label class="campo">${L('Colore bottoni', 'Button colour', 'Color de botones')}</label><input type="color" data-lpk="card" value="${esc(LP.tema.card || '#141220')}"></div>
-              <div><label class="campo">${L('Colore bordi', 'Border colour', 'Color de bordes')}</label><input type="color" data-lpk="bordo" value="${esc(LP.tema.bordo || '#2c2440')}"></div>
-              <div><label class="campo">${L('Testo dei bottoni', 'Button text', 'Texto de los botones')}</label><input type="color" data-lpk="testoBtn" value="${esc(LP.tema.testoBtn || LP.tema.testo || '#f4f2ff')}"></div>
+              <div><label class="campo">${L('Colore testo', 'Text colour', 'Color del texto')}</label><input aria-label="${esc(L('Colore testo', 'Text colour', 'Color del texto'))}" type="color" data-lpk="testo" value="${esc(LP.tema.testo || '#f4f2ff')}"></div>
+              <div><label class="campo">${L('Colore evidenza', 'Accent colour', 'Color de acento')}</label><input aria-label="${esc(L('Colore evidenza', 'Accent colour', 'Color de acento'))}" type="color" data-lpk="accent" value="${esc(LP.tema.accent || '#a568ff')}"></div>
+              <div><label class="campo">${L('Colore bottoni', 'Button colour', 'Color de botones')}</label><input aria-label="${esc(L('Colore bottoni', 'Button colour', 'Color de botones'))}" type="color" data-lpk="card" value="${esc(LP.tema.card || '#141220')}"></div>
+              <div><label class="campo">${L('Colore bordi', 'Border colour', 'Color de bordes')}</label><input aria-label="${esc(L('Colore bordi', 'Border colour', 'Color de bordes'))}" type="color" data-lpk="bordo" value="${esc(LP.tema.bordo || '#2c2440')}"></div>
+              <div><label class="campo">${L('Testo dei bottoni', 'Button text', 'Texto de los botones')}</label><input aria-label="${esc(L('Testo dei bottoni', 'Button text', 'Texto de los botones'))}" type="color" data-lpk="testoBtn" value="${esc(LP.tema.testoBtn || LP.tema.testo || '#f4f2ff')}"></div>
             </div>
           </div>
         </div>
@@ -11101,7 +11100,7 @@ async function caricaPaginaLink(ridisegna = false) {
                 </select></div>
               <div id="lp-ombra-col" ${(LP.tema.ombraTipo || 'morbida') === 'dura' ? '' : 'hidden'}>
                 <label class="campo">${L('Colore dell\'ombra dura', 'Hard shadow colour', 'Color de la sombra dura')}</label>
-                <input type="color" data-lpk="ombraColore" value="${esc(LP.tema.ombraColore || '#000000')}"></div>
+                <input aria-label="${esc(L('Colore dell\'ombra dura', 'Hard shadow colour', 'Color de la sombra dura'))}" type="color" data-lpk="ombraColore" value="${esc(LP.tema.ombraColore || '#000000')}"></div>
               <div><label class="campo" for="lp-avatarForma">${L('Immagine profilo', 'Profile picture', 'Imagen de perfil')}</label>
                 <select id="lp-avatarForma" data-lpk="avatarForma">
                   <option value="cerchio">${L('Cerchio', 'Circle', 'Círculo')}</option>
@@ -11109,10 +11108,8 @@ async function caricaPaginaLink(ridisegna = false) {
                   <option value="nessuno">${L('Non mostrarla', 'Don’t show it', 'No mostrarla')}</option>
                 </select></div>
             </div>
-            <label class="campo spazio-sopra">${L('Angoli dei bottoni', 'Button corners', 'Esquinas de los botones')} <span class="tenue" data-lpv="raggio" data-suf="px">${Number(LP.tema.raggio) ?? 14}px</span></label>
-            <input type="range" data-lpk="raggio" min="0" max="999" value="${Number(LP.tema.raggio) ?? 14}">
-            <label class="campo spazio-sopra">${L('Spessore del bordo', 'Border width', 'Grosor del borde')} <span class="tenue" data-lpv="bordoSp" data-suf="px">${Number(LP.tema.bordoSp) || 0}px</span></label>
-            <input type="range" data-lpk="bordoSp" min="0" max="8" value="${Number(LP.tema.bordoSp) || 0}">
+            ${lpRng('raggio', L('Angoli dei bottoni', 'Button corners', 'Esquinas de los botones'), 0, 999, Number(LP.tema.raggio) ?? 14, 'px')}
+            ${lpRng('bordoSp', L('Spessore del bordo', 'Border width', 'Grosor del borde'), 0, 8, Number(LP.tema.bordoSp) || 0, 'px')}
             <p class="suggerimento">${L('Spessore a 0 = quello che decide lo stile scelto qui sopra (pieno 1, contorno 2, inchiostro 3).', 'Width at 0 = whatever the style above decides (filled 1, outline 2, ink 3).', 'Grosor 0 = lo que decide el estilo de arriba (relleno 1, contorno 2, tinta 3).')}</p>
             <p class="suggerimento">${L('0 = spigoli vivi · 999 = pillola. Non vale per video e musica: lì un arrotondamento esagerato mangerebbe l\'immagine.', '0 = sharp corners · 999 = pill. Not applied to video and music: there an extreme radius would eat the picture.', '0 = esquinas rectas · 999 = píldora. No se aplica a vídeo y música: ahí un redondeo extremo se comería la imagen.')}</p>
           </div>
@@ -11400,9 +11397,9 @@ function lpRenderBlocchi() {
         ${b.img ? '' : grigliaIcone(i, b.icona)}
         <div class="griglia-campi spazio-sopra">
           <div><label class="campo">${L('Colore del bottone', 'Button colour', 'Color del botón')}</label>
-            <input type="color" data-lpb="${i}" data-lpf="colore" value="${esc(b.colore || '#6d3bef')}"></div>
+            <input aria-label="${esc(L('Colore del bottone', 'Button colour', 'Color del botón'))}" type="color" data-lpb="${i}" data-lpf="colore" value="${esc(b.colore || '#6d3bef')}"></div>
           <div><label class="campo">${L('Colore del testo', 'Text colour', 'Color del texto')}</label>
-            <input type="color" data-lpb="${i}" data-lpf="coloreTesto" value="${esc(b.coloreTesto || '#ffffff')}"></div>
+            <input aria-label="${esc(L('Colore del testo', 'Text colour', 'Color del texto'))}" type="color" data-lpb="${i}" data-lpf="coloreTesto" value="${esc(b.coloreTesto || '#ffffff')}"></div>
         </div>
         <p class="suggerimento">${L('Valgono solo per questo bottone. Per rimetterlo come il tema, svuota il colore qui sotto.', 'They apply to this button only. To put it back like the theme, clear the colour below.', 'Solo valen para este botón. Para dejarlo como el tema, vacía el color abajo.')}
           ${b.colore ? `<button type="button" class="btn secondario mini" data-lpvia-col="${i}">${L('Rimetti come il tema', 'Back to theme', 'Como el tema')}</button>` : ''}</p>
@@ -11444,7 +11441,7 @@ function lpRenderBlocchi() {
         <input type="range" data-lpb="${i}" data-lpf="altezza" min="0" max="900" step="10" value="${Number(b.altezza) || 0}">
         <div class="griglia-campi spazio-sopra">
           <div><label class="campo">${L('Colore dietro al riquadro', 'Colour behind the frame', 'Color detrás del marco')}</label>
-            <input type="color" data-lpb="${i}" data-lpf="sfondo" value="${esc(b.sfondo || LP.tema.bordo || '#000000')}"></div>
+            <input aria-label="${esc(L('Colore dietro al riquadro', 'Colour behind the frame', 'Color detrás del marco'))}" type="color" data-lpb="${i}" data-lpf="sfondo" value="${esc(b.sfondo || LP.tema.bordo || '#000000')}"></div>
         </div>
         <p class="suggerimento">${L('Il contenuto di un altro sito ha i suoi angoli arrotondati: negli spicchi che restano si vedeva la pagina. Di partenza li riempie il colore del bordo, così sembrano cornice e non un buco. Se preferisci, mettici il colore che vedi dentro al contenuto e spariscono del tutto.', 'Content from another site has its own rounded corners: in the wedges left over you could see the page through. By default the border colour fills them, so they read as frame and not as a hole. If you prefer, put the colour you see inside the content and they disappear entirely.', 'El contenido de otro sitio tiene sus esquinas redondeadas: en las cuñas que quedan se veía la página. Por defecto las rellena el color del borde, así parecen marco y no un agujero. Si lo prefieres, pon el color que ves dentro del contenido y desaparecen del todo.')}
           ${b.sfondo ? `<button type="button" class="btn secondario mini" data-lpvia-emb="${i}">${L('Rimetti come il tema', 'Back to theme', 'Como el tema')}</button>` : ''}</p>
@@ -11802,30 +11799,30 @@ async function caricaContatori() {
         <div class="cont-ov-form" data-ovform="${esc(c.comando)}">
           <label class="riga-check riga-mostra"><input type="checkbox" data-ovk="mostra"${o.mostra ? ' checked' : ''}> <strong>${L('Mostra in overlay', 'Show in overlay', 'Mostrar en overlay')}</strong> <span class="suggerimento">${L('(lo stesso overlay di OBS/Studio)', '(the same overlay as OBS/Studio)', '(el mismo overlay del directo/Studio)')}</span></label>
           <label class="campo spazio-sopra">${L('Posizione a schermo', 'On-screen position', 'Posición en pantalla')}</label>
-          <select data-ovk="posizione" class="campo-largo">${posOpts(o.x, o.y)}</select>
+          <select data-ovk="posizione" class="campo-largo" aria-label="${esc(L('Posizione a schermo', 'On-screen position', 'Posición en pantalla') + ' — ' + (c.etichetta || c.comando))}">${posOpts(o.x, o.y)}</select>
           <details class="cont-fine">
             <summary>${L('Regolazione fine (X/Y manuali)', 'Fine tuning (manual X/Y)', 'Ajuste fino (X/Y manual)')}</summary>
             <div class="griglia-campi spazio-sopra">
-              <div><label class="campo">${L('Posizione X %', 'Position X %', 'Posición X %')}</label><input type="number" data-ovk="x" min="0" max="100" value="${Number(o.x) || 0}"></div>
-              <div><label class="campo">${L('Posizione Y %', 'Position Y %', 'Posición Y %')}</label><input type="number" data-ovk="y" min="0" max="100" value="${Number(o.y) || 0}"></div>
+              <div><label class="campo">${L('Posizione X %', 'Position X %', 'Posición X %')}</label><input aria-label="${esc(L('Posizione X %', 'Position X %', 'Posición X %'))}" type="number" data-ovk="x" min="0" max="100" value="${Number(o.x) || 0}"></div>
+              <div><label class="campo">${L('Posizione Y %', 'Position Y %', 'Posición Y %')}</label><input aria-label="${esc(L('Posizione Y %', 'Position Y %', 'Posición Y %'))}" type="number" data-ovk="y" min="0" max="100" value="${Number(o.y) || 0}"></div>
             </div>
           </details>
           <div class="griglia-campi spazio-sopra">
-            <div><label class="campo">${L('Colore testo', 'Text color', 'Color texto')}</label><input type="color" data-ovk="colore" value="${esc(o.colore || '#ffffff')}"></div>
-            <div><label class="campo">${L('Dimensione (px)', 'Size (px)', 'Tamaño (px)')}</label><input type="number" data-ovk="dim" min="10" max="200" value="${Number(o.dim) || 40}"></div>
+            <div><label class="campo">${L('Colore testo', 'Text color', 'Color texto')}</label><input aria-label="${esc(L('Colore testo', 'Text color', 'Color texto'))}" type="color" data-ovk="colore" value="${esc(o.colore || '#ffffff')}"></div>
+            <div><label class="campo">${L('Dimensione (px)', 'Size (px)', 'Tamaño (px)')}</label><input aria-label="${esc(L('Dimensione (px)', 'Size (px)', 'Tamaño (px)'))}" type="number" data-ovk="dim" min="10" max="200" value="${Number(o.dim) || 40}"></div>
           </div>
           <div class="griglia-campi spazio-sopra">
-            <div><label class="campo">${L('Colore sfondo', 'Background color', 'Color de fondo')}</label><input type="color" data-ovk="sfondo" value="${esc(hexBg)}"></div>
-            <div><label class="campo">Font</label><select data-ovk="font">${fontOpts(o.font || 'system')}</select></div>
+            <div><label class="campo">${L('Colore sfondo', 'Background color', 'Color de fondo')}</label><input aria-label="${esc(L('Colore sfondo', 'Background color', 'Color de fondo'))}" type="color" data-ovk="sfondo" value="${esc(hexBg)}"></div>
+            <div><label class="campo">Font</label><select aria-label="Font" data-ovk="font">${fontOpts(o.font || 'system')}</select></div>
           </div>
           <label class="riga-check spazio-sopra"><input type="checkbox" data-ovk="trasp"${trasp ? ' checked' : ''}> ${L('Sfondo trasparente', 'Transparent background', 'Fondo transparente')}</label>
           <label class="riga-check"><input type="checkbox" data-ovk="grassetto"${o.grassetto ? ' checked' : ''}> ${L('Grassetto', 'Bold', 'Negrita')}</label>
           <label class="campo spazio-sopra">${L('Formato del testo', 'Text format', 'Formato del texto')}</label>
-          <input type="text" data-ovk="formato" maxlength="80" value="${esc(o.formato || '{emoji} {etichetta}: {valore}')}" placeholder="{emoji} {etichetta}: {valore}">
+          <input type="text" data-ovk="formato" maxlength="80" aria-label="${esc(L('Formato del testo', 'Text format', 'Formato del texto') + ' — ' + (c.etichetta || c.comando))}" value="${esc(o.formato || '{emoji} {etichetta}: {valore}')}" placeholder="{emoji} {etichetta}: {valore}">
           <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{emoji}</code> <code>{etichetta}</code> <code>{valore}</code></p>
           <div class="griglia-campi spazio-sopra">
-            <div><label class="campo">${L('Parola per ACCENDERE', 'Word to TURN ON', 'Palabra para ENCENDER')}</label><input type="text" data-ovk="parolaOn" maxlength="60" value="${esc(o.parolaOn || '')}" placeholder="es. acceso, ok, vai"></div>
-            <div><label class="campo">${L('Parola per SPEGNERE', 'Word to TURN OFF', 'Palabra para APAGAR')}</label><input type="text" data-ovk="parolaOff" maxlength="60" value="${esc(o.parolaOff || '')}" placeholder="es. spento, stop"></div>
+            <div><label class="campo">${L('Parola per ACCENDERE', 'Word to TURN ON', 'Palabra para ENCENDER')}</label><input aria-label="${esc(L('Parola per ACCENDERE', 'Word to TURN ON', 'Palabra para ENCENDER'))}" type="text" data-ovk="parolaOn" maxlength="60" value="${esc(o.parolaOn || '')}" placeholder="es. acceso, ok, vai"></div>
+            <div><label class="campo">${L('Parola per SPEGNERE', 'Word to TURN OFF', 'Palabra para APAGAR')}</label><input aria-label="${esc(L('Parola per SPEGNERE', 'Word to TURN OFF', 'Palabra para APAGAR'))}" type="text" data-ovk="parolaOff" maxlength="60" value="${esc(o.parolaOff || '')}" placeholder="es. spento, stop"></div>
           </div>
           <p class="suggerimento">${L('Parole extra per <code>!' + esc(c.comando) + ' &lt;parola&gt;</code> (oltre alle standard on/acceso/ok/vai · off/spento/stop). Separale con virgole.', 'Extra words for <code>!' + esc(c.comando) + ' &lt;word&gt;</code> (besides the defaults on/ok/go · off/stop). Comma-separated.', 'Palabras extra para <code>!' + esc(c.comando) + ' &lt;palabra&gt;</code> (además de las estándar on/ok/vai · off/stop). Sepáralas con comas.')}</p>
           <p><button type="button" class="btn secondario mini" data-ca="salva-ov" data-cmd="${esc(c.comando)}">${L('Salva aspetto', 'Save look', 'Guardar aspecto')}</button></p>
@@ -12076,33 +12073,33 @@ function pannelloGiochi() {
 
       <div id="gioco-manche" class="gioco-ramo-corpo" hidden>
       <div class="riga-flessibile">
-        <select id="gioco-tipo">
+        <select id="gioco-tipo" aria-label="${esc(L('Tipo di gioco', 'Game type', 'Tipo de juego'))}">
           <option value="trivia">${L('Quiz (domande & risposte)', 'Quiz (questions & answers)', 'Quiz (preguntas y respuestas)')}</option>
           <option value="parola">${L('Parola veloce (reflex)', 'Fast word (reflex)', 'Palabra rápida (reflejo)')}</option>
           <option value="anagramma">${L('Anagramma (lettere mescolate)', 'Anagram (scrambled letters)', 'Anagrama (letras mezcladas)')}</option>
           <option value="sequenza">${L('Sequenza di simboli', 'Symbol sequence', 'Secuencia de símbolos')}</option>
           <option value="domanda">${L('Domanda tua (una sola)', 'Your own question (single)', 'Tu pregunta (una sola)')}</option>
         </select>
-        <input type="text" id="gioco-nome" maxlength="60" placeholder="${L('Nome del gioco (es. Trivia gaming)', 'Game name (e.g. Gaming trivia)', 'Nombre del juego (p. ej. Trivia gaming)')}">
+        <input type="text" id="gioco-nome" aria-label="${esc(L('Nome del gioco', 'Game name', 'Nombre del juego'))}" maxlength="60" placeholder="${L('Nome del gioco (es. Trivia gaming)', 'Game name (e.g. Gaming trivia)', 'Nombre del juego (p. ej. Trivia gaming)')}">
       </div>
       <div id="gioco-trivia" class="spazio-sopra">
-        <label class="campo">${L('Domande — una per riga, formato', 'Questions — one per line, format', 'Preguntas — una por línea, formato')} <code>${L('domanda | risposta1, risposta2', 'question | answer1, answer2', 'pregunta | respuesta1, respuesta2')}</code></label>
+        <label class="campo" for="gioco-domande">${L('Domande — una per riga, formato', 'Questions — one per line, format', 'Preguntas — una por línea, formato')} <code>${L('domanda | risposta1, risposta2', 'question | answer1, answer2', 'pregunta | respuesta1, respuesta2')}</code></label>
         <textarea id="gioco-domande" rows="5" placeholder="${L('Chi ha vinto i mondiali 2006? | italia&#10;Come si chiama il mio gatto? | felix, felixe', 'Who won the 2006 World Cup? | italy&#10;What’s my cat’s name? | felix, felixe', '¿Quién ganó el Mundial 2006? | italia&#10;¿Cómo se llama mi gato? | felix, felixe')}"></textarea>
       </div>
       <div id="gioco-parola" class="spazio-sopra" hidden>
-        <label class="campo">${L('Parole — una per riga (il bot ne pesca una e il primo che la scrive vince)', 'Words — one per line (the bot picks one and the first to type it wins)', 'Palabras — una por línea (el bot elige una y el primero que la escribe gana)')}</label>
+        <label class="campo" for="gioco-parole">${L('Parole — una per riga (il bot ne pesca una e il primo che la scrive vince)', 'Words — one per line (the bot picks one and the first to type it wins)', 'Palabras — una por línea (el bot elige una y el primero que la escribe gana)')}</label>
         <textarea id="gioco-parole" rows="5" placeholder="pizza&#10;combo perfetta&#10;gg wp"></textarea>
         <p class="suggerimento" id="gioco-nota-anagramma" hidden>${L('Per gli anagrammi servono parole di almeno quattro lettere: il bot mescola le lettere e chi rimette la parola in ordine vince.', 'Anagrams need words of at least four letters: the bot scrambles them and whoever unscrambles first wins.', 'Los anagramas necesitan palabras de al menos cuatro letras: el bot las mezcla y gana quien las reordena.')}</p>
       </div>
       <div id="gioco-sequenza" class="spazio-sopra" hidden>
-        <label class="campo">${L('Simboli — separati da spazio (almeno tre). Il bot ne mostra una sequenza e vince chi la ricopia esatta.', 'Symbols — space separated (at least three). The bot shows a sequence and whoever copies it exactly wins.', 'Símbolos — separados por espacio (al menos tres). El bot muestra una secuencia y gana quien la copia exacta.')}</label>
+        <label class="campo" for="gioco-simboli">${L('Simboli — separati da spazio (almeno tre). Il bot ne mostra una sequenza e vince chi la ricopia esatta.', 'Symbols — space separated (at least three). The bot shows a sequence and whoever copies it exactly wins.', 'Símbolos — separados por espacio (al menos tres). El bot muestra una secuencia y gana quien la copia exacta.')}</label>
         <input type="text" id="gioco-simboli" placeholder="🍒 ⭐ 💎 🔥 🎲">
         <label class="campo-num spazio-sopra">${L('Quanti simboli per sequenza', 'How many symbols per sequence', 'Cuántos símbolos por secuencia')}<input type="number" id="gioco-lunghezza" min="3" max="8" value="4"></label>
       </div>
       <div id="gioco-domanda" class="spazio-sopra" hidden>
-        <label class="campo">${L('La domanda', 'The question', 'La pregunta')}</label>
+        <label class="campo" for="gioco-testo">${L('La domanda', 'The question', 'La pregunta')}</label>
         <input type="text" id="gioco-testo" maxlength="240" placeholder="${L('Qual è il mio gioco preferito?', 'What is my favourite game?', '¿Cuál es mi juego favorito?')}">
-        <label class="campo spazio-sopra">${L('Risposte accettate — separate da virgola', 'Accepted answers — comma separated', 'Respuestas aceptadas — separadas por comas')}</label>
+        <label class="campo spazio-sopra" for="gioco-risposte">${L('Risposte accettate — separate da virgola', 'Accepted answers — comma separated', 'Respuestas aceptadas — separadas por comas')}</label>
         <input type="text" id="gioco-risposte" placeholder="${L('elden ring, eldenring', 'elden ring, eldenring', 'elden ring, eldenring')}">
         <label class="campo-num spazio-sopra">${L('Secondi per rispondere', 'Seconds to answer', 'Segundos para responder')}<input type="number" id="gioco-durata" min="10" max="300" value="45"></label>
       </div>
@@ -12133,12 +12130,12 @@ function pannelloGiochi() {
       </div>
       <div class="riga-flessibile">
         <span class="suggerimento">${L('Ogni', 'Every', 'Cada')}</span>
-        <select id="sel-premio-periodo">
+        <select aria-label="${esc(L('Ogni quanto si assegna il premio', 'How often the prize is awarded', 'Cada cuanto se da el premio'))}" id="sel-premio-periodo">
           <option value="settimana" ${s.premioVip.periodo === 'settimana' ? 'selected' : ''}>${L('settimana', 'week', 'semana')}</option>
           <option value="mese" ${s.premioVip.periodo === 'mese' ? 'selected' : ''}>${L('mese', 'month', 'mes')}</option>
         </select>
         <span class="suggerimento">${L('ai primi', 'to the top', 'a los primeros')}</span>
-        <input type="number" id="num-premio-quanti" min="1" max="5" value="${Number(s.premioVip.quanti) || 1}">
+        <input aria-label="${esc(L('A quanti in classifica', 'To how many in the leaderboard', 'A cuantos de la clasificacion'))}" type="number" id="num-premio-quanti" min="1" max="5" value="${Number(s.premioVip.quanti) || 1}">
       </div>
       <div class="riga-check">
         <input type="checkbox" id="chk-premio-salta" ${s.premioVip.saltaPerenni !== false ? 'checked' : ''}>
@@ -12150,8 +12147,8 @@ function pannelloGiochi() {
       ${L('o in chat con', 'or in chat with', 'o en el chat con')} <code>!vip @${L('nome', 'name', 'nombre')}</code>.</p>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-premio">${L('Salva premio', 'Save reward', 'Guardar premio')}</button></p>
       ${stato.ruolo === 'moderatore' ? '' : `<div class="riga-flessibile spazio-sopra">
-        <input type="text" id="pt-utente" placeholder="${L('nome utente', 'username', 'nombre de usuario')}" style="max-width:14rem">
-        <input type="number" id="pt-delta" placeholder="${L('es. 100 o -50', 'e.g. 100 or -50', 'p. ej. 100 o -50')}" style="max-width:10rem">
+        <input aria-label="${esc(L('nome utente', 'username', 'nombre de usuario'))}" type="text" id="pt-utente" placeholder="${L('nome utente', 'username', 'nombre de usuario')}" style="max-width:14rem">
+        <input aria-label="${esc(L('es. 100 o -50', 'e.g. 100 or -50', 'p. ej. 100 o -50'))}" type="number" id="pt-delta" placeholder="${L('es. 100 o -50', 'e.g. 100 or -50', 'p. ej. 100 o -50')}" style="max-width:10rem">
         <button type="button" class="btn secondario" id="btn-punti-manuale">${L('Aggiusta', 'Adjust', 'Ajustar')} ${esc(s.nomeMonete)}</button>
       </div>
       <p class="suggerimento">${L('Per riparare un errore. Con il meno si tolgono. In chat puoi fare lo stesso con un comando (ricetta «Dai monete»), che però lo fa vedere a tutti — e possono usarlo anche i tuoi moderatori.', 'To fix a mistake. Use a minus to remove. In chat you can do the same with a command (the «Give coins» recipe), which everyone sees — and your mods can use it too.', 'Para reparar un error. Con el menos se quitan. En el chat puedes hacer lo mismo con un comando (receta «Dar monedas»), que además lo ve todo el mundo — y también pueden usarlo tus moderadores.')}</p>`}
@@ -12182,7 +12179,7 @@ function pannelloGiochi() {
       <p>${L('Le frasi memorabili della chat. In chat:', 'The chat’s memorable lines. In chat:', 'Las frases memorables del chat. En el chat:')} <code>!cita</code> (${L('a caso', 'random', 'al azar')}), <code>!cita 12</code> (${L('una precisa', 'a specific one', 'una concreta')}),
       <code>!cita ${L('aggiungi', 'add', 'añadir')} &lt;${L('testo', 'text', 'texto')}&gt;</code> ${L('e', 'and', 'y')} <code>!cita ${L('rimuovi', 'remove', 'quitar')} 12</code> (mod/streamer). ${L('Le gestisci anche da qui.', 'You can also manage them here.', 'También las gestionas desde aquí.')}</p>
       <div class="riga-flessibile">
-        <input type="text" id="inp-citazione" maxlength="400" placeholder="${L('una frase memorabile…', 'a memorable line…', 'una frase memorable…')}">
+        <input aria-label="${esc(L('una frase memorabile…', 'a memorable line…', 'una frase memorable…'))}" type="text" id="inp-citazione" maxlength="400" placeholder="${L('una frase memorabile…', 'a memorable line…', 'una frase memorable…')}">
         <button class="btn" id="btn-aggiungi-citazione">${L('Aggiungi', 'Add', 'Añadir')}</button>
       </div>
 
@@ -12197,9 +12194,9 @@ function pannelloGiochi() {
 
         <p class="suggerimento" style="margin-bottom:.5rem"><strong>${L('2) A mano.', '2) By hand.', '2) A mano.')}</strong> ${L('Sulla pagina x.la <em>già aperta e caricata</em>, seleziona le quote col mouse e incollale qui sotto: riconosco <strong>nome utente e data</strong> (formato «<em>frase</em> ⏎ <em>autore | data</em>», come le mostra x.la). I doppioni li salto.', 'On the x.la page <em>already open and loaded</em>, select the quotes with the mouse and paste them below: I recognize <strong>username and date</strong> (format “<em>line</em> ⏎ <em>author | date</em>”, as x.la shows them). I skip duplicates.', 'En la página x.la <em>ya abierta y cargada</em>, selecciona las citas con el ratón y pégalas abajo: reconozco <strong>usuario y fecha</strong> (formato «<em>frase</em> ⏎ <em>autor | fecha</em>», como las muestra x.la). Los duplicados los salto.')}</p>
 
-        <textarea id="txt-import-citazioni" rows="6" placeholder="&quot;Tu, molto molto bravo&quot;&#10;UnicornoFacinoroso | 06.09.2024&#10;&quot;io solo perchè mi andava di uscire&quot;&#10;@chiara_3008 | 06.10.2024"></textarea>
+        <textarea aria-label="&quot;Tu, molto molto bravo&quot;&#10;UnicornoFacinoroso | 06.09.2024&#10;&quot;io solo perchè mi andava di uscire&quot;&#10;@chiara_3008 | 06.10.2024" id="txt-import-citazioni" rows="6" placeholder="&quot;Tu, molto molto bravo&quot;&#10;UnicornoFacinoroso | 06.09.2024&#10;&quot;io solo perchè mi andava di uscire&quot;&#10;@chiara_3008 | 06.10.2024"></textarea>
         <div class="riga-flessibile">
-          <input type="text" id="inp-import-url" placeholder="${L('…oppure incolla un link (per altre fonti)', '…or paste a link (for other sources)', '…o pega un enlace (para otras fuentes)')}">
+          <input aria-label="${esc(L('…oppure incolla un link (per altre fonti)', '…or paste a link (for other sources)', '…o pega un enlace (para otras fuentes)'))}" type="text" id="inp-import-url" placeholder="${L('…oppure incolla un link (per altre fonti)', '…or paste a link (for other sources)', '…o pega un enlace (para otras fuentes)')}">
           <button class="btn secondario" id="btn-estrai-citazioni" title="${esc(L('Legge la pagina che hai incollato e ne tira fuori le frasi, invece di farti copiare a mano', 'Reads the page you pasted and pulls the lines out of it, instead of you copying by hand', 'Lee la página que pegaste y saca las frases, en vez de copiarlas a mano'))}">${L('Estrai dal link', 'Extract from link', 'Extraer del enlace')}</button>
         </div>
         <p class="spazio-sopra">
@@ -12515,13 +12512,13 @@ function pannelloScudo() {
         <div>
           <h3>${L('Blocca sempre', 'Always block', 'Bloquear siempre')}</h3>
           <p class="suggerimento">${L('Questi nomi vengono sempre fermati.', 'These names are always stopped.', 'Estos nombres se paran siempre.')}</p>
-          <div class="riga-flessibile"><input id="scudo-add-extra" maxlength="30" placeholder="${L('nome account', 'account name', 'nombre cuenta')}"><button type="button" class="btn secondario mini" data-scudo-add="extra">${L('Aggiungi', 'Add', 'Añadir')}</button></div>
+          <div class="riga-flessibile"><input aria-label="${esc(L('nome account', 'account name', 'nombre cuenta'))}" id="scudo-add-extra" maxlength="30" placeholder="${L('nome account', 'account name', 'nombre cuenta')}"><button type="button" class="btn secondario mini" data-scudo-add="extra">${L('Aggiungi', 'Add', 'Añadir')}</button></div>
           <div id="scudo-lista-extra" class="scudo-chips"></div>
         </div>
         <div>
           <h3>${L('Non toccare mai', 'Never touch', 'Nunca tocar')}</h3>
           <p class="suggerimento">${L('Questi non vengono mai fermati (oltre a mod, VIP e sub).', 'These are never stopped (besides mods, VIPs and subs).', 'Estos nunca se paran (además de mods, VIP y subs).')}</p>
-          <div class="riga-flessibile"><input id="scudo-add-esenti" maxlength="30" placeholder="${L('nome account', 'account name', 'nombre cuenta')}"><button type="button" class="btn secondario mini" data-scudo-add="esenti">${L('Aggiungi', 'Add', 'Añadir')}</button></div>
+          <div class="riga-flessibile"><input aria-label="${esc(L('nome account', 'account name', 'nombre cuenta'))}" id="scudo-add-esenti" maxlength="30" placeholder="${L('nome account', 'account name', 'nombre cuenta')}"><button type="button" class="btn secondario mini" data-scudo-add="esenti">${L('Aggiungi', 'Add', 'Añadir')}</button></div>
           <div id="scudo-lista-esenti" class="scudo-chips"></div>
         </div>
       </div>
@@ -12721,7 +12718,7 @@ function pannelloRegole() {
       </div>
       <div class="riga-flessibile">
         <span class="suggerimento">${L('Possono postare link:', 'Can post links:', 'Pueden publicar enlaces:')}</span>
-        <select id="sel-as-linktier">
+        <select aria-label="${esc(L('Chi puo\' postare link', 'Who can post links', 'Quien puede publicar enlaces'))}" id="sel-as-linktier">
           <option value="mod" ${a.linkTier === 'mod' ? 'selected' : ''}>${L('solo mod', 'mods only', 'solo mods')}</option>
           <option value="vip" ${a.linkTier === 'vip' ? 'selected' : ''}>${L('VIP e mod', 'VIPs and mods', 'VIP y mods')}</option>
           <option value="sub" ${(a.linkTier || 'sub') === 'sub' ? 'selected' : ''}>${L('sub, VIP e mod', 'subs, VIPs and mods', 'subs, VIP y mods')}</option>
@@ -12791,9 +12788,9 @@ function pannelloRegole() {
       </div>
       <div class="riga-flessibile">
         <span class="suggerimento">${L('Allarme oltre', 'Alert above', 'Alarma por encima de')}</span>
-        <input type="number" id="inp-ab-quanti" min="3" max="100" value="${Number(ab.rafficaQuanti) || 10}" style="width:5rem">
+        <input aria-label="${esc(L('Allarme oltre quanti follow', 'Alert above how many follows', 'Alerta por encima de cuantos follows'))}" type="number" id="inp-ab-quanti" min="3" max="100" value="${Number(ab.rafficaQuanti) || 10}" style="width:5rem">
         <span class="suggerimento">${L('follow in', 'follows in', 'follows en')}</span>
-        <input type="number" id="inp-ab-secondi" min="5" max="300" value="${Number(ab.rafficaSecondi) || 30}" style="width:5rem">
+        <input aria-label="${esc(L('In quanti secondi', 'Within how many seconds', 'En cuantos segundos'))}" type="number" id="inp-ab-secondi" min="5" max="300" value="${Number(ab.rafficaSecondi) || 30}" style="width:5rem">
         <span class="suggerimento">${L('secondi', 'seconds', 'segundos')}</span>
       </div>
       <div class="riga-check">
@@ -12816,7 +12813,7 @@ function pannelloRegole() {
       <p class="suggerimento" id="lp-ab-lista">${L('Controllo la lista…', 'Checking the list…', 'Comprobando la lista…')}</p>
       <div class="riga-flessibile">
         <span class="suggerimento">${L('Cosa fare:', 'What to do:', 'Qué hacer:')}</span>
-        <select id="sel-ab-azione">
+        <select aria-label="${esc(L('Cosa fare quando scatta l\'allarme', 'What to do when the alert fires', 'Que hacer cuando salta la alarma'))}" id="sel-ab-azione">
           <option value="ban" ${(ab.azione || 'ban') === 'ban' ? 'selected' : ''}>${L('bannare', 'ban', 'banear')}</option>
           <option value="timeout" ${ab.azione === 'timeout' ? 'selected' : ''}>${L('timeout 14 giorni', '14-day timeout', 'timeout 14 días')}</option>
           <option value="segnala" ${ab.azione === 'segnala' ? 'selected' : ''}>${L('solo segnalare', 'just report', 'solo avisar')}</option>
@@ -12835,9 +12832,9 @@ function pannelloRegole() {
       </div>
       <div class="riga-flessibile">
         <span class="suggerimento">${L('Account più giovane di', 'Account younger than', 'Cuenta con menos de')}</span>
-        <input type="number" id="inp-ab-chatore" min="1" max="720" value="${Number(ab.chatMinOre) || 24}" style="width:5rem">
+        <input aria-label="${esc(L('Quante ore di eta\' minima dell\'account', 'Minimum account age in hours', 'Horas minimas de antiguedad de la cuenta'))}" type="number" id="inp-ab-chatore" min="1" max="720" value="${Number(ab.chatMinOre) || 24}" style="width:5rem">
         <span class="suggerimento">${L('ore →', 'hours →', 'horas →')}</span>
-        <select id="sel-ab-chatazione">
+        <select aria-label="${esc(L('Cosa fare con gli account piu\' giovani', 'What to do with younger accounts', 'Que hacer con las cuentas mas nuevas'))}" id="sel-ab-chatazione">
           <option value="elimina" ${(ab.chatNuoviAzione || 'elimina') === 'elimina' ? 'selected' : ''}>${L('trattieni il messaggio', 'hold the message', 'retén el mensaje')}</option>
           <option value="segnala" ${ab.chatNuoviAzione === 'segnala' ? 'selected' : ''}>${L('lascialo, avvisa i mod', 'leave it, warn mods', 'déjalo, avisa a los mods')}</option>
         </select>
@@ -14089,8 +14086,8 @@ async function caricaCompleanni() {
   const roster = (d.membri || []).map((m) => `
     <div class="riga-flessibile membro-riga" data-membro-id="${esc(m.id)}" data-membro-nome="${esc(m.nome || '')}" style="margin-bottom:.4rem">
       <span class="campo-largo">${esc(m.nome || '—')}${m.username ? ` <span class="meta">@${esc(m.username)}</span>` : ''}</span>
-      <input type="number" class="mem-gg" min="1" max="31" placeholder="GG" style="width:72px">
-      <input type="number" class="mem-mm" min="1" max="12" placeholder="MM" style="width:72px">
+      <input type="number" class="mem-gg" min="1" max="31" aria-label="Giorno di nascita di ${esc(m.nome || '—')}" placeholder="GG" style="width:72px">
+      <input type="number" class="mem-mm" min="1" max="12" aria-label="Mese di nascita di ${esc(m.nome || '—')}" placeholder="MM" style="width:72px">
       <button class="btn secondario mini" data-membro-add>Aggiungi</button>
     </div>`).join('');
   box.innerHTML = `
@@ -14118,9 +14115,9 @@ async function caricaCompleanni() {
     <hr class="separatore">
     <label class="campo">Aggiungi un compleanno a mano (senza tag)</label>
     <div class="riga-flessibile">
-      <input type="text" id="inp-comple-nome" class="campo-largo" placeholder="Nome">
-      <input type="number" id="inp-comple-giorno" min="1" max="31" placeholder="GG" style="width:80px">
-      <input type="number" id="inp-comple-mese" min="1" max="12" placeholder="MM" style="width:80px">
+      <input aria-label="Nome" type="text" id="inp-comple-nome" class="campo-largo" placeholder="Nome">
+      <input aria-label="GG" type="number" id="inp-comple-giorno" min="1" max="31" placeholder="GG" style="width:80px">
+      <input aria-label="MM" type="number" id="inp-comple-mese" min="1" max="12" placeholder="MM" style="width:80px">
       <button class="btn secondario" id="btn-comple-aggiungi">Aggiungi</button>
     </div>`;
 }
@@ -14145,7 +14142,7 @@ async function caricaConoscenza() {
           <div class="meta"><span class="badge">${esc(badge[v.fonte] || v.fonte)}</span> · ${esc(QUANDO[v.quando] || QUANDO.sempre)}${v.id ? ' · ' + esc(dataIt(v.ts)) : ''}</div>
         </div>
         ${v.id ? `<div class="riga-flessibile">
-          <select data-quando="${v.id}" title="${L('Quando vale', 'When it applies', 'Cuándo vale')}">
+          <select data-quando="${v.id}" aria-label="${esc(L('Quando vale', 'When it applies', 'Cuándo vale') + ' — ' + v.domanda)}" title="${L('Quando vale', 'When it applies', 'Cuándo vale')}">
             ${Object.entries(QUANDO).map(([k, t]) => `<option value="${k}"${(v.quando || 'sempre') === k ? ' selected' : ''}>${esc(t)}</option>`).join('')}
           </select>
           <button class="btn secondario mini" data-fissa="${v.id}" data-on="${v.fissata ? '1' : '0'}">${v.fissata ? L('Libera', 'Unpin', 'Soltar') : L('Fissa', 'Pin', 'Fijar')}</button>
@@ -15573,7 +15570,7 @@ function disegnaCampiAzione(a) {
       }
       return `
         <label class="campo">Quale effetto</label>
-        <select data-campo="comando">
+        <select aria-label="Quale effetto" data-campo="comando">
           ${eff.map((e) => {
             const cmd = typeof e === 'string' ? e : (e.comando || '');
             return `<option value="${esc(cmd)}" ${a.comando === cmd ? 'selected' : ''}>!${esc(cmd)}</option>`;
@@ -15587,7 +15584,7 @@ function disegnaCampiAzione(a) {
         <div class="griglia-campi">
           <div>
             <label class="campo">Cosa fare</label>
-            <select data-campo="op">
+            <select aria-label="Cosa fare" data-campo="op">
               <option value="aggiungi" ${op === 'aggiungi' ? 'selected' : ''}>Dai</option>
               <option value="togli" ${op === 'togli' ? 'selected' : ''}>Togli</option>
               <option value="imposta" ${op === 'imposta' ? 'selected' : ''}>Porta esattamente a</option>
@@ -15595,11 +15592,11 @@ function disegnaCampiAzione(a) {
           </div>
           <div>
             <label class="campo">Quanti</label>
-            <input type="text" data-campo="quanto" data-var-target placeholder="10 oppure $random(1,50)" value="${esc(a.quanto ?? '')}">
+            <input aria-label="Quanti" type="text" data-campo="quanto" data-var-target placeholder="10 oppure $random(1,50)" value="${esc(a.quanto ?? '')}">
           </div>
           <div>
             <label class="campo">A chi</label>
-            <select data-campo="a">
+            <select aria-label="A chi" data-campo="a">
               <option value="autore" ${chi === 'autore' ? 'selected' : ''}>Chi ha scritto</option>
               <option value="destinatario" ${chi === 'destinatario' ? 'selected' : ''}>Chi è taggato dopo il comando</option>
               <option value="caso" ${chi === 'caso' ? 'selected' : ''}>Uno a caso fra chi è in chat</option>
@@ -15608,7 +15605,7 @@ function disegnaCampiAzione(a) {
           </div>
           <div${chi === 'nome' ? '' : ' hidden'} data-solo-nome>
             <label class="campo">Nome utente</label>
-            <input type="text" data-campo="nome" placeholder="tizio" value="${esc(a.nome || '')}">
+            <input aria-label="Nome utente" type="text" data-campo="nome" placeholder="tizio" value="${esc(a.nome || '')}">
           </div>
         </div>
         ${pillole}`;
@@ -15618,11 +15615,11 @@ function disegnaCampiAzione(a) {
         <div class="griglia-campi">
           <div>
             <label class="campo">Nome contatore</label>
-            <input type="text" data-campo="nome" placeholder="morti" value="${esc(a.nome || '')}">
+            <input aria-label="Nome contatore" type="text" data-campo="nome" placeholder="morti" value="${esc(a.nome || '')}">
           </div>
           <div>
             <label class="campo">Operazione</label>
-            <select data-campo="op">
+            <select aria-label="Operazione" data-campo="op">
               <option value="incrementa" ${a.op === 'incrementa' ? 'selected' : ''}>Incrementa (+1)</option>
               <option value="azzera" ${a.op === 'azzera' ? 'selected' : ''}>Azzera</option>
               <option value="imposta" ${a.op === 'imposta' ? 'selected' : ''}>Imposta a…</option>
@@ -15636,7 +15633,7 @@ function disegnaCampiAzione(a) {
     case 'webhook':
       return `
         <label class="campo">URL del tuo servizio (https)</label>
-        <input type="text" data-campo="url" placeholder="https://" value="${esc(a.url || '')}">
+        <input aria-label="URL del tuo servizio (https)" type="text" data-campo="url" placeholder="https://" value="${esc(a.url || '')}">
         <div class="riga-check">
           <input type="checkbox" data-campo="usaRisposta" ${a.usaRisposta ? 'checked' : ''}>
           <label>Usa la risposta come messaggio in chat</label>
@@ -15672,17 +15669,17 @@ function disegnaCampiAzione(a) {
     case 'attendi':
       return `
         <label class="campo">Secondi da aspettare</label>
-        <input type="number" data-campo="secondi" min="0" max="60" value="${Number(a.secondi) || 2}">`;
+        <input aria-label="Secondi da aspettare" type="number" data-campo="secondi" min="0" max="60" value="${Number(a.secondi) || 2}">`;
     case 'overlayTesto':
       return `
         <textarea data-campo="testo" data-var-target placeholder="Testo da mostrare sull'overlay">${esc(a.testo || '')}</textarea>
         ${pillole}
         <label class="campo">Durata a schermo (ms)</label>
-        <input type="number" data-campo="durata" min="500" max="30000" value="${Number(a.durata) || 5000}">`;
+        <input aria-label="Durata a schermo (ms)" type="number" data-campo="durata" min="500" max="30000" value="${Number(a.durata) || 5000}">`;
     case 'timeout':
       return `
         <label class="campo">Timeout (secondi)</label>
-        <input type="number" data-campo="secondi" min="1" max="1209600" value="${Number(a.secondi) || 600}">`;
+        <input aria-label="Timeout (secondi)" type="number" data-campo="secondi" min="1" max="1209600" value="${Number(a.secondi) || 600}">`;
     case 'musica':
       return `
         <label class="campo">Brano da mettere in coda (nome, artista o <code>$args</code>)</label>
@@ -15698,7 +15695,7 @@ function disegnaCampiAzione(a) {
         <textarea data-campo="testo" data-var-target placeholder="es. Benvenuti nella live! Oggi si gioca a $gioco">${esc(a.testo || '')}</textarea>
         ${pillole}
         <label class="campo">Colore dell'annuncio</label>
-        <select data-campo="colore">
+        <select aria-label="Colore dell'annuncio" data-campo="colore">
           ${[['primary', 'Predefinito (viola)'], ['blue', 'Blu'], ['green', 'Verde'], ['orange', 'Arancione'], ['purple', 'Viola']]
             .map(([v, t]) => `<option value="${v}" ${(a.colore || 'primary') === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}
         </select>
@@ -15706,7 +15703,7 @@ function disegnaCampiAzione(a) {
     case 'shoutout':
       return `
         <label class="campo">Canale a cui fare shoutout (vuoto = il nome dopo il comando o chi ti raida)</label>
-        <input type="text" data-campo="canale" placeholder="es. giorgiottv oppure lascia vuoto per $touser" value="${esc(a.canale || '')}">
+        <input aria-label="Canale a cui fare shoutout (vuoto = il nome dopo il comando o chi ti raida)" type="text" data-campo="canale" placeholder="es. giorgiottv oppure lascia vuoto per $touser" value="${esc(a.canale || '')}">
         <label class="campo spazio-sopra">Messaggio extra in chat (facoltativo)</label>
         <textarea data-campo="testo" data-var-target placeholder="es. Andate a seguire @$touser! Stava streammando $giocotarget">${esc(a.testo || '')}</textarea>
         ${pillole}
@@ -15843,7 +15840,7 @@ function disegnaConnettori() {
   box.innerHTML = `
     <label class="campo">Chiave API in ingresso</label>
     <div class="riga-flessibile">
-      <input type="text" class="campo-largo" readonly value="${esc(chiaveMostrata)}">
+      <input type="text" class="campo-largo" readonly aria-label="Chiave API in ingresso" value="${esc(chiaveMostrata)}">
       ${apiKey ? `<button class="btn secondario mini" data-apikey="mostra">${apiKeyVisibile ? L('Nascondi', 'Hide', 'Ocultar') : L('Mostra', 'Show', 'Mostrar')}</button>` : ''}
       ${apiKey ? `<button class="btn secondario mini" data-apikey="copia">${L('Copia', 'Copy', 'Copiar')}</button>` : ''}
       <button class="btn secondario mini" data-apikey="rigenera">${ceUna ? L('Rigenera', 'Regenerate', 'Regenerar') : L('Genera chiave', 'Generate key', 'Generar clave')}</button>
@@ -15852,7 +15849,7 @@ function disegnaConnettori() {
 
     <label class="campo">URL a cui inviare le richieste</label>
     <div class="riga-flessibile">
-      <input type="text" class="campo-largo" readonly value="${esc(apiUrl)}" placeholder="—">
+      <input type="text" class="campo-largo" readonly aria-label="URL a cui inviare le richieste" value="${esc(apiUrl)}" placeholder="—">
       <button class="btn secondario mini" data-apikey="copia-url">Copia</button>
     </div>
 

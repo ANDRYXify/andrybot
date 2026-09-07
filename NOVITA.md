@@ -15,6 +15,11 @@ streamer *usa*, si riscrive senza nominarla: la funzione resta documentata e il
 nome resta in casa. Non è una cosa da ricordarsi:
 `scripts/verifica-novita.mjs` boccia una riga pubblica che la nomina.
 
+## 2026-09-07
+
+- Ogni campo del pannello ha un nome che il lettore di schermo legge: prima 395 caselle su 916 restavano mute. Riguarda i cursori del tema, i pannelli dello Studio, gli avvisi, i compleanni e i premi.
+- Sui temi pronti della pagina link la nuvoletta ripeteva il nome scritto sotto al bottone, e ora non c'è più.
+
 ## 2026-09-06
 
 - Nella locandina live compare la foto anche degli streamer che hai aggiunto tu alle notifiche: prima restava un cerchio vuoto.
