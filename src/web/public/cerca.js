@@ -405,18 +405,25 @@
     try { calmo = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { calmo = false; }
     el.classList.add('cerca-mira');
     var giri = 0;
+    var fermo = 0;
+    var dovEro = -1;
     var porta = function () {
       if (!document.contains(el)) return;
+      giri += 1;
+      var qui = window.scrollY;
+      if (qui === dovEro) fermo += 1; else fermo = 0;
+      dovEro = qui;
+      if (fermo < 2 && giri < 12) { setTimeout(porta, 120); return; }
       var r = el.getBoundingClientRect();
       if (r.top < 60 || r.bottom > window.innerHeight - 40) {
-        try { el.scrollIntoView({ block: 'center', behavior: (calmo || giri) ? 'auto' : 'smooth' }); }
+        try { el.scrollIntoView({ block: 'center', behavior: calmo ? 'auto' : 'smooth' }); }
         catch (e) { try { el.scrollIntoView(); } catch (e2) {  } }
+        fermo = 0;
       }
-      giri += 1;
-      if (giri < 5) setTimeout(porta, 230);
+      if (giri < 24) setTimeout(porta, 120);
     };
     porta();
-    setTimeout(function () { el.classList.remove('cerca-mira'); }, 2600);
+    setTimeout(function () { el.classList.remove('cerca-mira'); }, 3600);
   }
 
   function indice() {

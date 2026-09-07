@@ -168,7 +168,7 @@ for (const d of provate.filter((_, i) => i % 7 === 0).slice(0, 6)) {
     const prima = document.querySelector('#cerca-overlay .cerca-voce');
     if (!prima) return { scheda: '', segnato: false, inVista: false };
     prima.click();
-    await new Promise((x) => setTimeout(x, 2000));
+    await new Promise((x) => setTimeout(x, 3200));
     const m = document.querySelector('.cerca-mira');
     const b = m && m.getBoundingClientRect();
     return {
