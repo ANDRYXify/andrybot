@@ -47,6 +47,7 @@ const DECISO = [
   ['features/antibot.js', 'cori', 'volatile', 'messaggi uguali in pochi secondi'],
   ['features/antibot.js', 'ondate', 'volatile', 'ondata in corso, misurata su una finestra corta'],
   ['features/antibot.js', 'code', 'volatile', 'ban in attesa: un ban deciso su prove di dieci minuti fa e\' peggio di un ban non dato'],
+  ['features/punteggio.js', 'visti', 'volatile', 'chi e\' in chat e in quanti canali: si ricostruisce da solo al primo giro, cioe\' in cinque minuti'],
   ['features/antispam.js', 'recenti', 'volatile', 'ultimi messaggi per rilevare flood, finestra di quaranta secondi'],
   ['features/antispam.js', 'reati', 'volatile', 'la recidivita\' decade da sola dopo dieci minuti'],
   ['features/badges.js', 'cacheTw', 'volatile', 'cache dei badge'],

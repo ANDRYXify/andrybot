@@ -12826,6 +12826,11 @@ function pannelloRegole() {
         <label for="chk-ab-listaauto">${L('Usa la lista di bot noti che si aggiorna da sola', 'Use the self-updating known-bot list', 'Usa la lista de bots conocidos que se actualiza sola')}</label>
       </div>
       <p class="suggerimento" id="lp-ab-lista">${L('Controllo la lista…', 'Checking the list…', 'Comprobando la lista…')}</p>
+      <div class="riga-check">
+        <input type="checkbox" id="chk-ab-presenze" ${sel(ab.presenze, true) ? 'checked' : ''}>
+        <label for="chk-ab-presenze">${L('Segnala chi guarda molti canali insieme senza scrivere mai', 'Report accounts watching many channels at once without ever writing', 'Avisa de quien mira muchos canales a la vez sin escribir nunca')}</label>
+      </div>
+      <p class="suggerimento">${L('Non tocca nessuno: mette la segnalazione qui sotto e decidi tu. Un account che sta in molti canali contemporaneamente e non parla mai è quasi sempre un bot che gonfia i numeri.', 'It never acts: it files a report below and you decide. An account sitting in many channels at once and never speaking is almost always a number-inflating bot.', 'No toca a nadie: deja el aviso aquí abajo y decides tú. Una cuenta que está en muchos canales a la vez y nunca habla casi siempre es un bot que infla los números.')}</p>
       <div class="riga-flessibile">
         <span class="suggerimento">${L('Cosa fare:', 'What to do:', 'Qué hacer:')}</span>
         <select aria-label="${esc(L('Cosa fare quando scatta l\'allarme', 'What to do when the alert fires', 'Que hacer cuando salta la alarma'))}" id="sel-ab-azione">
@@ -13062,6 +13067,7 @@ function attivaPiattaforma() {
         rafficaBanna: document.getElementById('chk-ab-rafbanna').checked,
         nomiBot: document.getElementById('chk-ab-nomi').checked,
         listaAuto: document.getElementById('chk-ab-listaauto').checked,
+        presenze: document.getElementById('chk-ab-presenze').checked,
         azione: document.getElementById('sel-ab-azione').value,
         controllaAccount: document.getElementById('chk-ab-account').checked,
         chatNuovi: document.getElementById('chk-ab-chatnuovi').checked,

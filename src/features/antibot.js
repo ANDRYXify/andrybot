@@ -26,7 +26,8 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { makeLog } from '../logger.js';
-import { streamers, statoVivo } from '../db.js';
+import { streamers, statoVivo, memory } from '../db.js';
+import { punteggio as punteggia, inCentesimi, nomeGenerato, canaliInsieme, segnaGiudizio, erroriDi, GIUDIZI_CHIAVE, SOGLIA_SEGNALA } from './punteggio.js';
 import { config } from '../config.js';
 
 const log = makeLog('antibot');
@@ -46,6 +47,7 @@ export const ANTIBOT_DEFAULT = {
   esenti: [],                  // nomi che NON vanno mai toccati (oltre ai bot buoni)
   extra: [],                   // nomi/pattern-bot in più, aggiunti dallo streamer
   listaAuto: true,             // usa la lista di bot noti aggiornata da sola
+  presenze: true,              // guarda chi sta in molti canali nostri insieme (solo segnala)
   // 3. account sospetto (costa una chiamata a Twitch per follow)
   controllaAccount: false,
   soglia: 70,                  // punteggio 0-100 oltre il quale si agisce
@@ -151,18 +153,30 @@ export function nomeBot(login, cfg = {}) {
 
 // Quanto è "nuovo di zecca e vuoto" un account? Ritorna { rischio, motivi }.
 // u = oggetto utente Helix (created_at, profile_image_url, description, login).
-export function valutaAccount(u, cfg = {}) {
-  if (!u) return { rischio: 0, motivi: [] };
-  const motivi = []; let r = 0;
-  const etaMin = Number(cfg.etaMinGiorni ?? 3);
-  const giorni = u.created_at ? (Date.now() - new Date(u.created_at).getTime()) / 86400000 : 9999;
-  if (giorni < 1) { r += 45; motivi.push('account di oggi'); }
-  else if (giorni < etaMin) { r += 30; motivi.push(`account di ${Math.floor(giorni)} giorni`); }
-  else if (giorni < 14) { r += 12; motivi.push('account recente'); }
-  if (/user-default-pictures/i.test(u.profile_image_url || '')) { r += 25; motivi.push('foto profilo di default'); }
-  if (!String(u.description || '').trim()) { r += 10; motivi.push('bio vuota'); }
-  if (nomeBot(u.login, cfg)) { r += 50; motivi.push('nome da bot'); }
-  return { rischio: Math.min(100, r), motivi };
+// Il giudizio su un account. I punti li fa il motore in punteggio.js, che è una
+// funzione pura e non sa niente di Twitch: qui si raccolgono i fatti e glieli
+// si passano. Il numero esce anche in centesimi perché le impostazioni salvate
+// degli streamer parlano quella lingua («soglia: 70»).
+//
+// `forte` è la cosa che conta più del numero: dice se fra i punti c'è almeno un
+// fatto che una persona non può produrre — il nome riconosciuto o la presenza
+// in molti canali insieme. Senza, il giudizio può far GUARDARE e non può far
+// agire, per quanto sia alto. Il perché sta in docs/PUNTEGGIO.md, col conto di
+// quanto prende uno spettatore nuovo e timido.
+export function valutaAccount(u, cfg = {}, extra = {}) {
+  if (!u) return { rischio: 0, motivi: [], punti: 0, forte: false };
+  const login = norm(u.login);
+  const g = punteggia({
+    utente: u,
+    nomeNoto: !!(login && cfg.listaAuto !== false && listaEsterna.has(login)),
+    nomePattern: nomeBot(login, cfg) && !listaEsterna.has(login),
+    nomeGenerato: nomeGenerato(login),
+    canaliInsieme: extra.canaliInsieme ?? canaliInsieme(login),
+    maiScritto: !!extra.maiScritto,
+    nonSegue: !!extra.nonSegue,
+    ondataIngressi: !!extra.ondataIngressi,
+  });
+  return { rischio: inCentesimi(g.punti), motivi: g.motivi, punti: g.punti, forte: g.forte, famiglie: g.famiglie };
 }
 
 // ── Rilevatore di raffiche, per canale ──────────────────────────────────────
@@ -543,6 +557,19 @@ function accodaBan(channel, voci) {
   return aggiunti;
 }
 
+// Quanto sbaglia lo scudo, misurato sui suoi stessi giudizi: chi era stato
+// segnato come «probabile macchina» e poi si e' messo a parlare in chat era una
+// persona. Il conto si fa guardando la memoria della chat che c'e' gia': non
+// serve etichettare niente a mano, e non serve intercettare niente nel percorso
+// dei messaggi. Sta fuori dalla classe perche' non ha bisogno di nessuno stato:
+// legge quello che e' scritto, come registro() e sintesiRegistro().
+export function erroriScudo(channel) {
+  const ch = norm(channel);
+  let elenco = [];
+  try { elenco = statoVivo.leggi(ch, GIUDIZI_CHIAVE) || []; } catch (e) { elenco = []; }
+  return erroriDi(elenco, (login, da) => !!memory.haScrittoDopo?.(ch, login, da));
+}
+
 export class AntiBot {
   constructor({ helix, alert, say, chatSettings } = {}) {
     this.helix = helix;
@@ -842,8 +869,17 @@ export class AntiBot {
     // follow di un'ondata amplificherebbe l'attacco in centinaia di richieste.
     if (cfg.controllaAccount && this.helix?.getUserByLogin && !inRaffica(channel)) {
       const u = await this.helix.getUserByLogin(login).catch(() => null);
-      const { rischio, motivi } = valutaAccount(u, cfg);
-      if (rischio >= Number(cfg.soglia || 70)) return this._agisci(channel, userId, login, motivi.join(', '), cfg, 'follow');
+      const { rischio, motivi, forte } = valutaAccount(u, cfg);
+      // Il numero da solo non basta mai: senza un fatto che una persona non può
+      // produrre si segnala e ci si ferma li'. Un account nuovo, spoglio, che
+      // guarda e non scrive e' la descrizione di uno spettatore appena
+      // arrivato, ed e' esattamente chi non si puo' permettere di perdere.
+      if (rischio < Number(cfg.soglia || 70)) return;
+      if (!forte) {
+        registra(channel, { login, userId, azione: 'segnala', motivo: `punteggio ${rischio}: ${motivi.join(', ')}`, esito: 'in-attesa', stato: 'aperto' });
+        return;
+      }
+      return this._agisci(channel, userId, login, motivi.join(', '), cfg, 'follow');
     }
   }
 
@@ -913,6 +949,55 @@ export class AntiBot {
       }
     }
     return false;
+  }
+
+  // ── Il giro delle presenze ────────────────────────────────────────────────
+  //
+  // Il lurker-bot non si incontra mai nel percorso dei messaggi, perche' non
+  // scrive: e' tutto il suo mestiere. Lo si incontra QUI, guardando chi c'e' in
+  // chat — la lista che chiediamo gia' ogni cinque minuti per contare le ore
+  // guardate. Zero chiamate nuove per il segnale, una sola per i profili.
+  //
+  // Si guarda solo chi sta in almeno tre canali nostri nello stesso momento e
+  // non ha mai scritto qui. Sono pochi, e sono gli unici per cui il segnale
+  // forte puo' esserci.
+  //
+  // L'azione predefinita e' SEGNALARE, sempre. Un lurker silenzioso non fa
+  // danno mentre lo si guarda, e il costo di sbagliare e' una persona vera
+  // cacciata dal canale. Chi vuole che agisca lo accende lui.
+  async giroPresenze(channel, presenti = []) {
+    const ch = norm(channel);
+    const cfg = this.cfg(ch);
+    if (!cfg.attivo || cfg.presenze === false || !this.helix?.getUsersByLogin) return { guardati: 0, segnalati: 0 };
+    const candidati = [];
+    for (const p of presenti) {
+      const l = norm(p);
+      if (!l || BUONI.has(l) || (cfg.esenti || []).map(norm).includes(l)) continue;
+      if (canaliInsieme(l) < 3) continue;
+      if (memory.haScrittoDopo?.(ch, l, 0)) continue;      // qui ha parlato: e' una persona
+      candidati.push(l);
+      if (candidati.length >= 100) break;                  // un batch per giro, non di piu'
+    }
+    if (!candidati.length) return { guardati: 0, segnalati: 0 };
+
+    const utenti = await this.helix.getUsersByLogin(candidati).catch(() => []);
+    let segnalati = 0;
+    let elenco = [];
+    try { elenco = statoVivo.leggi(ch, GIUDIZI_CHIAVE) || []; } catch (e) { elenco = []; }
+    for (const u of utenti) {
+      const g = valutaAccount(u, cfg, { maiScritto: true });
+      if (!g.punti || g.punti < SOGLIA_SEGNALA) continue;
+      segnalati++;
+      elenco = segnaGiudizio(elenco, { login: norm(u.login), punti: g.punti, agito: false });
+      registra(ch, {
+        login: norm(u.login), userId: u.id, azione: 'presenza',
+        motivo: `${g.punti} punti · ${g.motivi.join(', ')}`,
+        esito: 'in-attesa', stato: 'aperto',
+      });
+    }
+    if (segnalati) { try { statoVivo.scrivi(ch, GIUDIZI_CHIAVE, elenco); } catch (e) {  } }
+    if (segnalati) log.info(`#${ch} giro presenze: ${segnalati} segnalati su ${candidati.length} guardati`);
+    return { guardati: candidati.length, segnalati };
   }
 
   // ── Pulizia della lista follower ──────────────────────────────────────────

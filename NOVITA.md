@@ -17,6 +17,10 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-07
 
+- Lo scudo sa riconoscere anche i bot che guardano e basta: un account che sta in molti canali nello stesso momento e non scrive mai in nessuno viene segnalato. Non viene toccato, decidi tu.
+- Il giudizio su un account non somma piu tre volte la stessa cosa. Prima un nuovo spettatore senza foto ne bio prendeva lo stesso punteggio di un follow-bot vero.
+- E per togliere il follow a qualcuno adesso serve sempre un fatto che una persona non puo produrre: il nome riconosciuto o la presenza in molti canali. Il resto fa solo segnalare.
+- Nella console dello scudo c'e quanto ha sbagliato: chi era stato segnalato e poi ha scritto in chat era una persona, e viene contato.
 - Il filtro dei link guarda il dominio del link e non il testo intorno. Prima bastava nominare da qualche parte un sito permesso, o metterne uno buono davanti a quello vero, e il filtro si spegneva.
 - E non cancella piu i messaggi normali scritti col punto attaccato, tipo «lascia stare.io ci provo». Su quindici frasi di chat vere prima ne finivano cancellate dieci.
 - Lo scudo riconosce anche le ondate di follow cosi veloci da arrivare tutte insieme: erano proprio quelle che passavano.

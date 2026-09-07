@@ -50,6 +50,7 @@ import { ClipEngine } from './features/clips.js';
 import { PenitenzeEngine } from './features/penitenze.js';
 import { AlertsEngine } from './features/alerts.js';
 import { AntiBot, caricaListaBotDaDisco, aggiornaListaBot, caricaRegistroDaDisco, salvaRegistro } from './features/antibot.js';
+import { censisci } from './features/punteggio.js';
 import { scheduleReflection } from './ai/reflection.js';
 import { StreamWatcher } from './stream/watcher.js';
 import { LiveListener } from './stream/listener.js';
@@ -297,6 +298,13 @@ export class BotManager {
         const chatters = await this.helix.getChatters(login);
         if (chatters.length) {
           watchtime.accredita(login, chatters, passoSec);
+          // Stesso giro, stessa lista, ancora: chi c'e' viene censito per
+          // capire in quanti canali nostri sta nello stesso momento. E' il
+          // segnale che una persona non puo' produrre, e non costa nemmeno una
+          // chiamata in piu' — la lista ce l'abbiamo gia' in mano.
+          try { censisci(login, chatters); } catch (e) { log.debug(`#${login} censimento:`, e?.message || e); }
+          this.antibot?.giroPresenze?.(login, chatters)
+            .catch((e) => log.debug(`#${login} giro presenze:`, e?.message || e));
           // Stesso giro, stessa lista: le monete di presenza non costano
           // nemmeno una chiamata in piu' a Twitch.
           try { games.giroMonete(login, chatters, { live: true }); }

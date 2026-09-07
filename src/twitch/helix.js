@@ -608,6 +608,21 @@ export class Helix {
     } catch (e) { log.debug('getUsersByIds:', e?.message || e); return []; }
   }
 
+  // Utenti in blocco per login (fino a 100, che e' il tetto dell'endpoint).
+  // Serve allo scudo: guardare cento profili con una chiamata invece che con
+  // cento, perche' il secchio del rate limit e' per client e per utente e
+  // durante un'ondata va speso per le difese, non per le anagrafiche.
+  async getUsersByLogin(logins) {
+    const arr = [...new Set((logins || []).filter(Boolean).map((l) => String(l).toLowerCase()))].slice(0, 100);
+    if (!arr.length) return [];
+    const params = new URLSearchParams();
+    for (const l of arr) params.append('login', l);
+    try {
+      const j = await this._request('GET', '/users?' + params.toString());
+      return j?.data || [];
+    } catch (e) { log.debug('getUsersByLogin:', e?.message || e); return []; }
+  }
+
   // Revoca un ban/timeout. Ritorna { ok } o { ok:false, motivo }.
   async unbanUser(channelLogin, userId) {
     const s = streamers.get(channelLogin);
