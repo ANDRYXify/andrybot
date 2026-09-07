@@ -630,6 +630,8 @@ const MODERAZIONE = {
     { p: [
       'Il livello di base è <strong>sub</strong>: abbonati, VIP e mod possono mettere link, gli altri no. Si può alzare a solo-mod o abbassare a tutti.',
       'La <strong>lista bianca</strong> tiene fino a 30 domini che passano sempre, per chiunque. È il posto giusto per il tuo Discord, il tuo sito e i social del canale: senza, il primo che condivide il tuo Discord si prende una cancellazione.',
+      'Il confronto è sul <strong>dominio del link</strong>, non sul testo del messaggio. Un dominio in lista vale anche per i suoi sottodomini, e non vale per un indirizzo che se lo porta dentro al nome. Se in un messaggio ci sono più link, valgono uno per uno: uno permesso non fa passare gli altri.',
+      'Un indirizzo senza <code>http://</code> e senza <code>www.</code> viene visto come link se ha un percorso (<code>sito.it/pagina</code>) o se finisce in un dominio non ambiguo. Serve a non cancellare i messaggi normali: in chat si scrive «lascia stare.io ci provo», e quello non è un indirizzo.',
     ] },
     { h3: 'Il timeout cresce da solo' },
     { p: ['Il primo messaggio filtrato viene solo <strong>cancellato</strong>, senza timeout: la maggior parte delle volte è distrazione, non malafede. Se la persona insiste, la scala sale.'] },

@@ -467,27 +467,52 @@ function segnaOndata(channel, ora, userId, login, wMs) {
 //
 // Basta uno dei due per avere la certezza che serve. Se non c'è nessuno dei due
 // l'ondata sembra genuina: si alza la serranda e si avvisa, ma non si banna.
+// Quanti follow servono per poter rispondere. Non e' un numero scelto a
+// sentimento: il coefficiente di variazione di pochi campioni balla, e qui un
+// falso positivo blocca dei fan veri. Misurato su ondate di gente vera
+// (intervalli esponenziali, ventimila giri per punto): con 6 follow l'8,2%
+// delle ondate genuine veniva giudicata «macchina», con 10 l'1,3%, con 15 lo
+// 0,14%. Le macchine restano riconosciute al 100% anche con quindici campioni
+// e passo irregolare del 40%, quindi aspettare non costa niente in vista.
+const CAMPIONI_MIN = 15;
+
 export function ondataArtificiale(arr, cfg = {}) {
   const n = arr.length;
-  if (n < 6) return { certo: false, motivo: '' };
+  // «non lo so ancora» e' una risposta diversa da «no», e chi chiama deve
+  // poterle distinguere: sulla prima si richiede, sulla seconda si smette.
+  if (n < CAMPIONI_MIN) return { certo: false, basta: false, motivo: `ancora pochi follow per dirlo (${n} su ${CAMPIONI_MIN})` };
 
   const dt = [];
   for (let k = 1; k < n; k++) dt.push(arr[k].ts - arr[k - 1].ts);
   const media = dt.reduce((a, b) => a + b, 0) / dt.length;
-  let cv = 1;
-  if (media > 0) {
-    const varia = dt.reduce((a, b) => a + (b - media) ** 2, 0) / dt.length;
-    cv = Math.sqrt(varia) / media;
+
+  // QUANDO LA VELOCITA' RISPONDE DA SOLA. La dispersione relativa dice qualcosa
+  // solo se gli intervalli sono misurabili: con intervalli dell'ordine del
+  // millisecondo l'orologio li arrotonda a 0 e 1, e una fila di 0 e 1 ha la
+  // stessa dispersione di un arrivo casuale — cioe' l'ondata PIU' veloce di
+  // tutte era anche l'unica che passava per «gente vera». Piu' l'attacco
+  // correva, meno lo scudo lo vedeva.
+  //
+  // Li' non serve guardare la forma, basta la velocita': quindici follow a meno
+  // di cinque millisecondi l'uno dall'altro sono quindici follow in settanta
+  // millisecondi. Un canale enorme fa una decina di follow al secondo nei suoi
+  // momenti migliori: venti volte piu' lento di cosi'.
+  const ISTANTE_MS = 5;
+  if (media <= ISTANTE_MS) {
+    return { certo: true, basta: true, motivo: `${n} follow a meno di ${ISTANTE_MS}ms l'uno dall'altro (media ${media.toFixed(1)}ms)` };
   }
-  if (media > 0 && cv < 0.45) {
-    return { certo: true, motivo: `cadenza da macchina (un follow ogni ${Math.round(media)}ms, dispersione ${cv.toFixed(2)})` };
+
+  const varia = dt.reduce((a, b) => a + (b - media) ** 2, 0) / dt.length;
+  const cv = Math.sqrt(varia) / media;
+  if (cv < 0.45) {
+    return { certo: true, basta: true, motivo: `cadenza da macchina (un follow ogni ${Math.round(media)}ms, dispersione ${cv.toFixed(2)})` };
   }
 
   const noti = arr.filter((v) => nomeBot(v.login, cfg)).length;
   if (noti / n >= 0.3) {
-    return { certo: true, motivo: `${noti} nomi su ${n} già noti come follow-bot` };
+    return { certo: true, basta: true, motivo: `${noti} nomi su ${n} già noti come follow-bot` };
   }
-  return { certo: false, motivo: `cadenza irregolare (${cv.toFixed(2)}), nomi puliti: sembra gente vera` };
+  return { certo: false, basta: true, motivo: `cadenza irregolare (${cv.toFixed(2)}), nomi puliti: sembra gente vera` };
 }
 
 // ── Coda dei ban ────────────────────────────────────────────────────────────
@@ -659,7 +684,10 @@ export class AntiBot {
       registra(channel, { azione: 'blocco', motivo: `${n} account dell'ondata → ban (${motivo})`, esito: 'in-attesa' });
       if (cfg.avvisa) this.say?.(channel, `🛡️ Ondata artificiale: sto ripulendo ${n} account finti.`);
     }
-    this._svuotaCoda(channel, cfg);
+    // Non si aspetta (mille account sono minuti), ma non si lascia scoperta: una
+    // promessa senza rete finirebbe solo in un log di sistema, e la coda si
+    // fermerebbe in silenzio proprio durante l'attacco.
+    this._svuotaCoda(channel, cfg).catch((e) => log.error(`#${channel} coda dei blocchi:`, e?.message || e));
     return n;
   }
 
@@ -762,7 +790,10 @@ export class AntiBot {
         registra(channel, { azione: 'raffica', motivo, esito: 'avviso' });
         await this._alza(channel, ASSETTO.ATTACCO, motivo, cfg);
         const a = assetti.get(channel);
-        if (a) a.artificiale = g.certo;
+        // undefined = «non lo so ancora»: si torna a chiedere al prossimo
+        // follow, invece di aspettare il venticinquesimo con un «no» che non
+        // era un no.
+        if (a) a.artificiale = g.basta ? g.certo : undefined;
         if (g.certo && cfg.bloccoSulNascere !== false) {
           await this._blocca(channel, arr.map((v) => ({ ...v, motivo: 'ondata follow-bot' })), g.motivo, cfg);
         }
@@ -780,13 +811,23 @@ export class AntiBot {
     // Il giudizio si rifà ogni venticinque follow: un'ondata può cambiare faccia.
     const a = assetti.get(channel);
     if (a && a.livello === ASSETTO.ATTACCO && cfg.bloccoSulNascere !== false) {
+      const prima = a.artificiale;
       if (a.artificiale === undefined || arr.length % 25 === 0) {
         const g = ondataArtificiale(arr, cfg);
-        a.artificiale = g.certo;
+        a.artificiale = g.basta ? g.certo : undefined;
         if (g.certo && !a.motivoArt) { a.motivoArt = g.motivo; }
       }
       if (a.artificiale) {
-        await this._blocca(channel, [{ ts: ora, userId, login, motivo: 'follow durante ondata artificiale' }], a.motivoArt || 'ondata artificiale', cfg);
+        // LA PRIMA VOLTA CHE CI SI CONVINCE si riprende TUTTA l'ondata, non solo
+        // il follow di adesso. All'inizio il giudizio puo' essere «non lo so
+        // ancora» — servono quindici follow per rispondere senza rischiare di
+        // togliere il follow a dei fan veri — e in quel frattempo ne passano
+        // altri. Sono quelli che hanno fatto scattare l'allarme: lasciarli fuori
+        // vorrebbe dire ripulire tutto tranne l'inizio dell'attacco.
+        const voci = prima === true
+          ? [{ ts: ora, userId, login, motivo: 'follow durante ondata artificiale' }]
+          : arr.map((v) => ({ ...v, motivo: 'ondata follow-bot' }));
+        await this._blocca(channel, voci, a.motivoArt || 'ondata artificiale', cfg);
         return;
       }
     }
@@ -811,11 +852,18 @@ export class AntiBot {
   async controllaChat(msg) {
     const channel = msg.channel;
     const cfg = this.cfg(channel);
-    if (!cfg.attivo || !cfg.nomiBot) return false;
+    if (!cfg.attivo) return false;
     if (msg.isBroadcaster || msg.isMod || msg.isVip || msg.isSub) return false;
     const login = norm(msg.user || msg.username);
     if (!login || BUONI.has(login) || (cfg.esenti || []).map(norm).includes(login)) return false;
-    if (nomeBot(login, cfg)) { await this._agisci(channel, msg.userId, login, 'nome da bot in chat', cfg); return true; }
+
+    // Le tre difese in chat sono cose diverse e stanno su tre interruttori
+    // diversi. Prima erano tutte dietro a `nomiBot`: chi spegneva l'elenco dei
+    // nomi — che e' una difesa contro i follow-bot promozionali — si portava
+    // via anche il CORO, che e' la firma dell'hate-raid, e la trattenuta degli
+    // account appena nati. Spegneva una cosa e ne perdeva tre, e nessuno glielo
+    // diceva.
+    if (cfg.nomiBot && nomeBot(login, cfg)) { await this._agisci(channel, msg.userId, login, 'nome da bot in chat', cfg); return true; }
 
     // Il coro: lo stesso messaggio da molte bocche diverse in pochi secondi.
     // È la firma dell'hate-raid, e non dipende da chi scrive né da quanto è
@@ -835,10 +883,19 @@ export class AntiBot {
     if (cfg.chatNuovi && this.helix?.getUserByLogin && msg.userId) {
       let creato = nascita.get(msg.userId)?.creato;
       if (creato === undefined) {
-        const u = await this.helix.getUserByLogin(login).catch(() => null);
+        // Si ricorda un FATTO (la data di nascita, che non cambia mai), non un
+        // tentativo. Se Twitch non risponde — rete storta, 500, token scaduto —
+        // ricordarsi «non l'ho potuto controllare» vorrebbe dire non
+        // controllarlo mai piu': un inciampo di un secondo diventerebbe un buco
+        // permanente nello scudo, proprio per l'account che stava scrivendo.
+        let u = null, chiesto = true;
+        try { u = await this.helix.getUserByLogin(login); }
+        catch { chiesto = false; }
         creato = u?.created_at ? new Date(u.created_at).getTime() : 0;
-        nascita.set(msg.userId, { creato });
-        if (nascita.size > 8000) { let n = 0; for (const k of nascita.keys()) { nascita.delete(k); if (++n >= 3000) break; } }
+        if (chiesto) {
+          nascita.set(msg.userId, { creato });
+          if (nascita.size > 8000) { let n = 0; for (const k of nascita.keys()) { nascita.delete(k); if (++n >= 3000) break; } }
+        }
       }
       const ore = creato ? (Date.now() - creato) / 3600000 : 99999;
       if (ore < Number(cfg.chatMinOre || 24)) {
