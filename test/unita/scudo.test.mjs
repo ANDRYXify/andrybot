@@ -142,6 +142,48 @@ test('venti persone che scrivono «lol» sono una chat viva, non un attacco', as
   assert.equal(ab.assetto(ch).livello, 'calma');
 });
 
+test('le due soglie del coro reggono una per una', () => {
+  // Un messaggio entra nel confronto solo se e' abbastanza lungo E fatto di
+  // abbastanza parole. Sono due difese diverse e vanno provate separate: negli
+  // scenari si coprono a vicenda, e una potrebbe cadere senza che si veda.
+  assert.equal(ab.firmaMessaggio('ma che gioco e questo'), '', 'cinque parole ma corta: fuori');
+  assert.equal(ab.firmaMessaggio('ahahahahahahahahahah AHAHAHAHAHAHAH'), '', 'lunga ma due parole: fuori');
+  assert.equal(ab.firmaMessaggio('io stavo davvero per morire'), '', 'una frase che dicono in tanti: fuori');
+  assert.ok(ab.firmaMessaggio('seguimi sul mio canale trovi tutti i regali nel profilo'), 'un messaggio d\'attacco: dentro');
+});
+
+test('un evento fuori ordine non sballa il giudizio sulla cadenza', () => {
+  // Gli eventi non arrivano sempre nell'ordine in cui sono successi, e adesso
+  // che si misura sull'istante dell'evento due righe fuori posto darebbero
+  // intervalli negativi: la media crolla sotto zero e il giudizio dice
+  // qualunque cosa.
+  const messo = Array.from({ length: 16 }, (_, i) => ({ ts: i * 300, userId: 'u' + i, login: 'zzq' + i }));
+  const storto = [messo[7], ...messo.filter((_, i) => i !== 7)];
+  const b = ab.ondataArtificiale(storto, {});
+  assert.equal(b.certo, ab.ondataArtificiale(messo, {}).certo, 'lo stesso attacco, comunque arrivi');
+  assert.equal(b.certo, true);
+  assert.ok(!/-\d/.test(b.motivo), `nessun numero negativo nel motivo: ${b.motivo}`);
+});
+
+test('sotto un raid vero il coro chiede molte piu\' bocche', async () => {
+  const ch = 'raidcoro';
+  streamers.upsertApproved(ch, 'RaidCoro', '61');
+  streamers.setEnabled(ch, true);
+  streamers.setSettings(ch, { antibot: { attivo: true, avvisa: false } });
+  const scudo = new ab.AntiBot({ helix: {
+    deleteMessage: async () => {}, chatSoloFollower: async () => ({ ok: true }),
+    chatLenta: async () => ({ ok: true }), shieldMode: async () => ({ ok: true }),
+  } });
+  scudo.onRaid({ channel: ch, ts: 1000, data: { viewers: 300, from_login: 'lucia' } });
+  const testo = 'ciao ragazzi siamo appena arrivati dal raid di lucia';
+  let preso = false;
+  for (let i = 0; i < 8; i++) {
+    preso = await scudo.controllaChat({ channel: ch, ts: 2000 + i * 700, user: 'ospite' + i, userId: 'o' + i, id: 'm' + i, text: testo });
+  }
+  assert.equal(preso, false, 'otto persone che salutano dopo un raid non sono un attacco');
+  assert.equal(ab.assetto(ch).livello, 'calma');
+});
+
 test('la firma tiene anche se cambiano accenti, link e punteggiatura', () => {
   const a = ab.firmaMessaggio('Segui il mio canale, trovi tutto qui: https://esempio.it/x');
   const b = ab.firmaMessaggio('SEGUI IL MIO CANÀLE trovi tutto qui!!! http://altro.com/y');

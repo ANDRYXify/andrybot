@@ -17,6 +17,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-07
 
+- Se qualcuno ti manda un raid vero e in trecento salutano con la stessa frase, il bot non li scambia piu per un attacco. Prima ne cancellava fino a novanta su trecento.
+- E una chat che ripete una frase corta tutti insieme non e piu un attacco: prima bastavano quattordici caratteri, adesso ne servono trenta e cinque parole.
+- Lo scudo misura gli attacchi sull'ora in cui sono successi e non su quella in cui gli arrivano, cosi un ritardo del bot non falsa piu il giudizio.
 - Ogni attacco al tuo canale diventa una scheda unica invece di trecento righe di registro: quando e cominciato, quanto e durato, quanto forte e andato, chi c'era, cosa ha fatto il bot e quanto ha funzionato.
 - Un attacco che riprende dopo pochi minuti resta lo stesso attacco, cosi il conto dei danni non si spezza in dieci pezzi.
 - Nella scheda chi e arrivato durante l'attacco e diviso fra bot certi, sospetti e persone vere: serve per non fare pulizia alla cieca dopo.

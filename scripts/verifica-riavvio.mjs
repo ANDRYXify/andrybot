@@ -45,6 +45,7 @@ const DECISO = [
   ['features/antibot.js', 'registriMem', 'volatile', 'la coda recente di un registro gia\' scritto su disco a parte'],
   ['features/antibot.js', 'finestreLunghe', 'volatile', 'dieci minuti di gocciolamento: si riempie di nuovo da sola'],
   ['features/antibot.js', 'cori', 'volatile', 'messaggi uguali in pochi secondi'],
+  ['features/antibot.js', 'raidRecenti', 'volatile', 'da quanto e\' arrivato un raid: dieci minuti, e dopo un riavvio il raid e\' passato comunque'],
   ['features/antibot.js', 'ondate', 'volatile', 'ondata in corso, misurata su una finestra corta'],
   ['features/enforcement.js', '_inCoda', 'volatile', 'quali azioni sono gia\' in fila adesso: serve a non farne due, e dopo un riavvio la fila non c\'e\' piu\''],
   ['features/incidenti.js', 'tutti', 'volatile', 'gli attacchi gia\' successi: stanno su disco a parte e si riprendono all\'avvio'],

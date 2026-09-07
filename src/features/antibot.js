@@ -203,6 +203,15 @@ function segnaFollow(channel, cfg) {
 }
 export const inRaffica = (channel) => (raffiche.get(channel) || 0) > Date.now();
 
+// Solo per il simulatore e le prove: lo scudo tiene le sue finestre in memoria
+// e due attacchi giocati di fila nello stesso processo si mescolerebbero.
+export function azzeraStati() {
+  finestre.clear(); raffiche.clear(); nascita.clear(); raidRecenti.clear();
+  finestreLunghe.clear(); cori.clear(); ondate.clear(); ritmi.clear();
+  for (const [, a] of assetti) { if (a.timer) clearTimeout(a.timer); }
+  assetti.clear();
+}
+
 // ── Registro degli interventi (la "certezza") ────────────────────────────────
 // Lo scudo non deve solo agire: deve LASCIARE TRACCIA. Ogni intervento (ban,
 // timeout, raffica, trattenuta in chat, segnalazione, raid) finisce qui con
@@ -448,8 +457,21 @@ function segnaLunga(channel, ora) {
 // variano quei dettagli apposta. I messaggi corti non entrano — "lol", "W",
 // una emote scritta da venti persone insieme è una chat viva, non un attacco.
 const cori = new Map();                  // channel → Map(firma → { primo, chi:Set })
-const CORO_MIN_LUNGHEZZA = 14;
+// Quanto dev'essere lungo un messaggio per entrare nel confronto. Quattordici
+// caratteri erano troppo pochi: «io stavo per morire» ne fa diciannove ed è una
+// frase che venti persone scrivono insieme senza essere un attacco. Misurato
+// sugli scenari, con quella soglia una chat viva perdeva sette persone su
+// trenta. Un messaggio d'attacco tipico — «seguimi sul mio canale trovi tutti i
+// regali nel profilo» — ne fa cinquantacinque.
+const CORO_MIN_LUNGHEZZA = 30;
+const CORO_MIN_PAROLE = 5;
 const CORO_MS = 30000;
+// Quanto dura il contesto di un raid vero. Twitch ci dice quando arriva gente
+// da un altro canale: in quel momento molte bocche che dicono la stessa cosa
+// sono un saluto, non un coro. Non è una libera uscita — chi scrive spam viene
+// preso lo stesso — è che per gridare «attacco» servono più bocche.
+const RAID_CONTESTO_MS = 10 * 60 * 1000;
+const raidRecenti = new Map();           // channel → fino a quando
 
 export function firmaMessaggio(testo) {
   const t = String(testo || '')
@@ -460,23 +482,53 @@ export function firmaMessaggio(testo) {
     .replace(/\s+/g, ' ')
     .trim();
   if (t.length < CORO_MIN_LUNGHEZZA) return '';
-  if (!t.includes(' ')) return '';
+  if (t.split(' ').filter(Boolean).length < CORO_MIN_PAROLE) return '';
   return t.slice(0, 140);
 }
 
-function segnaCoro(channel, testo, chi, cfg) {
+function segnaCoro(channel, testo, chi, cfg, quando = 0) {
   const f = firmaMessaggio(testo);
   if (!f) return { coro: false, quanti: 0 };
-  const ora = Date.now();
+  const ora = Number.isFinite(quando) ? Number(quando) : Date.now();
   let m = cori.get(channel);
   if (!m) { m = new Map(); cori.set(channel, m); }
   for (const [k, v] of m) if (ora - v.primo > CORO_MS) m.delete(k);
   if (m.size > 400) { const k = m.keys().next().value; m.delete(k); }
-  const v = m.get(f) || { primo: ora, chi: new Set() };
+  const v = m.get(f) || { primo: ora, chi: new Set(), quando: [] };
+  if (!v.chi.has(norm(chi))) v.quando.push(ora);
   v.chi.add(norm(chi));
   m.set(f, v);
+
   const quanti = Number(cfg.coroQuanti ?? 4);
-  return { coro: v.chi.size >= quanti, quanti: v.chi.size, testo: f };
+  const sottoRaid = (raidRecenti.get(channel) || 0) > ora;
+  if (v.chi.size < quanti) return { coro: false, quanti: v.chi.size, testo: f };
+
+  // SOTTO RAID SI GUARDA LA CADENZA, come per i follow. Trecento persone
+  // arrivate da un altro canale che salutano tutte insieme sono un coro per
+  // definizione, e col solo conteggio delle bocche finivano dentro: novanta su
+  // trecento, misurato. La differenza vera fra loro e una macchina è la stessa
+  // di sempre — le persone scrivono a caso, le macchine a passo.
+  //
+  // Il giudizio sulla cadenza vuole quindici campioni per stare in piedi, e
+  // quella è già la guardia: sotto un raid servono quindi almeno quindici
+  // bocche, non quattro. Non c'è bisogno di scriverlo due volte con un
+  // moltiplicatore — c'era, e non faceva niente perché il massimo fra dodici e
+  // quindici è sempre quindici.
+  if (sottoRaid) {
+    // E SI GUARDA POCHE VOLTE. Rifare il giudizio a ogni bocca nuova vuol dire
+    // farlo cento volte, e a furia di riprovare il caso finisce per dare
+    // ragione all'accusa: misurato, otto persone su trecento venivano prese
+    // così, una alla volta. Si guarda quando il numero raddoppia — quindici,
+    // trenta, sessanta — e fra un raddoppio e l'altro si tiene quello che si è
+    // deciso.
+    if (v.giudizio === undefined || v.chi.size >= (v.prossimoEsame || 0)) {
+      const g = ondataArtificiale(v.quando.map((t, i) => ({ ts: t, login: 'x' + i })), cfg);
+      v.giudizio = g.certo;
+      v.prossimoEsame = v.chi.size * 2;
+    }
+    if (!v.giudizio) return { coro: false, quanti: v.chi.size, testo: f, raid: true };
+  }
+  return { coro: true, quanti: v.chi.size, testo: f };
 }
 
 // ── Chi c'era nell'ondata ───────────────────────────────────────────────────
@@ -524,8 +576,16 @@ export function ondataArtificiale(arr, cfg = {}) {
   // poterle distinguere: sulla prima si richiede, sulla seconda si smette.
   if (n < CAMPIONI_MIN) return { certo: false, basta: false, motivo: `ancora pochi follow per dirlo (${n} su ${CAMPIONI_MIN})` };
 
+  // IN ORDINE, PRIMA DI GUARDARE. Gli eventi non arrivano sempre nell'ordine in
+  // cui sono successi — una riconnessione, una coda che si svuota, due
+  // sottoscrizioni che consegnano insieme — e adesso che misuriamo sull'istante
+  // dell'evento e non su quello in cui ci arriva, due righe fuori posto danno
+  // intervalli NEGATIVI. La media crolla sotto zero e il giudizio dice
+  // qualunque cosa. Chi legge deve poter contare sull'ordine, quindi se lo
+  // mette da sé: costa un ordinamento su poche decine di voci.
+  const messi = [...arr].sort((a, b) => a.ts - b.ts);
   const dt = [];
-  for (let k = 1; k < n; k++) dt.push(arr[k].ts - arr[k - 1].ts);
+  for (let k = 1; k < n; k++) dt.push(messi[k].ts - messi[k - 1].ts);
   const media = dt.reduce((a, b) => a + b, 0) / dt.length;
 
   // QUANDO LA VELOCITA' RISPONDE DA SOLA. La dispersione relativa dice qualcosa
@@ -550,7 +610,7 @@ export function ondataArtificiale(arr, cfg = {}) {
     return { certo: true, basta: true, motivo: `cadenza da macchina (un follow ogni ${Math.round(media)}ms, dispersione ${cv.toFixed(2)})` };
   }
 
-  const noti = arr.filter((v) => nomeBot(v.login, cfg)).length;
+  const noti = messi.filter((v) => nomeBot(v.login, cfg)).length;
   if (noti / n >= 0.3) {
     return { certo: true, basta: true, motivo: `${noti} nomi su ${n} già noti come follow-bot` };
   }
@@ -812,7 +872,17 @@ export class AntiBot {
     if (!login || !userId) return;
     if (BUONI.has(login) || (cfg.esenti || []).map(norm).includes(login)) return;
 
-    const ora = Date.now();
+    // L'ISTANTE DELL'EVENTO, non quello in cui ci arriva. Twitch ci manda
+    // quando è successo; se il bot è indietro di due secondi — una riconnessione,
+    // una coda piena — misurare sull'ora di adesso schiaccia tutti gli eventi
+    // insieme e la cadenza risulta piu' regolare di com'era. E' anche quello che
+    // permette di rigiocare un attacco: il simulatore consegna gli eventi col
+    // loro tempo dentro.
+    // `|| Date.now()` qui sarebbe sbagliato: lo zero è un istante come un altro
+    // e verrebbe scambiato per «non me l'hanno detto», mettendo in fila un
+    // tempo assoluto insieme a quelli relativi. Basta un valore fuori scala
+    // dentro la finestra e la cadenza misurata non vuol più dire niente.
+    const ora = Number.isFinite(ev.ts) ? Number(ev.ts) : Date.now();
     const eraAttacco = assetto(channel).livello === ASSETTO.ATTACCO;
     if (!eraAttacco) segnaRitmo(channel, ora);      // la normalità si impara in pace, non sotto attacco
     const wMs = Number(cfg.rafficaSecondi ?? 30) * 1000;
@@ -922,7 +992,7 @@ export class AntiBot {
     // Il coro: lo stesso messaggio da molte bocche diverse in pochi secondi.
     // È la firma dell'hate-raid, e non dipende da chi scrive né da quanto è
     // vecchio il suo account — solo da quello che esce dalle bocche.
-    const c = segnaCoro(channel, msg.text || msg.message || '', login, cfg);
+    const c = segnaCoro(channel, msg.text || msg.message || '', login, cfg, msg.ts);
     if (c.coro) {
       const motivo = `stesso messaggio da ${c.quanti} account diversi in mezzo minuto`;
       if (assetto(channel).livello !== ASSETTO.ATTACCO) {
@@ -1085,10 +1155,18 @@ export class AntiBot {
   // Evento raid: un raid enorme da un account minuscolo/nuovo è un classico
   // hate-raid. Qui ci limitiamo ad avvisare: bannare un raid vero sarebbe grave.
   onRaid(ev) {
-    const channel = ev.channel;
+    const channel = norm(ev.channel);
     const cfg = this.cfg(channel);
     if (!cfg.attivo) return;
     const n = Number(ev.data?.viewers || 0);
+    // IL CONTESTO. Twitch ci dice che è arrivata gente da un altro canale: da
+    // qui in poi, per dieci minuti, molte bocche che dicono la stessa cosa sono
+    // un saluto e non un coro. Non è una libera uscita — chi fa spam viene preso
+    // lo stesso, e un account malevolo resta malevolo dentro a un raid — è che
+    // per gridare «attacco» servono più bocche.
+    const quando = Number.isFinite(ev.ts) ? Number(ev.ts) : Date.now();
+    raidRecenti.set(channel, quando + RAID_CONTESTO_MS);
+    try { inc.racconta(channel, `raid da ${n}: sensibilità del coro abbassata per dieci minuti`); } catch (e) {  }
     if (n >= 50 && cfg.avvisa) {
       this.alert?.(channel, { tipo: 'antibot', testo: `Raid da ${n}: controlla che sia genuino` });
       registra(channel, { login: norm(ev.data?.from_login || ev.data?.from_name), azione: 'raid', motivo: `raid da ${n} spettatori`, esito: 'avviso' });
