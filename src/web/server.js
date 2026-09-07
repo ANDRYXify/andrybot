@@ -68,6 +68,7 @@ import { creaGuscio } from './vetrina.js';
 import { salute } from '../salute.js';
 import { anteprima as anteprimaImport, moduloDa } from '../features/importacomandi.js';
 import { esporta as esportaDati } from '../features/esporta.js';
+import { cancella as cancellaDati, restiDi } from '../features/cancella.js';
 import { montaKick } from '../kick/rotte.js';
 import * as kickApi from '../kick/api.js';
 import * as kickDiario from '../kick/diario.js';
@@ -6474,6 +6475,28 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.send(JSON.stringify(dati, null, 2));
   }));
 
+
+  // ANDARSENE. L'altra meta' di «i tuoi dati sono tuoi»: si puo' portare via
+  // tutto, e si puo' togliere tutto di mezzo. Non si annulla, quindi il nome del
+  // canale va riscritto a mano: un bottone da solo si preme per sbaglio.
+  // Solo il PROPRIETARIO: un moderatore gestisce, non possiede.
+  app.get('/api/streamer/resti', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    try { res.json(restiDi(login)); }
+    catch (e) { res.status(500).json({ errore: e?.message || 'non riesco a guardare' }); }
+  }));
+
+  app.post('/api/streamer/cancella', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    let esito;
+    try { esito = cancellaDati(login, { conferma: req.body?.conferma }); }
+    catch (e) { return res.status(400).json({ errore: e?.message || 'cancellazione non riuscita' }); }
+    // il bot esce dal canale al primo giro di sincronizzazione: la riga
+    // streamers non c'e' piu', quindi non c'e' piu' niente a cui collegarsi.
+    try { await manager.syncChannels?.(); } catch (e) {  }
+    req.session = null;
+    res.json({ ok: true, ...esito });
+  }));
   // ------------------------------------------------------------ API admin
 
   // Esche: quanti stanno bussando a porte inesistenti, senza dire chi.

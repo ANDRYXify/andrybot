@@ -4301,6 +4301,21 @@ function pannelloStato() {
     </div>
 
     <div class="carta">
+      <h2>${_hIco(ICO.cestino)}${L('Andarsene', 'Leaving', 'Marcharse')}</h2>
+      <p>${L('Se te ne vai', 'If you leave', 'Si te vas')} <strong class="primo-piano">${L('non resta niente di tuo', 'nothing of yours stays', 'no queda nada tuyo')}</strong>: ${L('comandi, moduli, effetti, punti, ore guardate, memoria della chat, pagina link, file caricati, collegamenti ai tuoi account. Il bot esce dal tuo canale.', 'commands, modules, effects, points, watch time, chat memory, link page, uploaded files, connections to your accounts. The bot leaves your channel.', 'comandos, módulos, efectos, puntos, horas vistas, memoria del chat, página de enlaces, archivos subidos, conexiones con tus cuentas. El bot sale de tu canal.')}</p>
+      <p class="suggerimento">${L('Non si annulla e non c\'è un cestino. Se vuoi tenerti qualcosa, scarica prima i tuoi dati qui sopra.', 'It cannot be undone and there is no bin. If you want to keep something, download your data above first.', 'No se puede deshacer y no hay papelera. Si quieres conservar algo, descarga antes tus datos.')}</p>
+      ${stato.ruolo === 'moderatore'
+        ? `<p class="suggerimento spazio-sopra">${L('Solo il proprietario del canale può cancellare: i dati sono suoi.', 'Only the channel owner can delete: the data is theirs.', 'Solo el propietario del canal puede borrar: los datos son suyos.')}</p>`
+        : `<details class="spazio-sopra" id="det-cancella">
+            <summary>${L('Voglio cancellare tutto', 'I want to delete everything', 'Quiero borrarlo todo')}</summary>
+            <div id="resti-box" class="riquadro-info spazio-sopra"><span class="vuoto">${L('Guardo cosa c\'è…', 'Checking what is there…', 'Miro qué hay…')}</span></div>
+            <label class="campo spazio-sopra" for="inp-cancella">${L('Scrivi il nome del tuo canale per confermare', 'Type your channel name to confirm', 'Escribe el nombre de tu canal para confirmar')}</label>
+            <input type="text" id="inp-cancella" class="campo-largo" autocomplete="off" spellcheck="false" placeholder="${esc(stato.login || '')}">
+            <p class="spazio-sopra"><button type="button" class="btn pericolo" id="btn-cancella" disabled>${_bIco(ICO.cestino)}${L('Cancella tutto per sempre', 'Delete everything forever', 'Borrar todo para siempre')}</button></p>
+          </details>`}
+    </div>
+
+    <div class="carta">
       <h2>${_hIco(ICO.telefono)}${L('Installa l\'app', 'Install the app', 'Instala la app')}</h2>
       <p>${L('Installa la dashboard', 'Install the dashboard', 'Instala el panel')} <strong class="primo-piano">${L('come app', 'as an app', 'como app')}</strong> ${L('sul telefono o sul PC: la apri a schermo intero come un\'app vera, senza doverla cercare nel browser.', 'on your phone or PC: open it full-screen like a real app, no need to look for it in the browser.', 'en el móvil o el PC: la abres a pantalla completa como una app de verdad, sin buscarla en el navegador.')}</p>
       <p class="spazio-sopra">
@@ -14043,7 +14058,7 @@ async function conErrore(fn) {
 
 function caricaDatiScheda(id) {
   if (schedaBloccata(id)) return;
-  if (id === 'stato') { caricaPasskey(); caricaModeratori(); caricaRichiesteMod(); caricaMieRichieste(); caricaRetePanoramica(); caricaPiattaforme(); }
+  if (id === 'stato') { caricaPasskey(); caricaModeratori(); caricaRichiesteMod(); caricaMieRichieste(); caricaRetePanoramica(); caricaPiattaforme(); collegaCancella(); }
   if (id === 'avatar') caricaMente3d();
   if (id === 'personalita') caricaGuide();
   if (id === 'conoscenza') { caricaConoscenza(); caricaQuaderno(); }
@@ -17323,6 +17338,39 @@ function _piattaformeModulo(c) {
     <div class="mod-piatt">${_piattaformeAttive.map((p) => `
       <label class="riga-check"><input type="checkbox" class="mod-piatt-c" value="${esc(p.id)}"${scelte && scelte.includes(p.id) ? ' checked' : ''}> ${esc(p.nome)}</label>`).join('')}</div>
   </div>`;
+}
+
+function collegaCancella() {
+  const det = document.getElementById('det-cancella');
+  if (!det || det.dataset.pronto) return;
+  det.dataset.pronto = '1';
+  const inp = document.getElementById('inp-cancella');
+  const btn = document.getElementById('btn-cancella');
+  const box = document.getElementById('resti-box');
+  const mio = String(stato.login || '').toLowerCase();
+
+  det.addEventListener('toggle', () => {
+    if (!det.open || det.dataset.visto) return;
+    det.dataset.visto = '1';
+    conErrore(async () => {
+      const r = await api('/api/streamer/resti');
+      const righe = Object.entries(r?.righe || {}).sort((a, b) => b[1] - a[1]);
+      const tot = righe.reduce((s, x) => s + x[1], 0);
+      const cartelle = (r?.cartelle || []).length;
+      box.innerHTML = tot || cartelle
+        ? `<strong>${tot}</strong> ${L('righe in', 'rows in', 'filas en')} <strong>${righe.length}</strong> ${L('tabelle', 'tables', 'tablas')}${cartelle ? ', ' + cartelle + ' ' + L('cartelle di file', 'file folders', 'carpetas de archivos') : ''}. <span class="tenue">${righe.slice(0, 6).map((x) => esc(x[0]) + ' (' + x[1] + ')').join(', ')}</span>`
+        : L('Non c\'è ancora niente da cancellare.', 'There is nothing to delete yet.', 'Todavía no hay nada que borrar.');
+    });
+  });
+
+  inp.addEventListener('input', () => { btn.disabled = !mio || inp.value.trim().toLowerCase() !== mio; });
+  btn.addEventListener('click', () => conErrore(async () => {
+    btn.disabled = true;
+    const r = await api('/api/streamer/cancella', { method: 'POST', body: { conferma: inp.value.trim() } });
+    const n = Object.values(r?.righe || {}).reduce((s, x) => s + x, 0);
+    alert(L('Cancellato: ' + n + ' righe. Ora esci.', 'Deleted: ' + n + ' rows. Signing out.', 'Borrado: ' + n + ' filas. Ahora sales.'));
+    location.href = '/entra';
+  }));
 }
 
 async function caricaPiattaforme() {
