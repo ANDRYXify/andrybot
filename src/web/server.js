@@ -32,6 +32,7 @@ import { paginaManuale, paginaIndiceManuali, urlManuali, aiutiPerScheda } from '
 import { elenco as elencoComandi, normalizza as normalizzaComandi, collisioni as collisioniComandi, LIVELLI as LIVELLI_COMANDO, MODULI as MODULI_COMANDO } from '../features/comandi-registro.js';
 import { AntiBot, erroriScudo, statoEsecutore, azioniFallite, riprovaFallite } from '../features/antibot.js';
 import { statoCensimento } from '../features/punteggio.js';
+import { aperto as incidenteAperto, elenco as elencoIncidenti, uno as unIncidente, sintesi as sintesiIncidente } from '../features/incidenti.js';
 import { stato as statoRete, elenco as elencoRete, dimentica as dimenticaRete } from '../features/rete.js';
 import { statoListaBot, registro as registroAntibot, segnalazioniAperte, risolviSegnalazione, sintesiRegistro, registra as registraAntibot, nomeBot, valutaAccount, assetto as assettoAntibot, sogliaRaffica, codaBan } from '../features/antibot.js';
 import { statoBackup, backupOra } from '../backup.js';
@@ -2352,6 +2353,21 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json({ ripresi: riprovaFallite(login), stato: statoEsecutore() });
   });
 
+  // Gli incidenti: un attacco per volta, non trecento righe di registro.
+  app.get('/api/antibot/incidenti', requireOwner, (req, res) => {
+    const login = currentUser(req).login.toLowerCase();
+    res.json({ elenco: elencoIncidenti(login, { limite: 60 }) });
+  });
+
+  // Uno solo, con dentro la timeline e chi c'era diviso per giudizio: e' quello
+  // che serve per la bonifica, dove non si deve ripulire alla cieca.
+  app.get('/api/antibot/incidenti/:id', requireOwner, (req, res) => {
+    const login = currentUser(req).login.toLowerCase();
+    const i = unIncidente(req.params.id);
+    if (!i || i.canale !== login) return res.status(404).json({ errore: 'non trovato' });
+    res.json({ incidente: sintesiIncidente(i), timeline: i.timeline, coinvolti: i.coinvolti });
+  });
+
   app.get('/api/antibot/console', requireOwner, (req, res) => {
     const login = currentUser(req).login.toLowerCase();
     const cfg = _abCfg(login);
@@ -2378,6 +2394,7 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         // e soprattutto quante sono cadute e aspettano di essere riprese.
         esecutore: statoEsecutore(),
         aVuoto: cfg.aVuoto === true,
+        incidente: incidenteAperto(login) ? sintesiIncidente(incidenteAperto(login)) : null,
         // Quanto sbaglia lo scudo, contato sui suoi stessi giudizi: chi era
         // stato segnato come «probabile macchina» e poi ha parlato in chat era
         // una persona. Serve a tarare le soglie su un numero invece che a naso.

@@ -52,6 +52,7 @@ import { AlertsEngine } from './features/alerts.js';
 import { AntiBot, caricaListaBotDaDisco, aggiornaListaBot, caricaRegistroDaDisco, salvaRegistro } from './features/antibot.js';
 import { censisci } from './features/punteggio.js';
 import { carica as caricaRete } from './features/rete.js';
+import { carica as caricaIncidenti } from './features/incidenti.js';
 import { scheduleReflection } from './ai/reflection.js';
 import { StreamWatcher } from './stream/watcher.js';
 import { LiveListener } from './stream/listener.js';
@@ -150,6 +151,7 @@ export class BotManager {
     caricaListaBotDaDisco().catch(() => {});
     caricaRegistroDaDisco().catch(() => {});
     caricaRete().catch(() => {});     // chi i canali hanno gia' riconosciuto insieme
+    caricaIncidenti().catch(() => {});   // gli attacchi gia' successi: quelli aperti si chiudono
     setTimeout(() => aggiornaListaBot().catch(() => {}), 30_000);
     this._listaBotTimer = setInterval(() => aggiornaListaBot().catch(() => {}), 12 * 60 * 60_000);
     // Ore guardate: ogni 5 minuti, per ogni canale LIVE, accredito il tempo a chi

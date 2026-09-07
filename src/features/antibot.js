@@ -30,6 +30,7 @@ import { streamers, statoVivo, memory } from '../db.js';
 import { punteggio as punteggia, inCentesimi, nomeGenerato, canaliInsieme, segnaGiudizio, erroriDi, GIUDIZI_CHIAVE, SOGLIA_SEGNALA } from './punteggio.js';
 import * as rete from './rete.js';
 import { Esecutore, verdetto, AZIONI, daFare } from './enforcement.js';
+import * as inc from './incidenti.js';
 import { config } from '../config.js';
 
 const log = makeLog('antibot');
@@ -208,6 +209,9 @@ export const inRaffica = (channel) => (raffiche.get(channel) || 0) > Date.now();
 // l'esito REALE su Twitch (andato o fallito). Lo streamer lo rivede dalla sua
 // console, risolve le segnalazioni e all'occorrenza annulla. Persistito su
 // disco, con un tetto per canale così non cresce all'infinito.
+const AZIONI_ESECUTORE = new Set(['blocca', 'ban', 'timeout', 'cancella', 'limita']);
+const DA_RACCONTARE = new Set(['assetto', 'raffica', 'blocco', 'coro', 'presenza', 'segnala', 'raid']);
+
 const REG_MAX = 500;
 const registriMem = new Map();          // channel → [voce, …] (le recenti in coda)
 let regSeq = 0;
@@ -233,6 +237,15 @@ export function registra(channel, dati) {
   if (arr.length > REG_MAX) arr.splice(0, arr.length - REG_MAX);
   registriMem.set(ch, arr);
   programmaSalvataggioReg();
+
+  // L'incidente si riempie da qui, che e' l'unico punto da cui passa tutto.
+  // Le AZIONI si contano e basta: quattrocento righe «bloccato» in una timeline
+  // non raccontano niente, un numero si'. Gli eventi salienti invece si
+  // raccontano, perche' sono quelli che rispondono a «cos'e' successo e quando».
+  try {
+    if (AZIONI_ESECUTORE.has(voce.azione)) inc.segnaAzione(ch, { azione: voce.azione, esito: voce.esito });
+    else if (DA_RACCONTARE.has(voce.azione)) inc.racconta(ch, `${voce.azione}: ${voce.motivo}`.slice(0, 200));
+  } catch (e) {  }
   return voce;
 }
 
@@ -307,6 +320,17 @@ export async function caricaRegistroDaDisco() {
 // sale quando arriva evidenza, e scende da solo dopo un periodo di quiete.
 // Tutte le difese leggono quello. Un fatto, un posto dove è scritto.
 export const ASSETTO = { CALMA: 'calma', SOSPETTO: 'sospetto', ATTACCO: 'attacco' };
+
+// Che razza di attacco e'. Si legge da come l'ha descritto chi ha dato
+// l'allarme: e' l'unico che lo sa, e riscriverlo da capo altrove vorrebbe dire
+// tenere la stessa cosa in due posti.
+function tipoDi(motivo = '') {
+  const m = String(motivo).toLowerCase();
+  if (m.includes('stesso messaggio')) return 'coro';
+  if (m.includes('onda lenta')) return 'onda-lenta';
+  if (m.includes('follow')) return 'ondata-follow';
+  return 'ignoto';
+}
 const QUIETE_MS = 5 * 60 * 1000;         // quanto silenzio serve per tornare in pace
 const assetti = new Map();               // channel -> { livello, da, motivo, ripristino, timer }
 
@@ -643,6 +667,10 @@ export class AntiBot {
     if (!salita) return;
 
     log.warn(`#${ch} assetto → ${livello.toUpperCase()}: ${motivo}`);
+    // L'incidente nasce qui: un attacco e' una cosa sola, non trecento righe.
+    // Si apre alla prima salita, e se ne era appena chiuso uno si riapre quello
+    // — un'ondata che riprende non e' un attacco nuovo.
+    try { inc.apri(ch, { tipo: tipoDi(motivo), motivo, livello }); inc.segnaPicco(ch, { livello }); } catch (e) {  }
     registra(ch, { azione: 'assetto', motivo: `${livello}: ${motivo}`, esito: 'avviso' });
     this.alert?.(ch, { tipo: 'antibot', testo: livello === ASSETTO.ATTACCO ? 'Sotto attacco: scudo alzato' : 'Movimento sospetto' });
 
@@ -694,6 +722,7 @@ export class AntiBot {
     const durata = Math.round((Date.now() - a.da) / 1000);
     log.info(`#${ch} assetto → calma dopo ${durata}s`);
     registra(ch, { azione: 'assetto', motivo: `rientro in calma dopo ${durata}s`, esito: 'fatto' });
+    try { inc.chiudi(ch, `rientro in calma dopo ${durata}s`); } catch (e) {  }
     const c = this.cfg(ch);
     if (c.avvisa && a.livello === ASSETTO.ATTACCO) this.say?.(ch, '🛡️ Passata. Chat riaperta.');
   }
@@ -713,6 +742,7 @@ export class AntiBot {
         // follow finto dalla lista, e il numero gonfiato e' il danno vero.
         azione: cfg.togliFollow === false ? AZIONI.BAN : AZIONI.BLOCCA,
         motivi: [v.motivo || 'ondata follow-bot'], origine: 'ondata',
+        incidente: inc.aperto(ch)?.id || '',
         confidenza: 0.95, aVuoto: this._aVuoto(cfg),
       }));
     if (!verdetti.length) return 0;
@@ -726,6 +756,7 @@ export class AntiBot {
     registra(ch, { azione: 'blocco', motivo: `${n} account dell'ondata → blocco (${motivo})`, esito: 'in-attesa' });
     if (cfg.avvisa && !this._aVuoto(cfg)) this.say?.(ch, `🛡️ Ondata artificiale: sto ripulendo ${n} account finti.`);
     for (const v of verdetti) {
+      try { inc.coinvolto(ch, v.login, inc.GIUDIZI.CERTO, v.punti); } catch (e) {  }
       this.esecutore.esegui(v).then((r) => {
         // Nella rete entra solo quello che e' andato a buon fine DAVVERO: non
         // un doppione, non una prova a vuoto, non un tentativo fallito.
@@ -760,9 +791,10 @@ export class AntiBot {
     else if (cfg.azione === 'timeout') azione = AZIONI.TIMEOUT;
     else azione = AZIONI.BAN;
 
+    try { inc.coinvolto(ch, login, inc.GIUDIZI.CERTO, extra.punti || 0); } catch (e) {  }
     return this.esecutore.esegui(verdetto({
       canale: ch, login, userId, azione,
-      motivi: [motivo], origine,
+      motivi: [motivo], origine, incidente: inc.aperto(ch)?.id || '',
       durata: azione === AZIONI.TIMEOUT ? Number(cfg.timeoutSec || 1209600) : 0,
       punti: extra.punti || 0, confidenza: extra.confidenza ?? 0.9,
       aVuoto: this._aVuoto(cfg),
@@ -838,6 +870,13 @@ export class AntiBot {
       }
     }
 
+    // Chi e' arrivato durante l'attacco ma non ha nessun segnale contro resta
+    // scritto come LEGITTIMO. Dentro un'ondata ci finisce anche gente vera, ed
+    // e' quella che non si deve toccare dopo, quando si ripulisce.
+    if (a && a.livello === ASSETTO.ATTACCO) {
+      try { inc.coinvolto(channel, login, a.artificiale ? inc.GIUDIZI.SOSPETTO : inc.GIUDIZI.LEGITTIMO); } catch (e) {  }
+    }
+
     // vecchio interruttore: bannare i follow dell'ondata anche senza certezza
     if (cfg.raffica && cfg.rafficaBanna && inRaffica(channel)) {
       return this._agisci(channel, userId, login, 'follow durante ondata', cfg, 'follow');
@@ -889,9 +928,10 @@ export class AntiBot {
       if (assetto(channel).livello !== ASSETTO.ATTACCO) {
         await this._alza(channel, ASSETTO.ATTACCO, motivo, cfg);
       }
+      try { inc.coinvolto(channel, login, inc.GIUDIZI.CERTO); } catch (e) {  }
       const r = await this.esecutore.esegui(verdetto({
         canale: channel, login, userId: msg.userId, azione: AZIONI.CANCELLA,
-        messaggio: msg.id, motivi: [motivo], origine: 'coro',
+        messaggio: msg.id, motivi: [motivo], origine: 'coro', incidente: inc.aperto(channel)?.id || '',
         confidenza: 0.9, aVuoto: this._aVuoto(cfg),
       }));
       if (r?.ok && !r.aVuoto && !r.doppione) { try { rete.segnala(channel, login, 'coro'); } catch (e) {  } }
