@@ -17,29 +17,33 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-07
 
-- Se qualcuno ti manda un raid vero e in trecento salutano con la stessa frase, il bot non li scambia piu per un attacco. Prima ne cancellava fino a novanta su trecento.
-- E una chat che ripete una frase corta tutti insieme non e piu un attacco: prima bastavano quattordici caratteri, adesso ne servono trenta e cinque parole.
-- Lo scudo misura gli attacchi sull'ora in cui sono successi e non su quella in cui gli arrivano, cosi un ritardo del bot non falsa piu il giudizio.
-- Ogni attacco al tuo canale diventa una scheda unica invece di trecento righe di registro: quando e cominciato, quanto e durato, quanto forte e andato, chi c'era, cosa ha fatto il bot e quanto ha funzionato.
-- Un attacco che riprende dopo pochi minuti resta lo stesso attacco, cosi il conto dei danni non si spezza in dieci pezzi.
-- Nella scheda chi e arrivato durante l'attacco e diviso fra bot certi, sospetti e persone vere: serve per non fare pulizia alla cieca dopo.
-- Se il bot si riavvia mentre un attacco e in corso, la scheda si chiude e resta, invece di restare aperta per sempre.
-- Nello Scudo anti-bot c'e la sola osservazione: lo scudo lavora e scrive nel registro cosa avrebbe fatto, ma non banna, non blocca e non cancella. Serve per vedere come si comporta prima di lasciarlo agire.
-- Un'azione che non riesce, perche Twitch non risponde o manca un permesso, non si perde piu: resta in sospeso e la puoi far riprovare dalla console.
-- Nel registro dello scudo ora c'e anche cosa ha risposto Twitch, non solo se e andata. Prima «fallito» non diceva perche.
+- Quando arriva un'ondata di follow finti, il bot riconosce quali nomi vengono dalla stessa fabbrica e toglie solo quelli: chi era capitato lì in mezzo non viene più toccato.
+- E se non riconosce nessun gruppo non se lo inventa: tratta l'ondata come una cosa sola, perché lì il rischio è lasciarla passare.
+- Anche i follow finti che arrivano piano piano, uno ogni pochi secondi per dieci minuti, adesso vengono fermati. Prima passavano indisturbati.
+- E il bot non impara più il ritmo del tuo canale da due minuti di attacco: perché quel ritmo conti servono ore, non un episodio.
+- Se qualcuno ti manda un raid vero e in trecento salutano con la stessa frase, il bot non li scambia più per un attacco. Prima ne cancellava fino a novanta su trecento.
+- E una chat che ripete una frase corta tutti insieme non è più un attacco: prima bastavano quattordici caratteri, adesso ne servono trenta e cinque parole.
+- Lo scudo misura gli attacchi sull'ora in cui sono successi e non su quella in cui gli arrivano, così un ritardo del bot non falsa più il giudizio.
+- Ogni attacco al tuo canale diventa una scheda unica invece di trecento righe di registro: quando è cominciato, quanto è durato, quanto forte è andato, chi c'era, cosa ha fatto il bot e quanto ha funzionato.
+- Un attacco che riprende dopo pochi minuti resta lo stesso attacco, così il conto dei danni non si spezza in dieci pezzi.
+- Nella scheda chi è arrivato durante l'attacco è diviso fra bot certi, sospetti e persone vere: serve per non fare pulizia alla cieca dopo.
+- Se il bot si riavvia mentre un attacco è in corso, la scheda si chiude e resta, invece di restare aperta per sempre.
+- Nello Scudo anti-bot c'è la sola osservazione: lo scudo lavora e scrive nel registro cosa avrebbe fatto, ma non banna, non blocca e non cancella. Serve per vedere come si comporta prima di lasciarlo agire.
+- Un'azione che non riesce, perché Twitch non risponde o manca un permesso, non si perde più: resta in sospeso e la puoi far riprovare dalla console.
+- Nel registro dello scudo ora c'è anche cosa ha risposto Twitch, non solo se è andata. Prima «fallito» non diceva perché.
 - Se lo stesso evento arriva due volte, il bot non banna due volte.
-- E la cancellazione di un messaggio di spam passa avanti alla pulizia dei follower finti, che puo aspettare.
+- E la cancellazione di un messaggio di spam passa avanti alla pulizia dei follower finti, che può aspettare.
 - I canali che usano il bot ora si scambiano quello che scoprono: un account bloccato durante un'ondata su un canale diventa noto anche agli altri. La lista cresce da sola con gli streamer che arrivano.
-- Serve pero che tre canali diversi lo riconoscano ciascuno per conto suo, e solo per cose misurate sul momento, mai per il tipo di profilo. Un canale solo non fa una verita.
-- Un nome nella lista comune scade da solo dopo tre mesi e si puo togliere subito, cosi un errore non resta li per sempre.
+- Serve però che tre canali diversi lo riconoscano ciascuno per conto suo, e solo per cose misurate sul momento, mai per il tipo di profilo. Un canale solo non fa una verità.
+- Un nome nella lista comune scade da solo dopo tre mesi e si può togliere subito, così un errore non resta lì per sempre.
 - Lo scudo sa riconoscere anche i bot che guardano e basta: un account che sta in molti canali nello stesso momento e non scrive mai in nessuno viene segnalato. Non viene toccato, decidi tu.
-- Il giudizio su un account non somma piu tre volte la stessa cosa. Prima un nuovo spettatore senza foto ne bio prendeva lo stesso punteggio di un follow-bot vero.
-- E per togliere il follow a qualcuno adesso serve sempre un fatto che una persona non puo produrre: il nome riconosciuto o la presenza in molti canali. Il resto fa solo segnalare.
-- Nella console dello scudo c'e quanto ha sbagliato: chi era stato segnalato e poi ha scritto in chat era una persona, e viene contato.
+- Il giudizio su un account non somma più tre volte la stessa cosa. Prima un nuovo spettatore senza foto né bio prendeva lo stesso punteggio di un follow-bot vero.
+- E per togliere il follow a qualcuno adesso serve sempre un fatto che una persona non può produrre: il nome riconosciuto o la presenza in molti canali. Il resto fa solo segnalare.
+- Nella console dello scudo c'è quanto ha sbagliato: chi era stato segnalato e poi ha scritto in chat era una persona, e viene contato.
 - Il filtro dei link guarda il dominio del link e non il testo intorno. Prima bastava nominare da qualche parte un sito permesso, o metterne uno buono davanti a quello vero, e il filtro si spegneva.
-- E non cancella piu i messaggi normali scritti col punto attaccato, tipo «lascia stare.io ci provo». Su quindici frasi di chat vere prima ne finivano cancellate dieci.
-- Lo scudo riconosce anche le ondate di follow cosi veloci da arrivare tutte insieme: erano proprio quelle che passavano.
-- E per dire che un'ondata e finta ora aspetta di aver visto quindici follow. Con sei, una ondata vera su dodici veniva scambiata per finta e i follower veri finivano rimossi.
+- E non cancella più i messaggi normali scritti col punto attaccato, tipo «lascia stare.io ci provo». Su quindici frasi di chat vere prima ne finivano cancellate dieci.
+- Lo scudo riconosce anche le ondate di follow così veloci da arrivare tutte insieme: erano proprio quelle che passavano.
+- E per dire che un'ondata è finta ora aspetta di aver visto quindici follow. Con sei, una ondata vera su dodici veniva scambiata per finta e i follower veri finivano rimossi.
 - Quando lo scudo si convince a meta ondata, riprende anche i follow arrivati prima, invece di partire da quel momento.
 - Il rilevamento dello stesso messaggio scritto da tanti account resta acceso anche se spegni l'elenco dei nomi da bot: prima si spegneva anche quello, senza dirlo.
 - Una parola vietata resta vietata anche scritta con un accento.

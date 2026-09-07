@@ -135,9 +135,23 @@ test('se Twitch non risponde, la serranda resta segnata e si riprova', async () 
 
 test('il ritmo che il canale ha imparato non riparte da zero', async () => {
   const antibot = await import('../../src/features/antibot.js');
-  statoVivo.scrivi(CANALE, 'ritmo', { medio: 4000, visti: 120 });
+  // Serve anche da QUANDO lo sta imparando: centoventi follow raccolti in due
+  // minuti sono un episodio, non l'abitudine di un canale — e se l'episodio è
+  // un attacco, il canale imparerebbe che l'attacco è la sua normalità.
+  const treGiorniFa = Date.now() - 3 * 24 * 3600 * 1000;
+  statoVivo.scrivi(CANALE, 'ritmo', { medio: 4000, visti: 120, da: treGiorniFa });
   const dopo = await import('../../src/features/antibot.js?riavvio=1');
   const soglia = dopo.sogliaRaffica(CANALE, { rafficaQuanti: 10, rafficaSecondi: 30 });
-  assert.ok(soglia > 10, 'con 120 follow visti la soglia e\' quella imparata, non quella dichiarata');
+  assert.ok(soglia > 10, 'con 120 follow visti in tre giorni la soglia e\' quella imparata');
   assert.equal(typeof antibot.sogliaRaffica, 'function');
+});
+
+test('ma un ritmo imparato in due minuti non conta', async () => {
+  const ch = 'ritmofresco';
+  streamers.upsertApproved(ch, 'Fresco', '81');
+  streamers.setEnabled(ch, true);
+  statoVivo.scrivi(ch, 'ritmo', { medio: 4000, visti: 120, da: Date.now() - 120000 });
+  const dopo = await import('../../src/features/antibot.js?riavvio=2');
+  assert.equal(dopo.sogliaRaffica(ch, { rafficaQuanti: 10, rafficaSecondi: 30 }), 10,
+    'si torna al numero dichiarato: meglio una soglia prudente che una imparata da un attacco');
 });
