@@ -492,6 +492,14 @@ CREATE TABLE IF NOT EXISTS point_alerts (    -- premi a PUNTI CANALE Twitch → 
   ts INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (channel, reward_id)
 );
+
+CREATE TABLE IF NOT EXISTS stato_vivo (      -- lo stato dei motori che deve sopravvivere a un riavvio
+  channel TEXT NOT NULL,
+  chiave TEXT NOT NULL,                      -- 'giveaway' | 'penitenza' | 'assetto' | 'ritmo'
+  dato TEXT NOT NULL DEFAULT '{}',           -- JSON dello stato, letto solo dal motore che l'ha scritto
+  ts INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (channel, chiave)
+);
 `);
 
 // --- migrazioni leggere: aggiunge colonne nuove a DB già esistenti ------------
@@ -2949,6 +2957,46 @@ export const modules = {
   },
 };
 
+// ------------------------------------------------------------- stato vivo
+// Un deploy dura pochi secondi, una diretta dura ore: il processo muore, la
+// diretta no. Tutto quello che un motore tiene acceso mentre la diretta va —
+// un giveaway aperto, una penitenza in corso, il livello dello scudo, il ritmo
+// che il canale ha imparato — se sta solo in memoria sparisce a ogni
+// pubblicazione. Qui c'e' la casa comune: una riga per canale e chiave, dentro
+// il JSON che il motore si e' scritto da se'. Nessuno legge il JSON di un altro.
+
+export const statoVivo = {
+  leggi(channel, chiave) {
+    const r = db.prepare('SELECT dato FROM stato_vivo WHERE channel=? AND chiave=?')
+      .get(String(channel || '').toLowerCase(), String(chiave || ''));
+    return r ? safeJson(r.dato) : null;
+  },
+  scrivi(channel, chiave, dato) {
+    db.prepare(`INSERT INTO stato_vivo (channel, chiave, dato, ts) VALUES (?,?,?,?)
+      ON CONFLICT(channel, chiave) DO UPDATE SET dato=excluded.dato, ts=excluded.ts`)
+      .run(String(channel || '').toLowerCase(), String(chiave || ''), JSON.stringify(dato ?? {}), now());
+  },
+  togli(channel, chiave) {
+    db.prepare('DELETE FROM stato_vivo WHERE channel=? AND chiave=?')
+      .run(String(channel || '').toLowerCase(), String(chiave || ''));
+  },
+  // Tutte le righe di una chiave, per rimettere in piedi i motori all'avvio.
+  // `piuVecchieDi` (ms) butta quelle rimaste indietro invece di riaprirle: un
+  // giveaway di tre settimane fa non va riaperto, va dimenticato.
+  tutti(chiave, piuVecchieDi = 0) {
+    const righe = db.prepare('SELECT channel, dato, ts FROM stato_vivo WHERE chiave=?').all(String(chiave || ''));
+    const limite = piuVecchieDi > 0 ? now() - piuVecchieDi : 0;
+    const vive = [];
+    for (const r of righe) {
+      if (limite && Number(r.ts) < limite) {
+        try { db.prepare('DELETE FROM stato_vivo WHERE channel=? AND chiave=?').run(r.channel, String(chiave || '')); } catch (e) {  }
+        continue;
+      }
+      vive.push({ channel: r.channel, dato: safeJson(r.dato), ts: Number(r.ts) || 0 });
+    }
+    return vive;
+  },
+};
 // ---------------------------------------------------------------- contatori
 
 // Nome contatore normalizzato: minuscolo, senza spazi ai bordi, max 60 char.

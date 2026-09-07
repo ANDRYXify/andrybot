@@ -26,7 +26,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { makeLog } from '../logger.js';
-import { streamers } from '../db.js';
+import { streamers, statoVivo } from '../db.js';
 import { config } from '../config.js';
 
 const log = makeLog('antibot');
@@ -290,7 +290,24 @@ export async function caricaRegistroDaDisco() {
 // Tutte le difese leggono quello. Un fatto, un posto dove è scritto.
 export const ASSETTO = { CALMA: 'calma', SOSPETTO: 'sospetto', ATTACCO: 'attacco' };
 const QUIETE_MS = 5 * 60 * 1000;         // quanto silenzio serve per tornare in pace
-const assetti = new Map();               // channel → { livello, da, motivo, ripristino, timer }
+const assetti = new Map();               // channel -> { livello, da, motivo, ripristino, timer }
+
+// La SERRANDA e' l'unica cosa dell'assetto che deve sopravvivere a un riavvio,
+// e non per riprendere l'allarme: per DISFARLO. Quando lo scudo si alza, il bot
+// accende su Twitch la chat ai soli follower, la modalita' lenta e lo Shield
+// Mode, e si segna in `ripristino` quali ha acceso LUI. Quel foglietto stava in
+// memoria: se il processo moriva a scudo alzato, il bot al riavvio tornava in
+// pace — ma il canale restava chiuso, e non era rimasto nessuno a riaprirlo. Lo
+// streamer se lo trovava cosi' finche' non se ne accorgeva da solo.
+const CHIAVE_SERRANDA = 'serranda';
+
+function segnaSerranda(ch, a) {
+  try {
+    const rip = a?.ripristino || {};
+    if (rip.follower || rip.lenta || rip.shield) statoVivo.scrivi(ch, CHIAVE_SERRANDA, { ripristino: rip, da: a.da || Date.now() });
+    else statoVivo.togli(ch, CHIAVE_SERRANDA);
+  } catch (e) {  }
+}
 
 export function assetto(channel) {
   const a = assetti.get(norm(channel));
@@ -310,8 +327,32 @@ export function assetto(channel) {
 const ritmi = new Map();                 // channel → { medio, visti, ultimo }
 const RITMO_MIN_STORIA = 30;             // sotto questo si usa il valore dichiarato
 
+// Il ritmo e' una cosa IMPARATA, e ci vogliono trenta follow per impararla.
+// In memoria non ci arrivava mai: fra una pubblicazione e l'altra un canale
+// piccolo trenta follow non li fa, quindi la soglia adattiva restava per sempre
+// quella dichiarata e tutto il ragionamento sul "ritmo abituale" non entrava
+// mai in funzione. Adesso quello che il canale ha imparato resta. L'ultimo
+// istante NON si salva: l'intervallo a cavallo di un riavvio non vuol dire
+// niente, e il primo follow dopo riparte senza contribuire alla media.
+const CHIAVE_RITMO = 'ritmo';
+const SALVA_RITMO_MS = 60_000;           // si riscrive al piu' una volta al minuto per canale
+const RITMO_VECCHIO_MS = 90 * 24 * 60 * 60 * 1000;
+let _ritmiPresi = false;
+
+function ritmiPronti() {
+  if (_ritmiPresi) return;
+  _ritmiPresi = true;
+  try {
+    for (const r of statoVivo.tutti(CHIAVE_RITMO, RITMO_VECCHIO_MS)) {
+      const medio = Number(r.dato?.medio) || 0;
+      if (medio > 0) ritmi.set(norm(r.channel), { medio, visti: Number(r.dato?.visti) || 0, ultimo: 0, salvato: 0 });
+    }
+  } catch (e) {  }
+}
+
 function segnaRitmo(channel, ora) {
-  const r = ritmi.get(channel) || { medio: 0, visti: 0, ultimo: 0 };
+  ritmiPronti();
+  const r = ritmi.get(channel) || { medio: 0, visti: 0, ultimo: 0, salvato: 0 };
   if (r.ultimo) {
     const dt = Math.min(600000, ora - r.ultimo);
     r.medio = r.medio ? r.medio * 0.88 + dt * 0.12 : dt;
@@ -319,6 +360,10 @@ function segnaRitmo(channel, ora) {
   }
   r.ultimo = ora;
   ritmi.set(channel, r);
+  if (r.medio && ora - (r.salvato || 0) > SALVA_RITMO_MS) {
+    r.salvato = ora;
+    try { statoVivo.scrivi(channel, CHIAVE_RITMO, { medio: r.medio, visti: r.visti }); } catch (e) {  }
+  }
   return r;
 }
 
@@ -326,6 +371,7 @@ function segnaRitmo(channel, ora) {
 export function sogliaRaffica(channel, cfg = {}) {
   const base = Math.max(3, Number(cfg.rafficaQuanti ?? 10));
   const w = Number(cfg.rafficaSecondi ?? 30) * 1000;
+  ritmiPronti();
   const r = ritmi.get(norm(channel));
   if (!r || r.visti < RITMO_MIN_STORIA || !r.medio) return base;
   const normale = w / r.medio;                       // follow attesi nella finestra
@@ -478,12 +524,37 @@ export class AntiBot {
     this.alert = alert;                 // (channel, {tipo, testo}) per l'overlay (facolt.)
     this.say = say;                      // (channel, testo)
     this.chatSettings = chatSettings;    // (channel, {followersOnly}) se il bot sa farlo (facolt.)
+    setTimeout(() => { this._riapriSerrande().catch(() => {}); }, 4000).unref?.();
+  }
+
+  // All'avvio: nessun allarme si riprende — il bot non ha nessuna prova che
+  // l'attacco sia ancora in corso, e tornare in pace e' giusto. Ma quello che
+  // aveva chiuso va riaperto, se no resta chiuso per sempre. La riga si toglie
+  // solo se la riapertura e' andata: se Twitch non risponde, si riprova al
+  // riavvio dopo invece di dimenticarsene.
+  async _riapriSerrande() {
+    let righe = [];
+    try { righe = statoVivo.tutti(CHIAVE_SERRANDA); } catch (e) { return; }
+    for (const r of righe) {
+      const ch = norm(r.channel);
+      const rip = r.dato?.ripristino || {};
+      let tutto = true;
+      if (rip.shield) { const x = await this.helix?.shieldMode?.(ch, false).catch(() => null); if (!x?.ok) tutto = false; }
+      if (rip.lenta) { const x = await this.helix?.chatLenta?.(ch, false).catch(() => null); if (!x?.ok) tutto = false; }
+      if (rip.follower) { const x = await this.helix?.chatSoloFollower?.(ch, false).catch(() => null); if (!x?.ok) tutto = false; }
+      if (!tutto) { log.warn(`#${ch} serranda non riaperta del tutto: si riprova al prossimo avvio`); continue; }
+      try { statoVivo.togli(ch, CHIAVE_SERRANDA); } catch (e) {  }
+      log.info(`#${ch} serranda riaperta dopo un riavvio`);
+      registra(ch, { azione: 'assetto', motivo: 'riapertura dopo un riavvio', esito: 'fatto' });
+    }
   }
 
   // La configurazione dello streamer, più quello che l'assetto impone ADESSO.
   // L'aggiunta vive in memoria e non tocca le impostazioni salvate: se il
   // processo cadesse a metà attacco, il canale non resterebbe in assetto per
-  // sempre — al riavvio è di nuovo in pace, per costruzione.
+  // sempre — al riavvio è di nuovo in pace, per costruzione. Quello che il bot
+  // ha chiuso SU TWITCH è un'altra cosa e non torna indietro da solo: vedi la
+  // serranda, che si riapre all'avvio.
   cfg(channel) {
     const base = { ...ANTIBOT_DEFAULT, ...(streamers.get(channel)?.settings?.antibot || {}) };
     if (assetto(channel).livello !== ASSETTO.ATTACCO || base.assettoAuto === false) return base;
@@ -543,6 +614,7 @@ export class AntiBot {
     }
     a.ripristino = rip;
     assetti.set(ch, a);
+    segnaSerranda(ch, a);
   }
 
   _rimanda(ch) {
@@ -560,6 +632,7 @@ export class AntiBot {
     if (!a) return;
     if (a.timer) clearTimeout(a.timer);
     assetti.delete(ch);
+    try { statoVivo.togli(ch, CHIAVE_SERRANDA); } catch (e) {  }
     const rip = a.ripristino || {};
     if (rip.shield) await this.helix?.shieldMode?.(ch, false).catch(() => {});
     if (rip.lenta) await this.helix?.chatLenta?.(ch, false).catch(() => {});

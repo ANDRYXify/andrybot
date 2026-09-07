@@ -13,7 +13,7 @@
 // La corrispondenza è FUZZY (tollera i piccoli errori del riconoscimento vocale)
 // così una parola sentita male ma sostanzialmente corretta non fa scattare falsi
 // positivi.
-import { streamers } from '../db.js';
+import { streamers, statoVivo } from '../db.js';
 import { makeLog } from '../logger.js';
 
 const log = makeLog('penitenze');
@@ -59,6 +59,9 @@ function simile(a, b, soglia) {
   return 1 - levenshtein(a, b) / L >= soglia;
 }
 
+const CHIAVE = 'penitenza';
+const VECCHIE_MS = 60 * 60 * 1000;   // scadute da piu' di un'ora: si lasciano perdere
+
 export class PenitenzeEngine {
   // ia: funzione async (channel) → Promise<string|null> per far scegliere la
   // penitenza dall'IA. effects: EffectsEngine (per gli eventi overlay + effetto).
@@ -69,6 +72,36 @@ export class PenitenzeEngine {
     this.attive = new Map();   // channel → [penitenza attiva]
     this._sweep = null;
     this._nextId = 1;
+    this._idrata();
+  }
+
+  // Una penitenza dura fino a quindici minuti, un riavvio dura un secondo: se
+  // il contatore sta solo in memoria, chi ha pagato il premio a punti canale
+  // resta a meta' sfida, con l'overlay che si spegne e nessun risultato. Qui si
+  // riprende quello che era in corso. Chi e' scaduto mentre il bot era giu' lo
+  // conclude lo sweep al primo giro, che e' la risposta giusta: la sfida
+  // finisce, con qualche minuto di ritardo. Piu' vecchio di un'ora si lascia
+  // perdere: annunciare la penitenza di ieri sera e' rumore.
+  _idrata() {
+    let ripreso = false;
+    try {
+      for (const r of statoVivo.tutti(CHIAVE, VECCHIE_MS)) {
+        const lista = (Array.isArray(r.dato?.lista) ? r.dato.lista : []).filter((p) => p && p.valore);
+        if (!lista.length) continue;
+        this.attive.set(r.channel, lista);
+        for (const p of lista) this._nextId = Math.max(this._nextId, (Number(p.id) || 0) + 1);
+        ripreso = true;
+      }
+    } catch (e) { log.debug('ripresa penitenze:', e?.message || e); }
+    if (ripreso) this._avviaSweep();
+  }
+
+  _salva(channel) {
+    try {
+      const lista = this.attive.get(channel);
+      if (!lista || !lista.length) statoVivo.togli(channel, CHIAVE);
+      else statoVivo.scrivi(channel, CHIAVE, { lista });
+    } catch (e) { log.debug('salvataggio penitenze:', e?.message || e); }
   }
 
   cfg(channel) { return streamers.get(channel)?.settings?.penitenze || null; }
@@ -117,6 +150,7 @@ export class PenitenzeEngine {
       const lista = this.attive.get(channel) || [];
       lista.push(pen);
       this.attive.set(channel, lista);
+      this._salva(channel);
       this._avviaSweep();
 
       const cosa = tipo === 'lettera' ? `la lettera "${valore.toUpperCase()}"` : `la parola "${valore}"`;
@@ -162,6 +196,7 @@ export class PenitenzeEngine {
         }
         if (!hit) continue;
         p.count += hit;
+        this._salva(channel);
         this._overlay(channel, { azione: 'hit', id: p.id, count: p.count, inc: hit });
         log.debug(`#${channel} penitenza #${p.id}: +${hit} (tot ${p.count})`);
       }
@@ -244,6 +279,7 @@ export class PenitenzeEngine {
           else { Promise.resolve(this._concludi(ch, p)).catch(() => {}); }
         }
         if (vive.length) { this.attive.set(ch, vive); restaQualcosa = true; } else this.attive.delete(ch);
+        if (vive.length !== lista.length) this._salva(ch);
       }
       if (!restaQualcosa) { clearInterval(this._sweep); this._sweep = null; }
     }, 3000);

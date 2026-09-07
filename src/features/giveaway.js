@@ -1,5 +1,4 @@
-// Giveaway / sorteggi. Uno per canale alla volta, tenuto IN MEMORIA: è legato
-// alla diretta e non ha senso farlo sopravvivere ai riavvii. Si comanda sia dalla
+// Giveaway / sorteggi. Uno per canale alla volta. Si comanda sia dalla
 // CHAT (mod/streamer: !giveaway/!estrai; spettatori: !join) sia dalla DASHBOARD
 // (le funzioni apri/stato/estrai/annulla, usate dagli endpoint del server, che
 // gira nello stesso processo → stessa mappa in memoria).
@@ -11,7 +10,7 @@
 // Si possono estrarre anche più vincitori in un colpo (!estrai N), senza ripescare.
 //
 // Gating: segue l'add-on "Giochi" (settings.giochi), come i minigiochi.
-import { streamers } from '../db.js';
+import { streamers, statoVivo } from '../db.js';
 import { makeLog } from '../logger.js';
 
 const log = makeLog('giveaway');
@@ -23,6 +22,49 @@ const log = makeLog('giveaway');
 //   apertoDa, vincitori: [display,...]
 // }
 const attivi = new Map();
+
+// Stava solo qui dentro, e la ragione scritta era «è legato alla diretta, non ha
+// senso farlo sopravvivere ai riavvii». La ragione confondeva due cose: la
+// diretta dura ore, il processo muore in un secondo a ogni pubblicazione. Chi
+// aveva scritto !join spariva, e i suoi biglietti con lui — cioè si perdeva una
+// cosa che qualcuno si era guadagnato. Adesso la mappa è una copia di lavoro di
+// quello che sta nel database: si legge all'avvio, si riscrive a ogni mossa.
+const CHIAVE = 'giveaway';
+const SCADE_MS = 7 * 24 * 60 * 60 * 1000;   // uno aperto e dimenticato non si riapre in eterno
+let _idratato = false;
+
+function idrata() {
+  if (_idratato) return;
+  _idratato = true;
+  try {
+    for (const r of statoVivo.tutti(CHIAVE, SCADE_MS)) {
+      const d = r.dato || {};
+      attivi.set(r.channel, {
+        premio: String(d.premio || ''),
+        soloSub: !!d.soloSub,
+        keyword: String(d.keyword || 'join'),
+        molt: d.molt && typeof d.molt === 'object' ? d.molt : {},
+        partecipanti: new Map(Array.isArray(d.partecipanti) ? d.partecipanti : []),
+        apertoDa: Number(d.apertoDa) || r.ts,
+        vincitori: Array.isArray(d.vincitori) ? d.vincitori : [],
+      });
+    }
+  } catch (e) { log.debug('riapertura:', e?.message || e); }
+}
+
+function vivo(channel) { idrata(); return attivi.get(channel); }
+
+function salva(channel) {
+  const g = attivi.get(channel);
+  try {
+    if (!g) { statoVivo.togli(channel, CHIAVE); return; }
+    statoVivo.scrivi(channel, CHIAVE, {
+      premio: g.premio, soloSub: g.soloSub, keyword: g.keyword, molt: g.molt,
+      partecipanti: [...g.partecipanti], apertoDa: g.apertoDa, vincitori: g.vincitori,
+    });
+  } catch (e) { log.debug('salvataggio:', e?.message || e); }
+}
+
 const puoGestire = (msg) => !!(msg.isMod || msg.isBroadcaster);
 const abilitato = (channel) => streamers.get(channel)?.settings?.giochi !== false;
 
@@ -73,7 +115,7 @@ function bigliettiTotali(g) {
 
 // ── API condivisa (chat + dashboard) ────────────────────────────────────────
 export function stato(channel) {
-  const g = attivi.get(channel);
+  const g = vivo(channel);
   if (!g) return { aperto: false };
   return {
     aperto: true,
@@ -90,7 +132,7 @@ export function stato(channel) {
 // Apre un giveaway. { ok, premio, soloSub, keyword, molt } oppure { ok:false, errore }.
 export function apri(channel, opts = {}) {
   if (!abilitato(channel)) return { ok: false, errore: 'add-on' };
-  const g = attivi.get(channel);
+  const g = vivo(channel);
   if (g && g.partecipanti.size > 0) return { ok: false, errore: 'gia-aperto' };   // uno vuoto si può rimpiazzare
 
   const base = cfg(channel);
@@ -106,13 +148,14 @@ export function apri(channel, opts = {}) {
     premio, soloSub: !!opts.soloSub, keyword, molt,
     partecipanti: new Map(), apertoDa: Date.now(), vincitori: [],
   });
+  salva(channel);
   return { ok: true, premio, soloSub: !!opts.soloSub, keyword, molt };
 }
 
 // Iscrive (o aggiorna) un partecipante con i suoi biglietti "di ruolo".
 // I biglietti bonus eventualmente ricevuti restano.
 export function partecipa(channel, user, display, base = 1) {
-  const g = attivi.get(channel);
+  const g = vivo(channel);
   if (!g) return false;
   const u = String(user || '').toLowerCase();
   if (!u) return false;
@@ -120,19 +163,21 @@ export function partecipa(channel, user, display, base = 1) {
   cur.display = display || cur.display;
   cur.base = Math.max(Number(cur.base) || 0, intero(base, 1, 1, 50));
   g.partecipanti.set(u, cur);
+  salva(channel);
   return true;
 }
 
 // Regala (o toglie, con n negativo) biglietti bonus a un partecipante già iscritto.
 // Ritorna il totale di biglietti dell'utente, o null se non è in gara.
 export function bonus(channel, user, n) {
-  const g = attivi.get(channel);
+  const g = vivo(channel);
   if (!g) return null;
   const u = String(user || '').toLowerCase().replace(/^@/, '');
   const cur = g.partecipanti.get(u);
   if (!cur) return null;
   cur.bonus = Math.max(0, Math.min(100, (Number(cur.bonus) || 0) + (Math.round(Number(n)) || 0)));
   g.partecipanti.set(u, cur);
+  salva(channel);
   return bigliettiDi(cur);
 }
 
@@ -140,7 +185,7 @@ export function bonus(channel, user, n) {
 // probabilità). I vincitori escono dal pool (si può ri-estrarre per altri). Ritorna
 // { vincitori:[display...], rimasti, biglietti } — vincitori vuoto se pool vuoto.
 export function estrai(channel, quanti = 1) {
-  const g = attivi.get(channel);
+  const g = vivo(channel);
   if (!g || g.partecipanti.size === 0) return { vincitori: [], rimasti: 0, biglietti: 0 };
 
   let pool = [...g.partecipanti.entries()].map(([u, p]) => ({ u, display: p.display, peso: bigliettiDi(p) }));
@@ -159,6 +204,7 @@ export function estrai(channel, quanti = 1) {
     g.vincitori.push(win.display);
     pool.splice(idx, 1);
   }
+  salva(channel);
   return { vincitori, rimasti: g.partecipanti.size, biglietti: bigliettiTotali(g) };
 }
 
@@ -169,7 +215,12 @@ export function estraiUno(channel) {
   return { vincitore: r.vincitori[0], rimasti: r.rimasti };
 }
 
-export function annulla(channel) { return attivi.delete(channel); }
+export function annulla(channel) {
+  idrata();
+  const c_era = attivi.delete(channel);
+  salva(channel);
+  return c_era;
+}
 
 // ── Ingresso CHAT ────────────────────────────────────────────────────────────
 function frase(vincitori, premio) {
@@ -203,7 +254,7 @@ export function tryGiveaway(msg, say) {
     if (!msg) return false;
     const channel = msg.channel;
     const testo = String(msg.text || '').trim();
-    const g = attivi.get(channel);
+    const g = vivo(channel);
 
     // ENTRATA con parola-chiave personalizzata SENZA "!" (es. keyword "vinci"):
     // solo messaggio di UNA parola esatta, così non scatta dentro le frasi.
