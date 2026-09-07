@@ -5994,14 +5994,14 @@ function pannelloAlert() {
         <select id="ovl-quale" data-aiuto="${esc(L('Ogni overlay ha colori, posizioni e aspetto suoi. I testi degli alert restano gli stessi per tutti.', 'Each overlay has its own colors, positions and look. Alert texts stay the same across all of them.', 'Cada overlay tiene sus colores, posiciones y aspecto. Los textos de las alertas son los mismos para todos.'))}"></select>
         <span class="ovl-link">
           <span class="ovl-link-eti">${L('link overlay', 'overlay link', 'enlace overlay')}</span>
-          <input type="password" id="inp-overlay-url" class="ovl-url" readonly autocomplete="off" tabindex="-1" aria-label="${esc(L('Link di questo overlay (nascosto)', 'Link for this overlay (hidden)', 'Enlace de este overlay (oculto)'))}" data-aiuto="${esc(L('Sta nascosto apposta: chi ha questo link puo\' mandare roba sul tuo schermo in diretta.', 'Hidden on purpose: anyone with this link can push things onto your screen while you are live.', 'Esta oculto a proposito: quien tenga este enlace puede mandar cosas a tu pantalla en directo.'))}" value="">
+          <input type="password" id="inp-overlay-url" class="ovl-url" readonly autocomplete="off" tabindex="-1" aria-label="${esc(L('Link di questo overlay (nascosto)', 'Link for this overlay (hidden)', 'Enlace de este overlay (oculto)'))}" data-aiuto="${esc(L('Sta nascosto apposta: chi ha questo link può mandare roba sul tuo schermo in diretta.', 'Hidden on purpose: anyone with this link can push things onto your screen while you are live.', 'Esta oculto a proposito: quien tenga este enlace puede mandar cosas a tu pantalla en directo.'))}" value="">
           <button type="button" class="ovl-tasto ico-sola" id="btn-copia-overlay" data-aiuto="${esc(L('Copia il link, poi incollalo in OBS come Browser Source.', 'Copies the link, then paste it into OBS as a Browser Source.', 'Copia el enlace y pegalo en OBS como Browser Source.'))}" aria-label="${esc(L('Copia il link', 'Copy the link', 'Copiar el enlace'))}">${_bIco('<rect width="13" height="13" x="9" y="9" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>')}</button>
           <button type="button" class="ovl-tasto ico-sola" id="btn-apri-overlay" data-aiuto="${esc(L('Lo apre in una scheda per vedere com\'e\'. Per OBS serve il link copiato, non questo.', 'Opens it in a tab so you can see it. For OBS use the copied link, not this.', 'Lo abre en una pestana para verlo. Para OBS usa el enlace copiado, no esto.'))}" aria-label="${esc(L('Apri l\'overlay in una scheda', 'Open the overlay in a tab', 'Abrir el overlay en una pestaña'))}">${_bIco(ICO.occhio)}</button>
         </span>
         <span class="ovl-testa-az">
-          <button class="btn secondario mini" id="ovl-nuovo-da" type="button" data-aiuto="${esc(L('Parti da un modello gia\' fatto invece che da zero.', 'Start from a ready-made preset instead of from scratch.', 'Empieza desde una plantilla ya hecha en vez de cero.'))}">${L('Nuovo…', 'New…', 'Nuevo…')}</button>
+          <button class="btn secondario mini" id="ovl-nuovo-da" type="button" data-aiuto="${esc(L('Parti da un modello già fatto invece che da zero.', 'Start from a ready-made preset instead of from scratch.', 'Empieza desde una plantilla ya hecha en vez de cero.'))}">${L('Nuovo…', 'New…', 'Nuevo…')}</button>
           <button class="btn secondario mini" id="ov-rinomina" type="button" data-aiuto="${esc(L('Cambia solo il nome nell\'elenco: il link resta quello, in OBS non tocchi niente.', 'Changes only the name in the list: the link stays the same, nothing to touch in OBS.', 'Cambia solo el nombre de la lista: el enlace sigue igual, no tocas nada en OBS.'))}">${L('Rinomina', 'Rename', 'Renombrar')}</button>
-          <button class="btn secondario mini" id="ov-duplica" type="button" data-aiuto="${esc(L('Copia colori, posizioni e aspetto in un overlay nuovo, che avra\' un link suo.', 'Copies colors, positions and look into a new overlay, which gets its own link.', 'Copia colores, posiciones y aspecto en un overlay nuevo, con su propio enlace.'))}">${L('Duplica', 'Duplicate', 'Duplicar')}</button>
+          <button class="btn secondario mini" id="ov-duplica" type="button" data-aiuto="${esc(L('Copia colori, posizioni e aspetto in un overlay nuovo, che avrà un link suo.', 'Copies colors, positions and look into a new overlay, which gets its own link.', 'Copia colores, posiciones y aspecto en un overlay nuevo, con su propio enlace.'))}">${L('Duplica', 'Duplicate', 'Duplicar')}</button>
           <button class="btn secondario mini ovl-elimina" id="ov-elimina" type="button" data-aiuto="${esc(L('Toglie questo overlay: il suo link smette di funzionare, e in OBS resta una fonte vuota.', 'Removes this overlay: its link stops working, and OBS is left with an empty source.', 'Quita este overlay: su enlace deja de funcionar y en OBS queda una fuente vacia.'))}">${L('Elimina', 'Delete', 'Eliminar')}</button>
         </span>
         <button type="button" class="ovl-tasto ico-sola" id="ovl-aiuto" title="${esc(L('Come funziona', 'How it works', 'Cómo funciona'))}" aria-label="${esc(L('Come funziona', 'How it works', 'Cómo funciona'))}">${_bIco('<circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.2 3.2c-.5.2-.8.7-.8 1.3v.4"/><path d="M12 17.6h.01"/>')}</button>
@@ -8345,7 +8345,7 @@ function pannelloRegia() {
           <button type="button" class="btn secondario" id="regia-marker" title="${esc(L('Mette un segno in questo punto della registrazione, per ritrovarlo quando monti', 'Puts a marker at this point of the recording, to find it again when you edit', 'Pone una marca en este punto de la grabación, para encontrarla al montar'))}">${_bIco(ICO.segnaposto)}Marker</button>
         </div>
         <div class="regia-riga" id="regia-ad-box">
-          <select aria-label="${esc(L('Durata della pubblicita\'', 'Ad duration', 'Duracion del anuncio'))}" id="regia-ad-durata">
+          <select aria-label="${esc(L('Durata della pubblicità', 'Ad duration', 'Duracion del anuncio'))}" id="regia-ad-durata">
             <option value="30">30s</option><option value="60" selected>60s</option>
             <option value="90">90s</option><option value="120">120s</option>
             <option value="150">150s</option><option value="180">180s</option>
@@ -12733,7 +12733,7 @@ function pannelloRegole() {
       </div>
       <div class="riga-flessibile">
         <span class="suggerimento">${L('Possono postare link:', 'Can post links:', 'Pueden publicar enlaces:')}</span>
-        <select aria-label="${esc(L('Chi puo\' postare link', 'Who can post links', 'Quien puede publicar enlaces'))}" id="sel-as-linktier">
+        <select aria-label="${esc(L('Chi può postare link', 'Who can post links', 'Quien puede publicar enlaces'))}" id="sel-as-linktier">
           <option value="mod" ${a.linkTier === 'mod' ? 'selected' : ''}>${L('solo mod', 'mods only', 'solo mods')}</option>
           <option value="vip" ${a.linkTier === 'vip' ? 'selected' : ''}>${L('VIP e mod', 'VIPs and mods', 'VIP y mods')}</option>
           <option value="sub" ${(a.linkTier || 'sub') === 'sub' ? 'selected' : ''}>${L('sub, VIP e mod', 'subs, VIPs and mods', 'subs, VIP y mods')}</option>
@@ -12859,7 +12859,7 @@ function pannelloRegole() {
         <span class="suggerimento">${L('Account più giovane di', 'Account younger than', 'Cuenta con menos de')}</span>
         <input aria-label="${esc(L('Quante ore di eta\' minima dell\'account', 'Minimum account age in hours', 'Horas minimas de antiguedad de la cuenta'))}" type="number" id="inp-ab-chatore" min="1" max="720" value="${Number(ab.chatMinOre) || 24}" style="width:5rem">
         <span class="suggerimento">${L('ore →', 'hours →', 'horas →')}</span>
-        <select aria-label="${esc(L('Cosa fare con gli account piu\' giovani', 'What to do with younger accounts', 'Que hacer con las cuentas mas nuevas'))}" id="sel-ab-chatazione">
+        <select aria-label="${esc(L('Cosa fare con gli account più giovani', 'What to do with younger accounts', 'Que hacer con las cuentas mas nuevas'))}" id="sel-ab-chatazione">
           <option value="elimina" ${(ab.chatNuoviAzione || 'elimina') === 'elimina' ? 'selected' : ''}>${L('trattieni il messaggio', 'hold the message', 'retén el mensaje')}</option>
           <option value="segnala" ${ab.chatNuoviAzione === 'segnala' ? 'selected' : ''}>${L('lascialo, avvisa i mod', 'leave it, warn mods', 'déjalo, avisa a los mods')}</option>
         </select>
