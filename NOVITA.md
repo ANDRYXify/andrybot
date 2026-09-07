@@ -17,6 +17,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-07
 
+- La ricerca trova quello che c'è scritto dentro le schede — campi, sezioni, pieghevoli, bottoni — e non solo i nomi delle schede. Cliccando ti porta sulla cosa e te la segna, aprendo da sola quello che la nascondeva.
+- Dalla ricerca si arriva anche a Scudo anti-bot, Comandi vocali, Conoscenza, Penitenze, Musica e Clip: prima quelle sei sezioni non uscivano mai.
 - I moduli a tempo parlano solo mentre sei in diretta: prima riempivano la chat vuota tutta la notte. Dentro al modulo c'è l'interruttore per farli parlare anche a canale spento.
 - Dopo un riavvio del bot i timer non partono più tutti insieme, perché l'ora dell'ultimo giro adesso resta salvata. E quelli che scadono nello stesso minuto escono in fila, non in un colpo.
 - Un modulo a tempo appena creato aspetta il suo primo giro prima di parlare, invece di partire subito.

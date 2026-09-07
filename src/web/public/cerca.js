@@ -26,7 +26,7 @@
     clip: 'clip momenti highlight ritaglia registra clips momentos grabar',
     musica: 'musica spotify song request canzoni richieste brani coda music playlist canciones cola dj',
     alert: 'overlay alert studio scena widget browser source obs allerte follow sub bit raid chat a schermo emote 7tv avvisi notifica a schermo layout editor livelli sovrimpressione escena capa aviso',
-    effetti: 'effetti suoni audio sound sfx immagini video premi punti canale efectos sonidos',
+    effetti: 'effetti suoni audio sound sfx gif immagini video premi punti canale riscatto riscatti redeem efectos sonidos',
     emote: 'emote 7tv emoji faccine emoticon emotes',
     pagina: 'pagina link bio linktree profilo vetrina sito i miei link logo avatar página enlaces',
     grafiche: 'grafiche immagini sfondi banner locandine social gráficos fondos imágenes',
@@ -228,6 +228,22 @@
         out.push({ id: id, label: lab, gruppo: gnome, gruppoId: g.id, _base: true, icona: A.icona ? (A.icona(id) || '') : '', chiavi: (CHIAVI[id] || '') + ' ' + lab.toLowerCase() });
       });
     });
+    var visto = Object.create(null);
+    out.forEach(function (v) { visto[v.id] = v; });
+    (A.famiglie || []).forEach(function (f) {
+      var parti = f.parti || [], padre = null, i;
+      for (i = 0; i < parti.length; i++) if (visto[parti[i]]) { padre = visto[parti[i]]; break; }
+      if (!padre) return;
+      for (i = 0; i < parti.length; i++) {
+        var p = parti[i];
+        if (visto[p]) continue;
+        if (A.schedaValida && !A.schedaValida(p)) continue;
+        var lab = A.nomeScheda ? A.nomeScheda(p) : p;
+        visto[p] = { id: p, label: lab, gruppo: padre.gruppo, gruppoId: padre.gruppoId, _base: true,
+          icona: A.icona ? (A.icona(p) || '') : '', chiavi: (CHIAVI[p] || '') + ' ' + lab.toLowerCase() };
+        out.push(visto[p]);
+      }
+    });
     return out;
   }
 
@@ -244,16 +260,163 @@
       var r = radice(w);
       if (!v._forma[r] || w.length < v._forma[r].length) v._forma[r] = w;
     });
-    v._app = (m.p[v.id] || []).slice();
+    v._app = (m.p[chiaveDi(v)] || []).slice();
     v._tutto = v._lab + ' ' + testoCh;
     v._set = Object.create(null);
     var i;
     for (i = 0; i < v._labR.length; i++) v._set[v._labR[i]] = 3;
-    for (i = 0; i < v._chR.length; i++) if (!v._set[v._chR[i]]) v._set[v._chR[i]] = 1;
+    var pesoCh = v._base ? 4 : 1;
+    for (i = 0; i < v._chR.length; i++) if (!v._set[v._chR[i]]) v._set[v._chR[i]] = pesoCh;
     for (i = 0; i < v._app.length; i++) v._set[v._app[i]] = Math.max(v._set[v._app[i]] || 0, 2);
     v._triLab = trigrammi(v._lab);
     if (v._base) v._triTut = trigrammi(v._tutto.slice(0, 400));
     return v;
+  }
+
+  var MAX_DOM = 2600;
+  var SEL_DOM = [
+    ['.carta > h2, .carta > h3, .carta > h4', 'sezione'],
+    ['label.campo, label.campo-num', 'campo'],
+    ['input[aria-label], select[aria-label], textarea[aria-label]', 'campo'],
+    ['details > summary', 'pieghevole'],
+    ['button.btn', 'azione']
+  ];
+  var SOLO_NOME = /^(input|select|textarea)$/;
+  var SALTA_CL = /tenue|suggerimento|badge|levetta|pip|cerca-|ovl-liv-|mix-vu|al-up-esito/;
+  var MAX_UGUALI = 3;
+
+  function classeDi(n) {
+    var c = n.className;
+    if (c && typeof c === 'object' && 'baseVal' in c) return String(c.baseVal);
+    return String(c || '');
+  }
+
+  function testoNodo(el) {
+    var out = '', kids = el.childNodes, i, n, tag;
+    for (i = 0; i < kids.length; i++) {
+      n = kids[i];
+      if (n.nodeType === 3) { out += ' ' + n.textContent; continue; }
+      if (n.nodeType !== 1) continue;
+      tag = n.tagName ? n.tagName.toLowerCase() : '';
+      if (tag === 'svg' || tag === 'input' || tag === 'select' || tag === 'textarea') continue;
+      if (SALTA_CL.test(classeDi(n))) continue;
+      out += ' ' + n.textContent;
+    }
+    out = out.replace(/\s+/g, ' ').trim();
+    if (!out) out = String(el.textContent || '').replace(/\s+/g, ' ').trim();
+    return out;
+  }
+
+  function extraNodo(el) {
+    if (!el.querySelectorAll) return '';
+    var e = el.querySelectorAll('.tenue, .suggerimento'), out = '';
+    for (var i = 0; i < e.length; i++) out += ' ' + e[i].textContent;
+    return out.replace(/\s+/g, ' ').trim();
+  }
+
+  function titoloCarta(el) {
+    var c = el.closest ? el.closest('.carta') : null;
+    if (!c) return '';
+    var h = c.querySelector('h2, h3, h4');
+    return h && h !== el ? testoNodo(h) : '';
+  }
+
+  function raccogliDom(base) {
+    if (!document.querySelector('.pannello-scheda')) return [];
+    var out = [], visti = Object.create(null), quanti = Object.create(null), i, bi, si;
+    for (bi = 0; bi < base.length; bi++) visti[base[bi].id + '|' + normal(base[bi].label)] = 1;
+    for (bi = 0; bi < base.length && out.length < MAX_DOM; bi++) {
+      var b = base[bi];
+      var pan = null;
+      try { pan = document.querySelector('.pannello-scheda[data-scheda="' + CSS.escape(b.id) + '"]'); } catch (e) { pan = null; }
+      if (!pan) continue;
+      for (si = 0; si < SEL_DOM.length && out.length < MAX_DOM; si++) {
+        var sel = SEL_DOM[si][0], tipo = SEL_DOM[si][1];
+        var nodi = pan.querySelectorAll(sel);
+        for (i = 0; i < nodi.length && out.length < MAX_DOM; i++) {
+          var el = nodi[i];
+          var tag = el.tagName ? el.tagName.toLowerCase() : '';
+          var testo = SOLO_NOME.test(tag) ? String(el.getAttribute('aria-label') || '') : testoNodo(el);
+          if (testo.length < 3 || testo.length > 64) continue;
+          if (!/[a-zà-ÿ]/i.test(testo)) continue;
+          var nk = normal(testo);
+          if (!nk) continue;
+          var k = b.id + '|' + nk;
+          if (visti[k]) continue;
+          visti[k] = 1;
+          quanti[nk] = (quanti[nk] || 0) + 1;
+          var carta = titoloCarta(el);
+          out.push({
+            id: b.id, chiave: k, label: testo,
+            gruppo: b.label, gruppoId: b.gruppoId, sotto: carta,
+            chiavi: (testo + ' ' + extraNodo(el) + ' ' + carta + ' ' + b.label).toLowerCase(),
+            _el: el, _sel: sel, _tipo: tipo, _dom: true
+          });
+        }
+      }
+    }
+    return out.filter(function (v) { return v._tipo !== 'azione' || quanti[normal(v.label)] <= MAX_UGUALI; });
+  }
+
+  function chiaveDi(v) { return v.chiave || v.id; }
+
+  function ritrova(v) {
+    if (v._el && document.contains(v._el)) return v._el;
+    if (!v._sel) return null;
+    var pan = null;
+    try { pan = document.querySelector('.pannello-scheda[data-scheda="' + CSS.escape(v.id) + '"]'); } catch (e) { return null; }
+    if (!pan) return null;
+    var nodi = pan.querySelectorAll(v._sel);
+    for (var i = 0; i < nodi.length; i++) {
+      var t = nodi[i].tagName ? nodi[i].tagName.toLowerCase() : '';
+      var s = SOLO_NOME.test(t) ? String(nodi[i].getAttribute('aria-label') || '') : testoNodo(nodi[i]);
+      if (normal(s) === v._lab) return nodi[i];
+    }
+    return null;
+  }
+
+  function scopri(el) {
+    if (!el.closest) return;
+    var carta = el.closest('.carta[hidden]');
+    if (carta && carta.dataset) {
+      for (var k in carta.dataset) {
+        var b = null;
+        try { b = document.querySelector('[data-sotto="' + CSS.escape(carta.dataset[k]) + '"]'); } catch (e) { b = null; }
+        if (b) { b.click(); break; }
+      }
+    }
+    var blocco = el.closest('.asp-blocco[data-asp]');
+    if (blocco && blocco.hidden) {
+      var liv = null;
+      try { liv = document.querySelector('.ovl-liv[data-liv="' + CSS.escape(blocco.getAttribute('data-asp')) + '"]'); } catch (e) { liv = null; }
+      if (liv) liv.click();
+    }
+  }
+
+  function mira(el) {
+    if (!el || !document.contains(el)) return;
+    try { scopri(el); } catch (e) {  }
+    var d = el.closest ? el.closest('details') : null;
+    while (d) {
+      d.open = true;
+      d = d.parentElement && d.parentElement.closest ? d.parentElement.closest('details') : null;
+    }
+    var calmo = false;
+    try { calmo = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { calmo = false; }
+    el.classList.add('cerca-mira');
+    var giri = 0;
+    var porta = function () {
+      if (!document.contains(el)) return;
+      var r = el.getBoundingClientRect();
+      if (r.top < 60 || r.bottom > window.innerHeight - 40) {
+        try { el.scrollIntoView({ block: 'center', behavior: (calmo || giri) ? 'auto' : 'smooth' }); }
+        catch (e) { try { el.scrollIntoView(); } catch (e2) {  } }
+      }
+      giri += 1;
+      if (giri < 5) setTimeout(porta, 230);
+    };
+    porta();
+    setTimeout(function () { el.classList.remove('cerca-mira'); }, 2600);
   }
 
   function indice() {
@@ -261,7 +424,7 @@
     var base = baseIndice();
     if (!base.length) return [];
     var extra = _dyn.filter(function (v) { return !window.SB_APP || !window.SB_APP.schedaValida || window.SB_APP.schedaValida(v.id); });
-    _cache = base.concat(extra).map(preparaVoce);
+    _cache = base.concat(extra, raccogliDom(base)).map(preparaVoce);
     _cache._vocab = Object.create(null);
     _cache._forma = Object.create(null);
     for (var i = 0; i < _cache.length; i++) {
@@ -335,6 +498,7 @@
     var m = memoria();
     var kq = chiaveQuery(t.rad);
     var appreseQ = m.q[kq] || null;
+    var qn = normal(q);
 
     var out = [];
     for (var vi = 0; vi < insieme.length; vi++) {
@@ -346,7 +510,7 @@
         for (var ei = 0; ei < lista2.length; ei++) {
           var w = lista2[ei].w, f = lista2[ei].f, p = 0;
           var peso = v._set[w];
-          if (peso) p = peso === 3 ? 100 : peso === 2 ? 88 : 34;
+          if (peso) p = peso === 3 ? 100 : peso === 2 ? 88 : peso === 4 ? 62 : 34;
           else if (v._lab.indexOf(w) === 0) p = 70;
           else if (v._lab.indexOf(w) >= 0) p = 46;
           else if (v._tutto.indexOf(w) >= 0) p = 18;
@@ -357,20 +521,26 @@
       if (!tot) continue;
       var copertura = presi / espansi.length;
       var punti = tot * (0.42 + 0.58 * copertura);
-      if (appreseQ && appreseQ[v.id]) punti += 60 + Math.min(appreseQ[v.id], 6) * 22;
-      punti += Math.min(m.u[v.id] || 0, 10) * 2.4;
+      if (qn) {
+        if (v._lab === qn) punti += 240;
+        else if (v._lab.indexOf(qn) >= 0) punti += 96;
+        else if (v._tutto.indexOf(qn) >= 0) punti += 26;
+      }
+      var kv = chiaveDi(v);
+      if (appreseQ && appreseQ[kv]) punti += 60 + Math.min(appreseQ[kv], 6) * 22;
+      punti += Math.min(m.u[kv] || 0, 10) * 2.4;
+      if (v._base) punti += 40;
       out.push({ v: v, s: punti, c: copertura });
     }
 
     out.sort(function (a, b) { return b.s - a.s || a.v.label.length - b.v.label.length; });
 
-    var qn = normal(q);
     var triQ = trigrammi(qn);
     var vicine = function (esclusi, quante) {
       var basi = (ind._basi || []).filter(function (x) { return insieme.indexOf(x) >= 0; });
       var pozzo = basi.length ? basi : insieme.slice(0, 300);
       return pozzo.filter(function (x) { return esclusi.indexOf(x.id) < 0; }).map(function (x) {
-        return { v: x, s: simInsiemi(triQ, x._triLab) * 100 + (x._triTut ? simInsiemi(triQ, x._triTut) * 26 : 0) + Math.min(m.u[x.id] || 0, 10) * 2.6, c: 0 };
+        return { v: x, s: simInsiemi(triQ, x._triLab) * 100 + (x._triTut ? simInsiemi(triQ, x._triTut) * 26 : 0) + Math.min(m.u[chiaveDi(x)] || 0, 10) * 2.6, c: 0 };
       }).sort(function (a, b) { return b.s - a.s; }).slice(0, quante);
     };
 
@@ -474,8 +644,8 @@
 
   function piuUsate(tutto, quante) {
     var m = memoria();
-    return tutto.filter(function (v) { return m.u[v.id]; })
-      .sort(function (a, b) { return (m.u[b.id] || 0) - (m.u[a.id] || 0); })
+    return tutto.filter(function (v) { return m.u[chiaveDi(v)]; })
+      .sort(function (a, b) { return (m.u[chiaveDi(b)] || 0) - (m.u[chiaveDi(a)] || 0); })
       .slice(0, quante);
   }
 
@@ -486,12 +656,13 @@
     if (!testo) {
       _radAttuali = [];
       var hs = '';
+      var sezioni = tutto.filter(function (v) { return v._base; });
       var usate = piuUsate(tutto, 5);
       if (usate.length) {
-        correnti = usate.concat(tutto.filter(function (v) { return usate.indexOf(v) < 0; }));
+        correnti = usate.concat(sezioni.filter(function (v) { return usate.indexOf(v) < 0; }));
         hs += righe(usate, [], L('Dove torni più spesso', 'Where you go most', 'Donde vuelves más'));
       } else {
-        correnti = tutto;
+        correnti = sezioni;
       }
       var dd = DOMANDE().filter(function (d) { return !filtro || (indice().find(function (v) { return v.id === d[1]; }) || {}).gruppoId === filtro; });
       if (dd.length) {
@@ -499,7 +670,7 @@
         dd.forEach(function (d, i) { hs += '<button class="chip-domanda" data-id="' + esc(d[1]) + '" style="--an-ritardo:' + (i * 45) + 'ms"><span class="pip"></span>' + esc(d[0]) + '</button>'; });
         hs += '</div>';
       }
-      var resto = usate.length ? tutto.filter(function (v) { return usate.indexOf(v) < 0; }) : tutto;
+      var resto = usate.length ? sezioni.filter(function (v) { return usate.indexOf(v) < 0; }) : sezioni;
       hs += righe(resto, [], L('Tutte le sezioni', 'All sections', 'Todas las secciones'), usate.length);
       lista.innerHTML = hs;
       aggancia();
@@ -545,9 +716,9 @@
   }
 
   function aggancia() {
-    lista.querySelectorAll('.chip-domanda').forEach(function (b) { b.addEventListener('click', function () { vai(b.dataset.id); }); });
+    lista.querySelectorAll('.chip-domanda').forEach(function (b) { b.addEventListener('click', function () { vaiId(b.dataset.id); }); });
     lista.querySelectorAll('.cerca-voce').forEach(function (b) {
-      b.addEventListener('click', function () { vai(b.dataset.id); });
+      b.addEventListener('click', function () { var v = correnti[+b.dataset.i]; if (v) vaiVoce(v); else vaiId(b.dataset.id); });
       b.addEventListener('mousemove', function () { var i = +b.dataset.i; if (i !== sel) { sel = i; segna(); } });
     });
   }
@@ -560,19 +731,28 @@
     if (e.key === 'Escape') { chiudi(); return; }
     if (e.key === 'ArrowDown') { e.preventDefault(); if (correnti.length) { sel = (sel + 1) % correnti.length; segna(); } }
     else if (e.key === 'ArrowUp') { e.preventDefault(); if (correnti.length) { sel = (sel - 1 + correnti.length) % correnti.length; segna(); } }
-    else if (e.key === 'Enter') { e.preventDefault(); if (correnti[sel]) vai(correnti[sel].id); }
+    else if (e.key === 'Enter') { e.preventDefault(); if (correnti[sel]) vaiVoce(correnti[sel]); }
   }
 
-  function vai(id) {
+  function vaiId(id) {
     try { ricorda(_radAttuali, id); } catch (e) {  }
     invalida();
     chiudi();
     try { window.SB_APP.vai(id); } catch (e) { location.hash = '#' + id; }
   }
 
+  function vaiVoce(v) {
+    try { ricorda(_radAttuali, chiaveDi(v)); } catch (e) {  }
+    invalida();
+    chiudi();
+    try { window.SB_APP.vai(v.id); } catch (e) { location.hash = '#' + v.id; }
+    if (v._dom) setTimeout(function () { try { mira(ritrova(v)); } catch (e) {  } }, 300);
+  }
+
   function apri() {
     if (!ov) return;
     filtro = ''; sel = 0; _radAttuali = []; inp.value = '';
+    invalida();
     filtri(); ov.classList.add('aperto'); document.body.classList.add('cerca-aperta'); disegna();
     setTimeout(function () { inp.focus(); }, 30);
     document.addEventListener('keydown', globali, true);

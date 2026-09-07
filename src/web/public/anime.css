@@ -1947,3 +1947,18 @@ input[type="file"]::file-selector-button {
   box-shadow: var(--alone-contorno);
 }
 .sott-segno { border-radius: 50%; }
+
+.cerca-mira {
+  position: relative;
+  animation: cerca-mira-pulsa 2s var(--su-due) both;
+  border-radius: var(--ang-mano);
+  scroll-margin-block: 25vh;
+}
+@keyframes cerca-mira-pulsa {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--acc) 62%, transparent); background: color-mix(in srgb, var(--acc) 16%, transparent); }
+  22% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--acc) 0%, transparent); background: color-mix(in srgb, var(--acc) 14%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--acc) 0%, transparent); background: transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cerca-mira { animation: none; outline: var(--contorno-sp) solid var(--acc); outline-offset: 3px; }
+}

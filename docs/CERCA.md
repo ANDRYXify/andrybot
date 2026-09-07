@@ -117,3 +117,108 @@ ricaricamento; una frase mista funziona.
 `apri()` disegnava i risultati **prima** di svuotare la casella: riaprendo la
 ricerca vedevi i risultati della volta prima con la casella vuota. Ora si
 svuota prima di disegnare.
+
+## L'indice non si scrive: si raccoglie
+
+Tutto quello sopra funzionava, ma su un indice sbagliato. Le voci erano
+**ventiquattro**, una per scheda, con accanto una riga di parole chiave scritta
+a mano. Il pannello ha **ottocentotrenta destinazioni**: i titoli delle carte,
+le etichette dei campi, i riassunti dei pieghevoli, i bottoni. Cercare
+«spessore del bordo» non poteva funzionare — quella cosa nell'indice non
+c'era — e usciva il ripiego per somiglianza di lettere, che rispondeva Stato,
+Personalità, Giochi.
+
+E le ventiquattro non erano nemmeno tutte raggiungibili: `baseIndice()` girava
+su `GRUPPI`, che elenca solo le **tredici** schede principali. Le altre dieci —
+Scudo, Comandi vocali, Conoscenza, Penitenze, Musica, Clip… — stanno dentro le
+famiglie e non comparivano. Le loro parole chiave erano scritte e non usate da
+nessuno: «come blocco i bot» rispondeva Personalità perché lo Scudo non
+esisteva, per la ricerca.
+
+Adesso l'indice si **raccoglie dal pannello reso**. Tutti i pannelli sono già
+nel documento all'avvio, anche quelli non in vista, quindi si cammina una volta
+sola su `.pannello-scheda` e si prende:
+
+| cosa | da dove |
+| --- | --- |
+| sezione | `.carta > h2, h3, h4` |
+| campo | `label.campo`, `label.campo-num` |
+| campo | `input/select/textarea` con `aria-label` |
+| pieghevole | `details > summary` |
+| azione | `button.btn` |
+
+I campi che hanno un nome **solo** per il lettore di schermo entrano da qui:
+sono quelli nati dai generatori (una riga per premio, una per membro, una per
+contatore), e senza `aria-label` non avrebbero nessun testo da indicizzare. Il
+lavoro sull'accessibilità e quello sulla ricerca sono la stessa cosa vista da
+due lati.
+
+Ogni voce porta il titolo della carta che la contiene come contesto, così la
+riga si legge «Spessore del bordo — Pagina link · Tema». La chiave in memoria è
+`scheda|testo`, non più la sola scheda: due campi diversi imparano separati.
+
+Un'azione ripetuta ovunque non è una destinazione: i bottoni il cui testo
+compare in più di tre posti (Salva, Copia, Elimina) restano fuori. Le etichette
+ripetute invece restano, perché il contesto le distingue.
+
+### Cosa resta scritto a mano, e perché
+
+`CHIAVI` non sparisce, ma cambia mestiere. La raccolta copre quello che è
+**scritto** nel pannello; `CHIAVI` copre quello che la gente **dice** e che a
+schermo non c'è: «hate raid», «buttafuori», «linktree», «gif». Sono due insiemi
+disgiunti, non la stessa cosa in due posti.
+
+Per questo le parole di `CHIAVI` di una scheda pesano **62** invece di 34: sono
+scelte apposta, non testo capitato lì. E una scheda prende **+40** rispetto a
+un campo con lo stesso punteggio, perché a parità di segnale la sezione è la
+risposta più utile. «Quanto costa» finisce su Abbonamento, non sul campo
+«Slot: costo giocata».
+
+### La frase esatta
+
+Se quello che hai scritto è **esattamente** il titolo di una voce, quella voce
+prende **+240** e vince su tutto. Se ci sta dentro, +96. Serve perché molte
+etichette sono fatte quasi solo di parole vuote: «Quando sei in diretta»
+diventa un solo token utile, e senza il peso della frase intera perdeva contro
+qualunque altra riga che parlasse di diretta.
+
+## Arrivare, non solo trovare
+
+Aprire la scheda giusta e lasciare l'utente in cima a una pagina lunga non è
+una risposta. Cliccando un risultato adesso:
+
+1. si apre la scheda;
+2. si scopre quello che lo nasconde — la sottoscheda giusta (Telegram, TikTok…)
+   e, nell'Overlay Studio, il livello che fa comparire il suo pannello;
+3. si aprono i pieghevoli che lo contengono;
+4. si porta sotto gli occhi e si segna per due secondi e mezzo.
+
+Il punto 4 **insiste**: il cambio scheda fa uno scorrimento in cima suo, e una
+sola chiamata perdeva la corsa. Si ricontrolla cinque volte a distanza di
+230 ms e si riporta a posto finché la cosa non è davvero in vista.
+
+## Il cancello
+
+`scripts/verifica-cerca.mjs`. Non è un elenco di ricerche scritto a mano —
+quello sarebbe di nuovo la stessa cosa in due posti, con l'elenco che invecchia
+mentre il pannello cambia. Le etichette si **raccolgono dal pannello** con una
+raccolta indipendente da quella della ricerca, se ne prende un campione
+regolare (ogni k-esima, sempre le stesse: niente dado) e per ognuna si chiede:
+cercando il suo testo esatto, esce lei per prima?
+
+Tre misure:
+
+- cercando quello che c'è scritto, esce quello — **40 su 40**;
+- cliccando ci si arriva davvero, sotto gli occhi;
+- sei domande dette a parole finiscono nella scheda giusta.
+
+Il confronto è sul senso, non sui caratteri: «Costo ( monete )» e «Costo
+(monete)» sono la stessa etichetta. E la stessa etichetta in più schede vale in
+tutte: «Posizione» sta nelle Penitenze e nell'Overlay Studio, e sono due
+risposte giuste.
+
+L'autoprova toglie ai pannelli l'attributo che li lega alla loro scheda: la
+raccolta non trova più niente e resta l'indice scritto a mano, cioè la ricerca
+com'era. Il cancello deve diventare rosso, e diventa rosso.
+
+Prima di tutto questo: **0 su 40**.
