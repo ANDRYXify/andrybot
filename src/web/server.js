@@ -30,7 +30,7 @@ import { GUIDE, paginaGuida, paginaIndice, paginaNovita, urlGuide } from './guid
 import * as novita from './novita.js';
 import { paginaManuale, paginaIndiceManuali, urlManuali, aiutiPerScheda } from './manuali.js';
 import { elenco as elencoComandi, normalizza as normalizzaComandi, collisioni as collisioniComandi, LIVELLI as LIVELLI_COMANDO, MODULI as MODULI_COMANDO } from '../features/comandi-registro.js';
-import { AntiBot, erroriScudo } from '../features/antibot.js';
+import { AntiBot, erroriScudo, statoEsecutore, azioniFallite, riprovaFallite } from '../features/antibot.js';
 import { statoCensimento } from '../features/punteggio.js';
 import { stato as statoRete, elenco as elencoRete, dimentica as dimenticaRete } from '../features/rete.js';
 import { statoListaBot, registro as registroAntibot, segnalazioniAperte, risolviSegnalazione, sintesiRegistro, registra as registraAntibot, nomeBot, valutaAccount, assetto as assettoAntibot, sogliaRaffica, codaBan } from '../features/antibot.js';
@@ -2341,6 +2341,17 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
     res.json({ ok: dimenticaRete(login), stato: statoRete() });
   });
 
+  // Le azioni che non sono riuscite, e il modo di riprenderle. Un'azione persa
+  // durante un attacco e' proprio quella che serviva.
+  app.get('/api/antibot/sospese', requireOwner, (req, res) => {
+    res.json({ stato: statoEsecutore(), azioni: azioniFallite({ limite: 200 }) });
+  });
+
+  app.post('/api/antibot/sospese/riprova', requireOwner, (req, res) => {
+    const login = currentUser(req).login.toLowerCase();
+    res.json({ ripresi: riprovaFallite(login), stato: statoEsecutore() });
+  });
+
   app.get('/api/antibot/console', requireOwner, (req, res) => {
     const login = currentUser(req).login.toLowerCase();
     const cfg = _abCfg(login);
@@ -2362,6 +2373,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         presenze: cfg.presenze !== false,
         censimento: statoCensimento(),
         rete: statoRete(),
+        // Chi esegue e' un modulo a parte: qui si vede la sua fila, quante
+        // azioni sono andate a vuoto perche' il canale e' in sola osservazione,
+        // e soprattutto quante sono cadute e aspettano di essere riprese.
+        esecutore: statoEsecutore(),
+        aVuoto: cfg.aVuoto === true,
         // Quanto sbaglia lo scudo, contato sui suoi stessi giudizi: chi era
         // stato segnato come «probabile macchina» e poi ha parlato in chat era
         // una persona. Serve a tarare le soglie su un numero invece che a naso.

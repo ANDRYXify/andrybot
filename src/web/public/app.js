@@ -12827,6 +12827,11 @@ function pannelloRegole() {
       </div>
       <p class="suggerimento" id="lp-ab-lista">${L('Controllo la lista…', 'Checking the list…', 'Comprobando la lista…')}</p>
       <div class="riga-check">
+        <input type="checkbox" id="chk-ab-avuoto" ${ab.aVuoto === true ? 'checked' : ''}>
+        <label for="chk-ab-avuoto">${L('Sola osservazione: decidi tutto, non toccare nessuno', 'Observe only: decide everything, touch nobody', 'Solo observar: decide todo, no toques a nadie')}</label>
+      </div>
+      <p class="suggerimento">${L('Lo scudo lavora normalmente e scrive nel registro cosa avrebbe fatto, ma non banna, non blocca e non cancella niente. Serve per vedere come si comporterebbe sul tuo canale prima di lasciarlo agire.', 'The shield works as usual and logs what it would have done, but bans, blocks and deletes nothing. Use it to see how it would behave on your channel before letting it act.', 'El escudo trabaja normalmente y anota lo que habria hecho, pero no banea, ni bloquea, ni borra nada. Sirve para ver como se comportaria en tu canal antes de dejarlo actuar.')}</p>
+      <div class="riga-check">
         <input type="checkbox" id="chk-ab-presenze" ${sel(ab.presenze, true) ? 'checked' : ''}>
         <label for="chk-ab-presenze">${L('Segnala chi guarda molti canali insieme senza scrivere mai', 'Report accounts watching many channels at once without ever writing', 'Avisa de quien mira muchos canales a la vez sin escribir nunca')}</label>
       </div>
@@ -13068,6 +13073,7 @@ function attivaPiattaforma() {
         nomiBot: document.getElementById('chk-ab-nomi').checked,
         listaAuto: document.getElementById('chk-ab-listaauto').checked,
         presenze: document.getElementById('chk-ab-presenze').checked,
+        aVuoto: document.getElementById('chk-ab-avuoto').checked,
         azione: document.getElementById('sel-ab-azione').value,
         controllaAccount: document.getElementById('chk-ab-account').checked,
         chatNuovi: document.getElementById('chk-ab-chatnuovi').checked,

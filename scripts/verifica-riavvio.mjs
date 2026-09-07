@@ -46,7 +46,7 @@ const DECISO = [
   ['features/antibot.js', 'finestreLunghe', 'volatile', 'dieci minuti di gocciolamento: si riempie di nuovo da sola'],
   ['features/antibot.js', 'cori', 'volatile', 'messaggi uguali in pochi secondi'],
   ['features/antibot.js', 'ondate', 'volatile', 'ondata in corso, misurata su una finestra corta'],
-  ['features/antibot.js', 'code', 'volatile', 'ban in attesa: un ban deciso su prove di dieci minuti fa e\' peggio di un ban non dato'],
+  ['features/enforcement.js', '_inCoda', 'volatile', 'quali azioni sono gia\' in fila adesso: serve a non farne due, e dopo un riavvio la fila non c\'e\' piu\''],
   ['features/rete.js', 'nomi', 'volatile', 'la lista che i canali hanno costruito insieme: sta su disco a parte e si riprende all\'avvio'],
   ['features/rete.js', 'quote', 'volatile', 'quanto un canale ha gia\' aggiunto oggi: un tetto giornaliero che riparte, e va bene'],
   ['features/punteggio.js', 'visti', 'volatile', 'chi e\' in chat e in quanti canali: si ricostruisce da solo al primo giro, cioe\' in cinque minuti'],

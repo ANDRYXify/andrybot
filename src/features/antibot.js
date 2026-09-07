@@ -29,6 +29,7 @@ import { makeLog } from '../logger.js';
 import { streamers, statoVivo, memory } from '../db.js';
 import { punteggio as punteggia, inCentesimi, nomeGenerato, canaliInsieme, segnaGiudizio, erroriDi, GIUDIZI_CHIAVE, SOGLIA_SEGNALA } from './punteggio.js';
 import * as rete from './rete.js';
+import { Esecutore, verdetto, AZIONI, daFare } from './enforcement.js';
 import { config } from '../config.js';
 
 const log = makeLog('antibot');
@@ -49,6 +50,7 @@ export const ANTIBOT_DEFAULT = {
   extra: [],                   // nomi/pattern-bot in più, aggiunti dallo streamer
   listaAuto: true,             // usa la lista di bot noti aggiornata da sola
   presenze: true,              // guarda chi sta in molti canali nostri insieme (solo segnala)
+  aVuoto: false,               // sola osservazione: decide e scrive tutto, non tocca nessuno
   // 3. account sospetto (costa una chiamata a Twitch per follow)
   controllaAccount: false,
   soglia: 70,                  // punteggio 0-100 oltre il quale si agisce
@@ -531,33 +533,21 @@ export function ondataArtificiale(arr, cfg = {}) {
   return { certo: false, basta: true, motivo: `cadenza irregolare (${cv.toFixed(2)}), nomi puliti: sembra gente vera` };
 }
 
-// ── Coda dei ban ────────────────────────────────────────────────────────────
-// Twitch banna un account per chiamata: mille follow finti sono mille chiamate.
-// Il limite è 800 richieste al minuto per canale, e la pratica consigliata è
-// restare sotto le 400 per la moderazione. Andiamo a 6 al secondo (360 al
-// minuto), con rientro se comunque arriva un 429: durante un attacco farsi
-// bloccare dal rate limit significa restare disarmati sul più bello.
-const CODA_AL_SEC = 6;
-const code = new Map();                  // channel → { lista, chiInCoda:Set, attiva, pausaFino }
+// ── Chi esegue sta altrove ──────────────────────────────────────────────────
+// La coda, il ritmo, la riprova, il registro e la coda dei falliti stanno in
+// enforcement.js. Qui si DECIDE e basta: si producono verdetti e si consegnano.
+// C'e' un solo scudo per processo, quindi la console puo' chiedere lo stato
+// dell'esecutore anche da una funzione di modulo.
+let esecutore = null;
 
 export function codaBan(channel) {
-  const c = code.get(norm(channel));
-  return { in_attesa: c ? c.lista.length : 0 };
+  const s = esecutore?.stato();
+  return { in_attesa: s ? s.inCoda : 0, in_sospeso: s ? s.inSospeso : 0 };
 }
 
-function accodaBan(channel, voci) {
-  const ch = norm(channel);
-  const c = code.get(ch) || { lista: [], chiInCoda: new Set(), attiva: false, pausaFino: 0 };
-  let aggiunti = 0;
-  for (const v of voci) {
-    if (!v.userId || c.chiInCoda.has(v.userId)) continue;
-    c.chiInCoda.add(v.userId);
-    c.lista.push(v);
-    aggiunti++;
-  }
-  code.set(ch, c);
-  return aggiunti;
-}
+export const statoEsecutore = () => esecutore?.stato() || null;
+export const azioniFallite = (opz) => esecutore?.fallitiInSospeso(opz) || [];
+export const riprovaFallite = (ch) => esecutore?.riprovaFalliti(ch) || 0;
 
 // Quanto sbaglia lo scudo, misurato sui suoi stessi giudizi: chi era stato
 // segnato come «probabile macchina» e poi si e' messo a parlare in chat era una
@@ -578,8 +568,18 @@ export class AntiBot {
     this.alert = alert;                 // (channel, {tipo, testo}) per l'overlay (facolt.)
     this.say = say;                      // (channel, testo)
     this.chatSettings = chatSettings;    // (channel, {followersOnly}) se il bot sa farlo (facolt.)
+    // Chi decide non esegue: l'esecutore e' un altro modulo, e l'unica cosa che
+    // sa di noi e' dove scrivere quello che ha fatto.
+    this.esecutore = new Esecutore({ helix, annota: (ch, riga) => registra(ch, riga) });
+    esecutore = this.esecutore;
+    this.esecutore.caricaFalliti().catch(() => {});
     setTimeout(() => { this._riapriSerrande().catch(() => {}); }, 4000).unref?.();
   }
+
+  // Il canale sta girando a vuoto? Allora i verdetti si scrivono e non si
+  // eseguono: e' il modo di tarare le soglie senza che il collaudo sia la
+  // diretta di qualcuno.
+  _aVuoto(cfg) { return cfg?.aVuoto === true; }
 
   // All'avvio: nessun allarme si riprende — il bot non ha nessuna prova che
   // l'attacco sia ancora in corso, e tornare in pace e' giusto. Ma quello che
@@ -700,99 +700,73 @@ export class AntiBot {
 
   // ── Il blocco sul nascere ─────────────────────────────────────────────────
   // Prende TUTTA l'ondata, compresi quelli arrivati prima dell'allarme, e la
-  // manda in coda. Poi ogni nuovo follow, finché dura l'attacco, entra di suo.
+  // consegna all'esecutore. Qui non si chiama Twitch: si decide, e si scrive
+  // cosa si e' deciso.
   async _blocca(channel, voci, motivo, cfg) {
-    const puliti = voci.filter((v) => {
-      const l = norm(v.login);
-      return v.userId && l && !BUONI.has(l) && !(cfg.esenti || []).map(norm).includes(l);
-    });
-    if (!puliti.length) return 0;
-    const n = accodaBan(channel, puliti);
-    if (n) {
-      log.warn(`#${channel} blocco sul nascere: ${n} account in coda per il ban (${motivo})`);
-      registra(channel, { azione: 'blocco', motivo: `${n} account dell'ondata → ban (${motivo})`, esito: 'in-attesa' });
-      if (cfg.avvisa) this.say?.(channel, `🛡️ Ondata artificiale: sto ripulendo ${n} account finti.`);
+    const ch = norm(channel);
+    const esenti = (cfg.esenti || []).map(norm);
+    const verdetti = voci
+      .filter((v) => v.userId && norm(v.login) && !BUONI.has(norm(v.login)) && !esenti.includes(norm(v.login)))
+      .map((v) => verdetto({
+        canale: ch, login: v.login, userId: v.userId,
+        // Sui follow il blocco, non il ban: e' l'unica azione che toglie il
+        // follow finto dalla lista, e il numero gonfiato e' il danno vero.
+        azione: cfg.togliFollow === false ? AZIONI.BAN : AZIONI.BLOCCA,
+        motivi: [v.motivo || 'ondata follow-bot'], origine: 'ondata',
+        confidenza: 0.95, aVuoto: this._aVuoto(cfg),
+      }));
+    if (!verdetti.length) return 0;
+
+    // UNA SOLA STRADA. Consegnare gli stessi verdetti due volte — una in blocco
+    // e una uno per uno per sapere com'e' andata — li farebbe scartare come
+    // doppioni, e un doppione risponde «ok» senza aver bloccato nessuno: nella
+    // rete finirebbero nomi che non sono stati toccati.
+    const n = verdetti.length;
+    log.warn(`#${ch} blocco sul nascere: ${n} account in fila (${motivo})`);
+    registra(ch, { azione: 'blocco', motivo: `${n} account dell'ondata → blocco (${motivo})`, esito: 'in-attesa' });
+    if (cfg.avvisa && !this._aVuoto(cfg)) this.say?.(ch, `🛡️ Ondata artificiale: sto ripulendo ${n} account finti.`);
+    for (const v of verdetti) {
+      this.esecutore.esegui(v).then((r) => {
+        // Nella rete entra solo quello che e' andato a buon fine DAVVERO: non
+        // un doppione, non una prova a vuoto, non un tentativo fallito.
+        if (r?.ok && !r.aVuoto && !r.doppione && !r.saltato) { try { rete.segnala(ch, v.login, 'ondata'); } catch (e) {  } }
+      }).catch(() => {});
     }
-    // Non si aspetta (mille account sono minuti), ma non si lascia scoperta: una
-    // promessa senza rete finirebbe solo in un log di sistema, e la coda si
-    // fermerebbe in silenzio proprio durante l'attacco.
-    this._svuotaCoda(channel, cfg).catch((e) => log.error(`#${channel} coda dei blocchi:`, e?.message || e));
     return n;
   }
 
-  async _svuotaCoda(channel, cfg) {
+  // ── Decidere ──────────────────────────────────────────────────────────────
+  // Qui si sceglie COSA va fatto e si scrive il perché. Non si chiama Twitch:
+  // il verdetto va all'esecutore, che ha la coda, il ritmo, la riprova e la
+  // coda dei falliti. Sono due mestieri, e adesso stanno in due posti.
+  async _agisci(channel, userId, login, motivo, cfg, origine = 'chat', extra = {}) {
     const ch = norm(channel);
-    const c = code.get(ch);
-    if (!c || c.attiva) return;
-    c.attiva = true;
-    try {
-      while (c.lista.length) {
-        if (c.pausaFino > Date.now()) {
-          await new Promise((r) => setTimeout(r, c.pausaFino - Date.now()));
-          continue;
-        }
-        const v = c.lista.shift();
-        c.chiInCoda.delete(v.userId);
-        // Prima il blocco, che è ciò che toglie il follow. Il ban da solo
-        // lascerebbe il follow finto nella lista: l'attacco resterebbe a segno.
-        let r = null, azione = 'blocca';
-        if (cfg.togliFollow !== false) r = await this.helix?.bloccaUtente?.(ch, v.userId, v.motivo || 'follow-bot').catch(() => null);
-        if (!r?.ok) {
-          azione = 'ban';
-          r = await this.helix?.timeoutUser?.(ch, v.userId, 0, `anti-bot: ${v.motivo || 'ondata'}`).catch(() => null);
-        }
-        if (r?.motivo === 'errore Twitch') {
-          // può essere un 429: si rientra e si riprova più piano
-          c.pausaFino = Date.now() + 5000;
-          c.lista.unshift(v);
-          c.chiInCoda.add(v.userId);
-          continue;
-        }
-        registra(ch, { login: v.login, userId: v.userId, azione, motivo: v.motivo || 'ondata follow-bot', esito: r?.ok ? 'fatto' : 'fallito' });
-        // Entra nella rete solo quello che questo canale ha MISURATO e su cui ha
-        // AGITO davvero. Un blocco fallito non e' un fatto, e' un tentativo.
-        if (r?.ok) { try { rete.segnala(ch, v.login, 'ondata'); } catch (e) {  } }
-        await new Promise((r2) => setTimeout(r2, Math.round(1000 / CODA_AL_SEC)));
-      }
-    } finally {
-      c.attiva = false;
-    }
-  }
-
-  // Sui FOLLOW il ban non basta, e per anni gli scudi hanno sbagliato proprio qui:
-  // un account bannato RESTA follower. Il numero gonfiato dal follow-bot resta
-  // gonfiato, ed è quello il danno — il rapporto follower/spettatori conta per
-  // Affiliato e Partner, e chi arriva sul canale lo legge. Solo il BLOCCO toglie
-  // il follow, e in più impedisce di rifarlo. In chat invece l'azione giusta
-  // resta il ban: è moderazione, non pulizia della lista follower.
-  async _togliFollow(channel, userId, login, motivo, cfg) {
-    if (cfg.togliFollow === false) return null;
-    const r = await this.helix?.bloccaUtente?.(channel, userId, motivo).catch(() => null);
-    if (r?.ok) log.info(`#${channel} @${login} bloccato: follow rimosso e non può rifarlo`);
-    else if (r?.motivo === 'permesso mancante') log.warn(`#${channel} non posso togliere il follow a @${login}: manca user:manage:blocked_users`);
-    return r;
-  }
-
-  async _agisci(channel, userId, login, motivo, cfg, origine = 'chat') {
     if (cfg.azione === 'segnala') {
-      log.warn(`#${channel} bot segnalato: @${login} (${motivo})`);
-      if (cfg.avvisa) this.say?.(channel, `⚠️ Possibile bot: @${login} (${motivo})`);
-      registra(channel, { login, userId, azione: 'segnala', motivo, esito: 'in-attesa', stato: 'aperto' });
-      return;
+      // Decidere di non fare niente è una decisione, e va scritta come le
+      // altre: sennò «il bot non ha fatto niente» e «il bot non se n'è
+      // accorto» si leggono uguali.
+      log.warn(`#${ch} bot segnalato: @${login} (${motivo})`);
+      if (cfg.avvisa) this.say?.(ch, `⚠️ Possibile bot: @${login} (${motivo})`);
+      registra(ch, { login, userId, azione: 'segnala', motivo, esito: 'in-attesa', stato: 'aperto' });
+      return { ok: true, saltato: true };
     }
-    if (origine === 'follow') {
-      const b = await this._togliFollow(channel, userId, login, motivo, cfg);
-      if (b?.ok) {
-        registra(channel, { login, userId, azione: 'blocca', motivo, esito: 'fatto' });
-        return;
-      }
-    }
-    const durata = cfg.azione === 'timeout' ? Number(cfg.timeoutSec || 1209600) : 0;
-    const r = await this.helix?.timeoutUser?.(channel, userId, durata, `anti-bot: ${motivo}`).catch(() => null);
-    const esito = r?.ok ? 'fatto' : 'fallito';
-    if (r?.ok) log.info(`#${channel} anti-bot: @${login} ${durata ? 'in timeout' : 'bannato'} (${motivo})`);
-    else log.warn(`#${channel} anti-bot: @${login} NON ${durata ? 'messo in timeout' : 'bannato'} (${motivo}) — permesso mancante?`);
-    registra(channel, { login, userId, azione: durata ? 'timeout' : 'ban', motivo, esito });
+
+    // Sui FOLLOW il ban non basta, e per anni gli scudi hanno sbagliato proprio
+    // qui: un account bannato RESTA follower, e il numero gonfiato è il danno.
+    // In chat invece l'azione giusta è il ban: lì è moderazione, non pulizia
+    // della lista.
+    let azione;
+    if (origine === 'follow' && cfg.togliFollow !== false) azione = AZIONI.BLOCCA;
+    else if (cfg.azione === 'timeout') azione = AZIONI.TIMEOUT;
+    else azione = AZIONI.BAN;
+
+    return this.esecutore.esegui(verdetto({
+      canale: ch, login, userId, azione,
+      motivi: [motivo], origine,
+      durata: azione === AZIONI.TIMEOUT ? Number(cfg.timeoutSec || 1209600) : 0,
+      punti: extra.punti || 0, confidenza: extra.confidenza ?? 0.9,
+      aVuoto: this._aVuoto(cfg),
+    }));
   }
 
   // Evento follow (channel.follow v2): user_id, user_login, user_name.
@@ -915,9 +889,12 @@ export class AntiBot {
       if (assetto(channel).livello !== ASSETTO.ATTACCO) {
         await this._alza(channel, ASSETTO.ATTACCO, motivo, cfg);
       }
-      const del = await this.helix?.deleteMessage?.(channel, msg.id).then(() => true).catch(() => false);
-      registra(channel, { login, userId: msg.userId, azione: 'coro', motivo, esito: del ? 'fatto' : 'fallito' });
-      try { rete.segnala(channel, login, 'coro'); } catch (e) {  }
+      const r = await this.esecutore.esegui(verdetto({
+        canale: channel, login, userId: msg.userId, azione: AZIONI.CANCELLA,
+        messaggio: msg.id, motivi: [motivo], origine: 'coro',
+        confidenza: 0.9, aVuoto: this._aVuoto(cfg),
+      }));
+      if (r?.ok && !r.aVuoto && !r.doppione) { try { rete.segnala(channel, login, 'coro'); } catch (e) {  } }
       return true;
     }
 
@@ -947,10 +924,16 @@ export class AntiBot {
           registra(channel, { login, userId: msg.userId, azione: 'chat-segnala', motivo: `account di ${Math.floor(ore)}h che scrive`, esito: 'in-attesa', stato: 'aperto' });
           return false;                       // lasciato in chat, solo segnalato
         }
-        const del = await this.helix?.deleteMessage?.(channel, msg.id).then(() => true).catch(() => false);
         log.info(`#${channel} messaggio trattenuto: @${login} (account di ${Math.floor(ore)}h)`);
-        if (cfg.avvisa) this.say?.(channel, `🛡️ Messaggio di @${login} trattenuto: account creato da poco. Mod, se è ok fatelo riscrivere.`);
-        registra(channel, { login, userId: msg.userId, azione: 'chat-trattieni', motivo: `account di ${Math.floor(ore)}h`, esito: del ? 'fatto' : 'fallito' });
+        if (cfg.avvisa && !this._aVuoto(cfg)) this.say?.(channel, `🛡️ Messaggio di @${login} trattenuto: account creato da poco. Mod, se è ok fatelo riscrivere.`);
+        // «Limita» e non «cancella»: il messaggio non passa, ma la persona
+        // resta in chat e i mod possono farla riscrivere. È la differenza fra
+        // trattenere e punire, e va scritta anche nel registro.
+        await this.esecutore.esegui(verdetto({
+          canale: channel, login, userId: msg.userId, azione: AZIONI.LIMITA,
+          messaggio: msg.id, motivi: [`account di ${Math.floor(ore)}h`], origine: 'chat-nuovi',
+          confidenza: 0.6, aVuoto: this._aVuoto(cfg),
+        }));
         return true;                          // trattenuto: il messaggio si ferma qui
       }
     }
@@ -1044,12 +1027,17 @@ export class AntiBot {
     }
     if (prova || !esiti.trovati.length) return esiti;
 
-    for (const v of esiti.trovati) {
-      const r = await this.helix?.bloccaUtente?.(ch, v.userId, 'follow-bot noto').catch(() => null);
-      if (r?.ok) esiti.bloccati++; else esiti.falliti++;
-      registra(ch, { login: v.login, userId: v.userId, azione: 'blocca', motivo: 'pulizia lista follower: nome da bot noto', esito: r?.ok ? 'fatto' : 'fallito' });
-      await new Promise((r2) => setTimeout(r2, Math.round(1000 / CODA_AL_SEC)));
-    }
+    // Anche qui si decide e basta. Il ritmo, la riprova e la coda dei falliti
+    // li tiene l'esecutore, che e' lo stesso di un attacco in corso: cosi' una
+    // pulizia lanciata durante un'ondata non si mette a gareggiare con la
+    // difesa per il rate limit, si mette in fila dietro — e ci va dietro sul
+    // serio, perche' la pulizia e' la meno urgente di tutte.
+    const esiti2 = await Promise.all(esiti.trovati.map((v) => this.esecutore.esegui(verdetto({
+      canale: ch, login: v.login, userId: v.userId, azione: AZIONI.BLOCCA,
+      motivi: ['pulizia lista follower: nome da bot noto'], origine: 'pulizia',
+      confidenza: 0.99, aVuoto: this._aVuoto(cfg),
+    }))));
+    for (const r of esiti2) { if (r?.ok) esiti.bloccati++; else esiti.falliti++; }
     log.info(`#${ch} pulizia follower: ${esiti.bloccati} bot rimossi su ${esiti.guardati} guardati`);
     return esiti;
   }

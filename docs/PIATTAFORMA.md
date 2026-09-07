@@ -31,13 +31,16 @@ colonna «c'è» è stata verificata nel codice.
 | Coda di enforcement con rate limit e rientro sul 429 | `antibot.js` |
 | Reputation network fra installazioni, opzionale e degradante | `rete.js` |
 | Registro degli interventi con **esito reale** dell'API | `antibot.js` |
+| **Detection ed enforcement separati** | `enforcement.js` |
+| **Sola osservazione**: decide tutto, non tocca nessuno | `enforcement.js` |
+| **Idempotenza**: lo stesso evento due volte non produce due azioni | `enforcement.js` |
+| **Coda dei falliti** persistente, e la ripresa | `enforcement.js` |
 | Dashboard, `/health`, prove automatiche (700+), cancelli | vari |
 
 ### Manca, ed è la parte che conta
 
 | pezzo | perché pesa |
 |---|---|
-| **Detection ed enforcement separati** | oggi chi decide esegue anche. Senza separazione non esistono davvero né audit, né rollback, né prova a vuoto, né replay |
 | **Incident engine** | c'è un registro di righe, non un attacco come oggetto con inizio, picco, fine, coinvolti e azioni |
 | **Simulatore e replay** | senza, ogni soglia si tara a naso: non si misurano precision, recall né tempo di rilevamento |
 | **Analisi dei messaggi** | la firma confronta l'uguaglianza. Mancano zero-width, homoglyph, punycode, e la **similarità** (quasi-duplicati) |
@@ -46,7 +49,6 @@ colonna «c'è» è stata verificata nel codice.
 | **Reputazione locale con decadimento** | la rete è fra canali; manca la storia del singolo account, e il fatto che un errore di anni fa deve pesare meno |
 | **Raid legittimo correlato** | oggi il raid si avvisa soltanto; non abbassa la sensibilità né si aggancia allo spike |
 | **Dashboard investigativa dei follower** e bonifica post-attacco | c'è la pulizia per nomi noti, non l'indagine per intervallo, cluster e incidente |
-| **Dead-letter queue** e idempotenza degli eventi | un'azione fallita oggi si perde in un log |
 
 ## Sul linguaggio
 
@@ -79,14 +81,36 @@ il resto. È un altro motivo per fare prima la separazione dei moduli.
 Le fasi 1 e 2 della specifica sono già fatte. Il nostro ordine parte da lì, e
 mette il **misuratore prima delle cose da misurare**.
 
-**A · La spina dorsale.** Separare chi decide da chi esegue. Il detection
-produce un verdetto strutturato (`NIENTE`, `OSSERVA`, `LIMITA`, `CANCELLA`,
-`TIMEOUT`, `BAN`, `BLOCCO`) con dentro punteggio, confidenza e motivi.
-L'enforcement esegue: coda, priorità, riprova con rientro esponenziale,
-deduplicazione, verifica dell'esito, coda dei falliti. Nessuna azione si perde
-in silenzio. E l'audit registra richiesta, risposta ed esito.
+**A · La spina dorsale. — FATTA**
 
-Da qui in poi si può: girare a vuoto senza toccare nessuno, disfare, rigiocare.
+Chi decide non esegue più. Lo scudo produce un **verdetto** — un oggetto con
+azione, punteggio, confidenza, motivi e origine — e l'esecutore
+(`enforcement.js`) lo esegue. Nello scudo non è rimasta **nessuna** chiamata
+punitiva a Twitch, e un cancello lo pretende.
+
+Cosa ha portato, oltre alla pulizia:
+
+- **Sola osservazione.** Un canale può girare decidendo tutto e non toccando
+  nessuno: il registro riempie, Twitch non viene chiamato. Prima, per vedere se
+  una taratura era giusta, il collaudo era la diretta di qualcuno.
+- **Idempotenza.** Lo stesso evento consegnato due volte da Twitch, o due
+  rilevatori che si accorgono della stessa cosa, non producono due ban.
+- **Niente si perde.** Un'azione fallita finisce in una coda che sopravvive al
+  riavvio e si può riprendere: è durante un attacco che una chiamata cade, ed è
+  durante un attacco che serve.
+- **Il registro risponde.** Non più «bannato», ma cosa si è chiesto e cosa ha
+  risposto Twitch, con l'id del verdetto per risalire alla decisione.
+- **L'ordine giusto.** Una cancellazione di spam passa davanti a mille blocchi
+  di pulizia: la fila è una sola, ma l'urgenza non è la stessa.
+- **Il ripiego dichiarato.** Se il blocco non si può fare si banna, e resta
+  scritto che il follow è rimasto lì.
+
+Due difetti trovati mentre si costruiva, e vale la pena ricordarli. Il rientro
+sul 429 restituiva una promessa che non si risolveva mai: bastava un rate limit
+per **fermare la coda per sempre** invece di rallentarla. E `stato()` usava lo
+stesso nome per due numeri diversi — quante azioni aspettano di essere riprese e
+quante sono andate male in tutto — così uno dei due spariva e la console
+mostrava il numero sbagliato senza che si vedesse.
 
 **B · Gli incidenti.** Un attacco diventa un oggetto: inizio, picco, fine,
 account coinvolti divisi per giudizio, azioni fatte, timeline. Riapribile se
