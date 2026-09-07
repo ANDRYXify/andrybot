@@ -17,6 +17,11 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-07
 
+- Nello Scudo anti-bot c'e la sola osservazione: lo scudo lavora e scrive nel registro cosa avrebbe fatto, ma non banna, non blocca e non cancella. Serve per vedere come si comporta prima di lasciarlo agire.
+- Un'azione che non riesce, perche Twitch non risponde o manca un permesso, non si perde piu: resta in sospeso e la puoi far riprovare dalla console.
+- Nel registro dello scudo ora c'e anche cosa ha risposto Twitch, non solo se e andata. Prima «fallito» non diceva perche.
+- Se lo stesso evento arriva due volte, il bot non banna due volte.
+- E la cancellazione di un messaggio di spam passa avanti alla pulizia dei follower finti, che puo aspettare.
 - I canali che usano il bot ora si scambiano quello che scoprono: un account bloccato durante un'ondata su un canale diventa noto anche agli altri. La lista cresce da sola con gli streamer che arrivano.
 - Serve pero che tre canali diversi lo riconoscano ciascuno per conto suo, e solo per cose misurate sul momento, mai per il tipo di profilo. Un canale solo non fa una verita.
 - Un nome nella lista comune scade da solo dopo tre mesi e si puo togliere subito, cosi un errore non resta li per sempre.
