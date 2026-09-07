@@ -127,26 +127,3 @@ export function colora(testo) {
   } catch { return testo; }
 }
 
-// --------------------------------------------------------- proattività
-// Una battuta d'iniziativa (nessun trigger), colorata dall'anima. Il bot la
-// usa con bassa probabilità durante l'attività, dosata dall'autonomia.
-const PROATTIVE_SU = [
-  'oggi c\'è una bella energia qui',
-  'raga ma quanto siamo belli oggi?',
-  'io sto benissimo qui con voi',
-  'chi c\'è di bello in chat? fatevi sentire',
-  'mi sto divertendo un sacco stasera',
-];
-const PROATTIVE_CALMO = [
-  'tutto tranquillo, mi godo la vibe',
-  'ci siamo, io resto qui con voi',
-  'che si dice di bello?',
-  'sono qui in ascolto, come va?',
-];
-export function proattiva() {
-  try {
-    const p = profilo();
-    const pool = (p.umore ?? 50) >= 55 ? PROATTIVE_SU : PROATTIVE_CALMO;
-    return colora(scegli(pool));
-  } catch { return null; }
-}

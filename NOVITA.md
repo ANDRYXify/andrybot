@@ -17,6 +17,11 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-07
 
+- Quando il bot risponde a qualcuno, la risposta esce agganciata al messaggio: chi ha scritto la vede sotto la sua riga, anche se la chat nel frattempo è corsa avanti. Su Twitch e su Kick.
+- Il bot aspetta un momento prima di rispondere, come una persona che legge e scrive. Adesso quel momento tiene conto di quanto corre la chat: se vola risponde prima, se è calma si prende il suo tempo.
+- Il bot vede se chi gli scrive è moderatore, abbonato o VIP, e se è la prima volta che scrive nel tuo canale. Non cambia cosa risponde, cambia il modo: a un nuovo arrivato non dà per scontate le cose del canale.
+- Quando parla di sua iniziativa, il bot guarda cosa vi state dicendo e si aggancia a quello. Prima pescava da un elenco di frasi fatte, e cadevano in mezzo a discorsi che non c'entravano.
+- E se non ha niente di suo da dire, sta zitto. Prima una frase la diceva comunque.
 - Quando la cancellazione è finita te lo dice una nuvoletta disegnata come il resto del sito, invece della finestrella grigia del browser.
 - Nella finestra di ricerca il Tab non esce più dietro al velo, Escape chiude da qualunque punto e chiudendo il cursore torna dove eri. Prima girava nella pagina sotto, che non si vede.
 - Il bot legge e risponde nella chat delle tue dirette YouTube, con gli stessi comandi, moduli e monete di Twitch. Si accende da Stato → Le tue piattaforme.

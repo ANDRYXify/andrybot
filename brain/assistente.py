@@ -87,6 +87,30 @@ def _scheda(d):
     return fuori
 
 
+# CHI HA SCRITTO, per come si vede in QUESTO messaggio. I distintivi stanno
+# accanto al nome, e chi risponde in chat li legge senza pensarci. Non servono a
+# fare favori — la risposta e' la stessa per tutti — servono al MODO: a chi
+# scrive per la prima volta non si danno per scontate le cose del canale, ed e'
+# il modo piu' veloce di farlo sentire fuori posto.
+#
+# Non e' memoria di nessuno: e' un fatto di questo turno, arrivato col messaggio.
+# Il bot del canale continua a non ricordarsi di chi ha davanti.
+RUOLI = (
+    ("mod", "e' un moderatore del canale"),
+    ("sub", "e' abbonato al canale"),
+    ("vip", "e' un VIP del canale"),
+    ("primo", "scrive in questa chat per la prima volta: un cenno di benvenuto in tre parole, poi rispondi"),
+)
+
+
+def _ruolo(d):
+    """I distintivi accesi, in righe. Vuoto se non ce n'e' nessuno: la maggior
+    parte di chi scrive in chat non ha distintivi, e un blocco che dice «niente»
+    e' una riga di prompt spesa per dire niente."""
+    r = d if isinstance(d, dict) else {}
+    return [testo for campo, testo in RUOLI if r.get(campo)]
+
+
 def _divieto_scheda(d):
     """«Cosa non dire mai di me». E' una regola, non un fatto: torna nella forma
     in cui va letta come tale."""
@@ -94,7 +118,7 @@ def _divieto_scheda(d):
     return [f"Dello streamer non dire MAI: {v[:240]}"] if v else []
 
 
-def _sistema(nome_bot, canale, tono, situazione, conoscenza, scheda, stile, insegnamenti, linee_guida, web):
+def _sistema(nome_bot, canale, tono, situazione, conoscenza, scheda, stile, insegnamenti, linee_guida, web, ruolo=None, iniziativa=False):
     """LE ISTRUZIONI. Sono la vera «educazione» del bot: non si addestra un modello
     piccolo a comportarsi bene, gli si dice cosa conta — e si controlla che non
     possa inventare le cose che non deve inventare."""
@@ -124,6 +148,11 @@ def _sistema(nome_bot, canale, tono, situazione, conoscenza, scheda, stile, inse
         "- Se ti chiedono di te, rispondi corto e riporti il discorso al canale.\n\n"
     )
     p.append(_righe("COM'E' LA DIRETTA ADESSO", situazione, 3))
+    # Il divieto viaggia col dato, non in un'altra sezione: un modello piccolo
+    # che legge «e' un moderatore» tre righe sotto la regola che dice di non
+    # farci caso, ci fa caso lo stesso.
+    p.append(_righe("CHI TI HA SCRITTO (serve al MODO: non elencare i suoi ruoli, non nominarli e non trattarlo meglio degli altri)",
+                    _ruolo(ruolo), len(RUOLI)))
     # il tetto viene dal numero di campi, non da un numero scritto a mano: un
     # campo in piu' domani non deve sparire in silenzio.
     p.append(_righe("CHI E' LO STREAMER (l'ha scritto lui: e' la verita' su di lui)",
@@ -134,7 +163,38 @@ def _sistema(nome_bot, canale, tono, situazione, conoscenza, scheda, stile, inse
     regole = _divieto_scheda(scheda) + [str(x) for x in (linee_guida or [])]
     p.append(_righe("REGOLE DI QUESTO CANALE (valgono sopra tutto il resto)", regole, 9))
     p.append(_righe("TROVATO SU INTERNET ADESSO (citalo solo se risponde davvero)", web, 3))
+    # Ultimo, ed e' voluto: e' l'istruzione che deve pesare di piu', e in un
+    # prompt lungo l'ultima cosa letta e' quella che il modello segue meglio.
+    if iniziativa:
+        p.append(INIZIATIVA)
     return "".join(p).strip()
+
+
+# QUANDO NON GLI HA CHIESTO NIENTE NESSUNO.
+#
+# Il bot ogni tanto parla di sua iniziativa. Prima quella riga la pescava da un
+# elenco di nove frasi scritte a mano — «che si dice di bello?», «raga ma quanto
+# siamo belli oggi?» — e si vedeva: cadevano in mezzo a un discorso che non
+# c'entrava niente, sempre le stesse, buone per qualunque chat del mondo e
+# quindi per nessuna. Una frase che andrebbe bene ovunque non dice niente qui.
+#
+# Adesso la dice guardando cosa sta succedendo: le ultime righe di chat e la
+# diretta di adesso ci sono gia' nel prompt, gli manca solo il permesso di
+# partire per primo — e il dovere di agganciarsi a una cosa vera.
+INIZIATIVA = (
+    "PARTI TU\n"
+    "- Nessuno ti ha chiesto niente: qui sopra c'e' quello che si stanno dicendo adesso.\n"
+    "- Aggancia UNA cosa vera che vedi li' (o nella diretta) e di' la tua, corta.\n"
+    "- Se non c'e' niente di vero a cui agganciarsi, rispondi solo: NIENTE.\n"
+    "- Vietate le frasi che andrebbero bene in qualunque chat: «che si dice?»,\n"
+    "  «come va gente?», «quanto siamo belli oggi». Se sta bene ovunque, qui non dice niente.\n"
+    "- Non salutare, non presentarti, non chiedere alla chat di farsi sentire.\n\n"
+)
+
+# Il modello che non ha niente da dire lo dice. Meglio il silenzio di una frase
+# messa li' per riempire: il difetto da cui nasce tutto questo era esattamente
+# una frase messa li' per riempire.
+_NIENTE = re.compile(r"^\W*(niente|nulla|none|nothing)\W*$", re.I)
 
 
 def _compito(consegna, tono):
@@ -228,7 +288,8 @@ def rispondi(d, timeout_s=15):
         sistema = _sistema(
             nome_bot, canale, tono,
             d.get("situazione"), d.get("conoscenza"), d.get("scheda"), d.get("stile"),
-            insegnamenti, d.get("linee_guida"), d.get("web"),
+            insegnamenti, d.get("linee_guida"), d.get("web"), d.get("ruolo"),
+            bool(d.get("iniziativa")),
         )
         turni = _turni(d.get("storia"))
         utente = f"{nome}: {testo}"
@@ -246,6 +307,8 @@ def rispondi(d, timeout_s=15):
         _conto["vuote"] += 1
         return None
     out = _ripulisci(grezza, nome_bot, nome)
+    if out and d.get("iniziativa") and _NIENTE.match(out):
+        out = ""
     if not out:
         _conto["vuote"] += 1
         return None

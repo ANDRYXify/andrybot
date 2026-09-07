@@ -444,8 +444,10 @@ class Handler(BaseHTTPRequestHandler):
         # verso Lia come LACUNA, così la studierà lei. È l'unico verso libero, ed è
         # l'unica cosa che attraversa da qui.
         # (un COMPITO non è una domanda della chat: se non riesce non è una lacuna
-        # di nessuno, è solo un lavoretto andato a vuoto.)
-        if not d.get("compito") and _modello_pronto():
+        # di nessuno, è solo un lavoretto andato a vuoto. Nemmeno un'INIZIATIVA
+        # lo è: lì nessuno ha chiesto niente, e "non avevo niente da dire" è la
+        # risposta giusta, non un buco da studiare.)
+        if not d.get("compito") and not d.get("iniziativa") and _modello_pronto():
             try:
                 VAL.verso_lia(testo)
             except Exception:

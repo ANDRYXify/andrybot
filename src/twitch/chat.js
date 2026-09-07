@@ -40,6 +40,16 @@ function unescapeTag(v) {
 // normalizza un nome canale: minuscolo, senza '#'
 const normCh = ch => String(ch || '').toLowerCase().replace(/^#/, '').trim();
 
+// L'id del messaggio a cui si risponde arriva dalla RETE e finisce dentro una
+// riga IRC, dove lo spazio separa i tag dal comando e il ';' separa un tag
+// dall'altro. Un id storto non scriverebbe un tag storto: aprirebbe un comando
+// o un tag che non abbiamo scritto noi. Quindi passa solo la forma vera (un
+// uuid Twitch), e tutto il resto diventa una risposta semplice — che è sempre
+// valida. Il filtro sta qui e non a monte: qui è l'unico punto da cui un id
+// puo' entrare nella riga.
+const ID_MSG = /^[0-9a-fA-F-]{8,64}$/;
+const idRisposta = v => (ID_MSG.test(String(v || '')) ? String(v) : '');
+
 export class ChatBot extends EventEmitter {
   // login: account con cui parlare in chat (per SocialBot è lo streamer
   // stesso); kind: tipo di token in db ('broadcaster' di default).
@@ -97,12 +107,18 @@ export class ChatBot extends EventEmitter {
 
   // Accoda un messaggio per il canale: newline rimossi, troncato a 450 caratteri,
   // inviato rispettando il rate limit globale. Registrato nella memoria del bot.
-  say(ch, text) {
+  //
+  // `rispondiA` = l'id del messaggio a cui si sta rispondendo. In una chat che
+  // scorre una riga senza destinatario è una riga persa: chi l'ha scritta non
+  // sa che era per lui. Con l'id, Twitch la mostra agganciata alla domanda,
+  // come fa una persona che usa il tasto «rispondi». Se manca o non è valido,
+  // parte un messaggio normale: la risposta esce comunque.
+  say(ch, text, { rispondiA = '' } = {}) {
     const c = normCh(ch);
     let t = String(text ?? '').replace(/[\r\n]+/g, ' ').trim();
     if (!c || !t) return;
     if (t.length > MSG_MAX) t = t.slice(0, MSG_MAX - 1) + '…';
-    this._queue.push({ channel: c, text: t });
+    this._queue.push({ channel: c, text: t, rispondiA: idRisposta(rispondiA) });
     while (this._queue.length > QUEUE_MAX) this._queue.shift();   // non accumulare all'infinito
     this._pump();
   }
@@ -260,6 +276,7 @@ export class ChatBot extends EventEmitter {
       isBroadcaster,
       isSub: tags['subscriber'] === '1' || badges.includes('subscriber/') || badges.includes('founder/'),
       isVip: tags['vip'] === '1' || badges.includes('vip/'),
+      isFirst: tags['first-msg'] === '1',                      // prima volta che scrive in questo canale
       isSelf: user === this._login,
       tags,
     });
@@ -284,9 +301,9 @@ export class ChatBot extends EventEmitter {
         this._sendTimer = setTimeout(step, wait);
         return;
       }
-      const { channel, text } = this._queue.shift();
+      const { channel, text, rispondiA } = this._queue.shift();
       try {
-        this._ws.send(`PRIVMSG #${channel} :${text}`);
+        this._ws.send((rispondiA ? `@reply-parent-msg-id=${rispondiA} ` : '') + `PRIVMSG #${channel} :${text}`);
         this._lastSent = Date.now();
         // il bot ricorda anche quello che dice lui
         memory.logMessage(channel, this._login, this._login, text, true);

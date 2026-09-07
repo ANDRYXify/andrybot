@@ -27,6 +27,13 @@ sbagliato per rispondere in una chat che non è sua:
 Due messaggi identici a un mese di distanza danno al bot lo stesso identico
 prompt. Non impara da sé, non tiene stato, non si affeziona.
 
+Da qui una domanda che torna: se il bot non ricorda nessuno, come fa a sapere
+che chi gli scrive è un moderatore, o che è la prima volta che scrive qui? Non
+lo sa: glielo dice il messaggio. I distintivi arrivano dentro al messaggio,
+valgono per quel turno e finiscono lì. Quello che resta fuori è l'affinità con
+una persona, che vale su tutti i canali e sarebbe un ricordo. Per esteso:
+`docs/MODO.md`.
+
 ## La valvola (a senso unico)
 
 > «Lia può addestrare, ma il bot non può toccare Lia. Lui può crescere, Lia può
