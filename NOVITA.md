@@ -17,6 +17,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-07
 
+- Nel pannello sei scritte avevano l'apostrofo al posto dell'accento, e adesso sono scritte come si deve.
 - Quando arriva un'ondata di follow finti, il bot riconosce quali nomi vengono dalla stessa fabbrica e toglie solo quelli: chi era capitato lì in mezzo non viene più toccato.
 - E se non riconosce nessun gruppo non se lo inventa: tratta l'ondata come una cosa sola, perché lì il rischio è lasciarla passare.
 - Anche i follow finti che arrivano piano piano, uno ogni pochi secondi per dieci minuti, adesso vengono fermati. Prima passavano indisturbati.
@@ -44,7 +45,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - E non cancella più i messaggi normali scritti col punto attaccato, tipo «lascia stare.io ci provo». Su quindici frasi di chat vere prima ne finivano cancellate dieci.
 - Lo scudo riconosce anche le ondate di follow così veloci da arrivare tutte insieme: erano proprio quelle che passavano.
 - E per dire che un'ondata è finta ora aspetta di aver visto quindici follow. Con sei, una ondata vera su dodici veniva scambiata per finta e i follower veri finivano rimossi.
-- Quando lo scudo si convince a meta ondata, riprende anche i follow arrivati prima, invece di partire da quel momento.
+- Quando lo scudo si convince a metà ondata, riprende anche i follow arrivati prima, invece di partire da quel momento.
 - Il rilevamento dello stesso messaggio scritto da tanti account resta acceso anche se spegni l'elenco dei nomi da bot: prima si spegneva anche quello, senza dirlo.
 - Una parola vietata resta vietata anche scritta con un accento.
 - Se Twitch non risponde mentre lo scudo controlla l'eta di un account, ora riprova al messaggio dopo invece di lasciarlo per sempre senza controllo.
@@ -205,7 +206,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Ogni voce può valere sempre, solo quando sei in diretta o solo quando sei offline. Puoi anche fissarla, così il bot ce l'ha davanti in ogni caso.
 - Le frasi che scrivi in Personalità ora arrivano al bot come esempio del tuo modo di parlare. Prima restavano lì.
 - Nel quaderno del bot scrivi come deve rispondere, e vedi anche quello che gli è già stato insegnato.
-- Nella dashboard i menù a tendina restano in riga con i bottoni accanto, invece di andare a capo da soli.
+- Nella dashboard i menu a tendina restano in riga con i bottoni accanto, invece di andare a capo da soli.
 - In chat pubblica risponde il bot del tuo canale: non si ricorda degli utenti e non parla di sé.
 - Le risposte salvate non escono più sempre uguali: il bot le riformula. Se contengono un link restano identiche.
 - [privato] Lia potrà insegnare al bot solo quando vivrà. Fino ad allora il quaderno lo scrivi tu, e il bot non può leggere niente di lei.
