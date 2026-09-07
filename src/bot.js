@@ -41,6 +41,9 @@ import * as model from './ai/model.js';
 import * as brainpy from './ai/brainpy.js';
 import { createMessageHandler } from './features/handler.js';
 import { voceKick } from './kick/voce.js';
+import { ChatYoutube } from './youtube/chat.js';
+import { voceYoutube } from './youtube/voce.js';
+import { collegati as youtubeCollegati } from './youtube/api.js';
 import * as avvisi from './features/avvisi.js';
 import { dirette } from './db.js';
 import { ClipEngine } from './features/clips.js';
@@ -162,7 +165,12 @@ export class BotManager {
     // bot, quindi nessun evento arriva da solo — vanno guardati.
     this._amiciTimer = setInterval(() => this._giroAmiciTelegram().catch(() => {}), 2 * 60_000);
     // Nuovi post: avvisa quando esce un nuovo video su YouTube (via RSS, ogni 10 min).
-    this._ytId = new Map();     // login → id canale YouTube risolto (cache)
+    this._ytId = new Map();
+    // La chat di YouTube si legge chiedendola: il motore che la chiede sa anche
+    // qual e' l'indirizzo della chat aperta adesso, e la voce glielo chiede.
+    this.chatYT = new ChatYoutube({
+      suMessaggio: (m) => { this.messaggioEsterno(m).catch(() => {}); },
+    });     // login → id canale YouTube risolto (cache)
     this._postTimer = setInterval(() => this._controllaPost().catch(() => {}), 10 * 60_000);
     // Giochi del sito: poll delle regole da annunciare in chat quando parte una
     // partita (attivazione automatica anche per le partite create dal sito).
@@ -212,6 +220,7 @@ export class BotManager {
     clearTimeout(this._risveglioTO);
     this._stopReflection?.();
     this.watcher?.stop();
+    try { this.chatYT?.spegniTutti(); } catch { /* niente */ }
     // spegni tutti gli ascolti live (audio): non devono restare orfani
     for (const [, l] of this.listeners) { try { l.stop(); } catch { /* niente */ } }
     this.listeners.clear();
@@ -478,6 +487,26 @@ export class BotManager {
     // In try/catch a parte: l'ascolto non deve MAI compromettere il resto.
     try { await this.reconcileListeners(); }
     catch (e) { log.error('reconcileListeners:', e?.message || e); }
+
+    try { this.reconcileYoutube(wanted); }
+    catch (e) { log.error('reconcileYoutube:', e?.message || e); }
+  }
+
+  // Chi deve leggere la chat di YouTube: il bot acceso, YouTube collegato e la
+  // levetta alzata. Tutte e tre, se no si spende quota per una chat che nessuno
+  // ha chiesto di leggere.
+  reconcileYoutube(attivi) {
+    let collegati = [];
+    try { collegati = youtubeCollegati(); } catch (e) { return; }
+    const insieme = new Set(collegati.map((x) => String(x).toLowerCase()));
+    const vogliono = new Set();
+    for (const [login, s] of attivi) {
+      if (!insieme.has(login)) continue;
+      if (s?.settings?.youtube?.chat !== true) continue;
+      vogliono.add(login);
+    }
+    for (const login of vogliono) this.chatYT.accendi(login);
+    for (const login of [...this.chatYT.giri.keys()]) if (!vogliono.has(login)) this.chatYT.spegni(login);
   }
 
   // Catena di ingresso di ogni messaggio: prima i "guardiani" (antispam, poi il
@@ -504,6 +533,10 @@ export class BotManager {
   // veniva risposto su TWITCH. Peggio del silenzio.
   vocePer(msg) {
     if (msg?.piattaforma === 'kick') { const v = voceKick(msg.channel); return (t) => v.say(msg.channel, t); }
+    if (msg?.piattaforma === 'youtube') {
+      const v = voceYoutube(msg.channel, { chatDiAdesso: (l) => this.chatYT.chatDi(l) });
+      return (t) => v.say(msg.channel, t);
+    }
     return (t) => this.say(msg.channel, t);
   }
 

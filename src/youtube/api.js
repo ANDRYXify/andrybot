@@ -115,3 +115,120 @@ export async function ioSuYoutube(login, opts) {
   if (!t?.accessToken) return { ok: false, errore: 'account YouTube non collegato (o da ricollegare)' };
   return chiSono(t.accessToken, opts);
 }
+
+// ── LA CHAT DELLA DIRETTA ────────────────────────────────────────────────────
+//
+// Su YouTube la chat non e' un posto fisso come su Twitch: nasce e muore con la
+// diretta, e si raggiunge solo passando dal `liveChatId` della diretta ATTIVA.
+// Quindi il giro e' sempre lo stesso: chiedi qual e' la diretta in corso, e da
+// quella prendi l'indirizzo della chat.
+
+async function postConToken(accessToken, percorso, query, corpo, { fetchImpl = fetch } = {}) {
+  const tok = String(accessToken || '');
+  if (!tok) return { ok: false, errore: 'nessun token' };
+  const url = API + percorso + (query ? '?' + new URLSearchParams(query) : '');
+  try {
+    const r = await fetchImpl(url, {
+      method: 'POST',
+      headers: { authorization: 'Bearer ' + tok, accept: 'application/json', 'content-type': 'application/json' },
+      body: JSON.stringify(corpo || {}),
+    });
+    const testo = await r.text().catch(() => '');
+    let j = null; try { j = testo ? JSON.parse(testo) : null; } catch { /* non JSON */ }
+    if (!r.ok) return { ok: false, stato: r.status, errore: j?.error?.message || testo.slice(0, 200) || ('HTTP ' + r.status) };
+    return { ok: true, dati: j };
+  } catch (e) {
+    return { ok: false, errore: e?.message || String(e) };
+  }
+}
+
+// La diretta in corso, se c'e'. `inDiretta: false` non e' un errore: e' la
+// risposta normale per chi non sta trasmettendo adesso.
+export async function direttaInCorso(login, opts) {
+  const t = await tokenBuono(login, opts);
+  if (!t?.accessToken) return { ok: false, errore: 'account YouTube non collegato (o da ricollegare)' };
+  const r = await conToken(t.accessToken, '/liveBroadcasts',
+    { part: 'snippet', broadcastStatus: 'active', broadcastType: 'all', maxResults: '1' }, opts);
+  if (!r.ok) return r;
+  const b = (r.dati?.items || [])[0];
+  if (!b) return { ok: true, inDiretta: false };
+  return {
+    ok: true,
+    inDiretta: true,
+    videoId: String(b.id || ''),
+    chatId: String(b.snippet?.liveChatId || ''),
+    titolo: String(b.snippet?.title || ''),
+  };
+}
+
+// Un pezzo di chat. `pagina` e' il segnalibro: senza, si riparte dall'inizio e
+// si riprocessa tutto quello che era gia' passato. `attesaMs` lo decide YouTube
+// e va rispettato: e' lui che sa quanto e' carica la chat in questo momento.
+export async function messaggiChat(login, { chatId, pagina = '' } = {}, opts) {
+  const t = await tokenBuono(login, opts);
+  if (!t?.accessToken) return { ok: false, errore: 'account YouTube non collegato (o da ricollegare)' };
+  const q = { part: 'snippet,authorDetails', liveChatId: String(chatId || ''), maxResults: '200' };
+  if (pagina) q.pageToken = pagina;
+  const r = await conToken(t.accessToken, '/liveChatMessages', q, opts);
+  if (!r.ok) return r;
+  return {
+    ok: true,
+    voci: Array.isArray(r.dati?.items) ? r.dati.items : [],
+    pagina: String(r.dati?.nextPageToken || ''),
+    attesaMs: Math.max(1000, Number(r.dati?.pollingIntervalMillis) || 5000),
+  };
+}
+
+// Parlare in chat. Serve lo scope `youtube.force-ssl`: chi ha collegato YouTube
+// prima che la chat esistesse ha un token senza quel permesso, e Google
+// risponde 403. Non e' un guasto, e' un collegamento da rifare — e va detto
+// cosi', se no si cerca un guasto che non c'e'.
+export async function scriviChat(login, { chatId, testo } = {}, opts) {
+  const t = await tokenBuono(login, opts);
+  if (!t?.accessToken) return { ok: false, errore: 'account YouTube non collegato (o da ricollegare)' };
+  const messaggio = String(testo || '').slice(0, 200);   // YouTube taglia a 200 caratteri
+  if (!messaggio.trim()) return { ok: false, errore: 'niente da scrivere' };
+  const r = await postConToken(t.accessToken, '/liveChatMessages', { part: 'snippet' }, {
+    snippet: {
+      liveChatId: String(chatId || ''),
+      type: 'textMessageEvent',
+      textMessageDetails: { messageText: messaggio },
+    },
+  }, opts);
+  if (!r.ok && r.stato === 403) return { ...r, daRicollegare: true, errore: 'manca il permesso di scrivere in chat: ricollega YouTube' };
+  return r;
+}
+
+// Da id di canale YouTube a maniglia (@nome). Serve perche' nella chat YouTube
+// non manda nessun nome unico: manda un nome VISIBILE, che due persone diverse
+// possono avere identico, e un id opaco. L'economia del bot (monete, ore, VIP)
+// e' fatta di nomi leggibili, quindi con il solo nome visibile due spettatori
+// diversi finirebbero nello stesso portafoglio. La maniglia e' l'unica cosa che
+// e' insieme unica e leggibile: si chiede una volta per persona, a cinquanta
+// per volta, e si tiene.
+const _maniglie = new Map();
+const MANIGLIE_MAX = 5000;
+
+export function manigliaNota(canaleId) { return _maniglie.get(String(canaleId || '')) || ''; }
+
+export async function risolviManiglie(login, canaliId, opts) {
+  const mancanti = [...new Set((canaliId || []).map(String).filter((x) => x && !_maniglie.has(x)))];
+  if (!mancanti.length) return 0;
+  const t = await tokenBuono(login, opts);
+  if (!t?.accessToken) return 0;
+  let presi = 0;
+  for (let i = 0; i < mancanti.length; i += 50) {
+    const gruppo = mancanti.slice(i, i + 50);
+    const r = await conToken(t.accessToken, '/channels', { part: 'snippet', id: gruppo.join(','), maxResults: '50' }, opts);
+    if (!r.ok) break;
+    for (const c of (r.dati?.items || [])) {
+      const m = String(c?.snippet?.customUrl || '').replace(/^@/, '').toLowerCase();
+      if (c?.id) { _maniglie.set(String(c.id), m); presi += 1; }
+    }
+    // chi non torna dalla risposta non ha maniglia: si segna comunque, se no lo
+    // si richiede a ogni messaggio per tutta la diretta
+    for (const id of gruppo) if (!_maniglie.has(id)) _maniglie.set(id, '');
+  }
+  while (_maniglie.size > MANIGLIE_MAX) _maniglie.delete(_maniglie.keys().next().value);
+  return presi;
+}

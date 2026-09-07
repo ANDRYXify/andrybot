@@ -2182,10 +2182,24 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       rifaiEventi: !!tk?.accessToken && !kd.ultimo,
     });
 
-    // YouTube. `attivo` resta falso apposta: il collegamento c'è, il bot in chat
-    // no — e la nota lo dice invece di lasciarlo scoprire dal silenzio.
+    // YouTube. La chat c'è, ma non basta aver collegato il canale: il permesso
+    // di leggerla e di parlarci è arrivato dopo, e Google non aggiunge permessi
+    // a un token già dato. Chi ha collegato prima deve ricollegare — e questo si
+    // SA, non si indovina: gli scope del token sono salvati insieme al token.
     const ytAperto = !!(config.youtubeClientId && config.youtubeClientSecret) && !!config.youtubeAperto;
     const ty = ytAperto ? ytApi.tokenDi(login) : null;
+    const ytPuoChat = (ty?.scopes || []).some((s) => /force-ssl/.test(String(s)));
+    const ytVuole = streamers.get(login)?.settings?.youtube?.chat === true;
+    const ytGiro = manager.chatYT?.stato ? manager.chatYT.stato(login) : { acceso: false, inDiretta: false };
+    const ytNota = () => {
+      if (!ytAperto) return 'in arrivo';
+      if (!ty?.accessToken) return 'collega il canale per usare dashboard, link page, overlay e la chat delle dirette';
+      if (!ytVuole) return 'canale collegato. Accendi la chat per far parlare il bot durante le tue dirette YouTube';
+      if (!ytPuoChat) return 'per la chat serve ricollegare il canale: il permesso di leggerla e di parlarci è nuovo';
+      if (ytGiro.senzaQuota) return 'la quota YouTube di oggi è finita: la chat riprende da sola quando si rinnova';
+      if (ytGiro.inDiretta) return 'sto leggendo la chat della diretta';
+      return 'chat accesa: aspetto la tua prossima diretta';
+    };
     fuori.push({
       id: 'youtube',
       nome: 'YouTube',
@@ -2193,18 +2207,32 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
       inArrivo: !ytAperto,
       collegato: !!ty?.accessToken,
       account: ty?.userId ? ('canale ' + ty.userId) : '',
-      attivo: false,
-      daRifare: false,
+      attivo: !!ytGiro.inDiretta,
+      daRifare: !!ty?.accessToken && ytVuole && !ytPuoChat,
       azione: ytAperto ? '/auth/youtube' : '',
-      note: !ytAperto ? 'in arrivo'
-        : (ty?.accessToken
-          ? 'canale collegato: dashboard, link page e overlay. In chat il bot non parla ancora'
-          : 'collega il canale per usare dashboard, link page e overlay'),
+      chatDisponibile: !!ty?.accessToken,
+      chatAccesa: ytVuole,
+      note: ytNota(),
     });
 
     res.json({ piattaforme: fuori });
   }));
 
+
+  // La chat di YouTube si accende e si spegne da qui. Si applica subito: la
+  // riconciliazione gira ogni minuto, e un minuto di «ho premuto e non
+  // succede niente» fa pensare che sia rotto.
+  app.post('/api/streamer/youtube/chat', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const s = streamers.get(login);
+    if (!s) return res.status(404).json({ errore: 'canale non trovato' });
+    const acceso = req.body?.acceso === true;
+    const settings = { ...(s.settings || {}) };
+    settings.youtube = { ...(settings.youtube || {}), chat: acceso };
+    streamers.setSettings(login, settings);
+    try { await manager.syncChannels?.(); } catch (e) {  }
+    res.json({ ok: true, acceso });
+  }));
   // ------------------------------------------------------------ API base
 
   // Pubblico, per i monitor di uptime esterni e per il controllo di salute di

@@ -17,6 +17,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-07
 
+- Il bot legge e risponde nella chat delle tue dirette YouTube, con gli stessi comandi, moduli e monete di Twitch. Si accende da Stato → Le tue piattaforme.
+- Nella sezione Andarsene si vede cosa c'è da cancellare scritto a parole — messaggi ricordati, citazioni, comandi — invece dei nomi interni del database.
 - Da Stato → Andarsene puoi cancellare l'account e tutto quello che contiene, file caricati e collegamenti compresi. Non si annulla: per confermare va scritto il nome del canale.
 - Se il bot si riavvia mentre un giveaway è aperto, chi era entrato resta in gara coi suoi biglietti. Prima sparivano tutti, e con loro il giveaway.
 - Anche una penitenza in corso riprende da dov'era, contatore compreso, invece di spegnersi a metà.

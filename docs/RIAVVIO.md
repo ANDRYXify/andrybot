@@ -105,3 +105,34 @@ Otto prove, e non sono verdi per caso: cinque mutazioni del codice (non salvare
 chi entra, non riprendere le penitenze, non riaprire la serranda, dimenticare
 una serranda non riaperta, non rileggere il ritmo) le fanno diventare rosse una
 per una.
+
+---
+
+# Andarsene (cancellazione dell'account)
+
+`src/features/cancella.js`, rotte `/api/streamer/resti` e
+`/api/streamer/cancella`, sezione **Stato → Andarsene**.
+
+L'elenco delle tabelle si ricava dallo schema, dallo stesso posto da cui lo
+ricava l'esportazione (`tabelleDiCanale`): una tabella nuova viene cancellata da
+sola. Stessa idea per i file, che non hanno un elenco di cartelle da tenere
+aggiornato — si prende ogni `data/<qualcosa>/<login>` che esiste.
+
+## Quello che si vede prima di premere
+
+La prima versione mostrava il conto così com'era: *«1857 righe in 33 tabelle.
+messages (1044), user_memories (136), knowledge (124), diario (100), quotes
+(78), voce_streamer (60)»*. È lo schema del database messo davanti a uno
+streamer. `voce_streamer` non vuol dire niente per chi trasmette, e nemmeno
+«righe» e «tabelle».
+
+Adesso le tabelle che hanno un nome nella testa di una persona ce l'hanno
+(`messaggi della chat ricordati`, `ricordi sulle persone`, `cose che il bot sa`,
+`pagine di diario`, `citazioni`, `trascrizioni della tua voce`…), e tutte le
+altre finiscono in «e il resto delle tue impostazioni». Non è solo cortesia: è
+anche il modo di non far uscire una parola da programmatore quando domani
+qualcuno aggiunge una tabella. Il conto totale resta giusto comunque, perché le
+non nominate si sommano nel mucchio.
+
+La zona ha il contorno d'inchiostro come tutto il resto e un dorso rosso a
+sinistra (`.zona-pericolo`): si legge come un avviso, non come un link.

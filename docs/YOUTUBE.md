@@ -1,23 +1,83 @@
-# Entrare con YouTube
+# YouTube
 
-## Cosa fa, e cosa non fa
+## Cosa fa
 
-Con YouTube si **entra** e si **collega il canale**: da lì la persona ha la
-dashboard, la pagina link, gli overlay, la community, i comandi — tutto ciò che
-non passa dalla chat.
+Con YouTube si **entra** e si **collega il canale**: dashboard, pagina link,
+overlay, community, comandi. E adesso anche la **chat delle dirette**: il bot la
+legge e ci risponde, con gli stessi comandi, moduli, monete e memoria di Twitch
+e Kick — perché un messaggio di YouTube entra nello stesso tubo con la stessa
+forma (`src/youtube/messaggio.js`), e tutto il resto non sa che YouTube esiste.
 
-Il bot **non parla nella chat di YouTube**, e non è una dimenticanza. La chat in
-diretta di YouTube si legge a interrogazioni ripetute (`liveChatMessages.list`),
-ogni interrogazione costa quota, e la quota giornaliera di un progetto Google è
-di 10.000 unità. Un solo canale acceso tutto il giorno, letto ogni cinque
-secondi, ne consuma otto volte tanto. Con dieci canali non è una questione di
-ottimizzare: non sta in piedi. Quindi la dashboard lo dice, invece di far
-credere che il bot stia per rispondere.
+La chat si accende per canale, da **Stato → Le tue piattaforme**. Spenta di
+default, per il motivo qui sotto.
 
-Il giorno che si vorrà la chat servirà un progetto Google con quota alzata (si
-chiede a Google con un modulo, motivandola), e allora si aggiungerà anche lo
-scope per scrivere. Non prima: chiedere oggi il permesso di parlare per usarlo
-forse domani è chiedere un potere che non si usa.
+## Il vincolo vero: la quota è UNA SOLA, ed è nostra
+
+Questa è la cosa da capire prima di tutto il resto, ed è diversa da Kick e da
+Twitch.
+
+La quota giornaliera **non è dello streamer: è del progetto Google**, cioè di
+SocialBot. Le chiamate le fa il nostro client OAuth e Google le addebita a noi,
+quindi tutti i canali che accendono la chat spendono dalla **stessa borsa da
+10.000 unità al giorno**
+([fonte](https://developers.google.com/youtube/v3/determine_quota_cost)). Non
+c'è modo di far pagare la quota a ciascuno: la chiave API che lo streamer mette
+per l'avviso del video nuovo è un'altra strada, e non serve qui.
+
+Quanto costa una chiamata di chat, Google **non lo pubblica**: le tabelle dei
+costi non elencano i metodi della chat in diretta. Quindi si sceglie la stima
+alta, **5 unità**, e lo si dichiara. Sbagliare in eccesso spreca margine;
+sbagliare in difetto finisce la quota di tutti a metà pomeriggio e spegne anche
+l'avviso del video nuovo, che passa dalla stessa borsa. I due errori non sono
+equivalenti.
+
+Da qui la **borsa** (`src/youtube/quota.js`): un tetto di 8.000 unità sulle
+10.000, il resto lasciato al resto del bot. Ogni giro chiede il permesso di
+spendere; quando la borsa è vuota si smette di bussare fino al rinnovo — che è a
+mezzanotte del **Pacifico**, non a mezzanotte qui — e la dashboard lo dice
+invece di lasciarlo scoprire dal silenzio. Il conto sta in `stato_vivo`, quindi
+un deploy non regala quota.
+
+Cosa vuol dire in pratica: con la stima alta la borsa vale circa **1.600
+chiamate al giorno in tutto**. A cinque secondi di intervallo sono poco più di
+due ore di chat, sommando tutti i canali accesi. **Va bene per una prova, non
+per dieci streamer.** Per andare oltre serve chiedere a Google un aumento di
+quota (si compila un modulo motivandolo): fino ad allora la chat è una cosa che
+si accende per pochi, e il tetto fa sì che accenderla non possa far danno agli
+altri.
+
+Google stessa consiglia `liveChatMessages.streamList` al posto di `list`
+proprio per consumare meno. È la strada dopo: qui si è usato `list` perché è
+documentato per intero, si prova senza rete e rispetta `pollingIntervalMillis`,
+che è YouTube a dire quanto è carica la chat in questo momento.
+
+## Le due cose che su YouTube sono diverse
+
+**La chat nasce e muore con la diretta.** Non è un posto fisso come su Twitch:
+si arriva solo passando dal `liveChatId` della diretta attiva. Se non stai
+trasmettendo non c'è nessun posto dove parlare — e non è un guasto.
+
+**Non c'è un nome unico.** Twitch e Kick mandano un login. YouTube manda un nome
+*visibile*, che due persone possono avere identico, e un id opaco (`UC…`).
+L'economia del bot è fatta di nomi leggibili — le monete stanno in una riga
+(canale, utente) e la classifica stampa quella parola — quindi col solo nome
+visibile due spettatori diversi finirebbero nello stesso portafoglio, e con l'id
+la classifica sarebbe un elenco di codici. La **maniglia** (@nome) è l'unica
+cosa insieme unica e leggibile: non arriva nel messaggio, si chiede a parte
+cinquanta per volta e si tiene. Quando manca si ripiega sul nome visibile
+ripulito, e lo si accetta: è il massimo che YouTube lascia sapere.
+
+## Il permesso di parlare
+
+Serve lo scope `youtube.force-ssl`. Prima non lo chiedevamo, ed era giusto: la
+chat non c'era, e chiedere il permesso di parlare per usarlo forse domani è
+chiedere un potere che non si usa. Adesso la chat c'è, quindi si chiede.
+
+Chi aveva collegato YouTube **prima** ha un token senza quel permesso: continua
+a funzionare per tutto il resto, e la dashboard gli dice di ricollegare. Non è
+un guasto da cercare — Google non aggiunge permessi a un token già dato, si
+ripassa dalla porta. E questo non si indovina: gli scope del token sono salvati
+insieme al token, quindi la dashboard lo *sa*.
 
 ## Configurazione su Google Cloud
 
