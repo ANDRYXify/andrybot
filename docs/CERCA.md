@@ -222,3 +222,43 @@ raccolta non trova più niente e resta l'indice scritto a mano, cioè la ricerca
 com'era. Il cancello deve diventare rosso, e diventa rosso.
 
 Prima di tutto questo: **0 su 40**.
+
+## La trappola del fuoco
+
+La finestra dichiarava `role="dialog" aria-modal="true"` — cioè prometteva che
+fuori non c'è niente — e la funzione che doveva tenerlo dentro era **vuota**:
+
+```js
+function globali(e) {  }
+```
+
+Registrata in capture su `document` all'apertura, tolta alla chiusura: il posto
+giusto, senza niente dentro. Chi naviga col Tab usciva dalla finestra e
+continuava a girare nella pagina sotto, che non vede perché c'è il velo davanti.
+Una promessa scritta nell'attributo e non mantenuta è peggio del non
+prometterla.
+
+Adesso `globali` fa tre cose: tiene il Tab dentro (in avanti e indietro), chiude
+con Escape **da qualunque punto** della finestra — prima Escape stava solo sulla
+casella di testo, quindi chi era arrivato su un bottone col Tab non poteva
+uscire — e alla chiusura il fuoco torna dove era partito, invece di ripartire
+dalla cima della pagina.
+
+La finestra ha anche un nome (`aria-label`): senza, un lettore di schermo
+annuncia «dialogo» e basta.
+
+### Una prova che non provava niente
+
+La prima versione del cancello costruiva l'evento a mano:
+
+```js
+document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab' }));
+```
+
+Un evento sintetico **non muove il fuoco**: `document.activeElement` restava
+dov'era, cioè dentro la finestra, e la prova era verde. Lo si è scoperto
+mutando il codice — togliendo la trappola — e vedendo il cancello restare
+verde lo stesso.
+
+Adesso i tasti sono veri (`p.keyboard.press('Tab')`), e togliendo la trappola il
+cancello diventa rosso: `avanti: FUORI · indietro: FUORI`.

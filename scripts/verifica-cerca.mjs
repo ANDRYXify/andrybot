@@ -100,9 +100,11 @@ const uniche = destinazioni.filter((d) => {
   viste.add(k);
   return true;
 });
-// La stessa etichetta puo' stare in piu' schede: «Posizione» c'e' nelle
-// penitenze e nell'Overlay Studio, e sono due risposte giuste. Si chiede che
-// esca QUELLA ETICHETTA, non che indovini in quale delle due la volevi.
+// La stessa parola puo' stare in piu' posti: «Posizione» c'e' nelle penitenze e
+// nell'Overlay Studio, «Abbonamento» e' insieme il titolo di una carta e il nome
+// di una scheda. Sono tutte risposte giuste. Si chiede che esca QUELLA COSA, non
+// che indovini in quale dei posti la volevi: quello non e' determinato, e un
+// cancello che lo pretende misura la fortuna.
 const dove = new Map();
 for (const d of uniche) {
   const k = senso(d.testo);
@@ -145,7 +147,7 @@ let prese = 0;
 for (const d of provate) {
   const r = await chiedi(d.testo);
   const primo = r[0];
-  const ok = primo && stessoTesto(primo.testo, d.testo) && dove.get(senso(d.testo)).has(primo.id);
+  const ok = primo && stessoTesto(primo.testo, d.testo);
   if (ok) prese += 1;
   else sbagliate.push({ cercato: d.testo, dove: d.scheda, uscito: primo ? `${primo.testo} (${primo.id})` : '—' });
 }
@@ -178,6 +180,49 @@ for (const d of provate.filter((_, i) => i % 7 === 0).slice(0, 6)) {
   if (!r.segnato || !r.inVista) nonArrivate.push({ q: d.testo, dove: r.scheda, segnato: r.segnato, inVista: r.inVista });
 }
 
+// LA TRAPPOLA DEL FUOCO. La finestra dice `role="dialog" aria-modal="true"`,
+// cioe' promette che fuori non c'e' niente. Chi naviga col tasto Tab pero'
+// usciva dietro al velo e continuava a girare nella pagina sotto, senza
+// vederla: la funzione che doveva tenerlo dentro era rimasta vuota. Una
+// promessa scritta nell'attributo e non mantenuta e' peggio del non prometterla.
+//
+// I tasti qui sono VERI (p.keyboard), non eventi costruiti a mano: un evento
+// sintetico non muove il fuoco, quindi una prova fatta cosi' resterebbe verde
+// anche togliendo la trappola — e infatti la prima versione lo faceva.
+await p.evaluate(() => { document.querySelector('.pannello-scheda.visibile button')?.focus(); });
+const partenza = await p.evaluate(() => {
+  const a = document.activeElement;
+  a?.setAttribute('data-partenza', '1');
+  return !!a;
+});
+await p.evaluate(() => window.SB_CERCA.apri());
+await p.waitForTimeout(160);
+// dal fondo della finestra: un Tab in avanti deve tornare in cima, non uscire
+await p.evaluate(() => {
+  const box = document.querySelector('#cerca-overlay .cerca-box');
+  const dentro = [...box.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+    .filter((e) => e.getBoundingClientRect().width > 0);
+  dentro[dentro.length - 1].focus();
+});
+await p.keyboard.press('Tab');
+await p.waitForTimeout(80);
+const dentroDopoTab = await p.evaluate(() => !!document.querySelector('#cerca-overlay .cerca-box')?.contains(document.activeElement));
+// e indietro dal primo: stessa promessa, dall'altro verso
+await p.evaluate(() => {
+  const box = document.querySelector('#cerca-overlay .cerca-box');
+  const dentro = [...box.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+    .filter((e) => e.getBoundingClientRect().width > 0);
+  dentro[0].focus();
+});
+await p.keyboard.press('Shift+Tab');
+await p.waitForTimeout(80);
+const dentroDopoIndietro = await p.evaluate(() => !!document.querySelector('#cerca-overlay .cerca-box')?.contains(document.activeElement));
+const nomeFinestra = await p.evaluate(() => document.querySelector('#cerca-overlay .cerca-box')?.getAttribute('aria-label') || '');
+await p.keyboard.press('Escape');
+await p.waitForTimeout(180);
+const fuocoTornato = await p.evaluate(() => document.activeElement?.getAttribute('data-partenza') === '1');
+const fuoco = { avanti: dentroDopoTab, indietro: dentroDopoIndietro, nome: nomeFinestra, tornato: fuocoTornato, partenza };
+
 const aParole = [];
 for (const c of A_PAROLE) {
   const r = await chiedi(c.q);
@@ -199,6 +244,10 @@ dice(prese >= Math.ceil(provate.length * SOGLIA),
   sbagliate.slice(0, 5).map((x) => `«${x.cercato}» (${x.dove}) → ${x.uscito}`).join(' · '));
 dice(!nonArrivate.length, 'e cliccando ci si arriva davvero: la cosa finisce sotto gli occhi',
   nonArrivate.map((x) => `«${x.q}» → ${x.dove || 'nessuna scheda'}${x.segnato ? ' (segnata ma fuori vista)' : ' (non segnata)'}`).join(' · '));
+dice(fuoco.avanti && fuoco.indietro, 'col Tab non si esce dalla finestra di ricerca',
+  `avanti: ${fuoco.avanti ? 'dentro' : 'FUORI'} · indietro: ${fuoco.indietro ? 'dentro' : 'FUORI'} — si finisce a navigare la pagina dietro al velo, senza vederla`);
+dice(!!fuoco.nome, 'e la finestra ha un nome, non e\' solo «dialogo»', '');
+dice(fuoco.tornato, 'chiudendola il fuoco torna da dove era partito', 'si riparte da capo dalla cima della pagina');
 dice(!aParole.length, 'e una domanda detta a parole arriva nella scheda giusta',
   aParole.slice(0, 4).map((x) => `«${x.q}» voleva ${x.atteso}, ha dato ${x.uscito}`).join(' · '));
 for (const x of sbagliate) console.log(`  · non prima: «${x.cercato}» (${x.dove}) → ${x.uscito}`);

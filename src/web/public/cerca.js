@@ -601,7 +601,7 @@
     return esc(label);
   }
 
-  var ov, inp, lista, filtriBox, filtro = '', sel = 0, correnti = [], _deb = null, _radAttuali = [];
+  var ov, inp, lista, filtriBox, filtro = '', sel = 0, correnti = [], _deb = null, _radAttuali = [], _daDove = null;
 
   function costruisci() {
     var lancia = document.createElement('button');
@@ -613,7 +613,7 @@
 
     ov = document.createElement('div'); ov.id = 'cerca-overlay';
     ov.innerHTML =
-      '<div class="cerca-box" role="dialog" aria-modal="true">' +
+      '<div class="cerca-box" role="dialog" aria-modal="true" aria-label="' + esc(L('Cerca nel pannello', 'Search the panel', 'Buscar en el panel')) + '">' +
         '<div class="cerca-top"><span class="lente">' + SVG_LENTE + '</span>' +
           '<input id="cerca-input" autocomplete="off" spellcheck="false" placeholder="' +
             esc(L('Chiedi come ti viene… «come blocco i bot», «alert su obs»', 'Ask however you like… “how do I block bots”, “alerts on obs”', 'Pregunta como quieras… «cómo bloqueo los bots», «avisos en obs»')) + '">' +
@@ -751,14 +751,41 @@
 
   function apri() {
     if (!ov) return;
+    _daDove = document.activeElement;
     filtro = ''; sel = 0; _radAttuali = []; inp.value = '';
     invalida();
     filtri(); ov.classList.add('aperto'); document.body.classList.add('cerca-aperta'); disegna();
     setTimeout(function () { inp.focus(); }, 30);
     document.addEventListener('keydown', globali, true);
   }
-  function chiudi() { if (ov) ov.classList.remove('aperto'); document.body.classList.remove('cerca-aperta'); document.removeEventListener('keydown', globali, true); }
-  function globali(e) {  }
+  function chiudi() {
+    if (ov) ov.classList.remove('aperto');
+    document.body.classList.remove('cerca-aperta');
+    document.removeEventListener('keydown', globali, true);
+    try { if (_daDove && document.contains(_daDove)) _daDove.focus(); } catch (e) {  }
+    _daDove = null;
+  }
+  var FUOCABILI = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+  function globali(e) {
+    if (!ov || !ov.classList.contains('aperto')) return;
+    if (e.key === 'Escape') { e.preventDefault(); chiudi(); return; }
+    if (e.key !== 'Tab') return;
+    var box = ov.querySelector('.cerca-box');
+    if (!box) return;
+    var dentro = [];
+    var tutti = box.querySelectorAll(FUOCABILI);
+    for (var i = 0; i < tutti.length; i++) {
+      var r = tutti[i].getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) dentro.push(tutti[i]);
+    }
+    if (!dentro.length) { e.preventDefault(); return; }
+    var primo = dentro[0], ultimo = dentro[dentro.length - 1];
+    var ora = document.activeElement;
+    if (!box.contains(ora)) { e.preventDefault(); (e.shiftKey ? ultimo : primo).focus(); return; }
+    if (e.shiftKey && ora === primo) { e.preventDefault(); ultimo.focus(); return; }
+    if (!e.shiftKey && ora === ultimo) { e.preventDefault(); primo.focus(); }
+  }
 
   function scorciatoie(e) {
     var k = e.key.toLowerCase();
