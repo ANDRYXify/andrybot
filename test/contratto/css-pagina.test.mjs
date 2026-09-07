@@ -14,7 +14,15 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cssPaginaSicuro } from '../../src/db.js';
+import { cartellaUsaEGetta } from '../aiuto.mjs';
+
+// Importare src/db.js APRE un database. Senza una casa usa-e-getta si apre
+// quello di sviluppo, e basta una riga scritta per sbaglio perche' le prove
+// lascino tracce nei dati veri — o diventino rosse per qualcosa che non
+// c'entra. Qui servono solo funzioni pure, ma la porta si apre lo stesso.
+const casa = cartellaUsaEGetta('csspagina-');
+const { cssPaginaSicuro } = await import('../../src/db.js');
+test.after(() => casa.pulisci());
 
 const CATTIVO = /<\s*\/\s*style|@import|javascript\s*:|expression\s*\(/i;
 

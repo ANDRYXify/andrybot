@@ -16,8 +16,20 @@
 // avere identico e un id opaco.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ChatYoutube } from '../../src/youtube/chat.js';
-import { daMessaggioChat, canaliDi } from '../../src/youtube/messaggio.js';
+import { cartellaUsaEGetta } from '../aiuto.mjs';
+
+// Una casa usa-e-getta anche qui: senza, il motore vero della quota scriveva il
+// suo conto nel database di sviluppo, e dopo qualche giro di prove la borsa
+// risultava finita — con le prove che diventavano rosse per una ragione che non
+// c'entrava niente con quello che stavano guardando.
+const casa = cartellaUsaEGetta('ytchat-');
+const { ChatYoutube } = await import('../../src/youtube/chat.js');
+const { daMessaggioChat, canaliDi } = await import('../../src/youtube/messaggio.js');
+test.after(() => casa.pulisci());
+
+// E comunque la borsa qui e' finta: queste prove guardano il segnalibro e il
+// primo giro, non la quota. Quella ha le sue.
+const BORSA_PIENA = { chiedi: () => true, fraQuantoRinnova: () => 1000, stato: () => ({ finita: false }) };
 
 const voce = (id, nome, testo, extra = {}) => ({
   id,
@@ -52,7 +64,7 @@ test('il primo giro serve solo a prendere il segnalibro: non si risponde alla st
     { voci: [voce('2', 'marco', 'ciao adesso')], pagina: 'p2' },
   ]);
   const visti = [];
-  const m = new ChatYoutube({ suMessaggio: (x) => visti.push(x.text), api: f.api, attesaMinMs: 1 });
+  const m = new ChatYoutube({ suMessaggio: (x) => visti.push(x.text), api: f.api, attesaMinMs: 1, borsa: BORSA_PIENA });
   m.accendi('alfa');
   await aspetta(120);
   m.spegni('alfa');
@@ -68,7 +80,7 @@ test('il segnalibro si passa indietro: niente viene letto due volte', async () =
     { voci: [voce('2', 'lucia', 'due')], pagina: 'p3' },
   ]);
   const visti = [];
-  const m = new ChatYoutube({ suMessaggio: (x) => visti.push(x.text), api: f.api, attesaMinMs: 1 });
+  const m = new ChatYoutube({ suMessaggio: (x) => visti.push(x.text), api: f.api, attesaMinMs: 1, borsa: BORSA_PIENA });
   m.accendi('alfa');
   await aspetta(160);
   m.spegni('alfa');
@@ -88,7 +100,7 @@ test('quando la diretta finisce il giro non muore: torna ad aspettarla', async (
     manigliaNota: () => '',
   };
   const cambi = [];
-  const m = new ChatYoutube({ api, attesaMinMs: 1, quandoCambia: (_l, s) => cambi.push(s.inDiretta) });
+  const m = new ChatYoutube({ api, attesaMinMs: 1, quandoCambia: (_l, s) => cambi.push(s.inDiretta), borsa: BORSA_PIENA });
   m.accendi('alfa');
   await aspetta(80);
   const stato = m.stato('alfa');
