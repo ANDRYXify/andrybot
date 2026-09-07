@@ -246,4 +246,81 @@ import { guscio, bollicine, misuraCoda, MARGINE } from '/fumetto.js';
   window.addEventListener('resize', spegni);
   window.addEventListener('blur', spegni);
   document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') spegni(); });
+
+  const MARGINE_NUV = MARGINE;
+
+  function nuvolettaDillo(testo, opzioni) {
+    const o = opzioni || {};
+    return new Promise((risolvi) => {
+      const daDove = document.activeElement;
+      const velo = document.createElement('div');
+      velo.className = 'nuv-velo';
+      const bolla = document.createElement('div');
+      bolla.className = 'nuv-bolla' + (o.attenzione ? ' attenzione' : '');
+      bolla.setAttribute('role', 'alertdialog');
+      bolla.setAttribute('aria-modal', 'true');
+
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('class', 'nuv-guscio');
+      svg.setAttribute('aria-hidden', 'true');
+      const ombraN = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      ombraN.setAttribute('class', 'nuv-ombra');
+      const formaN = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      formaN.setAttribute('class', 'nuv-forma');
+      svg.append(ombraN, formaN);
+
+      const dentro = document.createElement('div');
+      dentro.className = 'nuv-dentro';
+      const p = document.createElement('p');
+      p.className = 'nuv-testo';
+      p.textContent = String(testo == null ? '' : testo);
+      const via = document.createElement('button');
+      via.type = 'button';
+      via.className = 'btn nuv-ok';
+      via.textContent = String(o.bottone || 'Ho capito');
+      dentro.append(p, via);
+      bolla.append(svg, dentro);
+      velo.appendChild(bolla);
+      document.body.appendChild(velo);
+
+      const disegnaBolla = () => {
+        const w = dentro.offsetWidth;
+        const h = dentro.offsetHeight;
+        if (!w || !h) return;
+        const LL = w + MARGINE_NUV * 2;
+        const AA = h + MARGINE_NUV * 2;
+        svg.setAttribute('viewBox', '0 0 ' + LL + ' ' + AA);
+        svg.setAttribute('width', LL);
+        svg.setAttribute('height', AA);
+        svg.style.left = -MARGINE_NUV + 'px';
+        svg.style.top = -MARGINE_NUV + 'px';
+        svg.style.width = LL + 'px';
+        svg.style.height = AA + 'px';
+        const d = guscio({ larghezza: w, altezza: h, tipo: 'tondo', becco: 0.32, giro: -3, sotto: false });
+        formaN.setAttribute('d', d);
+        ombraN.setAttribute('d', d);
+      };
+      disegnaBolla();
+      requestAnimationFrame(() => { disegnaBolla(); bolla.classList.add('vista'); });
+
+      const chiudiNuv = () => {
+        document.removeEventListener('keydown', tastiNuv, true);
+        velo.remove();
+        try { if (daDove && document.contains(daDove)) daDove.focus(); } catch (e) {  }
+        risolvi();
+      };
+      function tastiNuv(ev) {
+        if (ev.key === 'Escape') { ev.preventDefault(); chiudiNuv(); return; }
+        if (ev.key !== 'Tab') return;
+        ev.preventDefault();
+        via.focus();
+      }
+      document.addEventListener('keydown', tastiNuv, true);
+      via.addEventListener('click', chiudiNuv);
+      velo.addEventListener('click', (ev) => { if (ev.target === velo) chiudiNuv(); });
+      setTimeout(() => { try { via.focus(); } catch (e) {  } }, 30);
+    });
+  }
+
+  try { window.SB_NUVOLETTA = { dillo: nuvolettaDillo }; } catch (e) {  }
 })();

@@ -1969,3 +1969,38 @@ body.ce-aperto { overflow: hidden; }
 .zona-pericolo > summary { color: var(--rosso); font-weight: 600; }
 .zona-pericolo[open] > summary { margin-bottom: .3rem; }
 .zona-pericolo .riquadro-info { background: var(--surface); }
+
+.nuv-velo {
+  position: fixed; inset: 0; z-index: 9200;
+  display: grid; place-items: center; padding: 1.2rem;
+  background: rgba(10, 8, 10, .58);
+  animation: appare .18s ease both;
+}
+.nuv-bolla {
+  position: relative;
+  max-width: min(420px, 88vw);
+  color: var(--testo);
+  font-family: var(--mano); font-size: .95rem; line-height: 1.6;
+  text-align: center; text-wrap: balance;
+  opacity: 0; transform: rotate(-2deg) scale(.72);
+  transition: opacity .12s ease, transform .26s cubic-bezier(.34, 1.62, .58, 1);
+}
+.nuv-bolla.vista { opacity: 1; transform: rotate(-2deg) scale(1); }
+.nuv-guscio { position: absolute; overflow: visible; pointer-events: none; max-width: none; max-height: none; }
+.nuv-forma {
+  fill: color-mix(in srgb, var(--surface) 96%, transparent);
+  stroke: var(--contorno); stroke-width: 3.4; stroke-linejoin: round;
+}
+.nuv-ombra {
+  fill: color-mix(in srgb, var(--contorno) 52%, transparent);
+  stroke: color-mix(in srgb, var(--contorno) 52%, transparent); stroke-width: 3.4;
+  transform: translate(3px, 4px);
+}
+.nuv-dentro { position: relative; padding: 1.1rem 1.6rem 1.15rem; display: grid; gap: .85rem; justify-items: center; }
+.nuv-testo { margin: 0; }
+.nuv-bolla.attenzione .nuv-forma { fill: color-mix(in srgb, var(--rosso) 12%, var(--surface)); stroke: var(--rosso); }
+.nuv-bolla.attenzione .nuv-ombra { fill: color-mix(in srgb, var(--rosso) 45%, transparent); stroke: color-mix(in srgb, var(--rosso) 45%, transparent); }
+@media (prefers-reduced-motion: reduce) {
+  .nuv-velo { animation: none; }
+  .nuv-bolla, .nuv-bolla.vista { transition: none; transform: none; opacity: 1; }
+}

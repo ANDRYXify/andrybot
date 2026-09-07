@@ -17412,7 +17412,9 @@ function collegaCancella() {
   btn.addEventListener('click', () => conErrore(async () => {
     btn.disabled = true;
     const r = await api('/api/streamer/cancella', { method: 'POST', body: { conferma: inp.value.trim() } });
-    alert(L('Fatto: non è rimasto niente di tuo. Adesso esci.', 'Done: nothing of yours is left. Signing out now.', 'Hecho: no queda nada tuyo. Ahora sales.'));
+    const addio = L('Fatto: non è rimasto niente di tuo. Adesso esci.', 'Done: nothing of yours is left. Signing out now.', 'Hecho: no queda nada tuyo. Ahora sales.');
+    try { await window.SB_NUVOLETTA.dillo(addio, { attenzione: true, bottone: L('Esci', 'Sign out', 'Salir') }); }
+    catch (e) { alert(addio); }
     location.href = '/entra';
   }));
 }

@@ -17,6 +17,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-07
 
+- Quando la cancellazione è finita te lo dice una nuvoletta disegnata come il resto del sito, invece della finestrella grigia del browser.
 - Nella finestra di ricerca il Tab non esce più dietro al velo, Escape chiude da qualunque punto e chiudendo il cursore torna dove eri. Prima girava nella pagina sotto, che non si vede.
 - Il bot legge e risponde nella chat delle tue dirette YouTube, con gli stessi comandi, moduli e monete di Twitch. Si accende da Stato → Le tue piattaforme.
 - Nella sezione Andarsene si vede cosa c'è da cancellare scritto a parole — messaggi ricordati, citazioni, comandi — invece dei nomi interni del database.

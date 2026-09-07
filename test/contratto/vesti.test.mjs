@@ -15,7 +15,12 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { FONT_LINKPAGE } from '../../src/db.js';
+import { cartellaUsaEGetta } from '../aiuto.mjs';
+
+// Vedi css-pagina.test.mjs: importare src/db.js apre un database, e va aperto
+// uno usa-e-getta anche quando servono solo delle costanti.
+const casa = cartellaUsaEGetta('vesti-');
+const { FONT_LINKPAGE } = await import('../../src/db.js');
 import {
   FORME_OVL, MATERIE_OVL, CORNICI_OVL, COMP_OVL, FONT_OVL, PESO_OVL, MAIUSC_OVL,
   ANIM_ALERT, ANIM_CHAT, DIM_CHAT, DIM_WIDGET, USCITA_OVL,

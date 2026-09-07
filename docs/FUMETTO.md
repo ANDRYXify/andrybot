@@ -149,3 +149,24 @@ dipendenze si seguono da sole.
 l'elenco dei token con più larghezze lo ricava dalla tavolozza invece di
 elencarlo: la prima volta che l'ho scritto a mano mi ero scordato `--tratto-1`,
 che era proprio quello con più bordi morti.
+
+## La nuvoletta che parla dopo una cosa grossa
+
+`window.SB_NUVOLETTA.dillo(testo, { attenzione, bottone })`, in `aiuto.js`
+(che ha già `fumetto.js` in casa).
+
+`alert()` del browser è una finestra di sistema: font di sistema, bordo di
+sistema, la scritta «socialbot.live dice». In un sito disegnato a mano, coi
+contorni d'inchiostro, è l'unico pezzo che tradisce che sotto c'è un browser.
+Il messaggio adesso arriva come arriva tutto il resto: dentro una nuvoletta,
+con lo stesso guscio di `guscio()` e la stessa mano.
+
+Vale la pena farla bene perché è una finestra **modale**, quindi ha gli stessi
+doveri di quella della ricerca: tiene il fuoco dentro (col Tab non si finisce a
+girare nella pagina sotto, che non si vede), si chiude con Escape, e riporta il
+cursore dove era partito. Il guscio si ridisegna sulla misura vera del
+contenuto, dopo un `requestAnimationFrame`: prima il testo non ha ancora una
+larghezza, e la bolla verrebbe cucita addosso al vuoto.
+
+La variante `attenzione` è quella rossa che già esisteva per i suggerimenti: si
+usa per le cose che non si annullano.
