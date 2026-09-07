@@ -17,6 +17,14 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-07
 
+- Il filtro dei link guarda il dominio del link e non il testo intorno. Prima bastava nominare da qualche parte un sito permesso, o metterne uno buono davanti a quello vero, e il filtro si spegneva.
+- E non cancella piu i messaggi normali scritti col punto attaccato, tipo «lascia stare.io ci provo». Su quindici frasi di chat vere prima ne finivano cancellate dieci.
+- Lo scudo riconosce anche le ondate di follow cosi veloci da arrivare tutte insieme: erano proprio quelle che passavano.
+- E per dire che un'ondata e finta ora aspetta di aver visto quindici follow. Con sei, una ondata vera su dodici veniva scambiata per finta e i follower veri finivano rimossi.
+- Quando lo scudo si convince a meta ondata, riprende anche i follow arrivati prima, invece di partire da quel momento.
+- Il rilevamento dello stesso messaggio scritto da tanti account resta acceso anche se spegni l'elenco dei nomi da bot: prima si spegneva anche quello, senza dirlo.
+- Una parola vietata resta vietata anche scritta con un accento.
+- Se Twitch non risponde mentre lo scudo controlla l'eta di un account, ora riprova al messaggio dopo invece di lasciarlo per sempre senza controllo.
 - Quando il bot risponde a qualcuno, la risposta esce agganciata al messaggio: chi ha scritto la vede sotto la sua riga, anche se la chat nel frattempo è corsa avanti. Su Twitch e su Kick.
 - Il bot aspetta un momento prima di rispondere, come una persona che legge e scrive. Adesso quel momento tiene conto di quanto corre la chat: se vola risponde prima, se è calma si prende il suo tempo.
 - Il bot vede se chi gli scrive è moderatore, abbonato o VIP, e se è la prima volta che scrive nel tuo canale. Non cambia cosa risponde, cambia il modo: a un nuovo arrivato non dà per scontate le cose del canale.

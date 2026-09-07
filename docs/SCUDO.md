@@ -72,6 +72,15 @@ Questa è la domanda che decide se si bannano cento account, e sbagliarla costa
 più dell'attacco: bannare cento fan veri è un danno che non si recupera. Non si
 tira a indovinare, si **misura** — e senza chiamare Twitch.
 
+**La velocità.** Prima di guardare la forma si guarda la velocità, perché sotto
+una certa soglia la forma non dice più niente: con intervalli dell'ordine del
+millisecondo l'orologio li arrotonda a 0 e 1, e una fila di 0 e 1 ha la stessa
+dispersione di arrivi casuali. Risultato: l'ondata più veloce di tutte era
+l'unica che passava per gente vera — più l'attacco correva, meno lo scudo lo
+vedeva. Quindici follow a meno di cinque millisecondi l'uno dall'altro sono
+quindici follow in settanta millisecondi. Un canale enorme fa una decina di
+follow al secondo nei suoi momenti migliori: venti volte più lento.
+
 **La cadenza.** Le persone arrivano a caso: gli intervalli fra follow hanno una
 dispersione grande quanto la media — è un processo di Poisson, coefficiente di
 variazione attorno a 1. Una macchina arriva a passo regolare e il coefficiente
@@ -80,8 +89,29 @@ crolla. Sotto 0,45 non sono persone.
 **I nomi.** Se almeno tre account su dieci dell'ondata sono già riconosciuti dai
 pattern o dalla lista pubblica, il resto viene dallo stesso posto.
 
-Basta uno dei due. Se non c'è nessuno dei due, l'ondata ha l'aria di essere
+Basta uno dei tre. Se non c'è nessuno dei tre, l'ondata ha l'aria di essere
 genuina: si alza la serranda e si avvisa, **ma non si banna nessuno**.
+
+### Quanti follow servono per rispondere
+
+Il coefficiente di variazione di pochi campioni balla, e qui un errore dalla
+parte sbagliata toglie il follow a dei fan veri. Misurato su ondate di gente
+vera (intervalli esponenziali, ventimila giri per punto):
+
+| follow guardati | ondate genuine scambiate per macchine |
+|---|---|
+| 6 | 8,16% |
+| 10 | 1,34% |
+| 15 | 0,14% |
+| 20 | 0,01% |
+
+Il minimo è **quindici**. Le macchine restano riconosciute al 100% anche con
+quindici campioni e passo irregolare del 40%, quindi aspettare non costa niente
+in capacità di vedere.
+
+E sotto i quindici la risposta è **«non lo so ancora»**, che non è «no»: il
+giudizio si rifà a ogni follow finché non ci sono abbastanza dati. Prima era un
+«no» come un altro, e ci si tornava sopra solo al venticinquesimo follow.
 
 ## Bloccare sul nascere
 
@@ -89,6 +119,11 @@ Bannare solo i follow che arrivano dopo l'allarme lascia passare i primi — pro
 quelli che l'allarme lo hanno fatto scattare. Teniamo quindi chi ha seguito nella
 finestra, **per la sola durata della finestra**, così quando scatta l'attacco si
 prende tutta l'ondata, dal primo. Nomi e id spariscono appena la finestra scorre.
+
+Vale anche quando la certezza arriva tardi. L'allarme può scattare mentre il
+giudizio è ancora «non lo so ancora», e nel frattempo altri follow passano: la
+**prima volta che ci si convince** si riprende tutta l'ondata, non solo il
+follow di quel momento. Da lì in poi basta il singolo.
 
 Twitch banna un account per chiamata, con un tetto di 800 richieste al minuto per
 canale e la pratica consigliata sotto le 400 per la moderazione. La coda va a
@@ -106,6 +141,12 @@ faccia a metà.
 né da quanto esiste il suo account, conta che **lo stesso messaggio esca da molte
 bocche diverse** in pochi secondi. La ricerca sul fenomeno usa proprio la
 somiglianza del contenuto come rilevatore principale.
+
+Il coro **non dipende dall'elenco dei nomi**. Le tre difese in chat — nomi noti,
+coro, account appena nati — stavano dietro allo stesso interruttore: chi
+spegneva «nomi da bot», che è una difesa contro i follow-bot promozionali, si
+portava via anche la firma dell'hate-raid, e non gliel'aveva detto nessuno. Ora
+ogni difesa ha il suo interruttore, e il coro segue solo quello dello scudo.
 
 La firma normalizza via accenti, link, punteggiatura e spazi doppi — gli attacchi
 variano quei dettagli apposta. I messaggi corti e le parole singole **non entrano
@@ -176,21 +217,36 @@ e `coro`.
 
 ## Il collaudo
 
-`t_scudo.mjs` verifica i casi che contano davvero, e in particolare i due che si
-somigliano e vanno distinti:
+Questa sezione ha descritto per mesi le prove di un file, `t_scudo.mjs`, che non
+è mai esistito in nessun commit: tutto lo scudo non aveva una sola prova. Un
+documento che promette una rete che non c'è è peggio di un documento che non la
+promette, perché chi legge smette di guardare.
 
-- un'ondata a cadenza regolare viene riconosciuta come macchina;
-- **un picco irregolare di gente vera non viene toccato** — questo è il test che
-  protegge i fan;
-- sotto attacco l'assetto sale, Shield Mode e serranda si alzano, e **tutta**
-  l'ondata finisce bannata, primo compreso;
-- al rientro tutto torna com'era;
-- un coro di cinque account identici alza l'assetto e il messaggio sparisce;
-- venti persone che scrivono "lol" non alzano niente;
+Le prove ora ci sono, stanno in `test/unita/scudo.test.mjs` e girano dentro
+`npm test`. Coprono i casi che contano, e in particolare i due che si somigliano
+e vanno distinti:
+
+- un'ondata a passo regolare viene riconosciuta come macchina, anche col passo
+  che balla del 40%;
+- un'ondata così veloce da stare dentro pochi millisecondi pure — era l'unica
+  che passava;
+- **duemila ondate di gente vera non vengono toccate** (soglia: sotto lo 0,5%);
+- sotto i quindici follow la risposta è «non lo so ancora», non «no»;
+- sotto attacco l'assetto sale, serranda e Shield Mode si alzano, e **tutta**
+  l'ondata finisce bloccata, primo compreso;
+- un picco irregolare di gente vera alza la serranda e **non tocca nessuno**;
+- al rientro si riapre solo ciò che aveva chiuso lui;
+- un coro di quattro account identici alza l'assetto e il messaggio sparisce;
+- venti persone che scrivono «lol», o «w andry», non alzano niente;
 - la firma resiste ad accenti, link e punteggiatura cambiati;
-- un follow-bot viene **bloccato** e non solo bannato, mentre in chat si banna;
+- il coro funziona anche con l'elenco dei nomi spento;
+- un follow-bot viene **bloccato**, mentre in chat si banna;
 - la pulizia in prova non tocca niente, quella vera prende i due bot e **non**
-  sfiora né i fan veri né Nightbot.
+  sfiora né i fan veri né Nightbot;
+- un inciampo di rete non spegne per sempre il controllo di un account.
+
+Ogni prova è stata vista rossa rompendo il codice sotto: sedici rotture, sedici
+rossi. Due prove erano cieche alla prima stesura e sono state riscritte.
 
 ## Fonti
 

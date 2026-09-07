@@ -2,6 +2,15 @@
 // complesse. Le regole arrivano dalle impostazioni dello streamer
 // (dashboard): per ora l'unica regola è la lista di parole vietate.
 
+// Accenti via, minuscolo: «Nàpoli» e «napoli» sono la stessa cosa per chi
+// legge, e devono esserlo anche per il confronto. Vale per tutte e due le
+// misure: prima le parole vietate guardavano il testo com'era e le parole da
+// non dire lo guardavano senza accenti, cioe' la stessa idea misurata in due
+// modi nello stesso file. Bastava un accento per passare da una parte e non
+// dall'altra.
+const SEGNI = /[\u0300-\u036f]/g;
+const piatto = (s) => String(s || '').normalize('NFD').replace(SEGNI, '').toLowerCase();
+
 /**
  * Controlla un messaggio contro le impostazioni del canale.
  * @param {string} text testo del messaggio da valutare
@@ -13,9 +22,9 @@ export function checkMessage(text, settings = {}) {
   const vietate = Array.isArray(settings?.paroleVietate) ? settings.paroleVietate : [];
   if (!vietate.length) return { ok: true };
 
-  const testo = String(text || '').toLowerCase();
+  const testo = piatto(text);
   for (const parola of vietate) {
-    const p = String(parola || '').trim().toLowerCase();
+    const p = piatto(parola).trim();
     // confronto come sottostringa, case-insensitive: copre sia la parola
     // isolata sia i tentativi di "incollarla" ad altro testo
     if (p && testo.includes(p)) return { ok: false, reason: 'parola vietata: ' + p };
@@ -24,11 +33,6 @@ export function checkMessage(text, settings = {}) {
 }
 
 // ------------------------------------------------------- risposte del bot
-
-// Accenti via, minuscolo: «Nàpoli» e «napoli» sono la stessa cosa per chi
-// legge, e devono esserlo anche per il confronto.
-const SEGNI = /[\u0300-\u036f]/g;
-const piatto = (s) => String(s || '').normalize('NFD').replace(SEGNI, '').toLowerCase();
 
 /**
  * Controlla una risposta che sta per dire IL BOT. Piu' severo di checkMessage:

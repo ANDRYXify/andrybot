@@ -29,26 +29,93 @@ export const ANTISPAM_DEFAULT = {
 
 const RANK = { tutti: 0, sub: 1, vip: 2, mod: 3 };
 
-// -------------------------------------------------------- rilevatori
-// URL o dominio "nudo" (es. twitch.tv/tizio, discord.gg/xyz, sito.com)
-const TLD = 'com|net|org|it|tv|gg|io|me|co|xyz|link|live|shop|online|store|info|app|club|tk|ml|ga|ly|to|be|us|dev|site|fun|top|vip|win|bet|cam';
-const RE_URL = new RegExp(`(https?:\\/\\/|www\\.|\\b[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.(?:${TLD})\\b(?:\\/[^\\s]*)?)`, 'i');
+// -------------------------------------------------------- i link
+//
+// Un link si guarda per quello che è: un HOST e un PERCORSO. Guardare il
+// messaggio invece del link lasciava passare tutto — bastava nominare da
+// qualche parte un dominio permesso («niente a che vedere con andryxify.it»),
+// o metterne uno permesso prima di quello vero, e il filtro si spegneva. Anche
+// «clips.twitch.tv-truffa.com» passava, perché il messaggio conteneva
+// «clips.twitch.tv» come pezzo di un altro dominio.
+//
+// E i link si guardano TUTTI. Prima si guardava solo il primo: un link buono
+// all'inizio faceva passare quello cattivo dopo.
+
+// TLD che accettiamo anche in un dominio NUDO (senza schema, senza «www.» e
+// senza percorso). Gli altri li accettiamo solo se il link si dichiara come
+// tale, perché in chat italiana il punto si scrive attaccato: «lascia stare.io
+// ci provo» non è un indirizzo, è la parola dopo il punto. Misurato su frasi
+// di chat vere: con la lista intera aperta ai domini nudi, dieci messaggi
+// normali su quindici finivano cancellati.
+const TLD_NUDI = 'com|net|org|tv|gg|xyz|tk|ml|ga|ly';
+const TLD = `${TLD_NUDI}|it|io|me|co|be|us|to|link|live|shop|online|store|info|app|club|dev|site|fun|top|vip|win|bet|cam`;
+// Al massimo otto pezzi prima del dominio: nessun indirizzo vero ne ha di piu',
+// e senza tetto una riga fatta apposta di «a.a.a.a.…» fa lavorare il motore
+// molto piu' del necessario per ogni messaggio che arriva.
+const ETICHETTE = '(?:[a-z0-9][a-z0-9-]{0,62}\\.){1,8}';
+const RE_LINK = new RegExp(
+  '(?:https?://|www\\.)[^\\s]+'                    // dichiarato: schema o «www.»
+  + `|\\b${ETICHETTE}(?:${TLD})/[^\\s]*`            // dominio con un percorso
+  + `|\\b${ETICHETTE}(?:${TLD_NUDI})\\b`,           // dominio nudo, solo i TLD non ambigui
+  'gi');
+
+// Tutti i link di un messaggio, come li ha scritti chi scrive.
+export function linkDi(testo) {
+  return String(testo || '').match(RE_LINK) || [];
+}
+
+// L'host di un indirizzo: senza schema, senza credenziali, senza porta, senza
+// percorso, senza «www.». Stringa vuota se non è un host.
+export function hostDi(link) {
+  let t = String(link || '').trim().toLowerCase();
+  t = t.replace(/^https?:\/\//, '');
+  t = t.replace(/^[^/?#]*@/, '');                    // utente:password@host
+  t = t.split(/[/?#\\]/)[0].split(':')[0];
+  t = t.replace(/^www\./, '').replace(/\.$/, '');
+  return /^[a-z0-9.-]+\.[a-z]{2,}$/.test(t) ? t : '';
+}
+
+// Il percorso, senza lo slash iniziale e senza query.
+export function percorsoDi(link) {
+  const t = String(link || '').replace(/^https?:\/\//, '').replace(/^[^/?#]*@/, '');
+  const i = t.search(/[/?#\\]/);
+  if (i === -1 || t[i] !== '/') return '';
+  return t.slice(i + 1).split(/[?#]/)[0].toLowerCase().replace(/\/$/, '');
+}
+
+// Un permesso è «dominio» oppure «dominio/inizio-del-percorso». Il dominio vale
+// anche per i suoi sottodomini (clips.twitch.tv sotto twitch.tv), MAI per un
+// dominio che se lo porta dentro come pezzo di nome (twitch.tv-truffa.com).
+export function linkPermesso(link, permessi) {
+  const h = hostDi(link);
+  if (!h) return false;
+  const p = percorsoDi(link);
+  for (const voce of permessi) {
+    const v = String(voce || '').toLowerCase().trim();
+    if (!v) continue;
+    const taglio = v.indexOf('/');
+    const dom = taglio === -1 ? v : v.slice(0, taglio);
+    const via = taglio === -1 ? '' : v.slice(taglio + 1).replace(/\/$/, '');
+    if (!dom || (h !== dom && !h.endsWith('.' + dom))) continue;
+    if (!via) return true;
+    if (p === via || p.startsWith(via + '/')) return true;
+  }
+  return false;
+}
 
 // domini permessi "di base": il canale stesso, le clip e il sito
 function whitelistBase(channel, cfg) {
   const l = String(channel || '').toLowerCase();
   const extra = (Array.isArray(cfg.whitelist) ? cfg.whitelist : [])
-    .map((d) => String(d || '').toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').trim())
+    .map((d) => String(d || '').toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '').trim())
     .filter(Boolean);
   return ['twitch.tv/' + l, 'clips.twitch.tv', 'andryxify.it', ...extra];
 }
 
 function haLinkNonPermesso(testo, channel, cfg) {
-  const m = RE_URL.exec(testo);
-  if (!m) return false;
-  const t = testo.toLowerCase();
-  for (const dom of whitelistBase(channel, cfg)) if (dom && t.includes(dom)) return false; // link permesso
-  return true;
+  const permessi = whitelistBase(channel, cfg);
+  for (const l of linkDi(testo)) if (!linkPermesso(l, permessi)) return true;
+  return false;
 }
 
 const tierUtente = (msg) => (msg.isBroadcaster || msg.isMod) ? 3 : msg.isVip ? 2 : msg.isSub ? 1 : 0;
