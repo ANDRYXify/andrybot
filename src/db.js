@@ -1924,6 +1924,15 @@ export const memory = {
   recentMessages(channel, limit = 40) {
     return db.prepare('SELECT * FROM messages WHERE channel=? ORDER BY ts DESC LIMIT ?').all(channel, limit).reverse();
   },
+
+  // Ha scritto, questa persona, dopo un certo momento? Serve allo scudo per
+  // misurare i propri errori: un account segnato come «probabile macchina» che
+  // poi si mette a parlare in chat era una persona, e quel conto va tenuto.
+  haScrittoDopo(channel, user, da) {
+    const r = db.prepare('SELECT 1 FROM messages WHERE channel=? AND user=? AND from_bot=0 AND ts>? LIMIT 1')
+      .get(channel, String(user || '').toLowerCase(), Number(da) || 0);
+    return !!r;
+  },
   messagesSince(channel, sinceTs) {
     return db.prepare('SELECT * FROM messages WHERE channel=? AND ts>=? ORDER BY ts').all(channel, sinceTs);
   },

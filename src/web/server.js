@@ -30,7 +30,8 @@ import { GUIDE, paginaGuida, paginaIndice, paginaNovita, urlGuide } from './guid
 import * as novita from './novita.js';
 import { paginaManuale, paginaIndiceManuali, urlManuali, aiutiPerScheda } from './manuali.js';
 import { elenco as elencoComandi, normalizza as normalizzaComandi, collisioni as collisioniComandi, LIVELLI as LIVELLI_COMANDO, MODULI as MODULI_COMANDO } from '../features/comandi-registro.js';
-import { AntiBot } from '../features/antibot.js';
+import { AntiBot, erroriScudo } from '../features/antibot.js';
+import { statoCensimento } from '../features/punteggio.js';
 import { statoListaBot, registro as registroAntibot, segnalazioniAperte, risolviSegnalazione, sintesiRegistro, registra as registraAntibot, nomeBot, valutaAccount, assetto as assettoAntibot, sogliaRaffica, codaBan } from '../features/antibot.js';
 import { statoBackup, backupOra } from '../backup.js';
 import { risolviCanaleId } from '../features/youtube.js';
@@ -2344,6 +2345,12 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         bloccoSulNascere: cfg.bloccoSulNascere !== false,
         togliFollow: cfg.togliFollow !== false,
         pulizia: _pulizie.get(login) || null,
+        presenze: cfg.presenze !== false,
+        censimento: statoCensimento(),
+        // Quanto sbaglia lo scudo, contato sui suoi stessi giudizi: chi era
+        // stato segnato come «probabile macchina» e poi ha parlato in chat era
+        // una persona. Serve a tarare le soglie su un numero invece che a naso.
+        errori: erroriScudo(login),
       },
       sintesi: sintesiRegistro(login),
       segnalazioni: segnalazioniAperte(login).slice(0, 100),
