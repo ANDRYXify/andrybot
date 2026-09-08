@@ -39,6 +39,7 @@ colonna «c'è» è stata verificata nel codice.
 | **Simulatore** con scenari deterministici, precisione, richiamo e tempo di rilevamento | `simulatore.js` |
 | **Riconoscimento dei gruppi**: si tocca la fabbrica, non chi passava di lì | `gruppi.js` |
 | **Sei livelli** con punteggio continuo e tre modalità | `livelli.js` |
+| **Bonifica post-attacco** sui giudizi, con la conferma che è il numero | `bonifica.js` |
 | **Raid legittimo correlato**: sotto raid il coro si giudica sulla cadenza | `antibot.js` |
 | Dashboard, `/health`, prove automatiche (700+), cancelli | vari |
 
@@ -48,7 +49,6 @@ colonna «c'è» è stata verificata nel codice.
 |---|---|
 | **Analisi dei messaggi** | la firma confronta l'uguaglianza. Mancano zero-width, homoglyph, punycode, e la **similarità** (quasi-duplicati) |
 | **Reputazione locale con decadimento** | la rete è fra canali; manca la storia del singolo account, e il fatto che un errore di anni fa deve pesare meno |
-| **Dashboard investigativa dei follower** e bonifica post-attacco | c'è la pulizia per nomi noti, non l'indagine per intervallo, cluster e incidente |
 
 ## Sul linguaggio
 
@@ -154,8 +154,12 @@ scende di un gradino per volta. Il caso che l'ha motivata: un picco di gente
 vera alzava la serranda, cioè chiudeva la chat durante una clip andata bene.
 Per esteso: `docs/LIVELLI.md`.
 
-**G · La bonifica.** Indagine sui follower per intervallo, cluster e incidente;
-riepilogo prima di ogni operazione distruttiva; rapporto post-attacco.
+**F · La bonifica. — FATTA**
+
+Si ripulisce sui giudizi che l'incidente ha già scritto, non sull'orologio: chi
+è arrivato durante l'attacco senza nessun segnale contro resta dov'è, e non
+compare nemmeno fra i togliibili. Per eseguire si riscrive il numero di account,
+che cambia se cambia la lista. Per esteso: `docs/BONIFICA.md`.
 
 **H · La reputazione locale**, con decadimento: un account segnalato per errore
 anni fa non deve pesare per sempre.

@@ -134,13 +134,19 @@ export function segnaPicco(canale, { livello = '', quanti = 0 } = {}) {
 
 // Chi c'era, e come lo giudichiamo. Un giudizio più grave sostituisce uno più
 // lieve, mai il contrario: durante un attacco si scopre, non si dimentica.
-export function coinvolto(canale, login, giudizio = GIUDIZI.SOSPETTO, punti = 0) {
+export function coinvolto(canale, login, giudizio = GIUDIZI.SOSPETTO, punti = 0, userId = '') {
   const inc = aperto(canale);
   const l = norm(login);
   if (!inc || !l) return null;
   const gia = inc.coinvolti[l];
-  if (gia && (PESO[gia.giudizio] ?? 0) >= (PESO[giudizio] ?? 0)) return inc;
-  inc.coinvolti[l] = { giudizio, punti: Number(punti) || 0, ts: Date.now() };
+  // L'id si tiene anche quando il giudizio non cambia: senza, dopo l'attacco
+  // non si può fare niente a nessuno — Twitch vuole l'id, non il nome.
+  const id = String(userId || gia?.userId || '');
+  if (gia && (PESO[gia.giudizio] ?? 0) >= (PESO[giudizio] ?? 0)) {
+    if (id && !gia.userId) { gia.userId = id; programmaSalvataggio(); }
+    return inc;
+  }
+  inc.coinvolti[l] = { giudizio, punti: Number(punti) || 0, ts: Date.now(), userId: id };
   programmaSalvataggio();
   return inc;
 }
