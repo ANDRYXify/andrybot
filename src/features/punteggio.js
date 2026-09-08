@@ -171,7 +171,17 @@ export function punteggio(dati = {}) {
   const c = famigliaPresenza(dati.canaliInsieme);
   const d = famigliaComportamento(dati);
   const e = famigliaRete(dati.reteCanali);
-  const punti = a.punti + b.punti + c.punti + d.punti + e.punti;
+  // LA FIDUCIA, ed è l'unica cosa qui dentro che può togliere. Tutto il resto
+  // guarda indizi contro; senza qualcosa che sottragga, chi scrive in un canale
+  // da mesi resta in balìa di un'euristica sfortunata sul nome.
+  //
+  // Ha il segno perché la storia ce l'ha: chi è di casa toglie, chi lo scudo ha
+  // già fermato qui di recente aggiunge. E in nessuno dei due versi può
+  // decidere da sola — non è una famiglia forte, quindi al massimo fa guardare.
+  // È la ragione per cui un errore di ieri non diventa una condanna di domani:
+  // il precedente pesa, ma non arma niente.
+  const fid = Number(dati.sconto) || 0;
+  const punti = Math.max(0, a.punti + b.punti + c.punti + d.punti + e.punti - fid);
   // Una famiglia forte non e' «qualche punto in piu'»: e' la condizione per
   // poter toccare qualcuno. Senza, il punteggio serve solo a far guardare.
   //
@@ -183,8 +193,10 @@ export function punteggio(dati = {}) {
   return {
     punti,
     forte,
-    famiglie: { profilo: a.punti, nome: b.punti, presenza: c.punti, comportamento: d.punti, rete: e.punti },
-    motivi: [...e.motivi, ...b.motivi, ...c.motivi, ...a.motivi, ...d.motivi],
+    famiglie: { profilo: a.punti, nome: b.punti, presenza: c.punti, comportamento: d.punti, rete: e.punti, fiducia: -fid },
+    motivi: [...e.motivi, ...b.motivi, ...c.motivi, ...a.motivi, ...d.motivi,
+      ...(fid > 0 ? [`di casa in questo canale (-${fid})`] : []),
+      ...(fid < 0 ? [`ha un precedente recente qui (+${-fid})`] : [])],
     segnala: punti >= SOGLIA_SEGNALA,
     agisci: punti >= SOGLIA_AGISCI && forte,
   };

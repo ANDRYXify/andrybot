@@ -49,6 +49,7 @@ invece di ricordarsi com'era prima.
 | `coro` | 40 account, lo stesso messaggio in dodici secondi |
 | `chat-viva` | 30 persone che chiacchierano forte |
 | `raid-vero` | 300 persone arrivate da un raid annunciato da Twitch |
+| `abitue-sfortunati` | 60 bot e 3 persone vere il cui nome ha la stessa forma dei bot |
 
 Il tempo è dentro gli eventi, non nell'orologio: dieci minuti di attacco si
 giocano in un istante. È anche più corretto in produzione — Twitch ci dice
@@ -66,13 +67,18 @@ Oggi:
 
 | scenario | precisione | richiamo | note |
 |---|---|---|---|
-| ondata-veloce | 100% | 100% | |
+| ondata-veloce | 100% | 100% | 500 su 500 |
+| ondata-lenta | 100% | 100% | il gocciolamento si vede dopo due minuti e mezzo |
+| ondata-mista | 100% | 100% | le 40 persone in mezzo restano tutte |
+| abitue-sfortunati | 100% | 100% | i 3 abitué col nome sfortunato restano |
 | clip-virale | 100% | — | nessuno toccato |
 | chat-viva | 100% | — | nessuno toccato |
 | raid-vero | 100% | — | nessuno toccato |
-| coro | 100% | 92% | |
-| ondata-mista | **83%** | 100% | le persone in mezzo all'ondata si salvano solo in parte: serve il riconoscimento dei gruppi |
-| ondata-lenta | 100% | **0%** | il gocciolamento alza il sospetto ma non fa agire: manca il pezzo |
+| coro | 100% | 92,5% | tre account su quaranta scappano |
+
+Le due righe che erano rosse le hanno chiuse i **gruppi** (ondata mista dall'83%
+al 100% di precisione, ondata lenta dallo 0% al 100% di richiamo) e la
+**reputazione** (abitué sfortunati dal 95,2% al 100% di precisione).
 
 ## Cosa ha trovato appena acceso
 

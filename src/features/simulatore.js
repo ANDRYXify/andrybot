@@ -28,6 +28,7 @@
 // Il modello per esteso: docs/SIMULATORE.md.
 import { AntiBot, azzeraStati } from './antibot.js';
 import * as inc from './incidenti.js';
+import { memory as memoria } from '../db.js';
 
 // Dado con seme: le prove non devono dipendere dal caso, e due giri dello
 // stesso scenario devono dare esattamente la stessa cosa.
@@ -94,6 +95,7 @@ function unisci(...pezzi) {
 // Dove l'attesa è bassa c'è un pezzo di lavoro dichiarato, non un difetto
 // dimenticato.
 export const ATTESE = {
+  'abitue-sfortunati': { precisione: 100, richiamo: 100, vede: true },
   'ondata-veloce': { precisione: 100, richiamo: 100, vede: true },
   'ondata-lenta': { precisione: 100, richiamo: 100, vede: true },
   'clip-virale': { precisione: 100, richiamo: 100, vede: null },
@@ -146,6 +148,23 @@ export const SCENARI = {
     }
     return { descrizione: '30 persone che chiacchierano forte per venti secondi', attacco: false, eventi, verita };
   },
+  // Tre persone che scrivono nel canale da mesi, e che per sfortuna hanno un
+  // nome della stessa forma dei bot. Senza la fiducia guadagnata finirebbero
+  // nell'ondata: il giudizio è sull'insieme, e il loro nome è quello sbagliato.
+  'abitue-sfortunati': () => {
+    const r = dado(21);
+    const m = macchina({ quanti: 60, passoMs: 30, jitter: 0.15, r });
+    const sfortunati = ['zzq900x11', 'zzq901x22', 'zzq902x33'];
+    const eventi = [...m.eventi];
+    const verita = { ...m.verita };
+    sfortunati.forEach((login, i) => {
+      eventi.push({ tipo: 'follow', ts: 200 + i * 300, login, userId: 'p' + login });
+      verita[login] = 'persona';
+    });
+    eventi.sort((a, b) => a.ts - b.ts);
+    return { descrizione: '60 bot, e in mezzo tre abitué col nome sfortunato', attacco: true, eventi, verita, abitue: sfortunati };
+  },
+
   'raid-vero': () => {
     const r = dado(17);
     const p = persone({ quanti: 300, mediaMs: 60, r });
@@ -194,6 +213,17 @@ export async function gioca(sc, { canale = 'prova' } = {}) {
     getUserByLogin: async () => null,
   };
   azzeraStati();          // due attacchi giocati di fila non si mescolano
+  // Gli abitué dello scenario hanno una storia in questo canale, e la storia è
+  // in chat: si scrive davvero, come l'avrebbe scritta il bot vero.
+  if (sc.abitue?.length) {
+    const otto = Date.now() - 240 * 86400000;
+    for (const l of sc.abitue) {
+      // sessanta messaggi sparsi negli ultimi otto mesi: una presenza, non un
+      // volume — un account che scrive quattrocento righe in un'ora è sospetto,
+      // non affidabile, e la fiducia deve venire dal tempo.
+      for (let i = 0; i < 60; i++) memoria.logMessage(canale, l, l, 'ciao ragazzi come va oggi ' + i, false, otto + i * 4 * 86400000);
+    }
+  }
   const scudo = new AntiBot({ helix });
 
   // Si guarda dove passano tutti i verdetti. Cancellare un messaggio è colpire

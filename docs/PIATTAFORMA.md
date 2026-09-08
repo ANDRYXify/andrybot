@@ -40,6 +40,7 @@ colonna «c'è» è stata verificata nel codice.
 | **Riconoscimento dei gruppi**: si tocca la fabbrica, non chi passava di lì | `gruppi.js` |
 | **Sei livelli** con punteggio continuo e tre modalità | `livelli.js` |
 | **Bonifica post-attacco** sui giudizi, con la conferma che è il numero | `bonifica.js` |
+| **Reputazione locale** con decadimento: la storia di un account in quel canale | `reputazione.js` |
 | **Raid legittimo correlato**: sotto raid il coro si giudica sulla cadenza | `antibot.js` |
 | Dashboard, `/health`, prove automatiche (700+), cancelli | vari |
 
@@ -48,7 +49,6 @@ colonna «c'è» è stata verificata nel codice.
 | pezzo | perché pesa |
 |---|---|
 | **Analisi dei messaggi** | la firma confronta l'uguaglianza. Mancano zero-width, homoglyph, punycode, e la **similarità** (quasi-duplicati) |
-| **Reputazione locale con decadimento** | la rete è fra canali; manca la storia del singolo account, e il fatto che un errore di anni fa deve pesare meno |
 
 ## Sul linguaggio
 
@@ -133,10 +133,6 @@ Appena acceso ha trovato **cinque difetti veri**, nessuno dei quali si vedeva da
 fuori — compresi novanta falsi positivi su trecento in un raid legittimo. Per
 esteso, coi conti: `docs/SIMULATORE.md`.
 
-**D · I messaggi.** Normalizzazione Unicode, zero-width, homoglyph, punycode.
-Similarità invece della sola uguaglianza (SimHash o Jaccard su token). Domini
-mai visti prima.
-
 **D · I gruppi. — FATTA**
 
 Chi è arrivato insieme si riconosce dalla forma del nome, che è gratis. Con un
@@ -161,8 +157,29 @@ Si ripulisce sui giudizi che l'incidente ha già scritto, non sull'orologio: chi
 compare nemmeno fra i togliibili. Per eseguire si riscrive il numero di account,
 che cambia se cambia la lista. Per esteso: `docs/BONIFICA.md`.
 
-**H · La reputazione locale**, con decadimento: un account segnalato per errore
-anni fa non deve pesare per sempre.
+**G · La reputazione locale. — FATTA**
+
+Tutto il resto dello scudo guarda indizi contro, e non ce n'è uno che sottragga:
+basta un'euristica infelice sul nome e chi scrive lì da otto mesi finisce nel
+mucchio. La fiducia si legge da quello che c'è già — i messaggi, gli incidenti —
+e ha un segno: chi è di casa toglie rischio, chi lo scudo ha già fermato lì di
+recente ne aggiunge. I fatti negativi si dimezzano ogni novanta giorni, i
+positivi non scadono.
+
+Non può armare niente da sola, e questo è il punto: la fiducia non è una
+famiglia forte, quindi al massimo fa guardare. Senza quel limite un errore si
+confermerebbe da sé — il giudizio peggiora la reputazione, la reputazione alza
+il rischio, il rischio giustifica il giudizio.
+
+Ha chiuso lo scenario `abitue-sfortunati`, dove tre persone vere avevano un nome
+della stessa forma dei bot: dal 95,2% al 100% di precisione. E ha fatto emergere
+che il lato negativo del modulo non era collegato a niente — nessuno passava mai
+i precedenti, quindi la reputazione poteva solo perdonare. Per esteso:
+`docs/REPUTAZIONE.md`.
+
+**H · I messaggi.** Normalizzazione Unicode, zero-width, homoglyph, punycode.
+Similarità invece della sola uguaglianza (SimHash o Jaccard su token). Domini
+mai visti prima. È l'ultimo pezzo del piano che resta.
 
 ## I principi, che restano
 
