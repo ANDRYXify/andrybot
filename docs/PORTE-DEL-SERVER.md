@@ -42,14 +42,62 @@ del server. Il suo collaudo rimette i quattro guasti uno per volta.
 È la mossa che vale di più e costa niente: senza password da indovinare, i
 tentativi automatici finiscono contro un muro il primo giorno.
 
-**Prima**, verifica di poter già entrare con la chiave — se non puoi, il resto
-ti chiude fuori:
+#### 1a. La chiave nasce sul computer da cui entri
+
+Questo è il punto su cui si sbaglia. La chiave privata deve stare **sul tuo
+computer**, non sul server. Il computer tiene un segreto, il server tiene la
+metà pubblica che gli permette di riconoscerlo. Una coppia creata sul server
+non serve a entrare sul server: serve al server per entrare altrove.
+
+Quindi, **sul tuo computer**:
+
+```
+ssh-keygen -t ed25519 -C "portatile"
+```
+
+Accetta il percorso che propone. Poi chiede una passphrase: è la password che
+cifra il **file** della chiave, e non ha niente a che vedere con la password
+del server. Mettila. Se qualcuno ti porta via il portatile, senza quella il
+file è carta straccia.
+
+Escono due file in `~/.ssh`:
+
+| file | cos'è | dove va |
+|---|---|---|
+| `id_ed25519` | la privata (nessuna estensione) | resta sul computer, non si copia da nessuna parte |
+| `id_ed25519.pub` | la pubblica | va sul server, in `~/.ssh/authorized_keys` |
+
+#### 1b. La pubblica sale sul server
+
+```
+ssh-copy-id utente@server
+```
+
+Chiede la password del server: è l'ultima volta. Se `ssh-copy-id` non c'è sulla
+tua macchina, la stessa cosa a mano:
+
+```
+cat ~/.ssh/id_ed25519.pub | ssh utente@server \
+  'mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys'
+```
+
+Su macOS, per non ridigitare la passphrase a ogni accesso:
+
+```
+ssh-add --apple-use-keychain ~/.ssh/id_ed25519
+```
+
+#### 1c. La prova, prima di toccare la configurazione
+
+Verifica di poter entrare **con la sola chiave**. Se non puoi, il passo dopo ti
+chiude fuori:
 
 ```
 ssh -o PasswordAuthentication=no -o PreferredAuthentications=publickey utente@server
 ```
 
-Se questo comando ti fa entrare, procedi. In `/etc/ssh/sshd_config`:
+Se questo comando ti fa entrare, procedi. Se ti rifiuta, fermati qui e sistema
+la chiave. In `/etc/ssh/sshd_config`:
 
 ```
 PasswordAuthentication no
@@ -103,6 +151,10 @@ disordine in più da ricordarsi.
 - **Non chiudere la 80** «tanto c'è HTTPS»: Let's Encrypt la usa per rinnovare
   il certificato, e il rinnovo fallito non avvisa nessuno finché il sito non si
   ferma.
+- **Non generare la chiave sul server.** La privata deve stare sulla macchina
+  da cui parti, altrimenti al momento di entrare non hai niente da mostrare.
+- **Non copiare mai `id_ed25519`** (quella senza estensione) su un'altra
+  macchina, né per mail né altrove. Si copia solo il `.pub`.
 - **Non toccare `sshd_config` senza una seconda sessione aperta.** È il modo
   classico di restare chiusi fuori da casa propria.
 - **Non aggiungere `ports:` a un servizio per fare una prova.** Se serve
