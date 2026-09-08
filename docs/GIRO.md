@@ -136,6 +136,48 @@ uno con il bersaglio. E lì non si chiede «c'è la classe che centra»: si chie
 **dov'è** — guardare la classe vorrebbe dire ricascare nel difetto, perché la
 classe c'era anche quando non spostava niente.
 
+## L'ingresso non deve spostare la scheda
+
+Il piazzamento incolla la scheda al bordo della finestra quando il bersaglio sta
+in basso: `top` vale allora il massimo consentito, e non c'è un pixel di
+avanzo. L'animazione d'ingresso però la traslava in giù di 14px. Contro quel
+bordo il risultato è obbligato: la scheda esce, e resta fuori per tutta la
+durata dell'entrata.
+
+Misurato campionando ogni 20ms su una finestra da 760: `top` scritto a 562, che
+è esattamente il limite, e il rettangolo vero a `577..762` per 370ms, cioè 2px
+oltre il bordo. Poi la trasformazione va a zero e tutto torna a posto.
+
+La correzione non è allargare il margine né sottrarre i 14px al calcolo — quello
+legherebbe una riga di JavaScript a un numero scritto in un keyframe. La
+correzione è che **un ingresso su un elemento incollato a un bordo non deve
+traslarlo**. Opacità e scala verso l'alto non possono farlo da nessun lato,
+perché rimpiccioliscono: l'invariante regge a tutti e quattro i bordi e per
+qualunque altezza della scheda. La scheda ha ora un ingresso suo,
+`gr-entra-fermo`, mentre il pannello di ricerca e il menù dei canali tengono
+quello con la salita: loro non sono incollati a niente.
+
+La scala sta nella proprietà `scale` e non dentro `transform`, così il
+`transform: none` della versione stretta non la spegne senza volerlo.
+
+### Perché il cancello era verde
+
+Questo difetto è vissuto con il cancello del giro acceso e verde. La prova
+misurava la posizione a 60ms e a 600ms dopo ogni passo, e l'animazione dura
+240ms: se il campione capitava fuori da quella finestra non c'era niente da
+vedere. Contato, col difetto ancora dentro: **quattro esecuzioni, tre verdi e
+una rossa**. Una su quattro.
+
+Una prova a tempo su una cosa che dura poco non è una prova, è una lotteria. La
+domanda giusta non è «dov'è la scheda adesso» ma «l'animazione che le è stata
+assegnata può spostarla». Il cancello ora legge i **fotogrammi chiave** della
+regola che il browser applica davvero (`getComputedStyle(...).animationName`, poi
+la `CSSKeyframesRule` con quel nome) e rifiuta qualunque `translate` là dentro.
+Una domanda sulla struttura ha sempre la stessa risposta.
+
+La prova a tempo resta, perché copre difetti che quella strutturale non vede: un
+`top` calcolato male, un bersaglio che si muove, i pulsanti sotto il bordo.
+
 ## E l'indirizzo della demo
 
 Trovato costruendo il cammino: nella **demo** il pezzo di indirizzo dopo il
@@ -155,5 +197,7 @@ Il contratto è in `test/contratto/giro.test.mjs`. Le ancore **e** il cammino
 stanno nello stesso collaudo, `scripts/verifica-giro.mjs`, perché vogliono lo
 stesso browser e la stessa pagina; ora è dentro `npm run cancelli`, perché un
 giro rotto è una cosa che lo streamer vede al primo minuto e nessuno di noi al
-centesimo. Il suo autoprova rimette i quattro difetti uno per volta:
-`node scripts/verifica-giro.mjs --selftest --rottura=N`.
+centesimo. Il suo autoprova rimette i cinque difetti uno per volta:
+`node scripts/verifica-giro.mjs --selftest --rottura=N`. Il quinto non sta nel
+codice ma in `anime.css`, quindi l'autoprova sa rompere anche quel file: un
+difetto che vive nel foglio di stile non è meno difetto.

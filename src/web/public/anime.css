@@ -53,6 +53,7 @@ a:hover { color: var(--acc); }
 @keyframes gr-fade { from { opacity: 0; } to { opacity: 1; } }
 
 @keyframes gr-entra { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes gr-entra-fermo { from { opacity: 0; scale: .985; } to { opacity: 1; scale: 1; } }
 
 #cerca-lancia {
   position: fixed; z-index: 70;
@@ -1739,7 +1740,7 @@ body.giro-aperto { overflow: hidden; }
   border: var(--contorno-sp) solid var(--contorno); border-width: var(--tratto-4);
   border-radius: var(--ang-mano-l);
   box-shadow: var(--alone-contorno), var(--ombra-ink-alta); padding: 1rem 1.1rem; display: grid; gap: .5rem;
-  animation: gr-entra .24s var(--an-vel) both;
+  animation: gr-entra-fermo .24s var(--an-vel) both;
 }
 .giro-conta { font-size: .68rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--testo-3); }
 .giro-carta h3 { font-size: 1.05rem; font-weight: 700; letter-spacing: -.01em; }

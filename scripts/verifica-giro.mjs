@@ -31,37 +31,45 @@ import { fileURLToPath } from 'node:url';
 
 const RAD = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const APP = path.join(RAD, 'src/web/public/app.js');
+const CSS = path.join(RAD, 'src/web/public/anime.css');
 const SELFTEST = process.argv.includes('--selftest');
 
 // I difetti veri, per l'autoprova. Rimessi uno per volta: un cancello provato su
 // uno solo racconta di essere verde sapendone un terzo.
 const ROTTURE = [
-  ['la classe al posto della posizione: lo stile scritto a mano vince, la classe no',
+  ['la classe al posto della posizione: lo stile scritto a mano vince, la classe no', APP,
     `      if (!stretto) {
         carta.style.top = Math.max(GIRO_MARGINE, Math.round((window.innerHeight - alto) / 2)) + 'px';
         carta.style.left = Math.max(GIRO_MARGINE, Math.round((window.innerWidth - largo) / 2)) + 'px';
       }
       return;`,
     `      return;`],
-  ['la stretta dentro la finestra, in verticale',
+  ['la stretta dentro la finestra, in verticale', APP,
     `    carta.style.top = fra(y, GIRO_MARGINE, window.innerHeight - alto - GIRO_MARGINE) + 'px';`,
     `    carta.style.top = y + 'px';`],
-  ['la stretta dentro la finestra, in orizzontale',
+  ['la stretta dentro la finestra, in orizzontale', APP,
     `    carta.style.left = fra(x, GIRO_MARGINE, window.innerWidth - largo - GIRO_MARGINE) + 'px';`,
     `    carta.style.left = x + 'px';`],
-  ['la posa un fotogramma dopo il testo, invece che insieme',
+  ['la posa un fotogramma dopo il testo, invece che insieme', APP,
     `  posiziona();`,
     `  requestAnimationFrame(posiziona);`],
+  // Questo difetto non sta nel codice ma nell'animazione, e non si vede
+  // leggendo: la scheda e' posizionata giusta, poi l'ingresso la trasla in giu'
+  // di 14px. Contro il bordo inferiore esce, per tutta la durata dell'entrata.
+  ['l\'ingresso che trasla la scheda fuori dal bordo a cui e\' incollata', CSS,
+    `  animation: gr-entra-fermo .24s var(--an-vel) both;`,
+    `  animation: gr-entra .24s var(--an-vel) both;`],
 ];
-const originaleApp = fs.readFileSync(APP, 'utf8');
+const originali = new Map([[APP, fs.readFileSync(APP, 'utf8')], [CSS, fs.readFileSync(CSS, 'utf8')]]);
 const quale = SELFTEST ? Number(process.argv.find((a) => /^--rottura=/.test(a))?.split('=')[1] || 0) : -1;
 if (SELFTEST) {
-  const [nome, da, a] = ROTTURE[quale] || [];
-  if (!da || !originaleApp.includes(da)) { console.log(`  ✗ non trovo il punto da rompere (${quale})`); process.exit(1); }
+  const [nome, file, da, a] = ROTTURE[quale] || [];
+  const testo = originali.get(file);
+  if (!da || !testo?.includes(da)) { console.log(`  ✗ non trovo il punto da rompere (${quale})`); process.exit(1); }
   console.log(`  rimetto: ${nome}\n`);
-  fs.writeFileSync(APP, originaleApp.replace(da, a));
+  fs.writeFileSync(file, testo.replace(da, a));
 }
-const ripristina = () => { if (SELFTEST) fs.writeFileSync(APP, originaleApp); };
+const ripristina = () => { if (SELFTEST) for (const [f, t] of originali) fs.writeFileSync(f, t); };
 process.on('exit', ripristina);
 const PUB = path.join(RAD, 'src/web/public');
 const CHROMIUM = process.env.CHROMIUM || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
@@ -156,7 +164,40 @@ const MISURA = () => {
 const esce = (m) => m.top < -1 || m.bottom > m.h + 1 || m.left < -1 || m.right > m.w + 1
   || (m.tastiSotto !== null && m.tastiSotto > m.h + 1);
 
+// L'ingresso della scheda non deve SPOSTARLA. Il piazzamento la incolla al
+// bordo della finestra quando il bersaglio sta in basso, e li' `top` vale gia'
+// il massimo consentito: una traslazione d'ingresso la porta fuori per forza.
+//
+// Questo si chiede ai FOTOGRAMMI CHIAVE, non a un campione preso durante
+// l'animazione. Il difetto e' esistito per giorni con questo cancello verde:
+// misurando a tempo lo si vede solo se il campione capita dentro i 240ms
+// dell'entrata, e due esecuzioni su tre non lo vedevano. Una domanda sulla
+// struttura ha sempre la stessa risposta.
+//
+// Opacita' e scala sono ammesse: rimpiccioliscono, quindi non possono uscire da
+// nessun bordo, per nessuna altezza della scheda.
+const INGRESSO = () => {
+  const c = document.querySelector('.giro-carta');
+  if (!c) return null;
+  const nome = getComputedStyle(c).animationName;
+  if (!nome || nome === 'none') return { nome: '', trovata: true, muove: false };
+  let trovata = false, muove = false, dove = '';
+  for (const foglio of document.styleSheets) {
+    let regole; try { regole = foglio.cssRules; } catch { continue; }
+    for (const r of regole) {
+      if (r.type !== CSSRule.KEYFRAMES_RULE || r.name !== nome) continue;
+      trovata = true;
+      for (const k of r.cssRules) {
+        const t = `${k.style.transform || ''} ${k.style.translate || ''}`;
+        if (/translate|matrix|\d+\s*px/i.test(t)) { muove = true; dove = `${k.keyText}: ${t.trim()}`; }
+      }
+    }
+  }
+  return { nome, trovata, muove, dove };
+};
+
 const fuoriSchermo = [];
+const ingressi = [];
 let passiCamminati = 0;
 
 for (const [lw, lh, quali] of CAMMINO) {
@@ -171,6 +212,10 @@ for (const [lw, lh, quali] of CAMMINO) {
     await p.evaluate(() => { document.querySelector('[data-giro="salta"]')?.click(); });
     await p.evaluate(() => { const r = [...document.querySelectorAll('[data-rifai-giro]')]; (r.find((x) => x.offsetParent !== null) || r[0])?.click(); });
     await p.waitForTimeout(400);
+    if (!ingressi.length) {
+      const g = await p.evaluate(INGRESSO);
+      if (g) ingressi.push(g);
+    }
 
     for (let i = 0; i < 12; i++) {
       // Subito e a scorrimento finito: deve stare dentro in tutti e due i momenti.
@@ -225,6 +270,10 @@ verde = dice(vuoti.length === 0, `ogni passo con un'ancora la trova: ${conFaro} 
 verde = dice(povere.length === 0, `ogni scheda ha almeno due passi da insegnare: ${schede.length} schede`, povere.join(', ')) && verde;
 verde = dice(rotture.length === 0, 'nessuna tappa muta e nessun errore di pagina', rotture.join(' · ')) && verde;
 verde = dice(passiCamminati >= 80, `passi camminati: ${passiCamminati}, su ${CAMMINO.length} misure di finestra`) && verde;
+const ing = ingressi[0];
+verde = dice(!!ing?.trovata, 'i fotogrammi dell\'ingresso della scheda si leggono', ing ? ing.nome : 'nessuna scheda') && verde;
+verde = dice(!!ing && !ing.muove, 'l\'ingresso della scheda non la sposta: non puo\' spingerla fuori dal bordo',
+  ing?.dove || '') && verde;
 verde = dice(fuoriSchermo.length === 0, 'la scheda del giro sta sempre dentro lo schermo, pulsanti compresi',
   fuoriSchermo.slice(0, 5).join(' · ') + (fuoriSchermo.length > 5 ? ` · e altri ${fuoriSchermo.length - 5}` : '')) && verde;
 
