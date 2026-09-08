@@ -40,8 +40,11 @@ pensa che il prodotto è rotto.
 
 Il contrappeso è `scripts/verifica-giro.mjs`: apre **ogni scheda** in un browser
 vero, costruisce le tappe come le costruisce il prodotto e verifica che ogni
-ancora esista e sia visibile. Oggi sono 67 ancore su 24 schede, tutte trovate.
-Gira fuori da `npm run cancelli` (che devono restare statici e istantanei).
+ancora esista e sia visibile. Oggi sono 75 ancore su 25 schede, tutte trovate.
+
+Serve davvero, e lo ha dimostrato subito: la scheda **Registro**, appena nata,
+aveva due passi puntati su carte che quando sono vuote non ci sono. Il faro si
+sarebbe acceso sul nulla. Riscritti su cose che ci sono sempre.
 
 E in `test/contratto/giro.test.mjs`: ogni scheda del prodotto ha la sua ricetta,
 ogni passo parla tre lingue, e nessuno può tornare a fare il giro delle carte.
@@ -80,10 +83,77 @@ attesa da indovinare.
 sono nascoste: i loro riquadri diventano di larghezza zero e la luce cadrebbe
 nel vuoto. Cambiando scheda il giro si chiude.
 
+## La scheda deve vedersi
+
+Un faro giusto su una scheda che non si vede non serve a niente. Il direttore ha
+mandato una foto: all'ultimo passo — quello che dice «c'è anche il manuale» — la
+scheda finiva in fondo alla pagina con i pulsanti tagliati sotto il bordo.
+
+Misurato prima di toccare niente: **sei schede su sette avevano almeno un passo
+con la scheda fuori dallo schermo**. Non era un caso limite dell'ultima tappa.
+Erano quattro difetti diversi, tre della stessa famiglia — una cosa che sembra
+fare qualcosa e non la fa.
+
+**1. Il centraggio non ha mai funzionato.** Un passo senza bersaglio si centrava
+con una classe che usa `transform`. La scheda ha anche un'animazione d'ingresso
+che finisce con `transform: none`, e un'animazione batte una regola normale:
+finita l'animazione, la traslazione che centra spariva. In numeri, la scheda
+stava mezza larghezza (190 px) a destra e novanta pixel sotto il centro vero.
+Da sempre, perché «abbastanza in mezzo» sembra in mezzo.
+
+**2. La posizione del passo prima restava appesa.** Il passo senza bersaglio
+aggiungeva la classe e usciva, senza toccare `top` e `left` scritti nello stile
+dell'elemento dal passo precedente. Lo stile scritto a mano vince su una classe:
+la classe si aggiungeva e non spostava niente. È il caso della foto.
+
+**3. «Sopra il bersaglio» senza guardare il bordo di sotto.** Si sceglieva sotto
+se ci stava, altrimenti sopra se cominciava dopo il margine — mai se finiva
+prima del bordo. Con il bersaglio ancora fuori schermo, «sopra il bersaglio»
+voleva dire duemila pixel più in giù anche per la scheda: misurato `top: 2391px`
+in una finestra alta 900.
+
+**4. La scheda cresceva dopo essere stata messa a posto**, e restava fuori per
+un paio di fotogrammi.
+
+Adesso la posizione la decide **un punto solo** e dipende **solo dalla tappa di
+adesso**. La geometria è uscita dal foglio di stile: non c'è più nessuna
+animazione con cui litigare. Tre cose la tengono ferma: una stretta dentro la
+finestra sui due assi, la posa nello stesso momento del testo invece che un
+fotogramma dopo, e un osservatore sulla misura della scheda per quando cambia
+altezza da sola.
+
+Una guardia che avevo scritto in più è stata tolta: faceva lo stesso lavoro
+della stretta, e due guardie per la stessa cosa vogliono dire che nessuna delle
+due si può mettere alla prova.
+
+Il cammino sta nello stesso collaudo: apre i giri veri e cammina ogni passo su
+quattro misure di finestra — due da computer, una stretta ma non telefono, e una
+da telefono dove la scheda la incolla in basso il foglio di stile. A ogni passo
+pretende che la scheda **e i suoi pulsanti** stiano dentro, misurati subito e a
+scorrimento finito. Compreso il **ritorno indietro al primo passo**, che è
+l'unico modo, passando dalla porta, di chiedere un passo senza bersaglio dopo
+uno con il bersaglio. E lì non si chiede «c'è la classe che centra»: si chiede
+**dov'è** — guardare la classe vorrebbe dire ricascare nel difetto, perché la
+classe c'era anche quando non spostava niente.
+
+## E l'indirizzo della demo
+
+Trovato costruendo il cammino: nella **demo** il pezzo di indirizzo dopo il
+cancelletto (`/?demo=1#scudo`) veniva ignorato, e chi apriva un link diretto a
+una scheda atterrava sempre sulla prima. La lettura dell'indirizzo stava dentro
+il ramo «utente vero», dopo l'uscita anticipata della demo: ora è una funzione
+sola, chiamata da tutti e due i rami.
+
 ## Dove sta il codice
 
 `src/web/public/app.js`: `GUIDE` (le ricette con le ancore), `tappeDi`,
-`_puntaTappa`, `_dovePasso`, `apriGiro`, `disegnaTappa`, `muoviGiro`,
-`chiudiGiro`, `riavviaGiro`. Lo stile in `anime.css` (`.giro-*`).
-Il contratto è in `test/contratto/giro.test.mjs`, le ancore in
-`scripts/verifica-giro.mjs`.
+`_puntaTappa`, `_dovePasso`, `apriGiro`, `disegnaTappa` (dentro c'è `posiziona`,
+che decide dove sta la scheda), `muoviGiro`, `chiudiGiro`, `riavviaGiro`,
+`apriDaIndirizzo`. Lo stile in `anime.css` (`.giro-*`).
+
+Il contratto è in `test/contratto/giro.test.mjs`. Le ancore **e** il cammino
+stanno nello stesso collaudo, `scripts/verifica-giro.mjs`, perché vogliono lo
+stesso browser e la stessa pagina; ora è dentro `npm run cancelli`, perché un
+giro rotto è una cosa che lo streamer vede al primo minuto e nessuno di noi al
+centesimo. Il suo autoprova rimette i quattro difetti uno per volta:
+`node scripts/verifica-giro.mjs --selftest --rottura=N`.

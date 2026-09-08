@@ -1726,7 +1726,6 @@ body.giro-aperto { overflow: hidden; }
   box-shadow: var(--alone-contorno), var(--ombra-ink-alta); padding: 1rem 1.1rem; display: grid; gap: .5rem;
   animation: gr-entra .24s var(--an-vel) both;
 }
-.giro-carta.al-centro { top: 50%; left: 50%; transform: translate(-50%, -50%); }
 .giro-conta { font-size: .68rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--testo-3); }
 .giro-carta h3 { font-size: 1.05rem; font-weight: 700; letter-spacing: -.01em; }
 .giro-testo { color: var(--testo-2); font-size: .9rem; line-height: 1.55; }

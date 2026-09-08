@@ -192,8 +192,14 @@ function inApp() {
   return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 }
 
+function apriDaIndirizzo() {
+  if (stato?.streamer?.status !== 'approved') return;
+  const h = decodeURIComponent((location.hash || '').replace(/^#/, ''));
+  if (h && schedaValida(h) && !schedaBloccata(h) && (!SOLO_ADMIN.has(h) || stato?.isAdmin)) schedaAttiva = h;
+}
+
 async function caricaStato() {
-  if (DEMO) { stato = statoDemo(); render(); montaDemo(); window.SB_SPLASH_OFF?.(); return; }
+  if (DEMO) { stato = statoDemo(); apriDaIndirizzo(); render(); montaDemo(); window.SB_SPLASH_OFF?.(); return; }
   try {
     stato = await api('/api/me');
   } catch (e) {
@@ -204,10 +210,7 @@ async function caricaStato() {
     return;
   }
 
-  if (stato?.streamer?.status === 'approved') {
-    const hInit = decodeURIComponent((location.hash || '').replace(/^#/, ''));
-    if (hInit && schedaValida(hInit) && !schedaBloccata(hInit) && (!SOLO_ADMIN.has(hInit) || stato?.isAdmin)) schedaAttiva = hInit;
-  }
+  apriDaIndirizzo();
   render();
   window.SB_SPLASH_OFF?.();
   caricaNovita();
@@ -2481,7 +2484,7 @@ const GUIDE = {
   scudo: { serve: ['La difesa dagli attacchi: le ondate di finti follower e gli account-bot che spammano in chat.', 'Defence against attacks: waves of fake followers and bot accounts spamming chat.', 'La defensa contra los ataques: oleadas de seguidores falsos y cuentas-bot que spamean el chat.'],
     come: [['Accendi la protezione: sotto trovi lo stato di adesso.', 'Turn the protection on: below you see how things stand right now.', 'Enciende la protección: debajo ves cómo está ahora.', '#chk-ab-attivo'], ['Scegli quanto presto reagire e cosa fare quando è sicuro.', 'Choose how soon to react and what to do when it is sure.', 'Elige con qué rapidez reaccionar y qué hacer cuando está seguro.', '#sel-ab-modo'], ['Se non ti fidi ancora, accendi la sola osservazione: scrive cosa farebbe e non tocca nessuno.', 'If you do not trust it yet, turn on observe-only: it logs what it would do and touches nobody.', 'Si aún no te fías, enciende solo observar: anota lo que haría y no toca a nadie.', '#chk-ab-avuoto'], ['Le due liste in fondo si salvano da sole.', 'The two lists at the bottom save themselves.', 'Las dos listas de abajo se guardan solas.', '#scudo-add-esenti']] },
   registro: { serve: ['Vedere cosa ha fatto lo scudo, decidere tu sui casi dubbi e ripulire dopo un attacco.', 'See what the shield did, decide the doubtful cases yourself and clean up after an attack.', 'Ver qué hizo el escudo, decidir tú los casos dudosos y limpiar después de un ataque.'],
-    come: [['In cima ci sono i numeri: oggi, sette giorni, quanto è rimasto da decidere.', 'At the top there are the numbers: today, seven days, how much is left to decide.', 'Arriba están los números: hoy, siete días, cuánto queda por decidir.', '#reg-numeri'], ['«Da rivedere» sono i casi incerti: guardi e decidi tu, uno per uno.', '«To review» are the uncertain cases: you look and decide, one by one.', '«Por revisar» son los casos inciertos: miras y decides tú, uno a uno.', '#scudo-segnalazioni'], ['Ogni attacco è una scheda sola: apri e vedi chi c\'era, diviso per giudizio.', 'Every attack is a single card: open it and see who was there, split by verdict.', 'Cada ataque es una sola ficha: ábrela y ves quién estaba, dividido por juicio.', '#reg-incidenti'], ['La pulizia dei follower passa in rassegna chi ti segue già.', 'The follower cleanup goes through who already follows you.', 'La limpieza de seguidores repasa quién ya te sigue.', '#scudo-scan-btn']] },
+    come: [['In cima ci sono i numeri: oggi, sette giorni, quanto è rimasto da decidere.', 'At the top there are the numbers: today, seven days, how much is left to decide.', 'Arriba están los números: hoy, siete días, cuánto queda por decidir.', '#reg-numeri'], ['Ogni intervento è scritto qui con il suo motivo e cosa ha risposto Twitch.', 'Every action is written here with its reason and what Twitch answered.', 'Cada acción se escribe aquí con su motivo y lo que respondió Twitch.', '#scudo-registro'], ['Quando c\'è qualcosa da decidere o un attacco da ripulire, qui sopra compaiono le carte che servono.', 'When there is something to decide or an attack to clean up, the cards you need appear above.', 'Cuando hay algo que decidir o un ataque que limpiar, arriba aparecen las fichas necesarias.', '#reg-numeri'], ['La pulizia dei follower passa in rassegna chi ti segue già.', 'The follower cleanup goes through who already follows you.', 'La limpieza de seguidores repasa quién ya te sigue.', '#scudo-scan-btn']] },
 };
 
 const _icoGuida = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1.3.5 2.6 1.5 3.5.8.8 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>';
@@ -3133,6 +3136,11 @@ function apriGiro(id, forzato = false) {
   document.body.classList.add('giro-aperto');
   _giro = { id, tappe, i: 0, velo, forzato };
   _giroUltimo = Date.now();
+  try {
+    const carta = velo.querySelector('.giro-carta');
+    _giro.occhio = new ResizeObserver(() => _giro?.posiziona?.());
+    _giro.occhio.observe(carta);
+  } catch (e) {  }
   disegnaTappa();
   requestAnimationFrame(() => velo.classList.add('dentro'));
 }
@@ -3183,26 +3191,33 @@ function disegnaTappa() {
   }
   const posiziona = () => {
     if (!_giro) return;
-    if (!t.bersaglio) { buco.hidden = true; carta.classList.add('al-centro'); return; }
+    carta.classList.toggle('al-centro', !t.bersaglio);
+    buco.hidden = !t.bersaglio;
+    const alto = carta.offsetHeight || 200;
+    const largo = carta.offsetWidth || 380;
+    const stretto = window.innerWidth <= 720;
+    if (!t.bersaglio) {
+      if (!stretto) {
+        carta.style.top = Math.max(GIRO_MARGINE, Math.round((window.innerHeight - alto) / 2)) + 'px';
+        carta.style.left = Math.max(GIRO_MARGINE, Math.round((window.innerWidth - largo) / 2)) + 'px';
+      }
+      return;
+    }
     const r = t.bersaglio.getBoundingClientRect();
-    buco.hidden = false;
-    carta.classList.remove('al-centro');
     buco.style.left = (r.left - 6) + 'px';
     buco.style.top = (r.top - 6) + 'px';
     buco.style.width = (r.width + 12) + 'px';
     buco.style.height = (r.height + 12) + 'px';
-    if (window.innerWidth <= 720) return;
-    const h = carta.offsetHeight || 200;
-    const w = carta.offsetWidth || 380;
+    if (stretto) return;
+    const fra = (v, min, max) => Math.min(Math.max(v, min), Math.max(min, max));
     const sotto = r.bottom + GIRO_MARGINE;
-    const sopra = r.top - GIRO_MARGINE - h;
-    if (sotto + h < window.innerHeight) carta.style.top = sotto + 'px';
-    else if (sopra > GIRO_MARGINE) carta.style.top = sopra + 'px';
-    else carta.style.top = (window.innerHeight - h - GIRO_MARGINE) + 'px';
-    const dentroSopra = sotto + h < window.innerHeight || sopra > GIRO_MARGINE;
-    carta.style.left = (dentroSopra
-      ? Math.min(Math.max(GIRO_MARGINE, r.left), window.innerWidth - w - GIRO_MARGINE)
-      : window.innerWidth - w - GIRO_MARGINE) + 'px';
+    const sopra = r.top - GIRO_MARGINE - alto;
+    const staSotto = sotto + alto < window.innerHeight;
+    const staSopra = sopra > GIRO_MARGINE;
+    const y = staSotto ? sotto : (staSopra ? sopra : window.innerHeight - alto - GIRO_MARGINE);
+    const x = (staSotto || staSopra) ? r.left : window.innerWidth - largo - GIRO_MARGINE;
+    carta.style.top = fra(y, GIRO_MARGINE, window.innerHeight - alto - GIRO_MARGINE) + 'px';
+    carta.style.left = fra(x, GIRO_MARGINE, window.innerWidth - largo - GIRO_MARGINE) + 'px';
   };
 
   carta.innerHTML = `
@@ -3218,7 +3233,7 @@ function disegnaTappa() {
       <button type="button" class="btn mini" data-giro="avanti">${ultima ? L('Ho capito', 'Got it', 'Entendido') : L('Avanti', 'Next', 'Siguiente')}</button>
     </div>`;
   _giro.posiziona = posiziona;
-  requestAnimationFrame(posiziona);
+  posiziona();
   carta.querySelector('[data-giro="avanti"]')?.focus({ preventScroll: true });
 }
 
@@ -3233,8 +3248,9 @@ function muoviGiro(d) {
 
 function chiudiGiro(finito) {
   if (!_giro) return;
-  const { id, velo } = _giro;
+  const { id, velo, occhio } = _giro;
   _giro = null;
+  try { occhio?.disconnect(); } catch (e) {  }
   document.body.classList.remove('giro-aperto');
   velo.classList.remove('dentro');
   setTimeout(() => velo.remove(), 220);
