@@ -298,7 +298,9 @@ body.menu-aperto .backdrop { opacity: 1; pointer-events: auto; }
               opacity var(--dur-elem) var(--ease), margin-top var(--dur-elem) var(--ease-quint);
   margin-top: .45rem; opacity: 1;
 }
-.carta-corpo > .carta-corpo-in { min-height: 0; min-width: 0; overflow: clip; overflow-clip-margin: var(--posto-inchiostro); }
+.carta-corpo > .carta-corpo-in { min-height: 0; min-width: 0; }
+.carta.pieghevole.chiusa > .carta-corpo > .carta-corpo-in,
+.carta.pieghevole.in-moto > .carta-corpo > .carta-corpo-in { overflow: clip; overflow-clip-margin: var(--posto-inchiostro); }
 .carta.pieghevole.chiusa > .carta-corpo { grid-template-rows: 0fr; opacity: 0; margin-top: 0; }
 
 .carta-riassunto { display: none; font-size: .84rem; color: var(--testo-3); margin-top: .3rem; }
@@ -657,22 +659,21 @@ details > summary:focus-visible { outline: 2px solid var(--acc); outline-offset:
   padding: .5rem 1.05rem; min-height: 38px;
   font-size: .9rem; font-weight: 600; font-family: inherit; cursor: pointer; text-decoration: none;
 
-  transform: translate(var(--mx, 0px), var(--my, 0px));
   transition: background var(--molla), transform var(--t-molla-su, .34s) var(--molla-medio, var(--ease)), box-shadow var(--molla);
 }
 @media (hover: hover) {
-.btn:hover { background: var(--acc-600); color: var(--su-acc); box-shadow: var(--alone-contorno), var(--ombra-ink-alta); text-decoration: none; transform: translate(calc(var(--mx, 0px) - 1px), calc(var(--my, 0px) - 2px)); }
+.btn:hover { background: var(--acc-600); color: var(--su-acc); box-shadow: var(--alone-contorno), var(--ombra-ink-salto); text-decoration: none; }
 }
-.btn:active { box-shadow: var(--alone-contorno), var(--ombra-ink-timbro); transform: translate(calc(var(--mx, 0px) + 2px), calc(var(--my, 0px) + 3px)); }
+.btn:active { box-shadow: var(--alone-contorno), var(--ombra-ink-timbro); }
 .btn:disabled { opacity: .5; cursor: wait; box-shadow: none; }
 .btn.grande { padding: .65rem 1.45rem; min-height: 44px; font-size: .98rem; }
 .btn.secondario { background: var(--surface); border: var(--contorno-sp) solid var(--contorno); color: var(--testo); box-shadow: var(--ombra-ink); }
 @media (hover: hover) {
-.btn.secondario:hover { background: var(--surface-2); color: var(--testo); border-color: var(--contorno); box-shadow: var(--ombra-ink-alta); }
+.btn.secondario:hover { background: var(--surface-2); color: var(--testo); border-color: var(--contorno); box-shadow: var(--ombra-ink-salto); }
 }
 .btn.pericolo { background: var(--rosso); }
 @media (hover: hover) {
-.btn.pericolo:hover { background: #bb2f39; box-shadow: var(--alone-contorno), var(--ombra-ink-alta); }
+.btn.pericolo:hover { background: #bb2f39; box-shadow: var(--alone-contorno), var(--ombra-ink-salto); }
 }
 .btn.mini { padding: .3rem .7rem; min-height: 0; font-size: .8rem; border-radius: var(--ang-mano); }
 
@@ -1520,7 +1521,7 @@ body::after {
 }
 @media (hover: hover) {
 .btn:not(.secondario):not(.pericolo):not(.testo):hover {
-  box-shadow: var(--alone-contorno), var(--ombra-ink-alta);
+  box-shadow: var(--alone-contorno), var(--ombra-ink-salto);
 }
 }
 

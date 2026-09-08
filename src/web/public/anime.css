@@ -738,13 +738,15 @@ body.pad-guida, body.pad-guida * { cursor: none !important; }
   transform: translate3d(var(--mx, 0px), var(--my, 0px), 0);
 }
 @media (hover: hover) {
-.btn:hover, .grp-btn:hover, .modello-pronto:hover {
+.grp-btn:hover, .modello-pronto:hover {
   transform: translate3d(var(--mx, 0px), calc(var(--my, 0px) - 1px), 0);
 }
+.btn:hover {
+  transform: translate3d(calc(var(--mx, 0px) - 3px), calc(var(--my, 0px) - 4px), 0) scale(1.02);
 }
-@media (hover: hover) {
-.btn:not(.secondario):not(.testo):hover {
-  opacity: .82; transform: translate3d(var(--mx, 0px), calc(var(--my, 0px) - 1px), 0);
+.carta.ovl-banco .btn:hover {
+  transform: translate3d(var(--mx, 0px), calc(var(--my, 0px) - 1px), 0);
+  box-shadow: var(--ombra-ink-alta);
 }
 }
 .btn:active, button.btn:active, a.btn:active, .grp-btn:active, .modello-pronto:active,

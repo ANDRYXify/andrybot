@@ -17,6 +17,10 @@ nome resta in casa. Non è una cosa da ricordarsi:
 
 ## 2026-09-08
 
+- I tasti si sollevano davvero quando ci passi sopra: si staccano dalla pagina invece di spostarsi di un pixel, e restano davanti a quello che hanno intorno.
+- L'ombra dei tasti non viene più tagliata dal bordo della scheda che li contiene. Su Safari era tagliata sempre, perché quel browser non conosce il permesso di sfogo.
+- Chi tiene acceso il movimento ridotto vede la profondità senza il movimento: l'ombra cresce lo stesso, il tasto non si sposta.
+
 - Il giro guidato non finisce più mezzo fuori dallo schermo. Su sette schede, sei avevano almeno un passo con la scheda dei suggerimenti tagliata dal bordo.
 - L'ultimo passo, quello che dice dove trovare il manuale, si piantava dove stava il passo prima. Adesso sta in mezzo, e in mezzo davvero.
 - Quando il passo indica qualcosa che sta più in basso nella pagina, il riquadro aspetta di stare dentro la finestra invece di seguirlo fuori.
