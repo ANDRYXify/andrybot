@@ -599,14 +599,14 @@ const BOT = {
 
 const MODERAZIONE = {
   slug: 'moderazione',
-  schede: ['regole', 'scudo'],
+  schede: ['regole', 'scudo', 'registro'],
   titolo: 'Manuale della moderazione: antispam e scudo anti-bot | SocialBot',
   h1: 'Manuale della moderazione: antispam e scudo anti-bot',
   desc: 'Cosa filtra il bot in chat, con quali soglie vere, come cresce il timeout ai recidivi, e come lo scudo para follow-bot e hate-raid senza colpire le persone.',
   aggiornata: OGGI,
   corpo: [
     { p: [
-      'Due mestieri diversi, due schede. <em>Moderazione</em> tiene pulita la chat di tutti i giorni: spam, link, muri di maiuscole, flood. <em>Scudo</em> serve nei dieci minuti in cui il canale è sotto attacco: follow-bot e hate-raid.',
+      'Tre mestieri diversi, tre schede. <em>Chat</em> tiene pulita la chat di tutti i giorni: spam, link, muri di maiuscole, flood. <em>Scudo</em> serve nei dieci minuti in cui il canale è sotto attacco: follow-bot e hate-raid. <em>Registro</em> racconta cosa è successo, e da lì si ripulisce.',
       'La regola che attraversa tutte e due: <strong>in dubbio si avvisa, non si banna</strong>. Un falso positivo qui vuol dire cacciare una persona vera, e costa più dell\'attacco.',
     ] },
 
@@ -643,6 +643,7 @@ const MODERAZIONE = {
 
     { h2: 'Lo scudo anti-bot' },
     { p: ['Sta in <em>Scudo</em>, ed è spento finché non lo accendi (serve il permesso di moderazione di Twitch). Sono cinque difese, messe in ordine di quanto poco rischiano di colpire una persona vera.'] },
+    { p: ['Se non ti fidi ancora, accendi la <strong>sola osservazione</strong>: lo scudo lavora normalmente e scrive nel registro cosa avrebbe fatto, senza bannare, bloccare o cancellare niente. È il modo di vederlo all\'opera sul tuo canale prima di lasciarlo agire.'] },
 
     { h3: '1. La raffica di follow' },
     { p: ['Un attacco follow-bot sono tanti follow in pochi secondi: non serve guardarli uno per uno, basta contarli. Di base <strong>10 follow in 30 secondi</strong> fanno scattare l\'allarme (da 3 a 100 follow, da 5 a 300 secondi).'] },
@@ -660,9 +661,17 @@ const MODERAZIONE = {
     { p: ['Twitch ha una modalità «Restricted» che nasconde i messaggi dei sospetti a tutti tranne i mod, ma <strong>non ha un\'API</strong>: nessun bot può accenderla. Questa è l\'equivalente più vicino che si può fare da fuori.'] },
     { p: ['Spento di base. Se acceso: chi ha l\'account da meno di <strong>24 ore</strong> (da 1 a 720) e non segue, non è sub, VIP o mod, si vede il messaggio <strong>trattenuto</strong> — oppure solo segnalato ai mod, se preferisci lasciarlo passare.'] },
 
-    { h3: '5. L\'assetto automatico' },
-    { p: ['Lo scudo ha tre assetti — <strong>calma</strong>, <strong>sospetto</strong>, <strong>attacco</strong> — e di base si alza e si riabbassa da solo, accendendo anche lo Shield Mode di Twitch quando serve. Non devi essere davanti al computer perché funzioni: è il punto.'] },
+    { h3: '5. I sei livelli' },
+    { p: ['Lo scudo ha sei livelli — <strong>calma</strong>, <strong>osservo</strong>, <strong>allerta</strong>, <strong>difesa</strong>, <strong>attacco</strong>, <strong>serrata</strong> — e di base si alza e si riabbassa da solo, accendendo anche lo Shield Mode di Twitch quando serve. Non devi essere davanti al computer perché funzioni: è il punto.'] },
+    { p: ['Si sale in fretta e si scende <strong>un gradino per volta</strong>, riaprendo subito quello che non serve più. Con «quanto presto reagire» scegli il passo: <strong>prudente</strong>, <strong>bilanciata</strong> o <strong>aggressiva</strong>. Un picco di gente vera alza l\'attenzione, non la serranda.'] },
     { p: ['Dentro l\'assetto ci sono due cose in più. Il <strong>coro</strong>: lo stesso messaggio da <strong>4 bocche diverse</strong> (da 3 a 20) in pochi secondi non è una coincidenza, è un raid coordinato. E il <strong>blocco sul nascere</strong>: quando l\'ondata è chiaramente artificiale si agisce in blocco invece che uno alla volta, perché uno alla volta si arriva tardi.'] },
+
+    { h2: 'Il registro: cosa è successo' },
+    { p: ['La terza scheda non ha impostazioni: racconta. In cima i numeri di oggi e degli ultimi sette giorni, e quanto è rimasto da decidere.'] },
+    { p: ['<strong>Da rivedere</strong> sono i casi in cui lo scudo ha avvisato senza agire: guardi e decidi tu, uno per uno, e la decisione finisce nelle tue liste.'] },
+    { p: ['<strong>Gli attacchi</strong> sono una scheda per volta, non trecento righe di registro: quando è cominciato, quanto è durato, e chi c\'era diviso per giudizio — certo, probabile, sospetto, legittimo. Da lì si <strong>ripulisce</strong>: si tolgono i follower giudicati bot, mentre chi è arrivato durante l\'attacco senza nessun segnale contro resta dov\'è e non compare nemmeno nell\'elenco. Per eseguire bisogna riscrivere il numero di account: se nel frattempo è cambiato, la conferma non vale più.'] },
+    { p: ['<strong>Rimaste in sospeso</strong> sono le azioni che non sono riuscite, quasi sempre perché Twitch non ha risposto. Non si perdono: si riprendono da lì.'] },
+    { p: ['<strong>Pulizia follower</strong> passa in rassegna chi ti segue già e ti dice chi puzza di bot. Non banna nulla da sola.'] },
 
     { h2: 'Come tararlo, in pratica' },
     { ul: [
@@ -674,7 +683,7 @@ const MODERAZIONE = {
 
     { h2: 'Quando sembra rotto' },
     { ul: [
-      '<strong>Non modera nessuno.</strong> Controlla che l\'interruttore dell\'antispam sia acceso e che chi scrive non sia mod o VIP: quelli sono esenti sempre.',
+      '<strong>Non modera nessuno.</strong> Controlla che l\'interruttore dell\'antispam sia acceso — è quello in cima alla carta, e quando è spento tutto il resto della carta si smorza — e che chi scrive non sia mod o VIP: quelli sono esenti sempre.',
       '<strong>Cancella cose che non dovrebbe.</strong> Guarda quale filtro: il motivo lo scrive in chat se «avvisa» è acceso. Le maiuscole scattano all\'80%, quindi «AHAHAH SIIIII» conta.',
       '<strong>Il tuo Discord viene cancellato.</strong> Mettilo in lista bianca: senza, è un link come un altro.',
       '<strong>Lo scudo non parte.</strong> Serve il permesso di moderazione di Twitch: se manca, si riautorizza dalla scheda Stato.',

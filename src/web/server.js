@@ -7,6 +7,7 @@
 // conoscenza, clip e regole, e consulta memoria e statistiche.
 // L'amministratore (andryxify) approva e gestisce gli streamer.
 import express from 'express';
+import { normalizzaAntispam, normalizzaAntibot } from './impostazioni-moderazione.js';
 import cookieSession from 'cookie-session';
 import multer from 'multer';
 import crypto from 'node:crypto';
@@ -3646,60 +3647,11 @@ STREAMER DI TWITCH e non c'entra con l'automazione del marketing.
         disambigua: m.disambigua !== false,
       };
     }
-    // antispam: elimina spam/link e timeout ai recidivi
-    if (b.antispam !== undefined) {
-      const a = b.antispam || {};
-      out.antispam = {
-        attivo: !!a.attivo,
-        link: a.link !== false,
-        linkTier: ['tutti', 'sub', 'vip', 'mod'].includes(a.linkTier) ? a.linkTier : 'sub',
-        whitelist: Array.isArray(a.whitelist)
-          ? a.whitelist.map((d) => String(d).trim().toLowerCase().slice(0, 100)).filter(Boolean).slice(0, 30)
-          : [],
-        ripetizioni: a.ripetizioni !== false,
-        maiuscole: a.maiuscole !== false,
-        menzioni: a.menzioni !== false,
-        flood: a.flood !== false,
-        simboli: !!a.simboli,
-        lungo: !!a.lungo,
-        lungoMax: Math.min(500, Math.max(50, Math.round(Number(a.lungoMax)) || 350)),
-        emoji: !!a.emoji,
-        emojiMax: Math.min(50, Math.max(1, Math.round(Number(a.emojiMax)) || 8)),
-        timeoutRecidivi: a.timeoutRecidivi !== false,
-        avvisa: a.avvisa !== false,
-      };
-    }
-    // anti-bot: protezione da follow-bot e hate-raid (stile Sery_Bot)
-    if (b.antibot !== undefined) {
-      const a = b.antibot || {};
-      const puliciNomi = (v) => (Array.isArray(v) ? v : String(v || '').split(/[\s,]+/))
-        .map((x) => String(x).toLowerCase().replace(/^@/, '').trim()).filter((x) => /^[a-z0-9_]{2,30}$/.test(x)).slice(0, 200);
-      out.antibot = {
-        attivo: !!a.attivo,
-        raffica: a.raffica !== false,
-        rafficaQuanti: Math.min(100, Math.max(3, Math.round(Number(a.rafficaQuanti)) || 10)),
-        rafficaSecondi: Math.min(300, Math.max(5, Math.round(Number(a.rafficaSecondi)) || 30)),
-        rafficaChiudiChat: a.rafficaChiudiChat !== false,
-        rafficaBanna: !!a.rafficaBanna,
-        nomiBot: a.nomiBot !== false,
-        listaAuto: a.listaAuto !== false,
-        azione: ['ban', 'timeout', 'segnala'].includes(a.azione) ? a.azione : 'ban',
-        timeoutSec: Math.min(1209600, Math.max(60, Math.round(Number(a.timeoutSec)) || 1209600)),
-        esenti: puliciNomi(a.esenti),
-        extra: puliciNomi(a.extra),
-        controllaAccount: !!a.controllaAccount,
-        soglia: Math.min(100, Math.max(30, Math.round(Number(a.soglia)) || 70)),
-        etaMinGiorni: Math.min(90, Math.max(0, Math.round(Number(a.etaMinGiorni)) || 3)),
-        chatNuovi: !!a.chatNuovi,
-        chatMinOre: Math.min(720, Math.max(1, Math.round(Number(a.chatMinOre)) || 24)),
-        chatNuoviAzione: ['elimina', 'segnala'].includes(a.chatNuoviAzione) ? a.chatNuoviAzione : 'elimina',
-        avvisa: a.avvisa !== false,
-        assettoAuto: a.assettoAuto !== false,
-        bloccoSulNascere: a.bloccoSulNascere !== false,
-        coroQuanti: Math.min(20, Math.max(3, Math.round(Number(a.coroQuanti)) || 4)),
-        togliFollow: a.togliFollow !== false,
-      };
-    }
+    // Le due sezioni della moderazione le normalizza un modulo a parte, ed e'
+    // una funzione pura: la regola «il salvato sta sotto, quello che arriva sta
+    // sopra» si prova senza accendere un server. Il perche' sta scritto li'.
+    if (b.antispam !== undefined) out.antispam = normalizzaAntispam(s.settings?.antispam, b.antispam);
+    if (b.antibot !== undefined) out.antibot = normalizzaAntibot(s.settings?.antibot, b.antibot);
     // ore guardate (watchtime): sempre attive salvo che lo streamer le spenga
     if (b.watchtime !== undefined) {
       out.watchtime = { attivo: (b.watchtime || {}).attivo !== false };

@@ -2198,7 +2198,7 @@ function vistaDisabilitato() {
 const FAMIGLIE = [
   { id: 'bot', nome: 'Il bot', parti: ['personalita', 'conoscenza', 'memoria'] },
   { id: 'comandi', nome: 'Comandi', parti: ['moduli', 'ascolto'] },
-  { id: 'moderazione', nome: 'Moderazione', parti: ['regole', 'scudo'] },
+  { id: 'moderazione', nome: 'Moderazione', parti: ['regole', 'scudo', 'registro'] },
   { id: 'interazione', nome: 'Giochi', parti: ['giochi', 'sondaggi', 'giveaway', 'penitenze'] },
   { id: 'inonda', nome: 'Regia', parti: ['regia', 'clip', 'musica'] },
 ];
@@ -2264,6 +2264,7 @@ const T_SCHEDA = {
   moduli: ['Comandi', 'Commands', 'Comandos'],
   regole: ['Moderazione', 'Moderation', 'Moderación'],
   scudo: ['Scudo anti-bot', 'Anti-bot shield', 'Escudo anti-bot'],
+  registro: ['Registro dello scudo', 'Shield log', 'Registro del escudo'],
   giochi: ['Giochi & classifiche', 'Games & leaderboards', 'Juegos y clasificaciones'],
   regia: ['Regia', 'Control room', 'Realización'],
   studio: ['Studio Web', 'Web Studio', 'Estudio Web'],
@@ -2324,7 +2325,9 @@ const DESC = {
   conoscenza: ['Cosa sa il bot su di te e sui tuoi contenuti.', 'What the bot knows about you and your content.', 'Lo que el bot sabe sobre ti y tu contenido.'],
   memoria: ['Le statistiche della chat e cosa il bot ricorda.', 'Chat stats and what the bot remembers.', 'Las estadísticas del chat y lo que el bot recuerda.'],
   moduli: ['Crea comandi, automazioni e contatori per la tua chat.', 'Create commands, automations and counters for your chat.', 'Crea comandos, automatizaciones y contadores para tu chat.'],
-  regole: ['Moderazione automatica: filtri, antispam e scudo anti-bot.', 'Automatic moderation: filters, anti-spam and anti-bot shield.', 'Moderación automática: filtros, antispam y escudo anti-bot.'],
+  regole: ['I filtri sui messaggi: parole vietate e antispam.', 'Message filters: banned words and anti-spam.', 'Los filtros de los mensajes: palabras prohibidas y antispam.'],
+  scudo: ['La difesa dagli attacchi: ondate di follow-bot e hate-raid.', 'Defence against attacks: follow-bot waves and hate-raids.', 'La defensa contra los ataques: oleadas de follow-bots y hate-raids.'],
+  registro: ['Cosa è successo: attacchi, interventi e casi da rivedere.', 'What happened: attacks, actions and cases to review.', 'Qué ha pasado: ataques, acciones y casos por revisar.'],
   giochi: ['Mini-giochi, monete e classifiche per la chat.', 'Minigames, coins and leaderboards for chat.', 'Minijuegos, monedas y clasificaciones para el chat.'],
   effetti: ['Effetti, suoni, GIF e video da lanciare in chat o in overlay — con libreria condivisa.', 'Effects, sounds, GIFs and videos to trigger in chat or overlay — with a shared library.', 'Efectos, sonidos, GIF y vídeos para lanzar en el chat o en el overlay — con biblioteca compartida.'],
   regia: ['Gestisci la diretta dal bot: titolo, categoria, tag, clip, marker, pubblicità e raid.', 'Run your stream from the bot: title, category, tags, clips, markers, ads and raids.', 'Gestiona el directo desde el bot: título, categoría, etiquetas, clips, marcadores, anuncios y raids.'],
@@ -2358,7 +2361,7 @@ const NOME_ADDON = {
   squadra: ['Squadra', 'Squadra', 'Squadra'],
 };
 
-const SOLO_TWITCH = ['regia', 'regole', 'emote'];
+const SOLO_TWITCH = ['regia', 'regole', 'scudo', 'registro', 'emote'];
 
 function soloTwitch(id) {
   return stato?.piattaforma === 'kick' && SOLO_TWITCH.includes(id);
@@ -2445,8 +2448,8 @@ const GUIDE = {
     come: [['In cima leggi il piano attuale e, se è una prova, fino a quando dura.', 'At the top you read your current plan and, if it’s a trial, how long it lasts.', 'Arriba lees tu plan actual y, si es una prueba, hasta cuándo dura.', '#sott-box'], ['Sotto vedi quali funzioni sono accese e quali no, senza gerghi.', 'Below you see which features are on and which aren’t, no jargon.', 'Debajo ves qué funciones están activas y cuáles no, sin jerga.', ''], ['Da «Gestisci» apri il portale dei pagamenti: fatture, carta e disdetta.', 'From “Manage” you open the payment portal: invoices, card and cancellation.', 'Desde «Gestionar» abres el portal de pagos: facturas, tarjeta y cancelación.', '']] },
   pagina: { serve: ['Avere una pagina pubblica con tutti i tuoi link (Twitch, social, Discord, donazioni) da mettere nella bio di Instagram o TikTok.', 'Have a public page with all your links (Twitch, socials, Discord, donations) to put in your Instagram or TikTok bio.', 'Tener una página pública con todos tus enlaces (Twitch, redes, Discord, donaciones) para poner en la bio de Instagram o TikTok.'],
     come: [['Scrivi titolo e sottotitolo: è quello che si legge in cima. La foto la prendo dal tuo profilo Twitch.', 'Write a headline and tagline: that’s what people read at the top. I take the picture from your Twitch profile.', 'Escribe título y subtítulo: es lo que se lee arriba. La foto la tomo de tu perfil de Twitch.', '#lp-headline'], ['Aggiungi i link con etichetta e indirizzo: l’icona giusta la riconosco dall’indirizzo.', 'Add your links with a label and address: I recognise the right icon from the address.', 'Añade los enlaces con etiqueta y dirección: el icono correcto lo reconozco por la dirección.', '#lp-blocchi'], ['Metti anche video e musica (YouTube, Spotify, TikTok…) e il blocco “La mia diretta”: il player resta lì e dice da sé se sei online.', 'Add video and music too (YouTube, Spotify, TikTok…) and the “My live stream” block: the player stays there and says by itself whether you are online.', 'Pon también vídeo y música (YouTube, Spotify, TikTok…) y el bloque “Mi directo”: el reproductor se queda ahí y dice él mismo si estás online.', '#lp-blocchi'], ['Scegli stile e colori, salva e apri l’anteprima.', 'Pick style and colours, save and open the preview.', 'Elige estilo y colores, guarda y abre la vista previa.', '#lp-salva']] },
-  regole: { serve: ['Moderazione automatica: filtra spam, link e flood, dà timeout ai recidivi e con lo scudo anti-bot para follow-bot e hate-raid.', 'Automatic moderation: filters spam, links and flood, times out repeat offenders and, with the anti-bot shield, blocks follow-bots and hate-raids.', 'Moderación automática: filtra spam, enlaces y flood, da timeout a los reincidentes y, con el escudo anti-bot, para follow-bots y hate-raids.'],
-    come: [['Attiva l’antispam.', 'Enable anti-spam.', 'Activa el antispam.', '#chk-as-attivo'], ['Scegli cosa filtrare (link, maiuscole, ripetizioni…).', 'Choose what to filter (links, caps, repetitions…).', 'Elige qué filtrar (enlaces, mayúsculas, repeticiones…).', '#chk-as-link'], ['Attiva l’anti-bot per follow-bot e hate-raid: rileva le ondate di follow, ferma gli account con nomi da bot e trattiene i messaggi degli account appena creati.', 'Turn on anti-bot for follow-bots and hate-raids: detect follow waves, stop bot-named accounts and hold messages from brand-new accounts.', 'Activa el anti-bot para follow-bots y hate-raids: detecta oleadas de follows, frena las cuentas con nombre de bot y retén los mensajes de cuentas recién creadas.', '#chk-ab-attivo'], ['Salva: il bot modera da solo.', 'Save: the bot moderates on its own.', 'Guarda: el bot modera solo.', '#btn-salva-antispam']] },
+  regole: { serve: ['I filtri sui messaggi: le parole che il bot non dirà mai, e l\'antispam che pulisce la chat da solo.', 'Message filters: the words the bot will never say, and the anti-spam that cleans chat on its own.', 'Los filtros de los mensajes: las palabras que el bot nunca dirá, y el antispam que limpia el chat solo.'],
+    come: [['Scrivi le parole vietate, una per riga.', 'Write the banned words, one per line.', 'Escribe las palabras prohibidas, una por línea.', '#txt-vietate'], ['Accendi l\'antispam: da lì in giù decidi cosa filtrare.', 'Turn on anti-spam: from there down you choose what to filter.', 'Enciende el antispam: de ahí para abajo eliges qué filtrar.', '#chk-as-attivo'], ['Scegli chi può postare link e quali domini passano sempre.', 'Choose who can post links and which domains always pass.', 'Elige quién puede publicar enlaces y qué dominios pasan siempre.', '#sel-as-linktier'], ['Salva: il bot modera da solo.', 'Save: the bot moderates on its own.', 'Guarda: el bot modera solo.', '#btn-salva-antispam']] },
   giochi: { serve: ['Minigiochi, monete e classifiche per tenere viva la chat.', 'Minigames, coins and leaderboards to keep chat alive.', 'Minijuegos, monedas y clasificaciones para animar el chat.'],
     come: [['Attiva i giochi.', 'Turn on games.', 'Activa los juegos.', '#chk-giochi'], ['Personalizza il nome della moneta e i premi.', 'Customize the coin name and the prizes.', 'Personaliza el nombre de la moneda y los premios.', '#inp-monete'], ['Gli spettatori giocano con !slot, !roulette, !pesca, !trivia…', 'Viewers play with !slot, !roulette, !fish, !trivia…', 'Los espectadores juegan con !slot, !roulette, !pesca, !trivia…', '#lista-gcmd']] },
   effetti: { serve: ['Suoni ed effetti in overlay della diretta, anche riscattabili con i punti canale.', 'Sounds and effects in the stream overlay, redeemable with channel points too.', 'Sonidos y efectos en el overlay del directo, también canjeables con puntos de canal.'],
@@ -2475,8 +2478,10 @@ const GUIDE = {
     come: [['La sfera al centro è il bot: ogni filo che si illumina è un pezzo di ragionamento in corso.', 'The sphere in the middle is the bot: every thread that lights up is a piece of reasoning under way.', 'La esfera del centro es el bot: cada hilo que se ilumina es un trozo de razonamiento en marcha.', '#mente3d-canvas'], ['Sotto, il cruscotto dice cosa sta facendo adesso e quanto ci mette: se tace, qui si vede perché.', 'Below, the dashboard says what it is doing right now and how long it takes: if it goes quiet, here you see why.', 'Abajo, el panel dice qué está haciendo ahora y cuánto tarda: si se calla, aquí se ve por qué.', '#mente-cruscotto']] },
   grafiche: { serve: ['Fare la locandina della diretta da postare sui social, con i tuoi colori e il tuo handle.', 'Make the stream poster to post on socials, with your colors and your handle.', 'Hacer el cartel del directo para publicar en redes, con tus colores y tu handle.'],
     come: [['Scrivi il titolo: è la riga grande della locandina.', 'Write the title: it is the big line of the poster.', 'Escribe el título: es la línea grande del cartel.', '#gr-titolo'], ['Scegli il colore d\'accento; il testo si adatta da solo perché resti leggibile.', 'Pick the accent color; the text adapts by itself so it stays readable.', 'Elige el color de acento; el texto se adapta solo para que siga legible.', '#gr-accento'], ['Scarica il PNG (o la versione animata) e pubblicalo: la didascalia è già pronta da copiare.', 'Download the PNG (or the animated one) and post it: the caption is ready to copy.', 'Descarga el PNG (o la versión animada) y publícalo: el pie de foto ya está listo para copiar.', '#gr-scarica']] },
-  scudo: { serve: ['Vedere cosa ha fermato l\'anti-bot e decidere tu sui casi dubbi, invece di scoprirlo dopo.', 'See what the anti-bot stopped and decide the doubtful cases yourself, instead of finding out later.', 'Ver qué ha parado el anti-bot y decidir tú los casos dudosos, en vez de enterarte después.'],
-    come: [['In cima c\'è lo stato: se lo scudo è acceso e cosa sta sorvegliando.', 'At the top there is the status: whether the shield is on and what it is watching.', 'Arriba está el estado: si el escudo está encendido y qué está vigilando.', '#scudo-stato'], ['«Da rivedere» sono i casi incerti: guardi il profilo e decidi tu, uno per uno.', '«To review» are the uncertain cases: you look at the profile and decide, one by one.', '«Por revisar» son los casos inciertos: miras el perfil y decides tú, uno a uno.', '#scudo-segnalazioni'], ['La pulizia dei follower passa in rassegna chi ti segue già e ti dice chi puzza di bot.', 'The follower cleanup goes through who already follows you and tells you who smells like a bot.', 'La limpieza de seguidores repasa quién ya te sigue y te dice quién huele a bot.', '#scudo-scan-btn']] },
+  scudo: { serve: ['La difesa dagli attacchi: le ondate di finti follower e gli account-bot che spammano in chat.', 'Defence against attacks: waves of fake followers and bot accounts spamming chat.', 'La defensa contra los ataques: oleadas de seguidores falsos y cuentas-bot que spamean el chat.'],
+    come: [['Accendi la protezione: sotto trovi lo stato di adesso.', 'Turn the protection on: below you see how things stand right now.', 'Enciende la protección: debajo ves cómo está ahora.', '#chk-ab-attivo'], ['Scegli quanto presto reagire e cosa fare quando è sicuro.', 'Choose how soon to react and what to do when it is sure.', 'Elige con qué rapidez reaccionar y qué hacer cuando está seguro.', '#sel-ab-modo'], ['Se non ti fidi ancora, accendi la sola osservazione: scrive cosa farebbe e non tocca nessuno.', 'If you do not trust it yet, turn on observe-only: it logs what it would do and touches nobody.', 'Si aún no te fías, enciende solo observar: anota lo que haría y no toca a nadie.', '#chk-ab-avuoto'], ['Le due liste in fondo si salvano da sole.', 'The two lists at the bottom save themselves.', 'Las dos listas de abajo se guardan solas.', '#scudo-add-esenti']] },
+  registro: { serve: ['Vedere cosa ha fatto lo scudo, decidere tu sui casi dubbi e ripulire dopo un attacco.', 'See what the shield did, decide the doubtful cases yourself and clean up after an attack.', 'Ver qué hizo el escudo, decidir tú los casos dudosos y limpiar después de un ataque.'],
+    come: [['In cima ci sono i numeri: oggi, sette giorni, quanto è rimasto da decidere.', 'At the top there are the numbers: today, seven days, how much is left to decide.', 'Arriba están los números: hoy, siete días, cuánto queda por decidir.', '#reg-numeri'], ['«Da rivedere» sono i casi incerti: guardi e decidi tu, uno per uno.', '«To review» are the uncertain cases: you look and decide, one by one.', '«Por revisar» son los casos inciertos: miras y decides tú, uno a uno.', '#scudo-segnalazioni'], ['Ogni attacco è una scheda sola: apri e vedi chi c\'era, diviso per giudizio.', 'Every attack is a single card: open it and see who was there, split by verdict.', 'Cada ataque es una sola ficha: ábrela y ves quién estaba, dividido por juicio.', '#reg-incidenti'], ['La pulizia dei follower passa in rassegna chi ti segue già.', 'The follower cleanup goes through who already follows you.', 'La limpieza de seguidores repasa quién ya te sigue.', '#scudo-scan-btn']] },
 };
 
 const _icoGuida = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1.3.5 2.6 1.5 3.5.8.8 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>';
@@ -2688,11 +2693,18 @@ document.addEventListener('click', (ev) => {
   requestAnimationFrame(misuraSopraBanco);
 });
 
+const T_PARTE = {
+  regole: ['Chat', 'Chat', 'Chat'],
+  scudo: ['Scudo', 'Shield', 'Escudo'],
+  registro: ['Registro', 'Log', 'Registro'],
+};
+
 function barraFamigliaHtml(id) {
   const f = famigliaDi(id);
   if (!f || f.parti.length < 2) return '';
   const voci = f.parti.map((p) => {
-    const t = tScheda(p, _nomeSchedaGrezzo(p));
+    const c = T_PARTE[p];
+    const t = c ? L(c[0], c[1], c[2]) : tScheda(p, _nomeSchedaGrezzo(p));
     const on = p === id;
     return `<button type="button" class="fam-scheda${on ? ' on' : ''}" data-scheda="${esc(p)}"`
       + `${on ? ' aria-current="page"' : ''}>${esc(t)}</button>`;
@@ -2703,7 +2715,7 @@ function barraFamigliaHtml(id) {
 const NOMI_SCHEDA = {
   personalita: 'Personalità', conoscenza: 'Conoscenza', memoria: 'Memoria',
   moduli: 'Comandi', ascolto: 'Comandi vocali',
-  regole: 'Filtri e regole', scudo: 'Scudo anti-bot',
+  regole: 'Filtri e regole', scudo: 'Scudo anti-bot', registro: 'Registro dello scudo',
   giochi: 'Giochi & classifiche', sondaggi: 'Sondaggi & predizioni',
   giveaway: 'Giveaway', penitenze: 'Penitenze',
   regia: 'Regia', clip: 'Clip', musica: 'Musica',
@@ -3339,6 +3351,7 @@ function vistaPiattaforma() {
     ${pannelloModuli()}
     ${pannelloRegole()}
     ${pannelloScudo()}
+    ${pannelloRegistro()}
     ${pannelloGiochi()}
     ${pannelloRegia()}
     ${pannelloStudio()}
@@ -12500,45 +12513,335 @@ async function caricaStatoListaBot() {
 }
 
 function pannelloScudo() {
+  const s = impostazioni();
+  const ab = s.antibot || {};
+  const sel = (v, def) => v === undefined ? def : v;
   return pannello('scudo', `
     <div class="carta">
-      <h2>${_hIco(ICO.scudo)}${L('Scudo anti-bot', 'Anti-bot shield', 'Escudo anti-bot')}</h2>
-      <p>${L('Cosa ha fatto lo scudo, in chiaro. Rivedi le segnalazioni, e insegna chi bloccare sempre e chi non toccare mai. Le regole le imposti in', 'What the shield did, in plain sight. Review the reports, and teach it who to always block and who to never touch. You set the rules in', 'Lo que hizo el escudo, a la vista. Revisa los avisos y enséñale a quién bloquear siempre y a quién no tocar. Las reglas se configuran en')} <a href="#regole" data-scheda="regole">${L('Moderazione', 'Moderation', 'Moderación')}</a>.</p>
-      <div id="scudo-stato" class="scudo-stato"><p class="vuoto">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+      <h2>${_hIco(ICO.scudo)}${L('Lo scudo', 'The shield', 'El escudo')}</h2>
+      <p>${L('Difesa dagli attacchi: le ondate di finti follower e gli account-bot che spammano in chat.', 'Defence against attacks: waves of fake followers and bot accounts spamming chat.', 'Defensa contra los ataques: oleadas de seguidores falsos y cuentas-bot que spamean el chat.')}
+      <strong class="primo-piano">${L('In dubbio avvisa, non caccia i fan veri.', 'When unsure it warns, it doesn’t kick real fans.', 'En duda avisa, no echa a los fans de verdad.')}</strong></p>
+      ${modTesta('chk-ab-attivo', ab.attivo, L('Attiva la protezione anti-bot', 'Enable anti-bot protection', 'Activa la protección anti-bot'))}
+      <div id="scudo-stato" class="spazio-sopra"></div>
+      <div class="mod-corpo" data-legato="chk-ab-attivo">
+        <div class="mod-sez">
+          <h3>${L('Come si comporta', 'How it behaves', 'Cómo se comporta')}</h3>
+          <div class="riga-flessibile">
+            <span class="suggerimento">${L('Quanto presto reagire:', 'How soon to react:', 'Con qué rapidez reaccionar:')}</span>
+            <select aria-label="${esc(L('Quanto presto alzare il livello di difesa', 'How soon to raise the defence level', 'Con que rapidez subir el nivel de defensa'))}" id="sel-ab-modo">
+              <option value="prudente" ${ab.modo === 'prudente' ? 'selected' : ''}>${L('prudente', 'cautious', 'prudente')}</option>
+              <option value="bilanciata" ${(ab.modo || 'bilanciata') === 'bilanciata' ? 'selected' : ''}>${L('bilanciata', 'balanced', 'equilibrada')}</option>
+              <option value="aggressiva" ${ab.modo === 'aggressiva' ? 'selected' : ''}>${L('aggressiva', 'aggressive', 'agresiva')}</option>
+            </select>
+            <span class="suggerimento">${L('Cosa fare quando è sicuro:', 'What to do when it is sure:', 'Qué hacer cuando está seguro:')}</span>
+            <select aria-label="${esc(L('Cosa fare quando scatta l\'allarme', 'What to do when the alert fires', 'Que hacer cuando salta la alarma'))}" id="sel-ab-azione">
+              <option value="ban" ${(ab.azione || 'ban') === 'ban' ? 'selected' : ''}>${L('bannare', 'ban', 'banear')}</option>
+              <option value="timeout" ${ab.azione === 'timeout' ? 'selected' : ''}>${L('timeout 14 giorni', '14-day timeout', 'timeout 14 días')}</option>
+              <option value="segnala" ${ab.azione === 'segnala' ? 'selected' : ''}>${L('solo segnalare', 'just report', 'solo avisar')}</option>
+            </select>
+          </div>
+          <p class="suggerimento">${L('Lo scudo ha sei livelli e sale piano: prima guarda, poi avvisa i moderatori, poi rallenta la chat, e solo alla fine la chiude ai soli follower. Questa scelta decide quanto presto passa da uno all\'altro.', 'The shield has six levels and climbs gradually: first it watches, then it warns the mods, then it slows the chat, and only at the end closes it to followers only. This choice decides how soon it moves between them.', 'El escudo tiene seis niveles y sube poco a poco: primero mira, luego avisa a los moderadores, luego ralentiza el chat, y solo al final lo cierra solo a seguidores. Esta opcion decide con que rapidez pasa de uno a otro.')}</p>
+          <div class="mod-griglia">
+            ${modVoce('chk-ab-avuoto', ab.aVuoto === true, L('Sola osservazione: decidi tutto tu, lo scudo non tocca nessuno', 'Observe only: you decide everything, the shield touches nobody', 'Solo observar: decides todo tú, el escudo no toca a nadie'))}
+            ${modVoce('chk-ab-avvisa', sel(ab.avvisa, true), L('Avvisa in chat quando interviene', 'Warn in chat when it acts', 'Avisa en el chat cuando actúa'))}
+          </div>
+          <p class="suggerimento">${L('In sola osservazione lo scudo lavora normalmente e scrive nel registro cosa avrebbe fatto, senza bannare, bloccare o cancellare niente. Serve per vederlo all\'opera sul tuo canale prima di lasciarlo agire.', 'In observe-only the shield works as usual and logs what it would have done, without banning, blocking or deleting anything. Use it to watch it work on your channel before letting it act.', 'En solo observar el escudo trabaja normalmente y anota lo que habría hecho, sin banear, bloquear ni borrar nada. Sirve para verlo en acción en tu canal antes de dejarlo actuar.')}</p>
+        </div>
+      </div>
     </div>
+
     <div class="carta">
-      <h2>${L('Da rivedere', 'To review', 'Por revisar')}</h2>
-      <p class="suggerimento">${L('Casi in cui lo scudo ha avvisato senza agire: decidi tu.', 'Cases where the shield warned without acting: you decide.', 'Casos en que el escudo avisó sin actuar: decides tú.')}</p>
-      <div id="scudo-segnalazioni"></div>
+      <h2>${_hIco(ICO.fulmine)}${L('Le regole dello scudo', 'The shield rules', 'Las reglas del escudo')}</h2>
+      <div class="mod-corpo" data-legato="chk-ab-attivo">
+        <div class="mod-sez">
+        <h3>${L('Le ondate di follow', 'Follow waves', 'Las oleadas de follows')}</h3>
+        ${modVoce('chk-ab-raffica', sel(ab.raffica, true), L('Rileva le ondate di follow (attacco follow-bot)', 'Detect follow waves (follow-bot attack)', 'Detecta oleadas de follows (ataque follow-bot)'))}
+        <div class="riga-flessibile">
+          <span class="suggerimento">${L('Allarme oltre', 'Alert above', 'Alarma por encima de')}</span>
+          <input aria-label="${esc(L('Allarme oltre quanti follow', 'Alert above how many follows', 'Alerta por encima de cuantos follows'))}" type="number" id="inp-ab-quanti" min="3" max="100" value="${Number(ab.rafficaQuanti) || 10}" style="width:5rem">
+          <span class="suggerimento">${L('follow in', 'follows in', 'follows en')}</span>
+          <input aria-label="${esc(L('In quanti secondi', 'Within how many seconds', 'En cuantos segundos'))}" type="number" id="inp-ab-secondi" min="5" max="300" value="${Number(ab.rafficaSecondi) || 30}" style="width:5rem">
+          <span class="suggerimento">${L('secondi', 'seconds', 'segundos')}</span>
+        </div>
+        <div class="mod-griglia spazio-sopra">
+          ${modVoce('chk-ab-chiudi', sel(ab.rafficaChiudiChat, true), L('Durante un\'ondata, chat ai soli follower', 'During a wave, followers-only chat', 'Durante una oleada, chat solo para seguidores'))}
+          ${modVoce('chk-ab-rafbanna', ab.rafficaBanna, L('Durante un\'ondata, banna anche i follow sospetti (aggressivo)', 'During a wave, also ban suspicious follows (aggressive)', 'Durante una oleada, banea también los follows sospechosos (agresivo)'))}
+        </div>
+        </div>
+
+        <div class="mod-sez">
+        <h3>${L('Chi fermare', 'Who to stop', 'A quién parar')}</h3>
+        <div class="mod-griglia">
+          ${modVoce('chk-ab-nomi', sel(ab.nomiBot, true), L('Account con nomi da follow-bot noti', 'Accounts with known follow-bot names', 'Cuentas con nombres de follow-bot conocidos'))}
+          ${modVoce('chk-ab-listaauto', sel(ab.listaAuto, true), L('Usa la lista di bot noti che si aggiorna da sola', 'Use the self-updating known-bot list', 'Usa la lista de bots conocidos que se actualiza sola'))}
+          ${modVoce('chk-ab-presenze', sel(ab.presenze, true), L('Chi guarda molti canali insieme senza scrivere mai', 'Accounts watching many channels at once without ever writing', 'Quien mira muchos canales a la vez sin escribir nunca'))}
+          ${modVoce('chk-ab-account', ab.controllaAccount, L('Controlla ogni nuovo follower: appena creato, senza foto, bio vuota', 'Check every new follower: brand-new, no picture, empty bio', 'Revisa cada nuevo seguidor: recién creada, sin foto, bio vacía'))}
+        </div>
+        <p class="suggerimento" id="lp-ab-lista">${L('Controllo la lista…', 'Checking the list…', 'Comprobando la lista…')}</p>
+        <p class="suggerimento">${L('Chi guarda molti canali non viene toccato: la segnalazione finisce nel registro. Il controllo di ogni follower fa una richiesta a Twitch per ogni follow.', 'Accounts watching many channels are never acted on: the report goes to the log. Checking every follower makes one Twitch request per follow.', 'A quien mira muchos canales no se le toca: el aviso va al registro. Revisar cada seguidor hace una petición a Twitch por cada follow.')}</p>
+        </div>
+
+        <div class="mod-sez">
+        <h3>${L('Gli account appena creati', 'Brand-new accounts', 'Las cuentas recién creadas')}</h3>
+        ${modVoce('chk-ab-chatnuovi', ab.chatNuovi, L('Trattieni i messaggi degli account appena creati', 'Hold messages from brand-new accounts', 'Retén los mensajes de las cuentas recién creadas'))}
+        <div class="riga-flessibile">
+          <span class="suggerimento">${L('Account più giovane di', 'Account younger than', 'Cuenta con menos de')}</span>
+          <input aria-label="${esc(L('Quante ore di eta\' minima dell\'account', 'Minimum account age in hours', 'Horas minimas de antiguedad de la cuenta'))}" type="number" id="inp-ab-chatore" min="1" max="720" value="${Number(ab.chatMinOre) || 24}" style="width:5rem">
+          <span class="suggerimento">${L('ore →', 'hours →', 'horas →')}</span>
+          <select aria-label="${esc(L('Cosa fare con gli account più giovani', 'What to do with younger accounts', 'Que hacer con las cuentas mas nuevas'))}" id="sel-ab-chatazione">
+            <option value="elimina" ${(ab.chatNuoviAzione || 'elimina') === 'elimina' ? 'selected' : ''}>${L('trattieni il messaggio', 'hold the message', 'retén el mensaje')}</option>
+            <option value="segnala" ${ab.chatNuoviAzione === 'segnala' ? 'selected' : ''}>${L('lascialo, avvisa i mod', 'leave it, warn mods', 'déjalo, avisa a los mods')}</option>
+          </select>
+        </div>
+        <p class="suggerimento">${L('La modalità «Restricted» di Twitch, con i messaggi visibili solo ai mod, non si può accendere da un bot: questo è l\'equivalente automatico più vicino. Follower, sub, VIP e mod non vengono mai toccati.', 'Twitch’s «Restricted» mode, with messages visible only to mods, can’t be set by a bot: this is the closest automatic equivalent. Followers, subs, VIPs and mods are never touched.', 'El modo «Restricted» de Twitch, con los mensajes visibles solo para los mods, no lo puede activar un bot: esto es el equivalente automático más cercano. Seguidores, subs, VIP y mods nunca se tocan.')}</p>
+        </div>
+      </div>
     </div>
+
+    <p class="mod-salva"><button class="btn" id="btn-salva-antibot">${L('Salva lo scudo', 'Save the shield', 'Guardar el escudo')}</button></p>
+
     <div class="carta">
-      <h2>${L('Interventi recenti', 'Recent actions', 'Acciones recientes')}</h2>
-      <div id="scudo-registro"></div>
-    </div>
-    <div class="carta">
-      <h2>${L('Pulizia follower', 'Follower cleanup', 'Limpieza de seguidores')}</h2>
-      <p class="suggerimento">${L('Controlla i follower più recenti contro la lista bot e le euristiche. Non banna nulla da solo: ti mostra i sospetti e decidi tu.', 'Checks your most recent followers against the bot list and heuristics. It bans nothing on its own: it shows suspects and you decide.', 'Comprueba tus seguidores más recientes contra la lista de bots y las heurísticas. No banea nada solo: te muestra sospechosos y decides tú.')}</p>
-      <p><button type="button" class="btn secondario" id="scudo-scan-btn" title="${esc(L('Ricontrolla i follower arrivati di recente e segnala quelli che sembrano finti. Non banna nessuno da solo', 'Re-checks recent followers and flags the ones that look fake. It bans nobody on its own', 'Revisa los seguidores recientes y señala los que parecen falsos. No banea a nadie por su cuenta'))}">${L('Scansiona i follower recenti', 'Scan recent followers', 'Escanear seguidores recientes')}</button></p>
-      <div id="scudo-scan-esito"></div>
-    </div>
-    <div class="carta">
-      <h2>${L('Le tue liste', 'Your lists', 'Tus listas')}</h2>
+      <h2>${_hIco(ICO.lista)}${L('Le tue liste', 'Your lists', 'Tus listas')}</h2>
+      <p class="suggerimento">${L('Queste due si salvano da sole, appena aggiungi o togli un nome.', 'These two save themselves as soon as you add or remove a name.', 'Estas dos se guardan solas en cuanto añades o quitas un nombre.')}</p>
       <div class="scudo-liste">
         <div>
           <h3>${L('Blocca sempre', 'Always block', 'Bloquear siempre')}</h3>
           <p class="suggerimento">${L('Questi nomi vengono sempre fermati.', 'These names are always stopped.', 'Estos nombres se paran siempre.')}</p>
-          <div class="riga-flessibile"><input aria-label="${esc(L('nome account', 'account name', 'nombre cuenta'))}" id="scudo-add-extra" maxlength="30" placeholder="${L('nome account', 'account name', 'nombre cuenta')}"><button type="button" class="btn secondario mini" data-scudo-add="extra">${L('Aggiungi', 'Add', 'Añadir')}</button></div>
+          <div class="riga-flessibile"><input aria-label="${esc(L('nome account da bloccare sempre', 'account name to always block', 'nombre de cuenta a bloquear siempre'))}" id="scudo-add-extra" maxlength="30" placeholder="${L('nome account', 'account name', 'nombre cuenta')}"><button type="button" class="btn secondario mini" data-scudo-add="extra">${L('Aggiungi', 'Add', 'Añadir')}</button></div>
           <div id="scudo-lista-extra" class="scudo-chips"></div>
         </div>
         <div>
           <h3>${L('Non toccare mai', 'Never touch', 'Nunca tocar')}</h3>
-          <p class="suggerimento">${L('Questi non vengono mai fermati (oltre a mod, VIP e sub).', 'These are never stopped (besides mods, VIPs and subs).', 'Estos nunca se paran (además de mods, VIP y subs).')}</p>
-          <div class="riga-flessibile"><input aria-label="${esc(L('nome account', 'account name', 'nombre cuenta'))}" id="scudo-add-esenti" maxlength="30" placeholder="${L('nome account', 'account name', 'nombre cuenta')}"><button type="button" class="btn secondario mini" data-scudo-add="esenti">${L('Aggiungi', 'Add', 'Añadir')}</button></div>
+          <p class="suggerimento">${L('Questi non vengono mai fermati, oltre a mod, VIP e sub.', 'These are never stopped, besides mods, VIPs and subs.', 'Estos nunca se paran, además de mods, VIP y subs.')}</p>
+          <div class="riga-flessibile"><input aria-label="${esc(L('nome account da non toccare mai', 'account name to never touch', 'nombre de cuenta que nunca tocar'))}" id="scudo-add-esenti" maxlength="30" placeholder="${L('nome account', 'account name', 'nombre cuenta')}"><button type="button" class="btn secondario mini" data-scudo-add="esenti">${L('Aggiungi', 'Add', 'Añadir')}</button></div>
           <div id="scudo-lista-esenti" class="scudo-chips"></div>
         </div>
       </div>
     </div>
   `);
+}
+
+function pannelloRegistro() {
+  return pannello('registro', `
+    <div class="carta">
+      <h2>${_hIco(ICO.torta)}${L('Come è andata', 'How it went', 'Cómo ha ido')}</h2>
+      <div id="reg-numeri"><p class="vuoto">${L('Carico…', 'Loading…', 'Cargando…')}</p></div>
+    </div>
+
+    <div class="carta" id="reg-carta-rivedere" hidden>
+      <h2>${_hIco(ICO.occhio)}${L('Da rivedere', 'To review', 'Por revisar')}</h2>
+      <p class="suggerimento">${L('Casi in cui lo scudo ha avvisato senza agire: decidi tu.', 'Cases where the shield warned without acting: you decide.', 'Casos en que el escudo avisó sin actuar: decides tú.')}</p>
+      <div id="scudo-segnalazioni"></div>
+    </div>
+
+    <div class="carta" id="reg-carta-incidenti" hidden>
+      <h2>${_hIco(ICO.fulmine)}${L('Gli attacchi', 'The attacks', 'Los ataques')}</h2>
+      <p class="suggerimento">${L('Un attacco per volta, non trecento righe di registro: quando è cominciato, quanto è durato, chi c\'era e cosa ha fatto lo scudo.', 'One attack at a time, not three hundred log lines: when it started, how long it lasted, who was there and what the shield did.', 'Un ataque cada vez, no trescientas líneas de registro: cuándo empezó, cuánto duró, quién estaba y qué hizo el escudo.')}</p>
+      <div id="reg-incidenti"></div>
+    </div>
+
+    <div class="carta" id="reg-carta-sospese" hidden>
+      <h2>${_hIco(ICO.attesa)}${L('Rimaste in sospeso', 'Left pending', 'Quedaron pendientes')}</h2>
+      <p class="suggerimento">${L('Azioni che non sono riuscite, quasi sempre perché Twitch non ha risposto. Non si perdono: si riprendono.', 'Actions that did not go through, almost always because Twitch did not answer. They are not lost: they can be resumed.', 'Acciones que no salieron, casi siempre porque Twitch no respondió. No se pierden: se retoman.')}</p>
+      <div id="reg-sospese"></div>
+      <p class="spazio-sopra"><button type="button" class="btn secondario" id="reg-riprova">${L('Riprova quelle in sospeso', 'Retry the pending ones', 'Reintenta las pendientes')}</button></p>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.lista)}${L('Interventi recenti', 'Recent actions', 'Acciones recientes')}</h2>
+      <div id="scudo-registro"></div>
+    </div>
+
+    <div class="carta">
+      <h2>${_hIco(ICO.utenti)}${L('Pulizia follower', 'Follower cleanup', 'Limpieza de seguidores')}</h2>
+      <p class="suggerimento">${L('Controlla i follower più recenti contro la lista bot e le euristiche. Non banna nulla da solo: ti mostra i sospetti e decidi tu.', 'Checks your most recent followers against the bot list and heuristics. It bans nothing on its own: it shows suspects and you decide.', 'Comprueba tus seguidores más recientes contra la lista de bots y las heurísticas. No banea nada solo: te muestra sospechosos y decides tú.')}</p>
+      <p><button type="button" class="btn secondario" id="scudo-scan-btn" title="${esc(L('Ricontrolla i follower arrivati di recente e segnala quelli che sembrano finti. Non banna nessuno da solo', 'Re-checks recent followers and flags the ones that look fake. It bans nobody on its own', 'Revisa los seguidores recientes y señala los que parecen falsos. No banea a nadie por su cuenta'))}">${L('Scansiona i follower recenti', 'Scan recent followers', 'Escanear seguidores recientes')}</button></p>
+      <div id="scudo-scan-esito"></div>
+    </div>
+  `);
+}
+
+function regQuando(ts) {
+  return scudoQuando(ts);
+}
+
+function regDurata(ms) {
+  const m = Math.max(0, Math.round(Number(ms) || 0) / 60000);
+  if (m < 1) return L('meno di un minuto', 'under a minute', 'menos de un minuto');
+  if (m < 60) return Math.round(m) + ' ' + L('minuti', 'minutes', 'minutos');
+  return (Math.round(m / 6) / 10) + ' ' + L('ore', 'hours', 'horas');
+}
+
+async function caricaRegistro() {
+  scudoWire();
+  regWire();
+  let d;
+  try { d = await api('/api/antibot/console'); }
+  catch (e) {
+    const box = document.getElementById('reg-numeri');
+    if (box) box.innerHTML = `<p class="vuoto">${L('Non disponibile ora.', 'Not available now.', 'No disponible ahora.')}</p>`;
+    return;
+  }
+  const s = d.stato || {}, sn = d.sintesi || {};
+  const lb = s.listaBot || {};
+  const quando = lb.aggiornata ? new Date(lb.aggiornata).toLocaleDateString() : '';
+  const inSospeso = Number(s.esecutore?.inSospeso || 0);
+  const numeri = document.getElementById('reg-numeri');
+  if (numeri) numeri.innerHTML = `
+    <div class="scudo-kpi">
+      <div class="kpi"><b>${sn.oggi || 0}</b><span>${L('oggi', 'today', 'hoy')}</span></div>
+      <div class="kpi"><b>${sn.settimana || 0}</b><span>${L('7 giorni', '7 days', '7 días')}</span></div>
+      <div class="kpi ${sn.aperte ? 'warn' : ''}"><b>${sn.aperte || 0}</b><span>${L('da rivedere', 'to review', 'por revisar')}</span></div>
+      <div class="kpi ${inSospeso ? 'warn' : ''}"><b>${inSospeso}</b><span>${L('in sospeso', 'pending', 'pendientes')}</span></div>
+      <div class="kpi"><b>${Number(lb.conteggio || 0).toLocaleString('it')}</b><span>${L('bot noti', 'known bots', 'bots conocidos')}${quando ? ' · ' + quando : ''}</span></div>
+    </div>
+    ${s.errori && s.errori.sbagliati ? `<p class="suggerimento spazio-sopra">${L('Segnalati e poi rivelatisi persone vere:', 'Flagged and then turned out to be real people:', 'Señalados y luego resultaron personas de verdad:')} <b>${s.errori.sbagliati}</b> ${L('su', 'out of', 'de')} ${s.errori.giudicati}.</p>` : ''}`;
+
+  const seg = document.getElementById('scudo-segnalazioni');
+  const cartaSeg = document.getElementById('reg-carta-rivedere');
+  const quante = (d.segnalazioni || []).length;
+  if (cartaSeg) cartaSeg.hidden = !quante;
+  if (seg && quante) seg.innerHTML = d.segnalazioni.map((v) => `
+      <div class="scudo-seg">
+        <div class="scudo-seg-info">
+          <b>@${esc(v.login || '?')}</b>
+          <span>${esc(scudoAzioneTesto(v.azione))} · ${esc(v.motivo || '')}</span>
+          <small>${regQuando(v.ts)}</small>
+        </div>
+        <div class="scudo-seg-azioni">
+          <button type="button" class="btn mini" data-scudo-ris="${esc(v.id)}" data-esito="blocca">${L('Blocca sempre', 'Always block', 'Bloquear')}</button>
+          <button type="button" class="btn secondario mini" data-scudo-ris="${esc(v.id)}" data-esito="permetti">${L('Permetti', 'Allow', 'Permitir')}</button>
+          <button type="button" class="btn secondario mini" data-scudo-ris="${esc(v.id)}" data-esito="ignora">${L('Ignora', 'Dismiss', 'Ignorar')}</button>
+        </div>
+      </div>`).join('');
+
+  const reg = document.getElementById('scudo-registro');
+  if (reg) reg.innerHTML = (d.registro && d.registro.length)
+    ? `<div class="scudo-reg">${d.registro.map((v) => `
+      <div class="scudo-reg-riga">
+        <span class="scudo-reg-a">${esc(scudoAzioneTesto(v.azione))}</span>
+        <span class="scudo-reg-chi">${v.login ? '@' + esc(v.login) : ''}</span>
+        <span class="scudo-reg-perche">${esc(v.motivo || '')}</span>
+        ${scudoEsito(v.esito)}
+        <small>${regQuando(v.ts)}</small>
+      </div>`).join('')}</div>`
+    : `<p class="vuoto">${L('Ancora nessun intervento registrato.', 'No actions recorded yet.', 'Aún no hay acciones registradas.')}</p>`;
+
+  caricaSospese(inSospeso);
+  caricaIncidenti();
+}
+
+async function caricaSospese(quante) {
+  const carta = document.getElementById('reg-carta-sospese');
+  if (!carta) return;
+  carta.hidden = !quante;
+  if (!quante) return;
+  const box = document.getElementById('reg-sospese');
+  if (!box) return;
+  try {
+    const d = await api('/api/antibot/sospese');
+    const righe = d.azioni || [];
+    box.innerHTML = righe.length
+      ? `<div class="scudo-reg">${righe.slice(0, 60).map((v) => `
+        <div class="scudo-reg-riga">
+          <span class="scudo-reg-a">${esc(scudoAzioneTesto(v.azione))}</span>
+          <span class="scudo-reg-chi">${v.login ? '@' + esc(v.login) : ''}</span>
+          <span class="scudo-reg-perche">${esc(v.motivo || v.errore || '')}</span>
+          <small>${regQuando(v.ts)}</small>
+        </div>`).join('')}</div>`
+      : `<p class="vuoto">${L('Niente in sospeso.', 'Nothing pending.', 'Nada pendiente.')}</p>`;
+  } catch (e) { box.innerHTML = ''; }
+}
+
+async function caricaIncidenti() {
+  const carta = document.getElementById('reg-carta-incidenti');
+  const box = document.getElementById('reg-incidenti');
+  if (!carta || !box) return;
+  let elenco = [];
+  try { elenco = (await api('/api/antibot/incidenti')).elenco || []; } catch (e) { elenco = []; }
+  carta.hidden = !elenco.length;
+  if (!elenco.length) return;
+  box.innerHTML = elenco.slice(0, 20).map((i) => `
+    <div class="reg-inc">
+      <button type="button" class="reg-inc-testa" data-incidente="${esc(i.id)}" aria-expanded="false">
+        <span class="reg-inc-quando">${regQuando(i.aperto)}</span>
+        <span class="reg-inc-tipo">${esc(i.tipo || '')}</span>
+        <span class="reg-inc-picco">${esc(i.picco?.livello || '')}</span>
+        <span class="reg-inc-durata">${i.chiuso ? regDurata(i.chiuso - i.aperto) : L('in corso', 'ongoing', 'en curso')}</span>
+      </button>
+      <div class="reg-inc-corpo" id="inc-${esc(i.id)}" hidden></div>
+    </div>`).join('');
+}
+
+async function apriIncidente(id) {
+  const box = document.getElementById('inc-' + id);
+  if (!box) return;
+  box.innerHTML = `<p class="vuoto">${L('Carico…', 'Loading…', 'Cargando…')}</p>`;
+  let d, b;
+  try { d = await api('/api/antibot/incidenti/' + encodeURIComponent(id)); }
+  catch (e) { box.innerHTML = `<p class="vuoto">${L('Non disponibile ora.', 'Not available now.', 'No disponible ahora.')}</p>`; return; }
+  try { b = await api('/api/antibot/incidenti/' + encodeURIComponent(id) + '/bonifica'); } catch (e) { b = null; }
+  const r = b?.rapporto || {};
+  const ant = b?.anteprima || {};
+  const per = r.perGiudizio || {};
+  box.innerHTML = `
+    <div class="reg-inc-conti">
+      ${['certo', 'probabile', 'sospetto', 'legittimo'].map((g) => `<span class="reg-conto"><b>${Number(per[g] || 0)}</b> ${esc(g)}</span>`).join('')}
+    </div>
+    ${(d.timeline || []).length ? `<ol class="reg-timeline">${d.timeline.slice(-12).map((t) => `<li><small>${regQuando(t.ts)}</small> ${esc(t.cosa || '')}</li>`).join('')}</ol>` : ''}
+    ${ant.quanti ? `
+      <div class="reg-bonifica">
+        <p>${L('Si possono togliere', 'Can be removed', 'Se pueden quitar')} <b>${ant.quanti}</b> ${L('follower giudicati bot. Le persone vere restano dove sono, e non compaiono nemmeno qui.', 'followers judged to be bots. Real people stay where they are, and do not even show up here.', 'seguidores juzgados como bots. Las personas de verdad se quedan donde están, y ni siquiera aparecen aquí.')}</p>
+        <div class="riga-flessibile">
+          <label class="suggerimento" for="bon-conferma-${esc(id)}">${L('Riscrivi il numero per confermare:', 'Retype the number to confirm:', 'Reescribe el número para confirmar:')}</label>
+          <input id="bon-conferma-${esc(id)}" inputmode="numeric" maxlength="6" style="width:6rem" placeholder="${ant.quanti}">
+          <button type="button" class="btn mini" data-bonifica="${esc(id)}">${L('Togli i follower finti', 'Remove the fake followers', 'Quita los seguidores falsos')}</button>
+        </div>
+      </div>` : `<p class="suggerimento">${L('Niente da ripulire: nessun account giudicato bot con l\'id di Twitch a disposizione.', 'Nothing to clean up: no account judged a bot with a Twitch id available.', 'Nada que limpiar: ninguna cuenta juzgada bot con el id de Twitch disponible.')}</p>`}`;
+}
+
+let _regLegato = false;
+function regWire() {
+  if (_regLegato) return;
+  _regLegato = true;
+  document.addEventListener('click', async (ev) => {
+    const t = ev.target.closest?.('[data-incidente]');
+    if (t) {
+      ev.preventDefault();
+      const id = t.dataset.incidente;
+      const box = document.getElementById('inc-' + id);
+      if (!box) return;
+      const apri = box.hidden;
+      box.hidden = !apri;
+      t.setAttribute('aria-expanded', apri ? 'true' : 'false');
+      if (apri && !box.dataset.pieno) { box.dataset.pieno = '1'; apriIncidente(id); }
+      return;
+    }
+    const bon = ev.target.closest?.('[data-bonifica]');
+    if (bon) {
+      ev.preventDefault();
+      const id = bon.dataset.bonifica;
+      const campo = document.getElementById('bon-conferma-' + id);
+      const conferma = (campo?.value || '').trim();
+      if (!conferma) { toast(L('Riscrivi il numero per confermare.', 'Retype the number to confirm.', 'Reescribe el número para confirmar.')); return; }
+      bon.disabled = true;
+      try {
+        const r = await api('/api/antibot/incidenti/' + encodeURIComponent(id) + '/bonifica', { method: 'POST', body: { giudizi: ['certo'], conferma } });
+        toast(r.ok ? L('Fatto: ', 'Done: ', 'Hecho: ') + (r.tolti || 0) : (r.errore || L('Non riuscito', 'Failed', 'Falló')));
+        if (r.ok) { const box = document.getElementById('inc-' + id); if (box) { box.dataset.pieno = ''; apriIncidente(id); box.dataset.pieno = '1'; } }
+      } catch (e) { toast(L('Non riuscito', 'Failed', 'Falló')); }
+      bon.disabled = false;
+      return;
+    }
+    if (ev.target.closest?.('#reg-riprova')) {
+      ev.preventDefault();
+      try {
+        const r = await api('/api/antibot/sospese/riprova', { method: 'POST' });
+        toast(L('Riprese: ', 'Resumed: ', 'Retomadas: ') + (r.ripresi || 0));
+        caricaRegistro();
+      } catch (e) { toast(L('Non riuscito', 'Failed', 'Falló')); }
+    }
+  });
 }
 
 function scudoAzioneTesto(a) {
@@ -12621,54 +12924,42 @@ function scudoWire() {
   });
 }
 
+const SCUDO_LIVELLI = {
+  calma: ['in pace', 'at peace', 'en calma'],
+  osservo: ['sto guardando', 'watching', 'observando'],
+  allerta: ['in allerta', 'on alert', 'en alerta'],
+  difesa: ['in difesa', 'defending', 'defendiendo'],
+  attacco: ['sotto attacco', 'under attack', 'bajo ataque'],
+  serrata: ['serrata', 'shuttered', 'cerrado'],
+};
+
+function scudoLivello(nome) {
+  const t = SCUDO_LIVELLI[nome];
+  return t ? L(t[0], t[1], t[2]) : (nome || '');
+}
+
 async function caricaScudo() {
   scudoWire();
+  caricaStatoListaBot();
+  modSincronizza();
   const box = document.getElementById('scudo-stato');
   if (!box) return;
   let d;
   try { d = await api('/api/antibot/console'); }
   catch (e) { box.innerHTML = `<p class="vuoto">${L('Non disponibile ora.', 'Not available now.', 'No disponible ahora.')}</p>`; return; }
-  const s = d.stato || {}, sn = d.sintesi || {};
-  const lb = s.listaBot || {};
-  const quando = lb.aggiornata ? new Date(lb.aggiornata).toLocaleDateString() : '';
+  const s = d.stato || {};
+  const liv = s.assetto?.livello || 'calma';
+  const coda = Number(s.coda?.in_attesa || 0);
   box.innerHTML = `
     <div class="scudo-kpi">
-      <div class="kpi ${s.attivo ? 'on' : 'off'}"><b>${s.attivo ? L('Attivo', 'On', 'Activo') : L('Spento', 'Off', 'Apagado')}</b><span>${L('protezione', 'protection', 'protección')}</span></div>
-      <div class="kpi"><b>${sn.oggi || 0}</b><span>${L('oggi', 'today', 'hoy')}</span></div>
-      <div class="kpi"><b>${sn.settimana || 0}</b><span>${L('7 giorni', '7 days', '7 días')}</span></div>
-      <div class="kpi ${sn.aperte ? 'warn' : ''}"><b>${sn.aperte || 0}</b><span>${L('da rivedere', 'to review', 'por revisar')}</span></div>
-      <div class="kpi"><b>${Number(lb.conteggio || 0).toLocaleString('it')}</b><span>${L('bot noti', 'known bots', 'bots conocidos')}${quando ? ' · ' + quando : ''}</span></div>
+      <div class="kpi ${s.attivo ? 'on' : 'off'}"><b>${s.attivo ? L('Acceso', 'On', 'Encendido') : L('Spento', 'Off', 'Apagado')}</b><span>${L('protezione', 'protection', 'protección')}</span></div>
+      <div class="kpi ${liv === 'calma' ? '' : 'warn'}"><b>${esc(scudoLivello(liv))}</b><span>${L('adesso', 'right now', 'ahora')}</span></div>
+      <div class="kpi"><b>${Number(s.sogliaViva || 0) || Number(impostazioni().antibot?.rafficaQuanti) || 10}</b><span>${L('follow per allarme', 'follows to alert', 'follows para alarma')}</span></div>
+      ${coda ? `<div class="kpi warn"><b>${coda}</b><span>${L('in fila', 'queued', 'en cola')}</span></div>` : ''}
     </div>
+    ${s.aVuoto ? `<p class="suggerimento spazio-sopra"><span class="badge giallo">${L('sola osservazione', 'observe only', 'solo observar')}</span> ${L('lo scudo scrive cosa farebbe e non tocca nessuno.', 'the shield logs what it would do and touches nobody.', 'el escudo anota lo que haría y no toca a nadie.')}</p>` : ''}
+    ${s.incidente ? `<p class="suggerimento spazio-sopra">${L('Attacco in corso da', 'Attack ongoing since', 'Ataque en curso desde')} ${regQuando(s.incidente.aperto)}. <a href="#registro" data-scheda="registro">${L('Guarda nel registro', 'See it in the log', 'Míralo en el registro')}</a></p>` : ''}
     ${!s.moderazioneOk ? `<p class="suggerimento spazio-sopra">${L('Per bannare davvero servono i permessi di moderazione.', 'To actually ban, moderation permissions are needed.', 'Para banear de verdad hacen falta permisos de moderación.')} <a class="btn secondario mini" href="/auth/permessi">${L('Concedi i permessi', 'Grant permissions', 'Concede los permisos')}</a></p>` : ''}`;
-
-  const seg = document.getElementById('scudo-segnalazioni');
-  if (seg) seg.innerHTML = (d.segnalazioni && d.segnalazioni.length)
-    ? d.segnalazioni.map((v) => `
-      <div class="scudo-seg">
-        <div class="scudo-seg-info">
-          <b>@${esc(v.login || '?')}</b>
-          <span>${esc(scudoAzioneTesto(v.azione))} · ${esc(v.motivo || '')}</span>
-          <small>${scudoQuando(v.ts)}</small>
-        </div>
-        <div class="scudo-seg-azioni">
-          <button type="button" class="btn mini" data-scudo-ris="${esc(v.id)}" data-esito="blocca">${L('Blocca sempre', 'Always block', 'Bloquear')}</button>
-          <button type="button" class="btn secondario mini" data-scudo-ris="${esc(v.id)}" data-esito="permetti">${L('Permetti', 'Allow', 'Permitir')}</button>
-          <button type="button" class="btn secondario mini" data-scudo-ris="${esc(v.id)}" data-esito="ignora">${L('Ignora', 'Dismiss', 'Ignorar')}</button>
-        </div>
-      </div>`).join('')
-    : `<p class="vuoto">${L('Niente da rivedere. Tutto sotto controllo.', 'Nothing to review. All clear.', 'Nada por revisar. Todo en orden.')}</p>`;
-
-  const reg = document.getElementById('scudo-registro');
-  if (reg) reg.innerHTML = (d.registro && d.registro.length)
-    ? `<div class="scudo-reg">${d.registro.map((v) => `
-      <div class="scudo-reg-riga">
-        <span class="scudo-reg-a">${esc(scudoAzioneTesto(v.azione))}</span>
-        <span class="scudo-reg-chi">${v.login ? '@' + esc(v.login) : ''}</span>
-        <span class="scudo-reg-perche">${esc(v.motivo || '')}</span>
-        ${scudoEsito(v.esito)}
-        <small>${scudoQuando(v.ts)}</small>
-      </div>`).join('')}</div>`
-    : `<p class="vuoto">${L('Ancora nessun intervento registrato.', 'No actions recorded yet.', 'Aún no hay acciones registradas.')}</p>`;
 
   scudoRenderLista('extra', d.liste?.extra || []);
   scudoRenderLista('esenti', d.liste?.esenti || []);
@@ -12699,10 +12990,35 @@ function scudoRenderLista(campo, nomi) {
     : `<span class="suggerimento">${L('Vuota.', 'Empty.', 'Vacía.')}</span>`;
 }
 
+function modTesta(id, acceso, testo, nota) {
+  return `<div class="mod-testa">
+      <input type="checkbox" id="${id}" ${acceso ? 'checked' : ''}>
+      <label for="${id}">${testo}</label>
+      ${nota ? `<span class="mod-nota">${nota}</span>` : ''}
+    </div>`;
+}
+
+function modVoce(id, acceso, testo, coda) {
+  return `<div class="mod-voce">
+        <input type="checkbox" id="${id}" ${acceso ? 'checked' : ''}>
+        <label for="${id}">${testo}${coda ? ' ' + coda : ''}</label>
+      </div>`;
+}
+
+function modSincronizza() {
+  for (const el of document.querySelectorAll('[data-legato]')) {
+    const m = document.getElementById(el.dataset.legato);
+    el.dataset.spento = (!m || m.checked) ? '0' : '1';
+  }
+}
+
+document.addEventListener('change', (ev) => {
+  if (ev.target?.matches?.('.mod-testa input[type=checkbox]')) modSincronizza();
+});
+
 function pannelloRegole() {
   const s = impostazioni();
   const a = s.antispam || {};
-  const ab = s.antibot || {};
   const sel = (v, def) => v === undefined ? def : v;
   return pannello('regole', `
     <div class="carta">
@@ -12714,178 +13030,57 @@ function pannelloRegole() {
     </div>
 
     <div class="carta">
-      <h2>${_hIco(ICO.scudo)}${L('Antispam automatico', 'Automatic anti-spam', 'Antispam automático')}</h2>
-      ${stato.moderazioneOk
-        ? `<p class="suggerimento"><span class="badge verde">✓ ${L('permessi di moderazione attivi', 'moderation permissions active', 'permisos de moderación activos')}</span></p>`
-        : `<p class="suggerimento">${L('Per eliminare i messaggi servono i permessi di moderazione (aggiunti dopo).', 'Deleting messages needs moderation permissions (added later).', 'Para borrar mensajes hacen falta los permisos de moderación (añadidos después).')}
-        <a class="btn secondario mini" href="/auth/permessi">${L('Concedi i permessi', 'Grant permissions', 'Concede los permisos')}</a></p>`}
+      <h2>${_hIco(ICO.chat)}${L('Antispam automatico', 'Automatic anti-spam', 'Antispam automático')}</h2>
       <p>${L('Elimina da solo lo spam e, a chi insiste, dà un timeout crescente.', 'Deletes spam on its own and gives escalating timeouts to repeat offenders.', 'Borra el spam solo y da timeouts crecientes a los reincidentes.')}
       <strong class="primo-piano">${L('Mod, VIP e broadcaster sono sempre esenti.', 'Mods, VIPs and the broadcaster are always exempt.', 'Mods, VIP y el broadcaster están siempre exentos.')}</strong></p>
+      ${modTesta('chk-as-attivo', a.attivo, L('Attiva l\'antispam', 'Enable anti-spam', 'Activa el antispam'),
+        stato.moderazioneOk ? L('permessi attivi', 'permissions active', 'permisos activos') : '')}
+      ${!stato.moderazioneOk ? `<p class="suggerimento">${L('Per eliminare i messaggi servono i permessi di moderazione.', 'Deleting messages needs moderation permissions.', 'Para borrar mensajes hacen falta los permisos de moderación.')}
+        <a class="btn secondario mini" href="/auth/permessi">${L('Concedi i permessi', 'Grant permissions', 'Concede los permisos')}</a></p>` : ''}
 
-      <div class="riga-check">
-        <input type="checkbox" id="chk-as-attivo" ${a.attivo ? 'checked' : ''}>
-        <label for="chk-as-attivo">${L('Attiva l\'antispam', 'Enable anti-spam', 'Activa el antispam')}</label>
-      </div>
+      <div class="mod-corpo" data-legato="chk-as-attivo">
+        <div class="mod-sez">
+          <h3>${L('I link', 'Links', 'Los enlaces')}</h3>
+          ${modVoce('chk-as-link', sel(a.link, true), L('Blocca i link non autorizzati', 'Block unauthorized links', 'Bloquea los enlaces no autorizados'))}
+          <div class="riga-flessibile">
+            <span class="suggerimento">${L('Possono postare link:', 'Can post links:', 'Pueden publicar enlaces:')}</span>
+            <select aria-label="${esc(L('Chi può postare link', 'Who can post links', 'Quien puede publicar enlaces'))}" id="sel-as-linktier">
+              <option value="mod" ${a.linkTier === 'mod' ? 'selected' : ''}>${L('solo mod', 'mods only', 'solo mods')}</option>
+              <option value="vip" ${a.linkTier === 'vip' ? 'selected' : ''}>${L('VIP e mod', 'VIPs and mods', 'VIP y mods')}</option>
+              <option value="sub" ${(a.linkTier || 'sub') === 'sub' ? 'selected' : ''}>${L('sub, VIP e mod', 'subs, VIPs and mods', 'subs, VIP y mods')}</option>
+              <option value="tutti" ${a.linkTier === 'tutti' ? 'selected' : ''}>${L('tutti (non bloccare)', 'everyone (don’t block)', 'todos (no bloquear)')}</option>
+            </select>
+          </div>
+          <label class="campo" for="txt-as-whitelist">${L('Domini sempre permessi (uno per riga)', 'Always-allowed domains (one per line)', 'Dominios siempre permitidos (uno por línea)')}</label>
+          <textarea id="txt-as-whitelist" placeholder="${L('es. youtube.com&#10;instagram.com/tuonome', 'e.g. youtube.com&#10;instagram.com/yourname', 'p. ej. youtube.com&#10;instagram.com/tunombre')}">${esc((Array.isArray(a.whitelist) ? a.whitelist : []).join('\n'))}</textarea>
+          <p class="suggerimento">${L('Il tuo canale, le clip di Twitch e andryxify.it sono già permessi.', 'Your channel, Twitch clips and andryxify.it are already allowed.', 'Tu canal, los clips de Twitch y andryxify.it ya están permitidos.')}</p>
+        </div>
 
-      <div class="riga-check spazio-sopra">
-        <input type="checkbox" id="chk-as-link" ${sel(a.link, true) ? 'checked' : ''}>
-        <label for="chk-as-link">${L('Blocca i link non autorizzati', 'Block unauthorized links', 'Bloquea los enlaces no autorizados')}</label>
-      </div>
-      <div class="riga-flessibile">
-        <span class="suggerimento">${L('Possono postare link:', 'Can post links:', 'Pueden publicar enlaces:')}</span>
-        <select aria-label="${esc(L('Chi può postare link', 'Who can post links', 'Quien puede publicar enlaces'))}" id="sel-as-linktier">
-          <option value="mod" ${a.linkTier === 'mod' ? 'selected' : ''}>${L('solo mod', 'mods only', 'solo mods')}</option>
-          <option value="vip" ${a.linkTier === 'vip' ? 'selected' : ''}>${L('VIP e mod', 'VIPs and mods', 'VIP y mods')}</option>
-          <option value="sub" ${(a.linkTier || 'sub') === 'sub' ? 'selected' : ''}>${L('sub, VIP e mod', 'subs, VIPs and mods', 'subs, VIP y mods')}</option>
-          <option value="tutti" ${a.linkTier === 'tutti' ? 'selected' : ''}>${L('tutti (non bloccare)', 'everyone (don’t block)', 'todos (no bloquear)')}</option>
-        </select>
-      </div>
-      <label class="campo" for="txt-as-whitelist">${L('Domini sempre permessi (uno per riga)', 'Always-allowed domains (one per line)', 'Dominios siempre permitidos (uno por línea)')}</label>
-      <textarea id="txt-as-whitelist" placeholder="${L('es. youtube.com&#10;instagram.com/tuonome', 'e.g. youtube.com&#10;instagram.com/yourname', 'p. ej. youtube.com&#10;instagram.com/tunombre')}">${esc((Array.isArray(a.whitelist) ? a.whitelist : []).join('\n'))}</textarea>
-      <p class="suggerimento">${L('Il tuo canale, le clip di Twitch e andryxify.it sono già permessi.', 'Your channel, Twitch clips and andryxify.it are already allowed.', 'Tu canal, los clips de Twitch y andryxify.it ya están permitidos.')}</p>
+        <div class="mod-sez">
+          <h3>${L('Cosa filtrare', 'What to filter', 'Qué filtrar')}</h3>
+          <div class="mod-griglia">
+            ${modVoce('chk-as-ripet', sel(a.ripetizioni, true), L('Copypasta e messaggi ripetuti', 'Copypasta and repeated messages', 'Copypasta y mensajes repetidos'))}
+            ${modVoce('chk-as-flood', sel(a.flood, true), L('Flood: troppi messaggi di fila', 'Flooding: too many messages in a row', 'Flood: demasiados mensajes seguidos'))}
+            ${modVoce('chk-as-caps', sel(a.maiuscole, true), L('Messaggi TUTTI MAIUSCOLI', 'ALL-CAPS messages', 'Mensajes EN MAYÚSCULAS'))}
+            ${modVoce('chk-as-menz', sel(a.menzioni, true), L('Valanghe di @menzioni', '@mention floods', 'Avalanchas de @menciones'))}
+            ${modVoce('chk-as-simboli', sel(a.simboli, false), L('ASCII-art, «zalgo» e muri di simboli', 'ASCII art, «zalgo» and symbol walls', 'ASCII-art, «zalgo» y muros de símbolos'))}
+            ${modVoce('chk-as-lungo', sel(a.lungo, false), L('Messaggi più lunghi di', 'Messages longer than', 'Mensajes más largos de'),
+              `<input type="number" id="num-as-lungomax" min="50" max="500" value="${esc(String(a.lungoMax || 350))}" aria-label="${esc(L('Lunghezza massima in caratteri', 'Maximum length in characters', 'Longitud máxima en caracteres'))}"> ${L('caratteri', 'characters', 'caracteres')}`)}
+            ${modVoce('chk-as-emoji', sel(a.emoji, false), L('Raffiche di più di', 'Bursts of more than', 'Ráfagas de más de'),
+              `<input type="number" id="num-as-emojimax" min="1" max="50" value="${esc(String(a.emojiMax || 8))}" aria-label="${esc(L('Quante emoji al massimo per messaggio', 'Maximum emoji per message', 'Cuántos emojis como máximo por mensaje'))}"> ${L('emoji per messaggio', 'emoji per message', 'emojis por mensaje')}`)}
+          </div>
+        </div>
 
-      <div class="riga-check spazio-sopra">
-        <input type="checkbox" id="chk-as-ripet" ${sel(a.ripetizioni, true) ? 'checked' : ''}>
-        <label for="chk-as-ripet">${L('Blocca copypasta / messaggi ripetuti', 'Block copypasta / repeated messages', 'Bloquea copypasta / mensajes repetidos')}</label>
-      </div>
-      <div class="riga-check">
-        <input type="checkbox" id="chk-as-flood" ${sel(a.flood, true) ? 'checked' : ''}>
-        <label for="chk-as-flood">${L('Blocca il flood (troppi messaggi di fila)', 'Block flooding (too many messages in a row)', 'Bloquea el flood (demasiados mensajes seguidos)')}</label>
-      </div>
-      <div class="riga-check">
-        <input type="checkbox" id="chk-as-caps" ${sel(a.maiuscole, true) ? 'checked' : ''}>
-        <label for="chk-as-caps">${L('Blocca i messaggi TUTTI MAIUSCOLI', 'Block ALL-CAPS messages', 'Bloquea los mensajes EN MAYÚSCULAS')}</label>
-      </div>
-      <div class="riga-check">
-        <input type="checkbox" id="chk-as-menz" ${sel(a.menzioni, true) ? 'checked' : ''}>
-        <label for="chk-as-menz">${L('Blocca le valanghe di @menzioni', 'Block @mention floods', 'Bloquea las avalanchas de @menciones')}</label>
-      </div>
-      <div class="riga-check">
-        <input type="checkbox" id="chk-as-simboli" ${sel(a.simboli, false) ? 'checked' : ''}>
-        <label for="chk-as-simboli">${L('Blocca ASCII-art, «zalgo» e muri di simboli', 'Block ASCII art, «zalgo» and symbol walls', 'Bloquea ASCII-art, «zalgo» y muros de símbolos')}</label>
-      </div>
-      <div class="riga-check">
-        <input type="checkbox" id="chk-as-lungo" ${sel(a.lungo, false) ? 'checked' : ''}>
-        <label for="chk-as-lungo">${L('Blocca i messaggi troppo lunghi, oltre', 'Block messages longer than', 'Bloquea los mensajes más largos de')}
-          <input type="number" id="num-as-lungomax" min="50" max="500" value="${esc(String(a.lungoMax || 350))}" style="max-width:5rem"> ${L('caratteri', 'characters', 'caracteres')}</label>
-      </div>
-      <div class="riga-check">
-        <input type="checkbox" id="chk-as-emoji" ${sel(a.emoji, false) ? 'checked' : ''}>
-        <label for="chk-as-emoji">${L('Blocca le raffiche di emoji, oltre', 'Block emoji floods, over', 'Bloquea las ráfagas de emojis, más de')}
-          <input type="number" id="num-as-emojimax" min="1" max="50" value="${esc(String(a.emojiMax || 8))}" style="max-width:4rem"> ${L('per messaggio', 'per message', 'por mensaje')}</label>
-      </div>
-
-      <div class="riga-check spazio-sopra">
-        <input type="checkbox" id="chk-as-timeout" ${sel(a.timeoutRecidivi, true) ? 'checked' : ''}>
-        <label for="chk-as-timeout">${L('Timeout crescente ai recidivi (1ª volta solo cancella, poi 1m, 5m, 10m)', 'Escalating timeout for repeat offenders (1st time delete only, then 1m, 5m, 10m)', 'Timeout creciente a los reincidentes (1.ª vez solo borra, luego 1m, 5m, 10m)')}</label>
-      </div>
-      <div class="riga-check">
-        <input type="checkbox" id="chk-as-avvisa" ${sel(a.avvisa, true) ? 'checked' : ''}>
-        <label for="chk-as-avvisa">${L('Avvisa in chat quando elimina', 'Warn in chat when it deletes', 'Avisa en el chat cuando borra')}</label>
+        <div class="mod-sez">
+          <h3>${L('Quando interviene', 'When it steps in', 'Cuándo interviene')}</h3>
+          <div class="mod-griglia">
+            ${modVoce('chk-as-timeout', sel(a.timeoutRecidivi, true), L('Timeout crescente ai recidivi: la prima volta cancella e basta, poi 1 minuto, 5, 10', 'Escalating timeout for repeat offenders: first time delete only, then 1 minute, 5, 10', 'Timeout creciente a los reincidentes: la primera vez solo borra, luego 1 minuto, 5, 10'))}
+            ${modVoce('chk-as-avvisa', sel(a.avvisa, true), L('Avvisa in chat quando elimina', 'Warn in chat when it deletes', 'Avisa en el chat cuando borra'))}
+          </div>
+        </div>
       </div>
 
       <p class="spazio-sopra"><button class="btn" id="btn-salva-antispam">${L('Salva antispam', 'Save anti-spam', 'Guardar antispam')}</button></p>
-    </div>
-
-    <div class="carta">
-      <h2>${_hIco(ICO.scudo)}${L('Anti-bot: follow-bot e hate-raid', 'Anti-bot: follow-bots & hate-raids', 'Anti-bot: follow-bots y hate-raids')}</h2>
-      <p>${L('Protezione dagli attacchi di bot: le ondate di finti follower e gli account-bot che spammano in chat. Sullo stile di Sery_Bot.', 'Protection from bot attacks: waves of fake followers and bot accounts spamming chat. Sery_Bot style.', 'Protección de ataques de bots: oleadas de seguidores falsos y cuentas-bot que spamean el chat. Al estilo de Sery_Bot.')}
-      <strong class="primo-piano">${L('In dubbio avvisa, non caccia i fan veri.', 'When unsure it warns, it doesn’t kick real fans.', 'En duda avisa, no echa a los fans de verdad.')}</strong></p>
-
-      <div class="riga-check">
-        <input type="checkbox" id="chk-ab-attivo" ${ab.attivo ? 'checked' : ''}>
-        <label for="chk-ab-attivo">${L('Attiva la protezione anti-bot', 'Enable anti-bot protection', 'Activa la protección anti-bot')}</label>
-      </div>
-
-      <div class="riga-check spazio-sopra">
-        <input type="checkbox" id="chk-ab-raffica" ${sel(ab.raffica, true) ? 'checked' : ''}>
-        <label for="chk-ab-raffica">${L('Rileva le ondate di follow (attacco follow-bot)', 'Detect follow waves (follow-bot attack)', 'Detecta oleadas de follows (ataque follow-bot)')}</label>
-      </div>
-      <div class="riga-flessibile">
-        <span class="suggerimento">${L('Allarme oltre', 'Alert above', 'Alarma por encima de')}</span>
-        <input aria-label="${esc(L('Allarme oltre quanti follow', 'Alert above how many follows', 'Alerta por encima de cuantos follows'))}" type="number" id="inp-ab-quanti" min="3" max="100" value="${Number(ab.rafficaQuanti) || 10}" style="width:5rem">
-        <span class="suggerimento">${L('follow in', 'follows in', 'follows en')}</span>
-        <input aria-label="${esc(L('In quanti secondi', 'Within how many seconds', 'En cuantos segundos'))}" type="number" id="inp-ab-secondi" min="5" max="300" value="${Number(ab.rafficaSecondi) || 30}" style="width:5rem">
-        <span class="suggerimento">${L('secondi', 'seconds', 'segundos')}</span>
-      </div>
-      <div class="riga-check">
-        <input type="checkbox" id="chk-ab-chiudi" ${sel(ab.rafficaChiudiChat, true) ? 'checked' : ''}>
-        <label for="chk-ab-chiudi">${L('Durante un\'ondata, chat ai soli follower', 'During a wave, followers-only chat', 'Durante una oleada, chat solo para seguidores')}</label>
-      </div>
-      <div class="riga-check">
-        <input type="checkbox" id="chk-ab-rafbanna" ${ab.rafficaBanna ? 'checked' : ''}>
-        <label for="chk-ab-rafbanna">${L('Durante un\'ondata, banna anche i follow sospetti (aggressivo)', 'During a wave, also ban suspicious follows (aggressive)', 'Durante una oleada, banea también los follows sospechosos (agresivo)')}</label>
-      </div>
-
-      <div class="riga-check spazio-sopra">
-        <input type="checkbox" id="chk-ab-nomi" ${sel(ab.nomiBot, true) ? 'checked' : ''}>
-        <label for="chk-ab-nomi">${L('Ferma gli account con nomi da follow-bot noti', 'Stop accounts with known follow-bot names', 'Frena las cuentas con nombres de follow-bot conocidos')}</label>
-      </div>
-      <div class="riga-check">
-        <input type="checkbox" id="chk-ab-listaauto" ${sel(ab.listaAuto, true) ? 'checked' : ''}>
-        <label for="chk-ab-listaauto">${L('Usa la lista di bot noti che si aggiorna da sola', 'Use the self-updating known-bot list', 'Usa la lista de bots conocidos que se actualiza sola')}</label>
-      </div>
-      <p class="suggerimento" id="lp-ab-lista">${L('Controllo la lista…', 'Checking the list…', 'Comprobando la lista…')}</p>
-      <div class="riga-check">
-        <input type="checkbox" id="chk-ab-avuoto" ${ab.aVuoto === true ? 'checked' : ''}>
-        <label for="chk-ab-avuoto">${L('Sola osservazione: decidi tutto, non toccare nessuno', 'Observe only: decide everything, touch nobody', 'Solo observar: decide todo, no toques a nadie')}</label>
-      </div>
-      <p class="suggerimento">${L('Lo scudo lavora normalmente e scrive nel registro cosa avrebbe fatto, ma non banna, non blocca e non cancella niente. Serve per vedere come si comporterebbe sul tuo canale prima di lasciarlo agire.', 'The shield works as usual and logs what it would have done, but bans, blocks and deletes nothing. Use it to see how it would behave on your channel before letting it act.', 'El escudo trabaja normalmente y anota lo que habria hecho, pero no banea, ni bloquea, ni borra nada. Sirve para ver como se comportaria en tu canal antes de dejarlo actuar.')}</p>
-      <div class="riga-check">
-        <input type="checkbox" id="chk-ab-presenze" ${sel(ab.presenze, true) ? 'checked' : ''}>
-        <label for="chk-ab-presenze">${L('Segnala chi guarda molti canali insieme senza scrivere mai', 'Report accounts watching many channels at once without ever writing', 'Avisa de quien mira muchos canales a la vez sin escribir nunca')}</label>
-      </div>
-      <p class="suggerimento">${L('Non tocca nessuno: mette la segnalazione qui sotto e decidi tu. Un account che sta in molti canali contemporaneamente e non parla mai è quasi sempre un bot che gonfia i numeri.', 'It never acts: it files a report below and you decide. An account sitting in many channels at once and never speaking is almost always a number-inflating bot.', 'No toca a nadie: deja el aviso aquí abajo y decides tú. Una cuenta que está en muchos canales a la vez y nunca habla casi siempre es un bot que infla los números.')}</p>
-      <div class="riga-flessibile">
-        <span class="suggerimento">${L('Quanto presto reagire:', 'How soon to react:', 'Con qué rapidez reaccionar:')}</span>
-        <select aria-label="${esc(L('Quanto presto alzare il livello di difesa', 'How soon to raise the defence level', 'Con que rapidez subir el nivel de defensa'))}" id="sel-ab-modo">
-          <option value="prudente" ${ab.modo === 'prudente' ? 'selected' : ''}>${L('prudente', 'cautious', 'prudente')}</option>
-          <option value="bilanciata" ${(ab.modo || 'bilanciata') === 'bilanciata' ? 'selected' : ''}>${L('bilanciata', 'balanced', 'equilibrada')}</option>
-          <option value="aggressiva" ${ab.modo === 'aggressiva' ? 'selected' : ''}>${L('aggressiva', 'aggressive', 'agresiva')}</option>
-        </select>
-      </div>
-      <p class="suggerimento">${L('Lo scudo ha sei livelli e sale piano: prima guarda, poi avvisa i moderatori, poi rallenta la chat, e solo alla fine la chiude ai soli follower. Questa scelta decide quanto presto passa da uno all\'altro.', 'The shield has six levels and climbs gradually: first it watches, then it warns the mods, then it slows the chat, and only at the end closes it to followers only. This choice decides how soon it moves between them.', 'El escudo tiene seis niveles y sube poco a poco: primero mira, luego avisa a los moderadores, luego ralentiza el chat, y solo al final lo cierra solo a seguidores. Esta opcion decide con que rapidez pasa de uno a otro.')}</p>
-      <div class="riga-flessibile">
-        <span class="suggerimento">${L('Cosa fare:', 'What to do:', 'Qué hacer:')}</span>
-        <select aria-label="${esc(L('Cosa fare quando scatta l\'allarme', 'What to do when the alert fires', 'Que hacer cuando salta la alarma'))}" id="sel-ab-azione">
-          <option value="ban" ${(ab.azione || 'ban') === 'ban' ? 'selected' : ''}>${L('bannare', 'ban', 'banear')}</option>
-          <option value="timeout" ${ab.azione === 'timeout' ? 'selected' : ''}>${L('timeout 14 giorni', '14-day timeout', 'timeout 14 días')}</option>
-          <option value="segnala" ${ab.azione === 'segnala' ? 'selected' : ''}>${L('solo segnalare', 'just report', 'solo avisar')}</option>
-        </select>
-      </div>
-
-      <div class="riga-check spazio-sopra">
-        <input type="checkbox" id="chk-ab-account" ${ab.controllaAccount ? 'checked' : ''}>
-        <label for="chk-ab-account">${L('Controlla ogni nuovo follower (account appena creato, senza foto, bio vuota)', 'Check every new follower (brand-new account, no picture, empty bio)', 'Revisa cada nuevo seguidor (cuenta recién creada, sin foto, bio vacía)')}</label>
-      </div>
-      <p class="suggerimento">${L('Più accurato, ma fa una richiesta a Twitch per ogni follow.', 'More accurate, but makes one Twitch request per follow.', 'Más preciso, pero hace una petición a Twitch por cada follow.')}</p>
-
-      <div class="riga-check spazio-sopra">
-        <input type="checkbox" id="chk-ab-chatnuovi" ${ab.chatNuovi ? 'checked' : ''}>
-        <label for="chk-ab-chatnuovi">${L('Trattieni i messaggi degli account appena creati', 'Hold messages from brand-new accounts', 'Retén los mensajes de las cuentas recién creadas')}</label>
-      </div>
-      <div class="riga-flessibile">
-        <span class="suggerimento">${L('Account più giovane di', 'Account younger than', 'Cuenta con menos de')}</span>
-        <input aria-label="${esc(L('Quante ore di eta\' minima dell\'account', 'Minimum account age in hours', 'Horas minimas de antiguedad de la cuenta'))}" type="number" id="inp-ab-chatore" min="1" max="720" value="${Number(ab.chatMinOre) || 24}" style="width:5rem">
-        <span class="suggerimento">${L('ore →', 'hours →', 'horas →')}</span>
-        <select aria-label="${esc(L('Cosa fare con gli account più giovani', 'What to do with younger accounts', 'Que hacer con las cuentas mas nuevas'))}" id="sel-ab-chatazione">
-          <option value="elimina" ${(ab.chatNuoviAzione || 'elimina') === 'elimina' ? 'selected' : ''}>${L('trattieni il messaggio', 'hold the message', 'retén el mensaje')}</option>
-          <option value="segnala" ${ab.chatNuoviAzione === 'segnala' ? 'selected' : ''}>${L('lascialo, avvisa i mod', 'leave it, warn mods', 'déjalo, avisa a los mods')}</option>
-        </select>
-      </div>
-      <p class="suggerimento">${L('La modalità “Restricted” di Twitch (messaggi visibili solo ai mod) non si può attivare da un bot: questo è l’equivalente automatico più vicino. Follower, sub, VIP e mod non vengono mai toccati.', 'Twitch’s “Restricted” mode (messages visible only to mods) can’t be set by a bot: this is the closest automatic equivalent. Followers, subs, VIPs and mods are never touched.', 'El modo “Restricted” de Twitch (mensajes visibles solo para los mods) no lo puede activar un bot: esto es el equivalente automático más cercano. Seguidores, subs, VIP y mods nunca se tocan.')}</p>
-
-      <label class="campo spazio-sopra" for="txt-ab-esenti">${L('Nomi da non toccare MAI (uno per riga)', 'Names to NEVER touch (one per line)', 'Nombres que NUNCA tocar (uno por línea)')}</label>
-      <textarea id="txt-ab-esenti" placeholder="${L('un amico con un nome buffo…', 'a friend with a funny name…', 'un amigo con un nombre gracioso…')}">${esc((Array.isArray(ab.esenti) ? ab.esenti : []).join('\n'))}</textarea>
-      <label class="campo spazio-sopra" for="txt-ab-extra">${L('Bot da fermare in più (nomi esatti, uno per riga)', 'Extra bots to stop (exact names, one per line)', 'Bots extra a frenar (nombres exactos, uno por línea)')}</label>
-      <textarea id="txt-ab-extra" placeholder="${L('un bot che hai visto tu…', 'a bot you spotted…', 'un bot que viste tú…')}">${esc((Array.isArray(ab.extra) ? ab.extra : []).join('\n'))}</textarea>
-
-      <div class="riga-check spazio-sopra">
-        <input type="checkbox" id="chk-ab-avvisa" ${sel(ab.avvisa, true) ? 'checked' : ''}>
-        <label for="chk-ab-avvisa">${L('Avvisa in chat quando interviene', 'Warn in chat when it acts', 'Avisa en el chat cuando actúa')}</label>
-      </div>
-
-      <p class="spazio-sopra"><button class="btn" id="btn-salva-antibot">${L('Salva anti-bot', 'Save anti-bot', 'Guardar anti-bot')}</button></p>
     </div>`);
 }
 
@@ -13089,8 +13284,6 @@ function attivaPiattaforma() {
         chatNuovi: document.getElementById('chk-ab-chatnuovi').checked,
         chatMinOre: Number(document.getElementById('inp-ab-chatore').value),
         chatNuoviAzione: document.getElementById('sel-ab-chatazione').value,
-        esenti: righe(document.getElementById('txt-ab-esenti').value),
-        extra: righe(document.getElementById('txt-ab-extra').value),
         avvisa: document.getElementById('chk-ab-avvisa').checked,
       },
     }, 'Anti-bot salvato');
@@ -14102,8 +14295,9 @@ function caricaDatiScheda(id) {
   if (id === 'notifiche') { caricaCompleanni(); caricaTikTok(); caricaDiscord(); caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaFeed(); caricaFeed(); collegaCartaLive(); caricaCartaLive(); }
   if (id === 'pagina') caricaPaginaLink();
   if (id === 'grafiche') initGrafiche();
-  if (id === 'regole') caricaStatoListaBot();
+  modSincronizza();
   if (id === 'scudo') caricaScudo();
+  if (id === 'registro') caricaRegistro();
   if (id === 'sottoscrizione') caricaSottoscrizione();
   if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaSalute(); caricaBackup(); caricaAnima(); caricaLLM(); caricaVita(); caricaEcosistema(); }
 }
