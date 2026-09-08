@@ -180,6 +180,7 @@ body.cerca-aperta { overflow: hidden; }
   .cerca-voce, .cerca-sugg .chip-domanda, .cerca-box, #cerca-overlay.aperto { animation: none !important; opacity: 1 !important; }
   @media (hover: hover) {
   .blocco:hover, .carta:hover, .pannello:hover, .btn:hover, #cerca-lancia:hover, .menu-voce:hover { transform: none; }
+  .btn:hover, .btn:active { translate: none; scale: none; }
   }
 }
 
@@ -729,12 +730,17 @@ body.pad-guida, body.pad-guida * { cursor: none !important; }
   .vol-lista { gap: 14px; }
 }
 
-.btn, button.btn, a.btn, .grp-btn, .modello-pronto,
+.grp-btn, .modello-pronto,
 .pl-tile, .cerca-voce, .chip-domanda, .menu-voce, .drawer-voce {
   transition: transform var(--t-molla-su) var(--molla-medio), opacity .2s ease,
               background .24s ease, color .24s ease, border-color .24s ease, box-shadow var(--t-molla-su) var(--molla-medio);
 }
-.btn, button.btn, a.btn, .grp-btn, .modello-pronto {
+.btn, button.btn, a.btn {
+  transition: scale var(--t-molla-su) var(--molla-medio), opacity .2s ease,
+              background .24s ease, color .24s ease, border-color .24s ease, box-shadow var(--t-molla-su) var(--molla-medio);
+  translate: var(--mx, 0px) var(--my, 0px);
+}
+.grp-btn, .modello-pronto {
   transform: translate3d(var(--mx, 0px), var(--my, 0px), 0);
 }
 @media (hover: hover) {
@@ -742,16 +748,23 @@ body.pad-guida, body.pad-guida * { cursor: none !important; }
   transform: translate3d(var(--mx, 0px), calc(var(--my, 0px) - 1px), 0);
 }
 .btn:hover {
-  transform: translate3d(calc(var(--mx, 0px) - 3px), calc(var(--my, 0px) - 4px), 0) scale(1.02);
+  translate: calc(var(--mx, 0px) - 3px) calc(var(--my, 0px) - 4px);
+  scale: 1.02;
 }
 .carta.ovl-banco .btn:hover {
-  transform: translate3d(var(--mx, 0px), calc(var(--my, 0px) - 1px), 0);
+  translate: var(--mx, 0px) calc(var(--my, 0px) - 1px);
+  scale: 1;
   box-shadow: var(--ombra-ink-alta);
 }
 }
-.btn:active, button.btn:active, a.btn:active, .grp-btn:active, .modello-pronto:active,
-.btn:not(.secondario):not(.testo):active {
+.grp-btn:active, .modello-pronto:active {
   transform: translate3d(var(--mx, 0px), calc(var(--my, 0px) + 1px), 0) scale(.972);
+  transition-duration: var(--t-molla-giu);
+  transition-timing-function: var(--giu-secco);
+}
+.btn:active, button.btn:active, a.btn:active {
+  translate: var(--mx, 0px) calc(var(--my, 0px) + 1px);
+  scale: .972;
   transition-duration: var(--t-molla-giu);
   transition-timing-function: var(--giu-secco);
 }
