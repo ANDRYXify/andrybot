@@ -63,6 +63,12 @@ for (const [dir, atteso] of [['object-src', "'none'"], ['base-uri', "'self'"]]) 
 }
 perOgnuno(politiche, (p) => !!p['frame-ancestors'], (n) => `ogni politica dice chi puo' incorniciarla (${n})`);
 
+// form-action e frame-ancestors sono le due direttive che NON ereditano da
+// default-src: se non le scrivi non valgono, e default-src 'self' non ti copre.
+// Senza form-action, un form iniettato spedisce dove vuole — e la pagina puo'
+// avere tutta la CSP stretta che vuole, quella strada resta aperta.
+perOgnuno(politiche, (p) => !!p['form-action'], (n) => `ogni politica dice dove puo' spedire un form (${n})`);
+
 // ---- 3. nessuno script scritto dentro l'HTML -----------------------------
 // Ammessi solo i blocchi che il browser NON esegue come JavaScript: il JSON-LD
 // (dati per i motori di ricerca) e le regole di prefetch, che hanno un permesso
@@ -104,7 +110,9 @@ const costruite = await (async () => {
       { tipo: 'conto', testo: 'Fra poco', quando: '2030-01-01T00:00' },
     ],
   };
-  const chi = { login: 'x', display: 'X', avatar: '', baseUrl: 'http://x' };
+  // avatar valorizzato di proposito: senza, il ramo con l'<img> non viene
+  // composto e questo banco non guarderebbe proprio dove stava il difetto.
+  const chi = { login: 'x', display: 'X', avatar: 'https://esempio.invalid/a.png', baseUrl: 'http://x' };
   fuori.push(['pagina link', renderLinkPage(pag, chi)]);
   fuori.push(['informativa della pagina link', renderInformativa({ ...chi, pagina: pag, contatto: '' })]);
   try {
@@ -129,6 +137,58 @@ const RE_ON = /<[a-z][^>]*?\son(?:click|error|load|change|input|submit|mouseover
 const serviti = readdirSync(PUB).filter((x) => /\.(html|js)$/.test(x));
 perOgnuno(serviti, (f) => !RE_ON.test(readFileSync(join(PUB, f), 'utf8')),
   (n) => `nessun attributo on-qualcosa (${n} file, HTML e JS)`);
+
+// Qui il cancello era cieco esattamente come lo era al punto 3 per gli script:
+// guardava i file dentro public/ e non le pagine che il server COMPONE. La
+// pagina link ci teneva un onerror sull'avatar — rifiutato dal browser, perche'
+// script-src non si fida degli inline, quindi il ripiego con l'iniziale non
+// partiva mai. Un attributo on-qualcosa non e' meno servito perche' nasce da
+// una funzione invece che da un file.
+perOgnuno(costruite.map(([n]) => n),
+  (n) => !RE_ON.test(costruite.find(([x]) => x === n)[1]),
+  (n) => `nessun attributo on-qualcosa nemmeno nelle pagine costruite (${n})`);
+
+// E nemmeno nel codice che le compone: li' l'attributo e' una stringa, e la
+// pagina di collaudo qui sopra copre un solo ramo dei tanti che quel codice ha.
+const GENERATORI = ['src/features/linkpagina.js', 'src/web/guide.js', 'src/web/vetrina-vista.js'];
+perOgnuno(GENERATORI.filter((f) => existsSync(join(RAD, f))),
+  (f) => !RE_ON.test(readFileSync(join(RAD, f), 'utf8')),
+  (n) => `nessun attributo on-qualcosa nel codice che compone le pagine (${n} file)`);
+
+// ---- 4bis. frame-src dice esattamente cio' che il codice puo' incorniciare -
+// embedSrc() in linkpagina.js riconosce una lista CHIUSA di fornitori e per
+// qualunque altro indirizzo torna null. Quindi `frame-src https:` era un
+// permesso che non serviva a nessuno, e i due elenchi devono coincidere.
+//
+// Il controllo va nei due versi, perche' i due modi di sbagliare sono opposti:
+// un fornitore aggiunto al codice e dimenticato qui si rompe dal vivo senza un
+// errore in pagina; un host lasciato nella CSP dopo che il codice non lo usa
+// piu' e' un permesso regalato che nessuno rilegge.
+//
+// img-src e media-src tengono `https:` di proposito e non passano di qui: lo
+// sfondo e l'avatar della pagina link sono un indirizzo scelto dallo streamer,
+// e li' l'elenco chiuso non esiste per costruzione.
+{
+  const src = join(RAD, 'src/features/linkpagina.js');
+  if (existsSync(src)) {
+    const codice = readFileSync(src, 'utf8');
+    const daCodice = new Set(
+      codice.split('\n').filter((r) => /\b(src|chat)\s*:/.test(r))
+        .flatMap((r) => r.match(/https:\/\/[a-z0-9.-]+/g) || []));
+    const conFrame = politiche.filter((p) => (p['frame-src'] || []).some((f) => f.startsWith('https://')));
+    dice(daCodice.size > 0, `fornitori che il codice puo' incorniciare: ${daCodice.size}`);
+    dice(conFrame.length > 0, 'almeno una politica elenca chi si puo\' incorniciare');
+    for (const p of conFrame) {
+      const perm = new Set(p['frame-src']);
+      const aperti = [...perm].filter((f) => /^(https?:|\*)$/.test(f));
+      dice(aperti.length === 0, 'frame-src non si fida di tutto uno schema', aperti.join(' '));
+      const mancanti = [...daCodice].filter((h) => !perm.has(h));
+      dice(mancanti.length === 0, 'frame-src copre ogni fornitore che il codice produce', mancanti.join(' '));
+      const inPiu = [...perm].filter((f) => f.startsWith('https://') && !daCodice.has(f));
+      dice(inPiu.length === 0, 'frame-src non permette host che il codice non usa', inPiu.join(' '));
+    }
+  }
+}
 
 // ---- 5. se c'e' il prefetch inline, dev'esserci il suo permesso ----------
 if (conSpeculation) {
